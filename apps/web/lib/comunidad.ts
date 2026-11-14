@@ -242,7 +242,7 @@ type Quien = { estado: string; hasta: string | null; motivo: string | null; nuev
 export async function quien(c: PoolClient, userId: string, ciudad: string): Promise<Quien | null> {
   return (await c.query<Quien>(
     `select cuenta_estado(u.status, u.status_until) as estado, ${ISO("u.status_until")} as hasta, u.status_reason as motivo, u.created_at > now() - interval '24 hours' as nueva,
-            coalesce(u.lang, 'es') as lang, coalesce(cp.rank_level, 1) as rango, coalesce((select status = 'on' from cities where id = $2), false) as "ciudadOn"
+            coalesce(u.lang, 'es') as lang, coalesce(cp.rank_level, 1) as rango, ciudad_abierta_para($2::text, u.id) as "ciudadOn"
        from users u left join community_profiles cp on cp.user_id = u.id where u.id = $1`, [userId, ciudad])).rows[0] ?? null;
 }
 export const fechaHasta = (iso: string | null, es: boolean) => iso ? new Date(iso).toLocaleDateString(es ? "es-US" : "en-US", { day: "numeric", month: "long", timeZone: "America/New_York" }) : "";

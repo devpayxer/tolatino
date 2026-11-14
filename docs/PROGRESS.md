@@ -1908,3 +1908,50 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **No cerrado, con destino (LAUNCH «Fase 9 · 9k»):** 3-D Secure en los demás flujos y «Volver a Pro» con la hoja en el panel (9n), la foto de la entrega en la evidencia (9n), reponer un
   pedido sin costo y la prueba del rechazo al aprobar un estimado (9n), el webhook y la conciliación con Stripe de verdad y el saldo negativo de las cuentas conectadas (9q), la
   corrida del CI (9b).
+
+## Fase 9 · 9i — Ciudades: el asistente de apertura, la regla, la lista de espera, el estado «beta» y los barrios de las cinco (14 nov)
+- **Hecho (rama del worktree de 9i, sobre 677761f; en paralelo con 9l y 9o):**
+  - **Migración `0139_ciudades.sql`** (aplicada en una base nueva —antes de 0140/0141— y en una base con 0140/0141 ya puestas —el orden del sandbox—, y otra vez sin cambios):
+    `cities.status` suma **`beta`** (+ `beta_at`, `closed_at`); **`city_open_rules`** (por ciudad: negocios listos 30 **o** 300 en la lista, y 1 en comida, belleza, hogar, fiestas e
+    iglesias; `ok`/`checked_at` los escribe el servidor); **`city_launches`** (en curso → abierta con sus 7 pasos / cancelada con motivo) y **`city_launch_steps`** (paso 1–7 con quién,
+    evidencia y motivo; **solo avanza, de uno en uno; no se cambia ni se borra**); **`city_close_requests`** (lo pide una persona, lo aprueba OTRA: `decided_by <> requested_by`);
+    **`city_status_log`** (solo inserción: cada cambio de estado, por dónde —asistente, cierre, el equipo, directo— quién y por qué); **`city_beta_invites`** (se quitan, no se borran) y
+    **`ciudad_abierta_para(ciudad, persona)`** (on → todos; beta → invitaciones vivas y cuentas de revisión activas); el trigger **`cities_estado`**: a «on» solo con `tl.apertura` (un
+    asistente de esa ciudad, en curso, con los pasos 1–6) y bajar una ciudad abierta o en beta solo con `tl.cierre` (un cierre aprobado por otra persona) — fuera de la base del sandbox
+    (`ciudades_sandbox()`: el entorno «pruebas» o la semilla de pruebas aplicada) no hay otro camino; **`NOTIFY 'ciudades'`** en cada cambio de `cities`, `zones` y `city_beta_invites`;
+    `zones` con `edited_*` y `retired_*` (no se borran); `city_waitlist.notice_result`/`notice_launch_id` y **`city_notices`** (un aviso de apertura por persona y ciudad, solo
+    inserción); la plantilla **`ciudad_abierta`** (tx, push primero, SMS solo de respaldo); `email_outbox.tpl` suma `city_open` y `config_keys.section` suma `ciudades` (agregados a la
+    lista que haya); **Configuración › Ciudades**: `ciudad_aviso_lote` 500. Mapa de datos (330 filas) e inventario al día.
+  - **Barrios de las cinco** (L64): `packages/db/seeds/zonas.sql` (configuración real, corre en todos los entornos) ahora sale de `scripts/catalogo/extraer-ciudad.cjs` con Hazleton del
+    prototipo y **Allentown, Wilkes-Barre, Scranton y Reading** de `scripts/catalogo/barrios-ciudades.json` (6 barrios con su centro y 14–15 pueblos cercanos por ciudad; puntos
+    aproximados, el equipo local los revisa: LAUNCH → 9t). Un barrio que el equipo corrigió o retiró ya no lo pisa la semilla (`where zones.edited_at is null`).
+  - **Semilla `0059_ciudades.sql`** (el plan decía 0053; solo sandbox): Reading en **beta** con una vecina invitada (Inés, 570-555-9701) y su equipo local de ficción (Raúl, Ciudad
+    manager de Reading, 570-555-9702, en `staff_mfa_pruebas` como 0057). No abre ninguna ciudad.
+  - **Servidor** `lib/ciudades/`: `apertura.ts` (la evidencia de cada paso calculada en vivo y guardada al confirmar; el asistente solo avanza; abrir (paso 7) y «Abrir igual» de un
+    Admin; «Comprobar» = la regla + las líneas pendientes de la LAUNCH que nombran a la ciudad —leídas del archivo que viaja con el build, `outputFileTracingIncludes`; en producción
+    frenan, en el sandbox se anotan— + el commit; beta, invitar y quitar; pedir, aprobar, rechazar y retirar un cierre; la regla; radio, zona horaria e impuesto; barrios),
+    `aviso.ts` (el barrido avisa a la lista de la ciudad que abrió: por partes, de 9 AM a 9 PM de la ciudad, una vez por persona y ciudad, en la app/push, SMS si no tiene la app, correo
+    verificado; quien pidió sin cuenta no recibe nada), `admin.ts`, `launch.ts`, `comun.ts`. **Beta para invitados:** `ubicacion()` y el selector ven las ciudades con `vista()` (la de esa
+    persona, sin guardarla en memoria); Comunidad, «Mi ciudad», el panel («Tu página se ve el día que abra…») y los vecinos deciden «abierta» con `ciudad_abierta_para`. **Al instante (L71):**
+    lib/cambios-config.ts escucha también `ciudades`. El barrido suma `avisoApertura`.
+  - **Super Admin › Ciudades completo (ADM-CIUD):** el listado (estado, lista de espera, negocios listos contra la meta, % de la regla, paso del asistente, cierre por aprobar, la fecha de
+    la landing y «Pide tu ciudad») y el detalle (`/admin/ciudades/{id}`): cifras, la cuenta oficial y el equipo local, el aviso a la lista, **el asistente** (en el teléfono un paso por
+    pantalla, en escritorio la línea de los 7), la beta y sus invitaciones, la regla por categoría clave, las categorías con negocios, radio, zona horaria, impuesto, **barrios** (agregar,
+    corregir, retirar) y pueblos, «Pedir cierre» y el historial. ES/EN por el idioma del admin. **Inicio del Super Admin:** la cifra «LISTA DE ESPERA» y «CIERRE DE CIUDAD POR APROBAR».
+  - **Guardianes nuevos** (al final de `run.mjs`): **`ciudadConAsistente`**, **`ciudadAlInstante`**, **`betaSoloInvitados`** (al escribirlo cazó «Mi ciudad»: la lista para elegir no
+    traía la ciudad en beta), **`listaAvisadaUnaVez`** y **`parametroDeMas`** (una consulta que recibe más valores que los $n que usa: ciu9i cazó así el aviso que nunca salía);
+    `revisionVeCiudadAbierta` sigue en verde (ya lee `beta` de 0139). **`alreves9i` 46/46**, guardianes limpios después.
+  - **Prueba nueva `ciu9i`** (61 ✓): ver la cabecera del archivo. **Ayuda:** `ciudades-que-abren` (vecino) y `admin-ciudades` (equipo), ES/EN.
+- **Probado aquí (sin Docker: Postgres 16 + PostGIS de la máquina en un cluster propio, un `docker exec` de mentira hacia esa base, el build standalone en :3149, Chrome del sistema):**
+  `node guardianes/run.mjs` → «sin fallos»; `tsc --noEmit` limpio; `pnpm --filter web build` en verde (la LAUNCH viaja en `.next/standalone/docs/`); 0139 + semillas en una base nueva y
+  en el orden del sandbox (0139 después de 0140/0141), dos veces, y 0059 y zonas.sql otra vez a mano: sin errores ni cambios; **`ciu9i` 61 ✓ dos veces seguidas** en la misma base (las
+  primeras corridas cazaron dos errores de verdad: el parámetro de más del aviso —guardián `parametroDeMas`— y una comprobación de la prueba que esperaba otro mensaje); capturas a 390
+  y 1360 miradas. **No se corrió:** la regresión entera, la matriz de 9 dispositivos y `pruebas/visual` (el Inicio del admin suma una cifra: LAUNCH → 9b).
+- **Para quien junte las ramas:** 0139 agrega `ciudades` a `config_keys_section_check` y `city_open` a `email_outbox_tpl_check` sobre la lista que haya (si 9l reescribe esos checks con
+  una lista fija, tiene que incluirlos). La plantilla `ciudad_abierta` va con `on conflict do nothing` (si 9l la define también, que use la misma clave o `on conflict`). Archivos que
+  otros tocan: `guardianes/run.mjs` (5 guardianes al final), `lib/barrido.ts` (una tarea), `lib/config.ts` y `Configuracion.tsx` (una línea cada uno), `app/admin/page.tsx`,
+  `lib/correo/index.ts` (`Tpl`), `next.config.ts`, `packages/db/mapa-de-datos.json` (8 tablas al final; se regenera con `node scripts/datos/mapa.mjs`), `pruebas/lib/negocio-nuevo.cjs`
+  (Raúl en `EQUIPO`) y los docs.
+- **No cerrado, con destino (LAUNCH «Fase 9 · 9i»):** el selector de ciudad del encabezado del admin (9n), lo que queda de «Mi ciudad» (9m), el equipo local de las otras ciudades
+  (Paquete 9-4), revisar los barrios en el lugar (9t), el impuesto con el contador (9s), Hazleton en beta (9u), abrir las cinco con el asistente (9v), las corridas del CI y la captura
+  de `admin-hoy` (9b).

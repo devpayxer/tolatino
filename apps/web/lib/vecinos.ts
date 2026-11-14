@@ -234,7 +234,7 @@ export async function bienvenida(userId: string, p: PasoBienvenida): Promise<Res
       if (!u) return no("Entra otra vez.", "Sign in again.");
       let home = u.home;
       if (!home && p.ciudad) {
-        const ok = (await c.query(`select 1 from cities where id = $1 and status = 'on'`, [String(p.ciudad)])).rowCount;
+        const ok = (await c.query(`select 1 from cities where id = $1 and ciudad_abierta_para(id, $2::uuid)`, [String(p.ciudad), userId])).rowCount;
         if (!ok) return no("Esa ciudad todavía no está abierta.", "That city is not open yet.");
         home = String(p.ciudad);
         await c.query(`update users set home_city_id = $2 where id = $1`, [userId, home]);
@@ -282,7 +282,7 @@ export async function datosBienvenida(userId: string, ciudadViendo: string) {
        from users u left join community_profiles cp on cp.user_id = u.id where u.id = $1`, [userId])).rows[0];
   const ciudad = u?.home ?? ciudadViendo;
   const [c, z] = await Promise.all([
-    db().query<{ id: string; name: string; state: string; on: boolean }>(`select id, name, state, status = 'on' as on from cities where id = $1`, [ciudad]),
+    db().query<{ id: string; name: string; state: string; on: boolean }>(`select id, name, state, ciudad_abierta_para(id, $2::uuid) as on from cities where id = $1`, [ciudad, userId]),
     db().query<{ id: string; name: Bi }>(`select id, name from zones where city_id = $1 order by sort, id`, [ciudad]),
   ]);
   const n = await numeroVecino(userId);

@@ -8057,6 +8057,156 @@ const guardianes = {
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/\bsim_(intents|refunds|transfers|transfer_reversals|payouts|files|disputes|dispute_submissions)\b/.test(l)) falla(G, f, i + 1, "el simulador de pagos solo se toca desde lib/pagos/pasarela.ts"); });
     }
   },
+
+  /* 9i · ciudadConAsistente (fase9-apertura.md §4 9i; LAUNCH L41): una ciudad solo pasa a «on» por el asistente con todos sus pasos, y bajar una ciudad
+     abierta o en beta pide un cierre aprobado por OTRA persona. (1) La base lo impone: cities_estado pide tl.apertura con un asistente de esa ciudad, en
+     curso y con sus pasos 1–6 (fuera del sandbox no hay otro camino) y tl.cierre con un pedido aprobado por otra persona; los pasos solo avanzan, de uno
+     en uno, y no se cambian ni se borran; un asistente se cierra «abierta» solo con sus 7 pasos. (2) Solo lib/ciudades/apertura.ts cambia
+     cities.status, y lo hace con tl.apertura o tl.cierre en la misma transacción; abrir (paso 7) y «Abrir igual» son de un Admin; quien pide el cierre no
+     lo aprueba. (3) Ninguna semilla nueva abre una ciudad a mano (la 0002 del sandbox, de antes de 9i, es la única) ni lo hace una semilla del catálogo.
+     Al revés: alreves9i. */
+  ciudadConAsistente() {
+    const G = "ciudadConAsistente", M = "packages/db/migrations/0139_ciudades.sql", A = "apps/web/lib/ciudades/apertura.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta 0139 (el asistente de apertura en la base)");
+    const m = readFileSync(M, "utf8"), est = /create or replace function cities_estado\(\)[\s\S]*?\$\$([\s\S]*?)\$\$;/.exec(m)?.[1] ?? "";
+    if (!/create trigger cities_estado before update of status on cities for each row execute function cities_estado\(\)/.test(m)) falla(G, M, 0, "cada cambio de cities.status pasa por cities_estado (trigger)");
+    if (!/if new\.status = 'on' then\s*if ap is not null then/.test(est) || !/raise exception 'ciudad_apertura: una ciudad solo abre con el asistente/.test(est) || !/elsif not ciudades_sandbox\(\) then\s*raise exception 'ciudad_apertura/.test(est))
+      falla(G, M, 0, "abrir una ciudad pide el asistente (tl.apertura); sin él, solo la base del sandbox deja el cambio directo");
+    if (!/l\.city_id <> new\.id or l\.status <> 'en_curso'/.test(est) || !/step between 1 and 6;\s*if n < 6 then raise exception 'ciudad_apertura: faltan pasos/.test(est)) falla(G, M, 0, "el asistente que abre es de esa ciudad, sigue en curso y tiene sus pasos 1–6");
+    if (!/r\.status <> 'aprobada' or r\.to_status <> new\.status or r\.decided_by is null or r\.decided_by = r\.requested_by/.test(est) || !/raise exception 'ciudad_cierre: cerrar una ciudad abierta pide motivo y otra persona/.test(est))
+      falla(G, M, 0, "bajar una ciudad abierta o en beta pide un cierre aprobado por otra persona (tl.cierre)");
+    if (!/check \(decided_by is null or decided_by <> requested_by\)/.test(m)) falla(G, M, 0, "la base no deja que quien pide el cierre lo apruebe");
+    const pasos = /create or replace function city_launch_steps_reglas\(\)[\s\S]*?\$\$([\s\S]*?)\$\$;/.exec(m)?.[1] ?? "";
+    if (!/if tg_op <> 'INSERT' then raise exception 'ciudad_paso: un paso del asistente no se cambia ni se borra/.test(pasos) || !/if new\.step <> m \+ 1 then raise exception/.test(pasos) || !/create trigger city_launch_steps_reglas before insert or update or delete on city_launch_steps/.test(m))
+      falla(G, M, 0, "los pasos del asistente solo avanzan, de uno en uno, y no se cambian ni se borran (trigger)");
+    if (!/select count\(\*\) from city_launch_steps where launch_id = new\.id\) < 7 then raise exception/.test(m)) falla(G, M, 0, "un asistente solo queda «abierta» con sus 7 pasos");
+    if (!/legal_entorno\(\) = 'pruebas'/.test(m) || !/name like 'pruebas\/%'/.test(m)) falla(G, M, 0, "ciudades_sandbox() solo es verdad en la base del sandbox (el entorno o la semilla de pruebas)");
+    if (!existsSync(A)) return falla(G, A, 0, "falta lib/ciudades/apertura.ts");
+    const a = sinComent(A), cp = cuerpoFn(a, "confirmarPaso"), dc = cuerpoFn(a, "decidirCierre");
+    const iAp = cp.indexOf('await rastro(c, s, m, { "tl.apertura": l });'), iOn = cp.indexOf("update cities set status = 'on'");
+    if (iAp < 0 || iOn < 0 || iAp > iOn) falla(G, A, 0, "abrir pone tl.apertura (el asistente) antes de cambiar el estado, en la misma transacción");
+    if (!/if \(\(paso === 7 \|\| abrirIgual\) && !esAdmin\(s\)\) return mal\(/.test(cp)) falla(G, A, 0, "abrir (paso 7) y «Abrir igual» los hace un Admin");
+    if (!/if \(paso !== hecho \+ 1\) return mal\(/.test(cp)) falla(G, A, 0, "el servidor solo confirma el paso que toca (el asistente solo avanza)");
+    if (!/if \(!ev\.ok && !\(paso === 6 && abrirIgual && ev\.abrirIgual\)\) return/.test(cp)) falla(G, A, 0, "un paso sin su evidencia no se confirma (salvo «Abrir igual» en «Comprobar», que no salta la LAUNCH)");
+    const ev6 = cuerpoFn(a, "evidencia");
+    if (!/const frena = !LA\.leida \|\| \(!sandbox && LA\.deLaCiudad\.length > 0\)/.test(ev6) || !/abrirIgual: !R\.cumple && !frena,/.test(ev6) || !/const sandbox = \(await db\(\)\.query<\{ s: boolean \}>\(`select ciudades_sandbox\(\) as s`\)\)/.test(ev6))
+      falla(G, A, 0, "«Comprobar»: fuera de la base del sandbox, una línea de LAUNCH de la ciudad (o no poder leerla) frena la apertura, y «Abrir igual» no la salta");
+    const iCi = dc.indexOf('await rastro(c, s, m, { "tl.cierre": pedido });'), iUp = dc.indexOf("update cities set status = $2");
+    if (!/if \(x\.by === s\.id\) return mal\(/.test(dc) || iCi < 0 || iUp < 0 || iCi > iUp) falla(G, A, 0, "aprobar un cierre: otra persona, con tl.cierre antes de cambiar el estado");
+    for (const f of archivos) {
+      if (f === A || f === M || !/^(apps|services|scripts|packages\/db\/seeds)\/.*\.(tsx?|mjs|cjs|js|sql)$/.test(f) || !existsSync(f)) continue;
+      const t = /\.sql$/.test(f) ? readFileSync(f, "utf8").replace(/--.*$/gm, "") : sinComent(f);
+      if (/update cities set[^;`]*\bstatus\s*=/i.test(t)) falla(G, f, 0, "cambia cities.status fuera de lib/ciudades/apertura.ts: una ciudad abre con el asistente y cierra con otra persona");
+    }
+    for (const x of readdirSync("infra/pruebas/semilla").filter((y) => y.endsWith(".sql") && y > "0002_ciudad.sql")) {
+      const t = readFileSync(`infra/pruebas/semilla/${x}`, "utf8").replace(/--.*$/gm, "");
+      if (/update cities set status = 'on'/.test(t)) falla(G, `infra/pruebas/semilla/${x}`, 0, "una semilla abre una ciudad a mano: se abre con el asistente (la 0002, de antes de 9i, es la única)");
+    }
+  },
+
+  /* 9i · ciudadAlInstante (LAUNCH L71): ningún proceso guarda el estado de una ciudad más de lo que tarda el NOTIFY. (1) 0139 avisa por el canal «ciudades»
+     cada cambio de cities, zones y city_beta_invites; (2) lib/cambios-config.ts escucha «ciudades» y olvida lo registrado; (3) toda copia con hora que lee
+     cities, zones o city_beta_invites se registra con alCambiarConfig, y la de lib/ubicacion.ts dura a lo más 60 s de respaldo; (4) quién entra a una ciudad
+     en beta no se guarda en memoria (vista() pregunta cada vez). Al revés: alreves9i. */
+  ciudadAlInstante() {
+    const G = "ciudadAlInstante", M = "packages/db/migrations/0139_ciudades.sql", CC = "apps/web/lib/cambios-config.ts", U = "apps/web/lib/ubicacion.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta 0139");
+    const m = readFileSync(M, "utf8");
+    if (!/perform pg_notify\('ciudades', tg_table_name\);/.test(m)) falla(G, M, 0, "ciudades_avisar() avisa por el canal «ciudades»");
+    for (const t of ["cities", "zones", "city_beta_invites"]) if (!new RegExp(`create trigger \\w+ after insert or update or delete on ${t} for each statement execute function ciudades_avisar\\(\\)`).test(m)) falla(G, M, 0, `${t} no avisa sus cambios por NOTIFY 'ciudades'`);
+    const cc = sinComent(CC);
+    if (!/listen ciudades/.test(cc) || !/m\.channel === "ciudades"/.test(cc)) falla(G, CC, 0, "cada proceso escucha «ciudades» y olvida su copia al momento");
+    for (const f of codigo) {
+      if (!/^apps\/web\/lib\/.*\.ts$/.test(f) || f === CC) continue;
+      const t = sinComent(f);
+      if (!/Date\.now\(\)\s*-\s*\w+\.at\s*[<>]/.test(t)) continue;
+      const lee = ["cities", "zones", "city_beta_invites"].filter((x) => new RegExp(`\\b(from|join) ${x}\\b`).test(t));
+      if (lee.length && !/alCambiarConfig\(/.test(t)) falla(G, f, 0, `guarda en memoria lo que lee de ${lee.join(", ")} y no lo olvida con NOTIFY 'ciudades' (alCambiarConfig)`);
+    }
+    const u = sinComent(U);
+    const ms = /Date\.now\(\) - cache\.at < (\d[\d_]*)/.exec(u)?.[1];
+    if (!ms || Number(ms.replace(/_/g, "")) > 60000) falla(G, U, 0, "la copia de las ciudades dura a lo más 60 s de respaldo (el NOTIFY la olvida antes)");
+    const v = cuerpoFn(u, "vista");
+    if (!/ciudad_abierta_para\(id, \$1::uuid\)/.test(v) || /\bcache\b|=\s*new Map\(/.test(v)) falla(G, U, 0, "quién entra a una ciudad en beta se pregunta en cada visita (vista), sin guardarlo en memoria");
+  },
+
+  /* 9i · betaSoloInvitados (§3.1, §4 9i): una ciudad en «beta» es abierta SOLO para las cuentas invitadas (city_beta_invites vivas) y las de revisión
+     activas; para los demás es «próximamente». (1) ciudad_abierta_para lo decide en la base; (2) ubicacion() y el selector ven las ciudades con vista()
+     (la de esa persona); (3) las acciones del servidor que deciden si alguien puede actuar en una ciudad usan ciudad_abierta_para, nunca «status = 'on'»
+     a secas (con beta, un invitado no podía; sin beta, cualquiera podría). El Super Admin (app/admin, lib/admin*), el mapa del sitio (lo público) y
+     lib/ciudades/ quedan fuera; ordenar las abiertas primero («order by (status = 'on')») no decide nada. Al escribirlo cazó «Mi ciudad» (lib/perfil.ts ciudadDe): la lista de ciudades para elegir no traía la de la beta.
+     Al revés: alreves9i. */
+  betaSoloInvitados() {
+    const G = "betaSoloInvitados", M = "packages/db/migrations/0139_ciudades.sql", U = "apps/web/lib/ubicacion.ts", S = "apps/web/app/(app)/ciudad/acciones.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta 0139");
+    const f0 = /create or replace function ciudad_abierta_para\([\s\S]*?\$\$([\s\S]*?)\$\$;/.exec(readFileSync(M, "utf8"))?.[1] ?? "";
+    if (!/c\.status = 'on' or \(c\.status = 'beta' and p_user is not null and \(/.test(f0) || !/i\.user_id = p_user and i\.revoked_at is null/.test(f0) || !/r\.user_id = p_user and r\.active/.test(f0))
+      falla(G, M, 0, "ciudad_abierta_para: on para todos; beta solo para invitaciones vivas y cuentas de revisión activas");
+    const u = sinComent(U);
+    if (!/const cs = await vista\(cs0, usuario\?\.id\);/.test(cuerpoFn(u, "ubicacion"))) falla(G, U, 0, "ubicacion() ve las ciudades como las ve esa persona (vista)");
+    if (!/c\.status === "beta" \? \{ \.\.\.c, status: dentro\.has\(c\.id\) \? "on" : "soon" \} : c/.test(cuerpoFn(u, "vista"))) falla(G, U, 0, "vista(): beta → abierta para quien entra, próximamente para los demás");
+    if (existsSync(S)) {
+      const s = "\n" + sinComent(S).replace(/\nexport async function /g, "\nasync function ");
+      for (const fn of ["elegirUbicacion", "dondeEstoy", "medirBorrador", "esperarCiudad", "abrirSelector"]) if (!/await vista\(/.test(cuerpoFn(s, fn))) falla(G, S, 0, `${fn} ve las ciudades sin vista(): con una ciudad en beta, el selector le mentiría a quien no está invitado`);
+    }
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.*\.tsx?$/.test(f) || /^apps\/web\/(app\/admin\/|lib\/admin|lib\/ciudades\/|lib\/seo\/)/.test(f)) continue;
+      for (const q0 of sinComent(f).match(/`[^`]*`/g) ?? []) {
+        const q = q0.replace(/order by \([^)]*\)/g, ""); // ordenar las abiertas primero no decide nada
+        if (/\bfrom cities\b[^`]*\bstatus = 'on'|\bstatus = 'on'[^`]*\bfrom cities\b|\bc\.status = 'on' as\b/.test(q)) falla(G, f, 0, `decide si una ciudad está abierta con «status = 'on'»: usa ciudad_abierta_para (beta = solo invitados): «${q.slice(0, 70)}»`);
+      }
+    }
+  },
+
+  /* 9i · listaAvisadaUnaVez (§4 9i; LAUNCH 9h → 9i): el día que abre una ciudad, su lista de espera recibe UN aviso, por partes y nunca de noche. (1) city_notices
+     es único por ciudad y persona y de solo inserción; (2) lib/ciudades/aviso.ts reclama a cada persona en la misma escritura (on conflict … do nothing
+     returning), solo de AVISO_DESDE a AVISO_HASTA en la hora de la ciudad, y manda los avisos DESPUÉS de cerrar la transacción; (3) nunca escribe a un teléfono
+     sin cuenta (sin avisarTelefono); (4) el barrido lo corre; (5) la plantilla ciudad_abierta lleva push y su SMS solo como respaldo (sin_push). Al revés: alreves9i. */
+  listaAvisadaUnaVez() {
+    const G = "listaAvisadaUnaVez", M = "packages/db/migrations/0139_ciudades.sql", A = "apps/web/lib/ciudades/aviso.ts", C = "apps/web/lib/ciudades/comun.ts";
+    if (!existsSync(M) || !existsSync(A)) return falla(G, A, 0, "falta el aviso de apertura (0139 y lib/ciudades/aviso.ts)");
+    const m = readFileSync(M, "utf8");
+    if (!/create table if not exists city_notices \([\s\S]*?unique \(city_id, user_id\)\s*\);/.test(m)) falla(G, M, 0, "un aviso de apertura por ciudad y persona (unique)");
+    if (!/create trigger city_notices_reglas before update or delete on city_notices/.test(m) || !/raise exception 'city_notices es solo de inserción'/.test(m)) falla(G, M, 0, "city_notices es de solo inserción (trigger)");
+    if (!/\('ciudad_abierta', 'tx', null, true, 'sin_push', true,/.test(m)) falla(G, M, 0, "ciudad_abierta: push primero y el SMS solo de respaldo (sin_push)");
+    const a = sinComent(A), lo = cuerpoFn(a, "lote"), av = cuerpoFn(a, "avisarAperturas");
+    if (!/on conflict \(city_id, user_id\) do nothing returning user_id::text as uid/.test(lo)) falla(G, A, 0, "cada persona se reclama una vez en la misma escritura (city_notices)");
+    if (!/extract\(hour from now\(\) at time zone c\.timezone\) between \$\{AVISO_DESDE\} and \$\{AVISO_HASTA\}/.test(av)) falla(G, A, 0, "el aviso sale solo de día en la hora de la ciudad (AVISO_DESDE a AVISO_HASTA)");
+    const iTx = lo.indexOf("const r = await tx("), iFin = lo.indexOf("\n  });", iTx), iAv = lo.indexOf('await avisar(u.uid, "ciudad_abierta"');
+    if (iTx < 0 || iFin < 0 || iAv < 0 || iAv < iFin) falla(G, A, 0, "los avisos salen después de cerrar la transacción (nada de red adentro)");
+    if (/avisarTelefono\(/.test(a)) falla(G, A, 0, "el aviso de apertura no le escribe a un teléfono sin cuenta (no se verificó)");
+    const cm = sinComent(C), d = Number(/AVISO_DESDE = (\d+)/.exec(cm)?.[1] ?? -1), h = Number(/AVISO_HASTA = (\d+)/.exec(cm)?.[1] ?? 99);
+    if (!(d >= 8 && h <= 20 && d < h)) falla(G, C, 0, "la ventana del aviso queda dentro del día (de las 8 AM en adelante y hasta las 8:59 PM)");
+    if (!/\["avisoApertura", async \(\) => \(await import\("\.\/ciudades\/aviso"\)\)\.avisarAperturas\(\)\]/.test(sinComent("apps/web/lib/barrido.ts"))) falla(G, "apps/web/lib/barrido.ts", 0, "el barrido central manda el aviso de apertura");
+  },
+
+  /* 9i · parametroDeMas: una consulta que recibe más valores que los $n que usa falla en Postgres («could not determine data type of parameter $1»): el
+     aviso de apertura (lib/ciudades/aviso.ts) mandaba la ciudad como $1 a un update que no la usaba y el barrido fallaba en cada pasada (ciu9i lo cazó).
+     En cada .query(`…`, [ … ]) con la lista escrita ahí y la consulta sin partes armadas (${…}), el número de valores es el $n más alto. Al revés: alreves9i. */
+  parametroDeMas() {
+    const G = "parametroDeMas";
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      for (const m of t.matchAll(/\.query(?:<[^`]*?>)?\(\s*`([^`]*)`\s*,\s*\[/g)) {
+        if (m[1].includes("${")) continue;
+        // La lista de valores, hasta su corchete de cierre (contando corchetes, paréntesis y llaves; las cadenas se saltan).
+        let i = m.index + m[0].length, d = 1, n = 0, algo = false, q = null;
+        for (; i < t.length && d > 0; i++) {
+          const ch = t[i];
+          if (q) { if (ch === "\\") i++; else if (ch === q) q = null; continue; }
+          if (ch === '"' || ch === "'" || ch === "`") { q = ch; algo = true; continue; }
+          if ("[({".includes(ch)) d++; else if ("])}".includes(ch)) d--;
+          else if (ch === "," && d === 1) n++;
+          else if (d === 1 && /\S/.test(ch)) algo = true;
+        }
+        const cuenta = algo ? n + 1 - (/,\s*\]$/.test(t.slice(m.index, i)) ? 1 : 0) : 0;
+        if (/\.\.\./.test(t.slice(m.index + m[0].length, i))) continue; // una lista que se arma con «...» no se cuenta
+        const max = Math.max(0, ...[...m[1].matchAll(/\$(\d+)/g)].map((x) => Number(x[1])));
+        if (cuenta > max) falla(G, f, t.slice(0, m.index).split("\n").length, `la consulta usa hasta $${max} y recibe ${cuenta} valores: Postgres no sabe de qué tipo es el que sobra y la consulta falla`);
+      }
+    }
+  },
 };
 
 const lista = solo ? { [solo]: guardianes[solo] } : guardianes;

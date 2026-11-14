@@ -67,7 +67,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     status_reason: string | null; temp_until: string | null; temp_reason: string | null; admin_edits: Record<string, unknown>; phone: string | null; owner_phone: string | null;
     email: string | null; sello: string | null; sello_note: string | null; reclamo_aviso: string | null; sub_until: string | null; sub_days: number | null; sub_used: boolean;
   }>(
-    `select b.id, b.name, b.category_id as cat, b.city_id as city, c.name as ciudad, c.status = 'on' as ciudad_on, b.status, coalesce(s.plan, 'free') as plan,
+    `select b.id, b.name, b.category_id as cat, b.city_id as city, c.name as ciudad, ciudad_abierta_para(c.id, b.owner_user_id) as ciudad_on, b.status, coalesce(s.plan, 'free') as plan,
             coalesce(s.verified, false) as verified, coalesce(s.review_count, 0) as review_count, b.category_attrs as attrs, b.logo_url as logo,
             b.about, b.amenities as amen, b.operation as op, b.works_from_home as from_home, b.modules_on as mods,
             coalesce((select cc.allowed_modules ? 'eventos' from categories cc where cc.id = b.category_id), false) as evt_aplica,
