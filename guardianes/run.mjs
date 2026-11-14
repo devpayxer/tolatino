@@ -8761,6 +8761,9 @@ const guardianes = {
     for (const f of archivos.filter((x) => /^pruebas\/alreves\/[^/]+\.(cjs|mjs)$/.test(x))) {
       const t = readFileSync(f, "utf8");
       if (!/process\.exit(Code)?\b/.test(t)) falla(G, f, 0, "la prueba al revés no sale con error cuando un defecto no se caza (process.exit(1) si bien !== total)");
+      // 9b-3 · String.replace con un texto como reemplazo convierte «$$» en «$» (y «$&», «$1»…): una función SQL de reemplazo ($$ … $$) salía rota y
+      // el caso «no cazaba» (alreves5e con 0146). El reemplazo va siempre como función: .replace(a, () => b).
+      if (/(^|[^'"])\.replace\(\s*a\s*,\s*b\s*\)/m.test(t)) falla(G, f, 0, "reemplazo con texto (.replace(a, b)): «$$» se vuelve «$»; usa .replace(a, () => b)");
     }
   },
 

@@ -44,7 +44,7 @@ for (const [g, f, a, b] of casos) {
   if (!fs.existsSync(ruta)) { console.log(`  ✗ ${g}: no existe ${f}`); continue; }
   const orig = fs.readFileSync(ruta, 'utf8');
   if (!orig.includes(a)) { console.log(`  ✗ ${g}: no encontré el texto a cambiar en ${f}: ${a.slice(0, 70)}`); continue; }
-  fs.writeFileSync(ruta, orig.replace(a, b));
+  fs.writeFileSync(ruta, orig.replace(a, () => b));
   let falla = false, out = '';
   try { execSync(`node guardianes/run.mjs --solo ${g}`, { cwd: R, stdio: 'pipe' }); } catch (e) { falla = true; out = String(e.stderr).split('\n').find((l) => l.includes('[')) || ''; }
   fs.writeFileSync(ruta, orig);

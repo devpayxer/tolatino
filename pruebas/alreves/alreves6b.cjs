@@ -30,8 +30,8 @@ const casos = [
   ['rsvpConCupo', AC, "export async function evtCompartir(", "export async function evtVoyDirecto(f: string) { if (!(await mismoOrigen())) return; await db().query(`insert into rsvps (event_date_id, party) values ($1, 1)`, [f]); }\nexport async function evtCompartir("],
   ['rsvpConCupo', M7, "create trigger events_cupo before update of rsvp_capacity on events", "create trigger events_cupo_x before update of rsvp_capacity on events"],
   // hoySoloEnVivo (ampliado: novedad con evento) · 9b-3: la última definición de post_en_vivo es la de 0146 (9n-2)
-  ['hoySoloEnVivo', M46, "     and (p.link_kind <> 'event' or exists (select 1 from event_dates d join events e on e.id = d.event_id\n                                              where d.event_id = p.event_id and e.business_id = p.business_id and d.listable and d.ends_at > now()));", "     and true;"],
-  ['hoySoloEnVivo', M46, "where d.event_id = p.event_id and e.business_id = p.business_id and d.listable and d.ends_at > now()));", "where d.event_id = p.event_id and e.business_id = p.business_id and d.ends_at > now()));"],
+  ['hoySoloEnVivo', M46, "     and (p.link_kind <> 'event' or exists (select 1 from event_dates d join events e on e.id = d.event_id\n                                              where d.event_id = p.event_id and e.business_id = p.business_id and d.listable and d.ends_at > now()))", "     and true"],
+  ['hoySoloEnVivo', M46, "where d.event_id = p.event_id and e.business_id = p.business_id and d.listable and d.ends_at > now()))", "where d.event_id = p.event_id and e.business_id = p.business_id and d.ends_at > now()))"],
   // puntoPublico (ampliado: punto y dirección del evento)
   ['puntoPublico', PT, "when ${b}.works_from_home then round(st_y(${b}.geo::geometry)", "when false then round(st_y(${b}.geo::geometry)"],
   ['puntoPublico', PT, "when ${b}.works_from_home then null else ${b}.address end", "else ${b}.address end"],
@@ -55,7 +55,7 @@ for (const [g, f, a, b] of casos) {
   if (!fs.existsSync(ruta)) { console.log(`  ✗ ${g}: no existe ${f}`); continue; }
   const orig = fs.readFileSync(ruta, 'utf8');
   if (!orig.includes(a)) { console.log(`  ✗ ${g}: no encontré el texto a cambiar en ${f}: ${a.slice(0, 70)}`); continue; }
-  fs.writeFileSync(ruta, orig.replace(a, b));
+  fs.writeFileSync(ruta, orig.replace(a, () => b));
   let falla = false, out = '';
   try { execSync(`node guardianes/run.mjs --solo ${g}`, { cwd: R, stdio: 'pipe' }); } catch (e) { falla = true; out = String(e.stderr).split('\n').find((l) => l.includes('[')) || ''; }
   fs.writeFileSync(ruta, orig);

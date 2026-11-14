@@ -18,7 +18,7 @@ const casos = [
   ['ubicacionSoloEntregaActiva', M, "  if not ruta_activa(new.operation_id, new.rider_user_id, new.city_id) then raise exception 'ruta: la entrega no está activa para este repartidor en esta ciudad'; end if;\n", ''],
   ['ubicacionSoloEntregaActiva', M, "  if tg_op = 'UPDATE' then raise exception 'delivery_positions es solo de inserción'; end if;\n", ''],
   ['ubicacionSoloEntregaActiva', M, "    if (m - coalesce(t.last_accuracy_m, 0) - coalesce(new.accuracy_m, 0)) / greatest(seg, 1) > cfg_int('ubic_vel_max_mps') then", "    if false then"],
-  ['ubicacionSoloEntregaActiva', L, '  const activa = !!(await db().query<{ ok: boolean }>(`select ruta_activa($1::bigint, $2::uuid, $3) as ok`, [t.op, t.rider, t.city])).rows[0]?.ok && (await encendida());', '  const activa = await encendida();'],
+  ['ubicacionSoloEntregaActiva', L, '  const activa = !!(await db().query<{ ok: boolean }>(`select ruta_activa($1::bigint, $2::uuid, $3) as ok`, [t.op, t.rider, t.city])).rows[0]?.ok && (await encendida(undefined, t.rider));', '  const activa = await encendida(undefined, t.rider);'],
   ['ubicacionSoloEntregaActiva', L, '      if (m / seg > vmax) continue; // velocidad imposible\n', ''],
   ['ubicacionSoloEntregaActiva', L, 'where t.token_hash = $1 and t.sharing_until is null`, [huella(token)]', 'where t.token_hash = $1`, [huella(token)]'],
   ['ubicacionSoloEntregaActiva', RP, '      return { ok: true, aviso: { tpl: "ord_here", numero } } as const;', '      return { ok: true, aviso: { tpl: "ord_here", numero }, ruta: await empezarRuta(c, o.id, userId, "recogi") } as const;'],

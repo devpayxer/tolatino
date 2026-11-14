@@ -27,7 +27,7 @@ let bien = 0;
 for (const [g, f, a, b] of casos) {
   const ruta = `${R}/${f}`, orig = fs.readFileSync(ruta, 'utf8');
   if (!orig.includes(a)) { console.log(`  ✗ ${g}: no encontré el texto a cambiar en ${f}`); continue; }
-  fs.writeFileSync(ruta, orig.replace(a, b));
+  fs.writeFileSync(ruta, orig.replace(a, () => b));
   let falla = false;
   try { execSync(`node guardianes/run.mjs --solo ${g}`, { cwd: R, stdio: 'pipe' }); } catch { falla = true; }
   fs.writeFileSync(ruta, orig);
