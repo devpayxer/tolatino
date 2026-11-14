@@ -78,6 +78,9 @@ se anota en `docs/REVISION.md` y se revisa al final, paso a paso. Producción si
 **Desde el 6 nov (decisión AB):** no se para hasta terminar todo. Una decisión pendiente no detiene el trabajo: se elige lo
 más seguro y reversible, se construye y se anota en `docs/REVISION.md`; lo de terceros (Stripe, SMS, correo) se deja listo y
 probado contra simuladores. Sin resúmenes a mitad de camino: una línea de avance y al siguiente bloque.
+**Desde el 14 nov (decisión AD):** en el sandbox cada bloque pasa tipos, build, guardianes, al revés y sus pruebas de punta a punta
+(CI dirigido) y sube; la confirmación completa de CI corre solo en hitos (cierre de 9b-3, después de 9k, al terminar 9o). Producción: siempre
+confirmación completa + OK.
 
 ## Ramas
 `main` = trabajo v2 y rama por defecto · `pruebas` = sandbox (mismo contenido que
