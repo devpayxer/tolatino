@@ -56,7 +56,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
   category_attrs.items hasta la tabla de ítems del panel; (8) precios típicos de la lista sugerida = los del diseño
   («precios típicos de ejemplo, Hazleton 2026»): revisarlos con negocios reales; (9) la cola del Super Admin para ver los
   negocios nuevos (bloque 1i); (10) prueba de punta a punta de este flujo en CI (hoy corre a mano con Playwright); (11) «Publicar otro» (un segundo
-  negocio con la misma cuenta): hoy el borrador es uno por persona; llega con el panel (varios negocios por cuenta). — _9a (11 nov): hecho: (2) prueba Pro → Free y primer cobro (lib/suscripcion.ts procesar/pasarAFree, 2m), (5) Recuperar negocio (app/(app)/recuperar), (6) «Ir a mi panel» (publica/Publica.tsx), (7) ítems del panel (Menú 2a y los módulos de la Fase 4), (9) la cola de negocios nuevos (1i). Falta: (1) ubicar la dirección en el mapa al publicar (lib/direcciones.ts existe; publica/acciones.ts no pone geo), (3) la tabla de códigos de promotor (hoy PROMO = { HZL30 } en publica/acciones.ts; → 9h con Promotores), (4) «Tómale foto a tu lista» con El Compa, (8) revisar los precios típicos con negocios reales (→ 9h, reclutamiento), (10) esta prueba en el CI (→ 9b), (11) «Publicar otro»._
+  negocio con la misma cuenta): hoy el borrador es uno por persona; llega con el panel (varios negocios por cuenta). — _9a (11 nov): hecho: (2) prueba Pro → Free y primer cobro (lib/suscripcion.ts procesar/pasarAFree, 2m), (5) Recuperar negocio (app/(app)/recuperar), (6) «Ir a mi panel» (publica/Publica.tsx), (7) ítems del panel (Menú 2a y los módulos de la Fase 4), (9) la cola de negocios nuevos (1i). Falta: (1) ubicar la dirección en el mapa al publicar (lib/direcciones.ts existe; publica/acciones.ts no pone geo), (3) la tabla de códigos de promotor (hoy PROMO = { HZL30 } en publica/acciones.ts; → 9h con Promotores), (4) «Tómale foto a tu lista» con El Compa, (8) revisar los precios típicos con negocios reales (→ 9h, reclutamiento), (10) esta prueba en el CI (→ 9b), (11) «Publicar otro»._ — _9h (14 nov): (3) **hecho**: los códigos viven en `promo_codes` (0138; HZL30 y el de cada promotor, con sus días), Publica los lee de ahí (el código propio no vale: guardián `promotorAntiabuso`) y se administran en Super Admin › Crecimiento › Promotores (cre9h: un negocio publicado con el código de un promotor queda con 60 días y «traído»). (8) sigue: los precios típicos se revisan con los negocios reales del acceso anticipado (→ 9t, línea «Fase 9 · 9h»)._
 - [ ] **→ 9l** · **Recomendar — lo que falta:** el SMS al negocio («X te recomendó…», una vez) y el aviso «ya publicó» al vecino
   (Fase 2, notificaciones); la cola «Recomendaciones» del Super Admin para revisarlas, marcarlas y unirlas al negocio
   cuando publique (bloque 1i). — _9a (11 nov): la cola «Recomendaciones» del Super Admin está (app/admin/Colas.tsx, «Crear semilla»). Falta el SMS al negocio («X te recomendó…») y el aviso «ya publicó» al vecino (no hay plantilla en notif_templates)._
@@ -752,7 +752,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       se pueden apagar por grupo. (6b, 10 nov)
 - [x] **→ 9b** · **6b · Presupuesto de velocidad con la base de carga (1 M de fechas):** la lista usa el índice (city_id, starts_at, id) where listable
       con cursor; falta medir p95 con `scripts/carga/eventos-1m.mjs` (plan §7). (6b, 10 nov) — **✓ 9b-3 (13 nov):** lista de Hazleton p95 11,4 / 13,4 ms, sexta página 5,3 / 5,3, ficha 2,2 / 2,3 (≤ 50 / 40; antes 1,3 s: las fechas por ventanas en orden y sin JIT; cargas 43457199398 / 43460154153).
-- [ ] **→ 9h** · **6b · Eventos en el sitemap:** las fichas se indexan (metadatos, canónico y schema.org/Event), pero no hay sitemap de eventos. (6b, 10 nov)
+- [x] **→ 9h** · **6b · Eventos en el sitemap:** las fichas se indexan (metadatos, canónico y schema.org/Event), pero no hay sitemap de eventos. (6b, 10 nov) — **✓ 9h (14 nov):** `/sitemap.xml` (índice) y `/mapa-del-sitio/{n}.xml` (lib/seo/mapa.ts): la parte 0 lleva cada evento con fechas por venir que sale al público (`event_dates.listable`) de las ciudades abiertas, con su `lastmod`; solo en producción y calculado al pedirlo (en el sandbox, 404: guardián `sandboxNoSeIndexa`). Visto en local con el servidor en modo producción (REVISION 9h).
 - [ ] **→ 9c** · **6b · Eventos en los 9 dispositivos:** `evt6b` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6b, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9f** · **6b · Textos del Super Admin de Eventos en inglés:** como el resto del admin, en español (ficha › últimos RSVP, Pausar Eventos). (6b, 10 nov)
 
@@ -979,8 +979,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       propiedades-y-visitas, inscribirse, cita-con-doctores, emergencia-24-7). Ampliarlos antes de abrir; El Compa en inglés depende de eso. (7a, 10 nov)
 - [ ] **→ 9l** · **7a · SMS de invitación al equipo del panel:** `app/panel/acciones-equipo.ts` `enviarInvitacion` no manda nada (la pantalla y la ayuda lo dicen).
       Conectarlo a `avisarTelefono` como la invitación de porteros. (7a, 10 nov)
-- [ ] **→ 9h** · **7a · Centro de ayuda público para buscadores:** los artículos de vecinos no entran a un sitemap todavía (las páginas de equipo y negocio ya
-      dicen noindex). Con la web pública (Fase 9). (7a, 10 nov)
+- [x] **→ 9h** · **7a · Centro de ayuda público para buscadores:** los artículos de vecinos no entran a un sitemap todavía (las páginas de equipo y negocio ya
+      dicen noindex). Con la web pública (Fase 9). (7a, 10 nov) — **✓ 9h (14 nov):** la parte 0 del mapa del sitio lleva `/ayuda` y cada artículo que ve quien entra SIN sesión (`audienciasDe(null)` = vecino; los de negocio y equipo nunca), más las páginas legales y la landing. Solo en producción.
 - [ ] **→ 9f** · **7a · Editar la ayuda desde el Super Admin:** hoy el repo es la fuente y el Super Admin solo pausa (§6 #12); el editor llega con el CMS. (7a, 10 nov)
 - [ ] **→ 9c** · **7a · Centro de ayuda en los 9 dispositivos:** `ayu7a` corre en 390 y 1360 en local; falta la matriz de CI. (7a, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 
@@ -1598,8 +1598,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
       (un aviso en Hoy del panel) no se construyó. (9f, 14 nov)
 - [ ] **→ 9v** · **Encender el pie de la web en todas las páginas** (interruptor `web.pie_todas`, Super Admin › Textos y páginas › Páginas): nace apagado porque cambia las capturas
       aprobadas del Inicio, la ficha y Buscar. Con tu OK sobre las capturas nuevas (`pruebas/visual`, REVISION 9f) se enciende; el día de la apertura solo se encienden interruptores. (9f, 14 nov)
-- [ ] **→ 9h** · **Las líneas fijas de §1c que esperan su pantalla:** la landing y su teléfono (9h), la página de mantenimiento (9o) y «el equipo entra con dos pasos» (9j) ya están en
-      `lib/textos-fijas.ts` con candado y comparadas con el plan palabra por palabra (`lineaFijaBloqueada`); cada pantalla las usa cuando exista (hoy solo «Exportar mis datos»). (9f, 14 nov)
+- [x] **→ 9h** · **Las líneas fijas de §1c que esperan su pantalla:** la landing y su teléfono (9h), la página de mantenimiento (9o) y «el equipo entra con dos pasos» (9j) ya están en
+      `lib/textos-fijas.ts` con candado y comparadas con el plan palabra por palabra (`lineaFijaBloqueada`); cada pantalla las usa cuando exista (hoy solo «Exportar mis datos»). (9f, 14 nov) — **✓ 9h (14 nov):** la landing usa `FIJAS.landing` y `FIJAS.landingTel` tal cual (guardián `listaConPermiso`; cre9h las lee palabra por palabra en ES y EN). Las otras dos siguen abajo, cada una con su bloque.
+- [ ] **→ 9o** · **La línea fija de mantenimiento espera su pantalla** («Estamos haciendo un cambio. Volvemos en unos minutos.», `FIJAS.mantenimiento`): la página que sirve nginx con la app caída. (9h, 14 nov; de la línea de 9f)
+- [ ] **→ 9j** · **La línea fija «el equipo entra con dos pasos» espera su pantalla** (`FIJAS.equipoDosPasos`): el alta del segundo factor del equipo. (9h, 14 nov; de la línea de 9f)
 - [ ] **→ 9b** · **cms9f y alreves9f entran a la regresión del CI** (y a los 9 dispositivos): en local (Postgres 16 + PostGIS, un S3 de mentira, Chrome del sistema, perfil basico, :3110)
       cms9f pasó 91 ✓ dos veces seguidas y alreves9f 30/30; la corrida de verdad es la del CI. El paso nuevo del CI indexa las cadenas dos veces y comprueba que una línea fija y una edición
       sin autor se rechazan. (9f, 14 nov)
@@ -1644,3 +1646,25 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9k** · **`sis9j`, `ayu4m` y la regresión en el CI:** `sis9j` pasó dos veces seguidas en una base local (78 ✓); `ayu4m` (vidrio roto) no corrió aquí (necesita
       Garage) y la regresión entera de las pruebas que entran como equipo corre en el CI (decisión AD: en el hito después de 9k). (9j, 14 nov)
 
+## Fase 9 · 9h — Crecimiento, la landing de acceso anticipado, los QR de calle y el SEO (14 nov)
+- [ ] **→ 9b** · **cre9h y alreves9h entran a la regresión del CI** (y a los 9 dispositivos): en local (Postgres 16 + PostGIS de la máquina, un S3 de mentira, Chrome del sistema, sin Docker,
+      en :3119) cre9h pasó 95 ✓ dos veces seguidas y alreves9h cazó 53/53; la corrida de verdad es la del CI. (9h, 14 nov)
+- [ ] **→ 9b** · **`pruebas/visual` · admin-hoy:** «Crecimiento» dejó de verse «en construcción» en el menú del Super Admin (antes atenuado y con candado; en el teléfono, la lista de secciones
+      decía «Se construye en la Fase 9»). Si la captura aprobada del Inicio del admin cambia más de lo tolerado, se aprueba la nueva (REVISION 9h). No se corrió aquí. (9h, 14 nov)
+- [ ] **→ 9q** · **El mensaje de texto que promete la landing** («Te avisamos por mensaje de texto cuando abra tu zona. Nada más.»): sale con Telnyx (9q); el guardián `promesaSms` la tiene
+      anotada (`lib/textos-acceso.ts`). La landing sale al público en 9t, después de 9q. (9h, 14 nov)
+- [ ] **→ 9i** · **Avisar a la lista el día que abre la ciudad:** quien se anota queda en `city_waitlist` (source `coming_soon`, la misma «Avísame» de siempre) y en `early_access`
+      (`notified_at` sin usar todavía). El asistente de apertura (9i) manda ese único mensaje y marca `notified_at`. (9h, 14 nov)
+- [ ] **→ 9i** · **El Inicio del Super Admin con la lista de espera** (§4 9h): la lista está en Crecimiento › Lista de espera y en Ciudades; no se puso en el Inicio del admin porque cambia su
+      captura aprobada (`pruebas/visual/admin-hoy`). Va con el asistente de Ciudades (9i), con tu OK sobre la captura nueva. (9h, 14 nov)
+- [ ] **→ 9k** · **Pagar la recompensa del promotor a la Wallet:** el negocio traído califica solo (`promotor_operaciones` pedidos o citas hechos) y la recompensa queda anotada
+      (`business_referrals.reward_cents`, «pendiente de pago»); pasar a «pagado» con el movimiento de Wallet llega con el dinero real (9k). (9h, 14 nov)
+- [ ] **→ 9m** · **Destacar eventos:** `featured` lleva solo negocios (Negocios › Destacados). Fijar un evento en Eventos de la ciudad (el modelo Featured también lo pide) va con lo de
+      Eventos del vecino. (9h, 14 nov)
+- [ ] **→ 9n** · **Segmento «Free con N ítems» y la insignia Fundadores en la página del negocio:** las campañas segmentan por rol, ciudad, inactivos, categoría y plan; contar ítems no se
+      construyó. El número de negocio fundador queda en `early_access.founder_negocio_n` y la landing lo dice; la insignia en la ficha del negocio no se pintó. (9h, 14 nov)
+- [ ] **→ 9l** · **Campañas por correo de verdad:** salen por la bandeja de correo (`email_outbox`, plantilla `campaign`, solo correos verificados, con el pie «para no recibir más: Mi cuenta ›
+      Avisos»); en el sandbox quedan «en modo pruebas». Con SES (9q) falta la cabecera `List-Unsubscribe` de un toque. (9h, 14 nov)
+- [ ] **→ 9t** · **Encender la landing en producción** (interruptor `growth.landing`, nace apagado) con el OK-1, revisar en vivo `robots.txt`, `/sitemap.xml` y Open Graph con el dominio, y revisar
+      los precios típicos de Publica con los negocios reales que lleguen (parte 8 de «Publica tu negocio»). (9h, 14 nov)
+- [ ] **→ 9u** · **Smart App Banner de iOS en la web** (L1149): cuando la app To'Latino sea pública (su id de App Store); hoy no hay app pública que anunciar. (9h, 14 nov)

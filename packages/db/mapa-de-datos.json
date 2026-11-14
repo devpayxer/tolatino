@@ -246,6 +246,13 @@
     "staff_mfa_log": { "equipo": ["by"], "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "seguridad", "fusion": "no" } ] },
     "maintenance_windows": { "equipo": ["by_staff", "cancelled_by"] },
     "key_rotations": { "equipo": ["by"] },
-    "break_glass": { "equipo": ["staff_id"] }
+    "break_glass": { "equipo": ["staff_id"] },
+    "campaigns": { "equipo": ["created_by", "approved_by", "retired_by"] },
+    "campaign_sends": { "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "ley", "exporta": "campanas_recibidas", "fusion": "no" } ] },
+    "short_links": { "equipo": ["created_by", "retired_by"] },
+    "featured": { "equipo": ["by_staff_id", "retired_by"] },
+    "promo_codes": { "reglas": [ { "col": "promoter_user_id", "accion": "guardar", "porque": "dinero", "exporta": "codigo_de_promotor", "fusion": "no" } ], "equipo": ["created_by", "retired_by"] },
+    "business_referrals": { "reglas": [ { "col": "promoter_user_id", "accion": "guardar", "porque": "dinero", "exporta": "negocios_que_trajiste", "fusion": "no" } ], "equipo": ["paid_by"] },
+    "early_access": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "acceso_anticipado", "fusion": "mover" } ] }
   }
 }

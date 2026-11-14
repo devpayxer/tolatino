@@ -87,15 +87,18 @@ export async function cambiarTelefono(u: Yo, entrada: string, codigo: string): P
    guardas». Lo crítico de Eventos no tiene interruptor (plantillas del grupo `events` sin pref, y las `crit`). */
 /* 7h · cpa = «Hablar con El Compa por WhatsApp y SMS»: APAGADO de fábrica. Solo con esto encendido El Compa contesta con los datos de la cuenta a
    ese teléfono verificado (lib/compa/canales.ts); encenderlo o apagarlo queda anotado en la base (compa_canal_consent). */
-export const AVISOS = ["ord", "cit", "emp", "com", "dig", "msg", "evt", "evtR", "evtG", "hoy", "of", "mailR", "mailW", "quiet", "cpa"] as const;
-export const AVISOS_DEF: Record<(typeof AVISOS)[number], boolean> = { ord: true, cit: true, emp: true, com: true, dig: false, msg: true, evt: true, evtR: true, evtG: true, hoy: true, of: false, mailR: true, mailW: false, quiet: true, cpa: false };
+/* 9h · mkt = «Novedades de To'Latino» (las campañas de Crecimiento): APAGADO de fábrica. Encenderlo enciende también su push (mkt_push: Apple 4.5.4 pide
+   que el push de mercadeo sea algo que la persona eligió); apagarlo apaga los dos. Las campañas nunca llegan a quien no lo encendió (guardián campanaConPermiso). */
+export const AVISOS = ["ord", "cit", "emp", "com", "dig", "msg", "evt", "evtR", "evtG", "hoy", "of", "mailR", "mailW", "quiet", "cpa", "mkt"] as const;
+export const AVISOS_DEF: Record<(typeof AVISOS)[number], boolean> = { ord: true, cit: true, emp: true, com: true, dig: false, msg: true, evt: true, evtR: true, evtG: true, hoy: true, of: false, mailR: true, mailW: false, quiet: true, cpa: false, mkt: false };
 export async function avisosDe(userId: string) {
   const p = (await db().query<{ p: Record<string, boolean> }>(`select notif_prefs as p from users where id = $1`, [userId])).rows[0]?.p ?? {};
   return Object.fromEntries(AVISOS.map((k) => [k, typeof p[k] === "boolean" ? p[k] : AVISOS_DEF[k]])) as Record<(typeof AVISOS)[number], boolean>;
 }
 export async function guardarAviso(userId: string, k: string, v: boolean): Promise<ResP> {
   if (!(AVISOS as readonly string[]).includes(k)) return no("Ese aviso no existe.", "That notification does not exist.");
-  await db().query(`update users set notif_prefs = notif_prefs || jsonb_build_object($2::text, $3::boolean) where id = $1`, [userId, k, v === true]);
+  if (k === "mkt") await db().query(`update users set notif_prefs = notif_prefs || jsonb_build_object('mkt', $2::boolean, 'mkt_push', $2::boolean) where id = $1`, [userId, v === true]);
+  else await db().query(`update users set notif_prefs = notif_prefs || jsonb_build_object($2::text, $3::boolean) where id = $1`, [userId, k, v === true]);
   return { ok: true };
 }
 

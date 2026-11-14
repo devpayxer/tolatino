@@ -264,6 +264,7 @@
     "help_chunks.body": "El Centro de ayuda (artículos públicos).",
     "support_macros.body": "Respuestas guardadas del equipo de Soporte.",
     "compa_channel_numbers.address": "El número o la cuenta de WhatsApp de To'Latino.",
-    "city_official_accounts.photo_media_id": "La foto de una cuenta oficial de la ciudad."
+    "city_official_accounts.photo_media_id": "La foto de una cuenta oficial de la ciudad.",
+    "campaigns.body": "El texto de una campaña de Crecimiento: lo escribe el equipo de To'Latino, no es de una persona."
   }
 }

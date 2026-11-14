@@ -30,6 +30,7 @@ _Pantallas: la campana del encabezado, `/avisos` (APP-NOTIF, la bandeja), Mi cue
 | Son entre las 10 PM y las 7 AM (hora de tu ciudad) | El mensaje de texto no sale; el aviso queda en la bandeja. Puedes quitar las horas de silencio en Mi cuenta › Avisos. |
 | Un pedido no aceptado o la respuesta a tu ayuda | No tienen interruptor: llegan siempre. |
 | El negocio recibe un pedido nuevo de noche | Le llega igual: solo recibe pedidos mientras está abierto. |
+| Encendiste «Novedades de To'Latino» en Mi cuenta › Avisos | Te llegan las campañas de To'Latino de tu ciudad: nunca de 10 PM a 7 AM y con tope por semana. Apagado de fábrica. |
 | Sandbox (pruebas) | Ningún mensaje de texto sale: queda «en modo pruebas» y se ve en Super Admin › Notificaciones › Envíos. |
 | Sin proveedor de mensajes | Queda «sin proveedor» en Envíos; la bandeja funciona igual. |
 
@@ -99,6 +100,7 @@ default). Blocked people's activity is not counted. Moderation and coins always 
 | Between 10 PM and 7 AM (your city's time) | No text goes out; it stays in the inbox. You can turn quiet hours off. |
 | An order not accepted, or a reply to your help request | No switch: always delivered. |
 | A business gets a new order at night | It still arrives: it only takes orders while open. |
+| You turned on "To'Latino updates" in My account › Notifications | You get To'Latino campaigns for your city: never from 10 PM to 7 AM and with a weekly limit. Off by default. |
 | Sandbox | No text message leaves: it shows as «test mode» in Super Admin › Notifications › Sends. |
 
 ### FAQ

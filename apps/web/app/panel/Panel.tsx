@@ -528,6 +528,8 @@ function hoy(c: Ctx): (Bloque | null)[] {
   const fecha = es ? `${DIA_L[d.hoy.dow]![0]} ${dd} ${MES[m! - 1]![0].toUpperCase()}` : `${DIA_L[d.hoy.dow]![1]} ${MES[m! - 1]![1].toUpperCase()} ${dd}`;
   void y;
   out.push({ type: "head", eye: `${E2("HOY", "TODAY")} · ${fecha} · ${hora}`, t: `${d.hoy.saludo}, ${d.owner ?? d.name}` });
+  // 9h · Acceso anticipado (§3.1): la ciudad todavía no abre; el negocio arma su página y sabe cuándo se verá.
+  if (!d.ciudadAbierta) out.push({ type: "note", tone: "info", icon: "calendar", t: E2(`Tu página se ve el día que abra ${d.ciudad}. Mientras, ármala: lo que vendes, tu horario y tus fotos.`, `Your page shows the day ${d.ciudad} opens. Meanwhile, build it: what you sell, your hours and your photos.`) });
   out.push(...avisosPrueba(c, "hoy"));
   // Pedidos (Comida): cifras, los que esperan respuesta y la agenda de hoy (Panel v2 · DASH-HOY).
   // Noche (4na): la fila de esta noche se cambia desde Hoy (la puerta), sin entrar a Lo que vendes.

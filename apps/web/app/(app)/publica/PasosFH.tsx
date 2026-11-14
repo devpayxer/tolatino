@@ -67,7 +67,7 @@ export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast }: {
   };
   const portada = (id: string) => up((z) => { const t = [z.cover, ...(z.gallery || [])].filter((x): x is string => !!x && x !== id); return { cover: id, gallery: t }; });
   const quitar = (id: string) => up((z) => { const t = [z.cover, ...(z.gallery || [])].filter((x): x is string => !!x && x !== id); return { cover: t[0] ?? null, gallery: t.slice(1) }; });
-  const aplicar = async () => { const r = await probarPromo(promo.v); if (r.ok) { up({ promo: promo.v.toUpperCase(), promoOk: true }); setPromo({ open: false, v: "", err: false }); } else setPromo({ ...promo, err: true }); };
+  const aplicar = async () => { const r = await probarPromo(promo.v); if (r.ok) { up({ promo: promo.v.toUpperCase(), promoOk: true, promoDias: r.dias }); setPromo({ open: false, v: "", err: false }); } else setPromo({ ...promo, err: true }); };
   return (
     <div data-screen-label="ONB-NEG-F1 · tu foto y tu página" style={{ display: "flex", flexDirection: "column", gap: 14, animation: "oFade .2s ease-out" }}>
       <input ref={cam} type="file" accept="image/*" capture="environment" onChange={(e) => { void subir(e.target.files); e.target.value = ""; }} style={{ display: "none" }} />
@@ -125,7 +125,7 @@ export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast }: {
       {d.promoOk ? (
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 13px", borderRadius: 14, background: "rgba(255,176,32,.14)" }}>
           <Icon name="star" size={16} color="var(--tl-pro-ink)" /><span style={{ flex: 1, minWidth: 0, font: "700 13px/1.4 Manrope,sans-serif" }}>{E2(`Con ${d.promo} tienes ${len} días de Pro gratis.`, `With ${d.promo} you get ${len} days of Pro free.`)}</span>
-          <span role="button" onClick={() => up({ promo: "", promoOk: false })} {...tec(() => up({ promo: "", promoOk: false }))} style={{ flex: "none", font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Quitar", "Remove")}</span>
+          <span role="button" onClick={() => up({ promo: "", promoOk: false, promoDias: 0 })} {...tec(() => up({ promo: "", promoOk: false, promoDias: 0 }))} style={{ flex: "none", font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Quitar", "Remove")}</span>
         </div>
       ) : null}
       {/* 9e · Lo que se acepta al publicar (queda anotado en legal_acceptances con la versión que se ve en esas páginas). */}

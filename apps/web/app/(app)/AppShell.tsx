@@ -29,7 +29,7 @@ function useDesk() {
 const RUTAS: Record<string, string> = { home: "/", neg: "/negocios", com: "/comunidad", evt: "/eventos", me: "/cuenta" };
 const ICONOS = ["home", "store", "users", "ticket", "wallet"]; // prototipo navIcons
 
-export function AppShell({ lang, t, yo, ciudad, children }: { lang: "es" | "en"; t: TextosShell; yo: { iniciales: string; avisos?: number } | null; ciudad: CiudadShell; children: ReactNode }) {
+export function AppShell({ lang, t, yo, ciudad, children, landing = false }: { lang: "es" | "en"; t: TextosShell; yo: { iniciales: string; avisos?: number } | null; ciudad: CiudadShell; children: ReactNode; landing?: boolean }) {
   const desk = useDesk();
   const router = useRouter();
   const ruta = usePathname();
@@ -60,6 +60,8 @@ export function AppShell({ lang, t, yo, ciudad, children }: { lang: "es" | "en";
   // Pantallas de detalle (prototipo showMBrand): encabezado compacto y sin barra inferior en el teléfono.
   const compacto = !desk && /^\/(mapa|n\/|pedido\/|reserva\/|cita\/|pre\/|plan\/|renta\/|apartado\/|mercado\/|fiesta\/|viaje\/|noche\/|insc\/|vis\/|privado\/|solicitud\/|emergencia|cuenta\/|comunidad\/|recomendar|publica|recuperar|eventos\/|soporte|compa\/)/.test(ruta);
   const ir = (id: string) => router.push(id === "me" && !yo ? "/entrar" : RUTAS[id] ?? "/");
+  // 9h · Con el interruptor growth.landing (producción en acceso anticipado, 9t), «/» es la landing: trae su propio encabezado y su pie.
+  if (landing && ruta === "/") return <>{children}</>;
   return (
     <div className="min-h-dvh bg-white">
       <div className={`sticky top-0 z-40 ${pantallaCompleta ? "hidden" : ""}`}

@@ -1802,3 +1802,54 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **No cerrado, con destino (LAUNCH «Fase 9 · 9j»):** respaldos reales y restauración semanal, despliegues, Prometheus / Uptime Kuma, la página de mantenimiento y el aviso
   24 h antes (9o); el segundo paso con la llave dentro de una sesión de SMS (9p); cambiar la app o pedir códigos nuevos por cuenta propia y más interruptores acotables
   (9n); símbolos nativos, Novedades de Google, Apple Pay / Google Pay y el Smart App Banner (9r); el resto del Super Admin en inglés (9f); la corrida del CI (hito de 9k).
+
+## Fase 9 · 9h — Crecimiento, la landing de acceso anticipado, los QR de calle y el SEO (14 nov)
+- **Hecho (rama del worktree, sobre d1cfe41; en paralelo con 9g, 9j y 9k):**
+  - **Datos · migración `0138_crecimiento.sql`** (0137 es de 9g): **`campaigns`** (segmento, canal, plantilla, título y texto ES/EN, enlace propio, hora, estados borrador → por aprobar →
+    programada → enviando → enviada / retirada; `approved_by <> created_by` en la base; nada se edita: se retira) y **`campaign_sends`** (solo inserción, único por campaña y persona: enviado, tope,
+    sin correo); **`short_links`** (código de 7 letras sin las que se confunden; el destino es SIEMPRE una ruta propia, la base lo impone; no se borra ni cambia de destino: se retira) y
+    **`link_scans`** (solo inserción: código, hora, ciudad, web/app y clase de navegador; **sin IP, dispositivo ni cuenta**) con su derivado **`link_scan_days`** (lo cuenta la base; nadie más
+    lo escribe); **`featured`** (fijar o quitar de la rotación de Negocios › Destacados por unos días, con motivo; tope por ciudad con candado en la base); **`promo_codes`** (HZL30 deja el
+    código y vive aquí; el de cada promotor) y **`business_referrals`** (traído → calificado → pagado / rechazado; un rechazado o pagado no cambia); `users.is_promoter`;
+    **`early_access`** (la lista de la landing: la cuenta, el código postal, la ciudad o «CP xxxxx», lo del negocio, el QR de origen, el idioma; **sin copiar el teléfono**, sin IP ni
+    dispositivo; los números de **Fundadores** los pone la base con candado por ciudad y entregan la insignia de siempre; no se borra salvo la purga a los 30 días); el índice parcial de
+    quién tiene «Novedades» por ciudad; las plantillas `mkt_campana_app|push|sms` (grupo mkt, se apagan con «Novedades») y `mkt_promotor`; `email_outbox.tpl` suma `campaign`; el
+    interruptor **`growth.landing`** (apagado); **Configuración › Crecimiento** (11 claves: campañas por semana 2, SMS por mes 1, aprobar desde 1 000, lote 500, destacados por ciudad 6 y días 7,
+    fundadores 500 vecinos / 100 negocios, promotor: operaciones 5, recompensa $10, días de prueba 60). Mapa de datos al día (7 tablas, 301 filas) e inventario (`campaigns.body` no es de
+    una persona). Aplicada en una base nueva (137 migraciones) y la semilla dos veces sin errores.
+  - **Semilla `0056_crecimiento.sql`** (0055 es de 9k; todo `is_test`): tres enlaces con 40 escaneos cada uno, una campaña programada y una enviada (con sus envíos), un destacado que ya
+    terminó y un negocio Free quitado de la rotación (la vitrina de los Pro y las capturas aprobadas no cambian), un promotor (PABLO42) con un negocio traído y **20 entradas** en la lista con
+    códigos postales de las cinco ciudades y dos de fuera (teléfonos 570-555-95xx y 96xx).
+  - **Servidor** `lib/crecimiento/`: `enlaces.ts` (crear, retirar, escanear sin personas —un robot no cuenta—, escaneos por día y por web/app), `campanas.ts` (el segmento SIEMPRE con
+    «Novedades» encendido; de noche no sale; tope por semana y por SMS por mes; a más del umbral, otra persona aprueba; sale por lotes del barrido en una sola escritura por lote; cada quien en
+    su idioma; en la app y push por `avisarMuchos`, SMS por `avisar`, correo por la bandeja con su pie de baja), `destacados.ts`, `promotores.ts` (nombrar, retirar, el antiabuso de 5d, calificar
+    en el barrido), `lista.ts` (código postal → ciudad, el código de entrada de siempre con sus topes, la lista y «Avísame», quitarse), `volante.ts` (el **PDF propio** del volante y el cartel:
+    carta y media carta, sin librerías) y `admin.ts`. `/q/{código}` (redirige solo a la ruta propia del enlace, deja la ciudad puesta y el código de origen 30 días). El barrido suma `campanas`
+    y `promotores`. Publica tu negocio lee los códigos de `promo_codes` (y sus días); el panel (Hoy) dice «Tu página se ve el día que abra {ciudad}» cuando la ciudad no está abierta.
+    **Mi cuenta › Avisos** suma **«Novedades de To'Latino»** (apagado de fábrica; encenderlo enciende su push).
+  - **Pantallas:** **la landing** (`/acceso`; en `/` solo con `growth.landing`: producción en acceso anticipado, 9t) — Coming Soon v3 compuesta con el sistema (hueco #1): hero con las dos
+    líneas fijas de §1c, código postal + teléfono + «Tengo un negocio», la vitrina que rota (casos marcados EJEMPLO), «Aquí cabe cualquier negocio», Lo que viene, Cómo llega, Para negocios
+    (Free, Pro con el precio del plan, Fundadores), 8 preguntas, Comparte (WhatsApp y copiar), el pie legal y la barra fija «Avísame» en el teléfono; estados: sin señal, ya anotada, código
+    equivocado o vencido, de fuera («Pide tu ciudad»), con negocio («Publica tu negocio»), quitarse. Textos por el CMS (`lib/textos-acceso.ts`, APP-LANDING-PRE, 129 cadenas).
+    **Super Admin › Crecimiento** (`/admin/crecimiento`, sale de «Fase 9» en `admin-nav.ts`): cifras, Semilla, Promotores, Campañas, Destacados, Enlaces y QR (crear, PDF, escaneos por
+    día, retirar) y Lista de espera (por ciudad, código postal, negocios por tipo, «Pide tu ciudad», la fecha de la landing oculta o visible; **sin teléfonos ni nombres**), en ES/EN.
+  - **SEO:** `robots.txt` por entorno (el sandbox `Disallow: /`), noindex en toda página fuera de producción, la cabecera `X-Robots-Tag` en nginx-pruebas, **el mapa del sitio**
+    (`/sitemap.xml` + `/mapa-del-sitio/{n}.xml`: Inicio, Negocios, Eventos, categorías con negocios, cada negocio activo y cada evento público de las ciudades abiertas, la ayuda de vecinos, las
+    páginas legales y la landing; partes de 45 000 por huella del id, sin OFFSET; **solo en producción y calculado al pedirlo**), y la ficha con canónico, Open Graph y **schema.org/LocalBusiness**;
+    la categoría con su canónico.
+  - **Guardianes (al final del objeto):** **`enlaceSoloPropio`**, **`escaneosSinPersonas`** (amplía `analiticaSinPersonas` a los escaneos y a la lista; separado para no chocar con 9g),
+    **`campanaConPermiso`**, **`sandboxNoSeIndexa`**, **`listaConPermiso`**, **`promotorAntiabuso`**; `idioma` cubre la landing por el CMS. Se tocaron dos listas de guardianes viejos con su
+    porqué: `promesaSms` anota `lib/textos-acceso.ts` (el SMS de la apertura, LAUNCH → 9q) y `appNoAutoriza` deja que el escaneo lea si vino de la app (solo para contar).
+  - **Ayuda:** `acceso-anticipado` (vecino y negocio) y `admin-crecimiento` (equipo), ES/EN; `publica` (el código de un promotor; el propio no vale) y `notificaciones` («Novedades») al día.
+- **Probado aquí (sin Docker: Postgres 16 + PostGIS de la máquina en un cluster propio, un S3 de mentira, Chrome del sistema, el build standalone en :3119):** `node guardianes/run.mjs` →
+  «sin fallos»; `tsc --noEmit` limpio; `pnpm build` en verde; 0138 y la semilla 0056 en una base nueva (y la semilla otra vez sin cambios); **`cre9h` 95 ✓ dos veces seguidas** (la primera corrida cazó un
+  error de verdad: el antiabuso del promotor tenía al revés el orden de `pts_mismo_dispositivo` y rechazaba a todos; corregido y con su caso al revés); **`alreves9h` 53/53** y los guardianes limpios. El mapa del sitio de producción se miró con el servidor local en modo producción (REVISION 9h). **No se corrió** la regresión
+  entera, la matriz de 9 dispositivos ni `pruebas/visual` (el menú del admin cambia un poco: LAUNCH → 9b).
+- **Para quien junte las ramas:** 0138 vuelve a escribir el `check` de `config_keys.section` con `crecimiento` al final; si 0140 (9j) o 0141 (9k) también lo reescriben, su lista tiene que
+  incluir `crecimiento` (si no, la migración siguiente falla con las claves de 0138 ya puestas). Lo mismo con `email_outbox_tpl_check` (`campaign`) si 9l lo toca. `lib/config.ts` (`ClaveConfig`,
+  `Seccion`) y `Configuracion.tsx` (`SECCION`) tienen una línea de 9h cada uno.
+- **Para 9i (Ciudades):** la pieza compartida mínima ya está: quien se anota en la landing queda en `city_waitlist` (source `coming_soon`) y en `early_access` (`notified_at` vacío). El
+  asistente de apertura avisa a esa lista una sola vez y marca `notified_at`; la lista de espera por ciudad para su paso «Avisar a la lista» sale de `listaEspera()` (lib/crecimiento/admin.ts).
+- **No cerrado, con destino (LAUNCH «Fase 9 · 9h»):** el SMS de la apertura (9q), avisar a la lista (9i), el Inicio del admin con la lista (9i, cambia una captura), pagar al promotor (9k),
+  destacar eventos (9m), «Free con N ítems» y la insignia de negocio fundador en la ficha (9n), correo de campañas con baja de un toque (9l), encender la landing en producción (9t), el Smart
+  App Banner (9u) y las corridas del CI (9b).

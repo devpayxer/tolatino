@@ -297,7 +297,21 @@ insert into data_map (tabla, columna, rol, accion, set_sql, pendiente_sql, donde
   ('maintenance_windows', 'by_staff', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2930),
   ('maintenance_windows', 'cancelled_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2940),
   ('key_rotations', 'by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2950),
-  ('break_glass', 'staff_id', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2960)
+  ('break_glass', 'staff_id', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2960),
+  ('campaigns', 'created_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2970),
+  ('campaigns', 'approved_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2980),
+  ('campaigns', 'retired_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2990),
+  ('campaign_sends', 'user_id', 'persona', 'guardar', null, null, null, '{"es":"Lo pide la ley: recibos, impuestos y disputas.","en":"The law requires it: receipts, taxes and disputes."}'::jsonb, 'campanas_recibidas', 'no', null, false, 3000),
+  ('short_links', 'created_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3010),
+  ('short_links', 'retired_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3020),
+  ('featured', 'by_staff_id', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3030),
+  ('featured', 'retired_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3040),
+  ('promo_codes', 'promoter_user_id', 'persona', 'guardar', null, null, null, '{"es":"Es dinero: cobros, devoluciones y saldos. Stripe guarda lo suyo.","en":"It is money: charges, refunds and balances. Stripe keeps its own records."}'::jsonb, 'codigo_de_promotor', 'no', null, false, 3050),
+  ('promo_codes', 'created_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3060),
+  ('promo_codes', 'retired_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3070),
+  ('business_referrals', 'promoter_user_id', 'persona', 'guardar', null, null, null, '{"es":"Es dinero: cobros, devoluciones y saldos. Stripe guarda lo suyo.","en":"It is money: charges, refunds and balances. Stripe keeps its own records."}'::jsonb, 'negocios_que_trajiste', 'no', null, false, 3080),
+  ('business_referrals', 'paid_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3090),
+  ('early_access', 'user_id', 'persona', 'borrar', null, null, null, null, 'acceso_anticipado', 'mover', null, false, 3100)
 on conflict (tabla, columna) do update set rol = excluded.rol, accion = excluded.accion, set_sql = excluded.set_sql, pendiente_sql = excluded.pendiente_sql, donde_sql = excluded.donde_sql,
   porque = excluded.porque, exporta = excluded.exporta, fusion = excluded.fusion, fn = excluded.fn, derivados = excluded.derivados, orden = excluded.orden;
 -- Lo que salió del mapa sale de la tabla (es configuración: el mapa es la fuente).
@@ -597,6 +611,20 @@ delete from data_map d where not exists (select 1 from (values
   ('maintenance_windows', 'by_staff'),
   ('maintenance_windows', 'cancelled_by'),
   ('key_rotations', 'by'),
-  ('break_glass', 'staff_id')
+  ('break_glass', 'staff_id'),
+  ('campaigns', 'created_by'),
+  ('campaigns', 'approved_by'),
+  ('campaigns', 'retired_by'),
+  ('campaign_sends', 'user_id'),
+  ('short_links', 'created_by'),
+  ('short_links', 'retired_by'),
+  ('featured', 'by_staff_id'),
+  ('featured', 'retired_by'),
+  ('promo_codes', 'promoter_user_id'),
+  ('promo_codes', 'created_by'),
+  ('promo_codes', 'retired_by'),
+  ('business_referrals', 'promoter_user_id'),
+  ('business_referrals', 'paid_by'),
+  ('early_access', 'user_id')
 ) v (tabla, columna) where v.tabla = d.tabla and v.columna = d.columna);
 commit;

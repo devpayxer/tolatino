@@ -61,13 +61,13 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
   // La prueba Pro y el plan viven en subscriptions (lib/suscripcion.ts): lo vencido se procesa antes de mostrar.
   await (await import("./suscripcion")).procesar(id).catch(() => undefined);
   const b = (await db().query<{
-    id: string; name: string; cat: string; city: string; ciudad: string; status: string; plan: string; verified: boolean; review_count: number;
+    id: string; name: string; cat: string; city: string; ciudad: string; ciudad_on: boolean; status: string; plan: string; verified: boolean; review_count: number;
     attrs: Record<string, any>; logo: string | null; about: Bi | null; amen: string[]; op: string; from_home: boolean; mods: string[]; evt_aplica: boolean;
     email_ok: boolean; owner: string | null; tz: string; dow: number; hm: string; hoy: string; hora: number; open: boolean; closed_today: boolean; created: string;
     status_reason: string | null; temp_until: string | null; temp_reason: string | null; admin_edits: Record<string, unknown>; phone: string | null; owner_phone: string | null;
     email: string | null; sello: string | null; sello_note: string | null; reclamo_aviso: string | null; sub_until: string | null; sub_days: number | null; sub_used: boolean;
   }>(
-    `select b.id, b.name, b.category_id as cat, b.city_id as city, c.name as ciudad, b.status, coalesce(s.plan, 'free') as plan,
+    `select b.id, b.name, b.category_id as cat, b.city_id as city, c.name as ciudad, c.status = 'on' as ciudad_on, b.status, coalesce(s.plan, 'free') as plan,
             coalesce(s.verified, false) as verified, coalesce(s.review_count, 0) as review_count, b.category_attrs as attrs, b.logo_url as logo,
             b.about, b.amenities as amen, b.operation as op, b.works_from_home as from_home, b.modules_on as mods,
             coalesce((select cc.allowed_modules ? 'eventos' from categories cc where cc.id = b.category_id), false) as evt_aplica,
@@ -153,7 +153,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     `select count(*) filter (where status = 'live')::int as vivos, count(*) filter (where status = 'pending')::int as pend from coupons where business_id = $1`, [id])).rows[0]!;
   return {
     resenas: rs, novedades: nv, cupones: cu,
-    id, name: b.name, cat: b.cat, city: b.city, ciudad: b.ciudad, kind: acc.kind, partes: acc.partes, pro, verified: b.verified,
+    id, name: b.name, cat: b.cat, city: b.city, ciudad: b.ciudad, ciudadAbierta: b.ciudad_on, kind: acc.kind, partes: acc.partes, pro, verified: b.verified,
     trial: tr && tr.on ? tr : null, trialUsed: b.sub_used, onb, sells, mods: b.mods, evtAplica: b.evt_aplica, op: b.op, itemsW, items,
     st: { open: st.open, text: st.text, closedToday: b.closed_today },
     // Lo que hizo To'Latino (triángulo): el dueño siempre ve qué pasó y por qué.
