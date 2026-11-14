@@ -4,6 +4,7 @@ import { comision, liberarOperacion, registrarRetencion, retenerPedido, tarjetaD
 import { db, tx } from "./db";
 import { AGOTADO_SQL } from "./menu";
 import { pasarela } from "./pagos/pasarela";
+import { bancoPide } from "./pagos/verificacion";
 import { base, dirEntrega, topeFree } from "./pedir";
 
 /* Pedido del mercado (4p · fase4-mercados-tiendas.md §3 y §4p; prototipo neg-merc-flow.js). Reglas del servidor:
@@ -11,13 +12,17 @@ import { base, dirEntrega, topeFree } from "./pedir";
      en la app, solo pickup.
    - El mercado acepta en 10 min (si no, se libera). Pesa cada línea por libra con la FOTO de la balanza; lo que no hay: propone un
      sustituto que el cliente acepta en 10 min (si no contesta, se quita y no se cobra) o lo quita.
-   - El total real lo calcula la base (operation_lines.final_cents); nunca pasa de lo retenido (si pasa, no se manda).
-   - «Está bien, cobrar»: se captura lo real y se libera el resto. Si el cliente no toca nada, se cobra al recoger / entregar.
+   - El total real lo calcula la base (operation_lines.final_cents); nunca se cobra más de lo retenido sin un OK. 9n-4: si el peso real pasa lo
+     retenido, el mercado «Pide OK por $X más» y el cliente lo da al tocar «Está bien, cobrar» (se retienen esos $X en la misma tarjeta, con
+     3-D Secure si el banco lo pide) o dice «No, que corten» (el mercado pesa de nuevo). Sin ese OK no se marca listo.
+   - «Está bien, cobrar»: se captura lo real y se libera el resto. Si el cliente no toca nada, a los 10 min le llega un recordatorio (una vez) y,
+     si sigue sin tocar, se cobra lo real al recoger / entregar (nunca más de lo retenido).
+   - 9n-4: el sustituto puede venderse por libra (se pesa con su foto como cualquier línea por peso).
    - Todo idempotente; candado por negocio; cada paso queda en operation_events. */
 type Bi = { es: string; en: string };
 type Q = PoolClient | ReturnType<typeof db>;
 const no = (es: string, en: string) => ({ ok: false as const, msg: { es, en } });
-export type ResM = { ok: true; numero?: string } | { ok: false; msg: Bi; entrar?: true; tarjeta?: true };
+export type ResM = { ok: true; numero?: string } | { ok: false; msg: Bi; entrar?: true; tarjeta?: true; verificar?: import("./pagos/pasarela").Verificar };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const NUM = /^M-\d{1,10}$/;
 const ID = /^\d{1,18}$/;
@@ -200,41 +205,63 @@ export async function crearPedidoMercado(userId: string, p: MercIn, entorno: str
 }
 
 /* ── Totales (siempre de la base) ── */
-export type Totales = { est: number; real: number; sub: number; tax: number; envio: number; ret: number; cobrado: number; liberado: number; tarjeta: string | null; pendiente: boolean };
+/* 9n-4 · mas: lo que el peso real pasa lo retenido (sin el OK del cliente no se cobra ni se marca listo); extra: lo que se retuvo con ese OK. */
+export type Totales = { est: number; real: number; sub: number; tax: number; envio: number; ret: number; cobrado: number; liberado: number; tarjeta: string | null; pendiente: boolean; extra: number; mas: number };
 async function totales(c: Q, opId: string): Promise<Totales> {
-  const r = (await c.query<{ est: number; sub: number; tax: number; envio: number; ret: number; cob: number; lib: number; tarjeta: string | null; pend: boolean }>(
+  const r = (await c.query<{ est: number; sub: number; tax: number; envio: number; ret: number; xtra: number; cob: number; lib: number; tarjeta: string | null; pend: boolean }>(
     `select coalesce((o.details->>'est_cents')::int, o.total_cents) as est, coalesce(sum(l.final_cents), 0)::int as sub, coalesce(sum(round(l.final_cents * l.tax_pct / 100)), 0)::int as tax,
             coalesce(o.delivery_cents, 0) as envio,
-            (select coalesce(sum(p.held_cents), 0)::int from payments p where p.operation_id = o.id and p.kind = 'full') as ret,
-            (select coalesce(sum(p.amount_cents), 0)::int from payments p where p.operation_id = o.id and p.kind = 'full' and p.status in ('captured', 'partially_refunded', 'refunded')) as cob,
-            (select coalesce(sum(case when p.status = 'released' then p.held_cents when p.status in ('captured', 'partially_refunded', 'refunded') then p.held_cents - p.amount_cents else 0 end), 0)::int from payments p where p.operation_id = o.id and p.kind = 'full') as lib,
+            (select coalesce(sum(p.held_cents), 0)::int from payments p where p.operation_id = o.id and p.kind in ('full', 'extra')) as ret,
+            (select coalesce(sum(p.held_cents), 0)::int from payments p where p.operation_id = o.id and p.kind = 'extra') as xtra,
+            (select coalesce(sum(p.amount_cents), 0)::int from payments p where p.operation_id = o.id and p.kind in ('full', 'extra') and p.status in ('captured', 'partially_refunded', 'refunded')) as cob,
+            (select coalesce(sum(case when p.status = 'released' then p.held_cents when p.status in ('captured', 'partially_refunded', 'refunded') then p.held_cents - p.amount_cents else 0 end), 0)::int from payments p where p.operation_id = o.id and p.kind in ('full', 'extra')) as lib,
             (select case when p.card_last4 is null then null else upper(coalesce(p.card_brand, '')) || ' ·· ' || p.card_last4 end from payments p where p.operation_id = o.id and p.kind = 'full' limit 1) as tarjeta,
-            exists (select 1 from payments p where p.operation_id = o.id and p.kind = 'full' and p.status = 'held') as pend
+            exists (select 1 from payments p where p.operation_id = o.id and p.kind in ('full', 'extra') and p.status = 'held') as pend
        from operations o left join operation_lines l on l.operation_id = o.id where o.id = $1::bigint group by o.id`, [opId])).rows[0]!;
-  return { est: r.est, real: r.sub + r.tax + r.envio, sub: r.sub, tax: r.tax, envio: r.envio, ret: r.ret, cobrado: r.cob, liberado: r.lib, tarjeta: r.tarjeta, pendiente: r.pend };
+  const real = r.sub + r.tax + r.envio;
+  return { est: r.est, real, sub: r.sub, tax: r.tax, envio: r.envio, ret: r.ret, cobrado: r.cob, liberado: r.lib, tarjeta: r.tarjeta, pendiente: r.pend, extra: r.xtra, mas: r.ret > 0 ? Math.max(0, real - r.ret) : 0 };
 }
 
-/* ── Cobrar lo real y liberar el resto (idempotente; repararMercado reintenta si la pasarela falla) ── */
+/* ── Cobrar lo real y liberar el resto (idempotente; repararMercado reintenta si la pasarela falla) ──
+   9n-4 · Con el OK por más hay dos retenciones (la primera, «full», y la del OK, «extra»): se cobra de la primera hasta lo que tiene y lo que falta
+   de la segunda; lo que sobra de cada una se libera. Nunca más de lo retenido. La comisión (solo sobre lo vendido) se reparte en proporción. */
 export async function liquidarMercado(opId: string): Promise<{ cobrado: number; liberado: number }> {
-  const p = (await db().query<{ id: string; pi: string; held: number; num: string }>(
-    `select p.id::text, p.stripe_payment_intent as pi, p.held_cents as held, o.number as num from payments p join operations o on o.id = p.operation_id
-      where p.operation_id = $1::bigint and p.kind = 'full' and p.status = 'held'`, [opId])).rows[0];
-  if (!p) return { cobrado: 0, liberado: 0 };
-  const t = await totales(db(), opId), monto = Math.min(t.real, p.held);
-  if (monto <= 0) { await liberarOperacion(opId); return { cobrado: 0, liberado: p.held }; }
-  // Comisión del mercado solo sobre lo vendido (sin impuesto ni envío).
-  const fee = Math.min(await comision(db(), "merc", Math.min(t.sub, monto)), monto);
-  const r = await pasarela.cobrar(p.pi, monto, fee);
-  if (!r.ok) { await db().query(`update payments set failure_code = $2, updated_at = now() where id = $1::bigint`, [p.id, r.codigo ?? "error"]); return { cobrado: 0, liberado: 0 }; }
+  const P = (await db().query<{ id: string; pi: string; held: number; num: string; kind: string }>(
+    `select p.id::text, p.stripe_payment_intent as pi, p.held_cents as held, o.number as num, p.kind from payments p join operations o on o.id = p.operation_id
+      where p.operation_id = $1::bigint and p.kind in ('full', 'extra') and p.status = 'held' order by p.kind = 'full' desc, p.id`, [opId])).rows;
+  if (!P.length) return { cobrado: 0, liberado: 0 };
+  const t = await totales(db(), opId), retenido = P.reduce((n, p) => n + p.held, 0);
+  // Lo ya cobrado de esta orden (un reintento después de una captura a medias) cuenta: nunca se cobra dos veces lo mismo.
+  let resto = Math.max(0, Math.min(t.real, t.ret) - t.cobrado);
+  const feeTot = Math.min(await comision(db(), "merc", Math.min(t.sub, resto)), resto);
+  let cobrado = 0, liberado = 0, feeResto = feeTot, falla = false;
+  for (const p of P) {
+    const monto = Math.min(resto, p.held);
+    if (monto <= 0) {
+      const r = await pasarela.liberar(p.pi);
+      if (!r.ok) { falla = true; continue; }
+      const u = await db().query(`update payments set status = 'released', released_at = now(), updated_at = now() where id = $1::bigint and status = 'held'`, [p.id]);
+      if (u.rowCount) liberado += p.held;
+      continue;
+    }
+    const fee = p === P[P.length - 1] || resto - monto <= 0 ? Math.min(feeResto, monto) : Math.min(feeResto, Math.round((feeTot * monto) / Math.max(1, Math.min(t.real, t.ret))));
+    const r = await pasarela.cobrar(p.pi, monto, fee);
+    if (!r.ok) { await db().query(`update payments set failure_code = $2, updated_at = now() where id = $1::bigint`, [p.id, r.codigo ?? "error"]); falla = true; break; }
+    const u = await db().query(`update payments set status = 'captured', amount_cents = $2, fee_cents = $3, captured_at = now(), failure_code = null, updated_at = now() where id = $1::bigint and status = 'held'`, [p.id, monto, fee]);
+    if (u.rowCount) { cobrado += monto; liberado += p.held - monto; feeResto -= fee; }
+    resto -= monto;
+  }
+  if (falla || (!cobrado && !liberado)) return { cobrado, liberado };
+  const num = P[0]!.num;
   const hecho = await tx(async (c) => {
-    const u = await c.query(`update payments set status = 'captured', amount_cents = $2, fee_cents = $3, captured_at = now(), failure_code = null, updated_at = now() where id = $1::bigint and status = 'held'`, [p.id, monto, fee]);
-    if (!u.rowCount) return false;
-    await c.query(`update operations set pay_status = 'captured', details = details || jsonb_build_object('settled_at', now()) where id = $1::bigint`, [opId]);
-    await ev(c, opId, "payment_captured", "system", null, { es: `Se cobraron ${money(monto)}${p.held > monto ? ` y se liberaron ${money(p.held - monto)}` : ""}`, en: `${money(monto)} charged${p.held > monto ? ` and ${money(p.held - monto)} released` : ""}` });
+    if ((await c.query(`select 1 from payments where operation_id = $1::bigint and kind in ('full', 'extra') and status = 'held'`, [opId])).rowCount) return false;
+    await c.query(`update operations set pay_status = case when $2::boolean then 'captured' else 'released' end, details = details || jsonb_build_object('settled_at', now()) where id = $1::bigint`, [opId, cobrado > 0 || t.cobrado > 0]);
+    if (cobrado) await ev(c, opId, "payment_captured", "system", null, { es: `Se cobraron ${money(cobrado)}${liberado ? ` y se liberaron ${money(liberado)}` : ""}`, en: `${money(cobrado)} charged${liberado ? ` and ${money(liberado)} released` : ""}` });
+    else await ev(c, opId, "payment_released", "system", null, { es: `Se liberaron ${money(liberado)}`, en: `${money(liberado)} released` });
     return true;
   });
-  if (hecho) await avisar(p.num, "merc_cobrado", { monto: money(monto), libre: p.held > monto ? ` · se liberan ${money(p.held - monto)}` : "" });
-  return hecho ? { cobrado: monto, liberado: p.held - monto } : { cobrado: 0, liberado: 0 };
+  if (hecho && cobrado) await avisar(num, "merc_cobrado", { monto: money(cobrado), libre: liberado ? ` · se liberan ${money(liberado)}` : "" });
+  return { cobrado, liberado };
 }
 
 async function ev(c: Q, opId: string, kind: string, actor: "user" | "member" | "system", actorId: string | null, note: Bi) {
@@ -249,14 +276,23 @@ export async function vencerMercado(f: { negocio?: string; numero?: string }) {
   for (const x of exp) { await ev(db(), x.id, "expired", "system", null, { es: "No aceptaron en 10 minutos", en: "Not accepted within 10 minutes" }); await liberarOperacion(x.id); await avisar(x.number, "merc_exp", {}); }
   await db().query(
     `update change_proposals cp set status = 'expired', answered_at = now() from operations o where o.id = cp.operation_id and o.kind = 'market_order' and cp.kind = 'items' and cp.status = 'open' and cp.respond_by <= now() and ${w}`, v);
+  // 9n-4 · «Está bien, cobrar»: si a los 10 min de mandar el peso el cliente no lo tocó, un recordatorio (una vez por pedido: la marca rec10 es el candado).
+  const rec = (await db().query<{ number: string; mas: number | null }>(
+    `update operations o set details = o.details || jsonb_build_object('rec10', now()), updated_at = now()
+      where o.kind = 'market_order' and o.status = 'confirmed' and o.status_detail = 'pesado' and o.pay_mode = 'app' and not (o.details ? 'approved_at') and not (o.details ? 'settled_at')
+        and not (o.details ? 'rec10') and (o.details->>'weighed_at')::timestamptz <= now() - interval '10 minutes' and ${w}
+      returning o.number, (o.details->>'ok_mas')::int as mas`, v)).rows;
+  for (const x of rec) await avisar(x.number, "merc_rec10", { mas: x.mas ? ` (pide tu OK por ${money(x.mas)} más)` : "" }).catch(() => undefined);
 }
 
 /* ── Cliente ── */
 export type LineaVista = { id: string; name: Bi; q: number; peso: boolean; est: number; lb: number | null; lbReal: number | null; final: number; foto: string | null; ops: string[]; st: string; subOf: string | null };
-export type PropVista = { id: string; line: string; name: Bi; cents: number; vence: string };
+export type PropVista = { id: string; line: string; name: Bi; cents: number; vence: string; lb: number | null };
 export type MercadoVista = {
   numero: string; st: string; detalle: string | null; modo: string; cuando: string; win: string | null; negocio: { id: string; nombre: string; dir: string; tel: string | null };
   lineas: LineaVista[]; props: PropVista[]; t: Totales; local: boolean; sub: string; nota: string | null; aprobado: boolean; vence: string | null; eventos: { k: string; at: string; t: Bi }[];
+  // 9n-4 · El mercado pidió tu OK por $X más (el peso real pasa lo retenido) y si dijiste que no («que corten»).
+  okMas: number | null; noMas: boolean;
 };
 const ISO = (x: string) => `to_char((${x}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
 export async function vistaMercado(numero: string, filtro: { userId?: string; negocio?: string }): Promise<MercadoVista | null> {
@@ -273,13 +309,15 @@ export async function vistaMercado(numero: string, filtro: { userId?: string; ne
             m.url as foto, l.options as ops0, l.status as st, l.sub_of::text as "subOf"
        from operation_lines l left join media m on m.id = l.weigh_photo_id where l.operation_id = $1::bigint order by l.id`, [o.id])).rows;
   const P = (await db().query<PropVista>(
-    `select cp.id::text, cp.line_id::text as line, cp.proposed->'name' as name, (cp.proposed->>'cents')::int as cents, ${ISO("cp.respond_by")} as vence
+    `select cp.id::text, cp.line_id::text as line, cp.proposed->'name' as name, (cp.proposed->>'cents')::int as cents, ${ISO("cp.respond_by")} as vence, (cp.proposed->>'lb')::float as lb
        from change_proposals cp where cp.operation_id = $1::bigint and cp.kind = 'items' and cp.status = 'open' order by cp.id`, [o.id])).rows;
+  const tt = await totales(db(), o.id);
   const E = (await db().query<{ k: string; at: string; t: Bi }>(`select kind as k, ${ISO("at")} as at, coalesce(note, '{"es":"","en":""}'::jsonb) as t from operation_events where operation_id = $1::bigint order by id`, [o.id])).rows;
   return {
     numero, st: o.status, detalle: o.detail, modo: o.mode, cuando: o.cuando, win: (o.det.window_end as string) ?? null, negocio: { id: o.bid, nombre: o.bname, dir: o.addr ?? "", tel: o.tel },
-    lineas: L.map(({ ops0, ...x }) => ({ ...x, ops: (ops0 ?? []).map((z) => z.o?.es ?? "").filter(Boolean) })), props: P, t: await totales(db(), o.id), local: o.pay !== "app", sub: String(o.det.sub ?? "call"),
+    lineas: L.map(({ ops0, ...x }) => ({ ...x, ops: (ops0 ?? []).map((z) => z.o?.es ?? "").filter(Boolean) })), props: P, t: tt, local: o.pay !== "app", sub: String(o.det.sub ?? "call"),
     nota: o.nota, aprobado: !!o.det.approved_at || !!o.det.settled_at, vence: o.status === "pending" ? o.resp : null, eventos: E,
+    okMas: o.det.ok_mas != null && !o.det.ok_mas_no && tt.mas > 0 ? tt.mas : null, noMas: !!o.det.ok_mas_no,
   };
 }
 
@@ -296,12 +334,13 @@ export async function decidirSustituto(userId: string, numero: string, prop: str
   const r = await tx(async (c): Promise<ResM> => {
     const o = await opDe(c, numero, { userId }, true);
     if (!o) return no("Ese pedido no existe.", "That order does not exist.");
-    const cp = (await c.query<{ id: string; line: string; p: { item: string; name: Bi; cents: number; q: number; tax: number } }>(
+    const cp = (await c.query<{ id: string; line: string; p: { item: string; name: Bi; cents: number; q: number; tax: number; lb?: number } }>(
       `select id::text, line_id::text as line, proposed as p from change_proposals where id = $1::bigint and operation_id = $2::bigint and kind = 'items' and status = 'open' and respond_by > now() for update`, [prop, o.id])).rows[0];
     if (!cp) return no("Ese cambio ya no está: pasaron los 10 minutos o ya contestaste.", "That swap is no longer open: 10 minutes passed or you already answered.");
     await c.query(`update change_proposals set status = $2, answered_at = now() where id = $1::bigint`, [cp.id, si ? "accepted" : "declined"]);
-    if (si) await c.query(`insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct, sub_of) values ($1::bigint, $2, $3::jsonb, $4, $5, $6, $7, $8::bigint)`,
-      [o.id, cp.p.item, JSON.stringify(cp.p.name), cp.p.q, cp.p.cents, cp.p.cents * cp.p.q, cp.p.tax, cp.line]);
+    // 9n-4 · Un sustituto por libra entra como línea por peso (lb pedidas = las de la línea que no había): se pesa con su foto como las demás.
+    if (si) await c.query(`insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct, sub_of, weight_est) values ($1::bigint, $2, $3::jsonb, $4, $5, $6, $7, $8::bigint, $9)`,
+      [o.id, cp.p.item, JSON.stringify(cp.p.name), cp.p.lb ? 1 : cp.p.q, cp.p.cents, Math.round(cp.p.cents * (cp.p.lb ?? cp.p.q)), cp.p.tax, cp.line, cp.p.lb ?? null]);
     await ev(c, o.id, si ? "sub_ok" : "sub_no", "user", userId, si ? { es: `Aceptó el cambio: ${cp.p.name.es}`, en: `Accepted the swap: ${cp.p.name.en || cp.p.name.es}` } : { es: "No quiso el cambio: se quita y no se cobra", en: "Declined the swap: removed and not charged" });
     return { ok: true };
   });
@@ -309,6 +348,9 @@ export async function decidirSustituto(userId: string, numero: string, prop: str
   return r;
 }
 
+/* «Está bien, cobrar». 9n-4: si el mercado pidió tu OK por $X más (el peso real pasa lo retenido), este toque ES el OK: se retienen esos $X en la
+   MISMA tarjeta (con 3-D Secure si el banco lo pide: la pantalla abre la hoja y lo vuelve a mandar con la misma llave) y luego se cobra lo real.
+   El monto lo calcula la base (nunca el teléfono). */
 export async function aprobarPeso(userId: string, numero: string): Promise<ResM & { cobrado?: number; liberado?: number }> {
   if (!NUM.test(numero)) return no("Ese pedido no existe.", "That order does not exist.");
   const o = await opDe(db(), numero, { userId });
@@ -316,11 +358,59 @@ export async function aprobarPeso(userId: string, numero: string): Promise<ResM 
   if (o.status !== "confirmed" || !["pesado", "listo", "camino"].includes(o.detail ?? "")) return no("Todavía no lo han pesado.", "It has not been weighed yet.");
   if (o.det.approved_at) return { ok: true };
   if ((await db().query(`select 1 from change_proposals where operation_id = $1::bigint and kind = 'items' and status = 'open' limit 1`, [o.id])).rowCount) return no("Primero contesta el cambio que te proponen.", "First answer the proposed swap.");
+  const t0 = await totales(db(), o.id);
+  if (o.pay === "app" && t0.mas > 0) {
+    if (o.det.ok_mas == null || o.det.ok_mas_no) return no("El peso real pasa lo retenido: el mercado tiene que pedirte el OK o cortar menos.", "The real weight is over the hold: the market has to ask your OK or cut less.");
+    const r = await retenerMas(userId, o.id, numero, t0.mas);
+    if (!r.ok) return r;
+  }
   await db().query(`update operations set details = details || jsonb_build_object('approved_at', now()) where id = $1::bigint`, [o.id]);
-  await ev(db(), o.id, "approved", "user", userId, { es: "Dijo que está bien", en: "Approved" });
+  await ev(db(), o.id, "approved", "user", userId, t0.mas > 0 ? { es: `Dijo que está bien (con ${money(t0.mas)} más)`, en: `Approved (with ${money(t0.mas)} more)` } : { es: "Dijo que está bien", en: "Approved" });
   const t = await liquidarMercado(o.id);
   if (t.cobrado) await avisar(numero, "biz_merc_ok", { monto: money(t.cobrado) });
   return { ok: true, ...t };
+}
+/* 9n-4 · Retener lo que falta (el OK por más) en la tarjeta del primer cobro. Idempotente por pedido, monto y tarjeta (la misma llave al volver de la hoja). */
+async function retenerMas(userId: string, opId: string, numero: string, mas: number): Promise<ResM> {
+  const c = await db().connect();
+  let retenido: string | null = null;
+  try {
+    await c.query("begin");
+    await c.query(`select pg_advisory_xact_lock(hashtext('merc-mas:' || $1))`, [opId]);
+    // Ya retenido (doble toque, o volvió de la hoja después de que entró): no se retiene otra vez.
+    if ((await c.query(`select 1 from payments where operation_id = $1::bigint and kind = 'extra' and status = 'held'`, [opId])).rowCount) { await c.query("rollback"); return { ok: true }; }
+    const p = (await c.query<{ pm: string | null; biz: string; city: string }>(
+      `select p.payment_method as pm, p.business_id as biz, p.city_id as city from payments p where p.operation_id = $1::bigint and p.kind = 'full' and p.user_id = $2::uuid order by p.id limit 1`, [opId, userId])).rows[0];
+    if (!p?.pm) { await c.query("rollback"); return no("No encontramos la tarjeta de este pedido. Llama al mercado para arreglarlo.", "We could not find this order's card. Call the market to sort it out."); }
+    const T = await tarjetaDe(p.biz);
+    if (!T.on || !T.cuenta) { await c.query("rollback"); return no("El mercado no está cobrando con tarjeta ahora. Pídeles que corten menos.", "The market is not taking cards right now. Ask them to cut less."); }
+    const fee = Math.min(await comision(c, "merc", mas), mas);
+    const cliente = await pasarela.cliente(userId).catch(() => null);
+    const ret = await pasarela.retener({ centavos: mas, comision: fee, destino: T.cuenta, pm: p.pm, cliente, idem: `merc-mas-${opId}-${mas}-${p.pm.slice(-24)}`, usuario: { id: userId, negocio: p.biz, ciudad: p.city }, meta: { order: numero, business_id: p.biz, kind: "extra" } });
+    if (!ret.ok) { await c.query("rollback"); return { ...no(`${ret.mensaje.es} No se cobró nada: pídele al mercado que corte menos.`, `${ret.mensaje.en} Nothing was charged: ask the market to cut less.`), tarjeta: true }; }
+    retenido = ret.pi;
+    if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
+    await registrarRetencion(c, { opId, userId, negocio: p.biz, city: p.city, total: mas, comision: fee, r: ret, pm: p.pm, kind: "extra" });
+    await ev(c, opId, "extra_held", "user", userId, { es: `Se retuvieron ${money(mas)} más con su OK`, en: `${money(mas)} more held with their OK` });
+    await c.query("commit");
+    retenido = null;
+    return { ok: true };
+  } catch (e) {
+    await c.query("rollback").catch(() => undefined);
+    if (retenido) await pasarela.liberar(retenido).catch(() => undefined);
+    throw e;
+  } finally { c.release(); }
+}
+/* 9n-4 · «No, que corten»: el cliente no quiere pagar más; el mercado pesa otra vez (o quita algo) y vuelve a mandar el peso. */
+export async function noMasMercado(userId: string, numero: string): Promise<ResM> {
+  if (!NUM.test(numero)) return no("Ese pedido no existe.", "That order does not exist.");
+  const o = await opDe(db(), numero, { userId });
+  if (!o || o.status !== "confirmed" || o.det.ok_mas == null || o.det.ok_mas_no || o.det.approved_at) return no("Este pedido ya cambió. Actualiza la pantalla.", "This order already changed. Refresh the screen.");
+  const u = await db().query(`update operations set details = details || jsonb_build_object('ok_mas_no', now()), updated_at = now() where id = $1::bigint and details ? 'ok_mas' and not (details ? 'ok_mas_no') and not (details ? 'approved_at')`, [o.id]);
+  if (!u.rowCount) return no("Este pedido ya cambió. Actualiza la pantalla.", "This order already changed. Refresh the screen.");
+  await ev(db(), o.id, "extra_no", "user", userId, { es: "No quiso pagar más: que corten", en: "Did not want to pay more: cut less" });
+  await avisar(numero, "biz_merc_mas_no", {});
+  return { ok: true };
 }
 
 export async function cancelarMercado(userId: string, numero: string): Promise<ResM> {
@@ -351,7 +441,8 @@ export async function mercadoHoy(negocio: string): Promise<FilaMerc[]> {
       order by o.status = 'pending' desc, o.scheduled_at limit 30`, [negocio])).rows;
 }
 
-export type PasoMerc = "aceptar" | "rechazar" | "mandar" | "listo" | "entregado";
+/* 9n-4 · «mas» = mandar el peso pidiendo el OK del cliente por lo que pasa de lo retenido («Pedir OK por $X más»). */
+export type PasoMerc = "aceptar" | "rechazar" | "mandar" | "mas" | "listo" | "entregado";
 export async function pasoMercado(negocio: string, numero: string, paso: PasoMerc, actorId: string): Promise<ResM> {
   if (!NUM.test(numero)) return no("Ese pedido no existe.", "That order does not exist.");
   await vencerMercado({ negocio });
@@ -375,7 +466,7 @@ export async function pasoMercado(negocio: string, numero: string, paso: PasoMer
       return { ok: true };
     }
     if (o.status !== "confirmed") return cambio;
-    if (paso === "mandar") {
+    if (paso === "mandar" || paso === "mas") {
       if (o.detail !== "preparando" && o.detail !== "pesado") return cambio;
       const f = (await c.query<{ sin: number; prop: number }>(
         `select count(*) filter (where l.weight_est is not null and l.status = 'ok' and l.weight_final is null)::int as sin,
@@ -384,14 +475,19 @@ export async function pasoMercado(negocio: string, numero: string, paso: PasoMer
       if (f.sin) return no(`Falta pesar ${f.sin} ${f.sin === 1 ? "artículo" : "artículos"} con su foto.`, `${f.sin} ${f.sin === 1 ? "item still needs" : "items still need"} weighing with a photo.`);
       if (f.prop) return no("Espera la respuesta del cliente al cambio (10 min).", "Wait for the customer’s answer to the swap (10 min).");
       const t = await totales(c, o.id);
-      if (o.pay === "app" && t.real > t.ret) return no(`El total real (${money(t.real)}) pasa lo retenido (${money(t.ret)}). Corta menos: sin su OK no se cobra más.`, `The real total (${money(t.real)}) is over the hold (${money(t.ret)}). Cut less: without their OK no more is charged.`);
-      await c.query(`update operations set status_detail = 'pesado', details = details || jsonb_build_object('weighed_at', now()), updated_at = now() where id = $1::bigint`, [o.id]);
-      await ev(c, o.id, "weighed", "member", actorId, { es: `Pesado · total real ${money(t.real)}`, en: `Weighed · real total ${money(t.real)}` });
-      despues = () => avisar(numero, "merc_pesado", { monto: money(t.real) });
+      const pide = o.pay === "app" && t.mas > 0;
+      if (pide && paso !== "mas") return no(`El total real (${money(t.real)}) pasa lo retenido (${money(t.ret)}). Corta menos o pide su OK por ${money(t.mas)} más: sin su OK no se cobra más.`, `The real total (${money(t.real)}) is over the hold (${money(t.ret)}). Cut less or ask their OK for ${money(t.mas)} more: without their OK no more is charged.`);
+      // Cada vez que se manda el peso: el OK por más es el de ESTE peso (lo calcula la base) y el recordatorio de los 10 min vuelve a contar.
+      await c.query(`update operations set status_detail = 'pesado', details = (details - 'ok_mas' - 'ok_mas_no' - 'rec10') || jsonb_build_object('weighed_at', now()) || case when $2::int > 0 then jsonb_build_object('ok_mas', $2::int) else '{}'::jsonb end, updated_at = now() where id = $1::bigint`, [o.id, pide ? t.mas : 0]);
+      await ev(c, o.id, "weighed", "member", actorId, pide ? { es: `Pesado · total real ${money(t.real)} · pide su OK por ${money(t.mas)} más`, en: `Weighed · real total ${money(t.real)} · asks their OK for ${money(t.mas)} more` } : { es: `Pesado · total real ${money(t.real)}`, en: `Weighed · real total ${money(t.real)}` });
+      despues = () => (pide ? avisar(numero, "merc_mas", { monto: money(t.real), mas: money(t.mas) }) : avisar(numero, "merc_pesado", { monto: money(t.real) }));
       return { ok: true };
     }
     if (paso === "listo") {
       if (o.detail !== "pesado") return no("Primero manda el peso al cliente.", "First send the weight to the customer.");
+      // 9n-4 · Sin el OK por lo que pasa de lo retenido, no sale: o corta menos y manda el peso otra vez, o espera el OK.
+      if (o.det.ok_mas_no) return no("Dijo que no a pagar más: corta menos y manda el peso otra vez.", "They said no to paying more: cut less and send the weight again.");
+      if (o.pay === "app") { const t = await totales(c, o.id); if (t.mas > 0) return no(`Falta el OK del cliente por ${money(t.mas)} más (o corta menos y manda el peso otra vez).`, `The customer's OK for ${money(t.mas)} more is missing (or cut less and send the weight again).`); }
       const d = o.mode === "delivery" ? "camino" : "listo";
       await c.query(`update operations set status_detail = $2, stage = $3, ready_at = now(), updated_at = now() where id = $1::bigint`, [o.id, d, d === "camino" ? "on_the_way" : "ready"]);
       await ev(c, o.id, d === "camino" ? "on_the_way" : "ready", "member", actorId, d === "camino" ? { es: "Va en camino", en: "On the way" } : { es: "Listo para recoger", en: "Ready for pickup" });
@@ -436,18 +532,19 @@ export async function noHay(negocio: string, numero: string, linea: string, sust
   const r = await tx(async (c): Promise<ResM> => {
     const o = await opDe(c, numero, { negocio }, true);
     if (!o || o.status !== "confirmed" || !["preparando", "pesado"].includes(o.detail ?? "") || o.det.approved_at) return no("Este pedido ya no se puede cambiar.", "This order can no longer be changed.");
-    const l = (await c.query<{ name: Bi; q: number; peso: boolean; item: string | null }>(`select name, qty as q, weight_est is not null as peso, item_id::text as item from operation_lines where id = $1::bigint and operation_id = $2::bigint and status = 'ok' and sub_of is null for update`, [linea, o.id])).rows[0];
+    const l = (await c.query<{ name: Bi; q: number; peso: boolean; item: string | null; lb: number | null }>(`select name, qty as q, weight_est is not null as peso, item_id::text as item, weight_est::float as lb from operation_lines where id = $1::bigint and operation_id = $2::bigint and status = 'ok' and sub_of is null for update`, [linea, o.id])).rows[0];
     if (!l) return no("Esa línea ya no está.", "That line is gone.");
     await c.query(`update operation_lines set status = 'out', weight_final = null, weigh_photo_id = null where id = $1::bigint`, [linea]);
     if (sustituto) {
       const s = (await c.query<{ name: Bi; cents: number; tax: number; k: string }>(
         `select name, price_cents as cents, tax_pct::float as tax, coalesce(shop_kind, 'unid') as k from items where id = $1::bigint and business_id = $2 and module = 'shop' and removed_at is null and status = 'live' and sell and not in_store_only and age_min = 0`, [sustituto, negocio])).rows[0];
       if (!s || sustituto === l.item) return no("Ese producto no se puede ofrecer.", "That product cannot be offered.");
-      if (s.k === "peso") return no("Por ahora el sustituto tiene que ser por unidad (con precio del estante).", "For now the substitute has to be sold by unit (shelf price).");
+      // 9n-4 · Por libra: se piden las mismas libras de la línea que no había (o 1 lb si era por unidad) y se pesa con su foto; el precio es por libra.
+      const lb = s.k === "peso" ? (l.peso ? l.lb ?? 1 : 1) : null, porLb = lb != null ? "/lb" : "";
       await c.query(`insert into change_proposals (operation_id, kind, proposed, side, respond_by, created_by, line_id) values ($1::bigint, 'items', $2::jsonb, 'customer', now() + interval '10 minutes', $3, $4::bigint)`,
-        [o.id, JSON.stringify({ item: sustituto, name: { es: s.name.es, en: s.name.en || s.name.es }, cents: s.cents, q: l.peso ? 1 : l.q, tax: s.tax }), actorId, linea]);
-      await ev(c, o.id, "sub_proposed", "member", actorId, { es: `No hay ${l.name.es}: proponen ${s.name.es} (${money(s.cents)})`, en: `Out of ${l.name.en || l.name.es}: proposing ${s.name.en || s.name.es} (${money(s.cents)})` });
-      aviso = { articulo: l.name.es, sustituto: `${s.name.es} ${money(s.cents)}` };
+        [o.id, JSON.stringify({ item: sustituto, name: { es: s.name.es, en: s.name.en || s.name.es }, cents: s.cents, q: l.peso ? 1 : l.q, tax: s.tax, ...(lb != null ? { lb } : {}) }), actorId, linea]);
+      await ev(c, o.id, "sub_proposed", "member", actorId, { es: `No hay ${l.name.es}: proponen ${s.name.es} (${money(s.cents)}${porLb}${lb != null ? ` · ${lb} lb` : ""})`, en: `Out of ${l.name.en || l.name.es}: proposing ${s.name.en || s.name.es} (${money(s.cents)}${porLb}${lb != null ? ` · ${lb} lb` : ""})` });
+      aviso = { articulo: l.name.es, sustituto: `${s.name.es} ${money(s.cents)}${porLb}` };
     } else await ev(c, o.id, "line_out", "member", actorId, { es: `No hay ${l.name.es}: se quita y no se cobra`, en: `Out of ${l.name.en || l.name.es}: removed and not charged` });
     return { ok: true };
   });

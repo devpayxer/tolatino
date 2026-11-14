@@ -386,10 +386,13 @@ export const pasarela = {
     if (a.status === "pendiente" || a.status === "verificada") {
       const s = await this.intento(a.pi);
       if (s?.estado === "requires_capture") return { r: { ok: true, pi: a.pi, estado: "retenido", marca: s.marca, ultimos4: s.ultimos4, huella: s.huella } };
-      if (a.status === "pendiente" && a.viva && (s?.estado === "requires_action" || s?.estado === "requires_payment_method")) {
+      // 9n-4 · Solo «requires_action» es verificar: «requires_payment_method» (la autenticación falló o el banco la rechazó) es otro intento con otra llave.
+      if (a.status === "pendiente" && a.viva && s?.estado === "requires_action") {
         const secreto = s.secreto ?? secretoSim(a.pi);
         return { r: { ok: true, pi: a.pi, estado: "accion", secreto, marca: s.marca, ultimos4: s.ultimos4, huella: s.huella, verificar: { pi: a.pi, secreto, monto: a.monto, pm: a.pm, vence: a.vence, renovacion: false } } };
       }
+      // La verificación que el banco ya no aceptó queda en «fallo» (la hoja nunca se abre otra vez para ella).
+      if (a.status === "pendiente" && (s?.estado === "requires_payment_method" || s?.estado === "failed")) await db().query(`update payment_actions set status = 'fallo' where pi = $1::text and status = 'pendiente'`, [a.pi]);
     }
     return { idem: `${base}-v${a.n}` };
   },

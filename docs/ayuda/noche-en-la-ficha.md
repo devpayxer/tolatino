@@ -1,6 +1,6 @@
 # Noche en la página del local · Nightlife on the venue page
 
-_Pantallas: la página de un local de noche (`/n/{negocio}`): «Esta noche», la pestaña de Noche y su riel. Versión: 10 nov 2026. Audiencia: vecino.
+_Pantallas: la página de un local de noche (`/n/{negocio}`): «Esta noche», la pestaña de Noche y su riel. Versión: 14 nov 2026. Audiencia: vecino.
 Tema: explorar._
 
 ## Qué hace
@@ -29,6 +29,11 @@ edad (21+ o 18+), quién toca, el código de vestimenta y **cómo está la fila*
 **Noche especial:** el servicio «Noche especial» sale en la pestaña solo si está ligado a un evento publicado del local; su botón
 **Ver evento** abre la ficha del evento (los boletos se compran en la app).
 
+## Las noches especiales con boleto
+Una **noche especial** del local (un evento de To'Latino con boletos) sale en la ficha cuando su evento está publicado, con el
+**precio real del boleto más barato a la venta** («Desde $15 · BOLETO · SÁB 21 NOV») y **Comprar boletos**, que abre el evento.
+Si el evento no está publicado, no sale.
+
 ## English
 
 ### What it does
@@ -54,3 +59,7 @@ at the door.»**
 - **What if they charge me more at the door?** Ask for help in To'Latino: we check the cover the venue posted that night and the venue
   refunds the difference.
 - **Is the table minimum an extra charge?** No: it is what you spend that night; the deposit comes off your bill.
+
+### Special nights with tickets
+A venue's **special night** (a To'Latino event with tickets) shows on the page while its event is published, with the **real
+price of the cheapest ticket on sale** and the next date, and **Get tickets** opens the event.

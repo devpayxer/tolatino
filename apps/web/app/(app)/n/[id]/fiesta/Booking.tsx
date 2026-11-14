@@ -10,6 +10,7 @@ import { useRef, useState, type ComponentType } from "react";
 import { diaFiesta, EVT, GUESTS, LINEA_FIESTA, metaFiesta, precioFiesta, sumarDias } from "@/lib/fiestas-comun";
 import type { BookingFiesta } from "@/lib/fiestas-reservas";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
+import { useVerificacion } from "../../../pago/Verificacion";
 import { pedirFechaAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
 
@@ -41,6 +42,7 @@ export function BookingFiestaV({ b, es, pago, yo, inicial }: {
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas.find((t) => t.def) ?? pago?.tarjetas[0] ?? null);
   const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
   const clave = useRef(uuid());
+  const V = useVerificacion(es, pago?.modo, pago?.pk);
 
   // Lo que se cobra (la vista; el servidor recalcula con la misma regla al enviar).
   const qtyR = s.k === "unid" ? Math.min(2000, Math.max(s.min ?? 1, s.per ? Math.ceil(g / s.per) : qty)) : 1;
@@ -76,6 +78,8 @@ export function BookingFiestaV({ b, es, pago, yo, inicial }: {
       .catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     if (r.ok) { router.push(`/fiesta/${r.numero}`); return; }
     if ("entrar" in r && r.entrar) return entrar();
+    // 9n-4 · 3-D Secure: el banco pide confirmar → la hoja, y al confirmar se vuelve a enviar lo MISMO (la misma clave: nada se cobra dos veces).
+    if (V.pide(r, () => { void enviar(); })) { setOcupado(false); return; }
     setError(es ? r.msg.es : r.msg.en); setOcupado(false);
     if ("tarjeta" in r && r.tarjeta && tarjeta) { setDeclinada(tarjeta.pm); clave.current = uuid(); }
     if ("fecha" in r && r.fecha) { setH(null); setPaso(1); router.refresh(); }
@@ -253,6 +257,7 @@ export function BookingFiestaV({ b, es, pago, yo, inicial }: {
           </aside>
         </div>
       </div>
+      {V.hoja}
       {hoja && pago && (
         <MetodoPago es={es} tarjetas={tarjetas} sel={tarjeta?.pm ?? null} declinada={declinada} modo={pago.modo} pk={pago.pk}
           nota={`${E2("PARA TU DEPÓSITO DE ", "FOR YOUR ")}${dinero(dep)}${E2("", " DEPOSIT")} · ${E2("SE RETIENE AL ENVIAR · SE COBRA AL CONFIRMAR", "HELD WHEN YOU SEND · CHARGED ON CONFIRMATION")}`}

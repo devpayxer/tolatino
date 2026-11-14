@@ -1,7 +1,7 @@
 # Planes del hogar · Home plans
 
 _Pantallas: la hoja de un servicio «plan» («Empezar el plan · $149/mes»), `/n/{negocio}/plan`, tu plan `/plan/{PL-…}` y Panel › Hoy › «Tus planes».
-Versión: 6 nov 2026. Audiencia: vecino. Tema: citas._
+Versión: 14 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué hace
 Un plan es una visita fija cada mes (mantenimiento de la casa, plan para landlords…) o en meses fijos (Plan de confort:
@@ -33,9 +33,20 @@ calefacción en octubre y aire en abril), cobrada cada mes con tu tarjeta.
 **¿Cuándo me cobran?** El día de tu primera visita y después cada mes ese mismo día del mes. **¿Cobran si no hay visita?**
 Si saltas o pausas, no. **¿Puedo cambiar el día?** Cancela y empieza otra vez con el día nuevo (o escríbele al negocio).
 
+## El recordatorio de cada visita
+El día antes de cada visita del plan te llega **«Mañana es tu visita»** con la franja de llegada (por ejemplo, entre las 9:00 AM
+y las 11:00 AM), aunque la visita sea de $0 (la paga el plan), y 2 horas antes el de «hoy». Llega si tu cita tiene los avisos por
+SMS encendidos (Booking › Detalles).
+
+**¿Me llega el recordatorio si la visita no cuesta nada?** Sí: el recordatorio no depende del dinero.
+
 ## English
 
 ### What it does
 A plan is a fixed monthly visit (same weekday each month, 2-hour window) charged monthly to your card. Nothing is charged
 today; the first charge is on your first visit day. Skip or pause a month (no visit, no charge) or cancel (next month is not
 charged). If the bank declines, we retry after 2 and 4 days; on the third decline the plan pauses until you change the card.
+
+### The reminder for each visit
+The day before each plan visit you get **«Your visit is tomorrow»** with the arrival window, even though the visit is $0 (the
+plan pays it), and the «today» one 2 hours before.

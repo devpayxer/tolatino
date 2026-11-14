@@ -1,7 +1,7 @@
 # Plan Pro · Pro plan
 
 _Pantallas: Panel › Cobros y plan › **Tu plan** (`/panel/{negocio}/cobros/plan`), los avisos de la prueba en Tu página y Hoy, y cada «Ver Pro» del
-panel. Versión: 6 nov 2026. Audiencia: vecino. Tema: negocios._
+panel. Versión: 14 nov 2026. Audiencia: vecino. Tema: negocios._
 
 ## Qué hace
 - Al publicar el negocio empieza la **prueba Pro de 30 días** (60 con el código HZL30): todo Pro, sin tarjeta.
@@ -32,6 +32,14 @@ panel. Versión: 6 nov 2026. Audiencia: vecino. Tema: negocios._
 **¿Puedo comprar Pro desde la app To'Latino Negocios?** No: en la app ves el estado de tu plan (Pro, prueba o Free, y hasta cuándo); Pro se compra y se
 cambia en el panel de la web, con tu misma cuenta.
 
+## Volver a Pro y tu banco
+Si al **Volver a Pro** (desde Free, en Cobros y plan › Tu plan) tu banco pide confirmar el pago (3-D Secure), se abre ahí mismo la
+hoja **«Tu banco pide confirmar»**: confírmalo y Pro queda activo con ese único cobro (no se cobra otra vez). Si la cierras, no se
+cobra y puedes volver a intentarlo. En la renovación de cada mes, si el banco pide confirmar, te llega el aviso con el enlace a la
+misma hoja.
+
+**¿Se me cobra dos veces si confirmo después?** No: el cobro confirmado es el que deja Pro activo.
+
 ## English
 
 Publishing starts a **30-day Pro trial** (60 with HZL30), no card. In **Your plan**: **Keep Pro** (pick or add a card —
@@ -40,3 +48,7 @@ switches to Free; nothing is deleted). Reminders on day 20, 25 and the last day.
 switch to Free at the end of the paid period, receipts. With Free: **Back to Pro** charges that day (no second trial).
 Failed charges retry 3 times over 7 days, then Free. Never charged twice for the same period.
 In the To'Latino Negocios app you see your plan status only (Pro, trial or Free, and until when); Pro is bought and changed in the web dashboard, with the same account.
+
+### Back to Pro and your bank
+If your bank asks to confirm when you go **Back to Pro** from Free, the «Your bank asks you to confirm» sheet opens right in
+Your plan; confirm and Pro is active with that single charge. Closing it charges nothing. Monthly renewals send you a link.

@@ -83,7 +83,9 @@ async function soltarVerificaciones(negocio: string): Promise<boolean> {
   }
   return cobrado;
 }
-async function cobrarPeriodo(s: Fila, desde: number): Promise<{ ok: true } | { ok: false; msg: Bi; verificar?: true }> {
+/* 9n-4 · enSesion: «Volver a Pro» desde el panel (el dueño está en Tu plan): la hoja del banco se abre ahí mismo (hoja), sin el aviso con el enlace, y la
+   verificación vive lo de cualquier cobro en sesión (verificacion_min); si la cierra, el barrido la suelta y «Volver a Pro» es otro intento. */
+async function cobrarPeriodo(s: Fila, desde: number, enSesion = false): Promise<{ ok: true } | { ok: false; msg: Bi; verificar?: true; hoja?: import("./pagos/pasarela").Verificar }> {
   if (!s.card_pm || !s.payer_user_id) return { ok: false, msg: { es: "Falta la tarjeta.", en: "The card is missing." } };
   if (await soltarVerificaciones(s.business_id)) return { ok: true };
   const monto = precio(s.cycle), idem = `sub-${s.business_id}-${new Date(desde).toISOString()}-${s.card_pm.slice(-16)}-${s.failed_attempts}`;
@@ -94,10 +96,10 @@ async function cobrarPeriodo(s: Fila, desde: number): Promise<{ ok: true } | { o
     // llega el aviso con el enlace a la hoja; si confirma, el período se completa (completarRenovacion). Cuenta como intento para el calendario.
     const { registrarAccion } = await import("./pagos/pasarela");
     const city = (await db().query<{ c: string | null }>(`select city_id as c from businesses where id = $1`, [s.business_id])).rows[0]?.c ?? null;
-    await registrarAccion({ pi: r.pi, base: idem, idem, quien: { id: s.payer_user_id, negocio: s.business_id, ciudad: city }, kind: "renovacion", monto, pm: s.card_pm, secreto: r.secreto ?? "", minutos: (s.failed_attempts === 0 ? 3 : 4) * 1440 });
-    if (await evento(s.business_id, "action_required", { monto, note: { pi: r.pi }, idem: `ver-pide-${r.pi}` }))
-      await (await import("./avisos")).avisarNegocio(s.business_id, "pro_verify", { monto: money(monto), negocio: await nombre(s.business_id) }, { href: `/pago/verificar?pi=${encodeURIComponent(r.pi)}` });
-    return { ok: false, msg: r.mensaje, verificar: true };
+    const hoja = await registrarAccion({ pi: r.pi, base: idem, idem, quien: { id: s.payer_user_id, negocio: s.business_id, ciudad: city }, kind: "renovacion", monto, pm: s.card_pm, secreto: r.secreto ?? "", minutos: enSesion ? undefined : (s.failed_attempts === 0 ? 3 : 4) * 1440 });
+    const pide = await evento(s.business_id, "action_required", { monto, note: { pi: r.pi, ...(enSesion ? { en_sesion: true } : {}) }, idem: `ver-pide-${r.pi}` });
+    if (!enSesion && pide) await (await import("./avisos")).avisarNegocio(s.business_id, "pro_verify", { monto: money(monto), negocio: await nombre(s.business_id) }, { href: `/pago/verificar?pi=${encodeURIComponent(r.pi)}` });
+    return { ok: false, msg: r.mensaje, verificar: true, ...(enSesion ? { hoja } : {}) };
   }
   if (!r.ok) return { ok: false, msg: r.mensaje };
   await registrarPeriodo(s, desde, monto, r.id, idem);
@@ -127,10 +129,17 @@ export async function completarRenovacion(negocio: string, pi: string, candado =
     // barrido (que ya tiene el candado) se llama sin él.
     if (candado) await c.query(`select pg_advisory_xact_lock(hashtext('sub:' || $1))`, [negocio]);
     const s = (await c.query<Fila>(`select * from subscriptions where business_id = $1 for update`, [negocio])).rows[0];
-    if (!s || !["past_due", "active", "trial", "canceling"].includes(s.status) || !s.payer_user_id || !s.card_pm) return null;
-    const a = (await c.query<{ idem: string; monto: number }>(`select idem, amount_cents as monto from payment_actions where pi = $1::text and business_id = $2::text and kind = 'renovacion' and status = 'verificada'`, [pi, negocio])).rows[0];
+    if (!s || !["past_due", "active", "trial", "canceling", "ended"].includes(s.status) || !s.payer_user_id || !s.card_pm) return null;
+    // 9n-4 · desde_free: la verificación es de un «Volver a Pro» (se pidió con el plan en Free, después de terminar): el período empieza ese minuto.
+    const a = (await c.query<{ idem: string; monto: number; creada: string; desde_free: boolean }>(
+      `select idem, amount_cents as monto, to_char(date_trunc('minute', created_at) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as creada,
+              created_at > coalesce($3::timestamptz, '-infinity'::timestamptz) as desde_free
+         from payment_actions where pi = $1::text and business_id = $2::text and kind = 'renovacion' and status = 'verificada'`, [pi, negocio, s.ended_at])).rows[0];
     if (!a) return null;
-    const desde = Date.parse(s.current_period_end ?? s.trial_ends_at ?? new Date().toISOString());
+    // Free sin un «Volver a Pro» que se esté cobrando: no se toca (el paso a Free soltó las verificaciones viejas).
+    if (s.status === "ended" && !a.desde_free) return null;
+    const vuelve = s.status === "ended" && a.desde_free;
+    const desde = vuelve ? Date.parse(a.creada) : Date.parse(s.current_period_end ?? s.trial_ends_at ?? new Date().toISOString());
     const hasta = new Date(desde); hasta.setMonth(hasta.getMonth() + (s.cycle === "year" ? 12 : 1));
     // La llave del cobro es la del evento: si ya se anotó, no se anota ni se avisa otra vez.
     const ev = await c.query(`insert into subscription_events (business_id, kind, amount_cents, note, actor_id, idem_key) values ($1, 'charged', $2, $3::jsonb, null, $4) on conflict (idem_key) do nothing`,
@@ -139,6 +148,7 @@ export async function completarRenovacion(negocio: string, pi: string, candado =
     await c.query(`update subscriptions set status = 'active', current_period_end = $2, failed_attempts = 0, next_attempt_at = null, trial_choice = case when status = 'trial' then 'card' else trial_choice end, updated_at = now() where business_id = $1`,
       [negocio, hasta.toISOString()]);
     await plan(c, negocio, "pro");
+    if (s.status === "ended" && a.desde_free) await c.query(`insert into subscription_events (business_id, kind, actor_id, note) values ($1, 'back_to_pro', $2, '{"verificado":true}'::jsonb)`, [negocio, s.payer_user_id]);
     return { monto: a.monto, hasta: hasta.toISOString(), pm: s.card_pm, payer: s.payer_user_id, idem: a.idem };
   });
   if (!hecho) return;
@@ -227,8 +237,9 @@ export async function seguirConPro(negocio: string, userId: string, pm: string, 
     payer_user_id: userId, card_pm: card, current_period_end: null, failed_attempts: 0, next_attempt_at: null, courtesy_until: null, ended_at: null };
   await db().query(`insert into subscriptions (business_id, status, cycle, payer_user_id, card_pm, trial_choice) values ($1, 'ended', $2, $3, $4, 'card')
                     on conflict (business_id) do update set cycle = $2, payer_user_id = $3, card_pm = $4, updated_at = now()`, [negocio, cyc, userId, card]);
-  const r = await cobrarPeriodo(fila, Math.floor(Date.now() / 60_000) * 60_000); // el mismo minuto y tarjeta = el mismo intento (doble toque)
-  if (!r.ok) return { ok: false, msg: r.msg };
+  const r = await cobrarPeriodo(fila, Math.floor(Date.now() / 60_000) * 60_000, true); // el mismo minuto y tarjeta = el mismo intento (doble toque)
+  // 9n-4 · El banco pide confirmar: la hoja se abre en Tu plan; al confirmar, la verificación completa el período (completarRenovacion), sin otro cobro.
+  if (!r.ok) return { ok: false, msg: r.msg, ...(r.hoja ? { verificar: r.hoja } : {}) };
   await evento(negocio, "back_to_pro", { actor: userId });
   return { ok: true, cobrado: true };
 }

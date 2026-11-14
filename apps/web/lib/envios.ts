@@ -4,6 +4,7 @@ import { descifrar } from "./cifrado";
 import { cobrarOperacion, comision, registrarRetencion } from "./cobros";
 import { db, tx } from "./db";
 import { pasarela } from "./pagos/pasarela";
+import { bancoPide } from "./pagos/verificacion";
 import type { Bi } from "./transporte-comun";
 import { NUM_V, type Destino } from "./viajes";
 
@@ -15,7 +16,7 @@ import { NUM_V, type Destino } from "./viajes";
      gracias». Si nadie contesta, vence (barrerViajes) y no se cobra nada. */
 const no = (es: string, en: string, extra?: Record<string, true>) => ({ ok: false as const, msg: { es, en } as Bi, ...extra });
 const ok1 = { ok: true as const };
-type ResE = { ok: true } | { ok: false; msg: Bi; tarjeta?: true };
+type ResE = { ok: true } | { ok: false; msg: Bi; tarjeta?: true; verificar?: import("./pagos/pasarela").Verificar };
 const money = (c: number) => `$${(c / 100).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 
 type OpE = { id: string; num: string; biz: string; uid: string; status: string; detail: string | null; k: string; tot: number; pay: string | null; city: string };
@@ -104,10 +105,10 @@ export async function aceptarPrecio(userId: string, numero: string, version: num
       if (!p) { await c.query("rollback"); return no("Elige la tarjeta.", "Choose the card.", { tarjeta: true }); }
       fee = Math.min(await comision(c, "viaje", t.cents), t.cents);
       const cliente = await pasarela.cliente(userId).catch(() => null);
-      const ret = await pasarela.retener({ centavos: t.cents, comision: fee, destino: x.cuenta, pm: p, cliente, idem: `precio-${numero}-v${t.v}-${clave}`, meta: { trip: numero, business_id: x.id } });
+      const ret = await pasarela.retener({ centavos: t.cents, comision: fee, destino: x.cuenta, pm: p, cliente, idem: `precio-${numero}-v${t.v}-${clave}`, usuario: { id: userId, negocio: x.id, ciudad: x.city }, meta: { trip: numero, business_id: x.id } });
       if (!ret.ok) { await c.query("rollback"); return no(`${ret.mensaje.es} No se cobró nada.`, `${ret.mensaje.en} Nothing was charged.`, { tarjeta: true }); }
       retenido = ret.pi;
-      if (ret.estado === "accion") { await c.query("rollback"); await pasarela.liberar(ret.pi).catch(() => undefined); retenido = null; return no("Tu banco pide una verificación extra. Prueba con otra tarjeta.", "Your bank asks for an extra verification. Try another card.", { tarjeta: true }); }
+      if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
       await registrarRetencion(c, { opId: o.id, userId, negocio: x.id, city: x.city, total: t.cents, comision: fee, r: ret, pm: p, kind: "full" });
     }
     await c.query(`update written_totals set status = 'accepted', accepted_at = now(), accepted_ip = $2, accepted_extras = '{}' where id = $1::bigint`, [t.id, ip ? String(ip).slice(0, 64) : null]);

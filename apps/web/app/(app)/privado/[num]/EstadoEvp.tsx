@@ -10,6 +10,7 @@ import { useRef, useState, type ComponentType } from "react";
 import { AREAS_EVP, HORAS_EVP, OCASIONES, PRESUPUESTOS, diaEvp, dinero, horaL, lbl, nm } from "@/lib/evento-privado-comun";
 import type { EvpVista } from "@/lib/evento-privado";
 import { MetodoPago, marcaL, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../pago/MetodoPago";
+import { useVerificacion } from "../../pago/Verificacion";
 import { aceptarEvpAccion, cambioEvpAccion, evpClienteAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
 import { abrirComoLlegar } from "@/lib/como-llegar";
@@ -30,6 +31,7 @@ export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { m
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas.find((t) => t.def) ?? pago?.tarjetas[0] ?? null), [hoja, setHoja] = useState(false);
   const [cNota, setCNota] = useState(""), [cP, setCP] = useState<number | null>(null), [cFecha, setCFecha] = useState(""), [cH, setCH] = useState<number | null>(null);
   const clave = useRef(uuid());
+  const V = useVerificacion(es, pago?.modo, pago?.pk);
   const listo = (t: string) => { setFlash(t); setTimeout(() => setFlash(null), 3200); router.refresh(); };
   const fallo = (r: { msg: { es: string; en: string } }) => setError(es ? r.msg.es : r.msg.en);
   const correr = async <T extends { ok: boolean }>(f: () => Promise<T>, ok: string, after?: () => void) => {
@@ -45,6 +47,8 @@ export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { m
     const r = await aceptarEvpAccion(x.numero, q.v, tarjeta.pm, clave.current).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false);
     if (r.ok) { listo(E2("Listo: tu evento quedó confirmado", "Done: your event is confirmed")); return; }
+    // 9n-4 · 3-D Secure: la hoja del banco y, al confirmar, la misma aceptación con la misma clave.
+    if (V.pide(r, () => { void aceptar(q); })) return;
     if ("tarjeta" in r && r.tarjeta) setRechazo(true);
     fallo(r); clave.current = uuid();
   };
@@ -232,6 +236,7 @@ export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { m
             <div className="flex"><Button block variant="secondary" onClick={() => setCambio(false)}>{E2("Volver", "Back")}</Button></div>
           </div>
         </div>)}
+      {V.hoja}
       {hoja && pago && q && (
         <MetodoPago es={es} tarjetas={tarjetas} sel={tarjeta?.pm ?? null} declinada={null} modo={pago.modo} pk={pago.pk}
           nota={`${E2("DEPÓSITO DE ", "DEPOSIT OF ")}${dinero(q.dep)} · ${E2("SE COBRA AL ACEPTAR", "CHARGED WHEN YOU ACCEPT")}`}

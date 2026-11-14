@@ -1,7 +1,7 @@
 # Super Admin: Configuración · Super Admin: Settings
 
 _Pantallas: **Super Admin › Sistema › Configuración** (`/admin/sistema/configuracion`; pestañas Equipo y permisos · Configuración). Teléfono y
-escritorio. Ver: permiso de Sistema. Cambiar: **solo un Admin**. Versión: 13 nov 2026. Audiencia: equipo. Tema: equipo._
+escritorio. Ver: permiso de Sistema. Cambiar: **solo un Admin**. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - Junta en un solo lugar los **plazos y límites de la plataforma** que antes vivían escritos en el código: los de la Comunidad y los de
@@ -119,6 +119,11 @@ checks that the notice build stays above the minimum. Also in **Apps**: the **dr
 View route** only with a written reason, which is audited. And the **app pipeline**: how many builds per hour the team can **request** (4), how
 many **rejected attempts per minute** it takes before answering «wait» (60) and the **max size** of a file the CI uploads (200 MB).
 
+## Claves nuevas: el Repartidor y «Me lo devolvieron»
+- **Repartidor › Ofrecer solo · ofertas antes de avisar al negocio** (`rep_auto_intentos`, 3; 1–10).
+- **Repartidor › Pedido programado · se ofrece y se avisa antes de estar listo** (`rep_programado_min`, 30 min; 10–120).
+- **Iglesias, Bienes Raíces y Autos › «Me lo devolvieron» se cierra sola si nadie contesta en** (`ayuda_devuelto_dias`, 14 días; 7–60).
+
 ## English
 
 - **What it does:** platform deadlines and limits in one place (Community limits per day, minutes to edit a post, days to appeal, longest
@@ -132,3 +137,6 @@ many **rejected attempts per minute** it takes before answering «wait» (60) an
   **Apps**, **months each analytics event is kept** (1–36, **13**, what the store listings say): after that the sweep summarizes the month by
   day and city and drops the individual events; if you change it, change the stores' data inventory too.
 - **FAQ:** lowering the edit minutes applies from now on; to go back, type the factory value.
+
+### New keys: Driver and «They refunded me»
+`rep_auto_intentos` (3), `rep_programado_min` (30 min) in Driver, and `ayuda_devuelto_dias` (14 days) in Churches, Real Estate and Car dealers.

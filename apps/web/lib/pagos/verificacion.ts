@@ -17,6 +17,18 @@ export function pideVerificar(ret: Retencion): { verificar: Verificar } | null {
   return ret.ok && ret.estado === "accion" && ret.verificar ? { verificar: ret.verificar } : null;
 }
 
+/* 9n-4 · El mismo camino en TODOS los flujos que cobran con la persona en la app (citas, visitas, inscripciones, noche, fiestas, viajes, evento
+   privado, mudanzas, estimados y «algo más»; antes solo pedidos, mercado, tiendas, el plan de apartado y boletos): cuando el banco pide verificar
+   (`requires_action`, nunca `requires_payment_method`: eso es una tarjeta rechazada), lo retenido NO se suelta ni se pide otra tarjeta: la verificación
+   queda a nombre de quien paga y la pantalla abre la hoja y vuelve a enviar lo MISMO con la MISMA llave (la pasarela reusa el cobro verificado).
+   El flujo ya deshizo su transacción: nada se guarda sin la verificación. Sin verificación a su nombre (un flujo que no pasó `usuario`), como antes. */
+export async function bancoPide(ret: Extract<Retencion, { ok: true }>): Promise<{ ok: false; msg: Bi; tarjeta: true; verificar?: Verificar }> {
+  const v = pideVerificar(ret);
+  if (v) return { ok: false, msg: { es: "Tu banco pide confirmar que eres tú. Confírmalo y seguimos; no se cobró nada todavía.", en: "Your bank asks you to confirm it is you. Confirm it and we continue; nothing was charged yet." }, tarjeta: true, ...v };
+  await pasarela.liberar(ret.pi).catch(() => undefined);
+  return { ok: false, msg: { es: "Tu banco pide una verificación extra. Prueba con otra tarjeta.", en: "Your bank asks for an extra verification. Try another card." }, tarjeta: true };
+}
+
 const fila = async (pi: string) => (await db().query<{ user_id: string; status: string; viva: boolean; kind: string; business_id: string | null; amount_cents: number; pm: string | null; vence: string }>(
   `select user_id::text, status, expires_at > now() as viva, kind, business_id, amount_cents, pm, to_char(expires_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as vence
      from payment_actions where pi = $1::text`, [pi])).rows[0] ?? null;

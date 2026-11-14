@@ -5,7 +5,7 @@ del caso con `?caso=TK-…`), Colas › «Soporte · casos», Usuarios 360° ›
 Permisos (sección «Soporte»): ver; editar = responder, notas, tomar, resolver, unir, ligar, reabrir, pasar a Finanzas y devolver con tope;
 aprobar = macros y ocultar un mensaje; «Transacciones › aprobar» devuelve sin tope del rol. El copiloto de El Compa («Sugerir respuesta con El
 Compa») sale a quien puede responder (editar) y en Colas › Ayuda con pedidos y citas a quien resuelve (Colas › aprobar). Escritorio y teléfono.
-Versión: 11 nov 2026.
+Versión: 14 nov 2026.
 Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
@@ -73,6 +73,12 @@ Debajo de las cifras: **PLAZO CUMPLIDO · 30 D** (de los casos con respuesta, cu
 **FUERA DE PLAZO · 30 D** y **DESDE EL COMPA** (30 días). Por tema y por ciudad, en Analítica › El Compa y Soporte. Si la cuenta de la persona se
 borró hace más de 30 días, los mensajes del caso dicen «(Se borró: la cuenta se cerró hace más de 30 días.)»: el caso queda con su estado y tema.
 
+## Ayuda con un pedido: reponer o devolver
+En la cola «Ayuda con pedidos y citas», una ayuda con un **pedido de comida** que pide reposición tiene **Resolver y reponer**:
+crea un pedido nuevo de **$0** con esos platos (o todo el pedido si no le llegó), ya aceptado por el negocio y, si es delivery, con
+el Repartidor; el caso queda resuelto con tu respuesta y en la auditoría. Si el cliente pagó en la app, **Resolver y devolver**
+devuelve a su tarjeta hasta lo cobrado (con el permiso de dinero). Una reposición por solicitud.
+
 ## English
 
 ### What it does
@@ -112,3 +118,8 @@ what you see in that case, covered (no phone, email, card, passwords or ids); in
 ### The 30-day deadline
 Under the numbers: **DEADLINE MET · 30 D**, **PAST DEADLINE · 30 D** and **FROM EL COMPA** (30 days); by topic and city in Analytics › El Compa
 and Support. If the person's account was deleted more than 30 days ago, the case messages say so and the case keeps its status and topic.
+
+### Order help: replace or refund
+For a **food order** help asking for a replacement, **Resolve and replace** creates a new **$0** order with those dishes,
+accepted and with the driver flow; the case is resolved and audited. If paid in the app, **Resolve and refund** returns up to
+what was charged (money permission). One replacement per request.

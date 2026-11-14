@@ -5,7 +5,7 @@
    diseño propio: compuesto, ver REVISION). El despacho (asignar) vive en el detalle de cada pedido. */
 import type { PanelBloqueT as Bloque } from "@tolatino/ui";
 import { entregaAjustes, type EntregaIn } from "./acciones-pedidos";
-import { repInvitar, repPruebas, repQuitar } from "./acciones-repartidores";
+import { repInvitar, repAuto, repPruebas, repQuitar } from "./acciones-repartidores";
 import type { Ctx, Editor } from "./Panel";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
@@ -82,6 +82,9 @@ export function entregaBloques(c: Ctx): Sec {
         tgOn: a.pickupCode, onTg: () => c.run(() => repPruebas(d.id, a.proof, !a.pickupCode), a.pickupCode ? E2("Ya no se pide el código de recogida.", "Pickup code no longer required.") : E2("Listo: el repartidor escribe el código al recoger.", "Done: the driver types the code at pickup.")), chev: false },
       { icon: "image", t: E2("Prueba de entrega", "Proof of delivery"), s: E2("El repartidor toma una foto de la entrega o escribe el código que le dice el cliente. Sin prueba no se marca «Entregado».", "The driver takes a delivery photo or types the code the customer gives them. Without proof it cannot be marked “Delivered”."),
         tgOn: a.proof, onTg: () => c.run(() => repPruebas(d.id, !a.proof, a.pickupCode), a.proof ? E2("Ya no se pide prueba de entrega.", "Proof of delivery no longer required.") : E2("Listo: cada entrega lleva foto o código.", "Done: every delivery has a photo or a code.")), chev: false },
+      // 9n-4 · La asignación automática: la misma oferta con cuenta regresiva, sin que nadie la mande (y los programados, antes de su hora).
+      { icon: "truck", t: E2("Ofrecer solo a los repartidores", "Offer to drivers automatically"), s: E2("Cuando aceptas un delivery, se ofrece solo a los que están en línea; el primero que acepta se lo lleva. Los programados, antes de su hora. Si nadie lo toma, te avisamos.", "When you accept a delivery, it is offered to the drivers who are online; the first to accept takes it. Scheduled ones, before their time. If nobody takes it, we tell you."),
+        tgOn: a.autoOffer, onTg: () => c.run(() => repAuto(d.id, !a.autoOffer), a.autoOffer ? E2("Listo: ya no se ofrece solo.", "Done: no longer offered automatically.") : E2("Listo: los deliveries se ofrecen solos.", "Done: deliveries are offered automatically.")), chev: false },
     ] });
     const cuadre = R.filter((x) => x.hoy.efectivo > 0);
 

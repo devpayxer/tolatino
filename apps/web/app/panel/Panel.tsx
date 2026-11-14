@@ -32,6 +32,7 @@ import { entregaBloques } from "./Entrega";
 import { cobrosBloques } from "./Cobros";
 import { planBloques, type PlanPanel } from "./Plan";
 import { MetodoPago } from "../(app)/pago/MetodoPago";
+import { useVerificacion } from "../(app)/pago/Verificacion";
 import { planSeguir } from "./acciones-cobros";
 import type { CobrosPanel } from "@/lib/cobros";
 import type { RepPanel } from "@/lib/repartidor";
@@ -136,6 +137,8 @@ export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, men
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
+  // 9n-4 · «Volver a Pro» con 3-D Secure: la hoja del banco se abre aquí, en Tu plan (como en el checkout).
+  const V = useVerificacion(es, plan?.modo === "apagado" ? null : plan?.modo, plan?.pk);
   const w = useAncho(), desk = w >= 1024;
   const [forms, setForms] = useState<Record<string, any>>({});
   const [ui, setUiS] = useState<Record<string, any>>({ dayOpen: -1, gSel: -1, sheet: null, allTasks: false });
@@ -350,11 +353,12 @@ export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, men
       {ui.cupScan ? <EscanearCupon negocio={d.id} es={es} onCerrar={() => setUi({ cupScan: false })} onValidado={() => router.refresh()} /> : null}
       {ui.puertaCam && evt?.puerta && evt.puerta.miSesion === ui.puertaCam ? <PuertaCamaraPanel sesion={ui.puertaCam as string} es={es} reentrada={!!evt.puerta.reglas.reentrada} libre={(evt.det?.pending ? evt.det.vivo : evt.det?.d)?.entrada === "free"} onCerrar={() => setUi({ puertaCam: null })} /> : null}
       {toastT ? <div role="status" style={{ position: "fixed", left: "50%", bottom: desk ? 28 : 100, transform: "translateX(-50%)", zIndex: 90, maxWidth: 360, width: "calc(100% - 40px)", boxSizing: "border-box", padding: "12px 16px", borderRadius: 14, background: "var(--tl-ink)", color: "var(--tl-white)", font: "700 13px/1.4 Manrope,sans-serif", textAlign: "center", animation: "d2Up .2s ease-out" }}>{toastT}</div> : null}
+      {V.hoja}
       {ui.planHoja && plan && plan.modo !== "apagado" && compraPro ? (
         <MetodoPago es={es} tarjetas={plan.tarjetas} sel={plan.plan.tarjeta?.pm ?? null} declinada={null} modo={plan.modo} pk={plan.pk} guardarSiempre
           nota={plan.plan.st === "trial" ? E2(`PRO · ${(ui.planHoja as { ciclo: string }).ciclo === "year" ? "ANUAL" : "MENSUAL"} · HOY NO SE COBRA`, `PRO · ${(ui.planHoja as { ciclo: string }).ciclo === "year" ? "YEARLY" : "MONTHLY"} · NOTHING CHARGED TODAY`) : E2("PRO · SE COBRA HOY", "PRO · CHARGED TODAY")}
           onClose={() => setUi({ planHoja: null })}
-          onUsar={(t) => { const ciclo = (ui.planHoja as { ciclo: "month" | "year" }).ciclo; setUi({ planHoja: null }); run(() => planSeguir(d.id, t.pm, ciclo), (r) => (r?.cobrado ? E2("Listo: ya tienes Pro. Te mandamos el recibo.", "Done: you have Pro. We sent the receipt.") : E2("Listo: sigues con Pro. El primer cobro es el día 30.", "Done: you keep Pro. The first charge is on day 30."))); }} />
+          onUsar={(t) => { const ciclo = (ui.planHoja as { ciclo: "month" | "year" }).ciclo; setUi({ planHoja: null }); run(async () => { const r = await planSeguir(d.id, t.pm, ciclo); if (!r.ok && V.pide(r, () => { router.refresh(); })) return { ok: true, verificando: true } as Res; return r; }, (r) => (r?.verificando ? undefined : r?.cobrado ? E2("Listo: ya tienes Pro. Te mandamos el recibo.", "Done: you have Pro. We sent the receipt.") : E2("Listo: sigues con Pro. El primer cobro es el día 30.", "Done: you keep Pro. The first charge is on day 30."))); }} />
       ) : null}
     </div>
   );

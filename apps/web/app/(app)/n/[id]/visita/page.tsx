@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Booking · To'Latino" };
 /* APP-NEG-AUTO-BOOKING y APP-NEG-HOGAR-BOOKING (diseño neg-auto-flow.js / neg-hogar-flow.js): llega desde la hoja del
    servicio con lo elegido (?s=servicio&o=opciones&a=extras&w=espera|deja&z=tamaño). Ver las horas no pide cuenta;
    enviar sí. Lo que no se reserva en línea (grúa, sin cita, emergencia, plan) vuelve a la ficha. */
-export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ s?: string; o?: string; a?: string; w?: string; z?: string; pre?: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ s?: string; o?: string; a?: string; w?: string; z?: string; pre?: string; warr?: string }> }) {
   const [{ id }, sp, lang, u] = await Promise.all([params, searchParams, idioma(), yo()]);
   const op = await oficiosPublico(id, u?.id ?? null);
   if (!op) notFound();
@@ -29,5 +29,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const pago = modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: u ? await misTarjetas(u.id) : [] } : null;
   // 4e: con un pre-estimado o presupuesto vigente (P-/Q-), la cita lo lleva; la nota sale de lo que mandaste.
   const pre = u && sp.pre ? await preVigente(u.id, sp.pre, id) : null;
-  return <Visita op={op} svcId={s.id} inicial={{ opts, adds, w, z }} es={lang === "es"} pago={pago} yo={!!u} pre={pre} />;
+  // 9n-4 · La visita de garantía a $0 (?warr=H-…): la pantalla no cobra ni pide tarjeta; el servidor vuelve a mirar que la garantía es suya y sigue libre.
+  const warr = sp.warr && /^H-\d{1,12}$/.test(sp.warr) ? sp.warr : null;
+  return <Visita op={op} svcId={s.id} inicial={{ opts, adds, w, z }} es={lang === "es"} pago={pago} yo={!!u} pre={pre} warr={warr} />;
 }

@@ -87,6 +87,8 @@ export type ClaveConfig =
   | "vuelta_vigilancia_min" | "vuelta_5xx_pct" | "vuelta_p95_ms" | "vuelta_errores_nuevos" | "vuelta_salud_fallos" | "mantenimiento_aviso_h"
   // 9n · Repartidor: la oferta con cuenta regresiva, el código del cliente, la foto de la entrega y los mensajes al cliente (0144; Configuración › Repartidor)
   | "oferta_seg" | "entrega_codigo_intentos" | "entrega_foto_dias" | "rep_mensajes_max"
+  // 9n-4 · Repartidor (asignación automática y programados) y «Me lo devolvieron» sin respuesta (0148; Configuración › Repartidor y › Iglesias, Bienes Raíces y Autos)
+  | "rep_auto_intentos" | "rep_programado_min" | "ayuda_devuelto_dias"
   // 9n · Colas: el «tomado» que vence y el plazo de cada cola (0144; Configuración › Colas)
   | "cola_tomado_min" | "cola_sla_sello" | "cola_sla_nuevo" | "cola_sla_lic" | "cola_sla_medios" | "cola_sla_cambio" | "cola_sla_rep" | "cola_sla_chat" | "cola_sla_disputa"
   | "cola_sla_sop" | "cola_sla_renta" | "cola_sla_mesa" | "cola_sla_noid" | "cola_sla_cuidado" | "cola_sla_salir" | "cola_sla_grupo" | "cola_sla_plantones" | "cola_sla_estafa"

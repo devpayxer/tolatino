@@ -18,7 +18,8 @@ const no = (es: string, en: string): ResO => ({ ok: false, msg: { es, en } });
 const ID = /^\d{1,18}$/;
 
 /* ── Panel: ofrecer ── */
-export async function ofrecer(negocio: string, numero: string, actorId: string, driverId: string | null): Promise<ResO & { avisos?: { uid: string; vars: Record<string, string> }[] }> {
+/* 9n-4 · actorId null = la asignación automática (lib/repartidor-auto.ts): la oferta queda sin created_by y el evento es del sistema. */
+export async function ofrecer(negocio: string, numero: string, actorId: string | null, driverId: string | null): Promise<ResO & { avisos?: { uid: string; vars: Record<string, string> }[] }> {
   if (!/^\d{1,12}$/.test(numero) || (driverId !== null && !ID.test(driverId))) return no("Ese pedido no existe.", "That order does not exist.");
   const seg = await valor("oferta_seg");
   return tx(async (c) => {
@@ -39,8 +40,8 @@ export async function ofrecer(negocio: string, numero: string, actorId: string, 
     if (!D.length) return driverId ? no("Ese repartidor no está activo.", "That driver is not active.") : no("Ningún repartidor está en línea ahora. Asígnalo a alguien o márcalo tú.", "No driver is online now. Assign someone or mark it yourself.");
     await c.query(`insert into delivery_offers (operation_id, business_id, city_id, driver_id, expires_at, created_by) values ($1::bigint, $2, $3, $4::bigint, now() + make_interval(secs => $5), $6)`,
       [o.id, negocio, o.city, driverId, seg, actorId]);
-    await c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1::bigint, 'driver_offer', 'member', $2, $3::jsonb)`,
-      [o.id, actorId, JSON.stringify(driverId ? { es: "Ofrecido a un repartidor", en: "Offered to a driver" } : { es: `Ofrecido a ${D.length} ${D.length === 1 ? "repartidor en línea" : "repartidores en línea"}`, en: `Offered to ${D.length} online ${D.length === 1 ? "driver" : "drivers"}` })]);
+    await c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1::bigint, 'driver_offer', $4, $2, $3::jsonb)`,
+      [o.id, actorId, JSON.stringify(driverId ? { es: "Ofrecido a un repartidor", en: "Offered to a driver" } : { es: `Ofrecido a ${D.length} ${D.length === 1 ? "repartidor en línea" : "repartidores en línea"}`, en: `Offered to ${D.length} online ${D.length === 1 ? "driver" : "drivers"}` }), actorId ? "member" : "system"]);
     return { ok: true, avisos: D.map((d) => ({ uid: d.uid, vars: { negocio: o.negocio, num: numero, calle: o.calle ?? "" } })) } as const;
   });
 }

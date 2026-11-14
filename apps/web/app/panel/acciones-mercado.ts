@@ -13,7 +13,7 @@ const r2 = (r: { ok: true } | { ok: false; msg: { es: string; en: string } }): R
 
 export async function mercPaso(id: string, numero: string, paso: PasoMerc): Promise<Res> {
   const a = await entrar(id); if (!a) return SIN;
-  if (!["aceptar", "rechazar", "mandar", "listo", "entregado"].includes(paso)) return { ok: false, mensaje: { es: "Ese paso no existe.", en: "That step does not exist." } };
+  if (!["aceptar", "rechazar", "mandar", "mas", "listo", "entregado"].includes(paso)) return { ok: false, mensaje: { es: "Ese paso no existe.", en: "That step does not exist." } };
   return r2(await pasoMercado(a.negocio.id, String(numero ?? ""), paso, a.yo.id));
 }
 export async function mercPesar(id: string, numero: string, linea: string, lb: string, foto: string): Promise<Res> {

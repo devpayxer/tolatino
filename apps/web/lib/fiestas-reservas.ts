@@ -6,6 +6,7 @@ import { db, tx } from "./db";
 import { diasOcupados, recalcularFiltrosFiesta } from "./fiestas";
 import { diaFiesta, EVT, sumarDias, type Bi, type SvcFiesta } from "./fiestas-comun";
 import { pasarela } from "./pagos/pasarela";
+import { bancoPide } from "./pagos/verificacion";
 
 /* Pedir la fecha de una fiesta (Fase 4 · 4v · fase4-fiestas-transporte.md §3 y §4v · neg-fiesta-flow.js).
    - Una fiesta es una operación `party` (F-5101…). El depósito = mín(depósito del negocio, total) se RETIENE al enviar y se
@@ -98,7 +99,7 @@ export type FiestaIn = {
   svc: string; day: string; m: number; e?: string; g?: number | null; qty?: number | null; horas?: number | null;
   donde?: { k: "local" | "casa" | "salon"; id?: string } | null; nota?: string; sms?: boolean; pm?: string | null; clave: string;
 };
-type Res = { ok: true; numero: string } | { ok: false; msg: Bi; tarjeta?: true; fecha?: true };
+type Res = { ok: true; numero: string } | { ok: false; msg: Bi; tarjeta?: true; fecha?: true; verificar?: import("./pagos/pasarela").Verificar };
 export async function pedirFecha(userId: string, negocio: string, f: FiestaIn, entorno: string, ip: string | null): Promise<Res> {
   if (!UUID.test(String(f?.clave)) || !ID.test(String(f?.svc)) || !YMD.test(String(f?.day))) return no("Revisa tu solicitud y vuelve a intentarlo.", "Check your request and try again.");
   const nota = String(f.nota ?? "").replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "").trim().slice(0, 300);
@@ -164,10 +165,10 @@ export async function pedirFecha(userId: string, negocio: string, f: FiestaIn, e
       if (!pm) { await c.query("rollback"); return no("Elige la tarjeta para el depósito.", "Choose the card for the deposit.", { tarjeta: true }); }
       fee = Math.min(await comision(c, "fiesta", dep), dep);
       const cliente = await pasarela.cliente(userId).catch(() => null);
-      ret = await pasarela.retener({ centavos: dep, comision: fee, destino: x.cuenta!, pm, cliente, idem: `fiesta-${f.clave}-${pm.slice(-24)}`, meta: { party: numero, business_id: x.id } });
+      ret = await pasarela.retener({ centavos: dep, comision: fee, destino: x.cuenta!, pm, cliente, idem: `fiesta-${f.clave}-${pm.slice(-24)}`, usuario: { id: userId, negocio: x.id, ciudad: x.city }, meta: { party: numero, business_id: x.id } });
       if (!ret.ok) { await c.query("rollback"); return no(ret.mensaje.es, ret.mensaje.en, { tarjeta: true }); }
       retenido = ret.pi;
-      if (ret.estado === "accion") { await c.query("rollback"); await pasarela.liberar(ret.pi).catch(() => undefined); retenido = null; return no("Tu banco pide una verificación extra. Prueba con otra tarjeta.", "Your bank asks for an extra verification. Try another card.", { tarjeta: true }); }
+      if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
     }
     // El paquete se copia al enviar: si el negocio cambia el precio o lo que incluye después, lo pedido no cambia.
     const det = {

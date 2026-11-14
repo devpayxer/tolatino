@@ -146,13 +146,20 @@ async function borrarNotas() {
 /* Recordatorios 24 h y 2 h antes, a quien lo pidió (Booking › Detalles), una vez cada uno. */
 async function recordatorios() {
   for (const [k, desde, hasta, cuando] of [["rec24", "2 hours", "24 hours", { es: "mañana", en: "tomorrow" }], ["rec2", "0 minutes", "2 hours", { es: "hoy", en: "today" }]] as const) {
-    const L = (await db().query<{ number: string }>(
+    // 9n-4 · La visita de un plan (una cita de $0 que paga el plan) también recibe el suyo: el de 24 h es «Mañana es tu visita» con la franja de
+    // llegada (plan_visita). Que sea de $0 no la deja fuera (nada aquí mira el dinero).
+    const L = (await db().query<{ number: string; plan: boolean; franja: string | null }>(
       `update operations o set details = o.details || jsonb_build_object('${k}', now()), updated_at = now()
-        where o.kind = 'appointment' and o.status = 'confirmed' and coalesce(o.status_detail, '') = '' and coalesce((o.details->>'sms')::boolean, true)
+        from cities ci
+        where ci.id = o.city_id and o.kind = 'appointment' and o.status = 'confirmed' and coalesce(o.status_detail, '') = '' and coalesce((o.details->>'sms')::boolean, true)
           and not (o.details ? '${k}') and o.scheduled_at > now() + interval '${desde}' and o.scheduled_at <= now() + interval '${hasta}'
           and o.confirmed_at < now() - interval '10 minutes'
-        returning o.number`)).rows;
-    for (const x of L) await avisarCliente(x.number, "cita_rec", { cuando: cuando.es });
+        returning o.number, coalesce(o.details->>'k', '') = 'plan' as plan,
+                  to_char(o.scheduled_at at time zone ci.timezone, 'FMHH12:MI AM') || ' y las ' || to_char((o.scheduled_at + make_interval(mins => greatest(30, coalesce(o.duration_min, 120)))) at time zone ci.timezone, 'FMHH12:MI AM') as franja`)).rows;
+    for (const x of L) {
+      if (k === "rec24" && x.plan && x.franja) await avisarCliente(x.number, "plan_visita", { franja: x.franja });
+      else await avisarCliente(x.number, "cita_rec", { cuando: cuando.es });
+    }
   }
 }
 

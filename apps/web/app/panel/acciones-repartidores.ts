@@ -76,6 +76,14 @@ export async function repPruebas(id: string, prueba: boolean, recogida: boolean)
   await auditar(a, "entrega.pruebas", { prueba: prueba === true, recogida: recogida === true });
   return { ok: true };
 }
+/* 9n-4 · «Ofrecer solo»: un delivery aceptado y sin repartidor se ofrece solo a los repartidores en línea (y los programados, antes de su hora). */
+export async function repAuto(id: string, on: boolean): Promise<Res> {
+  const a = await entrar(id, "dlv");
+  if (!a) return SIN_ACCESO;
+  await db().query(`insert into delivery_settings (business_id, auto_offer) values ($1, $2) on conflict (business_id) do update set auto_offer = excluded.auto_offer, updated_at = now()`, [a.negocio.id, on === true]);
+  await auditar(a, "entrega.ofrecer_solo", { on: on === true });
+  return { ok: true };
+}
 export async function repAsignar(id: string, numero: string, rid: string | null): Promise<Res> {
   const a = await entrar(id, "ord", "dlv");
   if (!a) return SIN_ACCESO;

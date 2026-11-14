@@ -6,6 +6,7 @@ import { cifrar } from "./cifrado";
 import { db, tx } from "./db";
 import { destinatarioDe, fotosDe, precioDe, type Precio } from "./envios";
 import { pasarela } from "./pagos/pasarela";
+import { bancoPide } from "./pagos/verificacion";
 import { kindTrans, salidasDe } from "./transporte";
 import { LIC_TRANS, type Bi, type SvcTrans } from "./transporte-comun";
 
@@ -122,7 +123,7 @@ export function destinoValido(d: Destino | null | undefined): Destino | null {
   if (x.nombre.length < 3 || x.prov.length < 2 || x.dir.length < 6 || !/^\+?[\d\s().-]{7,24}$/.test(x.tel) || (x.tel.match(/\d/g) ?? []).length < 7) return null;
   return x;
 }
-type Res = { ok: true; numero: string } | { ok: false; msg: Bi; tarjeta?: true; salida?: true };
+type Res = { ok: true; numero: string } | { ok: false; msg: Bi; tarjeta?: true; salida?: true; verificar?: import("./pagos/pasarela").Verificar };
 export async function reservarViaje(userId: string, negocio: string, f: ViajeIn, entorno: string): Promise<Res> {
   if (!UUID.test(String(f?.clave)) || !ID.test(String(f?.svc)) || !/^\d{4}-\d{2}-\d{2}$/.test(String(f?.day))) return no("Revisa tu reserva y vuelve a intentarlo.", "Check your booking and try again.");
   const nota = String(f.nota ?? "").replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "").trim().slice(0, 200);
@@ -183,10 +184,10 @@ export async function reservarViaje(userId: string, negocio: string, f: ViajeIn,
       if (!pm) { await c.query("rollback"); return no("Elige la tarjeta.", "Choose the card.", { tarjeta: true }); }
       fee = Math.min(await comision(c, "viaje", tot), tot);
       const cliente = await pasarela.cliente(userId).catch(() => null);
-      ret = await pasarela.retener({ centavos: tot, comision: fee, destino: x.cuenta!, pm, cliente, idem: `viaje-${f.clave}-${pm.slice(-24)}`, meta: { trip: numero, business_id: x.id } });
+      ret = await pasarela.retener({ centavos: tot, comision: fee, destino: x.cuenta!, pm, cliente, idem: `viaje-${f.clave}-${pm.slice(-24)}`, usuario: { id: userId, negocio: x.id, ciudad: x.city }, meta: { trip: numero, business_id: x.id } });
       if (!ret.ok) { await c.query("rollback"); return no(`${ret.mensaje.es} No se retuvo nada.`, `${ret.mensaje.en} Nothing was held.`, { tarjeta: true }); }
       retenido = ret.pi;
-      if (ret.estado === "accion") { await c.query("rollback"); await pasarela.liberar(ret.pi).catch(() => undefined); retenido = null; return no("Tu banco pide una verificación extra. Prueba con otra tarjeta.", "Your bank asks for an extra verification. Try another card.", { tarjeta: true }); }
+      if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
     }
     const det = { svc: s.name, svcId: s.id, k: s.k, unit: s.cents, child: s.child, adults: calc.adults, kids: calc.kids, childSeat: !!f.childSeat && aj.nino, bagsIncl: aj.bags, bagsExtra: calc.bags, extraBag: aj.extra,
       inc: s.inc, from: s.from, to: s.to, run, pickup, sms: f.sms !== false, terms: { cancelH: 24, feePct: 50 },

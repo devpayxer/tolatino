@@ -175,6 +175,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // 9n · Repartidor y colas: las ofertas que vencieron (el negocio lo sabe), la foto de la entrega a los días de Configuración y el «tomado» que vence.
         ["ofertas", async () => (await import("./repartidor-ofertas")).vencerOfertas()], ["fotosEntrega", async () => (await import("./repartidor-barrido")).purgarFotosEntrega()],
         ["colasTomado", async () => (await import("./repartidor-barrido")).soltarTomados()],
+        // 9n-4 · «Me lo devolvieron» sin respuesta: recordatorio a la mitad y cierre a los ayuda_devuelto_dias (4if). El Repartidor: la oferta sola a los que
+        // están en línea (rep_auto_intentos) y el recordatorio de los programados (rep_programado_min antes de estar listos).
+        ["ayudaDevuelto", async () => (await import("./ayuda-cita")).cerrarDevueltosSinRespuesta()], ["repartoSolo", async () => (await import("./repartidor-auto")).asignarSolos()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

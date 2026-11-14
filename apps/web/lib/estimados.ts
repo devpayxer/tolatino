@@ -3,6 +3,7 @@ import type { PoolClient } from "pg";
 import { db, tx } from "./db";
 import { comision } from "./cobros";
 import { pasarela } from "./pagos/pasarela";
+import { bancoPide } from "./pagos/verificacion";
 
 /* Estimado / precio completo línea por línea y «algo más» (Fase 4 · bloque 4d). Diseño: neg-auto-flow.js y
    neg-hogar-flow.js (citaVals › est, xtra, ready, done; totals). Plan: docs/diseno/plan/fase4-hogar-auto.md §3 y §4d.
@@ -15,7 +16,7 @@ import { pasarela } from "./pagos/pasarela";
    - Todo dentro del candado de la cita del negocio; cada movimiento de dinero es idempotente y deja su evento. */
 type Q = PoolClient | ReturnType<typeof db>;
 type Bi = { es: string; en: string };
-type Res<T = object> = ({ ok: true } & T) | { ok: false; msg: Bi; tarjeta?: boolean };
+type Res<T = object> = ({ ok: true } & T) | { ok: false; msg: Bi; tarjeta?: boolean; verificar?: import("./pagos/pasarela").Verificar };
 const no = (es: string, en: string, x: { tarjeta?: boolean } = {}): { ok: false; msg: Bi; tarjeta?: boolean } => ({ ok: false, msg: { es, en }, ...x });
 const NUM = /^C-\d{1,10}$/;
 const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
@@ -114,9 +115,9 @@ async function retenerFalta(c: PoolClient, o: Op, kind: "estimate" | "extra", se
   if (!own && pasarela.modo() !== "simulador") return no("Esa tarjeta no es tuya.", "That card is not yours.", { tarjeta: true });
   const fee = Math.min(await comision(c, "cita", falta), falta);
   const cliente = await pasarela.cliente(o.uid).catch(() => null);
-  const r = await pasarela.retener({ centavos: falta, comision: fee, destino: t.cuenta, pm, cliente, idem: `${kind}-${o.id}-${seq}-${pm.slice(-24)}`, meta: { appointment: o.numero, business_id: o.biz, kind } });
+  const r = await pasarela.retener({ centavos: falta, comision: fee, destino: t.cuenta, pm, cliente, idem: `${kind}-${o.id}-${seq}-${pm.slice(-24)}`, usuario: { id: o.uid, negocio: o.biz, ciudad: o.city }, meta: { appointment: o.numero, business_id: o.biz, kind } });
   if (!r.ok) return no(r.mensaje.es, r.mensaje.en, { tarjeta: true });
-  if (r.estado === "accion") { await pasarela.liberar(r.pi).catch(() => undefined); return no("Tu banco pide una verificación extra. Prueba con otra tarjeta.", "Your bank asks for an extra verification. Try another card.", { tarjeta: true }); }
+  if (r.estado === "accion") return bancoPide(r);
   await c.query(
     `insert into payments (operation_id, user_id, business_id, city_id, kind, seq, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, held_at, simulated, payment_method)
      values ($1::bigint, $2, $3, $4, $5, $6, 'card', $7, $8, $8, $9, 'held', $10, $11, now(), $12, $13)`,

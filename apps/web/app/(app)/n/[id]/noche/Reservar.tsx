@@ -10,6 +10,7 @@ import { useRef, useState, type ComponentType } from "react";
 import { coverTexto, diaNoche, hNoche, LINEA_NOCHE, precioNoche, usdN } from "@/lib/noche-comun";
 import type { BookingNoche } from "@/lib/noche-reservas";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
+import { useVerificacion } from "../../../pago/Verificacion";
 import { reservarNocheAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
 
@@ -32,6 +33,7 @@ export function ReservarNoche({ b, es, pago, yo, pax0 }: { b: BookingNoche; es: 
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas.find((t) => t.def) ?? pago?.tarjetas[0] ?? null);
   const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
   const clave = useRef(uuid());
+  const V = useVerificacion(es, pago?.modo, pago?.pk);
   const N = b.noches.find((n) => n.fecha === noche), dep = b.dep, P = precioNoche({ ...s, pax: s.pax }, es);
   const nocheL = (f: string) => { const i = b.noches.findIndex((n) => n.fecha === f), n = b.noches[i]; return !n ? "" : i === 0 ? E2("Esta noche", "Tonight") : i === 1 ? E2("Mañana", "Tomorrow") : E2(`El ${diaNoche(n.dow, true)}`, diaNoche(n.dow, false)); };
   const ya = lista && b.mias.some((m) => m.fecha === noche);
@@ -55,6 +57,8 @@ export function ReservarNoche({ b, es, pago, yo, pax0 }: { b: BookingNoche; es: 
       .catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     if (r.ok) { router.push(`/noche/${r.numero}`); return; }
     if ("entrar" in r && r.entrar) return entrar();
+    // 9n-4 · 3-D Secure: el banco pide confirmar → la hoja, y al confirmar se vuelve a enviar lo MISMO (la misma clave: nada se cobra dos veces).
+    if (V.pide(r, () => { void enviar(); })) { setOcupado(false); return; }
     setError(es ? r.msg.es : r.msg.en); setOcupado(false);
     if ("tarjeta" in r && r.tarjeta && tarjeta) { setDeclinada(tarjeta.pm); clave.current = uuid(); }
     if ("hora" in r && r.hora) { setLlega(null); setPaso(1); router.refresh(); }
@@ -205,6 +209,7 @@ export function ReservarNoche({ b, es, pago, yo, pax0 }: { b: BookingNoche; es: 
           </aside>
         </div>
       </div>
+      {V.hoja}
       {hoja && pago && (
         <MetodoPago es={es} tarjetas={tarjetas} sel={tarjeta?.pm ?? null} declinada={declinada} modo={pago.modo} pk={pago.pk}
           nota={`${E2("PARA TU DEPÓSITO DE ", "FOR YOUR ")}${usdN(dep)}${E2("", " DEPOSIT")} · ${E2("SE RETIENE AL ENVIAR · SE COBRA AL CONFIRMAR", "HELD WHEN YOU SEND · CHARGED ON CONFIRMATION")}`}

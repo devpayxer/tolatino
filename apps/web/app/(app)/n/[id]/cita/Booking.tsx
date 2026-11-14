@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState, type ComponentType } from "react"
 import type { CitasPublica, HorasCita } from "@/lib/citas";
 import { subirFoto } from "@/lib/subir-foto";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
+import { useVerificacion } from "../../../pago/Verificacion";
 import { avisameEstado, avisameHora, horasDeCita, pedirCita, proximasHoras } from "../acciones-cita";
 import { aprC, aprL, diaS, dinero, durL, horaL, precio } from "../Servicios";
 import { uuid } from "@/lib/uuid";
@@ -66,6 +67,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
   const [ocupado, setOcupado] = useState(false);
   const [alerta, setAlerta] = useState(false);
   const clave = useRef<string>("");
+  const V = useVerificacion(es, pago?.modo, pago?.pk);
   const abierto = useRef(false);
   const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => { clave.current = uuid(); }, []);
@@ -195,6 +197,8 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
     }).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     if (r.ok) { vibrar("hecho"); router.push(`/cita/${r.numero}${"cambio" in r && r.cambio ? "?cambio=1" : ""}`); return; }
     if ("entrar" in r && r.entrar) return entrar();
+    // 9n-4 · 3-D Secure: el banco pide confirmar → la hoja, y al confirmar se vuelve a enviar lo MISMO (la misma clave: nada se cobra dos veces).
+    if (V.pide(r, () => { void enviar(); })) { setOcupado(false); return; }
     setError(es ? r.msg.es : r.msg.en); setOcupado(false);
     if ("tarjeta" in r && r.tarjeta && tarjeta) { setDeclinada(tarjeta.pm); clave.current = uuid(); }
     if ("hora" in r && r.hora) { setH(null); setPaso(0); void horasDeCita(cp.negocio.id, q, cambiar?.numero).then(setHoras); }
@@ -389,6 +393,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
         </div>
       </div>
 
+      {V.hoja}
       {hoja && pago && (
         <MetodoPago es={es} tarjetas={tarjetas} sel={tarjeta?.pm ?? null} declinada={declinada} modo={pago.modo} pk={pago.pk}
           nota={`${E2("PARA TU DEPÓSITO DE ", "FOR YOUR ")}${dinero(dep)}${E2("", " DEPOSIT")} · ${auto ? E2("SE COBRA AL CONFIRMAR", "CHARGED ON CONFIRMATION") : E2("SE RETIENE AL ENVIAR · SE COBRA AL CONFIRMAR", "HELD WHEN YOU SEND · CHARGED ON CONFIRMATION")}`}
