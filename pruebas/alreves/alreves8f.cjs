@@ -61,12 +61,13 @@ const casos = [
   ['apkUnUso', BE, 'where id = $1::bigint and used_at is null and revoked_at is null and expires_at > now()`, [l.id])', 'where id = $1::bigint`, [l.id])'],
   ['apkUnUso', BE, '  if (!b || createHash("sha256").update(b).digest("hex") !== l.sha) return { ok: false, status: 409 };\n', '  if (!b) return { ok: false, status: 409 };\n'],
   // tiendasSimuladorAislado
-  ['tiendasSimuladorAislado', BE, 'const URL_ASC = () => (!PROD && process.env.ASC_API_URL ? process.env.ASC_API_URL : "https://api.appstoreconnect.apple.com");', 'const URL_ASC = () => process.env.ASC_API_URL ?? "https://api.appstoreconnect.apple.com";'],
+  // 9b-3 · Desde 8h la dirección de App Store Connect vive en lib/tiendas/direcciones.ts: el defecto va allí.
+  ['tiendasSimuladorAislado', 'apps/web/lib/tiendas/direcciones.ts', 'export const URL_ASC = () => (!PROD && process.env.ASC_API_URL ? process.env.ASC_API_URL : "https://api.appstoreconnect.apple.com");', 'export const URL_ASC = () => process.env.ASC_API_URL ?? "https://api.appstoreconnect.apple.com";'],
   // pluginViejoNoRompe (la clase que cazó push8c)
   ['pluginViejoNoRompe', NR, '  try { await p.agitar({ on }); } catch { return () => undefined; }', '  await p.agitar({ on });'],
   ['pluginViejoNoRompe', NR, '  try { const r = await p.cierres(); return', '  { const r = await p.cierres(); return'],
   // colaConVista ampliado
-  ['colaConVista', SA, ', reporte_app: "App · Reportar un problema" };', ' };'],
+  ['colaConVista', SA, ', reporte_app: "App · Reportar un problema", correo: "Correo a Soporte" };', ', correo: "Correo a Soporte" };'], // 9b-3 · la lista de hoy (9: correo)
   ['colaConVista', SE, '  const registro = c.origin === "reporte_app" ? await registroDelCaso(c.id) : null;', '  const registro = null as RegistroEquipo;'],
 ];
 const crear = [

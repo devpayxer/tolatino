@@ -24,7 +24,7 @@ const casos = [
   // bloquesConLlave: los bloques del panel vuelven a la posición como llave (un bloque nuevo arriba desmonta el campo que se está escribiendo)
   ['bloquesConLlave', 'packages/ui/src/panel/Bloques.tsx', '<PanelBloque key={ks[i]} b={b} h1={h1} />', '<PanelBloque key={i} b={b} h1={h1} />'],
   // pruebaQueComprueba: la corrida vuelve a contar en verde una prueba sin ninguna ✓, o una prueba que solo imprime
-  ['pruebaQueComprueba', 'pruebas/correr.mjs', 'ok: codigo === 0 && !sinNada,', 'ok: codigo === 0,'],
+  ['pruebaQueComprueba', 'pruebas/correr.mjs', 'ok: codigo === 0 && !sinNada && !mudo,', 'ok: codigo === 0 && !mudo,'], // 9b-3 · la línea de hoy (alrevesQueFalla sumó !mudo)
 ];
 const crear = [
   ['pruebaQueComprueba', 'pruebas/e2e/zz9b1solomira.cjs', "console.log('precio guardado:', 1250);\n"],

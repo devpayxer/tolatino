@@ -26,7 +26,7 @@ const casos = [
   ['oidcEstricto', M, "  if tg_op = 'UPDATE' then raise exception 'ci_oidc_jti: un jti usado no cambia'; end if;\n", ''],
   // versionCoherente: lo nativo cambia sin subir la versión; re-sellar; bajar la versión; el CI no la revisa
   ['versionCoherente', PL, 'CAPPluginMethod(name: "obtener", returnType: CAPPluginReturnPromise),', 'CAPPluginMethod(name: "obtener", returnType: CAPPluginReturnPromise), // cambio nativo'],
-  ['versionCoherente', AJ, '"version": "1.0.0"', '"version": "1.0.1"'],
+  ['versionCoherente', AJ, '"version": "1.0.1"', '"version": "1.0.2"'], // 9b-3 · la versión de hoy: subirla sin su línea en versiones.json
   ['versionCoherente', V, '"version": "1.0.0"', '"version": "0.9.0"'],
   ['versionCoherente', Y, '        run: node apps/mobile/scripts/version.mjs --verificar\n', '        run: echo nada\n'],
   // tiendaSoloProduccion

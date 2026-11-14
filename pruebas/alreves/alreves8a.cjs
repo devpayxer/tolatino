@@ -33,7 +33,7 @@ const casos = [
   ['capacitorSoloEnPuente', PU, '  try { if (window.self !== window.top) return false; } catch { return false; }\n', ''],
   // nativoConRespaldo
   ['nativoConRespaldo', PA, '  if (!p) return; // la web no puede cambiar el brillo', '  if (p === undefined) return;'],
-  ['nativoConRespaldo', PA, 'type TLPantalla = { mantener(o: { on: boolean }): Promise<void>; brillo(o: { max: boolean }): Promise<void> };', 'type TLPantalla = { mantener(o: { on: boolean }): Promise<void>; brillo(o: { max: boolean }): Promise<void>; linterna(o: { on: boolean }): Promise<void> };'],
+  ['nativoConRespaldo', PA, 'type TLPantalla = { mantener(o: { on: boolean }): Promise<void>; brillo(o: { max: boolean }): Promise<void> };', 'type TLPantalla = { mantener(o: { on: boolean }): Promise<void>; brillo(o: { max: boolean }): Promise<void>; atenuar(o: { on: boolean }): Promise<void> };'], // 9b-3 · la linterna ya es nativa (8e): el método de más es uno que el nativo no trae
   ['nativoConRespaldo', RPJ, '    public void leer(PluginCall call) {', '    public void leerTodo(PluginCall call) {'],
   ['nativoConRespaldo', LLS, '        CAPPluginMethod(name: "todos", returnType: CAPPluginReturnPromise),\n', ''],
   // appNoAutoriza
@@ -68,7 +68,7 @@ const casos = [
   ['islaCoherente', RSS, 'import { PanelBloques,', 'import { db } from "@/lib/db";\nimport { PanelBloques,'],
   ['islaCoherente', ISS, 'onClick={() => { void irAlServidor("/cuenta/boletos"); }}', 'onClick={() => { location.href = "/cuenta/boletos"; }}'],
   // llavesFueraDelRepo
-  ['llavesFueraDelRepo', INT, 'const [filas] = await Promise.all([listar()]);', 'const [filas] = await Promise.all([listar()]);\n  const crudo = await (await import("@/lib/db")).db().query(`select blob_enc from store_secrets`);'],
+  ['llavesFueraDelRepo', INT, 'const [filas, ci] = await Promise.all([listar(), (await import("@/lib/tiendas/tuberia")).lecturasCi()]);', 'const [filas, ci] = await Promise.all([listar(), (await import("@/lib/tiendas/tuberia")).lecturasCi()]);\n  const crudo = await (await import("@/lib/db")).db().query(`select blob_enc from store_secrets`);'], // 9b-3 · la línea de hoy
   ['llavesFueraDelRepo', RL, '  return NextResponse.json({ ok: true, huella: r.huella,', '  return NextResponse.json({ ok: true, contenido: b.toString("base64"), huella: r.huella,'],
   ['llavesFueraDelRepo', WF, 'permissions:\n  contents: read', 'permissions:\n  contents: read\nenv:\n  LLAVE: ${{ secrets.ASC_KEY }}'],
   ['llavesFueraDelRepo', CI, '  pull_request:\n', '  pull_request_target:\n'],

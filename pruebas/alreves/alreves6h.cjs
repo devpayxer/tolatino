@@ -17,7 +17,8 @@ const casos = [
   ['paqueteMinimo', L, ' and s.ended_at is null`, [ctx.sesion, ctx.userId])', '`, [ctx.sesion, ctx.userId])'],
   ['paqueteMinimo', L, '/* ── Barrido:', 'export async function telefonos(f: string) { return db().query(`select u.phone from tickets t join users u on u.id = t.holder_user_id where t.event_date_id = $1`, [f]); }\n/* ── Barrido:'],
   ['paqueteMinimo', RP, 'const ctx = await accesoPuerta(u.id, String(b?.sesion ?? ""));\n  if (!ctx) return NO(', 'const ctx = (await accesoPuerta(u.id, String(b?.sesion ?? ""))) as never;\n  if (false) return NO('],
-  ['paqueteMinimo', C, 'importKey("raw", b64(raw), { name: "AES-GCM" }, false, ["encrypt", "decrypt"])', 'importKey("raw", b64(raw), { name: "AES-GCM" }, true, ["encrypt", "decrypt"])'],
+  // 9b-3 · Desde 8a la llave se importa en lib/nativo/almacen.ts (IndexedDB en la web, TLLocal en la app): el defecto va allí.
+  ['paqueteMinimo', 'apps/web/lib/nativo/almacen.ts', 'importKey("raw", raw, { name: "AES-GCM" }, false, ["encrypt", "decrypt"])', 'importKey("raw", raw, { name: "AES-GCM" }, true, ["encrypt", "decrypt"])'],
   ['paqueteMinimo', C, 'datos: await cifrar(k, e) };', 'datos: { iv: new Uint8Array(12) as Uint8Array<ArrayBuffer>, c: new TextEncoder().encode(JSON.stringify(e)).buffer as ArrayBuffer } };'],
   ['paqueteMinimo', C, '  if (!pub || !(await verificarEd(pub, new TextEncoder().encode(`TLPK1\\n${sobre.j}`), b64url(sobre.sig)))) throw new Error("paquete_firma");\n', ''],
   ['paqueteMinimo', C, '  if (Date.parse(f.vence) < Date.now()) { await borrarSesion(s); return null; }\n', ''],
@@ -44,7 +45,7 @@ const casos = [
   ['sinConexionSinDatosAjenos', K2, 'import { BoletosSinSenal } from "./BoletosSinSenal";', 'import { BoletosSinSenal } from "./BoletosSinSenal";\nimport { yo } from "@/lib/cuenta";\nvoid yo;'],
   ['sinConexionSinDatosAjenos', BS, '    const c = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, k, new TextEncoder().encode(JSON.stringify(b)));', '    const c = new TextEncoder().encode(JSON.stringify(b)).buffer as ArrayBuffer;'],
   ['sinConexionSinDatosAjenos', BS, 'estadoFg: string; titulo: string;', 'estadoFg: string; precio: number; titulo: string;'],
-  ['sinConexionSinDatosAjenos', BS, '    if (!v) { await pedir(st("readwrite").clear()); return; }\n', ''],
+  ['sinConexionSinDatosAjenos', BS, '    if (!v) { await ALM.vaciar("b"); return; }\n', ''], // 9b-3 · desde 8a vacía con lib/nativo/almacen
   ['sinConexionSinDatosAjenos', CU, '  jar.delete({ name: COOKIE_BOLETOS, path: "/cuenta/boletos" });\n', ''],
   ['sinConexionSinDatosAjenos', AJ, 'await olvidarSinConexion(); await fetch("/api/cuenta/salir"', 'await fetch("/api/cuenta/salir"'],
   // escaneoIdempotente (ampliado)

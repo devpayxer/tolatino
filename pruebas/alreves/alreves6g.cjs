@@ -31,7 +31,8 @@ const casos = [
   ['escaneoIdempotente', M, '  sc := puerta_repetido(p_scan);\n  if sc.id is not null then return sc; end if;\n  s := puerta_sesion(p_session, p_user);\n  select * into d from event_dates where id = s.event_date_id;\n  select * into e from events where id = d.event_id;\n  select * into v', '  s := puerta_sesion(p_session, p_user);\n  select * into d from event_dates where id = s.event_date_id;\n  select * into e from events where id = d.event_id;\n  select * into v'],
   ['escaneoIdempotente', M, 'select * into t from tickets where id = p_ticket for update;', 'select * into t from tickets where id = p_ticket;'],
   ['escaneoIdempotente', M, 'constraint ticket_entries_una_vez check (entered_n between 0 and admits)', 'constraint ticket_entries_una_vez check (entered_n >= 0)'],
-  ['escaneoIdempotente', M, "  if coalesce(current_setting('tl.puerta', true), '') <> 'si' then raise exception 'un escaneo lo registra solo la puerta (puerta_registrar)'; end if;\n", ''],
+  // 9b-3 · ticket_scans_antes la redefinen 0113 y 0134 (la última manda): el defecto va en la que hoy la define.
+  ['escaneoIdempotente', 'packages/db/migrations/0134_mis_datos.sql', "  if coalesce(current_setting('tl.puerta', true), '') <> 'si' then raise exception 'un escaneo lo registra solo la puerta (puerta_registrar)'; end if;\n", ''],
   ['escaneoIdempotente', L, '  if (!UUID.test(id)) return null;\n', ''],
   ['escaneoIdempotente', E, 'id: q.p.id', 'id: uuid()'],
   ['escaneoIdempotente', L, '/* ── Barrido ── */', "export async function marca() { await db().query(`select set_config('tl.puerta', 'si', true)`); }\n/* ── Barrido ── */"],
@@ -42,7 +43,8 @@ const casos = [
   // libroSoloInsercion (ampliado)
   ['libroSoloInsercion', M, 'create trigger door_searches_no_cambia before update or delete on door_searches', 'create trigger door_searches_no_cambia before update on door_searches'],
   ['libroSoloInsercion', L, '/* ── Barrido ── */', 'export async function borrar(s: string) { await db().query(`delete from ticket_scans where session_id = $1`, [s]); }\n/* ── Barrido ── */'],
-  ['libroSoloInsercion', M, "  if tg_op = 'DELETE' then raise exception 'una incidencia no se borra: se cierra'; end if;\n", ''],
+  // 9b-3 · door_incidents_antes la redefine 0113 (la última manda).
+  ['libroSoloInsercion', 'packages/db/migrations/0113_puerta_sin_conexion.sql', "  if tg_op = 'DELETE' then raise exception 'una incidencia no se borra: se cierra'; end if;\n", ''],
 ];
 let bien = 0;
 for (const [g, f, a, b] of casos) {

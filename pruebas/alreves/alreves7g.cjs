@@ -2,7 +2,7 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const fs = require('fs'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
-const M = 'packages/db/migrations/0122_compa_copiloto.sql', C = 'apps/web/lib/compa/conversacion.ts', CP = 'apps/web/lib/compa/contexto-copiloto.ts', V = 'apps/web/lib/compa/verificar.ts',
+const M = 'packages/db/migrations/0122_compa_copiloto.sql', MA = 'packages/db/migrations/0124_compa_admin_config.sql', C = 'apps/web/lib/compa/conversacion.ts', CP = 'apps/web/lib/compa/contexto-copiloto.ts', V = 'apps/web/lib/compa/verificar.ts',
   K = 'apps/web/lib/compa/copiloto.ts', AC = 'apps/web/app/admin/acciones-copiloto.ts', SA = 'apps/web/app/admin/SoporteAdmin.tsx', CO = 'apps/web/app/admin/Colas.tsx', E = 'apps/web/lib/soporte-equipo.ts',
   PG = 'apps/web/app/admin/soporte/page.tsx', AD = 'apps/web/lib/admin-colas.ts', ACO = 'apps/web/app/admin/acciones-colas.ts', BA = 'apps/web/lib/barrido.ts';
 const casos = [
@@ -21,8 +21,9 @@ const casos = [
   ['copilotoSoloBorrador', CO, 'const copOn = k.queue === "sop" && "copiloto" in k && !!k.copiloto', 'const copOn = "copiloto" in k'],
   ['copilotoSoloBorrador', E, 'from compa_drafts where id = $1::uuid and case_id = $2::bigint and staff_id = $3 and used is null', 'from compa_drafts where id = $1::uuid and used is null and $2::bigint > 0 and $3::uuid is not null'],
   ['copilotoSoloBorrador', M, "check (not from_draft or (sender = 'staff' and not internal))", "check (true)"],
-  ['copilotoSoloBorrador', M, "    raise exception 'compa_borrador_mensaje: ese mensaje no salió de este borrador';", "    null;"],
-  ['copilotoSoloBorrador', M, "new.at, new.from_draft)\n          is distinct from", "new.at)\n          is distinct from"],
+  // 9b-3 · compa_drafts_antes y support_messages_antes las redefine 0124 (la última manda): el defecto va en la que hoy las define.
+  ['copilotoSoloBorrador', MA, "    raise exception 'compa_borrador_mensaje: ese mensaje no salió de este borrador';", "    null;"],
+  ['copilotoSoloBorrador', MA, "new.at, new.from_draft)\n          is distinct from", "new.at)\n          is distinct from"],
   ['copilotoSoloBorrador', K, 'disponible({ uso: "copilot", canal: "app", ciudad: x.ciudad, negocio: x.negocio ?? null }), alTope()', 'disponible({ uso: "copilot", canal: "app", ciudad: x.ciudad, negocio: x.negocio ?? null }), Promise.resolve(false)'],
   // compaSoloSusDatos (7g): el caso con las lecturas de la ficha y el permiso de la acción; la conversación de ESE caso
   ['compaSoloSusDatos', CP, '  if (!(s.puede("sop", "ver") && s.puede("sop", "editar"))) return null;\n  const k = await casoEquipo(s, numero);', '  const k = await casoEquipo(s, numero);'],
@@ -49,10 +50,10 @@ const casos = [
   // compaSinRutaCritica (7g): la ficha solo pregunta con .catch; el borrador solo desde su acción
   ['compaSinRutaCritica', PG, 'm.copilotoDisponible({ ciudad: caso.ciudad, negocio: caso.negocio?.id ?? null })).catch(() => false)', 'm.copilotoDisponible({ ciudad: caso.ciudad, negocio: caso.negocio?.id ?? null }))'],
   ['compaSinRutaCritica', AD, 'm.copilotoDisponible({ ciudad: q.city_id, negocio: q.business_id })).catch(() => false)', 'm.copilotoDisponible({ ciudad: q.city_id, negocio: q.business_id }))'],
-  ['compaSinRutaCritica', ACO, 'import { tx } from "@/lib/db";', 'import { tx } from "@/lib/db";\nimport { copilotoDisponible } from "@/lib/compa/copiloto"; void copilotoDisponible;'],
+  ['compaSinRutaCritica', ACO, 'import { db, tx } from "@/lib/db";', 'import { db, tx } from "@/lib/db";\nimport { copilotoDisponible } from "@/lib/compa/copiloto"; void copilotoDisponible;'], // 9b-3 · el import de hoy
   ['compaSinRutaCritica', PG, '.then((m) => m.copilotoDisponible(', '.then((m) => m.borrador(null as never, {}) && m.copilotoDisponible('],
   // libroSoloInsercion (7g): compa_drafts
-  ['libroSoloInsercion', M, "  if old.used is not null then raise exception 'compa_borrador_usado: ese borrador ya se usó o se descartó'; end if;\n", ''],
+  ['libroSoloInsercion', MA, "  if old.used is not null then raise exception 'compa_borrador_usado: ese borrador ya se usó o se descartó'; end if;\n", ''], // 9b-3 · 0124 manda
   ['libroSoloInsercion', BA, "update compa_drafts set used = 'discarded' where used is null", "delete from compa_drafts where used is null"],
   ['libroSoloInsercion', E, '`update compa_drafts set used = $2, message_id = $3::bigint where id = $1::uuid`', '`update compa_drafts set draft = $2, message_id = $3::bigint where id = $1::uuid`'],
 ];

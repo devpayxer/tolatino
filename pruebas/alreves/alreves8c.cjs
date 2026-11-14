@@ -51,7 +51,8 @@ const casos = [
   ['uuidSinContextoSeguro', PA, 'const clave = useMemo(() => (uuid()), []);', 'const clave = useMemo(() => (crypto.randomUUID()), []);'],
   ['uuidSinContextoSeguro', UU, '  b[6] = (b[6]! & 0x0f) | 0x40;\n', ''],
   // permisosMinimos ampliado (POST_NOTIFICATIONS solo con el plugin de avisos: quitarlo de apps.json deja el permiso del manifiesto sin uso)
-  ['permisosMinimos', 'apps/mobile/apps.json', '"plugins": ["App", "AppLauncher", "PushNotifications", "SplashScreen", "StatusBar", "TLAlcance", "TLLocal", "TLReporte"],', '"plugins": ["App", "AppLauncher", "SplashScreen", "StatusBar", "TLAlcance", "TLLocal", "TLReporte"],'],
+  // 9b-3 · La lista de la app To'Latino creció (Haptics, Share, TLLlave, TLPantalla): el ancla es la de hoy, el defecto el mismo (sin PushNotifications).
+  ['permisosMinimos', 'apps/mobile/apps.json', '"plugins": ["App", "AppLauncher", "Haptics", "PushNotifications", "Share", "SplashScreen", "StatusBar", "TLAlcance", "TLLlave", "TLLocal", "TLPantalla", "TLReporte"],', '"plugins": ["App", "AppLauncher", "Haptics", "Share", "SplashScreen", "StatusBar", "TLAlcance", "TLLlave", "TLLocal", "TLPantalla", "TLReporte"],'],
 ];
 const crear = [
   ['pushConPlantilla', 'apps/web/lib/push/otra-cola.ts', 'import "server-only";\nimport { db } from "../db";\nexport async function meter() { await db().query(`insert into push_outbox (notification_id, token_id, payload_enc, expires_at) values (1, 1, null, now())`); }\n'],
