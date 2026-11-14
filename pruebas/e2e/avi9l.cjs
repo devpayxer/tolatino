@@ -242,6 +242,33 @@ const VARS = { ultimos: '0123', enlace: 'https://pruebas.tolatino.com/soporte', 
     await shot(pv, 'correo-confirmado-390');
     await pv.goto(B + `/cuenta/correo?t=${t2}`);
     ok(/ya se usó/.test(await texto(pv)), 'el mismo enlace otra vez → «ya se usó» (un solo uso)');
+    // La baja de un toque de las campañas (List-Unsubscribe, RFC 8058): el enlace firmado apaga «Novedades»; uno con otra firma no hace nada; abrirlo (GET) no da de baja.
+    sql(`update users set notif_prefs = coalesce(notif_prefs, '{}'::jsonb) || '{\"mkt\": true, \"mkt_push\": true}'::jsonb where id = '${vid}'`);
+    sql(`insert into email_outbox (user_id, city_id, to_email, tpl, subject, html, text_body, status) values ('${vid}', 'hzl', 'vero-${RUN}@prueba9l.tolatino.invalid', 'campaign', 'Novedades', '<p>x</p>', 'x', 'pruebas')`);
+    const firma = c.createHmac('sha256', env.AUTH_SECRET).update(`baja:mkt:${vid}`).digest('base64url').slice(0, 32);
+    const g = await fetch(`${B}/api/correo/baja?u=${vid}&f=${firma}`, { redirect: 'manual' });
+    ok(g.status === 303 && /\/cuenta\/avisos$/.test(g.headers.get('location') ?? '') && sql(`select notif_prefs->>'mkt' from users where id = '${vid}'`) === 'true', 'abrir el enlace (GET, como un antivirus) no da de baja: lleva a Mi cuenta › Avisos');
+    ok((await fetch(`${B}/api/correo/baja?u=${vid}&f=${'A'.repeat(32)}`, { method: 'POST', body: 'List-Unsubscribe=One-Click' })).status === 404 && sql(`select notif_prefs->>'mkt' from users where id = '${vid}'`) === 'true', 'con otra firma → 404, nada cambia');
+    ok((await fetch(`${B}/api/correo/baja?u=${vid}&f=${firma}`, { method: 'POST', body: 'List-Unsubscribe=One-Click' })).status === 200, 'la baja de un toque (POST firmado) → 200');
+    ok(sql(`select (notif_prefs->>'mkt') || '|' || (notif_prefs->>'mkt_push') from users where id = '${vid}'`) === 'false|false' && sql(`select via from email_unsubscribes where user_id = '${vid}' order by id desc limit 1`) === 'un_toque', '«Novedades» y su push quedan apagados y la baja anotada');
+    // pushsubscriptionchange: el service worker avisa a /api/push/renovar con la sesión; la suscripción nueva queda y la vieja se suelta.
+    const b64 = (x) => Buffer.from(x).toString('base64url');
+    const sub = (k) => ({ endpoint: `https://fcm.googleapis.com/fcm/send/avi9l-${RUN}-${k}`, p256dh: b64(Buffer.concat([Buffer.from([4]), c.randomBytes(64)])), auth: b64(c.randomBytes(16)) });
+    const s1 = sub('vieja'), s2 = sub('nueva');
+    const renovar = (x) => pv.evaluate(async (x) => (await fetch('/api/push/renovar', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(x) })).status, x);
+    ok(await renovar({ viejo: null, ...s1 }) === 200 && sql(`select count(*) from push_tokens where user_id = '${vid}' and provider = 'webpush' and revoked_at is null`) === '1', 'la suscripción del navegador queda registrada (con la sesión)');
+    ok(await renovar({ viejo: s1.endpoint, ...s2 }) === 200 && sql(`select count(*) from push_tokens where user_id = '${vid}' and provider = 'webpush' and revoked_at is null`) === '1'
+      && sql(`select count(*) from push_tokens where user_id = '${vid}' and provider = 'webpush' and revoked_reason = 'reemplazado'`) === '1', 'pushsubscriptionchange: la nueva queda y la vieja se suelta («reemplazado»)');
+    ok((await fetch(B + '/api/push/renovar', { method: 'POST', headers: { 'content-type': 'application/json', origin: B }, body: JSON.stringify({ viejo: null, ...sub('sin') }) })).status === 401, 'sin sesión → 401');
+    ok(await renovar({ viejo: null, endpoint: 'https://ejemplo.invalid/push/x', p256dh: s2.p256dh, auth: s2.auth }) === 400, 'a una dirección que no es de un servicio de push conocido → no');
+    // «Tu cuenta se borró» al número de antes, cuando la purga de los 30 días termina.
+    const bo = telLibre();
+    sql(`insert into users (phone, first_name, last_name, home_city_id, lang, is_test, phone_verified_at) values ('+1${bo}', 'Borra', '9l', 'hzl', 'es', true, now())`);
+    const boId = sql(`select id from users where phone = '+1${bo}'`);
+    sql(`update users set delete_at = now() - interval '1 minute', delete_reason = 'priv' where id = '${boId}'`);
+    barrer();
+    ok(await espera(() => sql(`select coalesce((select ok::text from purge_runs where user_id = '${boId}' order by id desc limit 1), '')`) === 'true', 30000), 'la purga de la cuenta terminó');
+    ok(await espera(() => sql(`select count(*) from phone_messages where tpl = 'cuenta_borrada' and ref_id = '${boId}' and sms_status = 'pruebas' and sms_id is not null`) === '1'), '«Tu cuenta se borró» salió UNA vez al número de antes (cifrado, por el único camino)');
 
     // ── 6 · El recibo de boletos con los botones de Wallet ──
     console.log('6 · El recibo de la compra con los botones de Wallet, a la página del boleto');

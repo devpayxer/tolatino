@@ -57,9 +57,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
   («precios típicos de ejemplo, Hazleton 2026»): revisarlos con negocios reales; (9) la cola del Super Admin para ver los
   negocios nuevos (bloque 1i); (10) prueba de punta a punta de este flujo en CI (hoy corre a mano con Playwright); (11) «Publicar otro» (un segundo
   negocio con la misma cuenta): hoy el borrador es uno por persona; llega con el panel (varios negocios por cuenta). — _9a (11 nov): hecho: (2) prueba Pro → Free y primer cobro (lib/suscripcion.ts procesar/pasarAFree, 2m), (5) Recuperar negocio (app/(app)/recuperar), (6) «Ir a mi panel» (publica/Publica.tsx), (7) ítems del panel (Menú 2a y los módulos de la Fase 4), (9) la cola de negocios nuevos (1i). Falta: (1) ubicar la dirección en el mapa al publicar (lib/direcciones.ts existe; publica/acciones.ts no pone geo), (3) la tabla de códigos de promotor (hoy PROMO = { HZL30 } en publica/acciones.ts; → 9h con Promotores), (4) «Tómale foto a tu lista» con El Compa, (8) revisar los precios típicos con negocios reales (→ 9h, reclutamiento), (10) esta prueba en el CI (→ 9b), (11) «Publicar otro»._ — _9h (14 nov): (3) **hecho**: los códigos viven en `promo_codes` (0138; HZL30 y el de cada promotor, con sus días), Publica los lee de ahí (el código propio no vale: guardián `promotorAntiabuso`) y se administran en Super Admin › Crecimiento › Promotores (cre9h: un negocio publicado con el código de un promotor queda con 60 días y «traído»). (8) sigue: los precios típicos se revisan con los negocios reales del acceso anticipado (→ 9t, línea «Fase 9 · 9h»)._
-- [ ] **→ 9l** · **Recomendar — lo que falta:** el SMS al negocio («X te recomendó…», una vez) y el aviso «ya publicó» al vecino
+- [x] **Recomendar — lo que falta:** el SMS al negocio («X te recomendó…», una vez) y el aviso «ya publicó» al vecino
   (Fase 2, notificaciones); la cola «Recomendaciones» del Super Admin para revisarlas, marcarlas y unirlas al negocio
-  cuando publique (bloque 1i). — _9a (11 nov): la cola «Recomendaciones» del Super Admin está (app/admin/Colas.tsx, «Crear semilla»). Falta el SMS al negocio («X te recomendó…») y el aviso «ya publicó» al vecino (no hay plantilla en notif_templates)._
+  cuando publique (bloque 1i). — _9a (11 nov): la cola «Recomendaciones» del Super Admin está (app/admin/Colas.tsx, «Crear semilla»). Falta el SMS al negocio («X te recomendó…») y el aviso «ya publicó» al vecino (no hay plantilla en notif_templates)._ — **✓ 9l (14 nov):** el SMS «X te recomendó…» al teléfono del negocio, UNA vez por teléfono en toda la vida (`rec_negocio`, con STOP; app/(app)/recomendar/acciones.ts) y «{negocio} ya está en To'Latino» al vecino cuando el negocio publica (`rec_publico`, barrido lib/canales/barrido.ts recomendados()). avi9l: las dos plantillas en ES y EN.
 - [ ] **→ 9m** · **Mapa — tope de 400 negocios:** el mapa trae los 400 más cercanos al punto (pines y lista). Cuando una ciudad pase
   de eso dentro de 2,6× el radio, pedir los pines por el recuadro visible al arrastrar. Mini mapas del Inicio y de la
   ficha («Cómo llegar» con el mapa propio) siguen pendientes; «Cómo llegar» abre el mapa del teléfono.
@@ -81,7 +81,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9m** · **Chips largos en BusinessCard:** textos largos (p. ej. «Coordinación del día $900 · boda completa…») se
   cortan en el borde de la tarjeta. Pedir al diseño cómo debe partirse.
 - [ ] **→ 9m** · **«Cómo llegar»** abre Google Maps del teléfono hasta tener el mapa propio.
-- [ ] **→ 9l** · **«Avísame cuando haya»** guarda la búsqueda; el envío del aviso se construye en la Fase 2 (notificaciones push/SMS/correo). — _9a (11 nov): «Avísame cuando haya» guarda la búsqueda (app/(app)/acciones.ts); el envío del aviso no existe (ninguna plantilla de búsqueda en notif_templates)._
+- [x] **«Avísame cuando haya»** guarda la búsqueda; el envío del aviso se construye en la Fase 2 (notificaciones push/SMS/correo). — _9a (11 nov): «Avísame cuando haya» guarda la búsqueda (app/(app)/acciones.ts); el envío del aviso no existe (ninguna plantilla de búsqueda en notif_templates)._ — **✓ 9l (14 nov):** el barrido manda «Ya hay {lo que buscaste}» cuando un negocio nuevo de la ciudad coincide (nombre o categoría), una vez por alerta (`busqueda_hay`, lib/canales/barrido.ts busquedas(); notified_at).
 - [x] **Toques de contacto sin límite:** resuelto en 1h (0015: uno cada 10 min por persona o red, 60/h por red, sin
   contar a la gente del negocio).
 - [x] **Ficha — lo que se ve cuando exista su dato o módulo:** («Quién está detrás» y «En el local» ✓ en 1h) reseñas y «N vecinos lo recomiendan» (Fase 2), menú/servicios/tienda/reservaciones/staff/eventos/jobs (sus
@@ -103,9 +103,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9n** · **Aceptar una invitación al equipo (`/e/{código}`):** el SMS dice «Acepta y pon tu foto aquí», pero el diseño no
   tiene esa pantalla (quien acepta entra con su teléfono, pone foto, palabras e idiomas). **Pedir el diseño al
   fundador.** Hasta entonces las invitaciones se guardan y vencen a los 7 días; nadie puede aceptar.
-- [ ] **→ 9l** · **SMS de invitación y de «Reenviar»:** sale con el proveedor de SMS (decisión E2, Fase 2). La pantalla dice con la
+- [x] **SMS de invitación y de «Reenviar»:** sale con el proveedor de SMS (decisión E2, Fase 2). La pantalla dice con la
   verdad que el SMS no salió. Igual «Le avisamos por SMS» al quitar a alguien y el aviso a quien pidió unirse (quitados
-  del texto hasta que existan).
+  del texto hasta que existan). — **✓ 9l (14 nov):** la invitación y «Reenviar SMS» salen por SMS con el código (`equipo_invitado`, avisarTelefono como los porteros; app/panel/acciones-equipo.ts); la pantalla dice la verdad si el número pidió STOP. Los avisos al quitar a alguien y a quien pidió unirse van con el flujo de aceptar de 9n (línea nueva en «Fase 9 · 9l»).
 - [x] **Secciones del panel que llegan en su fase (ocultas, no a medias):** Clientes, Mensajes, Lo que vendes (módulos,
   ítems, «Marcar agotado»), Entrega, Eventos, El Compa, Moderadores, Cobros y plan (los botones «Tu plan / Decidir /
   Pro» de las notas de la prueba), Ajustes, «Más»; apartados Información y contacto, Ubicación y zona, Reseñas,
@@ -123,7 +123,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
   «Sus platos» de cada persona: con el Menú (Fase 2). — _9a (11 nov): la pestaña Staff de la ficha y «Ver equipo» no están (solo «Sus platos» en app/panel/Menu.tsx)._
 - [x] **Prueba Pro al terminar** (pasar a Free, primer cobro, «decidiste seguir/no seguir»): con Cobros y plan (Fase 2);
   hoy `business_stats_cache.plan` no cambia solo el día 30. — **✓ 9a (11 nov):** prueba Pro al terminar: pasar a Free, primer cobro y «decidiste seguir / no seguir» (lib/suscripcion.ts procesar, pasarAFree, seguirConPro; plantillas pro_free, pro_charged, pro_failed); el día 30 sin que nadie entre → L377 (9k).
-- [ ] **→ 9l** · **Avisos de la prueba fuera del panel** (día 20, 25, último, fin: push/SMS/correo a las 10 AM): Fase 2. — _9a (11 nov): solo existe el aviso del día 25 (pro_d25 en lib/suscripcion.ts); faltan el día 20, el último día y el de fin a las 10 AM._
+- [x] **Avisos de la prueba fuera del panel** (día 20, 25, último, fin: push/SMS/correo a las 10 AM): Fase 2. — _9a (11 nov): solo existe el aviso del día 25 (pro_d25 en lib/suscripcion.ts); faltan el día 20, el último día y el de fin a las 10 AM._ — **✓ 9l (14 nov):** día 20 («Te quedan 10 días», `pro_d20`) y último día (`pro_ultimo`) a las 10 AM de la ciudad, solo sin tarjeta, una vez (lib/canales/barrido.ts pruebaPro()); el día 25 ya estaba (`pro_d25`) y el fin es «pasó a Free» (`pro_free`) al terminar. Push y SMS de respaldo; por correo no (decisión en REVISION 9l).
 - [x] **Super Admin del panel (triángulo):** hecho en 1i (fotos, Quiénes somos, nombre, teléfono, dirección, staff,
   cierre temporal, ocultar/suspender/cerrar, sello). El horario queda en lectura en el admin (como el prototipo).
 - [x] **9g** · **Vistas:** se cuentan al servir la ficha (sin robots ni gente del negocio). Revisar con tráfico real si hace falta
@@ -140,8 +140,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
   (SMS), Pro de cortesía / prueba / pagos (Fase 2), quitar acceso al panel (Moderadores), pausar módulos, «Panel del
   dueño» y «Ver como cliente» de un negocio no activo (vista del equipo). Pestañas Lo que vende, Operación, Dinero,
   Contenido: con sus módulos.
-- [ ] **→ 9l** · **Avisos por SMS** al dueño (sello, ocultar, foto quitada) y al vecino que reportó o recomendó: Fase 2. Los
-  textos del admin dicen «lo ve en su panel» (verdad hoy). — _9a (11 nov): el dueño recibe aviso de foto quitada y de ocultar (mod_foto, mod_hide) y el vecino el resultado de su reporte (com_rep_ok / com_rep_no). Falta el aviso del sello (verificación del negocio) y el del vecino que recomendó cuando el negocio publica._
+- [x] **Avisos por SMS** al dueño (sello, ocultar, foto quitada) y al vecino que reportó o recomendó: Fase 2. Los
+  textos del admin dicen «lo ve en su panel» (verdad hoy). — _9a (11 nov): el dueño recibe aviso de foto quitada y de ocultar (mod_foto, mod_hide) y el vecino el resultado de su reporte (com_rep_ok / com_rep_no). Falta el aviso del sello (verificación del negocio) y el del vecino que recomendó cuando el negocio publica._ — **✓ 9l (14 nov):** el sello decidido llega al dueño con su motivo (`sello_ok` / `sello_info` / `sello_no`, push y SMS de respaldo; app/admin/acciones-colas.ts decidirSello); quien reportó una foto recibe el resultado (`foto_rep_quitada` / `foto_rep_queda`); quien recomendó, «ya publicó» (`rec_publico`). Ocultar y foto quitada siguen en la campana y el push (moderación: sin SMS, REVISION 9l).
 - [x] **Avisos del panel sin diseño propio:** «To’Latino ocultó / suspendió / cerró tu página: {motivo}» usan el patrón
   del aviso «To’Latino cerró tu página por unos días» (el diseño del panel no trae esos tres). Confirmar con el fundador. — **✓ 9a (11 nov):** los tres avisos usan el patrón de «cerró tu página por unos días» (REVISION 9a).
 - [ ] **→ 9n** · **Colas:** atajos de teclado J/K/A/R y acciones en lote (plan §6), vencimiento del «tomado», tope de 200 casos por
@@ -223,7 +223,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
   Staff, Eventos, Novedades, Jobs) y «Tu herramienta» de la categoría: con sus fases. Hoy solo Menú (Comida). — **✓ 9a (11 nov):** «Lo que vendes» con todos los módulos y «Tu herramienta» de cada categoría (app/panel/; Fases 2–4).
 - [x] **Traducir con El Compa** (plato, categoría, grupo): Fase 7. — **✓ 9a (11 nov):** decisión del plan (§6 #9 de la Fase 7, L1140): «Traducir» usa el traductor propio.
 - [ ] **→ 9n** · **«Últimos 30 días» del plato** (pedidos, vendido, puesto) y Populares por lo más pedido: con los pedidos (2b/2c). — _9a (11 nov): «Últimos 30 días» del plato (pedidos, vendido, puesto) no está en el editor del Menú._
-- [ ] **→ 9l** · **Aviso por SMS de «quedan pocos»:** la preferencia se guarda; el SMS llega con las notificaciones.
+- [x] **Aviso por SMS de «quedan pocos»:** la preferencia se guarda; el SMS llega con las notificaciones. — **✓ 9l (14 nov):** el pedido que cruza el umbral de Menú › Inventario (2, 3 o 5) avisa al dueño una vez (`biz_quedan_pocos`; lib/pedir.ts quedanPocos()).
 - [x] **«Listo en N min»:** desde 2b sale de `delivery_settings.prep_min` (20 por defecto) + tiempo extra + el plato que más tarda.
 - [x] **Fotos de ejemplo del sandbox** vienen de Pexels (como el prototipo); las de los negocios reales son propias. — **✓ 9a (11 nov):** las fotos de Pexels son solo de la semilla del sandbox; producción nace vacía (decisión I) y cada negocio sube las suyas.
 
@@ -269,7 +269,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
   ella llegan: foto al dejarlo en la puerta (prueba de entrega), espera de 5 min si no abren, mapa en vivo del
   repartidor, «Tus repartidores» (invitar con código), Despacho y Cuadre de efectivo en el panel. Mientras, el negocio
   marca «Salió en camino» y «Entregado» en su panel, y el pago no promete la foto. — **✓ 9a (11 nov):** App To'Latino Repartidor (/repartidor, 2l y 8e): foto al dejarlo, espera, mapa en vivo, Tus repartidores, Despacho (app/repartidor, lib/repartidor.ts, lib/ruta-vivo.ts); pruebas rep2l, app8e.
-- [ ] **→ 9l** · **Enlace de seguimiento por SMS** al cliente (app externa) y avisos «en camino» / «entregado»: con las notificaciones.
+- [x] **Enlace de seguimiento por SMS** al cliente (app externa) y avisos «en camino» / «entregado»: con las notificaciones. — **✓ 9l (14 nov):** el SMS de «va en camino» lleva el enlace del pedido (notif_templates.sms_enlace: ord_way, merc_camino, cita_camino, caja_salio, chofer_salida, ord_tarde), donde está el seguimiento (también el de la app externa), y «Tu pedido llegó» al entregar (`ord_entregado`, una vez).
 - [x] **→ después de abrir (DA-02)** · **App externa conectada de verdad** (DoorDash Drive / Uber Direct por API): hoy el negocio pide el repartidor en la
   app externa y pega el enlace. Conectarla sería un servicio externo nuevo: decisión del fundador. — _9a (11 nov): conectar DoorDash Drive / Uber Direct es un servicio externo nuevo (regla 3): decisión del fundador. En `docs/DESPUES-DE-ABRIR.md`._
 - [x] **Delivery con tarjeta** (envío y propina cobrados en la app): con el 2d. Hoy solo efectivo al recibir. — **✓ 9a (11 nov):** delivery con tarjeta: envío y propina (2f/2d; app/repartidor, lib/cobros.ts); prueba dlv2f4.
@@ -286,7 +286,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **Reseña de una cita** (VERIFICADA · CITA) y **de una reservación** desde su pantalla: la mesa ya cuenta como verificada;
   el botón en la pantalla de la reservación terminada llega con Mi cuenta (2h). — **✓ 9a (11 nov):** reseña verificada de una cita y de una reservación desde su pantalla (3c/2h; res4g, res4m).
 - [x] **Ayuda con el pedido** desde una reseña de 2★ o menos: con Soporte (2i). — **✓ 9a (11 nov):** una reseña de 2★ o menos ofrece «Ayuda con…» (Fase 4: noc4d, res4s).
-- [ ] **→ 9l** · **Avisos** (al negocio: reseña nueva; al autor: respuesta, resultado de un reporte): con las notificaciones. — _9a (11 nov): el aviso de una respuesta del negocio y el resultado de un reporte existen en la bandeja; no hay plantilla de «reseña nueva» al negocio en notif_templates._
+- [x] **Avisos** (al negocio: reseña nueva; al autor: respuesta, resultado de un reporte): con las notificaciones. — _9a (11 nov): el aviso de una respuesta del negocio y el resultado de un reporte existen en la bandeja; no hay plantilla de «reseña nueva» al negocio en notif_templates._ — **✓ 9l (14 nov):** «Reseña nueva» al dueño, una vez por reseña (`biz_resena`, lib/resenas.ts).
 - [ ] **→ 9n** · **El negocio «quiere arreglarlo»** (propuesta en la respuesta) y **editar la respuesta**: el panel del diseño no los tiene.
 - [x] **Auto-moderación** («5 reseñas sin transacción en 10 min» → cola) y filtros de reseñas sospechosas en Contenido: con
   Contenido (2i). — **✓ 9a (11 nov):** auto-moderación de reseñas en ráfaga a la cola (lib/colas.ts, lib/barrido.ts; Confianza) — 5d.
@@ -304,9 +304,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9n** · **Elegir fotos de tu galería** en el editor (hoy se suben nuevas).
 
 ## Jobs (bloque 2g-3, 6 nov 2026)
-- [ ] **→ 9l** · **Avisos por SMS** de cada respuesta a la persona y de cada solicitud nueva al negocio: con el proveedor de SMS y las
-  notificaciones. Hoy se ven en la solicitud y en Hoy.
-- [ ] **→ 9l** · **«Avísame de nuevas vacantes»** (vecinos) y el aviso al publicar: con las notificaciones.
+- [x] **Avisos por SMS** de cada respuesta a la persona y de cada solicitud nueva al negocio: con el proveedor de SMS y las
+  notificaciones. Hoy se ven en la solicitud y en Hoy. — **✓ 9l (14 nov):** `job_reply` ya llevaba SMS; `biz_job` (solicitud nueva al negocio) pasa a SMS de respaldo del push (0142).
+- [ ] **→ 9m** · **«Avísame de nuevas vacantes»** (vecinos) y el aviso al publicar: con las notificaciones. — _9l (14 nov): pasa a 9m: la suscripción va en la pantalla de vacantes de Buscar (L311, 9m); la plantilla y el barrido siguen el patrón de «Avísame cuando haya» de 9l._
 - [ ] **→ 9n** · **«Traducir con El Compa»** en el editor: con El Compa. — _9a (11 nov): falta «Traducir con El Compa» en el editor de vacantes (solo existe en el Menú: app/panel/Menu.tsx)._
 - [ ] **→ 9m** · **Mis solicitudes** en Mi cuenta (lista de las J-… de la persona y las vacantes guardadas): con 2h Mi cuenta. — _9a (11 nov): falta «Mis solicitudes» en Mi cuenta (lista de las J-… y las vacantes guardadas)._
 - [ ] **→ 9m** · **Reportar una vacante** desde la página (la cola «Reportes de contenido» aún no acepta vacantes; el diseño no trae
@@ -318,9 +318,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **Borrado definitivo a los 30 días** de lo que pidió la persona (`users.delete_at`, `delete_reason`): un trabajo
   programado borra perfil, direcciones, guardados, reseñas y comentarios, cierra solicitudes y quita los pedidos de la
   cuenta (lo que la pantalla promete). Hoy solo queda programado y se cancela al entrar. — **✓ 9d (14 nov):** purga por el mapa (`data_map`, `purge_runs`/`purge_items`, `datos_purga_pendiente`); entrar solo cancela ANTES de la fecha; el mismo teléfono = cuenta nueva; prueba datos9d (local, 61 ✓).
-- [ ] **→ 9l** · **Verificar el correo** (enlace) y **recibos por correo**: con el proveedor de correo.
-- [ ] **→ 9l** · **Avisos al teléfono** que respeten `users.notif_prefs` (pedidos, reservas, empleos, negocios guardados, correo,
-  horas de silencio) y el aviso «cambiaste tu número» al número viejo. — _9a (11 nov): las preferencias y horas de silencio se respetan (Mi cuenta › Avisos, lib/avisos.ts; 2h/8c). Falta el aviso «cambiaste tu número» al número viejo._
+- [x] **Verificar el correo** (enlace) y **recibos por correo**: con el proveedor de correo. — **✓ 9l (14 nov):** el enlace es de un uso y solo vale el último que se pidió (email_verifications.revoked_at); recibos de pedido, mesa, Pro y boletos (con los botones de Wallet). avi9l sección 5 y 6.
+- [x] **Avisos al teléfono** que respeten `users.notif_prefs` (pedidos, reservas, empleos, negocios guardados, correo,
+  horas de silencio) y el aviso «cambiaste tu número» al número viejo. — _9a (11 nov): las preferencias y horas de silencio se respetan (Mi cuenta › Avisos, lib/avisos.ts; 2h/8c). Falta el aviso «cambiaste tu número» al número viejo._ — **✓ 9l (14 nov):** «Tu número de To'Latino cambió» al número viejo (`cuenta_tel_cambio`, crítico; lib/perfil.ts cambiarTelefono).
 - [ ] **→ 9m** · **Boletos, Mensajes, Pagos y Wallet, Apartados, platos y eventos guardados, Ayuda y soporte, Descargar mis datos,
   letra más grande, ajustes de la comunidad**: con sus fases (REVISION 11). — _9d (14 nov): «Descargar mis datos» hecho (Mi cuenta › Ajustes › Privacidad; prueba datos9d). Lo demás de la lista se revisa contra lo servido en 9m._
 - [x] **Invita vecinos con código** (quién invitó a quién) cuando exista la gamificación. — **✓ 9a (11 nov):** invita vecinos con código (lib/invitar.ts, 5f/5g); prueba com5f.
@@ -328,9 +328,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 
 ## Ayuda con el pedido y Soporte (bloque 2i, 6 nov 2026)
 - [ ] **→ 9n** · **Devolución a la tarjeta y reponer con un pedido nuevo sin costo**: con Stripe (2d) y el Repartidor. — _9k (14 nov): la devolución a la tarjeta desde la ayuda ya existe (7b «Resolver y devolver»; ahora repartida entre cobros). Reponer es crear un pedido de $0 que sigue el flujo del negocio y del Repartidor: va con lo diferido del negocio y el Repartidor (9n)._
-- [ ] **→ 9l** · **Soporte completo**: tickets por WhatsApp y correo, macros ES/EN, primera respuesta y CSAT; ayuda con citas y reservaciones. — 7b (10 nov):
+- [x] **Soporte completo**: tickets por WhatsApp y correo, macros ES/EN, primera respuesta y CSAT; ayuda con citas y reservaciones. — 7b (10 nov):
   casos en la app, macros ES/EN, plazo de primera respuesta en horas hábiles y «¿Se resolvió?» hechos. Falta: **WhatsApp** (7h) y **correo
-  entrante** (§6 #16, sin fecha).
+  entrante** (§6 #16, sin fecha). — **✓ 9l (14 nov):** correo entrante por SES (solo lo firmado; lib/correo/entrante.ts) y la respuesta del equipo por correo y por WhatsApp dentro de las 24 h (lib/soporte-canales.ts).
 - [x] **Avisos** al negocio de una solicitud nueva y al cliente de la respuesta (SMS/push). — **✓ 9a (11 nov):** avisos de Ayuda: al negocio biz_help y al cliente help_reply (lib/ayuda.ts); prueba ayuda2i.
 - [x] **El Compa** antes de abrir la solicitud (el prototipo lo pone primero). — 7d (10 nov): la hoja 2as sale antes del formulario en las 11
   páginas de «Ayuda con …»; apagada, al tope o con solicitud abierta, el formulario de siempre.
@@ -342,13 +342,13 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **Push en las apps** (Fase 8): el mismo aviso como push; la plantilla ya dice qué grupo es. **Hecho en 8c (11 nov):** Web Push de verdad; APNs y
       FCM contra simuladores hasta que estén las llaves (ver «Fase 8 · 8c»).
 - [x] **Anuncios in-app** (secNotif «Anuncios»): banner de un día en el home de la ciudad. Falta el banner en el inicio. _Hecho en 9f (14 nov): `announcements` (0136) con desde/hasta (31 días como máximo), para todos o solo vecinos con cuenta; el banner sale arriba del Inicio de la ciudad (InfoCard) y se crea y se retira en Super Admin › Textos y páginas › Home por ciudad (nada se borra; auditoría). Evidencia: cms9f (vivo, próximo, vencido, retirado y solo vecinos, en ES, EN y 390)._ La pestaña «Anuncios» de Notificaciones del diseño no se construyó: el banner se maneja desde Home por ciudad.
-- [ ] **→ 9l** · **Plantillas que faltan** porque su función aún no existe: código de entrada como plantilla editable, pedido tarde,
+- [x] **Plantillas que faltan** porque su función aún no existe: código de entrada como plantilla editable, pedido tarde,
       recibo por correo, propuesta de evento privado, citas (confirmada / otra hora), devolución, evento cancelado, sello
-      decidido, ciudad abierta, resumen semanal. Se agregan con su función.
-- [ ] **→ 9l** · **Cifras de entrega y apertura** (secNotif: entregados, abiertos, costo SMS): necesitan el webhook de Telnyx y push. **Push hecho en 8c**
-      (Notificaciones › Push: entregados al proveedor, abiertos desde el push, SMS ahorrados); falta la entrega del SMS (webhook de Telnyx).
-- [ ] **→ 9l** · **Avisos que la pantalla ya promete y ahora pueden salir:** reporte de foto («te avisamos el resultado»), invitación al
-      equipo, «Avísame cuando haya», recomendar. Engancharlos a `avisar()` con su plantilla.
+      decidido, ciudad abierta, resumen semanal. Se agregan con su función. — **✓ 9l (14 nov):** código de entrada editable (`cuenta_codigo`), pedido tarde (`ord_tarde`), sello decidido, ciudad abierta (`ciudad_abierta`, el barrido avisa a la lista de espera de una ciudad abierta), resumen semanal (negocio `biz_resumen_semana` y el correo «Resumen semanal del barrio»); el recibo por correo, la propuesta de evento privado (`evp_propuesta`), las citas (`cita_ok`, `cita_alt`), la devolución (`pay_refund`) y el evento cancelado (`evt_cancelado`) ya existían. avi9l: las 21 nuevas en ES y EN.
+- [x] **Cifras de entrega y apertura** (secNotif: entregados, abiertos, costo SMS): necesitan el webhook de Telnyx y push. **Push hecho en 8c**
+      (Notificaciones › Push: entregados al proveedor, abiertos desde el push, SMS ahorrados); falta la entrega del SMS (webhook de Telnyx). — **✓ 9l (14 nov):** Super Admin › Notificaciones › SMS y WhatsApp: entregados, en reintento, fallidos y sin proveedor por el webhook firmado de Telnyx (y WhatsApp por los statuses de Meta). El costo por SMS va con la cuenta de Telnyx (línea nueva → 9q).
+- [x] **Avisos que la pantalla ya promete y ahora pueden salir:** reporte de foto («te avisamos el resultado»), invitación al
+      equipo, «Avísame cuando haya», recomendar. Engancharlos a `avisar()` con su plantilla. — **✓ 9l (14 nov):** reporte de foto, invitación al equipo, «Avísame cuando haya» y recomendar salen; guardián promesaSms SIN excepciones (cada promesa dice qué plantilla la cumple y que alguien la manda).
 
 ## Pagos con tarjeta (bloque 2d, 6 nov 2026)
 - [ ] **→ 9q** · **Cuenta de Stripe (modo prueba y luego real) + Connect Express.** Claves en los secretos del entorno, por el formulario
@@ -363,7 +363,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **→ 9k** · **Quitar una tarjeta guardada** desde Mi cuenta (Pagos) y el Wallet de To'Latino. — **✓ 9k (14 nov):** Mi cuenta › Ajustes › Pagos (`/cuenta/pagos`, USR-PAGOS: tus tarjetas con «Quitar»; queda «removed», con Stripe se desliga del cliente; la que paga Pro de un negocio no se quita sin cambiarla antes). El Wallet de To'Latino todavía no existe: va con «Pagos y Wallet» de Mi cuenta (→ 9m, arriba). Prueba din9k paso 6.
 - [x] **Depósitos de citas, boletos y apartados** (comisiones 8 %, 5 % + $1, 6 % ya están en `fee_rules`): llegan con sus
       bloques. Super Admin › Planes › Comisiones (programar cambios con 30 días) también. — **✓ 9a (11 nov):** depósitos de citas, boletos y apartados con sus comisiones (Fases 3, 4 y 6) y Super Admin › Planes › Comisiones con cambios programados (app/admin/Planes.tsx, lib/admin-planes.ts); prueba adm5i.
-- [ ] **→ 9l** · **Recibo por correo** del pedido pagado (Fase 2, con el correo).
+- [x] **Recibo por correo** del pedido pagado (Fase 2, con el correo). — **✓ 9l (14 nov):** reciboPedido al terminar (lib/pedidos.ts y lib/repartidor.ts), a un correo confirmado con «Recibos» encendido.
 
 ## Repartidor (bloque 2l, 6 nov 2026)
 - [ ] **→ 9r** · **App de tienda (Capacitor)** «To'Latino Repartidor» apuntando a `/repartidor` (decisión B) con su ícono; ubicación
@@ -635,8 +635,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **→ 9b** · **5e · Velocidad de Hoy y de Recomendados con 1 M:** `hoyEnElBarrio` (índice `business_posts_hoy_idx`, presupuesto ≤ 40 ms) y
       `recomendadosPorVecinos` (agrega 180 días por ciudad en cada vista de Negocios) no se midieron en la base de carga; si no cumple,
       Recomendados pasa a derivado cacheado (con 5f). (5e, 7 nov) — **✓ 9b-3 (13 nov):** Hoy p95 15,6 / 16,8 ms (≤ 40; antes 72: solo las novedades de negocios Pro con Novedades antes de la regla) y Recomendados 14,3 / 13,5 ms (≤ 50; antes 580: candidatos de com_recomendados_cache que el barrido rehace cada 10 min; cargas 43457199398 / 43460154153). El tiempo de ese barrido va aparte (Fase 9 · 9b-3, abajo).
-- [ ] **→ 9l** · **5e · Aviso «Hoy en un negocio que sigues» a muchos seguidores:** el barrido escribe a todos los seguidores de un golpe (lotes de
-      1,000); con negocios de decenas de miles de seguidores hace falta repartirlo en varias pasadas y medirlo. Push real llega con la app. (5e, 7 nov) — _9b-3 (13 nov): no se midió en la carga (la carga no arma negocios con decenas de miles de seguidores); va con los avisos listos (9l)._
+- [ ] **→ 9q** · **5e · Aviso «Hoy en un negocio que sigues» a muchos seguidores:** el barrido escribe a todos los seguidores de un golpe (lotes de
+      1,000); con negocios de decenas de miles de seguidores hace falta repartirlo en varias pasadas y medirlo. Push real llega con la app. (5e, 7 nov) — _9b-3 (13 nov): no se midió en la carga (la carga no arma negocios con decenas de miles de seguidores); va con los avisos listos (9l)._ — _9l (14 nov): pasa a 9q: medirlo con push real (APNs/FCM) y la base de carga; 9l no cambió ese envío._
 - [ ] **→ 9c** · **5e · Hoy y la cuenta oficial en los 9 dispositivos:** `com5e` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta en la
       matriz de CI. (5e, 7 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [x] **5e · Puntos y Tabla sin la cuenta oficial:** hecho en 5f: el libro y la Tabla piden una persona (`user_id not null references
@@ -977,19 +977,19 @@ en el momento. Se marca solo cuando está hecho de verdad.
       traen «Escribir a Soporte»; los textos de error dicen «Mi cuenta › Ayuda y soporte» o «Más › Ayuda y Soporte». Falta «Pregúntale al Compa» (7d). — **✓ 9a (11 nov):** «Pregúntale al Compa» en Soporte y en el Centro de ayuda (app/(app)/soporte/compa, 7d); prueba compa7d.
 - [ ] **→ 9f** · **7a · Inglés de la ayuda:** el inglés es un resumen fiel; ~25 archivos tienen menos de una quinta parte del largo del español (p. ej.
       propiedades-y-visitas, inscribirse, cita-con-doctores, emergencia-24-7). Ampliarlos antes de abrir; El Compa en inglés depende de eso. (7a, 10 nov)
-- [ ] **→ 9l** · **7a · SMS de invitación al equipo del panel:** `app/panel/acciones-equipo.ts` `enviarInvitacion` no manda nada (la pantalla y la ayuda lo dicen).
-      Conectarlo a `avisarTelefono` como la invitación de porteros. (7a, 10 nov)
+- [x] **7a · SMS de invitación al equipo del panel:** `app/panel/acciones-equipo.ts` `enviarInvitacion` no manda nada (la pantalla y la ayuda lo dicen).
+      Conectarlo a `avisarTelefono` como la invitación de porteros. (7a, 10 nov) — **✓ 9l (14 nov):** avisarTelefono(«equipo_invitado») con el código, por el único camino de los SMS.
 - [x] **→ 9h** · **7a · Centro de ayuda público para buscadores:** los artículos de vecinos no entran a un sitemap todavía (las páginas de equipo y negocio ya
       dicen noindex). Con la web pública (Fase 9). (7a, 10 nov) — **✓ 9h (14 nov):** la parte 0 del mapa del sitio lleva `/ayuda` y cada artículo que ve quien entra SIN sesión (`audienciasDe(null)` = vecino; los de negocio y equipo nunca), más las páginas legales y la landing. Solo en producción.
 - [ ] **→ 9f** · **7a · Editar la ayuda desde el Super Admin:** hoy el repo es la fuente y el Super Admin solo pausa (§6 #12); el editor llega con el CMS. (7a, 10 nov)
 - [ ] **→ 9c** · **7a · Centro de ayuda en los 9 dispositivos:** `ayu7a` corre en 390 y 1360 en local; falta la matriz de CI. (7a, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 
 ## Fase 7 · 7b (Soporte: casos con To'Latino)
-- [ ] **→ 9l** · **7b · Correo entrante de Soporte** (§6 #16): no se construye en esta fase; los casos entran por la app (y por WhatsApp en 7h). Una cuenta
+- [x] **7b · Correo entrante de Soporte** (§6 #16): no se construye en esta fase; los casos entran por la app (y por WhatsApp en 7h). Una cuenta
       que no puede entrar (suspendida, baneada, dispositivo bloqueado) lee «Escríbele a Soporte» y hoy no tiene por dónde: definir el canal
-      (correo de soporte o una página pública de contacto con verificación) antes de abrir. (7b, 10 nov)
-- [ ] **→ 9l** · **7b · Aviso de respuesta por correo** (plan: «push + correo»): hoy sop_recibido, sop_respuesta y sop_resuelto llegan a la campana de la
-      app; el correo con plantilla propia (email_outbox) y el push llegan con el canal de push de las apps. (7b, 10 nov)
+      (correo de soporte o una página pública de contacto con verificación) antes de abrir. (7b, 10 nov) — **✓ 9l (14 nov):** Amazon SES → SNS firmado → /api/correo/entrada: solo lo que Amazon firma (tema propio, certificado de sns.*.amazonaws.com) y aprueba (SPF o DKIM, sin spam ni virus); el correo CONFIRMADO de una cuenta (aunque esté suspendida) abre un caso TK- tapado; contestar con el número en el asunto vuelve al caso. Guardián correoEntranteFirmado; avi9l sección 4.
+- [x] **7b · Aviso de respuesta por correo** (plan: «push + correo»): hoy sop_recibido, sop_respuesta y sop_resuelto llegan a la campana de la
+      app; el correo con plantilla propia (email_outbox) y el push llegan con el canal de push de las apps. (7b, 10 nov) — **✓ 9l (14 nov):** support_reply al correo confirmado (con el texto si el caso entró por correo); queda en support_replies_out.
 - [ ] **→ 9n** · **7b · Feriados del equipo** (§6 #17): el plazo cuenta lunes a viernes 9–6 sin feriados; sumar un calendario de feriados cuando haya
       equipo. (7b, 10 nov)
 - [x] **7b · Copiloto en la ficha del caso** («Sugerir respuesta con El Compa», §4 7g) y «Pregúntale al Compa» en Soporte (7d): la ficha y la
@@ -1115,22 +1115,22 @@ en el momento. Se marca solo cuando está hecho de verdad.
       `TOLATINO_COMPA=encendido`. Conectar el número de To'Latino en Super Admin › El Compa › Canales. (7h, 11 nov)
 - [ ] **→ 9q** · **7h · Respuesta de STOP de los proveedores:** Telnyx y Meta pueden mandar su propia confirmación de STOP; El Compa ya manda una. Dejar una
       sola (apagar la del perfil de Telnyx o la nuestra) al conectar. Con el canal en pausa, solo sale la del proveedor. (7h, 11 nov)
-- [ ] **→ 9l** · **7h · Plantillas de WhatsApp (escribir primero):** fuera de la ventana de 24 h no sale nada; los avisos por WhatsApp (código de entrada,
-      boletos, citas) necesitan plantillas aprobadas por Meta. No se construyó. (7h, 11 nov)
+- [x] **7h · Plantillas de WhatsApp (escribir primero):** fuera de la ventana de 24 h no sale nada; los avisos por WhatsApp (código de entrada,
+      boletos, citas) necesitan plantillas aprobadas por Meta. No se construyó. (7h, 11 nov) — **✓ 9l (14 nov):** wa_templates (código, boletos, cita, soporte; ES y EN) con su estado en Meta, «Mandar a Meta» y el webhook firmado de su estado; Soporte la usa fuera de la ventana si está aprobada. Mandarlas con la cuenta real → 9q (línea nueva).
 - [ ] **→ 9n** · **7h · Bandeja de los negocios por SMS:** las respuestas automáticas por SMS a un número del negocio funcionan, pero el dueño no tiene
       dónde leer ni contestar esos SMS en To'Latino (el de WhatsApp lo lee en su app de WhatsApp Business). Antes de encender SMS a negocios,
       una bandeja en Mensajes o dejarlo solo en WhatsApp. (7h, 11 nov)
-- [ ] **→ 9l** · **7h · Estado de entrega** (los avisos `message.finalized` de Telnyx y los `statuses` de Meta): hoy se ignoran; anotarlos en
-      `compa_outbound` y en las cifras de Notificaciones (también los SMS de avisos). Sin reintentos de un envío que falló. (7h, 11 nov)
-- [ ] **→ 9l** · **7h · Especificaciones del contrato fijas:** `scripts/contrato-canales/correr.sh` baja la especificación de Telnyx (`master`) y la de Meta
-      (`main`, v23.0) en cada corrida; fijarlas a un commit para que un cambio del proveedor no rompa la CI sin aviso. (7h, 11 nov)
-- [ ] **→ 9l** · **7h · El simulador y los SMS de avisos:** los avisos por SMS (`lib/avisos.ts`, 6d transferencias/cortesías/lista de espera, 6g puerta,
+- [x] **7h · Estado de entrega** (los avisos `message.finalized` de Telnyx y los `statuses` de Meta): hoy se ignoran; anotarlos en
+      `compa_outbound` y en las cifras de Notificaciones (también los SMS de avisos). Sin reintentos de un envío que falló. (7h, 11 nov) — **✓ 9l (14 nov):** message.finalized de Telnyx → sms_attempts / sms_outbox (y la salida de El Compa); statuses de Meta → compa_outbound; reintentos con espera creciente. Guardián smsConReintento.
+- [x] **7h · Especificaciones del contrato fijas:** `scripts/contrato-canales/correr.sh` baja la especificación de Telnyx (`master`) y la de Meta
+      (`main`, v23.0) en cada corrida; fijarlas a un commit para que un cambio del proveedor no rompa la CI sin aviso. (7h, 11 nov) — **✓ 9l (14 nov):** correr.sh las baja de un commit fijo (Telnyx bf2eb8e…, Meta e96a1c9…) y revisa su sha256; el contrato prueba también mandarPlantilla, crearPlantillaMeta, los avisos de entrega y el estado de las plantillas (31 ✓ con las especificaciones fijas).
+- [x] **7h · El simulador y los SMS de avisos:** los avisos por SMS (`lib/avisos.ts`, 6d transferencias/cortesías/lista de espera, 6g puerta,
       7a invitación al equipo) siguen saliendo por su propio camino (Telnyx con `TELNYX_FROM`, modo pruebas en el sandbox); ahora respetan STOP
-      («baja»). Unificar su salida con `lib/compa/canales-proveedor.ts` cuando se conecte Telnyx. (7h, 11 nov)
-- [ ] **→ 9l** · **7h · Soporte por WhatsApp** (admin-dashboard L271): hoy WhatsApp habla con El Compa y «Con una persona» abre un caso TK-; el equipo
-      contesta en la app (la persona lo ve ahí), no por WhatsApp. Contestar el caso por WhatsApp = decisión del fundador (costo por mensaje). (7h, 11 nov)
-- [ ] **→ 9l** · **7h · Inundación de remitentes falsos:** el límite es por teléfono (30 al día); un ataque con muchos números falsos por SMS gastaría
-      mensajes. Agregar un tope global por minuto con alerta antes de encender SMS. (7h, 11 nov)
+      («baja»). Unificar su salida con `lib/compa/canales-proveedor.ts` cuando se conecte Telnyx. (7h, 11 nov) — **✓ 9l (14 nov):** UN solo camino (lib/sms): avisos, SMS a números sin cuenta, el código para entrar y El Compa por SMS; solo canales-proveedor.ts habla con Telnyx.
+- [x] **7h · Soporte por WhatsApp** (admin-dashboard L271): hoy WhatsApp habla con El Compa y «Con una persona» abre un caso TK-; el equipo
+      contesta en la app (la persona lo ve ahí), no por WhatsApp. Contestar el caso por WhatsApp = decisión del fundador (costo por mensaje). (7h, 11 nov) — **✓ 9l (14 nov):** la respuesta del equipo le llega por WhatsApp dentro de las 24 h (gratis en la ventana de servicio); encendido de fábrica y reversible en Configuración › Avisos y canales (REVISION 9l).
+- [x] **7h · Inundación de remitentes falsos:** el límite es por teléfono (30 al día); un ataque con muchos números falsos por SMS gastaría
+      mensajes. Agregar un tope global por minuto con alerta antes de encender SMS. (7h, 11 nov) — **✓ 9l (14 nov):** tope global de números distintos por minuto (60, Configuración) con alerta a los Admins una vez cada 10 minutos (canal_alertas); STOP siempre se respeta. avi9l sección 3.
 - [ ] **→ 9s** · **7h · Para el abogado:** TCPA / 10DLC (consentimiento: el canal se enciende en Mi cuenta; STOP/HELP), política de WhatsApp Business
       (ventana de 24 h, opt-in, IA que se presenta) y el aviso de que el texto pasa por Telnyx/Meta y por el proveedor de IA. (7h, 11 nov)
 - [ ] **→ 9c** · **7h · En los 9 dispositivos:** `compa7h` corre en 390 y 1360 en local; falta la matriz de CI. (7h, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
@@ -1140,8 +1140,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       Soporte y sus fotos de una cuenta borrada (`compa_purgar`, `barrerRetencion`). El resto de lo que promete «Borrar mi cuenta» (perfil,
       direcciones, guardados, reseñas, comentarios, Mensajes con negocios, pasar la cuenta a `deleted`) sigue en el trabajo de Mi cuenta (2h, arriba). — **✓ 9d (14 nov):** todo eso por el mapa (`lib/datos/purgar.ts`); prueba datos9d (local, 61 ✓).
       (7i, 11 nov)
-- [ ] **→ 9l** · **7i · Soporte por correo entrante** (admin-dashboard L271, §6 #16): no en esta fase; El Compa y Soporte viven en la app, la web, WhatsApp y
-      SMS. (7i, 11 nov)
+- [x] **7i · Soporte por correo entrante** (admin-dashboard L271, §6 #16): no en esta fase; El Compa y Soporte viven en la app, la web, WhatsApp y
+      SMS. (7i, 11 nov) — **✓ 9l (14 nov):** ver 7b · Correo entrante de Soporte (Super Admin › Soporte › Por correo).
 - [ ] **→ 9q** · **7i · Batería del modelo real** (§7: ≥ 150 preguntas ES/EN, ≥ 95 %) y el **presupuesto de velocidad** con la base de carga (`compa-1m`):
       sin llave de Anthropic no se corren; todo lo de 7a–7i se probó con el simulador. (7i, 11 nov)
 - [x] **9g** · **7i · Analítica a escala:** `compa_analitica_dia` y `soporte_analitica_dia` agrupan al leer (como las vistas de Eventos); con millones
@@ -1215,13 +1215,13 @@ en el momento. Se marca solo cuando está hecho de verdad.
       primer build firmado de 8h). No se compiló aquí (sin Xcode). (8c, 11 nov)
 - [ ] **→ 9q** · **El SMS de respaldo sale de verdad cuando haya Telnyx** (`TELNYX_API_KEY`, `TELNYX_FROM`, 10DLC): hoy «en modo pruebas» en el sandbox; los
       textos de Mi cuenta › Avisos y del Super Admin que lo nombran están anotados en el guardián promesaSms. (8c, 11 nov)
-- [ ] **→ 9l** · **«pushsubscriptionchange»:** si el navegador cambia la suscripción sola, hoy se vuelve a registrar al abrir To'Latino (una vez al día);
-      atenderlo en el service worker necesita una ruta propia (las acciones del servidor no se llaman desde ahí). (8c, 11 nov)
+- [x] **«pushsubscriptionchange»:** si el navegador cambia la suscripción sola, hoy se vuelve a registrar al abrir To'Latino (una vez al día);
+      atenderlo en el service worker necesita una ruta propia (las acciones del servidor no se llaman desde ahí). (8c, 11 nov) — **✓ 9l (14 nov):** el service worker se vuelve a suscribir con la misma llave y avisa a /api/push/renovar (mismo origen y la sesión); la vieja queda «reemplazado». avi9l prueba la ruta (el evento del navegador no se puede disparar en Chromium sin pantalla).
 - [x] **Silencio de noche:** lo que no es crítico no sale por push entre 10 PM y 7 AM (como el SMS), ni se manda a las 7. Alternativa a decidir:
       mandarlo «sin sonido» (iOS `passive`). (8c, 11 nov) — **✓ 9a (11 nov):** lo no crítico no sale por push de 10 PM a 7 AM, como el SMS (REVISION 9a); «sin sonido» queda como alternativa.
-- [ ] **→ 9l** · **Web Push en Chromium de verdad:** la prueba `push8c` reemplaza `PushManager.subscribe` en la página (el Chromium de Playwright no tiene
+- [ ] **→ 9q** · **Web Push en Chromium de verdad:** la prueba `push8c` reemplaza `PushManager.subscribe` en la página (el Chromium de Playwright no tiene
       credenciales del servicio de push de Google); el resto es real (service worker, permiso, cifrado, VAPID, descifrar, mostrar, tocar). Probar
-      una vez en un Chrome y un Safari reales con el dominio. (8c, 11 nov) — _9b-3 (13 nov): con los avisos listos (9l)._
+      una vez en un Chrome y un Safari reales con el dominio. (8c, 11 nov) — _9b-3 (13 nov): con los avisos listos (9l)._ — _9l (14 nov): pasa a 9q: necesita el dominio con HTTPS y un Chrome y un Safari reales._
 - [x] **→ 9b** · **Presupuesto de velocidad en la base de carga** (`scripts/carga/apps-1m.mjs`, máquina aparte): aquí, 10 000 avisos por la tubería real en
       la base local: avisar() con el push encolado, media 4,98 ms (p95 6,3 ms); el trabajador entregó 10 000 en 49,8 s al simulador (tope
       `push_por_minuto` 10 000; los 50 de más salieron el minuto siguiente); 0 duplicados. Falta APNs p95 ≤ 2 s contra Apple. (8c, 11 nov) — **✓ 9b-3 (13 nov):** con 5 M de avisos en la base: avisar() con el push encolado p95 1,5 / 1,8 ms y la bandeja 0,5 / 0,6 ms (cargas 43457199398 / 43460154153). APNs p95 ≤ 2 s contra Apple, con las tiendas de verdad (9r).
@@ -1311,16 +1311,16 @@ en el momento. Se marca solo cuando está hecho de verdad.
       Agreement»** en developer.apple.com/wallet/add-to-apple-wallet-guidelines; Google, en su página de marca de Google Wallet (no abrió desde
       este entorno). Es un acuerdo legal del dueño de la cuenta: el fundador lo acepta (o da el OK para que Claude lo acepte en su nombre) y se
       reemplazan los dos botones ES/EN por el SVG oficial en `Wallet.tsx` (y se revisa que la licencia deje tenerlos en un repo público). (8g, 11 nov)
-- [ ] **→ 9l** · **El correo de la compra** todavía no trae los botones de Wallet (lleva a Mis boletos, donde están). Con el arte oficial: sumar las dos
-      insignias al recibo (`lib/correo/recibos.ts`), enlazadas a la página del boleto. (8g, 11 nov)
+- [x] **El correo de la compra** todavía no trae los botones de Wallet (lleva a Mis boletos, donde están). Con el arte oficial: sumar las dos
+      insignias al recibo (`lib/correo/recibos.ts`), enlazadas a la página del boleto. (8g, 11 nov) — **✓ 9l (14 nov):** el recibo trae «Agregar a Apple Wallet» y «Agregar a Google Wallet» (las insignias provisionales de 8g en HTML) a la página del boleto, solo si Wallet está disponible para ese boleto; el arte oficial sigue en REVISION 8g.
 - [ ] **→ 9r** · **Dentro de la app iOS (Capacitor):** el botón abre el .pkpass con un enlace firmado de 10 minutos en la vista del sistema (Safari), porque
       el WebView no muestra «Agregar a Wallet». Probar en TestFlight; si no basta, un plugin nativo pequeño con `PKAddPassesViewController`
       (versión nueva de la app, revisada). (8g, 11 nov)
 - [x] **→ 9b** · **Los límites del servicio web** (pase_ws_por_minuto por dirección) viven en la memoria de cada proceso; con varios procesos, contador
       compartido. El de registros por teléfono por hora está en la base. Detrás de Cloudflare, la dirección es `CF-Connecting-IP` (hoy
       `x-real-ip` de nginx). (8g, 11 nov) — **✓ 9b-3 (13 nov):** `permitido()` cuenta en `rate_counters` (compartido); la dirección detrás de Cloudflare (`CF-Connecting-IP`) queda para 9o con el resto de Cloudflare.
-- [ ] **→ 9l** · **Ritmo:** un escaneo en la puerta marca el boleto «usado» y eso actualiza su pase (un aviso a cada teléfono que lo sigue). En una noche de
-      2 000 personas con Wallet son 2 000 avisos a APNs en una hora: medir en la base de carga junto con el push (8c). (8g, 11 nov) — _9b-3 (13 nov): no se midió (los avisos a Apple necesitan APNs de verdad); con los avisos listos (9l)_
+- [ ] **→ 9q** · **Ritmo:** un escaneo en la puerta marca el boleto «usado» y eso actualiza su pase (un aviso a cada teléfono que lo sigue). En una noche de
+      2 000 personas con Wallet son 2 000 avisos a APNs en una hora: medir en la base de carga junto con el push (8c). (8g, 11 nov) — _9b-3 (13 nov): no se midió (los avisos a Apple necesitan APNs de verdad); con los avisos listos (9l)_ — _9l (14 nov): pasa a 9q: necesita APNs de verdad._
 - [ ] **→ 9c** · **En los 9 dispositivos:** `wal8g` corre en 390 y 1360 en local; falta la matriz de CI. (8g, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 
 ## Fase 8 · 8d (entrar con Face ID o huella: llaves de acceso; 11 nov)
@@ -1544,11 +1544,11 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9b** · **datos9d y alreves9d entran a la regresión del CI:** en local (Postgres 16 + PostGIS, un S3 de mentira en vez de Garage, Chrome del sistema)
       datos9d pasó 61 ✓ dos veces seguidas, alreves9d 23/23, y usr1l, cuenta2h, adm7i, alreves7i y alreves8i siguen en verde. La corrida de verdad (con Garage y los
       9 dispositivos) es la del CI. (9d, 14 nov)
-- [ ] **→ 9l** · **Aviso «Tu cuenta se borró» (`cuenta_borrada`):** la plantilla existe (crítica, SMS) pero la purga no la manda: al purgar, el teléfono queda vacío y
+- [x] **Aviso «Tu cuenta se borró» (`cuenta_borrada`):** la plantilla existe (crítica, SMS) pero la purga no la manda: al purgar, el teléfono queda vacío y
       un SMS a un número sin cuenta se guarda (cifrado) en `phone_messages`, que hoy no tiene retención. Mandarla antes de vaciar el teléfono y darle su retención
-      a `phone_messages` van juntos con los canales. (9d, 14 nov)
-- [ ] **→ 9l** · **Retención de `phone_messages`** (el registro cifrado de los SMS a números sin cuenta): el mapa la guarda «por las reglas de los SMS» sin un plazo;
-      falta su clave `retener_*` y su barrido. (9d, 14 nov)
+      a `phone_messages` van juntos con los canales. (9d, 14 nov) — **✓ 9l (14 nov):** purgarVencidas() lo manda al número de antes cuando la purga termina (una vez); phone_messages se vacía a retener_sms_dias. avi9l lo prueba.
+- [x] **Retención de `phone_messages`** (el registro cifrado de los SMS a números sin cuenta): el mapa la guarda «por las reglas de los SMS» sin un plazo;
+      falta su clave `retener_*` y su barrido. (9d, 14 nov) — **✓ 9l (14 nov):** `retener_sms_dias` (90) en Configuración › Retención: el teléfono y el texto se vacían (sms_outbox y phone_messages), prueba con el reloj movido en avi9l.
 - [x] **9e** · **Términos de uso y Privacidad con versión en «Términos que aceptaste»:** `lib/datos/terminos.ts` suma `legal_acceptances` (la adenda del
       estado y «por {negocio}»); `/privacidad` trae «Qué pasa con cada dato al borrar tu cuenta» del mapa (`privacidadDelMapa`). Evidencia: leg9e
       («VERSIÓN N · ACEPTADO …») y datos9d 61 ✓ sigue en verde. (9d, 14 nov · 9e, 14 nov)
@@ -1663,8 +1663,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       Eventos del vecino. (9h, 14 nov)
 - [ ] **→ 9n** · **Segmento «Free con N ítems» y la insignia Fundadores en la página del negocio:** las campañas segmentan por rol, ciudad, inactivos, categoría y plan; contar ítems no se
       construyó. El número de negocio fundador queda en `early_access.founder_negocio_n` y la landing lo dice; la insignia en la ficha del negocio no se pintó. (9h, 14 nov)
-- [ ] **→ 9l** · **Campañas por correo de verdad:** salen por la bandeja de correo (`email_outbox`, plantilla `campaign`, solo correos verificados, con el pie «para no recibir más: Mi cuenta ›
-      Avisos»); en el sandbox quedan «en modo pruebas». Con SES (9q) falta la cabecera `List-Unsubscribe` de un toque. (9h, 14 nov)
+- [x] **Campañas por correo de verdad:** salen por la bandeja de correo (`email_outbox`, plantilla `campaign`, solo correos verificados, con el pie «para no recibir más: Mi cuenta ›
+      Avisos»); en el sandbox quedan «en modo pruebas». Con SES (9q) falta la cabecera `List-Unsubscribe` de un toque. (9h, 14 nov) — **✓ 9l (14 nov):** List-Unsubscribe + List-Unsubscribe-Post (un toque, RFC 8058) en las cabeceras de SES y «Darme de baja» al pie; el POST firmado apaga «Novedades» y queda en email_unsubscribes; abrirlo (GET) no da de baja. avi9l lo prueba; el envío real con SES es de 9q.
 - [ ] **→ 9t** · **Encender la landing en producción** (interruptor `growth.landing`, nace apagado) con el OK-1, revisar en vivo `robots.txt`, `/sitemap.xml` y Open Graph con el dominio, y revisar
       los precios típicos de Publica con los negocios reales que lleguen (parte 8 de «Publica tu negocio»). (9h, 14 nov)
 - [ ] **→ 9u** · **Smart App Banner de iOS en la web** (L1149): cuando la app To'Latino sea pública (su id de App Store); hoy no hay app pública que anunciar. (9h, 14 nov)
