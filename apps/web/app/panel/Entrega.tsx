@@ -80,7 +80,7 @@ export function entregaBloques(c: Ctx): Sec {
     out.push({ type: "rows", k: E2("AL RECOGER Y AL ENTREGAR", "AT PICKUP AND DELIVERY"), items: [
       { icon: "lock", t: E2("Código de recogida", "Pickup code"), s: E2("Cada pedido trae un código de 4 números en su detalle: se lo dices al repartidor cuando le das el pedido.", "Each order has a 4-digit code in its detail: tell it to the driver when you hand over the order."),
         tgOn: a.pickupCode, onTg: () => c.run(() => repPruebas(d.id, a.proof, !a.pickupCode), a.pickupCode ? E2("Ya no se pide el código de recogida.", "Pickup code no longer required.") : E2("Listo: el repartidor escribe el código al recoger.", "Done: the driver types the code at pickup.")), chev: false },
-      { icon: "camera", t: E2("Prueba de entrega", "Proof of delivery"), s: E2("El repartidor toma una foto de la entrega o escribe el código que le dice el cliente. Sin prueba no se marca «Entregado».", "The driver takes a delivery photo or types the code the customer gives them. Without proof it cannot be marked “Delivered”."),
+      { icon: "image", t: E2("Prueba de entrega", "Proof of delivery"), s: E2("El repartidor toma una foto de la entrega o escribe el código que le dice el cliente. Sin prueba no se marca «Entregado».", "The driver takes a delivery photo or types the code the customer gives them. Without proof it cannot be marked “Delivered”."),
         tgOn: a.proof, onTg: () => c.run(() => repPruebas(d.id, !a.proof, a.pickupCode), a.proof ? E2("Ya no se pide prueba de entrega.", "Proof of delivery no longer required.") : E2("Listo: cada entrega lleva foto o código.", "Done: every delivery has a photo or a code.")), chev: false },
     ] });
     const cuadre = R.filter((x) => x.hoy.efectivo > 0);

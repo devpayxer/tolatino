@@ -157,8 +157,8 @@ export function pedidoDetalle(c: Ctx): Sec {
   if (x.rep9n && (x.rep9n.prueba.length || x.rep9n.mensajes)) {
     const PR: Record<string, [string, string]> = { foto: ["foto", "photo"], codigo: ["código del cliente", "customer code"], negocio: ["marcado por tu equipo", "marked by your team"] };
     out.push({ type: "rows", k: E2("PRUEBA DE ENTREGA", "PROOF OF DELIVERY"), items: [
-      ...(x.rep9n.prueba.length ? [{ icon: "camera", t: x.rep9n.prueba.map((p) => (PR[p] ?? [p, p])[es ? 0 : 1]).join(" · "), s: E2("Queda como evidencia si el cliente reclama.", "It is kept as evidence if the customer complains."), chev: false, compact: true,
-        acts: x.rep9n.foto ? [{ l: E2("Ver foto", "See photo"), v: "secondary", icon: "camera", onClick: () => window.open(`/api/entrega/foto/${x.rep9n!.foto}`, "_blank", "noopener") }] : undefined } as Fila] : []),
+      ...(x.rep9n.prueba.length ? [{ icon: "image", t: x.rep9n.prueba.map((p) => (PR[p] ?? [p, p])[es ? 0 : 1]).join(" · "), s: E2("Queda como evidencia si el cliente reclama.", "It is kept as evidence if the customer complains."), chev: false, compact: true,
+        acts: x.rep9n.foto ? [{ l: E2("Ver foto", "See photo"), v: "secondary", icon: "image", onClick: () => window.open(`/api/entrega/foto/${x.rep9n!.foto}`, "_blank", "noopener") }] : undefined } as Fila] : []),
       ...(x.rep9n.mensajes ? [{ icon: "chat", t: E2(`El repartidor le escribió ${x.rep9n.mensajes} ${x.rep9n.mensajes === 1 ? "vez" : "veces"} al cliente`, `The driver wrote to the customer ${x.rep9n.mensajes} ${x.rep9n.mensajes === 1 ? "time" : "times"}`), chev: false, compact: true } as Fila] : []),
     ] });
   }

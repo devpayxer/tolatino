@@ -4735,3 +4735,37 @@ pasa a «revisado» y se publica. En producción la base no deja publicar una p�
 - **«X te recomendó»:** una sola vez por teléfono en toda la vida, con STOP; de noche no sale (queda «silencio», no se reintenta).
 - **Reintentos:** 3 intentos con 2, 4 y 8 minutos de espera; no se reintenta lo permanente (STOP, número inválido: los códigos de Telnyx se confirman en 9q).
 - **«Ciudad abierta»:** el aviso y su plantilla son de 9i (lista avisada una vez, de día); 9l no manda otro.
+
+## Fase 9 · 9n — Lo diferido del negocio, el Repartidor y la operación del Super Admin (14 nov)
+**Qué mirar (en el sandbox, desde el teléfono y en la computadora):**
+1. **Panel de Sabor Dominicano › Entrega › «AL RECOGER Y AL ENTREGAR»:** «Código de recogida» y «Prueba de entrega» (la semilla 0063 los deja encendidos).
+2. **El detalle de un delivery aceptado:** «Ofrecer a los que están en línea» y «Ofrecer» junto a cada repartidor; la oferta con «vence en N s» y «Cancelar oferta»;
+   con repartidor, el CÓDIGO DE RECOGIDA (solo lo ve el negocio) y «Ya se lo di»; al terminar, la PRUEBA DE ENTREGA con «Ver foto».
+3. **To'Latino Repartidor (Juan, 570-555-0144):** la oferta con su cuenta regresiva y «Aceptar» / «Rechazar»; en el pedido, «Escribir» (frases fijas, sin el teléfono
+   del cliente) y «Llamar al negocio»; el código de recogida; al llegar, «Tomar foto» o el código del cliente.
+4. **Tu pedido (Héctor, 570-555-0210):** «TU CÓDIGO PARA RECIBIR», lo que te escribió el repartidor y «Ver la foto de la entrega».
+5. **Super Admin › Repartidores:** la lista, el 360° de Juan (la entrega de ayer con código y la incidencia abierta de la semilla), «Sancionar» / «Levantar».
+6. **Super Admin › Colas:** la cola «Incidencias de entrega»; en la computadora, «Elegir varios», «Asignar a…» y los atajos J/K/A/R; «Quién ve cada cola ·
+   feriados» (Admin).
+7. **Sistema › Configuración:** las secciones nuevas «REPARTIDOR» y «COLAS» (el plazo de cada cola); «Grupos cancelados que abren un caso» ya no está en solo lectura.
+8. **Panel › Tu página › Horario:** feriados con un toque, vacaciones y días propios, «Abro por temporada». **Panel › Más › Lo que te avisamos.**
+**Decisiones que tomé (lo más seguro y reversible):**
+- **«Llamar al cliente» desde el Repartidor:** se fue (§6 #20, sin servicio de voz): se le escribe dentro de la app y «Llamar al negocio». Una llamada enmascarada
+  (Telnyx Voice) sería un servicio pagado nuevo: decisión tuya.
+- **Prueba de entrega y código de recogida:** apagados de fábrica en cada negocio (los enciende el dueño en Entrega). Encenderlos para todos rompería a los negocios
+  que hoy entregan sin la app nueva; si prefieres encendidos para todos, es un cambio de la columna y de las pruebas viejas (rep2l, app8e, ruta).
+- **La prueba:** la foto (privada, sin metadatos) o el código de 4 cifras del cliente; 5 intentos (Configuración); al agotarse, solo foto y una incidencia. Si el
+  negocio marca «Entregado» él mismo, queda la prueba «marcado por tu equipo» con su nombre (la base exige una prueba).
+- **La oferta:** 60 s (Configuración › Repartidor, de 20 a 300); el primero que acepta se la lleva; si todos la rechazan o vence, el negocio recibe «Nadie aceptó».
+  Asignar a mano cierra la oferta abierta. Sin asignación automática ni lotes (§6 #21: lotes después de abrir).
+- **Sanciones del repartidor:** las pone Ciudad manager y Moderador (aviso y suspensión); el baneo solo un Admin y lo levanta otra persona. Suspendido puede terminar
+  la entrega que tiene; baneado sale de sus equipos y lo suyo vuelve al negocio con aviso.
+- **Colas:** los plazos de las 24 colas pasan a Configuración › Colas (con los mismos números de fábrica); quién ve cada cola, a la base (lo mismo que decía el código).
+  Un caso tomado vuelve a la cola a los 60 min. «Asignar a…» lo hacen Admin y Ciudad manager (colas:editar). Los atajos A/R tocan el primer botón de aprobar o el de
+  rechazar del caso abierto (el mismo que tocarías con el dedo, con su motivo).
+- **Feriados del negocio:** el catálogo trae los federales de EE. UU. y los de la comunidad (Reyes, Nochebuena, Fin de Año, Día de las Madres) de 2026 y 2027;
+  las fechas se escriben AAAA-MM-DD (el sistema de diseño no tiene un selector de fecha: compuesto con el campo de texto).
+- **Lo que te avisamos:** solo el dueño; lo que tiene que ver con dinero, disputas, la ayuda que pide un cliente y las decisiones de To'Latino no se apaga.
+- **Pantallas sin diseño propio** (compuestas con los bloques del sistema, sin piezas nuevas): la oferta en el Repartidor, la prueba de entrega, ADM-DLV (lista y 360°),
+  Colas › Ajustes, «Lo que te avisamos», feriados y temporada.
+- **Numeración:** la semilla es 0063_repartidor.sql (el plan decía 0056, de 9h; 0062 se dejó libre).

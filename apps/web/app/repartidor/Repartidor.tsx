@@ -231,14 +231,14 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
     const puerta = x.entrega?.drop === "puerta", prueba = fotoId ? { foto: fotoId } : codCli.length === 4 ? { codigo: codCli } : undefined, faltaPrueba = x.pidePrueba && !prueba;
     if (vivo && en && x.llegue) {
       B.push({ type: "group", k: x.pidePrueba ? E2("PRUEBA DE ENTREGA · LA PIDE EL NEGOCIO", "PROOF OF DELIVERY · THE BUSINESS ASKS FOR IT") : E2("PRUEBA DE ENTREGA · OPCIONAL", "PROOF OF DELIVERY · OPTIONAL") });
-      B.push({ type: "rows", items: [{ icon: "camera", t: fotoId ? E2("Foto de la entrega lista", "Delivery photo ready") : E2("Tomar la foto de la entrega", "Take the delivery photo"),
+      B.push({ type: "rows", items: [{ icon: "image", t: fotoId ? E2("Foto de la entrega lista", "Delivery photo ready") : E2("Tomar la foto de la entrega", "Take the delivery photo"),
         s: puerta ? E2("Lo dejas en la puerta: toma la foto del pedido en la puerta. Solo la ven el cliente, el negocio y To’Latino.", "You leave it at the door: photograph the order at the door. Only the customer, the business and To’Latino see it.")
           : E2("Solo la ven el cliente, el negocio y To’Latino.", "Only the customer, the business and To’Latino see it."),
         tag: fotoId ? E2("LISTA", "READY") : undefined, tone: "signal", chev: false, compact: true,
-        acts: [{ l: subiendo ? E2("Subiendo…", "Uploading…") : fotoId ? E2("Otra foto", "Retake") : E2("Tomar foto", "Take photo"), v: fotoId ? "secondary" : "primary", icon: "camera", off: subiendo || pend, onClick: () => fotoRef.current?.click() }] }] });
+        acts: [{ l: subiendo ? E2("Subiendo…", "Uploading…") : fotoId ? E2("Otra foto", "Retake") : E2("Tomar foto", "Take photo"), v: fotoId ? "secondary" : "primary", icon: "image", off: subiendo || pend, onClick: () => fotoRef.current?.click() }] }] });
       if (!puerta && !fotoId && !x.codigoAgotado) B.push({ type: "field", k: E2("O EL CÓDIGO DEL CLIENTE · 4 NÚMEROS", "OR THE CUSTOMER’S CODE · 4 DIGITS"), val: codCli, onChange: (v: string) => setCodCli(v.replace(/\D/g, "").slice(0, 4)),
         help: E2("Lo ve el cliente en su pedido. Pídeselo al darle el pedido.", "The customer sees it in their order. Ask for it when you hand it over.") });
-      if (x.codigoAgotado && !fotoId) B.push({ type: "note", tone: "warn", icon: "camera", t: E2("El código ya no sirve para este pedido: toma la foto de la entrega.", "The code no longer works for this order: take the delivery photo.") });
+      if (x.codigoAgotado && !fotoId) B.push({ type: "note", tone: "warn", icon: "image", t: E2("El código ya no sirve para este pedido: toma la foto de la entrega.", "The code no longer works for this order: take the delivery photo.") });
     }
     if (vivo && en && (x.llegue || cobro)) {
       if (cash && !cobro) B.push({ type: "acts", items: [{ l: E2(`Cobrar ${money(x.efectivo!)}`, `Collect ${money(x.efectivo!)}`), v: "primary", icon: "dollar", off: pend, onClick: () => setCobro(true) }] });
@@ -248,7 +248,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
           { l: E2("Volver", "Back"), v: "secondary", onClick: () => setCobro(false) }] });
       } else B.push({ type: "acts", items: [{ l: E2("Entregado", "Delivered"), v: "primary", icon: "check", off: pend || faltaPrueba, onClick: () => paso(x.numero, "entregado", E2("Entregado. Gracias.", "Delivered. Thanks."), undefined, prueba) }] });
     }
-    if (x.status === "done" && x.foto) B.push({ type: "note", tone: "ok", icon: "camera", t: E2("Entregado con foto.", "Delivered with a photo.") });
+    if (x.status === "done" && x.foto) B.push({ type: "note", tone: "ok", icon: "image", t: E2("Entregado con foto.", "Delivered with a photo.") });
     if (vivo && !prob) B.push({ type: "acts", items: [{ l: E2("Reportar un problema", "Report a problem"), v: "secondary", icon: "warning", onClick: () => { setProb(true); setMot(""); setNota(""); } }] });
     if (vivo && prob) {
       B.push({ type: "group", k: E2("¿QUÉ PASÓ? · LE LLEGA AL NEGOCIO", "WHAT HAPPENED? · THE BUSINESS GETS IT") });

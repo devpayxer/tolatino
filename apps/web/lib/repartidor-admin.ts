@@ -108,7 +108,7 @@ export async function rep360(s: Staff, uid: string): Promise<Rep360 | null> {
         (select count(*)::int from operations o join delivery_drivers d on d.id = o.driver_id where d.user_id = $1 and o.kind = 'order' and o.status = 'confirmed') as "enCurso",
         (select count(*)::int from operation_events e where e.kind = 'driver_issue' and e.actor_id = $1::text and e.at > now() - interval '30 days') as "problemas30",
         (select count(distinct p.operation_id)::int from delivery_proofs p join delivery_drivers d on d.id = p.driver_id where d.user_id = $1 and p.at > now() - interval '30 days') as "conPrueba30",
-        (select count(*)::int from delivery_offers f join delivery_drivers d on d.business_id = f.business_id and d.user_id = $1 where f.created_at > now() - interval '30 days' and (f.driver_id is null or f.driver_id = d.id)) as "ofertas30",
+        (select count(*)::int from delivery_offers f join delivery_drivers d on d.business_id = f.business_id and d.user_id = $1 where f.created_at > now() - interval '30 days' and f.created_at >= coalesce(d.accepted_at, d.created_at) and (f.driver_id is null or f.driver_id = d.id)) as "ofertas30",
         (select count(*)::int from delivery_offers f join delivery_drivers d on d.id = f.accepted_driver where d.user_id = $1 and f.created_at > now() - interval '30 days') as "aceptadas30"`, [uid]),
     db().query<Rep360["entregas"][number]>(`select o.number as numero, b.name as negocio, case when o.status = 'done' then 'Entregado' when o.status = 'confirmed' then 'En curso' else 'Cancelado' end as estado,
         to_char(coalesce(o.done_at, o.confirmed_at) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at,

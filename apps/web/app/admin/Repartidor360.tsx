@@ -42,7 +42,7 @@ export function Repartidor360({ r, puede }: { r: Rep360; puede: { editar: boolea
   B.push({ type: "kpis", cols: desk ? "repeat(6,minmax(0,1fr))" : "repeat(3,minmax(0,1fr))", items: [
     { k: "ENTREGAS 30 D", v: String(r.kpi.entregas30), bg: "var(--tl-ink)", fg: "var(--tl-white)" }, { k: "EN CURSO", v: String(r.kpi.enCurso) },
     { k: "CON PRUEBA 30 D", v: String(r.kpi.conPrueba30) }, { k: "PROBLEMAS 30 D", v: String(r.kpi.problemas30) },
-    { k: "OFERTAS 30 D", v: String(r.kpi.ofertas30) }, { k: "ACEPTADAS", v: String(r.kpi.aceptadas30) },
+    { k: "OFERTAS DEL NEGOCIO 30 D", v: String(r.kpi.ofertas30) }, { k: "ACEPTADAS", v: String(r.kpi.aceptadas30) },
   ] });
   const acts = [
     ...(puede.sancionar ? [{ l: "Sancionar", v: "danger", icon: "lock", onClick: sancionar }] : []),
@@ -57,7 +57,7 @@ export function Repartidor360({ r, puede }: { r: Rep360; puede: { editar: boolea
   B.push({ type: "rows", k: `INCIDENCIAS · ${abiertas.length} ${abiertas.length === 1 ? "ABIERTA" : "ABIERTAS"}`, items: r.incid.length ? r.incid.map((i): Fila => ({ key: i.id, icon: i.kind === "accidente" ? "warning" : "truck",
     t: `${KIND_INC[i.kind] ?? "INCIDENCIA"}${i.numero ? ` · #${i.numero}` : ""}${i.negocio ? ` · ${i.negocio}` : ""}`, s: [i.nota.es, cuandoDlv(i.at), i.status === "resolved" ? `Resuelta${i.quien ? ` por ${i.quien}` : ""}: ${i.resolucion ?? ""}` : null].filter(Boolean).join(" · "),
     tag: i.status === "open" ? "ABIERTA" : "RESUELTA", tone: i.status === "open" ? "action" : "neutral", chev: false,
-    acts: [...(i.foto ? [{ l: "Ver foto", v: "secondary", icon: "camera", onClick: () => window.open(`/api/entrega/foto/${i.foto}`, "_blank", "noopener") }] : []),
+    acts: [...(i.foto ? [{ l: "Ver foto", v: "secondary", icon: "image", onClick: () => window.open(`/api/entrega/foto/${i.foto}`, "_blank", "noopener") }] : []),
       ...(i.status === "open" && puede.editar ? [{ l: "Resolver", v: "secondary", icon: "check", onClick: () => setConf({ titulo: "¿Cómo se resolvió?", cta: "Resolver", sub: "Queda en la auditoría.",
         plantillas: ["Hablamos con el repartidor y el negocio", "La prueba de la entrega está bien", "Fue un accidente: nadie salió herido"], hacer: (m) => dlvResolver(i.id, m) }) }] : [])] }))
     : [{ icon: "check", t: "Sin incidencias", chev: false, compact: true }] });
@@ -70,7 +70,7 @@ export function Repartidor360({ r, puede }: { r: Rep360; puede: { editar: boolea
   B.push({ type: "rows", k: "ÚLTIMAS ENTREGAS", cols: desk ? "repeat(2,minmax(0,1fr))" : "1fr", items: r.entregas.length ? r.entregas.map((e): Fila => ({ key: e.numero, icon: "bag", t: `#${e.numero} · ${e.negocio}`,
     s: [cuandoDlv(e.at), e.prueba ? `prueba: ${e.prueba.split(",").map((p) => PR[p] ?? p).join(" · ")}` : e.estado === "Entregado" ? "sin prueba" : null, e.efectivo ? `efectivo ${money(e.efectivo)}` : null].filter(Boolean).join(" · "),
     tag: e.estado.toUpperCase(), tone: e.estado === "Entregado" ? "signal" : "neutral", chev: false,
-    acts: e.foto ? [{ l: "Ver foto", v: "secondary", icon: "camera", onClick: () => window.open(`/api/entrega/foto/${e.foto}`, "_blank", "noopener") }] : undefined }))
+    acts: e.foto ? [{ l: "Ver foto", v: "secondary", icon: "image", onClick: () => window.open(`/api/entrega/foto/${e.foto}`, "_blank", "noopener") }] : undefined }))
     : [{ icon: "truck", t: "Todavía no tiene entregas", chev: false, compact: true }] });
   B.push({ type: "note", tone: "ink", icon: "shield", t: "El repartidor nunca ve el teléfono del cliente ni sus códigos. La foto de la entrega es privada: cada vez que alguien del equipo la abre, queda en la auditoría." });
   return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}><PanelBloques bloques={B} h1={desk ? 26 : 22} /><Toast t={toast} desk={desk} /></div>;

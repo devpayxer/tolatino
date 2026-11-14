@@ -110,7 +110,7 @@ export function Pedido({ p, es, ayuda, ruta = false }: { p: PedidoVista; es: boo
         <div className={K}>{E2("TU REPARTIDOR TE ESCRIBIÓ", "YOUR DRIVER WROTE")}</div>
         {p.rep9n.mensajes.map((m, i) => <div key={i} className="text-[12.5px] font-semibold leading-[1.45]">{p.repartidor?.nombre ? `${p.repartidor.nombre}: ` : ""}{m.t}</div>)}
       </div>}
-      {p.rep9n?.foto && <div className="mt-3 flex"><Button variant="secondary" size="md" icon="camera" onClick={() => window.open(`/api/entrega/foto/${p.rep9n!.foto}`, "_blank", "noopener")}>{E2("Ver la foto de la entrega", "See the delivery photo")}</Button></div>}
+      {p.rep9n?.foto && <div className="mt-3 flex"><Button variant="secondary" size="md" icon="image" onClick={() => window.open(`/api/entrega/foto/${p.rep9n!.foto}`, "_blank", "noopener")}>{E2("Ver la foto de la entrega", "See the delivery photo")}</Button></div>}
       {ENT?.seguimiento && !cerrado && !fin &&
  <div className="mt-3 flex"><Button variant="secondary" size="md" icon="truck" onClick={() => window.open(ENT.seguimiento!, "_blank", "noopener,noreferrer")}>{E2(`Seguir en ${ENT.ext ?? "la app"}`, `Track on ${ENT.ext ?? "the app"}`)}</Button></div>}
     </div>

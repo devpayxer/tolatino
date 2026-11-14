@@ -524,7 +524,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
       cuerpoB.push({ type: "rows", items: [
         { icon: "users", t: i.rep, s: "Repartidor · su 360° con entregas, incidencias y sanciones", chev: true, onClick: () => router.push(`/admin/repartidores/${i.repId}`) },
         ...(i.numero ? [{ icon: "bag", t: `Pedido #${i.numero}`, s: i.prueba ? `Prueba: ${i.prueba.split(",").map((p) => PR[p] ?? p).join(" · ")}` : "Sin prueba de entrega todavía", chev: false,
-          acts: i.foto ? [{ l: "Ver foto", v: "secondary", icon: "camera", onClick: () => window.open(`/api/entrega/foto/${i.foto}`, "_blank", "noopener") }] : undefined }] : []),
+          acts: i.foto ? [{ l: "Ver foto", v: "secondary", icon: "image", onClick: () => window.open(`/api/entrega/foto/${i.foto}`, "_blank", "noopener") }] : undefined }] : []),
       ] });
       acts = "puedeResolver" in k && k.puedeResolver ? [{ l: "Resolver", icon: "check", onClick: () => setConf({ titulo: "¿Cómo se resolvió?", cta: "Resolver",
         plantillas: ["Hablamos con el repartidor y el negocio", "La prueba de la entrega está bien", "Fue un accidente: nadie salió herido", "Se sancionó en Repartidores"],

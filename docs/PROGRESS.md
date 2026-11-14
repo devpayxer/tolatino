@@ -2063,3 +2063,34 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   la baja), `lib/correo/plantillas.ts` (marco con `wallet` y `baja`), `lib/correo/recibos.ts` (armarReciboBoletos), `mapa-de-datos.json` (5 tablas: wa_templates,
   wa_template_events, support_email_in, email_unsubscribes, sms_outbox; regenerado), `infra/pruebas/docker-compose.yml` y `pruebas/servir/servir.sh` (TELNYX_FROM,
   WHATSAPP_WABA_ID, CORREO_SNS_TEMA, CORREO_SNS_HOSTS en el perfil completo), los docs.
+
+## Fase 9 · 9n — Lo diferido del negocio, el Repartidor y la operación del Super Admin (14 nov)
+- **Hecho (rama del worktree de 9n, sobre a7441f9; en paralelo con 9m):**
+  - **Migración `0144_negocio.sql`** (dos veces en una base nueva —antes de 0145— y otra vez a mano sobre una base con 0145: sin cambios). Los CHECK se AMPLÍAN
+    (`pg_temp.ampliar_check`: media «delivery», cola «entrega», sujeto «delivery_incident», secciones «repartidor» y «colas», special_hours «vacation» y «own»).
+    - **Repartidor:** `delivery_settings.proof` y `.pickup_code` (apagados de fábrica); `delivery_codes` (el código del cliente y el de recogida, 4 cifras de azar fuerte,
+      nacen solos al aceptar un delivery: trigger `operations_codigos`); `delivery_proofs` (foto / código / negocio; solo inserción) y el trigger **`operations_prueba`**
+      (la base no deja cerrar sin prueba un delivery con repartidor de un negocio que la pide); `delivery_offers` (una abierta por pedido; solo cambia de estado) y
+      `delivery_offer_replies` (solo inserción); `delivery_messages` (lo que el repartidor le escribe al cliente; solo inserción); `delivery_incidents` (se resuelven
+      una vez) y `driver_sanctions` (solo se levantan, una vez; un baneo lo levanta otra persona) con `repartidor_sancionado()`; sección **«dlv»** en la matriz.
+    - **Colas:** `queue_roles` (quién ve cada cola, sembrada con lo que decía el código), `staff_holidays` y `soporte_sla` que no los cuenta; Configuración › **Colas**
+      (`cola_tomado_min` y `cola_sla_*` de las 24 colas con plazo fijo) y › **Repartidor** (`oferta_seg`, `entrega_codigo_intentos`, `entrega_foto_dias`, `rep_mensajes_max`).
+    - **Horario:** `special_hours` con `status` (nada se borra) y `holiday_key`; `holiday_catalog` (2026–2027); **`negocio_abierto`** mira días especiales activos y la temporada.
+    - **Avisos:** `notif_templates.biz_pref` y `business_notif_prefs`; plantillas `drv_oferta`, `drv_sancion`, `biz_oferta_ok`, `biz_oferta_vencio`, `ord_rep_msg`.
+    - `insc_grupos_n` e `insc_grupos_dias` pasan a editables (Colas › Grupos que no abrieron lee el valor: `textoCola`).
+  - **Semilla `0063_repartidor.sql`** (el plan decía 0056, de 9h): Sabor Dominicano pide código y prueba, una entrega de ayer con código, una incidencia abierta en Colas.
+  - **Repartidor:** `lib/repartidor.ts` (sin el teléfono del cliente; código de recogida; la prueba con la foto de ESTE pedido o el código del cliente con tope; un
+    accidente abre incidencia; la sanción frena «en línea»), `lib/repartidor-ofertas.ts` (ofrecer, «Aceptar» inicia la ruta, rechazar, vencer en el barrido; escribir
+    al cliente sin teléfonos ni enlaces), `/api/repartidor/foto` (privada, `privado/e/`, sin metadatos) y `/api/entrega/foto/[id]` (cliente, negocio, equipo con
+    auditoría; lo demás 404), la pantalla (oferta con cuenta regresiva del servidor, «Escribir», «Llamar al negocio», código, «Tomar foto»), el pedido del cliente
+    (su código, los mensajes, la foto) y el panel (Entrega › «AL RECOGER Y AL ENTREGAR», «Ofrecer», la oferta abierta, el código de recogida y «Ya se lo di», la prueba).
+    La foto va en la evidencia de la disputa (`foto_entrega` → `uncategorized_file`).
+  - **Super Admin › Repartidores (ADM-DLV):** lista con filtros y cursor, 360°, incidencias (también en Colas, cola «entrega») y sanciones (`lib/repartidor-admin.ts`,
+    `app/admin/acciones-repartidores.ts`). **Colas:** J/K/A/R, lote en escritorio (Tomar, Asignar a…, Soltar), «Asignar a…», el «tomado» que vence (barrido
+    `colasTomado`), Colas › Ajustes (quién ve cada cola y feriados del equipo), plazos desde Configuración (también Confianza, que tenía su copia).
+  - **Panel:** Horario con feriados, vacaciones, días propios y «Abro por temporada»; Más › **Lo que te avisamos** (`avisarNegocio` lo mira).
+  - **Guardianes nuevos:** `entregaConPrueba`, `sinTelefonoAlRepartidor`, `diaEspecialActivo`; ampliados `ubicacionSoloEntregaActiva` («Aceptar» la oferta abre la
+    ruta, solo en `aceptarOferta`), `colasEnLaBase` (reconoce `ampliar_check`), `disputaConEvidencia` (la foto); `colaConVista` y `configDesdeUnLugar` en verde.
+    **`alreves9n` 24/24**; `alreves9k` al día (38/38 esperados con su caso nuevo).
+  - **Ayuda:** nuevas `panel-horario`, `repartidor-prueba-de-entrega`, `admin-repartidores`, `admin-colas`; `panel-avisos` al día (ES/EN).
+  - Mapa de datos al día (8 tablas; `delivery_messages` en sinPersona) y las salidas de privacidad regeneradas.
