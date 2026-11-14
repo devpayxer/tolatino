@@ -7210,6 +7210,19 @@ const guardianes = {
     }
   },
 
+  /* 9b-3 · El chat del negocio con El Compa encendido por otra prueba: compa7f y compa7h dejan las respuestas automáticas de El Compa
+     encendidas en su negocio y, dos veces seguidas, msg2p tomaba la respuesta de El Compa por el mensaje de la clienta. Una prueba que
+     escribe en /cuenta/mensajes y mira chat_messages, y no es de El Compa, lo apaga mientras dura (compa_business_settings). Al revés: alreves9b3. */
+  compaEnElChat() {
+    const G = "compaEnElChat";
+    for (const f of readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs") && !/^compa/.test(y)).map((y) => `pruebas/e2e/${y}`)) {
+      const t = readFileSync(f, "utf8");
+      if (!/cuenta\/mensajes\//.test(t) || !/from chat_messages/.test(t)) continue;
+      const apaga = t.search(/update compa_business_settings set enabled = false/), escribe = t.search(/Escribe a|cuenta\/mensajes\//);
+      if (apaga < 0 || apaga > escribe) falla(G, f, t.slice(0, escribe).split("\n").length, "escribe en el chat de un negocio y mira chat_messages sin apagar antes El Compa de ese negocio: si otra prueba lo dejó encendido, su respuesta pasa por la del cliente");
+    }
+  },
+
   veinticuatroHoras() {
     const G = "veinticuatroHoras", P = "apps/web/lib/pedir.ts";
     const p = sinComent(P);

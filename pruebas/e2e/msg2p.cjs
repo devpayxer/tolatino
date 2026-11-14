@@ -9,9 +9,14 @@ const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++
 const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l + ' · la página dice: ' + (await l.page().locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300)); };
 const MARI = "(select id from users where phone='+15705550122')", PEDRO = "(select id from users where phone='+15705550133')";
 const TH = `(select id from chat_threads where user_id = ${MARI} and business_id = '${BIZ}')`;
-const limpiar = () => { try { sql(`update chat_threads set blocked_at = null, blocked_by = null, phone_shared_at = null, assigned_user_id = null where business_id = '${BIZ}'`); sql(`update businesses set chat_auto_reply = false where id = '${BIZ}'`); } catch {} };
+// 9b-3 · Esta prueba es el chat del negocio (2p), no El Compa: si otra prueba (compa7f) lo dejó encendido, contesta a cada mensaje y el
+// «último» ya no es el del cliente (dos veces seguidas). Se apaga mientras dura y limpiar() lo deja como estaba.
+let COMPA0 = null;
+const limpiar = () => { try { sql(`update chat_threads set blocked_at = null, blocked_by = null, phone_shared_at = null, assigned_user_id = null where business_id = '${BIZ}'`); sql(`update businesses set chat_auto_reply = false where id = '${BIZ}'`); if (COMPA0 === 'true') sql(`update compa_business_settings set enabled = true where business_id = '${BIZ}'`); } catch {} };
 (async () => {
   limpiar();
+  COMPA0 = sql(`select coalesce((select enabled::text from compa_business_settings where business_id = '${BIZ}'), '')`);
+  if (COMPA0 === 'true') sql(`update compa_business_settings set enabled = false where business_id = '${BIZ}'`);
   // Base local de pruebas: la conversación de prueba empieza vacía (la app nunca borra; esto es solo el arreglo de la prueba).
   sql(`delete from content_reports where target_kind = 'chat'`); sql(`delete from queue_items where queue = 'chat'`); sql(`delete from chat_messages where thread_id in (select id from chat_threads where user_id = ${MARI} and business_id = '${BIZ}')`); sql(`delete from chat_threads where user_id = ${MARI} and business_id = '${BIZ}'`);
   const m0 = Number(sql(`select count(*) from chat_messages`)), nb0 = Number(sql(`select count(*) from notifications where tpl = 'biz_msg' and user_id = ${PEDRO}`)), nu0 = Number(sql(`select count(*) from notifications where tpl = 'msg_user' and user_id = ${MARI}`));
@@ -32,7 +37,7 @@ const limpiar = () => { try { sql(`update chat_threads set blocked_at = null, bl
   await m.getByPlaceholder(/Escribe a/).fill('Hola, ¿tienen mofongo hoy?'); await m.getByRole('button', { name: 'Enviar' }).click();
   await m.getByText('Hola, ¿tienen mofongo hoy?').first().waitFor();
   // 9b-3 · El texto en pantalla sale antes de que el servidor lo guarde: se espera a la base (dos veces seguidas, la consulta llegó antes).
-  let ult = ''; for (let i = 0; i < 40 && ult !== 'Hola, ¿tienen mofongo hoy?'; i++) { ult = sql(`select body from chat_messages where thread_id = ${TH} order by id desc limit 1`); if (ult !== 'Hola, ¿tienen mofongo hoy?') await new Promise((r) => setTimeout(r, 250)); }
+  let ult = ''; for (let i = 0; i < 40 && ult !== 'Hola, ¿tienen mofongo hoy?'; i++) { ult = sql(`select body from chat_messages where thread_id = ${TH} and sender = 'user' order by id desc limit 1`); if (ult !== 'Hola, ¿tienen mofongo hoy?') await new Promise((r) => setTimeout(r, 250)); }
   ok(ult === 'Hola, ¿tienen mofongo hoy?', 'el mensaje se guarda' + (ult === 'Hola, ¿tienen mofongo hoy?' ? '' : ` (el último: «${ult}»)`));
   ok(Number(sql(`select biz_unread from chat_threads where id = ${TH}`)) === 1, 'el negocio lo tiene sin leer');
   ok(Number(sql(`select count(*) from notifications where tpl = 'biz_msg' and user_id = ${PEDRO}`)) === nb0 + 1, 'aviso al dueño');
