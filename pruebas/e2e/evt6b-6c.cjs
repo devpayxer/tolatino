@@ -224,7 +224,8 @@ const PARR = 'parroquia-santa-maria', CASA = 'taquiza-don-chuy';
     // ── 8 · Noche: la noche especial abre su evento ──
     await am.goto(B + '/n/la-terraza-night?tab=svc');
     ok(await contiene(am, `Noche especial ${TAG}`), 'Noche: la noche especial con su evento en vivo sale en la ficha');
-    await clic(am.getByRole('button', { name: 'Ver evento' })); ok(await espera(() => am.url().includes(`/eventos/${slug(EJ)}`)), '«Ver evento» abre la ficha del evento');
+    /* 9n-4 · con boletos a la venta el botón dice «Comprar boletos» (desde su precio); sin boletos, «Ver evento»: los dos abren el evento */
+    await clic(am.getByRole('button', { name: /^(Ver evento|Comprar boletos)$/ })); ok(await espera(() => am.url().includes(`/eventos/${slug(EJ)}`)), '«Ver evento» / «Comprar boletos» abre la ficha del evento');
     sql(`update events set hidden_at = now(), hidden_by = '${ADMID}', hidden_reason = 'prueba ${TAG}' where id = ${EJ}`);
     await am.goto(B + '/n/la-terraza-night?tab=svc'); ok(!(await texto(am)).includes(`Noche especial ${TAG}`), 'con el evento oculto, la noche especial no sale');
     sql(`update events set hidden_at = null, hidden_by = null, hidden_reason = null where id = ${EJ}`);

@@ -245,7 +245,8 @@ async function inscFe(p, neg, svc, o = {}) {
   const yd = await ctx('5705550433', 1360); await yd.goto(`${B}/panel/${INM}/vendes/visitas`); await yd.getByText('POR PROPIEDAD · 90 DÍAS').first().waitFor(); await yd.screenshot({ path: OUT + 'v4ie-panel-visitas-d.png', fullPage: true });
   const ad = await ctx('5705550199', 1360); await ad.goto(`${B}/admin/transacciones?tab=vis`); await ad.getByText(/Visita D-|Prueba de manejo D-/).first().waitFor(); await ad.screenshot({ path: OUT + 'v4ie-admin-tx-d.png', fullPage: true });
   ok(true, 'Super Admin › Transacciones › Visitas');
-  await ad.goto(`${B}/admin/colas`); await ad.getByText(/Plantones · /).first().waitFor(); ok(true, 'Super Admin › Colas › Plantones');
+  /* 9b-3 · «Todas» las colas van por página (9n-3): con muchos casos abiertos (barajada) el de Plantones queda más abajo. Se abre su cola. */
+  await ad.goto(`${B}/admin/colas?cola=plantones`); await ad.getByText(/Plantones · /).first().waitFor(); ok(true, 'Super Admin › Colas › Plantones');
 
   // 11 · Ningún pago en todo el flujo.
   ok(pagos() === pagos0 && pagos0 === '0', 'ningún pago ni retención en visitas ni en Iglesias');

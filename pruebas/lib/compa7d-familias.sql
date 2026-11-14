@@ -9,4 +9,6 @@ select distinct on (o.kind) o.kind, o.number, u.phone, o.status, b.name
    and u.phone not in ('+15705550199','+15705550677')
    and (o.kind <> 'order' or (o.ready_at is not null and o.respond_by is not null))
    and (o.kind <> 'tickets' or exists (select 1 from payments p where p.operation_id = o.id and p.status = 'captured'))
- order by o.kind, (o.status = 'done') desc, o.sent_at desc;
+-- 9b-3 · La cita es de Marisol: los pasos 2 y 3 (?de=compa, la conversación con fuente, cancelar con El Compa) entran como ella. En otro orden
+-- (barajada, 14 nov) salía la cita de otra cuenta de prueba y la pantalla de Marisol era un 404.
+ order by o.kind, (o.kind = 'appointment' and u.phone = '+15705550122') desc, (o.status = 'done') desc, o.sent_at desc;

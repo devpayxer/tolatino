@@ -75,6 +75,10 @@ const casos = [
   ['alrevesQueFalla', 'pruebas/alreves/alreves5e.cjs', '.replace(a, () => b)', '.replace(a, b)'],
   // codigoRecogidaPropio: app8e vuelve a no decidir el código de recogida
   ['codigoRecogidaPropio', 'pruebas/e2e/app8e.cjs', ', proof=false, pickup_code=false where', ' where'],
+  // ciudadSinAmbiguedad: sis9j vuelve a hacer clic en «Reading» sin decir cuál (el selector de ciudad del admin también lo dice)
+  ['ciudadSinAmbiguedad', 'pruebas/e2e/sis9j.cjs', "await clic(a.locator('main').getByText('Reading', { exact: true }));", "await clic(a.getByText('Reading', { exact: true }));"],
+  // retiradoNoCuenta: rep2l vuelve a buscar a Juan por teléfono sin mirar el estado (sale también el retirado)
+  ['retiradoNoCuenta', 'pruebas/e2e/rep2l.cjs', "select status || '|' || vehicle || '|' || (invite_code is null) from delivery_drivers where phone = '+1${JUAN_TEL}' and status <> 'removed'", "select status || '|' || vehicle || '|' || (invite_code is null) from delivery_drivers where phone = '+1${JUAN_TEL}'"],
   // textoQueExiste: una prueba busca en la pantalla un texto que ya no está en ningún lado (lo que le pasó a sis9j con 9o)
   ['textoQueExiste', 'pruebas/e2e/sis9j.cjs', "await contiene(a, 'DESPLIEGUES Y VUELTAS ATRÁS')", "await contiene(a, 'Llegan cuando se encienda producción')"],
 ];

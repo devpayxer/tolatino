@@ -13,7 +13,7 @@ const MARISOL = "(select id from users where phone='+15705550122')";
   // Las ofertas de Novedades cambian el precio: esta prueba mira el precio del menú.
   sql(`update business_posts set status = 'stopped' where business_id = 'sabor-dominicano' and kind = 'oferta' and status = 'live'`);
   // Preparación (base local): abierto todo el día, nada agotado salvo el chivo, inventario de hoy en su número, sin pausa.
-  sql(`update business_hours set ranges='[["00:00","00:00"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`);
+  sql(`update business_hours set ranges='[["00:00","00:00"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`); sql(`update businesses set closed_on = null, temp_closed_until = null where id='${BIZ}'`); sql(`update special_hours set status = 'removed', removed_at = now() where business_id='${BIZ}' and status = 'active' and (kind = 'season' or (now() at time zone 'America/New_York')::date between date_from and date_to)`); /* 9b-3 · abierto AHORA lo decide la prueba: en otro orden (barajada, 14 nov) Sabor salía «Cerrado hoy» */
   sql(`update items set sold_out = (id = 3), stock_day = null where business_id='${BIZ}'`);
   sql(`insert into menu_settings (business_id) values ('${BIZ}') on conflict (business_id) do update set pause_until = null`);
   sql(`update operations set respond_by = now() - interval '1 minute' where user_id = ${MARISOL} and status = 'pending'`);

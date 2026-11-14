@@ -6,7 +6,7 @@ const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
 const restaurar = () => { sql(`update business_hours set ranges='[["11:00","21:00"]]'::jsonb where business_id='${BIZ}' and module=''`); sql(`update business_stats_cache set plan='pro' where business_id='${BIZ}'`); sql(`update platform_config set value='10' where key='free_ops_cap'`); };
 (async () => {
-  sql(`update business_hours set ranges='[["00:00","00:00"]]'::jsonb where business_id='${BIZ}' and module=''`);
+  sql(`update business_hours set ranges='[["00:00","00:00"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`); sql(`update businesses set closed_on = null, temp_closed_until = null where id='${BIZ}'`); sql(`update special_hours set status = 'removed', removed_at = now() where business_id='${BIZ}' and status = 'active' and (kind = 'season' or (now() at time zone 'America/New_York')::date between date_from and date_to)`); /* 9b-3 · abierto AHORA lo decide la prueba: en otro orden (barajada, 14 nov) Sabor salía «Cerrado hoy» */
   sql(`update operations set respond_by = now() - interval '1 minute' where status='pending'`);
   sql(`update business_stats_cache set plan='free' where business_id='${BIZ}'`);
   // 9b-3 · El mofongo y el chicharrón disponibles, con su cuenta, y sin pausa: barajada, otra prueba los dejaba agotados o en pausa y «Enviar pedido» quedaba apagado.

@@ -210,7 +210,8 @@ const VARS = { ultimos: '0123', enlace: 'https://pruebas.tolatino.com/soporte', 
     await pa.locator('textarea').first().fill(`Hola, ya revisamos tu cuenta ${RUN}: entra con tu teléfono de nuevo.`);
     await pa.getByRole('button', { name: 'Enviar' }).click();
     ok(await espera(() => sql(`select count(*) from email_outbox where tpl = 'support_reply' and ref_id = '${TK}' and html like '%ya revisamos tu cuenta ${RUN}%'`) === '1'), 'la respuesta del equipo le llega por correo, con el texto (el caso entró por correo)');
-    ok(sql(`select channel || '|' || status from support_replies_out where case_id = (select id from support_cases where number = '${TK}')`) === 'correo|pruebas', 'la salida quedó anotada (correo · en modo pruebas)');
+    /* la salida se anota DESPUÉS de encolar el correo (respuestaFueraDeLaApp corre tras el commit): se espera, no se lee de una vez */
+    ok(await espera(() => sql(`select channel || '|' || status from support_replies_out where case_id = (select id from support_cases where number = '${TK}')`) === 'correo|pruebas'), 'la salida quedó anotada (correo · en modo pruebas)');
     await shot(pa, 'soporte-caso-correo-1360');
     await pa.goto(B + '/admin/soporte?tab=correo');
     const ts = await texto(pa);

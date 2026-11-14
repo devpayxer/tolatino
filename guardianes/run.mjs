@@ -9193,6 +9193,34 @@ const guardianes = {
       if (/Recogí, voy en camino/.test(t) && !/pickup_code\s*=/.test(t)) falla(G, f, 0, "hace «Recogí» sin decidir el código de recogida del negocio (update delivery_settings … pickup_code = …, proof = …)");
     }
   },
+
+  /* 9b-3 · ciudadSinAmbiguedad: desde 9n-3 el Super Admin lleva arriba el selector de ciudad (Todas · Hazleton · Allentown …). Una prueba que hace clic en
+     el nombre de una ciudad sin decir cuál (la de la ventana o la del selector) se lleva la primera visible, que es la del selector: adm5i dejó «Mover»
+     apagado y sis9j guardó el interruptor sin ciudad (14 nov). Cada clic en una ciudad va acotado (locator(…) delante) o con .first()/.last()/.nth().
+     Al revés (alreves9b3): quitarle a sis9j el locator('main'). */
+  ciudadSinAmbiguedad() {
+    const G = "ciudadSinAmbiguedad";
+    const re = /\b([\w$]+)\.getByText\('(?:Hazleton|Allentown|Reading|Scranton|Wilkes-Barre)', \{ exact: true \}\)(\.(?:first|last|nth)\()?/g;
+    for (const f of archivos.filter((x) => /^pruebas\/e2e\/[^/]+\.(cjs|mjs)$/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      for (const m of t.matchAll(re)) {
+        if (m[2]) continue;
+        falla(G, f, t.slice(0, m.index).split("\n").length, `clic en «${m[0].match(/'([^']+)'/)[1]}» sin decir cuál: el selector de ciudad del admin también lo dice (acótalo con locator(…) o .first()/.last())`);
+      }
+    }
+  },
+
+  /* 9b-3 · retiradoNoCuenta: nada se borra; una prueba que retira repartidores (status = 'removed') y luego busca al de un teléfono sin mirar el estado
+     lee dos filas (el retirado y el nuevo): rep2l falló «Juan entra al equipo» en las 3 vueltas (14 nov). Al revés (alreves9b3): quitar el filtro en rep2l. */
+  retiradoNoCuenta() {
+    const G = "retiradoNoCuenta";
+    for (const f of archivos.filter((x) => /^pruebas\/e2e\/[^/]+\.(cjs|mjs)$/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      if (!/delivery_drivers set status = 'removed'/.test(t)) continue;
+      for (const m of t.matchAll(/from delivery_drivers where phone = [^`]*`/g))
+        if (!/status\s*(<>|=)/.test(m[0])) falla(G, f, t.slice(0, m.index).split("\n").length, "busca al repartidor por teléfono sin mirar el estado: también sale el retirado (and status <> 'removed')");
+    }
+  },
 };
 
 

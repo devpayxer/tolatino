@@ -13,6 +13,8 @@ const verV = async (l) => { for (let i = 0; i < 60; i++) { if (await vis(l)) ret
   // 9b-1 · El trámite terminado con su total por escrito que lista Transacciones › Profesionales lo hace pro4l2: se corre antes (requiere, siempre), así está en una base nueva, en cualquier orden y arriba de la
   // lista aunque la base tenga muchas corridas (antes se daba por hecho que ya había corrido).
   require('../lib/requiere.cjs').requiere('pro4l2', () => sql(`select number from operations where business_id = 'bufete-almonte' and status = 'done' and sent_at > now() - interval '30 minutes' limit 1`), { siempre: true, que: 'un trámite con su total por escrito, terminado (pro4l2)' });
+  // 9b-3 · Transacciones › Salud necesita una cita de salud: en una base nueva y en otro orden (barajada, 14 nov) no había ninguna. La hace sal4j.
+  require('../lib/requiere.cjs').requiere('sal4j', () => sql(`select number from operations where kind = 'appointment' and details->>'rubro' = 'salud' limit 1`), { que: 'una cita de salud (sal4j)' });
   const b = await chromium.launch(); const err = [];
   const a = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage();
   a.on('pageerror', (e) => err.push(e.message)); a.on('console', (x) => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); });

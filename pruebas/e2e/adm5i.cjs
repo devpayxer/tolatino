@@ -135,7 +135,7 @@ const KEYS = ['com_editar_min', 'com_resumen_hora'];
     // ── 6 · Mover de ciudad ──
     await ad.goto(B + `/admin/contenido?tab=pub&q=${encodeURIComponent('buena panadería')}`);
     await clic(ad.getByText('Mover de ciudad', { exact: true }));
-    await clic(ad.getByText('Allentown', { exact: true })); await clic(ad.getByText('Habla de otra ciudad', { exact: true })); await clic(ad.getByRole('button', { name: 'Mover', exact: true }).last());
+    /* 9n-3 · el selector de ciudad del admin también dice «Allentown»: la de la ventana (va después en la página) */ await clic(ad.getByText('Allentown', { exact: true }).last()); await clic(ad.getByText('Habla de otra ciudad', { exact: true })); await clic(ad.getByRole('button', { name: 'Mover', exact: true }).last());
     ok(await espera(() => sql(`select city_id from com_posts where id = ${P25}`) === 'alw') && sql(`select count(*) from com_comments where post_id = ${P25} and city_id <> 'alw'`) === '0', 'movida a Allentown con sus comentarios');
     ok(sql(`select count(*) from audit_entries where action = 'com.publicacion.mover' and target_id = '${P25}'`) === '1', 'mover queda en la auditoría');
 

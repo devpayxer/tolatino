@@ -84,6 +84,7 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
   ok(sql(`select count(*) >= 11 from app_events where name = 'compa_abrir' and at > now() - interval '5 minutes'`) === 't', 'analítica: compa_abrir (sin texto ni persona)');
   // ?de=compa = el formulario de siempre
   const fc = fam.find((f) => f.kind === 'appointment'), pM = await como(MARISOL);
+  ok(fc.tel === MARISOL, `la cita de la prueba es de Marisol (${fc.num}): los pasos que siguen entran como ella`);
   await pM.goto(B + AYUDA.appointment(fc.num) + '?de=compa'); await pM.waitForLoadState('networkidle');
   { const t = norm(await texto(pM)); ok(!(await pM.locator(HOJA).count()) && t === antes.appointment, '?de=compa: el formulario de siempre, idéntico' + dif(t, antes.appointment)); }
   // Cerrar la hoja (tocar fuera) = la operación de siempre

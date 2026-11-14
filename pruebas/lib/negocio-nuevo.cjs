@@ -41,14 +41,19 @@ async function publicarBarberia(browser, { tel = telLibre(), nombre: dueno = 'Ma
   await p.getByText('Belleza', { exact: true }).first().click(); await p.locator('text=/¿QUÉ HACES/').waitFor({ timeout: 8000 });
   await p.locator('[data-screen-label="ONB-NEG-B1 · tu negocio"] span:has-text("Barbería")').first().click().catch(async () => { await p.locator('[data-screen-label="ONB-NEG-B1 · tu negocio"] div[style*="flex-wrap"] > *').first().click(); });
   await p.getByPlaceholder('Ej.: Barbería Don Fello').fill(nombre); await p.waitForTimeout(600);
-  await p.getByText('Seguir', { exact: true }).last().click(); await p.waitForTimeout(900);
+  await p.getByText('Seguir', { exact: true }).last().click();
+  /* 9b-3 · con la máquina cargada (todas las fases) el paso C1 tardaba más de 900 ms: el bucle no veía «RESPONDE LO QUE FALTA», se saltaba y el
+     «Seguir» quedaba apagado en C1 (din9n4, 14 nov). Se espera a que la pantalla cambie de verdad (C1, o D1 si la categoría no tiene preguntas). */
+  await p.locator('[data-screen-label^="ONB-NEG-C1"], [data-screen-label^="ONB-NEG-D1"]').first().waitFor({ timeout: 20000 }); await p.waitForTimeout(300);
   for (let i = 0; i < 6; i++) {
     if (!(await p.locator('text=RESPONDE LO QUE FALTA').count())) break;
     const grupos = p.locator('[data-screen-label^="ONB-NEG-C1"] > div'); const n = await grupos.count();
     for (let g = 0; g < n; g++) { const opc = grupos.nth(g).locator('div[role=button], span[style*="border-radius: 999px"], div[style*="cursor: pointer"]').first(); if (await opc.count()) await opc.click().catch(() => {}); await p.waitForTimeout(120); }
   }
-  await p.getByText('Seguir', { exact: true }).last().click(); await p.waitForTimeout(900);
-  await p.locator('button, span, div').filter({ hasText: /^Seguir · / }).last().click(); await p.waitForTimeout(900);
+  if (await p.locator('[data-screen-label^="ONB-NEG-C1"]').count()) await p.getByText('Seguir', { exact: true }).last().click();
+  await p.locator('[data-screen-label^="ONB-NEG-D1"]').first().waitFor({ timeout: 20000 });
+  await p.locator('button, span, div').filter({ hasText: /^Seguir · / }).last().click();
+  await p.locator('[data-screen-label^="ONB-NEG-E1"]').first().waitFor({ timeout: 20000 }); await p.waitForTimeout(300);
   const dir = p.getByPlaceholder('312 N Wyoming St'); if (await dir.count()) await dir.fill('412 N Wyoming St');
   await p.waitForTimeout(400);
   await p.getByText('Seguir', { exact: true }).last().click(); await p.waitForTimeout(900);

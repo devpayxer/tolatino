@@ -29,7 +29,7 @@ const restaurar = () => { try { sql(`update delivery_settings set delivery=false
   await clic(d.getByText('Invitar repartidor', { exact: true }));
   const campos = d.locator('main input'), nc = await campos.count(); await campos.nth(nc - 2).fill('Juan Repartidor'); await campos.nth(nc - 1).fill('(570) 555-0144');
   await clic(d.getByText('Crear código', { exact: true })); await d.getByText(/Dale este código: [A-Z0-9]{6}/).first().waitFor();
-  const codigo = sql(`select invite_code from delivery_drivers where phone = '+1${JUAN_TEL}'`);
+  const codigo = sql(`select invite_code from delivery_drivers where phone = '+1${JUAN_TEL}' and status <> 'removed'`);
   ok(/^[A-HJ-NP-Z2-9]{6}$/.test(codigo), `código creado (${codigo}), sin letras que se confunden`);
   await d.screenshot({ path: OUT + 'r1-entrega-invitar-d.png', fullPage: true });
   // 2 · Otra cuenta no puede usar el código
@@ -44,8 +44,8 @@ const restaurar = () => { try { sql(`update delivery_settings set delivery=false
   await j.screenshot({ path: OUT + 'r2-onb-m.png', fullPage: true });
   await j.locator('input').first().fill(codigo.toLowerCase()); await clic(j.getByText('Moto', { exact: true })); await clic(j.getByText('Entrar al equipo', { exact: true }));
   await j.getByText(/Estás fuera de línea/).first().waitFor();
-  ok(sql(`select status || '|' || vehicle || '|' || (invite_code is null) from delivery_drivers where phone = '+1${JUAN_TEL}'`) === 'active|moto|true', 'Juan entra al equipo (moto); el código ya no sirve');
-  await clic(j.getByRole('switch').first()); await j.getByText(/Estás en línea/).first().waitFor(); ok(sql(`select online from delivery_drivers where phone = '+1${JUAN_TEL}'`) === 't', 'en línea');
+  ok(sql(`select status || '|' || vehicle || '|' || (invite_code is null) from delivery_drivers where phone = '+1${JUAN_TEL}' and status <> 'removed'`) === 'active|moto|true', 'Juan entra al equipo (moto); el código ya no sirve');
+  await clic(j.getByRole('switch').first()); await j.getByText(/Estás en línea/).first().waitFor(); ok(sql(`select online from delivery_drivers where phone = '+1${JUAN_TEL}' and status <> 'removed'`) === 't', 'en línea');
   await j.screenshot({ path: OUT + 'r3-inicio-m.png', fullPage: true });
   // 4 · Marisol pide a domicilio, efectivo al recibir
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); watch(m, 'cliente'); globalThis.__p.push(m);

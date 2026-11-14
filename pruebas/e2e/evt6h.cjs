@@ -146,7 +146,10 @@ const crudo = (p) => p.evaluate(() => new Promise((ok) => {
     const R1 = await crudo(a1);
     ok(R1.llaves[0].k && R1.llaves[0].k.ext === false && R1.llaves[0].k.alg === 'AES-GCM', 'la llave de la sesión es un CryptoKey AES-GCM NO exportable');
     const plano = Buffer.from(R1.paquetes[0].c).toString('latin1');
-    ok(!plano.includes(NOM1.split(' ')[0]) && !plano.includes('Pase') && !plano.includes(String(T.a)), 'el paquete guardado está cifrado: ni nombres, ni tipos, ni ids de boletos a la vista');
+    /* 9b-3 · Lo cifrado son bytes al azar: un id corto («12», en una base nueva o en otro orden) o un nombre de 3 letras sale por casualidad en unos KB
+       (barajada, 14 nov). Se busca lo que delataría el texto en claro: el nombre completo, el tipo y el id como lo escribe el JSON. */
+    const enClaro = [NOM1, 'Pase', `"id":${T.a}`, `"id":"${T.a}"`, `:${T.a},`, '"nombre"', '"tipo"', '"holder'];
+    ok(!enClaro.some((x) => plano.includes(x)), 'el paquete guardado está cifrado: ni nombres, ni tipos, ni ids de boletos a la vista');
     ok(await a1.evaluate(() => new Promise((ok) => { const r = indexedDB.open('tl-puerta'); r.onsuccess = () => { const q = r.result.transaction('llaves').objectStore('llaves').getAll(); q.onsuccess = () => crypto.subtle.exportKey('raw', q.result[0].k).then(() => ok(false), () => ok(true)); }; })), 'exportar la llave desde la página falla (no exportable)');
     // Con la llave de OTRA sesión (la de Eli, que el servidor solo le da a ella), el paquete de Dora no se abre.
     const llaveB = await a2.evaluate(async (s) => (await (await fetch('/api/puerta/paquete', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ sesion: s, llave: true }) })).json()).llave, SB);

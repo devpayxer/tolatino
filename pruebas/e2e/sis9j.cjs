@@ -156,7 +156,7 @@ const enNY = (d) => { const p = Object.fromEntries(new Intl.DateTimeFormat('en-U
     await a.goto(B + '/admin/sistema/flags'); await a.getByText('app.reportar', { exact: true }).first().waitFor();
     ok(await contiene(a, /\d+ INTERRUPTORES/) && await contiene(a, 'Se cambia en El Compa'), 'cada interruptor; los de El Compa llevan a su sección');
     await clic(a.getByText('app.reportar', { exact: true }));
-    await clic(a.getByText('Por porcentaje', { exact: true })); await clic(a.getByText('Reading', { exact: true }));
+    await clic(a.getByText('Por porcentaje', { exact: true })); /* 9n-3 · el selector de ciudad del admin también dice «Reading»: la del formulario */ await clic(a.locator('main').getByText('Reading', { exact: true }));
     await a.getByLabel('PORCENTAJE DE PERSONAS (1 A 99)').fill('10');
     await clic(boton(a, 'Guardar'));
     await confirmar(a, 'Prueba con pocas personas antes de abrirlo a todos.', 'Guardar');
