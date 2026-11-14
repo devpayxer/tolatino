@@ -43,7 +43,7 @@ const casos = [
   ['canalConFirma', PG, '  if (!u?.first_name) redirect(`/entrar?volver=', '  if (!u?.first_name && false) redirect(`/entrar?volver='],
   ['canalConFirma', PG, 'import { yo } from "@/lib/cuenta";', 'import { yo } from "@/lib/cuenta";\nimport { cookies } from "next/headers"; void cookies();'],
   ['canalConFirma', AC, '  if (!(await mismoOrigen())) return { ok: false, estado: "no", msg: SIN };\n', ''],
-  ['canalConFirma', M, "if texto_con_secretos(coalesce(new.body, '')) then raise exception 'compa_sin_secretos: la salida", "if false then raise exception 'compa_sin_secretos: la salida"],
+  ['canalConFirma', 'packages/db/migrations/0142_canales.sql', "if texto_con_secretos(coalesce(new.body, '')) then raise exception 'compa_sin_secretos: la salida", "if false then raise exception 'compa_sin_secretos: la salida"],  // 9l: la última definición de compa_outbound_antes es la de 0142 (también lo enviado → entregado)
   ['canalConFirma', 'apps/web/lib/avisos.ts', 'async function enBajaSms(', 'const META = "https://graph.facebook.com"; void META;\nasync function enBajaSms('],
   // libroSoloInsercion (7h)
   ['libroSoloInsercion', M, "  if tg_op = 'DELETE' then raise exception 'compa_inbound es solo de inserción'; end if;", "  if tg_op = 'DELETE' then return old; end if;"],

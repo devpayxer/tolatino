@@ -49,7 +49,7 @@ const casos = [
   ['promesaSms', EQ, 'await avisarTelefono(tel, "equipo_invitado", ', 'await avisarTelefono(tel, "biz_job", '],
   ['promesaSms', 'apps/web/app/admin/acciones-colas.ts', 'accion === "quitar" ? "foto_rep_quitada" : "foto_rep_queda"', 'accion === "quitar" ? "foto_rep_quitada" : "foto_rep_quitada"'],
   // avisoConPlantilla (ampliado): un correo que la base no acepta, un SMS con plantilla inventada
-  ['avisoConPlantilla', CI, '| "support_ack" | "weekly";', '| "support_ack" | "weekly" | "promo_flash";'],
+  ['avisoConPlantilla', CI, '| "weekly" | "city_open";', '| "weekly" | "city_open" | "promo_flash";'],
   ['avisoConPlantilla', CO, 'tpl: "cuenta_codigo"', 'tpl: "cuenta_codigo_v2"'],
   // smsSoloRespaldo (ampliado): el aviso manda en línea el SMS de respaldo
   ['smsSoloRespaldo', A, 'if (st === "pendiente" || st === "pruebas") await salirSms("notifications", id,', 'if (st1 === "pendiente" || st1 === "pruebas") await salirSms("notifications", id,'],

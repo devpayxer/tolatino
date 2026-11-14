@@ -1987,7 +1987,7 @@ const guardianes = {
     if (existsSync(AP)) for (const l of sinComent(AP).split("\n").filter((x) => /const tpl = |avisar\(/.test(x))) for (const m of l.matchAll(/"([a-z]+_[a-z0-9_]+)"/g)) if (!/^(com_post|com_comment|dm_message)$/.test(m[1]) && !tpl.has(m[1])) falla("avisoConPlantilla", AP, 0, `el aviso «${m[1]}» no existe en notif_templates`);
     // 9l · Ampliado: (1) el SMS del único camino (enviarSms({ … tpl: "…" })) usa una plantilla que existe; (2) cada plantilla de CORREO que el código
     // puede encolar (type Tpl de lib/correo) la acepta la base (email_outbox_tpl_check: las listas de las migraciones, también las que se amplían).
-    for (const f of codigo) if (/^apps\/web\/(lib|app)\/.+\.tsx?$/.test(f)) for (const m of sinComent(f).matchAll(/enviarSms\(\{[^}]*?tpl: "([a-z]+_[a-z0-9_]+)"/g)) if (!tpl.has(m[1])) falla("avisoConPlantilla", f, 0, `el SMS «${m[1]}» no existe en notif_templates`);
+    for (const f of codigo) if (/^apps\/web\/(lib|app)\/.+\.tsx?$/.test(f)) for (const l of sinComent(f).split("\n").filter((x) => /enviarSms\(\{/.test(x))) for (const m of l.matchAll(/tpl: "([a-z]+_[a-z0-9_]+)"/g)) if (!tpl.has(m[1])) falla("avisoConPlantilla", f, 0, `el SMS «${m[1]}» no existe en notif_templates`);
     const CI = "apps/web/lib/correo/index.ts";
     if (existsSync(CI)) {
       const ok = new Set();
@@ -5020,7 +5020,7 @@ const guardianes = {
     const CS = "scripts/contrato-canales/correr.sh", CP = "scripts/contrato-canales/prueba.cjs";
     if (existsSync(CS)) {
       const c = readFileSync(CS, "utf8");
-      if (/openapi\/(master|main)\//.test(c) || !/TELNYX_COMMIT=[0-9a-f]{40};/.test(c) || !/META_COMMIT=[0-9a-f]{40};/.test(c) || !/sha256sum -c/.test(c)) falla(G, CS, 0, "las especificaciones del contrato van fijas a un commit y a su huella, nunca a master/main");
+      if (/openapi\/(master|main)\//.test(c) || !/TELNYX_COMMIT=[0-9a-f]{40};/.test(c) || !/META_COMMIT=[0-9a-f]{40};/.test(c) || !/echo "\$TELNYX_SHA256  \$SPECS\/telnyx\.json" \| sha256sum -c/.test(c) || !/echo "\$META_SHA256  \$SPECS\/meta\.yaml" \| sha256sum -c/.test(c)) falla(G, CS, 0, "las especificaciones del contrato van fijas a un commit y a su huella, nunca a master/main");
     }
     if (existsSync(CP) && existsSync(P)) for (const m of sinComent(P).matchAll(/\nexport (?:async )?function (\w+)\(/g)) if (!["hayLlaves", "numeroSms", "wabaListo", "retoWhatsApp"].includes(m[1]) && !new RegExp(`P\\.${m[1]}\\(`).test(readFileSync(CP, "utf8"))) falla(G, CP, 0, `el contrato no prueba ${m[1]}() contra la especificación del proveedor`);
     if (!/if \(p !== "telnyx" && p !== "whatsapp"\) return no\(404\);/.test(post) || /proveedor: "sim"|"sim"/.test(r)) falla(G, R, 0, "la ruta pública solo acepta Telnyx y WhatsApp (el simulador no tiene ruta)");
@@ -8121,7 +8121,7 @@ const guardianes = {
     if (!/update sms_outbox set attempts = attempts \+ 1[\s\S]*?where id = \$1::bigint and attempts < max_attempts/.test(it)) falla(G, S, 0, "intentar() reclama el SMS en una sola escritura y nunca pasa del tope de intentos");
     if (!/insert into sms_attempts \(sms_id, n, provider, provider_msg_id, accepted, error_code\)/.test(it)) falla(G, S, 0, "cada intento queda anotado en sms_attempts");
     if (!/if \(f\.vencido \|\| !tel \|\| !texto\) return cerrar\(id, "vencido"/.test(it)) falla(G, S, 0, "un código vencido no se manda");
-    if (!/if \(permanente \|\| n >= max \|\| v\?\.vencido\) return cerrar\(id, "fallo"/.test(fa) || !/status = 'reintento', next_at = now\(\) \+ make_interval\(mins => \$2::int\)/.test(fa) || !/base \* 2 \*\* \(n - 1\)/.test(fa)) falla(G, S, 0, "lo que falla se reintenta con espera creciente hasta el tope; lo permanente o vencido, no");
+    if (!/if \(permanente \|\| n >= max \|\| v\?\.vencido\) return cerrar\(id, "fallo"/.test(fa) || !/status = 'reintento', next_at = now\(\) \+ make_interval\(mins => \$2::int\)/.test(fa) || !/\[id, base \* 2 \*\* \(n - 1\), codigo/.test(fa)) falla(G, S, 0, "lo que falla se reintenta con espera creciente hasta el tope; lo permanente o vencido, no");
     if (!/where provider = \$1 and provider_msg_id = \$2 and final is null and accepted/.test(an) || !/if \(!s \|\| s\.status !== "enviado" \|\| s\.attempts !== a\.n\) return/.test(an)) falla(G, S, 0, "el resultado final de un intento llega una vez y solo el último intento decide el SMS");
     if (!/\["sms", async \(\) => \(await import\("\.\/sms"\)\)\.reintentarSms\(\)\]/.test(sinComent(B))) falla(G, B, 0, "el barrido retoma los reintentos del SMS");
     if (!/if \(ENTORNO === "produccion"\) throw new Error/.test(sinComent(SIM))) falla(G, SIM, 0, "el simulador de SMS no existe en producción");

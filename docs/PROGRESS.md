@@ -1955,3 +1955,62 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **No cerrado, con destino (LAUNCH «Fase 9 · 9i»):** el selector de ciudad del encabezado del admin (9n), lo que queda de «Mi ciudad» (9m), el equipo local de las otras ciudades
   (Paquete 9-4), revisar los barrios en el lugar (9t), el impuesto con el contador (9s), Hazleton en beta (9u), abrir las cinco con el asistente (9v), las corridas del CI y la captura
   de `admin-hoy` (9b).
+
+## Fase 9 · 9l — avisos, correo y canales listos (14 nov)
+- **Hecho (rama del worktree de 9l, sobre 677761f; 9i ya juntado en la rama: «ciudad_abierta» y «city_open» son de 9i y 9l no manda su propio aviso de apertura):**
+  - **Migración `0142_canales.sql`** (dos veces en una base nueva 0001–0142 + semillas hasta 0059: la segunda no cambia nada). Los CHECK que listan valores se AMPLÍAN
+    con `pg_temp.ampliar_check` (nunca una lista fija): notifications / phone_messages / compa_outbound «entregado», compa_outbound kind «soporte» y «plantilla»,
+    compa_inbound result «tope_global», support_cases origin «correo», email_outbox tpl «support_reply», «support_ack», «weekly», config_keys section «avisos».
+    - **El único camino de los SMS:** `sms_outbox` (teléfono y texto CIFRADOS, solo avanza: pendiente → enviado → entregado / reintento / falló / vencido / sin proveedor;
+      no se borra; la retención los vacía) y `sms_attempts` (solo inserción; su resultado final llega una vez). `notifications.sms_id`, `phone_messages.sms_id` y
+      `compa_outbound.sms_id / delivered_at`; `phone_messages` deja de guardar para siempre (teléfono y texto vacíos a `retener_sms_dias`).
+    - `notif_templates.sms_enlace` (el enlace de seguimiento en el SMS), `notif_once` (un aviso una vez por objeto; solo inserción), `canal_alertas` (tope de remitentes),
+      `wa_templates` + `wa_template_events` (8 plantillas de WhatsApp: código, boletos, cita, soporte · ES/EN, nacen en borrador), `support_email_in` (solo inserción, tapado,
+      la base rechaza tarjeta o seguro social; ids únicos de SNS y SES), `support_replies_out`, `email_verifications.revoked_at`, `email_unsubscribes`.
+    - **21 plantillas nuevas** (ES y EN): cuenta_codigo (el código para entrar, editable, siempre con {codigo}), cuenta_tel_cambio, rsv_hoy, ord_tarde, ord_entregado,
+      sello_ok / sello_info / sello_no, biz_resumen_semana, pro_d20, pro_ultimo, rec_negocio, rec_publico, busqueda_hay, equipo_invitado, biz_quedan_pocos, biz_resena,
+      foto_rep_quitada / foto_rep_queda, canal_tope (y ciudad_abierta, que es de 9i). `biz_job` pasa a SMS de respaldo.
+    - **Configuración › Avisos y canales** (sección nueva): sms_reintentos 3, sms_reintento_min 2, canal_remitentes_min 60, canal_stop_propia 1, soporte_whatsapp 1,
+      pedido_tarde_min 15; **Retención**: retener_sms_dias 90, retener_correo_entrante_dias 365.
+  - **Servidor:**
+    - `lib/sms/` (index: enviarSms, intentar, anotarEntrega, reintentarSms, entregaSms; simulador.ts con los números mágicos 0911/0912/0913; codigo.ts). Avisos
+      (`lib/avisos.ts`), SMS a teléfonos sin cuenta, el código para entrar y el reclamo (`lib/cuenta.ts`: en producción ya no es «sin proveedor» siempre) y El Compa por
+      SMS (`lib/compa/canales.ts`) salen por ahí; solo `canales-proveedor.ts` habla con Telnyx (el `fetch` propio de avisos.ts se fue).
+    - Webhooks: `message.finalized` de Telnyx, los `statuses` de Meta y `message_template_status_update` se leen DESPUÉS de la firma (`lib/canales/estados.ts`).
+    - **Tope global de remitentes** por minuto con alerta a los Admins (una cada 10 min); **una sola respuesta de STOP** (la nuestra o la del proveedor).
+    - Plantillas de WhatsApp: `lib/canales/plantillas-wa.ts` («Mandar a Meta» con `crearPlantillaMeta`; simulador en el sandbox), `mandarPlantilla` (escribir primero).
+    - **Correo:** verificar con enlace de un uso (el nuevo anula los anteriores), baja de un toque de las campañas (List-Unsubscribe + Post en SES, «Darme de baja»
+      al pie, `/api/correo/baja`), botones de Wallet en el recibo de boletos (`armarReciboBoletos`), el resumen semanal del barrio (`weekly`).
+    - **Correo entrante de Soporte** (`lib/correo/entrante.ts`, `/api/correo/entrada`): firma de SNS con el certificado de sns.*.amazonaws.com y el tema propio
+      (`CORREO_SNS_TEMA`; sin él nada entra), veredictos de SES, correo CONFIRMADO de una cuenta → caso TK- origen «correo» tapado; el número en el asunto vuelve al caso.
+    - **Soporte fuera de la app** (`lib/soporte-canales.ts`): la respuesta del equipo por correo y, si el caso entró por WhatsApp, por WhatsApp dentro de las 24 h
+      (fuera, la plantilla aprobada).
+    - Avisos enganchados: sello decidido, resultado de la foto reportada, invitación al equipo y «Reenviar» por SMS, «X te recomendó» (una vez por teléfono), quedan
+      pocos, reseña nueva, «cambiaste tu número» al número viejo, «Tu cuenta se borró» al purgar, «Tu pedido llegó», y en el barrido (`lib/canales/barrido.ts`):
+      pedido tarde, «Hoy tienes mesa», «ya publicó», «Avísame cuando haya», prueba Pro día 20 y último (10 AM), resumen semanal (lunes 9 AM). `avisarMesa` respeta
+      el «Avísame por SMS» de la reservación.
+    - `pushsubscriptionchange` en `/sw-push.js` → `/api/push/renovar` (mismo origen y sesión).
+    - Contrato de los canales fijo a un commit y su sha256 (Telnyx bf2eb8e…, Meta e96a1c9…) y con las funciones nuevas: **31 ✓** (encontró que Meta pide
+      `language.policy` en una plantilla: arreglado).
+  - **Super Admin:** Notificaciones › **SMS y WhatsApp** (entrega de cada SMS sin teléfono, reintentos, el tope y sus alertas, WhatsApp entregados) y **Plantillas de
+    WhatsApp** (estado en Meta, «Mandar a Meta», simular la respuesta en el sandbox), en ES y EN; Soporte › **Por correo** y el canal «Correo a Soporte» en la ficha.
+  - **Guardianes:** nuevos `smsConReintento` y `correoEntranteFirmado`; ampliados `promesaSms` (SIN excepciones: cada promesa dice qué plantilla la cumple, con SMS
+    y que alguien la manda), `avisoConPlantilla` (el SMS de enviarSms y las plantillas de correo contra la base), `canalConFirma` (avisos de entrega después de la
+    firma, contrato fijo y completo), `smsSoloRespaldo` (el único camino), `privacidadSalud` (lib/sms abre su cifrado). **`alreves9l` 41/41**; `alreves7h` al día
+    (la última definición de compa_outbound_antes es la de 0142): 50/50.
+  - **Ayuda:** `notificaciones`, `soporte`, `mi-cuenta` al día y **`admin-notificaciones`** nueva (ES/EN).
+- **Probado aquí (sin Docker: Postgres 16 + PostGIS de la máquina en un cluster propio :5449, el build standalone en :3155, Chrome del sistema, un `docker exec` de
+  mentira hacia esa base):** `node guardianes/run.mjs` → sin fallos; `tsc --noEmit` limpio; `pnpm --filter web build` en verde; base nueva 0001–0142 y semillas
+  hasta 0059, 0142 otra vez sin cambios; **`avi9l` 123 ✓ dos veces seguidas** (las 21 plantillas en ES y EN con su SMS entregado por el simulador; reintento →
+  entregado, inválido sin reintento, proveedor caído; message.finalized firmado una vez y el de un intento viejo no mueve nada; 61 remitentes → tope y alerta;
+  correo a Soporte firmado, otro tema y spam fuera, sin cuenta, caso TK- tapado, respuesta al mismo caso y la respuesta del equipo por correo; retención de SMS y
+  de correo con el reloj movido; verificar el correo de un uso; baja de un toque; pushsubscriptionchange; «Tu cuenta se borró»; recibo con los botones de Wallet;
+  Notificaciones y Soporte a 390 y 1360, ES y EN). Contrato de los canales 31 ✓ con las especificaciones fijas. Al revés: 9l 41/41, 7h 50/50, 5d 34/34,
+  6i 40/40, 7i 35/35, 8i 49/49, 9d 23/23; **8c 36/37: el caso de `permisosMinimos` no encuentra su texto en apps/mobile/apps.json — igual en la rama base, no es de 9l.**
+- **No corrió aquí:** la regresión entera, la matriz de 9 dispositivos y `pruebas/visual` (Notificaciones y Soporte suman pestañas: cambia su captura) → CI (9b);
+  Telnyx, Meta y SES de verdad → 9q.
+- **Para quien junte las ramas:** `guardianes/run.mjs` (dos guardianes al final, después de los de 9k; 9i ya junto), `lib/barrido.ts` (tres tareas del barrido: la de los avisos de 9l, la de los SMS y la del
+  correo entrante), `lib/config.ts` (claves de 9l y sección «avisos»), `Configuracion.tsx` (SECCION.avisos), `lib/correo/index.ts` (`Tpl`, `mandar` con cabeceras,
+  la baja), `lib/correo/plantillas.ts` (marco con `wallet` y `baja`), `lib/correo/recibos.ts` (armarReciboBoletos), `mapa-de-datos.json` (5 tablas: wa_templates,
+  wa_template_events, support_email_in, email_unsubscribes, sms_outbox; regenerado), `infra/pruebas/docker-compose.yml` y `pruebas/servir/servir.sh` (TELNYX_FROM,
+  WHATSAPP_WABA_ID, CORREO_SNS_TEMA, CORREO_SNS_HOSTS en el perfil completo), los docs.

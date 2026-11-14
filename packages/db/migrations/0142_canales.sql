@@ -10,7 +10,7 @@
 --   del equipo por correo o por WhatsApp (dentro de la ventana de 24 h) quedan en `support_replies_out` (solo inserción).
 -- · Correo: el enlace para verificar es de UN uso y el nuevo anula los anteriores (`revoked_at`); la baja de un toque (List-Unsubscribe) queda en
 --   `email_unsubscribes` (solo inserción); plantillas `support_reply` y `support_ack` agregadas a la lista que haya.
--- · Las plantillas de aviso que faltaban (el código para entrar editable, pedido tarde, entregado, sello decidido, ciudad abierta, resumen semanal, la prueba
+-- · Las plantillas de aviso que faltaban (el código para entrar editable, pedido tarde, entregado, sello decidido, resumen semanal, la prueba
 --   de Pro, recomendar, «Avísame cuando haya», la invitación al equipo, «quedan pocos», reseña nueva, el resultado de una foto reportada, «cambiaste tu
 --   número», el tope de remitentes) y `notif_once` (un aviso que sale una sola vez por objeto).
 -- · `phone_messages` deja de guardar para siempre: su teléfono y su texto se vacían a los `retener_sms_dias`.

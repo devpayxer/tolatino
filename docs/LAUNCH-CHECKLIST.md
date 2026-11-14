@@ -1715,3 +1715,21 @@ en el momento. Se marca solo cuando está hecho de verdad.
       si se quiere un aviso «te invitamos a la beta», va con su plantilla. (9i, 14 nov)
 - [ ] **→ 9v** · **Abrir las cinco con el asistente (OK-3):** cada ciudad pasa sus 7 pasos; la que no llegue a la regla (30 negocios listos o 300 en la lista, y al menos uno en comida,
       belleza, hogar, fiestas e iglesias) se abre con «Abrir igual» y su motivo solo si el fundador lo decide (§6 #17); la LAUNCH de esa ciudad tiene que estar en cero. (9i, 14 nov)
+
+## Fase 9 · 9l — avisos, correo y canales listos (14 nov)
+- [x] **Cerradas con su evidencia** (marcadas «✓ 9l» arriba): recomendar, «Avísame cuando haya», invitación al equipo y «Reenviar», prueba de Pro, sello y foto
+      reportada, quedan pocos, seguimiento y «llegó», reseña nueva, SMS de empleos, verificar el correo y recibos, «cambiaste tu número», Soporte por WhatsApp y
+      correo, plantillas que faltaban, cifras de entrega, promesas de la pantalla, recibo del pedido, 7a/7b/7h/7i (estado de entrega, especificaciones fijas, un solo
+      camino, tope de remitentes, plantillas de WhatsApp), pushsubscriptionchange, Wallet en el recibo, «Tu cuenta se borró», retención de phone_messages,
+      baja de un toque. Prueba: `avi9l` 123 ✓ dos veces seguidas en local; `alreves9l` 41/41; contrato de los canales 31 ✓. (9l, 14 nov)
+- [ ] **→ 9q** · **Telnyx, Meta y SES de verdad:** `TELNYX_FROM`, `WHATSAPP_WABA_ID` y `CORREO_SNS_TEMA` (no son secretos) más las llaves; el tema de SNS
+      suscrito a `/api/correo/entrada` (la suscripción se confirma sola) y la regla de recepción de SES con la dirección de Soporte; probar una vez cada
+      camino con un teléfono y un correo reales. (9l, 14 nov)
+- [ ] **→ 9q** · **Mandar las 8 plantillas de WhatsApp a Meta** con la cuenta real (Notificaciones › Plantillas de WhatsApp) y corregir las que rechace. (9l, 14 nov)
+- [ ] **→ 9q** · **Los códigos de error permanentes de Telnyx** (hoy: 40300, 40310, 40311) y **el costo por SMS** en Notificaciones (el campo `cost` del aviso de
+      entrega): confirmarlos con la cuenta. (9l, 14 nov)
+- [ ] **→ 9q** · **Una sola respuesta de STOP:** al conectar Telnyx y Meta, apagar la de su perfil (o la nuestra en Configuración › Avisos y canales). (9l, 14 nov)
+- [ ] **→ 9n** · **Avisos al quitar a alguien del equipo y a quien pidió unirse:** van con aceptar la invitación con el código (L101). (9l, 14 nov)
+- [ ] **→ 9b** · **avi9l y alreves9l en la corrida dirigida del CI** (perfil completo de servir.sh: el certificado de «SNS» lo sirve la prueba en :4409); la
+      regresión entera, la matriz de 9 dispositivos y `pruebas/visual` (Notificaciones y Soporte suman pestañas) no corrieron aquí. (9l, 14 nov)
+- [ ] **→ 9b** · **alreves8c, caso `permisosMinimos`:** no encuentra su texto en apps/mobile/apps.json (también en la rama base; no es de 9l). (9l, 14 nov)

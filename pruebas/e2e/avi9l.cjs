@@ -18,6 +18,9 @@ const { chromium } = require('playwright'); const { execSync } = require('child_
 const c = require('crypto'), fs = require('fs'), http = require('http'), path = require('path');
 const { entrarComo, telLibre } = require('../lib/negocio-nuevo.cjs');
 const B = ENT.B, OUT = ENT.OUT, S = ENT.S;
+// El servidor cierra las conexiones quietas a los 5 s (keep-alive) y fetch puede reusar justo esa: «other side closed» antes de mandar. Se repite una vez.
+const fetch0 = globalThis.fetch;
+const fetch = async (u, o) => { try { return await fetch0(u, o); } catch (e) { if (/other side closed|ECONNRESET|socket/i.test(String(e?.cause?.message ?? e?.cause ?? e))) return fetch0(u, o); throw e; } };
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 let n = 0; const ok = (x, m) => { if (!x) throw new Error('ASSERT ' + m); n++; console.log('  ✓', m); };
 const espera = async (f, ms = 15000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await f()) return true; await new Promise((r) => setTimeout(r, 300)); } return false; };
@@ -313,7 +316,7 @@ const VARS = { ultimos: '0123', enlace: 'https://pruebas.tolatino.com/soporte', 
     await pa.goto(B + '/admin/notificaciones?tab=canales');
     let t = await texto(pa);
     ok(t.includes('SMS y WhatsApp') && t.includes('ENTREGADOS') && t.includes('EN REINTENTO') && t.includes('TOPE GLOBAL DE REMITENTES') && t.includes('números en un minuto'), 'SMS y WhatsApp: la entrega de cada SMS, el tope y su alerta');
-    ok(t.includes('···0911') && !t.includes('+15705550911') && !t.includes('570-555-0911'), 'cada SMS sin el teléfono: solo los últimos 4');
+    ok(t.includes('···0911') && !t.includes('+15705550911') && !t.includes('(570) 555-0911'), 'cada SMS sin el teléfono: solo los últimos 4');
     await shot(pa, 'notif-canales-1360');
     await pt.goto(B + '/admin/notificaciones?tab=canales'); await pt.getByText('TOPE GLOBAL DE REMITENTES').waitFor(); await shot(pt, 'notif-canales-390');
     // Una plantilla: borrador → «Mandar a Meta» (simulador del sandbox) → Meta la aprueba por su webhook firmado.
