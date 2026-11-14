@@ -2,6 +2,7 @@
 /* 9d · USR-DATOS · Mi cuenta › Ajustes › Privacidad › Descargar mis datos (hueco #4 de la Fase 9: no hay pantalla en el diseño; se compone con
    las piezas de Mi cuenta —nota, filas, formulario y acciones— como dice el plan). La línea fija de §1c arriba; tu archivo con su estado; pedirlo
    con el código que te mandamos (como Borrar mi cuenta); «Bajar» lo baja UNA vez (POST: un enlace pegado en un chat no lo gasta). */
+import { FIJAS } from "@/lib/textos-fijas";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Exportacion } from "@/lib/datos/exportar";
@@ -29,8 +30,7 @@ export function Datos({ es, yo, tel, archivos, pruebas, dias }: { es: boolean; y
   };
   const B: Bloque[] = [
     // §1c · línea fija (verbatim).
-    { type: "note", tone: "info", ic: "folder", s: E2("Te armamos un archivo con lo tuyo: perfil, pedidos, citas, reseñas, publicaciones y mensajes. Tarda unos minutos y lo bajas aquí durante 24 horas.",
-      "We put together a file with your data: profile, orders, appointments, reviews, posts and messages. It takes a few minutes and you can download it here for 24 hours.") },
+    { type: "note", tone: "info", ic: "folder", s: E2(FIJAS.es.exportar, FIJAS.en.exportar) },
     { type: "sec", t: E2("Tu archivo", "Your file"), fs: "14px" },
   ];
   B.push(archivos.length ? { type: "rows", rows: filasArchivo(archivos, es).map((f) => ({ key: f.id, ic: f.icon, t: f.t, s: f.s, tag: f.tag, acts: f.bajar ? [[E2("Bajar", "Download"), "primary", () => { bajarArchivo(f.id); window.setTimeout(() => router.refresh(), 2500); }]] as [string, string, () => void][] : undefined })) }

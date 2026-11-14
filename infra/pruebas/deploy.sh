@@ -76,6 +76,13 @@ docker run --rm --network none -v "$REPO":/repo:ro -w /repo node:22-alpine node 
   | docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt \
   || log "legal: no se pudo indexar docs/legal (las páginas legales quedan como estaban)"
 
+# 3c-quater) Cadenas de la interfaz (9f): apps/web/lib/cms-cadenas.json (lo que extrae scripts/cms/extraer.mjs del código) → cms_strings. Una
+#     cadena nueva entra con el texto del código; lo que el Super Admin editó se respeta (salvo que ya no cumpla su largo o sus marcas, o sea una
+#     línea fija); lo mismo otra vez no cambia nada. Si falla, la app sigue con las cadenas de antes (y con las del código, que van de respaldo).
+docker run --rm --network none -v "$REPO":/repo:ro -w /repo node:22-alpine node scripts/cms/indexar.mjs \
+  | docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt \
+  || log "cms: no se pudieron indexar las cadenas (la interfaz sigue con las de antes y las del código)"
+
 # 3d) Mapa: teselas propias de Pensilvania. Generarlas tarda minutos: si faltan, se hacen aparte (systemd-run) y al
 #     terminar se enciende el servidor de teselas. El despliegue de la app nunca espera por el mapa.
 MAPA=/var/lib/tolatino/mapa

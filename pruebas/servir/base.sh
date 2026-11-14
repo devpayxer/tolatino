@@ -75,3 +75,6 @@ echo "[base] centro de ayuda indexado ($(echo "select count(*) from help_article
 # 9e · Las páginas legales (docs/legal → legal_pages), como el despliegue del sandbox (deploy.sh, 3c-ter). Idempotente (sha256).
 node "$RAIZ/scripts/legal/indexar.mjs" | docker exec -i "$DB_CONT" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt > /dev/null
 echo "[base] páginas legales indexadas ($(echo "select count(*) from legal_pages where status <> 'retirado'" | docker exec -i "$DB_CONT" psql -h 127.0.0.1 -U tolatino -d tolatino -qAt) versiones vivas)"
+# 9f · Las cadenas de la interfaz (apps/web/lib/cms-cadenas.json → cms_strings), como el despliegue del sandbox (deploy.sh, 3c-quater). Idempotente (sha256).
+node "$RAIZ/scripts/cms/indexar.mjs" | docker exec -i "$DB_CONT" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt > /dev/null
+echo "[base] cadenas de la interfaz indexadas ($(echo "select count(*) from cms_strings" | docker exec -i "$DB_CONT" psql -h 127.0.0.1 -U tolatino -d tolatino -qAt) cadenas)"

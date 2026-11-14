@@ -14,8 +14,13 @@ import { filas as filasMapa, leer as leerMapa, problemas as problemasMapa, semil
 // 9e · Las páginas legales: el guardián lee docs/legal/ con el MISMO código que el indexador (forma, pares ES/EN, sha256).
 import { paginasLegales } from "../scripts/legal/indexar.mjs";
 import { BORRADOR as BORRADOR_LEGAL, CLAVES as CLAVES_LEGALES } from "../scripts/legal/forma.mjs";
+// 9f · Las cadenas de la interfaz: el guardián usa el MISMO extractor que genera apps/web/lib/cms-cadenas.json.
+import { cadenasDelCodigo, comoJson as cmsComoJson, SALIDA as CMS_SALIDA } from "../scripts/cms/extraer.mjs";
 
 const solo = process.argv.includes("--solo") ? process.argv[process.argv.indexOf("--solo") + 1] : null;
+// 9f · Lo que el extractor saca del código (si el código no se deja leer, el guardián lo dice).
+let CMS = { errores: [], cadenas: [] };
+if (!solo || /^(cadenaConLlave|lineaFijaBloqueada|cmsConLimite|idioma)$/.test(solo)) { try { CMS = await cadenasDelCodigo(); } catch (e) { CMS = { errores: [`el extractor de cadenas falló: ${e.message}`], cadenas: [] }; } }
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 // Incluye los archivos nuevos que todavía no están en git (5 nov, 1l: corrían limpios en local y la CI los cazó).
@@ -346,7 +351,7 @@ const guardianes = {
      puede sumar otra: di dónde lo ve la persona dentro de To'Latino. */
   promesaSms() {
     const ANOTADOS = new Set(["apps/web/app/(app)/reserva/[num]/Estado.tsx", "apps/web/app/(app)/CiudadSelector.tsx", "apps/web/app/(app)/n/[id]/reservar/Detalles.tsx",
-      "apps/web/app/panel/Equipo.tsx", "apps/web/app/panel/acciones-equipo.ts", "apps/web/lib/textos.ts", "apps/web/app/panel/Menu.tsx", "apps/web/app/(app)/n/[id]/apartar/Apartar.tsx",
+      "apps/web/app/panel/Equipo.tsx", "apps/web/app/panel/acciones-equipo.ts", "apps/web/lib/textos.ts", "apps/web/lib/textos-fijas.ts", "apps/web/app/panel/Menu.tsx", "apps/web/app/(app)/n/[id]/apartar/Apartar.tsx",
       // 8c · Mi cuenta › Avisos explica el SMS de respaldo del push (sale con Telnyx; anotado en LAUNCH-CHECKLIST «Fase 8 · 8c»).
       "apps/web/app/(app)/cuenta/avisos/Avisos.tsx", "apps/web/app/admin/IntegracionesPush.tsx", "apps/web/lib/push/admin.ts", "apps/web/app/admin/Notificaciones.tsx", "apps/web/app/admin/U360.tsx"]);
     for (const f of codigo) {
@@ -7237,6 +7242,139 @@ const guardianes = {
     }
   },
 
+  /* 9f · cadenaConLlave (fase9-apertura.md §4 9f): todo texto de la interfaz sale del CMS con su llave ÁREA-MÓDULO-PANTALLA.clave. (1) El catálogo
+     apps/web/lib/cms-cadenas.json es exactamente lo que el extractor saca del código (sin errores: los dos idiomas, llaves con la forma, sin repetidas);
+     (2) toda llave que el código pide con cadena("…") o pantalla("…") existe en el catálogo; (3) las pantallas ya migradas (el Inicio de la ciudad) no
+     llevan ni un E2("…","…") escrito a mano; (4) las páginas del servidor leen el diccionario general por textosT (lib/cms.ts), nunca T directo, salvo
+     los componentes de cliente que aún lo importan (lista cerrada, LAUNCH «→ 9f»); (5) el Inicio lee el CMS (homeConfig, anunciosVivos, pantalla).
+     Trinquete (aviso hasta TOLATINO_FASE=9): cuántos E2("…","…") escritos a mano quedan en apps/web; no puede subir de lo que se registró aquí.
+     Al revés: alreves9f. */
+  cadenaConLlave() {
+    const G = "cadenaConLlave";
+    for (const e of CMS.errores) falla(G, "apps/web/lib/textos*.ts", 0, e);
+    if (!CMS.errores.length) {
+      if (!existsSync(CMS_SALIDA) || readFileSync(CMS_SALIDA, "utf8") !== cmsComoJson(CMS.cadenas)) falla(G, "apps/web/lib/cms-cadenas.json", 0, "el catálogo de cadenas no es el que sale del código: corre «node scripts/cms/extraer.mjs»");
+    }
+    const llaves = new Set(CMS.cadenas.map((c) => c.id));
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      for (const m of t.matchAll(/\bcadena\(\s*["'`]([A-Z0-9-]+\.[A-Za-z0-9_.-]+)["'`]/g)) if (!llaves.has(m[1])) falla(G, f, 0, `la llave «${m[1]}» no está en el catálogo de cadenas`);
+      for (const m of t.matchAll(/\bpantalla\(\s*["'`]([A-Z0-9-]+)["'`]/g)) if (![...llaves].some((k) => k.startsWith(m[1] + "."))) falla(G, f, 0, `la pantalla «${m[1]}» no tiene cadenas en el catálogo`);
+    }
+    const E2LIT = /\bE2\(\s*(["`'])(?:(?!\1)[^\\\n]|\\.)*\1\s*,\s*(["`'])(?:(?!\2)[^\\\n]|\\.)*\2\s*\)/g;
+    const MIGRADAS = ["apps/web/app/(app)/Inicio.tsx", "apps/web/app/(app)/page.tsx"];
+    for (const f of MIGRADAS) {
+      if (!existsSync(f)) { falla(G, f, 0, "falta una pantalla migrada al CMS"); continue; }
+      const n = (sinComent(f).match(E2LIT) ?? []).length;
+      if (n) falla(G, f, 0, `${n} texto(s) escritos a mano con E2("…","…") en una pantalla que ya lee el CMS: van en el diccionario con su llave (lib/textos-home.ts)`);
+    }
+    // El Inicio lee el CMS.
+    const PG = "apps/web/app/(app)/page.tsx";
+    if (existsSync(PG)) {
+      const t = sinComent(PG);
+      for (const x of ["homeConfig(", "anunciosVivos(", "pantalla(\"APP-HOME\"", "textosT("]) if (!t.includes(x)) falla(G, PG, 0, `el Inicio de la ciudad lee el CMS: falta ${x.replace("(", "")}`);
+    }
+    // Las páginas del servidor no leen T directo (el diccionario con lo editado es textosT). Los componentes de cliente de la lista siguen con T.
+    const T_EN_CLIENTE = new Set(["apps/web/app/(app)/buscar/Buscar.tsx", "apps/web/app/(app)/comunidad/hoy/Hoy.tsx", "apps/web/lib/cms.ts"]);
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || T_EN_CLIENTE.has(f)) continue;
+      if (/import \{ T(?: as \w+)? \} from "@\/lib\/textos"/.test(sinComent(f))) falla(G, f, 0, "lee el diccionario T directo: usa textosT(lang) de lib/cms.ts (así ve lo que el Super Admin editó)");
+    }
+    // Trinquete.
+    const TOPE_E2 = 16129;
+    let hechos = 0;
+    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f)) hechos += (sinComent(f).match(E2LIT) ?? []).length;
+    if (hechos > TOPE_E2) {
+      const msg = `${hechos} textos escritos a mano con E2("…","…") en apps/web (tope registrado ${TOPE_E2}): los nuevos van al diccionario con su llave`;
+      if (process.env.TOLATINO_FASE === "9") falla(G, "apps/web", 0, msg); else avisos.push(`[${G}] ${msg} (solo aviso hasta TOLATINO_FASE=9)`);
+    }
+  },
+
+  /* 9f · lineaFijaBloqueada (fase9-apertura.md §1c y §4 9f): las líneas fijas no se editan desde el Super Admin: 911 («Si es una emergencia, llama al 911»),
+     «Nadie te garantiza un resultado», la de cada categoría y las de §1c. (1) El catálogo las trae con candado (locked); las de §1c son idénticas, palabra por
+     palabra, a las del plan; (2) la base lo impone (cms_linea_fija) y solo el despliegue (tl.cms_indexar, una sola función) puede cambiarlas; (3) la app
+     tampoco las edita (editarCadena revisa locked) y ningún código escribe locked ni tl.cms_indexar fuera del indexador. Al revés: alreves9f. */
+  lineaFijaBloqueada() {
+    const G = "lineaFijaBloqueada", M = "packages/db/migrations/0136_cms.sql", AD = "apps/web/lib/cms-admin.ts", PLAN = "docs/diseno/plan/fase9-apertura.md";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración del CMS");
+    const m = readFileSync(M, "utf8");
+    const fn = (m.match(/create or replace function cms_cadena_reglas\(\)[\s\S]*?\nend \$\$;/) ?? [""])[0];
+    if (!/if old\.locked and not indexando and \(new\.text is distinct from old\.text/.test(fn) || !/raise exception 'cms_linea_fija/.test(fn)) falla(G, M, 0, "la base no impide editar una línea fija (cms_linea_fija)");
+    if (!/if new\.locked then new\.status := 'vivo'; end if;/.test(fn)) falla(G, M, 0, "una línea fija nace «vivo»: no se deja en borrador");
+    if ((m.match(/set_config\('tl\.cms_indexar'/g) ?? []).length !== 1 || !/create or replace function cms_indexar\(p jsonb\)[\s\S]*?set_config\('tl\.cms_indexar', 'on', true\)/.test(m)) falla(G, M, 0, "solo cms_indexar (el despliegue) pone tl.cms_indexar");
+    for (const f of codigo) {
+      if (!/\.(tsx?|mjs|cjs|sh|ya?ml)$/.test(f) || f === "guardianes/run.mjs" || f.startsWith("pruebas/")) continue;
+      const t = sinComent(f);
+      if (/tl\.cms_indexar/.test(t)) falla(G, f, 0, "tl.cms_indexar lo pone solo la función cms_indexar de la base (el despliegue)");
+      if (f !== "scripts/cms/extraer.mjs" && /\bupdate cms_strings\s+set\b[^;`]*\blocked\s*=/.test(t)) falla(G, f, 0, "nadie cambia `locked` de una cadena fuera del despliegue");
+    }
+    if (!existsSync(AD)) falla(G, AD, 0, "falta lib/cms-admin.ts");
+    else { const t = sinComent(AD); if (!/if \(v\.locked\) return mal\(/.test(t)) falla(G, AD, 0, "editar una cadena revisa que no sea una línea fija"); }
+    const por = new Map(CMS.cadenas.map((c) => [c.id, c]));
+    const norm = (x) => x.replace(/\s+/g, " ").trim();
+    const plan = existsSync(PLAN) ? norm(readFileSync(PLAN, "utf8")) : "";
+    for (const k of ["landing", "landingTel", "exportar", "borrar", "mantenimiento", "equipoDosPasos"]) {
+      const c = por.get(`FIJAS-1C.${k}`);
+      if (!c) { falla(G, "apps/web/lib/textos-fijas.ts", 0, `falta la línea fija de §1c «${k}»`); continue; }
+      if (!c.locked) falla(G, "apps/web/lib/textos-fijas.ts", 0, `la línea fija «${k}» tiene que llevar candado`);
+      if (plan && (!plan.includes(norm(c.es)) || (k !== "borrar" && !plan.includes(norm(c.en))))) falla(G, "apps/web/lib/textos-fijas.ts", 0, `la línea fija «${k}» no es la de §1c de ${PLAN}, palabra por palabra`);
+    }
+    const sal = por.get("NEG-CATEGORIA.NEG-SALUD.linea"), pro = por.get("NEG-CATEGORIA.NEG-PRO.linea");
+    if (!sal || !/911/.test(sal.es) || !sal.locked) falla(G, "packages/db/seeds/lineas.sql", 0, "la línea fija de Salud (911) tiene que estar en el catálogo, con candado");
+    if (!pro || !/nadie te garantiza un resultado/i.test(pro.es) || !pro.locked) falla(G, "packages/db/seeds/lineas.sql", 0, "«Nadie te garantiza un resultado» tiene que estar en el catálogo, con candado");
+    for (const c of CMS.cadenas) if (/^NEG-CATEGORIA\./.test(c.id) && !c.locked) falla(G, "scripts/cms/extraer.mjs", 0, `${c.id}: la línea fija de una categoría lleva candado`);
+  },
+
+  /* 9f · cmsConLimite (fase9-apertura.md §4 9f): cada cadena editable tiene un largo máximo que cabe en su lugar. (1) En el catálogo, max_len ≥ el largo de
+     los dos textos del código, ≤ 600, y una cadena editable no se aleja más de 3 veces de su largo; (2) la base lo impone (cms_largo, cms_marcas,
+     cms_vacia, check de max_len) y exige autor y motivo (cms_sin_autor); (3) la app lo revisa antes (editarCadena compara con max_len y con las marcas). Al revés: alreves9f. */
+  cmsConLimite() {
+    const G = "cmsConLimite", M = "packages/db/migrations/0136_cms.sql", AD = "apps/web/lib/cms-admin.ts";
+    for (const c of CMS.cadenas) {
+      const mayor = Math.max(c.es.length, c.en.length);
+      if (!(c.max_len >= mayor)) falla(G, "apps/web/lib/cms-cadenas.json", 0, `${c.id}: el texto del código (${mayor}) pasa de su largo máximo (${c.max_len})`);
+      if (!c.locked && (c.max_len > 600 || c.max_len > Math.max(40, mayor * 3))) falla(G, "apps/web/lib/cms-cadenas.json", 0, `${c.id}: un largo máximo de ${c.max_len} no cabe en su lugar (el texto mide ${mayor})`);
+    }
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración del CMS");
+    const m = readFileSync(M, "utf8");
+    if (!/max_len\s+integer not null default 200 check \(max_len between 1 and 2000\)/.test(m)) falla(G, M, 0, "max_len tiene sus límites en la base");
+    const fn = (m.match(/create or replace function cms_cadena_reglas\(\)[\s\S]*?\nend \$\$;/) ?? [""])[0];
+    for (const x of ["cms_largo", "cms_marcas", "cms_vacia", "cms_sin_autor"]) if (!fn.includes(`raise exception '${x}`)) falla(G, M, 0, `la base no impone ${x}`);
+    if (!/char_length\(new\.text->>'es'\) > new\.max_len or char_length\(new\.text->>'en'\) > new\.max_len/.test(fn)) falla(G, M, 0, "la base compara los dos idiomas con max_len");
+    if (!existsSync(AD)) return falla(G, AD, 0, "falta lib/cms-admin.ts");
+    const t = sinComent(AD);
+    if (!/E\.length > v\.max_len \|\| N\.length > v\.max_len/.test(t)) falla(G, AD, 0, "editarCadena revisa el largo máximo antes de guardar");
+    if (!/marcas\(E\) !== marcas\(v\.code_text\.es\)/.test(t)) falla(G, AD, 0, "editarCadena revisa las marcas {…}");
+    if (!/tl\.cms_por/.test(t) || !/tl\.cms_motivo/.test(t)) falla(G, AD, 0, "un cambio de texto lleva autor y motivo");
+  },
+
+  /* 9f · cmsSoloInsercion (regla 12: auditoría solo inserción, nada se borra): cms_string_versions es de solo inserción (trigger) y la escribe la propia base
+     (cms_cadena_version); un anuncio no se borra ni se edita (se retira, con motivo); ningún código borra ni cambia versiones, cadenas, anuncios ni la
+     configuración del Inicio de otra manera que por lib/cms-admin.ts. Al revés: alreves9f. */
+  cmsSoloInsercion() {
+    const G = "cmsSoloInsercion", M = "packages/db/migrations/0136_cms.sql", AD = "apps/web/lib/cms-admin.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración del CMS");
+    const m = readFileSync(M, "utf8");
+    if (!/create trigger cms_string_versions_no_cambia before update or delete on cms_string_versions for each row execute function cms_solo_insercion\(\)/.test(m)) falla(G, M, 0, "cms_string_versions es de solo inserción (trigger)");
+    if (!/create trigger cms_strings_version after insert or update on cms_strings/.test(m)) falla(G, M, 0, "la base escribe la versión de cada cambio de texto (cms_cadena_version)");
+    const fa = (m.match(/create or replace function announcements_reglas\(\)[\s\S]*?\nend \$\$;/) ?? [""])[0];
+    if (!/raise exception 'announcements no se borra: se retira'/.test(fa) || !/un anuncio no se edita, se retira y se crea otro/.test(fa)) falla(G, M, 0, "un anuncio no se borra ni se edita: se retira");
+    if (!/create trigger announcements_reglas_tg before update or delete on announcements/.test(m)) falla(G, M, 0, "el trigger de los anuncios (no se borra, no se edita)");
+    for (const f of codigo) {
+      if (!/^(apps|scripts|packages)\/.*\.(tsx?|mjs|cjs)$/.test(f) || f === AD || f === "guardianes/run.mjs") continue;
+      for (const q of sinComent(f).match(/`[^`]*`/g) ?? []) {
+        if (/\b(delete from|update|insert into) cms_string_versions\b/.test(q)) falla(G, f, 0, "las versiones de las cadenas las escribe solo la base (cms_cadena_version)");
+        if (/\bdelete from (cms_strings|announcements|city_home_config)\b/.test(q)) falla(G, f, 0, "nada se borra: una cadena vuelve al código, un anuncio se retira");
+        if (/\b(update (cms_strings|announcements|city_home_config)|insert into (announcements|city_home_config))\b/.test(q)) falla(G, f, 0, "el CMS lo escribe solo lib/cms-admin.ts (con autor, motivo y auditoría)");
+      }
+    }
+    if (existsSync(AD)) {
+      const t = sinComent(AD);
+      for (const a of ["cms.editar", "cms.restaurar", "cms.rotulo", "cms.home", "cms.anuncio", "cms.anuncio.retirar", "cms.ingles"]) if (!t.includes(`"${a}"`)) falla(G, AD, 0, `la acción ${a} deja su auditoría`);
+    }
+  },
+
   idioma() {
     for (const f of codigo) {
       if (!/layout\.tsx$/.test(f)) continue;
@@ -7244,6 +7382,8 @@ const guardianes = {
     }
     // 9e · Cada página legal va en español Y en inglés, con las mismas secciones (scripts/legal/forma.mjs parejaLegal).
     for (const e of paginasLegales().errores) if (/van los dos idiomas|secciones|mismos puntos|fecha y el estado/.test(e)) falla("idioma", "docs/legal", 0, e);
+    // 9f · Toda cadena del catálogo del CMS trae los dos idiomas (y el inglés no se queda vacío ni como una marca de «pendiente»).
+    for (const c of CMS.cadenas) if (!c.es?.trim() || !c.en?.trim() || /^(TODO|TBD|pendiente)$/i.test(c.en.trim())) falla("idioma", "apps/web/lib/cms-cadenas.json", 0, `${c.id}: falta uno de los dos idiomas`);
   },
 };
 

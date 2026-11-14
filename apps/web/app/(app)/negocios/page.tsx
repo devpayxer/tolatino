@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { yo } from "@/lib/cuenta";
 import { db } from "@/lib/db";
 import { idioma } from "@/lib/idioma";
-import { T } from "@/lib/textos";
+import { textosT } from "@/lib/cms";
 import { categorias } from "@/lib/directorio";
 import { conteos, destacados, nuevos } from "@/lib/categoria";
 import { armarTarjetas } from "@/lib/tarjetas";
@@ -20,7 +20,7 @@ export const metadata: Metadata = { title: "Negocios · To'Latino" };
    quién) salen con datos reales; sin datos, la sección no se pinta (el prototipo los inventaba). */
 export default async function Page() {
   const [lang, u] = await Promise.all([idioma(), yo()]);
-  const t = T[lang];
+  const t = await textosT(lang);
   const loc = await ubicacion(u);
   if (loc.c.status !== "on") return <PantallaPronto loc={loc} lang={lang} userId={u?.id ?? null} />;
   const CIUDAD = loc.ciudad, ciudad = loc.c;

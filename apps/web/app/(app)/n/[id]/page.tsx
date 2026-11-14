@@ -32,7 +32,7 @@ import { novedadesFicha } from "@/lib/novedades";
 import { vacantesFicha } from "@/lib/jobs";
 import { eventosDelOrganizador } from "@/lib/evt-publico";
 import { idioma } from "@/lib/idioma";
-import { T } from "@/lib/textos";
+import { textosT } from "@/lib/cms";
 import { ubicacion } from "@/lib/ubicacion";
 import { Ficha } from "./Ficha";
 
@@ -178,7 +178,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // Al volver de «Entra» la pestaña conserva personas, día y hora; «Cambiar» trae la solicitud a editar.
   const num = (x?: string) => (x && /^\d{1,4}$/.test(x) ? Number(x) : undefined);
   const rsvInicial = { p: num(sp.p), i: num(sp.d), h: num(sp.h), editar: sp.editar && /^R-\d{1,10}$/.test(sp.editar) ? sp.editar : undefined };
-  const t = T[lang].ficha;
+  const t = (await textosT(lang)).ficha;
   return (
     <Ficha
       f={{ ...f, guardado: fav.has(f.id) }}

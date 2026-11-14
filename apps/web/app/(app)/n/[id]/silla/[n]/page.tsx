@@ -5,7 +5,7 @@ import { citasPublica, sillaPublica } from "@/lib/citas";
 import { ficha } from "@/lib/ficha";
 import { idioma } from "@/lib/idioma";
 import { resumenResenas } from "@/lib/resenas";
-import { T } from "@/lib/textos";
+import { textosT } from "@/lib/cms";
 import { ubicacion } from "@/lib/ubicacion";
 import { Ficha } from "../../Ficha";
 
@@ -26,7 +26,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const loc = await ubicacion(u);
   const [f, svc, res] = await Promise.all([ficha(id, lang, loc), citasPublica(id, u?.id ?? null), resumenResenas(id, u?.id ?? null, s.id)]);
   if (!f || !svc || !svc.gente.some((p) => p.id === s.id)) notFound();
-  const es = lang === "es", L = (a: string, b: string) => (es ? a : b), t = T[lang].ficha;
+  const es = lang === "es", L = (a: string, b: string) => (es ? a : b), t = (await textosT(lang)).ficha;
   const nRes = res?.n ?? 0, avg = res?.avg ?? null;
   const ini = s.nombre.split(" ").map((x) => x.charAt(0)).join("").slice(0, 2).toUpperCase();
   const puesto = es ? s.puesto.es : s.puesto.en;

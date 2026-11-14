@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
-import { T } from "@/lib/textos";
+import { textosT } from "@/lib/cms";
 import { foto } from "@/lib/directorio";
 import { diaFiesta } from "@/lib/fiestas-comun";
 import { categoriaPorSlug, cifras, filtros, mosaicos, ORDENES, resultados, type Orden } from "@/lib/categoria";
@@ -33,7 +33,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const CIUDAD = loc.ciudad, ciudad = loc.c;
   const ctx = await contexto();
   after(() => evento("ver_categoria", { ref: c.id, ciudad: loc.c.id, userId: u?.id ?? null, props: { filtros: String(sp.f ?? "").slice(0, 80) || null, sub: typeof sp.sub === "string" ? sp.sub.slice(0, 40) : null } }, ctx));
-  const t = T[lang], P = c.page, L = (b: { es: string; en: string }) => b[lang];
+  const t = await textosT(lang), P = c.page, L = (b: { es: string; en: string }) => b[lang];
 
   // Lo que pide la URL, validado contra lo que la categoría ofrece de verdad.
   const fs = await filtros(c.id, lang);

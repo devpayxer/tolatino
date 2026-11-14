@@ -125,6 +125,21 @@ jobs:
           test "$(Q "select legal_entorno()")" = "produccion"
           if err=$(Q "update legal_pages set status = 'publicado', published_by = (select id from users limit 1), published_at = now(), publish_reason = 'ci' where key = 'terminos' and jurisdiction = 'us'" 2>&1); then echo "✗ se publicó sin revisión en una base sin la semilla del sandbox"; exit 1; fi
           echo "$err" | grep -q "legal_revisado"
+      - name: Cadenas de la interfaz indexadas (dos veces; la segunda no cambia nada, una línea fija no se edita y una edición sin autor se rechaza)
+        env: { POSTGRES_PASSWORD: ci, TOLATINO_COMMIT: ci }
+        run: |
+          C="docker compose -p ci -f infra/pruebas/docker-compose.yml"
+          Q() { $C exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt -c "$1"; }
+          node scripts/cms/extraer.mjs --verificar
+          node scripts/cms/indexar.mjs | $C exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt
+          n1=$(Q "select count(*) from cms_string_versions")
+          out=$(node scripts/cms/indexar.mjs | $C exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt); echo "$out"
+          echo "$out" | grep -q " 0 nuevas · 0 cambiadas · 0 fijas · "
+          test "$(Q "select count(*) from cms_string_versions")" = "$n1"
+          if err=$(Q "update cms_strings set text = jsonb_build_object('es', 'x', 'en', 'y') where locked and id = (select id from cms_strings where locked limit 1)" 2>&1); then echo "✗ se editó una línea fija"; exit 1; fi
+          echo "$err" | grep -q "cms_linea_fija"
+          if err=$(Q "update cms_strings set text = jsonb_build_object('es', 'x', 'en', 'y') where id = 'APP-HOME.hoy'" 2>&1); then echo "✗ se editó una cadena sin autor"; exit 1; fi
+          echo "$err" | grep -q "cms_sin_autor"
       - name: La semilla del sandbox se puede volver a aplicar con el sandbox ya usado
         # Guardián (5 nov): la semilla borraba fotos que un «Reportar foto» ya referenciaba y fallaba. Se aplica, se
         # simula uso real (reporte de foto, guardado, lista de espera) y se vuelve a aplicar con la semilla cambiada.

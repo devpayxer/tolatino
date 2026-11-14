@@ -1,0 +1,1923 @@
+{
+ "$fuente": "9f · Generado por scripts/cms/extraer.mjs desde el código (textos.ts, textos-home.ts, textos-fijas.ts y las líneas fijas de las categorías). No editar a mano.",
+ "version": 1,
+ "cadenas": [
+  {
+   "id": "APP-HOME.anuncioK",
+   "screen": "APP-HOME",
+   "es": "ANUNCIO",
+   "en": "ANNOUNCEMENT",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "bdb4b1f4b57c822eb2f6c4c094a74eec54402d9afe004477348135251d8c21d5"
+  },
+  {
+   "id": "APP-HOME.aviso",
+   "screen": "APP-HOME",
+   "es": "AVISO",
+   "en": "NOTICE",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "3e9f06dc4796fab55cc80f8c391ef1f1a1b70239b8ab40c06f31e66fb577691f"
+  },
+  {
+   "id": "APP-HOME.avisoCiudadK",
+   "screen": "APP-HOME",
+   "es": "AVISO DE LA CIUDAD",
+   "en": "CITY NOTICE",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "8c4f093c524128b5e9a3c131ed18c628a1347259038c5e290b044613f0a8c3a9"
+  },
+  {
+   "id": "APP-HOME.comunidad",
+   "screen": "APP-HOME",
+   "es": "Comunidad",
+   "en": "Community",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "b0910119598aa9e5d0486fb296899b756da11f1d0579981faeedd27c6261c01e"
+  },
+  {
+   "id": "APP-HOME.comunidadSub",
+   "screen": "APP-HOME",
+   "es": "La comunidad es para vecinos con cuenta. Entra para leer las respuestas y recomendar.",
+   "en": "Community is for neighbors with an account. Sign in to read answers and recommend.",
+   "max_len": 130,
+   "locked": false,
+   "sha256": "17b98fd8fd0e9614a52b3b3aa2b79cfb47abaea9997a5104d1e43674030868c6"
+  },
+  {
+   "id": "APP-HOME.conBoletos",
+   "screen": "APP-HOME",
+   "es": "CON BOLETOS",
+   "en": "TICKETED",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "16edddc4938b49699906f9178d09805a923eb3ba93d65b6ce32b699b850d9168"
+  },
+  {
+   "id": "APP-HOME.desde",
+   "screen": "APP-HOME",
+   "es": "DESDE ",
+   "en": "FROM ",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "14eac18859f4880efa339dc077d03a43fadbea69299aff260f3dda1b70dce961"
+  },
+  {
+   "id": "APP-HOME.encuesta",
+   "screen": "APP-HOME",
+   "es": "ENCUESTA",
+   "en": "POLL",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "9224c3364b0f3c467961a42e580bfac151b4bb366a620e7f7380df22c3b3803f"
+  },
+  {
+   "id": "APP-HOME.entrar",
+   "screen": "APP-HOME",
+   "es": "Entrar",
+   "en": "Sign in",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "d2956fc32a8cf3e33ed3487bb30e006a17d56f1defd637ef637eb8c56d06c4dc"
+  },
+  {
+   "id": "APP-HOME.gratis",
+   "screen": "APP-HOME",
+   "es": "GRATIS",
+   "en": "FREE",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "3c06bd3dfa638dae2d1b810459459ce34666623bbb553e5f9cb5c390e187dff7"
+  },
+  {
+   "id": "APP-HOME.hoy",
+   "screen": "APP-HOME",
+   "es": "Hoy en el barrio",
+   "en": "Today nearby",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "aae0b1706646081decda5b8dab0971a0862ea22fceabb7ee35e636856c1d3a4d"
+  },
+  {
+   "id": "APP-HOME.irComunidad",
+   "screen": "APP-HOME",
+   "es": "Ir a la comunidad",
+   "en": "Go to community",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "94ce803c7b23a8d17c9e7c129651edaf491f20727b4d4ad4be52119de10f1377"
+  },
+  {
+   "id": "APP-HOME.pregunto",
+   "screen": "APP-HOME",
+   "es": "PREGUNTÓ",
+   "en": "ASKED",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "dae17a3e3151d316872c635aa65f776730dd38330513730b3d59c2d61e42b00e"
+  },
+  {
+   "id": "APP-HOME.semana",
+   "screen": "APP-HOME",
+   "es": "Esta semana",
+   "en": "This week",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "f2cc8efa152a09c21367a78febc334bdd04a7dc3d3328cf3847bbaa5f6c81867"
+  },
+  {
+   "id": "FIJAS-1C.borrar",
+   "screen": "FIJAS-1C",
+   "es": "Si borras tu cuenta tienes 30 días para arrepentirte; después se borra todo. Los cobros quedan en Stripe como pide la ley.",
+   "en": "If you delete your account you have 30 days to change your mind; after that everything is deleted. Charges stay in Stripe as the law requires.",
+   "max_len": 142,
+   "locked": true,
+   "sha256": "711d8b3896d61445bba552c7b2c5f2459ce3c9276e6a3a8fdaaefe468e847372"
+  },
+  {
+   "id": "FIJAS-1C.equipoDosPasos",
+   "screen": "FIJAS-1C",
+   "es": "Tu cuenta del equipo necesita tu llave de acceso o tu app de códigos. El SMS solo no alcanza.",
+   "en": "Your team account needs your passkey or your code app. SMS alone is not enough.",
+   "max_len": 93,
+   "locked": true,
+   "sha256": "2d7da7b3d6cd0171339d4ffa0b7916af35d7398234a3a558b126ecc32f07d0ca"
+  },
+  {
+   "id": "FIJAS-1C.exportar",
+   "screen": "FIJAS-1C",
+   "es": "Te armamos un archivo con lo tuyo: perfil, pedidos, citas, reseñas, publicaciones y mensajes. Tarda unos minutos y lo bajas aquí durante 24 horas.",
+   "en": "We put together a file with your data: profile, orders, appointments, reviews, posts and messages. It takes a few minutes and you can download it here for 24 hours.",
+   "max_len": 164,
+   "locked": true,
+   "sha256": "364b09b2d5883228f120989f788c3329c838cf6096c04cf0bad114fb24a512d4"
+  },
+  {
+   "id": "FIJAS-1C.landing",
+   "screen": "FIJAS-1C",
+   "es": "Alguien cerca de ti hace justo lo que buscas. Encontrarlo es lo difícil.",
+   "en": "Someone near you does exactly what you need. Finding them is the hard part.",
+   "max_len": 75,
+   "locked": true,
+   "sha256": "85f5298de41c9ae3aaee6019f7b0ff19941cade4db21a7f9e2bef54d1d6f1ebb"
+  },
+  {
+   "id": "FIJAS-1C.landingTel",
+   "screen": "FIJAS-1C",
+   "es": "Te avisamos por mensaje de texto cuando abra tu zona. Nada más.",
+   "en": "We will text you when your area opens. Nothing else.",
+   "max_len": 63,
+   "locked": true,
+   "sha256": "4c72285d9c29790e4d2cd99d5e9b4ec048577fbc08781f14939b04c9e8191898"
+  },
+  {
+   "id": "FIJAS-1C.mantenimiento",
+   "screen": "FIJAS-1C",
+   "es": "Estamos haciendo un cambio. Volvemos en unos minutos.",
+   "en": "We are making a change. Back in a few minutes.",
+   "max_len": 53,
+   "locked": true,
+   "sha256": "91032dfb3110d58d3958143b177f31642514629ecfb26f8071f3bbc3ce527626"
+  },
+  {
+   "id": "NEG-CATEGORIA.NEG-AUTO.linea",
+   "screen": "NEG-CATEGORIA",
+   "es": "Nada se hace ni se cobra sin tu OK.",
+   "en": "Nothing gets done or charged without your OK.",
+   "max_len": 45,
+   "locked": true,
+   "sha256": "6f39ab41f700a800d5e39ae47fa960168c71fe1c4563c0c6b7e8e1a8f4f8f3cf"
+  },
+  {
+   "id": "NEG-CATEGORIA.NEG-DEALER.linea",
+   "screen": "NEG-CATEGORIA",
+   "es": "El precio en la puerta: con impuestos, placas y cargos del dealer, antes de firmar.",
+   "en": "The out-the-door price: with taxes, tags and dealer fees, before you sign.",
+   "max_len": 83,
+   "locked": true,
+   "sha256": "645d990e2e00636343458c65b82c8e48a158676c2d27bc9f02590044f8fb8ce2"
+  },
+  {
+   "id": "NEG-CATEGORIA.NEG-DEPORTE.linea",
+   "screen": "NEG-CATEGORIA",
+   "es": "La cuota es la que ves: sin cargos escondidos, y si hay contrato, se dice.",
+   "en": "The fee is what you see: no hidden charges, and any contract is stated.",
+   "max_len": 74,
+   "locked": true,
+   "sha256": "a931432c55497d206342649c703ae7bf7bf7955499ba92f14c0828a08cdcc148"
+  },
+  {
+   "id": "NEG-CATEGORIA.NEG-EDU.linea",
+   "screen": "NEG-CATEGORIA",
+   "es": "El precio del curso es el total: libros y examen incluidos o dichos aparte.",
+   "en": "The course price is the total: books and exam included or listed separately.",
+   "max_len": 76,
+   "locked": true,
+   "sha256": "fd19f09871e76adf1c2a1c33b2764e9cb3a46d3228241978b8d3d924b95d7ccf"
+  },
+  {
+   "id": "NEG-CATEGORIA.NEG-FE.linea",
+   "screen": "NEG-CATEGORIA",
+   "es": "La ayuda de la iglesia es gratis; nunca se cobra por despensa, ropa ni oración.",
+   "en": "Church help is free; food, clothing and prayer are never charged.",
+   "max_len": 79,
+   "locked": true,
+   "sha256": "78c55a83e82051d367e21748126f2d8842ddf97f28d8786a9976cdd51063e77f"
+  },
+  {
+   "id": "NEG-CATEGORIA.NEG-FIESTA.linea",
+   "screen": "NEG-CATEGORIA",
+   "es": "La fecha no es tuya hasta que te la confirmen.",
+   "en": "The date is not yours until they confirm it.",
+   "max_len": 46,
+   "locked": true,
+   "sha256": "d0af13cd169d8c9c85b6b090f1fb7c1cd452ffa75435fe72e117081e5b4dc964"
+  },
+  {
+   "id": "NEG-CATEGORIA.NEG-HOGAR.linea",
+   "screen": "NEG-CATEGORIA",
+   "es": "Precio completo antes de empezar. Si algo cambia, te pregunta primero.",
+   "en": "Full price before they start. If anything changes, they ask you first.",
+   "max_len": 70,
+   "locked": true,
+   "sha256": "ed7a7df8d81da0fbd6e1f9732d908d046105d869694bf7dade7281e231dbcdb5"
+  },
+  {
+   "id": "NEG-CATEGORIA.NEG-INMUEBLE.linea",
+   "screen": "NEG-CATEGORIA",
+   "es": "Lo que pagas para mudarte está completo aquí: nadie cobra por ver una propiedad.",
+   "en": "What you pay to move in is all here: no one charges to see a property.",
+   "max_len": 80,
+   "locked": true,
+   "sha256": "904dab7aa48e610b12a64aa3df7898696c31fc1324d64ead17bb10e3383825aa"
+  },
+  {
+   "id": "NEG-CATEGORIA.NEG-MERC.linea",
+   "screen": "NEG-CATEGORIA",
+   "es": "Lo que va por peso se pesa delante de ti y pagas el peso real.",
+   "en": "Anything sold by weight is weighed in front of you and you pay the real weight.",
+   "max_len": 79,
+   "locked": true,
+   "sha256": "41010091d4e1b8b7e97de867db58d6a809fae2a1ef5fea7f13ef5f66d311b73a"
+  },
+  {
+   "id": "NEG-CATEGORIA.NEG-NINOS.linea",
+   "screen": "NEG-CATEGORIA",
+   "es": "Toda guardería muestra su licencia del estado; si no la tiene, se dice.",
+   "en": "Every daycare shows its state license; if it has none, it says so.",
+   "max_len": 71,
+   "locked": true,
+   "sha256": "f100ae4ac67bdcf98156ddbc21a1f51fdfb50d9bb06fb808c38b61bbcee7ec1d"
+  },
+  {
+   "id": "NEG-CATEGORIA.NEG-NOCHE.linea",
+   "screen": "NEG-CATEGORIA",
+   "es": "El cover que ves es el que pagas en la puerta.",
+   "en": "The cover you see is what you pay at the door.",
+   "max_len": 46,
+   "locked": true,
+   "sha256": "a945890e99e628de9baf9836f7604ced105b4231f033ec44c9ce509d1b753275"
+  },
+  {
+   "id": "NEG-CATEGORIA.NEG-PRO.linea",
+   "screen": "NEG-CATEGORIA",
+   "es": "Nadie te garantiza un resultado.",
+   "en": "No one can guarantee you a result.",
+   "max_len": 34,
+   "locked": true,
+   "sha256": "1b4568a7a59761771d44dfe00b8fd6338ad1cea3b357eda40d1fa7ae5a277d27"
+  },
+  {
+   "id": "NEG-CATEGORIA.NEG-SALUD.linea",
+   "screen": "NEG-CATEGORIA",
+   "es": "Si es una emergencia, llama al 911.",
+   "en": "If it is an emergency, call 911.",
+   "max_len": 35,
+   "locked": true,
+   "sha256": "655b6088143a7c94eaeb2344a0ca926e81b71b92358b54f2c9338b24dbe0d12b"
+  },
+  {
+   "id": "NEG-CATEGORIA.NEG-TIENDA.linea",
+   "screen": "NEG-CATEGORIA",
+   "es": "El precio que ves es el que pagas en la caja.",
+   "en": "The price you see is what you pay at the register.",
+   "max_len": 50,
+   "locked": true,
+   "sha256": "f93eaad562da4b38649b19ae2d50a5f7adb49352944b51882e4a2f55e46535bb"
+  },
+  {
+   "id": "NEG-CATEGORIA.NEG-TRANS.linea",
+   "screen": "NEG-CATEGORIA",
+   "es": "El precio del viaje es cerrado antes de salir.",
+   "en": "The trip price is fixed before you leave.",
+   "max_len": 46,
+   "locked": true,
+   "sha256": "ed29b816e2dc6b1e0ed691acafa87dff039258245bc85957a9d25b9cba9c9801"
+  },
+  {
+   "id": "WEB-BUSCAR.alerta",
+   "screen": "WEB-BUSCAR",
+   "es": "Avísame cuando haya",
+   "en": "Alert me when there is one",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "e120823f73ec5da7d99da0cfc01c497a4ec71da3eb1e54823c74ca3defcbb4e3"
+  },
+  {
+   "id": "WEB-BUSCAR.alertaOn",
+   "screen": "WEB-BUSCAR",
+   "es": "Te avisamos",
+   "en": "Alert on",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "418b3b2cb1dbec73e7017a4479a157c75b63a84c5ed5894a1a07799b5e2265ab"
+  },
+  {
+   "id": "WEB-BUSCAR.also",
+   "screen": "WEB-BUSCAR",
+   "es": "También en {c}",
+   "en": "Also in {c}",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "ac7d7f0608ab35e6be5239bd688bdcb751a9a2342ce69e14b7fd0c5bbdfa1cb9"
+  },
+  {
+   "id": "WEB-BUSCAR.biz",
+   "screen": "WEB-BUSCAR",
+   "es": "Negocios",
+   "en": "Businesses",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "bdce9db456e972856941e8b4460f0b24e22d6cfed1e13a5018e56791b6a75609"
+  },
+  {
+   "id": "WEB-BUSCAR.cancel",
+   "screen": "WEB-BUSCAR",
+   "es": "Cancelar",
+   "en": "Cancel",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "ad9c83036f407238a6c8217a028d71e0afa5246aa1e0d7deda8f0a900ede02da"
+  },
+  {
+   "id": "WEB-BUSCAR.cats",
+   "screen": "WEB-BUSCAR",
+   "es": "Explora por categoría",
+   "en": "Browse by category",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "c9b3dc03e856df78e49463e5c437f8608463f642995a83831b2457e6e2c17f49"
+  },
+  {
+   "id": "WEB-BUSCAR.catsU",
+   "screen": "WEB-BUSCAR",
+   "es": "CATEGORÍAS",
+   "en": "CATEGORIES",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "6efcf2ed8119bc9b73fcd54bb2f36b4c465c7f2fa1593a2a1b5dc829d38699f1"
+  },
+  {
+   "id": "WEB-BUSCAR.clear",
+   "screen": "WEB-BUSCAR",
+   "es": "Borrar",
+   "en": "Clear",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "ee8615054e47e4174a3f15d140a7169ee2937e5f5b0b100845fe05483b588d3a"
+  },
+  {
+   "id": "WEB-BUSCAR.conteo",
+   "screen": "WEB-BUSCAR",
+   "es": "{n} NEGOCIOS",
+   "en": "{n} BUSINESSES",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "c5179f4e1392fc71f2c5afb6b462123f878b778fbd62dba43f2fd6315b1ac4f1"
+  },
+  {
+   "id": "WEB-BUSCAR.dym",
+   "screen": "WEB-BUSCAR",
+   "es": "¿Quisiste decir «{x}»?",
+   "en": "Did you mean “{x}”?",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "dc61ab2effd68f45590477f618ae1f2847f48cfc09193b56d6ff02551c846fe5"
+  },
+  {
+   "id": "WEB-BUSCAR.ebCity",
+   "screen": "WEB-BUSCAR",
+   "es": "BUSCAR EN {C}",
+   "en": "SEARCH IN {C}",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "31b86f008ba7048084ce678efdedced8c1fdebfe6e3a8b692745fbd84b5165b8"
+  },
+  {
+   "id": "WEB-BUSCAR.hero",
+   "screen": "WEB-BUSCAR",
+   "es": "¿Qué necesitas hoy?",
+   "en": "What do you need today?",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "12e574c7582d1ede5248043bbd2bef7a3aee614791c22e174af89747342118e0"
+  },
+  {
+   "id": "WEB-BUSCAR.heroSub",
+   "screen": "WEB-BUSCAR",
+   "es": "Negocios, platos, servicios, eventos y lo que dicen los vecinos, en un solo lugar.",
+   "en": "Businesses, dishes, services, events and what neighbors say, in one place.",
+   "max_len": 130,
+   "locked": false,
+   "sha256": "cfecb147220db96020eae2610331b4b75941e93d091a65ee55543102e02c92ad"
+  },
+  {
+   "id": "WEB-BUSCAR.ir",
+   "screen": "WEB-BUSCAR",
+   "es": "Buscar «{q}»",
+   "en": "Search “{q}”",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "358117c3104409c7c812f98d4757bf652cbb18fdd191348cc89a7d6fc5c9d7e7"
+  },
+  {
+   "id": "WEB-BUSCAR.irEn",
+   "screen": "WEB-BUSCAR",
+   "es": " en {x}",
+   "en": " in {x}",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "f86d141d01815e72468c8bb10abccffae5ce1027a93ef89db05af0b2a46a9803"
+  },
+  {
+   "id": "WEB-BUSCAR.irMeta",
+   "screen": "WEB-BUSCAR",
+   "es": "VER RESULTADOS Y SUGERENCIAS",
+   "en": "SEE RESULTS AND SUGGESTIONS",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "e00747c10651b8a1cb481b118cba928cc03868eeca3dfcbad1b2e02b8bd5596c"
+  },
+  {
+   "id": "WEB-BUSCAR.mapa",
+   "screen": "WEB-BUSCAR",
+   "es": "Mapa",
+   "en": "Map",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "39e28626d973bd6cb467a807717bf9d25f7dabaf9b75175f5f7e4aa50c89b8c6"
+  },
+  {
+   "id": "WEB-BUSCAR.negocio",
+   "screen": "WEB-BUSCAR",
+   "es": "NEGOCIO",
+   "en": "BUSINESS",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "aed70a9881378fefe593c1099734a1d8512a5810d15d7ca33e02069531b2b0fa"
+  },
+  {
+   "id": "WEB-BUSCAR.negocios",
+   "screen": "WEB-BUSCAR",
+   "es": "NEGOCIOS",
+   "en": "BUSINESSES",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "5fe60c0952fe7c0c05ce1d8f9d7dcf1b79f8e9142246d6de1007df9cfb81c2c1"
+  },
+  {
+   "id": "WEB-BUSCAR.noneB",
+   "screen": "WEB-BUSCAR",
+   "es": "Revisa cómo lo escribiste o prueba con otra palabra. Esta búsqueda nos ayuda a saber qué negocios faltan en {c}.",
+   "en": "Check the spelling or try another word. This search helps us know which businesses {c} is missing.",
+   "max_len": 170,
+   "locked": false,
+   "sha256": "bb091ad2b085f40511392c0890c12a9bb2e9c3f8a19dc1766e2cbb3a9785dfcd"
+  },
+  {
+   "id": "WEB-BUSCAR.notFound",
+   "screen": "WEB-BUSCAR",
+   "es": "¿No encontraste lo que buscabas?",
+   "en": "Didn’t find what you need?",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "62f8f98a3ec1b4d70a5ef4b6664c5a6520ab92fb3c76b8be3f96d317de70f952"
+  },
+  {
+   "id": "WEB-BUSCAR.notYet",
+   "screen": "WEB-BUSCAR",
+   "es": "AÚN NO HAY",
+   "en": "NONE YET",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "4f5f98c31dfb15883650c0005b8eba2796ec59c4fe49a7e0b43fad9a40f4c61f"
+  },
+  {
+   "id": "WEB-BUSCAR.notYetB",
+   "screen": "WEB-BUSCAR",
+   "es": "Te avisamos cuando se publique uno. ¿Conoces uno? Invítalo a publicar gratis.",
+   "en": "We will let you know when one is listed. Know one? Invite them to list for free.",
+   "max_len": 120,
+   "locked": false,
+   "sha256": "14cd92796039e63827eda1cb6da3af65f0e9d8c60bf3d03c4e76a18094d31411"
+  },
+  {
+   "id": "WEB-BUSCAR.ordenar",
+   "screen": "WEB-BUSCAR",
+   "es": "Ordenar",
+   "en": "Sort",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "5db1a893faa84d3ea02541babe0c27874ccb3503bd0aa10b4aca05b0a4bb6565"
+  },
+  {
+   "id": "WEB-BUSCAR.pagina",
+   "screen": "WEB-BUSCAR",
+   "es": "PÁGINA {p} DE {n}",
+   "en": "PAGE {p} OF {n}",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "c1f9e1875b020deace4b498d2bf2f6ebaad7b9d60b54aa331e41ed791220028c"
+  },
+  {
+   "id": "WEB-BUSCAR.partial",
+   "screen": "WEB-BUSCAR",
+   "es": "Nada tiene todas las palabras que escribiste. Esto es lo que más se parece.",
+   "en": "Nothing has every word you typed. This is the closest match.",
+   "max_len": 120,
+   "locked": false,
+   "sha256": "1d169c9af3529d510b990caca485fa20910635e319791b371c8e08b83ce9a3dd"
+  },
+  {
+   "id": "WEB-BUSCAR.ph",
+   "screen": "WEB-BUSCAR",
+   "es": "¿Qué necesitas hoy?",
+   "en": "What do you need today?",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "b22e47cbcade7b44c2fe85c8e24ac5dbc79017dd64d6b999bf07cbcbe95e3868"
+  },
+  {
+   "id": "WEB-BUSCAR.phCat",
+   "screen": "WEB-BUSCAR",
+   "es": "Buscar en {x}…",
+   "en": "Search in {x}…",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "72b7a720d9f3a342d52b3fd2440315e1f1e0efc7a667a8debbc0962fdf8ec688"
+  },
+  {
+   "id": "WEB-BUSCAR.proNote",
+   "screen": "WEB-BUSCAR",
+   "es": "Los negocios Pro van primero; dentro de cada grupo se ordena como elijas.",
+   "en": "Pro businesses come first; within each group, results follow your choice.",
+   "max_len": 110,
+   "locked": false,
+   "sha256": "b6a0bda3a282787c452df8d80e389caf5f763cd7ff403abc1088c23184cc5a3d"
+  },
+  {
+   "id": "WEB-BUSCAR.rec",
+   "screen": "WEB-BUSCAR",
+   "es": "Recomienda un negocio",
+   "en": "Recommend a business",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "eeaac08964285148f027b52c46e40f1f440755c68ce9546fc9222d970de925db"
+  },
+  {
+   "id": "WEB-BUSCAR.recent",
+   "screen": "WEB-BUSCAR",
+   "es": "Recientes",
+   "en": "Recent",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "27c506a562184f57fd60c537f3b4bb89d5c5cf10f15b56740aa912ccd74164bb"
+  },
+  {
+   "id": "WEB-BUSCAR.resU",
+   "screen": "WEB-BUSCAR",
+   "es": "RESULTADOS",
+   "en": "RESULTS",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "7bff326f0c3a4e7186a2b4692818b3f4812b543c175da7cf7a169d32a7f81487"
+  },
+  {
+   "id": "WEB-BUSCAR.search",
+   "screen": "WEB-BUSCAR",
+   "es": "Buscar",
+   "en": "Search",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "890dfcdf2442c9715e7328752054634168c6d43860f1f76a0cb7cad5b69be661"
+  },
+  {
+   "id": "WEB-BUSCAR.sorts.best",
+   "screen": "WEB-BUSCAR",
+   "es": "Mejor calificados",
+   "en": "Top rated",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "9600890734b8d64815d303d04ef6b556c6b06e98e62dc233a7d83972ea7918c5"
+  },
+  {
+   "id": "WEB-BUSCAR.sorts.near",
+   "screen": "WEB-BUSCAR",
+   "es": "Más cerca",
+   "en": "Nearest",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "894dd1e8f7aa5b332c97d403133b048926bfa51e05ef50d8f390ce288f7f5a1e"
+  },
+  {
+   "id": "WEB-BUSCAR.sorts.rel",
+   "screen": "WEB-BUSCAR",
+   "es": "Relevancia",
+   "en": "Relevance",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "871516189371061dc60f669f12130b614692dc23e2f09244a44f2b66021e325d"
+  },
+  {
+   "id": "WEB-BUSCAR.talk",
+   "screen": "WEB-BUSCAR",
+   "es": "Escribe como hablas",
+   "en": "Type like you talk",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "db7b5951d2ae705d666d1ae5afbc9e15443265045529ed820d83077bfe9960b4"
+  },
+  {
+   "id": "WEB-BUSCAR.talkSub",
+   "screen": "WEB-BUSCAR",
+   "es": "Entendemos lo que importa: si está abierto, si es sin cita, si acepta tu seguro o si es esta noche.",
+   "en": "We get what matters: open now, walk-in, takes your insurance or tonight.",
+   "max_len": 150,
+   "locked": false,
+   "sha256": "ccf7b388aa888b4b63f0ce81e9319995c126ffefb3105c4bf9d95d245b7eb031"
+  },
+  {
+   "id": "WEB-BUSCAR.todo",
+   "screen": "WEB-BUSCAR",
+   "es": "Todo",
+   "en": "All",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "fa7fd7906c0d33d71a55138329529b70d3152a19fff52df92de908cc820b01b0"
+  },
+  {
+   "id": "WEB-BUSCAR.trend",
+   "screen": "WEB-BUSCAR",
+   "es": "Lo más buscado en {c}",
+   "en": "Most searched in {c}",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "a5382cf5b88edf6f9867b578ee1f51d7d62b4ada0466882d142a10f30f76b525"
+  },
+  {
+   "id": "WEB-BUSCAR.tryCats",
+   "screen": "WEB-BUSCAR",
+   "es": "PRUEBA CON UNA CATEGORÍA",
+   "en": "TRY A CATEGORY",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "1305b14e5a430289f9ebece04f74a6585cf01b197817c43067c455ecb50f55b6"
+  },
+  {
+   "id": "WEB-BUSCAR.und",
+   "screen": "WEB-BUSCAR",
+   "es": "ENTENDIMOS",
+   "en": "WE UNDERSTOOD",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "c5a28e40276f922105850bb668a14b6fe8dce548228397e5b69b100f14c60f14"
+  },
+  {
+   "id": "WEB-BUSCAR.verN",
+   "screen": "WEB-BUSCAR",
+   "es": "Ver los {n}",
+   "en": "See all {n}",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "d6c0df013ae5cd2c8f53d2e8ac8f12982b49ba60e68503307e131b77a3760577"
+  },
+  {
+   "id": "WEB-BUSCAR.voz",
+   "screen": "WEB-BUSCAR",
+   "es": "Te escuchamos…",
+   "en": "Listening…",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "50ea3772bee580c7fb8e23e1b97d68c483cadb7230c83b3206f79675ac2e4ead"
+  },
+  {
+   "id": "WEB-BUSCAR.vozNo",
+   "screen": "WEB-BUSCAR",
+   "es": "Tu navegador no permite buscar con la voz.",
+   "en": "Your browser does not support voice search.",
+   "max_len": 70,
+   "locked": false,
+   "sha256": "fdda22b5a5f9e207bf3e8275322ad5eee3b26db02ca53fb9d7469d47af12aea2"
+  },
+  {
+   "id": "WEB-BUSCAR.vozSub",
+   "screen": "WEB-BUSCAR",
+   "es": "Di lo que buscas, por ejemplo «barbería abierta ahora».",
+   "en": "Say what you need, for example “barber open now”.",
+   "max_len": 90,
+   "locked": false,
+   "sha256": "cf47e4ef9728139625ddd9d35f8509ce8b554a1948680c6437e176e57154823b"
+  },
+  {
+   "id": "WEB-BUSCAR.week",
+   "screen": "WEB-BUSCAR",
+   "es": "ESTA SEMANA",
+   "en": "THIS WEEK",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "c36ada9b99f53ad46a2ef69cbdef9a1f6b29a7cdb5e6800d2aa858dc68aba556"
+  },
+  {
+   "id": "WEB-FICHA.back",
+   "screen": "WEB-FICHA",
+   "es": "Volver",
+   "en": "Back",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "b3213db50d751037a6f2292542ee61e282a48dccfdcebd7d4167d87005e2f971"
+  },
+  {
+   "id": "WEB-FICHA.call",
+   "screen": "WEB-FICHA",
+   "es": "Llamar",
+   "en": "Call",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "50d490ea1b3466115e45ca2d47139ad3a30d8b89fe5f282b32eb58a2726c4211"
+  },
+  {
+   "id": "WEB-FICHA.changes",
+   "screen": "WEB-FICHA",
+   "es": "PRÓXIMOS CAMBIOS",
+   "en": "UPCOMING CHANGES",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "136d7dcc6ffa00e0a9e9d5f46e88e2f502f485b24213b576e2e9882caa2b519c"
+  },
+  {
+   "id": "WEB-FICHA.closed",
+   "screen": "WEB-FICHA",
+   "es": "Cerrado",
+   "en": "Closed",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "6c2cfac4f6b9065a665c237ceb3e5d8bedcabdbd58c6b8f64a7efff84604fd70"
+  },
+  {
+   "id": "WEB-FICHA.copied",
+   "screen": "WEB-FICHA",
+   "es": "Enlace copiado",
+   "en": "Link copied",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "79fac4c4e2d1f671677b5dba386e6fcc2c5a4324238e462bb2808e029937fff6"
+  },
+  {
+   "id": "WEB-FICHA.faq",
+   "screen": "WEB-FICHA",
+   "es": "Preguntas frecuentes",
+   "en": "FAQ",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "20916a4209fb87543d099c7680bc6a53c66a99258f61e5a2d600fdd8a671d596"
+  },
+  {
+   "id": "WEB-FICHA.hours",
+   "screen": "WEB-FICHA",
+   "es": "Horario",
+   "en": "Hours",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "ce254253cc207ddec49410df29ece5c0e3adbbd19687ed883186bd70c84756e8"
+  },
+  {
+   "id": "WEB-FICHA.hoursCaps",
+   "screen": "WEB-FICHA",
+   "es": "HORARIO",
+   "en": "HOURS",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "da5b97a2846928079f14e662badc7bab3e37518839cfe345eeb0b54815baa5a4"
+  },
+  {
+   "id": "WEB-FICHA.leyCta",
+   "screen": "WEB-FICHA",
+   "es": "Verificar",
+   "en": "Verify",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "25b030278bb8d0e48589a62e28629bc51303ca96ec84517743183e7a79fc3a39"
+  },
+  {
+   "id": "WEB-FICHA.leyK",
+   "screen": "WEB-FICHA",
+   "es": "¿PUEDE HACERLO POR LEY?",
+   "en": "ARE THEY ALLOWED BY LAW?",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "c0f1fb8f7e112fac9d8c1d7129d3c8ad33f07be6448db69af42c1428d7ade092"
+  },
+  {
+   "id": "WEB-FICHA.leyNo",
+   "screen": "WEB-FICHA",
+   "es": "No puede:",
+   "en": "Cannot:",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "1b3dd688efad6c350324fed5146d6edf519d4e218896f65c2d8a1aca7f885442"
+  },
+  {
+   "id": "WEB-FICHA.leyNoK",
+   "screen": "WEB-FICHA",
+   "es": "LO QUE NO HACE",
+   "en": "WHAT THEY DO NOT DO",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "bef43044d37ac71f6f84456d7a68e6acf4d07723570c4c726eefbe8a66d654cc"
+  },
+  {
+   "id": "WEB-FICHA.map",
+   "screen": "WEB-FICHA",
+   "es": "Cómo llegar",
+   "en": "Directions",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "102ee60f11d35b5523faf316b96d386ed255ee053c9e93146cdddbfaf9bd92ef"
+  },
+  {
+   "id": "WEB-FICHA.mapZone",
+   "screen": "WEB-FICHA",
+   "es": "Dónde atiende",
+   "en": "Service area",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "f074ab71a4e31089931559413b07c29e68c1be2a11e8ec931e1915089ca48401"
+  },
+  {
+   "id": "WEB-FICHA.msg",
+   "screen": "WEB-FICHA",
+   "es": "Mensaje",
+   "en": "Message",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "f8768f934810b44d0c873ff4d1402fc8c427a794ed3bf6b861f483108843b982"
+  },
+  {
+   "id": "WEB-FICHA.now",
+   "screen": "WEB-FICHA",
+   "es": "AHORA",
+   "en": "NOW",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "a9f8391a7277e5efc2b28322f76d9c0d581ebf74556544ad51c9f7385b77bb62"
+  },
+  {
+   "id": "WEB-FICHA.open",
+   "screen": "WEB-FICHA",
+   "es": "Abierto",
+   "en": "Open",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "d13be7a08e058462fbb7dee5b1006d006c624d890f9c82d71f1acd2fd42b17f6"
+  },
+  {
+   "id": "WEB-FICHA.openMaps",
+   "screen": "WEB-FICHA",
+   "es": "Abrir en mapas",
+   "en": "Open in maps",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "b44ccf4615c05c902776114ebc6811093ee3c499d9632ced78988d397a330b0c"
+  },
+  {
+   "id": "WEB-FICHA.photoCount",
+   "screen": "WEB-FICHA",
+   "es": "{n} FOTOS",
+   "en": "{n} PHOTOS",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "49973846412171273019e87e27cbad2678bee3324f79e6f1d936f5c7200ea3d4"
+  },
+  {
+   "id": "WEB-FICHA.photoCountOne",
+   "screen": "WEB-FICHA",
+   "es": "1 FOTO",
+   "en": "1 PHOTO",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "3d0f567903dc701fc22e1f2ff63c940144478eeb0f8eb5f536e34ef6842ad7ad"
+  },
+  {
+   "id": "WEB-FICHA.photos",
+   "screen": "WEB-FICHA",
+   "es": "Fotos",
+   "en": "Photos",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "fc48b2ddcb25c56d658440ccf5f6a53ef2d2c6a7c11f9a98243f5e35c5ec1b27"
+  },
+  {
+   "id": "WEB-FICHA.photosN",
+   "screen": "WEB-FICHA",
+   "es": "Ver las {n} fotos",
+   "en": "See all {n} photos",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "5ee91371788e0c7a79b8fb169155e30e3a85bc3bba00ec6efd054074c167ca8f"
+  },
+  {
+   "id": "WEB-FICHA.photosOne",
+   "screen": "WEB-FICHA",
+   "es": "Ver la foto",
+   "en": "See the photo",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "19a4f967f4258f4291e338b8a2f2f35a4fc83a252bd30c607fdbd70c9c60e329"
+  },
+  {
+   "id": "WEB-FICHA.relSub",
+   "screen": "WEB-FICHA",
+   "es": "Negocios conectados con {n}. Los dos negocios confirmaron la relación.",
+   "en": "Businesses connected with {n}. Both businesses confirmed the connection.",
+   "max_len": 110,
+   "locked": false,
+   "sha256": "986d35c3dca621363a19b47e945dd7a36deb26e2871c9813698fe4bc2c667f3e"
+  },
+  {
+   "id": "WEB-FICHA.save",
+   "screen": "WEB-FICHA",
+   "es": "Guardar",
+   "en": "Save",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "634913a3b499517b91eb7c84dbbd5ddbbed140a15673de859bf3f98cd1f8f8a1"
+  },
+  {
+   "id": "WEB-FICHA.saved",
+   "screen": "WEB-FICHA",
+   "es": "Guardado",
+   "en": "Saved",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "7879d1e7e6baef49c5b398bbab3451f5b13b875d4110c07ef0af1049ccbfe8fd"
+  },
+  {
+   "id": "WEB-FICHA.seeZone",
+   "screen": "WEB-FICHA",
+   "es": "Ver la zona",
+   "en": "See the area",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "cc2738509c3c087be718de9c64d9f1f0f79207fe39b1a5abbfda8cba23a18c2c"
+  },
+  {
+   "id": "WEB-FICHA.share",
+   "screen": "WEB-FICHA",
+   "es": "Compartir",
+   "en": "Share",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "c923610353cf49d1ece036393288146a652d67b4fcbebeaa3a82df0175b49f89"
+  },
+  {
+   "id": "WEB-FICHA.tabRel",
+   "screen": "WEB-FICHA",
+   "es": "Relacionados",
+   "en": "Related",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "e6d983ed5c57d276d236ebc3b01ec1e7e717b17bcf8d55f5af8f358d50b6bc41"
+  },
+  {
+   "id": "WEB-FICHA.tabRes",
+   "screen": "WEB-FICHA",
+   "es": "Resumen",
+   "en": "Overview",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "63950ebf672240e5774e97b545b6598689fe86d0549845d4e40a3d16a93d0c99"
+  },
+  {
+   "id": "WEB-FICHA.today",
+   "screen": "WEB-FICHA",
+   "es": "HOY",
+   "en": "TODAY",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "fea62cd10314b22803194eb03c51e3fb00c00c27eb899921cecd04a7cc17b99c"
+  },
+  {
+   "id": "WEB-FICHA.week",
+   "screen": "WEB-FICHA",
+   "es": "Esta semana",
+   "en": "This week",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "967086498f26b291c9d743ffcd7248a65364903888ad300f2dca397e2ad7bf82"
+  },
+  {
+   "id": "WEB-GAL.anterior",
+   "screen": "WEB-GAL",
+   "es": "Foto anterior",
+   "en": "Previous photo",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "bbf46f34ab57e9ec3007617ff03ccfcbfedd486b518daba47bc19b18a0ef5992"
+  },
+  {
+   "id": "WEB-GAL.cancelar",
+   "screen": "WEB-GAL",
+   "es": "Cancelar",
+   "en": "Cancel",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "f47c52399bd1b0af6b2e422ed8466c25341f3cbf2af3e2a5570838f6b9f2ac56"
+  },
+  {
+   "id": "WEB-GAL.cerrar",
+   "screen": "WEB-GAL",
+   "es": "Cerrar",
+   "en": "Close",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "f63563e93d703605ed1e83743b53a04fd52966e5b792ce102ab05e3de0ddba55"
+  },
+  {
+   "id": "WEB-GAL.delNegocio",
+   "screen": "WEB-GAL",
+   "es": "DEL NEGOCIO",
+   "en": "FROM THE BUSINESS",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "87bfd2759c67b892bb1984a0011719af270b0425594bdbea482e8766e92cd82c"
+  },
+  {
+   "id": "WEB-GAL.enviadoS",
+   "screen": "WEB-GAL",
+   "es": "To'Latino la revisa en 48 h. Mientras tanto sigue visible. Te avisamos el resultado por SMS.",
+   "en": "To'Latino reviews it within 48 h. Meanwhile it stays visible. We will text you the result.",
+   "max_len": 140,
+   "locked": false,
+   "sha256": "4f56c0aa7f3ac3a8789d250b1b6b8be984c493f0fdd17b57f01ea73da5f13288"
+  },
+  {
+   "id": "WEB-GAL.enviadoT",
+   "screen": "WEB-GAL",
+   "es": "Recibimos tu reporte",
+   "en": "We got your report",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "1cde3d0cacd916498d2d696fdd1d9130167ba56f3bd0e2e6efc16d127fe91fa9"
+  },
+  {
+   "id": "WEB-GAL.enviar",
+   "screen": "WEB-GAL",
+   "es": "Enviar reporte",
+   "en": "Send report",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "cfeab3760e1852d79d1bd9c2e16ad3f7b6e170a5b2c0d2cd1e4d34e13316ad5a"
+  },
+  {
+   "id": "WEB-GAL.foto",
+   "screen": "WEB-GAL",
+   "es": "1 FOTO",
+   "en": "1 PHOTO",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "4ccff4f61c6b5d87288601f165098a9f1805a3413610cc9b201e8d71de2bd8e6"
+  },
+  {
+   "id": "WEB-GAL.fotos",
+   "screen": "WEB-GAL",
+   "es": "{n} FOTOS",
+   "en": "{n} PHOTOS",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "16b4058c20c890b5943226cfb25b40ea5fd94bcc5b8af6e78d8ac07132a046df"
+  },
+  {
+   "id": "WEB-GAL.listo",
+   "screen": "WEB-GAL",
+   "es": "Listo",
+   "en": "Done",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "0d1c09637f1b0eed7c31db02449f51605de7180bfe8ac80ff2db89b46d8944b6"
+  },
+  {
+   "id": "WEB-GAL.motivos.datos",
+   "screen": "WEB-GAL",
+   "es": "Muestra datos personales",
+   "en": "Shows personal information",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "6284ffe06598b876188a403db9c65c78cf87f61e94b1d74b43f71158c5f46004"
+  },
+  {
+   "id": "WEB-GAL.motivos.inapropiado",
+   "screen": "WEB-GAL",
+   "es": "Contenido inapropiado",
+   "en": "Inappropriate content",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "2f810699f5ba13bc5fb247ca1bc1f960b0e76db3f95c00bc22abcb4204127f7e"
+  },
+  {
+   "id": "WEB-GAL.motivos.no_es",
+   "screen": "WEB-GAL",
+   "es": "No es de este negocio",
+   "en": "It is not from this business",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "81962e7df8a262e0d6319106d1b27ea51de6b035ae3dda45a8394c05873f874b"
+  },
+  {
+   "id": "WEB-GAL.motivos.otro",
+   "screen": "WEB-GAL",
+   "es": "Otro motivo",
+   "en": "Another reason",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "b687a75343fcdc9e8e251d7cca04243ae90546ae2f56599e5687122543d95a9c"
+  },
+  {
+   "id": "WEB-GAL.motivos.spam",
+   "screen": "WEB-GAL",
+   "es": "Es publicidad o spam",
+   "en": "It is an ad or spam",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "304de5cf2cacac647ed5e048dbccbe6d3ed9127fa2735f21e60d12b64540e37a"
+  },
+  {
+   "id": "WEB-GAL.notaK",
+   "screen": "WEB-GAL",
+   "es": "CUÉNTANOS MÁS · OPCIONAL",
+   "en": "TELL US MORE · OPTIONAL",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "5909bd0578f49798dd1252c7382aa00928e1f4a0b78b6708b7aee1d7df8158dd"
+  },
+  {
+   "id": "WEB-GAL.notaPh",
+   "screen": "WEB-GAL",
+   "es": "Qué viste en la foto…",
+   "en": "What you saw in the photo…",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "ede0b82f834460948959c0a90441d7ede2f51acaaf367e03f5d71c2238f8a05c"
+  },
+  {
+   "id": "WEB-GAL.pista",
+   "screen": "WEB-GAL",
+   "es": "← → PARA MOVERTE · ESC PARA CERRAR",
+   "en": "← → TO MOVE · ESC TO CLOSE",
+   "max_len": 60,
+   "locked": false,
+   "sha256": "724ed929c5f7acf5052733f76598378016391e965ba1914434f3ef0116f7c07d"
+  },
+  {
+   "id": "WEB-GAL.reportada",
+   "screen": "WEB-GAL",
+   "es": "Ya la reportaste · To'Latino la revisa en 48 h",
+   "en": "You reported it · To'Latino reviews it within 48 h",
+   "max_len": 80,
+   "locked": false,
+   "sha256": "9f484a18907cbca2606003b068b092244f3ad0f93758539ebee841acdb0041bf"
+  },
+  {
+   "id": "WEB-GAL.reportar",
+   "screen": "WEB-GAL",
+   "es": "Reportar foto",
+   "en": "Report photo",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "4b1c4f4232c6b79c02c05e08ffb5551ad4ac21249024ec7aaf52a35d58545cf4"
+  },
+  {
+   "id": "WEB-GAL.rpSub",
+   "screen": "WEB-GAL",
+   "es": "Sigue visible mientras una persona de To'Latino la revisa.",
+   "en": "It stays visible while a person at To'Latino reviews it.",
+   "max_len": 90,
+   "locked": false,
+   "sha256": "76166b2a0a74de931e2108e46ca01eadfaf76e5792a24ac7960e5196c001034b"
+  },
+  {
+   "id": "WEB-GAL.rpTitulo",
+   "screen": "WEB-GAL",
+   "es": "Reportar esta foto",
+   "en": "Report this photo",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "e66143c7693f83be716adc2fe8508063d36026fc13596ef0318feaecfc9d0b4a"
+  },
+  {
+   "id": "WEB-GAL.seccion",
+   "screen": "WEB-GAL",
+   "es": "DEL NEGOCIO · {n}",
+   "en": "FROM THE BUSINESS · {n}",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "b90b83096bc622b9812ae78f81cf8f0695335a42ae5de0eb1b143a4d568ebe50"
+  },
+  {
+   "id": "WEB-GAL.seccionSub",
+   "screen": "WEB-GAL",
+   "es": "Las sube {n}.",
+   "en": "Uploaded by {n}.",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "7c6e14c0da8828c2d98f53fea570c43a709099a71db57ff9ad9863efda047602"
+  },
+  {
+   "id": "WEB-GAL.siguiente",
+   "screen": "WEB-GAL",
+   "es": "Foto siguiente",
+   "en": "Next photo",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "05c1dd8de0e3364ac0246475842843ab058e34a1db17da732d496ec1f4ff35ee"
+  },
+  {
+   "id": "WEB-GAL.titulo",
+   "screen": "WEB-GAL",
+   "es": "Fotos de {n}",
+   "en": "Photos of {n}",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "6aaed5bdb2a6ec1c24f827bb87008fc02ee4c42f29b96954b34ffbc2a63c2c05"
+  },
+  {
+   "id": "WEB-GENERAL.all",
+   "screen": "WEB-GENERAL",
+   "es": "Todas",
+   "en": "All",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "2b503dff539196d656a53ccb6ee4c5853802587d75ad631f812e195e349c9dcd"
+  },
+  {
+   "id": "WEB-GENERAL.allCats",
+   "screen": "WEB-GENERAL",
+   "es": "Todas (17)",
+   "en": "All (17)",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "ecebe370f42752c090a3b3cf3ed377daabd1fedd2941fef1a3a7c7128b357e0c"
+  },
+  {
+   "id": "WEB-GENERAL.allCatsTitle",
+   "screen": "WEB-GENERAL",
+   "es": "Negocios",
+   "en": "Businesses",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "23eeb02bcdcb83cb4f8a1b3c3da70ccd8d4c51ac1a3905d45bdc1495e53492ab"
+  },
+  {
+   "id": "WEB-GENERAL.call",
+   "screen": "WEB-GENERAL",
+   "es": "Llamar",
+   "en": "Call",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "922847388c1851d62556c25d54c0eb5070da5f94e8062a7217a04017f1e09b3a"
+  },
+  {
+   "id": "WEB-GENERAL.catsSec",
+   "screen": "WEB-GENERAL",
+   "es": "Categorías",
+   "en": "Categories",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "828148fe21129e71612e243d036faa369dab9be561c449ee2a2e13c567ef7336"
+  },
+  {
+   "id": "WEB-GENERAL.catsTitle",
+   "screen": "WEB-GENERAL",
+   "es": "CATEGORÍAS (17)",
+   "en": "CATEGORIES (17)",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "143c86be2cfc2ba0fc6e76ed8d103a0c42770b8225f36d5329c75cf8e2930ce7"
+  },
+  {
+   "id": "WEB-GENERAL.clear",
+   "screen": "WEB-GENERAL",
+   "es": "Limpiar",
+   "en": "Clear",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "8aef6f4a2ade773318a248afe47470bb74af7479cd56c14f68f95d53124e76d4"
+  },
+  {
+   "id": "WEB-GENERAL.community",
+   "screen": "WEB-GENERAL",
+   "es": "Comunidad",
+   "en": "Community",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "ec3bf8aaa416830f9edeb3bca93f9f1693a85b44f5b6fd65a2325aebeefa4a2b"
+  },
+  {
+   "id": "WEB-GENERAL.ddNone",
+   "screen": "WEB-GENERAL",
+   "es": "No la encontramos",
+   "en": "Not found",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "530a261daccbdfe6eae9de60966642fe228002f43cf79acc93a258a901d2b007"
+  },
+  {
+   "id": "WEB-GENERAL.ddPh",
+   "screen": "WEB-GENERAL",
+   "es": "Busca la marca",
+   "en": "Search make",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "7963ec602c579b68e76913df1375b34cb78cb514fea92cafa7268e5af5c24607"
+  },
+  {
+   "id": "WEB-GENERAL.emptyBody",
+   "screen": "WEB-GENERAL",
+   "es": "¿Conoces uno? Invítalo a publicar gratis, o te avisamos cuando llegue.",
+   "en": "Know one? Invite them to list for free, or we will let you know when one arrives.",
+   "max_len": 130,
+   "locked": false,
+   "sha256": "ebc2684dda91fd44d58a34a75142db3c58c9ce346801c294894479ab388363fc"
+  },
+  {
+   "id": "WEB-GENERAL.emptyFilters",
+   "screen": "WEB-GENERAL",
+   "es": "Ningún negocio con esos filtros",
+   "en": "No businesses match those filters",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "3244d755ae996ed73f2b8e75abe6a19e6fa7527c527fabc3afd368a2cc88d6fc"
+  },
+  {
+   "id": "WEB-GENERAL.emptyLabel",
+   "screen": "WEB-GENERAL",
+   "es": "SIN RESULTADOS",
+   "en": "NO RESULTS",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "d7d6b11c503f760174efa24b05358d44bf038b785fdc60f20e8395a75c2a3f63"
+  },
+  {
+   "id": "WEB-GENERAL.emptyNone",
+   "screen": "WEB-GENERAL",
+   "es": "Aún no hay {x} en {c}",
+   "en": "No {x} in {c} yet",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "2e1691c743519740561073d029344bec500454421889c8661bb30c1d8ec1770d"
+  },
+  {
+   "id": "WEB-GENERAL.events",
+   "screen": "WEB-GENERAL",
+   "es": "Esta semana",
+   "en": "This week",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "5318b09f453c4b6597e94ef53d0fa84bfe291415e40fa576b0d623344bdd8eb2"
+  },
+  {
+   "id": "WEB-GENERAL.featTitle",
+   "screen": "WEB-GENERAL",
+   "es": "Destacados en {c}",
+   "en": "Featured in {c}",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "6cc59c6026e7c5e9664af28489f8466687a3480a60c3642f5cb66387ef8776ec"
+  },
+  {
+   "id": "WEB-GENERAL.filters",
+   "screen": "WEB-GENERAL",
+   "es": "Filtros",
+   "en": "Filters",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "cd10dcbef9cc8bae18e20a5a9778beda3c6e13a0866f2542a4588265695b4f25"
+  },
+  {
+   "id": "WEB-GENERAL.forBiz",
+   "screen": "WEB-GENERAL",
+   "es": "PARA NEGOCIOS",
+   "en": "FOR BUSINESSES",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "43dbdb3f63f91d274886c2d8b4dff047ed722c0a0b0ba3dd38d7c6556019eee5"
+  },
+  {
+   "id": "WEB-GENERAL.freeSub",
+   "screen": "WEB-GENERAL",
+   "es": "NEGOCIOS FREE · LLAMA O PASA",
+   "en": "FREE LISTINGS · CALL OR STOP BY",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "2c152f0f0c9dcf2e199b42e0e676470d7803e3b0aab2e77228a9841750412427"
+  },
+  {
+   "id": "WEB-GENERAL.freeTitle",
+   "screen": "WEB-GENERAL",
+   "es": "También en {c}",
+   "en": "Also in {c}",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "cbeac49b720e5dd7a9dcb6801e010b083834a9b3c27cc416739ebfa3790a1a51"
+  },
+  {
+   "id": "WEB-GENERAL.freshTitle",
+   "screen": "WEB-GENERAL",
+   "es": "Nuevos en el barrio",
+   "en": "New in the neighborhood",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "d615cfeb392bf43b6ec4793f6ab2d7953591dc149f72acacea8fa19deb57cfc2"
+  },
+  {
+   "id": "WEB-GENERAL.invite",
+   "screen": "WEB-GENERAL",
+   "es": "Recomienda un negocio",
+   "en": "Invite a business",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "81e305160cbe5d768e7719d5a8770f9346300c6139d249630f37ca5c8ce2276c"
+  },
+  {
+   "id": "WEB-GENERAL.login",
+   "screen": "WEB-GENERAL",
+   "es": "Entrar",
+   "en": "Sign in",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "d3ed28cf7337e4cb8db33b4e84a5ab432c40a72a9f14f37b1a3f47612401b6db"
+  },
+  {
+   "id": "WEB-GENERAL.mapBtn",
+   "screen": "WEB-GENERAL",
+   "es": "Mapa",
+   "en": "Map",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "5b31bb88af399bc98652d7c553cd1a48ed604adb339c3d0ebded2ba48e93eb48"
+  },
+  {
+   "id": "WEB-GENERAL.nav.0",
+   "screen": "WEB-GENERAL",
+   "es": "INICIO",
+   "en": "HOME",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "5ae74c7d9f1d0a2bd2628a3a34b58e31ec74bf4003c889ce5a01da44749e9fe7"
+  },
+  {
+   "id": "WEB-GENERAL.nav.1",
+   "screen": "WEB-GENERAL",
+   "es": "NEGOCIOS",
+   "en": "BUSINESS",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "721b8cd71b1455d2af54918ba678a02bfd3821bb1d198d40be956fe6a910e62c"
+  },
+  {
+   "id": "WEB-GENERAL.nav.2",
+   "screen": "WEB-GENERAL",
+   "es": "COMUNIDAD",
+   "en": "COMMUNITY",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "a4f755d5b5301e3c12f7fc36133305338404af61c515ef93b6d1912f35817dbb"
+  },
+  {
+   "id": "WEB-GENERAL.nav.3",
+   "screen": "WEB-GENERAL",
+   "es": "EVENTOS",
+   "en": "EVENTS",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "a8f76e834b65cfa229d1392464d919e53974f77e523f3f14781cdb6a5bb789e7"
+  },
+  {
+   "id": "WEB-GENERAL.nav.4",
+   "screen": "WEB-GENERAL",
+   "es": "YO",
+   "en": "ME",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "e99778af1cbc76b897c2369c1174bdd038bcee00544e3e3c72174b03d276755a"
+  },
+  {
+   "id": "WEB-GENERAL.negSub",
+   "screen": "WEB-GENERAL",
+   "es": "17 CATEGORÍAS · {l}",
+   "en": "17 CATEGORIES · {l}",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "9f27f4f8c20f16abc9f98ce016039bcb22bd9bf5c3f50b7340fe96b5fb1a4739"
+  },
+  {
+   "id": "WEB-GENERAL.negTitle",
+   "screen": "WEB-GENERAL",
+   "es": "Negocios en {c}",
+   "en": "Businesses in {c}",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "f2e6521472e94e0ee1e548ec7eb4dd878cb66765fd4aa40924a652fe357fcebf"
+  },
+  {
+   "id": "WEB-GENERAL.next",
+   "screen": "WEB-GENERAL",
+   "es": "Siguiente",
+   "en": "Next",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "34fee71141df3fd25233171936e97c42e13db0c4e469886d8c6fc37442b61c36"
+  },
+  {
+   "id": "WEB-GENERAL.notified",
+   "screen": "WEB-GENERAL",
+   "es": "Te avisaremos",
+   "en": "We will let you know",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "4d8e252f13af8dae7abcb8e325715f181fe1f4ddc9a4bc3727c07e223a0daa88"
+  },
+  {
+   "id": "WEB-GENERAL.notify",
+   "screen": "WEB-GENERAL",
+   "es": "Avísame cuando haya",
+   "en": "Notify me",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "04c15d5e3523b499c82b4c8fdd17e25321d5846e619fbf1fa951c31c061aabf1"
+  },
+  {
+   "id": "WEB-GENERAL.openNow",
+   "screen": "WEB-GENERAL",
+   "es": "Abierto ahora",
+   "en": "Open now",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "11533ec02c17da782768efefa20b3fcdbf49b4f7496ca09ed83cb17ec283383d"
+  },
+  {
+   "id": "WEB-GENERAL.page",
+   "screen": "WEB-GENERAL",
+   "es": "PÁGINA {p} DE {n}",
+   "en": "PAGE {p} OF {n}",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "aa51d7b0d23a6ad4ad5b66119683bf83d137e1b28b2cdd8891a64b802929f4e9"
+  },
+  {
+   "id": "WEB-GENERAL.prev",
+   "screen": "WEB-GENERAL",
+   "es": "Anterior",
+   "en": "Previous",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "3a199abe9e94b9920d5db980fa0731add6ccd2508036d4896a04d8b7d7104e89"
+  },
+  {
+   "id": "WEB-GENERAL.publish",
+   "screen": "WEB-GENERAL",
+   "es": "Publicar mi negocio",
+   "en": "List my business",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "4f1780bf3961de4cb305c094bdabaafb3a5e44d082765649e4698667df66d7ae"
+  },
+  {
+   "id": "WEB-GENERAL.publishBody",
+   "screen": "WEB-GENERAL",
+   "es": "Sin importar el nivel de tu emprendimiento: si ya estás establecido, si estás iniciando, o si solo es un hobby.",
+   "en": "Whatever stage you are at: established, just starting, or it is only a hobby.",
+   "max_len": 170,
+   "locked": false,
+   "sha256": "98bce1d70dbd4057f822133ebc100d25bf2e6372d0fd2b65a7621285ec9d2fdf"
+  },
+  {
+   "id": "WEB-GENERAL.publishCta",
+   "screen": "WEB-GENERAL",
+   "es": "Publicar mi negocio",
+   "en": "List my business",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "e520638f61edb8235cf5752abd1a4a903ad80ad84fe3e747a5c99ff10afd7004"
+  },
+  {
+   "id": "WEB-GENERAL.publishTitle",
+   "screen": "WEB-GENERAL",
+   "es": "Publica tu negocio gratis",
+   "en": "List your business for free",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "028dd312330f9447a94f0511b3c54c32fe79acc373408f8b5ca05de9cfed549c"
+  },
+  {
+   "id": "WEB-GENERAL.result",
+   "screen": "WEB-GENERAL",
+   "es": "resultado",
+   "en": "result",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "0b9c54396e7f4cedf76167bb180fc3061b3a0bbed36cb4590324a0f865527cf5"
+  },
+  {
+   "id": "WEB-GENERAL.results",
+   "screen": "WEB-GENERAL",
+   "es": "resultados",
+   "en": "results",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "038c1b38c775276375c701538f1247b14de7851abc0f44b0048490cca9986c84"
+  },
+  {
+   "id": "WEB-GENERAL.search",
+   "screen": "WEB-GENERAL",
+   "es": "¿Qué necesitas hoy?",
+   "en": "What do you need today?",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "6b56ee0b65b0de146137811940c41303782dbef3a2563dc8f30c359892b525d5"
+  },
+  {
+   "id": "WEB-GENERAL.searchBtn",
+   "screen": "WEB-GENERAL",
+   "es": "Buscar",
+   "en": "Search",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "03461edbfff4813a0aaed208666e6ab95eba6fa6ade9f745cb81c890c08dd795"
+  },
+  {
+   "id": "WEB-GENERAL.searchDesk",
+   "screen": "WEB-GENERAL",
+   "es": "Buscar negocios, eventos y más en {c}",
+   "en": "Search businesses, events and more in {c}",
+   "max_len": 70,
+   "locked": false,
+   "sha256": "b65806ba68c479e5565b784f9e607e76da9dc45871ca7be7e5c0a5016ca9df7c"
+  },
+  {
+   "id": "WEB-GENERAL.searchIn",
+   "screen": "WEB-GENERAL",
+   "es": "Buscar en {c}",
+   "en": "Search {c}",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "c69d80fdb380a6048060e05ce121c5442559043fc8697cdcc65262175529370b"
+  },
+  {
+   "id": "WEB-GENERAL.seeAll",
+   "screen": "WEB-GENERAL",
+   "es": "Ver todo",
+   "en": "See all",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "d0bc23fa3ef26fccaad0b7afc8166c624a8f40f149879b7894d411bf0f7103bf"
+  },
+  {
+   "id": "WEB-GENERAL.seeAllN",
+   "screen": "WEB-GENERAL",
+   "es": "Ver todas",
+   "en": "See all",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "8e2b93b2f1e48b2859bf0d93dab75a9360b01ae5f2d0ef2a341a7be787b23d34"
+  },
+  {
+   "id": "WEB-GENERAL.seeN",
+   "screen": "WEB-GENERAL",
+   "es": "Ver {n} resultados",
+   "en": "See {n} results",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "8cdaf4cb1919fb7bbc81faecff08f589cca9d057838220176a154c8de38f416d"
+  },
+  {
+   "id": "WEB-GENERAL.seedClaim",
+   "screen": "WEB-GENERAL",
+   "es": "Reclámalo gratis",
+   "en": "Claim it free",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "4d94e2abba5fad4f3c3d1d86d9daa136f1c1b7abc8d71b48dda5bd3e85c76b55"
+  },
+  {
+   "id": "WEB-GENERAL.seedUnclaimed",
+   "screen": "WEB-GENERAL",
+   "es": "SIN RECLAMAR",
+   "en": "UNCLAIMED",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "c5f47a77839a75d3fbe180f70acb25fd8b6e36fb98c921973d1b4abab197d241"
+  },
+  {
+   "id": "WEB-GENERAL.seedYours",
+   "screen": "WEB-GENERAL",
+   "es": "¿Es tuyo?",
+   "en": "Is it yours?",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "4dc042aa4c29473f12503c22f769aff7bfa898780b2ace0d3d07814912007743"
+  },
+  {
+   "id": "WEB-GENERAL.sortBy",
+   "screen": "WEB-GENERAL",
+   "es": "Ordenar: ",
+   "en": "Sort: ",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "fe75782ca6106f053f80693351a9775611d81fa77a2f57205873e7c2a6c9d5e2"
+  },
+  {
+   "id": "WEB-GENERAL.sortGroup",
+   "screen": "WEB-GENERAL",
+   "es": "ORDENAR",
+   "en": "SORT",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "6e7fb0cccd88d2d200b9a8b918e4db6a8cc5e21c96a0ce07023a20c1f0845385"
+  },
+  {
+   "id": "WEB-GENERAL.statsBiz",
+   "screen": "WEB-GENERAL",
+   "es": "NEGOCIOS",
+   "en": "BUSINESSES",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "b69a32ffcaca54e58300b356e1bb1fb9e1aabcfae9640f25a5df4126634e805e"
+  },
+  {
+   "id": "WEB-GENERAL.statsOpen",
+   "screen": "WEB-GENERAL",
+   "es": "ABIERTOS AHORA",
+   "en": "OPEN NOW",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "a54374f4416bc65e4f1d0ed590cb20c9113abaadc357a7db9bc483ee3f416026"
+  },
+  {
+   "id": "WEB-GENERAL.tabs.0",
+   "screen": "WEB-GENERAL",
+   "es": "INICIO",
+   "en": "HOME",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "0098e1151fe7abc6fb6e8e97824caefdcdf1a435902a884ab3f9a635535ebc5f"
+  },
+  {
+   "id": "WEB-GENERAL.tabs.1",
+   "screen": "WEB-GENERAL",
+   "es": "NEGOCIOS",
+   "en": "BUSINESS",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "8aada90e5dee5e0fe9af66a3511e39695119a1ef6adbd647a9367e7ee7062df4"
+  },
+  {
+   "id": "WEB-GENERAL.tabs.2",
+   "screen": "WEB-GENERAL",
+   "es": "COMUNIDAD",
+   "en": "COMMUNITY",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "8086fb86f3861e647e29ef535bc90cc4d5104e8a4517b2b85dd9619e9ad93a80"
+  },
+  {
+   "id": "WEB-GENERAL.tabs.3",
+   "screen": "WEB-GENERAL",
+   "es": "EVENTOS",
+   "en": "EVENTS",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "f1c436c03662911f45376d3fbb52cbf8ce5412ecb6d570490d73087ac352fdb3"
+  },
+  {
+   "id": "WEB-GENERAL.today",
+   "screen": "WEB-GENERAL",
+   "es": "Hoy en el barrio",
+   "en": "Today nearby",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "36a2a19b2fd753c24261e11de66bc242a7f590e18e9d19a70c375562613b361b"
+  },
+  {
+   "id": "WEB-GENERAL.todayTag",
+   "screen": "WEB-GENERAL",
+   "es": "HOY",
+   "en": "TODAY",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "095ba132e526c8a1caa947f22a763d797403a862d01f392aa77d537097147922"
+  },
+  {
+   "id": "WEB-INTENTS.abierto",
+   "screen": "WEB-INTENTS",
+   "es": "Abierto ahora",
+   "en": "Open now",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "2fa04844a637bf000e5f47afd32854764f59ebb3605db8adbbcc7be2697dd59f"
+  },
+  {
+   "id": "WEB-INTENTS.cita",
+   "screen": "WEB-INTENTS",
+   "es": "Con cita",
+   "en": "By appointment",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "4cb9cf19072db29829f9cb4258f7dfae52267ef2a32248b4e91f6694650fe56d"
+  },
+  {
+   "id": "WEB-INTENTS.delivery",
+   "screen": "WEB-INTENTS",
+   "es": "Delivery",
+   "en": "Delivery",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "5f931c4e4e915648d349ac8b9230ab78b808476c2776eaba73ba792c020bb69f"
+  },
+  {
+   "id": "WEB-INTENTS.domicilio",
+   "screen": "WEB-INTENTS",
+   "es": "A domicilio",
+   "en": "Comes to you",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "d028ef266ff6578a4784e0022799000ca200a2d71f58bd826d322469b424f26c"
+  },
+  {
+   "id": "WEB-INTENTS.pago",
+   "screen": "WEB-INTENTS",
+   "es": "Pago en línea",
+   "en": "Pay online",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "725b22acc99eeb5a86aacce256c7786da125b950ff400251f1d6adc95f350ec4"
+  },
+  {
+   "id": "WEB-INTENTS.verificados",
+   "screen": "WEB-INTENTS",
+   "es": "Verificados",
+   "en": "Verified",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "a4e98df6b7930382a9997ea0fa738de353aaba2d642fe4dd37a1e8232b2d414c"
+  },
+  {
+   "id": "WEB-SORTS.near",
+   "screen": "WEB-SORTS",
+   "es": "Más cerca",
+   "en": "Nearest",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "04a0eaa37126464c1bbbb32423cc567ae1d1d982b4982174f0a0a27e4c7a4032"
+  },
+  {
+   "id": "WEB-SORTS.rel",
+   "screen": "WEB-SORTS",
+   "es": "Relevancia",
+   "en": "Relevance",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "95acf259123728e28a5593271f54c40234c63d78d33f2adf4a6f4ebcaf75d648"
+  },
+  {
+   "id": "WEB-SORTS.rev",
+   "screen": "WEB-SORTS",
+   "es": "Más reseñas",
+   "en": "Most reviews",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "152bb1eeed1497638735153d84f0a336f437aae415173b078cd1e519723b51cd"
+  },
+  {
+   "id": "WEB-SORTS.top",
+   "screen": "WEB-SORTS",
+   "es": "Mejor calificados",
+   "en": "Top rated",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "e0ff2e9d6b1f7852c927674a9b451df520087207d4466ad4d90d8516c92f364b"
+  }
+ ]
+}

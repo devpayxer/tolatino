@@ -283,7 +283,12 @@ insert into data_map (tabla, columna, rol, accion, set_sql, pendiente_sql, donde
   ('legal_pages', 'reviewed_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2790),
   ('legal_pages', 'published_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2800),
   ('legal_page_log', 'by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2810),
-  ('legal_acceptances', 'user_id', 'persona', 'guardar', null, null, null, '{"es":"Lo pide la ley: recibos, impuestos y disputas.","en":"The law requires it: receipts, taxes and disputes."}'::jsonb, 'terminos_aceptados', 'no', null, false, 2820)
+  ('cms_strings', 'updated_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2820),
+  ('cms_string_versions', 'by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2830),
+  ('city_home_config', 'updated_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2840),
+  ('announcements', 'by_staff_id', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2850),
+  ('announcements', 'retired_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2860),
+  ('legal_acceptances', 'user_id', 'persona', 'guardar', null, null, null, '{"es":"Lo pide la ley: recibos, impuestos y disputas.","en":"The law requires it: receipts, taxes and disputes."}'::jsonb, 'terminos_aceptados', 'no', null, false, 2870)
 on conflict (tabla, columna) do update set rol = excluded.rol, accion = excluded.accion, set_sql = excluded.set_sql, pendiente_sql = excluded.pendiente_sql, donde_sql = excluded.donde_sql,
   porque = excluded.porque, exporta = excluded.exporta, fusion = excluded.fusion, fn = excluded.fn, derivados = excluded.derivados, orden = excluded.orden;
 -- Lo que salió del mapa sale de la tabla (es configuración: el mapa es la fuente).
@@ -569,6 +574,11 @@ delete from data_map d where not exists (select 1 from (values
   ('legal_pages', 'reviewed_by'),
   ('legal_pages', 'published_by'),
   ('legal_page_log', 'by'),
+  ('cms_strings', 'updated_by'),
+  ('cms_string_versions', 'by'),
+  ('city_home_config', 'updated_by'),
+  ('announcements', 'by_staff_id'),
+  ('announcements', 'retired_by'),
   ('legal_acceptances', 'user_id')
 ) v (tabla, columna) where v.tabla = d.tabla and v.columna = d.columna);
 commit;

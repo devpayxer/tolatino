@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { yo } from "@/lib/cuenta";
 import { galeria } from "@/lib/ficha";
 import { idioma } from "@/lib/idioma";
-import { T } from "@/lib/textos";
+import { textosT } from "@/lib/cms";
 import { Galeria } from "./Galeria";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const [{ id }, sp, lang, u] = await Promise.all([params, searchParams, idioma(), yo()]);
   const g = await galeria(id, u?.id ?? null);
   if (!g) notFound();
-  const t = T[lang].gal, n = g.fotos.length;
+  const t = (await textosT(lang)).gal, n = g.fotos.length;
   const at = Number.parseInt(String(sp.at ?? ""), 10);
   return (
     <Galeria
