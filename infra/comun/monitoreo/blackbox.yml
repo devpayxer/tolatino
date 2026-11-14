@@ -1,0 +1,18 @@
+# 9o · blackbox_exporter (Apache-2.0): las pruebas desde fuera de la app (la réplica pide como un vecino, por el dominio y Cloudflare).
+modules:
+  salud:
+    prober: http
+    timeout: 10s
+    http:
+      method: GET
+      valid_status_codes: [200]
+      fail_if_body_not_matches_regexp: ['"ok":true']
+      preferred_ip_protocol: ip4
+  # El webhook de Stripe está vivo: a un GET sin firma contesta 4xx (nunca 5xx ni nada).
+  webhook:
+    prober: http
+    timeout: 10s
+    http:
+      method: GET
+      valid_status_codes: [400, 401, 403, 405]
+      preferred_ip_protocol: ip4

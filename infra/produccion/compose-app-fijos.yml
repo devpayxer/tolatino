@@ -1,0 +1,99 @@
+# 9o · Lo que corre en la máquina de la app y no cambia con cada versión (proyecto «tolatino-fijos»): el barrido y el trabajador de push (le hablan a
+# la versión que sirve por nginx en 127.0.0.1:3000, sea azul o verde), la moderación de imágenes, el traductor, el mapa y node_exporter. Los mismos
+# servicios y comandos del sandbox (infra/pruebas/docker-compose.yml; guardián mismoPaquete), con las imágenes fijadas por versión.
+name: tolatino-fijos
+services:
+  barrido:
+    image: node:22.11-alpine
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      BARRIDO_TOKEN: ${BARRIDO_TOKEN}
+    command: ["node", "-e", "const t=process.env.BARRIDO_TOKEN;const go=async()=>{try{const r=await fetch('http://127.0.0.1:3000/api/interno/barrido',{method:'POST',headers:{'x-barrido-token':t},signal:AbortSignal.timeout(55000)});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)console.error(new Date().toISOString(),'barrido',r.status,JSON.stringify(j))}catch(e){console.error(new Date().toISOString(),'barrido',e.message)}};setTimeout(go,30000);setInterval(go,60000)"]
+
+  push:
+    image: node:22.11-alpine
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      BARRIDO_TOKEN: ${BARRIDO_TOKEN}
+    command: ["node", "-e", "const t=process.env.BARRIDO_TOKEN;let ocupado=false;const go=async()=>{if(ocupado)return;ocupado=true;try{const r=await fetch('http://127.0.0.1:3000/api/interno/push',{method:'POST',headers:{'x-barrido-token':t},signal:AbortSignal.timeout(30000)});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)console.error(new Date().toISOString(),'push',r.status,JSON.stringify(j))}catch(e){console.error(new Date().toISOString(),'push',e.message)}finally{ocupado=false}};setTimeout(go,20000);setInterval(go,5000)"]
+
+  moderacion-img:
+    build:
+      context: ../../services/moderacion-img
+    image: tolatino/moderacion-img:produccion
+    restart: unless-stopped
+    networks: [interna]
+    mem_limit: 768m
+    cpus: 1.0
+
+  traductor-modelos:
+    image: libretranslate/libretranslate:v1.9.6
+    profiles: ["traductor"]
+    restart: "no"
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - >-
+        ./venv/bin/python -c "import sys; from argostranslate import package as p, settings as s;
+        c = {(x.from_code, x.to_code) for x in p.get_installed_packages()};
+        sys.exit(0 if {('en', 'es'), ('es', 'en')} <= c and any((s.data_dir / 'minisbd').glob('*.onnx')) else 1)"
+        || ./venv/bin/python scripts/install_models.py --load_only_lang_codes es,en
+    volumes:
+      - traductor-modelos:/home/libretranslate/.local
+    networks: [salida]
+    mem_limit: 1g
+
+  traductor:
+    image: libretranslate/libretranslate:v1.9.6
+    profiles: ["traductor"]
+    restart: unless-stopped
+    environment:
+      LT_LOAD_ONLY: es,en
+      LT_UPDATE_MODELS: "false"
+      LT_DISABLE_WEB_UI: "true"
+      LT_DISABLE_FILES_TRANSLATION: "true"
+      LT_CHAR_LIMIT: "2000"
+      LT_THREADS: "2"
+    volumes:
+      - traductor-modelos:/home/libretranslate/.local
+    networks: [interna]
+    mem_limit: 1536m
+    cpus: 1.5
+    healthcheck:
+      test: ["CMD", "./venv/bin/python", "scripts/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      start_period: 90s
+      retries: 3
+
+  mapa:
+    image: maptiler/tileserver-gl:v5.6.0
+    profiles: ["mapa"]
+    restart: unless-stopped
+    command: ["--file", "/data/pennsylvania.mbtiles", "--public_url", "/teselas/"]
+    volumes:
+      - /var/lib/tolatino/mapa:/data:ro
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  # Prometheus (en la réplica) mide esta máquina por la red privada.
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    command: ["--path.rootfs=/host", "--web.listen-address=${RED_YO:?falta la IP privada}:9100"]
+    volumes:
+      - /:/host:ro,rslave
+
+volumes:
+  traductor-modelos:
+
+networks:
+  salida:
+    name: tolatino-salida
+    external: true
+  interna:
+    name: tolatino-interna
+    external: true

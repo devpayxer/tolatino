@@ -1,0 +1,3 @@
+{
+  "_": "9o · Cada sobre sellado de este entorno: para qué máquina y para qué llave pública se cifró (huella), cuándo y de dónde salió el secreto. Lo escribe scripts/produccion/sellar.sh; el guardián selladoSoloSuServidor lo compara con llaves.json. Nunca un valor."
+}

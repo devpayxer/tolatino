@@ -13,7 +13,8 @@ import { dbAnalisis } from "./db-analisis";
    guardianes en vivo y «lo que necesita de ti» (los pasos pendientes de Sistema › Apps › «Lo que te toca»). Uno por día (founder_reports, solo
    inserción: el cuerpo y a dónde salió). Si a las 8:00 no salió (o salió tarde), queda la alerta del día y un aviso a los Admins (guardián
    reporteDiarioSale). Solo cifras, nombres de negocios y los pasos del fundador: nunca una persona (guardián analiticaSinPersonas).
-   La conciliación del dinero llega con 9k y la vuelta atrás con 9o: el reporte ya tiene su lugar (conciliacion, vueltas) y dice que todavía no hay. */
+   La conciliación del dinero llega con 9k; las vueltas atrás de ayer las cuenta vueltas_atras_del_dia() (0145, 9o: el azul/verde las anota en
+   deploy_releases). */
 export const HORA_REPORTE = { h: 7, m: 30 };       // 7:30 AM de Hazleton
 export const HORA_ALERTA = { h: 8, m: 0 };         // si a las 8:00 no salió, alerta
 const MIN = (x: { h: number; m: number }) => x.h * 60 + x.m;
@@ -35,7 +36,7 @@ export type CuerpoReporte = {
 export async function armarReporte(): Promise<CuerpoReporte> {
   const sla = slaCase(cfgSql);
   const AYER = `((now() at time zone 'America/New_York')::date - 1)`;
-  const [dias, neg, ops, din, mrr, err, bar, colas, sop, sv, cg] = await Promise.all([
+  const [dias, neg, ops, din, mrr, err, bar, colas, sop, sv, cg, vu] = await Promise.all([
     dbAnalisis().query<{ dia: string; ayer: string }>(`select (now() at time zone 'America/New_York')::date::text as dia, ${AYER}::text as ayer`),
     dbAnalisis().query<{ n: number; nombres: string[] }>(
       `select count(*)::int as n, coalesce((array_agg(b.name order by b.created_at))[1:5], '{}') as nombres from businesses b
@@ -63,6 +64,7 @@ export async function armarReporte(): Promise<CuerpoReporte> {
     dbAnalisis().query<{ pct: number | null }>(
       `select case when cfg_int('compa_tope_mes_cents') > 0 then least(100, floor((coalesce(s.spent_microusd, 0) / 10000.0) / cfg_int('compa_tope_mes_cents') * 100))::int end as pct
          from (select 1) x left join compa_spend_month s on s.month = compa_mes()`),
+    dbAnalisis().query<{ n: number }>(`select vueltas_atras_del_dia(${AYER}) as n`),
   ]);
   // Lo que necesita del fundador: los pasos pendientes de «Lo que te toca» (Sistema › Apps). Si no se puede saber (sin red), se dice.
   let pendientes: CuerpoReporte["pendientes"] = [];
@@ -77,7 +79,7 @@ export async function armarReporte(): Promise<CuerpoReporte> {
     operaciones: ops.rows[0]!,
     dinero: { bruto: d.bruto, comision: d.comision, devuelto: d.devuelto, mrr: mrr.rows[0]?.mrr ?? 0, conciliacion: null },   // 9k: conciliación diaria con Stripe
     errores: { grupos_nuevos: err.rows[0]!.grupos, eventos: err.rows[0]!.eventos, barrido: bar.rows.map((x) => x.name) },
-    vueltas: null,                                                                                                           // 9o: vuelta atrás automática
+    vueltas: { n: vu.rows[0]?.n ?? 0 },                                                                                     // 9o: vuelta atrás automática (deploy_releases)
     colas: colas.rows.map((x) => ({ cola: COLAS[x.queue]?.es ?? x.queue, n: x.n })), soporte_vencidos: sop.rows[0]!.n,
     guardianes: { sobreventa: sv.rows[0]!.n, compa_pct: cg.rows[0]?.pct ?? null, errores_vivos: err.rows[0]!.vivos },
     pendientes,

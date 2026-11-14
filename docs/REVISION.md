@@ -4674,3 +4674,40 @@ pasa a «revisado» y se publica. En producción la base no deja publicar una p�
     del rol.
   - **Piezas sin diseño, compuestas con lo que existe** (hueco #6): el asistente usa la línea de tiempo, las cifras, las notas y los botones del panel; la confirmación con motivo es la de siempre.
 - **Prueba:** `alreves9i` 46/46 y los guardianes limpios; `ciu9i` (61 comprobaciones, 390 y 1360) pasó dos veces seguidas en una base local con el build servido; la corrida de verdad es la del CI.
+
+## Fase 9 · 9o — Producción como código y ensayada (14 nov)
+- **Qué mirar (con el sandbox ya en esta versión):**
+  1. **Super Admin › Sistema › Despliegues** (pestaña nueva, teléfono y escritorio): arriba la versión que sirve; la lista con **SIRVIÓ / VOLVIÓ ATRÁS / NO SALIÓ** (en el
+     sandbox, los despliegues de verdad del sandbox desde ahora y cuatro de ejemplo marcados «prueba»); los incidentes con su caso del manual y **Cerrar** (pide qué se hizo);
+     abajo, cuándo vuelve atrás sola (se cambia en **Configuración › Despliegues**).
+  2. **Sistema › Salud**: la fila «Despliegues y vueltas atrás» ya lista los últimos; en producción saldrán también las máquinas (Prometheus) y las llaves del servidor.
+  3. **La página de mantenimiento** (la ve un vecino con la app caída o durante una ventana programada, solo en producción): el logo y la línea fija en español e inglés.
+     Captura en el reporte de la sesión. Es un hueco del diseño (§1b #8) compuesto con los colores, las letras y el logo del sistema.
+  4. **`/estado/llave.txt`** del sandbox: la llave PÚBLICA del sobre sellado (el primer despliegue la crea; instala `age` si falta). `/estado/sobres.txt`: «sin sobres».
+- **Decisiones que tomé (si prefieres otra, se cambia):**
+  - **El sandbox NO pasa a azul/verde:** carga el mismo paquete común y hace exactamente lo de antes (lo prueba la traza), más anotar su despliegue y su sobre sellado. El
+    azul/verde, la vuelta atrás y los respaldos se ensayan en el **ensayo** (cuatro máquinas idénticas a producción). Pasarlo al sandbox es otro cambio con su ensayo.
+  - **Uptime Kuma → blackbox_exporter de Prometheus:** hace lo mismo (mira desde fuera: el dominio, /api/salud, el webhook de Stripe, el certificado) pero se configura en
+    el repo; Kuma se configura en su pantalla, a mano (contra «nadie entra a mano»). El tablero sigue siendo Sistema › Salud (sin Grafana, §6 #7).
+  - **La restauración de prueba semanal corre en un contenedor desechable en la réplica**, no en una máquina nueva por la API: así ningún servidor guarda el token del
+    proveedor y no cuesta nada. La máquina desechable de verdad la usa el ensayo. Si prefieres máquina nueva cada semana, se cambia (el token iría sellado a la réplica).
+  - **La llave de recuperación** (abre el sobre de recuperación de una máquina perdida) vive en el **secreto del entorno «produccion» de GitHub** (`sellar.sh recuperacion`
+    la crea y la guarda ahí sin que nadie la vea), porque quien reconstruye es el flujo `reconstruir.yml` (con tu aprobación del entorno). §6 #6 decía «los secretos del
+    entorno de Claude Code»: esos no llegan a GitHub Actions. Una segunda copia en tu gestor de contraseñas sigue siendo opción (§6 #6).
+  - **Los secretos que nacen en una máquina y otra necesita** (la contraseña de la base, la de la réplica, la llave de los respaldos, las de Garage, el token de las alertas)
+    viajan cifrados para la llave age de la otra máquina, **solo por la red privada** (nunca al repo). Los de terceros, sellados en el repo como dice §3.3.
+  - **La base de producción tiene IP pública con el firewall cerrado** (nada entra): sin IP pública no tendría salida para actualizaciones, git y el almacén de los respaldos.
+  - **El almacén de los respaldos:** Hetzner no tiene almacén de objetos en EE. UU.; el default de §6 #4 («mismo proveedor, otra región») sería la UE. Los scripts sirven para
+    cualquier S3 (endpoint, región y bucket en `infra/produccion/entorno.conf`): **decisión tuya en el Paquete 9-3** (UE del mismo proveedor, o un S3 en EE. UU. de otro).
+  - **Cloudflare gratis trae una sola regla de límite:** una por IP para todas las acciones del servidor sin cuenta (traducción, «Avísame», el código) y /api/errores, 40
+    cada 10 s. Lo fino lo sigue haciendo la app (por persona y por teléfono).
+  - **Alertas:** Alertmanager manda **correo directo** (sale aunque la app esté caída; necesita las llaves de SES, 9q) y avisa por la app (push y SMS al equipo). El SMS que no
+    depende de la app queda para 9t. El segundo testigo de GitHub Actions avisa con el correo de la corrida roja.
+  - **La ventana de mantenimiento corta solo las páginas de los vecinos**: la API (Stripe, tiendas, pases), el Super Admin y la entrada siguen. El anuncio sale 24 h antes en
+    el Inicio de cada ciudad (Configuración › Despliegues) y se retira solo si se cancela.
+  - **El incidente se cierra una vez** (incident_log es de solo inserción salvo ese cierre), como dispute_evidence.
+  - **Arreglo de paso:** `din9k` fija Pickup y devuelve la cuenta del flan (los guardianes `existenciaPropia` y `modoPropio` fallaban en la base de esta rama).
+- **El ensayo (no corrió aquí):** está listo en **Ensayo de producción** (`ensayo.yml`, a mano). Cuesta centavos (cuatro máquinas pequeñas por horas, una o dos horas) y se
+  destruye solo; necesita que Claude ponga el token del proveedor del proyecto de pruebas como secreto del entorno «ensayo» de GitHub. Sus cifras van a
+  `docs/incidentes/simulacros.md`.
+

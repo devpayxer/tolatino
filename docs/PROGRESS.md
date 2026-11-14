@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 14 nov 2026 (9g hecho en su rama: Analítica completa, base de análisis y el reporte diario al fundador; ver «Fase 9 · 9g» al final). Plan de la Fase 9: `docs/diseno/plan/fase9-apertura.md`._
+_Actualizado: 14 nov 2026 (9o hecho en su rama: producción como código y ensayada —el ensayo en máquinas no corrió—; ver «Fase 9 · 9o» al final. Antes: 9g). Plan de la Fase 9: `docs/diseno/plan/fase9-apertura.md`._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -1955,3 +1955,53 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **No cerrado, con destino (LAUNCH «Fase 9 · 9i»):** el selector de ciudad del encabezado del admin (9n), lo que queda de «Mi ciudad» (9m), el equipo local de las otras ciudades
   (Paquete 9-4), revisar los barrios en el lugar (9t), el impuesto con el contador (9s), Hazleton en beta (9u), abrir las cinco con el asistente (9v), las corridas del CI y la captura
   de `admin-hoy` (9b).
+
+## Fase 9 · 9o — Producción como código y ensayada (14 nov)
+- **Hecho (rama del worktree de 9o, sobre 15c2d5a; en paralelo con 9i y 9l):**
+  - **El paquete común `infra/comun/`** (fase9 §3.2, «mismo paquete»): `lib.sh` (los secretos que nacen en el servidor con las recetas de siempre, el diagnóstico,
+    liberar disco, los índices de la ayuda, lo legal y las cadenas, la comprobación de salud), `registro.sh` (deploy_releases, incident_log y server_keys desde bash, con
+    variables de psql, nunca SQL armado), `sellado.sh` (el **sobre sellado** con age: llave X25519 por máquina, la pública en /estado/llave.txt, abre solo los nombres de la
+    lista cerrada; un sobre para otro servidor no abre y se dice), `sobres-privados.sh` (lo que nace en una máquina y otra necesita viaja cifrado para su llave, solo por la
+    red privada), `recuperacion.sh` (una máquina reconstruida recupera sus llaves de siempre, también su llave age, del sobre de recuperación), `azulverde.sh` (migraciones →
+    color nuevo → **puerta de salud** de 3 respuestas → nginx → **10 minutos de vigilancia** con 5xx, p95, errores nuevos y /api/salud, umbrales en Configuración →
+    **vuelta atrás sola**, anotada con lo medido, incidente y aviso), `psql-remoto.sh`, `mantenimiento.sh` (la ventana en nginx), `secretos.json` (la **lista cerrada** de
+    variables de producción con su dueño), `respaldos/` (pgBackRest completo diario + diferencial 6 h + WAL continuo, cifrado, 35 días de PITR; fotos con rclone; el sobre de
+    recuperación de cada máquina; la **restauración de prueba** semanal en un contenedor desechable con `migrar.sh --verificar` —nuevo— y consultas de control), `monitoreo/`
+    (Prometheus, 14 alertas cada una con su caso del manual, Alertmanager → correo directo y la app, blackbox desde fuera, postgres_exporter con las cifras de la plataforma),
+    `mantenimiento/index.html` (del sistema de diseño con la línea fija, `scripts/produccion/mantenimiento.mjs`) y los rangos de Cloudflare de respaldo.
+  - **`infra/produccion/`**: tres máquinas (base con su disco, app azul/verde, réplica que lee para Analítica, vigila y restaura), `cloud-init.yml` sin SSH, compose de cada
+    una, `nginx-produccion.conf` (dominio, IP real solo desde Cloudflare, certificado de origen, mantenimiento, el registro que lee la vigilancia), `deploy.sh` por rol,
+    `tolatino-sync` que **solo avanza** (fast-forward, el commit pasó por pruebas, etiqueta `ok-produccion/*` con el OK del fundador → founder_ok_ref), la imagen de la base
+    con pgBackRest y las reglas de Cloudflare. **`infra/ensayo/`**: su entorno (cuarta máquina «almacen» con Garage y TLS propio), su estado para el guion. **`infra/pruebas/`**:
+    `deploy.sh` carga el paquete común sin cambiar lo que hace (traza igual: ver abajo), más tres pasos que no pueden tumbarlo (el sobre sellado, anotar el despliegue y la
+    huella de la llave), y el `cloud-init.yml` del sandbox (solo para reconstruirlo).
+  - **`scripts/produccion/`**: `hetzner.sh` (API sin imprimir el token), `maquinas.sh` (crear y reconstruir), `firewall.sh` (80/443 solo desde Cloudflare, sin 22), `cloudflare.sh`
+    (DNS, Full strict, certificado de origen desde la solicitud del servidor, WAF sin desafío para Apple/Google/Stripe/tiendas/pases, el límite por IP L683, caché), `sellar.sh`,
+    `reconstruir.sh`, `promover.sh` y **`ensayo.sh`** (el ensayo completo). Flujos nuevos: `testigo.yml` (el segundo testigo cada 10 min; verde mientras no haya producción),
+    `ensayo.yml` y `reconstruir.yml` (a mano), y un paso nuevo en `ci.yml` (`pruebas/infra/correr.sh` con Docker de verdad y la imagen de la base).
+  - **Migración `0145_despliegues.sql`** (dos veces sin cambios): `deploy_releases` (solo inserción; sin OK no entra uno de producción), `incident_log` (solo inserción, el cierre una
+    vez), `server_keys` (huella y vencimiento de las llaves fuera del llavero, con `server_key_anotar` y key_rotations), `health_checks` suma `vigia`, respaldos y restauraciones
+    admiten `ensayo`, `despliegues_estado`, `vueltas_atras_del_dia`, Configuración › **Despliegues** (6 claves), el anuncio del mantenimiento (notice_at, maintenance_id), avisos
+    `despliegue_vuelta`, `respaldo_alerta` y `monitoreo_alerta`. **Semilla `0061_despliegues.sql`** (solo sandbox, dos veces sin cambios). Mapa de datos al día (318 filas).
+  - **App:** Super Admin › Sistema › **Despliegues** (nueva pestaña: la versión que sirve, cada despliegue con su resultado y lo medido, incidentes con «Cerrar»), Salud con los
+    últimos despliegues, las máquinas de Prometheus y las llaves del servidor; `/api/salud` dice `barrido_s` y `vigia_s`; `/api/interno/alerta` (Alertmanager → incidente +
+    aviso); el reporte diario cuenta las vueltas atrás; barrido: `despliegues`, `respaldosVigilar` (crítico si la restauración falla o no corre en 8 días) y
+    `mantenimientoAviso` (anuncio en el Inicio de cada ciudad 24 h antes, por lib/cms-admin.ts con autor y auditoría; se retira si se cancela).
+  - **Guardianes nuevos:** `mismoPaquete`, `produccionSoloAvanza`, `migracionReversible`, `selladoSoloSuServidor`, `secretoConDueno`, `respaldoRestaurado`, `mantenimientoFijo`;
+    ampliados `semilla` y `modoPruebas` (producción, el paquete común y el ensayo), `ayudaConForma`, `qrFirmado` y `compaSoloServidor` (reconocen el paquete común).
+    **`alreves9o` 39/39**, guardianes limpios después.
+  - **Manual de incidentes `docs/incidentes/`** (15 casos + `simulacros.md`) y la ayuda **`admin-despliegues-y-respaldos`** (ES/EN).
+- **Probado aquí (sin Docker; Postgres 16 + PostGIS propio en :5496, pgBackRest 2.50 instalado, age, shellcheck 0.11):** `node guardianes/run.mjs` → sin fallos; `tsc --noEmit`
+  limpio; `pnpm --filter web build` en verde; 0145 aplicada dos veces por migrar.sh en una base nueva (141 migraciones; la segunda no aplica nada) y otra vez a mano sin error;
+  las semillas del sandbox en esa base y 0061 dos veces; `pruebas/infra/correr.sh` (como root): bash -n y shellcheck de 31 scripts, los compose y el monitoreo revisados en
+  Python (sin `docker compose config`: no hay Docker; en el CI sí), la página de mantenimiento al día, **azul/verde 21/21**, **sobre sellado y recuperación 17/17** (age de
+  verdad), **tolatino-sync de producción solo avanza 12/12** (repo de mentira: sin la etiqueta del OK, fuera de pruebas o reescribiendo la historia se rechaza; una vuelta atrás no se reintenta; al escribirla cazó que la etiqueta llegada después no se bajaba en un clon superficial), **traza del sandbox igual** (672 pasos del deploy.sh de antes contra 675 del nuevo: los 3 de más son de 9o), **PITR de verdad 8/8** con la plantilla de producción.
+  **Despliegues en el navegador** (build standalone en :3196, Chrome del sistema, 390 y 1360, entrando como el Admin de pruebas): 21 ✓ (los tres resultados, incidentes,
+  umbrales, sin desborde, cerrar un incidente → cerrado una vez y en la auditoría, Salud con los despliegues, Configuración › Despliegues, la página de mantenimiento, sin
+  errores de la página).
+- **No corrió (y por qué):** el **ensayo completo** en máquinas desechables (necesita el token del proveedor del proyecto de pruebas y crea máquinas que se cobran; listo en
+  `ensayo.yml` / `ensayo.sh`; LAUNCH «Fase 9 · 9o»); `docker compose config` y la imagen de la base (sin Docker aquí; paso nuevo del CI); Cloudflare por la API (sin zona, 9p).
+- **No cerrado, con destino (LAUNCH «Fase 9 · 9o»):** el ensayo (9o), la corrida del CI (9o), lo que necesita el Paquete 9-3 (proveedor, almacén de los respaldos, token,
+  llave de recuperación), Cloudflare (9p), el SMS crítico sin la app (9t), reconstruir base y réplica en máquinas (9t), la pausa del lanzamiento por fases (9u), la CPU de los
+  mapas de fuente y la auditoría de Semgrep (9t).
+

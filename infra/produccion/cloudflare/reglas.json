@@ -1,0 +1,10 @@
+{
+  "_": "9o · Cloudflare delante de todo (fase9-apertura.md §3.2, Paquete 8-0). Lo aplica scripts/produccion/cloudflare.sh por la API (plan gratis). SSL «Full (strict)» con el certificado de origen; el WAF no desafía a quien no es una persona (Apple y Google leyendo /.well-known, Stripe, las tiendas y los pases); límites por IP para las acciones sin cuenta; caché de lo que no cambia.",
+  "ssl": "strict",
+  "always_use_https": "on",
+  "min_tls_version": "1.2",
+  "dns": [{"nombre": "@", "destino": "app", "proxied": true}, {"nombre": "www", "destino": "app", "proxied": true}, {"nombre": "pruebas", "destino": "sandbox", "proxied": true}],
+  "sin_desafio": ["starts_with(http.request.uri.path, \"/.well-known/\")", "http.request.uri.path eq \"/api/stripe/webhook\"", "starts_with(http.request.uri.path, \"/api/tiendas/\")", "starts_with(http.request.uri.path, \"/api/pases/\")", "starts_with(http.request.uri.path, \"/api/compa/canales/\")"],
+  "limites": [{"nombre": "acciones-por-ip", "expresion": "(http.request.method eq \"POST\" and any(http.request.headers.names[*] eq \"next-action\")) or http.request.uri.path eq \"/api/errores\"", "por_10s": 40, "accion": "block", "launch": "L683", "_": "El plan gratis trae UNA regla de límite (10 s, bloquear). La traducción sin cuenta («Ver traducción», L683), «Avísame» y el código de entrada son acciones del servidor de Next (POST con la cabecera next-action): todas caben aquí, con /api/errores. Lo fino (por persona, por teléfono) ya lo hace la app con rate_counters."}],
+  "cache": [{"expresion": "starts_with(http.request.uri.path, \"/_next/static/\")", "edge_ttl": 31536000}, {"expresion": "starts_with(http.request.uri.path, \"/medios/n/\")", "edge_ttl": 31536000}, {"expresion": "starts_with(http.request.uri.path, \"/teselas/\")", "edge_ttl": 604800}]
+}

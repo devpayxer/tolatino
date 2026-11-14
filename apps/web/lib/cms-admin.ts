@@ -252,6 +252,32 @@ export async function retirarAnuncio(s: Staff, id: string, motivo: string): Prom
   return r ?? bien("Retirado: ya no sale. Nada se borra.", "Retired: it no longer shows. Nothing is deleted.");
 }
 
+// ─── 9o · El aviso del mantenimiento programado a los vecinos ───
+/* Lo llama el barrido (lib/sistema/despliegues.ts · avisarMantenimiento): un anuncio por ciudad, de ahora hasta el fin de la ventana, con el texto del
+   mantenimiento (ES/EN, 160 como máximo). El autor es quien programó el mantenimiento y queda en la auditoría con su motivo; una vez por ventana (la base
+   lo marca en notice_at en la MISMA transacción). Si el mantenimiento se cancela, sus anuncios se retiran con el motivo de la cancelación. */
+export async function anunciarMantenimiento(w: { id: string; hasta: Date; es: string; en: string; por: string; motivo: string }): Promise<number> {
+  return tx(async (c) => {
+    const marcado = (await c.query(`update maintenance_windows set notice_at = now() where id = $1 and notice_at is null and cancelled_at is null`, [w.id])).rowCount ?? 0;
+    if (!marcado) return 0;
+    const r = await c.query<{ id: string; city_id: string }>(
+      `insert into announcements (city_id, audience, text, from_at, to_at, by_staff_id, maintenance_id) select id, 'todos', $1::jsonb, now(), $2, $3::uuid, $4 from cities returning id::text, city_id`,
+      [JSON.stringify({ es: limpio(w.es, 160), en: limpio(w.en, 160) }), w.hasta, w.por, w.id]);
+    for (const a of r.rows) await auditar(c, { actor: w.por, action: "cms.anuncio.mantenimiento", targetKind: "announcement", targetId: a.id, city: a.city_id, after: { mantenimiento: w.id }, reason: w.motivo });
+    return r.rowCount ?? 0;
+  });
+}
+export async function retirarAnunciosDeMantenimiento(): Promise<number> {
+  return tx(async (c) => {
+    const r = await c.query<{ id: string; city_id: string; por: string; motivo: string }>(
+      `update announcements a set retired_at = now(), retired_by = w.cancelled_by, retired_reason = 'El mantenimiento se canceló: ' || w.cancel_reason
+         from maintenance_windows w where a.maintenance_id = w.id and w.cancelled_at is not null and a.retired_at is null
+       returning a.id::text, a.city_id, w.cancelled_by::text as por, w.cancel_reason as motivo`);
+    for (const a of r.rows) await auditar(c, { actor: a.por, action: "cms.anuncio.retirar", targetKind: "announcement", targetId: a.id, city: a.city_id, reason: `El mantenimiento se canceló: ${a.motivo}` });
+    return r.rowCount ?? 0;
+  });
+}
+
 // ─── El pie de la web en todas las páginas ───
 /* Encender o apagar el pie bajo el Inicio, la ficha y Buscar (feature_flags «web.pie_todas»). cms:aprobar: cambia lo que ve todo el que entra. */
 export async function fijarPie(s: Staff, encender: boolean, motivo: string): Promise<Res> {

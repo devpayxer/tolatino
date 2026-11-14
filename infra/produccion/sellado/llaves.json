@@ -1,0 +1,4 @@
+{
+  "_": "9o · Las llaves PÚBLICAS age de cada máquina de este entorno (las publica cada una en /estado/llave.txt al nacer; las copia aquí Claude en un commit). Solo públicas: la privada nunca sale de su máquina. Una por línea.",
+  "_estado": "sin máquinas todavía"
+}

@@ -3,6 +3,7 @@
    Regla de oro: un guardián se prueba al revés (se inyecta el defecto y debe fallar) antes de confiar en él.
    Uso: node guardianes/run.mjs   (corre todos)   ·   node guardianes/run.mjs --solo secretos */
 import { execSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { AUDIENCIAS, TEMAS, audienciaPorNombre, faseInterna, leerAyuda } from "../scripts/ayuda/forma.mjs";
@@ -156,6 +157,12 @@ const guardianes = {
       if (/(--semilla-pruebas|infra\/pruebas\/semilla)/.test(t) && !/^(infra\/pruebas\/|packages\/db\/migrar\.sh$|scripts\/semilla\/|guardianes\/|\.github\/workflows\/(ci|tiendas|carga)\.yml$)/.test(f))
         falla("semilla", f, 0, "la semilla de pruebas se llama desde fuera del sandbox");
     }
+    // 9o · Ni un archivo de infra/pruebas/semilla alcanzable desde producción: el despliegue de producción, el paquete común, el ensayo y los scripts de
+    // producción no nombran la semilla fuera de sus comentarios (ni SEMILLA_DIR, ni --semilla-pruebas, ni la carpeta).
+    for (const f of archivos) {
+      if (!/^(infra\/(produccion|comun|ensayo)\/|scripts\/produccion\/)/.test(f) || !/\.(sh|ya?ml|conf|tpl|json|mjs)$|tolatino-sync$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (!/^\s*(#|\/\/|\*)/.test(l) && /semilla|SEMILLA_DIR|infra\/pruebas\/semilla/i.test(l.replace(/#.*$/, ""))) falla("semilla", f, i + 1, "la semilla de pruebas no se alcanza desde producción"); });
+    }
   },
 
   /* 3b. El código de entrada en «modo pruebas» jamás en producción (decisión E2). */
@@ -166,6 +173,13 @@ const guardianes = {
     }
     const ent = readFileSync("apps/web/lib/entorno.ts", "utf8");
     if (!/ENTORNO === "produccion" && MODO_SMS === "pruebas"[\s\S]{0,40}throw/.test(ent)) falla("modoPruebas", "apps/web/lib/entorno.ts", 0, "falta el candado de tiempo de ejecución");
+    // 9o · El compose de producción manda el código por Telnyx (sin él, el candado de arriba no deja arrancar la app) y ni producción ni el ensayo nombran
+    // un simulador, un modo de pruebas o la dirección de un simulador.
+    if (existsSync("infra/produccion/compose-app.yml") && !/\n\s+TOLATINO_SMS_MODO: telnyx\n/.test(readFileSync("infra/produccion/compose-app.yml", "utf8"))) falla("modoPruebas", "infra/produccion/compose-app.yml", 0, "la app de producción sin TOLATINO_SMS_MODO: telnyx");
+    for (const f of archivos) {
+      if (!/^infra\/(produccion|ensayo)\//.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (!/^\s*#/.test(l) && /TOLATINO_PAGOS_SIMULADOR|TOLATINO_COMPA_MOTOR|TOLATINO_CORREO_MODO|_API_BASE\b|_API_URL\b|staff_mfa_pruebas|SMS_MODO[:=]\s*["']?pruebas/.test(l)) falla("modoPruebas", f, i + 1, "un simulador o un modo de pruebas en producción"); });
+    }
   },
 
   /* 3c. Un componente de servidor no puede usar piezas del sistema a través de un objeto del navegador
@@ -3411,7 +3425,7 @@ const guardianes = {
       const t = readFileSync(x, "utf8");
       // 9a · pruebas/alreves inyecta una llave FALSA a propósito (alreves6c); pruebaSinSecretos vigila que en pruebas/ no haya una de verdad.
       if (!x.startsWith("pruebas/alreves/") && /MC4CAQAwBQYDK2VwBCIEI[A-Za-z0-9+/]{20,}/.test(t)) falla(G, x, 0, "una llave privada Ed25519 escrita en el repo");
-      if (x !== Q && x !== "infra/pruebas/deploy.sh" && x !== "infra/pruebas/docker-compose.yml" && x !== "pruebas/servir/servir.sh" && x !== "pruebas/lib/g6-comun.cjs" && !x.startsWith("pruebas/alreves/") && !x.startsWith("guardianes/") && !x.startsWith("docs/") && !x.endsWith(".sql") && /QR_LLAVE_PRIVADA/.test(t)) falla(G, x, 0, "solo lib/boletos-qr.ts lee QR_LLAVE_PRIVADA");
+      if (x !== Q && x !== "infra/pruebas/deploy.sh" && x !== "infra/pruebas/docker-compose.yml" && !/^(infra\/comun\/(lib|recuperacion)\.sh|infra\/comun\/secretos\.json|infra\/produccion\/(deploy\.sh|compose-app\.yml)|pruebas\/infra\/sellado\.test\.sh)$/.test(x) && x !== "pruebas/servir/servir.sh" && x !== "pruebas/lib/g6-comun.cjs" && !x.startsWith("pruebas/alreves/") && !x.startsWith("guardianes/") && !x.startsWith("docs/") && !x.endsWith(".sql") && /QR_LLAVE_PRIVADA/.test(t)) falla(G, x, 0, "solo lib/boletos-qr.ts lee QR_LLAVE_PRIVADA");
     }
     for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && x !== Q && x !== "apps/web/lib/boletos.ts" && /\bfirmarQR\(/.test(sinComent(x))) falla(G, x, 0, "solo lib/boletos.ts pide firmar un QR (servidor)");
   },
@@ -4155,7 +4169,10 @@ const guardianes = {
       for (const [k] of temas) if (!(k in TEMAS)) falla(G, M, 0, `el tema «${k}» de help_topics no está en scripts/ayuda/forma.mjs`);
     }
     const D = "infra/pruebas/deploy.sh";
-    if (!/node scripts\/ayuda\/indexar\.mjs[\s\S]{0,400}\|\| log "ayuda: /.test(readFileSync(D, "utf8"))) falla(G, D, 0, "el despliegue indexa docs/ayuda (scripts/ayuda/indexar.mjs) aparte, con «|| log» para que un fallo no tumbe el sandbox");
+    // 9o · El índice sale del paquete común (infra/comun/lib.sh · indexar_docs), que el sandbox y producción llaman igual.
+    const conIndice = (t) => /node scripts\/ayuda\/indexar\.mjs[\s\S]{0,400}\|\| log "ayuda: /.test(t);
+    if (!conIndice(readFileSync(D, "utf8")) && !(/\nindexar_docs "\$REPO" /.test(readFileSync(D, "utf8")) && conIndice(readFileSync("infra/comun/lib.sh", "utf8"))))
+      falla(G, D, 0, "el despliegue indexa docs/ayuda (scripts/ayuda/indexar.mjs) aparte, con «|| log» para que un fallo no tumbe el sandbox");
     const ci = readFileSync(".github/workflows/ci.yml", "utf8");
     if ((ci.match(/node scripts\/ayuda\/indexar\.mjs \|/g) ?? []).length < 2 || !/grep -q " 0 nuevos · 0 cambiados"/.test(ci)) falla(G, ".github/workflows/ci.yml", 0, "el CI indexa docs/ayuda dos veces contra la base real y la segunda no cambia nada");
   },
@@ -4406,7 +4423,10 @@ const guardianes = {
         if (/import\s+(?!type\b)[^{;]*from "@\/lib\/compa\//.test(t)) falla(G, x, 0, "una pantalla del cliente no importa lib/compa");
       }
     }
-    for (const x of archivos.filter((f) => /^infra\//.test(f))) if (/ANTHROPIC_API_KEY/.test(readFileSync(x, "utf8")) && !/^infra\/pruebas\/docker-compose\.yml$/.test(x)) falla(G, x, 0, "la llave de la IA solo se le pasa al contenedor de la app");
+    // 9o · En producción: el compose de la app (solo el servicio web) y la lista cerrada de secretos (sellada para la app).
+    for (const x of archivos.filter((f) => /^infra\//.test(f))) if (/ANTHROPIC_API_KEY/.test(readFileSync(x, "utf8")) && !/^infra\/(pruebas\/docker-compose\.yml|produccion\/compose-app\.yml|comun\/secretos\.json)$/.test(x)) falla(G, x, 0, "la llave de la IA solo se le pasa al contenedor de la app");
+    if (existsSync("infra/produccion/compose-app.yml") && (readFileSync("infra/produccion/compose-app.yml", "utf8").match(/ANTHROPIC_API_KEY/g) ?? []).length > 2) falla(G, "infra/produccion/compose-app.yml", 0, "la llave de la IA solo se le pasa al contenedor de la app");
+    if (!/^  "ANTHROPIC_API_KEY": \{ "origen": "sellado", "maquina": "app",/m.test(readFileSync("infra/comun/secretos.json", "utf8"))) falla(G, "infra/comun/secretos.json", 0, "la llave de la IA llega sellada solo para la máquina de la app");
     if (existsSync(R)) {
       const r = sinComent(R);
       if (!/if \(ENTORNO === "produccion" \|\| !tokenOk\(req\.headers\.get\("x-barrido-token"\)\)\) return NO\(\);/.test(r)) falla(G, R, 0, "la ruta de pruebas de El Compa no existe en producción y pide el token del barrido");
@@ -8206,6 +8226,216 @@ const guardianes = {
         if (cuenta > max) falla(G, f, t.slice(0, m.index).split("\n").length, `la consulta usa hasta $${max} y recibe ${cuenta} valores: Postgres no sabe de qué tipo es el que sobra y la consulta falla`);
       }
     }
+  },
+
+  /* ── 9o · Producción como código y ensayada (fase9-apertura.md §3.2–§3.5, §4 9o) ── */
+
+  /* 9o · mismoPaquete: producción hace LO MISMO que el sandbox, con su lista cerrada de diferencias. Los dos deploy.sh cargan el paquete común
+     (infra/comun/) y llaman a sus mismos pasos; la imagen de la app sale de la misma receta (infra/pruebas/Dockerfile); los servicios de producción son
+     los del sandbox (mismas imágenes fijadas y mismos comandos) más los de su lista (monitoreo, sobres, exportadores); las variables de la app de
+     producción son las del sandbox más las de su lista; lo único del sandbox que producción NO tiene es la lista cerrada (la semilla, el modo pruebas del
+     SMS, los simuladores). Las órdenes del ensayo nunca están en main y solo corren con TOLATINO_ENTORNO=ensayo. */
+  mismoPaquete() {
+    const G = "mismoPaquete", P = "infra/pruebas/deploy.sh", D = "infra/produccion/deploy.sh";
+    if (!existsSync(D)) return falla(G, D, 0, "falta el despliegue de producción");
+    const tp = readFileSync(P, "utf8"), td = readFileSync(D, "utf8");
+    const sinC = (t) => t.split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+    for (const lib of ["lib.sh", "registro.sh", "sellado.sh"]) {
+      if (!new RegExp(`\\. "\\$REPO/infra/comun/${lib.replace(".", "\\.")}"`).test(tp)) falla(G, P, 0, `el sandbox no carga infra/comun/${lib} (el mismo paquete)`);
+      if (!new RegExp(`\\. "\\$REPO/infra/comun/${lib.replace(".", "\\.")}"`).test(td)) falla(G, D, 0, `producción no carga infra/comun/${lib} (el mismo paquete)`);
+    }
+    // Los pasos comunes que los dos llaman (producción no tiene un paso propio que el sandbox no tenga, salvo su lista cerrada).
+    const PASOS = ["secreto_nace", "sellado_preparar", "sellado_abrir", "disco_liberar", "diag", "indexar_docs", "packages/db/migrar.sh", "infra/pruebas/medios.sh"];
+    for (const p of PASOS) { if (!sinC(tp).includes(p)) falla(G, P, 0, `el sandbox no llama ${p}`); if (!sinC(td).includes(p)) falla(G, D, 0, `producción no llama ${p}`); }
+    if (!/registrar_despliegue pruebas /.test(sinC(tp))) falla(G, P, 0, "el sandbox no anota su despliegue (registrar_despliegue)");
+    if (!/desplegar_azulverde /.test(sinC(td)) || !/\. "\$REPO\/infra\/comun\/azulverde\.sh"/.test(td)) falla(G, D, 0, "producción despliega con el azul/verde común (infra/comun/azulverde.sh)");
+    const SOLO_PROD_PASOS = /\b(desplegar_azulverde|traer_sobre|servir_sobres|recuperar_si_hace_falta|pgbackrest_conf|temporizador|anotar_llave)\b/;
+    void SOLO_PROD_PASOS; // la lista cerrada de pasos propios de producción (azul/verde, sobres privados, recuperación, respaldos, temporizadores)
+    const llamadas = (t) => new Set([...sinC(t).matchAll(/^\s*(?:[A-Z_]+=\S+ )*(?:if !? ?)?([a-z][a-z_]+)\s/gm)].map((m) => m[1]));
+    const comunes = new Set([...readFileSync("infra/comun/lib.sh", "utf8").matchAll(/^([a-z_]+)\(\)/gm), ...readFileSync("infra/comun/sellado.sh", "utf8").matchAll(/^([a-z_]+)\(\)/gm),
+      ...readFileSync("infra/comun/registro.sh", "utf8").matchAll(/^([a-z_]+)\(\)/gm)].map((m) => m[1]));
+    for (const f of comunes) if (llamadas(td).has(f) && !llamadas(tp).has(f) && !["anotar_llave", "abrir_incidente", "env_poner", "age_disponible", "sellado_permitido", "hex_o_nada", "digest_o_nada", "salud_esperar", "log"].includes(f))
+      falla(G, D, 0, `producción llama ${f} del paquete común y el sandbox no (un paso que no se ensayó en pruebas)`);
+    // La imagen de la app: la misma receta.
+    if (!/docker build[^\n]*-f "\$REPO\/infra\/pruebas\/Dockerfile"/.test(td)) falla(G, D, 0, "la imagen de producción se construye con la MISMA receta del sandbox (infra/pruebas/Dockerfile)");
+    // Los servicios y sus imágenes.
+    const yml = (f) => existsSync(f) ? readFileSync(f, "utf8") : "";
+    const servicios = (t) => { const out = new Map(); const s = (/\nservices:\n([\s\S]*?)(?:\n[a-z]+:|$)/.exec("\n" + t) ?? [])[1] ?? ""; for (const b of s.split(/\n(?=  [a-z][\w-]*:\n)/)) { const n = (/^\s*([a-z][\w-]*):/.exec(b) ?? [])[1]; if (n) out.set(n, b); } return out; };
+    const sp = servicios(yml("infra/pruebas/docker-compose.yml"));
+    const SOLO_PROD = new Set(["node-exporter", "postgres-exporter", "prometheus", "alertmanager", "blackbox", "sobres", "tls"]);
+    for (const f of ["infra/produccion/compose-app.yml", "infra/produccion/compose-app-fijos.yml", "infra/produccion/compose-base.yml", "infra/produccion/compose-replica.yml"]) {
+      for (const [n, b] of servicios(yml(f))) {
+        if (SOLO_PROD.has(n)) continue;
+        if (!sp.has(n)) { falla(G, f, 0, `el servicio «${n}» de producción no existe en el sandbox (fuera de la lista cerrada)`); continue; }
+        const img = (x) => (/\n\s+image: (\S+)/.exec("\n" + x) ?? [])[1] ?? "";
+        const ip = img(sp.get(n)), id = img(b);
+        if (/^(libretranslate|maptiler|dxflrs)\//.test(ip) && ip !== id) falla(G, f, 0, `«${n}» usa ${id} y el sandbox ${ip} (la misma versión fijada)`);
+        const cmd = (x) => ((/\n\s+command: (\[.*\])/.exec("\n" + x) ?? [])[1] ?? "").replace(/http:\/\/(web|127\.0\.0\.1):3000/g, "APP");
+        if (["barrido", "push"].includes(n) && cmd(sp.get(n)) !== cmd(b)) falla(G, f, 0, `el comando de «${n}» no es el del sandbox`);
+      }
+    }
+    // Las variables de la app.
+    const envDe = (t, s) => new Set([...((/\n    environment:\n((?:      .*\n)+)/.exec(servicios(t).get(s) ?? "") ?? [])[1] ?? "").matchAll(/^\s+([A-Z][A-Z0-9_]+):/gm)].map((m) => m[1]));
+    const ep = envDe(yml("infra/pruebas/docker-compose.yml"), "web"), ed = envDe(yml("infra/produccion/compose-app.yml"), "web");
+    const SOLO_PROD_ENV = new Set(["TOLATINO_COLOR", "LLAVERO_SECRET", "ALERTA_TOKEN", "PROMETHEUS_URL", "STRIPE_SECRET_KEY", "STRIPE_PUBLISHABLE_KEY", "STRIPE_WEBHOOK_SECRET", "TELNYX_API_KEY", "TELNYX_FROM",
+      "SES_ACCESS_KEY_ID", "SES_SECRET_ACCESS_KEY", "CORREO_DE", "VAPID_SUJETO", "TOLATINO_URL", "TOLATINO_COMPA"]);
+    const SOLO_SANDBOX_ENV = new Set([]);   // la lista cerrada al revés: hoy ninguna variable del sandbox falta en producción (TOLATINO_SMS_MODO está, con otro valor)
+    for (const v of ed) if (!ep.has(v) && !SOLO_PROD_ENV.has(v)) falla(G, "infra/produccion/compose-app.yml", 0, `la app de producción lee ${v} y la del sandbox no (fuera de la lista cerrada)`);
+    for (const v of ep) if (!ed.has(v) && !SOLO_SANDBOX_ENV.has(v)) falla(G, "infra/produccion/compose-app.yml", 0, `la app del sandbox lee ${v} y la de producción no`);
+    // Lo del ensayo: sus órdenes no viven en main y su gancho solo corre en el ensayo.
+    for (const f of archivos) if (/^infra\/ensayo\/ordenes\//.test(f)) falla(G, f, 0, "las órdenes del ensayo viven solo en la rama «ensayo», nunca en main");
+    if (/infra\/ensayo\/ordenes/.test(td) && !/if \[ "\$TOLATINO_ENTORNO" = ensayo \]; then\n\s+if \[ -f "\$REPO\/infra\/ensayo\/ordenes/.test(td)) falla(G, D, 0, "las órdenes del ensayo solo corren con TOLATINO_ENTORNO=ensayo");
+  },
+
+  /* 9o · produccionSoloAvanza: la rama produccion solo AVANZA (fast-forward) a un commit que ya pasó por pruebas con su CI en verde y con el OK del
+     fundador anotado (etiqueta ok-produccion/*, que va a deploy_releases.founder_ok_ref). Lo revisan el que empuja (scripts/produccion/promover.sh) y el que
+     despliega (infra/produccion/tolatino-sync, en cada máquina); ningún flujo de GitHub empuja a produccion; y si las ramas están a mano, produccion es
+     ancestro de pruebas. */
+  produccionSoloAvanza() {
+    const G = "produccionSoloAvanza", S = "infra/produccion/tolatino-sync", PR = "scripts/produccion/promover.sh";
+    const s = existsSync(S) ? readFileSync(S, "utf8") : "";
+    if (!/git merge-base --is-ancestor "\$LOCAL" "\$REMOTE"/.test(s)) falla(G, S, 0, "el servidor no rechaza una rama que reescribe la historia (fast-forward)");
+    if (!/git merge-base --is-ancestor "\$REMOTE" origin\/pruebas/.test(s)) falla(G, S, 0, "el servidor no comprueba que el commit pasó por pruebas");
+    if (!/--list 'ok-produccion\/\*'/.test(s) || !/RECHAZO="\$\{RECHAZO:-sin la etiqueta ok-produccion/.test(s)) falla(G, S, 0, "el servidor despliega sin la etiqueta del OK del fundador");
+    if (!/export TOLATINO_OK_REF/.test(s)) falla(G, S, 0, "el OK del fundador no llega al registro del despliegue");
+    if (/git (reset|pull)[^\n]*\n[\s\S]*?RECHAZO=/.test(s.slice(0, s.indexOf("RECHAZO=\"\"")))) falla(G, S, 0, "el servidor se mueve antes de comprobar");
+    const p = existsSync(PR) ? readFileSync(PR, "utf8") : "";
+    if (!/--is-ancestor "\$C" origin\/pruebas/.test(p) || !/--is-ancestor origin\/produccion "\$C"/.test(p) || !/conclusion == "success"/.test(p) || !/git tag -a "\$T" "\$C" -m "OK del fundador/.test(p)) falla(G, PR, 0, "promover.sh: pruebas, fast-forward, CI en verde y la etiqueta con el OK");
+    p.split("\n").forEach((l, i) => { if (/git push/.test(l) && /(--force|\s-f\b|\+refs|\s\+)/.test(l)) falla(G, PR, i + 1, "a produccion no se empuja a la fuerza"); });
+    if (!/check \(entorno <> 'produccion' or founder_ok_ref is not null\)/.test(readFileSync("packages/db/migrations/0145_despliegues.sql", "utf8"))) falla(G, "packages/db/migrations/0145_despliegues.sql", 0, "la base no exige el OK en un despliegue de producción");
+    for (const f of archivos.filter((x) => /^\.github\/workflows\/.*\.ya?ml$/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      if (/(git push[^\n]*(refs\/heads\/)?produccion\b)|branches:\s*\[?\s*produccion/.test(t)) falla(G, f, 0, "un flujo de GitHub empuja o corre sobre produccion (solo promover.sh con el OK)");
+    }
+    try {
+      const r = (x) => execSync(`git rev-parse -q --verify ${x}`, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+      const pr = r("refs/remotes/origin/produccion"), pu = r("refs/remotes/origin/pruebas");
+      if (pr && pu) { try { execSync(`git merge-base --is-ancestor ${pr} ${pu}`, { stdio: "ignore" }); } catch { falla(G, "origin/produccion", 0, "produccion no es ancestro de pruebas"); } }
+    } catch { /* sin la rama produccion (todavía no existe): nada que comparar */ }
+  },
+
+  /* 9o · migracionReversible: toda migración desde la 0145 es expandir → contraer. Un drop / rename de una tabla, una columna o una función que el código
+     del commit ANTERIOR todavía lee rompe el CI (durante el azul/verde y en una vuelta atrás, el código anterior corre contra la base nueva). Se borra
+     solo en un despliegue posterior, cuando ningún código vivo lo usa. Una migración nunca se «deshace»: se escribe otra. */
+  migracionReversible() {
+    const G = "migracionReversible";
+    const previo = (() => { try { return execSync("git rev-parse -q --verify HEAD~1", { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); } catch { return ""; } })();
+    // Quién lo lee: el código del commit anterior (git grep en HEAD~1) y el de ahora (también lo que todavía no está en git).
+    const vivos = archivos.filter((f) => /^(apps|services|packages\/db\/seeds|scripts)\//.test(f) && /\.(tsx?|jsx?|mjs|cjs|sql|json|sh)$/.test(f) && !f.includes("node_modules"));
+    const lee = (id) => {
+      const re = new RegExp(`\\b${id}\\b`);
+      if (previo) {
+        try {
+          const out = execSync(`git grep -l -E "\\b${id}\\b" ${previo} -- apps services packages/db/seeds scripts`, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+          if (out) return out.split("\n")[0].replace(/^[0-9a-f]+:/, "") + " (commit anterior)";
+        } catch { /* sin coincidencias */ }
+      }
+      return vivos.find((f) => re.test(readFileSync(f, "utf8"))) ?? "";
+    };
+    for (const x of readdirSync("packages/db/migrations").filter((y) => /^\d{4}_.*\.sql$/.test(y) && Number(y.slice(0, 4)) >= 145).sort()) {
+      const f = `packages/db/migrations/${x}`, t = readFileSync(f, "utf8").replace(/--.*$/gm, "");
+      const objetos = [];
+      for (const m of t.matchAll(/\bdrop\s+(table|view|materialized view|function|type)\s+(?:if exists\s+)?([a-z_][a-z0-9_]*)/gi)) objetos.push([m[2], `drop ${m[1]}`]);
+      for (const m of t.matchAll(/\balter table\s+(?:if exists\s+)?(?:only\s+)?[a-z_][a-z0-9_]*\s+drop column\s+(?:if exists\s+)?([a-z_][a-z0-9_]*)/gi)) objetos.push([m[1], "drop column"]);
+      for (const m of t.matchAll(/\brename\s+column\s+([a-z_][a-z0-9_]*)\s+to/gi)) objetos.push([m[1], "rename column"]);
+      for (const m of t.matchAll(/\balter table\s+(?:if exists\s+)?([a-z_][a-z0-9_]*)\s+rename to/gi)) objetos.push([m[1], "rename table"]);
+      for (const m of t.matchAll(/\balter table\s+(?:if exists\s+)?[a-z_][a-z0-9_]*\s+alter column\s+([a-z_][a-z0-9_]*)\s+(?:set data\s+)?type/gi)) objetos.push([m[1], "cambio de tipo"]);
+      for (const [id, que] of objetos) { const quien = lee(id); if (quien) falla(G, f, 0, `${que} de «${id}»: el código todavía lo lee (${quien}); primero un despliegue sin lectores, después se contrae`); }
+    }
+  },
+
+  /* 9o · selladoSoloSuServidor: en infra/<entorno>/sellado/ solo hay llaves públicas (llaves.json, recuperacion.txt), la lista de sobres (sobres.json) y
+     sobres age (<máquina>/<NOMBRE>.age). Cada sobre es age de verdad (X25519), dice en sobres.json para qué huella se cifró y esa huella es la de la llave
+     publicada de su máquina; su nombre está en la lista cerrada con origen «sellado». Ninguna llave privada age en el repo. El servidor solo abre lo de la
+     lista (sellado_permitido). */
+  selladoSoloSuServidor() {
+    const G = "selladoSoloSuServidor";
+    const huella = (k) => createHash("sha256").update(k).digest("hex").slice(0, 32);
+    const lista = JSON.parse(readFileSync("infra/comun/secretos.json", "utf8"));
+    for (const f of archivos) {
+      if (/^infra\/[a-z]+\/sellado\//.test(f) && !/^infra\/[a-z]+\/sellado\/(llaves\.json|sobres\.json|recuperacion\.txt|[a-z][a-z0-9-]*\/[A-Z][A-Z0-9_]+\.age)$/.test(f)) falla(G, f, 0, "en sellado/ solo van llaves públicas, la lista de sobres y sobres .age");
+      if (/\.(tsx?|jsx?|mjs|cjs|json|md|sql|sh|ya?ml|txt|conf|tpl|age)$/.test(f) && !f.includes("node_modules")) {
+        const t = readFileSync(f, "utf8");
+        if (/AGE-SECRET-KEY-1[0-9A-Z]{40,}/.test(t)) falla(G, f, 0, "una llave PRIVADA age en el repo");
+      }
+    }
+    for (const ent of readdirSync("infra").filter((d) => existsSync(`infra/${d}/sellado`))) {
+      const dir = `infra/${ent}/sellado`;
+      const llaves = existsSync(`${dir}/llaves.json`) ? JSON.parse(readFileSync(`${dir}/llaves.json`, "utf8")) : {};
+      const sobres = existsSync(`${dir}/sobres.json`) ? JSON.parse(readFileSync(`${dir}/sobres.json`, "utf8")) : {};
+      for (const [m, k] of Object.entries(llaves)) if (!m.startsWith("_") && !/^age1[0-9a-z]{58}$/.test(String(k))) falla(G, `${dir}/llaves.json`, 0, `la llave de «${m}» no es una llave pública age`);
+      for (const f of archivos.filter((x) => x.startsWith(`${dir}/`) && x.endsWith(".age"))) {
+        const [maq, arch] = f.slice(dir.length + 1).split("/"), nombre = arch.replace(/\.age$/, "");
+        const cab = readFileSync(f).subarray(0, 200).toString("latin1");
+        if (!cab.startsWith("age-encryption.org/v1\n-> X25519 ")) falla(G, f, 0, "no es un sobre age para una llave X25519");
+        if (lista[nombre]?.origen !== "sellado") falla(G, f, 0, `${nombre} no está en la lista cerrada con origen «sellado»`);
+        const e = sobres[`${maq}/${nombre}`];
+        if (!e) { falla(G, f, 0, "el sobre no está en sobres.json (para qué llave se cifró)"); continue; }
+        if (!llaves[maq]) falla(G, f, 0, `no hay llave pública de «${maq}» en llaves.json`);
+        else if (e.para !== huella(llaves[maq])) falla(G, f, 0, `se cifró para la huella ${e.para} y la llave publicada de «${maq}» es ${huella(llaves[maq])}: no abre en su servidor`);
+      }
+    }
+    const S = "infra/comun/sellado.sh", s = readFileSync(S, "utf8");
+    if (!/! sellado_permitido "\$n" "\$lista"/.test(s)) falla(G, S, 0, "el servidor abre sobres fuera de la lista cerrada");
+    if (!/NO ABRE con la llave de este servidor/.test(s)) falla(G, S, 0, "un sobre que no abre tiene que decirse (y dejar el valor de antes)");
+    if (/echo "\$v"|printf '%s\\n' "\$v"|log [^\n]*\$v\b/.test(s)) falla(G, S, 0, "el valor de un sobre se imprime");
+  },
+
+  /* 9o · secretoConDueno (secretoConDueño): cada variable del entorno de producción está en la lista cerrada infra/comun/secretos.json con su origen (nace
+     en el servidor, llega por el sobre privado de otra máquina, llega sellada, configuración o derivada); ninguna «prohibida» (simuladores, modos de
+     pruebas, direcciones de simuladores) aparece en producción; lo que nace en el servidor tiene su receta en infra/comun/lib.sh y producción lo hace
+     nacer; lo que va al sobre de recuperación existe. */
+  secretoConDueno() {
+    const G = "secretoConDueno", L = "infra/comun/secretos.json";
+    let lista; try { lista = JSON.parse(readFileSync(L, "utf8")); } catch (e) { return falla(G, L, 0, `no se lee: ${e.message}`); }
+    readFileSync(L, "utf8").split("\n").forEach((l, i) => { if (/^\s{3,}"[A-Z]/.test(l)) falla(G, L, i + 1, "una variable por línea (los scripts la leen con grep)"); });
+    const ORIGENES = new Set(["servidor", "base", "app", "sellado", "config", "derivado", "prohibida"]);
+    for (const [k, v] of Object.entries(lista)) { if (k.startsWith("_")) continue; if (!ORIGENES.has(v.origen)) falla(G, L, 0, `${k}: origen «${v.origen}» desconocido`); }
+    for (const f of archivos.filter((x) => /^infra\/(produccion|ensayo)\/.*\.(ya?ml|conf)$/.test(x) && !/cloud-init|reglas\.json/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      for (const m of t.matchAll(/\$\{([A-Z][A-Z0-9_]*)/g)) { const v = lista[m[1]]; if (!v) falla(G, f, 0, `\${${m[1]}} sin dueño en ${L}`); else if (v.origen === "prohibida") falla(G, f, 0, `\${${m[1]}} está prohibida en producción`); }
+      for (const m of t.matchAll(/^\s+([A-Z][A-Z0-9_]+):\s/gm)) if (lista[m[1]]?.origen === "prohibida" || (!lista[m[1]] && f === "infra/produccion/compose-app.yml")) falla(G, f, 0, `${m[1]} en el entorno de la app de producción sin dueño o prohibida`);
+    }
+    const lib = readFileSync("infra/comun/lib.sh", "utf8"), dep = readFileSync("infra/produccion/deploy.sh", "utf8");
+    const receta = (/secreto_receta\(\) \{([\s\S]*?)\n\}/.exec(lib) ?? [])[1] ?? "";
+    for (const [k, v] of Object.entries(lista)) {
+      if (!["servidor", "base", "app"].includes(v.origen) || /^MEDIOS_/.test(k)) continue;   // las de Garage las crea medios.sh
+      if (!new RegExp(`(^|[|\\s])${k.replace(/_\*$/, "")}(\\*|[|)])`).test(receta) && !(k.startsWith("REVISION_CODIGO_") && /REVISION_CODIGO_\*\)/.test(receta))) falla(G, "infra/comun/lib.sh", 0, `${k} nace en el servidor y no tiene receta`);
+      if (!new RegExp(`\\b${k}\\b`).test(dep)) falla(G, "infra/produccion/deploy.sh", 0, `${k} nace en el servidor y producción no lo hace nacer`);
+    }
+    for (const [k, v] of Object.entries(lista)) if (v.recuperacion && !["servidor", "base", "app"].includes(v.origen)) falla(G, L, 0, `${k} va al sobre de recuperación pero no nace en un servidor`);
+    for (const k of ["DATOS_SECRET", "QR_LLAVE_PRIVADA", "VAPID_PRIVADA", "AUTH_SECRET", "LLAVERO_SECRET", "RESPALDO_LLAVE"]) if (!lista[k]?.recuperacion) falla(G, L, 0, `${k} tiene que ir en el sobre de recuperación (sin ella una máquina reconstruida no lee lo de antes: L458, L775)`);
+  },
+
+  /* 9o · respaldoRestaurado: no es «respaldo verificado» de palabra. La restauración de prueba corre cada semana (temporizador de la réplica), restaura a
+     un punto en el tiempo en un contenedor DESECHABLE, corre migrar.sh --verificar y las consultas de control, anota restore_drills con su RTO y su
+     resultado (también si falla); si falla o no corre en 8 días, Prometheus (RestauracionDePrueba) y el barrido (vigilarRespaldos) dan la alerta crítica. */
+  respaldoRestaurado() {
+    const G = "respaldoRestaurado", R = "infra/comun/respaldos/restaurar-prueba.sh", D = "infra/produccion/deploy.sh";
+    const r = existsSync(R) ? readFileSync(R, "utf8") : "";
+    if (!/--type=time "--target=\$PUNTO"/.test(r)) falla(G, R, 0, "restaura a un punto en el tiempo (PITR)");
+    if (!/docker volume create "\$C"/.test(r) || !/docker rm -f "\$C"/.test(r) || !/docker volume rm -f "\$C"/.test(r)) falla(G, R, 0, "en un contenedor y un volumen desechables que se destruyen");
+    if (!/migrar\.sh" --verificar/.test(r) || !/consultas-control\.sql/.test(r)) falla(G, R, 0, "con migrar.sh --verificar y las consultas de control");
+    if (!/insert into restore_drills/.test(r) || !/rto_s/.test(r) || !/anotar fallo/.test(r)) falla(G, R, 0, "anota restore_drills con su RTO, también cuando falla");
+    if (!/temporizador restauracion-prueba "Sun [^"]+" "bash \$REPO\/infra\/comun\/respaldos\/restaurar-prueba\.sh"/.test(readFileSync(D, "utf8"))) falla(G, D, 0, "la restauración de prueba no está programada cada semana en la réplica");
+    if (!/if \[ "\$VERIFICAR" = 1 \]; then/.test(readFileSync("packages/db/migrar.sh", "utf8"))) falla(G, "packages/db/migrar.sh", 0, "falta --verificar (no cambia nada)");
+    const reglas = readFileSync("infra/comun/monitoreo/reglas.yml", "utf8");
+    if (!/alert: RestauracionDePrueba\n\s+expr: tolatino_restauracion_dias > 8 or tolatino_restauracion_fallos > 0/.test(reglas) || !/RestauracionDePrueba[\s\S]{0,200}severity: critica/.test(reglas)) falla(G, "infra/comun/monitoreo/reglas.yml", 0, "la alerta crítica si falla o no corre en 8 días");
+    if (!/export const SIN_RESTAURAR_DIAS = 8;/.test(readFileSync("apps/web/lib/sistema/respaldos-comun.ts", "utf8"))) falla(G, "apps/web/lib/sistema/respaldos-comun.ts", 0, "8 días sin restaurar es la alerta");
+    const dsp = sinComent("apps/web/lib/sistema/despliegues.ts");
+    if (!/export async function vigilarRespaldos/.test(dsp) || !/"respaldo_alerta"/.test(dsp)) falla(G, "apps/web/lib/sistema/despliegues.ts", 0, "el barrido da la alerta crítica de los respaldos");
+    if (!/\["respaldosVigilar", async \(\) => \(await import\("\.\/sistema\/despliegues"\)\)\.vigilarRespaldos\(\)\]/.test(sinComent("apps/web/lib/barrido.ts"))) falla(G, "apps/web/lib/barrido.ts", 0, "vigilarRespaldos no corre en el barrido");
+  },
+
+  /* 9o · mantenimientoFijo: la página que sirve nginx con la app caída o durante una ventana programada es la del sistema de diseño con la línea fija
+     de §1c tal cual (FIJAS.mantenimiento, ES/EN), se instala en cada despliegue de producción y nginx la usa para 502/503/504 y para la ventana. */
+  mantenimientoFijo() {
+    const G = "mantenimientoFijo";
+    try { execSync("node scripts/produccion/mantenimiento.mjs --revisar", { stdio: "pipe" }); } catch { falla(G, "infra/comun/mantenimiento/index.html", 0, "no es la que sale del sistema de diseño y las líneas fijas (node scripts/produccion/mantenimiento.mjs)"); }
+    const n = readFileSync("infra/produccion/nginx-produccion.conf", "utf8");
+    if (!/error_page 502 503 504 \/mantenimiento\.html;/.test(n) || !/if \(-f \/var\/lib\/tolatino\/mantenimiento\/activo\) \{ set \$tolatino_mant 1; \}/.test(n)) falla(G, "infra/produccion/nginx-produccion.conf", 0, "nginx no muestra la página de mantenimiento (app caída y ventana programada)");
+    if (!/\^\/\(api\|admin\|entrar/.test(n)) falla(G, "infra/produccion/nginx-produccion.conf", 0, "la ventana no puede cortar la API (webhooks de Stripe, tiendas, pases) ni el Super Admin");
+    if (!/install -m 0644 "\$REPO\/infra\/comun\/mantenimiento\/index\.html" \/var\/www\/mantenimiento\/index\.html/.test(readFileSync("infra/produccion/deploy.sh", "utf8"))) falla(G, "infra/produccion/deploy.sh", 0, "el despliegue no instala la página de mantenimiento");
   },
 };
 

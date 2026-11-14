@@ -1,0 +1,89 @@
+# 9o · Las alertas del monitoreo (fase9-apertura.md §3.5). Cada una dice su caso del manual (docs/incidentes/<caso>.md) y su severidad: «critica» va
+# al equipo por push, correo y SMS; lo demás por push y correo. Las manda Alertmanager (alertmanager.yml): al correo del fundador por SES y a la app
+# (/api/interno/alerta, que abre el incidente y avisa al equipo). Si la app está caída, el correo sale igual (no depende de ella).
+groups:
+  - name: tolatino
+    rules:
+      - alert: AppNoResponde
+        expr: probe_success{job="salud"} == 0
+        for: 2m
+        labels: { severity: critica, caso: app-no-responde }
+        annotations: { resumen: "La app no contesta /api/salud desde fuera (2 min)" }
+
+      - alert: WebhookStripeCaido
+        expr: probe_success{job="webhook"} == 0
+        for: 5m
+        labels: { severity: alta, caso: stripe-caido }
+        annotations: { resumen: "El webhook de Stripe no contesta como debe (5 min)" }
+
+      - alert: CertificadoVence
+        expr: (probe_ssl_earliest_cert_expiry{job="salud"} - time()) / 86400 < 21
+        for: 1h
+        labels: { severity: alta, caso: certificado-vencido }
+        annotations: { resumen: "El certificado que ve el vecino vence en menos de 21 días" }
+
+      - alert: BaseNoResponde
+        expr: up{job="base"} == 0 or pg_up == 0
+        for: 2m
+        labels: { severity: critica, caso: base-no-responde }
+        annotations: { resumen: "La base no contesta (2 min)" }
+
+      - alert: MaquinaCaida
+        expr: up{job="maquinas"} == 0
+        for: 3m
+        labels: { severity: critica, caso: servidor-perdido }
+        annotations: { resumen: "Una máquina no contesta por la red privada (3 min)" }
+
+      - alert: DiscoLleno
+        expr: 100 * (1 - node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) > 85
+        for: 10m
+        labels: { severity: alta, caso: disco-lleno }
+        annotations: { resumen: "Un disco pasa del 85 %" }
+
+      - alert: DiscoSeLlenaEn24h
+        expr: predict_linear(node_filesystem_avail_bytes{mountpoint="/"}[6h], 24 * 3600) < 0
+        for: 30m
+        labels: { severity: alta, caso: disco-lleno }
+        annotations: { resumen: "Al ritmo de las últimas 6 h, un disco se llena en menos de 24 h" }
+
+      - alert: BarridoCallado
+        expr: tolatino_barrido_segundos > 600
+        for: 5m
+        labels: { severity: critica, caso: app-no-responde }
+        annotations: { resumen: "El barrido no corre desde hace más de 10 min (vencer, liberar, avisar y el reporte diario dependen de él)" }
+
+      - alert: ColaDelPush
+        expr: tolatino_push_vieja_segundos > 900
+        for: 5m
+        labels: { severity: alta, caso: app-no-responde }
+        annotations: { resumen: "Un aviso push espera más de 15 min" }
+
+      - alert: ReporteDiarioNoCorre
+        expr: tolatino_reporte_diario_segundos > 26 * 3600
+        for: 30m
+        labels: { severity: alta, caso: app-no-responde }
+        annotations: { resumen: "La tarea del reporte diario no corre desde hace más de 26 h" }
+
+      - alert: RespaldoAtrasado
+        expr: tolatino_respaldo_base_horas > 26
+        for: 30m
+        labels: { severity: critica, caso: base-no-responde }
+        annotations: { resumen: "La base no tiene un respaldo bueno en más de 26 h" }
+
+      - alert: RestauracionDePrueba
+        expr: tolatino_restauracion_dias > 8 or tolatino_restauracion_fallos > 0
+        for: 1h
+        labels: { severity: critica, caso: base-no-responde }
+        annotations: { resumen: "La restauración de prueba falló o no hubo una buena en 8 días" }
+
+      - alert: PicoDeErrores
+        expr: tolatino_errores_nuevos_hora > 20
+        for: 10m
+        labels: { severity: alta, caso: pico-de-errores }
+        annotations: { resumen: "Más de 20 grupos de errores nuevos en una hora" }
+
+      # Siempre encendida: si deja de llegar, el monitoreo mismo se calló (el segundo testigo de GitHub Actions lo ve por health_checks «vigia»).
+      - alert: Latido
+        expr: vector(1)
+        labels: { severity: latido, caso: app-no-responde }
+        annotations: { resumen: "El monitoreo está vivo" }

@@ -6,6 +6,7 @@ import { requerir } from "@/lib/admin";
 import { cambiarFlag, type Alcance } from "@/lib/sistema/flags";
 import { cancelarMantenimiento, programarMantenimiento } from "@/lib/sistema/salud";
 import { abrirVidrio } from "@/lib/sistema/vidrio";
+import { cerrarIncidente } from "@/lib/sistema/despliegues";
 
 type Res = { ok: true; msg: { es: string; en: string } } | { ok: false; msg: { es: string; en: string } };
 
@@ -35,4 +36,12 @@ export async function verFotosSalud(ayuda: string, motivo: string): Promise<{ ok
   const s = await requerir("colas", "ver");
   const r = await abrirVidrio(s, { ayuda: String(ayuda ?? "") }, motivo);
   return r.ok ? { ok: true, mensaje: r.msg.es } : { ok: false, mensaje: r.msg.es };
+}
+
+/* 9o · Sistema › Despliegues: cerrar un incidente con lo que se hizo (una vez; incident_log solo anota el cierre; auditoría). */
+export async function incidenteCerrar(id: string, hecho: string): Promise<Res> {
+  const s = await requerir("sys", "editar");
+  const r = await cerrarIncidente(s, String(id ?? ""), hecho);
+  if (r.ok) revalidatePath("/admin/sistema/despliegues");
+  return r;
 }

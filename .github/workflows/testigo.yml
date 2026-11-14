@@ -1,0 +1,40 @@
+# 9o · El SEGUNDO TESTIGO (fase9-apertura.md §3.5): cada 10 minutos, desde fuera de todo lo nuestro (gratis en un repo público), pide /api/salud de
+# producción. Falla (y GitHub manda el correo de la corrida roja) si la app no contesta, si el barrido entero se calló (barrido_s: nadie vence, libera ni
+# manda el reporte diario; LAUNCH 9g) o si el PRIMER testigo se calló (vigia_s: el latido de Prometheus/Alertmanager de la réplica no llega).
+# Mientras no haya producción (la variable del repo TOLATINO_DOMINIO_PRODUCCION vacía), termina en verde sin mirar nada.
+name: Segundo testigo
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: testigo
+  cancel-in-progress: true
+jobs:
+  mirar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Producción desde fuera
+        env:
+          DOMINIO: ${{ vars.TOLATINO_DOMINIO_PRODUCCION }}
+        run: |
+          if [ -z "$DOMINIO" ]; then echo "Sin producción todavía: nada que mirar."; exit 0; fi
+          ok=0
+          for i in 1 2 3; do
+            if r=$(curl -fsS -m 20 "https://$DOMINIO/api/salud"); then ok=1; break; fi
+            sleep 20
+          done
+          [ "$ok" = 1 ] || { echo "::error::La app no contesta /api/salud desde fuera (3 intentos). Manual: docs/incidentes/app-no-responde.md"; exit 1; }
+          echo "$r" | python3 -c '
+          import json, sys
+          d = json.load(sys.stdin); mal = []
+          if not d.get("ok"): mal.append("la app dice que no está sana (base: %s)" % d.get("base"))
+          b, v = d.get("barrido_s"), d.get("vigia_s")
+          if b is None or b > 900: mal.append(f"el barrido no corre desde hace {b} s (docs/incidentes/app-no-responde.md)")
+          if v is None or v > 900: mal.append(f"el monitoreo de la réplica no late desde hace {v} s: el primer testigo se calló")
+          print("commit", d.get("commit"), "· barrido", b, "s · latido", v, "s")
+          for m in mal: print("::error::" + m)
+          sys.exit(1 if mal else 0)'

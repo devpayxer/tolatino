@@ -1,0 +1,81 @@
+#cloud-config
+# 9o · El nacimiento de una máquina de PRODUCCIÓN o del ENSAYO (fase9-apertura.md §3.2). PLANTILLA: scripts/produccion/maquinas.sh cambia __ROL__
+# (base | app | replica | almacen), __ENTORNO__ (produccion | ensayo), __RAMA__ y __RECONSTRUIR__ (1 si reemplaza a una máquina perdida) y la manda por
+# la API del proveedor. SIN llave SSH (como el sandbox): nadie entra a mano; emergencia = reconstruir con este mismo archivo. Después de nacer, la
+# máquina se sincroniza sola con su rama cada 60 s (tolatino-sync) y corre infra/produccion/deploy.sh.
+package_update: true
+package_upgrade: true
+packages:
+  - git
+  - curl
+  - ca-certificates
+  - age
+  - python3
+  - fail2ban
+  - unattended-upgrades
+  - docker.io
+  - docker-compose-v2
+users:
+  - default
+  - name: deploy
+    groups: [docker]
+    shell: /bin/bash
+    lock_passwd: true
+ssh_pwauth: false
+disable_root: true
+write_files:
+  - path: /etc/tolatino/rol.conf
+    permissions: "0644"
+    content: |
+      TOLATINO_ROL=__ROL__
+      TOLATINO_ENTORNO=__ENTORNO__
+      TOLATINO_RAMA=__RAMA__
+      TOLATINO_RECONSTRUIR=__RECONSTRUIR__
+  # Actualizaciones de seguridad solas; si piden reinicio, a las 04:30 (después de los respaldos de las 03:15 y antes de la mañana).
+  - path: /etc/apt/apt.conf.d/52tolatino-reinicio
+    content: |
+      Unattended-Upgrade::Automatic-Reboot "true";
+      Unattended-Upgrade::Automatic-Reboot-Time "04:30";
+  - path: /etc/systemd/system/tolatino-sync.service
+    content: |
+      [Unit]
+      Description=To'Latino · sincronizar con la rama del entorno y desplegar
+      After=network-online.target docker.service
+      Wants=network-online.target
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/tolatino-sync
+      TimeoutStartSec=3600
+  - path: /etc/systemd/system/tolatino-sync.timer
+    content: |
+      [Unit]
+      Description=To'Latino · cada 60 s
+      [Timer]
+      OnBootSec=30
+      OnUnitActiveSec=60
+      [Install]
+      WantedBy=timers.target
+  - path: /etc/fail2ban/jail.d/tolatino.conf
+    content: |
+      [sshd]
+      enabled = true
+      maxretry = 3
+runcmd:
+  # La base guarda sus datos en su propio disco (un volumen del proveedor, si lo tiene) montado en /var/lib/tolatino.
+  - |
+    if [ "__ROL__" = base ]; then
+      V=$(ls /dev/disk/by-id/scsi-0HC_Volume_* 2>/dev/null | head -1)
+      if [ -n "$V" ]; then
+        blkid "$V" >/dev/null 2>&1 || mkfs.ext4 -q "$V"
+        mkdir -p /var/lib/tolatino
+        grep -q "$V" /etc/fstab || echo "$V /var/lib/tolatino ext4 defaults,nofail,discard 0 2" >> /etc/fstab
+        mount -a
+      fi
+    fi
+  - if [ "__ROL__" = app ]; then DEBIAN_FRONTEND=noninteractive apt-get install -y -q nginx; fi
+  - systemctl enable --now docker
+  - mkdir -p /var/lib/tolatino /var/www/estado /etc/tolatino
+  - git clone -q --depth 200 --branch __RAMA__ https://github.com/devpayxer/tolatino.git /opt/tolatino
+  - install -m 0755 /opt/tolatino/infra/produccion/tolatino-sync /usr/local/bin/tolatino-sync
+  - systemctl daemon-reload
+  - systemctl enable --now tolatino-sync.timer

@@ -1,0 +1,98 @@
+# 9o · La máquina de la base de producción (y del ensayo): Postgres 16 + PostGIS con pgBackRest (archive_command continuo), Garage (fotos, en el disco
+# de esta máquina), los sobres privados para la app y la réplica, node_exporter y postgres_exporter (con las consultas de la plataforma). Todo escucha
+# SOLO en la IP privada (RED_YO); el firewall del proveedor no deja entrar nada de afuera. Lo levanta infra/produccion/deploy.sh (rol base).
+name: tolatino-base
+services:
+  db:
+    build:
+      context: base
+    image: tolatino/base:produccion
+    restart: unless-stopped
+    shm_size: 1g
+    environment:
+      POSTGRES_DB: tolatino
+      POSTGRES_USER: tolatino
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: America/New_York
+    command:
+      - postgres
+      - -c
+      - listen_addresses=*
+      - -c
+      - hba_file=/etc/tolatino/pg_hba.conf
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_senders=5
+      - -c
+      - wal_keep_size=1GB
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_command=${DB_ARCHIVE:-/bin/true}
+      - -c
+      - archive_timeout=60
+      - -c
+      - shared_buffers=${DB_SHARED_BUFFERS:-2GB}
+      - -c
+      - effective_cache_size=${DB_CACHE:-8GB}
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+    volumes:
+      - /var/lib/tolatino/db:/var/lib/postgresql/data
+      - /etc/tolatino/pg_hba.conf:/etc/tolatino/pg_hba.conf:ro
+      - /etc/tolatino/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - pgbackrest-spool:/var/lib/pgbackrest
+    ports:
+      - "${RED_YO:?falta la IP privada}:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U tolatino -d tolatino"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  # Fotos: el mismo Garage del sandbox (infra/pruebas/medios.sh lo prepara), en el disco de esta máquina. La app lo usa por la red privada.
+  medios:
+    image: dxflrs/garage:v2.1.0
+    restart: unless-stopped
+    volumes:
+      - /etc/tolatino/garage.toml:/etc/garage.toml:ro
+      - /var/lib/tolatino/medios:/var/lib/garage
+    ports:
+      - "${RED_YO}:3900:3900"
+      - "${RED_YO}:3902:3902"
+
+  # Los sobres privados (cifrados para la app y la réplica; infra/comun/sobres-privados.sh), solo por la red privada.
+  sobres:
+    image: nginx:1.27.3-alpine
+    restart: unless-stopped
+    volumes:
+      - /var/lib/tolatino/sobres-servidos:/usr/share/nginx/html:ro
+    ports:
+      - "${RED_YO}:8099:80"
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    command: ["--path.rootfs=/host", "--web.listen-address=${RED_YO}:9100"]
+    volumes:
+      - /:/host:ro,rslave
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.16.0
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: postgresql://tolatino:${POSTGRES_PASSWORD}@db:5432/tolatino?sslmode=disable
+    command: ["--extend.query-path=/etc/tolatino/consultas.yml"]
+    volumes:
+      - ../comun/monitoreo/postgres-consultas.yml:/etc/tolatino/consultas.yml:ro
+    ports:
+      - "${RED_YO}:9187:9187"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgbackrest-spool:

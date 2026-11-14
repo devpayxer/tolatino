@@ -15,9 +15,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       al principio solo existe el de pruebas (decisión C).
 
 ## Infraestructura del sandbox
-- [ ] **→ 9o** · **Almacenamiento de archivos (5 nov 2026):** MinIO fuera (imágenes públicas retiradas).
+- [x] **→ 9o** · **Almacenamiento de archivos (5 nov 2026):** MinIO fuera (imágenes públicas retiradas).
       Entra **Garage** (`dxflrs/garage:v2.1.0`, S3 propio) en el bloque de subida de fotos,
-      con bucket, llaves y respaldo del volumen. Hasta entonces la app no sube archivos. — _9a (11 nov): Garage hecho (infra/pruebas/medios.sh, servicio «medios» del compose; las fotos suben: com5a, com5d, publica). Falta el respaldo del volumen._
+      con bucket, llaves y respaldo del volumen. Hasta entonces la app no sube archivos. — _9a (11 nov): Garage hecho (infra/pruebas/medios.sh, servicio «medios» del compose; las fotos suben: com5a, com5d, publica). Falta el respaldo del volumen._ — **✓ 9o (14 nov):** producción respalda las fotos cada día (Garage → almacén de otra región con rclone; lo borrado o cambiado se aparta 35 días; `infra/comun/respaldos/respaldar.sh fotos`, anotado en backup_runs). El volumen del sandbox no se respalda: sus fotos son de prueba y se rehacen con la semilla (REVISION 9o).
 
 ## Cuenta (bloque 3b, 5 nov 2026)
 - [ ] **→ 9q** · **Proveedor de SMS (decisión E/E2):** cuenta en Telnyx (o Twilio), registro 10DLC, clave en los secretos
@@ -467,7 +467,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **→ 9k** · «Devolver» desde Transacciones para cobros de planes y rentas. — **✓ 9k (14 nov):** Transacciones › «Devolver» también en planes (PL-) y rentas (T-), de lo cobrado neto, repartido entre los cobros de cada período (devolverTx + devolverOperacion); la lista de la pantalla y la del servidor coinciden (devolverCoincide).
 
 
-- [ ] **→ 9o** · **DATOS_SECRET (4j):** respaldar la llave del cifrado de columna de producción (op_private) en un lugar seguro fuera del servidor; sin ella, las notas vivas (máx. 30 días) quedan ilegibles.
+- [x] **→ 9o** · **DATOS_SECRET (4j):** respaldar la llave del cifrado de columna de producción (op_private) en un lugar seguro fuera del servidor; sin ella, las notas vivas (máx. 30 días) quedan ilegibles. — **✓ 9o (14 nov):** DATOS_SECRET (y QR, VAPID, AUTH, LLAVERO, RESPALDO_LLAVE y la llave age de cada máquina) va cada día en el **sobre de recuperación** de su máquina, cifrado para la llave de recuperación y subido al almacén (`respaldar.sh sobre`, backup_runs «sobre»); una máquina reconstruida lo recibe (`recuperacion.sh`, `scripts/produccion/reconstruir.sh`). Guardián secretoConDueno (no puede salir del sobre); probado con age de verdad en `pruebas/infra/sellado.test.sh` (17/17). La corrida en máquinas, en el ensayo (línea de abajo, «Fase 9 · 9o»).
 
 - [ ] **→ 9s** · **Pro · cobrar en la app (4l):** hoy nada de Profesionales se cobra en la app (Preguntas #1 del plan Salud/Pro: honorarios de abogados, IOLTA, CROA). Verificar con abogado antes de encender cobros para los no legales.
 - [ ] **→ 9s** · **Salud · HIPAA (4j):** consulta legal sobre si To’Latino es «business associate» de los consultorios antes de producción (Preguntas #2).
@@ -479,7 +479,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       Super Admin no las ve nunca (guardián privacidadSalud). Guardián `vidrioRoto`; `ayu4m` al día (no corrió aquí: necesita Garage).
 - [ ] **→ 9s** · La lista de términos de PRIVADO (`lib/resenas-filtro.ts`) es corta (diagnósticos y medicinas comunes): ampliarla con
       un listado revisado por alguien de salud antes de abrir, y medir falsos positivos en reseñas reales.
-- [ ] **→ 9o** · Fotos privadas de ayuda: confirmar en el servidor real que Garage borra el objeto (el sandbox lo prueba contra el Garage local).
+- [ ] **→ 9o** · Fotos privadas de ayuda: confirmar en el servidor real que Garage borra el objeto (el sandbox lo prueba contra el Garage local). — _9o (14 nov): el ensayo lo mide en la máquina de la base (sube 1 MB a medios/privado/, lo borra por la API S3 y comprueba que ya no está; GARAGE_BORRA en las cifras). No corrió aquí: va con el ensayo (línea «Fase 9 · 9o»)._
 - [ ] **→ 9n** · Configuración (Fase 5): hacer editables los plazos de Doctores y Profesionales **5i:** ya se leen de Sistema › Configuración (un solo lugar, con límites) pero en SOLO LECTURA hasta que sus textos lean el valor (ver «5i · Plazos de la Fase 4» abajo). (2 h «no aceptamos su seguro», 24 h
       cancelar, 30 d total por escrito, 24/48 h ayuda, 30 d notas, 90 d fotos de ayuda).
 
@@ -628,7 +628,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       vecinos de cada ciudad: palabras locales, falsos positivos («ice», «migra»). (5d, 7 nov)
 - [ ] **→ 9o** · **5d · Imagen del servicio de fotos sin construir aquí:** Docker Hub respondió 429 desde este entorno; se probó el servicio con el
       mismo código y las mismas versiones fijadas (ruedas de PyPI para Python 3.12 verificadas) fuera de Docker. Confirmar que `deploy.sh`
-      lo levanta en el sandbox y medir memoria junto con el traductor de 5h (§6 #24). (5d, 7 nov) — _9a (11 nov): el servicio de moderación tiene su perfil en el compose y deploy.sh lo levanta (systemd-run tolatino-moderacion); falta medir su memoria junto con el traductor en el sandbox._ — _9b-3 (13 nov): el CI la corre con su venv de Python (9b-2); la imagen del contenedor se arma y se prueba con la producción como código (9o)._
+      lo levanta en el sandbox y medir memoria junto con el traductor de 5h (§6 #24). (5d, 7 nov) — _9a (11 nov): el servicio de moderación tiene su perfil en el compose y deploy.sh lo levanta (systemd-run tolatino-moderacion); falta medir su memoria junto con el traductor en el sandbox._ — _9b-3 (13 nov): el CI la corre con su venv de Python (9b-2); la imagen del contenedor se arma y se prueba con la producción como código (9o)._ — _9o (14 nov): el compose de producción la construye en la máquina de la app (compose-app-fijos.yml, la misma receta del sandbox); se construye y se mide la memoria en el ensayo (línea «Fase 9 · 9o»)._
 - [x] **→ después de abrir (DA-08)** · **5d · Fotos: violencia y texto promocional** no tienen modelo (NudeNet solo mide desnudez); hoy los decide una persona en Medios
       marcados. Solo las fotos de la Comunidad pasan por el modelo; reseñas y negocios siguen con el reporte de vecinos. (5d, 7 nov) — _9a (11 nov): un modelo de violencia y texto promocional en fotos; hoy decide una persona en Medios marcados. En `docs/DESPUES-DE-ABRIR.md`._
 - [ ] **→ 9q** · **5d · No se probó el modelo con una foto de desnudez real** (solo fotos limpias y el servicio caído); probar el umbral 0.6 con un
@@ -693,8 +693,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       automática; vale el original». (5h, 7 nov)
 - [x] **5h · Borrado de cuenta (D5):** cuando se construya la purga de textos a los 30 días, debe borrar también sus filas de
       `ugc_translations` (derivadas) para que no quede el texto traducido. (5h, 7 nov) — **✓ 9d (14 nov):** la purga borra las traducciones de sus publicaciones, comentarios y reseñas (`fn: traducciones` en el mapa; `datos_purga_pendiente` lo comprueba).
-- [ ] **→ 9o** · **5h · Límite sin cuenta:** es por cookie del dispositivo (se puede borrar); el costo lo acota la caché (cada texto se traduce una
-      vez por idioma). En producción, límite por IP en Cloudflare para la acción. (5h, 7 nov)
+- [ ] **→ 9p** · **5h · Límite sin cuenta:** es por cookie del dispositivo (se puede borrar); el costo lo acota la caché (cada texto se traduce una
+      vez por idioma). En producción, límite por IP en Cloudflare para la acción. (5h, 7 nov) — _9o (14 nov): hecho como código: `infra/produccion/cloudflare/reglas.json` (una regla por IP para las acciones del servidor —«Ver traducción», «Avísame», el código— y /api/errores, el plan gratis trae una) y `scripts/produccion/cloudflare.sh reglas`. Se aplica por la API cuando exista la zona (Paquete 8-0 → 9p)._
 - [x] **→ 9b** · **5h · Corta-circuito compartido:** hoy vive en la memoria de cada proceso de la app; con varias réplicas en producción, cada una
       corta por su cuenta (aceptable; anotar si se quiere uno común). (5h, 7 nov) — **✓ 9b-3 (13 nov):** `lib/topes.ts` (`estadoCorte` / `resultadoCorte` sobre `rate_counters`): uno para todos los procesos, sobrevive a un reinicio y, pasado el minuto, una sola prueba lo vuelve a abrir (com5h lo comprueba). También el de la moderación de fotos. Guardián `topeCompartido`.
 - [ ] **→ 9c** · **5h · «Ver traducción» en los 9 dispositivos:** `com5h` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta la matriz
@@ -788,8 +788,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       construyeron en 6c; llegan con 6j (avisos de Eventos). (6c, 10 nov)
 - [ ] **→ 9m** · **6c · Mi cuenta › Inicio «Tu semana» con el boleto y Pagos › movimientos:** _6j (10 nov): «Tu semana» hecho (boletos, RSVP y evento privado); Pagos › movimientos sigue pendiente: ver «Fase 6 · 6j»._ los boletos están en Mi cuenta › Boletos y en
       Accesos; «Tu semana» llega con 6j. (6c, 10 nov)
-- [ ] **→ 9o** · **6c · Llave del QR de producción:** `deploy.sh` del sandbox la genera; el despliegue de producción (fase 9) debe generarla igual
-      (una por entorno) y nunca copiar la del sandbox. Rotar = nueva llave + `qr_keys.retired_at` de la vieja. (6c, 10 nov)
+- [x] **→ 9o** · **6c · Llave del QR de producción:** `deploy.sh` del sandbox la genera; el despliegue de producción (fase 9) debe generarla igual
+      (una por entorno) y nunca copiar la del sandbox. Rotar = nueva llave + `qr_keys.retired_at` de la vieja. (6c, 10 nov) — **✓ 9o (14 nov):** el despliegue de producción la hace nacer en la máquina de la app (`secreto_nace QR_LLAVE_PRIVADA`, la misma receta del sandbox en `infra/comun/lib.sh`), una por entorno, nunca copiada; solo viaja en el sobre de recuperación (guardián secretoConDueno). Rotar sigue igual (qr_keys.retired_at).
 - [ ] **→ 9s** · **6c · Abogado:** ley de reventa de boletos de PA, impuesto de diversiones (amusement tax) por ciudad, To'Latino como comerciante del
       cobro (1099-K del organizador), política de devoluciones en los Términos. (6c, 10 nov)
 - [x] **6c · `scripts/portar-sistema.mjs` no es idéntico a lo que hay en el repo:** al correrlo para el parche de TicketQR también
@@ -1259,17 +1259,17 @@ en el momento. Se marca solo cuando está hecho de verdad.
       (`NSPrivacyCollectedDataTypes`, desde `generar.mjs`) y en las etiquetas de App Store y la sección de seguridad de datos de Play (8i). (8f, 11 nov)
 - [x] **→ 9b** · **Tope de errores con varios procesos:** el tope por minuto vive en la memoria de cada proceso; en producción con varios procesos (o
       máquinas) se multiplica. Pasar a un contador compartido o a Cloudflare (límite por IP en `/api/errores`) en la Fase 9. (8f, 11 nov) — **✓ 9b-3 (13 nov):** el tope global, por teléfono y por conexión van a `rate_counters` (`dentroDelTope`), compartidos; lo descartado se cuenta en las últimas 24 h (Sistema › Apps). Cloudflare delante queda para 9o.
-- [ ] **→ 9o** · **Vuelta atrás por «Errores en vivo»:** en producción, un pico en la web servida debe volver al despliegue anterior y, en las apps, pausar el
-      lanzamiento por fases por la API de las tiendas (Fase 9). Hoy avisa a los Admins. (8f, 11 nov)
+- [ ] **→ 9u** · **Vuelta atrás por «Errores en vivo»:** en producción, un pico en la web servida debe volver al despliegue anterior y, en las apps, pausar el
+      lanzamiento por fases por la API de las tiendas (Fase 9). Hoy avisa a los Admins. (8f, 11 nov) — _9o (14 nov): la web ya vuelve atrás sola si aparecen grupos de errores nuevos (vuelta_errores_nuevos, Configuración › Despliegues; `infra/comun/azulverde.sh`). Pausar el lanzamiento por fases de las apps por la API de las tiendas va con las apps públicas (9u)._
 - [x] **La semilla 0045 en una base nueva** no crea testers ni el caso de ejemplo si todavía no existen esas cuentas (las crean otras semillas o las
       pruebas); los builds y los grupos de errores sí. (8f, 11 nov) — **✓ 9a (11 nov):** la semilla 0049 crea a Ana, Juan y Lucía si faltan y repite los bloques idempotentes de 0044, 0045 y 0046; probada en una base nueva (6 teléfonos de push, 3 testers, el caso de Lucía, 60 posiciones) y dos veces.
 - [ ] **→ 9c** · **En los 9 dispositivos:** `beta8f` corre en 390 y 1360 en local; falta la matriz de CI. (8f, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [x] **El registro de la web vive en la memoria de la pestaña:** una navegación con recarga completa (Panel › Más usa una recarga) lo empieza de
       nuevo, así que un reporte desde el panel en el navegador trae pocas pantallas. En las apps vive en el nativo y sobrevive. Pasarlo a
       `sessionStorage` (solo familias de pantalla) si el equipo lo echa de menos. (8f, 11 nov) — **✓ 9a (11 nov):** el registro de la web vive en la memoria de la pestaña (REVISION 9a); sessionStorage si el equipo lo echa de menos.
-- [ ] **→ 9o** · **Mapas de fuente y CPU:** cada proceso guarda hasta 12 mapas abiertos; un atacante dentro del tope por minuto puede obligar a abrir mapas
+- [ ] **→ 9t** · **Mapas de fuente y CPU:** cada proceso guarda hasta 12 mapas abiertos; un atacante dentro del tope por minuto puede obligar a abrir mapas
       distintos (cada uno cuesta leer y decodificar ~1 MB). Medir en la base de carga y, si hace falta, simbolizar en un trabajador aparte. (8f, 11 nov) — _9b-3 (13 nov): el tope por minuto ya es compartido (rate_counters); medir la CPU de simbolizar y, si hace falta, un trabajador aparte, con Sistema › Salud (9j)._ — _9j (14 nov): Salud ya cuenta los errores por tipo; la
-      medida de CPU va en el ensayo de producción (9o), con la base de carga._
+      medida de CPU va en el ensayo de producción (9o), con la base de carga._ — _9o (14 nov): el ensayo no lleva la base de carga; se mide con la carga sobre producción en acceso anticipado (9t), con Prometheus en Sistema › Salud._
 
 ## Fase 8 · 8e (lo nativo de cada app: la ruta del Repartidor, la Puerta, el boleto, compartir, «Escanear cupón»; 11 nov)
 - [ ] **→ 9r** · **La ruta en un teléfono real:** Android (servicio en primer plano con la pantalla apagada horas, batería, Doze) e iPhone (modo de fondo,
@@ -1498,11 +1498,11 @@ en el momento. Se marca solo cuando está hecho de verdad.
       (admin hoy), contra 0,1 que es lo bueno; el presupuesto de esas dos pantallas es lo medido con margen (0,4 y 1,2) para que el CI no mienta. 9b-3
       busca qué se mueve (contenido que llega después y empuja) y baja el presupuesto a 0,1 en `pruebas/velocidad/presupuesto.json`. El LCP (80–350 ms)
       y el TBT (0) son de laboratorio sin red ni CPU limitadas y con las fotos de fuera cortadas: lo de campo (RUM) llega con 9g. (9b-2, 13 nov) — _9b-3 (13 nov): no se buscó qué se mueve en 9b-3 (la escala de la base primero); va con el sistema de diseño en 9c, que toca esas pantallas._
-- [ ] **→ 9o** · **Semgrep `tolatino-sql-con-texto-interpolado` solo ve nombres de afuera** (`texto`, `q`, `body.x`, `searchParams.get(...)`…): el código tiene
+- [ ] **→ 9t** · **Semgrep `tolatino-sql-con-texto-interpolado` solo ve nombres de afuera** (`texto`, `q`, `body.x`, `searchParams.get(...)`…): el código tiene
       282 consultas con `${...}` dentro del SQL, ~210 con fragmentos fijos por convención (`PCT`, `ISO(…)`, `scope(…)`, `cfgSql(…)`) y 73 armadas con
       variables locales (`where`, `orden`, `col`, `fm`, `w.join(" and ")`…). Revisadas por encima, todas salen de constantes o de listas fijas del
       código, pero no hay una prueba de flujo de datos: en 9b-3, auditar las 73 una por una (modo taint de Semgrep desde los parámetros de las
-      acciones: 50 hallazgos de partida) y pasar la regla a taint con `nosemgrep` y su porqué en cada una que lo merezca. (9b-2, 13 nov) — _9b-3 (13 nov): no se auditó en 9b-3; va con la revisión de seguridad de la producción (9o)._
+      acciones: 50 hallazgos de partida) y pasar la regla a taint con `nosemgrep` y su porqué en cada una que lo merezca. (9b-2, 13 nov) — _9b-3 (13 nov): no se auditó en 9b-3; va con la revisión de seguridad de la producción (9o)._ — _9o (14 nov): no se auditó en 9o (el bloque fue la infraestructura); va con la revisión de seguridad antes de encender producción (9t)._
 - [ ] **→ 9c** · **Las pruebas de punta a punta por dispositivo son `disp9b` (recorrido de 4 personas, ancho real, sin desborde, sin errores) en los 9
       dispositivos; el resto de la regresión corre con el dispositivo por defecto (teléfono 390 y escritorio 1360).** `correr.mjs --dispositivo <id>`
       ya cambia cualquier prueba (`pruebas/lib/dispositivo-precarga.cjs`), pero correr las 199 en cada uno de los 9 (≈ 15 h de máquina) no se hizo: se
@@ -1609,7 +1609,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       aprobadas del Inicio, la ficha y Buscar. Con tu OK sobre las capturas nuevas (`pruebas/visual`, REVISION 9f) se enciende; el día de la apertura solo se encienden interruptores. (9f, 14 nov)
 - [x] **→ 9h** · **Las líneas fijas de §1c que esperan su pantalla:** la landing y su teléfono (9h), la página de mantenimiento (9o) y «el equipo entra con dos pasos» (9j) ya están en
       `lib/textos-fijas.ts` con candado y comparadas con el plan palabra por palabra (`lineaFijaBloqueada`); cada pantalla las usa cuando exista (hoy solo «Exportar mis datos»). (9f, 14 nov) — **✓ 9h (14 nov):** la landing usa `FIJAS.landing` y `FIJAS.landingTel` tal cual (guardián `listaConPermiso`; cre9h las lee palabra por palabra en ES y EN). Las otras dos siguen abajo, cada una con su bloque.
-- [ ] **→ 9o** · **La línea fija de mantenimiento espera su pantalla** («Estamos haciendo un cambio. Volvemos en unos minutos.», `FIJAS.mantenimiento`): la página que sirve nginx con la app caída. (9h, 14 nov; de la línea de 9f)
+- [x] **→ 9o** · **La línea fija de mantenimiento espera su pantalla** («Estamos haciendo un cambio. Volvemos en unos minutos.», `FIJAS.mantenimiento`): la página que sirve nginx con la app caída. (9h, 14 nov; de la línea de 9f) — **✓ 9o (14 nov):** `infra/comun/mantenimiento/index.html` sale del sistema de diseño con `FIJAS.mantenimiento` tal cual (ES y EN; `scripts/produccion/mantenimiento.mjs`) y nginx de producción la sirve con la app caída (502/503/504) y durante la ventana; guardián mantenimientoFijo (alreves9o).
 - [ ] **→ 9j** · **La línea fija «el equipo entra con dos pasos» espera su pantalla** (`FIJAS.equipoDosPasos`): el alta del segundo factor del equipo. (9h, 14 nov; de la línea de 9f)
 - [ ] **→ 9b** · **cms9f y alreves9f entran a la regresión del CI** (y a los 9 dispositivos): en local (Postgres 16 + PostGIS, un S3 de mentira, Chrome del sistema, perfil basico, :3110)
       cms9f pasó 91 ✓ dos veces seguidas y alreves9f 30/30; la corrida de verdad es la del CI. El paso nuevo del CI indexa las cadenas dos veces y comprueba que una línea fija y una edición
@@ -1629,21 +1629,21 @@ en el momento. Se marca solo cuando está hecho de verdad.
       con error; lo que cazan los guardianes del build corre en el CI y no queda en la base: con Sistema › Salud (9j), cada despliegue anota su resultado y el reporte lo lee. (9g, 14 nov)
 - [ ] **→ 9k** · **La conciliación con Stripe en el reporte diario y en Analítica › Dinero:** el renglón existe y dice que todavía no sale (`conciliacion: null`); lo llena la conciliación
       diaria de 9k. (9g, 14 nov)
-- [ ] **→ 9o** · **Las vueltas atrás en el reporte diario:** el renglón existe (`vueltas: null`); lo llena la vuelta atrás automática de 9o. La alerta «el reporte no salió» la da el barrido:
-      si el barrido entero se cae, nadie alerta; el monitoreo externo de 9o mira `system_jobs` (barrido.reporteDiario). (9g, 14 nov)
+- [x] **→ 9o** · **Las vueltas atrás en el reporte diario:** el renglón existe (`vueltas: null`); lo llena la vuelta atrás automática de 9o. La alerta «el reporte no salió» la da el barrido:
+      si el barrido entero se cae, nadie alerta; el monitoreo externo de 9o mira `system_jobs` (barrido.reporteDiario). (9g, 14 nov) — **✓ 9o (14 nov):** el renglón cuenta las de ayer (`vueltas_atras_del_dia`, 0145). Si el barrido entero se cae: Prometheus (BarridoCallado, ReporteDiarioNoCorre, por postgres_exporter) y el segundo testigo de GitHub Actions (`barrido_s` en /api/salud) avisan desde fuera.
 - [ ] **→ 9g** · **Corridas del CI de 9g:** `ana9g` pasó dos veces seguidas en una base local (85 ✓) con un docker de mentira; falta la regresión entera, la barajada y los 9
       dispositivos en el CI, y `pruebas/visual` del Inicio del Super Admin (Ciudad viva va al final de la pantalla). (9g, 14 nov)
 
 ## Fase 9 · 9j — Super Admin › Sistema completo y la seguridad del equipo (14 nov)
-- [ ] **→ 9o** · **Respaldos reales y la restauración de prueba semanal:** Sistema › Respaldos lee `backup_runs` y `restore_drills`; en el sandbox solo hay la semilla
+- [x] **→ 9o** · **Respaldos reales y la restauración de prueba semanal:** Sistema › Respaldos lee `backup_runs` y `restore_drills`; en el sandbox solo hay la semilla
       (0057). pgBackRest, la sincronización de las fotos, el sobre de recuperación y la máquina desechable que restaura cada semana (y la alerta si no corre en 8 días)
-      nacen con producción como código. (9j, 14 nov)
-- [ ] **→ 9o** · **Despliegues y vueltas atrás en Salud:** la fila dice que llegan con producción; `deploy_releases` es de 0145. Prometheus, node_exporter,
-      postgres_exporter y Uptime Kuma (HERRAMIENTAS #4, #14) también: Salud es su tablero. (9j, 14 nov)
-- [ ] **→ 9o** · **La página de mantenimiento la sirve nginx** durante la ventana (§1b #8) y **el aviso a los vecinos 24 h antes** (prototipo): hoy el mantenimiento
-      se programa, se cancela y queda en la auditoría, pero nadie lo ve fuera del Super Admin. (9j, 14 nov)
-- [ ] **→ 9o** · **Llaves que vencen fuera del llavero** (`RESPALDO_LLAVE`, certificados de origen de Cloudflare, el token de la API del proveedor): nacen en el
-      servidor de producción; su fecha se anota allí y el aviso es el mismo `llave_vence`. (9j, 14 nov)
+      nacen con producción como código. (9j, 14 nov) — **✓ 9o (14 nov), como código:** pgBackRest (completo diario, diferencial cada 6 h, WAL continuo, cifrado) al almacén de otra región, fotos y sobres de recuperación, cada corrida en backup_runs; la restauración de prueba cada domingo en un contenedor desechable de la réplica (PITR a hace 1 h, `migrar.sh --verificar`, consultas de control, restore_drills con su RTO) y la alerta crítica si falla o no corre en 8 días (Prometheus y el barrido; guardián respaldoRestaurado). PITR de verdad con la plantilla de producción en local: `pruebas/infra/pitr-local.sh` 8/8. En máquinas: el ensayo (línea «Fase 9 · 9o»).
+- [x] **→ 9o** · **Despliegues y vueltas atrás en Salud:** la fila dice que llegan con producción; `deploy_releases` es de 0145. Prometheus, node_exporter,
+      postgres_exporter y Uptime Kuma (HERRAMIENTAS #4, #14) también: Salud es su tablero. (9j, 14 nov) — **✓ 9o (14 nov):** Salud lee deploy_releases (y Sistema › Despliegues, nueva) y, en producción, las máquinas de Prometheus (PROMETHEUS_URL, red privada); node_exporter y postgres_exporter en cada máquina. Uptime Kuma se cambió por blackbox_exporter de Prometheus (configurado como código; REVISION 9o).
+- [x] **→ 9o** · **La página de mantenimiento la sirve nginx** durante la ventana (§1b #8) y **el aviso a los vecinos 24 h antes** (prototipo): hoy el mantenimiento
+      se programa, se cancela y queda en la auditoría, pero nadie lo ve fuera del Super Admin. (9j, 14 nov) — **✓ 9o (14 nov):** nginx de producción la sirve durante la ventana (un temporizador por minuto lee maintenance_windows y deja el aviso; la API, el Super Admin y la entrada siguen) y el barrido pone un anuncio en el Inicio de cada ciudad desde `mantenimiento_aviso_h` (24 h) antes, y lo retira si se cancela (`avisarMantenimiento`, con autor y auditoría por lib/cms-admin.ts).
+- [x] **→ 9o** · **Llaves que vencen fuera del llavero** (`RESPALDO_LLAVE`, certificados de origen de Cloudflare, el token de la API del proveedor): nacen en el
+      servidor de producción; su fecha se anota allí y el aviso es el mismo `llave_vence`. (9j, 14 nov) — **✓ 9o (14 nov):** server_keys (0145: solo la huella y el vencimiento; una nueva retira la anterior y deja key_rotations). El despliegue anota la llave age de cada máquina, RESPALDO_LLAVE y el certificado de origen (con su fecha); `llave_vence` avisa a los Admins igual que con el llavero y Salud las lista.
 - [ ] **→ 9p** · **Dar el segundo paso con la llave dentro de una sesión de SMS** (sin salir y volver a entrar): necesita HTTPS en el dominio (las llaves no corren en
       el sandbox por IP). Hoy: «Salir y entrar con mi llave». (9j, 14 nov)
 - [ ] **→ 9n** · **La persona del equipo cambia su app de códigos o pide códigos de recuperación nuevos por su cuenta** (con su segundo factor): hoy lo hace un Admin
@@ -1715,3 +1715,12 @@ en el momento. Se marca solo cuando está hecho de verdad.
       si se quiere un aviso «te invitamos a la beta», va con su plantilla. (9i, 14 nov)
 - [ ] **→ 9v** · **Abrir las cinco con el asistente (OK-3):** cada ciudad pasa sus 7 pasos; la que no llegue a la regla (30 negocios listos o 300 en la lista, y al menos uno en comida,
       belleza, hogar, fiestas e iglesias) se abre con «Abrir igual» y su motivo solo si el fundador lo decide (§6 #17); la LAUNCH de esa ciudad tiene que estar en cero. (9i, 14 nov)
+
+
+## Fase 9 · 9o — Producción como código y ensayada (14 nov)
+- [ ] **→ 9o** · **El ensayo completo en máquinas desechables NO corrió** (el sandbox no tiene el token del proveedor y crea máquinas que se cobran): `.github/workflows/ensayo.yml` (a mano) o `scripts/produccion/ensayo.sh`. Necesita el secreto HCLOUD_TOKEN del entorno de GitHub «ensayo» (lo pone Claude con `gh secret set HCLOUD_TOKEN --env ensayo` desde los secretos de su entorno) y que el flujo pueda empujar las ramas desechables «ensayo» y «recuperacion-ensayo». Mide: primer despliegue, sobre ajeno que no abre, vuelta atrás sola, expandir → contraer, RPO, PITR del dato borrado, restauración de prueba (RTO), Garage borra, reconstruir la app. Cifras a `docs/incidentes/simulacros.md` y PROGRESS. (9o, 14 nov)
+- [ ] **→ 9o** · **`pruebas/infra/correr.sh` en el CI** (paso nuevo de `verificar`, con `docker compose config` de verdad y la imagen de la base con pgBackRest): aquí corrió sin Docker (bash -n, shellcheck, la revisión de los compose en Python, azul/verde 21/21, sobre sellado 17/17, traza del sandbox, PITR 8/8); la corrida de verdad es la del CI (confirmación al terminar 9o, decisión AD). (9o, 14 nov)
+- [ ] **→ Paquete 9-3** · **Lo que producción necesita del fundador para nacer:** proveedor, región y tamaños con el precio del día (§6 #2–#3; los scripts aceptan TIPO_*, UBICACION y ZONA), el token del proveedor de producción (HCLOUD_TOKEN_PRODUCCION, entorno de GitHub «produccion» con aprobación), el **almacén de objetos de los respaldos** (Hetzner no tiene almacén en EE. UU.: otra región del mismo proveedor en la UE u otro proveedor S3 — decisión, REVISION 9o), y la variable TOLATINO_DOMINIO_PRODUCCION del repo para que el segundo testigo empiece a mirar. Claude crea la llave de recuperación (`sellar.sh recuperacion produccion`) y sella las llaves. (9o, 14 nov)
+- [ ] **→ 9p** · **Cloudflare por la API** (`scripts/produccion/cloudflare.sh dns | ajustes | reglas | origen`): con la zona y el token (Paquete 8-0); también `pruebas.tolatino.com` para el sandbox. El certificado de origen se firma con la solicitud que publica la app y se sella (ORIGEN_CERT). (9o, 14 nov)
+- [ ] **→ 9t** · **El SMS crítico cuando la app está caída:** Alertmanager manda el correo directo (sale aunque la app esté caída) y avisa por la app (push y SMS al equipo) cuando la app contesta; un SMS que no dependa de la app (Telnyx desde la réplica) no se construyó. (9o, 14 nov)
+- [ ] **→ 9t** · **Reconstruir la base o la réplica en máquinas:** el ensayo pierde y reconstruye la app; base y réplica tienen el mismo camino (`maquinas.sh reconstruir`, su disco aparte se vuelve a montar o PITR desde el almacén, estado provisional por la red privada) pero no se ensayaron. Se ensayan sobre producción en acceso anticipado antes de OK-3. (9o, 14 nov)

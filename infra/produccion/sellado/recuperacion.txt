@@ -1,0 +1,3 @@
+# 9o · La llave PÚBLICA de recuperación de producción (age). Su privada vive SOLO en los secretos del entorno de Claude Code de producción
+# (TOLATINO_RECUPERACION_LLAVE, formulario seguro). Se genera el día que se crea producción (Paquete 9-3, scripts/produccion/sellar.sh recuperacion).
+# sin llave todavía

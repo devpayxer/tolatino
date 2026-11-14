@@ -1,0 +1,63 @@
+# 9o · La réplica de producción (y del ensayo): la base de lectura para Analítica (T#33; 9g la lee como DATABASE_URL_ANALISIS) y el monitoreo que
+# mira desde fuera de la app (Prometheus + Alertmanager + blackbox_exporter, HERRAMIENTAS #4/#14; §6 #7). Hace también la restauración de prueba
+# semanal en un contenedor desechable (infra/comun/respaldos/restaurar-prueba.sh). Escucha solo en la IP privada. Lo levanta deploy.sh (rol replica).
+name: tolatino-replica
+services:
+  db:
+    image: tolatino/base:produccion
+    pull_policy: never
+    restart: unless-stopped
+    shm_size: 1g
+    environment:
+      TZ: America/New_York
+    # La primera vez deploy.sh copia la base con pg_basebackup -R (queda en recuperación continua, solo lectura).
+    command: ["postgres", "-c", "hot_standby=on", "-c", "listen_addresses=*", "-c", "hba_file=/etc/tolatino/pg_hba.conf", "-c", "max_standby_streaming_delay=5min"]
+    volumes:
+      - /var/lib/tolatino/db:/var/lib/postgresql/data
+      - /etc/tolatino/pg_hba.conf:/etc/tolatino/pg_hba.conf:ro
+    ports:
+      - "${RED_YO:?falta la IP privada}:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    restart: unless-stopped
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=30d", "--web.listen-address=:9090"]
+    volumes:
+      - /etc/tolatino/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../comun/monitoreo/reglas.yml:/etc/prometheus/reglas.yml:ro
+      - prometheus:/prometheus
+    ports:
+      - "${RED_YO}:9090:9090"
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    restart: unless-stopped
+    command: ["--config.file=/etc/alertmanager/alertmanager.yml", "--storage.path=/alertmanager"]
+    volumes:
+      - /etc/tolatino/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager:/alertmanager
+
+  blackbox:
+    image: prom/blackbox-exporter:v0.25.0
+    restart: unless-stopped
+    command: ["--config.file=/etc/blackbox/blackbox.yml"]
+    volumes:
+      - ../comun/monitoreo/blackbox.yml:/etc/blackbox/blackbox.yml:ro
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    command: ["--path.rootfs=/host", "--web.listen-address=${RED_YO}:9100"]
+    volumes:
+      - /:/host:ro,rslave
+
+volumes:
+  prometheus:
+  alertmanager:

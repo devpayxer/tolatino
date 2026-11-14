@@ -1,0 +1,44 @@
+# 9o · El ENSAYO de producción (scripts/produccion/ensayo.sh): cuatro máquinas desechables del proyecto de pruebas, desplegadas desde la rama «ensayo»
+# como sería produccion, con los simulacros del manual y sus cifras; al terminar se destruye todo (también si falla). SOLO a mano: crea máquinas que se
+# cobran por hora (centavos). El token del proveedor es el secreto HCLOUD_TOKEN del entorno de GitHub «ensayo» (lo pone Claude desde los secretos de
+# su entorno con «gh secret set … --env ensayo», sin verlo). Las cifras quedan como artefacto y en el resumen de la corrida.
+name: Ensayo de producción
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Revisión a ensayar (por defecto, lo que hay en pruebas)
+        default: origin/pruebas
+      conservar:
+        description: "1 = no destruir al terminar (para mirar; se sigue pagando por hora)"
+        default: "0"
+permissions:
+  contents: write   # empujar las ramas desechables «ensayo» y «recuperacion-ensayo» (nunca main, pruebas ni produccion)
+concurrency:
+  group: ensayo
+  cancel-in-progress: false
+jobs:
+  ensayo:
+    runs-on: ubuntu-latest
+    environment: ensayo
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Herramientas (age)
+        run: sudo apt-get install -y -q age
+      - name: Ensayo completo
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+          ENSAYO_REF: ${{ inputs.ref }}
+          ENSAYO_CONSERVAR: ${{ inputs.conservar }}
+          ENSAYO_SALIDA: ${{ runner.temp }}/ensayo
+        run: |
+          git config user.email tolatino@users.noreply.github.com; git config user.name "To'Latino ensayo"
+          bash scripts/produccion/ensayo.sh
+      - name: Las cifras
+        if: always()
+        run: cat "${{ runner.temp }}/ensayo/resultado.md" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || cat "${{ runner.temp }}/ensayo/medidas.txt" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: ensayo, path: "${{ runner.temp }}/ensayo", retention-days: 30, if-no-files-found: ignore }

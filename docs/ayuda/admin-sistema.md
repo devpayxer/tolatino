@@ -48,10 +48,9 @@ _Pantallas: **Super Admin › Sistema** con sus pestañas **Flags** (`/admin/sis
 
 ## Lo que todavía no está
 <!-- solo-equipo -->
-En el sandbox, **Respaldos** muestra la semilla de pruebas: los respaldos reales (pgBackRest a otra región, las fotos, el sobre de llaves) y la restauración
-de prueba de cada semana nacen con producción como código (9o), y también los **despliegues y vueltas atrás** de Salud y la **página de mantenimiento** que
-sirve el servidor web durante la ventana (aquí queda programada y en la auditoría). Prometheus y Uptime Kuma también llegan con producción (9o): Salud es su
-tablero. Simbolizar los cierres nativos con los dSYM queda para cuando haya builds reales (9r).
+En el sandbox, **Respaldos** muestra la semilla de pruebas: los respaldos reales, la restauración de prueba de cada semana, los despliegues con su
+vuelta atrás y la página de mantenimiento ya están como código (9o; ver «Despliegues, respaldos y la vuelta atrás») y empiezan a correr cuando se encienda
+producción (9t). Simbolizar los cierres nativos con los dSYM queda para cuando haya builds reales (9r).
 
 ## English
 
@@ -95,7 +94,6 @@ of identical ones. A key expiring in 30 days: each Admin gets one notice per sta
 
 ### What is not here yet
 <!-- solo-equipo -->
-In the sandbox, **Backups** shows the test seed: real backups (pgBackRest to another region, photos, the key envelope) and the weekly test restore are born
-with production as code (9o), as are Health's **deploys and rollbacks** and the **maintenance page** the web server shows during the window (here it is
-scheduled and in the audit log). Prometheus and Uptime Kuma also come with production (9o): Health is their dashboard. Symbolicating native crashes with
-dSYMs waits for real builds (9r).
+In the sandbox, **Backups** shows the test seed: real backups, the weekly test restore, deploys with rollback and the maintenance page are already code
+(9o; see «Deploys, backups and rollback») and start running when production is turned on (9t). Symbolicating native crashes with dSYMs waits for real
+builds (9r).

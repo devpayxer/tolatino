@@ -150,6 +150,10 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // 9j · Sistema › Salud: lo que se mide cada 5 minutos (la base, el barrido, la cola del push, el disco y los errores; health_checks, 30 días) y
         // las llaves del llavero que vencen en 30 días o vencieron (aviso a los Admins, una vez por llave, versión y etapa).
         ["salud", async () => (await import("./sistema/salud")).medirSalud()], ["llavesVencen", async () => (await import("./sistema/salud")).avisarLlavesQueVencen()],
+        // 9o · Producción como código: el aviso al equipo de cada vuelta atrás o despliegue que no salió (una vez), la alerta crítica si la restauración de
+        // prueba falló o no corrió en 8 días (solo producción; guardián respaldoRestaurado) y el anuncio a los vecinos antes de un mantenimiento programado.
+        ["despliegues", async () => (await import("./sistema/despliegues")).avisarDespliegues()], ["respaldosVigilar", async () => (await import("./sistema/despliegues")).vigilarRespaldos()],
+        ["mantenimientoAviso", async () => (await import("./sistema/despliegues")).avisarMantenimiento()],
         // 9h · Crecimiento: las campañas que ya tocan salen por partes (nunca de noche; con permiso y tope), y los negocios traídos por un promotor que ya
         // llegaron a sus pedidos o citas califican.
         ["campanas", async () => (await import("./crecimiento/campanas")).campanasProgramadas()],
