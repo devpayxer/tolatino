@@ -53,6 +53,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   const base: Omit<VistaBuscar, "res"> = {
     lang, q, cat: catSel ? { slug: catSel.slug, label: catSel.label, name: catSel.name } : null, ciudad: nomCiudad,
     explorar: null, conSesion: !!u,
+    // 9m · Buscar con la voz (L95): lo que la persona contestó al aviso o eligió en Privacidad.
+    voz: u ? ((await (await import("@/lib/db")).db().query<{ v: boolean | null }>(`select voice_search as v from users where id = $1`, [u.id])).rows[0]?.v ?? null) : null,
   };
 
   // ── Explorar (sin búsqueda): ejemplos con lo que entendemos, lo más buscado de verdad, categorías. ──
@@ -74,6 +76,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
     if (it) E.intenciones.push({ k, frase: "", label: it.label, tipo: it.tipo });
   }
   const limite = tab === "biz" ? 10 : 5;
+  // 9m · Vacantes en Buscar (L311) y si ya pidió «Avísame de nuevas vacantes» en esta ciudad.
+  const [VAC, alertaVac] = await Promise.all([(await import("@/lib/jobs")).vacantesBuscar(CIUDAD, q, 3), u ? (await import("@/lib/alertas")).tieneAlertaVacantes(u.id, CIUDAD) : Promise.resolve(false)]);
   const [r, C, V, EV] = await Promise.all([
     negocios(E, { punto: loc, cat: catSel?.id ?? null, orden, pagina: tab === "biz" ? pagina : 0, limite }),
     sugerirCatalogo(E, CIUDAD, catSel?.id ?? null),
@@ -139,6 +143,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
         catDominante: dom,
         vecinos: V ? { total: V.total, mas: V.mas, items: V.items.map((x) => filaVecino(x, E, es)) } : null,
         eventos: EV && EV.total ? { total: EV.total, f: ef, items: EV.items } : null,
+        vacantes: VAC.total ? { total: VAC.total, alerta: alertaVac, items: VAC.items.map((x) => ({ id: x.id, biz: x.biz, negocio: x.bname, puesto: es ? x.title.es : x.title.en || x.title.es, logo: x.logo, pago: x.payFrom ? `$${(x.payFrom / 100).toFixed(x.payFrom % 100 ? 2 : 0)}${x.payTo ? `–$${(x.payTo / 100).toFixed(x.payTo % 100 ? 2 : 0)}` : ""}${L(" / hora", " / hour")}${x.tips ? L(" + propinas", " + tips") : ""}` : null })) } : null,
       },
     }} />
     <PieWeb />

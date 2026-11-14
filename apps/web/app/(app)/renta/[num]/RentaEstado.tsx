@@ -9,6 +9,7 @@ import { useState, type ComponentType } from "react";
 import type { RentaVista } from "@/lib/rentas";
 import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../pago/MetodoPago";
 import { rentaAccion } from "./acciones";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -56,7 +57,7 @@ export function RentaEstado({ r, es, pago }: { r: RentaVista; es: boolean; pago:
   const h = H[r.st];
   const steps = [{ label: E2("Apartada", "On hold"), time: hora(r.at), state: "done" }, { label: E2("Recogida", "Picked up"), time: hora(r.outAt), state: ["out", "back"].includes(r.st) ? "done" : r.st === "held" ? "current" : "next" },
     { label: E2("Devuelta", "Returned"), time: hora(r.backAt), state: r.st === "back" ? "done" : r.st === "out" ? "current" : "next" }];
-  const llegar = () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(r.dir || r.bname)}`, "_blank", "noopener");
+  const llegar = () => abrirComoLlegar({ dir: r.dir || r.bname });
   const acts: [string, string, () => void][] = r.st === "held" ? [["pin", E2("Cómo llegar", "Directions"), llegar], ["close", E2("Ya no la necesito", "No longer needed"), () => setConfirmar(true)]]
     : r.st === "out" ? [["calendar", `${E2("Un día más · ", "One more day · ")}${dinero(r.p)}`, () => void hacer("dia", E2(`Listo: la devuelves el ${fL(new Date(new Date(`${r.due}T12:00:00Z`).getTime() + 86400000).toISOString().slice(0, 10))}`, "Done: one more day"))], ...(r.tel ? [["phone", E2("Llamar", "Call"), () => { location.href = `tel:${r.tel}`; }] as [string, string, () => void]] : [])]
       : r.st === "back" || r.st === "cancelled" || r.st === "expired" ? [["wrench", E2("Rentar otra vez", "Rent again"), () => router.push(`/n/${r.biz}/rentar?a=${r.itemId}`)]] : [];

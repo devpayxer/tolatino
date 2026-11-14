@@ -46,7 +46,9 @@ export type Bloque =
   | { type: "desk"; b: Bloque[] }
   // Conversación con un negocio (plantilla isChat): contexto, burbujas y la caja para escribir (fija abajo en el teléfono).
   | { type: "chat"; ph?: string | null; ini: string; ctx: string; onBiz: Fn; msgs: { yo: boolean; t: string; time: string; suave?: boolean; ia?: boolean }[]; v: string; onV: (v: string) => void; ph2: string; send: string; onSend: Fn; off?: boolean; nota?: string }
-  | { type: "biz"; items: { name: string; meta: string; ver: boolean; slot: string; img?: string; on: Fn }[] };
+  | { type: "biz"; items: { name: string; meta: string; ver: boolean; slot: string; img?: string; on: Fn }[] }
+  // 9m · Una pieza compuesta que no cabe en los bloques de arriba (la dirección con sus sugerencias y el pin ajustable).
+  | { type: "pieza"; el: ReactNode };
 export type Tarjeta = { label?: string; k?: string; t?: string; s?: string; rows?: { t: string; s?: string; v?: string; on?: Fn }[]; cta?: string; onCta?: Fn };
 export type Hoja = { title: string; sub?: string; yes: string; onYes: Fn; peligro?: boolean } | null;
 
@@ -258,6 +260,7 @@ function Pieza({ b, M }: { b: Bloque; M: boolean }): ReactNode {
           </div>)}
       </div>);
     case "biz": return <div data-screen-label="Mi cuenta · negocios" style={{ display: "grid", gridTemplateColumns: M ? "minmax(0,1fr)" : "repeat(auto-fill,minmax(320px,1fr))", gap: 8 }}>{b.items.map((x, i) => <BusinessRow key={i} name={x.name} meta={x.meta} verified={x.ver} slot={x.slot} image={x.img} onClick={x.on} />)}</div>;
+    case "pieza": return <>{b.el}</>;
     case "desk": return !M ? <>{b.b.map((x, i) => <Pieza key={i} b={x} M={M} />)}</> : null;
     case "tel": return M ? <>{b.b.map((x, i) => <Pieza key={i} b={x} M={M} />)}</> : null;
     case "chips": return <div className="hs" style={{ display: "flex", gap: 6, overflowX: "auto" }}>{b.items.map((x, i) => <Chip key={i} variant={x.on ? "selected" : "filter"} onClick={x.onClick}>{x.l}</Chip>)}</div>;

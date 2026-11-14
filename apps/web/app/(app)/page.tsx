@@ -14,6 +14,7 @@ import { HojaTerminos } from "./HojaTerminos";
 import { PieWeb } from "./_legal/PieWeb";
 import { datosLanding, landingEncendida } from "@/app/acceso/datos";
 import { Landing } from "@/app/acceso/Landing";
+import { puntosInicio } from "@/lib/mapa";
 
 export const dynamic = "force-dynamic";
 
@@ -33,8 +34,10 @@ export default async function Page() {
     on("hoy") ? hoyEnElBarrio(loc.c.id, null, null, loc, 10) : Promise.resolve({ historias: [] }), on("comunidad") ? oficialDeLaSemana(loc.c.id) : Promise.resolve(null),
     on("semana") ? eventosSemana(loc, u?.id ?? null, lang === "es", 6) : Promise.resolve([]), u?.first_name ? faltaAceptar(u.id).catch(() => []) : Promise.resolve([]),
     anunciosVivos(loc.c.id, !!u?.first_name, lang), pantalla("APP-HOME", lang), textosT(lang)]);
+  // 9m · El mini mapa de la columna derecha (escritorio, L42): los negocios con pin cerca del punto de quien mira; tocarlo abre el Mapa.
+  const puntos = await puntosInicio(loc, 40).catch(() => []);
   return (<>
-    <Inicio h={h} bloques={cfg.bloques} aviso={cfg.aviso ? cfg.aviso[lang] : null} anuncios={anuncios} semana={semana} cats={cats} inicio={HOME_CATS} abierto={abierto} es={lang === "es"} hoy={hoy.historias} oficial={oficial} conSesion={!!u?.first_name} lugar={`${loc.c.name.toUpperCase()}, ${loc.c.state}`}
+    <Inicio h={h} bloques={cfg.bloques} aviso={cfg.aviso ? cfg.aviso[lang] : null} anuncios={anuncios} semana={semana} cats={cats} inicio={HOME_CATS} abierto={abierto} es={lang === "es"} hoy={hoy.historias} oficial={oficial} conSesion={!!u?.first_name} lugar={`${loc.c.name.toUpperCase()}, ${loc.c.state}`} mapa={{ centro: [loc.lat, loc.lng], puntos, rad: loc.rad }}
       t={{ allCats: t.allCats, catsTitle: t.catsTitle, openNow: t.openNow, seeAll: t.seeAll, forBiz: t.forBiz, publishTitle: t.publishTitle, publishBody: t.publishBody, publishCta: t.publishCta }} />
     <PieWeb />
     {faltan.length ? <HojaTerminos es={lang === "es"} faltan={faltan} /> : null}

@@ -312,3 +312,21 @@ export async function avisarSolicitud(appId: string, paso: string) {
   const e = E[paso]; if (!e) return;
   await avisar(a.uid, "job_reply", { negocio: a.negocio, estado: en ? e[1] : e[0], puesto: a.puesto }, { href: `/solicitud/${a.num}`, ref: ["job_application", a.num] });
 }
+
+/* 9m · Vacantes en Buscar (L311): las vacantes vivas de la ciudad cuyo puesto (ES o EN) o negocio coincide con lo buscado; «empleo», «trabajo»,
+   «vacantes» o «jobs» traen todas (las más nuevas primero). Solo lo que sale al público (vacante_en_vivo). */
+export type VacBuscar = { id: string; biz: string; bname: string; title: Bi; kind: string; payFrom: number; payTo: number | null; tips: boolean; logo: string | null };
+export async function vacantesBuscar(ciudad: string, q: string, n: number): Promise<{ total: number; items: VacBuscar[] }> {
+  const t = String(q ?? "").replace(/[%_\\]/g, " ").replace(/\s+/g, " ").trim().slice(0, 60);
+  if (t.length < 2) return { total: 0, items: [] };
+  const todas = /^(empleos?|trabajos?|vacantes?|jobs?|work|hiring|se busca)$/i.test(t);
+  const r = await db().query<VacBuscar & { total: number }>(
+    `select j.id::text, j.business_id as biz, b.name as bname, j.title, j.kind, j.pay_from_cents as "payFrom", j.pay_to_cents as "payTo", j.tips,
+            (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1) as logo,
+            count(*) over ()::int as total
+       from job_postings j join businesses b on b.id = j.business_id and b.status = 'active'
+      where j.city_id = $1 and vacante_en_vivo(j)
+        and ($2::boolean or j.title->>'es' ilike '%' || $3 || '%' or j.title->>'en' ilike '%' || $3 || '%' or b.name ilike '%' || $3 || '%')
+      order by j.published_at desc nulls last limit $4`, [ciudad, todas, t, Math.max(1, Math.min(20, n))]);
+  return { total: r.rows[0]?.total ?? 0, items: r.rows.map(({ total: _t, ...x }) => (void _t, x)) };
+}

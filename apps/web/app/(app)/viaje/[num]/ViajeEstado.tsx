@@ -13,6 +13,7 @@ import type { ViajeVista } from "@/lib/viajes";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../pago/MetodoPago";
 import { precioAccion, viajeAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -93,7 +94,7 @@ export function ViajeEstado({ x, es, pago }: { x: ViajeVista; es: boolean; pago:
   const vivo = ["pending", "change_proposed", "confirmed"].includes(x.status) && !camino && x.detalle !== "recogida";
   const regla = x.status !== "confirmed" ? E2("Aún no confirman: liberamos todo.", "Not confirmed yet: we release everything.")
     : x.horasFaltan >= 24 ? E2(`Faltan más de 24 horas: te devolvemos ${dinero(x.tot)}.`, `More than 24 hours left: we refund ${dinero(x.tot)}.`) : E2(`Faltan menos de 24 horas: se cobra la mitad (${dinero(Math.floor(x.tot / 2))}) y te devolvemos el resto.`, `Less than 24 hours left: half is charged (${dinero(Math.floor(x.tot / 2))}) and the rest is refunded.`);
-  const llegar = () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(x.from ? nm(x.from) : x.negocio.direccion ?? B)}`, "_blank", "noopener");
+  const llegar = () => abrirComoLlegar({ dir: x.from ? nm(x.from) : x.negocio.direccion ?? B });
   return (
     <div data-screen-label="APP-NEG-TRANS-ESTADO" className="min-h-[100dvh] bg-paper pb-10">
       <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:top-0">

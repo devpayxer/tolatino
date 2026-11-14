@@ -11,6 +11,7 @@ import { fechaCorta, FORMA, LINEA_EDU, usdI, VOC } from "@/lib/inscripciones-com
 import { DONATIVO, LINEA_FE } from "@/lib/fe-comun";
 import type { InscVista } from "@/lib/inscripciones";
 import { inscAccion } from "./acciones";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,7 +71,7 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
     : !x.mat ? E2("Cancelar es gratis.", "Cancelling is free.")
     : !empezo ? E2(`Todavía no empieza: te devolvemos ${usdI(x.mat)}.`, `It has not started yet: we refund ${usdI(x.mat)}.`)
     : E2(`Ya empezó: la ${matL.toLowerCase()} de ${usdI(x.mat)} no se devuelve.`, `It already started: the ${usdI(x.mat)} ${matL.toLowerCase()} is not refunded.`);
-  const llegar = () => { if (x.negocio.direccion) window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${x.negocio.direccion}, ${B}`)}`, "_blank", "noopener"); };
+  const llegar = () => { if (x.negocio.direccion) abrirComoLlegar({ dir: `${x.negocio.direccion}, ${B}` }); };
   const caja = "overflow-hidden rounded-[18px] border border-ink/[.07] bg-white", Kh = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
   return (
     <div data-screen-label="APP-NEG-EDU-ESTADO" className="min-h-[100dvh] bg-paper pb-10">

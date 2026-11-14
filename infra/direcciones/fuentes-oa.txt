@@ -1,0 +1,8 @@
+# Puntos de dirección casa por casa (decisión AC): «ESTADO URL» por línea. OpenAddresses y los condados/estados que publican sus puntos
+# (dominio público o licencias abiertas; cada fuente se revisa antes de agregarla). El formato que lee oa_csv.py es el de las salidas de
+# OpenAddresses (GeoJSON por líneas, .geojson.gz). Una fuente que no se puede bajar no frena la carga: quedan los tramos del Censo.
+# La carga nacional agrega aquí las fuentes de cada estado (la lista de OpenAddresses por estado: batch.openaddresses.io → Data → us/<estado>).
+# Se mantiene a mano y con la revisión de licencias de cada una; el barrido de 90 días las vuelve a bajar.
+#
+# PA · Pensilvania: puntos estatales (PEMA / condados) por OpenAddresses
+# PA https://v2.openaddresses.io/batch-prod/job/<id>/source.geojson.gz

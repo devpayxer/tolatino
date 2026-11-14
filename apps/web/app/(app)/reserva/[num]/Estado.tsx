@@ -9,6 +9,7 @@ import { useEffect, useState, type ComponentType } from "react";
 import type { RsvVista } from "@/lib/reservas";
 import { diaL } from "../../n/[id]/Reservar";
 import { reservaAccion } from "./acciones";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 type N = "Icon" | "Button" | "Chip" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -88,7 +89,7 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
     const t = `${E2("Mesa en ", "Table at ")}${n} · ${dL} · ${T} · ${P(r.p)}`, url = `${location.origin}/n/${r.negocio.id}`;
     if ((await compartirNativo({ titulo: n, texto: t, url, copiar: `${t}\n${url}` })) === "copiado") setFlash(E2("Copiamos los datos de tu mesa.", "We copied your table details."));
   };
-  const llegar = r.negocio.lat != null && r.negocio.lng != null ? () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${r.negocio.lat},${r.negocio.lng}`, "_blank", "noopener") : null;
+  const llegar = r.negocio.lat != null && r.negocio.lng != null ? () => abrirComoLlegar({ lat: r.negocio.lat, lng: r.negocio.lng }) : null;
   const llamar = r.negocio.telefono ? () => { location.href = `tel:${r.negocio.telefono}`; } : null;
   const acts = ok ? ([["calendar", E2("Calendario", "Calendar"), ics], ["share", E2("Compartir", "Share"), compartir], ["pin", E2("Cómo llegar", "Directions"), llegar], ["phone", E2("Llamar", "Call"), llamar]] as const).filter((a) => a[2]) : [];
 

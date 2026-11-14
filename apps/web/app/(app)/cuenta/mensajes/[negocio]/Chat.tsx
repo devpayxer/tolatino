@@ -1,7 +1,7 @@
 "use client";
 /* USR-CHAT-NEG (diseño «To'Latino Mi cuenta» · chatV + plantilla isChat): el contexto (toca para ir al negocio), las
    burbujas (tuyas oscuras a la derecha; del negocio blancas; respuesta automática y avisos del sistema suaves) y la caja
-   para escribir. Sin teléfonos en el texto. Mientras la pantalla está abierta trae lo nuevo cada 4 segundos.
+   para escribir. Sin teléfonos en el texto. 9m: lo nuevo llega en vivo (SSE propio, sin preguntar cada 4 segundos).
    7f · Cuando contesta El Compa (respuestas automáticas Pro del negocio): su burbuja con el tinte de IA y «EL COMPA · IA · {hora}» (diseño Mi
    cuenta · chat, m[4] === 'compa'), «El Compa está escribiendo…» mientras el servidor contesta (y se pregunta más seguido) y, para reportar,
    «Una respuesta de El Compa». */
@@ -12,8 +12,10 @@ import { Marco, useCuentaUi, type Bloque, type Yo } from "../../Marco";
 import { cuando, sistema } from "../Mensajes";
 import { mensajeEnviar, mensajeReportar, mensajesNuevos } from "../acciones";
 import { useAhora } from "@/lib/ahora";
+import { useMensajesVivo } from "@/lib/vivo-cliente";
 
-const TEL = /(\d[\s.\-()]*){10}/;
+// Un teléfono son 10 dígitos (con +1 delante o no); una tarjeta (13–19) no es un teléfono: el servidor la tapa como Soporte (9m).
+const TEL = /(?<!\d[\s.\-()]*)(?:\+?1[\s.\-()]*)?(?:\d[\s.\-()]*){9}\d(?![\s.\-()]*\d)/;
 export function Chat({ c, op, es, yo }: { c: Conversacion; op: string | null; es: boolean; yo: Yo }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const E2 = (a: string, b: string) => (es ? a : b);
@@ -22,17 +24,17 @@ export function Chat({ c, op, es, yo }: { c: Conversacion; op: string | null; es
   const [hilo, setHilo] = useState(c.id), [rep, setRep] = useState(false), [escribe, setEscribe] = useState(c.compaEscribe);
   const fin = useRef<HTMLDivElement>(null), ultimo = msjs.length ? msjs[msjs.length - 1]!.id : "0";
   useEffect(() => { fin.current?.scrollIntoView({ block: "end" }); }, [msjs.length]);
-  useEffect(() => {
+  // 9m · En vivo (SSE propio, /api/vivo): cuando llega algo a ESTA conversación se trae lo nuevo; al conectarse (y al volver de un corte), una vez.
+  const traer = useRef<() => void>(() => undefined);
+  traer.current = () => {
     if (!hilo) return;
-    const t = window.setInterval(async () => {
-      if (document.hidden) return;
-      const L = await mensajesNuevos(hilo, ultimo).catch(() => []);
+    void mensajesNuevos(hilo, ultimo).catch(() => []).then((L) => {
       if (L.length) setMsjs((m) => [...m, ...L.filter((x) => !m.some((y) => y.id === x.id))]);
       if (L.some((x) => x.de !== "user")) setEscribe(false);
-    }, escribe ? 1500 : 4000);
-    return () => window.clearInterval(t);
-  }, [hilo, ultimo, escribe]);
-  // «Escribiendo…» nunca se queda pegado: a los 25 s se quita (la respuesta llega igual con la pregunta de cada 4 s).
+    });
+  };
+  useMensajesVivo({ apagado: !hilo, on: (x) => { if (x.k === "chat" && x.t === hilo) traer.current(); }, listo: () => traer.current() });
+  // «Escribiendo…» nunca se queda pegado: a los 25 s se quita (la respuesta de El Compa llega en vivo cuando se guarda).
   useEffect(() => { if (!escribe) return; const t = window.setTimeout(() => setEscribe(false), 25000); return () => window.clearTimeout(t); }, [escribe]);
   const enviar = () => {
     const x = v.trim();
@@ -42,6 +44,7 @@ export function Chat({ c, op, es, yo }: { c: Conversacion; op: string | null; es
       const r = await mensajeEnviar(c.negocio.id, x, op);
       if (!r.ok) { ui.toast(es ? r.msg.es : r.msg.en); return; }
       setV("");
+      if (r.tapado) ui.toast(E2("No compartas eso aquí. Nunca te lo pedimos. Lo tapamos.", "Don't share that here. We never ask for it. We covered it."));
       if (r.compa) setEscribe(true);
       const id = r.id ?? hilo;
       if (id && !hilo) setHilo(id);

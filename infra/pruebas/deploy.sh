@@ -126,6 +126,10 @@ if ! systemctl is-active --quiet tolatino-direcciones; then
   systemd-run --unit tolatino-direcciones --collect bash "$REPO/infra/direcciones/generar.sh" /var/lib/tolatino/direcciones \
     "${COMPOSE[@]}" || true
 fi
+# 3h) 9m · Retiros del fabricante (NHTSA, datos públicos): una vez al mes, aparte y sin esperar (el script no hace nada si tiene menos de 30 días).
+if ! systemctl is-active --quiet tolatino-retiros; then
+  systemd-run --unit tolatino-retiros --collect bash "$REPO/infra/retiros/generar.sh" /var/lib/tolatino/retiros "${COMPOSE[@]}" || true
+fi
 
 # 4) nginx: la app en /, la página de estado del servidor en /estado.
 install -m 0644 "$REPO/infra/pruebas/nginx-pruebas.conf" /etc/nginx/sites-available/tolatino-pruebas

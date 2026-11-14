@@ -95,6 +95,7 @@ export async function negocio360(s: Staff, id: string) {
     owner_id: string | null; owner: string | null; owner_phone: string | null; trial_until: string | null; trial_days: number | null;
     mi: number | null; admin_edits: Record<string, { at: string; by: string }>; staff_hidden: boolean; op: string; from_home: boolean;
     items: number; email_ok: boolean; faqs: number; crit: number; itemsw: [string, string] | null;
+    lat: number | null; lng: number | null; clat: number; clng: number; geo_fixed: string | null; geo_fixed_reason: string | null;
   }>(
     `select b.id, b.name, c.name->>'es' as cat, b.category_id as cat_id, b.city_id as city, ci.name as ciudad,
             (select string_agg(sc.name->>'es', ', ' order by array_position(b.subcategory_ids, sc.id)) from subcategories sc where sc.id = any(b.subcategory_ids[1:2])) as subs,
@@ -106,6 +107,8 @@ export async function negocio360(s: Staff, id: string) {
             nullif(trim(coalesce(u.first_name,'') || ' ' || coalesce(u.last_name,'')), '') as owner, u.phone as owner_phone,
             b.category_attrs->'onb'->'trial'->>'until' as trial_until, (b.category_attrs->'onb'->'trial'->>'days')::int as trial_days,
             case when b.geo is null then null else round((st_distance(b.geo, ci.center) / 1609.34)::numeric, 1)::float end as mi,
+            st_y(b.geo::geometry) as lat, st_x(b.geo::geometry) as lng, st_y(ci.center::geometry) as clat, st_x(ci.center::geometry) as clng,
+            to_char(b.geo_fixed_at at time zone ci.timezone, 'MM/DD/YYYY') as geo_fixed, b.geo_fixed_reason,
             b.admin_edits, b.staff_hidden, b.operation as op, b.works_from_home as from_home,
             case when jsonb_typeof(b.category_attrs->'items') = 'array' then jsonb_array_length(b.category_attrs->'items') else 0 end as items,
             coalesce(u.email_verified, false) as email_ok, (select count(*)::int from faqs f where f.business_id = b.id) as faqs,

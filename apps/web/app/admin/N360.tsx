@@ -12,6 +12,7 @@ import type { CompaNegocio } from "@/lib/compa/admin-compa";
 import type { Negocio360 } from "@/lib/admin-negocios";
 import { fmtHora } from "@/lib/panel-reglas";
 import { KINDS_LOCAL } from "@/lib/noche-comun";
+import { PuntoAdmin } from "./PuntoAdmin";
 import { cambiarEstado, tipoNoche, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, vacanteOcultar, platoOcultar, propiedadOcultar, mayoresRevisar, carroOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina } from "./acciones-negocios";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
@@ -38,7 +39,7 @@ const VERBO: Record<string, string> = {
   "negocio.modulo.pausar": "pausó un módulo de", "negocio.modulo.reanudar": "reanudó un módulo de", "negocio.noche.tipo": "ajustó el tipo de local de",
   "negocio.ocultar": "ocultó", "negocio.suspender": "suspendió", "negocio.cerrar": "cerró", "negocio.restaurar": "restauró", "negocio.cierre_temporal": "cerró temporalmente",
   "negocio.reabrir": "reabrió", "negocio.dueno.cambiar": "cambió el dueño de", "negocio.pagos.pausar": "pausó los pagos al banco de", "plan.cortesia": "dio Pro de cortesía a", "plan.quitar_cortesia": "quitó la cortesía a", "plan.extender_prueba": "extendió la prueba de", "plan.reintentar_cobro": "reintentó el cobro de Pro de", "plan.anular": "anuló la suscripción de",  "negocio.pagos.reanudar": "reanudó los pagos al banco de", "negocio.sello.dar": "dio el sello a", "negocio.sello.quitar": "quitó el sello a", "negocio.sello.aprobar": "aprobó el sello de",
-  "negocio.sello.pedir_dato": "pidió un dato a", "negocio.sello.rechazar": "no aprobó el sello de", "negocio.editar": "editó", "negocio.foto.quitar": "quitó una foto de",
+  "negocio.sello.pedir_dato": "pidió un dato a", "negocio.sello.rechazar": "no aprobó el sello de", "negocio.editar": "editó", "negocio.punto": "corrigió el punto en el mapa de", "negocio.foto.quitar": "quitó una foto de",
   "negocio.foto.restaurar": "restauró una foto de", "negocio.staff.quitar": "quitó de la página a alguien de", "negocio.staff.mostrar": "volvió a mostrar a alguien de",
   "evt.organizador.verificar": "verificó como organizador de eventos a", "evt.organizador.quitar_verificado": "quitó el verificado de eventos a", "evt.organizador.bloquear": "bloqueó la publicación de eventos de", "evt.organizador.desbloquear": "permitió publicar eventos otra vez a",
   "negocio.nota": "agregó una nota a", "negocio.revisado": "revisó", "licencia.verificar": "verificó la licencia de", "licencia.vencida": "marcó vencida la licencia de", "licencia.no_aparece": "no encontró la licencia de",
@@ -115,6 +116,8 @@ export function N360({ n, tab, din, evts = null, sop, cpa }: { n: Negocio360; ta
         }))} />
         {vis.length === 1 ? <A.AdminNote tone="info" icon="image">Es la única foto visible: para quitarla, pide al dueño que suba otra.</A.AdminNote> : null}
         <A.AdminList label="LO QUE VE EL CLIENTE" rows={[campo("name", "Nombre", n.name), campo("about", "Quiénes somos", n.about?.es ?? "", true), { icon: "grid", title: "Categoría y subcategorías", sub: `${n.cat}${n.subs ? ` · ${n.subs}` : ""}` }, campo("phone", "Teléfono", n.phone), campo("address", "Dirección", n.address ?? "")]} />
+        {/* 9m · El punto en el mapa y «Corregir el punto» (con motivo; el dueño lo ve en su panel). */}
+        <PuntoAdmin id={n.id} lat={n.lat} lng={n.lng} centro={[n.clat, n.clng]} fijado={n.geo_fixed} motivoFijado={n.geo_fixed_reason} puede={!!P.editar} />
         <PanelBloques bloques={[{ type: "group", k: "HORARIO" }, { type: "kv", cols: 2, items: DIAS.map(([d], i) => { const x = n.horas[i]!; return { k: d.toUpperCase(), v: x.on ? `${fmtHora(x.a)} – ${fmtHora(x.b)}${x.two ? ` · ${fmtHora(x.a2)} – ${fmtHora(x.b2)}` : ""}` : "Cerrado", fg: x.on ? undefined : "rgba(11,14,18,.45)" }; }) }]} />
       </>);
   } else if (tab === "vende" && n.cat_id === "NEG-FOOD") {

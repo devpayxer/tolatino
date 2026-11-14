@@ -10,6 +10,7 @@ import { useEffect, useState, useTransition, type ComponentType, type MouseEvent
 import { diaFiesta, dispoFiesta, EVT, findes, GUESTS, LINEA_FIESTA, metaFiesta, precioFiesta, sumarDias, tuFechaValida, WHERE, type SvcFiesta, type TuFecha } from "@/lib/fiestas-comun";
 import type { FiestaPublico } from "@/lib/fiestas-publico";
 import { tuFechaGuardar } from "./acciones-fiesta";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -59,7 +60,7 @@ export function useFiesta(fp: FiestaPublico | null, es: boolean, pro: boolean) {
     fp.cal.guests ? { k: E2("INVITADOS", "GUESTS"), v: E2(`Hasta ${fp.cal.guests}`, `Up to ${fp.cal.guests}`) } : fp.zone ? { k: E2("VA HASTA", "TRAVELS"), v: `${fp.zone} mi` } : { k: E2("DESDE", "FROM"), v: precioFiesta(c0, es).l },
   ];
   const llamar = () => { if (fp.negocio.telefono) location.href = `tel:${fp.negocio.telefono}`; };
-  const llegar = () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fp.negocio.direccion ?? fp.negocio.nombre)}`, "_blank", "noopener");
+  const llegar = () => abrirComoLlegar({ dir: fp.negocio.direccion ?? fp.negocio.nombre });
   const guardar = async (f: TuFecha): Promise<string | null> => {
     if (!fp.sesion) { guardarLocal(f); setFecha(f); return null; }
     const r = await tuFechaGuardar(f).catch(() => null);

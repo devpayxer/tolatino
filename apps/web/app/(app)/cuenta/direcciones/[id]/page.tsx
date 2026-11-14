@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { yo } from "@/lib/cuenta";
 import { direccionDe, misDirecciones, zonaDe } from "@/lib/direcciones";
 import { idioma } from "@/lib/idioma";
+import { ubicacion } from "@/lib/ubicacion";
 import { yoMarco } from "../../yo";
 import { Editor } from "./Editor";
 
@@ -16,8 +17,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const es = (await idioma()) === "es";
   const cur = id === "nueva" ? null : await direccionDe(u.id, id);
   if (id !== "nueva" && !cur) notFound();
-  const [zona, todas, me] = await Promise.all([zonaDe(u.id), misDirecciones(u.id), yoMarco(u, es)]);
+  const [zona, todas, me, loc] = await Promise.all([zonaDe(u.id), misDirecciones(u.id), yoMarco(u, es), ubicacion(u)]);
   // Solo rutas propias: nunca a otro sitio.
   const volver = typeof sp.volver === "string" && /^\/[a-z0-9/_-]*$/i.test(sp.volver) ? sp.volver : null;
-  return <Editor es={es} yo={me} cur={cur} primera={!todas.length} zona={zona} volver={volver} />;
+  return <Editor es={es} yo={me} cur={cur} primera={!todas.length} zona={zona} volver={volver} centro={[loc.lat, loc.lng]} />;
 }

@@ -181,6 +181,14 @@ function parchesAccesibilidad(t, rel) {
     cambia("  terms,\n  desktop,\n", "  terms,\n  desktop,\n  error,\n  phoneLabel = 'Tu teléfono',\n  codeLabel = 'Código de 6 dígitos',\n");
     cambia("    placeholder: \"(570) 555-0142\",\n    inputMode: \"tel\",\n", "    placeholder: \"(570) 555-0142\",\n    inputMode: \"tel\",\n    autoComplete: \"tel\",\n    \"aria-label\": phoneLabel,\n    \"aria-invalid\": error ? true : undefined,\n    \"aria-describedby\": error ? 'tl-auth-error' : undefined,\n");
     cambia("    placeholder: \"\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\",\n    inputMode: \"numeric\",\n", "    placeholder: \"\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\",\n    inputMode: \"numeric\",\n    autoComplete: \"one-time-code\",\n    \"aria-label\": codeLabel,\n    \"aria-invalid\": error ? true : undefined,\n    \"aria-describedby\": error ? 'tl-auth-error' : undefined,\n");
+    // 9m · Bilingüe (L240, L1538): los textos fijos en español pasan a props con su valor de siempre (la pantalla manda el inglés).
+    cambia("  codeLabel = 'Código de 6 dígitos',\n", "  codeLabel = 'Código de 6 dígitos',\n  phoneKicker = 'TU TELÉFONO',\n  codeKicker = 'CÓDIGO DE 6 DÍGITOS',\n  sendLabel = 'Enviar código',\n  verifyLabel = 'Verificar y seguir',\n  changeLabel = 'Cambiar número',\n  resendLabel = 'REENVIAR EN 30 S',\n");
+    cambia("  }, \"TU TEL\\xC9FONO\"), ", "  }, phoneKicker), ");
+    cambia("  }, \"Enviar c\\xF3digo\")), ", "  }, sendLabel)), ");
+    cambia("  }, \"C\\xD3DIGO DE 6 D\\xCDGITOS\"), ", "  }, codeKicker), ");
+    cambia("  }, \"Verificar y seguir\")), ", "  }, verifyLabel)), ");
+    cambia("  }, \"Cambiar n\\xFAmero\"), ", "  }, changeLabel), ");
+    cambia("  }, \"REENVIAR EN 30 S\"))));", "  }, resendLabel))));");
     cambia("  }))), step === 'phone' ? /*#__PURE__*/React.createElement(React.Fragment, null,", "  }))), /*#__PURE__*/React.createElement(\"div\", {\n    id: 'tl-auth-error',\n    role: 'alert',\n    'aria-live': 'assertive',\n    style: error ? {\n      font: '600 12.5px/1.4 Manrope,sans-serif',\n      color: 'var(--tl-danger)',\n      margin: '12px 0 0'\n    } : undefined\n  }, error || null), step === 'phone' ? /*#__PURE__*/React.createElement(React.Fragment, null,");
   }
   // QtyStepper y el «+ / −» del menú: los nombres que estaban fijos en español ahora son props (ES/EN con `lang`).
@@ -234,6 +242,12 @@ for (const src of archivos) {
     t = t.replace(/React\.createElement\(Stars, \{\n(\s*)r: rating,\n(\s*)n: reviews/g, "React.createElement(Stars, {\n$1r: rating,\n$2n: reviews,\n$2note: reviewsNote");
     t = t.replace(/  reviews,\n  status,/, "  reviews,\n  reviewsNote,\n  status,");
     if (t === antes || (t.match(/note: reviewsNote/g) || []).length !== 2 || !t.includes("reviewsNote,\n  status")) throw new Error("parche BusinessCard: el origen cambió, revisar");
+    // 9m · Chips largos (L79: «Coordinación del día $900 · boda completa…» se cortaba en el borde): el chip se parte en DOS líneas como máximo
+    // dentro de la tarjeta (sin salirse) y lo que sobra termina en «…». Los cortos se ven igual que antes.
+    const a2 = t;
+    t = t.replace(/chips\.map\(\(c, i\) => \/\*#__PURE__\*\/React\.createElement\(__ds_scope\.Chip, \{\n(\s*)key: i,\n(\s*)variant: c\.variant \|\| \(i === 0 \? 'slot' : 'feature'\)\n(\s*)\}, c\.label\)\)/,
+      "chips.map((c, i) => /*#__PURE__*/React.createElement(__ds_scope.Chip, {\n$1key: i,\n$2variant: c.variant || (i === 0 ? 'slot' : 'feature'),\n$2style: {\n$2  whiteSpace: 'normal',\n$2  maxWidth: '100%',\n$2  flex: '0 1 auto',\n$2  minWidth: 0\n$2}\n$3}, /*#__PURE__*/React.createElement(\"span\", {\n$3  style: {\n$3    display: '-webkit-box',\n$3    WebkitLineClamp: 2,\n$3    WebkitBoxOrient: 'vertical',\n$3    overflow: 'hidden',\n$3    lineHeight: 1.3,\n$3    overflowWrap: 'anywhere'\n$3  }\n$3}, c.label)))");
+    if (t === a2) throw new Error("parche BusinessCard (chips en dos líneas): el origen cambió, revisar");
   }
 
   // HoursPro: textos fijos en español (AHORA, PRÓXIMOS CAMBIOS, Esta semana) → props para ES/EN; y el estado

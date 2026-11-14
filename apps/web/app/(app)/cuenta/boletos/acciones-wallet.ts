@@ -20,3 +20,19 @@ export async function walletAppleEnlace(code: string): Promise<R<{ url: string }
   const u = await quien(); if (!u) return { ok: false, entrar: true };
   return (await import("@/lib/pases/pases")).enlaceAppleFirmado(u.id, String(code ?? "").toUpperCase());
 }
+
+/* 9m · Mis boletos guarda TODOS los próximos (L896, L778): al abrir Mis boletos con señal, el teléfono guarda cifrados (lib/boletos-sin-conexion.ts)
+   los QR de los boletos vivos de las próximas fechas, sin abrirlos uno por uno. Hasta 20 (los más cercanos); cada uno se firma como al abrirlo (miBoleto,
+   que revisa que sea de quien llama). Nada de precio ni de pago. */
+export async function boletosParaGuardar(es: boolean): Promise<{ b: import("@/lib/boletos").BoletoVista; evento: import("@/lib/boletos").OrdenVista["evento"] }[]> {
+  const u = await quien(); if (!u) return [];
+  const B = await import("@/lib/boletos");
+  const d = await B.misBoletos(u.id, !!es);
+  const codigos = d.proximos.filter((g) => g.vivos > 0).slice(0, 20).flatMap((g) => g.codigos ?? []).slice(0, 20);
+  const out: { b: import("@/lib/boletos").BoletoVista; evento: import("@/lib/boletos").OrdenVista["evento"] }[] = [];
+  for (const c of codigos) {
+    const x = await B.miBoleto(u.id, c, !!es).catch(() => null);
+    if (x && x.b.matriz && !x.b.envio && !x.evento.pasado && (x.b.estado === "valid" || x.b.sigue)) out.push({ b: x.b, evento: x.evento });
+  }
+  return out;
+}

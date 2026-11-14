@@ -9,6 +9,7 @@ import { useState, type ComponentType } from "react";
 import { diaNoche, hNoche, LINEA_NOCHE, usdN } from "@/lib/noche-comun";
 import type { NocheVista } from "@/lib/noche-reservas";
 import { nocheAccion } from "./acciones";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,7 +65,7 @@ export function NocheEstado({ x, es }: { x: NocheVista; es: boolean }) {
     : !dep ? E2("No dejaste depósito: no se cobra nada.", "You left no deposit: nothing is charged.")
     : x.nowN < (x.cut ?? 360) ? E2(`Antes de las ${corte} de esa noche: te devolvemos ${usdN(dep)}.`, `Before ${corte} that night: we refund ${usdN(dep)}.`)
     : E2(`Ya pasaron las ${corte}: el depósito de ${usdN(dep)} se queda con el local.`, `It is past ${corte}: the venue keeps the ${usdN(dep)} deposit.`);
-  const llegar = () => { if (x.negocio.direccion) window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${x.negocio.direccion}, ${B}`)}`, "_blank", "noopener"); };
+  const llegar = () => { if (x.negocio.direccion) abrirComoLlegar({ dir: `${x.negocio.direccion}, ${B}` }); };
   return (
     <div data-screen-label="APP-NEG-NOCHE-ESTADO" className="min-h-[100dvh] bg-paper pb-10">
       <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:top-0">

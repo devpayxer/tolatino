@@ -222,8 +222,23 @@ function BusinessCard({
     }
   }, chips.map((c, i) => /*#__PURE__*/React.createElement(__ds_scope.Chip, {
     key: i,
-    variant: c.variant || (i === 0 ? 'slot' : 'feature')
-  }, c.label))) : null, offer ? /*#__PURE__*/React.createElement("div", {
+    variant: c.variant || (i === 0 ? 'slot' : 'feature'),
+    style: {
+      whiteSpace: 'normal',
+      maxWidth: '100%',
+      flex: '0 1 auto',
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: '-webkit-box',
+      WebkitLineClamp: 2,
+      WebkitBoxOrient: 'vertical',
+      overflow: 'hidden',
+      lineHeight: 1.3,
+      overflowWrap: 'anywhere'
+    }
+  }, c.label)))) : null, offer ? /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 12,
       padding: '10px 12px',

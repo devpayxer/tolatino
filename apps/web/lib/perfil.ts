@@ -136,8 +136,10 @@ export async function cambiarCiudad(userId: string, cityId: string): Promise<Res
 
 /* ── Privacidad: sesiones abiertas ── */
 export async function sesionesDe(userId: string, actual: string | null) {
-  return (await db().query<{ id: string; ua: string | null; ip: string | null; visto: string; esta: boolean }>(
-    `select s.id::text, s.user_agent as ua, host(s.ip) as ip, to_char(coalesce(s.last_seen_at, s.created_at) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as visto, s.token_hash = $2 as esta
+  // 9m · De una de las cuatro apps: cuál, su versión y su build (L1181: «Este iPhone · To'Latino 1.0 (12)», como en Usuarios 360°).
+  return (await db().query<{ id: string; ua: string | null; ip: string | null; visto: string; esta: boolean; app: string; plat: string; ver: string | null; build: number | null; so: string | null }>(
+    `select s.id::text, s.user_agent as ua, host(s.ip) as ip, to_char(coalesce(s.last_seen_at, s.created_at) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as visto, s.token_hash = $2 as esta,
+            s.app, s.platform as plat, s.app_version as ver, s.app_build as build, s.os_version as so
        from sessions s where s.user_id = $1 and s.signed_out_at is null and s.expires_at > now() order by (s.token_hash = $2) desc, coalesce(s.last_seen_at, s.created_at) desc limit 20`, [userId, actual ?? ""])).rows;
 }
 export async function cerrarSesionOtra(userId: string, id: string, actual: string | null): Promise<ResP> {

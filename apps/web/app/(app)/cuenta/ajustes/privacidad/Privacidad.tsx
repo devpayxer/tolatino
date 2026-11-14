@@ -10,15 +10,26 @@ import { agregarLlave, llaveDisponible } from "@/lib/nativo/llave";
 import { metodoLlave } from "@/app/entrar/HojaLlave";
 import { llaveQuitar, sesionCerrar } from "../../acciones-perfil";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../../Marco";
+import { DEF_APPS } from "@/lib/app-nativa-comun";
+import { vozGuardar } from "../../../buscar/acciones";
 
 type S = Awaited<ReturnType<typeof sesionesDe>>;
 type K = Awaited<ReturnType<typeof misLlaves>>;
+/* 9m · El rótulo de una sesión de una app (L1181): «iPhone · To'Latino 1.0 (12)» (la app, su versión y su build); «Este …» si es esta. */
+const APPN: Record<string, string> = Object.fromEntries(DEF_APPS.map((a) => [a.key, a.nombre.es]));
+const rotulo = (x: { ua: string | null; app: string; plat: string; ver: string | null; build: number | null; esta: boolean }, es: boolean) => {
+  if (x.plat === "web") { const d = disp(x.ua, es); return x.esta ? `${es ? "Este navegador" : "This browser"} · ${d.t}` : d.t; }
+  const eq = /iPad/.test(x.ua ?? "") ? "iPad" : x.plat === "ios" ? "iPhone" : es ? "teléfono Android" : "Android phone";
+  const app = `${APPN[x.app] ?? "To'Latino"}${x.ver ? ` ${x.ver.replace(/^(\d+\.\d+)\.0$/, "$1")}${x.build != null ? ` (${x.build})` : ""}` : ""}`;
+  return `${x.esta ? (es ? `Este ${eq}` : `This ${eq}`) : /^i/.test(eq) ? eq : eq.charAt(0).toUpperCase() + eq.slice(1)} · ${app}`;
+};
 const disp = (ua: string | null, es: boolean) => {
   const u = ua ?? "", nav = /Edg\//.test(u) ? "Edge" : /Chrome\//.test(u) ? "Chrome" : /Firefox\//.test(u) ? "Firefox" : /Safari\//.test(u) ? "Safari" : es ? "Navegador" : "Browser";
   const so = /iPhone|iPad/.test(u) ? "iPhone" : /Android/.test(u) ? "Android" : /Mac OS X/.test(u) ? "Mac" : /Windows/.test(u) ? "Windows" : /Linux/.test(u) ? "Linux" : "";
   return { t: so ? `${nav} · ${so}` : nav, tel: /iPhone|Android/.test(u) };
 };
-export function Privacidad({ s, es, yo, llaves = [], agregar = false }: { s: S; es: boolean; yo: Yo; llaves?: K; agregar?: boolean }) {
+export function Privacidad({ s, es, yo, llaves = [], agregar = false, voz = null }: { s: S; es: boolean; yo: Yo; llaves?: K; agregar?: boolean; voz?: boolean | null }) {
+  const [vozOn, setVozOn] = useState<boolean>(voz === true);
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), ui = useCuentaUi();
   /* 8d · Llaves de acceso: la lista (dispositivo y última vez) y «Quitar»; «Agregar» solo si aquí se ofrecen y este dispositivo guarda llaves. */
@@ -50,8 +61,13 @@ export function Privacidad({ s, es, yo, llaves = [], agregar = false }: { s: S; 
       acts: [[E2("Quitar", "Remove"), "secondary", () => quitar(k.id, k.nombre)]] as [string, string, () => void][] })) }
       : { type: "note", tone: "info", ic: "key", s: E2("Con una llave de acceso entras con Face ID o tu huella, sin esperar el código. Tu cara o tu huella nunca salen de tu teléfono.", "With a passkey you sign in with Face ID or your fingerprint, no waiting for the code. Your face or fingerprint never leaves your phone.") },
     agregar && puede ? { type: "rows", rows: [{ key: "llave-nueva", ic: "plus", t: ocupado ? E2("Guardando…", "Saving…") : E2(`Agregar ${m.con} en este dispositivo`, `Add ${m.con} on this device`), s: E2("ENTRAS SIN ESPERAR EL CÓDIGO", "SIGN IN WITHOUT WAITING FOR THE CODE"), chev: true, on: () => { if (!ocupado) void nueva(); } }] } : null,
+    // 9m · Buscar con la voz (L95): el aviso y su interruptor. Apagado, Buscar no muestra el micrófono.
+    { type: "sec", t: E2("Buscar con la voz", "Search by voice"), fs: "14px" },
+    { type: "rows", rows: [{ key: "voz", ic: "mic", t: E2("Buscar con la voz", "Search by voice"), s: vozOn ? E2("ENCENDIDO · EL MICRÓFONO SALE EN BUSCAR", "ON · THE MICROPHONE SHOWS IN SEARCH") : E2("APAGADO · SIN MICRÓFONO EN BUSCAR", "OFF · NO MICROPHONE IN SEARCH"),
+      x: E2("Tu voz la convierte en texto el reconocimiento de tu teléfono o de tu navegador: Apple o Google la procesan en sus servidores, no To'Latino. A To'Latino solo llega el texto que buscas; nunca guardamos tu voz.", "Your phone's or browser's speech recognition turns your voice into text: Apple or Google process it on their servers, not To'Latino. To'Latino only gets the text you search; we never keep your voice."),
+      tog: vozOn, onTog: () => { const n = !vozOn; setVozOn(n); void vozGuardar(n).then((r) => { if (!r.ok) setVozOn(!n); else ui.toast(n ? E2("Buscar con la voz, encendido.", "Search by voice on.") : E2("Buscar con la voz, apagado.", "Search by voice off.")); }); } }] },
     { type: "sec", t: E2("Sesiones abiertas", "Open sessions"), s: `${s.length}`, fs: "14px" },
-    { type: "rows", rows: s.map((x) => { const d = disp(x.ua, es); return { key: x.id, ic: d.tel ? "phone" : "globe", t: d.t, tag: x.esta ? [E2("ESTA", "THIS ONE"), "signal"] as [string, string] : null,
+    { type: "rows", rows: s.map((x) => { const d = disp(x.ua, es); return { key: x.id, ic: d.tel || x.plat !== "web" ? "phone" : "globe", t: rotulo(x, es), tag: x.esta ? [E2("ESTA", "THIS ONE"), "signal"] as [string, string] : null,
       s: `${E2("ÚLTIMA VEZ ", "LAST SEEN ")}${visto(x.visto).toUpperCase()}`, acts: x.esta ? undefined : [[E2("Cerrar", "Sign out"), "secondary", () => void cerrar(x.id)]] as [string, string, () => void][] }; }) },
     { type: "sec", t: E2("Tus datos", "Your data"), fs: "14px" },
     { type: "rows", rows: [

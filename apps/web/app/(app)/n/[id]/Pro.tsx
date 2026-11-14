@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState, type ComponentType, type MouseEvent } from "react";
 import { precioPro, usd } from "@/lib/pro-comun";
 import type { ProPublico, SvcPro } from "@/lib/pro-publico";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -50,7 +51,7 @@ export function usePro(pp: ProPublico | null, es: boolean) {
   const precios = pp.servicios.filter((s) => s.k !== "pct" && s.cents > 0).map((s) => s.cents + s.gov);
   const desde = cons && !cons.cents ? E2("Consulta gratis", "Free consultation") : precios.length ? `${E2("Desde ", "From ")}${usd(Math.min(...precios))}` : E2("Servicios", "Services");
   const llamar = () => { if (pp.negocio.telefono) location.href = `tel:${pp.negocio.telefono}`; };
-  const llegar = () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pp.negocio.direccion ?? pp.negocio.nombre)}`, "_blank", "noopener");
+  const llegar = () => abrirComoLlegar({ dir: pp.negocio.direccion ?? pp.negocio.nombre });
   return { pp, es, E2, nm, secs, notes, riel, desde, legal, soloSinCita, hoja, abrir: (id: string, e?: MouseEvent) => { stop(e); setHoja(id); }, cerrar: () => setHoja(null), top: pp.servicios.slice(0, 4).map(item), llamar, llegar };
 }
 export type Pr = NonNullable<ReturnType<typeof usePro>>;

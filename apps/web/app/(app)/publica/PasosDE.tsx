@@ -9,6 +9,7 @@ import { ahora, DAYS, daysOf, F, fmt, Fl, metaOf, money, needZone, opOf, own, ro
 import { K } from "./PasosBC";
 
 import { tec } from "@/lib/tec";
+import { DireccionCampo } from "@/app/_dir/DireccionCampo";
 type N = "Icon" | "Button" | "Chip" | "OptionCard" | "SelectBox" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, OptionCard, SelectBox, Tag } = UI as unknown as Record<N, ComponentType<any>>;
@@ -157,12 +158,20 @@ export function PasoE1({ d, up, es, ciudad, irA }: { d: Borrador; up: Up; es: bo
         ) : null}
         {hasAddr ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
-            <span style={K}>{op === "truck" ? E2("¿DÓNDE TE PONES?", "WHERE DO YOU PARK?") : op === "home" ? E2("TU DIRECCIÓN · SOLO SALE LA CALLE", "YOUR ADDRESS · ONLY THE STREET SHOWS") : rento ? E2("DIRECCIÓN DE ESE NEGOCIO", "THAT BUSINESS’S ADDRESS") : E2("TU DIRECCIÓN", "YOUR ADDRESS")}</span>
-            <div style={{ height: 52, boxSizing: "border-box", borderRadius: 14, border: `1.5px solid ${aq.length >= 4 ? "var(--tl-ink)" : "rgba(11,14,18,.14)"}`, background: "var(--tl-white)", display: "flex", alignItems: "center", gap: 10, padding: "0 14px" }}>
-              <Icon name="pin" size={17} color="rgba(11,14,18,.45)" />
-              <input value={d.addr || ""} onChange={(e) => up({ addr: e.target.value.slice(0, 60) })} placeholder={op === "truck" ? E2("Ej.: Wyoming St y E Broad St", "E.g. Wyoming St & E Broad St") : "312 N Wyoming St"} autoComplete="street-address" aria-label={E2("Dirección", "Address")} style={entrada} />
-              <span style={{ flex: "none", font: `700 9.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.45)" }}>{ciudad.toUpperCase()}</span>
-            </div>
+            {op === "truck" ? (<>
+              <span style={K}>{E2("¿DÓNDE TE PONES?", "WHERE DO YOU PARK?")}</span>
+              <div style={{ height: 52, boxSizing: "border-box", borderRadius: 14, border: `1.5px solid ${aq.length >= 4 ? "var(--tl-ink)" : "rgba(11,14,18,.14)"}`, background: "var(--tl-white)", display: "flex", alignItems: "center", gap: 10, padding: "0 14px" }}>
+                <Icon name="pin" size={17} color="rgba(11,14,18,.45)" />
+                <input value={d.addr || ""} onChange={(e) => up({ addr: e.target.value.slice(0, 60) })} placeholder={E2("Ej.: Wyoming St y E Broad St", "E.g. Wyoming St & E Broad St")} autoComplete="street-address" aria-label={E2("Dirección", "Address")} style={entrada} />
+                <span style={{ flex: "none", font: `700 9.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.45)" }}>{ciudad.toUpperCase()}</span>
+              </div>
+            </>) : (
+              // 9m · La dirección como DoorDash (decisión AC): sugerencias reales, «Usar mi ubicación» y el pin ajustable; el servidor la ubica al publicar.
+              <DireccionCampo es={es} ph="312 N Wyoming St"
+                etiqueta={op === "home" ? E2("TU DIRECCIÓN · SOLO SALE LA CALLE", "YOUR ADDRESS · ONLY THE STREET SHOWS") : rento ? E2("DIRECCIÓN DE ESE NEGOCIO", "THAT BUSINESS’S ADDRESS") : E2("TU DIRECCIÓN", "YOUR ADDRESS")}
+                v={{ calle: d.addr || "", zip: d.zip ?? "", lugar: d.dirLugar ?? null, estado: d.dirEstado ?? null, origen: d.dirOrigen ?? null, pin: d.pin ?? null, calidad: null }}
+                onV={(x) => up({ addr: x.calle.slice(0, 120), zip: x.zip, dirOrigen: x.origen, pin: x.pin, dirLugar: x.lugar, dirEstado: x.estado })} />
+            )}
             {op === "local" || op === "ambos" ? <input value={d.ref || ""} onChange={(e) => up({ ref: e.target.value.slice(0, 50) })} placeholder={E2("Referencia (opcional): frente al parque, 2.º piso…", "Landmark (optional): across from the park, 2nd floor…")} aria-label={E2("Referencia", "Landmark")} style={{ height: 46, boxSizing: "border-box", borderRadius: 13, border: "1.5px solid rgba(11,14,18,.1)", background: "var(--tl-white)", padding: "0 14px", outline: "none", font: "500 14px Manrope,sans-serif", color: "var(--tl-ink)", width: "100%" }} /> : null}
             {op === "home" ? <div style={{ display: "flex", gap: 9, alignItems: "flex-start", font: "500 12.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.62)" }}><Icon name="lock" size={15} color="rgba(11,14,18,.5)" /><span>{E2("Tu dirección exacta solo la ve quien confirmas. En tu página sale la calle.", "Only people you confirm see your exact address. Your page shows the street.")}</span></div> : null}
           </div>

@@ -62,7 +62,8 @@ grep -q '^salida 0$' "$T/viejo.salida" || { echo "✗ el deploy.sh viejo no term
 grep -q '^salida 0$' "$T/nuevo.salida" || { echo "✗ el deploy.sh nuevo no terminó bien:"; tail -15 "$T/nuevo.salida"; ok=0; }
 if ! diff -q "$T/viejo.env" "$T/nuevo.env" >/dev/null; then echo "✗ el archivo de secretos cambió de claves:"; diff "$T/viejo.env" "$T/nuevo.env"; ok=0; fi
 # La traza nueva = la vieja + solo lo de 9o (apt-get de age si faltara, y los psql del registro: los que llevan «-v e=pruebas»).
-grep -v -E '^(apt-get install .* age|docker image inspect tolatino/web:pruebas .*|docker compose .* exec -T db psql .* -v e=pruebas .*)$' "$T/nuevo.traza" > "$T/nuevo.sin9o" || true
+# 9m · y el paso de los retiros de NHTSA (systemctl is-active/systemd-run de tolatino-retiros).
+grep -v -E '^(apt-get install .* age|docker image inspect tolatino/web:pruebas .*|docker compose .* exec -T db psql .* -v e=pruebas .*|systemctl is-active --quiet tolatino-retiros|systemd-run --unit tolatino-retiros .*)$' "$T/nuevo.traza" > "$T/nuevo.sin9o" || true
 if ! diff -u "$T/viejo.traza" "$T/nuevo.sin9o" > "$T/dif"; then echo "✗ la traza del sandbox cambió:"; head -40 "$T/dif"; ok=0; fi
 extra=$(grep -c -E 'exec -T db psql .* -v e=pruebas ' "$T/nuevo.traza" || true)
 [ "$extra" -ge 2 ] || { echo "✗ el despliegue nuevo no se anota en deploy_releases (y la huella de la llave age en server_keys)"; ok=0; }

@@ -1,5 +1,6 @@
 import "server-only";
 import { db, tx } from "./db";
+import { tapar } from "./compa/tapar";
 
 /* Mensajes cliente ↔ negocio (bloque 2p; modelo ChatThread · Message; Mi cuenta USR-MENSAJES / USR-CHAT-NEG; Panel v2 sec
    «msg»). Reglas, todas en el servidor:
@@ -14,7 +15,7 @@ import { db, tx } from "./db";
    - Avisos: al negocio cuando llega el primer mensaje sin leer; al vecino cuando el negocio contesta y no tenía nada sin leer.
    - Nada se borra: un mensaje se oculta con motivo (moderación) y sale como «Mensaje oculto por To’Latino». */
 type Bi = { es: string; en: string };
-export type ResM = { ok: true; id?: string; compa?: boolean } | { ok: false; msg: Bi };
+export type ResM = { ok: true; id?: string; compa?: boolean; tapado?: boolean } | { ok: false; msg: Bi };
 const no = (es: string, en: string): ResM => ({ ok: false, msg: { es, en } });
 export const MAX_TEXTO = 1000;
 const TEL = /(\d[\s.\-()]*){10}/;
@@ -22,12 +23,15 @@ export const conTelefono = (t: string) => TEL.test(t);
 const corto = (t: string) => (t.length > 150 ? `${t.slice(0, 147).trimEnd()}…` : t);
 const ISO = (c: string) => `to_char(${c} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
 
-function limpiar(texto: unknown): { ok: true; t: string } | { ok: false; r: ResM } {
-  const t = String(texto ?? "").replace(/\r\n?/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+/* 9m · Mensajes tapa como Soporte (L1063): tarjetas, seguro social, códigos y contraseñas quedan «[tapado]» ANTES de guardar (y la base rechaza el que
+   se salte esto: chat_messages_sin_secretos, 0143); quien escribe ve «No compartas eso aquí». Después, la regla de los teléfonos. */
+function limpiar(texto: unknown): { ok: true; t: string; tapado: boolean } | { ok: false; r: ResM } {
+  const tp = tapar(String(texto ?? ""));
+  const t = tp.texto.replace(/\r\n?/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
   if (!t) return { ok: false, r: no("Escribe tu mensaje.", "Type your message.") };
   if (t.length > MAX_TEXTO) return { ok: false, r: no(`Máximo ${MAX_TEXTO} letras.`, `${MAX_TEXTO} characters at most.`) };
   if (conTelefono(t)) return { ok: false, r: no("Por seguridad, sin teléfonos en los mensajes.", "For your safety, no phone numbers in messages.") };
-  return { ok: true, t };
+  return { ok: true, t, tapado: tp.tapado };
 }
 
 /* ── Vecino ── */
@@ -144,7 +148,7 @@ export async function enviarCliente(userId: string, negocio: string, texto: unkn
     await db().query(`update chat_threads set biz_notified_at = now() where id = $1`, [r.id]);
     await avisarEquipo(b.id, { cliente: yo?.nombre ?? "Un cliente", texto: corto(L.t).slice(0, 80) }, r.id!).catch(() => undefined);
   }
-  return { ok: true, id: r.id, compa };
+  return { ok: true, id: r.id, compa, tapado: L.tapado };
 }
 /* La respuesta fija fuera de horario (2p), tal cual: la usa enviarCliente y, si El Compa no pudo contestar al final (se apagó o llegó al tope
    entre el mensaje y su respuesta), lib/compa también, para que el cliente reciba exactamente lo de siempre. */
@@ -208,7 +212,7 @@ export async function nuevosNegocio(negocio: string, threadId: string, desde: st
 
 /* El negocio contesta (quien tenga Mensajes en el panel). */
 export async function enviarNegocio(negocio: string, nombreNegocio: string, userId: string, threadId: string, texto: unknown): Promise<ResM> {
-  if (conTelefono(String(texto ?? ""))) return no("Sin teléfonos en el texto: usa «Compartir mi teléfono».", "No phone numbers in the text: use “Share my phone”.");
+  if (conTelefono(tapar(String(texto ?? "")).texto)) return no("Sin teléfonos en el texto: usa «Compartir mi teléfono».", "No phone numbers in the text: use “Share my phone”.");
   const L = limpiar(texto);
   if (!L.ok) return L.r;
   const r10 = (await db().query<{ n: number }>(`select count(*)::int as n from chat_messages m join chat_threads t on t.id = m.thread_id where t.business_id = $1 and m.sender = 'business' and m.created_at > now() - interval '10 minutes'`, [negocio])).rows[0]?.n ?? 0;
@@ -226,7 +230,7 @@ export async function enviarNegocio(negocio: string, nombreNegocio: string, user
     const { avisar } = await import("./avisos");
     await avisar(r.user, "msg_user", { negocio: nombreNegocio, texto: corto(L.t).slice(0, 80) }, { href: `/cuenta/mensajes/${negocio}`, ref: ["chat", r.id] }).catch(() => undefined);
   }
-  return { ok: true, id: r.id };
+  return { ok: true, id: r.id, tapado: L.tapado };
 }
 /* Compartir el teléfono de la página (mensaje del sistema; una vez). */
 export async function compartirTelefono(negocio: string, userId: string, threadId: string): Promise<ResM> {

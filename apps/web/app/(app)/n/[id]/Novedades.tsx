@@ -11,6 +11,7 @@ import type { NovedadesFicha, Post } from "@/lib/novedades";
 import { diaCorto } from "@/lib/evt-comun";
 import { novComentar, novEncuesta, novGuardar, novLikeComentario, novVista, novVoto, seguir } from "./acciones-novedades";
 import { LineaTr, useTraducir } from "../../Traducir";
+import { ReportarContenido } from "./ReportarContenido";
 
 type N = "Icon" | "Button" | "Chip" | "Tag" | "PostCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -218,6 +219,8 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
             )}
             {cuerpo(p)}
             {comentarios(p)}
+            {/* 9m · Reportar una novedad desde la página (L299) → Super Admin › Contenido. */}
+            <div className="mt-2.5"><ReportarContenido kind="post" id={p.id} es={es} conSesion={sesion} volver={`/n/${v.negocio.id}?tab=nov`} /></div>
           </PostCard>
         );
       })}

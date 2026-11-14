@@ -6,12 +6,21 @@
 # Las fuentes auxiliares se bajan aquí (no con --download de Planetiler, que se cae entero si un servidor no responde):
 # lagos y Natural Earth son obligatorios; los océanos son opcionales (Pensilvania no tiene costa: agua-vacia.py).
 # Uso: bash infra/mapa/generar.sh /var/lib/tolatino/mapa
+# 9m · Todo EE. UU. (decisión AC): MAPA_REGION=us baja el extracto de EE. UU. de Geofabrik (~11 GB) y genera us.mbtiles (~20 GB, zoom 0–14) con el mismo
+# Planetiler. Pide un servidor con ≥ 32 GB de RAM (MAPA_HEAP, por defecto 24g para «us») y ~80 GB libres en el volumen del mapa; tarda ~1–2 h con 8 núcleos.
+# El servidor de teselas lee el archivo que diga su compose (hoy pennsylvania.mbtiles): pasar a us.mbtiles es el cambio de producción (LAUNCH → 9t).
 set -euo pipefail
 DIR="${1:?carpeta de datos}"
 AQUI="$(cd "$(dirname "$0")" && pwd)"
 # Fijada por huella: la 0.10.3 que pasó la prueba de punta a punta (CI «Mapa», 5 nov 2026).
 PLANETILER="${PLANETILER_IMAGEN:-ghcr.io/onthegomap/planetiler@sha256:b3b48614759d8676739f341b3de028bf852bbc80a0ea70804a2c55681d235c90}"
-OUT="$DIR/pennsylvania.mbtiles"
+REGION="${MAPA_REGION:-pennsylvania}"
+case "$REGION" in
+  pennsylvania) PBF_URL=https://download.geofabrik.de/north-america/us/pennsylvania-latest.osm.pbf; HEAP="${MAPA_HEAP:-3g}";;
+  us) PBF_URL=https://download.geofabrik.de/north-america/us-latest.osm.pbf; HEAP="${MAPA_HEAP:-24g}";;
+  *) echo "[mapa] MAPA_REGION desconocida: $REGION (pennsylvania | us)" >&2; exit 2;;
+esac
+OUT="$DIR/$REGION.mbtiles"
 mkdir -p "$DIR/sources"
 if [ -f "$OUT" ] && [ -z "$(find "$OUT" -mtime +30 2>/dev/null)" ] && [ "${FORZAR:-0}" != 1 ]; then
   echo "[mapa] $OUT al día"; exit 0
@@ -20,25 +29,26 @@ bajar() { # url destino
   [ -s "$2" ] && return 0
   curl -fsSL --retry 3 --connect-timeout 30 -o "$2.tmp" "$1" && mv "$2.tmp" "$2"
 }
-echo "[mapa] descargando OpenStreetMap de Pensilvania…"
-rm -f "$DIR/pennsylvania-latest.osm.pbf"
-bajar https://download.geofabrik.de/north-america/us/pennsylvania-latest.osm.pbf "$DIR/pennsylvania-latest.osm.pbf"
+echo "[mapa] descargando OpenStreetMap ($REGION)…"
+rm -f "$DIR/$REGION-latest.osm.pbf"
+bajar "$PBF_URL" "$DIR/$REGION-latest.osm.pbf"
 echo "[mapa] fuentes auxiliares…"
 bajar https://github.com/acalcutt/osm-lakelines/releases/download/v12/lake_centerline.shp.zip "$DIR/sources/lake_centerline.shp.zip"
 bajar https://naciscdn.org/naturalearth/packages/natural_earth_vector.sqlite.zip "$DIR/sources/natural_earth_vector.sqlite.zip"
 if ! bajar https://osmdata.openstreetmap.de/download/water-polygons-split-3857.zip "$DIR/sources/water-polygons-split-3857.zip"; then
+  if [ "$REGION" != pennsylvania ]; then echo "[mapa] osmdata.openstreetmap.de no responde y $REGION tiene costa: sin océanos no se genera" >&2; exit 1; fi
   echo "[mapa] osmdata.openstreetmap.de no responde: océanos vacíos (Pensilvania no tiene costa)"
   rm -f "$DIR/sources/water-polygons-split-3857.zip.tmp"
   python3 "$AQUI/agua-vacia.py" "$DIR/sources/water-polygons-split-3857.zip"
 fi
 ls -la "$DIR/sources"
 echo "[mapa] generando teselas con $PLANETILER…"
-docker run --rm -e JAVA_TOOL_OPTIONS="-Xmx3g" -v "$DIR":/data "$PLANETILER" \
-  --osm-path=/data/pennsylvania-latest.osm.pbf \
+docker run --rm -e JAVA_TOOL_OPTIONS="-Xmx$HEAP" -v "$DIR":/data "$PLANETILER" \
+  --osm-path="/data/$REGION-latest.osm.pbf" \
   --water-polygons-path=/data/sources/water-polygons-split-3857.zip \
   --natural-earth-path=/data/sources/natural_earth_vector.sqlite.zip \
   --lake-centerlines-path=/data/sources/lake_centerline.shp.zip \
-  --output=/data/pennsylvania.nuevo.mbtiles --force
-mv "$DIR/pennsylvania.nuevo.mbtiles" "$OUT"
+  --output="/data/$REGION.nuevo.mbtiles" --force
+mv "$DIR/$REGION.nuevo.mbtiles" "$OUT"
 ls -la "$OUT"
 echo "[mapa] listo"

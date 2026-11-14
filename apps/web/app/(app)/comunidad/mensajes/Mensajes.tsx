@@ -4,7 +4,8 @@
    negocios siguen en Mi cuenta › Mensajes. */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
-import { useState, type ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "react";
+import { RefrescoVivo } from "@/app/_vivo/RefrescoVivo";
 import { hace } from "@/lib/comunidad-comun";
 import type { Conv } from "@/lib/mensajes-vecinos";
 import { dmLista } from "../acciones";
@@ -19,6 +20,8 @@ export function Mensajes({ es, yo, ciudad, d }: { es: boolean; yo: YoCom; ciudad
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024;
   const [items, setItems] = useState(d.items), [mas, setMas] = useState(d.mas), [busy, setBusy] = useState(false);
+  // 9m · Llega un mensaje (en vivo): la página trae su lista otra vez y aquí se toma la nueva primera página (lo de «Ver más» se queda).
+  useEffect(() => { setItems((L) => [...d.items, ...L.filter((x) => !d.items.some((y) => y.id === x.id))]); }, [d.items]);
   const verMas = async () => {
     if (!mas || busy) return; setBusy(true);
     const r = await dmLista(mas).catch(() => null); setBusy(false);
@@ -27,6 +30,8 @@ export function Mensajes({ es, yo, ciudad, d }: { es: boolean; yo: YoCom; ciudad
   };
   const nuevos = items.filter((x) => x.unread > 0).length;
   return (
+    <>
+    <RefrescoVivo k="dm" />
     <Marco es={es} yo={yo} ui={ui} code="APP-COM-MENSAJES" titulo={E2("Mensajes", "Messages")} sub={nuevos ? `${nuevos} ${nuevos === 1 ? E2("SIN LEER", "UNREAD") : E2("SIN LEER", "UNREAD")}` : E2("VECINOS QUE TE SIGUEN", "NEIGHBORS WHO FOLLOW YOU")} back="/comunidad">
       <div data-screen-label="APP-COM-MENSAJES · mensajes" style={{ padding: D ? 0 : "14px 16px", maxWidth: 720, display: "flex", flexDirection: "column", gap: 12 }}>
         <div role="note" style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(75,55,245,.07)", display: "flex", gap: 10, alignItems: "flex-start" }}>
@@ -57,5 +62,6 @@ export function Mensajes({ es, yo, ciudad, d }: { es: boolean; yo: YoCom; ciudad
         </div>
       </div>
     </Marco>
+    </>
   );
 }

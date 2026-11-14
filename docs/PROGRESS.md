@@ -2063,3 +2063,49 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   la baja), `lib/correo/plantillas.ts` (marco con `wallet` y `baja`), `lib/correo/recibos.ts` (armarReciboBoletos), `mapa-de-datos.json` (5 tablas: wa_templates,
   wa_template_events, support_email_in, email_unsubscribes, sms_outbox; regenerado), `infra/pruebas/docker-compose.yml` y `pruebas/servir/servir.sh` (TELNYX_FROM,
   WHATSAPP_WABA_ID, CORREO_SNS_TEMA, CORREO_SNS_HOSTS en el perfil completo), los docs.
+
+## Fase 9 · 9m — lo diferido del vecino que entra antes de abrir (14 nov)
+- **Hecho (rama del worktree de 9m, sobre claude/vibrant-franklin-krutwa a7441f9):**
+  - **Migración `0143_vecino.sql`** (no depende de 0144/0145; los CHECK se AMPLÍAN con `pg_temp.ampliar_check`):
+    - **Direcciones de todo EE. UU. (decisión AC):** `geo_streets` con estado, lugar y fuente; tablas `geo_points` (puntos de dirección de OpenAddresses y de los
+      condados que los publican), `geo_places` (TIGER PLACE), `geo_zips` (ZCTA) y `geo_names` (los nombres que se autocompletan: índice por prefijo
+      `text_pattern_ops`, por estado y trigram GIN); `geo_loads` por estado y tipo. Funciones `dir_partes`, `dir_resolver` (punto → rango → calle), `dir_ubicar`
+      (la de siempre, misma firma), `dir_sugerir` (prefijo con tope en el estado y luego en el país, KNN al punto, la ciudad y el estado escritos, difuso solo
+      si no hay prefijo), `dir_inversa` (punto ≤ 40 m o tramo ≤ 150 m con su lado y paridad), `geo_nombres_rehacer`. `user_addresses` con lugar, estado y
+      `pin_at` (calidad «punto» y «puerta»); `businesses.geo_fixed_*` (el punto que corrigió el Super Admin).
+    - Mensajes en vivo: disparadores `chat_messages_vivo` y `dm_messages_vivo` (`pg_notify('mensajes', …)` sin el texto) y `chat_messages_sin_secretos`.
+    - `search_alerts.kind` (búsqueda / vacantes, una de vacantes por ciudad), plantilla `vacante_nueva`, `content_reports` acepta «job», `review_topics`,
+      `vehicle_recalls`, `users.voice_search`, la fila «Dirección y mapa» de la guía del panel.
+  - **Direcciones:** `infra/direcciones/generar.sh` reescrito: por estado (TIGER ADDRFEAT + PLACE + ZCTA + OpenAddresses), en paralelo (`PARALELO`) y
+    reanudable, volumen aparte, refresco a los 90 días, `ESTADOS=todos` para el país, `CONDADOS_MUESTRA` para un disco chico. API propia `/api/direcciones`
+    (sugerir y al revés, con tope de 250 ms y de peticiones); `DireccionCampo` (autocompletar mientras se escribe, «Usar mi ubicación», código postal) y
+    `MapaPin` (pin ajustable sobre las teselas propias) en **Mis direcciones, el checkout con delivery (las mismas direcciones), Publica tu negocio, Panel ›
+    Tu página › Dirección y mapa y Super Admin › Negocio 360 › Punto en el mapa** (con motivo y auditoría). El pin se acepta a ≤ 250 m de la dirección o
+    ≤ 3 km del centro de su código postal. Medida nacional (`scripts/carga/direcciones-1m.mjs`: 5,9 M nombres, 2 M tramos, 2 M puntos): 12/12 dentro de
+    100 ms (p95 máx. 19 ms). `infra/mapa/generar.sh` con `MAPA_REGION=us` para el mapa base del país.
+  - **Lo del vecino:** onboarding pasos 3–5 y Fundadores (ya servido en 5c; probado), mini mapa propio en el Inicio (escritorio) y en la ficha, «Cómo llegar»
+    por `lib/como-llegar.ts` (Mapas del iPhone, la app de Android, la web en una computadora; 25 lugares cambiados), pines por recuadro cuando pasan de 400,
+    chips en dos líneas, «¿Es tu negocio?», `HojaEntrar` (AuthSheet bilingüe con errores), «Lleva o es» en la hoja del plato, «Lo que más mencionan»
+    (`lib/temas.ts`, barrido), reportar novedad y vacante, vacantes en Buscar y «Avísame de nuevas vacantes» (barrido una vez por vacante), Mi cuenta ›
+    Avisos › Tus alertas con «Quitar», **Mensajes en vivo** (SSE propio `/api/vivo` + LISTEN/NOTIFY; se quitaron los intervalos de 4–5 s, también el del
+    panel), tarjeta y seguro social tapados en Mensajes, retiros de NHTSA (`infra/retiros/generar.sh`, mensual) en la hoja del carro, `/buscar/inventario`
+    (casa o carro), Mi cuenta › Pagos › Movimientos, Mis boletos guarda todos los próximos, sesiones con «Este iPhone · To'Latino 1.0 (12)», Buscar con la
+    voz con su aviso y su interruptor en Privacidad.
+  - **Guardianes:** nuevos `direccionSinTerceros`, `autocompletarRapido`, `mensajesEnVivo`, `mensajesTapados`; `guiaDelPanelCompleta` lee las filas de todas
+    las migraciones. **`alreves9m` 36/36**; `alreves7e` 36/36.
+  - **Ayuda:** nuevas `direcciones` y `pagos-y-movimientos`; al día `mapa`, `mensajes`, `buscar`, `mi-cuenta` (ES/EN).
+- **Probado aquí (sin Docker: Postgres 16 + PostGIS en un cluster propio :5497, el build standalone en :3171, un `docker exec` de mentira):**
+  `node guardianes/run.mjs` → sin fallos; `tsc --noEmit` limpio; `pnpm --filter web build` en verde; base nueva 0001–0143 + semillas repetibles + semilla de
+  pruebas hasta 0061, luego 0143 dos veces más sin errores y `migrar.sh` otra vez «al día»; **`dir9m` 29 ✓ y `vec9m` 50 ✓, dos veces seguidas cada una**
+  (un mensaje llega al otro teléfono en 12 ms desde que se guarda y en 38 ms el que entra directo en la base; quieta, la conversación no pregunta nada;
+  cada pieza a 390 y 1360 en ES y EN sin scroll de lado); `pruebas/infra/direcciones.test.sh` 19/19 (Pensilvania + muestra de CA/TX/NY con archivos del
+  formato de TIGER y OpenAddresses, reanudable, «al día», al revés, ≤ 100 ms).
+- **No corrió aquí:** las cargas reales de TIGER, OpenAddresses y NHTSA (la red de esta máquina no llega a census.gov, openaddresses.io ni nhtsa.gov) →
+  workflow «Direcciones» (ampliado) y `tolatino-pruebas-1`; el orden del sandbox (0143 después de 0144/0145, que no están en esta rama); la regresión entera,
+  la matriz de 9 dispositivos y `pruebas/visual` → CI (9b). Teselas: en local no hay servidor de teselas (el mini mapa sale sin fondo).
+- **Para quien junte las ramas:** `guardianes/run.mjs` (cuatro guardianes al final y el cambio en `guiaDelPanelCompleta`), `app/panel/Panel.tsx` (PARTS «dir»,
+  `RefrescoVivo`, sin el intervalo de 5 s) y `app/panel/[id]/[[...r]]/page.tsx` (SUBS «dir»), `app/repartidor/Repartidor.tsx` y `SinSenalRep.tsx` (una línea:
+  «Cómo llegar»), `app/admin/acciones-negocios.ts` (`puntoCorregir` al final; ocultar cierra reportes), `lib/barrido.ts` (tareas «vacantes» y «temasResenas»),
+  `lib/canales/barrido.ts` (alertas solo kind «busqueda»), LAUNCH L49 (Publica (1) hecho, línea de 9n), `mapa-de-datos.json` e `inventario-datos.json`
+  (regenerados), `scripts/portar-sistema.mjs` (AuthSheet y BusinessCard), `infra/*/deploy.sh` (direcciones y retiros) y `pruebas/infra/traza-sandbox.sh`,
+  `scripts/carga/correr.mjs`, `pruebas/e2e/menu2b.cjs` (sin sesión → la hoja «Entra para pedir»).

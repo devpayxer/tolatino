@@ -55,7 +55,7 @@ export async function busquedas(): Promise<number> {
                             where b.city_id = a.city_id and b.status = 'active' and b.created_at > a.created_at and length(trim(a.query)) >= 2
                               and (b.name ilike '%' || replace(replace(trim(a.query), '%', ''), '_', '') || '%' or k.name::text ilike '%' || replace(replace(trim(a.query), '%', ''), '_', '') || '%')
                             order by b.created_at limit 1) b
-      where a.removed_at is null and a.notified_at is null and a.created_at > now() - interval '180 days' order by a.id limit 200`)).rows;
+      where a.kind = 'busqueda' and a.removed_at is null and a.notified_at is null and a.created_at > now() - interval '180 days' order by a.id limit 200`)).rows;
   let n = 0;
   for (const a of L) {
     const r = await db().query(`update search_alerts set notified_at = now() where id = $1::bigint and notified_at is null`, [a.id]);

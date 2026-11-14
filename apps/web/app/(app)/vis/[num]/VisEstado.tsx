@@ -12,6 +12,7 @@ import { ANIMALES_SERVICIO, EHO, cuotaTexto, mudarteTexto, usd } from "@/lib/inm
 import { LICENCIA, QUE, cuandoVis, diaVis, horaVis, soloLlamada, type Bi } from "@/lib/visitas-inm-comun";
 import type { VisVista } from "@/lib/visitas-inm";
 import { visAccion } from "./acciones";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,7 +72,7 @@ export function VisEstado({ x, es }: { x: VisVista; es: boolean }) {
     ...(x.nota ? [[E2("TU NOTA", "YOUR NOTE"), `«${x.nota}»`] as [string, string]] : [])];
   const vivo = ["pending", "change_proposed", "confirmed"].includes(x.estado);
   const conf = x.estado === "confirmed";
-  const llegar = () => { if (x.direccion) window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(x.direccion)}`, "_blank", "noopener"); };
+  const llegar = () => { if (x.direccion) abrirComoLlegar({ dir: x.direccion }); };
   // «Calendario»: un .ics con la hora (hora local del negocio).
   const ics = () => {
     const p = (n: number) => String(n).padStart(2, "0"), ymd = x.dia.replace(/-/g, ""), f = (m: number) => `${ymd}T${p(Math.floor(m / 60))}${p(m % 60)}00`;

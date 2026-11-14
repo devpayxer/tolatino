@@ -210,6 +210,15 @@ paso_app() {
   # El azul/verde: migraciones (por la red privada) → color nuevo → puerta de salud → nginx → 10 minutos de vigilancia → ok o vuelta atrás sola.
   export PGPASSWORD; PGPASSWORD=$(envval POSTGRES_PASSWORD)
   export DB_HOST="$RED_BASE"
+  # 9m · Direcciones de TODO EE. UU. (decisión AC: los 50 estados + DC + PR, por estado, 4 a la vez, reanudable; la carpeta en el volumen aparte) y los
+  # retiros de NHTSA, aparte y sin esperar: nunca frenan el despliegue. La base es la de la otra máquina (psql-remoto); la clave viaja por el entorno.
+  if ! systemctl is-active --quiet tolatino-direcciones; then
+    systemd-run --unit tolatino-direcciones --collect --setenv=PGPASSWORD --setenv=DB_HOST --setenv=ESTADOS=todos --setenv=PARALELO=4 \
+      bash "$REPO/infra/direcciones/generar.sh" /var/lib/tolatino/direcciones bash "$REPO/infra/comun/psql-remoto.sh" || true
+  fi
+  if ! systemctl is-active --quiet tolatino-retiros; then
+    systemd-run --unit tolatino-retiros --collect --setenv=PGPASSWORD --setenv=DB_HOST bash "$REPO/infra/retiros/generar.sh" /var/lib/tolatino/retiros bash "$REPO/infra/comun/psql-remoto.sh" || true
+  fi
   PSQL=(bash "$REPO/infra/comun/psql-remoto.sh" exec -T db psql -h x -U tolatino -d tolatino -v ON_ERROR_STOP=1 -qAt)
   av_compose() { local c="$1"; shift; TOLATINO_COLOR="$c" TOLATINO_PUERTO="$(puerto_de "$c")" TOLATINO_IMAGEN="$IMG" \
     docker compose -p "tolatino-$c" --env-file "$ENV_FILE" -f "$REPO/infra/produccion/compose-app.yml" "$@"; }

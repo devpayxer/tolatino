@@ -3,7 +3,7 @@ import { yo } from "@/lib/cuenta";
 import { categorias } from "@/lib/directorio";
 import { categoriaPorSlug, conteos, filtros, mosaicos } from "@/lib/categoria";
 import { idioma } from "@/lib/idioma";
-import { negociosMapa, type FiltroMapa } from "@/lib/mapa";
+import { leerCaja, MAPA_MAX, negociosMapa, type FiltroMapa } from "@/lib/mapa";
 import { ubicacion } from "@/lib/ubicacion";
 import { PantallaPronto } from "../PantallaPronto";
 import { Mapa } from "./Mapa";
@@ -11,7 +11,7 @@ import { Mapa } from "./Mapa";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Mapa · To'Latino" };
 
-type SP = { cat?: string; sub?: string; f?: string; m?: string; ctx?: string };
+type SP = { cat?: string; sub?: string; f?: string; m?: string; ctx?: string; caja?: string };
 
 /* APP-NEG-MAPA (diseño «Mapa»): pines + lista con los filtros de donde vienes (la categoría manda ?cat, ?sub, ?f y
    ctx=1) y los del propio mapa (?m = open · ver · pro; sin contexto, ?cat como chip de categoría). */
@@ -29,7 +29,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   const validos = c && ctx ? new Set((await filtros(c.id, lang)).map((x) => x.key)) : new Set<string>();
   const fs = [...new Set(String(sp.f ?? "").split(",").filter((k) => validos.has(k)))];
   const m: FiltroMapa = (["open", "ver", "pro"] as const).find((x) => x === sp.m) ?? "all";
-  const [res, n] = await Promise.all([negociosMapa(loc, { cat: c?.id ?? null, sub, filtros: fs, f: m }, lang), ctx ? Promise.resolve(null) : conteos(loc)]);
+  // 9m · ?caja= (pines por el recuadro visible, L63): solo cuando la pantalla vio el tope; el servidor lo valida.
+  const caja = leerCaja(sp.caja);
+  const [res, n] = await Promise.all([negociosMapa(loc, { cat: c?.id ?? null, sub, filtros: fs, f: m, caja }, lang), ctx ? Promise.resolve(null) : conteos(loc)]);
   const cat = c ? cats.find((x) => x.id === c.id) ?? null : null;
   return (
     <Mapa v={{
@@ -38,7 +40,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
       volver: ctx && cat ? `/c/${cat.slug}?${new URLSearchParams({ ...(typeof sp.sub === "string" && sub ? { sub: sp.sub } : {}), ...(fs.length ? { f: fs.join(",") } : {}) })}`.replace(/\?$/, "") : null,
       titulo: cat?.name ?? (es ? "Negocios cerca de ti" : "Businesses near you"),
       cats: n ? cats.filter((x) => (n.get(x.id) ?? 0) > 0).map((x) => ({ slug: x.slug, l: x.label })) : [],
-      total: res.total, adentro: res.adentro, sinPin: res.sinPin, pins: res.pins,
+      total: res.total, adentro: res.adentro, sinPin: res.sinPin, pins: res.pins, tope: MAPA_MAX, caja: !!caja,
     }} />
   );
 }

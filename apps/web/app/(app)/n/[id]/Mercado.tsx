@@ -8,6 +8,7 @@ import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType, type MouseEvent } from "react";
 import type { MercPublico, ProdMerc } from "@/lib/merc-publico";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,7 +62,7 @@ export function useMerc(mp: MercPublico | null, es: boolean) {
   };
   const quitar = (item: string, o: number | null) => { if (!mio) return; const nuevo = { ...mio, lines: mio.lines.filter((l) => !(l.item === item && l.o === o)) }; guardarCarritoMerc(nuevo); setCart(nuevo.lines.length ? nuevo : null); };
   const verPedido = () => router.push(`/n/${mp.negocio.id}/mercado`);
-  const llegar = () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mp.negocio.direccion ?? mp.negocio.nombre)}`, "_blank", "noopener");
+  const llegar = () => abrirComoLlegar({ dir: mp.negocio.direccion ?? mp.negocio.nombre });
   const llamar = () => { if (mp.negocio.telefono) location.href = `tel:${mp.negocio.telefono}`; };
   return { mp, es, E2, nm, h, ord, secs, notes, riel, precio, meta, pod, tot, mio, hoja, aviso, abrir: (id: string, e?: MouseEvent) => { stop(e); setHoja(id); }, cerrar: () => setHoja(null), agregar, quitar, verPedido, llegar, llamar, linea,
     otroMercado: !!cart && cart.biz !== mp.negocio.id && cart.lines.length > 0, top: mp.prods.filter((p) => !p.ago).slice(0, 4) };

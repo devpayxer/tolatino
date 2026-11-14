@@ -4863,7 +4863,10 @@ const guardianes = {
   guiaDelPanelCompleta() {
     const G = "guiaDelPanelCompleta", M = "packages/db/migrations/0120_compa_panel.sql", R = "apps/web/app/panel/[id]/[[...r]]/page.tsx", PN = "apps/web/app/panel/Panel.tsx", A = "apps/web/lib/compa/acciones.ts";
     if (!existsSync(M)) return falla(G, M, 0, "falta la guía del panel (0120)");
-    const m = readFileSync(M, "utf8"), filas = new Map();
+    // 9m · Las filas de la guía de TODAS las migraciones (0120 y las que agregan una sección después, como «pagina/dir» en 0143): solo dentro de un
+    // «insert into compa_panel_guide … on conflict».
+    const m = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8"))
+      .flatMap((s) => [...s.matchAll(/insert into compa_panel_guide \([^)]*\) values([\s\S]*?)\non conflict/g)].map((y) => y[1])).join("\n"), filas = new Map();
     for (const x of m.matchAll(/^\s*\('([a-z/]+)', '([a-z/]*)', (null|'[a-z]+'), '([a-z]+)', '(\{[^']*\})',/gm)) filas.set(x[1], { ruta: x[2], parte: x[3] === "null" ? null : x[3].slice(1, -1), title: JSON.parse(x[5]) });
     if (filas.size < 15) falla(G, M, 0, `la guía del panel tiene ${filas.size} filas: ¿se rompió su forma?`);
     for (const [k, f] of filas) if (f.ruta !== (k === "pagina" ? "" : k)) falla(G, M, 0, `la fila «${k}» lleva a «${f.ruta}» (el código ES la ruta)`);
@@ -8555,6 +8558,115 @@ const guardianes = {
     if (!/error_page 502 503 504 \/mantenimiento\.html;/.test(n) || !/if \(-f \/var\/lib\/tolatino\/mantenimiento\/activo\) \{ set \$tolatino_mant 1; \}/.test(n)) falla(G, "infra/produccion/nginx-produccion.conf", 0, "nginx no muestra la página de mantenimiento (app caída y ventana programada)");
     if (!/\^\/\(api\|admin\|entrar/.test(n)) falla(G, "infra/produccion/nginx-produccion.conf", 0, "la ventana no puede cortar la API (webhooks de Stripe, tiendas, pases) ni el Super Admin");
     if (!/install -m 0644 "\$REPO\/infra\/comun\/mantenimiento\/index\.html" \/var\/www\/mantenimiento\/index\.html/.test(readFileSync("infra/produccion/deploy.sh", "utf8"))) falla(G, "infra/produccion/deploy.sh", 0, "el despliegue no instala la página de mantenimiento");
+  },
+
+  /* 9m · direccionSinTerceros (decisión AC): las direcciones, el mapa y «Cómo llegar» son nuestros. Ningún archivo de la app, los paquetes o los
+     servicios llama a un geocodificador, autocompletado o teselas de terceros (Google Maps/Places, Mapbox, Here, Esri/ArcGIS, Nominatim o Photon
+     públicos, OpenCage, LocationIQ, Geoapify, positionstack, tile.openstreetmap.org…): las direcciones salen de nuestra base (dir_sugerir,
+     dir_inversa, dir_resolver) y las teselas de /teselas. «Cómo llegar» abre la app de mapas del TELÉFONO con un enlace (no es una llamada): esos
+     enlaces viven SOLO en lib/como-llegar.ts. La ruta /api/direcciones y lib/direcciones.ts no hacen fetch. La carga (infra/direcciones/generar.sh)
+     baja datos públicos (Censo y las fuentes de fuentes-oa.txt), nunca consulta un servicio por cada dirección.
+     Al revés (alreves9m): un fetch a maps.googleapis.com, un enlace a google.com/maps fuera de lib/como-llegar.ts, una tesela de Mapbox, un fetch en
+     lib/direcciones.ts. */
+  direccionSinTerceros() {
+    const G = "direccionSinTerceros", CL = "apps/web/lib/como-llegar.ts";
+    const PROHIBIDOS = /maps\.googleapis\.com|maps\.google\.com|google\.com\/maps|maps\.gstatic\.com|places\.googleapis|api\.mapbox\.com|mapbox-gl|tiles\.mapbox|\bmapbox\.com|api\.here\.com|hereapi\.com|geocode\.search\.hereapi|arcgisonline\.com|arcgis\.com\/arcgis\/rest|geocode\.arcgis|nominatim\.openstreetmap\.org|photon\.komoot\.io|api\.opencagedata\.com|us1\.locationiq\.com|api\.geoapify\.com|api\.positionstack\.com|tile\.openstreetmap\.org|maps\.apple\.com\/geocode/;
+    for (const f of archivos) {
+      if (!/^(apps|packages|services)\//.test(f) || !/\.(tsx?|jsx?|mjs|cjs)$/.test(f) || /node_modules|\/\.next\//.test(f) || f === CL) continue;
+      if (/^apps\/mobile\/(ios|android)\//.test(f)) continue;
+      const t = sinComent(f);
+      t.split("\n").forEach((l, i) => { if (PROHIBIDOS.test(l)) falla(G, f, i + 1, "un servicio de mapas o direcciones de terceros: las direcciones salen de nuestra base y «Cómo llegar» solo con lib/como-llegar.ts"); });
+      if (/\b(maps:\/\/|geo:[0-9$])/.test(t)) falla(G, f, 0, "un enlace a la app de mapas fuera de lib/como-llegar.ts (abrirComoLlegar / urlComoLlegar)");
+    }
+    if (!existsSync(CL)) return falla(G, CL, 0, "falta lib/como-llegar.ts");
+    const cl = sinComent(CL);
+    if (!/export function abrirComoLlegar/.test(cl) || !/maps:\/\/\?daddr=/.test(cl) || !/geo:\$\{d\.lat\},\$\{d\.lng\}/.test(cl)) falla(G, CL, 0, "«Cómo llegar» abre la app de mapas del teléfono (maps:// en iPhone, geo: en Android)");
+    if (/\bfetch\(/.test(cl)) falla(G, CL, 0, "«Cómo llegar» es un enlace: nunca una llamada");
+    for (const f of ["apps/web/lib/direcciones.ts", "apps/web/app/api/direcciones/route.ts", "apps/web/app/_dir/DireccionCampo.tsx", "apps/web/app/_dir/MapaPin.tsx", "apps/web/app/_dir/MiniMapa.tsx"]) {
+      if (!existsSync(f)) { falla(G, f, 0, "falta"); continue; }
+      const t = sinComent(f);
+      if (/\bfetch\(\s*["'`]https?:/.test(t)) falla(G, f, 0, "una llamada a otro servidor desde las direcciones o el mapa");
+      if (/DireccionCampo/.test(f) && !/fetch\(`\/api\/direcciones\?/.test(t)) falla(G, f, 0, "las sugerencias salen de /api/direcciones (nuestra base)");
+      if (/(MapaPin|MiniMapa)/.test(f) && !/\bteselas\(/.test(t)) falla(G, f, 0, "el mapa se pinta con las teselas propias (lib/mapa-geo.ts teselas)");
+    }
+    const lib = sinComent("apps/web/lib/direcciones.ts");
+    if (!/from dir_sugerir\(/.test(lib) || !/from dir_inversa\(/.test(lib) || !/from dir_resolver\(/.test(lib)) falla(G, "apps/web/lib/direcciones.ts", 0, "autocompletar, inversa y el punto final salen de las funciones de la base (dir_sugerir, dir_inversa, dir_resolver)");
+    const gen = readFileSync("infra/direcciones/generar.sh", "utf8");
+    if (!/BASE="\$\{DIRECCIONES_ESPEJO:-https:\/\/www2\.census\.gov\/geo\/tiger\}"/.test(gen) || /googleapis|mapbox|hereapi|nominatim\.openstreetmap|photon\.komoot/.test(gen)) falla(G, "infra/direcciones/generar.sh", 0, "la carga baja datos públicos del Censo (y las fuentes de fuentes-oa.txt): nunca un servicio de geocodificación");
+  },
+
+  /* 9m · autocompletarRapido (decisión AC: ≤ 100 ms mientras se escribe, a escala nacional). Lo que lo hace rápido no se puede perder sin que el build
+     se entere: los índices por PREFIJO (text_pattern_ops) y de trigramas de geo_names, la búsqueda acotada (un CTE materializado con límite y el
+     número de sugerencias recortado), el tope de tiempo de la consulta (statement_timeout ≤ 300 ms), la espera de la pantalla (≥ 100 ms sin teclas)
+     y que la respuesta vieja se cancele, y la MEDIDA a escala nacional con su presupuesto de 100 ms (scripts/carga/direcciones-1m.mjs, en la
+     carga) y la de la tubería (pruebas/infra/direcciones.test.sh). Al revés (alreves9m): quitar el índice por prefijo, el límite del CTE, el tope de
+     tiempo, la espera de la pantalla, o subir el presupuesto. */
+  autocompletarRapido() {
+    const G = "autocompletarRapido";
+    const mig = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");
+    if (!/create index if not exists \w+ on geo_names \(norm text_pattern_ops\)/.test(mig) || !/on geo_names \(state, norm text_pattern_ops\)/.test(mig)) falla(G, "packages/db/migrations", 0, "geo_names sin sus índices por prefijo (norm text_pattern_ops y state, norm)");
+    if (!/on geo_names using gin \(norm gin_trgm_ops\)/.test(mig)) falla(G, "packages/db/migrations", 0, "geo_names sin su índice de trigramas (lo mal escrito)");
+    if (!/on geo_points \(norm, zip, num_i\)/.test(mig) || !/on geo_streets \(norm, zip_l, zip_r\)/.test(mig)) falla(G, "packages/db/migrations", 0, "la casa y el tramo se buscan por índice (geo_points norm/zip/num_i, geo_streets norm/zip)");
+    const fn = ultimaFn("dir_sugerir");
+    if (!fn) return falla(G, "packages/db/migrations", 0, "falta dir_sugerir");
+    if (!/with m as materialized \(/.test(fn) || !/where g\.norm like s \|\| '%'/.test(fn) || !/limit 4000\)/.test(fn)) falla(G, "dir_sugerir", 0, "la búsqueda por prefijo tiene que ser acotada (CTE materializado con límite) antes de ordenar por cercanía");
+    if (!/cuantos := greatest\(1, least\(coalesce\(cuantos, 6\), 10\)\)/.test(fn)) falla(G, "dir_sugerir", 0, "el número de sugerencias se recorta (1–10)");
+    const lib = sinComent("apps/web/lib/direcciones.ts"), tope = /export const TOPE_MS = (\d+);/.exec(lib);
+    if (!tope || Number(tope[1]) > 300 || !/set local statement_timeout = \$\{TOPE_MS\}/.test(lib)) falla(G, "apps/web/lib/direcciones.ts", 0, "la consulta de autocompletar lleva su tope de tiempo (≤ 300 ms)");
+    const dc = sinComent("apps/web/app/_dir/DireccionCampo.tsx"), espera = /\}, (\d+)\);\n  \};\n  const elegir/.exec(dc);
+    if (!espera || Number(espera[1]) < 100 || !/ctl\.current\?\.abort\(\); const c = new AbortController\(\)/.test(dc)) falla(G, "apps/web/app/_dir/DireccionCampo.tsx", 0, "la pantalla espera ≥ 100 ms sin teclas y cancela la pregunta anterior");
+    const c = existsSync("scripts/carga/direcciones-1m.mjs") ? readFileSync("scripts/carga/direcciones-1m.mjs", "utf8") : "";
+    if (!/NOMBRES = n\(6_000_000\)/.test(c) || !/presupuesto: 100/.test(c) || /presupuesto: (?!100\b)\d+/.test(c)) falla(G, "scripts/carga/direcciones-1m.mjs", 0, "la medida a escala nacional (6 M de nombres) con presupuesto de 100 ms");
+    if (!/"direcciones"\]/.test(readFileSync("scripts/carga/correr.mjs", "utf8"))) falla(G, "scripts/carga/correr.mjs", 0, "la carga corre direcciones-1m");
+    const t = existsSync("pruebas/infra/direcciones.test.sh") ? readFileSync("pruebas/infra/direcciones.test.sh", "utf8") : "";
+    if (!/presupuesto 100 ms/.test(t) || !/-le 100 \]/.test(t)) falla(G, "pruebas/infra/direcciones.test.sh", 0, "la prueba de la tubería mide la velocidad (≤ 100 ms)");
+  },
+
+  /* 9m · mensajesEnVivo (L385, L599): Mensajes en vivo con SSE propio, sin preguntar cada N segundos. Las pantallas de conversación (Mi cuenta,
+     Comunidad y el panel) escuchan /api/vivo (useMensajesVivo / RefrescoVivo) y no tienen setInterval; la ruta pide sesión, el negocio pide la parte
+     «Mensajes» del panel y el aviso NUNCA lleva el texto (solo de qué conversación es); la base avisa (NOTIFY 'mensajes') en cada mensaje nuevo de
+     chat_messages y dm_messages sin el cuerpo; el cliente se vuelve a conectar con espera creciente (nunca un intervalo fijo).
+     Al revés (alreves9m): volver al setInterval, mandar el texto en el aviso, quitar el disparador, la ruta sin sesión o sin acceso al negocio. */
+  mensajesEnVivo() {
+    const G = "mensajesEnVivo";
+    const P = { "apps/web/app/(app)/cuenta/mensajes/[negocio]/Chat.tsx": /useMensajesVivo\(/, "apps/web/app/(app)/comunidad/mensajes/[id]/Chat.tsx": /useMensajesVivo\(/,
+      "apps/web/app/(app)/cuenta/mensajes/Mensajes.tsx": /<RefrescoVivo k="chat" \/>/, "apps/web/app/(app)/comunidad/mensajes/Mensajes.tsx": /<RefrescoVivo k="dm" \/>/,
+      "apps/web/app/panel/Panel.tsx": /<RefrescoVivo negocio=\{d\.id\} k="chat" \/>/ };
+    for (const [f, re] of Object.entries(P)) {
+      if (!existsSync(f)) { falla(G, f, 0, "falta"); continue; }
+      const t = sinComent(f);
+      if (!re.test(t)) falla(G, f, 0, "la conversación se pone al día en vivo (/api/vivo), no preguntando");
+      if (/Chat\.tsx$|Mensajes\.tsx$/.test(f) && /setInterval\(/.test(t)) falla(G, f, 0, "pregunta cada N segundos (setInterval): Mensajes es en vivo");
+    }
+    for (const f of ["apps/web/app/panel/MensajesPanel.tsx", "apps/web/lib/vivo-cliente.ts", "apps/web/app/_vivo/RefrescoVivo.tsx"]) if (existsSync(f) && /setInterval\(/.test(sinComent(f))) falla(G, f, 0, "un intervalo fijo en Mensajes");
+    // El panel preguntaba cada 5 s con la sección Mensajes abierta (router.refresh en un setInterval): ningún intervalo que refresque Mensajes.
+    if (/ruta\.sec !== "msg"[\s\S]{0,200}setInterval\(|setInterval\([^)]*router\.refresh/.test(sinComent("apps/web/app/panel/Panel.tsx"))) falla(G, "apps/web/app/panel/Panel.tsx", 0, "el panel refresca Mensajes con un intervalo fijo: es en vivo (RefrescoVivo)");
+    const vc = existsSync("apps/web/lib/vivo-cliente.ts") ? sinComent("apps/web/lib/vivo-cliente.ts") : "";
+    if (!/new EventSource\(`\/api\/vivo/.test(vc) || !/espera = Math\.min\(espera \* 2, 30000\)/.test(vc)) falla(G, "apps/web/lib/vivo-cliente.ts", 0, "EventSource a /api/vivo con espera creciente al reconectar");
+    const R = "apps/web/app/api/vivo/route.ts", r = existsSync(R) ? sinComent(R) : "";
+    if (!/const u = await yo\(\);\n  if \(!u\) return NO\(\);/.test(r) || !/accesoPanel\(negocio, "msg"\)/.test(r)) falla(G, R, 0, "la ruta en vivo pide sesión y, para un negocio, la parte «Mensajes» de su panel");
+    if (/\bbody\b|last_text|\btexto\b|\bselect\b|\bdb\(\)/i.test(r)) falla(G, R, 0, "el aviso en vivo no lleva texto ni consulta mensajes: solo de qué conversación es");
+    const L = "apps/web/lib/mensajes-vivo.ts", l = existsSync(L) ? sinComent(L) : "";
+    if (!/c\.query\("listen mensajes"\)/.test(l)) falla(G, L, 0, "una conexión por proceso con LISTEN mensajes");
+    for (const [fn, tabla] of [["chat_messages_vivo", "chat_messages"], ["dm_messages_vivo", "dm_messages"]]) {
+      const b = ultimaFn(fn);
+      if (!b || !/pg_notify\('mensajes'/.test(b)) { falla(G, "packages/db/migrations", 0, `${tabla}: falta el aviso en vivo (${fn} con NOTIFY 'mensajes')`); continue; }
+      if (/new\.body|'body'/.test(b)) falla(G, "packages/db/migrations", 0, `${fn}: el aviso en vivo lleva el texto del mensaje`);
+    }
+    const mig = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");
+    if (!/create trigger chat_messages_vivo after insert or update of hidden_at on chat_messages/.test(mig) || !/create trigger dm_messages_vivo after insert or update of hidden_at on dm_messages/.test(mig)) falla(G, "packages/db/migrations", 0, "los disparadores del aviso en vivo (chat_messages y dm_messages)");
+  },
+
+  /* 9m · mensajesTapados (L1063): Mensajes tapa tarjetas y seguro social como Soporte: lib/mensajes.ts pasa todo texto por tapar() ANTES de guardarlo
+     (y antes de mirar si trae un teléfono: una tarjeta no es un teléfono) y la base rechaza el que se salte eso (chat_messages_sin_secretos).
+     Al revés (alreves9m): quitar tapar() de limpiar() o el disparador. */
+  mensajesTapados() {
+    const G = "mensajesTapados", F = "apps/web/lib/mensajes.ts", t = sinComent(F);
+    if (!/import \{ tapar \} from "\.\/compa\/tapar";/.test(t) || !/function limpiar\(texto: unknown\)[\s\S]{0,140}?\{\n  const tp = tapar\(String\(texto \?\? ""\)\);/.test(t)) falla(G, F, 0, "limpiar() tapa con tapar() antes de guardar");
+    const b = ultimaFn("chat_messages_sin_secretos");
+    if (!b || !/texto_con_secretos\(new\.body\)/.test(b)) falla(G, "packages/db/migrations", 0, "la base rechaza tarjetas y seguro social en chat_messages");
+    const mig = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");
+    if (!/create trigger chat_messages_sin_secretos before insert or update of body on chat_messages/.test(mig)) falla(G, "packages/db/migrations", 0, "falta el disparador chat_messages_sin_secretos");
   },
 };
 

@@ -9,6 +9,7 @@ import type { ApartadoVista } from "@/lib/apartados";
 import { apartadoAccion, pagarPlan } from "./acciones";
 import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../pago/MetodoPago";
 import { useVerificacion } from "../../pago/Verificacion";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -82,7 +83,7 @@ export function ApartadoEstado({ x, es, pago = null }: { x: ApartadoVista; es: b
   const pasos = x.ship ? [[E2("Pedido", "Ordered"), hora(x.enviado)], [E2("Lo tienen", "In stock"), hora(x.guardado)], [E2("En camino", "On its way"), hora(x.salio)], [E2("Entregado", "Delivered"), hora(x.recogido)]]
     : [[E2("Enviado", "Sent"), hora(x.enviado)], [E2("Guardado", "Held"), hora(x.guardado)], [E2("Recogido", "Picked up"), hora(x.recogido)]];
   const steps = pos2 == null ? [] : pasos.map(([label, time], i) => ({ label, time, state: i < pos2 || x.st === "done" ? "done" : i === pos2 ? "current" : "next" }));
-  const llegar = () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(x.dir || x.bname)}`, "_blank", "noopener");
+  const llegar = () => abrirComoLlegar({ dir: x.dir || x.bname });
   const acts: [string, string, () => void, boolean?][] = P && vivo ? [["card", E2(`Pagar ${dinero(P.siguiente?.monto ?? 0)}`, `Pay ${dinero(P.siguiente?.monto ?? 0)}`), () => void pagar(), true], ["close", E2("Cancelar el plan", "Cancel the plan"), () => setConfirmar(true)]]
     : P && P.st === "paid" && x.st === "confirmed" ? [["pin", E2("Cómo llegar", "Directions"), llegar, true]]
     : x.st === "change_proposed" && otra ? [["check", E2(`Sí, la talla ${otra.label}`, `Yes, size ${otra.label}`), () => void hacer("otraTalla", E2(`Listo: te guardan la talla ${otra.label}`, `Done: they hold size ${otra.label}`)), true], ["close", E2("Quitarlo", "Remove it"), () => void hacer("quitar", E2("Listo: te guardan lo demás", "Done: they keep the rest"))], ["close", E2("Cancelar el apartado", "Cancel the hold"), () => setConfirmar(true)]]

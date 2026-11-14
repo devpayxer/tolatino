@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { Accion, Tarjeta } from "@/lib/tarjeta";
 import { guardarNegocio, registrarToque } from "./acciones";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { BusinessCard } = UI as unknown as Record<"BusinessCard", ComponentType<any>>;
@@ -22,7 +23,7 @@ export function TarjetaNegocio({ b, origen, textos }: { b: Tarjeta; origen: stri
     }
     if (a === "llegar" && b.lat != null && b.lng != null) {
       void registrarToque(b.id, "directions", origen);
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}`, "_blank", "noopener");
+      abrirComoLlegar({ lat: b.lat, lng: b.lng });
     }
   };
   const guardar = async () => {

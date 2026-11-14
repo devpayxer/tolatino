@@ -2,7 +2,7 @@
 
 _Pantallas: Mi cuenta › **Mensajes** (`/cuenta/mensajes`) y la conversación (`/cuenta/mensajes/{negocio}`); botón **Mensaje** en la página del
 negocio, **Escribir al negocio** en tu pedido y tu reservación; Panel › **Mensajes** (`/panel/{negocio}/mensajes`) y «Mensajes sin responder» en Hoy;
-Super Admin › Colas › **Mensajes reportados**. Versión: 11 nov 2026. Audiencia: vecino. Tema: cuenta._
+Super Admin › Colas › **Mensajes reportados**. Versión: 14 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 - **Vecino:** le escribes a cualquier negocio que ya está en To'Latino (tiene dueño). Una conversación por negocio; si
@@ -42,6 +42,13 @@ Super Admin › Colas › **Mensajes reportados**. Versión: 11 nov 2026. Audien
 - **Reportar otra vez:** si ya habías reportado una conversación y el caso se cerró, el nuevo reporte la vuelve a abrir (antes
   daba error).
 
+## En vivo y lo que se tapa
+- **En vivo:** cuando el negocio (o el vecino) te escribe, el mensaje te aparece al momento mientras tienes la conversación abierta, sin recargar.
+  La lista de conversaciones también se pone al día sola. Si se corta la conexión, al volver trae lo que te perdiste.
+- **Lo que se tapa:** si escribes un número de tarjeta, un número de seguro social, un código o una contraseña, se guarda como «[tapado]» y te
+  decimos «No compartas eso aquí. Nunca te lo pedimos.». Nadie de To'Latino ni del negocio lo ve. Los teléfonos no se pueden escribir: el negocio
+  comparte el suyo con un botón.
+
 ## Preguntas frecuentes
 **¿El negocio ve mi teléfono?** No. Solo tu nombre y lo que escribes.
 **¿To'Latino lee mis mensajes?** No, salvo que tú o el negocio reporten la conversación.
@@ -61,3 +68,7 @@ introduces itself the first time and marks every reply **EL COMPA · AI** (it is
 anything: it passes that to the business, which still gets your message. If an El Compa reply is wrong, use **Report › An El Compa reply**. To'Latino reads a conversation
 only when someone reports it, while that case is open; it can hide a message (the author sees the reason). Nothing is
 deleted.
+
+### Live and what gets covered
+Messages show up the moment they are sent while the conversation is open, and the list updates by itself; after a dropped connection it catches up.
+Card numbers, Social Security numbers, codes and passwords are saved as "[tapado]" ("covered") and you are told not to share them here.

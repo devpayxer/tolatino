@@ -12,6 +12,7 @@ import { useToast } from "../../comun";
 import { bolDeshacer, bolElegirCambio } from "../../acciones-despues";
 import type { CambioOrden } from "@/lib/evt-cambios";
 import { fechaHora, HojaAyuda, HojaCancelar, HojaNombre, HojaTransferir } from "../../Despues";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 type N = "Icon" | "Button" | "TicketQR" | "OrderTracker" | "ReceiptCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,7 +54,7 @@ export function Orden({ o, es, cambio = null }: { o: OrdenVista; es: boolean; ca
   // 8e · En la app: con los boletos a la vista, el brillo al máximo (se devuelve al salir).
   useBrilloQr(!cancelada && !ev.pasado);
   const cuando = ev.rango ? ev.rango.toUpperCase() : `${diaCorto(ev.dia, es).toUpperCase()} · ${hora(ev.h0)}`;
-  const llegar = ev.lat != null && ev.lng != null ? `https://www.google.com/maps/dir/?api=1&destination=${ev.lat},${ev.lng}` : ev.addr ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ev.addr)}` : null;
+  const llegar = ev.lat != null && ev.lng != null ? { lat: ev.lat, lng: ev.lng } : ev.addr ? { dir: ev.addr } : null;
   const calendario = () => {
     const z = (s: string) => s.replace(/[-:]/g, "").replace(/\.\d+/, "");
     const txt = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//To'Latino//Eventos//ES", "BEGIN:VEVENT", `UID:orden-${o.numero}@tolatino`, `DTSTART:${z(ev.start)}`, `DTEND:${z(ev.end)}`,
@@ -136,7 +137,7 @@ export function Orden({ o, es, cambio = null }: { o: OrdenVista; es: boolean; ca
       {!cancelada && !ev.pasado && V.transferir && libres.length > 0 && <Button variant="secondary" icon="share" onClick={() => setHoja("tr")}>{E2("Transferir boletos", "Transfer tickets")}</Button>}
       {!cancelada && <Button variant="secondary" icon="help" onClick={() => setHoja("ayuda")}>{E2("Ayuda con esta orden", "Help with this order")}</Button>}
       <Button variant="secondary" onClick={calendario}>{E2("Calendario", "Calendar")}</Button>
-      {llegar && <Button variant="secondary" onClick={() => window.open(llegar, "_blank", "noopener")}>{E2("Cómo llegar", "Directions")}</Button>}
+      {llegar && <Button variant="secondary" onClick={() => abrirComoLlegar(llegar)}>{E2("Cómo llegar", "Directions")}</Button>}
       <Button variant="secondary" onClick={() => setRecibo(!recibo)}>{E2("Recibo", "Receipt")}</Button>
     </div>
   );

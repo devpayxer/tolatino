@@ -76,6 +76,8 @@ export type Bloque =
   | { type: "chart"; k: string; v: string; bars: { h: string; on?: boolean; l?: string }[]; s?: string }
   /* 8e · El mapa en vivo de una entrega (hueco #6 de fase8-apps.md): RadiusMap del sistema (2ag) sin círculo, con las teselas, el pin (centro) y
      los puntos que arma la pantalla (lib/mapa-ruta.ts). */
+  // 9m · Una pieza compuesta que no cabe en estos bloques (la dirección con sus sugerencias y el pin ajustable): la pantalla la arma con piezas del sistema.
+  | { type: "pieza"; el: ReactNode }
   | { type: "mapa"; k: string; r?: string; tiles: { src: string; left: number; top: number }[]; dots: { x: number; y: number; color: string }[]; place?: string; towns?: string; note?: string };
 
 const toque = (on: boolean): CSSProperties => ({ width: 42, height: 24, borderRadius: 99, background: on ? "var(--tl-ink)" : "rgba(11,14,18,.18)", position: "relative", flex: "none", cursor: "pointer", transition: "background .2s" });
@@ -85,6 +87,7 @@ const para = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
 export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNode {
   switch (b.type) {
+    case "pieza": return <div data-bloque="pieza">{b.el}</div>;
     case "mapa": return (
       <div data-bloque="mapa" style={{ padding: "14px 15px", borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)" }}>
         <DS.RadiusMap label={b.k} radius={b.r} tiles={b.tiles} dots={b.dots} circle={0} place={b.place} towns={b.towns} note={b.note} />

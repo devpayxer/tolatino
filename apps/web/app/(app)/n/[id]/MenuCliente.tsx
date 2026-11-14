@@ -14,6 +14,8 @@ const { Icon, Button, Tag, Chip, MenuItemRow, MenuTile, OptionGroup, QtyStepper,
 export type Linea = { id: string; ch: Record<string, number[]>; q: number; nt: string; k: Record<string, string[]> };
 const CLAVE = "tl-carrito-v1", VIDA = 24 * 3600 * 1000;
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+// 9m · Lo que el panel marca en «Lleva o es» (Menú › Para el cliente; las mismas claves que app/panel/Menu.tsx MTAGS).
+const LLEVA: [string, string, string][] = [["pica", "Picante", "Spicy"], ["veg", "Vegetariano", "Vegetarian"], ["sg", "Sin gluten", "Gluten-free"], ["mar", "Pescado o mariscos", "Fish or shellfish"], ["lac", "Lácteos", "Dairy"], ["hue", "Huevo", "Egg"], ["nuez", "Maní o nueces", "Peanuts or nuts"]];
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 const foto = (u: string | null): CSSProperties => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: { stopPropagation?: () => void }) => e?.stopPropagation?.();
@@ -211,6 +213,8 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
   };
   const sh = it && vista ? {
     it, desk: vista === "dlg", name: it.name, desc: it.desc, price: money(it.cents), tags: tagsOf(it), img: it.img, isCustom: custom, qty, note,
+    // 9m · «Lleva o es» (L246): lo que el negocio marcó en su panel (Menú › Para el cliente), como etiquetas; ayuda con las alergias.
+    lleva: LLEVA.filter(([k]) => it.tags.includes(k)).map(([, a, b]) => E2(a, b).toUpperCase()),
     customNote: E2("Empezamos con lo de la anterior. Cambia lo que quieras; se agrega aparte.", "We started from your last one. Change anything; it is added separately."),
     tNote: it.extra ? E2(`Se hace al momento: tarda unos ${it.extra} minutos.`, `Made to order: takes about ${it.extra} minutes.`) : "",
     groups: it.grp.map((gk) => {
@@ -494,6 +498,7 @@ export function MenuResumen({ mn, desk, onAll }: { mn: Mn; desk: boolean; onAll?
 function Plato({ mn }: { mn: Mn }) {
   const sh = mn.sh;
   if (!sh) return null;
+  const E2 = (a: string, b: string) => (mn.es ? a : b);
   const cuerpo = (
     <>
       <div className="relative bg-photo-bg" style={{ height: sh.desk ? 230 : 210, ...foto(sh.img) }}>
@@ -507,6 +512,13 @@ function Plato({ mn }: { mn: Mn }) {
           {sh.tags.map((t) => <Tag key={t.label} tone={t.tone}>{t.label}</Tag>)}
         </div>
         {sh.desc && <p className="mt-2.5 text-pretty text-[13px] leading-[1.6] text-ink/65">{sh.desc}</p>}
+        {sh.lleva.length > 0 && (
+          <div data-bloque="lleva" className="mt-3">
+            <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/50">{E2("LLEVA O ES · LO MARCÓ EL NEGOCIO", "CONTAINS OR IS · MARKED BY THE BUSINESS")}</div>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">{sh.lleva.map((x) => <Tag key={x} tone="neutral">{x}</Tag>)}</div>
+            <div className="mt-1.5 text-pretty text-[11.5px] leading-[1.45] text-ink/55">{E2("Si tienes una alergia, pregúntale al negocio antes de pedir.", "If you have an allergy, ask the business before ordering.")}</div>
+          </div>
+        )}
         {sh.isCustom && (
           <div className="mt-3 flex items-start gap-[9px] rounded-[13px] bg-action/[.07] px-[13px] py-[11px]">
             <span className="grid flex-none pt-px"><Icon name="edit" size={15} color="var(--tl-action)" /></span>

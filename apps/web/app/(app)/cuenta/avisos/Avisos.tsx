@@ -16,12 +16,14 @@ import { webPushPosible } from "@/lib/nativo/avisos";
 import { abrirAjustes } from "@/lib/nativo/permisos";
 import { esApp } from "@/lib/nativo/puente";
 import { avisoGuardar } from "../acciones-perfil";
+import type { Alerta } from "@/lib/alertas";
+import { alertaQuitar } from "./acciones-alertas";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
 
 const hora12 = (h: number) => `${h % 12 || 12} ${h < 12 ? "AM" : "PM"}`;
 type P = Awaited<ReturnType<typeof avisosDe>>;
 const fecha = (iso: string, es: boolean) => new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "short", year: "numeric" }).format(new Date(iso)).replace(/\./g, "").toUpperCase();
-export function Avisos({ p, es, yo, horaResumen, horaRecordatorio, horarioEquipo = null, disp = [] }: { p: P; es: boolean; yo: Yo; horaResumen: number; horaRecordatorio: number; horarioEquipo?: string | null; disp?: Dispositivo[] }) {
+export function Avisos({ p, es, yo, horaResumen, horaRecordatorio, horarioEquipo = null, disp = [], alertas = [] }: { alertas?: Alerta[]; p: P; es: boolean; yo: Yo; horaResumen: number; horaRecordatorio: number; horarioEquipo?: string | null; disp?: Dispositivo[] }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const ui = useCuentaUi(), router = useRouter();
   const [v, setV] = useState(p);
@@ -84,6 +86,14 @@ export function Avisos({ p, es, yo, horaResumen, horaRecordatorio, horarioEquipo
   // 7h · El Compa por WhatsApp y SMS (§6 #14): apagado de fábrica; solo contesta a TU teléfono verificado y lo que cambia algo se confirma en la app.
   B.push({ type: "sec", t: "EL COMPA", fs: "14px", mt: "8px" }, { type: "rows", rows: [{ key: "cpa", ic: "chat", t: E2("Hablar con El Compa por WhatsApp y SMS", "Talk to El Compa by WhatsApp and SMS"),
     s: E2("SOLO DESDE TU TELÉFONO VERIFICADO · LO QUE CAMBIA ALGO SE CONFIRMA AQUÍ · STOP PARA SALIR", "ONLY FROM YOUR VERIFIED PHONE · ANYTHING THAT CHANGES SOMETHING IS CONFIRMED HERE · STOP TO OPT OUT"), tog: v.cpa, onTog: () => void tg("cpa") }] });
+  // 9m · Tus alertas (L336): «Avísame cuando haya» y «Avísame de nuevas vacantes», cada una con «Quitar».
+  B.push({ type: "sec", t: E2("Tus alertas", "Your alerts"), s: E2("TE AVISAMOS UNA VEZ CUANDO HAYA ALGO NUEVO", "WE TELL YOU ONCE WHEN THERE IS SOMETHING NEW"), fs: "14px", mt: "8px" });
+  B.push(alertas.length ? { type: "rows", rows: alertas.map((a) => ({
+    key: `al-${a.id}`, ic: a.kind === "vacantes" ? "brief" : "search",
+    t: a.kind === "vacantes" ? E2(`Vacantes nuevas en ${a.ciudad}`, `New jobs in ${a.ciudad}`) : E2(`«${a.q}» en ${a.ciudad}`, `“${a.q}” in ${a.ciudad}`),
+    s: `${E2("DESDE", "SINCE")} ${fecha(a.at, es).toUpperCase()}${a.avisada ? E2(" · YA TE AVISAMOS", " · ALREADY NOTIFIED") : ""}`,
+    acts: [[E2("Quitar", "Remove"), "secondary", () => void alertaQuitar(a.id).then((r) => { ui.toast(r.ok ? E2("Alerta quitada.", "Alert removed.") : E2("No se pudo.", "Could not.")); router.refresh(); })]] as [string, string, () => void][],
+  })) } : { type: "note", tone: "info", ic: "search", s: E2("No tienes alertas. En Buscar, «Avísame cuando haya» te avisa cuando llega lo que buscaste; en Empleos, «Avísame de nuevas vacantes».", "You have no alerts. In Search, “Notify me” tells you when what you searched for arrives; in Jobs, “Notify me of new jobs”.") });
   B.push({ type: "sec", t: E2("Horas de silencio", "Quiet hours"), fs: "14px", mt: "8px" }, { type: "rows", rows: [{ ic: "clock", t: E2("De 10 PM a 7 AM", "10 PM to 7 AM"), s: E2("SOLO PASA LO CRÍTICO", "ONLY CRITICAL ONES GET THROUGH"), tog: v.quiet, onTog: () => void tg("quiet") }] });
   return <Marco es={es} code="USR-AVISOS" back="/cuenta" t={E2("Avisos", "Notifications")} s={E2("QUÉ TE LLEGA Y CUÁNDO", "WHAT YOU GET AND WHEN")} blocks={B} yo={yo} ui={ui}
     rcards={[{ label: "Avisos · regla", k: E2("NUESTRA REGLA", "OUR RULE"), t: E2("Nunca publicidad por aquí.", "Never ads here."), s: E2("Agrupamos lo que se puede: un aviso con todo, no tres.", "We group what we can: one notification with everything, not three.") }]} />;

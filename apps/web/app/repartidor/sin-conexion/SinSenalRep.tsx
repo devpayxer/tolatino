@@ -8,6 +8,7 @@ import { abrirFuera } from "@/lib/nativo/externo";
 import { irAlServidor } from "@/lib/nativo/puente";
 import { useSenal } from "@/lib/nativo/senal";
 import { leerCola, leerTurno, type Cola, type Turno } from "./local";
+import { urlComoLlegar } from "@/lib/como-llegar";
 
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const PASO: Record<string, [string, string]> = { recogi: ["Recogí", "Picked up"], llegue: ["Llegué", "Arrived"], entregado: ["Entregado", "Delivered"] };
@@ -41,7 +42,7 @@ export function SinSenalRep() {
       ...(x.indicaciones ? [{ k: E2("INDICACIONES", "NOTES"), v: x.indicaciones }] : []),
       { k: E2("COBRO", "PAYMENT"), v: x.efectivo != null ? E2(`Cobrar ${money(x.efectivo)} en efectivo`, `Collect ${money(x.efectivo)} in cash`) : E2("Pagado en la app", "Paid in the app") },
     ] });
-    B.push({ type: "acts", items: [{ l: E2("Abrir mapa", "Open map"), v: "secondary", icon: "pin", onClick: () => { void abrirFuera(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${x.calle ?? ""}, ${x.zip ?? ""}`)}`); } }] });
+    B.push({ type: "acts", items: [{ l: E2("Abrir mapa", "Open map"), v: "secondary", icon: "pin", onClick: () => { void abrirFuera(urlComoLlegar({ dir: `${x.calle ?? ""}, ${x.zip ?? ""}` })); } }] });
   }
   if (hechas.length) B.push({ type: "rows", k: E2("ENTREGADAS HOY", "DELIVERED TODAY"), items: hechas.map(fila) });
   return (

@@ -70,6 +70,8 @@ import { EscanearCupon } from "./EscanearCupon";
 import { useAhora } from "@/lib/ahora";
 
 import { tec } from "@/lib/tec";
+import { DireccionPanel } from "./DireccionPanel";
+import { RefrescoVivo } from "@/app/_vivo/RefrescoVivo";
 const Icon = UI.Icon as ComponentType<any>;
 const Button = UI.Button as ComponentType<any>;
 const MONO = "'JetBrains Mono',monospace";
@@ -85,6 +87,7 @@ export const PARTS: { k: string; icon: string; l: Bi; s: Bi }[] = [
   { k: "cup", icon: "ticket", l: ["Cupones por monedas", "Coupons for coins"], s: ["Lo que das por las monedas de los vecinos; valida su código.", "What you give for neighbors’ coins; validate their code."] },
   { k: "resenas", icon: "star", l: ["Reseñas", "Reviews"], s: ["Lo que dicen tus clientes; respóndeles.", "What clients say; reply to them."] },
   { k: "equipo", icon: "users", l: ["Equipo", "Team"], s: ["Las personas que salen en tu página.", "The people who show on your page."] },
+  { k: "dir", icon: "pin", l: ["Dirección y mapa", "Address and map"], s: ["Dónde te encuentran: la dirección y el pin en la puerta.", "Where people find you: the address and the pin at the door."] },
   { k: "ver", icon: "shield", l: ["Verificación y sello", "Verification and badge"], s: ["Teléfono, correo y el sello Verificado.", "Phone, email and the Verified badge."] },
   { k: "lic", icon: "law", l: ["Tus licencias", "Your licenses"], s: ["Lo que puedes hacer por ley y lo que no haces.", "What you may do by law and what you do not do."] },
 ];
@@ -179,12 +182,8 @@ export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, men
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
   const D = useMemo(() => (ruta.det ? detalle(ctx) : null), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Mensajes abiertos: trae lo nuevo cada 5 segundos mientras la pestaña se ve (lo escrito en el campo no se pierde).
-  useEffect(() => {
-    if (ruta.sec !== "msg" && !ruta.det?.startsWith("msg:")) return;
-    const t = window.setInterval(() => { if (!document.hidden) router.refresh(); }, 5000);
-    return () => window.clearInterval(t);
-  }, [ruta.sec, ruta.det, router]);
+  // 9m · Mensajes abiertos: lo nuevo llega EN VIVO (RefrescoVivo, abajo: el aviso del SSE propio → la página se pone al día); ya no se pregunta cada
+  // 5 segundos (guardián mensajesEnVivo). Lo escrito en el campo no se pierde (el formulario vive en el estado de la pantalla).
   const ed = (D?.ed ?? (desk || !ruta.det ? S.ed : null)) ?? null;
   const commit = (e: Editor | null) => { if (!e) return; const k = e.F.key; run(() => e.apply(e.F.d), e.toast ?? E2("Guardado · ya se ve en tu página", "Saved · it shows on your page now"), () => { setForms((z) => { const n = { ...z }; delete n[k]; return n; }); e.onDone?.(); }); };
   const discard = (e: Editor | null) => { if (!e) return; const k = e.F.key; setForms((z) => { const n = { ...z }; delete n[k]; return n; }); if (!desk && ruta.det) closeDet(); };
@@ -346,6 +345,8 @@ export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, men
       ) : null}
       {ruta.det?.startsWith("door:") && evt?.puerta?.fecha ? <PuertaVivo negocio={d.id} fecha={evt.puerta.fecha} /> : null}
       {ruta.det?.startsWith("ped:") && /^\d{1,12}$/.test(ruta.det.slice(4)) ? <RutaVivoPanel negocio={d.id} numero={ruta.det.slice(4)} setUi={setUi} /> : null}
+      {/* 9m · Mensajes en vivo: la lista y la conversación abierta se ponen al día cuando llega un mensaje (SSE propio, sin preguntar cada N s). */}
+      {ruta.sec === "msg" || ruta.det?.startsWith("msg:") ? <RefrescoVivo negocio={d.id} k="chat" /> : null}
       {ui.cupScan ? <EscanearCupon negocio={d.id} es={es} onCerrar={() => setUi({ cupScan: false })} onValidado={() => router.refresh()} /> : null}
       {ui.puertaCam && evt?.puerta && evt.puerta.miSesion === ui.puertaCam ? <PuertaCamaraPanel sesion={ui.puertaCam as string} es={es} reentrada={!!evt.puerta.reglas.reentrada} libre={(evt.det?.pending ? evt.det.vivo : evt.det?.d)?.entrada === "free"} onCerrar={() => setUi({ puertaCam: null })} /> : null}
       {toastT ? <div role="status" style={{ position: "fixed", left: "50%", bottom: desk ? 28 : 100, transform: "translateX(-50%)", zIndex: 90, maxWidth: 360, width: "calc(100% - 40px)", boxSizing: "border-box", padding: "12px 16px", borderRadius: 14, background: "var(--tl-ink)", color: "var(--tl-white)", font: "700 13px/1.4 Manrope,sans-serif", textAlign: "center", animation: "d2Up .2s ease-out" }}>{toastT}</div> : null}
@@ -406,7 +407,7 @@ function secciones(c: Ctx): Sec {
       act: p.k === "equipo" ? { l: E2("Invitar", "Invite"), icon: "plus", onClick: () => c.det("stf:new") } : p.k === "nov" && c.d.pro ? { l: E2("Publicar", "Post"), icon: "plus", onClick: () => c.det("nov:new") } : p.k === "cup" && c.d.pro ? { l: E2("Crear", "Create"), icon: "plus", onClick: () => c.det("cup:new") } : undefined },
     { type: "tabs", items: partesDe(c.d).map((z) => ({ l: E2(...z.l), on: z.k === p.k, onClick: () => c.go("pag", z.k) })) },
   ];
-  const r = p.k === "hor" ? horario(c) : p.k === "fotos" ? { blocks: fotos(c), ed: null } : p.k === "about" ? about(c) : p.k === "ver" ? { blocks: verificacion(c), ed: null } : p.k === "lic" ? licencias(c) : p.k === "resenas" ? resenasBloques(c) : p.k === "nov" ? novBloques(c) : p.k === "cup" ? cupBloques(c) : { blocks: equipoBloques(c), ed: null };
+  const r = p.k === "dir" ? { blocks: [{ type: "pieza", el: <DireccionPanel negocio={c.d.id} es={c.es} desk={c.desk} /> } as Bloque], ed: null } : p.k === "hor" ? horario(c) : p.k === "fotos" ? { blocks: fotos(c), ed: null } : p.k === "about" ? about(c) : p.k === "ver" ? { blocks: verificacion(c), ed: null } : p.k === "lic" ? licencias(c) : p.k === "resenas" ? resenasBloques(c) : p.k === "nov" ? novBloques(c) : p.k === "cup" ? cupBloques(c) : { blocks: equipoBloques(c), ed: null };
   return { blocks: [...head, ...r.blocks], ed: r.ed };
 }
 

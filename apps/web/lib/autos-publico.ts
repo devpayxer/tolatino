@@ -6,6 +6,7 @@ import {
   type Bhph, type CarroAuto, type EstadoCarro, type KindAutos, type Pago, type Puerta,
 } from "./autos-comun";
 import type { SelloPub } from "./fe-publico";
+import { retirosDe, type Retiro } from "./retiros";
 
 /* La ficha de Venta de Autos (Fase 4 · 4id · fase4-iglesias-inmuebles-autos.md §1c, §3 «Precio en la puerta», §4id; neg-dealer-kind.js
    faq L39–63, metaOf L101–104, btnOf L106, tabL L107, post L110–160).
@@ -15,9 +16,11 @@ import type { SelloPub } from "./fe-publico";
      «estimado, sujeto a aprobación» (autos-comun pagoTexto); compre aquí pague aquí, con el total pagado (bhphTexto).
    - Un título salvage lleva siempre su línea (autos-comun notasCarro). Los sellos (dealer de PA, vendedor, venta a plazos, NMLS) salen
      solo de una licencia «valid». Una consulta indexada para hasta 40 carros, sin N+1. */
-export type CarroPub = Omit<CarroAuto, "adm" | "status"> & { status: EstadoCarro };
+// 9m · retiros: los del fabricante para su marca, modelo y año (NHTSA, lib/retiros.ts).
+export type CarroPub = Omit<CarroAuto, "adm" | "status"> & { status: EstadoCarro; retiros?: Retiro[] };
 export type SvcAutoPub = { id: string; sec: string | null; name: Bi; desc: Bi; cents: number; foto: string | null };
 export type AutosPublica = {
+  retirosCargados?: boolean; // 9m · ¿hay datos de NHTSA cargados? (sin ellos no se dice «no tiene retiros»)
   negocio: { id: string; nombre: string; telefono: string | null; foto: string | null; radio: number | null; casa: boolean };
   kind: KindAutos; subs: string[]; linea: Bi; pro: boolean; esp: boolean; publica: boolean;
   carros: CarroPub[]; secciones: { id: string; name: Bi }[]; servicios: SvcAutoPub[];
@@ -69,13 +72,16 @@ export async function autosPublica(negocio: string): Promise<AutosPublica | null
     est: x.ep != null && x.ed != null && x.ea != null && x.em != null ? ({ down: x.ed, aprBp: x.ea, months: x.em, pago: x.ep, total: x.et! } as Pago) : null,
     bhph: x.bt != null && x.bd != null && x.bw != null && x.bk != null && x.ba != null ? ({ down: x.bd, week: x.bw, weeks: x.bk, months: Math.round((x.bk * 12) / 52), total: x.bt, aprBp: x.ba } as Bhph) : null,
   }));
+  // 9m · Retiros del fabricante (L524): una consulta para todos los carros de la página.
+  const RT = await retirosDe(carros.map((x) => ({ id: x.id, make: x.make, model: x.model, year: x.year }))).catch(() => ({ cargados: false, porCarro: {} as Record<string, Retiro[]> }));
+  for (const x of carros) x.retiros = RT.porCarro[x.id] ?? [];
   const fv = b.fv ?? [], onb = (b.ca?.onb ?? {}) as { tool?: Record<string, unknown>; own?: Record<string, unknown> };
   const itin = b.itin ?? (fv.includes("itin") || onb.tool?.itin === true), garOnb = Number(onb.tool?.gar ?? 0), kind = kindAutosDe(b.subs, b.ov), pro = b.plan === "pro";
   const usados = new Set(I.rows.map((x) => x.sec));
   return {
     negocio: { id: b.id, nombre: b.name, telefono: b.phone, foto: b.foto, radio: b.radio, casa: b.casaB },
     kind, subs: b.subs, linea: lineaAutos(kind, pro), pro, esp: fv.includes("esp"), publica: fv.includes("publica"),
-    carros, secciones: S.rows.filter((x) => usados.has(x.id)), servicios: I.rows,
+    carros, retirosCargados: RT.cargados, secciones: S.rows.filter((x) => usados.has(x.id)), servicios: I.rows,
     // Sin fila todavía: lo que dice hoy la página o lo que se dijo en Publica tu negocio (como herramientaAutos).
     fin: b.fin ?? (itin || onb.own?.fin === "si" || onb.own?.fin === "itin"), itin, noCredit: b.nc ?? fv.includes("sincredito"), trade: b.trade ?? (fv.includes("tradein") || onb.tool?.trade === true),
     casa: b.casa ?? fv.includes("casa"), reporta: b.rep ?? fv.includes("reporta"), garantia: b.gar ?? (garOnb === 6 ? 6 : garOnb > 0 || fv.includes("garantia") ? 3 : 0),

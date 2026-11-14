@@ -17,6 +17,7 @@ import { esperaAnotar, esperaSalir } from "../acciones-despues";
 import { Icon, MONO, useGuardar, useToast } from "../comun";
 
 import { tec } from "@/lib/tec";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const EventCard = UI.EventCard as ComponentType<any>;
 
@@ -79,8 +80,8 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
       `SUMMARY:${f.title.replace(/[,;\n]/g, " ")}`, `LOCATION:${[f.venue, f.addr].filter(Boolean).join(" ").replace(/[,;\n]/g, " ")}`, `URL:${location.origin}/eventos/${f.slug}?fecha=${f.fecha}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], { type: "text/calendar" })); a.download = `evento-${f.fecha}.ics`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   };
-  const llegar = f.zona ? null : f.lat != null && f.lng != null ? `https://www.google.com/maps/dir/?api=1&destination=${f.lat},${f.lng}` : f.addr ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${f.addr}, ${f.ciudad}, ${f.estado}`)}` : null;
-  const irMapa = () => { if (llegar) window.open(llegar, "_blank", "noopener"); };
+  const llegar = f.zona ? null : f.lat != null && f.lng != null ? { lat: f.lat, lng: f.lng, nombre: f.venue } : f.addr ? { dir: `${f.addr}, ${f.ciudad}, ${f.estado}` } : null;
+  const irMapa = () => { if (llegar) abrirComoLlegar(llegar); };
 
   // ── Textos ──
   const horas = `${hora(f.h0)} – ${hora(f.h1)}`;

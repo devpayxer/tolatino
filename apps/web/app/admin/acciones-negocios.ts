@@ -236,6 +236,8 @@ export async function novedadOcultar(id: string, post: string, ocultar: boolean,
     if (p.hidden === ocultar) return ocultar ? "Ya está oculta." : "Ya se ve.";
     await c.query(`update business_posts set hidden_at = $3, hidden_reason = $4, hidden_by = $5, pinned = case when $3::timestamptz is null then pinned else false end, updated_at = now() where id = $1::bigint and business_id = $2`,
       [post, b.id, ocultar ? new Date() : null, ocultar ? m : null, ocultar ? s.id : null]);
+    // 9m · Los reportes abiertos de la novedad (L299) quedan resueltos al ocultarla.
+    if (ocultar) await c.query(`update content_reports set status = 'actioned', decided_by = $2, decided_at = now() where target_kind = 'post' and target_id = $1 and status = 'open'`, [String(post), s.id]);
     await auditar(c, { actor: s.id, action: ocultar ? "novedad.ocultar" : "novedad.mostrar", targetKind: "business", targetId: b.id, city: b.city_id, before: { novedad: p.title, estado: ocultar ? "visible" : "oculta" }, after: { estado: ocultar ? "oculta" : "visible" }, reason: m });
     return null;
   }, ocultar ? "Novedad oculta. El dueño ve el motivo en su panel." : "La novedad se ve otra vez.");
@@ -251,6 +253,8 @@ export async function vacanteOcultar(id: string, job: string, ocultar: boolean, 
     if (j.hidden === ocultar) return ocultar ? "Ya está oculta." : "Ya se ve.";
     await c.query(`update job_postings set hidden_at = $3, hidden_reason = $4, hidden_by = $5, updated_at = now() where id = $1::bigint and business_id = $2`,
       [job, b.id, ocultar ? new Date() : null, ocultar ? m : null, ocultar ? s.id : null]);
+    // 9m · Los reportes abiertos de la vacante (L309) quedan resueltos al ocultarla.
+    if (ocultar) await c.query(`update content_reports set status = 'actioned', decided_by = $2, decided_at = now() where target_kind = 'job' and target_id = $1 and status = 'open'`, [String(job), s.id]);
     await auditar(c, { actor: s.id, action: ocultar ? "vacante.ocultar" : "vacante.mostrar", targetKind: "business", targetId: b.id, city: b.city_id, before: { vacante: j.title, estado: ocultar ? "visible" : "oculta" }, after: { estado: ocultar ? "oculta" : "visible" }, reason: m });
     return null;
   }, ocultar ? "Vacante oculta. El dueño ve el motivo en su panel." : "La vacante se ve otra vez.");
@@ -362,4 +366,22 @@ export async function carroOcultar(id: string, itemId: string, ocultar: boolean,
     await auditar(c, { actor: s.id, action: ocultar ? "autos.carro.ocultar" : "autos.carro.mostrar", targetKind: "business", targetId: b.id, city: b.city_id, before: { vehiculo: it.name, estado: ocultar ? "visible" : "oculto" }, after: { estado: ocultar ? "oculto" : "visible" }, reason: m });
     return null;
   }, ocultar ? "Vehículo oculto. El dueño ve el motivo en su panel." : "El vehículo se ve otra vez.");
+}
+
+/* 9m · Corregir el punto de un negocio en el mapa (decisión AC): el pin se mueve sobre el mapa propio y se guarda con motivo. Solo cerca de su ciudad
+   (hasta 60 km del centro: un error de dedo no lo manda a otro estado). Queda geo_fixed_* (el dueño lo ve en Panel › Dirección y mapa) y la auditoría
+   con el antes y el después. Si el dueño cambia su dirección después, gana la suya (lo más reciente). */
+export async function puntoCorregir(id: string, lat: number, lng: number, motivo: string): Promise<ResAdm> {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return no("Ese punto no es válido.");
+  return hacer(id, "editar", motivo, async (c, s, b, m) => {
+    const x = (await c.query<{ lat: number | null; lng: number | null; lejos: number }>(
+      `select st_y(b.geo::geometry) as lat, st_x(b.geo::geometry) as lng, st_distance(ci.center, st_setsrid(st_point($2::float8, $3::float8), 4326)::geography) as lejos
+         from businesses b join cities ci on ci.id = b.city_id where b.id = $1`, [b.id, lng, lat])).rows[0];
+    if (!x) return "Ese negocio no existe.";
+    if (x.lejos > 60000) return "Ese punto queda a más de 60 km de su ciudad. Revisa el mapa.";
+    await c.query(`update businesses set geo = st_setsrid(st_point($2::float8, $3::float8), 4326)::geography, geo_fixed_at = now(), geo_fixed_by = $4, geo_fixed_reason = $5, updated_at = now() where id = $1`,
+      [b.id, lng, lat, s.id, m]);
+    await auditar(c, { actor: s.id, action: "negocio.punto", targetKind: "business", targetId: b.id, city: b.city_id, before: { lat: x.lat, lng: x.lng }, after: { lat, lng }, reason: m });
+    return null;
+  }, "Punto guardado. Su página y el mapa ya lo muestran; el dueño lo ve en su panel.");
 }

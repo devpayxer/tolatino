@@ -233,6 +233,11 @@
   ],
   "$noPersonales": "Columnas que el guardián privacidadCoherente encuentra por su nombre (teléfono, correo, geom, fotos, mensajes…) y que NO son datos personales de la persona que usa la app, con su porqué. Cada una nueva se clasifica aquí o en una categoría de arriba.",
   "noPersonales": {
+    "geo_points.street": "Datos públicos de direcciones de EE. UU. (Censo TIGER, ZCTA y los puntos que publican condados y estados por OpenAddresses) para autocompletar y ubicar: no son de una persona ni de quien usa la app.",
+    "geo_points.geom": "Datos públicos de direcciones de EE. UU. (Censo TIGER, ZCTA y los puntos que publican condados y estados por OpenAddresses) para autocompletar y ubicar: no son de una persona ni de quien usa la app.",
+    "geo_places.geom": "Datos públicos de direcciones de EE. UU. (Censo TIGER, ZCTA y los puntos que publican condados y estados por OpenAddresses) para autocompletar y ubicar: no son de una persona ni de quien usa la app.",
+    "geo_zips.geom": "Datos públicos de direcciones de EE. UU. (Censo TIGER, ZCTA y los puntos que publican condados y estados por OpenAddresses) para autocompletar y ubicar: no son de una persona ni de quien usa la app.",
+    "geo_names.geom": "Datos públicos de direcciones de EE. UU. (Censo TIGER, ZCTA y los puntos que publican condados y estados por OpenAddresses) para autocompletar y ubicar: no son de una persona ni de quien usa la app.",
     "wa_templates.body": "El texto de una plantilla de WhatsApp de To'Latino (lo escribe el equipo para Meta): no es de una persona.",
     "staff_mfa_pruebas.phone": "Teléfonos de ficción 570-555 del equipo de las pruebas (solo el sandbox; la base no acepta otros).",
     "maintenance_windows.message": "El aviso de mantenimiento que el equipo escribe para todos: no es de una persona.",

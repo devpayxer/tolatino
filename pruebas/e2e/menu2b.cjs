@@ -135,13 +135,14 @@ const MARISOL = "(select id from users where phone='+15705550122')";
   await shot(d, 'b18-pedido-d.png');
   ok(sql(`select stock_left||'|'||(stock_day = (now() at time zone 'America/New_York' - interval '6 hours')::date) from items where id=16`) === `${parFlan - 1}|true`, `inventario del día del flan: ${parFlan} → ${parFlan - 1}`);
 
-  // Sin sesión: Ir a pagar lleva a Entra y vuelve al pago
+  // Sin sesión: Ir a pagar abre la hoja «Entra para pedir» sobre la ficha (9m, AuthSheet bilingüe); el pedido se queda igual.
   const g = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); watch(g, 'anon');
   await g.goto(B + N + '?tab=menu'); await g.locator('[data-screen-label="Ficha · menú"]').waitFor();
   await fila(g, 'Aguacate').getByRole('button', { name: 'Agregar' }).click();
   await g.locator('[data-screen-label="Ficha · barra del pedido"]').click();
   await g.locator('[data-screen-label="Menú · tu pedido"]').getByText(/^Ir a pagar/).click();
-  await g.waitForURL(/\/entrar\?volver=/); ok(decodeURIComponent(g.url()).includes('/n/sabor-dominicano/pagar'), 'sin sesión → Entra con regreso al pago');
+  await g.locator('[data-pieza="hoja-entrar"]').waitFor();
+  ok(/Entra para pedir/.test(await g.locator('[data-pieza="hoja-entrar"]').innerText()) && g.url().includes('/n/sabor-dominicano'), 'sin sesión → la hoja «Entra para pedir» sobre la ficha (el pedido se queda igual)');
 
   // Free: 5 platos en la página; con pedidos este mes se pide desde el Resumen; sin pedidos, lista y Llamar
   sql(`update business_stats_cache set plan='free' where business_id='${BIZ}'`);

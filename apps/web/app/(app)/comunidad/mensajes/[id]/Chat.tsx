@@ -14,6 +14,7 @@ import { dmAnteriores, dmEnviar, dmNuevos, dmReportar } from "../../acciones";
 import { Avatar, LINE, MONO, Marco, useAncho, useComUi, type ComUi, type YoCom } from "../../Marco";
 import { useVecinoAcciones } from "../../vecinoAcciones";
 import { abrirReporte } from "../../Reportar";
+import { useMensajesVivo } from "@/lib/vivo-cliente";
 import { LINEA988 } from "@/lib/moderacion-comun";
 
 import { tec } from "@/lib/tec";
@@ -32,18 +33,17 @@ export function Chat({ es, yo, ciudad, c }: { es: boolean; yo: YoCom; ciudad: st
   const fin = useRef<HTMLDivElement | null>(null);
   useEffect(() => { setMsjs(c?.msjs ?? []); setMas(c?.mas ?? null); }, [c]);
   useEffect(() => { fin.current?.scrollIntoView({ block: "end" }); }, [msjs.length]);
-  // Lo nuevo de la otra persona, cada 5 s mientras la pantalla está abierta.
-  useEffect(() => {
+  // 9m · Lo nuevo de la otra persona llega en vivo (SSE propio, /api/vivo): el aviso dice qué conversación y aquí se trae; al conectarse, una vez.
+  const traer = useRef<() => void>(() => undefined);
+  traer.current = () => {
     if (!c) return;
-    const iv = window.setInterval(async () => {
-      if (document.hidden) return;
-      const ult = msjs.at(-1)?.id ?? "0";
-      const r = await dmNuevos(c.otro.id, ult).catch(() => null);
+    const ult = msjs.at(-1)?.id ?? "0";
+    void dmNuevos(c.otro.id, ult).catch(() => null).then((r) => {
       if (r && r.ok && "msjs" in r && r.msjs.length) setMsjs((L) => [...L, ...r.msjs.filter((m) => !L.some((x) => x.id === m.id))]);
       if (r && !r.ok) router.refresh();
-    }, 5000);
-    return () => window.clearInterval(iv);
-  }, [c, msjs, router]);
+    });
+  };
+  useMensajesVivo({ apagado: !c, on: (x) => { if (x.k === "dm" && x.con === c?.otro.id) traer.current(); }, listo: () => traer.current() });
 
   if (!c) {
     return (

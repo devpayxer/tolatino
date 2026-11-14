@@ -12,6 +12,7 @@ import { enviarPedido } from "../acciones-pedido";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
 import { useVerificacion } from "../../../pago/Verificacion";
 import { uuid } from "@/lib/uuid";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -227,7 +228,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
                     <div className="mt-0.5 text-[11.5px] font-medium text-ink/50">{m.negocio.pickupNote || E2("Di tu número de pedido.", "Give your order number.")}</div>
                   </div>
                   {m.negocio.lat != null && m.negocio.lng != null && (
-                    <button type="button" onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${m.negocio.lat},${m.negocio.lng}`, "_blank", "noopener")} className="flex-none text-[12px] font-bold text-action">{E2("Cómo llegar", "Directions")}</button>
+                    <button type="button" onClick={() => abrirComoLlegar({ lat: m.negocio.lat, lng: m.negocio.lng })} className="flex-none text-[12px] font-bold text-action">{E2("Cómo llegar", "Directions")}</button>
                   )}
                 </div>
               )}

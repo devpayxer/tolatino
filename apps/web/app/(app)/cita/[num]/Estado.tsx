@@ -8,6 +8,7 @@ import { useEffect, useState, type ComponentType } from "react";
 import { citaAccion, totalDecidir } from "./acciones";
 import type { CitaVista } from "@/lib/citas";
 import { EstimadoCliente, type PagoEst } from "./EstimadoCliente";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -157,7 +158,7 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
       `SUMMARY:${nm(c.svc)} · ${c.negocio.nombre}`, `LOCATION:${(c.negocio.direccion ?? "").replace(/[,;]/g, " ")}`, `DESCRIPTION:${E2("Cita", "Booking")} ${c.numero} · ${withL}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], { type: "text/calendar" })); a.download = `${c.numero}.ics`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   };
-  const llegar = () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(c.negocio.direccion ?? c.negocio.nombre)}`, "_blank", "noopener");
+  const llegar = () => abrirComoLlegar({ dir: c.negocio.direccion ?? c.negocio.nombre });
   // Hogar: el profesional va a la casa; el cliente no se mueve (sin «Cómo llegar» ni «Voy tarde»).
   const enCurso = !!c.rubro && ok && !!c.paso;
   const acts: [string, string, () => void][] = enCurso ? [["pin", E2("Cómo llegar", "Directions"), llegar]] as [string, string, () => void][]

@@ -1,7 +1,7 @@
 # Pedir comida · Ordering food
 
 _Pantallas: pestaña **Menú** de la página del negocio (`/n/{negocio}?tab=menu`), **Finalizar pedido** (`/n/{negocio}/pagar`) y **Tu pedido**
-(`/pedido/{número}`), teléfono y escritorio. Comida y Bebidas. Pickup y delivery, con tarjeta o pago en el local según el negocio. Versión: 6 nov 2026. Audiencia: vecino. Tema: pedidos._
+(`/pedido/{número}`), teléfono y escritorio. Comida y Bebidas. Pickup y delivery, con tarjeta o pago en el local según el negocio. Versión: 14 nov 2026. Audiencia: vecino. Tema: pedidos._
 
 ## Qué hace
 - **Menú (Pro):** pestaña con las categorías arriba (se pegan al bajar), **Populares**, y cada plato con foto, precio y
@@ -77,7 +77,11 @@ delivery de hoy o lo tiene en pausa. Pickup sigue disponible.
 
 **¿Y si cambian el precio después de pedir?** Tu pedido guarda el precio con el que lo hiciste.
 
+**¿Qué es «Lleva o es» en un plato?** Las etiquetas que marcó el negocio en su panel (picante, vegetariano, sin gluten, pescado o mariscos, lácteos, huevo, maní o nueces). Las pone el negocio, no To'Latino: no son una garantía médica. Si tienes una alergia, pregúntale al negocio antes de pedir (Mensaje o Llamar) y escríbelo en las instrucciones del plato.
+
 ## English
+
+**Contains or is:** a dish sheet shows the tags the business marked in its panel (spicy, vegetarian, gluten-free, fish or shellfish, dairy, egg, peanuts or nuts). The business sets them, not To'Latino: they are not a medical guarantee. If you have an allergy, ask the business before ordering (Message or Call) and write it in the dish instructions.
 
 The **Menu** tab shows categories (sticky), Popular, and each dish with photo, price and tags (sold out today, in store
 only, only N left, popular, its own hours, takes N min). The + adds dishes without options directly and stretches into

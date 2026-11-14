@@ -10,6 +10,7 @@ import type { FiltroMapa, Pin } from "@/lib/mapa";
 import { registrarToque } from "../acciones";
 
 import { tec } from "@/lib/tec";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 type N = "Icon" | "Button" | "Chip" | "BusinessRow";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, BusinessRow } = UI as unknown as Record<N, ComponentType<any>>;
@@ -17,6 +18,8 @@ const { Icon, Button, Chip, BusinessRow } = UI as unknown as Record<N, Component
 export type VistaMapa = {
   lang: "es" | "en"; ciudad: string; rad: number; centro: LL; f: FiltroMapa; ctx: boolean; catSlug: string | null; volver: string | null;
   titulo: string; cats: { slug: string; l: string }[]; total: number; adentro: number; sinPin: number; pins: Pin[];
+  // 9m · El tope de pines (MAPA_MAX) y si estos son los del recuadro visible (L63).
+  tope: number; caja: boolean;
 };
 
 const MONO = "'JetBrains Mono',monospace";
@@ -76,7 +79,7 @@ export function Mapa({ v }: { v: VistaMapa }) {
   const meta = (b: Pin) => [b.reviews >= 5 && b.rating ? `★ ${b.rating.toFixed(1)}` : "", conPin(b) ? `${b.mi ?? "—"} MI` : b.domicilio ? E2("A DOMICILIO", "COMES TO YOU") : E2("SIN LOCAL", "NO VENUE"), (b.sub ?? "").toUpperCase()].filter(Boolean).join(" · ");
   const fila = (b: Pin) => ({ name: b.name, meta: meta(b), verified: b.verified, slot: b.eta ?? "", image: b.photo ?? undefined });
   const abrir = (id: string) => router.push(`/n/${id}`);
-  const comoLlegar = (b: Pin) => { if (!conPin(b) || b.casa) return; void registrarToque(b.id, "directions", "mapa"); window.open(`https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}`, "_blank", "noopener"); };
+  const comoLlegar = (b: Pin) => { if (!conPin(b) || b.casa) return; void registrarToque(b.id, "directions", "mapa"); abrirComoLlegar({ lat: b.lat, lng: b.lng }); };
 
   // ── Filtros: van en la dirección (el servidor vuelve a contar) ──
   const ir = (cambios: Record<string, string | null>) => {
@@ -100,7 +103,13 @@ export function Mapa({ v }: { v: VistaMapa }) {
     if (!movio.current) { movio.current = true; setArrastrando(true); try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* sin captura */ } }
     setCen(desproyectar(g.c[0] - dx / g.sc, g.c[1] - dy / g.sc, g.z));
   };
-  const arriba = () => { if (drag.current) { drag.current = null; setArrastrando(false); } };
+  // 9m · Pines por el recuadro visible (L63): si la ciudad llegó al tope alrededor del punto, al soltar el mapa se piden los del recuadro que se ve.
+  const pedirCaja = () => {
+    if (v.total < v.tope && !v.caja) return;
+    const p = proyectar(centro, z), a = desproyectar(p[0] - W / 2 / sc, p[1] - H / 2 / sc, z), b = desproyectar(p[0] + W / 2 / sc, p[1] + H / 2 / sc, z);
+    ir({ caja: [b[0], a[1], a[0], b[1]].map((x) => x.toFixed(4)).join(",") });
+  };
+  const arriba = () => { if (drag.current) { drag.current = null; setArrastrando(false); if (movio.current) pedirCaja(); } };
   const clicMapa = () => { if (movio.current) { movio.current = false; return; } if (sel) setSel(null); };
   const parar = (e: { stopPropagation: () => void }) => e.stopPropagation();
   const boton: CSSProperties = { width: 38, height: 38, borderRadius: 12, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.1)", display: "grid", placeItems: "center", cursor: "pointer" };

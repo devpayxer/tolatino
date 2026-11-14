@@ -1,6 +1,7 @@
 "use server";
 import { claveAmenidad } from "@/lib/amenidades";
 import { db, tx } from "@/lib/db";
+import { puntoFinal, sugerir } from "@/lib/direcciones";
 import { dispositivo, mismoOrigen, yo } from "@/lib/cuenta";
 import { anotarReferido, codigoPermitido, codigoVivo } from "@/lib/crecimiento/promotores";
 import { ubicacion } from "@/lib/ubicacion";
@@ -138,6 +139,16 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
         op === "casa" ? null : d.addr.trim() || null, op === "rento" && d.joinName && !d.join ? `Dentro de ${d.joinName}` : d.ref?.trim() || null,
         op === "home", needZone(op) ? Math.max(1, Math.min(100, zoneOf(d))) : null, tel,
         (dv.tags ?? []) as string[], ((dv.amen ?? []) as string[]).map(claveAmenidad), Object.keys(dv.mods ?? {}), JSON.stringify(attrs)]);
+    // 9m · El punto del negocio (L49 (1), decisión AC): la dirección elegida con su código postal (la casa, el tramo o la calle) y el pin que ajustó;
+    // sin código postal, la primera sugerencia con número de su estado cerca del centro de su ciudad. Sin punto, no sale como pin (como antes).
+    if (op !== "casa" && op !== "truck" && d.addr.trim().length >= 4) {
+      const zip = /^\d{5}$/.test(String(dIn.zip ?? "")) ? String(dIn.zip) : null;
+      const pin = Array.isArray(dIn.pin) && dIn.pin.length === 2 ? { lat: Number(dIn.pin[0]), lng: Number(dIn.pin[1]) } : null;
+      let pt: { lat: number; lng: number } | null = null;
+      if (zip) { const u = await puntoFinal(c, d.addr, zip, pin); if (!u.error && u.lat != null && u.lng != null) pt = { lat: u.lat, lng: u.lng }; }
+      else { const s = (await sugerir(d.addr, { lat: loc.c.lat, lng: loc.c.lng, estado: loc.c.state }, 1))[0]; if (s && s.calidad !== "calle" && s.estado === loc.c.state) pt = { lat: s.lat, lng: s.lng }; }
+      if (pt) await c.query(`update businesses set geo = st_setsrid(st_point($2::float8, $3::float8), 4326)::geography where id = $1`, [slug, pt.lng, pt.lat]);
+    }
     await c.query(`insert into business_stats_cache (business_id, plan, photo_count) values ($1, 'pro', $2)`, [slug, mias.length]);
     // La prueba Pro (Cobros y plan): 30 días (o 60 con HZL30). El día 30 sigue con tarjeta o pasa a Free (lib/suscripcion.ts).
     await c.query(`insert into subscriptions (business_id, status, trial_started_at, trial_ends_at, promo_code, payer_user_id) values ($1, 'trial', now(), $2, $3, $4)`,

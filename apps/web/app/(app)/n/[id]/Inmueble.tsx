@@ -6,7 +6,7 @@
    propiedad y firmar el contrato.». De cada propiedad se ve solo la zona (ciudad y código postal): la dirección de un cuarto o de «solo
    la zona» llega al confirmar la visita (4ie). «Para mudarte» y la cuota ESTIMADA vienen del servidor. 4ie: «Pedir visita», «Pedir
    precalificación», «Pedir oferta» y «Pedir cita» llevan a la solicitud (/n/{id}/ver); con Free, la fila va directo (sin hoja). */
-import { useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import type { Bi } from "@/lib/inscripciones-comun";
 import {
   ANIMALES_SERVICIO, CUOTA_NOTA, EHO, LAVANDERIA, NO_PAGUES, PROP, UTIL, alMes, cuotaTexto, mudarteTexto, porL, sinPropiedades, usd,
@@ -32,6 +32,8 @@ function pie(es: boolean) {
 export function useInm(ip: InmPublica | null, es: boolean, pro: boolean, acc: Acc) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const [hoja, setHoja] = useState<string | null>(null);
+  // 9m · Desde «Buscar por propiedad o por carro» (L559): ?item= abre esa hoja al llegar (si se ve en esta página).
+  useEffect(() => { try { const id = new URLSearchParams(window.location.search).get("item"); if (id && /^\d{1,18}$/.test(id) && pro) setHoja(id); } catch { /* sin dirección: nada */ } }, [pro]);
   if (!ip) return null;
   const nm = (b: Bi | null | undefined) => (b ? bi(b, es) : "");
   const k = ip.kind, linea = nm(ip.linea), R = ip.props.filter((x) => x.deal === "renta"), V = ip.props.filter((x) => x.deal === "venta");

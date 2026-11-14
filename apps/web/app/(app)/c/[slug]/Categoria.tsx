@@ -191,6 +191,8 @@ export function Categoria({ v }: { v: Vista }) {
         <span className="flex-1" />
         <Chip onClick={ciclarOrden}>{T.ordenLargo}<Icon name="chevronDown" size={14} strokeWidth={2} /></Chip>
         <Button variant={v.filtros.length ? "primary" : "secondary"} size="sm" icon="filter" onClick={() => setHoja(true)}>{T.filtros}</Button>
+        {/* 9m · Buscar por propiedad o por carro (L559): en Bienes Raíces y Venta de Autos, la búsqueda por casa o por carro con sus filtros. */}
+        {v.cat === "NEG-INMUEBLE" || v.cat === "NEG-DEALER" ? <Button variant="secondary" size="sm" icon={v.cat === "NEG-DEALER" ? "car" : "home"} onClick={() => router.push(`/buscar/inventario?t=${v.cat === "NEG-DEALER" ? "carro" : "casa"}`)}>{v.cat === "NEG-DEALER" ? (v.lang === "es" ? "Buscar carro" : "Find a car") : (v.lang === "es" ? "Buscar casa" : "Find a home")}</Button> : null}
         <Button variant="secondary" size="sm" icon="pin" onClick={() => { const q = new URLSearchParams({ cat: v.slug, ctx: "1" }); if (v.sub) q.set("sub", v.sub); if (v.filtros.length) q.set("f", v.filtros.join(",")); router.push(`/mapa?${q}`); }}>{T.mapa}</Button>
       </div>
 

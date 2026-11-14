@@ -14,6 +14,7 @@ import { HoyCarrusel } from "./HoyCarrusel";
 import type { TarjetaEvt } from "@/lib/evt-publico";
 import { dinero } from "@/lib/evt-comun";
 import type { Anuncio, BloqueHome } from "@/lib/cms-home";
+import { MiniMapa } from "@/app/_dir/MiniMapa";
 
 type N = "ModuleTile" | "SectionHeader" | "BusinessRow" | "InfoCard" | "Button" | "Eyebrow" | "Icon" | "FeedPost" | "EventCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,8 +22,9 @@ const { ModuleTile, SectionHeader, BusinessRow, InfoCard, Button, Eyebrow, Icon,
 
 type Textos = { allCats: string; catsTitle: string; openNow: string; seeAll: string; forBiz: string; publishTitle: string; publishBody: string; publishCta: string };
 
-export function Inicio({ h, bloques, aviso = null, anuncios = [], semana = [], cats, inicio, abierto, t, es, hoy, oficial, conSesion, lugar }: {
+export function Inicio({ h, bloques, aviso = null, anuncios = [], semana = [], cats, inicio, abierto, t, es, hoy, oficial, conSesion, lugar, mapa = null }: {
   h: Record<string, string>; bloques: { key: BloqueHome; on: boolean }[]; aviso?: string | null; anuncios?: Anuncio[]; semana?: TarjetaEvt[]; cats: Cat[]; inicio: string[]; abierto: Fila[]; t: Textos; es: boolean; hoy: Historia[]; oficial: OficialPortada | null; conSesion: boolean; lugar: string;
+  mapa?: { centro: [number, number]; puntos: { lat: number; lng: number; pro: boolean }[]; rad: number } | null;
 }) {
   const router = useRouter();
   const bloqueOn = (k: BloqueHome) => bloques.find((b) => b.key === k)?.on !== false;
@@ -126,7 +128,13 @@ export function Inicio({ h, bloques, aviso = null, anuncios = [], semana = [], c
 
         {/* Desde 1200: columna derecha fija (prototipo showRail) */}
         {bloqueOn("publica") && <aside className="hidden xl:block">
-          <div className="sticky top-[88px]">
+          <div className="sticky top-[88px] flex flex-col gap-4">
+            {/* 9m · El mini mapa propio (L42): los negocios cerca de tu punto; tocarlo abre el Mapa. */}
+            {mapa ? <div data-bloque="mini-mapa" className="rounded-[18px] border border-ink/[.08] bg-white p-3.5">
+              <MiniMapa desk centro={mapa.centro} z={mapa.rad <= 2 ? 14 : mapa.rad <= 5 ? 13 : 12} etiqueta={es ? "CERCA DE TI · MAPA" : "NEAR YOU · MAP"} href="/mapa"
+                puntos={mapa.puntos.map((p) => ({ ll: [p.lat, p.lng] as [number, number], pro: p.pro }))}
+                pie={es ? `${mapa.puntos.length} negocios en el mapa. Toca para verlos todos.` : `${mapa.puntos.length} businesses on the map. Tap to see them all.`} />
+            </div> : null}
             <Publica t={t} block onClick={() => router.push("/publica")} />
           </div>
         </aside>}

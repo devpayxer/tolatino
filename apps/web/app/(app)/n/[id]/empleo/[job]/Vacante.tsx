@@ -10,6 +10,7 @@ import type { VacanteDet } from "@/lib/jobs";
 import { bi, diasL, haceL, horarioL, idiomasL, pagoL, tipoL } from "@/lib/jobs-txt";
 import { vacGuardar } from "../../acciones-jobs";
 import { TAG_APP } from "../../Jobs";
+import { ReportarContenido } from "../../ReportarContenido";
 
 type N = "Icon" | "Button" | "Chip" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -105,7 +106,9 @@ export function Vacante({ v, negocio, sesion, es }: { v: VacanteDet; negocio: st
           <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{title}</div><div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{meta}</div></div>
           <button type="button" aria-label={E2("Compartir", "Share")} onClick={compartir} className="grid size-[38px] flex-none place-items-center rounded-[13px]"><Icon name="share" size={17} /></button>
         </div>
-        <div className="flex flex-col gap-3 px-4 pt-4">{solicitud}{principal}{trabajo}{piden}{seguro}{sim}</div>
+        <div className="flex flex-col gap-3 px-4 pt-4">{solicitud}{principal}{trabajo}{piden}{seguro}{sim}
+          {/* 9m · Reportar esta vacante también en el teléfono (L309). */}
+          <ReportarContenido kind="job" id={v.id} es={es} conSesion={sesion} volver={`/n/${negocio}/empleo/${v.id}`} /></div>
         <div data-screen-label="Vacante · barra" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-2.5 border-t border-line bg-paper/95 px-4 pb-5 pt-3 backdrop-blur-[14px]">
           {corazon}<div className="flex min-w-0 flex-1">{boton}</div>
         </div>
@@ -121,6 +124,8 @@ export function Vacante({ v, negocio, sesion, es }: { v: VacanteDet; negocio: st
             <div className="flex items-center gap-2.5">{corazon}<div className="flex min-w-0 flex-1">{boton}</div></div>
             {!vivo && <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/45">{E2("SIN CV · TOMA 1 MINUTO", "NO RESUME · TAKES 1 MINUTE")}</div>}
             <button type="button" onClick={compartir} className="inline-flex items-center justify-center gap-1.5 text-[13px] font-bold text-action"><Icon name="share" size={15} />{E2("Compartir", "Share")}</button>
+            {/* 9m · Reportar esta vacante (L309) → Super Admin › Contenido. */}
+            <ReportarContenido kind="job" id={v.id} es={es} conSesion={sesion} volver={`/n/${negocio}/empleo/${v.id}`} />
           </div>
         </div>
       </div>

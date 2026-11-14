@@ -4,7 +4,7 @@
    (lo calculó el servidor), millaje, título e historial; el pago de ejemplo sale solo con enganche, tasa (APR) y meses juntos y dice
    «estimado, sujeto a aprobación» (pagoTexto / bhphTexto; Regulation Z); un título salvage dice SIEMPRE su línea (notasCarro). 4ie: «Prueba de
    manejo», «Pedir oferta», «Pedir precalificación» y «Pedir cita» llevan a la solicitud (/n/{id}/ver); con Free, la fila va directo. */
-import { useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import type { Bi } from "@/lib/inscripciones-comun";
 import {
   DRIVE, FUEL, NO_OBLIGATORIA, SIN_GARANTIA, TITULO, TRANS, bhphTexto, notasCarro, pagoTexto, pctBp, totalPagoTexto, usd,
@@ -22,6 +22,8 @@ const formulaPuerta = (p: Pick<AutosPublica, "taxBp">, es: boolean) =>
 export function useDealer(ap: AutosPublica | null, es: boolean, pro: boolean, acc: Acc) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const [hoja, setHoja] = useState<string | null>(null);
+  // 9m · Desde «Buscar por propiedad o por carro» (L559): ?item= abre esa hoja al llegar (si se ve en esta página).
+  useEffect(() => { try { const id = new URLSearchParams(window.location.search).get("item"); if (id && /^\d{1,18}$/.test(id) && pro) setHoja(id); } catch { /* sin dirección: nada */ } }, [pro]);
   if (!ap) return null;
   const nm = (b: Bi | null | undefined) => (b ? bi(b, es) : "");
   const k = ap.kind, linea = nm(ap.linea), vende = VENDEN.includes(k) && !(k === "broker" && !ap.pro);
@@ -124,6 +126,19 @@ export function DlHoja({ v }: { v: DlV }) {
       </Caja>
       <Datos L={datos} />
       <Caja k={E2("LO QUE DEBES SABER", "GOOD TO KNOW")} label="Carro · lo que debes saber">{notas.map((n) => <Renglon key={n} t={n} />)}</Caja>
+      {/* 9m · Retiros del fabricante (L524), con los datos públicos de NHTSA por marca, modelo y año; si ESTE carro ya se arregló, lo confirma el VIN. */}
+      {ap.retirosCargados || (c.retiros?.length ?? 0) > 0 ? (
+        <Caja k={E2(`RETIROS DEL FABRICANTE · ${c.retiros?.length ?? 0}`, `MANUFACTURER RECALLS · ${c.retiros?.length ?? 0}`)} label="Carro · retiros del fabricante">
+          {(c.retiros ?? []).slice(0, 4).map((x) => (
+            <div key={x.campana} data-retiro={x.campana} className="mt-2 border-t border-ink/[.07] pt-2 first:mt-1 first:border-0 first:pt-0">
+              <div className="text-[13px] font-bold">{x.noManejar ? E2("NO LO MANEJES · ", "DO NOT DRIVE · ") : ""}{x.componente ?? E2("Retiro", "Recall")}</div>
+              {x.resumen ? <div className="mt-1 text-pretty text-[12px] font-medium leading-[1.5] text-ink/65">{x.resumen}</div> : null}
+              <div className="mt-1 font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/45">{`NHTSA ${x.campana}${x.fecha ? ` · ${x.fecha}` : ""}`}</div>
+            </div>))}
+          <div className="mt-2 text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{(c.retiros?.length ?? 0) > 0
+            ? E2(`Son los retiros de este modelo y año. Si ESTE carro ya se arregló lo confirma su VIN${c.vin ? ` (${c.vin})` : ""}: pídele el comprobante al dealer o búscalo en nhtsa.gov/recalls. Arreglarlo es gratis en el concesionario de la marca.`, `These are the recalls for this model and year. Whether THIS car was fixed is confirmed by its VIN${c.vin ? ` (${c.vin})` : ""}: ask the dealer for proof or look it up at nhtsa.gov/recalls. The repair is free at the brand's dealership.`)
+            : E2("NHTSA no tiene retiros para este modelo y año.", "NHTSA has no recalls for this model and year.")}</div>
+        </Caja>) : null}
       {pago && (
         <Caja k={E2("PAGO DE EJEMPLO", "EXAMPLE PAYMENT")} label="Carro · pago de ejemplo">
           <div className="mt-1.5 text-pretty text-[13.5px] font-bold leading-[1.45]">{pago}</div>

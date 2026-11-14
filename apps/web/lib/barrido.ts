@@ -170,6 +170,8 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["sms", async () => (await import("./sms")).reintentarSms()], ["correoEntrante", async () => (await import("./correo/entrante")).purgarCorreoEntrante()],
         // 9i · Ciudades: el aviso «tu ciudad abrió» a la lista de espera de la ciudad que abrió el asistente, por partes, de 9 AM a 9 PM de la ciudad, una vez.
         ["avisoApertura", async () => (await import("./ciudades/aviso")).avisarAperturas()],
+        // 9m · Lo del vecino: «Avísame de nuevas vacantes» (una vez por vacante, 9 AM–9 PM, ≤ 3 al día) y «Lo que más mencionan» (temas de las reseñas).
+        ["vacantes", async () => (await import("./alertas")).barrerVacantes()], ["temasResenas", async () => (await import("./temas")).rehacerTemas()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

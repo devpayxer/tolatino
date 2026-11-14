@@ -4735,3 +4735,37 @@ pasa a «revisado» y se publica. En producción la base no deja publicar una p�
 - **«X te recomendó»:** una sola vez por teléfono en toda la vida, con STOP; de noche no sale (queda «silencio», no se reintenta).
 - **Reintentos:** 3 intentos con 2, 4 y 8 minutos de espera; no se reintenta lo permanente (STOP, número inválido: los códigos de Telnyx se confirman en 9q).
 - **«Ciudad abierta»:** el aviso y su plantilla son de 9i (lista avisada una vez, de día); 9l no manda otro.
+
+## Fase 9 · 9m — Lo diferido del vecino que entra antes de abrir (14 nov)
+**Qué mirar (en el sandbox, desde el teléfono y en la computadora):**
+1. **Mi cuenta › Direcciones › Agregar:** escribe «123 N Wyo»: salen sugerencias mientras escribes. Elige una: sale el mapa con el pin; arrástralo a la puerta
+   y guarda («Pin puesto por ti en la puerta»). Prueba «Usar mi ubicación». (Las direcciones fuera de Pensilvania aparecen cuando el servidor cargue la
+   muestra de CA, TX y NY o el país.)
+2. **Publica tu negocio** (la dirección con sugerencias) y **Panel › Tu página › Dirección y mapa**; **Super Admin › Negocio 360 › Punto en el mapa** (corregir
+   con motivo; el dueño ve que To'Latino lo corrigió).
+3. **La ficha:** el mini mapa y «Cómo llegar» (abre Mapas en el iPhone); en Panadería La Espiga, «¿Es tu negocio?»; en Sabor Dominicano, la hoja del
+   Pescado frito («Lleva o es») y Reseñas («Lo que más mencionan»); en Autos El Cibao, un carro → «Retiros del fabricante» (cuando cargue NHTSA).
+4. **Mensajes en vivo:** abre la misma conversación en tu teléfono y en el panel en la computadora: lo que escribe uno aparece en el otro al momento. Escribe
+   una tarjeta de prueba (4242 4242 4242 4242): queda «[tapado]».
+5. **Buscar «empleo»:** las vacantes y «Avísame de nuevas vacantes»; **Mi cuenta › Avisos › Tus alertas** con «Quitar». Una vacante: «Reportar esta vacante».
+6. **Buscar casa / Buscar carro** desde la categoría (Bienes Raíces, Venta de Autos).
+7. **Mi cuenta › Pagos › Movimientos**, **Mis boletos** (sin señal, todos los próximos), **Ajustes › Privacidad** (las sesiones y «Buscar con la voz»).
+8. **Sin cuenta, «Ir a pagar»** en el menú: la hoja «Entra para pedir», también en inglés.
+9. **Inicio en la computadora:** el mini mapa a la derecha. **Mapa:** al arrastrar (con más de 400 negocios) pide los del recuadro.
+**Decisiones que tomé (lo más seguro y reversible):**
+- **Direcciones:** solo nuestra base (TIGER, OpenAddresses, ZCTA); ninguna llamada a Google, Mapbox o Here (guardián). El pin se acepta a ≤ 250 m de la
+  dirección o ≤ 3 km del centro de su código postal; si no, «El pin quedó muy lejos de esa dirección».
+- **«Cómo llegar»:** un ENLACE a la app de mapas del teléfono (Apple Mapas en el iPhone, la que elija en Android) y, en una computadora, a las indicaciones en
+  la web de Google Maps, como DoorDash. No es un servicio: no manda datos de la persona. Las rutas dentro de To'Latino serían después de abrir.
+- **Mapa base de EE. UU.:** el script ya genera el país (`MAPA_REGION=us`); producción sigue con Pensilvania hasta que haya servidor para el país (LAUNCH → 9t).
+- **Buscar con la voz:** sale la primera vez con el aviso (Apple o Google procesan la voz, no To'Latino) y «Ahora no»; se apaga en Privacidad. Un
+  reconocimiento propio, solo si lo pides.
+- **Alergias:** etiquetas «LLEVA O ES · LO MARCÓ EL NEGOCIO» (lo que marcó el panel); no es una garantía médica y así se dice en la ayuda.
+- **Retiros del fabricante:** del archivo público de NHTSA por marca, modelo y año (no trae VIN); la hoja dice cómo confirmarlo con el VIN en nhtsa.gov.
+  Sin llamadas a NHTSA desde la página.
+- **Mensajes:** tarjeta y seguro social se tapan («[tapado]») y se avisa; la base rechaza el que se salte la app. Los teléfonos siguen bloqueados como antes.
+- **Vacantes:** «Avísame» una por ciudad; el aviso sale de 9 AM a 8 PM, una vez por vacante y hasta 3 al día. Van en Buscar, no en la portada.
+- **Sesiones:** «To'Latino 1.0 (12)»: la versión 1.0.0 se muestra 1.0, como en la tienda.
+- **Piezas compuestas (el sistema no las trae; con sus piezas):** el campo de dirección con sugerencias y el mapa con pin, el mini mapa, «Reportar» de
+  novedad y vacante, Buscar casa o carro, el punto del Super Admin, el apartado «Dirección y mapa» del panel, el bloque «pieza» de Marco y PanelBloques, los
+  textos ES/EN del AuthSheet y los chips de BusinessCard en dos líneas (parches en `portar-sistema.mjs`). Mirarlas con el diseño.

@@ -5,13 +5,31 @@ import { useRouter } from "next/navigation";
 import type { GrupoMis, MisBoletos as MB } from "@/lib/boletos";
 import { diaCorto, hora, mesCorto } from "@/lib/evt-comun";
 import { Marco, useCuentaUi, type Bloque, type Fila, type Yo } from "../Marco";
-import { recordarIdioma, registrarSWBoletos } from "@/lib/boletos-sin-conexion";
+import { filasDe, guardarBoleto, recordarIdioma, registrarSWBoletos } from "@/lib/boletos-sin-conexion";
+import { estadoBoleto } from "../../eventos/orden/[num]/Orden";
+import { boletosParaGuardar } from "./acciones-wallet";
 import { useEffect } from "react";
+import { sinRed } from "@/lib/nativo/senal";
 
 export function MisBoletos({ d, f, es, yo }: { d: MB; f: "proximos" | "pasados"; es: boolean; yo: Yo }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), ui = useCuentaUi();
   useEffect(() => { registrarSWBoletos(); recordarIdioma(es); }, [es]);   // 6h · los boletos que abras con señal se ven sin señal
+  // 9m · Y TODOS los próximos, sin abrirlos uno por uno (L896): con señal, cada QR vivo se guarda cifrado en el teléfono (como al abrirlo).
+  useEffect(() => {
+    if (!d.proximos.length || sinRed()) return;
+    let vivo = true;
+    void boletosParaGuardar(es).then(async (L) => {
+      for (const { b, evento: ev } of L) {
+        if (!vivo || !b.matriz) return;
+        const [t, bg, fg] = estadoBoleto(b, es);
+        const cuando = ev.rango ? ev.rango.toUpperCase() : `${diaCorto(ev.dia, es).toUpperCase()} · ${hora(ev.h0)}`;
+        await guardarBoleto({ code: b.code, filas: filasDe(b.matriz), tipo: b.mesa ? `${b.tipo} · ${b.admits} ${es ? "entradas" : "entries"}` : b.vale ? `${b.tipo} · ${b.vale}` : b.tipo,
+          nombre: (b.nombre || (es ? "A tu nombre" : "In your name")).toUpperCase(), estado: t, estadoBg: bg, estadoFg: fg, titulo: ev.title, cuando, lugar: ev.venue, dia: ev.dia }, b.code).catch(() => undefined);
+      }
+    }).catch(() => undefined);
+    return () => { vivo = false; };
+  }, [d.proximos.length, es]); // eslint-disable-line react-hooks/exhaustive-deps
   const fila = (g: GrupoMis, pasado: boolean): Fila => ({
     key: g.numero, t: g.title, s: `${diaCorto(g.dia, es).toUpperCase()} · ${hora(g.h0)} · ${g.venue}`.toUpperCase(),
     // 6d · Recibido de otra persona (o cortesía): se abre el boleto (la orden es de quien pagó). Enviados y transferidos se dicen.

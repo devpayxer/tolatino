@@ -48,6 +48,9 @@ import type { VacanteFicha } from "@/lib/jobs";
 import type { ResumenResenas } from "@/lib/resenas";
 
 import { tec } from "@/lib/tec";
+import { abrirComoLlegar } from "@/lib/como-llegar";
+import { MiniMapa } from "@/app/_dir/MiniMapa";
+import { HojaEntrar } from "../../HojaEntrar";
 type N = "Icon" | "Button" | "IconButton" | "Tabs" | "DesktopTabs" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, IconButton, Tabs, DesktopTabs, TodayCard, HoursPro, Tag, Chip, OwnerCard } = UI as unknown as Record<N, ComponentType<any>>;
@@ -62,7 +65,9 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
   const router = useRouter();
   const [tab, setTabS] = useState(tabInicial === "menu" || (tabInicial === "svc" && (svc || ofi || salud || prof || merc || fiesta || trans || noche || insc || fe || inm || dl) && f.pro) || (tabInicial === "rsv" && rsv) || (tabInicial === "rev" && f.pro && resenas) || (tabInicial === "nov" && novedades) || (tabInicial === "jobs" && jobs.length) || (tabInicial === "evt" && eventos.length && f.pro) || (tabInicial === "shop" && tienda && (tienda.L.length || tienda.V.length) && f.pro) ? tabInicial : "res");
   // Sin sesión: «Entra» y vuelve al pago con el carrito igual (vive en el teléfono).
-  const pagar = () => router.push(sesion ? `/n/${f.id}/pagar` : `/entrar?volver=${encodeURIComponent(`/n/${f.id}/pagar`)}`);
+  // 9m · «Ir a pagar» sin cuenta abre la hoja «Entra para pedir» (AuthSheet bilingüe, L240) sobre la ficha: el pedido se queda igual.
+  const [entrar, setEntrar] = useState(false);
+  const pagar = () => { if (sesion) router.push(`/n/${f.id}/pagar`); else setEntrar(true); };
   const mn = useMenu(menu && !menu.vacio ? menu : null, es, { onPay: pagar });
   // Reservaciones (Pro, módulo encendido): pestaña, tarjeta rápida en el Resumen y riel «Tu mesa».
   const rv = useRsv(rsv, es, sesion, rsvInicial?.editar ?? null, rsvInicial);
@@ -130,7 +135,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
   const llegar = () => {
     if (f.lat == null || f.lng == null) return;
     void registrarToque(f.id, "directions", "ficha");
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${f.lat},${f.lng}`, "_blank", "noopener");
+    abrirComoLlegar({ lat: f.lat, lng: f.lng });
   };
   const compartir = async () => {
     void registrarToque(f.id, "share", "ficha");
@@ -213,6 +218,12 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
   const comoLlegar = sinLocal ? null : (
     <div data-screen-label="Resumen · cómo llegar">
       <div className={h2}>{f.direccion ? t.map : t.mapZone}</div>
+      {/* 9m · El mini mapa propio (L81): el punto del negocio (o su zona si trabaja desde casa); tocarlo abre el mapa del teléfono. */}
+      {f.lat != null && f.lng != null ? (
+        <div className="mt-3 lg:mt-4">
+          <MiniMapa centro={[f.lat, f.lng]} zona={!f.direccion} z={f.direccion ? 16 : 14} etiqueta={String((f.direccion ? t.map : t.mapZone) ?? "").toUpperCase()} al={f.direccion ? llegar : undefined} />
+        </div>
+      ) : null}
       <div className="mt-3 flex items-center gap-3 lg:mt-4 lg:rounded-[20px] lg:border lg:border-line lg:px-6 lg:py-[22px]">
         <div className="min-w-0 flex-1">
           <div className="text-[13.5px] font-bold lg:text-[17px] lg:leading-[1.35]">{f.direccion ?? f.zona}</div>
@@ -308,7 +319,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
                         <Button variant="secondary" size="md" icon={x.movil ? "phone" : "pin"}
                           onClick={() => {
                             if (x.movil && x.telefono) { void registrarToque(x.id, "call", "relacionados"); location.href = `tel:${x.telefono}`; }
-                            else if (x.lat != null && x.lng != null) { void registrarToque(x.id, "directions", "relacionados"); window.open(`https://www.google.com/maps/dir/?api=1&destination=${x.lat},${x.lng}`, "_blank", "noopener"); }
+                            else if (x.lat != null && x.lng != null) { void registrarToque(x.id, "directions", "relacionados"); abrirComoLlegar({ lat: x.lat, lng: x.lng }); }
                           }}>{x.movil ? t.call : t.map}</Button>
                       </div>
                       <div className="grid min-w-0 flex-1"><Button variant="primary" size="md" onClick={() => router.push(`/n/${x.id}`)}>{x.cta}</Button></div>
@@ -626,6 +637,19 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
               {fotos && <div className="pt-[26px] lg:pt-0">{fotos}</div>}
               <div className="px-5 pt-[26px] lg:hidden">{horario}</div>
               <div className="px-5 pt-[26px] lg:px-0 lg:pt-0">{comoLlegar}</div>
+              {/* 9m · «¿Es tuyo?» (L172): un negocio sin dueño en To'Latino (la página la armó el equipo o un vecino lo recomendó) se reclama desde aquí. */}
+              {!f.mensajes ? (
+                <div className="px-5 pt-5 lg:px-0">
+                  <button type="button" data-es-tuyo={f.id} onClick={() => router.push(`/recuperar/${f.id}`)} className="flex w-full items-center gap-3 rounded-[17px] border border-ink/[.08] bg-paper px-3.5 py-[13px] text-left">
+                    <span className="grid size-[42px] flex-none place-items-center rounded-xl bg-[rgba(75,55,245,.1)]"><Icon name="store" size={19} color="var(--tl-action)" /></span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[14px] font-bold">{es ? "¿Es tu negocio?" : "Is this your business?"}</span>
+                      <span className="mt-1 block text-[12px] font-medium leading-[1.45] text-ink/60">{es ? "Reclámalo gratis: confirmas que es tuyo y lo manejas desde tu panel." : "Claim it for free: confirm it is yours and run it from your dashboard."}</span>
+                    </span>
+                    <Icon name="chevronRight" size={16} color="rgba(11,14,18,.35)" />
+                  </button>
+                </div>
+              ) : null}
               {preguntas && <div className="px-5 pt-[26px] lg:px-0 lg:pt-0">{preguntas}</div>}
             </div>
             <aside className="hidden lg:flex lg:flex-col lg:gap-3.5 min-[1100px]:sticky min-[1100px]:top-[96px]">
@@ -708,6 +732,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
         </div>
       )}
       {mn && tab !== "rsv" && <MenuCapas mn={mn} nombre={f.nombre} />}
+      {entrar ? <HojaEntrar es={es} destino={`/n/${f.id}/pagar`} onClose={() => setEntrar(false)} /> : null}
       {rs && <ResCapas v={rs} />}
     </div>
   );

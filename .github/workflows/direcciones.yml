@@ -5,13 +5,13 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["infra/direcciones/**", "packages/db/migrations/0025_direcciones.sql", ".github/workflows/direcciones.yml"]
+    paths: ["infra/direcciones/**", "packages/db/migrations/0025_direcciones.sql", "packages/db/migrations/0143_vecino.sql", ".github/workflows/direcciones.yml"]
 
 jobs:
   direcciones:
     name: cargar · ubicar
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - name: Base real con las migraciones
@@ -21,8 +21,9 @@ jobs:
           $C up -d db
           for i in $(seq 1 60); do $C exec -T db pg_isready -h 127.0.0.1 -U tolatino -d tolatino && break; sleep 2; done
           bash packages/db/migrar.sh $C
+      # 9m · Pensilvania entera (los estados de nuestras ciudades) y una muestra de California (San Francisco), Texas (Travis) y Nueva York (Manhattan).
       - name: Cargar los tramos (dos veces; la segunda no hace nada)
-        env: { POSTGRES_PASSWORD: ci, TOLATINO_COMMIT: ci }
+        env: { POSTGRES_PASSWORD: ci, TOLATINO_COMMIT: ci, CONDADOS_MUESTRA: "06075 48453 36061", PARALELO: "3" }
         run: |
           C="docker compose -p ci -f infra/pruebas/docker-compose.yml"
           time bash infra/direcciones/generar.sh "$RUNNER_TEMP/dir" $C
@@ -55,3 +56,24 @@ jobs:
           test -n "$(q "select 1 from dir_ubicar('412 North Wyomin Street', '18201')")"
           # Rapidez: 50 búsquedas
           time (for i in $(seq 1 50); do q "select 1 from dir_ubicar('$((i*2)) N Wyoming St', '18201')" >/dev/null; done)
+      # 9m · Autocompletar como DoorDash (dir_sugerir) en Hazleton y en la muestra de CA, TX y NY; «Usar mi ubicación» (dir_inversa); ≤ 100 ms en el servidor.
+      - name: Sugerir, al revés y su rapidez
+        env: { POSTGRES_PASSWORD: ci, TOLATINO_COMMIT: ci }
+        run: |
+          C="docker compose -p ci -f infra/pruebas/docker-compose.yml"
+          q() { $C exec -T db psql -h 127.0.0.1 -U tolatino -d tolatino -qAt -c "$1" < /dev/null; }
+          q "select state, kind, status, seconds from geo_loads where state is not null order by state, kind"
+          f=0
+          while IFS='|' read -r texto lat lng st; do
+            r=$(q "select linea || ' · ' || sub from dir_sugerir('$texto', $lat, $lng, '$st', 6) limit 1")
+            echo "«$texto» → ${r:-SIN SUGERENCIAS}"; [ -n "$r" ] || f=$((f+1))
+          done <<'LISTA'
+          123 N Wyo|40.9584|-75.9746|PA
+          1 Dr Carlton B Goodlett|37.7793|-122.4193|CA
+          301 W 2nd St, Austin|30.2649|-97.7471|TX
+          350 5th Av|40.7484|-73.9857|NY
+          LISTA
+          test "$f" = 0
+          test -n "$(q "select calle from dir_inversa(40.9584, -75.9746)")"
+          ms=$(q "explain (analyze, format json) select * from dir_sugerir('412 N Wyo', 40.9584, -75.9746, 'PA', 6)" | python3 -c "import json,sys; print(int(json.load(sys.stdin)[0]['Execution Time']))")
+          echo "dir_sugerir: ${ms} ms"; test "$ms" -le 100

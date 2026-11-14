@@ -265,6 +265,8 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
     asp: b.food && a.orders > 0 ? { orders: a.orders, hot: a.hot, time: a.time, val: a.val, taste: a.taste } : null,
     aspSP: sp && aspSP?.rows[0] && Number(aspSP.rows[0].n) > 0 ? { rub: sp as "salud" | "pro" | "merc" | "tienda" | "fiesta" | "trans" | "noche" | "edu" | "ninos" | "dep" | "fe" | "inm" | "dealer", n: Number(aspSP.rows[0].n), v: aspSP.rows[0] as Record<string, number | null> } : null,
     top: top.rows.map((x) => ({ id: x.id, name: x.name, ph: x.ph, n: x.n })),
+    // 9m · «Lo que más mencionan» (L280): los temas de las reseñas visibles (review_topics, del barrido).
+    temas: fm ? [] : await (await import("./temas")).temasDe(negocio).catch(() => []),
     mine: fm ? null : mine, tengo, destacadas, miembro: fm ? miembro! : null,
     // «TU PEDIDO DE HOY · ¿Cómo estuvo?»: solo si terminó hoy y aún no tiene reseña.
     prompt: !tengo && op?.hoy ? { numero: op.numero, kind: op.kind } : null,

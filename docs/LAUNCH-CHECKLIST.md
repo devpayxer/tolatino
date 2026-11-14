@@ -25,8 +25,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       WhatsApp como canal del código después de SMS.
 - [ ] **→ 9p** · **Passkeys (Face ID / huella):** necesitan HTTPS y un dominio (WebAuthn no funciona sobre una IP con
       http). Construidas y probadas en 8d (11 nov); se usan cuando `pruebas.tolatino.com` esté detrás de Cloudflare (ver «Fase 8 · 8d»).
-- [ ] **→ 9m** · **Onboarding del vecino pasos 3–5** (Tu zona, Lo que te gusta, El barrio) y la bienvenida de Fundadores:
-      hoy después de «Tú» se va a Mi cuenta mínima.
+- [x] **→ 9m** · **Onboarding del vecino pasos 3–5** (Tu zona, Lo que te gusta, El barrio) y la bienvenida de Fundadores:
+      hoy después de «Tú» se va a Mi cuenta mínima. — **✓ 9m (14 nov):** Entra (sin destino) sigue después de «Tú» a Tu zona, Lo que te gusta, El barrio y la bienvenida con el número de Fundadores (5c, `trasNombre`); quien venía de un pedido sigue a donde iba. Prueba: `vec9m` (Entra → paso 3 de 5 → bienvenida).
 - [ ] **→ 9c** · **Accesibilidad de `Button` del sistema:** es un `div` con onClick (no se enfoca con teclado ni lo anuncia
       un lector de pantalla). Pasa a `<button>` real cuando se tipe el componente; el guardián WCAG lo exigirá.
 - [x] **Super Admin:** sesiones por dispositivo (cerrar / bloquear), cuentas, cambios de cuenta — en el bloque 3c. — **✓ 9a (11 nov):** Usuarios 360°: cerrar todas las sesiones y cerrar o bloquear un dispositivo (app/admin/U360.tsx: cerrarSesiones, dispositivoAccion); prueba usr1l.
@@ -41,11 +41,11 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9n** · **Buscador global ⌘K y campana con colas:** hoy llevan a Usuarios y a «Colas · Fase 1». — _9a (11 nov): la campana abre Colas reales con su cuenta y la de atrasados (app/admin/ui.tsx onBell, casos.n). Falta el buscador global ⌘K (hoy solo busca usuarios)._
 - [ ] **→ 9n** · **Selector de ciudad del admin:** hoy solo «Todas»; filtra por ciudad cuando haya datos por ciudad (Fase 1). — _9a (11 nov): el selector del encabezado sigue en «Todas» (app/admin/ui.tsx); filtra por ciudad con Ciudades._ — _9i (14 nov): Ciudades ya está completo (y cada sección filtra por las ciudades del rol: un Ciudad manager solo ve las suyas). El selector del encabezado filtra TODAS las secciones a la vez: es tocar las consultas de cada sección del Super Admin, la operación del admin de 9n; con cinco ciudades, en el teléfono no caben como segmentos (el diseño muestra «Hazleton · Todas»)._
 - [x] **Abrir/cerrar ciudad** (asistente de 6 pasos) en Fase 9; **editar catálogo** con «afecta a N negocios» en Fase 1. — **✓ 9i (14 nov):** Super Admin › Ciudades con el asistente de 7 pasos (los 6 del prototipo + «Comprobar»: la regla, las líneas de LAUNCH de la ciudad y el commit), cada paso con su evidencia, solo avanza (la base: `city_launch_steps_reglas`); abrir solo por el asistente (`cities_estado` con `tl.apertura`) y cerrar con motivo y otra persona (`city_close_requests`, `tl.cierre`); guardián `ciudadConAsistente`; `ciu9i` lo prueba de punta a punta (lib/ciudades/apertura.ts, app/admin/Ciudades.tsx). «Afecta a N negocios» del catálogo ya estaba (Fase 1, Catálogo).
-- [ ] **→ 9m** · **Inicio — secciones ocultas hasta tener datos reales (bloque 1c):** Hoy en el barrio, Esta semana
+- [x] **→ 9m** · **Inicio — secciones ocultas hasta tener datos reales (bloque 1c):** Hoy en el barrio, Esta semana
   (eventos, Fase 6), Comunidad (Fase 5) y el mini mapa de la columna derecha (mapa propio). Cada una se
-  enciende en el Inicio cuando su módulo exista; el prototipo manda en su forma.
-- [ ] **→ 9m** · **Pantallas `Pronto` (sandbox):** toda ruta que aún muestra «En construcción» debe llegar a 0 antes de la
-  fase 9 (hoy: comunidad, eventos).
+  enciende en el Inicio cuando su módulo exista; el prototipo manda en su forma. — **✓ 9m (14 nov):** Hoy en el barrio y Comunidad (5e), Esta semana (6b) y el mini mapa propio en la columna derecha del escritorio (9m: `MiniMapa`, puntos del Inicio, toca → Mapa). Prueba: `vec9m`.
+- [x] **→ 9m** · **Pantallas `Pronto` (sandbox):** toda ruta que aún muestra «En construcción» debe llegar a 0 antes de la
+  fase 9 (hoy: comunidad, eventos). — **✓ 9m (14 nov):** `Pronto.tsx` no existe (se borró en 9a) y ninguna pantalla dice «En construcción»: guardián `sinEnConstruccion` y `rutasVivas` en verde.
 - [ ] **→ 9n** · **Publica tu negocio — lo que falta (bloque 1g-2):** (1) **ubicar la dirección en el mapa** (geocodificar con un
   servicio propio sobre OpenStreetMap: Photon o Nominatim autoalojado); hoy el negocio publicado no tiene punto, así que no
   sale como pin y cuenta como «dentro» del radio; (2) **la prueba Pro de 30 días** queda en category_attrs.onb.trial: la
@@ -56,13 +56,13 @@ en el momento. Se marca solo cuando está hecho de verdad.
   category_attrs.items hasta la tabla de ítems del panel; (8) precios típicos de la lista sugerida = los del diseño
   («precios típicos de ejemplo, Hazleton 2026»): revisarlos con negocios reales; (9) la cola del Super Admin para ver los
   negocios nuevos (bloque 1i); (10) prueba de punta a punta de este flujo en CI (hoy corre a mano con Playwright); (11) «Publicar otro» (un segundo
-  negocio con la misma cuenta): hoy el borrador es uno por persona; llega con el panel (varios negocios por cuenta). — _9a (11 nov): hecho: (2) prueba Pro → Free y primer cobro (lib/suscripcion.ts procesar/pasarAFree, 2m), (5) Recuperar negocio (app/(app)/recuperar), (6) «Ir a mi panel» (publica/Publica.tsx), (7) ítems del panel (Menú 2a y los módulos de la Fase 4), (9) la cola de negocios nuevos (1i). Falta: (1) ubicar la dirección en el mapa al publicar (lib/direcciones.ts existe; publica/acciones.ts no pone geo), (3) la tabla de códigos de promotor (hoy PROMO = { HZL30 } en publica/acciones.ts; → 9h con Promotores), (4) «Tómale foto a tu lista» con El Compa, (8) revisar los precios típicos con negocios reales (→ 9h, reclutamiento), (10) esta prueba en el CI (→ 9b), (11) «Publicar otro»._ — _9h (14 nov): (3) **hecho**: los códigos viven en `promo_codes` (0138; HZL30 y el de cada promotor, con sus días), Publica los lee de ahí (el código propio no vale: guardián `promotorAntiabuso`) y se administran en Super Admin › Crecimiento › Promotores (cre9h: un negocio publicado con el código de un promotor queda con 60 días y «traído»). (8) sigue: los precios típicos se revisan con los negocios reales del acceso anticipado (→ 9t, línea «Fase 9 · 9h»)._
+  negocio con la misma cuenta): hoy el borrador es uno por persona; llega con el panel (varios negocios por cuenta). — _9a (11 nov): hecho: (2) prueba Pro → Free y primer cobro (lib/suscripcion.ts procesar/pasarAFree, 2m), (5) Recuperar negocio (app/(app)/recuperar), (6) «Ir a mi panel» (publica/Publica.tsx), (7) ítems del panel (Menú 2a y los módulos de la Fase 4), (9) la cola de negocios nuevos (1i). Falta: (1) ubicar la dirección en el mapa al publicar (lib/direcciones.ts existe; publica/acciones.ts no pone geo), (3) la tabla de códigos de promotor (hoy PROMO = { HZL30 } en publica/acciones.ts; → 9h con Promotores), (4) «Tómale foto a tu lista» con El Compa, (8) revisar los precios típicos con negocios reales (→ 9h, reclutamiento), (10) esta prueba en el CI (→ 9b), (11) «Publicar otro»._ — _9h (14 nov): (3) **hecho**: los códigos viven en `promo_codes` (0138; HZL30 y el de cada promotor, con sus días), Publica los lee de ahí (el código propio no vale: guardián `promotorAntiabuso`) y se administran en Super Admin › Crecimiento › Promotores (cre9h: un negocio publicado con el código de un promotor queda con 60 días y «traído»). (8) sigue: los precios típicos se revisan con los negocios reales del acceso anticipado (→ 9t, línea «Fase 9 · 9h»)._ — _9m (14 nov): (1) hecho: la dirección con sugerencias propias y su punto al publicar (`puntoFinal` o la primera sugerencia del estado); lo demás sigue en 9n._
 - [x] **Recomendar — lo que falta:** el SMS al negocio («X te recomendó…», una vez) y el aviso «ya publicó» al vecino
   (Fase 2, notificaciones); la cola «Recomendaciones» del Super Admin para revisarlas, marcarlas y unirlas al negocio
   cuando publique (bloque 1i). — _9a (11 nov): la cola «Recomendaciones» del Super Admin está (app/admin/Colas.tsx, «Crear semilla»). Falta el SMS al negocio («X te recomendó…») y el aviso «ya publicó» al vecino (no hay plantilla en notif_templates)._ — **✓ 9l (14 nov):** el SMS «X te recomendó…» al teléfono del negocio, UNA vez por teléfono en toda la vida (`rec_negocio`, con STOP; app/(app)/recomendar/acciones.ts) y «{negocio} ya está en To'Latino» al vecino cuando el negocio publica (`rec_publico`, barrido lib/canales/barrido.ts recomendados()). avi9l: las dos plantillas en ES y EN.
-- [ ] **→ 9m** · **Mapa — tope de 400 negocios:** el mapa trae los 400 más cercanos al punto (pines y lista). Cuando una ciudad pase
+- [x] **→ 9m** · **Mapa — tope de 400 negocios:** el mapa trae los 400 más cercanos al punto (pines y lista). Cuando una ciudad pase
   de eso dentro de 2,6× el radio, pedir los pines por el recuadro visible al arrastrar. Mini mapas del Inicio y de la
-  ficha («Cómo llegar» con el mapa propio) siguen pendientes; «Cómo llegar» abre el mapa del teléfono.
+  ficha («Cómo llegar» con el mapa propio) siguen pendientes; «Cómo llegar» abre el mapa del teléfono. — **✓ 9m (14 nov):** Al soltar el mapa con 400 o más negocios, pide los pines del recuadro visible (`?caja=s,o,n,e`, `leerCaja`: un recuadro de más de 1,5° se ignora); mini mapas propios en el Inicio y en la ficha; «Cómo llegar» abre la app de mapas del teléfono (`lib/como-llegar.ts`). Pruebas: `vec9m`, `dir9m`.
 - [x] **Ciudad — lo que falta (bloque 1f-2):** barrios y pueblos cercanos de Allentown, Wilkes-Barre, Scranton y
   Reading (el prototipo solo trae los de Hazleton; se cargan desde Super Admin › Ciudades antes de abrir); filas de
   «Casa / Trabajo» para medir desde tus direcciones (llegan con Mi cuenta › Direcciones; hasta entonces no se ofrece
@@ -75,10 +75,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
   barrios de las cinco en el selector); el aviso «tu ciudad abrió» (en la app, push, SMS si no tiene la app, correo verificado; una vez, de día;
   `lib/ciudades/aviso.ts`, guardián `listaAvisadaUnaVez`); el teléfono sin cuenta: **decidido no escribirle** (REVISION 9i) — se le avisa si ese
   teléfono ya tiene cuenta; la cifra de eventos en el radio ya estaba (6b). Lo que queda pasó a la línea de abajo (→ 9m).
-- [ ] **→ 9m** · **Mi ciudad — lo que queda de 1f-2 (9i, 14 nov):** filas de «Casa / Trabajo» para medir desde tus direcciones (con Mi cuenta ›
+- [ ] **→ 9t** · **Mi ciudad — lo que queda de 1f-2 (9i, 14 nov):** filas de «Casa / Trabajo» para medir desde tus direcciones (con Mi cuenta ›
   Direcciones; hasta entonces no se ofrece «Entra para medir desde tu casa»); «Qué es Mi ciudad» para quien no entró (un enlace a la ayuda
   `ciudades-que-abren`, que ya existe); «Lo que más buscan los vecinos» en Próximamente (sigue oculto: nada llena `city_waitlist.wants` salvo «negocio»
-  de la landing).
+  de la landing). — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m (las direcciones de la decisión AC se llevaron el bloque): las filas «Casa / Trabajo» ya pueden salir de Mis direcciones (con su punto), falta componerlas en Mi ciudad con «Qué es Mi ciudad»._
 - [x] **Ciudades en memoria 60 s:** abrir o cerrar una ciudad desde el Super Admin se nota en hasta un minuto. — **✓ 9i (14 nov):** `NOTIFY 'ciudades'` (0139) en cada cambio de `cities`, `zones` y `city_beta_invites`; cada proceso lo escucha (lib/cambios-config.ts) y olvida su copia al momento (los 60 s quedan de respaldo si la escucha se corta); quién entra a una beta no se guarda en memoria. Guardián `ciudadAlInstante`; `ciu9i`: al abrir Reading, la otra persona la ve abierta al recargar.
 - [x] **Banda de emergencia de Hogar:** oculta hasta que exista el flujo «Pedir ayuda ahora»
   (APP-NEG-HOGAR-EMERGENCIA). Las de Doctores y Profesionales sí están (filtran la lista). — **✓ 9a (11 nov):** Emergencia 24/7 de Hogar construida en 4e (app/(app)/emergencia, lib/solicitudes.ts vencerEmergencias; plantillas em_ok, em_nadie, em_tomada); prueba em4e.
@@ -87,9 +87,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **→ 9b** · **Paginación numerada (excepción a «paginación por cursor»):** el diseño pide «Página 2 de 5» y números; la — **✓ 9b-3 (13 nov):** con 20 mil negocios en Hazleton en las 17 categorías (~1 200 en Comida, el umbral de esta línea): página 1 p95 33 / 31 ms y página 50 p95 35 / 33 ms (presupuesto 50; cargas 43457199398 / 43460154153). Se queda con páginas numeradas; si una categoría de una ciudad pasa de ~1 200 negocios, se vuelve a medir.
   lista de una categoría en una ciudad es acotada, así que va con OFFSET y tope de 100 páginas. Revisar con datos
   reales antes de la fase 9 (si una categoría pasa de ~1 000 negocios en una ciudad, pasar a cursor).
-- [ ] **→ 9m** · **Chips largos en BusinessCard:** textos largos (p. ej. «Coordinación del día $900 · boda completa…») se
-  cortan en el borde de la tarjeta. Pedir al diseño cómo debe partirse.
-- [ ] **→ 9m** · **«Cómo llegar»** abre Google Maps del teléfono hasta tener el mapa propio.
+- [x] **→ 9m** · **Chips largos en BusinessCard:** textos largos (p. ej. «Coordinación del día $900 · boda completa…») se
+  cortan en el borde de la tarjeta. Pedir al diseño cómo debe partirse. — **✓ 9m (14 nov):** Los chips largos van en dos líneas con «…» (parche de `scripts/portar-sistema.mjs` sobre BusinessCard; a confirmar con el diseño en REVISION 9m).
+- [x] **→ 9m** · **«Cómo llegar»** abre Google Maps del teléfono hasta tener el mapa propio. — **✓ 9m (14 nov):** Un enlace (no una llamada): iPhone → Mapas de Apple (`maps://?daddr=`), Android → la app de mapas que elija (`geo:`), computadora → las indicaciones en la web. Los 25 lugares que abrían google.com/maps pasan por `lib/como-llegar.ts`; guardián `direccionSinTerceros`. Prueba: `dir9m` §5.
 - [x] **«Avísame cuando haya»** guarda la búsqueda; el envío del aviso se construye en la Fase 2 (notificaciones push/SMS/correo). — _9a (11 nov): «Avísame cuando haya» guarda la búsqueda (app/(app)/acciones.ts); el envío del aviso no existe (ninguna plantilla de búsqueda en notif_templates)._ — **✓ 9l (14 nov):** el barrido manda «Ya hay {lo que buscaste}» cuando un negocio nuevo de la ciudad coincide (nombre o categoría), una vez por alerta (`busqueda_hay`, lib/canales/barrido.ts busquedas(); notified_at).
 - [x] **Toques de contacto sin límite:** resuelto en 1h (0015: uno cada 10 min por persona o red, 60/h por red, sin
   contar a la gente del negocio).
@@ -100,11 +100,11 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **Reporte de foto — el aviso por SMS:** la hoja dice «Te avisamos el resultado por SMS» (texto del diseño). El
   aviso se construye con las notificaciones (Fase 2) y la cola «Medios marcados» del Super Admin (bloque 1i). Sin eso
   no pasa a producción. — **✓ 9a (11 nov):** el resultado de un reporte de foto avisa con mod_foto / mod_hide (lib/apelaciones.ts) y la cola «Medios marcados» está en Colas (5d); prueba com5d.
-- [ ] **→ 9m** · **Buscar — pendientes con su módulo:** pestañas «Platos y servicios» (Fase 2), «Eventos» (Fase 6), «Vecinos» y
+- [ ] **→ 9t** · **Buscar — pendientes con su módulo:** pestañas «Platos y servicios» (Fase 2), «Eventos» (Fase 6), «Vecinos» y
   «Pregúntale al barrio» (Fase 5); desplegable de búsqueda en el encabezado de escritorio (hoy el encabezado lleva a
-  /buscar); vista previa al pasar el cursor (escritorio). — _9a (11 nov): hechas: Eventos y Vecinos en Buscar, «Pregúntale al barrio» (app/(app)/buscar/Buscar.tsx; com5e, evt6b-6c). Falta la pestaña «Platos y servicios», el desplegable del encabezado de escritorio y la vista previa al pasar el cursor._
-- [ ] **→ 9m** · **Buscar con la voz** usa el reconocimiento del propio navegador (Safari/Chrome lo procesan en servidores de
-  Apple/Google). Revisar con el fundador si se acepta o se construye uno propio antes de producción.
+  /buscar); vista previa al pasar el cursor (escritorio). — _9a (11 nov): hechas: Eventos y Vecinos en Buscar, «Pregúntale al barrio» (app/(app)/buscar/Buscar.tsx; com5e, evt6b-6c). Falta la pestaña «Platos y servicios», el desplegable del encabezado de escritorio y la vista previa al pasar el cursor._ — _9m (14 nov): Sigue: la pestaña «Platos y servicios», el desplegable del encabezado de escritorio y la vista previa al pasar el cursor; no cupo en 9m._
+- [x] **→ 9m** · **Buscar con la voz** usa el reconocimiento del propio navegador (Safari/Chrome lo procesan en servidores de
+  Apple/Google). Revisar con el fundador si se acepta o se construye uno propio antes de producción. — **✓ 9m (14 nov):** La primera vez sale el aviso (lo procesan Apple o Google, no To'Latino) con «Ahora no»; interruptor «Buscar con la voz» en Mi cuenta › Ajustes › Privacidad (`users.voice_search`); apagado, Buscar no muestra el micrófono. Decisión en REVISION 9m (reconocimiento propio: después de abrir si el fundador lo pide). Prueba: `vec9m`.
 - [x] **→ 9b** · **Vocabulario de búsqueda (`search_vocab`)** se refresca en cada despliegue; con negocios nuevos todos los días — **✓ 9b-3 (13 nov):** el barrido lo refresca cada hora sin bloquear a quien busca (`buscar_al_dia`, CONCURRENTLY) y anota `search_vocab_refreshed_at` en platform_config (0133).
   hace falta refrescarlo cada hora (trabajo programado, con el resto de procesos). — _9a (11 nov): refrescar_busqueda() corre en cada despliegue y semilla (packages/db/migrar.sh); no está en el barrido: falta el refresco cada hora (derivados cacheados de 9b)._
 
@@ -180,7 +180,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **→ después de abrir (DA-01)** · **Botones de Soporte** del diseño (chat / llamar) ocultos hasta que exista Soporte. — 7b (10 nov): «chat» = Soporte (`/soporte`, casos con una
   persona) ya existe y los avisos del panel traen «Escribir a Soporte»; **llamar** sigue sin construirse (no hay línea telefónica, R1). — _9a (11 nov): «chat» = Soporte (7b); «llamar» no se construye: no hay servicio de voz (R1). En `docs/DESPUES-DE-ABRIR.md`._
 - [ ] **→ 9n** · **Admin Negocios › pestañas «Reclamos» y «Duplicados»** e **«Invitar a reclamar»** (SMS): con sus módulos.
-- [ ] **→ 9m** · **Entrada «¿Es tuyo?» desde la ficha** de un negocio: el diseño no la trae; hoy se llega desde Publica y semillas.
+- [x] **→ 9m** · **Entrada «¿Es tuyo?» desde la ficha** de un negocio: el diseño no la trae; hoy se llega desde Publica y semillas. — **✓ 9m (14 nov):** «¿Es tu negocio?» en la ficha de un negocio sin dueño → /recuperar/{id}; no sale en uno con dueño. Prueba: `vec9m`.
 - [x] **Decisiones tomadas sin el diseño (confirmar con el fundador):** texto del aviso al dueño actual en su panel
   (R2), las 3 plantillas de «Rechazar», el detalle del caso en «Cambios sensibles» (compuesto con piezas del admin). — **✓ 9a (11 nov):** textos del aviso al dueño (R2), las 3 plantillas de Rechazar y el detalle de Cambios sensibles (REVISION 9a).
 - [x] **9g** · **«Llamar» desde una semilla** abre el teléfono pero aún no se cuenta (la tabla `contact_taps` ya admite `seed_id`). — **✓ 9g (14 nov):** `registrarToqueSemilla` (mismas reglas que un negocio) desde la tarjeta de la semilla; Analítica › Resumen: toques, semillas y «las que más llaman». Evidencia: `ana9g` (sin correr aquí).
@@ -249,21 +249,21 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **Pago con tarjeta** (retener al enviar, cobrar al aceptar), Wallet y cupones: 2d / Fase de Planes. Hoy solo pago en
   el local y no hay cupones. — **✓ 9a (11 nov):** pago con tarjeta: retener al enviar, cobrar al aceptar (lib/pagos, lib/cobros.ts; pagos2d); cupones de negocios (5g, lib/cupones.ts). Apple / Google Pay nativo → después de abrir (L1149).
 - [x] **Delivery** (zona, envío, mínimo, propina, cómo te lo entregamos): hecho en el 2f, con efectivo al entregar.
-- [ ] **→ 9m** · **Hoja «Entra para pedir» (AuthSheet 2m):** el componente del sistema solo trae textos en español y no muestra
-  errores; mientras, «Ir a pagar» sin cuenta usa la pantalla Entra (bilingüe) y vuelve al pago con el pedido igual.
+- [x] **→ 9m** · **Hoja «Entra para pedir» (AuthSheet 2m):** el componente del sistema solo trae textos en español y no muestra
+  errores; mientras, «Ir a pagar» sin cuenta usa la pantalla Entra (bilingüe) y vuelve al pago con el pedido igual. — **✓ 9m (14 nov):** `HojaEntrar` sobre la ficha (el pedido se queda igual) con el AuthSheet del sistema en ES/EN (props nuevas por `portar-sistema.mjs`) y el error del servidor (`role="alert"`). Pruebas: `vec9m` (en inglés, código malo), `menu2b`.
 - [ ] **→ 9c** · **Accesibilidad del sistema de diseño:** `Button` es un `div` sin `role="button"` ni teclado (lo cazó la prueba del
   2b). Corregir en `packages/ui` y sumar la regla a la revisión de accesibilidad.
 - [x] **Mi cuenta › Pedidos** (la lista de los pedidos de la persona): 2h. Hoy se llega por el enlace del pedido. — **✓ 9a (11 nov):** Mi cuenta › Pedidos (app/(app)/cuenta/pedidos); prueba cuenta2h.
 - [x] **Super Admin › Transacciones** (línea de tiempo por pedido): 2i. Hoy el 360° muestra cuántos pedidos van este mes. — **✓ 9a (11 nov):** Super Admin › Transacciones con la línea de tiempo (app/admin/Transacciones.tsx, 2i/4g).
-- [ ] **→ 9m** · **Alergias en el menú del cliente:** el panel las guarda; el prototipo del cliente no las muestra. Preguntar al
-  fundador dónde salen.
+- [x] **→ 9m** · **Alergias en el menú del cliente:** el panel las guarda; el prototipo del cliente no las muestra. Preguntar al
+  fundador dónde salen. — **✓ 9m (14 nov):** La hoja del plato trae «LLEVA O ES · LO MARCÓ EL NEGOCIO» con las etiquetas del panel (picante, vegetariano, sin gluten, pescado o mariscos, lácteos, huevo, maní o nueces). Decisión en REVISION 9m. Prueba: `vec9m`.
 - [ ] **→ 9n** · **Hora del pedido programado** con el reloj del negocio: los horarios que cruzan la medianoche se programan solo hasta las 11:30 PM.
 
 ## Reservaciones de mesa (bloque 2e, 6 nov 2026)
 - [x] **Cambiar una reservación ya confirmada** (el cambio queda pendiente y la actual sigue en pie): hecho en el 2k
   (6 nov); el lado del panel compuesto, pendiente del OK del fundador (REVISION 4).
-- [ ] **→ 9m** · **«Avísame si se libera» (lista de espera) y «Otros restaurantes con mesa»** en la pantalla de «no pudo»: con las
-  notificaciones (SMS). — _9a (11 nov): «Avísame si se libera» existe para citas (lib/citas.ts) y la lista de espera de boletos (lib/espera.ts); falta en la pantalla «no pudo» de una reservación de mesa, con «Otros restaurantes con mesa»._
+- [ ] **→ 9t** · **«Avísame si se libera» (lista de espera) y «Otros restaurantes con mesa»** en la pantalla de «no pudo»: con las
+  notificaciones (SMS). — _9a (11 nov): «Avísame si se libera» existe para citas (lib/citas.ts) y la lista de espera de boletos (lib/espera.ts); falta en la pantalla «no pudo» de una reservación de mesa, con «Otros restaurantes con mesa»._ — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m: la lista de espera de una mesa y «Otros restaurantes con mesa» en la pantalla «no pudo»._
 - [x] **Avisos por SMS** (al confirmar, el día de la reservación, al proponer otra hora) y al restaurante (solicitud
   nueva): con las notificaciones. Hoy la pantalla se actualiza sola cada 20 s y el panel al abrirlo. — **✓ 9a (11 nov):** avisos de reservaciones (rsv_ok, rsv_alt, rsv_no, rsv_chg_*) y al restaurante (biz_req); app/panel/acciones-reservas.ts; prueba rsv2e.
 - [x] **Evento privado** (grupos grandes, APP-NEG-EVENTO-PRIVADO): hoy se ofrece Llamar; la solicitud de evento llega con
@@ -289,7 +289,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **Rango y puntos** del vecino en la tarjeta («SARGENTO · 23 RESEÑAS», «+15 PUNTOS»): hecho en 5f (desde Sargento; +15 si la reseña
   verificada sumó). Falta solo la nota de rango en «Tu reseña» del formulario de escribir (texto del diseño, sin dato nuevo).
 - [x] **«Ver traducción» (D3)** en reseñas y respuestas: con el servicio de traducción. — **✓ 9a (11 nov):** «Ver traducción» propia en reseñas y respuestas (5h, lib/traduccion.ts); prueba com5h.
-- [ ] **→ 9m** · **«Lo que más mencionan»** (temas): se calcula del texto; hoy no sale.
+- [x] **→ 9m** · **«Lo que más mencionan»** (temas): se calcula del texto; hoy no sale. — **✓ 9m (14 nov):** `review_topics` (0143) lo calcula el barrido (`temasResenas`, incremental, diccionario ES/EN en `lib/temas.ts`); Reseñas trae «LO QUE MÁS MENCIONAN» con 2+ menciones. Prueba: `vec9m`.
 - [x] **Preguntas de cada categoría** en «Lo que importa» (belleza, autos, hogar, salud…): con la fase de cada categoría. Hoy:
   Comida; las demás escriben estrellas, texto y fotos. — **✓ 9a (11 nov):** preguntas de reseña por categoría (Fase 4: res4g, res4m, res4s, res4z, noc4d).
 - [x] **Reseña de una cita** (VERIFICADA · CITA) y **de una reservación** desde su pantalla: la mesa ya cuenta como verificada;
@@ -308,20 +308,20 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9n** · **Evento y vacante** como tipo y como botón: con Eventos (y Jobs, ya hecho: falta el botón «Ver vacante» en una novedad). **«Escribir»**: con Mensajes. — _9a (11 nov): falta el botón «Ver vacante» en una novedad y «Escribir» con Mensajes._
 - [ ] **→ 9n** · **«Repetir»** (todos los días, lun · mié · vie…) y **«Avisar a tus seguidores»**: con las notificaciones.
 - [ ] **→ 9n** · **PEDIDOS** que salen de una novedad (hoy el detalle muestra comentarios en su lugar).
-- [ ] **→ 9m** · **Reportar una novedad o un comentario** desde la página (la cola «Reportes de contenido» ya acepta novedades y
-  comentarios; falta el botón en la tarjeta, que el diseño no trae).
+- [x] **→ 9m** · **Reportar una novedad o un comentario** desde la página (la cola «Reportes de contenido» ya acepta novedades y
+  comentarios; falta el botón en la tarjeta, que el diseño no trae). — **✓ 9m (14 nov):** «Reportar esta publicación» en cada novedad → Super Admin › Contenido (una vez por persona; ocultarla cierra los reportes abiertos). Prueba: `vec9m`.
 - [ ] **→ 9n** · **Elegir fotos de tu galería** en el editor (hoy se suben nuevas).
 
 ## Jobs (bloque 2g-3, 6 nov 2026)
 - [x] **Avisos por SMS** de cada respuesta a la persona y de cada solicitud nueva al negocio: con el proveedor de SMS y las
   notificaciones. Hoy se ven en la solicitud y en Hoy. — **✓ 9l (14 nov):** `job_reply` ya llevaba SMS; `biz_job` (solicitud nueva al negocio) pasa a SMS de respaldo del push (0142).
-- [ ] **→ 9m** · **«Avísame de nuevas vacantes»** (vecinos) y el aviso al publicar: con las notificaciones. — _9l (14 nov): pasa a 9m: la suscripción va en la pantalla de vacantes de Buscar (L311, 9m); la plantilla y el barrido siguen el patrón de «Avísame cuando haya» de 9l._
+- [x] **→ 9m** · **«Avísame de nuevas vacantes»** (vecinos) y el aviso al publicar: con las notificaciones. — _9l (14 nov): pasa a 9m: la suscripción va en la pantalla de vacantes de Buscar (L311, 9m); la plantilla y el barrido siguen el patrón de «Avísame cuando haya» de 9l._ — **✓ 9m (14 nov):** En Buscar «empleo»: «Avísame de nuevas vacantes» (search_alerts kind «vacantes», una por ciudad); el barrido avisa una vez por vacante (`vacante_nueva`, de 9 a 20 h, hasta 3 al día). Prueba: `vec9m`.
 - [ ] **→ 9n** · **«Traducir con El Compa»** en el editor: con El Compa. — _9a (11 nov): falta «Traducir con El Compa» en el editor de vacantes (solo existe en el Menú: app/panel/Menu.tsx)._
-- [ ] **→ 9m** · **Mis solicitudes** en Mi cuenta (lista de las J-… de la persona y las vacantes guardadas): con 2h Mi cuenta. — _9a (11 nov): falta «Mis solicitudes» en Mi cuenta (lista de las J-… y las vacantes guardadas)._
-- [ ] **→ 9m** · **Reportar una vacante** desde la página (la cola «Reportes de contenido» aún no acepta vacantes; el diseño no trae
-  el botón).
-- [ ] **→ 9m** · **Vacantes en Buscar y en la portada de la ciudad** («Empleos en Hazleton»): el diseño las ubica en la pestaña del
-  negocio; decidir si van en Buscar.
+- [x] **→ 9m** · **Mis solicitudes** en Mi cuenta (lista de las J-… de la persona y las vacantes guardadas): con 2h Mi cuenta. — _9a (11 nov): falta «Mis solicitudes» en Mi cuenta (lista de las J-… y las vacantes guardadas)._ — **✓ 9m (14 nov):** Ya estaba servido: Mi cuenta › Empleos (las J-… con su estado, 2h) y Guardados › Vacantes. Revisado contra lo servido en 9m.
+- [x] **→ 9m** · **Reportar una vacante** desde la página (la cola «Reportes de contenido» aún no acepta vacantes; el diseño no trae
+  el botón). — **✓ 9m (14 nov):** «Reportar esta vacante» en la página de la vacante (teléfono y escritorio) → la cola de Contenido acepta «job» (0143). Prueba: `vec9m`.
+- [x] **→ 9m** · **Vacantes en Buscar y en la portada de la ciudad** («Empleos en Hazleton»): el diseño las ubica en la pestaña del
+  negocio; decidir si van en Buscar. — **✓ 9m (14 nov):** Van en Buscar (hasta 3 que encajan, «empleo» las trae todas) con «Avísame de nuevas vacantes». La portada de la ciudad no las lleva (el diseño las ubica en el negocio). Prueba: `vec9m`.
 
 ## Mi cuenta (bloque 2h, 6 nov 2026)
 - [x] **Borrado definitivo a los 30 días** de lo que pidió la persona (`users.delete_at`, `delete_reason`): un trabajo
@@ -330,10 +330,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **Verificar el correo** (enlace) y **recibos por correo**: con el proveedor de correo. — **✓ 9l (14 nov):** el enlace es de un uso y solo vale el último que se pidió (email_verifications.revoked_at); recibos de pedido, mesa, Pro y boletos (con los botones de Wallet). avi9l sección 5 y 6.
 - [x] **Avisos al teléfono** que respeten `users.notif_prefs` (pedidos, reservas, empleos, negocios guardados, correo,
   horas de silencio) y el aviso «cambiaste tu número» al número viejo. — _9a (11 nov): las preferencias y horas de silencio se respetan (Mi cuenta › Avisos, lib/avisos.ts; 2h/8c). Falta el aviso «cambiaste tu número» al número viejo._ — **✓ 9l (14 nov):** «Tu número de To'Latino cambió» al número viejo (`cuenta_tel_cambio`, crítico; lib/perfil.ts cambiarTelefono).
-- [ ] **→ 9m** · **Boletos, Mensajes, Pagos y Wallet, Apartados, platos y eventos guardados, Ayuda y soporte, Descargar mis datos,
-  letra más grande, ajustes de la comunidad**: con sus fases (REVISION 11). — _9d (14 nov): «Descargar mis datos» hecho (Mi cuenta › Ajustes › Privacidad; prueba datos9d). Lo demás de la lista se revisa contra lo servido en 9m._
+- [ ] **→ 9t** · **Boletos, Mensajes, Pagos y Wallet, Apartados, platos y eventos guardados, Ayuda y soporte, Descargar mis datos,
+  letra más grande, ajustes de la comunidad**: con sus fases (REVISION 11). — _9d (14 nov): «Descargar mis datos» hecho (Mi cuenta › Ajustes › Privacidad; prueba datos9d). Lo demás de la lista se revisa contra lo servido en 9m._ — _9m (14 nov): Revisado en 9m contra lo servido: Boletos, Mensajes (en vivo), Pagos y movimientos, Descargar mis datos, Ayuda y Soporte, ajustes de la Comunidad ya están. Quedan: los Apartados en una lista de Mi cuenta, los platos guardados (el plato no se guarda todavía) y la letra más grande._
 - [x] **Invita vecinos con código** (quién invitó a quién) cuando exista la gamificación. — **✓ 9a (11 nov):** invita vecinos con código (lib/invitar.ts, 5f/5g); prueba com5f.
-- [ ] **→ 9m** · **Alertas de búsqueda** («Avísame cuando haya») listadas en Avisos con «Quitar».
+- [x] **→ 9m** · **Alertas de búsqueda** («Avísame cuando haya») listadas en Avisos con «Quitar». — **✓ 9m (14 nov):** Mi cuenta › Avisos › «Tus alertas» lista las de búsqueda y las de vacantes, cada una con «Quitar» (queda `removed_at`, no se borra). Prueba: `vec9m`.
 
 ## Ayuda con el pedido y Soporte (bloque 2i, 6 nov 2026)
 - [ ] **→ 9n** · **Devolución a la tarjeta y reponer con un pedido nuevo sin costo**: con Stripe (2d) y el Repartidor. — _9k (14 nov): la devolución a la tarjeta desde la ayuda ya existe (7b «Resolver y devolver»; ahora repartida entre cobros). Reponer es crear un pedido de $0 que sigue el flujo del negocio y del Repartidor: va con lo diferido del negocio y el Repartidor (9n)._
@@ -394,8 +394,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **→ 9k** · **3D Secure fuera de sesión** en renovaciones: si el banco pide verificación, avisar al dueño con un enlace para
       confirmar (hoy cuenta como intento fallido). — **✓ 9k (14 nov):** la renovación que pide 3-D Secure deja la verificación a nombre del dueño (hasta el próximo intento) y le avisa «Tu banco pide confirmar el cobro de Pro» con el enlace `/pago/verificar?pi=<pi>` (la misma hoja; Stripe.js confirmCardPayment con su tarjeta); al confirmar, el período se completa una sola vez (lib/suscripcion.ts completarRenovacion; también por el webhook payment_intent.succeeded). Antes de otro intento o de pasar a Free, la verificación vieja se mira (si ya cobró, no se cobra otra vez) y se suelta. Sigue contando para el calendario de 3 intentos, sin el aviso de «cobro fallido». Prueba din9k paso 2.
 
-- [ ] **→ 9m** · **Mensajes (2p):** tiempo real con WebSocket/SSE en vez de preguntar cada 4–5 s; fotos en el chat; «El Compa contesta
-  por ti» y «Sugerir respuesta» (Fase 4); mensajes vecino ↔ vecino (Comunidad); traducción ES↔EN sugerida; aviso push.
+- [ ] **→ 9t** · **Mensajes (2p):** tiempo real con WebSocket/SSE en vez de preguntar cada 4–5 s; fotos en el chat; «El Compa contesta
+  por ti» y «Sugerir respuesta» (Fase 4); mensajes vecino ↔ vecino (Comunidad); traducción ES↔EN sugerida; aviso push. — _9m (14 nov): Hecho en 9m: en vivo con SSE propio (`/api/vivo`, LISTEN/NOTIFY; sin preguntar cada 4–5 s, guardián `mensajesEnVivo`); El Compa y vecino ↔ vecino ya estaban. Quedan: fotos en el chat y la traducción ES↔EN sugerida._
 
 - [ ] **→ 9q** · **Correo (2q) · para encender en producción:** cuenta de Amazon SES fuera del «sandbox» de SES, dominio verificado con
   DKIM y SPF (+ DMARC) en Cloudflare, y en los secretos del entorno `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY`,
@@ -534,8 +534,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9s** · **4ic · Regulation Z (publicidad de crédito):** revisar el pago de ejemplo (enganche, meses, APR, «estimado, sujeto a aprobación», total de
   pagos), el de compre aquí pague aquí (total pagado y la tasa que resulta) y la decisión de no poner enganche ni pago en la tarjeta del buscador;
   confirmar los topes de tasa de la Motor Vehicle Sales Finance Act de PA (hoy el servidor deja 0–30 %).
-- [ ] **→ 9m** · **4ic · Retiros del fabricante (recalls):** consultar los retiros abiertos de cada VIN con los datos públicos de NHTSA (sin pagar) y
-  decidir cómo se muestran (§6 #11).
+- [x] **→ 9m** · **4ic · Retiros del fabricante (recalls):** consultar los retiros abiertos de cada VIN con los datos públicos de NHTSA (sin pagar) y
+  decidir cómo se muestran (§6 #11). — **✓ 9m (14 nov):** Los datos públicos de NHTSA (archivo FLAT_RCL, carga mensual `infra/retiros/generar.sh` → `vehicle_recalls`) por marca, modelo y año en la hoja del carro, con cómo confirmarlo con el VIN en nhtsa.gov/recalls (el archivo público no trae VIN). La carga real corre en el servidor (aquí la red no llega a NHTSA). Prueba: `vec9m`.
 - [ ] **→ 9s** · **4ic · Licencias de Venta de Autos:** verificar emisores y URL de registro de `pa_dealer` y `pa_vendedor_autos` (PALS, State Board of
   Vehicle Manufacturers, Dealers and Salespersons), `pa_venta_plazos` (licencia de venta a plazos del Department of Banking and Securities: si
   vive en NMLS) y `nmls_dealer`; textos «puede / no puede».
@@ -569,8 +569,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       las 4 h hábiles para responder una visita, las 24 h del «Pasó», las 48 h de Iglesias, los 14 días de aviso de una licencia y los 30 días de la
       purga son constantes del código (`lib/visitas-inm.ts`, `lib/licencias.ts`); la lista de frases de vivienda justa ya vive en Catálogo. Pasan a
       Configuración cuando llegue. (4ig, 7 nov)
-- [ ] **→ 9m** · **4ig · Búsqueda por propiedad o por carro (§6 #10):** recámaras, precio, año y millaje tienen datos e índices; falta componer la pantalla
-      con el sistema de diseño y el OK del fundador. Hoy la categoría y Buscar filtran negocios con `filter_values`. (4ig, 7 nov)
+- [x] **→ 9m** · **4ig · Búsqueda por propiedad o por carro (§6 #10):** recámaras, precio, año y millaje tienen datos e índices; falta componer la pantalla
+      con el sistema de diseño y el OK del fundador. Hoy la categoría y Buscar filtran negocios con `filter_values`. (4ig, 7 nov) — **✓ 9m (14 nov):** `/buscar/inventario` (casa: renta o venta, recámaras, precio; carro: año desde, millas, precio, marca), desde la categoría con «Buscar casa / Buscar carro». Prueba: `vec9m`.
 - [ ] **→ 9n** · **4ig · Licencias de las demás categorías:** el barrido devuelve a la cola «Licencias» las de Iglesias, Bienes Raíces y Autos 14 días antes
       de su revisión (y con prioridad si pasó); las de Profesionales, Salud, Niños, Educación, Transporte, Fiestas y Noche todavía no vuelven
       solas. Decidir si se extiende a todas (es una línea en `CATS_LIC_4I`). (4ig, 7 nov) — _9a (11 nov): decisión pendiente: extender la vuelta automática a revisión a todas las categorías con licencia (una línea en CATS_LIC_4I, lib/licencias.ts)._
@@ -609,8 +609,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       `welcome_at` y `adult`. (5c, 7 nov) — **✓ 9a (11 nov):** monedas de bienvenida (+100) acreditadas por 5g (ya no queda «HOOK 5g»); prueba com5g.
 - [x] **5c · Avisos viejos sin autor:** los avisos de la Comunidad anteriores a 0099 no tienen `actor_user_id` y un bloqueo no los esconde;
       en el sandbox son de prueba. En producción no existen (la Comunidad abre con 5c en adelante). (5c, 7 nov) — **✓ 9a (11 nov):** solo existen en el sandbox (datos de prueba); en producción la Comunidad nace con 0099.
-- [ ] **→ 9m** · **5c · Mensajes en tiempo real:** la conversación abierta pregunta cada 5 s; con mucho uso, medir y pasar a un canal propio
-      (SSE) antes de abrir. (5c, 7 nov)
+- [x] **→ 9m** · **5c · Mensajes en tiempo real:** la conversación abierta pregunta cada 5 s; con mucho uso, medir y pasar a un canal propio
+      (SSE) antes de abrir. (5c, 7 nov) — **✓ 9m (14 nov):** Canal propio: SSE `/api/vivo` con LISTEN/NOTIFY (0143: disparadores en chat_messages y dm_messages, el aviso sin el texto). Un mensaje llega al otro teléfono en ~10–40 ms; quieta, la conversación no pregunta nada. Prueba: `vec9m`.
 - [x] **5c · «10 conversaciones nuevas al día»** ~~cuenta 24 h corridas~~ — hecho en 5d: todos los límites de la Comunidad cuentan el día
       local de la ciudad, con la mitad el primer día de la cuenta (`lib/moderacion.ts` limiteDia; valores en Contenido › Auto-moderación).
 - [x] **→ 9b** · **5c · Velocidad** de Mensajes y listas de seguidores con 1 M de vecinos (índices `dm_threads_a/b_idx`, `follows_seguidos_idx`): no
@@ -658,9 +658,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       `board_closures_premios` → `mon_premios_mes` (una vez por persona y mes); la migración 0103 acreditó los meses ya cerrados. Probado en `com5g`.
 - [x] **5f · Reporte de canjes en «Cerrar el mes»** (paso 4): hoy dice 0 canjes porque los cupones llegan en 5g; conectar al libro de cupones. (5f, 7 nov)
       — **Hecho en 5g:** `board_closures_reporte` cuenta los canjes del mes de la ciudad (`canjes`, `canjes_usados`) al cerrar.
-- [ ] **→ 9m** · **5f · Velocidad de la Tabla y del rango con 1 M de publicaciones** (`scripts/carga/comunidad-1m.mjs`, presupuesto Tabla ≤ 40 ms): la
+- [ ] **→ 9t** · **5f · Velocidad de la Tabla y del rango con 1 M de publicaciones** (`scripts/carga/comunidad-1m.mjs`, presupuesto Tabla ≤ 40 ms): la
       Tabla usa índices `(city_id, month, puntos desc, user_id)` y cursor; «mi lugar» cuenta los de delante (índice), y `pts_rango` mira la
-      escalera con `limit n`. Medir en la base de carga aparte y anotar las cifras. (5f, 7 nov) — _9b-3 (13 nov): con 580 mil vecinos con puntos en UNA ciudad, la Tabla p95 89 / 85 ms y «mi lugar» 86 / 86 (presupuesto 40; cargas 43457199398 / 43460154153). La lista sale del índice (~5 ms); lo que tarda es contar a los de delante de quien mira (580 mil entradas del índice). Antes 250 ms (sin unir con users, dos cuentas por rango). Para bajarlo del todo: un histograma de puntos por ciudad y mes que mantenga la base, o el lugar calculado por el barrido con el aviso de que se pone al día; se decide con lo diferido del vecino (9m)_
+      escalera con `limit n`. Medir en la base de carga aparte y anotar las cifras. (5f, 7 nov) — _9b-3 (13 nov): con 580 mil vecinos con puntos en UNA ciudad, la Tabla p95 89 / 85 ms y «mi lugar» 86 / 86 (presupuesto 40; cargas 43457199398 / 43460154153). La lista sale del índice (~5 ms); lo que tarda es contar a los de delante de quien mira (580 mil entradas del índice). Antes 250 ms (sin unir con users, dos cuentas por rango). Para bajarlo del todo: un histograma de puntos por ciudad y mes que mantenga la base, o el lugar calculado por el barrido con el aviso de que se pone al día; se decide con lo diferido del vecino (9m)_ — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m: el histograma de puntos por ciudad y mes (o el lugar calculado por el barrido)._
 - [x] **5f · Notificación «Subiste de rango» en la app (push):** (hecho en 8c: va por push con la misma regla) hoy queda en la campana (sin SMS, `gam_*`); el push llega con la app. (5f, 7 nov)
 - [ ] **→ 9c** · **5f · Puntos y Tabla en los 9 dispositivos:** `com5f` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta en la matriz de CI. (5f, 7 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9n** · **5f · Condiciones de los rangos editables** (además del nombre): hoy el admin cambia nombres, valores de las reglas y el tope; los
@@ -699,7 +699,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       corta por su cuenta (aceptable; anotar si se quiere uno común). (5h, 7 nov) — **✓ 9b-3 (13 nov):** `lib/topes.ts` (`estadoCorte` / `resultadoCorte` sobre `rate_counters`): uno para todos los procesos, sobrevive a un reinicio y, pasado el minuto, una sola prueba lo vuelve a abrir (com5h lo comprueba). También el de la moderación de fotos. Guardián `topeCompartido`.
 - [ ] **→ 9c** · **5h · «Ver traducción» en los 9 dispositivos:** `com5h` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta la matriz
       de CI (y un traductor de prueba en CI). (5h, 7 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
-- [ ] **→ 9m** · **5h · El Compa con «Ver traducción»** cuando llegue su fase (ayuda `ver-traduccion.md` lista). (5h, 7 nov) — _9a (11 nov): El Compa ya existe (7c–7f); falta que responda sobre «Ver traducción» (el artículo de ayuda ver-traduccion no está en docs/ayuda)._
+- [ ] **→ 9t** · **5h · El Compa con «Ver traducción»** cuando llegue su fase (ayuda `ver-traduccion.md` lista). (5h, 7 nov) — _9a (11 nov): El Compa ya existe (7c–7f); falta que responda sobre «Ver traducción» (el artículo de ayuda ver-traduccion no está en docs/ayuda)._ — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._
 
 - [ ] **→ 9n** · **5i · Plazos de la Fase 4 en SOLO LECTURA:** `sp_seguro_guardar_h`, `sp_total_escrito_dias`, `sp_notas_purga_dias`, `ayuda_negocio_h`,
       `noche_responder_min`, `noche_mesa_guardada_min`, `noche_fila_viva_min`, `insc_responder_h`, `insc_oferta_h`, `insc_baja_h`,
@@ -775,10 +775,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **→ 9k** · **6c · 3D Secure:** si el banco pide verificación extra, se pide otra tarjeta (como el resto de la app). (6c, 10 nov) — **✓ 9k (14 nov):** los boletos completan la verificación en la hoja y «Pagar» vuelve a enviar el mismo apartado con el mismo intento (lib/boletos.ts pagarBoletos con `usuario`; no se suelta lo retenido ni cuenta como otro intento).
 - [x] **→ 9k** · **6c · Máximo por persona con la huella de la tarjeta:** hoy cuenta cuenta + dispositivo + la misma tarjeta guardada (`pm_…`); con
       Stripe real conviene la huella (`card.fingerprint`) para cazar la misma tarjeta en otra cuenta. (6c, 10 nov) — **✓ 9k (14 nov):** la huella (card.fingerprint; en el sandbox, la simulada de la marca y los 4) se guarda al guardar una tarjeta y en cada cobro (payment_methods/payments.card_fingerprint, 0141) y el máximo por persona y fecha cuenta la misma tarjeta en otra cuenta (lib/boletos.ts entradasDe). Guardián huellaDeTarjeta.
-- [ ] **→ 9m** · **6c · QR sin señal en el teléfono del cliente:** el QR verifica sin conexión en la puerta, pero la página del boleto necesita señal
+- [ ] **→ 9r** · **6c · QR sin señal en el teléfono del cliente:** el QR verifica sin conexión en la puerta, pero la página del boleto necesita señal
       para abrirse; la app instalable (service worker) llega con 6h. Apple / Google Wallet: Fase 8 (§6 #17). (6c, 10 nov) _6h (10 nov): hecho —
       el boleto abierto una vez con señal se guarda cifrado en el teléfono y se ve sin señal (service worker de Mis boletos); falta probarlo en un
-      iPhone (Safari puede borrar lo guardado de una web que no se abre en 7 días) y que Mis boletos guarde todos los próximos sin abrirlos uno por uno._ — _9a (11 nov): hecho en 6h (service worker de Mis boletos, boleto cifrado) y Wallet en 8g. Falta probarlo en un iPhone y que Mis boletos guarde todos los próximos sin abrirlos uno por uno._
+      iPhone (Safari puede borrar lo guardado de una web que no se abre en 7 días) y que Mis boletos guarde todos los próximos sin abrirlos uno por uno._ — _9a (11 nov): hecho en 6h (service worker de Mis boletos, boleto cifrado) y Wallet en 8g. Falta probarlo en un iPhone y que Mis boletos guarde todos los próximos sin abrirlos uno por uno._ — _9m (14 nov): Mis boletos ya guarda TODOS los próximos al abrirse (9m, `boletosParaGuardar`); queda probarlo en un iPhone real (Safari y los 7 días), con las tiendas._
 - [x] **→ después de abrir (DA-10)** · **6c · QR rotativo y reventa:** _6j (10 nov): las señales de reventa ya están en Confianza; queda el QR rotativo._ QR fijo, firmado y con versión (§6 #10); el rotativo anti-captura y las señales de reventa (Confianza,
       6j) quedan para después. (6c, 10 nov) — _9a (11 nov): el QR rotativo anti-captura (§3.9); las señales de reventa ya están en Confianza (6j). En `docs/DESPUES-DE-ABRIR.md`._
 - [x] **6c · Contrato con Stripe de las llamadas nuevas** (`retenerPlataforma` con `transfer_group`, `capturarPlataforma` y la lectura del
@@ -786,8 +786,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       paso del CI. (6c, 10 nov) — **✓ 9a (11 nov):** el contrato de Stripe corre en el CI (.github/workflows/ci.yml: scripts/contrato-stripe/correr.sh) y pasó en las corridas de 8i (PROGRESS «Fase 8 · 8i»).
 - [x] **6c · Recordatorio del boleto («Mañana» / «¡Es hoy!», `bol_recordatorio`) y aviso de aforo 90 % (`evt_aforo90`):** _hecho en 6j (10 nov): `bol_recordatorio` y `bol_es_hoy` desde `evt_recordatorio_hora` y `evt_aforo90` al 90 % de lo vendido, una vez cada uno (adm6j)._ no se
       construyeron en 6c; llegan con 6j (avisos de Eventos). (6c, 10 nov)
-- [ ] **→ 9m** · **6c · Mi cuenta › Inicio «Tu semana» con el boleto y Pagos › movimientos:** _6j (10 nov): «Tu semana» hecho (boletos, RSVP y evento privado); Pagos › movimientos sigue pendiente: ver «Fase 6 · 6j»._ los boletos están en Mi cuenta › Boletos y en
-      Accesos; «Tu semana» llega con 6j. (6c, 10 nov)
+- [x] **→ 9m** · **6c · Mi cuenta › Inicio «Tu semana» con el boleto y Pagos › movimientos:** _6j (10 nov): «Tu semana» hecho (boletos, RSVP y evento privado); Pagos › movimientos sigue pendiente: ver «Fase 6 · 6j»._ los boletos están en Mi cuenta › Boletos y en
+      Accesos; «Tu semana» llega con 6j. (6c, 10 nov) — **✓ 9m (14 nov):** Mi cuenta › Pagos › Movimientos (cobrado, retenido, liberado, devuelto, con su orden; cursor). Prueba: `vec9m`.
 - [x] **→ 9o** · **6c · Llave del QR de producción:** `deploy.sh` del sandbox la genera; el despliegue de producción (fase 9) debe generarla igual
       (una por entorno) y nunca copiar la del sandbox. Rotar = nueva llave + `qr_keys.retired_at` de la vieja. (6c, 10 nov) — **✓ 9o (14 nov):** el despliegue de producción la hace nacer en la máquina de la app (`secreto_nace QR_LLAVE_PRIVADA`, la misma receta del sandbox en `infra/comun/lib.sh`), una por entorno, nunca copiada; solo viaja en el sobre de recuperación (guardián secretoConDueno). Rotar sigue igual (qr_keys.retired_at).
 - [ ] **→ 9s** · **6c · Abogado:** ley de reventa de boletos de PA, impuesto de diversiones (amusement tax) por ciudad, To'Latino como comerciante del
@@ -910,8 +910,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9r** · **6h · Safari borra lo guardado de una web que no se abre en 7 días** (ITP): la lista de la puerta dura una noche (no importa), pero el boleto
       del cliente guardado hace más de 7 días puede no estar sin señal. Con la app de las tiendas (Fase 8) no pasa; hasta entonces, «abre tu boleto
       antes de llegar». (6h, 10 nov)
-- [ ] **→ 9m** · **6h · Mis boletos guarda solo los boletos abiertos** una vez con señal; guardar todos los próximos al abrir Mis boletos (con su QR) queda
-      pendiente (pide firmar todos los QR al listar). (6h, 10 nov)
+- [x] **→ 9m** · **6h · Mis boletos guarda solo los boletos abiertos** una vez con señal; guardar todos los próximos al abrir Mis boletos (con su QR) queda
+      pendiente (pide firmar todos los QR al listar). (6h, 10 nov) — **✓ 9m (14 nov):** Al abrir Mis boletos se guardan cifrados todos los próximos (hasta 20) sin abrirlos uno por uno. Prueba: `vec9m`.
 - [ ] **→ 9r** · **6h · Velocidad con la base de carga:** paquete de 10 k boletos ≤ 1 s y ≤ 1 MB comprimido, subir 500 escaneos ≤ 2 s, validar sin conexión
       ≤ 50 ms en un Pixel emulado (`scripts/carga/eventos-1m.mjs`). Hoy medido solo con los datos del e2e (11 boletos). (6h, 10 nov) — _9b-3 (13 nov): paquete de 10 mil boletos p95 252 / 239 ms y 165 KB (≤ 1 s y 1 MB); el de 50 mil, 1,2 s y 812 KB; subir 500 escaneos 1,35 s / 2,2 s (≤ 2 s; una sola vuelta, la segunda corrida pasó del tope; cargas 43457199398 / 43460154153). Falta volver a medir la subida y validar sin conexión ≤ 50 ms en un Pixel emulado, con las tiendas de verdad (9r)_
 - [x] **→ después de abrir (DA-20)** · **6h · Red entre teléfonos de la puerta sin internet** (LAN / Bluetooth) y **QR que cambia cada pocos segundos** (anti-captura): no se
@@ -952,8 +952,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 ## Fase 6 · 6j (Super Admin completo, Configuración, avisos, analítica, Mi cuenta) · FASE 6 CERRADA
 - [ ] **→ 9n** · **6j · Panel › Ajustes › Avisos del negocio** (venta, aforo 90 %, cancelaciones, pago; plan §4 6j): Panel › Ajustes (DASH-AJUSTES, «LO QUE TE
       AVISAMOS») no existe todavía. Hoy al negocio le llega todo en la campana (evt_venta, evt_aforo90, evt_ajuste_admin, evt_pago…). Con Ajustes. (6j, 10 nov)
-- [ ] **→ 9m** · **6j · Mi cuenta › Pagos y movimientos de boletos:** la pantalla Pagos y Wallet (USR-PAGOS) no existe; el recibo de cada orden B- está en la
-      orden. Con su fase (Pagos y Wallet). (6j, 10 nov)
+- [x] **→ 9m** · **6j · Mi cuenta › Pagos y movimientos de boletos:** la pantalla Pagos y Wallet (USR-PAGOS) no existe; el recibo de cada orden B- está en la
+      orden. Con su fase (Pagos y Wallet). (6j, 10 nov) — **✓ 9m (14 nov):** Pagos y Wallet (9k) + Movimientos (9m) con las órdenes B- de boletos. Prueba: `vec9m`; ayuda `pagos-y-movimientos`.
 - [x] **→ 9k** · **6j · Señal «la misma tarjeta en varias cuentas»:** necesita `card.fingerprint` de Stripe (un pm_… es de una sola cuenta); con Stripe real. (6j, 10 nov) — **✓ 9k (14 nov):** Confianza › Fraude › «LA MISMA TARJETA EN VARIAS CUENTAS · 90 DÍAS» desde la base (`tarjetas_en_varias_cuentas`, desde `tarjeta_cuentas_senal` cuentas, 3); con Stripe de verdad, la huella real. Prueba din9k paso 5.
 - [ ] **→ 9n** · **6j · «Día de pago de eventos» (evt_pago_dia) en SOLO LECTURA:** el panel (Eventos, Cobros), Publica tu evento y la ayuda dicen «el martes».
       Se abre cuando esos textos lean el valor. (6j, 10 nov)
@@ -1080,8 +1080,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9c** · **7f · En los 9 dispositivos:** `compa7f` corre en 390 y 1360 en local; falta la matriz de CI. La prueba vieja de Mensajes (`msg2p`) pasa con
       El Compa apagado y al tope; con las respuestas automáticas encendidas en Sabor Dominicano su paso «cerrado → la fija» no pasa tal cual
       (contesta El Compa, que es el cambio): en CI debe correr con El Compa apagado o apagarlas antes. (7f, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
-- [ ] **→ 9m** · **7f · Mensajes no tapa lo que escribe el cliente al negocio** (2p): un número de seguro social (9 dígitos) llega tal cual al negocio; El
-      Compa sí lo tapa en lo suyo. ¿Tapar en Mensajes también (como Soporte)? Decisión del fundador. (7f, 11 nov)
+- [x] **→ 9m** · **7f · Mensajes no tapa lo que escribe el cliente al negocio** (2p): un número de seguro social (9 dígitos) llega tal cual al negocio; El
+      Compa sí lo tapa en lo suyo. ¿Tapar en Mensajes también (como Soporte)? Decisión del fundador. (7f, 11 nov) — **✓ 9m (14 nov):** Mensajes tapa tarjetas y seguro social como Soporte (`tapar` en `lib/mensajes.ts`: «[tapado]» y el aviso «No compartas eso aquí»); la base rechaza el que se salte la app (`mensajes_sin_secretos`, 0143). Guardián `mensajesTapados`. Prueba: `vec9m`.
 - [x] **7f · «Marcar respuesta incorrecta»** en una respuesta automática (Super Admin › El Compa › ficha) y analítica de respuestas automáticas: 7i.
       Hoy el reporte del cliente abre el caso en «Mensajes reportados» y ahí se apaga en la conversación. (7f, 11 nov) — **✓ 9a (11 nov):** «Marcar respuesta incorrecta» en una respuesta automática y su analítica (7i, app/admin/ElCompaAdmin.tsx); prueba adm7i.
 - [ ] **→ 9s** · **7f · Para el abogado:** respuestas automáticas en nombre de un negocio (que es una IA, que no confirma ni promete) y responsabilidad del
@@ -1200,7 +1200,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9r** · **Islas más livianas:** hoy se copia todo `/_next/static` (≈6 MB por app); copiar solo los trozos que usan las islas. (8a, 11 nov) — _9b-3 (13 nov): con las tiendas de verdad (9r)._
 - [x] **→ después de abrir (DA-25)** · **La isla de la Puerta en la app sube la cola sola** (hoy la sube la puerta en línea, con la misma cola del llavero): necesitaría un token de
       la sesión de puerta y CORS desde el origen local. (8a, 11 nov) — _9a (11 nov): la isla de la Puerta sube su cola sola (token de la sesión de puerta y CORS desde el origen local). En `docs/DESPUES-DE-ABRIR.md`._
-- [ ] **→ 9m** · **Mi cuenta › Ajustes › Privacidad** con «Este iPhone · To'Latino 1.0 (12)» en cada sesión (hoy lo dice Usuarios 360°). (8a, 11 nov)
+- [x] **→ 9m** · **Mi cuenta › Ajustes › Privacidad** con «Este iPhone · To'Latino 1.0 (12)» en cada sesión (hoy lo dice Usuarios 360°). (8a, 11 nov) — **✓ 9m (14 nov):** Cada sesión dice «Este iPhone · To'Latino 1.0 (12)» (app, versión y build del rótulo de la app). Prueba: `vec9m`.
 - [ ] **→ 9p** · **«Abrir en la web» desde una app en pausa** cuando existan los enlaces universales: que no vuelva a abrir la misma app (excluir
       `?web=1` en el AASA o abrir con la vista del navegador). (8a, 11 nov)
 - [x] **El llavero:** lectura por el CI con OIDC y aviso de llaves que vencen (barrido) — tubería de las tiendas. (8a, 11 nov) — **✓ 9j (14 nov):** la
@@ -1400,8 +1400,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9u** · **Puerta de revisión:** la semilla no la hace portera (el teléfono del portero va cifrado con la llave del entorno): invitarla desde el panel
       del negocio de revisión y darle un evento de revisión antes de mandar Puerta a revisión. (8i, 11 nov)
 - [ ] **→ 9p** · **Face ID en las fichas:** las fichas no lo mencionan porque las llaves de acceso en las apps esperan el dominio (8b). Agregarlo cuando funcione. (8i, 11 nov)
-- [ ] **→ 9m** · **«Pronto»** (`sinProntoEnTienda`): 7 pantallas usan Pronto (Buscar, la categoría, Eventos, Esta noche…). Antes de la revisión pública,
-      ninguna alcanzable dentro de las apps; con `TOLATINO_FASE=9` el guardián falla. (8i, 11 nov)
+- [x] **→ 9m** · **«Pronto»** (`sinProntoEnTienda`): 7 pantallas usan Pronto (Buscar, la categoría, Eventos, Esta noche…). Antes de la revisión pública,
+      ninguna alcanzable dentro de las apps; con `TOLATINO_FASE=9` el guardián falla. (8i, 11 nov) — **✓ 9m (14 nov):** Pronto.tsx borrado (9a); `sinEnConstruccion` en verde.
 - [ ] **→ 9u** · **Reglas de EE. UU. sobre enlaces a compras externas** (caso Epic, 2025): hoy Pro no se ofrece ni se enlaza en las apps (3.1.3(f)); volver a
       leerlas el día del envío y decidir con el fundador. (8i, 11 nov)
 - [ ] **→ 9r** · **Novedades de Google:** van con cada lanzamiento (notas de la versión de la pista), no con la ficha; la tubería todavía no las manda en
@@ -1452,9 +1452,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       línea para cerrarla: dos corridas enteras seguidas en verde y una `--barajar` → la corrida de confirmación va al CI de 9b-2.
 
 ## Fase 9 · 9b-1 (la regresión entera en una base nueva; 12 nov)
-- [ ] **→ 9m** · **El tope de «Ayuda con …» (5 por persona en 24 h, `lib/ayuda.ts` y `lib/ayuda-cita.ts`) no tiene su prueba:** la regresión
+- [ ] **→ 9t** · **El tope de «Ayuda con …» (5 por persona en 24 h, `lib/ayuda.ts` y `lib/ayuda-cita.ts`) no tiene su prueba:** la regresión
       ahora corre un día hacia atrás la hora de las ayudas de esa persona antes de abrir otra (`sinTopeDeAyuda`), así que nada comprueba que la
-      sexta del día se rechace con «Abriste muchas solicitudes hoy». Además es un número fijo en el código (no sale de Configuración). (9b-1, 12 nov) — _9b-3 (13 nov): la prueba del sexto pedido del día y el número en Configuración, con lo diferido del vecino (9m)._
+      sexta del día se rechace con «Abriste muchas solicitudes hoy». Además es un número fijo en el código (no sale de Configuración). (9b-1, 12 nov) — _9b-3 (13 nov): la prueba del sexto pedido del día y el número en Configuración, con lo diferido del vecino (9m)._ — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m: la prueba del sexto pedido del día y el número en Configuración._
 - [ ] **→ 9b** · **La regresión de punta a punta tarda ~1 h 40 min una a la vez** (y más con las que piden a otra con `requiere`): para el CI
       (9b-2) va por grupos en paralelo, cada grupo con su base nueva. (9b-1, 12 nov)
 - [x] **Pruebas con el negocio abierto «00:00–23:59»** (push8c, app8e, pagos2d, pedidos2c, avisos2j, menu2b, compa7h, compa7f,
@@ -1514,37 +1514,37 @@ en el momento. Se marca solo cuando está hecho de verdad.
       (CI web); quedan para 9b-3 junto con la escala. (9b-2, 13 nov) — _9b-3 (13 nov): los `EXPLAIN` de las consultas calientes contra la base de carga ya están (`scripts/carga`, flujo «Carga 1M»: el plan de la más lenta de cada medida que pasa del presupuesto); el XCUITest, con las tiendas de verdad (9r)._
 
 ## Fase 9 · 9b-3 (la escala 1M y los topes compartidos; 13 nov)
-- [ ] **→ 9m** · **El barrido de la Comunidad con 1 M de vecinos** (`com_cifras_resumir`: rangos por ciudad, activos por rango en 7/30/90 días y candidatos de
+- [ ] **→ 9t** · **El barrido de la Comunidad con 1 M de vecinos** (`com_cifras_resumir`: rangos por ciudad, activos por rango en 7/30/90 días y candidatos de
       Recomendados, cada 10 min) tardó 8,6 s y 10,8 s en una sola vuelta (cargas 43457199398 / 43460154153; tope propio 10 s; antes 19 s solo los activos).
       No bloquea a nadie (corre aparte y la pantalla lee el resultado), pero con más ciudades crece: hacerlo por partes (solo lo que cambió desde la vuelta
-      anterior) con lo diferido del vecino. (9b-3, 13 nov)
+      anterior) con lo diferido del vecino. (9b-3, 13 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m: el barrido por partes._
 - [ ] **→ 9t** · **Lo de una sola vuelta varía en el runner de GitHub** (la base y la carga en la misma máquina de 4 núcleos, disco compartido): entre dos corridas
       iguales, la subida de 500 escaneos 1,35 → 2,2 s, el barrido 8,6 → 10,8 s, el ritmo de posiciones 2 860 → 673 ms. Antes de encender producción, correr
       `scripts/carga` contra una base del tamaño de la de producción (la misma máquina que se contrate) y dejar ahí los presupuestos de las líneas movidas
       a 9t. (9b-3, 13 nov)
 
 ## Fase 9 · 9c — accesibilidad del sistema de diseño (14 nov)
-- [ ] **→ 9m** · **Contraste de texto AA (4,5 : 1):** los grises de texto del sistema (`--tl-text-muted` = tinta al 50 %, `--tl-text-faint` al 42 % y los
+- [ ] **→ 9t** · **Contraste de texto AA (4,5 : 1):** los grises de texto del sistema (`--tl-text-muted` = tinta al 50 %, `--tl-text-faint` al 42 % y los
       `rgba(11,14,18,.42–.5)` en línea de muchos componentes) dan 2,9–3,7 : 1 sobre blanco y papel: no llegan a AA para texto pequeño. Subirlos a
       ≥ 60 % cambia pixeles en las capturas aprobadas de los 9 dispositivos, así que **no se hizo en 9c** (regla: lo visual no cambia sin OK).
-      Se hace en un bloque con captura nueva aprobada en `docs/REVISION.md` (subir `muted` a .62 y `faint` a .55, `pruebas/visual/` por `aprobar`). (9c, 14 nov)
-- [ ] **→ 9m** · **Objetivos táctiles de 44 px:** a11y9c informa cuántos controles del sistema miden menos de 44 px (íconos de 30–36 px, chips, filas
+      Se hace en un bloque con captura nueva aprobada en `docs/REVISION.md` (subir `muted` a .62 y `faint` a .55, `pruebas/visual/` por `aprobar`). (9c, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m (sistema de diseño entero; pide el OK del diseño)._
+- [ ] **→ 9t** · **Objetivos táctiles de 44 px:** a11y9c informa cuántos controles del sistema miden menos de 44 px (íconos de 30–36 px, chips, filas
       compactas). Agrandarlos cambia el diseño aprobado: o se agranda el área de toque sin tocar lo que se ve (relleno invisible con `::after`) o se aprueba
-      el cambio. Va con el contraste, en el mismo bloque y la misma aprobación visual. (9c, 14 nov)
-- [ ] **→ 9m** · **Nombres en inglés de los íconos sin texto del sistema (9c-2):** los controles que solo tienen un ícono (votar en Comunidad, «Foto» de una reseña,
+      el cambio. Va con el contraste, en el mismo bloque y la misma aprobación visual. (9c, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._
+- [ ] **→ 9t** · **Nombres en inglés de los íconos sin texto del sistema (9c-2):** los controles que solo tienen un ícono (votar en Comunidad, «Foto» de una reseña,
       «Ver el equipo», ficha del dominó, cerrar/atrás/enviar de El Compa y del onboarding, los de la barra del Super Admin…) tienen nombre con un prop
       (`upLabel`, `closeLabel`, `backLabel`, `searchLabel`…) cuyo valor por defecto es ES, o ES/EN si el componente recibe `lang`. Falta que cada pantalla que los
-      usa pase el EN: hoy lo pasan el menú, el QtyStepper y el encabezado (`SiteHeader`). Lo demás sale en español a un lector de pantalla en inglés. (9c, 14 nov)
-- [ ] **→ 9m** · **Hoja «Entra para pedir» (AuthSheet):** ya anuncia errores (`error` → `role="alert"`, campos con nombre y `aria-invalid`), pero ninguna pantalla la
-      usa todavía (el pedido sin cuenta usa la pantalla Entra, que ya es accesible); al conectarla con su texto ES/EN, pasar `error` y las etiquetas. (9c, 14 nov)
-- [ ] **→ 9m** · **Hojas (diálogos) sin trampa de foco ni Escape:** los fondos de las hojas son `role=presentation` y el teclado las cierra con su botón «Cerrar», pero
+      usa pase el EN: hoy lo pasan el menú, el QtyStepper y el encabezado (`SiteHeader`). Lo demás sale en español a un lector de pantalla en inglés. (9c, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._
+- [x] **→ 9m** · **Hoja «Entra para pedir» (AuthSheet):** ya anuncia errores (`error` → `role="alert"`, campos con nombre y `aria-invalid`), pero ninguna pantalla la
+      usa todavía (el pedido sin cuenta usa la pantalla Entra, que ya es accesible); al conectarla con su texto ES/EN, pasar `error` y las etiquetas. (9c, 14 nov) — **✓ 9m (14 nov):** Conectada: `HojaEntrar` pasa `error` y las etiquetas ES/EN; Escape la cierra. Prueba: `vec9m` (en inglés, código malo → el error con role=alert).
+- [ ] **→ 9t** · **Hojas (diálogos) sin trampa de foco ni Escape:** los fondos de las hojas son `role=presentation` y el teclado las cierra con su botón «Cerrar», pero
       una hoja abierta no atrapa el foco ni se cierra con Escape, ni devuelve el foco a quien la abrió (WCAG 2.1.2 y 2.4.3, nivel A/AA). Es el mismo cambio en
-      todas (≈ 40 hojas en `apps/web`): un componente `Hoja` con `role="dialog"`, `aria-modal`, foco inicial, Tab cíclico, Escape y retorno del foco. (9c, 14 nov)
-- [ ] **→ 9m** · **Tabs con flechas y lista de opciones:** las pestañas (`Tabs`, `DesktopTabs`) son botones en el orden de Tab; el patrón de WAI-ARIA pide una sola
+      todas (≈ 40 hojas en `apps/web`): un componente `Hoja` con `role="dialog"`, `aria-modal`, foco inicial, Tab cíclico, Escape y retorno del foco. (9c, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m (la hoja «Entra para pedir» ya cierra con Escape)._
+- [ ] **→ 9t** · **Tabs con flechas y lista de opciones:** las pestañas (`Tabs`, `DesktopTabs`) son botones en el orden de Tab; el patrón de WAI-ARIA pide una sola
       parada con las flechas ← → entre ellas, y lo mismo las listas de radios (día, hora). Hoy se llega a cada una con Tab y se elige con Enter o Espacio:
-      cumple AA, es mejorable. (9c, 14 nov)
-- [ ] **→ 9m** · **Foco visible sobre fondos oscuros:** el contorno global es el morado de marca (más de 3 : 1 sobre blanco, papel y tinta); mirarlo en las pantallas
-      oscuras (Puerta, Patio, el menú del Compa) con teclado físico y, si hace falta, un tono más claro con `:focus-visible` dentro de `[data-oscuro]`. (9c, 14 nov)
+      cumple AA, es mejorable. (9c, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._
+- [ ] **→ 9t** · **Foco visible sobre fondos oscuros:** el contorno global es el morado de marca (más de 3 : 1 sobre blanco, papel y tinta); mirarlo en las pantallas
+      oscuras (Puerta, Patio, el menú del Compa) con teclado físico y, si hace falta, un tono más claro con `:focus-visible` dentro de `[data-oscuro]`. (9c, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._
 - [ ] **→ 9b** · **a11y9c no se corrió en local** (sin Docker en la sesión que la escribió): `a11y9c` entra a la regresión de la fase 9; si alguna de sus
       pantallas tiene un selector distinto, la prueba lo dice con el texto de la página. Los avisos «clics con mano sin teclado» de a11y9c son una heurística de la página
       servida: lo que falla es lo estático (`sistemaClicMudo`, `clicConTeclado`) y los roles fuera del orden de tabulación. (9c, 14 nov)
@@ -1564,10 +1564,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **«Cuenta borrada» en inglés:** el nombre que queda en una cuenta purgada es un texto en la base («Cuenta borrada»); un panel en inglés también lo
       lee así. _Hecho en 9f (14 nov) para el panel de Pedidos: `nombreVisible()` (lib/textos-cuenta.ts, cadena `USR-CUENTA.borrada` con candado) → «Deleted account»; guardián
       `cuentaBorradaBilingue`; cms9f paso 10. Los demás paneles → 9n (abajo)._ (9d, 14 nov)
-- [ ] **→ 9m** · **Pedir el archivo con la llave de acceso** (el plan dice «con el código de entrada otra vez (o la llave)»): hoy solo con el código por SMS, como
-      Borrar mi cuenta. (9d, 14 nov)
-- [ ] **→ 9m** · **Un archivo con más de 20 000 filas en una parte** se corta en 20 000 (el LEEME dice cuántas trae cada parte); con la carga de 1M, medir el
-      tiempo de armarlo para la cuenta más grande y, si hace falta, partirlo. (9d, 14 nov)
+- [ ] **→ 9t** · **Pedir el archivo con la llave de acceso** (el plan dice «con el código de entrada otra vez (o la llave)»): hoy solo con el código por SMS, como
+      Borrar mi cuenta. (9d, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._
+- [ ] **→ 9t** · **Un archivo con más de 20 000 filas en una parte** se corta en 20 000 (el LEEME dice cuántas trae cada parte); con la carga de 1M, medir el
+      tiempo de armarlo para la cuenta más grande y, si hace falta, partirlo. (9d, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._
 
 ## Fase 9 · 9e — legales por estado, aceptar términos y la web legal (14 nov)
 - [ ] **→ 9s** · **El texto final de las 14 páginas de docs/legal/** (11 generales + 3 adendas de PA) lo revisa el abogado (Paquete 9-2): hoy son BORRADOR de
@@ -1671,8 +1671,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       Inicio (por ciudad que viene) y el aviso «CIERRE DE CIUDAD POR APROBAR». La captura nueva de `admin-hoy` espera tu OK (REVISION 9i; LAUNCH «Fase 9 · 9i» → 9b).
 - [ ] **→ 9k** · **Pagar la recompensa del promotor a la Wallet:** el negocio traído califica solo (`promotor_operaciones` pedidos o citas hechos) y la recompensa queda anotada
       (`business_referrals.reward_cents`, «pendiente de pago»); pasar a «pagado» con el movimiento de Wallet llega con el dinero real (9k). (9h, 14 nov)
-- [ ] **→ 9m** · **Destacar eventos:** `featured` lleva solo negocios (Negocios › Destacados). Fijar un evento en Eventos de la ciudad (el modelo Featured también lo pide) va con lo de
-      Eventos del vecino. (9h, 14 nov)
+- [ ] **→ 9t** · **Destacar eventos:** `featured` lleva solo negocios (Negocios › Destacados). Fijar un evento en Eventos de la ciudad (el modelo Featured también lo pide) va con lo de
+      Eventos del vecino. (9h, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._
 - [ ] **→ 9n** · **Segmento «Free con N ítems» y la insignia Fundadores en la página del negocio:** las campañas segmentan por rol, ciudad, inactivos, categoría y plan; contar ítems no se
       construyó. El número de negocio fundador queda en `early_access.founder_negocio_n` y la landing lo dice; la insignia en la ficha del negocio no se pintó. (9h, 14 nov)
 - [x] **Campañas por correo de verdad:** salen por la bandeja de correo (`email_outbox`, plantilla `campaign`, solo correos verificados, con el pie «para no recibir más: Mi cuenta ›
@@ -1742,3 +1742,26 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9b** · **avi9l y alreves9l en la corrida dirigida del CI** (perfil completo de servir.sh: el certificado de «SNS» lo sirve la prueba en :4409); la
       regresión entera, la matriz de 9 dispositivos y `pruebas/visual` (Notificaciones y Soporte suman pestañas) no corrieron aquí. (9l, 14 nov)
 - [ ] **→ 9b** · **alreves8c, caso `permisosMinimos`:** no encuentra su texto en apps/mobile/apps.json (también en la rama base; no es de 9l). (9l, 14 nov)
+
+## Fase 9 · 9m — lo diferido del vecino que entra antes de abrir (14 nov)
+- [x] **Cerradas con su evidencia** (marcadas «✓ 9m» arriba): onboarding pasos 3–5 y Fundadores, Inicio completo con el mini mapa, Pronto y «En construcción»,
+      mapa por recuadro y mini mapas propios, chips en dos líneas, «Cómo llegar» a la app de mapas, voz con su aviso e interruptor, «¿Es tu negocio?», AuthSheet
+      bilingüe con errores, alergias en la hoja del plato, «Lo que más mencionan», reportar novedad y vacante, «Avísame de nuevas vacantes» y vacantes en Buscar,
+      Mis solicitudes (ya estaba), alertas con «Quitar», retiros de NHTSA, buscar casa o carro, Mensajes en vivo (SSE propio) y tapados, Pagos y movimientos,
+      Mis boletos guarda todos los próximos, sesiones con «Este iPhone · To'Latino 1.0 (12)». Direcciones como DoorDash/Uber (decisión AC): autocompletar propio
+      ≤ 100 ms, «Usar mi ubicación», pin ajustable, Mis direcciones, checkout, Publica, panel y Super Admin. Pruebas: `dir9m` y `vec9m` dos veces seguidas en
+      local; `alreves9m`; `pruebas/infra/direcciones.test.sh`; la medida nacional `scripts/carga/direcciones-1m.mjs`. (9m, 14 nov)
+- [ ] **→ 9t** · **Direcciones de todo EE. UU. en producción:** `infra/produccion/deploy.sh` corre `generar.sh` con `ESTADOS=todos PARALELO=4` en su volumen
+      (≈ 80 GB: ADDRFEAT ≈ 11 GB y OpenAddresses ≈ 15–20 GB de descarga; 8–12 h la primera vez; refresco cada 90 días). Antes: un servidor con ese disco y
+      **las URLs de OpenAddresses en `infra/direcciones/fuentes-oa.txt`** (hoy vacío: aquí la red no llega a openaddresses.io para verificarlas; sin ellas
+      la precisión es la del rango de TIGER, interpolada). (9m, 14 nov)
+- [ ] **→ 9t** · **Mapa base de todo EE. UU.:** `MAPA_REGION=us bash infra/mapa/generar.sh` genera `us.mbtiles` (≈ 20 GB, ≥ 32 GB de RAM, 1–2 h); el
+      servidor de teselas de producción sigue leyendo `pennsylvania.mbtiles` hasta que su compose apunte a `us.mbtiles` (fuera de Pensilvania el mapa sale
+      sin calles; la dirección y su punto sí funcionan). (9m, 14 nov)
+- [ ] **→ 9b** · **Cargas reales en el sandbox y en CI:** TIGER de Pensilvania con la muestra de CA/TX/NY (workflow «Direcciones», ampliado con
+      `dir_sugerir`, `dir_inversa` y ≤ 100 ms) y la primera carga de NHTSA en `tolatino-pruebas-1` (paso de 3 h de `deploy.sh`); aquí la red no llega a
+      census.gov ni a nhtsa.gov: se probó con archivos del mismo formato (`pruebas/infra/direcciones-espejo.py`, 19/19). (9m, 14 nov)
+- [ ] **→ 9b** · **`dir9m`, `vec9m` y `alreves9m` en la corrida dirigida del CI;** la regresión entera, la matriz de 9 dispositivos y `pruebas/visual` no
+      corrieron aquí. Cambian capturas: el Inicio de escritorio (mini mapa a la derecha), la ficha (mini mapa en «Cómo llegar», «¿Es tu negocio?»), las
+      tarjetas con chips largos (dos líneas), la vacante (reportar), Mensajes (sin cambios visibles). (9m, 14 nov)
+

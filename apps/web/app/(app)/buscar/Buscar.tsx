@@ -10,7 +10,7 @@ import type { Tarjeta } from "@/lib/tarjeta";
 import { T as TX } from "@/lib/textos";
 import { avisameBusqueda } from "../acciones";
 import { LINEA_FIJA } from "@/lib/comunidad-filtro";
-import { vecinosMas } from "./acciones";
+import { vacantesAvisame, vecinosMas, vozGuardar } from "./acciones";
 import type { FilaVecino } from "./vecinos";
 import { TarjetaNegocio } from "../TarjetaNegocio";
 import type { TarjetaEvt } from "@/lib/evt-publico";
@@ -22,6 +22,8 @@ const { Icon, Button, Chip, Tag, Tabs, SearchResultRow, UnderstoodBar, NotYetCar
 
 export type VistaBuscar = {
   lang: "es" | "en"; q: string; cat: { slug: string; label: string; name: string } | null; ciudad: string; conSesion: boolean;
+  /* 9m · Buscar con la voz (L95): null = nunca se le preguntó (sale el aviso); false = lo apagó en Privacidad (no hay micrófono). */
+  voz?: boolean | null;
   explorar: null | {
     ejemplos: { t: string; chips: { l: string; tone: string }[] }[]; tendencias: { q: string; cat: string | null }[];
     cats: { slug: string; l: string; full: string; icon: string }[]; subs: string[];
@@ -37,6 +39,8 @@ export type VistaBuscar = {
     vecinos: { total: number; mas: string | null; items: FilaVecino[] } | null;
     /* 6b · Eventos que encajan (solo lo que sale al público), con el filtro de la pestaña. */
     eventos?: { total: number; f: "all" | "d0" | "wk" | "free"; items: TarjetaEvt[] } | null;
+    /* 9m · Vacantes que encajan (L311) y si ya pidió «Avísame de nuevas vacantes» en la ciudad. */
+    vacantes?: { total: number; alerta: boolean; items: { id: string; biz: string; negocio: string; puesto: string; logo: string | null; pago: string | null }[] } | null;
   };
 };
 type Fila = { seccion: string; parts: [string, string, string]; image: string | null; icon: string | null; meta: string; right: string | null; rightColor: string | null; href: string };
@@ -53,7 +57,8 @@ export function Buscar({ v }: { v: VistaBuscar }) {
   const [foco, setFoco] = useState(false);
   const [sug, setSug] = useState<{ filas: Fila[]; intenciones: string[]; total: number } | null>(null);
   const [rec, setRec] = useState<string[]>([]);
-  const [voz, setVoz] = useState<"no" | "escuchando" | "sin">("no");
+  const [voz, setVoz] = useState<"no" | "escuchando" | "sin" | "aviso">("no");
+  const [vozOk, setVozOk] = useState<boolean | null>(v.voz ?? null);
   const [alerta, setAlerta] = useState(false);
   const [ordenAbierto, setOrdenAbierto] = useState(false);
   const [vecL, setVecL] = useState<FilaVecino[]>(v.res?.vecinos?.items ?? []), [vecMas, setVecMas] = useState<string | null>(v.res?.vecinos?.mas ?? null), [vecCarga, setVecCarga] = useState(false);
@@ -95,7 +100,20 @@ export function Buscar({ v }: { v: VistaBuscar }) {
     if (r.ok) setAlerta(true);
     else if ("entrar" in r && r.entrar) router.push(`/entrar?volver=${encodeURIComponent(location.pathname + location.search)}`);
   };
+  // 9m · La primera vez, el aviso (L95): el reconocimiento de voz es el del teléfono o del navegador (Apple o Google lo procesan), no To'Latino.
+  // Sin cuenta, la respuesta queda en este teléfono; con cuenta, en Mi cuenta › Ajustes › Privacidad (users.voice_search).
   const hablar = () => {
+    let ok = vozOk;
+    if (!v.conSesion && ok == null) { try { const x = localStorage.getItem("tl-voz-v1"); ok = x === "1" ? true : x === "0" ? null : null; } catch { /* sin almacenamiento: se pregunta */ } }
+    if (!ok) { setVoz("aviso"); return; }
+    escuchar();
+  };
+  const aceptarVoz = () => {
+    setVozOk(true);
+    if (v.conSesion) void vozGuardar(true).catch(() => undefined); else { try { localStorage.setItem("tl-voz-v1", "1"); } catch { /* se vuelve a preguntar */ } }
+    escuchar();
+  };
+  const escuchar = () => {
     const W = window as unknown as { SpeechRecognition?: new () => SR; webkitSpeechRecognition?: new () => SR };
     const C = W.SpeechRecognition ?? W.webkitSpeechRecognition;
     if (!C) { setVoz("sin"); return; }
@@ -163,6 +181,35 @@ export function Buscar({ v }: { v: VistaBuscar }) {
     </div>
   );
 
+  // 9m · Empleos en Buscar (L311): hasta 3 vacantes que encajan y «Avísame de nuevas vacantes» (con cuenta; si no, entra primero).
+  const VA = R?.vacantes ?? null;
+  const [alertaVac, setAlertaVac] = useState(!!VA?.alerta);
+  const avisame = async () => {
+    if (!v.conSesion) { router.push(`/entrar?volver=${encodeURIComponent(`/buscar?q=${encodeURIComponent(v.q)}`)}`); return; }
+    const r = await vacantesAvisame().catch(() => ({ ok: false }));
+    if (r.ok) setAlertaVac(true);
+  };
+  const seccionVacantes = VA && VA.items.length > 0 && (
+    <div data-screen-label="APP-BUSCAR · empleos" className="flex flex-col gap-2.5">
+      <div className="flex items-baseline justify-between gap-2.5">
+        <span className="font-display text-[18px] font-extrabold tracking-[-0.03em] lg:text-[20px]">{E2("Empleos", "Jobs")}</span>
+        <span className="font-mono text-[10px] font-bold tracking-[0.1em] text-ink/50">{`${VA.total} ${VA.total === 1 ? E2("VACANTE", "OPENING") : E2("VACANTES", "OPENINGS")} · ${v.ciudad.toUpperCase()}`}</span>
+      </div>
+      <div className="flex flex-col overflow-hidden rounded-[18px] border border-ink/[.08] bg-white">
+        {VA.items.map((x, i) => (
+          <button key={x.id} type="button" data-vacante={x.id} onClick={() => router.push(`/n/${x.biz}/empleo/${x.id}`)} className={`flex items-center gap-3 px-4 py-3 text-left ${i ? "border-t border-ink/[.07]" : ""}`}>
+            <span className="grid size-[42px] flex-none place-items-center rounded-[12px] bg-photo-bg font-display text-[13px] font-extrabold" style={x.logo ? { background: `url("${x.logo}") center/cover` } : undefined}>{x.logo ? "" : x.negocio.slice(0, 1)}</span>
+            <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{x.puesto}</span><span className="mt-1 block truncate font-mono text-[9.5px] font-semibold tracking-[0.05em] text-ink/50">{`${x.negocio}${x.pago ? ` · ${x.pago}` : ""}`.toUpperCase()}</span></span>
+            <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" />
+          </button>
+        ))}
+      </div>
+      <div className="flex">{alertaVac
+        ? <span data-alerta-vacantes="1" className="flex items-center gap-2 text-[12.5px] font-bold text-[var(--tl-open-text)]"><Icon name="check" size={15} color="var(--tl-open-text)" />{E2(`Te avisamos de nuevas vacantes en ${v.ciudad}. Lo quitas en Mi cuenta › Avisos.`, `We will tell you about new jobs in ${v.ciudad}. Turn it off in My account › Notifications.`)}</span>
+        : <Button variant="secondary" size="sm" icon="bell" onClick={avisame}>{E2("Avísame de nuevas vacantes", "Notify me of new jobs")}</Button>}</div>
+    </div>
+  );
+
   /* ── Piezas ── */
   const caja = (desk: boolean) => (
     <div className={`flex min-w-0 flex-1 items-center gap-[9px] rounded-[14px] border-[1.5px] pl-[13px] pr-1.5 ${desk ? "h-[52px]" : "h-[46px]"} ${foco ? "border-ink bg-white" : "border-transparent bg-paper"}`}>
@@ -174,7 +221,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
       {q ? (
         <button type="button" aria-label={t.clear} onClick={() => { setQ(""); inRef.current?.focus(); }} className="grid size-[30px] flex-none place-items-center rounded-full bg-ink/[.07]"><Icon name="close" size={13} strokeWidth={2.2} /></button>
       ) : (
-        <button type="button" aria-label="Voz" onClick={hablar} className="grid size-[34px] flex-none place-items-center rounded-[10px]"><Icon name="mic" size={19} color="var(--tl-action)" /></button>
+        vozOk !== false ? <button type="button" aria-label={E2("Buscar con la voz", "Search by voice")} onClick={hablar} className="grid size-[34px] flex-none place-items-center rounded-[10px]"><Icon name="mic" size={19} color="var(--tl-action)" /></button> : null
       )}
     </div>
   );
@@ -312,6 +359,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                   <div className="flex"><Button block variant="soft" icon="users" onClick={preguntar}>{E2("Pregúntale al barrio", "Ask the neighborhood")}</Button></div>
                 </div>
                 {seccionEventos && <div className="mt-3 w-full text-left">{seccionEventos}</div>}
+                {seccionVacantes && <div className="mt-3 w-full text-left">{seccionVacantes}</div>}
                 {seccionVecinos && <div className="mt-3 w-full text-left">{seccionVecinos}</div>}
                 <div className="mt-3.5 flex w-full flex-col gap-2.5 text-left">
                   <span className="font-mono text-[10px] font-extrabold tracking-[0.14em] text-ink/45">{t.tryCats}</span>
@@ -359,6 +407,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                   ))}
                 </div>
                 {seccionEventos}
+                {seccionVacantes}
                 {R.notYet && !R.notYet.primero && <div className="grid"><NotYetCard layout="row" kicker={t.notYet} title={R.notYet.t} body={t.notYetB} alertLabel={alerta ? t.alertaOn : t.alerta} alertVariant={alerta ? "secondary" : "primary"} onAlert={alerta ? undefined : pedirAlerta} recLabel={t.rec} onRec={() => router.push(`/recomendar?${new URLSearchParams(v.q ? { q: v.q } : {})}`)} /></div>}
                 {seccionVecinos}
                 <div className="flex flex-col gap-3 rounded-[20px] border border-line bg-white p-4">
@@ -448,9 +497,11 @@ export function Buscar({ v }: { v: VistaBuscar }) {
               {voz === "escuchando" && <span className="absolute inset-0 animate-ping rounded-full bg-action/20" />}
               <span className="relative grid size-16 place-items-center rounded-full bg-action"><Icon name="mic" size={26} color="var(--tl-white)" /></span>
             </span>
-            <span className="text-center font-display text-[20px] font-extrabold tracking-[-0.03em]">{voz === "sin" ? t.vozNo : t.voz}</span>
+            <span className="text-center font-display text-[20px] font-extrabold tracking-[-0.03em]">{voz === "aviso" ? E2("Buscar con la voz", "Search by voice") : voz === "sin" ? t.vozNo : t.voz}</span>
             {voz === "escuchando" && <span className="text-center text-[13px] font-medium leading-[1.5] text-ink/60">{t.vozSub}</span>}
-            <div className="flex w-full"><Button block variant="secondary" onClick={() => { recRef.current?.stop(); setVoz("no"); }}>{t.cancel}</Button></div>
+            {voz === "aviso" && <span data-aviso-voz="1" className="text-pretty text-center text-[13px] font-medium leading-[1.5] text-ink/65">{E2("Tu voz la convierte en texto el reconocimiento de tu teléfono o de tu navegador (Apple o Google la procesan en sus servidores), no To'Latino. A To'Latino solo llega el texto que buscas. Lo apagas cuando quieras en Mi cuenta › Ajustes › Privacidad.", "Your phone's or browser's speech recognition turns your voice into text (Apple or Google process it on their servers), not To'Latino. To'Latino only gets the text you search. Turn it off anytime in My account › Settings › Privacy.")}</span>}
+            {voz === "aviso" && <div className="flex w-full"><Button block variant="primary" icon="mic" onClick={aceptarVoz}>{E2("Activar y hablar", "Turn on and speak")}</Button></div>}
+            <div className="flex w-full"><Button block variant="secondary" onClick={() => { recRef.current?.stop(); setVoz("no"); }}>{voz === "aviso" ? E2("Ahora no", "Not now") : t.cancel}</Button></div>
           </div>
         </div>
       )}

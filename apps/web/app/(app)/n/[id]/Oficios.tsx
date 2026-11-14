@@ -9,6 +9,7 @@ import { useEffect, useState, type ComponentType, type MouseEvent } from "react"
 import type { Casa, OficioPub, OficiosPublico, Vehiculo } from "@/lib/oficios-publico";
 import { detalleL, precioL } from "@/lib/oficios-texto";
 import { casaElegir, casaGuardar, vehiculoElegir, vehiculoGuardar } from "./acciones-oficio";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 type N = "Icon" | "Button" | "Chip" | "OptionGroup" | "AddOnRow" | "DepositNote" | "ReservationCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -217,7 +218,7 @@ export function OfHoja({ v }: { v: Of }) {
     if (emer) return router.push(`/emergencia?b=${op.negocio.id}${a.sym?.[0] ? `&ek=${encodeURIComponent(a.sym[0])}` : ""}`);
     if (plan && !llamar) return router.push(`/n/${op.negocio.id}/plan?s=${s.id}`);
     if (llamar) return v.llamar();
-    if (a.walk) return void window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(op.negocio.direccion ?? op.negocio.nombre)}`, "_blank", "noopener");
+    if (a.walk) return void abrirComoLlegar({ dir: op.negocio.direccion ?? op.negocio.nombre });
     if (sinDato) return v.setSheet(auto ? "veh" : "casa");
     if (bad || pend) return;
     const p = new URLSearchParams({ s: s.id });

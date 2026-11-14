@@ -51,7 +51,8 @@ const PARTES: Record<TipoCont, string> = {
          (select count(*)::int from content_reports x where x.target_kind = 'comment' and x.target_id = c.id::text and x.status = 'open'), false, false, p.city_id
        from post_comments c join business_posts p on p.id = c.post_id join businesses b on b.id = p.business_id join users u on u.id = c.user_id where c.status <> 'removed'`,
   vac: `select 'vac', j.id::text, j.business_id, b.name, b.name, null::text, null::int, false, false, (j.title->>'es') || coalesce('. ' || nullif(j.descr->>'es', ''), ''), '$' || (j.pay_from_cents / 100.0)::numeric(8,2)::text || '/h',
-          (select count(*)::int from job_applications a where a.job_id = j.id), 0, j.created_at, j.hidden_at is not null, j.hidden_reason, 0, false, false, j.city_id
+          (select count(*)::int from job_applications a where a.job_id = j.id), 0, j.created_at, j.hidden_at is not null, j.hidden_reason,
+          (select count(*)::int from content_reports x where x.target_kind = 'job' and x.target_id = j.id::text and x.status = 'open'), false, false, j.city_id
         from job_postings j join businesses b on b.id = j.business_id where j.status <> 'removed'`,
   // Comunidad (5a): el autor es un vecino o la cuenta oficial; «negocio» = el recomendado, si lo hay.
   pub: `select 'pub', p.id::text, coalesce(p.business_id, ''), coalesce(b.name, ''),
@@ -73,7 +74,7 @@ const COLS = "(k, id, biz, bname, who, uid, rango, inv, oficial, text, extra, up
    reporte (por el índice de fecha, ya filtrado y desde el cursor, con un tope de una página + 1); la página sale de juntar esos trozos. Es la
    misma lista y el mismo orden: lo de una página está siempre dentro de los trozos. */
 const REPORTE: Record<TipoCont, { kind: string; col: string } | null> = {
-  rev: { kind: "review", col: "r.id" }, nov: { kind: "post", col: "p.id" }, cm: { kind: "comment", col: "c.id" }, vac: null,
+  rev: { kind: "review", col: "r.id" }, nov: { kind: "post", col: "p.id" }, cm: { kind: "comment", col: "c.id" }, vac: { kind: "job", col: "j.id" },   // 9m · las vacantes se reportan (L309)
   pub: { kind: "com_post", col: "p.id" }, ccm: { kind: "com_comment", col: "c.id" },
 };
 export async function listaContenido(s: Staff, f: FiltrosCont) {
@@ -124,7 +125,7 @@ export async function listaContenido(s: Staff, f: FiltrosCont) {
       `select coalesce((select sum(total) from content_counts_cache where k = 'rev' and (cardinality($1::text[]) = 0 or city_id = any($1::text[]))), 0)::int as rev,
               coalesce((select sum(total) from content_counts_cache where k = 'pub' and (cardinality($1::text[]) = 0 or city_id = any($1::text[]))), 0)::int as pub,
               coalesce((select sum(total) from content_counts_cache where k = 'ccm' and (cardinality($1::text[]) = 0 or city_id = any($1::text[]))), 0)::int as ccm,
-              (select count(distinct (cr.target_kind, cr.target_id))::int from content_reports cr where cr.status = 'open' and cr.target_kind in ('review', 'post', 'comment', 'com_post', 'com_comment')
+              (select count(distinct (cr.target_kind, cr.target_id))::int from content_reports cr where cr.status = 'open' and cr.target_kind in ('review', 'post', 'comment', 'job', 'com_post', 'com_comment')
                   and (cardinality($1::text[]) = 0 or cr.city_id = any($1::text[]) or cr.city_id is null)) as rep,
               (select count(*)::int from com_posts p where p.status = 'hidden' and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[])))
                 + (select count(*)::int from com_comments c where c.status = 'hidden' and (cardinality($1::text[]) = 0 or c.city_id = any($1::text[])))

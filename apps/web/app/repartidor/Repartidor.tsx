@@ -16,6 +16,7 @@ import { compartirRuta, dejarDeCompartir, estadoRuta, type EstadoRuta, type Toke
 import { mantenerEncendida } from "@/lib/nativo/pantalla";
 import { vibrar } from "@/lib/nativo/haptica";
 import { horaCorta } from "@/lib/mapa-ruta";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { BottomNav } = UI as unknown as Record<"BottomNav", ComponentType<any>>;
@@ -164,7 +165,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
       { k: E2("PROPINA", "TIP"), v: x.propina ? money(x.propina) : "—" }] });
     if (vivo) B.push({ type: "rows", items: [
       { icon: "pin", t: x.calle ?? "—", s: [x.apto, x.zip].filter(Boolean).join(" · ") || undefined, chev: false, compact: true,
-        acts: [{ l: E2("Abrir mapa", "Open map"), v: "secondary", icon: "pin", onClick: () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${x.calle ?? ""}, ${x.zip ?? ""}`)}`, "_blank", "noopener") },
+        acts: [{ l: E2("Abrir mapa", "Open map"), v: "secondary", icon: "pin", onClick: () => abrirComoLlegar({ dir: `${x.calle ?? ""}, ${x.zip ?? ""}` }) },
           ...(x.telCliente ? [{ l: E2("Llamar", "Call"), v: "secondary", icon: "phone", onClick: () => { location.href = `tel:${x.telCliente}`; } }] : [])] },
       ...(x.entrega ? [{ icon: x.entrega.drop === "puerta" ? "home" : "users", t: x.entrega.drop === "puerta" ? E2("Dejar en la puerta", "Leave at door") : E2("En la mano", "Hand it to them"),
         s: [x.entrega.at.map((k) => (es ? AT[k]?.[0] : AT[k]?.[1])).filter(Boolean).join(" · "), x.entrega.note ? `“${x.entrega.note}”` : ""].filter(Boolean).join(" · ") || undefined, chev: false, compact: true } as Fila] : []),

@@ -11,7 +11,7 @@ import { LineaTr, useTraducir, type Tr } from "../../Traducir";
 
 type N = "Icon" | "Button" | "Chip" | "ReviewCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { Icon, Button, Chip, ReviewCard } = UI as unknown as Record<N, ComponentType<any>>;
+const { Icon, Button, Chip, ReviewCard, Tag } = UI as unknown as Record<N | "Tag", ComponentType<any>>;
 
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
 const BIEN = "var(--tl-open-text)", MAL = "var(--tl-danger)", NEUTRO = "var(--tl-text-3)";
@@ -551,9 +551,19 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
       </div>
     </div>
   );
+  // 9m · «Lo que más mencionan» (L280): los temas que más salen en las reseñas visibles (2 o más), contados por el barrido.
+  const temasB = r.temas && r.temas.length > 0 && (
+    <div data-bloque="temas" className={desk ? "border-t border-ink/[.08] pt-3.5" : "rounded-[18px] border border-ink/[.07] bg-white p-[15px]"}>
+      <div className={K}>{E2("LO QUE MÁS MENCIONAN", "WHAT PEOPLE MENTION MOST")}</div>
+      <div className="mt-2.5 flex flex-wrap gap-1.5">
+        {r.temas.map((x) => <Tag key={x.k} tone="neutral">{`${(es ? x.es : x.en).toUpperCase()} · ${x.n}`}</Tag>)}
+      </div>
+      <div className="mt-2 text-pretty text-[11px] font-medium leading-[1.5] text-ink/50">{E2("Cuántas reseñas lo mencionan. Sale de lo que escriben los clientes.", "How many reviews mention it. Taken from what customers write.")}</div>
+    </div>
+  );
   if (desk) return (
     <div data-screen-label="Ficha · reseñas · desktop" className="grid grid-cols-[minmax(240px,270px)_minmax(0,1fr)] items-start gap-9 pt-6">
-      <div className="sticky top-[96px] flex flex-col gap-4">{cabeza}{barras}{aspB}{cta}{como}</div>
+      <div className="sticky top-[96px] flex flex-col gap-4">{cabeza}{barras}{aspB}{temasB}{cta}{como}</div>
       <div className="flex min-w-0 flex-col gap-4">{top}{filtros}</div>
     </div>
   );
@@ -562,6 +572,7 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
       {cabeza}
       {rich && <Verif v={v} />}
       {aspB}
+      {temasB}
       {cta}
       {top}
       {filtros}

@@ -12,6 +12,7 @@ import type { EvpVista } from "@/lib/evento-privado";
 import { MetodoPago, marcaL, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../pago/MetodoPago";
 import { aceptarEvpAccion, cambioEvpAccion, evpClienteAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 type N = "Icon" | "Button" | "OrderTracker" | "Tag" | "BusinessRow" | "IconButton";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -69,7 +70,7 @@ export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { m
       `DESCRIPTION:${E2("Evento privado #", "Private event #")}${x.numero}${ac ? ` · ${E2("Resta ", "Left ")}${dinero(Math.max(0, ac.tot - ac.dep))}` : ""}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], { type: "text/calendar" })); a.download = `${x.numero}.ics`; a.click();
   };
-  const llegar = x.negocio.lat != null && x.negocio.lng != null ? () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${x.negocio.lat},${x.negocio.lng}`, "_blank", "noopener") : null;
+  const llegar = x.negocio.lat != null && x.negocio.lng != null ? () => abrirComoLlegar({ lat: x.negocio.lat, lng: x.negocio.lng }) : null;
   const otraVez = () => router.push(`/n/${x.negocio.id}/evento-privado?p=${x.p}`);
 
   // Pasos

@@ -10,6 +10,7 @@ import type { Seguro } from "@/lib/mis-seguros";
 import { compat, nombreSeguro, precioSalud, type SeguroRef } from "@/lib/salud-compat";
 import type { SaludPublico, SvcPub } from "@/lib/salud-publico";
 import { seguroGuardar, seguroUsar } from "../../cuenta/seguros/acciones";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,7 +59,7 @@ export function useSalud(sp: SaludPublico | null, es: boolean) {
   if (!(soloSinCita || sp.espera)) riel[0] = { k: E2("SIN SEGURO", "UNINSURED"), v: sp.h.sin ? usd(sp.h.cash) : "—" };
   const desde = seg && cp?.ok && !cp.sinSeguro ? E2("Con tu seguro", "With your insurance") : sp.h.sin ? `${E2("Sin seguro ", "Uninsured ")}${usd(sp.h.cash)}` : E2("Servicios", "Services");
   const llamar = () => { if (sp.negocio.telefono) location.href = `tel:${sp.negocio.telefono}`; };
-  const llegar = () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(sp.negocio.direccion ?? sp.negocio.nombre)}`, "_blank", "noopener");
+  const llegar = () => abrirComoLlegar({ dir: sp.negocio.direccion ?? sp.negocio.nombre });
   return {
     sp, es, E2, nm, secs, notes, seg, segs, cp, riel, desde, soloSinCita, insL, tg, hoja, abrir: (id: string, e?: MouseEvent) => { stop(e); setHoja(id); }, cerrar: () => setHoja(null),
     segHoja, setSegHoja, setTmp, elegir: (id: string) => setSel(id), top: sp.servicios.slice(0, 4).map(item), llamar, llegar, router,

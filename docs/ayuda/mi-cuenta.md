@@ -65,6 +65,15 @@ Llaves de acceso. Ver `entrar-con-face-id.md`.
 **¿Qué se borra si borro la cuenta?** Tu perfil, direcciones, guardados, reseñas y comentarios; tus solicitudes de empleo
 se cierran y tus pedidos y reservaciones salen de tu cuenta. Tienes 30 días para arrepentirte.
 
+## Pagos, alertas, sesiones y tus direcciones
+- **Pagos y movimientos** (Ajustes › Pagos): tus tarjetas y todo lo cobrado, retenido, liberado o devuelto, con su orden. Ver «Pagos y movimientos».
+- **Tus alertas** (Avisos): las de «Avísame cuando haya» y «Avísame de nuevas vacantes», cada una con **Quitar**.
+- **Sesiones abiertas** (Ajustes › Privacidad): cada una dice dónde está abierta, y la de una app su nombre y su versión («Este iPhone · To'Latino
+  1.0 (12)»). Cierra las que no reconozcas.
+- **Buscar con la voz** (Ajustes › Privacidad): enciéndelo o apágalo.
+- **Direcciones:** sugerencias mientras escribes, «Usar mi ubicación» y el pin en tu puerta. Ver «Tus direcciones y el pin en la puerta».
+- **Mis boletos:** al abrir Boletos con señal, el teléfono guarda los QR de todos tus próximos boletos para verlos sin señal.
+
 ## Boletos y eventos
 - **Tu semana** (Mi cuenta › Inicio): tus boletos de los próximos 7 días (cuántos y «Tu QR está en Boletos · funciona sin señal»), tus RSVP y tu
   evento privado confirmado, en orden con lo demás.
@@ -96,6 +105,10 @@ quedan cifras; si borras tu cuenta, a los 30 días se vacían tus conversaciones
 
 ## English
 
+### Payments, alerts, sessions and addresses
+**Payments** (Settings › Payments) lists your cards and every charge, hold, release and refund with its order. **Your alerts** (Notifications) can be
+removed one by one. **Open sessions** (Settings › Privacy) say where each one is open and, for an app, its name and version ("This iPhone ·
+To'Latino 1.0 (12)"). Voice search can be turned on or off there. Opening Tickets with signal saves all your upcoming QR codes for offline use.
 ### Your email, your number and notifications
 - **Confirm your email:** in **Profile** type your email and tap **Send the link**. The link works **24 hours, once**, and only the **latest** one you asked
   for. Open it while signed in. With a confirmed email you get receipts (with buttons to save your ticket to Apple Wallet or Google Wallet when available)

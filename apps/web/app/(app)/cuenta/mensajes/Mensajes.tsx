@@ -2,6 +2,7 @@
 /* USR-MENSAJES (diseño «To'Latino Mi cuenta» · msgsV): nota de privacidad, una fila por negocio (NUEVO si hay algo sin
    leer, el contexto y el último mensaje) y el acceso a los mensajes con vecinos (Comunidad › Mensajes, 5c). */
 import { useRouter } from "next/navigation";
+import { RefrescoVivo } from "@/app/_vivo/RefrescoVivo";
 import type { Hilo } from "@/lib/mensajes";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
 import { diaCorto, horaDe } from "../fechas";
@@ -34,5 +35,5 @@ export function Mensajes({ d, es, yo, pagina }: { d: { hilos: Hilo[]; mas: strin
     d.mas ? { type: "more", l: E2("Ver más antiguas", "See older"), on: () => router.push(`/cuenta/mensajes?antes=${encodeURIComponent(d.mas!)}`) } : null,
     { type: "rows", rows: [{ key: "vec", ic: "users", t: E2("Mensajes con vecinos", "Messages with neighbors"), s: E2("EN LA COMUNIDAD · SOLO CON QUIEN TE SIGUE", "IN THE COMMUNITY · ONLY WITH PEOPLE WHO FOLLOW YOU"), chev: true, on: () => router.push("/comunidad/mensajes") }] },
   ].filter(Boolean) as Bloque[];
-  return <Marco es={es} code="USR-MENSAJES" t={E2("Mensajes", "Messages")} s={nuevos ? `${nuevos} ${E2(nuevos === 1 ? "NUEVO" : "NUEVOS", "NEW")}` : E2("CON LOS NEGOCIOS", "WITH BUSINESSES")} blocks={B} yo={yo} ui={ui} />;
+  return <><RefrescoVivo k="chat" /><Marco es={es} code="USR-MENSAJES" t={E2("Mensajes", "Messages")} s={nuevos ? `${nuevos} ${E2(nuevos === 1 ? "NUEVO" : "NUEVOS", "NEW")}` : E2("CON LOS NEGOCIOS", "WITH BUSINESSES")} blocks={B} yo={yo} ui={ui} /></>;
 }

@@ -1,6 +1,6 @@
 # Mapa de negocios · Business map
 
-_Pantallas: APP-NEG-MAPA (teléfono y escritorio). Versión: 5 nov 2026. Audiencia: vecino. Tema: explorar._
+_Pantallas: APP-NEG-MAPA (teléfono y escritorio). Versión: 14 nov 2026. Audiencia: vecino. Tema: explorar._
 
 ## Qué hace
 Muestra en un mapa los negocios alrededor del punto que elegiste (centro, barrio o tu ubicación) y, al lado o debajo,
@@ -25,12 +25,19 @@ El mapa es nuestro (OpenStreetMap), no de Google.
 | Ningún negocio con ese filtro | «Nada con ese filtro». | Quitar un filtro o ampliar la distancia. |
 | La ciudad todavía no abre | Pantalla **Próximamente** (ver «Dónde buscas»). | — |
 
+## El mini mapa, «Cómo llegar» y muchos negocios
+- **El mini mapa** sale en la página de cada negocio (su punto, o su zona si trabaja desde casa) y, en una computadora, en la columna derecha del
+  Inicio con los negocios cerca de ti. Tócalo para abrir el Mapa o las indicaciones.
+- **Cómo llegar** abre la app de mapas de tu teléfono (Mapas en el iPhone; en Android, la que elijas) con el negocio de destino. En una computadora
+  abre las indicaciones en la web. El mapa y las direcciones de To'Latino son nuestros: no le preguntamos a nadie.
+- **Muchos negocios:** si en tu zona hay más de 400, al soltar el mapa después de moverlo salen los del cuadro que estás viendo.
+
 ## Preguntas frecuentes
 **¿Por qué no veo la casa de un negocio que trabaja desde casa?** Por seguridad: el mapa solo muestra la zona.
 
 **¿Por qué un negocio sale en la lista y no en el mapa?** No tiene local: va a domicilio o atiende por teléfono.
 
-**¿«Cómo llegar» usa Google Maps?** Por ahora abre el mapa de tu teléfono para las indicaciones.
+**¿«Cómo llegar» usa Google Maps?** Abre la app de mapas de tu teléfono (la que tú uses) para las indicaciones; el mapa de To'Latino es nuestro.
 
 ## English
 
@@ -44,3 +51,8 @@ category; **Clear filters** resets. **5 mi · Change** opens “Where are you lo
 **Cases.** Black pin = featured (Pro) · purple = Free · gray = outside your distance · dotted circle = works from home,
 approximate area only (about 500 m), never the address · no venue = listed, not pinned · nothing matches → remove a
 filter or widen the distance · city not open yet → Coming soon.
+
+### Mini map, Directions and many businesses
+The mini map shows on each business page (its point, or its area if it works from home) and, on a computer, in the Home right column. **Directions**
+opens your phone's map app (Apple Maps on iPhone; on Android, the one you choose); on a computer it opens directions on the web. When an area has more
+than 400 businesses, releasing the map after moving it loads the ones in the box you are looking at.

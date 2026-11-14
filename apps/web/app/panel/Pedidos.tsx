@@ -13,6 +13,7 @@ import type { Ctx, Editor } from "./Panel";
 import { clientesTabs, hoyMesas } from "./Reservas";
 import { hoyCitas } from "./Citas";
 import { uuid } from "@/lib/uuid";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 export type PedPanel = {
   hoy?: Awaited<ReturnType<typeof pedidosHoy>>; lista?: Awaited<ReturnType<typeof pedidosLista>>; f?: FiltroPed; q?: string;
@@ -105,7 +106,7 @@ export function pedidoDetalle(c: Ctx): Sec {
     const AT: Record<string, [string, string]> = { timbre: ["Toca el timbre", "Ring the bell"], noTimbre: ["No toques el timbre", "Don't ring the bell"], llamar: ["Llámame al llegar", "Call me on arrival"], texto: ["Escríbeme al llegar", "Text me on arrival"] };
     out.push({ type: "rows", k: E2("ENTREGA", "DELIVER TO"), items: [
       { icon: "home", t: `${ENT.to.street}${ENT.to.apt ? `, ${ENT.to.apt}` : ""}`, s: `${ENT.to.zip}${ENT.to.mi != null ? ` · ${ENT.to.mi} mi` : ""}`, chev: false, compact: true,
-        acts: [{ l: E2("Cómo llegar", "Directions"), v: "secondary", icon: "pin", onClick: () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${ENT.to!.street}, ${ENT.to!.zip}`)}`, "_blank", "noopener") },
+        acts: [{ l: E2("Cómo llegar", "Directions"), v: "secondary", icon: "pin", onClick: () => abrirComoLlegar({ dir: `${ENT.to!.street}, ${ENT.to!.zip}` }) },
           ...(x.telCliente ? [{ l: E2("Llamar", "Call"), v: "secondary", icon: "phone", onClick: () => { location.href = `tel:${x.telCliente}`; } }] : [])] },
       ...(ENT.drop ? [{ icon: ENT.drop.drop === "puerta" ? "home" : "users", t: ENT.drop.drop === "puerta" ? E2("Dejar en la puerta", "Leave at door") : E2("En la mano", "Hand it to me"),
         s: [ENT.drop.at.map((k) => (c.es ? AT[k]?.[0] : AT[k]?.[1])).filter(Boolean).join(" · "), ENT.drop.note ? `“${ENT.drop.note}”` : ""].filter(Boolean).join(" · ") || undefined, chev: false, compact: true } as Fila] : []),

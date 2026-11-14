@@ -7,7 +7,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { RAIZ } from "./lib/app.mjs";
 
-const TODAS = ["comunidad", "eventos", "apps", "compa", "analitica"];
+const TODAS = ["comunidad", "eventos", "apps", "compa", "analitica", "direcciones"];
 const pedidas = process.argv.slice(2).filter((x) => !x.startsWith("--"));
 const partes = pedidas.length ? pedidas : TODAS;
 for (const p of partes) if (!TODAS.includes(p)) { console.error(`parte desconocida: ${p} (${TODAS.join(", ")})`); process.exit(2); }

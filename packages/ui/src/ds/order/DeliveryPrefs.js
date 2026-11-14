@@ -550,6 +550,12 @@ function AuthSheet({
   error,
   phoneLabel = 'Tu teléfono',
   codeLabel = 'Código de 6 dígitos',
+  phoneKicker = 'TU TELÉFONO',
+  codeKicker = 'CÓDIGO DE 6 DÍGITOS',
+  sendLabel = 'Enviar código',
+  verifyLabel = 'Verificar y seguir',
+  changeLabel = 'Cambiar número',
+  resendLabel = 'REENVIAR EN 30 S',
   closeLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Close" : "Cerrar"
 }) {
   const input = {
@@ -632,7 +638,7 @@ function AuthSheet({
       ...K,
       marginTop: 18
     }
-  }, "TU TEL\xC9FONO"), /*#__PURE__*/React.createElement("div", {
+  }, phoneKicker), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 8,
       height: 50,
@@ -673,7 +679,7 @@ function AuthSheet({
     block: true,
     disabled: phone.replace(/\D/g, '').length !== 10,
     onClick: onSend
-  }, "Enviar c\xF3digo")), terms ? /*#__PURE__*/React.createElement("div", {
+  }, sendLabel)), terms ? /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 12,
       textAlign: 'center',
@@ -685,7 +691,7 @@ function AuthSheet({
       ...K,
       marginTop: 18
     }
-  }, "C\xD3DIGO DE 6 D\xCDGITOS"), /*#__PURE__*/React.createElement("input", {
+  }, codeKicker), /*#__PURE__*/React.createElement("input", {
     value: code,
     onChange: onCode,
     placeholder: "\u2022\u2022\u2022\u2022\u2022\u2022",
@@ -716,7 +722,7 @@ function AuthSheet({
     block: true,
     disabled: code.length !== 6,
     onClick: onVerify
-  }, "Verificar y seguir")), /*#__PURE__*/React.createElement("div", {
+  }, verifyLabel)), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 12,
       display: 'flex',
@@ -730,13 +736,13 @@ function AuthSheet({
       color: 'var(--tl-action)',
       cursor: 'pointer'
     }
-  }, "Cambiar n\xFAmero"), /*#__PURE__*/React.createElement("span", {
+  }, changeLabel), /*#__PURE__*/React.createElement("span", {
     style: {
       font: '600 10px ' + mono,
       letterSpacing: '.1em',
       color: 'rgba(11,14,18,.42)'
     }
-  }, "REENVIAR EN 30 S"))));
+  }, resendLabel))));
 }
 
 /* 2n · Recibo: negocio + estado, datos, platos, totales y movimientos (retenido · cobrado · liberado · reembolsos) con total pagado. */
