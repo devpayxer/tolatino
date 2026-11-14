@@ -141,6 +141,9 @@ export async function avisarMuchos(ids: string[], tpl: string, v: { es: Vars; en
 
 /* Los dueños activos de un negocio (para los avisos al negocio). */
 export async function avisarNegocio(negocio: string, tpl: string, v: Vars, o: { href?: string; ref?: [string, string] } = {}) {
+  // 9n · Panel › Más › Lo que te avisamos: el negocio apaga un grupo (pedidos, citas, reseñas…); lo que no tiene grupo (dinero, sanciones) siempre llega.
+  const apagado = (await db().query(`select 1 from notif_templates t join business_notif_prefs p on p.pref = t.biz_pref and p.business_id = $1 where t.key = $2 and p.off`, [negocio, tpl]).catch(() => ({ rowCount: 0 }))).rowCount;
+  if (apagado) return;
   const L = (await db().query<{ id: string }>(`select user_id::text as id from business_members where business_id = $1 and status = 'active' and kind = 'owner'`, [negocio]).catch(() => ({ rows: [] as { id: string }[] }))).rows;
   for (const u of L) await avisar(u.id, tpl, v, o);
 }

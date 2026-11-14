@@ -37,7 +37,7 @@ export function Confianza({ d, tab }: { d: D; tab: Tab }) {
   if (tab === "res") {
     B.push({ type: "group", k: "LO QUE ESPERA UNA DECISIÓN", first: true, link: "Ir a Colas", onLink: () => router.push("/admin/colas") });
     B.push({ type: "rows", cols, items: (["rep", "repUsr", "chat", "medios", "apel"] as const).map((k) => { const x = d.cola[k]!; return {
-      key: k, icon: COLAS[k].icon, t: COLAS[k].es, s: x.n ? `${x.n} esperando${x.tarde ? ` · ${x.tarde} fuera de plazo` : ""} · plazo ${COLAS[k].sla} h` : "Al día", r: String(x.n), chev: true, onClick: () => router.push(`/admin/colas?cola=${k}`) }; }) });
+      key: k, icon: COLAS[k].icon, t: COLAS[k].es, s: x.n ? `${x.n} esperando${x.tarde ? ` · ${x.tarde} fuera de plazo` : ""} ${x.sla ? ` · plazo ${x.sla} h` : ""}` : "Al día", r: String(x.n), chev: true, onClick: () => router.push(`/admin/colas?cola=${k}`) }; }) });
     B.push({ type: "group", k: "CÓMO FUNCIONA" });
     B.push({ type: "timeline", k: "FLUJO", items: [
       { t: "Reporte o regla automática", s: "Entra a una cola con plazo. Lo reportado deja de verse solo para quien reporta; las reglas marcan y una persona decide. Solo se oculta solo con 5 reportes de personas y dispositivos distintos." },

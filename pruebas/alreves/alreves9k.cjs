@@ -48,7 +48,7 @@ const casos = [
   ['alertasDelDinero', M, "create trigger refunds_a_mano before update on refunds for each row execute function dinero_a_mano();", ''],
   // disputaConEvidencia: la cola vuelve a 168 h; responder sin subir los archivos; un archivo que no sube y se envía igual; evidencia que se cambia
   ['disputaConEvidencia', 'apps/web/lib/colas.ts', 'icon: "card", sla: 120,', 'icon: "card", sla: 168,'],
-  ['disputaConEvidencia', DI, 'archivos: { recibo: archivos.recibo, conversacion: archivos.conversacion, entrega: archivos.entrega } });', '});'],
+  ['disputaConEvidencia', DI, 'archivos: { recibo: archivos.recibo, conversacion: archivos.conversacion, entrega: archivos.entrega, otro: archivos.foto_entrega } });', '});'],
   ['disputaConEvidencia', DI, '      if (!up.ok) return { ok: false, msg: "Stripe no aceptó un archivo de la evidencia. No se envió nada; inténtalo otra vez." };\n', ''],
   ['disputaConEvidencia', M, "raise exception 'de la evidencia solo cambia, una vez, su archivo en Stripe y cuándo se envió';", 'return new;'],
   // pagoAlBancoMartes: la cuenta nueva sin el martes; el webhook sin payouts; la Configuración se puede cambiar

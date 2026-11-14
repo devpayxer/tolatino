@@ -7,13 +7,18 @@
 # Uso (root): bash pruebas/infra/traza-sandbox.sh [REVISIÓN_VIEJA]   → «traza del sandbox: igual salvo lo de 9o» o la diferencia.
 set -euo pipefail
 RAIZ=$(cd "$(dirname "$0")/../.." && pwd)
-VIEJA=${1:-15c2d5a}
+# Sin revisión: la de este mismo commit (que el despliegue del sandbox termina y se anota). Para comparar un cambio de infra con lo de antes
+# se le pasa la revisión vieja a mano (así se comprobó 9o contra 32e5f31); en el CI una revisión fija se queda vieja con cada cambio legítimo.
+VIEJA=${1:-HEAD}
+echo "  comparado con: $VIEJA"
 T=$(mktemp -d)
 trap 'rm -rf "$T"' EXIT
 
 # Los árboles: el viejo (git archive de la revisión) y el nuevo (lo que hay ahora, también lo no comprometido).
 mkdir -p "$T/viejo" "$T/nuevo" "$T/stubs"
-git -C "$RAIZ" archive "$VIEJA" infra packages/db/migrar.sh packages/db/migrations packages/db/seeds scripts/ayuda scripts/legal scripts/cms | tar -x -C "$T/viejo"
+# Solo lo que existía en esa revisión (una vieja puede no tener scripts/legal o scripts/cms).
+RUTAS=$(git -C "$RAIZ" ls-tree --name-only "$VIEJA" infra packages/db/migrar.sh packages/db/migrations packages/db/seeds scripts/ayuda scripts/legal scripts/cms | tr '\n' ' ')
+git -C "$RAIZ" archive "$VIEJA" $RUTAS | tar -x -C "$T/viejo"
 ( cd "$RAIZ" && git ls-files --cached --others --exclude-standard -- infra packages/db/migrar.sh packages/db/migrations packages/db/seeds scripts/ayuda scripts/legal scripts/cms \
   | while read -r f; do [ -e "$f" ] && { mkdir -p "$T/nuevo/$(dirname "$f")"; cp -p "$f" "$T/nuevo/$f"; }; done )
 # Las mismas migraciones y semillas en los dos (la 0145 y la 0061 son nuevas; aquí se compara el despliegue, no la lista de archivos).
@@ -63,8 +68,11 @@ grep -q '^salida 0$' "$T/nuevo.salida" || { echo "✗ el deploy.sh nuevo no term
 if ! diff -q "$T/viejo.env" "$T/nuevo.env" >/dev/null; then echo "✗ el archivo de secretos cambió de claves:"; diff "$T/viejo.env" "$T/nuevo.env"; ok=0; fi
 # La traza nueva = la vieja + solo lo de 9o (apt-get de age si faltara, y los psql del registro: los que llevan «-v e=pruebas»).
 # 9m · y el paso de los retiros de NHTSA (systemctl is-active/systemd-run de tolatino-retiros).
-grep -v -E '^(apt-get install .* age|docker image inspect tolatino/web:pruebas .*|docker compose .* exec -T db psql .* -v e=pruebas .*|systemctl is-active --quiet tolatino-retiros|systemd-run --unit tolatino-retiros .*)$' "$T/nuevo.traza" > "$T/nuevo.sin9o" || true
-if ! diff -u "$T/viejo.traza" "$T/nuevo.sin9o" > "$T/dif"; then echo "✗ la traza del sandbox cambió:"; head -40 "$T/dif"; ok=0; fi
+SIN9O='^(apt-get install .* age|docker image inspect tolatino/web:pruebas .*|docker compose .* exec -T db psql .* -v e=pruebas .*|systemctl is-active --quiet tolatino-retiros|systemd-run --unit tolatino-retiros .*)$'
+grep -v -E "$SIN9O" "$T/nuevo.traza" > "$T/nuevo.sin9o" || true
+# La vieja puede ser ya de después de 9o (la rama pruebas): se le quita lo mismo.
+grep -v -E "$SIN9O" "$T/viejo.traza" > "$T/viejo.sin9o" || true
+if ! diff -u "$T/viejo.sin9o" "$T/nuevo.sin9o" > "$T/dif"; then echo "✗ la traza del sandbox cambió:"; head -40 "$T/dif"; ok=0; fi
 extra=$(grep -c -E 'exec -T db psql .* -v e=pruebas ' "$T/nuevo.traza" || true)
 [ "$extra" -ge 2 ] || { echo "✗ el despliegue nuevo no se anota en deploy_releases (y la huella de la llave age en server_keys)"; ok=0; }
 echo "  pasos del despliegue viejo: $(wc -l < "$T/viejo.traza") · nuevo: $(wc -l < "$T/nuevo.traza") (de ellos, $extra del registro de 9o)"

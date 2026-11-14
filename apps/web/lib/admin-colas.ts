@@ -5,8 +5,8 @@ const MOTIVO_CHAT: Record<string, string> = { spam: "Spam o publicidad", off: "O
 export const MOTIVO_DM: Record<string, string> = { acoso: "Acoso o amenazas", spam: "Spam o ventas", priv: "Pide o comparte datos privados", otro: "Otra cosa" };
 import type { Staff } from "./admin";
 import { INCIDENTE_SQL, UMBRAL_NOCHE } from "./noche-vigilar";
-import { AYUDA_DE, COLAS, MOTIVO_RESENA, colasDelRol, espera, slaCase, type Cola } from "./colas";
-import { cfgSql, valor } from "./config";
+import { AYUDA_DE, COLAS, MOTIVO_RESENA, ORDEN_COLAS, espera, slaCase, type ClaveCola, type Cola } from "./colas";
+import { cfgSql, valor, valores } from "./config";
 import { APELABLE, MOTIVO_REP, REGLA_L, type Apelable } from "./moderacion-comun";
 import { db } from "./db";
 import { MOTIVO, evidenciaDe } from "./disputas";
@@ -15,14 +15,16 @@ import { TEMAS, type Tema } from "./soporte-comun";
 
 /* ADM-COLAS: lo que espera una decisión. El servidor decide qué ve cada persona: las colas de su rol (lib/colas.ts),
    la matriz (colas:ver) y sus ciudades (staff_members.cities; vacío = todas). La más vieja contra su plazo va primero. */
+/* 9n · Qué colas ve cada rol vive en la base (queue_roles; Colas › Quién ve cada cola, solo un Admin, con auditoría): staff() la trae en s.colas. */
 export function colasVisibles(s: Staff): Cola[] {
-  return s.puede("colas", "ver") ? colasDelRol(s.role) : [];
+  return s.puede("colas", "ver") ? ORDEN_COLAS.filter((k) => s.colas.includes(k)) : [];
 }
 export const SLA_SQL = slaCase(cfgSql);
-/* El plazo de cada cola en horas (con lo de Configuración), para lo que se dice en pantalla. */
+/* El plazo de cada cola en horas (Configuración › Colas, 9n), para lo que se dice en pantalla. */
 export async function slasColas(): Promise<Record<Cola, number>> {
-  const v = await valor("evt_revision_h");
-  return Object.fromEntries(Object.entries(COLAS).map(([k, x]) => [k, x.slaCfg ? v : x.sla])) as Record<Cola, number>;
+  const claves = [...new Set(Object.values(COLAS).map((x) => x.slaCfg).filter((k): k is ClaveCola => !!k))];
+  const v = await valores(...claves);
+  return Object.fromEntries(Object.entries(COLAS).map(([k, x]) => [k, x.slaCfg ? v[x.slaCfg] : x.sla])) as Record<Cola, number>;
 }
 
 export type CasoLista = {
@@ -40,7 +42,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
     subject_kind: string; sctype: string | null; sname: string | null; rpreason: string | null; rpn: number; rpbiz: boolean; chreason: string | null; chn: number; chbiz: boolean; dpnum: string | null; sopk: string | null; sopr: string | null; dpamt: number | null; dpreason: string | null; dpdue: string | null;
     lst: string | null; lnext: string | null; vjn: number; vjf: string | null; vji: string | null;
     ctext: string | null; cn: number; creason: string | null; cflag: string | null; uname: string | null; apel: string | null; mkind: string | null; evt: string | null; sla_h: number;
-    tk: string | null;
+    tk: string | null; dinc: string | null;
   }>(
     `select q.id::text, q.queue, q.opened_at, q.priority, q.assigned_to, u.first_name as assignee, q.subject_kind, sc.type as sctype,
             coalesce(nullif(trim(coalesce(su.first_name, '') || ' ' || coalesce(su.last_name, '')), ''), su.phone) as sname,
@@ -79,7 +81,8 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
             (select case when e.pending_status = 'review' then 'cambio' else 'nuevo' end || '|' || (e.title->>'es') from events e where q.queue = 'evt' and e.id::text = q.subject_id) as evt,
             (select sc.number || '|' || sc.topic || '|' || coalesce((select left(m.body, 80) from support_messages m where m.case_id = sc.id and m.sender = 'user' and m.hidden_at is null order by m.at, m.id limit 1), '')
                from support_cases sc where q.queue = 'ticket' and sc.id::text = q.subject_id) as tk,
-            ${SLA_SQL} as sla_h
+            ${SLA_SQL} as sla_h,
+            (select i.kind || '|' || coalesce(o.number, '') || '|' || (i.note->>'es') from delivery_incidents i left join operations o on o.id = i.operation_id where q.queue = 'entrega' and i.id::text = q.subject_id) as dinc
        from queue_items q
        left join businesses b on b.id = q.business_id
        left join users u on u.id = q.assigned_to
@@ -99,7 +102,9 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
     if (e.r >= 1) vencidos++;
     const b = x.bname ?? "";
     const tk = (x.tk ?? "||").split("|");
-    const t = x.queue === "ticket" ? { title: `${tk[0]} · ${TEMAS[tk[1] as Tema]?.corto.es ?? "Soporte"}${b ? ` · ${b}` : ""}`, sub: tk.slice(2).join("|") || "Caso de Soporte" }
+    const di = (x.dinc ?? "||").split("|"), DK: Record<string, string> = { accidente: "Accidente", codigo: "Código del cliente", reclamo: "Reclamo", otro: "Incidencia" };
+    const t = x.queue === "entrega" ? { title: `${DK[di[0] ?? ""] ?? "Incidencia"}${di[1] ? ` · #${di[1]}` : ""}${b ? ` · ${b}` : ""}`, sub: di.slice(2).join("|") || "Incidencia de entrega" }
+      : x.queue === "ticket" ? { title: `${tk[0]} · ${TEMAS[tk[1] as Tema]?.corto.es ?? "Soporte"}${b ? ` · ${b}` : ""}`, sub: tk.slice(2).join("|") || "Caso de Soporte" }
       : x.queue === "sello" ? { title: `Sello · ${b}`, sub: "Pidió el sello de verificación" }
       : x.queue === "nuevo" ? { title: b, sub: "Publicado desde la app · revisión ligera" }
       : x.queue === "lic" ? { title: `Licencia · ${b}`, sub: `${x.ltitle ?? "Licencia"} · ${licEstado(x.lst, x.lnext)}` }
@@ -176,7 +181,8 @@ export async function caso(s: Staff, id: string) {
     `select q.id::text, q.queue, q.subject_kind, q.subject_id, q.business_id, q.city_id, q.opened_at, q.status, q.assigned_to, u.first_name as assignee, q.decision
        from queue_items q left join users u on u.id = q.assigned_to where q.id = $1`, [id])).rows[0];
   if (!q || !colasVisibles(s).includes(q.queue) || (s.cities.length && (!q.city_id || !s.cities.includes(q.city_id)))) return null;
-  const sla = q.queue === "evt" ? await valor("evt_revision_h") : COLAS[q.queue].sla;
+  const sc = COLAS[q.queue].slaCfg, sla = sc ? await valor(sc) : COLAS[q.queue].sla;
+
   const base = { ...q, esp: espera(q.opened_at, sla), sla, mine: q.assigned_to === s.id, puedeDecidir: s.puede("colas", "aprobar") };
   const negocio = q.business_id ? await negocioCorto(q.business_id) : null;
   // 7b · Un caso de Soporte se trabaja en Super Admin › Soporte (su ficha con el hilo, macros y notas).
@@ -184,6 +190,12 @@ export async function caso(s: Staff, id: string) {
     const tk = (await db().query<{ num: string }>(`select number as num from support_cases where id::text = $1`, [q.subject_id])).rows[0]?.num ?? null;
     return { ...base, negocio, tk };
   }
+  // 9n · Incidencia de entrega: lo que pasó, la prueba (foto o código) y el repartidor; se resuelve aquí o en Repartidores.
+  if (q.queue === "entrega") {
+    const inc = await (await import("./repartidor-admin")).incidencia(s, q.subject_id);
+    return { ...base, negocio, incidencia: inc, puedeResolver: s.puede("dlv", "editar") };
+  }
+
   if (q.queue === "sello") {
     const v = (await db().query<{ status: string; checks: Record<string, boolean>; note: string | null }>(`select status, checks, note from verification_requests where id = $1::bigint`, [q.subject_id])).rows[0];
     return { ...base, negocio, sello: v ?? null };
@@ -402,4 +414,17 @@ export async function negocioCorto(id: string) {
        from businesses b join categories c on c.id = b.category_id join cities ci on ci.id = b.city_id left join business_stats_cache s on s.business_id = b.id
       where b.id = $1`, [id])).rows[0];
   return b ? { ...b, phone: telefonoBonito(b.phone) } : null;
+}
+
+/* 9n · Colas › Ajustes (solo un Admin): quién ve cada cola (queue_roles), los roles, los feriados del equipo y las ciudades. Los plazos, en
+   Configuración › Colas (un solo lugar). */
+export type AjustesColas = { roles: { key: string; nombre: string }[]; vis: Record<string, string[]>; feriados: { id: string; dia: string; ciudad: string | null; nombre: string }[]; ciudades: { id: string; nombre: string }[] };
+export async function ajustesColas(): Promise<AjustesColas> {
+  const [r, v, f, c] = await Promise.all([
+    db().query<{ key: string; nombre: string }>(`select key, name->>'es' as nombre from staff_roles order by sort`),
+    db().query<{ queue: string; roles: string[] | null }>(`select queue, array_agg(role order by role) filter (where allowed) as roles from queue_roles group by queue`),
+    db().query<{ id: string; dia: string; ciudad: string | null; nombre: string }>(`select h.id::text, h.day::text as dia, ci.name as ciudad, h.name->>'es' as nombre from staff_holidays h left join cities ci on ci.id = h.city_id where h.status = 'active' and h.day >= current_date - 7 order by h.day limit 60`),
+    db().query<{ id: string; nombre: string }>(`select id, name as nombre from cities order by name`),
+  ]);
+  return { roles: r.rows, vis: Object.fromEntries(v.rows.map((x) => [x.queue, x.roles ?? []])), feriados: f.rows, ciudades: c.rows };
 }

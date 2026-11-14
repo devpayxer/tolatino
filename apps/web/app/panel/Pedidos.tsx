@@ -6,7 +6,7 @@ import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { AjustesPed, DetallePed, Fila as FilaPed, FiltroPed, pedidosHoy, pedidosLista } from "@/lib/pedidos";
 import { menuAjustes } from "./acciones-menu";
 import type { Ayuda } from "@/lib/ayuda";
-import { repAsignar } from "./acciones-repartidores";
+import { repAsignar, repOfertaCancelar, repOfrecer, repRecogido } from "./acciones-repartidores";
 import { rutaBloque, type RutaUi } from "./RutaPanel";
 import { ayudaResponder, pedidoDevolver, pedidoPaso, pedidoSeguimiento, pedidosAjustes, pedidosModulo } from "./acciones-pedidos";
 import type { Ctx, Editor } from "./Panel";
@@ -136,13 +136,35 @@ export function pedidoDetalle(c: Ctx): Sec {
   // Despacho (delivery con tu equipo): quién lo lleva. Se asigna a un repartidor activo; el repartidor recibe el aviso.
   if (ENT && x.equipo && !ENT.ext && (x.st === "ok" || x.st === "ready" || x.st === "out")) {
     const R = (c.reps ?? []).filter((r) => r.estado === "active").sort((p, q) => Number(q.enLinea) - Number(p.enLinea));
+    const k9 = x.rep9n;
     if (x.repartidor) out.push({ type: "rows", k: E2("REPARTIDOR", "DRIVER"), items: [{ icon: "truck", t: x.repartidor.nombre, s: x.st === "out" ? E2("Va en camino", "On the way") : E2("Asignado · lo ve en su app", "Assigned · they see it in their app"), chev: false, compact: true,
       acts: x.st !== "out" ? [{ l: E2("Cambiar", "Change"), v: "secondary", off: c.pending, onClick: () => c.run(() => repAsignar(c.d.id, x.numero, null), E2("Quitado. Asígnalo a otro.", "Removed. Assign someone else.")) }] : undefined }] });
-    else if (R.length) out.push({ type: "rows", k: E2("¿QUIÉN LO LLEVA?", "WHO TAKES IT?"), items: R.map((r) => ({ key: r.id, icon: "truck", t: r.nombre, s: `${r.enLinea ? E2("en línea", "online") : E2("fuera de línea", "offline")}${r.hoy.activos ? ` · ${r.hoy.activos} ${E2("en curso", "active")}` : ""}`, tag: r.enLinea ? E2("EN LÍNEA", "ONLINE") : null, tone: "signal", chev: false, compact: true,
-      acts: [{ l: E2("Asignar", "Assign"), v: "primary", off: c.pending, onClick: () => c.run(() => repAsignar(c.d.id, x.numero, r.id), E2(`Asignado a ${r.nombre}. Ya le llegó el aviso.`, `Assigned to ${r.nombre}. They got the notice.`)) }] })) });
+    // 9n · Una oferta abierta con su cuenta regresiva (el primero que acepta se la lleva); si vence, te llega el aviso.
+    else if (k9?.oferta) out.push({ type: "note", tone: "info", icon: "clock", t: E2(`Ofrecido ${k9.oferta.a ? `a ${k9.oferta.a}` : "a tus repartidores en línea"} · vence en ${k9.oferta.seg} s${k9.oferta.rechazos ? ` · ${k9.oferta.rechazos} lo rechazaron` : ""}. El primero que acepta va por él.`,
+      `Offered ${k9.oferta.a ? `to ${k9.oferta.a}` : "to your online drivers"} · expires in ${k9.oferta.seg} s${k9.oferta.rechazos ? ` · ${k9.oferta.rechazos} declined` : ""}. The first to accept heads there.`),
+      cta: E2("Cancelar oferta", "Cancel offer"), onCta: () => c.run(() => repOfertaCancelar(c.d.id, x.numero), E2("Oferta cancelada.", "Offer cancelled.")) });
+    else if (R.length) {
+      if (R.some((r) => r.enLinea)) out.push({ type: "acts", items: [{ l: E2("Ofrecer a los que están en línea", "Offer to online drivers"), v: "primary", icon: "clock", off: c.pending, onClick: () => c.run(() => repOfrecer(c.d.id, x.numero, null), E2("Ofrecido. Te avisamos cuando alguien lo acepte.", "Offered. We will tell you when someone accepts.")) }] });
+      out.push({ type: "rows", k: E2("¿QUIÉN LO LLEVA?", "WHO TAKES IT?"), items: R.map((r) => ({ key: r.id, icon: "truck", t: r.nombre, s: `${r.enLinea ? E2("en línea", "online") : E2("fuera de línea", "offline")}${r.hoy.activos ? ` · ${r.hoy.activos} ${E2("en curso", "active")}` : ""}`, tag: r.enLinea ? E2("EN LÍNEA", "ONLINE") : null, tone: "signal", chev: false, compact: true,
+        acts: [{ l: E2("Asignar", "Assign"), v: "primary", off: c.pending, onClick: () => c.run(() => repAsignar(c.d.id, x.numero, r.id), E2(`Asignado a ${r.nombre}. Ya le llegó el aviso.`, `Assigned to ${r.nombre}. They got the notice.`)) },
+          ...(r.enLinea ? [{ l: E2("Ofrecer", "Offer"), v: "secondary", off: c.pending, onClick: () => c.run(() => repOfrecer(c.d.id, x.numero, r.id), E2(`Ofrecido a ${r.nombre}.`, `Offered to ${r.nombre}.`)) }] : [])] })) });
+    }
+    // 9n · El código de recogida (solo lo ves tú): díselo al repartidor al darle el pedido.
+    if (k9?.recogida && x.repartidor && !k9.recogido && x.st !== "out") out.push({ type: "rows", k: E2("CÓDIGO DE RECOGIDA", "PICKUP CODE"), items: [{ icon: "lock", t: k9.recogida, s: E2("Díselo al repartidor cuando le des el pedido. El cliente no lo ve.", "Tell it to the driver when you hand over the order. The customer does not see it."), chev: false, compact: true,
+      acts: [{ l: E2("Ya se lo di", "Already handed over"), v: "secondary", off: c.pending, onClick: () => c.run(() => repRecogido(c.d.id, x.numero), E2("Listo: puede marcar «Recogí».", "Done: they can mark “Picked up”.")) }] }] });
     else out.push({ type: "note", tone: "info", icon: "truck", t: E2("Sin repartidores en la app: invítalos en Entrega, o marca tú «Salió en camino» y «Entregado».", "No drivers in the app: invite them in Delivery, or mark “Out for delivery” and “Delivered” yourself."), cta: E2("Entrega", "Delivery"), onCta: () => c.go("dlv") });
   }
+  // 9n · La prueba de la entrega (foto privada o el código del cliente) y los mensajes del repartidor al cliente.
+  if (x.rep9n && (x.rep9n.prueba.length || x.rep9n.mensajes)) {
+    const PR: Record<string, [string, string]> = { foto: ["foto", "photo"], codigo: ["código del cliente", "customer code"], negocio: ["marcado por tu equipo", "marked by your team"] };
+    out.push({ type: "rows", k: E2("PRUEBA DE ENTREGA", "PROOF OF DELIVERY"), items: [
+      ...(x.rep9n.prueba.length ? [{ icon: "image", t: x.rep9n.prueba.map((p) => (PR[p] ?? [p, p])[es ? 0 : 1]).join(" · "), s: E2("Queda como evidencia si el cliente reclama.", "It is kept as evidence if the customer complains."), chev: false, compact: true,
+        acts: x.rep9n.foto ? [{ l: E2("Ver foto", "See photo"), v: "secondary", icon: "image", onClick: () => window.open(`/api/entrega/foto/${x.rep9n!.foto}`, "_blank", "noopener") }] : undefined } as Fila] : []),
+      ...(x.rep9n.mensajes ? [{ icon: "chat", t: E2(`El repartidor le escribió ${x.rep9n.mensajes} ${x.rep9n.mensajes === 1 ? "vez" : "veces"} al cliente`, `The driver wrote to the customer ${x.rep9n.mensajes} ${x.rep9n.mensajes === 1 ? "time" : "times"}`), chev: false, compact: true } as Fila] : []),
+    ] });
+  }
   // Tarjeta: devolver dinero (solo el dueño). La comisión baja en proporción; el cliente recibe el aviso.
+
   const pg = x.pago, puedeDev = !!pg && (pg.estado === "captured" || pg.estado === "partially_refunded") && (c.d.kind === "owner" || c.d.partes.includes("all"));
   if (pg && pg.devuelto) out.push({ type: "note", tone: "info", icon: "dollar", t: E2(`Devueltos ${money(pg.devuelto)} de ${money(pg.monto)} a la tarjeta del cliente.`, `${money(pg.devuelto)} of ${money(pg.monto)} refunded to the client's card.`) });
   if (puedeDev && !c.ui.dev) out.push({ type: "acts", items: [{ l: E2("Devolver dinero", "Refund money"), v: "secondary", icon: "dollar", onClick: () => c.setUi({ dev: { n: ((pg!.monto - pg!.devuelto) / 100).toFixed(2), m: "", k: uuid() } }) }] });

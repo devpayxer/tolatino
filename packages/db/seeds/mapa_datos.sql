@@ -338,7 +338,20 @@ insert into data_map (tabla, columna, rol, accion, set_sql, pendiente_sql, donde
   ('city_beta_invites', 'user_id', 'persona', 'borrar', null, null, null, null, 'invitaciones_a_la_beta', 'no', null, false, 3340),
   ('city_beta_invites', 'invited_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3350),
   ('city_beta_invites', 'revoked_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3360),
-  ('city_notices', 'user_id', 'persona', 'borrar', null, null, null, null, 'avisos_de_apertura', 'no', null, false, 3370)
+  ('city_notices', 'user_id', 'persona', 'borrar', null, null, null, null, 'avisos_de_apertura', 'no', null, false, 3370),
+  ('delivery_proofs', 'actor_id', 'persona', 'guardar', null, null, null, '{"es":"Lo pide la ley: recibos, impuestos y disputas.","en":"The law requires it: receipts, taxes and disputes."}'::jsonb, null, 'no', null, false, 3380),
+  ('delivery_offers', 'created_by', 'persona', 'guardar', null, null, null, '{"es":"Es del negocio (su historial y sus cifras), sin tus datos.","en":"It belongs to the business (its history and numbers), without your data."}'::jsonb, null, 'no', null, false, 3390),
+  ('delivery_incidents', 'driver_user', 'persona', 'guardar', null, null, null, '{"es":"Seguridad: sanciones, bloqueos y abuso.","en":"Safety: sanctions, blocks and abuse."}'::jsonb, null, 'no', null, false, 3400),
+  ('delivery_incidents', 'created_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3410),
+  ('delivery_incidents', 'resolved_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3420),
+  ('driver_sanctions', 'user_id', 'persona', 'guardar', null, null, null, '{"es":"Seguridad: sanciones, bloqueos y abuso.","en":"Safety: sanctions, blocks and abuse."}'::jsonb, null, 'no', null, false, 3430),
+  ('driver_sanctions', 'by_user', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3440),
+  ('driver_sanctions', 'lifted_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3450),
+  ('queue_roles', 'updated_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3460),
+  ('staff_holidays', 'created_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3470),
+  ('staff_holidays', 'removed_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3480),
+  ('business_notif_prefs', 'updated_by', 'persona', 'guardar', null, null, null, '{"es":"Es del negocio (su historial y sus cifras), sin tus datos.","en":"It belongs to the business (its history and numbers), without your data."}'::jsonb, null, 'no', null, false, 3490),
+  ('special_hours', 'created_by', 'persona', 'guardar', null, null, null, '{"es":"Es del negocio (su historial y sus cifras), sin tus datos.","en":"It belongs to the business (its history and numbers), without your data."}'::jsonb, null, 'no', null, false, 3500)
 on conflict (tabla, columna) do update set rol = excluded.rol, accion = excluded.accion, set_sql = excluded.set_sql, pendiente_sql = excluded.pendiente_sql, donde_sql = excluded.donde_sql,
   porque = excluded.porque, exporta = excluded.exporta, fusion = excluded.fusion, fn = excluded.fn, derivados = excluded.derivados, orden = excluded.orden;
 -- Lo que salió del mapa sale de la tabla (es configuración: el mapa es la fuente).
@@ -679,6 +692,19 @@ delete from data_map d where not exists (select 1 from (values
   ('city_beta_invites', 'user_id'),
   ('city_beta_invites', 'invited_by'),
   ('city_beta_invites', 'revoked_by'),
-  ('city_notices', 'user_id')
+  ('city_notices', 'user_id'),
+  ('delivery_proofs', 'actor_id'),
+  ('delivery_offers', 'created_by'),
+  ('delivery_incidents', 'driver_user'),
+  ('delivery_incidents', 'created_by'),
+  ('delivery_incidents', 'resolved_by'),
+  ('driver_sanctions', 'user_id'),
+  ('driver_sanctions', 'by_user'),
+  ('driver_sanctions', 'lifted_by'),
+  ('queue_roles', 'updated_by'),
+  ('staff_holidays', 'created_by'),
+  ('staff_holidays', 'removed_by'),
+  ('business_notif_prefs', 'updated_by'),
+  ('special_hours', 'created_by')
 ) v (tabla, columna) where v.tabla = d.tabla and v.columna = d.columna);
 commit;

@@ -50,6 +50,123 @@ export async function tomarCaso(id: string): Promise<ResAdm> {
   return { ok: true, mensaje: "Lo tomaste. Nadie más lo trabaja mientras tanto." };
 }
 
+/* 9n · Asignar un caso a una persona concreta del equipo (L990): quien reparte (colas:editar) elige a alguien activo cuyo rol ve esa cola
+   (queue_roles) y con colas:aprobar, en la ciudad del caso. «Soltar» lo deja sin asignar. El lote (escritorio) hace lo mismo con varios a la vez,
+   cada uno con su auditoría; los que no se pueden (ya decididos, de otra ciudad) se saltan y se dice cuántos. */
+async function puedeTrabajar(c: PoolClient, uid: string, q: Fila): Promise<string | null> {
+  const p = (await c.query<{ nombre: string }>(
+    `select coalesce(nullif(u.first_name, ''), 'Alguien') as nombre from staff_members m join users u on u.id = m.user_id
+      where m.user_id = $1 and m.status = 'active'
+        and exists (select 1 from queue_roles r where r.role = m.role and r.queue = $2 and r.allowed)
+        and exists (select 1 from role_permissions p where p.role = m.role and p.section = 'colas' and p.action = 'aprobar' and p.allowed)
+        and (cardinality(m.cities) = 0 or $3::text = any(m.cities))`, [uid, q.queue, q.city_id])).rows[0];
+  return p?.nombre ?? null;
+}
+export async function asignarCaso(ids: string[], uid: string | null): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !s.puede("colas", "editar")) return no("Tu rol no reparte casos.");
+  return repartir(s, ids, uid);
+}
+async function repartir(s: Staff, ids: string[], uid: string | null): Promise<ResAdm> {
+  const L = (Array.isArray(ids) ? ids : []).map(String).filter((x) => /^\d{1,18}$/.test(x)).slice(0, 100);
+  if (!L.length) return no("Elige al menos un caso.");
+  if (uid !== null && !/^[0-9a-f-]{36}$/.test(String(uid))) return no("Elige a alguien del equipo.");
+  let hechos = 0, saltados = 0, nombre = "";
+  for (const id of L) {
+    const r = await tx(async (c) => {
+      const q = await abrir(c, s, id);
+      if (typeof q === "string") return false;
+      if (uid === null) {
+        if (!q.assigned_to) return false;
+        await c.query(`update queue_items set assigned_to = null, assigned_at = null where id = $1`, [q.id]);
+        await auditar(c, { actor: s.id, action: "cola.soltar", targetKind: "case", targetId: q.id, city: q.city_id, before: { asignado: q.assignee ?? null }, after: { asignado: null } });
+        return true;
+      }
+      const n = await puedeTrabajar(c, uid, q);
+      if (!n) return false;
+      nombre = n;
+      await c.query(`update queue_items set assigned_to = $2, assigned_at = now() where id = $1`, [q.id, uid]);
+      await auditar(c, { actor: s.id, action: "cola.asignar", targetKind: "case", targetId: q.id, city: q.city_id, before: { asignado: q.assignee ?? null }, after: { asignado: n } });
+      return true;
+    });
+    if (r) hechos++; else saltados++;
+  }
+  if (!hechos) return no(uid === null ? "Ninguno estaba asignado." : "Esa persona no trabaja esa cola o esa ciudad, o el caso ya se decidió.");
+  listo();
+  const extra = saltados ? ` ${saltados} no se ${saltados === 1 ? "pudo" : "pudieron"} (otra cola, otra ciudad o ya decidido).` : "";
+  return { ok: true, mensaje: uid === null ? `Sueltos: ${hechos}.${extra}` : `${hechos === 1 ? "Asignado" : `${hechos} asignados`} a ${nombre}. Queda en la auditoría.${extra}` };
+}
+/* Tomar varios a la vez (lote en escritorio). */
+export async function tomarLote(ids: string[]): Promise<ResAdm> {
+  const s = await quien();
+  if (!s) return no("Tu rol solo puede ver esta cola.");
+  return repartir(s, ids, s.id).then((r) => (r.ok ? { ok: true, mensaje: r.mensaje?.replace(/ a [^.]+\./, " a ti.") } : r));
+}
+/* Quién puede trabajar una cola (para el selector de «Asignar a…»): del equipo activo, su rol la ve y decide, en la ciudad del caso. */
+export async function equipoDeCola(id: string): Promise<{ id: string; nombre: string }[]> {
+  const s = await staff();
+  if (!s || !s.puede("colas", "editar") || !/^\d{1,18}$/.test(String(id))) return [];
+  return (await db().query<{ id: string; nombre: string }>(
+    `select m.user_id::text as id, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Alguien') || ' · ' || r.name->>'es' as nombre
+       from queue_items q join staff_members m on m.status = 'active' join users u on u.id = m.user_id join staff_roles r on r.key = m.role
+      where q.id = $1::bigint and exists (select 1 from queue_roles x where x.role = m.role and x.queue = q.queue and x.allowed)
+        and exists (select 1 from role_permissions p where p.role = m.role and p.section = 'colas' and p.action = 'aprobar' and p.allowed)
+        and (cardinality(m.cities) = 0 or q.city_id = any(m.cities)) order by u.first_name limit 50`, [id])).rows;
+}
+
+/* 9n · Quién ve cada cola (queue_roles): solo un Admin, con motivo y auditoría. El Admin siempre ve todas (no se le quita). */
+export async function colaVisibilidad(queue: string, role: string, ver: boolean, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || s.role !== "admin" || !s.puede("colas", "editar")) return no("Solo un Admin cambia quién ve cada cola.");
+  const m = motivoOk(motivo);
+  if (m.length < 3) return no("Escribe el motivo.");
+  if (role === "admin") return no("El Admin ve todas las colas.");
+  const r = await tx(async (c) => {
+    const x = (await c.query<{ allowed: boolean }>(`select allowed from queue_roles where queue = $1 and role = $2 for update`, [queue, role])).rows[0];
+    if (!x) return "Esa cola o ese rol no existe.";
+    if (x.allowed === !!ver) return "Ya estaba así.";
+    await c.query(`update queue_roles set allowed = $3, updated_by = $4, updated_at = now() where queue = $1 and role = $2`, [queue, role, !!ver, s.id]);
+    await auditar(c, { actor: s.id, action: "cola.visibilidad", targetKind: "queue", targetId: queue, before: { [role]: x.allowed ? "la ve" : "no la ve" }, after: { [role]: ver ? "la ve" : "no la ve" }, reason: m });
+    return "ok";
+  });
+  if (r !== "ok") return no(r);
+  listo();
+  return { ok: true, mensaje: "Guardado. Vale desde la próxima vez que esa persona abra Colas." };
+}
+
+/* 9n · Feriados del equipo (L982): el plazo de Soporte en horas hábiles no cuenta esos días (soporte_sla). Solo un Admin; nada se borra. */
+export async function feriadoEquipo(dia: string, ciudad: string | null, nombre: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || s.role !== "admin") return no("Solo un Admin cambia los feriados del equipo.");
+  const d = String(dia ?? ""), n = motivoOk(nombre).slice(0, 60);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || Number.isNaN(Date.parse(d))) return no("Escribe la fecha como 2026-12-25.");
+  if (n.length < 3) return no("Escribe el nombre del feriado.");
+  const c0 = ciudad && /^[a-z0-9-]{2,40}$/.test(ciudad) ? ciudad : null;
+  const r = await tx(async (c) => {
+    if ((await c.query(`select 1 from staff_holidays where status = 'active' and day = $1::date and coalesce(city_id, '') = coalesce($2::text, '')`, [d, c0])).rowCount) return "Ese día ya es feriado.";
+    const id = (await c.query<{ id: string }>(`insert into staff_holidays (day, city_id, name, created_by) values ($1::date, $2, $3::jsonb, $4) returning id::text`, [d, c0, JSON.stringify({ es: n, en: n }), s.id])).rows[0]!.id;
+    await auditar(c, { actor: s.id, action: "equipo.feriado", targetKind: "staff_holiday", targetId: id, city: c0, after: { día: d, nombre: n } });
+    return "ok";
+  });
+  if (r !== "ok") return no(r);
+  listo();
+  return { ok: true, mensaje: "Feriado guardado: el plazo de Soporte no cuenta ese día." };
+}
+export async function quitarFeriadoEquipo(id: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || s.role !== "admin") return no("Solo un Admin cambia los feriados del equipo.");
+  if (!/^\d{1,18}$/.test(String(id))) return no("Ese feriado no existe.");
+  const r = await tx(async (c) => {
+    const x = (await c.query<{ day: string; city: string | null }>(`update staff_holidays set status = 'removed', removed_by = $2, removed_at = now() where id = $1::bigint and status = 'active' returning day::text, city_id as city`, [id, s.id])).rows[0];
+    if (!x) return "Ese feriado ya no está.";
+    await auditar(c, { actor: s.id, action: "equipo.feriado_quitar", targetKind: "staff_holiday", targetId: id, city: x.city, before: { día: x.day } });
+    return "ok";
+  });
+  if (r !== "ok") return no(r);
+  listo();
+  return { ok: true, mensaje: "Quitado." };
+}
+
 /* Tomar siguiente: el primero sin asignar de MIS colas (la más vieja contra su plazo). Un caso de Soporte (ticket) se toma en Super Admin ›
    Soporte («Tomar siguiente» de ahí), que también lo asigna en el caso. */
 export async function tomarSiguiente(): Promise<ResAdm> {

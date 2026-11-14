@@ -63,7 +63,7 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
           <span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-text-muted">{E("CIUDAD VIVA", "LIVING CITY")}</span>
           {vivas.map((c) => (
             <div key={c.id} className="flex flex-col gap-1.5">
-              <span className="text-[13px] font-bold">{c.ciudad}{c.status === "on" ? "" : E(" · próximamente", " · coming soon")}</span>
+              <span className="text-[13px] font-bold">{c.ciudad}{c.status === "on" ? "" : c.status === "beta" ? E(" · beta (solo invitados)", " · beta (invited only)") : E(" · próximamente", " · coming soon")}</span>
               <KpiRow columns="repeat(auto-fill, minmax(min(100%, 160px), 1fr))" items={[
                 { label: E("SEMILLAS RECLAMADAS", "SEEDS CLAIMED"), value: c.semillas ? `${Math.round((c.reclamadas / c.semillas) * 100)} %` : "—", sub: E(`${c.reclamadas} de ${c.semillas}`, `${c.reclamadas} of ${c.semillas}`), dark: c.status === "on" },
                 { label: E("PUBLICACIONES · DÍA", "POSTS · DAY"), value: (Math.round((c.posts7 / 7) * 10) / 10).toString(), sub: E(`${c.posts7} en 7 días`, `${c.posts7} in 7 days`) },

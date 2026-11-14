@@ -254,7 +254,7 @@ export async function diasEntrevista(c: Q, negocio: string, tz: string) {
   const H = await c.query<{ weekday: number; ranges: [string, string][] }>(`select weekday, ranges from business_hours where business_id = $1 and module = '' and open`, [negocio]);
   const F = await c.query<{ d: number; ymd: string; dow: number }>(
       `select g as d, ((now() at time zone $1)::date + g)::text as ymd, extract(dow from (now() at time zone $1)::date + g)::int as dow from generate_series(1, 10) g
-        where not exists (select 1 from special_hours s where s.business_id = $2 and s.closed and ((now() at time zone $1)::date + g) between s.date_from and s.date_to)`, [tz, negocio]);
+        where not exists (select 1 from special_hours s where s.business_id = $2 and s.status = 'active' and s.closed and ((now() at time zone $1)::date + g) between s.date_from and s.date_to)`, [tz, negocio]);
   const R = new Map(H.rows.map((r) => [r.weekday, r.ranges]));
   return F.rows.map((f) => {
     const rg = R.get(f.dow) ?? [], horas: number[] = [];

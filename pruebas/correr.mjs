@@ -119,8 +119,11 @@ const correrUna = (t) => new Promise((ok) => {
     // 9b-1 · Una prueba que termina sin ninguna comprobación (✓) no está en verde: 13 de la fase 1–2 solo imprimían lo que veían y la corrida
     // las contaba en verde con «0 ✓» (lic, menu2a…). Ahora cada una comprueba; si una vuelve a no comprobar nada, es roja.
     const sinNada = codigo === 0 && checks === 0;
-    const error = sinNada ? "terminó sin ninguna comprobación (✓): no se sabe si probó algo" : codigo === 0 ? "" : (texto.split("\n").reverse().find((l) => /ASSERT|Error|✗|Timeout|falla|fallo/i.test(l)) ?? texto.trim().split("\n").pop() ?? "").trim().slice(0, 220);
-    const r = { nombre: t.nombre, grupo: t.grupo, ok: codigo === 0 && !sinNada, codigo, checks, malas, seg: Math.round((Date.now() - ini) / 1000), error, salida: out };
+    // 9b-3 · Una prueba al revés con un ✗ es roja aunque salga con 0: 25 (de 6c a 8i) no ponían el código de salida y alreves8e llevaba un caso
+    // sin armar (permisosMinimos) que el CI contaba en verde. Guardián: alrevesQueFalla.
+    const mudo = t.carril === "alreves" && codigo === 0 && malas > 0;
+    const error = sinNada ? "terminó sin ninguna comprobación (✓): no se sabe si probó algo" : mudo ? `${malas} ✗ y salió con 0: ${(texto.split("\n").find((l) => /^\s*✗/.test(l)) ?? "").trim().slice(0, 180)}` : codigo === 0 ? "" : (texto.split("\n").reverse().find((l) => /ASSERT|Error|✗|Timeout|falla|fallo/i.test(l)) ?? texto.trim().split("\n").pop() ?? "").trim().slice(0, 220);
+    const r = { nombre: t.nombre, grupo: t.grupo, ok: codigo === 0 && !sinNada && !mudo, codigo, checks, malas, seg: Math.round((Date.now() - ini) / 1000), error, salida: out };
     console.log(`${r.ok ? "✓" : "✗"} ${t.nombre.padEnd(16)} ${String(checks).padStart(4)} ✓ ${String(r.seg).padStart(5)} s${r.ok ? "" : `  · ${error}`}`);
     ok(r);
   });

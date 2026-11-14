@@ -82,6 +82,8 @@ export async function evidenciaDe(disputa: string): Promise<Evidencia | null> {
        join cities c on c.id = o.city_id left join payments p on p.id = d.payment_id where d.id = $1::bigint`, [disputa])).rows[0];
   if (!o) return null;
   const hora = (iso: string) => new Intl.DateTimeFormat("es-US", { timeZone: o.tz, day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
+  // 9n · La prueba de la entrega (foto privada o el código del cliente), con su hora: va en la constancia.
+  const PE = (await db().query<{ kind: string; at: string }>(`select kind, to_char(at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at from delivery_proofs where operation_id = (select operation_id from disputes where id = $1::bigint) order by at`, [disputa]).catch(() => ({ rows: [] as { kind: string; at: string }[] }))).rows;
   const [L, E, M] = await Promise.all([
     db().query<{ q: number; n: string }>(`select qty as q, coalesce(name ->> 'es', name::text, '') as n from operation_lines where operation_id = $1::bigint order by id`, [o.op]).catch(() => ({ rows: [] as { q: number; n: string }[] })),
     db().query<{ kind: string; at: string }>(`select kind, to_char(at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at from operation_events where operation_id = $1::bigint order by id`, [o.op]).catch(() => ({ rows: [] as { kind: string; at: string }[] })),
@@ -114,6 +116,7 @@ export async function evidenciaDe(disputa: string): Promise<Evidencia | null> {
     `Hecho por ${o.cliente} desde su cuenta (teléfono verificado) el ${hora(o.enviado)}`,
     ...E.rows.filter((x) => EV[x.kind]).map((x) => `${EV[x.kind]} · ${hora(x.at)}`),
     ...(o.dir ? [`Entrega en ${o.dir}`] : []),
+    ...PE.map((p) => `${p.kind === "foto" ? "Prueba de entrega: foto tomada por el repartidor en la entrega (adjunta)" : p.kind === "codigo" ? "Prueba de entrega: el cliente le dio su código de 4 cifras al repartidor" : "Entrega marcada por el negocio"} · ${hora(p.at)}`),
     ...(M.rows[0]?.n ? [`${M.rows[0].n} mensajes entre el cliente y el negocio`] : []),
     ...(o.devuelto ? [`Ya se devolvió ${money(o.devuelto)}`] : []),
   ];
@@ -123,7 +126,7 @@ export async function evidenciaDe(disputa: string): Promise<Evidencia | null> {
 /* 9k · Los archivos de la evidencia (L357, L393): el recibo en PDF, la conversación con el cliente (sin teléfonos) y la constancia de entrega (la línea
    de tiempo y la dirección). La foto de la entrega se suma cuando el Repartidor la tome (no existe todavía: LAUNCH). Cada archivo queda en
    dispute_evidence (sha256, bytes) y, si el almacén está, en el privado (privado/disputas/…; nunca por /medios). Idempotente por su sha256. */
-type Archivo = { kind: "recibo" | "conversacion" | "entrega"; cuerpo: Buffer; nombre: string };
+type Archivo = { kind: "recibo" | "conversacion" | "entrega" | "foto_entrega"; cuerpo: Buffer; nombre: string; mime?: "application/pdf" | "image/jpeg" };
 const TEL = /\+?1?\s*\(?\d{3}\)?[\s.-]*\d{3}[\s.-]*\d{4}/g;
 export async function archivosEvidencia(disputa: string): Promise<Archivo[]> {
   const e = await evidenciaDe(disputa);
@@ -149,26 +152,31 @@ export async function archivosEvidencia(disputa: string): Promise<Archivo[]> {
   const conversacion = pdfTexto(`Customer communication / Conversación · #${o.num}`, M.length ? M.map((m) => `[${m.at}] ${m.quien}: ${m.t.replace(TEL, "[teléfono]")}`)
     : ["No messages between the customer and the business for this order. / Sin mensajes entre el cliente y el negocio en este pedido."]);
   const entrega = pdfTexto(`Delivery and timeline / Entrega y línea de tiempo · #${o.num}`, [...e.lineas, ...(e.envio ? ["", `Delivered to / Entregado en: ${e.envio}`] : [])]);
-  return [{ kind: "recibo", cuerpo: recibo, nombre: `recibo-${o.num}.pdf` }, { kind: "conversacion", cuerpo: conversacion, nombre: `conversacion-${o.num}.pdf` }, { kind: "entrega", cuerpo: entrega, nombre: `entrega-${o.num}.pdf` }];
+  // 9n · La foto de la entrega (L1690): la misma imagen privada que tomó el repartidor (sin metadatos), si todavía está en el almacén.
+  const foto: Archivo[] = [];
+  const fm = (await db().query<{ url: string }>(`select m.url from delivery_proofs p join media m on m.id = p.media_id where p.operation_id = $1::bigint and p.kind = 'foto' and m.purged_at is null`, [o.op]).catch(() => ({ rows: [] as { url: string }[] }))).rows[0];
+  if (fm) { try { foto.push({ kind: "foto_entrega", cuerpo: await (await import("./medios")).leerObjeto(fm.url), nombre: `foto-entrega-${o.num}.jpg`, mime: "image/jpeg" }); } catch { /* sin almacén: va la constancia */ } }
+  return [{ kind: "recibo", cuerpo: recibo, nombre: `recibo-${o.num}.pdf` }, { kind: "conversacion", cuerpo: conversacion, nombre: `conversacion-${o.num}.pdf` }, { kind: "entrega", cuerpo: entrega, nombre: `entrega-${o.num}.pdf` }, ...foto];
 }
 /* Arma (o reusa) la evidencia de una disputa: una fila por archivo; el archivo al almacén privado si está configurado. */
-export async function armarEvidencia(disputa: string, staffId: string | null): Promise<{ id: string; kind: string; cuerpo: Buffer; nombre: string; fileId: string | null }[]> {
+export async function armarEvidencia(disputa: string, staffId: string | null): Promise<{ id: string; kind: string; cuerpo: Buffer; nombre: string; fileId: string | null; mime?: string }[]> {
+
   const { createHash, randomBytes } = await import("node:crypto");
   const { guardarObjeto, mediosListos } = await import("./medios");
-  const out: { id: string; kind: string; cuerpo: Buffer; nombre: string; fileId: string | null }[] = [];
+  const out: { id: string; kind: string; cuerpo: Buffer; nombre: string; fileId: string | null; mime?: string }[] = [];
   for (const a of await archivosEvidencia(disputa)) {
     const sha = createHash("sha256").update(a.cuerpo).digest("hex");
     const ya = (await db().query<{ id: string; f: string | null }>(`select id::text, stripe_file_id as f from dispute_evidence where dispute_id = $1::bigint and kind = $2::text and sha256 = $3::text`, [disputa, a.kind, sha])).rows[0];
-    if (ya) { out.push({ id: ya.id, kind: a.kind, cuerpo: a.cuerpo, nombre: a.nombre, fileId: ya.f }); continue; }
+    if (ya) { out.push({ id: ya.id, kind: a.kind, cuerpo: a.cuerpo, nombre: a.nombre, fileId: ya.f, mime: a.mime ?? "application/pdf" }); continue; }
     let clave: string | null = null;
     if (mediosListos()) {
-      clave = `privado/disputas/${disputa}/${a.kind}-${randomBytes(4).toString("hex")}.pdf`;
-      try { await guardarObjeto(clave, a.cuerpo, "application/pdf"); } catch { clave = null; }
+      clave = `privado/disputas/${disputa}/${a.kind}-${randomBytes(4).toString("hex")}.${a.mime === "image/jpeg" ? "jpg" : "pdf"}`;
+      try { await guardarObjeto(clave, a.cuerpo, a.mime ?? "application/pdf"); } catch { clave = null; }
     }
     const r = (await db().query<{ id: string; f: string | null }>(
-      `insert into dispute_evidence (dispute_id, kind, media_key, mime, bytes, sha256, created_by) values ($1::bigint, $2::text, $3::text, 'application/pdf', $4::int, $5::text, $6::uuid)
-       on conflict (dispute_id, kind, sha256) do update set dispute_id = excluded.dispute_id returning id::text, stripe_file_id as f`, [disputa, a.kind, clave, a.cuerpo.length, sha, staffId])).rows[0]!;
-    out.push({ id: r.id, kind: a.kind, cuerpo: a.cuerpo, nombre: a.nombre, fileId: r.f });
+      `insert into dispute_evidence (dispute_id, kind, media_key, mime, bytes, sha256, created_by) values ($1::bigint, $2::text, $3::text, $7::text, $4::int, $5::text, $6::uuid)
+       on conflict (dispute_id, kind, sha256) do update set dispute_id = excluded.dispute_id returning id::text, stripe_file_id as f`, [disputa, a.kind, clave, a.cuerpo.length, sha, staffId, a.mime ?? "application/pdf"])).rows[0]!;
+    out.push({ id: r.id, kind: a.kind, cuerpo: a.cuerpo, nombre: a.nombre, fileId: r.f, mime: a.mime ?? "application/pdf" });
   }
   return out;
 }
@@ -191,7 +199,7 @@ export async function responderDisputa(disputa: string, staffId: string, texto: 
   for (const a of A) {
     let f = a.fileId;
     if (!f) {
-      const up = await pasarela.subirEvidencia({ cuerpo: a.cuerpo, nombre: a.nombre, tipo: "application/pdf", idem: `dpf-${disputa}-${a.id}`, sim: d.sim });
+      const up = await pasarela.subirEvidencia({ cuerpo: a.cuerpo, nombre: a.nombre, tipo: a.mime === "image/jpeg" ? "image/jpeg" : "application/pdf", idem: `dpf-${disputa}-${a.id}`, sim: d.sim });
       if (!up.ok) return { ok: false, msg: "Stripe no aceptó un archivo de la evidencia. No se envió nada; inténtalo otra vez." };
       f = up.id;
       await db().query(`update dispute_evidence set stripe_file_id = $2::text where id = $1::bigint and stripe_file_id is null`, [a.id, f]);
@@ -199,7 +207,7 @@ export async function responderDisputa(disputa: string, staffId: string, texto: 
     archivos[a.kind] = f;
   }
   const ok = await pasarela.disputaResponder(d.sid, { texto: `${texto.trim()}\n\n${e.resumen}`, producto: e.producto, cliente: e.cliente, fecha: e.fecha, envio: e.envio,
-    archivos: { recibo: archivos.recibo, conversacion: archivos.conversacion, entrega: archivos.entrega } });
+    archivos: { recibo: archivos.recibo, conversacion: archivos.conversacion, entrega: archivos.entrega, otro: archivos.foto_entrega } });
   if (!ok) return { ok: false, msg: "Stripe no aceptó la respuesta. No cambió nada; inténtalo otra vez." };
   await db().query(`update dispute_evidence set sent_at = now() where dispute_id = $1::bigint and stripe_file_id is not null and sent_at is null`, [disputa]);
   await db().query(`update disputes set status = 'under_review', response_text = $2, responded_by = $3, responded_at = now(), evidence_submitted_at = now(), updated_at = now() where id = $1::bigint`, [disputa, texto.trim().slice(0, 2000), staffId]);

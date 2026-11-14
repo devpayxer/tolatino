@@ -1,6 +1,7 @@
 import "server-only";
 import type { Staff } from "./admin";
 import { db } from "./db";
+import { SLA_SQL } from "./admin-colas";
 import { catalogoConfig, valor } from "./config";
 import { saludImagen } from "./moderacion-img";
 import { saludTraductor } from "./traductor";
@@ -72,8 +73,9 @@ const COLAS_CONF = ["rep", "repUsr", "chat", "medios", "apel"] as const;
 export async function confianza(s: Staff) {
   const c = s.cities;
   const [Q, sanc, fraude, disp, bloq, apel] = await Promise.all([
-    db().query<{ queue: string; n: number; tarde: number }>(
-      `select q.queue, count(*)::int as n, count(*) filter (where q.opened_at < now() - make_interval(hours => case q.queue when 'apel' then 72 when 'chat' then 48 when 'medios' then 4 else 24 end))::int as tarde
+    // 9n · El plazo de cada cola sale de Configuración › Colas (SLA_SQL), no de una copia aquí.
+    db().query<{ queue: string; n: number; tarde: number; sla: number }>(
+      `select q.queue, count(*)::int as n, count(*) filter (where q.opened_at < now() - make_interval(secs => (${SLA_SQL}) * 3600))::int as tarde, max(${SLA_SQL})::float8 as sla
          from queue_items q where q.status = 'open' and q.queue = any($1::text[]) and ${CIUDAD("q.city_id", 2)} group by q.queue`, [COLAS_CONF, c]),
     db().query<{ id: string; uid: string; quien: string; kind: Sancion; reason: string; at: string; hasta: string | null; ciudad: string | null; apelada: string | null }>(
       `select s.id::text, u.id::text as uid, ${N("u")} as quien, s.kind, s.reason, s.starts_at as at, s.ends_at as hasta, ci.name as ciudad,
@@ -98,7 +100,8 @@ export async function confianza(s: Staff) {
               (select q.id::text from queue_items q where q.queue = 'apel' and q.subject_id = a.id::text order by q.id desc limit 1) as caso
          from appeals a join users u on u.id = a.user_id where ${CIUDAD("a.city_id", 1)} order by (a.status = 'open') desc, a.created_at desc limit 40`, [c]),
   ]);
-  const cola = Object.fromEntries(COLAS_CONF.map((k) => [k, Q.rows.find((x) => x.queue === k) ?? { queue: k, n: 0, tarde: 0 }]));
+  const cola = Object.fromEntries(COLAS_CONF.map((k) => [k, Q.rows.find((x) => x.queue === k) ?? { queue: k, n: 0, tarde: 0, sla: 0 }]));
+
   // 6j · Señales de Eventos (evt_senales: ráfaga de órdenes, transferencias en cadena, entradas duplicadas, contracargos) con su caso.
   const { senalesEvt } = await import("./evt-admin");
   // 9k · La misma tarjeta (por su huella, card.fingerprint) en varias cuentas en 90 días (L938): la señal no sanciona sola; se mira cada cuenta.

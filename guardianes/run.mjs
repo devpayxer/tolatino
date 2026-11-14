@@ -1096,9 +1096,16 @@ const guardianes = {
     const colas = [...m[1].matchAll(/"(\w+)"/g)].map((x) => x[1]);
     const dir = "packages/db/migrations", migs = readdirSync(dir).filter((x) => x.endsWith(".sql")).sort();
     let check = null, donde = null;
-    for (const x of migs) { const t = readFileSync(`${dir}/${x}`, "utf8"), c = [...t.matchAll(/add constraint queue_items_queue_check check \(([^;]+)\);/g)].pop(); if (c) { check = c[1]; donde = x; } }
+    const amplia = [];
+    for (const x of migs) {
+      const t = readFileSync(`${dir}/${x}`, "utf8"), c = [...t.matchAll(/add constraint queue_items_queue_check check \(([^;]+)\);/g)].pop();
+      if (c) { check = c[1]; donde = x; amplia.length = 0; }
+      // 9n: una migración que AMPLÍA el CHECK (pg_temp.ampliar_check, como 0141/0142) suma sus valores a los de la última lista fija.
+      for (const a of t.matchAll(/ampliar_check\('queue_items', 'queue_items_queue_check', array\[([^\]]+)\]\)/g)) { amplia.push(...[...a[1].matchAll(/'(\w+)'/g)].map((y) => y[1])); donde = x; }
+    }
     if (!check) return falla("colasEnLaBase", dir, 0, "ninguna migración define queue_items_queue_check");
-    const base = new Set([...check.matchAll(/'(\w+)'/g)].map((x) => x[1]));
+    const base = new Set([...[...check.matchAll(/'(\w+)'/g)].map((x) => x[1]), ...amplia]);
+
     for (const k of colas) if (!base.has(k)) falla("colasEnLaBase", `${dir}/${donde}`, 0, `la cola «${k}» está en lib/colas.ts pero queue_items_queue_check no la acepta`);
   },
 
@@ -6243,7 +6250,12 @@ const guardianes = {
       if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === L) continue;
       const t = sinComent(f);
       if (/(insert into|update|delete from) delivery_(positions|tracks)\b/.test(t)) falla(G, f, 0, "solo lib/ruta.ts escribe la ruta del repartidor");
-      if (/\bempezarRuta\(|\bempezar\(c, /.test(t) && f !== "apps/web/lib/repartidor.ts") falla(G, f, 0, "la ruta solo la abre el paso del repartidor (lib/repartidor.ts)");
+      // 9n (L1267): «Aceptar» una oferta con cuenta regresiva es el paso que inicia la ruta (lib/repartidor-ofertas.ts aceptarOferta, solo «empezar»).
+      if (/\bempezarRuta\(|\bempezar\(c, /.test(t) && f !== "apps/web/lib/repartidor.ts") {
+        const ofe = f === "apps/web/lib/repartidor-ofertas.ts", ac = ofe ? cuerpoFn(t, "aceptarOferta") : "", fuera = ofe ? t.replace(ac, "") : t;
+        if (!ofe || /\bempezarRuta\(|\bempezar\(c, /.test(fuera) || [...ac.matchAll(/empezarRuta\(c, f\.op, userId, "(\w+)"\)/g)].map((x) => x[1]).join(",") !== "empezar")
+          falla(G, f, 0, "la ruta solo la abre el paso del repartidor (lib/repartidor.ts) o «Aceptar» la oferta (aceptarOferta, «empezar»)");
+      }
       if (/\bcompartirRuta\(/.test(t) && !["apps/web/app/repartidor/Repartidor.tsx", "apps/web/lib/nativo/ruta.ts"].includes(f)) falla(G, f, 0, "el teléfono empieza a compartir solo desde el Repartidor, con el token del servidor");
     }
     const R = existsSync("apps/web/lib/repartidor.ts") ? sinComent("apps/web/lib/repartidor.ts") : "";
@@ -8090,7 +8102,8 @@ const guardianes = {
     if (!/disputa: \{ es: "Disputas con el banco", en: "Bank disputes", icon: "card", sla: 120,/.test(readFileSync("apps/web/lib/colas.ts", "utf8"))) falla(G, "apps/web/lib/colas.ts", 0, "la cola de disputas es de 120 h");
     if (!existsSync(D)) return falla(G, D, 0, "falta lib/disputas.ts");
     const r = cuerpoFn(sinComent(D), "responderDisputa");
-    if (!/pasarela\.subirEvidencia\(/.test(r) || !/archivos: \{ recibo: archivos\.recibo, conversacion: archivos\.conversacion, entrega: archivos\.entrega \}/.test(r)) falla(G, D, 0, "responder sube los archivos (API de archivos) y los manda en el envío");
+    // 9n: la foto de la entrega va como archivo más (otro → uncategorized_file).
+    if (!/pasarela\.subirEvidencia\(/.test(r) || !/archivos: \{ recibo: archivos\.recibo, conversacion: archivos\.conversacion, entrega: archivos\.entrega(, otro: archivos\.foto_entrega)? \}/.test(r)) falla(G, D, 0, "responder sube los archivos (API de archivos) y los manda en el envío");
     if (!/if \(!up\.ok\) return \{ ok: false/.test(r)) falla(G, D, 0, "si un archivo no sube, no se envía nada");
     if (!/clave = `privado\/disputas\//.test(sinComent(D))) falla(G, D, 0, "los archivos de la evidencia van al almacén privado (privado/disputas/…)");
     if (existsSync(M) && !/raise exception 'de la evidencia solo cambia, una vez, su archivo en Stripe y cuándo se envió'/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "la evidencia no se cambia ni se borra (trigger)");
@@ -8668,7 +8681,68 @@ const guardianes = {
     const mig = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");
     if (!/create trigger chat_messages_sin_secretos before insert or update of body on chat_messages/.test(mig)) falla(G, "packages/db/migrations", 0, "falta el disparador chat_messages_sin_secretos");
   },
+
+  /* 9n · entregaConPrueba (fase9 §6 #21): una entrega con prueba exige una foto de ESTE pedido subida por ESTE repartidor o el código válido del
+     cliente, y lo decide el servidor (y otra vez la base):
+     - 0144: el trigger operations_prueba no deja cerrar («done») un delivery con repartidor de un negocio que pide prueba sin una fila en delivery_proofs;
+       delivery_proofs es solo de inserción; los códigos nacen solos (operations_codigos) con codigo4() de azar fuerte.
+     - lib/repartidor.ts pasoRepartidor: la foto se busca con owner_kind 'delivery', owner_id = la operación y uploaded_by = el repartidor; el código se
+       compara con delivery_codes.cliente con un tope de intentos de Configuración (entrega_codigo_intentos) y suma los fallos; sin prueba y con el
+       negocio pidiéndola, no avanza. Nunca devuelve los códigos (EntregaRep no los lleva).
+     - Quien marca «Entregado» en el panel con repartidor y prueba pedida deja su prueba «negocio» (lib/pedidos.ts cambiarPaso). */
+  entregaConPrueba() {
+    const G = "entregaConPrueba", M = "packages/db/migrations/0144_negocio.sql", R = "apps/web/lib/repartidor.ts", P = "apps/web/lib/pedidos.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración de la prueba de entrega");
+    const m = readFileSync(M, "utf8");
+    const tr = /create or replace function operations_prueba\(\)[\s\S]*?\$\$([\s\S]*?)\$\$/.exec(m)?.[1] ?? "";
+    if (!/new\.driver_id is not null/.test(tr) || !/s\.proof/.test(tr) || !/not exists \(select 1 from delivery_proofs p where p\.operation_id = new\.id\)/.test(tr) || !/raise exception/.test(tr)) falla(G, M, 0, "la base no exige la prueba al cerrar un delivery con repartidor de un negocio que la pide (operations_prueba)");
+    if (!/create trigger operations_prueba before update of status on operations/.test(m)) falla(G, M, 0, "falta el trigger operations_prueba");
+    if (!/create trigger delivery_proofs_no_cambia before update or delete on delivery_proofs/.test(m)) falla(G, M, 0, "delivery_proofs es solo de inserción");
+    if (!/check \(\(kind = 'foto'\) = \(media_id is not null\)\)/.test(m)) falla(G, M, 0, "una prueba «foto» lleva su foto y solo ella");
+    if (!/gen_random_uuid\(\)/.test(/create or replace function codigo4\(\)[\s\S]*?\$\$([\s\S]*?)\$\$/.exec(m)?.[1] ?? "")) falla(G, M, 0, "los códigos salen de azar fuerte (gen_random_uuid), no de random()");
+    if (!existsSync(R)) return falla(G, R, 0, "falta lib/repartidor.ts");
+    const r = sinComent(R), ps = cuerpoFn(r, "pasoRepartidor");
+    if (!/owner_kind = 'delivery' and owner_id = \$2 and uploaded_by = \$3/.test(ps)) falla(G, R, 0, "la foto de la prueba es de ESTE pedido y la subió ESTE repartidor");
+    if (!/codigo !== k\.cliente/.test(ps) || !/intentos = intentos \+ 1/.test(ps) || !/if \(!k \|\| k\.n >= maxIntentos\) return no\(/.test(ps) || !/valor\("entrega_codigo_intentos"\)/.test(ps)) falla(G, R, 0, "el código del cliente se compara en el servidor, cuenta los fallos y tiene tope de Configuración");
+    if (!/if \(o\.pide_prueba && !probada\) return no\(/.test(ps)) falla(G, R, 0, "sin prueba, con el negocio pidiéndola, «Entregado» no avanza");
+    const tipo = /export type EntregaRep = \{([\s\S]*?)\n\};/.exec(r)?.[1] ?? "";
+    if (/\b(cliente|recogida)Codigo\b|codigoCliente|\bcodigo: string/.test(tipo) || /dc\.(cliente|recogida)\b/.test(cuerpoFn(r, "misEntregas"))) falla(G, R, 0, "el repartidor nunca recibe los códigos (EntregaRep / misEntregas)");
+    if (existsSync(P) && !/insert into delivery_proofs \(operation_id, city_id, kind, actor_id\)[\s\S]{0,120}'negocio'/.test(sinComent(P))) falla(G, P, 0, "el panel que marca «Entregado» con repartidor deja su prueba «negocio» con su nombre");
+  },
+
+  /* 9n · sinTelefonoAlRepartidor (§6 #20, L368): el repartidor nunca recibe el número del cliente (ni para llamar: «Llamar» es al negocio; al cliente
+     se le escribe dentro de la app). Lo que lee el Repartidor (lib/repartidor.ts, lib/repartidor-ofertas.ts, lib/chofer.ts y app/repartidor/**) no
+     selecciona el teléfono de la cuenta del cliente ni lo pasa; los mensajes libres no llevan teléfonos ni enlaces. */
+  sinTelefonoAlRepartidor() {
+    const G = "sinTelefonoAlRepartidor";
+    const F = codigo.filter((f) => /^apps\/web\/(lib\/(repartidor|repartidor-ofertas|chofer)\.ts|app\/repartidor\/.*\.tsx?)$/.test(f));
+    if (!F.length) return;
+    for (const f of F) {
+      const t = sinComent(f);
+      if (/telCliente|phoneCliente|clienteTel/.test(t)) falla(G, f, 0, "el repartidor no recibe el teléfono del cliente (§6 #20): escríbele dentro de la app o llama al negocio");
+      for (const q of t.match(/`[^`]*`/g) ?? []) if (/join users u\b/.test(q) && /\bphone\b/.test(q.replace(/\b[bd]\.phone\b/g, ""))) falla(G, f, 0, "una consulta del Repartidor con la cuenta del cliente trae un teléfono");
+      if (/href = `tel:\$\{(?!x\.negocio\.tel)/.test(t)) falla(G, f, 0, "el único «Llamar» del Repartidor es al negocio");
+    }
+    const o = "apps/web/lib/repartidor-ofertas.ts";
+    if (existsSync(o) && !/\(s\.match\(\/\\d\/g\) \?\? \[\]\)\.length >= 7 \|\|/.test(readFileSync(o, "utf8"))) falla(G, o, 0, "el mensaje libre del repartidor no deja pasar un número de teléfono");
+  },
+
+  /* 9n · diaEspecialActivo: los días especiales (feriados, vacaciones, días propios, temporada) no se borran: «Quitar» deja status 'removed'. Toda
+     lectura de special_hours en la app filtra los activos, y el estado abierto/cerrado de la base (la última negocio_abierto) también. Si no, un
+     feriado quitado seguiría cerrando la página. */
+  diaEspecialActivo() {
+    const G = "diaEspecialActivo";
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      for (const q of sinComent(f).match(/`[^`]*`/g) ?? []) if (/\bfrom special_hours\b/.test(q) && !/status = 'active'/.test(q)) falla(G, f, 0, "lee special_hours sin filtrar los quitados (status = 'active')");
+    }
+    const n = ultimaFn("negocio_abierto");
+    if (n && (!/s\.status = 'active'/.test(n) || !/kind = 'season'/.test(n))) falla(G, "packages/db/migrations", 0, "negocio_abierto no mira los días especiales activos ni la temporada");
+    for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql"))) if (/delete from special_hours/i.test(readFileSync(`packages/db/migrations/${x}`, "utf8"))) falla(G, `packages/db/migrations/${x}`, 0, "special_hours no se borra (status)");
+  },
+
 };
+
 
 const lista = solo ? { [solo]: guardianes[solo] } : guardianes;
 for (const [n, g] of Object.entries(lista)) {

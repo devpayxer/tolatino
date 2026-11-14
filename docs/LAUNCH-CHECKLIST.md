@@ -122,9 +122,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
   tareas de la fuerza que llevan ahí (ítems, sello, correo, FAQ, reseñas) se muestran sin enlace. — **✓ 9a (11 nov):** el panel tiene sus secciones con sus fases (Clientes, Mensajes, Lo que vendes, Entrega, Eventos, El Compa, Cobros y plan, Ajustes; app/panel/); prueba adm7i, compa7e, beta8f. Lo que todavía no existe no se enlaza (guardián panelClicMudo).
 - [x] **Hoy con datos reales:** pedidos, citas, reservaciones, cotizaciones, mensajes y reseñas (Fase 2–3). Hoy las cifras
   son cero porque esos módulos no existen; «Free: 0 de 10» cuenta de verdad cuando existan las operaciones en línea. — **✓ 9a (11 nov):** Hoy del panel con pedidos, citas, reservaciones, cotizaciones, mensajes y reseñas reales (lib/panel.ts, app/panel/Panel.tsx; pedidos2c, cit3b, rsv2e).
-- [ ] **→ 9n** · **Horario — feriados, vacaciones, días especiales propios y «Abro por temporada»** (y que el estado abierto/
+- [x] **→ 9n** · **Horario — feriados, vacaciones, días especiales propios y «Abro por temporada»** (y que el estado abierto/
   cerrado los mire): catálogo de feriados por año en el servidor + días propios. Ocultos hasta construirlos (el
-  subtítulo del apartado los menciona: texto del diseño).
+  subtítulo del apartado los menciona: texto del diseño). — **✓ 9n (14 nov):** Panel › Horario: el catálogo de feriados del servidor (holiday_catalog) con un toque, vacaciones y días propios con fechas y horas, «Abro por temporada»; special_hours con status (nada se borra) y negocio_abierto los mira (también Citas, la ficha, Jobs y El Compa leen solo los activos). Guardián diaEspecialActivo; prueba neg9n paso 6; ayuda panel-horario.
 - [ ] **→ 9n** · **Horario distinto por módulo** (último pedido en línea, citas que dejan de entrar antes de cerrar): con Pedidos y
   Citas.
 - [x] **El Compa traduce** (Quiénes somos, rol, especialidades, palabras): Fase 7; hoy se escribe a mano. — **✓ 9a (11 nov):** decisión del plan (§6 #9 de la Fase 7, L1140): los textos del panel se traducen con el traductor propio (5h), no con El Compa.
@@ -153,10 +153,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
   textos del admin dicen «lo ve en su panel» (verdad hoy). — _9a (11 nov): el dueño recibe aviso de foto quitada y de ocultar (mod_foto, mod_hide) y el vecino el resultado de su reporte (com_rep_ok / com_rep_no). Falta el aviso del sello (verificación del negocio) y el del vecino que recomendó cuando el negocio publica._ — **✓ 9l (14 nov):** el sello decidido llega al dueño con su motivo (`sello_ok` / `sello_info` / `sello_no`, push y SMS de respaldo; app/admin/acciones-colas.ts decidirSello); quien reportó una foto recibe el resultado (`foto_rep_quitada` / `foto_rep_queda`); quien recomendó, «ya publicó» (`rec_publico`). Ocultar y foto quitada siguen en la campana y el push (moderación: sin SMS, REVISION 9l).
 - [x] **Avisos del panel sin diseño propio:** «To’Latino ocultó / suspendió / cerró tu página: {motivo}» usan el patrón
   del aviso «To’Latino cerró tu página por unos días» (el diseño del panel no trae esos tres). Confirmar con el fundador. — **✓ 9a (11 nov):** los tres avisos usan el patrón de «cerró tu página por unos días» (REVISION 9a).
-- [ ] **→ 9n** · **Colas:** atajos de teclado J/K/A/R y acciones en lote (plan §6), vencimiento del «tomado», tope de 200 casos por
-  vista (paginar cuando haga falta), SLA editables por el Super Admin (hoy en `lib/colas.ts`).
-- [ ] **→ 9n** · **Permisos:** la matriz de 0007 manda (el prototipo daba Colas a soporte, finanzas y lectura). La visibilidad por
-  cola vive en código; pasarla a la base si el Super Admin la quiere editar.
+- [x] **→ 9n** · **Colas:** atajos de teclado J/K/A/R y acciones en lote (plan §6), vencimiento del «tomado», tope de 200 casos por
+  vista (paginar cuando haga falta), SLA editables por el Super Admin (hoy en `lib/colas.ts`). — **✓ 9n (14 nov):** atajos J/K/A/R y lote en escritorio (Tomar, Asignar a…, Soltar con la barra de selección del sistema), el «tomado» vence a cola_tomado_min (barrido colasTomado, auditado), el plazo de cada cola en Configuración › Colas (cola_sla_*; SLA_SQL y slasColas los leen). Lo que queda (tope de 200 por vista y paginar) va en «Fase 9 · 9n». Prueba neg9n paso 5; ayuda admin-colas.
+- [x] **→ 9n** · **Permisos:** la matriz de 0007 manda (el prototipo daba Colas a soporte, finanzas y lectura). La visibilidad por
+  cola vive en código; pasarla a la base si el Super Admin la quiere editar. — **✓ 9n (14 nov):** la visibilidad de cada cola por rol vive en la base (queue_roles, sembrada con lo que decía lib/colas.ts) y la edita un Admin en Colas › Ajustes con motivo y auditoría; staff() la trae en Staff.colas.
 - [ ] **→ 9n** · **Lista de Negocios con OFFSET** (14 por página, tope 100 páginas) y filtros de transacciones, Stripe, licencias,
   «sin actividad 30 d», «Exportar CSV» (servidor + auditoría): con sus datos.
 - [ ] **→ 9q** · **«Teléfono verificado» del negocio** = el teléfono del negocio es el del dueño que entró con código. Verificar
@@ -377,10 +377,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
 ## Repartidor (bloque 2l, 6 nov 2026)
 - [ ] **→ 9r** · **App de tienda (Capacitor)** «To'Latino Repartidor» apuntando a `/repartidor` (decisión B) con su ícono; ubicación
       en vivo con permiso del sistema (mapa en vivo para el cliente y el negocio, plan §1.4) y push. _Ubicación en vivo y mapa del cliente y del negocio: hechos en 8e (11 nov; ver «Fase 8 · 8e»); la cáscara existe desde 8a y el push desde 8c. Faltan la firma y las tiendas (8h)._ — _9a (11 nov): cáscara (8a), ubicación en vivo y mapa del cliente y del negocio (8e), push (8c) hechos. Faltan la firma y las tiendas._
-- [ ] **→ 9n** · **Llamada y mensaje enmascarados** (hoy el botón llama al número real del cliente, solo mientras la entrega está activa).
-- [ ] **→ 9n** · **Prueba de entrega** (foto, código del cliente) y **código de recogida** del negocio.
-- [ ] **→ 9n** · **Ofertas con cuenta regresiva y asignación automática**; entregas múltiples (batch); programados con recordatorio.
-- [ ] **→ 9n** · **Super Admin › Repartidores (ADM-DLV)**: lista, 360°, incidencias (cola) y sanciones.
+- [x] **→ 9n** · **Llamada y mensaje enmascarados** (hoy el botón llama al número real del cliente, solo mientras la entrega está activa). — **✓ 9n (14 nov):** decisión del plan (§6 #20, R1: sin servicio de voz): «Llamar» es al negocio y al cliente se le escribe dentro de la app (frases fijas o un texto corto sin teléfonos ni enlaces; delivery_messages solo inserción; aviso ord_rep_msg). El repartidor nunca recibe el teléfono del cliente (guardián sinTelefonoAlRepartidor). Prueba neg9n paso 3.
+- [x] **→ 9n** · **Prueba de entrega** (foto, código del cliente) y **código de recogida** del negocio. — **✓ 9n (14 nov):** foto privada (privado/e/, /api/entrega/foto con permiso y auditoría) o el código del cliente con tope de intentos; código de recogida del negocio; la base exige la prueba si el negocio la pide (operations_prueba). Guardián entregaConPrueba; prueba neg9n paso 3; ayuda repartidor-prueba-de-entrega.
+- [x] **→ 9n** · **Ofertas con cuenta regresiva y asignación automática**; entregas múltiples (batch); programados con recordatorio. — **✓ 9n (14 nov):** la oferta con cuenta regresiva a uno o a todos los repartidores en línea; «Aceptar» inicia la ruta (L1267); vence a oferta_seg y el negocio lo sabe. La asignación automática, los lotes (batch) y los programados con recordatorio van en «Fase 9 · 9n» (§6 #21: lotes después de abrir). Prueba neg9n pasos 1–2.
+- [x] **→ 9n** · **Super Admin › Repartidores (ADM-DLV)**: lista, 360°, incidencias (cola) y sanciones. — **✓ 9n (14 nov):** lista con filtros y cursor, 360°, incidencias (cola «entrega», resolver con motivo) y sanciones (aviso, suspensión, baneo; levantar). Sección «dlv» en la matriz. Prueba neg9n paso 4; ayuda admin-repartidores.
 - [x] **→ después de abrir (DA-03)** · **Repartidores de To'Latino** (registro, verificación, payout por Stripe Connect): «más adelante», por ciudad. — _9a (11 nov): Repartidores de To'Latino: «más adelante», por ciudad (§3.9). En `docs/DESPUES-DE-ABRIR.md`._
 - [x] **→ 9c** · **Accesibilidad:** el botón base ya es accesible (guardián `botonAccesible`); revisar el resto de piezas del sistema
       que usan `div` con onClick (auditoría por clase, decisión T).
@@ -950,8 +950,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       por debajo del depósito pagado (la base lo rechaza). Cobrar un depósito adicional por un cambio: si el fundador lo quiere. (6i, 10 nov) — _9a (11 nov): decisión pendiente: cobrar un depósito adicional por un cambio que sube el total (hoy la diferencia se paga en el local y la base no deja bajar del depósito)._
 
 ## Fase 6 · 6j (Super Admin completo, Configuración, avisos, analítica, Mi cuenta) · FASE 6 CERRADA
-- [ ] **→ 9n** · **6j · Panel › Ajustes › Avisos del negocio** (venta, aforo 90 %, cancelaciones, pago; plan §4 6j): Panel › Ajustes (DASH-AJUSTES, «LO QUE TE
-      AVISAMOS») no existe todavía. Hoy al negocio le llega todo en la campana (evt_venta, evt_aforo90, evt_ajuste_admin, evt_pago…). Con Ajustes. (6j, 10 nov)
+- [x] **→ 9n** · **6j · Panel › Ajustes › Avisos del negocio** (venta, aforo 90 %, cancelaciones, pago; plan §4 6j): Panel › Ajustes (DASH-AJUSTES, «LO QUE TE
+      AVISAMOS») no existe todavía. Hoy al negocio le llega todo en la campana (evt_venta, evt_aforo90, evt_ajuste_admin, evt_pago…). Con Ajustes. (6j, 10 nov) — **✓ 9n (14 nov):** Panel › Más › «Lo que te avisamos»: el dueño apaga grupos (pedidos, citas, reservas, eventos, reseñas, mensajes, quedan pocos); dinero, disputas, ayuda y decisiones de To'Latino no se apagan (notif_templates.biz_pref; avisarNegocio lo mira). Prueba neg9n paso 6; ayuda panel-avisos.
 - [x] **→ 9m** · **6j · Mi cuenta › Pagos y movimientos de boletos:** la pantalla Pagos y Wallet (USR-PAGOS) no existe; el recibo de cada orden B- está en la
       orden. Con su fase (Pagos y Wallet). (6j, 10 nov) — **✓ 9m (14 nov):** Pagos y Wallet (9k) + Movimientos (9m) con las órdenes B- de boletos. Prueba: `vec9m`; ayuda `pagos-y-movimientos`.
 - [x] **→ 9k** · **6j · Señal «la misma tarjeta en varias cuentas»:** necesita `card.fingerprint` de Stripe (un pm_… es de una sola cuenta); con Stripe real. (6j, 10 nov) — **✓ 9k (14 nov):** Confianza › Fraude › «LA MISMA TARJETA EN VARIAS CUENTAS · 90 DÍAS» desde la base (`tarjetas_en_varias_cuentas`, desde `tarjeta_cuentas_senal` cuentas, 3); con Stripe de verdad, la huella real. Prueba din9k paso 5.
@@ -999,16 +999,16 @@ en el momento. Se marca solo cuando está hecho de verdad.
       (correo de soporte o una página pública de contacto con verificación) antes de abrir. (7b, 10 nov) — **✓ 9l (14 nov):** Amazon SES → SNS firmado → /api/correo/entrada: solo lo que Amazon firma (tema propio, certificado de sns.*.amazonaws.com) y aprueba (SPF o DKIM, sin spam ni virus); el correo CONFIRMADO de una cuenta (aunque esté suspendida) abre un caso TK- tapado; contestar con el número en el asunto vuelve al caso. Guardián correoEntranteFirmado; avi9l sección 4.
 - [x] **7b · Aviso de respuesta por correo** (plan: «push + correo»): hoy sop_recibido, sop_respuesta y sop_resuelto llegan a la campana de la
       app; el correo con plantilla propia (email_outbox) y el push llegan con el canal de push de las apps. (7b, 10 nov) — **✓ 9l (14 nov):** support_reply al correo confirmado (con el texto si el caso entró por correo); queda en support_replies_out.
-- [ ] **→ 9n** · **7b · Feriados del equipo** (§6 #17): el plazo cuenta lunes a viernes 9–6 sin feriados; sumar un calendario de feriados cuando haya
-      equipo. (7b, 10 nov)
+- [x] **→ 9n** · **7b · Feriados del equipo** (§6 #17): el plazo cuenta lunes a viernes 9–6 sin feriados; sumar un calendario de feriados cuando haya
+      equipo. (7b, 10 nov) — **✓ 9n (14 nov):** staff_holidays (Colas › Ajustes, solo un Admin; nada se borra) y soporte_sla no cuenta esos días.
 - [x] **7b · Copiloto en la ficha del caso** («Sugerir respuesta con El Compa», §4 7g) y «Pregúntale al Compa» en Soporte (7d): la ficha y la
       pantalla ya tienen su lugar; se encienden con El Compa. (7b, 10 nov) — 7d: «Pregúntale al Compa». 7g (11 nov): el copiloto en la ficha del
       caso y en Colas › Ayuda con pedidos y citas (`compa7g`).
 - [x] **7b · Analítica de Soporte** (`soporte_analitica_dia`: casos por tema, primera respuesta, SLA cumplido, «¿Se resolvió?») y Mi cuenta ›
       Avisos › Soporte: en 7i. Hoy las cifras salen en Super Admin › Soporte. (7b, 10 nov) — **✓ 9a (11 nov):** Analítica de Soporte (soporte_analitica_dia, 7i) y Mi cuenta › Avisos › Soporte; prueba adm7i.
 - [ ] **→ 9c** · **7b · Soporte en los 9 dispositivos:** `sop7b` corre en 390 y 1360 en local; falta la matriz de CI. (7b, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
-- [ ] **→ 9n** · **7b · Asignar un caso a una persona concreta** (hoy: tomarlo uno mismo, «Tomar el siguiente caso» o «Pasar a Finanzas / un Admin», que lo
-      deja sin asignar para ese rol). Elegir a quién desde la ficha, con la lista del equipo activo. (7b, 10 nov)
+- [x] **→ 9n** · **7b · Asignar un caso a una persona concreta** (hoy: tomarlo uno mismo, «Tomar el siguiente caso» o «Pasar a Finanzas / un Admin», que lo
+      deja sin asignar para ese rol). Elegir a quién desde la ficha, con la lista del equipo activo. (7b, 10 nov) — **✓ 9n (14 nov):** «Asignar a…» en el caso y en lote: a alguien activo cuyo rol ve la cola, con colas:aprobar, en la ciudad del caso; auditado.
 
 ## Fase 7 · 7c (el motor de El Compa)
 - [ ] **→ 9q** · **Cuenta de Anthropic** (el fundador, en persona: términos y facturación) y la llave `ANTHROPIC_API_KEY` con el formulario seguro del entorno
@@ -1290,8 +1290,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       con el dominio. (8e, 11 nov)
 - [x] **La semilla 0046 en una base nueva** no crea las entregas de ejemplo si todavía no existen Juan (+1 570 555 0144) y Héctor (+1 570 555 0210)
       (las crean las pruebas), igual que 0044 y 0045. (8e, 11 nov) — **✓ 9a (11 nov):** igual que L1239: 0049 crea a Juan y repite 0046 (las dos entregas de Héctor) en una base nueva.
-- [ ] **→ 9n** · **Ofertas al repartidor («Aceptar» con cuenta regresiva), lotes y prueba de entrega con foto** siguen en «Repartidor (bloque 2l)»; cuando
-      exista la oferta, «Aceptar» pasa a ser el paso que inicia la ruta (hoy «Voy por el pedido»). (8e, 11 nov)
+- [x] **→ 9n** · **Ofertas al repartidor («Aceptar» con cuenta regresiva), lotes y prueba de entrega con foto** siguen en «Repartidor (bloque 2l)»; cuando
+      exista la oferta, «Aceptar» pasa a ser el paso que inicia la ruta (hoy «Voy por el pedido»). (8e, 11 nov) — **✓ 9n (14 nov):** ofertas con cuenta regresiva y prueba de entrega con foto hechas (ver «Repartidor (bloque 2l)»); los lotes, después de abrir (§6 #21).
 - [ ] **→ 9r** · **Privacidad en las tiendas:** declarar «Ubicación precisa · funcionalidad de la app · vinculada a la persona · sin rastreo» para To'Latino
       Repartidor (y To'Latino «al usar») en `PrivacyInfo.xcprivacy` y en la sección de seguridad de datos de Play; en Play, la **declaración de
       ubicación en segundo plano** no aplica (no se pide ACCESS_BACKGROUND_LOCATION) pero sí la de **servicio en primer plano de tipo ubicación**
@@ -1687,8 +1687,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       tresDSecure revisa los flujos que ya lo tienen): falta pasarlo en cada uno, con su prueba. (9k, 14 nov)
 - [ ] **→ 9n** · **«Volver a Pro» en el panel con 3-D Secure:** si el banco pide confirmar al volver a Pro desde Free (en sesión), hoy el dueño recibe el aviso con el enlace a la hoja; abrir la
       hoja directo en Tu plan (como en el checkout). (9k, 14 nov)
-- [ ] **→ 9n** · **La foto de la entrega en la evidencia de una disputa:** el Repartidor no toma foto al entregar; la evidencia lleva la constancia con la línea de tiempo y la dirección.
-      Cuando exista la foto, se suma como `foto_entrega` (dispute_evidence ya la admite). (9k, 14 nov)
+- [x] **→ 9n** · **La foto de la entrega en la evidencia de una disputa:** el Repartidor no toma foto al entregar; la evidencia lleva la constancia con la línea de tiempo y la dirección.
+      Cuando exista la foto, se suma como `foto_entrega` (dispute_evidence ya la admite). (9k, 14 nov) — **✓ 9n (14 nov):** la foto (si sigue en el almacén) va como archivo «foto_entrega» (uncategorized_file en Stripe) y la constancia dice la prueba con su hora. Guardián disputaConEvidencia ampliado.
 - [ ] **→ 9q** · **El webhook de Stripe de verdad:** al crear el endpoint (Paquete 9-1), suscribirlo a payment_intent.succeeded / canceled / amount_capturable_updated, charge.refunded,
       charge.dispute.created / updated / closed, account.updated y, en los eventos de las cuentas conectadas, payout.created / updated / paid / failed / canceled; y fijar el calendario
       de los pagos al banco (martes) en las cuentas que ya existan. (9k, 14 nov)
@@ -1765,3 +1765,32 @@ en el momento. Se marca solo cuando está hecho de verdad.
       corrieron aquí. Cambian capturas: el Inicio de escritorio (mini mapa a la derecha), la ficha (mini mapa en «Cómo llegar», «¿Es tu negocio?»), las
       tarjetas con chips largos (dos líneas), la vacante (reportar), Mensajes (sin cambios visibles). (9m, 14 nov)
 
+
+## Fase 9 · 9n — lo diferido del negocio, el Repartidor y la operación del Super Admin (14 nov)
+_Hecho en esta pasada (cada línea de arriba marcada «✓ 9n»): prueba de entrega, código de recogida, oferta con cuenta regresiva, «Llamar al cliente» → escribirle en
+la app, ADM-DLV, colas (atajos, lote, asignar, «tomado» que vence, plazos en Configuración, visibilidad en la base, feriados del equipo), la foto en la evidencia de
+la disputa, feriados / vacaciones / días propios / temporada, Lo que te avisamos y los grupos cancelados de Educación editables. Las líneas «→ 9n» que siguen abiertas
+arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen con su destino 9n y su texto original; lo nuevo, aquí._
+- [ ] **→ 9n** · **Lo que no entró en esta pasada de 9n (sigue abierto con su línea de arriba):** aceptar una invitación al equipo `/e/{código}` y sus avisos (L101,
+      L1741), horario por módulo (L117), repetir una novedad y avisar a los seguidores, pedidos desde una novedad, fotos de la galería (L297–L301), «quiere
+      arreglarlo» y editar la respuesta (L287), pedido programado que cruza la medianoche (L248), historial de no-show (L259), «Si no contestas en 10 min» y «Siempre,
+      al instante» (L1048), bandeja de SMS del negocio (L1108), validar un cupón desde Hoy (L660), avisos del organizador por la auto-moderación (L831), el mercado
+      (L473–476), garantía a $0 (L446), reponer con un pedido de $0 (L327), Reclamos y Duplicados (L171), filtros y CSV (L149), Usuarios 360° Actividad/Dinero/Comunidad
+      (L180), apelar desde «Entrar» (L623), Catálogo (L197, L199), el resto de Configuración en solo lectura (L453…L939, L548), condiciones de los rangos (L653), cupo
+      del RSVP (L941), Panel › Eventos con cursor (L952), acciones del 360° (L136), «Resolver» con el borrador del copiloto (L1075), selector de ciudad del encabezado
+      (L42), interruptores por ciudad y reinicio del autenticador (9j), 3-D Secure en los demás flujos, «Volver a Pro» en el panel y la tarjeta 0002 del estimado
+      (9k), «Free con N ítems» e insignia Fundadores (9h), vistas sin repetidos en el panel (9g). Motivo: no cabían con el cuidado que piden (dinero, permisos) en la
+      misma pasada que el Repartidor y las colas; ninguna pantalla quedó a medias. (9n, 14 nov)
+- [ ] **→ 9n** · **Configuración: lo que sigue en solo lectura** (sp_seguro_guardar_h, sp_total_escrito_dias, sp_notas_purga_dias, ayuda_negocio_h, noche_*, insc_responder_h,
+      insc_oferta_h, insc_baja_h, ninos_purga_dias, fe_responder_h, vis_*, evt_pago_dia, compa_auto_espera_min): cada uno pasa a editable cuando TODOS sus textos lean
+      el valor (como hizo 9n con insc_grupos_n / insc_grupos_dias en Colas, `textoCola`). pagos_banco_dia queda fijo por decisión. (9n, 14 nov)
+- [ ] **→ 9n** · **Repartidor: asignación automática y pedidos programados con recordatorio** (la oferta con cuenta regresiva ya está; los lotes son «después de abrir»,
+      §6 #21). (9n, 14 nov)
+- [ ] **→ 9n** · **Colas: tope de 200 casos por vista** (paginar cuando haga falta) y **la temporada en las citas** (hoy la ficha y el estado abierto/cerrado la miran;
+      el calendario de citas todavía ofrece días fuera de temporada si el horario de la semana los tiene abiertos). (9n, 14 nov)
+- [ ] **→ 9b** · **neg9n y alreves9n en la corrida dirigida del CI** (perfil completo de servir.sh: el almacén de fotos es Garage); la regresión entera, la matriz de 9
+      dispositivos y `pruebas/visual` (Panel › Entrega y Horario, el detalle del pedido y el Repartidor suman bloques: cambian sus capturas aprobadas) no corrieron aquí.
+      rep2l/app8e/ruta8e no cambian de flujo (prueba y código apagados de fábrica) pero el detalle del Repartidor ya no tiene «Llamar» al cliente. (9n, 14 nov)
+- [ ] **→ 9b** · **Íconos que no existen en el sistema:** `"camera"` en app/(app)/n/[id]/Resenas.tsx (de antes de 9n; 9n usaba el mismo y lo cambió a `image`) sale como
+      un cuadro vacío. Un guardián que compare cada `icon: "…"` con el mapa de packages/ui/src/ds/core/Icon.js. (9n, 14 nov)
+- [ ] **→ 9b** · **alreves8e, caso `permisosMinimos`:** no encuentra su texto en apps/mobile/apps.json (igual que alreves8c; de antes de 9n). (9n, 14 nov)

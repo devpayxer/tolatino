@@ -151,7 +151,17 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
   // Cupones por monedas (5g): cuántos en la Comunidad y por aprobar, para «Tu página › Cupones por monedas».
   const cu = (await db().query<{ vivos: number; pend: number }>(
     `select count(*) filter (where status = 'live')::int as vivos, count(*) filter (where status = 'pending')::int as pend from coupons where business_id = $1`, [id])).rows[0]!;
+  // 9n · Días especiales (feriados que cierra, vacaciones, días propios con otro horario) y «Abro por temporada»; el catálogo de feriados del año.
+  const esp = (await db().query<EspecialPanel>(
+    `select s.id::text, s.kind, s.date_from::text as desde, s.date_to::text as hasta, s.closed as cerrado, s.ranges, s.label, s.holiday_key as feriado
+       from special_hours s join businesses b on b.id = s.business_id join cities ci on ci.id = b.city_id
+      where s.business_id = $1 and s.status = 'active' and (s.kind = 'season' or s.date_to >= (now() at time zone ci.timezone)::date) order by s.date_from limit 60`, [id])).rows;
+  const fer = (await db().query<{ key: string; dia: string; name: { es: string; en: string } }>(
+    `select key, day::text as dia, name from holiday_catalog where day >= current_date and day <= current_date + 365 order by day limit 16`)).rows;
+  // 9n · Panel › Más › Lo que te avisamos (business_notif_prefs): los grupos apagados.
+  const avOff = (await db().query<{ pref: string }>(`select pref from business_notif_prefs where business_id = $1 and off`, [id])).rows.map((x) => x.pref);
   return {
+    especiales: esp, feriados: fer, avisosOff: avOff,
     resenas: rs, novedades: nv, cupones: cu,
     id, name: b.name, cat: b.cat, city: b.city, ciudad: b.ciudad, ciudadAbierta: b.ciudad_on, kind: acc.kind, partes: acc.partes, pro, verified: b.verified,
     trial: tr && tr.on ? tr : null, trialUsed: b.sub_used, onb, sells, mods: b.mods, evtAplica: b.evt_aplica, op: b.op, itemsW, items,
@@ -178,4 +188,5 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     })(),
   };
 }
+export type EspecialPanel = { id: string; kind: "holiday" | "vacation" | "own" | "season" | "scheduled"; desde: string; hasta: string; cerrado: boolean; ranges: [string, string][]; label: { es: string; en: string } | null; feriado: string | null };
 export type DatosPanel = NonNullable<Awaited<ReturnType<typeof datosPanel>>>;

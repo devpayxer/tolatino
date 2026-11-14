@@ -59,7 +59,7 @@ export async function contextoNegocio(negocio: string, lang: Lang, temas: Tema[]
     T.has("hours") ? db().query<{ weekday: number; open: boolean; ranges: Rango[] }>(`select weekday, open, ranges from business_hours where business_id = $1 and module = '' order by weekday`, [negocio]) : null,
     T.has("hours") ? db().query<{ desde: string; hasta: string; closed: boolean; ranges: Rango[]; label: Bi | null }>(
       `select to_char(h.date_from, 'YYYY-MM-DD') as desde, to_char(h.date_to, 'YYYY-MM-DD') as hasta, h.closed, h.ranges, h.label from special_hours h
-        where h.business_id = $1 and h.date_to >= (now() at time zone $2)::date and h.date_from <= (now() at time zone $2)::date + 7 order by h.date_from limit 5`, [negocio, b.tz]) : null,
+        where h.business_id = $1 and h.status = 'active' and h.kind <> 'season' and h.date_to >= (now() at time zone $2)::date and h.date_from <= (now() at time zone $2)::date + 7 order by h.date_from limit 5`, [negocio, b.tz]) : null,
     T.has("menu") ? db().query<{ n: Bi; cents: number | null; desde: boolean; ago: boolean }>(
       `select i.name as n, i.price_cents as cents, coalesce(i.price_from, false) as desde, ${AGOTADO_SQL("i", "c.timezone")} as ago
          from items i join businesses b on b.id = i.business_id join cities c on c.id = b.city_id left join item_sections s on s.id = i.section_id

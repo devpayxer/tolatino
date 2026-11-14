@@ -6,9 +6,11 @@ import * as UI from "@tolatino/ui";
 import type { SalidaC } from "@/lib/chofer";
 import { PanelBloques, type PanelBloqueT as Bloque, type PanelFila as Fila } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, useTransition, type ComponentType } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition, type ComponentType } from "react";
 import type { EntregaRep, MiRep, PasoRep } from "@/lib/repartidor";
-import { choferAbordoAccion, choferPasoAccion, repAceptar, repEnLinea, repPaso, repProblema, repRutaReanudar, repSalir } from "./acciones";
+import type { OfertaRep } from "@/lib/repartidor-ofertas";
+import { choferAbordoAccion, choferPasoAccion, repAceptar, repEnLinea, repEscribir, repOfertaAceptar, repOfertaRechazar, repPaso, repProblema, repRutaReanudar, repSalir } from "./acciones";
+import { subirFotoEntrega } from "@/lib/subir-foto";
 import { guardarTurno, leerCola, guardarCola, type Cola } from "./sin-conexion/local";
 import { alCambiarRed, sinRed } from "@/lib/nativo/senal";
 import { useAvisos, usePermiso } from "@/app/_cascara/HojaPermiso";
@@ -30,9 +32,13 @@ const MOT: [string, string, string][] = [["noresponde", "El cliente no responde"
   ["incompleto", "El pedido está incompleto", "Order is incomplete"], ["accidente", "Tuve un accidente o un problema con el vehículo", "Accident or vehicle problem"], ["otro", "Otro problema", "Something else"]];
 const AT: Record<string, [string, string]> = { timbre: ["Toca el timbre", "Ring the bell"], noTimbre: ["No toques el timbre", "Don't ring the bell"], llamar: ["Llámame al llegar", "Call me on arrival"], texto: ["Escríbeme al llegar", "Text me on arrival"] };
 
+// 9n · Lo que el repartidor le puede escribir al cliente (las mismas frases del servidor, lib/repartidor-ofertas.ts FRASES).
+const FRASE: [string, string, string][] = [["afuera", "Llegué, estoy afuera.", "I'm here, I'm outside."], ["puerta", "Estoy en la puerta, ¿me abres?", "I'm at the door, can you open?"],
+  ["direccion", "No encuentro la dirección.", "I can't find the address."], ["cinco", "Llego en unos 5 minutos.", "About 5 minutes out."], ["texto", "Otro mensaje", "Another message"]];
 type RutaAbierta = { numero: string; negocio: string; desde: string; ultima: string | null };
-export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias, salidas, s, rutas = [] }: {
+export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias, salidas, s, rutas = [], ofertas = [], sancion = null }: {
   es: boolean; t: Tab; p: string | null; nombre: string; tel: string; equipos: MiRep[]; entregas: EntregaRep[]; ganancias: Gan[]; salidas: SalidaC[]; s: string | null; rutas?: RutaAbierta[];
+  ofertas?: OfertaRep[]; sancion?: "suspension" | "baneo" | null;
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), [pend, start] = useTransition();
@@ -42,6 +48,21 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
   const avisos = useAvisos(es);
   const [cobro, setCobro] = useState(false), [prob, setProb] = useState(false), [mot, setMot] = useState(""), [nota, setNota] = useState("");
   const [cola, setCola] = useState<Cola>([]);
+  // 9n · Prueba de entrega y código de recogida: lo que escribe o la foto que sube (el servidor compara; nunca recibe los códigos).
+  const [codRec, setCodRec] = useState(""), [codCli, setCodCli] = useState(""), [fotoId, setFotoId] = useState<string | null>(null), [subiendo, setSubiendo] = useState(false);
+  const [escr, setEscr] = useState<string | null>(null), [texto, setTexto] = useState("");
+  const fotoRef = useRef<HTMLInputElement>(null);
+  // 9n · La cuenta regresiva de las ofertas: los segundos los da el servidor; aquí solo se descuentan desde que llegaron.
+  const [t0, setT0] = useState(0), [tick, setTick] = useState(0);
+  useEffect(() => { setT0(Date.now()); setTick(Date.now()); }, [ofertas]);
+  useEffect(() => {
+    if (!ofertas.length) return;
+    const i = setInterval(() => setTick(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, [ofertas.length]);
+  const quedan = (o: OfertaRep) => Math.max(0, o.seg - (t0 ? Math.floor((tick - t0) / 1000) : 0));
+  const vencida = ofertas.some((o) => quedan(o) === 0);
+  useEffect(() => { if (vencida) router.refresh(); }, [vencida]); // eslint-disable-line react-hooks/exhaustive-deps
   const ir = (q: string) => router.push("/repartidor" + q);
   // 8e · La ubicación durante la entrega. Empieza SOLO con el token que da el servidor en el paso que inicia la entrega («Voy por el pedido» o
   // «Recogí»), o al reanudarla si la app se cerró; para al marcar «Entregado» o cuando el servidor ya no tiene la entrega activa. La hoja previa
@@ -68,7 +89,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
   }, [abierta]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => { void mantenerEncendida(false); }, []);
   useEffect(() => { if (!toast) return; const x = setTimeout(() => setToast(""), 2600); return () => clearTimeout(x); }, [toast]);
-  useEffect(() => { setCobro(false); setProb(false); setErr(""); }, [p]);
+  useEffect(() => { setCobro(false); setProb(false); setErr(""); setCodRec(""); setCodCli(""); setFotoId(null); setEscr(null); setTexto(""); }, [p]);
   // Sin señal: lo pendiente se envía al volver la señal (y cada 15 s mientras quede algo).
   const enviarCola = useCallback(async () => {
     const c = await leerCola();
@@ -89,13 +110,15 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
     if (!r.ok) { setErr(r.msg ? (es ? r.msg.es : r.msg.en) : E2("No se pudo.", "Could not.")); return; }
     if (ok) setToast(ok); luego?.(); router.refresh();
   });
-  const paso = (numero: string, ps: PasoRep, ok: string, efectivo?: number) => {
+  const paso = (numero: string, ps: PasoRep, ok: string, efectivo?: number, prueba?: { codigo?: string; foto?: string }) => {
     const guardar = async () => { const c = [...(await leerCola()), { numero, paso: ps, efectivo, at: Date.now() }]; await guardarCola(c); setCola(c); setToast(E2("Sin señal: se guardó y se envía solo.", "No signal: saved, it sends on its own.")); };
+    // 9n · Un paso con código o foto necesita señal: el servidor los revisa en el momento.
+    if (sinRed() && (prueba?.codigo || prueba?.foto)) { setErr(E2("Necesitas señal para revisar el código o la foto. Muévete a donde haya señal.", "You need signal to check the code or photo. Move to where there is signal.")); return; }
     if (sinRed()) { void guardar(); return; }
     start(async () => {
       setErr("");
       try {
-        const r = await repPaso(numero, ps, efectivo);
+        const r = await repPaso(numero, ps, efectivo, prueba);
         if (!r.ok) { setErr(es ? r.msg.es : r.msg.en); return; }
         if (r.ruta) iniciar(r.ruta); // el paso que inicia la entrega: el teléfono empieza a compartir
         if (ps === "entregado") { vibrar("hecho"); if (rutas.length <= 1) void dejarDeCompartir(); }
@@ -108,6 +131,13 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
 
   const B: Bloque[] = [];
   const eq = equipos[0] ?? null;
+  // 9n · La foto de la entrega: se toma con la cámara del teléfono, se sube privada y queda lista para «Entregado».
+  const tomarFoto = (numero: string, f: File | null | undefined) => {
+    if (!f) return;
+    setSubiendo(true); setErr("");
+    void subirFotoEntrega(numero, f).then((r) => { setSubiendo(false); if (r.ok && r.id) { setFotoId(r.id); setToast(E2("Foto lista.", "Photo ready.")); } else setErr(r.mensaje ? (es ? r.mensaje.es : r.mensaje.en) : E2("No se pudo subir la foto. Revisa tu señal.", "Could not upload the photo. Check your signal.")); },
+      () => { setSubiendo(false); setErr(E2("No se pudo subir la foto. Revisa tu señal.", "Could not upload the photo. Check your signal.")); });
+  };
   const activas = entregas.filter((x) => x.status === "confirmed"), hechas = entregas.filter((x) => x.status === "done");
   if (cola.length) B.push({ type: "note", tone: "warn", icon: "wifi", t: E2(`Sin señal: ${cola.length} ${cola.length === 1 ? "paso espera" : "pasos esperan"} enviarse. Se envían solos al volver la señal.`, `No signal: ${cola.length} ${cola.length === 1 ? "step is" : "steps are"} waiting. They send on their own when signal returns.`) });
   const TAG: Record<string, [string, string]> = { accepted: [E2("POR RECOGER", "TO PICK UP"), "neutral"], preparing: [E2("EN COCINA", "COOKING"), "neutral"], ready: [E2("LISTO PARA RECOGER", "READY"), "action"], on_the_way: [E2("EN CAMINO", "ON THE WAY"), "action"], delivered: [E2("ENTREGADO", "DELIVERED"), "signal"] };
@@ -163,15 +193,24 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
     B.push({ type: "kv", items: [{ k: E2("CLIENTE", "CUSTOMER"), v: x.cliente }, { k: E2("LLEGA", "ARRIVES"), v: x.llega ?? x.listo ?? "—" },
       { k: E2("COBRO", "PAYMENT"), v: cash ? E2(`Cobrar ${money(x.efectivo!)} en efectivo`, `Collect ${money(x.efectivo!)} cash`) : x.pagado ? E2("Pagado con tarjeta", "Paid by card") : E2("Pagado", "Paid") },
       { k: E2("PROPINA", "TIP"), v: x.propina ? money(x.propina) : "—" }] });
+    // 9n · Sin el teléfono del cliente (§6 #20): «Escribir» le manda un mensaje dentro de la app; para hablar, se llama al negocio.
     if (vivo) B.push({ type: "rows", items: [
       { icon: "pin", t: x.calle ?? "—", s: [x.apto, x.zip].filter(Boolean).join(" · ") || undefined, chev: false, compact: true,
         acts: [{ l: E2("Abrir mapa", "Open map"), v: "secondary", icon: "pin", onClick: () => abrirComoLlegar({ dir: `${x.calle ?? ""}, ${x.zip ?? ""}` }) },
-          ...(x.telCliente ? [{ l: E2("Llamar", "Call"), v: "secondary", icon: "phone", onClick: () => { location.href = `tel:${x.telCliente}`; } }] : [])] },
+          { l: E2("Escribir", "Message"), v: "secondary", icon: "chat", onClick: () => { setEscr(escr ? null : "afuera"); setTexto(""); } }] },
       ...(x.entrega ? [{ icon: x.entrega.drop === "puerta" ? "home" : "users", t: x.entrega.drop === "puerta" ? E2("Dejar en la puerta", "Leave at door") : E2("En la mano", "Hand it to them"),
         s: [x.entrega.at.map((k) => (es ? AT[k]?.[0] : AT[k]?.[1])).filter(Boolean).join(" · "), x.entrega.note ? `“${x.entrega.note}”` : ""].filter(Boolean).join(" · ") || undefined, chev: false, compact: true } as Fila] : []),
       { icon: "store", t: E2(`Recoges en ${x.negocio.nombre}`, `Pick up at ${x.negocio.nombre}`), s: x.negocio.direccion ?? undefined, chev: false, compact: true,
-        acts: x.negocio.tel ? [{ l: E2("Llamar", "Call"), v: "secondary", icon: "phone", onClick: () => { location.href = `tel:${x.negocio.tel}`; } }] : undefined },
+        acts: x.negocio.tel ? [{ l: E2("Llamar al negocio", "Call the business"), v: "secondary", icon: "phone", onClick: () => { location.href = `tel:${x.negocio.tel}`; } }] : undefined },
     ] });
+    if (vivo && escr) {
+      B.push({ type: "group", k: E2(`ESCRIBIRLE AL CLIENTE · LE LLEGA EN LA APP · ${x.mensajes} ${x.mensajes === 1 ? "ENVIADO" : "ENVIADOS"}`, `MESSAGE THE CUSTOMER · THEY GET IT IN THE APP · ${x.mensajes} SENT`) });
+      B.push({ type: "chips", items: FRASE.map(([k, a, b]) => ({ l: es ? a : b, v: escr === k ? "selected" : "filter", onClick: () => setEscr(k) })) });
+      if (escr === "texto") B.push({ type: "field", k: E2("TU MENSAJE · SIN NÚMEROS DE TELÉFONO", "YOUR MESSAGE · NO PHONE NUMBERS"), val: texto, max: 140, count: `${texto.length}/140`, onChange: (v: string) => setTexto(v.slice(0, 140)) });
+      B.push({ type: "acts", items: [{ l: E2("Enviar", "Send"), v: "primary", icon: "chat", off: pend || (escr === "texto" && texto.trim().length < 2), onClick: () => run(() => repEscribir(x.numero, escr, texto), E2("Le llegó en la app.", "They got it in the app."), () => { setEscr(null); setTexto(""); }) },
+        { l: E2("Cancelar", "Cancel"), v: "secondary", onClick: () => setEscr(null) }] });
+      B.push({ type: "note", tone: "ink", icon: "shield", t: E2("Por seguridad no ves el teléfono del cliente. Si no contesta, llama al negocio o repórtalo.", "For safety you do not see the customer’s phone. If they do not answer, call the business or report it.") });
+    }
     B.push({ type: "rows", k: E2("LO QUE LLEVAS", "WHAT YOU CARRY"), items: x.lineas.map((l, i): Fila => ({ key: String(i), icon: "bag", ibg: "var(--tl-paper)", ifg: "rgba(11,14,18,.6)", t: `${l.q} × ${es ? l.name.es : l.name.en || l.name.es}`, compact: true, chev: false })) });
     const st = x.stage, en = st === "on_the_way", empezo = x.empezo || rutas.some((r) => r.numero === x.numero);
     B.push({ type: "timeline", k: E2("PASOS", "STEPS"), items: [
@@ -183,16 +222,34 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
     if (err) B.push({ type: "note", tone: "danger", icon: "warning", t: err });
     // 8e · «Voy por el pedido» inicia la entrega: el negocio te ve en el mapa desde aquí (el cliente, desde «Recogí»).
     if (vivo && !en && !empezo) B.push({ type: "acts", items: [{ l: E2("Voy por el pedido", "Heading to pick up"), v: "primary", icon: "pin", off: pend, onClick: () => paso(x.numero, "empezar", E2("El negocio ya ve que vas por el pedido.", "The business sees you are heading there.")) }] });
-    if (vivo && !en) B.push({ type: "acts", items: [{ l: E2("Recogí, voy en camino", "Picked up, on my way"), v: empezo ? "primary" : "secondary", icon: "truck", off: pend, onClick: () => paso(x.numero, "recogi", E2("El cliente ya sabe que vas en camino.", "The customer knows you are on the way.")) }] });
+    // 9n · Código de recogida: el negocio te lo dice cuando te da el pedido.
+    const pideRec = x.pideRecogida && !x.recogido;
+    if (vivo && !en && pideRec) B.push({ type: "field", k: E2("CÓDIGO DE RECOGIDA · TE LO DICE EL NEGOCIO", "PICKUP CODE · THE BUSINESS TELLS YOU"), val: codRec, onChange: (v: string) => setCodRec(v.replace(/\D/g, "").slice(0, 4)) });
+    if (vivo && !en) B.push({ type: "acts", items: [{ l: E2("Recogí, voy en camino", "Picked up, on my way"), v: empezo ? "primary" : "secondary", icon: "truck", off: pend || (pideRec && codRec.length !== 4),
+      onClick: () => paso(x.numero, "recogi", E2("El cliente ya sabe que vas en camino.", "The customer knows you are on the way."), undefined, pideRec ? { codigo: codRec } : undefined) }] });
     if (vivo && en && !x.llegue) B.push({ type: "acts", items: [{ l: E2("Llegué", "I'm here"), v: "primary", icon: "pin", off: pend, onClick: () => paso(x.numero, "llegue", E2("Le avisamos al cliente que llegaste.", "We told the customer you arrived.")) }] });
+    // 9n · Prueba de entrega: la foto (en la puerta, siempre) o el código que te dice el cliente. Si el negocio la pide, «Entregado» la exige.
+    const puerta = x.entrega?.drop === "puerta", prueba = fotoId ? { foto: fotoId } : codCli.length === 4 ? { codigo: codCli } : undefined, faltaPrueba = x.pidePrueba && !prueba;
+    if (vivo && en && x.llegue) {
+      B.push({ type: "group", k: x.pidePrueba ? E2("PRUEBA DE ENTREGA · LA PIDE EL NEGOCIO", "PROOF OF DELIVERY · THE BUSINESS ASKS FOR IT") : E2("PRUEBA DE ENTREGA · OPCIONAL", "PROOF OF DELIVERY · OPTIONAL") });
+      B.push({ type: "rows", items: [{ icon: "image", t: fotoId ? E2("Foto de la entrega lista", "Delivery photo ready") : E2("Tomar la foto de la entrega", "Take the delivery photo"),
+        s: puerta ? E2("Lo dejas en la puerta: toma la foto del pedido en la puerta. Solo la ven el cliente, el negocio y To’Latino.", "You leave it at the door: photograph the order at the door. Only the customer, the business and To’Latino see it.")
+          : E2("Solo la ven el cliente, el negocio y To’Latino.", "Only the customer, the business and To’Latino see it."),
+        tag: fotoId ? E2("LISTA", "READY") : undefined, tone: "signal", chev: false, compact: true,
+        acts: [{ l: subiendo ? E2("Subiendo…", "Uploading…") : fotoId ? E2("Otra foto", "Retake") : E2("Tomar foto", "Take photo"), v: fotoId ? "secondary" : "primary", icon: "image", off: subiendo || pend, onClick: () => fotoRef.current?.click() }] }] });
+      if (!puerta && !fotoId && !x.codigoAgotado) B.push({ type: "field", k: E2("O EL CÓDIGO DEL CLIENTE · 4 NÚMEROS", "OR THE CUSTOMER’S CODE · 4 DIGITS"), val: codCli, onChange: (v: string) => setCodCli(v.replace(/\D/g, "").slice(0, 4)),
+        help: E2("Lo ve el cliente en su pedido. Pídeselo al darle el pedido.", "The customer sees it in their order. Ask for it when you hand it over.") });
+      if (x.codigoAgotado && !fotoId) B.push({ type: "note", tone: "warn", icon: "image", t: E2("El código ya no sirve para este pedido: toma la foto de la entrega.", "The code no longer works for this order: take the delivery photo.") });
+    }
     if (vivo && en && (x.llegue || cobro)) {
       if (cash && !cobro) B.push({ type: "acts", items: [{ l: E2(`Cobrar ${money(x.efectivo!)}`, `Collect ${money(x.efectivo!)}`), v: "primary", icon: "dollar", off: pend, onClick: () => setCobro(true) }] });
       else if (cash && cobro) {
         B.push({ type: "note", tone: "warn", icon: "dollar", t: E2(`Cobra exactamente ${money(x.efectivo!)} en efectivo. Si te dan más, da el cambio. Lo que cobras lo entregas al negocio al cerrar.`, `Collect exactly ${money(x.efectivo!)} in cash. Give change if needed. You hand it to the business at the end.`) });
-        B.push({ type: "acts", items: [{ l: E2(`Cobré ${money(x.efectivo!)} · Entregado`, `Collected ${money(x.efectivo!)} · Delivered`), v: "primary", icon: "check", off: pend, onClick: () => paso(x.numero, "entregado", E2("Entregado. Gracias.", "Delivered. Thanks."), x.efectivo!) },
+        B.push({ type: "acts", items: [{ l: E2(`Cobré ${money(x.efectivo!)} · Entregado`, `Collected ${money(x.efectivo!)} · Delivered`), v: "primary", icon: "check", off: pend || faltaPrueba, onClick: () => paso(x.numero, "entregado", E2("Entregado. Gracias.", "Delivered. Thanks."), x.efectivo!, prueba) },
           { l: E2("Volver", "Back"), v: "secondary", onClick: () => setCobro(false) }] });
-      } else B.push({ type: "acts", items: [{ l: E2("Entregado", "Delivered"), v: "primary", icon: "check", off: pend, onClick: () => paso(x.numero, "entregado", E2("Entregado. Gracias.", "Delivered. Thanks.")) }] });
+      } else B.push({ type: "acts", items: [{ l: E2("Entregado", "Delivered"), v: "primary", icon: "check", off: pend || faltaPrueba, onClick: () => paso(x.numero, "entregado", E2("Entregado. Gracias.", "Delivered. Thanks."), undefined, prueba) }] });
     }
+    if (x.status === "done" && x.foto) B.push({ type: "note", tone: "ok", icon: "image", t: E2("Entregado con foto.", "Delivered with a photo.") });
     if (vivo && !prob) B.push({ type: "acts", items: [{ l: E2("Reportar un problema", "Report a problem"), v: "secondary", icon: "warning", onClick: () => { setProb(true); setMot(""); setNota(""); } }] });
     if (vivo && prob) {
       B.push({ type: "group", k: E2("¿QUÉ PASÓ? · LE LLEGA AL NEGOCIO", "WHAT HAPPENED? · THE BUSINESS GETS IT") });
@@ -206,6 +263,23 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
     const hoy = ganancias[0] && ganancias[0].dia === new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" }) ? ganancias[0] : { entregas: 0, propinas: 0, efectivo: 0 };
     B.push({ type: "head", eye: `${E2("REPARTES PARA", "DELIVERING FOR")} ${eq!.negocio.nombre.toUpperCase()}`, t: eq!.enLinea ? E2("Estás en línea", "You are online") : E2("Estás fuera de línea", "You are offline"),
       s: eq!.enLinea ? E2("El negocio ve que puedes llevar pedidos.", "The business sees you can take orders.") : E2("Ponte en línea para que el negocio te asigne pedidos.", "Go online so the business can assign you orders.") });
+    if (sancion) B.push({ type: "note", tone: "danger", icon: "lock", t: sancion === "baneo" ? E2("Tu cuenta ya no puede repartir en To’Latino.", "Your account can no longer deliver on To’Latino.")
+      : E2("Tu cuenta de repartidor está suspendida: no puedes ponerte en línea ni recibir ofertas. Te mandamos el motivo y hasta cuándo.", "Your driver account is suspended: you cannot go online or get offers. We sent you the reason and until when.") });
+    // 9n · DLV-OFERTA: las ofertas del negocio con su cuenta regresiva. «Aceptar» empieza la entrega (el negocio y el cliente te ven desde aquí).
+    for (const o of ofertas) {
+      const q = quedan(o);
+      B.push({ type: "note", tone: q <= 10 ? "warn" : "info", icon: "clock", t: E2(`${o.negocio.nombre} te ofrece un pedido · quedan ${q} s`, `${o.negocio.nombre} offers you an order · ${q} s left`) });
+      B.push({ type: "kv", items: [{ k: E2("RECOGES EN", "PICK UP AT"), v: o.negocio.direccion ?? o.negocio.nombre }, { k: E2("LLEVAS A", "DELIVER TO"), v: `${o.calle ?? "—"}${o.mi != null ? ` · ${o.mi} mi` : ""}` },
+        { k: E2("PAGO", "PAYMENT"), v: o.efectivo != null ? E2(`Cobrar ${money(o.efectivo)} en efectivo`, `Collect ${money(o.efectivo)} cash`) : E2("Pagado", "Paid") }, { k: E2("PROPINA", "TIP"), v: o.propina ? money(o.propina) : "—" }] });
+      B.push({ type: "acts", items: [{ l: E2("Aceptar", "Accept"), v: "primary", icon: "check", off: pend || q === 0, onClick: () => start(async () => {
+        setErr("");
+        const r = await repOfertaAceptar(o.id).catch(() => null);
+        if (!r) { setErr(E2("No se pudo. Revisa tu señal.", "Could not. Check your signal.")); return; }
+        if (!r.ok) { setErr(es ? r.msg.es : r.msg.en); router.refresh(); return; }
+        if (r.ruta) iniciar(r.ruta);
+        setToast(E2("Es tuyo. El negocio ya sabe que vas por él.", "It is yours. The business knows you are on the way.")); router.push(`/repartidor?p=${o.numero}`); router.refresh();
+      }) }, { l: E2("Rechazar", "Decline"), v: "secondary", off: pend, onClick: () => run(() => repOfertaRechazar(o.id, ""), E2("Rechazada.", "Declined.")) }] });
+    }
     B.push({ type: "rows", items: [{ icon: "truck", t: E2("En línea", "Online"), s: eq!.enLinea ? E2("Toca para terminar tu turno", "Tap to end your shift") : E2("Toca para empezar tu turno", "Tap to start your shift"), tgOn: eq!.enLinea,
       onTg: () => run(() => repEnLinea(eq!.id, !eq!.enLinea), eq!.enLinea ? E2("Fuera de línea.", "Offline.") : E2("En línea.", "Online."), eq!.enLinea ? undefined : () => { void avisos.ofrecer(); }) }] });
     B.push({ type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [
@@ -254,6 +328,8 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
       </div>
       {avisos.hoja}
       {hojaPermiso}
+      <input ref={fotoRef} type="file" accept="image/*" capture="environment" hidden aria-hidden="true" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (p) tomarFoto(p, f); }} />
+
       {toast && <div role="status" className="fixed bottom-[104px] left-1/2 z-[90] w-[calc(100%-40px)] max-w-[380px] -translate-x-1/2 rounded-[14px] bg-ink px-4 py-3 text-center text-[13px] font-bold text-white">{toast}</div>}
       {eq && <div className="fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur-[14px]">
         <BottomNav items={[{ id: "inicio", label: E2("INICIO", "HOME"), icon: "home" }, { id: "pedidos", label: E2("PEDIDOS", "ORDERS"), icon: "truck" }, { id: "ganancias", label: E2("GANANCIAS", "EARNINGS"), icon: "wallet" }, { id: "perfil", label: E2("PERFIL", "PROFILE"), icon: "users" }]}

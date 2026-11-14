@@ -226,6 +226,10 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - uses: ./.github/actions/entorno-pruebas
+      # alreves9o arma sobres de verdad (age-keygen) para el caso del sobre que no es para su servidor.
+      - name: age para las pruebas al revés de 9o
+        if: ${{ matrix.nombre == 'al revés' }}
+        run: sudo apt-get install -y -q age >/dev/null
       - name: Regresión de ${{ matrix.nombre }} en base nueva
         run: node pruebas/correr.mjs ${{ (inputs.solo != '' && matrix.nombre != 'al revés') && inputs.solo || matrix.args }}
       - name: Lo que dejó cada prueba (sin secretos, solo res y el registro del servidor)

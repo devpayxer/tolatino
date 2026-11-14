@@ -16,6 +16,11 @@ export async function subirFotoPrivada(file: File): Promise<Subida> {
   const fd = new FormData(); fd.append("foto", await reducir(file), "foto.jpg");
   return ((await fetch("/api/ayuda/foto", { method: "POST", body: fd }).then((x) => x.json()).catch(() => null)) as Subida | null) ?? { ok: false };
 }
+/* 9n · La foto de la entrega (privada; solo el repartidor asignado a un delivery activo): /api/repartidor/foto?numero=… devuelve el id. */
+export async function subirFotoEntrega(numero: string, file: File): Promise<Subida> {
+  const fd = new FormData(); fd.append("foto", await reducir(file), "foto.jpg");
+  return ((await fetch(`/api/repartidor/foto?numero=${encodeURIComponent(numero)}`, { method: "POST", body: fd }).then((x) => x.json()).catch(() => null)) as Subida | null) ?? { ok: false };
+}
 export async function subirFoto(file: File): Promise<Subida> {
   const fd = new FormData(); fd.append("foto", await reducir(file), "foto.jpg");
   return ((await fetch("/api/medios", { method: "POST", body: fd }).then((x) => x.json()).catch(() => null)) as Subida | null) ?? { ok: false };

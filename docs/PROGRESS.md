@@ -2109,3 +2109,50 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   `lib/canales/barrido.ts` (alertas solo kind «busqueda»), LAUNCH L49 (Publica (1) hecho, línea de 9n), `mapa-de-datos.json` e `inventario-datos.json`
   (regenerados), `scripts/portar-sistema.mjs` (AuthSheet y BusinessCard), `infra/*/deploy.sh` (direcciones y retiros) y `pruebas/infra/traza-sandbox.sh`,
   `scripts/carga/correr.mjs`, `pruebas/e2e/menu2b.cjs` (sin sesión → la hoja «Entra para pedir»).
+
+## Fase 9 · 9n — Lo diferido del negocio, el Repartidor y la operación del Super Admin (14 nov)
+- **Hecho (rama del worktree de 9n, sobre a7441f9; en paralelo con 9m):**
+  - **Migración `0144_negocio.sql`** (dos veces en una base nueva —antes de 0145— y otra vez a mano sobre una base con 0145: sin cambios). Los CHECK se AMPLÍAN
+    (`pg_temp.ampliar_check`: media «delivery», cola «entrega», sujeto «delivery_incident», secciones «repartidor» y «colas», special_hours «vacation» y «own»).
+    - **Repartidor:** `delivery_settings.proof` y `.pickup_code` (apagados de fábrica); `delivery_codes` (el código del cliente y el de recogida, 4 cifras de azar fuerte,
+      nacen solos al aceptar un delivery: trigger `operations_codigos`); `delivery_proofs` (foto / código / negocio; solo inserción) y el trigger **`operations_prueba`**
+      (la base no deja cerrar sin prueba un delivery con repartidor de un negocio que la pide); `delivery_offers` (una abierta por pedido; solo cambia de estado) y
+      `delivery_offer_replies` (solo inserción); `delivery_messages` (lo que el repartidor le escribe al cliente; solo inserción); `delivery_incidents` (se resuelven
+      una vez) y `driver_sanctions` (solo se levantan, una vez; un baneo lo levanta otra persona) con `repartidor_sancionado()`; sección **«dlv»** en la matriz.
+    - **Colas:** `queue_roles` (quién ve cada cola, sembrada con lo que decía el código), `staff_holidays` y `soporte_sla` que no los cuenta; Configuración › **Colas**
+      (`cola_tomado_min` y `cola_sla_*` de las 24 colas con plazo fijo) y › **Repartidor** (`oferta_seg`, `entrega_codigo_intentos`, `entrega_foto_dias`, `rep_mensajes_max`).
+    - **Horario:** `special_hours` con `status` (nada se borra) y `holiday_key`; `holiday_catalog` (2026–2027); **`negocio_abierto`** mira días especiales activos y la temporada.
+    - **Avisos:** `notif_templates.biz_pref` y `business_notif_prefs`; plantillas `drv_oferta`, `drv_sancion`, `biz_oferta_ok`, `biz_oferta_vencio`, `ord_rep_msg`.
+    - `insc_grupos_n` e `insc_grupos_dias` pasan a editables (Colas › Grupos que no abrieron lee el valor: `textoCola`).
+  - **Semilla `0063_repartidor.sql`** (el plan decía 0056, de 9h): Sabor Dominicano pide código y prueba, una entrega de ayer con código, una incidencia abierta en Colas.
+  - **Repartidor:** `lib/repartidor.ts` (sin el teléfono del cliente; código de recogida; la prueba con la foto de ESTE pedido o el código del cliente con tope; un
+    accidente abre incidencia; la sanción frena «en línea»), `lib/repartidor-ofertas.ts` (ofrecer, «Aceptar» inicia la ruta, rechazar, vencer en el barrido; escribir
+    al cliente sin teléfonos ni enlaces), `/api/repartidor/foto` (privada, `privado/e/`, sin metadatos) y `/api/entrega/foto/[id]` (cliente, negocio, equipo con
+    auditoría; lo demás 404), la pantalla (oferta con cuenta regresiva del servidor, «Escribir», «Llamar al negocio», código, «Tomar foto»), el pedido del cliente
+    (su código, los mensajes, la foto) y el panel (Entrega › «AL RECOGER Y AL ENTREGAR», «Ofrecer», la oferta abierta, el código de recogida y «Ya se lo di», la prueba).
+    La foto va en la evidencia de la disputa (`foto_entrega` → `uncategorized_file`).
+  - **Super Admin › Repartidores (ADM-DLV):** lista con filtros y cursor, 360°, incidencias (también en Colas, cola «entrega») y sanciones (`lib/repartidor-admin.ts`,
+    `app/admin/acciones-repartidores.ts`). **Colas:** J/K/A/R, lote en escritorio (Tomar, Asignar a…, Soltar), «Asignar a…», el «tomado» que vence (barrido
+    `colasTomado`), Colas › Ajustes (quién ve cada cola y feriados del equipo), plazos desde Configuración (también Confianza, que tenía su copia).
+  - **Panel:** Horario con feriados, vacaciones, días propios y «Abro por temporada»; Más › **Lo que te avisamos** (`avisarNegocio` lo mira).
+  - **Guardianes nuevos:** `entregaConPrueba`, `sinTelefonoAlRepartidor`, `diaEspecialActivo`; ampliados `ubicacionSoloEntregaActiva` («Aceptar» la oferta abre la
+    ruta, solo en `aceptarOferta`), `colasEnLaBase` (reconoce `ampliar_check`), `disputaConEvidencia` (la foto); `colaConVista` y `configDesdeUnLugar` en verde.
+    **`alreves9n` 24/24**; `alreves9k` al día (38/38 esperados con su caso nuevo).
+  - **Ayuda:** nuevas `panel-horario`, `repartidor-prueba-de-entrega`, `admin-repartidores`, `admin-colas`; `panel-avisos` al día (ES/EN).
+  - Mapa de datos al día (8 tablas; `delivery_messages` en sinPersona) y las salidas de privacidad regeneradas.
+- **Probado aquí (sin Docker: Postgres 16 + PostGIS en un cluster propio :5491, un `docker exec` de mentira hacia esa base, un almacén S3 de mentira para las fotos,
+  el build standalone en :3191 y el Chrome del sistema):** `node guardianes/run.mjs` → sin fallos (2469 archivos); `tsc --noEmit` limpio; `pnpm --filter web build` en
+  verde; base nueva 0001–0145 con 0144 (144 migraciones) dos veces (la segunda no aplica nada) y 0144 otra vez a mano sobre una base con 0145, sin error; las semillas del
+  sandbox dos veces (0063 sin cambios la segunda); **`neg9n` 50 ✓ dos veces seguidas** (entre corrida y corrida, lo que hace `correr.mjs`: las ventanas de un minuto y,
+  aquí, los códigos de esta hora de 127.0.0.1 —el tope de 20 por IP y hora—); capturas a 390 y 1360 revisadas (oferta, prueba con foto, escribir, cliente, panel con el
+  código de recogida, ADM-DLV lista y 360°, Colas › Ajustes, el texto de Configuración, Horario, Lo que te avisamos). Al revés: **9n 24/24**, 9k 38/38, 6a 26/26,
+  8e 52/53 (el caso de `permisosMinimos` no encuentra su texto en apps.json: igual que alreves8c en la rama base, no es de 9n).
+- **No corrió aquí:** la regresión entera, la matriz de 9 dispositivos y `pruebas/visual` → CI (9b; cambian capturas del panel de Entrega, el detalle del pedido y el
+  Repartidor). La foto con Garage de verdad (aquí, el almacén de mentira).
+- **No cerrado, con destino (LAUNCH «Fase 9 · 9n»):** lo del bloque que no entró en esta pasada (cada línea «→ 9n» abierta conserva su texto), el resto de Configuración
+  en solo lectura, asignación automática y programados del Repartidor, el tope de 200 casos por vista, la temporada en el calendario de citas.
+- **Para quien junte las ramas:** `guardianes/run.mjs` (tres guardianes al final, después de `mantenimientoFijo`; cambios en `ubicacionSoloEntregaActiva`,
+  `colasEnLaBase`, `disputaConEvidencia`), `lib/config.ts` (claves de 9n y secciones «repartidor» y «colas»), `Configuracion.tsx` (SECCION), `lib/barrido.ts` (tres
+  tareas después de `avisoApertura`), `lib/admin.ts` (`Staff.colas`), `lib/colas.ts` (`slaCfg` en cada cola, la cola «entrega»; `colasDelRol` ya no existe),
+  `lib/admin-nav.ts` (dlv), `lib/avisos.ts` (`avisarNegocio`), `lib/pedidos.ts`, `lib/pedir.ts`, `app/panel/Panel.tsx`, `app/panel/acciones.ts`, `mapa-de-datos.json`
+  e `inventario-datos.json` (regenerados), docs.
