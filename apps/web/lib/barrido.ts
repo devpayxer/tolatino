@@ -141,6 +141,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["datosPurga", async () => (await import("./datos/purgar")).purgarVencidas()],
         ["datosArchivos", async () => (await import("./datos/exportar")).armarPendientes()], ["datosArchivosVencer", async () => (await import("./datos/exportar")).vencerExportaciones()],
         ["retenciones", async () => (await import("./datos/retener")).barrerRetenciones()],
+        // 9j · Sistema › Salud: lo que se mide cada 5 minutos (la base, el barrido, la cola del push, el disco y los errores; health_checks, 30 días) y
+        // las llaves del llavero que vencen en 30 días o vencieron (aviso a los Admins, una vez por llave, versión y etapa).
+        ["salud", async () => (await import("./sistema/salud")).medirSalud()], ["llavesVencen", async () => (await import("./sistema/salud")).avisarLlavesQueVencen()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

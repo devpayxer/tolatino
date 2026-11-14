@@ -288,7 +288,15 @@ insert into data_map (tabla, columna, rol, accion, set_sql, pendiente_sql, donde
   ('city_home_config', 'updated_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2840),
   ('announcements', 'by_staff_id', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2850),
   ('announcements', 'retired_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2860),
-  ('legal_acceptances', 'user_id', 'persona', 'guardar', null, null, null, '{"es":"Lo pide la ley: recibos, impuestos y disputas.","en":"The law requires it: receipts, taxes and disputes."}'::jsonb, 'terminos_aceptados', 'no', null, false, 2870)
+  ('legal_acceptances', 'user_id', 'persona', 'guardar', null, null, null, '{"es":"Lo pide la ley: recibos, impuestos y disputas.","en":"The law requires it: receipts, taxes and disputes."}'::jsonb, 'terminos_aceptados', 'no', null, false, 2870),
+  ('staff_mfa', 'user_id', 'persona', 'guardar', null, null, null, '{"es":"Seguridad: sanciones, bloqueos y abuso.","en":"Safety: sanctions, blocks and abuse."}'::jsonb, null, 'no', null, false, 2880),
+  ('staff_mfa', 'revoked_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2890),
+  ('staff_mfa_log', 'user_id', 'persona', 'guardar', null, null, null, '{"es":"Seguridad: sanciones, bloqueos y abuso.","en":"Safety: sanctions, blocks and abuse."}'::jsonb, null, 'no', null, false, 2900),
+  ('staff_mfa_log', 'by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2910),
+  ('maintenance_windows', 'by_staff', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2920),
+  ('maintenance_windows', 'cancelled_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2930),
+  ('key_rotations', 'by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2940),
+  ('break_glass', 'staff_id', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2950)
 on conflict (tabla, columna) do update set rol = excluded.rol, accion = excluded.accion, set_sql = excluded.set_sql, pendiente_sql = excluded.pendiente_sql, donde_sql = excluded.donde_sql,
   porque = excluded.porque, exporta = excluded.exporta, fusion = excluded.fusion, fn = excluded.fn, derivados = excluded.derivados, orden = excluded.orden;
 -- Lo que salió del mapa sale de la tabla (es configuración: el mapa es la fuente).
@@ -579,6 +587,14 @@ delete from data_map d where not exists (select 1 from (values
   ('city_home_config', 'updated_by'),
   ('announcements', 'by_staff_id'),
   ('announcements', 'retired_by'),
-  ('legal_acceptances', 'user_id')
+  ('legal_acceptances', 'user_id'),
+  ('staff_mfa', 'user_id'),
+  ('staff_mfa', 'revoked_by'),
+  ('staff_mfa_log', 'user_id'),
+  ('staff_mfa_log', 'by'),
+  ('maintenance_windows', 'by_staff'),
+  ('maintenance_windows', 'cancelled_by'),
+  ('key_rotations', 'by'),
+  ('break_glass', 'staff_id')
 ) v (tabla, columna) where v.tabla = d.tabla and v.columna = d.columna);
 commit;

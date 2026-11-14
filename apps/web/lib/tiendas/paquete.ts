@@ -60,6 +60,14 @@ export async function loQueTeToca(): Promise<Paquete[]> {
   };
   const llave = (k: string): { ok: boolean; por: Bi } => ({ ok: tiene(k), por: tiene(k) ? { es: "La llave está en el llavero.", en: "The key is in the keychain." } : { es: "Todavía no está en el llavero.", en: "Not in the keychain yet." } });
   const correoPlay = meta("play_service_account").correo ?? null;
+  // 9j · 9-4.1: todo el equipo activo tiene su segundo factor de verdad (la app de códigos o una llave; el camino de las pruebas no cuenta).
+  const sinFactor = (await db().query<{ n: number; total: number }>(
+    `select count(*) filter (where not exists (select 1 from staff_mfa f where f.user_id = m.user_id and f.revoked_at is null and f.enrolled_at is not null)
+                               and not exists (select 1 from passkeys p where p.user_id = m.user_id and p.revoked_at is null))::int as n, count(*)::int as total
+       from staff_members m where m.status = 'active'`)).rows[0] ?? { n: 0, total: 0 };
+  const equipoConFactor = { ok: sinFactor.total > 0 && sinFactor.n === 0, por: sinFactor.n
+    ? { es: `${sinFactor.n} de ${sinFactor.total} del equipo todavía sin segundo factor.`, en: `${sinFactor.n} of ${sinFactor.total} on the team still without a second step.` }
+    : { es: "Todo el equipo tiene su segundo factor.", en: "The whole team has their second step." } };
   const out: Paquete[] = [
     { k: "8-0", t: { es: "Paquete 8-0 · El dominio", en: "Package 8-0 · The domain" }, s: { es: "Para que el sandbox tenga https y las apps puedan hablar con él.", en: "So the sandbox has https and the apps can talk to it." }, pasos: [
       P("8-0.1", { es: "Crear la cuenta de Cloudflare", en: "Create the Cloudflare account" }, { es: "Plan gratis; aceptar los términos.", en: "Free plan; accept the terms." }, "https://dash.cloudflare.com/sign-up"),
@@ -98,8 +106,57 @@ export async function loQueTeToca(): Promise<Paquete[]> {
       P("8-3.5", { es: "Google · Servicio en primer plano de ubicación (Repartidor)", en: "Google · Location foreground service (Repartidor)" }, { es: "El texto y el video que generamos.", en: "The text and video we generate." }, "https://play.google.com/console/"),
       P("8-3.6", { es: "Google · URL de privacidad y de borrar la cuenta", en: "Google · Privacy and account deletion URLs" }, { es: "/privacidad y /cuenta/ajustes/borrar.", en: "/privacidad and /cuenta/ajustes/borrar." }, "https://play.google.com/console/"),
     ] },
+    // 9j · Los paquetes de la Fase 9 (fase9-apertura.md §10): cada uno con su paso a paso; el sistema marca lo que puede ver (la llave real de cada
+    // proveedor en los secretos del entorno, sin mostrarla; el equipo con su segundo factor). Lo demás lo marca el fundador.
+    { k: "9-1", t: { es: "Paquete 9-1 · Pagos y mensajes", en: "Package 9-1 · Payments and messages" }, s: { es: "Stripe, Telnyx, WhatsApp, Amazon SES y Anthropic. Las llaves van al formulario seguro de los secretos del entorno, nunca al chat.", en: "Stripe, Telnyx, WhatsApp, Amazon SES and Anthropic. Keys go to the environment's secure secrets form, never the chat." }, pasos: [
+      P("9-1.1", { es: "Stripe: cuenta de la empresa y Connect", en: "Stripe: company account and Connect" }, { es: "Verificación del negocio y del dueño, banco de la plataforma, perfil de Connect (mercado, Express); primero en modo prueba, después en vivo.", en: "Business and owner verification, platform bank, Connect profile (marketplace, Express); test mode first, then live." }, "https://dashboard.stripe.com/register", proveedor("stripe")),
+      P("9-1.2", { es: "Telnyx: número y registro 10DLC", en: "Telnyx: number and 10DLC registration" }, { es: "La cuenta, el número de To'Latino y el registro de la marca y las campañas (los textos los dejamos listos para tocar «Enviar»).", en: "The account, To'Latino's number and the brand and campaign registration (we leave the texts ready to tap «Submit»)." }, "https://portal.telnyx.com/", proveedor("telnyx")),
+      P("9-1.3", { es: "Meta: WhatsApp Business verificado", en: "Meta: verified WhatsApp Business" }, { es: "El número, la app y el token permanente. Las plantillas las manda Claude por la API.", en: "The number, the app and the permanent token. Claude submits the templates through the API." }, "https://business.facebook.com/"),
+      P("9-1.4", { es: "Amazon SES: salir del modo de prueba", en: "Amazon SES: leave the sandbox" }, { es: "La cuenta y el formulario de AWS (el texto del uso lo dejamos listo). El DNS lo pone Claude por Cloudflare.", en: "The account and the AWS form (we leave the use-case text ready). Claude sets the DNS through Cloudflare." }, "https://console.aws.amazon.com/ses/", proveedor("ses")),
+      P("9-1.5", { es: "Anthropic: cuenta, facturación y retención cero", en: "Anthropic: account, billing and zero retention" }, { es: "Para El Compa en producción, con el tope de gasto de PLAN §8.", en: "For El Compa in production, with the spending cap in PLAN §8." }, "https://console.anthropic.com/"),
+    ] },
+    { k: "9-2", t: { es: "Paquete 9-2 · Abogado y contador", en: "Package 9-2 · Lawyer and accountant" }, s: { es: "Sin su revisión no se publica nada legal en producción ni se abre (su costo es decisión tuya: no está en PLAN §8).", en: "Without their review nothing legal is published in production and nothing opens (their cost is your decision: it is not in PLAN §8)." }, pasos: [
+      P("9-2.1", { es: "Contratar un abogado de Pennsylvania", en: "Hire a Pennsylvania lawyer" }, { es: "Una consulta con la lista que generamos (docs/legal/para-el-abogado.md).", en: "One consultation with the list we generate (docs/legal/para-el-abogado.md)." }, null),
+      P("9-2.2", { es: "Contratar un contador", en: "Hire an accountant" }, { es: "Para los impuestos (docs/legal/para-el-contador.md).", en: "For taxes (docs/legal/para-el-contador.md)." }, null),
+      P("9-2.3", { es: "Reenviarles los dos documentos", en: "Forward them the two documents" }, { es: "Desde el teléfono; sus respuestas llegan como documento y Claude las aplica.", en: "From the phone; their answers come back as a document and Claude applies them." }, null),
+      P("9-2.4", { es: "Registrar el agente DMCA", en: "Register the DMCA agent" }, { es: "El formulario en línea de la Copyright Office y su pago.", en: "The Copyright Office online form and its fee." }, "https://dmca.copyright.gov/"),
+    ] },
+    { k: "9-3", t: { es: "Paquete 9-3 · Producción", en: "Package 9-3 · Production" }, s: { es: "Para encender producción en acceso anticipado (OK-1).", en: "To turn on production in early access (OK-1)." }, pasos: [
+      P("9-3.1", { es: "Cuenta y proyecto del proveedor de producción", en: "Production provider account and project" }, { es: "Proyecto aparte del de pruebas, con forma de pago; el token de la API al formulario seguro.", en: "A project separate from the test one, with a payment method; the API token to the secure form." }, "https://console.hetzner.cloud/"),
+      P("9-3.2", { es: "El almacén de los respaldos", en: "The backup storage" }, { es: "Del mismo proveedor, en otra región (lo crea Claude con el token si el proveedor lo permite).", en: "From the same provider, in another region (Claude creates it with the token if the provider allows it)." }, null),
+      P("9-3.3", { es: "Dónde llegan las alertas críticas y el reporte diario", en: "Where critical alerts and the daily report arrive" }, { es: "Un correo y un teléfono.", en: "An email and a phone." }, null),
+      P("9-3.4", { es: "Borrar Vercel y Supabase de la v1", en: "Delete the v1 Vercel and Supabase" }, { es: "El día que tolatino.com apunte a producción; dos toques cada uno.", en: "The day tolatino.com points to production; two taps each." }, "https://vercel.com/dashboard"),
+    ] },
+    { k: "9-4", t: { es: "Paquete 9-4 · Personas y contenido", en: "Package 9-4 · People and content" }, s: { es: "Va llegando mientras se construye.", en: "It arrives while things are built." }, pasos: [
+      P("9-4.1", { es: "Quién entra al Super Admin y con qué rol", en: "Who enters the Super Admin and with what role" }, { es: "Cada persona da de alta su segundo factor (llave de acceso o app de códigos) al entrar.", en: "Each person sets up their second step (passkey or code app) when they enter." }, null, equipoConFactor),
+      P("9-4.2", { es: "El equipo local de cada ciudad", en: "The local team of each city" }, { es: "City manager y verificador (paso 4 del asistente de apertura).", en: "City manager and verifier (step 4 of the opening wizard)." }, null),
+      P("9-4.3", { es: "Las fotos de portada del muro y de la cuenta oficial", en: "The wall and official account cover photos" }, { es: "Una por ciudad.", en: "One per city." }, null),
+      P("9-4.4", { es: "Las listas de moderación revisadas con vecinos", en: "Moderation lists reviewed with neighbors" }, { es: "Los términos de cada ciudad.", en: "Each city's terms." }, null),
+      P("9-4.5", { es: "Las plantillas de estimado de Auto y Hogar", en: "Auto and Home estimate templates" }, { es: "Las que se quedan en producción.", en: "The ones that stay in production." }, null),
+      P("9-4.6", { es: "Negocios reales que dan permiso para las capturas", en: "Real businesses that allow the screenshots" }, { es: "Para las fichas de las tiendas.", en: "For the store listings." }, null),
+      P("9-4.7", { es: "Los invitados de la beta de Hazleton", en: "The Hazleton beta guests" }, { es: "Unos 50 vecinos y 20 negocios.", en: "About 50 neighbors and 20 businesses." }, null),
+      P("9-4.8", { es: "El contacto para la revisión de Apple y Google", en: "The contact for Apple and Google review" }, { es: "Nombre, teléfono y correo.", en: "Name, phone and email." }, null),
+    ] },
+    { k: "9-5", t: { es: "Paquete 9-5 · La revisión y los tres OK", en: "Package 9-5 · The review and the three OKs" }, s: { es: "Cada OK se escribe en el chat; queda anotado con su fecha.", en: "Each OK is written in the chat; it is logged with its date." }, pasos: [
+      P("9-5.1", { es: "La revisión por lista (docs/REVISION.md)", en: "The checklist review (docs/REVISION.md)" }, { es: "Paso a paso, en tu teléfono.", en: "Step by step, on your phone." }, null),
+      P("9-5.2", { es: "OK-1 · Producción en acceso anticipado", en: "OK-1 · Production in early access" }, { es: "«Enciende producción en acceso anticipado».", en: "«Turn on production in early access»." }, null),
+      P("9-5.3", { es: "OK-2 · Las apps a revisión y la beta de Hazleton", en: "OK-2 · The apps to review and the Hazleton beta" }, { es: "«Manda las apps a revisión y empieza la beta de Hazleton».", en: "«Send the apps to review and start the Hazleton beta»." }, null),
+      P("9-5.4", { es: "OK-3 · Abrir las cinco ciudades", en: "OK-3 · Open the five cities" }, { es: "«Abre las cinco ciudades».", en: "«Open the five cities»." }, null),
+    ] },
   ];
   return out;
+}
+
+/* 9j · Lo que el sistema puede ver de los proveedores del Paquete 9-1: que la llave REAL está en los secretos del entorno (nunca cuál es) y que no
+   apunta a un simulador. En el sandbox de hoy dicen «pendiente»: se usan los simuladores. WhatsApp y Anthropic los marca el fundador: sus llaves solo las leen
+   lib/compa/canales-proveedor.ts y lib/compa/modelo-claude.ts (guardianes canalConFirma, compaSoloServidor y compaSinRutaCritica). */
+function proveedor(k: "stripe" | "telnyx" | "ses"): { ok: boolean; por: Bi } {
+  const e = process.env, hay = (x: string | undefined) => (x ?? "").trim().length >= 8;
+  const ok = k === "stripe" ? (e.STRIPE_SECRET_KEY ?? "").startsWith("sk_") && !e.STRIPE_API_BASE && !e.TOLATINO_PAGOS_SIMULADOR
+    : k === "telnyx" ? e.TOLATINO_SMS_MODO === "telnyx" && hay(e.TELNYX_API_KEY) && !e.TELNYX_API_BASE
+      : hay(e.SES_ACCESS_KEY_ID) && hay(e.SES_SECRET_ACCESS_KEY) && e.TOLATINO_CORREO_MODO !== "pruebas";
+  return ok ? { ok, por: { es: "La llave real está en los secretos del entorno.", en: "The real key is in the environment secrets." } }
+    : { ok, por: { es: "Se ve hecho cuando la llave real llegue a los secretos del entorno (hoy: el simulador).", en: "Shows done when the real key reaches the environment secrets (today: the simulator)." } };
 }
 
 /* El fundador marca un paso que el sistema no puede ver (o lo vuelve a pendiente). Solo un Admin, con nota opcional y auditoría. */

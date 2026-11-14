@@ -283,13 +283,15 @@ export async function caso(s: Staff, id: string) {
     // Ayuda con un pedido: la solicitud, lo que pidió, la respuesta del negocio (si hubo) y el pedido.
     // Citas (3e): también el monto que pide, la decisión del negocio, sus fotos y lo que se puede devolver a la tarjeta.
     const h = (await db().query<{ number: string; reason: string; items: { n: string; q: number }[]; wants: string; body: string | null; status: string; reply: string | null; escalated_by: string | null; creada: string; num: string; total: number; quien: string; uid: string;
-      k: "order" | "appointment" | "market_order" | "hold" | "party" | "trip" | "night" | "enrollment" | "visit" | "tickets"; amount: number | null; decision: string | null; offer: number | null; fotos: string[]; pago: number; svc: string | null; rub: string | null }>(
+      k: "order" | "appointment" | "market_order" | "hold" | "party" | "trip" | "night" | "enrollment" | "visit" | "tickets"; amount: number | null; decision: string | null; offer: number | null; fotos: string[]; pago: number; hid: string; salud: boolean; vidrio: boolean; svc: string | null; rub: string | null }>(
       `select h.number, h.reason, h.items, h.wants, h.body, h.status, h.reply, h.escalated_by, h.created_at as creada, o.number as num, o.total_cents as total,
               coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as quien, u.id::text as uid,
               o.kind as k, h.amount_cents as amount, h.decision, h.offer_cents as offer, coalesce(o.details->'svc'->>'es', o.details#>>'{item,es}', o.details#>>'{title,es}') as svc, coalesce(o.details->>'rubro', case o.kind when 'party' then 'fiesta' when 'trip' then 'trans' when 'night' then 'noche' when 'enrollment' then o.details->>'rubro' when 'market_order' then 'merc' when 'hold' then 'tienda' when 'tickets' then 'evt' end) as rub,
               array(select ${FOTO_AYUDA_SQL} from media m where m.owner_kind = 'help' and m.owner_id = h.id::text and m.status = 'visible' order by m.sort) as fotos,
-              coalesce((select p.amount_cents - p.refunded_cents from payments p where p.operation_id = o.id and p.status in ('captured', 'partially_refunded') order by p.id desc limit 1), 0) as pago
-         from help_requests h join operations o on o.id = h.operation_id join users u on u.id = h.user_id where h.id = $1::bigint`, [q.subject_id])).rows[0];
+              coalesce((select p.amount_cents - p.refunded_cents from payments p where p.operation_id = o.id and p.status in ('captured', 'partially_refunded') order by p.id desc limit 1), 0) as pago,
+              h.id::text as hid, coalesce((select b.category_id = 'NEG-SALUD' from businesses b where b.id = h.business_id), false) as salud,
+              exists (select 1 from break_glass g where g.staff_id = $2 and g.target_kind = 'help_request' and g.target_id = h.id::text and g.expires_at > now()) as vidrio
+         from help_requests h join operations o on o.id = h.operation_id join users u on u.id = h.user_id where h.id = $1::bigint`, [q.subject_id, s.id])).rows[0];
     // 4if · «Posible estafa»: qué está en pausa (la propiedad o el carro, o «Pedir fecha» de la iglesia), desde cuándo, lo que vio la persona al
     // pedir (la copia del total) y cuántas otras ayudas directas tiene el negocio en 90 días. Nunca hay dinero que devolver: no pasó por la app.
     const pausa = q.queue === "estafa" ? (await db().query<{ kind: string | null; ref: string | null; at: string | null; fin: string | null; item: string | null; vivo: boolean | null; copia: Record<string, unknown> | null; otras: number }>(

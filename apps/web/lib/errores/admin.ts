@@ -15,7 +15,7 @@ export type SaludApps = {
   sinCierre: { app: string; plat: string; sesiones: number; conCierre: number; pct: number | null }[];
   grupos: FilaGrupo[]; siguiente: string | null;
 };
-const APPS = new Set(["cliente", "negocio", "delivery", "checkin", "web"]), ESTADOS = new Set(["nuevo", "visto", "resuelto", "silenciado"]), TIPOS = new Set(["js", "nativo", "cierre", "red"]);
+const APPS = new Set(["cliente", "negocio", "delivery", "checkin", "web"]), ESTADOS = new Set(["nuevo", "visto", "resuelto", "silenciado"]), TIPOS = new Set(["js", "nativo", "cierre", "red", "servidor"]);
 
 export async function saludApps(f: FiltroErrores): Promise<SaludApps> {
   const app = f.app && APPS.has(f.app) ? f.app : null, estado = f.estado && ESTADOS.has(f.estado) ? f.estado : null, tipo = f.tipo && TIPOS.has(f.tipo) ? f.tipo : null;

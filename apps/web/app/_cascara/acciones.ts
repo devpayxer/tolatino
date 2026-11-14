@@ -2,7 +2,8 @@
 /* 8a · Lo que anota la hoja previa de permisos en la analítica propia (sin personas: el permiso, la respuesta, la app y la plataforma; el
    rótulo TLApp lo pone evento()). Solo cuenta; no cambia nada de la cuenta. */
 import { valor } from "@/lib/config";
-import { mismoOrigen } from "@/lib/cuenta";
+import { mismoOrigen, yo } from "@/lib/cuenta";
+import { flagPara } from "@/lib/sistema/flags";
 import { db } from "@/lib/db";
 import { ENTORNO } from "@/lib/entorno";
 import { evento } from "@/lib/eventos";
@@ -19,6 +20,8 @@ export async function anotarPermiso(p: string, r: string): Promise<void> {
    «Reportar un problema» encendido. En producción no existe (§6 #17). Solo lectura: no cambia nada. */
 export async function agitarActivo(): Promise<boolean> {
   if (ENTORNO === "produccion" || !(await mismoOrigen())) return false;
-  const [v, on] = await Promise.all([valor("beta_agitar"), db().query<{ enabled: boolean }>(`select enabled from feature_flags where key = 'app.reportar'`).then((r) => r.rows[0]?.enabled === true).catch(() => false)]);
+  // 9j · app.reportar se decide por la persona (por ciudad o porcentaje, Sistema › Flags).
+  const u = await yo().catch(() => null);
+  const [v, on] = await Promise.all([valor("beta_agitar"), flagPara("app.reportar", u?.id ?? null).catch(() => false)]);
   return v === 1 && on;
 }

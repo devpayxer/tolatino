@@ -33,7 +33,7 @@ const EST_PEDIDO: Record<string, [string, string]> = { pendiente: ["PENDIENTE", 
 const EST_TESTER: Record<string, [string, string]> = { invitado: ["INVITADO", "action"], activo: ["ACTIVO", "signal"], pendiente_consola: ["FALTA EN PLAY", "action"], quitado: ["QUITADO", "neutral"] };
 const SYNC: Record<string, string> = { ok: "Apple al día", pendiente: "Apple pendiente", sin_llave: "Sin la llave de App Store Connect", error: "Apple no contestó bien" };
 const EST_GRUPO: Record<string, [string, string]> = { nuevo: ["NUEVO", "danger"], visto: ["VISTO", "action"], resuelto: ["RESUELTO", "signal"], silenciado: ["SILENCIADO", "neutral"] };
-const TIPO: Record<string, string> = { js: "Error de la página", red: "Sin conexión con el servidor", cierre: "Cierre de la app", nativo: "Error nativo" };
+const TIPO: Record<string, string> = { js: "Error de la página", red: "Sin conexión con el servidor", cierre: "Cierre de la app", nativo: "Error nativo", servidor: "Error del servidor" };
 const EST_CASO: Record<string, string> = { new: "Nuevo", in_progress: "En curso", waiting: "Esperando a la persona", resolved: "Resuelto", reopened: "Reabierto", merged: "Unido" };
 const cuando = (iso: string | null) => (iso ? new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "") : "—");
 const hace = (iso: string, ahora: number) => { const m = Math.max(0, Math.floor((ahora - new Date(iso).getTime()) / 60000)); return m < 1 ? "ahora" : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.floor(m / 60)} h` : cuando(iso); };

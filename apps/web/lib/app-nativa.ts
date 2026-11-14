@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { auditar, type Staff } from "./admin";
 import { cambiarConfig, valores, type ClaveConfig } from "./config";
 import { db, tx } from "./db";
+import { ENTORNO } from "./entorno";
 import { CLAVES_APP, defApp, leerRotulo, type AppNativa, type ClaveApp, type Plataforma } from "./app-nativa-comun";
 
 /* 8a · La app nativa en el servidor (fase8-apps.md §3.1, §4 8a). El servidor decide; la app solo muestra.
@@ -100,6 +101,7 @@ export async function cambiarBuild(s: Staff, app: string, plat: string, tipo: st
   if (!(CLAVES_APP as string[]).includes(app) || !(PLATAFORMAS as string[]).includes(plat) || !["min", "aviso"].includes(tipo)) return { ok: false, msg: "Esa app o plataforma no existe." };
   const a = app as ClaveApp, p = plat as Plataforma, k = tipo === "min" ? claveMin(a, p) : claveAviso(a, p), otra = tipo === "min" ? claveAviso(a, p) : claveMin(a, p);
   class Choque extends Error {}
+  let sobre: number | null = null;
   try {
     const r = await cambiarConfig(s.id, k, valorTxt, motivo, {
       desde: "/admin/sistema/apps",
@@ -107,10 +109,19 @@ export async function cambiarBuild(s: Staff, app: string, plat: string, tipo: st
         const o = (await c.query<{ v: number }>(`select cfg_int($1) as v`, [otra])).rows[0]?.v ?? 0;
         const min = tipo === "min" ? v : o, aviso = tipo === "min" ? o : v;
         if (min > 0 && aviso > 0 && aviso <= min) throw new Choque(`El build de aviso (${aviso}) tiene que ser mayor que el mínimo (${min}); 0 = sin aviso.`);
+        // 9j · Nunca por encima del último build DISPONIBLE de esa app y plataforma (plan §3.5; LAUNCH 8h): si no, nadie podría actualizar y la app
+        // quedaría cerrada para todos. En producción se rechaza; en el sandbox los builds son de prueba (simulados), así que se guarda y se dice.
+        if (v > 0) {
+          const ultimo = (await c.query<{ b: number | null }>(`select max(build) as b from app_builds where app = $1 and platform = $2 and status = 'disponible'`, [a, p])).rows[0]?.b ?? 0;
+          if (v > ultimo) {
+            if (ENTORNO === "produccion") throw new Choque(`El build ${v} no está disponible todavía (el último disponible de ${defApp(a).nombre.es} en ${p === "ios" ? "iPhone" : "Android"} es ${ultimo || "ninguno"}): nadie podría actualizar.`);
+            sobre = ultimo;
+          }
+        }
       },
     });
     if (!r.ok) return { ok: false, msg: r.msg };
-    return { ok: true, msg: `${defApp(a).nombre.es} · ${p === "ios" ? "iPhone" : "Android"}: ${tipo === "min" ? "build mínimo" : "build de aviso"} ${r.v || "sin límite"}.` };
+    return { ok: true, msg: `${defApp(a).nombre.es} · ${p === "ios" ? "iPhone" : "Android"}: ${tipo === "min" ? "build mínimo" : "build de aviso"} ${r.v || "sin límite"}.${sobre != null ? ` En producción no se podría: el último build disponible es ${sobre || "ninguno"} (aquí los builds son de prueba).` : ""}` };
   } catch (e) {
     if (e instanceof Choque) return { ok: false, msg: e.message };
     throw e;

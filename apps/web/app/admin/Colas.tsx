@@ -5,7 +5,7 @@
 import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useTransition, type ComponentType, type ReactNode } from "react";
+import { useEffect, useRef, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Caso, CasoLista } from "@/lib/admin-colas";
 import { AYUDA_DE, COLAS, MOTIVO_RESENA, type Cola } from "@/lib/colas";
 import { motivoAyuda, quiereAyuda } from "@/lib/ayuda-motivos";
@@ -13,6 +13,7 @@ import { cuerpoComunidad, tituloComunidad } from "./ColasComunidad";
 import { cuerpoEventos, tituloEventos } from "./ColasEventos";
 import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, decidirNoche, decidirEstafa, pausaEstafa, decidirVivienda, type ResAdm, verNinoCaso } from "./acciones-colas";
 import { compaHilo } from "./acciones-compa";
+import { verFotosSalud } from "./acciones-sistema";
 import { copilotoSugerir } from "./acciones-copiloto";
 import type { BorradorCopiloto } from "@/lib/compa/copiloto";
 import { uuid } from "@/lib/uuid";
@@ -94,7 +95,9 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
   const ir = (p: Record<string, string | null>) => { const q = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v === null) q.delete(k); else q.set(k, v); } router.push(`${path}${q.size ? `?${q}` : ""}`, { scroll: false }); };
   const cola = (sp.get("cola") as Cola | null) ?? null, filtro = sp.get("f");
   const run = (f: () => Promise<ResAdm>, after?: (r: ResAdm) => void) => start(async () => { const r = await f(); setToast(r.mensaje ?? (r.ok ? "Listo. Quedó en la auditoría." : "")); if (r.ok) { after?.(r); router.refresh(); } });
-  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); ir({ caso: null }); router.refresh(); };
+  // 9j · Ver las fotos de Salud con motivo no cierra el caso: se queda en él para verlas.
+  const quedarse = useRef(false);
+  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); if (quedarse.current) { quedarse.current = false; router.refresh(); return; } ir({ caso: null }); router.refresh(); };
 
   const lista: (Bloque | null)[] = [
     { type: "head", eye: `${total} CASOS · ${vencidos} VENCIDOS`, t: "Colas", s: "Todo lo que espera una decisión de una persona. La más vieja contra su plazo va primero.",
@@ -224,7 +227,11 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
       cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "SOLICITUD", v: h.number }, { k: h.k === "visit" ? "VISITA" : h.k === "market_order" ? "PEDIDO" : h.k === "hold" ? "APARTADO" : h.k === "party" ? "FIESTA" : h.k === "trip" ? "VIAJE" : h.k === "night" ? "NOCHE" : h.k === "enrollment" ? "INSCRIPCIÓN" : h.k === "tickets" ? "ORDEN DE BOLETOS" : "CITA", v: `${h.num}${h.svc ? ` · ${h.svc}` : ""}${h.k === "visit" ? "" : ` · ${usd(h.total)}`}` }, { k: "CLIENTE", v: h.quien }, { k: "QUÉ PASÓ", v: motivoAyuda(h.reason, h.k === "market_order" ? "merc" : h.k === "hold" ? "tienda" : h.rub)[0] },
         { k: "QUÉ QUIERE", v: `${quiereAyuda(h.wants)[0]}${h.amount ? ` · ${usd(h.amount)}` : ""}` }, { k: "DEVOLVIBLE A LA TARJETA", v: h.pago ? `${usd(h.pago)} (${h.k === "trip" ? "el viaje" : h.k === "tickets" ? "lo cobrado; los boletos siguen valiendo" : "depósito"})` : h.rub === "salud" || h.rub === "pro" || h.rub === "fe" || h.rub === "inm" || h.rub === "dealer" ? "Nada: no se cobra en la app" : "Nada: pagó en el local" }] });
       if (h.body) cuerpoB.push({ type: "note", tone: "ink", icon: "quote", t: `LO QUE CUENTA · «${h.body}»` });
-      if (h.fotos.length) cuerpoB.push({ type: "photos", k: "SUS FOTOS", cols: 4, items: h.fotos.map((u) => ({ bg: `url(${u})`, key: u, onClick: () => window.open(u, "_blank", "noopener") })) });
+      // 9j · «Vidrio roto»: las fotos de una ayuda de Salud se ven solo después de escribir el motivo (10 minutos; queda en la auditoría).
+      if (h.fotos.length && h.salud && !h.vidrio) cuerpoB.push({ type: "lock", t: `${h.fotos.length} ${h.fotos.length === 1 ? "foto" : "fotos"} de Salud`, s: "Son datos de salud: para verlas escribe por qué las necesitas. Queda en la auditoría y valen 10 minutos.", cta: "Ver con motivo",
+        onCta: () => setConf({ titulo: "Ver las fotos de Salud", cta: "Ver las fotos", sub: "El motivo queda en la auditoría con tu nombre. Las fotos se abren solo para ti durante 10 minutos.",
+          plantillas: ["Revisar la factura para decidir la ayuda.", "El paciente pidió que revisemos su cobro."], hacer: async (m) => { const r = await verFotosSalud(h.hid, m); quedarse.current = r.ok; return r; } }) });
+      else if (h.fotos.length) cuerpoB.push({ type: "photos", k: "SUS FOTOS", cols: 4, items: h.fotos.map((u) => ({ bg: `url(${u})`, key: u, onClick: () => window.open(u, "_blank", "noopener") })) });
       cuerpoB.push(h.reply ? { type: "note", tone: "info", icon: "chat", t: `RESPUESTA DEL NEGOCIO · ${DEC[h.decision ?? ""] ?? "Respondió"} · «${h.reply}»${h.escalated_by === "user" ? " · el cliente pidió que lo revisemos" : ""}` } : k.queue === "estafa" || (h.escalated_by === "system" && (k.queue !== "sop" || h.k === "tickets")) ? { type: "note", tone: "warn", icon: "warning", t: "Vino directo a To'Latino: no espera al negocio." } : { type: "note", tone: "warn", icon: "clock", t: "El negocio no respondió en 24 horas." });
       cuerpoB.push(...copBloques);
       // 4if · «Posible estafa»: lo que está en pausa, lo que vio la persona al pedir (la copia) y sus otras ayudas directas; decidir sin dinero.
