@@ -7,6 +7,28 @@ import { csv } from "@/lib/csv";
 import { tx } from "@/lib/db";
 import type { ResAdm } from "./acciones-colas";
 import { hoyEn } from "../../lib/fecha-local";
+import { idioma } from "@/lib/idioma";
+import { programarReporte } from "@/lib/reportes";
+import { mandarmeElReporte } from "@/lib/reporte-diario";
+
+/* 9g · Programar un reporte por correo (Analítica › Reportes): analit:exportar, con auditoría (lib/reportes.ts). cada = dia | semana | mes, o null para
+   pausarlo. La pantalla solo pide; el servidor revisa el permiso, la pestaña y la frecuencia. */
+export async function programar(tab: string, cada: string | null): Promise<ResAdm> {
+  const s = await staff();
+  const es = (await idioma()) === "es";
+  if (!s || !s.puede("analit", "exportar")) return { ok: false, mensaje: es ? "Tu rol no programa reportes." : "Your role cannot schedule reports." };
+  const r = await programarReporte(s, String(tab ?? ""), cada === null ? null : String(cada ?? ""));
+  return r.ok ? { ok: true, mensaje: es ? r.mensaje.es : r.mensaje.en } : { ok: false, mensaje: es ? r.mensaje.es : r.mensaje.en };
+}
+
+/* 9g · «Mándamelo ahora»: el reporte diario de hoy a quien lo pide (solo Admins; lib/reporte-diario.ts). */
+export async function reporteAhora(): Promise<ResAdm> {
+  const s = await staff();
+  const es = (await idioma()) === "es";
+  if (!s || s.role !== "admin") return { ok: false, mensaje: es ? "El reporte diario es de los Admins." : "The daily report is for Admins." };
+  const r = await mandarmeElReporte(s);
+  return r.ok ? { ok: true, mensaje: es ? r.mensaje.es : r.mensaje.en } : { ok: false, mensaje: es ? r.mensaje.es : r.mensaje.en };
+}
 
 const TOPE = 50_000;
 const NOMBRES: Record<string, string> = { biz: "Negocios", audit: "Historial", nosup: "Búsquedas sin oferta" };

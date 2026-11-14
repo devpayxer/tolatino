@@ -2,6 +2,8 @@ import { AdminNote, KpiRow } from "@tolatino/ui";
 import { requerir } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { gruposNav } from "@/lib/admin-nav";
+import { ciudadViva } from "@/lib/admin-analitica";
+import { idioma } from "@/lib/idioma";
 import { Auditoria } from "./sistema/Auditoria";
 import {SeccionesMovil, Titulo } from "./ui";
 
@@ -25,6 +27,9 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
   const cg = s.puede("compa", "ver") ? await (await import("@/lib/compa/tope")).gastoDelMes() : null;
   const cAl = cg && (cg.topeEn || cg.pct >= 100) ? "tope" : cg && cg.pct >= cg.alertaPct ? "aviso" : null;
   const usd = (c: number) => "$" + (c / 100).toFixed(2);
+  // 9g · «Ciudad viva» (pantallas-iniciales.md §2, ADM-HOME): por ciudad abierta o por abrir, de la base de análisis; con analit:ver.
+  const [lang, vivas] = await Promise.all([idioma(), s.puede("analit", "ver") ? ciudadViva(s) : Promise.resolve([])]);
+  const E = (a: string, b: string) => (lang === "en" ? b : a);
   return (
     <>
       <Titulo eyebrow="SUPER ADMIN · INICIO" titulo={`Hola, ${s.first_name}`} sub="Todo lo de aquí sale de la base real del servidor de pruebas." />
@@ -44,6 +49,20 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
       />
       <SeccionesMovil grupos={grupos} />
       {s.puede("sys", "ver") && <Auditoria limite={8} titulo="ÚLTIMAS ACCIONES DEL EQUIPO" />}
+      {vivas.length ? (
+        <section className="flex flex-col gap-2.5" data-ciudad-viva>
+          <span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-text-muted">{E("CIUDAD VIVA", "LIVING CITY")}</span>
+          {vivas.map((c) => (
+            <div key={c.id} className="flex flex-col gap-1.5">
+              <span className="text-[13px] font-bold">{c.ciudad}{c.status === "on" ? "" : E(" · próximamente", " · coming soon")}</span>
+              <KpiRow columns="repeat(auto-fill, minmax(min(100%, 160px), 1fr))" items={[
+                { label: E("SEMILLAS RECLAMADAS", "SEEDS CLAIMED"), value: c.semillas ? `${Math.round((c.reclamadas / c.semillas) * 100)} %` : "—", sub: E(`${c.reclamadas} de ${c.semillas}`, `${c.reclamadas} of ${c.semillas}`), dark: c.status === "on" },
+                { label: E("PUBLICACIONES · DÍA", "POSTS · DAY"), value: (Math.round((c.posts7 / 7) * 10) / 10).toString(), sub: E(`${c.posts7} en 7 días`, `${c.posts7} in 7 days`) },
+                { label: E("RECOMENDACIONES", "RECOMMENDATIONS"), value: String(c.recs30), sub: E("de vecinos en 30 días", "by neighbors in 30 days") },
+                { label: E("VECINOS ACTIVOS", "ACTIVE NEIGHBORS"), value: String(c.activos7), sub: E("en 7 días", "in 7 days") },
+              ]} />
+            </div>))}
+        </section>) : null}
     </>
   );
 }

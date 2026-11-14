@@ -124,8 +124,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9l** · **Avisos de la prueba fuera del panel** (día 20, 25, último, fin: push/SMS/correo a las 10 AM): Fase 2. — _9a (11 nov): solo existe el aviso del día 25 (pro_d25 en lib/suscripcion.ts); faltan el día 20, el último día y el de fin a las 10 AM._
 - [x] **Super Admin del panel (triángulo):** hecho en 1i (fotos, Quiénes somos, nombre, teléfono, dirección, staff,
   cierre temporal, ocultar/suspender/cerrar, sello). El horario queda en lectura en el admin (como el prototipo).
-- [ ] **→ 9g** · **Vistas:** se cuentan al servir la ficha (sin robots ni gente del negocio). Revisar con tráfico real si hace falta
-  dedupe por persona/día como los contactos.
+- [x] **9g** · **Vistas:** se cuentan al servir la ficha (sin robots ni gente del negocio). Revisar con tráfico real si hace falta
+  dedupe por persona/día como los contactos. — **✓ 9g (14 nov):** una vez por persona (o teléfono) y día: `business_views_daily.unicos` + `business_view_marks` (huella con la sal del día, se suelta a los 2 días); Analítica › Resumen muestra vistas y sin repetidos. El panel sigue con todas las vistas (LAUNCH «Fase 9 · 9g» → 9n). Evidencia: `ana9g` (dos vistas = +2 y +1 sin repetidos; sin correr aquí).
 - [ ] **→ 9c** · **Botones del sistema de diseño (`Button`) son `<div>` sin `role="button"`:** accesibilidad por teclado/lector de
   pantalla en todo el sitio. Corregir en `portar-sistema.mjs` (guardián de accesibilidad) antes de la fase 9.
 
@@ -172,7 +172,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9m** · **Entrada «¿Es tuyo?» desde la ficha** de un negocio: el diseño no la trae; hoy se llega desde Publica y semillas.
 - [x] **Decisiones tomadas sin el diseño (confirmar con el fundador):** texto del aviso al dueño actual en su panel
   (R2), las 3 plantillas de «Rechazar», el detalle del caso en «Cambios sensibles» (compuesto con piezas del admin). — **✓ 9a (11 nov):** textos del aviso al dueño (R2), las 3 plantillas de Rechazar y el detalle de Cambios sensibles (REVISION 9a).
-- [ ] **→ 9g** · **«Llamar» desde una semilla** abre el teléfono pero aún no se cuenta (la tabla `contact_taps` ya admite `seed_id`).
+- [x] **9g** · **«Llamar» desde una semilla** abre el teléfono pero aún no se cuenta (la tabla `contact_taps` ya admite `seed_id`). — **✓ 9g (14 nov):** `registrarToqueSemilla` (mismas reglas que un negocio) desde la tarjeta de la semilla; Analítica › Resumen: toques, semillas y «las que más llaman». Evidencia: `ana9g` (sin correr aquí).
 - [x] **→ 9b** · **Guardián de tipos de parámetros SQL:** el error «inconsistent types deduced for parameter» salió dos veces — **✓ 9b-3 (13 nov):** `parametroSinTipo` deduce el tipo de cada `$n` sin «::» desde las migraciones (lista de un insert, `set col = $n`, `col = $n`) y falla si recibe dos tipos; al revés en `alreves9b3`.
   (mismo `$n` usado como texto y uuid). Hoy lo caza la prueba punta a punta; falta un guardián estático.
 
@@ -200,18 +200,18 @@ en el momento. Se marca solo cuando está hecho de verdad.
   del onboarding por categoría, activo por ciudad, límites Free/Pro editables por módulo (la matriz es de solo lectura).
 - [x] **Decisiones tomadas sin el diseño (confirmar):** el nombre nuevo se escribe «español / inglés» en un solo campo;
   los módulos se listan sin la etiqueta «ACTIVO» del prototipo porque todavía no existen (llegan con sus fases). — **✓ 9a (11 nov):** nombre «español / inglés» en un campo y los módulos sin la etiqueta «ACTIVO» (REVISION 9a).
-- [ ] **→ 9g** · **Búsquedas sin oferta** cuenta solo «Avísame cuando haya»; las búsquedas sin resultado (search_logs) entran con la
-  analítica.
+- [x] **9g** · **Búsquedas sin oferta** cuenta solo «Avísame cuando haya»; las búsquedas sin resultado (search_logs) entran con la
+  analítica. — **✓ 9g (14 nov):** Búsquedas sin oferta suma «Buscaron y no hubo resultados» de `search_logs` (solo lo que buscaron 2 o más personas; las anónimas cuentan como una). Evidencia: `alreves9g` (el «2 o más») y `ana9g`.
 
 ## Analítica propia (bloque 1n, 6 nov 2026)
 - [x] **→ 9b** · **Escala:** `app_events` sin particiones (BRIN por fecha); particionar por mes y resúmenes diarios cuando crezca — **✓ 9b-3 (13 nov):** 0133: `app_events` particionada por mes (BRIN en cada partición, partición por omisión que `app_events_mes` reparte), `app_events_dia` (resumen por día, ciudad, nombre, app y plataforma) y la retención `eventos_retener_meses` (13, lo que dicen las tiendas): el barrido resume el mes y suelta su partición. Medido con 5 M de eventos (PROGRESS 9b-3).
   (necesita trabajos programados). Política de cuánto tiempo se guardan los eventos (privacidad): decidir y programar.
-- [ ] **→ 9g** · **Pestañas del diseño pendientes:** Dinero (MRR, conversión a Pro, devoluciones, ticket promedio), Comunidad y
+- [x] **9g** · **Pestañas del diseño pendientes:** Dinero (MRR, conversión a Pro, devoluciones, ticket promedio), Comunidad y
   eventos, vecinos por rango, reportes por mil operaciones y tickets: con sus módulos. Envío semanal de reportes por
-  correo (interruptor del diseño): con las notificaciones.
-- [ ] **→ 9g** · **Embudo:** el diseño termina en «El negocio aceptó»; en la Fase 1 termina en «Contactaron» (Llamar, WhatsApp,
-  Cómo llegar). Confirmar el texto con el fundador. Etiquetas cortas porque el componente de barras corta las largas.
-- [ ] **→ 9g** · **Grabación de sesiones (rrweb, con consentimiento)** y Web Vitals propios (HERRAMIENTAS §2 y §4): bloque aparte. — _9b-3 (13 nov): no es de la escala; va con la Analítica completa (9g)._
+  correo (interruptor del diseño): con las notificaciones. — **✓ 9g (14 nov):** pestaña Dinero (MRR, conversión a Pro, devoluciones, ticket promedio, no llegaron, 8 semanas, por tipo, dinero por estado) de `metricas_dinero_dia` y `metricas_pro_dia`; Soporte y confianza con reportes por cada 1,000 operaciones y casos de Soporte; Comunidad y Eventos ya eran pestañas; reportes programados por correo (Analítica › Reportes, interruptor como el prototipo). Evidencia: funciones contra la base local con la semilla 0055; `ana9g` (sin correr aquí).
+- [x] **9g** · **Embudo:** el diseño termina en «El negocio aceptó»; en la Fase 1 termina en «Contactaron» (Llamar, WhatsApp,
+  Cómo llegar). Confirmar el texto con el fundador. Etiquetas cortas porque el componente de barras corta las largas. — **✓ 9g (14 nov):** Resumen suma el embudo de buscar a «El negocio aceptó» (enviaron un pedido o una cita → el negocio aceptó); el de «Contactaron» sigue. El texto queda para tu OK (REVISION 9g).
+- [ ] **→ 9s** · **Grabación de sesiones (rrweb, con consentimiento)** y Web Vitals propios (HERRAMIENTAS §2 y §4): bloque aparte. — _9b-3 (13 nov): no es de la escala; va con la Analítica completa (9g)._ — _9g (14 nov): no se construyó; rrweb → 9s y Web Vitals → 9j, con su porqué en «Fase 9 · 9g»._
 - [x] **9e** · **Aviso de privacidad** que diga qué mide To'Latino (sin terceros): /privacidad «Lo que no hacemos» (analítica propia, sin rastreo ni
       publicidad de terceros) y «Con quién se comparten» (docs/legal/us/privacidad.{es,en}.md). Evidencia: leg9e 72 ✓ dos veces seguidas. (9e, 14 nov)
 
@@ -449,8 +449,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9k** · Si se devuelve más que un cobro (estimado + «algo más»), hoy sale del de más saldo: repartir entre cobros.
 
 ## Fase 4 · 4g-3
-- [ ] **→ 9g** · Analítica de Hogar y Auto: aprobado vs. cobrado, llegó en la franja, tiempo de respuesta a emergencias, % de
-      pre-estimados que terminan en cita.
+- [x] **9g** · Analítica de Hogar y Auto: aprobado vs. cobrado, llegó en la franja, tiempo de respuesta a emergencias, % de
+      pre-estimados que terminan en cita. — **✓ 9g (14 nov):** pestaña Hogar y Auto (pre-estimado y presupuesto → cita, emergencias y su respuesta, llegó en la franja, no llegó, aprobado contra cobrado y extras). Evidencia: funciones contra la base local con la semilla (10 visitas, 7 «Llegué», 4 en la franja); `ana9g`.
 - [ ] **→ 9n** · Configuración en el Super Admin: plazos (pre-estimado 24 h, presupuesto 48 h, emergencia 15 min, apartado 48 h) y la
       regla de impuesto (tax_rules) editables con motivo; hoy viven en el código y en datos.
 - [ ] **→ 9k** · «Devolver» desde Transacciones para cobros de planes y rentas.
@@ -945,8 +945,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9n** · **6j · «Día de pago de eventos» (evt_pago_dia) en SOLO LECTURA:** el panel (Eventos, Cobros), Publica tu evento y la ayuda dicen «el martes».
       Se abre cuando esos textos lean el valor. (6j, 10 nov)
 - [ ] **→ 9n** · **6j · Ajustar el cupo de un RSVP desde el Super Admin:** hoy solo boletos, mesas y aforo del día (el cupo del RSVP lo cambia el organizador). (6j, 10 nov)
-- [ ] **→ 9g** · **6j · Analítica › Eventos con la base de carga:** las vistas `evt_analitica_dia` / `evt_asistencia_dia` agregan en cada consulta; con 1 M de
-      fechas y 5 M de boletos medirlas y, si pasan del presupuesto, materializarlas por día (refresco en el barrido). (6j, 10 nov)
+- [x] **9g** · **6j · Analítica › Eventos con la base de carga:** las vistas `evt_analitica_dia` / `evt_asistencia_dia` agregan en cada consulta; con 1 M de
+      fechas y 5 M de boletos medirlas y, si pasan del presupuesto, materializarlas por día (refresco en el barrido). (6j, 10 nov) — **✓ 9g (14 nov):** 0137: las cuatro vistas pasan a tablas `*_cache` que rehace el barrido (40 días cada 10 min y la historia una vez al día; las vistas leen desde `analitica_desde()`, sin recorrer años); Analítica lee las tablas (guardián `derivadoNoEditable`). La medida con la base de carga de 1 M no se corrió aquí (va con la carga del CI).
 - [ ] **→ 9c** · **6j · Super Admin de Eventos en los 9 dispositivos:** `adm6j` corre en escritorio 1360 y teléfono 390 en local; falta la matriz de CI. (6j, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9f** · **6j · Textos del Super Admin de Eventos en inglés:** como el resto del admin, en español (las etiquetas de Configuración y las plantillas sí ES/EN). (6j, 10 nov)
       _9f-1/2 (14 nov): el mecanismo está (cookie `tl_lang`, selector Español / English, `par(l)` en `app/admin/TextosComun.tsx`) y Textos y páginas ya sale completo en los dos idiomas; este módulo sigue en español → resto del Super Admin en inglés (9f-4)._
@@ -1140,8 +1140,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       SMS. (7i, 11 nov)
 - [ ] **→ 9q** · **7i · Batería del modelo real** (§7: ≥ 150 preguntas ES/EN, ≥ 95 %) y el **presupuesto de velocidad** con la base de carga (`compa-1m`):
       sin llave de Anthropic no se corren; todo lo de 7a–7i se probó con el simulador. (7i, 11 nov)
-- [ ] **→ 9g** · **7i · Analítica a escala:** `compa_analitica_dia` y `soporte_analitica_dia` agrupan al leer (como las vistas de Eventos); con millones
-      de conversaciones, pasarlas a una tabla de cifras diarias que llene el barrido. (7i, 11 nov)
+- [x] **9g** · **7i · Analítica a escala:** `compa_analitica_dia` y `soporte_analitica_dia` agrupan al leer (como las vistas de Eventos); con millones
+      de conversaciones, pasarlas a una tabla de cifras diarias que llene el barrido. (7i, 11 nov) — **✓ 9g (14 nov):** 0137: `compa_analitica_dia_cache` y `soporte_analitica_dia_cache` (lo mismo que Eventos); Soporte también lee la tabla. Evidencia: tablas = vistas en la base local y en `ana9g`.
 - [x] **7i · «Plazo cumplido» de un caso reabierto:** la vista compara la primera respuesta con el plazo vigente del caso (un caso reabierto
       tiene plazo nuevo). Si hace falta el plazo original, guardarlo aparte al abrir. (7i, 11 nov) — **✓ 9a (11 nov):** «Plazo cumplido» compara con el plazo vigente del caso (REVISION 9a).
 - [ ] **→ 9c** · **7i · En los 9 dispositivos:** `adm7i` corre en 390 y 1360 en local; falta la matriz de CI y la corrida de CI de 0124 / 0043. (7i, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
@@ -1591,3 +1591,20 @@ en el momento. Se marca solo cuando está hecho de verdad.
       sin autor se rechazan. (9f, 14 nov)
 - [ ] **→ 9t** · **El indexador de cadenas en producción:** el despliegue del sandbox corre `scripts/cms/indexar.mjs` (deploy.sh 3c-quater); el de producción (todavía no existe) hace
       lo mismo, sin la semilla 0054 (los anuncios de ejemplo son solo del sandbox). (9f, 14 nov)
+
+## Fase 9 · 9g — Analítica completa, base de análisis y el reporte diario (14 nov)
+- [ ] **→ 9s** · **Grabación de sesiones (rrweb, con consentimiento):** no se construyó en 9g. Graba pantallas donde hay nombres, direcciones, mensajes y datos de salud o de niños; pide
+      una pantalla de consentimiento que el diseño no trae, cambiar el aviso de privacidad (hoy dice que no hay rastreo ni grabación) y la revisión del abogado. Se decide con el
+      paquete legal (9s); si se hace, enmascarando todo campo y solo en la web. (9g, 14 nov)
+- [ ] **→ 9j** · **Web Vitals propios (RUM: LCP, INP, CLS de teléfonos reales):** no se construyó en 9g. Se mide sin personas, pero es un script en todas las pantallas de la app y su
+      tablero y alertas van con Sistema › Salud (9j), donde ya viven los errores en vivo; el presupuesto de laboratorio sigue en el CI. (9g, 14 nov)
+- [ ] **→ 9n** · **El panel del negocio con vistas sin repetidos:** Analítica ya muestra las dos cifras (`business_views_daily.unicos`); el panel sigue con todas las vistas porque cambiarlo
+      cambia las capturas aprobadas del panel (necesita el OK del fundador con las capturas nuevas). (9g, 14 nov)
+- [ ] **→ 9j** · **Los guardianes del build en el reporte diario:** el reporte lleva los guardianes en vivo (sobreventa, errores sin revisar, el tope de El Compa) y las tareas del barrido
+      con error; lo que cazan los guardianes del build corre en el CI y no queda en la base: con Sistema › Salud (9j), cada despliegue anota su resultado y el reporte lo lee. (9g, 14 nov)
+- [ ] **→ 9k** · **La conciliación con Stripe en el reporte diario y en Analítica › Dinero:** el renglón existe y dice que todavía no sale (`conciliacion: null`); lo llena la conciliación
+      diaria de 9k. (9g, 14 nov)
+- [ ] **→ 9o** · **Las vueltas atrás en el reporte diario:** el renglón existe (`vueltas: null`); lo llena la vuelta atrás automática de 9o. La alerta «el reporte no salió» la da el barrido:
+      si el barrido entero se cae, nadie alerta; el monitoreo externo de 9o mira `system_jobs` (barrido.reporteDiario). (9g, 14 nov)
+- [ ] **→ 9g** · **Corridas del CI de 9g:** `ana9g` pasó dos veces seguidas en una base local (85 ✓) con un docker de mentira; falta la regresión entera, la barajada y los 9
+      dispositivos en el CI, y `pruebas/visual` del Inicio del Super Admin (Ciudad viva va al final de la pantalla). (9g, 14 nov)

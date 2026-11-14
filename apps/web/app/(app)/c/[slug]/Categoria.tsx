@@ -4,7 +4,7 @@
 import * as UI from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type ComponentType, type ReactNode } from "react";
-import { avisame } from "../../acciones";
+import { avisame, registrarToqueSemilla } from "../../acciones";
 import { TarjetaNegocio } from "../../TarjetaNegocio";
 import type { Tarjeta } from "@/lib/tarjeta";
 
@@ -229,7 +229,7 @@ export function Categoria({ v }: { v: Vista }) {
                 <div key={`s${x.id}`} className="grid">
                   <BusinessCard plan="free" name={x.name} verified={false} meta={`${T.sinReclamar}${x.address ? ` · ${x.address.toUpperCase()}` : ""}`} rating={T.esTuyo} reviews={0} reviewsNote={T.reclamalo}
                     photos={[]} chips={[]} contactLabel={T.llamar} onOpen={() => router.push(`/publica?semilla=${x.id}`)}
-                    onContact={() => { if (x.phone) location.href = `tel:${x.phone}`; else router.push(`/publica?semilla=${x.id}`); }} />
+                    onContact={() => { if (x.phone) { void registrarToqueSemilla(x.id, "categoria"); location.href = `tel:${x.phone}`; } else router.push(`/publica?semilla=${x.id}`); }} />
                 </div>))}
             </div>
           </div>

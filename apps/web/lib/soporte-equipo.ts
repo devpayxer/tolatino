@@ -69,11 +69,12 @@ export async function kpisSoporte(s: Staff) {
             count(*) filter (where c.csat = 'no' and c.csat_at > now() - interval '30 days')::int as no
        from support_cases c where ${CIUDAD("$1")} and (c.status not in ('resolved', 'merged') or c.resolved_at > now() - interval '30 days' or c.csat_at > now() - interval '30 days')`,
     [s.cities, s.id])).rows[0]!;
-  // 7i · El plazo de 30 días (soporte_analitica_dia, sin personas): primera respuesta dentro del plazo de horas hábiles, vencidos, desde El Compa.
+  // 7i · El plazo de 30 días (sin personas): primera respuesta dentro del plazo de horas hábiles, vencidos, desde El Compa. 9g · De la tabla que rehace
+  // el barrido cada 10 minutos (soporte_analitica_dia_cache), no de la vista que agrupaba toda la historia en cada vista.
   const p = (await db().query<{ con: number; cumplido: number; vencido: number; casos: number; compa: number }>(
     `select coalesce(sum(con_respuesta), 0)::int as con, coalesce(sum(plazo_cumplido), 0)::int as cumplido, coalesce(sum(plazo_vencido), 0)::int as vencido,
             coalesce(sum(casos), 0)::int as casos, coalesce(sum(desde_compa), 0)::int as compa
-       from soporte_analitica_dia where dia >= (now() at time zone 'America/New_York')::date - 29 and (cardinality($1::text[]) = 0 or city_id = any($1::text[]))`, [s.cities])).rows[0]!;
+       from soporte_analitica_dia_cache where dia >= (now() at time zone 'America/New_York')::date - 29 and (cardinality($1::text[]) = 0 or city_id = any($1::text[]))`, [s.cities])).rows[0]!;
   return { ...r, plazo30: p };
 }
 

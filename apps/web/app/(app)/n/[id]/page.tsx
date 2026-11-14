@@ -51,7 +51,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const f = await ficha(id, lang, loc);
   if (!f) notFound();
   const [ua, ctx] = [(await headers()).get("user-agent"), await contexto()];
-  after(() => registrarVista(f.id, u?.id ?? null, ua).catch(() => undefined));
+  after(() => registrarVista(f.id, u?.id ?? null, ua, ctx.dev).catch(() => undefined));
   after(() => evento("ver_ficha", { ref: f.id, ciudad: loc.c.id, userId: u?.id ?? null }, ctx));
   const [evts, fav, menu, rsv, res, nov, jobs, svc, ofi, tienda, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl] = await Promise.all([
     // 6b · Ficha › Eventos: solo réplica de sus fechas vivas, en Pro.

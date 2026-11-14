@@ -239,14 +239,21 @@ async function relacionados(id: string, lang: Lang, desde: string) {
 /* Una vista de la página del negocio (las cifras del panel: «VISTAS · 7 DÍAS», «VISTAS HOY»). Día de la ciudad del
    negocio; no cuenta a la gente del propio negocio ni a los robots. Una fila por negocio y día (derivado, nadie lo edita). */
 const ROBOT = /bot|crawl|spider|slurp|preview|headless|lighthouse|facebookexternalhit|whatsapp/i;
-export async function registrarVista(id: string, userId: string | null, ua: string | null) {
+export async function registrarVista(id: string, userId: string | null, ua: string | null, dev: string | null = null) {
   if (!ID_NEGOCIO.test(id) || id.length > 80 || !ua || ROBOT.test(ua)) return;
-  await db().query(
+  const r = await db().query<{ dia: string }>(
     `insert into business_views_daily (business_id, day, n)
      select b.id, (now() at time zone c.timezone)::date, 1 from businesses b join cities c on c.id = b.city_id
       where b.id = $1 and b.status = 'active'
         and not exists (select 1 from business_members m where m.business_id = b.id and m.user_id = $2::uuid and m.status = 'active')
-     on conflict (business_id, day) do update set n = business_views_daily.n + 1`, [id, userId]);
+     on conflict (business_id, day) do update set n = business_views_daily.n + 1
+     returning day::text as dia`, [id, userId]);
+  // 9g · «Sin repetidos» (L127): una vez por persona (o teléfono) y día; solo la huella con la sal del día (lib/analitica-derivados.ts).
+  const dia = r.rows[0]?.dia, quien = userId ?? dev;
+  if (!dia || !quien) return;
+  const { huellaVista } = await import("./analitica-derivados");
+  const nueva = await db().query(`insert into business_view_marks (business_id, day, mark) values ($1, $2::date, $3) on conflict do nothing`, [id, dia, huellaVista(quien, dia)]);
+  if (nueva.rowCount) await db().query(`update business_views_daily set unicos = unicos + 1 where business_id = $1 and day = $2::date`, [id, dia]);
 }
 
 /* Resumen · Quién está detrás (OwnerCard 15b): la persona (el dueño con sus palabras) o, sin ella, el texto del negocio;

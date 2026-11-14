@@ -131,8 +131,14 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["tiendas", async () => (await import("./tiendas/tuberia")).barrerTiendas()],
         // 9b-3 · La escala: los meses de la analítica (particiones), su resumen por día y su retención (eventos_retener_meses); el vocabulario de
         // búsqueda cada hora; los contadores compartidos de los topes (rate_counters) de más de un día.
-        ["analitica", async () => (await import("./eventos")).analiticaAlDia()], ["analiticaComunidad", async () => (await import("./admin-analitica")).comunidadAlDia()],
-        ["contenidoTotales", async () => (await import("./admin-contenido")).contenidoAlDia()], ["comunidadCifras", async () => (await import("./admin-analitica")).comunidadCifrasAlDia()],
+        ["analitica", async () => (await import("./eventos")).analiticaAlDia()], ["analiticaComunidad", async () => (await import("./analitica-derivados")).comunidadAlDia()],
+        ["contenidoTotales", async () => (await import("./admin-contenido")).contenidoAlDia()], ["comunidadCifras", async () => (await import("./analitica-derivados")).comunidadCifrasAlDia()],
+        // 9g · La Analítica completa: los derivados (metricas_* y las tablas de Eventos, El Compa y Soporte: 40 días cada 10 min, la historia una vez al
+        // día), los reportes programados por correo (8:00 AM) y el reporte diario al fundador (7:30 AM; si a las 8:00 no salió, la alerta). En este orden:
+        // el reporte lee los derivados recién hechos.
+        ["metricas", async () => (await import("./analitica-derivados")).barrerAnalitica()],
+        ["reportes", async () => (await import("./reportes")).barrerReportes()],
+        ["reporteDiario", async () => (await import("./reporte-diario")).barrerReporteDiario()],
         ["buscarVocab", async () => (await import("./buscar")).vocabularioAlDia()],
         ["topes", async () => (await import("./topes")).purgarTopes()],
         // 9d · Tus datos: la purga de las cuentas a los 30 días por el mapa (D5), armar los archivos pedidos (Descargar mis datos y el del negocio)

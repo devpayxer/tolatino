@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 11 nov 2026 (plan de la Fase 9 escrito: `docs/diseno/plan/fase9-apertura.md`; sigue 9a. Fase 8 cerrada salvo 8b, que espera el dominio y pasa a 9p)._
+_Actualizado: 14 nov 2026 (9g hecho en su rama: Analítica completa, base de análisis y el reporte diario al fundador; ver «Fase 9 · 9g» al final). Plan de la Fase 9: `docs/diseno/plan/fase9-apertura.md`._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -1734,3 +1734,39 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **No cerrado, con destino (LAUNCH «Fase 9 · 9f»):** más cadenas por el CMS (~16 000 `E2` a mano), el resto del Super Admin en inglés, la ayuda (inglés ampliado y editor de cambios propuestos), «Cuenta borrada» en los
   demás paneles, anuncios para negocios, encender el pie (necesita tu OK con las capturas), las líneas fijas que esperan su pantalla y las corridas del CI.
 
+
+## Fase 9 · 9g — Analítica completa, base de análisis y el reporte diario al fundador (14 nov)
+- **Hecho (rama del worktree, sobre `fase9-9f` 9067e89; las tres correcciones del sandbox de `main` —3cc3599, 425b58a, 1a64dd5— no están en esta rama: se juntan al integrar):**
+  - **Migración `0137_analitica.sql`:** derivados que escribe SOLO el barrido (trigger `derivado_no_editable` con la marca `tl.metricas_barrido`, que solo `metricas_resumir` enciende y
+    apaga): **`metricas_dinero_dia`** (por ciudad, día local y tipo de operación: operaciones cobradas, bruto, comisión, devoluciones, devuelto, citas cerradas y «no llegó»),
+    **`metricas_pro_dia`** (pruebas que empiezan, con tarjeta, que terminan, primeros cobros, cobrado, a Free y la foto del día: MRR, Pro pagando, en prueba) y **`metricas_retencion`**
+    (cohortes semanales por ciudad, D1/D7/D30 con su base; sin personas). Las seis vistas que agregaban toda la historia en cada lectura (`evt_analitica_dia`, `evt_asistencia_dia`,
+    `evt_ventas_negocio_dia`, `evp_analitica_dia`, `compa_analitica_dia`, `soporte_analitica_dia`; LAUNCH L948, L1143) pasan a tablas `*_cache` con las mismas columnas; las vistas siguen
+    como definición y leen solo desde `analitica_desde()`. `metricas_al_dia()` rehace los últimos 40 días cada 10 min y la historia entera una vez al día (pasadas las 3 AM).
+    `business_views_daily.unicos` + `business_view_marks` (huella con la sal del día, se suelta a los 2 días), **`scheduled_reports`** (se pausa, no se borra), **`founder_reports`**
+    (solo inserción, uno por día y tipo: `diario` | `alerta`), plantillas de correo `report` y `founder_daily`, avisos `reporte_diario` y `reporte_no_salio` (sin SMS), interruptor
+    `reporte.diario` (encendido) e índices de las ventanas. Probada en un Postgres 16 + PostGIS local: 0001–0137 y las semillas en una base nueva, 0137 dos veces sin cambios.
+  - **Semilla `0055_analitica.sql`** (el plan decía 0051): 40 vecinos de muestra (570-555-0801…0840) con sus días de vuelta, 90 días de pedidos, visitas de Hogar y mesas cobradas en
+    Hazleton con devoluciones, la historia Pro de cuatro negocios que ya se ven Pro o Free, búsquedas sin resultado y pre-estimados; al final `metricas_resumir`. Dos veces sin cambios.
+  - **Servidor:** `lib/db-analisis.ts` (`DATABASE_URL_ANALISIS`, de solo lectura; sin ella, la misma base); `lib/admin-analitica.ts` lee todo por ahí y suma `dinero`,
+    `retencionCohortes`, `embudos`, `busquedasSinResultado` (2 o más personas), `contactosYVistas`, `hogarAuto`, `ciudadViva`; `lib/analitica-derivados.ts` (el barrido:
+    `barrerAnalitica`, y los derivados de la Comunidad que estaban en admin-analitica); `lib/reportes.ts` (programar con auditoría, `barrerReportes` a las 8:00); `lib/reporte-diario.ts`
+    (7:30 AM a los Admins por correo y push con «lo que necesita de ti» de `loQueTeToca()`, alerta si a las 8:00 no salió o salió tarde, «Mándamelo ahora»; la conciliación (9k) y
+    la vuelta atrás (9o) tienen su lugar y dicen que todavía no). «Llamar» en una semilla se cuenta (`registrarToqueSemilla`, L175); vistas sin repetidos (L127); Soporte lee la tabla.
+  - **Super Admin › Analítica:** pestañas nuevas **Dinero**, **Hogar y Auto** y **Reportes** (programados con interruptor y frecuencia; reporte diario de 14 días, alertas y «Lo que
+    necesita de ti»); Resumen con el embudo hasta «El negocio aceptó», vistas sin repetidos y semillas; Gente con retención por cohorte y los embudos del vecino y del negocio paso a
+    paso; Búsquedas sin oferta con las búsquedas sin resultado. Lo nuevo y las pestañas en español e inglés. **Inicio** con «Ciudad viva».
+  - **Guardianes:** `derivadoNoEditable`, `analisisPorReplica`, `reporteDiarioSale` (nuevos) y `analiticaSinPersonas` ampliado (lo nuevo y los correos). **`alreves9g` 29/29.**
+    `alreves6j` y `alreves7i` al día con las tablas `_cache`.
+  - **Prueba nueva `ana9g`** (cada pestaña a 390 y 1360; Dinero contra los cobros y la fórmula de la semilla; derivados no editables y tablas = vistas; retención y embudos;
+    búsquedas sin resultado; «Llamar» en una semilla y vistas sin repetidos; Hogar y Auto; programar, recibir en el simulador y pausar; Solo lectura; reporte diario y «Mándamelo
+    ahora»; Inicio con ciudad viva). `adm6j` y `adm7i` rehacen los derivados antes de comparar.
+  - **Ayuda:** `admin-analitica` al día y **`reporte-diario`** (equipo, ES/EN).
+- **Probado aquí (sin Docker):** `node guardianes/run.mjs` → «sin fallos»; `tsc --noEmit` limpio; `pnpm --filter web build` en verde; las funciones reales de Analítica, de los reportes y del reporte
+  diario (con su alerta, adelantando la hora) contra la base local con la semilla; `alreves9g` 29/29; las al revés que tocan los archivos cambiados, en verde salvo tres casos que ya
+  fallaban antes y no son de 9g y no tocan sus archivos (`alreves6d` devolverCoincide; `alreves6h` paqueteMinimo y sinConexionSinDatosAjenos; `alreves7b`, `7c`, `7g`, `8e`, `8f`: casos de
+  El Compa, las apps y las tiendas cuyo texto ya no está). **`ana9g` en verde: 85 ✓ dos veces seguidas** (y antes 83 ✓ dos veces antes de las 7:30, que no prueba el reporte del día) contra
+  el servidor construido (`.next/standalone`) en :3197 y la base local con las semillas, con un `docker` de mentira que manda el psql de la prueba a esa base. `an1n` y `adm7i` no
+  pudieron correr en esta máquina (an1n: el Chrome sin pantalla cuenta como robot; adm7i: El Compa sin el índice de la ayuda): quedan para el CI. No se corrió `pruebas/visual`.
+- **No cerrado, con destino (LAUNCH «Fase 9 · 9g»):** grabación de sesiones (→ 9s), Web Vitals propios (→ 9j), el panel con vistas sin repetidos (→ 9n), los guardianes del build en el
+  reporte (→ 9j), la conciliación en el reporte (→ 9k), las vueltas atrás en el reporte (→ 9o) y las corridas del CI.
