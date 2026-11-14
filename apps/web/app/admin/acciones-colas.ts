@@ -260,8 +260,17 @@ export async function decidirCambio(id: string, aprobar: boolean, motivo: string
       `select id, type, status, target_id, requested_by from sensitive_changes where id = $1 for update`, [q.subject_id])).rows[0];
     if (!sc || sc.status !== "pending") return "Este cambio ya se decidió.";
     if (sc.requested_by === s.id) return "Lo pediste tú: lo aplica otra persona del equipo.";
-    if (sc.type !== "deleteUser") return "Este cambio todavía no se puede aplicar.";
-    if (aprobar) {
+    if (sc.type !== "deleteUser" && sc.type !== "mergeUser") return "Este cambio todavía no se puede aplicar.";
+    // 9d · Fusionar cuentas (L186): la aplica OTRA persona del equipo (fusionar() y la base lo vuelven a exigir).
+    if (sc.type === "mergeUser" && aprobar) {
+      const p = (await c.query<{ into: string | null; reason: string }>(`select payload->>'into' as into, reason from sensitive_changes where id = $1`, [sc.id])).rows[0];
+      if (!p?.into) return "Al pedido le falta la otra cuenta.";
+      const { fusionar } = await import("@/lib/datos/fusionar");
+      const f = await fusionar(c, { desde: sc.target_id, hacia: p.into, pidio: sc.requested_by, aprobo: s.id, motivo: `${p.reason} · ${m}`, cambio: sc.id });
+      if (!f.ok) return f.msg;
+      await auditar(c, { actor: s.id, action: "usuario.fusionar", targetKind: "user", targetId: sc.target_id, city: q.city_id, before: { estado: "activa" }, after: { estado: "fusionada", hacia: p.into, pedido: sc.id, tablas: Object.keys(f.tablas).length }, reason: m });
+    }
+    if (sc.type === "deleteUser" && aprobar) {
       const u = (await c.query<{ status: string; staff: boolean }>(
         `select status, exists (select 1 from staff_members m where m.user_id = u.id and m.status = 'active') as staff from users u where u.id::text = $1 for update`, [sc.target_id])).rows[0];
       if (!u || ["deleted_pending", "deleted", "merged"].includes(u.status)) return "Esta cuenta ya está borrada.";
@@ -273,12 +282,12 @@ export async function decidirCambio(id: string, aprobar: boolean, motivo: string
     await c.query(`update sensitive_changes set status = $2, decided_by = $3, decided_at = now(), decision_reason = $4 where id = $1`, [sc.id, aprobar ? "applied" : "rejected", s.id, m]);
     await cerrar(c, q, s, aprobar ? "aplicar" : "rechazar", m);
     await auditar(c, { actor: s.id, action: aprobar ? "cambio.aplicar" : "cambio.rechazar", targetKind: "sensitive_change", targetId: sc.id, city: q.city_id, before: { estado: "pendiente" }, after: { estado: aprobar ? "aplicado" : "rechazado" }, reason: m });
-    return "ok";
+    return sc.type === "mergeUser" ? "ok-fusion" : "ok";
   });
-  if (r !== "ok") return no(r);
+  if (r !== "ok" && r !== "ok-fusion") return no(r);
   listo();
   revalidatePath("/admin/usuarios");
-  return { ok: true, mensaje: aprobar ? "Aplicado. La cuenta tiene 30 días de gracia." : "Rechazado. Queda en el historial." };
+  return { ok: true, mensaje: !aprobar ? "Rechazado. Queda en el historial." : r === "ok-fusion" ? "Aplicado. Las cuentas quedaron fusionadas; quedó en la auditoría." : "Aplicado. La cuenta tiene 30 días de gracia." };
 }
 
 /* Recomendaciones · «Crear semilla»: negocio no reclamado que sale al final de «También en {ciudad}» de su categoría

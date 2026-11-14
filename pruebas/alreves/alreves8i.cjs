@@ -1,4 +1,4 @@
-// Prueba al revés de los guardianes de 8i: fichaEnLimites, privacidadCoherente, sinCompraDigitalEnApp, borrarCuentaEnCadaApp y revisionAcotada
+// Prueba al revés de los guardianes de 8i: fichaEnLimites, mapaDeDatos (antes privacidadCoherente), sinCompraDigitalEnApp, borrarCuentaEnCadaApp y revisionAcotada
 // (9a: sinProntoEnTienda se partió en dos; su al revés está en alreves9a). Se inyecta el defecto, el guardián debe fallar con SU mensaje; se restaura.
 // «crear»: se crea el archivo, se corre y se borra.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
@@ -23,15 +23,15 @@ const casos = [
   ['fichaEnLimites', FS, '  const detalle: ResSubir["detalle"] = [];', '  const detalle: ResSubir["detalle"] = []; void "/v1/reviewSubmissions";'],
   ['fichaEnLimites', M, 'subtitle    text check (char_length(subtitle) <= 30),', 'subtitle    text,'],
   // privacidadCoherente: rastreo, el xcprivacy a mano, el CSV viejo, /privacidad sin el inventario, la semilla vieja, una tabla que no existe, el patrón de columnas
-  ['privacidadCoherente', INV, '"rastreo": false,', '"rastreo": true,'],
-  ['privacidadCoherente', XP, '<string>NSPrivacyCollectedDataTypePreciseLocation</string>', '<string>NSPrivacyCollectedDataTypeCoarseLocation</string>'],
-  ['privacidadCoherente', CSV, 'PSL_DATA_TYPES_PERSONAL,PSL_PHONE,true', 'PSL_DATA_TYPES_PERSONAL,PSL_PHONE,false'],
-  ['privacidadCoherente', PRIV, '{I.categorias.map((c) => (', '{[].map((c: Cat) => ('],
-  ['privacidadCoherente', SEM, "'telefono'", "'telefono2'"],
-  ['privacidadCoherente', INV, '"search_logs.query"', '"search_logs.texto"'],
-  ['privacidadCoherente', INV, '"users.email", ', ''],
-  ['privacidadCoherente', GEN, 'poner(`${T}/PrivacyInfo.xcprivacy`, xcprivacy(a.key));', 'poner(`${T}/PrivacyInfo.xcprivacy`, xcprivacy("cliente"));'],
-  ['privacidadCoherente', M, 'tracking        boolean not null default false check (tracking = false),', 'tracking        boolean not null default false,'],
+  ['mapaDeDatos', INV, '"rastreo": false,', '"rastreo": true,'],
+  ['mapaDeDatos', XP, '<string>NSPrivacyCollectedDataTypePreciseLocation</string>', '<string>NSPrivacyCollectedDataTypeCoarseLocation</string>'],
+  ['mapaDeDatos', CSV, 'PSL_DATA_TYPES_PERSONAL,PSL_PHONE,true', 'PSL_DATA_TYPES_PERSONAL,PSL_PHONE,false'],
+  ['mapaDeDatos', PRIV, '{I.categorias.map((c) => (', '{[].map((c: Cat) => ('],
+  ['mapaDeDatos', SEM, "'telefono'", "'telefono2'"],
+  ['mapaDeDatos', INV, '"search_logs.query"', '"search_logs.texto"'],
+  ['mapaDeDatos', INV, '"users.email", ', ''],
+  ['mapaDeDatos', GEN, 'poner(`${T}/PrivacyInfo.xcprivacy`, xcprivacy(a.key));', 'poner(`${T}/PrivacyInfo.xcprivacy`, xcprivacy("cliente"));'],
+  ['mapaDeDatos', M, 'tracking        boolean not null default false check (tracking = false),', 'tracking        boolean not null default false,'],
   // sinCompraDigitalEnApp: un «Ver Pro» directo, ctaPro sin la compuerta, la hoja de compra sin compraPro, estadoPlan con un botón, planSeguir sin la compuerta, reglas que dan, el panel sin compraPro del servidor, otra puerta a seguirConPro
   ['sinCompraDigitalEnApp', CO, '...ctaPro(c, E2("Ver Pro", "See Pro")) });', 'cta: E2("Ver Pro", "See Pro"), onCta: () => c.go("pay", "plan") });'],
   ['sinCompraDigitalEnApp', PRO, 'return c.compraPro ? { cta: l, onCta: () => c.go("pay", "plan") } : {};', 'return { cta: l, onCta: () => c.go("pay", "plan") };'],
@@ -63,7 +63,7 @@ const casos = [
   ['revisionAcotada', M, "('app.revision.cuentas', false,", "('app.revision.cuentas', true,"],
 ];
 const crear = [
-  ['privacidadCoherente', 'packages/db/migrations/0999_prueba_alreves.sql', 'begin;\ncreate table if not exists vecinos_extra (\n  id bigint primary key,\n  contact_phone text\n);\ncommit;\n'],
+  ['mapaDeDatos', 'packages/db/migrations/0999_prueba_alreves.sql', 'begin;\ncreate table if not exists vecinos_extra (\n  id bigint primary key,\n  contact_phone text\n);\ncommit;\n'],
   ['revisionAcotada', 'packages/db/seeds/zz_revision_prod.sql', "insert into review_accounts (app, user_id, purpose, code_ref) values ('cliente', '00000000-0000-0000-0000-000000000000', 'x', 'REVISION_CODIGO_CLIENTE');\n"],
   ['revisionAcotada', 'apps/web/lib/otro-revision.ts', 'export const x = () => process.env.REVISION_CODIGO_CLIENTE;\n'],
   ['sinCompraDigitalEnApp', 'apps/web/app/panel/OtraCompra.ts', 'import { seguirConPro } from "@/lib/suscripcion";\nexport const comprar = (n: string, u: string, pm: string) => seguirConPro(n, u, pm, "month");\n'],

@@ -155,7 +155,7 @@ export async function borrarCuenta(u: Yo, codigo: string, por: string): Promise<
   const m = ERR[r]!; return no(m[0], m[1], "code");
 }
 export async function cancelarBorrado(userId: string): Promise<ResP> {
-  const r = await db().query(`update users set delete_at = null, delete_reason = null where id = $1 and delete_at is not null and coalesce(delete_reason, '') <> 'admin' and status = 'active'`, [userId]);
+  const r = await db().query(`update users set delete_at = null, delete_reason = null where id = $1 and delete_at > now() and coalesce(delete_reason, '') <> 'admin' and status = 'active'`, [userId]);
   if (r.rowCount) await db().query(`insert into account_changes (user_id, kind, "from", "to", by) values ($1, 'undelete', null, null, 'user')`, [userId]);
   return r.rowCount ? { ok: true } : no("No hay un borrado que cancelar.", "There is no deletion to cancel.");
 }

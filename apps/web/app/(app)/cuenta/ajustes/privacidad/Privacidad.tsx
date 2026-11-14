@@ -1,7 +1,7 @@
 "use client";
 /* USR-PRIVACIDAD (diseño «To'Latino Mi cuenta» · privV): lo que nunca cambia (tu teléfono solo lo ve el negocio de tu
-   pedido o reservación, y solo mientras dura), tus sesiones abiertas (cerrar las otras) y borrar tu cuenta. Los ajustes
-   de la comunidad y «Descargar mis datos» llegan con la comunidad y los correos. */
+   pedido o reservación, y solo mientras dura), tus sesiones abiertas (cerrar las otras), Descargar mis datos y Términos que aceptaste (9d) y
+   borrar tu cuenta. */
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { sesionesDe } from "@/lib/perfil";
@@ -54,7 +54,11 @@ export function Privacidad({ s, es, yo, llaves = [], agregar = false }: { s: S; 
     { type: "rows", rows: s.map((x) => { const d = disp(x.ua, es); return { key: x.id, ic: d.tel ? "phone" : "globe", t: d.t, tag: x.esta ? [E2("ESTA", "THIS ONE"), "signal"] as [string, string] : null,
       s: `${E2("ÚLTIMA VEZ ", "LAST SEEN ")}${visto(x.visto).toUpperCase()}`, acts: x.esta ? undefined : [[E2("Cerrar", "Sign out"), "secondary", () => void cerrar(x.id)]] as [string, string, () => void][] }; }) },
     { type: "sec", t: E2("Tus datos", "Your data"), fs: "14px" },
-    { type: "rows", rows: [{ ic: "trash", ibg: "rgba(192,57,43,.08)", ifg: "var(--tl-danger)", t: E2("Borrar mi cuenta", "Delete my account"), s: E2("TIENES 30 DÍAS PARA ARREPENTIRTE", "YOU HAVE 30 DAYS TO CHANGE YOUR MIND"), chev: true, on: () => router.push("/cuenta/ajustes/borrar") },
+    { type: "rows", rows: [
+      // 9d · Descargar mis datos (un ZIP con lo tuyo, 24 horas) y Términos que aceptaste (con su versión y su fecha).
+      { ic: "folder", t: E2("Descargar mis datos", "Download my data"), s: E2("UN ARCHIVO CON LO TUYO · LO BAJAS 24 HORAS", "A FILE WITH YOUR DATA · DOWNLOAD IT FOR 24 HOURS"), chev: true, on: () => router.push("/cuenta/ajustes/privacidad/datos") },
+      { ic: "check", t: E2("Términos que aceptaste", "Terms you accepted"), s: E2("CON SU VERSIÓN Y SU FECHA", "WITH VERSION AND DATE"), chev: true, on: () => router.push("/cuenta/ajustes/privacidad/terminos") },
+      { ic: "trash", ibg: "rgba(192,57,43,.08)", ifg: "var(--tl-danger)", t: E2("Borrar mi cuenta", "Delete my account"), s: E2("TIENES 30 DÍAS PARA ARREPENTIRTE", "YOU HAVE 30 DAYS TO CHANGE YOUR MIND"), chev: true, on: () => router.push("/cuenta/ajustes/borrar") },
       // 7d · El Compa (la IA de la ayuda): qué ve, qué no, quién lee y cuánto se guarda.
       { ic: "chat", t: E2("El Compa", "El Compa"), s: E2("LA IA DE LA AYUDA · QUÉ VE Y QUIÉN LO LEE", "THE HELP AI · WHAT IT SEES AND WHO READS IT"), chev: true, on: () => router.push("/ayuda/privacidad-de-el-compa") },
       // 8i · Qué datos guarda To'Latino, para qué y cuánto (/privacidad, desde el inventario real; lo mismo que dicen las tiendas).

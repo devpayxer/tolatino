@@ -135,6 +135,12 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["contenidoTotales", async () => (await import("./admin-contenido")).contenidoAlDia()], ["comunidadCifras", async () => (await import("./admin-analitica")).comunidadCifrasAlDia()],
         ["buscarVocab", async () => (await import("./buscar")).vocabularioAlDia()],
         ["topes", async () => (await import("./topes")).purgarTopes()],
+        // 9d · Tus datos: la purga de las cuentas a los 30 días por el mapa (D5), armar los archivos pedidos (Descargar mis datos y el del negocio)
+        // y sacar del almacén lo bajado o vencido, y las retenciones de Configuración › Retención (escaneos, documento del reclamo, sesiones,
+        // búsquedas y códigos de entrada).
+        ["datosPurga", async () => (await import("./datos/purgar")).purgarVencidas()],
+        ["datosArchivos", async () => (await import("./datos/exportar")).armarPendientes()], ["datosArchivosVencer", async () => (await import("./datos/exportar")).vencerExportaciones()],
+        ["retenciones", async () => (await import("./datos/retener")).barrerRetenciones()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

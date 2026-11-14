@@ -203,34 +203,52 @@ export async function restaurarCuenta(id: string, motivo: string): Promise<ResAd
   }, "Cuenta restaurada.", { borrada: true });
 }
 
-/* Exportar sus datos (pedido de privacidad): lo que To'Latino guarda de la persona, en JSON. Queda en la auditoría. */
+/* Exportar sus datos (pedido de privacidad): 9d · el MISMO archivo que la persona pide en Mi cuenta (por el mapa de datos: JSON + CSV + LEEME en un
+   ZIP), para un pedido que llega por Soporte. Queda en la auditoría. */
 export async function exportarDatos(id: string, motivo: string): Promise<ResAdm & { archivo?: string }> {
   let archivo = "";
   const r = await hacer(id, ["exportar"], motivo, async (c, s, u, m) => {
-    const q = async (sql: string) => (await c.query(sql, [u.id])).rows;
-    const data = {
-      cuenta: (await q(`select id, phone as telefono, email::text as correo, first_name as nombre, last_name as apellido, nick as apodo, lang as idioma, home_city_id as ciudad,
-                               zone_id as zona, status as estado, created_at as desde, last_seen_at as ultima_vez from users where id = $1`))[0],
-      cambios_de_cuenta: await q(`select kind as tipo, "from" as antes, "to" as despues, by as quien, at as fecha from account_changes where user_id = $1 order by at`),
-      dispositivos: await q(`select coalesce(name, '') as nombre, platform as plataforma, user_agent, host(ip) as ip, created_at as primera, last_seen_at as ultima, signed_out_at as cerrada
-                               from sessions where user_id = $1 order by created_at`),
-      // 8d · Sus llaves de acceso (nunca la llave pública ni el id de la credencial: el dispositivo y las fechas).
-      llaves_de_acceso: await q(`select name as dispositivo, created_at as agregada, last_used_at as ultima_vez, revoked_at as quitada, revoked_by as quitada_por from passkeys where user_id = $1 order by created_at`),
-      negocios: await q(`select b.id, b.name as nombre, m.kind as rol, m.status as estado from business_members m join businesses b on b.id = m.business_id where m.user_id = $1`),
-      recomendaciones: await q(`select business_name as negocio, status as estado, created_at as fecha from recommendations where by_user_id = $1 order by created_at`),
-      reportes_de_fotos: await q(`select reason as motivo, note as nota, status as estado, created_at as fecha from photo_reports where reporter_user_id = $1 order by created_at`),
-      reclamos: await q(`select id, business_id as negocio, status as estado, created_at as fecha from claims where user_id = $1 order by created_at`),
-      lista_de_espera: await q(`select coalesce(city_id, city_name) as ciudad, created_at as fecha from city_waitlist where user_id = $1 and removed_at is null`),
-      guardados: await q(`select kind as tipo, target_id as id, created_at as fecha from favorites where user_id = $1`),
-      siguiendo: await q(`select target_kind as tipo, target_id as id, created_at as fecha from follows where follower_user_id = $1`),
-      sanciones: await q(`select kind as tipo, reason as motivo, starts_at as desde, ends_at as hasta, lifted_at as levantada from sanctions where target_kind = 'user' and target_id = $1::text order by starts_at`),
-      generado: new Date().toISOString(),
-    };
-    archivo = JSON.stringify(data, null, 2);
-    await auditar(c, { actor: s.id, action: "usuario.exportar", targetKind: "user", targetId: u.id, city: u.city_id, after: { archivo: "datos de la cuenta" }, reason: m });
+    const { armarZip, datosDeCuenta } = await import("@/lib/datos/exportar");
+    const datos = await datosDeCuenta(u.id, c);
+    archivo = armarZip(datos, false).toString("base64");
+    await auditar(c, { actor: s.id, action: "usuario.exportar", targetKind: "user", targetId: u.id, city: u.city_id, after: { archivo: `ZIP por el mapa de datos (${datos.size} partes)` }, reason: m });
     return null;
   }, "Datos exportados. Quedó en la auditoría.", { borrada: true });
   return r.ok ? { ...r, archivo } : r;
+}
+
+/* 9d · «Ver como» (L189): lo que To'Latino guarda de la persona, tal como lo tiene, en SOLO LECTURA (las mismas partes de su archivo, las
+   primeras filas de cada una). Nada se cambia; el motivo queda en la auditoría ANTES de ver. */
+export async function verComo(id: string, motivo: string): Promise<ResAdm & { partes?: { k: string; n: number; filas: Record<string, unknown>[] }[] }> {
+  let partes: { k: string; n: number; filas: Record<string, unknown>[] }[] = [];
+  const r = await hacer(id, ["ver"], motivo, async (c, s, u, m) => {
+    await auditar(c, { actor: s.id, action: "usuario.ver_como", targetKind: "user", targetId: u.id, city: u.city_id, after: { vista: "solo lectura" }, reason: m });
+    const { datosDeCuenta } = await import("@/lib/datos/exportar");
+    partes = [...(await datosDeCuenta(u.id, c))].filter(([, v]) => v.length).map(([k, v]) => ({ k, n: v.length, filas: v.slice(0, 3) }));
+    return null;
+  }, "Solo lectura. Quedó en la auditoría.", { borrada: true });
+  return r.ok ? { ...r, partes } : r;
+}
+
+/* 9d · Fusionar cuentas (L186): una persona del equipo lo pide (aquí) y OTRA lo aplica en Colas › Cambios sensibles. Todo lo de ESTA cuenta pasa a
+   la cuenta del teléfono que se escribe; esta queda fusionada (no entra). */
+export async function pedirFusion(id: string, telefono: string, motivo: string): Promise<ResAdm> {
+  return hacer(id, ["editar"], motivo, async (c, s, u, m) => {
+    if (u.staff) return "Es del equipo de To’Latino: se revisa desde Sistema › Equipo.";
+    const t = String(telefono ?? "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
+    if (!/^[2-9]\d{9}$/.test(t)) return "Escribe los 10 números del teléfono de la otra cuenta.";
+    const h = (await c.query<{ id: string; status: string }>(`select id::text, status from users where phone = $1`, [`+1${t}`])).rows[0];
+    if (!h) return "No hay una cuenta con ese teléfono.";
+    if (h.id === u.id) return "Ese es el teléfono de esta misma cuenta.";
+    if (["deleted_pending", "deleted", "merged"].includes(h.status)) return "La otra cuenta está borrada o fusionada.";
+    if ((await c.query(`select 1 from sensitive_changes where type = 'mergeUser' and target_id = $1 and status = 'pending'`, [u.id])).rowCount) return "Ya hay un pedido de fusión en la cola.";
+    const cs = (await c.query<{ id: string }>(
+      `insert into sensitive_changes (type, target_kind, target_id, city_id, payload, reason, requested_by) values ('mergeUser', 'user', $1, $2, $3::jsonb, $4, $5) returning id`,
+      [u.id, u.city_id, JSON.stringify({ into: h.id }), m, s.id])).rows[0]!;
+    await c.query(`insert into queue_items (queue, subject_kind, subject_id, city_id) values ('cambio', 'sensitive_change', $1, $2)`, [cs.id, u.city_id]);
+    await auditar(c, { actor: s.id, action: "usuario.fusion.pedir", targetKind: "user", targetId: u.id, city: u.city_id, after: { pedido: cs.id, hacia: h.id }, reason: m });
+    return null;
+  }, "En la cola de Cambios sensibles: lo aplica otra persona del equipo.");
 }
 
 /* 5i · Usuarios 360° › Comunidad › «Abrir caso de red de cuentas» (MEM 699): seguidores o votos desde el mismo dispositivo que esta cuenta.

@@ -190,8 +190,9 @@ export async function caso(s: Staff, id: string) {
   }
   if (q.queue === "cambio" && q.subject_kind === "sensitive_change") {
     const sc = (await db().query<{ id: string; type: string; status: string; reason: string; created_at: string; requested_by: string; quien: string | null; target_id: string;
-      nombre: string | null; phone: string; ciudad: string | null; creado: string; negocios: number; estado: string }>(
+      nombre: string | null; phone: string; ciudad: string | null; creado: string; negocios: number; estado: string; hacia: string | null }>(
       `select sc.id, sc.type, sc.status, sc.reason, sc.created_at, sc.requested_by, nullif(trim(coalesce(a.first_name, '') || ' ' || coalesce(a.last_name, '')), '') as quien, sc.target_id,
+              (select coalesce(nullif(trim(coalesce(h.first_name, '') || ' ' || coalesce(h.last_name, '')), ''), h.phone) from users h where h.id::text = sc.payload->>'into') as hacia,
               nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), '') as nombre, u.phone, ci.name as ciudad, u.created_at as creado,
               (select count(*)::int from business_members m where m.user_id = u.id and m.status = 'active' and m.kind = 'owner') as negocios, u.status as estado
          from sensitive_changes sc join users a on a.id = sc.requested_by join users u on u.id::text = sc.target_id left join cities ci on ci.id = u.home_city_id
