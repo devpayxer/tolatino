@@ -44,6 +44,10 @@ const casos = [
   // pruebasIndependientes: el corredor deja de cerrar las ventanas de un minuto entre pruebas, o deja de cerrar la espera entre códigos
   ['pruebasIndependientes', 'pruebas/correr.mjs', '  if (t.carril === "e2e") cerrarVentanas();\n', ''],
   ['pruebasIndependientes', 'pruebas/correr.mjs', "delete from otp_codes where created_at > now() - interval '1 minute';\\n", ''],
+  // esperaQueEspera: cit3c vuelve a esperar «en atención», que el botón «Llegó · en atención» ya cumple
+  ['esperaQueEspera', 'pruebas/e2e/cit3c.cjs', "await hasta(() => op(T.numero, 'status_detail') === 'live', 'llegó: en atención (en la base)');", "await d.getByText(/en atención/).first().waitFor();"],
+  // tarjetaPropia: fie4v deja de guardarle su tarjeta a Marisol y comprueba el depósito retenido igual
+  ['tarjetaPropia', 'pruebas/e2e/fie4v.cjs', "  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');\n", ''],
 ];
 const crear = [
   // parametroSinTipo: un archivo nuevo con el error de siempre (uuid y text en el mismo $1)

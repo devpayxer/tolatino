@@ -11,6 +11,8 @@ const MARISOL = `(select id from users where phone = '+15705550122')`;
 const LUIS = `(select id from business_members where business_id = '${BIZ}' and kind = 'owner')`, ANDY = `(select id from business_members where business_id = '${BIZ}' and display_name = 'Andy Mejía')`;
 const SV = (n) => `(select id from items where business_id = '${BIZ}' and module = 'svc' and name->>'es' = '${n}' and removed_at is null)`;
 const op = (n, cols) => sql(`select ${cols} from operations where number = '${n}'`);
+// 9b-3 · Esperar lo que el clic hace, no un texto que ya estaba: «en atención» y «no llegó» salen en el botón mismo (guardián esperaQueEspera).
+const hasta = async (f, m) => { for (let i = 0; i < 60; i++) { if (f()) return; await new Promise((r) => setTimeout(r, 250)); } throw new Error('no pasó: ' + m); };
 const pago = (n) => sql(`select status || '|' || amount_cents || '|' || refunded_cents from payments where operation_id = (select id from operations where number = '${n}') and kind = 'deposit'`);
 const nt = (tpl, n) => sql(`select count(*) from notifications where tpl = '${tpl}' and ref_id = '${n}'`);
 const limpiar = () => {
@@ -99,7 +101,7 @@ async function reservar(m, svc, persona, nDia, conTarjeta) {
   await d.goto(B + `/panel/${BIZ}/hoy?det=cita:${T.numero}`); await det.getByRole('button', { name: 'Confirmar' }).click(); await d.getByText(/ya ve su cita confirmada/).first().waitFor();
   ok(op(T.numero, 'status') === 'confirmed' && nt('cita_ok', T.numero) === '1', `${T.numero}: confirmada, aviso cita_ok`);
   sql(`update operations set scheduled_at = now() - interval '5 minutes' where number = '${T.numero}'`);
-  await d.goto(B + `/panel/${BIZ}/hoy?det=cita:${T.numero}`); await det.getByRole('button', { name: 'Llegó · en atención' }).click(); await d.getByText(/en atención/).first().waitFor();
+  await d.goto(B + `/panel/${BIZ}/hoy?det=cita:${T.numero}`); await det.getByRole('button', { name: 'Llegó · en atención' }).click(); await hasta(() => op(T.numero, 'status_detail') === 'live', 'llegó: en atención (en la base)');
   await d.goto(B + `/panel/${BIZ}/hoy?det=cita:${T.numero}`); await det.getByRole('button', { name: 'Terminada · cobrar' }).click(); await d.getByText(/Anotado · terminada/).first().waitFor();
   ok(op(T.numero, "status || '|' || status_detail") === 'done|done', 'llegó → terminada');
   await m.goto(B + `/cita/${T.numero}`); await m.getByText('¿Cómo te quedó?').waitFor(); await m.screenshot({ path: OUT + 'c6-terminada-m.png', fullPage: true });
@@ -108,7 +110,7 @@ async function reservar(m, svc, persona, nDia, conTarjeta) {
   const N = await reservar(m, 'Fade', LUIS, 1, true);
   await d.goto(B + `/panel/${BIZ}/hoy?det=cita:${N.numero}`); await det.getByRole('button', { name: 'Confirmar' }).click(); await d.getByText(/ya ve su cita confirmada/).first().waitFor();
   sql(`update operations set scheduled_at = now() - interval '20 minutes' where number = '${N.numero}'`);
-  await d.goto(B + `/panel/${BIZ}/hoy?det=cita:${N.numero}`); await det.getByText(/se queda contigo/).waitFor(); await det.getByRole('button', { name: 'No llegó' }).click(); await d.getByText(/no llegó/i).first().waitFor();
+  await d.goto(B + `/panel/${BIZ}/hoy?det=cita:${N.numero}`); await det.getByText(/se queda contigo/).waitFor(); await det.getByRole('button', { name: 'No llegó' }).click(); await hasta(() => op(N.numero, "status || '|' || status_detail") === 'done|noshow', 'no llegó (en la base)');
   ok(op(N.numero, "status || '|' || status_detail") === 'done|noshow' && pago(N.numero) === 'captured|1000|0', 'no llegó: el depósito se queda');
   // 8. Voy tarde (confirmada, dentro de 2 h)
   const L = await reservar(m, 'Corte clásico', ANDY, 0, false);

@@ -44,6 +44,8 @@ async function reservar(p, svc, { pax = 2, card = true, horasMin = 1 } = {}) {
   sql(`update noche_settings set list_on = true, list_until_min = 720, list_cap = null, cover_cents = 1000, after_min = null, after_cents = null where business_id = '${NEG}'`);
   sql(`update items set svc_attrs = svc_attrs || '{\"tables\":2}'::jsonb, deposit_cents = 10000 where id = ${VIP}`);
   sql(`update users set first_name = coalesce(nullif(first_name, ''), 'Prueba') where phone in ('+15705550299', '+15705550288')`);
+  // 9b-3 · Lo retenido sale de SU tarjeta: barajada en una base nueva, Marisol no tenía ninguna (guardián tarjetaPropia).
+  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');
   const b = await chromium.launch(); const err = [];
   const ctx = async (tel, w = 390) => { const p = await (await b.newContext({ viewport: { width: w, height: 844 }, deviceScaleFactor: w < 500 ? 2 : 1 })).newPage(); p.on('pageerror', (e) => err.push(e.message)); await entrar(p, tel); return p; };
   const cli = await ctx('5705550122'), neg = await ctx('5705550366');

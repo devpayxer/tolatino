@@ -26,6 +26,8 @@ const pay = (n) => sql(`select o.status || '|' || coalesce(p.status, '-') || '|'
   sql(`update operations set status = 'done' where kind = 'trip' and status = 'confirmed' and business_id in ('${E}', '${MU}')`);
   const d1 = sql(`select ((now() at time zone 'America/New_York')::date + 1)::text`), d2 = sql(`select ((now() at time zone 'America/New_York')::date + 2)::text`);
   const lbl = (ymd) => `${DOW[new Date(ymd + 'T12:00:00Z').getUTCDay()]} ${Number(ymd.slice(8))}`;
+  // 9b-3 · Lo retenido sale de SU tarjeta: barajada en una base nueva, Marisol no tenía ninguna (guardián tarjetaPropia).
+  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');
   const b = await chromium.launch(); const err = [];
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); await entrar(m, '5705550122');
   m.on('pageerror', e => err.push(e.message)); m.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); });

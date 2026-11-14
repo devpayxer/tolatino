@@ -1552,6 +1552,17 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   | al-dia | L207 | 5000 ms | ✓ 55,7 ms | ✓ 57,8 ms |
   | retencion | L207 | 30000 ms | ✓ 542,5 ms | ✓ 567,2 ms |
   | resumen-dia | L207 | — | ✓ 661 filas | ✓ 630 filas |
+- **Tercera confirmación (14 nov, corrida 43537190801 sobre cc448a5):** «dos veces seguidas» siguió; «barajada» dio 6 rojos y «todas las fases» 1, cuatro clases:
+  - **La tarjeta de Marisol se daba por hecha:** fie4v, est4d (y por `requiere` res4z, res4g, ana4z) corrieron antes que cit3e en una base nueva; sin
+    tarjeta, «Enviar solicitud» / «Aprobar» no se encendía. Ahora fie4v, est4d, tra4y, tra4y2, noc4c y barr la guardan (`tarjeta()` de
+    negocio-nuevo.cjs). Guardián `tarjetaPropia`.
+  - **El tope de mensajes de El Compa por persona (20 por hora):** compa7c se lo dejaba lleno a Marisol y la hoja de ayuda de ayu4g/ayu4z contestaba
+    «llegaste al límite». `sinTopeDeAyuda()` corre también sus mensajes de El Compa.
+  - **Lo que hacía otra prueba:** adm4s necesitaba el apartado con envío de env4q (ahora `requiere`); adm4ig, la membresía de Yesenia en la
+    vivienda para mayores que le daba inm4ib (ahora la crea ella). Esta clase la caza la carrera «barajada» misma.
+  - **Una espera que no esperaba:** cit3c tocaba «Llegó · en atención» y esperaba /en atención/, que el botón ya cumplía; ahora espera la base.
+    Guardián `esperaQueEspera` (también «No llegó» → /no llegó/).
+  - Al revés: alreves9b3 23/23. La confirmación nueva corre sobre la punta con 9c (una sola corrida para los dos).
 - **No cerrado o con destino:** ver LAUNCH «→ 9b» (lo que queda), «Fase 9 · 9b-3» y las líneas movidas a 9c, 9g, 9j, 9l, 9m, 9n, 9o, 9q, 9r y 9t con su porqué.
 
 ## Fase 9 · 9c — accesibilidad WCAG AA del sistema de diseño (14 nov)

@@ -12,6 +12,8 @@ const espera = async (l) => { for (let i = 0; i < 40; i++) { if (await vis(l)) r
   // 9b-1 · El plan de apartado con lo pagado que lista Transacciones › Apartados lo hace lay4r: se corre antes (requiere, siempre), así está en una base nueva, en cualquier orden y arriba de la
   // lista aunque la base tenga muchas corridas (antes se daba por hecho que ya había corrido).
   require('../lib/requiere.cjs').requiere('lay4r', () => sql(`select o.number from operations o join layaway_plans l on l.operation_id = o.id where o.sent_at > now() - interval '30 minutes' limit 1`), { siempre: true, que: 'un plan de apartado con abonos (lay4r)' });
+  // 9b-3 · El apartado con envío cobrado lo hace env4q: barajada, adm4s corría antes y en una base nueva no había ninguno.
+  require('../lib/requiere.cjs').requiere('env4q', () => sql(`select o.number from operations o join payments p on p.operation_id = o.id where o.kind = 'hold' and o.mode = 'delivery' and p.status in ('captured', 'partially_refunded') and o.sent_at > now() - interval '30 minutes' limit 1`), { siempre: true, que: 'un apartado con envío cobrado (env4q)' });
   const b = await chromium.launch(); const err = [];
   const a = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); await entrar(a, '5705550199');
   a.on('pageerror', e => err.push(e.message)); a.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); });

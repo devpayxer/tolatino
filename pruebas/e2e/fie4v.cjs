@@ -23,6 +23,8 @@ const esperaV = async (f, v) => { let x; for (let i = 0; i < 40; i++) { x = f();
   const PACK = sql(`select id from items where business_id = '${F}' and svc_kind = 'pack' and removed_at is null and sell and status = 'live' order by sort, id limit 1`);
   const MAR = sql(`select id from users where phone = '+15705550122'`);
   sql(`update operations set status = 'cancelled' where user_id = '${MAR}' and kind = 'party' and status in ('pending', 'change_proposed')`);
+  // 9b-3 · El depósito se paga con SU tarjeta: en una base nueva y barajada Marisol no tenía ninguna y «Enviar solicitud» no se encendía.
+  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');
   sql(`delete from user_event_plans where user_id = '${MAR}'`); // la Tu fecha de otra prueba preseleccionaría el evento
   const b = await chromium.launch(); const err = [];
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); await entrar(m, '5705550122');

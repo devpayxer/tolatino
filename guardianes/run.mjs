@@ -6945,6 +6945,33 @@ const guardianes = {
     for (const x of ["delete from otp_codes where created_at > now\\(\\) - interval '1 minute'", "delete from rate_counters", "delete from door_searches"]) if (!new RegExp(x).test(f)) falla(G, C, 0, `cerrarVentanas() no cierra «${x.replace(/\\/g, "")}»`);
   },
 
+  /* 9b-3 · Esperar lo que el clic HACE, no un texto que ya estaba: cit3c tocaba «Llegó · en atención» y esperaba /en atención/, que el botón
+     mismo cumplía; recargaba antes de que el servidor guardara y «Terminada · cobrar» no salía (todas las fases, una vez). Un clic en un botón
+     seguido de esperar un texto que su propio nombre cumple falla: espera la base (o otro texto). Al revés: alreves9b3. */
+  esperaQueEspera() {
+    const G = "esperaQueEspera";
+    for (const f of readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs")).map((y) => `pruebas/e2e/${y}`)) {
+      const t = readFileSync(f, "utf8");
+      for (const m of t.matchAll(/getByRole\('button', \{ name: '([^']+)'[^}]*\}\)\)?(?:\.click\(\))?\)?;\s*await \w+\.getByText\(\/((?:[^\/\\]|\\.)+)\/(i?)\)/g)) {
+        let re; try { re = new RegExp(m[2], m[3]); } catch { continue; }
+        if (re.test(m[1])) falla(G, f, t.slice(0, m.index).split("\n").length, `toca «${m[1]}» y espera /${m[2]}/, que el botón mismo ya cumple: no espera nada; espera lo que guarda el servidor`);
+      }
+    }
+  },
+
+  /* 9b-3 · Lo que se retiene o se cobra de Marisol sale de SU tarjeta: fie4v, est4d, tra4y, tra4y2, noc4c y barr la daban por hecha (la dejaba
+     cit3e); barajada en una base nueva, «Enviar solicitud» no se encendía. Una prueba que entra como Marisol y comprueba algo retenido (held)
+     guarda su tarjeta (negocio-nuevo.cjs tarjeta) o la crea ella. Al revés: alreves9b3. */
+  tarjetaPropia() {
+    const G = "tarjetaPropia";
+    for (const f of readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs")).map((y) => `pruebas/e2e/${y}`)) {
+      const t = readFileSync(f, "utf8");
+      if (!/5705550122/.test(t) || /\.tarjeta\b|\btarjeta\(|pm_sim_|payment_methods/.test(t)) continue;
+      const l = t.split("\n").findIndex((x) => /\bok\(/.test(x) && /[|:'`]held\b/.test(x));
+      if (l >= 0) falla(G, f, l + 1, "comprueba un depósito retenido de Marisol sin guardarle su tarjeta: en una base nueva y barajada no tiene ninguna; usa tarjeta('5705550122') de pruebas/lib/negocio-nuevo.cjs");
+    }
+  },
+
   idioma() {
     for (const f of codigo) {
       if (!/layout\.tsx$/.test(f)) continue;

@@ -17,6 +17,8 @@ const barrer = () => fetch(B + '/api/interno/barrido', { method: 'POST', headers
 (async () => {
   const MAR = sql(`select id from users where phone = '+15705550122'`);
   sql(`update operations set status = 'cancelled', cancelled_by = 'system' where user_id = '${MAR}' and kind = 'trip' and status in ('pending', 'change_proposed')`);
+  // 9b-3 · Lo retenido sale de SU tarjeta: barajada en una base nueva, Marisol no tenía ninguna (guardián tarjetaPropia).
+  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');
   const b = await chromium.launch();
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); await entrar(m, '5705550122');
   const d2 = sql(`select ((now() at time zone 'America/New_York')::date + 2)::text`);

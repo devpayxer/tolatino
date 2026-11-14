@@ -74,7 +74,11 @@ const enFila = (p, titulo, boton) => p.getByText(titulo, { exact: true }).first(
   ok(sql(`select count(*) from audit_entries where action = 'vivienda.advertir' and target_id = '${INM}' and reason is not null`) !== '0', 'la decisión queda en la auditoría con el motivo');
 
   // ── 2 · Vivienda para mayores: la declaración por revisar abre su caso; confirmar avisa al negocio ──
-  const PM = sql(`select item_id from property_listings where business_id = '${MAY}' and senior_62 limit 1`);
+  // 9b-3 · Yesenia entra al panel de la vivienda para mayores porque es SU miembro: antes se lo daba inm4ib y, barajada, adm4ig corría primero.
+  sql(`insert into business_members (business_id, user_id, kind, display_name, role, status, show_on_page, panel_access, since_year, sort, same_as_business_hours) select '${MAY}', u.id, 'owner', 'Yesenia Batista', '{"es":"Prueba","en":"Test"}'::jsonb, 'active', false, '{all}', 2020, 9, true from users u where u.phone = '+15705550433' and not exists (select 1 from business_members m where m.business_id = '${MAY}' and m.user_id = u.id)`);
+  sql(`update business_members set status = 'active', panel_access = '{all}' where business_id = '${MAY}' and user_id = (select id from users where phone = '+15705550433')`);
+  sql(`update items set status = 'live', hidden_reason = null where business_id = '${MAY}' and status = 'hidden'`);
+  const PM = sql(`select item_id from property_listings where business_id = '${MAY}' and senior_62 order by item_id limit 1`);
   sql(`update property_listings set senior_status = 'review' where item_id = ${PM}`);
   await yes.goto(`${B}/panel/${MAY}/vendes/propiedades?det=inm:${PM}`); await yes.getByText('ASÍ SE VE EN TU PÁGINA').first().waitFor();
   const dsc = await vis(yes.getByLabel('DESCRIPCIÓN · OPCIONAL', { exact: true })); await dsc.fill((await dsc.inputValue()) + ' '); await guardar(yes); // el servidor recorta: guarda lo mismo

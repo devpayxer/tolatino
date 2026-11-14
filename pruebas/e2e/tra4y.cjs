@@ -30,6 +30,8 @@ const run = (id) => sql(`select seats_booked || '|' || status from trip_runs whe
   sql(`update trip_runs set seats_outside = 0, seats_booked = 0, status = 'scheduled', late_until = null where business_id = '${V}' and run_at > now() - interval '3 hours'`);
   // Salidas que una corrida anterior movió a la 1:30 PM: se mandan lejos al pasado (no chocan con la de esta corrida).
   sql(`update trip_runs set status = 'cancelled', run_at = run_at - interval '400 days' - make_interval(mins => id::int) where business_id = '${V}' and extract(minute from run_at at time zone 'America/New_York') = 30 and run_at > now() - interval '3 days'`);
+  // 9b-3 · Lo retenido sale de SU tarjeta: barajada en una base nueva, Marisol no tenía ninguna (guardián tarjetaPropia).
+  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');
   const b = await chromium.launch(); const err = [];
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); await entrar(m, '5705550122');
   m.on('pageerror', e => err.push(e.message)); m.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); });
