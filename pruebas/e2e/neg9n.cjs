@@ -220,6 +220,7 @@ const ck = (i) => `c0e1c6b0-9a9a-4000-8000-${ID}${String(i).padStart(6, '0')}`;
            update special_hours set status = 'removed', removed_at = now() where business_id = '${BIZ}' and status = 'active' and kind = 'vacation' and created_at > now() - interval '1 hour';
            update delivery_offers set status = 'cancelled' where status = 'open' and business_id = '${BIZ}';
            update operations set driver_id = null where driver_id = ${DID || 'null'} and status = 'confirmed';
+           update operations set status = 'cancelled', cancelled_by = 'business', cancelled_at = now(), cancel_reason = 'neg9n' where client_key::text like 'c0e1c6b0-9a9a-4000-8000-${ID}%' and status = 'confirmed';
            update delivery_drivers set status = 'removed', removed_at = now(), removed_reason = 'neg9n', online = false where user_id = '${RU}' and status <> 'removed';
            update staff_members set status = 'removed' where user_id = '${AU}';`);
       for (const h of JSON.parse(horas || '[]')) sql(`update business_hours set open = ${h.o}, ranges = '${JSON.stringify(h.r)}'::jsonb where business_id = '${BIZ}' and module = '' and weekday = ${h.w}`);

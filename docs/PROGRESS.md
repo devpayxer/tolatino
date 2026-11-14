@@ -2094,3 +2094,19 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
     **`alreves9n` 24/24**; `alreves9k` al día (38/38 esperados con su caso nuevo).
   - **Ayuda:** nuevas `panel-horario`, `repartidor-prueba-de-entrega`, `admin-repartidores`, `admin-colas`; `panel-avisos` al día (ES/EN).
   - Mapa de datos al día (8 tablas; `delivery_messages` en sinPersona) y las salidas de privacidad regeneradas.
+- **Probado aquí (sin Docker: Postgres 16 + PostGIS en un cluster propio :5491, un `docker exec` de mentira hacia esa base, un almacén S3 de mentira para las fotos,
+  el build standalone en :3191 y el Chrome del sistema):** `node guardianes/run.mjs` → sin fallos (2469 archivos); `tsc --noEmit` limpio; `pnpm --filter web build` en
+  verde; base nueva 0001–0145 con 0144 (144 migraciones) dos veces (la segunda no aplica nada) y 0144 otra vez a mano sobre una base con 0145, sin error; las semillas del
+  sandbox dos veces (0063 sin cambios la segunda); **`neg9n` 50 ✓ dos veces seguidas** (entre corrida y corrida, lo que hace `correr.mjs`: las ventanas de un minuto y,
+  aquí, los códigos de esta hora de 127.0.0.1 —el tope de 20 por IP y hora—); capturas a 390 y 1360 revisadas (oferta, prueba con foto, escribir, cliente, panel con el
+  código de recogida, ADM-DLV lista y 360°, Colas › Ajustes, el texto de Configuración, Horario, Lo que te avisamos). Al revés: **9n 24/24**, 9k 38/38, 6a 26/26,
+  8e 52/53 (el caso de `permisosMinimos` no encuentra su texto en apps.json: igual que alreves8c en la rama base, no es de 9n).
+- **No corrió aquí:** la regresión entera, la matriz de 9 dispositivos y `pruebas/visual` → CI (9b; cambian capturas del panel de Entrega, el detalle del pedido y el
+  Repartidor). La foto con Garage de verdad (aquí, el almacén de mentira).
+- **No cerrado, con destino (LAUNCH «Fase 9 · 9n»):** lo del bloque que no entró en esta pasada (cada línea «→ 9n» abierta conserva su texto), el resto de Configuración
+  en solo lectura, asignación automática y programados del Repartidor, el tope de 200 casos por vista, la temporada en el calendario de citas.
+- **Para quien junte las ramas:** `guardianes/run.mjs` (tres guardianes al final, después de `mantenimientoFijo`; cambios en `ubicacionSoloEntregaActiva`,
+  `colasEnLaBase`, `disputaConEvidencia`), `lib/config.ts` (claves de 9n y secciones «repartidor» y «colas»), `Configuracion.tsx` (SECCION), `lib/barrido.ts` (tres
+  tareas después de `avisoApertura`), `lib/admin.ts` (`Staff.colas`), `lib/colas.ts` (`slaCfg` en cada cola, la cola «entrega»; `colasDelRol` ya no existe),
+  `lib/admin-nav.ts` (dlv), `lib/avisos.ts` (`avisarNegocio`), `lib/pedidos.ts`, `lib/pedir.ts`, `app/panel/Panel.tsx`, `app/panel/acciones.ts`, `mapa-de-datos.json`
+  e `inventario-datos.json` (regenerados), docs.
