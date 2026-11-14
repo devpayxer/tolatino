@@ -4472,3 +4472,40 @@ pasa a «revisado» y se publica. En producción la base no deja publicar una p�
   - **Piezas sin diseño, compuestas con lo que existe:** el banner de anuncios y el aviso son la `InfoCard` del sistema (la que ya usa «Para negocios»); el editor de cadenas, los rótulos y el Inicio por ciudad se compusieron con filas, KPIs, campos y confirmar con motivo del Super Admin.
 - **Prueba:** `cms9f` (91 comprobaciones) pasó dos veces seguidas en una base local y `alreves9f` (30/30); la corrida de verdad es la del CI.
 
+
+
+## Fase 9 · 9k — Dinero real listo: conciliación diaria, pagos al banco, disputas con evidencia, 3-D Secure y la huella de la tarjeta (14 nov)
+- **Qué mirar (sandbox; cuentas de prueba 555):**
+  1. **3-D Secure en la hoja** (teléfono): pide en Sabor Dominicano con la tarjeta **4000 0027 6000 3184**. Al enviar sale **«Tu banco pide confirmar»** con el monto; **Confirmar con
+     mi banco** → el pedido sale. Prueba otra vez y toca **No fui yo** → no hay pedido. Lo mismo en el mercado, el envío o el abono de una tienda y los boletos.
+  2. **Renovación de Pro con 3-D Secure** (escritorio): un dueño con esa tarjeta en su plan recibe **«Tu banco pide confirmar el cobro de Pro»**; el enlace abre la misma hoja; al confirmar,
+     Tu plan sigue Pro y llega el recibo.
+  3. **Planes › Ingresos** (Super Admin 570-555-0199): abajo, **CONCILIACIÓN DIARIA** con los últimos 14 días (la semilla deja uno que cuadra y uno con dos diferencias que ya tienen
+     dueño) y **ALERTAS DEL DINERO**. Toca un día, mira cada diferencia (Stripe contra el libro), **Me hago cargo / Resuelta / Reabrir** y **Conciliar otra vez**.
+  4. **Inicio del Super Admin**: «EL DINERO NO CUADRA» aparece solo si hay diferencias sin dueño en 14 días (con la semilla no sale).
+  5. **Transacciones › Disputas**: simula una disputa desde Transacciones; en la cola de 120 h abre el caso, mira **ARCHIVOS PARA EL BANCO** y **Responder con evidencia**: los tres
+     PDF (recibo, conversación sin teléfonos, constancia de entrega) se suben y se mandan en un solo envío. **Transacciones › Devolver** ahora también en planes y rentas.
+  6. **Confianza › Fraude**: «LA MISMA TARJETA EN VARIAS CUENTAS». **Mi cuenta › Ajustes › Pagos**: tus tarjetas con **Quitar**. **Sistema › Configuración › Dinero**: las seis claves nuevas.
+- **Decisiones que tomé (si prefieres otra, se cambia):**
+  - **3-D Secure sin rehacer cada flujo:** cuando el banco pide verificar, el flujo no guarda nada todavía (como un rechazo) pero deja la verificación a nombre de quien paga; la hoja la
+    completa y la pantalla vuelve a enviar **lo mismo con la misma llave**: la pasarela encuentra la retención verificada y la reusa. Así nunca hay dos cobros y cada flujo cambia en
+    dos líneas. Si nadie confirma en 30 min (Configuración › Dinero), el barrido suelta lo retenido. Hecho en pedidos, mercado, tiendas (envío y abono), pago del plan de apartado y
+    boletos; los demás flujos siguen pidiendo otra tarjeta (LAUNCH → 9n).
+  - **La renovación de Pro que pide 3-D Secure cuenta como intento** (para que el calendario de 3 intentos en 7 días siga igual), pero el dueño recibe el aviso con el enlace y no el de
+    «cobro fallido»; si confirma, el período queda pagado. Antes de otro intento, la verificación vieja se mira en Stripe: si ya cobró, no se cobra otra vez.
+  - **La conciliación es por día UTC** (los días de Stripe) y corre a las 6 AM del Este; se leen el día anterior y el siguiente para emparejar lo que cruza la medianoche. Una diferencia
+    no se borra: se le pone dueño o se resuelve con nota (solo inserción). Un día se puede **conciliar otra vez**; vale la última corrida.
+  - **El sandbox se reconcilia contra su simulador:** la semilla 0058 le da al simulador lo que las semillas anteriores escribieron directo en el libro (si no, cada mañana saldría todo
+    como diferencia). Las dos diferencias de ejemplo ya tienen dueño (Ana) para que el Inicio de las capturas aprobadas no cambie.
+  - **Pagos al banco fijos los martes:** con Stripe, el calendario semanal de cada cuenta (al crearla y al reanudar); el día se ve en Configuración › Dinero pero no se edita ahí (decisión
+    del fundador). En el sandbox, el simulador paga los martes el saldo de cada cuenta simulada.
+  - **El camino manual** (una devolución o una reversión que Stripe no hace): «Resolver a mano» con la nota de cómo se pagó; desde ahí el sistema nunca la vuelve a pedir a Stripe y
+    sigue contando como hecha. Es para cuando el dinero se movió fuera de Stripe (cheque, transferencia).
+  - **Devolver repartido:** si una operación tiene varios cobros (estimado + «algo más», un plan o una renta por período), la devolución sale del de más saldo y sigue con los demás.
+  - **La foto de la entrega** no existe todavía (el Repartidor no la toma): la evidencia lleva la constancia con la línea de tiempo y la dirección (LAUNCH → 9n).
+  - **«Reponer con un pedido nuevo sin costo»** pasa a 9n (es un pedido de $0 que sigue el flujo del negocio y del Repartidor); la devolución a la tarjeta desde la ayuda ya existía.
+  - **Piezas sin diseño, compuestas con lo que existe:** la hoja «Tu banco pide confirmar» usa el mismo marco que «Método de pago» (hoja en el teléfono, ventana de 560 en escritorio);
+    Mi cuenta › Pagos usa el Marco de Mi cuenta; la conciliación, las alertas y Transacciones › Disputas, las piezas del panel (grupo, filas, nota, acciones, cifras); la señal de la
+    tarjeta, una fila más de Confianza. El diseño traía USR-PAGOS (tarjetas, Wallet, movimientos): por ahora solo las tarjetas.
+- **Prueba:** `alreves9k` 38/38 y los guardianes limpios; la lógica del dinero se probó contra Postgres 16 local (41 comprobaciones: conciliación, 3-D Secure, disputas con archivos,
+  renovación, devolver repartido, alertas y las lecturas del Super Admin). `din9k` (los cinco casos del plan y quitar una tarjeta, 390 y 1360) pasó 39 comprobaciones dos veces seguidas con el build servido en local; la corrida de verdad es la del CI.

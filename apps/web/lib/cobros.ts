@@ -35,14 +35,16 @@ export async function tarjetaDe(negocio: string): Promise<{ on: boolean; cuenta:
 export async function retenerPedido(x: { negocio: string; cuenta: string; clave: string; total: number; subtotal: number; pm: string; userId: string; numero: string; tipo?: "ped" | "merc" | "apt" }, c: Q): Promise<Retencion & { comision: number }> {
   const fee = Math.min(await comision(c, x.tipo ?? "ped", x.subtotal), x.total);
   const cliente = await pasarela.cliente(x.userId).catch(() => null);
-  const r = await pasarela.retener({ centavos: x.total, comision: fee, destino: x.cuenta, pm: x.pm, cliente, idem: `ord-${x.clave}-${x.pm.slice(-24)}` /* otra tarjeta = otro intento; la misma = idempotente */, meta: { order: x.numero, business_id: x.negocio } });
+  // 9k · Con quien paga: si el banco pide 3-D Secure, la verificación queda a su nombre y la pantalla la completa en la hoja (lib/pagos/verificacion.ts).
+  const r = await pasarela.retener({ centavos: x.total, comision: fee, destino: x.cuenta, pm: x.pm, cliente, idem: `ord-${x.clave}-${x.pm.slice(-24)}` /* otra tarjeta = otro intento; la misma = idempotente */, meta: { order: x.numero, business_id: x.negocio }, usuario: { id: x.userId, negocio: x.negocio } });
   return { ...r, comision: fee };
 }
 export async function registrarRetencion(c: Q, x: { opId: string; userId: string; negocio: string; city: string | null; total: number; comision: number; r: Extract<Retencion, { ok: true }>; pm?: string; kind?: "full" | "deposit" }) {
   await c.query(
-    `insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, held_at, simulated, payment_method)
-     values ($1::bigint, $2, $3, $4, $11, 'card', $5, $6, $6, $7, 'held', $8, $9, now(), $10, $12)`,
-    [x.opId, x.userId, x.negocio, x.city, x.r.pi, x.total, x.comision, x.r.marca, x.r.ultimos4, x.r.pi.startsWith("pi_sim_"), x.kind ?? "full", x.pm && /^pm_[A-Za-z0-9_]{3,200}$/.test(x.pm) ? x.pm : null]);
+    `insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, held_at, simulated, payment_method, card_fingerprint)
+     values ($1::bigint, $2, $3, $4, $11, 'card', $5, $6, $6, $7, 'held', $8, $9, now(), $10, $12, $13)`,
+    [x.opId, x.userId, x.negocio, x.city, x.r.pi, x.total, x.comision, x.r.marca, x.r.ultimos4, x.r.pi.startsWith("pi_sim_"), x.kind ?? "full", x.pm && /^pm_[A-Za-z0-9_]{3,200}$/.test(x.pm) ? x.pm : null,
+     x.r.huella && /^[A-Za-z0-9_]{6,64}$/.test(x.r.huella) ? x.r.huella : null]);
   await c.query(`update operations set pay_status = 'held' where id = $1::bigint`, [x.opId]);
   // La última tarjeta guardada que pagó queda como predeterminada (la que se rechazó deja de serlo).
   if (x.pm) await c.query(`update payment_methods set is_default = (stripe_pm_id = $2) where user_id = $1 and status = 'active' and exists (select 1 from payment_methods where user_id = $1 and stripe_pm_id = $2)`, [x.userId, x.pm]);
@@ -147,6 +149,38 @@ export async function devolverPago(x: { paymentId: string; centavos: number; por
   const R = refDe(p.kind, p.num);
   await (await import("./avisos")).avisar(p.uid, "pay_refund", { monto: money(n), num: R.num, tarjeta }, { href: R.href, ref: R.ref });
   return { ok: true };
+}
+
+/* 9k · Devolver de una operación con varios cobros (L448: estimado + «algo más» + visita; L455: planes y rentas, un cobro por período). Se reparte entre
+   los cobros con saldo, del de más saldo al de menos, y cada parte va por devolverPago con su propia llave (`<idem>-p<cobro>`): reintentar con la misma
+   llave no devuelve dos veces lo que ya salió (las partes hechas se saltan y cuentan). El tope es lo que queda por devolver en esos cobros: lo decide el
+   servidor. Si una parte falla, lo hecho queda hecho y el mensaje lo dice; el mismo toque otra vez sigue donde quedó. */
+export async function devolverOperacion(x: { opId: string; centavos: number; kinds: string[]; por: "business" | "admin" | "policy"; actorId: string | null; motivo: string; idem: string }): Promise<{ ok: true; partes: number } | { ok: false; msg: { es: string; en: string } }> {
+  const P = (await db().query<{ id: string; resto: number }>(
+    // También los ya devueltos del todo: una parte hecha con esta llave cuenta aunque su cobro ya no tenga saldo (el reintento no la repite).
+    `select p.id::text, case when p.status in ('captured', 'partially_refunded')
+                             then p.amount_cents - p.refunded_cents - coalesce((select sum(r.amount_cents) from refunds r where r.payment_id = p.id and r.status = 'pending'), 0)::int else 0 end as resto
+       from payments p where p.operation_id = $1::bigint and p.kind = any($2::text[]) and p.status in ('captured', 'partially_refunded', 'refunded')
+      order by 2 desc, p.id desc limit 200`, [x.opId, x.kinds])).rows;
+  const llaves = P.map((p) => `${x.idem}-p${p.id}`);
+  const hechas = (await db().query<{ k: string; n: number }>(`select idem_key as k, amount_cents as n from refunds where idem_key = any($1::text[])`, [llaves])).rows;
+  const ya = hechas.reduce((s, r) => s + r.n, 0), conLlave = new Set(hechas.map((r) => r.k));
+  const n = Math.round(x.centavos);
+  let falta = n - ya;
+  if (!(n > 0)) return { ok: false, msg: { es: "Escribe cuánto se devuelve.", en: "Write how much to refund." } };
+  if (falta <= 0) return { ok: true, partes: hechas.length };
+  const libre = P.filter((p) => !conLlave.has(`${x.idem}-p${p.id}`)).reduce((s, p) => s + Math.max(0, p.resto), 0);
+  if (falta > libre) return { ok: false, msg: { es: `Puedes devolver hasta ${money(libre + ya)}.`, en: `You can refund up to ${money(libre + ya)}.` } };
+  let partes = hechas.length;
+  for (const p of P) {
+    if (falta <= 0) break;
+    if (conLlave.has(`${x.idem}-p${p.id}`) || p.resto <= 0) continue;
+    const q = Math.min(falta, p.resto);
+    const d = await devolverPago({ paymentId: p.id, centavos: q, por: x.por, actorId: x.actorId, motivo: x.motivo, idem: `${x.idem}-p${p.id}` });
+    if (!d.ok) return { ok: false, msg: partes ? { es: `Se devolvieron ${money(n - falta)} de ${money(n)}; Stripe no pudo con el resto. Toca otra vez para seguir.`, en: `${money(n - falta)} of ${money(n)} refunded; Stripe could not do the rest. Tap again to continue.` } : d.msg };
+    falta -= q; partes++;
+  }
+  return { ok: true, partes };
 }
 
 /* El pago de una operación, para mostrarlo (cliente, panel, admin). */

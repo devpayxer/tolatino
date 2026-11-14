@@ -320,7 +320,9 @@ export async function caso(s: Staff, id: string) {
       `select d.id::text, d.stripe_dispute_id as sid, d.amount_cents as amount, d.reason, d.status, to_char(d.evidence_due_by at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as due,
               o.number as num, o.user_id::text as uid, nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), '') as cliente, d.response_text as resp, d.simulated as sim
          from disputes d left join operations o on o.id = d.operation_id left join users u on u.id = o.user_id where d.id = $1::bigint`, [q.subject_id])).rows[0];
-    return { ...base, negocio, disputa: d ? { ...d, motivo: MOTIVO[d.reason]?.es ?? "Otro motivo del banco" } : null, evidencia: d ? await evidenciaDe(d.id) : null, puedeDinero: s.puede("tx", "aprobar") };
+    // 9k · Los archivos que van al banco (recibo, conversación, constancia de entrega) y si ya se enviaron.
+    const archivos = d ? await (await import("./disputas")).evidenciaArchivos(d.id) : [];
+    return { ...base, negocio, disputa: d ? { ...d, motivo: MOTIVO[d.reason]?.es ?? "Otro motivo del banco" } : null, evidencia: d ? await evidenciaDe(d.id) : null, archivos, puedeDinero: s.puede("tx", "aprobar") };
   }
   if (q.queue === "chat" && q.subject_kind === "dm_thread") {
     // 5c · Mensajes entre vecinos: solo con el caso y un reporte abiertos (lib/admin-dm.ts; guardián dmSoloConReporte).

@@ -45,6 +45,23 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
   const dp = await (await fetch(process.env.STRIPE_API_BASE + '/v1/disputes/dp_123', { headers: { authorization: 'Bearer sk_test_123' } })).json();
   const nuestros = Object.keys(evidenciaStripe({ texto: 'x', producto: 'x', cliente: 'x', fecha: 'x', envio: 'x' })), deStripe = Object.keys(dp.evidence || {});
   ok(deStripe.length > 10 && nuestros.every((k) => deStripe.includes(k)), 'disputa: cada campo de evidencia existe en la especificación (' + nuestros.join(', ') + ')');
+  // 9k · El cliente de Stripe de una persona (L817): con el doble de la base, la primera vez se crea (customers) y se guarda; la segunda se lee de la base.
+  const { __clientes } = require(process.env.CONTRATO_OUT + '/db.js');
+  const c1 = await pasarela.cliente('00000000-0000-4000-8000-000000000001'); ok(/^cus_/.test(c1) && __clientes.get('00000000-0000-4000-8000-000000000001') === c1, 'cliente: customers con metadatos, guardado en la base');
+  ok((await pasarela.cliente('00000000-0000-4000-8000-000000000001')) === c1, 'cliente: la segunda vez sale de la base, sin crear otro');
+  // 9k · 3-D Secure: el estado de un PaymentIntent (después de la verificación) y su tarjeta con la huella.
+  const it = await pasarela.intento('pi_123'); ok(it && typeof it.estado === 'string' && typeof it.monto === 'number', 'intento: payment_intents/{id} con expand de la tarjeta (huella)');
+  // 9k · La huella de una tarjeta guardada (card.fingerprint): payment_methods/{id}.
+  const hu = await pasarela.huella('pm_card_visa_123'); ok(hu === null || typeof hu === 'string', 'huella: payment_methods/{id} (card.fingerprint)');
+  // 9k · La conciliación del día: payment_intents, refunds, transfers y disputes con created[gte|lt] y paginación, y payouts de una cuenta conectada.
+  const dd = await pasarela.delDia(new Date(Date.now() - 86400000), new Date(), [acct]);
+  ok(Array.isArray(dd.intents) && Array.isArray(dd.refunds) && Array.isArray(dd.transfers) && Array.isArray(dd.payouts) && Array.isArray(dd.disputes), 'conciliación: listas del día (created) y payouts con Stripe-Account');
+  // 9k · Evidencia de una disputa en archivo (API de archivos, purpose dispute_evidence) y en el envío (receipt, customer_communication, shipping_documentation).
+  const up = await pasarela.subirEvidencia({ cuerpo: Buffer.from('%PDF-1.4\n%%EOF\n'), nombre: 'recibo.pdf', tipo: 'application/pdf', idem: 'contrato-file-' + Date.now(), sim: false });
+  ok(up.ok && /^file_/.test(up.id), 'disputa: subir un archivo de evidencia (files, multipart)');
+  ok(await pasarela.disputaResponder('dp_123', { texto: 'Delivered as ordered.', producto: '1 x Mofongo', cliente: 'Marisol P', fecha: '2026-11-06', envio: '420 N Wyoming St, 18201', archivos: { recibo: up.ok ? up.id : 'file_123', conversacion: 'file_123', entrega: 'file_123' } }), 'disputa: responder con archivos de evidencia (receipt, customer_communication, shipping_documentation)');
+  const ev2 = Object.keys(evidenciaStripe({ texto: 'x', producto: 'x', cliente: 'x', fecha: 'x', envio: 'x', archivos: { recibo: 'file_1', conversacion: 'file_2', entrega: 'file_3', otro: 'file_4' } }));
+  ok(ev2.every((k) => deStripe.includes(k)), 'disputa: los campos de archivos existen en la especificación (' + ev2.filter((k) => !nuestros.includes(k)).join(', ') + ')');
   const t = Math.floor(Date.now() / 1000), cuerpo = '{"id":"evt_1"}', s = `t=${t},v1=${crypto.createHmac('sha256', 'whsec_x').update(`${t}.${cuerpo}`).digest('hex')}`;
   ok(firmaValida(cuerpo, s, 'whsec_x') && !firmaValida(cuerpo, s, 'whsec_y') && !firmaValida(cuerpo + ' ', s, 'whsec_x'), 'firma del webhook: buena pasa, otro secreto o cuerpo cambiado no');
   console.log('OK');

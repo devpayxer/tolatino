@@ -258,7 +258,7 @@ export type PedidoIn = {
   modo?: "pickup" | "delivery"; direccion?: string; propina?: { k: string; monto?: number }; entrega?: DropPref & { guardar?: boolean };
   pago?: { tipo: "tarjeta" | "efectivo"; pm?: string };   // tarjeta: la referencia de Stripe (pm_…), nunca el número
 };
-export type PedidoOut = { ok: true; numero: string } | { ok: false; msg: Bi; entrar?: true; perfil?: true; menu?: true; tarjeta?: true };
+export type PedidoOut = { ok: true; numero: string } | { ok: false; msg: Bi; entrar?: true; perfil?: true; menu?: true; tarjeta?: true; verificar?: import("./pagos/pasarela").Verificar };
 
 const ID = /^\d{1,18}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -372,7 +372,14 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
       ret = await retenerPedido({ negocio: b.id, cuenta: T.cuenta, clave: p.clave, total, subtotal: sub, pm, userId, numero: num }, c);
       if (!ret.ok) { await c.query("rollback"); return no(ret.mensaje.es, ret.mensaje.en, { tarjeta: true }); }
       retenido = ret.pi;
-      if (ret.estado === "accion") { await c.query("rollback"); await liberarSilencioso(ret.pi); return no("Tu banco pide una verificación extra que todavía no hacemos aquí. Prueba con otra tarjeta o paga en el local.", "Your bank asks for an extra verification we can't do here yet. Try another card or pay at the store.", { tarjeta: true }); }
+      if (ret.estado === "accion") {
+        // 9k · 3-D Secure: el pedido no se guarda todavía; la hoja completa la verificación y la pantalla lo vuelve a enviar con la misma clave (la
+        // retención verificada se reusa: nada se cobra dos veces). Sin verificación a su nombre, como antes: se suelta y se pide otra tarjeta.
+        await c.query("rollback");
+        const v = (await import("./pagos/verificacion")).pideVerificar(ret);
+        if (v) { retenido = null; return no("Tu banco pide confirmar que eres tú. Confírmalo y seguimos; no se cobró nada todavía.", "Your bank asks you to confirm it is you. Confirm it and we continue; nothing was charged yet.", { tarjeta: true, ...v }); }
+        await liberarSilencioso(ret.pi); return no("Tu banco pide una verificación extra. Prueba con otra tarjeta o paga en el local.", "Your bank asks for an extra verification. Try another card or pay at the store.", { tarjeta: true });
+      }
     }
     const drop: DropPref | null = modo === "delivery" && p.entrega && typeof p.entrega === "object" ? {
       drop: p.entrega.drop === "puerta" ? "puerta" : "mano", at: Array.isArray(p.entrega.at) ? p.entrega.at.filter((x) => ["timbre", "noTimbre", "llamar", "texto"].includes(x)).slice(0, 4) : [],

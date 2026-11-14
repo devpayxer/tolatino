@@ -325,7 +325,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9m** · **Alertas de búsqueda** («Avísame cuando haya») listadas en Avisos con «Quitar».
 
 ## Ayuda con el pedido y Soporte (bloque 2i, 6 nov 2026)
-- [ ] **→ 9k** · **Devolución a la tarjeta y reponer con un pedido nuevo sin costo**: con Stripe (2d) y el Repartidor.
+- [ ] **→ 9n** · **Devolución a la tarjeta y reponer con un pedido nuevo sin costo**: con Stripe (2d) y el Repartidor. — _9k (14 nov): la devolución a la tarjeta desde la ayuda ya existe (7b «Resolver y devolver»; ahora repartida entre cobros). Reponer es crear un pedido de $0 que sigue el flujo del negocio y del Repartidor: va con lo diferido del negocio y el Repartidor (9n)._
 - [ ] **→ 9l** · **Soporte completo**: tickets por WhatsApp y correo, macros ES/EN, primera respuesta y CSAT; ayuda con citas y reservaciones. — 7b (10 nov):
   casos en la app, macros ES/EN, plazo de primera respuesta en horas hábiles y «¿Se resolvió?» hechos. Falta: **WhatsApp** (7h) y **correo
   entrante** (§6 #16, sin fecha).
@@ -353,12 +353,12 @@ en el momento. Se marca solo cuando está hecho de verdad.
       seguro: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY` y `STRIPE_WEBHOOK_SECRET` (endpoint `/api/stripe/webhook`, eventos
       `account.updated`, `payment_intent.succeeded`, `payment_intent.canceled`, `charge.refunded`, `charge.dispute.created`).
       Sin clave: el sandbox usa el simulador; producción deja la tarjeta apagada (candado + guardián `simuladorAislado`).
-- [ ] **→ 9k** · **3D Secure:** hoy, si el banco pide verificación extra, se pide otra tarjeta. Falta completar la acción con Stripe.js (también aplica al envío de la tienda, 4q-2, y al pedido del mercado).
-      (`handleNextAction`) y confirmar el pedido después.
-- [ ] **→ 9k** · **Disputas:** el webhook las marca y deja auditoría; falta la cola «Disputas» (120 h) con evidencia (Super Admin).
-- [ ] **→ 9k** · **Pagos al banco (Payout) y conciliación diaria** Stripe ↔ libro propio (guardián del dinero, HERRAMIENTAS 20):
-      hoy Stripe paga según su calendario; falta fijarlo a martes y el reporte diario de diferencias.
-- [ ] **→ 9k** · **Quitar una tarjeta guardada** desde Mi cuenta (Pagos) y el Wallet de To'Latino.
+- [x] **→ 9k** · **3D Secure:** hoy, si el banco pide verificación extra, se pide otra tarjeta. Falta completar la acción con Stripe.js (también aplica al envío de la tienda, 4q-2, y al pedido del mercado).
+      (`handleNextAction`) y confirmar el pedido después. — **✓ 9k (14 nov):** la hoja «Tu banco pide confirmar» (app/(app)/pago/Verificacion.tsx: Stripe.js handleNextAction; en el sandbox, el banco simulado con la tarjeta 4000 0027 6000 3184) y la verificación a nombre de quien paga (payment_actions, 0141); la pantalla vuelve a enviar con la misma llave y la pasarela reusa la retención verificada (nunca cobra dos veces; lib/pagos/pasarela.ts verificacionPrevia). En pedidos, el mercado, el envío y el abono de la tienda (4q-2), el pago del plan de apartado y los boletos; lo que nadie verifica vence en el barrido. Guardián tresDSecure; prueba din9k paso 1; los demás flujos, en la línea nueva de «Fase 9 · 9k».
+- [x] **→ 9k** · **Disputas:** el webhook las marca y deja auditoría; falta la cola «Disputas» (120 h) con evidencia (Super Admin). — **✓ 9k (14 nov):** Super Admin › Transacciones › Disputas (`/admin/transacciones/disputas`, la cola de 120 h con plazo y estado de la evidencia) y en el caso de Colas los archivos para el banco (recibo en PDF, conversación sin teléfonos, constancia de entrega), subidos por la API de archivos y enviados en un solo envío (lib/disputas.ts responderDisputa; dispute_evidence). Guardián disputaConEvidencia; prueba din9k paso 4.
+- [x] **→ 9k** · **Pagos al banco (Payout) y conciliación diaria** Stripe ↔ libro propio (guardián del dinero, HERRAMIENTAS 20):
+      hoy Stripe paga según su calendario; falta fijarlo a martes y el reporte diario de diferencias. — **✓ 9k (14 nov):** los pagos al banco, fijos los martes (cuentaCrear con el calendario semanal del martes; reanudar vuelve al martes; Configuración › Dinero `pagos_banco_dia` = 2, no editable), el libro `payouts` (webhook payout.*; en el sandbox, lib/pagos-banco.ts el martes) y la conciliación diaria Stripe ↔ libro en el barrido (lib/conciliacion.ts; recon_runs / recon_diffs de solo inserción; Planes › Ingresos › Conciliación; «EL DINERO NO CUADRA» en Inicio; la alerta al equipo). Guardianes conciliacionDiaria y pagoAlBancoMartes; prueba din9k paso 3.
+- [x] **→ 9k** · **Quitar una tarjeta guardada** desde Mi cuenta (Pagos) y el Wallet de To'Latino. — **✓ 9k (14 nov):** Mi cuenta › Ajustes › Pagos (`/cuenta/pagos`, USR-PAGOS: tus tarjetas con «Quitar»; queda «removed», con Stripe se desliga del cliente; la que paga Pro de un negocio no se quita sin cambiarla antes). El Wallet de To'Latino todavía no existe: va con «Pagos y Wallet» de Mi cuenta (→ 9m, arriba). Prueba din9k paso 6.
 - [x] **Depósitos de citas, boletos y apartados** (comisiones 8 %, 5 % + $1, 6 % ya están en `fee_rules`): llegan con sus
       bloques. Super Admin › Planes › Comisiones (programar cambios con 30 días) también. — **✓ 9a (11 nov):** depósitos de citas, boletos y apartados con sus comisiones (Fases 3, 4 y 6) y Super Admin › Planes › Comisiones con cambios programados (app/admin/Planes.tsx, lib/admin-planes.ts); prueba adm5i.
 - [ ] **→ 9l** · **Recibo por correo** del pedido pagado (Fase 2, con el correo).
@@ -375,13 +375,13 @@ en el momento. Se marca solo cuando está hecho de verdad.
       que usan `div` con onClick (auditoría por clase, decisión T).
 
 ## Plan Pro (bloque 2m, 6 nov 2026) — **✓ 9c (14 nov):** los 190 clics mudos del sistema pasan por el motor de `scripts/portar-sistema.mjs` (tabla A11Y; `__ds_scope.__btn`); el guardián `sistemaClicMudo` quedó en cero (antes tope 190) y `panelClicMudo` también (antes 18); prueba a11y9c.
-- [ ] **→ 9k** · **Reloj del servidor** (systemd timer o similar) que llame al proceso del plan cada hora, además del proceso «al usar
-      la app» de hoy: que el día 30 llegue aunque nadie entre. — _9a (11 nov): el proceso del plan corre al abrir el panel (lib/panel.ts → suscripcion.procesar); no está en el barrido central: el día 30 no llega si nadie entra._
+- [x] **→ 9k** · **Reloj del servidor** (systemd timer o similar) que llame al proceso del plan cada hora, además del proceso «al usar
+      la app» de hoy: que el día 30 llegue aunque nadie entre. — _9a (11 nov): el proceso del plan corre al abrir el panel (lib/panel.ts → suscripcion.procesar); no está en el barrido central: el día 30 no llega si nadie entra._ — **✓ 9k (14 nov):** el proceso del plan corre en el barrido central (lib/barrido.ts «planPro», cada minuto con su tope de 5 min por proceso): el día 30 llega aunque nadie abra el panel. Guardián barridoCompleto.
 - [x] **Super Admin › Planes** (secPlan): suscripciones, MRR, extender prueba, cortesía, precio y comisiones programadas
       con 30 días (fee_rules ya lo soporta en datos). — **✓ 9a (11 nov):** Super Admin › Planes: suscripciones, MRR, extender prueba, cortesía, comisiones programadas (app/admin/Planes.tsx, lib/suscripcion.ts extenderPrueba/darCortesia); prueba adm5i.
 - [ ] **→ 9s** · **Recibo por correo** de cada cobro de Pro e **impuesto** si aplica (consultar con el contador antes de la fase 9).
-- [ ] **→ 9k** · **3D Secure fuera de sesión** en renovaciones: si el banco pide verificación, avisar al dueño con un enlace para
-      confirmar (hoy cuenta como intento fallido).
+- [x] **→ 9k** · **3D Secure fuera de sesión** en renovaciones: si el banco pide verificación, avisar al dueño con un enlace para
+      confirmar (hoy cuenta como intento fallido). — **✓ 9k (14 nov):** la renovación que pide 3-D Secure deja la verificación a nombre del dueño (hasta el próximo intento) y le avisa «Tu banco pide confirmar el cobro de Pro» con el enlace `/pago/verificar?pi=<pi>` (la misma hoja; Stripe.js confirmCardPayment con su tarjeta); al confirmar, el período se completa una sola vez (lib/suscripcion.ts completarRenovacion; también por el webhook payment_intent.succeeded). Antes de otro intento o de pasar a Free, la verificación vieja se mira (si ya cobró, no se cobra otra vez) y se suelta. Sigue contando para el calendario de 3 intentos, sin el aviso de «cobro fallido». Prueba din9k paso 2.
 
 - [ ] **→ 9m** · **Mensajes (2p):** tiempo real con WebSocket/SSE en vez de preguntar cada 4–5 s; fotos en el chat; «El Compa contesta
   por ti» y «Sugerir respuesta» (Fase 4); mensajes vecino ↔ vecino (Comunidad); traducción ES↔EN sugerida; aviso push.
@@ -391,8 +391,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
   `SES_REGION`, `CORREO_DE` (p. ej. recibos@tolatino.com) y `TOLATINO_URL`. Rebotes y quejas (SNS → webhook) para dejar de
   mandar a correos que rebotan. Reloj propio para reintentos (hoy: perezoso, al usar la app). Resumen semanal (Comunidad).
 
-- [ ] **→ 9k** · **Disputas (2r):** suscribir el webhook de Stripe a `charge.dispute.created/updated/closed`; adjuntar archivos de
-  evidencia (foto de entrega, recibo en PDF) por la API de archivos de Stripe; alerta al equipo 3 días antes del plazo.
+- [x] **→ 9k** · **Disputas (2r):** suscribir el webhook de Stripe a `charge.dispute.created/updated/closed`; adjuntar archivos de
+  evidencia (foto de entrega, recibo en PDF) por la API de archivos de Stripe; alerta al equipo 3 días antes del plazo. — **✓ 9k (14 nov):** el webhook ya aplica charge.dispute.created/updated/closed (2r); los archivos de evidencia por la API de archivos (lib/pagos/stripe.ts stripeArchivo; pasarela.subirEvidencia, en el contrato con stripe-mock) y la alerta al equipo 3 días antes del plazo (lib/dinero-alertas.ts «dispute_due», `disputa_alerta_dias`). Suscribir el endpoint a esos eventos en la cuenta real va con 9q (línea nueva de «Fase 9 · 9k»).
 - [x] **→ 9c** · **Accesibilidad del sistema de diseño (bloque propio, antes de la fase 9):** quedan 193 `onClick` en `<div>/<span>` sin
       rol ni teclado en `packages/ui/src/ds` (AdminBar 23, Thread 18, SiteHeader 17, Patio 11, DeliveryPrefs 10, OnbTopBar 10,
       CompaFrame 10, MenuItemRow 9…). Se corrigen con nombre y estado en `scripts/portar-sistema.mjs` (como Button, IconButton,
@@ -412,10 +412,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
       aprueba la lista por categoría (o se arranca sin plantillas).
 - [x] Renovar retenciones de más de 7 días corre al abrir el panel (Hoy). En producción: tarea programada cada hora
       (mismo `repararEstimados`), para que no dependa de que el negocio abra el panel. — **✓ 9a (11 nov):** renovar retenciones de más de 7 días corre en el barrido central cada minuto (lib/barrido.ts: renovarRetenciones, repararEstimados; servicio «barrido» del compose); prueba renov4d, barr.
-- [ ] **→ 9k** · Rechazo de tarjeta al aprobar el estimado: sigue el mismo camino del Booking (error, elegir otra), sin prueba
-      punta a punta propia todavía. Agregarla con la tarjeta 0002.
-- [ ] **→ 9k** · Si la base falla justo después de retener (entre la pasarela y el commit), la retención queda suelta hasta que
-      Stripe la suelte (7 días). Conciliación diaria contra Stripe (PaymentIntents `requires_capture` sin fila).
+- [ ] **→ 9n** · Rechazo de tarjeta al aprobar el estimado: sigue el mismo camino del Booking (error, elegir otra), sin prueba
+      punta a punta propia todavía. Agregarla con la tarjeta 0002. — _9k (14 nov): el camino del rechazo es el de siempre (pagos2d lo prueba en pedidos con la 0002); la prueba propia del estimado necesita armar la cita de Auto/Hogar con su estimado (como est4d): va con las pruebas del negocio (9n)._
+- [x] **→ 9k** · Si la base falla justo después de retener (entre la pasarela y el commit), la retención queda suelta hasta que
+      Stripe la suelte (7 días). Conciliación diaria contra Stripe (PaymentIntents `requires_capture` sin fila). — **✓ 9k (14 nov):** la conciliación diaria marca la retención suelta (`requires_capture` en Stripe sin fila en el libro ni verificación viva) como diferencia «Retención suelta» con su alerta (lib/conciliacion.ts kind hold_orphan). Probado contra la base local (la corrida y sus dos filas) y en din9k paso 3.
 - [ ] **→ 9s** · Validar con el contador: impuesto de PA solo sobre piezas/materiales en reparaciones de carro y de casa (tax_rules).
 
 ## Fase 4 · 4f (planes)
@@ -446,14 +446,14 @@ en el momento. Se marca solo cuando está hecho de verdad.
 ## Fase 4 · 4g-2 (ayuda con la visita)
 - [ ] **→ 9n** · Reserva de garantía a $0 desde la ayuda aceptada («que vuelva sin cargo»): Booking con `warr` (sin depósito ni
       retención) en vez de coordinar por Mensajes.
-- [ ] **→ 9k** · Si se devuelve más que un cobro (estimado + «algo más»), hoy sale del de más saldo: repartir entre cobros.
+- [x] **→ 9k** · Si se devuelve más que un cobro (estimado + «algo más»), hoy sale del de más saldo: repartir entre cobros. — **✓ 9k (14 nov):** lib/cobros.ts devolverOperacion reparte la devolución entre los cobros con saldo (del de más al de menos), cada parte con su llave `<idem>-p<cobro>` (reintentar no devuelve dos veces); la ayuda con la cita y Transacciones devuelven por ahí. Guardián devolverRepartido; probado contra la base local ($14 de $10 + $6 → 10 + 4; el reintento no repite).
 
 ## Fase 4 · 4g-3
 - [ ] **→ 9g** · Analítica de Hogar y Auto: aprobado vs. cobrado, llegó en la franja, tiempo de respuesta a emergencias, % de
       pre-estimados que terminan en cita.
 - [ ] **→ 9n** · Configuración en el Super Admin: plazos (pre-estimado 24 h, presupuesto 48 h, emergencia 15 min, apartado 48 h) y la
       regla de impuesto (tax_rules) editables con motivo; hoy viven en el código y en datos.
-- [ ] **→ 9k** · «Devolver» desde Transacciones para cobros de planes y rentas.
+- [x] **→ 9k** · «Devolver» desde Transacciones para cobros de planes y rentas. — **✓ 9k (14 nov):** Transacciones › «Devolver» también en planes (PL-) y rentas (T-), de lo cobrado neto, repartido entre los cobros de cada período (devolverTx + devolverOperacion); la lista de la pantalla y la del servidor coinciden (devolverCoincide).
 
 
 - [ ] **→ 9o** · **DATOS_SECRET (4j):** respaldar la llave del cifrado de columna de producción (op_private) en un lugar seguro fuera del servidor; sin ella, las notas vivas (máx. 30 días) quedan ilegibles.
@@ -759,9 +759,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **6c · Devoluciones de boletos:** _6e (10 nov): la devolución total al cancelar el evento o una fecha, en lote e idempotente, hecha._ _6d (10 nov): cancelar el comprador (menos el cargo, hasta 24 h antes) y devolver desde el panel
       (100 %) hechos, idempotentes y con el reintento del barrido._ Falta la devolución total al cancelar el evento (6e); «Anular» del admin
       no devuelve dinero. (6c, 10 nov)
-- [ ] **→ 9k** · **6c · 3D Secure:** si el banco pide verificación extra, se pide otra tarjeta (como el resto de la app). (6c, 10 nov)
-- [ ] **→ 9k** · **6c · Máximo por persona con la huella de la tarjeta:** hoy cuenta cuenta + dispositivo + la misma tarjeta guardada (`pm_…`); con
-      Stripe real conviene la huella (`card.fingerprint`) para cazar la misma tarjeta en otra cuenta. (6c, 10 nov)
+- [x] **→ 9k** · **6c · 3D Secure:** si el banco pide verificación extra, se pide otra tarjeta (como el resto de la app). (6c, 10 nov) — **✓ 9k (14 nov):** los boletos completan la verificación en la hoja y «Pagar» vuelve a enviar el mismo apartado con el mismo intento (lib/boletos.ts pagarBoletos con `usuario`; no se suelta lo retenido ni cuenta como otro intento).
+- [x] **→ 9k** · **6c · Máximo por persona con la huella de la tarjeta:** hoy cuenta cuenta + dispositivo + la misma tarjeta guardada (`pm_…`); con
+      Stripe real conviene la huella (`card.fingerprint`) para cazar la misma tarjeta en otra cuenta. (6c, 10 nov) — **✓ 9k (14 nov):** la huella (card.fingerprint; en el sandbox, la simulada de la marca y los 4) se guarda al guardar una tarjeta y en cada cobro (payment_methods/payments.card_fingerprint, 0141) y el máximo por persona y fecha cuenta la misma tarjeta en otra cuenta (lib/boletos.ts entradasDe). Guardián huellaDeTarjeta.
 - [ ] **→ 9m** · **6c · QR sin señal en el teléfono del cliente:** el QR verifica sin conexión en la puerta, pero la página del boleto necesita señal
       para abrirse; la app instalable (service worker) llega con 6h. Apple / Google Wallet: Fase 8 (§6 #17). (6c, 10 nov) _6h (10 nov): hecho —
       el boleto abierto una vez con señal se guarda cifrado en el teléfono y se ve sin señal (service worker de Mis boletos); falta probarlo en un
@@ -801,8 +801,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       Si se quiere, oferta de 30 min que guarda el RSVP. (6d, 10 nov) — _9a (11 nov): lista de espera de eventos gratis con cupo lleno. En `docs/DESPUES-DE-ABRIR.md`._
 - [x] **6d · Oferta de la lista de espera de noche:** respeta las horas de silencio (el SMS espera; el aviso llega en Avisos); 30 min pueden
       vencer sin verse. Decidir si es crítica o si no se ofrece de noche (REVISION 6d). (6d, 10 nov) — **✓ 9a (11 nov):** la oferta de la lista de espera respeta las horas de silencio (REVISION 6d y 9a).
-- [ ] **→ 9k** · **6d · Devolución que Stripe nunca hace** (tarjeta cerrada, cuenta con disputa): queda «pendiente» y el barrido la reintenta para
-      siempre con su llave (`refunds.attempts`, `last_error`). Falta la alerta en Dinero / Confianza pasado N intentos y el camino manual. (6d, 10 nov)
+- [x] **→ 9k** · **6d · Devolución que Stripe nunca hace** (tarjeta cerrada, cuenta con disputa): queda «pendiente» y el barrido la reintenta para
+      siempre con su llave (`refunds.attempts`, `last_error`). Falta la alerta en Dinero / Confianza pasado N intentos y el camino manual. (6d, 10 nov) — **✓ 9k (14 nov):** la alerta «devolución atascada» al equipo de dinero pasado `dinero_alerta_intentos` (Configuración › Dinero, 5), una vez por devolución, y el camino manual en Planes › Ingresos › Alertas: «Resolver a mano» con su nota (refunds.manual_*, la base lo impone una vez); desde ahí el barrido nunca la vuelve a pedir a Stripe y sigue contando como devuelta. Guardián alertasDelDinero.
 - [x] **6d · Señales de reventa** (transferencias en cadena, muchas al día a distintos teléfonos): el tope diario existe; las señales para
       Confianza llegan con 6j (`evt_senales`). (6d, 10 nov)
 - [x] **6d · La puerta (6g/6h) usa `bol_vigente`** (válido y sin transferencia pendiente) y el paquete sin conexión excluye boletos en
@@ -818,12 +818,12 @@ en el momento. Se marca solo cuando está hecho de verdad.
 
 
 ## Fase 6 · 6e (cambios del evento y dinero del organizador)
-- [ ] **→ 9k** · **6e · Contrato de `pasarela.cliente` (POST /v1/customers):** lee la base antes de llamar a Stripe y el contrato corre sin base; es la
+- [x] **→ 9k** · **6e · Contrato de `pasarela.cliente` (POST /v1/customers):** lee la base antes de llamar a Stripe y el contrato corre sin base; es la
       única llamada a Stripe fuera de `scripts/contrato-stripe/prueba.cjs` (guardián `contratoCubreLaPasarela` la deja anotada). Darle un
-      doble de la base al contrato y probarla. (6e, 10 nov)
+      doble de la base al contrato y probarla. (6e, 10 nov) — **✓ 9k (14 nov):** scripts/contrato-stripe/correr.sh le da a la pasarela un doble de la base (users.stripe_customer_id en memoria; cualquier otra consulta falla) y prueba.cjs prueba `pasarela.cliente` (la primera vez crea y guarda, la segunda lee); el guardián contratoCubreLaPasarela ya no tiene excepciones. Compilado y probado aquí contra una API falsa; con stripe-mock corre en el CI.
 - [x] **6e · Cargo de Stripe por disputa ($15):** lo absorbe To'Latino; decidir si se le cobra al organizador. (6e, 10 nov) — **✓ 9a (11 nov):** el cargo de Stripe por disputa lo absorbe To'Latino (REVISION 9a).
-- [ ] **→ 9k** · **6e · Revertir una transferencia sin saldo del organizador:** Stripe la rechaza; queda pendiente y se reintenta con su llave. Falta la
-      alerta en Dinero y el camino manual (cobrarle al organizador). (6e, 10 nov)
+- [x] **→ 9k** · **6e · Revertir una transferencia sin saldo del organizador:** Stripe la rechaza; queda pendiente y se reintenta con su llave. Falta la
+      alerta en Dinero y el camino manual (cobrarle al organizador). (6e, 10 nov) — **✓ 9k (14 nov):** la alerta «transferencia sin saldo para revertir» y el camino manual (cobrarle al organizador fuera de Stripe: «Resolver a mano» con su nota; event_settlement_reversals.manual_*; la deuda la sigue contando como revertida y el barrido no la vuelve a pedir). Guardián alertasDelDinero.
 - [x] **→ después de abrir (DA-13)** · **6e · Cambiar el lugar de un evento con ventas:** no se construyó (cancelar y publicar otro, o un cambio que revisa To'Latino). Las
       transferencias de boletos pendientes no se ajustan al mover la fecha (vencen a la hora de antes). (6e, 10 nov) — _9a (11 nov): cambiar el lugar de un evento con ventas. En `docs/DESPUES-DE-ABRIR.md`._
 - [x] **6e · Super Admin «Extender ventas» y «Ajustar cupo»** (admin-dashboard L183–185): con 6j. «Congelar» y «Cancelar y devolver todo» sí. (6e, 10 nov)
@@ -919,9 +919,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9s** · **6i · Impuesto de la comida preparada (6 % PA, `tax_rules` NEG-FOOD):** sembrado igual en las 5 ciudades; validar con el contador si aplica
       impuesto local y si el «Todo el local» o la decoración pagan impuesto (hoy todo el subtotal lo paga). (6i, 10 nov)
 - [x] **6i · Comisión `evp` 8 % del depósito** (igual que Fiestas, Super Admin › Planes): decisión del fundador (REVISION «### 6i»). (6i, 10 nov) — **✓ 9a (11 nov):** comisión evp 8 % del depósito, como Fiestas (REVISION 6i y 9a).
-- [ ] **→ 9k** · **6i · El depósito llega directo al restaurante** (cobro con destino, como toda la app): si el restaurante cancela y su saldo en Stripe no
+- [ ] **→ 9q** · **6i · El depósito llega directo al restaurante** (cobro con destino, como toda la app): si el restaurante cancela y su saldo en Stripe no
       alcanza, la devolución depende de Stripe (la plataforma la cubre y la cobra al negocio). Revisar con Stripe el saldo negativo de cuentas
-      conectadas antes de abrir. (6i, 10 nov)
+      conectadas antes de abrir. (6i, 10 nov) — _9k (14 nov): el saldo negativo de una cuenta conectada (la plataforma cubre y se lo cobra al negocio) solo se revisa con Stripe de verdad (Connect, modo prueba): 9q. Mientras, una devolución que Stripe no puede hacer cae en la alerta «devolución atascada» con su camino manual._
 - [ ] **→ 9q** · **6i · SMS del evento privado:** `evp_nueva` (al restaurante), `evp_propuesta`, `evp_ok` y `evp_cancelado_negocio` llevan SMS; salen de verdad
       cuando haya proveedor (Telnyx, decisión E). Hoy quedan «en modo pruebas». (6i, 10 nov)
 - [ ] **→ 9s** · **6i · Términos y políticas:** la política de cancelar de un evento privado (gratis hasta 72 h; después el depósito se queda con el
@@ -941,7 +941,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       AVISAMOS») no existe todavía. Hoy al negocio le llega todo en la campana (evt_venta, evt_aforo90, evt_ajuste_admin, evt_pago…). Con Ajustes. (6j, 10 nov)
 - [ ] **→ 9m** · **6j · Mi cuenta › Pagos y movimientos de boletos:** la pantalla Pagos y Wallet (USR-PAGOS) no existe; el recibo de cada orden B- está en la
       orden. Con su fase (Pagos y Wallet). (6j, 10 nov)
-- [ ] **→ 9k** · **6j · Señal «la misma tarjeta en varias cuentas»:** necesita `card.fingerprint` de Stripe (un pm_… es de una sola cuenta); con Stripe real. (6j, 10 nov)
+- [x] **→ 9k** · **6j · Señal «la misma tarjeta en varias cuentas»:** necesita `card.fingerprint` de Stripe (un pm_… es de una sola cuenta); con Stripe real. (6j, 10 nov) — **✓ 9k (14 nov):** Confianza › Fraude › «LA MISMA TARJETA EN VARIAS CUENTAS · 90 DÍAS» desde la base (`tarjetas_en_varias_cuentas`, desde `tarjeta_cuentas_senal` cuentas, 3); con Stripe de verdad, la huella real. Prueba din9k paso 5.
 - [ ] **→ 9n** · **6j · «Día de pago de eventos» (evt_pago_dia) en SOLO LECTURA:** el panel (Eventos, Cobros), Publica tu evento y la ayuda dicen «el martes».
       Se abre cuando esos textos lean el valor. (6j, 10 nov)
 - [ ] **→ 9n** · **6j · Ajustar el cupo de un RSVP desde el Super Admin:** hoy solo boletos, mesas y aforo del día (el cupo del RSVP lo cambia el organizador). (6j, 10 nov)
@@ -1591,3 +1591,21 @@ en el momento. Se marca solo cuando está hecho de verdad.
       sin autor se rechazan. (9f, 14 nov)
 - [ ] **→ 9t** · **El indexador de cadenas en producción:** el despliegue del sandbox corre `scripts/cms/indexar.mjs` (deploy.sh 3c-quater); el de producción (todavía no existe) hace
       lo mismo, sin la semilla 0054 (los anuncios de ejemplo son solo del sandbox). (9f, 14 nov)
+
+## Fase 9 · 9k — dinero real listo: conciliación, pagos al banco, disputas con evidencia, 3-D Secure y la huella (14 nov)
+- [ ] **→ 9n** · **3-D Secure en los demás flujos:** citas (depósito), fiestas, noche, viajes, inscripciones, visitas, evento privado, estimados y rentas todavía sueltan el cobro y piden
+      otra tarjeta cuando el banco pide verificar. El mecanismo está (la pasarela con `usuario`, `pideVerificar` en el servidor y `useVerificacion` + `{V.hoja}` en la pantalla; el guardián
+      tresDSecure revisa los flujos que ya lo tienen): falta pasarlo en cada uno, con su prueba. (9k, 14 nov)
+- [ ] **→ 9n** · **«Volver a Pro» en el panel con 3-D Secure:** si el banco pide confirmar al volver a Pro desde Free (en sesión), hoy el dueño recibe el aviso con el enlace a la hoja; abrir la
+      hoja directo en Tu plan (como en el checkout). (9k, 14 nov)
+- [ ] **→ 9n** · **La foto de la entrega en la evidencia de una disputa:** el Repartidor no toma foto al entregar; la evidencia lleva la constancia con la línea de tiempo y la dirección.
+      Cuando exista la foto, se suma como `foto_entrega` (dispute_evidence ya la admite). (9k, 14 nov)
+- [ ] **→ 9q** · **El webhook de Stripe de verdad:** al crear el endpoint (Paquete 9-1), suscribirlo a payment_intent.succeeded / canceled / amount_capturable_updated, charge.refunded,
+      charge.dispute.created / updated / closed, account.updated y, en los eventos de las cuentas conectadas, payout.created / updated / paid / failed / canceled; y fijar el calendario
+      de los pagos al banco (martes) en las cuentas que ya existan. (9k, 14 nov)
+- [ ] **→ 9q** · **La conciliación y 3-D Secure con Stripe de verdad (modo prueba):** aquí corren contra el simulador y el contrato (stripe-mock no guarda estado: no hay banco que pida
+      verificar ni listas con objetos). Con la llave de prueba: la tarjeta 4000 0027 6000 3184 en la hoja (handleNextAction), una renovación con `authentication_required`, una conciliación de
+      un día con objetos reales (paginación, payouts por cuenta conectada) y un archivo de evidencia real. (9k, 14 nov)
+- [ ] **→ 9b** · **din9k y alreves9k entran a la corrida dirigida del CI** (y a la confirmación completa después de 9k, decisión AD): aquí no hay Docker; alreves9k 38/38, la lógica del
+      dinero contra Postgres 16 local (41 ✓) y din9k 39 ✓ dos veces seguidas con el build servido en local (perfil basico, S3 de mentira, Chrome del sistema); la corrida
+      de verdad es la del CI. El contrato con stripe-mock (cliente con el doble de la base, intento, huella, delDia, archivos) también corre allí. (9k, 14 nov)

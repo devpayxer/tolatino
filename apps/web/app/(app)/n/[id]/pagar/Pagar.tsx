@@ -10,6 +10,7 @@ import type { DropPref, MenuPublico } from "@/lib/pedir";
 import { calc, carritoGuardado, entrega, EnvioGratis, guardarCarrito, guardarModo, limpiar, modoDe, modoGuardado, Modos, type Linea, type Modo } from "../MenuCliente";
 import { enviarPedido } from "../acciones-pedido";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
+import { useVerificacion } from "../../../pago/Verificacion";
 import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "Chip";
@@ -48,6 +49,8 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []);
   const [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas[0] ?? null);
   const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null);
+  // 9k · 3-D Secure: si el banco pide confirmar, la hoja lo completa y el pedido se vuelve a enviar con la misma clave.
+  const V = useVerificacion(es, pago?.modo, pago?.pk);
   const conTarjeta = !!pago && payK === "card";
   const clave = useMemo(() => (uuid()), []);
   useEffect(() => { setCart(limpiar(m, carritoGuardado(biz))); setModoG(modoGuardado(biz)); window.scrollTo(0, 0); }, [m, biz]);
@@ -109,6 +112,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
       });
       if (r.ok) { vibrar("hecho"); guardarCarrito(biz, []); router.push(`/pedido/${r.numero}`); return; }
       if (r.entrar || r.perfil) { router.push(`/entrar?volver=${aqui}`); return; }
+      if (V.pide(r, () => { void enviar(); })) { setEnviando(false); return; }
       if (r.tarjeta && tarjeta) setDeclinada(tarjeta.pm);
       setError({ msg: es ? r.msg.es : r.msg.en, menu: !!r.menu }); window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
@@ -339,6 +343,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
           <div className="flex">{boton}</div>
         </div>
       )}
+      {V.hoja}
       {hoja && pago && (
         <MetodoPago es={es} tarjetas={tarjetas} sel={tarjeta?.pm ?? null} declinada={declinada} modo={pago.modo} pk={pago.pk}
           nota={`${E2("PARA TU PEDIDO DE ", "FOR YOUR ORDER OF ")}${money(total)}${auto ? E2(" · SE COBRA AL ENVIAR", " · CHARGED WHEN YOU ORDER") : E2(" · SE RETIENE AL ENVIAR", " · HELD WHEN YOU ORDER")}`}

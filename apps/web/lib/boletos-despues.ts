@@ -323,11 +323,14 @@ async function anotarDevolucion(c: Q, x: { op: string; pid: string; city: string
 /* Paso 2: la devolución en Stripe (o el simulador) con su llave; idempotente (la misma llave nunca devuelve dos veces) y la marca 'done'
    una sola vez (update … where status = 'pending'). Si falla, queda pendiente y el barrido la reintenta. */
 export async function ejecutarDevolucion(refundId: string): Promise<boolean> {
-  const r = (await db().query<{ id: string; amt: number; idem: string; st: string; pi: string; pid: string; op: string; pg: boolean }>(
-    `select r.id::text, r.amount_cents as amt, r.idem_key as idem, r.status as st, p.stripe_payment_intent as pi, p.id::text as pid, p.operation_id::text as op, p.transfer_group is not null as pg
+  const r = (await db().query<{ id: string; amt: number; idem: string; st: string; pi: string; pid: string; op: string; pg: boolean; mano: boolean }>(
+    `select r.id::text, r.amount_cents as amt, r.idem_key as idem, r.status as st, p.stripe_payment_intent as pi, p.id::text as pid, p.operation_id::text as op, p.transfer_group is not null as pg,
+            r.manual_at is not null as mano
        from refunds r join payments p on p.id = r.payment_id where r.id = $1::bigint`, [refundId])).rows[0];
   if (!r) return false;
   if (r.st !== "pending") return r.st === "done";
+  // 9k · Resuelta a mano (el cliente ya recibió su dinero fuera de Stripe): nunca se vuelve a pedir a Stripe (sería pagar dos veces).
+  if (r.mano) return false;
   const x = await pasarela.devolver(r.pi, r.amt, r.idem, { plataforma: r.pg }).catch(() => ({ ok: false as const, codigo: "error" }));
   if (!x.ok) {
     await db().query(`update refunds set attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [r.id, ("codigo" in x && x.codigo) || "error"]);
@@ -347,7 +350,7 @@ export async function ejecutarDevolucion(refundId: string): Promise<boolean> {
 /* Barrido: reintenta las devoluciones de boletos pendientes (con la MISMA llave). */
 export async function barrerDevolucionesBoletos(): Promise<number> {
   const L = (await db().query<{ id: string }>(
-    `select r.id::text from refunds r where r.status = 'pending' and r.created_at < now() - interval '30 seconds' and exists (select 1 from ticket_refund_lines l where l.refund_id = r.id) order by r.created_at limit 50`)).rows;
+    `select r.id::text from refunds r where r.status = 'pending' and r.manual_at is null and r.created_at < now() - interval '30 seconds' and exists (select 1 from ticket_refund_lines l where l.refund_id = r.id) order by r.created_at limit 50`)).rows;
   let n = 0;
   for (const r of L) if (await ejecutarDevolucion(r.id)) n++;
   return n;

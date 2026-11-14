@@ -1738,3 +1738,58 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **No cerrado, con destino (LAUNCH «Fase 9 · 9f»):** más cadenas por el CMS (~16 000 `E2` a mano), el resto del Super Admin en inglés, la ayuda (inglés ampliado y editor de cambios propuestos), «Cuenta borrada» en los
   demás paneles, anuncios para negocios, encender el pie (necesita tu OK con las capturas), las líneas fijas que esperan su pantalla y las corridas del CI.
 
+
+## Fase 9 · 9k — dinero real listo: conciliación diaria, pagos al banco, disputas con evidencia, 3-D Secure y la huella de la tarjeta (14 nov)
+- **Hecho (rama del worktree de 9k, sobre d1cfe41):**
+  - **Migración `0141_conciliacion.sql`** (aplicada dos veces en local: la segunda no cambia nada): `recon_runs`, `recon_diffs` y `recon_diff_notes` (solo inserción; la base revisa al
+    confirmar que la corrida dice cuántas diferencias tiene, su suma y su día: `recon_runs_cuadra`, diferida) y **`conciliacion_del_dia(día)`**; `money_alerts` y `money_alert_notes`
+    (solo inserción; una alerta por tipo y objeto); el camino manual `refunds.manual_*` y `event_settlement_reversals.manual_*` (`dinero_a_mano`: una vez, con quién y nota; resuelta a
+    mano no pasa a hecha); `payouts` (el libro de los pagos al banco: no se borra ni cambia su monto) y `sim_payouts`; `dispute_evidence` (de una fila solo cambian, una vez, su archivo en
+    Stripe y cuándo se envió), `disputes.evidence_submitted_at` / `due_alert_at`, `sim_files`, `sim_disputes`, `sim_dispute_submissions`; **`payment_actions`** (la verificación
+    3-D Secure a nombre de quien paga: solo cambia de estado y solo hacia adelante) y `sim_intents.requires_action` / `capture_method`; `payment_methods.card_fingerprint` y
+    `payments.card_fingerprint` con `tarjetas_en_varias_cuentas()`; **Configuración › Dinero** (sección nueva, agregada a la lista que haya sin pisar la de otro bloque):
+    `pagos_banco_dia` 2 (martes, no editable), `conciliacion_hora` 6, `dinero_alerta_intentos` 5, `disputa_alerta_dias` 3, `verificacion_min` 30, `tarjeta_cuentas_senal` 3; avisos
+    `pro_verify` y `din_alerta`. Mapa de datos al día (294 filas).
+  - **La conciliación diaria (el guardián del dinero, HERRAMIENTAS #20):** `lib/conciliacion.ts` compara, objeto por objeto y por día UTC, lo que dice Stripe (`pasarela.delDia`: la
+    API paginada y los payouts por cuenta conectada; en el sandbox, el simulador) con el libro: cobros (y los de Pro y las verificaciones), devoluciones, transferencias, reversiones,
+    payouts, disputas y **retenciones sueltas** (L416). La corre el barrido a su hora (`conciliarAyer`, una vez) con su vigilante (`vigilarConciliacion`); una diferencia sin dueño o
+    una corrida que falló avisa al instante al equipo de dinero. **Para el reporte diario de 9g: `conciliacionDelDia(día)` en `lib/conciliacion.ts`, o en SQL `select * from
+    conciliacion_del_dia('AAAA-MM-DD')`** → si corrió, su estado (`cuadra` / `diferencias` / `fallo` / `sin_correr`), cuántas diferencias, cuántas **sin dueño** y los totales de
+    Stripe y del libro. Solo lectura.
+  - **Pagos al banco los martes:** `cuentaCrear` nace con el calendario semanal del martes (reanudar vuelve al martes); el libro `payouts` por el webhook `payout.*`; en el sandbox,
+    `lib/pagos-banco.ts` paga los martes el saldo de cada cuenta simulada no pausada (una vez por cuenta y fecha).
+  - **Disputas con evidencia:** Super Admin › **Transacciones › Disputas** (`/admin/transacciones/disputas`, la cola de 120 h con el plazo y el estado de la evidencia); en el caso de
+    Colas, **ARCHIVOS PARA EL BANCO**: el recibo en PDF, la conversación (sin teléfonos) y la constancia de entrega (`lib/pdf-simple.ts`, propio), al almacén privado, subidos por la API
+    de archivos (`stripeArchivo` / `pasarela.subirEvidencia`) y mandados en un solo envío; si uno no sube, no se envía nada. La alerta al equipo 3 días antes del plazo.
+  - **3-D Secure completo** (L355, L382, L759): la hoja **«Tu banco pide confirmar»** (`app/(app)/pago/Verificacion.tsx`: Stripe.js `handleNextAction`, o `confirmCardPayment` con la
+    tarjeta guardada en una renovación; en el sandbox, la tarjeta 4000 0027 6000 3184 y el banco simulado), `lib/pagos/verificacion.ts` (solo quien paga; el servidor mira el estado en
+    Stripe; lo que nadie verifica vence en el barrido) y la pasarela que **reusa la retención verificada con la misma llave** (nunca cobra dos veces). En pedidos, mercado, tiendas
+    (envío y abono), el pago del plan de apartado y boletos (`useVerificacion` + `pideVerificar`). La **renovación de Pro** avisa al dueño con el enlace `/pago/verificar?pi=<pi>` y completa
+    el período una vez (`completarRenovacion`; también por el webhook); antes de otro intento, la verificación vieja se mira (si ya cobró, no se cobra otra vez) y se suelta.
+  - **La huella de la tarjeta** (L760, L938): al guardar una tarjeta y en cada cobro; el máximo de boletos por persona la cuenta; **Confianza › Fraude** muestra «la misma tarjeta en
+    varias cuentas».
+  - **Alertas que Stripe nunca hace** (L800, L821): devolución atascada, transferencia sin saldo para revertir, disputa por vencer, pago al banco que falló y la conciliación que no
+    corrió, en **Planes › Ingresos › Alertas del dinero** con «Me hago cargo», «Resuelta» y **«Resolver a mano»** (resuelta fuera de Stripe: el barrido nunca la vuelve a pedir).
+  - **Devolver repartido** (L448, L455): `devolverOperacion` reparte entre los cobros, cada parte con su llave; Transacciones devuelve también planes y rentas; la ayuda con la cita, por ahí.
+  - **Mi cuenta › Ajustes › Pagos** (L360): tus tarjetas y «Quitar». El proceso del plan Pro en el barrido (L377). Inicio del Super Admin: **«EL DINERO NO CUADRA»**.
+  - **Contrato con Stripe** (L817): `correr.sh` le da a la pasarela un doble de la base y `prueba.cjs` prueba `cliente`, `intento`, `huella`, `delDia`, `subirEvidencia` y la evidencia con
+    archivos; `contratoCubreLaPasarela` ya no tiene excepciones.
+  - **Semilla `0058_conciliacion.sql`** (solo sandbox): el lado del simulador de lo sembrado (128 cobros y 6 devoluciones en la base local) y dos días de la conciliación (uno que cuadra
+    y uno con dos diferencias con dueño). Aplicada dos veces: la segunda no cambia nada.
+  - **Guardianes nuevos:** `conciliacionDiaria`, `tresDSecure`, `huellaDeTarjeta`, `alertasDelDinero`, `disputaConEvidencia`, `pagoAlBancoMartes`, `devolverRepartido`,
+    `simuladorDeDinero`; ampliados `contratoCubreLaPasarela` y `dineroDelServidor`. **`alreves9k` 38/38**; `alreves6d` tenía un caso que ya no encontraba su texto (la lista DEVUELVE
+    de 6i): al día.
+  - **Ayuda:** `admin-conciliacion` y `admin-disputas` (equipo), `panel-cobros` (negocio) y `pagar-con-tarjeta` al día (3-D Secure y quitar una tarjeta).
+- **Probado aquí (sin Docker: Postgres 16 + PostGIS de la máquina):** `node guardianes/run.mjs` → «sin fallos»; `tsc --noEmit` limpio; `next build` en verde; 0141 y la semilla 0058
+  dos veces sin cambios; la lógica del servidor de 9k compilada aparte y corrida contra la base local: **41 ✓** (un día que cuadra y uno con una retención suelta y un cobro que Stripe no
+  tiene, con su alerta una vez; la corrida y sus filas no se cambian y una corrida que miente sobre sus diferencias no entra; 3-D Secure: pide, la misma verificación sin otro cobro,
+  otra persona no la completa, verificada → retenido con el MISMO cobro, «No fui yo» → otro intento con otra llave; la huella; los pagos al banco una vez por cuenta y fecha; una disputa
+  con sus tres PDF subidos y enviados al simulador; devolver $14 de $10 + $6 → 10 + 4 y el reintento no repite; la renovación de Pro con 3-D Secure → aviso al dueño → confirmada → Pro
+  activo con un solo cobro y procesar otra vez no cobra; la devolución atascada → una alerta y su camino manual; las lecturas del Super Admin). El contrato se compiló y se probó
+  `cliente` con el doble de la base contra una API falsa. **`din9k` 39 ✓ dos veces seguidas en la misma base** (el build servido en local, perfil basico con un S3 de mentira y
+  Chrome del sistema; los cinco casos del plan y quitar una tarjeta, 390 y 1360); al correrla salieron y se arreglaron: el enlace de la renovación pasó a `/pago/verificar?pi=…` (el id
+  del simulador lleva «:» y «.», que una ruta no dejaba pasar: 404 para el dueño), la hoja va fuera de la página que la abre, y la prueba elige un día sin alerta (una por día).
+  **No se corrió:** el contrato con stripe-mock (no hay Docker): su primera corrida es la del CI, como la regresión entera (LAUNCH «Fase 9 · 9k» → 9b).
+- **No cerrado, con destino (LAUNCH «Fase 9 · 9k»):** 3-D Secure en los demás flujos y «Volver a Pro» con la hoja en el panel (9n), la foto de la entrega en la evidencia (9n), reponer un
+  pedido sin costo y la prueba del rechazo al aprobar un estimado (9n), el webhook y la conciliación con Stripe de verdad y el saldo negativo de las cuentas conectadas (9q), la
+  corrida del CI (9b).

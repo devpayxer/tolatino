@@ -19,6 +19,8 @@ export function Ajustes({ es, yo, ciudad, negocio }: { es: boolean; yo: Yo; ciud
       { ic: "pin", t: E2("Mi ciudad", "My city"), s: `${ciudad ? `${ciudad}, PA` : E2("SIN ELEGIR", "NOT CHOSEN")}${E2(" · CAMBIA CADA 30 DÍAS", " · CHANGES EVERY 30 DAYS")}`.toUpperCase(), chev: true, on: () => ir("/cuenta/ajustes/ciudad") },
       { ic: "bell", t: E2("Avisos", "Notifications"), s: E2("QUÉ TE LLEGA Y CUÁNDO", "WHAT YOU GET AND WHEN"), chev: true, on: () => ir("/cuenta/avisos") },
       { ic: "lock", t: E2("Privacidad y seguridad", "Privacy and security"), s: E2("QUIÉN TE VE · SESIONES", "WHO SEES YOU · SESSIONS"), chev: true, on: () => ir("/cuenta/ajustes/privacidad") },
+      // 9k · Tus tarjetas guardadas (USR-PAGOS): quitar una.
+      { ic: "card", t: E2("Pagos", "Payments"), s: E2("TUS TARJETAS GUARDADAS", "YOUR SAVED CARDS"), chev: true, on: () => ir("/cuenta/pagos") },
       negocio ? { ic: "store", ibg: "rgba(0,229,196,.16)", ifg: "var(--tl-open-text)", t: negocio.name, s: E2("TU NEGOCIO · ABRIR MI PANEL", "YOUR BUSINESS · OPEN MY DASHBOARD"), chev: true, on: () => ir(`/panel/${negocio.id}/hoy`) }
         : { ic: "store", ibg: "rgba(0,229,196,.16)", ifg: "var(--tl-open-text)", t: E2("¿Tienes negocio?", "Have a business?"), s: E2("PRO 30 DÍAS GRATIS · SIN TARJETA", "PRO FREE FOR 30 DAYS · NO CARD"), chev: true, on: () => ir("/publica") },
     ] },

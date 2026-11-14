@@ -23,10 +23,13 @@ const K = "font-mono text-[10px] font-bold tracking-[0.16em] text-ink/45";
 const campo = (err: boolean) => `h-[46px] w-full rounded-[13px] bg-white px-3.5 text-[14.5px] font-semibold outline-none ${err ? "border-[1.5px] border-danger" : "border border-ink/[.12]"}`;
 
 // Stripe.js (solo con Stripe de verdad): se carga una vez desde Stripe, como exige su norma de seguridad (PCI).
-type StripeJs = { elements: () => { create: (t: "card", o?: unknown) => { mount: (el: HTMLElement) => void; destroy: () => void; on: (e: string, f: (x: { complete: boolean; error?: { message: string } }) => void) => void } };
-  createPaymentMethod: (o: unknown) => Promise<{ paymentMethod?: { id: string; card: { brand: string; last4: string; exp_month: number; exp_year: number } }; error?: { message: string } }> };
+export type StripeJs = { elements: () => { create: (t: "card", o?: unknown) => { mount: (el: HTMLElement) => void; destroy: () => void; on: (e: string, f: (x: { complete: boolean; error?: { message: string } }) => void) => void } };
+  createPaymentMethod: (o: unknown) => Promise<{ paymentMethod?: { id: string; card: { brand: string; last4: string; exp_month: number; exp_year: number } }; error?: { message: string } }>;
+  // 9k · 3-D Secure: completar la verificación del banco en la hoja (en sesión), o confirmar con la tarjeta guardada (renovación fuera de sesión).
+  handleNextAction: (o: { clientSecret: string }) => Promise<{ paymentIntent?: { status: string }; error?: { message: string } }>;
+  confirmCardPayment: (secreto: string, o?: { payment_method?: string }) => Promise<{ paymentIntent?: { status: string }; error?: { message: string } }> };
 let stripeJs: Promise<StripeJs> | null = null;
-function cargarStripe(pk: string): Promise<StripeJs> {
+export function cargarStripe(pk: string): Promise<StripeJs> {
   if (!stripeJs) stripeJs = new Promise((ok, mal) => {
     const w = window as unknown as { Stripe?: (k: string) => StripeJs };
     if (w.Stripe) return ok(w.Stripe(pk));
@@ -150,7 +153,7 @@ export function MetodoPago({ es, tarjetas, sel, declinada, nota, modo, pk, onUsa
             <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Guardar para la próxima", "Save for next time")}</span><span className="mt-0.5 block text-[11.5px] font-medium text-ink/55">{E2("To'Latino nunca ve el número completo.", "To'Latino never sees the full number.")}</span></span>
             <span className={`relative h-[22px] w-10 flex-none rounded-full ${f.save ? "bg-ink" : "bg-ink/[.18]"}`}><span className="absolute top-0.5 size-[18px] rounded-full bg-white transition-all" style={{ left: f.save ? 20 : 2 }} /></span>
           </button>}
-          {modo === "simulador" && <div className="rounded-[12px] bg-action/[.08] px-3 py-2.5 text-[11.5px] font-semibold leading-[1.5] text-action">{E2("Sandbox: usa 4242 4242 4242 4242 (aprobada), 4000 0000 0000 0002 (rechazada) o 4000 0000 0000 9995 (sin fondos). No se cobra nada real.", "Sandbox: use 4242 4242 4242 4242 (approved), 4000 0000 0000 0002 (declined) or 4000 0000 0000 9995 (no funds). Nothing real is charged.")}</div>}
+          {modo === "simulador" && <div className="rounded-[12px] bg-action/[.08] px-3 py-2.5 text-[11.5px] font-semibold leading-[1.5] text-action">{E2("Sandbox: usa 4242 4242 4242 4242 (aprobada), 4000 0000 0000 0002 (rechazada), 4000 0000 0000 9995 (sin fondos) o 4000 0027 6000 3184 (el banco pide confirmar). No se cobra nada real.", "Sandbox: use 4242 4242 4242 4242 (approved), 4000 0000 0000 0002 (declined), 4000 0000 0000 9995 (no funds) or 4000 0027 6000 3184 (the bank asks to confirm). Nothing real is charged.")}</div>}
           {error && <div role="alert" className="text-[12px] font-semibold text-danger">{error}</div>}
           <div className="flex"><Button variant="primary" block disabled={!ok || ocupado} onClick={usarNueva}>{ocupado ? E2("Guardando…", "Saving…") : ok ? E2("Usar esta tarjeta", "Use this card") : `${E2("Falta: ", "Missing: ")}${falta}`}</Button></div>
           <div className="text-center font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/40">{E2("PAGO SEGURO CON STRIPE · 3D SECURE", "SECURED BY STRIPE · 3D SECURE")}</div>

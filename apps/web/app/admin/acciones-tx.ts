@@ -3,7 +3,7 @@
 import { auditar, staff } from "@/lib/admin";
 import { filasExportTx, leerFiltrosTx } from "@/lib/admin-tx";
 import { csv } from "@/lib/csv";
-import { devolverPago } from "@/lib/cobros";
+import { devolverOperacion } from "@/lib/cobros";
 import { db, tx } from "@/lib/db";
 import type { ResAdm } from "./acciones-colas";
 import { rutaAdmin, type RutaAdmin } from "@/lib/ruta";
@@ -23,15 +23,21 @@ export async function exportarTx(filtros: Record<string, string>): Promise<ResAd
 export async function devolverTx(numero: string, monto: string, motivo: string, clave: string): Promise<ResAdm> {
   const s = await staff();
   if (!s || !s.puede("tx", "aprobar")) return { ok: false, mensaje: "Tu rol no devuelve dinero." };
-  if (!/^([CFVNI]-|EP-)?\d{1,12}$/.test(String(numero ?? "")) || !/^[0-9a-f-]{36}$/.test(String(clave ?? ""))) return { ok: false, mensaje: "Ese pedido no existe." };
+  if (!/^([CFVNIT]-|EP-|PL-)?\d{1,12}$/.test(String(numero ?? "")) || !/^[0-9a-f-]{36}$/.test(String(clave ?? ""))) return { ok: false, mensaje: "Ese pedido no existe." };
   const cents = Math.round((parseFloat(String(monto ?? "").replace(/[^0-9.]/g, "")) || 0) * 100);
-  const p = (await db().query<{ id: string; city: string | null }>(
-    `select p.id::text, p.city_id as city from payments p join operations o on o.id = p.operation_id where o.number = $1 and ((o.kind in ('order', 'trip') and p.kind = 'full') or (o.kind in ('appointment', 'party', 'night', 'enrollment', 'private_event') and p.kind = 'deposit'))
-        and (cardinality($2::text[]) = 0 or p.city_id = any($2::text[]))`, [String(numero), s.cities])).rows[0];
-  if (!p) return { ok: false, mensaje: "Ese pedido no se pagó con tarjeta (o no es de tus ciudades)." };
-  const r = await devolverPago({ paymentId: p.id, centavos: cents, por: "admin", actorId: s.id, motivo: String(motivo ?? "").trim(), idem: `adm-${clave}` });
+  // 9k · La operación (de tus ciudades) y los cobros que se devuelven desde aquí según su tipo: el pedido y el viaje (el cobro completo), los depósitos
+  // (en una cita, también el estimado, «algo más» y la visita: L448), los planes (un cobro por período) y las rentas (la renta; el depósito de seguridad
+  // lo decide su flujo): L455. La devolución se reparte entre los cobros (devolverOperacion), una vez por llave.
+  const o = (await db().query<{ id: string; kind: string; city: string | null }>(
+    `select o.id::text, o.kind, o.city_id as city from operations o where o.number = $1 and o.kind in ('order', 'trip', 'appointment', 'party', 'night', 'enrollment', 'private_event', 'plan', 'rental')
+        and (cardinality($2::text[]) = 0 or o.city_id = any($2::text[]))`, [String(numero), s.cities])).rows[0];
+  const KINDS: Record<string, string[]> = { order: ["full"], trip: ["full"], appointment: ["deposit", "estimate", "extra", "visit"], party: ["deposit"], night: ["deposit"], enrollment: ["deposit"], private_event: ["deposit"], plan: ["plan"], rental: ["rental"] };
+  const hay = o ? (await db().query(`select 1 from payments where operation_id = $1::bigint and kind = any($2::text[]) and status in ('captured', 'partially_refunded')`, [o.id, KINDS[o.kind] ?? []])).rowCount : 0;
+  if (!o || !hay) return { ok: false, mensaje: "Ese pedido no se pagó con tarjeta (o no es de tus ciudades)." };
+  const r = await devolverOperacion({ opId: o.id, centavos: cents, kinds: KINDS[o.kind]!, por: "admin", actorId: s.id, motivo: String(motivo ?? "").trim(), idem: `adm-${clave}` });
   if (!r.ok) return { ok: false, mensaje: r.msg.es };
-  await tx((c) => auditar(c, { actor: s.id, action: "transacciones.devolver", targetKind: "payment", targetId: p.id, city: p.city, after: { [String(numero).startsWith("EP-") ? "evento_privado" : ({ C: "cita", F: "fiesta", V: "viaje", N: "noche", I: "inscripcion" } as Record<string, string>)[String(numero)[0]!] ?? "pedido"]: /^([CFVNI]|EP)-/.test(String(numero)) ? String(numero) : `#${numero}`, monto: `$${(cents / 100).toFixed(2)}` }, reason: String(motivo ?? "").trim() }));
+  const p = { id: o.id, city: o.city };
+  await tx((c) => auditar(c, { actor: s.id, action: "transacciones.devolver", targetKind: "operation", targetId: p.id, city: p.city, after: { [String(numero).startsWith("EP-") ? "evento_privado" : o.kind === "plan" ? "plan" : o.kind === "rental" ? "renta" : ({ C: "cita", F: "fiesta", V: "viaje", N: "noche", I: "inscripcion" } as Record<string, string>)[String(numero)[0]!] ?? "pedido"]: /^([A-Z]+)-/.test(String(numero)) ? String(numero) : `#${numero}`, monto: `$${(cents / 100).toFixed(2)}`, cobros: String(r.partes) }, reason: String(motivo ?? "").trim() }));
   return { ok: true, mensaje: `Devueltos $${(cents / 100).toFixed(2)}. El cliente ya lo sabe.` };
 }
 

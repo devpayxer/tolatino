@@ -127,7 +127,7 @@ export async function repararLiquidaciones(): Promise<number> {
   let n = 0;
   for (const s of L) if (await pagarUna(s.id)) n++;
   // Las reversiones pendientes, con su llave.
-  const R = (await db().query<{ id: string }>(`select id::text from event_settlement_reversals where status = 'pending' and created_at < now() - interval '30 seconds' order by created_at limit 50`)).rows;
+  const R = (await db().query<{ id: string }>(`select id::text from event_settlement_reversals where status = 'pending' and manual_at is null and created_at < now() - interval '30 seconds' order by created_at limit 50`)).rows;
   for (const r of R) await ejecutarReversion(r.id);
   return n;
 }
@@ -170,6 +170,8 @@ async function ejecutarReversion(id: string): Promise<boolean> {
     `select r.id::text, r.status as st, r.amount_cents as amt, r.idem_key as idem, s.transfer_id as tr, s.id::text as sid, s.city_id as city, s.net_cents as net
        from event_settlement_reversals r join event_settlements s on s.id = r.settlement_id where r.id = $1::bigint`, [id])).rows[0];
   if (!r || r.st !== "pending") return r?.st === "done";
+  // 9k · Resuelta a mano (se le cobró al organizador fuera de Stripe): no se vuelve a pedir a Stripe.
+  if ((await db().query(`select 1 from event_settlement_reversals where id = $1::bigint and manual_at is not null`, [id])).rowCount) return false;
   const x = await pasarela.revertirTransferencia(r.tr, r.amt, r.idem).catch(() => ({ ok: false as const, codigo: "error" }));
   if (!x.ok) { await db().query(`update event_settlement_reversals set attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [id, ("codigo" in x && x.codigo) || "error"]); return false; }
   return tx(async (c) => {

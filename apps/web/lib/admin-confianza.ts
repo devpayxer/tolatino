@@ -101,7 +101,18 @@ export async function confianza(s: Staff) {
   const cola = Object.fromEntries(COLAS_CONF.map((k) => [k, Q.rows.find((x) => x.queue === k) ?? { queue: k, n: 0, tarde: 0 }]));
   // 6j · Señales de Eventos (evt_senales: ráfaga de órdenes, transferencias en cadena, entradas duplicadas, contracargos) con su caso.
   const { senalesEvt } = await import("./evt-admin");
+  // 9k · La misma tarjeta (por su huella, card.fingerprint) en varias cuentas en 90 días (L938): la señal no sanciona sola; se mira cada cuenta.
+  const tarjetas = (await db().query<{ huella: string; cuentas: number; ultima: string; marca: string | null; l4: string | null; nombres: string[]; uid: string }>(
+    `select t.huella, t.cuentas, t.ultima,
+            (select m.brand from payment_methods m where m.card_fingerprint = t.huella order by m.id desc limit 1) as marca,
+            coalesce((select m.last4 from payment_methods m where m.card_fingerprint = t.huella order by m.id desc limit 1), (select p.card_last4 from payments p where p.card_fingerprint = t.huella order by p.id desc limit 1)) as l4,
+            array(select ${N("u")} from users u where u.id in (select m.user_id from payment_methods m where m.card_fingerprint = t.huella union select p.user_id from payments p where p.card_fingerprint = t.huella) order by u.created_at desc limit 4) as nombres,
+            (select x.user_id::text from (select m.user_id, m.created_at from payment_methods m where m.card_fingerprint = t.huella union all select p.user_id, p.created_at from payments p where p.card_fingerprint = t.huella) x order by x.created_at desc limit 1) as uid
+       from tarjetas_en_varias_cuentas(cfg_int('tarjeta_cuentas_senal'), 90) t
+      where cardinality($1::text[]) = 0 or exists (select 1 from users u where u.home_city_id = any($1::text[]) and u.id in (select m.user_id from payment_methods m where m.card_fingerprint = t.huella union select p.user_id from payments p where p.card_fingerprint = t.huella))
+      limit 30`, [c])).rows;
   return {
+    tarjetas,
     cola, sanc: sanc.rows, fraude: fraude.rows, disp: disp.rows, bloqueados: bloq.rows[0]!.n, apel: apel.rows, apelarDias: await valor("com_apelar_dias"), evt: await senalesEvt(s), abreCaso: s.puede("usr", "editar"),
     catalogo: (Object.keys(SANCIONES) as Sancion[]).map((k) => ({ k, ...SANCIONES[k] })),
   };

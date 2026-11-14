@@ -132,7 +132,7 @@ export async function pagarCuota(userId: string, numero: string, pm: string): Pr
       const ret = await cob.retenerPedido({ negocio: x.biz, cuenta: T.cuenta!, clave: `lay-${x.plan}-${s.seq}`, total: s.monto, subtotal: s.monto, pm, userId, numero: x.numero, tipo: "apt" }, c);
       if (!ret.ok) return no(ret.mensaje.es, ret.mensaje.en);
       pi = ret.pi;
-      if (ret.estado === "accion") return no("Tu banco pide una verificación extra que todavía no hacemos aquí. Prueba con otra tarjeta o paga en la tienda.", "Your bank asks for an extra verification we can't do here yet. Try another card or pay at the store.");
+      if (ret.estado === "accion") { const v = (await import("./pagos/verificacion")).pideVerificar(ret); if (v) pi = null; return { ...no(v ? "Tu banco pide confirmar que eres tú. Confírmalo y seguimos; no se cobró nada todavía." : "Tu banco pide una verificación extra. Prueba con otra tarjeta o paga en la tienda.", v ? "Your bank asks you to confirm it is you. Confirm it and we continue; nothing was charged yet." : "Your bank asks for an extra verification. Try another card or pay at the store."), ...(v ?? {}) }; }
       const pid = (await c.query<{ id: string }>(
         `insert into payments (operation_id, user_id, business_id, city_id, kind, seq, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, held_at, simulated, payment_method)
          select $1::bigint, $2, $3, o.city_id, 'balance', $4, 'card', $5, $6::int, $6::int, $7::int, 'held', $8, $9, now(), $10, $11 from operations o where o.id = $1::bigint returning id::text`,

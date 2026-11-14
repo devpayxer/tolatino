@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import type { OpcionesMerc } from "@/lib/mercado";
 import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
+import { useVerificacion } from "../../../pago/Verificacion";
 import { guardarCarritoMerc, leerCarritoMerc, type CarritoMerc } from "../Mercado";
 import { enviarMercado } from "./acciones";
 import { uuid } from "@/lib/uuid";
@@ -44,6 +45,8 @@ export function PedidoMercado({ o, es, yo, pago }: { o: OpcionesMerc; es: boolea
   const miss = [!lineas.length ? E2("Agrega productos", "Add products") : null, !hora ? E2("Elige la hora", "Pick the time") : null, faltaMin ? E2(`Te faltan ${money(faltaMin)} para el envío`, `Add ${money(faltaMin)} for delivery`) : null,
     modo === "delivery" && (!o.dir || !o.dir.dentro) ? E2("Una dirección dentro de la zona", "An address inside the area") : null, modo === "delivery" && local ? E2("El envío se paga con tarjeta", "Delivery is paid by card") : null,
     !local && !tarjeta ? E2("Tu tarjeta", "Your card") : null].filter((x): x is string => !!x);
+  // 9k · 3-D Secure: la hoja del banco y, al confirmar, el mismo pedido otra vez con la misma clave.
+  const V = useVerificacion(es, pago?.modo, pago?.pk);
   const enviar = async () => {
     if (!yo) { router.push(`/entrar?volver=${encodeURIComponent(`/n/${o.negocio.id}/mercado`)}`); return; }
     if (miss.length || ocupado || !hora) return;
@@ -52,7 +55,9 @@ export function PedidoMercado({ o, es, yo, pago }: { o: OpcionesMerc; es: boolea
       .catch(() => ({ ok: false as const, msg: { es: "No se pudo enviar. Revisa tu conexión.", en: "Could not send. Check your connection." } }));
     if (r.ok) { guardarCarritoMerc(null); router.push(`/mercado/${r.numero}`); return; }
     if ("entrar" in r && r.entrar) { router.push(`/entrar?volver=${encodeURIComponent(`/n/${o.negocio.id}/mercado`)}`); return; }
-    setOcupado(false); setError(es ? r.msg.es : r.msg.en);
+    setOcupado(false);
+    if (V.pide(r, () => { void enviar(); })) return;
+    setError(es ? r.msg.es : r.msg.en);
   };
   if (!listo) return <div className="min-h-dvh bg-paper" />;
   const radio = (on: boolean) => `box-border h-5 w-5 flex-none rounded-full ${on ? "border-[6px] border-ink" : "border-[1.5px] border-ink/25"}`;
@@ -138,6 +143,7 @@ export function PedidoMercado({ o, es, yo, pago }: { o: OpcionesMerc; es: boolea
         <div className="min-w-0 flex-1"><div className="font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/50">{local ? E2("PAGAS EN EL MERCADO", "YOU PAY AT THE MARKET") : E2("HOY SE RETIENE", "HELD TODAY")}</div><div className="mt-1 font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{money(local ? total : retener)}</div></div>
         <Button icon="bag" disabled={(yo && miss.length > 0) || ocupado} onClick={() => void enviar()}>{ocupado ? E2("Enviando…", "Sending…") : yo ? E2("Enviar pedido", "Send order") : E2("Entra para enviar", "Sign in to send")}</Button>
       </div>
+      {V.hoja}
       {hoja && pago && (
         <MetodoPago es={es} tarjetas={tarjetas} sel={tarjeta?.pm ?? null} declinada={null} modo={pago.modo} pk={pago.pk} nota={`${E2("SE RETIENEN ", "HOLDING ")}${money(retener)} · ${E2("SE COBRA LO QUE PESE", "YOU PAY WHAT IT WEIGHS")}`}
           onClose={() => setHoja(false)} onUsar={(t, nueva) => { if (nueva && !tarjetas.some((x) => x.pm === nueva.pm)) setTarjetas((L) => [nueva, ...L]); setTarjeta(t); setHoja(false); setEnMercado(false); }} />)}

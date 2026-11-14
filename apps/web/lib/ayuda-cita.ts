@@ -2,7 +2,7 @@ import "server-only";
 import { cfgSql } from "./config";
 import { COLA_AYUDA_SQL } from "./colas";
 import { db, tx } from "./db";
-import { devolverPago } from "./cobros";
+import { devolverOperacion } from "./cobros";
 import { escalarVencidas } from "./ayuda";
 import { esEstafa, pausarPorAyuda } from "./ayuda-estafa";
 
@@ -97,12 +97,21 @@ const COLS = `h.id::text, h.number, h.reason, h.wants, coalesce(h.body, '') as b
 const fila = (x: Omit<AyudaCita, "wants"> & { wants: string }): AyudaCita => ({ ...x, wants: W2Q[x.wants] ?? "avis" });
 
 /* Lo que se puede devolver a la tarjeta: el depósito cobrado en la app, menos lo ya devuelto. */
+const KINDS_AYUDA = ["deposit", "estimate", "extra", "visit", "full", "balance"];
 async function depositoDe(opId: string) {
-  // El cobro con más por devolver (Belleza: el depósito; Auto y Hogar: también estimado, «algo más» y visita).
+  // 9k (L448) · Lo cobrado en la app de TODOS sus cobros (Belleza: el depósito; Auto y Hogar: también estimado, «algo más» y visita): la tarjeta es la del
+  // cobro con más saldo; lo devolvible, la suma (devolverOperacion lo reparte entre los cobros).
   return (await db().query<{ id: string; amount: number; refunded: number; status: string; brand: string | null; l4: string | null }>(
-    `select id::text, amount_cents as amount, refunded_cents as refunded, status, card_brand as brand, card_last4 as l4 from payments
-      where operation_id = $1::bigint and kind in ('deposit', 'estimate', 'extra', 'visit', 'full', 'balance')
-      order by (status in ('captured', 'partially_refunded')) desc, amount_cents - refunded_cents desc, payments.id desc limit 1`, [opId])).rows[0] ?? null;
+    `with p as (select id, amount_cents, refunded_cents + coalesce((select sum(r.amount_cents) from refunds r where r.payment_id = payments.id and r.status = 'pending'), 0)::int as refunded_cents,
+                       status, card_brand, card_last4 from payments where operation_id = $1::bigint and kind = any($2::text[]))
+     select (select id::text from p order by (status in ('captured', 'partially_refunded')) desc, amount_cents - refunded_cents desc, id desc limit 1) as id,
+            coalesce(sum(amount_cents) filter (where status in ('captured', 'partially_refunded', 'refunded')), max(amount_cents))::int as amount,
+            coalesce(sum(refunded_cents) filter (where status in ('captured', 'partially_refunded', 'refunded')), 0)::int as refunded,
+            case when bool_or(status in ('captured', 'partially_refunded')) then 'captured' when bool_or(status = 'refunded') then 'refunded'
+                 else (select status from p order by id desc limit 1) end as status,
+            (select card_brand from p order by (status in ('captured', 'partially_refunded')) desc, amount_cents - refunded_cents desc, id desc limit 1) as brand,
+            (select card_last4 from p order by (status in ('captured', 'partially_refunded')) desc, amount_cents - refunded_cents desc, id desc limit 1) as l4
+       from p having count(*) > 0`, [opId, KINDS_AYUDA])).rows[0] ?? null;
 }
 const devolvible = (p: Awaited<ReturnType<typeof depositoDe>>) => (p && ["captured", "partially_refunded"].includes(p.status) ? p.amount - p.refunded : 0);
 const tarjetaL = (p: { brand: string | null; l4: string | null } | null) => (p?.l4 ? `${({ visa: "Visa", mastercard: "Mastercard", mc: "Mastercard", amex: "Amex", discover: "Discover", disc: "Discover" } as Record<string, string>)[p.brand ?? ""] ?? "Tarjeta"} ·· ${p.l4}` : null);
@@ -255,7 +264,7 @@ export async function citaAyudaCliente(userId: string, numero: string, accion: A
     const p = SIN_DINERO.has(rubroDe(h.cat, numero)) ? null : await depositoDe(h.op), maxi = devolvible(p);
     if (h.offer && h.offer > 0 && p && maxi > 0) {
       const n = Math.min(h.offer, maxi);
-      const d = await devolverPago({ paymentId: p.id, centavos: n, por: "business", actorId: h.reply_by, motivo: "Ayuda con la cita: propuesta aceptada", idem: `ayc-${h.id}` });
+      const d = await devolverOperacion({ opId: h.op, centavos: n, kinds: KINDS_AYUDA, por: "business", actorId: h.reply_by, motivo: "Ayuda con la cita: propuesta aceptada", idem: `ayc-${h.id}` });
       if (!d.ok) return { ok: false, msg: d.msg };
       devuelto = n;
     }
@@ -325,7 +334,7 @@ export async function responderAyudaCita(negocio: string, numero: string, x: { d
       where id = $1::bigint and business_id = $2 and status = 'open'`, [h.id, negocio, dec, offer, t, actorId, fuera]);
   if (!u.rowCount) return no("Esta solicitud ya cambió (pasó a To'Latino o ya respondiste).", "This request already changed (it went to To'Latino or you already replied).");
   if (devolver > 0 && p) {
-    const d = await devolverPago({ paymentId: p.id, centavos: devolver, por: "business", actorId, motivo: `Ayuda con la cita: ${t.slice(0, 200)}`, idem: `ayb-${x.clave}` });
+    const d = await devolverOperacion({ opId: h.op, centavos: devolver, kinds: KINDS_AYUDA, por: "business", actorId, motivo: `Ayuda con la cita: ${t.slice(0, 200)}`, idem: `ayb-${x.clave}` });
     if (!d.ok) {
       await db().query(`update help_requests set status = 'open', decision = null, offer_cents = null, reply = null, reply_at = null, reply_by = null, updated_at = now() where id = $1::bigint and status = 'answered'`, [h.id]);
       return { ok: false, msg: d.msg };
