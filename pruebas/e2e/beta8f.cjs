@@ -337,7 +337,10 @@ const PUENTE = (o) => `if (window === window.top) {
     ok(sql(`select status from beta_testers where user_id = ${U(MARI)} and removed_at is null`) === 'pendiente_consola', 'queda «falta en Play»');
     await pa.locator('div', { has: pa.getByText(/^Marisol/) }).filter({ has: boton(pa, 'Ya está en la lista') }).last().getByRole('button', { name: 'Ya está en la lista' }).click();
     await pa.getByText('Agregado en Play Console').click(); await boton(pa, 'Marcar').click();
-    ok(await espera(() => sql(`select status from beta_testers where user_id = ${U(MARI)} and removed_at is null`) === 'activo'), '«Ya está en la lista» → activo');
+    // 9b-3 · Falló una vez en la barajada del CI (43519377249) y pasó en otras dos con el mismo orden: si vuelve a fallar, la línea dice qué quedó en la
+    // base, qué dijo la pantalla y cuántas filas de Marisol hay en la lista.
+    const enPlay = await espera(() => sql(`select status from beta_testers where user_id = ${U(MARI)} and removed_at is null`) === 'activo');
+    ok(enPlay, enPlay ? '«Ya está en la lista» → activo' : `«Ya está en la lista» → activo (base: ${sql(`select string_agg(id || ' ' || channel || ' ' || status || ' ' || coalesce(removed_at::text, 'vivo'), ' · ' order by id) from beta_testers where user_id = ${U(MARI)}`)}; auditoría: ${sql(`select count(*) from audit_entries where action = 'beta.en_play' and created_at > '${T0}'`)}; filas «Marisol» en la lista: ${await pa.getByText(/^Marisol/).count()}; la pantalla: «${(await texto(pa)).match(/(Listo: ya está[^.]*\.|Ese tester[^.]*\.|Solo un Admin[^.]*\.|Escribe el motivo\.)/)?.[0] ?? 'sin mensaje'}»)`);
     await pa.screenshot({ path: OUT + 'b8f-testers-1360.png', fullPage: true });
     await pa.setViewportSize({ width: 390, height: 844 }); await pa.reload(); await pa.getByText('ACTIVOS').waitFor(); await pa.screenshot({ path: OUT + 'b8f-testers-390.png', fullPage: true });
     await pa.goto(B + '/admin/sistema/apps?v=versiones'); await pa.getByText(/TO'LATINO · \d+ BUILDS?/).waitFor(); await pa.screenshot({ path: OUT + 'b8f-versiones-390.png', fullPage: true });

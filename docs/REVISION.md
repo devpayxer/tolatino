@@ -4331,8 +4331,9 @@ cada pantalla «caliente» con el código de la app tal cual. Lo que pasaba de s
   barajada) en verde.
 - **Decisiones que tomé (si prefieres otra, se cambia):**
   - **Algunas cifras del Super Admin se ponen al día cada 10 minutos** en vez de contarse en cada vista (con millones de filas tardaban segundos): Analítica ›
-    Comunidad; los totales de arriba de Contenido (publicaciones, comentarios, reseñas); vecinos por rango y EN CIRCULACIÓN de Gamificación. Lo que se actúa
-    (reportes abiertos, ocultos, el lote) sigue al momento. Lo dicen sus ayudas.
+    Comunidad; los totales de arriba de Contenido (publicaciones, comentarios, reseñas); vecinos por rango de Gamificación. Lo que se actúa
+    (reportes abiertos, ocultos, el lote) sigue al momento, y EN CIRCULACIÓN también (el resumen más lo que entró al libro de monedas desde entonces).
+    Lo dicen sus ayudas.
   - **«Recomendados por vecinos»** elige entre los 50 negocios con más votos de la ciudad (resumen cada 10 min) y los vuelve a ordenar con los bloqueos de quien
     mira. Quedar fuera de los 50 y entrar a los 5 de alguien exigiría que esa persona bloqueara a casi todos los que recomiendan a los de arriba.
   - **Los eventos de la analítica se guardan 13 meses** (lo que ya dicen las fichas de las tiendas): después el barrido los resume por día y ciudad y suelta los de
@@ -4345,3 +4346,6 @@ cada pantalla «caliente» con el código de la app tal cual. Lo que pasaba de s
     eventos no salían en ningún lado).
 - **Pruebas:** las que dependían del orden ahora dicen su punto de partida (o piden la prueba que lo hace) y el corredor cierra entre una y otra las esperas de un
   minuto (la espera de 30 s entre códigos de un teléfono). Ninguna se reintenta.
+- **Lo que no pasó el presupuesto y queda con destino** (la tabla, en PROGRESS): la Tabla del mes con 580 mil vecinos con puntos en una ciudad (85–89 ms
+  contra 40; 9m), la búsqueda por nombre en la puerta con 50 mil boletos (131–160 ms contra 150; 9n) y el ritmo de 200 posiciones por segundo medido en la
+  misma máquina que la base (9t). Lo de una sola vuelta varía entre corridas en la máquina de GitHub.

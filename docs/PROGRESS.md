@@ -1462,7 +1462,7 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
     segundo por token) y los corta-circuitos del traductor y de la moderación de fotos. **Configuración al instante** en todos los procesos (`lib/cambios-config.ts`).
   - **Guardianes nuevos:** `topeCompartido`, `copiaQueSeOlvida`, `consultaUnaVez` (un CTE con una función nuestra sin `materialized`), `pruebasIndependientes`;
     **`parametroSinTipo`** deduce los tipos de cada `$n` desde las migraciones (L176); **`ordenSinTexto`** a todo el código (L1052, 50 consultas arregladas). Al revés:
-    `alreves9b3` 16/16 (y al día alreves5a, 5i, 6b, 6d, 6f, 8f).
+    `alreves9b3` 21/21 (y al día alreves5a, 5i, 6b, 6d, 6f, 8f).
   - **La carga** (`scripts/carga/`: `comunidad-1m`, `eventos-1m`, `apps-1m`, `compa-1m`, `analitica-1m`, `correr.mjs`): genera en una base desechable y **mide el código
     real de la app** (los módulos de `apps/web/lib` cargados con jiti), con su p50/p95 contra el presupuesto de cada fase y el `EXPLAIN ANALYZE` de la consulta más lenta
     de lo que pasa del presupuesto; lo que la app contesta con «no» cuenta como error. Corre en GitHub Actions (flujo a mano **«Carga 1M»**, `.github/workflows/carga.yml`):
@@ -1476,6 +1476,14 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
     pre4e, msg2p, compa7f, fic4id, tra4w, dep4c), noc4a acepta «anoche» pasadas las 6 AM, compa7e toma su foto de antes en cada modo, com5h comprueba el corte
     compartido. Ninguna se reintenta. **Semilla del sandbox `0051_eventos_modulo.sql`**: los negocios de la semilla con eventos tienen el módulo Eventos encendido
     (en una base nueva La Terraza no lo tenía y sus eventos daban 404: evt6e, evt6g, fich8i).
+  - **Lo que sacó la confirmación del CI (43457194098, barajada con la semilla 1486178388) y se arregló de raíz:** EN CIRCULACIÓN (Super Admin ›
+    Gamificación › Monedas) salía del resumen del barrido (hasta 10 min atrás; com5g en las tres corridas): ahora es el resumen + lo que entró al
+    libro de monedas desde entonces + quien no tiene ciudad, exacto (índice `coin_entries_fecha_idx`; guardián **`saldoAlDia`**). compa7e comparaba
+    dos fotos del panel con las 12:00 en medio («12 PM» → «12:01 PM»): `pruebas/lib/sin-reloj.cjs` quita la hora, el saludo y el día (compa7d/e/f/g;
+    guardián **`fotoSinReloj`**). pre4e creaba su casa solo si Marisol no tenía ninguna y fi4b le dejaba otra: la prueba crea la SUYA y la hace la de
+    por omisión (también pq4e, plan4f, em4e y la CR-V; guardián **`precondicionPropia`**).
+    En la siguiente (43473084085: barajada 160/160, punta a punta 160/160, «dos veces seguidas» 160 y 159) tra4w, en la segunda vuelta, elegía la
+    salida de un servicio que él mismo quitó al empezar: elige la que la herramienta muestra (guardián **`salidaComoLaPagina`**).
   - **Ayuda:** `admin-configuracion` (topes entre todos los servidores; meses de la analítica), `admin-analitica` y `admin-contenido` (cifras cada 10 minutos).
 - **Medido (escala 1, flujo «Carga 1M»; p95 salvo lo que dice otra unidad):** 58/63 y 57/63 dentro del presupuesto en dos corridas iguales sobre el mismo
   código (la segunda con un `checkpoint` después de generar). Lo que falla en las dos: la Tabla y «mi lugar» (→ 9m) y el p95 de las posiciones durante el

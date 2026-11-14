@@ -2,11 +2,11 @@
 
 _Pantallas: **Super Admin › Gamification** (`/admin/gamificacion`: pestañas Rangos · Puntos · Monedas · Cupones · Tabla del Barrio) y **Usuarios ›
 360° › Comunidad › Puntos y rango · Monedas**. Teléfono y escritorio. Permiso: Gamification (ver/editar; hoy solo el rol Admin); «Cerrar el mes» y
-«Cambiar rango», solo Admin; ajustar puntos, quien edita Usuarios (con tope por rol). Versión: 7 nov 2026. Audiencia: equipo. Tema: equipo._
+«Cambiar rango», solo Admin; ajustar puntos, quien edita Usuarios (con tope por rol). Versión: 13 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Rangos:** los 10, con lo que piden, sus puntos mínimos, lo que desbloquean (lo de El Patio dice «Cuando abra El Patio») y cuántos
-  vecinos hay en cada uno (en tus ciudades). **«Cambiar nombre»**: español e inglés con **vista previa** (así se ve la pastilla del rango);
+  vecinos hay en cada uno (en tus ciudades; esa cuenta se pone al día cada 10 minutos). **«Cambiar nombre»**: español e inglés con **vista previa** (así se ve la pastilla del rango);
   pide motivo, queda en la auditoría y la Comunidad lo muestra al instante. Lo que piden y los puntos mínimos no se cambian aquí.
 - **Puntos:** el **tope del día** por persona (50 · 100 · 150 · 200; de fábrica 100) y cada regla con su valor (0–100) y su interruptor.
   Cuenta desde ahora; lo ya ganado no cambia. Las 4 reglas fijas se muestran como texto.
@@ -75,7 +75,7 @@ _Pantallas: **Super Admin › Gamification** (`/admin/gamificacion`: pestañas R
 
 ### What it does
 - **Ranks:** the 10 ranks with requirements, minimum points, unlocks (El Patio ones say «When El Patio opens») and how many neighbors hold
-  each. **Rename** in Spanish and English with a **preview**; asks for a reason, is audited and shows in Community instantly.
+  each (that count refreshes every 10 minutes). **Rename** in Spanish and English with a **preview**; asks for a reason, is audited and shows in Community instantly.
 - **Points:** the **daily cap** per person (50 · 100 · 150 · 200; default 100) and each rule’s value (0–100) and switch. Applies from now on.
 - **Neighborhood Table:** per city and month (current or previous) with **PRIZE**, **NEIGHBORHOOD GENERAL** and **EXCLUDED** marks.
   **Exclude / Include again** with a reason (the person is notified). **Close the month** (Admin only, frozen previous month): 1 table fixed
