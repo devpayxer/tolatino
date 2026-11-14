@@ -21,7 +21,7 @@
   "tablas": {
     "users": { "fn": "usuario", "reglas": [
       { "col": "id", "accion": "seudonimizar", "porque": "auditoria", "exporta": "perfil", "fusion": "no",
-        "set": { "phone": "null", "first_name": "'Cuenta borrada'", "last_name": "null", "nick": "null", "photo_url": "null", "email": "null", "email_verified": "false", "phone_verified_at": "null", "zone_id": "null", "viewing_center": "null", "photo_removed_reason": "null", "status_reason": "null", "interests": "'{}'::jsonb", "status": "'deleted'" } },
+        "set": { "phone": "null", "first_name": "'Cuenta borrada'", "last_name": "null", "nick": "null", "photo_url": "null", "email": "null", "email_verified": "false", "phone_verified_at": "null", "zone_id": "null", "viewing_center": "null", "photo_removed_reason": "null", "status_reason": "null", "interests": "'{}'::jsonb", "legal_state": "null", "status": "'deleted'" } },
       { "col": "merged_into", "accion": "guardar", "porque": "auditoria", "fusion": "no" } ] },
     "account_changes": { "reglas": [ { "col": "user_id", "accion": "seudonimizar", "porque": "auditoria", "exporta": "cambios_de_cuenta", "fusion": "no", "set": { "from": "null", "to": "null" } } ] },
     "community_profiles": { "reglas": [ { "col": "user_id", "accion": "vaciar", "exporta": "comunidad_perfil", "fusion": "no", "set": { "bio": "null", "bio_lang": "null", "since_year": "null" } } ] },
@@ -233,6 +233,9 @@
     "data_exports": { "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "auditoria", "fusion": "no" }, { "col": "requested_by", "accion": "guardar", "porque": "equipo", "fusion": "no" } ] },
     "account_merges": { "equipo": ["requested_by", "approved_by"], "reglas": [
       { "col": "from_user_id", "accion": "guardar", "porque": "auditoria", "fusion": "no" },
-      { "col": "to_user_id", "accion": "guardar", "porque": "auditoria", "fusion": "no" } ] }
+      { "col": "to_user_id", "accion": "guardar", "porque": "auditoria", "fusion": "no" } ] },
+    "legal_pages": { "equipo": ["reviewed_by", "published_by"] },
+    "legal_page_log": { "equipo": ["by"] },
+    "legal_acceptances": { "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "ley", "exporta": "terminos_aceptados", "fusion": "no" } ] }
   }
 }
