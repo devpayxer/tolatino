@@ -5,7 +5,8 @@
 #      volumen nombrado existe (pruebas/infra/compose.py); en el CI, además, «docker compose config» de verdad
 #   3. la página de mantenimiento es la que sale del sistema de diseño
 #   4. azul/verde y vuelta atrás (azulverde.test.sh), sobre sellado y recuperación (sellado.test.sh)
-#   5. con root: la traza del sandbox igual a la de antes (traza-sandbox.sh); con Postgres 16 + pgBackRest: el PITR de verdad (pitr-local.sh)
+#   5. con root: la traza del sandbox igual a la de antes (traza-sandbox.sh), tolatino-sync de producción solo avanza (sync.test.sh); con Postgres 16 +
+#      pgBackRest: el PITR de verdad (pitr-local.sh)
 # Uso: bash pruebas/infra/correr.sh   → sale con 1 si algo falla. INFRA_SIN_ROOT=1 salta lo que necesita root.
 set -uo pipefail
 RAIZ=$(cd "$(dirname "$0")/../.." && pwd); cd "$RAIZ" || exit 1
@@ -33,6 +34,7 @@ seccion "azul/verde"; bash pruebas/infra/azulverde.test.sh || mal=1
 seccion "sobre sellado y recuperación"; bash pruebas/infra/sellado.test.sh || mal=1
 if [ "$(id -u)" = 0 ] && [ "${INFRA_SIN_ROOT:-0}" != 1 ]; then
   seccion "el sandbox no cambia (traza)"; bash pruebas/infra/traza-sandbox.sh || mal=1
+  seccion "producción solo avanza (tolatino-sync)"; bash pruebas/infra/sync.test.sh || mal=1
   if command -v pgbackrest >/dev/null && [ -x /usr/lib/postgresql/16/bin/initdb ]; then seccion "PITR de verdad"; bash pruebas/infra/pitr-local.sh || mal=1
   else echo; echo "· PITR: falta pgbackrest o Postgres 16 (no corrió)"; fi
 fi

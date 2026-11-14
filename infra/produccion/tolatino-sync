@@ -11,9 +11,9 @@ exec 9>/var/lock/tolatino-sync.lock
 flock -n 9 || exit 0
 # shellcheck source=/dev/null
 . /etc/tolatino/rol.conf
-REPO=https://github.com/devpayxer/tolatino.git
+REPO=${TOLATINO_SYNC_REPO:-https://github.com/devpayxer/tolatino.git}
 BR=${TOLATINO_RAMA:-produccion}
-DIR=/opt/tolatino
+DIR=${TOLATINO_SYNC_DIR:-/opt/tolatino}
 LOG=/var/log/tolatino-sync.log
 STATE=/var/lib/tolatino
 mkdir -p "$STATE" /var/www/estado
@@ -25,8 +25,10 @@ if [ ! -d "$DIR/.git" ]; then
   echo "$(date -Is) clon inicial $(git -C "$DIR" rev-parse --short HEAD)" >>"$LOG"
 fi
 cd "$DIR" || exit 0
-git fetch -q --depth 200 origin "$BR" pruebas 2>>"$LOG" || { echo "$(date -Is) fetch falló" >>"$LOG"; exit 0; }
-git fetch -q --depth 1 origin 'refs/tags/ok-produccion/*:refs/tags/ok-produccion/*' 2>/dev/null || true
+# Las dos ramas con su nombre (un clon superficial solo sigue la suya) y 90 días de historia: lo que se sube a produccion es reciente.
+git fetch -q --shallow-since="90 days ago" origin "+refs/heads/$BR:refs/remotes/origin/$BR" "+refs/heads/pruebas:refs/remotes/origin/pruebas" 2>>"$LOG" \
+  || git fetch -q --depth 200 origin "+refs/heads/$BR:refs/remotes/origin/$BR" 2>>"$LOG" || { echo "$(date -Is) fetch falló" >>"$LOG"; exit 0; }
+git fetch -q origin 'refs/tags/ok-produccion/*:refs/tags/ok-produccion/*' 2>/dev/null || true
 LOCAL=$(git rev-parse HEAD); REMOTE=$(git rev-parse "origin/$BR")
 REINTENTAR=0
 if [ "$(cat "$STATE/last-result" 2>/dev/null)" = FALLO ] && [ -z "$(find "$STATE/last-result" -mmin -15 2>/dev/null)" ]; then REINTENTAR=1; fi
@@ -49,8 +51,13 @@ if [ "$REINTENTAR" = 1 ] || [ "$LOCAL" != "$REMOTE" ] || [ ! -f "$STATE/last-dep
     echo "$(date -Is) actualizado a $(git rev-parse --short HEAD)" >>"$LOG"
     install -m 0755 infra/produccion/tolatino-sync /usr/local/bin/tolatino-sync
     echo "$(date -Is) deploy.sh inicio ($TOLATINO_ROL)" >>"$LOG"
-    if bash infra/produccion/deploy.sh >>"$LOG" 2>&1; then echo "$(date -Is) deploy.sh OK" >>"$LOG"; estado OK
-    else echo "$(date -Is) deploy.sh FALLÓ" >>"$LOG"; estado FALLO; fi
+    bash infra/produccion/deploy.sh >>"$LOG" 2>&1; rc=$?
+    # 0 sirve · 2 volvió atrás sola: NO se reintenta (sería servir otra vez la versión mala); se espera un commit nuevo · otro: se reintenta cada 15 min.
+    case "$rc" in
+      0) echo "$(date -Is) deploy.sh OK" >>"$LOG"; estado OK ;;
+      2) echo "$(date -Is) deploy.sh VOLVIÓ ATRÁS (sigue la versión anterior; se espera un commit nuevo)" >>"$LOG"; estado VUELTA_ATRAS ;;
+      *) echo "$(date -Is) deploy.sh FALLÓ" >>"$LOG"; estado FALLO ;;
+    esac
     git rev-parse --short HEAD > "$STATE/last-deploy"
   fi
 fi

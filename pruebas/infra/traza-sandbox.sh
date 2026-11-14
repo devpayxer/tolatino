@@ -16,8 +16,9 @@ mkdir -p "$T/viejo" "$T/nuevo" "$T/stubs"
 git -C "$RAIZ" archive "$VIEJA" infra packages/db/migrar.sh packages/db/migrations packages/db/seeds scripts/ayuda scripts/legal scripts/cms | tar -x -C "$T/viejo"
 ( cd "$RAIZ" && git ls-files --cached --others --exclude-standard -- infra packages/db/migrar.sh packages/db/migrations packages/db/seeds scripts/ayuda scripts/legal scripts/cms \
   | while read -r f; do [ -e "$f" ] && { mkdir -p "$T/nuevo/$(dirname "$f")"; cp -p "$f" "$T/nuevo/$f"; }; done )
-# Las mismas migraciones en los dos (la 0145 es nueva; aquí se compara el despliegue, no la lista de migraciones).
+# Las mismas migraciones y semillas en los dos (la 0145 y la 0061 son nuevas; aquí se compara el despliegue, no la lista de archivos).
 rm -rf "$T/viejo/packages/db/migrations"; cp -rp "$T/nuevo/packages/db/migrations" "$T/viejo/packages/db/migrations"
+rm -rf "$T/viejo/infra/pruebas/semilla"; cp -rp "$T/nuevo/infra/pruebas/semilla" "$T/viejo/infra/pruebas/semilla"
 for d in viejo nuevo; do git -C "$T/$d" init -q && git -C "$T/$d" add -A && git -C "$T/$d" -c user.email=t@t -c user.name=t commit -qm x; done
 
 # Los programas de mentira: anotan su llamada (sin rutas temporales) y contestan lo mínimo.
