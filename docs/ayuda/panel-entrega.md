@@ -1,7 +1,7 @@
 # Panel: Entrega · Dashboard: Delivery
 
 _Pantallas: `/panel/{negocio}/entrega` (Entrega; en el teléfono, desde **Más**). Teléfono y escritorio. Comida y Bebidas con Pedidos en línea.
-Versión: 11 nov 2026. Audiencia: negocio. Tema: panel._
+Versión: 14 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **Cómo entregas:** Delivery (lo llevas a la casa) y Pickup (lo recogen en tu local). Al menos una encendida.
@@ -40,6 +40,22 @@ reclamo y después se borran.
 **¿Dónde invito a mis repartidores?** En **Entrega › Tus repartidores**: nombre y teléfono, y la persona entra con su código a
 To’Latino Repartidor (ver `repartidor.md`). Si no tienes repartidores, marcas tú los pedidos en el panel («Salió en camino» y «Entregado»).
 
+## Ofrecer solo y los pedidos programados
+En **Entrega › Al recoger y al entregar**, **Ofrecer solo a los repartidores**: cuando aceptas un delivery que no tiene
+repartidor, se ofrece **solo** a los que están en línea (la misma oferta con cuenta regresiva: el primero que acepta se lo
+lleva). Si vence sin nadie, se ofrece otra vez, hasta 3 veces (Configuración). Si nadie lo toma, o no hay nadie en línea, te llega
+**un aviso** («Nadie tomó el pedido») y lo asignas tú o lo marcas tú. Los **pedidos programados** no se ofrecen al aceptarlos:
+se ofrecen **30 minutos antes** de estar listos y a esa hora te llega el recordatorio «El pedido es para las …» (también al
+repartidor, si ya lo tiene). Apagado de fábrica; queda en la auditoría.
+
+| Caso | Qué pasa |
+|---|---|
+| Entregas con una app externa | «Ofrecer solo» no hace nada: el pedido va por esa app. |
+| El pedido ya tiene repartidor u oferta abierta | No se ofrece otra vez. |
+| Nadie lo toma | Un solo aviso y deja de ofrecerse solo para ese pedido. |
+
+**¿Le llega al repartidor el teléfono del cliente?** No: la oferta es la de siempre (calle, millas y total).
+
 ## English
 
 Delivery settings: turn Delivery and/or Pickup on (at least one), add pickup instructions, delivery area (1–10 mi), fee,
@@ -50,3 +66,9 @@ pickup only and you see the reason. Invite drivers in Delivery › Your drivers 
 orders "Out for delivery" and "Delivered" in the dashboard. In a delivery order's detail you see **DRIVER · LIVE** from the moment your driver
 taps "Heading to pick up" (or "Picked up"): their position, where they went since starting and the customer address, with the time of the last
 position; it disappears on Delivered. The customer sees only the current point, from pickup. Positions are kept 14 days, then deleted.
+
+### Offer automatically and scheduled orders
+In **Delivery › At pickup and delivery**, **Offer to drivers automatically**: an accepted delivery without a driver is offered
+to the drivers online (same countdown offer). If it expires, it is offered again, up to 3 times (Settings). If nobody takes it,
+or nobody is online, you get **one notice** and assign it yourself. **Scheduled orders** are offered **30 minutes before** they
+are ready, with a reminder to you (and to the driver if assigned). Off by default; audited.

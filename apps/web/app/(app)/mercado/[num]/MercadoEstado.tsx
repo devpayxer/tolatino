@@ -2,12 +2,16 @@
 /* APP-NEG-MERC-ESTADO (neg-merc-flow.js · s.mped): el encabezado de cada estado (enviado · preparando · así lo pesaron · listo /
    en camino · recogido / entregado · no aceptaron · sin respuesta · cancelado), lo que se cambió (con tu OK), cada línea con «Pediste
    3 lb · pesó 2.84 lb» y la FOTO DE LA BALANZA, el dinero (estimado · peso real · retenido · se cobra · se libera), «Está bien,
-   cobrar», la línea de tiempo (OrderTracker) y cancelar mientras no lo acepten. El servidor decide; aquí solo se muestra. */
+   cobrar», la línea de tiempo (OrderTracker) y cancelar mientras no lo acepten. El servidor decide; aquí solo se muestra.
+   9n-4 · «Pide tu OK por $X más» (el peso real pasa lo retenido): «Está bien, cobrar» retiene esos $X en la misma tarjeta (con la hoja del banco si
+   pide 3-D Secure) o «No, que corten»; el sustituto por libra dice su precio por libra. */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
 import type { MercadoVista } from "@/lib/mercado";
-import { mercAprobar, mercCancelar, mercSustituto } from "./acciones";
+import { mercAprobar, mercCancelar, mercNoMas, mercSustituto } from "./acciones";
+import { useVerificacion } from "../../pago/Verificacion";
+import type { ModoTarjeta } from "../../pago/MetodoPago";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,13 +20,23 @@ const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/45";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-4";
 
-export function MercadoEstado({ v, es }: { v: MercadoVista; es: boolean }) {
+export function MercadoEstado({ v, es, pago = null }: { v: MercadoVista; es: boolean; pago?: { modo: ModoTarjeta; pk: string | null } | null }) {
   const E2 = (a: string, b: string) => (es ? a : b), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const router = useRouter();
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null), [flash, setFlash] = useState<string | null>(null), [foto, setFoto] = useState<string | null>(null);
   // Lo que cambia por el mercado (acepta, pesa, propone) se ve sin recargar: se vuelve a leer cada 15 s mientras sigue vivo.
   useEffect(() => { if (!["pending", "confirmed"].includes(v.st)) return; const t = setInterval(() => router.refresh(), 15000); return () => clearInterval(t); }, [v.st, router]);
   const t = v.t, del = v.modo === "delivery", D = v.detalle;
+  const V = useVerificacion(es, pago?.modo, pago?.pk);
+  // «Está bien, cobrar» (con el OK por más si lo piden). Si el banco pide confirmar, la hoja y otra vez lo mismo (la misma llave).
+  const aprobar = async () => {
+    if (ocupado) return; setOcupado(true); setError(null);
+    const r = await mercAprobar(v.numero).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not do it. Check your connection." } }));
+    setOcupado(false);
+    if (r.ok) { setFlash(r.mensaje ? (es ? r.mensaje.es : r.mensaje.en) : E2("Listo.", "Done.")); router.refresh(); return; }
+    if (V.pide(r, () => { void aprobar(); })) return;
+    setError(es ? r.msg.es : r.msg.en);
+  };
   const cuando = new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "America/New_York", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(v.cuando)).replace(/\./g, "");
   const hacer = async (f: () => Promise<{ ok: true; mensaje?: { es: string; en: string } } | { ok: false; msg: { es: string; en: string } }>, ok: string) => {
     if (ocupado) return; setOcupado(true); setError(null);
@@ -59,11 +73,20 @@ export function MercadoEstado({ v, es }: { v: MercadoVista; es: boolean }) {
       <div className={K}>{E2("ALGO NO HAY · SIN TU OK NO SE COBRA", "SOMETHING IS OUT · NOT CHARGED WITHOUT YOUR OK")}</div>
       {v.props.map((p) => { const orig = v.lineas.find((l) => l.id === p.line); return (
         <div key={p.id} className="flex flex-col gap-2">
-          <div className="text-pretty text-[13.5px] font-semibold">{`${E2("No hay ", "Out of ")}${orig ? nm(orig.name) : ""}. ${E2("Proponen: ", "Proposed: ")}${nm(p.name)} ${money(p.cents)}`}</div>
+          <div className="text-pretty text-[13.5px] font-semibold">{`${E2("No hay ", "Out of ")}${orig ? nm(orig.name) : ""}. ${E2("Proponen: ", "Proposed: ")}${nm(p.name)} ${money(p.cents)}${p.lb != null ? E2(`/lb · ${p.lb} lb, se pesa con foto`, `/lb · ${p.lb} lb, weighed with a photo`) : ""}`}</div>
           <div className="grid grid-cols-2 gap-2"><Button size="md" disabled={ocupado} onClick={() => void hacer(() => mercSustituto(v.numero, p.id, true), E2("Listo: aceptaste el cambio.", "Done: you accepted the swap."))}>{E2("Sí, cámbialo", "Yes, swap it")}</Button>
             <Button size="md" variant="secondary" disabled={ocupado} onClick={() => void hacer(() => mercSustituto(v.numero, p.id, false), E2("Listo: se quita y no se cobra.", "Done: removed and not charged."))}>{E2("No, quítalo", "No, remove it")}</Button></div>
         </div>); })}
     </div>);
+  const mas = v.st === "confirmed" && !v.aprobado && !v.local && v.okMas != null && (
+    <div data-screen-label="Pedido del mercado · OK por más" className="flex flex-col gap-2.5 rounded-[20px] border-[1.5px] border-ink bg-white p-4">
+      <div className={K}>{`${E2("PIDEN TU OK POR ", "THEY ASK YOUR OK FOR ")}${money(v.okMas)}${E2(" MÁS", " MORE")}`}</div>
+      <div className="text-pretty text-[13.5px] font-semibold leading-[1.45]">{E2(`Lo que va por peso pesó más de lo que retuvimos (${money(t.ret)}). Si está bien, se retienen ${money(v.okMas)} más en tu tarjeta y se cobra lo real: ${money(t.real)}. Si no, que corten menos.`, `By-weight items came out heavier than the hold (${money(t.ret)}). If it is OK, ${money(v.okMas)} more is held on your card and the real total is charged: ${money(t.real)}. If not, they cut less.`)}</div>
+      <div className="grid gap-2"><Button size="md" disabled={ocupado} onClick={() => void aprobar()}>{`${E2("Está bien, cobrar ", "Looks good, charge ")}${money(t.real)}`}</Button>
+        <Button size="md" variant="secondary" disabled={ocupado} onClick={() => void hacer(() => mercNoMas(v.numero), E2("Listo: le dijimos al mercado que corte menos.", "Done: we told the market to cut less."))}>{E2("No, que corten", "No, cut less")}</Button></div>
+    </div>);
+  const noMas = v.st === "confirmed" && !v.aprobado && v.noMas && (
+    <div role="status" className="rounded-[14px] bg-paper px-3.5 py-3 text-[12.5px] font-semibold text-ink/70">{E2("Le dijiste al mercado que corte menos. Te mandan el peso otra vez; no se cobra más de lo retenido.", "You told the market to cut less. They send the weight again; no more than the hold is charged.")}</div>);
   const lineas = (
     <div data-screen-label="Pedido del mercado · tus productos" className={caja}>
       <div className={K}>{E2("TUS PRODUCTOS", "YOUR PRODUCTS")}</div>
@@ -88,7 +111,7 @@ export function MercadoEstado({ v, es }: { v: MercadoVista; es: boolean }) {
     </div>);
   const acts = (
     <div className="flex flex-col gap-2">
-      {v.st === "confirmed" && D !== "preparando" && !v.aprobado && !v.local && !v.props.length && <Button block icon="check" disabled={ocupado} onClick={() => void hacer(() => mercAprobar(v.numero), E2("Listo.", "Done."))}>{`${E2("Está bien, cobrar ", "Looks good, charge ")}${money(Math.min(t.real, t.ret))}`}</Button>}
+      {v.st === "confirmed" && D !== "preparando" && !v.aprobado && !v.local && !v.props.length && v.okMas == null && t.mas === 0 && <Button block icon="check" disabled={ocupado} onClick={() => void aprobar()}>{`${E2("Está bien, cobrar ", "Looks good, charge ")}${money(Math.min(t.real, t.ret))}`}</Button>}
       {v.st === "pending" && <Button block variant="secondary" icon="close" disabled={ocupado} onClick={() => void hacer(() => mercCancelar(v.numero), E2("Cancelado. No se cobró nada.", "Cancelled. Nothing was charged."))}>{E2("Cancelar pedido", "Cancel order")}</Button>}
       {v.negocio.tel && <Button block variant="secondary" icon="phone" onClick={() => { location.href = `tel:${v.negocio.tel}`; }}>{E2("Llamar al mercado", "Call the market")}</Button>}
       {v.st === "done" && <Button block icon="star" onClick={() => router.push(`/n/${v.negocio.id}/resena?pedido=${v.numero}`)}>{E2("¿Cómo te fue? · Reseña verificada", "How was it? · Verified review")}</Button>}
@@ -97,6 +120,7 @@ export function MercadoEstado({ v, es }: { v: MercadoVista; es: boolean }) {
     </div>);
   return (
     <div data-pantalla="APP-NEG-MERC-ESTADO" className="min-h-dvh bg-paper pb-[60px] lg:px-[30px] lg:pt-[22px]">
+      {V.hoja}
       <div className="mx-auto lg:max-w-[1080px]">
         <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:static lg:border-0 lg:bg-transparent lg:px-0">
           <button type="button" aria-label={E2("Volver", "Back")} onClick={() => router.push(`/n/${v.negocio.id}`)} className="grid h-[34px] w-[34px] flex-none place-items-center rounded-[11px] bg-paper lg:bg-white"><Icon name="chevronLeft" size={16} strokeWidth={2} /></button>
@@ -106,7 +130,7 @@ export function MercadoEstado({ v, es }: { v: MercadoVista; es: boolean }) {
           <div className="flex min-w-0 flex-col gap-3">
             {error && <div role="alert" className="rounded-[14px] bg-danger/[.08] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{error}</div>}
             {flash && <div role="status" className="rounded-[14px] bg-signal/[.16] px-3.5 py-3 text-[12.5px] font-bold text-open-text">{flash}</div>}
-            {head}{props}{lineas}<div className="lg:hidden">{dinero}</div><div className="lg:hidden">{acts}</div>
+            {head}{props}{mas}{noMas}{lineas}<div className="lg:hidden">{dinero}</div><div className="lg:hidden">{acts}</div>
           </div>
           <div className="flex flex-col gap-3 lg:sticky lg:top-6"><div className="grid"><OrderTracker steps={pasos} /></div><div className="hidden lg:block">{dinero}</div><div className="hidden lg:block">{acts}</div></div>
         </div>

@@ -1,7 +1,7 @@
 # Super Admin: Configuración · Super Admin: Settings
 
 _Pantallas: **Super Admin › Sistema › Configuración** (`/admin/sistema/configuracion`; pestañas Equipo y permisos · Configuración). Teléfono y
-escritorio. Ver: permiso de Sistema. Cambiar: **solo un Admin**. Versión: 13 nov 2026. Audiencia: equipo. Tema: equipo._
+escritorio. Ver: permiso de Sistema. Cambiar: **solo un Admin**. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - Junta en un solo lugar los **plazos y límites de la plataforma** que antes vivían escritos en el código: los de la Comunidad y los de
@@ -125,6 +125,11 @@ many **rejected attempts per minute** it takes before answering «wait» (60) an
 
 **¿Por qué otros plazos siguen en «solo lectura»?** Porque sus textos en pantalla todavía dicen el número escrito («24 h», «30 días»); se abren cuando cada texto lee el valor.
 
+## Claves nuevas: el Repartidor y «Me lo devolvieron»
+- **Repartidor › Ofrecer solo · ofertas antes de avisar al negocio** (`rep_auto_intentos`, 3; 1–10).
+- **Repartidor › Pedido programado · se ofrece y se avisa antes de estar listo** (`rep_programado_min`, 30 min; 10–120).
+- **Iglesias, Bienes Raíces y Autos › «Me lo devolvieron» se cierra sola si nadie contesta en** (`ayuda_devuelto_dias`, 14 días; 7–60).
+
 ## English
 
 - **What it does:** platform deadlines and limits in one place (Community limits per day, minutes to edit a post, days to appeal, longest
@@ -144,3 +149,6 @@ many **rejected attempts per minute** it takes before answering «wait» (60) an
 - Each booking copies the cutoff when it is made: a change only affects new ones. The booking shows the minutes the venue really has left.
 
 **Why are other deadlines still «read only»?** Because their on-screen texts still say the number written out («24 h», «30 days»); they open when each text reads the value.
+
+### New keys: Driver and «They refunded me»
+`rep_auto_intentos` (3), `rep_programado_min` (30 min) in Driver, and `ayuda_devuelto_dias` (14 days) in Churches, Real Estate and Car dealers.

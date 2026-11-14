@@ -497,6 +497,36 @@ export async function decidirSop(id: string, mensaje: string, monto?: string | n
   });
 }
 
+/* 9n-4 · «Resolver y reponer» (ayuda con un pedido de comida que pide reposición): un pedido nuevo de $0 con esos platos que entra aceptado a la
+   cocina del negocio (y al Repartidor si es delivery), y el caso queda resuelto con la respuesta. En la misma transacción; queda en la auditoría. */
+export async function reponerSop(id: string, mensaje: string): Promise<ResAdm> {
+  const s = await quien();
+  if (!s) return no("Tu rol solo puede ver esta cola.");
+  const m = motivoOk(mensaje);
+  if (!m) return no("Escribe la respuesta para el cliente.");
+  if (m.length > 500) return no("Máximo 500 letras.");
+  const r = await tx(async (c) => {
+    const q = (await c.query<{ subject_id: string; business_id: string | null; city_id: string; num: string }>(
+      `select q.subject_id, q.business_id, q.city_id, o.number as num from queue_items q join help_requests h on h.id = q.subject_id::bigint join operations o on o.id = h.operation_id
+        where q.id = $1::bigint and q.queue = 'sop' and q.status = 'open' and o.kind = 'order' and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[])) for update of q`, [id, s.cities])).rows[0];
+    if (!q) return no("Este caso ya se decidió.");
+    const { reponerEn } = await import("@/lib/ayuda");
+    const x = await reponerEn(c, { numero: q.num, negocio: null, texto: m, actorId: s.id, por: "admin" });
+    if (!x.ok) return no(x.msg.es);
+    const h = await c.query(`update help_requests set status = 'resolved', resolution = $2, resolved_at = now(), resolved_by = $3, closed_by = 'admin', updated_at = now()
+                              where id = $1::bigint and status in ('open', 'answered', 'escalated') returning number`, [q.subject_id, m, s.id]);
+    if (!h.rowCount) return no("Esta solicitud ya se resolvió.");
+    await c.query(`update queue_items set status = 'decided', decision = 'resuelta', reason = $2, decided_by = $3, decided_at = now() where id = $1::bigint`, [id, m, s.id]);
+    await auditar(c, { actor: s.id, action: "soporte.reponer", targetKind: "business", targetId: q.business_id ?? "", city: q.city_id, before: { solicitud: (h.rows[0] as { number: string }).number, estado: "abierta" }, after: { estado: "resuelta", repuesto: `#${x.nuevo}` }, reason: m });
+    return { ok: true as const, mensaje: `Resuelta: pedido #${x.nuevo} de $0, ya aceptado por el negocio. El cliente lo sabe.`, num: q.num, nuevo: x.nuevo };
+  });
+  if (!r.ok || !("nuevo" in r)) return r;
+  const { avisarAyuda, avisarRepuesto } = await import("@/lib/ayuda");
+  await avisarAyuda(r.num, "help_done").catch(() => undefined);
+  await avisarRepuesto(r.nuevo).catch(() => undefined);
+  return { ok: true, mensaje: r.mensaje };
+}
+
 export async function decidirRep(id: string, accion: "mantener" | "ocultar", motivo: string, sancion?: string | null): Promise<ResAdm> {
   const s = await quien();
   if (!s) return no("Tu rol solo puede ver esta cola.");

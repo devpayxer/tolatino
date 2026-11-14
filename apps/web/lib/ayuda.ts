@@ -103,6 +103,65 @@ export async function responderAyuda(negocio: string, numero: string, texto: str
   return r.rowCount ? { ok: true } : no("Esta solicitud ya cambió (pasó a To'Latino o ya respondiste).", "This request already changed (it went to To'Latino or you already replied).");
 }
 
+/* ── 9n-4 · Reponer sin costo (LAUNCH L339): la solicitud que pide «Que me lo repongan» se contesta con un pedido NUEVO de $0 (pay_mode 'none')
+   con los platos de la solicitud (o todo el pedido si no le llegó), del mismo negocio, a la misma dirección o para recoger, que sigue el flujo de
+   siempre: entra aceptado a la cocina del negocio y, si es delivery, al Repartidor (su código, la oferta, la prueba). Una reposición por
+   solicitud (help_requests.replacement_op_id es único); no cuenta para el tope de Free; el precio de cada plato queda en $0 (nada se cobra ni
+   se devuelve: la devolución a la tarjeta es otro camino, «Devolver dinero» o «Resolver y devolver»). Lo hace el negocio (al responder, permiso
+   «Hoy y pedidos») o el equipo de To'Latino (Colas, al resolver). Corre dentro de la transacción de quien llama. ── */
+type NoA = { ok: false; msg: Bi };
+export async function reponerEn(c: import("pg").PoolClient, x: { numero: string; negocio: string | null; texto: string; actorId: string; por: "business" | "admin" }): Promise<{ ok: true; nuevo: string; hid: string; biz: string; city: string } | NoA> {
+  const t = String(x.texto ?? "").trim();
+  if (t.length < 5) return no("Escribe tu respuesta.", "Write your reply.") as NoA;
+  if (t.length > 500) return no("Máximo 500 letras.", "Up to 500 characters.") as NoA;
+  const h = (await c.query<{ hid: string; status: string; reason: string; items: ItemAyuda[]; rep: string | null; op: string; biz: string; city: string; uid: string; mode: string; det: Record<string, unknown>; prep: number; test: boolean }>(
+    `select h.id::text as hid, h.status, h.reason, h.items, h.replacement_op_id::text as rep, o.id::text as op, o.business_id as biz, o.city_id as city, o.user_id::text as uid,
+            coalesce(o.mode, 'pickup') as mode, o.details as det, coalesce(d.prep_min, 20) as prep, o.is_test as test
+       from help_requests h join operations o on o.id = h.operation_id left join delivery_settings d on d.business_id = o.business_id
+      where o.number = $1 and o.kind = 'order' and ($2::text is null or h.business_id = $2) for update of h`, [x.numero, x.negocio])).rows[0];
+  if (!h) return no("Esa solicitud no existe.", "That request does not exist.") as NoA;
+  if (h.rep) return no("Este pedido ya se repuso.", "This order was already replaced.") as NoA;
+  if (x.por === "business" ? h.status !== "open" : !["open", "answered", "escalated"].includes(h.status)) return no("Esta solicitud ya cambió. Actualiza la pantalla.", "This request already changed. Refresh the screen.") as NoA;
+  if (!POR_PLATO.has(h.reason) && h.reason !== "nollego") return no("Eso no se repone: contesta con un mensaje.", "That is not replaced: reply with a message.") as NoA;
+  // Los platos: los de la solicitud (hasta lo que se pidió) o, si no le llegó, todo el pedido. El precio, $0.
+  const L = (await c.query<{ item: string | null; name: Bi; qty: number; options: unknown; nota: string | null }>(
+    `select item_id::text as item, name, qty, options, instructions as nota from operation_lines where operation_id = $1::bigint order by id`, [h.op])).rows;
+  const sel = h.reason === "nollego" || !h.items?.length ? L.map((l) => ({ l, q: l.qty }))
+    : h.items.map((i) => { const l = L.find((y) => (y.name?.es ?? "") === i.n); return l ? { l, q: Math.max(1, Math.min(l.qty, Math.round(Number(i.q) || 1))) } : null; }).filter((z): z is { l: (typeof L)[number]; q: number } => !!z);
+  if (!sel.length) return no("No encontramos esos platos en el pedido.", "We could not find those dishes in the order.") as NoA;
+  const num = (await c.query<{ n: string }>(`select nextval('operations_order_seq')::text as n`)).rows[0]!.n;
+  const delivery = h.mode === "delivery" && !!h.det?.to;
+  const det = delivery ? { to: h.det.to, drop: h.det.drop ?? null, repone: x.numero } : { pickupNote: h.det?.pickupNote ?? null, address: h.det?.address ?? null, repone: x.numero };
+  const nuevo = (await c.query<{ id: string }>(
+    `insert into operations (number, kind, city_id, business_id, user_id, status, stage, mode, ready_at, customer_note, subtotal_cents, tax_cents, total_cents, pay_mode, respond_by,
+                             confirmed_at, answered_at, free_quota_month, client_key, is_test, details, delivery_cents, tip_cents)
+     values ($1, 'order', $2, $3, $4::uuid, 'confirmed', 'accepted', $5, now() + make_interval(mins => $6::int), $7, 0, 0, 0, 'none', now(), now(), now(), null, gen_random_uuid(), $8, $9::jsonb, 0, 0)
+     returning id::text`,
+    [num, h.city, h.biz, h.uid, delivery ? "delivery" : "pickup", h.prep, `Reposición sin costo del pedido #${x.numero}`, h.test, JSON.stringify(det)])).rows[0]!.id;
+  for (const z of sel) await c.query(`insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct, options, instructions) values ($1::bigint, $2, $3::jsonb, $4, 0, 0, 0, $5::jsonb, $6)`,
+    [nuevo, z.l.item, JSON.stringify(z.l.name), z.q, JSON.stringify(z.l.options ?? []), z.l.nota]);
+  const ev = (op: string, kind: string, note: Bi) => c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1::bigint, $2, $3, $4, $5::jsonb)`, [op, kind, x.por === "admin" ? "admin" : "member", x.actorId, JSON.stringify(note)]);
+  await ev(nuevo, "accepted", { es: `Reposición sin costo del pedido #${x.numero}`, en: `Free replacement of order #${x.numero}` });
+  await ev(h.op, "replaced", { es: `Se repone sin costo: pedido #${num}`, en: `Replaced at no cost: order #${num}` });
+  const u = await c.query(x.por === "business"
+    ? `update help_requests set status = 'answered', reply = $2, reply_at = now(), reply_by = $3, replacement_op_id = $4::bigint, updated_at = now() where id = $1::bigint and status = 'open' and replacement_op_id is null`
+    : `update help_requests set replacement_op_id = $4::bigint, updated_at = now() where id = $1::bigint and replacement_op_id is null and $2::text is not null and $3::uuid is not null`, [h.hid, t, x.actorId, nuevo]);
+  if (!u.rowCount) return no("Esta solicitud ya cambió. Actualiza la pantalla.", "This request already changed. Refresh the screen.") as NoA;
+  return { ok: true, nuevo: num, hid: h.hid, biz: h.biz, city: h.city };
+}
+/* El negocio responde «Te lo reponemos» (Panel › el pedido › Ayuda). */
+export async function reponerPedido(negocio: string, numero: string, texto: string, actorId: string): Promise<ResA & { nuevo?: string }> {
+  if (!/^\d{1,12}$/.test(numero)) return no("Ese pedido no existe.", "That order does not exist.");
+  return tx(async (c) => { const r = await reponerEn(c, { numero, negocio, texto, actorId, por: "business" }); return r.ok ? { ok: true as const, numero, nuevo: r.nuevo } : r; });
+}
+/* El aviso al cliente con el enlace al pedido nuevo. */
+export async function avisarRepuesto(numeroNuevo: string) {
+  const o = (await db().query<{ uid: string; negocio: string; de: string | null }>(
+    `select o.user_id::text as uid, b.name as negocio, o.details->>'repone' as de from operations o join businesses b on b.id = o.business_id where o.number = $1 and o.kind = 'order'`, [numeroNuevo])).rows[0];
+  if (!o) return;
+  await (await import("./avisos")).avisar(o.uid, "pedido_repuesto", { negocio: o.negocio, num: numeroNuevo, de: o.de ?? "" }, { href: `/pedido/${numeroNuevo}`, ref: ["order", numeroNuevo] });
+}
+
 /* Avisos de la ayuda: al cliente cuando responden o se resuelve; al negocio cuando se abre. */
 export async function avisarAyuda(numeroPedido: string, tpl: "help_reply" | "help_done" | "biz_help") {
   const { avisar, avisarNegocio } = await import("./avisos");

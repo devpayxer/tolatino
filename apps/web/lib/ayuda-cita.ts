@@ -85,9 +85,9 @@ const NUM = /^(?:[CMAFVNIDB]|EP)-\d{1,10}$/;  // 6i · EP-… = evento privado  
 export type AyudaCita = {
   id: string; number: string; reason: MotivoCita; wants: QuiereCita; body: string; amount: number | null; status: "open" | "answered" | "escalated" | "resolved";
   decision: "ok" | "alt" | "no" | null; offer: number | null; reply: string | null; replyAt: string | null; resolution: string | null; resolvedAt: string | null;
-  refunded: number; closedBy: "user" | "admin" | null; porUsuario: boolean; at: string; vence: string; fotos: string[];
+  refunded: number; closedBy: "user" | "admin" | "system" | null; porUsuario: boolean; at: string; vence: string; fotos: string[];
   // 4if · Sin dinero en la app: «Me lo devolvieron» (pending · confirmed · denied) y si lo ofrecido quedó en pausa por una posible estafa.
-  fuera: "pending" | "confirmed" | "denied" | null; pausa: "on" | "off" | null; directa: boolean;
+  fuera: "pending" | "confirmed" | "denied" | "expired" | null; pausa: "on" | "off" | null; directa: boolean;
 };
 const COLS = `h.id::text, h.number, h.reason, h.wants, coalesce(h.body, '') as body, h.amount_cents as amount, h.status, h.decision, h.offer_cents as offer, h.reply, ${ISO("h.reply_at")} as "replyAt",
   h.resolution, ${ISO("h.resolved_at")} as "resolvedAt", h.refunded_cents as refunded, h.closed_by as "closedBy", coalesce(h.escalated_by = 'user', false) as "porUsuario",
@@ -117,7 +117,10 @@ const devolvible = (p: Awaited<ReturnType<typeof depositoDe>>) => (p && ["captur
 const tarjetaL = (p: { brand: string | null; l4: string | null } | null) => (p?.l4 ? `${({ visa: "Visa", mastercard: "Mastercard", mc: "Mastercard", amex: "Amex", discover: "Discover", disc: "Discover" } as Record<string, string>)[p.brand ?? ""] ?? "Tarjeta"} ·· ${p.l4}` : null);
 
 /* ── La persona ── */
-export type CitaAyudaVista = { rubro: RubroAyuda; puede: boolean; hecho: boolean; motivo: string | null; a: AyudaCita | null; depPagado: number; devolvible: number; tarjeta: string | null };
+/* 9n-4 · garantia: «que vuelva sin cargo» aceptado (Auto y Hogar): la persona reserva la visita de garantía a $0 en el Booking (?warr=H-…), sin
+   depósito ni retención; una sola (help_requests.warranty_op_id). usada = el número de la cita de garantía. */
+export type GarantiaAyuda = { negocio: string; svc: string; num: string; usada: string | null; o: string; w: string | null };
+export type CitaAyudaVista = { rubro: RubroAyuda; puede: boolean; hecho: boolean; motivo: string | null; a: AyudaCita | null; depPagado: number; devolvible: number; tarjeta: string | null; garantia: GarantiaAyuda | null };
 export async function ayudaDeCita(userId: string, numero: string): Promise<CitaAyudaVista | null> {
   if (!NUM.test(numero)) return null;
   await escalarVencidas();
@@ -137,7 +140,13 @@ export async function ayudaDeCita(userId: string, numero: string): Promise<CitaA
   const motivo = !o.reciente ? "tarde" : hecho ? null : ["cancelled", "expired", "declined", "noshow"].includes(o.status) && conDep ? null : "aun";
   // Salud y Pro no tienen depósito: si no se dio la cita, no hay nada que reclamar aquí.
   const motivo2 = (PRIVADA(rubro) || SIN_DINERO.has(rubro)) && !hecho && !motivo ? "aun" : motivo;
-  return { rubro, puede: !motivo2 && !a, hecho, motivo, a: a ? fila(a) : null, depPagado: p && ["captured", "partially_refunded", "refunded"].includes(p.status) ? p.amount : 0, devolvible: devolvible(p), tarjeta: tarjetaL(p) };
+  const garantia = a && (rubro === "auto" || rubro === "hogar") && a.wants === "reponer" && a.decision === "ok" && ["answered", "resolved"].includes(a.status)
+    ? (await db().query<GarantiaAyuda>(
+        `select o.business_id as negocio, coalesce(o.details->>'svcId', '') as svc, h.number as num, (select w.number from operations w where w.id = h.warranty_op_id) as usada,
+                coalesce((select string_agg(e.k || '-' || e.v, ',') from jsonb_each_text(case when jsonb_typeof(o.details->'sel') = 'object' then o.details->'sel' else '{}'::jsonb end) as e(k, v)), '') as o,
+                o.details->>'w' as w
+           from help_requests h join operations o on o.id = h.operation_id where h.id = $1::bigint`, [a.id])).rows[0] ?? null : null;
+  return { rubro, puede: !motivo2 && !a, hecho, motivo, a: a ? fila(a) : null, depPagado: p && ["captured", "partially_refunded", "refunded"].includes(p.status) ? p.amount : 0, devolvible: devolvible(p), tarjeta: tarjetaL(p), garantia: garantia?.svc ? garantia : null };
 }
 
 export type AyudaCitaIn = { reason: string; wants?: string; body?: string; amount?: string | number | null; fotos?: string[] };
@@ -391,6 +400,29 @@ async function marcarLicencia(numero: string) {
 
 /* Las fotos privadas de una ayuda (Salud y Pro) se borran a los días de Configuración (sp_fotos_ayuda_dias) de cerrarse (§3): el archivo sale del
    almacenamiento y la fila queda como borrada (nada se borra de la base; la URL ya no lleva a nada). */
+/* 9n-4 · 4if «Me lo devolvieron» sin respuesta (LAUNCH L561): si la persona nunca confirma ni dice que no, a la mitad del plazo
+   (ayuda_devuelto_dias, Configuración) le llega un recordatorio (una vez: outside_reminded_at es el candado) y al cumplirse la solicitud se cierra
+   sola (closed_by 'system', outside_refund 'expired'; nada se borra) con su aviso. Los avisos son NEUTROS (sin el lugar ni el servicio: puede ser
+   una iglesia). Si después dice que no se lo devolvieron, lo pide en Soporte: la solicitud cerrada queda con su historia. */
+export async function cerrarDevueltosSinRespuesta(): Promise<number> {
+  const { avisar } = await import("./avisos");
+  const dias = `${cfgSql("ayuda_devuelto_dias")}`;
+  const rec = (await db().query<{ uid: string; hnum: string; numero: string; dias: number }>(
+    `update help_requests h set outside_reminded_at = now(), updated_at = now() from operations o
+      where o.id = h.operation_id and h.status = 'answered' and h.outside_refund = 'pending' and h.outside_reminded_at is null
+        and h.outside_pending_at <= now() - make_interval(hours => (${dias}) * 12)
+      returning h.user_id::text as uid, h.number as hnum, o.number as numero, (${dias})::int as dias`)).rows;
+  for (const x of rec) await avisar(x.uid, "help_devuelto_rec", { num: x.hnum, dias: String(Math.ceil(x.dias / 2)) }, { href: hrefAyuda(x.numero), ref: ["help", x.hnum] }).catch(() => undefined);
+  const L = (await db().query<{ uid: string; hnum: string; numero: string; dias: number }>(
+    `update help_requests h set status = 'resolved', closed_by = 'system', outside_refund = 'expired', outside_at = now(), resolved_at = now(), updated_at = now(),
+            resolution = 'Se cerró sola: pasaron ' || (${dias})::text || ' días sin que dijeras si te lo devolvieron.'
+       from operations o
+      where o.id = h.operation_id and h.status = 'answered' and h.outside_refund = 'pending' and h.outside_pending_at <= now() - make_interval(days => ${dias})
+      returning h.user_id::text as uid, h.number as hnum, o.number as numero, (${dias})::int as dias`)).rows;
+  for (const x of L) await avisar(x.uid, "help_devuelto_cierre", { num: x.hnum, dias: String(x.dias) }, { href: hrefAyuda(x.numero), ref: ["help", x.hnum] }).catch(() => undefined);
+  return L.length;
+}
+
 export async function purgarFotosAyuda() {
   const L = (await db().query<{ id: string; url: string }>(
     `select m.id::text, m.url from media m join help_requests h on m.owner_kind = 'help' and h.id::text = m.owner_id

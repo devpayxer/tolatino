@@ -778,7 +778,8 @@ const guardianes = {
     const A = existsSync("apps/web/lib/apartados.ts") ? readFileSync("apps/web/lib/apartados.ts", "utf8") : "";
     if (A && !/Math\.min\(p\.tot, p\.held\)/.test(A)) falla("capturaMercado", "apps/web/lib/apartados.ts", 1, "cobrarApartado cobra lo que se envía y nunca más de lo retenido (Math.min(p.tot, p.held))");
     A.split("\n").forEach((l, i) => { if (/cobrarOperacion\(/.test(l)) falla("capturaMercado", "apps/web/lib/apartados.ts", i + 1, "un envío de la tienda no usa cobrarOperacion (captura todo): usa cobrarApartado"); });
-    if (!/Math\.min\(t\.real, p\.held\)/.test(m)) falla("capturaMercado", M, 1, "liquidarMercado cobra lo real y nunca más de lo retenido (Math.min(t.real, p.held))");
+    // 9n-4: con el OK por más hay dos retenciones: lo real, nunca más de lo retenido entre las dos, y de cada una nunca más de lo suyo.
+    if (!/Math\.min\(t\.real, p\.held\)/.test(m) && !(/let resto = Math\.max\(0, Math\.min\(t\.real, t\.ret\) - t\.cobrado\);/.test(m) && /const monto = Math\.min\(resto, p\.held\);/.test(m))) falla("capturaMercado", M, 1, "liquidarMercado cobra lo real y nunca más de lo retenido (Math.min(t.real, p.held))");
     m.split("\n").forEach((l, i) => { if (/cobrarOperacion\(/.test(l)) falla("capturaMercado", M, i + 1, "un pedido del mercado no usa cobrarOperacion (captura todo): usa liquidarMercado"); });
     for (const x of m.matchAll(/export type (\w+In) = \{([^}]*)\}/g)) if (/\b(cents|price|precio|total|tax|impuesto|subtotal)\w*\??:/i.test(x[2])) falla("capturaMercado", M, 0, `«${x[1]}» trae un precio o total desde el teléfono; lo calcula el servidor`);
     const mig = readdirSync("packages/db/migrations").find((f) => f.startsWith("0065_"));
@@ -8068,6 +8069,138 @@ const guardianes = {
       if (!/if \(await soltarVerificaciones\(s\.business_id\)\) return \{ ok: true \};/.test(s)) falla(G, S, 0, "antes de otro intento de Pro, la verificación vieja se mira (si ya cobró, no se cobra otra vez) y se suelta");
       if (!/avisarNegocio\(s\.business_id, "pro_verify"/.test(s) || !/href: `\/pago\/verificar\?pi=\$\{encodeURIComponent\(r\.pi\)\}`/.test(s)) falla(G, S, 0, "la renovación con 3-D Secure avisa al dueño con el enlace a la hoja");
     }
+  },
+
+  /* 9n-4 · tresDSecureEnTodos (LAUNCH L1685): la CLASE «un flujo con la persona en la app que suelta el cobro cuando el banco pide verificar». Todo cobro
+     en sesión (pasarela.retener / retenerPlataforma sin `fuera`) pasa quien paga (`usuario`), y todo «requires_action» de un flujo va por la hoja
+     (bancoPide o pideVerificar), nunca por liberar y «prueba con otra tarjeta»; cada pantalla que cobra abre la hoja y vuelve a enviar lo mismo.
+     Solo `requires_action` es verificar: `requires_payment_method` es una tarjeta rechazada (nunca vuelve a abrir la hoja). Y «Volver a Pro» en el
+     panel abre la hoja ahí mismo (sin volver a cobrar al confirmar) y la verificación hecha deja Pro activo también desde Free. */
+  tresDSecureEnTodos() {
+    const G = "tresDSecureEnTodos", P = "apps/web/lib/pagos/pasarela.ts", V = "apps/web/lib/pagos/verificacion.ts", S = "apps/web/lib/suscripcion.ts";
+    for (const f of codigo.filter((x) => /^apps\/web\/lib\/.*\.ts$/.test(x) && !/\/pagos\//.test(x))) {
+      const t = sinComent(f);
+      for (const m of t.matchAll(/pasarela\.(retener|retenerPlataforma)\(\{/g)) {
+        const st = t.slice(m.index, t.indexOf("});", m.index) + 3);
+        if (/fuera: true/.test(st)) continue;
+        if (!/usuario: \{ id: /.test(st)) falla(G, f, t.slice(0, m.index).split("\n").length, "un cobro con la persona en la app pasa quien paga (usuario): si el banco pide verificar, la verificación queda a su nombre");
+      }
+      for (const m of t.matchAll(/(\w+)\.estado === "accion"/g)) {
+        const tras = t.slice(m.index, m.index + 420);
+        if (!/bancoPide\(|pideVerificar\(/.test(tras)) falla(G, f, t.slice(0, m.index).split("\n").length, "cuando el banco pide verificar, el flujo devuelve la verificación a la pantalla (bancoPide), no suelta el cobro ni pide otra tarjeta");
+      }
+    }
+    const v = sinComent(V), bp = cuerpoFn(v, "bancoPide");
+    if (!/const v = pideVerificar\(ret\);\s*if \(v\) return \{ ok: false,[^\n]*tarjeta: true, \.\.\.v \};/.test(bp)) falla(G, V, 0, "bancoPide devuelve la verificación (sin soltar lo retenido) cuando está a nombre de quien paga");
+    const pv = (sinComent(P).match(/\n  async verificacionPrevia\([\s\S]*?\n  },/) ?? [""])[0];
+    if (/estado === "requires_action" \|\| s\?\.estado === "requires_payment_method"/.test(pv) || !/a\.viva && s\?\.estado === "requires_action"\)/.test(pv)) falla(G, P, 0, "solo «requires_action» vuelve a abrir la hoja; «requires_payment_method» es una tarjeta rechazada (otro intento, otra llave)");
+    const PANT = ["apps/web/app/(app)/n/[id]/cita/Booking.tsx", "apps/web/app/(app)/n/[id]/visita/Visita.tsx", "apps/web/app/(app)/n/[id]/inscribirme/Inscribirme.tsx", "apps/web/app/(app)/n/[id]/noche/Reservar.tsx",
+      "apps/web/app/(app)/n/[id]/fiesta/Booking.tsx", "apps/web/app/(app)/n/[id]/viaje/ViajeBooking.tsx", "apps/web/app/(app)/privado/[num]/EstadoEvp.tsx", "apps/web/app/(app)/viaje/[num]/ViajeEstado.tsx",
+      "apps/web/app/(app)/cita/[num]/EstimadoCliente.tsx", "apps/web/app/(app)/mercado/[num]/MercadoEstado.tsx"];
+    for (const f of PANT) {
+      if (!existsSync(f)) { falla(G, f, 0, "falta la pantalla que cobra"); continue; }
+      const t = sinComent(f);
+      if (!/useVerificacion\(/.test(t) || !/\{\w+\.hoja\}/.test(t) || !/\w+\.pide\(r, \(\) => \{ void \w+\([^)]*\); \}\)/.test(t)) falla(G, f, 0, "la pantalla abre la hoja del banco y vuelve a enviar lo mismo (useVerificacion, V.pide, {V.hoja})");
+      if (/clave\.current = uuid\(\);[^\n]*\n[^\n]*V\.pide\(/.test(t)) falla(G, f, 0, "la clave no cambia antes de la hoja: al confirmar se vuelve a enviar con la MISMA (si no, sería otro cobro)");
+    }
+    const PA = "apps/web/app/panel/Panel.tsx", s = sinComent(S);
+    if (!/V\.pide\(r, \(\) => \{ router\.refresh\(\); \}\)/.test(sinComent(PA))) falla(G, PA, 0, "«Volver a Pro» abre la hoja del banco en Tu plan y, al confirmar, solo vuelve a leer el plan (nunca cobra otra vez)");
+    if (!/enSesion \? null : await \(await import\("\.\/avisos"\)\)\.avisarNegocio\(s\.business_id, "pro_verify"/.test(s) && !/if \(!enSesion[^\n]*avisarNegocio\(s\.business_id, "pro_verify"/.test(s)) falla(G, S, 0, "en sesión (Volver a Pro) la hoja se abre ahí: no se manda además el aviso con el enlace");
+    if (!/\["past_due", "active", "trial", "canceling", "ended"\]\.includes\(s\.status\)/.test(cuerpoFn(s, "completarRenovacion")) || !/const vuelve = s\.status === "ended" && a\.desde_free;/.test(cuerpoFn(s, "completarRenovacion"))) falla(G, S, 0, "la verificación de «Volver a Pro» (desde Free) deja Pro activo: si no, el banco cobra y el plan sigue en Free");
+  },
+
+  /* 9n-4 · okPorMas (L487, L490): el mercado nunca cobra más de lo retenido sin el OK del cliente. Si el peso real pasa lo retenido, «mandar» no sale
+     (o corta menos o «Pedir OK por $X más»); «Está bien, cobrar» ES el OK: retiene lo que falta (lo calcula la base) en la MISMA tarjeta, a nombre de
+     quien paga (3-D Secure por la hoja); sin ese OK no se marca listo; lo retenido es la suma de la primera retención y la del OK; la base no deja
+     cobrar de un cobro más de lo retenido. Y el recordatorio de los 10 min de «Está bien, cobrar» sale una vez por peso mandado. */
+  okPorMas() {
+    const G = "okPorMas", M = "apps/web/lib/mercado.ts", MIG = "packages/db/migrations/0148_dinero2.sql";
+    if (!existsSync(M)) return falla(G, M, 0, "falta lib/mercado.ts");
+    const m = sinComent(M);
+    if (!/if \(pide && paso !== "mas"\) return no\(/.test(m)) falla(G, M, 0, "el peso que pasa lo retenido no se manda sin pedir el OK por más");
+    if (!/if \(t\.mas > 0\) return no\(/.test(cuerpoFn(m, "pasoMercado"))) falla(G, M, 0, "sin el OK por lo que pasa de lo retenido, el pedido no se marca listo");
+    const ap = cuerpoFn(m, "aprobarPeso"), rm = cuerpoFn(m, "retenerMas");
+    if (!/if \(o\.pay === "app" && t0\.mas > 0\) \{/.test(ap) || !/await retenerMas\(userId, o\.id, numero, t0\.mas\)/.test(ap)) falla(G, M, 0, "«Está bien, cobrar» con el peso por encima retiene lo que falta (lo calcula la base) antes de cobrar");
+    if (!/usuario: \{ id: userId,/.test(rm) || !/return bancoPide\(ret\);/.test(rm) || !/kind: "extra"/.test(rm) || !/p\.kind = 'full' and p\.user_id = \$2::uuid/.test(rm)) falla(G, M, 0, "el OK por más se retiene en la tarjeta del primer cobro, a nombre de quien paga (3-D Secure por la hoja), como cobro 'extra'");
+    if (!/p\.kind in \('full', 'extra'\)\) as ret/.test(cuerpoFn(m, "totales"))) falla(G, M, 0, "lo retenido es la suma de la primera retención y la del OK por más");
+    if (!/not \(o\.details \? 'rec10'\) and \(o\.details->>'weighed_at'\)::timestamptz <= now\(\) - interval '10 minutes'/.test(m) || !/avisar\(x\.number, "merc_rec10"/.test(m)) falla(G, M, 0, "el recordatorio de los 10 min de «Está bien, cobrar» sale una vez por peso mandado");
+    if (!existsSync(MIG) || !/add constraint payments_cobro_hasta_lo_retenido check \(held_cents is null or amount_cents <= held_cents\)/.test(readFileSync(MIG, "utf8"))) falla(G, MIG, 0, "la base no deja cobrar de un cobro más de lo retenido");
+  },
+
+  /* 9n-4 · sustitutoPorLibra (L488): el sustituto por libra entra como línea por peso (se pesa con su foto, como las demás) y nunca por unidad a precio
+     de libra. */
+  sustitutoPorLibra() {
+    const G = "sustitutoPorLibra", M = "apps/web/lib/mercado.ts";
+    if (!existsSync(M)) return;
+    const m = sinComent(M);
+    if (/Por ahora el sustituto tiene que ser por unidad/.test(m)) falla(G, M, 0, "el sustituto por libra se puede proponer");
+    if (!/const lb = s\.k === "peso" \?/.test(cuerpoFn(m, "noHay"))) falla(G, M, 0, "el sustituto por libra lleva sus libras en la propuesta");
+    if (!/cp\.p\.lb \?\? null\]\)/.test(cuerpoFn(m, "decidirSustituto"))) falla(G, M, 0, "al aceptarlo entra como línea por peso (weight_est): se pesa con su foto");
+  },
+
+  /* 9n-4 · reponerSinCosto (L339): reponer es un pedido NUEVO de $0 (pay_mode 'none', $0 en cada plato) que sigue el flujo del negocio y del Repartidor;
+     uno por solicitud (la base lo impone); nunca crea ni mueve un cobro. */
+  reponerSinCosto() {
+    const G = "reponerSinCosto", A = "apps/web/lib/ayuda.ts", MIG = "packages/db/migrations/0148_dinero2.sql";
+    if (!existsSync(A)) return;
+    const r = cuerpoFn(sinComent(A), "reponerEn");
+    if (!r) return falla(G, A, 0, "falta reponerEn");
+    if (!/'confirmed', 'accepted', \$5, now\(\) \+ make_interval\(mins => \$6::int\), \$7, 0, 0, 0, 'none'/.test(r)) falla(G, A, 0, "la reposición es un pedido de $0 (pay_mode 'none') que entra aceptado a la cocina");
+    if (!/values \(\$1::bigint, \$2, \$3::jsonb, \$4, 0, 0, 0, \$5::jsonb, \$6\)/.test(r)) falla(G, A, 0, "cada plato repuesto va en $0");
+    if (/payments|pasarela|retener|cobrar/.test(r)) falla(G, A, 0, "reponer nunca crea ni mueve un cobro");
+    if (!/replacement_op_id is null/.test(r)) falla(G, A, 0, "una reposición por solicitud");
+    if (!existsSync(MIG) || !/create unique index if not exists help_requests_repone_uno on help_requests \(replacement_op_id\)/.test(readFileSync(MIG, "utf8"))) falla(G, MIG, 0, "la base impone una reposición por solicitud");
+  },
+
+  /* 9n-4 · garantiaSinCargo (L458): la visita de garantía es de quien pidió la ayuda, del mismo negocio y servicio, con «que vuelva sin cargo» aceptado
+     por el negocio, sin depósito ni retención, en $0 y una sola vez (la base lo impone). */
+  garantiaSinCargo() {
+    const G = "garantiaSinCargo", V = "apps/web/lib/visitas.ts", MIG = "packages/db/migrations/0148_dinero2.sql";
+    if (!existsSync(V)) return;
+    const v = sinComent(V), g = cuerpoFn(v, "garantiaPara");
+    if (!/h\.user_id = \$2 and h\.business_id = \$3 and o\.details->>'svcId' = \$4 and h\.wants = 'reponer' and h\.decision = 'ok'/.test(g) || !/h\.warranty_op_id is null/.test(g)) falla(G, V, 0, "la garantía es de quien pidió la ayuda, del mismo negocio y servicio, aceptada por el negocio y sin usar");
+    if (!/let dep = quien\.cuenta && !warr \?/.test(v)) falla(G, V, 0, "la visita de garantía no lleva depósito ni retención");
+    if (!/warr \? 0 : calc\.cents, dep, warr \? "none"/.test(v)) falla(G, V, 0, "la visita de garantía va en $0");
+    if (!existsSync(MIG) || !/create unique index if not exists help_requests_garantia_una on help_requests \(warranty_op_id\)/.test(readFileSync(MIG, "utf8"))) falla(G, MIG, 0, "la base impone una garantía por solicitud");
+  },
+
+  /* 9n-4 · devueltoSeCierra (L561): «Me lo devolvieron» que nadie contesta se cierra solo a los ayuda_devuelto_dias (Configuración), con un
+     recordatorio una vez a la mitad; solo las que esperan esa respuesta; avisos neutros (sin el lugar: puede ser una iglesia); desde cuándo espera lo
+     pone la base. */
+  devueltoSeCierra() {
+    const G = "devueltoSeCierra", A = "apps/web/lib/ayuda-cita.ts", MIG = "packages/db/migrations/0148_dinero2.sql";
+    if (!existsSync(A)) return;
+    const f = cuerpoFn(sinComent(A), "cerrarDevueltosSinRespuesta");
+    if (!f) return falla(G, A, 0, "falta cerrarDevueltosSinRespuesta");
+    if (!/cfgSql\("ayuda_devuelto_dias"\)/.test(f)) falla(G, A, 0, "el plazo sale de Configuración (ayuda_devuelto_dias)");
+    if ((f.match(/h\.status = 'answered' and h\.outside_refund = 'pending'/g) ?? []).length < 2) falla(G, A, 0, "solo se cierran (y se recuerdan) las que esperan «Me lo devolvieron»");
+    if (!/h\.outside_reminded_at is null/.test(f)) falla(G, A, 0, "el recordatorio sale una vez");
+    if (/negocio|b\.name/.test(f)) falla(G, A, 0, "los avisos son neutros (sin el lugar ni el servicio)");
+    if (!/\["ayudaDevuelto", async \(\) => \(await import\("\.\/ayuda-cita"\)\)\.cerrarDevueltosSinRespuesta\(\)\]/.test(sinComent("apps/web/lib/barrido.ts"))) falla(G, "apps/web/lib/barrido.ts", 0, "el cierre corre en el barrido central");
+    if (!existsSync(MIG) || !/if new\.outside_refund = 'pending' and \(tg_op = 'INSERT' or old\.outside_refund is distinct from 'pending'\) then new\.outside_pending_at := now\(\); end if;/.test(readFileSync(MIG, "utf8"))) falla(G, MIG, 0, "desde cuándo espera lo pone la base");
+  },
+
+  /* 9n-4 · repartoSolo (L1787): la asignación automática solo con «Ofrecer solo» encendido, nunca a un negocio que entrega con una app externa ni a un
+     pedido con repartidor u oferta abierta, con tope de ofertas (Configuración) y un solo aviso al negocio si nadie lo toma; los programados se
+     ofrecen y se recuerdan rep_programado_min antes (una vez). Corre en el barrido. */
+  repartoSolo() {
+    const G = "repartoSolo", R = "apps/web/lib/repartidor-auto.ts";
+    if (!existsSync(R)) return falla(G, R, 0, "falta lib/repartidor-auto.ts");
+    const r = sinComent(R);
+    if (!/where d\.auto_offer and coalesce\(d\.who, 'team'\) <> 'external'/.test(r) || !/o\.driver_id is null/.test(r) || !/not exists \(select 1 from delivery_offers f where f\.operation_id = o\.id and f\.status = 'open' and f\.expires_at > now\(\)\)/.test(r)) falla(G, R, 0, "solo con «Ofrecer solo», nunca con app externa, con repartidor o con una oferta abierta");
+    if (!/if \(x\.n >= intentos\) \{ await nadie\(/.test(r) || !/not \(details \? 'rep_nadie'\)/.test(r)) falla(G, R, 0, "tope de ofertas y un solo aviso al negocio si nadie lo toma");
+    if (!/not \(o\.details \? 'rec_prog'\)/.test(r)) falla(G, R, 0, "el recordatorio del programado sale una vez");
+    if (!/\["repartoSolo", async \(\) => \(await import\("\.\/repartidor-auto"\)\)\.asignarSolos\(\)\]/.test(sinComent("apps/web/lib/barrido.ts"))) falla(G, "apps/web/lib/barrido.ts", 0, "la asignación automática corre en el barrido central");
+  },
+
+  /* 9n-4 · recordatorioVisitaPlan (L437): el recordatorio de 24 h sale también para la visita de un plan (una cita de $0): nada en él mira el dinero, y
+     la del plan dice su franja (plan_visita). */
+  recordatorioVisitaPlan() {
+    const G = "recordatorioVisitaPlan", C = "apps/web/lib/citas-flujo.ts";
+    if (!existsSync(C)) return;
+    const f = cuerpoFn(sinComent(C), "recordatorios");
+    if (/total_cents|deposit_cents|pay_mode|payments/.test(f)) falla(G, C, 0, "el recordatorio no mira el dinero (sale igual para una cita de $0)");
+    if (!/avisarCliente\(x\.number, "plan_visita", \{ franja: x\.franja \}\)/.test(f)) falla(G, C, 0, "la visita del plan recibe «Mañana es tu visita» con su franja");
   },
 
   /* 9k · huellaDeTarjeta (L760, L938): la huella de la tarjeta (card.fingerprint) se guarda al guardar una tarjeta y en cada cobro; el máximo de boletos por

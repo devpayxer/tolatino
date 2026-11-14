@@ -1,7 +1,7 @@
 # Panel: Ayuda y Soporte · Dashboard: Help and Support
 
 _Pantallas: **Panel › Más › Ayuda y Soporte** (abre Soporte con tu negocio: `/soporte?negocio={tu negocio}`) y los avisos del panel que dicen
-«Escribir a Soporte». Teléfono y escritorio. Versión: 11 nov 2026. Audiencia: negocio. Tema: panel._
+«Escribir a Soporte». Teléfono y escritorio. Versión: 14 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - Le escribes a **una persona del equipo de To'Latino** sobre tu negocio: **tus cobros o tu plan**, **tu cuenta**, **la app no funciona bien**
@@ -31,6 +31,15 @@ _Pantallas: **Panel › Más › Ayuda y Soporte** (abre Soporte con tu negocio:
 - **¿Puedo escribir de mi cuenta personal?** Sí: Mi cuenta › Ayuda y soporte es para lo tuyo; esto es para tu negocio.
 - **¿Dónde está la ayuda de cómo funciona el panel?** En Más › **Ayuda** (los artículos de tu panel), o pregúntale a **El Compa**.
 
+## Reponer sin costo (ayuda con un pedido)
+Cuando el cliente pide **«Que me lo repongan»**, en el detalle del pedido (Ayuda con el pedido) escribe tu respuesta y toca
+**Reponer sin costo**. Se crea un **pedido nuevo de $0** con los platos de la solicitud (o todo el pedido si no le llegó), ya
+aceptado: te sale en Hoy como cualquier pedido y, si es delivery, va a tu repartidor (o se ofrece solo si tienes «Ofrecer solo»).
+No se cobra nada ni cuenta para el tope de Free. Una sola reposición por solicitud. Si prefieres devolver dinero, usa «Devolver
+dinero» en el pedido (solo el dueño).
+
+**¿Puedo reponer y devolver?** Sí, son dos cosas aparte: la reposición no toca la tarjeta del cliente.
+
 ## English
 
 ### What it does
@@ -52,3 +61,8 @@ that needs a payment review goes to Finance; you stay in the same case.
 - **Do my customers see my cases?** No.
 - **Can I write from my personal account?** Yes: My account › Help and support is for your own matters.
 - **Where is the help on how the dashboard works?** More › **Help**, or ask **El Compa**.
+
+### Replace at no cost (order help)
+When the customer asks **«Replace it»**, write your reply in the order's help and tap **Replace at no cost**: a **new $0 order**
+with those dishes (or the whole order if it never arrived) appears in Today as accepted and, for delivery, goes to your driver.
+Nothing is charged and it does not count toward the Free cap. Once per request. To refund money instead, use «Refund» on the order.

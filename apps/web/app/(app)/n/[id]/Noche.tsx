@@ -36,7 +36,7 @@ export function useNoche(np: NochePublica | null, es: boolean, pro: boolean, acc
     }
     return nm(s.desc);
   };
-  const btn = (s: SvcNoche) => (s.k === "evento" ? E2("Ver evento", "See event") : s.k === "fecha" ? E2("Pedir fecha", "Ask for a date") : s.k === "cover" ? E2("Cómo llegar", "Directions") : s.k === "lista" ? E2("Anotarme", "Join the list") : E2("Reservar", "Reserve"));
+  const btn = (s: SvcNoche) => (s.k === "evento" ? (s.evDesde != null ? E2("Comprar boletos", "Get tickets") : E2("Ver evento", "See event")) : s.k === "fecha" ? E2("Pedir fecha", "Ask for a date") : s.k === "cover" ? E2("Cómo llegar", "Directions") : s.k === "lista" ? E2("Anotarme", "Join the list") : E2("Reservar", "Reserve"));
   const item = (s: SvcNoche) => {
     const P = precioNoche(s, es), dias = s.dows.length ? `${E2("SOLO ", "ONLY ")}${s.dows.map((d) => DOW[es ? "es" : "en"][d]).join(" · ").toUpperCase()}` : "";
     return { id: s.id, k: s.k, ev: s.ev, name: nm(s.name), desc: desc(s), foto: s.foto, price: P.l, meta: [P.s, s.dep ? E2(`DEPÓSITO ${usdN(s.dep)}`, `${usdN(s.dep)} DEPOSIT`) : "", dias].filter(Boolean).join(" · "), btn: btn(s) };

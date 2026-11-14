@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
 import { vistaMercado } from "@/lib/mercado";
+import { pasarela } from "@/lib/pagos/pasarela";
 import { MercadoEstado } from "./MercadoEstado";
 
 export const dynamic = "force-dynamic";
@@ -14,5 +15,7 @@ export default async function Page({ params }: { params: Promise<{ num: string }
   if (!u) redirect(`/entrar?volver=${encodeURIComponent(`/mercado/${num}`)}`);
   const v = await vistaMercado(num, { userId: u.id });
   if (!v) notFound();
-  return <MercadoEstado v={v} es={lang === "es"} />;
+  // 9n-4 · La hoja del banco (3-D Secure) del OK por más necesita el modo de la pasarela y la llave pública.
+  const modo = pasarela.modo();
+  return <MercadoEstado v={v} es={lang === "es"} pago={!v.local && modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null } : null} />;
 }

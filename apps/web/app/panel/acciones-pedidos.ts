@@ -144,6 +144,19 @@ export async function ayudaResponder(id: string, numero: string, texto: string):
   return { ok: true };
 }
 
+/* 9n-4 · «Reponer sin costo»: responder la ayuda con un pedido nuevo de $0 que entra aceptado a la cocina (y al Repartidor si es delivery). */
+export async function ayudaReponer(id: string, numero: string, texto: string): Promise<Res & { nuevo?: string }> {
+  const a = await entrar(id, "ord");
+  if (!a) return SIN_ACCESO;
+  const { reponerPedido, avisarRepuesto } = await import("@/lib/ayuda");
+  const r = await reponerPedido(a.negocio.id, String(numero ?? ""), String(texto ?? ""), a.yo.id);
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "pedido.ayuda.reponer", { pedido: String(numero), nuevo: `#${r.nuevo}` }, { respuesta: String(texto).trim().slice(0, 120) });
+  await avisarAyuda(String(numero), "help_reply");
+  if (r.nuevo) await avisarRepuesto(r.nuevo).catch(() => undefined);
+  return { ok: true, nuevo: r.nuevo };
+}
+
 /* Devolver dinero de un pedido pagado con tarjeta (total o parcial, con motivo). Solo el dueño (Cobros): mueve dinero.
    La comisión de To'Latino baja en proporción; el cliente recibe el aviso. Idempotente por la clave del intento. */
 export async function pedidoDevolver(id: string, numero: string, centavos: number, motivo: string, clave: string): Promise<Res> {

@@ -21,7 +21,7 @@ const STOCK = { 'Blusa de encaje': { S: 3, M: 2, L: 4, XL: 1, '2X': 0 }, 'Vestid
   for (const [it, m] of Object.entries(STOCK)) for (const [t, n] of Object.entries(m)) sql(`update item_variants v set stock_left = ${n} from items i where i.id = v.item_id and i.business_id = '${T}' and i.name->>'es' = '${it}' and v.label = '${t}'`);
   sql(`insert into delivery_settings (business_id) values ('${T}') on conflict (business_id) do nothing`); /* 9b-1 · la fila de la tienda (en una base nueva no la tenía) */ sql(`update delivery_settings set ship = true, pay_card = true, ship_fee_cents = 699, ship_free_over_cents = 10000, ship_days = '3-5' where business_id = '${T}'`);
   // 9b-1 · La tarjeta de Marisol (la guarda si no la tiene) en vez del id de una tarjeta de una base vieja.
-  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');
+  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122'); require('../lib/negocio-nuevo.cjs').direccion('5705550122'); // 9n-4 · la dirección del envío es SUYA (en una base nueva no tenía ninguna)
   const PV = sql(`select price_cents from items where business_id = '${T}' and name->>'es' = 'Vestido de fiesta' and removed_at is null`), PB = sql(`select price_cents from items where business_id = '${T}' and name->>'es' = 'Blusa de encaje' and removed_at is null`);
   const b = await chromium.launch(); const err = [];
   const mc = await b.newContext({ ...devices['iPhone 13'] }), m = await mc.newPage(); await entrar(m, '5705550122');

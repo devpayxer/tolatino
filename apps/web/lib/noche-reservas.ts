@@ -8,6 +8,7 @@ import { db, tx } from "./db";
 import { herramientaNoche, NOCHE_SQL } from "./noche";
 import { diaNoche, hNoche, usdN, type Bi } from "./noche-comun";
 import { pasarela } from "./pagos/pasarela";
+import { bancoPide } from "./pagos/verificacion";
 
 /* La lista de la noche y la mesa / VIP (Fase 4 · 4nc · fase4-noche.md §3 y §4nc · neg-noche-flow.js).
    - Una lista o una mesa es una operación `night` (N-7101…). La noche es la fecha de la tarde en que abre (corte 6 AM).
@@ -104,7 +105,7 @@ export async function bookingNoche(negocio: string, svcId: string, userId: strin
 
 /* ── Anotarse en la lista / pedir la mesa ── */
 export type NocheIn = { svc: string; noche: string; llega: number; pax: number; ocasion?: string | null; nota?: string; sms?: boolean; pm?: string | null; clave: string };
-type Res = { ok: true; numero: string } | { ok: false; msg: Bi; tarjeta?: true; hora?: true };
+type Res = { ok: true; numero: string } | { ok: false; msg: Bi; tarjeta?: true; hora?: true; verificar?: import("./pagos/pasarela").Verificar };
 export async function reservarNoche(userId: string, negocio: string, f: NocheIn, entorno: string): Promise<Res> {
   if (!UUID.test(String(f?.clave)) || !ID.test(String(f?.svc)) || !YMD.test(String(f?.noche))) return no("Revisa tu solicitud y vuelve a intentarlo.", "Check your request and try again.");
   const nota = String(f.nota ?? "").replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "").trim().slice(0, 200);
@@ -152,10 +153,10 @@ export async function reservarNoche(userId: string, negocio: string, f: NocheIn,
       if (!pm) { await c.query("rollback"); return no("Elige la tarjeta para el depósito.", "Choose the card for the deposit.", { tarjeta: true }); }
       fee = Math.min(await comision(c, "noche", dep), dep);
       const cliente = await pasarela.cliente(userId).catch(() => null);
-      ret = await pasarela.retener({ centavos: dep, comision: fee, destino: x.cuenta!, pm, cliente, idem: `noche-${f.clave}-${pm.slice(-24)}`, meta: { night: numero, business_id: x.id } });
+      ret = await pasarela.retener({ centavos: dep, comision: fee, destino: x.cuenta!, pm, cliente, idem: `noche-${f.clave}-${pm.slice(-24)}`, usuario: { id: userId, negocio: x.id, ciudad: x.city }, meta: { night: numero, business_id: x.id } });
       if (!ret.ok) { await c.query("rollback"); return no(ret.mensaje.es, ret.mensaje.en, { tarjeta: true }); }
       retenido = ret.pi;
-      if (ret.estado === "accion") { await c.query("rollback"); await pasarela.liberar(ret.pi).catch(() => undefined); retenido = null; return no("Tu banco pide una verificación extra. Prueba con otra tarjeta.", "Your bank asks for an extra verification. Try another card.", { tarjeta: true }); }
+      if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
     }
     // El código de la puerta: 4 cifras, único entre las reservas vivas de esa noche (el índice lo garantiza).
     const usados = new Set((await c.query<{ d: string }>(`select door_code as d from operations where business_id = $1 and night_date = $2::date and kind = 'night' and door_code is not null and status = any($3::text[])`, [negocio, f.noche, VIVAS])).rows.map((z) => z.d));

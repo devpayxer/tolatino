@@ -6,6 +6,7 @@ import { valores } from "./config";
 import { db, tx } from "./db";
 import { AREAS_EVP, DURACIONES, EXTRAS_FABRICA, HORAS_EVP, MENUS_FABRICA, NUM_EP, OCASIONES, PRESUPUESTOS, diaEvp, dinero, horaL, lbl, type AjustesEvp, type Bi, type ExtraEvp, type MenuEvp } from "./evento-privado-comun";
 import { pasarela } from "./pagos/pasarela";
+import { bancoPide } from "./pagos/verificacion";
 
 /* Evento privado (Fase 6 · 6i · fase6-eventos.md §4 6i, §6 #9; diseño To'Latino Evento privado.dc.html + evp-flow.js). La solicitud de un grupo
    grande a un restaurante: una operación 'private_event' con número EP-4101….
@@ -22,7 +23,7 @@ import { pasarela } from "./pagos/pasarela";
      falla, el barrido lo reintenta con la misma llave (una sola devolución).
    - Sin teléfonos: el restaurante ve nombre + inicial; la nota y los cambios no admiten teléfonos; hablar = Mensajes (2p), con el contexto. */
 type Q = PoolClient | ReturnType<typeof db>;
-type Res<T = object> = ({ ok: true } & T) | { ok: false; msg: Bi; tarjeta?: true; fecha?: true };
+type Res<T = object> = ({ ok: true } & T) | { ok: false; msg: Bi; tarjeta?: true; fecha?: true; verificar?: import("./pagos/pasarela").Verificar };
 const no = (es: string, en: string, extra?: { tarjeta?: true; fecha?: true }) => ({ ok: false as const, msg: { es, en }, ...extra });
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, YMD = /^\d{4}-\d{2}-\d{2}$/;
 const TEL = /(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/;
@@ -354,10 +355,10 @@ export async function aceptarEvp(userId: string, numero: string, version: number
     // El depósito sale SOLO de la propuesta guardada (la calculó la base); la comisión, de fee_rules «evp».
     const dep = q.dep, fee = Math.min(await comision(c, "evp", dep), dep);
     const cliente = await pasarela.cliente(userId).catch(() => null);
-    const ret = await pasarela.retener({ centavos: dep, comision: fee, destino: x.cuenta, pm: pmOk, cliente, idem: `evp-${q.id}-${pmOk.slice(-24)}`, meta: { private_event: numero, business_id: x.id } });
+    const ret = await pasarela.retener({ centavos: dep, comision: fee, destino: x.cuenta, pm: pmOk, cliente, idem: `evp-${q.id}-${pmOk.slice(-24)}`, usuario: { id: userId, negocio: x.id, ciudad: x.city }, meta: { private_event: numero, business_id: x.id } });
     if (!ret.ok) { await c.query("rollback"); return no(`${ret.mensaje.es} No se cobró nada; la propuesta sigue.`, `${ret.mensaje.en} Nothing was charged; the proposal still stands.`, { tarjeta: true }); }
     retenido = ret.pi;
-    if (ret.estado === "accion") { await c.query("rollback"); await pasarela.liberar(ret.pi).catch(() => undefined); retenido = null; return no("Tu banco pide una verificación extra. Prueba con otra tarjeta.", "Your bank asks for an extra verification. Try another card.", { tarjeta: true }); }
+    if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
     await registrarRetencion(c, { opId: o.id, userId, negocio: x.id, city: x.city, total: dep, comision: fee, r: ret, pm: pmOk, kind: "deposit" });
     // La aceptación: la base vuelve a revisar última versión, vigencia y estado; una sola con depósito por solicitud.
     await c.query(`insert into private_event_acceptances (quote_id, operation_id, kind, user_id, ip, payment_id) values ($1::bigint, $2::bigint, 'quote', $3, $4, (select id from payments where stripe_payment_intent = $5))`,

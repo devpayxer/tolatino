@@ -1,7 +1,7 @@
 # To'Latino Repartidor · Driver app
 
 _Pantallas: `/repartidor` (Inicio · Pedidos · Ganancias · Perfil y el detalle de cada entrega), Panel › Entrega › Tus repartidores y el cuadre de
-efectivo, y el detalle del pedido en el panel («¿Quién lo lleva?»). Repartidores del propio negocio. Versión: 6 nov 2026. Audiencia: vecino. Tema: pedidos._
+efectivo, y el detalle del pedido en el panel («¿Quién lo lleva?»). Repartidores del propio negocio. Versión: 14 nov 2026. Audiencia: vecino. Tema: pedidos._
 
 ## Qué hace
 - **El negocio** (Entrega, con «Mi equipo») toca **Invitar repartidor**: nombre y teléfono → To'Latino crea un **código de
@@ -35,6 +35,13 @@ efectivo, y el detalle del pedido en el panel («¿Quién lo lleva?»). Repartid
 **¿Necesito otra cuenta?** No: la misma cuenta de To'Latino; una persona puede ser cliente, negocio y repartidor.
 **¿To'Latino me paga?** No en la v1: el negocio paga a su repartidor. To'Latino no cobra comisión por el efectivo.
 
+## Ofertas solas y pedidos programados
+Si el negocio tiene **Ofrecer solo**, los deliveries aceptados te llegan como **oferta** sin que nadie la mande (si estás en
+línea): la aceptas antes de que venza o la rechazas. Un pedido **programado** te llega como oferta cerca de su hora y, si ya es
+tuyo, te llega el recordatorio «El pedido es para las …».
+
+**¿Por qué me llegan ofertas sin que el negocio me escriba?** Porque el negocio encendió «Ofrecer solo». Si no estás en línea, no te llegan.
+
 ## English
 
 The business invites a driver from Delivery (name + phone → a 6-character code, valid 7 days). The driver opens
@@ -43,3 +50,7 @@ business assigns accepted deliveries from the order detail. The driver taps one 
 way** → **I'm here** → **Collect $X / Collected · Delivered** or **Delivered** if paid by card. The customer sees each step.
 Problems go to the business. Earnings show deliveries, tips and cash per day. Without signal, steps are saved on the
 phone and sent automatically. The business sees today's cash per driver.
+
+### Automatic offers and scheduled orders
+If the business turned on **Offer automatically**, accepted deliveries reach you as an **offer** while you are online. A
+**scheduled** order reaches you as an offer near its time and, if already yours, you get a reminder «Order is for …».

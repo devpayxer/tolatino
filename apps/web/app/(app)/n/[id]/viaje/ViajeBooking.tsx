@@ -13,6 +13,7 @@ import { subirFoto } from "@/lib/subir-foto";
 import { LINEA_TRANS } from "@/lib/transporte-comun";
 import type { BookingViaje } from "@/lib/viajes";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
+import { useVerificacion } from "../../../pago/Verificacion";
 import { reservarViajeAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
 
@@ -41,6 +42,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
   const [boxes, setBoxes] = useState(1), [dest, setDest] = useState({ nombre: "", tel: "", prov: "", dir: "", ref: "" }), [prohibido, setProhibido] = useState(false), [drop, setDrop] = useState("");
   const [fotos, setFotos] = useState<{ id: string; url: string }[]>([]), [subiendo, setSubiendo] = useState(false), fileRef = useRef<HTMLInputElement>(null);
   const clave = useRef(uuid());
+  const V = useVerificacion(es, pago?.modo, pago?.pk);
 
   const seats = adults + kids, child = s.child ?? s.cents;
   const bagsX = b.aj.extra == null ? 0 : extra;
@@ -67,6 +69,8 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
       .catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     if (r.ok) { router.push(`/viaje/${r.numero}`); return; }
     if ("entrar" in r && r.entrar) return entrar();
+    // 9n-4 · 3-D Secure: el banco pide confirmar → la hoja, y al confirmar se vuelve a enviar lo MISMO (la misma clave: nada se cobra dos veces).
+    if (V.pide(r, () => { void enviar(); })) { setOcupado(false); return; }
     setError(es ? r.msg.es : r.msg.en); setOcupado(false);
     if ("tarjeta" in r && r.tarjeta && tarjeta) { setDeclinada(tarjeta.pm); clave.current = uuid(); }
     if ("salida" in r && r.salida) { setSel(null); setPaso(1); router.refresh(); }
@@ -253,6 +257,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
           </aside>
         </div>
       </div>
+      {V.hoja}
       {hoja && pago && (
         <MetodoPago es={es} tarjetas={tarjetas} sel={tarjeta?.pm ?? null} declinada={declinada} modo={pago.modo} pk={pago.pk}
           nota={`${E2("PARA TU VIAJE DE ", "FOR YOUR TRIP OF ")}${dinero(tot)} · ${E2("SE RETIENE AL RESERVAR · SE COBRA AL CONFIRMAR", "HELD WHEN BOOKING · CHARGED ON CONFIRMATION")}`}

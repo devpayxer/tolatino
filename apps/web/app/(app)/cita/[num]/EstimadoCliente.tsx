@@ -8,6 +8,7 @@ import { useState, type ComponentType } from "react";
 import type { CitaVista } from "@/lib/citas";
 import type { LineaEst } from "@/lib/estimados";
 import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../pago/MetodoPago";
+import { useVerificacion } from "../../pago/Verificacion";
 import { citaAccion, estimadoDecidir, extraDecidir } from "./acciones";
 
 type N = "Icon" | "Button";
@@ -25,10 +26,13 @@ export function EstimadoCliente({ c, es, pago, aviso }: { c: CitaVista; es: bool
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas.find((t) => t.def) ?? pago?.tarjetas[0] ?? null);
   const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null);
+  const V = useVerificacion(es, pago?.modo, pago?.pk);
   const correr = async (f: () => Promise<{ ok: true } | { ok: false; msg: { es: string; en: string }; tarjeta?: boolean }>, ok: string) => {
     if (ocupado) return; setOcupado(true); setError(null);
     const r = await f().catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false);
+    // 9n-4 · 3-D Secure: la hoja del banco y, al confirmar, lo MISMO otra vez (la misma llave: el cobro verificado se reusa).
+    if (!r.ok && V.pide(r, () => { void correr(f, ok); })) return;
     if (r.ok) { aviso(ok); router.refresh(); } else { setError(es ? r.msg.es : r.msg.en); if ("tarjeta" in r && r.tarjeta && tarjeta) setDeclinada(tarjeta.pm); }
   };
   const conTarjeta = d.tarjeta && !!pago;
@@ -163,6 +167,7 @@ export function EstimadoCliente({ c, es, pago, aviso }: { c: CitaVista; es: bool
               : d.local ? E2(`Pagas ${dinero(d.local)} en ${who} al terminar. No se ha cobrado nada en la app.`, `You pay ${dinero(d.local)} at ${who} when done. Nothing has been charged in the app.`) : E2("No se ha cobrado ni retenido nada.", "Nothing has been charged or held.")}</div>
         </div>
       )}
+      {V.hoja}
       {hoja && pago && (
         <MetodoPago es={es} tarjetas={tarjetas} sel={tarjeta?.pm ?? null} declinada={declinada} modo={pago.modo} pk={pago.pk} nota={E2("Se retiene solo lo que apruebas. Al final se cobra lo final y se libera el resto.", "Only what you approve is held. At the end the final amount is charged and the rest released.")}
           onClose={() => setHoja(false)} onUsar={(t, nueva) => { if (nueva && !tarjetas.some((x) => x.pm === nueva.pm)) setTarjetas((L) => [nueva, ...L]); setTarjeta(t); setHoja(false); if (declinada && t.pm !== declinada) setError(null); }} />

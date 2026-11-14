@@ -1,7 +1,7 @@
 # Ayuda con la visita (Hogar) y con la cita (Auto) · Visit and appointment help
 
 _Pantallas: Tu cita › «Ayuda con la visita» / «Ayuda con la cita» (`/cita/{C-…}/ayuda`), Panel › Hoy › Ayuda con citas y el detalle de la cita, Super
-Admin › Colas › Ayuda con pedidos y citas. Es la misma ayuda de las citas de Belleza con los motivos de cada rubro. Versión: 10 nov 2026.
+Admin › Colas › Ayuda con pedidos y citas. Es la misma ayuda de las citas de Belleza con los motivos de cada rubro. Versión: 14 nov 2026.
 Audiencia: vecino. Tema: citas._
 
 ## Qué hace
@@ -30,6 +30,20 @@ devolver a su tarjeta. Tu respuesta la ve el cliente en su cita.
 - **¿Puedo pedir que vuelvan sin cargo?** Sí. Si el negocio acepta, coordinan la nueva visita (por Mensajes o por teléfono).
 - **¿Pedir ayuda borra mi reseña?** No.
 
+## La visita sin cargo (garantía)
+Si pediste **«Que lo corrijan»** (que vuelva sin cargo) en la ayuda de una visita del **taller o del hogar** y el negocio lo
+acepta, en tu solicitud sale **Reservar la visita sin cargo**: abre el Booking de ese mismo servicio con tus opciones, **en $0,
+sin depósito ni tarjeta**. Eliges el día y la hora como siempre y el negocio la confirma. Es una sola: después sale «Ver tu visita
+sin cargo». No cuenta para el tope de citas del negocio.
+
+| Caso | Qué pasa |
+|---|---|
+| El negocio aceptó que vuelva sin cargo | «Reservar la visita sin cargo» en tu solicitud. |
+| Ya la reservaste | No se reserva otra; ves la que tienes. |
+| El negocio propuso otra cosa o dijo que no | No hay visita sin cargo; puedes pedir que To'Latino lo revise. |
+
+**¿Me piden tarjeta?** No: va en $0. **¿Puedo cambiar de servicio?** No: es la garantía del mismo trabajo.
+
 ## English
 
 ### What it does
@@ -41,3 +55,8 @@ Up to 7 days after a finished visit or appointment, tell what happened (home or 
 and choose: come back / check again at no charge (warranty), refund to your card, or just let them know. The business
 replies within 24 h; otherwise, or if you disagree, To'Latino reviews within 48 h. Refunds come only from what you paid by
 card in the app for that visit.
+
+### The free visit (warranty)
+If you asked for **«Fix it»** (come back at no charge) on a **shop or home** visit and the business accepts, your request shows
+**Book the free visit**: the same service's booking at **$0, no deposit and no card**. Pick the day and time as usual. Only one;
+afterwards it shows «See your free visit». Does not count toward the business's booking cap.

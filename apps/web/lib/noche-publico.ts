@@ -9,7 +9,9 @@ import { POR_FECHA, type Bi, type EstaNoche, type FilaNoche, type KindNoche, typ
    y la Lista a la hora de la lista; la noche especial (k evento) sale solo si su evento de To'Latino está en vivo (listable) y abre la
    ficha del evento (6b). El servidor decide. */
 export type SvcNoche = { id: string; sec: string | null; name: Bi; desc: Bi; cents: number; k: string; until: number | null; pax: number | null; tables: number | null; hr: boolean;
-  dep: number; dows: number[]; inc: Bi[]; foto: string | null; ev: string | null };
+  dep: number; dows: number[]; inc: Bi[]; foto: string | null; ev: string | null;
+  // 9n-4 · La noche especial con boleto: el precio real del boleto más barato a la venta y la fecha de la próxima noche (del evento, no del servicio).
+  evDesde: number | null; evDia: string | null };
 export type NochePublica = {
   negocio: { id: string; nombre: string; telefono: string | null; foto: string | null };
   kind: KindNoche; porFecha: boolean; secciones: { id: string; name: Bi }[]; servicios: SvcNoche[];
@@ -41,7 +43,12 @@ export async function nochePublica(negocio: string): Promise<NochePublica | null
             coalesce(i.deposit_cents, 0) as dep, coalesce((select array_agg(x::int order by x::int) from jsonb_array_elements_text(coalesce(i.svc_attrs->'dows', '[]'::jsonb)) x), '{}') as dows,
             coalesce(i.svc_attrs->'inc', '[]'::jsonb) as inc, i.photos[1] as foto,
             case when i.svc_kind = 'evento' then (select '/eventos/' || e.slug from events e where e.id::text = i.svc_attrs->>'event_id' and e.business_id = i.business_id
-                                                    and exists (select 1 from event_dates d where d.event_id = e.id and d.listable and d.ends_at > now())) end as ev
+                                                    and exists (select 1 from event_dates d where d.event_id = e.id and d.listable and d.ends_at > now())) end as ev,
+            case when i.svc_kind = 'evento' then (select min(t.price_cents)::int from ticket_types t join events e on e.id = t.event_id
+                                                   where e.id::text = i.svc_attrs->>'event_id' and e.business_id = i.business_id and not t.off and t.quantity > 0
+                                                     and (t.sales_end_at is null or t.sales_end_at > now())) end as "evDesde",
+            case when i.svc_kind = 'evento' then (select to_char(d.local_date, 'YYYY-MM-DD') from event_dates d join events e on e.id = d.event_id
+                                                   where e.id::text = i.svc_attrs->>'event_id' and e.business_id = i.business_id and d.listable and d.ends_at > now() order by d.starts_at limit 1) end as "evDia"
        from items i where i.business_id = $1 and i.module = 'svc' and i.removed_at is null and i.sell and i.status = 'live' and not i.is_extra
         and i.svc_kind in ('cover', 'lista', 'mesa', 'vip', 'fecha', 'evento') order by i.sort, i.id`, [negocio]);
   // La Lista sigue a «Esta noche»: sin lista esa noche, no sale; la hora es la de la herramienta.

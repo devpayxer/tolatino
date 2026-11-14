@@ -88,13 +88,18 @@ export const KINDS_LOCAL: [KindNoche, string][] = [["club", "Discoteca"], ["sals
 
 /* ── Ficha de Noche (4nb · neg-noche.js line L77–78, neg-noche-listing.js priceFor L108–113) ── */
 export const LINEA_NOCHE: Bi = { es: "El cover que ves es el que pagas en la puerta.", en: "The cover you see is the one you pay at the door." };
-export function precioNoche(s: { k: string; cents: number; until: number | null; pax: number | null; hr: boolean }, es: boolean): { l: string; s: string } {
+export function precioNoche(s: { k: string; cents: number; until: number | null; pax: number | null; hr: boolean; evDesde?: number | null; evDia?: string | null }, es: boolean): { l: string; s: string } {
   const E2 = (a: string, b: string) => (es ? a : b);
   if (s.k === "lista") return { l: s.cents ? usdN(s.cents) : E2("Gratis", "Free"), s: s.until != null ? E2(`CON LA LISTA HASTA LAS ${hNoche(s.until)}`, `ON THE LIST UNTIL ${hNoche(s.until)}`) : "" };
   if (s.k === "cover") return { l: s.cents ? usdN(s.cents) : E2("Sin cover", "No cover"), s: s.cents ? E2("EN LA PUERTA", "AT THE DOOR") : "" };
   if (s.k === "mesa") return { l: s.hr ? `${usdN(s.cents)}${E2("/hora", "/hr")}` : s.cents ? `${E2("Mínimo ", "Minimum ")}${usdN(s.cents)}` : E2("Sin mínimo", "No minimum"), s: s.pax ? E2(`HASTA ${s.pax} PERSONAS`, `UP TO ${s.pax} PEOPLE`) : "" };
   if (s.k === "vip") return { l: s.cents ? `${E2("Mínimo ", "Minimum ")}${usdN(s.cents)}` : E2("Sin mínimo", "No minimum"), s: s.pax ? E2(`HASTA ${s.pax} PERSONAS`, `UP TO ${s.pax} PEOPLE`) : "" };
   if (s.k === "fecha") return { l: s.cents ? `${E2("Desde ", "From ")}${usdN(s.cents)}` : E2("Por cotización", "By quote"), s: s.pax ? E2(`HASTA ${s.pax} PERSONAS`, `UP TO ${s.pax} GUESTS`) : E2("POR FECHA", "PER DATE") };
+  // 9n-4 · La noche especial con boleto: el precio y la fecha salen de su evento (lo que de verdad se vende en Eventos).
+  if (s.k === "evento" && s.evDesde != null) {
+    const dia = s.evDia ? new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" }).format(new Date(`${s.evDia}T12:00:00Z`)).replace(/\./g, "").replace(/,/g, "").replace(/ de /g, " ").toUpperCase() : "";
+    return { l: `${E2("Desde ", "From ")}${usdN(s.evDesde)}`, s: `${E2("BOLETO", "TICKET")}${dia ? ` · ${dia}` : ""}` };
+  }
   return { l: usdN(s.cents), s: E2("BOLETO", "TICKET") };
 }
 /* «$10 · $15 después de las 11 PM» / «Sin cover». */

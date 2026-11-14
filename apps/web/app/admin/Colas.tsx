@@ -16,7 +16,7 @@ import { asignarCaso, colaVisibilidad, equipoDeCola, feriadoEquipo, quitarFeriad
 import type { AjustesColas } from "@/lib/admin-colas";
 
 import { crearSemilla,
- decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, decidirNoche, decidirEstafa, pausaEstafa, decidirVivienda, type ResAdm, verNinoCaso } from "./acciones-colas";
+ decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, reponerSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, decidirNoche, decidirEstafa, pausaEstafa, decidirVivienda, type ResAdm, verNinoCaso } from "./acciones-colas";
 import { compaHilo } from "./acciones-compa";
 import { verFotosSalud } from "./acciones-sistema";
 import { copilotoSugerir } from "./acciones-copiloto";
@@ -315,6 +315,13 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
           plantillas: cp ? [cp.borrador, ...plantP] : plantP, ini: cp?.borrador,
           hacer: (m) => decidirSop(k.id, m, null, null, cp?.id ?? null) }) },
         ...copAct,
+        // 9n-4 · Reponer con un pedido nuevo de $0 (sigue el flujo del negocio y del Repartidor) y devolver a la tarjeta lo pagado en la app.
+        ...(h.wants === "reponer" && ["falta", "equivocado", "frio", "danado", "nollego"].includes(h.reason) ? [{ l: "Resolver y reponer", v: "secondary", icon: "bag", onClick: () => setConf({ titulo: `Resolver y reponer · pedido #${h.num}`, cta: "Resolver y reponer",
+          sub: "Un pedido nuevo de $0 con esos platos (o todo el pedido si no le llegó), a la misma dirección. Entra aceptado a la cocina del negocio y, si es delivery, al Repartidor. Queda en la auditoría.",
+          plantillas: ["Hablamos con el negocio: te reponen lo que faltó sin costo. Lo ves como un pedido nuevo de $0.", "Lo sentimos. Te reponemos tu pedido sin costo: ya lo están preparando."], hacer: (m) => reponerSop(k.id, m) }) }] : []),
+        ...("puedeDinero" in k && k.puedeDinero && h.pago > 0 ? [{ l: "Resolver y devolver", v: "secondary", icon: "card", onClick: () => { const clave = uuid(); setConf({ titulo: `Resolver y devolver · pedido #${h.num}`, cta: "Resolver y devolver", peligro: true,
+          sub: `Hasta $${(h.pago / 100).toFixed(2)} (lo cobrado en la app). Vuelve a su tarjeta en 3 a 5 días hábiles; la comisión baja en proporción.`,
+          valor: { k: "MONTO EN DÓLARES", ini: (h.pago / 100).toFixed(2), max: 8 }, plantillas: ["Revisamos tu pedido: tienes razón. Te devolvemos lo de esos platos a tu tarjeta.", ...plantP], hacer: (m, _e, v) => decidirSop(k.id, m, v, clave, cp?.id ?? null) }); } }] : []),
         { l: "Ver el cliente", icon: "users", onClick: () => router.push(`/admin/usuarios/${h.uid}`) },
       ];
     }

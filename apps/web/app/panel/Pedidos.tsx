@@ -8,7 +8,7 @@ import { menuAjustes } from "./acciones-menu";
 import type { Ayuda } from "@/lib/ayuda";
 import { repAsignar, repOfertaCancelar, repOfrecer, repRecogido } from "./acciones-repartidores";
 import { rutaBloque, type RutaUi } from "./RutaPanel";
-import { ayudaResponder, pedidoDevolver, pedidoPaso, pedidoPedirResena, pedidoSeguimiento, pedidosAjustes, pedidosModulo } from "./acciones-pedidos";
+import { ayudaReponer, ayudaResponder, pedidoDevolver, pedidoPaso, pedidoPedirResena, pedidoSeguimiento, pedidosAjustes, pedidosModulo } from "./acciones-pedidos";
 import type { Ctx, Editor } from "./Panel";
 import { clientesTabs, hoyMesas } from "./Reservas";
 import { hoyCitas } from "./Citas";
@@ -87,7 +87,10 @@ function ayudaBloques(c: Ctx, numero: string): (Bloque | null)[] {
   if (a.status === "open") out.push(
     { type: "note", tone: "warn", icon: "clock", t: E2("Respóndele en 24 horas. Si no, To’Latino revisa el caso. Si pagó con tarjeta, puedes devolverle dinero desde el pedido; si pagó en el local, la devolución la arreglan ustedes.", "Reply within 24 hours. If not, To’Latino reviews the case. If they paid by card, you can refund from the order; if they paid in store, you settle the refund yourselves.") },
     { type: "field", area: true, rows: 3, max: 500, k: E2("TU RESPUESTA · LA VE EN SU PEDIDO", "YOUR REPLY · SHOWN ON THEIR ORDER"), val: txt, count: `${txt.length}/500`, ph: E2("Ej. Disculpa, te mandamos el plato que faltó en 30 minutos.", "e.g. Sorry, we'll send the missing dish in 30 minutes."), onChange: (v) => c.setUi({ ayT: v.slice(0, 500) }) },
-    { type: "acts", items: [{ l: E2("Enviar respuesta", "Send reply"), v: "primary", icon: "check", off: txt.trim().length < 5 || c.pending, onClick: () => c.run(() => ayudaResponder(d.id, numero, txt), E2("Respuesta enviada. La ve en su pedido.", "Reply sent. They see it on their order."), () => c.setUi({ ayT: "" })) }] });
+    { type: "acts", items: [{ l: E2("Enviar respuesta", "Send reply"), v: "primary", icon: "check", off: txt.trim().length < 5 || c.pending, onClick: () => c.run(() => ayudaResponder(d.id, numero, txt), E2("Respuesta enviada. La ve en su pedido.", "Reply sent. They see it on their order."), () => c.setUi({ ayT: "" })) },
+      // 9n-4 · Reponer sin costo: un pedido nuevo de $0 con esos platos, a la misma dirección; entra aceptado a tu cocina (y al Repartidor).
+      ...(a.wants === "reponer" ? [{ l: E2("Reponer sin costo", "Replace at no cost"), v: "secondary" as const, icon: "bag", off: txt.trim().length < 5 || c.pending,
+        onClick: () => c.run(() => ayudaReponer(d.id, numero, txt), (r: { nuevo?: string }) => E2(`Listo: pedido #${r?.nuevo ?? ""} de $0, ya aceptado. El cliente lo sabe.`, `Done: $0 order #${r?.nuevo ?? ""}, already accepted. The client knows.`), () => c.setUi({ ayT: "" })) }] : [])] });
   else out.push({ type: "note", tone: a.status === "resolved" ? "ok" : a.status === "escalated" ? "warn" : "info", icon: a.status === "answered" ? "chat" : "shield",
     t: a.status === "answered" ? `${E2("Respondiste: ", "You replied: ")}“${a.reply ?? ""}”` : a.status === "escalated" ? E2("To’Latino está revisando el caso.", "To’Latino is reviewing the case.") : `${E2("To’Latino lo resolvió: ", "To’Latino resolved it: ")}${a.resolution ?? ""}` });
   return out;

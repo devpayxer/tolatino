@@ -5,6 +5,7 @@ import { comision, cobrarOperacion, registrarRetencion } from "./cobros";
 import { contexto, fecha, gente, horaL, huecos, ocupadas, type Ctx, type Hueco, type Persona, type Q } from "./citas";
 import { depositoDe, type OficioPub, type PolPub } from "./oficios-publico";
 import { pasarela } from "./pagos/pasarela";
+import { bancoPide } from "./pagos/verificacion";
 
 /* El Booking de un taller (Auto) o un servicio del hogar (Hogar) — Fase 4 · 4b. Diseño: neg-auto-flow.js (TLAutoFlow,
    APP-NEG-AUTO-BOOKING: Tu carro → Día y hora + cómo te lo devuelven → Revisa y envía) y neg-hogar-flow.js (TLHogarFlow,
@@ -78,8 +79,9 @@ export type VisitaIn = PedidoVisita & {
   i: number; m: number; nota?: string; sms?: boolean; pm?: string | null; clave: string; fotos?: string[];
   luces?: string[]; area?: string | null; acceso?: "casa" | "llave" | null; accesoNota?: string; landlord?: boolean; piezas?: boolean;
   pre?: string | null; // 4e: reservar con un pre-estimado o un presupuesto (P-/Q-)
+  warr?: string | null; // 9n-4: la visita de garantía a $0 de una ayuda aceptada («que vuelva sin cargo»): el número de la solicitud (H-…)
 };
-type Res = { ok: true; numero: string; st: "pend" | "ok" } | { ok: false; msg: Bi; tarjeta?: true; hora?: true };
+type Res = { ok: true; numero: string; st: "pend" | "ok" } | { ok: false; msg: Bi; tarjeta?: true; hora?: true; verificar?: import("./pagos/pasarela").Verificar };
 const no = (es: string, en: string, extra?: { tarjeta?: true; hora?: true }): Res => ({ ok: false, msg: { es, en }, ...extra });
 const LUCES = ["ce", "bat", "temp", "abs", "oil", "tpms"]; // diseño LIGHTS
 const AREAS = ["cocina", "bano", "sotano", "cuarto", "sala", "afuera", "toda"]; // diseño AREAS
@@ -104,7 +106,11 @@ export async function enviarVisita(userId: string, negocio: string, f: VisitaIn,
     const P = await preparar(c, negocio, q);
     if (!P) { await c.query("rollback"); return no("Ese servicio no se reserva en línea.", "That service is not booked online."); }
     const { x, s, rubro } = P;
-    const off = await puedeVisita(c, x);
+    // 9n-4 · La garantía (L458): la solicitud de ayuda es suya, de este negocio y de este servicio, el negocio aceptó «que vuelva sin cargo» y no se usó.
+    // Sin depósito ni retención y en $0; no cuenta para el tope de Free (es el mismo trabajo). Se vuelve a mirar todo aquí: la pantalla no decide.
+    const warr = f.warr ? await garantiaPara(c, userId, negocio, String(f.warr), s.id) : null;
+    if (f.warr && !warr) { await c.query("rollback"); return no("Esa visita sin cargo ya no está disponible (ya la reservaste o la solicitud cambió).", "That free visit is no longer available (you already booked it or the request changed)."); }
+    const off0 = await puedeVisita(c, x), off = warr && off0 === "tope" ? null : off0;
     if (off) { await c.query("rollback"); return off === "tope" ? no(`${x.name} no recibe más citas en línea este mes. Llama para pedir tu cita.`, `${x.name} takes no more online bookings this month. Call to book.`) : no(`${x.name} no toma citas en línea por ahora: llama al negocio.`, `${x.name} is not taking online bookings right now: call the business.`); }
     // El vehículo o la casa: suyos, y que el negocio trabaje con ellos (el servidor decide, no la pantalla).
     const attrs = (await c.query<{ at: Record<string, unknown>; fv: string[]; zone: number | null }>(`select category_attrs as at, filter_values as fv, service_radius_mi as zone from businesses where id = $1`, [negocio])).rows[0]!;
@@ -136,7 +142,7 @@ export async function enviarVisita(userId: string, negocio: string, f: VisitaIn,
     const pend = (await c.query<{ n: number }>(`select count(*)::int as n from operations where user_id = $1 and kind = 'appointment' and status = 'pending'`, [userId])).rows[0]?.n ?? 0;
     if (pend >= 3) { await c.query("rollback"); return no("Tienes 3 solicitudes esperando respuesta. Espera a que te contesten.", "You have 3 requests waiting for a reply. Wait for an answer."); }
     const pol = await politica(c, negocio);
-    let dep = quien.cuenta ? depositoDe(pol, s, calc.cents) : 0;
+    let dep = quien.cuenta && !warr ? depositoDe(pol, s, calc.cents) : 0;
     // Hogar · trabajos de más de $1,000: el depósito nunca pasa de un tercio (regla de PA para contratistas, no se muestra).
     if (rubro === "hogar" && calc.cents > 100000) dep = Math.min(dep, Math.floor(calc.cents / 3));
     const auto = pol.auto, ymd = fecha(x.hoy, i);
@@ -147,10 +153,10 @@ export async function enviarVisita(userId: string, negocio: string, f: VisitaIn,
       if (!pm) { await c.query("rollback"); return no("Elige la tarjeta para el depósito.", "Choose the card for the deposit.", { tarjeta: true }); }
       fee = Math.min(await comision(c, "cita", dep), dep);
       const cliente = await pasarela.cliente(userId).catch(() => null);
-      ret = await pasarela.retener({ centavos: dep, comision: fee, destino: quien.cuenta!, pm, cliente, idem: `visita-${f.clave}-${pm.slice(-24)}`, meta: { appointment: numero, business_id: x.id } });
+      ret = await pasarela.retener({ centavos: dep, comision: fee, destino: quien.cuenta!, pm, cliente, idem: `visita-${f.clave}-${pm.slice(-24)}`, usuario: { id: userId, negocio: x.id, ciudad: x.city }, meta: { appointment: numero, business_id: x.id } });
       if (!ret.ok) { await c.query("rollback"); return no(ret.mensaje.es, ret.mensaje.en, { tarjeta: true }); }
       retenido = ret.pi;
-      if (ret.estado === "accion") { await c.query("rollback"); await pasarela.liberar(ret.pi).catch(() => undefined); retenido = null; return no("Tu banco pide una verificación extra. Prueba con otra tarjeta.", "Your bank asks for an extra verification. Try another card.", { tarjeta: true }); }
+      if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
     }
     // Con un pre-estimado o un presupuesto: debe ser suyo, de este negocio y vigente; queda en la cita (y se compara con el estimado).
     const pre = f.pre ? await usarPre(c, userId, String(f.pre), negocio) : null;
@@ -158,6 +164,7 @@ export async function enviarVisita(userId: string, negocio: string, f: VisitaIn,
     const luces = (Array.isArray(f.luces) ? f.luces : []).map(String).filter((z) => LUCES.includes(z)).slice(0, 8);
     const area = AREAS.includes(String(f.area)) ? String(f.area) : null;
     const det = {
+      ...(warr ? { warr: warr.h, garantiaDe: warr.de } : {}),
       ...(pre ? { pre: { num: pre.num, lo: pre.lo, hi: pre.hi }, preFotos: pre.fotos } : {}),
       svc: s.name, svcId: s.id, k: s.k, opts: calc.ol, adds: calc.al.map((a) => ({ name: a.n, cents: a.cents })), sel: q.opts, rubro, sms: f.sms !== false,
       ...(veh ? { veh: { id: veh.id, t: veh.t, size: veh.size, mi: veh.mileage }, w: q.w ?? s.a?.w ?? "espera", luces, piezas: !!f.piezas } : {}),
@@ -169,10 +176,14 @@ export async function enviarVisita(userId: string, negocio: string, f: VisitaIn,
        values ($1, 'appointment', $2, $3, $4, $5, $6, ($7::date + make_interval(mins => $8::int)) at time zone $9, $10, 0, nullif($11, ''), $12::jsonb,
                $13, $13, $14, $15, case when $6 = 'pending' then least(now() + make_interval(hours => $16::int), ($7::date + make_interval(mins => $8::int)) at time zone $9) end,
                case when $6 = 'confirmed' then now() end, case when $6 = 'confirmed' then now() end, $17, $18, $19) returning id::text`,
-      [numero, x.city, x.id, userId, quien.id, auto ? "confirmed" : "pending", ymd, m, x.tz, dur, nota, JSON.stringify(det), calc.cents, dep, dep > 0 ? "app" : "local", pol.exp, x.plan === "pro" ? null : x.mes, f.clave, entorno !== "produccion"])).rows[0]!.id;
+      [numero, x.city, x.id, userId, quien.id, auto ? "confirmed" : "pending", ymd, m, x.tz, dur, nota, JSON.stringify(det), warr ? 0 : calc.cents, dep, warr ? "none" : dep > 0 ? "app" : "local", pol.exp, x.plan === "pro" || warr ? null : x.mes, f.clave, entorno !== "produccion"])).rows[0]!.id;
     await c.query(`insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct, options) values ($1, $2, $3::jsonb, 1, $4, $4, 0, $5::jsonb)`,
-      [op, s.id, JSON.stringify(s.name), calc.cents - calc.al.reduce((n, a) => n + a.cents, 0), JSON.stringify(calc.ol.map((o) => ({ g: o.g, o: o.o, cents: o.p })))]);
-    for (const a of calc.al) await c.query(`insert into operation_lines (operation_id, name, qty, unit_price_cents, line_total_cents, tax_pct, options) values ($1, $2::jsonb, 1, $3, $3, 0, '[]'::jsonb)`, [op, JSON.stringify(a.n), a.cents]);
+      [op, s.id, JSON.stringify(s.name), warr ? 0 : calc.cents - calc.al.reduce((n, a) => n + a.cents, 0), JSON.stringify(calc.ol.map((o) => ({ g: o.g, o: o.o, cents: warr ? 0 : o.p })))]);
+    for (const a of calc.al) await c.query(`insert into operation_lines (operation_id, name, qty, unit_price_cents, line_total_cents, tax_pct, options) values ($1, $2::jsonb, 1, $3, $3, 0, '[]'::jsonb)`, [op, JSON.stringify(a.n), warr ? 0 : a.cents]);
+    // La garantía queda usada (una sola por solicitud: la base lo impone con warranty_op_id único).
+    if (warr && !(await c.query(`update help_requests set warranty_op_id = $2::bigint, updated_at = now() where id = $1::bigint and warranty_op_id is null`, [warr.id, op])).rowCount) {
+      await c.query("rollback"); return no("Esa visita sin cargo ya la reservaste.", "You already booked that free visit.");
+    }
     if (ret?.ok) await registrarRetencion(c, { opId: op, userId, negocio: x.id, city: x.city, total: dep, comision: fee, r: ret, pm: f.pm ?? undefined, kind: "deposit" });
     if (fotos.length) {
       const ok = await c.query(`update media set owner_kind = 'appointment', owner_id = $1, sort = array_position($3::uuid[], id)
@@ -193,6 +204,14 @@ export async function enviarVisita(userId: string, negocio: string, f: VisitaIn,
   } finally {
     c.release();
   }
+}
+/* 9n-4 · La garantía de una ayuda: suya, de este negocio, del mismo servicio, «que vuelva sin cargo» aceptado por el negocio y sin usar (se bloquea). */
+async function garantiaPara(c: Q, userId: string, negocio: string, num: string, svc: string): Promise<{ id: string; h: string; de: string } | null> {
+  if (!/^H-\d{1,12}$/.test(num)) return null;
+  return (await c.query<{ id: string; h: string; de: string }>(
+    `select h.id::text, h.number as h, o.number as de from help_requests h join operations o on o.id = h.operation_id
+      where h.number = $1 and h.user_id = $2 and h.business_id = $3 and o.details->>'svcId' = $4 and h.wants = 'reponer' and h.decision = 'ok'
+        and h.status in ('answered', 'resolved') and h.warranty_op_id is null and o.details->>'rubro' in ('auto', 'hogar') for update of h`, [num, userId, negocio, svc])).rows[0] ?? null;
 }
 async function puedeVisita(c: Q, x: Ctx): Promise<"pausa" | "tope" | "apagado" | null> {
   if (!x.mods.includes("citas")) return "apagado";

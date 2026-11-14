@@ -1,6 +1,6 @@
 "use server";
 import { mismoOrigen, yo } from "@/lib/cuenta";
-import { aprobarPeso, cancelarMercado, decidirSustituto } from "@/lib/mercado";
+import { aprobarPeso, cancelarMercado, decidirSustituto, noMasMercado } from "@/lib/mercado";
 
 /* El cliente en su pedido del mercado: aceptar o no un cambio, «Está bien, cobrar» y cancelar antes de que lo acepten. */
 type Bi = { es: string; en: string };
@@ -18,6 +18,12 @@ export async function mercAprobar(numero: string): Promise<R> {
   const r = await aprobarPeso(u.id, String(numero ?? ""));
   if (!r.ok) return r;
   return { ok: true, mensaje: r.cobrado ? { es: `Cobrado ${money(r.cobrado)}${r.liberado ? ` · se liberan ${money(r.liberado)}` : ""}`, en: `${money(r.cobrado)} charged${r.liberado ? ` · ${money(r.liberado)} released` : ""}` } : undefined };
+}
+/* 9n-4 · «No, que corten»: no quiere pagar más de lo retenido. */
+export async function mercNoMas(numero: string): Promise<R> {
+  if (!(await mismoOrigen())) return SIN;
+  const u = await yo(); if (!u) return SIN;
+  return noMasMercado(u.id, String(numero ?? ""));
 }
 export async function mercCancelar(numero: string): Promise<R> {
   if (!(await mismoOrigen())) return SIN;

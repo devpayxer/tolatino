@@ -4865,3 +4865,33 @@ Qué mirar:
   archivo de teselas; en el sandbox se ven las calles.
 - **Super Admin › Inicio** (las 9 de `pruebas/visual/admin-hoy/`): arriba, el **selector de ciudad** «Todas | Ciudad…» (9n-3: filtra todo el Super Admin
   sin dar más alcance que el del rol) y la campana con un caso más (la incidencia de entrega de ejemplo de la semilla de 9n en Colas).
+
+## Fase 9 · 9n-4 — El dinero y los flujos que faltan (14 nov)
+**Qué mirar (en el sandbox; la tarjeta 4000 0027 6000 3184 pide que confirmes con tu banco, la 4000 0000 0000 0002 la rechaza):**
+1. **Pedir una cita con depósito, una fiesta, una mesa VIP de noche o una inscripción con matrícula** con la 3184: sale la hoja «Tu banco pide confirmar»
+   con el monto; «No fui yo» → no se guarda nada; «Confirmar con mi banco» → la solicitud sale con ese mismo cobro.
+2. **Un estimado del taller o del hogar con tarjeta:** apruébalo con la 0002 → «Tu banco la rechazó. Prueba con otra tarjeta.»; cambia a la 3184 → la hoja → aprobado.
+   «Algo más» igual.
+3. **Pedido del mercado (Supermercado La Cosecha):** el mercado pesa de más → en el panel sale «Pedir OK por $X más»; el cliente ve «Piden tu OK por $X más» con
+   «Está bien, cobrar $Y» (la hoja si la tarjeta lo pide) y «No, que corten». «No hay» → el sustituto puede ser por libra («$X/lb · 1 lb, se pesa con foto»).
+   Si no tocas «Está bien, cobrar» en 10 minutos, te llega el recordatorio.
+4. **Panel › Cobros y plan › Tu plan desde Free:** «Volver a Pro» con la 3184 → la hoja ahí mismo → Pro activo, un solo cobro.
+5. **Panel › un pedido con «Ayuda con el pedido» que pide reposición:** escribe la respuesta y «Reponer sin costo» → un pedido nuevo de $0 ya aceptado
+   (Hoy y, si es delivery, el Repartidor). En Super Admin › Colas, la ayuda de un pedido trae «Resolver y reponer» y «Resolver y devolver».
+6. **Ayuda con una visita del taller o del hogar que el negocio aceptó «que vuelva sin cargo»:** «Reservar la visita sin cargo» → el Booking dice
+   «GARANTÍA · SIN CARGO», sin tarjeta ni depósito.
+7. **Panel › Entrega › «Ofrecer solo a los repartidores»** (apagado de fábrica): con un repartidor en línea, un delivery aceptado se le ofrece solo; los
+   programados, 30 minutos antes. Si nadie lo toma en 3 ofertas: «Nadie tomó el pedido».
+8. **La ficha de La Terraza Night** con una noche especial ligada a su evento: «Desde $15 · BOLETO · …» y «Comprar boletos».
+9. **Sistema › Configuración:** Repartidor › «Ofrecer solo · ofertas antes de avisar al negocio» (3) y «Pedido programado» (30 min); Iglesias, Bienes Raíces y
+   Autos › «“Me lo devolvieron” se cierra sola si nadie contesta en» (14 días).
+
+**Decisiones tomadas por defecto (AB: lo más seguro y reversible):**
+- **El OK por más se retiene en la MISMA tarjeta** del pedido (no se pide otra): es la que la persona ya eligió; si el banco la rechaza, se le dice y el
+  mercado corta menos. Nunca se cobra más de lo retenido sin ese toque.
+- **El recordatorio de «Está bien, cobrar» sale una vez por peso mandado** (si el mercado pesa otra vez y lo manda, puede salir otro).
+- **«Me lo devolvieron» se cierra a los 14 días** (recordatorio a los 7), editable en Configuración; cerrada no se reabre sola: si no le devolvieron, Soporte.
+- **«Ofrecer solo» apagado de fábrica**, 3 ofertas antes de avisar y para; los programados se ofrecen 30 minutos antes de estar listos.
+- **La reposición no cuenta para el tope de Free** y va sin envío ni propina; **la visita de garantía tampoco** cuenta para el tope de citas.
+- **Rentas con 3-D Secure:** se cobran al recogerlas, sin la persona en la app; queda → 9q (el enlace a la hoja como la renovación de Pro).
+- **El envío del mercado con el repartidor propio** no entró: el Repartidor trabaja con pedidos de comida; sigue abierto (L489).

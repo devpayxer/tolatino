@@ -11,6 +11,7 @@ import { useRef, useState, type ComponentType } from "react";
 import { LINEA_TRANS } from "@/lib/transporte-comun";
 import type { ViajeVista } from "@/lib/viajes";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../pago/MetodoPago";
+import { useVerificacion } from "../../pago/Verificacion";
 import { precioAccion, viajeAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
 import { abrirComoLlegar } from "@/lib/como-llegar";
@@ -29,11 +30,14 @@ export function ViajeEstado({ x, es, pago }: { x: ViajeVista; es: boolean; pago:
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null), [flash, setFlash] = useState<string | null>(null), [confirmar, setConfirmar] = useState(false);
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas.find((t) => t.def) ?? pago?.tarjetas[0] ?? null), [hoja, setHoja] = useState(false);
   const clave = useRef(uuid());
+  const V = useVerificacion(es, pago?.modo, pago?.pk);
   const precio = async (que: "aceptar" | "no") => {
     if (ocupado || !x.precio) return; setOcupado(true); setError(null);
     const r = await precioAccion(x.numero, que, x.precio.v, que === "aceptar" ? tarjeta?.pm ?? null : null, clave.current).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false);
     if (r.ok) { setFlash(que === "aceptar" ? E2("Listo: tu mudanza quedó confirmada", "Done: your move is confirmed") : E2("Listo: no se cobró nada", "Done: nothing was charged")); setTimeout(() => setFlash(null), 3200); router.refresh(); }
+    // 9n-4 · 3-D Secure: la hoja del banco y, al confirmar, el mismo «Aceptar» con la misma clave.
+    else if (que === "aceptar" && V.pide(r, () => { void precio("aceptar"); })) return;
     else { setError(es ? r.msg.es : r.msg.en); clave.current = uuid(); }
   };
   const hacer = async (que: "cancelar" | "aceptar" | "nogracias", ok: string) => {
@@ -157,6 +161,7 @@ export function ViajeEstado({ x, es, pago }: { x: ViajeVista; es: boolean; pago:
               <div className="flex min-w-0 flex-1"><Button block disabled={ocupado} onClick={() => void hacer("cancelar", E2("Listo: cancelado", "Done: cancelled"))}>{E2("Sí, cancelar", "Yes, cancel")}</Button></div></div>
           </div>
         </div>)}
+      {V.hoja}
       {hoja && pago && P && (
         <MetodoPago es={es} tarjetas={tarjetas} sel={tarjeta?.pm ?? null} declinada={null} modo={pago.modo} pk={pago.pk}
           nota={`${E2("PARA TU MUDANZA DE ", "FOR YOUR MOVE OF ")}${dinero(P.cents)} · ${E2("SE COBRA AL ACEPTAR", "CHARGED WHEN YOU ACCEPT")}`}

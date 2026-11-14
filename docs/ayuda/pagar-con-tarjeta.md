@@ -28,7 +28,8 @@ Audiencia: vecino. Tema: pedidos._
 |---|---|
 | El banco rechaza la tarjeta | «Tu banco la rechazó. Prueba con otra tarjeta.» No se crea el pedido. |
 | Sin fondos / vencida / código mal | El mensaje lo dice; no hay pedido ni cargo. |
-| El banco pide verificación extra (3-D Secure) | Se abre la hoja **«Tu banco pide confirmar»**: toca **Confirmar con mi banco** y confirma en la ventana de tu banco (aquí mismo; To'Latino no ve lo que escribes). Después el pedido sale solo, con la misma retención: nunca se cobra dos veces. Si cierras sin confirmar, no hay pedido y lo retenido se suelta solo. Vale para pedidos, el mercado, los apartados y envíos de las tiendas, el pago del plan de apartado y los boletos. |
+| El banco pide verificación extra (3-D Secure) | Se abre la hoja **«Tu banco pide confirmar»**: toca **Confirmar con mi banco** y confirma en la ventana de tu banco (aquí mismo; To'Latino no ve lo que escribes). Después el pedido sale solo, con la misma retención: nunca se cobra dos veces. Si cierras sin confirmar, no hay pedido y lo retenido se suelta solo. Vale para **todo lo que pagas con tarjeta en la app**: pedidos, el mercado (también el OK por más), los apartados y envíos de las tiendas, el plan de apartado, los boletos, el depósito de una cita o una visita (taller y hogar), la fecha de la fiesta, la mesa de Noche, el viaje, la matrícula de una inscripción, el evento privado, la mudanza y el estimado (y «algo más») del taller o del hogar. |
+| El banco pide confirmar al renovar algo que no ves en la app (Pro, la renta de herramientas al recogerla) | Pro: te llega el aviso con el enlace a la hoja. La renta: se cobra al recogerla, sin ti en la app; si tu banco pide confirmar, te pedimos cambiar la tarjeta. |
 | Tu banco no confirma («No fui yo») | No hay pedido ni cobro: prueba con otra tarjeta. |
 | Se envía dos veces el mismo pedido (doble toque) | Una sola retención: cada intento tiene su clave. |
 | Cambias de tarjeta después de un rechazo | Es un intento nuevo con la otra tarjeta. |
@@ -45,6 +46,7 @@ quita en 1 a 5 días.
 **¿Cómo quito una tarjeta?** En **Mi cuenta › Ajustes › Pagos**, toca **Quitar** y confirma. Deja de salir al pagar; lo que ya pagaste no cambia y las
 devoluciones siguen llegando a esa tarjeta. La que paga el Pro de tu negocio se cambia primero en el panel.
 **¿Cuándo le llega el dinero al negocio?** Cada martes, lo cobrado de lunes a domingo.
+**¿Por qué mi banco me pidió confirmar al pagar el depósito de mi cita?** Algunos bancos piden confirmar cualquier pago en línea (3-D Secure). Confírmalo en la hoja y la cita sale con ese mismo depósito; si dices «No fui yo», no hay cita ni cobro.
 
 ## English
 
@@ -60,8 +62,14 @@ devoluciones siguen llegando a esa tarjeta. La que paga el Pro de tu negocio se 
 
 - **3-D Secure:** if your bank asks to confirm, the «Your bank asks you to confirm» sheet opens; tap «Confirm with my bank» and confirm in your bank's
   window. The order then goes through with the same hold: never charged twice. Closing without confirming means no order and the hold is released.
+  It works for **everything you pay by card in the app**: orders, the market (also the OK for more), store holds and shipping, layaway, tickets, the
+  deposit of a booking or a shop/home visit, the party date, a Noche table, a trip, an enrollment fee, a private event, a move and a repair estimate
+  (and «something else»). Pro renewals send you a link; tool rentals are charged at pickup without you in the app (if your bank asks to confirm, we
+  ask you to change the card).
 - **Saved cards:** see and remove them in **My account › Settings › Payments**.
 
 ### FAQ
 **Why do I see a charge if the order did not happen?** It is a hold, not a charge: fully released, your bank removes it in
 1–5 days.
+**Why did my bank ask me to confirm my booking deposit?** Some banks ask to confirm any online payment (3-D Secure). Confirm it in the sheet and the
+booking goes through with that same deposit; if you say «It wasn't me», there is no booking and no charge.

@@ -11,6 +11,7 @@ import type { OficiosPublico } from "@/lib/oficios-publico";
 import type { HorasVisita } from "@/lib/visitas";
 import { subirFoto } from "@/lib/subir-foto";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
+import { useVerificacion } from "../../../pago/Verificacion";
 import { HojaCasa, HojaVehiculo, casaMeta, compatCasa, compatVeh, depositoVer, useOficio, vehMeta, vehName } from "../Oficios";
 import { horasDeVisita, pedirVisita } from "./acciones";
 import { uuid } from "@/lib/uuid";
@@ -29,9 +30,9 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const LIGHTS: [string, string, string][] = [["ce", "Check engine", "Check engine"], ["bat", "Batería", "Battery"], ["temp", "Temperatura", "Temperature"], ["abs", "Frenos o ABS", "Brakes or ABS"], ["oil", "Aceite", "Oil"], ["tpms", "Presión de gomas", "Tire pressure"]];
 const AREAS: [string, string, string][] = [["cocina", "Cocina", "Kitchen"], ["bano", "Baño", "Bathroom"], ["sotano", "Sótano", "Basement"], ["cuarto", "Cuarto", "Bedroom"], ["sala", "Sala", "Living room"], ["afuera", "Afuera", "Outside"], ["toda", "Toda la casa", "Whole house"]];
 
-export function Visita({ op, svcId, inicial, es, pago, yo, pre = null }: {
+export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = null }: {
   op: OficiosPublico; svcId: string; inicial: { opts: Record<string, number>; adds: number[]; w: string | null; z: number | null }; es: boolean;
-  pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null; yo: boolean; pre?: { num: string; lo: number; hi: number; nota: string; mode: string } | null;
+  pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null; yo: boolean; pre?: { num: string; lo: number; hi: number; nota: string; mode: string } | null; warr?: string | null;
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
@@ -43,6 +44,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null }: {
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas.find((t) => t.def) ?? pago?.tarjetas[0] ?? null);
   const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
   const clave = useRef(uuid()), fileRef = useRef<HTMLInputElement>(null);
+  const V = useVerificacion(es, pago?.modo, pago?.pk);
   const q = useMemo(() => ({ svc: svcId, opts: inicial.opts, adds: inicial.adds, z: inicial.z, w: inicial.w }), [svcId, inicial]);
   const tam = v.veh?.size ?? null;
   useEffect(() => { let vivo = true; setCargando(true); void horasDeVisita(op.negocio.id, q, i, tam).then((x) => { if (!vivo) return; setHoras(x); setCargando(false); if (x && i === 0 && !x.sl.some((h) => h.free) && x.sig) setI(x.sig.i); }); return () => { vivo = false; }; }, [op.negocio.id, q, i, tam]);
@@ -54,7 +56,9 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null }: {
   ol.forEach((x) => { total += x.o!.p; dur += x.o!.m; });
   const al = inicial.adds.map((k) => a.x?.[k]).filter(Boolean) as NonNullable<typeof a.x>;
   al.forEach((x) => { total += x.p; dur += x.m; });
-  let dep = depositoVer(op, s, total);
+  // 9n-4 · La visita de garantía (?warr=H-…): $0, sin depósito ni tarjeta (el servidor vuelve a mirar que la garantía es suya y sigue libre).
+  if (warr) total = 0;
+  let dep = warr ? 0 : depositoVer(op, s, total);
   if (!auto && total > 100000) dep = Math.min(dep, Math.floor(total / 3));
   const cp = auto ? compatVeh(op, v.veh, es) : compatCasa(op, v.casa, es), dato = auto ? v.veh : v.casa, ok0 = !!dato && !!cp?.ok;
   const inq = !auto && v.casa?.tenure === "inq", desdeK = ["desde", "cotiza", "pres", "diag", "visita", "hora", "area"].includes(s.k);
@@ -84,10 +88,12 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null }: {
     if (!listo || ocupado || hSel == null) return;
     if (!yo) return entrar();
     setOcupado(true); setError(null);
-    const r = await pedirVisita(op.negocio.id, { ...q, i, m: hSel, nota, sms, pm: necesitaTarjeta ? tarjeta?.pm ?? null : null, clave: clave.current, fotos: fotos.map((f) => f.id), pre: pre?.num ?? null, luces, area, acceso: auto ? null : acceso, accesoNota: accNota, landlord, piezas })
+    const r = await pedirVisita(op.negocio.id, { ...q, i, m: hSel, nota, sms, pm: necesitaTarjeta ? tarjeta?.pm ?? null : null, clave: clave.current, fotos: fotos.map((f) => f.id), pre: pre?.num ?? null, warr, luces, area, acceso: auto ? null : acceso, accesoNota: accNota, landlord, piezas })
       .catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     if (r.ok) { router.push(`/cita/${r.numero}`); return; }
     if ("entrar" in r && r.entrar) return entrar();
+    // 9n-4 · 3-D Secure: el banco pide confirmar → la hoja, y al confirmar se vuelve a enviar lo MISMO (la misma clave: nada se cobra dos veces).
+    if (V.pide(r, () => { void enviar(); })) { setOcupado(false); return; }
     setError(es ? r.msg.es : r.msg.en); setOcupado(false);
     if ("tarjeta" in r && r.tarjeta && tarjeta) { setDeclinada(tarjeta.pm); clave.current = uuid(); }
     if ("hora" in r && r.hora) { setH(null); setPaso(1); void horasDeVisita(op.negocio.id, q, i, tam).then(setHoras); }
@@ -102,7 +108,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null }: {
       <div className="min-w-0 flex-1">
         <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nm(s.name)}</div>
         {(ol.length > 0 || al.length > 0) && <div className="mt-[3px] text-[12px] font-medium leading-[1.4] text-ink/60">{[...ol.map((x) => nm(x.o!.n)), ...al.map((x) => nm(x.n))].join(" · ")}</div>}
-        <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${precioL}${dep ? ` · ${E2("DEPÓSITO ", "DEPOSIT ")}${dinero(dep)}` : ""}`.toUpperCase()}</div>
+        <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${warr ? E2("Garantía · sin cargo", "Warranty · no charge") : precioL}${dep ? ` · ${E2("DEPÓSITO ", "DEPOSIT ")}${dinero(dep)}` : ""}`.toUpperCase()}</div>
       </div>
       <button type="button" onClick={volver} className="flex-none text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
     </div>
@@ -260,6 +266,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null }: {
       </div>
       <HojaVehiculo v={v} />
       <HojaCasa v={v} />
+      {V.hoja}
       {hoja && pago && (
         <MetodoPago es={es} tarjetas={tarjetas} sel={tarjeta?.pm ?? null} declinada={declinada} modo={pago.modo} pk={pago.pk}
           nota={`${E2("PARA TU DEPÓSITO DE ", "FOR YOUR ")}${dinero(dep)}${E2("", " DEPOSIT")} · ${op.pol.auto ? E2("SE COBRA AL CONFIRMAR", "CHARGED ON CONFIRMATION") : E2("SE RETIENE AL ENVIAR · SE COBRA AL CONFIRMAR", "HELD WHEN YOU SEND · CHARGED ON CONFIRMATION")}`}

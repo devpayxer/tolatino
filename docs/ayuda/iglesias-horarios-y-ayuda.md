@@ -2,7 +2,7 @@
 
 _Pantallas: la página de una iglesia, parroquia, despensa, funeraria, consejería o línea de oración (`/n/…`), la categoría Iglesias (`/c/iglesias`),
 Buscar, «Pedir fecha» e «Inscribirme» (catecismo) y Tu lugar en la iglesia (`/insc/I-…`). Para el cliente. Lo del negocio está en `horarios-y-ayuda` y
-`panel-visitas`. Versión: 7 nov 2026. Audiencia: vecino. Tema: explorar._
+`panel-visitas`. Versión: 14 nov 2026. Audiencia: vecino. Tema: explorar._
 
 ## Qué hace
 Te dice cuándo es la próxima misa o el próximo culto **en español**, qué ayuda dan **gratis** (despensa, ropa, transporte, jóvenes,
@@ -41,6 +41,14 @@ inscribirse**. Lo que sí se pide por la app es una **fecha** (bautizo, bendici�
 - **¿Las reseñas de una iglesia llevan fotos?** No, para no mostrar a nadie sin permiso.
 - **¿To'Latino sabe a qué iglesia voy?** Solo el lugar sabe que pediste una fecha. To'Latino nunca cuenta ni muestra personas por religión.
 
+## Si nunca dices «Me lo devolvieron»
+Cuando el lugar acepta devolverte algo fuera de la app, tu solicitud espera que digas **Me lo devolvieron** o **No me lo
+devolvieron**. Si no dices nada, a la mitad del plazo te llega **un recordatorio** y, a los **14 días** (el plazo lo pone To'Latino
+en Configuración), la solicitud **se cierra sola**. Los avisos no dicen el lugar ni el servicio. Si después resulta que no te lo
+devolvieron, escríbenos en **Soporte**: la solicitud cerrada queda con toda su historia. Vale también para Bienes Raíces y Autos.
+
+**¿Se cierra aunque no me lo hayan devuelto?** Se cierra por falta de respuesta; si no te lo devolvieron, Soporte lo retoma.
+
 ## English
 
 ### What it does
@@ -53,3 +61,9 @@ in the app for churches**: help is free and donations are voluntary.
 You do not book mass: you show up. Tithes and offerings are not taken in the app. Catechism tuition, if any, is paid at the
 parish. Church reviews have no photos. To'Latino never counts or shows people by religion. If you were asked for money for help, choose
 «They asked me for money for the help»: it goes straight to To'Latino and the place's «Ask for a date» is paused while we review it.
+
+### If you never say «They refunded me»
+When the place agrees to refund you outside the app, your request waits for **They refunded me** or **They did not refund me**.
+If you say nothing, you get **one reminder** halfway and after **14 days** (set by To'Latino) it **closes on its own**. Notices
+never name the place or the service. If you were not refunded, write to **Support**: the closed request keeps its history.
+Also for Real Estate and Car dealers.

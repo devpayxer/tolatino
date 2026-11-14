@@ -3,6 +3,7 @@ import { estadoEstimado, type EstadoEstimado } from "./estimados";
 import type { PoolClient } from "pg";
 import { db } from "./db";
 import { pasarela } from "./pagos/pasarela";
+import { bancoPide } from "./pagos/verificacion";
 import { cobrarOperacion, comision, registrarRetencion } from "./cobros";
 import { TOPE_FREE } from "./plan";
 
@@ -298,7 +299,7 @@ export async function proximas(negocio: string, dur = 40): Promise<Record<string
 export type CitaIn = Pedido & {
   m: number; para: "me" | "other" | "kid"; nombre?: string; edad?: string; nota?: string; sms?: boolean; pm?: string | null; clave: string; fotos?: string[]; cambiar?: string | null;
 };
-type ResCita = { ok: true; numero: string; st: "pend" | "ok"; cambio?: "pend" } | { ok: false; msg: Bi; tarjeta?: true; hora?: true; entrar?: true };
+type ResCita = { ok: true; numero: string; st: "pend" | "ok"; cambio?: "pend" } | { ok: false; msg: Bi; tarjeta?: true; hora?: true; entrar?: true; verificar?: import("./pagos/pasarela").Verificar };
 const no = (es: string, en: string, x: { tarjeta?: true; hora?: true } = {}): ResCita => ({ ok: false, msg: { es, en }, ...x });
 const EDADES = ["1–3", "4–7", "8–12"];
 
@@ -371,10 +372,10 @@ export async function enviarCita(userId: string, negocio: string, f: CitaIn, ent
       if (!pm || !quien.cuenta) { await c.query("rollback"); return no("Elige la tarjeta para el depósito.", "Choose the card for the deposit.", { tarjeta: true }); }
       fee = Math.min(await comision(c, "cita", dep), dep);
       const cliente = await pasarela.cliente(userId).catch(() => null);
-      ret = await pasarela.retener({ centavos: dep, comision: fee, destino: quien.cuenta, pm, cliente, idem: `cita-${f.clave}-${pm.slice(-24)}`, meta: { appointment: numero, business_id: P.x.id } });
+      ret = await pasarela.retener({ centavos: dep, comision: fee, destino: quien.cuenta, pm, cliente, idem: `cita-${f.clave}-${pm.slice(-24)}`, usuario: { id: userId, negocio: P.x.id, ciudad: P.x.city }, meta: { appointment: numero, business_id: P.x.id } });
       if (!ret.ok) { await c.query("rollback"); return no(ret.mensaje.es, ret.mensaje.en, { tarjeta: true }); }
       retenido = ret.pi;
-      if (ret.estado === "accion") { await c.query("rollback"); await pasarela.liberar(ret.pi).catch(() => undefined); retenido = null; return no("Tu banco pide una verificación extra que todavía no hacemos aquí. Prueba con otra tarjeta.", "Your bank asks for an extra verification we can't do here yet. Try another card.", { tarjeta: true }); }
+      if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
     }
     const det = {
       svc: P.s.name, svcId: P.s.id, opts: calc.ol, adds: calc.al.map((a) => ({ id: a.id, name: a.name, cents: a.cents })), para, nombre: para === "me" ? null : nombre, edad: para === "kid" ? edad : null,

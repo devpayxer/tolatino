@@ -39,7 +39,7 @@ export async function retenerPedido(x: { negocio: string; cuenta: string; clave:
   const r = await pasarela.retener({ centavos: x.total, comision: fee, destino: x.cuenta, pm: x.pm, cliente, idem: `ord-${x.clave}-${x.pm.slice(-24)}` /* otra tarjeta = otro intento; la misma = idempotente */, meta: { order: x.numero, business_id: x.negocio }, usuario: { id: x.userId, negocio: x.negocio } });
   return { ...r, comision: fee };
 }
-export async function registrarRetencion(c: Q, x: { opId: string; userId: string; negocio: string; city: string | null; total: number; comision: number; r: Extract<Retencion, { ok: true }>; pm?: string; kind?: "full" | "deposit" }) {
+export async function registrarRetencion(c: Q, x: { opId: string; userId: string; negocio: string; city: string | null; total: number; comision: number; r: Extract<Retencion, { ok: true }>; pm?: string; kind?: "full" | "deposit" | "extra" }) {
   await c.query(
     `insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, held_at, simulated, payment_method, card_fingerprint)
      values ($1::bigint, $2, $3, $4, $11, 'card', $5, $6, $6, $7, 'held', $8, $9, now(), $10, $12, $13)`,

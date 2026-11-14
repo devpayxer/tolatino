@@ -10,6 +10,7 @@ import { kindFeDe } from "./fe-comun";
 import { FRANJAS, taparNumeros } from "./visitas-inm-comun";
 import { TOPE_FREE } from "./plan";
 import { pasarela } from "./pagos/pasarela";
+import { bancoPide } from "./pagos/verificacion";
 
 /* Inscribirse en un curso, programa o membresía (Fase 4 · 4ee · fase4-edu-ninos-deporte.md §3 y §4ee · neg-edu-flow.js).
    - Una inscripción es una operación `enrollment` (I-4101…). Lo que importa se COPIA al enviar (precio, matrícula, plan, certificado,
@@ -156,7 +157,7 @@ export async function bookingInsc(negocio: string, svcId: string, userId: string
 /* ── Inscribirme ── */
 export type InscIn = { svc: string; grupo?: string | null; banda?: string | null; para: Para; tutor?: boolean; nino?: unknown; nivel?: string | null; equipo?: string | null; nota?: string;
   plan?: boolean; sms?: boolean; pm?: string | null; clave: string; fecha?: string | null; franja?: string | null };
-type Res = { ok: true; numero: string } | { ok: false; msg: Bi; tarjeta?: true; grupo?: true; espera?: true };
+type Res = { ok: true; numero: string } | { ok: false; msg: Bi; tarjeta?: true; grupo?: true; espera?: true; verificar?: import("./pagos/pasarela").Verificar };
 const inicioTs = (ymd: string, min: number | null, tz: string) => ({ sql: `(($1::date + make_interval(mins => $2::int)) at time zone $3)`, args: [ymd, min ?? 480, tz] });
 export async function inscribirme(userId: string, negocio: string, f: InscIn, entorno: string, ip: string | null): Promise<Res> {
   if (!UUID.test(String(f?.clave)) || !ID.test(String(f?.svc))) return no("Revisa tu solicitud y vuelve a intentarlo.", "Check your request and try again.");
@@ -246,10 +247,10 @@ export async function inscribirme(userId: string, negocio: string, f: InscIn, en
       if (!pm) { await c.query("rollback"); return no("Elige la tarjeta para la matrícula.", "Choose the card for the registration fee.", { tarjeta: true }); }
       fee = Math.min(await comision(c, "insc", mat), mat);
       const cliente = await pasarela.cliente(userId).catch(() => null);
-      ret = await pasarela.retener({ centavos: mat, comision: fee, destino: x.cuenta!, pm, cliente, idem: `insc-${f.clave}-${pm.slice(-24)}`, meta: { enrollment: numero, business_id: x.id } });
+      ret = await pasarela.retener({ centavos: mat, comision: fee, destino: x.cuenta!, pm, cliente, idem: `insc-${f.clave}-${pm.slice(-24)}`, usuario: { id: userId, negocio: x.id, ciudad: x.city }, meta: { enrollment: numero, business_id: x.id } });
       if (!ret.ok) { await c.query("rollback"); return no("Tu tarjeta fue rechazada. No se cobró nada.", "Your card was declined. Nothing was charged.", { tarjeta: true }); }
       retenido = ret.pi;
-      if (ret.estado === "accion") { await c.query("rollback"); await pasarela.liberar(ret.pi).catch(() => undefined); retenido = null; return no("Tu banco pide una verificación extra. Prueba con otra tarjeta.", "Your bank asks for an extra verification. Try another card.", { tarjeta: true }); }
+      if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
     }
     // Lo que importa se COPIA al enviar.
     const neutro = x.neutro || (x.rubro === "fe" && NEUTRO_FE.test(`${s.name.es} ${s.name.en}`));
