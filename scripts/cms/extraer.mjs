@@ -6,6 +6,7 @@
      · apps/web/lib/textos.ts      T {es,en}: lo general (WEB-GENERAL) y cada grupo (ficha → WEB-FICHA, buscar → WEB-BUSCAR…)
      · apps/web/lib/textos-home.ts HOME {es,en}: el Inicio de la ciudad (APP-HOME)
      · apps/web/lib/textos-fijas.ts FIJAS {es,en}: las líneas de §1c (FIJAS-§1C), FIJAS (candado)
+     · apps/web/lib/textos-cuenta.ts CUENTA {es,en}: el nombre de una cuenta borrada (USR-CUENTA), con candado
      · packages/db/seeds/lineas.sql: la línea fija de cada categoría (NEG-CATEGORIA.NEG-XXX.linea), con candado
    El largo máximo de una cadena editable es lo que cabe en su lugar: 1,5 veces la más larga de las dos lenguas (mínimo 40, máximo 600). Las líneas fijas
    (locked) no se editan: ni el largo importa.
@@ -66,6 +67,9 @@ export async function cadenasDelCodigo() {
   todas.push(...pares(H, "apps/web/lib/textos-home.ts", (r) => ["APP-HOME", r], errores));
   const F = await leerTs("apps/web/lib/textos-fijas.ts", "FIJAS");
   todas.push(...pares(F, "apps/web/lib/textos-fijas.ts", (r) => ["FIJAS-1C", r], errores, true));
+  // El nombre de una cuenta borrada (9d): lo que la purga escribe y lo que se muestra; con candado.
+  const C = await leerTs("apps/web/lib/textos-cuenta.ts", "CUENTA");
+  todas.push(...pares(C, "apps/web/lib/textos-cuenta.ts", (r) => ["USR-CUENTA", r], errores, true));
   // La línea fija de cada categoría (la semilla del catálogo; con candado).
   const lineas = join(RAIZ, "packages", "db", "seeds", "lineas.sql");
   if (existsSync(lineas)) {

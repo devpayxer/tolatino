@@ -195,4 +195,9 @@ create trigger announcements_reglas_tg before update or delete on announcements 
 drop trigger if exists announcements_avisa on announcements;
 create trigger announcements_avisa after insert or update on announcements for each statement execute function config_avisar();
 
+-- ── El pie de la web en todas las páginas (LAUNCH de 9e): apagado de fábrica porque agregarlo bajo el Inicio, la ficha y Buscar cambia las capturas
+-- aprobadas de la tubería. Se enciende en Super Admin › Textos y páginas › Páginas cuando el fundador apruebe las capturas nuevas. ──
+insert into feature_flags (key, enabled, note, updated_by) values ('web.pie_todas', false, 'El pie de la web (Términos, Privacidad, Ayuda…) también bajo el Inicio, la ficha y Buscar', 'migración 0136')
+on conflict (key) do nothing;
+
 commit;

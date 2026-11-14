@@ -20,7 +20,7 @@ import { cadenasDelCodigo, comoJson as cmsComoJson, SALIDA as CMS_SALIDA } from 
 const solo = process.argv.includes("--solo") ? process.argv[process.argv.indexOf("--solo") + 1] : null;
 // 9f · Lo que el extractor saca del código (si el código no se deja leer, el guardián lo dice).
 let CMS = { errores: [], cadenas: [] };
-if (!solo || /^(cadenaConLlave|lineaFijaBloqueada|cmsConLimite|idioma)$/.test(solo)) { try { CMS = await cadenasDelCodigo(); } catch (e) { CMS = { errores: [`el extractor de cadenas falló: ${e.message}`], cadenas: [] }; } }
+if (!solo || /^(cadenaConLlave|lineaFijaBloqueada|cmsConLimite|cuentaBorradaBilingue|idioma)$/.test(solo)) { try { CMS = await cadenasDelCodigo(); } catch (e) { CMS = { errores: [`el extractor de cadenas falló: ${e.message}`], cadenas: [] }; } }
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 // Incluye los archivos nuevos que todavía no están en git (5 nov, 1l: corrían limpios en local y la CI los cazó).
@@ -7373,6 +7373,39 @@ const guardianes = {
       const t = sinComent(AD);
       for (const a of ["cms.editar", "cms.restaurar", "cms.rotulo", "cms.home", "cms.anuncio", "cms.anuncio.retirar", "cms.ingles"]) if (!t.includes(`"${a}"`)) falla(G, AD, 0, `la acción ${a} deja su auditoría`);
     }
+  },
+
+  /* 9f · cuentaBorradaBilingue (LAUNCH de 9d): el nombre que deja la purga en la base («Cuenta borrada», packages/db/mapa-de-datos.json) es el de
+     lib/textos-cuenta.ts, que también lo tiene en inglés («Deleted account»); en el catálogo va con candado (USR-CUENTA.borrada); y el panel de Pedidos lo
+     muestra con nombreVisible() en el idioma de quien mira, nunca el nombre guardado tal cual. Al revés: alreves9f. */
+  cuentaBorradaBilingue() {
+    const G = "cuentaBorradaBilingue", F = "apps/web/lib/textos-cuenta.ts", P = "apps/web/app/panel/Pedidos.tsx", MAPA = "packages/db/mapa-de-datos.json";
+    if (!existsSync(F)) return falla(G, F, 0, "falta lib/textos-cuenta.ts");
+    const t = readFileSync(F, "utf8"), c = CMS.cadenas.find((x) => x.id === "USR-CUENTA.borrada");
+    if (!c || !c.locked) return falla(G, F, 0, "USR-CUENTA.borrada tiene que estar en el catálogo, con candado");
+    if (c.es === c.en || !/deleted account/i.test(c.en)) falla(G, F, 0, "«Cuenta borrada» en inglés es «Deleted account»");
+    if (!readFileSync(MAPA, "utf8").includes(`"first_name": "'${c.es}'"`)) falla(G, MAPA, 0, `la purga deja en la base «${c.es}» (lo mismo que lib/textos-cuenta.ts)`);
+    if (!/export function nombreVisible\(/.test(t)) falla(G, F, 0, "falta nombreVisible()");
+    if (!existsSync(P)) return;
+    const p = sinComent(P);
+    if (!/nombreVisible\(x\.who, es\)/.test(p)) falla(G, P, 0, "el panel de Pedidos muestra el cliente con nombreVisible(x.who, es)");
+    if ((p.match(/\bx\.who\b/g) ?? []).length !== (p.match(/nombreVisible\(x\.who, es\)/g) ?? []).length) falla(G, P, 0, "x.who se muestra siempre por nombreVisible (una cuenta borrada en inglés dice «Deleted account»)");
+  },
+
+  /* 9f · pieSinCapturas (LAUNCH de 9e): el pie de la web bajo el Inicio, la ficha y Buscar cambiaría las capturas aprobadas de la tubería, así que nace APAGADO
+     (feature_flags «web.pie_todas» = false en la migración) y solo lib/cms-admin.ts lo enciende (cms:aprobar, con motivo y auditoría); <PieWeb> no pinta nada
+     mientras esté apagado; el Inicio, la ficha y Buscar lo llevan. Al revés: alreves9f. */
+  pieSinCapturas() {
+    const G = "pieSinCapturas", M = "packages/db/migrations/0136_cms.sql", W = "apps/web/app/(app)/_legal/PieWeb.tsx", AD = "apps/web/lib/cms-admin.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración del CMS");
+    if (!/insert into feature_flags \(key, enabled, note, updated_by\) values \('web\.pie_todas', false,/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "el interruptor web.pie_todas nace apagado");
+    if (!existsSync(W) || !/if \(!\(await pieEnTodas\(\)\)\) return null;/.test(sinComent(W))) falla(G, W, 0, "PieWeb no pinta nada mientras el interruptor esté apagado");
+    for (const f of ["apps/web/app/(app)/page.tsx", "apps/web/app/(app)/buscar/page.tsx", "apps/web/app/(app)/n/[id]/page.tsx"]) if (!/<PieWeb \/>/.test(sinComent(f))) falla(G, f, 0, "esta pantalla lleva <PieWeb />");
+    for (const f of codigo) {
+      if (!/^(apps|packages|scripts)\/.*\.(tsx?|mjs|cjs|sql)$/.test(f) || f === AD || f === M) continue;
+      for (const q of sinComent(f).match(/`[^`]*`/g) ?? []) if (/web\.pie_todas/.test(q) && /\b(update|insert into|delete from)\b/i.test(q)) falla(G, f, 0, "el interruptor del pie lo cambia solo lib/cms-admin.ts (con motivo y auditoría)");
+    }
+    if (!/cms\.pie/.test(sinComent(AD)) || !/s\.puede\("cms", "aprobar"\)/.test((sinComent(AD).match(/export async function fijarPie[\s\S]*?\n}/) ?? [""])[0])) falla(G, AD, 0, "encender el pie pide cms:aprobar y deja su auditoría");
   },
 
   idioma() {

@@ -251,3 +251,20 @@ export async function retirarAnuncio(s: Staff, id: string, motivo: string): Prom
   });
   return r ?? bien("Retirado: ya no sale. Nada se borra.", "Retired: it no longer shows. Nothing is deleted.");
 }
+
+// ─── El pie de la web en todas las páginas ───
+/* Encender o apagar el pie bajo el Inicio, la ficha y Buscar (feature_flags «web.pie_todas»). cms:aprobar: cambia lo que ve todo el que entra. */
+export async function fijarPie(s: Staff, encender: boolean, motivo: string): Promise<Res> {
+  if (!s.puede("cms", "aprobar")) return mal("Tu rol no cambia el pie de la web.", "Your role cannot change the web footer.");
+  const m = limpio(motivo, 500);
+  if (m.length < 3) return mal("Escribe el motivo: queda en el historial.", "Write the reason: it goes in the history.");
+  const r = await tx(async (c) => {
+    const a = (await c.query<{ enabled: boolean }>(`select enabled from feature_flags where key = 'web.pie_todas' for update`)).rows[0];
+    if (!a) return mal("Falta el interruptor del pie: corre las migraciones.", "The footer switch is missing: run the migrations.");
+    if (a.enabled === encender) return mal("Ya estaba así.", "It was already like that.");
+    await c.query(`update feature_flags set enabled = $1, updated_at = now(), updated_by = $2 where key = 'web.pie_todas'`, [encender, s.id]);
+    await auditar(c, { actor: s.id, action: "cms.pie", targetKind: "feature_flag", targetId: "web.pie_todas", before: { encendido: a.enabled }, after: { encendido: encender }, reason: m });
+    return null;
+  });
+  return r ?? bien(encender ? "Listo. El pie de la web sale en el Inicio, la ficha y Buscar." : "Listo. El pie de la web vuelve a salir solo en las páginas legales.", encender ? "Done. The web footer shows on Home, the listing and Search." : "Done. The web footer shows only on the legal pages again.");
+}

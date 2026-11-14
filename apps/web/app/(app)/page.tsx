@@ -11,6 +11,7 @@ import { oficialDeLaSemana } from "@/lib/comunidad-portada";
 import { eventosSemana } from "@/lib/evt-publico";
 import { faltaAceptar } from "@/lib/legal";
 import { HojaTerminos } from "./HojaTerminos";
+import { PieWeb } from "./_legal/PieWeb";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ export default async function Page() {
   return (<>
     <Inicio h={h} bloques={cfg.bloques} aviso={cfg.aviso ? cfg.aviso[lang] : null} anuncios={anuncios} semana={semana} cats={cats} inicio={HOME_CATS} abierto={abierto} es={lang === "es"} hoy={hoy.historias} oficial={oficial} conSesion={!!u?.first_name} lugar={`${loc.c.name.toUpperCase()}, ${loc.c.state}`}
       t={{ allCats: t.allCats, catsTitle: t.catsTitle, openNow: t.openNow, seeAll: t.seeAll, forBiz: t.forBiz, publishTitle: t.publishTitle, publishBody: t.publishBody, publishCta: t.publishCta }} />
+    <PieWeb />
     {faltan.length ? <HojaTerminos es={lang === "es"} faltan={faltan} /> : null}
   </>);
 }

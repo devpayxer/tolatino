@@ -318,6 +318,15 @@
    "sha256": "ed29b816e2dc6b1e0ed691acafa87dff039258245bc85957a9d25b9cba9c9801"
   },
   {
+   "id": "USR-CUENTA.borrada",
+   "screen": "USR-CUENTA",
+   "es": "Cuenta borrada",
+   "en": "Deleted account",
+   "max_len": 15,
+   "locked": true,
+   "sha256": "bec8a1affce72d05f03363581412d54402ee3a36a9d35096e960e2f437a2d85f"
+  },
+  {
    "id": "WEB-BUSCAR.alerta",
    "screen": "WEB-BUSCAR",
    "es": "Avísame cuando haya",

@@ -51,3 +51,15 @@ export async function anunciosVivos(ciudad: string, conSesion: boolean, lang: La
     return r.rows.map((x) => ({ id: x.id, text: x.text[lang] }));
   } catch { return []; }
 }
+
+/* El pie de la web en todas las páginas (feature_flags «web.pie_todas»; apagado hasta que el fundador apruebe las capturas nuevas): copia de 15 s que la base
+   vacía por NOTIFY. Sin respuesta de la base, apagado. */
+let pie: { at: number; v: boolean } | null = null, escuchaPie = false;
+export async function pieEnTodas(): Promise<boolean> {
+  if (!escuchaPie) { escuchaPie = true; alCambiarConfig(() => { pie = null; }); }
+  if (pie && Date.now() - pie.at < TTL_MS) return pie.v;
+  let v = false, ok = true;
+  try { v = (await db().query<{ enabled: boolean }>(`select enabled from feature_flags where key = 'web.pie_todas'`)).rows[0]?.enabled === true; } catch { ok = false; }
+  pie = { at: ok ? Date.now() : Date.now() - TTL_MS + 2_000, v };
+  return v;
+}

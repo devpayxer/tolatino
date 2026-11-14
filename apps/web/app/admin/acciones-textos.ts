@@ -9,7 +9,7 @@
 import { cookies } from "next/headers";
 import { staff } from "@/lib/admin";
 import { pausarAyuda } from "@/lib/compa/ayuda-indice";
-import { crearAnuncio, editarCadena, editarRotulo, guardarHome, ponerEstado, retirarAnuncio, revisarIngles, volverAlCodigo, type Res } from "@/lib/cms-admin";
+import { crearAnuncio, editarCadena, editarRotulo, fijarPie, guardarHome, ponerEstado, retirarAnuncio, revisarIngles, volverAlCodigo, type Res } from "@/lib/cms-admin";
 import { idioma } from "@/lib/idioma";
 import { marcarRevisada, publicarLegal, retirarLegal } from "@/lib/legal";
 import type { ResAdm } from "./acciones-colas";
@@ -92,4 +92,9 @@ export async function anuncioCrear(ciudad: string, audiencia: string, es: string
 export async function anuncioRetirar(id: string, motivo: string): Promise<ResAdm> {
   const s = await staff(); if (!s) return no("Sin sesión del equipo.", "No team session.");
   return sal(await retirarAnuncio(s, String(id ?? ""), String(motivo ?? "")));
+}
+// 9f · El pie de la web en todas las páginas
+export async function pieFijar(encender: boolean, motivo: string): Promise<ResAdm> {
+  const s = await staff(); if (!s) return no("Sin sesión del equipo.", "No team session.");
+  return sal(await fijarPie(s, encender === true, String(motivo ?? "")));
 }

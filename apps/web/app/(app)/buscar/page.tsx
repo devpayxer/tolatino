@@ -14,6 +14,7 @@ import { PantallaPronto } from "../PantallaPronto";
 import { buscarEventos } from "@/lib/evt-publico";
 import { contexto, evento } from "@/lib/eventos";
 import { after } from "next/server";
+import { PieWeb } from "../_legal/PieWeb";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Buscar · To'Latino" };
@@ -121,6 +122,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   }));
 
   return (
+    <>
     <Buscar v={{
       ...base,
       res: {
@@ -139,5 +141,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
         eventos: EV && EV.total ? { total: EV.total, f: ef, items: EV.items } : null,
       },
     }} />
+    <PieWeb />
+    </>
   );
 }

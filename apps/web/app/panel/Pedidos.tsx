@@ -1,6 +1,7 @@
 "use client";
 /* Pedidos en el panel (Panel v2 · reqRow, Hoy, detBlocks de un pedido, Clientes y Lo que vendes › Pedidos en línea).
    Todo lo decide el servidor (lib/pedidos.ts); aquí solo se arma con los bloques del sistema. */
+import { nombreVisible } from "@/lib/textos-cuenta";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { AjustesPed, DetallePed, Fila as FilaPed, FiltroPed, pedidosHoy, pedidosLista } from "@/lib/pedidos";
 import { menuAjustes } from "./acciones-menu";
@@ -29,7 +30,7 @@ const TG = (E2: Ctx["E2"]): Record<string, [string, string] | undefined> => ({
 
 /* Responder o mover un pedido; el aviso dice lo que ve el cliente. */
 function paso(c: Ctx, x: FilaPed, p: "aceptar" | "rechazar" | "listo" | "encamino" | "entregado") {
-  const { E2 } = c, n = x.who.split(" ")[0];
+  const { E2, es } = c, n = nombreVisible(x.who, es).split(" ")[0];
   const t = { aceptar: E2(`${n} ya lo ve en su pedido.`, `${n} now sees it in their order.`), rechazar: E2(`${n} ya ve que no se pudo.`, `${n} now sees it could not be done.`),
     listo: E2(`${n} ya ve que está listo para recoger.`, `${n} now sees it is ready for pickup.`), encamino: E2(`${n} ya ve que va en camino.`, `${n} now sees it is on the way.`),
     entregado: E2("Anotado · Entregado.", "Noted · Delivered.") }[p];
@@ -40,7 +41,7 @@ function paso(c: Ctx, x: FilaPed, p: "aceptar" | "rechazar" | "listo" | "encamin
 export function reqRow(c: Ctx, x: FilaPed, conActs = true): Fila {
   const { E2, es } = c, tg = TG(E2)[x.st];
   return {
-    icon: x.modo === "Delivery" ? "truck" : "bag", t: `${E2("Pedido", "Order")} #${x.numero} · ${x.modo}`, s: `${x.who} · ${es ? x.s.es : x.s.en}`, r: money(x.amt),
+    icon: x.modo === "Delivery" ? "truck" : "bag", t: `${E2("Pedido", "Order")} #${x.numero} · ${x.modo}`, s: `${nombreVisible(x.who, es)} · ${es ? x.s.es : x.s.en}`, r: money(x.amt),
     tag: tg ? tg[0] : null, tone: tg ? tg[1] : "neutral", chev: !conActs, onClick: () => c.det(`ped:${x.numero}`),
     acts: conActs && x.st === "pend" ? [{ l: E2("Aceptar", "Accept"), v: "primary", icon: "check", onClick: () => paso(c, x, "aceptar") }, { l: E2("Rechazar", "Decline"), v: "secondary", icon: null, onClick: () => paso(c, x, "rechazar") }] : undefined,
     bd: x.st === "pend" ? "1.5px solid var(--tl-ink)" : undefined,
@@ -95,8 +96,8 @@ export function pedidoDetalle(c: Ctx): Sec {
   const { E2, es } = c, x = c.ped?.det;
   if (!x) return { blocks: [{ type: "head", t: E2("Pedido no encontrado", "Order not found"), onBack: c.closeDet }, { type: "empty", icon: "bag", t: E2("Ese pedido no existe", "That order does not exist"), s: E2("Puede ser de otro negocio.", "It may belong to another business.") }], ed: null };
   const out: (Bloque | null)[] = [
-    { type: "head", eye: `${E2("PEDIDO", "ORDER")} · ${x.who.toUpperCase()}`, t: `${E2("Pedido", "Order")} #${x.numero} · ${x.modo}`, s: es ? x.s.es : x.s.en, onBack: c.closeDet },
-    { type: "kv", items: [{ k: E2("CLIENTE", "CLIENT"), v: x.who }, { k: E2("PROMETIDO", "PROMISED"), v: x.entrega?.llega ?? x.listo }, { k: E2("PAGO", "PAYMENT"), v: x.pago ? `${E2("Tarjeta", "Card")}${x.pago.ultimos4 ? ` ·· ${x.pago.ultimos4}` : ""} · ${(PAGO_L[x.pago.estado] ?? [x.pago.estado, x.pago.estado])[es ? 0 : 1]}` : x.entrega ? E2("Efectivo al entregar", "Cash on delivery") : E2("En el local", "At the store") }] },
+    { type: "head", eye: `${E2("PEDIDO", "ORDER")} · ${nombreVisible(x.who, es).toUpperCase()}`, t: `${E2("Pedido", "Order")} #${x.numero} · ${x.modo}`, s: es ? x.s.es : x.s.en, onBack: c.closeDet },
+    { type: "kv", items: [{ k: E2("CLIENTE", "CLIENT"), v: nombreVisible(x.who, es) }, { k: E2("PROMETIDO", "PROMISED"), v: x.entrega?.llega ?? x.listo }, { k: E2("PAGO", "PAYMENT"), v: x.pago ? `${E2("Tarjeta", "Card")}${x.pago.ultimos4 ? ` ·· ${x.pago.ultimos4}` : ""} · ${(PAGO_L[x.pago.estado] ?? [x.pago.estado, x.pago.estado])[es ? 0 : 1]}` : x.entrega ? E2("Efectivo al entregar", "Cash on delivery") : E2("En el local", "At the store") }] },
   ];
   // Delivery: a dónde, cómo se entrega y qué hacer al llegar (Checkout · cómo entregar), y el teléfono del cliente.
   const ENT = x.entrega;

@@ -33,6 +33,7 @@ import { vacantesFicha } from "@/lib/jobs";
 import { eventosDelOrganizador } from "@/lib/evt-publico";
 import { idioma } from "@/lib/idioma";
 import { textosT } from "@/lib/cms";
+import { PieWeb } from "../../_legal/PieWeb";
 import { ubicacion } from "@/lib/ubicacion";
 import { Ficha } from "./Ficha";
 
@@ -180,6 +181,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const rsvInicial = { p: num(sp.p), i: num(sp.d), h: num(sp.h), editar: sp.editar && /^R-\d{1,10}$/.test(sp.editar) ? sp.editar : undefined };
   const t = (await textosT(lang)).ficha;
   return (
+    <>
     <Ficha
       f={{ ...f, guardado: fav.has(f.id) }}
       menu={menu}
@@ -212,5 +214,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
         relSub: t.relSub.replace("{n}", f.nombre),
       }}
     />
+    <PieWeb />
+    </>
   );
 }
