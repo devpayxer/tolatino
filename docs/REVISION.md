@@ -4857,3 +4857,11 @@ Qué mirar (Super Admin › Inicio y la Inicio del vecino, en el teléfono y en 
 - **Configuración:** solo Noche se abrió, porque era lo único cuyos textos leen el valor (o no lo dicen). Los demás siguen en solo lectura (ver LAUNCH): abrirlos con textos que dicen «24 h» sería mentirle a la persona.
 - **Pantallas sin diseño propio** (compuestas con bloques del sistema): el buscador, Mis dos pasos, el CSV y el mensaje.
 - **Numeración:** migración 0147 y semilla 0065.
+
+## Fase 9 · Capturas aprobadas tras juntar 9m, 9n, 9n-2 y 9n-3 (14 nov)
+Qué mirar:
+- **Inicio del vecino en computadora** (`pruebas/visual/inicio/escritorio-*`): a la derecha sale **«Cerca de ti · Mapa»** (el mini mapa propio de 9m, con los
+  negocios como puntos y «Toca para verlos todos») encima de «Publica tu negocio gratis». En la captura del CI el mapa sale gris porque el CI no trae el
+  archivo de teselas; en el sandbox se ven las calles.
+- **Super Admin › Inicio** (las 9 de `pruebas/visual/admin-hoy/`): arriba, el **selector de ciudad** «Todas | Ciudad…» (9n-3: filtra todo el Super Admin
+  sin dar más alcance que el del rol) y la campana con un caso más (la incidencia de entrega de ejemplo de la semilla de 9n en Colas).
