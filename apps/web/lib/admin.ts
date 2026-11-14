@@ -10,14 +10,16 @@ import { estadoDosPasos, type Dos } from "./equipo/dos-pasos";
    Regla: el permiso se revisa SIEMPRE aquí (servidor). La pantalla solo esconde lo que no puedes. */
 
 export type Accion = "ver" | "editar" | "aprobar" | "retirar" | "exportar";
-export type Staff = Yo & { role: string; roleName: string; cities: string[]; puede: (s: string, a: Accion) => boolean };
+export type Staff = Yo & { role: string; roleName: string; cities: string[]; puede: (s: string, a: Accion) => boolean; colas: string[] };
 
 
 /* La fila del equipo de una persona (rol, ciudades y permisos), SIN mirar el segundo factor. Solo la usan staff() y la pantalla de los dos pasos. */
 async function filaEquipo(u: Yo): Promise<Staff | null> {
-  const r = await db().query<{ role: string; role_name: string; cities: string[]; perms: string[] | null }>(
+  // 9n · Las colas que ve su rol (queue_roles, editable por un Admin en Colas).
+  const r = await db().query<{ role: string; role_name: string; cities: string[]; perms: string[] | null; colas: string[] }>(
     `select m.role, r.name->>'es' as role_name, m.cities,
-            array_agg(p.section || ':' || p.action) filter (where p.allowed) as perms
+            array_agg(p.section || ':' || p.action) filter (where p.allowed) as perms,
+            array(select q.queue from queue_roles q where q.role = m.role and q.allowed) as colas
        from staff_members m join staff_roles r on r.key = m.role
        left join role_permissions p on p.role = m.role
       where m.user_id = $1 and m.status = 'active'
@@ -27,7 +29,8 @@ async function filaEquipo(u: Yo): Promise<Staff | null> {
   const m = r.rows[0];
   if (!m) return null;
   const set = new Set(m.perms ?? []);
-  return { ...u, role: m.role, roleName: m.role_name, cities: m.cities, puede: (s, a) => set.has(`${s}:${a}`) };
+  return { ...u, role: m.role, roleName: m.role_name, cities: m.cities, puede: (s, a) => set.has(`${s}:${a}`), colas: m.colas ?? [] };
+
 }
 
 /* 9j · Del equipo Y con el segundo factor dado en ESTA sesión (lib/equipo/dos-pasos.ts): sin eso, null (ninguna pantalla, acción ni ruta del

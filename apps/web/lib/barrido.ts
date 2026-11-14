@@ -170,6 +170,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["sms", async () => (await import("./sms")).reintentarSms()], ["correoEntrante", async () => (await import("./correo/entrante")).purgarCorreoEntrante()],
         // 9i · Ciudades: el aviso «tu ciudad abrió» a la lista de espera de la ciudad que abrió el asistente, por partes, de 9 AM a 9 PM de la ciudad, una vez.
         ["avisoApertura", async () => (await import("./ciudades/aviso")).avisarAperturas()],
+        // 9n · Repartidor y colas: las ofertas que vencieron (el negocio lo sabe), la foto de la entrega a los días de Configuración y el «tomado» que vence.
+        ["ofertas", async () => (await import("./repartidor-ofertas")).vencerOfertas()], ["fotosEntrega", async () => (await import("./repartidor-barrido")).purgarFotosEntrega()],
+        ["colasTomado", async () => (await import("./repartidor-barrido")).soltarTomados()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

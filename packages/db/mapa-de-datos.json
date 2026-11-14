@@ -14,7 +14,7 @@
     "cifras": { "es": "Cuenta en un resultado (una encuesta), sin tu nombre.", "en": "It counts in a result (a poll), without your name." },
     "envios": { "es": "Registro cifrado de los mensajes de texto que se mandaron (reglas de los SMS): el teléfono y el texto se vacían a los 90 días (retener_sms_dias).", "en": "Encrypted record of the text messages that were sent (SMS rules): the phone and the text are cleared after 90 days (retener_sms_dias)." }
   },
-  "sinPersona": {
+  "sinPersona": { "delivery_messages": { "es": "Lo que el repartidor le escribe al cliente dentro de la app (frases fijas o un texto corto, sin teléfonos ni enlaces): va con el pedido y con el repartidor del negocio (que se vacía al borrar su cuenta), no con la cuenta del cliente.", "en": "What the driver writes to the customer inside the app (fixed phrases or a short text, without phone numbers or links): it belongs to the order and to the business driver (emptied when their account is deleted), not to the customer account." },
     "support_case_logs": { "es": "El registro técnico de un caso de Soporte: se vacía con su caso cuando la cuenta se borra (soporte_purgar_casos).", "en": "The technical log of a Support case: emptied with its case when the account is deleted (soporte_purgar_casos)." },
     "app_error_events": { "es": "Cierres y errores de la app, sin la persona (solo una huella de la sesión); se borran a los 90 días (errores_retener_dias).", "en": "App crashes and errors, without the person (only a session fingerprint); deleted after 90 days (errores_retener_dias)." }
   },
@@ -273,6 +273,14 @@
     "city_close_requests": { "equipo": ["requested_by", "decided_by"] },
     "city_status_log": { "equipo": ["actor"] },
     "city_beta_invites": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "invitaciones_a_la_beta", "fusion": "no" } ], "equipo": ["invited_by", "revoked_by"] },
-    "city_notices": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "avisos_de_apertura", "fusion": "no" } ] }
+    "city_notices": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "avisos_de_apertura", "fusion": "no" } ] },
+    "delivery_proofs": { "reglas": [ { "col": "actor_id", "accion": "guardar", "porque": "ley", "fusion": "no" } ] },
+    "delivery_offers": { "reglas": [ { "col": "created_by", "accion": "guardar", "porque": "negocio", "fusion": "no" } ] },
+    "delivery_incidents": { "equipo": [ "created_by", "resolved_by" ], "reglas": [ { "col": "driver_user", "accion": "guardar", "porque": "seguridad", "fusion": "no" } ] },
+    "driver_sanctions": { "equipo": [ "by_user", "lifted_by" ], "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "seguridad", "fusion": "no" } ] },
+    "queue_roles": { "equipo": [ "updated_by" ] },
+    "staff_holidays": { "equipo": [ "created_by", "removed_by" ] },
+    "business_notif_prefs": { "reglas": [ { "col": "updated_by", "accion": "guardar", "porque": "negocio", "fusion": "no" } ] },
+    "special_hours": { "reglas": [ { "col": "created_by", "accion": "guardar", "porque": "negocio", "fusion": "no" } ] }
   }
 }

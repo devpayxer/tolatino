@@ -11,7 +11,9 @@ import { AYUDA_DE, COLAS, MOTIVO_RESENA, type Cola } from "@/lib/colas";
 import { motivoAyuda, quiereAyuda } from "@/lib/ayuda-motivos";
 import { cuerpoComunidad, tituloComunidad } from "./ColasComunidad";
 import { cuerpoEventos, tituloEventos } from "./ColasEventos";
-import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, decidirNoche, decidirEstafa, pausaEstafa, decidirVivienda, type ResAdm, verNinoCaso } from "./acciones-colas";
+import { dlvResolver } from "./acciones-repartidores";
+import { crearSemilla,
+ decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, decidirNoche, decidirEstafa, pausaEstafa, decidirVivienda, type ResAdm, verNinoCaso } from "./acciones-colas";
 import { compaHilo } from "./acciones-compa";
 import { verFotosSalud } from "./acciones-sistema";
 import { copilotoSugerir } from "./acciones-copiloto";
@@ -115,7 +117,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
   const detalle = caso ? cuerpo() : null;
   function cuerpo(): ReactNode {
     const k = caso!, Q = COLAS[k.queue], n = k.negocio, out: (Bloque | null)[] = [];
-    const titulo = tituloComunidad(k) ?? tituloEventos(k) ?? (k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : k.cambio.type === "mergeUser" ? "Fusionar cuentas" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "cuidado" ? `Cuidado de niños · ${n?.name ?? ""}` : k.queue === "salir" ? `No le dejan cancelar · ${n?.name ?? ""}` : k.queue === "grupo" ? `Grupos que no abrieron · ${n?.name ?? ""}` : k.queue === "plantones" ? `Plantones · ${n?.name ?? ""}` : k.queue === "vivienda" ? `${k.subject_kind === "listing" ? "Vivienda para mayores" : "Vivienda justa"} · ${n?.name ?? ""}` : k.queue === "estafa" ? `Posible estafa · ${n?.name ?? ""}` : k.queue === "ticket" ? `Soporte · ${"tk" in k && k.tk ? k.tk : "caso"}` : k.queue === "sop" ? `${AYUDA_DE["ayuda" in k && k.ayuda ? k.ayuda.k : "order"] ?? "Ayuda con un pedido"} · ${n?.name ?? ""}` : k.queue === "mesa" ? `Mesas no respetadas · ${n?.name ?? ""}` : k.queue === "noid" ? `Sin identificación · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "");
+    const titulo = (k.queue === "entrega" ? `Incidencia de entrega${n?.name ? ` · ${n.name}` : ""}` : null) ?? tituloComunidad(k) ?? tituloEventos(k) ?? (k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : k.cambio.type === "mergeUser" ? "Fusionar cuentas" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "cuidado" ? `Cuidado de niños · ${n?.name ?? ""}` : k.queue === "salir" ? `No le dejan cancelar · ${n?.name ?? ""}` : k.queue === "grupo" ? `Grupos que no abrieron · ${n?.name ?? ""}` : k.queue === "plantones" ? `Plantones · ${n?.name ?? ""}` : k.queue === "vivienda" ? `${k.subject_kind === "listing" ? "Vivienda para mayores" : "Vivienda justa"} · ${n?.name ?? ""}` : k.queue === "estafa" ? `Posible estafa · ${n?.name ?? ""}` : k.queue === "ticket" ? `Soporte · ${"tk" in k && k.tk ? k.tk : "caso"}` : k.queue === "sop" ? `${AYUDA_DE["ayuda" in k && k.ayuda ? k.ayuda.k : "order"] ?? "Ayuda con un pedido"} · ${n?.name ?? ""}` : k.queue === "mesa" ? `Mesas no respetadas · ${n?.name ?? ""}` : k.queue === "noid" ? `Sin identificación · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "");
     out.push({ type: "head", eye: `${Q.es.toUpperCase()} · ${k.esp.r >= 1 ? `${k.esp.t} · VENCIDO` : `${k.esp.t} esperando`}`, t: titulo, h1: 22, onBack: lado ? undefined : () => ir({ caso: null }) });
     if (k.status !== "open") return <><PanelBloques bloques={[out[0]!, { type: "empty", icon: "check", t: "Ya se decidió", s: "Este caso salió de la cola." }]} /></>;
     // 7b · Un caso de Soporte se trabaja en su ficha de Soporte (hilo, macros, notas internas, devolver).
@@ -480,6 +482,19 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         { l: "Ya existe", icon: "check", off: !par.length, onClick: () => setConf({ titulo: "¿Cuál negocio es?", sub: "La recomendación queda enlazada a ese negocio.", cta: "Guardar", elegir: { label: "ES ESTE", items: par.map((p) => ({ k: p.id, l: p.name })) }, plantillas: ["Ya estaba en To’Latino"], hacer: (_m, e) => decidirRec(k.id, "existe", "", e) }) },
         { l: "Descartar", v: "danger", icon: "close", onClick: () => setConf({ titulo: "¿Por qué se descarta?", peligro: true, hacer: (m) => decidirRec(k.id, "descartar", m) }) },
       ];
+    }
+    // 9n · Incidencia de entrega (k.queue === "entrega"): qué pasó, la prueba y el repartidor; «Resolver» con motivo (dlv:editar).
+    if (k.queue === "entrega" && "incidencia" in k && k.incidencia) {
+      const i = k.incidencia, PR: Record<string, string> = { foto: "foto", codigo: "código del cliente", negocio: "marcado por el negocio" };
+      cuerpoB.push({ type: "note", tone: i.kind === "accidente" ? "danger" : "warn", icon: i.kind === "accidente" ? "warning" : "truck", t: i.nota.es });
+      cuerpoB.push({ type: "rows", items: [
+        { icon: "users", t: i.rep, s: "Repartidor · su 360° con entregas, incidencias y sanciones", chev: true, onClick: () => router.push(`/admin/repartidores/${i.repId}`) },
+        ...(i.numero ? [{ icon: "bag", t: `Pedido #${i.numero}`, s: i.prueba ? `Prueba: ${i.prueba.split(",").map((p) => PR[p] ?? p).join(" · ")}` : "Sin prueba de entrega todavía", chev: false,
+          acts: i.foto ? [{ l: "Ver foto", v: "secondary", icon: "camera", onClick: () => window.open(`/api/entrega/foto/${i.foto}`, "_blank", "noopener") }] : undefined }] : []),
+      ] });
+      acts = "puedeResolver" in k && k.puedeResolver ? [{ l: "Resolver", icon: "check", onClick: () => setConf({ titulo: "¿Cómo se resolvió?", cta: "Resolver",
+        plantillas: ["Hablamos con el repartidor y el negocio", "La prueba de la entrega está bien", "Fue un accidente: nadie salió herido", "Se sancionó en Repartidores"],
+        sub: "Queda en la auditoría. Para sancionar, abre el 360° del repartidor.", hacer: (m) => dlvResolver(i.id, m) }) }] : [];
     }
     // 5d · Casos de la Comunidad (rep de publicaciones y comentarios, repUsr, apel y fotos de la Comunidad): ./ColasComunidad.tsx.
     const com = cuerpoComunidad(k, { setConf, run, fuera: () => ir({ caso: null }), abrir: (h) => window.open(h, "_blank", "noopener"), usuario: (id) => router.push(`/admin/usuarios/${id}`), apelarDias, ahora });

@@ -37,6 +37,45 @@ export async function repQuitar(id: string, rid: string, motivo: string): Promis
   await auditar(a, "repartidor.quitar", { repartidor: String(rid) });
   return { ok: true };
 }
+/* 9n · Ofrecer el pedido con cuenta regresiva (a uno o a todos los que están en línea), cancelar la oferta, confirmar que el repartidor lo
+   recogió (sin el código) y lo que pide el negocio (prueba de entrega y código de recogida). */
+export async function repOfrecer(id: string, numero: string, rid: string | null): Promise<Res> {
+  const a = await entrar(id, "ord", "dlv");
+  if (!a) return SIN_ACCESO;
+  const { ofrecer } = await import("@/lib/repartidor-ofertas");
+  const r = await ofrecer(a.negocio.id, String(numero ?? ""), a.yo.id, rid === null ? null : String(rid));
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "pedido.ofrecer_repartidor", { pedido: `#${numero}`, a: rid ? "uno" : "en línea" });
+  const { avisar } = await import("@/lib/avisos");
+  for (const x of ("avisos" in r ? r.avisos ?? [] : [])) await avisar(x.uid, "drv_oferta", x.vars, { href: "/repartidor", ref: ["order", String(numero)] }).catch(() => undefined);
+  return { ok: true };
+}
+export async function repOfertaCancelar(id: string, numero: string): Promise<Res> {
+  const a = await entrar(id, "ord", "dlv");
+  if (!a) return SIN_ACCESO;
+  const { cancelarOferta } = await import("@/lib/repartidor-ofertas");
+  const r = await cancelarOferta(a.negocio.id, String(numero ?? ""));
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "pedido.cancelar_oferta", { pedido: `#${numero}` });
+  return { ok: true };
+}
+export async function repRecogido(id: string, numero: string): Promise<Res> {
+  const a = await entrar(id, "ord", "dlv");
+  if (!a) return SIN_ACCESO;
+  const n = String(numero ?? "");
+  const r = await db().query(`update delivery_codes dc set recogido_at = now() from operations o where o.id = dc.operation_id and o.business_id = $1 and o.number = $2 and o.status = 'confirmed' and o.driver_id is not null and dc.recogido_at is null`, [a.negocio.id, n]);
+  if (!r.rowCount) return no("Ese pedido ya no espera que lo recojan.", "That order is no longer waiting for pickup.");
+  await auditar(a, "pedido.recogido_sin_codigo", { pedido: `#${n}` });
+  return { ok: true };
+}
+export async function repPruebas(id: string, prueba: boolean, recogida: boolean): Promise<Res> {
+  const a = await entrar(id, "dlv");
+  if (!a) return SIN_ACCESO;
+  await db().query(`insert into delivery_settings (business_id, proof, pickup_code) values ($1, $2, $3) on conflict (business_id) do update set proof = excluded.proof, pickup_code = excluded.pickup_code, updated_at = now()`,
+    [a.negocio.id, prueba === true, recogida === true]);
+  await auditar(a, "entrega.pruebas", { prueba: prueba === true, recogida: recogida === true });
+  return { ok: true };
+}
 export async function repAsignar(id: string, numero: string, rid: string | null): Promise<Res> {
   const a = await entrar(id, "ord", "dlv");
   if (!a) return SIN_ACCESO;

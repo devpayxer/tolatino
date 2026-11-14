@@ -20,6 +20,8 @@ const SECCION: Record<Seccion, string> = {
   avisos: "AVISOS Y CANALES · SMS, WHATSAPP Y CORREO",
   ciudades: "CIUDADES · EL AVISO DE APERTURA",
   despliegues: "DESPLIEGUES · VUELTA ATRÁS Y MANTENIMIENTO",
+  repartidor: "REPARTIDOR · OFERTAS Y PRUEBA DE ENTREGA",
+  colas: "COLAS · PLAZOS Y CASOS TOMADOS",
 };
 /* 9d · Retención: todo lo que dice cuánto se guarda algo (las claves nuevas de 0134 y las retenciones que ya corrían en su sección: El Compa,
    los errores, la ruta, la analítica, las notas privadas…) se ve junto aquí, cada una con sus límites. */

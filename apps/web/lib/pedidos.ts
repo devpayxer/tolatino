@@ -148,6 +148,8 @@ export type DetallePed = Fila & {
   tl: { t: Bi; at: string }[];
   pago: PagoVista | null; // tarjeta en la app (retenido, cobrado, liberado, devuelto)
   repartidor: { id: string; nombre: string } | null; equipo: boolean; // delivery con «Mi equipo»: quién lo lleva
+  // 9n · El código de recogida (solo el negocio lo ve), la prueba de la entrega, la oferta abierta y los mensajes del repartidor al cliente.
+  rep9n: { recogida: string | null; recogido: boolean; pideRec: boolean; pidePrueba: boolean; prueba: string[]; foto: string | null; oferta: { seg: number; a: string | null; rechazos: number } | null; mensajes: number } | null;
 };
 export async function pedidoNegocio(negocio: string, numero: string): Promise<DetallePed | null> {
   if (!/^\d{1,12}$/.test(numero)) return null;
@@ -171,6 +173,17 @@ export async function pedidoNegocio(negocio: string, numero: string): Promise<De
         where e.operation_id = $1 order by e.at, e.id`, [o.id]),
   ]);
   const pago = await pagoDe(o.id);
+  const rep9n = o.mode === "delivery" ? await (async () => {
+    const k = (await db().query<{ recogida: string | null; recogido: boolean; pide_rec: boolean; pide_prueba: boolean; prueba: string[] | null; foto: string | null; mensajes: number }>(
+      `select dc.recogida, dc.recogido_at is not null as recogido, coalesce(s.pickup_code, false) as pide_rec, coalesce(s.proof, false) as pide_prueba,
+              (select array_agg(p.kind order by p.kind) from delivery_proofs p where p.operation_id = o.id) as prueba,
+              (select p.media_id::text from delivery_proofs p where p.operation_id = o.id and p.kind = 'foto') as foto,
+              (select count(*)::int from delivery_messages m where m.operation_id = o.id) as mensajes
+         from operations o left join delivery_codes dc on dc.operation_id = o.id left join delivery_settings s on s.business_id = o.business_id where o.id = $1::bigint`, [o.id])).rows[0];
+    const of = o.status === "confirmed" && !o.rid ? await (await import("./repartidor-ofertas")).ofertaDe(negocio, numero) : null;
+    return { recogida: k?.pide_rec && o.status === "confirmed" ? k.recogida : null, recogido: !!k?.recogido, pideRec: !!k?.pide_rec, pidePrueba: !!k?.pide_prueba, prueba: k?.prueba ?? [], foto: k?.foto ?? null,
+      oferta: of ? { seg: of.seg, a: of.a, rechazos: of.rechazos } : null, mensajes: k?.mensajes ?? 0 };
+  })() : null;
   const T: Record<string, (q: string | null) => Bi> = {
     sent: () => ({ es: "Llegó por To’Latino", en: "Came in through To’Latino" }),
     accepted: (q) => (q ? { es: `Aceptado por ${q}`, en: `Accepted by ${q}` } : { es: "Aceptado al instante", en: "Accepted instantly" }),
@@ -192,8 +205,9 @@ export async function pedidoNegocio(negocio: string, numero: string): Promise<De
       llega: o.details?.eta ? `${hora(o.details.eta.d1)}–${hora(o.details.eta.d2)}` : null } : null,
     lineas: ls.rows.map((l) => ({ q: l.q, name: l.name, opts: (Array.isArray(l.options) ? l.options : []).map((x) => x.o), nota: l.instructions, cents: l.total })),
     tl: ev.rows.map((e) => ({ t: (T[e.kind] ?? (() => e.note ?? { es: e.kind, en: e.kind }))(e.quien), at: hora(hm2m(e.at)) })),
-    pago, repartidor: o.rid && o.rnombre ? { id: o.rid, nombre: o.rnombre } : null, equipo: o.equipo,
+    pago, repartidor: o.rid && o.rnombre ? { id: o.rid, nombre: o.rnombre } : null, equipo: o.equipo, rep9n,
   };
+
 }
 
 /* ── Lo que cambia el estado ── */
@@ -225,6 +239,13 @@ export async function cambiarPaso(negocio: string, numero: string, paso: Paso, a
       encamino: `stage = 'on_the_way'`,
       entregado: o.mode === "delivery" ? `status = 'done', stage = 'delivered', done_at = now()` : `status = 'done', stage = 'picked_up', done_at = now()`,
     }[paso];
+    // 9n · Un delivery con repartidor de un negocio que pide prueba: el negocio lo puede cerrar él mismo (se queda sin batería, lo entregó en
+    // el local…) y la prueba queda con SU nombre («negocio»); la base exige una prueba (trigger operations_prueba).
+    if (paso === "entregado" && o.mode === "delivery")
+      await c.query(`insert into delivery_proofs (operation_id, city_id, kind, actor_id)
+                     select o.id, o.city_id, 'negocio', $2 from operations o join delivery_settings s on s.business_id = o.business_id
+                      where o.id = $1::bigint and o.driver_id is not null and s.proof and not exists (select 1 from delivery_proofs p where p.operation_id = o.id)
+                     on conflict (operation_id, kind) do nothing`, [o.id, actorId]);
     await c.query(`update operations set ${set}, updated_at = now() where id = $1`, [o.id]);
     if (paso === "rechazar") await devolver(c, o.id);
     const kind = { aceptar: "accepted", rechazar: "declined", listo: "ready", encamino: "on_the_way", entregado: o.mode === "delivery" ? "delivered" : "picked_up" }[paso];
@@ -295,23 +316,26 @@ export type AjustesPed = {
   // Entrega (DASH-ENTREGA) y cómo se paga en delivery.
   pickup: boolean; delivery: boolean; cashD: boolean; tip: boolean; zone: number; fee: number; free: number; min: number; travel: number; dEnd: number;
   who: "team" | "external"; ext: "doordash" | "uber_eats" | "other" | null; dlvAdm: string | null;
+  proof: boolean; pickupCode: boolean; // 9n · prueba de entrega y código de recogida (Mi equipo)
   stripe: "none" | "pending" | "enabled" | "restricted"; // la cuenta de cobro (Cobros): la tarjeta pide «enabled» o «restricted» con cargos
 };
 export async function ajustesPedidos(negocio: string): Promise<AjustesPed> {
   const r = await db().query<{ prep: number; sched: boolean; auto: boolean; cashp: boolean; card: boolean; on: boolean; adm: string | null; note: Bi | null; busy: number; last: number;
-    pickup: boolean; delivery: boolean; cashd: boolean; tip: boolean; zone: number; fee: number; free: number; min: number; travel: number; dend: number; who: "team" | "external"; ext: AjustesPed["ext"]; dadm: string | null; stripe: string | null; cargos: boolean | null }>(
+    pickup: boolean; delivery: boolean; cashd: boolean; tip: boolean; zone: number; fee: number; free: number; min: number; travel: number; dend: number; who: "team" | "external"; ext: AjustesPed["ext"]; dadm: string | null; stripe: string | null; cargos: boolean | null;
+    proof: boolean | null; pcode: boolean | null }>(
     `select coalesce(d.prep_min, 20) as prep, coalesce(d.scheduled_orders, true) as sched, coalesce(d.auto_accept, false) as auto,
             coalesce(d.pay_cash_pickup, true) as cashp, coalesce(d.pay_card, false) as card, 'pedidos' = any(b.modules_on) as on,
             b.modules_off->'pedidos'->>'reason' as adm, d.pickup_note as note, coalesce(m.busy_min, 0) as busy, coalesce(m.last_min, 15) as last,
             coalesce(d.pickup, true) as pickup, coalesce(d.delivery, false) as delivery, coalesce(d.pay_cash_delivery, false) as cashd, coalesce(d.ask_tip, true) as tip,
             coalesce(d.zone_mi, 3) as zone, coalesce(d.fee_cents, 300) as fee, coalesce(d.free_over_cents, 0) as free, coalesce(d.min_order_cents, 0) as min,
             coalesce(d.travel_min, 15) as travel, coalesce(d.last_delivery_min, 0) as dend, coalesce(d.who, 'team') as who, d.external_app as ext,
-            b.modules_off->'delivery'->>'reason' as dadm, sa.status as stripe, sa.charges_enabled as cargos
+            b.modules_off->'delivery'->>'reason' as dadm, sa.status as stripe, sa.charges_enabled as cargos, d.proof, d.pickup_code as pcode
        from businesses b left join delivery_settings d on d.business_id = b.id left join menu_settings m on m.business_id = b.id left join stripe_accounts sa on sa.business_id = b.id where b.id = $1`, [negocio]);
   const x = r.rows[0];
   return { prep: x?.prep ?? 20, sched: x?.sched ?? true, auto: x?.auto ?? false, cashP: x?.cashp ?? true, card: x?.card ?? false, on: !!x?.on, admOff: x?.adm ?? null, pickupNote: x?.note ?? null, busy: x?.busy ?? 0, last: x?.last ?? 15,
     pickup: x?.pickup ?? true, delivery: x?.delivery ?? false, cashD: x?.cashd ?? false, tip: x?.tip ?? true, zone: x?.zone ?? 3, fee: x?.fee ?? 300, free: x?.free ?? 0, min: x?.min ?? 0,
-    travel: x?.travel ?? 15, dEnd: x?.dend ?? 0, who: x?.who ?? "team", ext: x?.ext ?? null, dlvAdm: x?.dadm ?? null,
+    travel: x?.travel ?? 15, dEnd: x?.dend ?? 0, who: x?.who ?? "team", ext: x?.ext ?? null, dlvAdm: x?.dadm ?? null, proof: !!x?.proof, pickupCode: !!x?.pcode,
+
     stripe: !x?.stripe ? "none" : x.cargos ? (x.stripe === "restricted" ? "restricted" : "enabled") : "pending" };
 }
 

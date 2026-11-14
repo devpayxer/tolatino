@@ -100,7 +100,19 @@ export function Pedido({ p, es, ayuda, ruta = false }: { p: PedidoVista; es: boo
       <div className="mt-2 text-[13.5px] font-bold">{ENT?.to ? `${ENT.to.street}${ENT.to.apt ? `, ${ENT.to.apt}` : ""}` : "—"}</div>
       {ENT?.drop && <div className="mt-1 text-[12px] font-medium leading-[1.45] text-ink/60">{ENT.drop.drop === "puerta" ? E2("Dejar en la puerta", "Leave at door") : E2("En la mano", "Hand it to me")}{ENT.drop.note ? ` · “${ENT.drop.note}”` : ""}</div>}
       {p.nota && <div className="mt-1 text-pretty text-[12px] font-medium leading-[1.45] text-ink/50">“{p.nota}”</div>}
-      {ENT?.seguimiento && !cerrado && !fin && <div className="mt-3 flex"><Button variant="secondary" size="md" icon="truck" onClick={() => window.open(ENT.seguimiento!, "_blank", "noopener,noreferrer")}>{E2(`Seguir en ${ENT.ext ?? "la app"}`, `Track on ${ENT.ext ?? "the app"}`)}</Button></div>}
+      {/* 9n · El código para recibir (se lo dices al repartidor), lo que te escribió y la foto de la entrega. */}
+      {p.rep9n?.codigo && p.repartidor && <div data-codigo-cliente className="mt-3 rounded-[14px] bg-paper px-3.5 py-3">
+        <div className={K}>{E2("TU CÓDIGO PARA RECIBIR", "YOUR CODE TO RECEIVE")}</div>
+        <div className="mt-1.5 font-mono text-[24px] font-bold tracking-[0.3em]">{p.rep9n.codigo}</div>
+        <div className="mt-1 text-[12px] font-medium leading-[1.45] text-ink/60">{E2("Dáselo al repartidor solo cuando tengas tu pedido en la mano.", "Give it to the driver only once your order is in your hands.")}</div>
+      </div>}
+      {p.rep9n && p.rep9n.mensajes.length > 0 && <div className="mt-3 flex flex-col gap-1.5">
+        <div className={K}>{E2("TU REPARTIDOR TE ESCRIBIÓ", "YOUR DRIVER WROTE")}</div>
+        {p.rep9n.mensajes.map((m, i) => <div key={i} className="text-[12.5px] font-semibold leading-[1.45]">{p.repartidor?.nombre ? `${p.repartidor.nombre}: ` : ""}{m.t}</div>)}
+      </div>}
+      {p.rep9n?.foto && <div className="mt-3 flex"><Button variant="secondary" size="md" icon="camera" onClick={() => window.open(`/api/entrega/foto/${p.rep9n!.foto}`, "_blank", "noopener")}>{E2("Ver la foto de la entrega", "See the delivery photo")}</Button></div>}
+      {ENT?.seguimiento && !cerrado && !fin &&
+ <div className="mt-3 flex"><Button variant="secondary" size="md" icon="truck" onClick={() => window.open(ENT.seguimiento!, "_blank", "noopener,noreferrer")}>{E2(`Seguir en ${ENT.ext ?? "la app"}`, `Track on ${ENT.ext ?? "the app"}`)}</Button></div>}
     </div>
   ) : (
     <div className={`${caja} px-4 py-3.5`}>

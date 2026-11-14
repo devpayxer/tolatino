@@ -464,7 +464,9 @@ export type PedidoVista = {
   // Tarjeta en la app: el estado del dinero (retenido, cobrado, liberado, devuelto) y con qué tarjeta.
   pago: { estado: string; monto: string; devuelto: string | null; tarjeta: string | null } | null;
   repartidor: { nombre: string; llego: boolean } | null; // delivery con el equipo del negocio
+  rep9n: { codigo: string | null; foto: string | null; mensajes: { t: string; at: string }[] } | null; // 9n · código del cliente, foto de la entrega, mensajes del repartidor
 };
+
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 export async function pedidoDe(userId: string, numero: string, lang: Lang): Promise<PedidoVista | null> {
   if (!/^\d{1,12}$/.test(numero)) return null;
@@ -503,8 +505,15 @@ export async function pedidoDe(userId: string, numero: string, lang: Lang): Prom
   const pg = (await db().query<{ st: string; amount: number; refunded: number; brand: string | null; l4: string | null }>(
     `select status as st, amount_cents as amount, refunded_cents as refunded, card_brand as brand, card_last4 as l4 from payments where operation_id = $1 and kind = 'full'`, [o.id])).rows[0];
   const MARCA: Record<string, string> = { visa: "Visa", mc: "Mastercard", mastercard: "Mastercard", amex: "Amex", disc: "Discover", discover: "Discover" };
+  // 9n · El código del cliente (se lo dice al repartidor al recibir), la foto de la entrega y lo que le escribió su repartidor. Solo de SU pedido
+  // (pedidoDe ya filtró por user_id). El código solo mientras el pedido está en curso.
+  const k9 = o.mode === "delivery" ? (await db().query<{ codigo: string | null; foto: string | null }>(
+    `select case when o.status = 'confirmed' then dc.cliente end as codigo, (select p.media_id::text from delivery_proofs p where p.operation_id = o.id and p.kind = 'foto') as foto
+       from operations o left join delivery_codes dc on dc.operation_id = o.id where o.id = $1::bigint`, [o.id])).rows[0] : null;
+  const msgs = o.mode === "delivery" ? await (await import("./repartidor-ofertas")).mensajesDelPedido(o.id) : [];
   return {
     repartidor: o.repartidor ? { nombre: o.repartidor, llego: o.llego } : null,
+    rep9n: o.mode === "delivery" ? { codigo: k9?.codigo ?? null, foto: k9?.foto ?? null, mensajes: msgs.map((m) => ({ t: es ? m.t.es : m.t.en, at: m.at })) } : null,
     pago: pg ? { estado: pg.st, monto: money(pg.amount), devuelto: pg.refunded ? money(pg.refunded) : null, tarjeta: pg.brand && pg.l4 ? `${MARCA[pg.brand] ?? pg.brand} ·· ${pg.l4}` : null } : null,
     numero: o.number, negocio: { id: o.business_id, nombre: o.name, direccion: o.address, telefono: o.phone, lat: o.lat, lng: o.lng },
     status: o.status, stage: o.stage, sinRespuesta: o.vencido, enviado: horaO(o.enviado), listo: horaO(o.listo), programado: horaO(o.programado),

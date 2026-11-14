@@ -107,7 +107,7 @@
       "propositos": ["funcionamiento", "seguridad"],
       "ligado": true, "opcional": true,
       "apps": ["cliente", "negocio"],
-      "tablas": ["chat_messages.body", "dm_messages.body", "compa_inbound.body", "compa_outbound.body", "sms_outbox.body_enc"],
+      "tablas": ["chat_messages.body", "delivery_messages.body", "dm_messages.body", "compa_inbound.body", "compa_outbound.body", "sms_outbox.body_enc"],
       "guarda": { "es": "Mientras exista la conversación; al borrar tu cuenta, tus mensajes se quitan.", "en": "While the conversation exists; when you delete your account, your messages are removed." }
     },
     {
