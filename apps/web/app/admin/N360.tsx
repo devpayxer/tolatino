@@ -21,6 +21,7 @@ import { accionesOrg, estadoEvt } from "./ColasEventos";
 import { diaCorto, hora, type Bi } from "@/lib/evt-comun";
 import { useAhora } from "@/lib/ahora";
 
+import { tec } from "@/lib/tec";
 /* 6a · Contenido › Eventos: los eventos del negocio (no los borradores) y su estado de organizador. 6j: liquidaciones y cancelaciones. */
 const LIQ_N: Record<string, string> = { pending: "PENDIENTES", held: "RETENIDAS", paid: "PAGADAS", reversed: "AJUSTADAS", paying: "EN CAMINO" };
 export type Evts360 = { filas: { id: string; t: Bi; st: string; hidden: boolean; pending: string | null; dia: string; h0: number; entrada: string }[]; org: { verificado: boolean; bloqueado: string | null }; puede: { aprobar: boolean; retirar: boolean }; liq: { st: string; n: number; neto: number }[]; cx: { evento: Bi; scope: string; reason: string; by: string; ordenes: number; devuelto: number; at: string }[] };
@@ -384,7 +385,7 @@ export function N360({ n, tab, din, evts = null, sop, cpa }: { n: Negocio360; ta
     </div>);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 1120 }}>
-      <span role="link" onClick={() => router.push("/admin/negocios")} style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><A.Icon name="chevronLeft" size={15} color="var(--tl-action)" />Negocios</span>
+      <span role="link" onClick={() => router.push("/admin/negocios")} {...tec(() => router.push("/admin/negocios"))} style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><A.Icon name="chevronLeft" size={15} color="var(--tl-action)" />Negocios</span>
       <span style={{ font: "700 9.5px 'JetBrains Mono',monospace", letterSpacing: ".14em", color: "rgba(11,14,18,.45)" }}>NEGOCIO 360°</span>
       <PanelBloques bloques={cab} />
       {notasEstado}

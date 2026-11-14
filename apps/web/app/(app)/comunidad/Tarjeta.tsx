@@ -10,6 +10,7 @@ import { hace, rango, type Pub } from "@/lib/comunidad-comun";
 import { Avatar, MONO } from "./Marco";
 import type { Tr } from "../Traducir";
 
+import { tec } from "@/lib/tec";
 type N = "Icon" | "PostCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, PostCard } = UI as unknown as Record<N, ComponentType<any>>;
@@ -60,14 +61,14 @@ export function Tarjeta({ p, es, full, tr, onOpen, onMenu, onVote, onPoll, onSav
         <div data-screen-label="Publicación · fotos" style={{ position: "relative", marginTop: 12, borderRadius: 16, overflow: "hidden", background: "var(--tl-ink)" }}>
           <div className="hs" onScroll={(e) => { const t = e.currentTarget; setIx(Math.round(t.scrollLeft / Math.max(1, t.clientWidth))); }} style={{ display: "flex", overflowX: "auto", scrollSnapType: "x mandatory" }}>
             {p.fotos.map((f, i) => (
-              <div key={i} onClick={onOpen} style={{ flex: "none", width: "100%", scrollSnapAlign: "start", aspectRatio: full ? "4 / 3" : "4 / 5", maxHeight: 520, background: `url("${f}") center/cover`, backgroundColor: "var(--tl-photo-bg)", cursor: onOpen ? "pointer" : "default" }} role="img" aria-label={E2(`Foto ${i + 1} de ${p.fotos.length}`, `Photo ${i + 1} of ${p.fotos.length}`)} />
+              <div key={i} onClick={onOpen} role="presentation" style={{ flex: "none", width: "100%", scrollSnapAlign: "start", aspectRatio: full ? "4 / 3" : "4 / 5", maxHeight: 520, background: `url("${f}") center/cover`, backgroundColor: "var(--tl-photo-bg)", cursor: onOpen ? "pointer" : "default" }} role="img" aria-label={E2(`Foto ${i + 1} de ${p.fotos.length}`, `Photo ${i + 1} of ${p.fotos.length}`)} />
             ))}
           </div>
           {p.fotos.length > 1 && <span style={{ position: "absolute", top: 12, right: 12, padding: "4px 9px", borderRadius: 99, background: "rgba(11,14,18,.6)", color: "var(--tl-white)", font: `700 10px ${MONO}` }}>{`${ix + 1}/${p.fotos.length}`}</span>}
         </div>
       )}
       {p.negocio && (
-        <div data-screen-label="Publicación · negocio" role="link" onClick={() => onBiz(p.negocio!.id)} style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 12, padding: "10px 14px 10px 10px", borderRadius: 16, background: "var(--tl-paper)", cursor: "pointer" }}>
+        <div data-screen-label="Publicación · negocio" role="link" onClick={() => onBiz(p.negocio!.id)} {...tec(() => onBiz(p.negocio!.id))} style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 12, padding: "10px 14px 10px 10px", borderRadius: 16, background: "var(--tl-paper)", cursor: "pointer" }}>
           <span style={{ width: 52, height: 52, borderRadius: 12, background: p.negocio.foto ? `url("${p.negocio.foto}") center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
             <span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".1em", color: "var(--tl-action)" }}>{E2("RECOMIENDA", "RECOMMENDS") + (p.negocio.para[0] ? ` · ${E2("PARA ", "FOR ")}${p.negocio.para[0].toUpperCase()}` : "")}</span>

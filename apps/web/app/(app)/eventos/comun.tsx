@@ -8,6 +8,7 @@ import { useState, type ComponentType, type MouseEvent } from "react";
 import type { TagEvt, TarjetaEvt } from "@/lib/evt-publico";
 import { evtGuardar } from "./acciones";
 
+import { tec } from "@/lib/tec";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const Icon = UI.Icon as ComponentType<any>;
 export const MONO = "'JetBrains Mono',monospace";
@@ -52,7 +53,7 @@ export function Cartel({ k, saved, onLike, desk, es }: { k: TarjetaEvt; saved: b
         </button>
         {k.tag ? <span className="absolute bottom-2.5 left-2.5 rounded-[7px] px-[9px] py-[5px]" style={{ background: TAG_COLOR[k.tag.k][0], color: TAG_COLOR[k.tag.k][1], font: `800 9px ${MONO}`, letterSpacing: ".1em" }}>{k.tag.t}</span> : null}
       </div>
-      <div role="link" onClick={abrir} className="mt-[9px] cursor-pointer">
+      <div role="link" onClick={abrir} {...tec(abrir)} className="mt-[9px] cursor-pointer">
         <div className="line-clamp-2 font-display font-extrabold leading-[1.25] tracking-[-0.02em]" style={{ fontSize: desk ? 15 : 14 }}>{k.title}</div>
         <div className="mt-1 truncate text-ink/50" style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".06em" }}>{`${k.cuando} · ${k.venue}`.toUpperCase()}</div>
         {k.serie ? <div className="mt-0.5 truncate text-action" style={{ font: `700 9px ${MONO}`, letterSpacing: ".06em" }}>{k.serie}</div> : null}

@@ -5,6 +5,7 @@ import * as UI from "@tolatino/ui";
 import type { ComponentType, CSSProperties } from "react";
 import { cap, F, Fl, opOf, own, TILES, X, ZERO, money, type Borrador } from "./logica";
 
+import { tec } from "@/lib/tec";
 type N = "Icon" | "Button" | "Chip" | "SearchSelect" | "OptionCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, SearchSelect, OptionCard } = UI as unknown as Record<N, ComponentType<any>>;
@@ -23,7 +24,7 @@ export function PasoB1({ d, up, ui, setUi, es, desk, dup, onClaim, toast }: {
   const togSub = (sub: string) => { const S = d.subs || []; if (S.includes(sub)) return up({ subs: S.filter((x) => x !== sub), sel: {} }); if (S.length >= 3) return toast(E2("Hasta 3. Quita una para cambiarla.", "Up to 3. Remove one to change it.")); up({ subs: S.concat([sub]), sel: {} }); };
   const inT = TILES.some((t) => t[0] === d.cat);
   const tile = (code: string | null, l: string, ic: string, onClick: () => void, on: boolean, soft = false) => (
-    <div key={l} role="button" onClick={onClick} style={{ height: 76, boxSizing: "border-box", minWidth: 0, borderRadius: 16, background: on ? "var(--tl-ink)" : soft ? "rgba(75,55,245,.08)" : "var(--tl-white)", color: on ? "var(--tl-white)" : soft ? "var(--tl-action)" : "var(--tl-ink)", border: `1px solid ${on ? "var(--tl-ink)" : soft ? "rgba(75,55,245,.35)" : "rgba(11,14,18,.1)"}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 7, cursor: "pointer" }}>
+    <div key={l} role="button" onClick={onClick} {...tec(onClick)} style={{ height: 76, boxSizing: "border-box", minWidth: 0, borderRadius: 16, background: on ? "var(--tl-ink)" : soft ? "rgba(75,55,245,.08)" : "var(--tl-white)", color: on ? "var(--tl-white)" : soft ? "var(--tl-action)" : "var(--tl-ink)", border: `1px solid ${on ? "var(--tl-ink)" : soft ? "rgba(75,55,245,.35)" : "rgba(11,14,18,.1)"}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 7, cursor: "pointer" }}>
       <Icon name={ic} size={22} color={on ? "var(--tl-white)" : soft ? "var(--tl-action)" : "var(--tl-ink)"} />
       <span style={{ maxWidth: "100%", padding: "0 4px", boxSizing: "border-box", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", font: "700 11.5px Manrope,sans-serif" }}>{l}</span>
     </div>
@@ -35,12 +36,12 @@ export function PasoB1({ d, up, ui, setUi, es, desk, dup, onClaim, toast }: {
       <div style={{ height: 48, boxSizing: "border-box", borderRadius: 14, border: `1.5px solid ${q ? "var(--tl-ink)" : "rgba(11,14,18,.14)"}`, background: "var(--tl-white)", display: "flex", alignItems: "center", gap: 10, padding: "0 8px 0 14px" }}>
         <Icon name="search" size={18} color="rgba(11,14,18,.45)" />
         <input value={q} onChange={(e) => setUi({ q: e.target.value.slice(0, 40) })} placeholder={E2("Barbería, taller, panadería…", "Barbershop, auto shop, bakery…")} aria-label={E2("¿Qué haces?", "What do you do?")} style={{ flex: 1, minWidth: 0, border: 0, outline: "none", background: "none", font: "600 15px Manrope,sans-serif", color: "var(--tl-ink)" }} />
-        {q ? <span role="button" aria-label={E2("Borrar", "Clear")} onClick={() => setUi({ q: "" })} style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(11,14,18,.06)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="close" size={13} /></span> : null}
+        {q ? <span role="button" aria-label={E2("Borrar", "Clear")} onClick={() => setUi({ q: "" })} {...tec(() => setUi({ q: "" }))} style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(11,14,18,.06)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="close" size={13} /></span> : null}
       </div>
       {res.length ? (
         <div style={{ display: "flex", flexDirection: "column", borderRadius: 16, border: "1px solid rgba(11,14,18,.1)", overflow: "hidden" }}>
           {res.map((r, i) => { const kk = X.cat(r.cat); return (
-            <div key={i} role="button" className="hover:bg-[var(--tl-paper)]" onClick={() => { setCat(r.cat); const S = d.cat === r.cat ? d.subs || [] : []; up({ subs: S.includes(r.sub) ? S : S.concat([r.sub]).slice(-3) }); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderTop: i ? "1px solid rgba(11,14,18,.07)" : "none", cursor: "pointer" }}>
+            <div key={i} role="button" className="hover:bg-[var(--tl-paper)]" onClick={() => { setCat(r.cat); const S = d.cat === r.cat ? d.subs || [] : []; up({ subs: S.includes(r.sub) ? S : S.concat([r.sub]).slice(-3) }); }} {...tec(() => { setCat(r.cat); const S = d.cat === r.cat ? d.subs || [] : []; up({ subs: S.includes(r.sub) ? S : S.concat([r.sub]).slice(-3) }); })} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderTop: i ? "1px solid rgba(11,14,18,.07)" : "none", cursor: "pointer" }}>
               <span style={{ width: 34, height: 34, borderRadius: 11, background: "var(--tl-paper)", display: "grid", placeItems: "center", flex: "none" }}><Icon name={kk ? kk[3] : "grid"} size={16} /></span>
               <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{es ? cap(r.sub) : r.en}</div><div style={{ marginTop: 2, font: `700 9.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.5)" }}>{(kk ? (es ? kk[1] : kk[2]) : "").toUpperCase()}</div></div>
               <Icon name="chevronRight" size={15} color="rgba(11,14,18,.4)" />
@@ -55,7 +56,7 @@ export function PasoB1({ d, up, ui, setUi, es, desk, dup, onClaim, toast }: {
       {ui.allCats ? (
         <div style={{ display: "grid", gridTemplateColumns: desk ? "repeat(2,minmax(0,1fr))" : "minmax(0,1fr)", gap: 6 }}>
           {(X.CATS as string[][]).map((k) => { const on = d.cat === k[0]; return (
-            <div key={k[0]} role="button" onClick={() => setCat(k[0]!)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 13, background: on ? "var(--tl-ink)" : "var(--tl-white)", color: on ? "var(--tl-white)" : "var(--tl-ink)", border: `1px solid ${on ? "var(--tl-ink)" : "rgba(11,14,18,.1)"}`, cursor: "pointer", minWidth: 0 }}>
+            <div key={k[0]} role="button" onClick={() => setCat(k[0]!)} {...tec(() => setCat(k[0]!))} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 13, background: on ? "var(--tl-ink)" : "var(--tl-white)", color: on ? "var(--tl-white)" : "var(--tl-ink)", border: `1px solid ${on ? "var(--tl-ink)" : "rgba(11,14,18,.1)"}`, cursor: "pointer", minWidth: 0 }}>
               <Icon name={k[3]} size={17} color={on ? "var(--tl-white)" : "var(--tl-ink)"} /><span style={{ minWidth: 0, font: "700 13px/1.3 Manrope,sans-serif" }}>{es ? k[1] : k[2]}</span>
             </div>); })}
         </div>
@@ -69,7 +70,7 @@ export function PasoB1({ d, up, ui, setUi, es, desk, dup, onClaim, toast }: {
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
               {extra.concat(top).map((t: string[]) => <Chip key={t[2]} variant={(d.subs || []).includes(t[2]!) ? "selected" : "filter"} onClick={() => togSub(t[2]!)}>{es ? t[0] : t[1]}</Chip>)}
-              <span role="button" onClick={() => setUi({ moreSubs: !ui.moreSubs })} style={{ height: 34, boxSizing: "border-box", padding: "0 13px", borderRadius: 999, border: "1.5px dashed rgba(75,55,245,.45)", color: "var(--tl-action)", display: "flex", alignItems: "center", gap: 5, font: "700 13px Manrope,sans-serif", cursor: "pointer" }}>{E2("Otra", "Other")}<Icon name="chevronDown" size={13} color="var(--tl-action)" /></span>
+              <span role="button" onClick={() => setUi({ moreSubs: !ui.moreSubs })} {...tec(() => setUi({ moreSubs: !ui.moreSubs }))} style={{ height: 34, boxSizing: "border-box", padding: "0 13px", borderRadius: 999, border: "1.5px dashed rgba(75,55,245,.45)", color: "var(--tl-action)", display: "flex", alignItems: "center", gap: 5, font: "700 13px Manrope,sans-serif", cursor: "pointer" }}>{E2("Otra", "Other")}<Icon name="chevronDown" size={13} color="var(--tl-action)" /></span>
             </div>
             {ui.moreSubs ? <SearchSelect items={Fl.subsOf(d.cat).map((t: string[]) => ({ k: t[2], l: es ? t[0] : t[1] }))} value={(d.subs || [])[(d.subs || []).length - 1] || ""} onPick={(v: string) => { togSub(v); setUi({ moreSubs: false }); }} placeholder={E2("Busca lo que haces", "Search what you do")} empty={E2("No está en la lista. Elige la más parecida.", "Not on the list. Pick the closest one.")} maxHeight={264} /> : null}
           </div>
@@ -127,9 +128,9 @@ export function PasoC1({ d, up, es }: { d: Borrador; up: Up; es: boolean }) {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "12px 14px", borderRadius: 16, background: "var(--tl-paper)" }}>
                 <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{t}</div>{sx ? <div style={{ marginTop: 3, font: "500 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{sx}</div> : null}</div>
                 <div style={{ flex: "none", display: "flex", alignItems: "center", gap: 2, height: 40, padding: "0 4px", borderRadius: 13, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.12)" }}>
-                  <span role="button" aria-label="−" onClick={() => setOwn(q.k, Math.max(mn, Math.round((n - stp) * 100) / 100))} style={{ width: 32, height: 32, borderRadius: 10, display: "grid", placeItems: "center", cursor: "pointer", opacity: n <= mn ? 0.3 : 1 }}><Icon name="minus" size={15} /></span>
+                  <span role="button" aria-label="−" onClick={() => setOwn(q.k, Math.max(mn, Math.round((n - stp) * 100) / 100))} {...tec(() => setOwn(q.k, Math.max(mn, Math.round((n - stp) * 100) / 100)))} style={{ width: 32, height: 32, borderRadius: 10, display: "grid", placeItems: "center", cursor: "pointer", opacity: n <= mn ? 0.3 : 1 }}><Icon name="minus" size={15} /></span>
                   <span style={{ minWidth: 58, textAlign: "center", font: "800 15px Sora,sans-serif", letterSpacing: "-.02em", whiteSpace: "nowrap" }}>{n === 0 && ZERO[q.k] ? E2(ZERO[q.k]![0], ZERO[q.k]![1]) : q.type === "money" ? money(n) : String(n)}</span>
-                  <span role="button" aria-label="+" onClick={() => setOwn(q.k, Math.min(mx, Math.round((n + stp) * 100) / 100))} style={{ width: 32, height: 32, borderRadius: 10, display: "grid", placeItems: "center", cursor: "pointer", opacity: n >= mx ? 0.3 : 1 }}><Icon name="plus" size={15} /></span>
+                  <span role="button" aria-label="+" onClick={() => setOwn(q.k, Math.min(mx, Math.round((n + stp) * 100) / 100))} {...tec(() => setOwn(q.k, Math.min(mx, Math.round((n + stp) * 100) / 100)))} style={{ width: 32, height: 32, borderRadius: 10, display: "grid", placeItems: "center", cursor: "pointer", opacity: n >= mx ? 0.3 : 1 }}><Icon name="plus" size={15} /></span>
                 </div>
               </div>); })() : null}
             {q.type === "yn" ? (
@@ -143,7 +144,7 @@ export function PasoC1({ d, up, es }: { d: Borrador; up: Up; es: boolean }) {
         );
       })}
       {lk ? (
-        <div role="button" onClick={() => rento ? up({ op: null, join: null, joinName: "" }) : up((z) => ({ op: "rento", own: { ...z.own, team: "solo" } }))} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 16, border: `1.5px dashed ${rento ? "var(--tl-action)" : "rgba(75,55,245,.35)"}`, background: rento ? "rgba(75,55,245,.06)" : "var(--tl-white)", cursor: "pointer" }}>
+        <div role="button" onClick={() => rento ? up({ op: null, join: null, joinName: "" }) : up((z) => ({ op: "rento", own: { ...z.own, team: "solo" } }))} {...tec(() => rento ? up({ op: null, join: null, joinName: "" }) : up((z) => ({ op: "rento", own: { ...z.own, team: "solo" } })))} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 16, border: `1.5px dashed ${rento ? "var(--tl-action)" : "rgba(75,55,245,.35)"}`, background: rento ? "rgba(75,55,245,.06)" : "var(--tl-white)", cursor: "pointer" }}>
           <span style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(75,55,245,.1)", display: "grid", placeItems: "center", flex: "none" }}><Icon name="key" size={17} color="var(--tl-action)" /></span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{rento ? E2("Rentas silla en otro negocio", "You rent a chair elsewhere") : E2(lk.t[0], lk.t[1])}</div>

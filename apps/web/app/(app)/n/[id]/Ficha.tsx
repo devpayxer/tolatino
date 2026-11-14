@@ -47,6 +47,7 @@ import type { NovedadesFicha } from "@/lib/novedades";
 import type { VacanteFicha } from "@/lib/jobs";
 import type { ResumenResenas } from "@/lib/resenas";
 
+import { tec } from "@/lib/tec";
 type N = "Icon" | "Button" | "IconButton" | "Tabs" | "DesktopTabs" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, IconButton, Tabs, DesktopTabs, TodayCard, HoursPro, Tag, Chip, OwnerCard } = UI as unknown as Record<N, ComponentType<any>>;
@@ -235,7 +236,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
   );
   /* ¿PUEDE HACERLO POR LEY? (Prototipo L781 / L1577, bundle-3 V.ax.veh): lleva a la ficha Licencia. */
   const ley = f.ley && (
-    <div data-screen-label="Resumen · puede hacerlo por ley" role={f.ley.enlace ? "link" : undefined} onClick={f.ley.enlace ? () => router.push(`/n/${f.id}/licencia`) : undefined}
+    <div data-screen-label="Resumen · puede hacerlo por ley" role={f.ley.enlace ? "link" : undefined} onClick={f.ley.enlace ? () => router.push(`/n/${f.id}/licencia`) : undefined} {...tec(f.ley.enlace ? () => router.push(`/n/${f.id}/licencia`) : undefined)}
       className="flex items-center gap-3 rounded-[17px] border border-line bg-white px-3.5 py-[13px]" style={{ cursor: f.ley.enlace ? "pointer" : "default" }}>
       <span className="grid size-[42px] flex-none place-items-center rounded-xl bg-ink"><Icon name={f.ley.enlace ? "verified" : "ban"} size={20} color="var(--tl-white)" /></span>
       <span className="min-w-0 flex-1">

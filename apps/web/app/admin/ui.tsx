@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import type { Resultado } from "./acciones";
 import { tomarSiguiente } from "./acciones-colas";
+import { tec } from "@/lib/tec";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Icono = UI.Icon as ComponentType<any>;
 
@@ -75,7 +76,7 @@ export function Shell({ yo, grupos, casos, children }: { yo: { nombre: string; r
           {([["/admin", "home", "Inicio"], ["/admin/colas", "bell", "Colas"], ["/admin/negocios", "store", "Negocios"], ["/admin/usuarios", "users", "Usuarios"]] as const).map(([href, icon, l]) => {
             const on = href === "/admin" ? ruta === "/admin" : ruta.startsWith(href);
             return (
-              <div key={href} role="link" onClick={() => router.push(href)} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "6px 0", cursor: "pointer", color: on ? "var(--tl-ink)" : "rgba(11,14,18,.42)" }}>
+              <div key={href} role="link" onClick={() => router.push(href)} {...tec(() => router.push(href))} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "6px 0", cursor: "pointer", color: on ? "var(--tl-ink)" : "rgba(11,14,18,.42)" }}>
                 <Icono name={icon} size={21} color={on ? "var(--tl-ink)" : "rgba(11,14,18,.42)"} />
                 <span style={{ font: "700 10.5px Manrope,sans-serif" }}>{l}</span>
                 {href === "/admin/colas" && casos.n ? <span style={{ position: "absolute", top: 1, left: "calc(50% + 6px)", minWidth: 17, height: 17, padding: "0 4px", boxSizing: "border-box", borderRadius: 99, background: casos.late ? "var(--tl-danger)" : "var(--tl-action)", color: "var(--tl-white)", display: "grid", placeItems: "center", font: "800 9px 'JetBrains Mono',monospace" }}>{casos.n}</span> : null}

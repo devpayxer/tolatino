@@ -16,6 +16,7 @@ import { useVecinoAcciones } from "../../vecinoAcciones";
 import { abrirReporte } from "../../Reportar";
 import { LINEA988 } from "@/lib/moderacion-comun";
 
+import { tec } from "@/lib/tec";
 type N = "Icon" | "Button" | "IconButton";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, IconButton } = UI as unknown as Record<N, ComponentType<any>>;
@@ -85,7 +86,7 @@ export function Chat({ es, yo, ciudad, c }: { es: boolean; yo: YoCom; ciudad: st
     <Marco es={es} yo={yo} ui={ui} code="APP-COM-CHAT" titulo={o.nombre} sub={meta} back="/comunidad/mensajes">
       <div data-screen-label="APP-COM-CHAT · conversación" style={{ padding: D ? 0 : "14px 16px", maxWidth: 720, display: "flex", flexDirection: "column", gap: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
-          <div role="link" onClick={() => router.push(`/comunidad/v/${o.id}`)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px 6px 6px", borderRadius: 99, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", cursor: "pointer", minWidth: 0 }}>
+          <div role="link" onClick={() => router.push(`/comunidad/v/${o.id}`)} {...tec(() => router.push(`/comunidad/v/${o.id}`))} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px 6px 6px", borderRadius: 99, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", cursor: "pointer", minWidth: 0 }}>
             <Avatar foto={o.foto} ini={o.ini} size={26} />
             <span style={{ font: `600 10px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta}</span>
           </div>

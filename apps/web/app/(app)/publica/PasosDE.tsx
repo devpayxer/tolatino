@@ -8,6 +8,7 @@ import { anfitriones } from "./acciones";
 import { ahora, DAYS, daysOf, F, fmt, Fl, metaOf, money, needZone, opOf, own, rows, status, stepOf, X, zoneOf, type Borrador, type Dia } from "./logica";
 import { K } from "./PasosBC";
 
+import { tec } from "@/lib/tec";
 type N = "Icon" | "Button" | "Chip" | "OptionCard" | "SelectBox" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, OptionCard, SelectBox, Tag } = UI as unknown as Record<N, ComponentType<any>>;
@@ -28,12 +29,12 @@ export function PasoD1({ d, up, es }: { d: Borrador; up: Up; es: boolean }) {
     <div data-screen-label="ONB-NEG-D1 · lo que vendes" style={{ display: "flex", flexDirection: "column", gap: 12, animation: "oFade .2s ease-out" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginTop: 4 }}>
         <span style={K}>{R.length + (d.cust || []).length}{E2(" EN LA LISTA · ", " ON THE LIST · ")}{on}{E2(on === 1 ? " MARCADO" : " MARCADOS", " CHECKED")}</span>
-        {Object.keys(d.sel || {}).length ? <span role="button" onClick={() => up({ sel: {}, via: "list" })} style={{ font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Volver a la lista sugerida", "Back to the suggested list")}</span> : null}
+        {Object.keys(d.sel || {}).length ? <span role="button" onClick={() => up({ sel: {}, via: "list" })} {...tec(() => up({ sel: {}, via: "list" }))} style={{ font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Volver a la lista sugerida", "Back to the suggested list")}</span> : null}
       </div>
       <div>
         {R.map((r) => { const free = r.u === "gratis", stp = stepOf(r.p, r), op = r.on ? 1 : 0.45; return (
           <div key={r.key} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid rgba(11,14,18,.08)" }}>
-            <div role="checkbox" aria-checked={r.on} onClick={() => setRow(r.key, { on: !r.on })} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+            <div role="checkbox" aria-checked={r.on} onClick={() => setRow(r.key, { on: !r.on })} {...tec(() => setRow(r.key, { on: !r.on }))} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
               <span style={{ display: "grid", flex: "none" }}><SelectBox on={r.on} /></span>
               <div style={{ flex: 1, minWidth: 0, opacity: op }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}><span style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{r.n[es ? 0 : 1]}</span>{r.flag ? <Tag tone="neutral">{E2("REVISA", "CHECK")}</Tag> : null}</div>
@@ -42,10 +43,10 @@ export function PasoD1({ d, up, es }: { d: Borrador; up: Up; es: boolean }) {
             </div>
             {!free ? (
               <div style={caja(op, "rgba(11,14,18,.12)")}>
-                <span role="button" aria-label="−" onClick={() => setRow(r.key, { p: Math.max(0, Math.round((r.p - stp) * 100) / 100), on: true, flag: false })} style={boton}><Icon name="minus" size={13} /></span>
+                <span role="button" aria-label="−" onClick={() => setRow(r.key, { p: Math.max(0, Math.round((r.p - stp) * 100) / 100), on: true, flag: false })} {...tec(() => setRow(r.key, { p: Math.max(0, Math.round((r.p - stp) * 100) / 100), on: true, flag: false }))} style={boton}><Icon name="minus" size={13} /></span>
                 <span style={{ font: "800 14px Sora,sans-serif" }}>$</span>
                 <input value={r.praw != null ? r.praw : String(r.p)} onChange={(e) => setRow(r.key, { p: precio(e.target.value), on: true, flag: false })} inputMode="decimal" aria-label={E2("Precio", "Price")} style={{ width: ancho(r.p), border: 0, outline: "none", background: "none", padding: 0, font: "800 14px Sora,sans-serif", letterSpacing: "-.02em", color: "var(--tl-ink)" }} />
-                <span role="button" aria-label="+" onClick={() => setRow(r.key, { p: Math.round((r.p + stp) * 100) / 100, on: true, flag: false })} style={{ ...boton, color: undefined }}><Icon name="plus" size={13} /></span>
+                <span role="button" aria-label="+" onClick={() => setRow(r.key, { p: Math.round((r.p + stp) * 100) / 100, on: true, flag: false })} {...tec(() => setRow(r.key, { p: Math.round((r.p + stp) * 100) / 100, on: true, flag: false }))} style={{ ...boton, color: undefined }}><Icon name="plus" size={13} /></span>
               </div>
             ) : <span style={{ flex: "none", font: "800 13px Sora,sans-serif", color: "var(--tl-open-text)", opacity: op }}>{E2("Gratis", "Free")}</span>}
           </div>); })}
@@ -56,12 +57,12 @@ export function PasoD1({ d, up, es }: { d: Borrador; up: Up; es: boolean }) {
               <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{x.n}</div><div style={{ marginTop: 3, font: `700 9px/1.45 ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{E2("AGREGADO POR TI", "ADDED BY YOU")}</div></div>
             </div>
             <div style={caja(1, "rgba(11,14,18,.12)")}>
-              <span role="button" aria-label="−" onClick={() => up((z) => ({ cust: z.cust.map((y, j) => j === i ? { ...y, p: Math.max(0, (Number(y.p) || 0) - stepOf(y.p)) } : y) }))} style={boton}><Icon name="minus" size={13} /></span>
+              <span role="button" aria-label="−" onClick={() => up((z) => ({ cust: z.cust.map((y, j) => j === i ? { ...y, p: Math.max(0, (Number(y.p) || 0) - stepOf(y.p)) } : y) }))} {...tec(() => up((z) => ({ cust: z.cust.map((y, j) => j === i ? { ...y, p: Math.max(0, (Number(y.p) || 0) - stepOf(y.p)) } : y) })))} style={boton}><Icon name="minus" size={13} /></span>
               <span style={{ font: "800 14px Sora,sans-serif" }}>$</span>
               <input value={String(x.p)} onChange={(e) => { const v = precio(e.target.value); up((z) => ({ cust: z.cust.map((y, j) => j === i ? { ...y, p: v } : y) })); }} inputMode="decimal" aria-label={E2("Precio", "Price")} style={{ width: ancho(x.p), border: 0, outline: "none", background: "none", padding: 0, font: "800 14px Sora,sans-serif", color: "var(--tl-ink)" }} />
-              <span role="button" aria-label="+" onClick={() => up((z) => ({ cust: z.cust.map((y, j) => j === i ? { ...y, p: (Number(y.p) || 0) + stepOf(y.p) } : y) }))} style={{ ...boton, color: undefined }}><Icon name="plus" size={13} /></span>
+              <span role="button" aria-label="+" onClick={() => up((z) => ({ cust: z.cust.map((y, j) => j === i ? { ...y, p: (Number(y.p) || 0) + stepOf(y.p) } : y) }))} {...tec(() => up((z) => ({ cust: z.cust.map((y, j) => j === i ? { ...y, p: (Number(y.p) || 0) + stepOf(y.p) } : y) })))} style={{ ...boton, color: undefined }}><Icon name="plus" size={13} /></span>
             </div>
-            <span role="button" aria-label={E2("Quitar", "Remove")} onClick={() => up((z) => ({ cust: z.cust.filter((_, j) => j !== i) }))} style={{ width: 28, height: 28, borderRadius: 9, display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="trash" size={15} color="rgba(11,14,18,.5)" /></span>
+            <span role="button" aria-label={E2("Quitar", "Remove")} onClick={() => up((z) => ({ cust: z.cust.filter((_, j) => j !== i) }))} {...tec(() => up((z) => ({ cust: z.cust.filter((_, j) => j !== i) })))} style={{ width: 28, height: 28, borderRadius: 9, display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="trash" size={15} color="rgba(11,14,18,.5)" /></span>
           </div>
         ))}
       </div>
@@ -78,7 +79,7 @@ export function PasoD1({ d, up, es }: { d: Borrador; up: Up; es: boolean }) {
           </div>
         </div>
       ) : (
-        <div role="button" onClick={() => setAdd({ ...add, open: true })} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: 8, padding: "6px 0", font: "700 13.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="plus" size={16} color="var(--tl-action)" />{E2("Agregar otro", "Add another")}</div>
+        <div role="button" onClick={() => setAdd({ ...add, open: true })} {...tec(() => setAdd({ ...add, open: true }))} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: 8, padding: "6px 0", font: "700 13.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="plus" size={16} color="var(--tl-action)" />{E2("Agregar otro", "Add another")}</div>
       )}
     </div>
   );
@@ -110,9 +111,9 @@ export function PasoE1({ d, up, es, ciudad, irA }: { d: Borrador; up: Up; es: bo
     <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
       <span style={{ font: `700 9px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.5)" }}>{lbl}</span>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 40, padding: "0 4px", borderRadius: 12, background: "var(--tl-paper)" }}>
-        <span role="button" aria-label="−" onClick={menos} style={{ width: 32, height: 32, display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="minus" size={14} /></span>
+        <span role="button" aria-label="−" onClick={menos} {...tec(menos)} style={{ width: 32, height: 32, display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="minus" size={14} /></span>
         <span style={{ font: "800 13.5px Sora,sans-serif", whiteSpace: "nowrap" }}>{val}</span>
-        <span role="button" aria-label="+" onClick={mas} style={{ width: 32, height: 32, display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="plus" size={14} /></span>
+        <span role="button" aria-label="+" onClick={mas} {...tec(mas)} style={{ width: 32, height: 32, display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="plus" size={14} /></span>
       </div>
     </div>
   );
@@ -125,7 +126,7 @@ export function PasoE1({ d, up, es, ciudad, irA }: { d: Borrador; up: Up; es: bo
           <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 16, background: "var(--tl-paper)" }}>
             <span style={{ width: 38, height: 38, borderRadius: 12, background: "var(--tl-ink)", display: "grid", placeItems: "center", flex: "none" }}><Icon name={sum.ic} size={17} color="var(--tl-white)" /></span>
             <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{sum.t}</div><div style={{ marginTop: 2, font: "500 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{sum.s}</div></div>
-            <span role="button" onClick={() => irA("C1")} style={{ flex: "none", font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Cambiar", "Change")}</span>
+            <span role="button" onClick={() => irA("C1")} {...tec(() => irA("C1"))} style={{ flex: "none", font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Cambiar", "Change")}</span>
           </div>
         ) : null}
         {rento ? (
@@ -135,7 +136,7 @@ export function PasoE1({ d, up, es, ciudad, irA }: { d: Borrador; up: Up; es: bo
               <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 16, border: "1.5px solid var(--tl-ink)" }}>
                 <span style={{ width: 38, height: 38, borderRadius: 12, background: "var(--tl-paper)", display: "grid", placeItems: "center", flex: "none" }}><Icon name="store" size={17} /></span>
                 <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{d.joinName}</div><div style={{ marginTop: 3, font: `700 9.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{(d.addr ? d.addr + " · " : "") + E2("TE AVISA CUANDO TE ACEPTE", "THEY CONFIRM YOU")}</div></div>
-                <span role="button" onClick={() => up({ join: null, joinName: "", addr: "" })} style={{ flex: "none", font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Cambiar", "Change")}</span>
+                <span role="button" onClick={() => up({ join: null, joinName: "", addr: "" })} {...tec(() => up({ join: null, joinName: "", addr: "" }))} style={{ flex: "none", font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Cambiar", "Change")}</span>
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -144,12 +145,12 @@ export function PasoE1({ d, up, es, ciudad, irA }: { d: Borrador; up: Up; es: bo
                   <input value={hostQ} onChange={(e) => setHostQ(e.target.value.slice(0, 40))} placeholder={E2("Busca el negocio", "Search the business")} aria-label={E2("Busca el negocio", "Search the business")} style={entrada} />
                 </div>
                 {hosts.map((h) => (
-                  <div key={h.id} role="button" className="hover:bg-[var(--tl-paper)]" onClick={() => up({ join: h.id, joinName: h.name, addr: h.addr || d.addr })} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 14, border: "1px solid rgba(11,14,18,.1)", cursor: "pointer" }}>
+                  <div key={h.id} role="button" className="hover:bg-[var(--tl-paper)]" onClick={() => up({ join: h.id, joinName: h.name, addr: h.addr || d.addr })} {...tec(() => up({ join: h.id, joinName: h.name, addr: h.addr || d.addr }))} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 14, border: "1px solid rgba(11,14,18,.1)", cursor: "pointer" }}>
                     <span style={{ width: 34, height: 34, borderRadius: 11, background: h.foto ? `url("${h.foto}") center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
                     <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px/1.3 Manrope,sans-serif" }}>{h.name}</div><div style={{ marginTop: 2, font: `700 9.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{(h.addr || ciudad).toUpperCase()}</div></div>
                   </div>
                 ))}
-                {hostQ.trim().length >= 3 && !hosts.length ? <div role="button" onClick={() => up({ join: null, joinName: hostQ.trim() })} style={{ font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2(`No está en To’Latino: usar «${hostQ.trim()}»`, `Not on To’Latino: use “${hostQ.trim()}”`)}</div> : null}
+                {hostQ.trim().length >= 3 && !hosts.length ? <div role="button" onClick={() => up({ join: null, joinName: hostQ.trim() })} {...tec(() => up({ join: null, joinName: hostQ.trim() }))} style={{ font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2(`No está en To’Latino: usar «${hostQ.trim()}»`, `Not on To’Latino: use “${hostQ.trim()}”`)}</div> : null}
               </div>
             )}
           </div>
@@ -188,13 +189,13 @@ export function PasoE1({ d, up, es, ciudad, irA }: { d: Borrador; up: Up; es: bo
               <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0" }}>
                 <span role="switch" aria-checked={x.on} aria-label={es ? DAYS[i]![2] : DAYS[i]![3]} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDay(i, { on: !x.on }); } }} onClick={() => setDay(i, { on: !x.on })} style={{ width: 40, height: 24, boxSizing: "border-box", borderRadius: 99, padding: 3, background: x.on ? "var(--tl-ink)" : "rgba(11,14,18,.15)", display: "flex", justifyContent: x.on ? "flex-end" : "flex-start", flex: "none", cursor: "pointer" }}><span style={{ width: 18, height: 18, borderRadius: 99, background: "var(--tl-white)", boxShadow: "0 1px 2px rgba(11,14,18,.2)" }} /></span>
                 <span style={{ width: 86, flex: "none", font: `${i === t.hoy ? 800 : 700} 13.5px Manrope,sans-serif` }}>{es ? DAYS[i]![2] : DAYS[i]![3]}</span>
-                <span role="button" onClick={() => x.on && setAbierto(open ? -1 : i)} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 6, font: "700 13px Manrope,sans-serif", color: x.on ? "var(--tl-ink)" : "rgba(11,14,18,.45)", cursor: "pointer", textAlign: "right" }}>{x.on ? fmt(x.a) + " – " + fmt(x.b) : E2("Cerrado", "Closed")}{x.on ? <Icon name={open ? "chevronDown" : "chevronRight"} size={13} color="rgba(11,14,18,.45)" /> : null}</span>
+                <span role="button" onClick={() => x.on && setAbierto(open ? -1 : i)} {...tec(() => x.on && setAbierto(open ? -1 : i))} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 6, font: "700 13px Manrope,sans-serif", color: x.on ? "var(--tl-ink)" : "rgba(11,14,18,.45)", cursor: "pointer", textAlign: "right" }}>{x.on ? fmt(x.a) + " – " + fmt(x.b) : E2("Cerrado", "Closed")}{x.on ? <Icon name={open ? "chevronDown" : "chevronRight"} size={13} color="rgba(11,14,18,.45)" /> : null}</span>
               </div>
               {open ? (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 10, padding: "0 0 12px" }}>
                   {paso(E2("ABRE", "OPENS"), fmt(x.a), () => setDay(i, { a: Math.max(0, x.a - 0.5) }), () => setDay(i, { a: Math.min(x.b - 1, x.a + 0.5) }))}
                   {paso(E2("CIERRA", "CLOSES"), fmt(x.b), () => setDay(i, { b: Math.max(x.a + 1, x.b - 0.5) }), () => setDay(i, { b: Math.min(x.a + 20, 30, x.b + 0.5) }))}
-                  <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end" }}><span role="button" onClick={() => up((z) => ({ days: daysOf(z).map((y) => (y.on ? { ...y, a: x.a, b: x.b } : y)), tpl: null }))} style={{ font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Igual los días abiertos", "Same for open days")}</span></div>
+                  <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end" }}><span role="button" onClick={() => up((z) => ({ days: daysOf(z).map((y) => (y.on ? { ...y, a: x.a, b: x.b } : y)), tpl: null }))} {...tec(() => up((z) => ({ days: daysOf(z).map((y) => (y.on ? { ...y, a: x.a, b: x.b } : y)), tpl: null })))} style={{ font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Igual los días abiertos", "Same for open days")}</span></div>
                 </div>
               ) : null}
             </div>); })}

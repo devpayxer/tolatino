@@ -18,6 +18,7 @@ import type { Historia } from "@/lib/hoy-comun";
 import { useVecinoAcciones } from "./vecinoAcciones";
 import { useTraducir } from "../Traducir";
 
+import { tec } from "@/lib/tec";
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
@@ -130,14 +131,14 @@ export function Muro({ es, yo, ciudad, abierta, filtros, inicial, hoy = [] }: { 
     <Marco es={es} yo={yo} ui={ui} code="APP-COM-FEED" titulo={E2("Comunidad", "Community")} sub={`${ciudad.toUpperCase()}${yo.invitado ? E2(` · INVITADO · DE ${yo.invitado.toUpperCase()}`, ` · VISITOR · FROM ${yo.invitado.toUpperCase()}`) : ""}`}>
       <div data-screen-label="APP-COM-FEED · conversación" style={{ background: "var(--tl-white)", borderRadius: 0, maxWidth: 720, overflow: "hidden" }} className="lg:rounded-[20px] lg:border lg:border-ink/[.08]">
         <div data-screen-label="Comunidad · publicar" style={{ padding: "16px 20px", borderBottom: LINE }}>
-          <div role="link" aria-label={E2("Publicar", "Post")} onClick={() => router.push("/comunidad/nuevo")} style={{ display: "flex", alignItems: "center", gap: 11, cursor: "pointer" }}>
+          <div role="link" aria-label={E2("Publicar", "Post")} onClick={() => router.push("/comunidad/nuevo")} {...tec(() => router.push("/comunidad/nuevo"))} style={{ display: "flex", alignItems: "center", gap: 11, cursor: "pointer" }}>
             <Avatar foto={yo.foto} ini={yo.ini} />
             <div style={{ flex: 1, minWidth: 0, height: 44, boxSizing: "border-box", padding: "0 14px", borderRadius: 14, background: "var(--tl-paper)", border: "1px solid rgba(11,14,18,.08)", display: "flex", alignItems: "center", font: "500 14px Manrope,sans-serif", color: "rgba(11,14,18,.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{E2(`¿Qué pasa en tu cuadra, ${yo.primer}?`, `What's happening on your block, ${yo.primer}?`)}</div>
             <span style={{ width: 44, height: 44, borderRadius: 14, background: "var(--tl-ink)", display: "grid", placeItems: "center", flex: "none" }}><Icon name="plus" size={18} strokeWidth={2.4} color="var(--tl-white)" /></span>
           </div>
         </div>
         <div className="hs" style={{ padding: "12px 20px", display: "flex", gap: 7, overflowX: "auto", borderBottom: LINE }}>
-          <span role="button" aria-label={E2("Filtros", "Filters")} onClick={hojaFiltros} style={{ flex: "none", width: 34, height: 34, boxSizing: "border-box", borderRadius: 999, border: `1px solid ${filtOn ? "var(--tl-action)" : "rgba(11,14,18,.12)"}`, background: filtOn ? "rgba(75,55,245,.08)" : "var(--tl-white)", display: "grid", placeItems: "center", cursor: "pointer" }}>
+          <span role="button" aria-label={E2("Filtros", "Filters")} onClick={hojaFiltros} {...tec(hojaFiltros)} style={{ flex: "none", width: 34, height: 34, boxSizing: "border-box", borderRadius: 999, border: `1px solid ${filtOn ? "var(--tl-action)" : "rgba(11,14,18,.12)"}`, background: filtOn ? "rgba(75,55,245,.08)" : "var(--tl-white)", display: "grid", placeItems: "center", cursor: "pointer" }}>
             <Icon name="filter" size={15} color={filtOn ? "var(--tl-action)" : "var(--tl-ink)"} />
           </span>
           {chips.map(([k, l, f, on]) => <Chip key={k} variant={on ? "selected" : "filter"} onClick={() => ir(f)}>{l}</Chip>)}

@@ -10,6 +10,7 @@ import { probarPromo } from "./acciones";
 import { derive, items, opOf, own, X, type Borrador } from "./logica";
 import { K } from "./PasosBC";
 
+import { tec } from "@/lib/tec";
 type N = "Icon" | "Button" | "Chip" | "Tag" | "BusinessPreview";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, Tag, BusinessPreview } = UI as unknown as Record<N, ComponentType<any>>;
@@ -84,9 +85,9 @@ export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast }: {
           <span style={K}>{E2("TUS FOTOS · LA PRIMERA ES LA PORTADA", "YOUR PHOTOS · THE FIRST ONE IS THE COVER")}</span>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 6 }}>
             {todas.map((id, i) => (
-              <div key={id} role="button" aria-label={i ? E2("Usar de portada", "Use as cover") : E2("Portada", "Cover")} onClick={() => (i ? portada(id) : undefined)} style={{ position: "relative", aspectRatio: "1", borderRadius: 12, background: `url("${foto(id, 240)}") center/cover`, backgroundColor: "var(--tl-photo-bg)", cursor: i ? "pointer" : "default", boxShadow: i ? "none" : "0 0 0 2.5px var(--tl-ink)" }}>
+              <div key={id} role="button" aria-label={i ? E2("Usar de portada", "Use as cover") : E2("Portada", "Cover")} onClick={() => (i ? portada(id) : undefined)} {...tec(() => (i ? portada(id) : undefined))} style={{ position: "relative", aspectRatio: "1", borderRadius: 12, background: `url("${foto(id, 240)}") center/cover`, backgroundColor: "var(--tl-photo-bg)", cursor: i ? "pointer" : "default", boxShadow: i ? "none" : "0 0 0 2.5px var(--tl-ink)" }}>
                 <span style={{ position: "absolute", top: 6, left: 6, minWidth: 22, height: 22, padding: "0 7px", boxSizing: "border-box", borderRadius: 99, background: "var(--tl-ink)", color: "var(--tl-white)", display: "grid", placeItems: "center", font: "800 9.5px 'JetBrains Mono',monospace", letterSpacing: ".06em" }}>{i ? String(i + 1) : E2("PORTADA", "COVER")}</span>
-                <span role="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={(e) => { e.stopPropagation(); quitar(id); }} style={{ position: "absolute", top: 6, right: 6, width: 24, height: 24, borderRadius: 99, background: "rgba(255,255,255,.92)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="close" size={12} strokeWidth={2.2} /></span>
+                <span role="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={(e) => { e.stopPropagation(); quitar(id); }} {...tec((e) => { e.stopPropagation(); quitar(id); })} style={{ position: "absolute", top: 6, right: 6, width: 24, height: 24, borderRadius: 99, background: "rgba(255,255,255,.92)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="close" size={12} strokeWidth={2.2} /></span>
               </div>
             ))}
             {Array.from({ length: subiendo }).map((_, i) => <div key={"s" + i} style={{ aspectRatio: "1", borderRadius: 12, background: "var(--tl-photo-bg)", animation: "pvFade 1s ease-in-out infinite alternate" }} />)}
@@ -97,7 +98,7 @@ export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast }: {
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}><span style={K}>{E2("ASÍ TE VEN LOS VECINOS", "HOW NEIGHBORS SEE YOU")}</span><Chip variant="pro">PRO</Chip></div>
           <div className="ohs" style={{ maxHeight: full ? "none" : 460, overflowY: "auto", borderRadius: 22, border: "1px solid rgba(11,14,18,.1)", background: "var(--tl-white)" }}><BusinessPreview pv={pv} mode="page" view="pro" lang={es ? "es" : "en"} /></div>
-          <span role="button" onClick={() => setFull(!full)} style={{ alignSelf: "center", font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{full ? E2("Ver menos", "Show less") : E2("Ver tu página completa", "See your whole page")}</span>
+          <span role="button" onClick={() => setFull(!full)} {...tec(() => setFull(!full))} style={{ alignSelf: "center", font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{full ? E2("Ver menos", "Show less") : E2("Ver tu página completa", "See your whole page")}</span>
         </div>
       ) : null}
       <div style={{ display: "flex", flexDirection: "column", marginTop: 4 }}>
@@ -111,7 +112,7 @@ export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast }: {
         ))}
       </div>
       <div style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(0,229,196,.12)", font: "600 12.5px/1.5 Manrope,sans-serif", color: "var(--tl-open-text)" }}>{E2(`Hoy no se cobra nada. El ${fechas.aviso} te avisamos; si no sigues, el ${fechas.fin} tu página pasa a Free y no se borra nada.`, `Nothing is charged today. On ${fechas.aviso} we remind you; if you don’t continue, on ${fechas.fin} your page moves to Free and nothing is deleted.`)}</div>
-      {!promo.open && !d.promoOk ? <span role="button" onClick={() => setPromo({ ...promo, open: true })} style={{ alignSelf: "flex-start", font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("¿Tienes un código de promotor?", "Have a promoter code?")}</span> : null}
+      {!promo.open && !d.promoOk ? <span role="button" onClick={() => setPromo({ ...promo, open: true })} {...tec(() => setPromo({ ...promo, open: true }))} style={{ alignSelf: "flex-start", font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("¿Tienes un código de promotor?", "Have a promoter code?")}</span> : null}
       {promo.open && !d.promoOk ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -124,7 +125,7 @@ export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast }: {
       {d.promoOk ? (
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 13px", borderRadius: 14, background: "rgba(255,176,32,.14)" }}>
           <Icon name="star" size={16} color="var(--tl-pro-ink)" /><span style={{ flex: 1, minWidth: 0, font: "700 13px/1.4 Manrope,sans-serif" }}>{E2(`Con ${d.promo} tienes ${len} días de Pro gratis.`, `With ${d.promo} you get ${len} days of Pro free.`)}</span>
-          <span role="button" onClick={() => up({ promo: "", promoOk: false })} style={{ flex: "none", font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Quitar", "Remove")}</span>
+          <span role="button" onClick={() => up({ promo: "", promoOk: false })} {...tec(() => up({ promo: "", promoOk: false }))} style={{ flex: "none", font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Quitar", "Remove")}</span>
         </div>
       ) : null}
     </div>
@@ -171,7 +172,7 @@ export function PasoH1({ p, d, es, pv, toast }: { p: Publicado; d: Borrador; es:
       <div style={{ height: 6, borderRadius: 99, background: "rgba(11,14,18,.08)", overflow: "hidden" }}><div style={{ width: `${S.sc}%`, height: "100%", borderRadius: 99, background: "var(--tl-action)" }} /></div>
       <div>
         {S.tasks.slice(0, 6).map((x) => (
-          <div key={x.t} role={x.part ? "link" : undefined} onClick={x.part ? () => { window.location.href = `/panel/${p.id}/pagina/${x.part}`; } : undefined} style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 0", borderBottom: "1px solid rgba(11,14,18,.08)", cursor: x.part ? "pointer" : "default" }}>
+          <div key={x.t} role={x.part ? "link" : undefined} onClick={x.part ? () => { window.location.href = `/panel/${p.id}/pagina/${x.part}`; } : undefined} {...tec(x.part ? () => { window.location.href = `/panel/${p.id}/pagina/${x.part}`; } : undefined)} style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 0", borderBottom: "1px solid rgba(11,14,18,.08)", cursor: x.part ? "pointer" : "default" }}>
             <span style={{ width: 34, height: 34, borderRadius: 11, background: "var(--tl-paper)", display: "grid", placeItems: "center", flex: "none" }}><Icon name={x.icon} size={16} /></span>
             <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px/1.3 Manrope,sans-serif" }}>{x.t}</div>{x.g ? <div style={{ marginTop: 2, font: "500 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.58)" }}>{x.g}</div> : null}</div>
             <span style={{ flex: "none", font: "700 10px 'JetBrains Mono',monospace", letterSpacing: ".06em", color: "var(--tl-action)" }}>+{x.p} %</span>

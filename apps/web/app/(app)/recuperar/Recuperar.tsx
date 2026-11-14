@@ -9,6 +9,7 @@ import type { Recuperar as R } from "@/lib/reclamos";
 import { reducir } from "@/lib/subir-foto";
 import { enviarReclamo, pedirCodigo } from "./acciones";
 
+import { tec } from "@/lib/tec";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, IconButton, BusinessRow, Chip, Button, Tag, OrderTracker } = UI as unknown as Record<"Icon" | "IconButton" | "BusinessRow" | "Chip" | "Button" | "Tag" | "OrderTracker", ComponentType<any>>;
 const MONO = "'JetBrains Mono',monospace";
@@ -92,7 +93,7 @@ export function Recuperar({ r, cands, ciudad, lang, conSesion, origen, id }: {
           <span style={K}>{E2("¿CÓMO LO COMPROBAMOS?", "HOW DO WE CHECK IT?")}</span>
           <div style={{ borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: "0 16px" }}>
             {hows.map((x, i) => (
-              <div key={x.k} role="radio" aria-checked={f.metodo === x.k} onClick={() => up({ metodo: x.k })} style={{ display: "flex", gap: 12, alignItems: "center", padding: "13px 0", borderTop: i ? "1px solid rgba(11,14,18,.08)" : "none", cursor: "pointer" }}>
+              <div key={x.k} role="radio" aria-checked={f.metodo === x.k} onClick={() => up({ metodo: x.k })} {...tec(() => up({ metodo: x.k }))} style={{ display: "flex", gap: 12, alignItems: "center", padding: "13px 0", borderTop: i ? "1px solid rgba(11,14,18,.08)" : "none", cursor: "pointer" }}>
                 <span style={{ width: 20, height: 20, boxSizing: "border-box", borderRadius: 99, border: f.metodo === x.k ? "6px solid var(--tl-ink)" : "1.5px solid rgba(11,14,18,.25)", flex: "none" }} />
                 <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.35 Manrope,sans-serif" }}>{x.t}</div><div style={{ marginTop: 2, font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{x.s}</div></div>
               </div>))}
@@ -104,7 +105,7 @@ export function Recuperar({ r, cands, ciudad, lang, conSesion, origen, id }: {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{DOCS.map(([k, a, b]) => <Chip key={k} variant={f.docKind === k ? "selected" : "filter"} onClick={() => up({ docKind: k })}>{E2(a, b)}</Chip>)}</div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               {doc ? <span style={{ width: 64, height: 64, borderRadius: 12, backgroundImage: `url("${doc.ver}")`, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", flex: "none" }} /> : null}
-              <span role="button" onClick={() => fileRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: 8, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="image" size={16} color="var(--tl-action)" />{doc ? E2("Cambiar foto", "Change photo") : E2("Subir foto del documento", "Upload a photo of the document")}</span>
+              <span role="button" onClick={() => fileRef.current?.click()} {...tec(() => fileRef.current?.click())} style={{ display: "flex", alignItems: "center", gap: 8, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="image" size={16} color="var(--tl-action)" />{doc ? E2("Cambiar foto", "Change photo") : E2("Subir foto del documento", "Upload a photo of the document")}</span>
               <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const x = e.target.files?.[0]; if (x) void subirDoc(x); e.target.value = ""; }} />
             </div>
             <span style={{ font: "500 12px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2("Tapa los números de cuenta. Solo necesitamos ver el nombre del negocio y la dirección.", "Cover account numbers. We only need to see the business name and address.")}</span>
@@ -124,8 +125,8 @@ export function Recuperar({ r, cands, ciudad, lang, conSesion, origen, id }: {
         <input value={codigo} onChange={(e) => setCodigo(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" maxLength={6} placeholder="000000" aria-label={E2("Código", "Code")} style={{ height: 56, boxSizing: "border-box", width: "100%", padding: "0 16px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", font: `800 24px ${MONO}`, letterSpacing: ".4em", textAlign: "center", color: "var(--tl-ink)", outline: "none", background: "var(--tl-white)" }} />
         {prueba ? <div data-modo-pruebas style={{ display: "flex", alignItems: "center", gap: 8 }}><Tag tone="danger">{E2("MODO PRUEBAS", "TEST MODE")}</Tag><span style={{ font: "600 13px Manrope,sans-serif" }}>{E2("Tu código es ", "Your code is ")}<b>{prueba}</b></span></div> : null}
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <span role="button" onClick={() => start(async () => { setErr(null); const x = await pedirCodigo(r!.id); if (!x.ok) setErr(M(x.mensaje)); else setPrueba(x.codigoPrueba ?? null); })} style={{ font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Mandarlo otra vez", "Send it again")}</span>
-          <span role="button" onClick={() => { setPaso("form"); up({ metodo: "documento" }); setCodigo(""); }} style={{ font: "700 13px Manrope,sans-serif", color: "rgba(11,14,18,.6)", cursor: "pointer" }}>{E2("Ya no tengo ese teléfono", "I no longer have that phone")}</span>
+          <span role="button" onClick={() => start(async () => { setErr(null); const x = await pedirCodigo(r!.id); if (!x.ok) setErr(M(x.mensaje)); else setPrueba(x.codigoPrueba ?? null); })} {...tec(() => start(async () => { setErr(null); const x = await pedirCodigo(r!.id); if (!x.ok) setErr(M(x.mensaje)); else setPrueba(x.codigoPrueba ?? null); }))} style={{ font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Mandarlo otra vez", "Send it again")}</span>
+          <span role="button" onClick={() => { setPaso("form"); up({ metodo: "documento" }); setCodigo(""); }} {...tec(() => { setPaso("form"); up({ metodo: "documento" }); setCodigo(""); })} style={{ font: "700 13px Manrope,sans-serif", color: "rgba(11,14,18,.6)", cursor: "pointer" }}>{E2("Ya no tengo ese teléfono", "I no longer have that phone")}</span>
         </div>
       </div>);
   } else if (rc) {
@@ -164,7 +165,7 @@ export function Recuperar({ r, cands, ciudad, lang, conSesion, origen, id }: {
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {desk ? (
             <div>
-              <span role="link" onClick={volver} style={{ display: "inline-flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="chevronLeft" size={15} strokeWidth={2} />{E2("Volver", "Back")}</span>
+              <span role="link" onClick={volver} {...tec(volver)} style={{ display: "inline-flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="chevronLeft" size={15} strokeWidth={2} />{E2("Volver", "Back")}</span>
               <div style={{ marginTop: 14, font: `700 10.5px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.5)" }}>{eye}</div>
               <h1 style={{ margin: "6px 0 0", font: "800 30px/1.1 Sora,sans-serif", letterSpacing: "-.035em", textWrap: "balance" }}>{titulo}</h1>
             </div>

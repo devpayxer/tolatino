@@ -7,6 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ComponentType, type CSSProperties } from "react";
 import { enviarRecomendacion } from "./acciones";
 
+import { tec } from "@/lib/tec";
 type N = "Icon" | "Button" | "Chip" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, OrderTracker } = UI as unknown as Record<N, ComponentType<any>>;
@@ -117,7 +118,7 @@ export function Recomendar({ v }: { v: VistaRec }) {
       <style>{"@keyframes rPop{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}"}</style>
       {!D ? (
         <div style={{ padding: "12px 16px", background: "var(--tl-white)", borderBottom: "1px solid rgba(11,14,18,.07)", display: "flex", alignItems: "center", gap: 12 }}>
-          <span role="button" aria-label={E2("Volver", "Back")} onClick={atras} style={{ width: 34, height: 34, borderRadius: 11, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="chevronLeft" size={16} strokeWidth={2} /></span>
+          <span role="button" aria-label={E2("Volver", "Back")} onClick={atras} {...tec(atras)} style={{ width: 34, height: 34, borderRadius: 11, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="chevronLeft" size={16} strokeWidth={2} /></span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ font: "800 15px/1.2 Sora,sans-serif", letterSpacing: "-.02em" }}>{E2("Recomienda un negocio", "Recommend a business")}</div>
             <div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)" }}>{cityK}</div>
@@ -126,7 +127,7 @@ export function Recomendar({ v }: { v: VistaRec }) {
       ) : null}
       <div style={{ maxWidth: lay.max, margin: "0 auto", padding: lay.pad, display: "grid", gridTemplateColumns: lay.cols, gap: lay.gap, alignItems: "start" }}>
         <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 14 }}>
-          {D ? <div role="button" onClick={atras} style={{ display: "inline-flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="chevronLeft" size={15} strokeWidth={2} />{E2("Volver", "Back")}</div> : null}
+          {D ? <div role="button" onClick={atras} {...tec(atras)} style={{ display: "inline-flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="chevronLeft" size={15} strokeWidth={2} />{E2("Volver", "Back")}</div> : null}
 
           {!sent ? (
             <>

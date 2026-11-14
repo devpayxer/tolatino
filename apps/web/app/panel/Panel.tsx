@@ -69,6 +69,7 @@ import { RutaVivoPanel } from "./RutaPanel";
 import { EscanearCupon } from "./EscanearCupon";
 import { useAhora } from "@/lib/ahora";
 
+import { tec } from "@/lib/tec";
 const Icon = UI.Icon as ComponentType<any>;
 const Button = UI.Button as ComponentType<any>;
 const MONO = "'JetBrains Mono',monospace";
@@ -202,7 +203,7 @@ export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, men
   ];
   const sec = ruta.sec, h1 = desk ? 28 : 24;
   const navIt = (on: boolean, icon: string, l: string, onClick: () => void, side = false) => (
-    <span role="link" onClick={onClick} style={{ display: "flex", alignItems: "center", gap: side ? 9 : 10, padding: side ? "7px 8px" : "9px 10px", borderRadius: side ? 10 : 11, background: on ? "rgba(75,55,245,.08)" : "transparent", cursor: "pointer" }}>
+    <span role="link" onClick={onClick} {...tec(onClick)} style={{ display: "flex", alignItems: "center", gap: side ? 9 : 10, padding: side ? "7px 8px" : "9px 10px", borderRadius: side ? 10 : 11, background: on ? "rgba(75,55,245,.08)" : "transparent", cursor: "pointer" }}>
       <Icon name={icon} size={side ? 15 : 16} color={on ? "var(--tl-ink)" : side ? "rgba(11,14,18,.7)" : "rgba(11,14,18,.66)"} />
       <span style={{ flex: 1, minWidth: 0, font: `${on ? 800 : side ? 600 : 700} ${side ? 12.5 : 13}px Manrope,sans-serif`, color: on ? "var(--tl-ink)" : side ? "rgba(11,14,18,.7)" : "rgba(11,14,18,.66)" }}>{l}</span>
     </span>);
@@ -239,14 +240,14 @@ export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, men
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = Array.from(e.target.files ?? []); if (f.length) fileCb.current?.(f); }} />
       {!desk ? (
         <div style={{ position: "sticky", top: 0, zIndex: 30, background: "var(--tl-white)", borderBottom: "1px solid rgba(11,14,18,.07)", padding: "10px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-          <div role="button" onClick={() => setUi({ sheet: "biz" })} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+          <div role="button" onClick={() => setUi({ sheet: "biz" })} {...tec(() => setUi({ sheet: "biz" }))} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
             {avatar(38)}
             <span style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
               <span style={{ display: "flex", alignItems: "center", gap: 5, font: "800 15px/1.1 Sora,sans-serif", letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.name}<Icon name="chevronDown" size={14} /></span>
               {estadoL(9, ".12em")}
             </span>
           </div>
-          {d.sells ? <span role="button" aria-label={E2("Avisos", "Alerts")} onClick={() => go("hoy")} style={{ position: "relative", width: 38, height: 38, borderRadius: 12, background: "rgba(11,14,18,.05)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="bell" size={18} /></span> : null}
+          {d.sells ? <span role="button" aria-label={E2("Avisos", "Alerts")} onClick={() => go("hoy")} {...tec(() => go("hoy"))} style={{ position: "relative", width: 38, height: 38, borderRadius: 12, background: "rgba(11,14,18,.05)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="bell" size={18} /></span> : null}
         </div>
       ) : null}
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: desk ? (detCol ? "264px minmax(0,1fr) 420px" : "264px minmax(0,1fr)") : "minmax(0,1fr)", gap: desk ? 28 : 0, maxWidth: desk ? 1440 : "none", width: "100%", margin: "0 auto", padding: desk ? "28px 32px 64px" : "16px 16px 24px", alignItems: "start", boxSizing: "border-box" }}>
@@ -254,7 +255,7 @@ export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, men
           <aside data-screen-label="Panel v2 · menú (2t)" style={{ minWidth: 0, position: "sticky", top: 28 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ padding: 12, borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 10 }}>
-                <div role="button" onClick={() => setUi({ sheet: "biz" })} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                <div role="button" onClick={() => setUi({ sheet: "biz" })} {...tec(() => setUi({ sheet: "biz" }))} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
                   {avatar(40)}
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 5, font: "800 13.5px/1.2 Sora,sans-serif", letterSpacing: "-.02em" }}>{d.name}<Icon name="chevronDown" size={13} color="rgba(11,14,18,.45)" /></span>
@@ -262,7 +263,7 @@ export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, men
                   </span>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 6 }}>
-                  {kpis.map((k) => <span key={k.k} role={k.onClick ? "button" : undefined} onClick={k.onClick} style={{ padding: "7px 6px", borderRadius: 10, background: "var(--tl-paper)", display: "flex", flexDirection: "column", gap: 2, alignItems: "center", cursor: k.onClick ? "pointer" : "default" }}><span style={{ font: "800 14px Sora,sans-serif" }}>{k.v}</span><span style={{ font: `700 7.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)", textAlign: "center" }}>{k.k}</span></span>)}
+                  {kpis.map((k) => <span key={k.k} role={k.onClick ? "button" : undefined} onClick={k.onClick} {...tec(k.onClick)} style={{ padding: "7px 6px", borderRadius: 10, background: "var(--tl-paper)", display: "flex", flexDirection: "column", gap: 2, alignItems: "center", cursor: k.onClick ? "pointer" : "default" }}><span style={{ font: "800 14px Sora,sans-serif" }}>{k.v}</span><span style={{ font: `700 7.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)", textAlign: "center" }}>{k.k}</span></span>)}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
                   {navIt(sec === "pag" && !ruta.sub, "store", E2("Tu página", "Your page"), () => go("pag"), true)}
@@ -323,14 +324,14 @@ export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, men
       </div>
       {showSave && ed ? (
         <div style={{ position: "sticky", bottom: 0, zIndex: 40, background: "rgba(247,246,243,.96)", backdropFilter: "blur(14px)", borderTop: "1px solid rgba(11,14,18,.08)", padding: "10px 16px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-          <span role="button" onClick={() => discard(ed)} style={{ font: "700 13.5px Manrope,sans-serif", color: "rgba(11,14,18,.65)", cursor: "pointer", padding: "0 6px" }}>{E2("Descartar", "Discard")}</span>
+          <span role="button" onClick={() => discard(ed)} {...tec(() => discard(ed))} style={{ font: "700 13.5px Manrope,sans-serif", color: "rgba(11,14,18,.65)", cursor: "pointer", padding: "0 6px" }}>{E2("Descartar", "Discard")}</span>
           <span style={{ flex: 1, minWidth: 0, textAlign: "right", font: `600 9.5px ${MONO}`, letterSpacing: ".08em", color: "var(--tl-pro-ink)" }}>{ed.F.dirty ? E2("CAMBIOS SIN GUARDAR", "UNSAVED CHANGES") : ""}</span>
           <Button size="lg" icon="check" disabled={!(ed.F.dirty || ed.always) || !ed.valid || pending} onClick={() => commit(ed)}>{ed.l}</Button>
         </div>
       ) : !desk && mnav.length > 1 ? (
         <div style={{ position: "sticky", bottom: 0, zIndex: 40, background: "rgba(247,246,243,.96)", backdropFilter: "blur(14px)", borderTop: "1px solid rgba(11,14,18,.08)", padding: "8px 8px 14px", display: "grid", gridTemplateColumns: `repeat(${mnav.length},minmax(0,1fr))` }}>
           {mnav.map((n) => { const on = n.k === sec || (n.k === "mas" && ["mod", "dlv", "pay", "evt", "cpa"].includes(sec) && !mtabs.has(sec)); return (
-            <div key={n.k} role="link" onClick={() => go(n.k as Ruta["sec"])} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "6px 0", cursor: "pointer", color: on ? "var(--tl-ink)" : "rgba(11,14,18,.42)" }}>
+            <div key={n.k} role="link" onClick={() => go(n.k as Ruta["sec"])} {...tec(() => go(n.k as Ruta["sec"]))} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "6px 0", cursor: "pointer", color: on ? "var(--tl-ink)" : "rgba(11,14,18,.42)" }}>
               <Icon name={n.icon} size={21} color={on ? "var(--tl-ink)" : "rgba(11,14,18,.42)"} /><span style={{ font: "700 10.5px Manrope,sans-serif" }}>{n.l}</span>
             </div>); })}
         </div>
@@ -359,7 +360,7 @@ export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, men
 }
 
 function Cerrar({ onClick }: { onClick: () => void }): ReactNode {
-  return <span role="button" aria-label="Cerrar" onClick={onClick} style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(11,14,18,.05)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="close" size={15} strokeWidth={2} /></span>;
+  return <span role="button" aria-label="Cerrar" onClick={onClick} {...tec(onClick)} style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(11,14,18,.05)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="close" size={15} strokeWidth={2} /></span>;
 }
 
 /* ─────────────────────────── Secciones ─────────────────────────── */

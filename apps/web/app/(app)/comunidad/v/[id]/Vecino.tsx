@@ -17,6 +17,7 @@ import { Tarjeta } from "../../Tarjeta";
 import { useTraducir } from "../../../Traducir";
 import { useVecinoAcciones } from "../../vecinoAcciones";
 
+import { tec } from "@/lib/tec";
 type N = "Icon" | "Button" | "IconButton" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, IconButton, Tag } = UI as unknown as Record<N, ComponentType<any>>;
@@ -99,7 +100,7 @@ export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCo
           {stats && (
             <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 8 }}>
               {stats.map(([n, l]) => (
-                <div key={l} role={v.yo && l !== stats[0]![1] ? "link" : undefined} onClick={v.yo && l !== stats[0]![1] ? () => router.push(`/cuenta/vecinos?l=${l === stats[1]![1] ? "seguidores" : "siguiendo"}`) : undefined}
+                <div key={l} role={v.yo && l !== stats[0]![1] ? "link" : undefined} onClick={v.yo && l !== stats[0]![1] ? () => router.push(`/cuenta/vecinos?l=${l === stats[1]![1] ? "seguidores" : "siguiendo"}`) : undefined} {...tec(v.yo && l !== stats[0]![1] ? () => router.push(`/cuenta/vecinos?l=${l === stats[1]![1] ? "seguidores" : "siguiendo"}`) : undefined)}
                   style={{ padding: 10, borderRadius: 13, background: "var(--tl-paper)", cursor: v.yo && l !== stats[0]![1] ? "pointer" : "default" }}>
                   <div style={{ font: "800 18px/1 Sora,sans-serif", letterSpacing: "-.02em" }}>{n.toLocaleString("en-US")}</div>
                   <div style={{ marginTop: 5, font: `700 8.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.5)" }}>{l}</div>
@@ -121,7 +122,7 @@ export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCo
           <div data-screen-label="APP-COM-VECINO · silenciado" role="note" style={{ margin: margen, padding: "12px 14px", borderRadius: 14, background: "rgba(11,14,18,.05)", display: "flex", gap: 10, alignItems: "center" }}>
             <Icon name="bell" size={16} />
             <span style={{ flex: 1, font: "600 12.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.7)" }}>{E2(`Silenciaste a ${primero(v.nombre)}: no ves lo que publica ni comenta. No se entera.`, `You muted ${primero(v.nombre)}: you don't see their posts or comments. They don't know.`)}</span>
-            <span role="button" onClick={vec.deshacer(v.id, "mute")} style={{ font: "800 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Quitar", "Undo")}</span>
+            <span role="button" onClick={vec.deshacer(v.id, "mute")} {...tec(vec.deshacer(v.id, "mute"))} style={{ font: "800 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Quitar", "Undo")}</span>
           </div>
         )}
         {v.yo && <MisEnlaces es={es} v={v} ui={ui} margen={margen} />}
@@ -173,7 +174,7 @@ function MisEnlaces({ es, v, ui, margen }: { es: boolean; v: V; ui: ComUi; marge
   return (
     <div data-screen-label="APP-COM-VECINO · lo mío" style={{ ...CARD, borderRadius: 18, margin: margen, padding: "4px 16px" }}>
       {filas.map(([ic, t, s, on], i) => (
-        <div key={t} role="link" onClick={on} style={{ display: "flex", gap: 12, alignItems: "center", padding: "12px 0", borderTop: i ? LINE : "none", cursor: "pointer" }}>
+        <div key={t} role="link" onClick={on} {...tec(on)} style={{ display: "flex", gap: 12, alignItems: "center", padding: "12px 0", borderTop: i ? LINE : "none", cursor: "pointer" }}>
           <span style={{ display: "grid", flex: "none" }}><Icon name={ic} size={18} color="var(--tl-action)" /></span>
           <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px Manrope,sans-serif" }}>{t}</div>{s && <div style={{ marginTop: 2, font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)" }}>{s}</div>}</div>
           <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" />

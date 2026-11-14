@@ -11,6 +11,7 @@ import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { useAhora } from "@/lib/ahora";
 
+import { tec } from "@/lib/tec";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"DenseTable" | "AdminNote" | "AdminList" | "AuditLog" | "HBars" | "PermMatrix" | "Pager" | "Icon", ComponentType<any>>;
 type Hist = { action: string; target_id: string; before: unknown; after: unknown; reason: string | null; at: string; quien: string | null }[];
@@ -67,7 +68,7 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
     const c = d.cat, vivas = c.subs.filter((s) => s.status === "on"), quitadas = c.subs.filter((s) => s.status !== "on");
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 1120 }}>
-        <span role="link" onClick={() => ir({ c: null })} style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><A.Icon name="chevronLeft" size={15} color="var(--tl-action)" />Catálogo</span>
+        <span role="link" onClick={() => ir({ c: null })} {...tec(() => ir({ c: null }))} style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><A.Icon name="chevronLeft" size={15} color="var(--tl-action)" />Catálogo</span>
         <PanelBloques bloques={[
           { type: "head", eye: "CATEGORÍA", t: c.es, s: `${c.id} · ${c.negocios.length ? "" : "sin negocios todavía · "}${vivas.length} subcategorías`, h1: desk ? 26 : 22 },
           c.line ? { type: "note", tone: "ink", icon: "warning", t: `Línea fija (nunca se suaviza): ${c.line.es}` } : null,
@@ -101,7 +102,7 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
     const f = d.filt, off = f.opciones.filter((o) => !o.active).length, grupos = [...new Map(f.opciones.map((o) => [o.group_key, o.grupo])).entries()];
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 1120 }}>
-        <span role="link" onClick={() => ir({ f: null })} style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><A.Icon name="chevronLeft" size={15} color="var(--tl-action)" />Familias de filtros</span>
+        <span role="link" onClick={() => ir({ f: null })} {...tec(() => ir({ f: null }))} style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><A.Icon name="chevronLeft" size={15} color="var(--tl-action)" />Familias de filtros</span>
         <PanelBloques bloques={[{ type: "head", eye: "FILTROS DE LA CATEGORÍA", t: f.es, s: "Lo que apagues deja de salir al instante en la hoja de filtros y en los filtros rápidos de la página de la categoría.", h1: desk ? 26 : 22 }]} />
         {!f.opciones.length ? <PanelBloques bloques={[{ type: "empty", icon: "grid", t: "Solo los globales", s: "Esta categoría no tiene filtros propios." }]} /> : grupos.map(([g, label]) => (
           <PanelBloques key={g} bloques={[{ type: "group", k: label }, { type: "rows", items: f.opciones.filter((o) => o.group_key === g).map((o) => ({

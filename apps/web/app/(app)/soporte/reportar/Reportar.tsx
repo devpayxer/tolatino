@@ -88,7 +88,7 @@ export function Reportar({ es, conSesion, negocio, agitado, horario }: { es: boo
       {grande && cap ? (
         <div role="dialog" aria-modal="true" aria-label={E2("Captura", "Capture")} className="fixed inset-0 z-[95] flex flex-col items-center justify-center gap-3 bg-ink/90 p-4" onClick={() => setGrande(false)}>
           <img src={cap.url} alt={E2("La captura que se envía con tu reporte", "The capture sent with your report")} className="max-h-[80dvh] max-w-full rounded-[14px] object-contain" />
-          <span data-cerrar onClick={() => setGrande(false)}><IconButton icon="close" size={44} label={E2("Cerrar", "Close")} onClick={() => setGrande(false)} /></span>
+          <span data-cerrar onClick={() => setGrande(false)} role="presentation"><IconButton icon="close" size={44} label={E2("Cerrar", "Close")} onClick={() => setGrande(false)} /></span>
         </div>
       ) : null}
     </div>

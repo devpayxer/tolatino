@@ -12,6 +12,7 @@ import { dinero } from "@/lib/evt-comun";
 import { eventosMas } from "./acciones";
 import { Cartel, Icon, MONO, useGuardar, useToast } from "./comun";
 
+import { tec } from "@/lib/tec";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Button = UI.Button as ComponentType<any>;
 
@@ -72,7 +73,7 @@ export function Eventos({ es, ciudad, estado, d, t, generos, lista, noche, feat,
       <div data-screen-label="APP-EVT-BUSQ · móvil" className="pb-[110px] lg:hidden">
         {mios + bol > 0 && (
           <div className="px-5 pt-3">
-            <div role="link" onClick={() => router.push(bol > 0 ? "/cuenta/boletos" : "/cuenta/guardados?f=evt")} className="flex cursor-pointer items-center gap-[11px] rounded-2xl bg-ink px-3.5 py-3 text-white">
+            <div role="link" onClick={() => router.push(bol > 0 ? "/cuenta/boletos" : "/cuenta/guardados?f=evt")} {...tec(() => router.push(bol > 0 ? "/cuenta/boletos" : "/cuenta/guardados?f=evt"))} className="flex cursor-pointer items-center gap-[11px] rounded-2xl bg-ink px-3.5 py-3 text-white">
               <span className="grid size-9 place-items-center rounded-[11px] bg-white/10"><Icon name="ticket" size={18} /></span>
               <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Mis boletos y RSVP", "My tickets & RSVPs")}</span>
                 <span className="mt-0.5 block text-white/55" style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".1em" }}>{[bol ? `${bol} ${bol === 1 ? E2("BOLETO", "TICKET") : E2("BOLETOS", "TICKETS")}` : "", mios ? `${mios} RSVP` : ""].filter(Boolean).join(" · ")}</span></span>
@@ -83,10 +84,10 @@ export function Eventos({ es, ciudad, estado, d, t, generos, lista, noche, feat,
         {noche.length > 0 && (
           <div data-screen-label="APP-EVT-BUSQ · esta noche" className="mt-4">
             <div className="flex items-baseline justify-between gap-2.5 px-5"><span className="font-display text-[18px] font-extrabold leading-none tracking-[-0.03em]">{E2("Esta noche", "Tonight")}</span>
-              <span role="link" onClick={() => router.push("/eventos/esta-noche")} className="cursor-pointer text-action" style={{ font: `700 10.5px ${MONO}`, letterSpacing: ".08em" }}>{E2("VER COMO HISTORIAS", "VIEW AS STORIES")}</span></div>
+              <span role="link" onClick={() => router.push("/eventos/esta-noche")} {...tec(() => router.push("/eventos/esta-noche"))} className="cursor-pointer text-action" style={{ font: `700 10.5px ${MONO}`, letterSpacing: ".08em" }}>{E2("VER COMO HISTORIAS", "VIEW AS STORIES")}</span></div>
             <div className="hs mt-3 flex gap-3.5 overflow-x-auto px-5 pb-1 pt-0.5">
               {noche.map((s, i) => (
-                <div key={s.fecha} role="link" aria-label={s.title} onClick={() => router.push(`/eventos/esta-noche?i=${i}`)} className="flex w-[74px] flex-none cursor-pointer flex-col items-center gap-[7px]">
+                <div key={s.fecha} role="link" aria-label={s.title} onClick={() => router.push(`/eventos/esta-noche?i=${i}`)} {...tec(() => router.push(`/eventos/esta-noche?i=${i}`))} className="flex w-[74px] flex-none cursor-pointer flex-col items-center gap-[7px]">
                   <span className="grid size-[70px] rounded-full p-[3px]" style={{ background: "linear-gradient(135deg,var(--tl-mod-events),var(--tl-brand))" }}>
                     <span className="grid overflow-hidden rounded-full bg-paper p-[2.5px]">{s.img ? <img src={s.img} alt="" className="block h-full w-full rounded-full object-cover" /> : <span className="block h-full w-full rounded-full bg-photo-bg" />}</span>
                   </span>
@@ -98,7 +99,7 @@ export function Eventos({ es, ciudad, estado, d, t, generos, lista, noche, feat,
         )}
         {feat && (
           <div className="mt-4 px-5">
-            <div role="link" data-screen-label="APP-EVT-BUSQ · destacado" onClick={() => router.push(feat.href)} className="relative cursor-pointer overflow-hidden rounded-[22px] bg-ink text-white">
+            <div role="link" data-screen-label="APP-EVT-BUSQ · destacado" onClick={() => router.push(feat.href)} {...tec(() => router.push(feat.href))} className="relative cursor-pointer overflow-hidden rounded-[22px] bg-ink text-white">
               {feat.img ? <img src={feat.img} alt="" className="absolute inset-0 block h-full w-full object-cover opacity-[.52]" /> : null}
               <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(11,14,18,0) 20%,rgba(11,14,18,.88))" }} />
               <div className="relative px-[18px] pb-[18px] pt-[88px]">
@@ -143,7 +144,7 @@ export function Eventos({ es, ciudad, estado, d, t, generos, lista, noche, feat,
         {(feat || noche.length > 0) && (
           <div className="grid items-stretch gap-[18px]" style={{ gridTemplateColumns: feat && noche.length ? "minmax(0,1.35fr) minmax(0,1fr)" : "minmax(0,1fr)" }}>
             {feat && (
-              <div role="link" onClick={() => router.push(feat.href)} className="relative min-h-[340px] cursor-pointer overflow-hidden rounded-[22px] bg-ink text-white">
+              <div role="link" onClick={() => router.push(feat.href)} {...tec(() => router.push(feat.href))} className="relative min-h-[340px] cursor-pointer overflow-hidden rounded-[22px] bg-ink text-white">
                 {feat.img ? <img src={feat.img} alt="" className="absolute inset-0 block h-full w-full object-cover opacity-[.55]" /> : null}
                 <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(11,14,18,0) 25%,rgba(11,14,18,.9))" }} />
                 <div className="absolute inset-x-0 bottom-0 p-[26px]">
@@ -160,10 +161,10 @@ export function Eventos({ es, ciudad, estado, d, t, generos, lista, noche, feat,
             {noche.length > 0 && (
               <div data-screen-label="APP-EVT-BUSQ · esta noche · desktop" className="flex min-h-[340px] flex-col rounded-[22px] bg-ink px-5 pb-3.5 pt-5 text-white">
                 <div className="flex items-baseline justify-between gap-2.5"><span className="font-display text-[18px] font-extrabold tracking-[-0.03em]">{E2("Esta noche", "Tonight")}</span>
-                  <span role="link" onClick={() => router.push("/eventos/esta-noche")} className="cursor-pointer" style={{ font: `700 10px ${MONO}`, letterSpacing: ".08em", color: "var(--tl-mod-events)" }}>{E2("VER COMO HISTORIAS", "VIEW AS STORIES")}</span></div>
+                  <span role="link" onClick={() => router.push("/eventos/esta-noche")} {...tec(() => router.push("/eventos/esta-noche"))} className="cursor-pointer" style={{ font: `700 10px ${MONO}`, letterSpacing: ".08em", color: "var(--tl-mod-events)" }}>{E2("VER COMO HISTORIAS", "VIEW AS STORIES")}</span></div>
                 <div className="mt-3 flex flex-1 flex-col gap-1">
                   {noche.slice(0, 5).map((w) => (
-                    <div key={w.fecha} role="link" onClick={() => router.push(w.href)} className="-mx-2.5 flex cursor-pointer items-center gap-3 rounded-[14px] px-2.5 py-[9px] hover:bg-white/[.06]">
+                    <div key={w.fecha} role="link" onClick={() => router.push(w.href)} {...tec(() => router.push(w.href))} className="-mx-2.5 flex cursor-pointer items-center gap-3 rounded-[14px] px-2.5 py-[9px] hover:bg-white/[.06]">
                       {w.img ? <img src={w.img} alt="" className="block size-[46px] rounded-xl object-cover" /> : <span className="block size-[46px] rounded-xl bg-white/10" />}
                       <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{w.title}</span>
                         <span className="mt-0.5 block text-white/50" style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".06em" }}>{`${w.venue} · ${w.cuando.split(" · ").pop()}${w.edad ? ` · ${w.edad}+` : ""}`.toUpperCase()}</span></span>
@@ -184,7 +185,7 @@ export function Eventos({ es, ciudad, estado, d, t, generos, lista, noche, feat,
         </div>
         <div className="mt-4 flex items-center justify-between gap-3">
           <span className="text-ink/45" style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em" }}>{conteo}</span>
-          {mios > 0 && <span role="link" onClick={() => router.push("/cuenta/guardados?f=evt")} className="flex cursor-pointer items-center gap-[7px] text-[12px] font-bold text-action"><Icon name="ticket" size={15} />{E2("Mis boletos y RSVP", "My tickets & RSVPs")}</span>}
+          {mios > 0 && <span role="link" onClick={() => router.push("/cuenta/guardados?f=evt")} {...tec(() => router.push("/cuenta/guardados?f=evt"))} className="flex cursor-pointer items-center gap-[7px] text-[12px] font-bold text-action"><Icon name="ticket" size={15} />{E2("Mis boletos y RSVP", "My tickets & RSVPs")}</span>}
         </div>
         {!items.length && !vacioModulo ? vacio(true) : null}
         {secs.map((s) => (

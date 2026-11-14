@@ -8,6 +8,7 @@ import { useState, type ComponentType } from "react";
 import type { FiltrosNeg } from "@/lib/admin-negocios";
 import { useAncho } from "./Colas";
 
+import { tec } from "@/lib/tec";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"DenseTable" | "AdminList" | "Pager" | "Icon", ComponentType<any>>;
 type Fila = { id: string; name: string; cat: string; cat_id: string; subs: string | null; plan: string; trial: boolean; verified: boolean; rating: number | null; reviews: number; perfil: number; estado: string; cover: string | null };
@@ -49,7 +50,7 @@ export function Negocios({ filas, total, porCat, cab, f, cats, porPagina }: {
         <span style={{ position: "absolute", left: 15, top: 14.5, display: "grid" }}><A.Icon name="search" size={17} color="rgba(11,14,18,.45)" /></span>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nombre, id, teléfono, dirección o subcategoría" aria-label="Buscar negocio"
           style={{ width: "100%", height: 46, boxSizing: "border-box", padding: "0 40px 0 42px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", background: "var(--tl-white)", font: "600 14.5px Manrope,sans-serif", outline: "none" }} />
-        {q ? <span role="button" aria-label="Borrar" onClick={() => { setQ(""); ir({ q: null }); }} style={{ position: "absolute", right: 12, top: 13, cursor: "pointer", display: "grid" }}><A.Icon name="close" size={18} color="rgba(11,14,18,.5)" /></span> : null}
+        {q ? <span role="button" aria-label="Borrar" onClick={() => { setQ(""); ir({ q: null }); }} {...tec(() => { setQ(""); ir({ q: null }); })} style={{ position: "absolute", right: 12, top: 13, cursor: "pointer", display: "grid" }}><A.Icon name="close" size={18} color="rgba(11,14,18,.5)" /></span> : null}
       </form>
       <PanelBloques bloques={despues} />
       {!filas.length ? (

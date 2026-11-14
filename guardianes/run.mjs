@@ -1220,6 +1220,38 @@ const guardianes = {
     if (existsSync("packages/ui/src/ds")) recorrer("packages/ui/src/ds");
   },
 
+  /* 9c · Las pantallas (apps/web) también: un <div>/<span> con onClick que no es un control de verdad lo usa el teclado y el lector de pantalla
+     (14 nov: 147 clics mudos con o sin role="button" sin foco). Cada etiqueta con onClick trae `{...tec(clic)}` (lib/tec.ts: foco, Enter y
+     Espacio), un tabIndex / onKeyDown propios o role="presentation" (zona de clic que repite a otro control). Quedan fuera los fondos de hojas
+     (inset-0), los envoltorios que solo detienen el clic y el mapa (sus propios gestos). */
+  clicConTeclado() {
+    const G = "clicConTeclado";
+    const llaves = (s, i) => { let d = 0; for (; i < s.length; i++) { const c = s[i];
+      if (c === '"' || c === "'") { const q = c; i++; while (i < s.length && s[i] !== q) i++; }
+      else if (c === "`") { i++; while (i < s.length && s[i] !== "`") { if (s[i] === "\\") i++; else if (s[i] === "$" && s[i + 1] === "{") i = llaves(s, i + 1) - 1; i++; } }
+      else if (c === "{") d++;
+      else if (c === "}") { d--; if (!d) return i + 1; } }
+      return -1; };
+    const finTag = (s, i) => { for (; i < s.length; i++) { const c = s[i];
+      if (c === '"' || c === "'") { const q = c; i++; while (i < s.length && s[i] !== q) i++; }
+      else if (c === "{") { i = llaves(s, i); if (i < 0) return -1; i--; }
+      else if (c === ">") return i; }
+      return -1; };
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx$/.test(f)) continue;
+      const s = readFileSync(f, "utf8");
+      if (!s.includes("onClick={")) continue;
+      for (const m of s.matchAll(/<([a-z][a-zA-Z0-9]*)(?=[\s/>])/g)) {
+        if (["button", "a", "input", "select", "textarea", "label", "summary", "option"].includes(m[1])) continue;
+        const e = finTag(s, m.index + m[0].length);
+        if (e < 0) continue;
+        const tag = s.slice(m.index, e + 1);
+        if (!tag.includes("onClick={") || /tec\(|tabIndex|onKeyDown|role="presentation"|onPointer|inset-0|inset: 0|stopPropagation|onClick=\{(stop|parar)\}/.test(tag)) continue;
+        falla(G, f, s.slice(0, m.index).split("\n").length, `<${m[1]}> con onClick sin teclado: agrega {...tec(clic)} (lib/tec.ts) y su role, o role="presentation" si repite a otro control`);
+      }
+    }
+  },
+
   /* 3o. Todo interruptor (role="switch") se usa con teclado: si no es un <button>, lleva tabIndex y onKeyDown; si es un
      <span> suelto, además su nombre (aria-label). 6 nov, 2p: el de «Respuesta automática» y otros cuatro no tenían. */
   interruptorAccesible() {

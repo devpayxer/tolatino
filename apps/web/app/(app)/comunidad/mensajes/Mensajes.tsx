@@ -10,6 +10,7 @@ import type { Conv } from "@/lib/mensajes-vecinos";
 import { dmLista } from "../acciones";
 import { Avatar, LINE, MONO, Marco, useAncho, useComUi, type YoCom } from "../Marco";
 
+import { tec } from "@/lib/tec";
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
@@ -34,7 +35,7 @@ export function Mensajes({ es, yo, ciudad, d }: { es: boolean; yo: YoCom; ciudad
         </div>
         <div style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", overflow: "hidden" }}>
           {items.map((x, i) => (
-            <div key={x.id} role="link" data-screen-label="Mensajes · conversación" onClick={() => router.push(`/comunidad/mensajes/${x.otro.id}`)}
+            <div key={x.id} role="link" data-screen-label="Mensajes · conversación" onClick={() => router.push(`/comunidad/mensajes/${x.otro.id}`)} {...tec(() => router.push(`/comunidad/mensajes/${x.otro.id}`))}
               style={{ padding: "13px 16px", borderTop: i ? LINE : "none", display: "flex", gap: 12, alignItems: "center", cursor: "pointer", background: x.unread ? "rgba(75,55,245,.04)" : "var(--tl-white)" }}>
               <Avatar foto={x.otro.foto} ini={x.otro.ini} size={44} />
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -49,7 +50,7 @@ export function Mensajes({ es, yo, ciudad, d }: { es: boolean; yo: YoCom; ciudad
           {!items.length && <div style={{ padding: "18px 16px", font: "500 13px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.6)", textWrap: "pretty" }}>{E2("Todavía no tienes mensajes. Cuando un vecino te siga, le podrás escribir desde su perfil.", "No messages yet. When a neighbor follows you, you can write from their profile.")}</div>}
         </div>
         {mas && <div style={{ display: "flex", justifyContent: "center" }}><Button variant="secondary" size="md" disabled={busy} onClick={verMas}>{busy ? E2("Cargando…", "Loading…") : E2("Ver más", "See more")}</Button></div>}
-        <div role="link" onClick={() => router.push("/cuenta/mensajes")} style={{ padding: "12px 16px", borderRadius: 16, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", gap: 12, alignItems: "center", cursor: "pointer" }}>
+        <div role="link" onClick={() => router.push("/cuenta/mensajes")} {...tec(() => router.push("/cuenta/mensajes"))} style={{ padding: "12px 16px", borderRadius: 16, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", gap: 12, alignItems: "center", cursor: "pointer" }}>
           <Icon name="store" size={18} color="var(--tl-action)" />
           <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px Manrope,sans-serif" }}>{E2("Mensajes con negocios", "Messages with businesses")}</div><div style={{ marginTop: 2, font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)" }}>{E2(`EN MI CUENTA · ${ciudad.toUpperCase()}`, `IN MY ACCOUNT · ${ciudad.toUpperCase()}`)}</div></div>
           <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" />

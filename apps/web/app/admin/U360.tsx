@@ -25,6 +25,7 @@ import { SoporteDe360, type CasoSop } from "./SoporteDe360";
 import type { CompaUsuario } from "@/lib/compa/admin-compa";
 import { useAhora } from "@/lib/ahora";
 
+import { tec } from "@/lib/tec";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"AdminNote" | "AdminList" | "AuditLog" | "Icon", ComponentType<any>>;
 const PUSH_APP: Record<string, string> = { cliente: "To'Latino", negocio: "Negocios", delivery: "Repartidor", checkin: "Puerta", web: "Web" };
@@ -365,7 +366,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
     </div>);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 1120 }}>
-      <span role="link" onClick={() => router.push("/admin/usuarios")} style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><A.Icon name="chevronLeft" size={15} color="var(--tl-action)" />Usuarios</span>
+      <span role="link" onClick={() => router.push("/admin/usuarios")} {...tec(() => router.push("/admin/usuarios"))} style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><A.Icon name="chevronLeft" size={15} color="var(--tl-action)" />Usuarios</span>
       <span style={{ font: "700 9.5px 'JetBrains Mono',monospace", letterSpacing: ".14em", color: "rgba(11,14,18,.45)" }}>USUARIO 360°</span>
       <PanelBloques bloques={cab} />
       {avisos}

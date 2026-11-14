@@ -13,6 +13,7 @@ import { LINEA_FIJA, reglas } from "@/lib/comunidad-filtro";
 import { fijarRangos, rango } from "@/lib/comunidad-comun";
 import { nombreMes } from "@/lib/puntos-comun";
 
+import { tec } from "@/lib/tec";
 type N = "Icon" | "Button" | "Chip" | "Tabs";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Tabs } = UI as unknown as Record<N, ComponentType<any>>;
@@ -76,18 +77,18 @@ export function Marco({ es, yo, ui, titulo, sub, back, children, aside, code }: 
     <div data-screen-label={`${code} · ${D ? "desktop" : "móvil"}`} style={{ minHeight: "calc(100dvh - 57px)", background: D ? "var(--tl-paper)" : "var(--tl-white)", color: "var(--tl-ink)", fontFamily: "Manrope,sans-serif", paddingBottom: D || !back ? 0 : 140, boxSizing: "border-box" }}>
       {!D && (back ? (
         <div data-screen-label="Comunidad · encabezado" style={{ position: "sticky", top: 57, zIndex: 20, padding: "12px 16px", background: "var(--tl-white)", borderBottom: LINE, display: "flex", alignItems: "center", gap: 12 }}>
-          <span role="button" aria-label={E2("Volver", "Back")} onClick={() => router.push(back)} style={{ width: 34, height: 34, borderRadius: 11, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="chevronLeft" size={16} strokeWidth={2} /></span>
+          <span role="button" aria-label={E2("Volver", "Back")} onClick={() => router.push(back)} {...tec(() => router.push(back))} style={{ width: 34, height: 34, borderRadius: 11, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="chevronLeft" size={16} strokeWidth={2} /></span>
           <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "800 15px/1.2 Sora,sans-serif", letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{titulo}</div><div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div></div>
         </div>
       ) : (
         <div data-screen-label="Comunidad · encabezado del módulo" style={{ background: "var(--tl-white)" }}>
           <div style={{ padding: "16px 20px 12px", display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ flex: 1, minWidth: 0 }}><h1 style={{ margin: 0, font: "800 26px/1.05 Sora,sans-serif", letterSpacing: "-.04em" }}>{titulo}</h1><div style={{ marginTop: 6, font: `600 10px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{sub}</div></div>
-            <span role="link" aria-label={E2(yo.sinLeer ? `Mensajes, ${yo.sinLeer} sin leer` : "Mensajes", yo.sinLeer ? `Messages, ${yo.sinLeer} unread` : "Messages")} onClick={() => router.push("/comunidad/mensajes")} style={{ position: "relative", width: 40, height: 40, boxSizing: "border-box", borderRadius: 13, border: "1px solid rgba(11,14,18,.1)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}>
+            <span role="link" aria-label={E2(yo.sinLeer ? `Mensajes, ${yo.sinLeer} sin leer` : "Mensajes", yo.sinLeer ? `Messages, ${yo.sinLeer} unread` : "Messages")} onClick={() => router.push("/comunidad/mensajes")} {...tec(() => router.push("/comunidad/mensajes"))} style={{ position: "relative", width: 40, height: 40, boxSizing: "border-box", borderRadius: 13, border: "1px solid rgba(11,14,18,.1)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}>
               <Icon name="chat" size={18} />
               {yo.sinLeer > 0 && <span aria-hidden style={{ position: "absolute", top: 7, right: 7, width: 8, height: 8, borderRadius: 99, background: "var(--tl-action)" }} />}
             </span>
-            <span role="link" aria-label={E2(`Tu rango: ${rk.es}`, `Your rank: ${rk.en}`)} onClick={() => router.push("/comunidad/rango")} data-screen-label="Comunidad · tu rango" style={{ height: 40, boxSizing: "border-box", padding: "0 12px 0 6px", borderRadius: 13, border: "1px solid rgba(11,14,18,.1)", display: "inline-flex", alignItems: "center", gap: 8, flex: "none", cursor: "pointer" }}>
+            <span role="link" aria-label={E2(`Tu rango: ${rk.es}`, `Your rank: ${rk.en}`)} onClick={() => router.push("/comunidad/rango")} {...tec(() => router.push("/comunidad/rango"))} data-screen-label="Comunidad · tu rango" style={{ height: 40, boxSizing: "border-box", padding: "0 12px 0 6px", borderRadius: 13, border: "1px solid rgba(11,14,18,.1)", display: "inline-flex", alignItems: "center", gap: 8, flex: "none", cursor: "pointer" }}>
               <span style={{ width: 26, height: 26, borderRadius: 9, background: "rgba(75,55,245,.1)", display: "grid", placeItems: "center", font: "800 12.5px/1 Sora,sans-serif", color: "var(--tl-action)" }}>{yo.rango}</span>
               <span style={{ font: "700 12.5px Manrope,sans-serif", whiteSpace: "nowrap" }}>{es ? rk.es : rk.en}</span>
             </span>
@@ -99,7 +100,7 @@ export function Marco({ es, yo, ui, titulo, sub, back, children, aside, code }: 
         {nav && (
           <div data-screen-label="Comunidad · navegación" style={{ alignSelf: "stretch", background: "var(--tl-white)", borderRight: "1px solid rgba(11,14,18,.08)", padding: "22px 14px 30px", minHeight: 760 }}>
             <div style={{ position: "sticky", top: 140, display: "flex", flexDirection: "column", gap: 16 }}>
-              <div role="link" aria-label={E2("Mi perfil", "My profile")} onClick={() => router.push("/comunidad/v/yo")} style={{ display: "flex", gap: 10, alignItems: "center", padding: 10, borderRadius: 14, background: "var(--tl-paper)", cursor: "pointer" }}>
+              <div role="link" aria-label={E2("Mi perfil", "My profile")} onClick={() => router.push("/comunidad/v/yo")} {...tec(() => router.push("/comunidad/v/yo"))} style={{ display: "flex", gap: 10, alignItems: "center", padding: 10, borderRadius: 14, background: "var(--tl-paper)", cursor: "pointer" }}>
                 <Avatar foto={yo.foto} ini={yo.ini} size={38} />
                 <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px/1.2 Manrope,sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{yo.nombre}</div>
                   <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 5, font: `700 9.5px ${MONO}`, letterSpacing: ".1em", color: "var(--tl-action)" }}><Icon name="shield" size={12} color="var(--tl-action)" />{`${yo.rango} · ${(es ? rk.es : rk.en).toUpperCase()}`}</div></div>
@@ -112,7 +113,7 @@ export function Marco({ es, yo, ui, titulo, sub, back, children, aside, code }: 
                   ["/comunidad/monedas", "ticket", E2("Monedas", "Coins"), code === "APP-GAM-MONEDAS", 0],
                   ["/comunidad/mensajes", "chat", E2("Mensajes", "Messages"), code === "APP-COM-MENSAJES" || code === "APP-COM-CHAT", yo.sinLeer],
                   ["/comunidad/v/yo", "shield", E2("Mi perfil", "My profile"), code === "APP-COM-VECINO · yo", 0]] as [string, string, string, boolean, number][]).map(([h, ic, l, on, n]) => (
-                  <div key={h} role="link" aria-current={on ? "page" : undefined} onClick={() => router.push(h)} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, borderRadius: 11, cursor: "pointer", background: on ? "rgba(75,55,245,.1)" : "transparent", color: on ? "var(--tl-action)" : "var(--tl-ink)" }}>
+                  <div key={h} role="link" aria-current={on ? "page" : undefined} onClick={() => router.push(h)} {...tec(() => router.push(h))} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, borderRadius: 11, cursor: "pointer", background: on ? "rgba(75,55,245,.1)" : "transparent", color: on ? "var(--tl-action)" : "var(--tl-ink)" }}>
                     <span style={{ display: "grid" }}><Icon name={ic} size={18} color={on ? "var(--tl-action)" : "var(--tl-ink)"} /></span><span style={{ flex: 1, minWidth: 0, font: `${on ? 800 : 600} 13px Manrope,sans-serif` }}>{l}</span>
                     {n > 0 && <span style={{ minWidth: 20, height: 20, padding: "0 6px", boxSizing: "border-box", borderRadius: 99, background: "var(--tl-action)", color: "var(--tl-white)", display: "grid", placeItems: "center", font: `700 10px ${MONO}` }}>{n > 99 ? "99+" : n}</span>}
                   </div>))}
@@ -124,7 +125,7 @@ export function Marco({ es, yo, ui, titulo, sub, back, children, aside, code }: 
         <div style={{ minWidth: 0, padding: D ? (c1 ? "22px 24px 40px" : "26px 30px 40px") : 0 }}>
           {D && (
             <div data-screen-label="Comunidad · título" style={{ marginBottom: 18, maxWidth: 720 }}>
-              {back && <div role="link" onClick={() => router.push(back)} style={{ marginBottom: 12, display: "inline-flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="chevronLeft" size={15} strokeWidth={2} color="var(--tl-action)" />{E2("Volver", "Back")}</div>}
+              {back && <div role="link" onClick={() => router.push(back)} {...tec(() => router.push(back))} style={{ marginBottom: 12, display: "inline-flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="chevronLeft" size={15} strokeWidth={2} color="var(--tl-action)" />{E2("Volver", "Back")}</div>}
               <h1 style={{ margin: 0, font: "800 30px/1.1 Sora,sans-serif", letterSpacing: "-.04em" }}>{titulo}</h1>
               <div style={{ marginTop: 8, font: `600 10.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{sub}</div>
             </div>
@@ -148,7 +149,7 @@ export function Marco({ es, yo, ui, titulo, sub, back, children, aside, code }: 
         <div role="status" style={{ position: "fixed", left: 16, right: 16, bottom: D ? "auto" : 96, top: D ? 90 : "auto", zIndex: 98, display: "flex", justifyContent: "center", pointerEvents: "none" }}>
           <div style={{ pointerEvents: "auto", maxWidth: 440, padding: "12px 16px", borderRadius: 14, background: "var(--tl-ink)", color: "var(--tl-white)", font: "600 13px/1.4 Manrope,sans-serif", boxShadow: "0 12px 30px -12px rgba(11,14,18,.5)", display: "flex", alignItems: "center", gap: 16 }}>
             <span style={{ flex: 1 }}>{ui.aviso.t}</span>
-            {ui.aviso.a && <span role="button" onClick={() => { ui.aviso?.onA?.(); ui.setAviso(null); }} style={{ font: "800 13px Manrope,sans-serif", color: "var(--tl-signal)", cursor: "pointer", flex: "none" }}>{ui.aviso.a}</span>}
+            {ui.aviso.a && <span role="button" onClick={() => { ui.aviso?.onA?.(); ui.setAviso(null); }} {...tec(() => { ui.aviso?.onA?.(); ui.setAviso(null); })} style={{ font: "800 13px Manrope,sans-serif", color: "var(--tl-signal)", cursor: "pointer", flex: "none" }}>{ui.aviso.a}</span>}
           </div>
         </div>
       )}
@@ -180,13 +181,13 @@ function HojaCom({ h, M, es, cerrar }: { h: NonNullable<Hoja>; M: boolean; es: b
         {M && <div style={{ width: 38, height: 4, borderRadius: 9, background: "rgba(11,14,18,.15)", margin: "0 auto 16px" }} />}
         <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "800 20px/1.2 Sora,sans-serif", letterSpacing: "-.03em", textWrap: "pretty" }}>{h.title}</div>{h.sub && <div style={{ marginTop: 6, font: "500 13px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.62)", textWrap: "pretty" }}>{h.sub}</div>}</div>
-          <span role="button" aria-label={es ? "Cerrar" : "Close"} onClick={cerrar} style={{ width: 32, height: 32, borderRadius: 10, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="close" size={15} /></span>
+          <span role="button" aria-label={es ? "Cerrar" : "Close"} onClick={cerrar} {...tec(cerrar)} style={{ width: 32, height: 32, borderRadius: 10, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="close" size={15} /></span>
         </div>
         {h.extra}
         {h.rows && (
           <div style={{ marginTop: 12 }}>
             {h.rows.map((r, i) => (
-              <div key={i} role="button" aria-disabled={r.off || undefined} onClick={r.off ? undefined : r.on} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 2px", borderTop: i ? (r.sep ? "2px solid rgba(11,14,18,.1)" : LINE) : "none", cursor: r.off ? "default" : "pointer", opacity: r.off ? 0.5 : 1 }}>
+              <div key={i} role="button" aria-disabled={r.off || undefined} onClick={r.off ? undefined : r.on} {...tec(r.off ? undefined : r.on)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 2px", borderTop: i ? (r.sep ? "2px solid rgba(11,14,18,.1)" : LINE) : "none", cursor: r.off ? "default" : "pointer", opacity: r.off ? 0.5 : 1 }}>
                 {r.ic && <span style={{ width: 36, height: 36, borderRadius: 11, background: r.peligro ? "rgba(192,57,43,.08)" : "var(--tl-paper)", display: "grid", placeItems: "center", flex: "none" }}><Icon name={r.ic} size={17} color={r.peligro ? "var(--tl-danger)" : "var(--tl-ink)"} /></span>}
                 <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.35 Manrope,sans-serif", color: r.peligro ? "var(--tl-danger)" : "var(--tl-ink)" }}>{r.t}</div>{r.s && <div style={{ marginTop: 3, font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.58)", textWrap: "pretty" }}>{r.s}</div>}</div>
                 {r.ring !== undefined && <span aria-hidden style={{ width: 20, height: 20, boxSizing: "border-box", borderRadius: 99, border: r.ring ? "6px solid var(--tl-action)" : "1.5px solid rgba(11,14,18,.25)", flex: "none" }} />}
@@ -229,7 +230,7 @@ function TablaRail({ es, t, ciudad }: { es: boolean; t: NonNullable<YoCom["tabla
       <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".18em", color: "rgba(11,14,18,.42)" }}>{`${es ? "TABLA DEL BARRIO" : "LEADERBOARD"} · ${nombreMes(t.mes, es).toUpperCase()} · ${ciudad.toUpperCase()}`}</div>
       <div style={{ marginTop: 8 }}>
         {t.filas.length ? t.filas.map((x, i) => (
-          <div key={x.id} role="link" onClick={() => router.push(`/comunidad/v/${x.yo ? "yo" : x.id}`)} style={{ display: "flex", gap: 10, alignItems: "center", padding: "8px 0", borderTop: i ? LINE : "none", cursor: "pointer" }}>
+          <div key={x.id} role="link" onClick={() => router.push(`/comunidad/v/${x.yo ? "yo" : x.id}`)} {...tec(() => router.push(`/comunidad/v/${x.yo ? "yo" : x.id}`))} style={{ display: "flex", gap: 10, alignItems: "center", padding: "8px 0", borderTop: i ? LINE : "none", cursor: "pointer" }}>
             <span style={{ width: 18, font: "800 13px Sora,sans-serif", color: x.pos <= 3 ? "var(--tl-pro-ink)" : "rgba(11,14,18,.4)", textAlign: "center", flex: "none" }}>{x.pos}</span>
             <Avatar foto={x.foto} ini={x.ini} size={30} />
             <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 12.5px/1.25 Manrope,sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.yo ? `${x.nombre} · ${es ? "tú" : "you"}` : x.nombre}</div>

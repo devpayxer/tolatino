@@ -9,6 +9,7 @@ import { millas, punto, teselas, vista, type LL } from "@/lib/mapa-geo";
 import { usePermiso } from "@/app/_cascara/HojaPermiso";
 import { abrirSelector, dondeEstoy, elegirUbicacion, lugares, medirBorrador, pedirCiudad, quitarPedido, type DatosSelector } from "./ciudad/acciones";
 
+import { tec } from "@/lib/tec";
 type N = "Icon" | "Button" | "Chip" | "Tag" | "RadiusMap";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, Tag, RadiusMap } = UI as unknown as Record<N, ComponentType<any>>;
@@ -228,10 +229,10 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
         <Icon name="search" size={sheet ? 17 : 16} color="rgba(11,14,18,.45)" />
         <input value={q} onChange={(e) => setQ(e.target.value)} onFocus={() => setQf(true)} onBlur={() => setQf(false)} placeholder={L.qPh} autoComplete="off" aria-label={L.qPh}
           style={{ flex: 1, minWidth: 0, height: "100%", border: "none", outline: "none", background: "transparent", padding: 0, font: `600 ${sheet ? 14.5 : 14}px Manrope,sans-serif`, color: "var(--tl-ink)" }} />
-        {q ? <span role="button" aria-label={E2("Borrar", "Clear")} onClick={() => setQ("")} style={{ width: sheet ? 30 : 28, height: sheet ? 30 : 28, borderRadius: 99, display: "grid", placeItems: "center", background: "rgba(11,14,18,.07)", cursor: "pointer", flex: "none" }}><Icon name="close" size={sheet ? 12 : 11} strokeWidth={2.2} /></span> : null}
+        {q ? <span role="button" aria-label={E2("Borrar", "Clear")} onClick={() => setQ("")} {...tec(() => setQ(""))} style={{ width: sheet ? 30 : 28, height: sheet ? 30 : 28, borderRadius: 99, display: "grid", placeItems: "center", background: "rgba(11,14,18,.07)", cursor: "pointer", flex: "none" }}><Icon name="close" size={sheet ? 12 : 11} strokeWidth={2.2} /></span> : null}
       </div>
       {q ? <div style={{ display: "flex", flexDirection: "column", gap: sheet ? 2 : 0 }}>{qRows.map((r, i) => (
-        <div key={i} onClick={r.onClick} style={sheet ? { display: "flex", alignItems: "center", gap: 12, padding: "10px 4px", borderBottom: "1px solid rgba(11,14,18,.06)", cursor: "pointer" } : { display: "flex", alignItems: "center", gap: 12, padding: 8, borderRadius: 12, cursor: "pointer" }} className={sheet ? "" : "hover:bg-[var(--tl-paper)]"}>
+        <div key={i} onClick={r.onClick} role="button" {...tec(r.onClick)} style={sheet ? { display: "flex", alignItems: "center", gap: 12, padding: "10px 4px", borderBottom: "1px solid rgba(11,14,18,.06)", cursor: "pointer" } : { display: "flex", alignItems: "center", gap: 12, padding: 8, borderRadius: 12, cursor: "pointer" }} className={sheet ? "" : "hover:bg-[var(--tl-paper)]"}>
           <span style={{ width: sheet ? 38 : 34, height: sheet ? 38 : 34, borderRadius: sheet ? 11 : 10, background: "var(--tl-paper)", display: "grid", placeItems: "center", flex: "none" }}><Icon name={r.icon} size={sheet ? 17 : 16} /></span>
           <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}><span style={txt(`700 ${sheet ? 14 : 13.5}px Manrope,sans-serif`)}>{r.t}</span><span style={txt(`600 ${sheet ? 10.5 : 10}px ${MONO}`, { letterSpacing: ".04em", color: r.mc })}>{r.m}</span></span>
           {sheet ? <Icon name="chevronRight" size={15} strokeWidth={2} color="rgba(11,14,18,.35)" /> : null}
@@ -239,7 +240,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
     </div>
   );
   const filaGps = (
-    <div onClick={pedirGps} role="button" style={{ display: "flex", alignItems: "center", gap: 12, padding: sheet ? "13px 14px" : "11px 12px", borderRadius: sheet ? 16 : 14, background: gpsV.bg, border: `1.5px solid ${gpsV.bd}`, cursor: "pointer" }}>
+    <div onClick={pedirGps} {...tec(pedirGps)} role="button" style={{ display: "flex", alignItems: "center", gap: 12, padding: sheet ? "13px 14px" : "11px 12px", borderRadius: sheet ? 16 : 14, background: gpsV.bg, border: `1.5px solid ${gpsV.bd}`, cursor: "pointer" }}>
       <span style={{ position: "relative", width: sheet ? 40 : 36, height: sheet ? 40 : 36, borderRadius: sheet ? 12 : 11, background: "rgba(75,55,245,.1)", display: "grid", placeItems: "center", flex: "none" }}>
         {gps === "loc" ? <span style={{ position: "absolute", inset: 0, borderRadius: 12, background: "rgba(75,55,245,.25)", animation: "cPulse 1.2s ease-out infinite" }} /> : null}
         <Icon name="pin" size={sheet ? 19 : 17} color="var(--tl-action)" />
@@ -254,7 +255,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
       {sheet ? (
         <div style={{ borderRadius: 17, border: "1px solid rgba(11,14,18,.08)", overflow: "hidden" }}>
           {ctrs.map((c) => (
-            <div key={c.k} onClick={c.onClick} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderTop: c.bt, background: c.bg, cursor: "pointer" }}>
+            <div key={c.k} onClick={c.onClick} role="button" {...tec(c.onClick)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderTop: c.bt, background: c.bg, cursor: "pointer" }}>
               <span style={{ width: 20, height: 20, borderRadius: 99, boxSizing: "border-box", border: c.ring, flex: "none" }} />
               <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}><span style={txt("700 14px Manrope,sans-serif")}>{c.t}</span><span style={txt(`600 10.5px ${MONO}`, { letterSpacing: ".04em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" })}>{c.s}</span></span>
             </div>))}
@@ -262,7 +263,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(170px,1fr))", gap: 6 }}>
           {ctrs.map((c) => (
-            <div key={c.k} onClick={c.onClick} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 11px", borderRadius: 13, border: `1.5px solid ${c.bd}`, background: c.bg, cursor: "pointer" }}>
+            <div key={c.k} onClick={c.onClick} role="button" {...tec(c.onClick)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 11px", borderRadius: 13, border: `1.5px solid ${c.bd}`, background: c.bg, cursor: "pointer" }}>
               <span style={{ width: 16, height: 16, borderRadius: 99, boxSizing: "border-box", border: c.ring, flex: "none" }} />
               <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 1 }}><span style={txt("700 13px Manrope,sans-serif", { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" })}>{c.t}</span><span style={txt(`600 9.5px ${MONO}`, { letterSpacing: ".04em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" })}>{c.s}</span></span>
             </div>))}
@@ -276,18 +277,18 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
       <span style={K}>{L.city}</span>
       <div style={{ borderRadius: sheet ? 17 : 15, border: "1px solid rgba(11,14,18,.08)", overflow: "hidden" }}>
         {cities.map((c) => sheet ? (
-          <div key={c.id} onClick={c.onClick} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderTop: c.bt, background: c.bg, cursor: "pointer" }}>
+          <div key={c.id} onClick={c.onClick} role="button" {...tec(c.onClick)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderTop: c.bt, background: c.bg, cursor: "pointer" }}>
             <span style={{ width: 20, height: 20, borderRadius: 99, boxSizing: "border-box", border: c.ring, flex: "none" }} />
             <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}><span style={{ display: "flex", alignItems: "center", gap: 7 }}><span style={txt("700 14px Manrope,sans-serif")}>{c.t}</span><Tag tone={c.tone}>{c.tag}</Tag></span><span style={txt(`600 10.5px ${MONO}`, { letterSpacing: ".04em", color: "rgba(11,14,18,.5)" })}>{c.s}</span></span>
           </div>
         ) : (
-          <div key={c.id} onClick={c.onClick} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderTop: c.bt, background: c.bg, cursor: "pointer" }}>
+          <div key={c.id} onClick={c.onClick} role="button" {...tec(c.onClick)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderTop: c.bt, background: c.bg, cursor: "pointer" }}>
             <span style={{ width: 16, height: 16, borderRadius: 99, boxSizing: "border-box", border: c.ring, flex: "none" }} />
             <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}><span style={txt("700 13.5px Manrope,sans-serif")}>{c.t}</span><Tag tone={c.tone}>{c.tag}</Tag></span>
             <span style={txt(`600 10px ${MONO}`, { letterSpacing: ".04em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap" })}>{c.s}</span>
           </div>
         ))}
-        <div onClick={() => { setView("ask"); setAskDone(null); }} style={{ display: "flex", alignItems: "center", gap: sheet ? 12 : 10, padding: sheet ? "12px 14px" : "10px 12px", borderTop: "1px solid rgba(11,14,18,.07)", cursor: "pointer" }}>
+        <div onClick={() => { setView("ask"); setAskDone(null); }} role="button" {...tec(() => { setView("ask"); setAskDone(null); })} style={{ display: "flex", alignItems: "center", gap: sheet ? 12 : 10, padding: sheet ? "12px 14px" : "10px 12px", borderTop: "1px solid rgba(11,14,18,.07)", cursor: "pointer" }}>
           <Icon name="plus" size={sheet ? 18 : 16} color="var(--tl-action)" /><span style={txt(`700 ${sheet ? 13.5 : 13}px Manrope,sans-serif`, { flex: sheet ? 1 : undefined, color: "var(--tl-action)" })}>{L.askRow}</span>
         </div>
       </div>
@@ -300,7 +301,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
       {mios.map((x) => (
         <div key={x.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: sheet ? "10px 12px" : "9px 12px", borderRadius: sheet ? 13 : 12, border: "1px solid rgba(11,14,18,.08)" }}>
           <Icon name="bell" size={sheet ? 15 : 14} color="var(--tl-action)" /><span style={txt(`700 ${sheet ? 13 : 12.5}px Manrope,sans-serif`, { flex: 1 })}>{x.t}</span>
-          <span role="button" onClick={() => quitar(x.id)} style={txt(`700 ${sheet ? 12 : 11.5}px Manrope,sans-serif`, { color: "rgba(11,14,18,.55)", cursor: "pointer" })}>{L.remove}</span>
+          <span role="button" onClick={() => quitar(x.id)} {...tec(() => quitar(x.id))} style={txt(`700 ${sheet ? 12 : 11.5}px Manrope,sans-serif`, { color: "rgba(11,14,18,.55)", cursor: "pointer" })}>{L.remove}</span>
         </div>))}
     </div>) : null;
   const listo = askDone ? (sheet ? (
@@ -335,7 +336,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
   const pie = (
     <>
       <div style={{ display: "flex" }}><Button block size={sheet ? undefined : "md"} disabled={foot.dis} icon={foot.icon} onClick={foot.onClick}>{foot.l}</Button></div>
-      {foot.reset ? <span role="button" onClick={foot.onReset} style={txt(`700 ${sheet ? 12.5 : 12}px Manrope,sans-serif`, { textAlign: "center", color: "rgba(11,14,18,.6)", cursor: "pointer" })}>{L.reset}</span> : null}
+      {foot.reset ? <span role="button" onClick={foot.onReset} {...tec(foot.onReset)} style={txt(`700 ${sheet ? 12.5 : 12}px Manrope,sans-serif`, { textAlign: "center", color: "rgba(11,14,18,.6)", cursor: "pointer" })}>{L.reset}</span> : null}
     </>
   );
 
@@ -347,9 +348,9 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
         <div style={{ flex: "none", padding: "10px 20px 12px", borderBottom: "1px solid rgba(11,14,18,.07)" }}>
           <div style={{ width: 38, height: 5, borderRadius: 99, background: "rgba(11,14,18,.15)", margin: "0 auto 12px" }} />
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {inAsk ? <span role="button" aria-label={L.back} onClick={() => { setView("main"); setAskDone(null); }} style={{ width: 36, height: 36, marginLeft: -8, display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="chevronLeft" size={20} strokeWidth={2} /></span> : null}
+            {inAsk ? <span role="button" aria-label={L.back} onClick={() => { setView("main"); setAskDone(null); }} {...tec(() => { setView("main"); setAskDone(null); })} style={{ width: 36, height: 36, marginLeft: -8, display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="chevronLeft" size={20} strokeWidth={2} /></span> : null}
             <span style={txt("800 22px/1.15 Sora,sans-serif", { flex: 1, minWidth: 0, letterSpacing: "-.035em" })}>{head.t}</span>
-            <span role="button" aria-label={E2("Cerrar", "Close")} onClick={onClose} style={{ width: 36, height: 36, borderRadius: 12, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="close" size={15} strokeWidth={2.2} /></span>
+            <span role="button" aria-label={E2("Cerrar", "Close")} onClick={onClose} {...tec(onClose)} style={{ width: 36, height: 36, borderRadius: 12, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="close" size={15} strokeWidth={2.2} /></span>
           </div>
           <span style={txt("500 13px/1.5 Manrope,sans-serif", { display: "block", marginTop: 4, color: "rgba(11,14,18,.6)" })}>{head.s}</span>
         </div>
@@ -368,7 +369,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
                     <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
                       <span style={txt("700 13px Manrope,sans-serif")}>{my.t}</span>
                       <span style={txt("500 12.5px/1.5 Manrope,sans-serif", { color: "rgba(11,14,18,.62)", textWrap: "pretty" } as CSSProperties)}>{my.s}</span>
-                      {my.a ? <span role="button" onClick={irMiCiudad} style={txt("700 12.5px Manrope,sans-serif", { color: "var(--tl-action)", cursor: "pointer" })}>{my.a}</span> : null}
+                      {my.a ? <span role="button" onClick={irMiCiudad} {...tec(irMiCiudad)} style={txt("700 12.5px Manrope,sans-serif", { color: "var(--tl-action)", cursor: "pointer" })}>{my.a}</span> : null}
                     </span>
                   </div>
                 </div>) : null}
@@ -400,7 +401,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <span role="button" onClick={() => { setView("main"); setAskDone(null); }} style={txt("700 13px Manrope,sans-serif", { display: "flex", alignItems: "center", gap: 6, color: "var(--tl-action)", cursor: "pointer" })}><Icon name="chevronLeft" size={15} strokeWidth={2} />{L.back}</span>
+                <span role="button" onClick={() => { setView("main"); setAskDone(null); }} {...tec(() => { setView("main"); setAskDone(null); })} style={txt("700 13px Manrope,sans-serif", { display: "flex", alignItems: "center", gap: 6, color: "var(--tl-action)", cursor: "pointer" })}><Icon name="chevronLeft" size={15} strokeWidth={2} />{L.back}</span>
                 {formPedir}{listo}{misPed}
               </div>
             )}
@@ -414,7 +415,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
         </div>
         <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "10px 20px", borderTop: "1px solid rgba(11,14,18,.07)", font: "500 12px Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>
           <Icon name="users" size={15} color="rgba(11,14,18,.5)" /><span style={{ flex: 1, minWidth: 0 }}>{my.short}</span>
-          {my.a ? <span role="button" onClick={irMiCiudad} style={txt("700 12px Manrope,sans-serif", { color: "var(--tl-action)", cursor: "pointer", whiteSpace: "nowrap" })}>{my.a}</span> : null}
+          {my.a ? <span role="button" onClick={irMiCiudad} {...tec(irMiCiudad)} style={txt("700 12px Manrope,sans-serif", { color: "var(--tl-action)", cursor: "pointer", whiteSpace: "nowrap" })}>{my.a}</span> : null}
           <span style={txt(`700 9.5px ${MONO}`, { letterSpacing: ".1em", color: "rgba(11,14,18,.42)" })}>{L.esc}</span>
         </div>
       </div>

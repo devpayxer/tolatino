@@ -11,6 +11,7 @@ import { nombreMes, type FilaTabla, type Tabla } from "@/lib/puntos-comun";
 import { tablaMas } from "../acciones";
 import { Avatar, LINE, MONO, Marco, useAncho, useComUi, type YoCom } from "../Marco";
 
+import { tec } from "@/lib/tec";
 type N = "Button" | "Chip" | "Icon";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Button, Chip, Icon } = UI as unknown as Record<N, ComponentType<any>>;
@@ -49,21 +50,21 @@ export function TablaBarrio({ es, yo, ciudad, d }: { es: boolean; yo: YoCom; ciu
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <div role="tablist" aria-label={E2("Mes", "Month")} style={{ display: "flex", gap: 2, padding: 3, borderRadius: 12, background: "rgba(11,14,18,.06)" }}>
             {(["actual", "anterior"] as const).map((k) => (
-              <span key={k} role="tab" aria-selected={d.mes === k} onClick={() => ir({ m: k })} style={{ padding: "7px 12px", borderRadius: 9, background: d.mes === k ? "var(--tl-white)" : "transparent", color: d.mes === k ? "var(--tl-ink)" : "rgba(11,14,18,.55)", font: "700 12px Manrope,sans-serif", cursor: "pointer", textTransform: "capitalize" }}>{nombreMes(k === "actual" ? d.meses.actual : d.meses.anterior, es)}</span>))}
+              <span key={k} role="tab" aria-selected={d.mes === k} onClick={() => ir({ m: k })} {...tec(() => ir({ m: k }))} style={{ padding: "7px 12px", borderRadius: 9, background: d.mes === k ? "var(--tl-white)" : "transparent", color: d.mes === k ? "var(--tl-ink)" : "rgba(11,14,18,.55)", font: "700 12px Manrope,sans-serif", cursor: "pointer", textTransform: "capitalize" }}>{nombreMes(k === "actual" ? d.meses.actual : d.meses.anterior, es)}</span>))}
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", flex: 1, minWidth: 0 }}>
             {([["general", E2("General", "Overall")], ["rec", E2("Recomendaciones", "Recommendations")], ["resp", E2("Respuestas", "Answers")]] as const).map(([k, l]) => (
               <Chip key={k} variant={d.tab === k ? "selected" : "filter"} onClick={() => ir({ t: k })}>{l}</Chip>))}
           </div>
         </div>
-        <div role="link" data-screen-label="Tabla · tu lugar" onClick={() => router.push("/comunidad/rango")} style={{ borderRadius: 16, background: "rgba(75,55,245,.07)", padding: "13px 15px", display: "flex", gap: 12, alignItems: "center", cursor: "pointer" }}>
+        <div role="link" data-screen-label="Tabla · tu lugar" onClick={() => router.push("/comunidad/rango")} {...tec(() => router.push("/comunidad/rango"))} style={{ borderRadius: 16, background: "rgba(75,55,245,.07)", padding: "13px 15px", display: "flex", gap: 12, alignItems: "center", cursor: "pointer" }}>
           <Avatar foto={yo.foto} ini={yo.ini} size={40} />
           <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px Manrope,sans-serif" }}>{mine.t}</div><div style={{ marginTop: 3, font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.62)" }}>{mine.s}</div></div>
           <Icon name="chevronRight" size={16} color="var(--tl-action)" />
         </div>
         <div data-screen-label="Tabla · filas" style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", overflow: "hidden" }}>
           {filas.length ? filas.map((x, i) => (
-            <div key={x.id} role="link" data-fila={x.pos} onClick={() => router.push(`/comunidad/v/${x.yo ? "yo" : x.id}`)} style={{ padding: "11px 16px", borderTop: i ? LINE : "none", background: x.yo ? "rgba(75,55,245,.07)" : "var(--tl-white)", display: "flex", gap: 12, alignItems: "center", cursor: "pointer" }}>
+            <div key={x.id} role="link" data-fila={x.pos} onClick={() => router.push(`/comunidad/v/${x.yo ? "yo" : x.id}`)} {...tec(() => router.push(`/comunidad/v/${x.yo ? "yo" : x.id}`))} style={{ padding: "11px 16px", borderTop: i ? LINE : "none", background: x.yo ? "rgba(75,55,245,.07)" : "var(--tl-white)", display: "flex", gap: 12, alignItems: "center", cursor: "pointer" }}>
               <span style={{ width: 26, font: "800 15px Sora,sans-serif", color: x.pos <= 3 ? "var(--tl-pro-ink)" : "rgba(11,14,18,.4)", flex: "none", textAlign: "center" }}>{x.pos}</span>
               <Avatar foto={x.foto} ini={x.ini} size={38} />
               <div style={{ flex: 1, minWidth: 0 }}>

@@ -16,6 +16,7 @@ import { evtCompartir, evtQuitarRsvp, evtRsvp } from "../acciones";
 import { esperaAnotar, esperaSalir } from "../acciones-despues";
 import { Icon, MONO, useGuardar, useToast } from "../comun";
 
+import { tec } from "@/lib/tec";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const EventCard = UI.EventCard as ComponentType<any>;
 
@@ -152,7 +153,7 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
     <>
       <div style={{ font: `700 ${d ? 11 : 10.5}px ${MONO}`, letterSpacing: ".16em", color: th.ac }}>{when}</div>
       <h1 className="font-display font-extrabold" style={{ margin: `${d ? 9 : 8}px 0 0`, fontSize: d ? 34 : 26, lineHeight: d ? 1.08 : 1.1, letterSpacing: d ? "-.045em" : "-.04em" }}>{f.title}</h1>
-      <div role={llegar ? "link" : undefined} onClick={irMapa} className={`flex items-center gap-[7px] ${llegar ? "cursor-pointer" : ""}`} style={{ marginTop: d ? 10 : 9 }}>
+      <div role={llegar ? "link" : undefined} onClick={irMapa} {...tec(irMapa)} className={`flex items-center gap-[7px] ${llegar ? "cursor-pointer" : ""}`} style={{ marginTop: d ? 10 : 9 }}>
         <Icon name="pin" size={14} color={w[".6"]} /><span style={{ font: `600 ${d ? 13.5 : 12.5}px Manrope,sans-serif`, color: w[".8"] }}>{venueL}</span>
         {f.mi != null && <span style={{ font: `600 10px ${MONO}`, letterSpacing: ".06em", color: w[".45"] }}>{`${f.mi} MI`}</span>}
       </div>
@@ -167,7 +168,7 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
     </div>
   );
   const fila = (r: (typeof rows)[number], d: boolean) => (
-    <div key={r.ic + r.t} role={r.on ? "button" : undefined} onClick={r.on} className={r.on ? "cursor-pointer" : ""}
+    <div key={r.ic + r.t} role={r.on ? "button" : undefined} onClick={r.on} {...tec(r.on)} className={r.on ? "cursor-pointer" : ""}
       style={d ? { padding: "15px 16px", borderRight: `1px solid ${w[".07"]}`, minWidth: 0 } : { padding: "13px 15px", display: "flex", alignItems: "center", gap: 12, borderBottom: `1px solid ${w[".07"]}` }}>
       {d ? (
         <>
@@ -198,7 +199,7 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
       <div className="flex flex-wrap items-baseline justify-between gap-2.5"><K>{E2("DÍAS Y HORARIO", "DAYS AND HOURS")}</K>{f.entry === "rsvp" && <span className="text-[11.5px]" style={{ color: w[".55"] }}>{E2("Dices que vas al día que elijas.", "You RSVP for the day you pick.")}</span>}</div>
       <div className="mt-2.5 overflow-hidden rounded-2xl" style={{ background: th.card, border: `1px solid ${w[".09"]}` }}>
         {f.dias.map((x) => (
-          <div key={x.id} role={f.entry === "rsvp" && !x.on ? "button" : undefined} onClick={f.entry === "rsvp" && !x.on ? () => router.push(`/eventos/${f.slug}?fecha=${x.id}`) : undefined}
+          <div key={x.id} role={f.entry === "rsvp" && !x.on ? "button" : undefined} onClick={f.entry === "rsvp" && !x.on ? () => router.push(`/eventos/${f.slug}?fecha=${x.id}`) : undefined} {...tec(f.entry === "rsvp" && !x.on ? () => router.push(`/eventos/${f.slug}?fecha=${x.id}`) : undefined)}
             className={`flex items-center justify-between gap-2.5 px-[15px] py-3 ${f.entry === "rsvp" && !x.on ? "cursor-pointer" : ""}`} style={{ borderBottom: `1px solid ${w[".07"]}`, background: f.entry === "rsvp" && x.on ? w[".07"] : undefined }}>
             <span className="text-[13px] font-bold">{x.l}</span><span className="whitespace-nowrap" style={{ font: `600 11px ${MONO}`, color: w[".6"] }}>{x.s}</span>
           </div>

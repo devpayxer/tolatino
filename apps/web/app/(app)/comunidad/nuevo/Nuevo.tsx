@@ -14,6 +14,7 @@ import type { NegocioRec } from "@/lib/comunidad";
 import { comEditar, comNegocios, comPublicar } from "../acciones";
 import { Avatar, LINE, MONO, Marco, Reglas, useAncho, useComUi, type YoCom } from "../Marco";
 
+import { tec } from "@/lib/tec";
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
@@ -141,10 +142,10 @@ export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar, d
                     <div style={{ marginTop: 10, padding: 12, borderRadius: 15, background: "var(--tl-paper)", display: "flex", gap: 12, alignItems: "center" }}>
                       <span style={{ width: 48, height: 48, borderRadius: 13, background: biz.foto ? `url("${biz.foto}") center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
                       <div style={{ flex: 1, minWidth: 0 }}><div style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ font: "700 14px/1.25 Manrope,sans-serif" }}>{biz.nombre}</span>{biz.verificado && <Icon name="verified" size={15} color="var(--tl-action)" />}</div>{(es ? biz.meta.es : biz.meta.en) && <div style={{ marginTop: 3, font: `600 9.5px ${MONO}`, letterSpacing: ".04em", color: "rgba(11,14,18,.5)" }}>{(es ? biz.meta.es : biz.meta.en).toUpperCase()}</div>}</div>
-                      {!ed && <span role="button" onClick={() => { setBuscar(""); }} style={{ font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer", flex: "none" }}>{E2("Cambiar", "Change")}</span>}
+                      {!ed && <span role="button" onClick={() => { setBuscar(""); }} {...tec(() => { setBuscar(""); })} style={{ font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer", flex: "none" }}>{E2("Cambiar", "Change")}</span>}
                     </div>
                   ) : (
-                    <div role="button" onClick={() => setBuscar("")} style={{ marginTop: 10, height: 50, boxSizing: "border-box", padding: "0 14px", borderRadius: 14, border: "1.5px dashed rgba(11,14,18,.25)", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", color: "rgba(11,14,18,.55)" }}>
+                    <div role="button" onClick={() => setBuscar("")} {...tec(() => setBuscar(""))} style={{ marginTop: 10, height: 50, boxSizing: "border-box", padding: "0 14px", borderRadius: 14, border: "1.5px dashed rgba(11,14,18,.25)", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", color: "rgba(11,14,18,.55)" }}>
                       <Icon name="search" size={17} /><span style={{ font: "600 14px Manrope,sans-serif" }}>{E2("Busca el negocio que recomiendas", "Find the business you recommend")}</span>
                     </div>
                   )}
@@ -154,10 +155,10 @@ export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar, d
                         <Icon name="search" size={16} color="rgba(11,14,18,.45)" />
                         <input autoFocus value={buscar} onChange={(e) => setBuscar(e.target.value.slice(0, 60))} placeholder={E2(`Negocios de ${yo.ciudad}`, `${yo.ciudad} businesses`)} aria-label={E2("Buscar negocio", "Search business")}
                           style={{ flex: 1, minWidth: 0, height: 44, border: "none", outline: "none", font: "600 14px Manrope,sans-serif", background: "transparent", color: "var(--tl-ink)" }} />
-                        <span role="button" aria-label={E2("Cerrar", "Close")} onClick={() => setBuscar(null)} style={{ display: "grid", cursor: "pointer" }}><Icon name="close" size={15} color="rgba(11,14,18,.5)" /></span>
+                        <span role="button" aria-label={E2("Cerrar", "Close")} onClick={() => setBuscar(null)} {...tec(() => setBuscar(null))} style={{ display: "grid", cursor: "pointer" }}><Icon name="close" size={15} color="rgba(11,14,18,.5)" /></span>
                       </div>
                       {hall.map((b) => (
-                        <div key={b.id} role="option" aria-selected={biz?.id === b.id} onClick={() => { setBiz(b); setPara(null); setNoEsMio(false); setBuscar(null); setErr(null); }} style={{ padding: "10px 12px", display: "flex", gap: 10, alignItems: "center", borderTop: LINE, cursor: "pointer" }}>
+                        <div key={b.id} role="option" aria-selected={biz?.id === b.id} onClick={() => { setBiz(b); setPara(null); setNoEsMio(false); setBuscar(null); setErr(null); }} {...tec(() => { setBiz(b); setPara(null); setNoEsMio(false); setBuscar(null); setErr(null); })} style={{ padding: "10px 12px", display: "flex", gap: 10, alignItems: "center", borderTop: LINE, cursor: "pointer" }}>
                           <span style={{ width: 36, height: 36, borderRadius: 10, background: b.foto ? `url("${b.foto}") center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
                           <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px Manrope,sans-serif" }}>{b.nombre}</div><div style={{ marginTop: 2, font: `600 9px ${MONO}`, letterSpacing: ".04em", color: "rgba(11,14,18,.5)" }}>{(es ? b.meta.es : b.meta.en).toUpperCase()}</div></div>
                         </div>))}
@@ -198,9 +199,9 @@ export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar, d
                       <div key={i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <input value={o} disabled={!!ed} onChange={(e) => { const a = opts.slice(); a[i] = e.target.value.slice(0, 60); setOpts(a); setErr(null); }} placeholder={E2(`Opción ${i + 1}`, `Option ${i + 1}`)} aria-label={E2(`Opción ${i + 1}`, `Option ${i + 1}`)} maxLength={60}
                           style={{ flex: 1, minWidth: 0, height: 44, boxSizing: "border-box", padding: "0 14px", borderRadius: 13, border: "1px solid rgba(11,14,18,.12)", outline: "none", font: "600 14px Manrope,sans-serif", color: "var(--tl-ink)", background: "var(--tl-white)" }} />
-                        {opts.length > 2 && !ed && <span role="button" aria-label={E2("Quitar opción", "Remove option")} onClick={() => setOpts(opts.filter((_, j) => j !== i))} style={{ width: 34, height: 34, display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="close" size={15} color="rgba(11,14,18,.5)" /></span>}
+                        {opts.length > 2 && !ed && <span role="button" aria-label={E2("Quitar opción", "Remove option")} onClick={() => setOpts(opts.filter((_, j) => j !== i))} {...tec(() => setOpts(opts.filter((_, j) => j !== i)))} style={{ width: 34, height: 34, display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="close" size={15} color="rgba(11,14,18,.5)" /></span>}
                       </div>))}
-                    {opts.length < 4 && !ed && <span role="button" onClick={() => setOpts([...opts, ""])} style={{ display: "inline-flex", alignItems: "center", gap: 6, font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="plus" size={15} color="var(--tl-action)" />{E2("Agregar opción", "Add option")}</span>}
+                    {opts.length < 4 && !ed && <span role="button" onClick={() => setOpts([...opts, ""])} {...tec(() => setOpts([...opts, ""]))} style={{ display: "inline-flex", alignItems: "center", gap: 6, font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="plus" size={15} color="var(--tl-action)" />{E2("Agregar opción", "Add option")}</span>}
                   </div>
                   {!ed && <><div style={{ ...K(""), marginTop: 14 }}>{E2("DURA", "RUNS FOR")}</div>
                     <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>{diasEnc.map((d) => <Chip key={d} variant={dias === d ? "selected" : "filter"} onClick={() => setDias(d)}>{d === 1 ? E2("1 día", "1 day") : E2(`${d} días`, `${d} days`)}</Chip>)}</div></>}
@@ -211,7 +212,7 @@ export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar, d
                   <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
                     {fotos.map((f, i) => (
                       <span key={f.id} style={{ position: "relative", width: 64, height: 64, borderRadius: 13, background: `url("${f.url}") center/cover`, backgroundColor: "var(--tl-photo-bg)", flex: "none" }}>
-                        <span role="button" aria-label={E2(`Quitar foto ${i + 1}`, `Remove photo ${i + 1}`)} onClick={() => setFotos(fotos.filter((x) => x.id !== f.id))} style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: 99, background: "rgba(11,14,18,.7)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="close" size={11} strokeWidth={2.2} color="var(--tl-white)" /></span>
+                        <span role="button" aria-label={E2(`Quitar foto ${i + 1}`, `Remove photo ${i + 1}`)} onClick={() => setFotos(fotos.filter((x) => x.id !== f.id))} {...tec(() => setFotos(fotos.filter((x) => x.id !== f.id)))} style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: 99, background: "rgba(11,14,18,.7)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="close" size={11} strokeWidth={2.2} color="var(--tl-white)" /></span>
                       </span>))}
                     {fotos.length < MAX_FOTOS && (
                       <label style={{ width: 64, height: 64, boxSizing: "border-box", borderRadius: 13, border: "1.5px dashed rgba(11,14,18,.25)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, cursor: "pointer", color: "rgba(11,14,18,.5)", flex: "none" }}>
@@ -226,7 +227,7 @@ export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar, d
             <div style={{ ...caja, padding: "13px 14px", display: "flex", gap: 11, alignItems: "center" }}>
               <span style={{ display: "grid", flex: "none" }}><Icon name="pin" size={18} color="var(--tl-action)" /></span>
               <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13px/1.35 Manrope,sans-serif" }}>{E2(`Lo ven tus vecinos de ${ciudad}`, `Your ${ciudad} neighbors see it`)}</div><div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)" }}>{yo.invitado ? E2(`SALE COMO INVITADO · DE ${yo.invitado.toUpperCase()}`, `SHOWS AS VISITOR · FROM ${yo.invitado.toUpperCase()}`) : E2("MI CIUDAD · SALE CON TU NOMBRE Y TU BARRIO, NUNCA TU DIRECCIÓN", "MY CITY · SHOWS YOUR NAME AND NEIGHBORHOOD, NEVER YOUR ADDRESS")}</div></div>
-              <span role="button" onClick={() => ui.setHoja({ title: E2("Reglas del barrio", "Neighborhood rules"), listo: E2("Entendido", "Got it"), extra: <div style={{ marginTop: 12 }}><Reglas es={es} R={R} /></div> })} style={{ font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer", flex: "none" }}>{E2("Reglas", "Rules")}</span>
+              <span role="button" onClick={() => ui.setHoja({ title: E2("Reglas del barrio", "Neighborhood rules"), listo: E2("Entendido", "Got it"), extra: <div style={{ marginTop: 12 }}><Reglas es={es} R={R} /></div> })} {...tec(() => ui.setHoja({ title: E2("Reglas del barrio", "Neighborhood rules"), listo: E2("Entendido", "Got it"), extra: <div style={{ marginTop: 12 }}><Reglas es={es} R={R} /></div> }))} style={{ font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer", flex: "none" }}>{E2("Reglas", "Rules")}</span>
             </div>
             {D && (
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}>

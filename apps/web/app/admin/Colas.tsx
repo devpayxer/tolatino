@@ -19,6 +19,7 @@ import { uuid } from "@/lib/uuid";
 import { hoyEn } from "@/lib/fecha-local";
 import { useAhora } from "@/lib/ahora";
 
+import { tec } from "@/lib/tec";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -507,7 +508,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
           {columnaLista}
           {lado && caso ? <aside style={{ position: "sticky", top: 76, maxHeight: "calc(100vh - 92px)", overflowY: "auto", padding: 16, borderRadius: 22, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ font: "700 9.5px 'JetBrains Mono',monospace", letterSpacing: ".14em", color: "rgba(11,14,18,.45)" }}>CASO</span>
-              <span role="button" aria-label="Cerrar" onClick={() => ir({ caso: null })} style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(11,14,18,.05)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icono name="close" size={15} /></span></div>
+              <span role="button" aria-label="Cerrar" onClick={() => ir({ caso: null })} {...tec(() => ir({ caso: null }))} style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(11,14,18,.05)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icono name="close" size={15} /></span></div>
             {detalle}</aside> : null}
         </div>
       )}

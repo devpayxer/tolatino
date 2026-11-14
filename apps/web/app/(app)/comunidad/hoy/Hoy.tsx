@@ -15,6 +15,7 @@ import { TarjetaNegocio } from "../../TarjetaNegocio";
 import { MONO, Marco, PestanasModulo, useAncho, useComUi, type YoCom } from "../Marco";
 import { hoyMas } from "./acciones";
 
+import { tec } from "@/lib/tec";
 type N = "Icon" | "Button" | "Chip" | "SectionHeader";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, SectionHeader } = UI as unknown as Record<N, ComponentType<any>>;
@@ -60,7 +61,7 @@ function Cuerpo({ es, ciudad, cat, d, nuevos, ancho }: { es: boolean; ciudad: st
         </div>
       )}
       {mas && <div style={{ display: "flex", justifyContent: "center" }}><Button variant="secondary" size="md" disabled={cargando} onClick={verMas}>{cargando ? E2("Cargando…", "Loading…") : E2("Ver más", "See more")}</Button></div>}
-      <div role="link" onClick={() => router.push("/publica")} data-screen-label="Hoy en el barrio · para negocios" style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: "14px 16px", display: "flex", gap: 12, alignItems: "center", cursor: "pointer", maxWidth: 720 }}>
+      <div role="link" onClick={() => router.push("/publica")} {...tec(() => router.push("/publica"))} data-screen-label="Hoy en el barrio · para negocios" style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: "14px 16px", display: "flex", gap: 12, alignItems: "center", cursor: "pointer", maxWidth: 720 }}>
         <span style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(0,168,143,.14)", display: "grid", placeItems: "center", flex: "none" }}><Icon name="store" size={18} color="var(--tl-open-text)" /></span>
         <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px/1.35 Manrope,sans-serif" }}>{E2("¿Tienes negocio? Publica tus Novedades y salen aquí 24 horas.", "Have a business? Post your Updates and they show here for 24 hours.")}</div>
           <div style={{ marginTop: 3, font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2("Con el plan Pro: ofertas, «Hoy hay», avisos y encuestas.", "With the Pro plan: deals, “Today”, notices and polls.")}</div></div>

@@ -13,6 +13,7 @@ import { PasoD1, PasoE1 } from "./PasosDE";
 import { fechasPrueba, foto, PasoF1, PasoH1, type Publicado } from "./PasosFH";
 import { vista } from "./vista";
 
+import { tec } from "@/lib/tec";
 type N = "Icon" | "Button" | "Tag" | "OnbTopBar" | "OnbPhases" | "OnbProgress" | "OnbActionBar" | "BusinessPreview";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Tag, OnbTopBar, OnbPhases, OnbProgress, OnbActionBar, BusinessPreview } = UI as unknown as Record<N, ComponentType<any>>;
@@ -262,7 +263,7 @@ export function Publica({ v }: { v: VistaPublica }) {
                       <div style={{ height: 52, boxSizing: "border-box", borderRadius: 14, border: `1.5px solid ${!ui.codeSent && ph.length === 10 ? "var(--tl-ink)" : "rgba(11,14,18,.14)"}`, background: "var(--tl-white)", padding: "0 14px", display: "flex", alignItems: "center", gap: 10 }}>
                         <span style={{ font: "700 15px Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>+1</span>
                         <input value={fmtPh(ph)} onChange={(e) => setUi({ ph: dig(e.target.value).slice(0, 10), err: null })} inputMode="numeric" autoComplete="tel" placeholder="(570) 555-0134" readOnly={ui.codeSent} aria-label={E2("Tu teléfono", "Your phone")} style={{ flex: 1, minWidth: 0, border: 0, outline: "none", background: "none", font: "600 16px Manrope,sans-serif", color: "var(--tl-ink)" }} />
-                        {ui.codeSent ? <span role="button" onClick={() => setUi({ codeSent: false, cd: "", err: null })} style={{ font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Cambiar", "Change")}</span> : null}
+                        {ui.codeSent ? <span role="button" onClick={() => setUi({ codeSent: false, cd: "", err: null })} {...tec(() => setUi({ codeSent: false, cd: "", err: null }))} style={{ font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Cambiar", "Change")}</span> : null}
                       </div>
                     </div>
                   ) : null}
@@ -270,7 +271,7 @@ export function Publica({ v }: { v: VistaPublica }) {
                     <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                       <span style={K}>{E2("CÓDIGO DE 6 NÚMEROS", "6-DIGIT CODE")}</span>
                       <input value={cd} onChange={(e) => setUi({ cd: dig(e.target.value).slice(0, 6), err: null })} inputMode="numeric" autoComplete="one-time-code" placeholder="······" aria-label={E2("Código", "Code")} style={{ height: 56, boxSizing: "border-box", borderRadius: 14, border: `1.5px solid ${cd.length === 6 ? "var(--tl-ink)" : "var(--tl-action)"}`, background: "var(--tl-white)", padding: "0 18px", outline: "none", font: "800 24px Sora,sans-serif", letterSpacing: ".5em", color: "var(--tl-ink)", width: "100%" }} />
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, font: "600 12.5px Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}><span>{E2("Lo mandamos al ", "Sent to ")}{fmtPh(ph)}</span><span role="button" onClick={() => void pedirCodigo(true)} style={{ fontWeight: 700, color: "var(--tl-action)", cursor: "pointer" }}>{ui.sendN ? E2("Reenviado", "Resent") : E2("Reenviar", "Resend")}</span></div>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, font: "600 12.5px Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}><span>{E2("Lo mandamos al ", "Sent to ")}{fmtPh(ph)}</span><span role="button" onClick={() => void pedirCodigo(true)} {...tec(() => void pedirCodigo(true))} style={{ fontWeight: 700, color: "var(--tl-action)", cursor: "pointer" }}>{ui.sendN ? E2("Reenviado", "Resent") : E2("Reenviar", "Resend")}</span></div>
                       {ui.prueba ? <div data-modo-pruebas style={{ padding: "8px 12px", borderRadius: 10, border: "1px dashed var(--tl-danger)", font: "600 12.5px Manrope,sans-serif" }}>{E2("Sandbox · código: ", "Sandbox · code: ")}<b style={{ fontFamily: "'JetBrains Mono',monospace", letterSpacing: ".2em" }}>{ui.prueba}</b></div> : null}
                     </div>
                   ) : null}

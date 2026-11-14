@@ -19,6 +19,7 @@ import { LINEA988 } from "@/lib/moderacion-comun";
 import { useVecinoAcciones } from "../../vecinoAcciones";
 import type { Tr } from "../../../Traducir";
 
+import { tec } from "@/lib/tec";
 type N = "Icon" | "Button" | "TopAnswer" | "CommentCard" | "ReplyThread" | "AlsoRecommended";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, TopAnswer, CommentCard, ReplyThread, AlsoRecommended } = UI as unknown as Record<N, ComponentType<any>>;
@@ -185,17 +186,17 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
         <ReplyThread open={!!st?.abierta} onToggle={() => void abrir(c.id)} faces={c.caras.map((f) => ({ image: fondo(f.foto), initials: f.foto ? "" : f.ini }))}
           toggleLabel={st?.abierta ? E2("Ocultar respuestas", "Hide replies") : E2(`Ver ${n} ${n === 1 ? "respuesta" : "respuestas"}`, `See ${n} ${n === 1 ? "reply" : "replies"}`)}
           replies={grupos.map((g) => respuesta(c, g.c, g.kids))} />
-        {st?.abierta && st.mas && <div style={{ marginTop: 10 }}><span role="button" onClick={() => void masResp(c.id)} style={{ font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Ver más respuestas", "See more replies")}</span></div>}
+        {st?.abierta && st.mas && <div style={{ marginTop: 10 }}><span role="button" onClick={() => void masResp(c.id)} {...tec(() => void masResp(c.id))} style={{ font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Ver más respuestas", "See more replies")}</span></div>}
       </>);
   };
   const adjunto = (onX: () => void) => att && (
     <div style={{ marginBottom: 8, padding: "7px 9px", borderRadius: 12, background: "var(--tl-white)", border: "1px solid rgba(75,55,245,.3)", display: "flex", gap: 9, alignItems: "center" }}>
       <span style={{ width: 30, height: 30, borderRadius: 9, background: fondo(att.foto), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
       <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 12.5px Manrope,sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{att.nombre}</div><div style={{ marginTop: 2, font: `600 8.5px ${MONO}`, letterSpacing: ".06em", color: "var(--tl-action)" }}>{E2("RECOMIENDAS ESTE NEGOCIO", "YOU RECOMMEND THIS BUSINESS")}</div></div>
-      <span role="button" aria-label={E2("Quitar el negocio", "Remove the business")} onClick={onX} style={{ display: "grid", cursor: "pointer", padding: 4 }}><Icon name="close" size={14} color="var(--tl-ink)" /></span>
+      <span role="button" aria-label={E2("Quitar el negocio", "Remove the business")} onClick={onX} {...tec(onX)} style={{ display: "grid", cursor: "pointer", padding: 4 }}><Icon name="close" size={14} color="var(--tl-ink)" /></span>
     </div>);
   const botonNegocio = (
-    <span role="button" onClick={elegirNegocio} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 10, background: "rgba(75,55,245,.08)", font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>
+    <span role="button" onClick={elegirNegocio} {...tec(elegirNegocio)} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 10, background: "rgba(75,55,245,.08)", font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>
       <Icon name="store" size={15} color="var(--tl-action)" />{E2("Recomendar un negocio", "Recommend a business")}</span>);
   const yoAv = <span style={{ width: 28, height: 28, borderRadius: 99, background: fondo(yo.foto), backgroundSize: "cover", backgroundColor: "var(--tl-desk)", display: "grid", placeItems: "center", font: "800 10px Sora,sans-serif", flex: "none" }}>{yo.foto ? "" : yo.ini}</span>;
   /* Responder aquí (escritorio): la cajita bajo el comentario. */
@@ -256,7 +257,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
           <span style={{ flex: 1, minWidth: 0, font: "800 16px/1.2 Sora,sans-serif", letterSpacing: "-.02em" }}>{n ? E2(`${n} ${n === 1 ? "comentario" : "comentarios"}`, `${n} ${n === 1 ? "comment" : "comments"}`) : E2("Comentarios", "Comments")}</span>
           <div role="group" aria-label={E2("Orden de los comentarios", "Comment order")} style={{ display: "flex", gap: 2, padding: 3, borderRadius: 11, background: "rgba(11,14,18,.06)", flex: "none" }}>
             {([["top", "Más votados", "Top"], ["new", "Recientes", "Newest"]] as const).map(([k, a, b]) => (
-              <span key={k} role="button" aria-pressed={orden === k} onClick={() => router.replace(`/comunidad/p/${pub.id}${k === "new" ? "?o=new" : ""}`, { scroll: false })}
+              <span key={k} role="button" aria-pressed={orden === k} onClick={() => router.replace(`/comunidad/p/${pub.id}${k === "new" ? "?o=new" : ""}`, { scroll: false })} {...tec(() => router.replace(`/comunidad/p/${pub.id}${k === "new" ? "?o=new" : ""}`, { scroll: false }))}
                 style={{ padding: "5px 10px", borderRadius: 8, background: orden === k ? "var(--tl-white)" : "transparent", color: orden === k ? "var(--tl-ink)" : "rgba(11,14,18,.55)", font: "700 11px Manrope,sans-serif", cursor: "pointer", whiteSpace: "nowrap" }}>{es ? a : b}</span>))}
           </div>
         </div>
@@ -286,13 +287,13 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
       </div>
       {!D && !h.cerrados && (
         <div data-screen-label="Publicación · comentar" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 40, background: "rgba(247,246,243,.96)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderTop: "1px solid rgba(11,14,18,.08)", padding: "10px 14px 26px" }}>
-          {dest && <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 8, font: "600 12px Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}><span style={{ flex: 1, minWidth: 0 }}>{E2(`Respondiendo a ${dest.nombre}`, `Replying to ${dest.nombre}`)}</span><span role="button" aria-label={E2("No responder", "Don't reply")} onClick={() => { setDest(null); setTxt(""); }} style={{ display: "grid", cursor: "pointer" }}><Icon name="close" size={14} /></span></div>}
+          {dest && <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 8, font: "600 12px Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}><span style={{ flex: 1, minWidth: 0 }}>{E2(`Respondiendo a ${dest.nombre}`, `Replying to ${dest.nombre}`)}</span><span role="button" aria-label={E2("No responder", "Don't reply")} onClick={() => { setDest(null); setTxt(""); }} {...tec(() => { setDest(null); setTxt(""); })} style={{ display: "grid", cursor: "pointer" }}><Icon name="close" size={14} /></span></div>}
           {adjunto(() => setAtt(null))}
           <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-            <span role="button" aria-label={E2("Recomendar un negocio", "Recommend a business")} onClick={elegirNegocio} style={{ width: 42, height: 42, boxSizing: "border-box", borderRadius: 13, border: "1px solid rgba(11,14,18,.12)", background: "var(--tl-white)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="store" size={18} color="var(--tl-action)" /></span>
+            <span role="button" aria-label={E2("Recomendar un negocio", "Recommend a business")} onClick={elegirNegocio} {...tec(elegirNegocio)} style={{ width: 42, height: 42, boxSizing: "border-box", borderRadius: 13, border: "1px solid rgba(11,14,18,.12)", background: "var(--tl-white)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="store" size={18} color="var(--tl-action)" /></span>
             <textarea ref={area} aria-label={dest ? E2("Tu respuesta", "Your reply") : E2("Tu comentario", "Your comment")} value={txt} maxLength={MAX_COMENTARIO} onChange={(e) => setTxt(e.target.value)} rows={1} placeholder={dest ? E2("Tu respuesta…", "Your reply…") : pub.kind === "pregunta" ? E2("Recomienda a alguien…", "Recommend someone…") : E2("Escribe un comentario…", "Write a comment…")}
               style={{ flex: 1, minWidth: 0, minHeight: 42, maxHeight: 120, boxSizing: "border-box", padding: "10px 14px", borderRadius: 14, border: "1px solid rgba(11,14,18,.12)", background: "var(--tl-white)", outline: "none", resize: "none", font: "500 14.5px/1.4 Manrope,sans-serif", color: "var(--tl-ink)" }} />
-            <span role="button" aria-label={dest ? E2("Responder", "Reply") : E2("Comentar", "Comment")} aria-disabled={!puedeEnviar || busy || undefined} onClick={() => { if (puedeEnviar && !busy) void enviar("main"); }}
+            <span role="button" aria-label={dest ? E2("Responder", "Reply") : E2("Comentar", "Comment")} aria-disabled={!puedeEnviar || busy || undefined} onClick={() => { if (puedeEnviar && !busy) void enviar("main"); }} {...tec(() => { if (puedeEnviar && !busy) void enviar("main"); })}
               style={{ width: 42, height: 42, borderRadius: 13, background: puedeEnviar ? "var(--tl-ink)" : "rgba(11,14,18,.22)", display: "grid", placeItems: "center", cursor: puedeEnviar ? "pointer" : "default", flex: "none" }}><Icon name="right" size={18} strokeWidth={2} color="var(--tl-white)" /></span>
           </div>
         </div>
@@ -317,7 +318,7 @@ function BuscaNegocio({ es, onPick }: { es: boolean; onPick: (b: NegocioCm & { m
         style={{ width: "100%", height: 46, boxSizing: "border-box", padding: "0 14px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", background: "var(--tl-white)", font: "600 14.5px Manrope,sans-serif", outline: "none" }} />
       <div role="listbox" aria-label={E2("Negocios", "Businesses")} style={{ marginTop: 10 }}>
         {L.map((b, i) => (
-          <div key={b.id} role="option" aria-selected={false} onClick={() => onPick({ ...b, metaT: es ? b.meta.es : b.meta.en })} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 2px", borderTop: i ? "1px solid rgba(11,14,18,.07)" : "none", cursor: "pointer" }}>
+          <div key={b.id} role="option" aria-selected={false} onClick={() => onPick({ ...b, metaT: es ? b.meta.es : b.meta.en })} {...tec(() => onPick({ ...b, metaT: es ? b.meta.es : b.meta.en }))} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 2px", borderTop: i ? "1px solid rgba(11,14,18,.07)" : "none", cursor: "pointer" }}>
             <span style={{ width: 40, height: 40, borderRadius: 11, background: fondo(b.foto), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
             <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{b.nombre}</div><div style={{ marginTop: 3, font: `600 9.5px/1.4 ${MONO}`, color: "rgba(11,14,18,.5)" }}>{(es ? b.meta.es : b.meta.en).toUpperCase()}</div></div>
           </div>))}

@@ -9,6 +9,7 @@ import { proyectar, TESELAS, vista, type LL } from "@/lib/mapa-geo";
 import type { FiltroMapa, Pin } from "@/lib/mapa";
 import { registrarToque } from "../acciones";
 
+import { tec } from "@/lib/tec";
 type N = "Icon" | "Button" | "Chip" | "BusinessRow";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, BusinessRow } = UI as unknown as Record<N, ComponentType<any>>;
@@ -111,12 +112,12 @@ export function Mapa({ v }: { v: VistaMapa }) {
       <style>{KF}</style>
       <div style={{ display: "flex", flexDirection: "column", gap: 12, background: L.topBg, padding: L.topPad, borderBottom: L.topBd }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span role="button" aria-label={E2("Volver", "Back")} onClick={atras} style={{ ...boton, flex: "none" }}><Icon name="chevronLeft" size={18} strokeWidth={2} /></span>
+          <span role="button" aria-label={E2("Volver", "Back")} onClick={atras} {...tec(atras)} style={{ ...boton, flex: "none" }}><Icon name="chevronLeft" size={18} strokeWidth={2} /></span>
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
             <span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>{`${E2("MAPA · ", "MAP · ")}${v.ciudad} · ${rad} MI`.toUpperCase()}</span>
             <h1 style={{ margin: 0, font: `800 ${L.h1}/1.12 Sora,sans-serif`, letterSpacing: "-.035em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{v.titulo}</h1>
           </div>
-          <span role="button" onClick={cambiarRadio} style={{ flex: "none", height: 36, padding: "0 12px", borderRadius: 12, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.12)", display: "flex", alignItems: "center", gap: 7, font: "700 12.5px Manrope,sans-serif", cursor: "pointer", whiteSpace: "nowrap" }}>
+          <span role="button" onClick={cambiarRadio} {...tec(cambiarRadio)} style={{ flex: "none", height: 36, padding: "0 12px", borderRadius: 12, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.12)", display: "flex", alignItems: "center", gap: 7, font: "700 12.5px Manrope,sans-serif", cursor: "pointer", whiteSpace: "nowrap" }}>
             <Icon name="pin" size={15} color="var(--tl-action)" />{desk ? `${rad} mi · ${E2("Cambiar", "Change")}` : `${rad} mi`}
           </span>
         </div>
@@ -135,23 +136,23 @@ export function Mapa({ v }: { v: VistaMapa }) {
             <div style={{ position: "absolute", left: `calc(50% + ${Math.round(rc[0])}px)`, top: `calc(50% + ${Math.round(rc[1])}px)`, width: rd, height: rd, transform: "translate(-50%,-50%)", borderRadius: 999, border: "2px solid var(--tl-action)", background: "rgba(75,55,245,.07)", boxSizing: "border-box", pointerEvents: "none" }} />
             <div style={{ position: "absolute", left: `calc(50% + ${Math.round(rc[0])}px)`, top: `calc(50% + ${Math.round(rc[1])}px)`, width: 12, height: 12, transform: "translate(-50%,-50%)", borderRadius: 99, background: "var(--tl-action)", border: "3px solid var(--tl-white)", boxShadow: "0 0 0 6px rgba(75,55,245,.18)", pointerEvents: "none" }} />
             {pins.map((p) => (
-              <div key={p.id} role="button" aria-label={p.name} onClick={(e) => { e.stopPropagation(); if (!movio.current) setSel(p.id); }}
+              <div key={p.id} role="button" aria-label={p.name} onClick={(e) => { e.stopPropagation(); if (!movio.current) setSel(p.id); }} {...tec((e) => { e.stopPropagation(); if (!movio.current) setSel(p.id); })}
                 style={{ position: "absolute", left: `calc(50% + ${p.x}px)`, top: `calc(50% + ${p.y}px)`, width: p.s, height: p.s, transform: "translate(-50%,-50%)", borderRadius: 99, background: p.bg, border: p.bd, boxSizing: "border-box", boxShadow: p.sh, zIndex: p.z, cursor: "pointer" }}>
                 {p.on ? <span style={{ position: "absolute", left: "50%", bottom: "calc(100% + 6px)", transform: "translateX(-50%)", padding: "6px 10px", borderRadius: 10, background: "var(--tl-ink)", color: "var(--tl-white)", font: "700 12px Manrope,sans-serif", whiteSpace: "nowrap", boxShadow: "0 10px 22px -12px rgba(11,14,18,.6)" }}>{p.name}</span> : null}
               </div>
             ))}
             <div style={{ position: "absolute", left: 12, top: 12, zIndex: 35, padding: "7px 10px", borderRadius: 10, background: "rgba(255,255,255,.94)", font: `700 10px ${MONO}`, letterSpacing: ".08em", pointerEvents: "none" }}>{`${v.adentro}${E2(` A ${rad} MI`, ` WITHIN ${rad} MI`)}`}</div>
             <div style={{ position: "absolute", right: 12, top: 12, display: "flex", flexDirection: "column", gap: 6, zIndex: 35 }} onPointerDown={parar}>
-              <span role="button" aria-label={E2("Acercar", "Zoom in")} onClick={(e) => { e.stopPropagation(); setDz(Math.min(4, d + 1)); }} style={boton}><Icon name="plus" size={16} strokeWidth={2} /></span>
-              <span role="button" aria-label={E2("Alejar", "Zoom out")} onClick={(e) => { e.stopPropagation(); setDz(Math.max(-2, d - 1)); }} style={boton}><Icon name="minus" size={16} strokeWidth={2} /></span>
-              <span role="button" aria-label={E2("Volver a mi punto", "Back to my point")} onClick={(e) => { e.stopPropagation(); setDz(null); setCen(null); }} style={boton}><Icon name="pin" size={16} color="var(--tl-action)" /></span>
+              <span role="button" aria-label={E2("Acercar", "Zoom in")} onClick={(e) => { e.stopPropagation(); setDz(Math.min(4, d + 1)); }} {...tec((e) => { e.stopPropagation(); setDz(Math.min(4, d + 1)); })} style={boton}><Icon name="plus" size={16} strokeWidth={2} /></span>
+              <span role="button" aria-label={E2("Alejar", "Zoom out")} onClick={(e) => { e.stopPropagation(); setDz(Math.max(-2, d - 1)); }} {...tec((e) => { e.stopPropagation(); setDz(Math.max(-2, d - 1)); })} style={boton}><Icon name="minus" size={16} strokeWidth={2} /></span>
+              <span role="button" aria-label={E2("Volver a mi punto", "Back to my point")} onClick={(e) => { e.stopPropagation(); setDz(null); setCen(null); }} {...tec((e) => { e.stopPropagation(); setDz(null); setCen(null); })} style={boton}><Icon name="pin" size={16} color="var(--tl-action)" /></span>
             </div>
             <span style={{ position: "absolute", right: 6, bottom: 4, zIndex: 34, font: "500 9px Manrope,sans-serif", color: "rgba(11,14,18,.6)", pointerEvents: "none" }}>© OpenMapTiles · © OpenStreetMap</span>
             {seleccion ? (
               <div onClick={parar} onPointerDown={parar} style={{ position: "absolute", zIndex: 40, left: 12, right: L.cardR, width: L.cardW, bottom: 12, padding: 12, borderRadius: 17, background: "var(--tl-white)", boxShadow: "0 18px 40px -20px rgba(11,14,18,.55)", display: "flex", flexDirection: "column", gap: 10, animation: "mpFade .2s ease-out", cursor: "default" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
                   <div style={{ flex: 1, minWidth: 0, display: "grid" }}><BusinessRow {...fila(seleccion)} onClick={() => abrir(seleccion.id)} /></div>
-                  <span role="button" aria-label={E2("Cerrar", "Close")} onClick={() => setSel(null)} style={{ width: 30, height: 30, borderRadius: 10, background: "rgba(11,14,18,.06)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="close" size={13} strokeWidth={2.2} /></span>
+                  <span role="button" aria-label={E2("Cerrar", "Close")} onClick={() => setSel(null)} {...tec(() => setSel(null))} style={{ width: 30, height: 30, borderRadius: 10, background: "rgba(11,14,18,.06)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="close" size={13} strokeWidth={2.2} /></span>
                 </div>
                 {seleccion.casa ? <span style={{ font: "600 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2("Trabaja desde casa: el pin es la zona. La dirección exacta te llega al confirmar.", "Works from home: the pin is the area. The exact address arrives on confirmation.")}</span> : null}
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -169,7 +170,7 @@ export function Mapa({ v }: { v: VistaMapa }) {
             <span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>
               {`${v.total} ${v.total === 1 ? E2("NEGOCIO", "BUSINESS") : E2("NEGOCIOS", "BUSINESSES")}${E2(" · EL MÁS CERCA PRIMERO", " · NEAREST FIRST")}${v.ctx ? E2(" · TUS FILTROS", " · YOUR FILTERS") : ""}`}
             </span>
-            {hayFiltros ? <span role="button" onClick={() => ir({ m: null, ...(v.ctx ? {} : { cat: null }) })} style={{ font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Quitar filtros", "Clear filters")}</span> : null}
+            {hayFiltros ? <span role="button" onClick={() => ir({ m: null, ...(v.ctx ? {} : { cat: null }) })} {...tec(() => ir({ m: null, ...(v.ctx ? {} : { cat: null }) }))} style={{ font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Quitar filtros", "Clear filters")}</span> : null}
           </div>
           {!v.pins.length ? (
             <div style={{ padding: "22px 18px", borderRadius: 18, background: "var(--tl-white)", border: "1px dashed rgba(11,14,18,.16)", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textAlign: "center" }}>
