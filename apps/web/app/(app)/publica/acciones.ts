@@ -1,7 +1,8 @@
 "use server";
 import { claveAmenidad } from "@/lib/amenidades";
 import { db, tx } from "@/lib/db";
-import { mismoOrigen, yo } from "@/lib/cuenta";
+import { dispositivo, mismoOrigen, yo } from "@/lib/cuenta";
+import { anotarReferido, codigoPermitido, codigoVivo } from "@/lib/crecimiento/promotores";
 import { ubicacion } from "@/lib/ubicacion";
 import { daysOf, derive, descEs, items as itemsDe, needZone, ok as okPaso, opOf, own as ownDe, SEQ, zoneOf, type Borrador } from "./logica";
 import { evento } from "@/lib/eventos";
@@ -80,7 +81,7 @@ export async function anfitriones(q: string, cat: string | null) {
    crea el negocio en una sola transacción: negocio, plan Pro de prueba, dueño, horario, fotos (pasan de la persona al
    negocio) y, si renta espacio, la solicitud al local. Nada se borra: el borrador queda completado. */
 
-const PROMO: Record<string, number> = { HZL30: 60 }; // código de promotor del diseño; la tabla de códigos llega con el Super Admin
+// 9h · Los códigos (HZL30 y los de cada promotor) viven en promo_codes (0138) y se administran en Super Admin › Crecimiento › Promotores.
 const NN = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 const hhmm = (h: number) => { const H = ((Math.round(h * 2) / 2) % 24 + 24) % 24; return `${String(Math.floor(H)).padStart(2, "0")}:${H % 1 ? "30" : "00"}`; };
 
@@ -111,13 +112,17 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
   if (!mias.includes(d.cover!)) return no("Vuelve a subir tu foto.", "Upload your photo again.", "F1");
   const subs = (await db().query<{ id: string; es: string }>(`select id, name->>'es' as es from subcategorias_vivas where category_id = $1`, [d.cat])).rows;
   const subIds = d.subs.map((s) => subs.find((x) => NN(x.es) === NN(s))?.id).filter((x): x is string => !!x);
-  const dias = diasPrueba(d);
+  // 9h · El código (si lo trae): sus días de prueba; el de un promotor no vale para su propia cuenta ni para alguien de su mismo dispositivo (antiabuso 5d).
+  const dev = await dispositivo(false);
+  const promo = d.promoOk ? await codigoVivo(d.promo) : null;
+  const promoOk = !!promo && (await tx((c) => codigoPermitido(c, promo, me.id, dev)));
+  const dias = promoOk ? promo!.dias : 30;
   const fin = new Date(Date.now() + dias * 864e5);
   const hasta = fin.toLocaleDateString("es-US", { day: "numeric", month: "short", timeZone: "America/New_York" }).replace(".", "");
   const tel = (await db().query<{ phone: string }>(`select phone from users where id = $1`, [me.id])).rows[0]?.phone ?? null;
   const operacion = op === "casa" ? "casa" : op === "ambos" ? "ambos" : op === "rento" ? "rento" : "local";
   const productos = its.map((it) => ({ name: it.n[0], ne: it.n[1], price: Number(it.p) || 0, unit: it.u || "fijo", dur: Number(it.dur) || 0, desc: descEs(it) }));
-  const attrs = { onb: { op, own: o, tool: dv.tool ?? {}, cx: dv.cx ?? {}, mods: dv.mods ?? {}, via: d.via, trial: { until: fin.toISOString(), days: dias, promo: d.promoOk ? d.promo : null } }, items: productos };
+  const attrs = { onb: { op, own: o, tool: dv.tool ?? {}, cx: dv.cx ?? {}, mods: dv.mods ?? {}, via: d.via, trial: { until: fin.toISOString(), days: dias, promo: promoOk ? promo!.code : null } }, items: productos };
   const base = NN(d.name).replace(/ /g, "-").slice(0, 60) || "negocio";
   const nombreYo = [me.first_name, me.last_name].filter(Boolean).join(" ") || me.nick || "Dueño";
   const minutos = d.t0 ? Math.max(1, Math.round((Date.now() - Number(d.t0)) / 60000)) : 0;
@@ -136,7 +141,9 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
     await c.query(`insert into business_stats_cache (business_id, plan, photo_count) values ($1, 'pro', $2)`, [slug, mias.length]);
     // La prueba Pro (Cobros y plan): 30 días (o 60 con HZL30). El día 30 sigue con tarjeta o pasa a Free (lib/suscripcion.ts).
     await c.query(`insert into subscriptions (business_id, status, trial_started_at, trial_ends_at, promo_code, payer_user_id) values ($1, 'trial', now(), $2, $3, $4)`,
-      [slug, fin.toISOString(), d.promoOk ? d.promo : null, me.id]);
+      [slug, fin.toISOString(), promoOk ? promo!.code : null, me.id]);
+    // 9h · El negocio que trajo un promotor queda como su referido (o «rechazado» si es suyo: antiabuso).
+    if (promo) await anotarReferido(c, promo, slug, loc.ciudad, me.id, dev);
     await c.query(`insert into subscription_events (business_id, kind, actor_id, note) values ($1, 'trial_start', $2, $3::jsonb)`, [slug, me.id, JSON.stringify({ dias })]);
     // Revisión ligera del equipo (Super Admin › Colas › Negocios nuevos). El negocio ya sale; esto no lo detiene.
     await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id) values ('nuevo', 'business', $1, $1, $2) on conflict do nothing`, [slug, loc.ciudad]);
@@ -180,17 +187,22 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
     await c.query(
       `insert into onboarding_drafts (user_id, step, answers, promo_code, completed_at, business_id) values ($1, 'H1', $2::jsonb, $3, now(), $4)
        on conflict (user_id) do update set step = 'H1', answers = excluded.answers, promo_code = excluded.promo_code, completed_at = now(), business_id = excluded.business_id`,
-      [me.id, JSON.stringify({ ...d, cover: null, gallery: [] }), d.promoOk ? d.promo : null, slug]);
+      [me.id, JSON.stringify({ ...d, cover: null, gallery: [] }), promoOk ? promo!.code : null, slug]);
     return slug;
   });
   await evento("publicar_negocio", { ref: id, ciudad: loc.ciudad, userId: me.id, props: { cat: d.cat } });
   return { ok: true, negocio: { id, nombre: d.name, minutos, hasta, items: productos.length, fotos: mias.length } };
 }
 
-const diasPrueba = (d: Pick<Borrador, "promo" | "promoOk">) => (d.promoOk && PROMO[d.promo] ? PROMO[d.promo]! : 30);
-/* Código de promotor (F1): lo valida el servidor. */
+/* Código de promotor (F1): lo valida el servidor (promo_codes, 9h). El de un promotor no vale para su propia cuenta. */
 // solo lectura
 export async function probarPromo(codigo: string) {
-  const k = String(codigo ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
-  return PROMO[k] ? { ok: true as const, dias: PROMO[k]! } : { ok: false as const };
+  const k = await codigoVivo(String(codigo ?? ""));
+  if (!k) return { ok: false as const };
+  const me = await yo();
+  if (me && k.kind === "promotor" && k.promotor === me.id) return { ok: false as const };
+  // El mismo antiabuso que al publicar (alguien del mismo teléfono que el promotor): la pantalla nunca promete días que el servidor no va a dar.
+  const dev = await dispositivo(false);
+  if (me && !(await tx((c) => codigoPermitido(c, k, me.id, dev)))) return { ok: false as const };
+  return { ok: true as const, dias: k.dias };
 }

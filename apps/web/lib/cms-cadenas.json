@@ -129,6 +129,1167 @@
    "sha256": "f2cc8efa152a09c21367a78febc334bdd04a7dc3d3328cf3847bbaa5f6c81867"
   },
   {
+   "id": "APP-LANDING-PRE.abre",
+   "screen": "APP-LANDING-PRE",
+   "es": "ABRE EL {fecha}",
+   "en": "OPENS ON {fecha}",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "84defbf034852fbf6765bf6dfee59d1520b46dce7b5eb7a800fc0ab4c1785b61"
+  },
+  {
+   "id": "APP-LANDING-PRE.anotarme",
+   "screen": "APP-LANDING-PRE",
+   "es": "Anotarme",
+   "en": "Sign me up",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "88aface32e6066cd7bea4da07817e4e5a2415e36b2abd080e956d2a6261d651f"
+  },
+  {
+   "id": "APP-LANDING-PRE.anotarmeYa",
+   "screen": "APP-LANDING-PRE",
+   "es": "Anotarme con mi cuenta",
+   "en": "Sign me up with my account",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "f547e9b1ccd8237842a54de128aae637c4eb8f15d7fdf4bcdb7e2b0b626cff7e"
+  },
+  {
+   "id": "APP-LANDING-PRE.apartar",
+   "screen": "APP-LANDING-PRE",
+   "es": "Apartar mi negocio",
+   "en": "Hold my business",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "ceac517e6ea3799aae7834f2d63669d09b147aa5b185df09f84fa6cb77196631"
+  },
+  {
+   "id": "APP-LANDING-PRE.avisame",
+   "screen": "APP-LANDING-PRE",
+   "es": "Avísame",
+   "en": "Notify me",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "9a6af71d7c2911f89286b0115d4ce3fcae5e8de5d5ad5fda58c0b168ff7ca6c4"
+  },
+  {
+   "id": "APP-LANDING-PRE.b0",
+   "screen": "APP-LANDING-PRE",
+   "es": "pasteles de tres leches",
+   "en": "tres leches cakes",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "30d8bade5f61da590bed1f6a478c325beeed0377d52b8e4aa143bff024228120"
+  },
+  {
+   "id": "APP-LANDING-PRE.b1",
+   "screen": "APP-LANDING-PRE",
+   "es": "barbero que corte rizos",
+   "en": "barber for curly hair",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "05ffaa120b69e443f55400e513047c03e69a2f2548e87ceb353b84df5b7ba04f"
+  },
+  {
+   "id": "APP-LANDING-PRE.b10",
+   "screen": "APP-LANDING-PRE",
+   "es": "DJ para cumpleaños",
+   "en": "birthday DJ",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "796378e145731163f93cdb7192ebf8f11552737e86e92383ee1674899debfe03"
+  },
+  {
+   "id": "APP-LANDING-PRE.b11",
+   "screen": "APP-LANDING-PRE",
+   "es": "limpieza de alfombras",
+   "en": "carpet cleaning",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "e2d32254104cb80e7525600d90100ad57e7e7403c793cac6f70082f0a2f8f77e"
+  },
+  {
+   "id": "APP-LANDING-PRE.b2",
+   "screen": "APP-LANDING-PRE",
+   "es": "notario en español",
+   "en": "notary in Spanish",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "843a8d042d14fe40c412c74a68339bbb453f9df12f69299f9d4d99f568919378"
+  },
+  {
+   "id": "APP-LANDING-PRE.b3",
+   "screen": "APP-LANDING-PRE",
+   "es": "mecánico que venga a casa",
+   "en": "mechanic who comes to you",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "23f538777fc38f8b9d247752e461d096791983aa39f9e74b275511fa003b97be"
+  },
+  {
+   "id": "APP-LANDING-PRE.b4",
+   "screen": "APP-LANDING-PRE",
+   "es": "uñas para una boda",
+   "en": "nails for a wedding",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "9d39214a65d11a3c8a865e0e46f0e035c3148af796f51fd85f2a7e9822330bc8"
+  },
+  {
+   "id": "APP-LANDING-PRE.b5",
+   "screen": "APP-LANDING-PRE",
+   "es": "clases de bachata",
+   "en": "bachata classes",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "0e5bbb3a681bd4d8ed31e9ef017183e4c6260305f5064a6d44877fbd2fbb06cb"
+  },
+  {
+   "id": "APP-LANDING-PRE.b6",
+   "screen": "APP-LANDING-PRE",
+   "es": "mariscos frescos",
+   "en": "fresh seafood",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "30dc91c675c0139284a4b953dca340d48e2c8bd1e077f72730ba72adccc0242d"
+  },
+  {
+   "id": "APP-LANDING-PRE.b7",
+   "screen": "APP-LANDING-PRE",
+   "es": "taxes en español",
+   "en": "taxes in Spanish",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "59aa90dd1d142095e8e3e63de99c9ca48bdaaec1d0008ff7306248346286feb2"
+  },
+  {
+   "id": "APP-LANDING-PRE.b8",
+   "screen": "APP-LANDING-PRE",
+   "es": "fotógrafo para quinceañera",
+   "en": "quinceañera photographer",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "99f3619063fbaa29df9a33cecce095461297c5c6775230982a3a7d9f5d0ce71b"
+  },
+  {
+   "id": "APP-LANDING-PRE.b9",
+   "screen": "APP-LANDING-PRE",
+   "es": "costurera que haga ruedos",
+   "en": "seamstress for hems",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "7b634f760c0c713e7fdc2dc631383171a6d68637ff9c3cee0627e0a5762d04db"
+  },
+  {
+   "id": "APP-LANDING-PRE.buscasK",
+   "screen": "APP-LANDING-PRE",
+   "es": "BÚSQUEDAS QUE HOY NADIE TE CONTESTA",
+   "en": "SEARCHES NOBODY ANSWERS TODAY",
+   "max_len": 60,
+   "locked": false,
+   "sha256": "598fb239ab08698def922ba835b73a148def7859f1f79e23cd6d53b4d82cf796"
+  },
+  {
+   "id": "APP-LANDING-PRE.cabeS",
+   "screen": "APP-LANDING-PRE",
+   "es": "Con local o sin él. Lo que importa es que lo hagas bien y que tus vecinos te encuentren.",
+   "en": "With a storefront or without one. What matters is doing it well and that your neighbors find you.",
+   "max_len": 150,
+   "locked": false,
+   "sha256": "8ce5c2ffef346bd19f73f26982026850d09f1b18a0147769d11b30187e5b8335"
+  },
+  {
+   "id": "APP-LANDING-PRE.cabeT",
+   "screen": "APP-LANDING-PRE",
+   "es": "Aquí cabe cualquier negocio",
+   "en": "Any business fits here",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "e1aa375b4389f85aaa02832367d753942f3a6aa11d38d920ff71bacf8a0964fd"
+  },
+  {
+   "id": "APP-LANDING-PRE.cambiar",
+   "screen": "APP-LANDING-PRE",
+   "es": "Cambiar",
+   "en": "Change",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "dd7febec652804e78b613c9ec8e14bedced2967a949d479012d977bcd621bb31"
+  },
+  {
+   "id": "APP-LANDING-PRE.codigoK",
+   "screen": "APP-LANDING-PRE",
+   "es": "CÓDIGO DE 6 NÚMEROS",
+   "en": "6-DIGIT CODE",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "ab5b882de67d008c56c1ac9d0714a729d38bdacf42b150a5d9207e45f6f143ee"
+  },
+  {
+   "id": "APP-LANDING-PRE.comoK",
+   "screen": "APP-LANDING-PRE",
+   "es": "¿CÓMO TRABAJAS?",
+   "en": "HOW DO YOU WORK?",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "935e8ca85ebe4f83883733df875c33d9b67af7caff83e5eab10d031f67b186b4"
+  },
+  {
+   "id": "APP-LANDING-PRE.comparteS",
+   "screen": "APP-LANDING-PRE",
+   "es": "Mientras más vecinos y negocios de tu zona se anotan, antes llega.",
+   "en": "The more neighbors and businesses in your area sign up, the sooner it comes.",
+   "max_len": 120,
+   "locked": false,
+   "sha256": "02f59bd27aa40335f8d927266114cde720eefd018c0b2186949f366e2a7e97a1"
+  },
+  {
+   "id": "APP-LANDING-PRE.comparteT",
+   "screen": "APP-LANDING-PRE",
+   "es": "Comparte",
+   "en": "Share",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "070546f63209d58241c16d0fe96c200a7d095b043d88890146cc27ea1451ec74"
+  },
+  {
+   "id": "APP-LANDING-PRE.copiado",
+   "screen": "APP-LANDING-PRE",
+   "es": "Enlace copiado.",
+   "en": "Link copied.",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "e061665957a97324e9fdfbce1528413284a80ab0c1918d942f24449d2222d965"
+  },
+  {
+   "id": "APP-LANDING-PRE.copiar",
+   "screen": "APP-LANDING-PRE",
+   "es": "Copiar el enlace",
+   "en": "Copy the link",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "124e7433219ba28c08dba80b4ea749c516832ca653a2f2eff5464a3bd996f140"
+  },
+  {
+   "id": "APP-LANDING-PRE.ejemplo",
+   "screen": "APP-LANDING-PRE",
+   "es": "EJEMPLO",
+   "en": "EXAMPLE",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "0241fa80b47da8bffacbe83ed31fee48bea407105b053f442da850f167de9e1f"
+  },
+  {
+   "id": "APP-LANDING-PRE.enviado",
+   "screen": "APP-LANDING-PRE",
+   "es": "Lo mandamos al {tel}",
+   "en": "Sent to {tel}",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "30d3e90c87ff953815ec0a040993962a9b7389d9f0fe266c1b96def25c39b1c8"
+  },
+  {
+   "id": "APP-LANDING-PRE.errTel",
+   "screen": "APP-LANDING-PRE",
+   "es": "El teléfono son 10 números.",
+   "en": "The phone is 10 digits.",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "3f332bb9fd0ca9de9e2c25919e6c246c7c52970710cad086fa41f11de77cbebd"
+  },
+  {
+   "id": "APP-LANDING-PRE.errZip",
+   "screen": "APP-LANDING-PRE",
+   "es": "El código postal son 5 números.",
+   "en": "The ZIP code is 5 digits.",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "ea4088211bc8b28e374938959420b8b0ae8bc07c300b7d71706f3b0411f606e3"
+  },
+  {
+   "id": "APP-LANDING-PRE.esperan",
+   "screen": "APP-LANDING-PRE",
+   "es": "{n} personas ya esperan",
+   "en": "{n} people are already waiting",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "b77840e59f97e62374530d1407b6953c7b94e03d3edcb9736cb18da7fa3f25bb"
+  },
+  {
+   "id": "APP-LANDING-PRE.eyebrow",
+   "screen": "APP-LANDING-PRE",
+   "es": "MUY PRONTO · DE TU ZONA",
+   "en": "VERY SOON · IN YOUR AREA",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "96d01742f5e3214c17e04482076ae7673bec2c50d810365b5f59588eab076e26"
+  },
+  {
+   "id": "APP-LANDING-PRE.faqT",
+   "screen": "APP-LANDING-PRE",
+   "es": "Preguntas",
+   "en": "Questions",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "8b8db5607d2a874de2c2f605bce22fc173d495a6b52c230d9da1a64987bcf912"
+  },
+  {
+   "id": "APP-LANDING-PRE.formK",
+   "screen": "APP-LANDING-PRE",
+   "es": "AVÍSAME CUANDO ABRA",
+   "en": "TELL ME WHEN IT OPENS",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "d76f02dc1d11dbd12df4e40d600912fa34eeb9cda2a05573dfb517cbca17f888"
+  },
+  {
+   "id": "APP-LANDING-PRE.freeS",
+   "screen": "APP-LANDING-PRE",
+   "es": "Para empezar: tu página, tu horario, tus fotos y que te llamen. $0.",
+   "en": "To start: your page, your hours, your photos and people calling you. $0.",
+   "max_len": 110,
+   "locked": false,
+   "sha256": "0c944f73deb6680264c863032044ec501e76c3da5fc16cc9b4b89529762e8ad0"
+  },
+  {
+   "id": "APP-LANDING-PRE.freeT",
+   "screen": "APP-LANDING-PRE",
+   "es": "Free",
+   "en": "Free",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "16669a7e7da528efa1070ca0bffe6a7dd49e0909229451b8816ba29804a9f085"
+  },
+  {
+   "id": "APP-LANDING-PRE.fuera",
+   "screen": "APP-LANDING-PRE",
+   "es": "Lo anotamos en «Pide tu ciudad»: cuantas más personas lo piden, antes llega. Te escribimos una sola vez, cuando llegue.",
+   "en": "We added it to “Ask for your city”: the more people ask, the sooner it comes. We text you only once, when it arrives.",
+   "max_len": 180,
+   "locked": false,
+   "sha256": "89814ba6153516925841c59f45c2b7e0e9685d9456dbdd9237230f04c2f08adf"
+  },
+  {
+   "id": "APP-LANDING-PRE.fueraT",
+   "screen": "APP-LANDING-PRE",
+   "es": "Todavía no llegamos al {zip}",
+   "en": "We are not in {zip} yet",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "02928cdc1b50fadbf8f25eaf9c7c35a02d440845f2bab575cd133093ee844d7b"
+  },
+  {
+   "id": "APP-LANDING-PRE.fundS",
+   "screen": "APP-LANDING-PRE",
+   "es": "Los primeros {meta} negocios de cada zona llevan la insignia Fundadores.",
+   "en": "The first {meta} businesses in each area carry the Founders badge.",
+   "max_len": 110,
+   "locked": false,
+   "sha256": "e87c028c7d42da371adb3493219cb96c2c7d6bf9988f6b4159b05d99005be94c"
+  },
+  {
+   "id": "APP-LANDING-PRE.fundT",
+   "screen": "APP-LANDING-PRE",
+   "es": "Fundadores",
+   "en": "Founders",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "128a85dc9cbb205dc7f0c90ab83a62f19e2a07daa6b49ecfeb2c07a68ba97587"
+  },
+  {
+   "id": "APP-LANDING-PRE.fundador",
+   "screen": "APP-LANDING-PRE",
+   "es": "Eres fundador {n} de {meta} en {ciudad}: llevas la insignia Fundadores.",
+   "en": "You are founder {n} of {meta} in {ciudad}: you carry the Founders badge.",
+   "max_len": 110,
+   "locked": false,
+   "sha256": "68e6249cb94eafc43c016edb405411b912ca1ada7f08c242baa486d57c626dfd"
+  },
+  {
+   "id": "APP-LANDING-PRE.fundadorNeg",
+   "screen": "APP-LANDING-PRE",
+   "es": "Tu negocio es fundador {n} de {meta} en {ciudad}.",
+   "en": "Your business is founder {n} of {meta} in {ciudad}.",
+   "max_len": 80,
+   "locked": false,
+   "sha256": "205c1c5ae8d70c40f2fa65af60d782d33f8bca5c4f6e54d30e8eb042e479bdbf"
+  },
+  {
+   "id": "APP-LANDING-PRE.l0",
+   "screen": "APP-LANDING-PRE",
+   "es": "Te anotas",
+   "en": "You sign up",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "b207ae97d70795219ce7a5546123afa5fd5b91c2f54a344925eda257f86b353b"
+  },
+  {
+   "id": "APP-LANDING-PRE.l0s",
+   "screen": "APP-LANDING-PRE",
+   "es": "Con tu código postal y tu teléfono. Un minuto.",
+   "en": "With your ZIP code and your phone. One minute.",
+   "max_len": 70,
+   "locked": false,
+   "sha256": "76d2d28e4ccf6ddea6e13aab84e5bd49a424d5803a35b0975731568b3569024e"
+  },
+  {
+   "id": "APP-LANDING-PRE.l1",
+   "screen": "APP-LANDING-PRE",
+   "es": "Los negocios arman su página",
+   "en": "Businesses build their page",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "132a63f9b220dcca0071d1313b777e0245ee52b4fe3612a777a2924bf83392d1"
+  },
+  {
+   "id": "APP-LANDING-PRE.l1s",
+   "screen": "APP-LANDING-PRE",
+   "es": "Desde ya: su menú, sus servicios, sus horas.",
+   "en": "Starting now: their menu, their services, their hours.",
+   "max_len": 90,
+   "locked": false,
+   "sha256": "0046d7d321f79eee65507332f2ab0550ececfe6b6d34ff4ed5c91200a9e8cb85"
+  },
+  {
+   "id": "APP-LANDING-PRE.l2",
+   "screen": "APP-LANDING-PRE",
+   "es": "Abre tu zona",
+   "en": "Your area opens",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "cb338308dba25ac6c173b4706c177a48ae871de192ba42565be63181121c1ffd"
+  },
+  {
+   "id": "APP-LANDING-PRE.l2s",
+   "screen": "APP-LANDING-PRE",
+   "es": "Te mandamos un mensaje ese día. Nada más.",
+   "en": "We text you that day. Nothing else.",
+   "max_len": 70,
+   "locked": false,
+   "sha256": "ea4980225b7fd9c5e1ab403ba386b9aeb9ca56347b4c0ba3a014c32497a8dc4e"
+  },
+  {
+   "id": "APP-LANDING-PRE.legal",
+   "screen": "APP-LANDING-PRE",
+   "es": "Al seguir aceptas los Términos y la Privacidad de To'Latino. Tu teléfono es tu cuenta: nunca te pedimos tu estatus ni tu seguro social.",
+   "en": "By continuing you accept To'Latino's Terms and Privacy. Your phone is your account: we never ask for your status or your social security number.",
+   "max_len": 220,
+   "locked": false,
+   "sha256": "e8d690677c834f3bf43219d86131355d5be01de771b76d0c36d6a705a5c57738"
+  },
+  {
+   "id": "APP-LANDING-PRE.listaCiudad",
+   "screen": "APP-LANDING-PRE",
+   "es": "En la lista de {ciudad}. Te escribimos una sola vez: el día que abra.",
+   "en": "On the {ciudad} list. We text you only once: the day it opens.",
+   "max_len": 110,
+   "locked": false,
+   "sha256": "0574d466503a168db98fa045c5f2989e99cdee4c0b7797afdae00c89d6714460"
+  },
+  {
+   "id": "APP-LANDING-PRE.listaT",
+   "screen": "APP-LANDING-PRE",
+   "es": "Estás en la lista · #{n}",
+   "en": "You are on the list · #{n}",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "57e8f649ec89dd1aaafb2d73a1e4779a97d95b22acb64f5a0a9be89531386b34"
+  },
+  {
+   "id": "APP-LANDING-PRE.listaYa",
+   "screen": "APP-LANDING-PRE",
+   "es": "Ya estabas en la lista · #{n}",
+   "en": "You were already on the list · #{n}",
+   "max_len": 60,
+   "locked": false,
+   "sha256": "96b7e32ade4d0af876214baba18eed0f523a12d7599e2d7453b9e15286709f2d"
+  },
+  {
+   "id": "APP-LANDING-PRE.llegaT",
+   "screen": "APP-LANDING-PRE",
+   "es": "Cómo llega a tu zona",
+   "en": "How it reaches your area",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "30ef091bcb7deb6647abb8636fdf858ac1021d2b095e77254aae5dda63de5d4f"
+  },
+  {
+   "id": "APP-LANDING-PRE.m0",
+   "screen": "APP-LANDING-PRE",
+   "es": "Desde casa · bizcochos y bandejas",
+   "en": "From home · cakes and trays",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "8625542374e9aa2dd621b05ce8ecbabaace33f2fc6d54258565bfb550e8423b2"
+  },
+  {
+   "id": "APP-LANDING-PRE.m1",
+   "screen": "APP-LANDING-PRE",
+   "es": "Con local · pantallas y baterías",
+   "en": "Storefront · screens and batteries",
+   "max_len": 60,
+   "locked": false,
+   "sha256": "668340c89f1965987ddb62e5d8a3e1b6968ef5ec5edcb9f0c4adafb077c0509b"
+  },
+  {
+   "id": "APP-LANDING-PRE.m2",
+   "screen": "APP-LANDING-PRE",
+   "es": "A domicilio · cita previa",
+   "en": "At your door · by appointment",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "eb0dc7c937294e70b5ba79e62a7e807029924a186b8b92bac3cd5d02ab02225a"
+  },
+  {
+   "id": "APP-LANDING-PRE.m3",
+   "screen": "APP-LANDING-PRE",
+   "es": "Por encargo · bandejas para 20",
+   "en": "Made to order · trays for 20",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "b427cfb7c03e70b76ee9ddfb578fa0aaf65b23e2c82aac72b406a395528ef094"
+  },
+  {
+   "id": "APP-LANDING-PRE.m4",
+   "screen": "APP-LANDING-PRE",
+   "es": "En su tiempo libre · grupos pequeños",
+   "en": "In their free time · small groups",
+   "max_len": 60,
+   "locked": false,
+   "sha256": "1dc867c910754f125cb3a03552be989c382b4a1d10cd8aa62df9cbae4b034436"
+  },
+  {
+   "id": "APP-LANDING-PRE.m5",
+   "screen": "APP-LANDING-PRE",
+   "es": "A domicilio · presupuesto en la app",
+   "en": "At your door · quote in the app",
+   "max_len": 60,
+   "locked": false,
+   "sha256": "c3fdd783cba768d2dc39177742d863765a1e807fde3f0a0181ae6f413dd6f4ad"
+  },
+  {
+   "id": "APP-LANDING-PRE.mensaje",
+   "screen": "APP-LANDING-PRE",
+   "es": "To'Latino llega a nuestra zona: negocios latinos de aquí, en un solo lugar. Anótate:",
+   "en": "To'Latino is coming to our area: local Latino businesses, all in one place. Sign up:",
+   "max_len": 130,
+   "locked": false,
+   "sha256": "a72bbf4ad92a7ce894e44acd125a58e81818b94e049aa775af5e0c27a39e09fb"
+  },
+  {
+   "id": "APP-LANDING-PRE.n0",
+   "screen": "APP-LANDING-PRE",
+   "es": "Repostería por encargo",
+   "en": "Cakes to order",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "fc9f9fdddc7ab8b9fec0019fa885dce7f0ae6310eb9ad6b262d5d4bf74c6de99"
+  },
+  {
+   "id": "APP-LANDING-PRE.n1",
+   "screen": "APP-LANDING-PRE",
+   "es": "Reparación de celulares",
+   "en": "Phone repair",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "5cdc4e39db1ed9314b00a3d56625d6b6a079f0f8ea76a75be6c3fc6360adbf4f"
+  },
+  {
+   "id": "APP-LANDING-PRE.n2",
+   "screen": "APP-LANDING-PRE",
+   "es": "Trenzas y peinados",
+   "en": "Braids and hairstyles",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "d6018d7a45af0d368f0cfe8c5605d5dbd7e0d0cb7c64c5fcc2105f8f64bdd37c"
+  },
+  {
+   "id": "APP-LANDING-PRE.n3",
+   "screen": "APP-LANDING-PRE",
+   "es": "Comida para fiestas",
+   "en": "Party food",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "c9edb1e8f1eedc10deb73698a648cfcd1d20c47418700bed80d445e57522e37d"
+  },
+  {
+   "id": "APP-LANDING-PRE.n4",
+   "screen": "APP-LANDING-PRE",
+   "es": "Clases de inglés",
+   "en": "English classes",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "d3dedb38e97c1ca7d4eca1f95bb67531f823e9503046563e4771c100684b485b"
+  },
+  {
+   "id": "APP-LANDING-PRE.n5",
+   "screen": "APP-LANDING-PRE",
+   "es": "Pintura de casas",
+   "en": "House painting",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "ae16907be15cb4ff221a32c7dc88822aa88a5c14c606fec66a2244776c1f40f0"
+  },
+  {
+   "id": "APP-LANDING-PRE.negS",
+   "screen": "APP-LANDING-PRE",
+   "es": "Tu página en To'Latino, en español y en inglés, para que te encuentren cerca.",
+   "en": "Your page on To'Latino, in Spanish and English, so people nearby find you.",
+   "max_len": 120,
+   "locked": false,
+   "sha256": "d6c6a84282839da856abc4ea7b6184b939589f2d05081e4a5766213147ef18a8"
+  },
+  {
+   "id": "APP-LANDING-PRE.negT",
+   "screen": "APP-LANDING-PRE",
+   "es": "Para negocios",
+   "en": "For businesses",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "5b1e2867db922c109d983ca2d01a2c213adcb935663e0424ef517731890ca4b5"
+  },
+  {
+   "id": "APP-LANDING-PRE.negocioListo",
+   "screen": "APP-LANDING-PRE",
+   "es": "Apartaste el lugar de {nombre}. Arma tu página desde ya: se ve el día que abra {ciudad}.",
+   "en": "You held the spot for {nombre}. Build your page now: it shows the day {ciudad} opens.",
+   "max_len": 140,
+   "locked": false,
+   "sha256": "41f7532fc339c7462cd76f1b0ca84dbcda98bcdb1169a23e6a657e7fba1700eb"
+  },
+  {
+   "id": "APP-LANDING-PRE.negocioListoSin",
+   "screen": "APP-LANDING-PRE",
+   "es": "Apartaste tu lugar. Arma tu página desde ya: se ve el día que abra {ciudad}.",
+   "en": "You held your spot. Build your page now: it shows the day {ciudad} opens.",
+   "max_len": 120,
+   "locked": false,
+   "sha256": "4c959cd1eda48ed97f375166979788eb9782fc8a3dbc2fae4473530c6e656036"
+  },
+  {
+   "id": "APP-LANDING-PRE.negocioSub",
+   "screen": "APP-LANDING-PRE",
+   "es": "Te apartamos el lugar y armas tu página desde ya.",
+   "en": "We hold your spot and you build your page now.",
+   "max_len": 80,
+   "locked": false,
+   "sha256": "2ef7ffcd25e8e1ab0e9cc4bdb8e2751b56d8d5f2d606c9915aa3b6d699c7519d"
+  },
+  {
+   "id": "APP-LANDING-PRE.negocioTg",
+   "screen": "APP-LANDING-PRE",
+   "es": "Tengo un negocio",
+   "en": "I have a business",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "4f42c07984694814086f5f35f8d916ae95971ae6298235bc4ff3103e5d6620bf"
+  },
+  {
+   "id": "APP-LANDING-PRE.nombreK",
+   "screen": "APP-LANDING-PRE",
+   "es": "NOMBRE DEL NEGOCIO",
+   "en": "BUSINESS NAME",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "c373ad770163e59c66d673c836ca3cfb71772a5d7a8c3ca877b31e1fb366f65d"
+  },
+  {
+   "id": "APP-LANDING-PRE.p0",
+   "screen": "APP-LANDING-PRE",
+   "es": "¿Cuándo abre?",
+   "en": "When does it open?",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "9d32f7713ad993179a37f5a56fe0721d6fdf684d418e8259b6569d23ee5b6427"
+  },
+  {
+   "id": "APP-LANDING-PRE.p1",
+   "screen": "APP-LANDING-PRE",
+   "es": "¿Cuesta algo?",
+   "en": "Does it cost anything?",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "4658cf498dd1e8eba10c7ef7b6554572b149db4dc92e5ad9d7817ec19d280ff2"
+  },
+  {
+   "id": "APP-LANDING-PRE.p2",
+   "screen": "APP-LANDING-PRE",
+   "es": "¿Qué hacen con mi teléfono?",
+   "en": "What do you do with my phone?",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "1f241988f27f53ddff129c14283952090116a3872c9600cbb2cfe916e6dad5d7"
+  },
+  {
+   "id": "APP-LANDING-PRE.p3",
+   "screen": "APP-LANDING-PRE",
+   "es": "¿Me van a mandar publicidad?",
+   "en": "Will you send me ads?",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "8519d1c271480cf18e964852db5ea6807f0c89ed82bcdcb73a49378cc8129fcb"
+  },
+  {
+   "id": "APP-LANDING-PRE.p4",
+   "screen": "APP-LANDING-PRE",
+   "es": "Mi negocio es desde casa, ¿cabe?",
+   "en": "My business is from home, does it fit?",
+   "max_len": 60,
+   "locked": false,
+   "sha256": "2090cd8f84d58214a00d7bf99043a7b50548c797a84f4bdc5e930af6a9c9db32"
+  },
+  {
+   "id": "APP-LANDING-PRE.p5",
+   "screen": "APP-LANDING-PRE",
+   "es": "¿En qué zonas?",
+   "en": "Which areas?",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "3263466c707579aae1bc6d0371d888bd2b64ce856504df2c73f0b0946068033b"
+  },
+  {
+   "id": "APP-LANDING-PRE.p6",
+   "screen": "APP-LANDING-PRE",
+   "es": "¿Qué es Fundadores?",
+   "en": "What is Founders?",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "d457cb853258dfb12cdc19327d09f4b0745ff8961ff55b1f44d2ea510db96c01"
+  },
+  {
+   "id": "APP-LANDING-PRE.p7",
+   "screen": "APP-LANDING-PRE",
+   "es": "¿Cómo me quito de la lista?",
+   "en": "How do I get off the list?",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "13cbdbb5a0ea0be79c55562112cec141da574cdd2622bf0fc13e78ddab8ed008"
+  },
+  {
+   "id": "APP-LANDING-PRE.pedir",
+   "screen": "APP-LANDING-PRE",
+   "es": "Enviarme el código",
+   "en": "Text me the code",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "fa617185a0ab7088f833a23ed42ab44edf511afc66d362da7c96e1c5ffc514c4"
+  },
+  {
+   "id": "APP-LANDING-PRE.proS",
+   "screen": "APP-LANDING-PRE",
+   "es": "Pedidos, citas y cobros en la app. {dias} días gratis; después {precio} al mes.",
+   "en": "Orders, bookings and payments in the app. {dias} days free; then {precio} a month.",
+   "max_len": 130,
+   "locked": false,
+   "sha256": "6c780f7daaa9661fab54048b5f223d2dcdc5459a590f741a1238e36d32922e2f"
+  },
+  {
+   "id": "APP-LANDING-PRE.proT",
+   "screen": "APP-LANDING-PRE",
+   "es": "Pro",
+   "en": "Pro",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "0eaa0b2bf4c620f3beceb6dc7a77b55a43e3d8d41f302b4f5032f312240d57bd"
+  },
+  {
+   "id": "APP-LANDING-PRE.pruebas",
+   "screen": "APP-LANDING-PRE",
+   "es": "MODO PRUEBAS",
+   "en": "TEST MODE",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "7a2f8c1d2396bc718a2b2a9f9eabc1c13e3006954a644182fdf641aeb011a71e"
+  },
+  {
+   "id": "APP-LANDING-PRE.publicar",
+   "screen": "APP-LANDING-PRE",
+   "es": "Publica tu negocio",
+   "en": "List your business",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "3921cb26191cd61639aa64324145a5c76f2cbde5ebadf3ef4424050f65499bed"
+  },
+  {
+   "id": "APP-LANDING-PRE.q0",
+   "screen": "APP-LANDING-PRE",
+   "es": "¿Quién hace bizcochos por encargo?",
+   "en": "Who bakes cakes to order?",
+   "max_len": 60,
+   "locked": false,
+   "sha256": "e29a047be140e6a04ad7ce19df53445124bb315bc9cd4431d3db48876899deda"
+  },
+  {
+   "id": "APP-LANDING-PRE.q1",
+   "screen": "APP-LANDING-PRE",
+   "es": "¿Quién arregla celulares cerca?",
+   "en": "Who fixes phones nearby?",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "e7154d51b87ce3c04c132d12f6d5c7b7c762b859f68b81e41c4c6fb77e6be7b3"
+  },
+  {
+   "id": "APP-LANDING-PRE.q2",
+   "screen": "APP-LANDING-PRE",
+   "es": "¿Quién hace trenzas a domicilio?",
+   "en": "Who does braids at home?",
+   "max_len": 50,
+   "locked": false,
+   "sha256": "c7b1eeed1dfb79f36211b318a164c925ffb1712a241494f4055189aa073c7f81"
+  },
+  {
+   "id": "APP-LANDING-PRE.q3",
+   "screen": "APP-LANDING-PRE",
+   "es": "¿Quién cocina pernil para una fiesta?",
+   "en": "Who cooks pernil for a party?",
+   "max_len": 60,
+   "locked": false,
+   "sha256": "4d7eafc4286b34d76034011957b4fb4e673ce8c6b7a35ebd16ce06dee842c3cd"
+  },
+  {
+   "id": "APP-LANDING-PRE.q4",
+   "screen": "APP-LANDING-PRE",
+   "es": "¿Quién da clases de inglés de noche?",
+   "en": "Who teaches English at night?",
+   "max_len": 60,
+   "locked": false,
+   "sha256": "6f03c74ab1cee668f38bb8ae540da5cf9fb214d66ddddc697049e738da7f5996"
+  },
+  {
+   "id": "APP-LANDING-PRE.q5",
+   "screen": "APP-LANDING-PRE",
+   "es": "¿Quién pinta casas este fin de semana?",
+   "en": "Who paints houses this weekend?",
+   "max_len": 60,
+   "locked": false,
+   "sha256": "309455289e0c13a586fe2c578bf5e059015d2a4ea8208cee115df0d9f52b675b"
+  },
+  {
+   "id": "APP-LANDING-PRE.quitado",
+   "screen": "APP-LANDING-PRE",
+   "es": "Te quitamos de la lista. No te vamos a escribir.",
+   "en": "We took you off the list. We will not text you.",
+   "max_len": 80,
+   "locked": false,
+   "sha256": "12a6c15e05fe9878a785cd422843d062a78e477bdb0eee81e0bacb679fc7b582"
+  },
+  {
+   "id": "APP-LANDING-PRE.quitar",
+   "screen": "APP-LANDING-PRE",
+   "es": "Quitarme de la lista",
+   "en": "Take me off the list",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "e5366e67be04c0cdbdb495758a66611d7a45b9eaea7acb917cdb4228695db456"
+  },
+  {
+   "id": "APP-LANDING-PRE.r0",
+   "screen": "APP-LANDING-PRE",
+   "es": "Abrimos cuando los negocios de tu zona tengan su página lista. Te avisamos por mensaje ese día.",
+   "en": "We open when the businesses in your area have their page ready. We text you that day.",
+   "max_len": 150,
+   "locked": false,
+   "sha256": "53e1fc5adbff9fb6719ace58dc611e3e63f3bc7ee853b840c3df762aabbee5e0"
+  },
+  {
+   "id": "APP-LANDING-PRE.r1",
+   "screen": "APP-LANDING-PRE",
+   "es": "Para los vecinos, nada. Para los negocios hay un plan Free y un plan Pro.",
+   "en": "For neighbors, nothing. For businesses there is a Free plan and a Pro plan.",
+   "max_len": 120,
+   "locked": false,
+   "sha256": "356bf0a0f36ab4247fef62fde8e3fd2db6ec3609934021d60375dbfa5d3995e2"
+  },
+  {
+   "id": "APP-LANDING-PRE.r2",
+   "screen": "APP-LANDING-PRE",
+   "es": "Es tu cuenta: entras con un código por texto, sin contraseñas. No lo vendemos.",
+   "en": "It is your account: you sign in with a texted code, no passwords. We do not sell it.",
+   "max_len": 130,
+   "locked": false,
+   "sha256": "1274d342a74421908c13ea9d75488d2a4505934853084ebe7ced33e87ffb6d82"
+  },
+  {
+   "id": "APP-LANDING-PRE.r3",
+   "screen": "APP-LANDING-PRE",
+   "es": "No. Te escribimos una sola vez, cuando abra tu zona. Las novedades solo llegan si tú las enciendes.",
+   "en": "No. We text you only once, when your area opens. Updates only come if you turn them on.",
+   "max_len": 150,
+   "locked": false,
+   "sha256": "cec27fdf8d931bbd1e15659c2f6afa16ae545f21dd6fe4815ec85ef8ce509736"
+  },
+  {
+   "id": "APP-LANDING-PRE.r4",
+   "screen": "APP-LANDING-PRE",
+   "es": "Sí. Cualquier negocio cabe: con local, desde casa, a domicilio, por encargo o en tu tiempo libre.",
+   "en": "Yes. Any business fits: storefront, from home, at your door, made to order or in your free time.",
+   "max_len": 150,
+   "locked": false,
+   "sha256": "2ab202fe08b8c2f79763d1dbe449eebcba1159c81842ecbc418d97483ff7a043"
+  },
+  {
+   "id": "APP-LANDING-PRE.r5",
+   "screen": "APP-LANDING-PRE",
+   "es": "Empezamos en Hazleton, Allentown, Wilkes-Barre, Scranton y Reading. Si vives en otra, anótate igual: lo tomamos en cuenta.",
+   "en": "We start in Hazleton, Allentown, Wilkes-Barre, Scranton and Reading. If you live elsewhere, sign up anyway: we take it into account.",
+   "max_len": 200,
+   "locked": false,
+   "sha256": "815de4c0346db68ee85c2e4f25582e577d4cdb8c6c2b15b94073fc2b67266e0f"
+  },
+  {
+   "id": "APP-LANDING-PRE.r6",
+   "screen": "APP-LANDING-PRE",
+   "es": "Una insignia para los primeros vecinos y negocios de cada zona. Solo eso: no cambia el precio.",
+   "en": "A badge for the first neighbors and businesses in each area. Only that: it does not change the price.",
+   "max_len": 160,
+   "locked": false,
+   "sha256": "2f23f43a883e6f51fd9c871ddb88a0822e858385ca87e96dc67b9510aa5049c0"
+  },
+  {
+   "id": "APP-LANDING-PRE.r7",
+   "screen": "APP-LANDING-PRE",
+   "es": "Aquí mismo, con «Quitarme de la lista». No te escribimos más.",
+   "en": "Right here, with “Take me off the list”. We will not text you again.",
+   "max_len": 110,
+   "locked": false,
+   "sha256": "3e19b6850506216217ccea76dcafa6df7b63206a5d823521d0112329c97f16d1"
+  },
+  {
+   "id": "APP-LANDING-PRE.reenviar",
+   "screen": "APP-LANDING-PRE",
+   "es": "Reenviar",
+   "en": "Resend",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "af8aa7a02a82cab87fbe150e82d34f060c70feae7ae62ce144ffd93b63932688"
+  },
+  {
+   "id": "APP-LANDING-PRE.sub",
+   "screen": "APP-LANDING-PRE",
+   "es": "To'Latino junta en un solo lugar a los negocios latinos de tu zona: los que tienen local y los que trabajan desde casa, a domicilio o por encargo.",
+   "en": "To'Latino brings together the Latino businesses in your area: the ones with a storefront and the ones that work from home, at your door or made to order.",
+   "max_len": 230,
+   "locked": false,
+   "sha256": "8e5b4dac814e01a1301623a58b48297ea2e76be535ebf96ce875bd95667f0238"
+  },
+  {
+   "id": "APP-LANDING-PRE.t0",
+   "screen": "APP-LANDING-PRE",
+   "es": "Con local",
+   "en": "Storefront",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "af95dd338258bd060face0465ffa1e6b8ecc68ebdf1f10d6690cb411d9490b55"
+  },
+  {
+   "id": "APP-LANDING-PRE.t1",
+   "screen": "APP-LANDING-PRE",
+   "es": "Desde casa",
+   "en": "From home",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "a5dc5e4b069c9989ba3b2bf4ac5be80670599946e52b97fde7fca856114ccb06"
+  },
+  {
+   "id": "APP-LANDING-PRE.t2",
+   "screen": "APP-LANDING-PRE",
+   "es": "A domicilio",
+   "en": "At your door",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "1cf558aac1f5e4f099f47c72c5e6b4a291246e7848e3bd687de81f98eb102ba4"
+  },
+  {
+   "id": "APP-LANDING-PRE.t3",
+   "screen": "APP-LANDING-PRE",
+   "es": "Por encargo",
+   "en": "Made to order",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "410001d151ddf24e7384bbb13922ca75998966f673e0e55d9a9ccc811d71488e"
+  },
+  {
+   "id": "APP-LANDING-PRE.t4",
+   "screen": "APP-LANDING-PRE",
+   "es": "En su tiempo libre",
+   "en": "In their free time",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "6eb6b90d0b2003fca5f91687f517d3821809336d860f1d82f65d5c7bc2efbed6"
+  },
+  {
+   "id": "APP-LANDING-PRE.t5",
+   "screen": "APP-LANDING-PRE",
+   "es": "Con varios empleados",
+   "en": "With several employees",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "3cf32fb72df1b50d7cf3c62ee6d5731ddb2b96f9e9d32ba8821395c83df1847e"
+  },
+  {
+   "id": "APP-LANDING-PRE.telK",
+   "screen": "APP-LANDING-PRE",
+   "es": "TU TELÉFONO",
+   "en": "YOUR PHONE",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "13651c410c76150f569aded27adef3dbdd1fad72e67de6712df599bce2568584"
+  },
+  {
+   "id": "APP-LANDING-PRE.tuCodigo",
+   "screen": "APP-LANDING-PRE",
+   "es": "Tu código es",
+   "en": "Your code is",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "f40525f8fdf4fedd251a2743d3f72380a3d9004b84d01ede46800f5e6e272732"
+  },
+  {
+   "id": "APP-LANDING-PRE.v0",
+   "screen": "APP-LANDING-PRE",
+   "es": "Pedir y recoger",
+   "en": "Order and pick up",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "824c7d1083424486cb03088fd5d953e861af43f000e611a906a6fee3ead21d7b"
+  },
+  {
+   "id": "APP-LANDING-PRE.v0s",
+   "screen": "APP-LANDING-PRE",
+   "es": "Comida y mercado de tu zona, con el total claro antes de pagar.",
+   "en": "Food and groceries from your area, with the clear total before you pay.",
+   "max_len": 110,
+   "locked": false,
+   "sha256": "1be59b7a8b442f0f42246c07ecaa0f028af0f4163004f91e4caf2dd351459d14"
+  },
+  {
+   "id": "APP-LANDING-PRE.v1",
+   "screen": "APP-LANDING-PRE",
+   "es": "Citas",
+   "en": "Bookings",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "d1972fecb8e52aec25e5cb208001a3b03511d22a1c32179a23270d1ba11b33a2"
+  },
+  {
+   "id": "APP-LANDING-PRE.v1s",
+   "screen": "APP-LANDING-PRE",
+   "es": "Barbería, uñas, doctores: pides la hora y el negocio la confirma.",
+   "en": "Barbers, nails, doctors: you ask for the time and the business confirms it.",
+   "max_len": 120,
+   "locked": false,
+   "sha256": "fbfdd9645381bb08bad2130d77e8d94e93d3825f6dadb0c57080382f1ac3b84f"
+  },
+  {
+   "id": "APP-LANDING-PRE.v2",
+   "screen": "APP-LANDING-PRE",
+   "es": "Eventos",
+   "en": "Events",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "af1a2efd474adb3cfc9106752180dec6626f12d347a1e819a4e126e8bf6cd4fb"
+  },
+  {
+   "id": "APP-LANDING-PRE.v2s",
+   "screen": "APP-LANDING-PRE",
+   "es": "Lo de esta semana en tu zona, con boletos en el teléfono.",
+   "en": "What is on this week in your area, with tickets on your phone.",
+   "max_len": 100,
+   "locked": false,
+   "sha256": "5dbbbff2e0ab70eb01193e246cfe25e7be590b1c7782d0881b75c96dfcc4695f"
+  },
+  {
+   "id": "APP-LANDING-PRE.v3",
+   "screen": "APP-LANDING-PRE",
+   "es": "Comunidad",
+   "en": "Community",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "4fce11b9e4b88638cbc4ebf578326cc2b51d03499ae024e530c9a3be60e3c242"
+  },
+  {
+   "id": "APP-LANDING-PRE.v3s",
+   "screen": "APP-LANDING-PRE",
+   "es": "Pregunta a tus vecinos y recomienda a quien lo hace bien.",
+   "en": "Ask your neighbors and recommend whoever does it well.",
+   "max_len": 90,
+   "locked": false,
+   "sha256": "c09b523b41fbd00950db37575e649fda6affc51825675f402ffd9b52ebc9e2a4"
+  },
+  {
+   "id": "APP-LANDING-PRE.v4",
+   "screen": "APP-LANDING-PRE",
+   "es": "En español y en inglés",
+   "en": "In Spanish and English",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "b8206495393c6044ed0b4d029a34aea97255f2e8d3fa7b5742e13a374984fb33"
+  },
+  {
+   "id": "APP-LANDING-PRE.v4s",
+   "screen": "APP-LANDING-PRE",
+   "es": "Toda la app en los dos idiomas. Tú eliges.",
+   "en": "The whole app in both languages. You choose.",
+   "max_len": 70,
+   "locked": false,
+   "sha256": "043ff65cc6a23aa5b6cf0859ccf81a7e6b27b55ac1deb3dcc677b6c0a9b5d5c2"
+  },
+  {
+   "id": "APP-LANDING-PRE.v5",
+   "screen": "APP-LANDING-PRE",
+   "es": "Sin sorpresas",
+   "en": "No surprises",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "0702719f53cd12b69391482d5af72aa43ca3c55f0a108d3777ed1a43b7de5225"
+  },
+  {
+   "id": "APP-LANDING-PRE.v5s",
+   "screen": "APP-LANDING-PRE",
+   "es": "Ves el total antes de pagar, y un depósito se retiene hasta que el negocio confirma.",
+   "en": "You see the total before you pay, and a deposit is held until the business confirms.",
+   "max_len": 130,
+   "locked": false,
+   "sha256": "b2a0b8b7629b4fa1993f84ea3780485802ddde7c92939178b85559de542fd517"
+  },
+  {
+   "id": "APP-LANDING-PRE.vieneT",
+   "screen": "APP-LANDING-PRE",
+   "es": "Lo que viene",
+   "en": "What is coming",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "683a682b28c1192b9ac2a956373d2143300fe746ffd16197b0e0778546e6a0db"
+  },
+  {
+   "id": "APP-LANDING-PRE.vitrinaK",
+   "screen": "APP-LANDING-PRE",
+   "es": "LO QUE BUSCAS, CERCA",
+   "en": "WHAT YOU NEED, NEARBY",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "32e7192dba2d5536e8335c4baa8bd2db850d392417420616808d41c462519621"
+  },
+  {
+   "id": "APP-LANDING-PRE.whatsapp",
+   "screen": "APP-LANDING-PRE",
+   "es": "Mandar por WhatsApp",
+   "en": "Send on WhatsApp",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "0666d39c19f7796cff947da814d441a760d141fd661ed3c250fa6ff32f879703"
+  },
+  {
+   "id": "APP-LANDING-PRE.zipK",
+   "screen": "APP-LANDING-PRE",
+   "es": "TU CÓDIGO POSTAL",
+   "en": "YOUR ZIP CODE",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "8aac4e8853ca002b6c2cc8762046c85654a9c40de15fb8b7d05e071f719f1be4"
+  },
+  {
    "id": "FIJAS-1C.borrar",
    "screen": "FIJAS-1C",
    "es": "Si borras tu cuenta tienes 30 días para arrepentirte; después se borra todo. Los cobros quedan en Stripe como pide la ley.",

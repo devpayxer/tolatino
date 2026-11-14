@@ -353,7 +353,10 @@ const guardianes = {
     const ANOTADOS = new Set(["apps/web/app/(app)/reserva/[num]/Estado.tsx", "apps/web/app/(app)/CiudadSelector.tsx", "apps/web/app/(app)/n/[id]/reservar/Detalles.tsx",
       "apps/web/app/panel/Equipo.tsx", "apps/web/app/panel/acciones-equipo.ts", "apps/web/lib/textos.ts", "apps/web/lib/textos-fijas.ts", "apps/web/app/panel/Menu.tsx", "apps/web/app/(app)/n/[id]/apartar/Apartar.tsx",
       // 8c · Mi cuenta › Avisos explica el SMS de respaldo del push (sale con Telnyx; anotado en LAUNCH-CHECKLIST «Fase 8 · 8c»).
-      "apps/web/app/(app)/cuenta/avisos/Avisos.tsx", "apps/web/app/admin/IntegracionesPush.tsx", "apps/web/lib/push/admin.ts", "apps/web/app/admin/Notificaciones.tsx", "apps/web/app/admin/U360.tsx"]);
+      "apps/web/app/(app)/cuenta/avisos/Avisos.tsx", "apps/web/app/admin/IntegracionesPush.tsx", "apps/web/lib/push/admin.ts", "apps/web/app/admin/Notificaciones.tsx", "apps/web/app/admin/U360.tsx",
+      // 9h · La landing promete UN mensaje de texto el día que abre la zona (la línea fija de §1c): sale con Telnyx (9q) y lo manda la apertura (9i); la landing
+      // sale al público en 9t. Anotado en LAUNCH-CHECKLIST «Fase 9 · 9h».
+      "apps/web/lib/textos-acceso.ts"]);
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f) || ANOTADOS.has(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => {
@@ -5227,7 +5230,9 @@ const guardianes = {
       // 8f · Los errores se agrupan por app y plataforma y llevan su build (informativo; nunca decide nada).
       "apps/web/lib/errores/ingesta.ts",
       // 8i · Las reglas de las tiendas: el rótulo SOLO QUITA (dentro de las apps no se vende Pro); nunca da nada.
-      "apps/web/lib/tiendas/reglas.ts"]);
+      "apps/web/lib/tiendas/reglas.ts",
+      // 9h · Un escaneo de QR anota si vino de la web o de la app (cifra sin personas); nunca decide nada.
+      "apps/web/lib/crecimiento/enlaces.ts"]);
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
       const t = sinComent(f);
@@ -7468,6 +7473,166 @@ const guardianes = {
     for (const e of paginasLegales().errores) if (/van los dos idiomas|secciones|mismos puntos|fecha y el estado/.test(e)) falla("idioma", "docs/legal", 0, e);
     // 9f · Toda cadena del catálogo del CMS trae los dos idiomas (y el inglés no se queda vacío ni como una marca de «pendiente»).
     for (const c of CMS.cadenas) if (!c.es?.trim() || !c.en?.trim() || /^(TODO|TBD|pendiente)$/i.test(c.en.trim())) falla("idioma", "apps/web/lib/cms-cadenas.json", 0, `${c.id}: falta uno de los dos idiomas`);
+  },
+
+  /* 9h · enlaceSoloPropio (fase9-apertura.md §4 9h, §6 #16): un enlace corto o un QR de calle (/q/{código}) y el enlace de una campaña llevan SIEMPRE a una ruta
+     propia: nunca a otro origen (un QR pegado en la calle no puede volverse una trampa hacia otra página). (1) La base lo impone (short_links.target y
+     campaigns.href: empiezan con una sola «/», sin «//» ni barra invertida); (2) rutaPropia() de lib/crecimiento/comun.ts lo revisa igual; (3) crear un enlace y
+     una campaña pasan por rutaPropia; el escaneo solo redirige a un destino que pasa rutaPropia (si no, al Inicio); (4) /q/[code] redirige SOLO a lo que
+     devuelve escanear() (nunca a un parámetro de la petición); (5) solo lib/crecimiento/enlaces.ts crea enlaces (y la semilla del sandbox). Al revés: alreves9h. */
+  enlaceSoloPropio() {
+    const G = "enlaceSoloPropio", M = "packages/db/migrations/0138_crecimiento.sql", C = "apps/web/lib/crecimiento/comun.ts", E = "apps/web/lib/crecimiento/enlaces.ts", Q = "apps/web/app/q/[code]/route.ts", K = "apps/web/lib/crecimiento/campanas.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración de Crecimiento");
+    const m = readFileSync(M, "utf8");
+    if (!/target\s+text not null check \(target ~ '\^\/\[A-Za-z0-9\/_\?=&\.%-\]\*\$' and target !~ '\^\/\/' and position\('\\' in target\) = 0/.test(m)) falla(G, M, 0, "short_links.target: la base exige una ruta propia (una «/», sin «//» ni barra invertida)");
+    if (!/href\s+text check \(href is null or \(href ~ '\^\/\[A-Za-z0-9\/_\?=&\.%-\]\*\$' and href !~ '\^\/\/'\)\)/.test(m)) falla(G, M, 0, "campaigns.href: la base exige una ruta propia");
+    // Sin sinComent: «"//"» dentro del código parece un comentario y se perdería.
+    const c = existsSync(C) ? readFileSync(C, "utf8") : "";
+    const rp = (c.match(/export function rutaPropia[\s\S]*?\n}/) ?? [""])[0];
+    if (!/\/\^\\\/\[A-Za-z0-9\/_\?=&\.%-\]\*\$\/\.test\(t\)/.test(rp) || !/!t\.startsWith\("\/\/"\)/.test(rp) || !/!t\.includes\("\\\\"\)/.test(rp)) falla(G, C, 0, "rutaPropia() revisa: empieza con una «/», sin «//» y sin barra invertida");
+    const e = existsSync(E) ? sinComent(E) : "";
+    if (!/if \(!rutaPropia\(target\)\) return mal\(/.test(cuerpoFn(e, "crearEnlace"))) falla(G, E, 0, "crearEnlace() rechaza un destino que no es una ruta propia");
+    if (!/if \(!l \|\| !l\.vivo \|\| !rutaPropia\(l\.target\)\) return \{ destino: "\/"/.test(cuerpoFn(e, "escanear"))) falla(G, E, 0, "escanear(): un enlace retirado, que no existe o con un destino ajeno lleva al Inicio");
+    if (!/if \(href && !rutaPropia\(href\)\) return mal\(/.test(cuerpoFn(existsSync(K) ? sinComent(K) : "", "crearCampana"))) falla(G, K, 0, "crearCampana(): el enlace de la campaña es una ruta propia");
+    const q = existsSync(Q) ? sinComent(Q) : "";
+    if (!q) falla(G, Q, 0, "falta /q/[code]");
+    else {
+      const red = [...q.matchAll(/NextResponse\.redirect\(([^;]*)\)/g)].map((x) => x[1]);
+      if (!red.length || red.some((x) => !/^new URL\(r\.destino, /.test(x))) falla(G, Q, 0, "/q/[code] solo redirige a r.destino (lo que devuelve escanear), nunca a otra cosa");
+      if (/searchParams\.get\(|nextUrl\.searchParams/.test(q)) falla(G, Q, 0, "/q/[code] no lee parámetros de la petición para decidir a dónde ir");
+    }
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === E) continue;
+      for (const s of sinComent(f).match(/`[^`]*`/g) ?? []) if (/insert into short_links\b|update short_links\s+set\s+[^`]*\btarget\b/i.test(s)) falla(G, f, 0, "solo lib/crecimiento/enlaces.ts crea enlaces cortos (y nunca les cambia el destino)");
+    }
+  },
+
+  /* 9h · escaneosSinPersonas (amplía analiticaSinPersonas a Crecimiento; fase9-apertura.md §2 0138): un escaneo de QR guarda el código, la hora, la ciudad, web o
+     app y la clase de navegador, y NADA de la persona: ni IP, ni dispositivo, ni cuenta, ni el navegador entero. (1) link_scans en la migración no tiene esas
+     columnas y es de solo inserción; link_scan_days es un derivado que solo escribe la base; (2) escanear() inserta solo esas columnas; (3) nadie más escribe
+     link_scans ni link_scan_days; (4) Crecimiento › Enlaces y QR y la Lista de espera no sacan columnas de personas (teléfono, nombre, IP, dispositivo).
+     Al revés: alreves9h. */
+  escaneosSinPersonas() {
+    const G = "escaneosSinPersonas", M = "packages/db/migrations/0138_crecimiento.sql", E = "apps/web/lib/crecimiento/enlaces.ts", AD = "apps/web/lib/crecimiento/admin.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración de Crecimiento");
+    const m = readFileSync(M, "utf8").replace(/--.*$/gm, "");
+    const t = /create table if not exists link_scans \(([\s\S]*?)\n\);/.exec(m)?.[1] ?? "";
+    if (!t) falla(G, M, 0, "falta link_scans");
+    const cols = t.split("\n").map((l) => l.trim().split(/\s+/)[0]).filter(Boolean);
+    const P = /^(ip|ip_\w+|\w+_ip|device|\w*_device|user_id|\w+_user_id|phone|\w*_phone|ua|user_agent|session\w*|cookie\w*|lat|lng|geom|\w+_hash)$/;
+    for (const x of cols) if (P.test(x)) falla(G, M, 0, `link_scans.${x}: un escaneo no guarda nada de la persona`);
+    if (!/create trigger link_scans_no_cambia before update or delete on link_scans/.test(m)) falla(G, M, 0, "link_scans es de solo inserción (trigger)");
+    if (!/if coalesce\(current_setting\('tl\.crec_derivado', true\), ''\) <> 'on' then raise exception 'link_scan_days es un derivado/.test(m)) falla(G, M, 0, "link_scan_days es un derivado: solo lo escribe la base");
+    const e = existsSync(E) ? sinComent(E) : "";
+    if (!/insert into link_scans \(code, city_id, app, ua_class\) values \(\$1, \$2, \$3, \$4\)/.test(cuerpoFn(e, "escanear"))) falla(G, E, 0, "escanear() inserta solo código, ciudad, web/app y la clase de navegador");
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === E) continue;
+      for (const s of sinComent(f).match(/`[^`]*`/g) ?? []) if (/\b(insert into|update|delete from) (link_scans|link_scan_days)\b/i.test(s)) falla(G, f, 0, "solo escanear() escribe un escaneo; los días los cuenta la base");
+    }
+    const PER = /\b(phone|first_name|last_name|nick|photo_url|email|ip|device|user_agent)\b/;
+    for (const fn of ["enlacesAdmin", "escaneosDe"]) { const b = cuerpoFn(e, fn); if (!b) falla(G, E, 0, `falta ${fn}`); else if (/from link_scans[\s\S]{0,200}\b(ip|device)\b/.test(b) || /l\.(ip|device)\b/.test(b)) falla(G, E, 0, `${fn} no saca columnas de personas`); }
+    const ad = existsSync(AD) ? sinComent(AD) : "";
+    const le = cuerpoFn(ad, "listaEspera");
+    if (!le) falla(G, AD, 0, "falta listaEspera");
+    else if (PER.test(le)) falla(G, AD, 0, "la Lista de espera del Super Admin no muestra teléfonos, nombres, IP ni dispositivos");
+  },
+
+  /* 9h · campanaConPermiso (fase9-apertura.md §4 9h; Notificaciones › Reglas): una campaña de Crecimiento solo llega a quien ENCENDIÓ «Novedades de To'Latino»
+     (apagado de fábrica), nunca en horas de silencio de su ciudad y con tope por persona y semana (y por SMS, por mes); a más de campana_aprobar_desde personas
+     la aprueba OTRA persona. (1) El segmento SIEMPRE exige notif_prefs.mkt = 'true' (se vuelve a mirar al mandar cada lote); (2) enviarLote no manda de noche
+     (7 AM – 10 PM de la ciudad) y aplica los topes; (3) la base: approved_by <> created_by y campaign_sends de solo inserción; aprobarCampana revisa que no la
+     apruebe quien la creó; (4) «mkt» nace apagado (perfil.ts) y la landing NO lo enciende (promete un solo mensaje); (5) solo lib/crecimiento/campanas.ts usa las
+     plantillas mkt_campana_* y escribe campaign_sends. Al revés: alreves9h. */
+  campanaConPermiso() {
+    const G = "campanaConPermiso", K = "apps/web/lib/crecimiento/campanas.ts", M = "packages/db/migrations/0138_crecimiento.sql", PF = "apps/web/lib/perfil.ts", LI = "apps/web/lib/crecimiento/lista.ts";
+    if (!existsSync(K)) return falla(G, K, 0, "falta lib/crecimiento/campanas.ts");
+    const k = sinComent(K), seg = cuerpoFn(k, "segmentoSql"), lote = cuerpoFn(k, "enviarLote"), cre = cuerpoFn(k, "crearCampana"), apr = cuerpoFn(k, "aprobarCampana");
+    if (!/let donde = `u\.home_city_id = \$1 and \(u\.notif_prefs->>'mkt'\) = 'true' and cuenta_estado\(u\.status, u\.status_until\) in \('active', 'muted'\)`/.test(seg)) falla(G, K, 0, "el segmento exige siempre «Novedades» encendido (notif_prefs.mkt = 'true'), la ciudad y la cuenta activa");
+    if (!/where \$\{q\.donde\} and/.test(lote)) falla(G, K, 0, "enviarLote() vuelve a mirar el segmento (con «Novedades») al mandar cada lote");
+    if (!/extract\(hour from now\(\) at time zone ci\.timezone\) not between 7 and 21 as silencio/.test(lote) || !/if \(!x \|\| x\.silencio\) return null;/.test(lote)) falla(G, K, 0, "enviarLote() no manda en horas de silencio de la ciudad (10 PM – 7 AM)");
+    if (!/u\.semana >= cfg\.campana_por_semana/.test(lote) || !/x\.canal === "sms" && u\.sms_mes >= cfg\.campana_sms_por_mes/.test(lote)) falla(G, K, 0, "enviarLote() aplica el tope por semana y el de SMS por mes");
+    if (!/const porAprobar = n > cfg\.campana_aprobar_desde;/.test(cre)) falla(G, K, 0, "crearCampana(): a más de campana_aprobar_desde personas queda «por aprobar»");
+    if (!/if \(x\.by === s\.id\) return mal\(/.test(apr) || !/s\.puede\("mkt", "aprobar"\)/.test(apr)) falla(G, K, 0, "aprobarCampana(): mkt:aprobar y nunca quien la creó");
+    if (existsSync(M)) {
+      const m = readFileSync(M, "utf8");
+      if (!/check \(approved_by is null or approved_by <> created_by\)/.test(m)) falla(G, M, 0, "campaigns: la base exige que apruebe otra persona");
+      if (!/create trigger campaign_sends_no_cambia before update or delete on campaign_sends/.test(m)) falla(G, M, 0, "campaign_sends es de solo inserción");
+      if (/\('mkt_campana_\w+', 'mkt', null,/.test(m) || !/\('mkt_campana_push', 'mkt', 'mkt',/.test(m)) falla(G, M, 0, "las plantillas de campaña son del grupo mkt y se apagan con «Novedades» (pref mkt)");
+    }
+    if (!existsSync(PF) || !/mkt: false \}/.test(sinComent(PF))) falla(G, PF, 0, "«Novedades de To'Latino» (mkt) nace apagado");
+    if (existsSync(LI) && /notif_prefs|['"]mkt['"]/.test(sinComent(LI))) falla(G, LI, 0, "la landing promete un solo mensaje: no enciende «Novedades» (mkt)");
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === K) continue;
+      const t = sinComent(f);
+      if (/["'`]mkt_campana_(push|app|sms|correo)["'`]/.test(t) && f !== "apps/web/lib/crecimiento/comun.ts") falla(G, f, 0, "solo lib/crecimiento/campanas.ts manda campañas (con permiso, silencio y tope)");
+      for (const s of t.match(/`[^`]*`/g) ?? []) if (/\b(insert into|update|delete from) campaign_sends\b/i.test(s)) falla(G, f, 0, "solo lib/crecimiento/campanas.ts escribe campaign_sends");
+      for (const s of t.match(/`[^`]*`/g) ?? []) if (/update campaigns\s+set\s+[^`]*status = 'enviando'/i.test(s)) falla(G, f, 0, "solo enviarLote() pone una campaña a salir");
+    }
+  },
+
+  /* 9h · sandboxNoSeIndexa (fase9-apertura.md §4 9h; HERRAMIENTAS #24): el sandbox no se indexa NUNCA. (1) app/robots.ts: fuera de producción, «Disallow: /» y
+     sin mapa del sitio; (2) el mapa del sitio (lib/seo/mapa.ts, /sitemap.xml y /mapa-del-sitio/{n}.xml) solo existe en producción y se calcula al pedirlo
+     (nada en el build: el mismo paquete sirve a los dos entornos); (3) el layout raíz: fuera de producción, noindex en toda página; (4) ninguna página
+     se declara indexable a mano (index: true); (5) nginx-pruebas pone X-Robots-Tag noindex en todo (también en cada ubicación con su propio add_header).
+     Al revés: alreves9h. */
+  sandboxNoSeIndexa() {
+    const G = "sandboxNoSeIndexa", R = "apps/web/app/robots.ts", S = "apps/web/lib/seo/mapa.ts", L = "apps/web/app/layout.tsx", N = "infra/pruebas/nginx-pruebas.conf";
+    const RS = ["apps/web/app/sitemap.xml/route.ts", "apps/web/app/mapa-del-sitio/[parte]/route.ts"];
+    const r = existsSync(R) ? sinComent(R) : "";
+    if (!/if \(ENTORNO !== "produccion"\) return \{ rules: \[\{ userAgent: "\*", disallow: "\/" \}\] \};/.test(r)) falla(G, R, 0, "robots.txt: fuera de producción, «Disallow: /» y nada más");
+    const s = existsSync(S) ? sinComent(S) : "";
+    if (!/export const mapaActivo = \(\) => ENTORNO === "produccion";/.test(s) || !/if \(!mapaActivo\(\)\) return \[\];/.test(cuerpoFn(s, "partes")) || !/if \(!mapaActivo\(\) \|\|/.test(cuerpoFn(s, "parte"))) falla(G, S, 0, "el mapa del sitio solo existe en producción (mapaActivo) y vacío fuera de ella");
+    for (const f of RS) { const t = existsSync(f) ? sinComent(f) : ""; if (!/export const dynamic = "force-dynamic";/.test(t) || !/if \(!mapaActivo\(\)\) return new NextResponse\("No", \{ status: 404/.test(t)) falla(G, f, 0, "el mapa del sitio se calcula al pedirlo y fuera de producción es 404"); }
+    if (existsSync("apps/web/app/sitemap.ts")) falla(G, "apps/web/app/sitemap.ts", 0, "sin app/sitemap.ts de Next: se arma en el build (con el entorno del build), no al pedirlo");
+    const l = existsSync(L) ? sinComent(L) : "";
+    if (!/\.\.\.\(ENTORNO !== "produccion" \? \{ robots: \{ index: false, follow: false \} \} : \{\}\)/.test(l)) falla(G, L, 0, "el layout raíz dice noindex en toda página fuera de producción");
+    for (const f of codigo) if (/^apps\/web\/app\/.*\.tsx?$/.test(f) && /\bindex:\s*true\b/.test(sinComent(f))) falla(G, f, 0, "ninguna página se declara indexable a mano (lo decide el entorno)");
+    if (!existsSync(N)) return falla(G, N, 0, "falta nginx-pruebas.conf");
+    const n = readFileSync(N, "utf8").replace(/#.*$/gm, "");
+    const cab = n.slice(n.indexOf("server_name _;"), n.indexOf("location"));
+    if (!/\n\s*add_header X-Robots-Tag "noindex, nofollow" always;/.test(cab)) falla(G, N, 0, "nginx-pruebas: X-Robots-Tag noindex para todo el servidor (antes de las ubicaciones)");
+    for (const b of n.matchAll(/location [^{]*\{([^}]*)\}/g)) if (/add_header (?!X-Robots-Tag)/.test(b[1]) && !/add_header X-Robots-Tag "noindex, nofollow" always;/.test(b[1])) falla(G, N, 0, "una ubicación con su propio add_header repite X-Robots-Tag noindex (nginx no lo hereda)");
+  },
+
+  /* 9h · listaConPermiso (la lista de la landing y los teléfonos: Opus; fase9-apertura.md §4 9h, §6 #14): (1) early_access no guarda el teléfono otra vez, ni IP,
+     ni dispositivo (la cuenta verificada ya lo tiene, decisión E); no se borra salvo la purga a los 30 días; (2) anotarse pasa por el código de entrada de
+     siempre (verificarCodigo: topes por teléfono y por dirección) y las acciones de la landing miran mismoOrigen; (3) la landing usa las dos líneas fijas de
+     §1c tal cual (FIJAS.landing y FIJAS.landingTel); (4) quitarse de la lista también la saca de city_waitlist. Al revés: alreves9h. */
+  listaConPermiso() {
+    const G = "listaConPermiso", M = "packages/db/migrations/0138_crecimiento.sql", LI = "apps/web/lib/crecimiento/lista.ts", AC = "apps/web/app/acceso/acciones.ts", LA = "apps/web/app/acceso/Landing.tsx", D = "apps/web/app/acceso/datos.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración de Crecimiento");
+    const m = readFileSync(M, "utf8").replace(/--.*$/gm, "");
+    const t = /create table if not exists early_access \(([\s\S]*?)\n\);/.exec(m)?.[1] ?? "";
+    for (const x of t.split("\n").map((l) => l.trim().split(/\s+/)[0]).filter(Boolean)) if (/^(phone\w*|\w+_phone|ip|\w*_ip|device|\w*_device|email|\w+_hash|first_name|last_name)$/.test(x)) falla(G, M, 0, `early_access.${x}: la lista no copia el teléfono ni guarda IP, dispositivo o nombre`);
+    if (!/if coalesce\(current_setting\('tl\.purga', true\), ''\) = 'si' then return old; end if;\s*raise exception 'la lista no se borra/.test(m)) falla(G, M, 0, "early_access no se borra (solo la purga de una cuenta borrada)");
+    const li = existsSync(LI) ? sinComent(LI) : "";
+    if (!/uid = \(await verificarCodigo\(String\(p\.tel \?\? ""\), String\(p\.codigo \?\? ""\)\)\)\.id;/.test(cuerpoFn(li, "anotarse"))) falla(G, LI, 0, "anotarse() pasa por el código de entrada (verificarCodigo, con sus topes)");
+    if (!/const r = await pedirCodigo\(String\(tel \?\? ""\)\);/.test(cuerpoFn(li, "pedirCodigoLista"))) falla(G, LI, 0, "el código de la landing es el de siempre (pedirCodigo, con sus topes)");
+    if (!/update city_waitlist set removed_at = now\(\) where user_id = \$1 and source = 'coming_soon'/.test(cuerpoFn(li, "quitarme"))) falla(G, LI, 0, "quitarse de la lista también la saca de «Avísame» (city_waitlist)");
+    const ac = existsSync(AC) ? sinComent(AC) : "";
+    for (const fn of ["listaCodigo", "listaEntrar", "listaConSesion", "listaQuitar"]) if (!new RegExp(`export async function ${fn}\\([^)]*\\) \\{\\n\\s*if \\(!\\(await mismoOrigen\\(\\)\\)\\) return NO;`).test(ac)) falla(G, AC, 0, `${fn}: la acción mira que venga de nuestra página (mismoOrigen)`);
+    const d = existsSync(D) ? sinComent(D) : "", la = existsSync(LA) ? sinComent(LA) : "";
+    if (!/fijas: \{ landing: FIJAS\[lang\]\.landing, landingTel: FIJAS\[lang\]\.landingTel \}/.test(d) || !/\{d\.fijas\.landing\}/.test(la) || !/\{d\.fijas\.landingTel\}/.test(la)) falla(G, LA, 0, "la landing usa las líneas fijas de §1c tal cual (FIJAS.landing y FIJAS.landingTel)");
+  },
+
+  /* 9h · promotorAntiabuso (prototipo secMkt «Promotores»; el antiabuso de 5d): el código de un promotor no vale para su propia cuenta ni para alguien de su
+     mismo dispositivo: ni da los días de prueba ni cuenta como negocio traído (queda «rechazado» con su motivo). (1) codigoPermitido mira dueño = promotor y
+     pts_mismo_dispositivo; (2) publicar() solo da los días del código si codigoPermitido lo deja y anota el referido en la MISMA transacción; (3) probarPromo
+     rechaza el código propio; (4) anotarReferido deja «rechazado» lo no permitido; (5) la base: un referido rechazado o pagado no cambia y no se borra.
+     Al revés: alreves9h. */
+  promotorAntiabuso() {
+    const G = "promotorAntiabuso", P = "apps/web/lib/crecimiento/promotores.ts", A = "apps/web/app/(app)/publica/acciones.ts", M = "packages/db/migrations/0138_crecimiento.sql";
+    const p = existsSync(P) ? sinComent(P) : "", a = existsSync(A) ? sinComent(A) : "";
+    const cp = cuerpoFn(p, "codigoPermitido");
+    if (!/if \(k\.promotor === dueno\) return false;/.test(cp) || !/pts_mismo_dispositivo\(\$1::uuid, \$2::uuid, \$3::uuid\) as v`, \[dueno, k\.promotor, dev\]/.test(cp)) falla(G, P, 0, "codigoPermitido(): ni su propia cuenta ni alguien de su mismo dispositivo (pts_mismo_dispositivo(dueño, promotor, el teléfono de esta petición))");
+    if (!/if \(me && !\(await tx\(\(c\) => codigoPermitido\(c, k, me\.id, dev\)\)\)\) return \{ ok: false as const \};/.test(cuerpoFn(a, "probarPromo"))) falla(G, A, 0, "probarPromo(): el mismo antiabuso que publicar (la pantalla no promete días que no se dan)");
+    if (!/ok \? "traido" : "rechazado"/.test(cuerpoFn(p, "anotarReferido")) || !/const ok = await codigoPermitido\(c, k, dueno, dev\);/.test(cuerpoFn(p, "anotarReferido"))) falla(G, P, 0, "anotarReferido(): lo no permitido queda «rechazado»");
+    const pub = cuerpoFn(a, "publicar");
+    if (!/const promoOk = !!promo && \(await tx\(\(c\) => codigoPermitido\(c, promo, me\.id, dev\)\)\);/.test(pub) || !/const dias = promoOk \? promo!\.dias : 30;/.test(pub)) falla(G, A, 0, "publicar(): los días del código solo si codigoPermitido lo deja");
+    if (!/if \(promo\) await anotarReferido\(c, promo, slug, loc\.ciudad, me\.id, dev\);/.test(pub)) falla(G, A, 0, "publicar(): el referido se anota en la misma transacción que el negocio");
+    if (!/if \(me && k\.kind === "promotor" && k\.promotor === me\.id\) return \{ ok: false as const \};/.test(cuerpoFn(a, "probarPromo"))) falla(G, A, 0, "probarPromo(): el código propio no vale");
+    if (/PROMO: Record<string, number>|HZL30: 60/.test(a)) falla(G, A, 0, "los códigos viven en promo_codes, no en el código");
+    if (existsSync(M)) { const f = ultimaFn("business_referrals_antes"); if (!/if old\.status in \('rechazado', 'pagado'\) and new\.status <> old\.status then raise exception/.test(f) || !/raise exception 'un referido no se borra'/.test(f)) falla(G, M, 0, "un referido rechazado o pagado no cambia y ninguno se borra"); }
   },
 };
 

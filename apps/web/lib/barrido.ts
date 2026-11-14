@@ -141,6 +141,10 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["datosPurga", async () => (await import("./datos/purgar")).purgarVencidas()],
         ["datosArchivos", async () => (await import("./datos/exportar")).armarPendientes()], ["datosArchivosVencer", async () => (await import("./datos/exportar")).vencerExportaciones()],
         ["retenciones", async () => (await import("./datos/retener")).barrerRetenciones()],
+        // 9h · Crecimiento: las campañas que ya tocan salen por partes (nunca de noche; con permiso y tope), y los negocios traídos por un promotor que ya
+        // llegaron a sus pedidos o citas califican.
+        ["campanas", async () => (await import("./crecimiento/campanas")).campanasProgramadas()],
+        ["promotores", async () => (await import("./crecimiento/promotores")).calificarReferidos()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

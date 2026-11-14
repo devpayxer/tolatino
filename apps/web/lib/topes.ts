@@ -9,7 +9,7 @@ import { db } from "./db";
    - Una sola sentencia por tope (tope_sumar): dos procesos nunca leen la misma cuenta.
    - Si la base no responde, el tope dice «no» (cerrado): lo que cuida un tope no se abre porque falte el contador. */
 
-export type Scope = "errores" | "errores_dev" | "errores_ip" | "errores_descartados" | "pase_ws" | "ruta_pos";
+export type Scope = "errores" | "errores_dev" | "errores_ip" | "errores_descartados" | "pase_ws" | "ruta_pos" | "qr" | "lista";
 const clave = (k: string) => huella(`tope:${k}`).slice(0, 40);
 
 /* Suma uno (o n) a la ventana de este minuto (o de ventanaS segundos) y devuelve la cuenta. */

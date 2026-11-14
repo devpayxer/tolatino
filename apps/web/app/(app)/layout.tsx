@@ -7,6 +7,7 @@ import { AppShell } from "./AppShell";
 import { actividad, contexto } from "@/lib/eventos";
 import { after } from "next/server";
 import { CompuertaApp } from "@/app/_cascara/Compuerta";
+import { landingEncendida } from "@/app/acceso/datos";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   after(async () => { await (await import("@/lib/suscripcion")).procesar().catch(() => undefined); });
   // Correo (2q): reintenta lo pendiente (solo con SES; en el sandbox no sale nada). Un reloj propio llega con el lanzamiento.
   after(async () => { await (await import("@/lib/correo")).procesarCorreos().catch(() => undefined); });
-  const t = await textosT(lang), es = lang === "es";
+  const [t, landing] = await Promise.all([textosT(lang), landingEncendida()]), es = lang === "es";
   const iniciales = u ? (((u.first_name?.[0] ?? "") + (u.last_name?.[0] ?? "")).toUpperCase() || "TL") : "";
   // Encabezado (prototipo locLabel / locShort): «Hazleton, PA · 5 mi · tú» o «Allentown, PA · pronto».
   const abierta = loc.c.status === "on", ctr = etiquetaCentro(loc, es);
@@ -32,7 +33,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   };
   const c = (s: string) => s.replace("{c}", loc.c.name);
   return (
-    <AppShell lang={lang} t={{ searchIn: c(t.searchIn), searchDesk: c(t.searchDesk), nav: t.nav, tabs: t.tabs, login: t.login, publish: t.publish }} yo={u ? { iniciales, avisos: await noLeidos(u.id).catch(() => 0) } : null} ciudad={ciudad}>
+    <AppShell lang={lang} t={{ searchIn: c(t.searchIn), searchDesk: c(t.searchDesk), nav: t.nav, tabs: t.tabs, login: t.login, publish: t.publish }} yo={u ? { iniciales, avisos: await noLeidos(u.id).catch(() => 0) } : null} ciudad={ciudad} landing={landing}>
       {aviso}{children}
     </AppShell>
   );

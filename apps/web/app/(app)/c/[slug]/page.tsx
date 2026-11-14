@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import type { Metadata } from "next";
+import { BASE_URL } from "@/lib/correo";
 import { notFound } from "next/navigation";
 import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
@@ -21,7 +22,8 @@ type SP = { sub?: string; f?: string; orden?: string; p?: string };
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const [{ slug }, lang] = await Promise.all([params, idioma()]);
   const c = await categoriaPorSlug(slug);
-  return { title: c ? `${c.page.title[lang]} · To'Latino` : "To'Latino" };
+  // 9h · SEO: canónico de la categoría.
+  return c ? { title: `${c.page.title[lang]} · To'Latino`, alternates: { canonical: `${BASE_URL()}/c/${slug}` } } : { title: "To'Latino" };
 }
 
 export default async function Page({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<SP> }) {

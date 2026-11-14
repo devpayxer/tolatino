@@ -22,7 +22,8 @@ const telLibre = (pre = '570555') => {
   throw new Error('no hay un teléfono 555 libre');
 };
 /* Publica una barbería con el flujo de /publica (como publica.cjs) y devuelve { id, tel, nombre, uid }. */
-async function publicarBarberia(browser, { tel = telLibre(), nombre: dueno = 'Mario', apellido = 'Peña' } = {}) {
+// 9h · promo: un código (HZL30 o el de un promotor) que se aplica en el último paso («¿Tienes un código de promotor?»).
+async function publicarBarberia(browser, { tel = telLibre(), nombre: dueno = 'Mario', apellido = 'Peña', promo = null } = {}) {
   const ctx = await browser.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await medios(ctx);
   const p = await ctx.newPage();
@@ -54,6 +55,10 @@ async function publicarBarberia(browser, { tel = telLibre(), nombre: dueno = 'Ma
   await p.locator('input[type=file]').nth(1).setInputFiles([FP + 'portada.jpg', FP + 'galeria.png']);
   await p.waitForFunction(() => document.querySelectorAll('[aria-label="Quitar foto"]').length === 2, null, { timeout: 20000 });
   await p.waitForTimeout(800);
+  if (promo) {
+    await p.getByText('¿Tienes un código de promotor?', { exact: true }).click(); await p.getByLabel('Código de promotor').fill(promo);
+    await p.getByText('Aplicar', { exact: true }).click(); await p.locator('text=/^Publicar · \\d+ días de Pro gratis$/').last().waitFor({ timeout: 8000 });
+  }
   await p.locator('text=/^Publicar · /').last().click();
   await p.getByText('PUBLICADA').first().waitFor({ timeout: 15000 });
   await ctx.close();

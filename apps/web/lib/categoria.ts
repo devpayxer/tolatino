@@ -165,14 +165,21 @@ export async function resultados(p: Pedido): Promise<{ items: Resultado[]; total
   return { items, total, pagina, paginas };
 }
 
-/* Destacados de la ciudad (APP-NEG-HOME): Pro, con foto y abiertos ahora; la vitrina rota cada día. */
+/* Destacados de la ciudad (APP-NEG-HOME): Pro, con foto y abiertos ahora; la vitrina rota cada día.
+   9h · Super Admin › Crecimiento › Destacados (featured, 0138): lo FIJADO por el equipo sale primero (activo, en el radio, en el orden en que se fijó) y lo
+   QUITADO no entra a la rotación, mientras dure (destacados_dias). Sin destacados vivos, la vitrina es exactamente la de siempre. */
 export async function destacados(p: Punto, n: number): Promise<Resultado[]> {
   const r = await db().query<Resultado>(
     `${CTE(p)},
+          fx as (select business_id, mode, created_at from featured where city_id = $1 and placement = 'negocios' and retired_at is null and from_at <= now() and to_at > now()),
+          fij as (select ${COLUMNAS}, 0 as rn, 0 as npro, 0 as grupo, (select extract(epoch from min(f.created_at)) from fx f where f.business_id = b.id)::float8 as orden
+                    ${DESDE} and b.id in (select business_id from fx where mode = 'fijar')),
           base as (select ${COLUMNAS} ${DESDE} and s.plan = 'pro' and negocio_abierto(b.id, t.t)
-                     and exists (select 1 from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible')),
-          r as (select *, (row_number() over (order by id) - 1)::int as rn, count(*) over ()::int as npro from base)
-     select r.*, ${FOTO("r")} from r order by mod(rn - mod(dia, greatest(npro, 1)) + npro, greatest(npro, 1)) limit $2`,
+                     and exists (select 1 from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible')
+                     and b.id not in (select business_id from fx)),
+          r as (select *, (row_number() over (order by id) - 1)::int as rn, count(*) over ()::int as npro from base),
+          rot as (select r.*, 1 as grupo, mod(rn - mod(dia, greatest(npro, 1)) + npro, greatest(npro, 1))::float8 as orden from r)
+     select x.*, ${FOTO("x")} from (select * from fij union all select * from rot) x order by x.grupo, x.orden limit $2`,
     [p.ciudad, n],
   );
   return r.rows.map(conFoto);

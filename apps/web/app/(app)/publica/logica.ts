@@ -12,7 +12,7 @@ export type Borrador = {
   v: 2; last: string; reach: number; started: boolean; t0: number; name: string; cat: string | null; subs: string[];
   own: Record<string, unknown>; sel: Record<string, { on?: boolean; p?: number | string; flag?: boolean; alt?: number | null }>; cust: Cust[];
   via: string; op: string | null; addr: string; ref: string; zone: number; join: string | null; joinName: string; days: Dia[] | null;
-  tpl: string | null; cita: boolean; cover: string | null; gallery: string[]; promo: string; promoOk: boolean;
+  tpl: string | null; cita: boolean; cover: string | null; gallery: string[]; promo: string; promoOk: boolean; promoDias?: number;
 };
 export const D0 = (): Borrador => ({ v: 2, last: "B1", reach: 0, started: false, t0: 0, name: "", cat: null, subs: [], own: {}, sel: {}, cust: [], via: "list", op: null, addr: "", ref: "", zone: 10, join: null, joinName: "", days: null, tpl: null, cita: false, cover: null, gallery: [], promo: "", promoOk: false });
 export const DAYS = [["Lun", "Mon", "Lunes", "Monday"], ["Mar", "Tue", "Martes", "Tuesday"], ["Mié", "Wed", "Miércoles", "Wednesday"], ["Jue", "Thu", "Jueves", "Thursday"], ["Vie", "Fri", "Viernes", "Friday"], ["Sáb", "Sat", "Sábado", "Saturday"], ["Dom", "Sun", "Domingo", "Sunday"]] as const;

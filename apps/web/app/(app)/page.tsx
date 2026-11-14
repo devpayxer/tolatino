@@ -12,11 +12,15 @@ import { eventosSemana } from "@/lib/evt-publico";
 import { faltaAceptar } from "@/lib/legal";
 import { HojaTerminos } from "./HojaTerminos";
 import { PieWeb } from "./_legal/PieWeb";
+import { datosLanding, landingEncendida } from "@/app/acceso/datos";
+import { Landing } from "@/app/acceso/Landing";
 
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
   const [lang, u] = await Promise.all([idioma(), yo()]);
+  // 9h · Producción en acceso anticipado (9t, OK-1): con growth.landing encendido, «/» es la landing (nace apagado; en el sandbox se ve en /acceso).
+  if (await landingEncendida()) return <Landing d={await datosLanding(lang)} />;
   const loc = await ubicacion(u);
   if (loc.c.status !== "on") return <PantallaPronto loc={loc} lang={lang} userId={u?.id ?? null} />;
   // 5e · Hoy en el barrio (de los negocios, público) y Comunidad (lo de la cuenta oficial de la ciudad; nada de vecinos), con datos reales.

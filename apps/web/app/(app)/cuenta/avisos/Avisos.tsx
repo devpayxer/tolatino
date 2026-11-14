@@ -54,6 +54,8 @@ export function Avisos({ p, es, yo, horaResumen, horaRecordatorio, horarioEquipo
     [E2("EMPLEOS", "JOBS"), [["emp", E2("Respuesta a tus solicitudes", "Replies to your applications"), E2("VISTA · TE VAN A LLAMAR · ENTREVISTA", "SEEN · THEY WILL CALL · INTERVIEW")]]],
     [E2("NEGOCIOS QUE GUARDAS", "SAVED BUSINESSES"), [["hoy", E2("Lo que traen hoy", "What they have today"), E2("SUS NOVEDADES", "THEIR UPDATES")], ["of", E2("Ofertas", "Deals"), E2("MÁXIMO 1 AL DÍA", "AT MOST 1 A DAY")]]],
     [E2("CORREO", "EMAIL"), [["mailR", E2("Recibos", "Receipts"), E2("DE CADA PEDIDO Y RESERVACIÓN", "FOR EVERY ORDER AND BOOKING")], ["mailW", E2("Resumen semanal del barrio", "Weekly neighborhood digest"), E2("LOS LUNES", "MONDAYS")]]],
+    // 9h · Las campañas de Crecimiento: solo a quien lo enciende (apagado de fábrica), nunca de noche y con tope por semana.
+    [E2("DE TO'LATINO", "FROM TO'LATINO"), [["mkt", E2("Novedades de To'Latino", "To'Latino updates"), E2("APAGADO DE FÁBRICA · NUNCA DE NOCHE · CON TOPE POR SEMANA", "OFF BY DEFAULT · NEVER AT NIGHT · WEEKLY LIMIT")]]],
   ];
   const B: Bloque[] = [{ type: "sec", t: E2("EN ESTE TELÉFONO", "ON THIS PHONE"), fs: "14px", mt: "4px" }];
   if (est === "no_disponible") B.push({ type: "note", tone: "warn", ic: "bell", t: E2("Los avisos al teléfono no están disponibles aquí", "Phone notifications are not available here"), s: sinPush() });

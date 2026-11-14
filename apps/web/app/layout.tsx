@@ -2,11 +2,17 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Arranque } from "./_cascara/Arranque";
 import { AhoraProvider } from "@/lib/ahora";
+import { BASE_URL } from "@/lib/correo";
+import { ENTORNO } from "@/lib/entorno";
 
 /* Fuentes: @font-face en globals.css con los archivos de public/fuentes (nada de Google en el build). */
 const PRECARGA = ["sora-latin-800-normal", "manrope-latin-500-normal", "manrope-latin-700-normal"];
 
+/* 9h · SEO (guardián sandboxNoSeIndexa): fuera de producción TODA página dice noindex (además de robots.txt y la cabecera de nginx-pruebas); en producción,
+   lo que cada página diga. metadataBase: las direcciones de Open Graph salen completas. */
 export const metadata: Metadata = {
+  metadataBase: new URL(BASE_URL()),
+  ...(ENTORNO !== "produccion" ? { robots: { index: false, follow: false } } : {}),
   title: "To'Latino",
   description: "Negocios, comunidad y eventos latinos en tu ciudad.",
   applicationName: "To'Latino",

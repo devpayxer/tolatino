@@ -36,13 +36,18 @@ import { textosT } from "@/lib/cms";
 import { PieWeb } from "../../_legal/PieWeb";
 import { ubicacion } from "@/lib/ubicacion";
 import { Ficha } from "./Ficha";
+import { BASE_URL } from "@/lib/correo";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const [{ id }, lang] = await Promise.all([params, idioma()]);
   const f = await ficha(id, lang);
-  return f ? { title: `${f.nombre} · To'Latino`, description: f.subsLinea } : { title: "To'Latino" };
+  // 9h · SEO: canónico y Open Graph con la foto de portada (lo público de la ficha).
+  if (!f) return { title: "To'Latino" };
+  const url = `${BASE_URL()}/n/${encodeURIComponent(f.id)}`;
+  return { title: `${f.nombre} · To'Latino`, description: f.subsLinea, alternates: { canonical: url },
+    openGraph: { title: f.nombre, description: f.subsLinea, type: "website", url, ...(f.fotos[0] ? { images: [{ url: f.fotos[0] }] } : {}) } };
 }
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; p?: string; d?: string; h?: string; editar?: string }> }) {
@@ -180,8 +185,14 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const num = (x?: string) => (x && /^\d{1,4}$/.test(x) ? Number(x) : undefined);
   const rsvInicial = { p: num(sp.p), i: num(sp.d), h: num(sp.h), editar: sp.editar && /^R-\d{1,10}$/.test(sp.editar) ? sp.editar : undefined };
   const t = (await textosT(lang)).ficha;
+  // 9h · schema.org/LocalBusiness: lo que dice la ficha (nombre, teléfono público, dirección si tiene local, el punto público y la portada), sin datos de nadie.
+  const ld = { "@context": "https://schema.org", "@type": "LocalBusiness", name: f.nombre, url: `${BASE_URL()}/n/${encodeURIComponent(f.id)}`,
+    ...(f.subsLinea ? { description: f.subsLinea } : {}), ...(f.telefono ? { telephone: f.telefono } : {}), ...(f.fotos[0] ? { image: f.fotos[0] } : {}),
+    ...(f.direccion ? { address: { "@type": "PostalAddress", streetAddress: f.direccion, addressRegion: "PA", addressCountry: "US" } } : {}),
+    ...(f.lat != null && f.lng != null ? { geo: { "@type": "GeoCoordinates", latitude: f.lat, longitude: f.lng } } : {}) };
   return (
     <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, "\\u003c") }} />
     <Ficha
       f={{ ...f, guardado: fav.has(f.id) }}
       menu={menu}

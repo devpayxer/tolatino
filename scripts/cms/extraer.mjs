@@ -5,6 +5,7 @@
    Fuentes:
      · apps/web/lib/textos.ts      T {es,en}: lo general (WEB-GENERAL) y cada grupo (ficha → WEB-FICHA, buscar → WEB-BUSCAR…)
      · apps/web/lib/textos-home.ts HOME {es,en}: el Inicio de la ciudad (APP-HOME)
+     · apps/web/lib/textos-acceso.ts ACCESO {es,en}: la landing de acceso anticipado (APP-LANDING-PRE, 9h)
      · apps/web/lib/textos-fijas.ts FIJAS {es,en}: las líneas de §1c (FIJAS-§1C), FIJAS (candado)
      · apps/web/lib/textos-cuenta.ts CUENTA {es,en}: el nombre de una cuenta borrada (USR-CUENTA), con candado
      · packages/db/seeds/lineas.sql: la línea fija de cada categoría (NEG-CATEGORIA.NEG-XXX.linea), con candado
@@ -65,6 +66,9 @@ export async function cadenasDelCodigo() {
   }, errores));
   const H = await leerTs("apps/web/lib/textos-home.ts", "HOME");
   todas.push(...pares(H, "apps/web/lib/textos-home.ts", (r) => ["APP-HOME", r], errores));
+  // 9h · La landing de acceso anticipado (APP-LANDING-PRE).
+  const AC = await leerTs("apps/web/lib/textos-acceso.ts", "ACCESO");
+  todas.push(...pares(AC, "apps/web/lib/textos-acceso.ts", (r) => ["APP-LANDING-PRE", r], errores));
   const F = await leerTs("apps/web/lib/textos-fijas.ts", "FIJAS");
   todas.push(...pares(F, "apps/web/lib/textos-fijas.ts", (r) => ["FIJAS-1C", r], errores, true));
   // El nombre de una cuenta borrada (9d): lo que la purga escribe y lo que se muestra; con candado.

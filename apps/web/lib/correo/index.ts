@@ -16,7 +16,7 @@ export function modoCorreo(): ModoCorreo {
 }
 export const BASE_URL = () => (process.env.TOLATINO_URL || "https://pruebas.tolatino.com").replace(/\/$/, "");
 
-type Tpl = "verify" | "receipt_order" | "receipt_table" | "receipt_pro" | "receipt_tickets";
+type Tpl = "verify" | "receipt_order" | "receipt_table" | "receipt_pro" | "receipt_tickets" | "campaign"; // 9h · campaign: Crecimiento › Campañas por correo
 export async function encolar(x: { userId: string | null; city?: string | null; to: string; tpl: Tpl; subject: string; html: string; text: string; ref?: [string, string]; idem?: string }): Promise<{ id: string; status: string } | null> {
   const m = modoCorreo(), st = m === "pruebas" ? "pruebas" : m === "ses" ? "pendiente" : "sin_proveedor";
   const r = (await db().query<{ id: string; status: string }>(

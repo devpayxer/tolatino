@@ -150,7 +150,7 @@ export function Publica({ v }: { v: VistaPublica }) {
   const segs = flow ? SEQ.map((_, i) => (i < idx ? "done" : i === idx ? "cur" : "next")) : [];
   const saved = d.started ? E2("GUARDADO", "SAVED") : "";
   const label = flow ? `${E2("PASO ", "STEP ")}${idx + 1}${E2(" DE 5 · ", " OF 5 · ")}${TOPN[idx]}` : E2("PUBLICA TU NEGOCIO", "LIST YOUR BUSINESS");
-  const len = d.promoOk ? 60 : 30;
+  const len = d.promoOk ? (d.promoDias || 60) : 30; // 9h · los días del código (promo_codes)
   const subsDone = [
     d.cat ? ((kc ? (es ? kc[1] : kc[2]) : "") + (d.subs[0] ? " · " + subL(d.cat, d.subs[0], es) : "")).toUpperCase() : "",
     f && Fl.valid(d.cat, d.own, d) && (d.reach || 0) >= 1 ? f.sum(o, es) : "",
