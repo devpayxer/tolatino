@@ -2208,6 +2208,9 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   plan2m 15 ✓, env4q 23 ✓ (le faltaba guardar SU dirección: en una base nueva Marisol no tenía ninguna; `direccion()` como pide 9b-3) y vis4ie 53 ✓ (falló
   mientras din9n4 dejaba una visita de prueba con `what` inventado que tumbaba Panel › Visitas: la prueba ahora la arma como la app y se repararon las
   filas que había dejado).
+- **Al revés que ya existían, contra el código de 9n-4:** 9k 38/38, 9n 24/24, 9b3 39/39, 5i 26/26, 6c, 6d y 6i sin ✗. `alreves7b` sale con 2 ✗ que NO son de
+  este bloque (sus casos cambian 0117_soporte.sql y 0122_compa_copiloto.sql, pero 0144 de 9n redefinió esas funciones y el guardián ya mira la última): queda
+  en LAUNCH → 9b.
 - **No corrió aquí:** la regresión entera, la matriz de 9 dispositivos y `pruebas/visual` → CI (cambian las capturas de las pantallas que cobran, el pedido del
   mercado, Tu plan, Entrega y la ficha de Noche). Visitas (Booking con depósito), viajes, evento privado y mudanza con 3-D Secure: por el guardián y `tsc`, sin
   su propia prueba de navegador en din9n4.
