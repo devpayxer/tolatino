@@ -4735,3 +4735,13 @@ pasa a «revisado» y se publica. En producción la base no deja publicar una p�
 - **«X te recomendó»:** una sola vez por teléfono en toda la vida, con STOP; de noche no sale (queda «silencio», no se reintenta).
 - **Reintentos:** 3 intentos con 2, 4 y 8 minutos de espera; no se reintenta lo permanente (STOP, número inválido: los códigos de Telnyx se confirman en 9q).
 - **«Ciudad abierta»:** el aviso y su plantilla son de 9i (lista avisada una vez, de día); 9l no manda otro.
+
+## Fase 9 · Capturas aprobadas tras juntar 9g–9o (14 nov)
+Qué mirar (Super Admin › Inicio y la Inicio del vecino, en el teléfono y en la computadora):
+- **Super Admin › Inicio** (las 9 capturas de `pruebas/visual/admin-hoy/`): ahora suma la cifra **LISTA DE ESPERA** (por ciudad, 9i) y, abajo,
+  **Ciudad viva** por ciudad (semillas reclamadas, publicaciones por día, recomendaciones y vecinos activos, 9g). «Crecimiento» ya no sale gris en el
+  menú (9h). Una ciudad en beta dice «· beta (solo invitados)» (antes decía «próximamente»).
+- **Inicio del vecino** en iPad y en las tres computadoras (`pruebas/visual/inicio/`): mismo diseño; solo cambian qué negocios están abiertos a la hora
+  de la captura y las fechas de «Esta semana» (cambian solos con el día). No es un cambio de pantalla.
+- Se dejó como está «Gamification» en el menú del Super Admin: es el nombre del diseño aprobado del Super Admin. Si lo prefieres «Gamificación», es un
+  cambio de una línea.
