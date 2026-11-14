@@ -69,6 +69,7 @@ function ReservationCard({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClick,
+    ...__ds_scope.__btn(onClick, undefined, undefined),
     style: {
       padding: '14px 16px',
       borderRadius: 18,

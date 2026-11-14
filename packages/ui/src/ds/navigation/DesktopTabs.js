@@ -45,6 +45,7 @@ function DesktopTabs({
     return /*#__PURE__*/React.createElement("div", {
       key: t.id,
       onClick: () => onChange && onChange(t.id),
+      ...__ds_scope.__btn(() => onChange && onChange(t.id), undefined, { 'aria-current': on ? 'page' : undefined }),
       style: {
         flex: 'none',
         display: 'flex',

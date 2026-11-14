@@ -18,6 +18,7 @@ function ModuleTile({
   const m = __ds_scope.MODULES[module] || {};
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClick,
+    ...__ds_scope.__btn(onClick, undefined, undefined),
     style: {
       borderRadius: 18,
       background: dark ? 'var(--tl-ink)' : 'var(--tl-white)',

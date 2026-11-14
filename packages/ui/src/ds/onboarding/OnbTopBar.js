@@ -77,7 +77,9 @@ function OnbTopBar({
   onExit,
   label,
   saved,
-  segments
+  segments,
+  exitLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Exit" : "Salir",
+  backLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Back" : "Volver"
 }) {
   const btn = {
     width: 36,
@@ -103,6 +105,7 @@ function OnbTopBar({
     }
   }, /*#__PURE__*/React.createElement("span", {
     onClick: onBack,
+    ...__ds_scope.__btn(onBack, backLabel, undefined),
     style: btn
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "chevronLeft",
@@ -115,6 +118,7 @@ function OnbTopBar({
     segments: segments
   }), /*#__PURE__*/React.createElement("span", {
     onClick: onExit,
+    ...__ds_scope.__btn(onExit, exitLabel, undefined),
     style: btn
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "close",
@@ -154,6 +158,7 @@ function OnbPhases({
     return /*#__PURE__*/React.createElement("div", {
       key: i,
       onClick: f.onClick,
+      ...__ds_scope.__btn(f.onClick, undefined, undefined),
       style: {
         display: 'flex',
         alignItems: 'center',
@@ -220,6 +225,7 @@ function OnbPhases({
     strokeWidth: 2.2
   }), saved) : null, has(exitLabel) ? /*#__PURE__*/React.createElement("span", {
     onClick: onExit,
+    ...__ds_scope.__btn(onExit, undefined, undefined),
     style: {
       font: '700 13px Manrope,sans-serif',
       color: 'var(--tl-action)',
@@ -238,6 +244,7 @@ function OptionCard({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClick,
+    ...__ds_scope.__btn(onClick, undefined, undefined),
     style: {
       display: 'flex',
       gap: 13,
@@ -368,6 +375,7 @@ function OnbActionBar({
     }
   }, back ? /*#__PURE__*/React.createElement("span", {
     onClick: back.onClick,
+    ...__ds_scope.__btn(back.onClick, undefined, undefined),
     style: {
       display: 'flex',
       alignItems: 'center',

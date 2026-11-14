@@ -20,6 +20,7 @@ const Tr = ({
   }
 }, /*#__PURE__*/React.createElement("span", {
   onClick: t.onClick,
+  ...__ds_scope.__btn(t.onClick, undefined, undefined),
   style: {
     font: '700 12px Manrope,sans-serif',
     color: 'var(--tl-action)',
@@ -176,6 +177,7 @@ function PollOptions({
   }, options.map((o, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     onClick: o.onClick,
+    ...__ds_scope.__btn(o.onClick, undefined, undefined),
     style: {
       position: 'relative',
       overflow: 'hidden',
@@ -386,6 +388,8 @@ function PostCard({
     }
   }, /*#__PURE__*/React.createElement("span", {
     onClick: onAuthor,
+    role: 'presentation',
+    'aria-hidden': true,
     style: {
       width: 40,
       height: 40,
@@ -417,6 +421,7 @@ function PostCard({
     }
   }, /*#__PURE__*/React.createElement("span", {
     onClick: onAuthor,
+    ...__ds_scope.__btn(onAuthor, undefined, undefined),
     style: {
       minWidth: 0,
       font: nameFont + ' Sora,sans-serif',
@@ -497,6 +502,7 @@ function PostCard({
     }
   }), chip) : null, has(body) ? /*#__PURE__*/React.createElement("div", {
     onClick: onOpen,
+    ...__ds_scope.__btn(onOpen, undefined, undefined),
     style: {
       marginTop: bodyGap,
       font: bodyFont + ' Manrope,sans-serif',

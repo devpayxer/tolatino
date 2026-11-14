@@ -112,6 +112,7 @@ function CategoryHero({
     }
   }), !d ? /*#__PURE__*/React.createElement("div", {
     onClick: onBack,
+    ...__ds_scope.__btn(onBack, backLabel, undefined),
     style: {
       position: 'absolute',
       top: 14,
@@ -141,6 +142,7 @@ function CategoryHero({
     }
   }, d ? /*#__PURE__*/React.createElement("div", {
     onClick: onBack,
+    ...__ds_scope.__btn(onBack, backLabel, undefined),
     style: {
       alignSelf: 'flex-start',
       display: 'flex',
@@ -166,6 +168,7 @@ function CategoryHero({
     }
   }, stats) : null, /*#__PURE__*/React.createElement("div", {
     onClick: onSearch,
+    ...__ds_scope.__btn(onSearch, undefined, undefined, d),
     style: {
       marginTop: d ? 6 : 0,
       display: 'flex',
@@ -205,6 +208,7 @@ function CategoryHero({
   }, countries.map((t, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     onClick: t.onClick,
+    ...__ds_scope.__btn(t.onClick, undefined, undefined),
     style: {
       flex: 'none',
       width: d ? 104 : 90,
@@ -284,6 +288,7 @@ function CategoryHero({
     }, g.tiles.map((t, i) => /*#__PURE__*/React.createElement("div", {
       key: i,
       onClick: t.onClick,
+      ...__ds_scope.__btn(t.onClick, undefined, undefined),
       style: {
         flex: 'none',
         width: d ? 112 : 84,

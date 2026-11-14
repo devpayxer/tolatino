@@ -30,6 +30,176 @@ const TOKEN_DE = {
 };
 const SOLO_PROTOTIPO = new Set(["patterns/hours-pro.js"]);
 
+// ── 9c · Accesibilidad de los clics mudos ──────────────────────────────────────────────────────────────────────────────────
+// El sistema exportado trae ~190 <div>/<span> con onClick y nada más: ni rol, ni foco, ni teclado, ni nombre. En vez de ~190 parches a
+// mano, un solo motor (`accesibilizar`) recorre cada módulo y, a cada <div>/<span> con onClick, le agrega con `__ds_scope.__btn(...)`:
+// role="button", tabIndex 0, Enter/Espacio (solo cuando el foco está en el propio elemento) y, si no hay texto que lo nombre, su nombre
+// (aria-label) en un prop nuevo con valor por defecto ES/EN. Se ve igual: no cambia ni un estilo ni la estructura.
+// La tabla dice, por módulo y EN ORDEN de aparición, qué es cada clic; la pista `h` es un trozo de la expresión del onClick y el motor
+// se detiene si no coincide (si el origen cambia, se revisa aquí, no se adivina). Tipos:
+//   b  botón (el texto de dentro lo nombra) · bl botón sin texto: nombre en un prop nuevo `props: [[prop, ES, EN]]`, `le` = expresión
+//   p  decorativo o duplicado de otro control (fondo de hoja, zona de toque, foto repetida): role=presentation y aria-hidden
+//   w  envoltura que solo detiene el clic (ya tiene controles de verdad dentro): role=presentation
+//   n  contenedor clicable con controles dentro (no puede ser role=button: «interactivo anidado»): presentation solo si `inner`
+//   k  ya tiene su rol (tab, option): solo foco y teclado · sw interruptor · cb casilla
+const bl = (h, props, le, x) => ({ h, t: "bl", props, le, x });
+const b = (h, x) => ({ h, t: "b", x });
+const P = (h) => ({ h, t: "p" });
+const W = (h) => ({ h, t: "w" });
+const N = (h, inner) => ({ h, t: "n", inner });
+const K = (h, fnx) => ({ h, t: "k", fnx });
+const SW = (h, chk, le, props) => ({ h, t: "sw", chk, le, props });
+const CB = (h, chk, le, props) => ({ h, t: "cb", chk, le, props });
+const BACK = ["backLabel", "Volver", "Back"], CLOSE = ["closeLabel", "Cerrar", "Close"], SEARCH = ["searchLabel", "Buscar", "Search"];
+const A11Y = {
+  "account/NeighborCard.js": [b("onProfile"), b("c.onClick"), b("x.onClick : undefined"), b("x.onClick")],
+  "admin/AdminBar.js": [b("onCta"), b("onHome"), b("onSearch"), b("o.onClick"), bl("onSearch", [SEARCH], "searchLabel"), bl("onBell", [["bellLabel", "Notificaciones", "Notifications"]], "bellLabel"),
+    bl("onMe", [["meLabel", "Mi cuenta", "My account"]], "meLabel"), b("n.onClick"), b("on ? f"), b("r.onClick"), N("onClick", "toggle != null"),
+    SW("onToggle", "!!toggle", "title", []), b("onLink"), b("onClick"), b("onClick"), CB("f || undefined", "on", "r.label", []), b("onClick"), bl("onBack", [BACK], "backLabel")],
+  "booking/PartyPicker.js": [b("onClick")],
+  "booking/PaymentSummary.js": [b("card.onClick")],
+  "booking/StaffPicker.js": [b("onClick"), b("onCta")],
+  "cards/BusinessCard.js": [N("onOpen", "true"), N("onOpen", "true")],
+  "cards/BusinessRow.js": [b("onClick")],
+  "cards/EventCard.js": [b("onClick")],
+  "cards/EventPromo.js": [b("onPrimary"), b("onSecondary")],
+  "cards/StoryCard.js": [bl("dir < 0", [["prevLabel", "Anterior", "Previous"], ["nextLabel", "Siguiente", "Next"]], "dir < 0 ? prevLabel : nextLabel"), P("back"), P("fwd")],
+  "city/RadiusMap.js": [b("r.onClick"), b("recommend.onClick")],
+  "community/FeedPost.js": [b("answer.onOpen")],
+  "community/Patio.js": [bl("onClick", [["tileLabel", "Ficha", "Tile"]], "tileLabel"), b("x.onClick"), bl("p.onClick", [["pieceLabel", "Pieza", "Piece"]], "pieceLabel"), b("o.onClick")],
+  "community/PostCard.js": [b("t.onClick"), b("o.onClick"), P("onAuthor"), b("onAuthor"), b("onOpen")],
+  "community/Thread.js": [b("t.onClick"), P("onAuthor"), b("onAuthor"), bl("vote.onUp", [["upLabel", "Votar a favor", "Upvote"]], "upLabel"), bl("vote.onDown", [["downLabel", "Votar en contra", "Downvote"]], "downLabel"),
+    b("onReply"), b("solve.onClick"), N("business.onOpen", "true"), bl("r.vote", [["upLabel", "Votar a favor", "Upvote"]], "upLabel"), b("r.onReply"), b("onToggle"), b("onToggle"),
+    P("b.onOpen"), b("b.onOpen"), bl("b.onVote", [["voteLabel", "Votar", "Vote"]], "voteLabel")],
+  "compa/CompaFrame.js": [P("onClose"), bl("onClose", [CLOSE], "closeLabel"), bl("onBack", [BACK], "backLabel"), b("onPerson"), b("onPerson"), bl("onSend", [["sendLabel", "Enviar", "Send"]], "sendLabel")],
+  "core/SearchBar.js": [b("onClick")],
+  "core/SearchSelect.js": [K("onPick"), b("other.onClick")],
+  "core/SectionHeader.js": [b("onAction")],
+  "home/ModuleGrid.js": [b("onClick")],
+  "layout/AppHeader.js": [b("onLang"), b("onLang")],
+  "layout/CategoryHero.js": [bl("onBack", [BACK], "backLabel"), bl("onBack", [BACK], "backLabel"), N("onSearch", "d"), b("t.onClick"), b("t.onClick")],
+  "layout/SiteFooter.js": [b("l.onClick"), b("s.onClick"), b("l.onClick"), b("setOpen", "'aria-expanded': open === i"), b("l.onClick"), b("onLang"), b("onCity"), b("l.onClick")],
+  "layout/SiteHeader.js": [bl("onClick", [["avatarLabel", "Mi cuenta", "My account"]], "avatarLabel"), bl("onClick", [], "'Idioma: ' + lang"), bl("onHome", [], "\"To\\u2019Latino\""), N("onSearch", "!!onCity"), b("stop(onCity)"),
+    bl("onHome", [], "\"To\\u2019Latino\""), N("onSearch", "!!onCity"), b("stop(onCity)"), b("onTab")],
+  "listing/BusinessPreview.js": [b("o.onClick"), b("onOpen")],
+  "listing/OwnerCard.js": [bl("onTeam", [["teamLabel", "Ver el equipo", "View the team"]], "teamLabel"), b("onLink")],
+  "listing/ReviewCard.js": [b("t.onClick"), bl("p.onClick", [["photoLabel", "Foto", "Photo"]], "photoLabel"), bl("helpful.onClick", [["helpfulLabel", "Útil", "Helpful"]], "helpfulLabel"), b("edit.onClick"), b("report.onClick")],
+  "menu/MenuItemRow.js": [N("off ? undefined", "true"), W("st"), K("left", "x ? left : undefined"), K("right"), N("onOpen", "true"), bl("onDec", [["decLabel", "Uno menos", "One less"]], "decLabel"), bl("onInc", [["incLabel", "Uno más", "One more"]], "incLabel"), b("onClick"), P("onEdit"), b("onEdit")],
+  "navigation/BottomNav.js": [b("it.id", "'aria-current': it.id === active ? 'page' : undefined")],
+  "navigation/DesktopTabs.js": [b("t.id", "'aria-current': on ? 'page' : undefined")],
+  "navigation/ModuleSwitcher.js": [b("k", "'aria-current': on ? 'page' : undefined")],
+  "navigation/Tabs.js": [K("t.id")],
+  "onboarding/OnbTopBar.js": [bl("onBack", [BACK], "backLabel"), bl("onExit", [["exitLabel", "Salir", "Exit"]], "exitLabel"), b("f.onClick"), b("onExit"), b("onClick"), b("back.onClick")],
+  "order/DeliveryPrefs.js": [b("o.onClick"), b("onSave"), b("x.onClick"), b("r.onClick"), b("onClick"), bl("onClose", [CLOSE], "closeLabel"), b("onChange")],
+  "panel/SelectionBar.js": [b("onAll"), bl("onClose", [CLOSE], "closeLabel"), b("a.onClick"), b("a.onClick"), CB("onClick", "on", "selectLabel", [["selectLabel", "Seleccionar", "Select"]])],
+  "patterns/HoursPro.js": [b("setOpen", "'aria-expanded': !!open")],
+  "rides/RideCard.js": [b("onCta")],
+  "rides/RideSearch.js": [b("onSearch")],
+  "search/SearchResultRow.js": [b("onClick")],
+};
+const usadas = new Set();
+
+// Agrega `name = <ES/EN>` al FINAL de los parámetros desestructurados del componente (así `lang`, si existe, ya está ligado).
+function agregarProp(t, comp, name, es, en) {
+  const m = new RegExp(`(?:function ${comp}\\(|const ${comp} = \\()\\{\\n`).exec(t);
+  if (!m) throw new Error(`accesibilidad: no encuentro los parámetros de ${comp}`);
+  const ini = m.index + m[0].length, fin = t.indexOf("\n}) ", ini);
+  if (fin < 0) throw new Error(`accesibilidad: no encuentro el cierre de los parámetros de ${comp}`);
+  if (new RegExp(`(^|\\n)  ${name}\\b`).test(t.slice(ini - 1, fin + 1))) return t;
+  const def = `typeof lang !== 'undefined' && lang === 'EN' ? ${JSON.stringify(en)} : ${JSON.stringify(es)}`;
+  return t.slice(0, fin) + `,\n  ${name} = ${def}` + t.slice(fin);
+}
+
+function accesibilizar(t, rel) {
+  const spec = A11Y[rel];
+  let L = t.split("\n");
+  const pendientes = []; // [línea del onClick, spec, componente]
+  let k = 0;
+  for (let i = 0; i < L.length; i++) {
+    const m = /^(\s*)onClick: (.+?),?$/.exec(L[i]);
+    if (!m) continue;
+    let a = i;
+    while (a >= 0 && !/createElement\(/.test(L[a])) a--;
+    if (!/^createElement\("(div|span)"/.test(L[a].slice(L[a].lastIndexOf("createElement(")))) continue;
+    let e = i;
+    while (e < L.length && !(L[e].match(/^\s*/)[0].length === m[1].length - 2 && /^\s*\}/.test(L[e]))) e++;
+    const bloque = L.slice(a, e + 1).join("\n");
+    if (/\.\.\.btn\(/.test(bloque) || (/\brole:/.test(bloque) && /tabIndex/.test(bloque))) continue; // ya accesible (parches de 2l a 6c)
+    const s = spec && spec[k++];
+    if (!s) throw new Error(`accesibilidad: ${rel}:${i + 1} (${m[2]}) no está en la tabla de scripts/portar-sistema.mjs`);
+    if (!m[2].includes(s.h)) throw new Error(`accesibilidad: ${rel}:${i + 1} esperaba «${s.h}» y el onClick es «${m[2]}» (el origen cambió: revisar la tabla)`);
+    let c = i;
+    while (c >= 0 && !/^(?:function (\w+)\(|const (\w+) = \()/.test(L[c])) c--;
+    const cm = /^(?:function (\w+)\(|const (\w+) = \()/.exec(L[c] || "");
+    pendientes.push({ i, s, m, comp: cm && (cm[1] || cm[2]), ind: m[1] });
+  }
+  if (spec && k !== spec.length) throw new Error(`accesibilidad: ${rel} tiene ${k} clics mudos y la tabla ${spec.length}`);
+  if (spec) usadas.add(rel);
+  const props = [];
+  for (const { i, s, m, comp, ind } of [...pendientes].reverse()) {
+    const fn = m[2];
+    for (const [n, es, en] of [...(s.props || [])]) props.push([comp, n, es, en]);
+    let linea;
+    if (s.t === "p") linea = `${ind}role: 'presentation',\n${ind}'aria-hidden': true,`;
+    else if (s.t === "w") linea = `${ind}role: 'presentation',`;
+    else if (s.t === "k") linea = `${ind}...__ds_scope.__key(${s.fnx || fn}),`;
+    else {
+      const x = s.t === "sw" ? `{ role: 'switch', 'aria-checked': ${s.chk}${s.x ? ", " + s.x : ""} }` : s.t === "cb" ? `{ role: 'checkbox', 'aria-checked': !!${s.chk}${s.x ? ", " + s.x : ""} }` : s.x ? `{ ${s.x} }` : "undefined";
+      const lab = s.le || "undefined";
+      linea = s.t === "n" ? `${ind}...__ds_scope.__btn(${fn}, undefined, undefined, ${s.inner}),` : `${ind}...__ds_scope.__btn(${fn}, ${lab}, ${x}),`;
+    }
+    L.splice(i + 1, 0, ...linea.split("\n"));
+  }
+  t = L.join("\n");
+  for (const [comp, n, es, en] of props) t = agregarProp(t, comp, n, es, en);
+  return t;
+}
+
+// Lo que el motor no puede decidir solo: en un contenedor clicable con controles de verdad dentro (tarjetas, el buscador con su ciudad),
+// el teclado entra por el nombre / el texto —un <span> role=button dentro—; el clic del ratón sigue subiendo al contenedor.
+function parchesAccesibilidad(t, rel) {
+  const cambia = (de, a, todas) => {
+    if (!t.includes(de)) throw new Error(`accesibilidad (${rel}): el origen cambió, no encuentro «${de.slice(0, 60)}»`);
+    t = todas ? t.replaceAll(de, a) : t.replace(de, a);
+  };
+  const btnSpan = (fn, cond, hijo) => `/*#__PURE__*/React.createElement("span", {\n    ...${cond ? `(${cond} ? __ds_scope.__btn(${fn}) : {})` : `__ds_scope.__btn(${fn})`}\n  }, ${hijo})`;
+  if (rel === "cards/BusinessCard.js") {
+    cambia("  }, name), meta ? ", `  }, ${btnSpan("onOpen", "", "name")}), meta ? `);
+    cambia("  }, name), verified ? ", `  }, ${btnSpan("onOpen", "", "name")}), verified ? `);
+  }
+  if (rel === "community/Thread.js") cambia("  }, business.name), business.verified", `  }, ${btnSpan("business.onOpen", "", "business.name")}), business.verified`);
+  if (rel === "admin/AdminBar.js") cambia("  }, title), has(sub) ?", `  }, ${btnSpan("onClick", "toggle != null", "title")}), has(sub) ?`);
+  if (rel === "layout/SiteHeader.js") {
+    cambia("  }, searchPlaceholder || 'Buscar en ' + cityShort),", `  }, ${btnSpan("onSearch", "onCity", "searchPlaceholder || 'Buscar en ' + cityShort")}),`);
+    cambia("  }, searchPlaceholder || 'Buscar negocios, eventos y más en ' + cityShort),", `  }, ${btnSpan("onSearch", "onCity", "searchPlaceholder || 'Buscar negocios, eventos y más en ' + cityShort")}),`);
+    cambia("'Idioma: ' + lang", "(lang === 'EN' ? 'Language: ' : 'Idioma: ') + lang");
+    cambia("    initials: initials,\n    onClick: onAvatar\n", "    initials: initials,\n    onClick: onAvatar,\n    avatarLabel: lang === 'EN' ? 'My account' : 'Mi cuenta'\n");
+  }
+  // AuthSheet (9c): los errores se anuncian (una región role="alert" siempre presente, vacía y sin altura mientras no hay error), los
+  // campos tienen nombre y se marcan inválidos / descritos por el error. `error` llega del servidor: la hoja solo lo muestra.
+  if (rel === "order/DeliveryPrefs.js") {
+    cambia("  terms,\n  desktop,\n", "  terms,\n  desktop,\n  error,\n  phoneLabel = 'Tu teléfono',\n  codeLabel = 'Código de 6 dígitos',\n");
+    cambia("    placeholder: \"(570) 555-0142\",\n    inputMode: \"tel\",\n", "    placeholder: \"(570) 555-0142\",\n    inputMode: \"tel\",\n    autoComplete: \"tel\",\n    \"aria-label\": phoneLabel,\n    \"aria-invalid\": error ? true : undefined,\n    \"aria-describedby\": error ? 'tl-auth-error' : undefined,\n");
+    cambia("    placeholder: \"\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\",\n    inputMode: \"numeric\",\n", "    placeholder: \"\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\",\n    inputMode: \"numeric\",\n    autoComplete: \"one-time-code\",\n    \"aria-label\": codeLabel,\n    \"aria-invalid\": error ? true : undefined,\n    \"aria-describedby\": error ? 'tl-auth-error' : undefined,\n");
+    cambia("  }))), step === 'phone' ? /*#__PURE__*/React.createElement(React.Fragment, null,", "  }))), /*#__PURE__*/React.createElement(\"div\", {\n    id: 'tl-auth-error',\n    role: 'alert',\n    'aria-live': 'assertive',\n    style: error ? {\n      font: '600 12.5px/1.4 Manrope,sans-serif',\n      color: 'var(--tl-danger)',\n      margin: '12px 0 0'\n    } : undefined\n  }, error || null), step === 'phone' ? /*#__PURE__*/React.createElement(React.Fragment, null,");
+  }
+  // QtyStepper y el «+ / −» del menú: los nombres que estaban fijos en español ahora son props (ES/EN con `lang`).
+  if (rel === "menu/MenuItemRow.js") {
+    // La fila y la tarjeta del plato llevan el «+» (un botón) dentro: el teclado entra por el nombre del plato.
+    cambia("  }, name), desc ? ", `  }, ${btnSpan("off ? undefined : onOpen", "", "name")}), desc ? `);
+    cambia("  }, name), /*#__PURE__*/React.createElement(\"div\", {", `  }, ${btnSpan("onOpen", "", "name")}), /*#__PURE__*/React.createElement("div", {`);
+    cambia("qty === 1 ? 'Quitar' : 'Uno menos'", "qty === 1 ? removeLabel : decLabel");
+    cambia("qty === 0 || x ? 'Agregar' : 'Cantidad: ' + qty", "qty === 0 || x ? addLabel : qtyLabel + ': ' + qty");
+    for (const c of ["AddPill", "MenuItemRow", "MenuTile"]) {
+      const m = new RegExp(`function ${c}\\(\\{\\n`).exec(t), fin = t.indexOf("\n}) ", m.index);
+      t = t.slice(0, fin) + ",\n  lang" + t.slice(fin);
+    }
+    cambia("React.createElement(AddPill, {\n", "React.createElement(AddPill, {\n    lang: lang,\n", true);
+    for (const [n, es, en] of [["removeLabel", "Quitar", "Remove"], ["decLabel", "Uno menos", "One less"], ["addLabel", "Agregar", "Add"], ["qtyLabel", "Cantidad", "Quantity"]]) t = agregarProp(t, "AddPill", n, es, en);
+  }
+  return t;
+}
+
 const puntuales = new Map();
 const nombres = [];
 const grupos = {};
@@ -246,6 +416,10 @@ for (const src of archivos) {
     if (t === antes || !t.includes("matrix: matrix") || !t.includes("  matrix,\n  qrSize,") || /seed/.test(t)) throw new Error("parche TicketQR: el origen cambió, revisar");
   }
 
+  // 9c: clics mudos → botones accesibles (tabla A11Y arriba).
+  t = accesibilizar(t, rel);
+  t = parchesAccesibilidad(t, rel);
+
   // Hex → token.
   t = t.replace(/#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/g, (m, h) => {
     const H = h.toUpperCase();
@@ -277,8 +451,24 @@ import { __ds_scope } from "${profundidad}/scope.js";
 
 writeFileSync(join(DESTINO, "scope.js"), `/* Registro común de los componentes portados: cada módulo se agrega aquí y busca a los demás aquí. */
 export const __ds_scope = {};
+
+/* 9c · Accesibilidad de lo que era un <div>/<span> con onClick (scripts/portar-sistema.mjs, tabla A11Y). \`__btn(clic, nombre, extra, dentro)\` devuelve
+   role="button", tabIndex 0, Enter/Espacio (solo con el foco en el propio elemento, para no robarle la tecla a un campo de dentro) y el nombre
+   si no hay texto que lo dé; sin clic no devuelve nada (un elemento sin acción no es un botón). \`dentro\`: el elemento lleva controles de verdad
+   dentro, así que no puede ser un botón (interactivo anidado) y solo queda como zona de clic para el ratón. \`__key\`: lo mismo para quien ya
+   trae su rol (tab, option). */
+const tecla = (fn) => (e) => {
+  if ((e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) {
+    e.preventDefault();
+    fn(e);
+  }
+};
+__ds_scope.__btn = (fn, label, extra, dentro) =>
+  !fn ? {} : dentro ? { role: "presentation" } : { role: "button", tabIndex: 0, ...(label ? { "aria-label": label } : null), ...extra, onKeyDown: tecla(fn) };
+__ds_scope.__key = (fn) => (fn ? { tabIndex: 0, onKeyDown: tecla(fn) } : {});
 `);
 
+for (const rel of Object.keys(A11Y)) if (!usadas.has(rel)) throw new Error(`accesibilidad: ${rel} está en la tabla y el origen no tiene ese módulo`);
 const modulos = archivos.map((a) => relative(ORIGEN, a)).filter((r) => !SOLO_PROTOTIPO.has(r));
 const unicos = [...new Set(nombres)];
 writeFileSync(join(DESTINO, "index.ts"), `"use client";

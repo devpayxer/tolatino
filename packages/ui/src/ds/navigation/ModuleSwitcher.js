@@ -28,6 +28,7 @@ function ModuleSwitcher({
     return /*#__PURE__*/React.createElement("span", {
       key: k,
       onClick: () => onChange && onChange(k),
+      ...__ds_scope.__btn(() => onChange && onChange(k), undefined, { 'aria-current': on ? 'page' : undefined }),
       style: {
         flex: 'none',
         padding: '9px 14px',

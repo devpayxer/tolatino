@@ -20,6 +20,7 @@ const Tr = ({
   }
 }, /*#__PURE__*/React.createElement("span", {
   onClick: t.onClick,
+  ...__ds_scope.__btn(t.onClick, undefined, undefined),
   style: {
     font: '700 12px Manrope,sans-serif',
     color: 'var(--tl-action)',
@@ -39,6 +40,8 @@ const Avatar = ({
   onAuthor
 }) => /*#__PURE__*/React.createElement("span", {
   onClick: onAuthor,
+  role: 'presentation',
+  'aria-hidden': true,
   style: {
     width: size,
     height: size,
@@ -61,6 +64,7 @@ const Who = ({
   size = 14
 }) => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
   onClick: onAuthor,
+  ...__ds_scope.__btn(onAuthor, undefined, undefined),
   style: {
     font: '700 ' + size + 'px/1.25 Manrope,sans-serif',
     cursor: onAuthor ? 'pointer' : 'default'
@@ -107,7 +111,9 @@ function CommentActions({
   onReply,
   solve,
   onMenu,
-  menuLabel = 'Opciones'
+  menuLabel = 'Opciones',
+  downLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Downvote" : "Votar en contra",
+  upLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Upvote" : "Votar a favor"
 }) {
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -130,6 +136,7 @@ function CommentActions({
     }
   }, /*#__PURE__*/React.createElement("span", {
     onClick: vote.onUp,
+    ...__ds_scope.__btn(vote.onUp, upLabel, undefined),
     style: {
       width: 28,
       height: 28,
@@ -150,6 +157,7 @@ function CommentActions({
     }
   }, vote.score), /*#__PURE__*/React.createElement("span", {
     onClick: vote.onDown,
+    ...__ds_scope.__btn(vote.onDown, downLabel, undefined),
     style: {
       width: 28,
       height: 28,
@@ -164,6 +172,7 @@ function CommentActions({
     color: vote.downColor || MUTED
   }))), onReply ? /*#__PURE__*/React.createElement("span", {
     onClick: onReply,
+    ...__ds_scope.__btn(onReply, undefined, undefined),
     style: {
       padding: '8px 10px',
       font: '700 12.5px Manrope,sans-serif',
@@ -172,6 +181,7 @@ function CommentActions({
     }
   }, replyLabel) : null, solve ? /*#__PURE__*/React.createElement("span", {
     onClick: solve.onClick,
+    ...__ds_scope.__btn(solve.onClick, undefined, undefined),
     style: {
       padding: '8px 4px',
       display: 'flex',
@@ -261,6 +271,7 @@ function TopAnswer({
     t: translate
   }) : null, business ? /*#__PURE__*/React.createElement("div", {
     onClick: business.onOpen,
+    ...__ds_scope.__btn(business.onOpen, undefined, undefined, true),
     style: {
       marginTop: 14,
       padding: 12,
@@ -296,7 +307,9 @@ function TopAnswer({
       font: '800 15px/1.2 Sora,sans-serif',
       letterSpacing: '-.02em'
     }
-  }, business.name), business.verified ? /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
+    ...__ds_scope.__btn(business.onOpen)
+  }, business.name)), business.verified ? /*#__PURE__*/React.createElement("span", {
     style: {
       display: 'grid',
       flex: 'none'
@@ -370,7 +383,8 @@ const ReplyBody = ({
   size,
   font,
   avatarSize,
-  children
+  children,
+  upLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Upvote" : "Votar a favor"
 }) => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
   style: {
     display: 'flex',
@@ -418,6 +432,7 @@ const ReplyBody = ({
   }
 }, /*#__PURE__*/React.createElement("span", {
   onClick: r.vote && r.vote.onUp,
+  ...__ds_scope.__btn(r.vote && r.vote.onUp, upLabel, undefined),
   style: {
     display: 'flex',
     alignItems: 'center',
@@ -431,6 +446,7 @@ const ReplyBody = ({
   color: r.vote && r.vote.upColor || MUTED
 }), r.vote && r.vote.score), r.onReply ? /*#__PURE__*/React.createElement("span", {
   onClick: r.onReply,
+  ...__ds_scope.__btn(r.onReply, undefined, undefined),
   style: {
     cursor: 'pointer'
   }
@@ -466,6 +482,7 @@ function ReplyThread({
 }) {
   if (!open) return /*#__PURE__*/React.createElement("div", {
     onClick: onToggle,
+    ...__ds_scope.__btn(onToggle, undefined, undefined),
     style: {
       marginTop: 6,
       padding: '8px 0 2px',
@@ -587,6 +604,7 @@ function ReplyThread({
     size: 13
   }))))))), has(toggleLabel) ? /*#__PURE__*/React.createElement("span", {
     onClick: onToggle,
+    ...__ds_scope.__btn(onToggle, undefined, undefined),
     style: {
       font: '700 12px Manrope,sans-serif',
       color: 'var(--tl-action)',
@@ -600,7 +618,8 @@ function AlsoRecommended({
   screenLabel,
   title,
   sub,
-  items = []
+  items = [],
+  voteLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Vote" : "Votar"
 }) {
   return /*#__PURE__*/React.createElement("div", {
     "data-screen-label": screenLabel,
@@ -656,6 +675,8 @@ function AlsoRecommended({
     }
   }), /*#__PURE__*/React.createElement("span", {
     onClick: b.onOpen,
+    role: 'presentation',
+    'aria-hidden': true,
     style: {
       position: 'relative',
       width: 36,
@@ -668,6 +689,7 @@ function AlsoRecommended({
     }
   }), /*#__PURE__*/React.createElement("div", {
     onClick: b.onOpen,
+    ...__ds_scope.__btn(b.onOpen, undefined, undefined),
     style: {
       position: 'relative',
       flex: 1,
@@ -693,6 +715,7 @@ function AlsoRecommended({
     }
   }, b.meta)), /*#__PURE__*/React.createElement("span", {
     onClick: b.onVote,
+    ...__ds_scope.__btn(b.onVote, voteLabel, undefined),
     style: {
       position: 'relative',
       height: 40,

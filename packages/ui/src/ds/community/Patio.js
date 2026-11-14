@@ -33,10 +33,12 @@ function DominoTile({
   ring,
   opacity = 1,
   lift,
-  onClick
+  onClick,
+  tileLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Tile" : "Ficha"
 }) {
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClick,
+    ...__ds_scope.__btn(onClick, tileLabel, undefined),
     style: {
       display: 'flex',
       flexDirection: dir,
@@ -159,6 +161,7 @@ function QuickReactions({
   }, items.map((x, i) => /*#__PURE__*/React.createElement("span", {
     key: i,
     onClick: x.onClick,
+    ...__ds_scope.__btn(x.onClick, undefined, undefined),
     style: {
       flex: 'none',
       padding: '7px 12px',
@@ -544,7 +547,8 @@ function ParchisBoard({
   cells = [],
   center,
   slots = [],
-  pieces = []
+  pieces = [],
+  pieceLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Piece" : "Pieza"
 }) {
   return /*#__PURE__*/React.createElement("div", {
     "data-screen-label": screenLabel,
@@ -612,6 +616,7 @@ function ParchisBoard({
   })), pieces.map((p, i) => /*#__PURE__*/React.createElement("span", {
     key: p.key || 'p' + i,
     onClick: p.onClick,
+    ...__ds_scope.__btn(p.onClick, pieceLabel, undefined),
     style: {
       position: 'absolute',
       left: p.l,
@@ -739,6 +744,7 @@ function ParchisTable({
   }, roll.label)) : null, moves.map((o, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     onClick: o.onClick,
+    ...__ds_scope.__btn(o.onClick, undefined, undefined),
     style: {
       minHeight: 46,
       padding: '10px 12px',

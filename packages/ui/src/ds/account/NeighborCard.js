@@ -56,6 +56,7 @@ function NeighborCard({
     }
   }, city)), /*#__PURE__*/React.createElement("div", {
     onClick: onProfile,
+    ...__ds_scope.__btn(onProfile, undefined, undefined),
     style: {
       marginTop: 18,
       display: 'flex',
@@ -117,6 +118,7 @@ function NeighborCard({
   }, cells.map((c, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     onClick: c.onClick,
+    ...__ds_scope.__btn(c.onClick, undefined, undefined),
     style: {
       padding: '11px 12px',
       borderRadius: 14,
@@ -213,6 +215,7 @@ function CompleteAccount({
   }, items.map((x, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     onClick: !x.done ? x.onClick : undefined,
+    ...__ds_scope.__btn(!x.done ? x.onClick : undefined, undefined, undefined),
     style: {
       display: 'flex',
       gap: 10,
@@ -272,6 +275,7 @@ function WeekAgenda({
     return /*#__PURE__*/React.createElement("div", {
       key: i,
       onClick: x.onClick,
+      ...__ds_scope.__btn(x.onClick, undefined, undefined),
       style: {
         display: 'grid',
         gridTemplateColumns: '58px 12px minmax(0,1fr) auto',

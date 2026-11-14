@@ -27,12 +27,14 @@ function MenuItemRow({
   onMinus,
   onExpand,
   onEnter,
-  onLeave
+  onLeave,
+  lang
 }) {
   const size = card ? 96 : 92,
     ring = selected && !off ? '0 0 0 2.5px var(--tl-ink)' : 'none';
   return /*#__PURE__*/React.createElement("div", {
     onClick: off ? undefined : onOpen,
+    ...__ds_scope.__btn(off ? undefined : onOpen, undefined, undefined, true),
     onMouseEnter: onEnter,
     onMouseLeave: onLeave,
     style: {
@@ -56,7 +58,9 @@ function MenuItemRow({
     style: {
       font: (card ? '700 14.5px/1.3' : '700 15px/1.3') + ' Manrope,sans-serif'
     }
-  }, name), desc ? /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", {
+    ...__ds_scope.__btn(off ? undefined : onOpen)
+  }, name)), desc ? /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 4,
       font: '400 12px/1.45 Manrope,sans-serif',
@@ -103,6 +107,7 @@ function MenuItemRow({
       boxShadow: card ? 'none' : ring
     }
   }, off ? null : /*#__PURE__*/React.createElement(AddPill, {
+    lang: lang,
     dark: true,
     qty: qty,
     open: open,
@@ -118,7 +123,12 @@ function AddPill({
   dark,
   onPlus,
   onMinus,
-  onExpand
+  onExpand,
+  lang,
+  removeLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Remove" : "Quitar",
+  decLabel = typeof lang !== 'undefined' && lang === 'EN' ? "One less" : "Uno menos",
+  addLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Add" : "Agregar",
+  qtyLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Quantity" : "Cantidad"
 }) {
   const x = qty > 0 && open,
     st = e => e.stopPropagation(),
@@ -155,6 +165,7 @@ function AddPill({
   };
   return /*#__PURE__*/React.createElement("div", {
     onClick: st,
+    role: 'presentation',
     style: {
       ...box,
       overflow: 'hidden',
@@ -166,8 +177,9 @@ function AddPill({
     }
   }, /*#__PURE__*/React.createElement("span", {
     onClick: left,
+    ...__ds_scope.__key(x ? left : undefined),
     role: "button",
-    "aria-label": qty === 1 ? 'Quitar' : 'Uno menos',
+    "aria-label": qty === 1 ? removeLabel : decLabel,
     "aria-hidden": !x,
     style: {
       width: 32,
@@ -192,8 +204,9 @@ function AddPill({
     }
   }, qty), /*#__PURE__*/React.createElement("span", {
     onClick: right,
+    ...__ds_scope.__key(right),
     role: "button",
-    "aria-label": qty === 0 || x ? 'Agregar' : 'Cantidad: ' + qty,
+    "aria-label": qty === 0 || x ? addLabel : qtyLabel + ': ' + qty,
     style: {
       width: dark ? 26 : 34,
       height: '100%',
@@ -227,10 +240,12 @@ function MenuTile({
   onMinus,
   onExpand,
   onEnter,
-  onLeave
+  onLeave,
+  lang
 }) {
   return /*#__PURE__*/React.createElement("div", {
     onClick: onOpen,
+    ...__ds_scope.__btn(onOpen, undefined, undefined, true),
     onMouseEnter: onEnter,
     onMouseLeave: onLeave,
     style: {
@@ -249,6 +264,7 @@ function MenuTile({
       boxShadow: selected ? '0 0 0 2.5px var(--tl-ink)' : 'none'
     }
   }, off ? null : /*#__PURE__*/React.createElement(AddPill, {
+    lang: lang,
     qty: qty,
     open: open,
     onPlus: onPlus,
@@ -259,7 +275,9 @@ function MenuTile({
       marginTop: 8,
       font: '700 13px/1.3 Manrope,sans-serif'
     }
-  }, name), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", {
+    ...__ds_scope.__btn(onOpen)
+  }, name)), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 4,
       display: 'flex',
@@ -390,7 +408,9 @@ function QtyStepper({
   value = 1,
   size = 'md',
   onDec,
-  onInc
+  onInc,
+  incLabel = typeof lang !== 'undefined' && lang === 'EN' ? "One more" : "Uno más",
+  decLabel = typeof lang !== 'undefined' && lang === 'EN' ? "One less" : "Uno menos"
 }) {
   const md = size === 'md',
     h = md ? 50 : 30,
@@ -418,6 +438,7 @@ function QtyStepper({
     }
   }, /*#__PURE__*/React.createElement("div", {
     onClick: onDec,
+    ...__ds_scope.__btn(onDec, decLabel, undefined),
     style: btn
   }, "\u2212"), /*#__PURE__*/React.createElement("span", {
     style: {
@@ -427,6 +448,7 @@ function QtyStepper({
     }
   }, value), /*#__PURE__*/React.createElement("div", {
     onClick: onInc,
+    ...__ds_scope.__btn(onInc, incLabel, undefined),
     style: btn
   }, "+"));
 }
@@ -439,6 +461,7 @@ function OrderBar({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClick,
+    ...__ds_scope.__btn(onClick, undefined, undefined),
     style: {
       padding: '12px 14px',
       borderRadius: 16,
@@ -511,6 +534,8 @@ function CartLine({
     }
   }, /*#__PURE__*/React.createElement("span", {
     onClick: onEdit,
+    role: 'presentation',
+    'aria-hidden': true,
     style: {
       width: 48,
       height: 48,
@@ -550,6 +575,7 @@ function CartLine({
     }
   }, summary) : null, onEdit ? /*#__PURE__*/React.createElement("span", {
     onClick: onEdit,
+    ...__ds_scope.__btn(onEdit, undefined, undefined),
     style: {
       display: 'inline-block',
       marginTop: 4,

@@ -93,6 +93,7 @@ function BusinessCard({
   };
   if (plan === 'free') return /*#__PURE__*/React.createElement("div", {
     onClick: onOpen,
+    ...__ds_scope.__btn(onOpen, undefined, undefined, true),
     style: {
       borderRadius: 18,
       background: 'var(--tl-white)',
@@ -122,7 +123,9 @@ function BusinessCard({
       font: '700 14.5px Manrope,sans-serif',
       color: 'var(--tl-ink)'
     }
-  }, name), meta ? /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", {
+    ...__ds_scope.__btn(onOpen)
+  }, name)), meta ? /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 4,
       font: '600 10.5px ' + mono,
@@ -145,6 +148,7 @@ function BusinessCard({
   }, contactLabel));
   return /*#__PURE__*/React.createElement("div", {
     onClick: onOpen,
+    ...__ds_scope.__btn(onOpen, undefined, undefined, true),
     style: {
       borderRadius: 22,
       overflow: 'hidden',
@@ -175,7 +179,9 @@ function BusinessCard({
       font: '800 17px Sora,sans-serif',
       letterSpacing: '-.03em'
     }
-  }, name), verified ? /*#__PURE__*/React.createElement(Check, null) : null), meta ? /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", {
+    ...__ds_scope.__btn(onOpen)
+  }, name)), verified ? /*#__PURE__*/React.createElement(Check, null) : null), meta ? /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 6,
       font: '600 10.5px ' + mono,

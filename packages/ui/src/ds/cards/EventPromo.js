@@ -71,6 +71,7 @@ function EventPromo({
     }
   }, price)), /*#__PURE__*/React.createElement("div", {
     onClick: onPrimary,
+    ...__ds_scope.__btn(onPrimary, undefined, undefined),
     style: {
       padding: '11px 16px',
       borderRadius: 12,
@@ -81,6 +82,7 @@ function EventPromo({
     }
   }, primary), secondary ? /*#__PURE__*/React.createElement("div", {
     onClick: onSecondary,
+    ...__ds_scope.__btn(onSecondary, undefined, undefined),
     style: {
       padding: '11px 14px',
       borderRadius: 12,

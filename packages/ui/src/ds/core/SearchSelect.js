@@ -44,6 +44,7 @@ function SearchSelect({
       role: "option",
       "aria-selected": on,
       onClick: () => onPick && onPick(m.k),
+      ...__ds_scope.__key(() => onPick && onPick(m.k)),
       style: {
         display: 'flex',
         alignItems: 'center',
@@ -111,6 +112,7 @@ function SearchSelect({
     }
   }, empty) : null, other ? /*#__PURE__*/React.createElement("div", {
     onClick: other.onClick,
+    ...__ds_scope.__btn(other.onClick, undefined, undefined),
     style: {
       marginTop: 4,
       borderTop: '1px solid rgba(11,14,18,.08)',

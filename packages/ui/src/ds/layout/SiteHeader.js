@@ -80,10 +80,12 @@ function Bell({
 }
 function Avatar({
   initials,
-  onClick
+  onClick,
+  avatarLabel = typeof lang !== 'undefined' && lang === 'EN' ? "My account" : "Mi cuenta"
 }) {
   return /*#__PURE__*/React.createElement("span", {
     onClick: onClick,
+    ...__ds_scope.__btn(onClick, avatarLabel, undefined),
     style: {
       width: 40,
       height: 40,
@@ -104,6 +106,7 @@ function Lang({
 }) {
   return /*#__PURE__*/React.createElement("span", {
     onClick: onClick,
+    ...__ds_scope.__btn(onClick, (lang === 'EN' ? 'Language: ' : 'Idioma: ') + lang, undefined),
     style: {
       padding: '8px 10px',
       borderRadius: 11,
@@ -146,7 +149,8 @@ function SiteHeader({
 }) {
   const auth = member ? /*#__PURE__*/React.createElement(Avatar, {
     initials: initials,
-    onClick: onAvatar
+    onClick: onAvatar,
+    avatarLabel: lang === 'EN' ? 'My account' : 'Mi cuenta'
   }) : null;
   if (variant === 'mobile') return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -168,6 +172,7 @@ function SiteHeader({
     }
   }, /*#__PURE__*/React.createElement("div", {
     onClick: onHome,
+    ...__ds_scope.__btn(onHome, "To\u2019Latino", undefined),
     style: {
       flex: 1,
       minWidth: 0,
@@ -192,6 +197,7 @@ function SiteHeader({
     onClick: onLogin
   }, loginLabel)), compact ? null : /*#__PURE__*/React.createElement("div", {
     onClick: onSearch,
+    ...__ds_scope.__btn(onSearch, undefined, undefined, !!onCity),
     style: {
       marginTop: 12,
       display: 'flex',
@@ -217,8 +223,11 @@ function SiteHeader({
       overflow: 'hidden',
       textOverflow: 'ellipsis'
     }
-  }, searchPlaceholder || 'Buscar en ' + cityShort), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
+    ...(onCity ? __ds_scope.__btn(onSearch) : {})
+  }, searchPlaceholder || 'Buscar en ' + cityShort)), /*#__PURE__*/React.createElement("span", {
     onClick: stop(onCity),
+    ...__ds_scope.__btn(stop(onCity), undefined, undefined),
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -257,6 +266,7 @@ function SiteHeader({
     }
   }, /*#__PURE__*/React.createElement("div", {
     onClick: onHome,
+    ...__ds_scope.__btn(onHome, "To\u2019Latino", undefined),
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -270,6 +280,7 @@ function SiteHeader({
     base: assetBase
   })), /*#__PURE__*/React.createElement("div", {
     onClick: onSearch,
+    ...__ds_scope.__btn(onSearch, undefined, undefined, !!onCity),
     style: {
       flex: 1,
       minWidth: 0,
@@ -296,8 +307,11 @@ function SiteHeader({
       overflow: 'hidden',
       textOverflow: 'ellipsis'
     }
-  }, searchPlaceholder || 'Buscar negocios, eventos y más en ' + cityShort), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
+    ...(onCity ? __ds_scope.__btn(onSearch) : {})
+  }, searchPlaceholder || 'Buscar negocios, eventos y más en ' + cityShort)), /*#__PURE__*/React.createElement("span", {
     onClick: stop(onCity),
+    ...__ds_scope.__btn(stop(onCity), undefined, undefined),
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -345,6 +359,7 @@ function SiteHeader({
     return /*#__PURE__*/React.createElement("div", {
       key: t.id,
       onClick: () => onTab && onTab(t.id),
+      ...__ds_scope.__btn(() => onTab && onTab(t.id), undefined, undefined),
       style: {
         flex: 'none',
         display: 'flex',

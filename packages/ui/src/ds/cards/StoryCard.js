@@ -16,7 +16,9 @@ function StoryCard({
   arrows = false,
   width = 230,
   height = 300,
-  onEnd
+  onEnd,
+  prevLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Previous" : "Anterior",
+  nextLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Next" : "Siguiente"
 }) {
   const [i, setI] = React.useState(0);
   const n = posts.length,
@@ -34,6 +36,7 @@ function StoryCard({
   const mono = (w, s, ls) => `${w} ${s}px 'JetBrains Mono',monospace`;
   const arrow = (dir, on) => on ? /*#__PURE__*/React.createElement("div", {
     onClick: dir < 0 ? back : fwd,
+    ...__ds_scope.__btn(dir < 0 ? back : fwd, dir < 0 ? prevLabel : nextLabel, undefined),
     style: {
       position: 'absolute',
       [dir < 0 ? 'left' : 'right']: 8,
@@ -152,6 +155,8 @@ function StoryCard({
     }
   }, distance) : null), /*#__PURE__*/React.createElement("div", {
     onClick: back,
+    role: 'presentation',
+    'aria-hidden': true,
     style: {
       position: 'absolute',
       left: 0,
@@ -162,6 +167,8 @@ function StoryCard({
     }
   }), /*#__PURE__*/React.createElement("div", {
     onClick: fwd,
+    role: 'presentation',
+    'aria-hidden': true,
     style: {
       position: 'absolute',
       right: 0,

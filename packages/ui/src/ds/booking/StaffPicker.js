@@ -94,6 +94,7 @@ function ServiceRow({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClick,
+    ...__ds_scope.__btn(onClick, undefined, undefined),
     style: {
       padding: '13px 14px',
       borderRadius: 15,
@@ -363,6 +364,7 @@ function TotalBar({
     }
   }, total)), /*#__PURE__*/React.createElement("div", {
     onClick: onCta,
+    ...__ds_scope.__btn(onCta, undefined, undefined),
     style: {
       flex: 1,
       padding: 14,

@@ -121,6 +121,7 @@ function FeedPost({
     }
   }, answer.meta)), /*#__PURE__*/React.createElement("div", {
     onClick: answer.onOpen,
+    ...__ds_scope.__btn(answer.onOpen, undefined, undefined),
     style: {
       padding: '8px 12px',
       borderRadius: 10,

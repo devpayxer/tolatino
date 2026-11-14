@@ -55,6 +55,7 @@ function BottomNav({
     return /*#__PURE__*/React.createElement("div", {
       key: it.id,
       onClick: () => onChange && onChange(it.id),
+      ...__ds_scope.__btn(() => onChange && onChange(it.id), undefined, { 'aria-current': it.id === active ? 'page' : undefined }),
       style: {
         flex: 1,
         display: 'flex',

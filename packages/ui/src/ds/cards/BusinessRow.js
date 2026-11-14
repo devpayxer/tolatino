@@ -16,6 +16,7 @@ function BusinessRow({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClick,
+    ...__ds_scope.__btn(onClick, undefined, undefined),
     style: {
       display: 'flex',
       gap: 12,

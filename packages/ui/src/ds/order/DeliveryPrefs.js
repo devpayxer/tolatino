@@ -64,6 +64,7 @@ function DeliveryPrefs({
   }, options.map((o, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     onClick: o.onClick,
+    ...__ds_scope.__btn(o.onClick, undefined, undefined),
     style: {
       padding: wide ? 14 : 12,
       borderRadius: 14,
@@ -175,6 +176,7 @@ function DeliveryPrefs({
     }
   }, hint)) : null, saveLabel ? /*#__PURE__*/React.createElement("div", {
     onClick: onSave,
+    ...__ds_scope.__btn(onSave, undefined, undefined),
     style: {
       marginTop: 12,
       paddingTop: 12,
@@ -366,6 +368,7 @@ function ChangeProposal({
   }, options.map((x, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     onClick: x.onClick,
+    ...__ds_scope.__btn(x.onClick, undefined, undefined),
     style: {
       padding: '12px 14px',
       borderRadius: 14,
@@ -429,6 +432,7 @@ function HelpReasonList({
   }, items.map((r, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     onClick: r.onClick,
+    ...__ds_scope.__btn(r.onClick, undefined, undefined),
     style: {
       display: 'flex',
       gap: 12,
@@ -484,6 +488,7 @@ function RequestCard({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClick,
+    ...__ds_scope.__btn(onClick, undefined, undefined),
     style: {
       padding: '14px 16px',
       borderRadius: 18,
@@ -541,7 +546,11 @@ function AuthSheet({
   onChange,
   onClose,
   terms,
-  desktop
+  desktop,
+  error,
+  phoneLabel = 'Tu teléfono',
+  codeLabel = 'Código de 6 dígitos',
+  closeLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Close" : "Cerrar"
 }) {
   const input = {
     flex: 1,
@@ -595,6 +604,7 @@ function AuthSheet({
     }
   }, sub)), /*#__PURE__*/React.createElement("div", {
     onClick: onClose,
+    ...__ds_scope.__btn(onClose, closeLabel, undefined),
     style: {
       width: 34,
       height: 34,
@@ -608,7 +618,16 @@ function AuthSheet({
     name: "close",
     size: 14,
     strokeWidth: 2.4
-  }))), step === 'phone' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
+    id: 'tl-auth-error',
+    role: 'alert',
+    'aria-live': 'assertive',
+    style: error ? {
+      font: '600 12.5px/1.4 Manrope,sans-serif',
+      color: 'var(--tl-danger)',
+      margin: '12px 0 0'
+    } : undefined
+  }, error || null), step === 'phone' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       ...K,
       marginTop: 18
@@ -640,6 +659,10 @@ function AuthSheet({
     onChange: onPhone,
     placeholder: "(570) 555-0142",
     inputMode: "tel",
+    autoComplete: "tel",
+    "aria-label": phoneLabel,
+    "aria-invalid": error ? true : undefined,
+    "aria-describedby": error ? 'tl-auth-error' : undefined,
     style: input
   })), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -667,6 +690,10 @@ function AuthSheet({
     onChange: onCode,
     placeholder: "\u2022\u2022\u2022\u2022\u2022\u2022",
     inputMode: "numeric",
+    autoComplete: "one-time-code",
+    "aria-label": codeLabel,
+    "aria-invalid": error ? true : undefined,
+    "aria-describedby": error ? 'tl-auth-error' : undefined,
     maxLength: 6,
     style: {
       marginTop: 8,
@@ -697,6 +724,7 @@ function AuthSheet({
     }
   }, /*#__PURE__*/React.createElement("span", {
     onClick: onChange,
+    ...__ds_scope.__btn(onChange, undefined, undefined),
     style: {
       font: '700 12.5px Manrope,sans-serif',
       color: 'var(--tl-action)',

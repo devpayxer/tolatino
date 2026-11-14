@@ -109,6 +109,7 @@ function RideSearch({
     size: 16
   }), seats)), /*#__PURE__*/React.createElement("div", {
     onClick: onSearch,
+    ...__ds_scope.__btn(onSearch, undefined, undefined),
     style: {
       marginTop: 12,
       padding: 14,

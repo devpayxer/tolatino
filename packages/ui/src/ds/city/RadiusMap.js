@@ -169,6 +169,7 @@ function RadiusMap({
   }, radii.map((r, i) => /*#__PURE__*/React.createElement("span", {
     key: i,
     onClick: r.onClick,
+    ...__ds_scope.__btn(r.onClick, undefined, undefined),
     style: {
       height: desk ? 34 : 38,
       borderRadius: desk ? 10 : 11,
@@ -483,6 +484,7 @@ function CitySoon({
     onClick: publish.onClick
   }, publish.label)), has(recommend.label) ? /*#__PURE__*/React.createElement("span", {
     onClick: recommend.onClick,
+    ...__ds_scope.__btn(recommend.onClick, undefined, undefined),
     style: {
       textAlign: 'center',
       padding: 6,

@@ -164,6 +164,7 @@ function HoursPro({
     }
   }, x.text))))), /*#__PURE__*/React.createElement("div", {
     onClick: () => setOpen(!open),
+    ...__ds_scope.__btn(() => setOpen(!open), undefined, { 'aria-expanded': !!open }),
     style: {
       marginTop: 12,
       display: 'flex',

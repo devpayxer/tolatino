@@ -271,6 +271,7 @@ function PaymentSummary({
   }, hold.foot) : null) : null, card ? /*#__PURE__*/React.createElement("div", {
     "data-screen-label": card.screenLabel,
     onClick: card.onClick,
+    ...__ds_scope.__btn(card.onClick, undefined, undefined),
     style: {
       marginTop: 14,
       padding: '11px 12px',

@@ -33,6 +33,7 @@ function OwnerCard({
   const person = !!(name && quote);
   const Team = team.length ? /*#__PURE__*/React.createElement("div", {
     onClick: onTeam,
+    ...__ds_scope.__btn(onTeam, teamLabel, undefined),
     style: {
       marginTop: 14,
       display: 'flex',
@@ -268,6 +269,7 @@ function TodayCard({
     color: "rgba(11,14,18,.5)"
   }), noLabel) : /*#__PURE__*/React.createElement("span", null), linkLabel ? /*#__PURE__*/React.createElement("span", {
     onClick: onLink,
+    ...__ds_scope.__btn(onLink, undefined, undefined),
     style: {
       font: '700 12.5px Manrope,sans-serif',
       color: 'var(--tl-action)',

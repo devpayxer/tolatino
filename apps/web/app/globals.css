@@ -96,3 +96,11 @@
   .hs { scrollbar-width: none; }
   .hs::-webkit-scrollbar { display: none; }
 }
+
+/* 9c · Foco visible para quien usa el teclado (WCAG 2.4.7, 2.4.11). Solo con :focus-visible: con el ratón o el dedo no se ve nada
+   distinto. Brand se lee sobre el papel, el blanco y la tinta (más de 3:1 en los tres); !important porque muchos controles
+   del sistema traen `outline: none` en su estilo en línea. Un solo lugar: nada de anillos propios por pantalla. */
+:is(a, button, input, select, textarea, summary, [role="button"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="option"], [role="link"], [tabindex="0"]):focus-visible {
+  outline: 2px solid var(--tl-brand) !important;
+  outline-offset: 2px !important;
+}

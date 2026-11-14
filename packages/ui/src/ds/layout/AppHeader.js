@@ -92,6 +92,7 @@ function AppHeader({
     }
   }, radius, " DE RADIO"))), /*#__PURE__*/React.createElement("div", {
     onClick: onLang,
+    ...__ds_scope.__btn(onLang, undefined, undefined),
     style: {
       padding: '10px 12px',
       borderRadius: 14,
@@ -154,6 +155,7 @@ function AppHeader({
     }
   }, /*#__PURE__*/React.createElement("div", {
     onClick: onLang,
+    ...__ds_scope.__btn(onLang, undefined, undefined),
     style: {
       padding: '7px 10px',
       borderRadius: dark ? 10 : 11,

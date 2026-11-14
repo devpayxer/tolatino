@@ -68,7 +68,9 @@ function CompaFrame({
   composer,
   bodyRef,
   maxWidth,
-  children
+  children,
+  backLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Back" : "Volver",
+  closeLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Close" : "Cerrar"
 }) {
   useKF();
   const sheet = mode === 'sheet',
@@ -121,6 +123,8 @@ function CompaFrame({
     style: wrap
   }, sheet ? /*#__PURE__*/React.createElement("div", {
     onClick: onClose,
+    role: 'presentation',
+    'aria-hidden': true,
     style: {
       position: 'absolute',
       inset: 0,
@@ -179,6 +183,7 @@ function CompaFrame({
     }
   }, sub) : null), /*#__PURE__*/React.createElement("span", {
     onClick: onClose,
+    ...__ds_scope.__btn(onClose, closeLabel, undefined),
     style: {
       width: 34,
       height: 34,
@@ -209,6 +214,7 @@ function CompaFrame({
     }
   }, /*#__PURE__*/React.createElement("span", {
     onClick: onBack,
+    ...__ds_scope.__btn(onBack, backLabel, undefined),
     style: {
       width: 34,
       height: 34,
@@ -240,6 +246,7 @@ function CompaFrame({
     }
   }, sub) : null), has(personLabel) ? /*#__PURE__*/React.createElement("span", {
     onClick: onPerson,
+    ...__ds_scope.__btn(onPerson, undefined, undefined),
     style: {
       height: 34,
       padding: '0 12px',
@@ -281,6 +288,7 @@ function CompaFrame({
     first: true
   }, disclaimer) : null, children, sheet && has(person2Label) ? /*#__PURE__*/React.createElement("div", {
     onClick: onPerson,
+    ...__ds_scope.__btn(onPerson, undefined, undefined),
     style: {
       margin: '16px 14px 0',
       textAlign: 'center',
@@ -625,7 +633,8 @@ function CompaComposer({
   onSend,
   placeholder,
   canSend,
-  maxWidth = 'none'
+  maxWidth = 'none',
+  sendLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Send" : "Enviar"
 }) {
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -662,6 +671,7 @@ function CompaComposer({
     }
   }), /*#__PURE__*/React.createElement("span", {
     onClick: onSend,
+    ...__ds_scope.__btn(onSend, sendLabel, undefined),
     style: {
       width: 44,
       height: 44,

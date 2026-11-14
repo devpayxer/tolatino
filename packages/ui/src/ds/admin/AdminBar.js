@@ -72,6 +72,7 @@ function AdminNote({
     }
   }, children), has(cta) ? /*#__PURE__*/React.createElement("span", {
     onClick: onCta,
+    ...__ds_scope.__btn(onCta, undefined, undefined),
     style: {
       font: '800 12.5px Manrope,sans-serif',
       color: fg,
@@ -94,7 +95,10 @@ function AdminBar({
   onBell,
   me = {},
   onMe,
-  badge = 'ADMIN'
+  badge = 'ADMIN',
+  meLabel = typeof lang !== 'undefined' && lang === 'EN' ? "My account" : "Mi cuenta",
+  bellLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Notifications" : "Notificaciones",
+  searchLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Search" : "Buscar"
 }) {
   const logo = desk ? 30 : 28,
     segH = desk ? 28 : 26,
@@ -110,6 +114,7 @@ function AdminBar({
     }
   }, /*#__PURE__*/React.createElement("div", {
     onClick: onHome,
+    ...__ds_scope.__btn(onHome, undefined, undefined),
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -149,6 +154,7 @@ function AdminBar({
     }
   }, desk ? /*#__PURE__*/React.createElement("div", {
     onClick: onSearch,
+    ...__ds_scope.__btn(onSearch, undefined, undefined),
     style: {
       flex: 1,
       minWidth: 0,
@@ -194,6 +200,7 @@ function AdminBar({
   }, cities.map((o, i) => /*#__PURE__*/React.createElement("span", {
     key: i,
     onClick: o.onClick,
+    ...__ds_scope.__btn(o.onClick, undefined, undefined),
     style: {
       height: segH,
       padding: '0 10px',
@@ -208,6 +215,7 @@ function AdminBar({
     }
   }, o.label))) : null, !desk ? /*#__PURE__*/React.createElement("span", {
     onClick: onSearch,
+    ...__ds_scope.__btn(onSearch, searchLabel, undefined),
     style: {
       width: 36,
       height: 36,
@@ -223,6 +231,7 @@ function AdminBar({
     size: 17
   })) : null, /*#__PURE__*/React.createElement("span", {
     onClick: onBell,
+    ...__ds_scope.__btn(onBell, bellLabel, undefined),
     style: {
       position: 'relative',
       width: btn,
@@ -256,6 +265,7 @@ function AdminBar({
     }
   }, count) : null), /*#__PURE__*/React.createElement("span", {
     onClick: onMe,
+    ...__ds_scope.__btn(onMe, meLabel, undefined),
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -344,6 +354,7 @@ function AdminNav({
     return /*#__PURE__*/React.createElement("span", {
       key: i,
       onClick: n.onClick,
+      ...__ds_scope.__btn(n.onClick, undefined, undefined),
       style: {
         display: 'flex',
         alignItems: 'center',
@@ -455,6 +466,7 @@ function Pager({
 }) {
   const b = (on, f, t) => /*#__PURE__*/React.createElement("span", {
     onClick: on ? f : undefined,
+    ...__ds_scope.__btn(on ? f : undefined, undefined, undefined),
     style: {
       height: 32,
       padding: '0 12px',
@@ -537,6 +549,7 @@ function DenseTable({
   })) : null, rows.map((r, i) => /*#__PURE__*/React.createElement("div", {
     key: r.key || i,
     onClick: r.onClick,
+    ...__ds_scope.__btn(r.onClick, undefined, undefined),
     style: {
       display: 'grid',
       gridTemplateColumns: cols,
@@ -599,6 +612,7 @@ function AdminRow({
     }
   }, /*#__PURE__*/React.createElement("div", {
     onClick: onClick,
+    ...__ds_scope.__btn(onClick, undefined, undefined, toggle != null),
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -643,7 +657,9 @@ function AdminRow({
       font: '700 14px/1.3 Manrope,sans-serif',
       color: titleColor
     }
-  }, title), has(sub) ? /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
+    ...(toggle != null ? __ds_scope.__btn(onClick) : {})
+  }, title)), has(sub) ? /*#__PURE__*/React.createElement("span", {
     style: {
       display: 'block',
       marginTop: 3,
@@ -681,6 +697,7 @@ function AdminRow({
     }
   }, right2) : null) : null, toggle != null ? /*#__PURE__*/React.createElement("span", {
     onClick: onToggle,
+    ...__ds_scope.__btn(onToggle, title, { role: 'switch', 'aria-checked': !!toggle }),
     style: {
       width: 42,
       height: 24,
@@ -749,6 +766,7 @@ function AdminList({
     style: KEY
   }, label), has(link) ? /*#__PURE__*/React.createElement("span", {
     onClick: onLink,
+    ...__ds_scope.__btn(onLink, undefined, undefined),
     style: {
       font: '700 12px Manrope,sans-serif',
       color: ACC,
@@ -790,6 +808,7 @@ function QueueCard({
   const [ibg, ifg, sbg, sfg] = SLA[state] || SLA.ok;
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClick,
+    ...__ds_scope.__btn(onClick, undefined, undefined),
     style: {
       flexShrink: 0,
       padding: '12px 14px',
@@ -936,6 +955,7 @@ function AuditRow({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClick,
+    ...__ds_scope.__btn(onClick, undefined, undefined),
     style: {
       display: 'grid',
       gridTemplateColumns: '30px minmax(0,1fr) auto',
@@ -1097,6 +1117,7 @@ function PermMatrix({
     return /*#__PURE__*/React.createElement("span", {
       key: j,
       onClick: f || undefined,
+      ...__ds_scope.__btn(f || undefined, r.label, { role: 'checkbox', 'aria-checked': !!on }),
       style: {
         height: 26,
         borderRadius: 8,
@@ -1125,6 +1146,7 @@ function KpiCard({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClick,
+    ...__ds_scope.__btn(onClick, undefined, undefined),
     style: {
       minWidth: 0,
       padding: '13px 14px',
@@ -1411,6 +1433,7 @@ function ReasonConfirm({
     }
   }, onBack ? /*#__PURE__*/React.createElement("span", {
     onClick: onBack,
+    ...__ds_scope.__btn(onBack, backLabel, undefined),
     style: {
       width: 36,
       height: 36,

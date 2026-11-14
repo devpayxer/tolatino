@@ -115,6 +115,7 @@ function RideCard({
     }
   }, seats) : null), /*#__PURE__*/React.createElement("span", {
     onClick: onCta,
+    ...__ds_scope.__btn(onCta, undefined, undefined),
     style: {
       padding: '8px 14px',
       borderRadius: 11,

@@ -29,6 +29,7 @@ function Link({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     onClick: l.onClick,
+    ...__ds_scope.__btn(l.onClick, undefined, undefined),
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -121,6 +122,7 @@ function SiteFooter({
   }, stores.map(s => /*#__PURE__*/React.createElement("span", {
     key: s.label,
     onClick: s.onClick,
+    ...__ds_scope.__btn(s.onClick, undefined, undefined),
     style: {
       padding: '10px 14px',
       borderRadius: 11,
@@ -170,6 +172,7 @@ function SiteFooter({
   }, quick.map(l => /*#__PURE__*/React.createElement("span", {
     key: l.label,
     onClick: l.onClick,
+    ...__ds_scope.__btn(l.onClick, undefined, undefined),
     style: {
       font: '700 13px Manrope,sans-serif',
       cursor: 'pointer'
@@ -181,6 +184,7 @@ function SiteFooter({
     }
   }, /*#__PURE__*/React.createElement("div", {
     onClick: () => setOpen(open === i ? null : i),
+    ...__ds_scope.__btn(() => setOpen(open === i ? null : i), undefined, { 'aria-expanded': open === i }),
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -267,6 +271,7 @@ function SiteFooter({
   }, "\xA9 ", new Date().getFullYear(), " TO\u2019LATINO"), legal.map(l => /*#__PURE__*/React.createElement("span", {
     key: l.label,
     onClick: l.onClick,
+    ...__ds_scope.__btn(l.onClick, undefined, undefined),
     style: {
       color: 'rgba(255,255,255,.62)',
       cursor: 'pointer'
@@ -280,6 +285,7 @@ function SiteFooter({
     }
   }, /*#__PURE__*/React.createElement("span", {
     onClick: onLang,
+    ...__ds_scope.__btn(onLang, undefined, undefined),
     style: pill
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "globe",
@@ -287,6 +293,7 @@ function SiteFooter({
     color: "var(--tl-white)"
   }), langLabel), /*#__PURE__*/React.createElement("span", {
     onClick: onCity,
+    ...__ds_scope.__btn(onCity, undefined, undefined),
     style: pill
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "pin",
@@ -295,6 +302,7 @@ function SiteFooter({
   }), cityLabel), social.map(l => /*#__PURE__*/React.createElement("span", {
     key: l.label,
     onClick: l.onClick,
+    ...__ds_scope.__btn(l.onClick, undefined, undefined),
     style: {
       padding: '8px 10px',
       font: '700 10.5px ' + mono,

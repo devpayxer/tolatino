@@ -19,6 +19,7 @@ const Tr = ({
   }
 }, /*#__PURE__*/React.createElement("span", {
   onClick: t.onClick,
+  ...__ds_scope.__btn(t.onClick, undefined, undefined),
   style: {
     font: '700 12px Manrope,sans-serif',
     color: 'var(--tl-action)',
@@ -49,7 +50,9 @@ function ReviewCard({
   reply,
   helpful,
   edit,
-  report
+  report,
+  helpfulLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Helpful" : "Útil",
+  photoLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Photo" : "Foto"
 }) {
   const S = summary;
   return /*#__PURE__*/React.createElement("div", {
@@ -170,6 +173,7 @@ function ReviewCard({
   }, photos.map((p, i) => /*#__PURE__*/React.createElement("span", {
     key: i,
     onClick: p.onClick,
+    ...__ds_scope.__btn(p.onClick, photoLabel, undefined),
     style: {
       width: S ? 64 : 76,
       height: S ? 64 : 76,
@@ -237,6 +241,7 @@ function ReviewCard({
     }
   }, helpful && helpful.onClick ? /*#__PURE__*/React.createElement("span", {
     onClick: helpful.onClick,
+    ...__ds_scope.__btn(helpful.onClick, helpfulLabel, undefined),
     style: {
       display: 'inline-flex',
       alignItems: 'center',
@@ -266,6 +271,7 @@ function ReviewCard({
     }
   }), edit ? /*#__PURE__*/React.createElement("span", {
     onClick: edit.onClick,
+    ...__ds_scope.__btn(edit.onClick, undefined, undefined),
     style: {
       font: '700 12px Manrope,sans-serif',
       color: 'var(--tl-action)',
@@ -273,6 +279,7 @@ function ReviewCard({
     }
   }, edit.label) : null, report ? /*#__PURE__*/React.createElement("span", {
     onClick: report.onClick,
+    ...__ds_scope.__btn(report.onClick, undefined, undefined),
     style: {
       font: '600 12px Manrope,sans-serif',
       color: report.color || 'rgba(11,14,18,.5)',

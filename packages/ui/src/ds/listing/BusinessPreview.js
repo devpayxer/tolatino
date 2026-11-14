@@ -67,6 +67,7 @@ function PlanSwitch({
   }, items.map((o, i) => /*#__PURE__*/React.createElement("span", {
     key: i,
     onClick: o.onClick,
+    ...__ds_scope.__btn(o.onClick, undefined, undefined),
     style: {
       height: 38,
       borderRadius: 11,
@@ -95,6 +96,7 @@ function BusinessPreview({
   if (mode === 'mini') return /*#__PURE__*/React.createElement("div", {
     "data-screen-label": "Vista previa \xB7 tarjeta compacta",
     onClick: onOpen,
+    ...__ds_scope.__btn(onOpen, undefined, undefined),
     style: {
       display: 'flex',
       alignItems: 'center',

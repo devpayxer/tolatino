@@ -44,6 +44,7 @@ function SectionHeader({
     }
   }, title)), action ? /*#__PURE__*/React.createElement("span", {
     onClick: onAction,
+    ...__ds_scope.__btn(onAction, undefined, undefined),
     style: {
       font: '700 12px Manrope,sans-serif',
       color: 'var(--tl-action)',

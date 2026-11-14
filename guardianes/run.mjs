@@ -1198,20 +1198,26 @@ const guardianes = {
     if (n > TOPE) falla("panelClicMudo", f, 1, `${n} «role=button» sin foco en los bloques del panel (tope ${TOPE}): usa <button type="button">`);
   },
 
-  /* 3o-bis. Clics mudos del sistema de diseño portado: un onClick en un <div>/<span> sin rol no lo usa ni el teclado ni un
-     lector de pantalla (6 nov, 3b: día, hora, persona, opción y extra del Booking). Los de reserva y Chip ya se corrigieron en
-     scripts/portar-sistema.mjs; los demás (fondos de hojas, cruces, filas) van en el bloque de accesibilidad del sistema
-     (LAUNCH-CHECKLIST). Trinquete: el número no puede subir; cuando baja, se baja el tope aquí. */
+  /* 3o-bis. Clics mudos del sistema de diseño portado: un onClick en un <div>/<span> que no es un control no lo usa ni el teclado ni un
+     lector de pantalla (6 nov, 3b: día, hora, persona, opción y extra del Booking). 9c (14 nov) llevó el trinquete a CERO: cada <div>/<span>
+     con onClick trae, en su misma lista de propiedades, `__ds_scope.__btn(…)` / `__key(…)` (role=button, foco, Enter y Espacio, nombre), o
+     un rol con su tabIndex, o `role: 'presentation'` (zona de clic que repite a otro control, o contenedor con controles de verdad dentro).
+     Se arregla en la tabla A11Y de scripts/portar-sistema.mjs, nunca a mano en packages/ui (sistemaSincronizado). */
   sistemaClicMudo() {
-    const TOPE = 190;
-    let n = 0;
+    const G = "sistemaClicMudo";
     const recorrer = (d) => { for (const x of readdirSync(d)) { const p = join(d, x); if (statSync(p).isDirectory()) recorrer(p); else if (p.endsWith(".js")) {
       const L = readFileSync(p, "utf8").split("\n");
-      L.forEach((l, i) => { if (/^\s*onClick:/.test(l) && !/role:|\.\.\.btn\(|\.\.\.\(on[A-Z]\w* \? \{ role/.test(L.slice(i, i + 3).join("\n"))) n++; });
+      L.forEach((l, i) => {
+        const m = /^(\s*)onClick:/.exec(l);
+        if (!m) return;
+        let a = i; while (a > 0 && !/createElement\(/.test(L[a])) a--;
+        if (!/createElement\("(div|span)"/.test(L[a].slice(L[a].lastIndexOf("createElement(")))) return; // los componentes del sistema (Button, Chip…) ya son accesibles
+        let e = i; while (e < L.length && !(L[e].match(/^\s*/)[0].length === m[1].length - 2 && /^\s*\}/.test(L[e]))) e++;
+        const b = L.slice(a, e + 1).join("\n");
+        if (!(/__ds_scope\.__(btn|key)\(|\.\.\.btn\(|role: 'presentation'/.test(b) || (/\brole:/.test(b) && /tabIndex/.test(b)))) falla(G, p, i + 1, "clic sin rol, foco ni teclado en un <div>/<span> del sistema portado: agrégalo a la tabla A11Y de scripts/portar-sistema.mjs");
+      });
     } } };
     if (existsSync("packages/ui/src/ds")) recorrer("packages/ui/src/ds");
-    if (n > TOPE) falla("sistemaClicMudo", "packages/ui/src/ds", 1, `${n} clics sin rol en el sistema portado (tope ${TOPE}): dale rol, foco y teclado en scripts/portar-sistema.mjs`);
-    else if (n < TOPE) console.log(`  (sistemaClicMudo: bajó a ${n}; baja el TOPE en guardianes/run.mjs)`);
   },
 
   /* 3o. Todo interruptor (role="switch") se usa con teclado: si no es un <button>, lleva tabIndex y onKeyDown; si es un

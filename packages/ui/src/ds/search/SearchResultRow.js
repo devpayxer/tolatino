@@ -51,6 +51,7 @@ function SearchResultRow({
     S = sug ? 44 : 58;
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClick,
+    ...__ds_scope.__btn(onClick, undefined, undefined),
     onMouseEnter: onHover,
     style: {
       display: 'flex',

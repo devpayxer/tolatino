@@ -18,7 +18,8 @@ function SelectionBar({
   actions = [],
   subLabel,
   sub = [],
-  top = '12px'
+  top = '12px',
+  closeLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Close" : "Cerrar"
 }) {
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -49,6 +50,7 @@ function SelectionBar({
     }
   }, title), allLabel ? /*#__PURE__*/React.createElement("span", {
     onClick: onAll,
+    ...__ds_scope.__btn(onAll, undefined, undefined),
     style: {
       font: '700 12.5px Manrope,sans-serif',
       color: 'var(--tl-signal)',
@@ -56,6 +58,7 @@ function SelectionBar({
     }
   }, allLabel) : null, /*#__PURE__*/React.createElement("span", {
     onClick: onClose,
+    ...__ds_scope.__btn(onClose, closeLabel, undefined),
     style: {
       width: 30,
       height: 30,
@@ -83,6 +86,7 @@ function SelectionBar({
     return /*#__PURE__*/React.createElement("span", {
       key: i,
       onClick: a.onClick,
+      ...__ds_scope.__btn(a.onClick, undefined, undefined),
       style: {
         flex: 'none',
         height: 34,
@@ -126,6 +130,7 @@ function SelectionBar({
   }, sub.map((a, i) => /*#__PURE__*/React.createElement("span", {
     key: i,
     onClick: a.onClick,
+    ...__ds_scope.__btn(a.onClick, undefined, undefined),
     style: {
       height: 32,
       padding: '0 12px',
@@ -144,10 +149,12 @@ function SelectionBar({
 /* La casilla de cada fila mientras seleccionas (on = tinta con ✓). */
 function SelectBox({
   on,
-  onClick
+  onClick,
+  selectLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Select" : "Seleccionar"
 }) {
   return /*#__PURE__*/React.createElement("span", {
     onClick: onClick,
+    ...__ds_scope.__btn(onClick, selectLabel, { role: 'checkbox', 'aria-checked': !!on }),
     style: {
       width: 22,
       height: 22,

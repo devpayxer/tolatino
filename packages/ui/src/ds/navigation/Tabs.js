@@ -44,6 +44,7 @@ function Tabs({
       role: "tab",
       "aria-selected": on,
       onClick: () => onChange && onChange(t.id),
+      ...__ds_scope.__key(() => onChange && onChange(t.id)),
       style: T ? {
         flex: 'none',
         display: 'flex',
