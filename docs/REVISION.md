@@ -4445,3 +4445,30 @@ pasa a «revisado» y se publica. En producción la base no deja publicar una p�
     motivo). El pie solo sale en las páginas legales: ponerlo en Inicio, la ficha y Buscar cambia capturas aprobadas (queda en LAUNCH → 9f, con tu OK).
   - **El Super Admin de Páginas está en español**, como el resto del Super Admin (el inglés del Super Admin es de 9f).
 - **Prueba:** `leg9e` (72 comprobaciones) pasó dos veces seguidas en una base local y `alreves9e` (18/18); la corrida de verdad es la del CI.
+
+## Fase 9 · 9f — Textos y páginas completo (14 nov)
+- **Qué mirar (Super Admin 570-555-0199, escritorio y teléfono):**
+  1. **Textos y páginas › Cadenas**: busca `APP-HOME.comunidad`, **Editar** (los dos idiomas, un motivo), abre la web sin sesión: el Inicio dice lo nuevo al momento, también en inglés. **Volver al código** lo deshace; **Historial** lista cada versión
+     con quién y por qué. En **Líneas fijas** no hay botón de editar (911, «Nadie te garantiza un resultado», las de §1c).
+  2. **Rótulos**: edita el nombre en inglés de una categoría y míralo en Negocios en inglés (vuelve a dejarlo como estaba).
+  3. **Home por ciudad › Hazleton**: escribe un aviso, apaga un bloque (por ejemplo Comunidad) o sube uno, **Guardar**; mira el Inicio. Crea un **anuncio** con fechas y míralo arriba del Inicio; **Retirar** lo quita (queda en la lista).
+  4. **Español / English** arriba de cada pestaña: Ayuda, Páginas, Cadenas, Rótulos y Home salen completas en inglés.
+  5. **Páginas › Pie de la web**: apagado. Si lo enciendes, Términos, Privacidad, Ayuda y Soporte salen al final del Inicio, la ficha y Buscar (**apágalo** al terminar).
+- **Decisiones que tomé (si prefieres otra, se cambia):**
+  - **Las cadenas nacen del código, no de la base.** El código es la fuente (como la ayuda y lo legal); la base guarda el texto en vigor y quién lo cambió. Lo que editas se respeta en los despliegues siguientes salvo que ya no quepa en su
+    lugar o pierda una marca `{n}`: entonces vuelve al código. Solo hay 214 cadenas con llave (el diccionario general, el Inicio, las líneas fijas y la cuenta borrada); los ~16 000 textos que siguen escritos en cada pantalla se pasan
+    poco a poco (LAUNCH → 9f). `cadenaConLlave` cuenta cuántos quedan.
+  - **Editar es instantáneo y sin segundo paso.** El plan decía borrador / vivo; lo dejé así: guardar publica, y **Dejar en borrador** es el deshacer reversible (se ve el texto del código y tu edición espera). El inglés tiene su propio estado
+    (pendiente / traducido / revisado; revisarlo pide `cms:aprobar`).
+  - **Líneas fijas con candado**, también para la base: las de §1c (las seis, palabra por palabra contra el plan), el 911 de Salud, «Nadie te garantiza un resultado» y la de cada categoría. La del «borrar mi cuenta» solo está en español en el plan: el inglés es mío.
+  - **Rótulos:** el nombre corto en español no se edita porque es la dirección de la categoría (`/c/comida`); cambiarlo rompería enlaces.
+  - **Home por ciudad:** los bloques se ordenan con CSS `order` (las categorías arriba y Publica tu negocio al final no se mueven) y el aviso fijo y los anuncios van arriba de todo. Un anuncio dura hasta 31 días, no se edita (se retira y se crea otro) y la audiencia es
+    «todos» o «vecinos con cuenta» (la de negocios quedó en LAUNCH → 9n).
+  - **El anuncio vivo de la semilla está en Allentown** (la ciudad aún no abre) para que el Inicio de Hazleton de las capturas aprobadas no cambie; el anuncio de ejemplo vence a los 30 días de aplicarse la semilla.
+  - **El pie de la web nace apagado** (`web.pie_todas`): encenderlo cambia las capturas aprobadas del Inicio, la ficha y Buscar. Necesita tu OK con las capturas nuevas; hasta entonces `pruebas/visual` queda igual (LAUNCH → 9v).
+  - **El Super Admin en inglés es por secciones:** Textos y páginas ya está completo en los dos idiomas; los demás módulos siguen en español (LAUNCH → 9f). Las piezas compartidas de confirmar con motivo siguen en español.
+  - **«Cuenta borrada»** se traduce al mostrar (el panel de Pedidos): en la base queda el mismo texto de siempre, así la purga y su prueba no cambian.
+  - **Quién ve qué:** solo el rol Admin tiene Textos y páginas; los demás roles ni entran. Editar cadenas, rótulos, el Inicio y los anuncios es `cms:editar`; revisar el inglés y encender el pie, `cms:aprobar`.
+  - **Piezas sin diseño, compuestas con lo que existe:** el banner de anuncios y el aviso son la `InfoCard` del sistema (la que ya usa «Para negocios»); el editor de cadenas, los rótulos y el Inicio por ciudad se compusieron con filas, KPIs, campos y confirmar con motivo del Super Admin.
+- **Prueba:** `cms9f` (91 comprobaciones) pasó dos veces seguidas en una base local y `alreves9f` (30/30); la corrida de verdad es la del CI.
+

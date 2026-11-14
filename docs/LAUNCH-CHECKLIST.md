@@ -339,7 +339,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       reintentos todavía: un SMS que falla queda «falló» en Envíos (agregar reintento con espera antes de la fase 9).
 - [x] **Push en las apps** (Fase 8): el mismo aviso como push; la plantilla ya dice qué grupo es. **Hecho en 8c (11 nov):** Web Push de verdad; APNs y
       FCM contra simuladores hasta que estén las llaves (ver «Fase 8 · 8c»).
-- [ ] **→ 9f** · **Anuncios in-app** (secNotif «Anuncios»): banner de un día en el home de la ciudad. Falta el banner en el inicio.
+- [x] **Anuncios in-app** (secNotif «Anuncios»): banner de un día en el home de la ciudad. Falta el banner en el inicio. _Hecho en 9f (14 nov): `announcements` (0136) con desde/hasta (31 días como máximo), para todos o solo vecinos con cuenta; el banner sale arriba del Inicio de la ciudad (InfoCard) y se crea y se retira en Super Admin › Textos y páginas › Home por ciudad (nada se borra; auditoría). Evidencia: cms9f (vivo, próximo, vencido, retirado y solo vecinos, en ES, EN y 390)._ La pestaña «Anuncios» de Notificaciones del diseño no se construyó: el banner se maneja desde Home por ciudad.
 - [ ] **→ 9l** · **Plantillas que faltan** porque su función aún no existe: código de entrada como plantilla editable, pedido tarde,
       recibo por correo, propuesta de evento privado, citas (confirmada / otra hora), devolución, evento cancelado, sello
       decidido, ciudad abierta, resumen semanal. Se agregan con su función.
@@ -709,6 +709,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       ya traen ES/EN en `config_keys`. (5i, 8 nov)
 
 ## Fase 6 · 6a (base de eventos, panel, Publica tu evento, revisión)
+      _9f-1/2 (14 nov): el mecanismo está (cookie `tl_lang`, selector Español / English, `par(l)` en `app/admin/TextosComun.tsx`) y Textos y páginas ya sale completo en los dos idiomas; este módulo sigue en español → resto del Super Admin en inglés (9f-4)._
 - [x] **6a → 6c · Boletos, mesas y extras guardados como configuración:** _hecho en 6c (10 nov): la base los pasa a ticket_types /
       event_tables / event_addons con su existencia por fecha (evt_sincronizar_venta) y se venden desde ahí; el editor sigue guardando la
       configuración que revisa To'Latino._ hoy viven en `events.tickets_cfg / tables_cfg / addons_cfg`
@@ -730,6 +731,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       locales. Verlos en el sandbox. (6a, 9 nov) — **✓ 9a (11 nov):** solo en local (/medios lo sirve el sandbox); nota, sin cambio.
 - [ ] **→ 9c** · **6a · Eventos en los 9 dispositivos:** `evt6a` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6a, 9 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9f** · **6a · Textos del Super Admin de Eventos en inglés:** como el resto del admin, en español (los avisos y el panel sí ES/EN). (6a, 9 nov)
+      _9f-1/2 (14 nov): el mecanismo está (cookie `tl_lang`, selector Español / English, `par(l)` en `app/admin/TextosComun.tsx`) y Textos y páginas ya sale completo en los dos idiomas; este módulo sigue en español → resto del Super Admin en inglés (9f-4)._
 - [x] **6a · Catálogo de formatos y géneros editable desde el Super Admin (hueco #8):** _hecho en 6j (10 nov): Super Admin › Eventos y boletos › Catálogo (formatos, categorías y géneros con vista previa, auditoría; apagar no borra)._ hoy vive en la base (0106) y se lee de ahí; el editor
       del catálogo llega en 6j. (6a, 9 nov)
 
@@ -751,6 +753,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9f** · **6b · Textos del Super Admin de Eventos en inglés:** como el resto del admin, en español (ficha › últimos RSVP, Pausar Eventos). (6b, 10 nov)
 
 ## Fase 6 · 6c (boletos, mesas, extras y códigos)
+      _9f-1/2 (14 nov): el mecanismo está (cookie `tl_lang`, selector Español / English, `par(l)` en `app/admin/TextosComun.tsx`) y Textos y páginas ya sale completo en los dos idiomas; este módulo sigue en español → resto del Super Admin en inglés (9f-4)._
 - [x] **6c · Transferir al organizador:** _hecho en 6e (10 nov): la liquidación del martes por fecha (lib/evt-liquidacion.ts)._ el cobro de boletos queda en la plataforma (`transfer_group` del evento); la transferencia del martes
       después de la fecha, las retenciones y el ajuste por devoluciones llegan con 6e. Hasta entonces el dinero no sale solo. (6c, 10 nov)
 - [x] **6c · Devoluciones de boletos:** _6e (10 nov): la devolución total al cancelar el evento o una fecha, en lote e idempotente, hecha._ _6d (10 nov): cancelar el comprador (menos el cargo, hasta 24 h antes) y devolver desde el panel
@@ -788,6 +791,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9f** · **6c · Textos del Super Admin de boletos en inglés:** como el resto del admin, en español. (6c, 10 nov)
 
 ## Fase 6 · 6d (después de comprar: transferir, cancelar, cortesías, lista de espera, ayuda B-)
+      _9f-1/2 (14 nov): el mecanismo está (cookie `tl_lang`, selector Español / English, `par(l)` en `app/admin/TextosComun.tsx`) y Textos y páginas ya sale completo en los dos idiomas; este módulo sigue en español → resto del Super Admin en inglés (9f-4)._
 - [ ] **→ 9q** · **6d · SMS de verdad para «Te mandaron un boleto», «Tienes una cortesía» y «Se liberó un lugar»:** salen con la clave del proveedor
       (Telnyx, decisión E2). Hoy: con cuenta llegan en Avisos; a un número sin cuenta solo queda el SMS (`phone_messages`, en el sandbox
       en modo pruebas). Hasta conectarlo, quien recibe sin cuenta no se entera: los textos ya dicen «le avisamos a ese teléfono». (6d, 10 nov)
@@ -945,6 +949,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       fechas y 5 M de boletos medirlas y, si pasan del presupuesto, materializarlas por día (refresco en el barrido). (6j, 10 nov)
 - [ ] **→ 9c** · **6j · Super Admin de Eventos en los 9 dispositivos:** `adm6j` corre en escritorio 1360 y teléfono 390 en local; falta la matriz de CI. (6j, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9f** · **6j · Textos del Super Admin de Eventos en inglés:** como el resto del admin, en español (las etiquetas de Configuración y las plantillas sí ES/EN). (6j, 10 nov)
+      _9f-1/2 (14 nov): el mecanismo está (cookie `tl_lang`, selector Español / English, `par(l)` en `app/admin/TextosComun.tsx`) y Textos y páginas ya sale completo en los dos idiomas; este módulo sigue en español → resto del Super Admin en inglés (9f-4)._
 - [x] **6j · Avisos viejos con «{evento}» en el título:** se arregló al mandar (guardián avisoTituloLleno); lo que ya estaba en las bandejas del
       sandbox queda como estaba (no se reescribe). En producción no hay avisos viejos. (6j, 10 nov) — **✓ 9a (11 nov):** solo en las bandejas del sandbox; en producción no hay avisos viejos.
 
@@ -1081,6 +1086,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       fundador. (7g, 11 nov) — **✓ 9a (11 nov):** el copiloto no sale en Cuidado de niños, No me dejan cancelar ni Posible estafa, ni lee Salud, Profesionales ni inscripciones (REVISION 9a).
 - [ ] **→ 9f** · **7g · Lo del equipo (resumen y siguiente paso) en español** (el Super Admin es en español); el borrador sale en el idioma de la persona.
       Cuando el Super Admin tenga inglés, pedirlos en el idioma de quien lo usa. (7g, 11 nov)
+      _9f-1/2 (14 nov): el mecanismo está (cookie `tl_lang`, selector Español / English, `par(l)` en `app/admin/TextosComun.tsx`) y Textos y páginas ya sale completo en los dos idiomas; este módulo sigue en español → resto del Super Admin en inglés (9f-4)._
 - [ ] **→ 9s** · **7g · Para el abogado y Privacidad:** el texto de un caso de Soporte (tapado, sin teléfono ni correo) y las notas internas del equipo se
       procesan con Anthropic en EE. UU. cuando el equipo pide un borrador (la ayuda `privacidad-de-el-compa` ya lo dice). Va con la retención cero
       y el aviso de IA de 7c. (7g, 11 nov)
@@ -1532,8 +1538,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **9e** · **Términos de uso y Privacidad con versión en «Términos que aceptaste»:** `lib/datos/terminos.ts` suma `legal_acceptances` (la adenda del
       estado y «por {negocio}»); `/privacidad` trae «Qué pasa con cada dato al borrar tu cuenta» del mapa (`privacidadDelMapa`). Evidencia: leg9e
       («VERSIÓN N · ACEPTADO …») y datos9d 61 ✓ sigue en verde. (9d, 14 nov · 9e, 14 nov)
-- [ ] **→ 9f** · **«Cuenta borrada» en inglés:** el nombre que queda en una cuenta purgada es un texto en la base («Cuenta borrada»); un panel en inglés también lo
-      lee así. Con el CMS, el nombre de una cuenta `deleted` sale de su cadena ES/EN. (9d, 14 nov)
+- [x] **«Cuenta borrada» en inglés:** el nombre que queda en una cuenta purgada es un texto en la base («Cuenta borrada»); un panel en inglés también lo
+      lee así. _Hecho en 9f (14 nov) para el panel de Pedidos: `nombreVisible()` (lib/textos-cuenta.ts, cadena `USR-CUENTA.borrada` con candado) → «Deleted account»; guardián
+      `cuentaBorradaBilingue`; cms9f paso 10. Los demás paneles → 9n (abajo)._ (9d, 14 nov)
 - [ ] **→ 9m** · **Pedir el archivo con la llave de acceso** (el plan dice «con el código de entrada otra vez (o la llave)»): hoy solo con el código por SMS, como
       Borrar mi cuenta. (9d, 14 nov)
 - [ ] **→ 9m** · **Un archivo con más de 20 000 filas en una parte** se corta en 20 000 (el LEEME dice cuántas trae cada parte); con la carga de 1M, medir el
@@ -1550,12 +1557,37 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9s** · **Dónde más se anota la aceptación:** hoy en Publica tu negocio, el primer pedido de comida (Pagar) y la hoja. El registro («Al seguir aceptas
       los Términos y la Privacidad» en /entrar), la primera cita, reserva, boleto o compra del mercado todavía no anotan nada: el abogado dice cuál acto
       obliga (decisión en REVISION 9e). (9e, 14 nov)
-- [ ] **→ 9f** · **El pie de la web en todas las páginas:** hoy `SiteFooter` sale en las once páginas legales; ponerlo bajo Inicio, la ficha y Buscar cambia
-      las capturas aprobadas de la tubería (necesita tu OK con las capturas nuevas). Y Super Admin › Textos y páginas › Páginas en inglés, con el resto del
-      Super Admin. (9e, 14 nov)
+- [x] **El pie de la web en todas las páginas** y **Super Admin › Textos y páginas › Páginas en inglés:** _hecho en 9f (14 nov): `<PieWeb>` bajo el Inicio, la ficha y Buscar detrás del
+      interruptor `web.pie_todas` (apagado de fábrica: las capturas aprobadas no cambian; se enciende en Páginas con motivo, `cms:aprobar`); Páginas, Ayuda, Cadenas, Rótulos y Home
+      salen en los dos idiomas (cms9f). Evidencia: cms9f 91 ✓ dos veces seguidas._ Lo que falta, abajo («Fase 9 · 9f»).
 - [ ] **→ 9b** · **leg9e y alreves9e entran a la regresión del CI:** en local (Postgres 16 + PostGIS, un S3 de mentira, Chrome del sistema, perfil basico)
       leg9e pasó 72 ✓ dos veces seguidas, alreves9e 18/18, datos9d 61 ✓, alreves8i y alreves9d siguen en verde. fich8i no se corrió entera en local (pide los
       simuladores de las tiendas y los documentos de Google): su paso 1 (/privacidad) se comprobó aparte con las mismas aserciones. La corrida de verdad es
       la del CI. (9e, 14 nov)
 - [ ] **→ 9t** · **El índice legal en producción:** el despliegue del sandbox indexa docs/legal/ (deploy.sh 3c-ter); el de producción (todavía no existe)
       hace lo mismo, sin la semilla 0053: allí la base es producción y nada se publica sin el abogado. (9e, 14 nov)
+
+## Fase 9 · 9f — Textos y páginas completo: cadenas, rótulos, Home por ciudad, anuncios (14 nov)
+- [ ] **→ 9f** · **9f-3 · Más cadenas por el CMS:** hoy salen por el CMS el diccionario general `T` (Inicio, ficha, galería, categorías, Negocios y el menú), el texto del Inicio
+      (`lib/textos-home.ts`), las líneas fijas y el nombre de la cuenta borrada: 214 cadenas. Quedan ~16 000 `E2("…","…")` escritos a mano en `apps/web` (el trinquete
+      `cadenaConLlave` los cuenta: tope 16129, solo aviso hasta TOLATINO_FASE=9; cada pantalla migrada se anota en su lista `MIGRADAS` y ahí no puede quedar ninguno) y los
+      componentes de cliente `Buscar.tsx` y `Hoy.tsx` leen `T` directo. Migrarlas pantalla por pantalla (cada una con su captura). (9f, 14 nov)
+- [ ] **→ 9f** · **9f-4 · El resto del Super Admin en inglés:** el mecanismo está y Textos y páginas ya sale completo; faltan los demás módulos (Colas, Usuarios, Negocios,
+      Transacciones, Soporte, El Compa, Contenido, Eventos y boletos, Planes, Notificaciones, Confianza, Analítica, Sistema…) y las piezas compartidas
+      (`ConfirmarMotivo`/`ReasonConfirm`, `Toast`, `Shell`: su «Confirmar», «Volver», «Guardando…» y el menú siguen en español). Las líneas de 5i, 6a, 6b, 6c, 6j y 7g de arriba se cierran
+      con esto. (9f, 14 nov)
+- [ ] **→ 9f** · **9f-5 · La ayuda: inglés ampliado y editor:** ~25 artículos de `docs/ayuda/` tienen un inglés de menos de una quinta parte del español (L969) y el Super Admin solo
+      pausa (L975): falta ampliar el inglés y el editor que guarda «cambio propuesto» para el siguiente commit (la tabla de cambios propuestos no se creó). (9f, 14 nov)
+- [ ] **→ 9n** · **«Cuenta borrada» en los demás paneles** (Apartados, Citas, Reservas, Rentas, Inscripciones, Fiestas, Noche…): solo el de Pedidos pasa el nombre por `nombreVisible()`;
+      los otros leen `users.first_name` tal cual y en un panel en inglés dicen «Cuenta borrada». (9f, 14 nov)
+- [ ] **→ 9n** · **Anuncios para negocios en el panel** (`announcements.audience = 'negocios'`): el banner sale en el Inicio de la ciudad (todos o solo vecinos); la audiencia de negocios
+      (un aviso en Hoy del panel) no se construyó. (9f, 14 nov)
+- [ ] **→ 9v** · **Encender el pie de la web en todas las páginas** (interruptor `web.pie_todas`, Super Admin › Textos y páginas › Páginas): nace apagado porque cambia las capturas
+      aprobadas del Inicio, la ficha y Buscar. Con tu OK sobre las capturas nuevas (`pruebas/visual`, REVISION 9f) se enciende; el día de la apertura solo se encienden interruptores. (9f, 14 nov)
+- [ ] **→ 9h** · **Las líneas fijas de §1c que esperan su pantalla:** la landing y su teléfono (9h), la página de mantenimiento (9o) y «el equipo entra con dos pasos» (9j) ya están en
+      `lib/textos-fijas.ts` con candado y comparadas con el plan palabra por palabra (`lineaFijaBloqueada`); cada pantalla las usa cuando exista (hoy solo «Exportar mis datos»). (9f, 14 nov)
+- [ ] **→ 9b** · **cms9f y alreves9f entran a la regresión del CI** (y a los 9 dispositivos): en local (Postgres 16 + PostGIS, un S3 de mentira, Chrome del sistema, perfil basico, :3110)
+      cms9f pasó 91 ✓ dos veces seguidas y alreves9f 30/30; la corrida de verdad es la del CI. El paso nuevo del CI indexa las cadenas dos veces y comprueba que una línea fija y una edición
+      sin autor se rechazan. (9f, 14 nov)
+- [ ] **→ 9t** · **El indexador de cadenas en producción:** el despliegue del sandbox corre `scripts/cms/indexar.mjs` (deploy.sh 3c-quater); el de producción (todavía no existe) hace
+      lo mismo, sin la semilla 0054 (los anuncios de ejemplo son solo del sandbox). (9f, 14 nov)

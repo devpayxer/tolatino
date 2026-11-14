@@ -7310,7 +7310,7 @@ const guardianes = {
       if (f !== "scripts/cms/extraer.mjs" && /\bupdate cms_strings\s+set\b[^;`]*\blocked\s*=/.test(t)) falla(G, f, 0, "nadie cambia `locked` de una cadena fuera del despliegue");
     }
     if (!existsSync(AD)) falla(G, AD, 0, "falta lib/cms-admin.ts");
-    else { const t = sinComent(AD); if (!/if \(v\.locked\) return mal\(/.test(t)) falla(G, AD, 0, "editar una cadena revisa que no sea una línea fija"); }
+    else { const t = (sinComent(AD).match(/async function cambiar\([\s\S]*?\n}\n/) ?? [""])[0]; if (!/if \(v\.locked\) return mal\(/.test(t)) falla(G, AD, 0, "editar una cadena revisa que no sea una línea fija"); }
     const por = new Map(CMS.cadenas.map((c) => [c.id, c]));
     const norm = (x) => x.replace(/\s+/g, " ").trim();
     const plan = existsSync(PLAN) ? norm(readFileSync(PLAN, "utf8")) : "";
@@ -7345,7 +7345,7 @@ const guardianes = {
     if (!existsSync(AD)) return falla(G, AD, 0, "falta lib/cms-admin.ts");
     const t = sinComent(AD);
     if (!/E\.length > v\.max_len \|\| N\.length > v\.max_len/.test(t)) falla(G, AD, 0, "editarCadena revisa el largo máximo antes de guardar");
-    if (!/marcas\(E\) !== marcas\(v\.code_text\.es\)/.test(t)) falla(G, AD, 0, "editarCadena revisa las marcas {…}");
+    if (!/if \(marcas\(E\) !== marcas\(v\.code_text\.es\)/.test(t)) falla(G, AD, 0, "editarCadena revisa las marcas {…}");
     if (!/tl\.cms_por/.test(t) || !/tl\.cms_motivo/.test(t)) falla(G, AD, 0, "un cambio de texto lleva autor y motivo");
   },
 

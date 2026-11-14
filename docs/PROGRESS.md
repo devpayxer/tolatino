@@ -1698,3 +1698,39 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   **No se corrió la regresión entera** ni la matriz de 9 dispositivos: eso es del CI (LAUNCH «Fase 9 · 9e»).
 - **No cerrado, con destino (LAUNCH «Fase 9 · 9e»):** el texto final de las 14 páginas y el agente DMCA (9s, el abogado), dónde más se anota la aceptación (9s),
   el pie en todas las páginas y Páginas en inglés (9f), la corrida del CI (9b) y el índice legal en producción (9t).
+
+## Fase 9 · 9f — Textos y páginas completo: cadenas, rótulos, Home por ciudad y anuncios (14 nov)
+- **Hecho (rama local `fase9-9f`, sobre 0f36d89; en subbloques):**
+  - **9f-1 · Datos y servidor.** Migración **`0136_cms.sql`**: `cms_strings` (la 0001 dejó una de otra forma, vacía y sin uso: se renombra a `cms_strings_0001`, no se borra) con la
+    llave `ÁREA-MÓDULO-PANTALLA.clave`, `text {es,en}`, `code_text` (lo que dice el código), `status` (vivo / borrador), `en_state` (pendiente / traducido / revisado), `max_len`, `locked`,
+    `edited`, `version`; **`cms_string_versions`** (solo inserción; la escribe la propia base con quién y por qué: `tl.cms_por` / `tl.cms_motivo`, sin ellos `cms_sin_autor`); la base impone
+    el **largo** (`cms_largo`), las **marcas {x}** del código (`cms_marcas`), el **no vacío** (`cms_vacia`), la **línea fija** (`cms_linea_fija`: solo la cambia `cms_indexar`, el
+    despliegue) y que lo que dice el código solo lo cambie un despliegue (`cms_codigo`); **`city_home_config`** (aviso ES/EN y bloques encendidos con su orden) y **`announcements`**
+    (desde/hasta, 31 días como máximo, para todos o solo vecinos; no se edita ni se borra: se retira con motivo); el interruptor `web.pie_todas` (apagado). Cada cambio avisa por
+    NOTIFY (canal `tl_config`). Aplicada dos veces: la segunda no cambia nada. Mapa de datos al día (4 tablas, 287 filas).
+    **Extractor** `scripts/cms/extraer.mjs` → `apps/web/lib/cms-cadenas.json` (214 cadenas: `T`, el texto del Inicio `lib/textos-home.ts`, las líneas fijas de §1c `lib/textos-fijas.ts`, el
+    nombre de la cuenta borrada `lib/textos-cuenta.ts` y la línea fija de cada categoría de `packages/db/seeds/lineas.sql`; 22 con candado) e **indexador** `scripts/cms/indexar.mjs`
+    (deploy.sh 3c-quater, `pruebas/servir/base.sh` y un paso del CI; lo mismo otra vez = «213 iguales»; lo editado se respeta salvo que ya no quepa). **`lib/cms.ts`**: la base primero y el código
+    de respaldo (copia de 15 s que NOTIFY vacía; si la base no responde, sale el código); `cadena()`, `pantalla()` y `textosT()` (T con lo editado). **Semilla `0054_cms.sql`** (el plan decía 0050):
+    un anuncio vivo (Allentown, así el Inicio de Hazleton de las capturas no cambia) y uno vencido (Hazleton).
+    **El Inicio de la ciudad** lee el CMS: aviso, bloques (un bloque apagado ni se consulta; el orden por `order` de CSS) y el banner de Anuncios (InfoCard); sus textos ya no van escritos en
+    `Inicio.tsx`. Las páginas del servidor (layout, ficha, silla, galería, categoría, Negocios) leen `textosT()`.
+  - **9f-2 · Super Admin › Textos y páginas** con cinco pestañas: Ayuda, Páginas, **Cadenas** (buscar, pantalla, estado, ES/EN lado a lado, largo máximo, editar con motivo, volver al código, borrador /
+    publicar, inglés revisado con `cms:aprobar`, historial, candado en las líneas fijas), **Rótulos por categoría** (nombre y nombre corto en los dos idiomas; el corto en español es la URL y no se
+    cambia) y **Home por ciudad** (aviso, interruptores y Subir / Bajar, anuncios con fechas, retirar). **La sección entera sale en español e inglés** (selector Español / English, cookie `tl_lang`):
+    cierra «Páginas en inglés» de 9e. **«Cuenta borrada» / «Deleted account»** en el panel de Pedidos (`nombreVisible`). **El pie de la web** bajo el Inicio, la ficha y Buscar detrás de `web.pie_todas`
+    (apagado de fábrica: Páginas lo enciende con motivo).
+  - **Guardianes:** **`cadenaConLlave`** (catálogo = lo que sale del código, llaves que existen, pantallas migradas sin `E2` a mano, el servidor lee `textosT`, el Inicio lee el CMS; trinquete de `E2` como aviso
+    hasta TOLATINO_FASE=9), **`lineaFijaBloqueada`** (las seis de §1c palabra por palabra contra el plan, 911 y «Nadie te garantiza un resultado» con candado, la base y la app las rechazan, solo `cms_indexar`
+    pone `tl.cms_indexar`), **`cmsConLimite`**, **`cmsSoloInsercion`**, **`cuentaBorradaBilingue`**, **`pieSinCapturas`**; `idioma` suma que toda cadena trae los dos idiomas. Al revés: **`alreves9f` 30/30**.
+  - **Prueba nueva `cms9f`** (91 ✓): editar una cadena → el vecino sin sesión la ve al instante en ES y en EN (y en el teléfono), con su versión (motivo y quién) y su auditoría; sin la tabla de cadenas la
+    pantalla sale con el texto del código; borrador / publicar / volver al código; historial; líneas fijas sin Editar y rechazadas por la base; marcas, largo, vacío y autor; inglés revisado; Rótulos; Home de
+    Hazleton (aviso ES/EN, un bloque apagado, el orden) y de Allentown (con un bloque apagado, el de Hazleton sin tocar); anuncios (vivo, próximo, vencido, retirado, solo vecinos, no se edita ni se borra, más de
+    31 días rechazado); el Super Admin en inglés en las cinco pestañas y de vuelta; el rol sin Textos y páginas no entra; el pie apagado / encendido en Inicio, ficha y Buscar; «Cuenta borrada» / «Deleted account».
+  - **Ayuda:** `admin-textos-y-paginas` (equipo, ES/EN).
+- **Probado aquí (sin Docker: Postgres 16 + PostGIS de la máquina, un S3 de mentira, Chrome del sistema, perfil `basico`, en :3110):** `node guardianes/run.mjs` → «sin fallos»; `tsc --noEmit` limpio; `pnpm build`
+  en verde; 0136 dos veces sin cambios; el indexador dos veces (213 nuevas y luego 0); **`cms9f` 91 ✓ dos veces seguidas**; `alreves9f` 30/30. **No se corrió la regresión entera** ni la matriz de 9 dispositivos
+  (CI), ni `pruebas/visual` (las capturas aprobadas no se tocaron a propósito: el pie nace apagado y el anuncio vivo de la semilla está en Allentown).
+- **No cerrado, con destino (LAUNCH «Fase 9 · 9f»):** más cadenas por el CMS (~16 000 `E2` a mano), el resto del Super Admin en inglés, la ayuda (inglés ampliado y editor de cambios propuestos), «Cuenta borrada» en los
+  demás paneles, anuncios para negocios, encender el pie (necesita tu OK con las capturas), las líneas fijas que esperan su pantalla y las corridas del CI.
+
