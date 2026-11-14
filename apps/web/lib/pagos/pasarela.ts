@@ -231,7 +231,7 @@ export const pasarela = {
       const pi = await stripe<{ id: string; status: string; client_secret?: string }>("POST", "/v1/payment_intents", {
         amount: x.centavos, currency: "usd", customer: x.cliente ?? undefined, payment_method: x.pm, off_session: true, confirm: true, metadata: x.meta,
       }, { idem: `dir-${x.idem}` });
-      if (pi.status === "requires_action" || pi.status === "requires_payment_method") return { ok: false, codigo: "authentication_required", mensaje: VERIFICAR_MSG, pi: pi.id, secreto: pi.client_secret };
+      if (pi.status === "requires_action") return { ok: false, codigo: "authentication_required", mensaje: VERIFICAR_MSG, pi: pi.id, secreto: pi.client_secret };
       return pi.status === "succeeded" ? { ok: true, id: pi.id } : { ok: false, codigo: pi.status, mensaje: traducir(null) };
     } catch (e) {
       const err = e instanceof ErrorStripe ? e : null;
