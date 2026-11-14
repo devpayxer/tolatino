@@ -50,7 +50,7 @@ const pedir = async (m, lines) => {
   await clic(D.getByRole('button', { name: 'Aceptar' }));
   ok(await espera(() => sql(`select status || '|' || status_detail from operations where id = ${O1}`), 'confirmed|preparando') === 'confirmed|preparando', 'aceptado · preparando');
   const pesar = async (nombre, lb) => {
-    const f = await vis(D.getByLabel(`PESO REAL · LB · ${nombre.toUpperCase()}`)); await f.fill(String(lb));
+    await verV(D.getByLabel(`PESO REAL · LB · ${nombre.toUpperCase()}`)); const f = await vis(D.getByLabel(`PESO REAL · LB · ${nombre.toUpperCase()}`)); await f.fill(String(lb));
     const [fc] = await Promise.all([h.waitForEvent('filechooser'), clic(D.getByText(`Foto de ${nombre}`, { exact: true }))]); await fc.setFiles(FOTO);
     await h.waitForTimeout(1500); await clic(D.getByRole('button', { name: `Guardar peso de ${nombre}` }));
   };

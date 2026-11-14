@@ -2156,3 +2156,64 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   tareas después de `avisoApertura`), `lib/admin.ts` (`Staff.colas`), `lib/colas.ts` (`slaCfg` en cada cola, la cola «entrega»; `colasDelRol` ya no existe),
   `lib/admin-nav.ts` (dlv), `lib/avisos.ts` (`avisarNegocio`), `lib/pedidos.ts`, `lib/pedir.ts`, `app/panel/Panel.tsx`, `app/panel/acciones.ts`, `mapa-de-datos.json`
   e `inventario-datos.json` (regenerados), docs.
+
+## Fase 9 · 9n-4 — El dinero y los flujos que faltan (14 nov)
+- **Hecho (rama `worktree-9n4-dinero`, sobre 586c3fb; en paralelo con 0146 · pantallas del panel y 0147 · Super Admin / Configuración):**
+  - **Migración `0148_dinero2.sql`** (dos veces: la segunda no cambia nada; los CHECK se AMPLÍAN con `pg_temp.ampliar_check`): `help_requests.replacement_op_id`
+    y `.warranty_op_id` (únicos: una reposición y una garantía por solicitud; una vez puestas no cambian), `.outside_pending_at` (lo pone la base al pasar a
+    «pending») y `.outside_reminded_at`; `outside_refund` admite `expired` y `closed_by` admite `system`; `payments_cobro_hasta_lo_retenido` (NOT VALID: de un cobro
+    nunca se cobra más de lo retenido, para todo lo nuevo); `delivery_settings.auto_offer`; Configuración: `rep_auto_intentos` (3) y `rep_programado_min` (30) en
+    Repartidor, `ayuda_devuelto_dias` (14) en Iglesias, Bienes Raíces y Autos; 9 avisos nuevos (ES/EN). Sin semilla nueva (no hizo falta).
+  - **3-D Secure en todos los flujos que cobran con la persona en la app (L1685):** citas (depósito), visitas, inscripciones, noche, fiestas, viajes, evento
+    privado, mudanza (precio cerrado), estimado y «algo más» pasan quien paga (`usuario`) y devuelven la hoja (`bancoPide` en `lib/pagos/verificacion.ts`);
+    cada pantalla (`useVerificacion` + `{V.hoja}`) vuelve a enviar lo MISMO con la MISMA clave: la pasarela reusa el cobro verificado. Un bug de 9k: una
+    verificación pendiente cuyo intento quedó en `requires_payment_method` (tarjeta rechazada o autenticación fallida) volvía a abrir la hoja; ahora solo
+    `requires_action` la abre y la otra queda en «fallo» (otro intento, otra llave).
+  - **«Volver a Pro» con la hoja en Tu plan (L1688)** y un bug de dinero: la verificación de «Volver a Pro» desde Free (status `ended`) no activaba Pro
+    (`completarRenovacion` no aceptaba `ended`): el banco cobraba y el plan seguía en Free. Ahora el período empieza ese minuto, con `back_to_pro`; en sesión no
+    sale además el aviso con el enlace; al confirmar solo se vuelve a leer el plan.
+  - **Mercado (L487, L488, L490):** «Pedir OK por $X más» (la base calcula lo que falta), «Está bien, cobrar» = el OK: retiene esos $X como cobro `extra` en la
+    MISMA tarjeta (con 3-D Secure) y `liquidarMercado` cobra lo real entre las dos retenciones sin pasar de lo de cada una (comisión en proporción); «No, que
+    corten»; sin el OK no se marca listo; el sustituto por libra (se pesa con su foto); el recordatorio a los 10 min de mandar el peso (una vez por peso).
+  - **Reponer sin costo (L339):** en el panel al responder la ayuda («Reponer sin costo») y en Colas («Resolver y reponer»): un pedido NUEVO de $0
+    (`pay_mode 'none'`, $0 por plato, fuera del tope de Free) aceptado, con su código de entrega (sigue el flujo del negocio y del Repartidor). «Resolver y
+    devolver» también para la ayuda de un pedido de comida (con el permiso de dinero).
+  - **La visita de garantía a $0 (L458):** «Reservar la visita sin cargo» en la ayuda de Auto y Hogar cuando el negocio aceptó «que vuelva sin cargo» → el
+    Booking del mismo servicio con `?warr=H-…`: $0, sin depósito ni tarjeta; el servidor revisa que la garantía es suya, del mismo negocio y servicio,
+    aceptada y sin usar.
+  - **4if «Me lo devolvieron» (L561):** recordatorio a la mitad y cierre solo a los `ayuda_devuelto_dias`, avisos neutros; la persona lo ve en su solicitud.
+  - **Repartidor (L1787):** «Ofrecer solo a los repartidores» (Panel › Entrega; `lib/repartidor-auto.ts` en el barrido): la oferta de 9n sin que nadie la
+    mande, con tope y un aviso «Nadie tomó el pedido»; los programados se ofrecen y se recuerdan 30 min antes de estar listos.
+  - **Recordatorio de la visita del plan (L437):** confirmado que sale para la visita de $0, y ahora con «Mañana es tu visita» y su franja (`plan_visita`).
+  - **Noche (L501):** la noche especial dice el precio real del boleto más barato a la venta y su fecha («Desde $15 · BOLETO · MAR 17 NOV»), «Comprar boletos».
+  - **Guardianes nuevos:** `tresDSecureEnTodos` (la clase: todo cobro en sesión con quien paga, todo «accion» por la hoja, cada pantalla con la hoja y la
+    misma clave, solo `requires_action`, «Volver a Pro»), `okPorMas`, `sustitutoPorLibra`, `reponerSinCosto`, `garantiaSinCargo`, `devueltoSeCierra`,
+    `repartoSolo`, `recordatorioVisitaPlan`; ampliado `capturaMercado`. **`alreves9n4` 42/42.**
+  - **Ayuda (ES/EN, FAQ):** `pagar-con-tarjeta`, `pedido-del-mercado`, `ayuda-con-el-pedido`, `panel-ayuda-y-soporte`, `ayuda-con-la-visita`,
+    `iglesias-horarios-y-ayuda`, `panel-entrega`, `repartidor`, `planes-del-hogar`, `plan-pro`, `noche-en-la-ficha`, `admin-soporte`, `admin-configuracion`.
+- **Revisión de seguridad (dinero, cuentas, permisos):** cada monto lo decide el servidor (la hoja muestra el de la verificación; el OK por más sale de
+  `totales`; la reposición y la garantía son $0 en el servidor, no en la pantalla); llaves: el OK por más `merc-mas-<op>-<monto>-<tarjeta>`, la captura por
+  intento (`cap-<pi>`), una reposición y una garantía por solicitud (índice único + `… is null` en el update), «Volver a Pro» nunca vuelve a cobrar al
+  confirmar y `completarRenovacion` anota una vez por `idem_key`; lo cobrado ≤ lo retenido (CHECK nuevo) y lo devuelto ≤ lo cobrado (el de siempre);
+  permisos: el OK por más solo con la tarjeta del primer cobro de ESA persona (`p.user_id = $2`), «No, que corten» y la garantía solo de la persona dueña, reponer
+  con el acceso «Hoy y pedidos» del negocio de la ayuda o `colas:aprobar` con las ciudades del rol (y auditoría), «Ofrecer solo» con el acceso de Entrega
+  (auditado); la oferta sola es la de 9n (sin el teléfono del cliente); la verificación sigue siendo solo de quien paga (payment_actions).
+- **Probado aquí (Postgres 16 + PostGIS en un cluster propio :5503, un `docker exec` de mentira hacia esa base, un S3 y una moderación de mentira, el build
+  standalone en :3203 y Chromium de Playwright):** `node guardianes/run.mjs` → sin fallos; `tsc --noEmit` limpio; `pnpm --filter web build` en verde; 0148 dos
+  veces sin cambios (base 0001–0148); **`din9n4` 90 ✓ dos veces seguidas** (390 y 1360, ES y EN; A cita con 3-D Secure y «No fui yo», B estimado rechazado → otra
+  tarjeta → la hoja y «algo más», C fiesta, mesa VIP e inscripción, D mercado completo, E «Volver a Pro», F reponer y la garantía, G barrido: plan, «Me lo
+  devolvieron», Repartidor, noche especial); **`alreves9n4` 42/42**; el contrato con stripe-mock (por primera vez fuera del CI: 32 ✓); las de dinero que ya
+  existían: pagos2d 22 ✓, din9k 39 ✓, est4d 38 ✓, merc4p 20 ✓ (con una espera que le faltaba antes de pesar: la página aún no mostraba el campo).
+  Los flujos que este bloque tocó, otra vez en el navegador: cit3b 36 ✓, fie4v 26 ✓, noc4c 26 ✓, ins4e 41 ✓, tra4w 17 ✓, evt6i 76 ✓, neg9n 51 ✓, ayuda2i 13 ✓,
+  plan2m 15 ✓, env4q 23 ✓ (le faltaba guardar SU dirección: en una base nueva Marisol no tenía ninguna; `direccion()` como pide 9b-3) y vis4ie 53 ✓ (falló
+  mientras din9n4 dejaba una visita de prueba con `what` inventado que tumbaba Panel › Visitas: la prueba ahora la arma como la app y se repararon las
+  filas que había dejado).
+- **No corrió aquí:** la regresión entera, la matriz de 9 dispositivos y `pruebas/visual` → CI (cambian las capturas de las pantallas que cobran, el pedido del
+  mercado, Tu plan, Entrega y la ficha de Noche). Visitas (Booking con depósito), viajes, evento privado y mudanza con 3-D Secure: por el guardián y `tsc`, sin
+  su propia prueba de navegador en din9n4.
+- **No cerrado, con destino (LAUNCH):** el envío del mercado con el repartidor propio (L489, sigue → 9n: el Repartidor trabaja con pedidos de comida); las
+  rentas con 3-D Secure al recogerlas (línea nueva → 9q: se cobran sin la persona en la app).
+- **Para quien junte las ramas:** `guardianes/run.mjs` (nueve guardianes después de `tresDSecure`; `capturaMercado` ampliado), `lib/config.ts` (tres claves
+  después de las del Repartidor de 9n), `lib/barrido.ts` (dos tareas después de `colasTomado`), `app/panel/Panel.tsx` (el hook `V` y «Volver a Pro»),
+  `app/panel/Entrega.tsx`, `Pedidos.tsx`, `MercadoPanel.tsx`, `acciones-*.ts`, `app/admin/Colas.tsx` y `acciones-colas.ts` (Resolver y reponer / devolver de
+  un pedido), `lib/pedidos.ts` (`autoOffer`), las pantallas que cobran, `docs/ayuda/admin-configuracion.md`, migración 0148.

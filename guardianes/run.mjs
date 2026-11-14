@@ -8099,7 +8099,7 @@ const guardianes = {
     const PA = "apps/web/app/panel/Panel.tsx", s = sinComent(S);
     if (!/V\.pide\(r, \(\) => \{ router\.refresh\(\); \}\)/.test(sinComent(PA))) falla(G, PA, 0, "«Volver a Pro» abre la hoja del banco en Tu plan y, al confirmar, solo vuelve a leer el plan (nunca cobra otra vez)");
     if (!/enSesion \? null : await \(await import\("\.\/avisos"\)\)\.avisarNegocio\(s\.business_id, "pro_verify"/.test(s) && !/if \(!enSesion[^\n]*avisarNegocio\(s\.business_id, "pro_verify"/.test(s)) falla(G, S, 0, "en sesión (Volver a Pro) la hoja se abre ahí: no se manda además el aviso con el enlace");
-    if (!/s\.status === "ended" && a\.desde_free/.test(cuerpoFn(s, "completarRenovacion"))) falla(G, S, 0, "la verificación de «Volver a Pro» (desde Free) deja Pro activo: si no, el banco cobra y el plan sigue en Free");
+    if (!/\["past_due", "active", "trial", "canceling", "ended"\]\.includes\(s\.status\)/.test(cuerpoFn(s, "completarRenovacion")) || !/const vuelve = s\.status === "ended" && a\.desde_free;/.test(cuerpoFn(s, "completarRenovacion"))) falla(G, S, 0, "la verificación de «Volver a Pro» (desde Free) deja Pro activo: si no, el banco cobra y el plan sigue en Free");
   },
 
   /* 9n-4 · okPorMas (L487, L490): el mercado nunca cobra más de lo retenido sin el OK del cliente. Si el peso real pasa lo retenido, «mandar» no sale

@@ -97,7 +97,7 @@ export function precioNoche(s: { k: string; cents: number; until: number | null;
   if (s.k === "fecha") return { l: s.cents ? `${E2("Desde ", "From ")}${usdN(s.cents)}` : E2("Por cotización", "By quote"), s: s.pax ? E2(`HASTA ${s.pax} PERSONAS`, `UP TO ${s.pax} GUESTS`) : E2("POR FECHA", "PER DATE") };
   // 9n-4 · La noche especial con boleto: el precio y la fecha salen de su evento (lo que de verdad se vende en Eventos).
   if (s.k === "evento" && s.evDesde != null) {
-    const dia = s.evDia ? new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" }).format(new Date(`${s.evDia}T12:00:00Z`)).replace(/\./g, "").toUpperCase() : "";
+    const dia = s.evDia ? new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" }).format(new Date(`${s.evDia}T12:00:00Z`)).replace(/\./g, "").replace(/,/g, "").replace(/ de /g, " ").toUpperCase() : "";
     return { l: `${E2("Desde ", "From ")}${usdN(s.evDesde)}`, s: `${E2("BOLETO", "TICKET")}${dia ? ` · ${dia}` : ""}` };
   }
   return { l: usdN(s.cents), s: E2("BOLETO", "TICKET") };

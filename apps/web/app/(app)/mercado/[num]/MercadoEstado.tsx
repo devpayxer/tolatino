@@ -82,7 +82,7 @@ export function MercadoEstado({ v, es, pago = null }: { v: MercadoVista; es: boo
     <div data-screen-label="Pedido del mercado · OK por más" className="flex flex-col gap-2.5 rounded-[20px] border-[1.5px] border-ink bg-white p-4">
       <div className={K}>{`${E2("PIDEN TU OK POR ", "THEY ASK YOUR OK FOR ")}${money(v.okMas)}${E2(" MÁS", " MORE")}`}</div>
       <div className="text-pretty text-[13.5px] font-semibold leading-[1.45]">{E2(`Lo que va por peso pesó más de lo que retuvimos (${money(t.ret)}). Si está bien, se retienen ${money(v.okMas)} más en tu tarjeta y se cobra lo real: ${money(t.real)}. Si no, que corten menos.`, `By-weight items came out heavier than the hold (${money(t.ret)}). If it is OK, ${money(v.okMas)} more is held on your card and the real total is charged: ${money(t.real)}. If not, they cut less.`)}</div>
-      <div className="grid grid-cols-2 gap-2"><Button size="md" disabled={ocupado} onClick={() => void aprobar()}>{`${E2("Está bien, cobrar ", "Looks good, charge ")}${money(t.real)}`}</Button>
+      <div className="grid gap-2"><Button size="md" disabled={ocupado} onClick={() => void aprobar()}>{`${E2("Está bien, cobrar ", "Looks good, charge ")}${money(t.real)}`}</Button>
         <Button size="md" variant="secondary" disabled={ocupado} onClick={() => void hacer(() => mercNoMas(v.numero), E2("Listo: le dijimos al mercado que corte menos.", "Done: we told the market to cut less."))}>{E2("No, que corten", "No, cut less")}</Button></div>
     </div>);
   const noMas = v.st === "confirmed" && !v.aprobado && v.noMas && (
