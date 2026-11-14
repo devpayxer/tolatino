@@ -61,7 +61,7 @@ export function Tarjeta({ p, es, full, tr, onOpen, onMenu, onVote, onPoll, onSav
         <div data-screen-label="Publicación · fotos" style={{ position: "relative", marginTop: 12, borderRadius: 16, overflow: "hidden", background: "var(--tl-ink)" }}>
           <div className="hs" onScroll={(e) => { const t = e.currentTarget; setIx(Math.round(t.scrollLeft / Math.max(1, t.clientWidth))); }} style={{ display: "flex", overflowX: "auto", scrollSnapType: "x mandatory" }}>
             {p.fotos.map((f, i) => (
-              <div key={i} onClick={onOpen} role="presentation" style={{ flex: "none", width: "100%", scrollSnapAlign: "start", aspectRatio: full ? "4 / 3" : "4 / 5", maxHeight: 520, background: `url("${f}") center/cover`, backgroundColor: "var(--tl-photo-bg)", cursor: onOpen ? "pointer" : "default" }} role="img" aria-label={E2(`Foto ${i + 1} de ${p.fotos.length}`, `Photo ${i + 1} of ${p.fotos.length}`)} />
+              <div key={i} onClick={onOpen} style={{ flex: "none", width: "100%", scrollSnapAlign: "start", aspectRatio: full ? "4 / 3" : "4 / 5", maxHeight: 520, background: `url("${f}") center/cover`, backgroundColor: "var(--tl-photo-bg)", cursor: onOpen ? "pointer" : "default" }} role="button" {...tec(onOpen)} aria-label={E2(`Foto ${i + 1} de ${p.fotos.length}`, `Photo ${i + 1} of ${p.fotos.length}`)} />
             ))}
           </div>
           {p.fotos.length > 1 && <span style={{ position: "absolute", top: 12, right: 12, padding: "4px 9px", borderRadius: 99, background: "rgba(11,14,18,.6)", color: "var(--tl-white)", font: `700 10px ${MONO}` }}>{`${ix + 1}/${p.fotos.length}`}</span>}
