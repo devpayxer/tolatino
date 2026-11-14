@@ -8591,7 +8591,7 @@ const guardianes = {
     if (!existsSync(R)) return falla(G, R, 0, "falta lib/repartidor.ts");
     const r = sinComent(R), ps = cuerpoFn(r, "pasoRepartidor");
     if (!/owner_kind = 'delivery' and owner_id = \$2 and uploaded_by = \$3/.test(ps)) falla(G, R, 0, "la foto de la prueba es de ESTE pedido y la subió ESTE repartidor");
-    if (!/codigo !== k\.cliente/.test(ps) || !/intentos = intentos \+ 1/.test(ps) || !/k\.n >= maxIntentos/.test(ps) || !/valor\("entrega_codigo_intentos"\)/.test(ps)) falla(G, R, 0, "el código del cliente se compara en el servidor, cuenta los fallos y tiene tope de Configuración");
+    if (!/codigo !== k\.cliente/.test(ps) || !/intentos = intentos \+ 1/.test(ps) || !/if \(!k \|\| k\.n >= maxIntentos\) return no\(/.test(ps) || !/valor\("entrega_codigo_intentos"\)/.test(ps)) falla(G, R, 0, "el código del cliente se compara en el servidor, cuenta los fallos y tiene tope de Configuración");
     if (!/if \(o\.pide_prueba && !probada\) return no\(/.test(ps)) falla(G, R, 0, "sin prueba, con el negocio pidiéndola, «Entregado» no avanza");
     const tipo = /export type EntregaRep = \{([\s\S]*?)\n\};/.exec(r)?.[1] ?? "";
     if (/\b(cliente|recogida)Codigo\b|codigoCliente|\bcodigo: string/.test(tipo) || /dc\.(cliente|recogida)\b/.test(cuerpoFn(r, "misEntregas"))) falla(G, R, 0, "el repartidor nunca recibe los códigos (EntregaRep / misEntregas)");
@@ -8612,8 +8612,23 @@ const guardianes = {
       if (/href = `tel:\$\{(?!x\.negocio\.tel)/.test(t)) falla(G, f, 0, "el único «Llamar» del Repartidor es al negocio");
     }
     const o = "apps/web/lib/repartidor-ofertas.ts";
-    if (existsSync(o) && !/\(s\.match\(\/\\d\/g\) \?\? \[\]\)\.length >= 7/.test(readFileSync(o, "utf8"))) falla(G, o, 0, "el mensaje libre del repartidor no deja pasar un número de teléfono");
+    if (existsSync(o) && !/\(s\.match\(\/\\d\/g\) \?\? \[\]\)\.length >= 7 \|\|/.test(readFileSync(o, "utf8"))) falla(G, o, 0, "el mensaje libre del repartidor no deja pasar un número de teléfono");
   },
+
+  /* 9n · diaEspecialActivo: los días especiales (feriados, vacaciones, días propios, temporada) no se borran: «Quitar» deja status 'removed'. Toda
+     lectura de special_hours en la app filtra los activos, y el estado abierto/cerrado de la base (la última negocio_abierto) también. Si no, un
+     feriado quitado seguiría cerrando la página. */
+  diaEspecialActivo() {
+    const G = "diaEspecialActivo";
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      for (const q of sinComent(f).match(/`[^`]*`/g) ?? []) if (/\bfrom special_hours\b/.test(q) && !/status = 'active'/.test(q)) falla(G, f, 0, "lee special_hours sin filtrar los quitados (status = 'active')");
+    }
+    const n = ultimaFn("negocio_abierto");
+    if (n && (!/s\.status = 'active'/.test(n) || !/kind = 'season'/.test(n))) falla(G, "packages/db/migrations", 0, "negocio_abierto no mira los días especiales activos ni la temporada");
+    for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql"))) if (/delete from special_hours/i.test(readFileSync(`packages/db/migrations/${x}`, "utf8"))) falla(G, `packages/db/migrations/${x}`, 0, "special_hours no se borra (status)");
+  },
+
 };
 
 
