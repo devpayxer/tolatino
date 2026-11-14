@@ -213,7 +213,7 @@ const chicos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=butt
     await seg(); await dormir(900);
     for (let i = 0; i < 6; i++) { // C1: lo primero de cada pregunta, con el teclado, hasta que se pueda seguir
       if (!(await p.locator('text=RESPONDE LO QUE FALTA').count())) break;
-      const grupos = p.locator('[data-screen-label^="ONB-NEG-C1"] > div'), k = await grupos.count();
+      const grupos = p.locator('[data-screen-label="ONB-NEG-C1 · lo propio de tu categoría"] > div'), k = await grupos.count();
       // Una pregunta de número tiene «−» primero, que en el mínimo no hace nada: se toca su «+» (primera corrida en el CI: el paso no avanzaba).
       for (let g = 0; g < k; g++) { const mas = grupos.nth(g).locator('[role=button][aria-label="+"]'); const opc = (await mas.count()) ? mas.first() : grupos.nth(g).locator('div[role=button], [role=radio], [role=checkbox], span[role=button]:not([aria-label="−"])').first(); if (await opc.count()) await act(p, opc, 'Space').catch((e) => console.log('  (aviso paso 2, pregunta ' + g + ': ' + e.message.slice(0, 160) + ')')); await dormir(120); }
     }

@@ -35,7 +35,7 @@ const seguir = async (p) => { const b = p.locator('button:has-text("Seguir"), sp
   // C1: responde lo primero de cada pregunta hasta que se pueda seguir
   for (let i = 0; i < 6; i++) {
     const nota = await p.locator('text=RESPONDE LO QUE FALTA').count(); if (!nota) break;
-    const grupos = p.locator('[data-screen-label^="ONB-NEG-C1"] > div');
+    const grupos = p.locator('[data-screen-label="ONB-NEG-C1 · lo propio de tu categoría"] > div');
     const n = await grupos.count();
     for (let g = 0; g < n; g++) { const opc = grupos.nth(g).locator('div[role=button], span[style*="border-radius: 999px"], div[style*="cursor: pointer"]').first(); if (await opc.count()) await opc.click().catch(() => {}); await p.waitForTimeout(120); }
   }

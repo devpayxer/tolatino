@@ -7175,6 +7175,37 @@ const guardianes = {
   /* 9b-3 · Abierto las 24 horas no tiene hora de cerrar: lib/pedir.ts contaba el «último pedido» desde la medianoche y un negocio de 24 horas
      dejaba de tomar pedidos a las 11:30 PM (lo destapó la barajada de noche: pedidos2c a las 11:50 PM de Hazleton). Las pruebas lo escribían
      «00:00–23:59» (cierra a las 11:59 PM); un día entero es «00:00–00:00». Al revés: alreves9b3. */
+  /* 9b-3 · Un bloque se toma por su nombre, no por su lugar: Textos y páginas armaba la página de una versión con «cab[3]», el aviso de producción;
+     9f metió el selector de idioma en la cabecera y la página mostraba las cifras en su lugar (leg9e: «el Super Admin avisa que es producción»).
+     Una lista de bloques (Bloque[]) no lleva un elemento de otra lista tomado por índice fijo. Al revés: alreves9b3. */
+  bloquePorNombre() {
+    const G = "bloquePorNombre";
+    for (const f of archivos.filter((x) => /^apps\/web\/.*\.tsx$/.test(x))) {
+      const t = sinComent(f), re = /:\s*Bloque\[\]\s*=\s*\[/g; let m;
+      while ((m = re.exec(t))) {
+        let i = m.index + m[0].length, n = 1;
+        for (; i < t.length && n; i++) { if (t[i] === "[") n++; else if (t[i] === "]") n--; }
+        // Los elementos de primer nivel de la lista (no lo de dentro de un objeto: «ic: L[1]» es un dato, no un bloque).
+        const cuerpo = t.slice(m.index + m[0].length, i - 1), els = []; let d = 0, ini = 0;
+        for (let k = 0; k < cuerpo.length; k++) { const c = cuerpo[k]; if ("([{".includes(c)) d++; else if (")]}".includes(c)) d--; else if (c === "," && !d) { els.push([ini, cuerpo.slice(ini, k)]); ini = k + 1; } }
+        els.push([ini, cuerpo.slice(ini)]);
+        for (const [pos, e] of els) if (/^[A-Za-z_$][\w$]*\[\d+\]!?$/.test(e.trim()))
+          falla(G, f, t.slice(0, m.index + m[0].length + pos).split("\n").length + (e.match(/^\s*\n/) ? 1 : 0), `una lista de bloques toma «${e.trim()}» por su lugar: si la otra lista cambia, sale otro bloque; dale nombre`);
+      }
+    }
+  },
+
+  /* 9b-3 · «Publica tu negocio» pinta cada paso dentro de un marco con la etiqueta «ONB-NEG-<paso> · móvil/desktop», y el paso lleva la suya
+     («ONB-NEG-C1 · lo propio de tu categoría»): un prefijo «^="ONB-NEG-C1"» toma los dos, y «> div» del marco incluye la cabecera con «Volver»
+     (a11y9c apretaba «Volver» en vez de contestar). Una prueba que baja a los hijos de un paso usa la etiqueta entera. */
+  etiquetaDelPaso() {
+    const G = "etiquetaDelPaso";
+    for (const f of readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs")).map((y) => `pruebas/e2e/${y}`)) {
+      const t = readFileSync(f, "utf8"), m = /data-screen-label\^=\\?"ONB-NEG-[A-Z0-9]+\\?"\]\s*>/.exec(t);
+      if (m) falla(G, f, t.slice(0, m.index).split("\n").length, "un prefijo «ONB-NEG-<paso>» también es el marco de la pantalla (con su «Volver»): para bajar a los hijos de un paso, la etiqueta entera");
+    }
+  },
+
   veinticuatroHoras() {
     const G = "veinticuatroHoras", P = "apps/web/lib/pedir.ts";
     const p = sinComent(P);

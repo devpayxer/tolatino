@@ -54,6 +54,12 @@ const casos = [
   // veinticuatroHoras: pedir.ts vuelve a contar el último pedido desde la medianoche, o una prueba vuelve a «00:00–23:59»
   ['veinticuatroHoras', 'apps/web/lib/pedir.ts', "actual && b.last_min && !sinCierre ? actual[1] - b.last_min", "actual && b.last_min ? actual[1] - b.last_min"],
   ['veinticuatroHoras', 'pruebas/e2e/pedidos2c.cjs', '[["00:00","00:00"]]', '[["00:00","23:59"]]'],
+  // tarjetaPropia: Marisol reserva un viaje sin guardarle su tarjeta («Reservar» queda apagado en una base nueva)
+  ['tarjetaPropia', 'pruebas/e2e/cho4y.cjs', "  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');\n", ''],
+  // bloquePorNombre: la página de una versión vuelve a tomar el aviso de producción por su lugar en la cabecera
+  ['bloquePorNombre', 'apps/web/app/admin/TextosPaginas.tsx', 'tabs, nota]', 'tabs, cab[4]!]'],
+  // etiquetaDelPaso: a11y9c vuelve a bajar a los hijos del paso 2 por el prefijo (que también es el marco, con su «Volver»)
+  ['etiquetaDelPaso', 'pruebas/e2e/a11y9c.cjs', '[data-screen-label="ONB-NEG-C1 · lo propio de tu categoría"] > div', '[data-screen-label^="ONB-NEG-C1"] > div'],
   ['tarjetaPropia', 'pruebas/e2e/fie4v.cjs', "  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');\n", ''],
 ];
 const crear = [

@@ -47,6 +47,11 @@ export function TextosPaginas({ d, adm, pie, k, j, det, dif, editar, aprobar }: 
     </div>);
 
   const kp = d.kpi;
+  // El aviso de producción va en la lista y en cada página (donde se publica): por nombre, no por su lugar en la cabecera (9b-3: el selector de
+  // idioma de 9f lo movió y la página mostraba las cifras en su lugar; guardián bloquePorNombre).
+  const nota: Bloque = { type: "note", tone: kp.produccion ? "warn" : "info", icon: "shield", t: kp.produccion
+    ? E("Producción: una página legal se publica solo revisada por el abogado (la base lo impide si no).", "Production: a legal page is only published once reviewed by the lawyer (the database blocks it otherwise).")
+    : E("Sandbox: se puede publicar un borrador para probar. En producción, solo lo revisado por el abogado.", "Sandbox: a draft can be published to test. In production, only what the lawyer reviewed.") };
   const cab: Bloque[] = [
     { type: "head", eye: "CONTROL", t: E("Textos y páginas", "Copy and pages"), s: E("Las páginas legales de docs/legal/, como están desplegadas. El texto se corrige en el repo; aquí se marca la revisión del abogado, se publica y se retira.", "The legal pages in docs/legal/, as deployed. The text is fixed in the repo; here you mark the lawyer’s review, publish and retire."), h1: desk ? 26 : 22 },
     tabs,
@@ -57,9 +62,7 @@ export function TextosPaginas({ d, adm, pie, k, j, det, dif, editar, aprobar }: 
       { k: E("REVISADAS", "REVIEWED"), v: String(kp.revisadas), s: E("por el abogado, sin publicar", "by the lawyer, not published") },
       { k: E("ACEPTACIONES", "ACCEPTANCES"), v: String(kp.aceptaciones), s: E("solo cifras, sin personas", "numbers only, no people") },
     ] },
-    { type: "note", tone: kp.produccion ? "warn" : "info", icon: "shield", t: kp.produccion
-      ? E("Producción: una página legal se publica solo revisada por el abogado (la base lo impide si no).", "Production: a legal page is only published once reviewed by the lawyer (the database blocks it otherwise).")
-      : E("Sandbox: se puede publicar un borrador para probar. En producción, solo lo revisado por el abogado.", "Sandbox: a draft can be published to test. In production, only what the lawyer reviewed.") },
+    nota,
   ];
 
   // ── Una página: sus versiones ──
@@ -90,7 +93,7 @@ export function TextosPaginas({ d, adm, pie, k, j, det, dif, editar, aprobar }: 
         v.publicada ? E(`publicada ${cuando(v.publicada)}${v.publicoQuien ? ` por ${v.publicoQuien}` : ""}: ${v.publish_reason ?? ""}`, `published ${cuando(v.publicada)}${v.publicoQuien ? ` by ${v.publicoQuien}` : ""}: ${v.publish_reason ?? ""}`) : null,
         v.force_accept ? E("pide aceptar otra vez", "asks to accept again") : null, v.retired_at ? E(`retirada ${cuando(v.retired_at)}`, `retired ${cuando(v.retired_at)}`) : null].filter(Boolean).join(" · "),
       actions: acts(v, i) }));
-    const bl: Bloque[] = [{ type: "head", eye: E("TEXTOS Y PÁGINAS · PÁGINAS", "COPY AND PAGES · PAGES"), t: `${t} · ${j}`, s: det.versiones[0]?.source_path ?? "", onBack: () => ir({}), h1: desk ? 26 : 22 }, tabs, cab[3]!];
+    const bl: Bloque[] = [{ type: "head", eye: E("TEXTOS Y PÁGINAS · PÁGINAS", "COPY AND PAGES · PAGES"), t: `${t} · ${j}`, s: det.versiones[0]?.source_path ?? "", onBack: () => ir({}), h1: desk ? 26 : 22 }, tabs, nota];
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }} data-legal-admin={k}>
         <PanelBloques bloques={bl} h1={desk ? 26 : 22} />
