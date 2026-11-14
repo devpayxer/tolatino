@@ -1190,9 +1190,9 @@ const guardianes = {
   },
 
   /* 4d. Lo mismo en los bloques del panel (packages/ui/src/panel): un «role=button» sin foco ni teclado. Los −/+ ya son
-     botones de verdad; el resto va al bloque de accesibilidad (LAUNCH-CHECKLIST). Trinquete: no puede subir. */
+     botones de verdad; 9c (14 nov) llevó el resto a CERO: todo role="button" trae tabIndex y onKeyDown. */
   panelClicMudo() {
-    const TOPE = 18, f = "packages/ui/src/panel/Bloques.tsx";
+    const TOPE = 0, f = "packages/ui/src/panel/Bloques.tsx";
     if (!existsSync(f)) return;
     const n = readFileSync(f, "utf8").split("\n").reduce((k, l) => k + [...l.matchAll(/role="button"(?![^>]*tabIndex)/g)].length, 0);
     if (n > TOPE) falla("panelClicMudo", f, 1, `${n} «role=button» sin foco en los bloques del panel (tope ${TOPE}): usa <button type="button">`);

@@ -2,6 +2,7 @@
 /* Bloques del Panel del negocio v2 (diseño «To'Latino Panel negocio v2», plantilla L96–360): el panel es un marco y un
    renderizador de bloques. Cada bloque se copió 1:1 de la plantilla del diseño (estilos y textos por defecto); los
    colores son tokens. Las pantallas del panel arman listas de bloques y las pinta <PanelBloques>. */
+import type React from "react";
 import type { CSSProperties, ReactNode } from "react";
 import * as DS from "../ds/index";
 import type { ComponentType } from "react";
@@ -10,6 +11,8 @@ import type { ComponentType } from "react";
 const { Icon, Button, Chip, Tag, SelectBox, QtyStepper, SelectionBar, MenuItemRow, OptionGroup } = DS as unknown as Record<"Icon" | "Button" | "Chip" | "Tag" | "SelectBox" | "QtyStepper" | "SelectionBar" | "MenuItemRow" | "OptionGroup", ComponentType<any>>;
 const MONO = "'JetBrains Mono',monospace";
 type Fn = () => void;
+// 9c · Enter y Espacio activan lo que es un botón con rol (solo con el foco en el propio elemento, para no robarle la tecla a un campo de dentro).
+const tecla = (fn?: Fn) => fn ? (e: React.KeyboardEvent<HTMLElement>) => { if ((e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) { e.preventDefault(); fn(); } } : undefined;
 const K: CSSProperties = { font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" };
 
 export type Accion = { l: string; v?: string; icon?: string | null; off?: boolean; onClick?: Fn };
@@ -126,7 +129,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
       </div>);
     case "head": return (
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12, paddingTop: 2 }}>
-        {b.onBack ? <span role="button" aria-label="Atrás" onClick={b.onBack} style={{ width: 36, height: 36, borderRadius: 12, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none", marginTop: 2 }}><Icon name="chevronLeft" size={17} strokeWidth={2} /></span> : null}
+        {b.onBack ? <span role="button" aria-label="Atrás" onClick={b.onBack} tabIndex={0} onKeyDown={tecla(b.onBack)} style={{ width: 36, height: 36, borderRadius: 12, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none", marginTop: 2 }}><Icon name="chevronLeft" size={17} strokeWidth={2} /></span> : null}
         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 5 }}>
           {b.eye ? <span style={{ ...K, color: "rgba(11,14,18,.45)" }}>{b.eye}</span> : null}
           <h1 style={{ margin: 0, font: `800 ${b.h1 ?? h1}px/1.12 Sora,sans-serif`, letterSpacing: "-.035em" }}>{b.t}</h1>
@@ -154,7 +157,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
             </span>))}
         </div>
         {b.acts.length ? <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {b.acts.map((a, i) => <span key={i} role="button" onClick={a.onClick} style={{ height: 36, padding: "0 13px", borderRadius: 11, background: a.bg ?? "rgba(255,255,255,.12)", color: a.fg ?? "var(--tl-white)", display: "flex", alignItems: "center", gap: 7, font: "700 12.5px Manrope,sans-serif", cursor: "pointer" }}><Icon name={a.icon} size={15} color={a.fg ?? "var(--tl-white)"} />{a.l}</span>)}
+          {b.acts.map((a, i) => <span key={i} role="button" onClick={a.onClick} tabIndex={0} onKeyDown={tecla(a.onClick)} style={{ height: 36, padding: "0 13px", borderRadius: 11, background: a.bg ?? "rgba(255,255,255,.12)", color: a.fg ?? "var(--tl-white)", display: "flex", alignItems: "center", gap: 7, font: "700 12.5px Manrope,sans-serif", cursor: "pointer" }}><Icon name={a.icon} size={15} color={a.fg ?? "var(--tl-white)"} />{a.l}</span>)}
         </div> : null}
       </div>);
     case "kpis": return (
@@ -182,13 +185,13 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, paddingTop: b.first ? 0 : 14, borderTop: b.first ? "none" : "1px solid rgba(11,14,18,.08)", marginTop: b.first ? 0 : 6 }}>
         <span style={K}>{b.k}</span>
         <span style={{ display: "flex", alignItems: "center", gap: 16, flex: "none" }}>
-          {b.link2 ? <span role="button" onClick={b.onLink2} style={{ font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{b.link2}</span> : null}
-          {b.link ? <span role="button" onClick={b.onLink} style={{ font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{b.link}</span> : null}
+          {b.link2 ? <span role="button" onClick={b.onLink2} tabIndex={0} onKeyDown={tecla(b.onLink2)} style={{ font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{b.link2}</span> : null}
+          {b.link ? <span role="button" onClick={b.onLink} tabIndex={0} onKeyDown={tecla(b.onLink)} style={{ font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{b.link}</span> : null}
         </span>
       </div>);
     case "rows": return (
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {b.k ? <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 4 }}><span style={K}>{b.k}</span>{b.link ? <span role="button" onClick={b.onLink} style={{ font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{b.link}</span> : null}</div> : null}
+        {b.k ? <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 4 }}><span style={K}>{b.k}</span>{b.link ? <span role="button" onClick={b.onLink} tabIndex={0} onKeyDown={tecla(b.onLink)} style={{ font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{b.link}</span> : null}</div> : null}
         <div style={{ display: "grid", gridTemplateColumns: b.cols ?? "minmax(0,1fr)", gap: b.gap ?? "8px" }}>
           {b.items.map((x, i) => { const tg = x.tgOn !== undefined, chev = x.chev !== undefined ? x.chev : !!x.onClick && !x.acts && !tg; return (
             <div key={x.key ?? i} style={{ minWidth: 0, padding: x.compact ? "10px 12px" : "13px 14px", borderRadius: x.compact ? 14 : 17, background: x.bg ?? "var(--tl-white)", border: x.bd ?? "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 11, opacity: x.dim ? 0.55 : 1 }}>
@@ -216,7 +219,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
       <div style={{ padding: "13px 14px", borderRadius: 16, background: T[0], color: T[1], display: "flex", alignItems: "center", gap: 11 }}>
         <Icon name={b.icon ?? T[2]} size={18} color={T[1]} />
         <span style={{ flex: 1, minWidth: 0, font: "600 13px/1.45 Manrope,sans-serif" }}>{b.t}</span>
-        {b.cta ? <span role="button" onClick={b.onCta} style={{ font: "800 12.5px Manrope,sans-serif", color: b.tone === "ink" ? "var(--tl-signal)" : "var(--tl-action)", cursor: "pointer", flex: "none" }}>{b.cta}</span> : null}
+        {b.cta ? <span role="button" onClick={b.onCta} tabIndex={0} onKeyDown={tecla(b.onCta)} style={{ font: "800 12.5px Manrope,sans-serif", color: b.tone === "ink" ? "var(--tl-signal)" : "var(--tl-action)", cursor: "pointer", flex: "none" }}>{b.cta}</span> : null}
       </div>); }
     case "lock": return (
       <div style={{ padding: 18, borderRadius: 20, background: "rgba(255,176,32,.08)", border: "1px solid rgba(255,176,32,.3)", display: "flex", flexDirection: "column", gap: 10 }}>
@@ -254,11 +257,11 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
         {b.k ? <span style={{ ...K, display: "flex", justifyContent: "space-between" }}><span>{b.k}</span><span style={{ fontWeight: 600 }}>{b.count}</span></span> : null}
         <div style={{ display: "grid", gridTemplateColumns: `repeat(${b.cols ?? 3},minmax(0,1fr))`, gap: 8 }}>
           {b.items.map((p, i) => (
-            <div key={p.key ?? i} role="button" onClick={p.onClick} style={{ position: "relative", aspectRatio: "1", borderRadius: 14, backgroundImage: p.bg, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", boxSizing: "border-box", border: p.on ? "3px solid var(--tl-action)" : "3px solid transparent", cursor: "pointer" }}>
+            <div key={p.key ?? i} role="button" onClick={p.onClick} tabIndex={0} onKeyDown={tecla(p.onClick)} style={{ position: "relative", aspectRatio: "1", borderRadius: 14, backgroundImage: p.bg, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", boxSizing: "border-box", border: p.on ? "3px solid var(--tl-action)" : "3px solid transparent", cursor: "pointer" }}>
               {p.tag ? <span style={{ position: "absolute", left: 6, top: 6, padding: "3px 6px", borderRadius: 6, background: "rgba(11,14,18,.75)", color: "var(--tl-white)", font: `800 8.5px ${MONO}`, letterSpacing: ".1em" }}>{p.tag}</span> : null}
             </div>))}
           {b.onAdd ? (
-            <div role="button" onClick={b.onAdd} style={{ aspectRatio: "1", borderRadius: 14, border: "1.5px dashed rgba(11,14,18,.22)", boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer", background: "var(--tl-white)" }}>
+            <div role="button" onClick={b.onAdd} tabIndex={0} onKeyDown={tecla(b.onAdd)} style={{ aspectRatio: "1", borderRadius: 14, border: "1.5px dashed rgba(11,14,18,.22)", boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer", background: "var(--tl-white)" }}>
               <Icon name="plus" size={20} color="var(--tl-action)" /><span style={{ font: "700 11.5px Manrope,sans-serif", color: "var(--tl-action)", textAlign: "center", padding: "0 6px" }}>{b.addL}</span>
             </div>) : null}
         </div>
@@ -268,7 +271,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
       <div style={{ border: "1px solid rgba(11,14,18,.08)", borderRadius: 18, background: "var(--tl-white)", overflow: "hidden" }}>
         {b.items.map((x, i) => (
           <div key={i} style={{ borderBottom: "1px solid rgba(11,14,18,.06)" }}>
-            <div role="button" onClick={x.onOpen} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", cursor: "pointer" }}>
+            <div role="button" onClick={x.onOpen} tabIndex={0} onKeyDown={tecla(x.onOpen)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", cursor: "pointer" }}>
               <span style={{ width: 92, flex: "none", display: "flex", alignItems: "center", gap: 6, font: "700 13.5px Manrope,sans-serif" }}>{x.d}{x.today ? <span style={{ font: `800 8.5px ${MONO}`, letterSpacing: ".1em", color: "var(--tl-action)" }}>{b.todayL}</span> : null}</span>
               <span style={{ flex: 1, minWidth: 0, font: "600 13px Manrope,sans-serif", color: x.hFg ?? "var(--tl-ink)" }}>{x.h}</span>
               <span role="switch" aria-checked={x.on} aria-label={x.d} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); x.onTg?.(); } }} onClick={(e) => { para(e); x.onTg?.(); }} style={toque(x.on)}><span style={bolita(x.on)} /></span>
@@ -289,8 +292,8 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
                     </div>))}
                 </div>))}
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 16px" }}>
-                  {x.twoL ? <span role="button" onClick={x.onTwo} style={{ display: "flex", alignItems: "center", gap: 7, font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{x.twoL}{b.free ? <Chip variant="pro">PRO</Chip> : null}</span> : null}
-                  <span role="button" onClick={x.onCopy} style={{ font: "700 12.5px Manrope,sans-serif", color: "rgba(11,14,18,.6)", cursor: "pointer" }}>{b.copyL}</span>
+                  {x.twoL ? <span role="button" onClick={x.onTwo} tabIndex={0} onKeyDown={tecla(x.onTwo)} style={{ display: "flex", alignItems: "center", gap: 7, font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{x.twoL}{b.free ? <Chip variant="pro">PRO</Chip> : null}</span> : null}
+                  <span role="button" onClick={x.onCopy} tabIndex={0} onKeyDown={tecla(x.onCopy)} style={{ font: "700 12.5px Manrope,sans-serif", color: "rgba(11,14,18,.6)", cursor: "pointer" }}>{b.copyL}</span>
                 </div>
               </div>) : null}
           </div>))}
@@ -300,19 +303,19 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
         <Icon name={b.icon} size={22} color="rgba(11,14,18,.35)" />
         <span style={{ font: "800 15px/1.3 Sora,sans-serif", letterSpacing: "-.02em" }}>{b.t}</span>
         <span style={{ font: "500 12.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{b.s}</span>
-        {b.cta ? <span role="button" onClick={b.onCta} style={{ marginTop: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{b.cta}</span> : null}
+        {b.cta ? <span role="button" onClick={b.onCta} tabIndex={0} onKeyDown={tecla(b.onCta)} style={{ marginTop: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{b.cta}</span> : null}
       </div>);
     case "rvar": return (
       <div style={{ padding: "13px 14px", borderRadius: 17, background: "var(--tl-white)", border: b.open ? "1.5px solid var(--tl-ink)" : "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 11, opacity: b.on ? 1 : 0.7 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span role="button" onClick={b.onClick} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+          <span role="button" onClick={b.onClick} tabIndex={0} onKeyDown={tecla(b.onClick)} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
             <span style={{ width: 40, height: 40, flex: "none", borderRadius: 12, background: "rgba(75,55,245,.08)", display: "grid", placeItems: "center" }}><Icon name={b.icon} size={18} color="var(--tl-action)" /></span>
             <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", font: "700 14px/1.3 Manrope,sans-serif", color: "var(--tl-ink)" }}>{b.t}</span><span style={{ display: "block", marginTop: 2, font: "500 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{b.s}</span></span>
           </span>
           <span role="switch" aria-checked={b.on} aria-label={b.t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); b.onTg(); } }} onClick={b.onTg} style={toque(b.on)}><span style={bolita(b.on)} /></span>
         </div>
         {b.on && (b.chips.length > 0 || !b.open) ? (
-          <div role="button" onClick={b.onClick} style={{ display: "flex", flexWrap: "wrap", gap: 6, cursor: "pointer" }}>
+          <div role="button" onClick={b.onClick} tabIndex={0} onKeyDown={tecla(b.onClick)} style={{ display: "flex", flexWrap: "wrap", gap: 6, cursor: "pointer" }}>
             {b.chips.map((l, i) => <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 28, padding: "0 10px", borderRadius: 9, background: "rgba(11,14,18,.05)", font: "700 11.5px Manrope,sans-serif", color: "var(--tl-ink)" }}><span style={{ display: "grid" }}><Icon name="users" size={13} color="rgba(11,14,18,.55)" /></span>{l.l}</span>)}
             {b.editL ? <span style={{ display: "inline-flex", alignItems: "center", height: 28, padding: "0 4px", font: "700 12px Manrope,sans-serif", color: "var(--tl-action)" }}>{b.editL}</span> : null}
           </div>) : null}
@@ -321,7 +324,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {b.items.map((x, i) => (
           <div key={x.key ?? i} style={{ padding: "13px 14px", borderRadius: 17, background: "var(--tl-white)", border: x.pend ? "1.5px solid var(--tl-ink)" : x.open ? "1.5px solid rgba(11,14,18,.5)" : "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 10, opacity: x.dim ? 0.6 : 1 }}>
-            <div role="button" aria-expanded={x.open} onClick={x.onClick} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+            <div role="button" aria-expanded={x.open} onClick={x.onClick} tabIndex={0} onKeyDown={tecla(x.onClick)} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
               <span style={{ width: 40, height: 40, flex: "none", borderRadius: 99, background: x.pend ? "rgba(75,55,245,.1)" : "rgba(11,14,18,.06)", color: x.pend ? "var(--tl-action)" : "var(--tl-ink)", display: "grid", placeItems: "center", font: "800 13px Sora,sans-serif", letterSpacing: "-.02em" }}>{x.ini}</span>
               <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", font: "700 14px/1.3 Manrope,sans-serif", color: "var(--tl-ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.n}</span>{x.m ? <span style={{ display: "block", marginTop: 3, font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.m}</span> : null}</span>
               <span style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>{x.total ? <span style={{ font: "800 15px/1 Sora,sans-serif", letterSpacing: "-.02em", color: "var(--tl-ink)" }}>{x.total}</span> : null}{x.tag ? <Tag tone={x.tone ?? "neutral"}>{x.tag}</Tag> : null}</span>
@@ -359,7 +362,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
         </div>
         <div style={{ display: "grid", gridTemplateColumns: `repeat(${b.tools.length},minmax(0,1fr))`, gap: 4, margin: "-4px -4px -6px" }}>
           {b.tools.map((x, i) => (
-            <span key={i} role="button" onClick={x.onClick} style={{ minWidth: 0, padding: "8px 2px", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer", textAlign: "center" }}>
+            <span key={i} role="button" onClick={x.onClick} tabIndex={0} onKeyDown={tecla(x.onClick)} style={{ minWidth: 0, padding: "8px 2px", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer", textAlign: "center" }}>
               <span style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(11,14,18,.05)", display: "grid", placeItems: "center" }}><Icon name={x.icon} size={18} /></span>
               <span style={{ font: "700 11px/1.25 Manrope,sans-serif", color: "var(--tl-ink)" }}>{x.l}</span>
             </span>))}
@@ -486,9 +489,9 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
         <span style={{ flex: 1, minWidth: 0, height: 46, padding: "0 14px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", background: "var(--tl-white)", display: "flex", alignItems: "center", gap: 9, boxSizing: "border-box" }}>
           <Icon name="search" size={17} color="rgba(11,14,18,.45)" />
           <input value={b.val} onChange={(e) => b.onChange(e.target.value)} placeholder={b.ph} aria-label={b.ph} style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", font: "600 14.5px Manrope,sans-serif", color: "var(--tl-ink)" }} />
-          {b.val ? <span role="button" aria-label="Borrar" onClick={b.onClear} style={{ width: 24, height: 24, borderRadius: 8, background: "rgba(11,14,18,.06)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="close" size={12} strokeWidth={2.2} /></span> : null}
+          {b.val ? <span role="button" aria-label="Borrar" onClick={b.onClear} tabIndex={0} onKeyDown={tecla(b.onClear)} style={{ width: 24, height: 24, borderRadius: 8, background: "rgba(11,14,18,.06)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="close" size={12} strokeWidth={2.2} /></span> : null}
         </span>
-        {b.link ? <span role="button" onClick={b.onLink} style={{ flex: "none", height: 46, padding: "0 14px", borderRadius: 14, background: b.linkOn ? "var(--tl-ink)" : "var(--tl-white)", color: b.linkOn ? "var(--tl-white)" : "var(--tl-ink)", border: "1px solid rgba(11,14,18,.1)", boxSizing: "border-box", display: "flex", alignItems: "center", font: "700 13px Manrope,sans-serif", cursor: "pointer", whiteSpace: "nowrap" }}>{b.link}</span> : null}
+        {b.link ? <span role="button" onClick={b.onLink} tabIndex={0} onKeyDown={tecla(b.onLink)} style={{ flex: "none", height: 46, padding: "0 14px", borderRadius: 14, background: b.linkOn ? "var(--tl-ink)" : "var(--tl-white)", color: b.linkOn ? "var(--tl-white)" : "var(--tl-ink)", border: "1px solid rgba(11,14,18,.1)", boxSizing: "border-box", display: "flex", alignItems: "center", font: "700 13px Manrope,sans-serif", cursor: "pointer", whiteSpace: "nowrap" }}>{b.link}</span> : null}
       </div>);
     case "bulk": return <SelectionBar title={b.t} allLabel={b.allL} onAll={b.onAll} onClose={b.onClose} top={b.top ?? "12px"}
       actions={b.acts.map((a) => ({ label: a.l, icon: a.icon, on: !!a.on, disabled: !!a.off, onClick: a.onClick }))} subLabel={b.subK} sub={(b.sub ?? []).map((a) => ({ label: a.l, danger: !!a.danger, onClick: a.onClick }))} />;
