@@ -56,17 +56,29 @@ create table if not exists admin_messages (
   id          bigint generated always as identity primary key,
   target_kind text not null check (target_kind in ('user', 'business')),
   target_id   text not null,
+  user_id     uuid references users (id),                         -- la persona (target_kind = 'user'); lo que se purga al borrar su cuenta
   city_id     text references cities (id),
   channel     text not null check (channel in ('sms', 'push')),
-  body        text not null check (char_length(body) between 3 and 320),
+  body        text not null check (char_length(body) between 3 and 320 or body = ''),
   reason      text not null check (char_length(reason) between 3 and 500),
   by_staff    uuid not null references users (id),
-  at          timestamptz not null default now()
+  at          timestamptz not null default now(),
+  check ((target_kind = 'user') = (user_id is not null))
 );
 create index if not exists admin_messages_destino_idx on admin_messages (target_kind, target_id, at desc);
 create index if not exists admin_messages_equipo_idx on admin_messages (by_staff, at desc);
+create index if not exists admin_messages_persona_idx on admin_messages (user_id) where user_id is not null;
+-- Solo inserción; la única excepción es la purga de una cuenta borrada (tl.purga, solo dentro de lib/datos/purgar.ts): vacía el TEXTO una vez; quién, cuándo y por
+-- qué se escribió quedan (como los mensajes entre vecinos, 0134).
 create or replace function admin_messages_solo_insercion() returns trigger language plpgsql as $$
-begin raise exception 'admin_messages es solo de inserción'; end $$;
+begin
+  if tg_op = 'UPDATE' and coalesce(current_setting('tl.purga', true), '') = 'si' and new.body = '' and old.body <> ''
+     and (new.target_kind, new.target_id, new.user_id, new.city_id, new.channel, new.reason, new.by_staff, new.at) is not distinct from (old.target_kind, old.target_id, old.user_id, old.city_id, old.channel, old.reason, old.by_staff, old.at)
+     and exists (select 1 from users u where u.id = old.user_id and u.delete_at is not null and u.delete_at <= now()) then
+    return new;
+  end if;
+  raise exception 'admin_messages es solo de inserción';
+end $$;
 drop trigger if exists admin_messages_no_cambia on admin_messages;
 create trigger admin_messages_no_cambia before update or delete on admin_messages for each row execute function admin_messages_solo_insercion();
 

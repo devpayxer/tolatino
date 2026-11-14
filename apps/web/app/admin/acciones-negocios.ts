@@ -9,6 +9,7 @@ import { auditar, staff, type Staff } from "@/lib/admin";
 import { normalizarTelefono } from "@/lib/cuenta";
 import { avisar } from "@/lib/avisos";
 import { db, tx } from "@/lib/db";
+import { hoyEn } from "@/lib/fecha-local";
 import type { ResAdm } from "./acciones-colas";
 
 const no = (mensaje: string): ResAdm => ({ ok: false, mensaje });
@@ -404,5 +405,5 @@ export async function exportarNegocios(filtros: Record<string, string | undefine
     return r;
   });
   if (!hecho) return no("Ya exportaste 5 veces en la última hora. Espera un rato.");
-  return { ok: true, mensaje: `Exportadas ${hecho.n} ${hecho.n === 1 ? "fila" : "filas"}. Quedó en la auditoría.`, nombre: `negocios-${new Date().toISOString().slice(0, 10)}.csv`, csv: hecho.csv };
+  return { ok: true, mensaje: `Exportadas ${hecho.n} ${hecho.n === 1 ? "fila" : "filas"}. Quedó en la auditoría.`, nombre: `negocios-${hoyEn()}.csv`, csv: hecho.csv };
 }

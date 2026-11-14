@@ -54,6 +54,9 @@ export default async function Sistema() {
                 tag={m.rol.toUpperCase()}
                 tone={m.role === "admin" ? "ink" : "neutral"}
               />
+              {m.user_id === s.id && (
+                <a href="/admin/seguridad" className="self-start px-1 text-[12.5px] font-extrabold text-action">Mis dos pasos: cambiar mi app de códigos o pedir códigos de recuperación nuevos</a>
+              )}
               {editar && m.user_id !== s.id && factores.get(m.user_id)?.app && (
                 <ConMotivo accion={restablecerDosPasos} campos={{ usuario: m.user_id }} boton="Restablecer sus dos pasos"
                   titulo={`Restablecer los dos pasos de ${m.nombre}`} sub="Su app de códigos deja de servir y sus sesiones vuelven a pedir el segundo factor: la da de alta otra vez al entrar. Le llega un aviso."

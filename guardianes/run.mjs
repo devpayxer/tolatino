@@ -375,7 +375,7 @@ const guardianes = {
       "apps/web/lib/textos.ts": ["foto_rep_quitada", "foto_rep_queda"], "apps/web/app/panel/Menu.tsx": ["biz_quedan_pocos"], "apps/web/app/(app)/n/[id]/apartar/Apartar.tsx": ["lay_listo", "lay_pronto"],
       // Lo que explica el camino del SMS (el respaldo del push, lo crítico, el código): lo cumple el SMS del código para entrar (crit, siempre) y el único camino.
       "apps/web/app/(app)/cuenta/avisos/Avisos.tsx": ["cuenta_codigo"], "apps/web/app/admin/IntegracionesPush.tsx": ["cuenta_codigo"], "apps/web/lib/push/admin.ts": ["cuenta_codigo"],
-      "apps/web/app/admin/Notificaciones.tsx": ["cuenta_codigo"], "apps/web/app/admin/U360.tsx": ["cuenta_codigo"],
+      "apps/web/app/admin/Notificaciones.tsx": ["cuenta_codigo"], "apps/web/app/admin/U360.tsx": ["cuenta_codigo", "msg_equipo_sms"], "apps/web/app/admin/acciones-usuarios.ts": ["msg_equipo_sms"],
     };
     const sms = new Map(); // clave → ¿lleva SMS? (la última migración que la define)
     for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) for (const m of readFileSync(`packages/db/migrations/${x}`, "utf8").matchAll(/\(\s*'([a-z0-9_]+)',\s*'(?:crit|tx|mod|biz|mkt|community|events|support)',\s*(?:'\w+'|null),\s*(true|false)(?:,\s*'(siempre|sin_push|nunca)')?/g)) sms.set(m[1], m[2] === "true" && m[3] !== "nunca");
@@ -4172,8 +4172,10 @@ const guardianes = {
     if (!/check \(sales_extended_until is null or sales_extended_until <= starts_at\)/.test(m) || !/least\(d\.starts_at, greatest\(d\.sales_extended_until/.test(ultimaFn("bol_venta_hasta"))) falla(G, M, 0, "la venta extendida nunca pasa del inicio (D1)");
     if (!/create or replace view evt_sobreventa as[\s\S]*?v\.n > s\.quantity[\s\S]*?v\.n > s\.quantity/.test(m)) falla(G, M, 0, "falta la alerta viva evt_sobreventa (boletos vivos contra la existencia de cada tipo y mesa)");
     if (!existsSync(L)) return falla(G, L, 0, "falta lib/evt-admin.ts");
-    const t = sinComent(L), a = cuerpoFn(t, "ajustarCupo"), iB = a.search(/if \(n < x\.usado\) return no/), iI = a.search(/insert into event_stock_overrides/);
-    if (iB < 0 || iI < 0 || iB > iI) falla(G, L, 0, "ajustarCupo: rechazar por debajo de lo vendido + apartado ANTES de guardar el ajuste");
+    const t = sinComent(L), a = cuerpoFn(t, "ajustarCupo");
+    // 9n-3 · hay dos caminos (boletos/mesas/aforo y el cupo del RSVP): cada inserción del ajuste va DESPUÉS de su rechazo por debajo de lo vendido o guardado.
+    const rechazos = [...a.matchAll(/if \((?:n > 0 && )?n < (?:x|ev)\.usado\) return no/g)].map((m) => m.index), inserciones = [...a.matchAll(/insert into event_stock_overrides/g)].map((m) => m.index);
+    if (!inserciones.length || rechazos.length < inserciones.length || inserciones.some((iI, i) => !(rechazos[i] < iI))) falla(G, L, 0, "ajustarCupo: rechazar por debajo de lo vendido + apartado ANTES de guardar el ajuste");
     for (const fn of ["ajustarCupo", "extenderVenta"]) { const b = cuerpoFn(t, fn); if (!/m\.length < 4\) return no/.test(b) || !/insert into event_changes/.test(b) || !/await auditar\(c,/.test(b) || !/for update/.test(b + cuerpoFn(t, "fechaAdm"))) falla(G, L, 0, `${fn}: motivo, event_changes, auditoría y la fecha bloqueada`); }
     if (existsSync(AC)) { const ac = sinComent(AC); for (const fn of ["evtCupo", "evtExtenderVenta"]) if (!/requerir\("evt", "editar"\)/.test(cuerpoFn(ac, fn))) falla(G, AC, 0, `${fn} pide evt:editar`); }
     for (const f of ["apps/web/app/admin/page.tsx", "apps/web/app/admin/eventos/page.tsx"]) if (existsSync(f) && !/sobreventa\(s\)/.test(readFileSync(f, "utf8"))) falla(G, f, 0, "la alerta «evento con sobreventa» sale aquí");

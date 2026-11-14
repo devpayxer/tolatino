@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Resultados } from "@/lib/admin-buscar";
 
+const RUTA = "/admin/buscar";
+const destino = (q: string) => (q.trim() ? RUTA + "?q=" + encodeURIComponent(q.trim()) : RUTA);
+
 export function Buscar({ r }: { r: Resultados }) {
   const router = useRouter();
   const [q, setQ] = useState(r.q);
@@ -12,7 +15,7 @@ export function Buscar({ r }: { r: Resultados }) {
   // Con la caja quieta 300 ms busca sola; Enter busca al momento.
   useEffect(() => {
     if (q.trim() === r.q) return;
-    const t = setTimeout(() => router.replace(`/admin/buscar${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ""}`), 300);
+    const t = setTimeout(() => router.replace(destino(q)), 300);
     return () => clearTimeout(t);
   }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
   const grupo = (k: string, l: { t: string; s: string; href: string; icon: string }[]): Bloque | null =>
@@ -20,13 +23,13 @@ export function Buscar({ r }: { r: Resultados }) {
   const n = r.negocios.length + r.usuarios.length + r.operaciones.length + r.secciones.length;
   const bloques: (Bloque | null)[] = [
     { type: "head", eye: "BUSCAR EN TODO", t: "Buscador", s: "Negocio, usuario, # de operación o sección. Solo lo de tus ciudades y lo que tu rol puede ver.", h1: 24 },
-    { type: "search", val: q, ph: "Buscar negocio, usuario, # de operación…", onChange: setQ, onClear: () => { setQ(""); router.replace("/admin/buscar"); } },
+    { type: "search", val: q, ph: "Buscar negocio, usuario, # de operación…", onChange: setQ, onClear: () => { setQ(""); router.replace(RUTA); } },
     r.q.length < 2 ? { type: "empty", icon: "search", t: "Escribe al menos 2 letras", s: "Atajo: ⌘K (o Ctrl K) desde cualquier pantalla del Super Admin." }
       : !n ? { type: "empty", icon: "search", t: "No encontré nada", s: `Nada con «${r.q}» en tus ciudades. Prueba con otro nombre, un teléfono o el número de la operación.` } : null,
     grupo("NEGOCIOS", r.negocios), grupo("USUARIOS", r.usuarios), grupo("OPERACIONES", r.operaciones), grupo("SECCIONES", r.secciones),
   ];
   return (
-    <form onSubmit={(e) => { e.preventDefault(); router.replace(`/admin/buscar?q=${encodeURIComponent(q.trim())}`); }} style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 760 }}>
+    <form onSubmit={(e) => { e.preventDefault(); router.replace(destino(q)); }} style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 760 }}>
       <PanelBloques bloques={bloques} h1={24} />
     </form>
   );

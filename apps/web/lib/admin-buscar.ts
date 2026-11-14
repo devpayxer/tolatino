@@ -36,7 +36,7 @@ export async function buscarTodo(s: Staff, entrada: string): Promise<Resultados>
     s.puede("tx", "ver") && /^[A-Za-z]{0,3}-?[0-9A-Za-z]{2,}$/.test(q)
       ? db().query<{ number: string; kind: string; total: number; bname: string | null }>(
           `select o.number, o.kind, o.total_cents as total, b.name as bname from operations o left join businesses b on b.id = o.business_id
-            where (cardinality($2::text[]) = 0 or o.city_id = any($2::text[])) and upper(o.number) like upper($1) || '%' order by o.created_at desc limit ${MAX}`, [q, s.cities])
+            where o.kind in ('order', 'market_order', 'hold', 'appointment', 'party', 'private_event', 'table', 'night', 'trip', 'enrollment', 'visit', 'tickets', 'rental', 'plan') and (cardinality($2::text[]) = 0 or o.city_id = any($2::text[])) and upper(o.number) like upper($1) || '%' order by o.created_at desc limit ${MAX}`, [q, s.cities])
       : null,
     gruposNav((k) => s.puede(k, "ver")),
   ]);
