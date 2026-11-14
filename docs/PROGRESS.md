@@ -1599,3 +1599,45 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **Probado aquí:** `node guardianes/run.mjs` → «sin fallos»; `tsc --noEmit` limpio; `pnpm --filter web build` en verde; re-portar produce el mismo árbol (`sistemaSincronizado`).
 - **No cerrado, con destino (LAUNCH «Fase 9 · 9c»):** contraste de texto AA y objetivos de 44 px (cambian las capturas aprobadas: necesitan tu OK), nombres EN de los íconos
   sin texto en las pantallas que no pasan `lang`, hojas sin trampa de foco ni Escape, flechas entre pestañas, el foco sobre fondos oscuros.
+
+## Fase 9 · 9d — tus datos: exportar, borrar a los 30 días, retener y fusionar cuentas (14 nov)
+- **Hecho (rama local `fase9-9d`, sobre e462364):**
+  - **Un solo mapa** `packages/db/mapa-de-datos.json` → `node scripts/datos/mapa.mjs` → semilla repetible `packages/db/seeds/mapa_datos.sql` → tabla **`data_map`**
+    (278 filas: por tabla y columna, persona / equipo / teléfono; borrar, vaciar, seudonimizar o guardar con su porqué; el archivo donde se exporta; si se mueve al
+    fusionar). Lo que la purga escribe sale de una lista cerrada de valores (el generador y `lib/datos/mapa.ts` lo revisan). `sinPersona` para las tablas personales
+    sin columna de persona (registro técnico de Soporte, errores).
+  - **Migración `0134_mis_datos.sql`:** `data_map`; `data_exports` (uno vivo por persona y negocio, sin borrar: vence; un uso en la base); `purge_runs` y `purge_items`
+    (solo inserción); `account_merges` (solo inserción, `approved_by <> requested_by`); `users.phone` vacío solo en una cuenta `deleted`/`merged`; los textos mínimos
+    (reseña, publicación, comentario, mensaje, calle) admiten el vacío solo en su estado de quitado; `otp_codes` propósito `data_export`; `account_changes` «export»;
+    `dm_messages_antes` con la purga (`tl.purga`); `ticket_scans.purged_at` y `escaneos_retener()` (`tl.retencion`); `datos_vaciar_derivados()` (el último mensaje
+    de una conversación lo vacía la base); `datos_purga_pendiente(cuenta, teléfono)`; Configuración › **Retención** (`export_cada_dias` 7, `export_vence_h` 24,
+    `purga_lote` 1000, `retener_escaneos_meses` 13, `retener_doc_reclamo_dias` 90, `retener_sesiones_dias` 400, `retener_busquedas_dias` 90,
+    `retener_codigos_dias` 7); plantillas `datos_export_listo`, `datos_export_negocio`, `cuenta_borrada`. Aplicada dos veces en local (la segunda no cambia nada).
+  - **Servidor (`apps/web/lib/datos/`):** `mapa.ts` (lee `data_map`), `exportar.ts` (el ZIP JSON + CSV + LEEME ES/EN por el mapa, solo sus filas y sin columnas de
+    otra persona; el del negocio con lo que el panel muestra; el barrido lo arma al almacén privado `privado/exportes/`; bajar = POST, una vez, 24 h, 404 a otra
+    cuenta), `purgar.ts` (D5 por el mapa en una transacción por cuenta: fotos fuera de Garage, `soporte_purgar_casos` y `compa_purgar_conversaciones` de 7i,
+    negocios sin otro dueño quedan sin dueño y su Pro termina, traducciones derivadas, avisos por push sin texto, la cuenta al final con teléfono vacío y «Cuenta
+    borrada»; comprueba con `datos_purga_pendiente` y anota `purge_runs`/`purge_items`), `retener.ts` (las cinco retenciones nuevas), `fusionar.ts` (por el mapa,
+    sin chocar con lo que la otra cuenta ya tiene), `terminos.ts`, `admin.ts`. En el barrido: `datosPurga`, `datosArchivos`, `datosArchivosVencer`, `retenciones`.
+    `abrirSesionEn`: pasada la fecha ya no entra (y entrar ya no cancela un borrado vencido).
+  - **Pantallas:** Mi cuenta › Ajustes › Privacidad › **Descargar mis datos** (`/cuenta/ajustes/privacidad/datos`, USR-DATOS) y **Términos que aceptaste**
+    (`/terminos`, USR-TERMINOS); Panel › Más › **Exportar los datos del negocio** (`/panel/{id}/exportar`, solo el dueño); Super Admin › Usuarios 360° ›
+    **Privacidad** (sus archivos, «Exportar sus datos» = el mismo ZIP, borrado y su purga tabla por tabla, Ver como de solo lectura con motivo auditado antes, términos,
+    avisos que recibe, **Fusionar** con dos personas por Cambios sensibles `mergeUser`); Colas › Cambios sensibles aplica la fusión; Sistema › Configuración ›
+    **Retención** (las claves nuevas y las que ya corrían en su sección). Todo compuesto con piezas existentes (REVISION 9d).
+  - **Guardianes:** **`mapaDeDatos`** (reemplaza y amplía `privacidadCoherente`: toda columna `references users` de las migraciones —también varias por línea y las
+    de un `add column`— está en el mapa; toda tabla del inventario también; tablas y columnas existen; semilla al día), **`purgaCompleta`** (estático + la prueba),
+    **`exportaSoloLoSuyo`**, **`enlaceUnUsoSinGet`**, **`retencionQueCorre`** ampliado (`retener_*` corre en el barrido y tiene su prueba con el reloj movido),
+    `barridoCompleto` mira también `lib/datos/`. Al revés: **`alreves9d` 23/23**; `alreves8i` (49/49) y `alreves7i` (35/35) al día.
+  - **Semilla del sandbox `0052_mis_datos.sql`** (el plan decía 0049): Borra Mañana (borra en 1 día), Borra Ayer (31 días: el barrido la purga), Datos Listos (archivo
+    pedido), Datos Vencidos (archivo vencido).
+  - **Ayuda:** `descargar-mis-datos` (vecino), `panel-exportar-los-datos` (negocio; cada artículo es de una sola audiencia), `borrar-mi-cuenta` (nuevo, lo que pasa
+    exactamente a los 30 días) y `admin-privacidad` (equipo). Las cuatro pasan `ayudaConForma` y el indexador.
+- **Probado aquí (sin Docker: Postgres 16 + PostGIS de la máquina, un S3 de mentira en lugar de Garage, Chrome del sistema, perfil `basico`):**
+  `node guardianes/run.mjs` → «sin fallos»; `tsc --noEmit` limpio; `pnpm build` en verde; la purga corrida sobre las 307 cuentas de la semilla → 307/307 completas;
+  **`datos9d` 61 ✓ dos veces seguidas** (pedir con el código, el barrido lo arma, GET 303 sin gastarlo, otra cuenta 404, bajar una vez → 410, vence, el del negocio
+  sin teléfonos ni direcciones, +30 días → `datos_purga_pendiente` en 0 y cada tabla, «Cuenta borrada» en el panel, el mismo teléfono = cuenta nueva, las cinco
+  retenciones con el reloj movido, fusionar con una persona → no y con otra → sí); `usr1l`, `cuenta2h` y `adm7i` (117 ✓) siguen en verde. **No se corrió la
+  regresión entera** ni la matriz de 9 dispositivos: eso es del CI (LAUNCH «Fase 9 · 9d»).
+- **No cerrado, con destino (LAUNCH «Fase 9 · 9d»):** el aviso `cuenta_borrada` y la retención de `phone_messages` (9l), Términos de uso con versión y /privacidad
+  desde el mapa (9e), «Cuenta borrada» en inglés (9f), pedir el archivo con la llave de acceso y el tope de 20 000 filas por parte (9m), la corrida del CI (9b).
