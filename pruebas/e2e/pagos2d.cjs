@@ -55,6 +55,7 @@ const restaurar = () => { try { sql(`update business_hours set ranges='[["11:00"
   await agregar('4000000000000002');
   const appAntes = sql(`select count(*) from operations where user_id = ${MARISOL} and pay_mode = 'app'`);
   ok(sql(`select count(*) from payment_methods where user_id = ${MARISOL} and last4 = '0002' and simulated and status = 'active'`) === '1', 'tarjeta guardada: solo marca y últimos 4');
+  await m.locator('[data-screen-label="Checkout · barra"]').getByText(/Enviar pedido/).waitFor({ timeout: 15000 }).catch(async () => { throw new Error('sin «Enviar pedido» · la página dice: ' + (await m.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 1500)); });
   await m.locator('[data-screen-label="Checkout · barra"]').getByText(/Enviar pedido/).click();
   await m.getByText(/Tu banco la rechazó/).first().waitFor(); ok(true, 'rechazada: «Tu banco la rechazó» y no hay pedido');
   ok(sql(`select count(*) from operations where user_id = ${MARISOL} and pay_mode = 'app'`) === appAntes, 'sin pedido con la tarjeta rechazada');

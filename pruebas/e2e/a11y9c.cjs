@@ -215,9 +215,14 @@ const chicos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=butt
       if (!(await p.locator('text=RESPONDE LO QUE FALTA').count())) break;
       const grupos = p.locator('[data-screen-label^="ONB-NEG-C1"] > div'), k = await grupos.count();
       // Una pregunta de número tiene «−» primero, que en el mínimo no hace nada: se toca su «+» (primera corrida en el CI: el paso no avanzaba).
-      for (let g = 0; g < k; g++) { const mas = grupos.nth(g).locator('[role=button][aria-label="+"]'); const opc = (await mas.count()) ? mas.first() : grupos.nth(g).locator('div[role=button], [role=radio], [role=checkbox], span[role=button]:not([aria-label="−"])').first(); if (await opc.count()) await act(p, opc, 'Space').catch(() => {}); await dormir(120); }
+      for (let g = 0; g < k; g++) { const mas = grupos.nth(g).locator('[role=button][aria-label="+"]'); const opc = (await mas.count()) ? mas.first() : grupos.nth(g).locator('div[role=button], [role=radio], [role=checkbox], span[role=button]:not([aria-label="−"])').first(); if (await opc.count()) await act(p, opc, 'Space').catch((e) => console.log('  (aviso paso 2, pregunta ' + g + ': ' + e.message.slice(0, 160) + ')')); await dormir(120); }
     }
     await seg(); await dormir(900);
+    // 9b-3 · Si el paso 2 no avanzó, decirlo con lo que hay en pantalla y lo elegido (antes: «no visible: Seguir ·» sin saber por qué).
+    if (await p.locator('[data-screen-label^="ONB-NEG-C1"]').count()) {
+      const elegido = await p.locator('[data-screen-label^="ONB-NEG-C1"] [aria-checked=true], [data-screen-label^="ONB-NEG-C1"] [aria-pressed=true]').allInnerTexts().catch(() => []);
+      throw new Error('el paso 2 no avanzó · elegido: ' + elegido.join(' | ') + ' · nombres: ' + nombres.slice(-6).join(' · ') + ' · la página dice: ' + (await p.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 1500));
+    }
     await act(p, p.locator('button, span, div').filter({ hasText: /^Seguir · / }).last()); await dormir(900);
     const dir = p.getByPlaceholder('312 N Wyoming St'); if (await dir.count()) await dir.fill('412 N Wyoming St');
     await dormir(400); await seg(); await dormir(900);

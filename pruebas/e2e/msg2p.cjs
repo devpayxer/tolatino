@@ -31,7 +31,9 @@ const limpiar = () => { try { sql(`update chat_threads set blocked_at = null, bl
   // 3) enviar
   await m.getByPlaceholder(/Escribe a/).fill('Hola, ¿tienen mofongo hoy?'); await m.getByRole('button', { name: 'Enviar' }).click();
   await m.getByText('Hola, ¿tienen mofongo hoy?').first().waitFor();
-  ok(sql(`select body from chat_messages where thread_id = ${TH} order by id desc limit 1`) === 'Hola, ¿tienen mofongo hoy?', 'el mensaje se guarda');
+  // 9b-3 · El texto en pantalla sale antes de que el servidor lo guarde: se espera a la base (dos veces seguidas, la consulta llegó antes).
+  let ult = ''; for (let i = 0; i < 40 && ult !== 'Hola, ¿tienen mofongo hoy?'; i++) { ult = sql(`select body from chat_messages where thread_id = ${TH} order by id desc limit 1`); if (ult !== 'Hola, ¿tienen mofongo hoy?') await new Promise((r) => setTimeout(r, 250)); }
+  ok(ult === 'Hola, ¿tienen mofongo hoy?', 'el mensaje se guarda' + (ult === 'Hola, ¿tienen mofongo hoy?' ? '' : ` (el último: «${ult}»)`));
   ok(Number(sql(`select biz_unread from chat_threads where id = ${TH}`)) === 1, 'el negocio lo tiene sin leer');
   ok(Number(sql(`select count(*) from notifications where tpl = 'biz_msg' and user_id = ${PEDRO}`)) === nb0 + 1, 'aviso al dueño');
   await m.getByPlaceholder(/Escribe a/).fill('Para recoger a las 6'); await m.getByRole('button', { name: 'Enviar' }).click(); await m.getByText('Para recoger a las 6').first().waitFor();

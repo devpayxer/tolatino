@@ -82,7 +82,8 @@ const enVersion = (p, v, boton) => p.locator('div', { has: p.getByText(new RegEx
     await pv.goto(B + '/n/' + BIZ + '/pagar');
     await pv.locator('[data-acepta-pedido]').first().waitFor();
     ok(/Al enviar el pedido aceptas los Términos y la Privacidad de To'Latino/.test(await texto(pv)), 'el pago dice «Al enviar el pedido aceptas los Términos y la Privacidad»'); await shot(pv, 'pagar-acepta-390');
-    await pv.locator('[data-screen-label="Checkout · barra"]').getByText(/Enviar pedido/).click(); await pv.waitForURL(/\/pedido\/\d+$/);
+    await pv.locator('[data-screen-label="Checkout · barra"]').getByText(/Enviar pedido/).click();
+    await pv.waitForURL(/\/pedido\/\d+$/, { timeout: 30000 }).catch(async (e) => { throw new Error('el pedido no salió · la página dice: ' + (await texto(pv)).replace(/\s+/g, ' ').slice(0, 1500) + ' · estado: ' + sql(`select coalesce(st.plan, '-') || ' · tope ' || coalesce((select value::text from platform_config where key = 'free_ops_cap'), '-') || ' · pausa ' || coalesce((select pause_until::text from menu_settings where business_id = '${BIZ}'), '-') from businesses b left join business_stats_cache st on st.business_id = b.id where b.id = '${BIZ}'`)); });
     const NUM = pv.url().split('/').pop();
     const vig = Number(sql(`select count(*) from unnest(array['terminos','privacidad']) k cross join unnest(array['us','us-pa']) j, lateral legal_vigente(k, j) v where v.id is not null`));
     ok(sql(`select count(*) from legal_acceptances where user_id = '${UP}' and via = 'primer_pedido' and business_id is null`) === String(vig), `el pedido #${NUM} anota Términos y Privacidad (la general y la de PA: ${vig})`);

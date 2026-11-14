@@ -7054,6 +7054,9 @@ const guardianes = {
       if (!/5705550122/.test(t) || /\.tarjeta\b|\btarjeta\(|pm_sim_|payment_methods/.test(t)) continue;
       const l = t.split("\n").findIndex((x) => /\bok\(/.test(x) && /[|:'`]held\b/.test(x));
       if (l >= 0) falla(G, f, l + 1, "comprueba un depósito retenido de Marisol sin guardarle su tarjeta: en una base nueva y barajada no tiene ninguna; usa tarjeta('5705550122') de pruebas/lib/negocio-nuevo.cjs");
+      // Un viaje reservado en la app también se retiene en la tarjeta: sin ella «Reservar» queda apagado (cho4y en la barajada).
+      const v = t.split("\n").findIndex((x) => /\/viaje\?s=/.test(x));
+      if (v >= 0 && /name: 'Reservar', exact: true/.test(t)) falla(G, f, v + 1, "Marisol reserva un viaje sin guardarle su tarjeta: el viaje se retiene en la tarjeta y sin ella «Reservar» queda apagado; usa tarjeta('5705550122') de pruebas/lib/negocio-nuevo.cjs");
     }
   },
 

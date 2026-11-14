@@ -80,7 +80,8 @@ async function confirmar(p, neg, num) { await p.goto(`${B}/panel/${neg}/hoy?det=
   // ── Niños: «No cuidaron bien a mi niño» → directo a To'Latino, con ChildLine ──
   const N1 = await inscribir(m, NIN, GUARD, { hijo: { nombre: 'Valentina', edad: 4 } }); await confirmar(nin, NIN, N1);
   sql(`update operations set status_detail = 'started' where number = '${N1}'`);
-  await m.goto(`${B}/insc/${N1}/ayuda?de=compa`); const g = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await g.getByText('¿Qué pasó?').first().waitFor();
+  await m.goto(`${B}/insc/${N1}/ayuda?de=compa`); const g = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]');
+  await g.getByText('¿Qué pasó?').first().waitFor({ timeout: 20000 }).catch(async () => { throw new Error(`la ayuda de ${N1} no abre (${sql(`select status || '/' || coalesce(status_detail, '-') from operations where number = '${N1}'`)}) · la página dice: ` + (await m.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 1500)); });
   await clic(g.getByRole('button', { name: 'No cuidaron bien a mi niño', exact: true }));
   ok(!!(await vis(m.getByText(/ChildLine de Pennsylvania: 1-800-932-0313/))), 'el aviso fijo: 911 y ChildLine');
   await (await vis(g.getByLabel('Qué pasó'))).fill('La recogí y nadie sabía dónde estaba; la encontraron sola en el patio.');

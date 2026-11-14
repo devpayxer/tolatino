@@ -42,7 +42,7 @@ async function inscribir(p, neg, svc, o = {}) {
   if (o.plan) { await clic(p.getByRole('switch', { name: 'Plan de pagos' })); await clic(p.getByRole('checkbox', { name: /Acepto este plan/ })); }
   if (o.shot) await p.screenshot({ path: OUT + o.shot, fullPage: true });
   await clic(p.getByRole('button', { name: 'Enviar solicitud' }));
-  await p.waitForURL(/\/insc\/I-\d+/, { timeout: 15000 });
+  await p.waitForURL(/\/insc\/I-\d+/, { timeout: 15000 }).catch(async () => { throw new Error('la solicitud no salió · la página dice: ' + (await p.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 1500)); });
   return p.url().match(/I-\d+/)[0];
 }
 (async () => {

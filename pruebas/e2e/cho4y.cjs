@@ -25,6 +25,8 @@ const DOW = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
   const HEC = sql(`select id from users where phone = '+15705550288'`);
   sql(`insert into delivery_drivers (business_id, user_id, display_name, phone, vehicle, status, accepted_at) select '${V}', '${HEC}', 'Héctor', '+15705550288', 'camioneta', 'active', now() where not exists (select 1 from delivery_drivers where business_id = '${V}' and user_id = '${HEC}' and status = 'active')`);
   const DRV = sql(`select id from delivery_drivers where business_id = '${V}' and user_id = '${HEC}' and status = 'active'`);
+  // 9b-3 · El viaje se retiene en SU tarjeta: barajada en una base nueva Marisol no tenía ninguna y «Reservar» quedaba apagado (guardián tarjetaPropia).
+  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');
   const b = await chromium.launch(); const err = [];
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); await entrar(m, '5705550122');
   m.on('pageerror', e => err.push(e.message));

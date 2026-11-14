@@ -70,8 +70,10 @@ const MARISOL = "(select id from users where phone='+15705550122')";
   await m.waitForURL(/\/pagar$/); await m.locator('[data-pantalla="APP-NEG-CHECKOUT"]').waitFor();
   await m.getByText('Lo antes posible ·', { exact: false }).first().waitFor();
   await shot(m, 'b8-pagar-m.png', true);
-  if (await m.getByText('Cambiar', { exact: true }).count()) { // sin horas para programar (tarde en la noche) no sale «Cambiar»
-    await m.getByText('Cambiar', { exact: true }).click(); await m.waitForTimeout(300);
+  // El «Cambiar» de la hora vive en el botón del reloj (la dirección y la tarjeta tienen el suyo: en orden barajado Marisol ya trae dirección o tarjeta).
+  const horaCambiar = m.locator('button', { hasText: /Lo antes posible/ }).locator('span', { hasText: /^Cambiar$/ });
+  if (await horaCambiar.count()) { // sin horas para programar (tarde en la noche) no sale «Cambiar»
+    await horaCambiar.first().click(); await m.waitForTimeout(300);
     await shot(m, 'b9-pagar-horas-m.png');
     await m.getByText('Lo antes posible', { exact: true }).click();
   } else console.log('  · sin horas para programar a esta hora');
