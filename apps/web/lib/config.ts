@@ -71,7 +71,9 @@ export type ClaveConfig =
   // 8h · La tubería de las tiendas (0131)
   | "tiendas_pedidos_hora" | "tiendas_oidc_fallos_min" | "tiendas_archivo_mb"
   // 8i · Cuentas de revisión y fichas de las tiendas (0132)
-  | "revision_intentos_hora" | "fichas_subidas_dia";
+  | "revision_intentos_hora" | "fichas_subidas_dia"
+  // 9d · Tus datos: exportar, la purga a los 30 días y las retenciones (0134; Configuración › Retención)
+  | "export_cada_dias" | "export_vence_h" | "purga_lote" | "retener_escaneos_meses" | "retener_doc_reclamo_dias" | "retener_sesiones_dias" | "retener_busquedas_dias" | "retener_codigos_dias";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;
@@ -103,7 +105,7 @@ export async function valores<K extends ClaveConfig>(...ks: K[]): Promise<Record
 export const cfgSql = (k: ClaveConfig) => `cfg_int('${k}')`;
 
 /* ── Configuración (Super Admin › Sistema › Configuración) ── */
-export type Seccion = "comunidad" | "gamificacion" | "salud_pro" | "noche" | "edu" | "fe_inm_autos" | "eventos" | "compa" | "soporte" | "apps";
+export type Seccion = "comunidad" | "gamificacion" | "salud_pro" | "noche" | "edu" | "fe_inm_autos" | "eventos" | "compa" | "soporte" | "apps" | "retencion";
 export type FilaConfig = {
   key: ClaveConfig; seccion: Seccion; label: Bi; help: Bi | null; unidad: Bi; min: number; max: number; def: number; v: number; cambiado: boolean;
   editable: boolean; bloqueo: Bi | null; editIn: string | null; at: string | null; quien: string | null;

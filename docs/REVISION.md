@@ -4368,3 +4368,39 @@ tarjetas, los días y horas de una reserva, las cruces de cerrar) ahora se puede
     Quedan en LAUNCH «Fase 9 · 9c» para hacerlos juntos, con captura nueva, en 9m.
   - **Los nombres de los botones solo con ícono salen en español** donde la pantalla no manda el idioma (votar, «Foto», «Ver el equipo»…): LAUNCH «Fase 9 · 9c».
 - **Prueba:** `a11y9c` (teclado solo: pedir, reservar, comprar un boleto, publicar un negocio, entrar al Super Admin) en el CI; la primera corrida es la real.
+
+### 9d · Tus datos: descargar, borrar a los 30 días, cuánto se guarda y fusionar cuentas (14 nov)
+**Qué es (en sencillo):** cada persona puede bajar un archivo con todo lo suyo; a los 30 días de pedir borrar su cuenta, se borra de verdad (lo que la ley pide guardar
+queda como «Cuenta borrada»); cuánto se guarda cada cosa se cambia en un solo lugar; y dos cuentas de la misma persona se juntan, siempre con dos personas del equipo.
+Todo sale de **un solo mapa de datos** (`packages/db/mapa-de-datos.json`): por cada tabla, qué se exporta, qué se borra, qué se vacía y por qué se guarda lo que se guarda.
+- **Qué mirar (en el sandbox):**
+  1. Entra como **Datos Listos (570-555-9403)** → Mi cuenta › Ajustes › Privacidad y seguridad › **Descargar mis datos**: arriba la línea «Te armamos un archivo con lo
+     tuyo…», abajo «Tu archivo está listo» y **Bajar** (el ZIP con JSON, CSV y un LEEME en español e inglés). Tócalo otra vez: ya no baja (se usa una vez). Si ya pasaron 24 horas desde que se armó, sale «Venció sin bajarse»: pídelo desde tu propia cuenta (uno cada 7 días por cuenta).
+  2. Pega el enlace del archivo en un chat o ábrelo en otra pestaña: **no lo gasta** (te lleva a la pantalla).
+  3. Mi cuenta › Privacidad › **Términos que aceptaste**: lo que aceptaste, con versión y fecha.
+  4. Entra como **Pedro (570-555-0133)** → panel de Sabor Dominicano › Más › **Exportar los datos del negocio**: pide el archivo (código en pantalla del sandbox).
+     De los clientes viene el nombre con la inicial, nunca el teléfono ni la dirección. En el mismo panel abre el pedido **#905200001**: el cliente dice **«Cuenta borrada»**
+     (era de Borra Ayer, 570-555-9402, que pidió borrar hace 31 días y el barrido ya purgó).
+  5. Super Admin › Usuarios › **Borra Ayer** › **Privacidad**: la purga con cada tabla (cuántas filas se borraron, se vaciaron o se seudonimizaron). **Borra Mañana**
+     (570-555-9401) dice «se borra el …».
+  6. En cualquier cuenta: Privacidad › **Ver como (solo lectura)** (pide motivo) y **Fusionar con otra cuenta** (pide el teléfono de la otra y el motivo). Ve a Colas ›
+     Cambios sensibles: tú ves «Lo pediste tú»; **otra persona del equipo** la aplica.
+  7. Sistema › Configuración › **RETENCIÓN · CUÁNTO SE GUARDA**: todo junto, cada uno con sus límites.
+- **Decisiones que tomé (si prefieres otra, se cambia):**
+  - **Borrar = lo de la persona sale; lo que la ley o el dinero piden guardar queda como «Cuenta borrada»** (pedidos, cobros, boletos, auditoría; el id queda, el
+    nombre y el teléfono no). Sus reseñas, publicaciones, comentarios y mensajes **quedan como fila vacía** (no se borran del todo) para que el hilo de los demás
+    no se rompa y las cifras del negocio sigan cuadrando; el texto ya no existe.
+  - **Sus negocios sin otro dueño quedan sin dueño y su plan Pro termina** (nadie paga ni entra al panel hasta que alguien lo reclame).
+  - **Las conversaciones abiertas con El Compa esperan a cerrarse** (24 h) y se vacían en la pasada siguiente, como ya hacía la purga de El Compa; mientras, la
+    purga sale «faltan N filas» y se reintenta sola.
+  - **Pasada la fecha, ya no se entra** (antes, entrar después de la fecha también cancelaba el borrado). Y el mismo teléfono que vuelve es una cuenta nueva.
+  - **El archivo se pide con el código por SMS** (no con la llave de acceso, por ahora) y es **uno cada 7 días**, **un uso**, **24 horas** (los tres en Retención).
+  - **Retenciones nuevas** que estaban prometidas y no corrían: búsquedas 90 días (lo dicen las tiendas), códigos de entrada 7 días, sesiones vencidas 400 días,
+    escaneos de la puerta 13 meses y luego solo cifras, la foto del documento de un reclamo 90 días después de decidido. Para la analítica (13 meses) usé la
+    clave que ya existía (`eventos_retener_meses`) en vez de crear otra igual.
+  - **Exportar sus datos (Super Admin)** ahora baja el MISMO ZIP que la persona pide (antes era un JSON corto).
+  - **Pantallas sin diseño (hueco #4 y «Términos que aceptaste»)**: compuestas solo con piezas que ya existen (nota, filas, formulario, acciones de Mi cuenta; encabezado,
+    nota, filas, campo y acciones del panel). La de **Exportar los datos del negocio** es una página aparte dentro de `/panel` (con su «atrás» a Más), sin la barra
+    del panel. El ícono de «Ver como» es la lupa (el sistema no tiene un ojo).
+  - **La ayuda del negocio va en su propio artículo** (`panel-exportar-los-datos`): cada artículo es de una sola audiencia.
+- **Prueba:** `datos9d` (61 comprobaciones) y `alreves9d` (23/23) pasaron en una base local; la corrida de verdad es la del CI.

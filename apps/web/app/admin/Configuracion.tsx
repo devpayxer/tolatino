@@ -15,7 +15,11 @@ import { PESTANAS_SISTEMA } from "./sistema/Pestanas";
 
 const SECCION: Record<Seccion, string> = {
   comunidad: "COMUNIDAD", gamificacion: "GAMIFICATION", salud_pro: "DOCTORES Y PROFESIONALES", noche: "NOCHE", edu: "EDUCACIÓN · NIÑOS · DEPORTE", fe_inm_autos: "IGLESIAS · BIENES RAÍCES · AUTOS", eventos: "EVENTOS", compa: "EL COMPA", soporte: "SOPORTE", apps: "APPS",
+  retencion: "RETENCIÓN · CUÁNTO SE GUARDA",
 };
+/* 9d · Retención: todo lo que dice cuánto se guarda algo (las claves nuevas de 0134 y las retenciones que ya corrían en su sección: El Compa,
+   los errores, la ruta, la analítica, las notas privadas…) se ve junto aquí, cada una con sus límites. */
+const RETIENE = /^(retener_|export_|purga_lote$)|_retener_(dias|meses)$|_purga_dias$/;
 /* 6j · Configuración › Eventos: las ~50 claves de la Fase 6 en subgrupos (lo que cubre cada una). */
 const SUB_EVT: [string, RegExp][] = [
   ["EVENTOS · PUBLICAR Y REVISAR", /^evt_(revision_h|fechas_max|dias_adelante|fotos_max|dias_seguidos_max)$/],
@@ -61,7 +65,7 @@ export function Configuracion({ filas, admin, autoOcultar, modelos = null, horar
     { type: "note", tone: "info", icon: "info", t: `Moneda: USD · Hora: la de cada ciudad. ${admin ? "Toca un valor para cambiarlo." : "Solo un Admin cambia la configuración."}` },
   ];
   for (const sec of Object.keys(SECCION) as Seccion[]) {
-    const T = filas.filter((f) => f.seccion === sec);
+    const T = filas.filter((f) => (sec === "retencion" ? f.seccion === sec || RETIENE.test(f.key) : f.seccion === sec && !RETIENE.test(f.key)));
     if (!T.length) continue;
     // 6j · Eventos va en subgrupos (y lo que no cae en uno, al final con el nombre de la sección).
     const grupos: [string, FilaConfig[]][] = sec === "eventos"

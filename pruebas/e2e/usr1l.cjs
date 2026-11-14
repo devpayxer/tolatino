@@ -60,8 +60,10 @@ const confirmar = async (a, { elegir, plantilla, motivo, cta = 'Confirmar' }) =>
   const ws = sql(`select count(*) from city_waitlist where user_id = '${X}' and city_id = 'alw'`); ok(+ws >= 1, `ciudad cambiada; en la lista de espera de Allentown (${ws})`);
   // Privacidad: exportar sus datos (descarga real)
   await a.goto(B + `/admin/usuarios/${X}?tab=privacidad`); await t(a, 'Exportar sus datos').click(); await a.locator('textarea').last().fill('Pedido de privacidad de la vecina');
-  const dl = a.waitForEvent('download'); await t(a, 'Descargar').click(); const d = await dl; const f = await d.path(); const j = JSON.parse(require('fs').readFileSync(f, 'utf8'));
-  ok(j.cuenta?.telefono && Array.isArray(j.dispositivos) && Array.isArray(j.sanciones), `exportar → cuenta ${j.cuenta?.telefono}, ${j.dispositivos?.length} dispositivos, ${j.sanciones?.length} sanciones`);
+  // 9d · El mismo archivo que la persona pide en Mi cuenta: un ZIP por el mapa de datos (JSON + CSV + LEEME).
+  const dl = a.waitForEvent('download'); await t(a, 'Descargar').click(); const d = await dl; const f = await d.path();
+  const z = require('../lib/zip.cjs').leerZip(require('fs').readFileSync(f)), J = (k) => JSON.parse(z[`${k}.json`].toString('utf8'));
+  ok(J('perfil')[0]?.phone === '+15705550122' && Array.isArray(J('sesiones')) && Array.isArray(J('sanciones')) && !!z['LEEME.txt'], `exportar → ZIP con su perfil ${J('perfil')[0]?.phone}, ${J('sesiones').length} sesiones, ${J('sanciones').length} sanciones y LEEME`);
   // Borrar: lo pide Ana, Ana no puede aplicarlo; lo aplica Beto (otro Admin); la vecina no entra; Ana restaura
   await a.goto(B + `/admin/usuarios/${X}`); await t(a, 'Borrar datos').click(); await confirmar(a, { motivo: 'La vecina pidió borrar su cuenta', cta: 'Enviar a la cola' }); await a.locator('text=/Pedido de borrado en Cambios sensibles/').waitFor();
   await a.goto(B + '/admin/colas?cola=cambio'); await a.locator('text=/Borrar cuenta · Marisol/').first().click(); await a.locator('text=/Lo pediste tú/').first().waitFor(); await shot(a, 'l6-cola-borrado-d.png'); ok(true, 'quien lo pide no lo aplica («Lo pediste tú»)');

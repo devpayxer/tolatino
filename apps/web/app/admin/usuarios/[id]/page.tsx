@@ -22,5 +22,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const sop = s.puede("sop", "ver") ? (tab === "soporte" ? await (await import("@/lib/soporte-equipo")).casosDe(s, { userId: u.id }) : []) : undefined;
   // 7i · El Compa: cifras y sus conversaciones sin texto (quien ve El Compa; el hilo, en la ficha anotada).
   const cpa = s.puede("compa", "ver") ? (tab === "compa" ? await (await import("@/lib/compa/admin-compa")).compaDeUsuario(s, u.id) : null) : undefined;
-  return <U360 cpa={cpa} sop={sop} act={act} u={u} tab={tab} sub={SUBS.has(sp.sub ?? "") ? sp.sub! : "pub"} com={com} pts={pts} mon={mon} topeAjuste={s.role === "admin" ? 5000 : 500} topeMonedas={s.role === "admin" ? 1000 : 500} />;
+  // 9d · Privacidad: archivos, borrado y su purga por tabla, términos, avisos y fusiones (después de usuario360(): permiso y ciudad ya revisados).
+  const pri = tab === "privacidad" ? await (await import("@/lib/datos/admin")).privacidad360(u.id) : null;
+  return <U360 pri={pri} cpa={cpa} sop={sop} act={act} u={u} tab={tab} sub={SUBS.has(sp.sub ?? "") ? sp.sub! : "pub"} com={com} pts={pts} mon={mon} topeAjuste={s.role === "admin" ? 5000 : 500} topeMonedas={s.role === "admin" ? 1000 : 500} />;
 }

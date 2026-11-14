@@ -9,6 +9,8 @@ import { AUDIENCIAS, TEMAS, audienciaPorNombre, faseInterna, leerAyuda } from ".
 // 8i · Las fichas y la privacidad: el guardián usa el MISMO código que genera las salidas (y fija aquí lo que no se puede aflojar).
 import { LIMITES as LIMITES_FICHAS, SUPERLATIVOS as SUPERLATIVOS_FICHA, salida as salidaFichas } from "../apps/mobile/scripts/fichas.mjs";
 import { problemas as problemasPrivacidad, salidas as salidasPrivacidad, xcprivacy as xcprivacyDe } from "../apps/mobile/scripts/privacidad.mjs";
+// 9d · El mapa de datos: el guardián revisa lo mismo que se aplica (las filas de data_map, la semilla y los problemas del mapa).
+import { filas as filasMapa, leer as leerMapa, problemas as problemasMapa, semilla as semillaMapa, SEMILLA as SEMILLA_MAPA } from "../scripts/datos/mapa.mjs";
 
 const solo = process.argv.includes("--solo") ? process.argv[process.argv.indexOf("--solo") + 1] : null;
 import { existsSync } from "node:fs";
@@ -72,6 +74,34 @@ function deducirParametros(q, tipos) {
     for (const m of q.matchAll(/(?:\b(\w+)\.)?\b(\w+)\s*(?:=|<>|<=|>=|<|>)\s*\$(\d+)(?![\d:])/g)) pon(m[3], ref(m[1], m[2]));
     for (const m of q.matchAll(/\$(\d+)(?![\d:])\s*(?:=|<>|<=|>=|<|>)\s*(?:\b(\w+)\.)?\b(\w+)\b(?!\s*\()/g)) pon(m[1], ref(m[2], m[3]));
   }
+  return out;
+}
+/* 9d · Tablas y columnas de las migraciones (create table, cada «add column» de un alter, nombres entre comillas y «rename to»), para el mapa de
+   datos. Devuelve { cols: Map(tabla → Set(columna)), renombre: Map(viejo → nuevo) }. */
+let _cols = null;
+function columnasMigraciones() {
+  if (_cols) return _cols;
+  const cols = new Map(), renombre = new Map(), refsUsers = [], pon = (t, c) => (cols.get(t) ?? cols.set(t, new Set()).get(t)).add(c);
+  for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) {
+    const t = readFileSync(`packages/db/migrations/${x}`, "utf8").replace(/--.*$/gm, "");
+    for (const m of t.matchAll(/create (?:unlogged )?table (?:if not exists )?(\w+)\s*\(([\s\S]*?)\n\)/gi))
+      for (const d of defsTabla(m[2])) { const c = /^"?(\w+)"?\s+[a-z]/i.exec(d); if (c && !/^(primary|unique|check|foreign|constraint|exclude|like)$/i.test(c[1])) { pon(m[1], c[1]); if (/\breferences users\b/i.test(d)) refsUsers.push([x, m[1], c[1]]); } }
+    for (const st of t.split(";")) {
+      const a = /^\s*alter table (?:if exists )?(?:only )?(\w+)\b/i.exec(st);
+      if (!a) continue;
+      for (const m of st.matchAll(/add column (?:if not exists )?"?(\w+)"?([^,]*)/gi)) { pon(a[1], m[1]); if (/\breferences users\b/i.test(m[2])) refsUsers.push([x, a[1], m[1]]); }
+      for (const m of st.matchAll(/rename column "?(\w+)"? to "?(\w+)"?/gi)) pon(a[1], m[2]);
+      const r = /rename to (\w+)/i.exec(st); if (r) renombre.set(a[1], r[1]);
+    }
+  }
+  for (const [v, n] of renombre) for (const c of cols.get(v) ?? []) pon(n, c);
+  return (_cols = { cols, renombre, refsUsers });
+}
+/* Las definiciones de una tabla separadas por las comas de primer nivel (varias columnas en una línea; un check con comas dentro). */
+function defsTabla(cuerpo) {
+  const out = []; let d = 0, cur = "";
+  for (const ch of cuerpo) { if (ch === "(") d++; if (ch === ")") d--; if (ch === "," && d === 0) { out.push(cur.trim()); cur = ""; } else cur += ch; }
+  if (cur.trim()) out.push(cur.trim());
   return out;
 }
 const cuerpoFn = (t, nombre) => { const i = t.search(new RegExp(`\\n(?:export )?(?:async )?function ${nombre}\\(`)); if (i < 0) return ""; const j = t.indexOf("\n}", i + 1); return t.slice(i, j < 0 ? undefined : j + 2); };
@@ -1072,7 +1102,7 @@ const guardianes = {
     const t = readFileSync(B, "utf8");
     for (const f of codigo) {
       // 7h · También lib/compa/ (las acciones que vencen, la retoma de WhatsApp/SMS).
-      if (!/^apps\/web\/lib\/(compa\/)?[^/]+\.ts$/.test(f) || f === B) continue;
+      if (!/^apps\/web\/lib\/(compa\/|datos\/)?[^/]+\.ts$/.test(f) || f === B) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => {
         const m = /^export async function ((?:vencer|barrer|escalar)\w*)\(/.exec(l);
         if (m && !t.includes(`.${m[1]}(`)) falla("barridoCompleto", f, i + 1, `«${m[1]}» no corre en el barrido central (lib/barrido.ts): sin él, solo vence cuando alguien abre una página`);
@@ -4874,7 +4904,11 @@ const guardianes = {
   retencionQueCorre() {
     const G = "retencionQueCorre", B = "apps/web/lib/barrido.ts";
     if (!existsSync(B)) return falla(G, B, 0, "falta el barrido central");
-    const bar = sinComent(B), claves = [...new Set(catalogoConfig().map((x) => x.k).filter((k) => /(_purga_dias|_retener_(dias|meses))$/.test(k)))];
+    const bar = sinComent(B), claves = [...new Set(catalogoConfig().map((x) => x.k).filter((k) => /(_purga_dias|_retener_(dias|meses))$|^retener_/.test(k)))];
+    // 9d · Cada clave retener_* (Configuración › Retención) tiene, además, su prueba con el reloj movido (una prueba de punta a punta que la nombra
+    // y mueve una fecha hacia atrás con interval).
+    const e2e = readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs")).map((y) => [y, sinComent(`pruebas/e2e/${y}`)]);
+    for (const k of claves.filter((x) => /^retener_/.test(x))) if (!e2e.some(([, t]) => t.includes(k) && /interval '\d+ (days?|months?)'/.test(t))) falla(G, "pruebas/e2e", 0, `«${k}» no tiene su prueba con el reloj movido (una prueba de punta a punta que la nombre)`);
     if (claves.length < 5) falla(G, "packages/db/migrations", 0, `solo ${claves.length} claves de retención: ¿se rompió la lectura del catálogo?`);
     const libs = codigo.filter((x) => /^apps\/web\/lib\/.*\.ts$/.test(x) && x !== B && x !== "apps/web/lib/config.ts");
     // Las funciones de nivel superior de un archivo (nombre, cuerpo, exportada).
@@ -6355,8 +6389,14 @@ const guardianes = {
      que sale del inventario; el PrivacyInfo.xcprivacy de cada target es xcprivacy(app); /privacidad lee el inventario (no texto a mano). El
      patrón de columnas está fijado AQUÍ (si alguien lo afloja en el script, sigue cazando). Al revés: una columna «phone» nueva sin inventario,
      un tipo de Apple que falta en el xcprivacy, rastreo true, el CSV viejo, /privacidad sin el inventario → falla. */
-  privacidadCoherente() {
-    const G = "privacidadCoherente", I = "apps/mobile/inventario-datos.json";
+  /* 9d · mapaDeDatos (reemplaza y amplía privacidadCoherente; fase9-apertura.md §3.7): además de lo de 8i (el inventario y sus salidas), UN mapa
+     dice qué pasa con cada dato de una persona (packages/db/mapa-de-datos.json → data_map): toda columna que apunta a users en las migraciones
+     (create table o add column) está en el mapa (de la persona o del equipo); toda tabla con una columna que parece personal está en el mapa, en
+     «sinPersona» o en noPersonales; toda tabla del inventario está en el mapa; cada tabla y columna del mapa (y lo que escribe) existe; el mapa no
+     tiene problemas (scripts/datos/mapa.mjs) y la semilla mapa_datos.sql es la que sale de él. Al revés (alreves9d): una tabla nueva con
+     `references users` sin mapa, una columna que no existe, la semilla vieja, un valor que no está en la lista → falla. */
+  mapaDeDatos() {
+    const G = "mapaDeDatos", I = "apps/mobile/inventario-datos.json", MJ = "packages/db/mapa-de-datos.json";
     if (!existsSync(I)) return falla(G, I, 0, "falta el inventario de datos");
     for (const p of problemasPrivacidad()) falla(G, I, 0, p);
     const PAT = /^(phone|\w+_phone|phone_\w+|email|\w+_email|geom|\w+_geom|lat|lng|latitude|longitude|first_name|last_name|full_name|birth\w*|dob|address\w*|street\w*|photo\w*|\w+_photo\w*|body|message|selfie\w*|ssn|license\w*|plate)$/;
@@ -6377,6 +6417,26 @@ const guardianes = {
     else { const w = sinComent(W); if (!/import INV from "\.\.\/\.\.\/\.\.\/\.\.\/mobile\/inventario-datos\.json"/.test(w) || !/I\.categorias\.map\(/.test(w)) falla(G, W, 0, "la sección de datos de /privacidad sale del inventario"); }
     const M = "packages/db/migrations/0132_tiendas_fichas.sql";
     if (existsSync(M) && !/tracking\s+boolean not null default false check \(tracking = false\)/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "data_inventory: rastreo siempre false");
+    // ── 9d · El mapa ──
+    if (!existsSync(MJ)) return falla(G, MJ, 0, "falta el mapa de datos");
+    const mapa = leerMapa(), tablas = mapa.tablas ?? {}, sinP = mapa.sinPersona ?? {};
+    for (const x of problemasMapa(mapa)) falla(G, MJ, 0, x);
+    if (!existsSync(SEMILLA_MAPA) || readFileSync(SEMILLA_MAPA, "utf8") !== semillaMapa(mapa)) falla(G, SEMILLA_MAPA, 0, "no es la que sale del mapa (corre node scripts/datos/mapa.mjs)");
+    const enMapa = new Set(filasMapa(mapa).map((f) => `${f.tabla}.${f.columna}`)), { cols: tipos, renombre } = columnasMigraciones();
+    for (const [x, tb0, co] of columnasMigraciones().refsUsers) {
+      const c = `${renombre.get(tb0) ?? tb0}.${co}`;
+      if (!enMapa.has(c)) falla(G, `packages/db/migrations/${x}`, 0, `${c} apunta a una persona y no está en el mapa de datos (${MJ}): qué se exporta, qué se borra y por qué se guarda`);
+    }
+    for (const c of inv.categorias.flatMap((k) => k.tablas)) { const tb = c.split(".")[0]; if (!tablas[tb] && !sinP[tb]) falla(G, MJ, 0, `${tb} está en el inventario (${c}) y no en el mapa de datos`); }
+    for (const [tb, def] of Object.entries(tablas)) {
+      const cols = tipos.get(tb);
+      if (!cols) { falla(G, MJ, 0, `${tb}: esa tabla no existe en las migraciones`); continue; }
+      for (const r of [...(def.reglas ?? []), ...(def.equipo ?? []).map((c) => ({ col: c }))]) {
+        if (!cols.has(r.col)) falla(G, MJ, 0, `${tb}.${r.col}: esa columna no existe`);
+        for (const c of Object.keys(r.set ?? {})) if (!cols.has(c)) falla(G, MJ, 0, `${tb}.${r.col}: escribe ${c}, que no existe`);
+      }
+    }
+    for (const tb of Object.keys(sinP)) if (!tipos.get(tb)) falla(G, MJ, 0, `sinPersona: ${tb} no existe`);
   },
 
   /* 8i · Dentro de las apps de las tiendas no se compra Pro (Apple 3.1.3(f), Pagos de Google; fase8-apps.md §3.6, §6 #6): el panel no muestra
@@ -6985,6 +7045,89 @@ const guardianes = {
       if (/^\/panel/.test(pa.ruta) && !ab.length) falla(G, P, 0, `la pantalla ${pa.id} (panel) sin negocios en «abiertos»`);
     }
     if (!/cfg\.abiertos/.test(c) || !/finally \{ devolverHorario\(\); \}/.test(c)) falla(G, C, 0, "correr.mjs no abre los negocios de «abiertos» antes de capturar o no devuelve su horario al final");
+  },
+
+  /* 9d · purgaCompleta (D5; fase9-apertura.md §3.7): a los 30 días pasa exactamente lo que promete «Borrar mi cuenta», por el mapa. Estático: la
+     purga corre en el barrido central (purgarVencidas), lee el mapa (no una lista propia), comprueba con datos_purga_pendiente y anota purge_runs y
+     purge_items; la cuenta queda con el teléfono vacío y 'deleted' (el mismo número que vuelve es una cuenta nueva); una tabla «borrar» del mapa no
+     tiene un trigger que impida borrar (la purga fallaría a medias); purge_runs y purge_items son de solo inserción. La comprobación de verdad es la
+     prueba de punta a punta datos9d (reloj a +30 días: datos_purga_pendiente en cero, tabla por tabla). Al revés: alreves9d. */
+  purgaCompleta() {
+    const G = "purgaCompleta", P = "apps/web/lib/datos/purgar.ts", B = "apps/web/lib/barrido.ts", M = "packages/db/migrations/0134_mis_datos.sql", E = "pruebas/e2e/datos9d.cjs";
+    if (!existsSync(P)) return falla(G, P, 0, "falta la purga (lib/datos/purgar.ts)");
+    const p = sinComent(P), b = sinComent(B);
+    if (!/\["datosPurga", async \(\) => \(await import\("\.\/datos\/purgar"\)\)\.purgarVencidas\(\)\]/.test(b)) falla(G, B, 0, "la purga de las cuentas a los 30 días corre en el barrido central");
+    const pc = cuerpoFn(p, "purgarCuenta");
+    if (!/const M = await mapa\(\);/.test(pc) || !/await paso\(c, f, cuenta, u\.phone, lote\)/.test(pc)) falla(G, P, 0, "la purga va por el mapa (data_map), cada paso, no por una lista propia");
+    if (!/datos_purga_pendiente\(\$1::uuid, \$2::text\)/.test(pc) || !/pendientes === 0/.test(pc)) falla(G, P, 0, "la purga se comprueba con datos_purga_pendiente (ok solo si no queda nada)");
+    if (!/insert into purge_runs/.test(pc) || !/insert into purge_items/.test(pc)) falla(G, P, 0, "la purga anota purge_runs y purge_items (cada tabla)");
+    if (!/soporte_purgar_casos\(/.test(pc) || !/compa_purgar_conversaciones\(/.test(pc)) falla(G, P, 0, "la purga reusa la de 7i (soporte_purgar_casos, compa_purgar_conversaciones)");
+    if (!/negociosSinDueno\(c, cuenta\)/.test(pc)) falla(G, P, 0, "sus negocios sin otro dueño quedan sin reclamar (L188)");
+    if (!/fotosFuera\(cuenta/.test(pc)) falla(G, P, 0, "sus fotos salen del almacenamiento antes de vaciar la fila");
+    if (/set_config\('tl\.purga', 'si', false\)|tl\.purga = 'si'/.test(p)) falla(G, P, 0, "tl.purga solo dentro de la transacción (set_config(..., true))");
+    const mapa = leerMapa(), us = mapa.tablas?.users?.reglas?.find((r) => r.col === "id");
+    if (us?.set?.phone !== "null" || us?.set?.status !== "'deleted'" || us?.set?.first_name !== "'Cuenta borrada'") falla(G, "packages/db/mapa-de-datos.json", 0, "la cuenta purgada: teléfono vacío (vuelve = cuenta nueva), 'deleted' y «Cuenta borrada»");
+    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== P && /tl\.purga/.test(sinComent(f))) falla(G, f, 0, "solo lib/datos/purgar.ts enciende tl.purga");
+    // Una tabla que el mapa borra no tiene un trigger que lo impida.
+    const borrar = new Set(filasMapa(mapa).filter((f) => f.accion === "borrar" && f.rol !== "equipo").map((f) => f.tabla));
+    for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) {
+      const t = readFileSync(`packages/db/migrations/${x}`, "utf8");
+      for (const m of t.matchAll(/create trigger \w+ before ([^;]*?) on (\w+)[^;]*?execute (?:function|procedure) (\w+)\(/g)) {
+        if (!/\bdelete\b/.test(m[1]) || !borrar.has(m[2])) continue;
+        const cuerpo = ultimaFn(m[3]);
+        if (/^\s*(declare[\s\S]*?)?begin\s+raise exception/i.test(cuerpo) || /if tg_op = 'DELETE' then raise exception/.test(cuerpo) || /if tg_op <> 'INSERT' then raise exception/.test(cuerpo))
+          falla(G, `packages/db/migrations/${x}`, 0, `${m[2]} está en el mapa como «borrar», pero su trigger ${m[3]} no deja borrar: vacíala (vaciar) o guárdala con su porqué`);
+      }
+    }
+    if (existsSync(M)) {
+      const m = readFileSync(M, "utf8");
+      for (const tb of ["purge_runs", "purge_items", "account_merges"]) if (!new RegExp(`create trigger ${tb}_no_cambia before update or delete on ${tb} for each row execute function purga_solo_insercion\\(\\)`).test(m)) falla(G, M, 0, `${tb} es de solo inserción`);
+      if (!/check \(approved_by <> requested_by\)/.test(m)) falla(G, M, 0, "account_merges: lo aprueba OTRA persona (la base lo exige)");
+      if (!/alter table users add constraint users_phone_o_borrada check \(phone is not null or status in \('deleted', 'merged'\)\)/.test(m)) falla(G, M, 0, "users: el teléfono solo queda vacío en una cuenta borrada o fusionada");
+    }
+    if (!existsSync(E) || !/datos_purga_pendiente/.test(readFileSync(E, "utf8"))) falla(G, E, 0, "la prueba de punta a punta comprueba la purga tabla por tabla (datos_purga_pendiente)");
+  },
+
+  /* 9d · exportaSoloLoSuyo (fase9-apertura.md §3.7): el archivo de una persona trae SOLO sus filas (la columna de la persona del mapa = su id) y
+     sin las columnas que apuntan a OTRA persona, ni huellas, cifrados, tokens o la ubicación exacta; el del negocio, solo lo de su negocio
+     (business_id = $1) y de sus clientes nunca el teléfono, el correo ni la dirección; el archivo lo baja solo quien lo pidió (404 si no). Al revés:
+     alreves9d. */
+  exportaSoloLoSuyo() {
+    const G = "exportaSoloLoSuyo", X = "apps/web/lib/datos/exportar.ts", MP = "apps/web/lib/datos/mapa.ts";
+    if (!existsSync(X)) return falla(G, X, 0, "falta lib/datos/exportar.ts");
+    const x = sinComent(X), dc = cuerpoFn(x, "datosDeCuenta"), dn = cuerpoFn(x, "datosDeNegocio"), bj = cuerpoFn(x, "bajarExportacion");
+    if (!/where \$\{ident\(f\.columna\)\} = \$1::uuid/.test(dc)) falla(G, X, 0, "el archivo de la persona: solo sus filas (la columna de la persona del mapa = su id)");
+    if (!/\.filter\(\(x\) => x !== f\.columna\)/.test(dc) || !/columnasDePersona\(c\)/.test(dc)) falla(G, X, 0, "el archivo de la persona: sin las columnas que apuntan a otra persona");
+    if (!/f\.rol !== "persona"/.test(dc)) falla(G, X, 0, "solo las reglas de la persona exportan (nunca las del equipo)");
+    if (!/NUNCA_SE_EXPORTA\.test\(k\)/.test(cuerpoFn(x, "limpiar")) || !/Buffer\.isBuffer\(v\)/.test(cuerpoFn(x, "limpiar"))) falla(G, X, 0, "nunca salen huellas, cifrados, tokens ni binarios");
+    const nunca = /export const NUNCA_SE_EXPORTA = (\/.*\/);/.exec(sinComent(MP))?.[1] ?? "";
+    for (const k of ["token_hash", "phone_enc", "code_hash", "public_key", "geom", "credential_id"]) if (!nunca || !new RegExp(nunca.slice(1, -1)).test(k)) falla(G, MP, 0, `NUNCA_SE_EXPORTA deja salir «${k}»`);
+    const qs = dn.match(/`[^`]*`/g) ?? [];
+    if (qs.length < 5) falla(G, X, 0, "no encuentro las consultas del archivo del negocio");
+    for (const q of qs) {
+      if (/\bfrom\b/.test(q) && !/business_id = \$1\b|where id = \$1\b/.test(q)) falla(G, X, 0, `el archivo del negocio: solo lo de su negocio («${q.slice(0, 60)}…»)`);
+      if (/\bu\.(phone|email)\b|user_addresses|\bstreet\b|\bu\.photo_url\b/.test(q)) falla(G, X, 0, "de los clientes, el negocio no recibe teléfono, correo, dirección ni foto");
+    }
+    if (!/from data_exports where id = \$1::uuid and user_id = \$2::uuid`/.test(bj) || !/status: 404/.test(bj)) falla(G, X, 0, "el archivo lo baja solo quien lo pidió (de otra persona: 404)");
+    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== X && /privado\/exportes\//.test(sinComent(f))) falla(G, f, 0, "solo lib/datos/exportar.ts toca los archivos de las exportaciones");
+  },
+
+  /* 9d · enlaceUnUsoSinGet (fase9-apertura.md §3.7): el enlace del archivo es de UN uso y vence: un GET (la vista previa de un enlace pegado en un
+     chat, un buscador) NUNCA lo gasta ni sirve el archivo; solo el POST del mismo sitio con la sesión de quien lo pidió lo baja, una vez (gana el
+     primero: la condición status = 'listo' y vigente va en el update). La base: bajado no vuelve, y se baja una sola vez. Al revés: alreves9d. */
+  enlaceUnUsoSinGet() {
+    const G = "enlaceUnUsoSinGet", R = "apps/web/app/api/datos/archivo/[id]/route.ts", X = "apps/web/lib/datos/exportar.ts", M = "packages/db/migrations/0134_mis_datos.sql";
+    if (!existsSync(R)) return falla(G, R, 0, "falta la ruta del archivo");
+    const r = sinComent(R), get = r.slice(r.indexOf("export async function GET"), r.indexOf("export async function POST") > r.indexOf("export async function GET") ? r.indexOf("export async function POST") : undefined);
+    if (!/export async function GET/.test(r)) falla(G, R, 0, "el GET existe y no gasta nada (lleva a la pantalla)");
+    if (/bajarExportacion|leerObjeto|update |application\/zip|db\(\)/.test(get)) falla(G, R, 0, "un GET no gasta el enlace ni sirve el archivo");
+    const post = r.slice(r.indexOf("export async function POST"));
+    if (!/await mismoOrigen\(\)/.test(post) || !/await yo\(\)/.test(post) || !/bajarExportacion\(/.test(post)) falla(G, R, 0, "solo un POST del mismo sitio, con sesión, baja el archivo");
+    if (/export async function (PUT|PATCH|HEAD|OPTIONS)/.test(r)) falla(G, R, 0, "solo GET (sin gastar) y POST");
+    const bj = cuerpoFn(sinComent(X), "bajarExportacion");
+    if (!/set status = 'bajado', downloaded_at = now\(\)[^`]*where id = \$1::uuid and user_id = \$2::uuid and status = 'listo' and expires_at > now\(\)/.test(bj)) falla(G, X, 0, "un uso: el que baja gana con status = 'listo' y vigente en el mismo update");
+    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== R && f !== X && /bajarExportacion\(/.test(sinComent(f))) falla(G, f, 0, "solo la ruta POST baja el archivo");
+    if (existsSync(M)) { const m = readFileSync(M, "utf8"); if (!/raise exception 'el archivo se baja una sola vez'/.test(m) || !/raise exception 'una exportación bajada, vencida o fallida no vuelve'/.test(m)) falla(G, M, 0, "la base: se baja una sola vez y no vuelve"); }
   },
 
   idioma() {

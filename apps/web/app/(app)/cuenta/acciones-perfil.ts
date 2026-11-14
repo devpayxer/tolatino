@@ -21,6 +21,14 @@ export async function sesionCerrar(id: string): Promise<ResP> { const u = await 
 export async function borrarCodigo(): Promise<ResP> { const u = await quien(); return u ? codigoBorrar(u) : NO; }
 export async function borrarConfirmar(codigo: string, por: string): Promise<ResP> { const u = await quien(); return u ? borrarCuenta(u, String(codigo ?? ""), String(por ?? "")) : NO; }
 export async function borrarCancelar(): Promise<ResP> { const u = await quien(); return u ? cancelarBorrado(u.id) : NO; }
+/* 9d · Descargar mis datos y Exportar los datos del negocio: el código otra vez y el pedido (el del negocio, solo su dueño: lo revisa pedirArchivo). */
+export async function archivoCodigo(): Promise<ResP> { const u = await quien(); return u ? (await import("@/lib/datos/exportar")).pedirCodigoArchivo(u.phone) : NO; }
+export async function archivoPedir(codigo: string, negocio: string | null): Promise<ResP> {
+  const u = await quien();
+  if (!u) return NO;
+  const n = typeof negocio === "string" && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(negocio) && negocio.length <= 80 ? negocio : null;
+  return (await import("@/lib/datos/exportar")).pedirArchivo(u, String(codigo ?? ""), n);
+}
 /* 8d · Mi cuenta › Privacidad › Llaves de acceso: quitar una de MIS llaves (la consulta va por la cuenta de la sesión: la de otro no existe). */
 export async function llaveQuitar(id: string): Promise<ResP> { const u = await quien(); return u ? (await import("@/lib/llaves/llaves")).quitar(u, String(id ?? "")) : NO; }
 /* Idioma: la cookie de la interfaz y el de la cuenta (para lo que le mandemos después). */

@@ -58,7 +58,7 @@ export async function ipCliente(): Promise<string | null> {
 }
 
 /* Paso 1: pedir el código. Devuelve el código solo en modo pruebas (sandbox). */
-export async function pedirCodigo(entrada: string, proposito: "login" | "phone_change" | "account_delete" | "llavero" = "login"): Promise<{ reenviarEn: number; codigoPrueba?: string }> {
+export async function pedirCodigo(entrada: string, proposito: "login" | "phone_change" | "account_delete" | "llavero" | "data_export" = "login"): Promise<{ reenviarEn: number; codigoPrueba?: string }> {
   const tel = normalizarTelefono(entrada);
   if (!tel) throw new ErrorCuenta("telefono_invalido");
   const ip = await ipCliente();
@@ -98,7 +98,7 @@ export async function pedirCodigo(entrada: string, proposito: "login" | "phone_c
 
 /* Revisa un código (cambiar teléfono, borrar la cuenta) dentro de una transacción: el último vigente de ese propósito,
    con tope de intentos y comparación de tiempo constante. */
-export async function consumirCodigo(c: import("pg").PoolClient, tel: string, proposito: "phone_change" | "account_delete" | "llavero", codigo: string): Promise<"ok" | "codigo_incorrecto" | "codigo_vencido" | "demasiados"> {
+export async function consumirCodigo(c: import("pg").PoolClient, tel: string, proposito: "phone_change" | "account_delete" | "llavero" | "data_export", codigo: string): Promise<"ok" | "codigo_incorrecto" | "codigo_vencido" | "demasiados"> {
   if (!/^\d{6}$/.test(codigo)) return "codigo_incorrecto";
   const f = (await c.query<{ id: number; code_hash: string; attempts: number }>(
     `select id, code_hash, attempts from otp_codes where phone = $1 and purpose = $2 and used_at is null and expires_at > now() order by created_at desc limit 1 for update`, [tel, proposito])).rows[0];
@@ -170,6 +170,11 @@ export async function abrirSesionEn(c: import("pg").PoolClient, ctx: { dev: stri
   const user = await cargar();
   if (!user) return { error: "sin_cuenta" as const };
   // Lo que la persona ve al intentar entrar: el estado, hasta cuándo y el motivo (sanción o borrado).
+  // 9d · D5: pasados los 30 días (el barrido la purga en el minuto siguiente) ya no entra: después, nada vuelve. El mismo teléfono, purgada la
+  // cuenta, es una cuenta nueva (su teléfono quedó vacío).
+  const vencida = !!user.delete_at && new Date(user.delete_at).getTime() <= Date.now();
+  if (vencida && !["suspended", "banned"].includes(user.status))
+    return { error: "cuenta_bloqueada" as const, detalle: { es: "Esta cuenta se borró. Si vuelves a entrar en unos minutos, empiezas una cuenta nueva.", en: "This account was deleted. If you sign in again in a few minutes, you start a new account." } };
   if (["suspended", "banned", "deleted_pending", "deleted", "merged"].includes(user.status)) {
     const m = (await c.query<{ reason: string }>(
       `select reason from sanctions where target_kind = 'user' and target_id = $1::text and lifted_at is null and kind in ('susp14', 'ban') order by starts_at desc limit 1`, [user.id])).rows[0]?.reason;
@@ -182,7 +187,7 @@ export async function abrirSesionEn(c: import("pg").PoolClient, ctx: { dev: stri
     return { error: "cuenta_bloqueada" as const, detalle: det };
   }
   // Entrar antes de los 30 días cancela el borrado que pidió la persona (no el de To'Latino).
-  if ((await c.query(`update users set delete_at = null, delete_reason = null where id = $1 and status = 'active' and delete_at is not null and coalesce(delete_reason, '') <> 'admin' returning 1`, [user.id])).rowCount)
+  if ((await c.query(`update users set delete_at = null, delete_reason = null where id = $1 and status = 'active' and delete_at > now() and coalesce(delete_reason, '') <> 'admin' returning 1`, [user.id])).rowCount)
     await c.query(`insert into account_changes (user_id, kind, "from", "to", by) values ($1, 'undelete', null, 'entró', 'user')`, [user.id]);
   // Un silencio o una suspensión que ya venció se levanta sola.
   await c.query(`update users set status = 'active', status_until = null where id = $1 and status in ('muted', 'suspended') and status_until <= now()`, [user.id]);

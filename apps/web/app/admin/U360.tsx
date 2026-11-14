@@ -16,8 +16,9 @@ import { diaCorto } from "@/lib/evt-comun";
 import { usrAjustarMonedas, usrAjustarPuntos, usrPisoRango } from "./acciones-gam";
 import { ORDEN_SANCIONES, PLANTILLAS_USR, SANCIONES, sub as subSancion, type Sancion } from "@/lib/sanciones";
 import {
-  cambiarCiudadUsuario, cerrarSesiones, dispositivoAccion, exportarDatos, llaveRevocar, pushRevocar, levantar, notaUsuario, pedirBorrado, quitarFotoPerfil, restablecerVerificacion, restaurarCuenta, sancionar, usrCasoRed,
+  cambiarCiudadUsuario, cerrarSesiones, dispositivoAccion, exportarDatos, llaveRevocar, pushRevocar, levantar, notaUsuario, pedirBorrado, pedirFusion, quitarFotoPerfil, restablecerVerificacion, restaurarCuenta, sancionar, usrCasoRed, verComo,
 } from "./acciones-usuarios";
+import type { Privacidad360 } from "@/lib/datos/admin";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { EST_USR, haceUsr } from "./Usuarios";
@@ -39,18 +40,20 @@ const VERBO: Record<string, string> = {
   "usuario.dispositivo.bloquear": "bloqueó un dispositivo de", "usuario.dispositivo.desbloquear": "desbloqueó un dispositivo de", "usuario.push.revocar": "revocó los avisos de un teléfono de", "usuario.llave.revocar": "revocó una llave de acceso de", "usuario.verificacion.restablecer": "restableció la verificación de",
   "usuario.ciudad": "cambió la ciudad de", "usuario.borrado.pedir": "pidió borrar la cuenta de", "usuario.borrar": "borró la cuenta de", "usuario.restaurar": "restauró la cuenta de",
   "usuario.exportar": "exportó los datos de", "usuario.red.caso": "abrió un caso de red de cuentas de", "usuario.evt.caso": "abrió un caso de Eventos de",
+  "usuario.ver_como": "vio en solo lectura los datos de", "usuario.fusion.pedir": "pidió fusionar la cuenta de", "usuario.fusionar": "fusionó la cuenta de",
 };
 const CAMBIO_K: Record<string, string> = { phone: "Teléfono", city: "Ciudad", email: "Correo", name: "Nombre" };
 const fecha = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric" }) : "—");
 const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Record<string, unknown>).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : String(x ?? "—"));
 const OK = "var(--tl-open-text)", WARN = "var(--tl-pro-ink)", BAD = "var(--tl-danger)";
 
-export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, topeMonedas = 500, act = null, sop, cpa }: { sop?: CasoSop[]; cpa?: CompaUsuario | null; u: Usuario360; tab: string; sub?: string; com?: Comunidad360 | null; pts?: Puntos360 | null; mon?: Monedas360 | null; topeAjuste?: number; topeMonedas?: number; act?: Actividad360 | null }) {
+export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, topeMonedas = 500, act = null, sop, cpa, pri = null }: { sop?: CasoSop[]; cpa?: CompaUsuario | null; u: Usuario360; tab: string; sub?: string; com?: Comunidad360 | null; pts?: Puntos360 | null; mon?: Monedas360 | null; topeAjuste?: number; topeMonedas?: number; act?: Actividad360 | null; pri?: Privacidad360 | null }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
   const [pend] = useTransition();
+  const [comoVista, setComoVista] = useState<{ k: string; n: number; filas: Record<string, unknown>[] }[] | null>(null);
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
   const P = u.puede, ir = (t: string) => router.push(`/admin/usuarios/${u.id}${t === "resumen" ? "" : `?tab=${t}`}`, { scroll: false });
   const nombre = u.nombre ?? "(sin nombre todavía)", corto = u.nombre?.split(" ")[0] ?? u.phone_b;
@@ -71,7 +74,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
     const gracia = u.status === "deleted_pending" && u.delete_at && new Date(u.delete_at).getTime() > Date.now();
     avisos.push(<A.AdminNote key="d" tone="bad" icon="trash" cta={gracia && P.admin ? "Restaurar" : undefined}
       onCta={() => setConf({ titulo: `Restaurar la cuenta de ${corto}`, sub: "Vuelve a como estaba y puede entrar otra vez.", hacer: (m) => restaurarCuenta(u.id, m) })}>
-      {gracia ? `Borrada. Período de gracia hasta el ${fecha(u.delete_at)}: hasta entonces se puede restaurar. Después se borra todo, también sus transacciones; los pagos con tarjeta quedan solo en Stripe.` : "Borrada."}</A.AdminNote>);
+      {gracia ? `Borrada. Período de gracia hasta el ${fecha(u.delete_at)}: hasta entonces se puede restaurar. Después se borra todo lo suyo; sus pedidos y cobros quedan como «Cuenta borrada» (lo pide la ley) y los pagos con tarjeta quedan en Stripe.` : u.status === "merged" ? "Fusionada con otra cuenta: ya no entra." : "Borrada."}</A.AdminNote>);
   } else if (u.estado !== "ok") {
     const v = vigentes[0], hasta = v?.ends_at ? ` hasta el ${fecha(v.ends_at)}` : "";
     const lo = u.estado === "susp" || u.estado === "ban" ? "Lo ve al intentar entrar." : "Lo ve en su cuenta.";
@@ -308,21 +311,65 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
       { type: "note", tone: "ink", icon: "shield", t: cpa.leer ? "La lista no muestra lo que se habló. Al abrir una conversación ves el hilo (tapado como se guardó) y tu lectura queda anotada." : "Tu rol ve las cifras. El hilo lo leen Admin y Soporte, y cada lectura queda anotada." },
     ]} />;
   } else if (tab === "privacidad") {
+    // 9d · Privacidad (L186, L189): sus archivos, el borrado y su purga por tabla, «ver como» de solo lectura, lo que aceptó, sus avisos y Fusionar.
+    const x = pri;
+    const EST_ARCH: Record<string, [string, string]> = { pendiente: ["PEDIDO", "action"], armando: ["ARMANDO", "action"], listo: ["LISTO", "signal"], bajado: ["BAJADO", "neutral"], vencido: ["VENCIDO", "neutral"], fallo: ["NO SALIÓ", "danger"] };
+    const ACC: Record<string, string> = { borrar: "borradas", vaciar: "vaciadas", seudonimizar: "seudonimizadas" };
+    const descargar = (b64: string) => {
+      const bin = atob(b64), bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([bytes], { type: "application/zip" })); a.download = `tolatino-datos-${u.id}.zip`;
+      document.body.appendChild(a); a.click(); a.remove();
+    };
+    const resumen = (f: Record<string, unknown>) => Object.entries(f).filter(([, v]) => v != null && v !== "" && typeof v !== "object").slice(0, 4).map(([k, v]) => `${k}: ${String(v).slice(0, 40)}`).join(" · ");
     cuerpo = (
       <>
-        <PanelBloques bloques={[{ type: "group", k: "SUS DATOS", first: true }]} />
+        <PanelBloques bloques={[{ type: "group", k: "SUS ARCHIVOS (DESCARGAR MIS DATOS)", first: true }]} />
         {P.exportar ? <PanelBloques bloques={[{ type: "acts", items: [{ l: "Exportar sus datos", icon: "folder", off: pend, onClick: () => setConf({
-          titulo: `Exportar los datos de ${corto}`, sub: "Para un pedido de privacidad del vecino. Se descarga un archivo con su perfil, dispositivos, negocios, recomendaciones, reportes y sanciones.", cta: "Descargar",
-          hacer: async (m) => {
-            const r = await exportarDatos(u.id, m);
-            if (r.ok && "archivo" in r && r.archivo) {
-              const a = document.createElement("a");
-              a.href = URL.createObjectURL(new Blob([r.archivo], { type: "application/json" }));
-              a.download = `tolatino-datos-${u.id}.json`;
-              document.body.appendChild(a); a.click(); a.remove();
-            }
-            return r;
-          } }) }] }]} /> : <A.AdminNote tone="info" icon="lock">Tu rol no exporta datos.</A.AdminNote>}
+          titulo: `Exportar los datos de ${corto}`, sub: "Para un pedido de privacidad que llegó por Soporte. Es el mismo archivo que la persona pide en Mi cuenta: lo que el mapa de datos dice que se exporta, en JSON y CSV.", cta: "Descargar",
+          hacer: async (m) => { const r = await exportarDatos(u.id, m); if (r.ok && "archivo" in r && r.archivo) descargar(r.archivo); return r; } }) }] }]} /> : <A.AdminNote tone="info" icon="lock">Tu rol no exporta datos.</A.AdminNote>}
+        {x?.archivos.length ? <A.AdminList rows={x.archivos.map((e) => ({ icon: "folder", title: `${e.negocio ? `Del negocio ${e.negocio}` : "Su archivo"} · pedido ${fecha(e.pedido)}`,
+          sub: [e.equipo ? `Lo pidió ${e.equipo} (equipo)` : "Lo pidió la persona", e.bytes ? `${Math.max(1, Math.round(e.bytes / 1024))} KB` : null, e.bajado ? `bajado ${fecha(e.bajado)}` : null].filter(Boolean).join(" · "),
+          tag: EST_ARCH[e.estado]?.[0] ?? e.estado.toUpperCase(), tone: EST_ARCH[e.estado]?.[1] ?? "neutral" }))} />
+          : <A.AdminNote tone="info" icon="folder">No ha pedido su archivo.</A.AdminNote>}
+
+        <PanelBloques bloques={[{ type: "group", k: "BORRADO A LOS 30 DÍAS" }]} />
+        {x?.purga ? <>
+          <PanelBloques bloques={[{ type: "kv", cols: desk ? 3 : 2, items: [
+            { k: "PURGADA", v: fecha(x.purga.at) }, { k: "RESULTADO", v: x.purga.ok ? "Completa" : `Faltan ${x.purga.pendientes} filas`, fg: x.purga.ok ? OK : BAD },
+            { k: "FILAS", v: String(x.purga.filas) }, { k: "TABLAS REVISADAS", v: String(x.purga.tablas) }, { k: "NEGOCIOS SIN DUEÑO", v: String(x.purga.negocios) }, { k: "FOTOS FUERA DEL ALMACÉN", v: String(x.purga.fotos) },
+          ] }]} />
+          <A.AdminList rows={x.purga.items.filter((it) => it.filas > 0).map((it) => ({ icon: it.accion === "borrar" ? "trash" : "edit", title: `${it.tabla}.${it.columna}`, sub: `${it.filas} ${ACC[it.accion] ?? it.accion}` }))} />
+          <A.AdminNote tone="info" icon="check">{`${x.purga.items.filter((it) => it.filas === 0).length} tablas más del mapa revisadas sin nada suyo.`}</A.AdminNote>
+        </> : x?.borrado ? <A.AdminNote tone="warn" icon="clock">{`${x.borrado.porElEquipo ? "Borrado pedido por el equipo" : "La persona pidió borrar su cuenta"}: se borra el ${fecha(x.borrado.at)}. Ese día el barrido la purga por el mapa de datos y aquí se ve cada tabla.`}</A.AdminNote>
+          : <A.AdminNote tone="info" icon="trash">No hay un borrado programado.</A.AdminNote>}
+
+        <PanelBloques bloques={[{ type: "group", k: "VER COMO (SOLO LECTURA)", link: comoVista ? "Cerrar" : undefined, onLink: () => setComoVista(null) }]} />
+        {comoVista ? (comoVista.length ? comoVista.map((pt) => <div key={pt.k}><PanelBloques bloques={[{ type: "group", k: `${pt.k.toUpperCase().replace(/_/g, " ")} · ${pt.n}` }]} />
+          <A.AdminList rows={pt.filas.map((f, i) => ({ icon: "search", title: resumen(f) || "—", sub: i === 0 && pt.n > 3 ? `y ${pt.n - 3} más` : undefined }))} /></div>)
+          : <A.AdminNote tone="info" icon="search">No tiene nada guardado aparte de su cuenta.</A.AdminNote>)
+          : <PanelBloques bloques={[{ type: "acts", items: [{ l: "Ver como (solo lectura)", icon: "search", onClick: () => setConf({ titulo: `Ver lo que guardamos de ${corto}`, sub: "Lo mismo que trae su archivo, sin poder cambiar nada. El motivo queda en la auditoría antes de ver.", cta: "Ver",
+            plantillas: ["Pedido de privacidad por Soporte", "Revisar un reclamo de la persona"], hacer: async (m) => { const r = await verComo(u.id, m); if (r.ok && "partes" in r && r.partes) setComoVista(r.partes); return r; } }) }] }]} />}
+
+        <PanelBloques bloques={[{ type: "group", k: "TÉRMINOS QUE ACEPTÓ" }]} />
+        {x?.terminos.length ? <A.AdminList rows={x.terminos.map((t) => ({ icon: "check", title: t.t.es, sub: [t.s?.es, `aceptado ${fecha(t.at)}`].filter(Boolean).join(" · ") }))} />
+          : <A.AdminNote tone="info" icon="shield">No hay términos anotados.</A.AdminNote>}
+
+        <PanelBloques bloques={[{ type: "group", k: "AVISOS QUE RECIBE" }]} />
+        <A.AdminNote tone="info" icon="bell">{`${x?.avisos.apagados.length ? `Apagó: ${x.avisos.apagados.join(", ")}.` : "Recibe todos los avisos."} ${x?.avisos.silencio ? "Respeta sus horas de silencio (de 10 PM a 7 AM, salvo lo crítico)." : "Sin horas de silencio."}`}</A.AdminNote>
+
+        <PanelBloques bloques={[{ type: "group", k: "FUSIONAR CUENTAS" }]} />
+        {x?.pedidoFusion ? <A.AdminNote tone="warn" icon="users" cta={x.pedidoFusion.caso ? "Ver" : undefined} onCta={() => router.push(`/admin/colas?caso=${x.pedidoFusion?.caso}`)}>
+          {`Pedido de fusión en Cambios sensibles (#${x.pedidoFusion.id}${x.pedidoFusion.pidio ? `, lo pidió ${x.pedidoFusion.pidio}` : ""}): lo aplica otra persona del equipo.`}</A.AdminNote> : null}
+        {x?.fusiones.length ? <A.AdminList rows={x.fusiones.map((f) => ({ icon: "users", title: f.desde === u.id ? "Esta cuenta se fusionó en otra" : "Otra cuenta se fusionó en esta",
+          sub: `${fecha(f.at)} · lo pidió ${f.pidio ?? "equipo"} · lo aprobó ${f.aprobo ?? "equipo"} · ${Object.values(f.tablas).reduce((a, n) => a + n, 0)} filas movidas`, chevron: true,
+          onClick: () => router.push(`/admin/usuarios/${f.desde === u.id ? f.hacia : f.desde}?tab=privacidad`) }))} /> : null}
+        {P.editar && !borrada && !intocable && !x?.pedidoFusion ? <PanelBloques bloques={[{ type: "acts", items: [{ l: "Fusionar con otra cuenta", icon: "users", onClick: () => setConf({
+          titulo: `Fusionar la cuenta de ${corto} en otra`, sub: "Sus pedidos, cobros, direcciones, guardados, reseñas y publicaciones pasan a la cuenta del teléfono que escribas; esta queda fusionada y ya no entra. Entra a Cambios sensibles: lo aplica otra persona del equipo.",
+          cta: "Enviar a la cola", valor: { k: "TELÉFONO DE LA OTRA CUENTA (10 NÚMEROS)", ini: "", max: 14 }, plantillas: ["Cambió de número y abrió otra cuenta", "Lo pidió la persona por Soporte"],
+          hacer: (m, _e, v) => pedirFusion(u.id, v, m) }) }] }]} />
+          : !x?.pedidoFusion && !x?.fusiones.length ? <A.AdminNote tone="info" icon="users">{borrada ? "Una cuenta borrada o fusionada no se fusiona." : "Tu rol no fusiona cuentas."}</A.AdminNote> : null}
       </>);
   } else {
     const acts: { l: string; v?: string; icon?: string; off?: boolean; onClick: () => void }[] = [];
@@ -332,7 +379,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
       elegir: { label: "SANCIÓN", items: ORDEN_SANCIONES.filter((k) => !SANCIONES[k].admin || P.admin).map((k) => ({ k, l: `${SANCIONES[k].es} · ${subSancion(k)}` })) },
       hacer: (m, e) => sancionar(u.id, (e ?? "") as Sancion, m) }) });
     if (P.editar && !borrada && !intocable && !pedido) acts.push({ l: "Borrar datos", icon: "trash", onClick: () => setConf({
-      titulo: "Pedido de borrado", sub: "Entra a Cambios sensibles; otra persona lo aprueba. Luego hay 30 días de gracia para restaurarla. Después se borra todo, también sus transacciones; los pagos con tarjeta quedan solo en Stripe.",
+      titulo: "Pedido de borrado", sub: "Entra a Cambios sensibles; otra persona lo aprueba. Luego hay 30 días de gracia para restaurarla. Después se borra todo lo suyo; sus pedidos y cobros quedan como «Cuenta borrada» (lo pide la ley) y los pagos con tarjeta quedan en Stripe.",
       cta: "Enviar a la cola", hacer: (m) => pedirBorrado(u.id, m) }) });
     cuerpo = (
       <>

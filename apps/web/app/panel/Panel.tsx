@@ -763,6 +763,8 @@ function masBloques(c: Ctx): Bloque[] {
       ...(d.evtAplica ? [{ icon: "ticket", t: "To'Latino Puerta", s: E2("Tus porteros entran con el código de la puerta de cada evento, en Eventos.", "Your door staff join with each event's door code, in Events."), onClick: () => c.go("evt") }] : []),
     ] },
     { type: "rows", k: E2("TAMBIÉN", "ALSO"), items: [{ icon: "search", t: E2("Ver mi página como cliente", "View my page as a client"), onClick: () => window.open(`/n/${d.id}`, "_blank", "noopener") },
+      // 9d · Exportar los datos del negocio (solo el dueño): lo que el panel ya muestra, en un ZIP que se baja una vez en 24 horas.
+      ...(d.kind === "owner" ? [{ icon: "folder", t: E2("Exportar los datos del negocio", "Export business data"), s: E2("Lo que tu panel muestra, en un archivo. Lo bajas aquí durante 24 horas.", "What your dashboard shows, in one file. Download it here for 24 hours."), onClick: () => c.nav(`/panel/${d.id}/exportar`) }] : []),
       // 8i · Mi cuenta en las cuatro apps (Apple 5.1.1(v), Google Play): idioma, teléfono, privacidad y Borrar mi cuenta (guardián borrarCuentaEnCadaApp).
       { icon: "shield", t: E2("Mi cuenta y ajustes", "My account and settings"), s: E2("Tu teléfono, idioma, privacidad y borrar tu cuenta.", "Your phone, language, privacy and deleting your account."), onClick: () => c.nav("/cuenta/ajustes") },
       { icon: "help", t: E2("Ayuda", "Help"), s: E2("Cómo funciona cada parte de tu panel, en español y en inglés.", "How each part of your dashboard works, in Spanish and English."), onClick: () => window.location.assign("/ayuda?t=panel") },

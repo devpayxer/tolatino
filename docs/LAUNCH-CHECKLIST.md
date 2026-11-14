@@ -165,7 +165,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 ## Recuperar negocio y semillas (bloque 1j, 5 nov 2026)
 - [ ] **→ 9q** · **Proveedor de SMS en producción** para el código del reclamo (R1). En el sandbox el código sale en pantalla;
   sin proveedor, producción responde «Los mensajes de texto todavía no están disponibles. Usa un documento».
-- [ ] **→ 9d** · **Borrar la foto del documento a los 90 días** de decidido el reclamo: necesita los trabajos programados.
+- [x] **Borrar la foto del documento a los 90 días** de decidido el reclamo: necesita los trabajos programados. — **✓ 9d (14 nov):** `retener_doc_reclamo_dias` (90, Configuración › Retención), `lib/datos/retener.ts` retenerDocReclamo en el barrido; prueba datos9d (local, 61 ✓).
 - [x] **→ después de abrir (DA-01)** · **Botones de Soporte** del diseño (chat / llamar) ocultos hasta que exista Soporte. — 7b (10 nov): «chat» = Soporte (`/soporte`, casos con una
   persona) ya existe y los avisos del panel traen «Escribir a Soporte»; **llamar** sigue sin construirse (no hay línea telefónica, R1). — _9a (11 nov): «chat» = Soporte (7b); «llamar» no se construye: no hay servicio de voz (R1). En `docs/DESPUES-DE-ABRIR.md`._
 - [ ] **→ 9n** · **Admin Negocios › pestañas «Reclamos» y «Duplicados»** e **«Invitar a reclamar»** (SMS): con sus módulos.
@@ -183,10 +183,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9n** · **Enviar mensaje** (SMS/push, AdminMessage) y **avisos por SMS** de sanciones: con las notificaciones (Fase 2). — _9a (11 nov): los avisos de sanciones salen (mod_sancion en lib/apelaciones.ts) y existe la plantilla msg_user (lib/mensajes.ts). Falta el botón «Enviar mensaje» en Usuarios 360°._
 - [x] **Apelaciones** (cola de 72 h y botón en Mi cuenta): con Soporte / Confianza y seguridad. Hoy la persona ve el
   motivo y «Escríbele a Soporte». — **✓ 9a (11 nov):** apelaciones con su cola de 72 h y el botón en Mi cuenta (lib/apelaciones.ts, app/admin/Confianza.tsx; 5d); prueba com5d.
-- [ ] **→ 9d** · **Fusionar cuentas**: el pedido y su aplicación mueven todo lo de una cuenta a otra; se construye con un guardián
-  que obligue a cada tabla nueva con `users` a declarar cómo se fusiona. No está en este bloque.
-- [ ] **→ 9d** · **Borrado definitivo a los 30 días** (y qué pasa con sus negocios: quedan sin reclamar): trabajos programados.
-- [ ] **→ 9d** · **«Ver como (solo lectura)»**, términos aceptados y avisos que recibe (Privacidad): con Mi cuenta completa.
+- [x] **Fusionar cuentas**: el pedido y su aplicación mueven todo lo de una cuenta a otra; se construye con un guardián
+  que obligue a cada tabla nueva con `users` a declarar cómo se fusiona. No está en este bloque. — **✓ 9d (14 nov):** Usuarios 360° › Privacidad › «Fusionar con otra cuenta» → Cambios sensibles (mergeUser) → la aplica OTRA persona (`lib/datos/fusionar.ts`; `account_merges` solo inserción con `approved_by <> requested_by`); cada tabla declara `fusion` en el mapa (guardián mapaDeDatos); prueba datos9d (local, 61 ✓).
+- [x] **Borrado definitivo a los 30 días** (y qué pasa con sus negocios: quedan sin reclamar): trabajos programados. — **✓ 9d (14 nov):** `lib/datos/purgar.ts` en el barrido, por el mapa; negocios sin otro dueño quedan sin dueño y su Pro termina; prueba datos9d (local, 61 ✓).
+- [x] **«Ver como (solo lectura)»**, términos aceptados y avisos que recibe (Privacidad): con Mi cuenta completa. — **✓ 9d (14 nov):** Usuarios 360° › Privacidad (Ver como con motivo auditado antes de ver, Términos que aceptó, Avisos que recibe) y Mi cuenta › Privacidad › Términos que aceptaste (los Términos de uso con versión se suman en 9e).
 - [x] **Decisiones tomadas sin el diseño (confirmar con el fundador):** textos de Mi cuenta y de Recomendar para la
   persona silenciada o advertida; textos al entrar (suspendida, borrándose, dispositivo bloqueado); «Silencio» y
   «Bloquear publicación» frenan Recomendar (no hay Comunidad todavía); no se sanciona ni borra a alguien del equipo. — **✓ 9a (11 nov):** textos de silencio, advertencia, suspensión y dispositivo bloqueado; desde 5c «Silencio» y «Bloquear publicación» también frenan la Comunidad; nadie del equipo se sanciona ni se borra (REVISION 9a).
@@ -312,14 +312,14 @@ en el momento. Se marca solo cuando está hecho de verdad.
   negocio; decidir si van en Buscar.
 
 ## Mi cuenta (bloque 2h, 6 nov 2026)
-- [ ] **→ 9d** · **Borrado definitivo a los 30 días** de lo que pidió la persona (`users.delete_at`, `delete_reason`): un trabajo
+- [x] **Borrado definitivo a los 30 días** de lo que pidió la persona (`users.delete_at`, `delete_reason`): un trabajo
   programado borra perfil, direcciones, guardados, reseñas y comentarios, cierra solicitudes y quita los pedidos de la
-  cuenta (lo que la pantalla promete). Hoy solo queda programado y se cancela al entrar.
+  cuenta (lo que la pantalla promete). Hoy solo queda programado y se cancela al entrar. — **✓ 9d (14 nov):** purga por el mapa (`data_map`, `purge_runs`/`purge_items`, `datos_purga_pendiente`); entrar solo cancela ANTES de la fecha; el mismo teléfono = cuenta nueva; prueba datos9d (local, 61 ✓).
 - [ ] **→ 9l** · **Verificar el correo** (enlace) y **recibos por correo**: con el proveedor de correo.
 - [ ] **→ 9l** · **Avisos al teléfono** que respeten `users.notif_prefs` (pedidos, reservas, empleos, negocios guardados, correo,
   horas de silencio) y el aviso «cambiaste tu número» al número viejo. — _9a (11 nov): las preferencias y horas de silencio se respetan (Mi cuenta › Avisos, lib/avisos.ts; 2h/8c). Falta el aviso «cambiaste tu número» al número viejo._
-- [ ] **→ 9d** · **Boletos, Mensajes, Pagos y Wallet, Apartados, platos y eventos guardados, Ayuda y soporte, Descargar mis datos,
-  letra más grande, ajustes de la comunidad**: con sus fases (REVISION 11).
+- [ ] **→ 9m** · **Boletos, Mensajes, Pagos y Wallet, Apartados, platos y eventos guardados, Ayuda y soporte, Descargar mis datos,
+  letra más grande, ajustes de la comunidad**: con sus fases (REVISION 11). — _9d (14 nov): «Descargar mis datos» hecho (Mi cuenta › Ajustes › Privacidad; prueba datos9d). Lo demás de la lista se revisa contra lo servido en 9m._
 - [x] **Invita vecinos con código** (quién invitó a quién) cuando exista la gamificación. — **✓ 9a (11 nov):** invita vecinos con código (lib/invitar.ts, 5f/5g); prueba com5f.
 - [ ] **→ 9m** · **Alertas de búsqueda** («Avísame cuando haya») listadas en Avisos con «Quitar».
 
@@ -677,8 +677,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9s** · **5h · Abogado:** LibreTranslate es **AGPL-3.0** (lo corremos sin modificar como servicio aparte; revisar §13 si algún día se
       modifica o se expone) y las licencias de cada modelo Argos (es→en, en→es) y de MiniSBD. Aviso en los Términos: «traducción
       automática; vale el original». (5h, 7 nov)
-- [ ] **→ 9d** · **5h · Borrado de cuenta (D5):** cuando se construya la purga de textos a los 30 días, debe borrar también sus filas de
-      `ugc_translations` (derivadas) para que no quede el texto traducido. (5h, 7 nov)
+- [x] **5h · Borrado de cuenta (D5):** cuando se construya la purga de textos a los 30 días, debe borrar también sus filas de
+      `ugc_translations` (derivadas) para que no quede el texto traducido. (5h, 7 nov) — **✓ 9d (14 nov):** la purga borra las traducciones de sus publicaciones, comentarios y reseñas (`fn: traducciones` en el mapa; `datos_purga_pendiente` lo comprueba).
 - [ ] **→ 9o** · **5h · Límite sin cuenta:** es por cookie del dispositivo (se puede borrar); el costo lo acota la caché (cada texto se traduce una
       vez por idioma). En producción, límite por IP en Cloudflare para la acción. (5h, 7 nov)
 - [x] **→ 9b** · **5h · Corta-circuito compartido:** hoy vive en la memoria de cada proceso de la app; con varias réplicas en producción, cada una
@@ -875,8 +875,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       noche sin evento se marca desde Panel › Hoy. Si se quiere, una «puerta de la noche» sin evento. (6g, 10 nov) — _9a (11 nov): una «puerta de la noche» sin evento. En `docs/DESPUES-DE-ABRIR.md`._
 - [x] **6g · «Adentro» por puerta con reentrada:** si alguien entra por una puerta y sale por otra, el adentro de cada puerta es aproximado (nunca
       negativo); el total de la fecha es exacto. (6g, 10 nov) — **✓ 9a (11 nov):** el «adentro» por puerta es aproximado y el total de la fecha es exacto (nota, sin cambio).
-- [ ] **→ 9d** · **6g · Retención de escaneos** (§6 #25: 13 meses y luego solo totales): hoy se guardan sin vencer (solo inserción). Falta la tarea que los
-      resume. (6g, 10 nov)
+- [x] **6g · Retención de escaneos** (§6 #25: 13 meses y luego solo totales): hoy se guardan sin vencer (solo inserción). Falta la tarea que los
+      resume. (6g, 10 nov) — **✓ 9d (14 nov):** `retener_escaneos_meses` (13): `escaneos_retener()` deja cada escaneo en cifras (sin boleto, código ni dispositivo; `tl.retencion`), en el barrido; prueba datos9d (local, 61 ✓).
 - [ ] **→ 9q** · **6g · SMS de verdad para «Te invitaron a la puerta»** (`puerta_invitado`): sale con la clave del proveedor (Telnyx). Hoy en modo pruebas; el
       código también se ve en el panel para dictarlo. (6g, 10 nov)
 - [x] **6g · Push de verdad** (hecho en 8c: van por push a To'Latino Puerta) para «Hoy escaneas en la puerta» (`puerta_abre`, una hora antes de las puertas) y «Tienes una puerta»: hoy en Avisos
@@ -1000,8 +1000,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       tope; con la llave.
 - [ ] **→ 9v** · **Encender en producción** (fase 9): poner `TOLATINO_COMPA=encendido` en el entorno de producción (candado de `lib/compa/interruptores.ts`).
       Sin eso, El Compa queda apagado aunque los interruptores digan otra cosa. El simulador no existe allí.
-- [ ] **→ 9d** · **Purga por retención** (12 meses → solo cifras) y por cuenta borrada (D5, 30 días): la ayuda `privacidad-de-el-compa` ya lo promete; se
-      construye con el Super Admin completo de El Compa. `compa_retener_meses` queda bloqueada en Configuración hasta entonces.
+- [x] **Purga por retención** (12 meses → solo cifras) y por cuenta borrada (D5, 30 días): la ayuda `privacidad-de-el-compa` ya lo promete; se
+      construye con el Super Admin completo de El Compa. `compa_retener_meses` queda bloqueada en Configuración hasta entonces. — **✓ 9d (14 nov):** la retención corre desde 7i (adm7i); la de cuenta borrada la hace la purga de 9d, que reusa `soporte_purgar_casos` y `compa_purgar_conversaciones` (adm7i 117 ✓ y datos9d en local).
 - [ ] **→ 9s** · **Abogado:** aviso de IA en Términos y Privacidad; el texto (tapado y mínimo) se procesa con Anthropic en EE. UU.; quién del equipo lee las
       conversaciones y cuánto se guardan.
 - [x] El copiloto, el panel y las respuestas automáticas usan el mismo motor (`turno` hoy solo acepta el uso «vecino»). — 7e (11 nov): el panel
@@ -1123,9 +1123,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9c** · **7h · En los 9 dispositivos:** `compa7h` corre en 390 y 1360 en local; falta la matriz de CI. (7h, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 
 ## Fase 7 · 7i (Super Admin completo de El Compa y Soporte; cierre de la Fase 7)
-- [ ] **→ 9d** · **7i · Borrado definitivo de una cuenta (D5) completo:** la purga de 7i vacía a los 30 días las conversaciones con El Compa, los casos de
+- [x] **7i · Borrado definitivo de una cuenta (D5) completo:** la purga de 7i vacía a los 30 días las conversaciones con El Compa, los casos de
       Soporte y sus fotos de una cuenta borrada (`compa_purgar`, `barrerRetencion`). El resto de lo que promete «Borrar mi cuenta» (perfil,
-      direcciones, guardados, reseñas, comentarios, Mensajes con negocios, pasar la cuenta a `deleted`) sigue en el trabajo de Mi cuenta (2h, arriba).
+      direcciones, guardados, reseñas, comentarios, Mensajes con negocios, pasar la cuenta a `deleted`) sigue en el trabajo de Mi cuenta (2h, arriba). — **✓ 9d (14 nov):** todo eso por el mapa (`lib/datos/purgar.ts`); prueba datos9d (local, 61 ✓).
       (7i, 11 nov)
 - [ ] **→ 9l** · **7i · Soporte por correo entrante** (admin-dashboard L271, §6 #16): no en esta fase; El Compa y Soporte viven en la app, la web, WhatsApp y
       SMS. (7i, 11 nov)
@@ -1317,8 +1317,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       un perfil de Google. (8d, 11 nov)
 - [ ] **→ 9j** · **Passkeys obligatorias para el equipo (T#30):** hoy se ofrecen y Sistema › Equipo dice quién la tiene; exigirla para entrar al Super Admin es
       la Fase 9 (ver «Super Admin (bloque 3c)» L36). (8d, 11 nov)
-- [ ] **→ 9d** · **El borrado definitivo a los 30 días (L314)** no corre todavía; cuando corra, sus llaves quedan quitadas con la cuenta (hoy una cuenta borrada
-      ya no entra con llave: lo revisa `abrirSesionEn`). (8d, 11 nov)
+- [x] **El borrado definitivo a los 30 días (L314)** no corre todavía; cuando corra, sus llaves quedan quitadas con la cuenta (hoy una cuenta borrada
+      ya no entra con llave: lo revisa `abrirSesionEn`). (8d, 11 nov) — **✓ 9d (14 nov):** la purga deja sus llaves revocadas («Cuenta borrada») y `abrirSesionEn` no deja entrar pasada la fecha.
 - [ ] **→ 9v** · **Nombres de los administradores de llaves (AAGUID):** la lista corta de `lib/llaves/llaves.ts` (iCloud Keychain, Google Password Manager, Windows
       Hello, Samsung Pass, 1Password, Bitwarden) es solo para el nombre que se muestra; revisarla contra la lista pública el día del lanzamiento. (8d, 11 nov) — _9a (11 nov): revisar la lista corta de AAGUID contra la lista pública el día de la apertura._
 
@@ -1515,4 +1515,22 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9b** · **a11y9c no se corrió en local** (sin Docker en la sesión que la escribió): `a11y9c` entra a la regresión de la fase 9; si alguna de sus
       pantallas tiene un selector distinto, la prueba lo dice con el texto de la página. Los avisos «clics con mano sin teclado» de a11y9c son una heurística de la página
       servida: lo que falla es lo estático (`sistemaClicMudo`, `clicConTeclado`) y los roles fuera del orden de tabulación. (9c, 14 nov)
+
+## Fase 9 · 9d — tus datos: exportar, borrar a los 30 días, retener y fusionar (14 nov)
+- [ ] **→ 9b** · **datos9d y alreves9d entran a la regresión del CI:** en local (Postgres 16 + PostGIS, un S3 de mentira en vez de Garage, Chrome del sistema)
+      datos9d pasó 61 ✓ dos veces seguidas, alreves9d 23/23, y usr1l, cuenta2h, adm7i, alreves7i y alreves8i siguen en verde. La corrida de verdad (con Garage y los
+      9 dispositivos) es la del CI. (9d, 14 nov)
+- [ ] **→ 9l** · **Aviso «Tu cuenta se borró» (`cuenta_borrada`):** la plantilla existe (crítica, SMS) pero la purga no la manda: al purgar, el teléfono queda vacío y
+      un SMS a un número sin cuenta se guarda (cifrado) en `phone_messages`, que hoy no tiene retención. Mandarla antes de vaciar el teléfono y darle su retención
+      a `phone_messages` van juntos con los canales. (9d, 14 nov)
+- [ ] **→ 9l** · **Retención de `phone_messages`** (el registro cifrado de los SMS a números sin cuenta): el mapa la guarda «por las reglas de los SMS» sin un plazo;
+      falta su clave `retener_*` y su barrido. (9d, 14 nov)
+- [ ] **→ 9e** · **Términos de uso y Privacidad con versión en «Términos que aceptaste»:** hoy salen las reglas de la Comunidad, los términos de un plan y la
+      propuesta de un evento privado; `legal_acceptances` (9e) se suma a la misma lista (`lib/datos/terminos.ts`). Y `/privacidad` sale del mapa de datos. (9d, 14 nov)
+- [ ] **→ 9f** · **«Cuenta borrada» en inglés:** el nombre que queda en una cuenta purgada es un texto en la base («Cuenta borrada»); un panel en inglés también lo
+      lee así. Con el CMS, el nombre de una cuenta `deleted` sale de su cadena ES/EN. (9d, 14 nov)
+- [ ] **→ 9m** · **Pedir el archivo con la llave de acceso** (el plan dice «con el código de entrada otra vez (o la llave)»): hoy solo con el código por SMS, como
+      Borrar mi cuenta. (9d, 14 nov)
+- [ ] **→ 9m** · **Un archivo con más de 20 000 filas en una parte** se corta en 20 000 (el LEEME dice cuántas trae cada parte); con la carga de 1M, medir el
+      tiempo de armarlo para la cuenta más grande y, si hace falta, partirlo. (9d, 14 nov)
 
