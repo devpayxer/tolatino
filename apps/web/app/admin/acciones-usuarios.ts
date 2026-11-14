@@ -316,7 +316,7 @@ export async function enviarMensaje(id: string, canal: string, texto: string, mo
     if (h >= MSG_HORA) return `Ya mandaste ${MSG_HORA} mensajes en la última hora. Espera un rato.`;
     const d = (await c.query<{ n: number }>(`select count(*)::int as n from admin_messages where target_kind = 'user' and target_id = $1 and at > now() - interval '1 day'`, [u.id])).rows[0]!.n;
     if (d >= MSG_DIA_DESTINO) return `A esta persona ya le llegaron ${MSG_DIA_DESTINO} mensajes del equipo hoy. Espera a mañana.`;
-    await c.query(`insert into admin_messages (target_kind, target_id, user_id, city_id, channel, body, reason, by_staff) values ('user', $1, $1::uuid, $2, $3, $4, $5, $6)`, [u.id, u.city_id, canal, t, m, s.id]);
+    await c.query(`insert into admin_messages (target_kind, target_id, user_id, city_id, channel, body, reason, by_staff) values ('user', $1::text, $1::uuid, $2, $3, $4, $5, $6)`, [u.id, u.city_id, canal, t, m, s.id]);
     await auditar(c, { actor: s.id, action: "usuario.mensaje", targetKind: "user", targetId: u.id, city: u.city_id, after: { canal: canal === "sms" ? "SMS" : "App", mensaje: t.slice(0, 120) }, reason: m });
     enviado = true;
     return null;

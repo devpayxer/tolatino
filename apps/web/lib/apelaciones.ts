@@ -27,9 +27,11 @@ export async function avisarOculto(userId: string, k: Exclude<Apelable, "sanctio
   const tpl = k === "com_post" ? (o.auto ? "com_autohide" : "com_hide") : k === "com_comment" ? (o.auto ? "com_cm_autohide" : "com_cm_hide") : k === "dm_message" ? "dm_hide" : "mod_foto";
   await avisar(userId, tpl, { motivo: motivo.slice(0, 160) }, { href: RUTA_AVISO(k, id), ref: [k, id], sinSms: true }).catch(() => undefined);
 }
+/* 9n-3 · Una advertencia solo va a la campana; lo que le quita algo a la persona (silencio, bloqueo, suspensión, baneo) también sale por SMS de respaldo cuando no hay push
+   que lo lleve (la plantilla mod_sancion es «sin_push»; respeta STOP y las horas de silencio): quien está suspendido quizá ya no abre la app. */
 export async function avisarSancion(userId: string, sancionId: string, kind: Sancion, motivo: string) {
   const en = (await db().query<{ lang: string }>(`select coalesce(lang, 'es') as lang from users where id = $1`, [userId])).rows[0]?.lang === "en";
-  await avisar(userId, "mod_sancion", { sancion: en ? SANCIONES[kind].en : SANCIONES[kind].es, motivo: motivo.slice(0, 160) }, { href: RUTA_AVISO("sanction", sancionId), ref: ["sanction", sancionId], sinSms: true }).catch(() => undefined);
+  await avisar(userId, "mod_sancion", { sancion: en ? SANCIONES[kind].en : SANCIONES[kind].es, motivo: motivo.slice(0, 160) }, { href: RUTA_AVISO("sanction", sancionId), ref: ["sanction", sancionId], sinSms: kind === "adv" }).catch(() => undefined);
 }
 
 /* Aplicar una sanción a una persona (dentro de la transacción de quien decide). El efecto en la Comunidad lo lee efectoSancion().

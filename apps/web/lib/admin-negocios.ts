@@ -74,8 +74,8 @@ function armarFiltros(s: Staff, f: FiltrosNeg) {
   if (f.mas.includes("norev")) w.push("coalesce(s.review_count, 0) = 0");
   if (f.mas.includes("noown")) w.push("b.owner_user_id is null");
   // 9n-3 · Transacciones, cobros con Stripe, licencias y «sin actividad».
-  if (f.mas.includes("tx")) w.push("exists (select 1 from operations o where o.business_id = b.id and o.kind in ('order', 'market_order', 'hold', 'appointment', 'party', 'private_event', 'table', 'night', 'trip', 'enrollment', 'visit', 'tickets', 'rental', 'plan') and o.created_at > now() - interval '30 days' and not o.is_test)");
-  if (f.mas.includes("inact")) w.push("not exists (select 1 from operations o where o.business_id = b.id and o.kind in ('order', 'market_order', 'hold', 'appointment', 'party', 'private_event', 'table', 'night', 'trip', 'enrollment', 'visit', 'tickets', 'rental', 'plan') and o.created_at > now() - interval '30 days') and coalesce(b.updated_at, b.created_at) < now() - interval '30 days'");
+  if (f.mas.includes("tx")) w.push("exists (select 1 from operations o where o.business_id = b.id and o.kind in ('order', 'market_order', 'hold', 'appointment', 'party', 'private_event', 'table', 'night', 'trip', 'enrollment', 'visit', 'tickets', 'rental', 'plan') and o.sent_at > now() - interval '30 days' and not o.is_test)");
+  if (f.mas.includes("inact")) w.push("not exists (select 1 from operations o where o.business_id = b.id and o.kind in ('order', 'market_order', 'hold', 'appointment', 'party', 'private_event', 'table', 'night', 'trip', 'enrollment', 'visit', 'tickets', 'rental', 'plan') and o.sent_at > now() - interval '30 days') and coalesce(b.updated_at, b.created_at) < now() - interval '30 days'");
   if (f.mas.includes("stripe")) w.push("exists (select 1 from stripe_accounts z where z.business_id = b.id and z.charges_enabled)");
   if (f.mas.includes("nostripe")) w.push("coalesce(s.plan, 'free') = 'pro' and not exists (select 1 from stripe_accounts z where z.business_id = b.id and z.charges_enabled)");
   if (f.mas.includes("lic")) w.push("exists (select 1 from licenses l where l.business_id = b.id and l.status = 'valid')");
@@ -122,7 +122,7 @@ export async function negociosCsv(s: Staff, f: FiltrosNeg): Promise<{ csv: strin
   const r = await db().query<{ id: string; name: string; ciudad: string; cat: string; plan: string; verified: boolean; rating: number | null; reviews: number; perfil: number; estado: string; pedidos30: number; stripe: boolean; licencia: boolean; creado: string }>(
     `select b.id, b.name, ci.name as ciudad, c.name->>'es' as cat, coalesce(s.plan, 'free') as plan, coalesce(s.verified, false) as verified, s.rating_avg::float as rating,
             coalesce(s.review_count, 0) as reviews, coalesce(s.profile_strength, 0) as perfil, ${ESTADO_SQL} as estado,
-            (select count(*)::int from operations o where o.business_id = b.id and o.kind in ('order', 'market_order', 'hold', 'appointment', 'party', 'private_event', 'table', 'night', 'trip', 'enrollment', 'visit', 'tickets', 'rental', 'plan') and o.created_at > now() - interval '30 days' and not o.is_test) as pedidos30,
+            (select count(*)::int from operations o where o.business_id = b.id and o.kind in ('order', 'market_order', 'hold', 'appointment', 'party', 'private_event', 'table', 'night', 'trip', 'enrollment', 'visit', 'tickets', 'rental', 'plan') and o.sent_at > now() - interval '30 days' and not o.is_test) as pedidos30,
             exists (select 1 from stripe_accounts z where z.business_id = b.id and z.charges_enabled) as stripe,
             exists (select 1 from licenses l where l.business_id = b.id and l.status = 'valid') as licencia, to_char(b.created_at, 'YYYY-MM-DD') as creado
        from businesses b join categories c on c.id = b.category_id join cities ci on ci.id = b.city_id left join business_stats_cache s on s.business_id = b.id

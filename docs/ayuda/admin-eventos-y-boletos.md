@@ -149,6 +149,11 @@ order), with previews; turning something off never deletes it. **Trust › Fraud
 transfers, duplicate entries and ticket chargebacks, with **Open case**. **Users 360° › Activity** shows a person's tickets and RSVPs; **Business 360°**
 adds payouts by status and cancellations.
 
+## Ajustar el cupo de un RSVP
+- En la ficha de un evento con RSVP, la fila «Cupo del RSVP (lugares)» tiene **Ajustar cupo** (0 = sin límite). No baja de los lugares ya guardados en ninguna fecha, manda sobre lo que guarde el organizador, le llega el aviso con el motivo y queda en la auditoría y en los cambios del evento.
+
+**¿El organizador puede deshacer mi ajuste de un RSVP?** No: el último ajuste de To'Latino manda en la base; para cambiarlo, vuelve a ajustar.
+
 ## English
 
 ### What it does
@@ -194,3 +199,8 @@ event payouts**; new Event settings (notices per date, payout day, new-organizer
   `app.wallet.apple` and `app.wallet.google` switches (off: no new passes; existing passes keep getting their changes) and the figures.
 - What goes through Apple and Google: event, date, venue, type and code. Never the person's name, phone or amounts; Faith, Health and Kids
   events: «Event ticket», without name or venue.
+
+### Adjusting an RSVP capacity
+- On an RSVP event's page, the «RSVP capacity (spots)» row has **Adjust capacity** (0 = no limit). It never drops below the spots already saved on any date, it overrides what the organizer saves, the organizer is told with your reason, and it is audited and shown in the event changes.
+
+**Can the organizer undo my RSVP adjustment?** No: To'Latino's last adjustment rules in the database; to change it, adjust again.

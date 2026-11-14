@@ -119,6 +119,12 @@ checks that the notice build stays above the minimum. Also in **Apps**: the **dr
 View route** only with a written reason, which is audited. And the **app pipeline**: how many builds per hour the team can **request** (4), how
 many **rejected attempts per minute** it takes before answering «wait» (60) and the **max size** of a file the CI uploads (200 MB).
 
+## Noche: plazos y el corte de las 6 PM
+- **Noche** ya se cambia aquí: cuánto responde el local una mesa (`noche_responder_min`), cuánto se guarda la mesa (`noche_mesa_guardada_min`), cuánto dura la fila «ahora» (`noche_fila_viva_min`) y el **corte para cancelar gratis** (`noche_corte_min`, 360 = 6 PM; nunca cae a menos de 2 h antes de la llegada).
+- Cada reserva copia el corte al reservar: un cambio solo toca las nuevas. La reserva dice los minutos de verdad que le quedan al local.
+
+**¿Por qué otros plazos siguen en «solo lectura»?** Porque sus textos en pantalla todavía dicen el número escrito («24 h», «30 días»); se abren cuando cada texto lee el valor.
+
 ## English
 
 - **What it does:** platform deadlines and limits in one place (Community limits per day, minutes to edit a post, days to appeal, longest
@@ -132,3 +138,9 @@ many **rejected attempts per minute** it takes before answering «wait» (60) an
   **Apps**, **months each analytics event is kept** (1–36, **13**, what the store listings say): after that the sweep summarizes the month by
   day and city and drops the individual events; if you change it, change the stores' data inventory too.
 - **FAQ:** lowering the edit minutes applies from now on; to go back, type the factory value.
+
+### Night: deadlines and the 6 PM cutoff
+- **Night** is now changed here: how long the venue takes to answer a table (`noche_responder_min`), how long the table is held (`noche_mesa_guardada_min`), how long the «now» line lasts (`noche_fila_viva_min`) and the **free-cancellation cutoff** (`noche_corte_min`, 360 = 6 PM; it never falls less than 2 h before arrival).
+- Each booking copies the cutoff when it is made: a change only affects new ones. The booking shows the minutes the venue really has left.
+
+**Why are other deadlines still «read only»?** Because their on-screen texts still say the number written out («24 h», «30 days»); they open when each text reads the value.

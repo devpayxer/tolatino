@@ -13,6 +13,7 @@ To'Latino. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
   **R** (rechazar).
 - **Colas › Ajustes** (solo un Admin): quién ve cada cola, por rol, y los **feriados del equipo** (el plazo de Soporte, en horas hábiles, no
   cuenta esos días).
+- **De a 50 casos por página** (antes la lista se cortaba en 200 sin avisar). El encabezado, las pestañas y «Vencidos» cuentan **todos** los casos abiertos de tus ciudades, no solo los de la página; las flechas ← y → recorren el resto.
 
 ## Cómo se usa
 - **Asignar:** en el caso, «Asignar a…» › la persona › «Asignar».
@@ -30,11 +31,13 @@ To'Latino. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
 | Quitas una cola a un rol | Esas personas dejan de verla la próxima vez que abren Colas. |
 | Cambias un plazo | La lista, los vencidos y la Analítica lo usan desde ese momento. |
 | Feriado del equipo | El plazo de los casos de Soporte que se abren no cuenta ese día. |
+| Hay más de 200 casos abiertos | Las cuentas son las de verdad y la lista pasa de 50 en 50 (1–50 · total). «Míos», «Sin asignar» y «Vencidos» filtran en la base. |
 
 ## Preguntas frecuentes
 **¿El Admin puede quitarse una cola?** No: el Admin ve todas.
 
 **¿Los atajos funcionan en el teléfono?** No: son del teclado de escritorio.
+**¿Por qué mis casos no están todos en la primera página?** Van los más viejos contra su plazo primero; de a 50. Usa la flecha →, o filtra por cola, «Míos» o «Vencidos».
 
 ## English
 
@@ -48,6 +51,7 @@ To'Latino. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
   **R** (reject).
 - **Queues › Settings** (Admin only): who sees each queue, by role, and the **team holidays** (the Support deadline, in business hours, skips
   those days).
+- **50 cases per page** (the list used to be cut at 200 without telling you). The header, the tabs and «Overdue» count **all** the open cases in your cities, not just the page; the ← and → arrows walk the rest.
 
 ### How to use it
 - **Assign:** on the case, «Assign to…» › the person › «Assign».
@@ -65,8 +69,11 @@ To'Latino. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
 | You remove a queue from a role | Those people stop seeing it the next time they open Queues. |
 | You change a deadline | The list, overdue cases and Analytics use it from then on. |
 | Team holiday | Support cases opened do not count that day. |
+| More than 200 open cases | The counts are the real ones and the list goes 50 at a time (1–50 · total). «Mine», «Unassigned» and «Overdue» filter in the database. |
 
 ### FAQ
 **Can the Admin remove a queue from themselves?** No: the Admin sees all of them.
 
 **Do the shortcuts work on the phone?** No: they are for the desktop keyboard.
+**Why are my cases not all on the first page?** The oldest against their deadline come first, 50 at a time. Use the → arrow, or filter by queue, «Mine» or «Overdue».
+
