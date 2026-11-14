@@ -276,9 +276,10 @@ const VARS = { ultimos: '0123', enlace: 'https://pruebas.tolatino.com/soporte', 
     // ── 6 · El recibo de boletos con los botones de Wallet ──
     console.log('6 · El recibo de la compra con los botones de Wallet, a la página del boleto');
     const orden = sql(`select o.id || '|' || o.user_id || '|' || t.code from operations o join payments p on p.operation_id = o.id and p.kind = 'full' and p.status = 'captured'
-                        join tickets t on t.operation_id = o.id and t.holder_user_id = o.user_id join event_dates d on d.id = t.event_date_id join events e on e.id = t.event_id
+                        join lateral (select * from tickets x where x.operation_id = o.id and x.holder_user_id = o.user_id order by x.id limit 1) t on true join event_dates d on d.id = t.event_date_id join events e on e.id = t.event_id
                        where o.kind = 'tickets' and d.status = 'scheduled' and d.ends_at > now() + interval '1 day' and e.status not in ('cancelled', 'rejected') and bol_vigente(t.id) order by o.id limit 1`);
     ok(!!orden, 'hay una orden de boletos pagada con un boleto vivo');
+    // 9b-3 · El recibo enlaza el PRIMER boleto de esa persona en la orden (lib/correo/recibos.ts): con varios, el que se miraba podía ser otro (las 3 vueltas, 14 nov).
     const [opId, holder, code] = orden.split('|');
     const antesU = sql(`select coalesce(email::text, '') || '|' || coalesce(email_verified, false) || '|' || coalesce(notif_prefs->>'mailR', '') from users where id = '${holder}'`);
     const puestas = [];

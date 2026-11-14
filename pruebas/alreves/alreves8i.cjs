@@ -93,3 +93,5 @@ for (const [g, f, c] of crear) {
 // 9a · sinProntoEnTienda se partió en sinEnConstruccion y revisionVeCiudadAbierta: su prueba al revés vive en alreves9a.
 console.log(`\n${bien}/${total} al revés`);
 execSync('node guardianes/run.mjs', { cwd: R, stdio: 'inherit' });
+// 9b-3 · alrevesQueFalla: un defecto sin cazar pone la prueba en rojo (antes salía con 0 y el CI la contaba en verde).
+if (bien !== total) process.exit(1);

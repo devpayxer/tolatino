@@ -8741,6 +8741,40 @@ const guardianes = {
     for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql"))) if (/delete from special_hours/i.test(readFileSync(`packages/db/migrations/${x}`, "utf8"))) falla(G, `packages/db/migrations/${x}`, 0, "special_hours no se borra (status)");
   },
 
+
+  /* 9b-3 · alrevesQueFalla: una prueba al revés que no caza un defecto sale en ROJO. 25 suites (alreves6c … alreves8i) imprimían «52/53» y salían
+     con 0, y el CI las contaba en verde: alreves8e llevaba un caso sin armar (permisosMinimos: el ancla no tenía TLLlave) desde 8d. Ahora correr.mjs
+     pone en rojo la prueba al revés con un ✗ aunque salga con 0, y cada suite sale con 1 si no cazó todo. Al revés (alreves9b3): quitar la regla de
+     correr.mjs; una suite nueva sin process.exit. */
+  alrevesQueFalla() {
+    const G = "alrevesQueFalla", CO = "pruebas/correr.mjs";
+    const co = existsSync(CO) ? readFileSync(CO, "utf8") : "";
+    if (!/const mudo = t\.carril === "alreves" && codigo === 0 && malas > 0;/.test(co) || !/ok: codigo === 0 && !sinNada && !mudo/.test(co))
+      falla(G, CO, 0, "correr.mjs tiene que poner en rojo la prueba al revés que imprime un ✗ y sale con 0");
+    for (const f of archivos.filter((x) => /^pruebas\/alreves\/[^/]+\.(cjs|mjs)$/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      if (!/process\.exit(Code)?\b/.test(t)) falla(G, f, 0, "la prueba al revés no sale con error cuando un defecto no se caza (process.exit(1) si bien !== total)");
+    }
+  },
+
+  /* 9b-3 · textoQueExiste: lo que una prueba de punta a punta busca en la pantalla (contiene(p, '…')) existe en el código, la base o la ayuda. sis9j
+     buscaba «Llegan cuando se encienda producción», que 9o cambió por la sección de despliegues de verdad: la prueba quedó roja en las 3 vueltas
+     (14 nov). Lo que la pantalla ARMA con datos (nombres de la prueba, cifras, MAYÚSCULAS) no está escrito en el código: esos van, uno por uno, en
+     guardianes/textos-armados.json («prueba|texto»). Un texto que se quita del código con una prueba que todavía lo busca falla aquí, antes del CI.
+     Al revés (alreves9b3): una prueba que busca un texto que no existe. */
+  textoQueExiste() {
+    const G = "textoQueExiste", L = "guardianes/textos-armados.json";
+    const todo = archivos.filter((f) => /^(apps|packages|scripts|docs\/ayuda)\//.test(f) && /\.(tsx?|mjs|cjs|js|json|sql|md)$/.test(f) && !/node_modules|\/\.next\/|^apps\/mobile\/(ios|android)\//.test(f))
+      .map((f) => readFileSync(f, "utf8")).join("\n");
+    const armados = new Set(existsSync(L) ? JSON.parse(readFileSync(L, "utf8")) : []);
+    for (const f of archivos.filter((x) => /^pruebas\/e2e\/[^/]+\.(cjs|mjs)$/.test(x))) {
+      const t = readFileSync(f, "utf8"), base = f.split("/").pop();
+      for (const m of t.matchAll(/contiene\(\s*\w+\s*,\s*'([^'\\$]{6,})'\s*\)/g)) {
+        if (todo.includes(m[1]) || armados.has(`${base}|${m[1]}`)) continue;
+        falla(G, f, t.slice(0, m.index).split("\n").length, `busca «${m[1]}» y ese texto no está en el código, la base ni la ayuda (si la pantalla lo arma con datos, va en ${L})`);
+      }
+    }
+  },
 };
 
 

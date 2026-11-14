@@ -69,6 +69,11 @@ const casos = [
   ['equipoDePruebaConDosPasos','pruebas/e2e/ana9g.cjs',"insert into staff_mfa_pruebas (phone, note)","select 1 /* staff_mfa */"],
   ['compaEnElChat', 'pruebas/e2e/msg2p.cjs', "update compa_business_settings set enabled = false where business_id = '${BIZ}'`);\n", "select 1`);\n"],
   ['tarjetaPropia', 'pruebas/e2e/fie4v.cjs', "  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');\n", ''],
+  // alrevesQueFalla: correr.mjs vuelve a contar en verde la prueba al revés con un ✗ que sale con 0; una suite vuelve a no salir con error
+  ['alrevesQueFalla', 'pruebas/correr.mjs', 'ok: codigo === 0 && !sinNada && !mudo,', 'ok: codigo === 0 && !sinNada,'],
+  ['alrevesQueFalla', 'pruebas/alreves/alreves6c.cjs', '\nif (bien !== casos.length) process.exit(1);\n', '\n'],
+  // textoQueExiste: una prueba busca en la pantalla un texto que ya no está en ningún lado (lo que le pasó a sis9j con 9o)
+  ['textoQueExiste', 'pruebas/e2e/sis9j.cjs', "await contiene(a, 'DESPLIEGUES Y VUELTAS ATRÁS')", "await contiene(a, 'Llegan cuando se encienda producción')"],
 ];
 const crear = [
   // parametroSinTipo: un archivo nuevo con el error de siempre (uuid y text en el mismo $1)

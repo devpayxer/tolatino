@@ -47,3 +47,5 @@ for (const [g, que, f, mut] of casos) {
 }
 console.log(`${ok}/${casos.length} al revés`);
 for (const g of ["puenteSoloNuestroOrigen", "cascaraArrancaIos"]) console.log(execSync(`node guardianes/run.mjs --solo ${g}`, { encoding: "utf8" }).trim());
+// 9b-3 · alrevesQueFalla: un defecto sin cazar pone la prueba en rojo.
+if (ok !== casos.length) process.exit(1);

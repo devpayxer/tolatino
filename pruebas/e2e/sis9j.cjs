@@ -194,7 +194,8 @@ const enNY = (d) => { const p = Object.fromEntries(new Intl.DateTimeFormat('en-U
     await a.goto(B + '/admin/sistema/salud');
     ok(await contiene(a, 'Base de datos') && await contiene(a, 'Cola de los avisos push') && await contiene(a, 'Disco del servidor') && await contiene(a, 'DISPONIBILIDAD') && await contiene(a, 'ERRORES 24 H'), 'Salud: kpis y una fila por servicio');
     ok(await contiene(a, /\d+ del servidor/), 'los errores del servidor cuentan en Salud');
-    ok(await contiene(a, 'Llegan cuando se encienda producción'), 'los despliegues lo dicen: nacen con producción');
+    // 9b-3 · 9o puso la sección de verdad (deploy_releases): ya no es «Llegan cuando se encienda producción».
+    ok(await contiene(a, 'DESPLIEGUES Y VUELTAS ATRÁS') && (await contiene(a, 'Todavía no hay despliegues anotados') || await contiene(a, /SIRVIÓ|VOLVIÓ ATRÁS|NO SALIÓ/)), 'Salud: los despliegues y vueltas atrás, con el detalle en Sistema › Despliegues');
     const d1 = new Date(Date.now() + 2 * 86400000), d2 = new Date(d1.getTime() + 3600000);
     await a.getByLabel('DESDE (AAAA-MM-DD HH:MM, HORA DE HAZLETON)').fill(enNY(d1)); await a.getByLabel('HASTA (6 HORAS COMO MÁXIMO)').fill(enNY(d2));
     await clic(boton(a, 'Programar')); await clic(a.getByText('Cambio de la base.', { exact: true }));
