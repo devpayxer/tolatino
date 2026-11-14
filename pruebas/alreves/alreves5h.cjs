@@ -17,7 +17,7 @@ const casos = [
   ['traduccionPropia', TR, 'import "server-only";', 'import "server-only";\nexport const otro = () => fetch(`${process.env.TRADUCTOR_URL}/translate`);'],
   ['traduccionPropia', CO, 'import "server-only";', 'import "server-only";\nexport const det = () => fetch("http://x/detect");'],
   ['traduccionPropia', C, '      TRADUCTOR_URL: http://traductor:5000\n', '      TRADUCTOR_URL: https://libretranslate.example.net\n'],
-  ['traduccionPropia', D, 'log() {', '# https://libretranslate.com/translate\nlog() {'],
+  ['traduccionPropia', D, '# 3g) Traductor propio', '# https://libretranslate.com/translate\n# 3g) Traductor propio'],
   // traductorEnPerfil
   ['traductorEnPerfil', C, '    image: libretranslate/libretranslate:v1.9.6\n    profiles: ["traductor"]\n    restart: unless-stopped', '    image: libretranslate/libretranslate:v1.9.6\n    restart: unless-stopped'],
   ['traductorEnPerfil', C, '    image: libretranslate/libretranslate:v1.9.6\n    profiles: ["traductor"]\n    restart: unless-stopped', '    image: libretranslate/libretranslate:latest\n    profiles: ["traductor"]\n    restart: unless-stopped'],

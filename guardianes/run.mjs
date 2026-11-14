@@ -3064,7 +3064,7 @@ const guardianes = {
     if (/\n      traductor:/.test(web)) falla(G, C, 0, "la app no espera al traductor para arrancar (sin depends_on)");
     if (!/COMPOSE_TRAD=\(docker compose [^)]*--profile traductor\)/.test(d)) falla(G, D, 0, "deploy.sh enciende el traductor con su perfil (COMPOSE_TRAD … --profile traductor)");
     if (!/\n  systemd-run --unit tolatino-traductor --collect [^\n]*traductor-modelos && [^\n]*up -d traductor[^\n]*\|\| true\n/.test(d)) falla(G, D, 0, "deploy.sh baja los modelos y enciende el traductor APARTE (systemd-run … || true)");
-    for (const l of d.split("\n")) if (/^docker compose .* up -d --build/.test(l) && /--profile/.test(l)) falla(G, D, 0, "el despliegue de la app no enciende perfiles: cada uno va aparte");
+    for (const l of d.split("\n")) if (/(^docker compose |COMPOSE\[@\]\}"? ).*up -d --build/.test(l) && /--profile/.test(l)) falla(G, D, 0, "el despliegue de la app no enciende perfiles: cada uno va aparte");
   },
 
   /* 5h. El Super Admin ve siempre el original (§4 5h): nada del Super Admin traduce ni lee la caché de traducciones; lo que ve es el texto
@@ -7205,6 +7205,17 @@ const guardianes = {
       const t = readFileSync(f, "utf8");
       const m = /(?<![a-z-])(?<!eventos\\?)\/pagar(?![a-z-])|Ir a pagar/.exec(t);
       if (m && !/tl-modo-v1/.test(t)) falla(G, f, t.slice(0, m.index).split("\n").length, "va al pago de un negocio sin fijar el modo (tl-modo-v1): sin él toma el primero que haya a esa hora y otra prueba pudo dejar delivery");
+    }
+  },
+
+  /* 9j · Un miembro del equipo que una prueba inventa (teléfono libre) entra con segundo factor como el resto del equipo de ficción: ana9g daba de
+     alta un Admin con telLibre() sin ponerlo en staff_mfa_pruebas y /admin lo mandaba a /admin/dos-pasos («EMBUDO» no salía). Una prueba que inserta
+     en staff_members con un teléfono libre lo anota en staff_mfa_pruebas. Al revés: alreves9b3. */
+  equipoDePruebaConDosPasos() {
+    const G = "equipoDePruebaConDosPasos";
+    for (const f of readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs")).map((y) => `pruebas/e2e/${y}`)) {
+      const t = readFileSync(f, "utf8"), i = t.search(/insert into staff_members/);
+      if (i >= 0 && /telLibre\(\)/.test(t) && !/insert into staff_mfa_pruebas/.test(t)) falla(G, f, t.slice(0, i).split("\n").length, "da de alta a alguien del equipo con un teléfono libre sin anotarlo en staff_mfa_pruebas: sin segundo factor el Super Admin no abre");
     }
   },
 

@@ -100,6 +100,8 @@ const FIJA = 'Gracias por escribir a Sabor Dominicano. Ahora estamos cerrados; t
   ok(/LO QUE EL COMPA DEBE SABER/.test(t2) && (await pd.locator('textarea').evaluateAll((xs) => xs.map((x) => x.value))).some((v) => v.includes('sancocho')), 'LO QUE EL COMPA DEBE SABER con la nota del dueño');
   await pd.getByText('Tus preguntas frecuentes', { exact: true }).click();
   ok(await espera(() => sql(`select array_to_string(topics, ',') from compa_business_settings where business_id = '${NEG}'`) === 'hours,menu,how_to_order'), 'quitar un tema');
+  // 9b-3 · El chip sale de lo que el servidor manda al refrescar: tocarlo otra vez antes de que se vea apagado lo volvía a quitar (todas las fases, una vez).
+  ok(await espera(async () => (await pd.getByText('Tus preguntas frecuentes', { exact: true }).first().evaluate((e) => e.closest('[role="button"]')?.getAttribute('aria-pressed') ?? '')) !== 'true'), 'el chip se ve apagado');
   await pd.getByText('Tus preguntas frecuentes', { exact: true }).click();
   ok(await espera(() => sql(`select cardinality(topics) from compa_business_settings where business_id = '${NEG}'`) === '4'), 'y volverlo a poner');
   await pd.waitForTimeout(400); await pd.screenshot({ path: OUT + 'e7f-panel-auto-390.png', fullPage: true });

@@ -49,6 +49,8 @@ let SEMILLA = null;
   ADM = telLibre();
   sql(`insert into users (phone, phone_verified_at, first_name, last_name, home_city_id, lang, is_test, email, email_verified) values ('+1${ADM}', now(), 'Admin', 'Analítica', 'hzl', 'es', true, 'admin.${RUN}@example.com', true)`);
   sql(`insert into staff_members (user_id, role, cities, status, added_by) select u.id, 'admin', '{}', 'active', (select id from users where phone = '+15705550199') from users u where u.phone = '+1${ADM}'`);
+  // 9j · Todo el equipo entra con segundo factor: en el sandbox, el equipo de ficción de las pruebas lo da por la lista staff_mfa_pruebas (sin ella, /admin manda a /admin/dos-pasos).
+  sql(`insert into staff_mfa_pruebas (phone, note) values ('+1${ADM}', 'ana9g · Admin propio de la corrida') on conflict do nothing`);
   const EMAIL = sql(`select email::text from users where phone = '+1${ADM}'`);
   ok(EMAIL === `admin.${RUN}@example.com`, `un Admin propio de esta corrida, con correo para recibir los reportes (${EMAIL})`);
   alDia();

@@ -18,7 +18,7 @@ const casos = [
   ['pruebaSinSecretos', 'pruebas/e2e/webhook2d.cjs', "const crypto = require('crypto');", `const crypto = require('crypto'); const K = '${'wh' + 'sec_'}${'a1B2c3D4e5'.repeat(2)}';`],
   ['pruebaSinSecretos', 'pruebas/servir/servir.sh', 'pon AUTH_SECRET "$(hex 32)"', `pon AUTH_SECRET "$(hex 32)"\n${'AUTH_' + 'SECRET'}=local-${'s'.repeat(20)}`],
   // sinEnConstruccion: con TOLATINO_FASE=9 la sección pendiente del Super Admin (mkt) rompe; sin la fase, una página que dice «EN CONSTRUCCIÓN»
-  ['sinEnConstruccion', AN, 'cont: "Fase 2", mkt: "Fase 9",', 'cont: "Fase 2", mkt: "Fase 9", cms: "Fase 9", zz: "Fase 9",', { TOLATINO_FASE: '9' }],
+  ['sinEnConstruccion', AN, '  cont: "Fase 2",\n', '  cont: "Fase 2", cms: "Fase 9", zz: "Fase 9",\n', { TOLATINO_FASE: '9' }],
   // revisionVeCiudadAbierta
   ['revisionVeCiudadAbierta', S48, "('+14845550183', 'Revisión', 'Repartidor', 'en', 'hzl'", "('+14845550183', 'Revisión', 'Repartidor', 'en', 'alw'"],
   ['revisionVeCiudadAbierta', S48, "values ('revision-tolatino', 'hzl',", "values ('revision-tolatino', 'scr',"],

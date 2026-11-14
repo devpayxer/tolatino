@@ -23,7 +23,9 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
   const CH = requiere('est4d', () => sql(`select o.number from operations o where o.user_id = ${MARISOL} and o.business_id = '${H}' and o.kind = 'appointment' and o.status = 'done' and o.done_at > now() - interval '6 days' and exists (select 1 from payments p where p.operation_id = o.id and p.kind = 'estimate' and p.status = 'captured' and p.refunded_cents = 0) and not exists (select 1 from help_requests h where h.operation_id = o.id) order by o.id desc limit 1`), { que: 'una visita del Hogar terminada con su estimado cobrado y sin ayuda' });
   const CA = requiere('est4d', () => sql(`select o.number from operations o where o.user_id = ${MARISOL} and o.business_id = '${A}' and o.kind = 'appointment' and o.status = 'done' and o.done_at > now() - interval '6 days' and not exists (select 1 from help_requests h where h.operation_id = o.id) order by o.id desc limit 1`), { que: 'una cita del taller terminada y sin ayuda' });
   ok(!!CH && !!CA, `visita ${CH} (hogar, con estimado cobrado) y cita ${CA} (auto)`);
-  const est = Number(sql(`select max(p.amount_cents) from payments p join operations o on o.id = p.operation_id where o.number = '${CH}' and p.status = 'captured'`));
+  // 9k (L448) · Lo devolvible a la tarjeta es lo cobrado en la app de TODOS los cobros de la visita (depósito, estimado, «algo más», visita) menos lo ya devuelto.
+  const est = Number(sql(`select coalesce(sum(p.amount_cents - p.refunded_cents), 0) from payments p join operations o on o.id = p.operation_id where o.number = '${CH}' and p.kind in ('deposit', 'estimate', 'extra', 'visit', 'full', 'balance') and p.status in ('captured', 'partially_refunded')`));
+  const estPago = Number(sql(`select max(p.amount_cents) from payments p join operations o on o.id = p.operation_id where o.number = '${CH}' and p.status = 'captured'`)); // el cobro con más saldo: ahí cae la devolución
   const b = await chromium.launch(); const err = [];
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); await entrar(m, '5705550122');
   const t = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); await entrar(t, '5705550222');
@@ -48,7 +50,7 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
   await t.goto(B + `/panel/${H}/hoy?det=cita:${CH}`); await det.getByText(/AYUDA CON LA CITA · H-/).first().waitFor();
   ok(!!(await vis(det.getByText('Quedó mal o volvió a fallar').first())), 'panel: el motivo con su nombre');
   await clic(det.getByText('Proponer otra cosa', { exact: true }));
-  ok(!!(await vis(det.getByText(new RegExp(`A su tarjeta puedes devolver hasta \\$${(est / 100).toFixed(2).replace(/\.00$/, '')}`)))), `panel: hasta $${est / 100} (lo cobrado del estimado)`);
+  ok(!!(await vis(det.getByText(new RegExp(`A su tarjeta puedes devolver hasta \\$${(est / 100).toFixed(2).replace(/\.00$/, '')}`)))), `panel: hasta $${est / 100} (lo cobrado en la app, de todos sus cobros)`);
   await (await vis(det.getByPlaceholder((est / 100).toFixed(2)))).fill('40');
   await (await vis(det.locator('textarea'))).fill('Vuelvo a revisarlo sin cargo y te devolvemos $40 por la molestia.');
   await t.screenshot({ path: OUT + 'y2-panel-ayuda-d.png', fullPage: true });
@@ -56,7 +58,7 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
   ok(await espera(() => AY(CH, "h.status || '|' || h.decision || '|' || h.offer_cents"), 'answered|alt|4000') === 'answered|alt|4000', 'el negocio propone $40');
   await m.goto(B + `/cita/${CH}/ayuda?de=compa`); await m.getByText('TE PROPONEN UN CAMBIO').first().waitFor();
   await clic(m.getByRole('button', { name: 'Aceptar $40' }));
-  ok(await espera(() => sql(`select p.status || '|' || p.refunded_cents from payments p join operations o on o.id = p.operation_id where o.number = '${CH}' and p.amount_cents = ${est}`), 'partially_refunded|4000') === 'partially_refunded|4000', 'aceptó: $40 devueltos de lo cobrado del estimado');
+  ok(await espera(() => sql(`select p.status || '|' || p.refunded_cents from payments p join operations o on o.id = p.operation_id where o.number = '${CH}' and p.amount_cents = ${estPago}`), 'partially_refunded|4000') === 'partially_refunded|4000', 'aceptó: $40 devueltos de lo cobrado del estimado');
   await m.getByText('TERMINADA').first().waitFor(); ok(true, 'hogar: terminada');
   // ── Auto ──
   await m.goto(B + `/cita/${CA}/ayuda?de=compa`); const f2 = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await f2.getByText('¿Qué pasó?').first().waitFor();
