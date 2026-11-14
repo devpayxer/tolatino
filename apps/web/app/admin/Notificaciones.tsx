@@ -18,7 +18,7 @@ const PREF: Record<string, string> = { ord: "Pedidos", cit: "Citas y reservas", 
 const cuando = (iso: string) => new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
 
 const MAIL: Record<string, [string, string]> = { pruebas: ["EN MODO PRUEBAS", "action"], pendiente: ["PENDIENTE", "neutral"], enviado: ["ENVIADO", "signal"], fallo: ["FALLÓ", "danger"], sin_proveedor: ["SIN PROVEEDOR", "danger"] };
-const MAIL_TPL: Record<string, string> = { verify: "Confirma tu correo", receipt_order: "Recibo de pedido", receipt_table: "Mesa confirmada", receipt_pro: "Recibo de Pro" };
+const MAIL_TPL: Record<string, string> = { verify: "Confirma tu correo", receipt_order: "Recibo de pedido", receipt_table: "Mesa confirmada", receipt_pro: "Recibo de Pro", receipt_tickets: "Recibo de boletos", report: "Reporte programado", founder_daily: "Reporte diario", campaign: "Campaña", support_reply: "Respuesta de Soporte", support_ack: "Soporte: recibimos tu correo" };
 // 8c · Push: el estado de cada aviso y qué app lo abre.
 const PUSH: Record<string, [string, string]> = { pendiente: ["PUSH EN COLA", "neutral"], enviado: ["PUSH ENTREGADO", "signal"], pruebas: ["PUSH EN PRUEBAS", "action"], fallo: ["PUSH FALLÓ", "danger"], silencio: ["PUSH · SILENCIO", "neutral"], apagado: ["PUSH APAGADO", "neutral"] };
 const APP: Record<string, string> = { cliente: "TO'LATINO", negocio: "NEGOCIOS", delivery: "REPARTIDOR", checkin: "PUERTA" };
@@ -62,7 +62,7 @@ export function Notificaciones({ d, tab, puede, com = false, evt = false, sop = 
       { k: "SMS CON PROBLEMA · 24 H", v: String(k.fallos), s: k.fallos ? "fallaron o no hay proveedor" : "ninguno", sFg: k.fallos ? "var(--tl-danger)" : undefined },
       { k: "PUSH ENTREGADOS · 24 H", v: String(k.push), s: k.ahorrados ? `${k.ahorrados} SMS ahorrados` : "push primero, SMS de respaldo", onClick: () => ir("push") },
     ] },
-    { type: "tabs", items: ([["tpl", "Plantillas", String(d.plantillas.length)], ["log", "Envíos"], ["push", "Push"], ["mail", "Correos", d.kmail.hoy ? String(d.kmail.hoy) : undefined], ["rules", "Reglas"]] as const).map(([t, l, n]) => ({ l, n, on: tab === t, onClick: () => ir(t) })) },
+    { type: "tabs", items: ([["tpl", "Plantillas", String(d.plantillas.length)], ["log", "Envíos"], ["push", "Push"], ["canales", "SMS y WhatsApp"], ["wa", "Plantillas de WhatsApp"], ["mail", "Correos", d.kmail.hoy ? String(d.kmail.hoy) : undefined], ["rules", "Reglas"]] as const).map(([t, l, n]) => ({ l, n, on: tab === t, onClick: () => ir(t) })) },
   ];
   // 5i · «Solo Comunidad»: com_*, gam_*, dm_*, mod_*, apel_* (todas sin SMS; guardián avisoComunidadSinSms) y el resumen diario.
   // 6j · «Solo Eventos»: evt_*, bol_*, rsvp_*, espera_*, puerta_*, evp_* (SMS solo lo crítico; guardián avisoEventoSmsSoloCritico).

@@ -73,27 +73,40 @@ export async function reciboPro(negocio: string, userId: string, centavos: numbe
   } catch { /* nunca rompe el cobro */ }
 }
 
-/* 6c · Recibo de boletos: la orden B-…, lo comprado, «Cargos de servicio · Incluidos», la tarjeta y el enlace a los boletos. Uno por orden. */
+/* 6c · Recibo de boletos: la orden B-…, lo comprado, «Cargos de servicio · Incluidos», la tarjeta y el enlace a los boletos. Uno por orden.
+   9l · armarReciboBoletos() lo arma (también lo usan las pruebas para mirar los botones de Wallet sin mandar otro) y reciboBoletos() lo encola, una vez. */
 export async function reciboBoletos(opId: string) {
   try {
+    const r = await armarReciboBoletos(opId);
+    if (r) await encolar({ userId: r.u.id, city: r.u.city, to: r.u.email, tpl: "receipt_tickets", subject: r.subject, html: r.html, text: r.text, ref: ["operation", opId], idem: `rcpt-bol-${opId}` });
+  } catch { /* el recibo nunca rompe la compra */ }
+}
+export async function armarReciboBoletos(opId: string): Promise<{ u: Dest; subject: string; html: string; text: string } | null> {
+  {
     const o = (await db().query<{ user: string; num: string; title: { es: string; en: string }; venue: string; dia: string; total: number; desc: number; brand: string | null; l4: string | null;
       l: { name: { es: string; en: string }; qty: number; tot: number }[] }>(
       `select o.user_id::text as user, o.number as num, o.details->'title' as title, o.details->>'venue' as venue, o.details->>'local_date' as dia, o.total_cents as total, o.discount_cents as desc,
               p.card_brand as brand, p.card_last4 as l4,
               (select coalesce(json_agg(json_build_object('name', l.name, 'qty', l.qty, 'tot', l.line_total_cents) order by l.id), '[]') from operation_lines l where l.operation_id = o.id) as l
          from operations o join payments p on p.operation_id = o.id and p.kind = 'full' where o.id = $1::bigint and o.kind = 'tickets' and p.status = 'captured'`, [opId])).rows[0];
-    if (!o) return;
+    if (!o) return null;
     const u = await destino(o.user);
-    if (!u) return;
+    if (!u) return null;
     const es = u.lang !== "en", m = (c: number) => `$${(c / 100).toFixed(2)}`, t = es ? o.title.es : o.title.en || o.title.es;
     const filas: Fila[] = [...o.l.map((l): Fila => [`${l.qty} × ${es ? l.name.es : l.name.en || l.name.es}`, m(l.tot)])];
     if (o.desc) filas.push([es ? "Código de descuento" : "Discount code", `−${m(o.desc)}`]);
     filas.push([es ? "Cargos de servicio" : "Service fees", es ? "Incluidos" : "Included"], ["Total", m(o.total), true]);
     const pago = o.brand && o.l4 ? (es ? `Pagado con ${o.brand.toUpperCase()} ·· ${o.l4}. ` : `Paid with ${o.brand.toUpperCase()} ·· ${o.l4}. `) : "";
+    // 9l · Los botones de Wallet (L1297): a la página del boleto (el primero que esta persona tiene en la orden), donde el pase se agrega con la sesión. Solo
+    // si Wallet está disponible para ese boleto (interruptor, llaves y boleto vivo: lib/pases/pases.ts disponible()).
+    const bol = (await db().query<{ code: string }>(`select code from tickets where operation_id = $1::bigint and holder_user_id = $2::uuid order by id limit 1`, [opId, o.user])).rows[0]?.code ?? null;
+    const w = bol ? await (await import("../pases/pases")).disponible(o.user, bol).catch(() => ({ apple: false, google: false })) : { apple: false, google: false };
+    const pag = bol ? `${BASE_URL()}/cuenta/boletos/${encodeURIComponent(bol)}` : null;
+    const wallet = pag && (w.apple || w.google) ? { apple: w.apple ? { href: pag, l: es ? "Agregar a Apple Wallet" : "Add to Apple Wallet" } : null, google: w.google ? { href: pag, l: es ? "Agregar a Google Wallet" : "Add to Google Wallet" } : null } : undefined;
     const { html, text } = marco({ es, pre: es ? `Tus boletos para ${t}` : `Your tickets for ${t}`, titulo: es ? `Recibo · orden ${o.num}` : `Receipt · order ${o.num}`,
       intro: es ? `¡Listo, vas! ${t} · ${o.venue} · ${o.dia}.` : `You are going! ${t} · ${o.venue} · ${o.dia}.`,
       filas, nota: pago + (es ? "El precio que pagaste ya incluye los cargos: nada más en la puerta. Tu QR está en Mi cuenta › Boletos." : "The price you paid already includes fees: nothing extra at the door. Your QR is in My account › Tickets."),
-      cta: { l: es ? "Ver mis boletos" : "See my tickets", href: `${BASE_URL()}/eventos/orden/${encodeURIComponent(o.num)}` } });
-    await encolar({ userId: u.id, city: u.city, to: u.email, tpl: "receipt_tickets", subject: es ? `Tus boletos · ${t} · orden ${o.num}` : `Your tickets · ${t} · order ${o.num}`, html, text, ref: ["operation", opId], idem: `rcpt-bol-${opId}` });
-  } catch { /* el recibo nunca rompe la compra */ }
+      cta: { l: es ? "Ver mis boletos" : "See my tickets", href: `${BASE_URL()}/eventos/orden/${encodeURIComponent(o.num)}` }, wallet });
+    return { u, subject: es ? `Tus boletos · ${t} · orden ${o.num}` : `Your tickets · ${t} · order ${o.num}`, html, text };
+  }
 }

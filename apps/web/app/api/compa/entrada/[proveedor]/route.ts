@@ -1,7 +1,8 @@
 import { after, NextResponse, type NextRequest } from "next/server";
 import { valor } from "@/lib/config";
 import { contarRechazo, procesar, recibir } from "@/lib/compa/canales";
-import { CUERPO_MAX, firmaTelnyx, firmaWhatsApp, leerTelnyx, leerWhatsApp, retoWhatsApp, type Entrante } from "@/lib/compa/canales-proveedor";
+import { CUERPO_MAX, firmaTelnyx, firmaWhatsApp, leerEstadosTelnyx, leerEstadosWhatsApp, leerPlantillasWhatsApp, leerTelnyx, leerWhatsApp, retoWhatsApp, type Entrante } from "@/lib/compa/canales-proveedor";
+import { anotar } from "@/lib/canales/estados";
 
 /* 7h · La entrada de WhatsApp y SMS de El Compa: POST /api/compa/entrada/telnyx · /api/compa/entrada/whatsapp (fase7-compa.md §4 7h; guardián
    canalConFirma). Orden fijo: tamaño → FIRMA del proveedor (antes de leer el JSON; sin firma buena: 401 y solo se cuenta el rechazo, sin
@@ -35,6 +36,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
   let j: unknown;
   try { j = JSON.parse(cuerpo.toString("utf8")); } catch { await contarRechazo(p, "formato"); return no(400); }
   const L: Entrante[] = p === "telnyx" ? leerTelnyx(j) : leerWhatsApp(j);
+  // 9l · Los avisos de entrega (Telnyx message.finalized, Meta statuses) y el estado de las plantillas de WhatsApp: no son mensajes, se anotan aquí.
+  const E = p === "telnyx" ? leerEstadosTelnyx(j) : leerEstadosWhatsApp(j), PL = p === "whatsapp" ? leerPlantillasWhatsApp(j) : [];
+  if (E.length || PL.length) await anotar(E, PL);
   const nuevos: string[] = [];
   for (const m of L) {
     // WhatsApp no firma la hora: la del mensaje vale 24 h (su ventana); más vieja o del futuro = repetida, no se contesta.

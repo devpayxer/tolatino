@@ -32,12 +32,18 @@ async function persona(a: Acceso, mid: unknown): Promise<Fila | null> {
   if (typeof mid !== "string" || !UUID.test(mid)) return null;
   return (await db().query<Fila>(`select id, kind, status, user_id, display_name, invite_sends, invited_at from business_members where id = $1 and business_id = $2`, [mid, a.negocio.id])).rows[0] ?? null;
 }
-/* El SMS de invitación («{Dueño} te invitó al equipo de {Negocio}… tolatino.app/e/{código}. Vence en 7 días»). El
-   proveedor de SMS se conecta en la Fase 2 (decisión E2, LAUNCH-CHECKLIST): hasta entonces la invitación queda guardada
-   y la pantalla lo dice con la verdad (sms: false). */
-function enviarInvitacion(_code: string): boolean {
-  void _code;
-  return false;
+/* 9l · El SMS de invitación (L106, L980): «{Negocio} te invitó a su equipo en To'Latino como {rol}. Tu código de invitación: {código}. Vence en 7 días.»,
+   como la invitación de porteros: avisarTelefono (si el número ya tiene cuenta, también le llega a su campana; si no, solo el SMS, cifrado). Sale por el
+   único camino de los SMS (reintentos y estado de entrega). Aceptar con el código desde la app llega con 9n (L101): el SMS no promete más que el código.
+   Devuelve si el SMS salió (o quedó en el simulador del sandbox); si el número pidió STOP o no hay proveedor, la pantalla dice la verdad. */
+async function enviarInvitacion(a: Acceso, tel: string | null, code: string, rol: string): Promise<boolean> {
+  if (!tel) return false;
+  const { avisarTelefono } = await import("@/lib/avisos");
+  await avisarTelefono(tel, "equipo_invitado", { negocio: a.negocio.name, rol: rol || "equipo", codigo: code }, { ref: ["business", a.negocio.id], city: a.negocio.city_id });
+  const s = (await db().query<{ st: string }>(
+    `select coalesce((select n.sms_status from notifications n join users u on u.id = n.user_id where u.phone = $1 and n.tpl = 'equipo_invitado' and n.created_at > now() - interval '1 minute' order by n.id desc limit 1),
+                     (select p.sms_status from phone_messages p where p.tpl = 'equipo_invitado' and p.created_at > now() - interval '1 minute' order by p.id desc limit 1)) as st`, [tel])).rows[0]?.st;
+  return !!s && ["pruebas", "pendiente", "enviado", "entregado", "respaldo"].includes(s);
 }
 
 export async function equipoInvitar(id: string, x: { kind: string; name: string; phone: string; role: string }): Promise<ResEq> {
@@ -61,7 +67,7 @@ export async function equipoInvitar(id: string, x: { kind: string; name: string;
     if ((e as { code?: string }).code === "23505") return no("Ese teléfono ya está en tu equipo.", "That phone is already on your team.");
     throw e;
   }
-  return { ok: true, sms: enviarInvitacion(code) };
+  return { ok: true, sms: await enviarInvitacion(a, tel, code, role) };
 }
 
 export async function equipoReenviar(id: string, mid: string): Promise<ResEq> {
@@ -73,7 +79,8 @@ export async function equipoReenviar(id: string, mid: string): Promise<ResEq> {
   const code = randomBytes(6).toString("base64url");
   await db().query(`update business_members set invite_code = $2, invited_at = now(), invite_expires_at = now() + interval '7 days', invite_sends = invite_sends + 1, updated_at = now() where id = $1`, [m.id, code]);
   await auditar(a, "panel.equipo_reenviar", m.id, null);
-  return { ok: true, sms: enviarInvitacion(code) };
+  const pr = (await db().query<{ tel: string | null; rol: string | null }>(`select phone as tel, role->>'es' as rol from business_members where id = $1`, [m.id])).rows[0];
+  return { ok: true, sms: await enviarInvitacion(a, pr?.tel ?? null, code, pr?.rol ?? "") };
 }
 
 export async function equipoCancelar(id: string, mid: string): Promise<ResEq> {

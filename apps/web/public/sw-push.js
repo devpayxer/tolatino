@@ -20,6 +20,24 @@ self.addEventListener("push", function (e) {
   }));
 });
 
+/* 9l · Si el navegador cambia la suscripción por su cuenta (vence o la rota), se vuelve a suscribir con la MISMA llave del servidor y le avisa a
+   /api/push/renovar (nuestro origen, con la sesión de la cookie; el servidor ata la nueva a esa sesión y suelta la vieja). Sin sesión, no pasa nada: se
+   registra otra vez al abrir To'Latino. No guarda nada. */
+self.addEventListener("pushsubscriptionchange", function (e) {
+  e.waitUntil((function () {
+    var vieja = e.oldSubscription, nueva = e.newSubscription;
+    var llave = vieja && vieja.options ? vieja.options.applicationServerKey : null;
+    var sub = nueva ? Promise.resolve(nueva) : llave ? self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: llave }) : Promise.resolve(null);
+    return sub.then(function (s) {
+      if (!s) return;
+      var j = s.toJSON ? s.toJSON() : {};
+      if (!j.endpoint || !j.keys || !j.keys.p256dh || !j.keys.auth) return;
+      return fetch(new URL("/api/push/renovar", self.location.origin).href, { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ viejo: vieja ? vieja.endpoint : null, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth }) });
+    }).catch(function () { return undefined; });
+  })());
+});
+
 self.addEventListener("notificationclick", function (e) {
   e.notification.close();
   var u = e.notification.data && typeof e.notification.data.u === "string" && RUTA.test(e.notification.data.u) ? e.notification.data.u : "/avisos";

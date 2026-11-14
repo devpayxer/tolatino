@@ -59,7 +59,7 @@ export function equipoBloques(c: Ctx): (Bloque | null)[] {
   return out;
 }
 
-const smsToast = (c: Ctx, si: string) => (r: { sms?: boolean }) => (r.sms ? si : c.E2("Invitación guardada. El SMS de invitación todavía no sale: avísale tú a la persona.", "Invite saved. The invite text is not sent yet: let the person know yourself."));
+const smsToast = (c: Ctx, si: string) => (r: { sms?: boolean }) => (r.sms ? si : c.E2("Invitación guardada, pero el SMS no salió (ese número pidió no recibir mensajes de To'Latino): avísale tú a la persona.", "Invite saved, but the text did not go out (that number asked not to get To'Latino texts): let the person know yourself."));
 
 export function equipoDetalle(c: Ctx, mid: string): Sec {
   const { d, E2 } = c, out: (Bloque | null)[] = [], H = (o: { eye?: string; t: string; s?: string }): Bloque => ({ type: "head", onBack: c.closeDet, ...o });

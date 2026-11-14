@@ -87,6 +87,59 @@ export function leerWhatsApp(j: unknown): Entrante[] {
   return out;
 }
 
+/* 9l · Los avisos de entrega (Telnyx `message.finalized`; Meta `statuses`) y el estado de las plantillas de WhatsApp (Meta
+   `message_template_status_update`). No son mensajes: no pasan por El Compa. Se leen DESPUÉS de verificar la firma (la ruta). */
+export type EstadoEntrega = { proveedor: Proveedor; id: string; final: "entregado" | "fallo" | null; codigo: string | null };
+export function leerEstadosTelnyx(j: unknown): EstadoEntrega[] {
+  const d = (j as { data?: { event_type?: string; payload?: { id?: unknown; to?: { status?: unknown }[]; errors?: { code?: unknown }[] } } })?.data;
+  if (!d || d.event_type !== "message.finalized" || !d.payload) return [];
+  const id = txt(d.payload.id, 200), st = txt(Array.isArray(d.payload.to) ? d.payload.to[0]?.status : "", 40);
+  if (!id) return [];
+  const final = st === "delivered" ? "entregado" : st === "delivery_failed" || st === "sending_failed" || st === "expired" ? "fallo" : null;
+  const codigo = Array.isArray(d.payload.errors) && d.payload.errors[0] ? txt(String(d.payload.errors[0].code ?? ""), 40) || null : null;
+  return [{ proveedor: "telnyx", id, final, codigo }];
+}
+export function leerEstadosWhatsApp(j: unknown): EstadoEntrega[] {
+  const out: EstadoEntrega[] = [];
+  const o = j as { object?: string; entry?: { changes?: { field?: string; value?: { statuses?: { id?: unknown; status?: unknown; errors?: { code?: unknown }[] }[] } }[] }[] };
+  if (o?.object !== "whatsapp_business_account" || !Array.isArray(o.entry)) return out;
+  for (const e of o.entry.slice(0, 20)) for (const c of (e?.changes ?? []).slice(0, 20)) {
+    const st0 = c?.field === "messages" ? c.value?.statuses : undefined;
+    if (!Array.isArray(st0)) continue;
+    for (const x of st0.slice(0, 50)) {
+      const id = txt(x.id, 200), st = txt(x.status, 20);
+      if (!id) continue;
+      out.push({ proveedor: "whatsapp", id, final: st === "delivered" || st === "read" ? "entregado" : st === "failed" ? "fallo" : null,
+        codigo: Array.isArray(x.errors) && x.errors[0] ? txt(String(x.errors[0].code ?? ""), 40) || null : null });
+    }
+  }
+  return out;
+}
+export type EstadoPlantilla = { metaId: string; nombre: string; idioma: string; estado: "aprobada" | "rechazada" | "pausada" | "deshabilitada" | "enviada"; motivo: string | null };
+export function leerPlantillasWhatsApp(j: unknown): EstadoPlantilla[] {
+  const out: EstadoPlantilla[] = [];
+  const o = j as { object?: string; entry?: { changes?: { field?: string; value?: Record<string, unknown> }[] }[] };
+  if (o?.object !== "whatsapp_business_account" || !Array.isArray(o.entry)) return out;
+  const M: Record<string, EstadoPlantilla["estado"]> = { APPROVED: "aprobada", REJECTED: "rechazada", PAUSED: "pausada", DISABLED: "deshabilitada", PENDING: "enviada", IN_APPEAL: "enviada", REINSTATED: "aprobada" };
+  for (const e of o.entry.slice(0, 20)) for (const c of (e?.changes ?? []).slice(0, 20)) {
+    if (c?.field !== "message_template_status_update" || !c.value) continue;
+    const v = c.value, est = M[txt(v.event, 30)];
+    const metaId = txt(String(v.message_template_id ?? ""), 60), nombre = txt(v.message_template_name, 60), idioma = txt(v.message_template_language, 10);
+    if (!est || !nombre || !idioma) continue;
+    const motivo = txt(v.reason, 300);
+    out.push({ metaId, nombre, idioma, estado: est, motivo: motivo && motivo !== "NONE" ? motivo : null });
+  }
+  return out;
+}
+/* Los errores de Telnyx que no se reintentan (el número pidió STOP, número inválido o que no recibe SMS). Lo demás se reintenta hasta el tope. La lista se
+   confirma con la cuenta de Telnyx en 9q (LAUNCH «Fase 9 · 9l»). */
+export const SMS_PERMANENTES = new Set(["40300", "40310", "40311", "sim_invalido"]);
+/* El número de To'Latino que manda los avisos y los códigos por SMS (TELNYX_FROM). */
+export function numeroSms(): string | null {
+  const n = process.env.TELNYX_FROM ?? "";
+  return /^\+1\d{10}$/.test(n) ? n : null;
+}
+
 /* ¿Hay llaves para mandar de verdad? (sin ellas: el simulador en el sandbox, nada en producción). */
 export function hayLlaves(p: Proveedor): boolean {
   return p === "telnyx" ? !!(process.env.TELNYX_API_KEY && process.env.TOLATINO_SMS_MODO === "telnyx") : !!process.env.WHATSAPP_TOKEN;
@@ -120,4 +173,40 @@ export async function mandar(p: Proveedor, de: string, para: string, texto: stri
   } catch {
     return { ok: false, error: "red" };
   }
+}
+
+/* 9l · Escribir primero por WhatsApp (fuera de la ventana de 24 h): solo con una plantilla APROBADA por Meta. `de` = phone_number_id; `vars` en orden
+   ({{1}}, {{2}}…). Nunca lanza. */
+export async function mandarPlantilla(de: string, para: string, nombre: string, idioma: string, vars: string[]): Promise<Envio> {
+  try {
+    const token = process.env.WHATSAPP_TOKEN;
+    if (!token) return { ok: false, error: "sin_llave" };
+    if (!/^\d{6,20}$/.test(de) || !/^[a-z0-9_]{3,60}$/.test(nombre) || !/^(es|en_US)$/.test(idioma)) return { ok: false, error: "datos" };
+    const r = await fetch(`${API_META()}/${VERSION_META}/${de}/messages`, { method: "POST", signal: AbortSignal.timeout(8000),
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({ messaging_product: "whatsapp", recipient_type: "individual", to: para.replace(/^\+/, ""), type: "template",
+        template: { name: nombre, language: { policy: "deterministic", code: idioma }, components: vars.length ? [{ type: "body", parameters: vars.map((t) => ({ type: "text", text: String(t).slice(0, 1000) })) }] : [] } }) });
+    const j = (await r.json().catch(() => null)) as { messages?: { id?: string }[] } | null;
+    return r.ok ? { ok: true, id: j?.messages?.[0]?.id ?? null } : { ok: false, error: `meta_${r.status}` };
+  } catch { return { ok: false, error: "red" }; }
+}
+
+/* 9l · Mandar una plantilla a Meta para que la apruebe (POST /{waba_id}/message_templates). Sin WHATSAPP_TOKEN o sin WHATSAPP_WABA_ID no hay a dónde
+   (en el sandbox la marca el simulador). El resultado (aprobada o rechazada) llega por el webhook `message_template_status_update`. */
+export function wabaListo(): boolean {
+  return !!(process.env.WHATSAPP_TOKEN && /^\d{6,20}$/.test(process.env.WHATSAPP_WABA_ID ?? ""));
+}
+export async function crearPlantillaMeta(x: { nombre: string; idioma: string; categoria: string; cuerpo: string; ejemplo: string[] }): Promise<{ ok: true; id: string | null } | { ok: false; error: string }> {
+  try {
+    const token = process.env.WHATSAPP_TOKEN, waba = process.env.WHATSAPP_WABA_ID ?? "";
+    if (!token || !/^\d{6,20}$/.test(waba)) return { ok: false, error: "sin_llave" };
+    const componentes = x.categoria === "AUTHENTICATION"
+      ? [{ type: "BODY", add_security_recommendation: true }, { type: "FOOTER", code_expiration_minutes: 10 }, { type: "BUTTONS", buttons: [{ type: "OTP", otp_type: "COPY_CODE" }] }]
+      : [{ type: "BODY", text: x.cuerpo, ...(x.ejemplo.length ? { example: { body_text: [x.ejemplo] } } : {}) }];
+    const r = await fetch(`${API_META()}/${VERSION_META}/${waba}/message_templates`, { method: "POST", signal: AbortSignal.timeout(10_000),
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({ name: x.nombre, language: x.idioma, category: x.categoria, components: componentes }) });
+    const j = (await r.json().catch(() => null)) as { id?: string } | null;
+    return r.ok ? { ok: true, id: j?.id ?? null } : { ok: false, error: `meta_${r.status}` };
+  } catch { return { ok: false, error: "red" }; }
 }

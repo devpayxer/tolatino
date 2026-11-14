@@ -45,6 +45,12 @@ services:
       WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET:-}
       WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN:-}
       WHATSAPP_TOKEN: ${WHATSAPP_TOKEN:-}
+      # 9l · Avisos y canales: el número de To'Latino que manda los SMS (TELNYX_FROM), la cuenta de WhatsApp Business para mandar las plantillas a Meta
+      # (WHATSAPP_WABA_ID) y el tema de SNS por el que Amazon SES entrega el correo de Soporte (CORREO_SNS_TEMA: sin él, nada entra). No son secretos;
+      # se ponen en 9q con las cuentas. Vacíos: el SMS va al simulador, las plantillas al simulador y el correo entrante no entra.
+      TELNYX_FROM: ${TELNYX_FROM:-}
+      WHATSAPP_WABA_ID: ${WHATSAPP_WABA_ID:-}
+      CORREO_SNS_TEMA: ${CORREO_SNS_TEMA:-}
       # 8d · Llaves de acceso (Face ID / huella): el dominio de la cuenta (RP ID) y los orígenes que pueden firmar. No son secretos. Mientras el
       # sandbox se sirva por HTTP en la IP (sin el Paquete 8-0), el origen de la petición no está en la lista y la app NO ofrece llaves (el SMS
       # sigue igual). Con el dominio y HTTPS, funcionan sin tocar nada. El de Android (android:apk-key-hash:…) se suma cuando 8h firme las apps.

@@ -18,6 +18,7 @@ import type { ResAdm } from "./acciones-colas";
 import { sopDevolver, sopEscalar, sopLigar, sopMacroEstado, sopMacroGuardar, sopNota, sopOcultar, sopReabrir, sopResolver, sopResponder, sopTomar, sopTomarSiguiente, sopUnir } from "./acciones-soporte";
 import { copilotoSugerir } from "./acciones-copiloto";
 import type { BorradorCopiloto } from "@/lib/compa/copiloto";
+import type { CorreoEntrante } from "@/lib/correo/entrante";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { uuid } from "@/lib/uuid";
 import { useAhora } from "@/lib/ahora";
@@ -32,7 +33,7 @@ const hace = (iso: string, ahora: number) => {
   return m < 1 ? "ahora" : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.floor(m / 60)} h` : `hace ${Math.floor(m / 1440)} d`;
 };
 const fecha = (iso: string | null) => (iso ? new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "") : "—");
-const ORIGEN: Record<string, string> = { form: "App · formulario", panel: "Panel del negocio", compa: "El Compa", reporte_app: "App · Reportar un problema" };
+const ORIGEN: Record<string, string> = { form: "App · formulario", panel: "Panel del negocio", compa: "El Compa", reporte_app: "App · Reportar un problema", correo: "Correo a Soporte" };
 const OPST: Record<string, string> = { pending: "pendiente", change_proposed: "con un cambio propuesto", confirmed: "confirmado", declined: "no aceptado", expired: "sin respuesta", cancelled: "cancelado", done: "terminado" };
 const vence = (iso: string) => {
   const ms = new Date(iso).getTime() - Date.now();
@@ -51,8 +52,8 @@ const SISTEMA: Record<string, (v: Record<string, string>) => string> = {
 };
 
 type Cop = Extract<BorradorCopiloto, { ok: true }> & { num: string };
-export function SoporteAdmin({ tab, filas, sig, kpis, caso, plazo, macros, q, f, tema, horario, casoPedido, puede, copiloto = false }: {
-  tab: TabSop | "macros"; filas: FilaSop[]; sig: string | null; kpis: { abiertos: number; vencidos: number; mios: number; equipo: number; esc: number; mediana: number | null; resueltos: number; si: number; no: number;
+export function SoporteAdmin({ tab, filas, sig, kpis, caso, plazo, macros, q, f, tema, horario, casoPedido, puede, copiloto = false, correos = [] }: {
+  tab: TabSop | "macros" | "correo"; correos?: CorreoEntrante[]; filas: FilaSop[]; sig: string | null; kpis: { abiertos: number; vencidos: number; mios: number; equipo: number; esc: number; mediana: number | null; resueltos: number; si: number; no: number;
     plazo30?: { con: number; cumplido: number; vencido: number; casos: number; compa: number } };
   caso: CasoEquipo | null; plazo: string | null; macros: Macro[]; q: string; f: string | null; tema: Tema | null; horario: string; casoPedido: string | null;
   puede: { editar: boolean; aprobar: boolean; devolver: boolean; usr: boolean; neg: boolean; tx: boolean }; copiloto?: boolean;
@@ -118,9 +119,25 @@ export function SoporteAdmin({ tab, filas, sig, kpis, caso, plazo, macros, q, f,
       { k: "PLAZO CUMPLIDO · 30 D", v: kpis.plazo30.con ? `${Math.round((kpis.plazo30.cumplido / kpis.plazo30.con) * 100)} % · ${kpis.plazo30.cumplido} de ${kpis.plazo30.con} con respuesta` : "—" },
       { k: "FUERA DE PLAZO · 30 D", v: `${kpis.plazo30.vencido} de ${kpis.plazo30.casos} casos`, fg: kpis.plazo30.vencido ? "var(--tl-danger)" : undefined },
       { k: "DESDE EL COMPA", v: `${kpis.plazo30.compa} de ${kpis.plazo30.casos} casos en 30 días` }] }] : []),
-    { type: "tabs", items: ([["open", "Abiertos", kpis.abiertos], ["mine", "Míos", kpis.mios], ["esc", "Escalados", kpis.esc], ["res", "Resueltos"], ["macros", "Macros"]] as [string, string, number?][])
+    { type: "tabs", items: ([["open", "Abiertos", kpis.abiertos], ["mine", "Míos", kpis.mios], ["esc", "Escalados", kpis.esc], ["res", "Resueltos"], ["correo", "Por correo"], ["macros", "Macros"]] as [string, string, number?][])
       .map(([k, l, n]) => ({ l, n: n ? String(n) : undefined, on: tab === k, onClick: () => ir({ tab: k === "open" ? null : k, caso: null, antes: null }) })) },
   ];
+  // 9l · Los correos que entraron a Soporte por SES (solo lo firmado y aprobado abre un caso; sin el remitente: su dominio). Tocar uno abre su caso.
+  if (tab === "correo") {
+    const EST: Record<string, [string, string]> = { caso: ["CASO NUEVO", "signal"], mensaje: ["EN SU CASO", "signal"], sin_cuenta: ["SIN CUENTA CONFIRMADA", "neutral"], rechazado: ["RECHAZADO", "danger"] };
+    const MOT: Record<string, string> = { spf: "no pasó SPF ni DKIM", dkim: "la firma DKIM falló", spam: "SES lo marcó como spam", virus: "SES encontró un virus", vacio: "sin texto", varias_cuentas: "ese correo está en varias cuentas", tope: "llegó al tope de casos del día" };
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }} data-screen-label="Soporte · por correo">
+        <PanelBloques bloques={[...cabeza,
+          { type: "note", tone: "info", icon: "info", t: "Al correo de Soporte solo entra lo que Amazon firma y aprueba (SPF o DKIM, sin spam ni virus). Abre un caso solo el correo CONFIRMADO de una cuenta (aunque esté suspendida: es quien no puede entrar); la respuesta del equipo le llega también por correo y, si contesta el correo, vuelve al mismo caso. El texto entra tapado." },
+          correos.length ? { type: "rows", items: correos.map((x) => ({ key: x.id, icon: "info", t: x.asunto || "(sin asunto)", s: `@${x.dominio} · SPF ${x.spf} · DKIM ${x.dkim}${x.motivo ? ` · ${MOT[x.motivo] ?? x.motivo}` : ""}${x.caso ? ` · ${x.caso}` : ""}`,
+            m: fecha(x.at).toUpperCase(), tag: EST[x.estado]?.[0] ?? x.estado, tone: EST[x.estado]?.[1] ?? "neutral", chev: !!x.caso, onClick: x.caso ? () => ir({ tab: null, caso: x.caso }) : undefined })) }
+            : { type: "empty", icon: "info", t: "Todavía no entra ningún correo", s: "Aparecen aquí cuando alguien le escribe al correo de Soporte." },
+        ]} />
+        <Toast t={toast} desk={desk} />
+      </div>
+    );
+  }
   if (tab === "macros") {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }} data-screen-label="Soporte · macros">

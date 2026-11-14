@@ -2,7 +2,7 @@ import "server-only";
 import { auditar, type Staff } from "../admin";
 import { avisar, avisarMuchos } from "../avisos";
 import { valores } from "../config";
-import { BASE_URL, encolar } from "../correo";
+import { BASE_URL, enlaceBaja, encolar } from "../correo";
 import { marco } from "../correo/plantillas";
 import { db, tx } from "../db";
 import { CANALES, PLANTILLA, TIPOS_CAMPANA, bien, mal, rutaPropia, type Bi, type Canal, type Res, type Segmento } from "./comun";
@@ -172,7 +172,9 @@ export async function enviarLote(id: string): Promise<number> {
     if (!u.email) continue;
     const es = u.lang !== "en", T = es ? v.es : v.en;
     const { html, text } = marco({ es, pre: T.titulo, titulo: T.titulo, intro: T.texto, cta: x.href ? { l: es ? "Abrir To'Latino" : "Open To'Latino", href: `${BASE_URL()}${x.href}` } : undefined,
-      pie: es ? "Te llega porque encendiste «Novedades de To'Latino». Para no recibir más: Mi cuenta › Avisos." : "You get this because you turned on “To'Latino updates”. To stop: My account › Notifications." });
+      pie: es ? "Te llega porque encendiste «Novedades de To'Latino». Para no recibir más: Mi cuenta › Avisos." : "You get this because you turned on “To'Latino updates”. To stop: My account › Notifications.",
+      // 9l · La baja visible (además de la de un toque en las cabeceras, lib/correo enlaceBaja).
+      baja: { l: es ? "Darme de baja" : "Unsubscribe", href: enlaceBaja(u.id) } });
     await encolar({ userId: u.id, city: x.city, to: u.email, tpl: "campaign", subject: T.titulo, html, text, ref, idem: `camp:${id}:${u.id}` }).catch(() => null);
   }
   return claim.n;

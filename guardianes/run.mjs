@@ -349,18 +349,34 @@ const guardianes = {
   /* 3f-sexies. Nada promete un SMS que no sale (6 nov, 2g-3: el prototipo de Jobs decía «Te avisamos por SMS» y aún no hay
      proveedor de SMS). Las promesas que ya existen están anotadas en LAUNCH-CHECKLIST con su archivo; un archivo nuevo no
      puede sumar otra: di dónde lo ve la persona dentro de To'Latino. */
+  /* 9l · SIN EXCEPCIONES: ya no hay promesas «anotadas para después». Cada pantalla que promete un SMS dice qué plantilla la CUMPLE; la plantilla existe con
+     SMS (no «nunca») y el código la manda de verdad (un avisar…(…, "clave") o el SMS del código). Al revés: una promesa nueva sin su plantilla, una plantilla
+     sin SMS o que nadie manda → falla. */
   promesaSms() {
-    const ANOTADOS = new Set(["apps/web/app/(app)/reserva/[num]/Estado.tsx", "apps/web/app/(app)/CiudadSelector.tsx", "apps/web/app/(app)/n/[id]/reservar/Detalles.tsx",
-      "apps/web/app/panel/Equipo.tsx", "apps/web/app/panel/acciones-equipo.ts", "apps/web/lib/textos.ts", "apps/web/lib/textos-fijas.ts", "apps/web/app/panel/Menu.tsx", "apps/web/app/(app)/n/[id]/apartar/Apartar.tsx",
-      // 8c · Mi cuenta › Avisos explica el SMS de respaldo del push (sale con Telnyx; anotado en LAUNCH-CHECKLIST «Fase 8 · 8c»).
-      "apps/web/app/(app)/cuenta/avisos/Avisos.tsx", "apps/web/app/admin/IntegracionesPush.tsx", "apps/web/lib/push/admin.ts", "apps/web/app/admin/Notificaciones.tsx", "apps/web/app/admin/U360.tsx",
-      // 9h · La landing promete UN mensaje de texto el día que abre la zona (la línea fija de §1c): sale con Telnyx (9q) y lo manda la apertura (9i); la landing
-      // sale al público en 9t. Anotado en LAUNCH-CHECKLIST «Fase 9 · 9h».
-      "apps/web/lib/textos-acceso.ts"]);
+    const G = "promesaSms";
+    const CUMPLIDAS = {
+      "apps/web/app/(app)/reserva/[num]/Estado.tsx": ["rsv_ok", "rsv_hoy"], "apps/web/app/(app)/n/[id]/reservar/Detalles.tsx": ["rsv_ok", "rsv_hoy"],
+      "apps/web/app/(app)/CiudadSelector.tsx": ["ciudad_abierta"], "apps/web/lib/textos-fijas.ts": ["ciudad_abierta"], "apps/web/lib/textos-acceso.ts": ["ciudad_abierta"],
+      "apps/web/app/panel/Equipo.tsx": ["equipo_invitado"], "apps/web/app/panel/acciones-equipo.ts": ["equipo_invitado"],
+      "apps/web/lib/textos.ts": ["foto_rep_quitada", "foto_rep_queda"], "apps/web/app/panel/Menu.tsx": ["biz_quedan_pocos"], "apps/web/app/(app)/n/[id]/apartar/Apartar.tsx": ["lay_listo", "lay_pronto"],
+      // Lo que explica el camino del SMS (el respaldo del push, lo crítico, el código): lo cumple el SMS del código para entrar (crit, siempre) y el único camino.
+      "apps/web/app/(app)/cuenta/avisos/Avisos.tsx": ["cuenta_codigo"], "apps/web/app/admin/IntegracionesPush.tsx": ["cuenta_codigo"], "apps/web/lib/push/admin.ts": ["cuenta_codigo"],
+      "apps/web/app/admin/Notificaciones.tsx": ["cuenta_codigo"], "apps/web/app/admin/U360.tsx": ["cuenta_codigo"],
+    };
+    const sms = new Map(); // clave → ¿lleva SMS? (la última migración que la define)
+    for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) for (const m of readFileSync(`packages/db/migrations/${x}`, "utf8").matchAll(/\(\s*'([a-z0-9_]+)',\s*'(?:crit|tx|mod|biz|mkt|community|events|support)',\s*(?:'\w+'|null),\s*(true|false)(?:,\s*'(siempre|sin_push|nunca)')?/g)) sms.set(m[1], m[2] === "true" && m[3] !== "nunca");
+    const enviadas = new Set();
+    for (const f of codigo) if (/^apps\/web\/(lib|app)\/.+\.tsx?$/.test(f)) for (const l of sinComent(f).split("\n").filter((x) => /\bavisar\w*\(|tpl: "/.test(x))) for (const m of l.matchAll(/"([a-z]+_[a-z0-9_]+)"/g)) enviadas.add(m[1]);
+    if (existsSync("apps/web/lib/sms/codigo.ts") && /tpl: "cuenta_codigo"/.test(sinComent("apps/web/lib/sms/codigo.ts"))) enviadas.add("cuenta_codigo");
+    for (const [f, L] of Object.entries(CUMPLIDAS)) for (const k of L) {
+      if (!sms.has(k)) falla(G, f, 0, `la plantilla «${k}» que cumple la promesa no existe`);
+      else if (!sms.get(k)) falla(G, f, 0, `la plantilla «${k}» no lleva SMS: la promesa no se cumple`);
+      else if (!enviadas.has(k)) falla(G, f, 0, `nadie manda «${k}»: la promesa no se cumple`);
+    }
     for (const f of codigo) {
-      if (!/^apps\/web\/.*\.tsx?$/.test(f) || ANOTADOS.has(f)) continue;
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || CUMPLIDAS[f]) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => {
-        if (/["'`][^"'`]*(por SMS|by SMS|We will text|we text you|We text you|te llega un SMS|Le llegó por SMS|Sent by text)/i.test(l) && !/c[oó]digo|code/i.test(l)) falla("promesaSms", f, i + 1, "promete un SMS que todavía no sale; di dónde lo ve en To'Latino o anótalo en LAUNCH-CHECKLIST");
+        if (/["'`][^"'`]*(por SMS\b|by SMS\b|We will text|we text you|We text you|te llega un SMS|Le llegó por SMS|Sent by text)/i.test(l) && !/c[oó]digo|code/i.test(l)) falla(G, f, i + 1, "promete un SMS: di qué plantilla lo cumple (CUMPLIDAS en este guardián) o di dónde lo ve en To'Latino");
       });
     }
   },
@@ -667,7 +683,7 @@ const guardianes = {
     for (const f of readdirSync("packages/db/migrations").map((x) => `packages/db/migrations/${x}`)) {
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/\('(sal_|biz_sal_)[a-z_]+'/.test(l) && /\{(negocio|servicio|svc|cliente)\}/.test(l)) falla("privacidadSalud", f, i + 1, "un aviso de Salud no lleva {negocio}, {servicio} ni {cliente}: tiene que ser neutro"); });
     }
-    const PERMITIDOS = new Set(["apps/web/lib/citas-salud.ts", "apps/web/lib/citas-panel.ts", "apps/web/lib/citas-flujo.ts", "apps/web/lib/citas-pro.ts", "apps/web/lib/cifrado.ts", "apps/web/lib/viajes.ts", "apps/web/lib/envios.ts", "apps/web/lib/ninos-privado.ts", "apps/web/lib/visitas-inm.ts", "apps/web/lib/compa/canales.ts", "apps/web/lib/push/cola.ts", "apps/web/lib/beta.ts", "apps/web/lib/pases/pases.ts", "apps/web/lib/equipo/dos-pasos.ts"]); // 9j: el secreto del TOTP del equipo se abre solo para comprobar un código // 8f: el correo de Apple del tester se abre solo para invitarlo por la API y mostrarlo tapado // 8c: el token de push y el contenido cifrado se abren solo para mandarlos · 7h: el teléfono cifrado de una entrada de WhatsApp/SMS (para contestar a ese teléfono) · 4ie: la dirección cifrada de la prueba en casa (crear y ver confirmada) · crear · ver en el panel · borrar a los 30 d · 4y-2: el destinatario de la caja (crear en viajes, ver en envios) // 8g: el token de push del teléfono de Wallet (pass_devices.push_token_enc), solo para mandarle el aviso de cambio
+    const PERMITIDOS = new Set(["apps/web/lib/citas-salud.ts", "apps/web/lib/citas-panel.ts", "apps/web/lib/citas-flujo.ts", "apps/web/lib/citas-pro.ts", "apps/web/lib/cifrado.ts", "apps/web/lib/viajes.ts", "apps/web/lib/envios.ts", "apps/web/lib/ninos-privado.ts", "apps/web/lib/visitas-inm.ts", "apps/web/lib/compa/canales.ts", "apps/web/lib/push/cola.ts", "apps/web/lib/beta.ts", "apps/web/lib/pases/pases.ts", "apps/web/lib/equipo/dos-pasos.ts", "apps/web/lib/sms/index.ts"]); // 9l: el teléfono y el texto cifrados de un SMS se abren solo para mandarlo (el único camino de los SMS) // 9j: el secreto del TOTP del equipo se abre solo para comprobar un código // 8f: el correo de Apple del tester se abre solo para invitarlo por la API y mostrarlo tapado // 8c: el token de push y el contenido cifrado se abren solo para mandarlos · 7h: el teléfono cifrado de una entrada de WhatsApp/SMS (para contestar a ese teléfono) · 4ie: la dirección cifrada de la prueba en casa (crear y ver confirmada) · crear · ver en el panel · borrar a los 30 d · 4y-2: el destinatario de la caja (crear en viajes, ver en envios) // 8g: el token de push del teléfono de Wallet (pass_devices.push_token_enc), solo para mandarle el aviso de cambio
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f) || PERMITIDOS.has(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/note_enc|descifrar\(/.test(l)) falla("privacidadSalud", f, i + 1, "la nota cifrada de una cita (op_private) solo se toca en lib/citas-salud o lib/citas-pro (crear), lib/citas-panel (ver) o lib/citas-flujo (borrar a los 30 d)"); });
@@ -1969,6 +1985,19 @@ const guardianes = {
     // 5d: lib/apelaciones.ts elige la plantilla adentro (const tpl = …): toda clave de moderación escrita ahí existe.
     const AP = "apps/web/lib/apelaciones.ts";
     if (existsSync(AP)) for (const l of sinComent(AP).split("\n").filter((x) => /const tpl = |avisar\(/.test(x))) for (const m of l.matchAll(/"([a-z]+_[a-z0-9_]+)"/g)) if (!/^(com_post|com_comment|dm_message)$/.test(m[1]) && !tpl.has(m[1])) falla("avisoConPlantilla", AP, 0, `el aviso «${m[1]}» no existe en notif_templates`);
+    // 9l · Ampliado: (1) el SMS del único camino (enviarSms({ … tpl: "…" })) usa una plantilla que existe; (2) cada plantilla de CORREO que el código
+    // puede encolar (type Tpl de lib/correo) la acepta la base (email_outbox_tpl_check: las listas de las migraciones, también las que se amplían).
+    for (const f of codigo) if (/^apps\/web\/(lib|app)\/.+\.tsx?$/.test(f)) for (const m of sinComent(f).matchAll(/enviarSms\(\{[^}]*?tpl: "([a-z]+_[a-z0-9_]+)"/g)) if (!tpl.has(m[1])) falla("avisoConPlantilla", f, 0, `el SMS «${m[1]}» no existe en notif_templates`);
+    const CI = "apps/web/lib/correo/index.ts";
+    if (existsSync(CI)) {
+      const ok = new Set();
+      for (const x of readdirSync(dir).filter((y) => y.endsWith(".sql"))) {
+        const t = readFileSync(`${dir}/${x}`, "utf8");
+        for (const m of t.matchAll(/email_outbox_tpl_check check \(tpl in \(([^)]*)\)\)|tpl\s+text not null check \(tpl in \(([^)]*)\)\)|ampliar_check\('email_outbox', 'email_outbox_tpl_check', array\[([^\]]*)\]\)/g)) for (const v of (m[1] ?? m[2] ?? m[3] ?? "").matchAll(/'([a-z_]+)'/g)) ok.add(v[1]);
+      }
+      const u = /type Tpl = ([^;]+);/.exec(sinComent(CI))?.[1] ?? "";
+      for (const v of u.matchAll(/"([a-z_]+)"/g)) if (!ok.has(v[1])) falla("avisoConPlantilla", CI, 0, `el correo «${v[1]}» no lo acepta la base (email_outbox_tpl_check)`);
+    }
   },
 
   /* 4ig. Analítica muestra cifras, nunca personas por lo que creen ni datos de crédito: lib/admin-analitica.ts y la pantalla no leen la
@@ -4982,6 +5011,16 @@ const guardianes = {
     if (iF < 0 || iJ < 0 || iF > iJ || iL < iJ) falla(G, R, 0, "la firma se verifica antes de leer el JSON y antes de guardar nada");
     if (!/if \(!f\.ok\) \{ await contarRechazo\(p, f\.motivo\); return no\(401\); \}/.test(post)) falla(G, R, 0, "firma mala = 401 (solo se cuenta el rechazo)");
     if (/req\.(json|text|formData)\(\)/.test(post)) falla(G, R, 0, "el cuerpo se lee crudo (para la firma), nunca como JSON antes de verificar");
+    // 9l · Los avisos de entrega (Telnyx message.finalized, Meta statuses) y el estado de las plantillas de WhatsApp: también solo DESPUÉS de la firma.
+    const iE = post.search(/leerEstadosTelnyx\(|leerEstadosWhatsApp\(|leerPlantillasWhatsApp\(|anotar\(/);
+    if (iE < 0 || iE < iJ || iE < iF) falla(G, R, 0, "los avisos de entrega y el estado de las plantillas se leen después de la firma");
+    // 9l · El contrato de los canales: las especificaciones FIJAS a un commit y a su huella (L1113), y cada función del proveedor probada contra ellas.
+    const CS = "scripts/contrato-canales/correr.sh", CP = "scripts/contrato-canales/prueba.cjs";
+    if (existsSync(CS)) {
+      const c = readFileSync(CS, "utf8");
+      if (/openapi\/(master|main)\//.test(c) || !/TELNYX_COMMIT=[0-9a-f]{40};/.test(c) || !/META_COMMIT=[0-9a-f]{40};/.test(c) || !/sha256sum -c/.test(c)) falla(G, CS, 0, "las especificaciones del contrato van fijas a un commit y a su huella, nunca a master/main");
+    }
+    if (existsSync(CP) && existsSync(P)) for (const m of sinComent(P).matchAll(/\nexport (?:async )?function (\w+)\(/g)) if (!["hayLlaves", "numeroSms", "wabaListo", "retoWhatsApp"].includes(m[1]) && !new RegExp(`P\\.${m[1]}\\(`).test(readFileSync(CP, "utf8"))) falla(G, CP, 0, `el contrato no prueba ${m[1]}() contra la especificación del proveedor`);
     if (!/if \(p !== "telnyx" && p !== "whatsapp"\) return no\(404\);/.test(post) || /proveedor: "sim"|"sim"/.test(r)) falla(G, R, 0, "la ruta pública solo acepta Telnyx y WhatsApp (el simulador no tiene ruta)");
     if (!/firmaTelnyx\(cuerpo, req\.headers\.get\("telnyx-signature-ed25519"\), req\.headers\.get\("telnyx-timestamp"\), Math\.floor\(Date\.now\(\) \/ 1000\), await valor\("compa_canal_firma_seg"\)\)/.test(post)) falla(G, R, 0, "Telnyx: firma con su hora y la ventana de Configuración");
     if (!/Math\.abs\(Date\.now\(\) - m\.hora\.getTime\(\)\) > DIA_MS/.test(post)) falla(G, R, 0, "WhatsApp: un mensaje más viejo que 24 h (o del futuro) no se contesta");
@@ -5011,7 +5050,7 @@ const guardianes = {
       if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
       const t = sinComent(x);
       if (x !== P && /graph\.facebook\.com|WHATSAPP_(APP_SECRET|TOKEN|VERIFY_TOKEN)|TELNYX_PUBLIC_KEY/.test(t)) falla(G, x, 0, "solo canales-proveedor.ts habla con Meta y lee los secretos de los canales");
-      if (x !== P && x !== "apps/web/lib/avisos.ts" && /api\.telnyx\.com/.test(t)) falla(G, x, 0, "solo canales-proveedor.ts (y los avisos) hablan con Telnyx");
+      if (x !== P && /api\.telnyx\.com/.test(t)) falla(G, x, 0, "solo canales-proveedor.ts habla con Telnyx (9l: también los avisos, por el único camino de los SMS)");
       if ([R, P, K, E, AC].includes(x) && /console\.(log|info|warn|error)/.test(t)) falla(G, x, 0, "los canales no escriben en el registro del servidor (teléfono o texto)");
       if (/insert into compa_links\b/.test(t) && x !== E) falla(G, x, 0, "solo enlace.ts crea enlaces de un uso");
     }
@@ -5666,7 +5705,8 @@ const guardianes = {
     const G = "smsSoloRespaldo", A = "apps/web/lib/avisos.ts", C = "apps/web/lib/push/cola.ts", M = "packages/db/migrations/0126_push.sql";
     const a = existsSync(A) ? cuerpoFn(sinComent(A), "avisar") : "";
     if (!/const st = pst === "pendiente" && r\.sms_mode === "sin_push" && \(st1 === "pendiente" \|\| st1 === "pruebas"\) \? "respaldo" : st1;/.test(a)) falla(G, A, 0, "avisar(): con push en camino, el SMS de una plantilla sin_push queda «respaldo»");
-    if (!/if \(st === "pendiente"\) \{/.test(a) || /smsTelnyx\([^)]*\)[\s\S]{0,40}st1/.test(a)) falla(G, A, 0, "avisar() solo manda en línea el SMS «pendiente» (nunca el de respaldo)");
+    // 9l · El SMS sale por el único camino (salirSms → lib/sms) y en línea solo el «pendiente» (o el del simulador «pruebas»), nunca el de respaldo.
+    if (!/if \(st === "pendiente" \|\| st === "pruebas"\) await salirSms\("notifications", id,/.test(a) || /salirSms\([^;]*st1|smsTelnyx\(|fetch\(/.test(a)) falla(G, A, 0, "avisar() solo manda en línea el SMS «pendiente» (nunca el de respaldo)");
     const r = existsSync(A) ? cuerpoFn(sinComent(A), "smsRespaldo") : "";
     if (!/where n\.id = \$1::bigint and n\.sms_status = 'respaldo'/.test(r)) falla(G, A, 0, "smsRespaldo() reclama el estado «respaldo» en la misma escritura (una vez)");
     const v = existsSync(C) ? cuerpoFn(sinComent(C), "resolver") : "";
@@ -8055,6 +8095,72 @@ const guardianes = {
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === "apps/web/lib/pagos/pasarela.ts") continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/\bsim_(intents|refunds|transfers|transfer_reversals|payouts|files|disputes|dispute_submissions)\b/.test(l)) falla(G, f, i + 1, "el simulador de pagos solo se toca desde lib/pagos/pasarela.ts"); });
+    }
+  },
+
+  /* 9l · smsConReintento (L336, L345, L1111, L1115): TODO SMS sale por el único camino (lib/sms): el aviso, el SMS a un teléfono sin cuenta, el código para
+     entrar y El Compa por SMS. Cada intento queda anotado (sms_attempts, solo inserción); el que falla se reintenta con espera creciente hasta el tope, salvo
+     lo permanente o un código vencido; el resultado final llega UNA vez del webhook (o del simulador) y solo el último intento decide; el barrido retoma.
+     El simulador nunca en producción. Al revés: mandar un SMS por fuera (fetch a Telnyx, mandar("telnyx" en otro archivo), reintentar sin tope o sin
+     espera, dejar que un aviso viejo mueva el SMS, o el código para entrar que no sale → falla. */
+  smsConReintento() {
+    const G = "smsConReintento", S = "apps/web/lib/sms/index.ts", SIM = "apps/web/lib/sms/simulador.ts", A = "apps/web/lib/avisos.ts", K = "apps/web/lib/compa/canales.ts",
+      CU = "apps/web/lib/cuenta.ts", CO = "apps/web/lib/sms/codigo.ts", P = "apps/web/lib/compa/canales-proveedor.ts", M = "packages/db/migrations/0142_canales.sql", B = "apps/web/lib/barrido.ts";
+    for (const f of [S, SIM, A, K, CU, CO, P]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza del único camino de los SMS");
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      if (f !== S && /insert into sms_(outbox|attempts)\b|update sms_(outbox|attempts)\b/.test(t)) falla(G, f, 0, "solo lib/sms/index.ts escribe sms_outbox y sms_attempts");
+      if (f !== S && /mandar\(\s*"telnyx"/.test(t)) falla(G, f, 0, "un SMS por Telnyx solo sale desde lib/sms (el único camino, con reintentos)");
+      if (f !== P && /api\.telnyx\.com|process\.env\.TELNYX_API_KEY/.test(t)) falla(G, f, 0, "solo canales-proveedor.ts habla con Telnyx");
+      if (f !== S && f !== SIM && /simularEnvio\(|from "\.\/simulador"|sms\/simulador/.test(t)) falla(G, f, 0, "el simulador de SMS solo lo usa lib/sms/index.ts");
+    }
+    const s = sinComent(S), it = cuerpoFn(s, "intentar"), fa = cuerpoFn(s, "fallar"), an = cuerpoFn(s, "anotarEntrega");
+    if (!/update sms_outbox set attempts = attempts \+ 1[\s\S]*?where id = \$1::bigint and attempts < max_attempts/.test(it)) falla(G, S, 0, "intentar() reclama el SMS en una sola escritura y nunca pasa del tope de intentos");
+    if (!/insert into sms_attempts \(sms_id, n, provider, provider_msg_id, accepted, error_code\)/.test(it)) falla(G, S, 0, "cada intento queda anotado en sms_attempts");
+    if (!/if \(f\.vencido \|\| !tel \|\| !texto\) return cerrar\(id, "vencido"/.test(it)) falla(G, S, 0, "un código vencido no se manda");
+    if (!/if \(permanente \|\| n >= max \|\| v\?\.vencido\) return cerrar\(id, "fallo"/.test(fa) || !/status = 'reintento', next_at = now\(\) \+ make_interval\(mins => \$2::int\)/.test(fa) || !/base \* 2 \*\* \(n - 1\)/.test(fa)) falla(G, S, 0, "lo que falla se reintenta con espera creciente hasta el tope; lo permanente o vencido, no");
+    if (!/where provider = \$1 and provider_msg_id = \$2 and final is null and accepted/.test(an) || !/if \(!s \|\| s\.status !== "enviado" \|\| s\.attempts !== a\.n\) return/.test(an)) falla(G, S, 0, "el resultado final de un intento llega una vez y solo el último intento decide el SMS");
+    if (!/\["sms", async \(\) => \(await import\("\.\/sms"\)\)\.reintentarSms\(\)\]/.test(sinComent(B))) falla(G, B, 0, "el barrido retoma los reintentos del SMS");
+    if (!/if \(ENTORNO === "produccion"\) throw new Error/.test(sinComent(SIM))) falla(G, SIM, 0, "el simulador de SMS no existe en producción");
+    if (/smsTelnyx|fetch\(/.test(sinComent(A)) || !/await enviarSms\(\{ tel, texto, tpl, origen:/.test(sinComent(A))) falla(G, A, 0, "los avisos mandan su SMS por el único camino (enviarSms)");
+    if (!/if \(st === "pendiente" && o\.n\.provider === "telnyx"\) \{\s*const s = await enviarSms\(/.test(cuerpoFn(sinComent(K), "enviar"))) falla(G, K, 0, "El Compa por SMS sale por el único camino (enviarSms)");
+    const pc = cuerpoFn(sinComent(CU), "pedirCodigo");
+    if (!/smsCodigo\(tel, codigo, CODIGO_MIN/.test(pc) || /^\s*throw new ErrorCuenta\("sin_proveedor"\);/m.test(pc)) falla(G, CU, 0, "el código para entrar sale por el único camino (smsCodigo); ya no «sin proveedor» siempre");
+    if (!/tpl: "cuenta_codigo"/.test(sinComent(CO)) || !/venceSeg: minutos \* 60/.test(sinComent(CO))) falla(G, CO, 0, "el SMS del código usa su plantilla editable y no se reintenta vencido");
+    if (existsSync(M)) {
+      const m = readFileSync(M, "utf8");
+      if (!/raise exception 'ese SMS ya se decidió/.test(m) || !/raise exception 'sms_attempts es solo de inserción/.test(m) || !/raise exception 'sms_outbox no se borra \(estados\)'/.test(m)) falla(G, M, 0, "la base impone que el SMS solo avanza y que sus intentos son de solo inserción");
+      if (!/body_enc\s+bytea/.test(m) || !/to_enc\s+bytea/.test(m)) falla(G, M, 0, "el teléfono y el texto del SMS se guardan cifrados (llevan códigos)");
+    }
+  },
+
+  /* 9l · correoEntranteFirmado (L977, L1131, §6 #23): al correo de Soporte solo entra lo que Amazon firma y aprueba. La firma de SNS se revisa ANTES de leer el
+     aviso de SES (401 si no), con el certificado bajado SOLO de sns.<región>.amazonaws.com por https (o de localhost fuera de producción) y del tema PROPIO
+     (CORREO_SNS_TEMA; sin él, nada entra); la hora dentro de una hora; una vez por id. Los veredictos de SES: virus y spam PASS y SPF o DKIM PASS. Solo un
+     correo CONFIRMADO de una cuenta abre un caso; el texto entra tapado. Al revés: leer el aviso antes de la firma, aceptar otro host o http en producción,
+     no mirar el tema, dejar pasar spam o un remitente sin SPF ni DKIM, o un correo sin confirmar → falla. */
+  correoEntranteFirmado() {
+    const G = "correoEntranteFirmado", R = "apps/web/app/api/correo/entrada/route.ts", E = "apps/web/lib/correo/entrante.ts", M = "packages/db/migrations/0142_canales.sql";
+    for (const f of [R, E]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza del correo entrante de Soporte");
+    const post = cuerpoFn(sinComent(R), "POST");
+    const iF = post.indexOf("firmaSns("), iM = post.indexOf("recibirCorreo("), iP = post.search(/JSON\.parse\(String\(m\.Message/);
+    if (iF < 0 || iM < 0 || iP < 0 || iF > iM || iF > iP) falla(G, R, 0, "la firma de SNS se revisa antes de leer el aviso de SES");
+    if (!/if \(!f\.ok\) return no\(401\);/.test(post)) falla(G, R, 0, "firma mala = 401 y nada se guarda");
+    if (/console\.(log|info|warn|error)/.test(sinComent(R) + sinComent(E))) falla(G, E, 0, "el correo que entra no va al registro del servidor");
+    const e = sinComent(E), fs = cuerpoFn(e, "firmaSns"), uv = cuerpoFn(e, "urlCertificadoValida"), hp = cuerpoFn(e, "hostsPrueba"), rc = cuerpoFn(e, "recibirCorreo");
+    if (!/const tema = process\.env\.CORREO_SNS_TEMA \?\? "";/.test(fs) || !/return \{ ok: false, motivo: "sin_secreto" \}/.test(fs) || !/if \(m\.TopicArn !== tema\) return \{ ok: false, motivo: "tema" \};/.test(fs)) falla(G, E, 0, "solo el tema propio (CORREO_SNS_TEMA); sin él, nada entra");
+    if (!/createVerify\(ver\)\.update\(cad, "utf8"\)\.verify\(pem, Buffer\.from\(m\.Signature, "base64"\)\)/.test(fs) || !/"RSA-SHA256"/.test(fs) || !/Math\.abs\(Date\.now\(\) - t\) > 3_600_000/.test(fs)) falla(G, E, 0, "la firma RSA de SNS sobre su cadena canónica y la hora dentro de una hora");
+    if (!/const HOST_SNS = \/\^sns\\\.\[a-z0-9-\]\+\\\.amazonaws\\\.com\$\/;/.test(e) || !/x\.protocol === "https:" && \(x\.port === "" \|\| x\.port === "443"\) && HOST_SNS\.test\(x\.hostname\)/.test(uv)) falla(G, E, 0, "el certificado solo de https://sns.<región>.amazonaws.com");
+    if (!/if \(ENTORNO === "produccion"\) return \[\];/.test(hp) || !/\^\(127\\\.0\\\.0\\\.1\|localhost\):\\d\{2,5\}\$/.test(hp)) falla(G, E, 0, "los hosts de prueba solo fuera de producción y solo localhost");
+    if (!/virus !== "PASS" \? "virus" : spam !== "PASS" \? "spam" : spf !== "PASS" && dkim !== "PASS"/.test(rc)) falla(G, E, 0, "solo entra lo que SES aprueba: virus y spam PASS, SPF o DKIM PASS");
+    if (!/coalesce\(email_verified, false\)/.test(rc) || !/U\.length === 1/.test(rc)) falla(G, E, 0, "solo el correo CONFIRMADO de una sola cuenta abre un caso");
+    if (!/tapar\(sinCitas\(textoDelCorreo/.test(rc)) falla(G, E, 0, "el texto del correo entra tapado");
+    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== E && /insert into support_email_in\b/.test(sinComent(f))) falla(G, f, 0, "solo lib/correo/entrante.ts escribe support_email_in");
+    if (existsSync(M)) {
+      const m = readFileSync(M, "utf8");
+      if (!/sns_message_id\s+text not null unique/.test(m) || !/ses_message_id\s+text not null unique/.test(m)) falla(G, M, 0, "un correo entra una sola vez (ids únicos de SNS y de SES)");
+      if (!/raise exception 'support_sin_secretos: el correo se guarda tapado'/.test(m)) falla(G, M, 0, "la base rechaza un correo con tarjeta o seguro social");
     }
   },
 };

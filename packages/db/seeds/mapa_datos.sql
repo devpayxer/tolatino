@@ -280,7 +280,7 @@ insert into data_map (tabla, columna, rol, accion, set_sql, pendiente_sql, donde
   ('written_totals', 'created_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2760),
   ('purge_runs', 'user_id', 'persona', 'guardar', null, null, null, '{"es":"Auditoría: el id queda, el nombre y el teléfono no.","en":"Audit trail: the ID stays, the name and phone do not."}'::jsonb, null, 'no', null, false, 2770),
   ('ugc_translations', 'target_id', 'persona', 'borrar', null, null, null, null, null, 'no', 'traducciones', false, 2780),
-  ('phone_messages', 'phone_hash', 'telefono', 'guardar', null, null, null, '{"es":"Registro cifrado de los mensajes de texto que se mandaron (reglas de los SMS).","en":"Encrypted record of the text messages that were sent (SMS rules)."}'::jsonb, null, 'no', null, false, 2790),
+  ('phone_messages', 'phone_hash', 'telefono', 'guardar', null, null, null, '{"es":"Registro cifrado de los mensajes de texto que se mandaron (reglas de los SMS): el teléfono y el texto se vacían a los 90 días (retener_sms_dias).","en":"Encrypted record of the text messages that were sent (SMS rules): the phone and the text are cleared after 90 days (retener_sms_dias)."}'::jsonb, null, 'no', null, false, 2790),
   ('data_exports', 'user_id', 'persona', 'guardar', null, null, null, '{"es":"Auditoría: el id queda, el nombre y el teléfono no.","en":"Audit trail: the ID stays, the name and phone do not."}'::jsonb, null, 'no', null, false, 2800),
   ('data_exports', 'requested_by', 'persona', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2810),
   ('account_merges', 'from_user_id', 'persona', 'guardar', null, null, null, '{"es":"Auditoría: el id queda, el nombre y el teléfono no.","en":"Audit trail: the ID stays, the name and phone do not."}'::jsonb, null, 'no', null, false, 2820),
@@ -318,7 +318,12 @@ insert into data_map (tabla, columna, rol, accion, set_sql, pendiente_sql, donde
   ('promo_codes', 'retired_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3140),
   ('business_referrals', 'promoter_user_id', 'persona', 'guardar', null, null, null, '{"es":"Es dinero: cobros, devoluciones y saldos. Stripe guarda lo suyo.","en":"It is money: charges, refunds and balances. Stripe keeps its own records."}'::jsonb, 'negocios_que_trajiste', 'no', null, false, 3150),
   ('business_referrals', 'paid_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3160),
-  ('early_access', 'user_id', 'persona', 'borrar', null, null, null, null, 'acceso_anticipado', 'mover', null, false, 3170)
+  ('early_access', 'user_id', 'persona', 'borrar', null, null, null, null, 'acceso_anticipado', 'mover', null, false, 3170),
+  ('wa_templates', 'submitted_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3180),
+  ('wa_template_events', 'actor_id', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3190),
+  ('support_email_in', 'user_id', 'persona', 'vaciar', '"subject" = null, "body" = null, "from_enc" = null', '"subject" is not null or "body" is not null or "from_enc" is not null', null, null, 'correos_a_soporte', 'no', null, false, 3200),
+  ('email_unsubscribes', 'user_id', 'persona', 'guardar', null, null, null, '{"es":"Lo pide la ley: recibos, impuestos y disputas.","en":"The law requires it: receipts, taxes and disputes."}'::jsonb, null, 'no', null, false, 3210),
+  ('sms_outbox', 'to_hash', 'telefono', 'guardar', null, null, null, '{"es":"Registro cifrado de los mensajes de texto que se mandaron (reglas de los SMS): el teléfono y el texto se vacían a los 90 días (retener_sms_dias).","en":"Encrypted record of the text messages that were sent (SMS rules): the phone and the text are cleared after 90 days (retener_sms_dias)."}'::jsonb, null, 'no', null, false, 3220)
 on conflict (tabla, columna) do update set rol = excluded.rol, accion = excluded.accion, set_sql = excluded.set_sql, pendiente_sql = excluded.pendiente_sql, donde_sql = excluded.donde_sql,
   porque = excluded.porque, exporta = excluded.exporta, fusion = excluded.fusion, fn = excluded.fn, derivados = excluded.derivados, orden = excluded.orden;
 -- Lo que salió del mapa sale de la tabla (es configuración: el mapa es la fuente).
@@ -639,6 +644,11 @@ delete from data_map d where not exists (select 1 from (values
   ('promo_codes', 'retired_by'),
   ('business_referrals', 'promoter_user_id'),
   ('business_referrals', 'paid_by'),
-  ('early_access', 'user_id')
+  ('early_access', 'user_id'),
+  ('wa_templates', 'submitted_by'),
+  ('wa_template_events', 'actor_id'),
+  ('support_email_in', 'user_id'),
+  ('email_unsubscribes', 'user_id'),
+  ('sms_outbox', 'to_hash')
 ) v (tabla, columna) where v.tabla = d.tabla and v.columna = d.columna);
 commit;

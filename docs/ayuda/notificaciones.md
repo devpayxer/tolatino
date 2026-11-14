@@ -1,7 +1,7 @@
 # Notificaciones · Notifications
 
 _Pantallas: la campana del encabezado, `/avisos` (APP-NOTIF, la bandeja), Mi cuenta › Avisos (qué llega por teléfono) y Super Admin › Notificaciones
-(ADM-NOTIF). Versión: 11 nov 2026. Audiencia: vecino. Tema: cuenta._
+(ADM-NOTIF). Versión: 14 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 - Cuando pasa algo con lo tuyo, To'Latino te avisa: **el negocio aceptó o no tu pedido, está listo, va en camino; confirmó
@@ -75,7 +75,40 @@ En **Super Admin › Notificaciones**, el chip **Solo Soporte y El Compa** muest
 las del equipo (tope de El Compa, caso fuera de plazo) y las del negocio (respuestas automáticas), cada una en español e inglés y editable con
 motivo. En **Reglas**: «Soporte: lo del caso siempre llega».
 
+## Avisos nuevos y cómo llega el mensaje de texto
+- **Avisos nuevos:** «Tu pedido va tarde» (si pasa su hora de listo), «Tu pedido llegó» (con entrega), «Hoy tienes mesa» (el día de tu reservación, si
+  pediste el SMS al reservar), el resultado de la foto que reportaste, «{negocio} ya está en To'Latino» (el negocio que recomendaste publicó su página),
+  «Ya hay {lo que buscaste}» (cuando un negocio nuevo coincide con «Avísame cuando haya»), «To'Latino abrió en {ciudad}» (si estabas en la lista de
+  espera: un solo mensaje, el día que abre) y «Tu número de To'Latino cambió» (al número viejo, por si no fuiste tú).
+- **Al negocio:** la decisión del sello (aprobado, falta un dato o no aprobado, con el motivo), «Quedan pocos» (Menú › Inventario: cuando quedan 2, 3 o
+  5), una reseña nueva, su semana (los lunes: visitas, pedidos y reseñas) y los días 20 y último de la prueba Pro (a las 10 AM).
+- **Cómo llega el SMS:** todos los mensajes de texto de To'Latino (avisos, el código para entrar y El Compa) salen por el mismo camino. Si el operador no
+  lo entrega, se vuelve a intentar solo, con una espera que crece; si tu número es inválido o pediste STOP, no se insiste. Un código para entrar no se
+  reintenta si ya venció: pide otro.
+- **STOP:** respondes STOP al número de To'Latino y no te llegan más SMS de avisos ni de El Compa (la campana sigue). Te llega UNA confirmación. Para
+  volver, responde START.
+- **Correo:** «Resumen semanal del barrio» (Mi cuenta › Avisos › Correo, apagado de fábrica): los lunes, los negocios nuevos y lo que viene en tu
+  ciudad. Las campañas por correo traen «Darme de baja» al pie y el botón de baja de tu correo (Gmail, Yahoo) funciona con un toque.
+
+| Caso | Qué pasa |
+|---|---|
+| El SMS no llegó al primer intento | To'Latino lo reintenta solo (hasta 3 veces). En Super Admin › Notificaciones › SMS y WhatsApp se ve cada intento. |
+| Muchos números escriben a la vez al número de To'Latino | Pasado el tope por minuto, no se contesta en ese minuto (protege de números falsos). STOP siempre se respeta. |
+| Reservaste sin «Avísame por SMS» | Los avisos de tu reservación llegan a la campana y por push, sin SMS. |
+
 ## English
+
+### New notifications and how texts arrive
+- **New:** «Your order is running late», «Your order was delivered», «You have a table today» (if you asked for the text when booking), the result of a
+  photo you reported, «{business} is now on To'Latino» (a business you recommended), «There is {what you searched} now» («Notify me when there is»),
+  «To'Latino opened in {city}» (one text, the day it opens) and «Your To'Latino number changed» (to the old number).
+- **Businesses:** the badge decision with its reason, «Running low» (Menu › Inventory), a new review, their week (Mondays) and days 20 and last of the Pro
+  trial (10 AM).
+- **How texts arrive:** every To'Latino text goes through one path. If the carrier does not deliver it, it is retried automatically with growing waits;
+  invalid numbers and STOP are not retried. An expired sign-in code is not retried: ask for a new one.
+- **STOP:** reply STOP and no more texts arrive (the bell keeps working); you get ONE confirmation. Reply START to come back.
+- **Email:** «Weekly neighborhood digest» (off by default) on Mondays. Campaign emails have «Unsubscribe» at the bottom and your mail app's one-tap
+  unsubscribe works.
 
 ### What it does
 - When something happens with your stuff, To'Latino lets you know: **your order was accepted or not, is ready, is on the

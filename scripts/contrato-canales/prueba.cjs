@@ -76,6 +76,34 @@ const cuerpoDe = (spec, ruta, metodo) => { const op = spec.paths[ruta]?.[metodo]
   ok(!e3.length, `Meta: el cuerpo cumple Message${e3.length ? ' — ' + e3.join('; ') : ''}`);
   ok(ultimo.cuerpo.type === 'text' && ultimo.cuerpo.text.preview_url === false && ultimo.cuerpo.to === '15705550122', 'Meta: texto sin vista previa del enlace, «to» sin «+»');
   ok(!(await P.mandar('whatsapp', 'no-es-un-id', '+15705550122', 'x')).ok, 'Meta: un phone_number_id que no es número no se llama');
+  // ── 9l · Escribir primero: una plantilla aprobada (type template) en el mismo POST /messages ──
+  const r3 = await P.mandarPlantilla('100200300400', '+15705550122', 'tl_soporte', 'es', ['TK-1042', 'https://pruebas.tolatino.com/soporte?caso=TK-1042']);
+  ok(r3.ok && r3.id === 'wamid.PRUEBA', 'mandarPlantilla: leyó el wamid de la respuesta');
+  const e4 = validar(META, cuerpoDe(META, RM, 'post'), ultimo.cuerpo);
+  ok(!e4.length && ultimo.cuerpo.type === 'template' && ultimo.cuerpo.template.name === 'tl_soporte' && ultimo.cuerpo.template.language.code === 'es', `Meta: la plantilla cumple Message (type template)${e4.length ? ' — ' + e4.join('; ') : ''}`);
+  // ── 9l · Mandar una plantilla a Meta: POST /{Version}/{WABA-ID}/message_templates ──
+  const RT = '/{Version}/{WABA-ID}/message_templates';
+  ok(!!META.paths[RT]?.post, 'Meta: la especificación publica POST /{Version}/{WABA-ID}/message_templates');
+  process.env.WHATSAPP_WABA_ID = '900800700600';
+  const r4 = await P.crearPlantillaMeta({ nombre: 'tl_cita', idioma: 'es', categoria: 'UTILITY', cuerpo: 'Tu cita en {{1}} quedó confirmada para el {{2}} a las {{3}}. Detalles: {{4}}', ejemplo: ['Barbería', '14/11', '3:30 PM', 'https://tolatino.com/cita/C-1'] });
+  ok(r4.ok && ultimo.metodo === 'POST' && ultimo.ruta === '/v23.0/900800700600/message_templates' && ultimo.h.authorization === 'Bearer EAAPRUEBA', `Meta: POST ${ultimo.ruta} con Bearer`);
+  const e5 = validar(META, cuerpoDe(META, RT, 'post'), ultimo.cuerpo);
+  ok(!e5.length, `Meta: el cuerpo de la plantilla cumple la especificación${e5.length ? ' — ' + e5.join('; ') : ''}`);
+  // ── 9l · Los avisos de entrega: Telnyx message.finalized (to[].status con el enumerado publicado) y Meta statuses ──
+  const ST = TX.components.schemas.OutboundMessagePayload?.properties?.to?.items?.properties?.status?.enum ?? [];
+  ok(['delivered', 'delivery_failed', 'sending_failed', 'expired'].every((x) => ST.includes(x)), 'Telnyx: los estados de entrega que leemos están en el enumerado publicado');
+  const fin = (st) => ({ data: { event_type: 'message.finalized', payload: { id: 'm1', to: [{ phone_number: '+15705550122', status: st }], errors: st === 'delivered' ? [] : [{ code: '40002' }] } } });
+  ok(P.leerEstadosTelnyx(fin('delivered'))[0].final === 'entregado' && P.leerEstadosTelnyx(fin('delivery_failed'))[0].final === 'fallo' && P.leerEstadosTelnyx(fin('delivery_failed'))[0].codigo === '40002', 'leerEstadosTelnyx: entregado o falló, con su código');
+  ok(!P.leerEstadosTelnyx(ej).length, 'leerEstadosTelnyx: un mensaje que entra no es un aviso de entrega');
+  const wst = { object: 'whatsapp_business_account', entry: [{ changes: [{ field: 'messages', value: { statuses: [{ id: 'wamid.X', status: 'delivered' }, { id: 'wamid.Y', status: 'failed', errors: [{ code: 131047 }] }] } }] }] };
+  const W = P.leerEstadosWhatsApp(wst);
+  ok(W.length === 2 && W[0].final === 'entregado' && W[1].final === 'fallo' && W[1].codigo === '131047', 'leerEstadosWhatsApp: delivered → entregado, failed → falló con su código');
+  const wmsg = { object: 'whatsapp_business_account', entry: [{ changes: [{ field: 'messages', value: { metadata: { phone_number_id: '100200300400' }, messages: [{ id: 'wamid.E', from: '15705550122', type: 'text', timestamp: String(Math.floor(Date.now() / 1000)), text: { body: 'hola' } }] } }] }] };
+  const WM = P.leerWhatsApp(wmsg);
+  ok(WM.length === 1 && WM[0].de === '+15705550122' && WM[0].para === '100200300400' && WM[0].texto === 'hola' && !P.leerWhatsApp(wst).length, 'leerWhatsApp: el mensaje que entra (y un aviso de entrega no es un mensaje)');
+  const pst = { object: 'whatsapp_business_account', entry: [{ changes: [{ field: 'message_template_status_update', value: { event: 'REJECTED', message_template_id: 123, message_template_name: 'tl_cita', message_template_language: 'es', reason: 'INVALID_FORMAT' } }] }] };
+  const PL = P.leerPlantillasWhatsApp(pst);
+  ok(PL.length === 1 && PL[0].estado === 'rechazada' && PL[0].motivo === 'INVALID_FORMAT' && PL[0].nombre === 'tl_cita', 'leerPlantillasWhatsApp: el estado de la plantilla en Meta y su motivo');
   // ── Firmas: las mismas reglas que publica cada proveedor ──
   const kp = crypto.generateKeyPairSync('ed25519'); process.env.TELNYX_PUBLIC_KEY = kp.publicKey.export({ type: 'spki', format: 'der' }).subarray(12).toString('base64');
   const cuerpo = Buffer.from(JSON.stringify(ej)), ts = String(Math.floor(Date.now() / 1000)), sig = crypto.sign(null, Buffer.from(`${ts}|${cuerpo}`), kp.privateKey).toString('base64');

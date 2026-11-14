@@ -10,8 +10,14 @@ T="$(mktemp -d)"
 trap 'rm -rf -- "$T"' EXIT
 SPECS="${CONTRATO_SPECS:-$T/specs}"
 mkdir -p "$SPECS" "$T/src/compa" "$T/node_modules/server-only"
-[ -f "$SPECS/telnyx.json" ] || curl -fsSL -o "$SPECS/telnyx.json" https://raw.githubusercontent.com/team-telnyx/openapi/master/openapi/spec3.json
-[ -f "$SPECS/meta.yaml" ] || curl -fsSL -o "$SPECS/meta.yaml" https://raw.githubusercontent.com/facebook/openapi/main/business-messaging-api_v23.0.yaml
+# 9l · Las especificaciones FIJAS a un commit (L1113) y a su huella: un cambio del proveedor no rompe la CI sin aviso. Para subir de versión: cambiar el
+# commit y la huella aquí (git ls-remote https://github.com/team-telnyx/openapi master · facebook/openapi main), correr el contrato y anotarlo en PROGRESS.
+TELNYX_COMMIT=bf2eb8ed5b816213987fecae8fe33329e98cdd84; TELNYX_SHA256=fc59cb60a25c5091e73889842c808f1db7b4c0bb36bbb0228ee9ed2f629eca18
+META_COMMIT=e96a1c9dbf240c2937b6a95920685230458e346b; META_SHA256=5c1973265369944b7cdfa3fa690985713575249042e2b7edd46be3ef9bd9b09d
+[ -f "$SPECS/telnyx.json" ] || curl -fsSL -o "$SPECS/telnyx.json" "https://raw.githubusercontent.com/team-telnyx/openapi/$TELNYX_COMMIT/openapi/spec3.json"
+[ -f "$SPECS/meta.yaml" ] || curl -fsSL -o "$SPECS/meta.yaml" "https://raw.githubusercontent.com/facebook/openapi/$META_COMMIT/business-messaging-api_v23.0.yaml"
+echo "$TELNYX_SHA256  $SPECS/telnyx.json" | sha256sum -c --quiet - || { echo "✗ la especificación de Telnyx no es la fijada ($TELNYX_COMMIT)" >&2; exit 1; }
+echo "$META_SHA256  $SPECS/meta.yaml" | sha256sum -c --quiet - || { echo "✗ la especificación de Meta no es la fijada ($META_COMMIT)" >&2; exit 1; }
 python3 -I -c 'import sys, json, yaml; json.dump(yaml.safe_load(open(sys.argv[1])), open(sys.argv[2], "w"))' "$SPECS/meta.yaml" "$T/meta.json"
 cp "$RAIZ/apps/web/lib/compa/canales-proveedor.ts" "$T/src/compa/"
 echo 'module.exports = {};' > "$T/node_modules/server-only/index.js"

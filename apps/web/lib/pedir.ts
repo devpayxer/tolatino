@@ -308,7 +308,7 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
     }
     const m = armar(b, F, { ...est, later: false, now: refMin }, true);
     const filasPorId = new Map(F.i.map((i) => [i.id, i]));
-    const cuenta = new Map<string, number>();
+    const cuenta = new Map<string, number>(), pocos: { id: string; antes: number; despues: number; nombre: string }[] = [];
     const L: { it: FilaItem; name: Bi; q: number; unit: number; tax: number; ops: { g: Bi; o: Bi; cents: number; gid: string; ix: number }[]; nota: string }[] = [];
     let extra = 0;
     for (const l of lineas) {
@@ -415,6 +415,8 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
     for (const [id, q] of cuenta) {
       const f = filasPorId.get(id)!;
       if (f.stk === "none") continue;
+      // 9l · «Quedan pocos» (L226): lo que este pedido deja en el umbral o por debajo (y no en 0: ahí ya sale agotado) se avisa al negocio después del commit.
+      if (f.quedan != null) pocos.push({ id, antes: f.quedan, despues: Math.max(0, f.quedan - q), nombre: L.find((x) => x.it.id === id)?.name.es ?? "" });
       await c.query(
         `update items set stock_left = greatest(0, $2::int - $3::int), stock_day = case when stock_mode = 'day' then (now() at time zone $4 - interval '6 hours')::date else stock_day end, updated_at = now()
           where id = $1::bigint`, [id, f.quedan, q, b.tz]);
@@ -426,6 +428,7 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
     await c.query("commit");
     retenido = null;
     if (ret?.ok && auto) await cobrarOperacion(opId); // acepta pedidos al instante: se cobra al enviar
+    if (pocos.length) await quedanPocos(b.id, b.name, pocos).catch(() => undefined);
     return { ok: true, numero: num };
   } catch (e) {
     await c.query("rollback").catch(() => undefined);
@@ -437,6 +440,16 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
 }
 
 async function liberarSilencioso(pi: string) { await (await import("./pagos/pasarela")).pasarela.liberar(pi).catch(() => undefined); }
+
+/* 9l · «Avísame por SMS cuando queden N» (Panel › Menú › Inventario, low_alert 2 / 3 / 5; 0 = no avisar): el pedido que CRUZA el umbral (antes había más,
+   ahora quedan N o menos y más de 0) avisa una vez al dueño (push y SMS de respaldo). Al reponer y volver a cruzar, avisa otra vez. */
+async function quedanPocos(negocio: string, nombre: string, L: { id: string; antes: number; despues: number; nombre: string }[]) {
+  const low = (await db().query<{ n: number }>(`select coalesce((select low_alert from menu_settings where business_id = $1), 3) as n`, [negocio])).rows[0]?.n ?? 0;
+  if (!low) return;
+  const { avisarNegocio } = await import("./avisos");
+  for (const x of L) if (x.antes > low && x.despues <= low && x.despues > 0)
+    await avisarNegocio(negocio, "biz_quedan_pocos", { n: x.despues, item: x.nombre, negocio: nombre }, { href: `/panel/${negocio}/menu`, ref: ["item", x.id] });
+}
 
 /* ── El pedido (APP-NEG-PEDIDO): solo lo ve quien lo hizo. ── */
 export type PedidoVista = {

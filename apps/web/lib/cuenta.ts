@@ -92,8 +92,15 @@ export async function pedirCodigo(entrada: string, proposito: "login" | "phone_c
      values ($1, $6, $2, $3::inet, $4, now() + make_interval(mins => $5))`,
     [tel, huellaCodigo(tel, codigo), ip, MODO_SMS === "pruebas" ? "pruebas" : "sms", CODIGO_MIN, proposito],
   );
+  // 9l · El SMS del código sale por el único camino de los SMS (plantilla cuenta_codigo; reintentos mientras no venza). En el sandbox, el simulador.
+  const sms = await (await import("./sms/codigo")).smsCodigo(tel, codigo, CODIGO_MIN, await langPantalla());
   if (MODO_SMS === "pruebas") return { reenviarEn: REENVIO_SEG, codigoPrueba: codigo };
-  throw new ErrorCuenta("sin_proveedor"); // Telnyx se conecta aquí (decisión E2).
+  if (!sms || sms.estado === "sin_proveedor" || sms.estado === "fallo") throw new ErrorCuenta("sin_proveedor");
+  return { reenviarEn: REENVIO_SEG };
+}
+/* El idioma de la pantalla (la cookie del botón ES/EN): el del SMS del código cuando el teléfono todavía no tiene cuenta. */
+async function langPantalla(): Promise<"es" | "en"> {
+  try { return (await cookies()).get("tl_lang")?.value === "en" ? "en" : "es"; } catch { return "es"; }
 }
 
 /* Revisa un código (cambiar teléfono, borrar la cuenta) dentro de una transacción: el último vigente de ese propósito,
@@ -306,8 +313,10 @@ export async function codigoReclamo(telNegocio: string): Promise<{ reenviarEn: n
   await db().query(
     `insert into otp_codes (phone, purpose, code_hash, ip, channel, expires_at) values ($1, 'claim_call', $2, $3::inet, $4, now() + make_interval(mins => $5))`,
     [tel, huellaCodigo(tel, codigo), ip, MODO_SMS === "pruebas" ? "pruebas" : "sms", CODIGO_MIN]);
+  const sms = await (await import("./sms/codigo")).smsCodigo(tel, codigo, CODIGO_MIN, await langPantalla()); // 9l · el único camino de los SMS
   if (MODO_SMS === "pruebas") return { reenviarEn: REENVIO_SEG, codigoPrueba: codigo };
-  throw new ErrorCuenta("sin_proveedor");
+  if (!sms || sms.estado === "sin_proveedor" || sms.estado === "fallo") throw new ErrorCuenta("sin_proveedor");
+  return { reenviarEn: REENVIO_SEG };
 }
 /* Verifica el código del reclamo dentro de la transacción de quien llama (para crear el reclamo en la misma). */
 export async function verificarCodigoReclamo(c: import("pg").PoolClient, telNegocio: string, codigo: string): Promise<"ok" | "codigo_incorrecto" | "codigo_vencido" | "demasiados"> {

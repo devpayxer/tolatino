@@ -166,11 +166,11 @@ export async function datosSoporte(q: Quien) {
 
 /* ── Abrir un caso ── */
 export type AbrirIn = { tema: string; operacion?: string | null; texto: string; foto?: string | null; enlazado?: string | null; clave?: string | null };
-type Origen = "form" | "panel" | "compa" | "reporte_app";
+type Origen = "form" | "panel" | "compa" | "reporte_app" | "correo"; // 9l · «correo»: entró por SES (lib/correo/entrante.ts)
 /* 8f · Lo que acompaña un «Reportar un problema» (lib/reportar.ts ya lo tapó y lo acotó): queda en support_case_logs, en la MISMA transacción. */
 export type RegistroCaso = { kind: "registro_app" | "captura"; body: Record<string, unknown> };
 const ALTA = /(entr[oó]|entraron|metieron)\s+(a|en)\s+mi\s+cuenta|hacke|me\s+robaron\s+(la|mi)\s+cuenta|no\s+fui\s+yo|me\s+amenaz|me\s+est[aá]\s+acosando|someone\s+(got|logged|broke)\s+into|hacked|not\s+me|threat/i;
-export async function abrirCaso(q: Quien, x: AbrirIn, o: { origen?: Origen; resumen?: string | null; compaConversacion?: number | null; prioridad?: "alta" | null; registros?: RegistroCaso[] } = {}): Promise<ResS> {
+export async function abrirCaso(q: Quien, x: AbrirIn, o: { origen?: Origen; resumen?: string | null; compaConversacion?: number | null; prioridad?: "alta" | null; registros?: RegistroCaso[]; dispositivo?: { device: string; version: string } } = {}): Promise<ResS> {
   const origen: Origen = o.origen ?? (q.negocio ? "panel" : "form");
   const n = q.negocio ? (NEG.test(q.negocio) ? q.negocio : "") : null;
   if (n === "") return no("Ese negocio no existe.", "That business does not exist.");
@@ -184,7 +184,7 @@ export async function abrirCaso(q: Quien, x: AbrirIn, o: { origen?: Origen; resu
   const foto = x?.foto && UUID.test(String(x.foto)) ? String(x.foto) : null;
   const clave = x?.clave && UUID.test(String(x.clave)) ? String(x.clave) : null;
   const alta = o.prioridad === "alta" || tema === "seguridad" || ALTA.test(crudo);
-  const disp = await dispositivo().catch(() => ({ device: "", version: "web" }));
+  const disp = o.dispositivo ?? (await dispositivo().catch(() => ({ device: "", version: "web" })));
   let r: ResS & { id?: string } = no("Prueba de nuevo.", "Try again.");
   try {
     r = await tx(async (c): Promise<ResS & { id?: string }> => {

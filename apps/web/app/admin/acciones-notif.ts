@@ -22,6 +22,8 @@ export async function plantillaEditar(key: string, lang: "es" | "en", texto: str
     const permitidas = new Set([...variables(p.body.es), ...variables(p.body.en)]), malas = variables(t).filter((v) => !permitidas.has(v));
     if (malas.length) return { ok: false as const, mensaje: `Esta plantilla no conoce ${malas.map((v) => `{${v}}`).join(", ")}. Usa: ${[...permitidas].map((v) => `{${v}}`).join(", ")}.` };
     if (t === p.body[lang]) return { ok: false as const, mensaje: "Es el mismo texto." };
+    // 9l · El código para entrar: el texto se edita, pero sin {codigo} el SMS no serviría.
+    if (String(key) === "cuenta_codigo" && !t.includes("{codigo}")) return { ok: false as const, mensaje: "El texto del código para entrar tiene que llevar {codigo}." };
     await c.query(`update notif_templates set body = jsonb_set(body, array[$2], to_jsonb($3::text)), edited_by = $4, updated_at = now() where key = $1`, [String(key), lang, t, s.id]);
     await auditar(c, { actor: s.id, action: "notificaciones.plantilla", targetKind: "notif_template", targetId: String(key), before: { [lang]: p.body[lang] }, after: { [lang]: t }, reason: m });
     return { ok: true as const, mensaje: "Guardada. Los avisos nuevos salen con este texto." };
