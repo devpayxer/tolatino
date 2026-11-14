@@ -31,7 +31,7 @@ const nombres = []; // el nombre accesible de cada control que se operó (para e
 async function act(p, loc, tecla = 'Enter') {
   let el = null;
   for (let i = 0; i < 60 && !el; i++) { const k = await loc.count(); for (let j = 0; j < k; j++) if (await loc.nth(j).isVisible()) { el = loc.nth(j); break; } if (!el) await dormir(250); }
-  if (!el) throw new Error('act: no visible: ' + loc + ' · la página dice: ' + (await p.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300));
+  if (!el) throw new Error('act: no visible: ' + loc + ' · la página dice: ' + (await p.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 900));
   const r = await el.evaluate((e, sel) => {
     const t = e.closest(sel) || e.querySelector(sel);
     if (!t) return { sin: true, etiqueta: e.tagName, texto: (e.innerText || '').slice(0, 50) };
@@ -214,7 +214,8 @@ const chicos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=butt
     for (let i = 0; i < 6; i++) { // C1: lo primero de cada pregunta, con el teclado, hasta que se pueda seguir
       if (!(await p.locator('text=RESPONDE LO QUE FALTA').count())) break;
       const grupos = p.locator('[data-screen-label^="ONB-NEG-C1"] > div'), k = await grupos.count();
-      for (let g = 0; g < k; g++) { const opc = grupos.nth(g).locator('div[role=button], [role=radio], [role=checkbox], span[role=button]').first(); if (await opc.count()) await act(p, opc, 'Space').catch(() => {}); await dormir(120); }
+      // Una pregunta de número tiene «−» primero, que en el mínimo no hace nada: se toca su «+» (primera corrida en el CI: el paso no avanzaba).
+      for (let g = 0; g < k; g++) { const mas = grupos.nth(g).locator('[role=button][aria-label="+"]'); const opc = (await mas.count()) ? mas.first() : grupos.nth(g).locator('div[role=button], [role=radio], [role=checkbox], span[role=button]:not([aria-label="−"])').first(); if (await opc.count()) await act(p, opc, 'Space').catch(() => {}); await dormir(120); }
     }
     await seg(); await dormir(900);
     await act(p, p.locator('button, span, div').filter({ hasText: /^Seguir · / }).last()); await dormir(900);

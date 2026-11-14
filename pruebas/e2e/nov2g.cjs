@@ -17,6 +17,8 @@ const limpiar = () => {
   sql(`delete from follows where follower_user_id = ${MARISOL} and target_id = '${BIZ}'`);
   sql(`update business_posts set status = 'removed', pinned = false where business_id = '${BIZ}' and title like 'Prueba %'`);
   sql(`update business_posts set hidden_at = null, hidden_reason = null where business_id = '${BIZ}'`);
+  // 9b-3 · La oferta de la semilla vuelve a estar en vivo: barajada, a11y9c paraba las ofertas de Sabor Dominicano antes y la pestaña no la mostraba.
+  sql(`update business_posts set status = 'live', ends_at = null where business_id = '${BIZ}' and title = 'Mofongo de chicharrón a $10 hoy' and status <> 'removed'`);
   sql(`update business_posts set pinned = (title = 'Mofongo de chicharrón a $10 hoy') where business_id = '${BIZ}' and status <> 'removed'`);
   sql(`update businesses set modules_off = modules_off - 'nov' where id = '${BIZ}'`);
   sql(`update business_posts set created_at = created_at - interval '1 day' where business_id = '${BIZ}' and created_at > now() - interval '1 day'`); // el tope de 20 por día no lo llenan las pruebas

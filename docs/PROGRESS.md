@@ -1575,6 +1575,10 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
     escriben un día entero como 00:00–00:00 (no 00:00–23:59). Además: evt6b-6c espera a que pase la medianoche si faltan <15 min
     (`lejosDeMedianoche`); merc4p abre el mercado mientras corre (`abiertoTodoElDia`); rev2g, res4s y tx4g piden con `requiere` lo que dejan
     pedidos2c, merc4p, renta4f, plan4f y apt4f; fic4d pone la matrícula del curso; evt6g usa un teléfono libre; a11y9c toca el boleto visible.
+  - **Sexta confirmación (corrida 43563245945):** «todas las fases» y «dos veces seguidas» solo con a11y9c (en el paso 2 de Publica tocaba el «−» de
+    una pregunta de número, que en el mínimo no hace nada; ahora el «+»). Barajada: adm4ig ahora crea la membresía de Luis en la despensa (antes se
+    la daba fe4ia) y retira sus licencias de prueba aunque se caiga a la mitad (si no, autos4ic e inm4ib, y por requiere vis4ie, compa7d y fic4id,
+    no veían «sin verificar»); nov2g vuelve a poner en vivo su oferta de la semilla (a11y9c la paraba).
   - Al revés: alreves9b3 27/27. La confirmación nueva corre sobre la punta con 9c (una sola corrida para los dos).
 - **No cerrado o con destino:** ver LAUNCH «→ 9b» (lo que queda), «Fase 9 · 9b-3» y las líneas movidas a 9c, 9g, 9j, 9l, 9m, 9n, 9o, 9q, 9r y 9t con su porqué.
 

@@ -23,6 +23,8 @@ const pid = (n) => sql(`select i.id from items i where i.name->>'es' = '${n}' an
 // La misma fórmula de lib/inmuebles.ts (cuotaEstimada), para comprobar lo que guardó el servidor.
 const cuota = (precio, pct) => { const pr = precio * (1 - pct / 100), r = 0.0675 / 12; return Math.round(((pr * r) / (1 - Math.pow(1 + r, -360)) + (precio * 0.025) / 12) / 100) * 100; };
 (async () => {
+  // 9b-3 · Las licencias de prueba de adm4ig (si se cayó antes de retirarlas) no tapan las «sin verificar» de este negocio.
+  sql(`update licenses set status = 'withdrawn', updated_at = now() where number like 'PRUEBA-4IG-%' and status <> 'withdrawn'`);
   // Punto de partida conocido: sin propiedades de pruebas anteriores, Yesenia también administra venta, préstamos, Free y mayores.
   sql(`update items set removed_at = now() where name->>'es' like 'Prueba 4ib%' and removed_at is null`);
   sql(`delete from fair_housing_phrases where phrase = 'solo parejas jóvenes'`);

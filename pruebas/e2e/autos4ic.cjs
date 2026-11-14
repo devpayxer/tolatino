@@ -32,6 +32,8 @@ const totalesBien = () => sql(`select count(*) from vehicle_listings v join deal
 
 const CARGOS = `update dealer_settings s set doc_fee_cents = x.f, derived_on = null from (values ('autos-el-cibao', 39900), ('keystone-trucks', 29900), ('compre-aqui-hzl', 19900), ('valle-motors', 47700), ('power-sports-hazleton', 19900), ('lake-harmony-botes-campers', 39900), ('comercial-keystone', 39900), ('clasicos-lujo-valle', 47700)) as x(b, f) where s.business_id = x.b`;
 (async () => {
+  // 9b-3 · Las licencias de prueba de adm4ig (si se cayó antes de retirarlas) no tapan las «sin verificar» de este negocio.
+  sql(`update licenses set status = 'withdrawn', updated_at = now() where number like 'PRUEBA-4IG-%' and status <> 'withdrawn'`);
   // Punto de partida conocido (los cargos de la semilla, por si una corrida anterior bajó el tope).
   sql(`update vehicle_listings set status = 'sold', status_at = now() - interval '40 days' where trim_level like 'P4IC%' and business_id = '${NEG}'`);
   sql(`update items set removed_at = now() where id in (select item_id from vehicle_listings where trim_level like 'P4IC%') and removed_at is null`);

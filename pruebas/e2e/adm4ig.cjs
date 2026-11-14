@@ -96,6 +96,8 @@ const enFila = (p, titulo, boton) => p.getByText(titulo, { exact: true }).first(
   // ── 3 · Licencias de las tres: por vencer y vencida vuelven a la cola; «Verificada» mueve la revisión ──
   const L1 = sql(`insert into licenses (business_id, city_id, kind, title, status, source, number, next_review, verified_at, checked_at) select id, city_id, 'pa_dealer', '{}', 'valid', 'panel', 'PRUEBA-4IG-1', current_date + 5, now() - interval '3 months', now() - interval '3 months' from businesses where id = '${DEA}' returning id`).split('\n')[0];
   const L2 = sql(`insert into licenses (business_id, city_id, kind, title, status, source, number, next_review, verified_at, checked_at) select id, city_id, 'pa_corredor', '{}', 'valid', 'panel', 'PRUEBA-4IG-2', current_date - 2, now() - interval '3 months', now() - interval '3 months' from businesses where id = '${INM}' returning id`).split('\n')[0];
+  // 9b-3 · Si la prueba se cae a la mitad, sus licencias de prueba igual se retiran: verificadas, autos4ic e inm4ib (barajadas después) no veían «sin verificar».
+  process.on('exit', () => { try { sql(`update licenses set status = 'withdrawn', updated_at = now() where id in (${L1}, ${L2}) and status <> 'withdrawn'`); } catch { /* la base ya no está */ } });
   barrer();
   ok(sql(`select priority from queue_items where queue = 'lic' and subject_id = '${L1}' and status = 'open'`) === 'normal' && sql(`select priority from queue_items where queue = 'lic' and subject_id = '${L2}' and status = 'open'`) === 'alta', 'el barrido reabre la licencia por vencer (normal) y la vencida (alta)');
   barrer(); ok(sql(`select count(*) from queue_items where queue = 'lic' and subject_id in ('${L1}', '${L2}')`) === '2', 'el barrido no duplica casos');
@@ -145,6 +147,8 @@ const enFila = (p, titulo, boton) => p.getByText(titulo, { exact: true }).first(
 
   // ── 7 · Triángulo (regla 8): Tu herramienta → ficha, tarjeta de categoría y Buscar → Super Admin lo ve y puede pausar u ocultar ──
   const pub = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); mira(pub);
+  // 9b-3 · Luis entra al panel de la despensa porque es SU miembro: antes se lo daba fe4ia y, barajada, adm4ig corría primero.
+  for (const n of [DES]) sql(`insert into business_members (business_id, user_id, kind, display_name, role, status, show_on_page, panel_access, since_year, sort, same_as_business_hours) select '${n}', u.id, 'owner', 'Padre Luis Herrera', '{"es":"Prueba","en":"Test"}'::jsonb, 'active', false, '{all}', 2020, 9, true from users u where u.phone = '+15705550422' and not exists (select 1 from business_members m where m.business_id = '${n}' and m.user_id = u.id)`);
   const fe = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage(); mira(fe); await entrar(fe, '5705550422');
   // 7a · Iglesias: «Se acabó por hoy» en la despensa.
   await fe.goto(`${B}/panel/${DES}/vendes/herramienta`); await fe.getByText('La ayuda de hoy', { exact: true }).first().waitFor();
