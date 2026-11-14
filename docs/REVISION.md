@@ -4472,3 +4472,50 @@ pasa a «revisado» y se publica. En producción la base no deja publicar una p�
   - **Piezas sin diseño, compuestas con lo que existe:** el banner de anuncios y el aviso son la `InfoCard` del sistema (la que ya usa «Para negocios»); el editor de cadenas, los rótulos y el Inicio por ciudad se compusieron con filas, KPIs, campos y confirmar con motivo del Super Admin.
 - **Prueba:** `cms9f` (91 comprobaciones) pasó dos veces seguidas en una base local y `alreves9f` (30/30); la corrida de verdad es la del CI.
 
+
+## Fase 9 · 9h — Crecimiento, la landing de acceso anticipado, los QR de calle y el SEO (14 nov)
+- **Qué mirar (en el sandbox; Super Admin 570-555-0199; teléfono y escritorio):**
+  1. **La landing:** abre `/acceso` en el teléfono y en la computadora. Arriba, la frase «Alguien cerca de ti hace justo lo que buscas. Encontrarlo es lo difícil.» y, bajo el teléfono, «Te avisamos
+     por mensaje de texto cuando abra tu zona. Nada más.». Baja hasta el final: la vitrina cambia sola cada 4 segundos, las secciones, las preguntas y, en el teléfono, la barra «Avísame» abajo.
+     Cambia a **English** arriba.
+  2. **Anótate** con un teléfono 570-555-xxxx de prueba y el código postal **18102** (Allentown): sale «Estás en la lista · #N», «En la lista de Allentown» y la insignia de fundador. Prueba otro con
+     **19020**: «Todavía no llegamos al 19020». Vuelve a abrir la página: ves tu lugar; **Quitarme de la lista** te saca.
+  3. **«Tengo un negocio»** (Desde casa, un nombre): después de anotarte, **Publica tu negocio** abre Publicar con Allentown; publica y en el panel (Hoy) sale «Tu página se ve el día que abra Allentown».
+  4. **Super Admin › Crecimiento:** las seis pestañas. En **Enlaces y QR** crea uno (Calle, Hazleton, «La landing»), baja **PDF carta** y **PDF media carta** e imprímelo o míralo; escanea el QR con tu
+     teléfono: abre la landing y el enlace suma un escaneo (toca **Escaneos** para ver los de cada día). **Retirar** lo deja llevando al Inicio.
+  5. **Campañas:** crea una para Hazleton, vecinos, «En la app»: ves a cuántas personas llega antes de programarla (solo quien encendió «Novedades»). Con el umbral de fábrica (1 000) sale sola; para ver
+     la aprobación de otra persona, el umbral está en **Sistema › Configuración › Crecimiento**.
+  6. **Mi cuenta › Avisos** de una cuenta de vecino: el renglón nuevo **«Novedades de To'Latino»**, apagado.
+  7. **Destacados** (Hazleton): la vitrina de hoy tal como la ve el vecino; fija uno, míralo primero en **Negocios › Destacados**, y **Retirar**.
+  8. **Lista de espera:** por ciudad, por código postal, los negocios por cómo trabajan y «Pide tu ciudad». No hay ni un teléfono.
+- **Decisiones que tomé (si prefieres otra, se cambia):**
+  - **La landing vive en `/acceso` y en `/` solo con el interruptor `growth.landing`** (apagado). Así el sandbox y sus capturas aprobadas no cambian; en producción (acceso anticipado, OK-1) se enciende y `/`
+    es la landing. Se compuso con piezas del sistema siguiendo la memoria del diseño (Coming Soon v3), porque su archivo de diseño no está en el repo; si lo exportas, se porta y se reemplaza.
+  - **La vitrina no inventa negocios:** los seis casos («¿Quién hace bizcochos por encargo?»…) muestran el TIPO de negocio con la etiqueta **EJEMPLO**, sin nombre de persona, estrellas ni reseñas, y su
+    botón es «Avísame». Cuando haya negocios reales en acceso anticipado, se puede cambiar por los de verdad.
+  - **Anotarse crea la cuenta** (decisión E): el teléfono se verifica con el código de entrada de siempre (con sus topes). La lista **no copia el teléfono**: guarda la cuenta, el código postal y lo que dijo
+    de su negocio. No pide el nombre (la v3 no lo pedía); Publicar lo pide si hace falta.
+  - **Un solo mensaje:** anotarse **no** enciende «Novedades»; la persona recibe un SMS el día que abre su zona (lo manda la apertura, 9i, con Telnyx, 9q) y nada más. Las campañas de Crecimiento solo
+    llegan a quien encendió **«Novedades de To'Latino»** en Mi cuenta › Avisos (apagado de fábrica); encenderlo enciende también su push (Apple pide que el push de mercadeo lo elija la persona).
+  - **Código postal → zona:** exacto contra los códigos de cada ciudad y, si no, por sus tres primeros números cuando son de una sola ciudad (182xx Hazleton, 181xx Allentown, 187xx Wilkes-Barre,
+    185xx Scranton, 196xx Reading). Lo demás va a «Pide tu ciudad» como «CP xxxxx».
+  - **Fundadores = solo insignia** para los primeros **500 vecinos y 100 negocios de cada ciudad** (se cambian en Configuración › Crecimiento); el número lo pone la base en orden. La insignia del vecino es la
+    de siempre; la del negocio todavía no sale en su ficha (LAUNCH → 9n). HZL30 sigue dando 60 días.
+  - **Fecha de apertura oculta** (como la v3). En Lista de espera hay «Mostrar la fecha» (con motivo): una sola fecha para las cinco (decisión A).
+  - **Enlaces y QR propios** en `tolatino.com/q/{código}` (no `tolatino.app`): 7 letras sin 0/O, 1/I/L, 5/S, 8/B; siempre a una página de To'Latino; un escaneo no guarda quién (ni la dirección de
+    internet, ni el dispositivo, ni la cuenta) y la vista previa de WhatsApp o un buscador no cuenta. El enlace deja puesta su ciudad (un QR de Allentown abre Publicar en Allentown).
+  - **El volante y el cartel son un PDF propio** (sin servicios de afuera): «To'Latino» en letra gruesa (la marca en texto; si quieres el logo de imagen, se agrega), la frase de la landing en
+    español y en inglés, el QR y la dirección corta. Carta y media carta. La imprenta la eliges y la pagas tú.
+  - **Campañas:** nunca de 10 PM a 7 AM de la ciudad (esperan a las 7 AM), máximo **2 por persona por semana** y **1 SMS de crecimiento al mes** (la regla que ya decía Notificaciones), a más de
+    **1 000 personas** la aprueba otra persona del equipo. Segmentos: vecinos o dueños de una ciudad, sin entrar desde 30/60/90 días, categoría y plan (contar ítems quedó para 9n). Canales: en la
+    app, push, SMS y correo (en el sandbox, SMS y correo quedan «en modo pruebas»).
+  - **Destacados:** fijar o quitar de la rotación por **7 días**, máximo **6 fijados por ciudad**; solo negocios (fijar eventos va con Eventos, 9m). La semilla quitó de la rotación un negocio Free (que no
+    estaba en ella) para que la vitrina y las capturas no cambien.
+  - **Promotores:** el código de un promotor da **60 días** de prueba (30 + 30) y, cuando el negocio traído llega a **5 pedidos o citas**, la recompensa de **$10** queda anotada «pendiente de pago»: pagarla
+    a la Wallet es dinero real y llega con 9k. Su propio negocio o uno de su mismo teléfono no cuenta.
+  - **SEO:** el sandbox no se indexa nunca (robots.txt, noindex en cada página y la cabecera de nginx); el mapa del sitio solo existe en producción y se calcula al pedirlo (el mismo paquete sirve a
+    los dos entornos: nada se decide en el build).
+  - **El Inicio del Super Admin no cambió** (el plan pedía la lista de espera ahí): cambiaría su captura aprobada; la lista está en Crecimiento y en Ciudades, y el Inicio va con 9i y tu OK.
+  - **«Crecimiento» ya no sale «en construcción» en el menú del admin:** la captura aprobada del Inicio del admin (`pruebas/visual/admin-hoy`) puede moverse un poco en escritorio; si el CI la frena, se
+    aprueba la nueva (LAUNCH → 9b).
+- **Prueba:** `cre9h` (95 comprobaciones) pasó dos veces seguidas en una base local nueva (sin Docker) y `alreves9h` cazó 53/53. El mapa del sitio se miró con el servidor local en modo producción: el índice con 2 partes, la parte 0 con 156 direcciones (9 eventos, 17 categorías, 114 artículos de ayuda de vecinos y ninguno de negocio, equipo o puerta) y la parte 1 con los 449 negocios activos. La corrida de verdad es la del CI.

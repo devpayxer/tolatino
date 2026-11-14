@@ -25,7 +25,7 @@ Todo se guarda solo: si sales, vuelves a /publica (también desde otro teléfono
 | Falta algo en el paso | Una nota arriba del botón (p. ej. «FALTA LA DIRECCIÓN») y el botón apagado | Completar. |
 | La foto no es una foto | «Eso no parece una foto. Prueba con otra.» | Elegir otra. |
 | Muchas fotos seguidas (60 en una hora) | «Subiste muchas fotos seguidas. Prueba en un rato.» | Esperar. |
-| Código de promotor | «¿Tienes un código de promotor?» → 60 días de Pro con HZL30 | Escribirlo y «Aplicar». |
+| Código de promotor | «¿Tienes un código de promotor?» → 60 días de Pro con HZL30 o con el código de un promotor. El código propio no vale: «Ese código no existe o ya venció». | Escribirlo y «Aplicar». |
 | Ya publicó | «… ya sale en …» y «Ver mi página» | — |
 
 ## Seguridad y privacidad
@@ -46,4 +46,4 @@ List your business in about 5 minutes, free, with Pro free for 30 days (no card)
 code, pick your category and what you do, answer your category's questions, check what you sell and set prices, add
 where and when, take or choose a cover photo and publish — it goes live right away. Everything saves automatically and
 you can continue from another phone. Photos are cleaned on the server (camera data and GPS location removed). If the
-name already exists we ask whether it's yours. A promoter code (HZL30) gives 60 days of Pro.
+name already exists we ask whether it's yours. A promoter code (HZL30, or a promoter's own code) gives 60 days of Pro; your own code does not count.
