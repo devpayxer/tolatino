@@ -2,7 +2,7 @@
 -- (el guardián mapaDeDatos compara este archivo con lo que sale del mapa). Configuración real, no datos de ejemplo: corre en todos los entornos.
 begin;
 insert into data_map (tabla, columna, rol, accion, set_sql, pendiente_sql, donde_sql, porque, exporta, fusion, fn, derivados, orden) values
-  ('users', 'id', 'persona', 'seudonimizar', '"phone" = null, "first_name" = ''Cuenta borrada'', "last_name" = null, "nick" = null, "photo_url" = null, "email" = null, "email_verified" = false, "phone_verified_at" = null, "zone_id" = null, "viewing_center" = null, "photo_removed_reason" = null, "status_reason" = null, "interests" = ''{}''::jsonb, "status" = ''deleted''', '"phone" is not null or "first_name" is distinct from ''Cuenta borrada'' or "last_name" is not null or "nick" is not null or "photo_url" is not null or "email" is not null or "email_verified" is distinct from false or "phone_verified_at" is not null or "zone_id" is not null or "viewing_center" is not null or "photo_removed_reason" is not null or "status_reason" is not null or "interests" is distinct from ''{}''::jsonb or "status" is distinct from ''deleted''', null, '{"es":"Auditoría: el id queda, el nombre y el teléfono no.","en":"Audit trail: the ID stays, the name and phone do not."}'::jsonb, 'perfil', 'no', 'usuario', false, 10),
+  ('users', 'id', 'persona', 'seudonimizar', '"phone" = null, "first_name" = ''Cuenta borrada'', "last_name" = null, "nick" = null, "photo_url" = null, "email" = null, "email_verified" = false, "phone_verified_at" = null, "zone_id" = null, "viewing_center" = null, "photo_removed_reason" = null, "status_reason" = null, "interests" = ''{}''::jsonb, "legal_state" = null, "status" = ''deleted''', '"phone" is not null or "first_name" is distinct from ''Cuenta borrada'' or "last_name" is not null or "nick" is not null or "photo_url" is not null or "email" is not null or "email_verified" is distinct from false or "phone_verified_at" is not null or "zone_id" is not null or "viewing_center" is not null or "photo_removed_reason" is not null or "status_reason" is not null or "interests" is distinct from ''{}''::jsonb or "legal_state" is not null or "status" is distinct from ''deleted''', null, '{"es":"Auditoría: el id queda, el nombre y el teléfono no.","en":"Audit trail: the ID stays, the name and phone do not."}'::jsonb, 'perfil', 'no', 'usuario', false, 10),
   ('users', 'merged_into', 'persona', 'guardar', null, null, null, '{"es":"Auditoría: el id queda, el nombre y el teléfono no.","en":"Audit trail: the ID stays, the name and phone do not."}'::jsonb, null, 'no', 'usuario', false, 20),
   ('account_changes', 'user_id', 'persona', 'seudonimizar', '"from" = null, "to" = null', '"from" is not null or "to" is not null', null, '{"es":"Auditoría: el id queda, el nombre y el teléfono no.","en":"Audit trail: the ID stays, the name and phone do not."}'::jsonb, 'cambios_de_cuenta', 'no', null, false, 30),
   ('community_profiles', 'user_id', 'persona', 'vaciar', '"bio" = null, "bio_lang" = null, "since_year" = null', '"bio" is not null or "bio_lang" is not null or "since_year" is not null', null, null, 'comunidad_perfil', 'no', null, false, 40),
@@ -279,7 +279,11 @@ insert into data_map (tabla, columna, rol, accion, set_sql, pendiente_sql, donde
   ('account_merges', 'from_user_id', 'persona', 'guardar', null, null, null, '{"es":"Auditoría: el id queda, el nombre y el teléfono no.","en":"Audit trail: the ID stays, the name and phone do not."}'::jsonb, null, 'no', null, false, 2750),
   ('account_merges', 'to_user_id', 'persona', 'guardar', null, null, null, '{"es":"Auditoría: el id queda, el nombre y el teléfono no.","en":"Audit trail: the ID stays, the name and phone do not."}'::jsonb, null, 'no', null, false, 2760),
   ('account_merges', 'requested_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2770),
-  ('account_merges', 'approved_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2780)
+  ('account_merges', 'approved_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2780),
+  ('legal_pages', 'reviewed_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2790),
+  ('legal_pages', 'published_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2800),
+  ('legal_page_log', 'by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 2810),
+  ('legal_acceptances', 'user_id', 'persona', 'guardar', null, null, null, '{"es":"Lo pide la ley: recibos, impuestos y disputas.","en":"The law requires it: receipts, taxes and disputes."}'::jsonb, 'terminos_aceptados', 'no', null, false, 2820)
 on conflict (tabla, columna) do update set rol = excluded.rol, accion = excluded.accion, set_sql = excluded.set_sql, pendiente_sql = excluded.pendiente_sql, donde_sql = excluded.donde_sql,
   porque = excluded.porque, exporta = excluded.exporta, fusion = excluded.fusion, fn = excluded.fn, derivados = excluded.derivados, orden = excluded.orden;
 -- Lo que salió del mapa sale de la tabla (es configuración: el mapa es la fuente).
@@ -561,6 +565,10 @@ delete from data_map d where not exists (select 1 from (values
   ('account_merges', 'from_user_id'),
   ('account_merges', 'to_user_id'),
   ('account_merges', 'requested_by'),
-  ('account_merges', 'approved_by')
+  ('account_merges', 'approved_by'),
+  ('legal_pages', 'reviewed_by'),
+  ('legal_pages', 'published_by'),
+  ('legal_page_log', 'by'),
+  ('legal_acceptances', 'user_id')
 ) v (tabla, columna) where v.tabla = d.tabla and v.columna = d.columna);
 commit;

@@ -5,6 +5,7 @@ import { idioma } from "@/lib/idioma";
 import { menuPublico } from "@/lib/pedir";
 import { misTarjetas, tarjetaDe } from "@/lib/cobros";
 import { pasarela } from "@/lib/pagos/pasarela";
+import { sinAceptarVigente } from "@/lib/legal";
 import { Pagar } from "./Pagar";
 
 export const dynamic = "force-dynamic";
@@ -20,5 +21,6 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   // Tarjeta en la app: si el negocio cobra con tarjeta, el modo de la pasarela, la llave pública y tus tarjetas guardadas.
   const T = await tarjetaDe(id), modo = pasarela.modo();
   const pago = T.on && modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: await misTarjetas(u.id) } : null;
-  return <Pagar m={m} es={lang === "es"} pago={pago} />;
+  // 9e · Si todavía no aceptó la versión vigente de Términos y Privacidad (su primer pedido), la pantalla lo dice y al enviar queda anotado.
+  return <Pagar m={m} es={lang === "es"} pago={pago} acepta={await sinAceptarVigente(u.id).catch(() => false)} />;
 }

@@ -11,6 +11,9 @@ import { LIMITES as LIMITES_FICHAS, SUPERLATIVOS as SUPERLATIVOS_FICHA, salida a
 import { problemas as problemasPrivacidad, salidas as salidasPrivacidad, xcprivacy as xcprivacyDe } from "../apps/mobile/scripts/privacidad.mjs";
 // 9d · El mapa de datos: el guardián revisa lo mismo que se aplica (las filas de data_map, la semilla y los problemas del mapa).
 import { filas as filasMapa, leer as leerMapa, problemas as problemasMapa, semilla as semillaMapa, SEMILLA as SEMILLA_MAPA } from "../scripts/datos/mapa.mjs";
+// 9e · Las páginas legales: el guardián lee docs/legal/ con el MISMO código que el indexador (forma, pares ES/EN, sha256).
+import { paginasLegales } from "../scripts/legal/indexar.mjs";
+import { BORRADOR as BORRADOR_LEGAL, CLAVES as CLAVES_LEGALES } from "../scripts/legal/forma.mjs";
 
 const solo = process.argv.includes("--solo") ? process.argv[process.argv.indexOf("--solo") + 1] : null;
 import { existsSync } from "node:fs";
@@ -2593,6 +2596,23 @@ const guardianes = {
       if (!/raise exception 'store_submissions es solo de inserción'/.test(ultimaFn("store_submissions_antes"))) falla(G, MT, 0, "store_submissions es de solo inserción (trigger)");
       if (!/raise exception 'un pedido de build no se borra'/.test(ultimaFn("build_requests_antes"))) falla(G, MT, 0, "un pedido de build no se borra");
       for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) (ci_oidc_log|store_submissions)\b|\bdelete from (build_requests|app_builds)\b/.test(q)) falla(G, x, 0, "los libros de la tubería no se cambian y un pedido o un build no se borran");
+    }
+    // 9e · Lo legal: legal_acceptances y legal_page_log son de solo inserción; una página legal no se borra (se retira) y su texto no cambia;
+    // aceptar queda anotado UNA vez por persona, negocio y versión (índice único). Solo lib/legal.ts escribe aceptaciones; nadie las cambia.
+    const MLG = "packages/db/migrations/0135_legal.sql";
+    if (existsSync(MLG)) {
+      const mlg = readFileSync(MLG, "utf8");
+      if (!/if tg_op <> 'INSERT' then raise exception 'legal_acceptances es solo de inserción'/.test(ultimaFn("legal_acceptances_antes")) || !/create trigger legal_acceptances_antes before insert or update or delete on legal_acceptances/.test(mlg)) falla(G, MLG, 0, "legal_acceptances es de solo inserción (trigger)");
+      if (!/create trigger legal_page_log_no_cambia before update or delete on legal_page_log for each row execute function legal_solo_insercion\(\)/.test(mlg)) falla(G, MLG, 0, "legal_page_log es de solo inserción (trigger)");
+      if (!/raise exception 'una página legal no se borra/.test(ultimaFn("legal_pages_antes")) || !/raise exception 'el texto de una versión legal no cambia/.test(ultimaFn("legal_pages_antes"))) falla(G, MLG, 0, "una página legal no se borra y el texto de una versión no cambia");
+      if (!/create unique index if not exists legal_acceptances_una_vez on legal_acceptances \(user_id, coalesce\(business_id, ''\), page_key, jurisdiction, version\)/.test(mlg)) falla(G, MLG, 0, "aceptar queda anotado una vez por persona, negocio y versión (índice único)");
+      for (const x of codigo) {
+        if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+        for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) {
+          if (/\b(update|delete from) (legal_acceptances|legal_page_log)\b|\bdelete from legal_pages\b/.test(q)) falla(G, x, 0, `lo legal no se cambia ni se borra: «${q.slice(0, 60)}»`);
+          if (/\binsert into (legal_acceptances|legal_page_log)\b|\bupdate legal_pages\b/.test(q) && x !== "apps/web/lib/legal.ts") falla(G, x, 0, "solo lib/legal.ts escribe lo legal (aceptaciones, libro y estados)");
+        }
+      }
     }
     const m = readFileSync(M, "utf8");
     if (!/create trigger mod_flags_no_cambia before update or delete on mod_flags for each row execute function mod_flags_inmutable\(\)/.test(m) || !/raise exception 'mod_flags es solo de inserción'/.test(m)) falla(G, M, 0, "mod_flags sin el trigger de solo inserción");
@@ -7157,11 +7177,73 @@ const guardianes = {
     }
   },
 
+  /* 9e · legalRevisado (fase9-apertura.md §1c, §3.6, §4 9e): «Nada de lo legal se publica como final sin el abogado». En producción, ninguna
+     página legal «publicado» sin reviewed_by_counsel: (1) la base lo impide (legal_pages_antes) y la base es producción salvo que la semilla del
+     SANDBOX diga lo contrario (legal_entorno() falla cerrada: sin la fila, 'produccion'); (2) esa fila solo la escribe una semilla de
+     infra/pruebas/semilla (nunca el código, una migración ni la Configuración); (3) lib/legal.ts tampoco publica sin revisión con
+     el entorno de producción; (4) solo lib/legal.ts cambia el estado de una página y el indexador nunca publica; (5) con TOLATINO_FASE=9 (el
+     despliegue de la apertura) ningún archivo de docs/legal/ puede seguir diciendo BORRADOR (antes, solo aviso). Al revés: alreves9e. */
+  legalRevisado() {
+    const G = "legalRevisado", M = "packages/db/migrations/0135_legal.sql", L = "apps/web/lib/legal.ts", X = "scripts/legal/indexar.mjs";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración de lo legal");
+    const fn = ultimaFn("legal_pages_antes");
+    if (!/if new\.reviewed_by_counsel is null and legal_entorno\(\) <> 'pruebas' then\s+raise exception 'legal_revisado/.test(fn)) falla(G, M, 0, "la base no deja publicar sin reviewed_by_counsel fuera del sandbox");
+    if (!/select coalesce\(\(select value #>> '\{\}' from platform_config where key = 'entorno'\), 'produccion'\)/.test(ultimaFn("legal_entorno"))) falla(G, M, 0, "legal_entorno() falla cerrada: sin la fila del sandbox, es producción");
+    for (const f of archivos) {
+      if (!/\.(sql|tsx?|mjs|cjs|js|sh|ya?ml)$/.test(f) || f.startsWith("infra/pruebas/semilla/") || f.startsWith("docs/") || f.startsWith("pruebas/") || f === "guardianes/run.mjs") continue;
+      const t = readFileSync(f, "utf8");
+      if (/platform_config[\s\S]{0,200}'entorno'|'entorno'[\s\S]{0,40}platform_config/.test(t) && !/key = 'entorno'\), 'produccion'/.test(t)) falla(G, f, 0, "platform_config «entorno» lo escribe solo la semilla del sandbox (infra/pruebas/semilla)");
+      if (/^\s*\('entorno',/m.test(t) && /insert into config_keys/.test(t)) falla(G, f, 0, "«entorno» no es una clave de Configuración");
+    }
+    if (!existsSync(L)) return falla(G, L, 0, "falta lib/legal.ts");
+    if (!/if \(ENTORNO === "produccion" && !v\.reviewed_by_counsel\) return \{ ok: false/.test(cuerpoFn(sinComent(L), "publicarLegal"))) falla(G, L, 0, "publicarLegal no publica sin revisión en el entorno de producción");
+    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== L && /\bupdate legal_pages\b|status = 'publicado'/.test(sinComent(f))) falla(G, f, 0, "solo lib/legal.ts publica una página legal");
+    if (existsSync(X) && /publicado|published_by/.test(sinComent(X))) falla(G, X, 0, "el indexador nunca publica: publicar es del Super Admin");
+    const borr = paginasLegales().paginas.filter((p) => p.es.meta?.estado === BORRADOR_LEGAL || p.en.meta?.estado === BORRADOR_LEGAL);
+    if (borr.length) {
+      const msg = `${borr.length} página(s) de docs/legal/ siguen en BORRADOR (${borr.map((p) => `${p.jur}/${p.clave}`).join(", ")}): el abogado las revisa en 9s`;
+      if (process.env.TOLATINO_FASE === "9") falla(G, "docs/legal", 0, msg); else avisos.push(`[${G}] ${msg} (solo aviso hasta TOLATINO_FASE=9)`);
+    }
+  },
+
+  /* 9e · legalUnaFuente (fase9-apertura.md §3.6, §4 9e): el texto legal vive SOLO en docs/legal/ (con la forma de scripts/legal/forma.mjs, los
+     dos idiomas y la página general de cada adenda) y llega a la web por lib/legal.ts. Cada página tiene su ruta pública, que pinta
+     <PaginaLegal clave="…"> y nada más escrito a mano; ningún .ts/.tsx de apps/ o packages/ copia un trozo de un texto legal (16 palabras
+     seguidas iguales). Al revés: alreves9e. */
+  legalUnaFuente() {
+    const G = "legalUnaFuente";
+    const { errores, paginas } = paginasLegales();
+    for (const e of errores) falla(G, "docs/legal", 0, e);
+    for (const k of CLAVES_LEGALES) {
+      if (!paginas.some((p) => p.jur === "us" && p.clave === k)) falla(G, `docs/legal/us/${k}.es.md`, 0, `falta la página «${k}» (español e inglés) en docs/legal/us/`);
+      const R = `apps/web/app/(app)/${k}/page.tsx`;
+      if (!existsSync(R)) { falla(G, R, 0, `falta la ruta pública /${k}`); continue; }
+      const r = sinComent(R);
+      if (!new RegExp(`<PaginaLegal clave="${k}" searchParams=\\{searchParams\\}`).test(r)) falla(G, R, 0, `/${k} pinta <PaginaLegal clave="${k}"> (el texto sale de docs/legal/)`);
+      for (const m of r.matchAll(/(["'`])((?:(?!\1)[^\\\n]|\\.){160,})\1/g)) falla(G, R, 0, `texto largo escrito en la ruta legal: «${m[2].slice(0, 50)}…» (va en docs/legal/)`);
+    }
+    const P = "apps/web/app/(app)/_legal/PaginaLegal.tsx";
+    if (!existsSync(P) || !/paginaPara\(/.test(sinComent(P))) falla(G, P, 0, "la página legal lee su texto con paginaPara (lib/legal.ts)");
+    // 16 palabras seguidas de un texto legal en el código = el texto se copió (las líneas fijas del producto que un texto legal cita, más cortas, no cuentan).
+    const norm = (t) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\[([^\]]+)\]\([^)]*\)/g, "$1").replace(/[^a-z0-9ñ]+/g, " ").trim();
+    const N = 16, tejas = new Set();
+    for (const p of paginas) for (const l of ["es", "en"]) { const w = norm(`${p[l].lead}\n${p[l].cuerpo}`).split(" "); for (let i = 0; i + N <= w.length; i++) tejas.add(w.slice(i, i + N).join(" ")); }
+    for (const f of codigo) {
+      if (!/^(apps|packages)\/.*\.(tsx?|jsx?)$/.test(f) || /^packages\/ui\/src\/ds\//.test(f)) continue;
+      for (const m of readFileSync(f, "utf8").matchAll(/(["'`])((?:(?!\1)[^\\\n]|\\.){50,})\1/g)) {
+        const w = norm(m[2]).split(" ");
+        for (let i = 0; i + N <= w.length; i++) if (tejas.has(w.slice(i, i + N).join(" "))) { falla(G, f, 0, `copia un texto legal («${w.slice(i, i + N).join(" ").slice(0, 60)}…»): el texto vive solo en docs/legal/`); break; }
+      }
+    }
+  },
+
   idioma() {
     for (const f of codigo) {
       if (!/layout\.tsx$/.test(f)) continue;
       if (/lang=["']en/.test(readFileSync(f, "utf8"))) falla("idioma", f, 0, "el idioma por defecto es es-US");
     }
+    // 9e · Cada página legal va en español Y en inglés, con las mismas secciones (scripts/legal/forma.mjs parejaLegal).
+    for (const e of paginasLegales().errores) if (/van los dos idiomas|secciones|mismos puntos|fecha y el estado/.test(e)) falla("idioma", "docs/legal", 0, e);
   },
 };
 

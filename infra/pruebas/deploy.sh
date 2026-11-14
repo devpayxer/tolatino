@@ -69,6 +69,13 @@ docker run --rm --network none -v "$REPO":/repo:ro -w /repo node:22-alpine node 
   | docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt \
   || log "ayuda: no se pudo indexar docs/ayuda (el Centro de ayuda queda como estaba)"
 
+# 3c-ter) Páginas legales (9e): docs/legal/ → legal_pages, igual que la ayuda. Un archivo que cambió es una versión NUEVA en borrador (el texto
+#     de una versión nunca cambia); lo mismo otra vez no cambia nada (sha256). Publicar es del Super Admin (Textos y páginas › Páginas), nunca
+#     de este paso. Si falla, la app sigue arriba con las versiones de antes.
+docker run --rm --network none -v "$REPO":/repo:ro -w /repo node:22-alpine node scripts/legal/indexar.mjs \
+  | docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt \
+  || log "legal: no se pudo indexar docs/legal (las páginas legales quedan como estaban)"
+
 # 3d) Mapa: teselas propias de Pensilvania. Generarlas tarda minutos: si faltan, se hacen aparte (systemd-run) y al
 #     terminar se enciende el servidor de teselas. El despliegue de la app nunca espera por el mapa.
 MAPA=/var/lib/tolatino/mapa

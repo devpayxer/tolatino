@@ -4404,3 +4404,44 @@ Todo sale de **un solo mapa de datos** (`packages/db/mapa-de-datos.json`): por c
     del panel. El ícono de «Ver como» es la lupa (el sistema no tiene un ojo).
   - **La ayuda del negocio va en su propio artículo** (`panel-exportar-los-datos`): cada artículo es de una sola audiencia.
 - **Prueba:** `datos9d` (61 comprobaciones) y `alreves9d` (23/23) pasaron en una base local; la corrida de verdad es la del CI.
+
+### 9e · Las páginas legales, aceptar los términos nuevos y la web legal (14 nov)
+**Qué es (en sencillo):** las once páginas legales (Términos, Privacidad, Cookies, Reglas de la Comunidad, Cómo verificamos, Votos, Seguridad, Inteligencia
+artificial, Derechos de autor, Vivienda justa y Accesibilidad) se leen sin cuenta, en español y en inglés, con su versión y lo que aplica en Pennsylvania debajo.
+El texto vive en el repo (`docs/legal/`) y cada despliegue lo lee como la ayuda: un cambio es una versión nueva en borrador. Lo que alguien acepta queda
+anotado con su versión. Cuando el equipo publica una versión que pide aceptar otra vez, quien entra ve una hoja con lo que cambió.
+**Lo más importante: el texto final es del abogado.** Lo que lees ahora lo escribí yo como **BORRADOR — pendiente de revisión legal**, sacado de lo que el
+producto hace hoy; cada hueco que solo él puede llenar dice «[pendiente: …]». En el Paquete 9-2 (bloque 9s) se le manda la lista; con su revisión el texto
+pasa a «revisado» y se publica. En producción la base no deja publicar una página sin esa revisión, y el día de abrir el build no pasa con un BORRADOR.
+- **Qué mirar (en el sandbox):**
+  1. Sin entrar, abre **/terminos** en el teléfono: arriba «BORRADOR · VERSIÓN 1», cada sección en su tarjeta, **«Lo que aplica en Pennsylvania»** abajo y el pie
+     oscuro con todas las páginas. Toca **Read in English**. Haz lo mismo con /privacidad (al final: los datos del inventario y **«Qué pasa con cada dato al
+     borrar tu cuenta»**), /cookies, /reglas, /verificamos, /votos, /seguridad, /ia, /dmca, /vivienda-justa y /accesibilidad. Lee el texto: si algo no es lo
+     que hace To'Latino, dímelo.
+  2. Entra con una cuenta nueva, pide algo en Sabor Dominicano: en el pago sale **«Al enviar el pedido aceptas los Términos y la Privacidad de To'Latino»**. En Mi
+     cuenta › Ajustes › Privacidad › **Términos que aceptaste** aparecen los Términos de uso y la Privacidad con su versión. En el segundo pedido ya no sale la línea.
+  3. **Publica tu negocio**: el último paso («Una foto y listo») dice «Al publicar aceptas los Términos y la Privacidad de To'Latino para negocios».
+  4. Super Admin (570-555-0199) › **Textos y páginas** › pestaña **Páginas**: la lista, y en Términos de uso las versiones con **Diferencias**, **Marcar revisada**
+     (despacho y fecha), **Publicar** (en Términos y Privacidad: «¿Pide aceptar otra vez?») y **Retirar**. Las aceptaciones se ven solo como cifras.
+  5. Publica una versión con «Sí» (en el sandbox se puede sin abogado), y entra con otra cuenta: en **Inicio** sale la hoja **«Aceptar los términos nuevos»** (lo que
+     cambió, «Leer completo», «Acepto», «Ahora no»). Si tenías un pedido abierto, ábrelo antes: ahí no sale. Al terminar, **Retira** esa versión (nada se borra).
+- **Decisiones que tomé (si prefieres otra, se cambia):**
+  - **La hoja sale en Inicio y en Hoy del panel**, nunca en otra pantalla (así no tapa un pedido, una cita o un boleto en curso), y tiene **«Ahora no»**: vuelve la
+    próxima vez que llegues al inicio. Si prefieres que no se pueda seguir sin aceptar, se quita «Ahora no».
+  - **Qué se acepta:** Términos y Privacidad (la general y la de Pennsylvania). Solo esas dos pueden pedir aceptar otra vez; las Reglas de la Comunidad siguen con
+    su aceptación de siempre al entrar a la Comunidad.
+  - **Dónde se anota:** Publica tu negocio, el primer pedido de comida y la hoja, como dice el plan. El registro («Al seguir aceptas…» en /entrar) y la primera
+    cita, reserva o boleto todavía no anotan nada: quedó en LAUNCH para que el abogado diga qué acto obliga.
+  - **En el sandbox, mientras nada está publicado, se ve y se acepta el borrador** (marcado BORRADOR; «Términos que aceptaste» dice «borrador»). En producción solo
+    lo publicado; si no hay nada publicado, la página dice «Esta página se está revisando».
+  - **Cómo sabe la base que es el sandbox:** la semilla del sandbox (0053) escribe «entorno = pruebas»; sin esa fila la base se porta como producción (falla
+    cerrada). Producción nunca corre esa semilla.
+  - **Una fila por versión con los dos idiomas** (el plan decía una por idioma): así una versión es siempre el mismo texto en español y en inglés, y se acepta una vez.
+  - **Las claves son las rutas en español** (terminos, privacidad, vivienda-justa…) en vez de terms, privacy…; «Términos de la Comunidad» va dentro de Reglas.
+  - **Permisos:** ver con Textos y páginas · ver; marcar la revisión con · editar; publicar y retirar con · aprobar (hoy solo el Admin). No agregué una sección
+    nueva al Super Admin: Páginas es una pestaña de Textos y páginas.
+  - **Piezas sin diseño, compuestas con lo que existe:** la página legal es la plantilla «To'Latino Página» (APP-WEB); el pie es `SiteFooter` del sistema; la hoja
+    se compuso como las otras hojas (velo, asa, ícono, título, botones del sistema); la pestaña Páginas con las piezas del Super Admin (filas, KPIs, confirmar con
+    motivo). El pie solo sale en las páginas legales: ponerlo en Inicio, la ficha y Buscar cambia capturas aprobadas (queda en LAUNCH → 9f, con tu OK).
+  - **El Super Admin de Páginas está en español**, como el resto del Super Admin (el inglés del Super Admin es de 9f).
+- **Prueba:** `leg9e` (72 comprobaciones) pasó dos veces seguidas en una base local y `alreves9e` (18/18); la corrida de verdad es la del CI.

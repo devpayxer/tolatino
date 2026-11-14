@@ -1654,3 +1654,47 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   regresión entera** ni la matriz de 9 dispositivos: eso es del CI (LAUNCH «Fase 9 · 9d»).
 - **No cerrado, con destino (LAUNCH «Fase 9 · 9d»):** el aviso `cuenta_borrada` y la retención de `phone_messages` (9l), Términos de uso con versión y /privacidad
   desde el mapa (9e), «Cuenta borrada» en inglés (9f), pedir el archivo con la llave de acceso y el tope de 20 000 filas por parte (9m), la corrida del CI (9b).
+
+## Fase 9 · 9e — legales por estado, aceptar los términos nuevos y la web legal (14 nov)
+- **Hecho (rama local `fase9-9e`, sobre b5ff90a):**
+  - **El repo es la fuente**, como la ayuda: `docs/legal/{us,us-pa}/{clave}.{es,en}.md` (14 páginas: las 11 generales y las adendas de PA de Términos, Privacidad
+    y Vivienda justa), BORRADOR de Claude, sobrios, sacados de lo que el producto hace (el inventario, el mapa de datos, las cookies reales, las reglas de la
+    Comunidad, la ayuda), con cada hueco del abogado marcado «[pendiente: …]». Forma única en `scripts/legal/forma.mjs` (título, metadatos con el estado del
+    texto, resumen, «Lo que cambió» de 1 a 3 puntos, secciones; ES y EN con las mismas secciones; solo enlaces internos).
+  - **Migración `0135_legal.sql`:** `legal_pages` (una fila por versión con los dos idiomas: título, resumen, cuerpo, lo que cambió, sha256, de dónde sale;
+    borrador → revisado con `reviewed_by_counsel` → publicado con quién, cuándo, motivo, `effective_at` y `force_accept` (solo Términos y Privacidad) →
+    retirado; el texto de una versión nunca cambia; nada se borra); `legal_page_log` y `legal_acceptances` (solo inserción; una vez por persona, negocio y
+    versión; solo se acepta lo publicado, o en el sandbox lo que se ve); `users.legal_state`; `legal_indexar` / `legal_retirar` / `legal_vigente` /
+    `legal_entorno` (falla cerrada: sin la fila «entorno = pruebas» de la semilla 0053, la base es producción y no publica sin el abogado). Aplicada dos
+    veces (migrar.sh y el archivo a mano otra vez): la segunda no cambia nada.
+  - **Servidor:** `scripts/legal/indexar.mjs` (sha256 de los dos idiomas; lo mismo otra vez = «iguales»; un cambio = versión nueva en borrador; lo que ya no
+    está y no se publicó = retirado; nunca publica) en `deploy.sh` (3c-ter, después de la ayuda; si falla, la app sigue), `pruebas/servir/base.sh` y un paso
+    del CI (dos veces, y sin la semilla del sandbox publicar sin revisión → `legal_revisado`). `lib/legal.ts`: `paginaPara(persona, clave)` (la general y la
+    adenda del estado), `aceptar` / `aceptarEn` (la versión vigente; con la hoja, solo la que se vio), `faltaAceptar`, `sinAceptarVigente` y lo del Super
+    Admin (`paginasAdmin`, `versionesAdmin`, `diferencias`, `marcarRevisada`, `publicarLegal` —en producción solo revisada, aquí y en la base—, `retirarLegal`;
+    libro y auditoría en la misma transacción). El mapa de datos suma `legal_acceptances` (se guarda por ley; archivo `terminos_aceptados`), `legal_pages`,
+    `legal_page_log` (equipo) y `users.legal_state` (se vacía al purgar).
+  - **Pantallas:** las once rutas públicas (`app/(app)/{clave}/page.tsx` → `_legal/PaginaLegal.tsx`, plantilla «To'Latino Página»: rótulo, título, resumen,
+    versión y vigencia o BORRADOR, una tarjeta por sección, la adenda de PA, «Más en …», «¿No encontraste lo que buscas?» y el pie `SiteFooter` con todas);
+    `/privacidad` con su texto de docs/legal y debajo los datos del inventario y «Qué pasa con cada dato al borrar tu cuenta» (`privacidadDelMapa`). La hoja
+    «Aceptar los términos nuevos» (`HojaTerminos`, hueco #5) en Inicio y en Hoy del panel. Pagar dice «Al enviar el pedido aceptas…» en el primer pedido y lo
+    anota; Publica tu negocio lo dice en el último paso y lo anota en su transacción (con el negocio). «Términos que aceptaste» (9d) suma `legal_acceptances`.
+    Super Admin › Textos y páginas › **Páginas** (`/admin/textos/paginas`). Todo compuesto con piezas existentes (REVISION 9e).
+  - **Guardianes:** **`legalRevisado`** (la base no publica sin revisión fuera del sandbox; `legal_entorno` falla cerrada; la fila «entorno» solo la escribe la
+    semilla del sandbox; `publicarLegal` no publica sin revisión en producción; el indexador nunca publica; con TOLATINO_FASE=9 un BORRADOR en docs/legal
+    rompe el build, antes solo avisa), **`legalUnaFuente`** (forma y pares ES/EN; cada clave con su página y su ruta que pinta `<PaginaLegal>`; ningún .ts/.tsx
+    copia 16 palabras seguidas de un texto legal), `libroSoloInsercion` (aceptaciones y libro de solo inserción, una vez por versión, solo `lib/legal.ts` las
+    escribe), `idioma` (cada página legal en los dos idiomas con las mismas secciones). Al revés: **`alreves9e` 18/18**; `alreves8i` y `alreves9d` siguen en verde.
+  - **Prueba nueva `leg9e`** (72 ✓): las once páginas sin sesión en ES y EN, la adenda de PA, el pie con las once, /privacidad con el inventario y el mapa; el
+    primer pedido y Publica tu negocio anotan; una versión nueva publicada desde el Super Admin con «pide aceptar otra vez» → la hoja en Inicio (no encima del
+    pedido abierto, que sigue igual), «Acepto» anotado una vez (la fila repetida la rechaza la base; una aceptación no se cambia), «Términos que aceptaste»,
+    aceptaciones solo en cifras; en modo producción simulado publicar sin revisión → rechazado (pantalla y base), con la revisión del abogado → publicado;
+    retirar. Lo que publica lo retira al terminar. `fich8i` al día con la /privacidad nueva.
+  - **Ayuda:** `terminos-y-privacidad` (vecino), `panel-terminos-y-privacidad` (negocio; cada artículo es de una audiencia) y `admin-paginas-legales` (equipo).
+- **Probado aquí (sin Docker: Postgres 16 + PostGIS de la máquina, un S3 de mentira, Chrome del sistema, perfil `basico`, en :3110):** `node guardianes/run.mjs` →
+  «sin fallos»; `tsc --noEmit` limpio; `pnpm build` en verde; 0135 dos veces sin cambios; el indexador dos veces («14 nuevas» y luego «14 iguales»);
+  **`leg9e` 72 ✓ dos veces seguidas** en la misma base; `alreves9e` 18/18; `datos9d` 61 ✓; `alreves8i` 49 ✓ y `alreves9d` 23/23. `fich8i` no corre entera en
+  local (pide los simuladores de las tiendas y los documentos de Google): su paso 1 (/privacidad) se comprobó aparte con las mismas aserciones (8 ✓).
+  **No se corrió la regresión entera** ni la matriz de 9 dispositivos: eso es del CI (LAUNCH «Fase 9 · 9e»).
+- **No cerrado, con destino (LAUNCH «Fase 9 · 9e»):** el texto final de las 14 páginas y el agente DMCA (9s, el abogado), dónde más se anota la aceptación (9s),
+  el pie en todas las páginas y Páginas en inglés (9f), la corrida del CI (9b) y el índice legal en producción (9t).

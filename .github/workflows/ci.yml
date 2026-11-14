@@ -111,6 +111,20 @@ jobs:
           test "$(Q "select count(*) from help_chunks c join help_articles a using (slug) where a.audience = 'equipo' and c.audience <> 'equipo'")" = "0"
           test -n "$(Q "select slug from help_chunks where tsv @@ ayuda_consulta('devolución', 'es') and audience = 'vecino' limit 1")"
           test -n "$(Q "select slug from help_chunks where tsv @@ ayuda_consulta('refund', 'en') and audience = 'vecino' limit 1")"
+      - name: Páginas legales indexadas (dos veces; la segunda no cambia nada y sin la semilla del sandbox nada se publica sin revisión)
+        env: { POSTGRES_PASSWORD: ci, TOLATINO_COMMIT: ci }
+        run: |
+          C="docker compose -p ci -f infra/pruebas/docker-compose.yml"
+          Q() { $C exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt -c "$1"; }
+          node scripts/legal/indexar.mjs | $C exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt
+          n1=$(Q "select count(*) from legal_pages")
+          out=$(node scripts/legal/indexar.mjs | $C exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt); echo "$out"
+          echo "$out" | grep -q " 0 nuevas · 0 cambiadas"
+          test "$(Q "select count(*) from legal_pages")" = "$n1"
+          test "$(Q "select count(*) from legal_pages where status = 'borrador'")" = "$(ls docs/legal/*/*.es.md | wc -l)"
+          test "$(Q "select legal_entorno()")" = "produccion"
+          if err=$(Q "update legal_pages set status = 'publicado', published_by = (select id from users limit 1), published_at = now(), publish_reason = 'ci' where key = 'terminos' and jurisdiction = 'us'" 2>&1); then echo "✗ se publicó sin revisión en una base sin la semilla del sandbox"; exit 1; fi
+          echo "$err" | grep -q "legal_revisado"
       - name: La semilla del sandbox se puede volver a aplicar con el sandbox ya usado
         # Guardián (5 nov): la semilla borraba fotos que un «Reportar foto» ya referenciaba y fallaba. Se aplica, se
         # simula uso real (reporte de foto, guardado, lista de espera) y se vuelve a aplicar con la semilla cambiada.
