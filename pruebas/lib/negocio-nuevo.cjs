@@ -102,11 +102,11 @@ function tarjeta(tel, l4 = '4242', { predeterminada = true } = {}) {
    regresión (pedidos, citas, inscripciones, fiestas, viajes, boletos, El Compa…): en una sola corrida pasaba el tope y la sexta prueba veía
    «Abriste muchas solicitudes hoy». Antes de abrir la suya, cada prueba corre 1 día hacia atrás las de ESA persona de las últimas 24 h (solo
    created_at, que es lo único que mira el tope; nada se borra ni cambia de estado). El tope en sí todavía no tiene su prueba (LAUNCH, 9b).
-   9b-3 · Lo mismo con los mensajes de El Compa (compa_msgs_hora = 20, compa_msgs_dia = 60 por persona; lib/compa/conversacion.ts): barajada,
+   9b-3 · Lo mismo con los mensajes de El Compa (compa_msgs_hora = 20, compa_msgs_dia = 60 por persona; lib/compa/conversacion.ts; el libro es solo inserción: se corre como compa7c, en modo réplica): barajada,
    compa7c le deja a Marisol los suyos y la hoja de ayuda de ayu4g/ayu4z contestaba «llegaste al límite» en vez de abrir el formulario. */
 function sinTopeDeAyuda(tel) {
   sql(`update help_requests set created_at = created_at - interval '1 day' where user_id = (select id from users where phone = '+1${tel}') and created_at > now() - interval '1 day'`);
-  sql(`update compa_messages set at = at - interval '2 days' where user_id = (select id from users where phone = '+1${tel}') and sender = 'user' and at > now() - interval '1 day'`);
+  sql(`set session_replication_role = replica; update compa_messages set at = at - interval '2 days' where user_id = (select id from users where phone = '+1${tel}') and sender = 'user' and at > now() - interval '1 day'`);
 }
 /* El estado del SMS que la app le pone AHORA a un aviso de esa plantilla en modo pruebas, con la regla del servidor (lib/avisos.ts): lo
    crítico (y biz_req) siempre sale («pruebas»); lo demás, entre las 10 PM y las 7 AM de Hazleton, espera («silencio»). Antes las pruebas

@@ -7130,6 +7130,20 @@ const guardianes = {
     if (existsSync(M)) { const m = readFileSync(M, "utf8"); if (!/raise exception 'el archivo se baja una sola vez'/.test(m) || !/raise exception 'una exportación bajada, vencida o fallida no vuelve'/.test(m)) falla(G, M, 0, "la base: se baja una sola vez y no vuelve"); }
   },
 
+  /* 9b-3 · Un ayudante compartido de las pruebas (pruebas/lib) no cambia un libro de solo inserción sin el modo réplica: sinTopeDeAyuda corría
+     compa_messages con un update simple, la base lo rechazó («es solo de inserción») y 15 pruebas cayeron en la misma línea. Las tablas salen de
+     los disparadores de las migraciones. (En pruebas/e2e un update así suele ser a propósito: comprueba que la base lo rechaza.) Al revés: alreves9b3. */
+  libroEnAyudantes() {
+    const G = "libroEnAyudantes", tabs = new Set();
+    for (const f of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql"))) for (const m of readFileSync(`packages/db/migrations/${f}`, "utf8").matchAll(/'(\w+) es solo de inserci[oó]n/g)) tabs.add(m[1]);
+    if (!tabs.has("compa_messages")) falla(G, "packages/db/migrations", 0, "no encontré los libros de solo inserción en las migraciones");
+    for (const y of readdirSync("pruebas/lib").filter((x) => /\.c?js$/.test(x))) {
+      const f = `pruebas/lib/${y}`, t = readFileSync(f, "utf8");
+      for (const m of t.matchAll(/`[^`]*`/g)) for (const tb of tabs)
+        if (new RegExp(`\\b(update|delete from)\\s+${tb}\\b`).test(m[0]) && !/session_replication_role\s*=\s*replica/.test(m[0])) falla(G, f, t.slice(0, m.index).split("\n").length, `cambia ${tb} (solo inserción) sin «set session_replication_role = replica»: la base lo rechaza y cae cada prueba que usa este ayudante`);
+    }
+  },
+
   idioma() {
     for (const f of codigo) {
       if (!/layout\.tsx$/.test(f)) continue;

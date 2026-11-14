@@ -49,6 +49,8 @@ const casos = [
   // tarjetaPropia: fie4v deja de guardarle su tarjeta a Marisol y comprueba el depósito retenido igual
   // capturaSinHora: la ficha de Sabor Dominicano se captura sin abrir el negocio (de noche sale cerrada)
   ['capturaSinHora', 'pruebas/visual/pantallas.json', '"abiertos": ["sabor-dominicano"]', '"abiertos": []'],
+  // libroEnAyudantes: sinTopeDeAyuda vuelve a correr los mensajes de El Compa sin el modo réplica
+  ['libroEnAyudantes', 'pruebas/lib/negocio-nuevo.cjs', "set session_replication_role = replica; update compa_messages", "update compa_messages"],
   ['tarjetaPropia', 'pruebas/e2e/fie4v.cjs', "  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');\n", ''],
 ];
 const crear = [

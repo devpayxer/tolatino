@@ -35,7 +35,7 @@ async function reservar(p, svc, { pax = 2, card = true, horasMin = 1 } = {}) {
   await p.getByText('BUENO SABER').first().waitFor();
   const btn = await vis(p.getByRole('button', { name: /^(Anotarme|Enviar solicitud)$/ }));
   await btn.click();
-  await p.waitForURL(/\/noche\/N-\d+/, { timeout: 15000 });
+  await p.waitForURL(/\/noche\/N-\d+/, { timeout: 15000 }).catch(async (e) => { throw new Error('no se abrió la reserva · la página dice: ' + (await p.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 500) + ' · ' + String(e.message).split('\n')[0]); });
   return p.url().match(/N-\d+/)[0];
 }
 (async () => {

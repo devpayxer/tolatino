@@ -143,9 +143,11 @@ const chicos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=butt
     const manana = +sql(`select extract(dow from (now() at time zone 'America/New_York')::date + 1)`);
     await m.goto(B + N + '?tab=rsv');
     const tab = m.locator('[data-screen-label="Ficha · reservaciones"]').first(); await tab.getByText('¿Cuántos son?').waitFor();
-    snap = await arbol(m);
-    ok(/radio "[A-ZÁÉÍÓÚ]{3} \d+"/.test(snap) || (await tab.getByText(DOW[manana], { exact: true }).count()) > 0, 'árbol: los días de la reserva son radios con su nombre («MAR 17»)');
     await act(m, tab.getByText('2', { exact: true }), 'Space');
+    // Los días salen después de elegir cuántos son (primera corrida: se miraban antes y no estaban).
+    await tab.locator('[role=radio]').filter({ hasText: DOW[manana] }).first().waitFor({ timeout: 10000 }).catch(() => {});
+    snap = await arbol(m);
+    ok(/radio "[A-ZÁÉÍÓÚ]{3} \d+"/.test(snap), 'árbol: los días de la reserva son radios con su nombre («MAR 17»)' + (/radio "[A-ZÁÉÍÓÚ]{3} \d+"/.test(snap) ? '' : ' · árbol: ' + snap.split('\n').filter((l) => /radio/.test(l)).slice(0, 6).join(' | ')));
     await act(m, tab.locator('[role=radio]').filter({ hasText: DOW[manana] }).first());
     await tab.getByText(/^ALMUERZO ·/).waitFor();
     await act(m, tab.locator('[role=radio][aria-label="1:00 PM"]').first());

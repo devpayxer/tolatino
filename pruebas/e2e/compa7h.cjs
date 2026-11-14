@@ -56,6 +56,8 @@ const interno = (body) => fetch(B + '/api/interno/compa', { method: 'POST', head
 const HOY = `extract(dow from now() at time zone 'America/New_York')::int`;
 
 (async () => {
+  // 9b-3 · Barajada, otras pruebas le dejaban a Marisol lleno el tope de mensajes de El Compa (20 por hora) y su SMS de noche salía como «límite».
+  for (const x of [MARI, YARI, HECTOR]) require('../lib/negocio-nuevo.cjs').sinTopeDeAyuda(x);
   // ── Preparar: todo encendido, sin pausas, límites holgados; las entradas y mensajes de corridas anteriores a hace 2 días (solo esta base) ──
   const AU = uid(ADM), MU = uid(MARI), YU = uid(YARI), HU = uid(HECTOR);
   sql(`update feature_flags set enabled = true where key like 'compa.%'`);
@@ -302,7 +304,7 @@ const HOY = `extract(dow from now() at time zone 'America/New_York')::int`;
   sql(`update users set home_city_id = 'rdg' where id = '${MU}'`); sql(`update cities set timezone = '${noche}' where id = 'rdg'`);
   cfg('compa_canal_respuesta_min', 0); await dormir(16000);
   const q1 = await sms(MARI, '¿cómo reservo una mesa?');
-  ok(q1.out[0]?.s === 'silencio', 'de noche en su ciudad, con «respuesta a tiempo» = 0: no sale («silencio»)');
+  ok(q1.out[0]?.s === 'silencio', 'de noche en su ciudad, con «respuesta a tiempo» = 0: no sale («silencio»)' + (q1.out[0]?.s === 'silencio' ? '' : ' · salió: ' + JSON.stringify(q1).slice(0, 300)));
   sql(`update cities set timezone = '${dia}' where id = 'rdg'`);
   const q2 = await sms(MARI, '¿cómo reservo una mesa?'); ok(q2.out[0]?.s === 'simulado', 'de día: sale');
   sql(`update cities set timezone = '${noche}' where id = 'rdg'`);

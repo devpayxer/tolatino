@@ -19,13 +19,14 @@ const EDU = 'ingles-para-todos', NIN = 'guarderia-mis-angelitos';
   const ad = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); await entrar(ad, '5705550199');
   ad.on('pageerror', (e) => err.push(e.message));
 
+  // 9b-3 · La matrícula de ins4e se pide ANTES de mirar la pestaña (barajada en una base nueva, la pestaña estaba vacía).
+  const I = requiere('ins4e', () => sql(`select o.number from operations o join payments p on p.operation_id = o.id and p.kind = 'deposit' where o.kind = 'enrollment' and p.status in ('captured', 'partially_refunded') and p.amount_cents - p.refunded_cents >= 1000 order by o.id desc limit 1`), { que: 'una matrícula cobrada' });
   // ── Transacciones › Inscripciones ──
   await ad.goto(B + '/admin/transacciones?tab=insc');
   ok(await espera(ad.getByText(/^Inscripción I-\d+ · /).first()), 'pestaña Inscripciones con inscripciones');
   ok(await espera(ad.getByText(/Educación · Preparación para ciudadanía/).first()), 'dice el rubro y el curso');
   ok(!(await ad.content()).includes('Valentina'), 'nunca el nombre de un niño en Transacciones');
   await ad.screenshot({ path: OUT + 'g4g-tx-d.png', fullPage: true });
-  const I = requiere('ins4e', () => sql(`select o.number from operations o join payments p on p.operation_id = o.id and p.kind = 'deposit' where o.kind = 'enrollment' and p.status in ('captured', 'partially_refunded') and p.amount_cents - p.refunded_cents >= 1000 order by o.id desc limit 1`), { que: 'una matrícula cobrada' });
   ok(/^I-\d+$/.test(I), `una matrícula cobrada para devolver: ${I}`);
   const R0 = Number(sql(`select refunded_cents from payments p join operations o on o.id = p.operation_id where o.number = '${I}' and p.kind = 'deposit'`));
   await ad.goto(B + `/admin/transacciones?tab=insc&q=${I}`); await ad.getByText(new RegExp(`Inscripción ${I}`)).first().waitFor();

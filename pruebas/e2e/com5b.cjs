@@ -87,7 +87,8 @@ const pill = (card) => card.locator('div[style*="height: 34px"], div[style*="hei
   await clic(resp.getByText('Responder', { exact: true }));
   ok(await espera(async () => (await bp.getByLabel('Tu respuesta').inputValue()) === '@Marisol ') && await contiene(bp, 'Respondiendo a Marisol P.'), 'responder a una respuesta: «@Marisol» y «Respondiendo a Marisol P.»');
   await bp.getByLabel('Tu respuesta').fill(`@Marisol Sí, de 9 a 1 ${TAG}`);
-  await clic(bp.getByRole('button', { name: 'Responder', exact: true }));
+  // 9c · El «Responder» de cada comentario ahora también es un botón con ese nombre: se toca el de enviar (el de la caja, con su aria-label).
+  await clic(bp.locator('[role=button][aria-label="Responder"]'));
   ok(await espera(() => sql(`select count(*) from com_comments where parent_id = ${CB} and reply_to_id = ${RC1} and author_user_id = '${RB}'`) === '1'), 'la respuesta a la respuesta: misma raíz y reply_to');
   const RB2 = sql(`select id from com_comments where parent_id = ${CB} and reply_to_id = ${RC1}`);
   ok(await espera(() => avisos(RC, 'com_mention', RB2) === '1' && avisos(RA, 'com_comment', RB2) === '1') && sql(`select count(*) from com_mentions where comment_id = ${RB2} and user_id = '${RC}'`) === '1',

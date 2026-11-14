@@ -1565,7 +1565,12 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   - **Las capturas de los teléfonos fallaban de noche (corrida 43549458698):** la ficha y el panel de Sabor Dominicano se aprobaron abiertos; a las
     10 PM de Hazleton salían «Cerrado · abre mañana» y lo de abajo se corría (2–6 % distinto). No era 9c. `correr.mjs` deja abiertos hoy los
     negocios de `pantallas.json` «abiertos» mientras captura y devuelve el horario al final. Guardián `capturaSinHora`.
-  - Al revés: alreves9b3 24/24. La confirmación nueva corre sobre la punta con 9c (una sola corrida para los dos).
+  - **Cuarta confirmación (corrida 43549458698, con 9c):** 15 rojos cayeron en una línea: `sinTopeDeAyuda` corría `compa_messages` (solo inserción)
+    sin el modo réplica → ahora como compa7c; guardián `libroEnAyudantes`. Además: com5b tocaba el «Responder» de un comentario (9c lo volvió
+    botón con ese nombre) en vez del de enviar; a11y9c (primera corrida) miraba los días antes de elegir cuántos son; compa7h y su tope de El Compa;
+    adm4eg pedía la matrícula de ins4e después de mirar la pestaña. noc4c y env4q (dentro de requiere) cayeron por tiempo: ahora dicen qué muestra
+    la página, y `requiere` imprime lo que dice algo (✓, error, adónde llegó) en vez de la cola del registro de Playwright.
+  - Al revés: alreves9b3 25/25. La confirmación nueva corre sobre la punta con 9c (una sola corrida para los dos).
 - **No cerrado o con destino:** ver LAUNCH «→ 9b» (lo que queda), «Fase 9 · 9b-3» y las líneas movidas a 9c, 9g, 9j, 9l, 9m, 9n, 9o, 9q, 9r y 9t con su porqué.
 
 ## Fase 9 · 9c — accesibilidad WCAG AA del sistema de diseño (14 nov)
