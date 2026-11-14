@@ -23,7 +23,7 @@ const NEG = 'sabor-dominicano', FREE = 'locales-centro', DUENO = '5705550133', M
 const uid = (t) => sql(`select id from users where phone = '+1${t}'`);
 const HOY = `extract(dow from now() at time zone 'America/New_York')::int`;
 const cerrar = () => sql(`update business_hours set open = false where business_id = '${NEG}' and module = '' and weekday = ${HOY}`);
-const abrirTodoElDia = () => sql(`update business_hours set open = true, ranges = '[["00:00","23:59"]]' where business_id = '${NEG}' and module = '' and weekday = ${HOY}`);
+const abrirTodoElDia = () => sql(`update business_hours set open = true, ranges = '[["00:00","00:00"]]' where business_id = '${NEG}' and module = '' and weekday = ${HOY}`);
 const horarioDeSiempre = () => sql(`update business_hours set open = true, ranges = '[["11:00","21:00"]]' where business_id = '${NEG}' and module = ''`);
 const NOTA = `{"es":"Los sábados hay sancocho desde las 12. Catering con 3 días de aviso.","en":"Sancocho on Saturdays from 12. Catering with 3 days' notice."}`;
 const PRESENTA = 'Soy El Compa, el asistente de IA de Sabor Dominicano.';

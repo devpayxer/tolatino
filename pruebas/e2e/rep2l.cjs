@@ -12,7 +12,7 @@ const MARISOL = "(select id from users where phone='+15705550122')", JUAN_TEL = 
 const op = (n, c = "status||'|'||coalesce(stage,'-')") => sql(`select ${c} from operations where number='${n}'`);
 const restaurar = () => { try { sql(`update delivery_settings set delivery=false, pay_cash_delivery=false where business_id='${BIZ}'`); sql(`update business_hours set ranges='[["11:00","21:00"]]'::jsonb where business_id='${BIZ}' and module=''`); } catch {} };
 (async () => {
-  sql(`update business_hours set ranges='[["00:00","23:59"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`);
+  sql(`update business_hours set ranges='[["00:00","00:00"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`);
   sql(`update delivery_settings set delivery=true, pickup=true, pay_cash_delivery=true, pay_card=false, ask_tip=true, zone_mi=3, fee_cents=300, free_over_cents=4000, min_order_cents=0, travel_min=15, last_delivery_min=0, who='team', external_app=null, auto_accept=false where business_id='${BIZ}'`);
   sql(`update businesses set modules_off = modules_off - 'delivery' where id='${BIZ}'`);
   sql(`update items set sold_out = false, stock_day = null where business_id='${BIZ}'`); sql(`update menu_settings set pause_until = null where business_id='${BIZ}'`);

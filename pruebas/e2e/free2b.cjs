@@ -6,7 +6,7 @@ const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
 const restaurar = () => { sql(`update business_hours set ranges='[["11:00","21:00"]]'::jsonb where business_id='${BIZ}' and module=''`); sql(`update business_stats_cache set plan='pro' where business_id='${BIZ}'`); sql(`update platform_config set value='10' where key='free_ops_cap'`); };
 (async () => {
-  sql(`update business_hours set ranges='[["00:00","23:59"]]'::jsonb where business_id='${BIZ}' and module=''`);
+  sql(`update business_hours set ranges='[["00:00","00:00"]]'::jsonb where business_id='${BIZ}' and module=''`);
   sql(`update operations set respond_by = now() - interval '1 minute' where status='pending'`);
   sql(`update business_stats_cache set plan='free' where business_id='${BIZ}'`);
   const usados = +sql(`select count(*) from operations where business_id='${BIZ}' and free_quota_month = to_char(now() at time zone 'America/New_York','YYYY-MM')`);

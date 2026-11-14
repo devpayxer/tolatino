@@ -11,7 +11,7 @@ const restaurar = () => { try { sql(`update business_hours set ranges='[["11:00"
 const st = (n) => sql(`select status||'|'||coalesce(stage,'-') from operations where number='${n}'`);
 
 (async () => {
-  sql(`update business_hours set ranges='[["00:00","23:59"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`);
+  sql(`update business_hours set ranges='[["00:00","00:00"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`);
   sql(`update items set sold_out = (id = 3), stock_day = null where business_id='${BIZ}'`);
   sql(`update menu_settings set pause_until = null where business_id='${BIZ}'`);
   sql(`update operations set respond_by = now() - interval '1 minute' where user_id = ${MARISOL} and status = 'pending'`);

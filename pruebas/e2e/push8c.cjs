@@ -70,7 +70,7 @@ const PUENTE = (token) => `if (window === window.top) {
   sql(`update feature_flags set enabled = true where key like 'push.%'`);
   sql(`delete from platform_config where key like 'push_%'`);
   sql(`update push_tokens set revoked_at = now(), revoked_reason = 'admin' where revoked_at is null and provider <> 'sim' and user_id in (${U(MARI)}, ${U(DUENO)}, ${U(ADM)})`);
-  sql(`update business_hours set ranges='[["00:00","23:59"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`);
+  sql(`update business_hours set ranges='[["00:00","00:00"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`);
   sql(`update items set sold_out = false, stock_day = null where business_id='${BIZ}'`);
   sql(`update menu_settings set pause_until = null where business_id='${BIZ}'`);
   sql(`update operations set respond_by = now() - interval '1 minute' where user_id = ${U(MARI)} and status = 'pending'`);

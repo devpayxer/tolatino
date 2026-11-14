@@ -13,6 +13,8 @@ const ve = async (l) => { for (let i = 0; i < 24; i++) { if (await vis(l)) retur
   // Un enlace de clase en línea de prueba: nunca puede salir en la ficha.
   const gid = sql(`select g.id from class_groups g join items i on i.id = g.item_id where i.business_id = 'ingles-para-todos' and i.name->>'es' = 'Inglés nivel 1 · noche' and g.status = 'open' order by g.starts_on limit 1`);
   sql(`update class_groups set join_url = 'https://meet.example.com/secreto-4ed' where id = ${gid}`);
+  // 9b-3 · «Preparación para ciudadanía» con su matrícula de $55 (como ins4e): barajada, fic4d corría antes que ins4e y el curso no tenía matrícula.
+  sql(`update items set deposit_cents = 5500, svc_attrs = svc_attrs || '{"dep":5500,"plan_n":3}'::jsonb where business_id = 'ingles-para-todos' and name->>'es' = 'Preparación para ciudadanía' and removed_at is null`);
   const b = await chromium.launch(); const err = [];
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); m.on('pageerror', (e) => err.push(e.message));
   const d = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); d.on('pageerror', (e) => err.push(e.message));

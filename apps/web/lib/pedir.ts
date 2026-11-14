@@ -117,9 +117,12 @@ function calcEstado(b: Base, R: [number, number][], usados: number, cap: number,
   const paused = !!b.pause_until;
   const later = planOk && !ordOff && b.scheduled_orders && !!sig;
   const shut = !b.open && !later;
-  const lastAt = actual && b.last_min ? actual[1] - b.last_min : null;
+  // 9b-3 · Abierto las 24 horas (el rango de un día entero: «00:00–00:00», como lo lee la ficha) no tiene hora de cerrar: antes el «último pedido»
+  // se contaba desde la medianoche y el negocio dejaba de tomar pedidos a las 11:30 PM todas las noches. Guardián veinticuatroHoras.
+  const sinCierre = !!actual && actual[1] - actual[0] >= 1440;
+  const lastAt = actual && b.last_min && !sinCierre ? actual[1] - b.last_min : null;
   // El último delivery (Entrega): con el último pedido, o 30 / 60 min antes de cerrar.
-  const dlvTo = actual ? actual[1] - Math.max(b.last_min, b.last_delivery_min) : null;
+  const dlvTo = actual && !sinCierre ? actual[1] - Math.max(b.last_min, b.last_delivery_min) : null;
   const dlvAhora = dlvOk && !(dlvTo != null && now >= dlvTo);
   const tarde = lastAt != null && now >= lastAt;
   const canOrd = planOk && !shut && !paused && !ordOff && !tarde;

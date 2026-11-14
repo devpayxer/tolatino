@@ -12,7 +12,7 @@ const MARISOL = "(select id from users where phone='+15705550122')";
 const pago = (n) => sql(`select coalesce((select p.status || '|' || p.amount_cents || '|' || p.fee_cents || '|' || p.refunded_cents from payments p join operations o on o.id = p.operation_id where o.number = '${n}'), '-')`);
 const restaurar = () => { try { sql(`update business_hours set ranges='[["11:00","21:00"]]'::jsonb where business_id='${BIZ}' and module=''`); sql(`update delivery_settings set auto_accept=false, pay_card=false, pay_cash_pickup=true where business_id='${BIZ}'`); } catch {} };
 (async () => {
-  sql(`update business_hours set ranges='[["00:00","23:59"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`);
+  sql(`update business_hours set ranges='[["00:00","00:00"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`);
   sql(`update items set sold_out = false, stock_day = null where business_id='${BIZ}'`);
   sql(`update menu_settings set pause_until = null where business_id='${BIZ}'`);
   sql(`update operations set respond_by = now() - interval '1 minute' where user_id = ${MARISOL} and status = 'pending'`);

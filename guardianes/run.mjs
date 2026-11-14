@@ -7144,6 +7144,19 @@ const guardianes = {
     }
   },
 
+  /* 9b-3 · Abierto las 24 horas no tiene hora de cerrar: lib/pedir.ts contaba el «último pedido» desde la medianoche y un negocio de 24 horas
+     dejaba de tomar pedidos a las 11:30 PM (lo destapó la barajada de noche: pedidos2c a las 11:50 PM de Hazleton). Las pruebas lo escribían
+     «00:00–23:59» (cierra a las 11:59 PM); un día entero es «00:00–00:00». Al revés: alreves9b3. */
+  veinticuatroHoras() {
+    const G = "veinticuatroHoras", P = "apps/web/lib/pedir.ts";
+    const p = sinComent(P);
+    if (!/const sinCierre = !!actual && actual\[1\] - actual\[0\] >= 1440;/.test(p) || !/!sinCierre \? actual\[1\] - b\.last_min/.test(p)) falla(G, P, 0, "el «último pedido» de un negocio abierto las 24 horas se cuenta desde la medianoche: deja de tomar pedidos de noche");
+    for (const f of readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs")).map((y) => `pruebas/e2e/${y}`)) {
+      const t = readFileSync(f, "utf8"), m = /\[\["00:00", ?"23:59"\]\]/.exec(t);
+      if (m) falla(G, f, t.slice(0, m.index).split("\n").length, "«abierto todo el día» como 00:00–23:59 cierra a las 11:59 PM (y deja de tomar pedidos antes): un día entero es [[\"00:00\",\"00:00\"]]");
+    }
+  },
+
   idioma() {
     for (const f of codigo) {
       if (!/layout\.tsx$/.test(f)) continue;

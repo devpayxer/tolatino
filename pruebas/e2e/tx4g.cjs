@@ -13,6 +13,11 @@ const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l
   const a = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); await entrar(a, '5705550199');
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); await entrar(m, '5705550122');
   for (const p of [a, m]) { p.on('pageerror', e => err.push(e.message)); p.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); }); }
+  // 9b-3 · Lo que listan las tres pestañas lo hacen renta4f, plan4f y apt4f: se pide con requiere (barajada en una base nueva no había nada).
+  { const { requiere } = require('../lib/requiere.cjs');
+    requiere('renta4f', () => sql(`select o.number from operations o where o.kind = 'rental' and exists (select 1 from payments p where p.operation_id = o.id and p.status in ('captured', 'partially_refunded')) limit 1`), { que: 'una renta cobrada' });
+    requiere('plan4f', () => sql(`select o.number from operations o where o.kind = 'plan' and exists (select 1 from payments p where p.operation_id = o.id and p.status in ('captured', 'partially_refunded')) limit 1`), { que: 'un plan cobrado' });
+    requiere('apt4f', () => sql(`select o.number from operations o where o.kind = 'hold' and o.pay_mode = 'local' limit 1`), { que: 'un apartado que se paga en la caja' }); }
   await a.goto(B + '/admin/transacciones'); await a.getByText('PLANES · RENTAS · APARTADOS').waitFor(); ok(true, 'KPI: planes · rentas · apartados');
   for (const [tab, pre, rx] of [['Rentas', 'Renta T-', /cobrado \$/], ['Planes', 'Plan PL-', /cobrado \$/], ['Apartados', 'Apartado A-', /en la caja · sin cobro en la app/]]) {
     await clic(a.getByRole('button', { name: tab, exact: true }).or(a.getByText(tab, { exact: true }))); await a.getByText(new RegExp(`^${pre}`)).first().waitFor();

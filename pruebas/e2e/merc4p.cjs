@@ -29,6 +29,7 @@ const pedir = async (m, lines) => {
   sql(`update retail_settings set slot_cap = 6, sub_default = 'call' where business_id = '${M}'`);
   // 9b-1 · La tarjeta de Marisol (la guarda si no la tiene) en vez del id de una tarjeta de una base vieja.
   require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');
+  const volverHorario = require('../lib/negocio-nuevo.cjs').abiertoTodoElDia(M); process.on('exit', volverHorario); // 9b-3 · de noche el mercado estaba cerrado
   const b = await chromium.launch(); const err = [];
   const mk = async (o, tel) => { const p = await (await b.newContext(o)).newPage(); p.on('pageerror', (e) => err.push(e.message)); p.on('console', (x) => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); }); await entrar(p, tel); return p; };
   const m = await mk({ ...devices['iPhone 13'] }, '5705550122'), h = await mk({ viewport: { width: 1360, height: 900 } }, '5705550288');
@@ -36,7 +37,7 @@ const pedir = async (m, lines) => {
   // ── Pedido ──
   await m.goto(B + `/n/${M}`); await m.evaluate(([b2, l]) => localStorage.setItem('tl-mercado', JSON.stringify({ biz: b2, lines: l })), [M, L]);
   await m.goto(B + `/n/${M}/mercado`); await verV(m.getByText('1 · Tu pedido'));
-  ok(!!(await vis(m.getByText('Extra retenido por peso (10 %)'))) && !!(await vis(m.getByText('$36.57').first())), 'revisa: estimado $34.42 + 10 % de lo que va por peso ($2.15) → hoy se retienen $36.57');
+  ok(!!(await vis(m.getByText('Extra retenido por peso (10 %)'))) && !!(await vis(m.getByText('$36.57').first())), 'revisa: estimado $34.42 + 10 % de lo que va por peso ($2.15) → hoy se retienen $36.57' + ((await vis(m.getByText('$36.57').first())) ? '' : ' · la página dice: ' + (await m.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 400)));
   await m.screenshot({ path: OUT + 's1-pedido-mercado-m.png', fullPage: true });
   const N1 = await pedir(m, L), O1 = sql(`select id from operations where number = '${N1}'`);
   ok(sql(`select status || '|' || held_cents || '|' || kind from payments where operation_id = ${O1}`) === 'held|3657|full', `${N1}: retenidos $36.57 en la tarjeta (no se cobra todavía)`);

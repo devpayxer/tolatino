@@ -21,7 +21,8 @@ const MARISOL = "(select id from users where phone = '+15705550122')";
 const AY = (n, col) => sql(`select ${col} from help_requests h join operations o on o.id = h.operation_id where o.number = '${n}'`);
 (async () => {
   require('../lib/negocio-nuevo.cjs').sinTopeDeAyuda('5705550122'); // 9b-1 · el tope de 5 ayudas al día de Marisol (ver lib)
-  const MO = sql(`select o.number from operations o where o.user_id = ${MARISOL} and o.business_id = '${M}' and o.kind = 'market_order' and o.status = 'done' and exists (select 1 from payments p where p.operation_id = o.id and p.status = 'captured') and not exists (select 1 from help_requests h where h.operation_id = o.id) order by o.id desc limit 1`);
+  // 9b-3 · El pedido del mercado terminado y cobrado lo deja merc4p: se pide con requiere (barajada en una base nueva no había ninguno).
+  const MO = require('../lib/requiere.cjs').requiere('merc4p', () => sql(`select o.number from operations o where o.user_id = ${MARISOL} and o.business_id = '${M}' and o.kind = 'market_order' and o.status = 'done' and exists (select 1 from payments p where p.operation_id = o.id and p.status = 'captured') and not exists (select 1 from help_requests h where h.operation_id = o.id) order by o.id desc limit 1`), { que: 'un pedido del mercado terminado y cobrado' });
   ok(!!MO, `pedido del mercado terminado y cobrado: ${MO}`);
   sql(`update operations set done_at = now() where number = '${MO}'`);
   // Tope de 5 solicitudes por día: las de pruebas anteriores ya cerradas pasan a «ayer».

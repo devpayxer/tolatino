@@ -160,4 +160,17 @@ async function lejosDelCambioDeNoche(margen = 240) {
   const s = Number(sql(`select extract(epoch from (date_trunc('day', (now() at time zone 'America/New_York') - interval '6 hours') + interval '30 hours') - (now() at time zone 'America/New_York'))::int`));
   if (s < margen) { console.log(`  (faltan ${s} s para las 6 AM, cuando cambia la noche: se espera)`); await new Promise((r) => setTimeout(r, (s + 5) * 1000)); }
 }
-module.exports = { lejosDelCambioDeNoche, publicarBarberia, negocioSinDueno, entrarComo, telLibre, tarjeta, sinTopeDeAyuda, sinTopesComunidad, smsEsperado, equipo, direccion, medios, PUERTO_MEDIOS, sql };
+/* 9b-3 · Lejos de la medianoche de Hazleton: evt6b-6c creó «lo de hoy» a las 11:59 PM y a las 12:00 la página ya mostraba el día siguiente
+   («Hoy: solo lo de hoy» falló en «dos veces seguidas»). Con menos de `margen` segundos para la medianoche, se espera a que pase. */
+async function lejosDeMedianoche(margen = 900) {
+  const s = Number(sql(`select extract(epoch from (date_trunc('day', now() at time zone 'America/New_York') + interval '1 day') - (now() at time zone 'America/New_York'))::int`));
+  if (s < margen) { console.log(`  (faltan ${s} s para la medianoche de Hazleton: se espera)`); await new Promise((r) => setTimeout(r, (s + 10) * 1000)); }
+}
+/* 9b-3 · El negocio abierto las 24 horas mientras corre la prueba (un día entero es 00:00–00:00: lib/pedir.ts no le pone «último pedido»):
+   barajada de noche, merc4p pedía al mercado a las 12:07 AM, cerrado. Devuelve con qué volver su horario de siempre (llamarlo al terminar). */
+function abiertoTodoElDia(biz) {
+  const antes = sql(`select coalesce(json_agg(json_build_array(weekday, open, ranges) order by weekday)::text, '[]') from business_hours where business_id = '${biz}' and module = ''`);
+  sql(`update business_hours set open = true, ranges = '[["00:00","00:00"]]'::jsonb where business_id = '${biz}' and module = ''`);
+  return () => { for (const [d, o, r] of JSON.parse(antes)) sql(`update business_hours set open = ${o}, ranges = '${JSON.stringify(r)}'::jsonb where business_id = '${biz}' and module = '' and weekday = ${d}`); };
+}
+module.exports = { abiertoTodoElDia, lejosDeMedianoche, lejosDelCambioDeNoche, publicarBarberia, negocioSinDueno, entrarComo, telLibre, tarjeta, sinTopeDeAyuda, sinTopesComunidad, smsEsperado, equipo, direccion, medios, PUERTO_MEDIOS, sql };

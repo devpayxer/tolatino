@@ -51,6 +51,9 @@ const casos = [
   ['capturaSinHora', 'pruebas/visual/pantallas.json', '"abiertos": ["sabor-dominicano"]', '"abiertos": []'],
   // libroEnAyudantes: sinTopeDeAyuda vuelve a correr los mensajes de El Compa sin el modo réplica
   ['libroEnAyudantes', 'pruebas/lib/negocio-nuevo.cjs', "set session_replication_role = replica; update compa_messages", "update compa_messages"],
+  // veinticuatroHoras: pedir.ts vuelve a contar el último pedido desde la medianoche, o una prueba vuelve a «00:00–23:59»
+  ['veinticuatroHoras', 'apps/web/lib/pedir.ts', "actual && b.last_min && !sinCierre ? actual[1] - b.last_min", "actual && b.last_min ? actual[1] - b.last_min"],
+  ['veinticuatroHoras', 'pruebas/e2e/pedidos2c.cjs', '[["00:00","00:00"]]', '[["00:00","23:59"]]'],
   ['tarjetaPropia', 'pruebas/e2e/fie4v.cjs', "  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');\n", ''],
 ];
 const crear = [

@@ -55,6 +55,7 @@ const PARR = 'parroquia-santa-maria', CASA = 'taquiza-don-chuy';
   };
   const fecha = (id) => sql(`select id from event_dates where event_id = ${id} order by starts_at limit 1`);
   const slug = (id) => sql(`select slug from events where id = ${id}`);
+  await require('../lib/negocio-nuevo.cjs').lejosDeMedianoche(); // 9b-3 · «hoy» no cambia a mitad de la prueba
   const ahora = Number(sql(`select (extract(hour from now() at time zone 'America/New_York') * 60 + extract(minute from now() at time zone 'America/New_York'))::int`));
   // 9b-1 · Sin depender de la hora (antes: «la prueba corre antes de las 9:30 PM de Hazleton» y fallaba de noche). Los dos eventos de HOY
   // se crean a una hora cualquiera y después su fecha se pone respecto al reloj del servidor: la noche de hoy (local_date = hoy en Hazleton)

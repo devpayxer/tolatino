@@ -201,9 +201,11 @@ function videoQR(t, file) {
     await a1.goto(B + '/puerta');
     ok(await contiene(a1, 'Todavía no tienes puertas') && await contiene(a1, 'Para escanear en una puerta, el negocio te invita con un código'), '/puerta sin equipo: «Todavía no tienes puertas» y entrar con el código');
     // Los intentos malos, con una cuenta de esta corrida (el tope es por persona y hora: Configuración no lo afloja).
-    const P0 = `570555${6000 + (parseInt(RUN.slice(-4), 36) % 3999)}`;
+    // 9b-3 · Un teléfono que nadie tiene (antes uno calculado de la corrida: podía ser de alguien con puertas y no salía el formulario).
+    const P0 = require('../lib/negocio-nuevo.cjs').telLibre();
     sql(`insert into users (phone, phone_verified_at, first_name, last_name, home_city_id) values ('+1${P0}', now(), 'Otra', 'Persona', 'hzl') on conflict (phone) do nothing`);
     const c0 = await ctx(390, 844, true), p0 = await c0.newPage(); await entrar(p0, P0); await p0.goto(B + '/puerta');
+    await p0.getByLabel('CÓDIGO · 6 LETRAS Y NÚMEROS').first().waitFor({ timeout: 15000 }).catch(async () => { throw new Error('/puerta sin el formulario del código · la página dice: ' + (await p0.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 300)); });
     await (await vis(p0.getByLabel('CÓDIGO · 6 LETRAS Y NÚMEROS'))).fill('ZZZZZZ');
     await clic(btn(p0, 'Entrar al equipo de la puerta'));
     ok(await contiene(p0, 'Ese código no existe o ya se usó'), 'un código que no existe no entra (y cuenta como intento)');

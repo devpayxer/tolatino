@@ -23,7 +23,8 @@ const limpiar = () => {
 (async () => {
   limpiar();
   sql(`update reviews set helpful_count = (select count(*) from review_helpful h where h.review_id = reviews.id) where business_id = '${BIZ}'`);
-  const NUM = sql(`select number from operations where user_id = ${MARISOL} and business_id = '${BIZ}' and kind = 'order' and status = 'done' and mode = 'pickup' and done_at > now() - interval '30 days' order by done_at desc limit 1`);
+  // 9b-3 · El pedido terminado lo deja pedidos2c: se pide con requiere (barajada en una base nueva no había ninguno).
+  const NUM = require('../lib/requiere.cjs').requiere('pedidos2c', () => sql(`select number from operations where user_id = ${MARISOL} and business_id = '${BIZ}' and kind = 'order' and status = 'done' and mode = 'pickup' and done_at > now() - interval '30 days' order by done_at desc limit 1`), { que: 'un pedido terminado para reseñar' });
   ok(!!NUM, `pedido terminado para reseñar: #${NUM}`);
   // 9b-3 · El dato del pedido («llegó N min tarde») sale de su hora prometida (la de listo): el pedido más reciente que dejó OTRA prueba no
   // siempre la tenía (barajada salió sin «late»). Se le pone aquí, como la tiene un pedido de verdad.

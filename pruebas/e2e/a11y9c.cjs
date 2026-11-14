@@ -101,7 +101,7 @@ const chicos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=butt
   };
   try {
     // ═══ 1 · Pedir, con el teclado ═══
-    sql(`update business_hours set ranges='[["00:00","23:59"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`);
+    sql(`update business_hours set ranges='[["00:00","00:00"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`);
     sql(`update items set sold_out = (id = 3), stock_day = null where business_id='${BIZ}'`);
     sql(`insert into menu_settings (business_id) values ('${BIZ}') on conflict (business_id) do update set pause_until = null`);
     sql(`update operations set respond_by = now() - interval '1 minute' where user_id = (select id from users where phone='+1${MARISOL}') and status = 'pending'`);
@@ -180,11 +180,11 @@ const chicos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=butt
     await m.goto(B + `/eventos/${SLUG}?fecha=${F}`);
     await act(m, m.locator('button, [role="button"]', { hasText: /^Boletos$/ }));
     await m.waitForURL(/\/boletos\?fecha=/);
-    await m.locator(`[data-tipo="${T_GEN}"]`).waitFor();
+    await m.locator(`[data-tipo="${T_GEN}"]:visible`).first().waitFor();
     snap = await arbol(m);
     ok(/button "Uno más"/.test(snap) && /button "Uno menos"/.test(snap), 'árbol: el QtyStepper de los boletos dice «Uno más» y «Uno menos» (antes eran div mudos)');
-    await act(m, m.locator(`[data-tipo="${T_GEN}"] >> text="+"`), 'Space');
-    ok(await m.locator(`[data-tipo="${T_GEN}"]`).innerText().then((t) => /\b1\b/.test(t)), 'Espacio en «Uno más»: el boleto suma 1');
+    await act(m, m.locator(`[data-tipo="${T_GEN}"]:visible >> text="+"`).first(), 'Space');
+    ok(await m.locator(`[data-tipo="${T_GEN}"]:visible`).first().innerText().then((t) => /\b1\b/.test(t)), 'Espacio en «Uno más»: el boleto suma 1');
     await act(m, m.locator('button, [role="button"]', { hasText: 'Continuar' }));
     await m.waitForURL(/\/eventos\/pagar\//, { timeout: 20000 });
     await m.locator('input[placeholder="A nombre de…"]').first().fill('Marisol P');

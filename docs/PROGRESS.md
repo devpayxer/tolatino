@@ -1570,7 +1570,12 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
     botón con ese nombre) en vez del de enviar; a11y9c (primera corrida) miraba los días antes de elegir cuántos son; compa7h y su tope de El Compa;
     adm4eg pedía la matrícula de ins4e después de mirar la pestaña. noc4c y env4q (dentro de requiere) cayeron por tiempo: ahora dicen qué muestra
     la página, y `requiere` imprime lo que dice algo (✓, error, adónde llegó) en vez de la cola del registro de Playwright.
-  - Al revés: alreves9b3 25/25. La confirmación nueva corre sobre la punta con 9c (una sola corrida para los dos).
+  - **Quinta confirmación (corrida 43556167290, de noche en Hazleton):** un bug de la app: **un negocio abierto las 24 horas dejaba de tomar
+    pedidos a las 11:30 PM** (lib/pedir.ts contaba el «último pedido» desde la medianoche); arreglado, guardián `veinticuatroHoras`, y las pruebas
+    escriben un día entero como 00:00–00:00 (no 00:00–23:59). Además: evt6b-6c espera a que pase la medianoche si faltan <15 min
+    (`lejosDeMedianoche`); merc4p abre el mercado mientras corre (`abiertoTodoElDia`); rev2g, res4s y tx4g piden con `requiere` lo que dejan
+    pedidos2c, merc4p, renta4f, plan4f y apt4f; fic4d pone la matrícula del curso; evt6g usa un teléfono libre; a11y9c toca el boleto visible.
+  - Al revés: alreves9b3 27/27. La confirmación nueva corre sobre la punta con 9c (una sola corrida para los dos).
 - **No cerrado o con destino:** ver LAUNCH «→ 9b» (lo que queda), «Fase 9 · 9b-3» y las líneas movidas a 9c, 9g, 9j, 9l, 9m, 9n, 9o, 9q, 9r y 9t con su porqué.
 
 ## Fase 9 · 9c — accesibilidad WCAG AA del sistema de diseño (14 nov)

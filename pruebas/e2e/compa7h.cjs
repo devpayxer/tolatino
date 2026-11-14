@@ -345,7 +345,7 @@ const HOY = `extract(dow from now() at time zone 'America/New_York')::int`;
   await pdu.goto(B + `/panel/${NEG}/compa`); await pdu.waitForSelector('text=POR DÓNDE');
   tdu = await texto(pdu);
   ok(/Cliente en WhatsApp/.test(tdu) && !/570|0122/.test(tdu.slice(tdu.indexOf('LO QUE CONTESTÓ'))), 'LO QUE CONTESTÓ EL COMPA: «Cliente en WhatsApp», sin teléfono');
-  sql(`update business_hours set open = true, ranges = '[["00:00","23:59"]]' where business_id = '${NEG}' and module = '' and weekday = ${HOY}`);
+  sql(`update business_hours set open = true, ranges = '[["00:00","00:00"]]' where business_id = '${NEG}' and module = '' and weekday = ${HOY}`);
   const w7 = await wa(NADIE, '¿A qué hora cierran?', { para: NEG_WA }); ok(w7.res === 'auto_nada' && w7.out.length === 0, 'el negocio ABIERTO: El Compa no contesta');
   sql(`update business_hours set open = false where business_id = '${NEG}' and module = '' and weekday = ${HOY}`);
 
