@@ -60,6 +60,8 @@ async function inscribir(p, neg, svc, o = {}) {
   sql(`update items set svc_attrs = svc_attrs || '{\"g1\":true}'::jsonb where id = ${CONV}`);
   sql(`update care_openings set openings = 3 where business_id = '${NIN}' and removed_at is null`);
   sql(`update users set first_name = coalesce(nullif(first_name, ''), 'Prueba') where phone in ('+15705550299', '+15705550288', '+15705550122')`);
+  // 9b-3 · La matrícula se retiene en la tarjeta de Marisol: en una base nueva y barajada no tiene ninguna y «Enviar solicitud» queda apagado.
+  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');
   const b = await chromium.launch(); const err = [];
   const ctx = async (tel, w = 390) => { const p = await (await b.newContext({ viewport: { width: w, height: 844 }, deviceScaleFactor: w < 500 ? 2 : 1 })).newPage(); p.on('pageerror', (e) => err.push(e.message)); await entrar(p, tel); return p; };
   const cli = await ctx('5705550122'), edu = await ctx('5705550377'), nin = await ctx('5705550388'), gym = await ctx('5705550411');

@@ -60,6 +60,8 @@ const casos = [
   ['bloquePorNombre', 'apps/web/app/admin/TextosPaginas.tsx', 'tabs, nota]', 'tabs, cab[4]!]'],
   // etiquetaDelPaso: a11y9c vuelve a bajar a los hijos del paso 2 por el prefijo (que también es el marco, con su «Volver»)
   ['etiquetaDelPaso', 'pruebas/e2e/a11y9c.cjs', '[data-screen-label="ONB-NEG-C1 · lo propio de tu categoría"] > div', '[data-screen-label^="ONB-NEG-C1"] > div'],
+  // tarjetaPropia: ins4e vuelve a guardarle tarjeta solo a otra clienta (0299) y Marisol inscribe con matrícula retenida sin ninguna
+  ['tarjetaPropia', 'pruebas/e2e/ins4e.cjs', "  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');\n", ''],
   ['tarjetaPropia', 'pruebas/e2e/fie4v.cjs', "  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');\n", ''],
 ];
 const crear = [

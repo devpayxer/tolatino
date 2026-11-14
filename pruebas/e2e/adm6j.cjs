@@ -245,8 +245,14 @@ const KEYS = ['evt_recordatorio_hora', 'evt_senal_ordenes_n'];
     await ad.goto(B + `/admin/usuarios/${U1}?tab=act`);
     ok(await contiene(ad, 'BOLETOS DE EVENTOS') && await contiene(ad, cod) && await contiene(ad, 'cortesía') && await contiene(ad, 'RSVP'), 'Usuarios 360° › Actividad: sus boletos (código, cortesía) y RSVP');
     await ad.screenshot({ path: OUT + 'e6j-u360-act-d.png', fullPage: true });
+    // 9b-3 · La cancelación la pone esta prueba (antes la dejaba evt6e: barajada, adm6j corría primero y no había ninguna). Un evento
+    // propio sin boletos, cancelado por To'Latino: la fila nace «running» (trigger) y se cierra a «done»; el barrido no tiene nada que devolver.
+    const Ecx = evento(2, 'Cancelada');
+    sql(`insert into event_cancellations (event_id, business_id, city_id, scope, reason_key, note, by_user, by_kind) values (${Ecx.id}, '${NEG}', 'hzl', 'event', 'admin', 'prueba', '${ADMID}', 'admin')`);
+    sql(`update event_cancellations set status = 'done' where event_id = ${Ecx.id}`);
+    sql(`update events set status = 'cancelled', cancelled_at = now(), cancelled_by = 'admin', cancel_reason = 'prueba' where id = ${Ecx.id}`);
     await ad.goto(B + `/admin/negocios/${NEG}?tab=cont`);
-    ok(await contiene(ad, 'EVENTOS ·') && (await contiene(ad, 'LIQUIDACIONES ·', 3000) || await contiene(ad, 'CANCELACIONES ·', 3000)), 'Negocios 360° › Contenido › Eventos con liquidaciones y cancelaciones');
+    ok(await contiene(ad, 'EVENTOS ·') && await contiene(ad, 'CANCELACIONES ·', 3000) && await contiene(ad, 'Cancelada', 3000), 'Negocios 360° › Contenido › Eventos con sus cancelaciones (la de esta prueba)');
     await ad.goto(B + '/admin/analitica?tab=evt');
     const v = sql(`select coalesce(sum(vistas), 0) || '|' || coalesce(sum(ordenes), 0) || '|' || coalesce(sum(rsvp), 0) from evt_analitica_dia where dia >= (now() at time zone 'America/New_York')::date - 29`).split('|');
     ok(await contiene(ad, 'VISTAS DE EVENTOS') && await contiene(ad, 'ÓRDENES DE BOLETOS') && await contiene(ad, 'ASISTENCIA') && await contiene(ad, 'EVENTO PRIVADO') && await contiene(ad, 'POR FORMATO'), 'Analítica › Eventos: de ver a ir, dinero, la puerta, evento privado, por formato, ciudad y organizador');

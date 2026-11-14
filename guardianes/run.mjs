@@ -7051,7 +7051,11 @@ const guardianes = {
     const G = "tarjetaPropia";
     for (const f of readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs")).map((y) => `pruebas/e2e/${y}`)) {
       const t = readFileSync(f, "utf8");
-      if (!/5705550122/.test(t) || /\.tarjeta\b|\btarjeta\(|pm_sim_|payment_methods/.test(t)) continue;
+      // 9b-3 · La tarjeta tiene que ser la de Marisol: ins4e solo guardaba una a otra clienta (0299) y el guardián lo daba por bueno. Si
+      // todas las líneas que guardan tarjeta nombran a otro teléfono de prueba, Marisol sigue sin ninguna.
+      if (!/5705550122/.test(t)) continue;
+      const lt = t.split("\n").filter((x) => /\.tarjeta\b|\btarjeta\(|pm_sim_|payment_methods/.test(x));
+      if (lt.length && !lt.every((x) => /570555(?!0122)\d{4}/.test(x) && !/5705550122/.test(x))) continue;
       const l = t.split("\n").findIndex((x) => /\bok\(/.test(x) && /[|:'`]held\b/.test(x));
       if (l >= 0) falla(G, f, l + 1, "comprueba un depósito retenido de Marisol sin guardarle su tarjeta: en una base nueva y barajada no tiene ninguna; usa tarjeta('5705550122') de pruebas/lib/negocio-nuevo.cjs");
       // Un viaje reservado en la app también se retiene en la tarjeta: sin ella «Reservar» queda apagado (cho4y en la barajada).
