@@ -240,6 +240,7 @@
     "cms_string_versions": { "equipo": ["by"] },
     "city_home_config": { "equipo": ["updated_by"] },
     "announcements": { "equipo": ["by_staff_id", "retired_by"] },
+    "scheduled_reports": { "equipo": ["by_staff_id"] },
     "legal_acceptances": { "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "ley", "exporta": "terminos_aceptados", "fusion": "no" } ] }
   }
 }

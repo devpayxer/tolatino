@@ -253,6 +253,8 @@ const KEYS = ['evt_recordatorio_hora', 'evt_senal_ordenes_n'];
     sql(`update events set status = 'cancelled', cancelled_at = now(), cancelled_by = 'admin', cancel_reason = 'prueba' where id = ${Ecx.id}`);
     await ad.goto(B + `/admin/negocios/${NEG}?tab=cont`);
     ok(await contiene(ad, 'EVENTOS ·') && await contiene(ad, 'CANCELACIONES ·', 3000) && await contiene(ad, 'Cancelada', 3000), 'Negocios 360° › Contenido › Eventos con sus cancelaciones (la de esta prueba)');
+    // 9g · Analítica › Eventos lee las tablas que rehace el barrido (0137, cada 10 min): aquí se rehacen como lo hace él.
+    sql(`select metricas_resumir((now() at time zone 'America/New_York')::date - 40)`);
     await ad.goto(B + '/admin/analitica?tab=evt');
     const v = sql(`select coalesce(sum(vistas), 0) || '|' || coalesce(sum(ordenes), 0) || '|' || coalesce(sum(rsvp), 0) from evt_analitica_dia where dia >= (now() at time zone 'America/New_York')::date - 29`).split('|');
     ok(await contiene(ad, 'VISTAS DE EVENTOS') && await contiene(ad, 'ÓRDENES DE BOLETOS') && await contiene(ad, 'ASISTENCIA') && await contiene(ad, 'EVENTO PRIVADO') && await contiene(ad, 'POR FORMATO'), 'Analítica › Eventos: de ver a ir, dinero, la puerta, evento privado, por formato, ciudad y organizador');

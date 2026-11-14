@@ -244,6 +244,8 @@ const boton = (p, t) => p.locator('button, [role=button]').filter({ hasText: t i
 
   console.log('7 · Analítica › El Compa y Soporte (sin personas) y Soporte con el plazo de 30 días');
   ok(sql(`select count(*) from information_schema.columns where table_name in ('compa_analitica_dia', 'soporte_analitica_dia') and column_name ~ '(user|staff|phone|name|text|query|summary|body)'`) === '0', 'las vistas no tienen columnas de personas ni de texto');
+  // 9g · Analítica › El Compa y Soporte (y el plazo de 30 días de Soporte) leen las tablas que rehace el barrido (0137, cada 10 min): aquí se rehacen como lo hace él.
+  sql(`select metricas_resumir((now() at time zone 'America/New_York')::date - 40)`);
   await pa.goto(B + '/admin/analitica?tab=cpa'); await pa.getByText('POR QUÉ PASÓ A UNA PERSONA').first().waitFor();
   T = await texto(pa);
   for (const k of ['EL COMPA', 'CONVERSACIONES', 'GASTO DE IA', 'ESPERA DE LA IA', 'NO SUPO', 'MARCADAS', 'DÓNDE CONTESTA', 'POR DÓNDE ESCRIBEN', 'SOPORTE', 'PLAZO CUMPLIDO', '1.ª RESPUESTA', '¿SE RESOLVIÓ?', 'POR TEMA', 'POR CIUDAD']) ok(T.includes(k), `Analítica: «${k}»`);

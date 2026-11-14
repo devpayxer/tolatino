@@ -15,6 +15,8 @@ services:
       TOLATINO_ENTORNO: pruebas
       TOLATINO_COMMIT: ${TOLATINO_COMMIT:-desconocido}
       DATABASE_URL: postgres://tolatino:${POSTGRES_PASSWORD}@db:5432/tolatino
+      # 9g · La base de análisis (réplica de lectura): vacía en el sandbox, Analítica lee de la misma base (lib/db-analisis.ts).
+      DATABASE_URL_ANALISIS: ${DATABASE_URL_ANALISIS:-}
       AUTH_SECRET: ${AUTH_SECRET}
       DATOS_SECRET: ${DATOS_SECRET:-}
       QR_LLAVE_PRIVADA: ${QR_LLAVE_PRIVADA:-}

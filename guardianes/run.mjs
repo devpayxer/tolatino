@@ -3144,8 +3144,9 @@ const guardianes = {
     // negocio (evt_ventas_negocio_dia). Las vistas no sacan columnas de personas (evt_senales sí: es de Confianza y no se lee aquí).
     const E = cuerpoFn(sinComent(A), "eventosAnalitica"), KE = "packages/db/migrations/0115_eventos_admin_config.sql";
     if (!E) return falla(G, A, 0, "falta eventosAnalitica");
-    const OKE = new Set(["evt_analitica_dia", "evt_asistencia_dia", "evt_ventas_negocio_dia", "evp_analitica_dia", "event_formats", "cities"]);
-    for (const [, t] of E.matchAll(/\b(?:from|join)\s+([a-z_]+)/g)) if (!OKE.has(t)) falla(G, A, 0, `eventosAnalitica lee «${t}»: solo las vistas sin personas de 0115`);
+    // 9g · Lee las tablas que rehace el barrido (0137: *_cache, las mismas columnas que las vistas), nunca las vistas que agregan toda la historia.
+    const OKE = new Set(["evt_analitica_dia_cache", "evt_asistencia_dia_cache", "evt_ventas_negocio_dia_cache", "evp_analitica_dia_cache", "event_formats", "cities"]);
+    for (const [, t] of E.matchAll(/\b(?:from|join)\s+([a-z_]+)/g)) if (!OKE.has(t)) falla(G, A, 0, `eventosAnalitica lee «${t}»: solo las tablas sin personas que rehace el barrido (0115 → 0137)`);
     if (P.test(E) || /\bholder_user_id\b|\bcomp_name\b|\buid\b/.test(E)) falla(G, A, 0, "eventosAnalitica pide una columna de una persona");
     if (existsSync(KE)) {
       const me = readFileSync(KE, "utf8");
@@ -3161,8 +3162,8 @@ const guardianes = {
     // personas (ni user_id, staff_id, assigned_staff_id, contact_phone_*, ni el texto: text, query_tapada, summary, body); la pantalla no lleva a nadie.
     const CP = cuerpoFn(sinComent(A), "compaSoporteAnalitica"), K7 = "packages/db/migrations/0124_compa_admin_config.sql";
     if (!CP) return falla(G, A, 0, "falta compaSoporteAnalitica (Analítica › El Compa y Soporte)");
-    const OK7 = new Set(["compa_analitica_dia", "soporte_analitica_dia", "cities"]);
-    for (const [, t] of CP.matchAll(/\b(?:from|join)\s+([a-z_]+)/g)) if (!OK7.has(t)) falla(G, A, 0, `compaSoporteAnalitica lee «${t}»: solo las vistas sin personas de 0124`);
+    const OK7 = new Set(["compa_analitica_dia_cache", "soporte_analitica_dia_cache", "cities"]);
+    for (const [, t] of CP.matchAll(/\b(?:from|join)\s+([a-z_]+)/g)) if (!OK7.has(t)) falla(G, A, 0, `compaSoporteAnalitica lee «${t}»: solo las tablas sin personas que rehace el barrido (0124 → 0137)`);
     const P7 = /\b(user_id|staff_id|assigned_staff_id|decided_by|contact_phone_\w+|first_name|last_name|phone|email|query_tapada|summary|body)\b|\b(?:cv|g|c)\.text\b/;
     if (P.test(CP) || P7.test(CP)) falla(G, A, 0, "compaSoporteAnalitica pide una columna de una persona o un texto");
     if (existsSync(K7)) {
@@ -3176,7 +3177,112 @@ const guardianes = {
       }
     } else falla(G, K7, 0, "falta la migración 0124 (vistas de la analítica de El Compa y Soporte)");
     if (existsSync(UI)) { const u = readFileSync(UI, "utf8"), i = u.indexOf('d.tab === "cpa"'), j = u.indexOf("} else if", i + 10); if (i < 0) falla(G, UI, 0, "falta Analítica › El Compa y Soporte"); else if (/admin\/usuarios|admin\/compa\?cp|\.uid\b|\.num\b/.test(u.slice(i, j))) falla(G, UI, 0, "Analítica › El Compa y Soporte no lleva a personas ni a conversaciones"); }
+    // 9g · Dinero, retención, embudos, búsquedas sin resultado, contactos desde semillas, vistas, Hogar y Auto y ciudad viva: lo que SALE de cada consulta
+    // (las llaves del tipo de query<{…}>) nunca es de una persona (ni nombre, teléfono, correo, ni el id de una cuenta). Una búsqueda solo sale si la
+    // buscaron 2 o más personas distintas (having … >= 2).
+    const PS = /\b(user_id|uid|first_name|last_name|phone|telefono|email|correo|nick|author_user_id|staff_id|by_user_id)\??:/;
+    for (const fn of ["dinero", "retencionCohortes", "embudos", "busquedasSinResultado", "contactosYVistas", "hogarAuto", "ciudadViva"]) {
+      const b9 = cuerpoFn(sinComent(A), fn);
+      if (!b9) { falla(G, A, 0, `falta ${fn} (9g)`); continue; }
+      for (const [, ty] of b9.matchAll(/query<\{([^}]*)\}>/g)) if (PS.test(ty)) falla(G, A, 0, `${fn} devuelve «${PS.exec(ty)[1]}»: Analítica nunca devuelve a una persona`);
+    }
+    if (!/having count\(distinct x\.user_id\) \+ \(count\(\*\) filter \(where x\.user_id is null\) > 0\)::int >= 2/.test(cuerpoFn(sinComent(A), "busquedasSinResultado"))) falla(G, A, 0, "busquedasSinResultado: solo lo que buscaron 2 o más personas (una búsqueda de una sola persona puede ser un nombre)");
+    // 9g · También en los correos: el reporte programado sale SOLO de las funciones de Analítica (cifrasReporte no consulta la base) y el reporte diario
+    // no lee personas (nada de nombres, teléfonos ni correos de vecinos en armarReporte).
+    const RP = "apps/web/lib/reportes.ts", RD = "apps/web/lib/reporte-diario.ts";
+    if (!existsSync(RP) || !existsSync(RD)) falla(G, RP, 0, "faltan los reportes de 9g (lib/reportes.ts, lib/reporte-diario.ts)");
+    else {
+      const cr = cuerpoFn(sinComent(RP), "cifrasReporte");
+      if (!cr) falla(G, RP, 0, "falta cifrasReporte");
+      else if (/\.query\(|\bdb\(\)|dbAnalisis\(\)/.test(cr)) falla(G, RP, 0, "cifrasReporte consulta la base: el correo sale de las mismas funciones de lib/admin-analitica.ts (sin personas)");
+      const ar = cuerpoFn(sinComent(RD), "armarReporte");
+      if (!ar) falla(G, RD, 0, "falta armarReporte");
+      else if (/\b(first_name|last_name|phone|email|nick|from users|join users)\b/.test(ar)) falla(G, RD, 0, "armarReporte lee una persona: el reporte diario lleva cifras, nombres de negocios y los pasos del fundador");
+      for (const [, ty] of ar.matchAll(/query<\{([^}]*)\}>/g)) if (PS.test(ty)) falla(G, RD, 0, `armarReporte devuelve «${PS.exec(ty)[1]}»: nunca una persona`);
+    }
   },
+
+  /* 9g · derivadoNoEditable (fase9-apertura.md §4 9g): los derivados de Analítica (metricas_dinero_dia, metricas_pro_dia, metricas_retencion y las seis
+     tablas *_cache de Eventos, El Compa y Soporte) los escribe SOLO el barrido: la base lo impone (trigger derivado_no_editable, que pide tl.metricas_barrido y
+     solo metricas_resumir lo enciende y lo apaga al terminar); ningún otro archivo los escribe ni enciende tl.metricas_barrido; el barrido llama a metricas_al_dia
+     (lib/analitica-derivados.ts) y Analítica lee las tablas, no las vistas que agregan toda la historia. Al revés: alreves9g. */
+  derivadoNoEditable() {
+    const G = "derivadoNoEditable", M = "packages/db/migrations/0137_analitica.sql", D = "apps/web/lib/analitica-derivados.ts", B = "apps/web/lib/barrido.ts", A = "apps/web/lib/admin-analitica.ts";
+    const T9 = ["metricas_dinero_dia", "metricas_pro_dia", "metricas_retencion", "evt_analitica_dia_cache", "evt_asistencia_dia_cache", "evt_ventas_negocio_dia_cache", "evp_analitica_dia_cache", "compa_analitica_dia_cache", "soporte_analitica_dia_cache"];
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración 0137 (los derivados de Analítica)");
+    const m = readFileSync(M, "utf8").replace(/--.*$/gm, "");
+    const arr = /foreach t in array array\[([\s\S]*?)\] loop\s*execute format\('drop trigger if exists %I on %I', t \|\| '_no_editable', t\);\s*execute format\('create trigger %I before insert or update or delete on %I for each row execute function derivado_no_editable\(\)'/.exec(m);
+    if (!arr) falla(G, M, 0, "cada derivado lleva el trigger derivado_no_editable (antes de insertar, cambiar o borrar)");
+    else for (const t of T9) if (!arr[1].includes(`'${t}'`)) falla(G, M, 0, `${t} no lleva el trigger derivado_no_editable: se podría escribir a mano`);
+    if (!/if coalesce\(current_setting\('tl\.metricas_barrido', true\), ''\) <> 'on' then\s*raise exception 'derivado_no_editable/.test(m)) falla(G, M, 0, "derivado_no_editable rechaza lo que no viene del barrido (tl.metricas_barrido)");
+    const fr = /create or replace function metricas_resumir\(desde date\)[\s\S]*?\$\$([\s\S]*?)\$\$;/.exec(m)?.[1] ?? "";
+    if (!/perform set_config\('tl\.metricas_barrido', 'on', true\);/.test(fr) || !/perform set_config\('tl\.metricas_barrido', 'off', true\);\s*return n;/.test(fr)) falla(G, M, 0, "metricas_resumir enciende tl.metricas_barrido al empezar y lo apaga al terminar (dentro de la misma transacción)");
+    if ((m.match(/set_config\('tl\.metricas_barrido', 'on'/g) ?? []).length !== 1) falla(G, M, 0, "solo metricas_resumir enciende tl.metricas_barrido");
+    const ESC = new RegExp(`\\b(insert into|update|delete from|truncate)\\s+(${T9.join("|")})\\b`, "i");
+    for (const f of archivos) {
+      if (f === M || !/^(apps|packages|scripts|services|infra|pruebas)\/.*\.(tsx?|mjs|cjs|js|sql|sh)$/.test(f) || !existsSync(f)) continue;
+      const t = readFileSync(f, "utf8");
+      if (ESC.test(t)) falla(G, f, 0, `escribe ${ESC.exec(t)[2]}: los derivados de Analítica solo los escribe el barrido (metricas_resumir)`);
+      if (/tl\.metricas_barrido/.test(t)) falla(G, f, 0, "enciende tl.metricas_barrido: solo metricas_resumir (0137) escribe los derivados");
+    }
+    if (!existsSync(D) || !/select metricas_al_dia\(\) as n/.test(cuerpoFn(sinComent(D), "barrerAnalitica"))) falla(G, D, 0, "barrerAnalitica llama a metricas_al_dia (lib/analitica-derivados.ts)");
+    if (!/\["metricas", async \(\) => \(await import\("\.\/analitica-derivados"\)\)\.barrerAnalitica\(\)\]/.test(sinComent(B))) falla(G, B, 0, "el barrido central no corre barrerAnalitica: los derivados se quedan viejos");
+    const a = sinComent(A);
+    for (const v of ["evt_analitica_dia", "evt_asistencia_dia", "evt_ventas_negocio_dia", "evp_analitica_dia", "compa_analitica_dia", "soporte_analitica_dia"])
+      if (new RegExp(`\\b(from|join) ${v}\\b(?!_cache)`).test(a)) falla(G, A, 0, `Analítica lee la vista ${v}: lee ${v}_cache (la tabla que rehace el barrido), no la vista que agrupa toda la historia`);
+  },
+
+  /* 9g · analisisPorReplica (HERRAMIENTAS #33, PLAN §3.2): Analítica lee por la base de análisis (lib/db-analisis.ts: DATABASE_URL_ANALISIS, la réplica de
+     lectura en producción; en el sandbox, la misma base) y nunca frena a la app: lib/admin-analitica.ts no usa db(); la pantalla de Analítica no abre la
+     base; los reportes (programados y diario) leen las cifras por dbAnalisis y solo escriben (o deciden) por la principal; cada conexión de análisis es
+     de solo lectura; el compose del sandbox pasa la variable. Al revés: alreves9g. */
+  analisisPorReplica() {
+    const G = "analisisPorReplica", L = "apps/web/lib/db-analisis.ts", A = "apps/web/lib/admin-analitica.ts", P = "apps/web/app/admin/analitica/page.tsx", C = "infra/pruebas/docker-compose.yml";
+    if (!existsSync(L)) return falla(G, L, 0, "falta lib/db-analisis.ts (la conexión de análisis)");
+    const l = sinComent(L);
+    if (!/process\.env\.DATABASE_URL_ANALISIS/.test(l) || !/if \(!url\) return db\(\);/.test(l)) falla(G, L, 0, "dbAnalisis usa DATABASE_URL_ANALISIS y, sin ella (sandbox), la misma base");
+    if (!/set default_transaction_read_only = on/.test(l)) falla(G, L, 0, "la conexión de análisis es de solo lectura (default_transaction_read_only)");
+    const a = sinComent(A);
+    if (/\bdb\(\)|from "\.\/db"/.test(a)) falla(G, A, 0, "lib/admin-analitica.ts usa la base principal: Analítica lee por dbAnalisis()");
+    if (!/import \{ dbAnalisis \} from "\.\/db-analisis"/.test(a)) falla(G, A, 0, "lib/admin-analitica.ts no importa dbAnalisis");
+    if (existsSync(P) && /@\/lib\/db"|\bdb\(\)/.test(sinComent(P))) falla(G, P, 0, "la pantalla de Analítica abre la base: todo pasa por lib/admin-analitica.ts");
+    const LEE = /\b(metricas_\w+|\w+_cache|app_events|search_logs|payments|operations|business_views_daily|contact_taps|seed_listings|subscription_events)\b/;
+    for (const f of ["apps/web/lib/reportes.ts", "apps/web/lib/reporte-diario.ts"]) {
+      if (!existsSync(f)) { falla(G, f, 0, "falta"); continue; }
+      const t = sinComent(f);
+      if (!/dbAnalisis\(\)\.query/.test(t)) falla(G, f, 0, "los reportes leen las cifras por dbAnalisis()");
+      for (const m of t.matchAll(/\bdb\(\)\.query(?:<[^>]*>)?\(\s*`([^`]*)`/g)) if (LEE.test(m[1]) && !/^\s*(insert|update)\b/i.test(m[1])) falla(G, f, t.slice(0, m.index).split("\n").length, `lee ${LEE.exec(m[1])[1]} por la base principal: las cifras de Analítica se leen por dbAnalisis()`);
+    }
+    if (!existsSync(C) || !/DATABASE_URL_ANALISIS: \$\{DATABASE_URL_ANALISIS:-\}/.test(readFileSync(C, "utf8"))) falla(G, C, 0, "el compose pasa DATABASE_URL_ANALISIS a la app (vacía en el sandbox)");
+  },
+
+  /* 9g · reporteDiarioSale (PLAN §5 «Reporte diario», HERRAMIENTAS #31): el reporte al fundador sale cada día a las 7:30 AM de Hazleton por correo y push
+     con «lo que necesita de ti» (los pasos pendientes de «Lo que te toca»), uno por día y de solo inserción; si a las 8:00 no salió (o salió tarde), queda
+     la alerta del día, se avisa a los Admins y la tarea del barrido queda con error. Estático (la hora, la alerta, el registro en el barrido, las plantillas
+     y la tabla); lo comprueba de verdad ana9g. Al revés: alreves9g. */
+  reporteDiarioSale() {
+    const G = "reporteDiarioSale", R = "apps/web/lib/reporte-diario.ts", B = "apps/web/lib/barrido.ts", M = "packages/db/migrations/0137_analitica.sql";
+    if (!existsSync(R)) return falla(G, R, 0, "falta lib/reporte-diario.ts");
+    const r = sinComent(R);
+    if (!/export const HORA_REPORTE = \{ h: 7, m: 30 \};/.test(r)) falla(G, R, 0, "el reporte sale a las 7:30 AM de Hazleton (HORA_REPORTE)");
+    if (!/export const HORA_ALERTA = \{ h: 8, m: 0 \};/.test(r)) falla(G, R, 0, "la alerta es a las 8:00 (HORA_ALERTA)");
+    const br = cuerpoFn(r, "barrerReporteDiario");
+    if (!/at time zone 'America\/New_York'/.test(br)) falla(G, R, 0, "barrerReporteDiario mide la hora de Hazleton");
+    if (!/if \(f\.min >= MIN\(HORA_ALERTA\) && \(!hecho \|\| [^\n]*>= MIN\(HORA_ALERTA\)\)\) await alertar\(/.test(br)) falla(G, R, 0, "si a las 8:00 no salió (o salió tarde), barrerReporteDiario deja la alerta");
+    if (!/if \(!hecho\) throw new Error\(/.test(br)) falla(G, R, 0, "si no salió, la tarea del barrido queda con error (system_jobs)");
+    const al = cuerpoFn(r, "alertar");
+    if (!/insert into founder_reports \(dia, kind, cifras\) values \(\$1::date, 'alerta'/.test(al) || !/avisar\(a\.id, "reporte_no_salio"/.test(al)) falla(G, R, 0, "la alerta queda en founder_reports (una por día) y avisa a los Admins (reporte_no_salio)");
+    const en = cuerpoFn(r, "enviarReporteDiario");
+    if (!/tpl: "founder_daily"/.test(en) || !/avisar\(a\.id, "reporte_diario"/.test(en)) falla(G, R, 0, "el reporte sale por correo (founder_daily) y push (reporte_diario)");
+    if (!/loQueTeToca\(\)/.test(cuerpoFn(r, "armarReporte")) || !/t\.pend\.join/.test(cuerpoFn(r, "correoReporte"))) falla(G, R, 0, "el reporte lleva «lo que necesita de ti» (los pasos pendientes de Sistema › Apps › «Lo que te toca»)");
+    if (!/\["reporteDiario", async \(\) => \(await import\("\.\/reporte-diario"\)\)\.barrerReporteDiario\(\)\]/.test(sinComent(B))) falla(G, B, 0, "el barrido central no corre barrerReporteDiario: el reporte no sale");
+    const m = existsSync(M) ? readFileSync(M, "utf8") : "";
+    if (!/create trigger founder_reports_no_cambia before update or delete on founder_reports/.test(m) || !/unique \(kind, dia\)/.test(m)) falla(G, M, 0, "founder_reports es de solo inserción y lleva uno por día y tipo");
+    for (const k of ["reporte_diario", "reporte_no_salio"]) if (!new RegExp(`\\('${k}', 'mod', null, false,`).test(m)) falla(G, M, 0, `falta la plantilla de aviso ${k} (sin SMS)`);
+    if (!/values \('reporte\.diario', true,/.test(m)) falla(G, M, 0, "el interruptor reporte.diario nace encendido");
+    if (!/'founder_daily'/.test(m)) falla(G, M, 0, "email_outbox acepta la plantilla founder_daily");
+  },
+
 
   /* 5i (MEM 651). «Ocultar los N reportados» nunca oculta la cuenta oficial: el lote pasa por loteOcultarUno, que lee author_kind y se
      niega ANTES de ocultar; la pantalla manda cada uno a esa acción (nunca a pubOcultar). Al revés: quitar la revisión → falla. */

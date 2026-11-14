@@ -26,7 +26,7 @@ const casos = [
   ['ajusteAdminConRegla', IN, 'await (await import("@/lib/evt-admin")).sobreventa(s)', '[] as never[]'],
   ['ajusteAdminConRegla', EV, ' kpiBoletosAdmin(s), sobreventa(s),', ' kpiBoletosAdmin(s), Promise.resolve([]),'],
   // analiticaSinPersonas (Eventos)
-  ['analiticaSinPersonas', AN, 'from evt_ventas_negocio_dia v join cities ci on ci.id = v.city_id', 'from evt_ventas_negocio_dia v join cities ci on ci.id = v.city_id join users u on u.id = v.business_id::uuid'],
+  ['analiticaSinPersonas', AN, 'from evt_ventas_negocio_dia_cache v join cities ci on ci.id = v.city_id', 'from evt_ventas_negocio_dia_cache v join cities ci on ci.id = v.city_id join users u on u.id = v.business_id::uuid'],
   ['analiticaSinPersonas', AN, "select v.negocio, ci.name as ciudad, sum(v.ordenes)", "select v.negocio, ci.name as ciudad, max(v.holder_user_id::text) as uid, sum(v.ordenes)"],
   ['analiticaSinPersonas', M, "select o.city_id, (p.captured_at at time zone ci.timezone)::date as dia, o.business_id, b.name as negocio, count(distinct o.id)::int as ordenes,", "select o.city_id, (p.captured_at at time zone ci.timezone)::date as dia, o.business_id, o.user_id, b.name as negocio, count(distinct o.id)::int as ordenes,"],
   ['analiticaSinPersonas', M, "select k.city_id, k.dia, coalesce(s.pedidas, 0)::int as pedidas,", "select k.city_id, k.dia, (select max(user_id::text) from operations) as phone, coalesce(s.pedidas, 0)::int as pedidas,"],

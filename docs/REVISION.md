@@ -4472,3 +4472,36 @@ pasa a «revisado» y se publica. En producción la base no deja publicar una p�
   - **Piezas sin diseño, compuestas con lo que existe:** el banner de anuncios y el aviso son la `InfoCard` del sistema (la que ya usa «Para negocios»); el editor de cadenas, los rótulos y el Inicio por ciudad se compusieron con filas, KPIs, campos y confirmar con motivo del Super Admin.
 - **Prueba:** `cms9f` (91 comprobaciones) pasó dos veces seguidas en una base local y `alreves9f` (30/30); la corrida de verdad es la del CI.
 
+
+## Fase 9 · 9g — Analítica completa, base de análisis y el reporte diario (14 nov)
+- **Qué mirar (Super Admin 570-555-0199, escritorio y teléfono):**
+  1. **Analítica › Dinero** (30 días): vendido en línea, comisión, operaciones cobradas, devoluciones, ticket promedio y «no llegaron», cada uno contra el período anterior;
+     las 8 semanas; el ticket por tipo; **Pro** (MRR, Pro pagando, conversión a Pro, en prueba, cobrado) con su embudo prueba → tarjeta → primer cobro; dinero por estado.
+     Con la semilla 0055 (90 días de pedidos, visitas de Hogar y mesas en Hazleton; Tacos El Güero y Jugos Tropical pagando Pro, Pollo Don Lucho en prueba, Florería
+     Rosa que no siguió) las cifras tienen forma. Cambia a 7 y 90 días.
+  2. **Gente y negocios:** abajo, **Retención por cohorte** (una fila por semana con D1 · D7 · D30) y los embudos de **vecinos nuevos** y de **Publica tu negocio paso a paso**.
+  3. **Resumen:** el embudo nuevo **de buscar a «El negocio aceptó»** (el diseño termina ahí; la Fase 1 terminaba en «Contactaron»: confirma el texto), **vistas de fichas y sin
+     repetidos** y **«Llamar» en una semilla**.
+  4. **Hogar y Auto** (pestaña nueva): pre-estimado → cita, emergencias y su tiempo de respuesta, llegó en la franja, aprobado contra cobrado.
+  5. **Búsquedas sin oferta:** abajo, **«Buscaron y no hubo resultados»** (en la semilla: «mofongo vegano», «notario público», «plomero 24 horas»; «xyz», de una sola persona, no sale).
+  6. **Reportes** (pestaña nueva): prende **Dinero** (sale cada lunes 8 AM; cambia a «Cada día»), y mira el correo en el simulador de correo cuando llegue su hora. **Mándamelo ahora**
+     te manda el reporte diario de hoy a tu correo y como aviso: revisa «Lo que necesita de ti» (los pasos pendientes de Sistema › Apps › «Lo que te toca»). Para recibir correos,
+     tu cuenta necesita un correo (Mi cuenta › Perfil).
+  7. **Inicio** del Super Admin: al final, **Ciudad viva** por ciudad (semillas reclamadas, publicaciones por día, recomendaciones, vecinos activos).
+  8. **Mañana a las 7:30 AM** te llega «Tu reporte de hoy» (aviso; y correo si tu cuenta tiene correo). Si a las 8:00 no salió, verás la alerta en Analítica › Reportes.
+- **Decisiones que tomé (si prefieres otra, se cambia):**
+  - **El reporte diario va a todos los Admins activos** (no hay una marca de «fundador» en el equipo). Si prefieres solo a ti, se agrega esa marca.
+  - **El aviso del reporte no muestra las cifras en la pantalla bloqueada** (como los demás avisos del equipo): el texto completo está en la campana y en el correo.
+  - **Si sale después de las 8:00, también hay alerta** (no solo si no salió): «salió tarde» queda como alerta del día, una vez.
+  - **Reportes programados:** la frecuencia es cada día, cada lunes o el día 1, siempre a las 8:00 AM de Hazleton, con los últimos 7 días (el mensual, 30). Programa quien tiene
+    permiso de exportar (como en el prototipo); el reporte diario del fundador solo lo ven los Admins.
+  - **Búsquedas sin resultado:** solo las que buscaron 2 o más personas; todas las búsquedas sin cuenta cuentan como una sola persona (una búsqueda puede ser un nombre).
+  - **Vistas sin repetidos:** Analítica muestra las dos cifras; **el panel del negocio sigue mostrando todas las vistas** (cambiarlo cambia las capturas aprobadas del panel: LAUNCH → 9n, con tu OK).
+  - **Conversión a Pro** = de las pruebas que terminaron en el período, cuántas tuvieron su primer cobro. El MRR cuenta el plan anual como su doceava parte.
+  - **«Ciudad viva» va al final del Inicio** para no mover lo de arriba; la captura aprobada del Inicio (`pruebas/visual/admin-hoy`) es de la parte de arriba: si en algún
+    dispositivo alto se ve, el CI pedirá aprobarla de nuevo (no se corrió `pruebas/visual` aquí).
+  - **Pestañas nuevas en español e inglés** (Dinero, Hogar y Auto, Reportes y lo nuevo de Resumen, Gente y Búsquedas); las pestañas viejas siguen en español (LAUNCH → 9f).
+  - **Grabación de sesiones (rrweb) y Web Vitals propios no se construyeron** (LAUNCH: rrweb → 9s, Web Vitals → 9j): ver por qué abajo en LAUNCH.
+  - **Los embudos cuentan personas distintas en cada paso**, no un camino estricto: en el sandbox «Pidieron» sale mayor que «Buscaron» porque la semilla tiene pedidos sin búsquedas
+    (en producción, con todo pasando por la app, se ordena solo). Las etiquetas son cortas porque las barras cortan las largas; la ayuda de cada embudo dice qué cuenta.
+- **Prueba:** `ana9g` (85 comprobaciones) pasó dos veces seguidas contra el servidor construido y una base local con las semillas; `alreves9g` 29/29 y los guardianes limpios. La corrida de verdad es la del CI.

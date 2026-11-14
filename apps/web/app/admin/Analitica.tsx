@@ -5,17 +5,22 @@ import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
 import { useTransition, type ComponentType, type ReactNode } from "react";
-import { exportar } from "./acciones-analitica";
+import { exportar, programar, reporteAhora } from "./acciones-analitica";
 import { motivoAyuda } from "@/lib/ayuda-motivos";
 import { Toast, useAncho, useToast } from "./Colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"HBars" | "AdminNote" | "Icon", ComponentType<any>>;
+type AN = typeof import("@/lib/admin-analitica");
 export type DatosAnalitica = {
-  tab: string; dias: number; exporta: boolean;
+  tab: string; dias: number; exporta: boolean; l?: "es" | "en"; replica?: boolean;
+  // 9g · Dinero, Hogar y Auto, Reportes, retención por cohorte, embudos, búsquedas sin resultado, contactos desde semillas y vistas sin repetidos.
+  dinero?: Awaited<ReturnType<AN["dinero"]>>; cohortes?: Awaited<ReturnType<AN["retencionCohortes"]>>; embudos?: Awaited<ReturnType<AN["embudos"]>>;
+  cv?: Awaited<ReturnType<AN["contactosYVistas"]>>; sinRes?: Awaited<ReturnType<AN["busquedasSinResultado"]>>; ha?: Awaited<ReturnType<AN["hogarAuto"]>>;
+  programados?: Awaited<ReturnType<typeof import("@/lib/reportes").misReportes>>; diarios?: Awaited<ReturnType<typeof import("@/lib/reporte-diario").reportesDiarios>> | null;
   gente?: { u: { n: number; nuevos: number; activos: number }; b: { n: number; pro: number; ver: number }; retencion: { k: number; base: number; vuelven: number }[]; cats: { id: string; short: string; n: number; pro: number }[] };
   embudo?: { buscar: number; ficha: number; contactar: number };
-  confianza?: { sancionados: number; abiertas: { queue: string; n: number; es: string; sla: number }[]; cumplido: { total: number; a_tiempo: number } };
+  confianza?: { sancionados: number; abiertas: { queue: string; n: number; es: string; sla: number }[]; cumplido: { total: number; a_tiempo: number }; rep?: { reportes: number; operaciones: number; casos: number } };
   nosup?: { q: string; cat: string | null; n: number }[];
   sp?: { sal: { n: number; conseg: number; segok: number; segno: number; hechas: number; noshow: number; resp: number | null }; pro: { n: number; consultas: number; contrato: number; total: number; resp: number | null };
     rev: { cobro: number; base: number }; ayuda: { rub: string; reason: string; n: number }[] };
@@ -36,8 +41,13 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
   const [toast, setToast] = useToast();
   const [pend, start] = useTransition();
   const ir = (tab: string, dias = d.dias) => router.push(`${path}?${new URLSearchParams({ ...(tab !== "sum" ? { tab } : {}), ...(dias !== 30 ? { p: String(dias) } : {}) })}`, { scroll: false });
-  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen"], ["ppl", "Gente y negocios"], ["trust", "Soporte y confianza"], ["sp", "Doctores y Profesionales"], ["mt", "Mercados y Tiendas"], ["ft", "Fiestas y Transporte"], ["no", "Noche"], ["en", "Educación · Niños · Deporte"], ["ia", "Iglesias · Bienes Raíces · Autos"], ["com", "Comunidad"], ["evt", "Eventos"], ["cpa", "El Compa y Soporte"], ["apps", "Apps"], ["nosup", "Búsquedas sin oferta"], ["exp", "Exportar"]] as const).map(([k, l]) => ({ l, on: d.tab === k, onClick: () => ir(k) })) };
-  const periodo: Bloque = { type: "chips", items: [7, 30, 90].map((n) => ({ l: `${n} días`, v: d.dias === n ? "selected" : "filter", onClick: () => ir(d.tab, n) })) };
+  const E = (a: string, b: string) => (d.l === "en" ? b : a);
+  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen", "Overview"], ["ppl", "Gente y negocios", "People and businesses"], ["dinero", "Dinero", "Money"], ["trust", "Soporte y confianza", "Support and trust"],
+    ["sp", "Doctores y Profesionales", "Doctors and Professionals"], ["ha", "Hogar y Auto", "Home and Auto"], ["mt", "Mercados y Tiendas", "Markets and Stores"], ["ft", "Fiestas y Transporte", "Parties and Transport"],
+    ["no", "Noche", "Nightlife"], ["en", "Educación · Niños · Deporte", "Education · Kids · Sports"], ["ia", "Iglesias · Bienes Raíces · Autos", "Churches · Real Estate · Cars"], ["com", "Comunidad", "Community"],
+    ["evt", "Eventos", "Events"], ["cpa", "El Compa y Soporte", "El Compa and Support"], ["apps", "Apps", "Apps"], ["nosup", "Búsquedas sin oferta", "Searches without supply"], ["rep", "Reportes", "Reports"],
+    ["exp", "Exportar", "Export"]] as const).map(([k, es, en]) => ({ l: E(es, en), on: d.tab === k, onClick: () => ir(k) })) };
+  const periodo: Bloque = { type: "chips", items: [7, 30, 90].map((n) => ({ l: E(`${n} días`, `${n} days`), v: d.dias === n ? "selected" : "filter", onClick: () => ir(d.tab, n) })) };
   const kpis = (items: { k: string; v: string; s?: string; dark?: boolean; onClick?: () => void }[]): Bloque => ({ type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))",
     items: items.map((x) => ({ k: x.k, v: x.v, s: x.s, onClick: x.onClick, ...(x.dark ? { bg: "var(--tl-ink)", fg: "var(--tl-white)", bd: "var(--tl-ink)", sFg: "rgba(255,255,255,.7)" } : {}) })) });
 
@@ -49,7 +59,15 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
         <PanelBloques bloques={[periodo]} />
         {d.embudo.buscar ? <A.HBars label="EMBUDO · DE BUSCAR A CONTACTAR" help={`${d.dias} días · personas · buscar o abrir una categoría → ficha → Llamar, WhatsApp o Cómo llegar`} items={F.map(([l, n]) => ({ label: l, width: `${Math.max(2, Math.round((n / (F[0][1] || 1)) * 100))}%`, color: "var(--tl-action)", value: String(n) }))} />
           : <PanelBloques bloques={[{ type: "empty", icon: "filter", t: "Todavía no hay movimiento", s: "Cuando los vecinos busquen y abran fichas en el período, el embudo sale aquí." }]} />}
-        <PanelBloques bloques={[{ type: "note", tone: "info", t: "Vendido, comisión, operaciones y citas aprobadas llegan con los pedidos y las citas." }]} />
+        {d.embudos ? (() => { const o = d.embudos.operacion, F = [[E("Buscaron", "Searched"), o.buscaron], [E("Abrieron una ficha", "Opened a page"), o.ficha],
+            [E("Contactaron", "Contacted"), o.contactaron], [E("Pidieron", "Ordered"), o.enviaron], [E("El negocio aceptó", "Business accepted"), o.aceptadas]] as const;
+          return <A.HBars label={E("EMBUDO · DE BUSCAR A ACEPTADO", "FUNNEL · FROM SEARCH TO ACCEPTED")} help={E(`${d.dias} días · personas distintas · «pidieron» = un pedido, una cita o una reserva`, `${d.dias} days · distinct people · «ordered» = an order, booking or reservation`)}
+            items={F.map(([l, n]) => ({ label: l, width: `${Math.min(100, Math.max(2, Math.round((n / (F[0][1] || 1)) * 100)))}%`, color: "var(--tl-action)", value: String(n) }))} />; })() : null}
+        {d.cv ? <PanelBloques bloques={[kpis([
+          { k: E("VISTAS DE FICHAS", "BUSINESS PAGE VIEWS"), v: d.cv.vistas.vistas.toLocaleString("en-US"), s: E(`${d.cv.vistas.unicos.toLocaleString("en-US")} sin repetidos`, `${d.cv.vistas.unicos.toLocaleString("en-US")} unique`), dark: true },
+          { k: E("«LLAMAR» EN UNA SEMILLA", "«CALL» ON A SEED"), v: String(d.cv.semillas.toques), s: E(`${d.cv.semillas.semillas} negocios sin reclamar`, `${d.cv.semillas.semillas} unclaimed businesses`) },
+          { k: E("SEMILLAS RECLAMADAS", "SEEDS CLAIMED"), v: String(d.cv.semillas.reclamadas), s: E("en el período", "in the period") },
+        ]), ...(d.cv.top.length ? [{ type: "rows" as const, k: E("SEMILLAS QUE MÁS LLAMAN", "MOST CALLED SEEDS"), items: d.cv.top.map((x) => ({ key: x.nombre, icon: "phone", t: x.nombre, r: String(x.toques), s: x.reclamada ? E("Ya reclamó su página", "Already claimed its page") : E("Sin reclamar · sal a buscarlo", "Unclaimed · go find them") })) }] : [])]} /> : null}
       </>);
   } else if (d.tab === "ppl" && d.gente) {
     const g = d.gente, top = g.cats[0]?.n || 1;
@@ -65,6 +83,21 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
           items={g.retencion.map((r) => ({ label: `D${r.k}`, width: r.base ? `${Math.max(2, Math.round((r.vuelven / r.base) * 100))}%` : "2%", color: "var(--tl-action)", value: r.base ? `${Math.round((r.vuelven / r.base) * 100)} % · ${r.vuelven} de ${r.base}` : "—" }))} />
           : <A.AdminNote tone="info" icon="users">Retención: todavía no hay cuentas nuevas con la edad suficiente en el período.</A.AdminNote>}
         <A.HBars label="NEGOCIOS POR CATEGORÍA · PRO" items={g.cats.filter((c) => c.n).map((c) => ({ label: c.short, width: `${Math.round((c.n / top) * 100)}%`, color: "var(--tl-ink)", value: `${c.n} · ${c.pro}` }))} />
+        {/* 9g · Retención por cohorte semanal (metricas_retencion) y los embudos del vecino y del negocio. */}
+        <PanelBloques bloques={[{ type: "rows", k: E("RETENCIÓN POR COHORTE · SEMANA EN QUE SE REGISTRARON", "RETENTION BY COHORT · WEEK THEY SIGNED UP"),
+          items: d.cohortes?.length ? d.cohortes.map((c) => ({ key: c.cohorte, icon: "users", t: E(`Semana del ${c.cohorte}`, `Week of ${c.cohorte}`), r: String(c.nuevos),
+            s: `D1 ${pct(c.d1, c.base_d1)} · D7 ${pct(c.d7, c.base_d7)} · D30 ${pct(c.d30, c.base_d30)}` }))
+            : [{ key: "0", icon: "users", t: E("Todavía no hay cohortes", "No cohorts yet") }] },
+          { type: "note", tone: "info", icon: "info", t: E("Vecinos nuevos por semana (a la derecha) y cuántos volvieron el día 1, 7 y 30; «—» = esa semana todavía no tiene la edad.", "New neighbors per week (on the right) and how many came back on day 1, 7 and 30; «—» = that week is not that old yet.") }]} />
+        {d.embudos ? (() => { const v = d.embudos.vecino, n = d.embudos.negocio;
+          const FV = [[E("Se registraron", "Signed up"), v.registrados], [E("Buscaron", "Searched"), v.usaron], [E("Contactaron", "Contacted"), v.contactaron], [E("Volvieron", "Came back"), v.volvieron]] as const;
+          const PN: Record<string, [string, string]> = { B1: ["Tipo de negocio", "Business type"], C1: ["Lo que hacen", "What they do"], D1: ["Precios", "Prices"], E1: ["Dónde y cuándo", "Where and when"], F1: ["Revisar", "Review"] };
+          const FN = [...n.pasos.map((x) => [E(PN[x.paso]![0], PN[x.paso]![1]), x.n] as const), [E("Publicaron", "Published"), n.publicaron] as const];
+          const barras = (F: readonly (readonly [string, number])[], color: string) => F.map(([l, k]) => ({ label: l, width: `${Math.min(100, Math.max(2, Math.round((k / (F[0]![1] || 1)) * 100)))}%`, color, value: String(k) }));
+          return <>
+            <A.HBars label={E("EMBUDO · VECINOS NUEVOS", "FUNNEL · NEW NEIGHBORS")} help={E(`${d.dias} días · cuentas nuevas · buscaron o abrieron una ficha, contactaron o pidieron, volvieron otro día`, `${d.dias} days · new accounts · searched or opened a page, contacted or ordered, came back another day`)} items={barras(FV, "var(--tl-action)")} />
+            <A.HBars label={E("EMBUDO · PUBLICA TU NEGOCIO PASO A PASO", "FUNNEL · LIST YOUR BUSINESS STEP BY STEP")} help={E(`${d.dias} días · borradores que empezaron`, `${d.dias} days · drafts started`)} items={barras(FN, "var(--tl-ink)")} />
+          </>; })() : null}
       </>);
   } else if (d.tab === "trust" && d.confianza) {
     const c = d.confianza, mx = Math.max(1, ...c.abiertas.map((x) => x.n));
@@ -76,7 +109,10 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
         ])]} />
         {c.abiertas.length ? <A.HBars label="COLAS ABIERTAS" help="SLA en horas" items={c.abiertas.map((x) => ({ label: x.es, width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: `${x.n} · ${x.sla} h` }))} />
           : <A.AdminNote tone="ok" icon="check">No hay casos abiertos en tus colas.</A.AdminNote>}
-        <PanelBloques bloques={[{ type: "note", tone: "info", t: "Reportes por cada mil operaciones y tickets de soporte llegan con los pedidos y con Soporte." }]} />
+        {c.rep ? <PanelBloques bloques={[kpis([
+          { k: E("REPORTES POR CADA 1,000 OPERACIONES", "REPORTS PER 1,000 TRANSACTIONS"), v: c.rep.operaciones ? (Math.round((10000 * c.rep.reportes) / c.rep.operaciones) / 10).toLocaleString("en-US") : "—", s: E(`${c.rep.reportes} reportes · ${c.rep.operaciones} operaciones`, `${c.rep.reportes} reports · ${c.rep.operaciones} transactions`) },
+          { k: E("CASOS DE SOPORTE", "SUPPORT CASES"), v: String(c.rep.casos), s: E(`en ${d.dias} días · el detalle en El Compa y Soporte`, `in ${d.dias} days · details in El Compa and Support`), onClick: () => ir("cpa") },
+        ])]} /> : null}
       </>);
   } else if (d.tab === "sp" && d.sp) {
     // Doctores y Profesionales: solo cifras (nunca motivos de consulta, notas ni seguros de nadie).
@@ -368,7 +404,100 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
         {L.length ? <A.HBars label="BUSCARON Y NO HABÍA · 30 DÍAS" help="pidieron aviso" items={L.slice(0, 10).map((x) => ({ label: x.q, width: `${Math.round((x.n / (L[0]!.n || 1)) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
           : <PanelBloques bloques={[{ type: "empty", icon: "search", t: "Nadie ha pedido aviso todavía", s: "Cuando un vecino busca algo que no hay y toca «Avísame cuando haya», sale aquí." }]} />}
         <PanelBloques bloques={[{ type: "acts", items: [{ l: "Abrir en Catálogo", icon: "grid", onClick: () => router.push("/admin/catalogo?tab=nosup") }] }]} />
+        {/* 9g · Lo que se buscó y no encontró nada (search_logs): solo lo que buscaron 2 o más personas. */}
+        {d.sinRes?.length ? <A.HBars label={E("BUSCARON Y NO HUBO RESULTADOS · 30 DÍAS", "SEARCHED WITH NO RESULTS · 30 DAYS")} help={E("personas distintas · solo lo que buscaron 2 o más", "distinct people · only what 2 or more searched")}
+          items={d.sinRes.slice(0, 15).map((x) => ({ label: x.q, width: `${Math.round((x.personas / (d.sinRes![0]!.personas || 1)) * 100)}%`, color: "var(--tl-pro)", value: `${x.personas} · ${x.n}` }))} />
+          : <PanelBloques bloques={[{ type: "empty", icon: "search", t: E("Ninguna búsqueda sin resultado", "No searches without results"), s: E("Cuando dos o más vecinos busquen algo y no salga nada, aparece aquí.", "When two or more neighbors search for something and nothing comes up, it shows here.") }]} />}
       </>);
+  } else if (d.tab === "dinero" && d.dinero) {
+    // 9g · Dinero (prototipo secAnalit «money»): de metricas_dinero_dia y metricas_pro_dia, que llena el barrido. Solo cifras.
+    const D = d.dinero, usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const tot = (k: "bruto" | "comision" | "operaciones" | "devoluciones" | "devuelto" | "cerradas" | "no_llegaron") => D.tipos.reduce((a, x) => a + x[k], 0);
+    const delta = (a: number, b: number) => (b ? `${a >= b ? "+" : ""}${Math.round(((a - b) / b) * 100)} % ${E("contra el período anterior", "vs. the previous period")}` : E("sin período anterior", "no previous period"));
+    const TIPO: Record<string, [string, string]> = { order: ["Pedido", "Order"], market_order: ["Mercado", "Market order"], hold: ["Apartado", "Hold"], appointment: ["Cita", "Booking"], quote: ["Presupuesto", "Quote"],
+      party: ["Fiesta", "Party"], private_event: ["Evento privado", "Private event"], table: ["Mesa", "Table"], night: ["Noche", "Night"], trip: ["Viaje", "Trip"], enrollment: ["Inscripción", "Enrollment"],
+      visit: ["Visita", "Visit"], tickets: ["Boletos", "Tickets"], rental: ["Renta", "Rental"], plan: ["Plan", "Plan"] };
+    const nom = (k: string) => (TIPO[k] ? E(TIPO[k]![0], TIPO[k]![1]) : k);
+    const ticket = D.tipos.filter((x) => x.operaciones).map((x) => ({ k: x.tipo, v: x.bruto / x.operaciones })), mxT = Math.max(1, ...ticket.map((x) => x.v));
+    const mxS = Math.max(1, ...D.semanas.map((x) => x.neto)), ESTADO: Record<string, [string, string]> = { captured: ["Cobrado", "Charged"], held: ["Retenido", "Held"], released: ["Liberado", "Released"],
+      refunded: ["Devuelto", "Refunded"], partially_refunded: ["Devuelto en parte", "Partly refunded"], failed: ["Falló", "Failed"] };
+    const mxE = Math.max(1, ...D.estados.map((x) => x.monto + x.devuelto));
+    const FP = [[E("Prueba Pro", "Pro trial"), D.pro.iniciadas], [E("Dejaron tarjeta", "Left card"), D.pro.con_tarjeta], [E("Primer cobro", "First charge"), D.pro.primeros]] as const;
+    cuerpo = (
+      <>
+        <PanelBloques bloques={[periodo, kpis([
+          { k: E("VENDIDO EN LÍNEA", "SOLD ONLINE"), v: usd(tot("bruto")), s: delta(tot("bruto"), D.antes.bruto), dark: true },
+          { k: E("COMISIÓN", "COMMISSION"), v: usd(tot("comision")), s: delta(tot("comision"), D.antes.comision) },
+          { k: E("OPERACIONES COBRADAS", "PAID TRANSACTIONS"), v: String(tot("operaciones")), s: delta(tot("operaciones"), D.antes.operaciones) },
+          { k: E("DEVOLUCIONES", "REFUNDS"), v: pct(tot("devoluciones"), tot("operaciones")), s: E(`${tot("devoluciones")} · ${usd(tot("devuelto"))} devuelto`, `${tot("devoluciones")} · ${usd(tot("devuelto"))} refunded`) },
+          { k: E("TICKET PROMEDIO", "AVERAGE TICKET"), v: tot("operaciones") ? usd(tot("bruto") / tot("operaciones")) : "—", s: E("de lo cobrado", "of what was charged") },
+          { k: E("NO LLEGARON", "NO-SHOWS"), v: pct(tot("no_llegaron"), tot("cerradas")), s: E(`${tot("no_llegaron")} de ${tot("cerradas")} citas, mesas y visitas`, `${tot("no_llegaron")} of ${tot("cerradas")} bookings, tables and visits`) },
+        ]), { type: "chart", k: E("VENDIDO POR SEMANA · 8 SEMANAS", "SOLD PER WEEK · 8 WEEKS"), v: usd(D.semanas.reduce((a, x) => a + x.neto, 0)),
+          bars: D.semanas.map((x, i) => ({ h: `${Math.max(4, Math.round((x.neto / mxS) * 100))}%`, on: i === D.semanas.length - 1, l: x.semana.slice(5) })),
+          s: E("Solo lo cobrado, menos lo devuelto. La última barra es la semana en curso.", "Charged only, minus refunds. The last bar is the current week.") }]} />
+        {ticket.length ? <A.HBars label={E("TICKET PROMEDIO POR TIPO", "AVERAGE TICKET BY TYPE")} items={ticket.map((x) => ({ label: nom(x.k), width: `${Math.max(2, Math.round((x.v / mxT) * 100))}%`, color: "var(--tl-ink)", value: usd(x.v) }))} />
+          : <PanelBloques bloques={[{ type: "empty", icon: "card", t: E("Todavía no hay cobros en el período", "No charges in the period yet"), s: E("Cuando se cobre un pedido, una cita o boletos, sale aquí.", "When an order, booking or tickets are charged, it shows here.") }]} />}
+        <PanelBloques bloques={[{ type: "rows", k: E("POR TIPO DE OPERACIÓN", "BY TRANSACTION TYPE"), items: D.tipos.length ? D.tipos.map((x) => ({ key: x.tipo, icon: "card", t: nom(x.tipo), r: usd(x.bruto),
+            s: E(`${x.operaciones} cobradas · comisión ${usd(x.comision)} · devuelto ${usd(x.devuelto)}`, `${x.operaciones} paid · commission ${usd(x.comision)} · refunded ${usd(x.devuelto)}`) })) : [{ key: "0", icon: "card", t: E("Sin cobros en el período", "No charges in the period") }] },
+          { type: "group", k: "PRO" }, kpis([
+            { k: "MRR", v: usd(D.foto.mrr), s: E(`${D.foto.pagando} Pro pagando`, `${D.foto.pagando} paying Pro`), dark: true, onClick: () => router.push("/admin/planes") },
+            { k: E("CONVERSIÓN A PRO", "PRO CONVERSION"), v: pct(D.pro.primeros, D.pro.terminadas), s: E(`${D.pro.primeros} de ${D.pro.terminadas} pruebas que terminaron`, `${D.pro.primeros} of ${D.pro.terminadas} trials that ended`) },
+            { k: E("EN PRUEBA", "ON TRIAL"), v: String(D.foto.prueba), s: E(`${D.pro.a_free} pasaron a Free en el período`, `${D.pro.a_free} went to Free in the period`) },
+            { k: E("COBRADO DE PRO", "PRO CHARGED"), v: usd(D.pro.cobrado), s: E("en el período", "in the period") },
+          ])]} />
+        <A.HBars label={E("EMBUDO · PRUEBA PRO → PAGO", "FUNNEL · PRO TRIAL → PAID")} help={E(`${d.dias} días`, `${d.dias} days`)} items={FP.map(([l, n]) => ({ label: l, width: `${Math.min(100, Math.max(2, Math.round((n / (FP[0][1] || 1)) * 100)))}%`, color: "var(--tl-pro)", value: String(n) }))} />
+        {D.estados.length ? <A.HBars label={E("DINERO POR ESTADO", "MONEY BY STATE")} help={E(`${d.dias} días · cobros creados en el período`, `${d.dias} days · charges created in the period`)}
+          items={D.estados.map((x) => ({ label: ESTADO[x.estado] ? E(ESTADO[x.estado]![0], ESTADO[x.estado]![1]) : x.estado, width: `${Math.max(2, Math.round(((x.monto + x.devuelto) / mxE) * 100))}%`, color: x.estado === "captured" ? "var(--tl-action)" : "var(--tl-ink)", value: usd(x.monto + x.devuelto) }))} /> : null}
+        <PanelBloques bloques={[{ type: "note", tone: "info", icon: "info", t: E("La conciliación diaria con Stripe (lo cobrado aquí contra lo que dice Stripe) llega con el bloque 9k: sale aquí y en el reporte diario.", "The daily reconciliation with Stripe (what was charged here against what Stripe says) arrives with block 9k: it shows here and in the daily report.") },
+          { type: "note", tone: "info", icon: "lock", t: E("Solo cifras por ciudad, día y tipo: nunca quién pagó.", "Figures only by city, day and type: never who paid.") }]} />
+      </>);
+  } else if (d.tab === "ha" && d.ha) {
+    // 9g · Hogar y Auto (LAUNCH L452): solo cifras.
+    const { sol, hogar, auto, est } = d.ha, usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    cuerpo = (
+      <PanelBloques bloques={[periodo, { type: "group", k: E("PRE-ESTIMADOS, PRESUPUESTOS Y EMERGENCIAS", "PRE-ESTIMATES, QUOTES AND EMERGENCIES") }, kpis([
+        { k: E("PRE-ESTIMADO → CITA", "PRE-ESTIMATE → BOOKING"), v: pct(sol.pre_cita, sol.pre), s: E(`${sol.pre_cita} de ${sol.pre} pre-estimados`, `${sol.pre_cita} of ${sol.pre} pre-estimates`), dark: true },
+        { k: E("PRESUPUESTO → CITA", "QUOTE → BOOKING"), v: pct(sol.pq_cita, sol.pq), s: E(`${sol.pq_cita} de ${sol.pq} presupuestos`, `${sol.pq_cita} of ${sol.pq} quotes`) },
+        { k: E("EMERGENCIAS ATENDIDAS", "EMERGENCIES ANSWERED"), v: pct(sol.em_ok, sol.em), s: E(`${sol.em_ok} de ${sol.em}`, `${sol.em_ok} of ${sol.em}`) },
+        { k: E("RESPUESTA A UNA EMERGENCIA", "EMERGENCY RESPONSE"), v: sol.em_min == null ? "—" : `${sol.em_min} min`, s: E("promedio, de pedir a que un negocio acepte", "average, from request to a business accepting") },
+      ]), { type: "group", k: E("VISITAS Y CITAS", "VISITS AND BOOKINGS") }, kpis([
+        { k: E("HOGAR · LLEGÓ EN LA FRANJA", "HOME · ARRIVED IN THE WINDOW"), v: pct(hogar.en_franja, hogar.llegaron), s: E(`${hogar.en_franja} de ${hogar.llegaron} con «Llegué» · franja de 2 h`, `${hogar.en_franja} of ${hogar.llegaron} with «Arrived» · 2-hour window`), dark: true },
+        { k: E("HOGAR · NO LLEGÓ EL CLIENTE", "HOME · CUSTOMER NO-SHOW"), v: String(hogar.no_llego), s: E(`de ${hogar.visitas} visitas que ya pasaron`, `of ${hogar.visitas} visits that already happened`) },
+        { k: E("AUTO · CITAS", "AUTO · BOOKINGS"), v: String(auto.visitas), s: E(`${auto.no_llego} no llegaron`, `${auto.no_llego} no-shows`) },
+      ]), { type: "group", k: E("ESTIMADOS: APROBADO CONTRA COBRADO", "ESTIMATES: APPROVED VS. CHARGED") }, kpis([
+        { k: E("APROBADO", "APPROVED"), v: usd(est.aprobado), s: E(`${est.con} trabajos terminados con estimado`, `${est.con} finished jobs with an estimate`) },
+        { k: E("COBRADO", "CHARGED"), v: usd(est.cobrado), s: est.aprobado ? E(`${pct(est.cobrado, est.aprobado)} de lo aprobado · nunca más`, `${pct(est.cobrado, est.aprobado)} of what was approved · never more`) : "—", dark: true },
+        { k: E("EXTRAS CON SU OK", "EXTRAS WITH THEIR OK"), v: String(est.extra), s: E("algo que apareció y el cliente aprobó", "something that came up and the customer approved") },
+      ]), { type: "note", tone: "info", icon: "lock", t: E("Solo cifras: nunca la casa, el carro ni quién pidió.", "Figures only: never the home, the car or who asked.") }]} />);
+  } else if (d.tab === "rep") {
+    // 9g · Reportes: los programados por correo (de quien mira) y el reporte diario al fundador (solo los Admins lo ven).
+    const TAB: [string, string, string][] = [["sum", "Resumen", "Overview"], ["dinero", "Dinero", "Money"], ["ppl", "Gente y negocios", "People and businesses"], ["nosup", "Búsquedas sin resultado", "Searches with no results"],
+      ["evt", "Eventos", "Events"], ["cpa", "El Compa y Soporte", "El Compa and Support"], ["biz", "Negocios", "Businesses"]];
+    const CADA: Record<string, [string, string]> = { dia: ["Cada día, 8 AM", "Every day, 8 AM"], semana: ["Cada lunes, 8 AM", "Every Monday, 8 AM"], mes: ["El día 1, 8 AM", "On the 1st, 8 AM"] };
+    const prog = (k: string) => d.programados?.find((x) => x.tab === k && x.status === "activo");
+    const cambiar = (k: string, cada: string | null) => start(async () => { const r = await programar(k, cada); setToast(r.mensaje ?? ""); if (r.ok) router.refresh(); });
+    const cuando = (iso: string | null) => (iso ? new Intl.DateTimeFormat(d.l === "en" ? "en-US" : "es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)) : E("todavía no salió", "not sent yet"));
+    const filas: Bloque[] = [{ type: "note", tone: d.exporta ? "info" : "warn", icon: d.exporta ? "calendar" : "lock", t: d.exporta ? E("Te llegan a tu correo con las cifras de tus ciudades. Solo cifras: nunca quién.", "They arrive in your email with the figures for your cities. Figures only: never who.") : E("Tu rol no programa reportes.", "Your role cannot schedule reports.") },
+      { type: "rows", k: E("REPORTES PROGRAMADOS", "SCHEDULED REPORTS"), items: TAB.map(([k, es, en]) => { const p = prog(k); return { key: k, icon: "calendar", t: E(es, en),
+        s: p ? `${E(CADA[p.cada]![0], CADA[p.cada]![1])} · ${E("último", "last")}: ${cuando(p.last_sent_at)}` : E("Bajo pedido", "On demand"),
+        ...(d.exporta ? { tgOn: !!p, onTg: () => cambiar(k, p ? null : "semana") } : {}) }; }) }];
+    for (const [k, es, en] of TAB) { const p = prog(k); if (p && d.exporta) filas.push({ type: "chips", k: E(`${es.toUpperCase()} · CADA CUÁNTO`, `${en.toUpperCase()} · HOW OFTEN`), items: (["dia", "semana", "mes"] as const).map((c) => ({ l: E(CADA[c]![0], CADA[c]![1]), v: p.cada === c ? "selected" : "filter", onClick: () => { if (!pend && p.cada !== c) cambiar(k, c); } })) }); }
+    if (d.diarios) {
+      const usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      const hoy = d.diarios.find((x) => x.kind === "diario");
+      filas.push({ type: "group", k: E("REPORTE DIARIO AL FUNDADOR · 7:30 AM", "DAILY REPORT TO THE FOUNDER · 7:30 AM") },
+        { type: "acts", items: [{ l: E("Mándamelo ahora", "Send it to me now"), icon: "bell", off: pend, onClick: () => start(async () => { const r = await reporteAhora(); setToast(r.mensaje ?? ""); }) }] },
+        { type: "rows", items: d.diarios.length ? d.diarios.map((x) => x.kind === "alerta"
+          ? { key: `a${x.dia}`, icon: "warning", ifg: "var(--tl-danger)", t: E(`${x.dia} · no salió a tiempo`, `${x.dia} · did not go out on time`), tag: E("ALERTA", "ALERT"), tone: "danger", s: x.cifras.motivo === "tarde" ? E(`Salió después de las 8:00 (${x.hora}).`, `Went out after 8:00 (${x.hora}).`) : E("A las 8:00 no había salido.", "By 8:00 it had not gone out.") }
+          : { key: `d${x.dia}`, icon: "bell", t: E(`${x.dia} · salió ${x.hora}`, `${x.dia} · went out ${x.hora}`), r: usd(x.cifras.dinero?.bruto ?? 0),
+              s: E(`${x.cifras.negocios?.nuevos ?? 0} negocios nuevos · ${x.cifras.operaciones?.enviadas ?? 0} operaciones · ${(x.destinos ?? []).map((z) => `${z.n} ${z.canal === "push" ? "push" : "correos"}`).join(" · ")}`,
+                `${x.cifras.negocios?.nuevos ?? 0} new businesses · ${x.cifras.operaciones?.enviadas ?? 0} transactions · ${(x.destinos ?? []).map((z) => `${z.n} ${z.canal === "push" ? "push" : "emails"}`).join(" · ")}`) })
+          : [{ key: "0", icon: "bell", t: E("Todavía no ha salido ninguno", "None has gone out yet"), s: E("Sale cada día a las 7:30 AM de Hazleton a los Admins.", "It goes out every day at 7:30 AM Hazleton time to the Admins.") }] });
+      if (hoy) filas.push({ type: "rows", k: E("LO QUE NECESITA DE TI", "WHAT NEEDS YOU"), items: (hoy.cifras.pendientes ?? []).length ? hoy.cifras.pendientes.map((p, i) => ({ key: `p${i}`, icon: "brief", t: E(p.es, p.en), s: `${E("Paquete", "Package")} ${p.paquete}`, onClick: () => router.push("/admin/sistema/apps?v=toca") }))
+        : [{ key: "0", icon: "check", t: E("Nada por ahora", "Nothing for now") }] });
+    }
+    filas.push({ type: "note", tone: "info", icon: "info", t: d.replica ? E("Analítica lee de la base de análisis (réplica): nunca frena la app.", "Analytics reads from the analysis database (replica): it never slows the app down.") : E("En el sandbox Analítica lee de la misma base; en producción, de la réplica de análisis.", "In the sandbox Analytics reads from the same database; in production, from the analysis replica.") });
+    cuerpo = <PanelBloques bloques={filas} />;
   } else if (d.tab === "exp") {
     const R = [["biz", "Negocios"], ["audit", "Historial"], ["nosup", "Búsquedas sin oferta"]] as const;
     const bajar = (k: "biz" | "audit" | "nosup") => start(async () => {
@@ -389,7 +518,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
   }
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 1120 }}>
-      <PanelBloques bloques={[{ type: "head", eye: "CONTROL", t: "Analítica", s: "Lo que pasa en la plataforma, de los eventos propios y de la base: gente, negocios, búsquedas y confianza. Nada sale a terceros.", h1: desk ? 26 : 22 }, tabs]} />
+      <PanelBloques bloques={[{ type: "head", eye: "CONTROL", t: E("Analítica", "Analytics"), s: E("Lo que pasa en la plataforma, de los eventos propios y de la base: dinero, gente, negocios, búsquedas y confianza. Nada sale a terceros.", "What happens on the platform, from our own events and database: money, people, businesses, searches and trust. Nothing goes to third parties."), h1: desk ? 26 : 22 }, tabs]} />
       {cuerpo}
       <Toast t={toast} desk={desk} />
     </div>);

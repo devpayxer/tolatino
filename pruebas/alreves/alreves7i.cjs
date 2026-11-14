@@ -19,7 +19,7 @@ const casos = [
   ['soporteSiempreLlega', AV, 'E2("Lo de tus casos siempre te llega", "Your case updates always reach you")', 'E2("Lo de tus casos", "Your cases")'],
   ['soporteSiempreLlega', AV, '    [E2("EMPLEOS", "JOBS"),', '    [E2("SOPORTE", "SUPPORT"), [["sopR", E2("Respuestas de Soporte", "Support replies"), ""]]],\n    [E2("EMPLEOS", "JOBS"),'],
   // analiticaSinPersonas ampliado (El Compa y Soporte)
-  ['analiticaSinPersonas', AN, 'from compa_analitica_dia a where a.dia >= ${DESDE} and ${scope("a.city_id")} group by a.uso order by 2 desc', 'from compa_analitica_dia a join compa_conversations cv on cv.city_id = a.city_id where a.dia >= ${DESDE} and ${scope("a.city_id")} group by a.uso order by 2 desc'],
+  ['analiticaSinPersonas', AN, 'from compa_analitica_dia_cache a where a.dia >= ${DESDE} and ${scope("a.city_id")} group by a.uso order by 2 desc', 'from compa_analitica_dia_cache a join compa_conversations cv on cv.city_id = a.city_id where a.dia >= ${DESDE} and ${scope("a.city_id")} group by a.uso order by 2 desc'],
   ['analiticaSinPersonas', AN, 'coalesce(sum(x.alta), 0)::int as alta,', 'coalesce(sum(x.alta), 0)::int as alta, max(x.assigned_staff_id::text) as quien,'],
   ['analiticaSinPersonas', M, "       count(*) filter (where c.origin = 'compa')::int as desde_compa,", "       max(c.user_id::text) as user_id, count(*) filter (where c.origin = 'compa')::int as desde_compa,"],
   ['analiticaSinPersonas', M, '       coalesce(c.marcadas, 0)::int as marcadas,', '       coalesce(c.marcadas, 0)::int as marcadas, null::text as query_tapada,'],
