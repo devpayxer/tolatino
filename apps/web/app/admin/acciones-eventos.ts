@@ -120,7 +120,7 @@ export async function evtCasoCancela(caso: string, bloquear: boolean, motivo: st
    motivo, aviso al organizador, event_changes y auditoría (lib/evt-admin.ts). */
 export async function evtCupo(fecha: string, kind: string, ref: string | null, cantidad: string, motivo: string): Promise<ResAdm> {
   const s = await requerir("evt", "editar");
-  if (kind !== "tipo" && kind !== "mesa" && kind !== "dia") return no("Ese cupo no existe.");
+  if (kind !== "tipo" && kind !== "mesa" && kind !== "dia" && kind !== "rsvp") return no("Ese cupo no existe.");
   const r = await (await import("@/lib/evt-admin")).ajustarCupo(s, String(fecha), kind, ref == null ? null : String(ref), String(cantidad ?? ""), motivoOk(motivo));
   if (!r.ok) return no(r.msg);
   listo();

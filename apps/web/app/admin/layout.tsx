@@ -6,6 +6,7 @@ import { Arranque } from "./Arranque";
 import { gruposNav } from "@/lib/admin-nav";
 import { Shell } from "./ui";
 import { casosAbiertos } from "@/lib/admin-colas";
+import { db } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Admin · To'Latino", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -32,8 +33,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const grupos = await gruposNav((k) => s.puede(k, "ver"));
   const nombre = [s.first_name, s.last_name].filter(Boolean).join(" ");
   const iniciales = ((s.first_name?.[0] ?? "") + (s.last_name?.[0] ?? "")).toUpperCase();
+  // 9n-3 · Las ciudades que puede elegir en el selector: las de su rol (o todas las abiertas, si su rol es de todas).
+  const ciudades = (await db().query<{ id: string; nombre: string }>(
+    `select id, name as nombre from cities where (cardinality($1::text[]) = 0 or id = any($1::text[])) order by (status = 'on') desc, sort, name`, [s.ciudadesRol])).rows;
   return (
-    <Shell yo={{ nombre, rol: s.roleName.toUpperCase(), iniciales }} grupos={grupos} casos={{ ...(await casosAbiertos(s)), tomar: s.puede("colas", "aprobar") }}>
+    <Shell yo={{ nombre, rol: s.roleName.toUpperCase(), iniciales }} grupos={grupos} casos={{ ...(await casosAbiertos(s)), tomar: s.puede("colas", "aprobar") }} ciudades={ciudades} vista={s.ciudadVista}>
       {children}
     </Shell>
   );

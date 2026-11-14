@@ -186,15 +186,17 @@ function cuposAdm(e: EvtAdm, C: CuposFecha | null, fechas: FechaPanel[], puede: 
   if (prox.length > 1) B.push({ type: "chips", k: "FECHA QUE ESTÁS VIENDO", items: prox.map((f) => ({ l: `${diaCorto(f.dia, true)} · ${hora(f.h0)}`, v: f.id === C.fecha ? "selected" : "filter", onClick: () => irFecha(f.id) })) });
   B.push({ type: "rows", k: `CUPOS · ${diaCorto(C.dia, true).toUpperCase()} · ${hora(C.h0)}`, cols: desk ? "repeat(auto-fill,minmax(340px,1fr))" : undefined, items: C.filas.map((x) => {
     const quedan = Math.max(0, x.cantidad - x.vendidos - x.apartados);
-    return { key: `${x.kind}${x.ref ?? ""}`, icon: x.kind === "mesa" ? "users" : x.kind === "dia" ? "calendar" : "ticket", t: x.nombre.es, r: `${x.vendidos} / ${x.cantidad}`,
-      s: `${x.apartados ? `${x.apartados} apartados · ` : ""}quedan ${quedan}${x.ajuste ? ` · ajustado por To'Latino: ${x.ajuste.motivo}` : ""}`, tag: quedan === 0 ? "AGOTADO" : null, tone: "neutral", compact: true, chev: false,
+    const rsvp = x.kind === "rsvp", libre = rsvp && !x.cantidad;
+    return { key: `${x.kind}${x.ref ?? ""}`, icon: x.kind === "mesa" ? "users" : x.kind === "dia" || rsvp ? "calendar" : "ticket", t: x.nombre.es, r: libre ? `${x.vendidos} / sin límite` : `${x.vendidos} / ${x.cantidad}`,
+      s: `${x.apartados ? `${x.apartados} apartados · ` : ""}${libre ? "sin límite de lugares" : `quedan ${quedan}`}${x.ajuste ? ` · ajustado por To'Latino: ${x.ajuste.motivo}` : ""}`, tag: quedan === 0 && !libre ? "AGOTADO" : null, tone: "neutral", compact: true, chev: false,
       acts: pe ? [{ l: "Ajustar cupo", icon: "edit", onClick: () => setConf({ titulo: `Ajustar cupo · ${x.nombre.es}`, cta: "Ajustar",
-        sub: `Ahora ${x.cantidad} · vendidos ${x.vendidos} · apartados ${x.apartados}. No baja de ${x.vendidos + x.apartados}. Manda sobre lo que guarde el organizador para esta fecha; recibe el aviso con el motivo y queda en la auditoría.`,
+        sub: rsvp ? `Ahora ${x.cantidad || "sin límite"} · lugares guardados en esta fecha ${x.vendidos}. 0 = sin límite; no baja de los lugares ya guardados. El cupo es de todo el evento; manda sobre lo que guarde el organizador, recibe el aviso con el motivo y queda en la auditoría.`
+          : `Ahora ${x.cantidad} · vendidos ${x.vendidos} · apartados ${x.apartados}. No baja de ${x.vendidos + x.apartados}. Manda sobre lo que guarde el organizador para esta fecha; recibe el aviso con el motivo y queda en la auditoría.`,
         valor: { k: "CUPO NUEVO", ini: String(x.cantidad), max: 6 }, plantillas: ["El lugar bajó su aforo", "Lo pidió el organizador", "Sobreventa o error de carga"],
         hacer: (m, _e, v) => evtCupo(C.fecha, x.kind, x.ref, v, m) }) }] : undefined };
   }) });
   const opciones = C.extender;
-  B.push({ type: "note", tone: "ink", icon: "clock", t: `VENTA EN LÍNEA HASTA · ${C.ventaHastaH}${C.extendida ? " · extendida por To'Latino" : ` · el organizador la cierra ${CORTE_L[C.corte] ?? ""}`}. En la puerta no se venden boletos.`,
+  if (!C.rsvp) B.push({ type: "note", tone: "ink", icon: "clock", t: `VENTA EN LÍNEA HASTA · ${C.ventaHastaH}${C.extendida ? " · extendida por To'Latino" : ` · el organizador la cierra ${CORTE_L[C.corte] ?? ""}`}. En la puerta no se venden boletos.`,
     cta: pe && opciones.length ? "Extender ventas" : undefined,
     onCta: pe && opciones.length ? () => setConf({ titulo: `Extender ventas · ${diaCorto(C.dia, true)}`, cta: "Extender",
       sub: "La venta en línea de esta fecha cierra más tarde (nunca después de que empieza: en la puerta no se vende). El organizador recibe el aviso con el motivo; queda en la auditoría.",

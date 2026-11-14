@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash, timingSafeEqual } from "node:crypto";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { PoolClient } from "pg";
 import { yo, type Yo } from "./cuenta";
@@ -10,7 +11,12 @@ import { estadoDosPasos, type Dos } from "./equipo/dos-pasos";
    Regla: el permiso se revisa SIEMPRE aquí (servidor). La pantalla solo esconde lo que no puedes. */
 
 export type Accion = "ver" | "editar" | "aprobar" | "retirar" | "exportar";
-export type Staff = Yo & { role: string; roleName: string; cities: string[]; puede: (s: string, a: Accion) => boolean; colas: string[] };
+/* `cities` = las ciudades que ve ESTA vista (vacío = todas): las del rol, o la UNA que la persona eligió en el selector del encabezado (9n-3).
+   Casi 270 consultas filtran con `s.cities`, así que el selector filtra todas las secciones a la vez sin tocar ninguna. Una ciudad elegida NUNCA da más
+   alcance que el rol: debe estar entre las del rol. `ciudadesRol` son las del rol (vacío = todas) y `ciudadVista` la elegida (null = «Todas»).
+   Lo que se exige de «alguien con todas las ciudades» (`!s.cities.length`) se vuelve más estricto mientras hay una elegida, nunca menos. */
+export type Staff = Yo & { role: string; roleName: string; cities: string[]; ciudadesRol: string[]; ciudadVista: string | null; puede: (s: string, a: Accion) => boolean; colas: string[] };
+export const COOKIE_CIUDAD = "tl_adm_ciudad";
 
 
 /* La fila del equipo de una persona (rol, ciudades y permisos), SIN mirar el segundo factor. Solo la usan staff() y la pantalla de los dos pasos. */
@@ -29,7 +35,13 @@ async function filaEquipo(u: Yo): Promise<Staff | null> {
   const m = r.rows[0];
   if (!m) return null;
   const set = new Set(m.perms ?? []);
-  return { ...u, role: m.role, roleName: m.role_name, cities: m.cities, puede: (s, a) => set.has(`${s}:${a}`), colas: m.colas ?? [] };
+  const rol = m.cities ?? [];
+  let vista: string | null = null;
+  try {
+    const c = (await cookies()).get(COOKIE_CIUDAD)?.value ?? "";
+    if (/^[a-z0-9-]{2,24}$/.test(c) && (!rol.length || rol.includes(c)) && (await db().query("select 1 from cities where id = $1", [c])).rowCount) vista = c;
+  } catch { /* sin petición (barrido, prueba): sin ciudad elegida */ }
+  return { ...u, role: m.role, roleName: m.role_name, cities: vista ? [vista] : rol, ciudadesRol: rol, ciudadVista: vista, puede: (s, a) => set.has(`${s}:${a}`), colas: m.colas ?? [] };
 
 }
 

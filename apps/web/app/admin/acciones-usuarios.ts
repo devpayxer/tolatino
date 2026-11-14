@@ -294,3 +294,36 @@ export async function pushRevocar(id: string, tokenId: string, motivo: string): 
     return null;
   }, "Ese teléfono ya no recibe avisos.");
 }
+
+/* 9n-3 · Enviar mensaje del equipo a una persona (AdminMessage): por la app (campana y push) o por SMS. usr:editar, con motivo interno, auditoría y la fila de
+   admin_messages (solo inserción). Tope contra el abuso: 30 por hora por persona del equipo y 3 al día por destinatario (el SMS cuesta y molesta); el SMS pide
+   el teléfono verificado. El texto va tal cual (sin enlaces: la persona ve lo que le llega en su cuenta). El aviso respeta STOP y las horas de silencio. */
+const MSG_HORA = 30, MSG_DIA_DESTINO = 3;
+export async function enviarMensaje(id: string, canal: string, texto: string, motivo: string, textoEn = ""): Promise<ResAdm> {
+  if (canal !== "sms" && canal !== "push") return no("Elige por dónde se manda.");
+  const t = motivoOk(texto).replace(/\s+/g, " ");
+  const en = motivoOk(textoEn).replace(/\s+/g, " ") || t;
+  if (t.length < 3) return no("Escribe el mensaje.");
+  if (t.length > 280 || en.length > 280) return no("El mensaje es de hasta 280 letras.");
+  if (/https?:\/\/|www\.|[a-z0-9-]+\.(com|net|org|co|io|us|app|link)\b/i.test(`${t} ${en}`)) return no("El mensaje no lleva enlaces: la persona ve lo que le llega en su cuenta.");
+  let enviado = false;
+  const r = await hacer(id, ["editar"], motivo, async (c, s, u, m) => {
+    if (u.id === s.id) return "Eso no se manda a uno mismo.";
+    if (canal === "sms" && !u.phone_ok) return "Su teléfono no está verificado: manda el mensaje por la app.";
+    // El tope se cuenta DENTRO de la transacción y con la persona del equipo bloqueada: dos mensajes a la vez no se pasan del tope.
+    await c.query(`select pg_advisory_xact_lock(hashtextextended($1, 0))`, [`msg-equipo:${s.id}`]);
+    const h = (await c.query<{ n: number }>(`select count(*)::int as n from admin_messages where by_staff = $1 and at > now() - interval '1 hour'`, [s.id])).rows[0]!.n;
+    if (h >= MSG_HORA) return `Ya mandaste ${MSG_HORA} mensajes en la última hora. Espera un rato.`;
+    const d = (await c.query<{ n: number }>(`select count(*)::int as n from admin_messages where target_kind = 'user' and target_id = $1 and at > now() - interval '1 day'`, [u.id])).rows[0]!.n;
+    if (d >= MSG_DIA_DESTINO) return `A esta persona ya le llegaron ${MSG_DIA_DESTINO} mensajes del equipo hoy. Espera a mañana.`;
+    await c.query(`insert into admin_messages (target_kind, target_id, city_id, channel, body, reason, by_staff) values ('user', $1, $2, $3, $4, $5, $6)`, [u.id, u.city_id, canal, t, m, s.id]);
+    await auditar(c, { actor: s.id, action: "usuario.mensaje", targetKind: "user", targetId: u.id, city: u.city_id, after: { canal: canal === "sms" ? "SMS" : "App", mensaje: t.slice(0, 120) }, reason: m });
+    enviado = true;
+    return null;
+  }, canal === "sms" ? "Mensaje enviado por SMS (y en su campana). Quedó en la auditoría." : "Mensaje enviado a su app. Quedó en la auditoría.");
+  if (r.ok && enviado) {
+    const { avisar } = await import("@/lib/avisos");
+    await avisar(id, canal === "sms" ? "msg_equipo_sms" : "msg_equipo", { texto: t, texto_en: en }, { href: "/cuenta", ref: ["admin_message", id] });
+  }
+  return r;
+}

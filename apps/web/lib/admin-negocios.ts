@@ -17,10 +17,13 @@ import { licenciasTodas } from "./licencias";
 import { telefonoBonito } from "./panel";
 
 /* ADM-NEG · Negocios: lista con filtros y el 360° de un negocio. Todo acotado a las ciudades de la persona
-   (staff_members.cities; vacío = todas). Paginado de a 14 (lista acotada por ciudad: OFFSET con tope, como la página
-   de categoría; ver LAUNCH-CHECKLIST). */
+   (staff_members.cities; vacío = todas). 9n-3: paginado POR CURSOR (de a 14; el cursor es la llave de orden de la última fila, sin OFFSET ni tope de
+   páginas) y «Exportar CSV» (neg:exportar, con motivo y auditoría). */
 export const POR_PAGINA = 14;
-export type FiltrosNeg = { q: string; cat: string | null; plan: string[]; est: string[]; mas: string[]; orden: string; pag: number };
+export type FiltrosNeg = { q: string; cat: string | null; plan: string[]; est: string[]; mas: string[]; orden: string; pag: number; cur: string | null; ant: string[] };
+const B64 = /^[A-Za-z0-9_-]{0,400}$/;
+export const aCursor = (sk: string) => Buffer.from(sk, "utf8").toString("base64url");
+const deCursor = (c: string | null) => (c && B64.test(c) ? Buffer.from(c, "base64url").toString("utf8") : null);
 
 export function leerFiltros(sp: Record<string, string | undefined>): FiltrosNeg {
   const lista = (v: string | undefined, ok: string[]) => (v ?? "").split(",").filter((x) => ok.includes(x));
@@ -29,17 +32,28 @@ export function leerFiltros(sp: Record<string, string | undefined>): FiltrosNeg 
     cat: /^NEG-[A-Z]+$/.test(sp.cat ?? "") ? sp.cat! : null,
     plan: lista(sp.plan, ["pro", "free", "prueba"]),
     est: lista(sp.est, ["activo", "temp", "oculto", "susp", "cerrado"]),
-    mas: lista(sp.mas, ["ver", "nover", "rep", "weak", "norev", "noown"]),
+    mas: lista(sp.mas, ["ver", "nover", "rep", "weak", "norev", "noown", "tx", "stripe", "nostripe", "lic", "inact"]),
     orden: ["pro", "top", "new", "rep", "weak"].includes(sp.orden ?? "") ? sp.orden! : "pro",
-    pag: Math.min(100, Math.max(1, Number(sp.pag) || 1)),
+    pag: 1,
+    cur: sp.cur && B64.test(sp.cur) ? sp.cur : null,
+    ant: (sp.ant ?? "").split("~").filter((x) => x && B64.test(x)).slice(0, 60),
   };
 }
 
 const ESTADO_SQL = `case when b.status = 'closed' then 'cerrado' when b.status = 'suspended' then 'susp' when b.status = 'hidden' then 'oculto'
   when b.temp_closed_until > now() then 'temp' else 'activo' end`;
+/* La llave de orden de cada vista (texto que crece con el orden de la lista; lleva el nombre y el id al final para desempatar): el cursor es la de la última fila. */
+const LLAVE_SQL: Record<string, string> = {
+  pro: `(case when coalesce(s.plan, 'free') = 'pro' then '0' else '1' end) || lpad((999999 - least(999998, coalesce(s.review_count, -1) + 1))::text, 6, '0')`,
+  top: `lpad((99999999 - least(99999998, floor(coalesce(s.rating_avg, 0) * 1000)::bigint + coalesce(s.review_count, 0)))::text, 8, '0')`,
+  new: `lpad((9999999999 - extract(epoch from b.created_at)::bigint)::text, 10, '0')`,
+  rep: `lpad((99999 - least(99999, (select count(*) from queue_items q where q.business_id = b.id and q.status = 'open' and q.queue = 'medios')))::text, 5, '0')`,
+  weak: `lpad(coalesce(s.profile_strength, 0)::text, 3, '0')`,
+};
 const REPORTES_SQL = `(select count(*) from queue_items q where q.business_id = b.id and q.status = 'open' and q.queue = 'medios')`;
 
-export async function listaNegocios(s: Staff, f: FiltrosNeg) {
+/* Los filtros (ciudades de la persona, búsqueda, categoría, plan, estado y «más») como condiciones SQL; `wCat` es lo mismo sin la categoría (para contar las pestañas). */
+function armarFiltros(s: Staff, f: FiltrosNeg) {
   const w: string[] = ["b.status <> 'merged'"];
   const p: unknown[] = [];
   const add = (sql: string, ...v: unknown[]) => { for (const x of v) p.push(x); w.push(sql.replace(/\$(\d)/g, (_, n) => `$${p.length - v.length + Number(n)}`)); };
@@ -59,29 +73,63 @@ export async function listaNegocios(s: Staff, f: FiltrosNeg) {
   if (f.mas.includes("weak")) w.push("coalesce(s.profile_strength, 0) < 70");
   if (f.mas.includes("norev")) w.push("coalesce(s.review_count, 0) = 0");
   if (f.mas.includes("noown")) w.push("b.owner_user_id is null");
+  // 9n-3 · Transacciones, cobros con Stripe, licencias y «sin actividad».
+  if (f.mas.includes("tx")) w.push("exists (select 1 from operations o where o.business_id = b.id and o.created_at > now() - interval '30 days' and not o.is_test)");
+  if (f.mas.includes("inact")) w.push("not exists (select 1 from operations o where o.business_id = b.id and o.created_at > now() - interval '30 days') and coalesce(b.updated_at, b.created_at) < now() - interval '30 days'");
+  if (f.mas.includes("stripe")) w.push("exists (select 1 from stripe_accounts z where z.business_id = b.id and z.charges_enabled)");
+  if (f.mas.includes("nostripe")) w.push("coalesce(s.plan, 'free') = 'pro' and not exists (select 1 from stripe_accounts z where z.business_id = b.id and z.charges_enabled)");
+  if (f.mas.includes("lic")) w.push("exists (select 1 from licenses l where l.business_id = b.id and l.status = 'valid')");
   const whereCat = wCat.join(" and ");
   if (f.cat) add("b.category_id = $1", f.cat);
+  return { w, p, wCat, pCat, whereCat };
+}
+
+export async function listaNegocios(s: Staff, f: FiltrosNeg) {
+  const { w, p, pCat, whereCat } = armarFiltros(s, f);
   const where = w.join(" and ");
-  const orden = { pro: "(coalesce(s.plan,'free') = 'pro') desc, s.review_count desc nulls last, b.name", top: "coalesce(s.rating_avg, 0) * 1000 + coalesce(s.review_count, 0) desc, b.name",
-    new: "b.created_at desc", rep: `${REPORTES_SQL} desc, b.name`, weak: "coalesce(s.profile_strength, 0) asc, b.name" }[f.orden];
-  const desde = (f.pag - 1) * POR_PAGINA;
+  const llave = `${LLAVE_SQL[f.orden]} || '|' || lower(b.name) || '|' || b.id`;
+  const pc = [...p];
+  const cur = deCursor(f.cur);
+  const wl = [...w];
+  if (cur !== null) { pc.push(cur); wl.push(`${llave} > $${pc.length}`); }
+  const whereLista = wl.join(" and ");
   const [filas, total, cats, cab] = await Promise.all([
-    db().query<{ id: string; name: string; cat: string; cat_id: string; subs: string | null; plan: string; trial: boolean; verified: boolean; rating: number | null; reviews: number; perfil: number; estado: string; cover: string | null }>(
-      `select b.id, b.name, c.name->>'es' as cat, b.category_id as cat_id,
+    db().query<{ sk: string; id: string; name: string; cat: string; cat_id: string; subs: string | null; plan: string; trial: boolean; verified: boolean; rating: number | null; reviews: number; perfil: number; estado: string; cover: string | null }>(
+      `select ${llave} as sk, b.id, b.name, c.name->>'es' as cat, b.category_id as cat_id,
               (select string_agg(sc.name->>'es', ', ' order by array_position(b.subcategory_ids, sc.id)) from subcategories sc where sc.id = any(b.subcategory_ids[1:2])) as subs,
               coalesce(s.plan,'free') as plan, coalesce((b.category_attrs->'onb'->'trial'->>'until')::timestamptz > now(), false) as trial,
               coalesce(s.verified, false) as verified, s.rating_avg::float as rating, coalesce(s.review_count, 0) as reviews, coalesce(s.profile_strength, 0) as perfil,
               ${ESTADO_SQL} as estado,
               (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1) as cover
          from businesses b join categories c on c.id = b.category_id left join business_stats_cache s on s.business_id = b.id
-        where ${where} order by ${orden} limit ${POR_PAGINA} offset ${desde}`, p),
+        where ${whereLista} order by ${llave} limit ${POR_PAGINA + 1}`, pc),
     db().query<{ n: number }>(`select count(*)::int as n from businesses b left join business_stats_cache s on s.business_id = b.id where ${where}`, p),
     db().query<{ cat: string; n: number }>(`select b.category_id as cat, count(*)::int as n from businesses b left join business_stats_cache s on s.business_id = b.id where ${whereCat} group by 1`, pCat),
     db().query<{ n: number; pro: number; ver: number }>(
       `select count(*)::int as n, count(*) filter (where s.plan = 'pro')::int as pro, count(*) filter (where s.verified)::int as ver
          from businesses b left join business_stats_cache s on s.business_id = b.id where b.status <> 'merged' and (cardinality($1::text[]) = 0 or b.city_id = any($1::text[]))`, [s.cities]),
   ]);
-  return { filas: filas.rows, total: total.rows[0]?.n ?? 0, porCat: Object.fromEntries(cats.rows.map((x) => [x.cat, x.n])), cab: cab.rows[0] ?? { n: 0, pro: 0, ver: 0 } };
+  const hayMas = filas.rows.length > POR_PAGINA, pagina = filas.rows.slice(0, POR_PAGINA);
+  return { filas: pagina, siguiente: hayMas ? aCursor(pagina[pagina.length - 1]!.sk) : null, total: total.rows[0]?.n ?? 0, porCat: Object.fromEntries(cats.rows.map((x) => [x.cat, x.n])), cab: cab.rows[0] ?? { n: 0, pro: 0, ver: 0 } };
+}
+
+/* 9n-3 · «Exportar CSV» de lo filtrado: hasta 20,000 filas, las mismas que ve la persona (sus ciudades y sus filtros). Sin datos personales del dueño más allá de
+   su nombre y teléfono de contacto del negocio; el motivo y la auditoría los pone la acción. */
+const CSV_MAX = 20_000;
+const celda = (v: unknown) => { let t = v == null ? "" : String(v).replace(/\r?\n/g, " "); if (/^[=+\-@\t]/.test(t)) t = `'${t}`; return /[",;]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+export async function negociosCsv(s: Staff, f: FiltrosNeg): Promise<{ csv: string; n: number }> {
+  const { w, p } = armarFiltros(s, f);
+  const r = await db().query<{ id: string; name: string; ciudad: string; cat: string; plan: string; verified: boolean; rating: number | null; reviews: number; perfil: number; estado: string; pedidos30: number; stripe: boolean; licencia: boolean; creado: string }>(
+    `select b.id, b.name, ci.name as ciudad, c.name->>'es' as cat, coalesce(s.plan, 'free') as plan, coalesce(s.verified, false) as verified, s.rating_avg::float as rating,
+            coalesce(s.review_count, 0) as reviews, coalesce(s.profile_strength, 0) as perfil, ${ESTADO_SQL} as estado,
+            (select count(*)::int from operations o where o.business_id = b.id and o.created_at > now() - interval '30 days' and not o.is_test) as pedidos30,
+            exists (select 1 from stripe_accounts z where z.business_id = b.id and z.charges_enabled) as stripe,
+            exists (select 1 from licenses l where l.business_id = b.id and l.status = 'valid') as licencia, to_char(b.created_at, 'YYYY-MM-DD') as creado
+       from businesses b join categories c on c.id = b.category_id join cities ci on ci.id = b.city_id left join business_stats_cache s on s.business_id = b.id
+      where ${w.join(" and ")} order by b.city_id, b.name, b.id limit ${CSV_MAX}`, p);
+  const cab = ["id", "negocio", "ciudad", "categoria", "plan", "verificado", "calificacion", "resenas", "perfil_pct", "estado", "pedidos_30d", "cobros_stripe", "licencia_verificada", "creado"];
+  const filas = r.rows.map((x) => [x.id, x.name, x.ciudad, x.cat, x.plan, x.verified ? "si" : "no", x.rating?.toFixed(1) ?? "", x.reviews, x.perfil, x.estado, x.pedidos30, x.stripe ? "si" : "no", x.licencia ? "si" : "no", x.creado]);
+  return { csv: [cab, ...filas].map((l) => l.map(celda).join(",")).join("\n") + "\n", n: r.rows.length };
 }
 
 /* El 360° de un negocio: lo que ve el cliente, lo que hizo el dueño, lo que hizo el equipo. */

@@ -25,7 +25,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const { repL, spanL } = await import("@/lib/evt-comun");
   const forma = e.kind === "series" ? { kind: "series", l: repL(e.d.dia, e.d.rep, true) } : e.kind === "span" ? { kind: "span", l: `${spanL(e.d.dia, e.d.span, true)} · ${e.d.span} días` } : null;
   // 6j · Cupos y venta de UNA fecha (la próxima, o ?fecha=): «Ajustar cupo» y «Extender ventas».
-  const cupos = e.d.entrada === "tickets" ? await (await import("@/lib/evt-admin")).cuposFecha(s, e.id, fecha && /^\d{1,18}$/.test(fecha) ? fecha : null) : null;
+  const cupos = (e.d.entrada === "tickets" || e.d.entrada === "rsvp") ? await (await import("@/lib/evt-admin")).cuposFecha(s, e.id, fecha && /^\d{1,18}$/.test(fecha) ? fecha : null) : null;
   return <EventoAdmin e={e} rsvp={rsvp} ventas={ventas} cambios={cambios} liq={liq} fechas={fechas} forma={forma} cupos={cupos} publico={pub.rows[0] ? { href: `/eventos/${e.slug}?fecha=${pub.rows[0].fid}`, van: pub.rows[0].van } : null}
     puede={{ aprobar: s.puede("evt", "aprobar"), retirar: s.puede("evt", "retirar"), editar: s.puede("evt", "editar"), dinero: s.puede("tx", "ver") }} />;
 }
