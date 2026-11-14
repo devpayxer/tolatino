@@ -1774,3 +1774,31 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   pudieron correr en esta máquina (an1n: el Chrome sin pantalla cuenta como robot; adm7i: El Compa sin el índice de la ayuda): quedan para el CI. No se corrió `pruebas/visual`.
 - **No cerrado, con destino (LAUNCH «Fase 9 · 9g»):** grabación de sesiones (→ 9s), Web Vitals propios (→ 9j), el panel con vistas sin repetidos (→ 9n), los guardianes del build en el
   reporte (→ 9j), la conciliación en el reporte (→ 9k), las vueltas atrás en el reporte (→ 9o) y las corridas del CI.
+
+## Fase 9 · 9j — Super Admin › Sistema completo y la seguridad del equipo (14 nov)
+- **Hecho (rama de trabajo del bloque, sobre d1cfe41; en paralelo con 9g, 9h y 9k):**
+  - **Migración `0140_sistema.sql`** (dos veces sin cambios): `staff_mfa` (TOTP: secreto cifrado, 10 huellas de recuperación, `last_step` que solo sube; nada se borra, se
+    revoca), `sessions.mfa_at / mfa_via`, `staff_mfa_log` (solo inserción), `staff_mfa_pruebas` (solo sandbox, teléfonos 570-555), `backup_runs` y `restore_drills` (solo
+    inserción), `health_checks` (solo inserción, purga a 30 días con `tl.retencion = 'salud'`), `maintenance_windows` (se cancela, no se edita ni se borra), `key_rotations`
+    y `break_glass` (solo inserción), `app_error_groups.kind` + `servidor`, `feature_flags.scope / scopable` con `flag_cubeta` y `flag_para` (`app.reportar` acotable),
+    `founder_steps` admite 9-1 a 9-5, avisos `llave_vence` y `equipo_dos_pasos`. **Semilla `0057_sistema.sql`** (el plan decía 0054): la lista del equipo de las pruebas,
+    respaldos de cada tipo (uno falló), dos restauraciones (una buena con RTO, una que falló) y un error del servidor tapado. Mapa de datos e inventario al día.
+  - **Segundo factor obligatorio** (`lib/equipo/totp.ts` RFC 6238 con node:crypto, ventana ±1; `lib/equipo/dos-pasos.ts`): `staff()` devuelve null y `requerir()` manda a
+    `/admin/dos-pasos` sin el segundo factor de la sesión (llave de acceso o app de códigos); el marco no pinta secciones ni colas; alta con QR una vez y 10 códigos de
+    recuperación una vez; código usado no vuelve; bloqueo a los 5 intentos malos en 15 min; un Admin restablece (motivo, auditoría, aviso). Las pruebas de siempre: el
+    equipo de ficción de la semilla entra marcado «pruebas» solo con el código en pantalla (imposible en producción). Sistema › Equipo dice el segundo factor de cada uno.
+  - **Sistema** suma **Flags** (por ciudad y porcentaje, con motivo), **Salud** (lo que mide el barrido cada 5 min, errores 24 h, tareas con error, llaves que vencen,
+    mantenimiento programado), **Respaldos** (la restauración de prueba arriba) y **Estados** (los 9), en español e inglés. **Errores del servidor** con
+    `instrumentation.ts` → `recibirErrorServidor` (el mismo tapado y agrupado). **Llaves que vencen:** aviso a los Admins a 30 / 7 días y vencida; cada reemplazo en
+    `key_rotations`. **Build mínimo** nunca por encima del último disponible (producción). **Lo que te toca** con los paquetes 9-1 a 9-5 (9-4.1 lo marca el sistema).
+    **Vidrio roto** para las fotos de las ayudas de Salud (`/api/admin/vidrio` y Colas › «Ver con motivo»; `ayu4m` al día).
+  - **Guardianes nuevos** (al final de `run.mjs`): `equipoConDosPasos`, `totpPropio`, `erroresDelServidor`, `llaveConVencimiento`, `flagPorPersona`, `vidrioRoto`,
+    `minimoDisponible`; `privacidadSalud` suma `dos-pasos.ts` a los que abren un cifrado. Al revés: **`alreves9j` 32/32**, guardianes limpios después.
+  - **Prueba nueva `sis9j`** (78 ✓): ver la cabecera del archivo. **Ayuda:** `admin-sistema`, `admin-segundo-factor` (ES/EN).
+- **Probado aquí (sin Docker: Postgres 16 + PostGIS de la máquina, el build standalone en :3100 con perfil básico, Chromium de Playwright, un `docker exec` de mentira
+  hacia esa base):** `node guardianes/run.mjs` → sin fallos; `tsc --noEmit` limpio; `pnpm build` en verde; 0140 dos veces; 0057 dos veces; **`sis9j` 78 ✓ dos veces
+  seguidas**; `alreves9j` 32/32. **No corrió aquí:** `ayu4m` (necesita Garage para la foto), las demás pruebas que entran como equipo (la regresión entera en el CI) y
+  la matriz de 9 dispositivos. El QR del alta no se decodificó aquí (sale del mismo generador del boleto; el secreto en texto sí se probó).
+- **No cerrado, con destino (LAUNCH «Fase 9 · 9j»):** respaldos reales y restauración semanal, despliegues, Prometheus / Uptime Kuma, la página de mantenimiento y el aviso
+  24 h antes (9o); el segundo paso con la llave dentro de una sesión de SMS (9p); cambiar la app o pedir códigos nuevos por cuenta propia y más interruptores acotables
+  (9n); símbolos nativos, Novedades de Google, Apple Pay / Google Pay y el Smart App Banner (9r); el resto del Super Admin en inglés (9f); la corrida del CI (hito de 9k).

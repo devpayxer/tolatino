@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { hayAdmin, staff } from "@/lib/admin";
+import { hayAdmin, miembroEquipo } from "@/lib/admin";
 import { yo } from "@/lib/cuenta";
 import { Arranque } from "./Arranque";
 import { gruposNav } from "@/lib/admin-nav";
@@ -14,8 +14,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const u = await yo();
   if (!u) redirect("/entrar");
   if (!u.first_name) redirect("/entrar");
-  const s = await staff();
-  if (!s) {
+  const m = await miembroEquipo();
+  if (!m) {
     if (!(await hayAdmin())) return <Arranque nombre={u.first_name} />;
     return (
       <main className="mx-auto flex min-h-dvh max-w-[480px] flex-col justify-center gap-2 px-5">
@@ -25,6 +25,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </main>
     );
   }
+  // 9j · Del equipo pero sin el segundo factor de esta sesión: sin el marco (ni secciones ni colas). La única página que pinta algo es
+  // /admin/dos-pasos; todas las demás llaman a requerir(), que las manda ahí (y staff() devuelve null en cada acción y ruta).
+  if (m.dos.estado !== "ok") return <main className="min-h-dvh bg-paper">{children}</main>;
+  const s = m.staff;
   const grupos = await gruposNav((k) => s.puede(k, "ver"));
   const nombre = [s.first_name, s.last_name].filter(Boolean).join(" ");
   const iniciales = ((s.first_name?.[0] ?? "") + (s.last_name?.[0] ?? "")).toUpperCase();

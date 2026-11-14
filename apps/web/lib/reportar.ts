@@ -18,7 +18,8 @@ export type ReporteIn = { texto: string; foto?: string | null; registro?: unknow
 const LINEA = /^\d{2}:\d{2}:\d{2} /;
 
 export async function reportarProblema(q: Quien, x: ReporteIn): Promise<ResS> {
-  const on = (await db().query<{ enabled: boolean }>(`select enabled from feature_flags where key = 'app.reportar'`)).rows[0]?.enabled === true;
+  // 9j · app.reportar se puede abrir por ciudad o por porcentaje (Sistema › Flags): se decide por la persona (flag_para).
+  const on = await (await import("./sistema/flags")).flagPara("app.reportar", q.userId);
   if (!on) return { ok: false, msg: { es: "Reportar un problema no está disponible ahora. Escríbenos desde Ayuda y soporte.", en: "Report a problem is not available right now. Write to us from Help and support." } };
   const kb = await valor("reporte_logs_kb");
   const crudo = Array.isArray(x.registro) ? x.registro.slice(-200) : [];

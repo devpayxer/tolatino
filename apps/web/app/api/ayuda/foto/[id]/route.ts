@@ -5,9 +5,11 @@ import { yo } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
 import { leerObjeto } from "@/lib/medios";
 import { accesoPanel } from "@/lib/panel";
+import { ayudaDeSalud, vidrioVigente } from "@/lib/sistema/vidrio";
 
 /* Ver una foto privada de una ayuda (Salud y Pro). La ven: quien la subió; el negocio de esa solicitud (con permiso de
-   citas); el equipo de To'Latino que trabaja Soporte en esa ciudad, y cada vez queda en la auditoría («vidrio roto»).
+   citas); el equipo de To'Latino que trabaja Soporte en esa ciudad, y cada vez queda en la auditoría («vidrio roto»). 9j: si la ayuda es de Salud,
+   el equipo primero escribe el motivo (break_glass, 10 minutos); sin eso, 404.
    7b · La foto de un caso de Soporte (owner_kind 'support'): quien la subió, quien abrió el caso, el dueño del negocio si el caso es de
    su negocio, y el equipo con Soporte › ver en esa ciudad (auditado). El negocio de una operación NUNCA ve la foto de un caso con To'Latino.
    Nunca se cachea. Lo demás: 404 (no se dice si existe). */
@@ -40,7 +42,9 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   if (!ok && m.biz) ok = !!(await accesoPanel(m.biz, "ord"));
   if (!ok && m.biz) {
     const s = await staff();
-    if (s && colasVisibles(s).includes("sop") && (!s.cities.length || (m.city && s.cities.includes(m.city)))) {
+    // 9j · «Vidrio roto»: la foto de una ayuda de Salud (consultorio) solo con un motivo escrito y vigente de esta persona (lib/sistema/vidrio.ts).
+    const sinMotivo = !!s && m.owner_kind === "help" && (await ayudaDeSalud(m.owner_id)) && !(await vidrioVigente(s.id, m.owner_id));
+    if (s && !sinMotivo && colasVisibles(s).includes("sop") && (!s.cities.length || (m.city && s.cities.includes(m.city)))) {
       await tx((c) => auditar(c, { actor: s.id, action: "ayuda.foto.ver", targetKind: "help_request", targetId: m.hnum ?? m.owner_id, city: m.city ?? undefined }));
       ok = true;
     }

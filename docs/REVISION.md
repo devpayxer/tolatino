@@ -4505,3 +4505,41 @@ pasa a «revisado» y se publica. En producción la base no deja publicar una p�
   - **Los embudos cuentan personas distintas en cada paso**, no un camino estricto: en el sandbox «Pidieron» sale mayor que «Buscaron» porque la semilla tiene pedidos sin búsquedas
     (en producción, con todo pasando por la app, se ordena solo). Las etiquetas son cortas porque las barras cortan las largas; la ayuda de cada embudo dice qué cuenta.
 - **Prueba:** `ana9g` (85 comprobaciones) pasó dos veces seguidas contra el servidor construido y una base local con las semillas; `alreves9g` 29/29 y los guardianes limpios. La corrida de verdad es la del CI.
+
+## Fase 9 · 9j — Super Admin › Sistema y los dos pasos del equipo (14 nov)
+- **Qué mirar (escritorio y teléfono):**
+  1. **Los dos pasos con tu propia cuenta del equipo** (la tuya, no la de la semilla): entra con SMS y abre `/admin`. Te pide **dar de alta tu app de códigos**:
+     **Mostrar mi código QR**, escanéalo con Google Authenticator o 1Password, escribe el código, **Confirmar**, guarda los 10 códigos y **Ya los guardé**. Cierra
+     sesión, entra otra vez con SMS: te pide el código. Prueba un código de recuperación una vez (sirve) y otra vez (no).
+  2. **Sistema › Equipo y permisos:** cada miembro dice su segundo factor; **Restablecer sus dos pasos** (con motivo) en alguien que lo tenga.
+  3. **Sistema › Flags:** toca `app.reportar` → **Por porcentaje** → Reading → 10 → Guardar (motivo). Mira que vuelve a «Todas las ciudades» al tocarlo otra vez.
+  4. **Sistema › Salud:** los cinco servicios (se miden cada 5 minutos), errores de 24 h y programar / cancelar un mantenimiento.
+  5. **Sistema › Respaldos** y **Sistema › Estados**; **Sistema › Apps › Lo que te toca:** los paquetes 9-1 a 9-5.
+  6. **Colas › una ayuda de un consultorio con foto:** «Ver con motivo» antes de ver la foto.
+- **Decisiones que tomé (si prefieres otra, se cambia):**
+  - **Obligatorio en los dos entornos, también en el sandbox** (plan §6 #8): llave de acceso o app de códigos (TOTP propio, sin servicio nuevo). Una sesión abierta
+    con la llave ya trae los dos pasos. **Quien ya tiene llave y entra con SMS no puede dar de alta una app nueva** desde esa sesión (sería la puerta para quien se quede
+    con tu chip): sale y entra con la llave, o un Admin restablece.
+  - **El equipo de ficción de las pruebas automáticas entra sin segundo paso solo en el sandbox**, mientras el código de entrada se ve en pantalla: es una lista de
+    teléfonos 570-555 que pone la semilla (`staff_mfa_pruebas`; la base no acepta otros), el código no la lee fuera de ese modo (que no puede existir en producción) y
+    Sistema › Equipo lo dice en su fila. Así las ~cien pruebas que entran como Ana, Dayana, Omar, Beto, Lucía o Sofía siguen igual; el segundo factor de verdad lo prueba
+    `sis9j` con otra persona (Rita, 570-555-0961). Cualquier otra cuenta, también la tuya en el sandbox, da sus dos pasos.
+  - **Bloqueo:** 5 intentos malos en 15 minutos (códigos, repetidos o de recuperación). Lo levanta el tiempo o un Admin con «Restablecer». Los límites del segundo
+    factor van en el código, no en Configuración (un Admin no debería poder aflojarlos).
+  - **Los códigos de recuperación** son 10 de 8 letras (XXXX-XXXX), una vez cada uno, guardados solo como huella. Hoy no se generan nuevos por tu cuenta: lo hace un
+    Admin al restablecer (LAUNCH → 9n).
+  - **El plan pedía `staff_mfa.kind` passkey o totp:** la llave sigue viviendo en `passkeys` (8d); `staff_mfa` solo guarda la app de códigos.
+  - **Flags por ciudad o porcentaje solo para los interruptores que el código lee persona por persona** (hoy «Reportar un problema»); los demás son todo o nada y la
+    base no deja acotarlos (si no, un interruptor «al 10 %» quedaría encendido para todos). Los que tienen su pantalla (El Compa, apps, Push, fichas, el pie) llevan ahí.
+  - **Salud lee el sandbox de verdad** (la base, el barrido, la cola del push, el disco y los errores, cada 5 minutos; hoy el disco del sandbox puede salir «REVISAR»).
+    Los despliegues, Prometheus y Uptime Kuma llegan con producción (LAUNCH → 9o).
+  - **Respaldos en el sandbox es la semilla** y lo dice; con el tiempo el respaldo de la base se verá «atrasado» (es la verdad: no hay respaldos reales todavía).
+  - **El mantenimiento se programa con su aviso ES/EN y se cancela con motivo**, pero hoy nadie lo ve fuera del Super Admin: la página de nginx y el aviso 24 h antes
+    van con producción (LAUNCH → 9o).
+  - **El build mínimo por encima del último build disponible** se rechaza solo en producción; en el sandbox los builds son de prueba y se guarda diciéndolo.
+  - **«Vidrio roto»** solo para las fotos de las ayudas de Salud (las notas de Salud el Super Admin no las ve nunca); el motivo abre las fotos de esa ayuda 10 minutos.
+  - **Errores del servidor:** pasan por el mismo tapado que los de la web y las apps, sin mirar el interruptor `app.errores` (ese es de lo que mandan los teléfonos) y con
+    su propio tope por minuto.
+  - **Piezas sin diseño, compuestas con lo que existe:** la pantalla de los dos pasos (encabezado, nota, campo, filas y el QR del boleto; el sistema no tiene `OtpInput`),
+    Flags, Salud, Respaldos y Estados (filas, KPIs, notas, campos y confirmar con motivo del Super Admin, como el prototipo `secSys`).
+- **Prueba:** `sis9j` 78 ✓ dos veces seguidas en una base local; `alreves9j` 32/32. Lo que entra como equipo en las demás pruebas se ve en la corrida del CI.

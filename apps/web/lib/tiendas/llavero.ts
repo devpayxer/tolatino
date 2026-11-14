@@ -120,6 +120,9 @@ export async function guardar(c: PoolClient, x: { tipo: TipoLlave; contenido: Bu
   const id = (await c.query<{ id: string }>(
     `insert into store_secrets (kind, version, blob_enc, meta, fingerprint, size_bytes, expires_on, uploaded_by) values ($1, $2, $3, $4::jsonb, $5, $6, $7::date, $8) returning id::text`,
     [x.tipo, version, sobre, JSON.stringify(x.meta), huella, x.contenido.length, x.vence, x.actor])).rows[0]!.id;
+  // 9j · Llaves que se reemplazan: cada rotación queda anotada (solo inserción) con la huella vieja y la nueva, quién y por qué.
+  if (prev) await c.query(`insert into key_rotations (key_name, version, old_fp, new_fp, by, reason) values ($1, $2, $3, $4, $5, $6)`,
+    [x.tipo, version, prev.fingerprint, huella, x.actor, String(x.motivo ?? "").trim().slice(0, 300).padEnd(3, ".")]);
   await auditar(c, { actor: x.actor, action: "llavero.subir", targetKind: "store_secret", targetId: id,
     before: prev ? { llave: TIPOS[x.tipo].es, version: prev.version, huella: prev.fingerprint.slice(0, 16) } : undefined,
     after: { llave: TIPOS[x.tipo].es, version, huella: huella.slice(0, 16), ...x.meta }, reason: x.motivo });

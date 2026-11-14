@@ -32,8 +32,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **Super Admin:** sesiones por dispositivo (cerrar / bloquear), cuentas, cambios de cuenta — en el bloque 3c. — **✓ 9a (11 nov):** Usuarios 360°: cerrar todas las sesiones y cerrar o bloquear un dispositivo (app/admin/U360.tsx: cerrarSesiones, dispositivoAccion); prueba usr1l.
 
 ## Super Admin (bloque 3c, 5 nov 2026)
-- [ ] **→ 9j** · **Segundo factor obligatorio para el equipo (T#30)** antes de encender producción: TOTP (app de
-      autenticación) o passkey; sin él, una cuenta del equipo depende solo del SMS. Bloquea la fase 9.
+- [x] **Segundo factor obligatorio para el equipo (T#30)** antes de encender producción: TOTP (app de
+      autenticación) o passkey; sin él, una cuenta del equipo depende solo del SMS. Bloquea la fase 9. — **✓ 9j (14 nov):** staff() y requerir()
+      (lib/admin.ts) exigen el segundo factor de ESA sesión (llave de acceso o TOTP propio, lib/equipo/), en los dos entornos; guardianes `equipoConDosPasos` y
+      `totpPropio` (alreves9j 32/32); `sis9j` 78 ✓ dos veces seguidas en una base local.
 - [ ] **→ 9t** · **Código de arranque del primer Admin:** su huella vive en `lib/admin.ts` y solo sirve mientras no exista
       ningún Admin. En producción se genera uno nuevo (otra huella) y se usa el día de la apertura.
 - [ ] **→ 9n** · **Buscador global ⌘K y campana con colas:** hoy llevan a Usuarios y a «Colas · Fase 1». — _9a (11 nov): la campana abre Colas reales con su cuenta y la de atrasados (app/admin/ui.tsx onBell, casos.n). Falta el buscador global ⌘K (hoy solo busca usuarios)._
@@ -462,8 +464,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9s** · **Salud · HIPAA (4j):** consulta legal sobre si To’Latino es «business associate» de los consultorios antes de producción (Preguntas #2).
 
 ## Fase 4 · 4m (Doctores y Profesionales: reseñas y ayuda)
-- [ ] **→ 9j** · Acceso «vidrio roto» del Super Admin a una foto o nota de Salud: hoy queda en la auditoría al abrirla; falta pedir un
-      motivo escrito antes de mostrarla (plan §3).
+- [x] Acceso «vidrio roto» del Super Admin a una foto o nota de Salud: hoy queda en la auditoría al abrirla; falta pedir un
+      motivo escrito antes de mostrarla (plan §3). — **✓ 9j (14 nov):** la foto de una ayuda de Salud pide el motivo antes (Colas › «Ver con motivo»,
+      `break_glass` solo inserción, 10 minutos, auditoría `ayuda.foto.vidrio`); sin él la ruta contesta 404 al equipo. Las notas de Salud (op_private) el
+      Super Admin no las ve nunca (guardián privacidadSalud). Guardián `vidrioRoto`; `ayu4m` al día (no corrió aquí: necesita Garage).
 - [ ] **→ 9s** · La lista de términos de PRIVADO (`lib/resenas-filtro.ts`) es corta (diagnósticos y medicinas comunes): ampliarla con
       un listado revisado por alguien de salud antes de abrir, y medir falsos positivos en reseñas reales.
 - [ ] **→ 9o** · Fotos privadas de ayuda: confirmar en el servidor real que Garage borra el objeto (el sandbox lo prueba contra el Garage local).
@@ -1154,7 +1158,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9u** · Cuentas de revisión en producción (decisión I, choque anotado en REVISION) y textos finales de `/privacidad` y `/terminos` revisados por el abogado.
 - [ ] **→ 9u** · Ninguna pantalla «Pronto» alcanzable en los builds de tienda (Apple 2.1); la purga final de la cuenta a los 30 días corriendo (L314).
 - [ ] **→ 9u** · Enviar a revisión y lanzamiento por fases; beta real en Hazleton.
-- [ ] **→ 9j** · Apple Pay / Google Pay nativos; Smart App Banner; passkeys obligatorias para el equipo.
+- [ ] **→ 9r** · Apple Pay / Google Pay nativos; Smart App Banner; passkeys obligatorias para el equipo. — _9j (14 nov): lo del equipo está (segundo factor
+      obligatorio: llave o TOTP). Apple Pay / Google Pay nativos y el Smart App Banner necesitan las apps en las tiendas y Stripe de verdad (Paquetes 8-1/8-2 y 9-1)._
 - [ ] **→ 9u** · El día del envío: revisar de nuevo las reglas de compras externas en EE. UU. y el SDK mínimo que pide cada tienda.
 
 ## Fase 8 · 8a (las cuatro cáscaras, el puente, las islas y el llavero; 11 nov)
@@ -1189,7 +1194,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9m** · **Mi cuenta › Ajustes › Privacidad** con «Este iPhone · To'Latino 1.0 (12)» en cada sesión (hoy lo dice Usuarios 360°). (8a, 11 nov)
 - [ ] **→ 9p** · **«Abrir en la web» desde una app en pausa** cuando existan los enlaces universales: que no vuelva a abrir la misma app (excluir
       `?web=1` en el AASA o abrir con la vista del navegador). (8a, 11 nov)
-- [ ] **→ 9j** · **El llavero:** lectura por el CI con OIDC y aviso de llaves que vencen (barrido) — tubería de las tiendas. (8a, 11 nov)
+- [x] **El llavero:** lectura por el CI con OIDC y aviso de llaves que vencen (barrido) — tubería de las tiendas. (8a, 11 nov) — **✓ 9j (14 nov):** la
+      lectura por OIDC es de 8h (`lib/tiendas/oidc.ts`); el aviso: `avisarLlavesQueVencen` en el barrido (toda llave viva con fecha, 30 días, 7 días y vencida,
+      una vez por etapa, plantilla `llave_vence`) y cada reemplazo en `key_rotations`. Guardián `llaveConVencimiento`.
 - [x] **Imagen del sandbox en local:** `docker build` no corrió aquí (corepack no sale a npm desde dentro de Docker en esta máquina); la
       instalación congelada sin `apps/mobile` se probó aparte con pnpm. El CI la construye en cada push. (8a, 11 nov) — **✓ 9a (11 nov):** el CI construye la imagen en cada push (.github/workflows/ci.yml); en local no hace falta.
 - [ ] **→ 9r** · **Presupuesto de velocidad de las apps** (tocar el ícono → primer pintado ≤ 1.5 s; isla ≤ 400 ms): medir en emulador y simulador. (8a, 11 nov) — _9b-3 (13 nov): se mide en emulador y simulador con las tiendas de verdad (9r); la carga de 9b-3 mide la base._
@@ -1233,8 +1240,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9r** · **APK propio de verdad:** hoy el build «disponible» del sandbox es un APK de PRUEBA que arma el servidor y no se instala. 8h sube los APK
       firmados por el CI (con su sha256) a `privado/apk/` y los registra en `app_builds`; nginx corta en 14 MB los cuerpos de subida: la subida del
       CI va directa al almacenamiento. Probar la instalación en un Android real (fuentes desconocidas). (8f, 11 nov)
-- [ ] **→ 9j** · **Símbolos nativos:** los cierres de iOS y Android llegan con binario y desplazamiento (iOS) o la pila de Java ofuscada por R8; simbolizar con
-      el dSYM y el `mapping.txt` que 8h guarda en `app_builds.symbols_media_id`. (8f, 11 nov)
+- [ ] **→ 9r** · **Símbolos nativos:** los cierres de iOS y Android llegan con binario y desplazamiento (iOS) o la pila de Java ofuscada por R8; simbolizar con
+      el dSYM y el `mapping.txt` que 8h guarda en `app_builds.symbols_media_id`. (8f, 11 nov) — _9j (14 nov): sin builds reales firmados no hay dSYM que probar
+      (ni llvm-symbolizer / retrace en la imagen): con las tiendas de verdad (9r)._
 - [ ] **→ 9r** · **Compilar lo nativo de 8f:** `TLReporteBeta.swift` / `.java` y los tres métodos nuevos de TLReporte (`ultimaCaptura`, `agitar`, `cierres`) los
       compila el CI de las cáscaras; probar en un iPhone y un Android reales agitar (captura de la pantalla) y un cierre que aparezca al abrir otra
       vez. MetricKit entrega los cierres al abrir de nuevo (iOS 15+). (8f, 11 nov)
@@ -1250,8 +1258,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **El registro de la web vive en la memoria de la pestaña:** una navegación con recarga completa (Panel › Más usa una recarga) lo empieza de
       nuevo, así que un reporte desde el panel en el navegador trae pocas pantallas. En las apps vive en el nativo y sobrevive. Pasarlo a
       `sessionStorage` (solo familias de pantalla) si el equipo lo echa de menos. (8f, 11 nov) — **✓ 9a (11 nov):** el registro de la web vive en la memoria de la pestaña (REVISION 9a); sessionStorage si el equipo lo echa de menos.
-- [ ] **→ 9j** · **Mapas de fuente y CPU:** cada proceso guarda hasta 12 mapas abiertos; un atacante dentro del tope por minuto puede obligar a abrir mapas
-      distintos (cada uno cuesta leer y decodificar ~1 MB). Medir en la base de carga y, si hace falta, simbolizar en un trabajador aparte. (8f, 11 nov) — _9b-3 (13 nov): el tope por minuto ya es compartido (rate_counters); medir la CPU de simbolizar y, si hace falta, un trabajador aparte, con Sistema › Salud (9j)._
+- [ ] **→ 9o** · **Mapas de fuente y CPU:** cada proceso guarda hasta 12 mapas abiertos; un atacante dentro del tope por minuto puede obligar a abrir mapas
+      distintos (cada uno cuesta leer y decodificar ~1 MB). Medir en la base de carga y, si hace falta, simbolizar en un trabajador aparte. (8f, 11 nov) — _9b-3 (13 nov): el tope por minuto ya es compartido (rate_counters); medir la CPU de simbolizar y, si hace falta, un trabajador aparte, con Sistema › Salud (9j)._ — _9j (14 nov): Salud ya cuenta los errores por tipo; la
+      medida de CPU va en el ensayo de producción (9o), con la base de carga._
 
 ## Fase 8 · 8e (lo nativo de cada app: la ruta del Repartidor, la Puerta, el boleto, compartir, «Escanear cupón»; 11 nov)
 - [ ] **→ 9r** · **La ruta en un teléfono real:** Android (servicio en primer plano con la pantalla apagada horas, batería, Doze) e iPhone (modo de fondo,
@@ -1324,8 +1333,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       (capacidad en el App ID, 8h); (3) 8h suma a `PASSKEY_ORIGENES` el origen `android:apk-key-hash:<sha256 de la llave de firma>` (la de subida y la de
       Play App Signing); (4) `activas: true` y probar en el simulador de iOS (a verificar que ofrece passkeys con dominio asociado) y en el emulador con
       un perfil de Google. (8d, 11 nov)
-- [ ] **→ 9j** · **Passkeys obligatorias para el equipo (T#30):** hoy se ofrecen y Sistema › Equipo dice quién la tiene; exigirla para entrar al Super Admin es
-      la Fase 9 (ver «Super Admin (bloque 3c)» L36). (8d, 11 nov)
+- [x] **Passkeys obligatorias para el equipo (T#30):** hoy se ofrecen y Sistema › Equipo dice quién la tiene; exigirla para entrar al Super Admin es
+      la Fase 9 (ver «Super Admin (bloque 3c)» L36). (8d, 11 nov) — **✓ 9j (14 nov):** obligatoria la llave O la app de códigos (sin dominio no hay llaves en
+      el sandbox); una sesión abierta con la llave ya trae los dos pasos; Sistema › Equipo dice el segundo factor de cada uno.
 - [x] **El borrado definitivo a los 30 días (L314)** no corre todavía; cuando corra, sus llaves quedan quitadas con la cuenta (hoy una cuenta borrada
       ya no entra con llave: lo revisa `abrirSesionEn`). (8d, 11 nov) — **✓ 9d (14 nov):** la purga deja sus llaves revocadas («Cuenta borrada») y `abrirSesionEn` no deja entrar pasada la fecha.
 - [ ] **→ 9v** · **Nombres de los administradores de llaves (AAGUID):** la lista corta de `lib/llaves/llaves.ts` (iCloud Keychain, Google Password Manager, Windows
@@ -1345,8 +1355,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9r** · **Primer TestFlight real** en el iPhone del fundador y primer build en Play interno: verificar `xcodebuild -exportArchive` con destino upload
       y la llave de la API (sin fastlane), que App Store Connect procese y que el grupo interno lo reciba; y que la primera subida por API a una app
       recién creada en Play funcione. (8h, 11 nov)
-- [ ] **→ 9j** · **Símbolos nativos:** el CI sube el dSYM (y el mapping.txt si un día se activa R8) al almacén privado (`app_builds.symbols_key`), pero los
-      cierres nativos todavía no se simbolizan con ellos (llvm-symbolizer / retrace en la imagen). (8h, 11 nov)
+- [ ] **→ 9r** · **Símbolos nativos:** el CI sube el dSYM (y el mapping.txt si un día se activa R8) al almacén privado (`app_builds.symbols_key`), pero los
+      cierres nativos todavía no se simbolizan con ellos (llvm-symbolizer / retrace en la imagen). (8h, 11 nov) — _9j (14 nov): con builds reales (9r)._
 - [ ] **→ 9p** · **La huella de la firma de Google** (`lib/tiendas/play.ts` `huellaFirmaGoogle`, generatedapks.list) está escrita y probada contra el simulador,
       pero no se usa todavía: 8b la lleva a assetlinks.json y 8d a `PASSKEY_ORIGENES` (`android:apk-key-hash:`). (8h, 11 nov)
 - [ ] **→ 9r** · **La configuración de Firebase de la app** (google-services / firebase.xml para el push de Android) no la escribe todavía el CI desde el
@@ -1354,8 +1364,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9r** · **El entorno «tiendas» de GitHub:** hoy lo creó GitHub al primer uso, sin reglas. Ponerle «solo la rama pruebas» (y produccion en la Fase 9)
       por la API cuando haya un token con permiso de administración. (8h, 11 nov)
 - [ ] **→ 9r** · **Cloudflare (plan gratis) corta los cuerpos en 100 MB:** un .aab o un dSYM más grande no pasaría; medir el tamaño real de los builds. (8h, 11 nov)
-- [ ] **→ 9j** · **`app_min_build_*` nunca por encima del último build disponible** (plan §3.5): no lo revisa 8h; revisarlo al cambiar el mínimo en Sistema ›
-      Apps. (8h, 11 nov)
+- [x] **`app_min_build_*` nunca por encima del último build disponible** (plan §3.5): no lo revisa 8h; revisarlo al cambiar el mínimo en Sistema ›
+      Apps. (8h, 11 nov) — **✓ 9j (14 nov):** `cambiarBuild` lo rechaza en producción (mínimo y aviso, contra `app_builds` disponible); en el sandbox los builds
+      son de prueba y se guarda diciéndolo (así `app8a` sigue). Guardián `minimoDisponible`.
 - [ ] **→ 9u** · **Fase 9:** encender `app.tiendas.publico` con el OK del fundador, aceptar la rama produccion en el servidor de producción, el sabor de
       producción y los envíos a revisión pública (hoy la base los rechaza). (8h, 11 nov)
 
@@ -1384,8 +1395,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       ninguna alcanzable dentro de las apps; con `TOLATINO_FASE=9` el guardián falla. (8i, 11 nov)
 - [ ] **→ 9u** · **Reglas de EE. UU. sobre enlaces a compras externas** (caso Epic, 2025): hoy Pro no se ofrece ni se enlaza en las apps (3.1.3(f)); volver a
       leerlas el día del envío y decidir con el fundador. (8i, 11 nov)
-- [ ] **→ 9j** · **Novedades de Google:** van con cada lanzamiento (notas de la versión de la pista), no con la ficha; la tubería todavía no las manda en
-      `tracks.update`. (8i, 11 nov)
+- [ ] **→ 9r** · **Novedades de Google:** van con cada lanzamiento (notas de la versión de la pista), no con la ficha; la tubería todavía no las manda en
+      `tracks.update`. (8i, 11 nov) — _9j (14 nov): no se hizo; las notas de la versión se prueban con la primera subida real a Play (9r): el simulador no
+      comprueba su forma._
 - [x] **9e** · **/privacidad:** el texto sale de docs/legal/ con versión y sha256 (legal_pages), los datos del inventario y del mapa; /terminos y las otras
       nueve páginas existen sin sesión, en ES y EN. Evidencia: leg9e (cada página ES/EN, 22 ✓) y el paso 1 de fich8i al día. La revisión del abogado
       sigue en «Fase 9 · 9e» → 9s. (8i, 11 nov · 9e, 14 nov)
@@ -1436,10 +1448,12 @@ en el momento. Se marca solo cuando está hecho de verdad.
       sexta del día se rechace con «Abriste muchas solicitudes hoy». Además es un número fijo en el código (no sale de Configuración). (9b-1, 12 nov) — _9b-3 (13 nov): la prueba del sexto pedido del día y el número en Configuración, con lo diferido del vecino (9m)._
 - [ ] **→ 9b** · **La regresión de punta a punta tarda ~1 h 40 min una a la vez** (y más con las que piden a otra con `requiere`): para el CI
       (9b-2) va por grupos en paralelo, cada grupo con su base nueva. (9b-1, 12 nov)
-- [ ] **→ 9j** · **Pruebas con el negocio abierto «00:00–23:59»** (push8c, app8e, pagos2d, pedidos2c, avisos2j, menu2b, compa7h, compa7f,
+- [x] **Pruebas con el negocio abierto «00:00–23:59»** (push8c, app8e, pagos2d, pedidos2c, avisos2j, menu2b, compa7h, compa7f,
       free2b, rep2l): el último pedido es 15 min antes de cerrar, así que de 11:44 PM a medianoche (hora de Hazleton) «Enviar pedido» se apaga y
       fallarían. dlvsrv tenía lo mismo con 06:00–05:00 (falló a las 4:45 AM en la corrida del 12 nov) y ya abre 3 h antes de la hora de la
-      corrida, como nov2g y dlv2f4. Falta pasar las otras a esa forma (un ayudante en `pruebas/lib`). (9b-1, 12 nov) — _9b-3 (13 nov): no se pasaron a la forma de dlvsrv; el CI corre a las 8:17 y 20:43 UTC (3:17 AM y 3:43 PM de Hazleton), lejos de las 11:44 PM. Con Sistema (9j)_
+      corrida, como nov2g y dlv2f4. Falta pasar las otras a esa forma (un ayudante en `pruebas/lib`). (9b-1, 12 nov) — _9b-3 (13 nov): no se pasaron a la forma de dlvsrv; el CI corre a las 8:17 y 20:43 UTC (3:17 AM y 3:43 PM de Hazleton), lejos de las 11:44 PM. Con Sistema (9j)_ — **✓ 9j (14 nov):** ya lo cerró la quinta confirmación
+      de 9b-3: `lib/pedir.ts` cuenta el último pedido de un negocio de 24 h sin la medianoche y las pruebas escriben 00:00–00:00; ninguna prueba de `pruebas/e2e`
+      tiene «00:00–23:59» y el guardián `veinticuatroHoras` lo vigila (alreves9b3).
 - [ ] **→ 9n** · **Negocios sin negocio:** quien entra a la app To'Latino Negocios sin tener un negocio va de `/panel` a `/publica`, que está
       fuera del alcance de esa app (`apps/mobile/apps.json`: solo `/panel` y lo común). Comprobar en la cáscara qué ve (¿se abre fuera?) y que
       llegue a Mi cuenta › Ajustes › Borrar mi cuenta, como ya llega el Repartidor sin equipo (9b-1). Hoy `borrarCuentaEnCadaApp` solo mira el
@@ -1608,3 +1622,25 @@ en el momento. Se marca solo cuando está hecho de verdad.
       si el barrido entero se cae, nadie alerta; el monitoreo externo de 9o mira `system_jobs` (barrido.reporteDiario). (9g, 14 nov)
 - [ ] **→ 9g** · **Corridas del CI de 9g:** `ana9g` pasó dos veces seguidas en una base local (85 ✓) con un docker de mentira; falta la regresión entera, la barajada y los 9
       dispositivos en el CI, y `pruebas/visual` del Inicio del Super Admin (Ciudad viva va al final de la pantalla). (9g, 14 nov)
+
+## Fase 9 · 9j — Super Admin › Sistema completo y la seguridad del equipo (14 nov)
+- [ ] **→ 9o** · **Respaldos reales y la restauración de prueba semanal:** Sistema › Respaldos lee `backup_runs` y `restore_drills`; en el sandbox solo hay la semilla
+      (0057). pgBackRest, la sincronización de las fotos, el sobre de recuperación y la máquina desechable que restaura cada semana (y la alerta si no corre en 8 días)
+      nacen con producción como código. (9j, 14 nov)
+- [ ] **→ 9o** · **Despliegues y vueltas atrás en Salud:** la fila dice que llegan con producción; `deploy_releases` es de 0145. Prometheus, node_exporter,
+      postgres_exporter y Uptime Kuma (HERRAMIENTAS #4, #14) también: Salud es su tablero. (9j, 14 nov)
+- [ ] **→ 9o** · **La página de mantenimiento la sirve nginx** durante la ventana (§1b #8) y **el aviso a los vecinos 24 h antes** (prototipo): hoy el mantenimiento
+      se programa, se cancela y queda en la auditoría, pero nadie lo ve fuera del Super Admin. (9j, 14 nov)
+- [ ] **→ 9o** · **Llaves que vencen fuera del llavero** (`RESPALDO_LLAVE`, certificados de origen de Cloudflare, el token de la API del proveedor): nacen en el
+      servidor de producción; su fecha se anota allí y el aviso es el mismo `llave_vence`. (9j, 14 nov)
+- [ ] **→ 9p** · **Dar el segundo paso con la llave dentro de una sesión de SMS** (sin salir y volver a entrar): necesita HTTPS en el dominio (las llaves no corren en
+      el sandbox por IP). Hoy: «Salir y entrar con mi llave». (9j, 14 nov)
+- [ ] **→ 9n** · **La persona del equipo cambia su app de códigos o pide códigos de recuperación nuevos por su cuenta** (con su segundo factor): hoy lo hace un Admin
+      con «Restablecer sus dos pasos». (9j, 14 nov)
+- [ ] **→ 9n** · **Más interruptores por ciudad o porcentaje:** hoy solo `app.reportar` es «scopable» (sus tres lectores usan `flag_para`). Cada interruptor nuevo que
+      se quiera acotar pasa sus lectores a `flagPara` y se marca en una migración (guardián `flagPorPersona`). (9j, 14 nov)
+- [ ] **→ 9f** · **Equipo y permisos, Configuración, Apps e Integraciones en inglés:** las pestañas de 9j (Flags, Salud, Respaldos, Estados, los dos pasos) ya salen
+      en los dos idiomas; esas cuatro siguen en español (como el resto del Super Admin). (9j, 14 nov)
+- [ ] **→ 9k** · **`sis9j`, `ayu4m` y la regresión en el CI:** `sis9j` pasó dos veces seguidas en una base local (78 ✓); `ayu4m` (vidrio roto) no corrió aquí (necesita
+      Garage) y la regresión entera de las pruebas que entran como equipo corre en el CI (decisión AD: en el hito después de 9k). (9j, 14 nov)
+

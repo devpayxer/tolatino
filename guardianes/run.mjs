@@ -662,7 +662,7 @@ const guardianes = {
     for (const f of readdirSync("packages/db/migrations").map((x) => `packages/db/migrations/${x}`)) {
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/\('(sal_|biz_sal_)[a-z_]+'/.test(l) && /\{(negocio|servicio|svc|cliente)\}/.test(l)) falla("privacidadSalud", f, i + 1, "un aviso de Salud no lleva {negocio}, {servicio} ni {cliente}: tiene que ser neutro"); });
     }
-    const PERMITIDOS = new Set(["apps/web/lib/citas-salud.ts", "apps/web/lib/citas-panel.ts", "apps/web/lib/citas-flujo.ts", "apps/web/lib/citas-pro.ts", "apps/web/lib/cifrado.ts", "apps/web/lib/viajes.ts", "apps/web/lib/envios.ts", "apps/web/lib/ninos-privado.ts", "apps/web/lib/visitas-inm.ts", "apps/web/lib/compa/canales.ts", "apps/web/lib/push/cola.ts", "apps/web/lib/beta.ts", "apps/web/lib/pases/pases.ts"]); // 8f: el correo de Apple del tester se abre solo para invitarlo por la API y mostrarlo tapado // 8c: el token de push y el contenido cifrado se abren solo para mandarlos · 7h: el teléfono cifrado de una entrada de WhatsApp/SMS (para contestar a ese teléfono) · 4ie: la dirección cifrada de la prueba en casa (crear y ver confirmada) · crear · ver en el panel · borrar a los 30 d · 4y-2: el destinatario de la caja (crear en viajes, ver en envios) // 8g: el token de push del teléfono de Wallet (pass_devices.push_token_enc), solo para mandarle el aviso de cambio
+    const PERMITIDOS = new Set(["apps/web/lib/citas-salud.ts", "apps/web/lib/citas-panel.ts", "apps/web/lib/citas-flujo.ts", "apps/web/lib/citas-pro.ts", "apps/web/lib/cifrado.ts", "apps/web/lib/viajes.ts", "apps/web/lib/envios.ts", "apps/web/lib/ninos-privado.ts", "apps/web/lib/visitas-inm.ts", "apps/web/lib/compa/canales.ts", "apps/web/lib/push/cola.ts", "apps/web/lib/beta.ts", "apps/web/lib/pases/pases.ts", "apps/web/lib/equipo/dos-pasos.ts"]); // 9j: el secreto del TOTP del equipo se abre solo para comprobar un código // 8f: el correo de Apple del tester se abre solo para invitarlo por la API y mostrarlo tapado // 8c: el token de push y el contenido cifrado se abren solo para mandarlos · 7h: el teléfono cifrado de una entrada de WhatsApp/SMS (para contestar a ese teléfono) · 4ie: la dirección cifrada de la prueba en casa (crear y ver confirmada) · crear · ver en el panel · borrar a los 30 d · 4y-2: el destinatario de la caja (crear en viajes, ver en envios) // 8g: el token de push del teléfono de Wallet (pass_devices.push_token_enc), solo para mandarle el aviso de cambio
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f) || PERMITIDOS.has(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/note_enc|descifrar\(/.test(l)) falla("privacidadSalud", f, i + 1, "la nota cifrada de una cita (op_private) solo se toca en lib/citas-salud o lib/citas-pro (crear), lib/citas-panel (ver) o lib/citas-flujo (borrar a los 30 d)"); });
@@ -7574,6 +7574,147 @@ const guardianes = {
     for (const e of paginasLegales().errores) if (/van los dos idiomas|secciones|mismos puntos|fecha y el estado/.test(e)) falla("idioma", "docs/legal", 0, e);
     // 9f · Toda cadena del catálogo del CMS trae los dos idiomas (y el inglés no se queda vacío ni como una marca de «pendiente»).
     for (const c of CMS.cadenas) if (!c.es?.trim() || !c.en?.trim() || /^(TODO|TBD|pendiente)$/i.test(c.en.trim())) falla("idioma", "apps/web/lib/cms-cadenas.json", 0, `${c.id}: falta uno de los dos idiomas`);
+  },
+
+  /* 9j · equipoConDosPasos (fase9-apertura.md §4 9j; T#30; LAUNCH L35, L1319): ninguna acción del Super Admin sin el segundo factor de ESA sesión.
+     (1) staff() devuelve null si la sesión no dio su segundo factor y requerir() manda a /admin/dos-pasos; (2) toda página de /admin pasa por
+     requerir(), salvo /admin/dos-pasos (que no abre nada más); (3) el marco no pinta secciones ni colas sin el segundo factor; (4) toda ruta de
+     /api/admin pasa por staff() o requerir(); (5) las acciones de los dos pasos revisan la sesión y el origen; (6) el camino de las pruebas solo existe
+     con el código de entrada en pantalla y fuera de producción: solo lib/equipo/dos-pasos.ts lee staff_mfa_pruebas y solo con ese candado, solo la
+     semilla del sandbox lo llena, la base solo acepta teléfonos 570-555, y una sesión marcada «pruebas» no vale fuera de ese camino; (7) solo
+     dos-pasos.ts marca una sesión con su segundo factor; (8) la ruta que provoca un error del servidor solo existe con ese mismo candado. Al revés: alreves9j. */
+  equipoConDosPasos() {
+    const G = "equipoConDosPasos", A = "apps/web/lib/admin.ts", D = "apps/web/lib/equipo/dos-pasos.ts", L = "apps/web/app/admin/layout.tsx", P = "apps/web/app/admin/dos-pasos/page.tsx",
+      AC = "apps/web/app/admin/dos-pasos/acciones.ts", M = "packages/db/migrations/0140_sistema.sql", EP = "apps/web/app/api/interno/error-prueba/route.ts";
+    for (const f of [A, D, L, P, AC, M]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza del segundo factor del equipo");
+    const a = sinComent(A), st = (a.match(/export async function staff\(\)[\s\S]*?\n}/) ?? [""])[0], rq = (a.match(/export async function requerir\([\s\S]*?\n}/) ?? [""])[0];
+    if (!/if \(\(await estadoDosPasos\(u\)\)\.estado !== "ok"\) return null;/.test(st)) falla(G, A, 0, "staff() devuelve null si la sesión no dio su segundo factor");
+    if (!/if \(m\.dos\.estado !== "ok"\) redirect\("\/admin\/dos-pasos"\);/.test(rq)) falla(G, A, 0, "requerir() manda a /admin/dos-pasos a quien no dio su segundo factor");
+    for (const f of archivos) {
+      if (/^apps\/web\/app\/admin\/.*page\.tsx$/.test(f) && f !== P && !/\brequerir\(/.test(sinComent(f))) falla(G, f, 0, "toda página del Super Admin pasa por requerir() (del equipo y con el segundo factor)");
+      if (/^apps\/web\/app\/api\/admin\/.*route\.ts$/.test(f) && !/await (staff|requerir)\(/.test(sinComent(f))) falla(G, f, 0, "toda ruta de /api/admin pasa por staff() o requerir()");
+    }
+    const p = sinComent(P);
+    if (/\brequerir\(/.test(p) || !/if \(m\.dos\.estado === "ok"\) redirect\("\/admin"\);/.test(p)) falla(G, P, 0, "la pantalla de los dos pasos solo da el segundo factor (con él, al Inicio del admin)");
+    if (!/if \(m\.dos\.estado !== "ok"\) return <main[^>]*>\{children\}<\/main>;/.test(sinComent(L))) falla(G, L, 0, "sin el segundo factor, el marco no pinta secciones ni colas");
+    const ac = sinComent(AC);
+    for (const parte of ac.split(/\nexport async function /).slice(1)) if (!/await yo\(\)/.test(parte.slice(0, 400)) && !/await mismoOrigen\(\)/.test(parte.slice(0, 400))) falla(G, AC, 0, `«${parte.slice(0, parte.indexOf("("))}» no revisa la sesión ni el origen`);
+    for (const parte of ac.split(/\nexport async function /).slice(1)) if (/await yo\(\)/.test(parte) && !/mismoOrigen\(\)/.test(parte)) falla(G, AC, 0, `«${parte.slice(0, parte.indexOf("("))}» no revisa que venga de nuestra página`);
+    const d = sinComent(D);
+    if (!/const CAMINO_PRUEBAS = MODO_SMS === "pruebas" && ENTORNO !== "produccion";/.test(d)) falla(G, D, 0, "el camino de las pruebas exige el código en pantalla Y un entorno que no es producción");
+    if (!/if \(s\.mfa_at && \(s\.mfa_via !== "pruebas" \|\| CAMINO_PRUEBAS\)\)/.test(d)) falla(G, D, 0, "una sesión marcada «pruebas» no vale fuera del camino de las pruebas");
+    if (!/if \(s\.via === "llave"\) return \{ estado: "ok"/.test(d)) falla(G, D, 0, "la sesión abierta con la llave de acceso trae los dos pasos");
+    for (const f of codigo) {
+      if (!/\.(tsx?|mjs|cjs|sql)$/.test(f) || f.startsWith("guardianes/") || f === M) continue;
+      const t = /\.sql$/.test(f) ? readFileSync(f, "utf8") : sinComent(f);
+      if (/staff_mfa_pruebas/.test(t)) {
+        if (/^infra\/pruebas\/semilla\//.test(f)) continue;
+        if (f !== D) { falla(G, f, 0, "solo lib/equipo/dos-pasos.ts lee staff_mfa_pruebas (y la semilla del sandbox la llena)"); continue; }
+        for (const l of t.split("\n")) if (/staff_mfa_pruebas/.test(l) && !/CAMINO_PRUEBAS/.test(l) && !/^\s*const exento = /.test(l)) falla(G, D, 0, "staff_mfa_pruebas solo se lee detrás de CAMINO_PRUEBAS");
+        if (/insert into staff_mfa_pruebas|update staff_mfa_pruebas|delete from staff_mfa_pruebas/.test(t)) falla(G, D, 0, "la app no escribe staff_mfa_pruebas (solo la semilla del sandbox)");
+      }
+      if (f !== D && /\.(tsx?|mjs|cjs)$/.test(f) && /update sessions set[^`]*\bmfa_(at|via)\s*=/.test(t)) falla(G, f, 0, "solo lib/equipo/dos-pasos.ts marca una sesión con su segundo factor");
+    }
+    const ex = /if \(CAMINO_PRUEBAS[^)]*\) \{\s*const exento = /.test(d);
+    if (!ex) falla(G, D, 0, "la lista de las pruebas se mira solo dentro de if (CAMINO_PRUEBAS …)");
+    if (!/phone text primary key check \(phone ~ '\^\\\+1570555\[0-9\]\{4\}\$'\)/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "staff_mfa_pruebas solo acepta teléfonos de ficción 570-555");
+    if (!existsSync(EP) || !/if \(!\(MODO_SMS === "pruebas" && ENTORNO !== "produccion"\) \|\| !tokenOk\(/.test(sinComent(EP))) falla(G, EP, 0, "la ruta que provoca un error del servidor solo existe en pruebas y con el token");
+  },
+
+  /* 9j · totpPropio: el TOTP del equipo es nuestro (RFC 6238 con node:crypto, sin dependencias), con ventana ±1, comparación de tiempo constante, y un
+     código usado no vuelve a entrar (la escritura condicionada en la app y el trigger en la base). Los códigos de recuperación se guardan como huella
+     y se gastan una vez. Al revés: alreves9j. */
+  totpPropio() {
+    const G = "totpPropio", T = "apps/web/lib/equipo/totp.ts", D = "apps/web/lib/equipo/dos-pasos.ts", M = "packages/db/migrations/0140_sistema.sql";
+    for (const f of [T, D, M]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza del TOTP del equipo");
+    const t = sinComent(T);
+    for (const m of t.matchAll(/from "([^"]+)"/g)) if (!["node:crypto", "server-only"].includes(m[1])) falla(G, T, 0, `el TOTP no depende de nada más que node:crypto («${m[1]}»)`);
+    for (const f of ["apps/web/package.json", "package.json"]) if (existsSync(f) && /"(otplib|speakeasy|otpauth|notp|totp-generator|@otplib\/[\w-]+)"/.test(readFileSync(f, "utf8"))) falla(G, f, 0, "sin dependencia externa para el TOTP");
+    if (!/export const VENTANA = 1;/.test(t)) falla(G, T, 0, "la ventana es ±1 paso (30 s)");
+    if (!/export const PASO_S = 30;/.test(t) || !/createHmac\("sha1", secreto\)/.test(t)) falla(G, T, 0, "RFC 6238: HMAC-SHA1 y pasos de 30 s");
+    if (!/timingSafeEqual\(/.test(t)) falla(G, T, 0, "el código se compara en tiempo constante");
+    const d = sinComent(D), ent = (d.match(/export async function entrarConCodigo[\s\S]*?\n}/) ?? [""])[0];
+    if (!/and \(last_step is null or last_step < \$2\)/.test(ent)) falla(G, D, 0, "un código usado no vuelve a entrar (escritura condicionada al último paso)");
+    if (!/codigo_repetido/.test(ent)) falla(G, D, 0, "el código repetido se anota y cuenta para el bloqueo");
+    const rec = (d.match(/export async function entrarConRecuperacion[\s\S]*?\n}/) ?? [""])[0];
+    if (!/array_remove\(recovery_hashes, \$2\)/.test(rec) || !/\$2 = any \(recovery_hashes\)/.test(rec)) falla(G, D, 0, "un código de recuperación se gasta al usarlo (una sola vez)");
+    if (!/const huellaRecuperacion = [^\n]*createHmac\("sha256", secretoAuth\(\)\)/.test(d)) falla(G, D, 0, "los códigos de recuperación se guardan como huella (HMAC)");
+    if (!/cifrar\(secreto\)/.test(d)) falla(G, D, 0, "el secreto del TOTP se guarda cifrado");
+    const m = readFileSync(M, "utf8");
+    if (!/raise exception 'un código usado no vuelve a entrar'/.test(m) || !/raise exception 'los códigos de recuperación solo se gastan'/.test(m) || !/raise exception 'un segundo factor no se borra/.test(m)) falla(G, M, 0, "la base no deja bajar el último paso, recuperar códigos gastados ni borrar un factor");
+    if (!/raise exception 'staff_mfa_log es solo de inserción'/.test(m)) falla(G, M, 0, "staff_mfa_log es de solo inserción");
+  },
+
+  /* 9j · erroresDelServidor (erroresTapados ampliado al servidor): instrumentation.ts manda los errores del servidor a recibirErrorServidor, que pasa
+     por el MISMO guardar() (tapar, huella, tablas) que los de los teléfonos; con su tope por minuto antes de la base; solo en el proceso de Node. */
+  erroresDelServidor() {
+    const G = "erroresDelServidor", I = "apps/web/instrumentation.ts", E = "apps/web/lib/errores/ingesta.ts", M = "packages/db/migrations/0140_sistema.sql";
+    if (!existsSync(I)) return falla(G, I, 0, "falta instrumentation.ts (los errores del servidor)");
+    const i = sinComent(I);
+    if (!/export async function onRequestError\(/.test(i) || !/if \(process\.env\.NEXT_RUNTIME === "nodejs"\)/.test(i) || !/recibirErrorServidor\(err,/.test(i)) falla(G, I, 0, "onRequestError manda el error a recibirErrorServidor, solo en Node");
+    const e = sinComent(E), f = cuerpoFn(e, "recibirErrorServidor");
+    if (!f) return falla(G, E, 0, "falta recibirErrorServidor");
+    const it = f.indexOf("dentroDelTope("), ig = f.indexOf("guardar(");
+    if (it < 0 || ig < 0 || ig < it) falla(G, E, 0, "el tope por minuto va antes de guardar");
+    if (!/return guardar\([^;]*"servidor"/.test(f)) falla(G, E, 0, "el error del servidor pasa por el mismo guardar() (tapado y agrupado)");
+    if (/insert into app_error/.test(f)) falla(G, E, 0, "recibirErrorServidor no inserta por su cuenta: usa guardar()");
+    const g = cuerpoFn(e, "guardar");
+    if (!/const mensaje = taparError\(/.test(g) || !/const stack = taparError\(s\.stack/.test(g)) falla(G, E, 0, "guardar() tapa el mensaje y el stack");
+    if (!/kind in \('js', 'nativo', 'cierre', 'red', 'servidor'\)/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "app_error_groups.kind admite 'servidor'");
+  },
+
+  /* 9j · llaveConVencimiento (LAUNCH L1184): toda llave viva del llavero con fecha se avisa a los Admins 30 días antes (y vencida), una vez por llave,
+     versión y etapa, desde el barrido; cada reemplazo queda en key_rotations (solo inserción). */
+  llaveConVencimiento() {
+    const G = "llaveConVencimiento", S = "apps/web/lib/sistema/salud.ts", B = "apps/web/lib/barrido.ts", LL = "apps/web/lib/tiendas/llavero.ts", M = "packages/db/migrations/0140_sistema.sql";
+    for (const f of [S, B, LL, M]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de las llaves que vencen");
+    const s = sinComent(S), av = cuerpoFn(s, "avisarLlavesQueVencen");
+    if (!/export const AVISO_LLAVE_DIAS = 30;/.test(s)) falla(G, S, 0, "el aviso sale 30 días antes");
+    if (!/where retired_at is null and expires_on is not null[^`]*expires_on <= current_date \+ \$1::int/.test(av)) falla(G, S, 0, "se revisan TODAS las llaves vivas con fecha (no una lista)");
+    if (!/ref_kind = 'llave_vence' and ref_id = \$1/.test(av) || !/avisar\(u\.id, "llave_vence"/.test(av)) falla(G, S, 0, "un aviso por llave, versión y etapa (sin repetir)");
+    if (!/avisarLlavesQueVencen\(\)/.test(readFileSync(B, "utf8"))) falla(G, B, 0, "las llaves que vencen se revisan en el barrido");
+    if (!/if \(prev\) await c\.query\(`insert into key_rotations/.test(sinComent(LL))) falla(G, LL, 0, "cada llave que se reemplaza queda en key_rotations");
+    const m = readFileSync(M, "utf8");
+    if (!/\('llave_vence', 'mod'/.test(m)) falla(G, M, 0, "falta la plantilla del aviso llave_vence");
+    if (!/create trigger key_rotations_no_cambia before update or delete on key_rotations/.test(m)) falla(G, M, 0, "key_rotations es de solo inserción");
+  },
+
+  /* 9j · flagPorPersona: un interruptor por ciudad o por porcentaje solo si su código lo lee persona por persona (flag_para); la base no deja acotar
+     uno «todo o nada», y nadie lee crudo un interruptor acotable. Lo cambia Sistema › Flags con sys:editar, motivo y auditoría. */
+  flagPorPersona() {
+    const G = "flagPorPersona", M = "packages/db/migrations/0140_sistema.sql", F = "apps/web/lib/sistema/flags.ts";
+    if (!existsSync(M) || !existsSync(F)) return falla(G, F, 0, "falta Sistema › Flags");
+    const m = readFileSync(M, "utf8");
+    if (!/check \(scope in \('all', 'city', 'percent'\) and \(scope = 'all' or scopable\)/.test(m)) falla(G, M, 0, "la base no deja acotar un interruptor que no es «scopable»");
+    const acotables = [...m.matchAll(/update feature_flags set scopable = true where key = '([^']+)'/g)].map((x) => x[1]);
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      for (const k of acotables) if (new RegExp(`select enabled[^\`]*from feature_flags where key = '${k.replace(/\./g, "\\.")}'`).test(t)) falla(G, f, 0, `${k} se puede acotar por ciudad o porcentaje: se lee con flag_para (flagPara), no crudo`);
+    }
+    const f = sinComent(F), c = cuerpoFn(f, "cambiarFlag");
+    if (!/s\.puede\("sys", "editar"\)/.test(c) || !/auditar\(cx, \{ actor: s\.id, action: "sistema\.flag"/.test(c) || !/m\.length < 3/.test(c)) falla(G, F, 0, "cambiar un interruptor pide sys:editar, motivo y deja su auditoría");
+    if (!/if \(duenio\(key\)\) return/.test(c)) falla(G, F, 0, "los interruptores con pantalla propia se cambian ahí");
+  },
+
+  /* 9j · vidrioRoto (LAUNCH L464): la foto de una ayuda de Salud solo se muestra al equipo después de escribir el motivo (break_glass, solo inserción,
+     10 minutos, auditoría); la ruta de la foto lo exige. */
+  vidrioRoto() {
+    const G = "vidrioRoto", R = "apps/web/app/api/ayuda/foto/[id]/route.ts", V = "apps/web/lib/sistema/vidrio.ts", M = "packages/db/migrations/0140_sistema.sql";
+    for (const f of [R, V, M]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza del vidrio roto");
+    if (!/const sinMotivo = !!s && m\.owner_kind === "help" && \(await ayudaDeSalud\(m\.owner_id\)\) && !\(await vidrioVigente\(s\.id, m\.owner_id\)\);/.test(sinComent(R)) || !/if \(s && !sinMotivo &&/.test(sinComent(R))) falla(G, R, 0, "la foto de Salud no se le muestra al equipo sin un motivo vigente");
+    const v = sinComent(V), ab = cuerpoFn(v, "abrirVidrio");
+    if (!/if \(m\.length < 10\) return/.test(ab) || !/insert into break_glass/.test(ab) || !/action: "ayuda\.foto\.vidrio"/.test(ab)) falla(G, V, 0, "abrir pide un motivo de 10 letras o más, lo guarda y deja la auditoría");
+    if (!/create trigger break_glass_no_cambia before update or delete on break_glass/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "break_glass es de solo inserción");
+  },
+
+  /* 9j · minimoDisponible (LAUNCH L1349; plan §3.5): el build mínimo o de aviso de una app nunca por encima del último build disponible en producción
+     (nadie podría actualizar). En el sandbox (builds de prueba) se guarda y se dice. */
+  minimoDisponible() {
+    const G = "minimoDisponible", A = "apps/web/lib/app-nativa.ts";
+    if (!existsSync(A)) return;
+    const c = cuerpoFn(sinComent(A), "cambiarBuild");
+    if (!/select max\(build\) as b from app_builds where app = \$1 and platform = \$2 and status = 'disponible'/.test(c) || !/if \(ENTORNO === "produccion"\) throw new Choque\(/.test(c)) falla(G, A, 0, "en producción, el build mínimo o de aviso no pasa del último build disponible");
   },
 };
 

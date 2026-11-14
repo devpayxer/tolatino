@@ -241,6 +241,11 @@
     "city_home_config": { "equipo": ["updated_by"] },
     "announcements": { "equipo": ["by_staff_id", "retired_by"] },
     "scheduled_reports": { "equipo": ["by_staff_id"] },
-    "legal_acceptances": { "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "ley", "exporta": "terminos_aceptados", "fusion": "no" } ] }
+    "legal_acceptances": { "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "ley", "exporta": "terminos_aceptados", "fusion": "no" } ] },
+    "staff_mfa": { "equipo": ["revoked_by"], "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "seguridad", "fusion": "no" } ] },
+    "staff_mfa_log": { "equipo": ["by"], "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "seguridad", "fusion": "no" } ] },
+    "maintenance_windows": { "equipo": ["by_staff", "cancelled_by"] },
+    "key_rotations": { "equipo": ["by"] },
+    "break_glass": { "equipo": ["staff_id"] }
   }
 }

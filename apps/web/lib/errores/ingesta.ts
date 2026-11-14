@@ -63,6 +63,22 @@ export async function recibirError(e: Entrada): Promise<Recibido> {
   if (!TIPOS.has(tipo)) return { ok: false, por: "invalido" };
   const ua = String(e.ua ?? "").slice(0, 600), app = leerRotulo(ua);
   if ((tipo === "cierre" || tipo === "nativo") && !app) return { ok: false, por: "invalido" };
+  return guardar(e, b, tipo, ua, app);
+}
+
+/* 9j · Un error del SERVIDOR (instrumentation.ts › onRequestError: una página, una acción o una ruta que se cayó): el mismo tapado, la misma huella
+   y las mismas tablas que los de la web y las apps, como «servidor» (app web). Solo lo llama el propio proceso (nunca un teléfono), así que no mira
+   el interruptor app.errores (es de lo que mandan los teléfonos); tiene su tope por minuto (el de todo el sistema) para que un error en un bucle no
+   llene la base. Sin persona: la «sesión» de todos los errores del servidor de un día es la misma huella. */
+export async function recibirErrorServidor(err: unknown, ruta: string | null): Promise<Recibido> {
+  const lim = await valores("errores_por_minuto");
+  if (!(await dentroDelTope("errores_servidor", "todo", lim.errores_por_minuto))) return { ok: false, por: "limite" };
+  const x = (err && typeof err === "object" ? err : { message: String(err) }) as { name?: unknown; message?: unknown; stack?: unknown };
+  return guardar({ ua: null, dev: null, ip: null, cuerpo: null }, { nombre: x.name, mensaje: x.message, stack: x.stack, ruta }, "servidor", "", null);
+}
+
+/* Tapar, agrupar y guardar (lo común de los errores de los teléfonos y los del servidor). */
+async function guardar(e: Entrada, b: Record<string, unknown>, tipo: string, ua: string, app: ReturnType<typeof leerRotulo>): Promise<Recibido> {
   const nombre = texto(b.nombre, 80).replace(/[^A-Za-z0-9_$. ]/g, "").trim();
   // Chrome antepone «Uncaught » al mensaje de un ErrorEvent; el nombre ya va aparte.
   const mensaje = taparError(texto(b.mensaje, 2000).replace(/^Uncaught\s+(?:\(in promise\)\s+)?/, ""), 500);

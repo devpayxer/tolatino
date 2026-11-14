@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { yo } from "@/lib/cuenta";
-import { db } from "@/lib/db";
+import { flagPara } from "@/lib/sistema/flags";
 import { idioma } from "@/lib/idioma";
 import { accesoPanel } from "@/lib/panel";
 import { horario } from "@/lib/soporte";
@@ -17,7 +17,8 @@ export const metadata: Metadata = { title: "Reportar un problema · To'Latino" }
    Con app.reportar apagado: el Soporte de siempre. El negocio lo revisa el servidor (accesoPanel), igual que /soporte. */
 export default async function Page({ searchParams }: { searchParams: Promise<{ negocio?: string; captura?: string }> }) {
   const [sp, lang, u] = await Promise.all([searchParams, idioma(), yo().catch(() => null)]);
-  const on = (await db().query<{ enabled: boolean }>(`select enabled from feature_flags where key = 'app.reportar'`)).rows[0]?.enabled === true;
+  // 9j · app.reportar se decide por la persona (por ciudad o porcentaje, Sistema › Flags); sin cuenta, solo si está para todas las ciudades.
+  const on = await flagPara("app.reportar", u?.id ?? null);
   const neg = sp.negocio ? String(sp.negocio).slice(0, 80) : null;
   if (!on) redirect(`/soporte?nuevo=1&tema=tecnico${neg ? `&negocio=${encodeURIComponent(neg)}` : ""}`);
   let negocio: { id: string; name: string } | null = null;

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import type { PoolClient } from "pg";
 import { yo, type Yo } from "./cuenta";
 import { db, tx } from "./db";
+import { estadoDosPasos, type Dos } from "./equipo/dos-pasos";
 
 /* Super Admin: quién es del equipo, qué puede hacer y el rastro de cada acción.
    Regla: el permiso se revisa SIEMPRE aquí (servidor). La pantalla solo esconde lo que no puedes. */
@@ -12,9 +13,8 @@ export type Accion = "ver" | "editar" | "aprobar" | "retirar" | "exportar";
 export type Staff = Yo & { role: string; roleName: string; cities: string[]; puede: (s: string, a: Accion) => boolean };
 
 
-export async function staff(): Promise<Staff | null> {
-  const u = await yo();
-  if (!u) return null;
+/* La fila del equipo de una persona (rol, ciudades y permisos), SIN mirar el segundo factor. Solo la usan staff() y la pantalla de los dos pasos. */
+async function filaEquipo(u: Yo): Promise<Staff | null> {
   const r = await db().query<{ role: string; role_name: string; cities: string[]; perms: string[] | null }>(
     `select m.role, r.name->>'es' as role_name, m.cities,
             array_agg(p.section || ':' || p.action) filter (where p.allowed) as perms
@@ -30,10 +30,33 @@ export async function staff(): Promise<Staff | null> {
   return { ...u, role: m.role, roleName: m.role_name, cities: m.cities, puede: (s, a) => set.has(`${s}:${a}`) };
 }
 
+/* 9j · Del equipo Y con el segundo factor dado en ESTA sesión (lib/equipo/dos-pasos.ts): sin eso, null (ninguna pantalla, acción ni ruta del
+   Super Admin abre; guardián equipoConDosPasos). */
+export async function staff(): Promise<Staff | null> {
+  const u = await yo();
+  if (!u) return null;
+  const s = await filaEquipo(u);
+  if (!s) return null;
+  if ((await estadoDosPasos(u)).estado !== "ok") return null;
+  return s;
+}
+
+/* 9j · Para el marco del Super Admin y la pantalla de los dos pasos: ¿es del equipo? y ¿ya dio su segundo factor? */
+export async function miembroEquipo(): Promise<{ staff: Staff; dos: Dos } | null> {
+  const u = await yo();
+  if (!u) return null;
+  const s = await filaEquipo(u);
+  if (!s) return null;
+  return { staff: s, dos: await estadoDosPasos(u) };
+}
+
 /* Sin cuenta → a entrar. Sin permiso → al inicio del admin con aviso (nunca un error en pantalla). */
 export async function requerir(seccion: string, accion: Accion = "ver"): Promise<Staff> {
-  const s = await staff();
-  if (!s) redirect("/entrar");
+  const m = await miembroEquipo();
+  if (!m) redirect("/entrar");
+  // 9j · Del equipo pero sin el segundo factor de esta sesión: a la pantalla de los dos pasos (nunca a la sección).
+  if (m.dos.estado !== "ok") redirect("/admin/dos-pasos");
+  const s = m.staff;
   if (!s.puede(seccion, accion)) {
     if (seccion === "home") redirect("/cuenta");
     redirect(`/admin?sin=${encodeURIComponent(`${seccion}:${accion}`)}`);

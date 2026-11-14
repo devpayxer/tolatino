@@ -59,6 +59,26 @@ export async function agregarMiembro(_: Resultado | null, f: FormData): Promise<
   return { ok: true, mensaje: "Listo: ya es parte del equipo." };
 }
 
+/* 9j · Restablecer los dos pasos de OTRA persona del equipo (perdió el teléfono y los códigos de recuperación): su app de códigos queda revocada y sus
+   sesiones vuelven a pedir el segundo factor. Solo sys:editar, nunca a uno mismo, con motivo, auditoría y aviso. */
+export async function restablecerDosPasos(_: Resultado | null, f: FormData): Promise<Resultado> {
+  const s = await requerir("sys", "editar");
+  const id = String(f.get("usuario") ?? ""), motivo = motivoOk(f.get("motivo"));
+  if (!motivo || motivo.length < 3) return { ok: false, mensaje: "Escribe el motivo." };
+  if (id === s.id) return { ok: false, mensaje: "Tus propios dos pasos los restablece otra persona del equipo." };
+  const { restablecerEn, avisarRestablecido } = await import("@/lib/equipo/dos-pasos");
+  const hecho = await tx(async (c) => {
+    if (!(await c.query("select 1 from staff_members where user_id = $1 and status = 'active'", [id])).rowCount) return false;
+    const ok = await restablecerEn(c, s.id, id, motivo);
+    if (ok) await auditar(c, { actor: s.id, action: "equipo.dos_pasos.restablecer", targetKind: "staff", targetId: id, before: { segundo_factor: "app de códigos" }, after: { segundo_factor: "por dar de alta" }, reason: motivo });
+    return ok;
+  });
+  if (!hecho) return { ok: false, mensaje: "No tenía nada que restablecer." };
+  await avisarRestablecido(id);
+  revalidatePath("/admin/sistema");
+  return { ok: true, mensaje: "Listo: da de alta su app de códigos otra vez al entrar." };
+}
+
 export async function quitarMiembro(_: Resultado | null, f: FormData): Promise<Resultado> {
   const s = await requerir("sys", "editar");
   const id = String(f.get("usuario") ?? ""), motivo = motivoOk(f.get("motivo"));

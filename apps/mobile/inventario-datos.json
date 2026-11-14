@@ -233,6 +233,8 @@
   ],
   "$noPersonales": "Columnas que el guardián privacidadCoherente encuentra por su nombre (teléfono, correo, geom, fotos, mensajes…) y que NO son datos personales de la persona que usa la app, con su porqué. Cada una nueva se clasifica aquí o en una categoría de arriba.",
   "noPersonales": {
+    "staff_mfa_pruebas.phone": "Teléfonos de ficción 570-555 del equipo de las pruebas (solo el sandbox; la base no acepta otros).",
+    "maintenance_windows.message": "El aviso de mantenimiento que el equipo escribe para todos: no es de una persona.",
     "businesses.address": "La dirección pública del negocio (sale en su página).",
     "businesses.address_ref": "La referencia pública de la dirección del negocio.",
     "businesses.phone": "El teléfono público del negocio.",

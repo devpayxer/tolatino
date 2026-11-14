@@ -64,6 +64,11 @@ const st = (p, u) => p.evaluate(async (u) => (await fetch(u)).status, u);
   ok(await st(anon, U) === 404 && await st(otro, U) === 404, 'sin cuenta u otro negocio: 404 (no se dice que existe)');
   ok(await st(anon, `/medios/${fm[2]}`) !== 200, 'por /medios no se sirve');
   const audAntes = Number(sql(`select count(*) from audit_entries where action = 'ayuda.foto.ver'`));
+  // 9j · «Vidrio roto»: una foto de Salud, el equipo la ve solo después de escribir el motivo (10 minutos, en la auditoría).
+  sql(`set session_replication_role = replica; delete from break_glass where target_id = (select owner_id from media where id = '${fm[0]}')`);
+  ok(await st(adm, U) === 404, 'To’Latino sin motivo: 404 (vidrio roto)');
+  const vg = await api(adm, '/api/admin/vidrio', { foto: fm[0], motivo: 'Revisar la factura para decidir la ayuda.' });
+  ok(vg.ok === true && sql(`select count(*) from audit_entries where action = 'ayuda.foto.vidrio' and reason = 'Revisar la factura para decidir la ayuda.' and target_id = (select owner_id from media where id = '${fm[0]}')`) !== '0', 'con su motivo escrito: queda en la auditoría');
   ok(await st(adm, U) === 200 && Number(sql(`select count(*) from audit_entries where action = 'ayuda.foto.ver'`)) === audAntes + 1, 'To’Latino la ve y queda en la auditoría');
   // Aviso al consultorio: neutro (sin nombre del paciente).
   const nb = sql(`select tpl || '|' || coalesce(body::text, '') from notifications where tpl = 'biz_sal_help' order by id desc limit 1`);
