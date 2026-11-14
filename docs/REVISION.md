@@ -4349,3 +4349,22 @@ cada pantalla «caliente» con el código de la app tal cual. Lo que pasaba de s
 - **Lo que no pasó el presupuesto y queda con destino** (la tabla, en PROGRESS): la Tabla del mes con 580 mil vecinos con puntos en una ciudad (85–89 ms
   contra 40; 9m), la búsqueda por nombre en la puerta con 50 mil boletos (131–160 ms contra 150; 9n) y el ritmo de 200 posiciones por segundo medido en la
   misma máquina que la base (9t). Lo de una sola vuelta varía entre corridas en la máquina de GitHub.
+
+### 9c · Accesibilidad del sistema de diseño (14 nov)
+**Qué es (en sencillo):** todo lo que se tocaba con el dedo pero que un teclado o un lector de pantalla no podía usar (botones «de adorno»: la campana, los − y +, las
+tarjetas, los días y horas de una reserva, las cruces de cerrar) ahora se puede usar con teclado y dice su nombre. No cambia cómo se ve nada.
+- **Qué mirar (con un teclado físico, en la computadora):**
+  1. Abre un negocio con menú (Sabor Dominicano). Aprieta **Tab** varias veces: el foco va pasando por la página y cada cosa se ve con un contorno morado. **Enter** o
+     **Espacio** sobre «+» agrega el plato; sobre la barra de abajo abre tu pedido.
+  2. En una reserva, **Tab** hasta un día o una hora y **Enter**: se elige igual que con el dedo.
+  3. En el menú de un negocio con tarjeta (la lista de negocios), **Tab** va al nombre del negocio y **Enter** abre su ficha; el botón de contactar es otro punto de parada.
+  4. En el Super Admin, **Tab** recorre el menú y **Enter** entra a cada sección.
+  - Con el lector de pantalla del teléfono (VoiceOver o TalkBack) los botones solo con ícono dicen «Notificaciones», «Uno más», «Cerrar»… en vez de «botón».
+- **Decisiones que tomé (si prefieres otra, se cambia):**
+  - **El contorno del foco es el morado de la marca**, 2 px, solo cuando se navega con teclado (con el dedo o el ratón no se ve). Se lee sobre blanco, papel y tinta.
+  - **Una tarjeta con botones dentro** (negocio, plato, buscador con ciudad) **no es un botón entera**: el teclado entra por su nombre. Así un lector de pantalla no se
+    confunde con «botón dentro de botón». Con el dedo o el ratón toda la tarjeta sigue siendo clicable.
+  - **No toqué los grises ni los tamaños** (contraste de texto pequeño y 44 px de alto en íconos): cambiarlos cambia las capturas que aprobaste y no quise decidirlo por ti.
+    Quedan en LAUNCH «Fase 9 · 9c» para hacerlos juntos, con captura nueva, en 9m.
+  - **Los nombres de los botones solo con ícono salen en español** donde la pantalla no manda el idioma (votar, «Foto», «Ver el equipo»…): LAUNCH «Fase 9 · 9c».
+- **Prueba:** `a11y9c` (teclado solo: pedir, reservar, comprar un boleto, publicar un negocio, entrar al Super Admin) en el CI; la primera corrida es la real.

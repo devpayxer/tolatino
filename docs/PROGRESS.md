@@ -1553,3 +1553,38 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   | retencion | L207 | 30000 ms | ✓ 542,5 ms | ✓ 567,2 ms |
   | resumen-dia | L207 | — | ✓ 661 filas | ✓ 630 filas |
 - **No cerrado o con destino:** ver LAUNCH «→ 9b» (lo que queda), «Fase 9 · 9b-3» y las líneas movidas a 9c, 9g, 9j, 9l, 9m, 9n, 9o, 9q, 9r y 9t con su porqué.
+
+## Fase 9 · 9c — accesibilidad WCAG AA del sistema de diseño (14 nov)
+- **Hecho:**
+  - **Los 190 clics mudos del sistema de diseño** (`<div>` y `<span>` con `onClick` y nada más, en 38 módulos de `packages/ui/src/ds`: AdminBar 23, Thread 16,
+    SiteHeader 17, Patio 11, DeliveryPrefs 10, OnbTopBar 10, CompaFrame 10, MenuItemRow 8…) tienen ahora rol, foco, Enter / Espacio y nombre. No se hicieron 190
+    parches a mano: un solo **motor** en `scripts/portar-sistema.mjs` (`accesibilizar`, con la tabla `A11Y` del tipo de cada clic) recorre cada módulo y, con
+    `__ds_scope.__btn(clic, nombre, extra, dentro)` (definido en el `scope.js` que genera el mismo script), le agrega `role="button"`, `tabIndex`, `onKeyDown`
+    (solo con el foco en el propio elemento) y, si no hay texto que lo nombre, `aria-label` en un prop nuevo con valor por defecto ES/EN. **Se ve igual**: ni un estilo
+    ni la estructura cambian. Decisión L: lo mismo se produce al volver a portar (`sistemaSincronizado` lo comprueba).
+    - Tipos de la tabla: botón (el texto lo nombra) · botón con nombre en un prop · decorativo (fondos de hojas, zonas de toque repetidas: `role="presentation"` +
+      `aria-hidden`) · envoltura que solo detiene el clic · **contenedor clicable con controles de verdad dentro** (tarjeta de negocio, fila y tarjeta del plato con su «+»,
+      el buscador con su ciudad, el negocio recomendado de Comunidad): no puede ser un botón (axe: «interactivo anidado»), así que el teclado entra por el nombre
+      (un `<span role="button">` dentro) y el clic del ratón sigue subiendo al contenedor · solo foco y teclado para lo que ya trae su rol (tab, option, el − y + del plato)
+      · interruptor · casilla.
+    - **QtyStepper y el «+» del menú:** «Uno menos» / «Uno más», «Quitar», «Agregar» y «Cantidad: N» eran texto fijo en español: ahora son props con ES/EN
+      (`decLabel`, `incLabel`, `removeLabel`, `addLabel`, `qtyLabel`); las cinco pantallas que los usan pasan el idioma.
+    - **AuthSheet:** región `role="alert"` siempre presente (vacía y sin altura mientras no hay error), campos con nombre, `aria-invalid` y `aria-describedby`.
+  - **Las pantallas también** (`apps/web`): 147 `<div>/<span>` con `onClick` (con `role="button"` o `role="link"` pero sin foco ni teclado, o sin rol) usan `{...tec(clic)}`
+    (`apps/web/lib/tec.ts`: foco, Enter y Espacio). Los 18 `role="button"` de `packages/ui/src/panel/Bloques.tsx` también.
+  - **Foco visible global** (`apps/web/app/globals.css`): contorno de 2 px en el morado de marca con `:focus-visible` (solo teclado) en todo lo enfocable; `!important`
+    porque muchos controles traen `outline: none` en su estilo en línea.
+- **Guardianes:** `sistemaClicMudo` en **0** (antes tope 190; ya no es un trinquete: cualquier `<div>/<span>` con `onClick` sin `__btn` / `__key` / rol con `tabIndex` /
+  `role="presentation"` falla) · `panelClicMudo` en **0** (antes 18) · nuevo **`clicConTeclado`** (lo mismo para las pantallas de `apps/web`). `botonAccesible` (Button e
+  IconButton con rol, foco, teclado y nombre) sigue en verde.
+- **Prueba nueva (punta a punta): `a11y9c`** — solo con el teclado (cada paso es «llevar el foco al control y apretar Enter o Espacio»; falla si el control no se
+  puede enfocar, no está en el orden de Tab o no tiene nombre): pedir (agregar un plato, abrir el pedido, «Ir a pagar», «Enviar pedido»), reservar una mesa (cuántos, día,
+  hora, ocasión, enviar), comprar un boleto («Uno más» con Espacio, Continuar, Pagar), publicar un negocio (el asistente de `/publica` entero, hasta «PUBLICADA») y entrar al
+  Super Admin y moverse por su menú; además Tab a Tab (cada elemento con foco se ve, el foco avanza y no se atrapa), ningún control con rol fuera del orden de
+  tabulación, y el árbol de accesibilidad de Playwright (`ariaSnapshot`: «VoiceOver simulado») trae «Agregar», «Uno más», «Uno menos», los radios de día y hora, la
+  campana y la cuenta del Super Admin con su nombre. Informa (sin fallar) cuántos controles miden menos de 44 px. **No se corrió en local** (la sesión no tenía Docker):
+  la primera corrida es la del CI.
+- **Ayuda:** `docs/ayuda/accesibilidad.md` (vecino, ES/EN; también es el texto de la página de Accesibilidad de 9e).
+- **Probado aquí:** `node guardianes/run.mjs` → «sin fallos»; `tsc --noEmit` limpio; `pnpm --filter web build` en verde; re-portar produce el mismo árbol (`sistemaSincronizado`).
+- **No cerrado, con destino (LAUNCH «Fase 9 · 9c»):** contraste de texto AA y objetivos de 44 px (cambian las capturas aprobadas: necesitan tu OK), nombres EN de los íconos
+  sin texto en las pantallas que no pasan `lang`, hojas sin trampa de foco ni Escape, flechas entre pestañas, el foco sobre fondos oscuros.

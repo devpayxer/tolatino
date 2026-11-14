@@ -370,10 +370,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9n** · **Ofertas con cuenta regresiva y asignación automática**; entregas múltiples (batch); programados con recordatorio.
 - [ ] **→ 9n** · **Super Admin › Repartidores (ADM-DLV)**: lista, 360°, incidencias (cola) y sanciones.
 - [x] **→ después de abrir (DA-03)** · **Repartidores de To'Latino** (registro, verificación, payout por Stripe Connect): «más adelante», por ciudad. — _9a (11 nov): Repartidores de To'Latino: «más adelante», por ciudad (§3.9). En `docs/DESPUES-DE-ABRIR.md`._
-- [ ] **→ 9c** · **Accesibilidad:** el botón base ya es accesible (guardián `botonAccesible`); revisar el resto de piezas del sistema
+- [x] **→ 9c** · **Accesibilidad:** el botón base ya es accesible (guardián `botonAccesible`); revisar el resto de piezas del sistema
       que usan `div` con onClick (auditoría por clase, decisión T).
 
-## Plan Pro (bloque 2m, 6 nov 2026)
+## Plan Pro (bloque 2m, 6 nov 2026) — **✓ 9c (14 nov):** los 190 clics mudos del sistema pasan por el motor de `scripts/portar-sistema.mjs` (tabla A11Y; `__ds_scope.__btn`); el guardián `sistemaClicMudo` quedó en cero (antes tope 190) y `panelClicMudo` también (antes 18); prueba a11y9c.
 - [ ] **→ 9k** · **Reloj del servidor** (systemd timer o similar) que llame al proceso del plan cada hora, además del proceso «al usar
       la app» de hoy: que el día 30 llegue aunque nadie entre. — _9a (11 nov): el proceso del plan corre al abrir el panel (lib/panel.ts → suscripcion.procesar); no está en el barrido central: el día 30 no llega si nadie entra._
 - [x] **Super Admin › Planes** (secPlan): suscripciones, MRR, extender prueba, cortesía, precio y comisiones programadas
@@ -392,10 +392,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
 
 - [ ] **→ 9k** · **Disputas (2r):** suscribir el webhook de Stripe a `charge.dispute.created/updated/closed`; adjuntar archivos de
   evidencia (foto de entrega, recibo en PDF) por la API de archivos de Stripe; alerta al equipo 3 días antes del plazo.
-- [ ] **→ 9c** · **Accesibilidad del sistema de diseño (bloque propio, antes de la fase 9):** quedan 193 `onClick` en `<div>/<span>` sin
+- [x] **→ 9c** · **Accesibilidad del sistema de diseño (bloque propio, antes de la fase 9):** quedan 193 `onClick` en `<div>/<span>` sin
       rol ni teclado en `packages/ui/src/ds` (AdminBar 23, Thread 18, SiteHeader 17, Patio 11, DeliveryPrefs 10, OnbTopBar 10,
       CompaFrame 10, MenuItemRow 9…). Se corrigen con nombre y estado en `scripts/portar-sistema.mjs` (como Button, IconButton,
-      PostCard, Chip y el Booking); el guardián `sistemaClicMudo` no deja que suban y pide bajar el tope.
+      PostCard, Chip y el Booking); el guardián `sistemaClicMudo` no deja que suban y pide bajar el tope. — **✓ 9c (14 nov):** los 193 (190 contados por el guardián) son botones con rol, foco, Enter/Espacio y nombre; los contenedores con controles dentro (tarjetas, buscador con ciudad, fila del plato) entran por su nombre; los fondos de hojas y zonas repetidas son `role=presentation`. Nombres EN y 147 clics de las pantallas: ver «9c-2» abajo.
 - [x] **Fotos privadas de ayuda y de citas:** las fotos de «Ayuda con la cita» (recibos, cómo quedó) y las de referencia de
       una cita se guardan con dirección imposible de adivinar pero pública (`/medios/n/…`). Antes de abrir: moverlas a
       `privado/` y servirlas con permiso (la persona, el negocio de esa cita y To'Latino). — **✓ 9a (11 nov):** fotos de ayuda y de citas en privado/ servidas con permiso (app/api/ayuda/foto/[id], guardián fotoAyudaPrivada); pruebas ayu4if, sop7b.
@@ -480,8 +480,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
   de la fase 9 y ajustar `lay_cancel_pct` máximo por estado. También: Super Admin › Transacciones con el detalle del plan
   (pagado / falta / atrasado) y la cola de cancelaciones disputadas van en 4s.
 
-- [ ] **→ 9c** · **QtyStepper (sistema de diseño) sin teclado ni nombre accesible** (7 nov, 4y-1): los botones − / + son `div` con onClick, sin role ni aria-label. Lo usan el Booking de viajes, el carrito y los productos. Arreglarlo en `packages/ui` (role=button, tabIndex, aria-label «Uno menos / Uno más») y ampliar el guardián botonAccesible a `packages/ui/src/ds`.
-
+- [x] **→ 9c** · **QtyStepper (sistema de diseño) sin teclado ni nombre accesible** (7 nov, 4y-1): los botones − / + son `div` con onClick, sin role ni aria-label. Lo usan el Booking de viajes, el carrito y los productos. Arreglarlo en `packages/ui` (role=button, tabIndex, aria-label «Uno menos / Uno más») y ampliar el guardián botonAccesible a `packages/ui/src/ds`. — **✓ 9c (14 nov):** «Uno menos» / «Uno más» (ES/EN con las props `decLabel`/`incLabel`; los cinco usos de las pantallas las pasan), role=button, foco y Enter/Espacio; el «+» del plato dice «Agregar», «Quitar» o «Cantidad: N» en el idioma de la pantalla.
 - [x] **Barrido central (sin él no se vence nada si nadie mira)** — HECHO en el sandbox (0078, servicio «barrido», guardián barridoCompleto). Falta repetirlo en el docker-compose de PRODUCCIÓN cuando se encienda (fase 9) (7 nov, 4y-3b): vencer solicitudes y liberar retenciones (citas, fiestas, viajes, mercado, apartados), precios y totales vencidos, recordatorios y el aviso «tu salida todavía no sale» solo corren cuando alguien abre una página. Hace falta un proceso que los corra cada minuto (endpoint interno con token del entorno + servicio del docker-compose que lo llama). Bloque siguiente a 4y-3b.
 - [ ] **→ 9s** · **Noche · licencia de licor (PLCB):** hoy es un sello que no bloquea nada y la lista legal no está revisada. Antes de abrir,
   revisar con abogado si hace falta algo más (hookah, after-hours después de las 2 AM, promotores). (4na, 7 nov)
@@ -1490,3 +1489,30 @@ en el momento. Se marca solo cuando está hecho de verdad.
       iguales, la subida de 500 escaneos 1,35 → 2,2 s, el barrido 8,6 → 10,8 s, el ritmo de posiciones 2 860 → 673 ms. Antes de encender producción, correr
       `scripts/carga` contra una base del tamaño de la de producción (la misma máquina que se contrate) y dejar ahí los presupuestos de las líneas movidas
       a 9t. (9b-3, 13 nov)
+
+## Fase 9 · 9c — accesibilidad del sistema de diseño (14 nov)
+- [ ] **→ 9m** · **Contraste de texto AA (4,5 : 1):** los grises de texto del sistema (`--tl-text-muted` = tinta al 50 %, `--tl-text-faint` al 42 % y los
+      `rgba(11,14,18,.42–.5)` en línea de muchos componentes) dan 2,9–3,7 : 1 sobre blanco y papel: no llegan a AA para texto pequeño. Subirlos a
+      ≥ 60 % cambia pixeles en las capturas aprobadas de los 9 dispositivos, así que **no se hizo en 9c** (regla: lo visual no cambia sin OK).
+      Se hace en un bloque con captura nueva aprobada en `docs/REVISION.md` (subir `muted` a .62 y `faint` a .55, `pruebas/visual/` por `aprobar`). (9c, 14 nov)
+- [ ] **→ 9m** · **Objetivos táctiles de 44 px:** a11y9c informa cuántos controles del sistema miden menos de 44 px (íconos de 30–36 px, chips, filas
+      compactas). Agrandarlos cambia el diseño aprobado: o se agranda el área de toque sin tocar lo que se ve (relleno invisible con `::after`) o se aprueba
+      el cambio. Va con el contraste, en el mismo bloque y la misma aprobación visual. (9c, 14 nov)
+- [ ] **→ 9m** · **Nombres en inglés de los íconos sin texto del sistema (9c-2):** los controles que solo tienen un ícono (votar en Comunidad, «Foto» de una reseña,
+      «Ver el equipo», ficha del dominó, cerrar/atrás/enviar de El Compa y del onboarding, los de la barra del Super Admin…) tienen nombre con un prop
+      (`upLabel`, `closeLabel`, `backLabel`, `searchLabel`…) cuyo valor por defecto es ES, o ES/EN si el componente recibe `lang`. Falta que cada pantalla que los
+      usa pase el EN: hoy lo pasan el menú, el QtyStepper y el encabezado (`SiteHeader`). Lo demás sale en español a un lector de pantalla en inglés. (9c, 14 nov)
+- [ ] **→ 9m** · **Hoja «Entra para pedir» (AuthSheet):** ya anuncia errores (`error` → `role="alert"`, campos con nombre y `aria-invalid`), pero ninguna pantalla la
+      usa todavía (el pedido sin cuenta usa la pantalla Entra, que ya es accesible); al conectarla con su texto ES/EN, pasar `error` y las etiquetas. (9c, 14 nov)
+- [ ] **→ 9m** · **Hojas (diálogos) sin trampa de foco ni Escape:** los fondos de las hojas son `role=presentation` y el teclado las cierra con su botón «Cerrar», pero
+      una hoja abierta no atrapa el foco ni se cierra con Escape, ni devuelve el foco a quien la abrió (WCAG 2.1.2 y 2.4.3, nivel A/AA). Es el mismo cambio en
+      todas (≈ 40 hojas en `apps/web`): un componente `Hoja` con `role="dialog"`, `aria-modal`, foco inicial, Tab cíclico, Escape y retorno del foco. (9c, 14 nov)
+- [ ] **→ 9m** · **Tabs con flechas y lista de opciones:** las pestañas (`Tabs`, `DesktopTabs`) son botones en el orden de Tab; el patrón de WAI-ARIA pide una sola
+      parada con las flechas ← → entre ellas, y lo mismo las listas de radios (día, hora). Hoy se llega a cada una con Tab y se elige con Enter o Espacio:
+      cumple AA, es mejorable. (9c, 14 nov)
+- [ ] **→ 9m** · **Foco visible sobre fondos oscuros:** el contorno global es el morado de marca (más de 3 : 1 sobre blanco, papel y tinta); mirarlo en las pantallas
+      oscuras (Puerta, Patio, el menú del Compa) con teclado físico y, si hace falta, un tono más claro con `:focus-visible` dentro de `[data-oscuro]`. (9c, 14 nov)
+- [ ] **→ 9b** · **a11y9c no se corrió en local** (sin Docker en la sesión que la escribió): `a11y9c` entra a la regresión de la fase 9; si alguna de sus
+      pantallas tiene un selector distinto, la prueba lo dice con el texto de la página. Los avisos «clics con mano sin teclado» de a11y9c son una heurística de la página
+      servida: lo que falla es lo estático (`sistemaClicMudo`, `clicConTeclado`) y los roles fuera del orden de tabulación. (9c, 14 nov)
+
