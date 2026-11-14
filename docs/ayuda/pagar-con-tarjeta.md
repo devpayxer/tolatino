@@ -1,7 +1,7 @@
 # Pagar con tarjeta · Paying by card
 
 _Pantallas: Finalizar pedido (APP-NEG-CHECKOUT · PAGO y la hoja «Método de pago»), la página del pedido, Panel › Cobros (DASH-COBROS), Panel › Lo que
-vendes › Pedidos (Tarjeta en la app), el detalle del pedido en el panel («Devolver dinero») y Super Admin › Transacciones. Versión: 6 nov 2026.
+vendes › Pedidos (Tarjeta en la app), el detalle del pedido en el panel («Devolver dinero») y Super Admin › Transacciones, la hoja «Tu banco pide confirmar» (3-D Secure) y Mi cuenta › Ajustes › Pagos. Versión: 14 nov 2026.
 Audiencia: vecino. Tema: pedidos._
 
 ## Qué hace
@@ -28,19 +28,22 @@ Audiencia: vecino. Tema: pedidos._
 |---|---|
 | El banco rechaza la tarjeta | «Tu banco la rechazó. Prueba con otra tarjeta.» No se crea el pedido. |
 | Sin fondos / vencida / código mal | El mensaje lo dice; no hay pedido ni cargo. |
-| El banco pide verificación extra (3D Secure) | Esa tarjeta no sirve aquí: prueba otra o paga en el local. |
+| El banco pide verificación extra (3-D Secure) | Se abre la hoja **«Tu banco pide confirmar»**: toca **Confirmar con mi banco** y confirma en la ventana de tu banco (aquí mismo; To'Latino no ve lo que escribes). Después el pedido sale solo, con la misma retención: nunca se cobra dos veces. Si cierras sin confirmar, no hay pedido y lo retenido se suelta solo. Vale para pedidos, el mercado, los apartados y envíos de las tiendas, el pago del plan de apartado y los boletos. |
+| Tu banco no confirma («No fui yo») | No hay pedido ni cobro: prueba con otra tarjeta. |
 | Se envía dos veces el mismo pedido (doble toque) | Una sola retención: cada intento tiene su clave. |
 | Cambias de tarjeta después de un rechazo | Es un intento nuevo con la otra tarjeta. |
 | El negocio no tiene cuenta de cobro o la apagó | No sale «Tarjeta»: solo pago en el local. |
 | Stripe pide un dato más al negocio | Cobros dice «Stripe necesita un dato más» con «Completar en Stripe». |
 | To'Latino retiene los pagos al negocio | Cobros lo dice con el motivo; no se pierde nada. |
 | Devolución mayor a lo que queda | No deja: «Puedes devolver hasta $X». |
-| Sandbox (pruebas) | Todo corre contra el simulador de To'Latino: 4242 4242 4242 4242 aprueba, 4000 0000 0000 0002 rechaza, 4000 0000 0000 9995 sin fondos. Nada real se cobra. |
+| Sandbox (pruebas) | Todo corre contra el simulador de To'Latino: 4242 4242 4242 4242 aprueba, 4000 0000 0000 0002 rechaza, 4000 0000 0000 9995 sin fondos, 4000 0027 6000 3184 pide confirmar (el «banco» de pruebas contesta en la hoja). Nada real se cobra. |
 
 ## Preguntas frecuentes
 **¿Por qué me aparece un cargo si el pedido no se dio?** Es una retención, no un cobro: se libera completa y tu banco la
 quita en 1 a 5 días.
-**¿Dónde veo mis tarjetas?** En la hoja «Método de pago» al pagar; la última que pagó queda como predeterminada.
+**¿Dónde veo mis tarjetas?** En la hoja «Método de pago» al pagar y en **Mi cuenta › Ajustes › Pagos**; la última que pagó queda como predeterminada.
+**¿Cómo quito una tarjeta?** En **Mi cuenta › Ajustes › Pagos**, toca **Quitar** y confirma. Deja de salir al pagar; lo que ya pagaste no cambia y las
+devoluciones siguen llegando a esa tarjeta. La que paga el Pro de tu negocio se cambia primero en el panel.
 **¿Cuándo le llega el dinero al negocio?** Cada martes, lo cobrado de lunes a domingo.
 
 ## English
@@ -54,6 +57,10 @@ quita en 1 a 5 días.
   Orders. Payouts shows this week (taken, fee, refunded, **you get it on Tuesday**) and each charge.
 - **Fee:** 10% of the subtotal on card orders; delivery fee and tip go in full; card processing comes out of the fee.
 - **Refunds:** the owner from the order, To'Latino from Transactions; the fee drops proportionally; 3–5 business days.
+
+- **3-D Secure:** if your bank asks to confirm, the «Your bank asks you to confirm» sheet opens; tap «Confirm with my bank» and confirm in your bank's
+  window. The order then goes through with the same hold: never charged twice. Closing without confirming means no order and the hold is released.
+- **Saved cards:** see and remove them in **My account › Settings › Payments**.
 
 ### FAQ
 **Why do I see a charge if the order did not happen?** It is a hold, not a charge: fully released, your bank removes it in

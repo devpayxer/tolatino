@@ -157,15 +157,17 @@ export async function ventaFicha(fecha: string, es: boolean): Promise<VentaFicha
 }
 
 /* Entradas de una persona para una fecha: boletos vivos (por cuenta, dispositivo o la misma tarjeta guardada) + apartados vivos. */
-export async function entradasDe(q: Q, fecha: string, userId: string, dev: string | null, pm: string | null, sinApartado: string | null): Promise<number> {
+/* 9k · `huella`: la misma tarjeta FÍSICA en otra cuenta (card.fingerprint; un pm_… es de una sola cuenta) también cuenta para el máximo (L760). */
+export async function entradasDe(q: Q, fecha: string, userId: string, dev: string | null, pm: string | null, sinApartado: string | null, huella: string | null = null): Promise<number> {
   return (await q.query<{ n: number }>(
     `select (coalesce((select sum(t.admits) from tickets t join operations o on o.id = t.operation_id left join ticket_holds h on h.operation_id = o.id
                         where t.event_date_id = $1::bigint and t.status in ('valid', 'used') and t.kind = 'paid'
                           and (o.user_id = $2 or ($3::uuid is not null and h.device = $3::uuid)
-                               or ($4::text is not null and exists (select 1 from payments p where p.operation_id = o.id and p.payment_method = $4)))), 0)
+                               or ($4::text is not null and exists (select 1 from payments p where p.operation_id = o.id and p.payment_method = $4))
+                               or ($6::text is not null and exists (select 1 from payments p where p.operation_id = o.id and p.card_fingerprint = $6)))), 0)
            + coalesce((select sum(admits_n) from ticket_holds where event_date_id = $1::bigint and status = 'held' and expires_at > now()
                          and (user_id = $2 or ($3::uuid is not null and device = $3::uuid)) and ($5::uuid is null or id <> $5::uuid)), 0))::int as n`,
-    [fecha, userId, dev, pm, sinApartado])).rows[0]?.n ?? 0;
+    [fecha, userId, dev, pm, sinApartado, huella])).rows[0]?.n ?? 0;
 }
 
 /* ── Apartar (al tocar «Continuar»): todo o nada, dentro de una transacción ── */
@@ -428,15 +430,21 @@ export async function pagarBoletos(userId: string, holdId: string, pmRaw: unknow
       h = (await leerH(false))!;
     }
     // Máximo por persona con la tarjeta (otra cuenta con la misma tarjeta guardada cuenta).
-    const ya = await entradasDe(c, h.fid, userId, dev, pm, holdId), maxP = Math.min(cfg.evt_boletos_persona_fecha_max, v.mpp ?? 1000);
+    const ya = await entradasDe(c, h.fid, userId, dev, pm, holdId, await pasarela.huella(pm)), maxP = Math.min(cfg.evt_boletos_persona_fecha_max, v.mpp ?? 1000);
     if (ya + h.admits > maxP) throw no(`Hasta ${maxP} entradas por persona para esta fecha. No se cobró nada.`, `Up to ${maxP} entries per person for this date. Nothing was charged.`);
     // 1) Autorizar la tarjeta (no cobra todavía).
     const cliente = await pasarela.cliente(userId).catch(() => null);
-    const ret = await pasarela.retenerPlataforma({ centavos: h.total, pm, cliente, idem: `${holdId}-${pm.slice(-24)}-${h.intento}`, grupo: `evt-${h.eid}`, meta: { hold: holdId, event_id: h.eid, business_id: v.biz } });
+    const ret = await pasarela.retenerPlataforma({ centavos: h.total, pm, cliente, idem: `${holdId}-${pm.slice(-24)}-${h.intento}`, grupo: `evt-${h.eid}`, meta: { hold: holdId, event_id: h.eid, business_id: v.biz }, usuario: { id: userId, negocio: v.biz, ciudad: h.city } });
     if (!ret.ok) throw no(`No se cobró nada y tus boletos siguen guardados. ${ret.mensaje.es}`, `Nothing was charged and your tickets are still held. ${ret.mensaje.en}`, { tarjeta: true });
     pi = ret.pi;
     await db().query(`update ticket_holds set payment_intent = $2, pi_released_at = null where id = $1::uuid and status = 'held'`, [holdId, pi]);
-    if (ret.estado === "accion") throw no("Tu banco pide una verificación extra. Prueba con otra tarjeta. No se cobró nada.", "Your bank asks for an extra verification. Try another card. Nothing was charged.", { tarjeta: true });
+    if (ret.estado === "accion") {
+      // 9k · 3-D Secure (L759): la verificación queda a su nombre; la hoja la completa y «Pagar» vuelve a enviar este mismo apartado (la llave con el
+      // mismo intento encuentra la retención verificada). No se suelta lo retenido ni cuenta como otro intento.
+      const vf = (await import("./pagos/verificacion")).pideVerificar(ret);
+      if (vf) { pi = null; throw no("Tu banco pide confirmar que eres tú. Confírmalo y seguimos; no se cobró nada todavía.", "Your bank asks you to confirm it is you. Confirm it and we continue; nothing was charged yet.", { tarjeta: true, ...vf }); }
+      throw no("Tu banco pide una verificación extra. Prueba con otra tarjeta. No se cobró nada.", "Your bank asks for an extra verification. Try another card. Nothing was charged.", { tarjeta: true });
+    }
     // 2) La orden y los boletos, con el apartado bloqueado y todavía vivo.
     h = await leerH(true);
     if (!h || h.st !== "held") throw no("Se acabaron mientras pagabas. No se cobró nada.", "They sold out while you were paying. Nothing was charged.", { vencido: true, agotado: true });
@@ -481,9 +489,9 @@ export async function pagarBoletos(userId: string, holdId: string, pmRaw: unknow
     const extrasT = h.lines.filter((l) => l.k === "a").reduce((s, l) => s + l.unit, 0);
     if (extrasT) fee += Math.min(await comision(c, "bol", extrasT, 0), extrasT); // extras: el porcentaje, sin el fijo por boleto
     if (h.code) await c.query(`update discount_codes set held_n = held_n - 1, used_n = used_n + 1 where id = $1::bigint and held_n >= 1`, [h.code]);
-    await c.query(`insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, held_at, simulated, payment_method, transfer_group)
-                   values ($1::bigint, $2, $3, $4, 'full', 'card', $5, $6, $6, $7, 'held', $8, $9, now(), $10, $11, $12)`,
-      [op, userId, v.biz, h.city, pi, h.total, Math.min(fee, h.total), ret.marca, ret.ultimos4, pi.startsWith("pi_sim_"), pm, `evt-${h.eid}`]);
+    await c.query(`insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, held_at, simulated, payment_method, transfer_group, card_fingerprint)
+                   values ($1::bigint, $2, $3, $4, 'full', 'card', $5, $6, $6, $7, 'held', $8, $9, now(), $10, $11, $12, $13)`,
+      [op, userId, v.biz, h.city, pi, h.total, Math.min(fee, h.total), ret.marca, ret.ultimos4, pi.startsWith("pi_sim_"), pm, `evt-${h.eid}`, ret.huella && /^[A-Za-z0-9_]{6,64}$/.test(ret.huella) ? ret.huella : null]);
     await c.query(`update operations set pay_status = 'held' where id = $1::bigint`, [op]);
     await c.query(`update ticket_holds set status = 'converted', operation_id = $2::bigint where id = $1::uuid`, [holdId, op]);
     if (h.wl) await c.query(`update waitlist set status = 'converted' where id = $1::bigint and status = 'offered'`, [h.wl]);

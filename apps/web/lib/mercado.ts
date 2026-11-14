@@ -164,7 +164,13 @@ export async function crearPedidoMercado(userId: string, p: MercIn, entorno: str
       ret = await retenerPedido({ negocio: b.id, cuenta: T.cuenta, clave: p.clave, total: retener, subtotal: subt, pm, userId, numero: num, tipo: "merc" }, c);
       if (!ret.ok) { await c.query("rollback"); return { ...no(ret.mensaje.es, ret.mensaje.en), tarjeta: true }; }
       retenido = ret.pi;
-      if (ret.estado === "accion") { await c.query("rollback"); await pasarela.liberar(ret.pi).catch(() => undefined); return { ...no("Tu banco pide una verificación extra que todavía no hacemos aquí. Prueba con otra tarjeta o paga en el mercado.", "Your bank asks for an extra verification we can't do here yet. Try another card or pay at the market."), tarjeta: true }; }
+      if (ret.estado === "accion") {
+        // 9k · 3-D Secure: la hoja verifica y la pantalla vuelve a enviar con la misma clave (la retención verificada se reusa).
+        await c.query("rollback");
+        const v = (await import("./pagos/verificacion")).pideVerificar(ret);
+        if (v) { retenido = null; return { ...no("Tu banco pide confirmar que eres tú. Confírmalo y seguimos; no se cobró nada todavía.", "Your bank asks you to confirm it is you. Confirm it and we continue; nothing was charged yet."), tarjeta: true, ...v }; }
+        await pasarela.liberar(ret.pi).catch(() => undefined); return { ...no("Tu banco pide una verificación extra. Prueba con otra tarjeta o paga en el mercado.", "Your bank asks for an extra verification. Try another card or pay at the market."), tarjeta: true };
+      }
     }
     const fecha = d.f, min = Number(hora.slice(0, 2)) * 60 + Number(hora.slice(3, 5));
     const op = (await c.query<{ id: string }>(

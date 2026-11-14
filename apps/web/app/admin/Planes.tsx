@@ -8,6 +8,15 @@ import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { DatosPlanes, Ingresos, TabPlan } from "@/lib/admin-planes";
 import { comisionProgramar, ingresosCsv, planCortesia, planExtender, planQuitarCortesia, planReintentar } from "./acciones-planes";
+import { alertaNota, conciliacionNota, conciliarOtraVez } from "./acciones-conciliacion";
+import type { DiaConc, FilaDif } from "@/lib/conciliacion";
+import type { FilaAlerta } from "@/lib/dinero-alertas";
+/* 9k · Planes › Ingresos · Conciliación (el guardián del dinero) y las alertas del dinero. */
+export type Conc = { dias: DiaConc[]; dia: string | null; difs: { filas: FilaDif[]; sigue: string | null }; alertas: { filas: FilaAlerta[]; sigue: string | null }; todas: boolean } | null;
+const KIND_DIF: Record<string, string> = { payment_intent: "Cobro", refund: "Devolución", transfer: "Transferencia al organizador", transfer_reversal: "Reversión de transferencia", payout: "Pago al banco", dispute: "Disputa", hold_orphan: "Retención suelta" };
+const PROB_DIF: Record<string, string> = { falta_en_libro: "está en Stripe y no en nuestro libro", falta_en_stripe: "está en nuestro libro y no en Stripe", monto: "el monto no coincide", estado: "el estado no coincide" };
+const EST_DIA: Record<string, [string, string]> = { cuadra: ["CUADRA", "signal"], diferencias: ["DIFERENCIAS", "danger"], fallo: ["FALLÓ", "danger"], sin_correr: ["SIN CORRER", "neutral"] };
+const ALERTA: Record<string, string> = { refund_stuck: "Devolución atascada", transfer_reversal_stuck: "Transferencia sin saldo para revertir", dispute_due: "Disputa por vencer", recon_diff: "El dinero no cuadra", recon_no_corrio: "La conciliación no corrió", payout_failed: "Pago al banco que falló" };
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import type { ResAdm } from "./acciones-colas";
 
@@ -18,7 +27,7 @@ const EST: Record<string, [string, string, string]> = { trial: ["EN PRUEBA", "ac
 const KIND: Record<string, string> = { ped: "Pedidos de comida", merc: "Pedidos del mercado", cita: "Citas y solicitudes", bol: "Boletos", apt: "Apartados y layaway", rsv: "Reservaciones de mesa", plan: "Planes del hogar", renta: "Rentas", fiesta: "Depósitos de fiestas", viaje: "Viajes, envíos y mudanzas" };
 const fecha = (iso: string | null) => (iso ? new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", weekday: "short", day: "numeric", month: "short" }).format(new Date(iso)).replace(/\./g, "") : "—");
 
-export function Planes({ d, ing, tab, est, editar, aprobar, exportar }: { d: DatosPlanes; ing?: Ingresos | null; tab: TabPlan; est: string | null; editar: boolean; aprobar: boolean; exportar?: boolean }) {
+export function Planes({ d, ing, conc = null, tab, est, editar, aprobar, exportar, dinero = false }: { d: DatosPlanes; ing?: Ingresos | null; conc?: Conc; tab: TabPlan; est: string | null; editar: boolean; aprobar: boolean; exportar?: boolean; dinero?: boolean }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
@@ -30,6 +39,45 @@ export function Planes({ d, ing, tab, est, editar, aprobar, exportar }: { d: Dat
       <Toast t={toast} desk={desk} />
     </div>
   );
+  /* 9k · La conciliación diaria y las alertas del dinero (compuesto con las piezas del panel: group, rows, note, acts; hueco del diseño, REVISION 9k). */
+  const usd = (c: number) => `${c < 0 ? "−" : ""}$${(Math.abs(c) / 100).toFixed(2)}`;
+  const diaL = (ymd: string) => new Intl.DateTimeFormat("es-US", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" }).format(new Date(`${ymd}T12:00:00Z`)).replace(/\./g, "");
+  const irIng = (q: Record<string, string>) => router.push(`/admin/planes?tab=ing&${new URLSearchParams(q)}`);
+  const nota = (titulo: string, cta: string, plantillas: string[], hacer: (m: string) => Promise<ResAdm>, peligro = false) => setConf({ titulo, cta, peligro, sub: "La nota queda en la auditoría con tu nombre.", plantillas, hacer: (m) => hacer(m) });
+  const conciliacion = (c: NonNullable<Conc>): Bloque[] => {
+    const sel = c.dias.find((x) => x.dia === c.dia) ?? null;
+    return [
+      { type: "group", k: "CONCILIACIÓN DIARIA · STRIPE CONTRA NUESTRO LIBRO" },
+      { type: "note", tone: "info", icon: "info", t: "Cada mañana se cuadra el día anterior, objeto por objeto: cobros, devoluciones, transferencias, pagos al banco, disputas y retenciones sueltas. Una diferencia sin dueño avisa al equipo y sale en Inicio." },
+      { type: "rows", items: c.dias.map((x) => ({ key: x.dia, icon: x.estado === "cuadra" ? "check" : x.estado === "sin_correr" ? "clock" : "warning", t: diaL(x.dia),
+        s: x.estado === "sin_correr" ? "todavía no corre" : x.estado === "fallo" ? "Stripe no respondió: vuelve a conciliarlo" : x.estado === "cuadra" ? `cuadra · ${x.stripeN} en Stripe, ${x.libroN} en el libro` : `${x.diferencias} diferencia${x.diferencias === 1 ? "" : "s"}${x.sinDueno ? ` · ${x.sinDueno} sin dueño` : " · todas con dueño"} · ${usd(x.diferenciaCents)}`,
+        tag: EST_DIA[x.estado]![0], tone: EST_DIA[x.estado]![1], chev: true, onClick: () => irIng({ dia: x.dia }), compact: true, bd: x.dia === c.dia ? "1.5px solid var(--tl-ink)" : undefined })) },
+      ...(c.dia ? [
+        { type: "group" as const, k: `DIFERENCIAS DEL ${diaL(c.dia).toUpperCase()}${sel?.corrioAt ? ` · CORRIÓ ${new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" }).format(new Date(sel.corrioAt))}` : ""}` },
+        ...(c.difs.filas.length ? [{ type: "rows" as const, items: c.difs.filas.map((f) => ({ key: f.id, icon: f.kind === "dispute" ? "law" : "dollar", t: `${KIND_DIF[f.kind] ?? f.kind}: ${PROB_DIF[f.problem] ?? f.problem}`,
+          s: `${f.nombre ?? "To’Latino"} · ${f.stripeId ?? f.ledgerRef ?? ""} · Stripe ${f.stripeCents == null ? "—" : usd(f.stripeCents)}${f.stripeStatus ? ` (${f.stripeStatus})` : ""} · libro ${f.ledgerCents == null ? "—" : usd(f.ledgerCents)}${f.ledgerStatus ? ` (${f.ledgerStatus})` : ""}${f.dueno ? ` · ${f.dueno.accion === "resuelta" ? "resuelta por" : f.dueno.accion === "me_hago_cargo" ? "de" : "reabierta por"} ${f.dueno.quien}: ${f.dueno.nota}` : ""}`,
+          tag: !f.dueno || f.dueno.accion === "reabierta" ? "SIN DUEÑO" : f.dueno.accion === "resuelta" ? "RESUELTA" : "CON DUEÑO", tone: !f.dueno || f.dueno.accion === "reabierta" ? "danger" : f.dueno.accion === "resuelta" ? "signal" : "action", chev: false,
+          acts: dinero ? [
+            ...(!f.dueno || f.dueno.accion === "reabierta" ? [{ l: "Me hago cargo", v: "secondary", onClick: () => nota("Me hago cargo de la diferencia", "Me hago cargo", ["La reviso hoy con Stripe.", "Es un cobro de prueba del sandbox.", "Lo veo con el negocio."], (m) => conciliacionNota(f.key, "me_hago_cargo", m)) }] : []),
+            ...(f.dueno?.accion !== "resuelta" ? [{ l: "Resuelta", v: "secondary", onClick: () => nota("Cómo se resolvió", "Marcar resuelta", ["Stripe lo corrigió; el libro ya cuadra.", "Era un cruce de medianoche: cuadra al día siguiente.", "Se ajustó el libro con su caso."], (m) => conciliacionNota(f.key, "resuelta", m)) }] : []),
+            ...(f.dueno && f.dueno.accion !== "reabierta" ? [{ l: "Reabrir", v: "secondary", onClick: () => nota("Por qué se reabre", "Reabrir", ["Volvió a salir al conciliar otra vez.", "La nota no era correcta."], (m) => conciliacionNota(f.key, "reabierta", m)) }] : []),
+          ] : undefined })) }]
+          : [{ type: "empty" as const, icon: "check", t: sel?.estado === "sin_correr" ? "Este día todavía no se concilió" : "Sin diferencias", s: sel?.estado === "fallo" ? "La corrida falló: vuelve a conciliarlo." : "Stripe y nuestro libro dicen lo mismo." }]),
+        ...(c.difs.sigue ? [{ type: "acts" as const, items: [{ l: "Ver más", v: "secondary", onClick: () => irIng({ dia: c.dia!, antes: c.difs.sigue! }) }] }] : []),
+        ...(dinero ? [{ type: "acts" as const, items: [{ l: "Conciliar otra vez", v: "secondary", onClick: () => nota(`Conciliar otra vez · ${diaL(c.dia!)}`, "Conciliar", ["Stripe ya corrigió el objeto.", "La corrida de la mañana falló."], (m) => conciliarOtraVez(c.dia!, m)) }] }] : []),
+      ] : []),
+      { type: "group", k: c.todas ? "ALERTAS DEL DINERO · TODAS" : "ALERTAS DEL DINERO · ABIERTAS", link: c.todas ? "Solo abiertas" : "Ver todas", onLink: () => irIng({ ...(c.dia ? { dia: c.dia } : {}), ...(c.todas ? {} : { alertas: "todas" }) }) },
+      ...(c.alertas.filas.length ? [{ type: "rows" as const, items: c.alertas.filas.map((a) => ({ key: a.id, icon: a.kind === "dispute_due" ? "law" : "warning", t: `${ALERTA[a.kind] ?? a.kind}${a.monto ? ` · ${usd(a.monto)}` : ""}`,
+        s: `${a.detalle.es}${a.nombre ? ` · ${a.nombre}` : ""}${a.nota ? ` · ${a.nota.quien}: ${a.nota.nota}` : ""}`, tag: a.estado === "abierta" ? "ABIERTA" : a.estado === "con_dueno" ? "CON DUEÑO" : "RESUELTA", tone: a.estado === "abierta" ? "danger" : a.estado === "con_dueno" ? "action" : "signal", chev: false,
+        acts: dinero && a.estado !== "resuelta" ? [
+          ...(a.estado === "abierta" ? [{ l: "Me hago cargo", v: "secondary", onClick: () => nota("Me hago cargo de la alerta", "Me hago cargo", ["La reviso hoy.", "Hablo con el negocio."], (m) => alertaNota(a.id, "me_hago_cargo", m)) }] : []),
+          ...(a.aMano ? [{ l: "Resolver a mano", v: "secondary", onClick: () => nota(a.kind === "refund_stuck" ? "La devolución se hizo fuera de Stripe" : "Se le cobró al organizador fuera de Stripe", "Resolver a mano", a.kind === "refund_stuck" ? ["Se le mandó un cheque al cliente.", "Se le devolvió por transferencia bancaria; comprobante en el caso."] : ["El organizador pagó por transferencia; comprobante en el caso.", "Se descontó de su próxima liquidación fuera de Stripe."], (m) => alertaNota(a.id, "resuelta_a_mano", m), true) }] : []),
+          { l: "Resuelta", v: "secondary", onClick: () => nota("Cómo se resolvió", "Marcar resuelta", ["Stripe ya lo hizo.", "Se respondió la disputa con evidencia.", "El banco del negocio ya recibió el pago."], (m) => alertaNota(a.id, "resuelta", m)) },
+        ] : undefined })) }]
+        : [{ type: "empty" as const, icon: "check", t: "Ninguna alerta abierta", s: "Devoluciones, transferencias, disputas y pagos al banco al día." }]),
+      ...(c.alertas.sigue ? [{ type: "acts" as const, items: [{ l: "Ver más alertas", v: "secondary", onClick: () => irIng({ ...(c.dia ? { dia: c.dia } : {}), ...(c.todas ? { alertas: "todas" } : {}), aantes: c.alertas.sigue! }) }] }] : []),
+    ];
+  };
   const k = d.kpi;
   const B: Bloque[] = [
     { type: "head", eye: "DINERO Y CRECIMIENTO", t: "Planes y suscripciones", s: "Free y Pro: qué incluye cada uno, la prueba, el precio, los cobros fallidos y las comisiones.", h1: desk ? 26 : 22 },
@@ -80,6 +128,7 @@ export function Planes({ d, ing, tab, est, editar, aprobar, exportar }: { d: Dat
             : <PanelBloques bloques={[{ type: "empty", icon: "dollar", t: "Sin comisiones en 90 días", s: "Aparecen cuando los negocios cobran con tarjeta." }]} />}
           <PanelBloques bloques={[{ type: "note", tone: "info", icon: "info", t: "Comisión = lo que To’Latino se queda de cada cobro con tarjeta, neto de devoluciones. Pro = cobros de suscripción. Los pagos a los negocios salen cada martes por Stripe." },
             ...(exportar ? [{ type: "acts" as const, items: [{ l: "Exportar CSV", v: "secondary", icon: "folder", onClick: () => { void descargar(); } }] }] : [])]} />
+          {conc ? <PanelBloques bloques={conciliacion(conc)} h1={desk ? 26 : 22} /> : null}
         </>);
       })() : null}
       {tab === "subs" && (filas.length ? <A.AdminList rows={filas.map((x) => ({ icon: "wallet", title: x.nombre, sub: `${EST[x.estado]?.[2] ?? x.estado}${x.fin ? ` · ${x.estado === "trial" ? "termina" : x.estado === "past_due" ? "próximo intento" : x.estado === "ended" ? "desde" : x.estado === "courtesy" ? "hasta" : "próximo cobro"} ${fecha(x.fin)}` : ""}${x.intentos ? ` · intento ${x.intentos} de 3` : ""}${x.ciclo === "year" ? " · anual" : ""}${x.dueño ? ` · ${x.dueño}` : ""}`,

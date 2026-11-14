@@ -61,6 +61,11 @@ export function Confianza({ d, tab }: { d: D; tab: Tab }) {
     B.push(d.fraude.length ? { type: "rows", items: d.fraude.map((f) => ({ key: f.id, icon: f.regla === "red" ? "users" : "star", t: `${REGLA_L[f.regla] ?? f.regla} · ${f.quien ?? "Vecino"}`, s: `${f.detalle} · ${fecha(f.at)}`,
       tag: f.abierto ? "CASO ABIERTO" : "REVISADO", tone: f.abierto ? "danger" : "neutral", chev: true, onClick: () => router.push(f.abierto && f.caso ? `/admin/colas?cola=repUsr&caso=${f.caso}` : `/admin/usuarios/${f.uid}`) })) }
       : { type: "empty", icon: "shield", t: "Nada marcado", s: "Votos o seguidores desde un mismo dispositivo y reseñas en ráfaga aparecen aquí (el barrido revisa cada minuto)." });
+    // 9k · La misma tarjeta en varias cuentas (por su huella, card.fingerprint; L938): se mira cada cuenta; la señal no sanciona sola.
+    B.push({ type: "group", k: "LA MISMA TARJETA EN VARIAS CUENTAS · 90 DÍAS" });
+    B.push(d.tarjetas.length ? { type: "rows", items: d.tarjetas.map((x) => ({ key: x.huella, icon: "card", t: `${x.marca ? x.marca.toUpperCase() : "Tarjeta"}${x.l4 ? ` ·· ${x.l4}` : ""} · ${x.cuentas} cuentas`,
+      s: `${x.nombres.join(", ")} · última vez ${fecha(x.ultima)}`, tag: x.cuentas >= 5 ? "REVISAR" : null, tone: "danger", chev: true, onClick: () => router.push(`/admin/usuarios/${x.uid}?tab=act`) })) }
+      : { type: "empty", icon: "card", t: "Ninguna tarjeta en varias cuentas", s: "La misma tarjeta (por su huella) guardada o usada en varias cuentas aparece aquí, desde el número de Configuración › Dinero." });
     // 6j · Eventos (admin-dashboard L291 «boletos duplicados», hueco #9): la señal no sanciona sola; «Abrir caso» la manda a Reportes de usuario.
     B.push({ type: "group", k: "EVENTOS Y BOLETOS · 30 DÍAS" });
     B.push(d.evt.length ? { type: "rows", items: d.evt.map((x) => ({ key: `${x.kind}${x.uid}`, icon: "ticket", t: `${SENAL_L_UI[x.kind]?.t ?? x.kind} · ${x.quien}`, s: `${SENAL_L_UI[x.kind]?.s(x.n) ?? x.n} · ${x.ciudad ?? "Sin ciudad"} · ${fecha(x.at)}`,

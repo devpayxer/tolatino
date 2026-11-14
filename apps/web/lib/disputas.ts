@@ -120,16 +120,89 @@ export async function evidenciaDe(disputa: string): Promise<Evidencia | null> {
   return { lineas, resumen: lineas.join("\n"), producto: L.rows.map((x) => `${x.q} x ${x.n}`).join(", ") || `Pedido #${o.num}`, cliente: o.cliente, fecha: o.enviado.slice(0, 10), envio: o.dir };
 }
 
-/* Responder con evidencia (texto del equipo + lo que tenemos) o aceptar la devolución. Lo llama la cola (con permiso). */
+/* 9k · Los archivos de la evidencia (L357, L393): el recibo en PDF, la conversación con el cliente (sin teléfonos) y la constancia de entrega (la línea
+   de tiempo y la dirección). La foto de la entrega se suma cuando el Repartidor la tome (no existe todavía: LAUNCH). Cada archivo queda en
+   dispute_evidence (sha256, bytes) y, si el almacén está, en el privado (privado/disputas/…; nunca por /medios). Idempotente por su sha256. */
+type Archivo = { kind: "recibo" | "conversacion" | "entrega"; cuerpo: Buffer; nombre: string };
+const TEL = /\+?1?\s*\(?\d{3}\)?[\s.-]*\d{3}[\s.-]*\d{4}/g;
+export async function archivosEvidencia(disputa: string): Promise<Archivo[]> {
+  const e = await evidenciaDe(disputa);
+  if (!e) return [];
+  const { pdfTexto } = await import("./pdf-simple");
+  const o = (await db().query<{ op: string; num: string; total: number; sub: number; tax: number; env: number; tip: number; negocio: string; dir: string | null }>(
+    `select o.id::text as op, o.number as num, o.total_cents as total, coalesce(o.subtotal_cents, 0) as sub, coalesce(o.tax_cents, 0) as tax, coalesce(o.delivery_cents, 0) as env, coalesce(o.tip_cents, 0) as tip,
+            b.name as negocio, b.address as dir
+       from disputes d join operations o on o.id = d.operation_id join businesses b on b.id = o.business_id where d.id = $1::bigint`, [disputa])).rows[0];
+  if (!o) return [];
+  const L = (await db().query<{ q: number; n: string; t: number }>(`select qty as q, coalesce(name ->> 'es', name::text, '') as n, line_total_cents as t from operation_lines where operation_id = $1::bigint order by id`, [o.op]).catch(() => ({ rows: [] as { q: number; n: string; t: number }[] }))).rows;
+  const M = (await db().query<{ quien: string; t: string; at: string }>(
+    `select case when m.sender = 'user' then 'Cliente' when m.compa then 'Asistente del negocio' else 'Negocio' end as quien, coalesce(m.body, '') as t,
+            to_char(m.created_at at time zone 'UTC', 'YYYY-MM-DD HH24:MI "UTC"') as at
+       from chat_messages m join chat_threads t on t.id = m.thread_id where t.operation_id = $1::bigint and m.hidden_at is null order by m.id limit 400`, [o.op]).catch(() => ({ rows: [] as { quien: string; t: string; at: string }[] }))).rows;
+  const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
+  const recibo = pdfTexto(`Receipt / Recibo · ${o.negocio} · #${o.num}`, [
+    `Customer / Cliente: ${e.cliente}`, `Date / Fecha: ${e.fecha}`, "",
+    ...(L.length ? L.map((x) => `${x.q} x ${x.n}  ${usd(x.t)}`) : [e.producto]), "",
+    `Subtotal: ${usd(o.sub)}`, ...(o.tax ? [`Tax / Impuesto: ${usd(o.tax)}`] : []), ...(o.env ? [`Delivery / Envío: ${usd(o.env)}`] : []), ...(o.tip ? [`Tip / Propina: ${usd(o.tip)}`] : []),
+    `Total: ${usd(o.total)}`, "", `${o.negocio}${o.dir ? ` · ${o.dir}` : ""}`, "Paid through To'Latino (card processed by Stripe).",
+  ]);
+  const conversacion = pdfTexto(`Customer communication / Conversación · #${o.num}`, M.length ? M.map((m) => `[${m.at}] ${m.quien}: ${m.t.replace(TEL, "[teléfono]")}`)
+    : ["No messages between the customer and the business for this order. / Sin mensajes entre el cliente y el negocio en este pedido."]);
+  const entrega = pdfTexto(`Delivery and timeline / Entrega y línea de tiempo · #${o.num}`, [...e.lineas, ...(e.envio ? ["", `Delivered to / Entregado en: ${e.envio}`] : [])]);
+  return [{ kind: "recibo", cuerpo: recibo, nombre: `recibo-${o.num}.pdf` }, { kind: "conversacion", cuerpo: conversacion, nombre: `conversacion-${o.num}.pdf` }, { kind: "entrega", cuerpo: entrega, nombre: `entrega-${o.num}.pdf` }];
+}
+/* Arma (o reusa) la evidencia de una disputa: una fila por archivo; el archivo al almacén privado si está configurado. */
+export async function armarEvidencia(disputa: string, staffId: string | null): Promise<{ id: string; kind: string; cuerpo: Buffer; nombre: string; fileId: string | null }[]> {
+  const { createHash, randomBytes } = await import("node:crypto");
+  const { guardarObjeto, mediosListos } = await import("./medios");
+  const out: { id: string; kind: string; cuerpo: Buffer; nombre: string; fileId: string | null }[] = [];
+  for (const a of await archivosEvidencia(disputa)) {
+    const sha = createHash("sha256").update(a.cuerpo).digest("hex");
+    const ya = (await db().query<{ id: string; f: string | null }>(`select id::text, stripe_file_id as f from dispute_evidence where dispute_id = $1::bigint and kind = $2::text and sha256 = $3::text`, [disputa, a.kind, sha])).rows[0];
+    if (ya) { out.push({ id: ya.id, kind: a.kind, cuerpo: a.cuerpo, nombre: a.nombre, fileId: ya.f }); continue; }
+    let clave: string | null = null;
+    if (mediosListos()) {
+      clave = `privado/disputas/${disputa}/${a.kind}-${randomBytes(4).toString("hex")}.pdf`;
+      try { await guardarObjeto(clave, a.cuerpo, "application/pdf"); } catch { clave = null; }
+    }
+    const r = (await db().query<{ id: string; f: string | null }>(
+      `insert into dispute_evidence (dispute_id, kind, media_key, mime, bytes, sha256, created_by) values ($1::bigint, $2::text, $3::text, 'application/pdf', $4::int, $5::text, $6::uuid)
+       on conflict (dispute_id, kind, sha256) do update set dispute_id = excluded.dispute_id returning id::text, stripe_file_id as f`, [disputa, a.kind, clave, a.cuerpo.length, sha, staffId])).rows[0]!;
+    out.push({ id: r.id, kind: a.kind, cuerpo: a.cuerpo, nombre: a.nombre, fileId: r.f });
+  }
+  return out;
+}
+/* Lo que el equipo ve de la evidencia en la cola (sin el contenido). */
+export async function evidenciaArchivos(disputa: string) {
+  return (await db().query<{ kind: string; bytes: number; enviado: boolean; at: string }>(
+    `select kind, bytes, sent_at is not null as enviado, to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at from dispute_evidence where dispute_id = $1::bigint order by kind, id desc`, [disputa])).rows;
+}
+
+/* Responder con evidencia (texto del equipo + lo que tenemos + los archivos) o aceptar la devolución. Lo llama la cola (con permiso). Los archivos se suben
+   por la API de archivos de Stripe (en el sandbox, al simulador) y van en el mismo envío (submit); si una subida falla, no se envía nada. */
 export async function responderDisputa(disputa: string, staffId: string, texto: string): Promise<{ ok: true } | { ok: false; msg: string }> {
-  const d = (await db().query<{ sid: string; st: string }>(`select stripe_dispute_id as sid, status as st from disputes where id = $1::bigint`, [disputa])).rows[0];
+  const d = (await db().query<{ sid: string; st: string; sim: boolean }>(`select stripe_dispute_id as sid, status as st, simulated as sim from disputes where id = $1::bigint`, [disputa])).rows[0];
   if (!d) return { ok: false, msg: "Esa disputa no existe." };
   if (d.st !== "needs_response") return { ok: false, msg: "Esta disputa ya se respondió o se cerró." };
   const e = await evidenciaDe(disputa);
   if (!e) return { ok: false, msg: "No encontramos el pedido de esta disputa." };
-  const ok = await pasarela.disputaResponder(d.sid, { texto: `${texto.trim()}\n\n${e.resumen}`, producto: e.producto, cliente: e.cliente, fecha: e.fecha, envio: e.envio });
+  const A = await armarEvidencia(disputa, staffId);
+  const archivos: Record<string, string> = {};
+  for (const a of A) {
+    let f = a.fileId;
+    if (!f) {
+      const up = await pasarela.subirEvidencia({ cuerpo: a.cuerpo, nombre: a.nombre, tipo: "application/pdf", idem: `dpf-${disputa}-${a.id}`, sim: d.sim });
+      if (!up.ok) return { ok: false, msg: "Stripe no aceptó un archivo de la evidencia. No se envió nada; inténtalo otra vez." };
+      f = up.id;
+      await db().query(`update dispute_evidence set stripe_file_id = $2::text where id = $1::bigint and stripe_file_id is null`, [a.id, f]);
+    }
+    archivos[a.kind] = f;
+  }
+  const ok = await pasarela.disputaResponder(d.sid, { texto: `${texto.trim()}\n\n${e.resumen}`, producto: e.producto, cliente: e.cliente, fecha: e.fecha, envio: e.envio,
+    archivos: { recibo: archivos.recibo, conversacion: archivos.conversacion, entrega: archivos.entrega } });
   if (!ok) return { ok: false, msg: "Stripe no aceptó la respuesta. No cambió nada; inténtalo otra vez." };
-  await db().query(`update disputes set status = 'under_review', response_text = $2, responded_by = $3, responded_at = now(), updated_at = now() where id = $1::bigint`, [disputa, texto.trim().slice(0, 2000), staffId]);
+  await db().query(`update dispute_evidence set sent_at = now() where dispute_id = $1::bigint and stripe_file_id is not null and sent_at is null`, [disputa]);
+  await db().query(`update disputes set status = 'under_review', response_text = $2, responded_by = $3, responded_at = now(), evidence_submitted_at = now(), updated_at = now() where id = $1::bigint`, [disputa, texto.trim().slice(0, 2000), staffId]);
   return { ok: true };
 }
 export async function aceptarDisputa(disputa: string): Promise<{ ok: true } | { ok: false; msg: string }> {
@@ -149,13 +222,17 @@ export async function simularDisputa(paymentId: string, motivo: string) {
   if (!p) return { ok: false as const, msg: "Ese cobro no se puede disputar." };
   const ya = (await db().query(`select 1 from disputes where payment_id = $1::bigint`, [paymentId])).rowCount;
   if (ya) return { ok: false as const, msg: "Ese cobro ya tiene una disputa." };
-  await registrarDisputa({ stripeId: `dp_sim_${paymentId}_${Date.now().toString(36)}`, pi: p.pi, amount: p.amount, reason: MOTIVO[motivo] ? motivo : "product_not_received", dueBy: new Date(Date.now() + 7 * 86_400_000).toISOString(), simulated: true });
+  const sid = `dp_sim_${paymentId}_${Date.now().toString(36)}`;
+  // 9k · El «banco» del sandbox también la tiene (el simulador de la pasarela): la conciliación la compara con el libro.
+  await pasarela.simDisputa(sid, p.pi, p.amount, "needs_response");
+  await registrarDisputa({ stripeId: sid, pi: p.pi, amount: p.amount, reason: MOTIVO[motivo] ? motivo : "product_not_received", dueBy: new Date(Date.now() + 7 * 86_400_000).toISOString(), simulated: true });
   return { ok: true as const };
 }
 export async function simularResultado(paymentId: string, gana: boolean) {
   if (pasarela.modo() !== "simulador") return { ok: false as const, msg: "Solo en el sandbox." };
   const d = (await db().query<{ sid: string }>(`select stripe_dispute_id as sid from disputes where payment_id = $1::bigint and simulated and status = 'under_review' order by id desc limit 1`, [paymentId])).rows[0];
   if (!d) return { ok: false as const, msg: "No hay una disputa respondida esperando al banco." };
+  await pasarela.simDisputa(d.sid, "", 0, gana ? "won" : "lost");
   await cerrarDisputa(d.sid, gana ? "won" : "lost");
   return { ok: true as const };
 }

@@ -149,7 +149,7 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string, ip:
       ret = await cob.retenerPedido({ negocio: f.negocio, cuenta: T!.cuenta!, clave: f.clave, total: abono, subtotal: abono, pm: f.plan!.pm, userId, numero, tipo: "apt" }, c);
       if (!ret.ok) return no(ret.mensaje.es, ret.mensaje.en);
       retenido = ret.pi;
-      if (ret.estado === "accion") return no("Tu banco pide una verificación extra que todavía no hacemos aquí. Prueba con otra tarjeta.", "Your bank asks for an extra verification we can't do here yet. Try another card.");
+      if (ret.estado === "accion") { const v = (await import("./pagos/verificacion")).pideVerificar(ret); if (v) retenido = null; return { ...no(v ? "Tu banco pide confirmar que eres tú. Confírmalo y seguimos; no se cobró nada todavía." : "Tu banco pide una verificación extra. Prueba con otra tarjeta.", v ? "Your bank asks you to confirm it is you. Confirm it and we continue; nothing was charged yet." : "Your bank asks for an extra verification. Try another card."), ...(v ?? {}) }; }
     } else if (ship) {
       const dir = await (await import("./pedir")).dirEntrega(c, userId, f.negocio, 100000, f.envio!.dir);
       if (!dir) return no("Agrega la dirección a donde te lo envían.", "Add the address to ship to.");
@@ -158,7 +158,7 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string, ip:
       ret = await cob.retenerPedido({ negocio: f.negocio, cuenta: T!.cuenta!, clave: f.clave, total: tot + fee, subtotal: tot, pm: f.envio!.pm, userId, numero, tipo: "apt" }, c);
       if (!ret.ok) return no(ret.mensaje.es, ret.mensaje.en);
       retenido = ret.pi;
-      if (ret.estado === "accion") return no("Tu banco pide una verificación extra que todavía no hacemos aquí. Prueba con otra tarjeta o recógelo en la tienda.", "Your bank asks for an extra verification we can't do here yet. Try another card or pick it up in store.");
+      if (ret.estado === "accion") { const v = (await import("./pagos/verificacion")).pideVerificar(ret); if (v) retenido = null; return { ...no(v ? "Tu banco pide confirmar que eres tú. Confírmalo y seguimos; no se cobró nada todavía." : "Tu banco pide una verificación extra. Prueba con otra tarjeta o recógelo en la tienda.", v ? "Your bank asks you to confirm it is you. Confirm it and we continue; nothing was charged yet." : "Your bank asks for an extra verification. Try another card or pick it up in store."), ...(v ?? {}) }; }
     }
     const det = conPlan ? { sms: f.sms !== false, como: "plan", hold_hours: holdH } : ship ? { sms: f.sms !== false, como: "envio", ship: true, to, ship_days: o.envio!.dias, hold_hours: holdH } : { dia: f.dia, hora: f.hora, sms: f.sms !== false, como: "tienda", hold_hours: holdH };
     const op = conPlan ? (await c.query<{ id: string }>(

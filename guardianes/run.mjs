@@ -517,7 +517,9 @@ const guardianes = {
     const B6 = "apps/web/lib/boletos.ts", A6 = "apps/web/app/(app)/eventos/acciones-boletos.ts";
     if (existsSync(B6)) { const m = /export type BoletosIn = \{([^\n]*)\};/.exec(readFileSync(B6, "utf8")); if (!m) falla("dineroDelServidor", B6, 0, "falta BoletosIn"); else if (/\b(cents|price|precio|total|tax|impuesto|subtotal|descuento|unit|monto)\w*\??:/i.test(m[1])) falla("dineroDelServidor", B6, 0, "BoletosIn trae un monto desde el teléfono; lo calcula el servidor"); }
     // 6d · Cancelar, devolver y las cortesías: el teléfono y el panel mandan códigos y números de orden, nunca cuánto se devuelve.
-    for (const A of [A6, "apps/web/app/(app)/eventos/acciones-despues.ts", "apps/web/app/panel/acciones-eventos.ts"])
+    // 9k · 3-D Secure, quitar tarjeta y la conciliación: la pantalla manda el PaymentIntent, la tarjeta o la diferencia, nunca un monto (el de la hoja
+    // del banco lo decidió el servidor y solo se muestra).
+    for (const A of [A6, "apps/web/app/(app)/eventos/acciones-despues.ts", "apps/web/app/panel/acciones-eventos.ts", "apps/web/app/(app)/pago/acciones.ts", "apps/web/app/admin/acciones-conciliacion.ts"])
       if (existsSync(A)) for (const m of readFileSync(A, "utf8").matchAll(/export async function (\w+)\(([^)]*)\)/g)) if (/\b(cents|price|precio|total|monto|descuento|devuelve|refund)\w*\s*:/i.test(m[2])) falla("dineroDelServidor", A, 0, `«${m[1]}» recibe un monto desde el teléfono`);
     const f = "apps/web/lib/pedir.ts";
     if (!existsSync(f)) return;
@@ -3630,11 +3632,13 @@ const guardianes = {
     const p = sinComent(P), t = readFileSync(T, "utf8"), i = p.indexOf("export const pasarela = {");
     const cuerpo = p.slice(i);
     const metodos = [...cuerpo.matchAll(/\n  (?:async )?(\w+)\(/g)].map((m) => m[1]);
-    // Lee la base antes de llamar a Stripe y el contrato corre sin base: queda anotado en LAUNCH-CHECKLIST (6e).
-    const SIN_CONTRATO = new Set(["cliente"]);
+    // 9k (L817): «cliente» lee la base antes de llamar a Stripe; el contrato le da un doble de la base (correr.sh) y la prueba. Nada queda sin contrato.
+    const SIN_CONTRATO = new Set([]);
+    const CO = "scripts/contrato-stripe/correr.sh";
+    if (existsSync(CO) && !/const clientes = new Map<string, string \| null>\(\);/.test(readFileSync(CO, "utf8"))) falla(G, CO, 0, "el contrato corre la pasarela con un doble de la base (el cliente de Stripe de una persona)");
     for (let k = 0; k < metodos.length; k++) {
       const desde = cuerpo.search(new RegExp(`\\n  (?:async )?${metodos[k]}\\(`)), hasta = k + 1 < metodos.length ? cuerpo.search(new RegExp(`\\n  (?:async )?${metodos[k + 1]}\\(`)) : cuerpo.length;
-      if (!SIN_CONTRATO.has(metodos[k]) && /\bstripe\s*(<|\()/.test(cuerpo.slice(desde, hasta)) && !new RegExp(`pasarela\\.${metodos[k]}\\(`).test(t)) falla(G, T, 0, `«pasarela.${metodos[k]}» llama a Stripe y la prueba de contrato no lo prueba`);
+      if (!SIN_CONTRATO.has(metodos[k]) && /\bstripe(Archivo)?\s*(<|\()/.test(cuerpo.slice(desde, hasta)) && !new RegExp(`pasarela\\.${metodos[k]}\\(`).test(t)) falla(G, T, 0, `«pasarela.${metodos[k]}» llama a Stripe y la prueba de contrato no lo prueba`);
     }
   },
 
@@ -7904,6 +7908,154 @@ const guardianes = {
     if (!/if \(me && k\.kind === "promotor" && k\.promotor === me\.id\) return \{ ok: false as const \};/.test(cuerpoFn(a, "probarPromo"))) falla(G, A, 0, "probarPromo(): el código propio no vale");
     if (/PROMO: Record<string, number>|HZL30: 60/.test(a)) falla(G, A, 0, "los códigos viven en promo_codes, no en el código");
     if (existsSync(M)) { const f = ultimaFn("business_referrals_antes"); if (!/if old\.status in \('rechazado', 'pagado'\) and new\.status <> old\.status then raise exception/.test(f) || !/raise exception 'un referido no se borra'/.test(f)) falla(G, M, 0, "un referido rechazado o pagado no cambia y ninguno se borra"); }
+  },
+
+  /* ── 9k · Dinero real listo (fase9-apertura.md §4 9k). Al revés: pruebas/alreves/alreves9k.cjs. ── */
+
+  /* 9k · conciliacionDiaria (HERRAMIENTAS #20, el guardián del dinero): la conciliación Stripe ↔ libro corre cada día en el barrido (y su vigilante avisa si
+     no corrió); compara TODO lo que mueve dinero (cobros, devoluciones, transferencias, reversiones, payouts, disputas y retenciones sueltas); una diferencia
+     sin dueño o una corrida que falló avisa al instante; la corrida, sus diferencias y quién se hizo cargo son de solo inserción y la base revisa que la
+     corrida diga cuántas diferencias tiene; solo lib/conciliacion.ts las escribe; el Inicio dice «el dinero no cuadra» desde conciliacion_del_dia. */
+  conciliacionDiaria() {
+    const G = "conciliacionDiaria", M = "packages/db/migrations/0141_conciliacion.sql", C = "apps/web/lib/conciliacion.ts", B = "apps/web/lib/barrido.ts", H = "apps/web/app/admin/page.tsx";
+    if (!existsSync(M) || !existsSync(C)) return falla(G, C, 0, "falta la conciliación diaria (migración 0141 y lib/conciliacion.ts)");
+    const m = readFileSync(M, "utf8"), c = sinComent(C), b = existsSync(B) ? sinComent(B) : "";
+    for (const t of ["recon_runs", "recon_diffs", "recon_diff_notes", "money_alerts", "money_alert_notes"])
+      if (!new RegExp(`create trigger ${t}_no_cambia before update or delete on ${t} for each row execute function dinero_solo_insercion\\(\\)`).test(m)) falla(G, M, 0, `${t} es de solo inserción (trigger)`);
+    if (!/create constraint trigger recon_runs_cuadra after insert on recon_runs deferrable initially deferred/.test(m)) falla(G, M, 0, "la base revisa al confirmar que la corrida dice cuántas diferencias tiene (recon_runs_cuadra)");
+    if (!/create or replace function conciliacion_del_dia\(d date\)/.test(m)) falla(G, M, 0, "falta conciliacion_del_dia (lo lee el reporte diario de 9g)");
+    if (!/\["conciliacion", async \(\) => \(await import\("\.\/conciliacion"\)\)\.conciliarAyer\(\)\]/.test(b)) falla(G, B, 0, "la conciliación de ayer corre en el barrido central");
+    if (!/\.vigilarConciliacion\(\)/.test(b)) falla(G, B, 0, "el vigilante (si la conciliación no corrió, alerta) corre en el barrido central");
+    for (const k of ["payment_intent", "refund", "transfer", "transfer_reversal", "payout", "dispute", "hold_orphan"]) if (!new RegExp(`kind: "${k}"`).test(c)) falla(G, C, 0, `la conciliación no compara «${k}»`);
+    for (const lado of ["intents", "refunds", "transfers", "reversals", "payouts", "disputes"]) if (!new RegExp(`for \\(const \\w+ of st\\.${lado}\\)`).test(c)) falla(G, C, 0, `la conciliación no recorre lo que dice Stripe de «${lado}»`);
+    if (!/if \(r\.sinDueno > 0 \|\| r\.estado === "fallo"\) await \(await import\("\.\/dinero-alertas"\)\)\.alertar\(/.test(c)) falla(G, C, 0, "una diferencia sin dueño (o una corrida que falló) avisa al equipo al instante");
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.(tsx?)$/.test(f) || f === C || f === "apps/web/lib/dinero-alertas.ts") continue;
+      for (const q of sinComent(f).match(/`[^`]*`/g) ?? []) {
+        if (/\b(insert into|update|delete from) (recon_runs|recon_diffs|recon_diff_notes)\b/.test(q)) falla(G, f, 0, "la conciliación la escribe solo lib/conciliacion.ts");
+        if (/\b(insert into|update|delete from) (money_alerts|money_alert_notes)\b/.test(q)) falla(G, f, 0, "las alertas del dinero las escribe solo lib/dinero-alertas.ts");
+      }
+    }
+    if (existsSync(H) && !/EL DINERO NO CUADRA/.test(readFileSync(H, "utf8")) || existsSync(H) && !/conciliacion_del_dia\(g::date\)/.test(readFileSync(H, "utf8"))) falla(G, H, 0, "el Inicio del Super Admin dice «el dinero no cuadra» desde conciliacion_del_dia");
+  },
+
+  /* 9k · tresDSecure (L355, L382, L759): cuando el banco pide verificar, el cobro no se suelta ni se pide otra tarjeta: la verificación queda a nombre de quien
+     paga (payment_actions, que solo cambia de estado), la pantalla la completa en la hoja y vuelve a enviar con la MISMA llave (la pasarela reusa el cobro
+     verificado: nunca cobra dos veces); el simulador nunca da por retenido un «requires_action»; lo que nadie verifica vence en el barrido; la renovación de
+     Pro avisa al dueño con su enlace y suelta la verificación vieja antes de otro intento. */
+  tresDSecure() {
+    const G = "tresDSecure", P = "apps/web/lib/pagos/pasarela.ts", V = "apps/web/lib/pagos/verificacion.ts", S = "apps/web/lib/suscripcion.ts", M = "packages/db/migrations/0141_conciliacion.sql";
+    if (!existsSync(P) || !existsSync(V)) return falla(G, V, 0, "falta lib/pagos/verificacion.ts");
+    const p = sinComent(P);
+    for (const fn of ["retener", "retenerPlataforma"]) {
+      const cu = (p.match(new RegExp(`\\n  async ${fn}\\([\\s\\S]*?\\n  },`)) ?? [""])[0];
+      if (!/const v = await this\.verificacionPrevia\(x\.idem, !!x\.usuario\);\s*if \(v && "r" in v\) return v\.r;/.test(cu)) falla(G, P, 0, `«${fn}» reusa la verificación previa del mismo cobro (sin cobrar dos veces)`);
+      if (!/if \(ya && ya\.status !== "requires_action"\)/.test(cu)) falla(G, P, 0, `«${fn}»: el simulador nunca da por retenido un cobro que pide verificar`);
+      if ((cu.match(/registrarAccion\(\{/g) ?? []).length < 2) falla(G, P, 0, `«${fn}» guarda la verificación a nombre de quien paga (simulador y Stripe)`);
+    }
+    if (!/if \(s\?\.estado === "requires_capture"\) return \{ r: \{ ok: true, pi: a\.pi, estado: "retenido"/.test(p)) falla(G, P, 0, "una verificación hecha se reusa solo si Stripe dice que está retenida (se mira, no se supone)");
+    if (existsSync(M)) { const m = readFileSync(M, "utf8"); if (!/raise exception 'verificacion_estado: de % no se pasa a %'/.test(m) || !/de una verificación solo cambia su estado/.test(m)) falla(G, M, 0, "payment_actions solo cambia de estado, y solo hacia adelante (trigger)"); }
+    const v = sinComent(V);
+    for (const fn of ["verificacionDe", "confirmarVerificacion", "simularBanco"]) if (!/a\.user_id !== userId/.test(cuerpoFn(v, fn))) falla(G, V, 0, `solo quien paga ve y completa su verificación («${fn}»)`);
+    if (!/const s = await pasarela\.intento\(pi\);/.test(v)) falla(G, V, 0, "después de la hoja, el servidor mira el estado en Stripe (nunca le cree a la pantalla)");
+    if (!/\["verificaciones", async \(\) => \(await import\("\.\/pagos\/verificacion"\)\)\.vencerVerificaciones\(\)\]/.test(sinComent("apps/web/lib/barrido.ts"))) falla(G, "apps/web/lib/barrido.ts", 0, "las verificaciones que nadie completó vencen en el barrido (se suelta lo retenido)");
+    // Los flujos con quien paga devuelven `verificar` (no sueltan el cobro) y sus pantallas abren la hoja.
+    for (const f of ["apps/web/lib/pedir.ts", "apps/web/lib/mercado.ts", "apps/web/lib/apartados.ts", "apps/web/lib/layaway.ts", "apps/web/lib/boletos.ts"])
+      if (existsSync(f) && !/pideVerificar\(ret\)/.test(sinComent(f))) falla(G, f, 0, "cuando el banco pide verificar, el flujo devuelve la verificación a la pantalla (pideVerificar) en vez de soltar el cobro");
+    if (!/usuario: \{ id: x\.userId, negocio: x\.negocio \}/.test(sinComent("apps/web/lib/cobros.ts"))) falla(G, "apps/web/lib/cobros.ts", 0, "retenerPedido pasa quien paga a la pasarela (la verificación queda a su nombre)");
+    for (const f of ["apps/web/app/(app)/n/[id]/pagar/Pagar.tsx", "apps/web/app/(app)/n/[id]/mercado/PedidoMercado.tsx", "apps/web/app/(app)/n/[id]/apartar/Apartar.tsx", "apps/web/app/(app)/eventos/pagar/[apartado]/Pagar.tsx", "apps/web/app/(app)/apartado/[num]/ApartadoEstado.tsx"]) {
+      if (!existsSync(f)) continue;
+      const t = sinComent(f);
+      if (!/useVerificacion\(/.test(t) || !/\{V\.hoja\}/.test(t) || !/V\.pide\(r, \(\) => \{ void \w+\(\); \}\)/.test(t)) falla(G, f, 0, "la pantalla abre la hoja del banco y vuelve a enviar lo mismo (useVerificacion, V.pide, {V.hoja})");
+    }
+    if (existsSync(S)) {
+      const s = sinComent(S);
+      if (!/if \(await soltarVerificaciones\(s\.business_id\)\) return \{ ok: true \};/.test(s)) falla(G, S, 0, "antes de otro intento de Pro, la verificación vieja se mira (si ya cobró, no se cobra otra vez) y se suelta");
+      if (!/avisarNegocio\(s\.business_id, "pro_verify"/.test(s) || !/href: `\/pago\/verificar\?pi=\$\{encodeURIComponent\(r\.pi\)\}`/.test(s)) falla(G, S, 0, "la renovación con 3-D Secure avisa al dueño con el enlace a la hoja");
+    }
+  },
+
+  /* 9k · huellaDeTarjeta (L760, L938): la huella de la tarjeta (card.fingerprint) se guarda al guardar una tarjeta y en cada cobro; el máximo de boletos por
+     persona la cuenta (la misma tarjeta en otra cuenta); la señal «la misma tarjeta en varias cuentas» sale de la base (tarjetas_en_varias_cuentas) en
+     Confianza; al borrar una cuenta, la huella de sus tarjetas guardadas se vacía (mapa de datos). */
+  huellaDeTarjeta() {
+    const G = "huellaDeTarjeta", A = "apps/web/app/(app)/pago/acciones.ts", C = "apps/web/lib/cobros.ts", BO = "apps/web/lib/boletos.ts", CF = "apps/web/lib/admin-confianza.ts", MAPA = "packages/db/mapa-de-datos.json";
+    if (existsSync(A) && !/insert into payment_methods \([^)]*card_fingerprint\)/.test(sinComent(A))) falla(G, A, 0, "guardar una tarjeta guarda su huella (card_fingerprint)");
+    if (existsSync(C) && !/insert into payments \([^)]*card_fingerprint\)/.test(sinComent(C))) falla(G, C, 0, "cada retención guarda la huella de la tarjeta (payments.card_fingerprint)");
+    if (existsSync(BO)) { const t = sinComent(BO); if (!/p\.card_fingerprint = \$6/.test(t) || !/entradasDe\(c, h\.fid, userId, dev, pm, holdId, await pasarela\.huella\(pm\)\)/.test(t)) falla(G, BO, 0, "el máximo de boletos por persona cuenta la misma tarjeta en otra cuenta (por su huella)"); }
+    if (existsSync(CF) && !/tarjetas_en_varias_cuentas\(cfg_int\('tarjeta_cuentas_senal'\), 90\)/.test(sinComent(CF))) falla(G, CF, 0, "la señal «la misma tarjeta en varias cuentas» sale de la base, con el número de Configuración");
+    if (!/"payment_methods": \{ "reglas": \[ \{[^\n]*"card_fingerprint": "null"/.test(readFileSync(MAPA, "utf8"))) falla(G, MAPA, 0, "al borrar una cuenta, la huella de sus tarjetas guardadas se vacía");
+  },
+
+  /* 9k · alertasDelDinero (L800, L821, L357/L393): lo que Stripe nunca avisa se avisa (devolución atascada, transferencia sin saldo para revertir, disputa por
+     vencer, pago al banco que falló) desde el barrido, una vez por objeto; el camino manual se anota una vez con quién y por qué (la base lo impone) y,
+     resuelto a mano, nunca se vuelve a pedir a Stripe (sería pagar dos veces). */
+  alertasDelDinero() {
+    const G = "alertasDelDinero", A = "apps/web/lib/dinero-alertas.ts", M = "packages/db/migrations/0141_conciliacion.sql";
+    if (!existsSync(A)) return falla(G, A, 0, "falta lib/dinero-alertas.ts");
+    const a = sinComent(A);
+    for (const k of ["refund_stuck", "transfer_reversal_stuck", "dispute_due", "payout_failed"]) if (!new RegExp(`alertar\\("${k}"`).test(a)) falla(G, A, 0, `falta la alerta «${k}»`);
+    if (!/\["alertasDinero", async \(\) => \(await import\("\.\/dinero-alertas"\)\)\.barrerAlertasDinero\(\)\]/.test(sinComent("apps/web/lib/barrido.ts"))) falla(G, "apps/web/lib/barrido.ts", 0, "las alertas del dinero corren en el barrido central");
+    if (!/on conflict \(kind, subject_id\) do nothing returning id::text/.test(a)) falla(G, A, 0, "una alerta por tipo y objeto (dos barridos no avisan dos veces)");
+    if (existsSync(M)) {
+      const m = readFileSync(M, "utf8");
+      for (const t of ["refunds", "event_settlement_reversals"]) if (!new RegExp(`create trigger ${t}_a_mano before update on ${t} for each row execute function dinero_a_mano\\(\\)`).test(m)) falla(G, M, 0, `lo resuelto a mano de ${t} se anota una vez y no vuelve (trigger)`);
+      if (!/raise exception 'dinero_a_mano: resuelta a mano, ya no se reintenta'/.test(m)) falla(G, M, 0, "resuelta a mano, la base no la deja pasar a hecha");
+    }
+    if (!/r\.status = 'pending' and r\.manual_at is null/.test(sinComent("apps/web/lib/boletos-despues.ts")) || !/if \(r\.mano\) return false;/.test(sinComent("apps/web/lib/boletos-despues.ts"))) falla(G, "apps/web/lib/boletos-despues.ts", 0, "una devolución resuelta a mano no se vuelve a pedir a Stripe");
+    if (!/status = 'pending' and manual_at is null/.test(sinComent("apps/web/lib/evt-liquidacion.ts")) || !/manual_at is not null`, \[id\]\)\)\.rowCount\) return false;/.test(sinComent("apps/web/lib/evt-liquidacion.ts"))) falla(G, "apps/web/lib/evt-liquidacion.ts", 0, "una reversión resuelta a mano no se vuelve a pedir a Stripe");
+  },
+
+  /* 9k · disputaConEvidencia (L357, L393): la cola de disputas es de 120 h; responder sube los archivos de la evidencia (recibo, conversación, constancia de
+     entrega) por la API de archivos de Stripe y los manda en el mismo envío; si una subida falla, no se envía nada; los archivos van al almacén PRIVADO; la
+     evidencia es de solo inserción salvo su archivo de Stripe y cuándo se envió (trigger). */
+  disputaConEvidencia() {
+    const G = "disputaConEvidencia", D = "apps/web/lib/disputas.ts", M = "packages/db/migrations/0141_conciliacion.sql";
+    if (!/disputa: \{ es: "Disputas con el banco", en: "Bank disputes", icon: "card", sla: 120,/.test(readFileSync("apps/web/lib/colas.ts", "utf8"))) falla(G, "apps/web/lib/colas.ts", 0, "la cola de disputas es de 120 h");
+    if (!existsSync(D)) return falla(G, D, 0, "falta lib/disputas.ts");
+    const r = cuerpoFn(sinComent(D), "responderDisputa");
+    if (!/pasarela\.subirEvidencia\(/.test(r) || !/archivos: \{ recibo: archivos\.recibo, conversacion: archivos\.conversacion, entrega: archivos\.entrega \}/.test(r)) falla(G, D, 0, "responder sube los archivos (API de archivos) y los manda en el envío");
+    if (!/if \(!up\.ok\) return \{ ok: false/.test(r)) falla(G, D, 0, "si un archivo no sube, no se envía nada");
+    if (!/clave = `privado\/disputas\//.test(sinComent(D))) falla(G, D, 0, "los archivos de la evidencia van al almacén privado (privado/disputas/…)");
+    if (existsSync(M) && !/raise exception 'de la evidencia solo cambia, una vez, su archivo en Stripe y cuándo se envió'/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "la evidencia no se cambia ni se borra (trigger)");
+    if (!/const ok = await pasarela\.disputaResponder\(/.test(r) || !/if \(!ok\) return \{ ok: false/.test(r)) falla(G, D, 0, "responder manda la evidencia por la pasarela y, si Stripe no la acepta, no cambia nada");
+  },
+
+  /* 9k · pagoAlBancoMartes (L358, L829): los pagos al banco salen los martes: la cuenta nueva nace con el calendario semanal del martes, reanudar vuelve al
+     martes, la Configuración dice 2 (martes) y no se edita aquí; el libro de payouts no se borra ni cambia su monto; el webhook payout.* lo pone al día. */
+  pagoAlBancoMartes() {
+    const G = "pagoAlBancoMartes", P = "apps/web/lib/pagos/pasarela.ts", M = "packages/db/migrations/0141_conciliacion.sql", W = "apps/web/app/api/stripe/webhook/route.ts";
+    const p = sinComent(P);
+    if (!/settings: \{ payouts: \{ schedule: \{ interval: "weekly", weekly_anchor: "tuesday" \} \} \}/.test(p)) falla(G, P, 0, "la cuenta de cobro nace con los pagos al banco los martes");
+    if (!/\{ interval: "weekly", weekly_anchor: "tuesday" \}/.test(p.slice(p.indexOf("async cuentaPagos(")))) falla(G, P, 0, "reanudar los pagos vuelve al martes");
+    if (existsSync(M)) {
+      const m = readFileSync(M, "utf8");
+      if (!/\('pagos_banco_dia', 1, 5, 2, [^\n]*\n[^\n]*\n\s*false,/.test(m)) falla(G, M, 0, "pagos_banco_dia nace en 2 (martes) y no se edita en Configuración");
+      if (!/raise exception 'de un pago al banco solo cambian su estado, la llegada y el fallo'/.test(m) || !/raise exception 'un pago al banco no se borra \(estados\)'/.test(m)) falla(G, M, 0, "el libro de payouts no se borra ni cambia su monto (trigger)");
+    }
+    if (!existsSync(W) || !/case "payout\.paid":/.test(readFileSync(W, "utf8")) || !/registrarPayout\(ev\.account, o\)/.test(readFileSync(W, "utf8"))) falla(G, W, 0, "el webhook payout.* escribe el libro de payouts");
+    if (!/\["pagosAlBanco", async \(\) => \(await import\("\.\/pagos-banco"\)\)\.pagarAlBanco\(\)\]/.test(sinComent("apps/web/lib/barrido.ts"))) falla(G, "apps/web/lib/barrido.ts", 0, "los pagos al banco del simulador corren en el barrido (los martes)");
+  },
+
+  /* 9k · devolverRepartido (L448, L455): una devolución de una operación con varios cobros (estimado + «algo más», planes y rentas) se reparte entre los cobros,
+     cada parte con su propia llave (reintentar no devuelve dos veces); Transacciones y la ayuda con la cita devuelven por ahí. */
+  devolverRepartido() {
+    const G = "devolverRepartido", C = "apps/web/lib/cobros.ts";
+    const f = cuerpoFn(sinComent(C), "devolverOperacion");
+    if (!f) return falla(G, C, 0, "falta devolverOperacion");
+    if (!/idem: `\$\{x\.idem\}-p\$\{p\.id\}`/.test(f) || !/if \(conLlave\.has\(`\$\{x\.idem\}-p\$\{p\.id\}`\) \|\| p\.resto <= 0\) continue;/.test(f)) falla(G, C, 0, "cada parte con su propia llave, y las partes hechas se saltan (no se devuelven dos veces)");
+    if (!/if \(falta > libre\) return \{ ok: false/.test(f)) falla(G, C, 0, "el tope es lo que queda por devolver en esos cobros");
+    for (const x of ["apps/web/app/admin/acciones-tx.ts", "apps/web/lib/ayuda-cita.ts"]) if (existsSync(x) && (/devolverPago\(/.test(sinComent(x)) || !/devolverOperacion\(/.test(sinComent(x)))) falla(G, x, 0, "devuelve repartiendo entre los cobros (devolverOperacion), no de uno solo");
+  },
+
+  /* 9k · simuladorDeDinero (amplía simuladorAislado): TODO el simulador de pagos (sim_intents, sim_refunds, sim_transfers, sim_transfer_reversals, sim_payouts,
+     sim_files, sim_disputes, sim_dispute_submissions) vive en lib/pagos/pasarela.ts; ninguna otra parte de la app escribe o lee el «Stripe» del sandbox. */
+  simuladorDeDinero() {
+    const G = "simuladorDeDinero";
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === "apps/web/lib/pagos/pasarela.ts") continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/\bsim_(intents|refunds|transfers|transfer_reversals|payouts|files|disputes|dispute_submissions)\b/.test(l)) falla(G, f, i + 1, "el simulador de pagos solo se toca desde lib/pagos/pasarela.ts"); });
+    }
   },
 };
 

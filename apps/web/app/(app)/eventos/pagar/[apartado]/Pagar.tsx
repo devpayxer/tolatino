@@ -11,6 +11,7 @@ import { useEffect, useRef, useState, type ComponentType } from "react";
 import type { PantallaPago } from "@/lib/boletos";
 import { diaCorto, dinero, hora } from "@/lib/evt-comun";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
+import { useVerificacion } from "../../../pago/Verificacion";
 import { evtPagar, evtSoltar } from "../../acciones-boletos";
 
 type N = "Icon" | "Button" | "StepHeader" | "PaymentSummary";
@@ -33,6 +34,8 @@ export function Pagar({ p, es, pago }: { p: PantallaPago; es: boolean; pago: { m
   useEffect(() => { const i = setInterval(() => setSeg(Math.max(0, p.segundos - Math.floor((Date.now() - t0.current) / 1000))), 1000); return () => clearInterval(i); }, [p.segundos]);
   const mmss = `${Math.floor(seg / 60)}:${String(seg % 60).padStart(2, "0")}`;
   const etiquetas = p.lineas.flatMap((l) => (l.k === "t" ? Array.from({ length: l.q }, (_, i) => `${l.n}${l.q > 1 ? ` ${i + 1}` : ""}`) : l.k === "m" ? [l.n] : []));
+  // 9k · 3-D Secure (L759): la hoja del banco y, al confirmar, «Pagar» otra vez con el mismo apartado (la retención verificada se reusa).
+  const V = useVerificacion(es, pago.modo, pago.pk);
   const pagar = async () => {
     if (!tarjeta || ocupado || fin) return;
     setOcupado(true); setError(null);
@@ -40,6 +43,7 @@ export function Pagar({ p, es, pago }: { p: PantallaPago; es: boolean; pago: { m
     if (r?.ok) { vibrar("hecho"); router.push(`/eventos/orden/${r.numero}`); return; }
     setOcupado(false);
     if (r && !r.ok && r.entrar) { router.push(`/entrar?volver=${encodeURIComponent(location.pathname)}`); return; }
+    if (r && !r.ok && V.pide(r, () => { void pagar(); })) return;
     setError(r?.msg ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Revisa tu conexión. No se cobró nada.", "Could not do it. Check your connection. Nothing was charged."));
     if (r && !r.ok && r.tarjeta) setDeclinada(tarjeta.pm);
     if (r && !r.ok && r.vencido) setFin(true);
@@ -129,6 +133,7 @@ export function Pagar({ p, es, pago }: { p: PantallaPago; es: boolean; pago: { m
           </aside>
         </div>
       </div>
+      {V.hoja}
       {hoja && (
         <MetodoPago es={es} tarjetas={tarjetas} sel={tarjeta?.pm ?? null} declinada={declinada} modo={pago.modo} pk={pago.pk}
           nota={`${E2("PARA TUS BOLETOS · ", "FOR YOUR TICKETS · ")}${dinero(p.total)} · ${E2("SE COBRA AHORA", "CHARGED NOW")}`}

@@ -8,6 +8,7 @@ import { useState, type ComponentType } from "react";
 import type { ApartadoVista } from "@/lib/apartados";
 import { apartadoAccion, pagarPlan } from "./acciones";
 import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../pago/MetodoPago";
+import { useVerificacion } from "../../pago/Verificacion";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,12 +59,14 @@ export function ApartadoEstado({ x, es, pago = null }: { x: ApartadoVista; es: b
   const P = x.plan, vivo = !!P && (P.st === "active" || P.st === "late");
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas.find((t) => t.def) ?? pago?.tarjetas[0] ?? null), [hojaT, setHojaT] = useState(false);
   const fD = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(es ? "es-US" : "en-US", { timeZone: "America/New_York", weekday: "short", day: "numeric", month: "short" }) : "—");
+  // 9k · 3-D Secure: la hoja del banco y, al confirmar, el mismo pago otra vez (la misma clave del plan y la cuota).
+  const V = useVerificacion(es, pago?.modo, pago?.pk);
   const pagar = async () => {
     if (!tarjeta || ocupado) { setHojaT(true); return; }
     setOcupado(true); setError(null);
     const r = await pagarPlan(x.numero, tarjeta.pm).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false);
-    if (r.ok) { setFlash(r.listo ? E2("Terminaste de pagar: pasa a recogerlo", "Fully paid: come pick it up") : E2(`Listo: pagaste ${dinero(r.monto)}`, `Done: you paid ${dinero(r.monto)}`)); setTimeout(() => setFlash(null), 3200); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
+    if (r.ok) { setFlash(r.listo ? E2("Terminaste de pagar: pasa a recogerlo", "Fully paid: come pick it up") : E2(`Listo: pagaste ${dinero(r.monto)}`, `Done: you paid ${dinero(r.monto)}`)); setTimeout(() => setFlash(null), 3200); router.refresh(); } else if (!V.pide(r, () => { void pagar(); })) setError(es ? r.msg.es : r.msg.en);
   };
   if (P) {
     if (x.st === "pending") H.pending = ["clock", "bg-action/10", "var(--tl-action)", E2("PLAN ENVIADO", "PLAN SENT"), `${E2("Esperando a ", "Waiting for ")}${x.bname}`, E2(`Confirman que lo tienen. Se retuvo el abono de ${dinero(P.abono)}; se cobra al confirmar.`, `They confirm stock. The ${dinero(P.abono)} down payment is held; charged on confirmation.`)];
@@ -139,6 +142,7 @@ export function ApartadoEstado({ x, es, pago = null }: { x: ApartadoVista; es: b
         {acts.length > 0 && <div className="grid grid-cols-2 gap-2">{acts.map(([icon, l, on, prim]) => <div key={l} className="grid"><Button variant={prim ? "primary" : "secondary"} size="md" icon={icon} disabled={ocupado} onClick={on}>{l}</Button></div>)}
           <div className="grid"><Button variant="secondary" size="md" icon="bubble" onClick={() => router.push(`/cuenta/mensajes/${x.biz}`)}>{E2("Mensaje", "Message")}</Button></div></div>}
       </div>
+      {V.hoja}
       {hojaT && pago && (
         <MetodoPago es={es} tarjetas={tarjetas} sel={tarjeta?.pm ?? null} declinada={null} modo={pago.modo} pk={pago.pk} nota={`${E2("PAGO DEL PLAN ", "PLAN PAYMENT ")}${dinero(P?.siguiente?.monto ?? 0)}`}
           onClose={() => setHojaT(false)} onUsar={(t, nueva) => { if (nueva && !tarjetas.some((z) => z.pm === nueva.pm)) setTarjetas((Z) => [nueva, ...Z]); setTarjeta(t); setHojaT(false); }} />)}

@@ -399,6 +399,12 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         if (dp.sim) cuerpoB.push({ type: "note", tone: "info", icon: "info", t: "Sandbox: disputa simulada. No hay banco; el resultado se simula desde Transacciones." });
         if (ev) cuerpoB.push({ type: "timeline", k: "EVIDENCIA QUE TENEMOS", items: ev.lineas.map((t) => ({ t })) });
         else cuerpoB.push({ type: "note", tone: "warn", icon: "warning", t: "No encontramos el pedido de este cobro: responde con lo que sepas o acepta." });
+        // 9k · Los archivos para el banco: se arman al responder (recibo en PDF, conversación sin teléfonos, constancia de entrega) y se suben por la API de
+        // archivos de Stripe en el mismo envío.
+        const AR = "archivos" in k ? (k.archivos as { kind: string; bytes: number; enviado: boolean }[]) : [];
+        cuerpoB.push({ type: "rows", k: "ARCHIVOS PARA EL BANCO", items: (["recibo", "conversacion", "entrega"] as const).map((x) => { const f = AR.find((a) => a.kind === x);
+          return { key: x, icon: x === "recibo" ? "folder" : x === "conversacion" ? "chat" : "truck", t: ({ recibo: "Recibo en PDF", conversacion: "Conversación con el cliente (PDF, sin teléfonos)", entrega: "Constancia de entrega y línea de tiempo (PDF)" } as const)[x],
+            s: f ? `${Math.max(1, Math.round(f.bytes / 1024))} KB · ${f.enviado ? "enviado al banco" : "listo, sin enviar"}` : "se arma al responder", tag: f?.enviado ? "ENVIADO" : null, tone: "signal", chev: false, compact: true }; }) });
         if (!k.puedeDinero) cuerpoB.push({ type: "note", tone: "warn", icon: "lock", t: "Tu rol no decide sobre dinero." });
         if (dp.status === "needs_response" && k.puedeDinero) acts = [
           { l: "Responder con evidencia", v: "action", icon: "right", onClick: () => setConf({ titulo: "Resumen para el banco", sub: "Se envía junto con la evidencia de arriba. Escribe en inglés si puedes: lo lee el banco.", cta: "Enviar al banco",

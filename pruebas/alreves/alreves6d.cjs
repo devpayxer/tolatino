@@ -42,7 +42,8 @@ const casos = [
   ['devolucionUnaVez', BA, '["bolDevoluciones", () => desp.barrerDevolucionesBoletos()]', '["bolDevoluciones", async () => 0]'],
   ['devolucionUnaVez', D, "(${EN_PIE}) and d.starts_at - make_interval(hours => ${cfgSql(\"bol_cancelar_h\")}) > now() as abierto, p.id::text as pid", "(${EN_PIE}) and d.starts_at - interval '24 hours' > now() as abierto, p.id::text as pid"],
   // devolverCoincide (ampliado)
-  ['devolverCoincide', TX, 'const DEVUELVE = new Set(["order", "appointment", "party", "trip", "night", "enrollment"]);', 'const DEVUELVE = new Set(["order", "appointment", "party", "trip", "night", "enrollment", "tickets"]);'],
+  // 9k · La lista de hoy (con evento privado, planes y rentas): antes el texto ya no se encontraba y el caso no corría.
+  ['devolverCoincide', TX, 'const DEVUELVE = new Set(["order", "appointment", "party", "trip", "night", "enrollment", "private_event", "plan", "rental"]);', 'const DEVUELVE = new Set(["order", "appointment", "party", "trip", "night", "enrollment", "private_event", "plan", "rental", "tickets"]);'],
   ['devolverCoincide', AE, '  if (!(await accesoPanel(a.negocio.id, "pay"))) return no(', '  if (false) return no('],
   // dineroDelServidor (ampliado a 6d)
   ['dineroDelServidor', AD, "export async function bolCancelar(numero: string, codes: string[], clave: string)", "export async function bolCancelar(numero: string, codes: string[], clave: string, monto: number)"],

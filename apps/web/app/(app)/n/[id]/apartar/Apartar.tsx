@@ -10,6 +10,7 @@ import type { OpcionesApartar } from "@/lib/apartados";
 import { guardarCarrito, leerCarrito, lineaValida, llaveLinea, type Carrito } from "../Tienda";
 import { mandarApartado } from "./acciones";
 import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
+import { useVerificacion } from "../../../pago/Verificacion";
 import { cuotas, terminos } from "@/lib/layaway-comun";
 import { uuid } from "@/lib/uuid";
 
@@ -47,13 +48,15 @@ export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApa
   const whenL = dia && h != null ? `${dL(dia.k, dia.f)} · ${hL(h)}` : "—";
   const miss = [!L.length ? E2("Tu apartado está vacío", "Your hold is empty") : null, conPlan ? (!tarjeta ? E2("Tu tarjeta", "Your card") : !acepto ? E2("Acepta el acuerdo del plan", "Accept the plan agreement") : null) : envio ? (!dir ? E2("La dirección del envío", "The shipping address") : !tarjeta ? E2("Tu tarjeta", "Your card") : null) : h == null ? E2("Elige cuándo pasas", "Pick when you come") : null].filter(Boolean) as string[];
   const okPaso = paso === 0 ? L.length > 0 : miss.length === 0;
+  // 9k · 3-D Secure: la hoja del banco y, al confirmar, el mismo apartado otra vez con la misma clave.
+  const V = useVerificacion(es, pago?.modo, pago?.pk);
   const enviar = async () => {
     if (!yo) return router.push(`/entrar?volver=${encodeURIComponent(location.pathname)}`);
     if (miss.length || ocupado || (!envio && !conPlan && (!dia || h == null))) return;
     setOcupado(true); setError(null);
     const r = await mandarApartado({ negocio: o.negocio.id, lineas: L.map((l) => ({ item: l.item, qty: l.qty, v: l.v ?? null })), dia: envio || conPlan ? "" : dia!.f, hora: envio || conPlan ? 0 : h!, nota, sms, clave: clave.current, envio: envio && tarjeta ? { pm: tarjeta.pm, dir: dir?.id ?? null } : null, plan: conPlan && tarjeta ? { pm: tarjeta.pm, acepto } : null }).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false);
-    if (r.ok) { guardarCarrito(o.negocio.id, []); router.push(`/apartado/${r.numero}`); } else setError(es ? r.msg.es : r.msg.en);
+    if (r.ok) { guardarCarrito(o.negocio.id, []); router.push(`/apartado/${r.numero}`); } else if (!V.pide(r, () => { void enviar(); })) setError(es ? r.msg.es : r.msg.en);
   };
   const sigue = () => { if (paso < 2) { setPaso(paso + 1); window.scrollTo({ top: 0 }); } else void enviar(); };
   const LINE = E2("El precio que ves es el que pagas en la caja.", "The price you see is the price you pay at the register.");
@@ -200,6 +203,7 @@ export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApa
           </aside>
         </div>
       </div>
+      {V.hoja}
       {hojaT && pago && (
         <MetodoPago es={es} tarjetas={tarjetas} sel={tarjeta?.pm ?? null} declinada={null} modo={pago.modo} pk={pago.pk} nota={conPlan && cu ? `${E2("SE RETIENE EL ABONO ", "HOLDING DOWN PAYMENT ")}${dinero(cu.abono)}` : `${E2("SE RETIENEN ", "HOLDING ")}${dinero(tot)} · ${E2("SE COBRA AL ENVIARLO", "CHARGED WHEN IT SHIPS")}`}
           onClose={() => setHojaT(false)} onUsar={(t, nueva) => { if (nueva && !tarjetas.some((x) => x.pm === nueva.pm)) setTarjetas((Z) => [nueva, ...Z]); setTarjeta(t); setHojaT(false); }} />)}

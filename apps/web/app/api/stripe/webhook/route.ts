@@ -51,6 +51,10 @@ async function aplicar(ev: Ev) {
       });
       return;
     case "payment_intent.succeeded":
+      {
+        const a = (await db().query<{ biz: string }>(`update payment_actions set status = 'verificada' where pi = $1::text and status = 'pendiente' and kind = 'renovacion' returning business_id as biz`, [String(o.id)])).rows[0];
+        if (a) await (await import("@/lib/suscripcion")).completarRenovacion(a.biz, String(o.id));
+      }
       await tx(async (c) => {
         const p = (await c.query<{ op: string }>(`update payments set status = 'captured', captured_at = coalesce(captured_at, now()), updated_at = now() where stripe_payment_intent = $1 and status = 'held' returning operation_id::text as op`, [String(o.id)])).rows[0];
         if (p) await c.query(`update operations set pay_status = 'captured' where id = $1::bigint`, [p.op]);
@@ -76,6 +80,19 @@ async function aplicar(ev: Ev) {
     }
     case "charge.dispute.closed":
       await cerrarDisputa(String(o.id), String(o.status ?? ""));
+      return;
+    // 9k · Pagos al banco de una cuenta conectada (el martes): el libro propio (payouts) se pone al día; la conciliación lo compara cada día.
+    case "payout.created":
+    case "payout.updated":
+    case "payout.paid":
+    case "payout.failed":
+    case "payout.canceled":
+      if (ev.account) await (await import("@/lib/pagos-banco")).registrarPayout(ev.account, o);
+      return;
+    // 9k · 3-D Secure: el banco confirmó una verificación (la persona pudo cerrar la app antes de volver): queda verificada; si era la renovación
+    // de Pro, el período se completa (una sola vez por cobro).
+    case "payment_intent.amount_capturable_updated":
+      await db().query(`update payment_actions set status = 'verificada' where pi = $1::text and status = 'pendiente' and kind = 'en_sesion'`, [String(o.id)]);
       return;
     default: return;
   }

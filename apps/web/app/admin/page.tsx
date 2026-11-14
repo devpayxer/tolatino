@@ -30,6 +30,10 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
   // 9g · «Ciudad viva» (pantallas-iniciales.md §2, ADM-HOME): por ciudad abierta o por abrir, de la base de análisis; con analit:ver.
   const [lang, vivas] = await Promise.all([idioma(), s.puede("analit", "ver") ? ciudadViva(s) : Promise.resolve([])]);
   const E = (a: string, b: string) => (lang === "en" ? b : a);
+  // 9k · «El dinero no cuadra» (el guardián del dinero): diferencias de la conciliación de los últimos 14 días que nadie tomó.
+  const dn = s.puede("tx", "ver") ? (await db().query<{ dias: number; n: number; c: string }>(
+    `select count(*) filter (where x.sin_dueno > 0)::int as dias, coalesce(sum(x.sin_dueno), 0)::int as n, coalesce(sum(x.diferencia_cents) filter (where x.sin_dueno > 0), 0)::text as c
+       from generate_series((now() at time zone 'UTC')::date - 14, (now() at time zone 'UTC')::date - 1, interval '1 day') g, conciliacion_del_dia(g::date) x`)).rows[0] : null;
   return (
     <>
       <Titulo eyebrow="SUPER ADMIN · INICIO" titulo={`Hola, ${s.first_name}`} sub="Todo lo de aquí sale de la base real del servidor de pruebas." />
@@ -37,6 +41,7 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
       {cg && cAl ? <AdminNote tone={cAl === "tope" ? "bad" : "warn"} icon="warning">{cAl === "tope"
         ? `EL COMPA LLEGÓ AL TOPE · ${usd(cg.gastado)} de ${usd(cg.tope)} este mes. Contesta con reglas fijas y ofrece «Con una persona». Sube el tope en El Compa · IA si hace falta.`
         : `EL COMPA VA EN EL ${cg.pct} % DEL TOPE · ${usd(cg.gastado)} de ${usd(cg.tope)} este mes. Míralo en El Compa · IA.`}</AdminNote> : null}
+      {dn && dn.n > 0 ? <AdminNote tone="bad" icon="warning">{`EL DINERO NO CUADRA · ${dn.n} diferencia${dn.n === 1 ? "" : "s"} sin dueño en ${dn.dias} día${dn.dias === 1 ? "" : "s"} (${usd(Math.abs(Number(dn.c)))}). Tómalas en Planes › Ingresos › Conciliación.`}</AdminNote> : null}
       {sv.length ? <AdminNote tone="bad" icon="warning">{`EVENTO CON SOBREVENTA · ${sv.slice(0, 3).map((x) => `${x.titulo.es} · ${x.dia}: ${x.vivos} vivos de ${x.cantidad}`).join(" · ")}. Míralo en Eventos y boletos.`}</AdminNote> : null}
       <KpiRow
         columns="repeat(auto-fill, minmax(min(100%, 160px), 1fr))"

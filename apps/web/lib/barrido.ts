@@ -154,6 +154,12 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // llegaron a sus pedidos o citas califican.
         ["campanas", async () => (await import("./crecimiento/campanas")).campanasProgramadas()],
         ["promotores", async () => (await import("./crecimiento/promotores")).calificarReferidos()],
+        // 9k · Dinero real listo: la conciliación de ayer a su hora (una vez) y su vigilante, las verificaciones del banco (3-D Secure) que vencieron, los
+        // pagos al banco del martes (simulador; con Stripe paga Stripe), las alertas que Stripe nunca hace y el proceso del plan Pro cada hora aunque
+        // nadie abra el panel (L377: el día 30 llega igual).
+        ["conciliacion", async () => (await import("./conciliacion")).conciliarAyer()], ["conciliacionVigilar", async () => (await import("./conciliacion")).vigilarConciliacion()],
+        ["verificaciones", async () => (await import("./pagos/verificacion")).vencerVerificaciones()], ["pagosAlBanco", async () => (await import("./pagos-banco")).pagarAlBanco()],
+        ["alertasDinero", async () => (await import("./dinero-alertas")).barrerAlertasDinero()], ["planPro", async () => (await import("./suscripcion")).procesar()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

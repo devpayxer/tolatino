@@ -9,7 +9,23 @@ trap 'rm -rf -- "$T"' EXIT
 mkdir -p "$T/src/pagos" "$T/node_modules/server-only"
 cp "$RAIZ/apps/web/lib/pagos/stripe.ts" "$RAIZ/apps/web/lib/pagos/pasarela.ts" "$T/src/pagos/"
 echo 'module.exports = {};' > "$T/node_modules/server-only/index.js"
-printf 'export const db = (): { query: (q: string, v?: unknown[]) => Promise<{ rows: any[]; rowCount: number }> } => { throw new Error("sin base en el contrato"); };\nexport const tx = db;\n' > "$T/src/db.ts"
+# 9k (L817) · Un doble de la base para lo que la pasarela lee y escribe en modo Stripe: el cliente de Stripe de una persona (users.stripe_customer_id).
+# Cualquier otra consulta falla en voz alta: el contrato no tapa lo que no conoce.
+cat > "$T/src/db.ts" <<'TS'
+const clientes = new Map<string, string | null>();
+type R = { rows: any[]; rowCount: number };
+const q = async (sql: string, v: unknown[] = []): Promise<R> => {
+  if (/^select stripe_customer_id as c from users where id = \$1$/.test(sql.trim())) return { rows: [{ c: clientes.get(String(v[0])) ?? null }], rowCount: 1 };
+  if (/^update users set stripe_customer_id = \$2 where id = \$1 and stripe_customer_id is null$/.test(sql.trim())) {
+    if (clientes.get(String(v[0]))) return { rows: [], rowCount: 0 };
+    clientes.set(String(v[0]), String(v[1])); return { rows: [], rowCount: 1 };
+  }
+  throw new Error("sin base en el contrato: " + sql.slice(0, 80));
+};
+export const db = () => ({ query: q, connect: async () => ({ query: q, release: () => undefined }) });
+export const tx = async <T,>(f: (c: { query: typeof q }) => Promise<T>) => f({ query: q });
+export const __clientes = clientes;
+TS
 printf 'export const ENTORNO = "pruebas" as string;\n' > "$T/src/entorno.ts"
 # 8i · La pasarela pregunta antes de cobrar si quien paga es una cuenta de revisión (lib/tiendas/revision.ts, con la base y la sesión): en el
 # contrato no hay sesión, así que nadie lo es.

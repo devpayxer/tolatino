@@ -16,6 +16,7 @@ import { PESTANAS_SISTEMA } from "./sistema/Pestanas";
 const SECCION: Record<Seccion, string> = {
   comunidad: "COMUNIDAD", gamificacion: "GAMIFICATION", salud_pro: "DOCTORES Y PROFESIONALES", noche: "NOCHE", edu: "EDUCACIÓN · NIÑOS · DEPORTE", fe_inm_autos: "IGLESIAS · BIENES RAÍCES · AUTOS", eventos: "EVENTOS", compa: "EL COMPA", soporte: "SOPORTE", apps: "APPS",
   retencion: "RETENCIÓN · CUÁNTO SE GUARDA", crecimiento: "CRECIMIENTO",
+  dinero: "DINERO · PAGOS AL BANCO, CONCILIACIÓN Y ALERTAS",
 };
 /* 9d · Retención: todo lo que dice cuánto se guarda algo (las claves nuevas de 0134 y las retenciones que ya corrían en su sección: El Compa,
    los errores, la ruta, la analítica, las notas privadas…) se ve junto aquí, cada una con sus límites. */
