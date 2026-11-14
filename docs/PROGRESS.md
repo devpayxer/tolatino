@@ -1562,7 +1562,10 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
     vivienda para mayores que le daba inm4ib (ahora la crea ella). Esta clase la caza la carrera «barajada» misma.
   - **Una espera que no esperaba:** cit3c tocaba «Llegó · en atención» y esperaba /en atención/, que el botón ya cumplía; ahora espera la base.
     Guardián `esperaQueEspera` (también «No llegó» → /no llegó/).
-  - Al revés: alreves9b3 23/23. La confirmación nueva corre sobre la punta con 9c (una sola corrida para los dos).
+  - **Las capturas de los teléfonos fallaban de noche (corrida 43549458698):** la ficha y el panel de Sabor Dominicano se aprobaron abiertos; a las
+    10 PM de Hazleton salían «Cerrado · abre mañana» y lo de abajo se corría (2–6 % distinto). No era 9c. `correr.mjs` deja abiertos hoy los
+    negocios de `pantallas.json` «abiertos» mientras captura y devuelve el horario al final. Guardián `capturaSinHora`.
+  - Al revés: alreves9b3 24/24. La confirmación nueva corre sobre la punta con 9c (una sola corrida para los dos).
 - **No cerrado o con destino:** ver LAUNCH «→ 9b» (lo que queda), «Fase 9 · 9b-3» y las líneas movidas a 9c, 9g, 9j, 9l, 9m, 9n, 9o, 9q, 9r y 9t con su porqué.
 
 ## Fase 9 · 9c — accesibilidad WCAG AA del sistema de diseño (14 nov)

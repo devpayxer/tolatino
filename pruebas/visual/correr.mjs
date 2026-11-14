@@ -79,6 +79,14 @@ const falla = (m) => { fallos.push(m); console.log(`  ✗ ${m}`); };
 const bien = (m) => console.log(`  ✓ ${m}`);
 const sesiones = new Map();
 const navegador = await pw[disp.motor].launch();
+/* 9b-3 · La captura no depende de la hora: la aprobada de la ficha y del panel de Sabor Dominicano se tomó con el negocio ABIERTO («Abierto · hasta
+   9 PM»); a las 10 PM de Hazleton la pantalla es otra («Cerrado · abre mañana», lo de abajo se corre) y el CI fallaba solo de noche. Antes de capturar,
+   los negocios de cfg.abiertos quedan abiertos hoy hasta las 11:59 PM (lo que diga la hora se tapa igual); al terminar vuelve su horario de hoy.
+   Guardián capturaSinHora. */
+const hoy = sql("select extract(dow from now() at time zone 'America/New_York')::int");
+const antes = (cfg.abiertos || []).map((b) => [b, sql(`select coalesce((select open::text || '|' || ranges::text from business_hours where business_id = '${b}' and module = '' and weekday = ${hoy}), '')`)]);
+for (const [b] of antes) sql(`insert into business_hours (business_id, module, weekday, open, ranges) values ('${b}', '', ${hoy}, true, '[["00:00","23:59"]]'::jsonb) on conflict (business_id, module, weekday) do update set open = true, ranges = excluded.ranges`);
+const devolverHorario = () => { for (const [b, v] of antes) { if (!v) sql(`delete from business_hours where business_id = '${b}' and module = '' and weekday = ${hoy}`); else { const [o, ...r] = v.split("|"); sql(`update business_hours set open = ${o}, ranges = '${r.join("|").replace(/'/g, "''")}'::jsonb where business_id = '${b}' and module = '' and weekday = ${hoy}`); } } };
 console.log(`${disp.nombre} (${id}, ${disp.motor}) · ${pantallas.length} pantallas${flag("--velocidad") ? " · velocidad" : flag("--aprobar") ? " · APROBAR capturas nuevas" : ""}`);
 try {
   for (const pa of pantallas) {
@@ -144,7 +152,7 @@ try {
     for (const v of nuevas) falla(`${pa.id}: axe ${v.id} (${v.impact}, ${v.nodes.length} nodos) · ${v.help} · ${v.nodes.slice(0, 2).map((n) => n.target.join(" ")).join(" | ")}`);
     await p.close();
   }
-} catch (e) { falla(`la corrida se cayó: ${String(e.stack ?? e).split("\n").slice(0, 4).join(" · ")}`); }
+} catch (e) { falla(`la corrida se cayó: ${String(e.stack ?? e).split("\n").slice(0, 4).join(" · ")}`); } finally { devolverHorario(); }
 await navegador.close();
 writeFileSync(join(SALIDA, "resultado.json"), JSON.stringify({ dispositivo: id, fecha: new Date().toISOString(), fallos, resumen }, null, 2));
 console.log(`\n${fallos.length ? `✗ ${fallos.length} fallo(s)` : "✓ todo en orden"} · ${join(SALIDA)}`);

@@ -47,6 +47,8 @@ const casos = [
   // esperaQueEspera: cit3c vuelve a esperar «en atención», que el botón «Llegó · en atención» ya cumple
   ['esperaQueEspera', 'pruebas/e2e/cit3c.cjs', "await hasta(() => op(T.numero, 'status_detail') === 'live', 'llegó: en atención (en la base)');", "await d.getByText(/en atención/).first().waitFor();"],
   // tarjetaPropia: fie4v deja de guardarle su tarjeta a Marisol y comprueba el depósito retenido igual
+  // capturaSinHora: la ficha de Sabor Dominicano se captura sin abrir el negocio (de noche sale cerrada)
+  ['capturaSinHora', 'pruebas/visual/pantallas.json', '"abiertos": ["sabor-dominicano"]', '"abiertos": []'],
   ['tarjetaPropia', 'pruebas/e2e/fie4v.cjs', "  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');\n", ''],
 ];
 const crear = [

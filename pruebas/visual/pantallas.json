@@ -1,5 +1,7 @@
 {
   "comentario": "9b-2 · Las pantallas clave de la tubería (capturas aprobadas, axe y velocidad). cuenta = teléfono de prueba (555) que entra antes; null = sin sesión. El resto de pantallas entra aquí cuando el fundador cierre su diseño.",
+  "abiertos": ["sabor-dominicano"],
+  "abiertos_porque": "9b-3 · La ficha y el panel de Sabor Dominicano se aprobaron abiertos: correr.mjs los deja abiertos hoy mientras captura (de noche la pantalla era otra) y devuelve su horario al final.",
   "pantallas": [
     {
       "id": "inicio",

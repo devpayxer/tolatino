@@ -6972,6 +6972,21 @@ const guardianes = {
     }
   },
 
+  /* 9b-3 · Una captura aprobada no cambia con la hora del día: la ficha y el panel de Sabor Dominicano se aprobaron abiertos y de noche («Cerrado ·
+     abre mañana») el CI fallaba en los teléfonos sin que nada cambiara. Cada pantalla de un negocio (/n/<id>, /panel) tiene su negocio en
+     pantallas.json «abiertos», y correr.mjs los abre antes de capturar y devuelve el horario al final. Al revés: alreves9b3. */
+  capturaSinHora() {
+    const G = "capturaSinHora", P = "pruebas/visual/pantallas.json", C = "pruebas/visual/correr.mjs";
+    if (!existsSync(P) || !existsSync(C)) return falla(G, P, 0, "faltan las pantallas o el corredor visual");
+    const cfg = JSON.parse(readFileSync(P, "utf8")), ab = cfg.abiertos || [], c = readFileSync(C, "utf8");
+    for (const pa of cfg.pantallas) {
+      const n = /^\/n\/([^/?#]+)/.exec(pa.ruta)?.[1];
+      if (n && !ab.includes(n)) falla(G, P, 0, `la pantalla ${pa.id} (${pa.ruta}) no tiene a ${n} en «abiertos»: de noche la captura sale cerrada y no es la aprobada`);
+      if (/^\/panel/.test(pa.ruta) && !ab.length) falla(G, P, 0, `la pantalla ${pa.id} (panel) sin negocios en «abiertos»`);
+    }
+    if (!/cfg\.abiertos/.test(c) || !/finally \{ devolverHorario\(\); \}/.test(c)) falla(G, C, 0, "correr.mjs no abre los negocios de «abiertos» antes de capturar o no devuelve su horario al final");
+  },
+
   idioma() {
     for (const f of codigo) {
       if (!/layout\.tsx$/.test(f)) continue;
