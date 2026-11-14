@@ -66,7 +66,7 @@ const casos = [
   ['permisosMinimos', PR, '		<string>location</string>\n	</array>', '		<string>location</string>\n		<string>audio</string>\n	</array>'],
   ['permisosMinimos', MR, ' android:foregroundServiceType="location" />', ' android:foregroundServiceType="location|camera" android:exported="true" />'],
   ['permisosMinimos', AJ, '"permisos": { "camara": false, "ubicacion": "entrega" }', '"permisos": { "camara": false, "ubicacion": "siempre" }'],
-  ['permisosMinimos', AJ, '"plugins": ["App", "AppLauncher", "Haptics", "PushNotifications", "Share", "SplashScreen", "StatusBar", "TLAlcance", "TLLocal", "TLPantalla", "TLReporte"],', '"plugins": ["App", "AppLauncher", "Haptics", "PushNotifications", "Share", "SplashScreen", "StatusBar", "TLAlcance", "TLLocal", "TLPantalla", "TLReporte", "TLRuta"],'],
+  ['permisosMinimos', AJ, '"plugins": ["App", "AppLauncher", "Haptics", "PushNotifications", "Share", "SplashScreen", "StatusBar", "TLAlcance", "TLLlave", "TLLocal", "TLPantalla", "TLReporte"],', '"plugins": ["App", "AppLauncher", "Haptics", "PushNotifications", "Share", "SplashScreen", "StatusBar", "TLAlcance", "TLLlave", "TLLocal", "TLPantalla", "TLReporte", "TLRuta"],'],
   // nativoConRespaldo (la linterna en las dos variantes de iOS) y pluginViejoNoRompe (TLRuta)
   ['nativoConRespaldo', SC, '    @objc func linterna(_ call: CAPPluginCall) { call.resolve(["ok": false]) }', '    @objc func otraCosa(_ call: CAPPluginCall) { call.resolve(["ok": false]) }'],
   ['pluginViejoNoRompe', NR, '  try { return (await n.empezar({', '  { return (await n.empezar({'],
