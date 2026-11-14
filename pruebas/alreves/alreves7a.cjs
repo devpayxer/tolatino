@@ -14,7 +14,9 @@ const casos = [
   ['ayudaConForma', P1, '## Qué hace\n', '# Qué hace\n'],
   ['ayudaConForma', P2, '## English\n\n### What it does', '## English\n\n## What it does'],
   ['ayudaConForma', M, "('puerta', 'portero',", "('puertas', 'portero',"],
-  ['ayudaConForma', D, '|| log "ayuda: no se pudo indexar', '; log "ayuda: no se pudo indexar'],
+  // 9b-3 · Desde 9o el índice sale de infra/comun/lib.sh (indexar_docs), que deploy.sh llama: el defecto va allí.
+  ['ayudaConForma', 'infra/comun/lib.sh', '|| log "ayuda: no se pudo indexar', '; log "ayuda: no se pudo indexar'],
+  ['ayudaConForma', D, '\nindexar_docs "$REPO" ', '\n# indexar_docs "$REPO" '],
   ['ayudaConForma', CI, 'node scripts/ayuda/indexar.mjs |', 'true |'],
   ['ayudaConForma', CI, 'echo "$out" | grep -q " 0 nuevos · 0 cambiados"', 'true'],
   // ayudaSinFaseInterna
@@ -23,7 +25,7 @@ const casos = [
   ['ayudaSinFaseInterna', P1, '| Devolución |', '| Devolución (2i) |'],
   ['ayudaSinFaseInterna', P1, 'and, if the order was paid by card, a refund to that card', 'Card refunds arrive with Stripe'],
   ['ayudaSinFaseInterna', P2, '## Para El Compa\n<!-- solo-equipo -->', '## Para El Compa (llega con el bloque 7d)'],
-  ['ayudaSinFaseInterna', EQ, 'El SMS de invitación todavía no sale: avísale tú a la persona.', 'El SMS sale con la Fase 2.'],
+  ['ayudaSinFaseInterna', EQ, 'Invitación guardada, pero el SMS no salió (ese número pidió no recibir mensajes de To\'Latino): avísale tú a la persona.', 'El SMS sale con la Fase 2.'], // 9b-3 · el texto de hoy
   // compaAyudaPorAudiencia
   ['compaAyudaPorAudiencia', P3, 'Audiencia: equipo. Tema: equipo._', 'Audiencia: vecino. Tema: cuenta._'],
   ['compaAyudaPorAudiencia', P4, 'Audiencia: negocio. Tema: panel._', 'Audiencia: vecino. Tema: pedidos._'],

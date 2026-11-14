@@ -16,7 +16,7 @@ const casos = [
   ['compaSiempreIA', V, 'personLabel={E2("Con una persona", "Talk to a person")}', 'personLabel={busy ? null : E2("Con una persona", "Talk to a person")}'],
   ['compaSiempreIA', V, 'person2Label={E2("Hablar con una persona", "Talk to a person")}', 'person2Label={null}'],
   ['compaSiempreIA', V, 'note: E2("EL COMPA LO PREPARÓ · CONFÍRMALO TÚ", "EL COMPA PREPARED IT · YOU CONFIRM")', 'note: E2("LISTO", "DONE")'],
-  ['compaSiempreIA', ADM, 'const A = UI as unknown as Record<"AdminList", ComponentType<any>>;', 'const A = UI as unknown as Record<"AdminList", ComponentType<any>>;\nconst Otro = (UI as unknown as Record<string, ComponentType<any>>).CompaFrame; void Otro;'],
+  ['compaSiempreIA', ADM, 'const A = UI as unknown as Record<"AdminList" | "HBars", ComponentType<any>>;', 'const A = UI as unknown as Record<"AdminList" | "HBars", ComponentType<any>>;\nconst Otro = (UI as unknown as Record<string, ComponentType<any>>).CompaFrame; void Otro;'], // 9b-3 · la línea de hoy
   ['compaSiempreIA', C, "Eres una IA y lo dices si te preguntan; ", ''],
   // compaHojaSinRomper
   ['compaHojaSinRomper', CITA, '  if (hoja) return hoja;\n', ''],
@@ -47,8 +47,9 @@ const casos = [
   ['libroSoloInsercion', M, "  if tg_op <> 'INSERT' then raise exception 'compa_reads es solo de inserción'; end if;", "  if tg_op = 'DELETE' then return old; end if;"],
   ['libroSoloInsercion', AD, 'export async function fichaConversacion(', 'export async function olvidarLecturas() { return db().query(`delete from compa_reads where at < now()`); }\nexport async function fichaConversacion('],
   // eventosEnLista (la analítica nueva en el código y en la base)
-  ['eventosEnLista', EV, ' | "compa_persona";', ' | "compa_persona" | "compa_otro";'],
-  ['eventosEnLista', M, "'compa_accion', 'compa_persona'));", "'compa_accion'));"],
+  // 9b-3 · La lista siguió creciendo (8a: app_abrir…): el evento de más va tras compa_persona y la lista que manda es la de 0125 (la última).
+  ['eventosEnLista', EV, ' | "compa_persona"\n', ' | "compa_persona" | "compa_otro"\n'],
+  ['eventosEnLista', 'packages/db/migrations/0125_apps_base.sql', "'compa_accion', 'compa_persona', 'app_abrir'", "'compa_accion', 'app_abrir'"],
 ];
 let bien = 0;
 for (const [g, f, a, b] of casos) {

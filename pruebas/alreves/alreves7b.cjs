@@ -11,7 +11,8 @@ const casos = [
   ['soporteCasoConSla', M, 'create trigger support_cases_cola after insert or update on support_cases', 'create trigger support_cases_cola after update on support_cases'],
   ['soporteCasoConSla', M, "values ('ticket', 'support_case', new.id::text,", "values ('sop', 'support_case', new.id::text,"],
   ['soporteCasoConSla', M, "    new.sla_due_at := soporte_sla(new.city_id, now(), cfg_int('soporte_sla_h'));\n  end if;\n  new.updated_at", "    new.sla_due_at := now() + interval '8 hours';\n  end if;\n  new.updated_at"],
-  ['soporteCasoConSla', M, "declare tz text; d0 int := cfg_int('soporte_desde_h');", "declare tz text; d0 int := 9;"],
+  // 9b-3 · soporte_sla la redefine 0144 (la última manda): el defecto va en la que hoy la define.
+  ['soporteCasoConSla', 'packages/db/migrations/0144_negocio.sql', "declare tz text; d0 int := cfg_int('soporte_desde_h');", "declare tz text; d0 int := 9;"],
   ['soporteCasoConSla', C, 'slaSql: "(select greatest(extract(epoch from sc.sla_due_at - q.opened_at)', 'slaSqlX: "(select greatest(extract(epoch from sc.sla_due_at - q.opened_at)'],
   ['soporteCasoConSla', E, 'export async function tomar(', "export async function colaAMano(id: string) { return db().query(`insert into queue_items (queue, subject_kind, subject_id) values ('ticket', 'support_case', $1)`, [id]); }\nexport async function tomar("],
   ['soporteCasoConSla', PN, 'export async function misNegocios(userId: string) {', "export async function casoAMano() { return db().query(`insert into support_cases (number) values ('TK-1')`); }\nexport async function misNegocios(userId: string) {"],
@@ -34,7 +35,8 @@ const casos = [
   ['compaTapaSecretos', T, 't = t.replace(/(?:\\d[ -]?){12,18}\\d/g, (m) => (luhn(m.replace(/\\D/g, "")) ? TAPADO : m));', ''],
   ['compaTapaSecretos', T, '  [/(^|[^\\d])(\\d{3}[- ]\\d{2}[- ]\\d{4})(?!\\d)/g, (_m, a: string) => `${a}${TAPADO}`],', ''],
   ['compaTapaSecretos', T, '[/\\b(contrase[ñn]a|password|passcode|clave)(\\s*(?:es|is|:|=)\\s*|\\s+)(\\S{3,})/gi', '[/\\b(contrase[ñn]a|passcode|clave)(\\s*(?:es|is|:|=)\\s*|\\s+)(\\S{3,})/gi'],
-  ['compaTapaSecretos', 'packages/db/migrations/0122_compa_copiloto.sql', "  if texto_con_secretos(new.body) then raise exception 'support_sin_secretos", "  if false then raise exception 'support_sin_secretos"],
+  // 9b-3 · support_messages_antes la redefine 0124 (la última manda).
+  ['compaTapaSecretos', 'packages/db/migrations/0124_compa_admin_config.sql', "  if texto_con_secretos(new.body) then raise exception 'support_sin_secretos", "  if false then raise exception 'support_sin_secretos"],
   ['compaTapaSecretos', L, "values ($1, $2, 'user', $3, $4, $5::uuid)`, [k.id, k.city_id, q.userId, t.texto || null, f]);", "values ($1, $2, 'user', $3, $4, $5::uuid)`, [k.id, k.city_id, q.userId, crudo || null, f]);"],
   ['compaTapaSecretos', E, "await c.query(`insert into support_messages (case_id, city_id, sender, staff_id, body, internal) values ($1, $2, 'staff', $3, $4, true)`, [k.id, k.city_id, s.id, tapar(t).texto]);", "await c.query(`insert into support_messages (case_id, city_id, sender, staff_id, body, internal) values ($1, $2, 'staff', $3, $4, true)`, [k.id, k.city_id, s.id, texto]);"],
   // soporteSoloSuyos

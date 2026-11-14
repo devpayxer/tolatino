@@ -11,7 +11,7 @@ const M = 'packages/db/migrations/0118_compa_base.sql', C = 'apps/web/lib/compa/
 const casos = [
   // compaSoloServidor
   ['compaSoloServidor', V, 'import "server-only";\n', ''],
-  ['compaSoloServidor', UI, 'import type { DatosCompaAdmin, FichaConv } from "@/lib/compa/admin-compa";', 'import { datosCompaAdmin, type DatosCompaAdmin, type FichaConv } from "@/lib/compa/admin-compa";\nvoid datosCompaAdmin;'],
+  ['compaSoloServidor', UI, 'import type { DatosCompaAdmin, FichaConv, ResumenCompa } from "@/lib/compa/admin-compa";', 'import { datosCompaAdmin, type DatosCompaAdmin, type FichaConv, type ResumenCompa } from "@/lib/compa/admin-compa";\nvoid datosCompaAdmin;'], // 9b-3 · el import de hoy
   ['compaSoloServidor', MO, '  if (hayClave()) return "claude";', '  if (process.env.ANTHROPIC_API_KEY) return "claude";'],
   ['compaSoloServidor', UI, 'export function ElCompaAdmin(', 'const ia = (window as unknown as { claude: unknown }).claude; void ia;\nexport function ElCompaAdmin('],
   ['compaSoloServidor', RT, 'if (ENTORNO === "produccion" || !tokenOk(req.headers.get("x-barrido-token"))) return NO();', 'if (!tokenOk(req.headers.get("x-barrido-token"))) return NO();'],
@@ -64,7 +64,8 @@ const casos = [
   ['compaTapaEnElMotor', C, '[conv.id, ciudad, q.userId, t.texto]', '[conv.id, ciudad, q.userId, crudo]'],
   ['compaTapaEnElMotor', C, 'texto: tapar(h.body).texto', 'texto: h.body'],
   ['compaTapaEnElMotor', C, 'texto: tapar(r.text).texto', 'texto: r.text'],
-  ['compaTapaEnElMotor', M, "  if texto_con_secretos(new.text) then raise exception 'compa_sin_secretos", "  if false then raise exception 'compa_sin_secretos"],
+  // 9b-3 · compa_messages_antes la redefine 0124 (la última manda): el defecto va en la que hoy la define.
+  ['compaTapaEnElMotor', 'packages/db/migrations/0124_compa_admin_config.sql', "  if texto_con_secretos(new.text) then raise exception 'compa_sin_secretos", "  if false then raise exception 'compa_sin_secretos"],
   ['compaTapaEnElMotor', A, 'export async function descartar(', 'export async function nota(c: string) { return db().query(`insert into compa_messages (conversation_id, city_id, sender, text) values (1, \'hzl\', \'system\', $1)`, [c]); }\nexport async function descartar('],
   // compaSalidaLimpia
   ['compaSalidaLimpia', V, '  if (EMOJI.test(todo)) return { ok: false, motivo: "emoji" };\n', ''],
@@ -85,7 +86,8 @@ const casos = [
   ['compaAyudaPorAudiencia', AY, "and c.audience = any($3::text[]) and a.status = 'live' and a.audience = any($3::text[])\n        and ($5", "and a.status = 'live'\n        and ($5"],
   ['compaAyudaPorAudiencia', C, '  const suyas: Audiencia[] = (["vecino"] as Audiencia[]).filter((a) => aud.includes(a));', '  const suyas: Audiencia[] = ["vecino", "equipo"];'],
   // libroSoloInsercion (ampliado)
-  ['libroSoloInsercion', M, "  if tg_op <> 'INSERT' then raise exception 'compa_messages es solo de inserción'; end if;", "  if tg_op = 'DELETE' then return old; end if;"],
+  // 9b-3 · compa_messages_antes la redefine 0124 (la última manda).
+  ['libroSoloInsercion', 'packages/db/migrations/0124_compa_admin_config.sql', "  if tg_op <> 'INSERT' then raise exception 'compa_messages es solo de inserción'; end if;", "  if tg_op = 'DELETE' then return old; end if;"],
   ['libroSoloInsercion', M, "  if tg_op = 'DELETE' then raise exception 'una pausa de El Compa no se borra: se levanta'; end if;", ''],
   ['libroSoloInsercion', A, 'export async function descartar(', 'export async function borrar(id: string) { return db().query(`delete from compa_actions where id = $1`, [id]); }\nexport async function descartar('],
   ['libroSoloInsercion', T, 'export async function gastoDelMes(', 'export async function limpiar() { return db().query(`update compa_usage set cost_microusd = 0`); }\nexport async function gastoDelMes('],
