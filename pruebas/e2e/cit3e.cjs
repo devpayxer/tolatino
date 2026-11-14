@@ -110,7 +110,7 @@ const terminar = (n) => sql(`update operations set status = 'done', status_detai
   await m.screenshot({ path: OUT + 'e5-estado-alt.png', fullPage: true });
   await clic(m.getByRole('button', { name: 'Aceptar $6' }));
   ok(await espera(() => pago(A.numero), 'partially_refunded|1000|600') === 'partially_refunded|1000|600', 'aceptó: $6 devueltos a su tarjeta');
-  ok(ayuda(A.numero, "h.status || '|' || h.closed_by || '|' || h.refunded_cents") === 'resolved|user|600', 'solicitud terminada por la persona');
+  ok(await espera(() => ayuda(A.numero, "h.status || '|' || h.closed_by || '|' || h.refunded_cents"), 'resolved|user|600') === 'resolved|user|600', 'solicitud terminada por la persona'); // el reembolso y el cierre son dos escrituras
   ok(sql(`select count(*) from notifications where tpl = 'pay_refund' and ref_id = '${A.numero}'`) === '1', 'aviso: te devolvimos $6');
   await m.getByText('TERMINADA').first().waitFor(); ok(true, 'estado: terminada');
   // ── 4. Sin depósito: el negocio no puede, ella pide revisión y To'Latino resuelve ──

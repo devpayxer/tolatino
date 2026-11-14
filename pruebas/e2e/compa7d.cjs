@@ -216,7 +216,7 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
   const fo = fam.find((f) => f.kind === 'appointment');
   await pr.goto(B + AYUDA.appointment(fo.num)); h = pr.locator(HOJA); await h.waitFor();
   await h.getByText('Hablar con una persona', { exact: true }).click(); await h.getByText('Tu caso pasó a Soporte').waitFor({ timeout: 15000 });
-  const tk2 = sql(`select number from support_cases where user_id = '${MU}' order by id desc limit 1`);
+  const tk2 = sql(`select number from support_cases where user_id = '${DU}' order by id desc limit 1`); // pr es de la dueña de la cita (DU), no de MU
   ok(sql(`select k.origin || '|' || k.topic || '|' || o.number || '|' || c.number from support_cases k join operations o on o.id = k.operation_id join compa_conversations c on c.id = k.compa_conversation_id where k.number = '${tk2}'`).startsWith(`compa|cita|${fo.num}|CP-`), `${tk2}: desde la hoja, con la cita ${fo.num} y la conversación CP-`);
   ok(sql(`select reason from compa_handoffs h join support_cases k on k.id = h.support_case_id where k.number = '${tk2}'`) === 'asked_person', 'el paso a una persona queda en compa_handoffs (lo pidió)');
   await pr.waitForTimeout(700); await pr.screenshot({ path: OUT + 'e7d-hoja-persona-390.png' });

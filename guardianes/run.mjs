@@ -9221,6 +9221,19 @@ const guardianes = {
         if (!/status\s*(<>|=)/.test(m[0])) falla(G, f, t.slice(0, m.index).split("\n").length, "busca al repartidor por teléfono sin mirar el estado: también sale el retirado (and status <> 'removed')");
     }
   },
+
+  /* 9b-3 · precioVuelve: una prueba que guarda el precio de un producto de la semilla para cambiarlo (const p0 = …select price_cents from items…)
+     lo devuelve al salir; si no, la que cuenta un total con ese producto falla según el orden (merc4p en la barajada, 14 nov: ret4n subió
+     la pierna 10¢). Al revés (alreves9b3): quitar el process.on('exit') de ret4n. */
+  precioVuelve() {
+    const G = "precioVuelve";
+    for (const f of archivos.filter((x) => /^pruebas\/e2e\/[^/]+\.(cjs|mjs)$/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      for (const m of t.matchAll(/const (\w+) = Number\(sql\(`select price_cents from items\b/g))
+        if (!new RegExp(`process\\.on\\('exit'[^\\n]*price_cents = \\$\\{${m[1]}\\}`).test(t))
+          falla(G, f, t.slice(0, m.index).split("\n").length, `guarda el precio en ${m[1]} para cambiarlo y no lo devuelve al salir: process.on('exit', () => sql(\`update items set price_cents = \${${m[1]}} …\`))`);
+    }
+  },
 };
 
 

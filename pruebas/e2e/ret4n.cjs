@@ -26,6 +26,7 @@ const FV = (id) => sql(`select array_to_string(filter_values, ',') from business
   ok(await espera(() => String(FV(M).includes('ebt')), 'false') === 'false', 'EBT apagado → sale del filtro «EBT» de Buscar');
   ok(Number(sql(`select count(*) from audit_entries where action = 'herramienta.mercado' and target_id = '${M}' and at > now() - interval '1 minute'`)) >= 1, 'queda en la auditoría');
   const p0 = Number(sql(`select price_cents from items where business_id = '${M}' and name->>'es' = 'Pierna de cerdo'`));
+  process.on('exit', () => sql(`update items set price_cents = ${p0} where business_id = '${M}' and name->>'es' = 'Pierna de cerdo'`)); // 9b-3 · devuelve el precio: merc4p cuenta con el de la semilla
   await clic(h.getByRole('button', { name: 'Pierna de cerdo +', exact: true }));
   ok(await espera(() => sql(`select price_cents from items where business_id = '${M}' and name->>'es' = 'Pierna de cerdo'`), String(p0 + 10)) === String(p0 + 10), `precio por libra +10¢ (${p0} → ${p0 + 10})`);
   await clic(h.getByRole('switch', { name: 'Yuca', exact: true }));

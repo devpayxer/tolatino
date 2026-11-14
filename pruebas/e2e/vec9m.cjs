@@ -128,9 +128,10 @@ const desk = (b, extra = {}) => b.newContext({ viewport: { width: 1360, height: 
     // ── 4 · La ficha: alergias, temas, retiros; Buscar casa y carro ──
     console.log('4 · «Lleva o es», «Lo que más mencionan», los retiros de NHTSA y Buscar casa o carro');
     const cd = await desk(b); abiertas.push(cd); const pd = await cd.newPage(); mirar(pd, 'desk');
-    await pd.goto(B + `/n/${BIZ}?tab=menu`); await pd.evaluate(() => { localStorage.removeItem('tl-carrito-v1'); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); }); await pd.reload();
-    // 9b-3 · Lo suyo: «Pescado frito» lleva «mar» (la barajada lo vio sin la etiqueta, una vez: otra prueba de menú le cambia las etiquetas).
+    // 9b-3 · Lo suyo: «Pescado frito» lleva «mar» (la barajada lo vio sin la etiqueta: otra prueba de menú le cambia las etiquetas).
+    // Antes de abrir la página: la ficha trae las etiquetas al pintarse; ponerlas después no cambia lo ya servido.
     sql(`update items set tags = array_append(tags, 'mar') where business_id = '${BIZ}' and name->>'es' = 'Pescado frito' and not ('mar' = any(tags))`);
+    await pd.goto(B + `/n/${BIZ}?tab=menu`); await pd.evaluate(() => { localStorage.removeItem('tl-carrito-v1'); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); }); await pd.reload();
     await vis(pd, 'Pescado frito').click();
     ok(await espera(async () => (await pd.locator('[data-bloque="lleva"]').count()) > 0), 'la hoja del plato trae «Lleva o es»');
     ok(/PESCADO O MARISCOS/.test(await pd.locator('[data-bloque="lleva"]').innerText()), 'con lo que marcó el panel (pescado o mariscos)');

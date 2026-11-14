@@ -79,6 +79,8 @@ const casos = [
   ['ciudadSinAmbiguedad', 'pruebas/e2e/sis9j.cjs', "await clic(a.locator('main').getByText('Reading', { exact: true }));", "await clic(a.getByText('Reading', { exact: true }));"],
   // retiradoNoCuenta: rep2l vuelve a buscar a Juan por teléfono sin mirar el estado (sale también el retirado)
   ['retiradoNoCuenta', 'pruebas/e2e/rep2l.cjs', "select status || '|' || vehicle || '|' || (invite_code is null) from delivery_drivers where phone = '+1${JUAN_TEL}' and status <> 'removed'", "select status || '|' || vehicle || '|' || (invite_code is null) from delivery_drivers where phone = '+1${JUAN_TEL}'"],
+  // precioVuelve: ret4n sube el precio de la pierna y ya no lo devuelve al salir
+  ['precioVuelve', 'pruebas/e2e/ret4n.cjs', "  process.on('exit', () => sql(`update items set price_cents = ${p0} where business_id = '${M}' and name->>'es' = 'Pierna de cerdo'`)); // 9b-3 · devuelve el precio: merc4p cuenta con el de la semilla\n", ''],
   // textoQueExiste: una prueba busca en la pantalla un texto que ya no está en ningún lado (lo que le pasó a sis9j con 9o)
   ['textoQueExiste', 'pruebas/e2e/sis9j.cjs', "await contiene(a, 'DESPLIEGUES Y VUELTAS ATRÁS')", "await contiene(a, 'Llegan cuando se encienda producción')"],
 ];
