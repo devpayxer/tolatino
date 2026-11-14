@@ -42,8 +42,9 @@ const enFila = (p, titulo, boton) => p.getByText(titulo, { exact: true }).first(
   const b = await chromium.launch(); const err = [];
   // Fotos de negocios que crearon pruebas anteriores (barberías de 2q/4a) cuyo archivo no está en el almacenamiento local: se cuentan aparte y
   // se dicen al final; cualquier otro 404 o error sí rompe la prueba.
-  const sinArchivo = new Set(), medio404 = (u) => /\/medios\/n\/[0-9a-f-]+\.jpg$/.test(u) && sql(`select coalesce(string_agg(owner_id, ','), '') from media where url = '${new URL(u).pathname}'`).split(',').every((o) => /^barberia-\d+$/.test(o));
-  const mira = (pg) => { pg.on('response', (r) => { if (r.status() === 404) { if (medio404(r.url())) sinArchivo.add(r.url()); else err.push('404 ' + r.url()); } }); pg.on('pageerror', (e) => err.push(e.message));
+  // 9b-3 · El mini mapa propio (9m) pide teselas; la base nueva del CI no trae el archivo de teselas (como ciudad.cjs, no cuenta como error de la página).
+  const teselas404 = new Set(), sinArchivo = new Set(), medio404 = (u) => /\/medios\/n\/[0-9a-f-]+\.jpg$/.test(u) && sql(`select coalesce(string_agg(owner_id, ','), '') from media where url = '${new URL(u).pathname}'`).split(',').every((o) => /^barberia-\d+$/.test(o));
+  const mira = (pg) => { pg.on('response', (r) => { if (r.status() === 404) { if (medio404(r.url())) sinArchivo.add(r.url()); else if (/\/teselas\//.test(r.url())) teselas404.add(r.url()); else err.push('404 ' + r.url()); } }); pg.on('pageerror', (e) => err.push(e.message));
     pg.on('console', (m) => { if (m.type() === 'error' && !/net::ERR_TUNNEL_CONNECTION_FAILED/.test(m.text()) && !/status of 404/.test(m.text())) err.push('console: ' + m.text()); }); };
   const ad = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); mira(ad); await entrar(ad, '5705550199');
   const yes = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage(); mira(yes); await entrar(yes, '5705550433');

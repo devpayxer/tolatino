@@ -72,6 +72,8 @@ const casos = [
   // alrevesQueFalla: correr.mjs vuelve a contar en verde la prueba al revés con un ✗ que sale con 0; una suite vuelve a no salir con error
   ['alrevesQueFalla', 'pruebas/correr.mjs', 'ok: codigo === 0 && !sinNada && !mudo,', 'ok: codigo === 0 && !sinNada,'],
   ['alrevesQueFalla', 'pruebas/alreves/alreves6c.cjs', '\nif (bien !== casos.length) process.exit(1);\n', '\n'],
+  // codigoRecogidaPropio: app8e vuelve a no decidir el código de recogida
+  ['codigoRecogidaPropio', 'pruebas/e2e/app8e.cjs', ', proof=false, pickup_code=false where', ' where'],
   // textoQueExiste: una prueba busca en la pantalla un texto que ya no está en ningún lado (lo que le pasó a sis9j con 9o)
   ['textoQueExiste', 'pruebas/e2e/sis9j.cjs', "await contiene(a, 'DESPLIEGUES Y VUELTAS ATRÁS')", "await contiene(a, 'Llegan cuando se encienda producción')"],
 ];

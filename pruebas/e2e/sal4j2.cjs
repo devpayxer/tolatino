@@ -71,6 +71,8 @@ async function pedir(m, nota) {
   const N3 = await pedir(m, 'Vacuna');
   await d.goto(B + `/panel/${S}/hoy?det=cita:${N3}`); await clic(d.getByRole('button', { name: 'Confirmar' }));
   ok(await espera(() => sql(`select status from operations where number = '${N3}'`), 'confirmed') === 'confirmed', 'confirmada');
+  // 9b-3 · El aviso sale después de guardar «confirmada»: se espera (una vez en verde y una en rojo con «»).
+  for (let i = 0; i < 40 && !sql(`select count(*) from notifications where ref_id = '${N3}' and tpl = 'sal_cita_ok'`).match(/^[1-9]/); i++) await new Promise((r) => setTimeout(r, 250));
   const avOk = sql(`select body from notifications where ref_id = '${N3}' and tpl = 'sal_cita_ok' order by id desc limit 1`);
   ok(avOk && /Detalles en la app/.test(avOk) && !/Quisqueya|Consulta|Vacuna/i.test(avOk), `aviso de confirmada neutro: «${avOk}»`);
   ok(sql(`select count(*) from notifications where ref_id in ('${N1}','${N2}','${N3}') and (body ilike '%Quisqueya%' or body ilike '%medicina%')`) === '0', 'ningún aviso de estas citas nombra el consultorio ni el servicio');

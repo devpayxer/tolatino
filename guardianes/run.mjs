@@ -9043,6 +9043,16 @@ const guardianes = {
     for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql"))) if (/N-9065/.test(readFileSync(`packages/db/migrations/${x}`, "utf8"))) falla(G, `packages/db/migrations/${x}`, 0, "el demo de Noche no va en una migración (regla 13: datos de ejemplo solo en pruebas)");
   },
 
+  /* 9b-3 · codigoRecogidaPropio: una prueba que hace «Recogí, voy en camino» en el Repartidor decide ella si el negocio pide código de recogida y
+     prueba de entrega (delivery_settings.pickup_code / proof). La semilla 0063 (9n) los enciende en Sabor Dominicano para el sandbox y app8e se
+     quedó esperando un botón apagado en las 3 vueltas (14 nov). Al revés (alreves9b3): quitarle a app8e el «pickup_code=false». */
+  codigoRecogidaPropio() {
+    const G = "codigoRecogidaPropio";
+    for (const f of archivos.filter((x) => /^pruebas\/e2e\/[^/]+\.(cjs|mjs)$/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      if (/Recogí, voy en camino/.test(t) && !/pickup_code\s*=/.test(t)) falla(G, f, 0, "hace «Recogí» sin decidir el código de recogida del negocio (update delivery_settings … pickup_code = …, proof = …)");
+    }
+  },
 };
 
 
