@@ -55,14 +55,15 @@ const env = ENT.env; // los secretos de la corrida (pruebas/servir/servir.sh)
       const p = await pagina(`pub${w}`, w);
       await p.goto(B + '/privacidad');
       let t = await texto(p);
-      ok(/PRIVACIDAD · BORRADOR · VERSIÓN 0/.test(t) && /Cómo usa To'Latino tus datos/.test(t) && /No te rastreamos entre apps ni sitios/.test(t), `${w} · /privacidad sin sesión: borrador versión 0, sin rastreo`);
+      // 9e · El texto sale de docs/legal/us/privacidad.es.md (BORRADOR hasta que el abogado lo revisa); los datos, del inventario como en 8i.
+      ok(/BORRADOR · VERSIÓN \d+/.test(t) && /^Privacidad$/.test((await p.locator('h1').first().innerText()).trim()) && /No te rastreamos entre apps ni sitios/.test(t), `${w} · /privacidad sin sesión: borrador con su versión, sin rastreo`);
       const inv = JSON.parse(fs.readFileSync(REPO + '/apps/mobile/inventario-datos.json', 'utf8'));
       ok(await p.locator('[data-dato]').count() === inv.categorias.length && inv.categorias.every((c) => t.includes(c.label.es)), `${w} · la sección de datos sale del inventario (${inv.categorias.length} categorías, cada una con su nombre)`);
-      ok(await p.locator('a[href="/cuenta/ajustes/borrar"]').count() === 1 && await p.locator('a[href="/soporte"]').count() === 1, `${w} · enlaces a Borrar mi cuenta y a Soporte`);
+      ok(/Mi cuenta › Ajustes › Borrar mi cuenta/.test(t) && await p.locator('a[href="/soporte"]').count() >= 1, `${w} · dónde se borra la cuenta y el enlace a Soporte`);
       await p.screenshot({ path: `${OUT}f8i-privacidad-${w}.png`, fullPage: w === 390 });
-      await p.locator('a', { hasText: 'Read in English' }).click(); await p.waitForURL(/l=en/);
+      await p.locator('[data-idioma="en"]').first().click(); await p.waitForURL(/l=en/); await p.getByText('Privacy policy').first().waitFor();
       t = await texto(p);
-      ok(/How To'Latino uses your data/.test(t) && /PRIVACY · DRAFT · VERSION 0/.test(t) && inv.categorias.every((c) => t.includes(c.label.en)), `${w} · en inglés (?l=en), con cada categoría en inglés`);
+      ok(/DRAFT · VERSION \d+/.test(t) && /The data we use and why/.test(t) && inv.categorias.every((c) => t.includes(c.label.en)), `${w} · en inglés (?l=en), con cada categoría en inglés`);
       await p.goto(B + '/soporte');
       t = await texto(p);
       ok(!/\/entrar/.test(p.url()) && /Soporte|Support/.test(t) && /Escríbenos|Escr[ií]benos|Entrar y enviar|Caso nuevo/i.test(t), `${w} · /soporte sin sesión: cómo escribir a Soporte (${p.url().replace(B, '')})`);
