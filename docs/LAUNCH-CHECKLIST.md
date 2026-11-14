@@ -212,7 +212,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9g** · **Embudo:** el diseño termina en «El negocio aceptó»; en la Fase 1 termina en «Contactaron» (Llamar, WhatsApp,
   Cómo llegar). Confirmar el texto con el fundador. Etiquetas cortas porque el componente de barras corta las largas.
 - [ ] **→ 9g** · **Grabación de sesiones (rrweb, con consentimiento)** y Web Vitals propios (HERRAMIENTAS §2 y §4): bloque aparte. — _9b-3 (13 nov): no es de la escala; va con la Analítica completa (9g)._
-- [ ] **→ 9e** · **Aviso de privacidad** que diga qué mide To'Latino (sin terceros): con las páginas legales (Fase 9).
+- [x] **9e** · **Aviso de privacidad** que diga qué mide To'Latino (sin terceros): /privacidad «Lo que no hacemos» (analítica propia, sin rastreo ni
+      publicidad de terceros) y «Con quién se comparten» (docs/legal/us/privacidad.{es,en}.md). Evidencia: leg9e 72 ✓ dos veces seguidas. (9e, 14 nov)
 
 ## Menú (bloque 2a, 6 nov 2026)
 - [x] **Pestaña Menú en la ficha, carrito y pedido:** hecho en el bloque 2b.
@@ -919,8 +920,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
       conectadas antes de abrir. (6i, 10 nov)
 - [ ] **→ 9q** · **6i · SMS del evento privado:** `evp_nueva` (al restaurante), `evp_propuesta`, `evp_ok` y `evp_cancelado_negocio` llevan SMS; salen de verdad
       cuando haya proveedor (Telnyx, decisión E). Hoy quedan «en modo pruebas». (6i, 10 nov)
-- [ ] **→ 9e** · **6i · Términos y políticas:** la política de cancelar de un evento privado (gratis hasta 72 h; después el depósito se queda con el
-      restaurante; si cancela el restaurante, devolución completa) va en los Términos versionados (`LegalPage`), con el abogado. (6i, 10 nov)
+- [ ] **→ 9s** · **6i · Términos y políticas:** la política de cancelar de un evento privado (gratis hasta 72 h; después el depósito se queda con el
+      restaurante; si cancela el restaurante, devolución completa) va en los Términos versionados (`LegalPage`), con el abogado. 9e dejó el mecanismo
+      (`legal_pages` con versión) y los Términos dicen que la política que cada operación muestra antes de enviarla es parte de ellos; el texto de cada
+      política dentro de los Términos lo escribe el abogado. (6i, 10 nov · 9e, 14 nov)
 - [x] **6i · El Fogón y Mariscos La Bahía** tienen Evento privado encendido en la semilla pero no tienen dueño ni Cobros: una solicitud a ellos solo
       puede vencer (sirven para «Otros que hacen eventos privados»). Al tener dueño, conectar Cobros. (6i, 10 nov) — **✓ 9a (11 nov):** son negocios de la semilla del sandbox sin dueño a propósito; en producción no existen.
 - [x] **6i · Mi cuenta › Avisos › Eventos** (grupo `events`, apagar lo no crítico del evento privado) y la sección Eventos de Configuración con
@@ -1377,8 +1380,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       leerlas el día del envío y decidir con el fundador. (8i, 11 nov)
 - [ ] **→ 9j** · **Novedades de Google:** van con cada lanzamiento (notas de la versión de la pista), no con la ficha; la tubería todavía no las manda en
       `tracks.update`. (8i, 11 nov)
-- [ ] **→ 9e** · **/privacidad:** borrador versión 0 desde el inventario; el texto legal final, la revisión de abogado y la página de acceso anticipado en
-      tolatino.com, Fase 9 (§6 #26). /terminos no existe todavía. (8i, 11 nov)
+- [x] **9e** · **/privacidad:** el texto sale de docs/legal/ con versión y sha256 (legal_pages), los datos del inventario y del mapa; /terminos y las otras
+      nueve páginas existen sin sesión, en ES y EN. Evidencia: leg9e (cada página ES/EN, 22 ✓) y el paso 1 de fich8i al día. La revisión del abogado
+      sigue en «Fase 9 · 9e» → 9s. (8i, 11 nov · 9e, 14 nov)
 - [ ] **→ 9p** · **Analítica › Apps · enlaces que abren la app o la web:** espera los enlaces universales (8b). (8i, 11 nov)
 
 ## Fase 9 · 9a (las pruebas al repo y la LAUNCH con destino; 11 nov)
@@ -1525,8 +1529,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       a `phone_messages` van juntos con los canales. (9d, 14 nov)
 - [ ] **→ 9l** · **Retención de `phone_messages`** (el registro cifrado de los SMS a números sin cuenta): el mapa la guarda «por las reglas de los SMS» sin un plazo;
       falta su clave `retener_*` y su barrido. (9d, 14 nov)
-- [ ] **→ 9e** · **Términos de uso y Privacidad con versión en «Términos que aceptaste»:** hoy salen las reglas de la Comunidad, los términos de un plan y la
-      propuesta de un evento privado; `legal_acceptances` (9e) se suma a la misma lista (`lib/datos/terminos.ts`). Y `/privacidad` sale del mapa de datos. (9d, 14 nov)
+- [x] **9e** · **Términos de uso y Privacidad con versión en «Términos que aceptaste»:** `lib/datos/terminos.ts` suma `legal_acceptances` (la adenda del
+      estado y «por {negocio}»); `/privacidad` trae «Qué pasa con cada dato al borrar tu cuenta» del mapa (`privacidadDelMapa`). Evidencia: leg9e
+      («VERSIÓN N · ACEPTADO …») y datos9d 61 ✓ sigue en verde. (9d, 14 nov · 9e, 14 nov)
 - [ ] **→ 9f** · **«Cuenta borrada» en inglés:** el nombre que queda en una cuenta purgada es un texto en la base («Cuenta borrada»); un panel en inglés también lo
       lee así. Con el CMS, el nombre de una cuenta `deleted` sale de su cadena ES/EN. (9d, 14 nov)
 - [ ] **→ 9m** · **Pedir el archivo con la llave de acceso** (el plan dice «con el código de entrada otra vez (o la llave)»): hoy solo con el código por SMS, como
@@ -1534,3 +1539,23 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9m** · **Un archivo con más de 20 000 filas en una parte** se corta en 20 000 (el LEEME dice cuántas trae cada parte); con la carga de 1M, medir el
       tiempo de armarlo para la cuenta más grande y, si hace falta, partirlo. (9d, 14 nov)
 
+## Fase 9 · 9e — legales por estado, aceptar términos y la web legal (14 nov)
+- [ ] **→ 9s** · **El texto final de las 14 páginas de docs/legal/** (11 generales + 3 adendas de PA) lo revisa el abogado (Paquete 9-2): hoy son BORRADOR de
+      Claude, sobrios y sacados de lo que el producto hace, con cada hueco marcado «[pendiente: …]» (nombre legal y dirección de la empresa, edad mínima de
+      la cuenta y COPPA, límite de responsabilidad, ley aplicable y arbitraje, consentimiento de mensajes TCPA/10DLC, Sección 230 y difamación, respuesta
+      a órdenes legales, proveedor de servidores de producción, leyes de privacidad de PA, avisos de IA, plazos DMCA, quejas ante HUD y la PHRC). Con
+      TOLATINO_FASE=9, `legalRevisado` no deja abrir con un BORRADOR. (9e, 14 nov)
+- [ ] **→ 9s** · **Agente designado DMCA** registrado en la Copyright Office (tiene costo): /dmca dice que está pendiente y manda a Soporte mientras tanto; no
+      hay una cola propia de avisos DMCA (el equipo oculta con las herramientas de moderación de siempre). (9e, 14 nov)
+- [ ] **→ 9s** · **Dónde más se anota la aceptación:** hoy en Publica tu negocio, el primer pedido de comida (Pagar) y la hoja. El registro («Al seguir aceptas
+      los Términos y la Privacidad» en /entrar), la primera cita, reserva, boleto o compra del mercado todavía no anotan nada: el abogado dice cuál acto
+      obliga (decisión en REVISION 9e). (9e, 14 nov)
+- [ ] **→ 9f** · **El pie de la web en todas las páginas:** hoy `SiteFooter` sale en las once páginas legales; ponerlo bajo Inicio, la ficha y Buscar cambia
+      las capturas aprobadas de la tubería (necesita tu OK con las capturas nuevas). Y Super Admin › Textos y páginas › Páginas en inglés, con el resto del
+      Super Admin. (9e, 14 nov)
+- [ ] **→ 9b** · **leg9e y alreves9e entran a la regresión del CI:** en local (Postgres 16 + PostGIS, un S3 de mentira, Chrome del sistema, perfil basico)
+      leg9e pasó 72 ✓ dos veces seguidas, alreves9e 18/18, datos9d 61 ✓, alreves8i y alreves9d siguen en verde. fich8i no se corrió entera en local (pide los
+      simuladores de las tiendas y los documentos de Google): su paso 1 (/privacidad) se comprobó aparte con las mismas aserciones. La corrida de verdad es
+      la del CI. (9e, 14 nov)
+- [ ] **→ 9t** · **El índice legal en producción:** el despliegue del sandbox indexa docs/legal/ (deploy.sh 3c-ter); el de producción (todavía no existe)
+      hace lo mismo, sin la semilla 0053: allí la base es producción y nada se publica sin el abogado. (9e, 14 nov)
