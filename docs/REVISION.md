@@ -4627,3 +4627,50 @@ pasa a «revisado» y se publica. En producción la base no deja publicar una p�
     tarjeta, una fila más de Confianza. El diseño traía USR-PAGOS (tarjetas, Wallet, movimientos): por ahora solo las tarjetas.
 - **Prueba:** `alreves9k` 38/38 y los guardianes limpios; la lógica del dinero se probó contra Postgres 16 local (41 comprobaciones: conciliación, 3-D Secure, disputas con archivos,
   renovación, devolver repartido, alertas y las lecturas del Super Admin). `din9k` (los cinco casos del plan y quitar una tarjeta, 390 y 1360) pasó 39 comprobaciones dos veces seguidas con el build servido en local; la corrida de verdad es la del CI.
+
+## Fase 9 · 9i — Ciudades: el asistente de apertura, la regla, la lista de espera, el estado «beta» y los barrios (14 nov)
+- **Qué mirar (en el sandbox; Super Admin 570-555-0199; teléfono y escritorio):**
+  1. **Super Admin › Ciudades:** las cinco con su estado. Hazleton ABIERTA, Allentown, Wilkes-Barre y Scranton PRÓXIMAMENTE y **Reading en BETA** (la semilla). Cada fila dice cuántos
+     esperan, los negocios listos contra la meta y el % de la regla.
+  2. **Toca Reading:** las cifras, el **equipo local** (Raúl, de ficción), la **regla por categoría** (comida, belleza, hogar, fiestas, iglesias: todas en FALTA, Reading no tiene negocios),
+     los **barrios** (6) y los pueblos, y abajo el **historial**. En la computadora ves los 7 pasos del asistente en una línea; en el teléfono, solo el paso que toca («PASO 1 de 7»).
+  3. **La beta:** entra en otro teléfono como **Inés (570-555-9701)** y elige Reading: la ve abierta. Con cualquier otro teléfono de prueba, Reading dice «próximamente» y puedes tocar
+     «Avísame cuando llegue a Reading». En Ciudades › Reading, **«Invitar»** con el teléfono de esa otra cuenta: al recargar, ya la ve abierta; **«Quitar»** y vuelve a «próximamente».
+  4. **El asistente** (si quieres abrir Reading de verdad en el sandbox): confirma los pasos uno por uno, cada uno con su motivo; mira que no se puede saltar ninguno y que el 4 pide un
+     Ciudad manager. En el 6 («Comprobar»), la regla no se cumple: como Admin sale **«Abrir igual»**; las líneas de LAUNCH que nombran a Reading salen como aviso (en el sandbox no
+     frenan; en producción sí). En el 7, **«Abrir Reading»**: en ese momento cualquier persona la ve abierta, y su lista de espera recibe UN aviso (de 9 AM a 9 PM de Reading) en la app;
+     el SMS sale «en modo pruebas».
+  5. **Cerrar:** «Pedir cierre» (elige a qué pasa y escribe el motivo). Tú no puedes aprobarlo: entra como **Beto (570-555-0188)** y toca «Aprobar el cierre».
+  6. **El selector de ciudad** (arriba en la app): escribe «Old Allentown», «Parsons», «Green Ridge» o «Centre Park»: salen los barrios de las otras cuatro ciudades.
+  7. **El Inicio del Super Admin:** la cifra nueva **«LISTA DE ESPERA»** (por ciudad que viene). Cambia la captura aprobada de ese Inicio: **mírala y dime si va** (LAUNCH → 9b).
+- **Decisiones que tomé (si prefieres otra, se cambia):**
+  - **La regla de apertura:** cumple con **30 negocios listos o 300 personas en la lista** (las dos cifras del prototipo) **y al menos 1 negocio en comida, belleza, hogar, fiestas e
+    iglesias** (§6 #17). Se cambia por ciudad en Ciudades (un Admin, con motivo). Si una ciudad no llega, el Admin puede **«Abrir igual»** y queda anotado quién y por qué: es la
+    decisión que el plan deja en tus manos (abrir las cinco juntas, decisión A, o esperar).
+  - **El asistente tiene 7 pasos** (los 6 del prototipo + «Comprobar»); los pasos 1–6 los puede confirmar un Ciudad manager de esa ciudad; **abrir (el 7) y «Abrir igual» solo un Admin**.
+    El paso 4 pide al menos un **Ciudad manager** de esa ciudad (el verificador se anota si está, no se exige).
+  - **«Comprobar» y la LAUNCH:** cuenta las líneas pendientes que **nombran a la ciudad** (con sus renglones de abajo) en la LAUNCH que viaja con el build. **En producción frenan; en el sandbox
+    se anotan y no frenan** (la LAUNCH no llega a cero hasta 9v; si frenara, no se podría probar la apertura). Es conservador: una línea que menciona «Hazleton» de ejemplo también frena
+    a Hazleton. Los **guardianes** no se pueden correr dentro del servidor: el paso anota el commit que corre (los corre el CI antes de que ese commit llegue a la rama).
+  - **Abrir solo con el asistente lo impone la base** (no solo la pantalla): en una base que no es la del sandbox, nadie —ni desde la app ni con una consulta a mano (salvo desactivando los triggers, que es otra cosa)— pasa una ciudad a «on» sin un asistente con sus
+    pasos, ni la baja sin un cierre aprobado por otra persona. En el sandbox, las semillas y las pruebas sí pueden (queda anotado «directo» en el historial).
+  - **Cerrar pide otra persona** también para bajar de abierta a beta o a próximamente, y para cerrar una beta. Quien lo pide puede retirarlo; si la ciudad cambió entre tanto, el pedido se
+    cierra solo.
+  - **La beta:** la ven abierta las cuentas que invites por teléfono (tienen que tener cuenta) y **las cuentas de revisión de Apple y Google activas**, sin invitarlas. Hoy **no le llega un aviso
+    a la persona invitada** (la beta la armas tú en persona); si lo quieres, va con su plantilla (LAUNCH → 9u).
+  - **El aviso de apertura:** un solo aviso por persona y ciudad (aunque esté en la landing y en «Avísame»), **de 9 AM a 9 PM** de la ciudad (más estrecho que las horas de silencio de
+    siempre), por partes de 500 por minuto (Configuración › Ciudades). Canales: la bandeja y push; **SMS solo a quien no tiene la app** (es lo que promete la landing: un mensaje de texto);
+    **correo** a quien lo tiene confirmado. Si alguien responde STOP, no le llega el SMS (como todo SMS).
+  - **El teléfono que pidió su ciudad sin cuenta** («Avísame» del selector sin entrar; LAUNCH L64 pedía decidirlo): **no le escribimos**, porque ese número nunca se confirmó con un código
+    (podría ser de otra persona). Si después entra con ese teléfono, el aviso le llega a su cuenta. Si prefieres mandarle un único SMS con STOP, se cambia.
+  - **Los barrios de Allentown, Wilkes-Barre, Scranton y Reading** son una primera versión: el centro de cada ciudad y 5 barrios con sus calles de referencia, y 14–15 pueblos cercanos, con
+    **puntos aproximados** (a menos de media milla). El equipo local los revisa y corrige en Ciudades › Barrios antes de abrir (LAUNCH → 9t); lo que corrige ya no lo cambia ninguna
+    actualización. El «centro» de cada una es su punto de partida para medir (Allentown: Hamilton y 7th; Wilkes-Barre: Public Square; Scranton: Courthouse Square; Reading: Penn Square).
+  - **Las ciudades que todavía no abren no ofrecen «desde dónde medimos»** en el selector (el prototipo muestra «Ver Reading»); sus barrios salen en la búsqueda de lugar y aparecen solos el día
+    que abren.
+  - **Zona horaria e impuesto** se cambian en Ciudades (solo un Admin, con motivo); el impuesto vale para lo que se cobre desde ese momento y lo confirma el contador (LAUNCH → 9s).
+  - **La fecha de apertura** sigue siendo una sola para las cinco (la de la landing, oculta de fábrica): Ciudades la muestra y lleva a Crecimiento para cambiarla.
+  - **El selector de ciudad del encabezado del Super Admin** (L42) no se hizo aquí: filtrar TODAS las secciones a la vez es la operación del admin (9n). Cada sección ya filtra por las ciudades
+    del rol.
+  - **Piezas sin diseño, compuestas con lo que existe** (hueco #6): el asistente usa la línea de tiempo, las cifras, las notas y los botones del panel; la confirmación con motivo es la de siempre.
+- **Prueba:** `alreves9i` 46/46 y los guardianes limpios; `ciu9i` (61 comprobaciones, 390 y 1360) pasó dos veces seguidas en una base local con el build servido; la corrida de verdad es la del CI.

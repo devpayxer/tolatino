@@ -116,7 +116,7 @@ export async function ciudadDe(userId: string) {
               (u.home_city_changed_at is null or u.home_city_changed_at <= now() - interval '30 days') as ok
          from users u left join cities c on c.id = u.home_city_id where u.id = $1`, [userId]),
     db().query<{ id: string; name: string; negocios: number }>(
-      `select c.id, c.name, (select count(*)::int from businesses b where b.city_id = c.id and b.status = 'active') as negocios from cities c where c.status = 'on' order by c.name`),
+      `select c.id, c.name, (select count(*)::int from businesses b where b.city_id = c.id and b.status = 'active') as negocios from cities c where ciudad_abierta_para(c.id, $1::uuid) order by c.name`, [userId]),
   ]);
   return { ...u.rows[0]!, abiertas: c.rows };
 }
@@ -126,7 +126,7 @@ export async function cambiarCiudad(userId: string, cityId: string): Promise<Res
     if (!u) return no("Entra otra vez.", "Sign in again.");
     if (u.cur === cityId) return no("Ya es tu ciudad.", "It is already your city.");
     if (!u.ok) return no("Tu ciudad se cambia cada 30 días.", "Your city can change every 30 days.");
-    const ok = (await c.query(`select 1 from cities where id = $1 and status = 'on'`, [String(cityId ?? "")])).rowCount;
+    const ok = (await c.query(`select 1 from cities where id = $1 and ciudad_abierta_para(id, $2::uuid)`, [String(cityId ?? ""), userId])).rowCount;
     if (!ok) return no("Esa ciudad todavía no está abierta.", "That city is not open yet.");
     await c.query(`update users set home_city_id = $2, home_city_changed_at = now() where id = $1`, [userId, cityId]);
     await c.query(`insert into account_changes (user_id, kind, "from", "to", by) values ($1, 'city', $2, $3, 'user')`, [userId, u.cur, cityId]);

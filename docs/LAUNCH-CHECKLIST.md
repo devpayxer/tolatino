@@ -39,8 +39,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9t** · **Código de arranque del primer Admin:** su huella vive en `lib/admin.ts` y solo sirve mientras no exista
       ningún Admin. En producción se genera uno nuevo (otra huella) y se usa el día de la apertura.
 - [ ] **→ 9n** · **Buscador global ⌘K y campana con colas:** hoy llevan a Usuarios y a «Colas · Fase 1». — _9a (11 nov): la campana abre Colas reales con su cuenta y la de atrasados (app/admin/ui.tsx onBell, casos.n). Falta el buscador global ⌘K (hoy solo busca usuarios)._
-- [ ] **→ 9i** · **Selector de ciudad del admin:** hoy solo «Todas»; filtra por ciudad cuando haya datos por ciudad (Fase 1). — _9a (11 nov): el selector del encabezado sigue en «Todas» (app/admin/ui.tsx); filtra por ciudad con Ciudades._
-- [ ] **→ 9i** · **Abrir/cerrar ciudad** (asistente de 6 pasos) en Fase 9; **editar catálogo** con «afecta a N negocios» en Fase 1.
+- [ ] **→ 9n** · **Selector de ciudad del admin:** hoy solo «Todas»; filtra por ciudad cuando haya datos por ciudad (Fase 1). — _9a (11 nov): el selector del encabezado sigue en «Todas» (app/admin/ui.tsx); filtra por ciudad con Ciudades._ — _9i (14 nov): Ciudades ya está completo (y cada sección filtra por las ciudades del rol: un Ciudad manager solo ve las suyas). El selector del encabezado filtra TODAS las secciones a la vez: es tocar las consultas de cada sección del Super Admin, la operación del admin de 9n; con cinco ciudades, en el teléfono no caben como segmentos (el diseño muestra «Hazleton · Todas»)._
+- [x] **Abrir/cerrar ciudad** (asistente de 6 pasos) en Fase 9; **editar catálogo** con «afecta a N negocios» en Fase 1. — **✓ 9i (14 nov):** Super Admin › Ciudades con el asistente de 7 pasos (los 6 del prototipo + «Comprobar»: la regla, las líneas de LAUNCH de la ciudad y el commit), cada paso con su evidencia, solo avanza (la base: `city_launch_steps_reglas`); abrir solo por el asistente (`cities_estado` con `tl.apertura`) y cerrar con motivo y otra persona (`city_close_requests`, `tl.cierre`); guardián `ciudadConAsistente`; `ciu9i` lo prueba de punta a punta (lib/ciudades/apertura.ts, app/admin/Ciudades.tsx). «Afecta a N negocios» del catálogo ya estaba (Fase 1, Catálogo).
 - [ ] **→ 9m** · **Inicio — secciones ocultas hasta tener datos reales (bloque 1c):** Hoy en el barrio, Esta semana
   (eventos, Fase 6), Comunidad (Fase 5) y el mini mapa de la columna derecha (mapa propio). Cada una se
   enciende en el Inicio cuando su módulo exista; el prototipo manda en su forma.
@@ -63,14 +63,23 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9m** · **Mapa — tope de 400 negocios:** el mapa trae los 400 más cercanos al punto (pines y lista). Cuando una ciudad pase
   de eso dentro de 2,6× el radio, pedir los pines por el recuadro visible al arrastrar. Mini mapas del Inicio y de la
   ficha («Cómo llegar» con el mapa propio) siguen pendientes; «Cómo llegar» abre el mapa del teléfono.
-- [ ] **→ 9i** · **Ciudad — lo que falta (bloque 1f-2):** barrios y pueblos cercanos de Allentown, Wilkes-Barre, Scranton y
+- [x] **Ciudad — lo que falta (bloque 1f-2):** barrios y pueblos cercanos de Allentown, Wilkes-Barre, Scranton y
   Reading (el prototipo solo trae los de Hazleton; se cargan desde Super Admin › Ciudades antes de abrir); filas de
   «Casa / Trabajo» para medir desde tus direcciones (llegan con Mi cuenta › Direcciones; hasta entonces no se ofrece
   «Entra para medir desde tu casa»); «Qué es Mi ciudad» para quien no entró (cuando exista el Centro de ayuda);
   la cifra de eventos en el radio (Fase 6); «Lo que más buscan los vecinos de X» en Próximamente (sale oculto hasta
   tener datos reales de `city_waitlist.wants`); el SMS «tu ciudad abrió» (Fase 2 + asistente de abrir ciudad, Fase 9);
-  el teléfono de quien pide sin cuenta no se verifica con código (tope por IP): decidir antes de enviar SMS.
-- [ ] **→ 9i** · **Ciudades en memoria 60 s:** abrir o cerrar una ciudad desde el Super Admin se nota en hasta un minuto.
+  el teléfono de quien pide sin cuenta no se verifica con código (tope por IP): decidir antes de enviar SMS. — **✓ 9i (14 nov):** los barrios (6 por
+  ciudad) y los pueblos cercanos de las cuatro en `packages/db/seeds/zonas.sql` (generado de `scripts/catalogo/barrios-ciudades.json`; corre en todos los
+  entornos), y el equipo los corrige, agrega o retira en Super Admin › Ciudades › Barrios (lo que cambia el equipo, la semilla ya no lo pisa; `ciu9i`: los
+  barrios de las cinco en el selector); el aviso «tu ciudad abrió» (en la app, push, SMS si no tiene la app, correo verificado; una vez, de día;
+  `lib/ciudades/aviso.ts`, guardián `listaAvisadaUnaVez`); el teléfono sin cuenta: **decidido no escribirle** (REVISION 9i) — se le avisa si ese
+  teléfono ya tiene cuenta; la cifra de eventos en el radio ya estaba (6b). Lo que queda pasó a la línea de abajo (→ 9m).
+- [ ] **→ 9m** · **Mi ciudad — lo que queda de 1f-2 (9i, 14 nov):** filas de «Casa / Trabajo» para medir desde tus direcciones (con Mi cuenta ›
+  Direcciones; hasta entonces no se ofrece «Entra para medir desde tu casa»); «Qué es Mi ciudad» para quien no entró (un enlace a la ayuda
+  `ciudades-que-abren`, que ya existe); «Lo que más buscan los vecinos» en Próximamente (sigue oculto: nada llena `city_waitlist.wants` salvo «negocio»
+  de la landing).
+- [x] **Ciudades en memoria 60 s:** abrir o cerrar una ciudad desde el Super Admin se nota en hasta un minuto. — **✓ 9i (14 nov):** `NOTIFY 'ciudades'` (0139) en cada cambio de `cities`, `zones` y `city_beta_invites`; cada proceso lo escucha (lib/cambios-config.ts) y olvida su copia al momento (los 60 s quedan de respaldo si la escucha se corta); quién entra a una beta no se guarda en memoria. Guardián `ciudadAlInstante`; `ciu9i`: al abrir Reading, la otra persona la ve abierta al recargar.
 - [x] **Banda de emergencia de Hogar:** oculta hasta que exista el flujo «Pedir ayuda ahora»
   (APP-NEG-HOGAR-EMERGENCIA). Las de Doctores y Profesionales sí están (filtran la lista). — **✓ 9a (11 nov):** Emergencia 24/7 de Hogar construida en 4e (app/(app)/emergencia, lib/solicitudes.ts vencerEmergencias; plantillas em_ok, em_nadie, em_tomada); prueba em4e.
 - [x] **Negocios — secciones ocultas hasta tener datos reales:** «Hoy en el barrio» (módulo Novedades) y
@@ -1653,10 +1662,13 @@ en el momento. Se marca solo cuando está hecho de verdad.
       decía «Se construye en la Fase 9»). Si la captura aprobada del Inicio del admin cambia más de lo tolerado, se aprueba la nueva (REVISION 9h). No se corrió aquí. (9h, 14 nov)
 - [ ] **→ 9q** · **El mensaje de texto que promete la landing** («Te avisamos por mensaje de texto cuando abra tu zona. Nada más.»): sale con Telnyx (9q); el guardián `promesaSms` la tiene
       anotada (`lib/textos-acceso.ts`). La landing sale al público en 9t, después de 9q. (9h, 14 nov)
-- [ ] **→ 9i** · **Avisar a la lista el día que abre la ciudad:** quien se anota queda en `city_waitlist` (source `coming_soon`, la misma «Avísame» de siempre) y en `early_access`
-      (`notified_at` sin usar todavía). El asistente de apertura (9i) manda ese único mensaje y marca `notified_at`. (9h, 14 nov)
-- [ ] **→ 9i** · **El Inicio del Super Admin con la lista de espera** (§4 9h): la lista está en Crecimiento › Lista de espera y en Ciudades; no se puso en el Inicio del admin porque cambia su
-      captura aprobada (`pruebas/visual/admin-hoy`). Va con el asistente de Ciudades (9i), con tu OK sobre la captura nueva. (9h, 14 nov)
+- [x] **Avisar a la lista el día que abre la ciudad:** quien se anota queda en `city_waitlist` (source `coming_soon`, la misma «Avísame» de siempre) y en `early_access`
+      (`notified_at` sin usar todavía). El asistente de apertura (9i) manda ese único mensaje y marca `notified_at`. (9h, 14 nov) — **✓ 9i (14 nov):** el paso 7 abre y el barrido avisa
+      por partes (`ciudad_aviso_lote`), de 9 AM a 9 PM de la ciudad, una vez por persona y ciudad (`city_notices`); marca `city_waitlist.notified_at` + `notice_result` y
+      `early_access.notified_at`. `ciu9i`: de noche no sale, de día sí, otro barrido no repite, sin cuenta no se escribe.
+- [x] **El Inicio del Super Admin con la lista de espera** (§4 9h): la lista está en Crecimiento › Lista de espera y en Ciudades; no se puso en el Inicio del admin porque cambia su
+      captura aprobada (`pruebas/visual/admin-hoy`). Va con el asistente de Ciudades (9i), con tu OK sobre la captura nueva. (9h, 14 nov) — **✓ 9i (14 nov):** «LISTA DE ESPERA» en las cifras del
+      Inicio (por ciudad que viene) y el aviso «CIERRE DE CIUDAD POR APROBAR». La captura nueva de `admin-hoy` espera tu OK (REVISION 9i; LAUNCH «Fase 9 · 9i» → 9b).
 - [ ] **→ 9k** · **Pagar la recompensa del promotor a la Wallet:** el negocio traído califica solo (`promotor_operaciones` pedidos o citas hechos) y la recompensa queda anotada
       (`business_referrals.reward_cents`, «pendiente de pago»); pasar a «pagado» con el movimiento de Wallet llega con el dinero real (9k). (9h, 14 nov)
 - [ ] **→ 9m** · **Destacar eventos:** `featured` lleva solo negocios (Negocios › Destacados). Fijar un evento en Eventos de la ciudad (el modelo Featured también lo pide) va con lo de
@@ -1686,3 +1698,20 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9b** · **din9k y alreves9k entran a la corrida dirigida del CI** (y a la confirmación completa después de 9k, decisión AD): aquí no hay Docker; alreves9k 38/38, la lógica del
       dinero contra Postgres 16 local (41 ✓) y din9k 39 ✓ dos veces seguidas con el build servido en local (perfil basico, S3 de mentira, Chrome del sistema); la corrida
       de verdad es la del CI. El contrato con stripe-mock (cliente con el doble de la base, intento, huella, delDia, archivos) también corre allí. (9k, 14 nov)
+
+## Fase 9 · 9i — Ciudades: el asistente de apertura, la regla, la lista de espera, el estado «beta» y los barrios de las cinco (14 nov)
+- [ ] **→ 9b** · **ciu9i y alreves9i entran a la regresión del CI** (y a los 9 dispositivos): en local (Postgres 16 + PostGIS de la máquina, sin Docker, Chrome del sistema, el build
+      standalone en :3149) `ciu9i` pasó dos veces seguidas (61 ✓) y `alreves9i` cazó 46/46; la corrida de verdad es la del CI. (9i, 14 nov)
+- [ ] **→ 9b** · **`pruebas/visual` · admin-hoy:** el Inicio del Super Admin suma la cifra «LISTA DE ESPERA» (y «Ciudades» cuenta beta con próximamente): si la captura aprobada cambia más de
+      lo tolerado, se aprueba la nueva con tu OK (REVISION 9i). No se corrió aquí. (9i, 14 nov)
+- [ ] **→ Paquete 9-4** · **El equipo local de cada ciudad** (paso 4 del asistente): un Ciudad manager por ciudad, con su nombre y su teléfono, lo da el fundador. En el sandbox, Reading tiene a Raúl
+      (de ficción, semilla 0059); las otras tres que vienen no tienen a nadie y su asistente se queda en el paso 4 hasta entonces. (9i, 14 nov)
+- [ ] **→ 9t** · **Los barrios y los pueblos de Allentown, Wilkes-Barre, Scranton y Reading revisados en el lugar:** sus puntos son aproximados (a menos de media milla); el equipo
+      local los confirma o corrige en Super Admin › Ciudades › Barrios antes de abrir (lo que corrige ya no lo pisa la semilla). (9i, 14 nov)
+- [ ] **→ 9s** · **El impuesto de cada ciudad lo confirma el contador:** las cinco nacen en 6 % (PA, 0005); Ciudades deja cambiarlo (Admin, con motivo) y vale para lo que se cobre desde ese
+      momento. (9i, 14 nov)
+- [ ] **→ 9u** · **Hazleton en «beta» para la beta cerrada (OK-2):** en producción se pasa con Super Admin › Ciudades › «Pasar a beta» y se invita por teléfono a los vecinos y negocios de
+      confianza; las cuentas de revisión de Apple y Google entran solas (`review_accounts` activas). Hoy no se le avisa a la persona invitada (la beta la arma el fundador en persona):
+      si se quiere un aviso «te invitamos a la beta», va con su plantilla. (9i, 14 nov)
+- [ ] **→ 9v** · **Abrir las cinco con el asistente (OK-3):** cada ciudad pasa sus 7 pasos; la que no llegue a la regla (30 negocios listos o 300 en la lista, y al menos uno en comida,
+      belleza, hogar, fiestas e iglesias) se abre con «Abrir igual» y su motivo solo si el fundador lo decide (§6 #17); la LAUNCH de esa ciudad tiene que estar en cero. (9i, 14 nov)

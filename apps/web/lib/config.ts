@@ -80,7 +80,9 @@ export type ClaveConfig =
   // 9k · Dinero: pagos al banco (martes), la conciliación diaria, las alertas, 3-D Secure y la señal de la tarjeta (0141; Configuración › Dinero)
   | "pagos_banco_dia" | "conciliacion_hora" | "dinero_alerta_intentos" | "disputa_alerta_dias" | "verificacion_min" | "tarjeta_cuentas_senal"
   // 9l · Avisos y canales: reintentos del SMS, el tope global de remitentes, STOP, Soporte por WhatsApp, pedido tarde y las retenciones de SMS y correo (0142)
-  | "sms_reintentos" | "sms_reintento_min" | "canal_remitentes_min" | "canal_stop_propia" | "soporte_whatsapp" | "pedido_tarde_min" | "retener_sms_dias" | "retener_correo_entrante_dias";
+  | "sms_reintentos" | "sms_reintento_min" | "canal_remitentes_min" | "canal_stop_propia" | "soporte_whatsapp" | "pedido_tarde_min" | "retener_sms_dias" | "retener_correo_entrante_dias"
+  // 9i · Ciudades: el aviso de apertura a la lista de espera, por partes (0139; Configuración › Ciudades)
+  | "ciudad_aviso_lote";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;
@@ -112,7 +114,7 @@ export async function valores<K extends ClaveConfig>(...ks: K[]): Promise<Record
 export const cfgSql = (k: ClaveConfig) => `cfg_int('${k}')`;
 
 /* ── Configuración (Super Admin › Sistema › Configuración) ── */
-export type Seccion = "comunidad" | "gamificacion" | "salud_pro" | "noche" | "edu" | "fe_inm_autos" | "eventos" | "compa" | "soporte" | "apps" | "retencion" | "crecimiento" | "dinero" | "avisos";
+export type Seccion = "comunidad" | "gamificacion" | "salud_pro" | "noche" | "edu" | "fe_inm_autos" | "eventos" | "compa" | "soporte" | "apps" | "retencion" | "crecimiento" | "dinero" | "avisos" | "ciudades";
 export type FilaConfig = {
   key: ClaveConfig; seccion: Seccion; label: Bi; help: Bi | null; unidad: Bi; min: number; max: number; def: number; v: number; cambiado: boolean;
   editable: boolean; bloqueo: Bi | null; editIn: string | null; at: string | null; quien: string | null;

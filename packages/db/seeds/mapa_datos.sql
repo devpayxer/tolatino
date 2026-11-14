@@ -323,7 +323,20 @@ insert into data_map (tabla, columna, rol, accion, set_sql, pendiente_sql, donde
   ('wa_template_events', 'actor_id', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3190),
   ('support_email_in', 'user_id', 'persona', 'vaciar', '"subject" = null, "body" = null, "from_enc" = null', '"subject" is not null or "body" is not null or "from_enc" is not null', null, null, 'correos_a_soporte', 'no', null, false, 3200),
   ('email_unsubscribes', 'user_id', 'persona', 'guardar', null, null, null, '{"es":"Lo pide la ley: recibos, impuestos y disputas.","en":"The law requires it: receipts, taxes and disputes."}'::jsonb, null, 'no', null, false, 3210),
-  ('sms_outbox', 'to_hash', 'telefono', 'guardar', null, null, null, '{"es":"Registro cifrado de los mensajes de texto que se mandaron (reglas de los SMS): el teléfono y el texto se vacían a los 90 días (retener_sms_dias).","en":"Encrypted record of the text messages that were sent (SMS rules): the phone and the text are cleared after 90 days (retener_sms_dias)."}'::jsonb, null, 'no', null, false, 3220)
+  ('sms_outbox', 'to_hash', 'telefono', 'guardar', null, null, null, '{"es":"Registro cifrado de los mensajes de texto que se mandaron (reglas de los SMS): el teléfono y el texto se vacían a los 90 días (retener_sms_dias).","en":"Encrypted record of the text messages that were sent (SMS rules): the phone and the text are cleared after 90 days (retener_sms_dias)."}'::jsonb, null, 'no', null, false, 3220),
+  ('zones', 'edited_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3230),
+  ('zones', 'retired_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3240),
+  ('city_open_rules', 'updated_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3250),
+  ('city_launches', 'started_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3260),
+  ('city_launches', 'cancelled_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3270),
+  ('city_launch_steps', 'done_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3280),
+  ('city_close_requests', 'requested_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3290),
+  ('city_close_requests', 'decided_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3300),
+  ('city_status_log', 'actor', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3310),
+  ('city_beta_invites', 'user_id', 'persona', 'borrar', null, null, null, null, 'invitaciones_a_la_beta', 'no', null, false, 3320),
+  ('city_beta_invites', 'invited_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3330),
+  ('city_beta_invites', 'revoked_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3340),
+  ('city_notices', 'user_id', 'persona', 'borrar', null, null, null, null, 'avisos_de_apertura', 'no', null, false, 3350)
 on conflict (tabla, columna) do update set rol = excluded.rol, accion = excluded.accion, set_sql = excluded.set_sql, pendiente_sql = excluded.pendiente_sql, donde_sql = excluded.donde_sql,
   porque = excluded.porque, exporta = excluded.exporta, fusion = excluded.fusion, fn = excluded.fn, derivados = excluded.derivados, orden = excluded.orden;
 -- Lo que salió del mapa sale de la tabla (es configuración: el mapa es la fuente).
@@ -649,6 +662,19 @@ delete from data_map d where not exists (select 1 from (values
   ('wa_template_events', 'actor_id'),
   ('support_email_in', 'user_id'),
   ('email_unsubscribes', 'user_id'),
-  ('sms_outbox', 'to_hash')
+  ('sms_outbox', 'to_hash'),
+  ('zones', 'edited_by'),
+  ('zones', 'retired_by'),
+  ('city_open_rules', 'updated_by'),
+  ('city_launches', 'started_by'),
+  ('city_launches', 'cancelled_by'),
+  ('city_launch_steps', 'done_by'),
+  ('city_close_requests', 'requested_by'),
+  ('city_close_requests', 'decided_by'),
+  ('city_status_log', 'actor'),
+  ('city_beta_invites', 'user_id'),
+  ('city_beta_invites', 'invited_by'),
+  ('city_beta_invites', 'revoked_by'),
+  ('city_notices', 'user_id')
 ) v (tabla, columna) where v.tabla = d.tabla and v.columna = d.columna);
 commit;

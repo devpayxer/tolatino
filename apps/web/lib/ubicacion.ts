@@ -11,13 +11,15 @@ import type { Punto } from "./punto";
 
 export type Zona = { id: string; es: string; en: string; calleEs: string; calleEn: string; lat: number; lng: number };
 export type Ciudad = {
-  id: string; name: string; state: string; status: "on" | "soon" | "off"; lat: number; lng: number;
+  id: string; name: string; state: string; status: "on" | "beta" | "soon" | "off"; lat: number; lng: number;
   radios: number[]; radio: number; zips: string[]; meta: number; towns: { n: string; lat: number; lng: number }[]; zonas: Zona[];
 };
 export type Ubicacion = Punto & { c: Ciudad; ctr: string; gps: boolean; porDefecto: boolean };
 
 let cache: { at: number; ciudades: Ciudad[] } | null = null, escucha = false;
-/* Ciudades y barrios (en memoria; 9b-3: un cambio en cities la olvida al momento en todos los procesos, lib/cambios-config.ts; 60 s de respaldo). */
+/* Ciudades y barrios (en memoria; 9b-3: un cambio en cities la olvida al momento en todos los procesos, lib/cambios-config.ts; 60 s de respaldo).
+   9i · Con NOTIFY 'ciudades' (0139): abrir, cerrar, pasar a beta o cambiar un barrio se nota al instante (L71; guardián ciudadAlInstante). El estado
+   «beta» sale tal cual: lo que ve cada persona lo decide vista() (invitada → abierta; el resto → próximamente). Los barrios retirados no salen. */
 export async function ciudades(): Promise<Ciudad[]> {
   if (!escucha) { escucha = true; alCambiarConfig(() => { cache = null; }); }
   if (cache && Date.now() - cache.at < 60_000) return cache.ciudades;
@@ -30,11 +32,20 @@ export async function ciudades(): Promise<Ciudad[]> {
     db().query<Zona & { city: string }>(
       `select id, city_id as city, name->>'es' as es, name->>'en' as en, coalesce(streets->>'es', '') as "calleEs",
               coalesce(streets->>'en', '') as "calleEn", st_y(center::geometry) as lat, st_x(center::geometry) as lng
-         from zones where center is not null order by city_id, sort`),
+         from zones where center is not null and retired_at is null order by city_id, sort`),
   ]);
   const ciudades = c.rows.map((x) => ({ ...x, zonas: z.rows.filter((r) => r.city === x.id).map(({ city: _c, ...r }) => (void _c, r)) }));
   cache = { at: Date.now(), ciudades };
   return ciudades;
+}
+
+/* 9i · Las ciudades como las ve ESTA persona: una ciudad en «beta» es abierta para quien está invitado (o es una cuenta de revisión activa) y
+   «próximamente» para todos los demás (ciudad_abierta_para de 0139, la misma regla que usan las acciones del servidor). Sin beta, no consulta nada.
+   Nunca se guarda en memoria: una invitación nueva o quitada vale en la siguiente página (guardián betaSoloInvitados). */
+export async function vista(cs: Ciudad[], userId: string | null | undefined): Promise<Ciudad[]> {
+  if (!cs.some((c) => c.status === "beta")) return cs;
+  const dentro = new Set(userId ? (await db().query<{ id: string }>(`select id from cities where status = 'beta' and ciudad_abierta_para(id, $1::uuid)`, [userId])).rows.map((r) => r.id) : []);
+  return cs.map((c) => (c.status === "beta" ? { ...c, status: dentro.has(c.id) ? "on" : "soon" } : c));
 }
 
 /* El centro de la ciudad es su barrio «centro» si lo tiene (Broad St y Wyoming St), si no el centro guardado. */
@@ -74,7 +85,8 @@ export function resolver(cs: Ciudad[], p: Pedida): Ubicacion {
 
 /* La ubicación de esta visita: cookie del dispositivo; si no hay, la guardada en la cuenta; si no, por defecto. */
 export async function ubicacion(usuario?: { id: string } | null): Promise<Ubicacion> {
-  const [cs, jar] = await Promise.all([ciudades(), cookies()]);
+  const [cs0, jar] = await Promise.all([ciudades(), cookies()]);
+  const cs = await vista(cs0, usuario?.id);
   let p = leer(jar.get(COOKIE)?.value);
   if (!p.c && usuario) {
     const r = (await db().query<{ c: string | null; z: string | null; r: number | null }>(

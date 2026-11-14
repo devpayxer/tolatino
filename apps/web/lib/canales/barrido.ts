@@ -80,24 +80,6 @@ export async function pruebaPro(): Promise<number> {
   return n;
 }
 
-/* «To'Latino abrió en {ciudad}» (L345; la promesa de la landing y de «Pide tu ciudad»: UN mensaje, el día que abre): quien está en la lista de espera de una
-   ciudad que ya está abierta (cities.status = 'on') y todavía no recibió el aviso. Una vez por persona y ciudad (notified_at + notif_once): si el asistente de
-   apertura (9i) ya avisó y marcó la lista, aquí no sale nada. */
-export async function aperturas(): Promise<number> {
-  const L = (await db().query<{ id: string; uid: string; city: string; ciudad: string }>(
-    `select w.id::text, w.user_id::text as uid, c.id as city, c.name as ciudad from city_waitlist w join cities c on c.id = w.city_id
-      where c.status = 'on' and w.user_id is not null and w.removed_at is null and w.notified_at is null order by w.id limit 300`)).rows;
-  const base = (process.env.TOLATINO_URL || "https://pruebas.tolatino.com").replace(/\/$/, "");
-  let n = 0;
-  for (const w of L) {
-    const r = await db().query(`update city_waitlist set notified_at = now() where id = $1::bigint and notified_at is null`, [w.id]);
-    if (!r.rowCount) continue;
-    await db().query(`update early_access set notified_at = now() where user_id = $1::uuid and city_id = $2 and notified_at is null`, [w.uid, w.city]).catch(() => undefined);
-    if (await una(`ciudad_abierta:${w.city}:${w.uid}`)) { await avisar(w.uid, "ciudad_abierta", { ciudad: w.ciudad, enlace: `${base}/` }, { href: "/", ref: ["city", w.city] }); n++; }
-  }
-  return n;
-}
-
 /* Los lunes desde las 9 AM (hora de la ciudad); una vez por semana ISO. */
 export async function resumenSemanal(): Promise<{ negocios: number; vecinos: number }> {
   const B = (await db().query<{ b: string; n: string; semana: string; vistas: number; ops: number; resenas: number }>(
@@ -150,5 +132,5 @@ async function correoSemanal(u: { id: string; email: string; lang: string; city:
 
 /* El barrido de 9l: todo lo de arriba (el único camino de los SMS y la retención del correo a Soporte corren aparte en lib/barrido.ts). */
 export async function barrerCanales9l() {
-  return { tarde: await pedidosTarde(), mesas: await recordatorioMesas(), rec: await recomendados(), busq: await busquedas(), pro: await pruebaPro(), abre: await aperturas(), semana: await resumenSemanal() };
+  return { tarde: await pedidosTarde(), mesas: await recordatorioMesas(), rec: await recomendados(), busq: await busquedas(), pro: await pruebaPro(), semana: await resumenSemanal() };
 }

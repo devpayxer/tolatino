@@ -264,6 +264,14 @@
     "wa_template_events": { "equipo": ["actor_id"] },
     "support_email_in": { "reglas": [ { "col": "user_id", "accion": "vaciar", "exporta": "correos_a_soporte", "fusion": "no", "set": { "subject": "null", "body": "null", "from_enc": "null" } } ] },
     "email_unsubscribes": { "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "ley", "fusion": "no" } ] },
-    "sms_outbox": { "reglas": [ { "col": "to_hash", "accion": "guardar", "porque": "envios", "telefono": true, "fusion": "no" } ] }
+    "sms_outbox": { "reglas": [ { "col": "to_hash", "accion": "guardar", "porque": "envios", "telefono": true, "fusion": "no" } ] },
+    "zones": { "equipo": ["edited_by", "retired_by"] },
+    "city_open_rules": { "equipo": ["updated_by"] },
+    "city_launches": { "equipo": ["started_by", "cancelled_by"] },
+    "city_launch_steps": { "equipo": ["done_by"] },
+    "city_close_requests": { "equipo": ["requested_by", "decided_by"] },
+    "city_status_log": { "equipo": ["actor"] },
+    "city_beta_invites": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "invitaciones_a_la_beta", "fusion": "no" } ], "equipo": ["invited_by", "revoked_by"] },
+    "city_notices": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "avisos_de_apertura", "fusion": "no" } ] }
   }
 }

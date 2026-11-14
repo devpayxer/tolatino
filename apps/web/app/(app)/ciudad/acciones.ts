@@ -3,10 +3,11 @@ import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { dispositivo, ipCliente, mismoOrigen, normalizarTelefono, yo } from "@/lib/cuenta";
 import { millas, type LL } from "@/lib/mapa-geo";
-import { centroDe, ciudades, COOKIE_LOC, escribir, porDefecto, resolver, ubicacion } from "@/lib/ubicacion";
+import { centroDe, ciudades, COOKIE_LOC, escribir, porDefecto, resolver, ubicacion, vista } from "@/lib/ubicacion";
 import { buscarLugar, ciudadDeTexto, cuantosPiden, masPedidas, medir, miCiudad, misPedidos, resumenCiudades, telefonoBonito } from "@/lib/ciudad";
 
-/* Acciones de APP-CIUDAD. El servidor valida todo; la pantalla solo pide. */
+/* Acciones de APP-CIUDAD. El servidor valida todo; la pantalla solo pide.
+   9i · Una ciudad en «beta» se ve abierta solo para quien está invitado (vista de lib/ubicacion.ts); para los demás es «próximamente» y se puede pedir. */
 
 const UN_ANO = 365 * 86400;
 const ok = (x: unknown): x is number => typeof x === "number" && Number.isFinite(x);
@@ -14,13 +15,13 @@ const ok = (x: unknown): x is number => typeof x === "number" && Number.isFinite
 /* Elegir la ciudad que estoy viendo: desde dónde (centro, barrio, mi ubicación) y hasta dónde. */
 export async function elegirUbicacion(p: { c: string; z: string; r: number; g?: [number, number] | null }) {
   if (!(await mismoOrigen())) return { ok: false as const };
-  const cs = await ciudades();
+  const me = await yo();
+  const cs = await vista(await ciudades(), me?.id);
   const g = p.g && ok(p.g[0]) && ok(p.g[1]) ? ([p.g[0], p.g[1]] as [number, number]) : undefined;
   const u = resolver(cs, { c: String(p.c ?? ""), z: String(p.z ?? ""), r: Number(p.r), g });
   const jar = await cookies();
   jar.set(COOKIE_LOC, escribir({ ciudad: u.ciudad, ctr: u.ctr, rad: u.rad, g: u.gps ? [u.lat, u.lng] : null }),
     { path: "/", maxAge: UN_ANO, sameSite: "lax", httpOnly: true });
-  const me = await yo();
   // En la cuenta se guarda que mide «desde mi ubicación», nunca el punto.
   if (me) await db().query(`update users set viewing_city_id = $2, viewing_center = $3, viewing_radius_mi = $4 where id = $1`, [me.id, u.ciudad, u.ctr, u.rad]);
   return { ok: true as const, abierta: u.c.status === "on" };
@@ -30,7 +31,7 @@ export async function elegirUbicacion(p: { c: string; z: string; r: number; g?: 
 // solo lectura
 export async function dondeEstoy(lat: number, lng: number) {
   if (!ok(lat) || !ok(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
-  const cs = await ciudades(), p: LL = [lat, lng];
+  const cs = await vista(await ciudades(), (await yo())?.id), p: LL = [lat, lng];
   const cerca = [...cs].map((c) => ({ c, d: millas(p, centroDe(c)) })).sort((a, b) => a.d - b.d);
   const abierta = cerca.find((x) => x.c.status === "on");
   const elegida = abierta && abierta.d <= 30 ? abierta : cerca[0]!;
@@ -43,7 +44,7 @@ export async function dondeEstoy(lat: number, lng: number) {
 /* Lo que entra con un punto y un radio (para el mapa del selector mientras se elige). */
 // solo lectura
 export async function medirBorrador(p: { c: string; z: string; r: number; g?: [number, number] | null }) {
-  const cs = await ciudades();
+  const cs = await vista(await ciudades(), (await yo())?.id);
   const g = p.g && ok(p.g[0]) && ok(p.g[1]) ? ([p.g[0], p.g[1]] as [number, number]) : undefined;
   const u = resolver(cs, { c: String(p.c ?? ""), z: String(p.z ?? ""), r: Number(p.r), g });
   if (u.c.status !== "on") return { lat: u.lat, lng: u.lng, biz: 0, evt: 0, prev: null, towns: [], dots: [] };
@@ -101,7 +102,8 @@ export async function esperarCiudad(ciudad: string): Promise<{ ok: true; on: boo
   if (!(await mismoOrigen())) return { ok: false };
   const me = await yo();
   if (!me) return { ok: false, entrar: true };
-  const c = (await ciudades()).find((x) => x.id === ciudad && x.status === "soon");
+  // 9i · También una ciudad en «beta» para quien no está invitado (la ve «próximamente»): el día que abra, le llega el aviso.
+  const c = (await vista(await ciudades(), me.id)).find((x) => x.id === ciudad && x.status === "soon");
   if (!c) return { ok: false };
   const quitado = await db().query(`update city_waitlist set removed_at = now() where user_id = $1 and city_id = $2 and removed_at is null`, [me.id, c.id]);
   if (!quitado.rowCount) await db().query(`insert into city_waitlist (city_id, user_id, source) values ($1, $2, 'coming_soon') on conflict do nothing`, [c.id, me.id]);
@@ -112,7 +114,8 @@ export async function esperarCiudad(ciudad: string): Promise<{ ok: true; on: boo
 // solo lectura
 export async function abrirSelector() {
   const me = await yo();
-  const [cs, dev] = await Promise.all([ciudades(), dispositivo(false)]);
+  const [cs0, dev] = await Promise.all([ciudades(), dispositivo(false)]);
+  const cs = await vista(cs0, me?.id);
   const [u, res, mios, sugeridas, mi] = await Promise.all([ubicacion(me), resumenCiudades(cs), misPedidos(me?.id ?? null, dev), masPedidas(), miCiudad(me?.id ?? null, cs)]);
   const def = porDefecto(cs);
   return {

@@ -27,6 +27,8 @@ const CSP = [
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname, "../../"),
+  // 9i · El paso «Comprobar» del asistente de apertura lee las líneas pendientes de la LAUNCH-CHECKLIST que viaja con el build (lib/ciudades/launch.ts).
+  outputFileTracingIncludes: { "/admin/ciudades": ["../../docs/LAUNCH-CHECKLIST.md"] },
   transpilePackages: ["@tolatino/ui"],
   poweredByHeader: false,
   // 8f · Mapas de fuente del navegador para simbolizar los errores EN EL SERVIDOR (lib/errores/simbolizar.ts). Nunca se sirven: el paso que

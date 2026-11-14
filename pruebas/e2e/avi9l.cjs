@@ -278,17 +278,17 @@ const VARS = { ultimos: '0123', enlace: 'https://pruebas.tolatino.com/soporte', 
     ok(!!orden, 'hay una orden de boletos pagada con un boleto vivo');
     const [opId, holder, code] = orden.split('|');
     const antesU = sql(`select coalesce(email::text, '') || '|' || coalesce(email_verified, false) || '|' || coalesce(notif_prefs->>'mailR', '') from users where id = '${holder}'`);
-    sql(`update users set email = 'boletos-${RUN}@prueba9l.tolatino.invalid', email_verified = true where id = '${holder}'`);
-    // Wallet disponible: el interruptor y las credenciales (si la corrida no tiene las de wal8g, unas de la prueba que se retiran al final).
     const puestas = [];
-    for (const [kind, meta2] of [['pass_type_cert', '{\"pass_type_id\":\"pass.com.tolatino.boletos\",\"equipo\":\"TL12345678\"}'], ['google_wallet_sa', '{\"emisor\":\"3388000000000000000\"}']]) {
-      if (sql(`select count(*) from store_secrets where kind = '${kind}' and retired_at is null`) !== '0') continue;
-      puestas.push(sql(`insert into store_secrets (kind, version, blob_enc, meta, fingerprint, size_bytes, uploaded_by, uploaded_at) values ('${kind}', (select coalesce(max(version), 0) + 1 from store_secrets where kind = '${kind}'), '\\x00'::bytea,
-                         '${meta2}'::jsonb, 'prueba-avi9l', 1, '${AU}', now()) returning id`).split('\n').find((x) => /^\d+$/.test(x)));
-    }
     const flags0 = sql(`select string_agg(key || '=' || enabled, ',') from feature_flags where key in ('app.wallet.apple', 'app.wallet.google')`);
-    sql(`update feature_flags set enabled = true where key in ('app.wallet.apple', 'app.wallet.google')`);
     try {
+      sql(`update users set email = 'boletos-${RUN}@prueba9l.tolatino.invalid', email_verified = true where id = '${holder}'`);
+      // Wallet disponible: el interruptor y las credenciales (si la corrida no tiene las de wal8g, unas de la prueba que se retiran al final).
+      for (const [kind, meta2] of [['pass_type_cert', '{\"pass_type_id\":\"pass.com.tolatino.boletos\",\"equipo\":\"TL12345678\"}'], ['google_wallet_sa', '{\"emisor\":\"3388000000000000000\"}']]) {
+        if (sql(`select count(*) from store_secrets where kind = '${kind}' and retired_at is null`) !== '0') continue;
+        puestas.push(sql(`insert into store_secrets (kind, version, blob_enc, meta, fingerprint, size_bytes, uploaded_by, uploaded_at) values ('${kind}', (select coalesce(max(version), 0) + 1 from store_secrets where kind = '${kind}'),
+                           decode(repeat('00', 64), 'hex'), '${meta2}'::jsonb, encode(sha256('prueba-avi9l-${kind}'::bytea), 'hex'), 64, '${AU}', now()) returning id`).split('\n').find((x) => /^\d+$/.test(x)));
+      }
+      sql(`update feature_flags set enabled = true where key in ('app.wallet.apple', 'app.wallet.google')`);
       await new Promise((r) => setTimeout(r, 16000)); // los interruptores de Wallet se leen con 15 s de caché
       const rb = await interno({ op: 'recibo_boletos', op_id: opId });
       ok(rb.ok && /data-wallet-correo/.test(rb.html) && (rb.html.match(/data-wallet-correo/g) ?? []).length === 2, 'el recibo trae los dos botones de Wallet');
