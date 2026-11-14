@@ -81,11 +81,15 @@ const sesiones = new Map();
 const navegador = await pw[disp.motor].launch();
 /* 9b-3 · La captura no depende de la hora: la aprobada de la ficha y del panel de Sabor Dominicano se tomó con el negocio ABIERTO («Abierto · hasta
    9 PM»); a las 10 PM de Hazleton la pantalla es otra («Cerrado · abre mañana», lo de abajo se corre) y el CI fallaba solo de noche. Antes de capturar,
-   los negocios de cfg.abiertos quedan abiertos hoy hasta las 11:59 PM (lo que diga la hora se tapa igual); al terminar vuelve su horario de hoy.
+   los negocios de cfg.abiertos quedan abiertos hoy, con una hora de cerrar de un dígito (lo que diga la hora se tapa igual); al terminar vuelve su horario de hoy.
    Guardián capturaSinHora. */
 const hoy = sql("select extract(dow from now() at time zone 'America/New_York')::int");
 const antes = (cfg.abiertos || []).map((b) => [b, sql(`select coalesce((select open::text || '|' || ranges::text from business_hours where business_id = '${b}' and module = '' and weekday = ${hoy}), '')`)]);
-for (const [b] of antes) sql(`insert into business_hours (business_id, module, weekday, open, ranges) values ('${b}', '', ${hoy}, true, '[["00:00","23:59"]]'::jsonb) on conflict (business_id, module, weekday) do update set open = true, ranges = excluded.ranges`);
+// La hora de cerrar tiene UN dígito, como la aprobada («hasta 9 PM»): «hasta 11:59 PM» ocupaba otra línea en el Galaxy (360 px) y todo se corría.
+// Desde las 11 AM, de 11 AM a 2 AM (cruza la medianoche, como un negocio de noche); antes, hasta las 9 AM o la 1 PM.
+const minAhora = Number(sql("select (extract(hour from now() at time zone 'America/New_York') * 60 + extract(minute from now() at time zone 'America/New_York'))::int"));
+const rango = minAhora >= 11 * 60 ? '[["11:00","02:00"]]' : minAhora < 8 * 60 ? '[["00:00","09:00"]]' : '[["00:00","13:00"]]';
+for (const [b] of antes) sql(`insert into business_hours (business_id, module, weekday, open, ranges) values ('${b}', '', ${hoy}, true, '${rango}'::jsonb) on conflict (business_id, module, weekday) do update set open = true, ranges = excluded.ranges`);
 const devolverHorario = () => { for (const [b, v] of antes) { if (!v) sql(`delete from business_hours where business_id = '${b}' and module = '' and weekday = ${hoy}`); else { const [o, ...r] = v.split("|"); sql(`update business_hours set open = ${o}, ranges = '${r.join("|").replace(/'/g, "''")}'::jsonb where business_id = '${b}' and module = '' and weekday = ${hoy}`); } } };
 console.log(`${disp.nombre} (${id}, ${disp.motor}) · ${pantallas.length} pantallas${flag("--velocidad") ? " · velocidad" : flag("--aprobar") ? " · APROBAR capturas nuevas" : ""}`);
 try {

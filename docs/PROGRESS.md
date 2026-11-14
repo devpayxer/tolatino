@@ -1564,7 +1564,7 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
     Guardián `esperaQueEspera` (también «No llegó» → /no llegó/).
   - **Las capturas de los teléfonos fallaban de noche (corrida 43549458698):** la ficha y el panel de Sabor Dominicano se aprobaron abiertos; a las
     10 PM de Hazleton salían «Cerrado · abre mañana» y lo de abajo se corría (2–6 % distinto). No era 9c. `correr.mjs` deja abiertos hoy los
-    negocios de `pantallas.json` «abiertos» mientras captura y devuelve el horario al final. Guardián `capturaSinHora`.
+    negocios de `pantallas.json` «abiertos» mientras captura y devuelve el horario al final. Guardián `capturaSinHora`. La hora de cerrar es de un dígito, como la aprobada: «hasta 11:59 PM» ocupaba otra línea en el Galaxy.
   - **Cuarta confirmación (corrida 43549458698, con 9c):** 15 rojos cayeron en una línea: `sinTopeDeAyuda` corría `compa_messages` (solo inserción)
     sin el modo réplica → ahora como compa7c; guardián `libroEnAyudantes`. Además: com5b tocaba el «Responder» de un comentario (9c lo volvió
     botón con ese nombre) en vez del de enviar; a11y9c (primera corrida) miraba los días antes de elegir cuántos son; compa7h y su tope de El Compa;
