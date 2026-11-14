@@ -28,7 +28,8 @@ const casos = [
   // cmsSoloInsercion: las versiones se pueden cambiar, un anuncio se puede borrar, la auditoría de la acción falta
   ['cmsSoloInsercion', M, 'create trigger cms_string_versions_no_cambia before update or delete on cms_string_versions', 'create trigger cms_string_versions_no_cambia before update on cms_string_versions'],
   ['cmsSoloInsercion', M, "raise exception 'announcements no se borra: se retira';", "null;"],
-  ['cmsSoloInsercion', AD, '"cms.anuncio.retirar"', '"cms.otra"'],
+  // 9o retira también los anuncios de un mantenimiento cancelado (otra auditoría con la misma acción): se quitan TODAS, si no el guardián ve la otra.
+  ['cmsSoloInsercion', AD, /"cms\.anuncio\.retirar"/g, '"cms.otra"'],
   // cuentaBorradaBilingue: en inglés sigue en español, el panel muestra el nombre guardado, la purga escribe otra cosa
   ['cuentaBorradaBilingue', CUE, 'borrada: "Deleted account"', 'borrada: "Cuenta borrada"'],
   ['cuentaBorradaBilingue', PED, 'v: nombreVisible(x.who, es) }', 'v: x.who }'],
@@ -61,7 +62,7 @@ for (const [g, f, a, b] of casos) {
   const ruta = path.join(R, f);
   if (!fs.existsSync(ruta)) { total++; console.log(`  ✗ ${g}: no existe ${f}`); continue; }
   const orig = fs.readFileSync(ruta, 'utf8');
-  if (!orig.includes(a)) { total++; console.log(`  ✗ ${g}: no encontré el texto a cambiar en ${f}: ${a.slice(0, 70)}`); continue; }
+  if (typeof a === 'string' ? !orig.includes(a) : !orig.match(a)) { total++; console.log(`  ✗ ${g}: no encontré el texto a cambiar en ${f}: ${String(a).slice(0, 70)}`); continue; }
   fs.writeFileSync(ruta, orig.replace(a, () => b));
   let r; try { r = correr(g); } finally { fs.writeFileSync(ruta, orig); }
   informe(g, f.split('/').pop(), r);
