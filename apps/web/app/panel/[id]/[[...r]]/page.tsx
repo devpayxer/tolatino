@@ -33,6 +33,8 @@ import type { MsjPanel } from "../../MensajesPanel";
 import { conversacionNegocio, hilosNegocio } from "@/lib/mensajes";
 import { serviciosPanel } from "@/lib/servicios";
 import { herramientaRetail, rubroRetail } from "@/lib/retail";
+import { faltaAceptar } from "@/lib/legal";
+import { HojaTerminos } from "../../../(app)/HojaTerminos";
 
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
@@ -306,5 +308,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // sección dice que El Compa no está y lleva a Ayuda y Soporte; ninguna otra pantalla del panel espera a El Compa).
   const cpa = ruta.sec === "cpa" ? await (await import("@/lib/compa/asistente-panel")).asistentePanel(acc.yo.id, d.id, lang).catch(() => null) : undefined;
   const cpaAuto = ruta.sec === "cpa" && RA ? await RA.ajustesAuto(d.id, acc.partes).catch(() => null) : undefined;
-  return <Panel cpa={cpa} cpaAuto={cpaAuto} d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} compraPro={await (await import("@/lib/tiendas/reglas")).compraDigitalAqui()} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} evp={evp} />;
+  // 9e · La hoja «Aceptar los términos nuevos» también en Hoy del panel (la pantalla de inicio de la app Negocios), sin un detalle abierto.
+  const faltan = ruta.sec === "hoy" && !ruta.det ? await faltaAceptar(u.id).catch(() => []) : [];
+  return <>{faltan.length ? <HojaTerminos es={lang === "es"} faltan={faltan} /> : null}<Panel cpa={cpa} cpaAuto={cpaAuto} d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} compraPro={await (await import("@/lib/tiendas/reglas")).compraDigitalAqui()} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} evp={evp} /></>;
 }

@@ -53,3 +53,14 @@ export async function resumenMapa() {
   const por = (a: Accion) => [...new Set(F.filter((f) => f.rol !== "equipo" && f.accion === a).map((f) => f.tabla))];
   return { borrar: por("borrar"), vaciar: por("vaciar"), seudonimizar: por("seudonimizar"), guardar: por("guardar"), exporta: [...new Set(F.filter((f) => f.exporta).map((f) => f.exporta!))] };
 }
+
+/* 9e · Lo que /privacidad dice del mapa (el mismo que usan la exportación y la purga): cuántos tipos de datos se borran, se vacían o se guardan
+   sin tu nombre al borrar la cuenta, los porqués de lo que se guarda (sin repetir) y los archivos que trae «Descargar mis datos». */
+export async function privacidadDelMapa(): Promise<{ n: Record<Accion, number>; porques: { es: string; en: string }[]; archivos: string[] }> {
+  const F = (await mapa()).filter((f) => f.rol !== "equipo");
+  const n = { borrar: 0, vaciar: 0, seudonimizar: 0, guardar: 0 } as Record<Accion, number>;
+  for (const a of Object.keys(n) as Accion[]) n[a] = new Set(F.filter((f) => f.accion === a).map((f) => f.tabla)).size;
+  const vistos = new Set<string>(), porques: { es: string; en: string }[] = [];
+  for (const f of F) if ((f.accion === "seudonimizar" || f.accion === "guardar") && f.porque && !vistos.has(f.porque.es)) { vistos.add(f.porque.es); porques.push(f.porque); }
+  return { n, porques, archivos: [...new Set(F.filter((f) => f.exporta).map((f) => f.exporta!))].sort() };
+}

@@ -36,7 +36,7 @@ export function TextosAyuda({ d, aud, est, q, desde, editar }: { d: DatosAyudaAd
   const k = d.kpi;
   const B: Bloque[] = [
     { type: "head", eye: "CONTROL", t: "Textos y páginas", s: "La ayuda de docs/ayuda/, como está desplegada. El texto se corrige en el repo; aquí se pausa un artículo para el Centro de ayuda y El Compa.", h1: desk ? 26 : 22 },
-    { type: "tabs", items: [{ l: "Ayuda", on: true, onClick: () => ir({ aud: null, est: null, q: "" }) }] },
+    { type: "tabs", items: [{ l: "Ayuda", on: true, onClick: () => ir({ aud: null, est: null, q: "" }) }, { l: "Páginas", on: false, onClick: () => router.push("/admin/textos/paginas") }] },
     { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
       { k: "EN USO", v: String(k.vivos), s: `${k.vecino} vecinos · ${k.negocio} negocios`, bg: "var(--tl-ink)", fg: "var(--tl-white)" },
       { k: "PAUSADOS", v: String(k.pausados), s: k.pausados ? "no salen en el Centro de ayuda" : "ninguno", onClick: () => ir({ est: "paused" }) },

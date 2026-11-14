@@ -128,6 +128,11 @@ export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast }: {
           <span role="button" onClick={() => up({ promo: "", promoOk: false })} {...tec(() => up({ promo: "", promoOk: false }))} style={{ flex: "none", font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Quitar", "Remove")}</span>
         </div>
       ) : null}
+      {/* 9e · Lo que se acepta al publicar (queda anotado en legal_acceptances con la versión que se ve en esas páginas). */}
+      <div data-acepta-publica style={{ font: "500 12px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>
+        {E2("Al publicar aceptas los ", "By publishing you accept To'Latino's ")}<a href="/terminos" target="_blank" rel="noopener" style={{ fontWeight: 700, color: "var(--tl-action)" }}>{E2("Términos", "Terms")}</a>
+        {E2(" y la ", " and ")}<a href="/privacidad" target="_blank" rel="noopener" style={{ fontWeight: 700, color: "var(--tl-action)" }}>{E2("Privacidad", "Privacy policy")}</a>{E2(" de To'Latino para negocios.", " for businesses.")}
+      </div>
     </div>
   );
 }

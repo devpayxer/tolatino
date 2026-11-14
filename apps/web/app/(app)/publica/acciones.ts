@@ -5,6 +5,7 @@ import { mismoOrigen, yo } from "@/lib/cuenta";
 import { ubicacion } from "@/lib/ubicacion";
 import { daysOf, derive, descEs, items as itemsDe, needZone, ok as okPaso, opOf, own as ownDe, SEQ, zoneOf, type Borrador } from "./logica";
 import { evento } from "@/lib/eventos";
+import { ACEPTABLES, aceptarEn, contextoAceptar } from "@/lib/legal";
 
 /* Publica tu negocio v2: el borrador vive en el servidor (onboarding_drafts) para seguir desde otro teléfono. La
    pantalla lo guarda solo, con pausas; el servidor valida tamaño y forma. Las fotos nunca van aquí (son media). */
@@ -120,6 +121,7 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
   const base = NN(d.name).replace(/ /g, "-").slice(0, 60) || "negocio";
   const nombreYo = [me.first_name, me.last_name].filter(Boolean).join(" ") || me.nick || "Dueño";
   const minutos = d.t0 ? Math.max(1, Math.round((Date.now() - Number(d.t0)) / 60000)) : 0;
+  const acepta = await contextoAceptar();
   const id = await tx(async (c) => {
     let slug = base;
     for (let i = 2; (await c.query(`select 1 from businesses where id = $1`, [slug])).rowCount; i++) slug = `${base}-${i}`;
@@ -162,6 +164,8 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
         [slug, loc.ciudad, lics, d.cat]);
     }
     await c.query(`insert into business_members (business_id, user_id, kind, display_name, phone, panel_access) values ($1, $2, 'owner', $3, $4, '{all}')`, [slug, me.id, nombreYo, tel]);
+    // 9e · «Al publicar aceptas los Términos y la Privacidad … para negocios»: queda anotado (la versión vigente, por esta persona y este negocio).
+    await aceptarEn(c, me.id, ACEPTABLES, { via: "publica", businessId: slug, app: acepta.app, ipHash: acepta.ipHash });
     const D = daysOf(d);
     for (let i = 0; i < 7; i++) {
       const x = D[i]!;

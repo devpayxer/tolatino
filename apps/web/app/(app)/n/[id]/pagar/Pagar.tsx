@@ -24,7 +24,7 @@ const AT = [["timbre", "Toca el timbre", "Ring the bell"], ["noTimbre", "No toqu
 const LB: Record<string, [string, string]> = { casa: ["Casa", "Home"], trabajo: ["Trabajo", "Work"], otra: ["Otra", "Other"] };
 
 export type PagoCheckout = { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null;
-export function Pagar({ m, es, pago }: { m: MenuPublico; es: boolean; pago: PagoCheckout }) {
+export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boolean; pago: PagoCheckout; acepta?: boolean }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
   const biz = m.negocio.id, est = m.estado, D = est.dlv, dir = m.dir;
@@ -153,6 +153,12 @@ export function Pagar({ m, es, pago }: { m: MenuPublico; es: boolean; pago: Pago
       <span className="text-pretty text-[12.5px] font-medium leading-[1.55] text-pro-ink">{hold}</span>
     </div>
   );
+  // 9e · El primer pedido (o el primero después de una versión nueva): «Al enviar aceptas…»; queda anotado en legal_acceptances al enviar.
+  const aceptaLinea = acepta ? (
+    <p data-acepta-pedido className="m-0 px-1 text-[12px] font-medium leading-normal text-ink/60">
+      {E2("Al enviar el pedido aceptas los ", "By placing the order you accept To'Latino's ")}<a href="/terminos" target="_blank" rel="noopener" className="font-bold text-action">{E2("Términos", "Terms")}</a>
+      {E2(" y la ", " and ")}<a href="/privacidad" target="_blank" rel="noopener" className="font-bold text-action">{E2("Privacidad", "Privacy policy")}</a>{E2(" de To'Latino.", ".")}
+    </p>) : null;
   const boton = <Button variant="action" block disabled={enviando || sinPedidos} onClick={enviar}>{enviando ? E2("Enviando…", "Sending…") : cta}</Button>;
 
   return (
@@ -313,6 +319,7 @@ export function Pagar({ m, es, pago }: { m: MenuPublico; es: boolean; pago: Pago
             </div>
             <div className={`${caja} lg:hidden`}>{resumen}</div>
             <div className="lg:hidden">{notaPago}</div>
+            {aceptaLinea ? <div className="lg:hidden">{aceptaLinea}</div> : null}
           </div>
           <div className="hidden lg:sticky lg:top-[96px] lg:block">
             <div className="flex flex-col gap-3.5">
@@ -321,6 +328,7 @@ export function Pagar({ m, es, pago }: { m: MenuPublico; es: boolean; pago: Pago
                 <div className="flex">{boton}</div>
               </div>
               {notaPago}
+              {aceptaLinea}
             </div>
           </div>
         </div>
