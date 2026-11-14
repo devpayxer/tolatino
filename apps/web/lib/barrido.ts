@@ -160,6 +160,8 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["conciliacion", async () => (await import("./conciliacion")).conciliarAyer()], ["conciliacionVigilar", async () => (await import("./conciliacion")).vigilarConciliacion()],
         ["verificaciones", async () => (await import("./pagos/verificacion")).vencerVerificaciones()], ["pagosAlBanco", async () => (await import("./pagos-banco")).pagarAlBanco()],
         ["alertasDinero", async () => (await import("./dinero-alertas")).barrerAlertasDinero()], ["planPro", async () => (await import("./suscripcion")).procesar()],
+        // 9i · Ciudades: el aviso «tu ciudad abrió» a la lista de espera de la ciudad que abrió el asistente, por partes, de 9 AM a 9 PM de la ciudad, una vez.
+        ["avisoApertura", async () => (await import("./ciudades/aviso")).avisarAperturas()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

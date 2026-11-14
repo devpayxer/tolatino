@@ -259,6 +259,14 @@
     "featured": { "equipo": ["by_staff_id", "retired_by"] },
     "promo_codes": { "reglas": [ { "col": "promoter_user_id", "accion": "guardar", "porque": "dinero", "exporta": "codigo_de_promotor", "fusion": "no" } ], "equipo": ["created_by", "retired_by"] },
     "business_referrals": { "reglas": [ { "col": "promoter_user_id", "accion": "guardar", "porque": "dinero", "exporta": "negocios_que_trajiste", "fusion": "no" } ], "equipo": ["paid_by"] },
-    "early_access": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "acceso_anticipado", "fusion": "mover" } ] }
+    "early_access": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "acceso_anticipado", "fusion": "mover" } ] },
+    "zones": { "equipo": ["edited_by", "retired_by"] },
+    "city_open_rules": { "equipo": ["updated_by"] },
+    "city_launches": { "equipo": ["started_by", "cancelled_by"] },
+    "city_launch_steps": { "equipo": ["done_by"] },
+    "city_close_requests": { "equipo": ["requested_by", "decided_by"] },
+    "city_status_log": { "equipo": ["actor"] },
+    "city_beta_invites": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "invitaciones_a_la_beta", "fusion": "no" } ], "equipo": ["invited_by", "revoked_by"] },
+    "city_notices": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "avisos_de_apertura", "fusion": "no" } ] }
   }
 }

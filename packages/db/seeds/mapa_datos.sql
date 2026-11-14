@@ -318,7 +318,20 @@ insert into data_map (tabla, columna, rol, accion, set_sql, pendiente_sql, donde
   ('promo_codes', 'retired_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3140),
   ('business_referrals', 'promoter_user_id', 'persona', 'guardar', null, null, null, '{"es":"Es dinero: cobros, devoluciones y saldos. Stripe guarda lo suyo.","en":"It is money: charges, refunds and balances. Stripe keeps its own records."}'::jsonb, 'negocios_que_trajiste', 'no', null, false, 3150),
   ('business_referrals', 'paid_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3160),
-  ('early_access', 'user_id', 'persona', 'borrar', null, null, null, null, 'acceso_anticipado', 'mover', null, false, 3170)
+  ('early_access', 'user_id', 'persona', 'borrar', null, null, null, null, 'acceso_anticipado', 'mover', null, false, 3170),
+  ('zones', 'edited_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3180),
+  ('zones', 'retired_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3190),
+  ('city_open_rules', 'updated_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3200),
+  ('city_launches', 'started_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3210),
+  ('city_launches', 'cancelled_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3220),
+  ('city_launch_steps', 'done_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3230),
+  ('city_close_requests', 'requested_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3240),
+  ('city_close_requests', 'decided_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3250),
+  ('city_status_log', 'actor', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3260),
+  ('city_beta_invites', 'user_id', 'persona', 'borrar', null, null, null, null, 'invitaciones_a_la_beta', 'no', null, false, 3270),
+  ('city_beta_invites', 'invited_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3280),
+  ('city_beta_invites', 'revoked_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3290),
+  ('city_notices', 'user_id', 'persona', 'borrar', null, null, null, null, 'avisos_de_apertura', 'no', null, false, 3300)
 on conflict (tabla, columna) do update set rol = excluded.rol, accion = excluded.accion, set_sql = excluded.set_sql, pendiente_sql = excluded.pendiente_sql, donde_sql = excluded.donde_sql,
   porque = excluded.porque, exporta = excluded.exporta, fusion = excluded.fusion, fn = excluded.fn, derivados = excluded.derivados, orden = excluded.orden;
 -- Lo que salió del mapa sale de la tabla (es configuración: el mapa es la fuente).
@@ -639,6 +652,19 @@ delete from data_map d where not exists (select 1 from (values
   ('promo_codes', 'retired_by'),
   ('business_referrals', 'promoter_user_id'),
   ('business_referrals', 'paid_by'),
-  ('early_access', 'user_id')
+  ('early_access', 'user_id'),
+  ('zones', 'edited_by'),
+  ('zones', 'retired_by'),
+  ('city_open_rules', 'updated_by'),
+  ('city_launches', 'started_by'),
+  ('city_launches', 'cancelled_by'),
+  ('city_launch_steps', 'done_by'),
+  ('city_close_requests', 'requested_by'),
+  ('city_close_requests', 'decided_by'),
+  ('city_status_log', 'actor'),
+  ('city_beta_invites', 'user_id'),
+  ('city_beta_invites', 'invited_by'),
+  ('city_beta_invites', 'revoked_by'),
+  ('city_notices', 'user_id')
 ) v (tabla, columna) where v.tabla = d.tabla and v.columna = d.columna);
 commit;

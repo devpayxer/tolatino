@@ -124,7 +124,9 @@ function smsEsperado(tpl, quien = null) {
 /* Alguien del equipo (Super Admin) que la prueba necesita y que no es de la semilla: Beto (segundo Admin, 0188), Lucía (Solo lectura, 0693),
    Sofía (Soporte de Allentown, 0694). Antes los creaban usr1l y compa7g, y evt6a, com5d, com5f, adm7i… los daban por hechos (en una base
    nueva o en otro orden no estaban). Se crean como lo hacía compa7g: la persona si falta y su rol, activo, agregado por Ana. */
-const EQUIPO = { '5705550188': ['Beto', 'admin', '{}'], '5705550693': ['Lucía', 'lectura', '{}'], '5705550694': ['Sofía', 'soporte', '{alw}'] };
+const EQUIPO = { '5705550188': ['Beto', 'admin', '{}'], '5705550693': ['Lucía', 'lectura', '{}'], '5705550694': ['Sofía', 'soporte', '{alw}'],
+  // 9i · Raúl, Ciudad manager de Reading (su paso por los dos pasos lo pone la semilla 0059, como 0057 con los demás).
+  '5705559702': ['Raúl', 'ciudad', '{rdg}'] };
 function equipo(...tels) {
   for (const t of tels) {
     const [nom, rol, ci] = EQUIPO[t] ?? (() => { throw new Error(`equipo: ${t} no es del equipo de prueba`); })();

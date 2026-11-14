@@ -1,0 +1,69 @@
+{
+  "$fuente": "9i (14 nov) · Barrios y pueblos cercanos de Allentown, Wilkes-Barre, Scranton y Reading (LAUNCH L64; el prototipo solo traía los de Hazleton). Puntos aproximados al centro de cada barrio o pueblo (a menos de media milla): el equipo local los revisa y los corrige en Super Admin › Ciudades › Barrios antes de abrir (lo que el equipo cambia, la semilla ya no lo pisa). El «centro» de cada ciudad es su punto de partida para medir (como Broad St y Wyoming St en Hazleton). Lo lee scripts/catalogo/extraer-ciudad.cjs.",
+  "ciudades": {
+    "alw": {
+      "barrios": [
+        { "k": "centro", "es": "Centro de Allentown", "en": "Downtown Allentown", "calleEs": "Hamilton St y 7th St", "calleEn": "Hamilton St & 7th St", "ll": [40.6023, -75.4714] },
+        { "k": "old-allentown", "es": "Old Allentown", "en": "Old Allentown", "calleEs": "N 9th St y Turner St", "calleEn": "N 9th St & Turner St", "ll": [40.6069, -75.4737] },
+        { "k": "first-ward", "es": "First Ward", "en": "First Ward", "calleEs": "N 2nd St y Liberty St", "calleEn": "N 2nd St & Liberty St", "ll": [40.6098, -75.4639] },
+        { "k": "east-side", "es": "East Side", "en": "East Side", "calleEs": "Hanover Ave", "calleEn": "Hanover Ave", "ll": [40.6127, -75.4520] },
+        { "k": "south-side", "es": "South Side", "en": "South Side", "calleEs": "Lehigh St y Emaus Ave", "calleEn": "Lehigh St & Emaus Ave", "ll": [40.5797, -75.4818] },
+        { "k": "west-end", "es": "West End", "en": "West End", "calleEs": "N 23rd St y Liberty St", "calleEn": "N 23rd St & Liberty St", "ll": [40.6035, -75.5030] }
+      ],
+      "pueblos": [
+        ["Allentown", 40.6023, -75.4714], ["Bethlehem", 40.6259, -75.3705], ["Whitehall", 40.6590, -75.4985], ["Emmaus", 40.5395, -75.4968],
+        ["Catasauqua", 40.6548, -75.4643], ["Fullerton", 40.6318, -75.4732], ["Coplay", 40.6704, -75.4955], ["Macungie", 40.5159, -75.5552],
+        ["Northampton", 40.6862, -75.4968], ["Hellertown", 40.5795, -75.3407], ["Trexlertown", 40.5487, -75.6052], ["Schnecksville", 40.6751, -75.6205],
+        ["Easton", 40.6884, -75.2207], ["Coopersburg", 40.5115, -75.3905]
+      ]
+    },
+    "wbr": {
+      "barrios": [
+        { "k": "centro", "es": "Centro de Wilkes-Barre", "en": "Downtown Wilkes-Barre", "calleEs": "Public Square y S Main St", "calleEn": "Public Square & S Main St", "ll": [41.2459, -75.8813] },
+        { "k": "north-end", "es": "North End", "en": "North End", "calleEs": "N Main St y Scott St", "calleEn": "N Main St & Scott St", "ll": [41.2624, -75.8746] },
+        { "k": "heights", "es": "The Heights", "en": "The Heights", "calleEs": "Hazle St y Park Ave", "calleEn": "Hazle St & Park Ave", "ll": [41.2391, -75.8668] },
+        { "k": "south", "es": "South Wilkes-Barre", "en": "South Wilkes-Barre", "calleEs": "S Main St y Hanover St", "calleEn": "S Main St & Hanover St", "ll": [41.2318, -75.8885] },
+        { "k": "parsons", "es": "Parsons", "en": "Parsons", "calleEs": "George Ave y Scott St", "calleEn": "George Ave & Scott St", "ll": [41.2697, -75.8580] },
+        { "k": "east-end", "es": "East End", "en": "East End", "calleEs": "Wilkes-Barre Blvd y Coal St", "calleEn": "Wilkes-Barre Blvd & Coal St", "ll": [41.2470, -75.8640] }
+      ],
+      "pueblos": [
+        ["Wilkes-Barre", 41.2459, -75.8813], ["Kingston", 41.2620, -75.8963], ["Plymouth", 41.2404, -75.9449], ["Nanticoke", 41.2051, -76.0049],
+        ["Ashley", 41.2100, -75.8963], ["Plains", 41.2734, -75.8524], ["Forty Fort", 41.2790, -75.8780], ["Edwardsville", 41.2698, -75.9166],
+        ["Luzerne", 41.2856, -75.9013], ["Swoyersville", 41.2918, -75.8749], ["Pittston", 41.3259, -75.7896], ["Dallas", 41.3362, -75.9632],
+        ["Mountain Top", 41.1695, -75.8774], ["Scranton", 41.4090, -75.6624], ["Hazleton", 40.9584, -75.9746]
+      ]
+    },
+    "scr": {
+      "barrios": [
+        { "k": "centro", "es": "Centro de Scranton", "en": "Downtown Scranton", "calleEs": "Courthouse Square y Wyoming Ave", "calleEn": "Courthouse Square & Wyoming Ave", "ll": [41.4090, -75.6624] },
+        { "k": "south-side", "es": "South Side", "en": "South Side", "calleEs": "Cedar Ave y Pittston Ave", "calleEn": "Cedar Ave & Pittston Ave", "ll": [41.3946, -75.6656] },
+        { "k": "hill", "es": "Hill Section", "en": "Hill Section", "calleEs": "Mulberry St y Clay Ave", "calleEn": "Mulberry St & Clay Ave", "ll": [41.4076, -75.6460] },
+        { "k": "west-side", "es": "West Side", "en": "West Side", "calleEs": "N Main Ave y Jackson St", "calleEn": "N Main Ave & Jackson St", "ll": [41.4129, -75.6819] },
+        { "k": "north", "es": "North Scranton", "en": "North Scranton", "calleEs": "N Main Ave y W Market St", "calleEn": "N Main Ave & W Market St", "ll": [41.4316, -75.6612] },
+        { "k": "green-ridge", "es": "Green Ridge", "en": "Green Ridge", "calleEs": "Green Ridge St y N Washington Ave", "calleEn": "Green Ridge St & N Washington Ave", "ll": [41.4247, -75.6443] }
+      ],
+      "pueblos": [
+        ["Scranton", 41.4090, -75.6624], ["Dunmore", 41.4198, -75.6324], ["Dickson City", 41.4715, -75.6077], ["Old Forge", 41.3712, -75.7349],
+        ["Taylor", 41.3948, -75.7063], ["Clarks Summit", 41.4887, -75.7085], ["Moosic", 41.3534, -75.7385], ["Throop", 41.4515, -75.6118],
+        ["Olyphant", 41.4687, -75.6029], ["Jessup", 41.4687, -75.5624], ["Archbald", 41.4948, -75.5368], ["Carbondale", 41.5737, -75.5018],
+        ["Pittston", 41.3259, -75.7896], ["Wilkes-Barre", 41.2459, -75.8813]
+      ]
+    },
+    "rdg": {
+      "barrios": [
+        { "k": "centro", "es": "Centro de Reading", "en": "Downtown Reading", "calleEs": "Penn Square y 5th St", "calleEn": "Penn Square & 5th St", "ll": [40.3356, -75.9269] },
+        { "k": "centre-park", "es": "Centre Park", "en": "Centre Park", "calleEs": "N 4th St y Douglass St", "calleEn": "N 4th St & Douglass St", "ll": [40.3446, -75.9296] },
+        { "k": "northeast", "es": "Northeast", "en": "Northeast", "calleEs": "N 11th St y Spring St", "calleEn": "N 11th St & Spring St", "ll": [40.3478, -75.9150] },
+        { "k": "southeast", "es": "Southeast", "en": "Southeast", "calleEs": "S 9th St y Chestnut St", "calleEn": "S 9th St & Chestnut St", "ll": [40.3305, -75.9190] },
+        { "k": "glenside", "es": "Glenside", "en": "Glenside", "calleEs": "N Front St y Windsor St", "calleEn": "N Front St & Windsor St", "ll": [40.3502, -75.9380] },
+        { "k": "southwest", "es": "Southwest", "en": "Southwest", "calleEs": "Lancaster Ave y S 4th St", "calleEn": "Lancaster Ave & S 4th St", "ll": [40.3220, -75.9330] }
+      ],
+      "pueblos": [
+        ["Reading", 40.3356, -75.9269], ["West Reading", 40.3337, -75.9474], ["Wyomissing", 40.3295, -75.9652], ["Shillington", 40.3079, -75.9658],
+        ["Kenhorst", 40.3101, -75.9396], ["Mount Penn", 40.3287, -75.8910], ["Laureldale", 40.3876, -75.9180], ["Temple", 40.4087, -75.9216],
+        ["Sinking Spring", 40.3273, -76.0110], ["Birdsboro", 40.2645, -75.8044], ["Leesport", 40.4468, -75.9663], ["Fleetwood", 40.4540, -75.8180],
+        ["Kutztown", 40.5173, -75.7774], ["Boyertown", 40.3334, -75.6374], ["Hamburg", 40.5556, -75.9819]
+      ]
+    }
+  }
+}
