@@ -36,7 +36,7 @@ const RUN = Date.now().toString(36);
   const volverHoras = abiertoTodoElDia(BIZ);
   sql(`update menu_settings set pause_until = null where business_id = '${BIZ}'`);
   const FLAN = sql(`select id from items where business_id = '${BIZ}' and name->>'es' = 'Flan de leche' and removed_at is null limit 1`);
-  sql(`update items set sold_out = false, stock_day = null where id = ${FLAN}`);
+  sql(`update items set sold_out = false, stock_left = greatest(stock_left, stock_par), stock_day = null where id = ${FLAN}`);
   const VEC = telLibre(), OTRO1 = telLibre(), OTRO2 = telLibre();
   // Unos últimos 4 que nadie usa (ni las tarjetas especiales del simulador): la señal de la tarjeta es de esta corrida.
   let L4 = ''; for (let i = 0; i < 50 && !L4; i++) { const c = String(1000 + Math.floor(Math.random() * 8999)); if (!['0002', '9995', '0069', '3184', '4242'].includes(c) && sql(`select count(*) from payment_methods where card_fingerprint = '${huella('visa', c)}'`) === '0') L4 = c; }
@@ -52,7 +52,7 @@ const RUN = Date.now().toString(36);
     const U = uid(VEC);
     const alCheckout = async () => {
       await m.goto(B + '/n/' + BIZ);
-      await m.evaluate((l) => localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: l } })), [{ id: FLAN, ch: {}, q: 1, nt: '', k: {} }]);
+      await m.evaluate((l) => { localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: l } })); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); }, [{ id: FLAN, ch: {}, q: 1, nt: '', k: {} }]);
       await m.goto(B + '/n/' + BIZ + '/pagar'); await m.getByText(/Retenemos|Se cobran/).first().waitFor();
     };
     const agregar = async (num) => {
