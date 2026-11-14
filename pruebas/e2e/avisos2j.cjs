@@ -14,7 +14,7 @@ const MARISOL = "(select id from users where phone='+15705550122')", PEDRO = "(s
 const restaurar = () => { try { sql(`update business_hours set ranges='[["11:00","21:00"]]'::jsonb where business_id='${BIZ}' and module=''`); sql(`update users set notif_prefs = notif_prefs - 'ord' - 'quiet' where id = ${MARISOL}`); sql(`update notif_templates set body = jsonb_set(body, '{es}', to_jsonb('{negocio} aceptó tu pedido #{num}. Listo a las {hora}.'::text)), edited_by = null where key = 'ord_ok'`); } catch {} };
 (async () => {
   sql(`update business_hours set ranges='[["00:00","00:00"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`);
-  sql(`update items set sold_out = false, stock_day = null where business_id='${BIZ}'`);
+  sql(`update items set sold_out = false, stock_left = greatest(stock_left, stock_par), stock_day = null where business_id='${BIZ}'`);
   sql(`update menu_settings set pause_until = null where business_id='${BIZ}'`);
   sql(`update operations set respond_by = now() - interval '1 minute' where user_id = ${MARISOL} and status = 'pending'`);
   sql(`update delivery_settings set auto_accept=false where business_id='${BIZ}'`);

@@ -13,7 +13,7 @@ const pago = (n) => sql(`select coalesce((select p.status || '|' || p.amount_cen
 const restaurar = () => { try { sql(`update business_hours set ranges='[["11:00","21:00"]]'::jsonb where business_id='${BIZ}' and module=''`); sql(`update delivery_settings set auto_accept=false, pay_card=false, pay_cash_pickup=true where business_id='${BIZ}'`); } catch {} };
 (async () => {
   sql(`update business_hours set ranges='[["00:00","00:00"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`);
-  sql(`update items set sold_out = false, stock_day = null where business_id='${BIZ}'`);
+  sql(`update items set sold_out = false, stock_left = greatest(stock_left, stock_par), stock_day = null where business_id='${BIZ}'`);
   sql(`update menu_settings set pause_until = null where business_id='${BIZ}'`);
   sql(`update operations set respond_by = now() - interval '1 minute' where user_id = ${MARISOL} and status = 'pending'`);
   sql(`update delivery_settings set auto_accept=false, pay_card=false, pay_cash_pickup=true where business_id='${BIZ}'`);
@@ -41,7 +41,7 @@ const restaurar = () => { try { sql(`update business_hours set ranges='[["11:00"
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); watch(m, 'cliente'); globalThis.__p.push(m);
   await entrar(m, '5705550122');
   const FLAN = { id: '16', ch: {}, q: 1, nt: '', k: {} };
-  const alCheckout = async () => { await m.goto(B + '/n/' + BIZ); await m.evaluate((l) => localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: l } })), [FLAN]); await m.goto(B + '/n/' + BIZ + '/pagar'); await m.getByText(/Retenemos|Se cobran/).first().waitFor(); };
+  const alCheckout = async () => { await m.goto(B + '/n/' + BIZ); await m.evaluate((l) => { localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: l } })); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); }, [FLAN]); /* 9b-3 · pickup fijo (modoPropio) */ await m.goto(B + '/n/' + BIZ + '/pagar'); await m.getByText(/Retenemos|Se cobran/).first().waitFor(); };
   await alCheckout();
   await m.screenshot({ path: OUT + 'd3-checkout-tarjeta-m.png', fullPage: true });
   const agregar = async (num) => {

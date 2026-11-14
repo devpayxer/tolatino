@@ -63,6 +63,9 @@ const casos = [
   // tarjetaPropia: ins4e vuelve a guardarle tarjeta solo a otra clienta (0299) y Marisol inscribe con matrícula retenida sin ninguna
   ['tarjetaPropia', 'pruebas/e2e/ins4e.cjs', "  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');\n", ''],
   // compaEnElChat: msg2p deja de apagar El Compa de Sabor Dominicano al empezar (compa7f lo deja encendido)
+  ['existenciaPropia','pruebas/e2e/leg9e.cjs',"sold_out = false, stock_left = greatest(stock_left, stock_par), stock_day = null where","sold_out = false where"],
+  ['modoPropio','pruebas/e2e/menu2b.cjs',"localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' }));","0;"],
+  ['modoPropio','pruebas/e2e/pagos2d.cjs',"localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' }));","0;"],
   ['compaEnElChat', 'pruebas/e2e/msg2p.cjs', "update compa_business_settings set enabled = false where business_id = '${BIZ}'`);\n", "select 1`);\n"],
   ['tarjetaPropia', 'pruebas/e2e/fie4v.cjs', "  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');\n", ''],
 ];

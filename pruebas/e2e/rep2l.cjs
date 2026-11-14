@@ -15,7 +15,7 @@ const restaurar = () => { try { sql(`update delivery_settings set delivery=false
   sql(`update business_hours set ranges='[["00:00","00:00"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`);
   sql(`update delivery_settings set delivery=true, pickup=true, pay_cash_delivery=true, pay_card=false, ask_tip=true, zone_mi=3, fee_cents=300, free_over_cents=4000, min_order_cents=0, travel_min=15, last_delivery_min=0, who='team', external_app=null, auto_accept=false where business_id='${BIZ}'`);
   sql(`update businesses set modules_off = modules_off - 'delivery' where id='${BIZ}'`);
-  sql(`update items set sold_out = false, stock_day = null where business_id='${BIZ}'`); sql(`update menu_settings set pause_until = null where business_id='${BIZ}'`);
+  sql(`update items set sold_out = false, stock_left = greatest(stock_left, stock_par), stock_day = null where business_id='${BIZ}'`); sql(`update menu_settings set pause_until = null where business_id='${BIZ}'`);
   sql(`update operations set respond_by = now() - interval '1 minute' where user_id = ${MARISOL} and status = 'pending'`);
   sql(`update operations set driver_id = null where driver_id is not null`); sql(`update trip_runs set driver_id = null where driver_id is not null`); sql(`delete from delivery_drivers where user_id not in (select user_id from review_accounts)`);
   // 9b-1 · Sin tocar al repartidor de la cuenta de revisión (semilla 0048): antes se borraban TODOS y, en una corrida entera, fich8i encontraba

@@ -73,7 +73,8 @@ const enVersion = (p, v, boton) => p.locator('div', { has: p.getByText(new RegEx
     console.log('2 · El primer pedido: «Al enviar el pedido aceptas…» y queda anotado');
     sql(`update business_hours set ranges = '[["00:00","00:00"]]'::jsonb, open = true where business_id = '${BIZ}' and module = ''`);
     sql(`insert into menu_settings (business_id) values ('${BIZ}') on conflict (business_id) do update set pause_until = null`);
-    sql(`update items set sold_out = false where business_id = '${BIZ}' and id = 16`);
+    // 9b-3 · El flan cuenta por día (6): otras pruebas lo compran y, barajadas, lo dejaban agotado («no está disponible ahora»). La cuenta vuelve a su número.
+    sql(`update items set sold_out = false, stock_left = greatest(stock_left, stock_par), stock_day = null where business_id = '${BIZ}' and id = 16`);
     const P = telLibre(); const cp = await ctxTel(b), pv = await cp.newPage(); abiertas.push(pv); await entrarComo(pv, P, { nombre: 'Vecina', apellido: 'Legal' });
     const UP = uid(P); sql(`update users set home_city_id = 'hzl', is_test = true where id = '${UP}'`);
     ok(sql(`select count(*) from legal_acceptances where user_id = '${UP}'`) === '0', 'una cuenta nueva no tiene nada aceptado');

@@ -14,7 +14,7 @@ const espera = async (f, v) => { let x; for (let i = 0; i < 40; i++) { x = f(); 
 const FV = (id) => sql(`select array_to_string(filter_values, ',') from businesses where id = '${id}'`).split(',');
 (async () => {
   sql(`update retail_settings set ebt = true, cash = true, slot_cap = 6 where business_id = '${M}'`);
-  sql(`update items set sold_out = false where business_id = '${M}'`);
+  sql(`update items set sold_out = false, stock_left = greatest(stock_left, stock_par), stock_day = null where business_id = '${M}'`);
   sql(`update retail_settings set hold_hours = 48, layaway = false, lay_down_pct = 20 where business_id = '${T}'`); sql(`insert into delivery_settings (business_id) values ('${T}') on conflict (business_id) do nothing`); /* 9b-1 · la fila de la tienda (en una base nueva no la tenía) */ sql(`update delivery_settings set ship = false, ship_fee_cents = 0 where business_id = '${T}'`);
   const b = await chromium.launch(); const err = [];
   const mk = async (o, tel) => { const p = await (await b.newContext(o)).newPage(); p.on('pageerror', (e) => err.push(e.message)); p.on('console', (x) => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); }); await entrar(p, tel); return p; };

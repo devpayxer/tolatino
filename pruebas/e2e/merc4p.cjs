@@ -25,7 +25,7 @@ const pedir = async (m, lines) => {
 };
 (async () => {
   sql(`update operations set status = 'cancelled' where kind = 'market_order' and user_id = ${MAR} and status in ('pending', 'confirmed')`);
-  sql(`update items set sold_out = false where business_id = '${M}'`);
+  sql(`update items set sold_out = false, stock_left = greatest(stock_left, stock_par), stock_day = null where business_id = '${M}'`); // 9b-3 · y con su cuenta llena (existenciaPropia)
   sql(`update retail_settings set slot_cap = 6, sub_default = 'call' where business_id = '${M}'`);
   // 9b-1 · La tarjeta de Marisol (la guarda si no la tiene) en vez del id de una tarjeta de una base vieja.
   require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');

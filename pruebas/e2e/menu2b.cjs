@@ -26,7 +26,8 @@ const MARISOL = "(select id from users where phone='+15705550122')";
   // ── Teléfono ──
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); watch(m, 'movil');
   await entrar(m, '5705550122');
-  await m.goto(B + N); await m.evaluate(() => localStorage.removeItem('tl-carrito-v1')); await m.reload();
+  // 9b-3 · Pickup fijo: si otra prueba dejó a Sabor Dominicano con delivery a esta hora, el pago abría en Delivery (modoPropio).
+  await m.goto(B + N); await m.evaluate(() => { localStorage.removeItem('tl-carrito-v1'); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); }); await m.reload();
   await m.locator('[data-screen-label="Resumen · menú"]').waitFor();
   ok(await m.locator('[data-screen-label="Ficha · barra de pedido"]').isVisible(), 'barra «Desde» en la ficha');
   await shot(m, 'b1-resumen-m.png', true);

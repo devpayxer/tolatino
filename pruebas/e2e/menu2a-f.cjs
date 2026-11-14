@@ -10,7 +10,7 @@ const shot = async (p, n, full = true) => { await p.waitForTimeout(500); await p
 const toast = (p, re) => p.locator(`text=${re}`).first().waitFor({ timeout: 10000 });
 (async () => {
   sql("update items set sold_out = false, stock_left = 2, stock_day = (now() at time zone 'America/New_York' - interval '6 hours')::date where business_id='sabor-dominicano' and name->>'es'='Tres leches'");
-  sql("update items set sold_out = false where business_id='sabor-dominicano' and name->>'es'='Pica pollo'");
+  sql("update items set sold_out = false, stock_left = greatest(stock_left, stock_par), stock_day = null where business_id='sabor-dominicano' and name->>'es'='Pica pollo'");
   // 9b-1 · «Res guisada» disponible antes de agotarla (la corrida anterior en la misma base la dejaba agotada y no salía «Agotar»).
   sql("update option_groups set options = jsonb_set(options, '{1,on}', 'true') where business_id='sabor-dominicano' and name->>'es'='Elige la carne' and options->1->>'es' = 'Res guisada'");
   const postres0 = sql("select string_agg(price_cents::text, ',' order by id) from items where business_id='sabor-dominicano' and name->>'es' in ('Flan de leche','Tres leches')").split(',').map(Number);

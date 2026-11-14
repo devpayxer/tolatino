@@ -7118,6 +7118,30 @@ const guardianes = {
     }
   },
 
+  /* 9b-3 · Un artículo que la prueba deja «disponible» también queda con su cuenta: leg9e quitaba sold_out del flan, que cuenta por día (6); otras
+     pruebas lo compraban y, barajadas o dos veces seguidas, el pedido no salía («no está disponible ahora»). Un «update items set sold_out = false»
+     de una prueba pone en la misma orden la cuenta (stock_left y stock_day: a su número y null, o la que la prueba necesita). Al revés: alreves9b3. */
+  existenciaPropia() {
+    const G = "existenciaPropia";
+    for (const f of readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs")).map((y) => `pruebas/e2e/${y}`)) {
+      const t = readFileSync(f, "utf8");
+      for (const m of t.matchAll(/update items set ([^`]*?)\bwhere\b/g))
+        if (/sold_out = false/.test(m[1]) && (!/\bstock_left = /.test(m[1]) || !/\bstock_day = /.test(m[1]))) falla(G, f, t.slice(0, m.index).split("\n").length, "deja el artículo disponible sin devolverle su cuenta: otra prueba pudo agotarlo (stock_left = greatest(stock_left, stock_par), stock_day = null)");
+    }
+  },
+
+  /* 9b-3 · El pago del menú abre en el modo que la prueba dice: sin uno guardado toma el primero que el negocio tiene a esa hora (delivery si lo
+     hay). Barajadas, menu2b y pagos2d llegaban al pago de Sabor Dominicano con delivery encendido, el pedido de $4.50 no llegaba al mínimo de $15 y
+     «Enviar pedido» no salía. Una prueba que va al pago de un negocio (/n/…/pagar o «Ir a pagar») fija tl-modo-v1. Al revés: alreves9b3. */
+  modoPropio() {
+    const G = "modoPropio";
+    for (const f of readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs")).map((y) => `pruebas/e2e/${y}`)) {
+      const t = readFileSync(f, "utf8");
+      const m = /(?<![a-z-])(?<!eventos\\?)\/pagar(?![a-z-])|Ir a pagar/.exec(t);
+      if (m && !/tl-modo-v1/.test(t)) falla(G, f, t.slice(0, m.index).split("\n").length, "va al pago de un negocio sin fijar el modo (tl-modo-v1): sin él toma el primero que haya a esa hora y otra prueba pudo dejar delivery");
+    }
+  },
+
   /* 9b-3 · La fila que una prueba elige es la que la página muestra: tra4w tomaba «la próxima salida» de trip_runs sin mirar si el servicio seguía
      vivo y con esa hora (lib/transporte.ts salidasDe lo mira); en la segunda vuelta seguida quedaba la salida de un servicio quitado, la página no la
      mostraba y el «+» bajaba otra. Una consulta de prueba que elige una salida (trip_runs … limit 1) filtra como salidasDe. Al revés: alreves9b3. */
