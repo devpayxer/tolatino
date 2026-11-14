@@ -46,10 +46,40 @@ chmod 600 "$ENV_FILE"
 ENV_FILE="$ENV_FILE" GARAGE_TOML=/etc/tolatino/garage.toml bash "$REPO/infra/pruebas/medios.sh" docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" \
   || log "medios: falló la preparación (las fotos no se pueden subir)"
 
+# 2c) Diagnóstico a la vista (sin SSH): disco, Docker y la base, en /estado/diag.txt. Si el disco pasa del 85 %, se libera lo que Docker
+#     puede rehacer (caché de builds, imágenes sin uso); nunca volúmenes.
+COMPOSE=(docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml")
+diag() {
+  mkdir -p /var/www/estado
+  { echo "== $(date -Is) commit $COMMIT · $1"; df -h / /var/lib/docker 2>/dev/null; echo; docker system df 2>/dev/null; echo
+    echo "== contenedores"; "${COMPOSE[@]}" ps -a 2>/dev/null; echo
+    echo "== base (últimas líneas)"; "${COMPOSE[@]}" logs --tail=60 db 2>/dev/null | sed -E 's/(password|PASSWORD)=[^ ]*/\1=***/g'
+  } > /var/www/estado/diag.txt 2>&1 || true
+}
+USO=$(df --output=pcent / | tail -1 | tr -dc 0-9)
+if [ "${USO:-0}" -ge 85 ]; then
+  log "disco al $USO %: se libera la caché de Docker"
+  docker builder prune -af >/dev/null 2>&1 || true
+  docker image prune -af >/dev/null 2>&1 || true
+  journalctl --vacuum-size=200M >/dev/null 2>&1 || true
+fi
+diag "antes"
+
 # 3) Contenedores: app (se reconstruye con el commit nuevo), Postgres + PostGIS y Garage (fotos).
+#    Si la base tarda en quedar sana (recuperación después de un corte), se espera hasta 10 min y se vuelve a intentar una vez.
 export TOLATINO_COMMIT="$COMMIT"
 log "docker compose up (commit $COMMIT)"
-docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" up -d --build --remove-orphans
+if ! "${COMPOSE[@]}" up -d --build --remove-orphans; then
+  log "la base no quedó sana a tiempo: se espera hasta 10 min y se reintenta"
+  diag "primer intento fallido"
+  "${COMPOSE[@]}" up -d db || true
+  for i in $(seq 1 60); do
+    "${COMPOSE[@]}" exec -T db pg_isready -h 127.0.0.1 -U tolatino -d tolatino >/dev/null 2>&1 && break
+    sleep 10
+  done
+  "${COMPOSE[@]}" up -d --build --remove-orphans || { diag "segundo intento fallido"; exit 1; }
+fi
+diag "después"
 docker image prune -f >/dev/null 2>&1 || true
 
 # 3b) Base de datos: migraciones pendientes, en orden, una sola vez cada una.
