@@ -43,6 +43,9 @@ services:
       WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET:-}
       WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN:-}
       WHATSAPP_TOKEN: ${WHATSAPP_TOKEN:-}
+      # 9l · La cuenta de WhatsApp Business (plantillas a Meta) y el tema de SNS del correo entrante de Soporte (sin él, nada entra).
+      WHATSAPP_WABA_ID: ${WHATSAPP_WABA_ID:-}
+      CORREO_SNS_TEMA: ${CORREO_SNS_TEMA:-}
       SES_ACCESS_KEY_ID: ${SES_ACCESS_KEY_ID:-}
       SES_SECRET_ACCESS_KEY: ${SES_SECRET_ACCESS_KEY:-}
       CORREO_DE: ${CORREO_DE:-}

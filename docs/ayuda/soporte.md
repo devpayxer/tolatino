@@ -2,7 +2,7 @@
 
 _Pantallas: **Soporte** (`/soporte`: Escríbenos, To'Latino está revisando, tus casos, caso nuevo y el caso con su conversación); se llega desde
 Mi cuenta › **Ayuda y soporte**, el pie de cada artículo del Centro de ayuda y los avisos de tus casos. Teléfono (una pantalla a la vez) y
-escritorio (tus casos a la izquierda, el caso a la derecha). Versión: 10 nov 2026. Audiencia: vecino. Tema: cuenta._
+escritorio (tus casos a la izquierda, el caso a la derecha). Versión: 14 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 - Es tu conversación con **una persona del equipo de To'Latino** sobre lo que no es de un solo negocio: tu cuenta, un pago o un cobro, la app,
@@ -38,7 +38,27 @@ escritorio (tus casos a la izquierda, el caso a la derecha). Versión: 10 nov 20
 - **¿El equipo escribe cosas que yo no veo?** Puede dejar notas para el resto del equipo; lo que te dice a ti siempre está en tu caso.
 - **¿Puedo cerrar un caso?** Sí: **Ya se resolvió**.
 
+## Por correo y por WhatsApp
+- **Si no puedes entrar** (tu cuenta está suspendida o perdiste tu teléfono), escríbele al **correo de Soporte de To'Latino** desde el correo que
+  **confirmaste en tu cuenta**. Se abre un caso TK- y te llega un correo «Recibimos tu correo · TK-…». Para seguir, **contesta ese correo sin cambiar el
+  asunto**: tu respuesta entra al mismo caso.
+- Solo entra un correo de verdad: si tu proveedor de correo no lo firma (SPF o DKIM) o parece spam, no se abre el caso. Si el correo no es el
+  confirmado de una cuenta, te contestamos cómo escribirnos (una vez al día).
+- **Cuando el equipo te responde**, además de la campana te llega un correo (si tu correo está confirmado y tienes «Recibos» encendido; si escribiste por
+  correo, siempre, con la respuesta). Si tu caso empezó por **WhatsApp** con El Compa y escribiste en las últimas 24 horas, la respuesta también te llega
+  por WhatsApp.
+- **Nunca nos mandes** números de tarjeta ni de seguro social: si los escribes en un correo, los tapamos antes de guardarlo.
+
 ## English
+
+### By email and WhatsApp
+- **If you cannot sign in**, write to the **To'Latino Support email** from the email you **confirmed in your account**. A TK- case opens and you get «We got
+  your email · TK-…». To continue, **reply to that email keeping the subject**: your reply goes into the same case.
+- Only real email gets in: if your provider does not sign it (SPF or DKIM) or it looks like spam, no case opens. If it is not the confirmed email of an
+  account, we reply with how to reach us (once a day).
+- **When the team replies**, you also get an email (if your email is confirmed and «Receipts» is on; always if you wrote by email, with the reply). If
+  your case started on **WhatsApp** and you wrote in the last 24 hours, the reply also reaches you there.
+- **Never send** card or Social Security numbers: if you write them in an email, we cover them before saving it.
 
 ### What it does
 With El Compa on, the top card says **El Compa helps you right away** with **Ask El Compa** (guided steps) and **Write to us** below it to go

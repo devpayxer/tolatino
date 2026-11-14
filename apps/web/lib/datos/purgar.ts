@@ -29,7 +29,14 @@ export async function purgarVencidas(max = 5): Promise<ResPurga[]> {
         and not exists (select 1 from staff_members s where s.user_id = u.id and s.status = 'active')
       order by u.delete_at limit $1`, [max])).rows;
   const out: ResPurga[] = [];
-  for (const x of C) out.push(await purgarCuenta(x.id));
+  for (const x of C) {
+    // 9l · «Tu cuenta se borró» (L1547): después de la purga la cuenta ya no tiene teléfono; el aviso va al número de ANTES como SMS a un teléfono (cifrado
+    // en phone_messages, que ahora se vacía a retener_sms_dias). Una vez: solo cuando esta corrida dejó la purga completa.
+    const a = (await db().query<{ tel: string | null; city: string | null; lang: string }>(`select phone as tel, home_city_id as city, coalesce(lang, 'es') as lang from users where id = $1::uuid`, [x.id])).rows[0];
+    const r = await purgarCuenta(x.id);
+    out.push(r);
+    if (r.ok && a?.tel) await (await import("../avisos")).avisarTelefono(a.tel, "cuenta_borrada", {}, { ref: ["user", x.id], city: a.city, en: a.lang === "en" }).catch(() => undefined);
+  }
   return out;
 }
 

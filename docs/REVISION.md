@@ -4711,3 +4711,27 @@ pasa a «revisado» y se publica. En producción la base no deja publicar una p�
   destruye solo; necesita que Claude ponga el token del proveedor del proyecto de pruebas como secreto del entorno «ensayo» de GitHub. Sus cifras van a
   `docs/incidentes/simulacros.md`.
 
+## Fase 9 · 9l — Avisos, correo y canales listos (14 nov)
+**Qué mirar (en el sandbox, desde el teléfono y en la computadora):**
+1. **Super Admin › Notificaciones › SMS y WhatsApp:** cada SMS con su estado (entregado, en reintento, falló) y sus intentos, sin el teléfono (solo los últimos 4); el
+   tope de remitentes (60 por minuto) y sus alertas. En el sandbox contesta el simulador: un aviso a 570-555-0911 falla una vez y llega al reintento.
+2. **Notificaciones › Plantillas de WhatsApp:** las 8 (código, boletos, cita, soporte; ES y EN). «Mandar a Meta» → «en revisión» → en el sandbox, «Simular: aprobada».
+   Míralas en inglés con el selector de idioma del admin.
+3. **Notificaciones › Plantillas:** «Tu código para entrar» se edita, pero no deja quitar {codigo}.
+4. **Soporte › Por correo** y un caso con canal «Correo a Soporte». (El correo entrante se enciende con SES en 9q.)
+5. **Mi cuenta › Perfil › Mandar el enlace** dos veces: el primer enlace ya no sirve; el segundo confirma; otra vez, «ya se usó».
+6. **El recibo de boletos** con «Agregar a Apple Wallet / Google Wallet» (las insignias provisionales de 8g; el arte oficial sigue pendiente de tus licencias).
+**Decisiones que tomé (lo más seguro y reversible):**
+- **Soporte contesta por WhatsApp** dentro de las 24 h: encendido (en la ventana de servicio Meta no cobra); se apaga en Configuración › Avisos y canales. Fuera
+  de la ventana, solo la plantilla aprobada (un aviso con el enlace, nunca el texto del caso).
+- **STOP:** confirma To'Latino (en el idioma de la persona); el día que se conecte Telnyx (9q) se apaga la respuesta del perfil del proveedor, o esta en Configuración.
+- **Tope global:** 60 números distintos por minuto, contando todos los números (To'Latino y negocios); lo que pasa no se contesta ese minuto; STOP siempre.
+- **Correo a Soporte:** solo abre caso el correo CONFIRMADO de una cuenta (también suspendida). A un correo sin cuenta le contestamos cómo escribirnos, una vez al día.
+  El correo de la respuesta del equipo lleva el TEXTO solo si el caso entró por correo; si no, solo el aviso y el enlace (lo de Soporte puede ser delicado).
+- **Baja de un toque:** el POST firmado da de baja; abrir el enlace (GET) solo lleva a Mi cuenta › Avisos (los antivirus abren enlaces).
+- **Ocultar y foto quitada** siguen sin SMS (moderación: campana y push); el **sello** sí lleva SMS de respaldo. La prueba de Pro avisa el día 20 y el último por
+  push y SMS de respaldo, no por correo.
+- **Invitación al equipo:** el SMS lleva el código de invitación y no promete más (aceptarla con el código es de 9n).
+- **«X te recomendó»:** una sola vez por teléfono en toda la vida, con STOP; de noche no sale (queda «silencio», no se reintenta).
+- **Reintentos:** 3 intentos con 2, 4 y 8 minutos de espera; no se reintenta lo permanente (STOP, número inválido: los códigos de Telnyx se confirman en 9q).
+- **«Ciudad abierta»:** el aviso y su plantilla son de 9i (lista avisada una vez, de día); 9l no manda otro.

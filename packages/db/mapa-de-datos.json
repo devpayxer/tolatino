@@ -12,7 +12,7 @@
     "negocio": { "es": "Es del negocio (su historial y sus cifras), sin tus datos.", "en": "It belongs to the business (its history and numbers), without your data." },
     "otra": { "es": "Es de otra persona; lo tuyo se quita.", "en": "It belongs to another person; your part is removed." },
     "cifras": { "es": "Cuenta en un resultado (una encuesta), sin tu nombre.", "en": "It counts in a result (a poll), without your name." },
-    "envios": { "es": "Registro cifrado de los mensajes de texto que se mandaron (reglas de los SMS).", "en": "Encrypted record of the text messages that were sent (SMS rules)." }
+    "envios": { "es": "Registro cifrado de los mensajes de texto que se mandaron (reglas de los SMS): el teléfono y el texto se vacían a los 90 días (retener_sms_dias).", "en": "Encrypted record of the text messages that were sent (SMS rules): the phone and the text are cleared after 90 days (retener_sms_dias)." }
   },
   "sinPersona": {
     "support_case_logs": { "es": "El registro técnico de un caso de Soporte: se vacía con su caso cuando la cuenta se borra (soporte_purgar_casos).", "en": "The technical log of a Support case: emptied with its case when the account is deleted (soporte_purgar_casos)." },
@@ -261,6 +261,11 @@
     "promo_codes": { "reglas": [ { "col": "promoter_user_id", "accion": "guardar", "porque": "dinero", "exporta": "codigo_de_promotor", "fusion": "no" } ], "equipo": ["created_by", "retired_by"] },
     "business_referrals": { "reglas": [ { "col": "promoter_user_id", "accion": "guardar", "porque": "dinero", "exporta": "negocios_que_trajiste", "fusion": "no" } ], "equipo": ["paid_by"] },
     "early_access": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "acceso_anticipado", "fusion": "mover" } ] },
+    "wa_templates": { "equipo": ["submitted_by"] },
+    "wa_template_events": { "equipo": ["actor_id"] },
+    "support_email_in": { "reglas": [ { "col": "user_id", "accion": "vaciar", "exporta": "correos_a_soporte", "fusion": "no", "set": { "subject": "null", "body": "null", "from_enc": "null" } } ] },
+    "email_unsubscribes": { "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "ley", "fusion": "no" } ] },
+    "sms_outbox": { "reglas": [ { "col": "to_hash", "accion": "guardar", "porque": "envios", "telefono": true, "fusion": "no" } ] },
     "zones": { "equipo": ["edited_by", "retired_by"] },
     "city_open_rules": { "equipo": ["updated_by"] },
     "city_launches": { "equipo": ["started_by", "cancelled_by"] },

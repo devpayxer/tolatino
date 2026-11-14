@@ -23,7 +23,7 @@
       "propositos": ["cuenta", "funcionamiento", "seguridad", "avisos"],
       "ligado": true, "opcional": false,
       "apps": ["cliente", "negocio", "delivery", "checkin"],
-      "tablas": ["users.phone", "users.phone_verified_at", "otp_codes.phone", "business_members.phone", "delivery_drivers.phone", "job_applications.phone", "chat_threads.phone_shared_at", "phone_messages.phone_enc", "phone_messages.phone_hash", "door_staff.phone_enc", "door_staff.phone_hash", "door_staff.phone_last4", "compa_canal_consent.phone_hash"],
+      "tablas": ["users.phone", "users.phone_verified_at", "otp_codes.phone", "business_members.phone", "delivery_drivers.phone", "job_applications.phone", "chat_threads.phone_shared_at", "phone_messages.phone_enc", "phone_messages.phone_hash", "door_staff.phone_enc", "door_staff.phone_hash", "door_staff.phone_last4", "compa_canal_consent.phone_hash", "sms_outbox.to_enc", "sms_outbox.to_hash", "sms_outbox.to_last4"],
       "guarda": { "es": "Mientras tengas la cuenta. Los códigos de entrada vencen a los 10 minutos.", "en": "While you have the account. Sign-in codes expire after 10 minutes." }
     },
     {
@@ -107,7 +107,7 @@
       "propositos": ["funcionamiento", "seguridad"],
       "ligado": true, "opcional": true,
       "apps": ["cliente", "negocio"],
-      "tablas": ["chat_messages.body", "dm_messages.body", "compa_inbound.body", "compa_outbound.body"],
+      "tablas": ["chat_messages.body", "dm_messages.body", "compa_inbound.body", "compa_outbound.body", "sms_outbox.body_enc"],
       "guarda": { "es": "Mientras exista la conversación; al borrar tu cuenta, tus mensajes se quitan.", "en": "While the conversation exists; when you delete your account, your messages are removed." }
     },
     {
@@ -131,7 +131,7 @@
       "propositos": ["funcionamiento"],
       "ligado": true, "opcional": true,
       "apps": ["cliente", "negocio", "delivery", "checkin"],
-      "tablas": ["support_messages.body", "support_case_logs.body"],
+      "tablas": ["support_messages.body", "support_case_logs.body", "support_email_in.body", "support_email_in.subject", "support_email_in.from_enc"],
       "guarda": { "es": "Mientras el caso esté abierto y un año después de cerrado.", "en": "While the case is open and one year after it is closed." }
     },
     {
@@ -233,6 +233,7 @@
   ],
   "$noPersonales": "Columnas que el guardián privacidadCoherente encuentra por su nombre (teléfono, correo, geom, fotos, mensajes…) y que NO son datos personales de la persona que usa la app, con su porqué. Cada una nueva se clasifica aquí o en una categoría de arriba.",
   "noPersonales": {
+    "wa_templates.body": "El texto de una plantilla de WhatsApp de To'Latino (lo escribe el equipo para Meta): no es de una persona.",
     "staff_mfa_pruebas.phone": "Teléfonos de ficción 570-555 del equipo de las pruebas (solo el sandbox; la base no acepta otros).",
     "maintenance_windows.message": "El aviso de mantenimiento que el equipo escribe para todos: no es de una persona.",
     "businesses.address": "La dirección pública del negocio (sale en su página).",

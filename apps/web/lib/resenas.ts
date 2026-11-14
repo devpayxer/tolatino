@@ -592,6 +592,15 @@ export async function guardarResena(userId: string, p: ResenaIn): Promise<Res> {
   // 5d · rev5: reseñas sin transacción en ráfaga → caso en «Reportes de usuario» (también lo revisa el barrido).
   if (res.ok) await (await import("./moderacion")).rafagaResenas(userId).catch(() => undefined);
   if (res.ok && puntos > 0) await recalcularRango(userId).catch(() => undefined);
+  // 9l · «Reseña nueva» al negocio (L289): una vez por reseña (editarla no vuelve a avisar); push, sin SMS. Lo de un bloqueo lo cuida la bandeja (actor).
+  if (res.ok && "id" in res && res.id) {
+    const rid = String(res.id);
+    if ((await db().query(`insert into notif_once (key) values ($1) on conflict do nothing`, [`resena:${rid}`]).catch(() => ({ rowCount: 0 }))).rowCount) {
+      const n = (await db().query<{ n: string }>(`select name as n from businesses where id = $1`, [p.negocio]).catch(() => ({ rows: [] }))).rows[0]?.n ?? "";
+      const dueños = (await db().query<{ id: string }>(`select user_id::text as id from business_members where business_id = $1 and status = 'active' and kind = 'owner'`, [p.negocio]).catch(() => ({ rows: [] as { id: string }[] }))).rows;
+      for (const d of dueños) await (await import("./avisos")).avisar(d.id, "biz_resena", { negocio: n, estrellas: stars }, { href: `/panel/${p.negocio}/resenas`, ref: ["review", rid], actor: userId });
+    }
+  }
   return res;
 }
 

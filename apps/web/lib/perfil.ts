@@ -77,7 +77,12 @@ export async function cambiarTelefono(u: Yo, entrada: string, codigo: string): P
     await c.query(`insert into account_changes (user_id, kind, "from", "to", by) values ($1, 'phone', $2, $3, 'user')`, [u.id, u.phone, tel]);
     return "ok";
   });
-  if (r === "ok") return { ok: true };
+  if (r === "ok") {
+    // 9l · «Cambiaste tu número» al número VIEJO (L322): si no fue la persona, se entera ahí (ya no tiene cuenta: va como SMS a un teléfono, en su idioma).
+    const base = (process.env.TOLATINO_URL || "https://pruebas.tolatino.com").replace(/\/$/, "");
+    await (await import("./avisos")).avisarTelefono(u.phone, "cuenta_tel_cambio", { ultimos: tel.slice(-4), enlace: `${base}/soporte` }, { ref: ["user", u.id], en: u.lang === "en" });
+    return { ok: true };
+  }
   if (r === "usado") return no("Ese número ya tiene una cuenta en To'Latino.", "That number already has a To'Latino account.", "ph");
   const m = ERR[r]!; return no(m[0], m[1], "code");
 }

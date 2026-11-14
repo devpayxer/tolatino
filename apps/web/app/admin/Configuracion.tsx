@@ -17,6 +17,7 @@ const SECCION: Record<Seccion, string> = {
   comunidad: "COMUNIDAD", gamificacion: "GAMIFICATION", salud_pro: "DOCTORES Y PROFESIONALES", noche: "NOCHE", edu: "EDUCACIÓN · NIÑOS · DEPORTE", fe_inm_autos: "IGLESIAS · BIENES RAÍCES · AUTOS", eventos: "EVENTOS", compa: "EL COMPA", soporte: "SOPORTE", apps: "APPS",
   retencion: "RETENCIÓN · CUÁNTO SE GUARDA", crecimiento: "CRECIMIENTO",
   dinero: "DINERO · PAGOS AL BANCO, CONCILIACIÓN Y ALERTAS",
+  avisos: "AVISOS Y CANALES · SMS, WHATSAPP Y CORREO",
   ciudades: "CIUDADES · EL AVISO DE APERTURA",
   despliegues: "DESPLIEGUES · VUELTA ATRÁS Y MANTENIMIENTO",
 };

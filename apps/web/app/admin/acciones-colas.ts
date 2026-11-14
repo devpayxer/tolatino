@@ -7,7 +7,8 @@ import type { PoolClient } from "pg";
 import { auditar, staff, type Staff } from "@/lib/admin";
 import { colasVisibles } from "@/lib/admin-colas";
 import type { Cola } from "@/lib/colas";
-import { tx } from "@/lib/db";
+import { db, tx } from "@/lib/db";
+import { avisar, avisarNegocio } from "@/lib/avisos";
 
 export type ResAdm = { ok: true; mensaje?: string; caso?: string } | { ok: false; mensaje: string };
 const no = (mensaje: string): ResAdm => ({ ok: false, mensaje });
@@ -93,6 +94,9 @@ export async function decidirSello(id: string, accion: "aprobar" | "info" | "no"
   });
   if (r !== "ok") return no(r);
   listo();
+  // 9l · El sello decidido (L143, L345): al dueño, con su motivo cuando falta un dato o no se aprobó (push y SMS de respaldo). Después del commit.
+  const nb = (await db().query<{ b: string; n: string }>(`select q.business_id as b, b.name as n from queue_items q join businesses b on b.id = q.business_id where q.id = $1::bigint`, [id]).catch(() => ({ rows: [] }))).rows[0];
+  if (nb) await avisarNegocio(nb.b, accion === "aprobar" ? "sello_ok" : accion === "info" ? "sello_info" : "sello_no", { negocio: nb.n, motivo: m }, { href: `/panel/${nb.b}` }).catch(() => undefined);
   return { ok: true, mensaje: accion === "aprobar" ? "Sello otorgado. El negocio lo ve en su panel y en su ficha." : "Listo. Quedó en la auditoría." };
 }
 
@@ -126,6 +130,7 @@ export async function decidirMedios(id: string, accion: "mantener" | "quitar", m
   if (!s) return no("Tu rol solo puede ver esta cola.");
   const m = accion === "mantener" ? "Falso positivo" : motivoOk(motivo);
   if (!m) return no("Escribe el motivo.");
+  let reportaron: string[] = [], negocioFoto: string | null = null;
   const r = await tx(async (c) => {
     const q = await abrir(c, s, id);
     if (typeof q === "string") return q;
@@ -136,13 +141,18 @@ export async function decidirMedios(id: string, accion: "mantener" | "quitar", m
       await c.query(`update media set status = 'removed', removed_reason = 'admin', removed_note = $2, removed_by = $3, removed_at = now() where id = $1::uuid and status = 'visible'`, [q.subject_id, m, s.id]);
       await c.query(`update business_stats_cache set photo_count = (select count(*) from media where owner_kind = 'business' and owner_id = $1 and status = 'visible'), updated_at = now() where business_id = $1`, [q.business_id]);
     }
-    await c.query(`update photo_reports set status = $2, decided_by = $3, decided_at = now(), decision_reason = $4 where media_id = $1::uuid and status = 'open'`, [q.subject_id, accion === "quitar" ? "removed" : "kept", s.id, m]);
+    reportaron = (await c.query<{ u: string }>(`update photo_reports set status = $2, decided_by = $3, decided_at = now(), decision_reason = $4 where media_id = $1::uuid and status = 'open' returning reporter_user_id::text as u`,
+      [q.subject_id, accion === "quitar" ? "removed" : "kept", s.id, m])).rows.map((x) => x.u);
+    negocioFoto = q.business_id;
     await cerrar(c, q, s, accion, m);
     await auditar(c, { actor: s.id, action: accion === "quitar" ? "negocio.foto.quitar" : "foto.reporte.mantener", targetKind: "media", targetId: q.subject_id, city: q.city_id, before: { foto: "marcada" }, after: { foto: accion === "quitar" ? "quitada" : "aprobada", negocio: q.business_id }, reason: m });
     return "ok";
   });
   if (r !== "ok") return no(r);
   listo();
+  // 9l · El resultado a quien reportó la foto (L350: la pantalla dice «Te avisamos el resultado»). Después del commit; una vez por reporte.
+  const nf = negocioFoto ? (await db().query<{ n: string }>(`select name as n from businesses where id = $1`, [negocioFoto]).catch(() => ({ rows: [] }))).rows[0]?.n ?? "" : "";
+  for (const u of [...new Set(reportaron)]) await avisar(u, accion === "quitar" ? "foto_rep_quitada" : "foto_rep_queda", { negocio: nf }, { href: negocioFoto ? `/n/${negocioFoto}` : undefined, ref: ["media", id] }).catch(() => undefined);
   return { ok: true, mensaje: accion === "quitar" ? "Quitada. El dueño ve el motivo en su panel." : "Listo. Quedó en la auditoría." };
 }
 

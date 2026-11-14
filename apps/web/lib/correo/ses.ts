@@ -26,11 +26,13 @@ export function firmarV4(x: { method: string; host: string; path: string; query?
 export function sesListo() {
   return !!(process.env.SES_ACCESS_KEY_ID && process.env.SES_SECRET_ACCESS_KEY && process.env.CORREO_DE);
 }
-export async function enviarSES(m: { to: string; subject: string; html: string; text: string }): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+export async function enviarSES(m: { to: string; subject: string; html: string; text: string; cabeceras?: Record<string, string> }): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const region = process.env.SES_REGION || "us-east-1", host = `email.${region}.amazonaws.com`, path = "/v2/email/outbound-emails";
+  // 9l · Cabeceras propias (la baja de un toque de las campañas: List-Unsubscribe y List-Unsubscribe-Post), con Content.Simple.Headers de SES v2.
+  const Headers = m.cabeceras ? Object.entries(m.cabeceras).map(([Name, Value]) => ({ Name, Value })) : undefined;
   const body = JSON.stringify({
     FromEmailAddress: process.env.CORREO_DE, Destination: { ToAddresses: [m.to] },
-    Content: { Simple: { Subject: { Data: m.subject, Charset: "UTF-8" }, Body: { Html: { Data: m.html, Charset: "UTF-8" }, Text: { Data: m.text, Charset: "UTF-8" } } } },
+    Content: { Simple: { Subject: { Data: m.subject, Charset: "UTF-8" }, Body: { Html: { Data: m.html, Charset: "UTF-8" }, Text: { Data: m.text, Charset: "UTF-8" } }, ...(Headers ? { Headers } : {}) } },
   });
   const f = firmarV4({ method: "POST", host, path, headers: { "content-type": "application/json" }, body, region, service: "ses", key: process.env.SES_ACCESS_KEY_ID!, secret: process.env.SES_SECRET_ACCESS_KEY!, date: new Date() });
   try {

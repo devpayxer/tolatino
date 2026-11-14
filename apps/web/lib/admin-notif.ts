@@ -69,4 +69,6 @@ export const MUESTRA: Record<string, string> = { resumen: "Hoy en la Comunidad: 
   // 6j · Eventos
   evento: "Noche de bachata", lugar: "La Terraza", que: "Entrada general: cupo de 100 a 120", pct: "90", vendidos: "90", total: "100", cuantos: "2 boletos", codigo: "TL-KQX-4821",
   // 7i · Soporte y El Compa
-  cuando: "hoy antes de las 6 PM", quien: "Dayana", horas: "8", gastado: "$80.00", tope: "$100.00", texto: "¿Abren el domingo?" };
+  cuando: "hoy antes de las 6 PM", quien: "Dayana", horas: "8", gastado: "$80.00", tope: "$100.00", texto: "¿Abren el domingo?",
+  // 9l · Avisos y canales
+  ultimos: "0123", enlace: "https://tolatino.com/soporte", ciudad: "Hazleton", vistas: "120", ops: "14", resenas: "3", n: "2", item: "Flan de leche", estrellas: "5", rol: "barbero" };

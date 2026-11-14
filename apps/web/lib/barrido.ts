@@ -164,6 +164,10 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["conciliacion", async () => (await import("./conciliacion")).conciliarAyer()], ["conciliacionVigilar", async () => (await import("./conciliacion")).vigilarConciliacion()],
         ["verificaciones", async () => (await import("./pagos/verificacion")).vencerVerificaciones()], ["pagosAlBanco", async () => (await import("./pagos-banco")).pagarAlBanco()],
         ["alertasDinero", async () => (await import("./dinero-alertas")).barrerAlertasDinero()], ["planPro", async () => (await import("./suscripcion")).procesar()],
+        // 9l · Avisos y canales: los reintentos del SMS (el único camino) y su retención, la retención del correo a Soporte, pedido tarde, «ya publicó», «Avísame
+        // cuando haya», la prueba de Pro (día 20 y último, 10 AM) y el resumen de la semana (lunes, 9 AM). Cada aviso una vez (notif_once).
+        ["canales9l", async () => (await import("./canales/barrido")).barrerCanales9l()],
+        ["sms", async () => (await import("./sms")).reintentarSms()], ["correoEntrante", async () => (await import("./correo/entrante")).purgarCorreoEntrante()],
         // 9i · Ciudades: el aviso «tu ciudad abrió» a la lista de espera de la ciudad que abrió el asistente, por partes, de 9 AM a 9 PM de la ciudad, una vez.
         ["avisoApertura", async () => (await import("./ciudades/aviso")).avisarAperturas()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],

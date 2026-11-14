@@ -209,6 +209,7 @@ export async function responder(s: Staff, numero: string, texto: string, macro?:
   if (!puedeEditar(s)) return no("Tu rol solo puede ver Soporte.");
   const crudo = limpio(texto, 2000);
   if (crudo.length < 2) return no("Escribe la respuesta.");
+  let enviada: { caseId: string; mid: string; texto: string } | null = null;
   const r = await tx(async (c): Promise<ResE> => {
     const k = await abrir(c, s, numero);
     if (typeof k === "string") return no(k);
@@ -224,11 +225,15 @@ export async function responder(s: Staff, numero: string, texto: string, macro?:
     const m = (await c.query<{ id: string }>(`insert into support_messages (case_id, city_id, sender, staff_id, body, macro_key, from_draft) values ($1, $2, 'staff', $3, $4, $5, $6) returning id::text`,
       [k.id, k.city_id, s.id, t, mk, !!bd])).rows[0]!;
     if (bd) await c.query(`update compa_drafts set used = $2, message_id = $3::bigint where id = $1::uuid`, [bd.id, t.replace(/\s+/g, " ").trim() === bd.draft.replace(/\s+/g, " ").trim() ? "sent_as_is" : "edited", m.id]);
+    enviada = { caseId: k.id, mid: m.id, texto: t };
     await c.query(`update support_cases set status = 'waiting', first_reply_at = coalesce(first_reply_at, now()), assigned_staff_id = coalesce(assigned_staff_id, $2) where id = $1`, [k.id, s.id]);
     await audit(c, s, k, "soporte.responder", { estado: EST[k.status] }, { estado: EST.waiting, ...(mk ? { macro: mk } : {}), ...(bd ? { borrador: "de El Compa" } : {}) });
     return { ok: true, mensaje: "Enviado. La persona lo ve en su caso.", numero: k.number };
   });
   if (r.ok) await avisarCaso(r.numero!, "sop_respuesta", s.first_name ?? "");
+  // 9l · Fuera de la app: el aviso por correo (L980) y, si el caso entró por WhatsApp, la respuesta por WhatsApp dentro de las 24 h (L1118). Después del commit.
+  const e = enviada as { caseId: string; mid: string; texto: string } | null;
+  if (r.ok && e) await (await import("./soporte-canales")).respuestaFueraDeLaApp({ caseId: e.caseId, numero: r.numero!, mid: e.mid, texto: e.texto, quien: s.first_name ?? "" }).catch(() => undefined);
   return r;
 }
 /* Nota interna: solo el equipo la ve (internal = true; nunca sale por HILO_VECINO_SQL). */

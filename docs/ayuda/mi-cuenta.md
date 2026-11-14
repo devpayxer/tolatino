@@ -2,7 +2,7 @@
 
 _Pantallas: `/cuenta` (Resumen), `/cuenta/pedidos`, `/cuenta/citas`, `/cuenta/guardados`, `/cuenta/resenas`, `/cuenta/empleos`, `/cuenta/perfil` (y
 `/perfil/telefono`), `/cuenta/direcciones`, `/cuenta/avisos`, `/cuenta/ajustes` (y `/ajustes/ciudad`, `/ajustes/privacidad`, `/ajustes/borrar`) y
-`/cuenta/invitar`; **Ayuda y soporte** abre `/soporte`. Teléfono y escritorio (en escritorio, navegación a la izquierda). Pide haber entrado. Versión: 11 nov 2026. Audiencia: vecino. Tema:
+`/cuenta/invitar`; **Ayuda y soporte** abre `/soporte`. Teléfono y escritorio (en escritorio, navegación a la izquierda). Pide haber entrado. Versión: 14 nov 2026. Audiencia: vecino. Tema:
 cuenta._
 
 ## Qué hace
@@ -83,7 +83,27 @@ En **Avisos** hay una sección **SOPORTE**: lo de tus casos (recibido, te respon
 llega y no se apaga, y dice el horario del equipo. **Privacidad › El Compa**: lo que hablas con El Compa se guarda tapado 12 meses y después solo
 quedan cifras; si borras tu cuenta, a los 30 días se vacían tus conversaciones con El Compa y tus casos de Soporte (los cobros quedan en Stripe).
 
+## Tu correo, tu número y los avisos
+- **Confirmar tu correo:** en **Perfil** escribe tu correo y toca **Mandar el enlace**. El enlace sirve **24 horas y una sola vez**, y solo el **último** que
+  pediste: si pides otro, el anterior deja de servir. Ábrelo con tu cuenta abierta. Con el correo confirmado te llegan los recibos (pedidos, mesas, Pro y
+  boletos, con los botones para guardar el boleto en Apple Wallet o Google Wallet cuando están disponibles) y las respuestas de Soporte.
+- **Cambiar tu número:** cuando cambias el teléfono de tu cuenta, al número **viejo** le llega un mensaje «Tu número de To'Latino cambió…» con los
+  últimos 4 del nuevo, por si no fuiste tú.
+- **Borrar tu cuenta:** el día que se borra (a los 30 días) te llega un último mensaje «Tu cuenta se borró» a tu número.
+- **El código para entrar** llega por mensaje de texto; si tu teléfono lo reconoce, se llena solo. Si no llega, el sistema lo reintenta; si ya venció,
+  pide otro.
+- **Correo › Resumen semanal del barrio** (apagado de fábrica): los lunes, los negocios nuevos y los eventos de los próximos 7 días en tu ciudad.
+
 ## English
+
+### Your email, your number and notifications
+- **Confirm your email:** in **Profile** type your email and tap **Send the link**. The link works **24 hours, once**, and only the **latest** one you asked
+  for. Open it while signed in. With a confirmed email you get receipts (with buttons to save your ticket to Apple Wallet or Google Wallet when available)
+  and Support replies.
+- **Changing your number:** your **old** number gets «Your To'Latino number changed…» with the last 4 of the new one, in case it was not you.
+- **Deleting your account:** on the day it is deleted (after 30 days) you get one last text «Your account was deleted».
+- **The sign-in code** arrives by text and may autofill. If it does not arrive it is retried; if it expired, ask for a new one.
+- **Email › Weekly neighborhood digest** (off by default): on Mondays, new businesses and the next 7 days of events in your city.
 
 Help and support also says «El Compa · AI right away» when El Compa is on, and Settings › Privacy has **El Compa** (what the help AI sees and who
 reads it).

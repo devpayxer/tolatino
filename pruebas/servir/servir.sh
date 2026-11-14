@@ -70,7 +70,8 @@ else
     PUSH_APNS_URL=http://127.0.0.1:4401 PUSH_FCM_URL=http://127.0.0.1:4402 PUSH_FCM_OAUTH_URL=http://127.0.0.1:4402/token PUSH_WEB_HOSTS=127.0.0.1:4403
     ASC_API_URL=http://127.0.0.1:4404 PASES_APNS_URL=https://127.0.0.1:4406 PASES_GOOGLE_URL=http://127.0.0.1:4405 PASES_GOOGLE_OAUTH_URL=http://127.0.0.1:4405/token
     PASES_AIA_HOSTS=127.0.0.1:4405 TIENDAS_OIDC_JWKS_URL=http://127.0.0.1:4407/.well-known/jwks TIENDAS_GITHUB_API_URL=http://127.0.0.1:4407
-    PLAY_API_URL=http://127.0.0.1:4408 PLAY_OAUTH_URL=http://127.0.0.1:4408/token NODE_EXTRA_CA_CERTS="$PKI/raiz.pem")
+    PLAY_API_URL=http://127.0.0.1:4408 PLAY_OAUTH_URL=http://127.0.0.1:4408/token NODE_EXTRA_CA_CERTS="$PKI/raiz.pem"
+    CORREO_SNS_HOSTS=127.0.0.1:4409 CORREO_SNS_TEMA=arn:aws:sns:us-east-1:000000000000:tolatino-soporte-pruebas)  # 9l: el certificado de «SNS» lo sirve avi9l en :4409
 fi
 [ -n "${TRADUCTOR_URL:-}" ] && VARS+=(TRADUCTOR_URL="$TRADUCTOR_URL")
 # 5d: la moderación de imágenes propia (la levanta com5d en :8790 con el venv de recursos.sh; sin ella, las fotos esperan revisión manual).

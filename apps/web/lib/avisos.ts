@@ -2,6 +2,7 @@ import "server-only";
 import { db } from "./db";
 import { MODO_SMS } from "./entorno";
 import { canales, destino, encolar, estadoPushSql } from "./push/cola";
+import { enviarSms } from "./sms";
 
 /* Avisos (Super Admin secNotif): cada evento deja un aviso en la bandeja de la persona (siempre) y, si la plantilla va por
    SMS, decide si sale: lo crítico siempre; lo demás respeta sus preferencias (users.notif_prefs) y las horas de silencio
@@ -14,13 +15,16 @@ import { canales, destino, encolar, estadoPushSql } from "./push/cola";
 type Vars = Record<string, string | number>;
 const llenar = (t: string, v: Vars) => t.replace(/\{(\w+)\}/g, (_, k: string) => (v[k] != null ? String(v[k]) : `{${k}}`));
 
-async function smsTelnyx(to: string, texto: string): Promise<"enviado" | "fallo" | "sin_proveedor"> {
-  const key = process.env.TELNYX_API_KEY, from = process.env.TELNYX_FROM;
-  if (!key || !from) return "sin_proveedor";
-  try {
-    const r = await fetch("https://api.telnyx.com/v2/messages", { method: "POST", headers: { authorization: `Bearer ${key}`, "content-type": "application/json" }, body: JSON.stringify({ from, to, text: texto }), signal: AbortSignal.timeout(8000) });
-    return r.ok ? "enviado" : "fallo";
-  } catch { return "fallo"; }
+/* 9l · El SMS de un aviso sale por EL ÚNICO CAMINO (lib/sms: sms_outbox con reintentos y estado de entrega; guardián smsConReintento). Aquí solo se
+   arma el texto («To'Latino: …» y, si la plantilla lo pide, el enlace de seguimiento) y se anota el SMS en su aviso. En el sandbox el aviso sigue
+   «en modo pruebas» (el simulador lleva el recorrido en sms_outbox). */
+const BASE_URL = () => (process.env.TOLATINO_URL || "https://pruebas.tolatino.com").replace(/\/$/, "");
+const DE_SMS: Record<string, string> = { entregado: "entregado", enviado: "enviado", reintento: "enviado", pendiente: "enviado", fallo: "fallo", vencido: "fallo", sin_proveedor: "sin_proveedor" };
+async function salirSms(tabla: "notifications" | "phone_messages", id: string, tel: string, body: string, tpl: string, ciudad: string | null, pruebas: boolean, href?: string | null): Promise<void> {
+  const texto = `To'Latino: ${body}${href && /^\/[A-Za-z0-9/_?=&.%-]*$/.test(href) ? ` ${BASE_URL()}${href}` : ""}`;
+  const r = await enviarSms({ tel, texto, tpl, origen: { kind: tabla === "notifications" ? "aviso" : "telefono", id }, ciudad });
+  if (pruebas) await db().query(`update ${tabla} set sms_id = $2::bigint where id = $1::bigint`, [id, r?.id ?? null]);
+  else await db().query(`update ${tabla} set sms_id = $2::bigint, sms_status = $3, sms_at = now() where id = $1::bigint`, [id, r?.id ?? null, r ? DE_SMS[r.estado] ?? "fallo" : "fallo"]);
 }
 
 /* 7h · ¿Este teléfono pidió STOP al número de SMS de To'Latino? (compa_canal_consent; la última palabra manda). Ante la duda (la base falla), no se
@@ -34,8 +38,8 @@ async function enBajaSms(tel: string): Promise<boolean> {
 
 export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: string; ref?: [string, string]; sinSms?: boolean; actor?: string | null } = {}) {
   try {
-    const r = (await db().query<{ grp: string; pref: string | null; sms: boolean; sms_mode: string; push: boolean; title: { es: string; en: string }; body: { es: string; en: string }; lang: string; phone: string; prefs: Record<string, boolean>; city: string | null; tz: string; silencio: boolean; pn: number }>(
-      `select tp.grp, tp.pref, tp.sms, tp.sms_mode, tp.push, tp.title, tp.body, u.lang, u.phone, u.notif_prefs as prefs, u.home_city_id as city, coalesce(c.timezone, 'America/New_York') as tz,
+    const r = (await db().query<{ grp: string; pref: string | null; sms: boolean; sms_mode: string; push: boolean; enlace: boolean; title: { es: string; en: string }; body: { es: string; en: string }; lang: string; phone: string; prefs: Record<string, boolean>; city: string | null; tz: string; silencio: boolean; pn: number }>(
+      `select tp.grp, tp.pref, tp.sms, tp.sms_mode, tp.push, tp.sms_enlace as enlace, tp.title, tp.body, u.lang, u.phone, u.notif_prefs as prefs, u.home_city_id as city, coalesce(c.timezone, 'America/New_York') as tz,
               extract(hour from now() at time zone coalesce(c.timezone, 'America/New_York')) not between 7 and 21 as silencio,
               (select count(*)::int from push_tokens t where ${destino("u.id", "tp.app", "$3::text[]")}) as pn
          from notif_templates tp, users u left join cities c on c.id = u.home_city_id where tp.key = $1 and u.id = $2`, [tpl, userId, await canales()])).rows[0];
@@ -62,10 +66,7 @@ export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: s
       `insert into notifications (user_id, city_id, tpl, title, body, href, ref_kind, ref_id, sms_status, sms_to, actor_user_id, held_digest, push_status) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) returning id::text`,
       [userId, r.city, tpl, title, body, o.href ?? null, o.ref?.[0] ?? null, o.ref?.[1] ?? null, st, r.sms ? r.phone : null, o.actor ?? null, guardado, pst])).rows[0]!.id;
     if (pst === "pendiente") await encolar([id]);
-    if (st === "pendiente") {
-      const res = await smsTelnyx(r.phone, `To'Latino: ${body}`);
-      await db().query(`update notifications set sms_status = $2, sms_at = now() where id = $1::bigint`, [id, res]);
-    }
+    if (st === "pendiente" || st === "pruebas") await salirSms("notifications", id, r.phone, body, tpl, r.city, st === "pruebas", r.enlace ? o.href : null);
   } catch { /* un aviso nunca rompe la acción que lo dispara */ }
 }
 
@@ -74,19 +75,17 @@ export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: s
    (puede ser horas después) y el STOP. Nunca lanza. */
 export async function smsRespaldo(nid: string): Promise<string | null> {
   try {
-    const r = (await db().query<{ to: string | null; body: string; st: string }>(
+    const r = (await db().query<{ to: string | null; body: string; st: string; tpl: string; city: string | null; href: string | null; enlace: boolean }>(
       `update notifications n set sms_status = case when tp.grp <> 'crit' and n.tpl <> 'biz_req' and coalesce(u.notif_prefs->>'quiet', '') <> 'false'
                                                      and extract(hour from now() at time zone coalesce(c.timezone, 'America/New_York')) not between 7 and 21 then 'silencio'
                                                      when $2 then 'pruebas' else 'pendiente' end
          from notif_templates tp, users u left join cities c on c.id = u.home_city_id
         where n.id = $1::bigint and n.sms_status = 'respaldo' and tp.key = n.tpl and u.id = n.user_id
-        returning n.sms_to as to, n.body, n.sms_status as st`, [nid, MODO_SMS === "pruebas"])).rows[0];
+        returning n.sms_to as to, n.body, n.sms_status as st, n.tpl, n.city_id as city, n.href, tp.sms_enlace as enlace`, [nid, MODO_SMS === "pruebas"])).rows[0];
     if (!r || (r.st !== "pendiente" && r.st !== "pruebas")) return r?.st ?? null;
     if (!r.to || (await enBajaSms(r.to))) { await db().query(`update notifications set sms_status = 'baja' where id = $1::bigint`, [nid]); return "baja"; }
-    if (r.st === "pruebas") return "pruebas";
-    const res = await smsTelnyx(r.to, `To'Latino: ${r.body}`);
-    await db().query(`update notifications set sms_status = $2, sms_at = now() where id = $1::bigint`, [nid, res]);
-    return res;
+    await salirSms("notifications", nid, r.to, r.body, r.tpl, r.city, r.st === "pruebas", r.enlace ? r.href : null);
+    return (await db().query<{ s: string }>(`select sms_status as s from notifications where id = $1::bigint`, [nid])).rows[0]?.s ?? null;
   } catch { return null; }
 }
 
@@ -97,8 +96,8 @@ export async function avisarTelefono(tel: string, tpl: string, v: Vars, o: { hre
   try {
     const u = (await db().query<{ id: string }>(`select id::text from users where phone = $1 and status <> 'deleted' limit 1`, [tel])).rows[0];
     if (u) { await avisar(u.id, tpl, v, o); return; }
-    const t = (await db().query<{ grp: string; sms: boolean; body: { es: string; en: string }; silencio: boolean }>(
-      `select t.grp, t.sms, t.body, extract(hour from now() at time zone coalesce((select timezone from cities where id = $2), 'America/New_York')) not between 7 and 21 as silencio
+    const t = (await db().query<{ grp: string; sms: boolean; body: { es: string; en: string }; silencio: boolean; enlace: boolean }>(
+      `select t.grp, t.sms, t.body, t.sms_enlace as enlace, extract(hour from now() at time zone coalesce((select timezone from cities where id = $2), 'America/New_York')) not between 7 and 21 as silencio
          from notif_templates t where t.key = $1`, [tpl, o.city ?? null])).rows[0];
     if (!t?.sms) return;
     const { cifrar, huella } = await import("./cifrado");
@@ -107,10 +106,7 @@ export async function avisarTelefono(tel: string, tpl: string, v: Vars, o: { hre
     const st = st0 !== "silencio" && (await enBajaSms(tel)) ? "baja" : st0;   // 7h · STOP al número de To'Latino
     const id = (await db().query<{ id: string }>(`insert into phone_messages (phone_enc, phone_hash, city_id, tpl, body, ref_kind, ref_id, sms_status) values ($1, $2, $3, $4, $5, $6, $7, $8) returning id::text`,
       [cifrar(tel), huella(tel), o.city ?? null, tpl, body, o.ref?.[0] ?? null, o.ref?.[1] ?? null, st])).rows[0]!.id;
-    if (st === "pendiente") {
-      const res = await smsTelnyx(tel, `To'Latino: ${body}`);
-      await db().query(`update phone_messages set sms_status = $2, sms_at = now() where id = $1::bigint`, [id, res]);
-    }
+    if (st === "pendiente" || st === "pruebas") await salirSms("phone_messages", id, tel, body, tpl, o.city ?? null, st === "pruebas", t.enlace ? o.href : null);
   } catch { /* un aviso nunca rompe la acción que lo dispara */ }
 }
 
@@ -156,16 +152,25 @@ export async function avisarPedido(numero: string, tpl: "ord_ok" | "ord_no" | "o
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id where o.number = $1 and o.kind = 'order'`, [numero]).catch(() => ({ rows: [] }))).rows[0];
   if (o) await avisar(o.uid, tpl, { negocio: o.negocio, num: numero, hora: o.hora }, { href: `/pedido/${numero}`, ref: ["order", numero] });
 }
-export async function avisarMesa(numero: string, tpl: "rsv_ok" | "rsv_alt" | "rsv_no" | "rsv_chg_ok" | "rsv_chg_no", alt?: string) {
-  const o = (await db().query<{ uid: string; negocio: string; dia: string; hora: string }>(
-    `select o.user_id::text as uid, b.name as negocio, to_char(o.scheduled_at at time zone c.timezone, 'FMDD/FMMM') as dia, to_char(o.scheduled_at at time zone c.timezone, 'FMHH12:MI AM') as hora
+/* 9l · «Tu pedido llegó» (L272): solo un pedido con entrega (stage delivered), una vez. Lo llaman el negocio (Hoy) y el repartidor al entregar. */
+export async function avisarEntregado(opId: string) {
+  const o = (await db().query<{ uid: string; negocio: string; num: string }>(
+    `select o.user_id::text as uid, b.name as negocio, o.number as num from operations o join businesses b on b.id = o.business_id where o.id = $1::bigint and o.kind = 'order' and o.stage = 'delivered'`, [opId]).catch(() => ({ rows: [] }))).rows[0];
+  if (!o || !(await db().query(`insert into notif_once (key) values ($1) on conflict do nothing`, [`ord_entregado:${opId}`]).catch(() => ({ rowCount: 0 }))).rowCount) return;
+  await avisar(o.uid, "ord_entregado", { negocio: o.negocio, num: o.num }, { href: `/pedido/${o.num}`, ref: ["order", o.num] });
+}
+export async function avisarMesa(numero: string, tpl: "rsv_ok" | "rsv_alt" | "rsv_no" | "rsv_chg_ok" | "rsv_chg_no" | "rsv_hoy", alt?: string) {
+  const o = (await db().query<{ uid: string; negocio: string; dia: string; hora: string; sms: boolean }>(
+    `select o.user_id::text as uid, b.name as negocio, to_char(o.scheduled_at at time zone c.timezone, 'FMDD/FMMM') as dia, to_char(o.scheduled_at at time zone c.timezone, 'FMHH12:MI AM') as hora,
+            coalesce((o.details->>'sms')::boolean, true) as sms
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id where o.number = $1 and o.kind = 'table'`, [numero]).catch(() => ({ rows: [] }))).rows[0];
   let a = alt ?? "";
   if (o && tpl === "rsv_alt" && !a) {
     const p = (await db().query<{ at: string | null }>(`select p.proposed->>'at' as at from change_proposals p join operations o on o.id = p.operation_id where o.number = $1 and p.status = 'open' order by p.created_at desc limit 1`, [numero]).catch(() => ({ rows: [] }))).rows[0];
     if (p?.at) { const [h, m] = p.at.split(":").map(Number); a = `${(h! % 12) || 12}:${String(m ?? 0).padStart(2, "0")} ${h! < 12 ? "AM" : "PM"}`; }
   }
-  if (o) await avisar(o.uid, tpl, { negocio: o.negocio, dia: o.dia, hora: o.hora, alt: a }, { href: `/reserva/${numero}`, ref: ["table", numero] });
+  // 9l · «Avísame por SMS cuando confirmen y el día de la reservación» (Detalles): sin esa marca, el aviso llega a la app y por push, sin SMS.
+  if (o) await avisar(o.uid, tpl, { negocio: o.negocio, dia: o.dia, hora: o.hora, alt: a }, { href: `/reserva/${numero}`, ref: ["table", numero], sinSms: !o.sms });
 }
 
 /* 5c · Bloquear es mutuo e invisible también en la bandeja: un aviso que provocó alguien con quien hay un bloqueo (en cualquier

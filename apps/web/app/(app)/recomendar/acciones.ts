@@ -50,5 +50,15 @@ export async function enviarRecomendacion(r: Recomendacion): Promise<RespRec> {
     [me.id, c.id, name, cat, casa ? "sin_local" : "address", casa ? null : where, contacto, kind, know, know === "mio", !!r.show, why || null]);
   if (!ins.rows[0]) return { ok: false, error: "repetida" };
   await evento("recomendar", { ref: ins.rows[0].id, ciudad: c.id, userId: me.id, props: { cat } });
+  // 9l · El SMS al negocio «X te recomendó…» (L60): UNA sola vez por teléfono en toda la vida (aunque lo recomienden muchos), con STOP; de noche no sale.
+  if (tel) {
+    const { huella } = await import("@/lib/cifrado");
+    const primera = (await db().query(`insert into notif_once (key) values ($1) on conflict do nothing`, [`rec_sms:${huella(tel)}`])).rowCount;
+    if (primera) {
+      const quien = r.show && me.first_name ? me.first_name : "Un vecino";
+      const base = (process.env.TOLATINO_URL || "https://pruebas.tolatino.com").replace(/\/$/, "");
+      await (await import("@/lib/avisos")).avisarTelefono(tel, "rec_negocio", { quien, negocio: name, enlace: `${base}/publica` }, { ref: ["recommendation", ins.rows[0].id], city: c.id });
+    }
+  }
   return { ok: true, id: ins.rows[0].id, at: ins.rows[0].at.replace(/^0/, ""), name, ciudad: c.name };
 }

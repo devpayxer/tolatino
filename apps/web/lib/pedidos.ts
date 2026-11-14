@@ -235,6 +235,7 @@ export async function cambiarPaso(negocio: string, numero: string, paso: Paso, a
     if (r.ok && "op" in r && paso === "aceptar") await cobrarOperacion(r.op as string);
     if (r.ok && "op" in r && paso === "rechazar") await liberarOperacion(r.op as string);
     if (r.ok && "op" in r && paso === "entregado") await (await import("./correo/recibos")).reciboPedido(r.op as string); // 2q: recibo por correo
+    if (r.ok && "op" in r && paso === "entregado") await (await import("./avisos")).avisarEntregado(r.op as string); // 9l: «Tu pedido llegó»
     return r.ok ? { ok: true as const } : r;
   });
 }

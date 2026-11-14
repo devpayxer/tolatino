@@ -75,6 +75,15 @@ export async function registrar(userId: string, sesionHash: string, r: Registro)
 }
 
 /* «En este teléfono» → apagado: los tokens vivos de ESTA sesión. */
+/* 9l · `pushsubscriptionchange` (el service worker, /api/push/renovar): el navegador cambió la suscripción por su cuenta. La nueva se registra como
+   siempre (atada a ESTA sesión; la dirección y las llaves se revisan) y la vieja, si era de esta persona, queda «reemplazado» (nunca la de otra). */
+export async function renovarWeb(userId: string, sesionHash: string, viejo: string | null, r: { endpoint: string; p256dh: string; auth: string }): Promise<Res> {
+  const x = await registrar(userId, sesionHash, { provider: "webpush", token: r.endpoint, p256dh: r.p256dh, auth: r.auth });
+  if (x.ok && viejo && viejo !== r.endpoint && viejo.length <= 4096)
+    await db().query(`update push_tokens set revoked_at = now(), revoked_reason = 'reemplazado' where token_hash = $1 and user_id = $2 and revoked_at is null`, [huella(`push:webpush:${viejo}`), userId]);
+  return x;
+}
+
 export async function apagarEste(userId: string, sesionHash: string): Promise<number> {
   return (await db().query(`update push_tokens t set revoked_at = now(), revoked_reason = 'apagado', revoked_by = $1
                               from sessions s where s.token_hash = $2 and s.user_id = $1 and t.session_id = s.id and t.revoked_at is null`, [userId, sesionHash])).rowCount ?? 0;

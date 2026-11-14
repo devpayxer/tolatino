@@ -7,7 +7,8 @@ import { db, tx } from "../db";
 import { ENTORNO } from "../entorno";
 import { respuestaAutoCanal, idiomaDe, turno } from "./conversacion";
 import { crearEnlace } from "./enlace";
-import { hayLlaves, mandar, type Entrante } from "./canales-proveedor";
+import { hayLlaves, mandar, mandarPlantilla, type Entrante } from "./canales-proveedor";
+import { enviarSms } from "../sms";
 import { canalEncendido, disponible } from "./interruptores";
 import type { Lang } from "./modelo";
 import { TAPADO, tapar } from "./tapar";
@@ -99,7 +100,7 @@ export async function contarRechazo(proveedor: string, motivo: "firma" | "hora" 
 }
 
 /* 2 · La salida: TODO lo que El Compa manda por un canal pasa por aquí. Decide si sale y lo anota (aunque no salga). */
-type Salir = { inboundId: string | null; n: Numero; tel: string; hash: string; userId?: string | null; convId?: number | null; ciudad: string; kind: "respuesta" | "enlace" | "fija" | "baja" | "alta" | "ayuda" | "limite" | "auto";
+type Salir = { inboundId: string | null; n: Numero; tel: string; hash: string; userId?: string | null; convId?: number | null; ciudad: string; kind: "respuesta" | "enlace" | "fija" | "baja" | "alta" | "ayuda" | "limite" | "auto" | "soporte";
   texto: string; guardar?: string; respuestaDe?: Date | null };
 export async function enviar(o: Salir): Promise<string> {
   const canal = o.n.channel, negocio = o.n.business_id, texto = plano(tapar(o.texto).texto, canal), guardado = plano(tapar(o.guardar ?? o.texto).texto, canal);
@@ -121,6 +122,15 @@ export async function enviar(o: Salir): Promise<string> {
   if (st === "simulado" && ENTORNO !== "produccion") {
     const B0 = ((globalThis as unknown as { __canalSim?: { entrada: string | null; texto: string }[] }).__canalSim ??= []);
     B0.push({ entrada: o.inboundId, texto }); if (B0.length > 200) B0.splice(0, B0.length - 200);
+  }
+  // 9l · Por SMS, EL ÚNICO CAMINO (lib/sms: reintentos y estado de entrega); por WhatsApp, directo (el estado llega por los `statuses` de Meta).
+  if (st === "pendiente" && o.n.provider === "telnyx") {
+    const s = await enviarSms({ tel: o.tel, texto, origen: { kind: "compa", id }, ciudad: o.ciudad, de: o.n.address });
+    const e = s?.estado ?? "fallo", fin = e === "fallo" || e === "vencido" ? "fallo" : e === "sin_proveedor" || e === "pendiente" ? "pendiente" : "enviado";
+    await db().query(`update compa_outbound set sms_id = $2::bigint, status = $3, sent_at = case when $3 = 'enviado' then now() else sent_at end,
+                             provider_msg_id = (select a.provider_msg_id from sms_attempts a where a.sms_id = $2::bigint and a.accepted order by a.n desc limit 1) where id = $1::bigint`, [id, s?.id ?? null, fin]);
+    if (e === "entregado") await db().query(`update compa_outbound set status = 'entregado' where id = $1::bigint and status = 'enviado'`, [id]);
+    return e === "entregado" ? "entregado" : fin === "pendiente" ? "pendiente" : fin;
   }
   if (st === "pendiente" && o.n.provider !== "sim") {
     const r = await mandar(o.n.provider, o.n.address, o.tel, texto);
@@ -178,10 +188,14 @@ async function turnoCanal(e: Fila): Promise<{ result: string; userId?: string | 
   if (k === "stop" || k === "start") {
     await db().query(`insert into compa_canal_consent (phone_hash, channel, business_id, action, via, inbound_id) values ($1, $2, $3, $4, $5, $6::bigint)`,
       [e.from_hash, canal, negocio, k, via, e.id]);
-    await enviar({ ...base, kind: k === "stop" ? "baja" : "alta", texto: LINEAS_CANAL[k === "stop" ? "baja" : "alta"][lang0] });
+    // 9l · UNA sola confirmación de STOP (L1104): la nuestra o la del proveedor (Configuración › Avisos y canales); la baja se anota siempre.
+    if (k === "start" || (await valor("canal_stop_propia")) === 1) await enviar({ ...base, kind: k === "stop" ? "baja" : "alta", texto: LINEAS_CANAL[k === "stop" ? "baja" : "alta"][lang0] });
     return { result: k === "stop" ? "baja" : "alta" };
   }
   if (await enBaja()) return { result: "en_baja" };    // de baja: no se contesta nada (salvo START)
+  // 9l · El tope GLOBAL de remitentes por minuto (una inundación de números falsos, L1120): pasado el tope, a ese número no se le contesta en ese minuto
+  // (ni pasa por El Compa) y el equipo recibe una alerta (una cada 10 minutos). STOP ya se respetó arriba.
+  if (await sobreElTope(e.id, e.from_hash)) return { result: "tope_global" };
   if (k === "help") { await enviar({ ...base, kind: "ayuda", texto: LINEAS_CANAL.ayuda(`${BASE()}/ayuda/el-compa-por-whatsapp-y-sms`)[lang0] }); return { result: "ayuda" }; }
 
   // ── Límite por teléfono al día (todas las entradas de ese teléfono): avisa una vez y calla ──
@@ -267,6 +281,59 @@ export async function barrerCanales(): Promise<{ retomadas: number; purgadas: nu
   const a = (await db().query(`update compa_inbound set body = null, from_enc = null, purged_at = now() where purged_at is null and received_at < now() - make_interval(days => $1::int) and estado in ('hecho', 'fallo')`, [dias])).rowCount ?? 0;
   const b = (await db().query(`update compa_outbound set body = null, purged_at = now() where purged_at is null and created_at < now() - make_interval(days => $1::int) and status <> 'pendiente'`, [dias])).rowCount ?? 0;
   return { retomadas, purgadas: a + b };
+}
+
+/* 9l · El tope GLOBAL de remitentes por minuto (todos los números, WhatsApp y SMS). El lugar de cada número es el de su primer mensaje en el minuto:
+   los que llegan después del tope no se contestan ese minuto. Pasado el tope, una alerta al equipo por cada ventana de 10 minutos (canal_alertas). */
+async function sobreElTope(id: string, hash: string): Promise<boolean> {
+  const tope = await valor("canal_remitentes_min");
+  const r = (await db().query<{ pos: number; n: number }>(
+    `with v as (select from_hash, min(id) as primero from compa_inbound where received_at > now() - interval '1 minute' and id <= $2::bigint group by from_hash)
+     select (select count(*)::int from v where primero <= coalesce((select primero from v where from_hash = $1), $2::bigint)) as pos, (select count(*)::int from v) as n`, [hash, id])).rows[0];
+  if (!r || r.n <= tope) return false;
+  const nueva = (await db().query<{ id: string }>(
+    `insert into canal_alertas (kind, bucket, n, tope) values ('remitentes', to_timestamp(floor(extract(epoch from now()) / 600) * 600), $1, $2) on conflict (kind, bucket) do nothing returning id::text`,
+    [r.n, tope])).rows[0];
+  if (nueva) {
+    const equipo = (await db().query<{ id: string }>(`select m.user_id::text as id from staff_members m where m.status = 'active' and m.role = 'admin'`).catch(() => ({ rows: [] as { id: string }[] }))).rows;
+    if (equipo.length) await (await import("../avisos")).avisarMuchos(equipo.map((u) => u.id), "canal_tope", { es: { n: r.n, tope }, en: { n: r.n, tope } }, { href: "/admin/notificaciones?tab=canales" });
+  }
+  return r.pos > tope;
+}
+
+/* 9l · Soporte contesta por WhatsApp (L1118): si el caso entró por WhatsApp (El Compa lo pasó a una persona) y la persona escribió en las últimas 24 h,
+   la respuesta del equipo le llega también ahí (la ventana de servicio de Meta: no se cobra). Fuera de la ventana, solo con la plantilla `tl_soporte`
+   APROBADA (un aviso con el enlace al caso, nunca el texto). Configuración › Avisos y canales › «Soporte contesta por WhatsApp». Lo de siempre de la
+   salida (canal apagado, STOP, la ventana) lo decide enviar(). Devuelve el estado (o «no» si el caso no entró por WhatsApp). */
+export async function responderCasoPorWhatsApp(x: { caseId: string; numero: string; texto: string }): Promise<string> {
+  const c = (await db().query<{ uid: string; tel: string; lang: string; ciudad: string; conv: number | null }>(
+    `select c.user_id::text as uid, u.phone as tel, coalesce(u.lang, 'es') as lang, c.city_id as ciudad, c.compa_conversation_id::int as conv
+       from support_cases c join users u on u.id = c.user_id join compa_conversations k on k.id = c.compa_conversation_id
+      where c.id = $1::bigint and k.channel = 'whatsapp' and u.phone_verified_at is not null and u.status not in ('deleted', 'merged')`, [Number(x.caseId) || 0])).rows[0];
+  if (!c) return "no";
+  if ((await valor("soporte_whatsapp")) !== 1) return "apagado";
+  const hash = huella(c.tel), es = c.lang !== "en";
+  const n = (await db().query<Numero>(
+    `select n.id::text, n.channel, n.provider, n.address, n.business_id, n.city_id from compa_channel_numbers n
+      where n.channel = 'whatsapp' and n.business_id is null and n.status = 'active'
+      order by (n.id = (select i.number_id from compa_inbound i where i.from_hash = $1 and i.channel = 'whatsapp' and i.business_id is null order by i.id desc limit 1)) desc nulls last, n.id limit 1`, [hash])).rows[0];
+  if (!n) return "sin_numero";
+  const href = `${BASE()}/soporte?caso=${encodeURIComponent(x.numero)}`;
+  const texto = es ? `To'Latino · Soporte · ${x.numero}: ${x.texto} Míralo aquí: ${href}` : `To'Latino · Support · ${x.numero}: ${x.texto} See it here: ${href}`;
+  const st = await enviar({ inboundId: null, n, tel: c.tel, hash, userId: c.uid, convId: c.conv, ciudad: c.ciudad, kind: "soporte", texto, respuestaDe: new Date() });
+  if (st !== "ventana") return st;
+  // Fuera de las 24 h: la plantilla aprobada por Meta (solo el número del caso y el enlace).
+  const t = (await db().query<{ ok: boolean }>(`select status = 'aprobada' as ok from wa_templates where name = 'tl_soporte' and language = $1`, [es ? "es" : "en_US"])).rows[0];
+  if (!t?.ok) return "ventana";
+  const guardado = es ? `Plantilla tl_soporte · ${x.numero}` : `Template tl_soporte · ${x.numero}`;
+  const sim = n.provider === "sim" || !hayLlaves("whatsapp");
+  const r = sim ? null : await mandarPlantilla(n.address, c.tel, "tl_soporte", es ? "es" : "en_US", [x.numero, href]);
+  const estado = sim ? (ENTORNO === "produccion" ? "sin_proveedor" : "simulado") : r?.ok ? "enviado" : "fallo";
+  await db().query(
+    `insert into compa_outbound (inbound_id, channel, provider, number_id, to_hash, user_id, conversation_id, business_id, city_id, kind, body, status, provider_msg_id, error, sent_at)
+     values (null, 'whatsapp', $1, $2::bigint, $3, $4, $5::bigint, null, $6, 'plantilla', $7, $8, $9, $10, case when $8 = 'enviado' then now() end)`,
+    [n.provider, n.id, hash, c.uid, c.conv, c.ciudad, guardado, estado, r?.ok ? r.id : null, r && !r.ok ? r.error : null]);
+  return "plantilla";
 }
 
 /* ── Super Admin › El Compa › Canales ── */
