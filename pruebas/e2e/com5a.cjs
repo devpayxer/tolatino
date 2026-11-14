@@ -35,6 +35,8 @@ const A = '5705550299', BB = '5705550288', Y = '5705550433', ADM = '5705550199';
   sql(`select com_derivados_on(); update community_profiles set rank_level = 3 where user_id = '${RA}'`); // fixture: las encuestas se abren en Cabo (5f: el rango es derivado; la prueba enciende la marca de la base)
   sql(`update users set status = 'active', status_until = null where id in ('${RA}', '${RB}', '${RY}')`);
   sql(`update media set created_at = created_at - interval '2 hours' where uploaded_by = '${RA}' and created_at > now() - interval '1 hour'`);
+  // 9b-3 · Lo que una corrida anterior dejó a medias (si falló antes de limpiar) no cuenta: se limpia al empezar, igual que al terminar.
+  sql(`update com_posts set status = 'deleted', deleted_at = coalesce(deleted_at, now()), pinned_until = null where body like '%${TAG}%' and status <> 'deleted'`);
   sql(`update com_posts set pinned_until = now() + interval '5 days' where author_kind = 'official' and city_id = 'hzl' and body like 'Pregunta de la semana:%'`);
   // Para «Ver más»: 8 publicaciones viejas de B (fuera de su límite de 24 h), así el muro de Hazleton pasa de 20.
   for (let i = 1; i <= 8; i++) sql(`insert into com_posts (city_id, author_kind, author_user_id, kind, body, publish_at, created_at) values ('hzl', 'user', '${RB}', 'publicacion', 'Paginación de prueba número ${i} del barrio ${TAG}', now() - interval '${60 + i} hours', now() - interval '${60 + i} hours')`);
@@ -222,8 +224,10 @@ const A = '5705550299', BB = '5705550288', Y = '5705550433', ADM = '5705550199';
   ok(/com_posts_datos/.test(sqlErr(`insert into com_posts (city_id, author_kind, author_user_id, kind, body) values ('hzl', 'user', '${RA}', 'publicacion', 'Llamen al (570) 555 0123 ya ${TAG}')`)), 'insert directo con teléfono → la base lo rechaza');
   ok(/derivados/.test(sqlErr(`update com_posts set up_n = 999 where id = ${Q}`)), 'contadores a mano → la base lo rechaza');
   ok(/la pone la base/.test(sqlErr(`update com_posts set geom = st_setsrid(st_makepoint(-75.97, 40.95), 4326)::geography where id = ${Q}`)), 'ubicación a mano → la base lo rechaza');
-  const plan = execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "set enable_seqscan = off; explain select id from com_posts p where p.city_id = 'hzl' and p.status = 'visible' and (p.hot, p.id) < (99999::float8, 999999::bigint) order by p.hot desc, p.id desc limit 21"`).toString();
-  ok(/Index (Only )?Scan using com_posts_hot_idx/.test(plan) && !/Seq Scan/.test(plan) && !/Sort/.test(plan), 'el muro usa com_posts_hot_idx sin ordenar aparte');
+  const plan = execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "set enable_seqscan = off; set enable_bitmapscan = off; set enable_sort = off; explain select id from com_posts p where p.city_id = 'hzl' and p.status = 'visible' and (p.hot, p.id) < (99999::float8, 999999::bigint) order by p.hot desc, p.id desc limit 21"`).toString();
+  // 9b-3 · Lo que se comprueba es que el índice da el orden del muro (sin ordenar aparte), no qué plan prefiere el planificador con las estadísticas
+  // del momento: con pocas filas visibles (después de una vuelta entera) elegía un recorrido por mapa de bits + ordenar, que con pocas filas es más barato.
+  ok(/Index (Only )?Scan using com_posts_hot_idx/.test(plan) && !/Seq Scan/.test(plan) && !/Sort/.test(plan), /Index (Only )?Scan using com_posts_hot_idx/.test(plan) && !/Sort/.test(plan) ? 'el muro usa com_posts_hot_idx sin ordenar aparte' : `el muro usa com_posts_hot_idx sin ordenar aparte (plan: ${plan.replace(/\s+/g, ' ').slice(0, 300)})`);
 
   // ── 13 · Escritorio: muro y la publicación (240 + 720 + 320) ──
   await ad.goto(B + '/comunidad'); await ad.getByText('¿Qué pasa en tu cuadra').first().waitFor();

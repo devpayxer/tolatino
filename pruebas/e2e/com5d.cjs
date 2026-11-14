@@ -252,6 +252,10 @@ const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhos
   await clic(adB.getByText('Confirmar', { exact: true }));
   ok(await espera(() => sql(`select kind from sanctions where target_id = '${RM}' and lifted_at is null`) === 'mute7') && sql(`select status from users where id = '${RM}'`) === 'muted', 'el admin B lo silencia 7 días');
   ok(await espera(() => sql(`select count(*) from notifications where user_id = '${RM}' and tpl = 'mod_sancion'`) !== '0'), 'la persona recibe la sanción con el motivo y «Apelar»');
+  // 9b-3 · Punto de partida propio: arriba sale UNA fijada (la más nueva). Si otra prueba de la Comunidad falló antes de quitar la suya, tapaba la
+  // pregunta de la semana; se quitan las fijadas de prueba que quedaron y la pregunta queda fijada.
+  sql(`update com_posts set pinned_until = null where city_id = 'hzl' and pinned_until > now() and position('[c5' in body) > 0`);
+  sql(`update com_posts set pinned_until = now() + interval '5 days' where author_kind = 'official' and city_id = 'hzl' and body like 'Pregunta de la semana:%'`);
   await mp.goto(B + '/comunidad'); ok(await contiene(mp, 'Pregunta de la semana'), 'silenciado: el muro se lee');
   await mp.goto(B + '/comunidad/nuevo'); ok(await contiene(mp, 'No puedes publicar hasta el') && await contiene(mp, 'Primera vez') && await contiene(mp, 'Ver y apelar'), 'Publicar dice hasta cuándo y por qué (y «Ver y apelar»)');
   await mp.screenshot({ path: OUT + 'c5d-silenciado-m.png' });
