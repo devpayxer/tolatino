@@ -2,7 +2,7 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const fs = require('fs'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
-const M7 = 'packages/db/migrations/0107_eventos_publico.sql', EP = 'apps/web/lib/evt-publico.ts', RS = 'apps/web/lib/rsvp.ts', PT = 'apps/web/lib/punto.ts',
+const M7 = 'packages/db/migrations/0107_eventos_publico.sql', M46 = 'packages/db/migrations/0146_panel.sql', EP = 'apps/web/lib/evt-publico.ts', RS = 'apps/web/lib/rsvp.ts', PT = 'apps/web/lib/punto.ts',
   NP = 'apps/web/lib/noche-publico.ts', EV = 'apps/web/app/(app)/eventos/Eventos.tsx', AC = 'apps/web/app/(app)/eventos/acciones.ts',
   FI = 'apps/web/app/(app)/eventos/[slug]/FichaEvento.tsx', CF = 'apps/web/lib/config.ts', EVL = 'apps/web/lib/eventos.ts', BA = 'apps/web/lib/barrido.ts', IN = 'apps/web/app/(app)/Inicio.tsx';
 const casos = [
@@ -29,9 +29,9 @@ const casos = [
   ['rsvpConCupo', RS, "if (ya) { if (ya.party !== party) await c.query(`update rsvps set party = $2 where id = $1::bigint`, [ya.id, party]); }", "if (ya) { if (ya.party !== party) await c.query(`update rsvps set party = $2 where id = $1::bigint`, [ya.id, party]); await c.query(`update event_dates set rsvp_n = rsvp_n + $2 where id = $1::bigint`, [fechaId, party]); }"],
   ['rsvpConCupo', AC, "export async function evtCompartir(", "export async function evtVoyDirecto(f: string) { if (!(await mismoOrigen())) return; await db().query(`insert into rsvps (event_date_id, party) values ($1, 1)`, [f]); }\nexport async function evtCompartir("],
   ['rsvpConCupo', M7, "create trigger events_cupo before update of rsvp_capacity on events", "create trigger events_cupo_x before update of rsvp_capacity on events"],
-  // hoySoloEnVivo (ampliado: novedad con evento)
-  ['hoySoloEnVivo', M7, "     and (p.link_kind <> 'event' or exists (select 1 from event_dates d join events e on e.id = d.event_id\n                                              where d.event_id = p.event_id and e.business_id = p.business_id and d.listable and d.ends_at > now()));", "     and true;"],
-  ['hoySoloEnVivo', M7, "where d.event_id = p.event_id and e.business_id = p.business_id and d.listable and d.ends_at > now()));", "where d.event_id = p.event_id and e.business_id = p.business_id and d.ends_at > now()));"],
+  // hoySoloEnVivo (ampliado: novedad con evento) · 9b-3: la última definición de post_en_vivo es la de 0146 (9n-2)
+  ['hoySoloEnVivo', M46, "     and (p.link_kind <> 'event' or exists (select 1 from event_dates d join events e on e.id = d.event_id\n                                              where d.event_id = p.event_id and e.business_id = p.business_id and d.listable and d.ends_at > now()));", "     and true;"],
+  ['hoySoloEnVivo', M46, "where d.event_id = p.event_id and e.business_id = p.business_id and d.listable and d.ends_at > now()));", "where d.event_id = p.event_id and e.business_id = p.business_id and d.ends_at > now()));"],
   // puntoPublico (ampliado: punto y dirección del evento)
   ['puntoPublico', PT, "when ${b}.works_from_home then round(st_y(${b}.geo::geometry)", "when false then round(st_y(${b}.geo::geometry)"],
   ['puntoPublico', PT, "when ${b}.works_from_home then null else ${b}.address end", "else ${b}.address end"],
