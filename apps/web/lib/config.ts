@@ -18,7 +18,7 @@ export type ClaveConfig =
   | "com_editar_min" | "com_apelar_dias" | "com_encuesta_dias_max" | "com_traduccion_hora" | "com_resumen_hora" | "cup_dias_def"
   | "pts_tope_dia"
   | "sp_seguro_guardar_h" | "sp_total_escrito_dias" | "sp_notas_purga_dias" | "sp_fotos_ayuda_dias" | "ayuda_negocio_h"
-  | "noche_responder_min" | "noche_mesa_guardada_min" | "noche_fila_viva_min"
+  | "noche_responder_min" | "noche_mesa_guardada_min" | "noche_fila_viva_min" | "noche_corte_min"
   | "insc_responder_h" | "insc_oferta_h" | "insc_baja_h" | "ninos_purga_dias" | "insc_grupos_n" | "insc_grupos_dias"
   | "fe_responder_h" | "vis_responder_h" | "vis_paso_h" | "vis_purga_dias" | "lic_aviso_dias" | "dealer_doc_fee_cap_cents"
   // 6a · Eventos (0106)

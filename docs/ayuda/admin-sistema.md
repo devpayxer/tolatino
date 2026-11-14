@@ -52,6 +52,9 @@ En el sandbox, **Respaldos** muestra la semilla de pruebas: los respaldos reales
 vuelta atrás y la página de mantenimiento ya están como código (9o; ver «Despliegues, respaldos y la vuelta atrás») y empiezan a correr cuando se encienda
 producción (9t). Simbolizar los cierres nativos con los dSYM queda para cuando haya builds reales (9r).
 
+## Flags por ciudad o porcentaje
+- Además de `app.reportar`, **`app.ubicacion_vivo`** (la ruta en vivo del repartidor) se puede abrir solo en unas ciudades o a un porcentaje de repartidores; se decide por quien comparte su ubicación (la base no deja acotar un interruptor que se lee todo o nada).
+
 ## English
 
 ### What it does
@@ -97,3 +100,6 @@ of identical ones. A key expiring in 30 days: each Admin gets one notice per sta
 In the sandbox, **Backups** shows the test seed: real backups, the weekly test restore, deploys with rollback and the maintenance page are already code
 (9o; see «Deploys, backups and rollback») and start running when production is turned on (9t). Symbolicating native crashes with dSYMs waits for real
 builds (9r).
+
+### Flags by city or percentage
+- Besides `app.reportar`, **`app.ubicacion_vivo`** (the driver's live route) can be opened only in some cities or to a percentage of drivers; it is decided by the person sharing their location (the database does not let you limit a flag that is read all-or-nothing).

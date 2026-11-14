@@ -26,13 +26,15 @@ export function NocheEstado({ x, es }: { x: NocheVista; es: boolean }) {
     setOcupado(false); setConfirmar(false);
     if (r.ok) { setFlash(ok); setTimeout(() => setFlash(null), 3200); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
   };
+  // 9n-3 · El plazo sale de la reserva (el que eligió el local o el de Configuración): ya no dice «1 hora» para todos.
+  const espL = (m: number | null, es: boolean) => (m == null ? (es ? "un rato" : "a while") : m >= 60 ? (es ? `${Math.ceil(m / 60)} h` : `${Math.ceil(m / 60)} h`) : `${m} min`);
   const B = x.negocio.nombre, lista = x.k === "lista", dep = x.dep, linea = nm(LINEA_NOCHE);
   const noche = x.hoy ? E2("Esta noche", "Tonight") : E2(`El ${diaNoche(x.dow, true)}`, diaNoche(x.dow, false)), cuando = `${noche} · ${hNoche(x.llega)}`;
   const liberado = x.pago.st === "released", devuelto = x.pago.devuelto;
   const devT = dep ? (liberado ? E2(`Se liberó tu depósito de ${usdN(dep)}.`, `Your ${usdN(dep)} deposit was released.`) : devuelto ? E2(`Te devolvimos ${usdN(devuelto)} · 3 a 5 días.`, `We refunded ${usdN(devuelto)} · 3 to 5 days.`) : x.pago.st === "held" ? E2(`Se libera tu depósito de ${usdN(dep)}.`, `Your ${usdN(dep)} deposit is released.`) : "") : E2("No se cobró nada.", "Nothing was charged.");
   const codeL = x.code ? E2(`Código ${x.code}`, `Code ${x.code}`) : "";
   const H: Record<string, [string, string, string, string, string, string]> = {
-    pending: ["clock", "bg-action/10", "var(--tl-action)", E2("PENDIENTE", "PENDING"), `${E2("Esperando a ", "Waiting for ")}${B}`, E2("Confirman en menos de 1 hora. Si no confirman, te devolvemos el depósito.", "They confirm within 1 hour. If they do not, your deposit comes back.")],
+    pending: ["clock", "bg-action/10", "var(--tl-action)", E2("PENDIENTE", "PENDING"), `${E2("Esperando a ", "Waiting for ")}${B}`, E2(`Confirman en menos de ${espL(x.resp, true)}. Si no confirman, te devolvemos el depósito.`, `They confirm within ${espL(x.resp, false)}. If they do not, your deposit comes back.`)],
     confirmed: lista
       ? ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("ESTÁS EN LA LISTA", "YOU ARE ON THE LIST"), `${codeL} · ${x.pax} ${x.pax === 1 ? E2("persona", "person") : E2("personas", "people")}`, `${E2("Di tu nombre y el código en la puerta.", "Say your name and the code at the door.")} ${x.puerta[es ? "es" : "en"]}.`]
       : ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("MESA CONFIRMADA", "TABLE CONFIRMED"), cuando, `${codeL}. ${E2(`Te guardan la mesa ${x.hold} min.`, `They hold the table ${x.hold} min.`)}`],
@@ -59,11 +61,11 @@ export function NocheEstado({ x, es }: { x: NocheVista; es: boolean }) {
     ...(x.inN != null ? [[E2("ENTRARON", "GOT IN"), `${x.inN} ${E2("de", "of")} ${x.pax}`] as [string, string]] : [])];
   const depEstado = !dep ? "" : x.pago.st === "held" ? E2("RETENIDO", "HELD") : x.pago.st === "captured" ? E2("COBRADO", "CHARGED") : liberado ? E2("LIBERADO", "RELEASED") : devuelto ? E2("DEVUELTO", "REFUNDED") : x.perdio ? E2("SE QUEDÓ", "KEPT") : "";
   const vivo = ["pending", "change_proposed", "confirmed"].includes(x.status) && !(lista && x.inN);
-  const corte = x.cut != null ? hNoche(x.cut) : "6 PM";
+  const corte = hNoche(x.cut ?? x.corteBase);
   const reglaCx = lista ? E2("Puedes salir de la lista cuando quieras. No se cobra nada.", "You can leave the list any time. Nothing is charged.")
     : x.status !== "confirmed" ? E2("Aún no confirman: te liberamos todo.", "Not confirmed yet: we release everything.")
     : !dep ? E2("No dejaste depósito: no se cobra nada.", "You left no deposit: nothing is charged.")
-    : x.nowN < (x.cut ?? 360) ? E2(`Antes de las ${corte} de esa noche: te devolvemos ${usdN(dep)}.`, `Before ${corte} that night: we refund ${usdN(dep)}.`)
+    : x.nowN < (x.cut ?? x.corteBase) ? E2(`Antes de las ${corte} de esa noche: te devolvemos ${usdN(dep)}.`, `Before ${corte} that night: we refund ${usdN(dep)}.`)
     : E2(`Ya pasaron las ${corte}: el depósito de ${usdN(dep)} se queda con el local.`, `It is past ${corte}: the venue keeps the ${usdN(dep)} deposit.`);
   const llegar = () => { if (x.negocio.direccion) abrirComoLlegar({ dir: `${x.negocio.direccion}, ${B}` }); };
   return (

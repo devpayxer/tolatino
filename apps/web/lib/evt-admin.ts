@@ -22,19 +22,19 @@ const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
 const CIU = (col: string, i = 1) => `(cardinality($${i}::text[]) = 0 or ${col} = any($${i}::text[]))`;
 
 /* ── Cupos y venta de una fecha (la ficha del Super Admin) ── */
-export type CupoFila = { kind: "tipo" | "mesa" | "dia"; ref: string | null; nombre: Bi; cantidad: number; vendidos: number; apartados: number; ajuste: { n: number; motivo: string; at: string } | null };
-export type CuposFecha = { fecha: string; dia: string; h0: number; empezo: boolean; tz: string; ventaHasta: string; ventaHastaH: string; corte: "start" | "doors" | "day_before"; extendida: string | null;
+export type CupoFila = { kind: "tipo" | "mesa" | "dia" | "rsvp"; ref: string | null; nombre: Bi; cantidad: number; vendidos: number; apartados: number; ajuste: { n: number; motivo: string; at: string } | null };
+export type CuposFecha = { rsvp: boolean; fecha: string; dia: string; h0: number; empezo: boolean; tz: string; ventaHasta: string; ventaHastaH: string; corte: "start" | "doors" | "day_before"; extendida: string | null;
   extender: ("doors" | "start")[]; filas: CupoFila[] };
 export async function cuposFecha(s: Staff, eventoId: string, fechaId: string | null): Promise<CuposFecha | null> {
   if (!ID.test(eventoId) || (fechaId && !ID.test(fechaId))) return null;
-  const d = (await db().query<{ id: string; dia: string; h0: number; empezo: boolean; tz: string; hasta: string; hastaH: string; corte: CuposFecha["corte"]; ext: string | null; pm: boolean; im: boolean }>(
-    `select d.id::text, d.local_date::text as dia, (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as h0,
+  const d = (await db().query<{ id: string; dia: string; h0: number; empezo: boolean; tz: string; hasta: string; hastaH: string; corte: CuposFecha["corte"]; ext: string | null; pm: boolean; im: boolean; entry: string }>(
+    `select e.entry, d.id::text, d.local_date::text as dia, (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as h0,
             d.starts_at <= now() as empezo, ci.timezone as tz, to_char(bol_venta_hasta(e, d) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as hasta,
             to_char(bol_venta_hasta(e, d) at time zone ci.timezone, 'FMHH12:MI AM') as "hastaH", e.sales_until as corte,
             to_char(d.sales_extended_until at time zone ci.timezone, 'FMHH12:MI AM') as ext,
             d.doors_at > bol_venta_hasta(e, d) as pm, d.starts_at > bol_venta_hasta(e, d) as im
        from event_dates d join events e on e.id = d.event_id join cities ci on ci.id = d.city_id
-      where d.event_id = $1::bigint and ($2::bigint is null or d.id = $2::bigint) and d.status = 'scheduled' and e.entry = 'tickets' and ${CIU("d.city_id", 3)}
+      where d.event_id = $1::bigint and ($2::bigint is null or d.id = $2::bigint) and d.status = 'scheduled' and e.entry in ('tickets', 'rsvp') and ${CIU("d.city_id", 3)}
       order by (d.starts_at < now()), d.starts_at limit 1`, [eventoId, fechaId, s.cities])).rows[0];
   if (!d) return null;
   const F = (await db().query<CupoFila & { at: string | null; an: number | null; am: string | null }>(
@@ -53,9 +53,19 @@ export async function cuposFecha(s: Staff, eventoId: string, fechaId: string | n
        left join lateral (select x.quantity, x.reason, x.at from event_stock_overrides x where x.event_date_id = s.event_date_id and x.kind = 'dia' order by x.id desc limit 1) o on true
       where s.event_date_id = $1::bigint
      order by k`, [d.id])).rows;
+  // 9n-3 · Un evento con RSVP: el cupo es el del evento (0 = sin límite); «vendidos» son los lugares que ya se guardaron en ESTA fecha.
+  if (d.entry === "rsvp") {
+    const r = (await db().query<{ cantidad: number; vendidos: number; an: number | null; am: string | null; at: string | null }>(
+      `select e.rsvp_capacity as cantidad, dd.rsvp_n as vendidos, o.quantity as an, o.reason as am, o.at::text as at
+         from events e join event_dates dd on dd.id = $2::bigint
+         left join lateral (select x.quantity, x.reason, x.at from event_stock_overrides x where x.event_id = e.id and x.kind = 'rsvp' order by x.id desc limit 1) o on true
+        where e.id = $1::bigint`, [eventoId, d.id])).rows[0];
+    if (r) F.push({ kind: "rsvp", ref: null, nombre: { es: "Cupo del RSVP (lugares)", en: "RSVP capacity (spots)" }, cantidad: r.cantidad, vendidos: r.vendidos, apartados: 0,
+      ajuste: r.an != null ? { n: r.an, motivo: r.am ?? "", at: r.at ?? "" } : null, at: null, an: null, am: null });
+  }
   // Solo se ofrece extender hacia más tarde que el cierre de ahora (lo calcula la base).
-  return { fecha: d.id, dia: d.dia, h0: d.h0, empezo: d.empezo, tz: d.tz, ventaHasta: d.hasta, ventaHastaH: d.hastaH, corte: d.corte, extendida: d.ext,
-    extender: [...(d.pm ? (["doors"] as const) : []), ...(d.im ? (["start"] as const) : [])],
+  return { rsvp: d.entry === "rsvp", fecha: d.id, dia: d.dia, h0: d.h0, empezo: d.empezo, tz: d.tz, ventaHasta: d.hasta, ventaHastaH: d.hastaH, corte: d.corte, extendida: d.ext,
+    extender: d.entry === "rsvp" ? [] : [...(d.pm ? (["doors"] as const) : []), ...(d.im ? (["start"] as const) : [])],
     filas: F.map((x) => ({ kind: x.kind, ref: x.ref, nombre: x.nombre, cantidad: x.cantidad, vendidos: x.vendidos, apartados: x.apartados, ajuste: x.an != null ? { n: x.an, motivo: x.am ?? "", at: x.at ?? "" } : null })) };
 }
 
@@ -72,17 +82,34 @@ async function fechaAdm(c: Pick<import("pg").PoolClient, "query">, s: Staff, fec
 
 /* «Ajustar cupo» de un tipo, una mesa o el aforo del día de una fecha. No baja de lo vendido + apartado (lo dice antes y la base lo vuelve a
    imponer con su check). */
-export async function ajustarCupo(s: Staff, fechaId: string, kind: "tipo" | "mesa" | "dia", ref: string | null, cantidadTxt: string, motivo: string): Promise<R> {
+export async function ajustarCupo(s: Staff, fechaId: string, kind: "tipo" | "mesa" | "dia" | "rsvp", ref: string | null, cantidadTxt: string, motivo: string): Promise<R> {
   const m = String(motivo ?? "").trim().slice(0, 500);
   if (m.length < 4) return no("Escribe el motivo: lo ve el organizador.");
-  if (!["tipo", "mesa", "dia"].includes(kind) || (kind !== "dia" && !ID.test(String(ref ?? "")))) return no("Ese cupo no existe.");
+  if (!["tipo", "mesa", "dia", "rsvp"].includes(kind) || (kind !== "dia" && kind !== "rsvp" && !ID.test(String(ref ?? "")))) return no("Ese cupo no existe.");
   const n = Number(String(cantidadTxt ?? "").replace(/[,\s]/g, ""));
-  if (!Number.isInteger(n) || n < 0 || n > 100000) return no("Escribe un número entero (de 0 a 100,000).");
+  if (!Number.isInteger(n) || n < 0 || n > (kind === "rsvp" ? 20000 : 100000)) return no(`Escribe un número entero (de 0 a ${kind === "rsvp" ? "20,000" : "100,000"}).`);
   try {
     const r = await tx(async (c): Promise<R & { aviso?: { biz: string; v: Record<string, string> } }> => {
       const f = await fechaAdm(c, s, fechaId);
       if (!f) return no("Esa fecha no existe en tus ciudades.");
       if (f.st !== "scheduled" || !["live", "paused"].includes(f.est) || f.empezo) return no("Solo una fecha que no ha empezado de un evento publicado.");
+      if (kind === "rsvp") {
+        // 9n-3 · El cupo de un RSVP es del EVENTO (events.rsvp_capacity; 0 = sin límite). No baja de los lugares que ya se guardaron en ninguna fecha; el trigger
+        // events_cupo lo vuelve a imponer y events_cupo_admin hace que el último ajuste de To'Latino mande sobre lo que vuelva a guardar el organizador.
+        const ev = (await c.query<{ q: number; usado: number; entry: string }>(
+          `select e.rsvp_capacity as q, coalesce((select max(d.rsvp_n) from event_dates d where d.event_id = e.id and d.status = 'scheduled'), 0) as usado, e.entry from events e where e.id = $1::bigint for update`, [f.eid])).rows[0];
+        if (!ev || ev.entry !== "rsvp") return no("Ese evento no lleva RSVP.");
+        if (n === ev.q) return no("Ya tiene ese cupo.");
+        if (n > 0 && n < ev.usado) return no(`No baja de los lugares ya guardados: ${ev.usado}.`);
+        await c.query(`insert into event_stock_overrides (event_id, event_date_id, city_id, kind, ref_id, quantity, before_qty, reason, by_user) values ($1::bigint, $2::bigint, $3, 'rsvp', null, $4, $5, $6, $7)`,
+          [f.eid, fechaId, f.city, n, ev.q, m, s.id]);
+        await c.query(`update events set rsvp_capacity = $2 where id = $1::bigint`, [f.eid, n]);
+        const que = `Cupo del RSVP: ${ev.q || "sin límite"} a ${n || "sin límite"}`, queEn = `RSVP capacity: ${ev.q || "no limit"} to ${n || "no limit"}`;
+        await c.query(`insert into event_changes (event_id, event_date_id, city_id, kind, before, after, reason_key, note, by_user, by_kind) values ($1::bigint, $2::bigint, $3, 'capacity_adjusted', $4, $5, 'admin', $6, $7, 'admin')`,
+          [f.eid, fechaId, f.city, JSON.stringify({ cupo: ev.q }), JSON.stringify({ cupo: n, que: { es: que, en: queEn } }), m, s.id]);
+        await auditar(c, { actor: s.id, action: "evento.cupo.ajustar", targetKind: "event", targetId: f.eid, city: f.city, before: { "Cupo del RSVP": ev.q }, after: { "Cupo del RSVP": n, fecha: f.dia }, reason: m });
+        return { ok: true, msg: `Cupo ajustado: ${que}. El organizador recibe el aviso.`, aviso: { biz: f.biz, v: { evento: f.title.es, cuando: `${diaCorto(f.dia, true)} · ${hora(f.h0)}`, que, motivo: m } } };
+      }
       const T = kind === "tipo" ? { t: "ticket_stock", k: "ticket_type_id", q: "quantity", n: "ticket_types", nc: "name" } : kind === "mesa" ? { t: "table_stock", k: "table_id", q: "quantity", n: "event_tables", nc: "zone" } : { t: "event_day_stock", k: null, q: "capacity", n: null, nc: null };
       const x = (await c.query<{ q: number; usado: number; nombre: Bi | null }>(
         `select s.${T.q} as q, s.sold_n + s.held_n as usado, ${T.n ? `(select y.${T.nc} from ${T.n} y where y.id = s.${T.k})` : "null::jsonb"} as nombre

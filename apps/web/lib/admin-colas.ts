@@ -32,10 +32,28 @@ export type CasoLista = {
   assignee: string | null; mine: boolean; esp: ReturnType<typeof espera>; priority: string; tk?: string;
 };
 
-export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boolean; sinAsignar?: boolean; vencidos?: boolean }) {
+/* 9n-3 · Antes la lista traía 200 casos y todo lo demás (los conteos de las pestañas, los vencidos, los filtros «Míos / Sin asignar / Vencidos») se
+   calculaba sobre esos 200: con más, las cifras mentían. Ahora el filtro y la página los hace la base, y los conteos salen de una consulta
+   aparte sobre TODOS los casos abiertos de la persona. */
+export const CASOS_POR_PAGINA = 50;
+export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boolean; sinAsignar?: boolean; vencidos?: boolean; pag?: number }) {
   const vis = colasVisibles(s);
   const colas = f.cola && vis.includes(f.cola) ? [f.cola] : vis;
-  if (!colas.length) return { casos: [] as CasoLista[], conteo: {} as Record<string, number>, vencidos: 0, total: 0 };
+  if (!colas.length) return { casos: [] as CasoLista[], conteo: {} as Record<string, number>, vencidos: 0, total: 0, hay: 0, pag: 1, porPagina: CASOS_POR_PAGINA };
+  const cuentas = (await db().query<{ queue: Cola; n: number; late: number }>(
+    `select q.queue, count(*)::int as n, count(*) filter (where extract(epoch from now() - q.opened_at) / (${SLA_SQL} * 3600) >= 1)::int as late
+       from queue_items q where q.status = 'open' and q.queue = any($1::text[]) and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[])) group by q.queue`,
+    [vis, s.cities])).rows;
+  const conteo: Record<string, number> = {};
+  let vencidos = 0, total = 0;
+  for (const c of cuentas) { conteo[c.queue] = c.n; vencidos += c.late; total += c.n; }
+  const hay = await db().query<{ n: number }>(
+    `select count(*)::int as n from queue_items q
+      where q.status = 'open' and q.queue = any($1::text[]) and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[]))
+        and (not $3::boolean or q.assigned_to = $5) and (not $4::boolean or q.assigned_to is null) and (not $6::boolean or extract(epoch from now() - q.opened_at) / (${SLA_SQL} * 3600) >= 1)`,
+    [colas, s.cities, !!f.mios, !!f.sinAsignar, s.id, !!f.vencidos]);
+  const nHay = hay.rows[0]?.n ?? 0;
+  const pag = Math.min(Math.max(1, Math.floor(f.pag ?? 1) || 1), Math.max(1, Math.ceil(nHay / CASOS_POR_PAGINA)));
   const r = await db().query<{
     id: string; queue: Cola; opened_at: string; priority: string; assigned_to: string | null; assignee: string | null;
     bname: string | null; cover: string | null; rname: string | null; rcat: string | null; mnote: string | null; mreason: string | null; nrep: number; ltitle: string | null;
@@ -91,15 +109,12 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
        left join sensitive_changes sc on q.subject_kind = 'sensitive_change' and sc.id = q.subject_id
        left join users su on sc.target_kind = 'user' and su.id::text = sc.target_id
       where q.status = 'open' and q.queue = any($1::text[]) and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[]))
-      order by (q.queue = 'cuidado') desc, (q.queue = 'estafa') desc, (q.queue = 'sop' and q.priority = 'alta') desc, extract(epoch from now() - q.opened_at) / (${SLA_SQL} * 3600) desc
-      limit 200`,
-    [colas, s.cities]);
-  const conteo: Record<string, number> = {};
-  let vencidos = 0;
-  const todos = r.rows.map((x): CasoLista => {
+        and (not $3::boolean or q.assigned_to = $5) and (not $4::boolean or q.assigned_to is null) and (not $6::boolean or extract(epoch from now() - q.opened_at) / (${SLA_SQL} * 3600) >= 1)
+      order by (q.queue = 'cuidado') desc, (q.queue = 'estafa') desc, (q.queue = 'sop' and q.priority = 'alta') desc, extract(epoch from now() - q.opened_at) / (${SLA_SQL} * 3600) desc, q.id
+      limit ${CASOS_POR_PAGINA} offset ${(pag - 1) * CASOS_POR_PAGINA}`,
+    [colas, s.cities, !!f.mios, !!f.sinAsignar, s.id, !!f.vencidos]);
+  const casos = r.rows.map((x): CasoLista => {
     const e = espera(x.opened_at, x.sla_h);
-    conteo[x.queue] = (conteo[x.queue] ?? 0) + 1;
-    if (e.r >= 1) vencidos++;
     const b = x.bname ?? "";
     const tk = (x.tk ?? "||").split("|");
     const di = (x.dinc ?? "||").split("|"), DK: Record<string, string> = { accidente: "Accidente", codigo: "Código del cliente", reclamo: "Reclamo", otro: "Incidencia" };
@@ -143,8 +158,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       assignee: x.assignee, mine: x.assigned_to === s.id, esp: e, ...(x.queue === "ticket" && x.tk ? { tk: x.tk.split("|")[0] } : {}),
     };
   });
-  const casos = todos.filter((c) => (!f.mios || c.mine) && (!f.sinAsignar || !c.assignee) && (!f.vencidos || c.esp.r >= 1));
-  return { casos, conteo, vencidos, total: todos.length };
+  return { casos, conteo, vencidos, total, hay: nHay, pag, porPagina: CASOS_POR_PAGINA };
 }
 /* 5d · Lo que dice un caso de la Comunidad en la lista: el motivo principal y cuántos reportes, o la regla que lo marcó. */
 function subCom(n: number, reason: string | null, flag: string | null) {

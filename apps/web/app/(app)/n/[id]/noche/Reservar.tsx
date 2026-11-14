@@ -136,7 +136,7 @@ export function ReservarNoche({ b, es, pago, yo, pax0 }: { b: BookingNoche; es: 
       sub: !yo ? E2("ENTRA PARA ELEGIRLA", "SIGN IN TO CHOOSE IT") : declinada && tarjeta?.pm === declinada ? E2("TU BANCO LA RECHAZÓ · CAMBIA DE TARJETA", "YOUR BANK DECLINED IT · CHANGE CARD") : E2("TARJETA DEL DEPÓSITO · SE RETIENE AL ENVIAR", "DEPOSIT CARD · HELD WHEN YOU SEND"),
       change: yo && tarjeta ? E2("Cambiar", "Change") : E2("Elegir", "Choose"), onClick: () => (yo ? setHoja(true) : entrar()) } : null,
   };
-  const corte = llega != null && llega < 480 ? hNoche(Math.max(0, llega - 120)) : "6 PM", GR = "var(--tl-open-text)", RD = "var(--tl-danger)", dev = `${E2("Se libera ", "Released ")}${usdN(dep)}`;
+  const corte = hNoche(llega != null ? Math.max(0, Math.min(b.corte, llega - 120)) : b.corte), GR = "var(--tl-open-text)", RD = "var(--tl-danger)", dev = `${E2("Se libera ", "Released ")}${usdN(dep)}`;
   const salidas = dep > 0 ? { screenLabel: "Reserva · tu depósito", title: `${E2("Tu depósito de ", "Your deposit of ")}${usdN(dep)}`.toUpperCase(),
     rows: [[E2("No hay mesa o no contestan", "No table or no reply"), dev, GR], [E2("Te proponen otra hora y no te sirve", "They propose another time and it does not work"), dev, GR],
       [E2(`Cancelas antes de las ${corte} de esa noche`, `You cancel before ${corte} that night`), `${E2("Te devolvemos ", "We refund ")}${usdN(dep)}`, GR], [E2(`Cancelas después de las ${corte}`, `You cancel after ${corte}`), E2("Se queda con el local", "Kept by the venue"), RD],

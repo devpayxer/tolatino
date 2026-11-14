@@ -16,7 +16,7 @@ import { diaCorto } from "@/lib/evt-comun";
 import { usrAjustarMonedas, usrAjustarPuntos, usrPisoRango } from "./acciones-gam";
 import { ORDEN_SANCIONES, PLANTILLAS_USR, SANCIONES, sub as subSancion, type Sancion } from "@/lib/sanciones";
 import {
-  cambiarCiudadUsuario, cerrarSesiones, dispositivoAccion, exportarDatos, llaveRevocar, pushRevocar, levantar, notaUsuario, pedirBorrado, pedirFusion, quitarFotoPerfil, restablecerVerificacion, restaurarCuenta, sancionar, usrCasoRed, verComo,
+  cambiarCiudadUsuario, cerrarSesiones, enviarMensaje, dispositivoAccion, exportarDatos, llaveRevocar, pushRevocar, levantar, notaUsuario, pedirBorrado, pedirFusion, quitarFotoPerfil, restablecerVerificacion, restaurarCuenta, sancionar, usrCasoRed, verComo,
 } from "./acciones-usuarios";
 import type { Privacidad360 } from "@/lib/datos/admin";
 import type { ResAdm } from "./acciones-colas";
@@ -374,6 +374,12 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
   } else {
     const acts: { l: string; v?: string; icon?: string; off?: boolean; onClick: () => void }[] = [];
     if (u.photo && (P.editar || P.retirar) && !borrada) acts.push({ l: "Quitar foto de perfil", icon: "image", onClick: () => setConf({ titulo: `Quitar la foto de ${corto}`, plantillas: PLANTILLAS_USR, hacer: (m) => quitarFotoPerfil(u.id, m) }) });
+    // 9n-3 · Enviar mensaje del equipo (AdminMessage): por la app o por SMS; tope por hora y por destinatario, sin enlaces.
+    if (P.editar && !borrada && !u.yoMismo) acts.push({ l: "Enviar mensaje", icon: "chat", onClick: () => setConf({
+      titulo: `Mensaje a ${corto}`, sub: "Lo ve en su campana y, si eliges SMS, también por texto (no sale de noche ni a quien dijo STOP). Sin enlaces. El motivo de abajo es interno: queda en la auditoría.",
+      cta: "Enviar", elegir: { label: "POR DÓNDE", items: [{ k: "push", l: "En la app (campana y push)" }, ...(u.phone_ok ? [{ k: "sms", l: "Por SMS" }] : [])] },
+      valor: { k: "MENSAJE (HASTA 280 LETRAS)", ini: "", area: true, max: 280 }, plantillas: ["Aviso sobre su cuenta", "Respuesta a lo que pidió por Soporte", "Aviso de seguridad"],
+      hacer: (m, e, v) => enviarMensaje(u.id, e ?? "push", v, m) }) });
     if (P.retirar && !borrada && u.estado !== "ban" && !intocable) acts.push({ l: "Sancionar", v: "danger", icon: "warning", onClick: () => setConf({
       titulo: `Sanción a ${corto}`, peligro: true, plantillas: PLANTILLAS_USR,
       elegir: { label: "SANCIÓN", items: ORDEN_SANCIONES.filter((k) => !SANCIONES[k].admin || P.admin).map((k) => ({ k, l: `${SANCIONES[k].es} · ${subSancion(k)}` })) },

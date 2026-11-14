@@ -6,7 +6,8 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { FiltrosNeg } from "@/lib/admin-negocios";
-import { useAncho } from "./Colas";
+import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
+import { exportarNegocios } from "./acciones-negocios";
 
 import { tec } from "@/lib/tec";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,14 +16,15 @@ type Fila = { id: string; name: string; cat: string; cat_id: string; subs: strin
 const EST: Record<string, [string, string]> = { activo: ["ACTIVO", "neutral"], temp: ["CERRADO TEMPORAL", "action"], oculto: ["OCULTO", "danger"], susp: ["SUSPENDIDO", "danger"], cerrado: ["CERRADO", "danger"] };
 const estadoDe = (r: Fila) => (r.estado === "activo" && r.verified ? ["VERIFICADO", "signal"] : EST[r.estado] ?? EST.activo!);
 
-export function Negocios({ filas, total, porCat, cab, f, cats, porPagina }: {
-  filas: Fila[]; total: number; porCat: Record<string, number>; cab: { n: number; pro: number; ver: number }; f: FiltrosNeg;
+export function Negocios({ filas, siguiente, total, porCat, cab, f, cats, porPagina, puedeExportar = false }: {
+  filas: Fila[]; siguiente: string | null; puedeExportar?: boolean; total: number; porCat: Record<string, number>; cab: { n: number; pro: number; ver: number }; f: FiltrosNeg;
   cats: { id: string; s: string }[]; porPagina: number;
 }) {
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const w = useAncho(), desk = w >= 1024;
   const [q, setQ] = useState(f.q), [mas, setMas] = useState(f.mas.length > 0);
-  const ir = (p: Record<string, string | null>) => { const u = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v) u.set(k, v); else u.delete(k); } if (!("pag" in p)) u.delete("pag"); router.push(`${path}${u.size ? `?${u}` : ""}`); };
+  const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
+  const ir = (p: Record<string, string | null>) => { const u = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v) u.set(k, v); else u.delete(k); } if (!("pag" in p) && !("cur" in p)) { u.delete("cur"); u.delete("ant"); } router.push(`${path}${u.size ? `?${u}` : ""}`); };
   const toggle = (k: "plan" | "est" | "mas", v: string) => { const l = f[k].includes(v) ? f[k].filter((x) => x !== v) : [...f[k], v]; ir({ [k]: l.join(",") || null }); };
   const chips = (k: "plan" | "est" | "mas", label: string, items: [string, string][]): Bloque => ({ type: "chips", k: label, items: items.map(([v, l]) => ({ l, v: f[k].includes(v) ? "selected" : "filter", onClick: () => toggle(k, v) })) });
   const hayFiltro = !!(f.q || f.cat || f.plan.length || f.est.length || f.mas.length);
@@ -33,18 +35,35 @@ export function Negocios({ filas, total, porCat, cab, f, cats, porPagina }: {
     { type: "tabs", items: [{ l: "Todas", n: String(Object.values(porCat).reduce((a, b) => a + b, 0) || ""), on: !f.cat, onClick: () => ir({ cat: null }) }, ...cats.filter((c) => porCat[c.id]).map((c) => ({ l: c.s, n: String(porCat[c.id]), on: f.cat === c.id, onClick: () => ir({ cat: c.id }) }))] },
     chips("plan", "PLAN", [["pro", "Pro"], ["free", "Free"], ["prueba", "En prueba"]]),
     chips("est", "ESTADO", [["activo", "Activo"], ["temp", "Cerrado temporal"], ["oculto", "Oculto"], ["susp", "Suspendido"], ["cerrado", "Cerrado"]]),
-    mas ? chips("mas", "MÁS", [["ver", "Verificado"], ["nover", "Pro sin sello"], ["rep", "Con reportes"], ["weak", "Perfil menos de 70 %"], ["norev", "Sin reseñas"], ["noown", "Sin reclamar"]]) : null,
+    mas ? chips("mas", "MÁS", [["ver", "Verificado"], ["nover", "Pro sin sello"], ["rep", "Con reportes"], ["weak", "Perfil menos de 70 %"], ["norev", "Sin reseñas"], ["noown", "Sin reclamar"], ["tx", "Con pedidos 30 d"], ["inact", "Sin actividad 30 d"], ["stripe", "Con cobros (Stripe)"], ["nostripe", "Pro sin cobros"], ["lic", "Con licencia verificada"]]) : null,
     { type: "chips", k: "ORDENAR", items: ([["pro", "Pro primero"], ["top", "Mejor calificados"], ["new", "Más nuevos"], ["rep", "Más reportes"], ["weak", "Perfil más débil"]] as const).map(([v, l]) => ({ l, v: f.orden === v ? "selected" : "filter", onClick: () => ir({ orden: v === "pro" ? null : v }) })) },
     { type: "acts", items: [
       { l: mas ? "Menos filtros" : `Más filtros${f.mas.length ? ` (${f.mas.length})` : ""}`, icon: "grid", onClick: () => setMas(!mas) },
       ...(hayFiltro ? [{ l: "Quitar filtros", icon: "close", onClick: () => router.push(path) }] : []),
+      ...(puedeExportar ? [{ l: "Exportar CSV", icon: "folder", onClick: () => exportar() }] : []),
     ] },
   ];
-  const a = total ? (f.pag - 1) * porPagina + 1 : 0, b = Math.min(total, f.pag * porPagina);
-  const pager = { label: `${a}–${b} · ${total}`, hasPrev: f.pag > 1, hasNext: b < total, onPrev: () => ir({ pag: String(f.pag - 1) }), onNext: () => ir({ pag: String(f.pag + 1) }) };
+  // 9n-3 · Paginado por cursor: `cur` es donde empieza esta página y `ant` la pila de las anteriores («_» = el principio).
+  const antes = f.ant.length * porPagina, a = total ? antes + 1 : 0, b = antes + filas.length;
+  const pager = { label: `${a}–${b} · ${total}`, hasPrev: f.cur !== null,
+    hasNext: !!siguiente, onPrev: () => { const x = f.ant[f.ant.length - 1]; ir({ cur: !x || x === "_" ? null : x, ant: f.ant.slice(0, -1).join("~") || null }); },
+    onNext: () => ir({ cur: siguiente, ant: [...f.ant, f.cur ?? "_"].join("~") }) };
+  const exportar = () => setConf({ titulo: "Exportar la lista a CSV", sub: `Baja lo que ves con los filtros de ahora (hasta 20,000 filas). Queda en la auditoría con el motivo.`, cta: "Exportar",
+    plantillas: ["Revisión de la ciudad", "Pedido de finanzas", "Reporte del mes"],
+    hacer: async (m) => {
+      const r = await exportarNegocios(Object.fromEntries(sp.entries()), m);
+      if (r.ok && r.csv) { const url = URL.createObjectURL(new Blob([r.csv], { type: "text/csv;charset=utf-8" })), el = document.createElement("a"); el.href = url; el.download = r.nombre ?? "negocios.csv"; document.body.appendChild(el); el.click(); el.remove(); URL.revokeObjectURL(url); }
+      return r; } });
   const abrir = (id: string) => router.push(`/admin/negocios/${id}`);
+  if (conf) return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
+      <PanelBloques bloques={[{ type: "head", eye: "NEGOCIOS", t: conf.titulo, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={(r) => { setConf(null); setToast(r.mensaje ?? "Listo."); }} />
+      <Toast t={toast} desk={desk} />
+    </div>);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <Toast t={toast} desk={desk} />
       <PanelBloques bloques={bloques} h1={desk ? 26 : 22} />
       <form onSubmit={(e) => { e.preventDefault(); ir({ q: q.trim() || null }); }} style={{ position: "relative" }}>
         <span style={{ position: "absolute", left: 15, top: 14.5, display: "grid" }}><A.Icon name="search" size={17} color="rgba(11,14,18,.45)" /></span>

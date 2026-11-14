@@ -64,6 +64,18 @@ Compa aquí** (con motivo y aviso al dueño) y si El Compa está en pausa ahí; 
 la lectura anotada). **Negocios 360° › Soporte**: los casos que abrió el negocio desde su panel. **El Compa › Negocios** lista todos los negocios
 con respuestas automáticas.
 
+## Lista por cursor, filtros nuevos y Exportar CSV
+- **La lista pagina por cursor** (de a 14, sin tope de páginas): las flechas ← y → siguen donde ibas aunque cambien los datos. Filtros nuevos en «Más filtros»: **Con pedidos 30 d**, **Sin actividad 30 d**, **Con cobros (Stripe)**, **Pro sin cobros** y **Con licencia verificada**.
+- **Exportar CSV** (solo un Admin): baja lo que ves con tus filtros (hasta 20,000 filas). Pide motivo, queda en la auditoría con las filas y los filtros, y se puede hasta 5 veces por hora.
+
+| Caso | Qué pasa |
+|---|---|
+| Exportas más de 5 veces en una hora | Se rechaza y se dice; las anteriores siguen en la auditoría. |
+| Tu rol no es Admin | No ves «Exportar CSV». |
+| Eliges una ciudad en el encabezado | La lista, los filtros y el CSV son solo de esa ciudad. |
+
+**¿El CSV trae datos personales?** Solo lo del negocio (nombre, ciudad, categoría, plan, calificación, estado, pedidos de 30 días, si cobra con Stripe y si tiene licencia verificada). Nada de clientes.
+
 ## English
 
 Queues: everything waiting for a team decision, oldest against its SLA first — Verification badge (48 h), New
@@ -87,3 +99,15 @@ and stops deal prices; the owner sees the reason.
 ### The business's El Compa and Support
 **Businesses 360° › El Compa** shows the dashboard assistant's 30-day numbers, the auto-replies (Pro) with **Turn off El Compa here** (with a
 reason and a notice to the owner) and any pause, without text or people. **Businesses 360° › Support** lists the cases the business opened.
+
+### Cursor list, new filters and Export CSV
+- **The list pages by cursor** (14 at a time, no page cap): the ← and → arrows continue where you were even if the data changes. New filters under «More filters»: **With orders 30 d**, **No activity 30 d**, **With payouts (Stripe)**, **Pro without payouts** and **With verified license**.
+- **Export CSV** (Admin only): downloads what you see with your filters (up to 20,000 rows). It asks for a reason, is audited with the rows and the filters, and works up to 5 times an hour.
+
+| Case | What happens |
+|---|---|
+| You export more than 5 times in an hour | It is refused and you are told; the earlier ones stay in the audit. |
+| Your role is not Admin | You do not see «Export CSV». |
+| You pick a city in the header | The list, the filters and the CSV are only for that city. |
+
+**Does the CSV carry personal data?** Only the business's own (name, city, category, plan, rating, status, 30-day orders, whether it takes Stripe payouts and whether it has a verified license). No customers.

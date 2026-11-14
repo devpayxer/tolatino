@@ -27,7 +27,7 @@ import { useAhora } from "@/lib/ahora";
 
 import { tec } from "@/lib/tec";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
+const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button" | "Pager", ComponentType<any>>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Icono = UI.Icon as ComponentType<any>;
 export const PLANT = {
@@ -79,8 +79,8 @@ export function useToast() {
 }
 
 
-export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeAprobar, apelarDias = 0, slas = {}, puedeRepartir = false, ajustes = null, esAdmin = false, cfgTxt = {} }: {
-  casos: CasoLista[]; conteo: Record<string, number>; vencidos: number; total: number; visibles: Cola[]; caso: Caso | null; puedeAprobar: boolean; apelarDias?: number; slas?: Partial<Record<Cola, number>>;
+export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, conteo, vencidos, total, visibles, caso, puedeAprobar, apelarDias = 0, slas = {}, puedeRepartir = false, ajustes = null, esAdmin = false, cfgTxt = {} }: {
+  casos: CasoLista[]; hay?: number; pag?: number; porPagina?: number; conteo: Record<string, number>; vencidos: number; total: number; visibles: Cola[]; caso: Caso | null; puedeAprobar: boolean; apelarDias?: number; slas?: Partial<Record<Cola, number>>;
   puedeRepartir?: boolean; ajustes?: AjustesColas | null; esAdmin?: boolean; cfgTxt?: Record<string, number>;
 }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
@@ -101,7 +101,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
     if (!r.ok) { setToast(r.msg); if (r.apagado) router.refresh(); return; }
     setCop({ ...r, caso: id }); setToast("Revísalo antes de enviar: sale con tu nombre.");
   }, () => { setCopBusy(false); setToast("El Compa no está disponible ahora. Escribe tu respuesta."); }); };
-  const ir = (p: Record<string, string | null>) => { const q = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v === null) q.delete(k); else q.set(k, v); } router.push(`${path}${q.size ? `?${q}` : ""}`, { scroll: false }); };
+  const ir = (p: Record<string, string | null>) => { const q = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v === null) q.delete(k); else q.set(k, v); } if (!("pag" in p)) q.delete("pag"); router.push(`${path}${q.size ? `?${q}` : ""}`, { scroll: false }); };
   const cola = (sp.get("cola") as Cola | null) ?? null, filtro = sp.get("f");
   const run = (f: () => Promise<ResAdm>, after?: (r: ResAdm) => void) => start(async () => { const r = await f(); setToast(r.mensaje ?? (r.ok ? "Listo. Quedó en la auditoría." : "")); if (r.ok) { after?.(r); router.refresh(); } });
   // 9j · Ver las fotos de Salud con motivo no cierra el caso: se queda en él para verlas.
@@ -568,6 +568,8 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
       {regla ? <A.AdminNote tone="ink" icon={regla.icon}>{`Plazo de esta cola: ${(cola && slas[cola]) ?? regla.sla} h${regla.regla ? ` · ${textoCola(regla.regla[0], cfgTxt)}` : ""}`}</A.AdminNote> : null}
       {casos.length ? <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{tarjetas}</div>
         : <PanelBloques bloques={[{ type: "empty", icon: "check", t: "Nada por aquí", s: "Esta cola está al día con los filtros que elegiste." }]} />}
+      {/* 9n-3 · De a 50 casos por página (antes se cortaba en 200 sin avisar): el contador y las pestañas cuentan TODOS. */}
+      {hay > porPagina ? <A.Pager label={`${(pag - 1) * porPagina + 1}–${Math.min(hay, pag * porPagina)} · ${hay}`} hasPrev={pag > 1} hasNext={pag * porPagina < hay} onPrev={() => ir({ pag: String(pag - 1), caso: null })} onNext={() => ir({ pag: String(pag + 1), caso: null })} /> : null}
     </div>
   );
   if (conf && !caso) return (

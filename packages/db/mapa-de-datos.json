@@ -151,6 +151,7 @@
     "beta_testers": { "equipo": ["invited_by", "removed_by"], "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "equipo", "fusion": "no" } ] },
 
     "admin_notes": { "equipo": ["by_staff"] },
+    "admin_messages": { "equipo": ["by_staff"], "reglas": [ { "col": "user_id", "accion": "vaciar", "fusion": "no", "set": { "body": "''" } } ] },
     "apk_links": { "equipo": ["created_by"] },
     "app_builds": { "equipo": ["retired_by"] },
     "app_error_groups": { "equipo": ["status_by"] },

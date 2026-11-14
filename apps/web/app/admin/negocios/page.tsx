@@ -11,5 +11,5 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const s = await requerir("neg", "ver");
   const f = leerFiltros(await searchParams);
   const r = await listaNegocios(s, f);
-  return <Negocios filas={r.filas} total={r.total} porCat={r.porCat} cab={r.cab} f={f} cats={CATS} porPagina={POR_PAGINA} />;
+  return <Negocios filas={r.filas} siguiente={r.siguiente} total={r.total} porCat={r.porCat} cab={r.cab} f={f} cats={CATS} porPagina={POR_PAGINA} puedeExportar={s.puede("neg", "exportar")} />;
 }

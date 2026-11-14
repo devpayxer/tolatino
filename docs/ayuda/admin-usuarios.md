@@ -86,6 +86,19 @@ nivel, resolvió solo, acciones confirmadas, a una persona, sin IA, marcadas y p
 resultado y ciudad, **sin el texto**. Admin y Soporte tocan una para abrir su ficha en El Compa › Conversaciones (la lectura queda anotada);
 Solo lectura ve las cifras. Si el texto ya se borró por la retención, la fila lo dice. **Soporte** (al lado) son sus casos.
 
+## Enviar mensaje y el aviso de sanciones por SMS
+- **Enviar mensaje** (Resumen): el equipo le escribe a una persona **por la app** (su campana y el push) o **por SMS**. Sin enlaces, hasta 280 letras, con un motivo interno que queda en la auditoría. Tope: 30 mensajes por hora por persona del equipo y 3 al día por destinatario. El SMS pide el teléfono verificado, no sale de noche ni a quien dijo STOP, y en el sandbox no sale a ningún teléfono.
+- **Una sanción también avisa por SMS** cuando no hay push que la lleve (quien está suspendido o baneado quizá ya no abre la app); el aviso trae el motivo y cómo apelar.
+
+| Caso | Qué pasa |
+|---|---|
+| Mandas el mensaje con un enlace | Se rechaza: la persona ve lo que le llega en su cuenta. |
+| Ya le llegaron 3 mensajes hoy | Se rechaza hasta mañana. |
+| Eliges SMS y su teléfono no está verificado | Se rechaza: mándalo por la app. |
+| La persona borra su cuenta | El texto de los mensajes del equipo se vacía a los 30 días; quién, cuándo y el motivo quedan. |
+
+**¿La persona sabe quién le escribió?** Ve «Mensaje de To'Latino», no tu nombre; tu nombre queda en la auditoría.
+
 ## English
 
 Community: the 360° Community tab shows rank, points, coins (no cash value), votes received, followers, blocks and mutes, and a
@@ -109,3 +122,16 @@ sees them in the bell and in My account › Moderation notices, where they can a
 ### El Compa
 **Users 360° › El Compa** (with El Compa permission): that person's 30-day El Compa numbers and **their conversations** by CP- number, outcome
 and city, **without the text**. Admin and Support tap one to open its record (the read is logged); Read-only sees numbers only.
+
+### Send message and the sanction SMS notice
+- **Send message** (Summary): the team writes to a person **in the app** (their bell and push) or **by SMS**. No links, up to 280 letters, with an internal reason that stays in the audit. Cap: 30 messages an hour per team member and 3 a day per recipient. SMS needs a verified phone, does not go out at night or to someone who said STOP, and in the sandbox it goes to no phone.
+- **A sanction also notifies by SMS** when there is no push to carry it (someone suspended or banned may no longer open the app); the notice carries the reason and how to appeal.
+
+| Case | What happens |
+|---|---|
+| You send the message with a link | It is refused: the person sees what reaches them in their account. |
+| They already got 3 messages today | Refused until tomorrow. |
+| You pick SMS and their phone is not verified | Refused: send it in the app. |
+| The person deletes their account | The text of the team's messages is emptied after 30 days; who, when and the reason stay. |
+
+**Does the person know who wrote to them?** They see «Message from To'Latino», not your name; your name stays in the audit.

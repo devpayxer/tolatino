@@ -9,6 +9,7 @@ import { auditar, staff, type Staff } from "@/lib/admin";
 import { normalizarTelefono } from "@/lib/cuenta";
 import { avisar } from "@/lib/avisos";
 import { db, tx } from "@/lib/db";
+import { hoyEn } from "@/lib/fecha-local";
 import type { ResAdm } from "./acciones-colas";
 
 const no = (mensaje: string): ResAdm => ({ ok: false, mensaje });
@@ -384,4 +385,25 @@ export async function puntoCorregir(id: string, lat: number, lng: number, motivo
     await auditar(c, { actor: s.id, action: "negocio.punto", targetKind: "business", targetId: b.id, city: b.city_id, before: { lat: x.lat, lng: x.lng }, after: { lat, lng }, reason: m });
     return null;
   }, "Punto guardado. Su página y el mapa ya lo muestran; el dueño lo ve en su panel.");
+}
+
+/* 9n-3 · «Exportar CSV» de la lista de Negocios (neg:exportar: solo el Admin): lo que ve la persona con sus filtros, hasta 20,000 filas. Pide motivo, deja la
+   auditoría (cuántas filas y con qué filtros) y no pasa más de 5 exportaciones por hora por persona. El archivo se arma aquí; la pantalla solo lo baja. */
+export async function exportarNegocios(filtros: Record<string, string | undefined>, motivo: string): Promise<ResAdm & { nombre?: string; csv?: string }> {
+  const s = await staff();
+  if (!s || !s.puede("neg", "exportar")) return no("Tu rol no exporta la lista.");
+  const m = motivoOk(motivo);
+  if (m.length < 3) return no("Escribe el motivo.");
+  const { leerFiltros, negociosCsv } = await import("@/lib/admin-negocios");
+  const f = leerFiltros(filtros ?? {});
+  const hecho = await tx(async (c) => {
+    await c.query(`select pg_advisory_xact_lock(hashtextextended($1, 0))`, [`neg-csv:${s.id}`]);
+    const n = (await c.query<{ n: number }>(`select count(*)::int as n from audit_entries where actor_id = $1 and action = 'negocios.exportar' and at > now() - interval '1 hour'`, [s.id])).rows[0]!.n;
+    if (n >= 5) return null;
+    const r = await negociosCsv(s, f);
+    await auditar(c, { actor: s.id, action: "negocios.exportar", targetKind: "negocios", targetId: s.ciudadVista ?? (s.ciudadesRol.join(",") || "todas"), after: { filas: r.n, filtros: JSON.stringify({ q: f.q, cat: f.cat, plan: f.plan, est: f.est, mas: f.mas }) }, reason: m });
+    return r;
+  });
+  if (!hecho) return no("Ya exportaste 5 veces en la última hora. Espera un rato.");
+  return { ok: true, mensaje: `Exportadas ${hecho.n} ${hecho.n === 1 ? "fila" : "filas"}. Quedó en la auditoría.`, nombre: `negocios-${hoyEn()}.csv`, csv: hecho.csv };
 }

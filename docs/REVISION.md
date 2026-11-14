@@ -4835,3 +4835,25 @@ Qué mirar (Super Admin › Inicio y la Inicio del vecino, en el teléfono y en 
 - **/panel sin negocio:** en la web sigue yendo a /publica; solo en la app Negocios (rótulo TLApp) se muestra la pantalla nueva. `panel/page.tsx` se añadió a la lista de `appNoAutoriza` (solo elige qué pantalla informativa).
 - **Anuncios para negocios:** el panel los muestra; falta el selector en Super Admin › Textos (no se tocó, es de otro bloque).
 - **Sin diseño, no se inventó:** «Quién tiene licencia aquí» y la pestaña Staff de la ficha quedan abiertas para pedir el diseño.
+
+## Fase 9 · 9n-3 — El Super Admin y Configuración (14 nov)
+**Qué mirar (en el Super Admin, Admin con todas las ciudades):**
+1. **⌘K** (o la lupa en el teléfono): busca «Sabor», «Marisol», «N-906501», «Colas».
+2. **Selector de ciudad** del encabezado: elige Allentown y mira Negocios, Usuarios y Colas; «Todas» lo quita. En el teléfono es «Todas» + una ciudad que cambia al tocarla.
+3. **Colas** con muchos casos: el contador, las pestañas y «Vencidos» cuentan todo; las flechas ← → pasan de 50 en 50.
+4. **Negocios:** flechas por cursor, «Más filtros» (pedidos, Stripe, licencia) y «Exportar CSV» (pide motivo).
+5. **Usuarios 360° › Enviar mensaje** (app o SMS; en el sandbox el SMS no sale) y una sanción que quita algo (también SMS de respaldo).
+6. **Eventos** con RSVP: «Cupo del RSVP (lugares)» › Ajustar cupo.
+7. **Sistema › Configuración › Noche** (corte de las 6 PM y plazos) y Sistema › Flags (`app.ubicacion_vivo` por ciudad).
+8. **Sistema › Equipo › Mis dos pasos** (necesita una cuenta con app de códigos).
+9. **Transacciones › Noche:** el demo de La Terraza (semilla 0065).
+**Decisiones que tomé (lo más seguro y reversible):**
+- **El selector de ciudad** reduce `Staff.cities` (no agrega alcance). Lo que exige «todas las ciudades» queda más estricto mientras hay una elegida. Vive en una cookie, no en la base.
+- **Colas** de a 50 (no 200). Los conteos salen de una consulta aparte sobre todos los casos.
+- **Sanciones por SMS:** solo las que quitan algo (silencio, bloqueo, suspensión, baneo), como respaldo del push, respetando STOP y las horas de silencio; la advertencia sigue solo en la campana. Si prefieres sin SMS en sanciones: `sinSms: true` en `lib/apelaciones.ts`.
+- **Mensaje del equipo:** 280 letras, sin enlaces, 30 por hora por persona del equipo y 3 al día por destinatario; la persona ve «Mensaje de To'Latino», no tu nombre.
+- **Exportar CSV de Negocios:** solo Admin (neg:exportar), 20,000 filas, 5 por hora, con motivo y auditoría.
+- **Cambiar la app de códigos:** el secreto nuevo viaja cifrado en un testigo de 10 min (nada en la base hasta confirmar); al cambiar, las otras sesiones vuelven a pedir el segundo factor.
+- **Configuración:** solo Noche se abrió, porque era lo único cuyos textos leen el valor (o no lo dicen). Los demás siguen en solo lectura (ver LAUNCH): abrirlos con textos que dicen «24 h» sería mentirle a la persona.
+- **Pantallas sin diseño propio** (compuestas con bloques del sistema): el buscador, Mis dos pasos, el CSV y el mensaje.
+- **Numeración:** migración 0147 y semilla 0065.

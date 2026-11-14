@@ -40,7 +40,7 @@ const LETRAS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 const huellaRecuperacion = (userId: string, codigo: string) => createHmac("sha256", secretoAuth()).update(`recuperacion:${userId}:${codigo}`).digest("hex");
 const limpiarRecuperacion = (x: string) => String(x ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 16);
-const mal = (es: string, en: string): ResDos => ({ ok: false, msg: { es, en } });
+const mal = (es: string, en: string): { ok: false; msg: Bi } => ({ ok: false, msg: { es, en } });
 
 type FilaSesion = { id: string; via: string; mfa_at: string | null; mfa_via: string | null; mfa_id: string | null; enrolled: boolean | null; quedan: number | null; llaves: number };
 async function leerSesion(u: Yo): Promise<FilaSesion | null> {
@@ -238,4 +238,110 @@ export async function factoresDelEquipo(ids: string[]): Promise<Map<string, Fact
        from users u left join staff_mfa f on f.user_id = u.id and f.revoked_at is null and f.enrolled_at is not null
       where u.id = any ($1::uuid[])`, [ids]);
   return new Map(r.rows.map((x) => [x.userId, x]));
+}
+
+/* ── 9n-3 · Los dos pasos del equipo, por su propia cuenta ──
+   La persona del equipo (con su sesión YA en regla: staff() la pasó) cambia su app de códigos o pide códigos de recuperación nuevos sin esperar a un Admin.
+   Pide un código FRESCO de su app de siempre (algo que solo tiene quien tiene el teléfono; un código ya usado no sirve), cuenta los fallos igual que al entrar
+   (5 en 15 min la bloquean), deja el staff_mfa_log, la auditoría y el aviso (equipo_dos_pasos) y NUNCA toca el segundo factor de otra persona.
+   Lo que se revoca no vuelve: un secreto nuevo es una fila nueva (staff_mfa no deja cambiar el secreto ni agregar códigos a una fila). */
+type MfaVivo = { id: string; enc: Buffer; last_step: string | null; sesion: string };
+async function mfaPropio(u: Yo): Promise<MfaVivo | null> {
+  if (!(await delEquipo(u)) || (await estadoDosPasos(u)).estado !== "ok") return null;
+  const s = await leerSesion(u);
+  if (!s) return null;
+  const f = (await db().query<{ id: string; enc: Buffer; last_step: string | null }>(
+    `select id::text, totp_secret_enc as enc, last_step::text from staff_mfa where user_id = $1 and revoked_at is null and enrolled_at is not null`, [u.id])).rows[0];
+  return f ? { ...f, sesion: s.id } : null;
+}
+const SIN_APP = mal("Tu cuenta no tiene app de códigos dada de alta (entras con llave de acceso). Esto es para quien la tiene.", "Your account has no code app set up (you sign in with a passkey). This is for people who have one.");
+
+/* El código fresco de la app de siempre: devuelve su paso, o el error (y cuenta el fallo). */
+async function pasoFresco(u: Yo, f: MfaVivo, entrada: string): Promise<{ paso: number } | { err: { ok: false; msg: Bi } }> {
+  const d = await estadoDosPasos(u);
+  if (d.estado === "bloqueado") return { err: mal(`Demasiados intentos. Espera ${d.espera} min o pídele a un Admin que restablezca tus dos pasos.`, `Too many attempts. Wait ${d.espera} min or ask an Admin to reset your two steps.`) };
+  const secreto = descifrar(f.enc);
+  if (!secreto) return { err: mal("No pudimos leer tu app de códigos. Pídele a un Admin que restablezca tus dos pasos.", "We could not read your code app. Ask an Admin to reset your two steps.") };
+  const paso = coincide(secreto, entrada);
+  if (paso == null) { await fallo(u.id, f.id, f.sesion, "codigo_fallo"); return { err: mal("Ese código no es. Escribe el que se ve ahora en tu app.", "That code is not right. Type the one showing now in your app.") }; }
+  if (f.last_step != null && BigInt(paso) <= BigInt(f.last_step)) { await fallo(u.id, f.id, f.sesion, "codigo_repetido"); return { err: mal("Ese código ya se usó. Espera el siguiente (cambia cada 30 segundos).", "That code was already used. Wait for the next one (it changes every 30 seconds).") }; }
+  return { paso };
+}
+
+/* Revoca la fila viva y crea la nueva (mismo secreto o uno nuevo) con 10 códigos de recuperación nuevos. Dentro de la transacción de quien llama. */
+async function reemplazarFila(c: PoolClient, u: Yo, f: MfaVivo, o: { secretoEnc: Buffer; paso: number; motivo: string; accion: "cambio_app" | "codigos_nuevos"; cerrarOtras: boolean }): Promise<string[] | null> {
+  await c.query(`select pg_advisory_xact_lock(hashtextextended($1, 0))`, [`dos-pasos:${u.id}`]);
+  const viva = (await c.query<{ id: string; last_step: string | null }>(`select id::text, last_step::text from staff_mfa where user_id = $1 and revoked_at is null and enrolled_at is not null for update`, [u.id])).rows[0];
+  if (!viva || viva.id !== f.id) return null;
+  if (viva.last_step != null && BigInt(o.paso) <= BigInt(viva.last_step)) return null; // el mismo código en dos peticiones: gana una
+  const codigos = codigosRecuperacion();
+  await c.query(`update staff_mfa set last_step = $2, last_used_at = now() where id = $1`, [viva.id, o.paso]);
+  await c.query(`update staff_mfa set revoked_at = now(), revoked_by = $2, revoked_reason = $3 where id = $1`, [viva.id, u.id, o.motivo]);
+  const nueva = (await c.query<{ id: string }>(
+    `insert into staff_mfa (user_id, kind, totp_secret_enc, enrolled_at, last_step, last_used_at, recovery_hashes) values ($1, 'totp', $2, now(), $3, now(), $4) returning id::text`,
+    [u.id, o.secretoEnc, o.paso, codigos.map((x) => huellaRecuperacion(u.id, limpiarRecuperacion(x)))])).rows[0]!;
+  await anotar(c, { user: u.id, mfa: nueva.id, sesion: f.sesion, accion: o.accion });
+  if (o.cerrarOtras) await c.query(`update sessions set mfa_at = null, mfa_via = null where user_id = $1 and mfa_at is not null and id <> $2::uuid`, [u.id, f.sesion]);
+  const { auditar } = await import("../admin");
+  await auditar(c, { actor: u.id, action: `equipo.dos_pasos.${o.accion}`, targetKind: "staff", targetId: u.id, before: { recuperacion: "códigos anteriores" }, after: { recuperacion: RECUPERACION_N }, reason: o.motivo });
+  return codigos;
+}
+
+/* «Pedir códigos de recuperación nuevos»: los de antes dejan de servir. Salen UNA vez. */
+export async function codigosNuevos(u: Yo, entrada: string): Promise<ResDos> {
+  const f = await mfaPropio(u);
+  if (!f) return SIN_APP;
+  const p = await pasoFresco(u, f, entrada);
+  if ("err" in p) return p.err;
+  const codigos = await tx((c) => reemplazarFila(c, u, f, { secretoEnc: f.enc, paso: p.paso, motivo: "Códigos de recuperación nuevos (los pidió la propia persona)", accion: "codigos_nuevos", cerrarOtras: false }));
+  if (!codigos) return mal("Ese código ya se usó. Espera el siguiente.", "That code was already used. Wait for the next one.");
+  await avisarCambio(u.id, "Pediste códigos de recuperación nuevos (los anteriores ya no sirven)", "You requested new recovery codes (the old ones no longer work)");
+  return { ok: true, codigos, quedan: RECUPERACION_N };
+}
+
+/* «Cambiar mi app de códigos», paso 1: el código de la app de ahora y un secreto nuevo. Nada se guarda en la base todavía: el secreto nuevo viaja cifrado
+   en un testigo que solo este servidor abre (10 min, atado a esta persona). Cerrar la pantalla lo abandona y la app de siempre sigue valiendo. */
+const TESTIGO_MIN = 10;
+export async function empezarCambioApp(u: Yo, entrada: string): Promise<{ ok: true; secreto: string; matriz: boolean[][]; testigo: string } | { ok: false; msg: Bi }> {
+  const f = await mfaPropio(u);
+  if (!f) return SIN_APP;
+  const p = await pasoFresco(u, f, entrada);
+  if ("err" in p) return p.err;
+  const secreto = nuevoSecreto();
+  const testigo = cifrar(JSON.stringify({ u: u.id, s: secreto, m: f.id, x: Date.now() + TESTIGO_MIN * 60_000 })).toString("base64url");
+  const uri = uriOtp(secreto, `${u.first_name ?? "Equipo"} · ${u.phone.slice(-4)}`);
+  return { ok: true, secreto, matriz: matrizTexto(uri), testigo };
+}
+
+/* Paso 2: el primer código de la app NUEVA. Recién ahí se cambia: la de antes se revoca, salen 10 códigos nuevos y las demás sesiones vuelven a pedir el
+   segundo factor (con la app nueva). */
+export async function confirmarCambioApp(u: Yo, testigo: string, entrada: string): Promise<ResDos> {
+  const f = await mfaPropio(u);
+  if (!f) return SIN_APP;
+  let t: { u: string; s: string; m: string; x: number } | null = null;
+  try { const j = descifrar(Buffer.from(String(testigo ?? ""), "base64url")); t = j ? JSON.parse(j) : null; } catch { t = null; }
+  if (!t || t.u !== u.id || t.m !== f.id || !(t.x > Date.now()) || typeof t.s !== "string") return mal("Pasaron más de 10 minutos o cambió algo. Empieza otra vez.", "More than 10 minutes passed or something changed. Start again.");
+  const d = await estadoDosPasos(u);
+  if (d.estado === "bloqueado") return mal(`Demasiados intentos. Espera ${d.espera} min o pídele a un Admin que restablezca tus dos pasos.`, `Too many attempts. Wait ${d.espera} min or ask an Admin to reset your two steps.`);
+  const paso = coincide(t.s, entrada);
+  if (paso == null) { await fallo(u.id, f.id, f.sesion, "codigo_fallo"); return mal("Ese código no es. Revisa la hora del teléfono y escribe el que se ve ahora en la app NUEVA.", "That code is not right. Check your phone's time and type the one showing now in the NEW app."); }
+  // El paso de la app nueva puede ser menor que el último de la vieja (relojes distintos): la fila nueva empieza en su propio paso; el de la vieja ya quedó gastado.
+  const codigos = await tx(async (c) => {
+    await c.query(`select pg_advisory_xact_lock(hashtextextended($1, 0))`, [`dos-pasos:${u.id}`]);
+    const viva = (await c.query<{ id: string; last_step: string | null }>(`select id::text, last_step::text from staff_mfa where user_id = $1 and revoked_at is null and enrolled_at is not null for update`, [u.id])).rows[0];
+    if (!viva || viva.id !== f.id) return null;
+    const cod = codigosRecuperacion();
+    await c.query(`update staff_mfa set revoked_at = now(), revoked_by = $2, revoked_reason = $3 where id = $1`, [viva.id, u.id, "Cambió su app de códigos (lo pidió la propia persona)"]);
+    const nueva = (await c.query<{ id: string }>(
+      `insert into staff_mfa (user_id, kind, totp_secret_enc, enrolled_at, last_step, last_used_at, recovery_hashes) values ($1, 'totp', $2, now(), $3, now(), $4) returning id::text`,
+      [u.id, cifrar(t!.s), paso, cod.map((x) => huellaRecuperacion(u.id, limpiarRecuperacion(x)))])).rows[0]!;
+    await anotar(c, { user: u.id, mfa: nueva.id, sesion: f.sesion, accion: "cambio_app" });
+    await c.query(`update sessions set mfa_at = null, mfa_via = null where user_id = $1 and mfa_at is not null and id <> $2::uuid`, [u.id, f.sesion]);
+    const { auditar } = await import("../admin");
+    await auditar(c, { actor: u.id, action: "equipo.dos_pasos.cambio_app", targetKind: "staff", targetId: u.id, before: { segundo_factor: "app de códigos anterior" }, after: { segundo_factor: "app de códigos nueva", recuperacion: RECUPERACION_N }, reason: "Lo pidió la propia persona, con el código de su app de siempre" });
+    return cod;
+  });
+  if (!codigos) return mal("Empieza otra vez: tu app de siempre cambió mientras tanto.", "Start again: your usual app changed in the meantime.");
+  await avisarCambio(u.id, "Cambiaste tu app de códigos (las demás sesiones vuelven a pedir el código)", "You changed your code app (your other sessions ask for the code again)");
+  return { ok: true, codigos, quedan: RECUPERACION_N };
 }

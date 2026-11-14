@@ -3,9 +3,10 @@
    Las server actions de Next ya rechazan peticiones de otro origen. */
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { arrancar, auditar, requerir, type Accion } from "@/lib/admin";
+import { cookies } from "next/headers";
+import { arrancar, auditar, COOKIE_CIUDAD, requerir, staff, type Accion } from "@/lib/admin";
 import { normalizarTelefono } from "@/lib/cuenta";
-import { tx } from "@/lib/db";
+import { db, tx } from "@/lib/db";
 
 export type Resultado = { ok: boolean; mensaje?: string };
 const motivoOk = (m: unknown) => (typeof m === "string" ? m.trim().slice(0, 500) : "");
@@ -89,5 +90,19 @@ export async function quitarMiembro(_: Resultado | null, f: FormData): Promise<R
     if (r.rows[0]) await auditar(c, { actor: s.id, action: "equipo.quitar", targetKind: "staff", targetId: id, before: { role: r.rows[0].role, status: "active" }, after: { status: "removed" }, reason: motivo });
   });
   revalidatePath("/admin/equipo");
+  return { ok: true };
+}
+
+/* 9n-3 · El selector de ciudad del encabezado: solo cambia lo que VE esta persona (cookie propia, nada en la base, sin auditoría); nunca da más
+   alcance que su rol. null = «Todas» (las de su rol). */
+export async function elegirCiudad(id: string | null): Promise<Resultado> {
+  const s = await staff();
+  if (!s) return { ok: false, mensaje: "Sin acceso." };
+  const jar = await cookies();
+  if (!id) { jar.delete({ name: COOKIE_CIUDAD, path: "/admin" }); revalidatePath("/admin", "layout"); return { ok: true }; }
+  if (!/^[a-z0-9-]{2,24}$/.test(id) || (s.ciudadesRol.length && !s.ciudadesRol.includes(id))) return { ok: false, mensaje: "Esa ciudad no es de tu rol." };
+  if (!(await db().query("select 1 from cities where id = $1", [id])).rowCount) return { ok: false, mensaje: "Esa ciudad no existe." };
+  jar.set(COOKIE_CIUDAD, id, { path: "/admin", httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", maxAge: 60 * 60 * 24 * 30 });
+  revalidatePath("/admin", "layout");
   return { ok: true };
 }

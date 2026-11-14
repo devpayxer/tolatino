@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import type { Resultado } from "./acciones";
 import { tomarSiguiente } from "./acciones-colas";
+import { elegirCiudad } from "./acciones";
 import { tec } from "@/lib/tec";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Icono = UI.Icon as ComponentType<any>;
@@ -28,7 +29,7 @@ function useDesk() {
 export type ItemNav = { key: string; label: string; icon: string; href: string | null; fase?: string };
 export type GrupoNav = { label: string; items: ItemNav[] };
 
-export function Shell({ yo, grupos, casos, children }: { yo: { nombre: string; rol: string; iniciales: string }; grupos: GrupoNav[]; casos: { n: number; late: boolean; tomar: boolean }; children: ReactNode }) {
+export function Shell({ yo, grupos, casos, ciudades = [], vista = null, children }: { yo: { nombre: string; rol: string; iniciales: string }; grupos: GrupoNav[]; casos: { n: number; late: boolean; tomar: boolean }; ciudades?: { id: string; nombre: string }[]; vista?: string | null; children: ReactNode }) {
   const desk = useDesk();
   const router = useRouter();
   const ruta = usePathname();
@@ -45,6 +46,19 @@ export function Shell({ yo, grupos, casos, children }: { yo: { nombre: string; r
       onClick: () => router.push(i.href ?? `/admin/pendiente/${i.key}`),
     })),
   }));
+  // 9n-3 · ⌘K (o Ctrl K) abre el buscador global desde cualquier pantalla.
+  useEffect(() => {
+    const f = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); router.push("/admin/buscar"); } };
+    window.addEventListener("keydown", f);
+    return () => window.removeEventListener("keydown", f);
+  }, [router]);
+  // 9n-3 · El selector de ciudad filtra TODAS las secciones (lib/admin.ts: `cities` de la vista). En escritorio: Todas + una por ciudad; en el teléfono no caben
+  // cinco segmentos: «Todas» y la ciudad elegida (tocarla pasa a la siguiente).
+  const elegir = (id: string | null) => void elegirCiudad(id).then(() => router.refresh());
+  const siguiente = () => { const i = ciudades.findIndex((c) => c.id === vista); elegir(ciudades[(i + 1) % ciudades.length]?.id ?? null); };
+  const segmentos = ciudades.length < 2 ? [{ label: "Todas", on: true }]
+    : desk ? [{ label: "Todas", on: !vista, onClick: () => elegir(null) }, ...ciudades.map((c) => ({ label: c.nombre, on: vista === c.id, onClick: () => elegir(c.id) }))]
+    : [{ label: "Todas", on: !vista, onClick: () => elegir(null) }, { label: vista ? ciudades.find((c) => c.id === vista)?.nombre ?? "Ciudad" : "Ciudad…", on: !!vista, onClick: siguiente }];
   return (
     <div className="min-h-dvh bg-paper">
       <div className="sticky top-0 z-30">
@@ -52,10 +66,10 @@ export function Shell({ yo, grupos, casos, children }: { yo: { nombre: string; r
           desk={desk}
           assetBase="/assets/"
           onHome={() => router.push("/admin")}
-          searchPlaceholder="Buscar usuario por nombre o teléfono…"
-          onSearch={() => router.push("/admin/usuarios")}
+          searchPlaceholder="Buscar negocio, usuario, # de operación…"
+          onSearch={() => router.push("/admin/buscar")}
           onBell={() => router.push("/admin/colas")}
-          cities={[{ label: "Todas", on: true }]}
+          cities={segmentos}
           count={casos.n}
           me={{ name: yo.nombre, role: yo.rol, initials: yo.iniciales }}
           onMe={() => router.push("/cuenta")}

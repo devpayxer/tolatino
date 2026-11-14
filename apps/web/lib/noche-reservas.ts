@@ -1,5 +1,5 @@
 import "server-only";
-import { cfgSql } from "./config";
+import { cfgSql, valor } from "./config";
 import { randomInt } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { vigilarNoche } from "./noche-vigilar";
@@ -27,7 +27,8 @@ export const OCASION = ["bailar", "cumple", "despedida", "celebra"] as const;
 const VIVAS = ["pending", "change_proposed", "confirmed"];
 const no = (es: string, en: string, extra?: Record<string, true>) => ({ ok: false as const, msg: { es, en } as Bi, ...extra });
 /* El corte para cancelar gratis (Preguntas #3): las 6 PM de esa noche, o 2 h antes de la llegada si llegas antes de las 8 PM. */
-export const corteMin = (llegada: number) => (llegada < 480 ? Math.max(0, llegada - 120) : 360);
+/* 9n-3 · `base` = noche_corte_min de Configuración (360 = 6 PM de fábrica): el corte nunca cae a menos de 2 h antes de la llegada. Con 360 es el de siempre. */
+export const corteMin = (llegada: number, base: number) => Math.max(0, Math.min(base, llegada - 120));
 
 type Svc = { id: string; k: "lista" | "mesa" | "vip"; name: Bi; desc: Bi; cents: number; pax: number; tables: number; dep: number; hr: boolean; until: number | null; inc: Bi[]; foto: string | null; dows: number[] };
 async function servicio(c: Q, negocio: string, id: string): Promise<Svc | null> {
@@ -82,7 +83,7 @@ async function noches(c: Q, x: Ctx, s: Svc): Promise<NocheOpcion[]> {
 /* ── La pantalla de reservar (APP-NEG-NOCHE-RESERVA): el servicio, las noches con sus horas y cupo, la edad y el depósito ── */
 export type BookingNoche = {
   negocio: { id: string; nombre: string; direccion: string | null; ciudad: string; foto: string | null };
-  svc: Omit<Svc, "dows" | "tables">; noches: NocheOpcion[]; edad: 18 | 21; listaHasta: number | null; hold: number; reply: number;
+  svc: Omit<Svc, "dows" | "tables">; noches: NocheOpcion[]; edad: 18 | 21; listaHasta: number | null; hold: number; reply: number; corte: number;
   booking: boolean; dep: number; free: boolean; mias: { numero: string; fecha: string }[];
 };
 export async function bookingNoche(negocio: string, svcId: string, userId: string | null): Promise<BookingNoche | null> {
@@ -98,7 +99,7 @@ export async function bookingNoche(negocio: string, svcId: string, userId: strin
     `select number as numero, night_date::text as fecha from operations where user_id = $1 and business_id = $2 and kind = 'night' and status = any($3::text[]) and night_date >= $4::date`, [userId, negocio, VIVAS, x.hoy])).rows : [];
   const { dows: _d, tables: _t, ...svc } = s;
   return { negocio: { id: x.id, nombre: x.name, direccion: x.address, ciudad: x.ciudad, foto: x.foto }, svc, noches: await noches(db(), x, s), edad: h.edad,
-    listaHasta: h.listaHasta, hold: x.hold, reply: x.reply, booking, dep, free: !pro, mias };
+    listaHasta: h.listaHasta, hold: x.hold, reply: x.reply, corte: await valor("noche_corte_min"), booking, dep, free: !pro, mias };
 }
 
 /* ── Anotarse en la lista / pedir la mesa ── */
@@ -162,7 +163,7 @@ export async function reservarNoche(userId: string, negocio: string, f: NocheIn,
     for (let k = 0; k < 50 && (!code || usados.has(code)); k++) code = String(randomInt(1000, 10000));
     // Lo de la puerta se COPIA al enviar: si el local cambia la herramienta después, lo enviado no cambia.
     const det = { k: s.k, item: s.id, svc: s.name, night: f.noche, arrive: llega, occ: ocasion, door_cents: lista ? s.cents : null, list_until: lista ? h.listaHasta : null,
-      cover_cents: N.cover, after: N.after, min_cents: lista || s.hr ? null : s.cents, hr: s.hr, edad: h.edad, hold: x.hold, sms: f.sms !== false, cut: lista ? null : corteMin(llega), inc: s.inc };
+      cover_cents: N.cover, after: N.after, min_cents: lista || s.hr ? null : s.cents, hr: s.hr, edad: h.edad, hold: x.hold, sms: f.sms !== false, cut: lista ? null : corteMin(llega, await valor("noche_corte_min")), inc: s.inc };
     const op = (await c.query<{ id: string }>(
       `insert into operations (number, kind, city_id, business_id, user_id, status, scheduled_at, duration_min, buffer_min, customer_note, details, party_size, night_date, door_code,
                                subtotal_cents, total_cents, deposit_cents, pay_mode, respond_by, confirmed_at, free_quota_month, client_key, is_test)
@@ -207,7 +208,7 @@ async function avisarCliente(numero: string, tpl: string, extra: Record<string, 
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const { avisar } = await import("./avisos");
-  await avisar(o.uid, tpl, { negocio: o.negocio, noche: nocheL(o), hora: hNoche(Number(o.det.arrive)), guarda: String(o.det.hold ?? 30), dev: "", dep: "", puerta: "", ...extra }, { href: `/noche/${numero}`, ref: ["night", numero] });
+  await avisar(o.uid, tpl, { negocio: o.negocio, noche: nocheL(o), hora: hNoche(Number(o.det.arrive)), guarda: String(o.det.hold ?? await valor("noche_mesa_guardada_min")), dev: "", dep: "", puerta: "", ...extra }, { href: `/noche/${numero}`, ref: ["night", numero] });
 }
 async function avisarNeg(numero: string, tpl: string, extra: Record<string, string> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
@@ -325,7 +326,7 @@ export async function nocheCliente(userId: string, numero: string, que: QueNoche
     }
     if (o.dep > 0 && o.pay !== "held") return no("Tu depósito ya no está retenido. Elige «No me sirve» y pide la mesa otra vez.", "Your deposit is no longer held. Choose “Doesn’t work” and request the table again.");
     await c.query(`update operations set status = 'confirmed', scheduled_at = ($2::date + time '12:00' + make_interval(mins => $3::int)) at time zone $4, details = details || $5::jsonb, confirmed_at = now(), respond_by = null, updated_at = now() where id = $1::bigint`,
-      [o.id, o.night, p.m, o.tz, JSON.stringify({ arrive: p.m, cut: corteMin(p.m) })]);
+      [o.id, o.night, p.m, o.tz, JSON.stringify({ arrive: p.m, cut: corteMin(p.m, await valor("noche_corte_min")) })]);
     await c.query(`update change_proposals set status = 'accepted', answered_at = now() where id = $1`, [p.id]);
     await ev(c, o.id, "alt_accepted", "user", userId);
     despues = async () => { await cobrarOperacion(o.id); await avisarNeg(numero, "biz_noche_alt_ok", { hora: hNoche(p.m) }); };
@@ -385,7 +386,7 @@ export async function marcarNoche(negocio: string, numero: string, que: MarcaMes
       return { ok: true };
     }
     // «No llegaron» desde los 30 min (lo que se guarda la mesa) después de su hora; «sin identificación», cuando quieras.
-    if (que === "nollegaron" && o.nowN < Number(o.det.arrive) + Number(o.det.hold ?? 30)) return no(`Su mesa se guarda hasta las ${hNoche(Number(o.det.arrive) + Number(o.det.hold ?? 30))}.`, `Their table is held until ${hNoche(Number(o.det.arrive) + Number(o.det.hold ?? 30))}.`);
+    if (que === "nollegaron" && o.nowN < Number(o.det.arrive) + Number(o.det.hold ?? await valor("noche_mesa_guardada_min"))) return no(`Su mesa se guarda hasta las ${hNoche(Number(o.det.arrive) + Number(o.det.hold ?? await valor("noche_mesa_guardada_min")))}.`, `Their table is held until ${hNoche(Number(o.det.arrive) + Number(o.det.hold ?? await valor("noche_mesa_guardada_min")))}.`);
     await c.query(`update operations set status = 'done', status_detail = $2, done_at = now(), door_code = null, updated_at = now() where id = $1::bigint`, [o.id, que]);
     await ev(c, o.id, que === "noid" ? "night_noid" : "night_noshow", "member", actorId);
     // 4ne: «sin identificación» con depósito cuenta para la cola «Sin identificación».
@@ -483,7 +484,7 @@ export async function avisarCoverSube(negocio: string, antes: number) {
 export type NocheVista = {
   numero: string; status: string; detalle: string | null; k: "lista" | "mesa" | "vip"; negocio: { id: string; nombre: string; telefono: string | null; direccion: string | null; foto: string | null };
   svc: Bi; night: string; hoy: boolean; dow: number; llega: number; pax: number; occ: string | null; nota: string | null; code: string | null; puerta: { es: string; en: string };
-  edad: number; hold: number; cut: number | null; nowN: number; dep: number; pago: { st: string | null; devuelto: number; marca: string | null; l4: string | null };
+  edad: number; hold: number; resp: number | null; corteBase: number; cut: number | null; nowN: number; dep: number; pago: { st: string | null; devuelto: number; marca: string | null; l4: string | null };
   alt: { m: number } | null; motivoNeg: string | null; perdio: boolean; inN: number | null; cover: number; resena: boolean;
   linea: { at: string; kind: string; note: Bi | null }[];
 };
@@ -491,8 +492,8 @@ export async function nocheVista(userId: string, numero: string): Promise<NocheV
   if (!NUM_N.test(numero)) return null;
   await vencerNoche({ userId, numero });
   const o = (await db().query<{ id: string; num: string; status: string; detail: string | null; det: Record<string, unknown>; night: string; hoy: string; nowN: number; pax: number; note: string | null; code: string | null;
-    dep: number; biz: string; nombre: string; phone: string | null; address: string | null; foto: string | null; pst: string | null; dev: number | null; marca: string | null; l4: string | null }>(
-    `select o.id::text, o.number as num, o.status, o.status_detail as detail, o.details as det, o.night_date::text as night, ${NOCHE_SQL("now()", "c.timezone")}::text as hoy,
+    dep: number; biz: string; nombre: string; phone: string | null; address: string | null; foto: string | null; pst: string | null; dev: number | null; marca: string | null; l4: string | null; resp: number | null }>(
+    `select o.id::text, o.number as num, case when o.status = 'pending' and o.respond_by is not null then greatest(1, ceil(extract(epoch from o.respond_by - now()) / 60))::int end as resp, o.status, o.status_detail as detail, o.details as det, o.night_date::text as night, ${NOCHE_SQL("now()", "c.timezone")}::text as hoy,
             (extract(epoch from (now() at time zone c.timezone) - (o.night_date + time '12:00')) / 60)::int as "nowN", o.party_size as pax, o.customer_note as note, o.door_code as code,
             o.deposit_cents as dep, b.id as biz, b.name as nombre, b.phone, b.address, (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1) as foto,
             p.status as pst, p.refunded_cents as dev, p.card_brand as marca, p.card_last4 as l4
@@ -507,7 +508,7 @@ export async function nocheVista(userId: string, numero: string): Promise<NocheV
     numero: o.num, status: o.status, detalle: o.detail, k: d.k as NocheVista["k"], negocio: { id: o.biz, nombre: o.nombre, telefono: o.phone, direccion: o.address, foto: o.foto },
     svc: d.svc as Bi, night: o.night, hoy: o.night === o.hoy, dow: new Date(`${o.night}T12:00:00Z`).getUTCDay(), llega: Number(d.arrive), pax: o.pax, occ: (d.occ as string) ?? null, nota: o.note,
     // El código solo mientras la reserva está viva (y nunca antes de que el local confirme la mesa).
-    code: o.status === "confirmed" ? o.code : null, puerta: { es: puertaTexto(d, true), en: puertaTexto(d, false) }, edad: Number(d.edad ?? 21), hold: Number(d.hold ?? 30),
+    code: o.status === "confirmed" ? o.code : null, puerta: { es: puertaTexto(d, true), en: puertaTexto(d, false) }, edad: Number(d.edad ?? 21), hold: Number(d.hold ?? await valor("noche_mesa_guardada_min")), resp: o.resp, corteBase: await valor("noche_corte_min"),
     cut: d.cut == null ? null : Number(d.cut), nowN: o.nowN, dep: o.dep, pago: { st: o.pst, devuelto: o.dev ?? 0, marca: o.marca, l4: o.l4 }, alt, motivoNeg: (d.motivoNeg as string) ?? null,
     perdio: !!d.perdio, inN: d.in_n == null ? null : Number(d.in_n), cover: Number(d.cover_cents ?? 0), resena, linea: L,
   };
@@ -545,7 +546,7 @@ export async function nochePanel(negocio: string, numero: string): Promise<Noche
   const o = await leer(db(), "o.business_id = $1 and o.number = $2", [negocio, numero]);
   if (!o) return null;
   if (!f) f = { numero, st: o.status, detalle: o.detail, who: o.cliente, k: String(o.det.k), svc: o.det.svc as Bi, night: o.night, llega: Number(o.det.arrive), pax: o.pax, occ: (o.det.occ as string) ?? null,
-    nota: null, dep: o.dep, pay: o.pay, code: null, inN: o.det.in_n == null ? null : Number(o.det.in_n), llego: !!o.det.llego, resp: null, cupo: null, nowN: o.nowN, hold: Number(o.det.hold ?? 30), esHoy: o.night === o.hoy };
+    nota: null, dep: o.dep, pay: o.pay, code: null, inN: o.det.in_n == null ? null : Number(o.det.in_n), llego: !!o.det.llego, resp: null, cupo: null, nowN: o.nowN, hold: Number(o.det.hold ?? await valor("noche_mesa_guardada_min")), esHoy: o.night === o.hoy };
   const x = (await contexto(db(), negocio))!, s = await servicio(db(), negocio, String(o.det.item));
   const slots = s && f.st === "pending" ? ((await noches(db(), x, s)).find((n) => n.fecha === o.night)?.slots ?? []).filter((m) => m !== f!.llega) : [];
   const L = (await db().query<{ at: string; kind: string; note: Bi | null }>(`select at::text, kind, note from operation_events where operation_id = $1::bigint order by operation_events.at, id`, [o.id])).rows;

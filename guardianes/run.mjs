@@ -377,7 +377,7 @@ const guardianes = {
       "apps/web/lib/textos.ts": ["foto_rep_quitada", "foto_rep_queda"], "apps/web/app/panel/Menu.tsx": ["biz_quedan_pocos"], "apps/web/app/(app)/n/[id]/apartar/Apartar.tsx": ["lay_listo", "lay_pronto"],
       // Lo que explica el camino del SMS (el respaldo del push, lo crítico, el código): lo cumple el SMS del código para entrar (crit, siempre) y el único camino.
       "apps/web/app/(app)/cuenta/avisos/Avisos.tsx": ["cuenta_codigo"], "apps/web/app/admin/IntegracionesPush.tsx": ["cuenta_codigo"], "apps/web/lib/push/admin.ts": ["cuenta_codigo"],
-      "apps/web/app/admin/Notificaciones.tsx": ["cuenta_codigo"], "apps/web/app/admin/U360.tsx": ["cuenta_codigo"],
+      "apps/web/app/admin/Notificaciones.tsx": ["cuenta_codigo"], "apps/web/app/admin/U360.tsx": ["cuenta_codigo", "msg_equipo_sms"], "apps/web/app/admin/acciones-usuarios.ts": ["msg_equipo_sms"],
     };
     const sms = new Map(); // clave → ¿lleva SMS? (la última migración que la define)
     for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) for (const m of readFileSync(`packages/db/migrations/${x}`, "utf8").matchAll(/\(\s*'([a-z0-9_]+)',\s*'(?:crit|tx|mod|biz|mkt|community|events|support)',\s*(?:'\w+'|null),\s*(true|false)(?:,\s*'(siempre|sin_push|nunca)')?/g)) sms.set(m[1], m[2] === "true" && m[3] !== "nunca");
@@ -4174,8 +4174,10 @@ const guardianes = {
     if (!/check \(sales_extended_until is null or sales_extended_until <= starts_at\)/.test(m) || !/least\(d\.starts_at, greatest\(d\.sales_extended_until/.test(ultimaFn("bol_venta_hasta"))) falla(G, M, 0, "la venta extendida nunca pasa del inicio (D1)");
     if (!/create or replace view evt_sobreventa as[\s\S]*?v\.n > s\.quantity[\s\S]*?v\.n > s\.quantity/.test(m)) falla(G, M, 0, "falta la alerta viva evt_sobreventa (boletos vivos contra la existencia de cada tipo y mesa)");
     if (!existsSync(L)) return falla(G, L, 0, "falta lib/evt-admin.ts");
-    const t = sinComent(L), a = cuerpoFn(t, "ajustarCupo"), iB = a.search(/if \(n < x\.usado\) return no/), iI = a.search(/insert into event_stock_overrides/);
-    if (iB < 0 || iI < 0 || iB > iI) falla(G, L, 0, "ajustarCupo: rechazar por debajo de lo vendido + apartado ANTES de guardar el ajuste");
+    const t = sinComent(L), a = cuerpoFn(t, "ajustarCupo");
+    // 9n-3 · hay dos caminos (boletos/mesas/aforo y el cupo del RSVP): cada inserción del ajuste va DESPUÉS de su rechazo por debajo de lo vendido o guardado.
+    const rechazos = [...a.matchAll(/if \((?:n > 0 && )?n < (?:x|ev)\.usado\) return no/g)].map((m) => m.index), inserciones = [...a.matchAll(/insert into event_stock_overrides/g)].map((m) => m.index);
+    if (!inserciones.length || rechazos.length < inserciones.length || inserciones.some((iI, i) => !(rechazos[i] < iI))) falla(G, L, 0, "ajustarCupo: rechazar por debajo de lo vendido + apartado ANTES de guardar el ajuste");
     for (const fn of ["ajustarCupo", "extenderVenta"]) { const b = cuerpoFn(t, fn); if (!/m\.length < 4\) return no/.test(b) || !/insert into event_changes/.test(b) || !/await auditar\(c,/.test(b) || !/for update/.test(b + cuerpoFn(t, "fechaAdm"))) falla(G, L, 0, `${fn}: motivo, event_changes, auditoría y la fecha bloqueada`); }
     if (existsSync(AC)) { const ac = sinComent(AC); for (const fn of ["evtCupo", "evtExtenderVenta"]) if (!/requerir\("evt", "editar"\)/.test(cuerpoFn(ac, fn))) falla(G, AC, 0, `${fn} pide evt:editar`); }
     for (const f of ["apps/web/app/admin/page.tsx", "apps/web/app/admin/eventos/page.tsx"]) if (existsSync(f) && !/sobreventa\(s\)/.test(readFileSync(f, "utf8"))) falla(G, f, 0, "la alerta «evento con sobreventa» sale aquí");
@@ -7812,7 +7814,7 @@ const guardianes = {
     if (!existsSync(M) || !existsSync(F)) return falla(G, F, 0, "falta Sistema › Flags");
     const m = readFileSync(M, "utf8");
     if (!/check \(scope in \('all', 'city', 'percent'\) and \(scope = 'all' or scopable\)/.test(m)) falla(G, M, 0, "la base no deja acotar un interruptor que no es «scopable»");
-    const acotables = [...m.matchAll(/update feature_flags set scopable = true where key = '([^']+)'/g)].map((x) => x[1]);
+    const acotables = readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql") && y >= "0140").flatMap((y) => [...readFileSync(`packages/db/migrations/${y}`, "utf8").matchAll(/update feature_flags set scopable = true where key = '([^']+)'/g)].map((x) => x[1]));
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
       const t = sinComent(f);
@@ -8932,6 +8934,115 @@ const guardianes = {
     if (!/pg_temp\.ampliar_check\('announcements', 'announcements_audience_check', array\['negocios'\]\)/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "el CHECK de announcements.audience se AMPLÍA con 'negocios'");
     if (/audience = 'negocios'/.test(sinComent(H))) falla(G, H, 0, "los anuncios de negocios no salen en el Inicio de los vecinos");
   },
+
+  /* 9n-3 · El Super Admin completo (lo que quedaba de 9n). Una clase de problema por guardián; todos con su caso al revés en pruebas/alreves/alreves9n3.cjs.
+     colasSinTope: la lista de Colas no corta en 200 sin avisar (las cifras salían de los primeros 200): la base cuenta, filtra y pagina. */
+  colasSinTope() {
+    const G = "colasSinTope", L = "apps/web/lib/admin-colas.ts";
+    if (!existsSync(L)) return falla(G, L, 0, "falta lib/admin-colas.ts");
+    const t = sinComent(L), c = cuerpoFn(t, "listaCasos");
+    if (/limit 200\b/.test(c)) falla(G, L, 0, "listaCasos corta en 200: pagina (CASOS_POR_PAGINA) y cuenta todo en la base");
+    if (!/limit \$\{CASOS_POR_PAGINA\} offset/.test(c)) falla(G, L, 0, "listaCasos pagina de a CASOS_POR_PAGINA");
+    if (!/group by q\.queue/.test(c)) falla(G, L, 0, "los conteos de las pestañas salen de una consulta sobre TODOS los casos abiertos, no de la página");
+    if (!/q\.assigned_to = \$5/.test(c) || !/q\.assigned_to is null/.test(c)) falla(G, L, 0, "«Míos» y «Sin asignar» se filtran en la base, no en la página");
+  },
+
+  /* ciudadDelSelector: el selector de ciudad del encabezado filtra TODAS las secciones por `Staff.cities` y NUNCA da más alcance que el rol (una cookie de otra
+     ciudad no sirve a un Ciudad manager). */
+  ciudadDelSelector() {
+    const G = "ciudadDelSelector", L = "apps/web/lib/admin.ts", A = "apps/web/app/admin/acciones.ts";
+    const t = sinComent(L), f = t.slice(t.indexOf("async function filaEquipo"), t.indexOf("export async function staff()"));
+    if (!/\(!rol\.length \|\| rol\.includes\(c\)\)/.test(f)) falla(G, L, 0, "la ciudad elegida solo vale si está entre las del rol (vacío = todas)");
+    if (!/cities: vista \? \[vista\] : rol/.test(f)) falla(G, L, 0, "Staff.cities es la ciudad elegida o las del rol (así filtran todas las secciones)");
+    if (!/select 1 from cities where id = \$1/.test(f)) falla(G, L, 0, "la ciudad de la cookie tiene que existir");
+    const a = sinComent(A), e = cuerpoFn(a, "elegirCiudad");
+    if (!/s\.ciudadesRol\.length && !s\.ciudadesRol\.includes\(id\)/.test(e) || !/httpOnly: true/.test(e) || !/staff\(\)/.test(e)) falla(G, A, 0, "elegirCiudad: pide staff(), solo ciudades del rol y cookie httpOnly");
+  },
+
+  /* mensajeDelEquipo: «Enviar mensaje» (AdminMessage) pide usr:editar, motivo, auditoría, tope por hora y por destinatario ANTES de guardar, sin enlaces, SMS solo a
+     teléfono verificado, y admin_messages es de solo inserción (la purga de una cuenta borrada es la única excepción). */
+  mensajeDelEquipo() {
+    const G = "mensajeDelEquipo", L = "apps/web/app/admin/acciones-usuarios.ts", M = "packages/db/migrations/0147_admin.sql";
+    if (!existsSync(L) || !existsSync(M)) return falla(G, L, 0, "falta Enviar mensaje");
+    const c = cuerpoFn(sinComent(L), "enviarMensaje");
+    if (!/hacer\(id, \["editar"\]/.test(c) || !/await auditar\(c,/.test(c)) falla(G, L, 0, "enviarMensaje pide usr:editar y deja su auditoría");
+    const iT = c.search(/if \(d >= MSG_DIA_DESTINO\) return/), iH = c.search(/if \(h >= MSG_HORA\) return/), iI = c.search(/insert into admin_messages/);
+    if (iT < 0 || iH < 0 || iI < 0 || iT > iI || iH > iI) falla(G, L, 0, "enviarMensaje: el tope por hora y por destinatario va ANTES de guardar (el SMS cuesta y molesta)");
+    if (!/https\?:\\\/\\\//.test(c)) falla(G, L, 0, "enviarMensaje no deja pasar enlaces");
+    if (!/canal === "sms" && !u\.phone_ok/.test(c)) falla(G, L, 0, "el SMS solo va a un teléfono verificado");
+    const m = readFileSync(M, "utf8");
+    if (!/create trigger admin_messages_no_cambia before update or delete on admin_messages/.test(m)) falla(G, M, 0, "admin_messages es de solo inserción");
+    if (!/mod_sancion' and \(not sms or sms_mode <> 'sin_push'\)/.test(m)) falla(G, M, 0, "la sanción lleva SMS de respaldo (mod_sancion, sin_push)");
+  },
+
+  /* negociosPorCursor: la lista de Negocios pagina por cursor (sin OFFSET ni tope de páginas) y «Exportar CSV» pide neg:exportar, motivo, auditoría y tope por hora. */
+  negociosPorCursor() {
+    const G = "negociosPorCursor", L = "apps/web/lib/admin-negocios.ts", A = "apps/web/app/admin/acciones-negocios.ts";
+    const t = sinComent(L), c = cuerpoFn(t, "listaNegocios");
+    if (/\boffset\b/i.test(c)) falla(G, L, 0, "listaNegocios pagina por cursor, no con OFFSET");
+    if (!/limit \$\{POR_PAGINA \+ 1\}/.test(c) || !/> \$\$\{pc\.length\}/.test(c)) falla(G, L, 0, "listaNegocios pide una fila de más y avanza con la llave de la última");
+    const e = cuerpoFn(sinComent(A), "exportarNegocios");
+    if (!/s\.puede\("neg", "exportar"\)/.test(e) || !/m\.length < 3/.test(e) || !/auditar\(c, \{ actor: s\.id, action: "negocios\.exportar"/.test(e) || !/n >= 5/.test(e)) falla(G, A, 0, "exportarNegocios pide neg:exportar, motivo, deja su auditoría y topa a 5 por hora");
+    if (!/negociosCsv\(s, f\)/.test(e)) falla(G, A, 0, "el CSV sale con las ciudades de la persona (s)");
+  },
+
+  /* dosPasosPropios: la persona del equipo cambia SU app o pide códigos nuevos con un código fresco de la app de siempre; nunca toca a otra persona. */
+  dosPasosPropios() {
+    const G = "dosPasosPropios", L = "apps/web/lib/equipo/dos-pasos.ts", M = "packages/db/migrations/0147_admin.sql", A = "apps/web/app/admin/seguridad/acciones.ts";
+    if (!existsSync(L) || !existsSync(M)) return falla(G, L, 0, "falta lib/equipo/dos-pasos.ts");
+    const t = sinComent(L);
+    for (const [fn, firma] of [["codigosNuevos", /export async function codigosNuevos\(u: Yo, entrada: string\)/], ["empezarCambioApp", /export async function empezarCambioApp\(u: Yo, entrada: string\)/], ["confirmarCambioApp", /export async function confirmarCambioApp\(u: Yo, testigo: string, entrada: string\)/]]) {
+      if (!firma.test(t)) falla(G, L, 0, `${fn} solo recibe a quien llama (u), nunca el id de otra persona`);
+    }
+    if (!/await pasoFresco\(u, f, entrada\)/.test(cuerpoFn(t, "codigosNuevos")) || !/await pasoFresco\(u, f, entrada\)/.test(cuerpoFn(t, "empezarCambioApp"))) falla(G, L, 0, "pedir códigos nuevos y empezar el cambio piden un código fresco de la app de siempre");
+    if (!/!\(t\.x > Date\.now\(\)\)/.test(cuerpoFn(t, "confirmarCambioApp")) || !/t\.u !== u\.id/.test(cuerpoFn(t, "confirmarCambioApp"))) falla(G, L, 0, "el testigo del cambio vence (10 min) y es de esta persona");
+    if (!/mfa_at = null, mfa_via = null where user_id = \$1 and mfa_at is not null and id <> \$2::uuid/.test(t)) falla(G, L, 0, "al cambiar la app, las otras sesiones vuelven a pedir el segundo factor");
+    if (!/revoked_reason = \$3/.test(t) || /delete from staff_mfa/.test(t)) falla(G, L, 0, "lo anterior se revoca con su motivo; nada se borra");
+    if (!/'cambio_app', 'codigos_nuevos'/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "el libro de los dos pasos acepta cambio_app y codigos_nuevos");
+    if (existsSync(A)) for (const fn of ["accionCodigosNuevos", "accionEmpezarCambio", "accionConfirmarCambio"]) if (!/await staff\(\)/.test(cuerpoFn(sinComent(A), fn)) || !/mismoOrigen\(\)/.test(cuerpoFn(sinComent(A), fn))) falla(G, A, 0, `${fn} pide staff() (segundo factor dado) y el mismo origen`);
+  },
+
+  /* buscadorAcotado: el buscador global solo busca en lo que el rol puede ver y en las ciudades de su vista. */
+  buscadorAcotado() {
+    const G = "buscadorAcotado", L = "apps/web/lib/admin-buscar.ts";
+    if (!existsSync(L)) return falla(G, L, 0, "falta el buscador global");
+    const t = sinComent(L);
+    for (const [s, q] of [["neg", /s\.puede\("neg", "ver"\)\s*\?/], ["usr", /s\.puede\("usr", "ver"\)\s*\?/], ["tx", /s\.puede\("tx", "ver"\) &&/]]) if (!q.test(t)) falla(G, L, 0, `buscar en «${s}» pide ${s}:ver`);
+    if ((t.match(/\$2::text\[\]\) = 0 or/g) ?? []).length < 3) falla(G, L, 0, "cada grupo va acotado a s.cities");
+  },
+
+  /* nocheEditable: las claves de Noche editables leen su valor donde lo dice la pantalla (nada de «1 hora» ni «30» fijos) y el corte de las 6 PM sale de Configuración. */
+  nocheEditable() {
+    const G = "nocheEditable", M = "packages/db/migrations/0147_admin.sql", R = "apps/web/lib/noche-reservas.ts", E = "apps/web/app/(app)/noche/[num]/NocheEstado.tsx", V = "apps/web/app/(app)/n/[id]/noche/Reservar.tsx";
+    if (!existsSync(M) || !existsSync(R)) return falla(G, R, 0, "falta Noche");
+    if (!/update config_keys set editable = true, bloqueo = null where key in \('noche_responder_min', 'noche_mesa_guardada_min', 'noche_fila_viva_min'\)/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "las claves de Noche se abren en la migración");
+    const r = sinComent(R);
+    if (/\?\? 30\b/.test(r)) falla(G, R, 0, "el plazo de la mesa guardada no tiene un 30 fijo: lee noche_mesa_guardada_min");
+    if (!/corteMin = \(llegada: number, base: number\)/.test(r) || /corteMin\(\w+\)/.test(r)) falla(G, R, 0, "el corte de cancelar gratis sale de noche_corte_min");
+    if (existsSync(E) && /menos de 1 hora|within 1 hour/.test(readFileSync(E, "utf8"))) falla(G, E, 0, "la reserva pendiente no dice «1 hora» fijo: dice los minutos que le quedan");
+    if (existsSync(V) && /: "6 PM"/.test(sinComent(V))) falla(G, V, 0, "el corte que ve quien reserva sale de Configuración, no de un «6 PM» escrito");
+  },
+
+  /* rsvpCupoAdmin: el cupo de un RSVP lo ajusta el Super Admin con motivo, nunca por debajo de lo guardado, y el organizador no lo deshace (la base). */
+  rsvpCupoAdmin() {
+    const G = "rsvpCupoAdmin", M = "packages/db/migrations/0147_admin.sql", L = "apps/web/lib/evt-admin.ts";
+    if (!existsSync(M) || !existsSync(L)) return falla(G, L, 0, "falta el cupo del RSVP");
+    const m = readFileSync(M, "utf8");
+    if (!/create trigger events_cupo_admin before update of rsvp_capacity on events/.test(m)) falla(G, M, 0, "el último ajuste de To'Latino manda sobre lo que guarde el organizador (trigger events_cupo_admin)");
+    if (!/event_stock_overrides_check check \(\(kind in \('dia', 'rsvp'\)\) = \(ref_id is null\)\)/.test(m)) falla(G, M, 0, "el ajuste del RSVP es del evento (sin ref_id)");
+    const c = cuerpoFn(sinComent(L), "ajustarCupo");
+    if (!/from events e where e\.id = \$1::bigint for update/.test(c) || !/n > 0 && n < ev\.usado/.test(c)) falla(G, L, 0, "ajustarCupo (RSVP): bloquea el evento y rechaza por debajo de los lugares guardados");
+  },
+
+  /* semillaNocheDemo: el demo de Noche vive SOLO en la semilla del sandbox (nunca en una migración) y todo es is_test. */
+  semillaNocheDemo() {
+    const G = "semillaNocheDemo", S = "infra/pruebas/semilla/0065_noche_demo.sql";
+    if (!existsSync(S)) return falla(G, S, 0, "falta la semilla del demo de Noche");
+    const s = readFileSync(S, "utf8");
+    if (!/client_key, is_test\)/.test(s) || !/u\.ck, true\b/.test(s) || /delete from/i.test(s)) falla(G, S, 0, "todo el demo es is_test, idempotente por client_key y sin borrar nada");
+    for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql"))) if (/N-9065/.test(readFileSync(`packages/db/migrations/${x}`, "utf8"))) falla(G, `packages/db/migrations/${x}`, 0, "el demo de Noche no va en una migración (regla 13: datos de ejemplo solo en pruebas)");
+  },
+
 };
 
 

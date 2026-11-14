@@ -25,9 +25,15 @@ const MAX_LOTE = 60;
 const huella = (t: string) => createHash("sha256").update(t).digest("hex");
 const ISO = (c: string) => `to_char(${c} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`;
 
-async function encendida(c?: PoolClient): Promise<boolean> {
-  const r = await (c ?? db()).query<{ on: boolean }>(`select enabled as on from feature_flags where key = 'app.ubicacion_vivo'`);
-  return !!r.rows[0]?.on; // una bandera que no existe cuenta como apagada
+/* 9n-3 · `app.ubicacion_vivo` se puede abrir por ciudad o por porcentaje (Sistema › Flags): se decide por EL REPARTIDOR que comparte su ubicación
+   (flag_para; guardián flagPorPersona). Sin repartidor (aún no hay ruta), un interruptor acotado queda apagado. Una bandera que no existe cuenta como apagada. */
+async function encendida(c?: PoolClient, repartidor: string | null = null): Promise<boolean> {
+  const r = await (c ?? db()).query<{ on: boolean }>(`select flag_para('app.ubicacion_vivo', $1::uuid) as on`, [repartidor]);
+  return !!r.rows[0]?.on;
+}
+/* El repartidor de la ruta de un pedido (para decidir el interruptor cuando mira el cliente o el negocio). */
+async function repartidorDe(opId: string): Promise<string | null> {
+  return (await db().query<{ r: string }>(`select rider_user_id::text as r from delivery_tracks where operation_id = $1::bigint order by id desc limit 1`, [opId])).rows[0]?.r ?? null;
 }
 async function ritmo() {
   const v = await valores("ubic_cada_s", "ubic_min_m");
@@ -37,7 +43,7 @@ async function ritmo() {
 /* Abre la ruta de una entrega (dentro de la transacción del paso; la operación ya está bloqueada por ese paso) o, si ya está abierta para este
    repartidor, le da un token nuevo. null = interruptor apagado o la entrega no es de este repartidor. */
 export async function empezar(c: PoolClient, opId: string, userId: string, paso: "empezar" | "recogi"): Promise<RutaToken | null> {
-  if (!(await encendida(c))) return null;
+  if (!(await encendida(c, userId))) return null;
   const o = (await c.query<{ id: string; numero: string; city: string; biz: string; negocio: string; did: string; stage: string | null }>(
     `select o.id::text, o.number as numero, o.city_id as city, o.business_id as biz, b.name as negocio, d.id::text as did, o.stage
        from operations o join delivery_drivers d on d.id = o.driver_id join businesses b on b.id = o.business_id
@@ -62,7 +68,7 @@ export async function reanudar(userId: string, numero: string): Promise<RutaToke
     const t = (await c.query<{ id: string; op: string; city: string }>(
       `select t.id::text, t.operation_id::text as op, t.city_id as city from delivery_tracks t join operations o on o.id = t.operation_id
         where o.number = $1 and o.kind = 'order' and t.rider_user_id = $2 and t.sharing_until is null for update of t`, [numero, userId])).rows[0];
-    if (!t || !(await encendida(c))) return null;
+    if (!t || !(await encendida(c, userId))) return null;
     if (!(await c.query<{ ok: boolean }>(`select ruta_activa($1::bigint, $2::uuid, $3) as ok`, [t.op, userId, t.city])).rows[0]?.ok) return null;
     const token = randomBytes(32).toString("base64url");
     await c.query(`update delivery_tracks set token_hash = $2, token_at = now() where id = $1::bigint`, [t.id, huella(token)]);
@@ -96,7 +102,7 @@ export async function guardarPosiciones(token: string, cuerpo: unknown, fuente: 
             st_y(t.last_geom::geometry) as ulat, st_x(t.last_geom::geometry) as ulng, t.last_accuracy_m as uacc, st_y(c.center::geometry) as clat, st_x(c.center::geometry) as clng
        from delivery_tracks t join cities c on c.id = t.city_id where t.token_hash = $1 and t.sharing_until is null`, [huella(token)])).rows[0];
   if (!t) return null; // token desconocido, rotado o de una ruta terminada: el teléfono deja de compartir
-  const activa = !!(await db().query<{ ok: boolean }>(`select ruta_activa($1::bigint, $2::uuid, $3) as ok`, [t.op, t.rider, t.city])).rows[0]?.ok && (await encendida());
+  const activa = !!(await db().query<{ ok: boolean }>(`select ruta_activa($1::bigint, $2::uuid, $3) as ok`, [t.op, t.rider, t.city])).rows[0]?.ok && (await encendida(undefined, t.rider));
   if (!activa) return { activa: false, aceptadas: 0, rechazadas: 0 };
   const lista = Array.isArray((cuerpo as { p?: unknown })?.p) ? ((cuerpo as { p: Cruda[] }).p).slice(0, MAX_LOTE) : [];
   const { ubic_vel_max_mps: vmax, ubic_cada_s: cadaS, ubic_min_m: minM } = await valores("ubic_vel_max_mps", "ubic_cada_s", "ubic_min_m");
@@ -162,7 +168,7 @@ async function vista(op: string, conRastro: boolean, desdeCliente: boolean): Pro
 export async function rutaCliente(userId: string, numero: string): Promise<Vista | null> {
   if (!/^\d{1,12}$/.test(numero) || (await valores("ubic_cliente_desde")).ubic_cliente_desde !== 1) return null;
   const o = (await db().query<{ id: string }>(`select id::text from operations where number = $1 and kind = 'order' and user_id = $2 and coalesce(mode, 'pickup') = 'delivery'`, [numero, userId])).rows[0];
-  if (!o || !(await encendida())) return null;
+  if (!o || !(await encendida(undefined, await repartidorDe(o.id)))) return null;
   return vista(o.id, false, true);
 }
 /* ¿El cliente puede abrir el mapa ahora? (la pantalla del pedido decide si lo monta; el SSE lo vuelve a revisar). */
@@ -175,7 +181,7 @@ export async function clienteVeRuta(userId: string, numero: string): Promise<boo
 export async function rutaNegocio(negocioId: string, numero: string): Promise<Vista | null> {
   if (!/^\d{1,12}$/.test(numero)) return null;
   const o = (await db().query<{ id: string }>(`select id::text from operations where number = $1 and kind = 'order' and business_id = $2 and coalesce(mode, 'pickup') = 'delivery'`, [numero, negocioId])).rows[0];
-  if (!o || !(await encendida())) return null;
+  if (!o || !(await encendida(undefined, await repartidorDe(o.id)))) return null;
   return vista(o.id, true, false);
 }
 /* El id de la operación para escuchar sus cambios (SSE), solo después de revisar quién mira. */
