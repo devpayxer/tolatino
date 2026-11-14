@@ -22,15 +22,12 @@ const ESTADO = (c: Ctx, x: CuponNegocio): [string, string, string] => {
   return [E2("TERMINADO", "ENDED"), "neutral", x.motivo ? E2(`No salió: ${x.motivo}`, `Not published: ${x.motivo}`) : E2("Ya no sale. Los códigos canjeados siguen valiendo hasta que vencen.", "No longer shows. Redeemed codes stay valid until they expire.")];
 };
 
-export function cupBloques(c: Ctx): Sec {
-  const { E2, d } = c, L = c.cup?.lista, out: (Bloque | null)[] = [];
-  if (!d.pro) {
-    out.push({ type: "lock", t: E2("Ofrece cupones por monedas", "Offer coupons for coins"), s: E2("Los vecinos de la Comunidad los canjean con las monedas que ganan y te muestran su código en el local.", "Community neighbors redeem them with the coins they earn and show you their code in store."), ...ctaPro(c, E2("Ver Pro", "See Pro")) });
-    return { blocks: out, ed: null };
-  }
-  // Validar un código (lo primero: es lo que se hace con el vecino enfrente).
+/* Validar un código del vecino (lo que se hace con él enfrente). 9n-2 · También sale en Hoy para quien solo tiene «Hoy y pedidos» (L673): el mismo campo,
+   el mismo «Escanear cupón» y la misma acción (cupValidar decide en el servidor, una sola vez por código). */
+export function cupValidarBloques(c: Ctx, primero = true): Bloque[] {
+  const { E2, d } = c, out: Bloque[] = [];
   const cod = (c.ui.cupCod as string | undefined) ?? "", res = c.ui.cupRes as { ok: boolean; t: string } | undefined;
-  out.push({ type: "group", k: E2("VALIDAR UN CÓDIGO", "VALIDATE A CODE"), first: true },
+  out.push({ type: "group", k: E2("VALIDAR UN CÓDIGO", "VALIDATE A CODE"), first: primero },
     { type: "field", k: E2("CÓDIGO DEL VECINO", "NEIGHBOR'S CODE"), val: cod, max: 12, ph: "TL-CQ-7K4M", help: E2("Escanea el QR o escribe el código que el vecino te muestra en su teléfono. Cada código se usa una sola vez.", "Scan the QR or type the code the neighbor shows on their phone. Each code works once."),
       onChange: (v) => c.setUi({ cupCod: v.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 12), cupRes: undefined }) },
     // 8e · «Escanear cupón»: la cámara lee el QR del código (EscanearCupon.tsx, el lector de la Puerta); también en la web.
@@ -41,6 +38,24 @@ export function cupBloques(c: Ctx): Sec {
         c.setUi({ cupRes: { ok: true, t }, cupCod: "" }); return t;
       }) }] });
   if (res) out.push({ type: "note", tone: res.ok ? "ok" : "danger", icon: res.ok ? "check" : "warning", t: res.t });
+  return out;
+}
+
+/* Hoy: el campo para validar un cupón, solo con Pro y si el negocio tiene cupones en la Comunidad. */
+export function hoyCupon(c: Ctx): Bloque[] {
+  const { d } = c;
+  if (!d.pro || !d.cupones.vivos) return [];
+  if (!(d.partes.includes("all") || d.partes.includes("page") || d.partes.includes("ord"))) return [];
+  return cupValidarBloques(c, false);
+}
+
+export function cupBloques(c: Ctx): Sec {
+  const { E2, d } = c, L = c.cup?.lista, out: (Bloque | null)[] = [];
+  if (!d.pro) {
+    out.push({ type: "lock", t: E2("Ofrece cupones por monedas", "Offer coupons for coins"), s: E2("Los vecinos de la Comunidad los canjean con las monedas que ganan y te muestran su código en el local.", "Community neighbors redeem them with the coins they earn and show you their code in store."), ...ctaPro(c, E2("Ver Pro", "See Pro")) });
+    return { blocks: out, ed: null };
+  }
+  out.push(...cupValidarBloques(c));
   out.push({ type: "note", tone: "info", icon: "ticket", t: E2("To’Latino aprueba cada cupón y fija su costo en monedas. Las monedas no tienen valor en dinero: To’Latino no te paga ni te cobra por los canjes; el descuento lo das tú en tu local.",
     "To’Latino approves each coupon and sets its cost in coins. Coins have no cash value: To’Latino neither pays nor charges you for redemptions; you give the discount in your store.") });
   if (!L) return { blocks: out, ed: null };

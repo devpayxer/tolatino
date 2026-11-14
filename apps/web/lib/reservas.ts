@@ -636,7 +636,12 @@ export async function mesaDetalle(negocio: string, numero: string) {
     expired: () => ({ es: "Nadie contestó a tiempo", en: "No reply in time" }),
     cancelled: (_q, n) => n ?? { es: "La canceló el cliente", en: "Cancelled by the client" },
   };
-  return { ...v, tl: ev.rows.map((e) => ({ t: (T[e.kind] ?? (() => e.note ?? { es: e.kind, en: e.kind }))(e.quien, e.note), at: hora(hm2m(e.at)) })) };
+  // 9n-2 · El historial de este cliente CON ESTE NEGOCIO (L271): cuántas veces no llegó y cuántas sí en el último año. Solo lo del propio negocio: lo de otros
+  // negocios es de ellos (privacidad); el Super Admin ve el panorama completo en Usuarios 360°.
+  const h = (await db().query<{ nos: number; vino: number }>(
+    `select count(*) filter (where status = 'done' and status_detail = 'noshow')::int as nos, count(*) filter (where status = 'done' and coalesce(status_detail, '') <> 'noshow')::int as vino
+       from operations where business_id = $1 and kind = 'table' and user_id = (select user_id from operations where number = $2 and kind = 'table') and number <> $2 and sent_at > now() - interval '365 days'`, [negocio, numero])).rows[0];
+  return { ...v, historial: { nos: h?.nos ?? 0, vino: h?.vino ?? 0 }, tl: ev.rows.map((e) => ({ t: (T[e.kind] ?? (() => e.note ?? { es: e.kind, en: e.kind }))(e.quien, e.note), at: hora(hm2m(e.at)) })) };
 }
 
 /* Cuántas solicitudes esperan respuesta del negocio (pestañas de Clientes). */

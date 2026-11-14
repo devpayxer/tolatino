@@ -157,6 +157,25 @@ export async function revisarAlEscribir(c: Q, x: { kind: "com_post" | "com_comme
   return out;
 }
 
+/* 9n-2 · Un texto que NO es una publicación de la Comunidad pero llega a mucha gente sin que nadie lo lea antes (p. ej. el aviso del organizador a quienes
+   van a su evento, L848): pasa por las MISMAS listas y reglas (odio, estafa, inmigración, datos personales). A diferencia de una publicación, si lo marca NO sale:
+   el organizador lo reescribe o pide revisión a Soporte, y queda una marca para el equipo (mod_flags + cola «repUsr»). Nunca lanza. */
+export async function revisarTextoSuelto(c: Q, x: { texto: string; autor: string; ciudad: string | null; donde: string }): Promise<{ ok: true } | { ok: false; reglas: string[]; msg: Bi }> {
+  const R = await reglasMod(c), t = norm(x.texto), reglas: string[] = [];
+  const hallados = (await terminos(c)).filter((y) => y.re.test(t));
+  const de = (k: Termino["kind"]) => [...new Set(hallados.filter((y) => y.kind === k).map((y) => y.term))].slice(0, 3);
+  const pon = async (regla: string, detalle: string, prioridad: "normal" | "alta" = "normal") => { reglas.push(regla); await marcar(c, { kind: "user", id: x.autor, regla, detalle: `${x.donde}: ${detalle}`, autor: x.autor, ciudad: x.ciudad, prioridad }).catch(() => undefined); };
+  if (R.hate.on) {
+    if (de("odio").length) await pon("hate", `Lenguaje discriminatorio: «${de("odio").join("», «")}»`);
+    if (de("estafa").length) await pon("estafa", `Posible estafa: «${de("estafa").join("», «")}»`);
+    if (de("migra").length) await pon("migra", `Inmigración: «${de("migra").join("», «")}»`, "alta");
+  }
+  if (R.pii.on && (PLACA.test(x.texto) || VIVE.test(x.texto))) await pon("pii", PLACA.test(x.texto) ? "Parece una placa de carro" : "Parece decir dónde vive alguien");
+  if (!reglas.length) return { ok: true };
+  return { ok: false, reglas, msg: { es: "Tu aviso no se envió: tiene algo que las reglas de To'Latino no permiten (lenguaje que ofende, una estafa, el estatus migratorio de alguien o datos personales). Reescríbelo; si crees que fue un error, escríbele a Soporte.",
+    en: "Your notice was not sent: it has something To'Latino's rules do not allow (offensive language, a scam, someone's immigration status or personal data). Rewrite it; if you think it was a mistake, write to Support." } };
+}
+
 /* ── Fotos de una publicación (regla img): las nuevas pasan por el modelo propio; si las marca o no responde, esperan revisión ── */
 export async function revisarFotosCom(postId: string): Promise<{ revision: number }> {
   const R = await reglasMod();

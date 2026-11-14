@@ -2,7 +2,7 @@
 import { mismoOrigen } from "@/lib/cuenta";
 import { db } from "@/lib/db";
 import { accesoPanel, type Acceso } from "@/lib/panel";
-import { pedirRevision, responderResena } from "@/lib/resenas";
+import { editarRespuesta, pedirRevision, responderResena } from "@/lib/resenas";
 import type { Res } from "./acciones";
 
 /* Reseñas desde el panel (Panel v2 · Tu página › Reseñas). Pide acceso a «Tu página» (page). El negocio Pro responde una
@@ -20,12 +20,22 @@ async function auditar(a: Acceso, action: string, after: unknown) {
     [a.yo.id, action, a.negocio.id, a.negocio.city_id, JSON.stringify(after ?? null)]);
 }
 
-export async function resenaResponder(id: string, resena: string, texto: string): Promise<Res> {
+export async function resenaResponder(id: string, resena: string, texto: string, oferta = false): Promise<Res> {
   const a = await entrar(id);
   if (!a) return SIN_ACCESO;
-  const r = await responderResena(a.negocio.id, String(resena ?? ""), String(texto ?? ""), a.yo.id);
+  const r = await responderResena(a.negocio.id, String(resena ?? ""), String(texto ?? ""), a.yo.id, oferta === true);
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "resena.responder", { resena: String(resena), respuesta: String(texto).trim().slice(0, 300) });
+  await auditar(a, "resena.responder", { resena: String(resena), respuesta: String(texto).trim().slice(0, 300), propuesta: oferta === true });
+  return { ok: true };
+}
+
+/* 9n-2 · Editar la respuesta (hasta 3 veces y dentro de 7 días; lo anterior queda en el historial). */
+export async function resenaEditarRespuesta(id: string, resena: string, texto: string, oferta = false): Promise<Res> {
+  const a = await entrar(id);
+  if (!a) return SIN_ACCESO;
+  const r = await editarRespuesta(a.negocio.id, String(resena ?? ""), String(texto ?? ""), oferta === true, a.yo.id);
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "resena.editar_respuesta", { resena: String(resena), respuesta: String(texto).trim().slice(0, 300), propuesta: oferta === true });
   return { ok: true };
 }
 

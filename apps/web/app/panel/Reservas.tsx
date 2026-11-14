@@ -76,6 +76,11 @@ export function rsvDetalle(c: Ctx): Sec {
     { type: "head", eye: `${E2("RESERVACIÓN", "RESERVATION")} · ${x.quien.toUpperCase()}`, t: `${E2("Reservación", "Reservation")} #${x.numero}`, s: `${cuando} · ${P} · ${areaL(c, x.area)}${tg ? ` · ${tg[0]}` : x.st === "pend" ? E2(" · POR CONFIRMAR", " · TO CONFIRM") : ""}`, onBack: c.closeDet },
     { type: "kv", items: [{ k: E2("CLIENTE", "CLIENT"), v: x.otro ? `${x.otro} (${E2("reservó", "booked by")} ${x.quien})` : x.quien }, { k: E2("CUÁNDO", "WHEN"), v: cuando }, { k: E2("PERSONAS", "GUESTS"), v: String(x.p) }, { k: E2("ÁREA", "AREA"), v: areaL(c, x.area) }] },
   ];
+  // 9n-2 · Su historial con tu negocio (L271): cuántas veces no llegó en el último año; solo lo de tu negocio.
+  if (x.historial && (x.historial.nos > 0 || x.historial.vino > 0)) out.push({ type: "note", tone: x.historial.nos > 0 ? "warn" : "info", icon: "clock",
+    t: x.historial.nos > 0
+      ? E2(`En el último año no llegó ${x.historial.nos} ${x.historial.nos === 1 ? "vez" : "veces"} a tu negocio${x.historial.vino ? ` y vino ${x.historial.vino}` : ""}.`, `In the last year they did not show up ${x.historial.nos} ${x.historial.nos === 1 ? "time" : "times"} at your business${x.historial.vino ? ` and came ${x.historial.vino}` : ""}.`)
+      : E2(`Ya vino ${x.historial.vino} ${x.historial.vino === 1 ? "vez" : "veces"} en el último año. Nunca dejó la mesa vacía.`, `They came ${x.historial.vino} ${x.historial.vino === 1 ? "time" : "times"} in the last year. Never a no-show.`) });
   if (x.tarde) out.push({ type: "note", tone: "warn", icon: "clock", t: E2(`Avisó que llega ${x.tarde} min tarde. Le guardas la mesa ${x.hold} min después de la hora.`, `They said they will be ${x.tarde} min late. You hold the table ${x.hold} min past the time.`) });
   if (x.nota) out.push({ type: "note", tone: "warn", icon: "edit", t: `${E2("Nota del cliente: ", "Client note: ")}${x.nota}` });
   const extra = [x.occ ? { icon: "star", t: E2("Ocasión", "Occasion"), s: es ? OCC[x.occ]?.[0] : OCC[x.occ]?.[1] } : null, x.needs.length ? { icon: "users", t: E2("Necesitan", "Needs"), s: x.needs.map((k) => (es ? NEED[k]?.[0] : NEED[k]?.[1])).join(" · ") } : null]

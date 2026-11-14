@@ -5,7 +5,7 @@
 import { ctaPro } from "./pro-cta";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { FilaPanel, ResenaPanelDet, ResenasPanel } from "@/lib/resenas";
-import { resenaResponder, resenaRevision } from "./acciones-resenas";
+import { resenaEditarRespuesta, resenaResponder, resenaRevision } from "./acciones-resenas";
 import type { Ctx, Editor } from "./Panel";
 
 export type ResPanel = { lista?: ResenasPanel; f?: string; det?: ResenaPanelDet | null; hoy?: FilaPanel[] };
@@ -55,15 +55,26 @@ export function resenaDetalle(c: Ctx): Sec {
   const out: (Bloque | null)[] = [
     { type: "head", eye: `${E2("RESEÑA · ", "REVIEW · ")}${cuando(c, x.d)}`.toUpperCase(), t: `${estrellas(x.stars)} · ${x.who}`, onBack: c.closeDet },
     { type: "thread", items: [{ t: x.text }, ...(x.reply ? [{ t: x.reply, mine: true }] : [])] },
+    ...(x.reply && x.offer ? [{ type: "note", tone: "info", icon: "chat", t: E2("Tu respuesta es una propuesta para arreglarlo: el cliente la ve como «quiere arreglarlo».", "Your reply is an offer to make it right: the client sees it as “wants to make it right”.") } as Bloque] : []),
     { type: "kv", items: [{ k: E2("VISITA", "VISIT"), v: VISITA(c)[x.src] }, { k: E2("DATO DEL PEDIDO · NO SE EDITA", "ORDER DATA · NOT EDITABLE"), v: x.extra ? (es ? x.extra.es : x.extra.en) : "—" }] },
   ];
   if (!d.pro) out.push({ type: "lock", t: E2("Responde tus reseñas", "Reply to your reviews"), s: E2("La respuesta se ve tanto como la reseña. Solo con Pro.", "The reply shows as much as the review. Pro only."), ...ctaPro(c, E2("Ver Pro", "See Pro")) });
   else if (!x.reply) {
-    const key = `det:rev:${x.id}`, F = c.form(key, { txt: "" }), t = F.d.txt;
+    const key = `det:rev:${x.id}`, F = c.form(key, { txt: "", of: false }), t = F.d.txt;
     out.push(
       { type: "chips", k: E2("EMPIEZA CON", "START WITH"), items: [E2("Gracias por venir. ", "Thanks for coming. "), E2("Tienes razón, lo vamos a mejorar. ", "You are right, we will improve it. "), E2("Te esperamos otra vez. ", "Hope to see you again. ")].map((s) => ({ l: s.trim(), v: "filter", onClick: () => F.set({ txt: (t + s).slice(0, 300) }) })) },
       { type: "field", k: E2("TU RESPUESTA · SE VE EN PÚBLICO", "YOUR REPLY · PUBLIC"), val: t, area: true, rows: 3, max: 300, count: `${t.length}/300`, ph: E2("Escribe como le hablarías en persona.", "Write as you would say it in person."), onChange: (v) => F.set({ txt: v.slice(0, 300) }) },
-      { type: "acts", items: [{ l: E2("Publicar respuesta", "Post reply"), v: "primary", icon: "check", off: c.pending || t.trim().length < 5, onClick: () => c.run(() => resenaResponder(d.id, x.id, t), E2("Respuesta publicada debajo de la reseña.", "Reply posted under the review.")) }] },
+      ...(x.stars <= 3 ? [{ type: "rows", items: [{ icon: "chat", t: E2("Quiero arreglarlo", "I want to make it right"), s: E2("Tu respuesta es una propuesta: el cliente la ve así y puede actualizar su reseña si le convence.", "Your reply is an offer: the client sees it that way and can update their review if it works for them."), compact: true, chev: false, tgOn: !!F.d.of, onTg: () => F.set({ of: !F.d.of }) }] } as Bloque] : []),
+      { type: "acts", items: [{ l: E2("Publicar respuesta", "Post reply"), v: "primary", icon: "check", off: c.pending || t.trim().length < 5, onClick: () => c.run(() => resenaResponder(d.id, x.id, t, !!F.d.of), E2("Respuesta publicada debajo de la reseña.", "Reply posted under the review.")) }] },
+    );
+  } else if (x.editable) {
+    // 9n-2 · Editar la respuesta (L287): hasta 3 veces y dentro de 7 días; lo anterior queda en el historial y la respuesta se ve «editada».
+    const F = c.form(`det:rev-ed:${x.id}`, { txt: x.reply ?? "", of: x.offer }), t = F.d.txt;
+    out.push(
+      { type: "field", k: E2("EDITAR TU RESPUESTA · SE VE EN PÚBLICO", "EDIT YOUR REPLY · PUBLIC"), val: t, area: true, rows: 3, max: 300, count: `${t.length}/300`, onChange: (v) => F.set({ txt: v.slice(0, 300) }) },
+      ...(x.stars <= 3 ? [{ type: "rows", items: [{ icon: "chat", t: E2("Quiero arreglarlo", "I want to make it right"), s: E2("Tu respuesta es una propuesta para arreglarlo.", "Your reply is an offer to make it right."), compact: true, chev: false, tgOn: !!F.d.of, onTg: () => F.set({ of: !F.d.of }) }] } as Bloque] : []),
+      { type: "note", tone: "info", icon: "clock", t: E2(`Puedes editarla ${3 - x.edits} ${3 - x.edits === 1 ? "vez" : "veces"} más, dentro de 7 días de publicada. Lo que había antes queda en el historial.`, `You can edit it ${3 - x.edits} more ${3 - x.edits === 1 ? "time" : "times"}, within 7 days of posting. What was there before stays in the history.`) },
+      { type: "acts", items: [{ l: E2("Guardar cambios", "Save changes"), v: "primary", icon: "check", off: c.pending || t.trim().length < 5 || (t.trim() === x.reply && !!F.d.of === x.offer), onClick: () => c.run(() => resenaEditarRespuesta(d.id, x.id, t, !!F.d.of), E2("Respuesta actualizada. Se ve «editada».", "Reply updated. It shows “edited”.")) }] },
     );
   } else out.push({ type: "note", tone: "ok", t: E2("Respondida. Se ve debajo de la reseña.", "Replied. It shows under the review.") });
   if (x.estado === "disp") out.push({ type: "note", tone: "info", icon: "shield", t: E2("Pediste revisarla. Sigue visible mientras To'Latino la revisa, hasta 48 h.", "You asked for a review. It stays visible while To'Latino reviews it, up to 48 h.") });

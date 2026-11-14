@@ -8,7 +8,7 @@ import { menuAjustes } from "./acciones-menu";
 import type { Ayuda } from "@/lib/ayuda";
 import { repAsignar, repOfertaCancelar, repOfrecer, repRecogido } from "./acciones-repartidores";
 import { rutaBloque, type RutaUi } from "./RutaPanel";
-import { ayudaResponder, pedidoDevolver, pedidoPaso, pedidoSeguimiento, pedidosAjustes, pedidosModulo } from "./acciones-pedidos";
+import { ayudaResponder, pedidoDevolver, pedidoPaso, pedidoPedirResena, pedidoSeguimiento, pedidosAjustes, pedidosModulo } from "./acciones-pedidos";
 import type { Ctx, Editor } from "./Panel";
 import { clientesTabs, hoyMesas } from "./Reservas";
 import { hoyCitas } from "./Citas";
@@ -122,6 +122,16 @@ export function pedidoDetalle(c: Ctx): Sec {
   ] });
   if (x.tl.length) out.push({ type: "timeline", k: E2("HISTORIAL", "HISTORY"), items: x.tl.map((t, i) => ({ t: es ? t.t.es : t.t.en, s: t.at, now: i === x.tl.length - 1 }))
     .concat(x.st === "pend" ? [{ t: E2("Tu respuesta", "Your reply"), s: E2("AHORA", "NOW"), future: true } as never] : []) });
+  // 9n-2 · «Pedir reseña» (L248): en un pedido entregado, el negocio le pregunta al cliente «¿Cómo estuvo?». Una vez por pedido.
+  if (x.resena) {
+    const z = x.resena, n1 = nombreVisible(x.who, es).split(" ")[0];
+    out.push({ type: "rows", k: E2("RESEÑA", "REVIEW"), items: [{ icon: "star",
+      t: z.hecha ? E2("Ya escribió su reseña", "They already wrote their review") : z.pedida ? E2("Reseña pedida", "Review requested") : E2("Pedir reseña", "Ask for a review"),
+      s: z.hecha ? E2("La ves en Tu página › Reseñas.", "You see it in Your page › Reviews.") : z.pedida ? E2(`${n1} recibió «¿Cómo estuvo?». Solo se pide una vez por pedido.`, `${n1} got “How was it?”. It is asked once per order.`)
+        : z.motivo ? (es ? z.motivo.es : z.motivo.en) : E2(`${n1} recibe «¿Cómo estuvo?» en su campana y, si no abre la app, por SMS.`, `${n1} gets “How was it?” in their bell and, if they don’t open the app, by SMS.`),
+      compact: true, chev: false,
+      acts: z.puede ? [{ l: E2("Pedir reseña", "Ask for a review"), v: "secondary", icon: "star", off: c.pending, onClick: () => c.run(() => pedidoPedirResena(c.d.id, x.numero), E2(`Listo: le pedimos la reseña a ${n1}.`, `Done: we asked ${n1} for the review.`)) }] : undefined }] });
+  }
   const row = reqRow(c, x);
   if (row.acts?.length) out.push({ type: "acts", pt: "4px", items: row.acts.map((a) => ({ ...a, off: c.pending })) });
   // 9a · Un pedido sin hora de respuesta (respond_by vacío: viejo o de la semilla) decía «antes de las null»: la frase del plazo solo sale con la hora.

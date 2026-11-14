@@ -39,7 +39,7 @@ const casos = [
   ['configDesdeUnLugar', PU, 'E2(`El modo puerta se activa el día del evento, ${ventanaH} ${ventanaH === 1 ? "hora" : "horas"} antes de abrir las puertas.`', 'E2(`El modo puerta se activa el día del evento, 2 horas antes de abrir las puertas.`'],
   ['configDesdeUnLugar', PP, 'E2(`El modo puerta se activa el día del evento: ${P.ventanaH} ${P.ventanaH === 1 ? "hora" : "horas"} antes', 'E2(`El modo puerta se activa el día del evento: 2 horas antes'],
   // listaConTopeLoQueImporta
-  ['listaConTopeLoQueImporta', 'apps/web/lib/evt.ts', "order by (e.status in ('cancelled', 'rejected', 'done')) or (e.start_date + (e.span_days - 1) <", "order by false or (e.start_date + (e.span_days - 1) <"],
+  ['listaConTopeLoQueImporta', 'apps/web/lib/evt.ts', "where e.business_id = $1 and not ${ES_PASADO}", "where e.business_id = $1"],
   ['listaConTopeLoQueImporta', 'apps/web/lib/evt-liquidacion.ts', 'order by (d.starts_at > now()), d.starts_at desc limit 60', 'order by d.starts_at desc limit 60'],
 ];
 let bien = 0;

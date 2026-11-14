@@ -19,7 +19,7 @@ import type { RsvPanel } from "../../Reservas";
 import { accesoPanel, datosPanel } from "@/lib/panel";
 import { resenaPanel, resenasPanel, resenasSinResponder, type FiltroPanel } from "@/lib/resenas";
 import type { ResPanel } from "../../ResenasPanel";
-import { eventosNovedad, itemsNovedad, novedadPanel, novedadesPanel } from "@/lib/novedades";
+import { eventosNovedad, itemsNovedad, novedadPanel, novedadesPanel, vacantesNovedad } from "@/lib/novedades";
 import type { NovData } from "../../NovedadesPanel";
 import type { CupData } from "../../CuponesPanel";
 import { cuponesNegocio } from "@/lib/cupones";
@@ -116,6 +116,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     det: nid && /^\d+$/.test(nid) ? await novedadPanel(d.id, nid) : undefined,
     items: nd && (nd === "new" || /^(edit|dup):/.test(nd)) ? await itemsNovedad(d.id) : undefined,
     eventos: nd && (nd === "new" || /^(edit|dup):/.test(nd)) ? await eventosNovedad(d.id) : undefined,
+    vacantes: nd && (nd === "new" || /^(edit|dup):/.test(nd)) ? await vacantesNovedad(d.id) : undefined,
   };
   // Cupones por monedas (5g · Tu página › Cupones por monedas y su editor): piden acceso a «Tu página».
   const cup: CupData = { lista: pag && ((ruta.sec === "pag" && ruta.sub === "cup") || ruta.det?.startsWith("cup:")) ? await cuponesNegocio(d.id) : undefined };
@@ -264,7 +265,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     // 6f · evt:{evento}@{fecha} = la FECHA QUE ESTÁS VIENDO de una serie (todo lo de la ficha es de esa fecha).
     // 6g · door:{evento}@{fecha} = el modo puerta del panel y el Monitor de esa fecha.
     const [eid = "", fver = null] = ruta.det?.startsWith("evt:") ? ruta.det.slice(4).replace(/^edit:/, "").split("@") : ruta.det?.startsWith("door:") ? ruta.det.slice(5).split("@") : [""];
-    const [lista, formatos, generos, org, cfg, fee, b, mod, quien] = await Promise.all([
+    const [lista0, formatos, generos, org, cfg, fee, b, mod, quien] = await Promise.all([
       E.eventosDelNegocio(d.id), E.formatosDe(d.cat, d.id), E.generos(), E.organizadorDe(d.id), valores("evt_revision_h", "evt_fotos_max", "evt_dias_adelante", "evt_fechas_max", "evt_dias_seguidos_max"),
       db().query<{ bp: number; fixed: number }>(`select rate_bp as bp, fixed_cents as fixed from fee_rules where kind = 'bol' and effective_from <= now() order by effective_from desc, id desc limit 1`),
       db().query<{ dir: string | null }>(`select address as dir from businesses where id = $1`, [d.id]),
@@ -275,6 +276,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       // 6b · QUIÉN VA: los RSVP del evento abierto (nombre + inicial; nunca teléfono).
       /^\d+$/.test(eid) ? (await import("@/lib/evt-publico")).ultimosRsvp(eid, 100, d.id) : Promise.resolve([]),
     ]);
+    const lista = lista0.filas;
     // 6c · Lo vendido del evento abierto, sus códigos y lo vendido de cada evento (barra de la lista). Solo de este negocio.
     const B6 = await import("@/lib/boletos"), C6 = await import("@/lib/codigos-evt");
     const [ventas, codigos, vendidos] = await Promise.all([/^\d+$/.test(eid) ? B6.ventasPanel(d.id, eid, fver) : Promise.resolve(null), /^\d+$/.test(eid) ? C6.codigosDelEvento(d.id, eid) : Promise.resolve([]), B6.vendidosPorEvento(d.id)]);
@@ -289,7 +291,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     const chart = det6 && fv6 ? await (await import("@/lib/evt-series")).ventasPorDia(d.id, det6.kind === "span" ? det6.fechas.filter((x) => x.st === "scheduled").at(-1)?.id ?? fv6 : fv6) : null;
     // 6g · La puerta: porteros, reglas, la sesión del modo puerta de esta persona y el Monitor de la fecha (la del modo puerta o la que se ve).
     const puerta = det6 ? await (await import("@/lib/puerta-equipo")).puertaPanel(d.id, eid, ruta.det?.startsWith("door:") && fver ? fver : fv6, acc.yo.id, lang === "es") : null;
-    return { puerta, cambios, liq, lista, formatos, generos, org, det: det6, fver: fv6, chart, cfg: { revisionH: cfg.evt_revision_h, fotosMax: cfg.evt_fotos_max, diasAdelante: cfg.evt_dias_adelante, fechasMax: cfg.evt_fechas_max, diasMax: cfg.evt_dias_seguidos_max },
+    return { puerta, cambios, liq, lista, masPasados: lista0.mas, formatos, generos, org, det: det6, fver: fv6, chart, cfg: { revisionH: cfg.evt_revision_h, fotosMax: cfg.evt_fotos_max, diasAdelante: cfg.evt_dias_adelante, fechasMax: cfg.evt_fechas_max, diasMax: cfg.evt_dias_seguidos_max },
       fee: fee.rows[0] ?? null, hoy: d.hoy.fecha, dir: b.rows[0]?.dir ?? null, mod: mod.rows[0] ?? { aplica: false, on: false, pausa: null }, quien, ventas, codigos, vendidos, despues, espera };
   })() : undefined;
   // 6i · Evento privado (restaurantes): las solicitudes en Hoy y su detalle piden «Hoy y pedidos»; los ajustes (Reservaciones › Evento privado),

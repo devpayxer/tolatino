@@ -109,9 +109,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
   hace falta refrescarlo cada hora (trabajo programado, con el resto de procesos). — _9a (11 nov): refrescar_busqueda() corre en cada despliegue y semilla (packages/db/migrar.sh); no está en el barrido: falta el refresco cada hora (derivados cacheados de 9b)._
 
 ## Panel del negocio · base (bloque 1h, 5 nov 2026)
-- [ ] **→ 9n** · **Aceptar una invitación al equipo (`/e/{código}`):** el SMS dice «Acepta y pon tu foto aquí», pero el diseño no
+- [x] **→ 9n** · **Aceptar una invitación al equipo (`/e/{código}`):** el SMS dice «Acepta y pon tu foto aquí», pero el diseño no
   tiene esa pantalla (quien acepta entra con su teléfono, pone foto, palabras e idiomas). **Pedir el diseño al
-  fundador.** Hasta entonces las invitaciones se guardan y vencen a los 7 días; nadie puede aceptar.
+  fundador.** Hasta entonces las invitaciones se guardan y vencen a los 7 días; nadie puede aceptar. — **✓ 9n-2 (14 nov):** `/e/{código}` (apps/web/app/e, lib/equipo-invitacion.ts): composada con head/photos/field/chips/acts, un solo uso, vence a 7 días, solo con el teléfono invitado, tope de 8 intentos por hora, el SMS lleva el enlace; foto-palabras-idiomas. Decisión en REVISION 9n-2 (el diseño no tiene la pantalla). Guardián invitacionDeEquipoSegura; pan9n2 §1; ayuda panel-equipo-invitacion.
 - [x] **SMS de invitación y de «Reenviar»:** sale con el proveedor de SMS (decisión E2, Fase 2). La pantalla dice con la
   verdad que el SMS no salió. Igual «Le avisamos por SMS» al quitar a alguien y el aviso a quien pidió unirse (quitados
   del texto hasta que existan). — **✓ 9l (14 nov):** la invitación y «Reenviar SMS» salen por SMS con el código (`equipo_invitado`, avisarTelefono como los porteros; app/panel/acciones-equipo.ts); la pantalla dice la verdad si el número pidió STOP. Los avisos al quitar a alguien y a quien pidió unirse van con el flujo de aceptar de 9n (línea nueva en «Fase 9 · 9l»).
@@ -126,10 +126,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
   cerrado los mire): catálogo de feriados por año en el servidor + días propios. Ocultos hasta construirlos (el
   subtítulo del apartado los menciona: texto del diseño). — **✓ 9n (14 nov):** Panel › Horario: el catálogo de feriados del servidor (holiday_catalog) con un toque, vacaciones y días propios con fechas y horas, «Abro por temporada»; special_hours con status (nada se borra) y negocio_abierto los mira (también Citas, la ficha, Jobs y El Compa leen solo los activos). Guardián diaEspecialActivo; prueba neg9n paso 6; ayuda panel-horario.
 - [ ] **→ 9n** · **Horario distinto por módulo** (último pedido en línea, citas que dejan de entrar antes de cerrar): con Pedidos y
-  Citas.
+  Citas. — _(9n-2, 14 nov): «último pedido» ya existe (menu_settings.last_min); falta el corte de citas antes de cerrar. No entró._
 - [x] **El Compa traduce** (Quiénes somos, rol, especialidades, palabras): Fase 7; hoy se escribe a mano. — **✓ 9a (11 nov):** decisión del plan (§6 #9 de la Fase 7, L1140): los textos del panel se traducen con el traductor propio (5h), no con El Compa.
 - [ ] **→ 9n** · **Pestaña Staff de la ficha** y «Ver equipo» de «Quién está detrás» (sin botón por ahora): con las pestañas Pro.
-  «Sus platos» de cada persona: con el Menú (Fase 2). — _9a (11 nov): la pestaña Staff de la ficha y «Ver equipo» no están (solo «Sus platos» en app/panel/Menu.tsx)._
+  «Sus platos» de cada persona: con el Menú (Fase 2). — _9a (11 nov): la pestaña Staff de la ficha y «Ver equipo» no están (solo «Sus platos» en app/panel/Menu.tsx)._ — _(9n-2, 14 nov): no hay pieza de diseño para la pestaña (solo StaffPicker de reservas); no se inventó. Pedir el diseño._
 - [x] **Prueba Pro al terminar** (pasar a Free, primer cobro, «decidiste seguir/no seguir»): con Cobros y plan (Fase 2);
   hoy `business_stats_cache.plan` no cambia solo el día 30. — **✓ 9a (11 nov):** prueba Pro al terminar: pasar a Free, primer cobro y «decidiste seguir / no seguir» (lib/suscripcion.ts procesar, pasarAFree, seguirConPro; plantillas pro_free, pro_charged, pro_failed); el día 30 sin que nadie entre → L377 (9k).
 - [x] **Avisos de la prueba fuera del panel** (día 20, 25, último, fin: push/SMS/correo a las 10 AM): Fase 2. — _9a (11 nov): solo existe el aviso del día 25 (pro_d25 en lib/suscripcion.ts); faltan el día 20, el último día y el de fin a las 10 AM._ — **✓ 9l (14 nov):** día 20 («Te quedan 10 días», `pro_d20`) y último día (`pro_ultimo`) a las 10 AM de la ciudad, solo sin tarjeta, una vez (lib/canales/barrido.ts pruebaPro()); el día 25 ya estaba (`pro_d25`) y el fin es «pasó a Free» (`pro_free`) al terminar. Push y SMS de respaldo; por correo no (decisión en REVISION 9l).
@@ -166,7 +166,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **Revisión cada 3 meses:** abrir el caso solo al llegar `next_review` necesita los trabajos programados (no hay
   todavía). Hasta entonces una licencia verificada sigue verificada. — **✓ 9a (11 nov):** el barrido devuelve a la cola las licencias que llegan a next_review (lib/licencias.ts barrerLicencias en lib/barrido.ts); prueba adm4ig.
 - [x] **Otras categorías con licencia** (Niños/DHS, Bienes Raíces, Salud, Hogar, Auto…): el catálogo es de NEG-PRO. — **✓ 9a (11 nov):** licencias de Niños (DHS), Salud, Bienes Raíces, Autos, Iglesias y demás (lib/licencias.ts CATS_LIC_4I; 4h–4ig); qué categorías vuelven solas a revisión: L561.
-- [ ] **→ 9n** · **«Quién tiene licencia aquí»** (licencia de cada persona del equipo): sin gestión diseñada en el panel ni el admin.
+- [ ] **→ 9n** · **«Quién tiene licencia aquí»** (licencia de cada persona del equipo): sin gestión diseñada en el panel ni el admin. — _(9n-2, 14 nov): sin diseño para el panel ni el admin; no se inventó UI (regla 7). Pedir el diseño al fundador._
 - [x] **Pestaña Servicios de la ficha:** la tarjeta «¿Puede hacerlo por ley?» vive en el Resumen hasta que exista. — **✓ 9a (11 nov):** la ficha de Profesionales tiene su pestaña Servicios con «¿Puede hacerlo por ley?» (app/(app)/n/[id]/licencia, lib/ficha.ts; pro4k).
 - [x] **Decisiones tomadas sin el diseño:** el número de licencia se escribe en el panel (campo del sistema de diseño;
   el diseño no lo tenía); plazo único 72 h (el panel del diseño decía 48 h); «revocada» se muestra como «No aparece»;
@@ -231,7 +231,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **«Lo que vendes» con los demás módulos** (Servicios, Tienda, Renta, Citas, Reservaciones, Pedidos en línea,
   Staff, Eventos, Novedades, Jobs) y «Tu herramienta» de la categoría: con sus fases. Hoy solo Menú (Comida). — **✓ 9a (11 nov):** «Lo que vendes» con todos los módulos y «Tu herramienta» de cada categoría (app/panel/; Fases 2–4).
 - [x] **Traducir con El Compa** (plato, categoría, grupo): Fase 7. — **✓ 9a (11 nov):** decisión del plan (§6 #9 de la Fase 7, L1140): «Traducir» usa el traductor propio.
-- [ ] **→ 9n** · **«Últimos 30 días» del plato** (pedidos, vendido, puesto) y Populares por lo más pedido: con los pedidos (2b/2c). — _9a (11 nov): «Últimos 30 días» del plato (pedidos, vendido, puesto) no está en el editor del Menú._
+- [x] **→ 9n** · **«Últimos 30 días» del plato** (pedidos, vendido, puesto) y Populares por lo más pedido: con los pedidos (2b/2c). — _9a (11 nov): «Últimos 30 días» del plato (pedidos, vendido, puesto) no está en el editor del Menú._ — **✓ 9n-2 (14 nov):** «Últimos 30 días» en el editor del plato (pedidos, vendido, unidades, puesto) y Populares = fijados + lo más pedido (≥3 pedidos entregados en 30 días, máx. 6), una sola definición en lib/menu-ventas.ts. Guardián popularesPorLoMasPedido; pan9n2 §7.
 - [x] **Aviso por SMS de «quedan pocos»:** la preferencia se guarda; el SMS llega con las notificaciones. — **✓ 9l (14 nov):** el pedido que cruza el umbral de Menú › Inventario (2, 3 o 5) avisa al dueño una vez (`biz_quedan_pocos`; lib/pedir.ts quedanPocos()).
 - [x] **«Listo en N min»:** desde 2b sale de `delivery_settings.prep_min` (20 por defecto) + tiempo extra + el plato que más tarda.
 - [x] **Fotos de ejemplo del sandbox** vienen de Pexels (como el prototipo); las de los negocios reales son propias. — **✓ 9a (11 nov):** las fotos de Pexels son solo de la semilla del sandbox; producción nace vacía (decisión I) y cada negocio sube las suyas.
@@ -245,7 +245,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **Avisos** al cliente y al negocio (SMS / push: pedido nuevo, aceptado, listo): con las notificaciones. Hoy la
   página del pedido se actualiza sola cada 20 s y el panel al abrirlo. — **✓ 9a (11 nov):** avisos del pedido al cliente y al negocio (ord_ok, ord_ready, ord_way, ord_here, ord_no; lib/avisos.ts, app/panel/acciones-pedidos.ts; push 8c).
 - [x] **Nota de cómo se recoge** (pickup_note): se edita en Entrega (DASH-ENTREGA): hecho en el 2f.
-- [ ] **→ 9n** · **Devolver dinero y Pedir reseña** (SMS «¿Cómo estuvo?») en un pedido entregado: con tarjeta (2d) y las notificaciones. El cliente ya escribe la reseña desde su pedido (2g). — _9a (11 nov): devolver dinero de un pedido con tarjeta existe (2d, lib/cobros.ts); falta «Pedir reseña» (SMS «¿Cómo estuvo?») en un pedido entregado._
+- [ ] **→ 9n** · **Devolver dinero y Pedir reseña** (SMS «¿Cómo estuvo?») en un pedido entregado: con tarjeta (2d) y las notificaciones. El cliente ya escribe la reseña desde su pedido (2g). — _9a (11 nov): devolver dinero de un pedido con tarjeta existe (2d, lib/cobros.ts); falta «Pedir reseña» (SMS «¿Cómo estuvo?») en un pedido entregado._ — _(9n-2, 14 nov): «Pedir reseña» hecho (botón en el pedido entregado, una vez por pedido, ≤14 días, una por cliente por semana; SMS plantilla resena_pedir; guardián resenaPedidaUnaVez; pan9n2 §3). Devolver dinero sigue con lo de dinero (9n-3)._
 - [x] **Pago con tarjeta** (retener al enviar, cobrar al aceptar), Wallet y cupones: 2d / Fase de Planes. Hoy solo pago en
   el local y no hay cupones. — **✓ 9a (11 nov):** pago con tarjeta: retener al enviar, cobrar al aceptar (lib/pagos, lib/cobros.ts; pagos2d); cupones de negocios (5g, lib/cupones.ts). Apple / Google Pay nativo → después de abrir (L1149).
 - [x] **Delivery** (zona, envío, mínimo, propina, cómo te lo entregamos): hecho en el 2f, con efectivo al entregar.
@@ -257,7 +257,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **Super Admin › Transacciones** (línea de tiempo por pedido): 2i. Hoy el 360° muestra cuántos pedidos van este mes. — **✓ 9a (11 nov):** Super Admin › Transacciones con la línea de tiempo (app/admin/Transacciones.tsx, 2i/4g).
 - [x] **→ 9m** · **Alergias en el menú del cliente:** el panel las guarda; el prototipo del cliente no las muestra. Preguntar al
   fundador dónde salen. — **✓ 9m (14 nov):** La hoja del plato trae «LLEVA O ES · LO MARCÓ EL NEGOCIO» con las etiquetas del panel (picante, vegetariano, sin gluten, pescado o mariscos, lácteos, huevo, maní o nueces). Decisión en REVISION 9m. Prueba: `vec9m`.
-- [ ] **→ 9n** · **Hora del pedido programado** con el reloj del negocio: los horarios que cruzan la medianoche se programan solo hasta las 11:30 PM.
+- [x] **→ 9n** · **Hora del pedido programado** con el reloj del negocio: los horarios que cruzan la medianoche se programan solo hasta las 11:30 PM. — **✓ 9n-2 (14 nov):** los horarios que cruzan la medianoche se programan hasta una hora antes de cerrar, con el reloj del negocio («12:30 AM · de madrugada»). Guardián programadoCruzaMedianoche; pan9n2 §7b.
 
 ## Reservaciones de mesa (bloque 2e, 6 nov 2026)
 - [x] **Cambiar una reservación ya confirmada** (el cambio queda pendiente y la actual sigue en pie): hecho en el 2k
@@ -268,7 +268,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
   nueva): con las notificaciones. Hoy la pantalla se actualiza sola cada 20 s y el panel al abrirlo. — **✓ 9a (11 nov):** avisos de reservaciones (rsv_ok, rsv_alt, rsv_no, rsv_chg_*) y al restaurante (biz_req); app/panel/acciones-reservas.ts; prueba rsv2e.
 - [x] **Evento privado** (grupos grandes, APP-NEG-EVENTO-PRIVADO): hoy se ofrece Llamar; la solicitud de evento llega con
   Cotizaciones. — **✓ 9a (11 nov):** evento privado con su solicitud, propuesta y depósito (6i, lib/evento-privado.ts); prueba evt6i.
-- [ ] **→ 9n** · **Historial de no-show del cliente** visible para el restaurante (cuántas veces no llegó): con Mi cuenta / Usuarios 360°.
+- [x] **→ 9n** · **Historial de no-show del cliente** visible para el restaurante (cuántas veces no llegó): con Mi cuenta / Usuarios 360°. — **✓ 9n-2 (14 nov):** la reservación dice cuántas veces no llegó a ESE negocio en el último año (solo lo del negocio; el panorama completo es del Super Admin). Guardián noShowSoloDelNegocio; pan9n2 §4.
 - [x] **Plan Pro:** Reservaciones es de Pro; el botón «Ver Pro» del candado espera la Fase de Planes. — **✓ 9a (11 nov):** el candado lleva a Pro con «Ver Pro» (app/panel/pro-cta.ts, 2m).
 - [x] **Fotos de Pexels** (semilla) no cargan en el entorno de pruebas sin salida a internet: la tarjeta de la solicitud
   muestra el fondo gris. En el sandbox real sí cargan. — **✓ 9a (11 nov):** solo pasa en local sin salida a internet; en el sandbox cargan (nota, sin cambio).
@@ -296,7 +296,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
   el botón en la pantalla de la reservación terminada llega con Mi cuenta (2h). — **✓ 9a (11 nov):** reseña verificada de una cita y de una reservación desde su pantalla (3c/2h; res4g, res4m).
 - [x] **Ayuda con el pedido** desde una reseña de 2★ o menos: con Soporte (2i). — **✓ 9a (11 nov):** una reseña de 2★ o menos ofrece «Ayuda con…» (Fase 4: noc4d, res4s).
 - [x] **Avisos** (al negocio: reseña nueva; al autor: respuesta, resultado de un reporte): con las notificaciones. — _9a (11 nov): el aviso de una respuesta del negocio y el resultado de un reporte existen en la bandeja; no hay plantilla de «reseña nueva» al negocio en notif_templates._ — **✓ 9l (14 nov):** «Reseña nueva» al dueño, una vez por reseña (`biz_resena`, lib/resenas.ts).
-- [ ] **→ 9n** · **El negocio «quiere arreglarlo»** (propuesta en la respuesta) y **editar la respuesta**: el panel del diseño no los tiene.
+- [x] **→ 9n** · **El negocio «quiere arreglarlo»** (propuesta en la respuesta) y **editar la respuesta**: el panel del diseño no los tiene. — **✓ 9n-2 (14 nov):** «Quiero arreglarlo» al responder (≤3 estrellas) y editar la respuesta (3 veces, 7 días, historial en review_reply_history solo inserción); el cliente y la página lo ven («quiere arreglarlo», «editada»). Guardián respuestaDeResenaConHistorial; pan9n2 §5.
 - [x] **Auto-moderación** («5 reseñas sin transacción en 10 min» → cola) y filtros de reseñas sospechosas en Contenido: con
   Contenido (2i). — **✓ 9a (11 nov):** auto-moderación de reseñas en ráfaga a la cola (lib/colas.ts, lib/barrido.ts; Confianza) — 5d.
 - [x] **Mi cuenta › Reseñas** (escritas / por escribir): con Mi cuenta completa (2h). — **✓ 9a (11 nov):** Mi cuenta › Reseñas (app/(app)/cuenta, 2h); prueba cuenta2h.
@@ -304,19 +304,19 @@ en el momento. Se marca solo cuando está hecho de verdad.
 
 ## Novedades (bloque 2g-2, 6 nov 2026)
 - [x] **«Hoy en el barrio»** en la portada (lo de las últimas 24 h de la ciudad, StoryCard) y su chip en la publicación. — **✓ 9a (11 nov):** «Hoy en el barrio» en la portada y su chip (5e, lib/hoy.ts); prueba com5e.
-- [ ] **→ 9n** · **Cupón para seguidores** (código, compra mínima, usos): con los cupones en el pago (2d / Planes). — _9a (11 nov): los cupones de negocios existen (5g); falta «Cupón para seguidores» como tipo de novedad._
-- [ ] **→ 9n** · **Evento y vacante** como tipo y como botón: con Eventos (y Jobs, ya hecho: falta el botón «Ver vacante» en una novedad). **«Escribir»**: con Mensajes. — _9a (11 nov): falta el botón «Ver vacante» en una novedad y «Escribir» con Mensajes._
-- [ ] **→ 9n** · **«Repetir»** (todos los días, lun · mié · vie…) y **«Avisar a tus seguidores»**: con las notificaciones.
-- [ ] **→ 9n** · **PEDIDOS** que salen de una novedad (hoy el detalle muestra comentarios en su lugar).
+- [ ] **→ 9n** · **Cupón para seguidores** (código, compra mínima, usos): con los cupones en el pago (2d / Planes). — _9a (11 nov): los cupones de negocios existen (5g); falta «Cupón para seguidores» como tipo de novedad._ — _(9n-2, 14 nov): no entró: cambia lo que se cobra (cupones en el pago) y queda con el bloque de dinero._
+- [ ] **→ 9n** · **Evento y vacante** como tipo y como botón: con Eventos (y Jobs, ya hecho: falta el botón «Ver vacante» en una novedad). **«Escribir»**: con Mensajes. — _9a (11 nov): falta el botón «Ver vacante» en una novedad y «Escribir» con Mensajes._ — _(9n-2, 14 nov): «Ver vacante» hecho (link_kind job, sale solo con la vacante abierta; pan9n2 §9). «Escribir» con Mensajes sigue abierto._
+- [ ] **→ 9n** · **«Repetir»** (todos los días, lun · mié · vie…) y **«Avisar a tus seguidores»**: con las notificaciones. — _(9n-2, 14 nov): «Avisar a tus seguidores» hecho (una vez por novedad, 2 al día, respeta Lo que traen hoy / Ofertas; guardián novedadAvisaUnaVez). «Repetir» (días de la semana) sigue abierto: pide un trabajo del barrido que republique la novedad._
+- [x] **→ 9n** · **PEDIDOS** que salen de una novedad (hoy el detalle muestra comentarios en su lugar). — **✓ 9n-2 (14 nov):** el detalle de una oferta muestra los pedidos al precio de la oferta mientras estuvo en vivo (pedidos, unidades, vendido); se calcula al leer. pan9n2 §9. Una novedad que no es oferta no cuenta pedidos (no hay forma de atribuirlos).
 - [x] **→ 9m** · **Reportar una novedad o un comentario** desde la página (la cola «Reportes de contenido» ya acepta novedades y
   comentarios; falta el botón en la tarjeta, que el diseño no trae). — **✓ 9m (14 nov):** «Reportar esta publicación» en cada novedad → Super Admin › Contenido (una vez por persona; ocultarla cierra los reportes abiertos). Prueba: `vec9m`.
-- [ ] **→ 9n** · **Elegir fotos de tu galería** en el editor (hoy se suben nuevas).
+- [x] **→ 9n** · **Elegir fotos de tu galería** en el editor (hoy se suben nuevas). — **✓ 9n-2 (14 nov):** el editor ofrece «O elige de tu galería»: se copian a la novedad, la galería no cambia. pan9n2 §9.
 
 ## Jobs (bloque 2g-3, 6 nov 2026)
 - [x] **Avisos por SMS** de cada respuesta a la persona y de cada solicitud nueva al negocio: con el proveedor de SMS y las
   notificaciones. Hoy se ven en la solicitud y en Hoy. — **✓ 9l (14 nov):** `job_reply` ya llevaba SMS; `biz_job` (solicitud nueva al negocio) pasa a SMS de respaldo del push (0142).
 - [x] **→ 9m** · **«Avísame de nuevas vacantes»** (vecinos) y el aviso al publicar: con las notificaciones. — _9l (14 nov): pasa a 9m: la suscripción va en la pantalla de vacantes de Buscar (L311, 9m); la plantilla y el barrido siguen el patrón de «Avísame cuando haya» de 9l._ — **✓ 9m (14 nov):** En Buscar «empleo»: «Avísame de nuevas vacantes» (search_alerts kind «vacantes», una por ciudad); el barrido avisa una vez por vacante (`vacante_nueva`, de 9 a 20 h, hasta 3 al día). Prueba: `vec9m`.
-- [ ] **→ 9n** · **«Traducir con El Compa»** en el editor: con El Compa. — _9a (11 nov): falta «Traducir con El Compa» en el editor de vacantes (solo existe en el Menú: app/panel/Menu.tsx)._
+- [x] **→ 9n** · **«Traducir con El Compa»** en el editor: con El Compa. — _9a (11 nov): falta «Traducir con El Compa» en el editor de vacantes (solo existe en el Menú: app/panel/Menu.tsx)._ — **✓ 9n-2 (14 nov):** en el editor de vacantes y en el del plato (app/panel/acciones-traducir.ts, traductor propio; sin traductor lo dice). pan9n2 §9.
 - [x] **→ 9m** · **Mis solicitudes** en Mi cuenta (lista de las J-… de la persona y las vacantes guardadas): con 2h Mi cuenta. — _9a (11 nov): falta «Mis solicitudes» en Mi cuenta (lista de las J-… y las vacantes guardadas)._ — **✓ 9m (14 nov):** Ya estaba servido: Mi cuenta › Empleos (las J-… con su estado, 2h) y Guardados › Vacantes. Revisado contra lo servido en 9m.
 - [x] **→ 9m** · **Reportar una vacante** desde la página (la cola «Reportes de contenido» aún no acepta vacantes; el diseño no trae
   el botón). — **✓ 9m (14 nov):** «Reportar esta vacante» en la página de la vacante (teléfono y escritorio) → la cola de Contenido acepta «job» (0143). Prueba: `vec9m`.
@@ -441,7 +441,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       respuesta en 72 h) corre al abrir la renta o el panel de Hoy. En producción: tarea programada cada hora
       (`barrerRentas({})`). — **✓ 9a (11 nov):** el barrido de rentas corre en el barrido central (lib/barrido.ts: rentas.barrerRentas({})); prueba renta4f.
 - [ ] **→ 9n** · Editor de artículos de Tienda/Renta en el panel (nombre, precio por día, depósito, unidades, foto): llega con
-      Tiendas; mientras, los artículos salen de datos. — _9a (11 nov): falta el editor de artículos de Renta en el panel (nombre, precio por día, depósito, unidades, foto)._
+      Tiendas; mientras, los artículos salen de datos. — _9a (11 nov): falta el editor de artículos de Renta en el panel (nombre, precio por día, depósito, unidades, foto)._ — _(9n-2, 14 nov): no entró (editor completo con fotos, depósito y unidades; queda para después de este bloque)._
 - [x] Si el depósito no se pudo renovar (el banco ya no deja), hoy solo se avisa al negocio: decidir si se le pide al
       cliente devolverla antes. — **✓ 9a (11 nov):** si el banco no deja renovar el depósito se avisa al negocio y no se le pide nada al cliente (REVISION 9a).
 - [x] Rentas en Super Admin › Transacciones (pestaña propia junto a citas y pedidos): bloque 4g. — **✓ 9a (11 nov):** rentas en Super Admin › Transacciones (4g); prueba tx4g.
@@ -670,8 +670,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       basta para Capitán (anillos de invitaciones). (5f, 7 nov) — **✓ 9a (11 nov):** cualquier operación no cancelada cuenta para «participa» (REVISION 9a); si aparecen anillos, Confianza los ve.
 - [x] **5g · Escanear el código del cupón** en el panel (cámara, QR): hoy se escribe (no hay escáner en ningún lado del panel). Llega con la
       app Negocios (Capacitor) o con un lector propio; el servidor ya valida igual. (5g, 7 nov) _Hecho en 8e (11 nov): «Escanear cupón» en el panel (app Negocios y web) con el lector de la Puerta; el código del vecino trae su QR._
-- [ ] **→ 9n** · **5g · Validar un código desde «Hoy»** para quien solo tiene acceso a «Hoy y pedidos»: la acción ya lo permite (`cupValidar` acepta
-      «Tu página» u «Hoy y pedidos»), pero el campo vive en Tu página › Cupones por monedas. Componer el bloque en Hoy. (5g, 7 nov)
+- [x] **→ 9n** · **5g · Validar un código desde «Hoy»** para quien solo tiene acceso a «Hoy y pedidos»: la acción ya lo permite (`cupValidar` acepta
+      «Tu página» u «Hoy y pedidos»), pero el campo vive en Tu página › Cupones por monedas. Componer el bloque en Hoy. (5g, 7 nov) — **✓ 9n-2 (14 nov):** Hoy muestra «Validar un código» (con Escanear cupón) si hay cupones vivos; lo usa quien solo tiene «Hoy y pedidos». pan9n2 §6 (el camino de éxito sigue en com5g).
 - [ ] **→ 9s** · **5g · Abogado:** monedas sin valor en dinero y cupones (leyes de tarjetas de regalo y de bienes no reclamados; premios del mes sin
       compra = no es sorteo); Términos de la Comunidad con «Sin valor en dinero · no se compran, no se venden, no se transfieren, no vencen».
       (5g, 7 nov)
@@ -845,7 +845,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       leer el `balance_transaction.fee` de cada cobro. (6e, 10 nov) — _9a (11 nov): el estimado del costo de la tarjeta está (6e/6j); falta leer balance_transaction.fee de cada cobro con Stripe real._
 - [ ] **→ 9q** · **6e · Payouts de Stripe al banco del organizador:** la transferencia llega a su saldo de Stripe el martes; de ahí al banco con su
       calendario (semanal, martes). Con dinero real, confirmar que el calendario y la transferencia del mismo martes no atrasan una semana. (6e, 10 nov)
-- [ ] **→ 9n** · **6e · Avisos del organizador sin moderación:** van tal cual a los que van (sin SMS); pasarlos por la auto-moderación (5d) antes de abrir. (6e, 10 nov)
+- [x] **→ 9n** · **6e · Avisos del organizador sin moderación:** van tal cual a los que van (sin SMS); pasarlos por la auto-moderación (5d) antes de abrir. (6e, 10 nov) — **✓ 9n-2 (14 nov):** el aviso pasa por revisarTextoSuelto (odio, estafa, inmigración, datos personales) antes de salir; si lo marca, no sale y queda en Colas. Guardián avisoDelOrganizadorModerado.
 - [ ] **→ 9s** · **6e · Abogado:** To'Latino como comerciante del cobro y la transferencia al organizador (1099-K), la política de cancelación del
       organizador y del cambio de fecha en los Términos. (6e, 10 nov)
 
@@ -969,8 +969,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **→ después de abrir (DA-21)** · **6j · Promotores de eventos** (§6 #18: vender cortesías o cobrar por promotor, MEM 208): no se construye; los promotores usan códigos de
       descuento del organizador. Si el fundador lo quiere: un rol «promotor» con su código y su reporte. (6j, 10 nov) — _9a (11 nov): promotores de eventos (§3.9). En `docs/DESPUES-DE-ABRIR.md`._
 - [x] **→ después de abrir (DA-22)** · **6j · Wallet como forma de pago** (§6 #8): solo tarjeta; el Wallet de To'Latino y Apple/Google Pay llegan con su fase. (6j, 10 nov) — _9a (11 nov): Wallet de To'Latino como forma de pago y Apple / Google Pay (§3.9). En `docs/DESPUES-DE-ABRIR.md`._
-- [ ] **→ 9n** · **6j · Panel › Eventos con cursor:** la lista del panel trae hasta 200 eventos (ahora lo vivo y próximo primero); un organizador con cientos de
-      eventos necesita «Ver más» con cursor en Pasados y cancelados. (6j, 10 nov)
+- [x] **→ 9n** · **6j · Panel › Eventos con cursor:** la lista del panel trae hasta 200 eventos (ahora lo vivo y próximo primero); un organizador con cientos de
+      eventos necesita «Ver más» con cursor en Pasados y cancelados. (6j, 10 nov) — **✓ 9n-2 (14 nov):** lo vivo completo y lo pasado de a 20 con cursor (fecha+id) y «Ver más». Guardián eventosPanelConCursor; pan9n2 §6.
 - [ ] **→ 9b** · **6j · Pruebas que fallaron una vez en la corrida seguida de la fase y pasaron solas:** `evt6b-6c` (un aviso de React #418, texto distinto entre
       servidor y navegador, en una de sus ~40 pantallas; dos corridas más, una con la URL de cada error, salieron limpias) y `evt6i` (el paso de la
       propuesta que vence espera 52 s con el reloj real). Hacerlas deterministas: registrar la URL del error de hidratación y mover el reloj en la
@@ -1066,7 +1066,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 
 ## Fase 7 · 7f (respuestas automáticas de El Compa y «Sugerir respuesta»)
 - [ ] **→ 9n** · **7f · «Si no contestas en 10 min» y «Siempre, al instante»** (CUÁNDO del diseño): hoy solo «Fuera de tu horario» (§6 #8). Se construyen con
-      `chat_threads.compa_pending_until` (ya existe) y el barrido; `compa_auto_espera_min` queda bloqueada en Configuración hasta entonces. (7f, 11 nov)
+      `chat_threads.compa_pending_until` (ya existe) y el barrido; `compa_auto_espera_min` queda bloqueada en Configuración hasta entonces. (7f, 11 nov) — _(9n-2, 14 nov): no entró: pide el trabajo del barrido de compa_pending_until y su prueba; sigue abierto._
 - [x] **7f · WhatsApp y SMS en las respuestas automáticas** (POR DÓNDE): 7h. Hoy solo el chat de To'Latino (`channels` = {app}). (7f, 11 nov)
       — 7h (11 nov): POR DÓNDE con WhatsApp y SMS, solo con el número del negocio conectado en Super Admin › El Compa › Canales (`compa7h`).
 - [x] **→ 9b** · **7f · «order by» sobre `id::text`** (clase): en Postgres `select id::text … order by id` ordena el texto (100 antes que 98). Cazado en 7f
@@ -1128,7 +1128,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       boletos, citas) necesitan plantillas aprobadas por Meta. No se construyó. (7h, 11 nov) — **✓ 9l (14 nov):** wa_templates (código, boletos, cita, soporte; ES y EN) con su estado en Meta, «Mandar a Meta» y el webhook firmado de su estado; Soporte la usa fuera de la ventana si está aprobada. Mandarlas con la cuenta real → 9q (línea nueva).
 - [ ] **→ 9n** · **7h · Bandeja de los negocios por SMS:** las respuestas automáticas por SMS a un número del negocio funcionan, pero el dueño no tiene
       dónde leer ni contestar esos SMS en To'Latino (el de WhatsApp lo lee en su app de WhatsApp Business). Antes de encender SMS a negocios,
-      una bandeja en Mensajes o dejarlo solo en WhatsApp. (7h, 11 nov)
+      una bandeja en Mensajes o dejarlo solo en WhatsApp. (7h, 11 nov) — _(9n-2, 14 nov): no entró: necesita su diseño de bandeja en Mensajes; antes de encender SMS a negocios sigue valiendo dejarlo solo en WhatsApp._
 - [x] **7h · Estado de entrega** (los avisos `message.finalized` de Telnyx y los `statuses` de Meta): hoy se ignoran; anotarlos en
       `compa_outbound` y en las cifras de Notificaciones (también los SMS de avisos). Sin reintentos de un envío que falló. (7h, 11 nov) — **✓ 9l (14 nov):** message.finalized de Telnyx → sms_attempts / sms_outbox (y la salida de El Compa); statuses de Meta → compa_outbound; reintentos con espera creciente. Guardián smsConReintento.
 - [x] **7h · Especificaciones del contrato fijas:** `scripts/contrato-canales/correr.sh` baja la especificación de Telnyx (`master`) y la de Meta
@@ -1463,10 +1463,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
       corrida, como nov2g y dlv2f4. Falta pasar las otras a esa forma (un ayudante en `pruebas/lib`). (9b-1, 12 nov) — _9b-3 (13 nov): no se pasaron a la forma de dlvsrv; el CI corre a las 8:17 y 20:43 UTC (3:17 AM y 3:43 PM de Hazleton), lejos de las 11:44 PM. Con Sistema (9j)_ — **✓ 9j (14 nov):** ya lo cerró la quinta confirmación
       de 9b-3: `lib/pedir.ts` cuenta el último pedido de un negocio de 24 h sin la medianoche y las pruebas escriben 00:00–00:00; ninguna prueba de `pruebas/e2e`
       tiene «00:00–23:59» y el guardián `veinticuatroHoras` lo vigila (alreves9b3).
-- [ ] **→ 9n** · **Negocios sin negocio:** quien entra a la app To'Latino Negocios sin tener un negocio va de `/panel` a `/publica`, que está
+- [x] **→ 9n** · **Negocios sin negocio:** quien entra a la app To'Latino Negocios sin tener un negocio va de `/panel` a `/publica`, que está
       fuera del alcance de esa app (`apps/mobile/apps.json`: solo `/panel` y lo común). Comprobar en la cáscara qué ve (¿se abre fuera?) y que
       llegue a Mi cuenta › Ajustes › Borrar mi cuenta, como ya llega el Repartidor sin equipo (9b-1). Hoy `borrarCuentaEnCadaApp` solo mira el
-      panel con negocio. (9b-1, 12 nov) — _9b-3 (13 nov): con lo diferido del negocio (9n)._
+      panel con negocio. (9b-1, 12 nov) — _9b-3 (13 nov): con lo diferido del negocio (9n)._ — **✓ 9n-2 (14 nov):** /panel sin negocio en la app Negocios muestra SinNegocio (publicar, entrar a un equipo, Mi cuenta › Ajustes › Borrar mi cuenta). Guardián negociosSinNegocio; pan9n2 §8. Falta probarlo en la cáscara nativa real (CI 9b).
 - [ ] **→ 9b** · **(9b-2) Pruebas que no aguantan repetirse en la misma base:** corriendo `--todas` 2 y 3 veces seguidas sobre una base (12 nov,
       corridas B4 197/199 y B5 194/199 en `tl9b1acc5`), salieron en rojo por lo que dejaba la corrida anterior: menu2a-f («Res guisada» quedaba
       agotada), adm2i (contaba las cortesías de evt6*), tra4y y adm4y (cada corrida gastaba dos días de salidas y a la tercera no quedaban en la
@@ -1601,10 +1601,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
       con esto. (9f, 14 nov)
 - [ ] **→ 9f** · **9f-5 · La ayuda: inglés ampliado y editor:** ~25 artículos de `docs/ayuda/` tienen un inglés de menos de una quinta parte del español (L969) y el Super Admin solo
       pausa (L975): falta ampliar el inglés y el editor que guarda «cambio propuesto» para el siguiente commit (la tabla de cambios propuestos no se creó). (9f, 14 nov)
-- [ ] **→ 9n** · **«Cuenta borrada» en los demás paneles** (Apartados, Citas, Reservas, Rentas, Inscripciones, Fiestas, Noche…): solo el de Pedidos pasa el nombre por `nombreVisible()`;
-      los otros leen `users.first_name` tal cual y en un panel en inglés dicen «Cuenta borrada». (9f, 14 nov)
+- [x] **→ 9n** · **«Cuenta borrada» en los demás paneles** (Apartados, Citas, Reservas, Rentas, Inscripciones, Fiestas, Noche…): solo el de Pedidos pasa el nombre por `nombreVisible()`;
+      los otros leen `users.first_name` tal cual y en un panel en inglés dicen «Cuenta borrada». (9f, 14 nov) — **✓ 9n-2 (14 nov):** Panel envuelve a PanelBase con traducirBorradas: todos los paneles en inglés dicen «Deleted account». Guardián cuentaBorradaEnTodosLosPaneles; pan9n2 §2.
 - [ ] **→ 9n** · **Anuncios para negocios en el panel** (`announcements.audience = 'negocios'`): el banner sale en el Inicio de la ciudad (todos o solo vecinos); la audiencia de negocios
-      (un aviso en Hoy del panel) no se construyó. (9f, 14 nov)
+      (un aviso en Hoy del panel) no se construyó. (9f, 14 nov) — _(9n-2, 14 nov): el panel de Hoy ya muestra los anuncios con audience «negocios» (el CHECK se amplió; pan9n2 §6; guardián anuncioDeNegociosEnElPanel). Falta el selector «Negocios» en Super Admin › Textos (lib/cms-admin.ts crearAnuncio y TextosHome.tsx): es pantalla del Super Admin y no se tocó en 9n-2._
 - [ ] **→ 9v** · **Encender el pie de la web en todas las páginas** (interruptor `web.pie_todas`, Super Admin › Textos y páginas › Páginas): nace apagado porque cambia las capturas
       aprobadas del Inicio, la ficha y Buscar. Con tu OK sobre las capturas nuevas (`pruebas/visual`, REVISION 9f) se enciende; el día de la apertura solo se encienden interruptores. (9f, 14 nov)
 - [x] **→ 9h** · **Las líneas fijas de §1c que esperan su pantalla:** la landing y su teléfono (9h), la página de mantenimiento (9o) y «el equipo entra con dos pasos» (9j) ya están en
@@ -1624,7 +1624,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9j** · **Web Vitals propios (RUM: LCP, INP, CLS de teléfonos reales):** no se construyó en 9g. Se mide sin personas, pero es un script en todas las pantallas de la app y su
       tablero y alertas van con Sistema › Salud (9j), donde ya viven los errores en vivo; el presupuesto de laboratorio sigue en el CI. (9g, 14 nov)
 - [ ] **→ 9n** · **El panel del negocio con vistas sin repetidos:** Analítica ya muestra las dos cifras (`business_views_daily.unicos`); el panel sigue con todas las vistas porque cambiarlo
-      cambia las capturas aprobadas del panel (necesita el OK del fundador con las capturas nuevas). (9g, 14 nov)
+      cambia las capturas aprobadas del panel (necesita el OK del fundador con las capturas nuevas). (9g, 14 nov) — _(9n-2, 14 nov): hecho detrás de feature_flags «panel.vistas_unicas» (nace APAGADO, no cambia las capturas aprobadas); el fundador lo enciende con las capturas nuevas._
 - [ ] **→ 9j** · **Los guardianes del build en el reporte diario:** el reporte lleva los guardianes en vivo (sobreventa, errores sin revisar, el tope de El Compa) y las tareas del barrido
       con error; lo que cazan los guardianes del build corre en el CI y no queda en la base: con Sistema › Salud (9j), cada despliegue anota su resultado y el reporte lo lee. (9g, 14 nov)
 - [ ] **→ 9k** · **La conciliación con Stripe en el reporte diario y en Analítica › Dinero:** el renglón existe y dice que todavía no sale (`conciliacion: null`); lo llena la conciliación
@@ -1738,7 +1738,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9q** · **Los códigos de error permanentes de Telnyx** (hoy: 40300, 40310, 40311) y **el costo por SMS** en Notificaciones (el campo `cost` del aviso de
       entrega): confirmarlos con la cuenta. (9l, 14 nov)
 - [ ] **→ 9q** · **Una sola respuesta de STOP:** al conectar Telnyx y Meta, apagar la de su perfil (o la nuestra en Configuración › Avisos y canales). (9l, 14 nov)
-- [ ] **→ 9n** · **Avisos al quitar a alguien del equipo y a quien pidió unirse:** van con aceptar la invitación con el código (L101). (9l, 14 nov)
+- [x] **→ 9n** · **Avisos al quitar a alguien del equipo y a quien pidió unirse:** van con aceptar la invitación con el código (L101). (9l, 14 nov) — **✓ 9n-2 (14 nov):** al quitar (equipo_quitado), al aceptar o no a quien pidió unirse (equipo_unirse_ok/no), al dueño cuando alguien acepta (biz_equipo_acepto) o pide unirse (biz_equipo_pide). pan9n2 §1.
 - [ ] **→ 9b** · **avi9l y alreves9l en la corrida dirigida del CI** (perfil completo de servir.sh: el certificado de «SNS» lo sirve la prueba en :4409); la
       regresión entera, la matriz de 9 dispositivos y `pruebas/visual` (Notificaciones y Soporte suman pestañas) no corrieron aquí. (9l, 14 nov)
 - [ ] **→ 9b** · **alreves8c, caso `permisosMinimos`:** no encuentra su texto en apps/mobile/apps.json (también en la rama base; no es de 9l). (9l, 14 nov)

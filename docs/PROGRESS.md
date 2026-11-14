@@ -2156,3 +2156,23 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   tareas después de `avisoApertura`), `lib/admin.ts` (`Staff.colas`), `lib/colas.ts` (`slaCfg` en cada cola, la cola «entrega»; `colasDelRol` ya no existe),
   `lib/admin-nav.ts` (dlv), `lib/avisos.ts` (`avisarNegocio`), `lib/pedidos.ts`, `lib/pedir.ts`, `app/panel/Panel.tsx`, `app/panel/acciones.ts`, `mapa-de-datos.json`
   e `inventario-datos.json` (regenerados), docs.
+
+## Fase 9 · 9n-2 — El panel del negocio y la página del negocio (14 nov)
+- **Hecho (rama worktree-9n2-panel, sobre 586c3fb):**
+  - **Migración `0146_panel.sql`** (dos veces sin cambios; CHECK ampliados con `pg_temp.ampliar_check`): `business_members.accepted_at`, plantillas del equipo (`biz_equipo_acepto`, `biz_equipo_pide`,
+    `equipo_quitado`, `equipo_unirse_ok/no`; el SMS de `equipo_invitado` lleva enlace), `review_requests` y `review_reply_history` (solo inserción), `reviews.reply_offer/reply_edited_at/reply_edits`,
+    `announcements.audience` + «negocios», `business_posts.job_id/followers_notified_at` + link «job» y `post_en_vivo` con la vacante, plantillas `resena_pedir`, `nov_seguidores`, `nov_oferta_seguidores`,
+    la bandera `panel.vistas_unicas` (apagada). Semilla `0064_panel.sql` (invitación de prueba `/e/PruebaEq`).
+  - **Piezas:** aceptar la invitación `/e/{código}` y sus avisos; «Cuenta borrada» en todos los paneles (`traducirBorradas`); Pedir reseña; no-show del negocio; «quiere arreglarlo» y editar la respuesta;
+    validar cupón en Hoy; Panel › Eventos con cursor; anuncios para negocios en Hoy; aviso del organizador por la auto-moderación; pedido programado que cruza la medianoche; To'Latino Negocios sin negocio;
+    «Últimos 30 días» y Populares por lo más pedido; Novedades (galería, «Ver vacante», avisar a seguidores, pedidos de la oferta); «Traducir con El Compa» (vacantes y plato); vistas sin repetidos tras bandera.
+  - **Guardianes nuevos (12):** invitacionDeEquipoSegura, cuentaBorradaEnTodosLosPaneles, resenaPedidaUnaVez, respuestaDeResenaConHistorial, avisoDelOrganizadorModerado, novedadAvisaUnaVez,
+    programadoCruzaMedianoche, eventosPanelConCursor, negociosSinNegocio, popularesPorLoMasPedido, noShowSoloDelNegocio, anuncioDeNegociosEnElPanel; ajustados listaConTopeLoQueImporta, promesaSms, appNoAutoriza.
+    **`alreves9n2` 25/25**; `alreves6j` 29/29 (caso actualizado), `alreves9f` 30/30. Mapa de datos al día.
+  - **Ayuda (ES/EN):** nuevas `panel-equipo-invitacion`, `panel-resenas-pedir-y-arreglarlo`, `panel-novedades-seguidores-y-vacante`, `panel-menu-populares-y-30-dias`, `panel-hoy-cupon-anuncios-y-reservas`.
+- **Probado aquí** (Postgres 16 propio :5501, build standalone :3201, `docker` de mentira): `node guardianes/run.mjs` sin fallos; `tsc --noEmit` limpio; build en verde; `pan9n2` **90 ✓ dos veces seguidas**
+  (390 y 1360, ES y EN; capturas revisadas).
+- **No cerrado:** cupón para seguidores, «Repetir» y «Escribir», «Quién tiene licencia aquí», pestaña Staff, horario por módulo (citas), editor de Tienda/Renta, «Si no contestas en 10 min», bandeja de SMS del
+  negocio, selector «Negocios» del Super Admin (ver LAUNCH). No corrió: la foto de la invitación con almacén real, la regresión entera y la matriz de 9 dispositivos (CI).
+- **Para quien junte las ramas:** `guardianes/run.mjs` (guardianes al final; `CUMPLIDAS` de promesaSms, `OK` de appNoAutoriza, regex de listaConTopeLoQueImporta), `app/panel/Panel.tsx` (Panel envuelve a PanelBase),
+  `lib/panel.ts`, `app/panel/[id]/[[...r]]/page.tsx`, `lib/pedir.ts`, `lib/novedades.ts`, `mapa-de-datos.json`/`mapa_datos.sql`, `pruebas/alreves/alreves6j.cjs`, docs.

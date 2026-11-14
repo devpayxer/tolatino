@@ -25,12 +25,12 @@ import { cambiosBloques } from "./EventosCambios";
 import { puertaFicha } from "./EventosPuerta";
 import type { PuertaPanel } from "@/lib/puerta-equipo";
 import { chipsFechas, crearPorDia, duracionBloques, fechaVista, horarioBloques, modoDe, seriesBloques, valePara } from "./EventosSeries";
-import { evtAvisarLista, evtBoletosOrden, evtCodigoCambiar, evtCodigoCrear, evtCortesia, evtDevolver, evtEnviar, evtGuardar, evtModulo, evtQuitarCortesia, evtReenviar, evtRepetir, evtTraducir } from "./acciones-eventos";
+import { evtAvisarLista, evtBoletosOrden, evtCodigoCambiar, evtCodigoCrear, evtCortesia, evtDevolver, evtEnviar, evtGuardar, evtModulo, evtPasadosMas, evtQuitarCortesia, evtReenviar, evtRepetir, evtTraducir } from "./acciones-eventos";
 import type { Ctx, Editor, Form, Sec } from "./Panel";
 import { uuid } from "@/lib/uuid";
 
 export type EvtData = {
-  lista: FilaPanelEvt[]; formatos: FormatoEvt[]; generos: { key: string; label: Bi }[]; org: { verificado: boolean; bloqueado: string | null };
+  lista: FilaPanelEvt[]; masPasados?: boolean; formatos: FormatoEvt[]; generos: { key: string; label: Bi }[]; org: { verificado: boolean; bloqueado: string | null };
   det: EvtPanel | null; cfg: { revisionH: number; fotosMax: number; diasAdelante: number; fechasMax: number; diasMax: number }; fee: { bp: number; fixed: number } | null; hoy: string; dir: string | null;
   /* 6b · El módulo Eventos (interruptor del negocio y pausa de To'Latino) y QUIÉN VA del evento abierto (nombre + inicial). */
   mod: { aplica: boolean; on: boolean; pausa: string | null }; quien: { nombre: string; party: number; st: string; at: string; dia: string }[];
@@ -77,11 +77,13 @@ export function evtBloques(c: Ctx): Sec {
   if (X.org.bloqueado) out.push({ type: "note", tone: "danger", icon: "ban", t: E2(`To’Latino bloqueó tus eventos: no puedes enviar ni publicar. Motivo: ${X.org.bloqueado}`, `To’Latino blocked your events: you cannot send or publish. Reason: ${X.org.bloqueado}`), cta: E2("Apelar", "Appeal"), onCta: () => c.nav(`/cuenta/moderacion?k=evt_org&id=${d.id}`) });
   else if (X.org.verificado) out.push({ type: "note", tone: "ok", icon: "verified", t: E2("Eres organizador verificado: tus eventos se publican al enviarlos.", "You are a verified organizer: your events go live when you send them.") });
   const grp = (e: FilaPanelEvt) => (e.st === "draft" ? "draft" : e.st === "cancelled" || e.st === "rejected" || e.st === "done" || e.pasado ? "done" : "up");
+  // 9n-2 · Pasados y cancelados con cursor (L972): lo de las páginas siguientes se suma aquí; «Ver más» pide la que sigue.
+  const extra = (ui.evMas as { filas: FilaPanelEvt[]; mas: boolean } | undefined) ?? null, todos = extra ? [...X.lista, ...extra.filas.filter((z) => !X.lista.some((y) => y.id === z.id))] : X.lista, hayMas = extra ? extra.mas : !!X.masPasados;
   const TB = ([["up", E2("Próximos", "Upcoming")], ["draft", E2("Borradores", "Drafts")], ["done", E2("Pasados y cancelados", "Past and cancelled")]] as const)
-    .map(([k, l]) => ({ k, l, n: X.lista.filter((e) => grp(e) === k).length })).filter((x) => x.k === "up" || x.n);
+    .map(([k, l]) => ({ k, l, n: todos.filter((e) => grp(e) === k).length })).filter((x) => x.k === "up" || x.n);
   const tb = TB.some((x) => x.k === ui.evTab) ? (ui.evTab as string) : "up";
-  if (TB.length > 1) out.push({ type: "tabs", items: TB.map((x) => ({ l: x.l, n: String(x.n), on: tb === x.k, onClick: () => c.setUi({ evTab: x.k }) })) });
-  const cards = X.lista.filter((e) => grp(e) === tb).map((e) => {
+  if (TB.length > 1) out.push({ type: "tabs", items: TB.map((x) => ({ l: x.l, n: x.k === "done" && hayMas ? `${x.n}+` : String(x.n), on: tb === x.k, onClick: () => c.setUi({ evTab: x.k }) })) });
+  const cards = todos.filter((e) => grp(e) === tb).map((e) => {
     const F = fmtDe(c, e.fmt), [tag, tone] = etiquetaEvt({ status: e.st, hidden: e.hidden, pending: e.pending, hoy: e.dia === X.hoy }, es), tix = e.entrada === "tickets";
     // 6f · Una serie: la próxima fecha y «CADA JUEVES · N FECHAS»; varios días: el rango.
     const forma = e.kind === "series" && e.rep ? ` · ${repL(e.inicio, e.rep, es).toUpperCase()}` : e.kind === "span" ? ` · ${e.span}${E2(" DÍAS", " DAYS")}` : "";
@@ -94,6 +96,10 @@ export function evtBloques(c: Ctx): Sec {
   out.push(cards.length ? { type: "evrow", cols: c.desk && c.w >= 900 && !c.ruta.det ? "repeat(2,minmax(0,1fr))" : "minmax(0,1fr)", items: cards }
     : { type: "empty", icon: "ticket", t: tb === "up" ? E2("Sin eventos próximos", "No upcoming events") : E2("Nada aquí", "Nothing here"), s: tb === "up" ? E2("Crea uno abajo: cada tipo trae solo lo que necesitas.", "Create one below: each type comes with only what you need.") : "",
       cta: tb === "up" && !X.org.bloqueado ? E2("Crear evento", "Create event") : undefined, onCta: () => c.det("evt:new") });
+  if (tb === "done" && hayMas) {
+    const ult = todos.filter((e) => grp(e) === "done").at(-1);
+    if (ult) out.push({ type: "acts", items: [{ l: E2("Ver más", "See more"), v: "secondary", icon: "plus", off: c.pending, onClick: () => c.run(() => evtPasadosMas(d.id, `${ult.inicio}|${ult.id}`).then((r) => { if (r.ok && r.filas) c.setUi({ evMas: { filas: [...(extra?.filas ?? []), ...r.filas], mas: !!r.mas } }); return r; }), "") }] });
+  }
   if (!X.org.bloqueado) out.push({ type: "rows", k: E2("LO QUE PUEDES PUBLICAR", "WHAT YOU CAN PUBLISH"), cols: c.desk && c.w >= 1100 && !c.ruta.det ? "repeat(2,minmax(0,1fr))" : undefined,
     items: X.formatos.filter((F) => F.ofrece !== false).map((F): Fila => ({ key: F.key, icon: F.icon, t: bi(F.label, es), s: bi(F.sub, es), acts: [{ l: E2("Crear", "Create"), icon: "plus", onClick: () => c.det(`evt:new:${F.key}`) }], onClick: () => c.det(`evt:new:${F.key}`) })) });
   return { blocks: out, ed: null };

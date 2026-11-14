@@ -363,6 +363,12 @@ export async function avisarAsistentes(negocio: string, userId: string, eventoId
   if (!ID.test(String(eventoId))) return falla("Ese evento no existe.", "That event does not exist.");
   const texto = limpiar(textoRaw, 160);
   if (texto.length < 5) return falla("Escribe el aviso (5 a 160 letras).", "Write the notice (5 to 160 characters).");
+  // 9n-2 · El aviso llega a todos los que van sin que nadie lo lea antes: pasa por la auto-moderación (5d) ANTES de salir (L848). Si lo marca, no sale.
+  {
+    const ci = (await db().query<{ c: string }>(`select city_id as c from businesses where id = $1`, [negocio])).rows[0]?.c ?? null;
+    const rev = await (await import("./moderacion")).revisarTextoSuelto(db(), { texto, autor: userId, ciudad: ci, donde: `Aviso del organizador (evento ${eventoId})` });
+    if (!rev.ok) return falla(rev.msg.es, rev.msg.en);
+  }
   let r: { id: string; L: string[]; t: Bi; org: string; slug: string; fid: string };
   try {
     r = await tx(async (c) => {

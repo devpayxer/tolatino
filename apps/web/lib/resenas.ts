@@ -61,7 +61,7 @@ export type Hechos = { promised?: string; done?: string; late?: number; win?: nu
   que?: string; seRento?: "rentada" | "vendida"; noLlegaron?: boolean };
 export type Tarjeta = {
   id: string; name: string; ini: string; mine: boolean; cnt: number; d: number; editada: boolean; src: Src; stars: number;
-  answers: Respuestas; facts: Hechos; body: string; fotos: string[]; rec: Bi[]; reply: { text: string; d: number; lang?: "es" | "en" } | null;
+  answers: Respuestas; facts: Hechos; body: string; fotos: string[]; rec: Bi[]; reply: { text: string; d: number; lang?: "es" | "en"; offer?: boolean; ed?: boolean } | null;
   lang?: "es" | "en"; // 5h: el idioma del texto (lo detecta el servidor al publicar) → «Ver traducción»
   help: number; helpOn: boolean; reported: boolean; pro?: string | null; // la cita fue con esa persona (3d)
   rango?: { n: number; es: string; en: string } | null; pts?: number; // 5f: rango (desde Sargento) y los puntos que sumó
@@ -81,7 +81,7 @@ const iniciales = (s: string) => s.split(/\s+/).map((w) => w[0] ?? "").join("").
 const TARJETA_SQL = `
   r.id::text, r.user_id = $2::uuid as mine, u.first_name, u.last_name, r.src, r.stars, r.answers, r.facts, r.body, r.lang, coalesce(r.reply_lang, 'es') as reply_lang, r.rec,
   (now()::date - r.created_at::date) as d, r.edited_at is not null as editada, r.helpful_count as help,
-  case when b.pro then r.reply end as reply, case when b.pro and r.reply_at is not null then (now()::date - r.reply_at::date) end as reply_d,
+  case when b.pro then r.reply end as reply, case when b.pro and r.reply_at is not null then (now()::date - r.reply_at::date) end as reply_d, r.reply_offer, r.reply_edited_at is not null as reply_ed,
   (select count(*)::int from reviews x where x.user_id = r.user_id and x.status = 'visible') as cnt,
   (select coalesce(array_agg(m.url order by m.sort, m.created_at), '{}') from media m where m.owner_kind = 'review' and m.owner_id = r.id::text and m.status = 'visible') as fotos,
   coalesce($2::uuid is not null and exists (select 1 from review_helpful h where h.review_id = r.id and h.user_id = $2::uuid), false) as help_on,
@@ -92,14 +92,14 @@ const TARJETA_SQL = `
   (select coalesce(sum(e.delta), 0)::int from points_entries e join users pu on pu.id = e.user_id where e.target_kind = 'review' and e.target_id = r.id::text and e.rule_key = 'resena_verificada') as pts`;
 type FilaT = {
   id: string; mine: boolean; first_name: string | null; last_name: string | null; src: Src; stars: number; answers: Respuestas; facts: Hechos; body: string; lang: "es" | "en"; reply_lang: "es" | "en";
-  rec: string[]; d: number; editada: boolean; help: number; reply: string | null; reply_d: number | null; cnt: number; fotos: string[]; help_on: boolean; reported: boolean; rec_names: Bi[]; con_pro: string | null;
+  rec: string[]; d: number; editada: boolean; help: number; reply: string | null; reply_d: number | null; reply_offer: boolean; reply_ed: boolean; cnt: number; fotos: string[]; help_on: boolean; reported: boolean; rec_names: Bi[]; con_pro: string | null;
   rango: { n: number; es: string; en: string } | null; pts: number;
 };
 const tarjeta = (x: FilaT): Tarjeta => {
   const name = nombreCorto(x.first_name, x.last_name);
   return {
     id: x.id, name, ini: iniciales(name), mine: x.mine, cnt: x.cnt, d: x.d, editada: x.editada, src: x.src, stars: x.stars, answers: x.answers ?? {}, facts: x.facts ?? {},
-    body: x.body, lang: x.lang, fotos: x.fotos ?? [], rec: x.rec_names ?? [], reply: x.reply ? { text: x.reply, d: x.reply_d ?? 0, lang: x.reply_lang } : null, help: x.help, helpOn: x.help_on, reported: x.reported, pro: x.con_pro ?? null,
+    body: x.body, lang: x.lang, fotos: x.fotos ?? [], rec: x.rec_names ?? [], reply: x.reply ? { text: x.reply, d: x.reply_d ?? 0, lang: x.reply_lang, offer: x.reply_offer, ed: x.reply_ed } : null, help: x.help, helpOn: x.help_on, reported: x.reported, pro: x.con_pro ?? null,
     // 5f · El rango se ve desde Sargento (4); «+15 puntos» si la reseña verificada sumó (y sigue sumando) al rango de quien la escribió.
     rango: x.rango && x.rango.n >= 4 ? x.rango : null, pts: x.pts > 0 ? x.pts : 0,
   };
@@ -709,13 +709,37 @@ export async function resenasSinResponder(negocio: string) {
 
 export async function resenaPanel(negocio: string, id: string) {
   if (!/^\d{1,18}$/.test(id)) return null;
-  const x = (await db().query<FilaPanelDb & { reply: string | null }>(`select ${PANEL_SQL}, r.reply from reviews r join users u on u.id = r.user_id where r.business_id = $1 and r.id = $2::bigint and r.status = 'visible'`, [negocio, id])).rows[0];
-  return x ? { ...filaPanel(x), reply: x.reply } : null;
+  const x = (await db().query<FilaPanelDb & { reply: string | null; offer: boolean; edits: number; editable: boolean }>(`select ${PANEL_SQL}, r.reply, r.reply_offer as offer, r.reply_edits as edits,
+            (r.reply is not null and r.reply_edits < ${MAX_EDITS_RESP} and r.reply_at > now() - interval '${DIAS_EDITAR_RESP} days') as editable from reviews r join users u on u.id = r.user_id where r.business_id = $1 and r.id = $2::bigint and r.status = 'visible'`, [negocio, id])).rows[0];
+  return x ? { ...filaPanel(x), reply: x.reply, offer: x.offer, edits: x.edits, editable: x.editable } : null;
 }
 export type ResenaPanelDet = NonNullable<Awaited<ReturnType<typeof resenaPanel>>>;
 
 /* El negocio Pro responde una vez (5 a 300 letras). Free no responde. */
-export async function responderResena(negocio: string, id: string, texto: string, actorId: string): Promise<Res> {
+/* 9n-2 · La respuesta del negocio (L287): puede ser una PROPUESTA para arreglarlo («quiere arreglarlo»: el cliente la ve con ese título y, si le convence, actualiza su
+   reseña; no es obligatorio) y se puede EDITAR hasta ${MAX_EDITS_RESP} veces y dentro de ${DIAS_EDITAR_RESP} días. Lo anterior no se borra: queda en review_reply_history (solo inserción) y la
+   respuesta se ve «editada». Una respuesta que cambia de sentido a los 7 días no se deja. */
+export const MAX_EDITS_RESP = 3, DIAS_EDITAR_RESP = 7;
+export async function editarRespuesta(negocio: string, id: string, texto: string, oferta: boolean, actorId: string): Promise<Res> {
+  const t = String(texto ?? "").trim();
+  if (t.length < 5) return no("Escribe al menos 5 letras.", "Write at least 5 characters.");
+  if (t.length > 300) return no("Máximo 300 letras.", "300 characters max.");
+  if (!/^\d{1,18}$/.test(id)) return no("Esa reseña no existe.", "That review does not exist.");
+  const det = await detectarIdioma(t);
+  return tx(async (c) => {
+    const r = (await c.query<{ reply: string; offer: boolean; edits: number; ok: boolean }>(
+      `select reply, reply_offer as offer, reply_edits as edits, (reply_at > now() - interval '${DIAS_EDITAR_RESP} days') as ok from reviews where business_id = $1 and id = $2::bigint and status = 'visible' and reply is not null for update`, [negocio, id])).rows[0];
+    if (!r) return no("Esa reseña no tiene respuesta o ya no está.", "That review has no reply or is gone.");
+    if (r.edits >= MAX_EDITS_RESP) return no(`Ya editaste esta respuesta ${MAX_EDITS_RESP} veces.`, `You already edited this reply ${MAX_EDITS_RESP} times.`);
+    if (!r.ok) return no(`Pasaron más de ${DIAS_EDITAR_RESP} días: la respuesta ya no se edita.`, `More than ${DIAS_EDITAR_RESP} days have passed: the reply can no longer be edited.`);
+    if (r.reply === t && r.offer === !!oferta) return no("No cambiaste nada.", "You did not change anything.");
+    await c.query(`insert into review_reply_history (review_id, business_id, previous_reply, previous_offer, edited_by) values ($1::bigint, $2, $3, $4, $5::uuid)`, [id, negocio, r.reply, r.offer, actorId]);
+    await c.query(`update reviews set reply = $2, reply_offer = $3, reply_edited_at = now(), reply_edits = reply_edits + 1, reply_by = $4, reply_lang = coalesce($5, reply_lang) where id = $1::bigint`, [id, t, !!oferta, actorId, det]);
+    return { ok: true, id } as const;
+  });
+}
+
+export async function responderResena(negocio: string, id: string, texto: string, actorId: string, oferta = false): Promise<Res> {
   const t = String(texto ?? "").trim();
   if (t.length < 5) return no("Escribe al menos 5 letras.", "Write at least 5 characters.");
   if (t.length > 300) return no("Máximo 300 letras.", "300 characters max.");
@@ -724,8 +748,8 @@ export async function responderResena(negocio: string, id: string, texto: string
   if (!pro) return no("Responder reseñas es de Pro.", "Replying to reviews is a Pro feature.");
   const det = await detectarIdioma(t); // 5h: si no se sabe, el idioma de la app de quien responde
   const r = await db().query<{ id: string }>(
-    `update reviews set reply = $3, reply_at = now(), reply_by = $4, reply_lang = coalesce($5, (select case when u.lang = 'en' then 'en' else 'es' end from users u where u.id = $4), 'es')
-      where business_id = $1 and id = $2::bigint and status = 'visible' and reply is null returning id::text`, [negocio, id, t, actorId, det]);
+    `update reviews set reply = $3, reply_at = now(), reply_by = $4, reply_offer = $6, reply_lang = coalesce($5, (select case when u.lang = 'en' then 'en' else 'es' end from users u where u.id = $4), 'es')
+      where business_id = $1 and id = $2::bigint and status = 'visible' and reply is null returning id::text`, [negocio, id, t, actorId, det, !!oferta]);
   return r.rows[0] ? { ok: true, id } : no("Esta reseña ya tiene respuesta o ya no está.", "This review already has a reply or is gone.");
 }
 

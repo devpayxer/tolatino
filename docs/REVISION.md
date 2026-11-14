@@ -4813,3 +4813,25 @@ Qué mirar (Super Admin › Inicio y la Inicio del vecino, en el teléfono y en 
 - **Pantallas sin diseño propio** (compuestas con los bloques del sistema, sin piezas nuevas): la oferta en el Repartidor, la prueba de entrega, ADM-DLV (lista y 360°),
   Colas › Ajustes, «Lo que te avisamos», feriados y temporada.
 - **Numeración:** la semilla es 0063_repartidor.sql (el plan decía 0056, de 9h; 0062 se dejó libre).
+
+## Fase 9 · 9n-2 — El panel del negocio y la página del negocio (14 nov)
+**Qué mirar (sandbox, teléfono y escritorio, ES y EN):**
+- `/e/PruebaEq` entrando con +1 570 555 0251 (invitación de la semilla 0064): foto, palabras, idiomas y «Aceptar y entrar al equipo». Luego, en Tu página › Equipo del dueño.
+- Panel › Hoy: «Validar un código» (cupones vivos), un anuncio para negocios, una reservación con su historial de no-show, «Cuenta borrada» en inglés.
+- Un pedido entregado: «Pedir reseña». Una reseña ≤3 estrellas: «Quiero arreglarlo» y editar la respuesta.
+- Menú › un plato: «Últimos 30 días»; la página con «Populares» armado. Novedades: fotos de la galería, «Ver vacante», «Avisar a tus seguidores», pedidos de una oferta.
+- Eventos › Pasados y cancelados › «Ver más». To'Latino Negocios con una cuenta sin negocio.
+
+**Decisiones tomadas (lo más seguro y reversible):**
+- **/e/{código} sin diseño propio:** compuesta con head, photos, field, chips y acts (como entrar al equipo del Repartidor). Si el fundador prefiere otro diseño, solo cambia `AceptarEquipo.tsx`;
+  la regla (un solo uso, 7 días, teléfono invitado, 8 intentos/hora) vive en el servidor. El SMS ahora lleva el enlace, no el código. La nota «Le llega: …» del dueño dice «(enlace)» (antes ponía el host
+  y rompía la hidratación).
+- **No-show:** solo se cuenta lo del propio negocio (privacidad); no se muestra lo de otros restaurantes.
+- **Populares:** mínimo 3 pedidos entregados en 30 días y hasta 6; lo fijado va primero. Valores en `lib/menu-ventas.ts`.
+- **Pedir reseña:** una por pedido, hasta 14 días, una por cliente cada 7 días. **Editar la respuesta:** 3 veces, 7 días.
+- **Avisar a seguidores:** solo campana (sin SMS ni push), 2 novedades al día por negocio, ofertas una al día por vecino; respeta «Lo que traen hoy» y «Ofertas».
+- **Aviso del organizador:** si la auto-moderación lo marca, NO sale (a diferencia de una publicación, que solo se marca) y queda una marca en Colas.
+- **Vistas sin repetidos del panel:** hecho detrás de `feature_flags.panel.vistas_unicas`, APAGADO (cambia las capturas aprobadas). Se enciende con las capturas nuevas.
+- **/panel sin negocio:** en la web sigue yendo a /publica; solo en la app Negocios (rótulo TLApp) se muestra la pantalla nueva. `panel/page.tsx` se añadió a la lista de `appNoAutoriza` (solo elige qué pantalla informativa).
+- **Anuncios para negocios:** el panel los muestra; falta el selector en Super Admin › Textos (no se tocó, es de otro bloque).
+- **Sin diseño, no se inventó:** «Quién tiene licencia aquí» y la pestaña Staff de la ficha quedan abiertas para pedir el diseño.

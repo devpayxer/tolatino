@@ -7,6 +7,7 @@ import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { AppPanel, VacPanel, VacPanelDet } from "@/lib/jobs";
 import { bi, DCORTO, diasL, EXP_L, haceL, horaL, horarioL, idiomasL, pagoLargo, PROHIBIDO, tipoL } from "@/lib/jobs-txt";
 import { vacGuardarP, vacModulo, vacPaso, vacResponder } from "./acciones-jobs";
+import { panelTraducir } from "./acciones-traducir";
 import type { Ctx, Sec } from "./Panel";
 
 export type JobsData = { lista?: VacPanel; det?: VacPanelDet | null; app?: string | null; hor?: { abre: number[]; a: number; z: number }; hoy?: { id: string; job: string; name: string; title: { es: string; en: string }; at: string }[] };
@@ -198,7 +199,15 @@ function editor(c: Ctx, v: string): Sec {
   };
   lista(E2("LO QUE PIDES · HASTA 5", "WHAT YOU ASK · UP TO 5"), "req", RQ, "reqN");
   lista(E2("LO QUE OFRECES · HASTA 5", "WHAT YOU OFFER · UP TO 5"), "ben", BN, "benN");
-  out.push({ type: "group", k: E2("EN INGLÉS · OPCIONAL", "IN ENGLISH · OPTIONAL") },
+  // 9n-2 · «Traducir con El Compa» (L319): el puesto y la descripción con el traductor propio; la persona lo revisa antes de guardar.
+  const traducir = () => {
+    if (!x.t0.trim()) { c.toast(E2("Escribe primero el puesto en español.", "Write the Spanish position first.")); return; }
+    c.run(() => panelTraducir(d.id, [x.t0, x.d0]), E2("Traducido. Revísalo antes de guardar.", "Translated. Check it before saving."), (r) => {
+      const en = (r.en ?? []) as string[]; if (!en.length) return;
+      F.set({ t1: (en[0] ?? "").slice(0, 50), d1: (en[1] ?? "").slice(0, 300) });
+    });
+  };
+  out.push({ type: "group", k: E2("EN INGLÉS · OPCIONAL", "IN ENGLISH · OPTIONAL"), link: E2("Traducir con El Compa", "Translate with El Compa"), onLink: traducir },
     { type: "field", k: E2("PUESTO EN INGLÉS", "POSITION IN ENGLISH"), val: x.t1, max: 50, count: `${x.t1.length}/50`, ph: E2("Si lo dejas vacío, sale en español.", "Leave empty to show the Spanish one."), onChange: (t) => F.set({ t1: t.slice(0, 50) }) });
   if (x.d0.trim()) out.push({ type: "field", k: E2("DESCRIPCIÓN EN INGLÉS", "DESCRIPTION IN ENGLISH"), val: x.d1, area: true, rows: 3, max: 300, count: `${x.d1.length}/300`, onChange: (t) => F.set({ d1: t.slice(0, 300) }) });
   const lo = Number(x.lo) || 0, hi = Number(x.hi) || 0, loC = Math.round(lo * 100), hiC = hi > lo ? Math.round(hi * 100) : null;

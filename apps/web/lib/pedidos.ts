@@ -148,6 +148,7 @@ export type DetallePed = Fila & {
   tl: { t: Bi; at: string }[];
   pago: PagoVista | null; // tarjeta en la app (retenido, cobrado, liberado, devuelto)
   repartidor: { id: string; nombre: string } | null; equipo: boolean; // delivery con «Mi equipo»: quién lo lleva
+  resena: import("./resena-pedir").EstadoPedir | null; // 9n-2 · «Pedir reseña» (solo en un pedido entregado)
   // 9n · El código de recogida (solo el negocio lo ve), la prueba de la entrega, la oferta abierta y los mensajes del repartidor al cliente.
   rep9n: { recogida: string | null; recogido: boolean; pideRec: boolean; pidePrueba: boolean; prueba: string[]; foto: string | null; oferta: { seg: number; a: string | null; rechazos: number } | null; mensajes: number } | null;
 };
@@ -206,6 +207,7 @@ export async function pedidoNegocio(negocio: string, numero: string): Promise<De
     lineas: ls.rows.map((l) => ({ q: l.q, name: l.name, opts: (Array.isArray(l.options) ? l.options : []).map((x) => x.o), nota: l.instructions, cents: l.total })),
     tl: ev.rows.map((e) => ({ t: (T[e.kind] ?? (() => e.note ?? { es: e.kind, en: e.kind }))(e.quien), at: hora(hm2m(e.at)) })),
     pago, repartidor: o.rid && o.rnombre ? { id: o.rid, nombre: o.rnombre } : null, equipo: o.equipo, rep9n,
+    resena: o.status === "done" ? await (await import("./resena-pedir")).estadoPedirResena(negocio, numero) : null,
   };
 
 }

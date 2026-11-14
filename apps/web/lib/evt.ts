@@ -381,9 +381,10 @@ export type FilaPanelEvt = {
   /* 6f · Serie o varios días: la próxima fecha (dia), cuántas quedan por delante, la regla y los días. */
   kind: "single" | "series" | "span"; rep: Repite | null; span: number; nf: number; inicio: string;
 };
-export async function eventosDelNegocio(negocio: string): Promise<FilaPanelEvt[]> {
-  return (await db().query<FilaPanelEvt>(
-    `select e.id::text, e.title as t, e.format as fmt, e.status as st, e.hidden_at is not null as hidden, e.pending_status as pending,
+/* 9n-2 · Panel › Eventos con cursor (L972). Lo vivo y próximo (y los borradores) sale completo (hasta 200); lo PASADO o cancelado sale de a 20, lo más
+   reciente primero, con «Ver más» (cursor = fecha de inicio + id, sin OFFSET). Un organizador con cientos de eventos ya no baja todos. */
+export const PASADOS_PAGINA = 20;
+const COLS_EVT = `e.id::text, e.title as t, e.format as fmt, e.status as st, e.hidden_at is not null as hidden, e.pending_status as pending,
             coalesce(case when e.kind = 'series' then (select min(d.local_date) from event_dates d where d.event_id = e.id and d.status = 'scheduled' and d.ends_at > now()) end, e.start_date)::text as dia,
             e.start_date::text as inicio, e.kind, e.rep, e.span_days as span, e.start_min as h0,
             (select count(*)::int from event_dates d where d.event_id = e.id and d.status = 'scheduled' and d.ends_at > now()) as nf,
@@ -392,12 +393,24 @@ export async function eventosDelNegocio(negocio: string): Promise<FilaPanelEvt[]
             (select m.url from media m where m.owner_kind = 'event' and m.owner_id = e.id::text and m.status = 'visible' order by m.sort, m.created_at limit 1) as foto,
             e.origin as origen, coalesce(e.hidden_reason, case when e.status in ('changes', 'rejected') then e.review_note end, case when e.pending_status in ('changes', 'rejected') then e.pending_note end) as nota,
             e.start_date + (e.span_days - 1) < (now() at time zone c.timezone)::date
-              and not exists (select 1 from event_dates d where d.event_id = e.id and d.status = 'scheduled' and d.ends_at > now()) as pasado
-       from events e join cities c on c.id = e.city_id where e.business_id = $1
-      -- 6j · Lo vivo y próximo primero (el más cercano), luego lo pasado o cancelado (lo más reciente): con más de 200 eventos, el límite
-      -- cortaba los próximos.
-      order by (e.status in ('cancelled', 'rejected', 'done')) or (e.start_date + (e.span_days - 1) < (now() at time zone c.timezone)::date
-                and not exists (select 1 from event_dates d where d.event_id = e.id and d.status = 'scheduled' and d.ends_at > now())), abs(e.start_date - (now() at time zone c.timezone)::date), e.start_min, e.id limit 200`, [negocio])).rows;
+              and not exists (select 1 from event_dates d where d.event_id = e.id and d.status = 'scheduled' and d.ends_at > now()) as pasado`;
+const ES_PASADO = `(e.status <> 'draft' and ((e.status in ('cancelled', 'rejected', 'done')) or (e.start_date + (e.span_days - 1) < (now() at time zone c.timezone)::date
+                and not exists (select 1 from event_dates d where d.event_id = e.id and d.status = 'scheduled' and d.ends_at > now()))))`;
+export async function eventosDelNegocio(negocio: string): Promise<{ filas: FilaPanelEvt[]; mas: boolean }> {
+  const [vivos, pas] = await Promise.all([
+    db().query<FilaPanelEvt>(`select ${COLS_EVT} from events e join cities c on c.id = e.city_id where e.business_id = $1 and not ${ES_PASADO}
+       order by abs(e.start_date - (now() at time zone c.timezone)::date), e.start_min, e.id limit 200`, [negocio]),
+    db().query<FilaPanelEvt>(`select ${COLS_EVT} from events e join cities c on c.id = e.city_id where e.business_id = $1 and ${ES_PASADO} order by e.start_date desc, e.id desc limit ${PASADOS_PAGINA + 1}`, [negocio]),
+  ]);
+  return { filas: [...vivos.rows, ...pas.rows.slice(0, PASADOS_PAGINA)], mas: pas.rows.length > PASADOS_PAGINA };
+}
+/* La página siguiente de lo pasado o cancelado: `antes` = «{inicio}|{id}» del último que ya se ve. Solo de ESTE negocio. */
+export async function pasadosPagina(negocio: string, antes: string): Promise<{ filas: FilaPanelEvt[]; mas: boolean } | null> {
+  const m = /^(\d{4}-\d{2}-\d{2})\|(\d{1,18})$/.exec(String(antes ?? ""));
+  if (!m) return null;
+  const r = await db().query<FilaPanelEvt>(`select ${COLS_EVT} from events e join cities c on c.id = e.city_id where e.business_id = $1 and ${ES_PASADO} and (e.start_date, e.id) < ($2::date, $3::bigint)
+       order by e.start_date desc, e.id desc limit ${PASADOS_PAGINA + 1}`, [negocio, m[1], m[2]]);
+  return { filas: r.rows.slice(0, PASADOS_PAGINA), mas: r.rows.length > PASADOS_PAGINA };
 }
 export type EvtPanel = {
   id: string; slug: string; st: EstadoEvt; hidden: string | null; nota: string | null; razon: string | null; pending: "review" | "changes" | "rejected" | null; pendingNota: string | null;

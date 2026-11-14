@@ -372,6 +372,8 @@ const guardianes = {
       "apps/web/app/(app)/reserva/[num]/Estado.tsx": ["rsv_ok", "rsv_hoy"], "apps/web/app/(app)/n/[id]/reservar/Detalles.tsx": ["rsv_ok", "rsv_hoy"],
       "apps/web/app/(app)/CiudadSelector.tsx": ["ciudad_abierta"], "apps/web/lib/textos-fijas.ts": ["ciudad_abierta"], "apps/web/lib/textos-acceso.ts": ["ciudad_abierta"],
       "apps/web/app/panel/Equipo.tsx": ["equipo_invitado"], "apps/web/app/panel/acciones-equipo.ts": ["equipo_invitado"],
+      // 9n-2 · «Pedir reseña» en un pedido entregado: el cliente recibe «¿Cómo estuvo?» (campana y, si no abre la app, SMS).
+      "apps/web/app/panel/Pedidos.tsx": ["resena_pedir"],
       "apps/web/lib/textos.ts": ["foto_rep_quitada", "foto_rep_queda"], "apps/web/app/panel/Menu.tsx": ["biz_quedan_pocos"], "apps/web/app/(app)/n/[id]/apartar/Apartar.tsx": ["lay_listo", "lay_pronto"],
       // Lo que explica el camino del SMS (el respaldo del push, lo crítico, el código): lo cumple el SMS del código para entrar (crit, siempre) y el único camino.
       "apps/web/app/(app)/cuenta/avisos/Avisos.tsx": ["cuenta_codigo"], "apps/web/app/admin/IntegracionesPush.tsx": ["cuenta_codigo"], "apps/web/lib/push/admin.ts": ["cuenta_codigo"],
@@ -4185,7 +4187,7 @@ const guardianes = {
      fechas que ya pasaron antes que las próximas. Al revés: volver al orden por fecha a secas → falla. */
   listaConTopeLoQueImporta() {
     const G = "listaConTopeLoQueImporta", E = "apps/web/lib/evt.ts", L = "apps/web/lib/evt-liquidacion.ts";
-    if (existsSync(E)) { const b = cuerpoFn(sinComent(E), "eventosDelNegocio"); if (!/order by \(e\.status in \('cancelled', 'rejected', 'done'\)\) or \(e\.start_date \+ \(e\.span_days - 1\) </.test(b) || !/limit 200/.test(b)) falla(G, E, 0, "eventosDelNegocio: lo vivo y próximo primero antes del tope (con muchos eventos, el tope cortaba los próximos)"); }
+    if (existsSync(E)) { const b = cuerpoFn(sinComent(E), "eventosDelNegocio"); if (!/where e\.business_id = \$1 and not \$\{ES_PASADO\}/.test(b) || !/limit 200/.test(b)) falla(G, E, 0, "eventosDelNegocio: lo vivo y próximo primero antes del tope (con muchos eventos, el tope cortaba los próximos)"); }
     if (existsSync(L)) { const b = cuerpoFn(sinComent(L), "liquidacionesPanel"); if (!/order by \(d\.starts_at > now\(\)\), d\.starts_at desc limit 60/.test(b)) falla(G, L, 0, "liquidacionesPanel: las fechas que ya pasaron (dinero en camino o pagado) antes que las próximas"); }
   },
 
@@ -5413,7 +5415,10 @@ const guardianes = {
       // 8i · Las reglas de las tiendas: el rótulo SOLO QUITA (dentro de las apps no se vende Pro); nunca da nada.
       "apps/web/lib/tiendas/reglas.ts",
       // 9h · Un escaneo de QR anota si vino de la web o de la app (cifra sin personas); nunca decide nada.
-      "apps/web/lib/crecimiento/enlaces.ts"]);
+      "apps/web/lib/crecimiento/enlaces.ts",
+      // 9n-2 · /panel sin negocio: en la app Negocios muestra una pantalla de «qué hacer» (publicar, entrar a un equipo, Borrar mi cuenta) en vez de mandar a /publica, que la
+      // cáscara no abre; solo elige QUÉ pantalla informativa se ve (el servidor sigue sin dar nada: sin negocio no hay nada que autorizar).
+      "apps/web/app/panel/page.tsx"]);
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
       const t = sinComent(f);
@@ -8774,6 +8779,158 @@ const guardianes = {
         falla(G, f, t.slice(0, m.index).split("\n").length, `busca «${m[1]}» y ese texto no está en el código, la base ni la ayuda (si la pantalla lo arma con datos, va en ${L})`);
       }
     }
+  },
+
+  /* 9n-2 · invitacionDeEquipoSegura (L101, L1741): aceptar una invitación al equipo con el código (/e/{código}). El servidor decide: el código se usa UNA vez (al
+     aceptar se borra), vence a los 7 días (invite_expires_at), solo sirve con el teléfono invitado, quien se equivoca suma un intento con tope por hora, la fila se
+     bloquea (for update) para que dos teléfonos no acepten el mismo código, y el SMS lleva el enlace /e/{código}, no el código suelto. Quitar a alguien, aceptar o no
+     a quien pidió unirse y aceptar una invitación avisan (equipo_quitado, equipo_unirse_*, biz_equipo_acepto). Al revés: alreves9n2. */
+  invitacionDeEquipoSegura() {
+    const G = "invitacionDeEquipoSegura", F = "apps/web/lib/equipo-invitacion.ts", A = "apps/web/app/panel/acciones-equipo.ts", P = "apps/web/app/e/[code]/page.tsx", M = "packages/db/migrations/0146_panel.sql";
+    for (const f of [F, A, P, M]) if (!existsSync(f)) return falla(G, f, 0, "falta el archivo de aceptar la invitación al equipo");
+    const t = sinComent(F), a = sinComent(A), p = sinComent(P), m = readFileSync(M, "utf8");
+    if (!/invite_code = null/.test(t)) falla(G, F, 0, "al aceptar, el código se borra (invite_code = null): un solo uso");
+    if (!/invite_expires_at > now\(\)/.test(t) || !/if \(!m\.vivo\)/.test(t)) falla(G, F, 0, "el código vence a los 7 días: se mira invite_expires_at > now()");
+    if ((t.match(/m\.phone !== tel/g) ?? []).length < 2) falla(G, F, 0, "el código solo sirve con el teléfono invitado (m.phone !== tel)");
+    if (!/for update of m/.test(t)) falla(G, F, 0, "la fila se bloquea al aceptar (for update of m): dos teléfonos no aceptan el mismo código");
+    if (!/equipo\.codigo_malo/.test(t) || (t.match(/intentosMalos\(userId\)\) >= TOPE_MALOS/g) ?? []).length < 2) falla(G, F, 0, "los intentos malos suman y tienen tope por hora");
+    if (/rol: rol \|\| "equipo", codigo: code/.test(a) || !/href: `\/e\/\$\{code\}`/.test(a)) falla(G, A, 0, "el SMS lleva el enlace /e/{código}, no el código suelto");
+    if (!/avisarPersonaEquipo\(m\.id, "equipo_quitado"\)/.test(a) || !/aceptar \? "equipo_unirse_ok" : "equipo_unirse_no"/.test(a)) falla(G, A, 0, "quitar a alguien y responderle a quien pidió unirse avisan a esa persona");
+    if (!/biz_equipo_acepto/.test(t)) falla(G, F, 0, "aceptar la invitación le avisa al negocio (biz_equipo_acepto)");
+    if (!/redirect\(`\/entrar\?volver=/.test(p)) falla(G, P, 0, "/e/{código} pide entrar con la cuenta antes de mirar el código");
+    for (const k of ["equipo_quitado", "equipo_unirse_ok", "equipo_unirse_no", "biz_equipo_acepto", "biz_equipo_pide"]) if (!m.includes(`'${k}'`)) falla(G, M, 0, `falta la plantilla ${k}`);
+  },
+
+  /* 9n-2 · cuentaBorradaEnTodosLosPaneles (L1604): el nombre que deja la purga («Cuenta borrada») se ve en inglés en TODOS los paneles, no solo en Pedidos: el
+     panel entero pasa lo que manda el servidor por traducirBorradas (lib/textos-cuenta.ts) en un solo lugar. */
+  cuentaBorradaEnTodosLosPaneles() {
+    const G = "cuentaBorradaEnTodosLosPaneles", T = "apps/web/lib/textos-cuenta.ts", P = "apps/web/app/panel/Panel.tsx";
+    if (!existsSync(T) || !existsSync(P)) return falla(G, T, 0, "faltan lib/textos-cuenta.ts o app/panel/Panel.tsx");
+    const t = sinComent(T), p = sinComent(P);
+    if (!/export function traducirBorradas</.test(t) || !/CUENTA\.en\.borrada/.test(t.slice(t.indexOf("export function traducirBorradas")))) falla(G, T, 0, "falta traducirBorradas() con «Deleted account»");
+    if (!/traducirBorradas\(props, props\.lang === "es"\)/.test(p) || !/export function Panel\(props: Parameters<typeof PanelBase>\[0\]\)/.test(p)) falla(G, P, 0, "el panel entero pasa lo que manda el servidor por traducirBorradas (Panel envuelve a PanelBase)");
+  },
+
+  /* 9n-2 · resenaPedidaUnaVez (L248): «Pedir reseña» en un pedido ENTREGADO sale UNA vez por pedido (índice único + on conflict do nothing), solo de pedidos
+     terminados de ESTE negocio, dentro de los 14 días, una vez cada 7 días por cliente en el mismo negocio y nunca si ya escribió su reseña; la tabla es de solo
+     inserción y la acción queda en la auditoría. */
+  resenaPedidaUnaVez() {
+    const G = "resenaPedidaUnaVez", F = "apps/web/lib/resena-pedir.ts", M = "packages/db/migrations/0146_panel.sql";
+    if (!existsSync(F)) return falla(G, F, 0, "falta lib/resena-pedir.ts");
+    const t = sinComent(F), m = readFileSync(M, "utf8");
+    if (!/create unique index if not exists review_requests_op_idx on review_requests \(operation_id\)/.test(m)) falla(G, M, 0, "review_requests: un solo aviso por pedido (índice único por operation_id)");
+    if (!/create trigger review_requests_solo_insercion before update or delete on review_requests/.test(m)) falla(G, M, 0, "review_requests es de solo inserción (trigger)");
+    if (!/on conflict \(operation_id\) do nothing/.test(t)) falla(G, F, 0, "dos toques a la vez mandan UN solo aviso (on conflict do nothing)");
+    if (!/r\.st !== "done"/.test(t)) falla(G, F, 0, "solo se pide en un pedido entregado (status done)");
+    if (!/o\.business_id = \$1 and o\.number = \$2/.test(t)) falla(G, F, 0, "el pedido tiene que ser de ESTE negocio");
+    if (!/r\.dias > 14/.test(t) || !/r\.reciente/.test(t) || !/r\.hecha/.test(t)) falla(G, F, 0, "tope de 14 días, una vez cada 7 días por cliente y nunca si ya escribió su reseña");
+    if (!/pedido\.pedir_resena/.test(t)) falla(G, F, 0, "pedir una reseña queda en la auditoría");
+  },
+
+  /* 9n-2 · respuestaDeResenaConHistorial (L287): la respuesta del negocio puede ser una propuesta («quiere arreglarlo») y se edita hasta 3 veces y dentro de 7 días;
+     lo anterior NO se borra: se guarda en review_reply_history (solo inserción) en la misma transacción, antes de cambiar la respuesta; el cliente ve «quiere arreglarlo»
+     y «editada». */
+  respuestaDeResenaConHistorial() {
+    const G = "respuestaDeResenaConHistorial", F = "apps/web/lib/resenas.ts", M = "packages/db/migrations/0146_panel.sql", Tu = "apps/web/app/(app)/n/[id]/resena/tuya/Tuya.tsx", Pu = "apps/web/app/(app)/n/[id]/Resenas.tsx";
+    const t = sinComent(F), m = readFileSync(M, "utf8");
+    const i = t.indexOf("export async function editarRespuesta");
+    if (i < 0) return falla(G, F, 0, "falta editarRespuesta()");
+    const cuerpo = t.slice(i, t.indexOf("export async function responderResena"));
+    if (!/MAX_EDITS_RESP = 3, DIAS_EDITAR_RESP = 7/.test(t) || !/r\.edits >= MAX_EDITS_RESP/.test(cuerpo) || !/if \(!r\.ok\)/.test(cuerpo)) falla(G, F, 0, "editar la respuesta tiene tope de 3 veces y de 7 días");
+    if (cuerpo.indexOf("insert into review_reply_history") < 0 || cuerpo.indexOf("insert into review_reply_history") > cuerpo.indexOf("update reviews set reply")) falla(G, F, 0, "lo anterior se guarda en review_reply_history ANTES de cambiar la respuesta");
+    if (!/create trigger review_reply_history_solo_insercion before update or delete on review_reply_history/.test(m)) falla(G, M, 0, "review_reply_history es de solo inserción (trigger)");
+    if (!/reply_offer/.test(t) || !/reply_edited_at is not null as reply_ed/.test(t)) falla(G, F, 0, "la tarjeta de la reseña lleva si la respuesta es propuesta y si fue editada");
+    if (!existsSync(Tu) || !/c\.reply\?\.offer/.test(sinComent(Tu))) falla(G, Tu, 0, "Tu reseña dice «quiere arreglarlo» cuando la respuesta es una propuesta");
+    if (!existsSync(Pu) || !/c\.reply\.offer/.test(sinComent(Pu)) || !/c\.reply\.ed/.test(sinComent(Pu))) falla(G, Pu, 0, "la página muestra «quiere arreglarlo» y «editada» en la respuesta");
+  },
+
+  /* 9n-2 · avisoDelOrganizadorModerado (L848): el aviso del organizador llega a todos los que van sin que nadie lo lea antes: pasa por la auto-moderación (revisarTextoSuelto:
+     odio, estafa, inmigración, datos personales) ANTES de guardarse y salir; si lo marca, no sale y queda una marca para el equipo. */
+  avisoDelOrganizadorModerado() {
+    const G = "avisoDelOrganizadorModerado", F = "apps/web/lib/evt-cambios.ts", Mo = "apps/web/lib/moderacion.ts";
+    const t = sinComent(F), mo = sinComent(Mo);
+    const i = t.indexOf("export async function avisarAsistentes");
+    if (i < 0) return falla(G, F, 0, "falta avisarAsistentes()");
+    const cuerpo = t.slice(i, t.indexOf("/* ── Lo que ve el panel en la ficha del evento"));
+    const r = cuerpo.indexOf("revisarTextoSuelto("), g = cuerpo.indexOf("insert into event_notices");
+    if (r < 0 || g < 0 || r > g) falla(G, F, 0, "el aviso del organizador pasa por revisarTextoSuelto() ANTES de guardarse y salir");
+    if (!/if \(!rev\.ok\) return falla\(/.test(cuerpo)) falla(G, F, 0, "si la auto-moderación lo marca, el aviso NO sale");
+    if (!/export async function revisarTextoSuelto/.test(mo) || !/marcar\(c, \{ kind: "user"/.test(mo)) falla(G, Mo, 0, "revisarTextoSuelto() existe y deja una marca para el equipo");
+  },
+
+  /* 9n-2 · novedadAvisaUnaVez (L297): «Avisar a tus seguidores» sale UNA vez por novedad (la marca followers_notified_at se escribe en la misma transacción que
+     bloquea la fila y ANTES de avisar), solo si ya está en vivo, con tope de 2 por negocio al día, respeta «Lo que traen hoy» / «Ofertas» de cada vecino y las
+     ofertas tienen el tope de una al día por persona. */
+  novedadAvisaUnaVez() {
+    const G = "novedadAvisaUnaVez", F = "apps/web/lib/novedades.ts";
+    const t = sinComent(F), i = t.indexOf("export async function avisarSeguidores");
+    if (i < 0) return falla(G, F, 0, "falta avisarSeguidores()");
+    const c = t.slice(i);
+    if (!/for update of p/.test(c) || c.indexOf("followers_notified_at = now()") < 0 || c.indexOf("followers_notified_at = now()") > c.indexOf("avisarMuchos(")) falla(G, F, 0, "la novedad se marca como avisada (con la fila bloqueada) ANTES de avisar: una sola vez");
+    if (!/if \(p\.ya\)/.test(c) || !/if \(!p\.lista\)/.test(c) || !/p\.hoy >= MAX_AVISOS_DIA/.test(c)) falla(G, F, 0, "solo una vez, solo en vivo y con tope por día");
+    if (!/notif_prefs->>\(case when \$3::text = 'oferta' then 'of' else 'hoy' end\)/.test(c)) falla(G, F, 0, "respeta «Lo que traen hoy» y «Ofertas» de cada vecino");
+    if (!/nov_oferta_seguidores' and n\.created_at > now\(\) - interval '1 day'/.test(c)) falla(G, F, 0, "las ofertas: una al día por persona");
+  },
+
+  /* 9n-2 · programadoCruzaMedianoche (L260): los pedidos programados de un negocio cuyo horario cruza la medianoche (6 PM – 2 AM) se programan hasta una hora
+     antes de cerrar, con el reloj del negocio (su zona), no hasta las 11:30 PM: las horas de después de medianoche van como «24:30», «25:00». */
+  programadoCruzaMedianoche() {
+    const G = "programadoCruzaMedianoche", F = "apps/web/lib/pedir.ts", t = sinComent(F);
+    if (/m <= z - 60 && m < 1440/.test(t)) falla(G, F, 0, "los horarios programados no se cortan en la medianoche (m < 1440)");
+    if (!/m <= z - 60; m \+= 30\) slots\.push/.test(t) || !/de madrugada/.test(t)) falla(G, F, 0, "las horas de después de medianoche salen como «de madrugada»");
+    if (!/now = hm2m\(b\.hm\)/.test(t)) falla(G, F, 0, "la hora de ahora es la del negocio (b.hm, la zona de su ciudad)");
+  },
+
+  /* 9n-2 · eventosPanelConCursor (L972): Panel › Eventos trae lo vivo completo y lo PASADO de a 20 con cursor (fecha de inicio + id), nunca con OFFSET ni un límite
+     que corte lo próximo; «Ver más» pide la página siguiente solo de ESTE negocio. */
+  eventosPanelConCursor() {
+    const G = "eventosPanelConCursor", F = "apps/web/lib/evt.ts", A = "apps/web/app/panel/acciones-eventos.ts", U = "apps/web/app/panel/EventosPanel.tsx";
+    const t = sinComent(F), i = t.indexOf("export async function eventosDelNegocio");
+    if (i < 0) return falla(G, F, 0, "falta eventosDelNegocio()");
+    const cuerpo = t.slice(i, t.indexOf("export type EvtPanel"));
+    if (!/PASADOS_PAGINA = 20/.test(t) || !/\(e\.start_date, e\.id\) < \(\$2::date, \$3::bigint\)/.test(cuerpo)) falla(G, F, 0, "lo pasado va de a 20 con cursor (start_date, id)");
+    if (/\boffset\b/i.test(cuerpo.replace(/[^\n]*Sin OFFSET[^\n]*/g, ""))) falla(G, F, 0, "Panel › Eventos pagina con cursor, no con OFFSET");
+    if (!/pasadosPagina\(a\.negocio\.id/.test(sinComent(A))) falla(G, A, 0, "«Ver más» pide la página siguiente solo del negocio con acceso");
+    if (!/evtPasadosMas/.test(sinComent(U)) || !/Ver más/.test(readFileSync(U, "utf8"))) falla(G, U, 0, "Panel › Eventos tiene «Ver más» en Pasados y cancelados");
+  },
+
+  /* 9n-2 · negociosSinNegocio (L1466): quien entra a To'Latino Negocios sin un negocio no va a /publica (fuera del alcance de la app): /panel le muestra qué hacer
+     y siempre llega a Mi cuenta › Ajustes › Borrar mi cuenta. */
+  negociosSinNegocio() {
+    const G = "negociosSinNegocio", P = "apps/web/app/panel/page.tsx", S = "apps/web/app/panel/SinNegocio.tsx";
+    if (!existsSync(P) || !existsSync(S)) return falla(G, S, 0, "falta la pantalla de To'Latino Negocios sin negocio");
+    const p = sinComent(P), s = sinComent(S);
+    if (!/leerRotulo\(h\.get\("user-agent"\)\)\?\.app !== "negocio"\) redirect\("\/publica"\)/.test(p) || !/<SinNegocio/.test(p)) falla(G, P, 0, "en la app Negocios, /panel sin negocio muestra SinNegocio; en la web va a /publica");
+    if (!/router\.push\("\/cuenta\/ajustes"\)/.test(s)) falla(G, S, 0, "SinNegocio llega a Mi cuenta › Ajustes › Borrar mi cuenta");
+  },
+
+  /* 9n-2 · popularesPorLoMasPedido (L234): Populares = lo fijado y, después, lo más pedido en 30 días (con 3 pedidos entregados como mínimo, sin pasar de 6); el panel
+     muestra «Últimos 30 días» del plato con la MISMA definición (lib/menu-ventas.ts) que la página. */
+  popularesPorLoMasPedido() {
+    const G = "popularesPorLoMasPedido", V = "apps/web/lib/menu-ventas.ts", PD = "apps/web/lib/pedir.ts", MN = "apps/web/lib/menu.ts", MU = "apps/web/app/panel/Menu.tsx";
+    if (!existsSync(V)) return falla(G, V, 0, "falta lib/menu-ventas.ts");
+    const v = sinComent(V);
+    if (!/POPULAR_MIN = 3, POPULAR_MAX = 6/.test(v) || !/o\.status = 'done'/.test(v) || !/count\(distinct l\.operation_id\)/.test(v)) falla(G, V, 0, "Populares: 3 pedidos entregados como mínimo, hasta 6; un pedido cuenta una vez por plato");
+    if (!/populares\(F\.ventas/.test(sinComent(PD)) || !/VENTAS_SQL/.test(sinComent(PD))) falla(G, PD, 0, "la página arma Populares con lo más pedido (populares + VENTAS_SQL)");
+    if (!/v30, pop: populares\(v30/.test(sinComent(MN))) falla(G, MN, 0, "el panel calcula lo mismo (v30 y pop)");
+    if (!/ÚLTIMOS 30 DÍAS/.test(readFileSync(MU, "utf8"))) falla(G, MU, 0, "el editor del plato muestra «Últimos 30 días»");
+  },
+
+  /* 9n-2 · noShowSoloDelNegocio (L271): el restaurante ve cuántas veces no llegó ese cliente A SU NEGOCIO (último año); nunca lo de otros negocios. */
+  noShowSoloDelNegocio() {
+    const G = "noShowSoloDelNegocio", F = "apps/web/lib/reservas.ts", t = sinComent(F), i = t.indexOf("export async function mesaDetalle");
+    if (i < 0) return falla(G, F, 0, "falta mesaDetalle()");
+    const c = t.slice(i, t.indexOf("/* Cuántas solicitudes esperan respuesta del negocio"));
+    if (!/historial: \{ nos:/.test(c) || !/where business_id = \$1 and kind = 'table' and user_id = /.test(c)) falla(G, F, 0, "el historial de no-show se cuenta solo con el negocio de la reservación (business_id = $1)");
+  },
+
+  /* 9n-2 · anuncioDeNegociosEnElPanel (L1606): un anuncio con audience 'negocios' sale en Hoy del panel de los negocios de esa ciudad (y solo ahí). */
+  anuncioDeNegociosEnElPanel() {
+    const G = "anuncioDeNegociosEnElPanel", F = "apps/web/lib/panel.ts", P = "apps/web/app/panel/Panel.tsx", M = "packages/db/migrations/0146_panel.sql", H = "apps/web/lib/cms-home.ts";
+    if (!/a\.audience = 'negocios'/.test(sinComent(F)) || !/a\.city_id = \$1/.test(sinComent(F))) falla(G, F, 0, "el panel lee los anuncios vivos de 'negocios' de la ciudad del negocio");
+    if (!/\.\.\.d\.anuncios\.map/.test(sinComent(P))) falla(G, P, 0, "Hoy del panel muestra los anuncios para negocios");
+    if (!/pg_temp\.ampliar_check\('announcements', 'announcements_audience_check', array\['negocios'\]\)/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "el CHECK de announcements.audience se AMPLÍA con 'negocios'");
+    if (/audience = 'negocios'/.test(sinComent(H))) falla(G, H, 0, "los anuncios de negocios no salen en el Inicio de los vecinos");
   },
 };
 

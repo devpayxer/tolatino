@@ -1,3 +1,4 @@
+import { VENTAS_SQL, populares, type Ventas30 } from "./menu-ventas";
 import "server-only";
 import type { QueryResult, QueryResultRow } from "pg";
 import { db } from "./db";
@@ -137,11 +138,13 @@ function calcEstado(b: Base, R: [number, number][], usados: number, cap: number,
   else if (later && sig) { closedT = E2(`Abre a las ${hora(sig[0])}`, `Opens at ${hora(sig[0])}`); closedS = E2("Programa tu pedido desde ahora: sale a la hora que elijas.", "Schedule your order now: it goes out at the time you choose."); }
   else if (tarde) { closedT = E2("Ya no toma pedidos en línea hoy", "No more online orders today"); closedS = E2("Puedes ver el menú. Para pedir, llama o pasa por el local.", "You can browse the menu. To order, call or stop by."); }
   // Programar para hoy (cada 30 min): abierto → desde una hora después; antes de abrir → desde 30 min después de abrir; hasta una hora antes de cerrar.
+  // 9n-2 · Con el reloj DEL NEGOCIO (b.hm, su zona) y sin tope en la medianoche: un horario que cruza (6 PM – 2 AM) se programa hasta la 1 AM (L260); las horas de
+  // después de medianoche van como «24:30», «25:00» y salen «12:30 AM · de madrugada» (la fecha del pedido es la de hoy + esos minutos).
   const slots: PSlot[] = [];
   if (canOrd && b.scheduled_orders) {
     for (const [a, z] of R) {
       if (z <= now) continue;
-      for (let m = later && a > now ? mitad(a + 30) : mitad(Math.max(a, now) + 60); m <= z - 60 && m < 1440; m += 30) slots.push({ v: `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`, l: hora(m) });
+      for (let m = later && a > now ? mitad(a + 30) : mitad(Math.max(a, now) + 60); m <= z - 60; m += 30) slots.push({ v: `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`, l: m >= 1440 ? `${hora(m)} · ${E2("de madrugada", "after midnight")}` : hora(m) });
     }
   }
   const dia = new Date(`${b.hoy}T12:00:00`).toLocaleDateString(es ? "es-US" : "en-US", { weekday: "long", day: "numeric", month: "short" });
@@ -181,7 +184,10 @@ async function filas(c: Q, negocio: string, tz: string, lock = false, userId: st
       `select id::text, name, required, max_pick, options from option_groups where business_id = $1 and removed_at is null`, [negocio]);
   // Con un cliente de transacción (lock) van en fila: nunca dos consultas a la vez sobre el mismo cliente.
   const [s, i, g] = lock ? [await qS(), await qI(), await qG()] : await Promise.all([qS(), qI(), qG()]);
-  return { s: s.rows, i: i.rows, g: g.rows, tz };
+  // 9n-2 · Populares = lo fijado y, después, lo más pedido en 30 días (lib/menu-ventas.ts). Al cobrar (lock) no se calcula: no cambia el pedido.
+  const ventas: Ventas30 = {};
+  if (!lock) for (const r of (await c.query<{ id: string; pedidos: number; uds: number; cents: number }>(VENTAS_SQL, [negocio])).rows) ventas[r.id] = { pedidos: r.pedidos, uds: r.uds, cents: r.cents };
+  return { s: s.rows, i: i.rows, g: g.rows, tz, ventas };
 }
 
 /* Arma el menú público. `ref` = minuto de referencia para los horarios propios (ahora, o la hora en que abre). */
@@ -218,7 +224,7 @@ function armar(b: Base, F: Awaited<ReturnType<typeof filas>>, est: PEstado, es: 
     for (const k of Object.keys(items)) if (!cinco.has(k)) delete items[k];
   }
   const visibles = secs.flatMap((s) => s.items);
-  const pop = F.i.filter((i) => i.feat && items[i.id]).map((i) => i.id);
+  const pop = populares(F.ventas, F.i.filter((i) => i.feat && items[i.id]).map((i) => i.id), (id) => !!items[id]);
   const precios = visibles.map((id) => items[id]!.cents);
   return { secs, items, grps, pop, desde: precios.length ? Math.min(...precios) : 0, vacio: !visibles.length };
 }

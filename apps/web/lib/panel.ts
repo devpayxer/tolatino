@@ -102,11 +102,11 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
           from business_members where business_id = $1 and (status <> 'removed' or hidden_by_admin is not null)
          order by (kind = 'owner') desc, sort, invited_at nulls first, id`, [id]),
     db().query<{ v7: number; vhoy: number; vprueba: number; c7: number; cprueba: number }>(
-      `select (select coalesce(sum(n), 0)::int from business_views_daily where business_id = $1 and day > $2::date - 7) as v7,
-              (select coalesce(sum(n), 0)::int from business_views_daily where business_id = $1 and day = $2::date) as vhoy,
-              (select coalesce(sum(n), 0)::int from business_views_daily where business_id = $1 and day >= $3::timestamptz::date) as vprueba,
+      `select (select coalesce(sum(case when $4::boolean then unicos else n end), 0)::int from business_views_daily where business_id = $1 and day > $2::date - 7) as v7,
+              (select coalesce(sum(case when $4::boolean then unicos else n end), 0)::int from business_views_daily where business_id = $1 and day = $2::date) as vhoy,
+              (select coalesce(sum(case when $4::boolean then unicos else n end), 0)::int from business_views_daily where business_id = $1 and day >= $3::timestamptz::date) as vprueba,
               (select count(*)::int from contact_taps where business_id = $1 and at > now() - interval '7 days') as c7,
-              (select count(*)::int from contact_taps where business_id = $1 and at >= $3::timestamptz) as cprueba`, [id, b.hoy, desde]),
+              (select count(*)::int from contact_taps where business_id = $1 and at >= $3::timestamptz) as cprueba`, [id, b.hoy, desde, (await db().query<{ e: boolean }>(`select coalesce((select enabled from feature_flags where key = 'panel.vistas_unicas'), false) as e`)).rows[0]?.e === true]),
     db().query<{ n: number }>(`select count(*)::int as n from faqs where business_id = $1`, [id]),
     db().query<{ key: string; icon: string; label: Bi }>(`select key, icon, label from amenities where categories = '{}' or $1 = any(categories) order by (categories = '{}'), sort`, [b.cat]),
     misNegocios(acc.yo.id),
@@ -160,8 +160,12 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     `select key, day::text as dia, name from holiday_catalog where day >= current_date and day <= current_date + 365 order by day limit 16`)).rows;
   // 9n · Panel › Más › Lo que te avisamos (business_notif_prefs): los grupos apagados.
   const avOff = (await db().query<{ pref: string }>(`select pref from business_notif_prefs where business_id = $1 and off`, [id])).rows.map((x) => x.pref);
+  // 9n-2 · Los anuncios del Super Admin para negocios (announcements.audience = 'negocios'; vivos, de su ciudad): un aviso en Hoy (L1606). No los ven los vecinos.
+  const anuncios = (await db().query<{ id: string; text: Bi }>(
+    `select a.id::text, a.text from announcements a where a.city_id = $1 and a.audience = 'negocios' and a.retired_at is null and a.from_at <= now() and a.to_at > now() order by a.from_at desc, a.id desc limit 2`, [b.city])).rows
+    .map((x) => ({ id: x.id, text: x.text[lang] ?? x.text.es }));
   return {
-    especiales: esp, feriados: fer, avisosOff: avOff,
+    anuncios, especiales: esp, feriados: fer, avisosOff: avOff,
     resenas: rs, novedades: nv, cupones: cu,
     id, name: b.name, cat: b.cat, city: b.city, ciudad: b.ciudad, ciudadAbierta: b.ciudad_on, kind: acc.kind, partes: acc.partes, pro, verified: b.verified,
     trial: tr && tr.on ? tr : null, trialUsed: b.sub_used, onb, sells, mods: b.mods, evtAplica: b.evt_aplica, op: b.op, itemsW, items,

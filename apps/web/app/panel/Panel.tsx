@@ -9,6 +9,7 @@ import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelAccion as Accion, type PanelBloqueT as Bloque, type PanelFila as Fila } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type ComponentType, type ReactNode } from "react";
+import { traducirBorradas } from "@/lib/textos-cuenta";
 import type { DatosPanel } from "@/lib/panel";
 import { aBase, fmtHora, type DiaPanel } from "@/lib/panel-reglas";
 import { FOTOS_FREE, ITEMS_FREE, PRECIO_PRO, dinero } from "@/lib/plan";
@@ -60,7 +61,7 @@ import type { HerrRetail } from "@/lib/retail-comun";
 import type { OfiPanel } from "@/lib/oficios";
 import type { SvcPanel } from "@/lib/servicios";
 import { novBloques, novDetalle, type NovData } from "./NovedadesPanel";
-import { cupBloques, cupDetalle, type CupData } from "./CuponesPanel";
+import { cupBloques, cupDetalle, hoyCupon, type CupData } from "./CuponesPanel";
 import { hoyJobs, jobsBloques, jobsDetalle, type JobsData } from "./JobsPanel";
 import type { MenuPanel } from "@/lib/menu";
 import { evtBloques, evtDetalle, type EvtData } from "./EventosPanel";
@@ -131,7 +132,7 @@ export type Ctx = {
   ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData; nav: (href: string) => void; cpa?: CpaPanel | null; cpaAuto?: AutoPanel | null;
 };
 
-export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp }: { cpa?: CpaPanel | null; cpaAuto?: AutoPanel | null; d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; compraPro: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData }) {
+function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp }: { cpa?: CpaPanel | null; cpaAuto?: AutoPanel | null; d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; compraPro: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
@@ -360,6 +361,13 @@ export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, men
   );
 }
 
+/* 9n-2 · «Cuenta borrada» en TODOS los paneles (Apartados, Citas, Reservas, Rentas, Inscripciones, Fiestas, Noche…): en inglés se ve «Deleted account».
+   Un solo lugar para todo lo que el servidor manda (guardián cuentaBorradaBilingue). */
+export function Panel(props: Parameters<typeof PanelBase>[0]) {
+  const p = useMemo(() => traducirBorradas(props, props.lang === "es"), [props]);
+  return <PanelBase {...p} />;
+}
+
 function Cerrar({ onClick }: { onClick: () => void }): ReactNode {
   return <span role="button" aria-label="Cerrar" onClick={onClick} {...tec(onClick)} style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(11,14,18,.05)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="close" size={15} strokeWidth={2} /></span>;
 }
@@ -523,7 +531,7 @@ function pagina(c: Ctx): (Bloque | null)[] {
 
 /* Hoy (DASH-HOY): pedidos de Comida (2c). Citas, mensajes y reseñas llegan con sus bloques. */
 function hoy(c: Ctx): (Bloque | null)[] {
-  const { d, E2, es } = c, out: (Bloque | null)[] = [...avisosAdmin(c, "hoy")];
+  const { d, E2, es } = c, out: (Bloque | null)[] = [...avisosAdmin(c, "hoy"), ...d.anuncios.map((a): Bloque => ({ type: "note", tone: "info", icon: "bell", t: a.text }))];
   if (d.st.closedToday) out.push({ type: "note", tone: "warn", icon: "clock", t: E2("Cerraste por hoy: tu página dice «Cerrado hoy» y no recibes pedidos ni citas. Mañana abres normal.", "You closed for today: your page says “Closed today” and you get no orders or bookings. Tomorrow you open as usual."), cta: E2("Abrir", "Open"), onCta: () => c.run(() => cerrarPorHoy(d.id, false), E2("Abierto otra vez.", "Open again.")) });
   const [y, m, dd] = d.hoy.fecha.split("-").map(Number), hora = fmtHora(Number(d.hoy.hm.slice(0, 2)) + Number(d.hoy.hm.slice(3)) / 60);
   const fecha = es ? `${DIA_L[d.hoy.dow]![0]} ${dd} ${MES[m! - 1]![0].toUpperCase()}` : `${DIA_L[d.hoy.dow]![1]} ${MES[m! - 1]![1].toUpperCase()} ${dd}`;
@@ -539,6 +547,7 @@ function hoy(c: Ctx): (Bloque | null)[] {
   out.push(...hoyPedidos(c));
   out.push(...hoyMensajes(c));
   out.push(...hoyResenas(c));
+  out.push(...hoyCupon(c)); // 9n-2 · validar un cupón desde Hoy (L673)
   out.push(...hoyAyudas(c));
   out.push(...hoyAyudasCitas(c));
   out.push(...hoyPlanes(c));

@@ -1,7 +1,7 @@
 "use server";
 import { mismoOrigen } from "@/lib/cuenta";
 import { db } from "@/lib/db";
-import { guardarNovedad, moduloNovedades, pasoNovedad, responderComentario, type NovIn, type PasoNov } from "@/lib/novedades";
+import { avisarSeguidores, guardarNovedad, moduloNovedades, pasoNovedad, responderComentario, type NovIn, type PasoNov } from "@/lib/novedades";
 import { accesoPanel, type Acceso } from "@/lib/panel";
 import type { Res } from "./acciones";
 
@@ -18,13 +18,25 @@ async function auditar(a: Acceso, action: string, after: unknown) {
 }
 const PASOS = new Set<PasoNov>(["detener", "ya", "otravez", "fijar", "desfijar", "quitar"]);
 
-export async function novGuardar(id: string, p: NovIn): Promise<Res & { nid?: string }> {
+export async function novGuardar(id: string, p: NovIn): Promise<Res & { nid?: string; avisados?: number }> {
   const a = await entrar(id);
   if (!a) return SIN_ACCESO;
   const r = await guardarNovedad(a.negocio.id, p && typeof p === "object" ? p : ({} as NovIn), a.yo.id);
   if (!r.ok) return { ok: false, mensaje: r.msg };
   await auditar(a, p?.id ? "novedad.editar" : "novedad.publicar", { novedad: r.id, tipo: String(p?.kind ?? ""), titulo: String(p?.title ?? "").slice(0, 60) });
-  return { ok: true, nid: r.id };
+  // 9n-2 · «Avisar a tus seguidores» (L297): una vez por novedad, solo si ya está en vivo, con tope por día; el servidor decide si sale.
+  let avisados = 0;
+  if (p?.avisar === true) { const v = await avisarSeguidores(a.negocio.id, r.id, a.yo.id); if (v.ok) { avisados = v.n; await auditar(a, "novedad.avisar_seguidores", { novedad: r.id, n: v.n }); } }
+  return { ok: true, nid: r.id, avisados };
+}
+/* 9n-2 · «Avisar a tus seguidores» desde el detalle de una novedad en vivo (una vez por novedad; hasta 2 al día). */
+export async function novAvisar(id: string, nid: string): Promise<Res & { avisados?: number }> {
+  const a = await entrar(id);
+  if (!a) return SIN_ACCESO;
+  const v = await avisarSeguidores(a.negocio.id, String(nid ?? ""), a.yo.id);
+  if (!v.ok) return { ok: false, mensaje: v.msg };
+  await auditar(a, "novedad.avisar_seguidores", { novedad: String(nid), n: v.n });
+  return { ok: true, avisados: v.n };
 }
 export async function novPaso(id: string, nid: string, paso: PasoNov): Promise<Res> {
   const a = await entrar(id);

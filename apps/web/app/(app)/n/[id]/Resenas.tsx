@@ -150,7 +150,7 @@ export function propsTarjeta(c: Tarjeta, o: { es: boolean; negocio: string; summ
     source: { label: o.es ? src[0] : src[1], tone: src[2] }, facts: hechos(c, o.es), body: tb.body, translate: tb.translate,
     photos: c.fotos.map((u, i) => ({ image: `url(${u})`, onClick: o.onPhoto ? () => o.onPhoto!(i) : undefined })),
     recommend: !S && c.rec.length ? { label: E2("Recomienda:", "Recommends:"), text: c.rec.map((x) => (o.es ? x.es : x.en || x.es)).join(" · ") } : null,
-    reply: c.reply ? { kicker: `${E2("RESPUESTA DE ", "REPLY FROM ")}${o.negocio} · ${revWhen(c.reply.d, o.es)}`.toUpperCase(), text: tp?.translate ? <>{tp.body}<LineaTr t={tp.translate} /></> : c.reply.text } : null,
+    reply: c.reply ? { kicker: `${c.reply.offer ? E2("QUIERE ARREGLARLO · ", "WANTS TO MAKE IT RIGHT · ") : E2("RESPUESTA DE ", "REPLY FROM ")}${o.negocio} · ${revWhen(c.reply.d, o.es)}${c.reply.ed ? E2(" · EDITADA", " · EDITED") : ""}`.toUpperCase(), text: tp?.translate ? <>{tp.body}<LineaTr t={tp.translate} /></> : c.reply.text } : null,
     helpful: foot ? (!c.mine ? { label: E2("Útil", "Helpful") + (hN ? ` · ${hN}` : ""), bg: hOn ? "var(--tl-action-tint)" : "var(--tl-white)", border: hOn ? "rgba(75,55,245,.35)" : "rgba(11,14,18,.14)", color: hOn ? "var(--tl-action)" : "var(--tl-ink)", onClick: o.onHelp }
       : hN > 0 ? { label: E2("Útil", "Helpful") + ` · ${hN}` } : null) : null,
     edit: foot && c.mine ? { label: E2("Ver y editar", "View and edit"), onClick: o.onEdit } : null,

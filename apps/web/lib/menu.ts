@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "./db";
+import { VENTAS_SQL, populares, type Ventas30 } from "./menu-ventas";
 
 /* Menú del negocio (Panel v2 · Lo que vendes · Menú; modelo de datos §4). Lo que se calcula al leer, sin tareas
    programadas: «agotado hoy» vuelve a las 6 AM del día siguiente; «hasta el viernes», el viernes a las 6 AM; la
@@ -16,7 +17,8 @@ export type MItem = {
 export type MSec = { id: string; name: Bi; visible: boolean; avail: string; av: Av | null; sort: number };
 export type MGrp = { id: string; name: Bi; required: boolean; max: number; options: { es: string; en: string; cents: number; on: boolean }[] };
 export type MCfg = { last: number; pause: string | null; pauseKind: string | null; busy: number; low: number };
-export type MenuPanel = { mod: "menu" | "shop"; sections: MSec[]; items: MItem[]; groups: MGrp[]; cfg: MCfg; off: { menu: string | null; pedidos: string | null } };
+/* 9n-2 · `v30`: pedidos, unidades y dinero de cada plato en los últimos 30 días; `pop`: los que hoy salen en Populares (fijados + más pedidos). */
+export type MenuPanel = { mod: "menu" | "shop"; sections: MSec[]; items: MItem[]; groups: MGrp[]; cfg: MCfg; off: { menu: string | null; pedidos: string | null }; v30: Ventas30; pop: string[] };
 
 /* Expresiones SQL del estado real (zona de la ciudad del negocio). */
 export const AGOTADO_SQL = (i: string, tz: string) => `(${i}.sold_out and (${i}.sold_out_until = 'manual' or ${i}.sold_out_at is null or (now() at time zone ${tz}) < case
@@ -26,7 +28,7 @@ export const QUEDAN_SQL = (i: string, tz: string) => `(case when ${i}.stock_mode
 
 export async function menuPanel(negocio: string, mod: "menu" | "shop" = "menu"): Promise<MenuPanel> {
   const tz = `(select c.timezone from cities c join businesses b on b.city_id = c.id where b.id = $1)`;
-  const [s, i, g, c, b] = await Promise.all([
+  const [s, i, g, c, b, vt] = await Promise.all([
     db().query<MSec>(`select id::text, name, visible, avail, av, sort from item_sections where business_id = $1 and module = $2 and removed_at is null order by sort, item_sections.id`, [negocio, mod]),
     db().query<MItem & { agotado: boolean; quedan: number }>(
       `select i.id::text, i.section_id::text as sec, i.name, i.descr as "desc", i.price_cents as cents, i.tax_pct::float as tax, i.photos, i.sell, i.channels as ch,
@@ -40,7 +42,10 @@ export async function menuPanel(negocio: string, mod: "menu" | "shop" = "menu"):
     db().query<{ last_min: number; pause_until: string | null; pause_kind: string | null; busy_min: number; low_alert: number }>(
       `select last_min, case when pause_until > now() then pause_until end as pause_until, case when pause_until > now() then pause_kind end as pause_kind, busy_min, low_alert from menu_settings where business_id = $1`, [negocio]),
     db().query<{ off: Record<string, { reason?: string }> }>(`select modules_off as off from businesses where id = $1`, [negocio]),
+    mod === "menu" ? db().query<{ id: string; pedidos: number; uds: number; cents: number }>(VENTAS_SQL, [negocio]) : Promise.resolve({ rows: [] as { id: string; pedidos: number; uds: number; cents: number }[] }),
   ]);
+  const v30: Ventas30 = {};
+  for (const r of vt.rows) v30[r.id] = { pedidos: r.pedidos, uds: r.uds, cents: r.cents };
   const cf = c.rows[0];
   const off = b.rows[0]?.off ?? {};
   return {
@@ -49,5 +54,6 @@ export async function menuPanel(negocio: string, mod: "menu" | "shop" = "menu"):
     groups: g.rows.map(({ max_pick, ...x }) => ({ ...x, max: max_pick })),
     cfg: { last: cf?.last_min ?? 15, pause: cf?.pause_until ?? null, pauseKind: cf?.pause_kind ?? null, busy: cf?.busy_min ?? 0, low: cf?.low_alert ?? 3 },
     off: { menu: off.menu?.reason ?? null, pedidos: off.pedidos?.reason ?? null },
+    v30, pop: populares(v30, i.rows.filter((x) => x.feat && !x.hidden).map((x) => x.id)),
   };
 }

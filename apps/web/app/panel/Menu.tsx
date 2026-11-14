@@ -5,6 +5,8 @@
    Compa (Fase 7); las cifras de los últimos 30 días, con los pedidos. */
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { MenuPanel, MGrp, MItem, MSec, Av } from "@/lib/menu";
+import { POPULAR_MIN } from "@/lib/menu-ventas";
+import { panelTraducir } from "./acciones-traducir";
 import { subirFoto } from "@/lib/subir-foto";
 import { ITEMS_FREE, TOPE_FREE } from "@/lib/plan";
 import { categoriaGuardar, categoriaMover, categoriaQuitar, categoriaVisible, grupoDuplicar, grupoGuardar, grupoOpcion, grupoQuitar, menuAjustes, platoAgotar, platoCuenta, platoDuplicar, platoGuardar, platoMover, platosLote, type PlatoIn, type ShopIn } from "./acciones-menu";
@@ -320,7 +322,15 @@ function platoDet(c: Ctx, iid: string): Sec {
   const fld = (k: string, prop: "name" | "en" | "desc" | "descEn" | "price", o: { max: number; area?: boolean; ph?: string; help?: string; pre?: string; num?: boolean }): Bloque => ({ type: "field", k, val: String(d[prop] ?? ""), area: o.area, rows: 2, max: o.max, ph: o.ph, help: o.help, pre: o.pre, im: o.num ? "decimal" : "text",
     count: o.num ? undefined : `${String(d[prop] ?? "").length}/${o.max}`, onChange: (v) => setF({ [prop]: o.num ? v.replace(/[^0-9.]/g, "").slice(0, 8) : v } as Partial<FPlato>) });
   out.push({ type: "group", k: E2("NOMBRE Y DESCRIPCIÓN", "NAME AND DESCRIPTION") }, fld(E2("NOMBRE", "NAME"), "name", { max: 60, ph: E2("Ej. La bandera", "e.g. La bandera") }), fld(E2("DESCRIPCIÓN", "DESCRIPTION"), "desc", { max: 140, area: true, ph: E2("Qué lleva. Ej. Cuarto de pollo frito con tostones.", "What it comes with. e.g. Quarter fried chicken with tostones.") }));
-  if (more) out.push({ type: "group", k: E2("EN INGLÉS", "IN ENGLISH") }, fld(E2("NOMBRE", "NAME"), "en", { max: 60, help: E2("Si lo dejas vacío, en inglés se ve el nombre en español.", "If empty, the Spanish name shows in English.") }), fld(E2("DESCRIPCIÓN", "DESCRIPTION"), "descEn", { max: 140, area: true }));
+  // 9n-2 · «Traducir con El Compa» (L319): el nombre y la descripción en inglés con el traductor propio; se revisa antes de guardar.
+  const traducir = () => {
+    if (!d.name.trim()) { c.toast(E2("Escribe primero el nombre en español.", "Write the Spanish name first.")); return; }
+    c.run(() => panelTraducir(c.d.id, [d.name, d.desc]), E2("Traducido. Revísalo antes de guardar.", "Translated. Check it before saving."), (r) => {
+      const en = (r.en ?? []) as string[]; if (!en.length) return;
+      setF({ en: (en[0] ?? "").slice(0, 60), descEn: (en[1] ?? "").slice(0, 140) });
+    });
+  };
+  if (more) out.push({ type: "group", k: E2("EN INGLÉS", "IN ENGLISH"), link: E2("Traducir con El Compa", "Translate with El Compa"), onLink: traducir }, fld(E2("NOMBRE", "NAME"), "en", { max: 60, help: E2("Si lo dejas vacío, en inglés se ve el nombre en español.", "If empty, the Spanish name shows in English.") }), fld(E2("DESCRIPCIÓN", "DESCRIPTION"), "descEn", { max: 140, area: true }));
   const req = d.grp.map((k) => M.groups.find((g) => g.id === k)).filter((g): g is MGrp => !!g && g.required && g.options.length > 0);
   const lo = pr + req.reduce((a, g) => a + Math.min(...g.options.map((o) => o.cents)) / 100, 0), hi = pr + req.reduce((a, g) => a + Math.max(...g.options.map((o) => o.cents)) / 100, 0);
   out.push({ type: "group", k: E2("CATEGORÍA Y PRECIO", "CATEGORY AND PRICE"), link: E2("Nueva categoría", "New category"), onLink: () => c.det("mcat:new") },
@@ -371,6 +381,13 @@ function platoDet(c: Ctx, iid: string): Sec {
     out.push({ type: "group", k: E2("PARA EL CLIENTE", "FOR THE CLIENT") }, { type: "chips", k: E2("LLEVA O ES", "CONTAINS OR IS"), help: E2("AYUDA CON ALERGIAS", "HELPS WITH ALLERGIES"), items: MTAGS.map((t) => ({ l: es ? t[1] : t[2], v: d.tags.includes(t[0]) ? "selected" : "filter", onClick: () => setF({ tags: d.tags.includes(t[0]) ? d.tags.filter((x) => x !== t[0]) : [...d.tags, t[0]] }) })) },
       { type: "step", t: E2("Tiempo extra de cocina", "Extra kitchen time"), s: E2("Se suma a tu tiempo de preparación cuando lo piden.", "Added to your prep time when ordered."), v: d.extra ? `+${d.extra} min` : E2("Ninguno", "None"), onM: () => setF({ extra: Math.max(0, d.extra - 5) }), onP: () => setF({ extra: Math.min(60, d.extra + 5) }) },
       { type: "rows", items: [{ icon: "star", t: E2("Fijar en Populares", "Pin to Popular"), s: E2("Sale arriba en tu menú. Si no, Populares se arma con lo más pedido.", "Shows at the top of your menu. Otherwise Popular uses your best sellers."), tgOn: d.feat, onTg: () => setF({ feat: !d.feat }) }] });
+  }
+  // 9n-2 · «Últimos 30 días» del plato (L234): pedidos, vendido y su puesto en Populares (lo fijado va primero; después, lo más pedido, con 3 pedidos como mínimo).
+  if (!isNew && !shop && it0) {
+    const v = M.v30[iid] ?? { pedidos: 0, uds: 0, cents: 0 }, rk = M.pop.indexOf(iid), falta = Math.max(0, POPULAR_MIN - v.pedidos);
+    out.push({ type: "group", k: E2("ÚLTIMOS 30 DÍAS", "LAST 30 DAYS") },
+      { type: "kv", items: [{ k: E2("PEDIDOS", "ORDERS"), v: String(v.pedidos) }, { k: E2("VENDIDO", "SOLD"), v: fp(v.cents) }, { k: E2("UNIDADES", "UNITS"), v: String(v.uds) },
+        { k: E2("PUESTO", "RANK"), v: rk >= 0 ? (it0.feat ? E2("Fijado en Populares", "Pinned to Popular") : E2(`${rk + 1}.º en Populares`, `No. ${rk + 1} in Popular`)) : v.pedidos ? E2(`Faltan ${falta} pedidos para Populares`, `${falta} more orders for Popular`) : E2("Sin pedidos todavía", "No orders yet") }] });
   }
   const miss = [d.shop?.k === "talla" && !d.shop.tallas.length ? E2("tallas", "sizes") : null, d.name.trim().length < 2 ? E2("nombre", "name") : null, pr > 0 ? null : E2("precio", "price"), d.sec ? null : E2("categoría", "category"), d.sell && !d.ch.length ? E2("delivery o pickup", "delivery or pickup") : null, d.avail === "own" && d.av && !d.av.d.length ? E2("días de su horario", "days for its hours") : null].filter(Boolean), valid = !miss.length;
   if (miss.length && F.dirty) out.push({ type: "note", tone: "warn", t: E2(`Para guardar falta: ${miss.join(" · ")}.`, `To save, add: ${miss.join(" · ")}.`) });

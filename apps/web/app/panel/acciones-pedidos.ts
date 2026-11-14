@@ -40,6 +40,14 @@ export async function pedidoPaso(id: string, numero: string, paso: Paso): Promis
   return { ok: true };
 }
 
+/* 9n-2 · «Pedir reseña» (L248) en un pedido entregado: el cliente recibe «¿Cómo estuvo?» (campana y, si no abre la app, SMS). Una vez por pedido. */
+export async function pedidoPedirResena(id: string, numero: string): Promise<Res> {
+  const a = await entrar(id, "ord");
+  if (!a) return SIN_ACCESO;
+  const r = await (await import("@/lib/resena-pedir")).pedirResena(a.negocio.id, String(numero ?? ""), a.yo.id);
+  return r.ok ? { ok: true } : { ok: false, mensaje: r.msg };
+}
+
 /* Delivery con una app externa: el enlace de seguimiento del pedido (el cliente lo ve en su pedido). */
 export async function pedidoSeguimiento(id: string, numero: string, url: string): Promise<Res> {
   const a = await entrar(id, "ord");
