@@ -181,7 +181,8 @@ const reset = () => {
   await yd.screenshot({ path: OUT + 'h4if-me-lo-devolvieron-d.png', fullPage: true });
   await clic(yd.getByRole('button', { name: 'Me lo devolvieron' }));
   ok(await espera(() => AY(V2, "h.status || '|' || h.closed_by || '|' || h.outside_refund || '|' || h.refunded_cents"), 'resolved|user|confirmed|0') === 'resolved|user|confirmed|0', '«Me lo devolvieron»: cerrada por la persona, nada devuelto por la app');
-  ok(sql(`select count(*) from notifications where ref_id = '${HN2}' and tpl = 'biz_help_devuelto'`) !== '0', 'al dealer le llega la confirmación');
+  // 9b-3 · El aviso sale DESPUÉS de guardar «resuelta» (lib/ayuda-cita: update y luego avisarAyudaCita): se espera, no se mira al instante (barajada, una vez).
+  ok(await espera(() => sql(`select count(*) from notifications where ref_id = '${HN2}' and tpl = 'biz_help_devuelto'`) !== '0', true) === true, 'al dealer le llega la confirmación');
 
   // ── 4 · Iglesias: reseña de visitante (no cuenta como verificada) · «Me pidieron dinero por la ayuda» → directo, «Pedir fecha» en pausa → sanción ──
   await m.goto(`${B}/n/${FE}/resena`); ok(await ve(m.getByText('¿LA AYUDA FUE GRATIS?')), 'reseña de Iglesias: sus preguntas');

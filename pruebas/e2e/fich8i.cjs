@@ -183,10 +183,12 @@ const env = ENT.env; // los secretos de la corrida (pruebas/servir/servir.sh)
       if (!guardar) { await espera(async () => await boton(pr, /^Pagar \$/).count() > 0); await boton(pr, /^Pagar \$/).filter({ visible: true }).first().click(); }
       return espera(async () => /cuenta de revisión/.test(await texto(pr)), 20000);
     };
+    // 9b-3 · Lo de ESTA prueba, desde ahora: barajada, la anterior pudo cobrar con la Visa del simulador en los últimos 2 minutos o anotar otro pago bloqueado.
+    const T8 = sql(`select now()`);
     ok(await pagarBoleto(true), 'guardar la tarjeta: «Esta es una cuenta de revisión: no guarda tarjetas…»');
     ok(await pagarBoleto(false), 'pagar con una tarjeta sin guardar: «Esta es una cuenta de revisión: no paga con tarjeta…» (la pasarela)');
     await pr.screenshot({ path: `${OUT}f8i-revision-no-paga-390.png` });
-    ok(sql(`select count(*) from review_account_log where kind = 'pago_bloqueado'`) === '1' && sql(`select count(*) from payment_methods where user_id = '${uid}'`) === '0' && sql(`select count(*) from sim_intents where card like 'pm_sim_visa_4242%' and created_at > now() - interval '2 minutes'`) === '0', 'anotado como pago bloqueado; ni tarjeta guardada ni cobro en el simulador');
+    ok(sql(`select count(*) from review_account_log where kind = 'pago_bloqueado' and at >= '${T8}'`) === '1' && sql(`select count(*) from payment_methods where user_id = '${uid}'`) === '0' && sql(`select count(*) from sim_intents where card like 'pm_sim_visa_4242%' and created_at >= '${T8}'`) === '0', 'anotado como pago bloqueado; ni tarjeta guardada ni cobro en el simulador');
     // Ve solo lo suyo: el negocio de revisión está oculto para todos y su panel es solo ese negocio.
     const anon = await pagina('anon', 390);
     const rn = await anon.goto(B + '/n/revision-tolatino'); const tn = await texto(anon);
