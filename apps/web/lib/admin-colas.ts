@@ -415,3 +415,16 @@ export async function negocioCorto(id: string) {
       where b.id = $1`, [id])).rows[0];
   return b ? { ...b, phone: telefonoBonito(b.phone) } : null;
 }
+
+/* 9n · Colas › Ajustes (solo un Admin): quién ve cada cola (queue_roles), los roles, los feriados del equipo y las ciudades. Los plazos, en
+   Configuración › Colas (un solo lugar). */
+export type AjustesColas = { roles: { key: string; nombre: string }[]; vis: Record<string, string[]>; feriados: { id: string; dia: string; ciudad: string | null; nombre: string }[]; ciudades: { id: string; nombre: string }[] };
+export async function ajustesColas(): Promise<AjustesColas> {
+  const [r, v, f, c] = await Promise.all([
+    db().query<{ key: string; nombre: string }>(`select key, name->>'es' as nombre from staff_roles order by sort`),
+    db().query<{ queue: string; roles: string[] | null }>(`select queue, array_agg(role order by role) filter (where allowed) as roles from queue_roles group by queue`),
+    db().query<{ id: string; dia: string; ciudad: string | null; nombre: string }>(`select h.id::text, h.day::text as dia, ci.name as ciudad, h.name->>'es' as nombre from staff_holidays h left join cities ci on ci.id = h.city_id where h.status = 'active' and h.day >= current_date - 7 order by h.day limit 60`),
+    db().query<{ id: string; nombre: string }>(`select id, name as nombre from cities order by name`),
+  ]);
+  return { roles: r.rows, vis: Object.fromEntries(v.rows.map((x) => [x.queue, x.roles ?? []])), feriados: f.rows, ciudades: c.rows };
+}

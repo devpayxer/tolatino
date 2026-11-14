@@ -389,16 +389,15 @@ create table if not exists business_notif_prefs (
 );
 -- Qué grupo apaga cada aviso al negocio (lo que no tiene grupo no se apaga: dinero en disputa, sanciones, seguridad).
 update notif_templates set biz_pref = case
-    when key in ('biz_resena') or key like 'biz\_rev%' then 'resenas'
-    when key like 'evt\_venta%' or key like 'evt\_aforo%' or key like 'biz\_evt%' then 'eventos'
-    when key in ('biz_quedan_pocos') then 'inventario'
-    when key like 'biz\_cita%' or key like 'biz\_apt%' then 'citas'
-    when key like 'biz\_rsv%' or key like 'biz\_mesa%' then 'reservas'
-    when key like 'biz\_ord%' or key like 'biz\_merc%' or key = 'biz_dlv_issue' or key like 'biz\_oferta%' then 'pedidos'
-    when key like 'biz\_msg%' then 'mensajes'
-    when key like 'biz\_equipo%' then 'equipo'
+    when key = 'biz_resena' then 'resenas'
+    when key in ('evt_venta', 'evt_aforo90', 'evt_venta_congelada') then 'eventos'
+    when key = 'biz_quedan_pocos' then 'inventario'
+    when key ~ '^biz_(cita|apartado|hold_fallo|sal_(cita|cx|tarde|alt_ok|seg_ok)|pro_(cita|ok|no|cx)|preest|pq|est_ok|xtra_|precio_|vis($|_)|insc|fiesta|viaje|renta|plan_|em$|envio|mudanza|req)' or key ~ '^evp_biz_(pide|cx|ok|no|cambio_ok|cambio_no|recordatorio)' then 'citas'
+    when key ~ '^biz_(rsv|noche)' then 'reservas'
+    when key ~ '^biz_(merc|dlv_issue|oferta_)' then 'pedidos'
+    when key = 'biz_msg' then 'mensajes'
     else null end
- where grp = 'biz' and biz_pref is null and key not in ('biz_dispute', 'biz_dispute_end', 'biz_help_sancion', 'biz_dlv_issue_crit');
+ where grp = 'biz' and biz_pref is null;
 
 -- ════════════════════ AVISOS NUEVOS ════════════════════
 insert into notif_templates (key, grp, pref, sms, sms_mode, push, app, title, body) values
@@ -448,5 +447,9 @@ insert into config_keys (key, min, max, def, unit, section, label, help, editabl
   ('cola_sla_rec', 1, 720, 168, '{"es":"horas","en":"hours"}', 'colas', '{"es":"Plazo · Recomendaciones de vecinos","en":"Deadline · Neighbor recommendations"}', null, true, null, null, 1132),
   ('cola_sla_entrega', 1, 720, 24, '{"es":"horas","en":"hours"}', 'colas', '{"es":"Plazo · Incidencias de entrega","en":"Deadline · Delivery incidents"}', null, true, null, null, 1133)
 on conflict (key) do nothing;
+
+-- 9n · Lo que estaba «en solo lectura» y ya se lee en su texto: los grupos cancelados que abren un caso (Colas › Grupos que no abrieron dice el
+-- número de Configuración, lib/colas.ts textoCola). Los demás siguen en solo lectura hasta que sus textos lean el valor (LAUNCH «Fase 9 · 9n»).
+update config_keys set editable = true, bloqueo = null where key in ('insc_grupos_n', 'insc_grupos_dias') and not editable;
 
 commit;

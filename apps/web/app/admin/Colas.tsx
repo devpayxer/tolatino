@@ -7,11 +7,14 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Caso, CasoLista } from "@/lib/admin-colas";
-import { AYUDA_DE, COLAS, MOTIVO_RESENA, type Cola } from "@/lib/colas";
+import { AYUDA_DE, COLAS, MOTIVO_RESENA, ORDEN_COLAS, textoCola, type Cola } from "@/lib/colas";
 import { motivoAyuda, quiereAyuda } from "@/lib/ayuda-motivos";
 import { cuerpoComunidad, tituloComunidad } from "./ColasComunidad";
 import { cuerpoEventos, tituloEventos } from "./ColasEventos";
 import { dlvResolver } from "./acciones-repartidores";
+import { asignarCaso, colaVisibilidad, equipoDeCola, feriadoEquipo, quitarFeriadoEquipo, tomarLote } from "./acciones-colas";
+import type { AjustesColas } from "@/lib/admin-colas";
+
 import { crearSemilla,
  decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, decidirNoche, decidirEstafa, pausaEstafa, decidirVivienda, type ResAdm, verNinoCaso } from "./acciones-colas";
 import { compaHilo } from "./acciones-compa";
@@ -76,8 +79,9 @@ export function useToast() {
 }
 
 
-export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeAprobar, apelarDias = 0, slas = {} }: {
+export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeAprobar, apelarDias = 0, slas = {}, puedeRepartir = false, ajustes = null, esAdmin = false, cfgTxt = {} }: {
   casos: CasoLista[]; conteo: Record<string, number>; vencidos: number; total: number; visibles: Cola[]; caso: Caso | null; puedeAprobar: boolean; apelarDias?: number; slas?: Partial<Record<Cola, number>>;
+  puedeRepartir?: boolean; ajustes?: AjustesColas | null; esAdmin?: boolean; cfgTxt?: Record<string, number>;
 }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
@@ -85,6 +89,9 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
   const [checks, setChecks] = useState<Record<string, boolean>>({});
+  // 9n · Lote en escritorio (elegir varios → Tomar / Asignar a… / Soltar) y los atajos J/K (siguiente/anterior) · A (aprobar) · R (rechazar).
+  const [sel, setSel] = useState<string[] | null>(null);
+  const actsRef = useRef<{ l: string; v?: string; off?: boolean; onClick: () => void }[]>([]);
   const [pend, start] = useTransition();
   // 7g · El copiloto en una ayuda escalada (cola «sop»): el borrador va al mensaje de «Resolver con un mensaje»; nada se envía solo.
   const [cop, setCop] = useState<(Extract<BorradorCopiloto, { ok: true }> & { caso: string }) | null>(null), [copBusy, setCopBusy] = useState(false);
@@ -108,11 +115,37 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
     { type: "chips", items: [["mios", "Míos"], ["sin", "Sin asignar"], ["venc", "Vencidos"]].map(([k, l]) => ({ l: l!, v: filtro === k ? "selected" : "filter", onClick: () => ir({ f: filtro === k ? null : k! }) })) },
   ];
   const regla = cola ? COLAS[cola] : null;
+  const asignarA = (ids: string[]) => start(async () => {
+    const eq = await equipoDeCola(ids[0]!);
+    if (!eq.length) { setToast("Nadie más del equipo trabaja esa cola en esa ciudad."); return; }
+    setConf({ titulo: ids.length === 1 ? "Asignar el caso a…" : `Asignar ${ids.length} casos a…`, cta: "Asignar", elegir: { label: "PERSONA DEL EQUIPO", items: eq.map((x) => ({ k: x.id, l: x.nombre })) },
+      sub: "Le sale en «Míos». Si no lo decide en el tiempo de Configuración › Colas, vuelve a la cola. Queda en la auditoría.", ini: "Reparto del día", plantillas: ["Reparto del día", "Sabe de este tema", "Cubre a alguien de vacaciones"],
+      hacer: async (_m, e) => { const r = await asignarCaso(ids, e); if (r.ok) setSel(null); return r; } });
+  });
+  // Atajos de teclado (escritorio): no se activan escribiendo en un campo.
+  useEffect(() => {
+    if (!desk) return;
+    const f = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (e.metaKey || e.ctrlKey || e.altKey || conf || (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)))) return;
+      const k = e.key.toLowerCase(), i = casos.findIndex((x) => x.id === caso?.id);
+      if (k === "j" || k === "k") {
+        const n = casos[k === "j" ? Math.min(casos.length - 1, i + 1) : Math.max(0, i < 0 ? 0 : i - 1)];
+        if (n && n.queue !== "ticket") { e.preventDefault(); ir({ caso: n.id }); }
+      } else if ((k === "a" || k === "r") && caso) {
+        const a = actsRef.current.filter((x) => !x.off), b = k === "a" ? a.find((x) => x.v !== "danger") : a.find((x) => x.v === "danger");
+        if (b) { e.preventDefault(); b.onClick(); }
+      }
+    };
+    window.addEventListener("keydown", f);
+    return () => window.removeEventListener("keydown", f);
+  }, [desk, casos, caso?.id, conf]); // eslint-disable-line react-hooks/exhaustive-deps
   const ancho = desk && !(lado && caso);
   const tarjetas = casos.map((x) => (
     <A.QueueCard key={x.id} icon={COLAS[x.queue].icon} state={x.esp.state} title={x.title} sub={x.sub} meta={COLAS[x.queue].es}
       priority={x.priority === "alta" ? "ALTA" : undefined} who={x.who} sla={x.esp.label} assignee={x.assignee ? { name: x.assignee } : undefined}
-      wide={ancho} columns={ancho ? "40px minmax(0,1.6fr) minmax(0,1fr) auto" : "40px minmax(0,1fr) auto"} active={caso?.id === x.id} onClick={() => (x.queue === "ticket" && x.tk ? router.push(`/admin/soporte?caso=${x.tk}`) : ir({ caso: x.id }))} />));
+      wide={ancho} columns={ancho ? "40px minmax(0,1.6fr) minmax(0,1fr) auto" : "40px minmax(0,1fr) auto"} active={sel ? sel.includes(x.id) : caso?.id === x.id}
+      onClick={() => (sel ? (x.queue === "ticket" ? setToast("Un caso de Soporte se trabaja en Soporte.") : setSel(sel.includes(x.id) ? sel.filter((y) => y !== x.id) : [...sel, x.id])) : x.queue === "ticket" && x.tk ? router.push(`/admin/soporte?caso=${x.tk}`) : ir({ caso: x.id }))} />));
 
   const detalle = caso ? cuerpo() : null;
   function cuerpo(): ReactNode {
@@ -504,6 +537,9 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
     if (evt) { cuerpoB.push(...evt.bloques); acts = evt.acts; extra = null; }
     const arriba = k.queue === "medios" || ("cambio" in k && !!k.cambio);
     if (conf) return <><PanelBloques bloques={[out[0]!]} h1={22} /><ConfirmarMotivo c={conf} desk={false} onBack={() => setConf(null)} onDone={hecho} /></>;
+    // 9n · Asignar este caso a alguien del equipo (quien reparte) y lo que hacen los atajos A/R.
+    if (puedeRepartir) acts = [...acts, { l: k.assigned_to ? "Asignar a otra persona" : "Asignar a…", v: "secondary", icon: "users", onClick: () => asignarA([k.id]) }];
+    actsRef.current = k.puedeDecidir ? acts : [];
     return (
       <>
         <PanelBloques bloques={out} h1={22} />
@@ -518,14 +554,41 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
     );
   }
 
+  // 9n · Lote (escritorio): la barra de selección del sistema (SelectionBar) con Tomar, Asignar a… y Soltar.
+  const lote: Bloque | null = !desk || !puedeAprobar ? null : sel ? { type: "bulk", t: `${sel.length} ${sel.length === 1 ? "elegido" : "elegidos"}`, allL: "Todos", onAll: () => setSel(casos.filter((x) => x.queue !== "ticket").map((x) => x.id)), onClose: () => setSel(null),
+    acts: [{ l: "Tomar", icon: "check", off: !sel.length || pend, onClick: () => run(() => tomarLote(sel), () => setSel(null)) },
+      ...(puedeRepartir ? [{ l: "Asignar a…", icon: "users", off: !sel.length || pend, onClick: () => asignarA(sel) }, { l: "Soltar", icon: "close", off: !sel.length || pend, onClick: () => run(() => asignarCaso(sel, null), () => setSel(null)) }] : [])] }
+    : { type: "acts", items: [{ l: "Elegir varios", v: "secondary", icon: "check", onClick: () => { setSel([]); ir({ caso: null }); } }, ...(esAdmin ? [{ l: "Quién ve cada cola · feriados", v: "secondary", icon: "users", onClick: () => ir({ ajustes: "1", caso: null }) }] : [])] };
   const columnaLista = (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
       <PanelBloques bloques={lista} h1={desk ? 26 : 22} />
-      {regla ? <A.AdminNote tone="ink" icon={regla.icon}>{`Plazo de esta cola: ${(cola && slas[cola]) ?? regla.sla} h${regla.regla ? ` · ${regla.regla[0]}` : ""}`}</A.AdminNote> : null}
+      {lote ? <PanelBloques bloques={[lote]} /> : null}
+      {desk && !sel ? <A.AdminNote tone="ink" icon="info">Atajos: J siguiente · K anterior · A aprobar · R rechazar.</A.AdminNote> : null}
+      {regla ? <A.AdminNote tone="ink" icon={regla.icon}>{`Plazo de esta cola: ${(cola && slas[cola]) ?? regla.sla} h${regla.regla ? ` · ${textoCola(regla.regla[0], cfgTxt)}` : ""}`}</A.AdminNote> : null}
       {casos.length ? <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{tarjetas}</div>
         : <PanelBloques bloques={[{ type: "empty", icon: "check", t: "Nada por aquí", s: "Esta cola está al día con los filtros que elegiste." }]} />}
     </div>
   );
+  if (conf && !caso) return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
+      <PanelBloques bloques={[{ type: "head", eye: "COLAS", t: conf.titulo, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={hecho} />
+      <Toast t={toast} desk={desk} />
+    </div>);
+  // 9n · Colas › Ajustes (solo un Admin): quién ve cada cola, los plazos (en Configuración › Colas) y los feriados del equipo.
+  if (ajustes) {
+    const AB: Bloque[] = [{ type: "head", eye: "COLAS · AJUSTES", t: "Quién ve cada cola", s: "Además del rol, la matriz de permisos (Colas) y las ciudades de cada persona deciden. Cada cambio pide el motivo y queda en la auditoría.", onBack: () => ir({ ajustes: null }), h1: desk ? 26 : 22 },
+      { type: "note", tone: "info", icon: "clock", t: "El plazo de cada cola y cuánto dura un caso tomado se cambian en Sistema › Configuración › Colas.", cta: "Ir", onCta: () => router.push("/admin/sistema/configuracion") }];
+    AB.push({ type: "rows", cols: desk ? "repeat(2,minmax(0,1fr))" : "1fr", items: ORDEN_COLAS.map((q) => ({ key: q, icon: COLAS[q].icon, t: COLAS[q].es, s: `Plazo ${slas[q] ?? COLAS[q].sla} h`, chev: false,
+      acts: ajustes.roles.filter((r) => r.key !== "admin").map((r) => { const on = (ajustes.vis[q] ?? []).includes(r.key); return { l: r.nombre, v: on ? "primary" : "secondary", onClick: () => setConf({ titulo: `${on ? "Quitar" : "Dar"} «${COLAS[q].es}» a ${r.nombre}`, cta: "Guardar", sub: on ? "Ese rol deja de ver esta cola (y sus casos tomados vuelven a la cola cuando venzan)." : "Ese rol empieza a ver esta cola.", plantillas: ["Cambio de responsabilidades", "Lo pidió el fundador"], hacer: (m) => colaVisibilidad(q, r.key, !on, m) }) }; }) })) });
+    AB.push({ type: "group", k: "FERIADOS DEL EQUIPO · EL PLAZO DE SOPORTE NO LOS CUENTA" });
+    AB.push({ type: "rows", items: ajustes.feriados.length ? ajustes.feriados.map((f) => ({ key: f.id, icon: "calendar", t: `${f.dia} · ${f.nombre}`, s: f.ciudad ?? "Todas las ciudades", chev: false,
+      acts: [{ l: "Quitar", v: "secondary", onClick: () => run(() => quitarFeriadoEquipo(f.id)) }] })) : [{ icon: "calendar", t: "Sin feriados", s: "Lunes a viernes cuentan todos (Configuración › Soporte).", chev: false }] });
+    AB.push({ type: "acts", items: [{ l: "Agregar un feriado", v: "secondary", icon: "plus", onClick: () => setConf({ titulo: "Feriado del equipo", cta: "Guardar", sub: "El motivo es el nombre del feriado. El plazo de Soporte no cuenta ese día.",
+      valor: { k: "FECHA (AAAA-MM-DD)", ini: "", max: 10 }, elegir: { label: "DÓNDE", items: [{ k: "todas", l: "Todas las ciudades" }, ...ajustes.ciudades.map((c) => ({ k: c.id, l: c.nombre }))] },
+      plantillas: ["Navidad", "Año Nuevo", "Día de Acción de Gracias", "Día de la Independencia"], hacer: (m, e, v) => feriadoEquipo(v, e === "todas" ? null : e, m) }) }] });
+    return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}><PanelBloques bloques={AB} h1={desk ? 26 : 22} /><Toast t={toast} desk={desk} /></div>;
+  }
   return (
     <>
       {caso && !lado ? (

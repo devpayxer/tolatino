@@ -121,7 +121,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
   const cambios = await db().query<{ desde: string; hasta: string; closed: boolean; ranges: Rango[]; label: Bi | null }>(
     `select to_char(h.date_from, 'YYYY-MM-DD') as desde, to_char(h.date_to, 'YYYY-MM-DD') as hasta, h.closed, h.ranges, h.label
        from special_hours h join businesses b on b.id = h.business_id join cities c on c.id = b.city_id
-      where h.business_id = $1 and h.date_to >= (now() at time zone c.timezone)::date order by h.date_from limit 3`, [id]);
+      where h.business_id = $1 and h.status = 'active' and h.kind <> 'season' and h.date_to >= (now() at time zone c.timezone)::date order by h.date_from limit 3`, [id]);
   const hpChanges = cambios.rows.length
     ? cambios.rows.map((c) => ({ dateLong: c.desde === c.hasta ? c.desde : `${c.desde} – ${c.hasta}`, name: c.label?.[lang] ?? "", tagFg: c.closed ? "var(--tl-danger)" : "var(--tl-action)", text: c.closed ? L("Cerrado", "Closed") : c.ranges.map((x) => rango(x, lang)).join(" · ") }))
     : [{ dateLong: L("Sin cambios programados", "No scheduled changes"), name: L("Horario de siempre", "Regular hours"), tagFg: "rgba(11,14,18,.35)", text: "" }];

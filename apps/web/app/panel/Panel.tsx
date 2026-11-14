@@ -14,7 +14,7 @@ import { aBase, fmtHora, type DiaPanel } from "@/lib/panel-reglas";
 import { FOTOS_FREE, ITEMS_FREE, PRECIO_PRO, dinero } from "@/lib/plan";
 import { subirFoto } from "@/lib/subir-foto";
 import { estado } from "@/lib/tarjeta";
-import { aboutGuardar, cerrarPorHoy, fotoQuitar, fotosAgregar, fotosOrden, horarioGuardar, licenciaAgregar, licenciaNumero, licenciaQuitar, logoPoner, noHago, selloCancelar, selloPedir, type Res } from "./acciones";
+import { aboutGuardar, avisoNegocio, cerrarPorHoy, especialAgregar, especialQuitar, feriadoMarcar, fotoQuitar, fotosAgregar, fotosOrden, horarioGuardar, licenciaAgregar, licenciaNumero, licenciaQuitar, logoPoner, noHago, selloCancelar, selloPedir, type Res } from "./acciones";
 import { LIC_LEGAL, NO_HAGO } from "@/lib/no-hago";
 import { equipoBloques, equipoDetalle } from "./Equipo";
 import { menuBloques, menuDetalle, vendesBloques } from "./Menu";
@@ -601,7 +601,7 @@ function fotos(c: Ctx): (Bloque | null)[] {
   return out;
 }
 
-/* Horario (sub hor). Free: un tramo por día; Pro: dos. Feriados, vacaciones y temporada llegan después (LAUNCH-CHECKLIST). */
+/* Horario (sub hor). Free: un tramo por día; Pro: dos. 9n: feriados, vacaciones, días propios y temporada (especialesBloques). */
 function horario(c: Ctx): { blocks: (Bloque | null)[]; ed: Editor } {
   const { d, E2, es } = c, F = c.form<{ hours: DiaPanel[] }>(`hor:${d.id}`, { hours: d.horas }), out: (Bloque | null)[] = [];
   const mk = (on: boolean, a: number, b: number): DiaPanel => ({ on, a, b, two: false, a2: 17, b2: 21 }), I = [0, 1, 2, 3, 4, 5, 6];
@@ -638,7 +638,53 @@ function horario(c: Ctx): { blocks: (Bloque | null)[]; ed: Editor } {
     }),
   });
   if (!d.pro) out.push({ type: "note", tone: "warn", icon: "star", t: E2("Con Free: un horario por día. Los tramos son de Pro.", "On Free: one window per day. Windows are Pro.") });
+  out.push(...especialesBloques(c));
   return { blocks: out, ed: { F, l: E2("Guardar", "Save"), valid: true, apply: (x) => horarioGuardar(d.id, x.hours), onDone: () => c.setUi({ dayOpen: -1 }) } };
+}
+
+/* 9n · Feriados, vacaciones, días propios y «Abro por temporada» (L114). Se guardan al tocar (no con «Guardar» del horario); la página, las citas y
+   el estado abierto/cerrado los leen del servidor. Compuesto con los bloques del sistema (REVISION 9n). */
+function especialesBloques(c: Ctx): (Bloque | null)[] {
+  const { d, E2, es } = c, out: (Bloque | null)[] = [];
+  const fecha = (s: string) => new Date(`${s}T12:00:00Z`).toLocaleDateString(es ? "es-US" : "en-US", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).replace(/\./g, "");
+  const nm = (b: { es: string; en: string } | null) => (b ? (es ? b.es : b.en || b.es) : "");
+  const marcado = (k: string, dia: string) => d.especiales.some((x) => x.feriado === k && x.desde === dia);
+  out.push({ type: "group", k: E2("FERIADOS · TOCA LOS QUE CIERRAS", "HOLIDAYS · TAP THE ONES YOU CLOSE") });
+  out.push({ type: "chips", help: E2("TU PÁGINA DICE «CERRADO» ESE DÍA Y NO RECIBES PEDIDOS NI CITAS", "YOUR PAGE SAYS “CLOSED” THAT DAY AND YOU GET NO ORDERS OR BOOKINGS"),
+    items: d.feriados.slice(0, 10).map((f) => { const on = marcado(f.key, f.dia); return { l: `${nm(f.name)} · ${fecha(f.dia)}`, v: on ? "selected" : "filter",
+      onClick: () => c.run(() => feriadoMarcar(d.id, f.key, f.dia, !on), on ? E2("Abres ese día como siempre.", "You open that day as usual.") : E2("Listo: ese día sale cerrado.", "Done: that day shows closed.")) }; }) });
+  const prox = d.especiales.filter((x) => x.kind !== "season" && !x.feriado), temp = d.especiales.find((x) => x.kind === "season") ?? null;
+  const KL: Record<string, [string, string]> = { vacation: ["Vacaciones", "Vacation"], own: ["Día con otro horario", "Day with other hours"], holiday: ["Cerrado", "Closed"], scheduled: ["Día especial", "Special day"] };
+  out.push({ type: "group", k: E2("VACACIONES Y DÍAS PROPIOS", "VACATIONS AND YOUR OWN DAYS") });
+  if (prox.length) out.push({ type: "rows", items: prox.map((x) => ({ key: x.id, icon: x.cerrado ? "close" : "clock", t: `${x.desde === x.hasta ? fecha(x.desde) : `${fecha(x.desde)} – ${fecha(x.hasta)}`}${x.label ? ` · ${nm(x.label)}` : ""}`,
+    s: x.cerrado ? `${E2(...KL[x.kind] ?? KL.holiday!)} · ${E2("cerrado", "closed")}` : `${E2(...KL[x.kind] ?? KL.own!)} · ${x.ranges.map(([a, b]) => `${fmtHora(Number(a.slice(0, 2)) + Number(a.slice(3)) / 60)} – ${fmtHora(Number(b.slice(0, 2)) + Number(b.slice(3)) / 60)}`).join(", ")}`,
+    chev: false, compact: true, acts: [{ l: E2("Quitar", "Remove"), v: "secondary", off: c.pending, onClick: () => c.run(() => especialQuitar(d.id, x.id), E2("Quitado.", "Removed.")) }] })) });
+  const f = c.ui.esp as { kind: "vacation" | "own" | "season"; desde: string; hasta: string; cerrado: boolean; a: string; b: string; nombre: string } | undefined;
+  const set = (p: Partial<NonNullable<typeof f>>) => c.setUi({ esp: { ...f!, ...p } });
+  const nuevo = (kind: "vacation" | "own" | "season") => c.setUi({ esp: { kind, desde: d.hoy.fecha ?? "", hasta: "", cerrado: kind !== "own", a: "09:00", b: "15:00", nombre: "" } });
+  if (f && f.kind !== "season") {
+    out.push({ type: "chips", items: ([["vacation", E2("Vacaciones (cerrado)", "Vacation (closed)")], ["own", E2("Un día distinto", "A different day")]] as const).map(([k, l]) => ({ l, v: f.kind === k ? "selected" : "filter", onClick: () => set({ kind: k, cerrado: k !== "own" }) })) });
+    out.push({ type: "field", k: E2("DESDE · AAAA-MM-DD", "FROM · YYYY-MM-DD"), val: f.desde, ph: "2026-12-24", onChange: (v) => set({ desde: v.replace(/[^\d-]/g, "").slice(0, 10) }) });
+    out.push({ type: "field", k: E2("HASTA · OPCIONAL", "UNTIL · OPTIONAL"), val: f.hasta, ph: f.desde || "2026-12-31", onChange: (v) => set({ hasta: v.replace(/[^\d-]/g, "").slice(0, 10) }) });
+    if (f.kind === "own") {
+      out.push({ type: "rows", items: [{ icon: "close", t: E2("Cierro ese día", "Closed that day"), tgOn: f.cerrado, onTg: () => set({ cerrado: !f.cerrado }), chev: false }] });
+      if (!f.cerrado) out.push({ type: "field", k: E2("ABRO · HH:MM", "OPEN · HH:MM"), val: f.a, onChange: (v) => set({ a: v.replace(/[^\d:]/g, "").slice(0, 5) }) }, { type: "field", k: E2("CIERRO · HH:MM", "CLOSE · HH:MM"), val: f.b, onChange: (v) => set({ b: v.replace(/[^\d:]/g, "").slice(0, 5) }) });
+    }
+    out.push({ type: "field", k: E2("NOMBRE · OPCIONAL", "NAME · OPTIONAL"), val: f.nombre, max: 60, ph: E2("Ej. Inventario", "e.g. Inventory"), onChange: (v) => set({ nombre: v.slice(0, 60) }) });
+    out.push({ type: "acts", items: [{ l: E2("Guardar el día", "Save the day"), v: "primary", icon: "check", off: c.pending || f.desde.length !== 10, onClick: () => c.run(() => especialAgregar(d.id, f), E2("Guardado: tu página ya lo dice.", "Saved: your page shows it now."), () => c.setUi({ esp: undefined })) },
+      { l: E2("Cancelar", "Cancel"), v: "secondary", onClick: () => c.setUi({ esp: undefined }) }] });
+  } else out.push({ type: "acts", items: [{ l: E2("Agregar vacaciones o un día", "Add a vacation or a day"), v: "secondary", icon: "plus", onClick: () => nuevo("vacation") }] });
+  out.push({ type: "group", k: E2("ABRO POR TEMPORADA", "SEASONAL") });
+  if (temp) out.push({ type: "rows", items: [{ icon: "calendar", t: `${fecha(temp.desde)} – ${fecha(temp.hasta)}`, s: E2("Solo abres en estas fechas: fuera de ellas tu página dice cerrado.", "You only open on these dates: outside them your page says closed."), chev: false, compact: true,
+    acts: [{ l: E2("Quitar", "Remove"), v: "secondary", off: c.pending, onClick: () => c.run(() => especialQuitar(d.id, temp.id), E2("Abres todo el año.", "You open all year.")) }] }] });
+  else if (f?.kind === "season") {
+    out.push({ type: "field", k: E2("ABRES DESDE · AAAA-MM-DD", "OPEN FROM · YYYY-MM-DD"), val: f.desde, ph: "2027-05-01", onChange: (v) => set({ desde: v.replace(/[^\d-]/g, "").slice(0, 10) }) });
+    out.push({ type: "field", k: E2("HASTA · AAAA-MM-DD", "UNTIL · YYYY-MM-DD"), val: f.hasta, ph: "2027-09-30", onChange: (v) => set({ hasta: v.replace(/[^\d-]/g, "").slice(0, 10) }) });
+    out.push({ type: "acts", items: [{ l: E2("Guardar la temporada", "Save the season"), v: "primary", icon: "check", off: c.pending || f.desde.length !== 10 || f.hasta.length !== 10, onClick: () => c.run(() => especialAgregar(d.id, f), E2("Guardado: fuera de esas fechas sales cerrado.", "Saved: outside those dates you show closed."), () => c.setUi({ esp: undefined })) },
+      { l: E2("Cancelar", "Cancel"), v: "secondary", onClick: () => c.setUi({ esp: undefined }) }] });
+  } else out.push({ type: "rows", items: [{ icon: "calendar", t: E2("Abro todo el año", "Open all year"), s: E2("¿Solo abres unos meses? Pon las fechas y fuera de ellas tu página dice cerrado.", "Only open some months? Set the dates and outside them your page says closed."), chev: false, compact: true,
+    acts: [{ l: E2("Poner temporada", "Set a season"), v: "secondary", onClick: () => nuevo("season") }] }] });
+  return out;
 }
 
 /* Quiénes somos (sub about). */
@@ -764,6 +810,18 @@ function masBloques(c: Ctx): Bloque[] {
       ...(entrega ? [{ icon: "truck", t: "To'Latino Repartidor", s: E2("Tus repartidores entran con el código que les das en Entrega › Tus repartidores.", "Your drivers join with the code you give them in Delivery › Your drivers."), onClick: () => c.go("dlv") }] : []),
       ...(d.evtAplica ? [{ icon: "ticket", t: "To'Latino Puerta", s: E2("Tus porteros entran con el código de la puerta de cada evento, en Eventos.", "Your door staff join with each event's door code, in Events."), onClick: () => c.go("evt") }] : []),
     ] },
+    // 9n · Panel › Ajustes › Avisos (L934, DASH-AJUSTES «LO QUE TE AVISAMOS»): qué grupos de avisos del negocio le llegan al dueño. Dinero, disputas y
+    // sanciones no se apagan.
+    ...(d.kind === "owner" || d.partes.includes("all") ? [{ type: "rows" as const, k: E2("LO QUE TE AVISAMOS", "WHAT WE NOTIFY YOU ABOUT"), items: ([
+      ["pedidos", "bag", ["Pedidos y entregas", "Orders and deliveries"], ["Un pedido nuevo, una oferta que nadie aceptó, un problema del repartidor.", "A new order, an offer nobody accepted, a driver problem."]],
+      ["citas", "calendar", ["Citas y apartados", "Bookings and holds"], ["Una cita nueva, pagada o cancelada.", "A new, paid or cancelled booking."]],
+      ["reservas", "users", ["Reservaciones y mesas", "Reservations and tables"], ["Una mesa nueva o un cambio.", "A new table or a change."]],
+      ["eventos", "ticket", ["Eventos", "Events"], ["Ventas, aforo al 90 % y cancelaciones.", "Sales, 90% capacity and cancellations."]],
+      ["resenas", "star", ["Reseñas", "Reviews"], ["Una reseña nueva para contestar.", "A new review to reply to."]],
+      ["mensajes", "chat", ["Mensajes", "Messages"], ["Un cliente te escribió.", "A client wrote to you."]],
+      ["inventario", "grid", ["Quedan pocos", "Running low"], ["Un producto está por agotarse.", "A product is about to run out."]],
+    ] as [string, string, [string, string], [string, string]][]).map(([k, icon, t, s]) => { const on = !d.avisosOff.includes(k); return { key: `av-${k}`, icon, t: E2(...t), s: E2(...s), tgOn: on, chev: false,
+      onTg: () => c.run(() => avisoNegocio(d.id, k, !on), on ? E2("Apagado. Lo sigues viendo en tu panel.", "Off. You still see it in your dashboard.") : E2("Encendido.", "On.")) }; }) }] : []),
     { type: "rows", k: E2("TAMBIÉN", "ALSO"), items: [{ icon: "search", t: E2("Ver mi página como cliente", "View my page as a client"), onClick: () => window.open(`/n/${d.id}`, "_blank", "noopener") },
       // 9d · Exportar los datos del negocio (solo el dueño): lo que el panel ya muestra, en un ZIP que se baja una vez en 24 horas.
       ...(d.kind === "owner" ? [{ icon: "folder", t: E2("Exportar los datos del negocio", "Export business data"), s: E2("Lo que tu panel muestra, en un archivo. Lo bajas aquí durante 24 horas.", "What your dashboard shows, in one file. Download it here for 24 hours."), onClick: () => c.nav(`/panel/${d.id}/exportar`) }] : []),

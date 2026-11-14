@@ -71,7 +71,7 @@ export async function contexto(c: Q, negocio: string, cats: string[] = ["NEG-BEL
   // Una tras otra: `c` puede ser el cliente de la transacción de enviarCita.
   const h = await c.query<{ weekday: number; open: boolean; ranges: [string, string][] }>(`select weekday, open, ranges from business_hours where business_id = $1 and module = ''`, [negocio]);
   const e = await c.query<{ desde: string; hasta: string; closed: boolean; ranges: [string, string][] }>(
-    `select date_from::text as desde, date_to::text as hasta, closed, ranges from special_hours where business_id = $1 and date_to >= $2::date and date_from <= $2::date + ${DIAS}`, [negocio, b.hoy]);
+    `select date_from::text as desde, date_to::text as hasta, closed, ranges from special_hours where business_id = $1 and status = 'active' and kind <> 'season' and date_to >= $2::date and date_from <= $2::date + ${DIAS}`, [negocio, b.hoy]);
   const rng = (L: [string, string][]) => L.map(([a, z]) => { const A = hm2m(a), Z = hm2m(z); return [A, Z <= A ? Math.min(Z + 1440, 1440) : Z] as [number, number]; });
   const horas: Ctx["horas"] = {};
   for (const d of h.rows) horas[d.weekday] = d.open ? rng(d.ranges) : [];

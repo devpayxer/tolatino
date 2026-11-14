@@ -1,4 +1,5 @@
 "use server";
+import { hoyEn } from "@/lib/fecha-local";
 import { claveAmenidad } from "@/lib/amenidades";
 import { recalcularFiltrosSP } from "@/lib/salud-pro";
 import { LIC_LEGAL, NO_HAGO } from "@/lib/no-hago";
@@ -131,6 +132,80 @@ export async function horarioGuardar(id: string, dias: DiaPanel[]): Promise<Res>
     await c.query(`update businesses set updated_at = now() where id = $1`, [a.negocio.id]);
   });
   await auditar(a, "panel.horario", antes, filas);
+  return { ok: true };
+}
+
+/* ── 9n · Panel › Más › Lo que te avisamos (L934, hueco #10): el dueño (o quien tiene todo el panel) apaga o enciende un grupo de avisos del
+   negocio. Lo de dinero, disputas y sanciones no tiene grupo: siempre llega. Queda en la auditoría. ── */
+const GRUPOS_AVISO = ["pedidos", "citas", "reservas", "eventos", "resenas", "mensajes", "equipo", "inventario"] as const;
+export async function avisoNegocio(id: string, pref: string, on: boolean): Promise<Res> {
+  const a = await entrar(id);
+  if (!a) return SIN_ACCESO;
+  if (a.kind !== "owner" && !a.partes.includes("all")) return no("Solo el dueño cambia los avisos del negocio.", "Only the owner changes the business notifications.");
+  if (!(GRUPOS_AVISO as readonly string[]).includes(String(pref))) return no("Ese aviso no existe.", "That notification does not exist.");
+  await db().query(`insert into business_notif_prefs (business_id, pref, off, updated_by) values ($1, $2, $3, $4) on conflict (business_id, pref) do update set off = excluded.off, updated_by = excluded.updated_by, updated_at = now()`,
+    [a.negocio.id, pref, !on, a.yo.id]);
+  await auditar(a, "panel.avisos", null, { aviso: pref, encendido: !!on });
+  return { ok: true };
+}
+
+/* ── 9n · Feriados, vacaciones, días propios y «Abro por temporada» (L114) ──
+   Un feriado del catálogo del servidor (holiday_catalog) se marca «cierro» con un toque; vacaciones y días propios llevan fechas (y horas
+   propias si abre distinto); la temporada es el rango en que SÍ abre (fuera, la página dice cerrado). Nada se borra: «Quitar» deja status
+   'removed'. La ficha, las citas, Jobs, El Compa y el estado abierto/cerrado (negocio_abierto) leen solo los activos. */
+const FECHA = /^\d{4}-\d{2}-\d{2}$/, HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+async function hoyNegocio(id: string): Promise<string> {
+  return (await db().query<{ d: string }>(`select (now() at time zone ci.timezone)::date::text as d from businesses b join cities ci on ci.id = b.city_id where b.id = $1`, [id])).rows[0]?.d ?? hoyEn();
+}
+export async function feriadoMarcar(id: string, key: string, dia: string, cierra: boolean): Promise<Res> {
+  const a = await entrar(id);
+  if (!a) return SIN_ACCESO;
+  const f = (await db().query<{ name: { es: string; en: string } }>(`select name from holiday_catalog where key = $1 and day = $2::date`, [String(key ?? ""), FECHA.test(String(dia)) ? dia : "1900-01-01"])).rows[0];
+  if (!f) return no("Ese feriado no está en el calendario.", "That holiday is not on the calendar.");
+  if (cierra) {
+    await db().query(`insert into special_hours (business_id, kind, date_from, date_to, closed, label, holiday_key, created_by) values ($1, 'holiday', $2::date, $2::date, true, $3::jsonb, $4, $5)
+                      on conflict (business_id, holiday_key, date_from) where status = 'active' and holiday_key is not null do nothing`, [a.negocio.id, dia, JSON.stringify(f.name), key, a.yo.id]);
+  } else {
+    await db().query(`update special_hours set status = 'removed', removed_at = now() where business_id = $1 and holiday_key = $2 and date_from = $3::date and status = 'active'`, [a.negocio.id, key, dia]);
+  }
+  await auditar(a, "panel.feriado", null, { feriado: f.name.es, día: dia, cierra: !!cierra });
+  return { ok: true };
+}
+export async function especialAgregar(id: string, x: { kind: string; desde: string; hasta: string; cerrado: boolean; a?: string; b?: string; nombre?: string }): Promise<Res> {
+  const a = await entrar(id);
+  if (!a) return SIN_ACCESO;
+  const kind = ["vacation", "own", "season"].includes(String(x?.kind)) ? String(x.kind) : null;
+  if (!kind) return no("Elige qué día es.", "Choose what kind of day it is.");
+  const d1 = String(x?.desde ?? ""), d2 = String(x?.hasta ?? "") || d1;
+  if (!FECHA.test(d1) || !FECHA.test(d2) || Number.isNaN(Date.parse(d1)) || Number.isNaN(Date.parse(d2))) return no("Elige las fechas.", "Choose the dates.");
+  if (d2 < d1) return no("La fecha final va después de la primera.", "The end date goes after the start date.");
+  if ((Date.parse(d2) - Date.parse(d1)) / 86_400_000 > 366) return no("Como mucho un año.", "One year at most.");
+  if (kind !== "season" && d2 < (await hoyNegocio(a.negocio.id))) return no("Esas fechas ya pasaron.", "Those dates already passed.");
+  const cerrado = kind === "vacation" ? true : kind === "season" ? false : !!x?.cerrado;
+  let ranges: [string, string][] = [];
+  if (kind === "own" && !cerrado) {
+    const h1 = String(x?.a ?? ""), h2 = String(x?.b ?? "");
+    if (!HHMM.test(h1) || !HHMM.test(h2) || h1 === h2) return no("Escribe a qué hora abres y cierras ese día (como 09:00 y 15:00).", "Write when you open and close that day (like 09:00 and 15:00).");
+    ranges = [[h1, h2]];
+  }
+  const nombre = String(x?.nombre ?? "").replace(/\s+/g, " ").trim().slice(0, 60);
+  const n = (await db().query<{ n: number }>(`select count(*)::int as n from special_hours where business_id = $1 and status = 'active' and date_to >= current_date`, [a.negocio.id])).rows[0]!.n;
+  if (n >= 50) return no("Tienes muchos días especiales por delante. Quita alguno.", "You have many special days ahead. Remove some.");
+  if (kind === "season" && (await db().query(`select 1 from special_hours where business_id = $1 and status = 'active' and kind = 'season'`, [a.negocio.id])).rowCount)
+    return no("Ya tienes una temporada: quítala para poner otra.", "You already have a season: remove it to set another.");
+  const label = nombre ? { es: nombre, en: nombre } : null;
+  await db().query(`insert into special_hours (business_id, kind, date_from, date_to, closed, ranges, label, created_by) values ($1, $2, $3::date, $4::date, $5, $6::jsonb, $7::jsonb, $8)`,
+    [a.negocio.id, kind, d1, d2, cerrado, JSON.stringify(ranges), label ? JSON.stringify(label) : null, a.yo.id]);
+  await auditar(a, "panel.dia_especial", null, { tipo: kind === "vacation" ? "vacaciones" : kind === "season" ? "temporada" : "día propio", desde: d1, hasta: d2, cerrado, horas: ranges.map((r) => r.join("–")).join(", ") || null });
+  return { ok: true };
+}
+export async function especialQuitar(id: string, eid: string): Promise<Res> {
+  const a = await entrar(id);
+  if (!a) return SIN_ACCESO;
+  if (!/^\d{1,18}$/.test(String(eid))) return no("Ese día ya no está.", "That day is no longer there.");
+  const r = (await db().query<{ desde: string; hasta: string }>(`update special_hours set status = 'removed', removed_at = now() where id = $1::bigint and business_id = $2 and status = 'active' returning date_from::text as desde, date_to::text as hasta`, [eid, a.negocio.id])).rows[0];
+  if (!r) return no("Ese día ya no está.", "That day is no longer there.");
+  await auditar(a, "panel.dia_especial_quitar", { desde: r.desde, hasta: r.hasta }, null);
   return { ok: true };
 }
 
