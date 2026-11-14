@@ -79,6 +79,8 @@
     "waitlist_entries": { "equipo": ["offered_by"], "reglas": [ { "col": "user_id", "accion": "seudonimizar", "porque": "negocio", "exporta": "listas_de_espera", "fusion": "mover" } ] },
     "help_requests": { "equipo": ["reply_by", "resolved_by"], "reglas": [ { "col": "user_id", "accion": "vaciar", "exporta": "ayudas_con_pedidos", "fusion": "mover", "set": { "body": "null" } } ] },
     "job_applications": { "reglas": [ { "col": "user_id", "accion": "vaciar", "exporta": "solicitudes_de_empleo", "fusion": "mover", "set": { "name": "'Cuenta borrada'", "phone": "null", "note": "null", "status": "case when status in ('sent', 'seen', 'interview') then 'withdrawn' else status end" } } ] },
+    "review_requests": { "equipo": ["requested_by"], "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "negocio", "fusion": "no" } ] },
+    "review_reply_history": { "equipo": ["edited_by"] },
     "reviews": { "equipo": ["hidden_by", "reply_by"], "reglas": [ { "col": "user_id", "accion": "vaciar", "exporta": "resenas", "fusion": "mover", "set": { "body": "''", "answers": "'{}'::jsonb", "status": "'removed'", "hidden_reason": "coalesce(hidden_reason, 'Cuenta borrada')", "hidden_at": "coalesce(hidden_at, now())" } } ] },
     "post_comments": { "equipo": ["reply_by"], "reglas": [ { "col": "user_id", "accion": "vaciar", "exporta": "comentarios_en_novedades", "fusion": "mover", "set": { "body": "''", "status": "'removed'" } } ] },
     "com_posts": { "equipo": ["staff_id", "hidden_staff_id"], "reglas": [ { "col": "author_user_id", "accion": "vaciar", "exporta": "publicaciones", "fusion": "mover", "set": { "body": "''", "looking_for": "'{}'", "status": "'deleted'", "deleted_at": "coalesce(deleted_at, now())" } } ] },

@@ -77,8 +77,8 @@ export function equipoDetalle(c: Ctx, mid: string): Sec {
     out.push(txt(E2("NOMBRE", "NAME"), x.name, (v) => F.set({ name: v }), E2("Ej. Yahaira Cruz", "e.g. Yahaira Cruz"), 40));
     out.push(txt(E2("TELÉFONO · LE LLEGA EL SMS", "PHONE · GETS THE TEXT"), x.phone, (v) => F.set({ phone: v.replace(/[^0-9()\-\s+]/g, "") }), "(570) 555-0123", 16, { im: "tel" }));
     if (!bell) out.push(txt(E2("QUÉ HACE · LO VE EL CLIENTE", "WHAT THEY DO · CLIENTS SEE IT"), x.r0, (v) => F.set({ r0: v }), E2("Ej. Cocina, Delivery, Caja", "e.g. Kitchen, Delivery, Register"), 40));
-    const dueño = first(d.owner ?? d.name), host = typeof location !== "undefined" ? location.host : "tolatino.app";
-    out.push({ type: "note", tone: "ink", icon: "chat", t: E2(`Le llega: «${dueño} te invitó al equipo de ${d.name} en To’Latino. Acepta y pon tu foto aquí: ${host}/e/…». Vence en 7 días.`, `They get: “${dueño} invited you to the ${d.name} team on To’Latino. Accept and add your photo here: ${host}/e/…”. Expires in 7 days.`) });
+    const dueño = first(d.owner ?? d.name);
+    out.push({ type: "note", tone: "ink", icon: "chat", t: E2(`Le llega: «${dueño} te invitó al equipo de ${d.name} en To’Latino. Acepta y pon tu foto aquí: (enlace)». Vence en 7 días.`, `They get: “${dueño} invited you to the ${d.name} team on To’Latino. Accept and add your photo here: (link)”. Expires in 7 days.`) });
     const dup = ph.length === 10 && d.equipo.some((m) => m.st !== "gone" && m.phone.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "") === ph);
     const miss = [x.name.trim().length < 2 ? E2("nombre", "name") : null, ph.length !== 10 ? E2("teléfono de 10 números", "10-digit phone") : null, !bell && !x.r0.trim() ? E2("qué hace", "what they do") : null].filter(Boolean);
     if (dup) out.push({ type: "note", tone: "warn", t: E2("Ese teléfono ya está en tu equipo.", "That phone is already on your team.") });

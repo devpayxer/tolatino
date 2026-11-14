@@ -34,12 +34,12 @@ async function persona(a: Acceso, mid: unknown): Promise<Fila | null> {
 }
 /* 9l · El SMS de invitación (L106, L980): «{Negocio} te invitó a su equipo en To'Latino como {rol}. Tu código de invitación: {código}. Vence en 7 días.»,
    como la invitación de porteros: avisarTelefono (si el número ya tiene cuenta, también le llega a su campana; si no, solo el SMS, cifrado). Sale por el
-   único camino de los SMS (reintentos y estado de entrega). Aceptar con el código desde la app llega con 9n (L101): el SMS no promete más que el código.
+   único camino de los SMS (reintentos y estado de entrega). 9n-2: el SMS lleva el enlace `/e/{código}` (lib/equipo-invitacion.ts: un solo uso, vence a los 7 días, solo con el teléfono invitado).
    Devuelve si el SMS salió (o quedó en el simulador del sandbox); si el número pidió STOP o no hay proveedor, la pantalla dice la verdad. */
 async function enviarInvitacion(a: Acceso, tel: string | null, code: string, rol: string): Promise<boolean> {
   if (!tel) return false;
   const { avisarTelefono } = await import("@/lib/avisos");
-  await avisarTelefono(tel, "equipo_invitado", { negocio: a.negocio.name, rol: rol || "equipo", codigo: code }, { ref: ["business", a.negocio.id], city: a.negocio.city_id });
+  await avisarTelefono(tel, "equipo_invitado", { negocio: a.negocio.name, rol: rol || "equipo" }, { href: `/e/${code}`, ref: ["business", a.negocio.id], city: a.negocio.city_id });
   const s = (await db().query<{ st: string }>(
     `select coalesce((select n.sms_status from notifications n join users u on u.id = n.user_id where u.phone = $1 and n.tpl = 'equipo_invitado' and n.created_at > now() - interval '1 minute' order by n.id desc limit 1),
                      (select p.sms_status from phone_messages p where p.tpl = 'equipo_invitado' and p.created_at > now() - interval '1 minute' order by p.id desc limit 1)) as st`, [tel])).rows[0]?.st;
@@ -98,9 +98,11 @@ export async function equipoResponder(id: string, mid: string, aceptar: boolean)
   if (!a) return SIN_ACCESO;
   const m = await persona(a, mid);
   if (!m || m.status !== "requested") return no("Esa solicitud ya no está.", "That request is gone.");
-  if (aceptar) await db().query(`update business_members set status = 'active', show_on_page = true, same_as_business_hours = true, updated_at = now() where id = $1`, [m.id]);
+  if (aceptar) await db().query(`update business_members set status = 'active', show_on_page = true, same_as_business_hours = true, accepted_at = now(), updated_at = now() where id = $1`, [m.id]);
   else await db().query(`update business_members set status = 'removed', removed_reason = 'declined', removed_at = now(), updated_at = now() where id = $1`, [m.id]);
   await auditar(a, aceptar ? "panel.equipo_aceptar" : "panel.equipo_no_aceptar", m.id, null);
+  // 9n-2 · Quien pidió unirse se entera de la respuesta (L1741).
+  await (await import("@/lib/equipo-invitacion")).avisarPersonaEquipo(m.id, aceptar ? "equipo_unirse_ok" : "equipo_unirse_no");
   return { ok: true };
 }
 
@@ -128,6 +130,8 @@ export async function equipoQuitar(id: string, mid: string): Promise<ResEq> {
     await recalcularFiltrosSP(c, a.negocio.id);
   });
   await auditar(a, "panel.equipo_quitar", m.id, null);
+  // 9n-2 · La persona quitada se entera (si ya tiene cuenta): L1741.
+  await (await import("@/lib/equipo-invitacion")).avisarPersonaEquipo(m.id, "equipo_quitado");
   return { ok: true };
 }
 

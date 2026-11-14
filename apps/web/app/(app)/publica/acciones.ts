@@ -202,6 +202,8 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
     return slug;
   });
   await evento("publicar_negocio", { ref: id, ciudad: loc.ciudad, userId: me.id, props: { cat: d.cat } });
+  // 9n-2 · Quien pidió rentar un espacio: el dueño se entera (Lo que te avisamos › Equipo) para aceptarlo o no desde Tu página › Equipo.
+  if (op === "rento" && d.join) await (await import("@/lib/avisos")).avisarNegocio(d.join, "biz_equipo_pide", { nombre: d.name }, { href: `/panel/${d.join}/pagina/equipo`, ref: ["business", d.join] });
   return { ok: true, negocio: { id, nombre: d.name, minutos, hasta, items: productos.length, fotos: mias.length } };
 }
 
