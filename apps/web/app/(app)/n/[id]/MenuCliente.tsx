@@ -353,7 +353,7 @@ export function MenuMovil({ mn }: { mn: Mn }) {
         <div data-msec="m-pop" className="pt-[18px]">
           <div className="px-5 font-display text-[18px] font-extrabold leading-none tracking-[-0.03em]">{mn.lbl.pop}</div>
           <div className="hs mt-3 flex gap-2.5 overflow-x-auto px-5 pb-1.5">
-            {mn.pop.map((it) => <MenuTile key={it.id} off={it.off} name={it.name} price={it.price} image={it.image} qty={it.qty} selected={it.selected} open={it.open} width={148} height={112} onOpen={it.onOpen} onPlus={it.onPlus} onMinus={it.onMinus} onExpand={it.onExp} />)}
+            {mn.pop.map((it) => <MenuTile lang={mn.es ? "ES" : "EN"} key={it.id} off={it.off} name={it.name} price={it.price} image={it.image} qty={it.qty} selected={it.selected} open={it.open} width={148} height={112} onOpen={it.onOpen} onPlus={it.onPlus} onMinus={it.onMinus} onExpand={it.onExp} />)}
           </div>
         </div>
       )}
@@ -365,7 +365,7 @@ export function MenuMovil({ mn }: { mn: Mn }) {
           </div>
           {c.items.map((it) => (
             <div key={it.id} className="grid min-w-0">
-              <MenuItemRow name={it.name} desc={it.desc} price={it.price} tags={it.tags} image={it.image} qty={it.qty} forms={it.forms} off={it.off} selected={it.selected} open={it.open}
+              <MenuItemRow lang={mn.es ? "ES" : "EN"} name={it.name} desc={it.desc} price={it.price} tags={it.tags} image={it.image} qty={it.qty} forms={it.forms} off={it.off} selected={it.selected} open={it.open}
                 onOpen={it.onOpen} onPlus={it.onPlus} onMinus={it.onMinus} onExpand={it.onExp} />
             </div>
           ))}
@@ -441,7 +441,7 @@ export function MenuDesk({ mn, unaColumna }: { mn: Mn; unaColumna: boolean }) {
             <div data-msec="d-pop">
               <div className="font-display text-[20px] font-extrabold leading-none tracking-[-0.03em]">{mn.lbl.pop}</div>
               <div className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
-                {mn.pop.map((it) => <div key={it.id} className="grid min-w-0"><MenuTile off={it.off} name={it.name} price={it.price} image={it.image} qty={it.qty} selected={it.selected} open={it.open} width="100%" height={118} onOpen={it.onDesk} onPlus={it.onPlusD} onMinus={it.onMinusD} onExpand={it.onExp} onEnter={it.onEnter} onLeave={it.onLeave} /></div>)}
+                {mn.pop.map((it) => <div key={it.id} className="grid min-w-0"><MenuTile lang={mn.es ? "ES" : "EN"} off={it.off} name={it.name} price={it.price} image={it.image} qty={it.qty} selected={it.selected} open={it.open} width="100%" height={118} onOpen={it.onDesk} onPlus={it.onPlusD} onMinus={it.onMinusD} onExpand={it.onExp} onEnter={it.onEnter} onLeave={it.onLeave} /></div>)}
               </div>
             </div>
           )}
@@ -454,7 +454,7 @@ export function MenuDesk({ mn, unaColumna }: { mn: Mn; unaColumna: boolean }) {
               <div className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-2.5">
                 {c.items.map((it) => (
                   <div key={it.id} className="grid min-w-0">
-                    <MenuItemRow card name={it.name} desc={it.desc} price={it.price} tags={it.tags} image={it.image} qty={it.qty} forms={it.forms} off={it.off} selected={it.selected} open={it.open}
+                    <MenuItemRow lang={mn.es ? "ES" : "EN"} card name={it.name} desc={it.desc} price={it.price} tags={it.tags} image={it.image} qty={it.qty} forms={it.forms} off={it.off} selected={it.selected} open={it.open}
                       onOpen={it.onDesk} onPlus={it.onPlusD} onMinus={it.onMinusD} onExpand={it.onExp} onEnter={it.onEnter} onLeave={it.onLeave} />
                   </div>
                 ))}
@@ -480,7 +480,7 @@ export function MenuResumen({ mn, desk, onAll }: { mn: Mn; desk: boolean; onAll?
       <div className={desk ? "mt-4 grid grid-cols-[repeat(auto-fill,minmax(188px,1fr))] gap-4" : "mt-3 grid grid-cols-2 gap-x-3 gap-y-4"}>
         {mn.tiles.map((it) => (
           <div key={it.id} className="grid min-w-0">
-            <MenuTile off={it.off} name={it.name} price={it.price} image={it.image} qty={it.qty} selected={it.selected} open={it.open} width="100%" height={desk ? 136 : 120}
+            <MenuTile lang={mn.es ? "ES" : "EN"} off={it.off} name={it.name} price={it.price} image={it.image} qty={it.qty} selected={it.selected} open={it.open} width="100%" height={desk ? 136 : 120}
               onOpen={desk ? it.onDesk : it.onOpen} onPlus={desk ? it.onPlusD : it.onPlus} onMinus={desk ? it.onMinusD : it.onMinus} onExpand={it.onExp}
               onEnter={desk ? it.onEnter : undefined} onLeave={desk ? it.onLeave : undefined} />
           </div>
@@ -529,7 +529,7 @@ function Plato({ mn }: { mn: Mn }) {
   );
   const pie = (
     <div className={`flex flex-none items-center gap-[11px] border-t border-line bg-white ${sh.desk ? "px-5 py-3.5" : "px-4 pb-[22px] pt-3"}`}>
-      <div className="flex-none"><QtyStepper value={sh.qty} onDec={sh.onDec} onInc={sh.onInc} /></div>
+      <div className="flex-none"><QtyStepper decLabel={mn.E2("Uno menos", "One less")} incLabel={mn.E2("Uno más", "One more")} value={sh.qty} onDec={sh.onDec} onInc={sh.onInc} /></div>
       <div className="flex min-w-0 flex-1"><Button block disabled={sh.disabled} onClick={sh.onAdd}>{sh.cta}</Button></div>
     </div>
   );
@@ -599,7 +599,7 @@ function Pregunta({ mn }: { mn: Mn }) {
               <div className="text-pretty text-[13.5px] font-bold leading-[1.4]">{x.sum}</div>
               <div className="mt-1 font-mono text-[11.5px] font-bold">{x.price}</div>
             </div>
-            <div className="flex-none"><QtyStepper size="sm" value={x.q} onDec={x.onMinus} onInc={x.onPlus} /></div>
+            <div className="flex-none"><QtyStepper decLabel={mn.E2("Uno menos", "One less")} incLabel={mn.E2("Uno más", "One more")} size="sm" value={x.q} onDec={x.onMinus} onInc={x.onPlus} /></div>
           </div>
         ))}
       </div>

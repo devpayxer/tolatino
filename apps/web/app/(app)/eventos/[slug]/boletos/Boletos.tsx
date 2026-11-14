@@ -86,7 +86,7 @@ export function Boletos({ p, es, yo, ini }: { p: PantallaBoletos; es: boolean; y
                 {t.quedan === 0 ? <span className="font-mono text-[9.5px] font-bold tracking-[0.08em] text-danger">{E2("AGOTADO.", "SOLD OUT.")}</span>
                   : t.quedan <= 20 ? <span className="font-mono text-[9.5px] font-bold tracking-[0.08em] text-pro-ink">{E2(`SOLO QUEDAN ${t.quedan}.`, `ONLY ${t.quedan} LEFT.`)}</span> : null}</div>
             </div>
-            {t.quedan > 0 && <div className="flex-none"><QtyStepper value={n} size="sm" onDec={() => cambiar(t.id, -1)} onInc={() => { if (!tope) cambiar(t.id, 1); }} /></div>}
+            {t.quedan > 0 && <div className="flex-none"><QtyStepper decLabel={E2("Uno menos", "One less")} incLabel={E2("Uno más", "One more")} value={n} size="sm" onDec={() => cambiar(t.id, -1)} onInc={() => { if (!tope) cambiar(t.id, 1); }} /></div>}
           </div>
         );
       })}

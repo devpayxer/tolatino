@@ -86,7 +86,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
   const cuando = sel ? `${cap(diaL)} · ${horaL(sel.m)}` : "—";
 
   const fila = (t: string, s2: string, val: number, dec: () => void, inc: () => void) => (
-    <div className="flex items-center justify-between gap-3"><div><div className="text-[13.5px] font-bold">{t}</div><div className="mt-0.5 text-[11.5px] font-medium text-ink/55">{s2}</div></div><QtyStepper value={val} onDec={dec} onInc={inc} /></div>
+    <div className="flex items-center justify-between gap-3"><div><div className="text-[13.5px] font-bold">{t}</div><div className="mt-0.5 text-[11.5px] font-medium text-ink/55">{s2}</div></div><QtyStepper decLabel={E2("Uno menos", "One less")} incLabel={E2("Uno más", "One more")} value={val} onDec={dec} onInc={inc} /></div>
   );
   const lineaNota = <div className="flex items-start gap-2.5 rounded-[14px] bg-action/[.07] px-3.5 py-3"><span className="grid flex-none pt-px"><Icon name="dollar" size={16} color="var(--tl-action)" /></span><span className="text-pretty text-[12.5px] font-bold leading-[1.45] text-action-hover">{linea}</span></div>;
   const bloqueViaje = (
