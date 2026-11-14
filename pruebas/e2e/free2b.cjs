@@ -9,6 +9,9 @@ const restaurar = () => { sql(`update business_hours set ranges='[["11:00","21:0
   sql(`update business_hours set ranges='[["00:00","00:00"]]'::jsonb where business_id='${BIZ}' and module=''`);
   sql(`update operations set respond_by = now() - interval '1 minute' where status='pending'`);
   sql(`update business_stats_cache set plan='free' where business_id='${BIZ}'`);
+  // 9b-3 · El mofongo y el chicharrón disponibles, con su cuenta, y sin pausa: barajada, otra prueba los dejaba agotados o en pausa y «Enviar pedido» quedaba apagado.
+  sql(`update items set sold_out = false, stock_left = greatest(stock_left, stock_par), stock_day = null where business_id='${BIZ}' and id in (5, 7)`);
+  sql(`insert into menu_settings (business_id) values ('${BIZ}') on conflict (business_id) do update set pause_until = null`);
   const usados = +sql(`select count(*) from operations where business_id='${BIZ}' and free_quota_month = to_char(now() at time zone 'America/New_York','YYYY-MM')`);
   sql(`update platform_config set value='${usados + 1}' where key='free_ops_cap'`);
   const b = await chromium.launch(); const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage();
@@ -21,7 +24,7 @@ const restaurar = () => { sql(`update business_hours set ranges='[["11:00","21:0
   const cinco = sql(`select string_agg(i.id::text, ',' order by s.sort, s.id, i.sort, i.id) from items i join item_sections s on s.id=i.section_id where i.business_id='${BIZ}' and i.removed_at is null and i.status='live' and s.visible and s.removed_at is null`).split(',').slice(0, 5);
   console.log('  los 5 de Free:', cinco.join(','));
   const sin = '5', CH = { '5': [0], '6': [0] }; ok(cinco.includes(sin), 'el mofongo está entre los 5');
-  await cart(sin, CH); await m.goto(B + N + '/pagar'); await m.locator('[data-screen-label="Checkout · barra"]').getByText(/Enviar pedido/).click();
+  await cart(sin, CH); await m.goto(B + N + '/pagar'); await m.locator('[data-screen-label="Checkout · barra"]').getByText(/Enviar pedido/).click({ timeout: 15000 }).catch(async (e) => { throw new Error('no se pudo enviar · la página dice: ' + (await m.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 1200) + ' · ' + sql(`select string_agg(id || ':' || sold_out || ':' || stock_mode || ':' || stock_left, ' ') from items where business_id='${BIZ}' and id in (5,7)`)); });
   await m.waitForURL(/\/pedido\/\d+$/); const num = m.url().split('/').pop();
   ok(/^\d{4}-\d{2}$/.test(sql(`select free_quota_month from operations where number='${num}'`)), 'Free: el pedido #' + num + ' cuenta para el techo del mes');
   await m.goto(B + N); await cart(sin, CH); await m.goto(B + N + '/pagar');

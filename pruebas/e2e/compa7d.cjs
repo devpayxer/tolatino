@@ -60,6 +60,8 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
   console.log('1 · Todo apagado: la «Ayuda con …» de cada familia tal como era (la foto de referencia)');
   flag('compa.use.neighbor', false);
   const antes = {};
+  // 9b-3 · Si una pantalla «idéntica» no lo es, el fallo dice dónde empieza la diferencia (barajada falló una vez sin decirlo).
+  const dif = (a, b) => { if (a === b) return ''; let i = 0; while (i < a.length && a[i] === b[i]) i++; return ` · difiere en ${i}: antes «${(b || '').slice(Math.max(0, i - 60), i + 80)}» · ahora «${(a || '').slice(Math.max(0, i - 60), i + 80)}»`; };
   for (const f of fam) { const p = await como(f.tel); await p.goto(B + AYUDA[f.kind](f.num)); await p.waitForLoadState('networkidle'); antes[f.kind] = norm(await texto(p));
     ok(!(await p.locator(HOJA).count()), `${f.num} (${f.kind}) apagado: sin hoja, la pantalla de siempre`); }
   const pm0 = await como(MARISOL); await pm0.goto(B + '/soporte');
@@ -83,7 +85,7 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
   // ?de=compa = el formulario de siempre
   const fc = fam.find((f) => f.kind === 'appointment'), pM = await como(MARISOL);
   await pM.goto(B + AYUDA.appointment(fc.num) + '?de=compa'); await pM.waitForLoadState('networkidle');
-  ok(!(await pM.locator(HOJA).count()) && norm(await texto(pM)) === antes.appointment, '?de=compa: el formulario de siempre, idéntico');
+  { const t = norm(await texto(pM)); ok(!(await pM.locator(HOJA).count()) && t === antes.appointment, '?de=compa: el formulario de siempre, idéntico' + dif(t, antes.appointment)); }
   // Cerrar la hoja (tocar fuera) = la operación de siempre
   await pM.goto(B + AYUDA.appointment(fc.num)); await pM.locator(HOJA).waitFor();
   await pM.mouse.click(200, 40); await pM.waitForURL(new RegExp(`/cita/${fc.num}$`)); ok(!(await pM.locator(HOJA).count()), 'tocar fuera de la hoja: vuelve a la cita');
@@ -246,7 +248,7 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
 
   console.log('10 · Todo apagado y al tope: la «Ayuda con …» de cada familia IGUAL que antes');
   const iguales = async (tag) => { for (const f of fam) { const p = await como(f.tel); await p.goto(B + AYUDA[f.kind](f.num)); await p.waitForLoadState('networkidle');
-    const t = norm(await texto(p)); ok(!(await p.locator(HOJA).count()) && t === antes[f.kind], `${tag}: ${f.num} sin hoja, la misma pantalla de antes`); } };
+    const t = norm(await texto(p)); ok(!(await p.locator(HOJA).count()) && t === antes[f.kind], `${tag}: ${f.num} sin hoja, la misma pantalla de antes` + dif(t, antes[f.kind])); } };
   flag('compa.channel.app', false); await iguales('canal app apagado'); flag('compa.channel.app', true);
   sql(`insert into compa_pauses (scope, city_id, use, reason, paused_by) values ('city', 'hzl', 'neighbor', 'prueba compa7d', '${uid(ADM)}')`); await iguales('Hazleton en pausa');
   sql(`update compa_pauses set lifted_at = now(), lifted_by = '${uid(ADM)}', lift_reason = 'prueba compa7d' where lifted_at is null`);

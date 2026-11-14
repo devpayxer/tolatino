@@ -86,7 +86,17 @@ const limpiar = () => { try { sql(`update chat_threads set blocked_at = null, bl
   await m.goto(B + `/cuenta/mensajes/${BIZ}`); await m.getByText('Este negocio no recibe mensajes tuyos.').first().waitFor(); ok(!(await vis(m.getByPlaceholder(/Escribe a/))), 'bloqueada: no puede escribir');
   ok(sql(`select count(*) from audit_entries where action = 'mensajes.bloquear' and at > now() - interval '1 minute'`) !== '0', 'bloquear queda en la auditoría');
   // 8) desde un pedido: contexto
-  limpiar(); const num = sql(`select number from operations where user_id = ${MARI} and business_id = '${BIZ}' and kind = 'order' order by id desc limit 1`);
+  // 9b-3 · El pedido es de esta prueba: en una base nueva y barajada Marisol no tenía ninguno en Sabor Dominicano y /pedido/ quedaba sin número (404).
+  limpiar();
+  const horas = sql(`select coalesce(json_agg(json_build_object('w', weekday, 'o', open, 'r', ranges)), '[]') from business_hours where business_id = '${BIZ}' and module = ''`);
+  sql(`update business_hours set ranges = '[["00:00","00:00"]]'::jsonb, open = true where business_id = '${BIZ}' and module = ''`);
+  sql(`insert into menu_settings (business_id) values ('${BIZ}') on conflict (business_id) do update set pause_until = null`);
+  sql(`update items set sold_out = false, stock_left = greatest(stock_left, stock_par), stock_day = null where business_id = '${BIZ}' and id = 16`);
+  await m.goto(B + `/n/${BIZ}`);
+  await m.evaluate(() => { localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: [{ id: '16', ch: {}, q: 1, nt: '', k: {} }] } })); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); });
+  await m.goto(B + `/n/${BIZ}/pagar`); await clic(m.locator('[data-screen-label="Checkout · barra"]').getByText(/Enviar pedido/));
+  await m.waitForURL(/\/pedido\/\d+$/, { timeout: 30000 }).finally(() => { for (const h of JSON.parse(horas)) sql(`update business_hours set open = ${h.o}, ranges = '${JSON.stringify(h.r)}'::jsonb where business_id = '${BIZ}' and module = '' and weekday = ${h.w}`); });
+  const num = m.url().split('/').pop();
   // 9b-3 · «Escribir al negocio» sale en un pedido EN CURSO: el último de Marisol podía estar terminado por otra prueba (barajada). Se le pone en curso.
   sql(`update operations set status = 'confirmed', stage = 'preparing', done_at = null where number = '${num}' and business_id = '${BIZ}' and kind = 'order'`);
   await m.goto(B + `/pedido/${num}`); await clic(m.getByRole('button', { name: 'Escribir al negocio' }));
