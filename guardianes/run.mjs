@@ -2565,6 +2565,10 @@ const guardianes = {
     // Lo demás que muestra eventos al público también pide listable (Noche, novedades, Mi cuenta, Hoy por post_en_vivo).
     for (const [f, re] of [["apps/web/lib/noche-publico.ts", /d\.listable and d\.ends_at > now\(\)/], ["apps/web/lib/novedades.ts", /where e\.id = p\.event_id and d\.listable/], ["apps/web/lib/rsvp.ts", /f\.kind = 'event' and d\.listable/]])
       if (existsSync(f) && !re.test(sinComent(f))) falla(G, f, 0, "muestra un evento al público sin pedir listable");
+    // Noche lee fechas de eventos en más de una subconsulta (el enlace y el día): CADA lectura de event_dates pide listable, no basta con una.
+    { const f = "apps/web/lib/noche-publico.ts";
+      if (existsSync(f)) { const t = sinComent(f), lee = (t.match(/event_dates d\b/g) ?? []).length, pide = (t.match(/d\.listable and d\.ends_at > now\(\)/g) ?? []).length;
+        if (pide < lee) falla(G, f, 0, `lee event_dates ${lee} veces y pide listable solo ${pide}: cada fecha que ve el público es listable`); } }
   },
 
   /* 6b. Eventos pagina con cursor (starts_at, id), 20 por página y una de más, sin offset, sobre el índice (city_id, starts_at, id) where

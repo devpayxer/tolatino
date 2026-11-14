@@ -14,6 +14,7 @@ const casos = [
   ['eventosSoloListables', EP, "const VIVO = `d.listable and d.starts_at", "const VIVO = `d.starts_at"],
   ['eventosSoloListables', EP, "${DESDE_T} where ${VIVO} and d.city_id = $2 and d.local_date <= $3::date", "${DESDE_T} where d.city_id = $2 and d.local_date <= $3::date"],
   ['eventosSoloListables', NP, "and exists (select 1 from event_dates d where d.event_id = e.id and d.listable and d.ends_at > now())", "and exists (select 1 from event_dates d where d.event_id = e.id and d.ends_at > now())"],
+  ['eventosSoloListables', NP, "e.business_id = i.business_id and d.listable and d.ends_at > now() order by d.starts_at limit 1", "e.business_id = i.business_id and d.ends_at > now() order by d.starts_at limit 1"],
   ['eventosSoloListables', RS, "f.kind = 'event' and d.listable", "f.kind = 'event'"],
   // eventosConCursor (nuevo)
   ['eventosConCursor', EP, "order by d.starts_at, d.id limit ${K}`, vv)", "order by d.starts_at, d.id limit ${K} offset 0`, vv)"],
