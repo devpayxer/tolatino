@@ -2251,3 +2251,17 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   después de las del Repartidor de 9n), `lib/barrido.ts` (dos tareas después de `colasTomado`), `app/panel/Panel.tsx` (el hook `V` y «Volver a Pro»),
   `app/panel/Entrega.tsx`, `Pedidos.tsx`, `MercadoPanel.tsx`, `acciones-*.ts`, `app/admin/Colas.tsx` y `acciones-colas.ts` (Resolver y reponer / devolver de
   un pedido), `lib/pedidos.ts` (`autoOffer`), las pantallas que cobran, `docs/ayuda/admin-configuracion.md`, migración 0148.
+
+## Fase 9 · 9b-3 — la confirmación del CI con todo junto (14 nov)
+- **Qué:** 9g, 9h, 9i, 9j, 9k, 9l, 9m, 9n, 9n-2, 9n-3, 9n-4 y 9o juntos en `claude/vibrant-franklin-krutwa`; la confirmación completa del CI (decisión AD:
+  hito de cierre de 9b-3) — tipos, build, guardianes, seguridad, al revés, todas las fases, barajada, dos veces seguidas y los 9 dispositivos.
+- **Primera vuelta (43630040130):** 12 rojos + al revés 30/31. **Segunda (43643679396):** 4 rojos (vec9m en las tres, cit3e, compa7d y merc4p en la
+  barajada); dispositivos, seguridad, al revés y build en verde.
+- **Clases cazadas y su guardián** (al revés `alreves9b3` 44/44):
+  - `ciudadSinAmbiguedad` — el selector de ciudad del admin (9n-3) también dice «Hazleton…Reading»: un `getByText('<ciudad>')` sin acotar choca.
+  - `retiradoNoCuenta` — nada se borra: una prueba que retira repartidores no puede buscarlos por teléfono sin mirar el estado.
+  - `precioVuelve` — una prueba que cambia el precio de un producto de la semilla lo devuelve al salir (ret4n subía la pierna 10¢ y merc4p contaba $36.57).
+  - Noche en `eventosSoloListables` (`lib/noche-publico.ts` lee fechas solo listables; al revés `alreves6b` 32/32).
+  - El resto eran precondiciones de orden que ahora cada prueba se pone (free2b y menu2b abren Sabor; adm4m pide la cita de salud de sal4j; vec9m pone la
+    etiqueta antes de abrir la ficha; cit3e espera el cierre —reembolso y cierre son dos escrituras—; compa7d usa a la dueña de la cita).
+- **Sigue:** la tercera vuelta de confirmación; en verde → `main` y `pruebas` avanzan (el sandbox recibe de golpe las migraciones 0133–0148: mirarlo).
