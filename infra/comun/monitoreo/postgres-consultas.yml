@@ -1,0 +1,25 @@
+# 9o · Lo que postgres_exporter mide de la plataforma (además de lo de Postgres): lo lee Prometheus en la réplica y las alertas de reglas.yml.
+# Solo cifras; nada de una persona. Cada consulta es barata (índices de 0140/0145) y corre cada 30 s.
+tolatino:
+  query: |
+    select
+      coalesce(extract(epoch from now() - (select max(last_run_at) from system_jobs where name like 'barrido.%')), 999999)::float8 as barrido_segundos,
+      (select count(*) from push_outbox where status = 'pendiente' and not_before <= now())::float8 as push_cola,
+      coalesce(extract(epoch from now() - (select min(not_before) from push_outbox where status = 'pendiente' and not_before <= now())), 0)::float8 as push_vieja_segundos,
+      coalesce(extract(epoch from now() - (select max(finished_at) from backup_runs where kind = 'base' and result = 'ok' and not is_test)) / 3600, 9999)::float8 as respaldo_base_horas,
+      coalesce(extract(epoch from now() - (select max(started_at) from restore_drills where result = 'ok' and not is_test)) / 86400, 9999)::float8 as restauracion_dias,
+      (select count(*) from restore_drills where result = 'fallo' and not is_test and started_at > now() - interval '8 days'
+         and started_at > coalesce((select max(started_at) from restore_drills where result = 'ok' and not is_test), '-infinity'))::float8 as restauracion_fallos,
+      (select count(*) from app_error_groups where first_seen > now() - interval '1 hour')::float8 as errores_nuevos_hora,
+      (select count(*) from incident_log where ended_at is null)::float8 as incidentes_abiertos,
+      coalesce(extract(epoch from now() - (select max(last_run_at) from system_jobs where name = 'barrido.reporteDiario')), 999999)::float8 as reporte_diario_segundos
+  metrics:
+    - barrido_segundos: { usage: GAUGE, description: "Segundos desde la última vuelta del barrido" }
+    - push_cola: { usage: GAUGE, description: "Avisos push pendientes ya debidos" }
+    - push_vieja_segundos: { usage: GAUGE, description: "Antigüedad del aviso push pendiente más viejo" }
+    - respaldo_base_horas: { usage: GAUGE, description: "Horas desde el último respaldo bueno de la base" }
+    - restauracion_dias: { usage: GAUGE, description: "Días desde la última restauración de prueba buena" }
+    - restauracion_fallos: { usage: GAUGE, description: "Restauraciones de prueba fallidas desde la última buena" }
+    - errores_nuevos_hora: { usage: GAUGE, description: "Grupos de errores nuevos en la última hora" }
+    - incidentes_abiertos: { usage: GAUGE, description: "Incidentes abiertos" }
+    - reporte_diario_segundos: { usage: GAUGE, description: "Segundos desde que corrió la tarea del reporte diario" }

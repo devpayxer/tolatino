@@ -1,12 +1,22 @@
 #!/bin/bash
 # Despliegue del sandbox. Lo ejecuta tolatino-sync (root) en /opt/tolatino cada vez que la rama `pruebas` cambia.
 # Idempotente: se puede correr mil veces. Nunca pide nada a nadie.
+# 9o · Los pasos que comparte con producción viven en infra/comun/ (el mismo paquete; guardián mismoPaquete): los secretos que nacen en el servidor,
+# el diagnóstico, los índices de la ayuda, lo legal y las cadenas, la comprobación de salud, el sobre sellado y el registro del despliegue. Lo propio del
+# sandbox se queda aquí: un solo servidor (docker compose up --build), la semilla de pruebas y el modo pruebas del SMS.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 REPO=$(pwd)
 COMMIT=$(git rev-parse --short HEAD)
 ENV_FILE=/etc/tolatino/pruebas.env
-log() { echo "$(date -Is) [deploy] $*"; }
+# shellcheck source=../comun/lib.sh
+. "$REPO/infra/comun/lib.sh"
+# shellcheck source=../comun/registro.sh
+. "$REPO/infra/comun/registro.sh"
+# shellcheck source=../comun/sellado.sh
+. "$REPO/infra/comun/sellado.sh"
+INICIO=$(date -u +%FT%TZ)
+PREVIO=$(cat /var/lib/tolatino/last-deploy 2>/dev/null || true)
 
 # 1) El script de sincronización con candado (corrige el choque del primer arranque).
 install -m 0755 "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync
@@ -22,47 +32,31 @@ MINIO_ROOT_USER=tolatino
 MINIO_ROOT_PASSWORD=$(openssl rand -hex 24)
 EOF
 fi
-# Secretos que se agregaron después: se completan sin tocar los que ya existen.
-grep -q '^AUTH_SECRET=' "$ENV_FILE" || echo "AUTH_SECRET=$(openssl rand -hex 32)" >> "$ENV_FILE"
-# Llave del cifrado de columna (op_private, 4j): se crea una vez en el servidor; perderla vuelve ilegibles las notas vivas.
-grep -q '^DATOS_SECRET=' "$ENV_FILE" || echo "DATOS_SECRET=$(openssl rand -hex 32)" >> "$ENV_FILE"
-# Barrido central (0078): el token que comparten la app y el servicio «barrido»; nunca sale del servidor.
-grep -q '^BARRIDO_TOKEN=' "$ENV_FILE" || echo "BARRIDO_TOKEN=$(openssl rand -hex 32)" >> "$ENV_FILE"
-# Llave Ed25519 que firma el QR de los boletos (6c): la privada vive solo aquí (PKCS8 DER en base64); la pública la publica la app en
-# qr_keys. Una por entorno: un QR del sandbox nunca vale en producción. Perderla anula los QR mostrados hasta que la app los vuelva a firmar.
-grep -q '^QR_LLAVE_PRIVADA=' "$ENV_FILE" || echo "QR_LLAVE_PRIVADA=$(openssl genpkey -algorithm ed25519 -outform DER | base64 -w0)" >> "$ENV_FILE"
-# 8c · Llave VAPID de Web Push (P-256, PKCS8 DER en base64): la privada vive solo aquí; la pública la entrega la app a cada navegador. Una por
-# entorno (las suscripciones del sandbox nunca valen en producción). Perderla deja las suscripciones sin uso: los navegadores se vuelven a suscribir.
-grep -q '^VAPID_PRIVADA=' "$ENV_FILE" || echo "VAPID_PRIVADA=$(openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt -outform DER | base64 -w0)" >> "$ENV_FILE"
-# 8i · El código FIJO de cada cuenta de revisión de Apple y Google (6 dígitos al azar, uno por app): vive solo aquí; el servidor lo lee por su
-# nombre (review_accounts.code_ref) y lo manda a App Store Connect por la API con las notas para la revisión. Nunca en el repo ni en el chat.
-for a in CLIENTE NEGOCIO REPARTIDOR PUERTA; do
-  grep -q "^REVISION_CODIGO_$a=" "$ENV_FILE" || echo "REVISION_CODIGO_$a=$(printf '%06d' $(( $(od -An -N4 -tu4 /dev/urandom | tr -d ' ') % 1000000 )))" >> "$ENV_FILE"
+# Secretos que se agregaron después: se completan sin tocar los que ya existen (las recetas, en infra/comun/lib.sh).
+#   AUTH_SECRET · DATOS_SECRET (cifrado de columna op_private, 4j: perderla vuelve ilegibles las notas vivas) · BARRIDO_TOKEN (0078) ·
+#   QR_LLAVE_PRIVADA (6c: una por entorno; un QR del sandbox nunca vale en producción) · VAPID_PRIVADA (8c) · REVISION_CODIGO_* (8i: el código fijo de
+#   cada cuenta de revisión de Apple y Google; nunca en el repo ni en el chat).
+for n in AUTH_SECRET DATOS_SECRET BARRIDO_TOKEN QR_LLAVE_PRIVADA VAPID_PRIVADA \
+         REVISION_CODIGO_CLIENTE REVISION_CODIGO_NEGOCIO REVISION_CODIGO_REPARTIDOR REVISION_CODIGO_PUERTA; do
+  secreto_nace "$ENV_FILE" "$n"
 done
 chmod 600 "$ENV_FILE"
 
+# 2a) 9o · El sobre sellado: la llave age del sandbox (la pública en /estado/llave.txt) y los secretos de terceros que lleguen sellados para él
+#     (infra/pruebas/sellado/sandbox/*.age; Paquete 9-1 → 9q). Nunca detiene el despliegue: sin age o sin sobres, sigue como siempre.
+FP_AGE=$(sellado_preparar /var/www/estado/llave.txt || true)
+sellado_abrir "$REPO/infra/pruebas/sellado" sandbox "$ENV_FILE" "$REPO/infra/comun/secretos.json" /var/www/estado/sobres.txt || true
+
 # 2b) Fotos: Garage (S3 propio). Antes que el resto: su configuración (con secretos) tiene que existir antes de montar
 #     el contenedor. La primera vez crea el bucket y la llave de la app (a $ENV_FILE), que el paso 3 le pasa a la app.
+# shellcheck disable=SC2097,SC2098  # (como siempre: ENV_FILE va al proceso de medios.sh y el mismo valor a sus argumentos)
 ENV_FILE="$ENV_FILE" GARAGE_TOML=/etc/tolatino/garage.toml bash "$REPO/infra/pruebas/medios.sh" docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" \
   || log "medios: falló la preparación (las fotos no se pueden subir)"
 
 # 2c) Diagnóstico a la vista (sin SSH): disco, Docker y la base, en /estado/diag.txt. Si el disco pasa del 85 %, se libera lo que Docker
 #     puede rehacer (caché de builds, imágenes sin uso); nunca volúmenes.
 COMPOSE=(docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml")
-diag() {
-  mkdir -p /var/www/estado
-  { echo "== $(date -Is) commit $COMMIT · $1"; df -h / /var/lib/docker 2>/dev/null; echo; docker system df 2>/dev/null; echo
-    echo "== contenedores"; "${COMPOSE[@]}" ps -a 2>/dev/null; echo
-    echo "== base (últimas líneas)"; "${COMPOSE[@]}" logs --tail=60 db 2>/dev/null | sed -E 's/(password|PASSWORD)=[^ ]*/\1=***/g'
-  } > /var/www/estado/diag.txt 2>&1 || true
-}
-USO=$(df --output=pcent / | tail -1 | tr -dc 0-9)
-if [ "${USO:-0}" -ge 85 ]; then
-  log "disco al $USO %: se libera la caché de Docker"
-  docker builder prune -af >/dev/null 2>&1 || true
-  docker image prune -af >/dev/null 2>&1 || true
-  journalctl --vacuum-size=200M >/dev/null 2>&1 || true
-fi
+disco_liberar
 diag "antes"
 
 # 3) Contenedores: app (se reconstruye con el commit nuevo), Postgres + PostGIS y Garage (fotos).
@@ -84,34 +78,20 @@ docker image prune -f >/dev/null 2>&1 || true
 
 # 3b) Base de datos: migraciones pendientes, en orden, una sola vez cada una.
 for i in $(seq 1 30); do
-  docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" exec -T db pg_isready -h 127.0.0.1 -U tolatino -d tolatino >/dev/null 2>&1 && break
+  "${COMPOSE[@]}" exec -T db pg_isready -h 127.0.0.1 -U tolatino -d tolatino >/dev/null 2>&1 && break
   sleep 2
 done
-bash "$REPO/packages/db/migrar.sh" docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml"
+bash "$REPO/packages/db/migrar.sh" "${COMPOSE[@]}"
 
 # 3c) Semilla del SANDBOX (decisión I: datos de ejemplo solo en pruebas). Se vuelve a aplicar si cambia.
-SEMILLA_DIR="$REPO/infra/pruebas/semilla" bash "$REPO/packages/db/migrar.sh" --semilla-pruebas docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml"
+SEMILLA_DIR="$REPO/infra/pruebas/semilla" bash "$REPO/packages/db/migrar.sh" --semilla-pruebas "${COMPOSE[@]}"
 
-# 3c-bis) Centro de ayuda (7a): docs/ayuda/ → help_articles / help_chunks. El repo es la fuente; el índice se rehace solo con lo que
-#     cambió (sha256: el mismo archivo otra vez no cambia nada) y lo que ya no está queda «retirado». Corre con el node de la imagen base
-#     (sin conexión a la base: imprime SQL que psql aplica en una transacción). Si falla, la app sigue arriba con el índice anterior.
-docker run --rm --network none -v "$REPO":/repo:ro -w /repo node:22-alpine node scripts/ayuda/indexar.mjs \
-  | docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt \
-  || log "ayuda: no se pudo indexar docs/ayuda (el Centro de ayuda queda como estaba)"
-
-# 3c-ter) Páginas legales (9e): docs/legal/ → legal_pages, igual que la ayuda. Un archivo que cambió es una versión NUEVA en borrador (el texto
-#     de una versión nunca cambia); lo mismo otra vez no cambia nada (sha256). Publicar es del Super Admin (Textos y páginas › Páginas), nunca
-#     de este paso. Si falla, la app sigue arriba con las versiones de antes.
-docker run --rm --network none -v "$REPO":/repo:ro -w /repo node:22-alpine node scripts/legal/indexar.mjs \
-  | docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt \
-  || log "legal: no se pudo indexar docs/legal (las páginas legales quedan como estaban)"
-
-# 3c-quater) Cadenas de la interfaz (9f): apps/web/lib/cms-cadenas.json (lo que extrae scripts/cms/extraer.mjs del código) → cms_strings. Una
-#     cadena nueva entra con el texto del código; lo que el Super Admin editó se respeta (salvo que ya no cumpla su largo o sus marcas, o sea una
-#     línea fija); lo mismo otra vez no cambia nada. Si falla, la app sigue con las cadenas de antes (y con las del código, que van de respaldo).
-docker run --rm --network none -v "$REPO":/repo:ro -w /repo node:22-alpine node scripts/cms/indexar.mjs \
-  | docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt \
-  || log "cms: no se pudieron indexar las cadenas (la interfaz sigue con las de antes y las del código)"
+# 3c-bis/ter/quater) Lo que sale del repo (infra/comun/lib.sh · indexar_docs): el Centro de ayuda (7a: docs/ayuda/ → help_articles), las páginas
+#     legales (9e: docs/legal/ → legal_pages; un archivo que cambió es una versión NUEVA en borrador, publicar es del Super Admin) y las cadenas de la
+#     interfaz (9f: apps/web/lib/cms-cadenas.json → cms_strings; lo editado en el Super Admin se respeta). Cada uno con el node de la imagen base, sin
+#     red, imprime SQL que psql aplica en una transacción; lo mismo otra vez no cambia nada. Si uno falla, la app sigue con lo de antes.
+PSQL=("${COMPOSE[@]}" exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt)
+indexar_docs "$REPO" "${PSQL[@]}"
 
 # 3d) Mapa: teselas propias de Pensilvania. Generarlas tarda minutos: si faltan, se hacen aparte (systemd-run) y al
 #     terminar se enciende el servidor de teselas. El despliegue de la app nunca espera por el mapa.
@@ -128,6 +108,7 @@ fi
 #     arriba y las fotos nuevas de la Comunidad esperan revisión manual; nunca se publican sin revisar.
 COMPOSE_MOD=(docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" --profile moderacion)
 if ! systemctl is-active --quiet tolatino-moderacion; then
+  # shellcheck disable=SC2048  # (como siempre: las partes del compose no llevan espacios)
   systemd-run --unit tolatino-moderacion --collect ${COMPOSE_MOD[*]} up -d --build moderacion-img || true
 fi
 
@@ -143,7 +124,7 @@ fi
 #     el script mismo no hace nada si la carga tiene menos de 90 días.
 if ! systemctl is-active --quiet tolatino-direcciones; then
   systemd-run --unit tolatino-direcciones --collect bash "$REPO/infra/direcciones/generar.sh" /var/lib/tolatino/direcciones \
-    docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" || true
+    "${COMPOSE[@]}" || true
 fi
 
 # 4) nginx: la app en /, la página de estado del servidor en /estado.
@@ -152,14 +133,16 @@ ln -sf /etc/nginx/sites-available/tolatino-pruebas /etc/nginx/sites-enabled/tola
 rm -f /etc/nginx/sites-enabled/estado /etc/nginx/sites-enabled/default
 nginx -t && systemctl reload nginx
 
-# 5) Comprobación real: la app responde y ve la base con PostGIS.
-for i in $(seq 1 30); do
-  if curl -fsS -m 5 http://127.0.0.1:3000/api/salud >/tmp/salud.json 2>/dev/null; then
-    log "salud: $(cat /tmp/salud.json)"
-    exit 0
-  fi
-  sleep 3
-done
+# 5) Comprobación real: la app responde y ve la base con PostGIS. 9o: el despliegue queda anotado en deploy_releases (Sistema › Despliegues) con su
+#    resultado; si la base no contesta, se dice y se sigue (el registro nunca cambia el resultado del despliegue).
+if salud_esperar http://127.0.0.1:3000/api/salud 30 3; then
+  log "salud: $(cat /tmp/salud.json)"
+  DIGEST=$(docker image inspect tolatino/web:pruebas --format '{{.Id}}' 2>/dev/null || true)
+  registrar_despliegue pruebas "$(git rev-parse HEAD)" "$PREVIO" "$DIGEST" unico "$INICIO" "$(date -u +%FT%TZ)" ok "" "" "" "" >/dev/null || true
+  anotar_llave pruebas age_servidor sandbox "${FP_AGE:-}" || true
+  exit 0
+fi
 log "la app no respondió en /api/salud a tiempo"
-docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" logs --tail=40 web || true
+"${COMPOSE[@]}" logs --tail=40 web || true
+registrar_despliegue pruebas "$(git rev-parse HEAD)" "$PREVIO" "" unico "$INICIO" "" fallo "la app no respondió en /api/salud a tiempo" "" "" "" >/dev/null || true
 exit 1

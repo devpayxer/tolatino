@@ -1,0 +1,56 @@
+#cloud-config
+# 9o · El nacimiento del SANDBOX (tolatino-pruebas-1), en el repo para poder reconstruirlo por la API del proveedor sin tocar nada a mano
+# (fase9-apertura.md §3.2: «y el del sandbox también, que hoy no está»). Es lo que PROGRESS dice que instaló el cloud-init del 5 nov: git, nginx, docker y
+# compose, fail2ban, actualizaciones automáticas (reinicio 04:30), usuario deploy y tolatino-sync cada 60 s contra la rama «pruebas». NO se aplica a la
+# máquina viva: solo al reconstruirla (scripts/produccion/maquinas.sh reconstruir-sandbox). La primera corrida de tolatino-sync instala la versión
+# del repo (infra/pruebas/tolatino-sync, con candado) y deploy.sh hace el resto. Sin llave SSH.
+package_update: true
+package_upgrade: true
+packages:
+  - git
+  - curl
+  - nginx
+  - age
+  - fail2ban
+  - unattended-upgrades
+  - docker.io
+  - docker-compose-v2
+users:
+  - default
+  - name: deploy
+    groups: [docker]
+    shell: /bin/bash
+    lock_passwd: true
+ssh_pwauth: false
+disable_root: true
+write_files:
+  - path: /etc/apt/apt.conf.d/52tolatino-reinicio
+    content: |
+      Unattended-Upgrade::Automatic-Reboot "true";
+      Unattended-Upgrade::Automatic-Reboot-Time "04:30";
+  - path: /etc/systemd/system/tolatino-sync.service
+    content: |
+      [Unit]
+      Description=To'Latino · sincronizar con la rama pruebas y desplegar
+      After=network-online.target docker.service
+      Wants=network-online.target
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/tolatino-sync
+      TimeoutStartSec=3600
+  - path: /etc/systemd/system/tolatino-sync.timer
+    content: |
+      [Unit]
+      Description=To'Latino · cada 60 s
+      [Timer]
+      OnBootSec=30
+      OnUnitActiveSec=60
+      [Install]
+      WantedBy=timers.target
+runcmd:
+  - systemctl enable --now docker
+  - mkdir -p /var/lib/tolatino /var/www/estado
+  - git clone -q --depth 50 --branch pruebas https://github.com/devpayxer/tolatino.git /opt/tolatino
+  - install -m 0755 /opt/tolatino/infra/pruebas/tolatino-sync /usr/local/bin/tolatino-sync
+  - systemctl daemon-reload
+  - systemctl enable --now tolatino-sync.timer

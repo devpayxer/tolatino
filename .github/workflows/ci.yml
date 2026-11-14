@@ -86,6 +86,12 @@ jobs:
         run: node scripts/prueba-firma-ses/prueba.mjs
       - name: Imagen del sandbox se construye
         run: docker build -f infra/pruebas/Dockerfile -t tolatino/web:ci .
+      - name: Producción como código sin servidor (azul/verde, sobre sellado, recuperación, PITR de verdad con pgBackRest, la traza del sandbox, compose)
+        run: |
+          sudo apt-get install -y -q age shellcheck pgbackrest >/dev/null
+          sudo -E env "PATH=$PATH" bash pruebas/infra/correr.sh
+      - name: Imagen de la base de producción se construye (Postgres + PostGIS + pgBackRest)
+        run: docker build -t tolatino/base:ci infra/produccion/base
       - name: Migraciones en una base real (dos veces, la segunda no cambia nada)
         env: { POSTGRES_PASSWORD: ci, TOLATINO_COMMIT: ci }
         run: |

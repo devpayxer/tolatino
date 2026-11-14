@@ -7,9 +7,10 @@ import { ENTORNO } from "../entorno";
 /* 9j · Super Admin › Sistema › Salud (prototipo secSys «health»; ADM-SYS «errores, latencia, colas de trabajos, estado de servicios; mantenimiento
    programado»; fase9-apertura.md §3.5). En el sandbox lee el sandbox: lo que mide el barrido cada 5 minutos (health_checks: la base, el barrido, la
    cola del push, el disco y los errores), el estado de cada tarea del barrido (system_jobs), los errores de las últimas 24 h por tipo (web, apps y
-   servidor), las llaves del llavero que vencen y el mantenimiento programado. Los despliegues y sus vueltas atrás (deploy_releases) los escribe la
-   tubería de producción (9o): hasta entonces la fila lo dice. Prometheus y Uptime Kuma (HERRAMIENTAS #4, #14) llegan con producción (9o); este
-   tablero es el mismo. Nada aquí lleva personas. */
+   servidor), las llaves del llavero que vencen y el mantenimiento programado. 9o: los últimos despliegues y sus vueltas atrás (deploy_releases, los
+   anota el deploy.sh de cada entorno), las llaves del servidor que viven fuera del llavero (server_keys: RESPALDO_LLAVE, el certificado de origen de
+   Cloudflare, el token del proveedor) y, en producción, las máquinas que mide Prometheus en la réplica (PROMETHEUS_URL, por la red privada; sin él la
+   fila no sale). Este tablero es el de Prometheus (HERRAMIENTAS #15: no hay Grafana aparte). Nada aquí lleva personas. */
 type Bi = { es: string; en: string };
 export type Servicio = "base" | "barrido" | "push" | "disco" | "errores";
 export const SERVICIOS: Servicio[] = ["base", "barrido", "push", "disco", "errores"];
@@ -18,7 +19,7 @@ export const AVISO_LLAVE_DIAS = 30;
 
 /* ── La medición (barrido, cada 5 minutos; cada servicio en su fila, solo inserción) ── */
 export async function medirSalud(): Promise<number> {
-  const ultima = (await db().query<{ hace: number | null }>(`select extract(epoch from now() - max(at))::float as hace from health_checks where not is_test`)).rows[0]?.hace;
+  const ultima = (await db().query<{ hace: number | null }>(`select extract(epoch from now() - max(at))::float as hace from health_checks where not is_test and service <> 'vigia'`)).rows[0]?.hace;
   if (ultima != null && ultima < CADA_MIN * 60 - 5) return 0;
   const filas: { service: Servicio; ok: boolean; latency_ms: number | null; value: number | null; detail: string }[] = [];
   const t0 = Date.now();
@@ -51,14 +52,35 @@ export async function medirSalud(): Promise<number> {
 export type FilaServicio = { service: Servicio; ok: boolean | null; at: string | null; latency: number | null; value: number | null; detail: string | null; caidas24: number };
 export type DatosSalud = {
   disponibilidad: number | null; p95: number | null; errores: { web: number; apps: number; servidor: number }; trabajosConError: { name: string; error: string; at: string | null }[];
-  servicios: FilaServicio[]; llaves: { kind: string; version: number; vence: string; dias: number }[];
+  servicios: FilaServicio[]; llaves: { kind: string; version: number; vence: string; dias: number; servidor?: boolean }[];
   mantenimiento: { id: string; desde: string; hasta: string; es: string; en: string; motivo: string; por: string | null; estado: "programado" | "en_curso" | "pasado" | "cancelado" }[];
-  despliegues: boolean; entorno: string;
+  despliegues: { id: string; commit: string; fin: string; result: "ok" | "vuelta_atras" | "fallo"; motivo: string | null; entorno: string }[] | null; entorno: string;
+  maquinas: { nombre: string; cpu: number | null; memoria: number | null; disco: number | null }[] | null;
 };
+
+/* 9o · Las máquinas de producción según Prometheus (la réplica, por la red privada): CPU, memoria y disco de cada una. 2 s como mucho; si no contesta,
+   la fila no sale (Salud nunca se queda esperando por el monitoreo). */
+async function maquinasPrometheus(): Promise<DatosSalud["maquinas"]> {
+  const base = process.env.PROMETHEUS_URL;
+  if (!base || !/^http:\/\/(10|172\.(1[6-9]|2\d|3[01])|192\.168)\.[0-9.]+:9090$/.test(base)) return null;
+  const q = async (expr: string) => {
+    const r = await fetch(`${base}/api/v1/query?query=${encodeURIComponent(expr)}`, { signal: AbortSignal.timeout(2000), cache: "no-store" });
+    const j = (await r.json()) as { data?: { result?: { metric: { maquina?: string }; value: [number, string] }[] } };
+    return new Map((j.data?.result ?? []).map((x) => [x.metric.maquina ?? "?", Math.round(Number(x.value[1]))]));
+  };
+  try {
+    const [cpu, mem, dis] = await Promise.all([
+      q(`100 * (1 - avg by (maquina) (rate(node_cpu_seconds_total{mode="idle"}[5m])))`),
+      q(`100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)`),
+      q(`100 * (1 - node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})`),
+    ]);
+    return [...new Set([...cpu.keys(), ...mem.keys(), ...dis.keys()])].sort().map((n) => ({ nombre: n, cpu: cpu.get(n) ?? null, memoria: mem.get(n) ?? null, disco: dis.get(n) ?? null }));
+  } catch { return null; }
+}
 const ISO = (c: string) => `to_char((${c}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
 
 export async function saludAdmin(): Promise<DatosSalud> {
-  const [k, s, e, j, ll, m, dep] = await Promise.all([
+  const [k, s, e, j, ll, m, dep, maq] = await Promise.all([
     db().query<{ disp: number | null; p95: number | null }>(
       `select round(100.0 * count(*) filter (where ok) / nullif(count(*), 0), 2)::float as disp,
               (select percentile_disc(0.95) within group (order by latency_ms) from health_checks where service = 'base' and at > now() - interval '24 hours' and latency_ms is not null)::float as p95
@@ -76,19 +98,24 @@ export async function saludAdmin(): Promise<DatosSalud> {
     db().query<{ name: string; error: string; at: string | null }>(
       `select replace(name, 'barrido.', '') as name, left(last_error, 160) as error, ${ISO("last_run_at")} as at from system_jobs
         where last_error is not null and (last_ok_at is null or last_ok_at < last_run_at) order by last_run_at desc nulls last limit 8`),
-    db().query<{ kind: string; version: number; vence: string; dias: number }>(
-      `select kind, version, to_char(expires_on, 'YYYY-MM-DD') as vence, (expires_on - current_date)::int as dias from store_secrets
-        where retired_at is null and expires_on is not null order by expires_on limit 20`),
+    db().query<{ kind: string; version: number; vence: string; dias: number; servidor: boolean }>(
+      `select * from (
+         select kind, version, to_char(expires_on, 'YYYY-MM-DD') as vence, (expires_on - current_date)::int as dias, false as servidor from store_secrets
+          where retired_at is null and expires_on is not null
+         union all
+         select key_name || ' · ' || machine, 1, to_char(expires_on, 'YYYY-MM-DD'), (expires_on - current_date)::int, true from server_keys
+          where retired_at is null and expires_on is not null) x order by vence limit 20`),
     db().query<DatosSalud["mantenimiento"][number]>(
       `select w.id::text, ${ISO("w.from_at")} as desde, ${ISO("w.to_at")} as hasta, w.message->>'es' as es, w.message->>'en' as en, w.reason as motivo,
               nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), '') as por,
               case when w.cancelled_at is not null then 'cancelado' when w.to_at < now() then 'pasado' when w.from_at <= now() then 'en_curso' else 'programado' end as estado
          from maintenance_windows w left join users u on u.id = w.by_staff order by w.from_at desc limit 10`),
-    db().query<{ ok: boolean }>(`select to_regclass('public.deploy_releases') is not null as ok`),
+    import("./despliegues").then((x) => x.ultimosDespliegues(5)).catch(() => null),
+    maquinasPrometheus(),
   ]);
   return {
     disponibilidad: k.rows[0]?.disp ?? null, p95: k.rows[0]?.p95 ?? null, errores: e.rows[0] ?? { web: 0, apps: 0, servidor: 0 }, trabajosConError: j.rows,
-    servicios: s.rows, llaves: ll.rows, mantenimiento: m.rows, despliegues: dep.rows[0]?.ok === true, entorno: ENTORNO,
+    servicios: s.rows, llaves: ll.rows, mantenimiento: m.rows, despliegues: dep, entorno: ENTORNO, maquinas: maq,
   };
 }
 
@@ -145,10 +172,19 @@ export async function cancelarMantenimiento(s: Staff, id: string, motivo: string
 const NOMBRES: Record<string, string> = { asc_api_key: "Llave de la API de App Store Connect", apns_key: "Llave de APNs", fcm_service_account: "Cuenta de servicio de Firebase",
   play_service_account: "Cuenta de servicio de Play", android_upload_keystore: "Llave de subida de Android", ios_dist_cert: "Certificado de distribución de iOS",
   google_wallet_sa: "Cuenta de Google Wallet", github_token: "Token de GitHub" };
+const SERVIDOR: Record<string, string> = { respaldo_llave: "Llave de los respaldos", cloudflare_origen: "Certificado de origen de Cloudflare", proveedor_token: "Token del proveedor de servidores",
+  age_servidor: "Llave del sobre sellado del servidor", recuperacion: "Llave de recuperación" };
+const nombreLlave = (k: string) => NOMBRES[k] ?? (k.includes(":") ? `${SERVIDOR[k.split(":")[0]!] ?? k.split(":")[0]} (${k.split(":")[1]})` : k);
 export async function avisarLlavesQueVencen(): Promise<number> {
   const r = await db().query<{ id: string; kind: string; version: number; vence: string; dias: number }>(
     `select id::text, kind, version, to_char(expires_on, 'YYYY-MM-DD') as vence, (expires_on - current_date)::int as dias from store_secrets
       where retired_at is null and expires_on is not null and kind <> 'pass_type_cert' and expires_on <= current_date + $1::int`, [AVISO_LLAVE_DIAS]);
+  // 9o · Las llaves del servidor que viven fuera del llavero (server_keys: RESPALDO_LLAVE, el certificado de origen de Cloudflare, el token del
+  // proveedor…): el mismo aviso, con su nombre y su máquina.
+  const sk = await db().query<{ id: string; kind: string; version: number; vence: string; dias: number }>(
+    `select 's' || id::text as id, key_name || ':' || machine as kind, 1 as version, to_char(expires_on, 'YYYY-MM-DD') as vence, (expires_on - current_date)::int as dias from server_keys
+      where retired_at is null and expires_on is not null and expires_on <= current_date + $1::int`, [AVISO_LLAVE_DIAS]);
+  r.rows.push(...sk.rows);
   if (!r.rows.length) return 0;
   const equipo = (await db().query<{ id: string }>(`select user_id::text as id from staff_members where role = 'admin' and status = 'active'`)).rows;
   const { avisar } = await import("../avisos");
@@ -158,7 +194,7 @@ export async function avisarLlavesQueVencen(): Promise<number> {
     if ((await db().query(`select 1 from notifications where ref_kind = 'llave_vence' and ref_id = $1 limit 1`, [ref])).rowCount) continue;
     const fecha = new Intl.DateTimeFormat("es-US", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }).format(new Date(`${k.vence}T12:00:00Z`));
     for (const u of equipo) {
-      await avisar(u.id, "llave_vence", { llave: NOMBRES[k.kind] ?? k.kind, version: String(k.version), fecha, cuando: k.dias < 0 ? "ya venció" : k.dias === 0 ? "hoy" : `en ${k.dias} días` },
+      await avisar(u.id, "llave_vence", { llave: nombreLlave(k.kind), version: String(k.version), fecha, cuando: k.dias < 0 ? "ya venció" : k.dias === 0 ? "hoy" : `en ${k.dias} días` },
         { href: "/admin/sistema/integraciones", ref: ["llave_vence", ref], sinSms: true }).catch(() => undefined);
       n++;
     }

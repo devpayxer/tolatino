@@ -1,0 +1,73 @@
+#!/bin/bash
+# 9o · Sincroniza una máquina de PRODUCCIÓN (o del ensayo) con la rama de su entorno y despliega si cambió. Como el del sandbox (infra/pruebas/
+# tolatino-sync: candado, reintento cada 15 min, página /estado/) más lo que pide producción (guardián produccionSoloAvanza):
+#   · Solo AVANZA: el commit nuevo tiene que ser descendiente del que ya corre (fast-forward). Un empujón que reescribe la historia se rechaza.
+#   · En produccion, el commit nuevo lleva una etiqueta anotada «ok-produccion/<fecha>-<commit>» cuyo mensaje es el OK del fundador (la frase y su fecha).
+#     Sin ella no se despliega. El mensaje va a deploy_releases.founder_ok_ref.
+#   · El commit nuevo ya pasó por «pruebas» (es ancestro de origin/pruebas).
+# deploy.sh lo instala en /usr/local/bin. El temporizador de cloud-init lo corre cada 60 s.
+set -u
+exec 9>/var/lock/tolatino-sync.lock
+flock -n 9 || exit 0
+# shellcheck source=/dev/null
+. /etc/tolatino/rol.conf
+REPO=https://github.com/devpayxer/tolatino.git
+BR=${TOLATINO_RAMA:-produccion}
+DIR=/opt/tolatino
+LOG=/var/log/tolatino-sync.log
+STATE=/var/lib/tolatino
+mkdir -p "$STATE" /var/www/estado
+estado() { echo "$1" > "$STATE/last-result"; }
+
+if [ ! -d "$DIR/.git" ]; then
+  rm -rf "$DIR"
+  git clone -q --depth 200 --branch "$BR" "$REPO" "$DIR" 2>>"$LOG" || { echo "$(date -Is) clone falló" >>"$LOG"; exit 0; }
+  echo "$(date -Is) clon inicial $(git -C "$DIR" rev-parse --short HEAD)" >>"$LOG"
+fi
+cd "$DIR" || exit 0
+git fetch -q --depth 200 origin "$BR" pruebas 2>>"$LOG" || { echo "$(date -Is) fetch falló" >>"$LOG"; exit 0; }
+git fetch -q --depth 1 origin 'refs/tags/ok-produccion/*:refs/tags/ok-produccion/*' 2>/dev/null || true
+LOCAL=$(git rev-parse HEAD); REMOTE=$(git rev-parse "origin/$BR")
+REINTENTAR=0
+if [ "$(cat "$STATE/last-result" 2>/dev/null)" = FALLO ] && [ -z "$(find "$STATE/last-result" -mmin -15 2>/dev/null)" ]; then REINTENTAR=1; fi
+if [ "$REINTENTAR" = 1 ] || [ "$LOCAL" != "$REMOTE" ] || [ ! -f "$STATE/last-deploy" ] || [ "$(cat "$STATE/last-deploy")" != "$(git rev-parse --short "$REMOTE")" ]; then
+  RECHAZO=""
+  if [ -f "$STATE/last-deploy" ] && ! git merge-base --is-ancestor "$LOCAL" "$REMOTE" 2>/dev/null; then RECHAZO="la rama $BR no avanzó: reescribe la historia"; fi
+  if [ -z "$RECHAZO" ] && [ "$BR" = produccion ]; then
+    git merge-base --is-ancestor "$REMOTE" origin/pruebas 2>/dev/null || RECHAZO="el commit no pasó por pruebas"
+    OK_TAG=$(git tag --points-at "$REMOTE" --list 'ok-produccion/*' | head -1)
+    [ -n "$OK_TAG" ] || RECHAZO="${RECHAZO:-sin la etiqueta ok-produccion/* (el OK del fundador)}"
+    TOLATINO_OK_REF=$(git tag -l --format='%(contents:subject) %(contents:body)' "$OK_TAG" 2>/dev/null | tr '\n' ' ' | cut -c1-480)
+    [ "${#TOLATINO_OK_REF}" -ge 10 ] || RECHAZO="${RECHAZO:-la etiqueta ok-produccion no dice el OK}"
+    export TOLATINO_OK_REF
+  fi
+  if [ -n "$RECHAZO" ]; then
+    echo "$(date -Is) RECHAZADO $(git rev-parse --short "$REMOTE"): $RECHAZO" >>"$LOG"; estado RECHAZADO
+  else
+    git reset -q --hard "origin/$BR"
+    git clean -qfd
+    echo "$(date -Is) actualizado a $(git rev-parse --short HEAD)" >>"$LOG"
+    install -m 0755 infra/produccion/tolatino-sync /usr/local/bin/tolatino-sync
+    echo "$(date -Is) deploy.sh inicio ($TOLATINO_ROL)" >>"$LOG"
+    if bash infra/produccion/deploy.sh >>"$LOG" 2>&1; then echo "$(date -Is) deploy.sh OK" >>"$LOG"; estado OK
+    else echo "$(date -Is) deploy.sh FALLÓ" >>"$LOG"; estado FALLO; fi
+    git rev-parse --short HEAD > "$STATE/last-deploy"
+  fi
+fi
+
+RES=$(cat "$STATE/last-result" 2>/dev/null || echo -)
+{ echo "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=robots content=noindex><title>To'Latino · $TOLATINO_ENTORNO</title>"
+  echo "<body style='font-family:system-ui;padding:24px;max-width:640px;margin:auto'><h1>To'Latino · $TOLATINO_ENTORNO · $TOLATINO_ROL</h1>"
+  echo "<p><b>Último despliegue:</b> $RES · <b>commit:</b> $(cat "$STATE/last-deploy" 2>/dev/null || echo -) · <b>hora:</b> $(date '+%Y-%m-%d %H:%M %Z')</p>"
+  echo "<p><a href='/estado/llave.txt'>Llave pública del sobre sellado</a> · <a href='/estado/sobres.txt'>Sobres</a> · <a href='/estado/diag.txt'>Diagnóstico</a></p>"
+  echo "<h3>Últimas líneas</h3><pre style='white-space:pre-wrap;background:#f4f4f4;padding:12px;border-radius:8px'>"
+  tail -n 25 "$LOG" | sed -E 's/(password|PASSWORD|secret|SECRET|token|TOKEN)=[^ ]*/\1=***/g; s/&/\&amp;/g; s/</\&lt;/g'; echo "</pre></body>"; } > /var/www/estado/index.html
+# En producción el diagnóstico (disco, contenedores, registro de la base) no queda a la vista de cualquiera: se ve en Sistema › Salud (Prometheus).
+[ "$TOLATINO_ENTORNO" = produccion ] && rm -f /var/www/estado/diag.txt
+# La base, la réplica (y el almacén del ensayo) no tienen entrada pública: su página de estado y su llave pública salen por la red privada y la app las
+# muestra en /estado/<máquina>/.
+if [ "$TOLATINO_ROL" != app ]; then
+  mkdir -p /var/lib/tolatino/sobres-servidos/estado
+  for f in index.html llave.txt sobres.txt diag.txt; do [ -f "/var/www/estado/$f" ] && cp "/var/www/estado/$f" "/var/lib/tolatino/sobres-servidos/estado/$f"; done
+  chmod -R a+rX /var/lib/tolatino/sobres-servidos/estado
+fi

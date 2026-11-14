@@ -63,6 +63,7 @@
     "city_waitlist": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "lista_de_espera", "fusion": "mover" } ] },
     "otp_codes": { "reglas": [ { "col": "phone", "accion": "borrar", "telefono": true, "fusion": "no" } ] },
     "sessions": { "reglas": [ { "col": "user_id", "accion": "vaciar", "exporta": "sesiones", "fusion": "no", "set": { "ip": "null", "user_agent": "null", "name": "null", "device": "null", "signed_out_at": "coalesce(signed_out_at, now())", "expires_at": "least(expires_at, now())" } } ] },
+    "incident_log": { "equipo": ["closed_by"], "reglas": [] },
     "push_tokens": { "equipo": ["revoked_by"], "reglas": [ { "col": "user_id", "accion": "vaciar", "exporta": "telefonos_con_avisos", "fusion": "no", "set": { "revoked_at": "coalesce(revoked_at, now())", "revoked_reason": "coalesce(revoked_reason, 'vencido')" } } ] },
     "passkeys": { "equipo": ["revoked_staff"], "reglas": [ { "col": "user_id", "accion": "vaciar", "exporta": "llaves_de_acceso", "fusion": "no", "set": { "name": "'—'", "revoked_at": "coalesce(revoked_at, now())", "revoked_by": "coalesce(revoked_by, 'sistema')", "revoked_reason": "coalesce(revoked_reason, 'Cuenta borrada')" } } ] },
     "passkey_log": { "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "seguridad", "fusion": "no" } ] },

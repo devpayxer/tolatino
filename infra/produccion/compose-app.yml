@@ -1,0 +1,65 @@
+# 9o · La app de producción (y del ensayo), UN color del azul/verde: deploy.sh la levanta como proyecto «tolatino-azul» o «tolatino-verde» con
+# TOLATINO_COLOR, TOLATINO_PUERTO (3001/3002) e TOLATINO_IMAGEN (tolatino/web:<commit>, construida una vez con infra/pruebas/Dockerfile, la misma del
+# sandbox). Lo que no cambia con la versión (barrido, push, moderación, traductor, mapa, node_exporter) está en compose-app-fijos.yml.
+# Cada variable tiene su dueño en infra/comun/secretos.json (guardián secretoConDueno); nada de simuladores ni del modo pruebas (guardián modoPruebas).
+services:
+  web:
+    image: ${TOLATINO_IMAGEN:?falta la imagen}
+    pull_policy: never
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${TOLATINO_PUERTO:?falta el puerto}:3000"
+    environment:
+      TOLATINO_ENTORNO: produccion
+      TOLATINO_COMMIT: ${TOLATINO_COMMIT:-desconocido}
+      TOLATINO_COLOR: ${TOLATINO_COLOR:-azul}
+      # El código de entrada sale por Telnyx (el candado de lib/entorno.ts no deja arrancar el modo pruebas en producción).
+      TOLATINO_SMS_MODO: telnyx
+      TOLATINO_URL: ${TOLATINO_URL:-}
+      TOLATINO_COMPA: ${TOLATINO_COMPA:-}
+      DATABASE_URL: postgres://tolatino:${POSTGRES_PASSWORD}@${DB_HOST}:5432/tolatino
+      # 9g · La base de análisis: la réplica de lectura (T#33).
+      DATABASE_URL_ANALISIS: postgres://tolatino:${POSTGRES_PASSWORD}@${REPLICA_HOST}:5432/tolatino
+      AUTH_SECRET: ${AUTH_SECRET}
+      DATOS_SECRET: ${DATOS_SECRET}
+      LLAVERO_SECRET: ${LLAVERO_SECRET}
+      QR_LLAVE_PRIVADA: ${QR_LLAVE_PRIVADA}
+      BARRIDO_TOKEN: ${BARRIDO_TOKEN}
+      ALERTA_TOKEN: ${ALERTA_TOKEN}
+      VAPID_PRIVADA: ${VAPID_PRIVADA}
+      VAPID_SUJETO: ${VAPID_SUJETO:-}
+      MEDIOS_S3_URL: http://${DB_HOST}:3900
+      MEDIOS_KEY_ID: ${MEDIOS_KEY_ID:-}
+      MEDIOS_SECRET: ${MEDIOS_SECRET:-}
+      MODERACION_IMG_URL: http://moderacion-img:8790
+      TRADUCTOR_URL: http://traductor:5000
+      PROMETHEUS_URL: http://${REPLICA_HOST}:9090
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      TELNYX_API_KEY: ${TELNYX_API_KEY:-}
+      TELNYX_PUBLIC_KEY: ${TELNYX_PUBLIC_KEY:-}
+      TELNYX_FROM: ${TELNYX_FROM:-}
+      WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET:-}
+      WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN:-}
+      WHATSAPP_TOKEN: ${WHATSAPP_TOKEN:-}
+      SES_ACCESS_KEY_ID: ${SES_ACCESS_KEY_ID:-}
+      SES_SECRET_ACCESS_KEY: ${SES_SECRET_ACCESS_KEY:-}
+      CORREO_DE: ${CORREO_DE:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      PASSKEY_RP_ID: ${PASSKEY_RP_ID:-}
+      PASSKEY_ORIGENES: ${PASSKEY_ORIGENES:-}
+      REVISION_CODIGO_CLIENTE: ${REVISION_CODIGO_CLIENTE:-}
+      REVISION_CODIGO_NEGOCIO: ${REVISION_CODIGO_NEGOCIO:-}
+      REVISION_CODIGO_REPARTIDOR: ${REVISION_CODIGO_REPARTIDOR:-}
+      REVISION_CODIGO_PUERTA: ${REVISION_CODIGO_PUERTA:-}
+    networks: [salida, interna]
+    mem_limit: 2g
+
+networks:
+  salida:
+    name: tolatino-salida
+    external: true
+  interna:
+    name: tolatino-interna
+    external: true

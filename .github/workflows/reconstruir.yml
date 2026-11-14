@@ -1,0 +1,42 @@
+# 9o · Reconstruir una máquina perdida (docs/incidentes/servidor-perdido.md; scripts/produccion/reconstruir.sh). SOLO a mano y solo para producción:
+# borra la máquina perdida y crea otra igual con el mismo cloud-init, le entrega su sobre de recuperación (cifrado solo para su llave provisional) y
+# espera a que esté sana. Los secretos son del entorno de GitHub «produccion» (los pone Claude con «gh secret set», sin verlos); el entorno pide la
+# aprobación del fundador antes de correr.
+name: Reconstruir una máquina de producción
+on:
+  workflow_dispatch:
+    inputs:
+      rol:
+        description: La máquina perdida
+        type: choice
+        options: [app, base, replica]
+permissions:
+  contents: write   # empujar la rama «recuperacion» (solo texto cifrado para la llave provisional)
+concurrency:
+  group: reconstruir
+  cancel-in-progress: false
+jobs:
+  reconstruir:
+    runs-on: ubuntu-latest
+    environment: produccion
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - run: sudo apt-get install -y -q age
+      - name: Reconstruir
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN_PRODUCCION }}
+          TOLATINO_RECUPERACION_LLAVE: ${{ secrets.TOLATINO_RECUPERACION_LLAVE }}
+          RESPALDO_S3_KEY_ID: ${{ secrets.RESPALDO_S3_KEY_ID }}
+          RESPALDO_S3_SECRET: ${{ secrets.RESPALDO_S3_SECRET }}
+          RESPALDO_S3_ENDPOINT_PUBLICO: ${{ vars.RESPALDO_S3_ENDPOINT }}
+          TIPO_APP: ${{ vars.TIPO_APP }}
+          TIPO_BASE: ${{ vars.TIPO_BASE }}
+          TIPO_REPLICA: ${{ vars.TIPO_REPLICA }}
+          UBICACION: ${{ vars.UBICACION }}
+          ZONA: ${{ vars.ZONA }}
+          DISCO_BASE_GB: ${{ vars.DISCO_BASE_GB }}
+        run: |
+          git config user.email tolatino@users.noreply.github.com; git config user.name "To'Latino"
+          bash scripts/produccion/reconstruir.sh produccion "${{ inputs.rol }}"
