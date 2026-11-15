@@ -51,7 +51,11 @@ const uid = (tel) => sql(`select id from users where phone = '+1${tel}'`);
     ok(await espera(async () => (await texto(m)).includes('−$3.00 · APLICADO')), 'dos platos (escrito en minúsculas): «−$3.00 · APLICADO»');
     ok((await texto(m)).includes(`Cupón ${CODE} −$3.00`), `la línea «Cupón ${CODE} −$3.00» en el resumen`);
     await m.screenshot({ path: OUT + 'c9n21-pago-390.png', fullPage: true });
-    await m.locator('[data-screen-label="Checkout · barra"]').getByText(/^Enviar pedido/).click(); await m.waitForURL(/\/pedido\/\d+$/);
+    // Precondición propia: si el negocio cobra con tarjeta, la pestaña empieza en «Tarjeta» y sin tarjeta guardada se abre la hoja; aquí se paga en el local.
+    await m.getByRole('tab', { name: 'Pagas en el local' }).click();
+    await m.locator('[data-screen-label="Checkout · barra"]').getByText(/^Enviar pedido/).click();
+    if (!(await m.waitForURL(/\/pedido\/\d+$/, { timeout: 30000 }).then(() => true, () => false)))
+      throw new Error('el pedido con cupón no salió; la pantalla dice: ' + ((await m.locator('[role=alert]').allInnerTexts()).join(' | ') || (await texto(m)).slice(0, 400)));
     const num = m.url().split('/').pop();
     const o = sql(`select subtotal_cents || '|' || discount_cents || '|' || tax_cents || '|' || total_cents from operations where number = '${num}'`).split('|').map(Number);
     const taxBase = Number(sql(`select round(${PRECIO * 2} * tax_pct / 100.0) from items where id = ${IT}`));
