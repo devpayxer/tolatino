@@ -1,5 +1,6 @@
 "use client";
 /* Marco de la app del vecino: SiteHeader (patrón 2e) + BottomNav (móvil). Desktop = header con tabs, sin barra inferior. */
+import { useAncho as useAnchoComun } from "@/app/_ancho/Ancho";
 import * as UI from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition, type ComponentType, type ReactNode } from "react";
@@ -14,16 +15,9 @@ export type CiudadShell = { nombre: string; corto: string; abierta: boolean; rad
 // Pantallas que muestran «Pronto» cuando la ciudad que estás viendo todavía no abre (prototipo isPronto).
 const CON_CIUDAD = /^\/($|negocios|c\/|buscar|abierto|mapa|eventos)/;
 
+// 9c · sin salto al cargar: el ancho arranca con la estimación del servidor (app/_ancho/Ancho.tsx).
 function useDesk() {
-  const [d, setD] = useState(false);
-  useEffect(() => {
-    const m = window.matchMedia("(min-width: 1024px)");
-    const f = () => setD(m.matches);
-    f();
-    m.addEventListener("change", f);
-    return () => m.removeEventListener("change", f);
-  }, []);
-  return d;
+  return useAnchoComun() >= 1024;
 }
 
 const RUTAS: Record<string, string> = { home: "/", neg: "/negocios", com: "/comunidad", evt: "/eventos", me: "/cuenta" };

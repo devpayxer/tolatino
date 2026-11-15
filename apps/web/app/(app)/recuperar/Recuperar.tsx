@@ -2,6 +2,7 @@
 /* ONB-NEG-RECUPERAR (To'Latino Recuperar negocio.dc.html, plantilla L24-129): ¿es tuyo? → qué eres → cómo lo
    comprobamos (código por SMS al teléfono del negocio — decisión R1 — o un documento) → estado del reclamo. Nunca se
    piden documentos de identidad. Una persona de To'Latino aprueba. */
+import { useAncho as useAnchoComun } from "@/app/_ancho/Ancho";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type ComponentType, type ReactNode } from "react";
@@ -22,8 +23,7 @@ export function Recuperar({ r, cands, ciudad, lang, conSesion, origen, id }: {
   r: R | null; cands: { id: string; name: string; address: string | null; cover: string | null }[]; ciudad: string; lang: "es" | "en"; conSesion: boolean; origen: string; id: string;
 }) {
   const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b), router = useRouter();
-  const [desk, setDesk] = useState(false);
-  useEffect(() => { const m = window.matchMedia("(min-width: 1024px)"); const f = () => setDesk(m.matches); f(); m.addEventListener("change", f); return () => m.removeEventListener("change", f); }, []);
+  const desk = useAnchoComun() >= 1024; // 9c · sin salto al cargar
   const KEY = `tl-recuperar-${id}`;
   type Form = { rol: string; metodo: "codigo" | "documento"; docKind: string; nota: string };
   const [f, setF] = useState<Form>(() => {

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { anchoInicial } from "@/lib/ancho";
+import { AnchoInicial } from "@/app/_ancho/Ancho";
 import { BASE_URL } from "@/lib/correo";
 import { idioma } from "@/lib/idioma";
 import { FIJAS } from "@/lib/textos-fijas";
@@ -18,5 +20,5 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const [sp, l0] = await Promise.all([searchParams, idioma()]), l = sp.l === "en" || sp.l === "es" ? sp.l : l0;
-  return <Landing d={await datosLanding(l)} />;
+  return <AnchoInicial w={await anchoInicial()}><Landing d={await datosLanding(l)} /></AnchoInicial>;
 }

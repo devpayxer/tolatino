@@ -1412,7 +1412,7 @@ const guardianes = {
     for (const f of codigo) {
       if (!/^apps\/web\/app\/.*\.tsx$/.test(f) || f.startsWith("apps/web/app/_ancho/")) continue;
       const s = readFileSync(f, "utf8");
-      const m = /useState\((?:390|1280|1024)\)[\s\S]{0,240}?setW\(window\.innerWidth\)/.exec(s);
+      const m = /useState\((?:390|1280|1024)\)[\s\S]{0,240}?setW\(window\.innerWidth\)/.exec(s) ?? /useState\(false\)[\s\S]{0,200}?matchMedia\("\(min-width: \d+px\)"\)/.exec(s);
       if (m) falla(G, f, s.slice(0, m.index).split("\n").length, "ancho que arranca en un número fijo y después mide (salto al cargar): usa useAncho() de app/_ancho/Ancho.tsx");
     }
     for (const L of ["apps/web/app/(app)/layout.tsx", "apps/web/app/panel/layout.tsx", "apps/web/app/admin/layout.tsx"])

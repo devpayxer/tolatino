@@ -2,6 +2,7 @@
 /* 9e · Las piezas con toque de una página legal, del sistema de diseño: «Ver en español / Read in English» (como el artículo de la ayuda), la
    columna «Más en …», la tarjeta oscura «¿No encontraste lo que buscas?» (Button) y el pie de la web (SiteFooter) con todas las páginas legales,
    la ayuda y Soporte. En el teléfono el pie va en acordeón; en escritorio, ancho. */
+import { useAncho as useAnchoComun } from "@/app/_ancho/Ancho";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
@@ -13,8 +14,7 @@ const MONO = "'JetBrains Mono',monospace";
 type Pag = { k: string; t: string; g: "legal" | "comunidad" | "confianza" };
 
 function useDesk() {
-  const [d, setD] = useState(false);
-  useEffect(() => { const m = window.matchMedia("(min-width: 1024px)"); const f = () => setD(m.matches); f(); m.addEventListener("change", f); return () => m.removeEventListener("change", f); }, []);
+  const d = useAnchoComun() >= 1024; // 9c · sin salto al cargar
   return d;
 }
 

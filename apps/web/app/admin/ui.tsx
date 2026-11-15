@@ -1,5 +1,6 @@
 "use client";
 /* Piezas cliente del Super Admin, compuestas con el sistema de diseño (patrones 2aj–2aq). */
+import { useAncho as useAnchoComun } from "@/app/_ancho/Ancho";
 import * as UI from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
@@ -15,16 +16,9 @@ type N = "AdminBar" | "AdminNav" | "AdminNote" | "AdminRow" | "AdminList" | "Kpi
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const A = UI as unknown as Record<N, ComponentType<any>>;
 
+// 9c · sin salto al cargar: el ancho arranca con la estimación del servidor (app/_ancho/Ancho.tsx).
 function useDesk() {
-  const [d, setD] = useState(false);
-  useEffect(() => {
-    const m = window.matchMedia("(min-width: 1024px)");
-    const f = () => setD(m.matches);
-    f();
-    m.addEventListener("change", f);
-    return () => m.removeEventListener("change", f);
-  }, []);
-  return d;
+  return useAnchoComun() >= 1024;
 }
 
 export type ItemNav = { key: string; label: string; icon: string; href: string | null; fase?: string };

@@ -4,6 +4,7 @@
    postal + teléfono) y la barra fija abajo en el teléfono cuando el formulario no se ve; sin cuenta regresiva ni fecha (v3). En escritorio la vitrina va a
    la derecha. Las dos frases de §1c son líneas fijas (textos-fijas, con candado); lo demás sale del CMS (APP-LANDING-PRE). Estados: sin señal (el envío
    falla y lo dice), ya anotada, código vencido o incorrecto, de fuera de las cinco («Pide tu ciudad»), con negocio («Publica tu negocio»). */
+import { useAncho as useAnchoComun } from "@/app/_ancho/Ancho";
 import * as UI from "@tolatino/ui";
 import { Wordmark } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
@@ -21,10 +22,9 @@ const fmt = (d: string) => { d = d.replace(/\D/g, "").slice(0, 10); return d.len
 const pon = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => (v[k] != null ? String(v[k]) : `{${k}}`));
 const MODO_T: Record<Modo, string> = { local: "t0", casa: "t1", domicilio: "t2", encargo: "t3", tiempo_libre: "t4" };
 
+// 9c · sin salto al cargar: el ancho arranca con la estimación del servidor (app/_ancho/Ancho.tsx; la página la da con <AnchoInicial>).
 function useDesk() {
-  const [d, setD] = useState(false);
-  useEffect(() => { const m = window.matchMedia("(min-width: 1024px)"); const f = () => setD(m.matches); f(); m.addEventListener("change", f); return () => m.removeEventListener("change", f); }, []);
-  return d;
+  return useAnchoComun() >= 1024;
 }
 const Clave = ({ children }: { children: ReactNode }) => <span className="font-mono text-[10px] font-bold tracking-[0.14em] text-text-muted">{children}</span>;
 const Titulo = ({ children, id }: { children: ReactNode; id?: string }) => <h2 id={id} className="font-display text-[24px] font-extrabold leading-[1.15] tracking-[-0.035em] lg:text-[30px]">{children}</h2>;

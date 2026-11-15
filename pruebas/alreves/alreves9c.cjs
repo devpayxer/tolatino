@@ -20,6 +20,7 @@ const casos = [
   ['iconoExiste', 'apps/web/app/admin/HoyAdmin.tsx', 'icon: "plus"', 'icon: "undo"'],
   ['anchoSinSalto', 'apps/web/app/(app)/soporte/Soporte.tsx', '  return useAnchoComun(); // 9c · sin salto al cargar: app/_ancho/Ancho.tsx', '  const [w, setW] = useState(390);\n  useEffect(() => { const f = () => setW(window.innerWidth); f(); }, []);\n  return w;'],
   ['anchoSinSalto', 'apps/web/app/panel/layout.tsx', '<AnchoInicial w={w}>', '<>'],
+  ['anchoSinSalto', 'apps/web/app/(app)/_legal/PieLegal.tsx', '  const d = useAnchoComun() >= 1024; // 9c · sin salto al cargar', '  const [d, setD] = useState(false);\n  useEffect(() => { const m = window.matchMedia("(min-width: 1024px)"); const f = () => setD(m.matches); f(); }, []);'],
   ['impuestoSoloNuevo', 'apps/web/lib/autos.ts', "and effective_from <= now() order by city_id, effective_from desc, id desc) v) as tax", "order by city_id, effective_from desc, id desc) v) as tax, (select max(id) from tax_rules) as x"],
   ['impuestoSoloNuevo', 'apps/web/app/admin/acciones-planes.ts', '  if (!s || !s.puede("plan", "aprobar")) return { ok: false, mensaje: "Tu rol no cambia impuestos." };', '  if (!s) return { ok: false, mensaje: "Tu rol no cambia impuestos." };'],
   ['iconoExiste', 'apps/web/app/admin/IntegracionesWallet.tsx', 'icon: "folder"', 'icon: "download"'],

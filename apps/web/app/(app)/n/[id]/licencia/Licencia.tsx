@@ -2,6 +2,7 @@
 /* APP-NEG-LICENCIA · «¿Puede hacerlo por ley?» (To'Latino Licencia.dc.html, plantilla L18-60, lógica L62-100), portada
    1:1 con tokens. Pública: lo que la licencia permite, lo que no, quién la emitió, el estado real y el enlace al
    registro oficial (del catálogo, nunca del dueño). */
+import { useAncho as useAnchoComun } from "@/app/_ancho/Ancho";
 import * as UI from "@tolatino/ui";
 import Link from "next/link";
 import { useEffect, useState, type ComponentType } from "react";
@@ -15,8 +16,7 @@ const fecha = (iso: string | null, es: boolean) => { if (!iso) return "—"; con
 
 export function Licencia({ l, lang }: { l: { id: string; nombre: string; cant: string | null; licencias: LicFila[] }; lang: "es" | "en" }) {
   const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b);
-  const [desk, setDesk] = useState(false);
-  useEffect(() => { const m = window.matchMedia("(min-width: 1024px)"); const f = () => setDesk(m.matches); f(); m.addEventListener("change", f); return () => m.removeEventListener("change", f); }, []);
+  const desk = useAnchoComun() >= 1024; // 9c · sin salto al cargar
   const lay = desk ? { max: "760px", pad: "28px 32px 70px", h1: 32 } : { max: "100%", pad: "16px 16px 0", h1: 26 };
   const bizK = l.nombre.toUpperCase(), L = (x: { es: string; en: string } | null) => (x ? x[lang] || x.es : "");
   const k = { font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "var(--tl-text-muted)" } as const;
