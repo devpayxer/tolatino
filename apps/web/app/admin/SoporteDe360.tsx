@@ -4,14 +4,15 @@
 import { PanelBloques } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { ESTADO_EQUIPO, TEMAS, type Tema } from "@/lib/soporte-comun";
+import { useE } from "./idioma-admin";
 
 export type CasoSop = { num: string; tema: Tema; status: string; priority: string; at: string; titulo: string };
-const fecha = (iso: string) => new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", year: "numeric" }).format(new Date(iso)).replace(/\./g, "");
+const fecha = (iso: string, loc = "es-US") => new Intl.DateTimeFormat(loc, { timeZone: "America/New_York", day: "numeric", month: "short", year: "numeric" }).format(new Date(iso)).replace(/\./g, "");
 
 export function SoporteDe360({ casos, vacio }: { casos: CasoSop[]; vacio: string }) {
-  const router = useRouter();
-  return <PanelBloques bloques={casos.length ? [{ type: "rows", k: `CASOS DE SOPORTE · ${casos.length}`, items: casos.map((c) => ({
-    key: c.num, icon: "chat", t: `${c.num} · ${TEMAS[c.tema]?.corto.es ?? c.tema}`, s: c.titulo || "(sin texto)", m: `${(ESTADO_EQUIPO[c.status]?.es ?? c.status).toUpperCase()} · ${fecha(c.at).toUpperCase()}`,
-    tag: c.priority === "alta" ? "ALTA" : null, tone: "danger", chev: true, onClick: () => router.push(`/admin/soporte?caso=${c.num}`) })) }]
+  const router = useRouter(), E = useE(), loc = E("es-US", "en-US");
+  return <PanelBloques bloques={casos.length ? [{ type: "rows", k: `${E("CASOS DE SOPORTE", "SUPPORT CASES")} · ${casos.length}`, items: casos.map((c) => ({
+    key: c.num, icon: "chat", t: `${c.num} · ${((t) => (t ? E(t.es, t.en) : c.tema))(TEMAS[c.tema]?.corto)}`, s: c.titulo || E("(sin texto)", "(no text)"), m: `${((x) => (x ? E(x.es, x.en) : c.status))(ESTADO_EQUIPO[c.status]).toUpperCase()} · ${fecha(c.at, loc).toUpperCase()}`,
+    tag: c.priority === "alta" ? E("ALTA", "HIGH") : null, tone: "danger", chev: true, onClick: () => router.push(`/admin/soporte?caso=${c.num}`) })) }]
     : [{ type: "note", tone: "info", icon: "chat", t: vacio }]} />;
 }

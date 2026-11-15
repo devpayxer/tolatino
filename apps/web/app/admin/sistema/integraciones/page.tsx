@@ -19,6 +19,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   // 8h · Cada lectura del CI (por OIDC, con su run) y cada intento contra la tubería, debajo de las llaves.
   const [filas, ci] = await Promise.all([listar(), (await import("@/lib/tiendas/tuberia")).lecturasCi()]);
   // La llave de la solicitud del certificado del pase la genera el servidor (Wallet): no es un archivo que se suba.
-  const tipos = Object.entries(TIPOS).filter(([, v]) => v.forma !== "generada").map(([k, v]) => ({ k, es: v.es, ext: [...v.ext] }));
+  const tipos = Object.entries(TIPOS).filter(([, v]) => v.forma !== "generada").map(([k, v]) => ({ k, es: v.es, en: v.en, ext: [...v.ext] }));
   return <Integraciones filas={filas.filter((f) => f.kind !== "pass_type_csr" || !!f.retirada)} tipos={tipos} admin={admin} listo={llaveroListo()} subir={typeof sp.subir === "string" ? sp.subir : null} ci={ci} />;
 }
