@@ -9222,6 +9222,27 @@ const guardianes = {
     }
   },
 
+  /* 9b-3 · almuerzoATodaHora: los platos del Almuerzo de la semilla (sección con horario propio, 11:00–16:00) solo se piden en esa ventana;
+     una prueba que abre el menú del cliente (?tab=menu) y hace clic en uno lo pone a toda hora (avail = 'siempre') o falla según la hora del CI
+     (vec9m pasó a las 2 de la tarde y falló a las 4:30 y a las 6:20 del 14 nov). Al revés (alreves9b3): quitarlo de vec9m. */
+  almuerzoATodaHora() {
+    const G = "almuerzoATodaHora", sem = "infra/pruebas/semilla/0004_menu.sql";
+    if (!existsSync(sem)) return;
+    const lineas = readFileSync(sem, "utf8").split("\n"), nombres = [];
+    let enVentana = false;
+    for (const l of lineas) {
+      if (/insert into item_sections/.test(l)) enVentana = /'own'/.test(l);
+      else if (enVentana && /insert into items|values \(b, s,/.test(l)) { const m = l.match(/values \(b, s, '\{"es":"([^"]+)"/); if (m) nombres.push(m[1]); }
+    }
+    if (!nombres.length) return;
+    const re = new RegExp(`(?:vis|getByText)\\([^)]*'(${nombres.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})'`, "g");
+    for (const f of archivos.filter((x) => /^pruebas\/e2e\/[^/]+\.(cjs|mjs)$/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      if (!/\?tab=menu/.test(t) || /avail = 'siempre'/.test(t)) continue;
+      for (const m of t.matchAll(re)) falla(G, f, t.slice(0, m.index).split("\n").length, `«${m[1]}» es del Almuerzo (11:00–16:00): ponlo a toda hora (update items set avail = 'siempre' … y devuélvelo al salir) o la prueba depende de la hora del CI`);
+    }
+  },
+
   /* 9b-3 · precioVuelve: una prueba que guarda el precio de un producto de la semilla para cambiarlo (const p0 = …select price_cents from items…)
      lo devuelve al salir; si no, la que cuenta un total con ese producto falla según el orden (merc4p en la barajada, 14 nov: ret4n subió
      la pierna 10¢). Al revés (alreves9b3): quitar el process.on('exit') de ret4n. */

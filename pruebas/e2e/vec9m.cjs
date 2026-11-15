@@ -131,6 +131,10 @@ const desk = (b, extra = {}) => b.newContext({ viewport: { width: 1360, height: 
     // 9b-3 · Lo suyo: «Pescado frito» lleva «mar» (la barajada lo vio sin la etiqueta: otra prueba de menú le cambia las etiquetas).
     // Antes de abrir la página: la ficha trae las etiquetas al pintarse; ponerlas después no cambia lo ya servido.
     sql(`update items set tags = array_append(tags, 'mar') where business_id = '${BIZ}' and name->>'es' = 'Pescado frito' and not ('mar' = any(tags))`);
+    // Y a toda hora: es del Almuerzo (11:00–16:00); después de las 4 la hoja no se abre igual (falló de tarde el 14 nov, pasó a las 2).
+    const avPF = sql(`select avail from items where business_id = '${BIZ}' and name->>'es' = 'Pescado frito'`);
+    sql(`update items set avail = 'siempre' where business_id = '${BIZ}' and name->>'es' = 'Pescado frito'`);
+    process.on('exit', () => sql(`update items set avail = '${avPF}' where business_id = '${BIZ}' and name->>'es' = 'Pescado frito'`));
     await pd.goto(B + `/n/${BIZ}?tab=menu`); await pd.evaluate(() => { localStorage.removeItem('tl-carrito-v1'); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); }); await pd.reload();
     await vis(pd, 'Pescado frito').click();
     ok(await espera(async () => (await pd.locator('[data-bloque="lleva"]').count()) > 0), 'la hoja del plato trae «Lleva o es»');
