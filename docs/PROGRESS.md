@@ -2422,3 +2422,7 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **Confirmación completa CI 43759335047 (3f99c21) en verde** → main y pruebas en 3f99c21. Cerradas en LAUNCH las 15 líneas que esperaban esa corrida (contraste
   axe, CLS, a11y9c, datos9d, leg9e, cms9f, ana9g, sis9j/ayu4m, cre9h, din9k, ciu9i, avi9l, dir9m/vec9m, neg9n, evt6b-6c/evt6i). Corrida dirigida de lo nuevo
   (reporte, ayuda, editor, ver como cliente, cupón): 43769029540.
+- **CI dirigido 43769029540: 3 rojos arreglados (625ca52).** neg9n20 (el negocio nuevo no tenía `business_stats_cache`, la ficha la une → 404), cup9n21
+  (`psql -At` también imprime «INSERT 0 1»: el id del cupón salía roto) y alreves7g (ancla vieja). La misma clase estaba en push8c y dir9m (este anotaba
+  códigos postales ya existentes como nuevos y los borraba al final). Guardián `returningConPsqlCallado` + caso al revés en alreves9n21 (10/10).
+  Corrida dirigida nueva: 43773487639.
