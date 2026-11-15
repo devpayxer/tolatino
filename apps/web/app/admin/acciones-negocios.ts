@@ -7,7 +7,7 @@ import { recalcularFiltrosSP } from "@/lib/salud-pro";
 import type { PoolClient } from "pg";
 import { auditar, staff, type Staff } from "@/lib/admin";
 import { normalizarTelefono } from "@/lib/cuenta";
-import { avisar } from "@/lib/avisos";
+import { avisar, avisarTelefono } from "@/lib/avisos";
 import { db, tx } from "@/lib/db";
 import { hoyEn } from "@/lib/fecha-local";
 import type { ResAdm } from "./acciones-colas";
@@ -70,6 +70,27 @@ export async function mensajeAlDueno(id: string, canal: string, texto: string, m
     return null;
   }, canal === "sms" ? "Mensaje enviado al dueño por SMS (y en su campana). Quedó en la auditoría." : "Mensaje enviado al dueño en su app. Quedó en la auditoría.");
   if (r.ok && dueno) await avisar(dueno, canal === "sms" ? "biz_msg_equipo_sms" : "biz_msg_equipo", { texto: t, texto_en: t }, { href: `/panel/${id}`, ref: ["admin_message", id] });
+  return r;
+}
+/* 9n-7 · «Invitar a reclamar»: un SMS (reclamar_invita, 0157) al teléfono de un negocio SIN dueño con el enlace a /recuperar/{id}. neg:editar, con motivo y
+   auditoría; una vez cada 30 días por negocio (la auditoría lo cuenta). Sale por avisarTelefono (STOP, horas de silencio, modo pruebas en el sandbox). */
+export async function invitarReclamar(id: string, motivo: string): Promise<ResAdm> {
+  let envio: { tel: string; nombre: string; ciudad: string } | null = null;
+  const r = await hacer(id, "editar", motivo, async (c, s, b, m) => {
+    const x = (await c.query<{ owner: string | null; phone: string | null }>(`select owner_user_id::text as owner, phone from businesses where id = $1`, [b.id])).rows[0];
+    if (x?.owner) return "Este negocio ya tiene dueño.";
+    const tel = normalizarTelefono(x?.phone ?? "");
+    if (!tel) return "Este negocio no tiene un teléfono de EE. UU. en su página.";
+    if ((await c.query(`select 1 from audit_entries where action = 'negocio.invitar_reclamar' and target_id = $1 and at > now() - interval '30 days'`, [b.id])).rowCount) return "Ya se le invitó en los últimos 30 días.";
+    await auditar(c, { actor: s.id, action: "negocio.invitar_reclamar", targetKind: "business", targetId: b.id, city: b.city_id, after: { sms: `…${tel.slice(-4)}` }, reason: m });
+    envio = { tel, nombre: b.name, ciudad: b.city_id };
+    return null;
+  }, "Invitación enviada por SMS al teléfono del negocio. Quedó en la auditoría.");
+  const e = envio as { tel: string; nombre: string; ciudad: string } | null;
+  if (r.ok && e) {
+    const base = (process.env.TOLATINO_URL || "https://pruebas.tolatino.com").replace(/\/$/, "");
+    await avisarTelefono(e.tel, "reclamar_invita", { negocio: e.nombre, enlace: `${base}/recuperar/${id}` }, { ref: ["business", id], city: e.ciudad });
+  }
   return r;
 }
 const LIC_EST: Record<string, string> = { review: "en revisión", valid: "verificada", expired: "vencida", not_found: "no se pudo verificar", revoked: "retirada por To'Latino" };

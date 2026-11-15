@@ -222,6 +222,22 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
         ok(sql(`select target_kind || '|' || (user_id is null)::text || '|' || by_staff::text from admin_messages where target_id = '${NEGM}' order by id desc limit 1`) === `business|true|${AU}`, 'AdminMessage del negocio: quién y a qué negocio');
         ok(sql(`select count(*) from audit_entries where action = 'negocio.mensaje' and target_id = '${NEGM}' and at > now() - interval '2 minutes'`) !== '0', 'queda en la auditoría');
       } else ok(await contiene(a, 'ya le llegaron 3 mensajes del equipo hoy'), 'tope de 3 mensajes al día por negocio (corridas anteriores de hoy)');
+      // 9n-7 · «Invitar a reclamar»: un SMS al teléfono de un negocio sin dueño (una vez cada 30 días: la auditoría lo cuenta).
+      {
+        const SEM = sql(`select id from businesses where owner_user_id is null and status = 'active' and city_id = 'hzl' and phone is not null order by id limit 1`);
+        const ya = sql(`select count(*) from audit_entries where action = 'negocio.invitar_reclamar' and target_id = '${SEM}' and at > now() - interval '30 days'`) !== '0';
+        const s0 = sql(`select coalesce(max(id), 0) from audit_entries`);
+        await a.goto(B + `/admin/negocios/${SEM}`); await clic(a.getByText('Invitar a reclamar', { exact: true }));
+        await confirmar(a, 'Semilla de la apertura', 'Enviar el SMS');
+        if (ya) ok(await contiene(a, 'Ya se le invitó en los últimos 30 días'), '«Invitar a reclamar»: una vez cada 30 días (corrida anterior)');
+        else {
+          ok(await contiene(a, 'Invitación enviada por SMS'), '«Invitar a reclamar»: sale el SMS');
+          ok(sql(`select count(*) from audit_entries where id > ${s0} and action = 'negocio.invitar_reclamar' and target_id = '${SEM}'`) === '1', 'queda en la auditoría (con los 4 últimos del teléfono)');
+          await a.goto(B + `/admin/negocios/${SEM}`); await clic(a.getByText('Invitar a reclamar', { exact: true }));
+          await confirmar(a, 'Semilla de la apertura', 'Enviar el SMS');
+          ok(await contiene(a, 'Ya se le invitó en los últimos 30 días'), 'la segunda vez el mismo mes no sale');
+        }
+      }
       // 9n-7 · «Destacar» desde el 360° = Crecimiento › Destacados › Fijar (se retira al final: nada se borra).
       sql(`update featured set retired_at = now(), retired_by = '${AU}', retired_reason = 'adm9n3 antes' where business_id = '${NEGM}' and retired_at is null`);
       await a.goto(B + `/admin/negocios/${NEGM}`); await clic(a.getByText('Destacar', { exact: true }));

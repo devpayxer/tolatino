@@ -13,7 +13,7 @@ import type { Negocio360 } from "@/lib/admin-negocios";
 import { fmtHora } from "@/lib/panel-reglas";
 import { KINDS_LOCAL } from "@/lib/noche-comun";
 import { PuntoAdmin } from "./PuntoAdmin";
-import { cambiarEstado, tipoNoche, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, vacanteOcultar, platoOcultar, propiedadOcultar, mayoresRevisar, carroOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina, mensajeAlDueno } from "./acciones-negocios";
+import { cambiarEstado, tipoNoche, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, vacanteOcultar, platoOcultar, propiedadOcultar, mayoresRevisar, carroOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina, mensajeAlDueno, invitarReclamar } from "./acciones-negocios";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { N360Dinero } from "./N360Dinero";
@@ -35,7 +35,7 @@ const FOTO = ["No es de este negocio", "Contenido inapropiado", "Muestra datos p
 const SELLO_NO = ["La dirección no coincide con la página", "No pudimos confirmar que representas el negocio", "Las fotos no son del local", "El nombre puede confundirse con otro negocio"];
 /* Verbo de cada acción en el historial (prototipo actL). */
 const VERBO: Record<string, string> = {
-  "negocio.mensaje": "le mandó un mensaje al dueño de", "mkt.destacado.fijar": "destacó a", "mkt.destacado.quitar": "sacó de la rotación a",
+  "negocio.mensaje": "le mandó un mensaje al dueño de", "negocio.invitar_reclamar": "invitó por SMS a reclamar", "mkt.destacado.fijar": "destacó a", "mkt.destacado.quitar": "sacó de la rotación a",
   "resena.ocultar": "ocultó una reseña de", "resena.mostrar": "volvió a mostrar una reseña de", "novedad.ocultar": "ocultó una novedad de", "novedad.mostrar": "volvió a mostrar una novedad de",
   "vacante.ocultar": "ocultó una vacante de", "vacante.mostrar": "volvió a mostrar una vacante de", "comentario.ocultar": "ocultó un comentario en", "comentario.mostrar": "volvió a mostrar un comentario en",
   "negocio.modulo.pausar": "pausó un módulo de", "negocio.modulo.reanudar": "reanudó un módulo de", "negocio.noche.tipo": "ajustó el tipo de local de",
@@ -364,6 +364,10 @@ export function N360({ n, tab, din, evts = null, sop, cpa }: { n: Negocio360; ta
       cta: "Enviar", elegir: { label: "POR DÓNDE", items: [{ k: "push", l: "En la app (campana y push)" }, ...(n.owner_phone ? [{ k: "sms", l: "Por SMS" }] : [])] },
       valor: { k: "MENSAJE (HASTA 280 LETRAS)", ini: "", area: true, max: 280 }, plantillas: ["Aviso sobre su página", "Respuesta a lo que pidió por Soporte", "Falta un dato para el sello"],
       hacer: (m, e, v) => mensajeAlDueno(n.id, e ?? "push", v ?? "", m) }) });
+    // 9n-7 · «Invitar a reclamar»: un SMS al teléfono de un negocio sin dueño con el enlace para reclamarlo (una vez cada 30 días).
+    if (P.editar && !n.owner_id && n.phone && n.status === "active") acts.push({ l: "Invitar a reclamar", icon: "phone", onClick: () => setConf({ titulo: `Invitar a ${n.name} a reclamar su página`,
+      sub: "Le llega un SMS al teléfono de su página con el enlace para reclamarla gratis. Una vez cada 30 días; respeta STOP y las horas de silencio.", cta: "Enviar el SMS",
+      plantillas: ["Lo recomendaron vecinos", "Semilla de la apertura", "Pidió información"], hacer: (m) => invitarReclamar(n.id, m) }) });
     // 9n-7 · «Destacar»: lo mismo que Crecimiento › Destacados › Fijar (mkt:editar), sin salir del 360°: sale primero en Destacados de su ciudad los días de
     // Configuración (destacados_dias) y vuelve solo a la rotación; el tope por ciudad lo pone la base.
     if (P.destacar && n.status === "active") acts.push({ l: "Destacar", icon: "star", onClick: () => setConf({ titulo: `Destacar ${n.name}`, sub: "Sale primero en Negocios › Destacados de su ciudad por los días de Configuración y vuelve solo a la rotación. Se retira en Crecimiento › Destacados.",

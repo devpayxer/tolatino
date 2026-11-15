@@ -2311,4 +2311,5 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **Negocio 360° · «Mensaje al dueño»:** la misma pieza que «Enviar mensaje» de Usuarios 360° (app o SMS, sin enlaces, motivo interno, 3 al día por
   negocio); plantillas `biz_msg_equipo` / `biz_msg_equipo_sms` (**0156**, el push abre su panel); `admin_messages` con target_kind 'business'. adm9n3 lo prueba.
 - **Negocio 360° · «Destacar»:** fija el negocio en Destacados de su ciudad como Crecimiento › Destacados (mkt:editar, tope por ciudad de la base); adm9n3.
+- **Negocio 360° · «Invitar a reclamar»:** SMS `reclamar_invita` (**0157**) al teléfono de un negocio sin dueño con el enlace a /recuperar/{id}; una vez cada 30 días; adm9n3.
 - **No corrió aquí:** e2e (sin Docker) → CI dirigido cuando termine la confirmación completa de 9b-3 (run 43683346297, en curso).
