@@ -1419,6 +1419,33 @@ const guardianes = {
       if (existsSync(L) && !/<AnchoInicial w=\{/.test(readFileSync(L, "utf8"))) falla(G, L, 0, "el layout no da el ancho estimado (<AnchoInicial w={await anchoInicial()}>): sus pantallas saltan al cargar");
   },
 
+  /* 9n-19 · impuestoSoloNuevo: un impuesto nunca se cambia: se programa una regla NUEVA desde una fecha (Planes › Impuestos, L471). Lo ya cotizado y
+     el total en la puerta guardan su porcentaje; el historial explica cada uno. Caza: un update / delete de tax_rules en el código; el trigger de
+     solo inserción (0166) que falte; la acción sin motivo, sin permiso plan:aprobar o sin auditoría; y la firma del recálculo de Autos hecha con
+     la ÚLTIMA regla creada (max(id)) en vez de la VIGENTE de cada ciudad (una regla para el 1.º de enero no recalculaba ese día). Al revés: alreves9c. */
+  impuestoSoloNuevo() {
+    const G = "impuestoSoloNuevo";
+    for (const f of codigo) {
+      if (!/^(apps\/web\/(app|lib)|scripts)\/.*\.(tsx?|mjs|cjs)$/.test(f)) continue;
+      const s = readFileSync(f, "utf8");
+      const m = /\b(update\s+tax_rules\b|delete\s+from\s+tax_rules\b)/i.exec(s);
+      if (m) falla(G, f, s.slice(0, m.index).split("\n").length, "tax_rules es solo de inserción: un cambio es una regla nueva desde una fecha (impuestoProgramar)");
+    }
+    const M = "packages/db/migrations/0166_impuestos_admin.sql";
+    if (!existsSync(M) || !/create trigger tax_rules_no_cambia before update or delete on tax_rules/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "falta el trigger de solo inserción de tax_rules");
+    const A = "apps/web/app/admin/acciones-planes.ts", a = existsSync(A) ? readFileSync(A, "utf8") : "";
+    const fn = /export async function impuestoProgramar[\s\S]*?\n\}/.exec(a)?.[0] ?? "";
+    if (!fn) falla(G, A, 0, "falta impuestoProgramar (Planes › Impuestos)");
+    else {
+      if (!/s\.puede\("plan", "aprobar"\)/.test(fn)) falla(G, A, 0, "impuestoProgramar sin el permiso plan:aprobar");
+      if (!/m\.length < 3/.test(fn) || !/auditar\(c,/.test(fn)) falla(G, A, 0, "impuestoProgramar sin motivo o sin auditoría");
+      if (!/insert into tax_rules/.test(fn)) falla(G, A, 0, "impuestoProgramar tiene que insertar una regla nueva");
+    }
+    const U = "apps/web/lib/autos.ts", u = existsSync(U) ? readFileSync(U, "utf8") : "";
+    const fi = /async function firmaTotales[\s\S]*?\n\}/.exec(u)?.[0] ?? "";
+    if (!fi || /max\(id\)/.test(fi) || !/effective_from <= now\(\)/.test(fi)) falla(G, U, 0, "firmaTotales tiene que usar la regla de impuesto VIGENTE de cada ciudad (no la última creada)");
+  },
+
   /* 3o. Todo interruptor (role="switch") se usa con teclado: si no es un <button>, lleva tabIndex y onKeyDown; si es un
      <span> suelto, además su nombre (aria-label). 6 nov, 2p: el de «Respuesta automática» y otros cuatro no tenían. */
   interruptorAccesible() {

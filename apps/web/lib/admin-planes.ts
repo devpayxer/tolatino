@@ -6,7 +6,7 @@ import { PRECIO_PRO, PRUEBA_DIAS } from "./plan";
 
 /* ADM-PLAN · Planes y suscripciones (Super Admin.dc.html secPlan): MRR, en prueba, cobro fallido, Free al techo; Planes
    (qué incluye cada uno), Suscripciones (estado de cada negocio de tus ciudades) y Comisiones (vigentes y programadas). */
-export type TabPlan = "res" | "subs" | "fees" | "ing";
+export type TabPlan = "res" | "subs" | "fees" | "ing" | "tax";
 export type FilaSub = { negocio: string; nombre: string; estado: string; fin: string | null; ciclo: string; intentos: number; dueño: string | null; desde: string };
 const CIUD = "(cardinality($1::text[]) = 0 or b.city_id = any($1::text[]))";
 export async function datosPlanes(s: Staff, tab: TabPlan, est: string | null) {

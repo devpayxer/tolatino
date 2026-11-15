@@ -49,6 +49,8 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
   const TAG = `a9n3-${ID}`;
   const KEYS = ['noche_corte_min', 'noche_responder_min'];
   const limpiar = () => {
+    // 12 · La regla de impuesto de prueba (tax_rules es solo de inserción: se quita con el trigger apagado, solo en la base de pruebas).
+    try { sql(`set session_replication_role = replica; delete from tax_rules where reason like '%${TAG}%'`); } catch {}
     sql(`update queue_items set status = 'decided', decision = 'prueba', decided_at = now() where status = 'open' and subject_id like '${TAG}-%';
          delete from platform_config where key = any (array['${KEYS.join("','")}']);
          update feature_flags set enabled = true, scope = 'all', cities = '{}', percent = 100 where key = 'app.ubicacion_vivo';
@@ -381,6 +383,25 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
     await a.context().addCookies([{ name: 'tl_lang', value: 'es', url: B }]);
     await a.goto(B + '/admin');
     ok(await contiene(a, 'Colas'), 'y vuelve a español');
+    // 12 · 9n-19 · Planes › Impuestos (L471): la vigente de cada ciudad y categoría, «Programar cambio» con motivo → una regla NUEVA desde el
+    // 1.º de enero (PROGRAMADA en la lista, quién y por qué en la base, auditoría) y la base no deja cambiar ni borrar una regla.
+    console.log('12 · Impuestos');
+    await a.goto(B + '/admin/planes?tab=tax');
+    ok(await contiene(a, 'Venta de autos') && await contiene(a, 'Precio 6 %') && await contiene(a, 'Mano de obra 0 %'), 'Impuestos: la vigente por ciudad y categoría (Venta de autos · Precio 6 % · Mano de obra 0 %)');
+    await clic(boton(a, 'Programar cambio'));
+    ok(await contiene(a, 'QUÉ CAMBIA Y DESDE CUÁNDO') && await contiene(a, 'desde el 1.º de enero'), 'la confirmación pide qué cambia y desde cuándo');
+    await clic(a.getByText(/ · desde el 1\.º de enero$/).first());
+    { const pct = await vis(a.getByLabel(/PORCENTAJE \(0 A 20\)/)) ?? await vis(a.locator('input').last()); await pct.fill('6.25'); }
+    await clic(a.getByText('Indicación del contador.', { exact: true }));
+    await a.locator('textarea').last().fill(`Indicación del contador. ${TAG}`);
+    await clic(boton(a, 'Programar').last());
+    ok(await contiene(a, 'Programado: 6.25 % desde el'), 'la regla queda programada para el 1.º de enero');
+    const r12 = sql(`select t.id || '|' || t.parts_bp || '|' || t.labor_bp || '|' || (t.created_by = '${AU}') || '|' || to_char(t.effective_from at time zone 'America/New_York', 'MM-DD HH24:MI') from tax_rules t where t.reason like '%${TAG}%' order by t.id desc limit 1`).split('|');
+    ok(r12[1] === '625' && r12[3] === 'true' && r12[4] === '01-01 00:00', `en la base: una regla NUEVA (6.25 %, quién, desde el 1.º de enero a medianoche del este) · ${r12.join(' ')}`);
+    ok(sql(`select count(*) from audit_entries where action = 'plan.impuesto_programar' and reason like '%${TAG}%'`) === '1', 'queda en la auditoría con su motivo');
+    await a.goto(B + '/admin/planes?tab=tax');
+    ok(await contiene(a, 'PROGRAMADA') && await contiene(a, /(Partes|Materiales|Precio|Consumo) 6\.25 %/), 'la lista la muestra PROGRAMADA con su porcentaje');
+    ok((sqlFalla(`update tax_rules set parts_bp = 0 where id = ${r12[0]}`) ?? '').includes('solo de inserción') && (sqlFalla(`delete from tax_rules where id = ${r12[0]}`) ?? '').includes('solo de inserción'), 'la base no deja cambiar ni borrar una regla (solo inserción)');
     const ok2 = err.filter((e) => !/hydrat|Hydrat/.test(e));
     ok(ok2.length === 0, `sin errores en las páginas (${ok2.slice(0, 3).join(' | ')})`);
     console.log(`\nadm9n3: ${n} comprobaciones ✓`);

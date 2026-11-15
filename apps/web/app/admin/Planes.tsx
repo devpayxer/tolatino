@@ -2,12 +2,13 @@
 /* ADM-PLAN · Planes y suscripciones (Super Admin.dc.html secPlan): MRR, en prueba, cobro fallido y Free al techo; Planes
    (Free y Pro), Suscripciones (filtros por estado; extender prueba, cortesía, quitar cortesía, reintentar cobro) y
    Comisiones (vigentes y programadas con 30 días) e Ingresos (comisiones y Pro de 8 semanas, por categoría, CSV). */
+import type { ReglaImpuesto } from "@/lib/admin-impuestos";
 import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { DatosPlanes, Ingresos, TabPlan } from "@/lib/admin-planes";
-import { comisionProgramar, ingresosCsv, planCortesia, planExtender, planQuitarCortesia, planReintentar } from "./acciones-planes";
+import { comisionProgramar, impuestoProgramar, ingresosCsv, planCortesia, planExtender, planQuitarCortesia, planReintentar } from "./acciones-planes";
 import { alertaNota, conciliacionNota, conciliarOtraVez } from "./acciones-conciliacion";
 import type { DiaConc, FilaDif } from "@/lib/conciliacion";
 import type { FilaAlerta } from "@/lib/dinero-alertas";
@@ -29,7 +30,7 @@ const EST = (E: EF): Record<string, [string, string, string]> => ({ trial: [E("E
 const KIND = (E: EF): Record<string, string> => ({ ped: E("Pedidos de comida", "Food orders"), merc: E("Pedidos del mercado", "Market orders"), cita: E("Citas y solicitudes", "Appointments and requests"), bol: E("Boletos", "Tickets"), apt: E("Apartados y layaway", "Holds and layaway"), rsv: E("Reservaciones de mesa", "Table reservations"), plan: E("Planes del hogar", "Home plans"), renta: E("Rentas", "Rentals"), fiesta: E("Depósitos de fiestas", "Party deposits"), viaje: E("Viajes, envíos y mudanzas", "Trips, shipping and moving") });
 const fecha = (iso: string | null, en = false) => (iso ? new Intl.DateTimeFormat(en ? "en-US" : "es-US", { timeZone: "America/New_York", weekday: "short", day: "numeric", month: "short" }).format(new Date(iso)).replace(/\./g, "") : "—");
 
-export function Planes({ d, ing, conc = null, tab, est, editar, aprobar, exportar, dinero = false }: { d: DatosPlanes; ing?: Ingresos | null; conc?: Conc; tab: TabPlan; est: string | null; editar: boolean; aprobar: boolean; exportar?: boolean; dinero?: boolean }) {
+export function Planes({ d, ing, imp = null, conc = null, tab, est, editar, aprobar, exportar, dinero = false }: { d: DatosPlanes; ing?: Ingresos | null; imp?: ReglaImpuesto[] | null; conc?: Conc; tab: TabPlan; est: string | null; editar: boolean; aprobar: boolean; exportar?: boolean; dinero?: boolean }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024, E = useE();
   const en = E("", "x") === "x", loc = en ? "en-US" : "es-US", KD = KIND_DIF(E), PD = PROB_DIF(E), ED = EST_DIA(E), AL = ALERTA(E), ES = EST(E), KI = KIND(E);
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
@@ -90,7 +91,7 @@ export function Planes({ d, ing, conc = null, tab, est, editar, aprobar, exporta
       { k: E("COBRO FALLIDO", "FAILED CHARGE"), v: String(k.fallidos), s: E("3 intentos en 7 días", "3 attempts in 7 days"), onClick: () => ir("subs", "past_due") },
       { k: E("FREE AL TECHO", "FREE AT CAP"), v: String(k.techo), s: E(`${d.cfg.tope} en línea este mes · solo Llamar`, `${d.cfg.tope} online this month · Call only`) },
     ] },
-    { type: "tabs", items: ([["res", E("Planes", "Plans")], ["subs", E("Suscripciones", "Subscriptions")], ["fees", E("Comisiones", "Fees")], ["ing", E("Ingresos", "Revenue")]] as const).map(([t, l]) => ({ l, on: tab === t, onClick: () => ir(t) })) },
+    { type: "tabs", items: ([["res", E("Planes", "Plans")], ["subs", E("Suscripciones", "Subscriptions")], ["fees", E("Comisiones", "Fees")], ["ing", E("Ingresos", "Revenue")], ["tax", E("Impuestos", "Taxes")]] as const).map(([t, l]) => ({ l, on: tab === t, onClick: () => ir(t) })) },
   ];
   if (tab === "res") {
     B.push({ type: "group", k: "FREE" }, { type: "kv", items: [{ k: E("TECHO MENSUAL EN LÍNEA", "MONTHLY ONLINE CAP"), v: E(`${d.cfg.tope} pedidos o citas · después, Llamar`, `${d.cfg.tope} orders or appointments · then, Call`) }, { k: E("PÁGINA", "PAGE"), v: E("Una sola página, pocas fotos y 5 ítems; reseñas sin respuesta", "A single page, few photos and 5 items; no review replies") }] });
@@ -113,6 +114,25 @@ export function Planes({ d, ing, conc = null, tab, est, editar, aprobar, exporta
     B.push({ type: "rows", items: d.fees.map((f) => ({ key: f.id, icon: "dollar", t: KI[f.kind] ?? f.kind, s: f.vigente ? (f.reason ?? E("Vigente", "Current")) : `${E("Programada desde el", "Scheduled from")} ${fecha(f.desde, en)} · ${f.reason ?? ""}`,
       r: `${f.rate_bp / 100} %${f.fixed_cents ? ` + ${money(f.fixed_cents)}` : ""}`, tag: f.vigente ? null : E("PROGRAMADO", "SCHEDULED"), tone: "action", chev: false,
       acts: aprobar && f.vigente && f.kind !== "rsv" ? [{ l: E("Programar cambio", "Schedule change"), v: "secondary", onClick: () => setConf({ titulo: `${E("Nueva comisión", "New fee")} · ${KI[f.kind]}`, cta: E("Programar", "Schedule"), sub: E(`Ahora: ${f.rate_bp / 100} %. Aplica en 30 días; lo ya vendido no cambia.`, `Now: ${f.rate_bp / 100}%. Applies in 30 days; past sales don’t change.`), valor: { k: E("PORCENTAJE (0 A 30)", "PERCENT (0 TO 30)"), ini: String(f.rate_bp / 100), max: 5 }, hacer: (m, _e, v) => comisionProgramar(f.kind, v, m) }) }] : undefined })) });
+  }
+  if (tab === "tax") {
+    // 9n-19 · Impuestos (L471), compuesto como Comisiones: la vigente de cada ciudad y categoría y las programadas; un cambio es una regla nueva.
+    const CAT: Record<string, [string, string]> = { "NEG-AUTO": [E("Taller (Auto)", "Auto shop"), E("Partes", "Parts")], "NEG-HOGAR": [E("Hogar", "Home services"), E("Materiales", "Materials")],
+      "NEG-DEALER": [E("Venta de autos", "Car sales"), E("Precio", "Price")], "NEG-FOOD": [E("Comida (evento privado)", "Food (private event)"), E("Consumo", "Food and drink")] };
+    const pc = (bp: number) => `${bp / 100} %`;
+    B.push({ type: "note", tone: "info", icon: "info", t: E("El impuesto de cada ciudad y categoría: sobre las partes o el precio, y sobre la mano de obra. Un cambio es una regla nueva desde una fecha y queda en la auditoría; lo ya cotizado o vendido no cambia. Revísalo con el contador antes de cambiarlo.", "Each city and category’s tax: on parts or price, and on labor. A change is a new rule from a date and stays in the audit log; what was already quoted or sold doesn’t change. Check with the accountant before changing it.") });
+    B.push((imp ?? []).length ? { type: "rows", items: (imp ?? []).map((x) => {
+      const [cn, pn] = CAT[x.cat] ?? [x.cat, E("Partes", "Parts")];
+      return { key: x.id, icon: "dollar", t: `${x.ciudad} · ${cn}`, s: x.vigente ? (x.motivo ?? E("Vigente", "Current")) : `${E("Programada desde el", "Scheduled from")} ${fecha(x.desde, en)}${x.motivo ? ` · ${x.motivo}` : ""}`,
+        r: `${pn} ${pc(x.partes)} · ${E("Mano de obra", "Labor")} ${pc(x.mano)}`, tag: x.vigente ? null : E("PROGRAMADA", "SCHEDULED"), tone: "action", chev: false,
+        acts: aprobar && x.vigente ? [{ l: E("Programar cambio", "Schedule change"), v: "secondary", onClick: () => setConf({ titulo: `${E("Nuevo impuesto", "New tax")} · ${x.ciudad} · ${cn}`, cta: E("Programar", "Schedule"),
+          sub: E(`Ahora: ${pn} ${pc(x.partes)}, mano de obra ${pc(x.mano)}. Lo ya cotizado o vendido no cambia.`, `Now: ${pn} ${pc(x.partes)}, labor ${pc(x.mano)}. What was already quoted or sold doesn’t change.`),
+          elegir: { label: E("QUÉ CAMBIA Y DESDE CUÁNDO", "WHAT CHANGES AND FROM WHEN"), items: [["partes", pn], ["mano", E("Mano de obra", "Labor")]].flatMap(([k, l]) =>
+            [["ahora", E("desde ahora", "from now")], ["mes", E("desde el 1.º del mes que viene", "from the 1st of next month")], ["enero", E("desde el 1.º de enero", "from January 1")]].map(([c, lc]) => ({ k: `${k}:${c}`, l: `${l} · ${lc}` }))) },
+          valor: { k: E("PORCENTAJE (0 A 20)", "PERCENT (0 TO 20)"), ini: String(x.partes / 100), max: 5 },
+          plantillas: [E("Cambió la ley del estado.", "State law changed."), E("Indicación del contador.", "Accountant’s instruction."), E("Impuesto local de la ciudad.", "City local tax.")],
+          hacer: (m, e, v) => impuestoProgramar(x.ciudadId, x.cat, e ?? "", v, m) }) }] : undefined };
+    }) } : { type: "empty", icon: "dollar", t: E("Sin reglas de impuesto", "No tax rules"), s: E("Las de tus ciudades salen aquí.", "Your cities’ rules show here.") });
   }
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>

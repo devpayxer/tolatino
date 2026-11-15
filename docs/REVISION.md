@@ -4989,3 +4989,9 @@ que ya usaba el texto secundario. **Las capturas aprobadas cambian por esto:** s
 **Decisión por defecto (AB):** un solo gris (60 %) para lo que antes eran tres tonos (42 %, 50 % y 55 %); la jerarquía la siguen dando el tamaño y el peso.
 Si quieres conservar dos tonos, el más claro no puede bajar de 58 %.
 
+## Fase 9 · 9n-19 — Impuestos en el Super Admin (15 nov)
+**Qué mirar (sandbox):** Super Admin › Planes y suscripciones › **Impuestos**: el impuesto de cada ciudad y categoría (Taller y Hogar sobre partes y mano
+de obra, Venta de autos sobre el precio, Comida en eventos privados), y «Programar cambio» con motivo: qué cambia, desde cuándo (ahora, el 1.º del mes
+que viene o el 1.º de enero) y el porcentaje. **Pantalla compuesta con piezas del sistema (la misma forma que Comisiones; el diseño no la trae):** dime si
+la quieres distinta. **Decisión por defecto (AB):** solo el permiso «aprobar» de Planes la cambia; nunca se edita una regla: se programa otra.
+

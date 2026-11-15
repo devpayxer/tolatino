@@ -2391,4 +2391,7 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   `scrollable-region-focusable` y con un solo contraste (BottomNav al 34 %, corregido); com5a y sal4i usaban «Escape no cierra» (ahora sí cierra:
   pruebas al día); a11y9c encontró que el foco no volvía a la barra desmontada (FocoHojas la busca por su `data-screen-label`).
 - Alreves9c: **17/17** (contrasteTexto, hojaAccesible, tuberiaNoSeSalta, iconoExiste, anchoSinSalto).
+- **9n-19 · Impuestos en el Super Admin (L471):** Planes › Impuestos (vigente + programadas por ciudad y categoría; «Programar cambio» con motivo →
+  regla nueva desde ahora / el 1.º del mes que viene / el 1.º de enero). **0166** (created_by, reason, solo inserción). `firmaTotales` de Autos con la
+  regla vigente de cada ciudad (antes max(id)). Guardián **`impuestoSoloNuevo`** (alreves9c 20/20); adm9n3 §12; ayuda admin-planes.
 

@@ -1,7 +1,7 @@
 # Super Admin › Planes y suscripciones · Plans
 
-_Pantallas: `/admin/planes` (ADM-PLAN). Permiso «Planes y suscripciones»: ver; editar (extender prueba, reintentar cobro); aprobar (cortesía y
-comisiones). Versión: 6 nov 2026. Audiencia: equipo. Tema: equipo._
+_Pantallas: `/admin/planes` (ADM-PLAN). Permiso «Planes y suscripciones»: ver; editar (extender prueba, reintentar cobro); aprobar (cortesía,
+comisiones e impuestos). Versión: 15 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Cifras:** MRR (Pro activos, anuales prorrateados), en prueba (cuántas terminan en 7 días), cobro fallido y Free al
@@ -34,6 +34,28 @@ transacciones) queda en el Historial.
 
 _English:_ **Revenue** tab: 8-week fees (net of refunds), 8-week Pro charges (with MRR) and fees by category over 90
 days, for your cities; CSV export is audited.
+
+## Impuestos
+Pestaña **Impuestos**: el impuesto de cada ciudad y categoría — Taller (Auto) y Hogar sobre partes o materiales y sobre la mano de obra,
+Venta de autos sobre el precio (entra en el total en la puerta) y Comida sobre el consumo de un evento privado — la vigente y las
+programadas, con quién y por qué. **Programar cambio** (permiso aprobar): eliges qué cambia (partes / precio o mano de obra) y desde cuándo
+(**ahora**, **el 1.º del mes que viene** o **el 1.º de enero**, a medianoche del Este), el porcentaje (0 a 20 %) y el motivo.
+
+| Caso | Qué pasa |
+|---|---|
+| Programar desde el 1.º de enero | Sale **PROGRAMADA**; hasta esa fecha se cobra la vigente. Ese día entra sola y los totales en la puerta de Venta de autos se recalculan solos. |
+| Programar desde ahora | Vale desde ese momento para lo que se cotice o venda después. |
+| Un estimado ya enviado, una cita cerrada o un carro ya vendido | No cambian: guardan el porcentaje de su momento. |
+| Equivocarse | Una regla nunca se cambia ni se borra: se programa otra con el porcentaje bueno y el motivo. |
+| Porcentaje fuera de 0–20 % o sin motivo | No deja. |
+| Ciudad que no es de tu rol | No aparece ni se puede tocar. |
+
+Revísalo con el contador antes de cambiarlo (impuesto del estado y local).
+
+_English:_ **Taxes** tab: each city and category's tax (parts or materials and labor for Auto and Home, price for Car sales, food and drink
+for private events), current and scheduled, with who and why. **Schedule change** (approve permission): what changes (parts/price or
+labor), from when (now, the first day of next month or January 1, midnight Eastern), the percent (0–20 %) and the reason. A rule is never edited
+or deleted — schedule a new one; past quotes and sales keep their percent.
 
 ## English
 

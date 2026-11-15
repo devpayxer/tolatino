@@ -60,6 +60,39 @@ export async function comisionProgramar(kind: string, pct: string, motivo: strin
   return { ok: true, mensaje: `Programado: ${p} % en 30 días. Lo ya vendido no cambia.` };
 }
 
+/* 9n-19 · Impuestos (L471): una regla NUEVA para una ciudad y categoría desde una fecha (ahora, el 1.º del mes que viene o el 1.º de enero, hora
+   del este), con motivo. Cambia una sola parte (partes o mano de obra); la otra se copia de la vigente. Nunca toca lo ya cotizado o vendido
+   (estimates y el total en la puerta guardan su copia). tax_rules es solo de inserción (0166). Permiso plan:aprobar y la ciudad en su rol. */
+export async function impuestoProgramar(ciudad: string, cat: string, eleccion: string, pct: string, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !s.puede("plan", "aprobar")) return { ok: false, mensaje: "Tu rol no cambia impuestos." };
+  const [que, cuando] = String(eleccion ?? "").split(":");
+  if (!(que === "partes" || que === "mano") || !(cuando === "ahora" || cuando === "mes" || cuando === "enero")) return { ok: false, mensaje: "Elige qué cambia y desde cuándo." };
+  if (s.ciudadesRol.length && !s.ciudadesRol.includes(String(ciudad))) return { ok: false, mensaje: "Esa ciudad no es de tu rol." };
+  const m = String(motivo ?? "").trim(), p = Number(String(pct ?? "").replace(",", ".").replace(/[^0-9.]/g, ""));
+  if (m.length < 3) return { ok: false, mensaje: "Escribe el motivo: queda en la auditoría." };
+  if (m.length > 300) return { ok: false, mensaje: "El motivo va hasta 300 letras." };
+  if (!(String(pct ?? "").trim() !== "" && p >= 0 && p <= 20)) return { ok: false, mensaje: "El impuesto va de 0 a 20 %." };
+  const bp = Math.round(p * 100);
+  const desde = cuando === "ahora" ? "now()" : cuando === "mes"
+    ? "(date_trunc('month', now() at time zone 'America/New_York') + interval '1 month') at time zone 'America/New_York'"
+    : "(date_trunc('year', now() at time zone 'America/New_York') + interval '1 year') at time zone 'America/New_York'";
+  const r = await tx(async (c) => {
+    const v = (await c.query<{ parts_bp: number; labor_bp: number }>(
+      `select parts_bp, labor_bp from tax_rules where city_id = $1 and category_id = $2 and effective_from <= now() order by effective_from desc, id desc limit 1 for update`, [ciudad, cat])).rows[0];
+    if (!v) return null;
+    const partes = que === "partes" ? bp : v.parts_bp, mano = que === "mano" ? bp : v.labor_bp;
+    const n = (await c.query<{ id: string; desde: string }>(
+      `insert into tax_rules (city_id, category_id, parts_bp, labor_bp, effective_from, created_by, reason) values ($1, $2, $3, $4, ${desde}, $5, $6) returning id::text, effective_from::text as desde`,
+      [ciudad, cat, partes, mano, s.id, m])).rows[0]!;
+    await auditar(c, { actor: s.id, action: "plan.impuesto_programar", targetKind: "tax_rule", targetId: `${ciudad}:${cat}`,
+      before: { partes: `${v.parts_bp / 100} %`, mano_de_obra: `${v.labor_bp / 100} %` }, after: { partes: `${partes / 100} %`, mano_de_obra: `${mano / 100} %`, desde: n.desde }, reason: m });
+    return n;
+  });
+  if (!r) return { ok: false, mensaje: "Esa ciudad no tiene impuesto para esa categoría." };
+  return { ok: true, mensaje: cuando === "ahora" ? `Listo: ${p} % desde ahora. Lo ya cotizado o vendido no cambia.` : `Programado: ${p} % desde el ${r.desde.slice(0, 10)}. Lo ya cotizado o vendido no cambia.` };
+}
+
 /* Ingresos · Exportar CSV (8 semanas: comisiones y Pro; por categoría 90 días). Permiso tx:exportar; queda en la auditoría. */
 export async function ingresosCsv(): Promise<ResAdm & { archivo?: string; nombre?: string }> {
   const s = await staff();

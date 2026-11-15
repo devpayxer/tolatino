@@ -429,10 +429,14 @@ export async function cambiarTopeCargo(c: PoolClient, cents: number): Promise<{ 
   return { bajados };
 }
 
-/* La firma de lo que mueve los totales de todos: el tope y la última regla de impuesto de Autos. Si cambia, se recalcula todo por lotes. */
+/* La firma de lo que mueve los totales de todos: el tope y la regla de impuesto de Autos VIGENTE en cada ciudad. Si cambia, se recalcula todo
+   por lotes. 9n-19: antes era la última regla creada (max(id)); una regla programada para el 1.º de enero cambiaba la firma el día que se creó
+   (se recalculaba con la vieja) y no el día que entraba en vigor (se quedaba el total viejo). */
 async function firmaTotales(): Promise<string> {
   const x = (await db().query<{ tope: number; tax: string | null }>(
-    `select ${cfgSql(TOPE_KEY)} as tope, (select max(id)::text from tax_rules where category_id = 'NEG-DEALER') as tax`)).rows[0]!;
+    `select ${cfgSql(TOPE_KEY)} as tope,
+            (select string_agg(id::text, ',' order by city_id) from (select distinct on (city_id) id, city_id from tax_rules
+              where category_id = 'NEG-DEALER' and effective_from <= now() order by city_id, effective_from desc, id desc) v) as tax`)).rows[0]!;
   return `${x.tope}:${x.tax ?? "-"}`;
 }
 /* Por cursor (business_id), de 100 en 100, cada lote en su transacción corta: nadie queda bloqueado. Guarda dónde va en platform_config

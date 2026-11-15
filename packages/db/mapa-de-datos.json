@@ -78,6 +78,7 @@
     "plan_subscriptions": { "reglas": [ { "col": "user_id", "accion": "seudonimizar", "porque": "dinero", "exporta": "planes", "fusion": "mover", "set": { "note": "null", "access": "null" } } ] },
     "reservation_holds": { "reglas": [ { "col": "user_id", "accion": "borrar", "fusion": "no" } ] },
     "service_requests": { "reglas": [ { "col": "user_id", "accion": "seudonimizar", "porque": "negocio", "exporta": "solicitudes", "fusion": "mover" } ] },
+    "tax_rules": { "equipo": ["created_by"] },
     "waitlist_entries": { "equipo": ["offered_by"], "reglas": [ { "col": "user_id", "accion": "seudonimizar", "porque": "negocio", "exporta": "listas_de_espera", "fusion": "mover" } ] },
     "help_requests": { "equipo": ["reply_by", "resolved_by"], "reglas": [ { "col": "user_id", "accion": "vaciar", "exporta": "ayudas_con_pedidos", "fusion": "mover", "set": { "body": "null" } } ] },
     "job_applications": { "reglas": [ { "col": "user_id", "accion": "vaciar", "exporta": "solicitudes_de_empleo", "fusion": "mover", "set": { "name": "'Cuenta borrada'", "phone": "null", "note": "null", "status": "case when status in ('sent', 'seen', 'interview') then 'withdrawn' else status end" } } ] },

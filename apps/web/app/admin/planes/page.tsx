@@ -3,13 +3,14 @@ import { datosPlanes, ingresos, type TabPlan } from "@/lib/admin-planes";
 import { procesar } from "@/lib/suscripcion";
 import { Planes } from "../Planes";
 
-/* ADM-PLAN · Planes y suscripciones (Planes, Suscripciones, Comisiones, Ingresos). */
+/* ADM-PLAN · Planes y suscripciones (Planes, Suscripciones, Comisiones, Ingresos, Impuestos). */
 const EST = new Set(["trial", "active", "canceling", "past_due", "courtesy", "ended"]);
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const s = await requerir("plan", "ver");
-  const sp = await searchParams, tab = (sp.tab === "subs" || sp.tab === "fees" || sp.tab === "ing" ? sp.tab : "res") as TabPlan, est = EST.has(sp.est ?? "") ? sp.est! : null;
+  const sp = await searchParams, tab = (sp.tab === "subs" || sp.tab === "fees" || sp.tab === "ing" || sp.tab === "tax" ? sp.tab : "res") as TabPlan, est = EST.has(sp.est ?? "") ? sp.est! : null;
   await procesar().catch(() => undefined);
-  const [d, ing] = await Promise.all([datosPlanes(s, tab, est), tab === "ing" ? ingresos(s) : Promise.resolve(null)]);
+  const [d, ing, imp] = await Promise.all([datosPlanes(s, tab, est), tab === "ing" ? ingresos(s) : Promise.resolve(null),
+    tab === "tax" ? import("@/lib/admin-impuestos").then((m) => m.reglasImpuesto(s)) : Promise.resolve(null)]);
   // 9k · Ingresos con la conciliación diaria (14 días, las diferencias del día elegido) y las alertas del dinero abiertas.
   let conc = null;
   if (tab === "ing") {
@@ -19,5 +20,5 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     const [difs, alertas] = await Promise.all([dia ? C.diferenciasDelDia(s, dia, /^\d{1,18}$/.test(sp.antes ?? "") ? sp.antes! : null) : Promise.resolve({ filas: [], sigue: null }), A.alertasDinero(s, sp.alertas !== "todas", /^\d{1,18}$/.test(sp.aantes ?? "") ? sp.aantes! : null)]);
     conc = { dias, dia, difs, alertas, todas: sp.alertas === "todas" };
   }
-  return <Planes d={d} ing={ing} conc={conc} tab={tab} est={est} editar={s.puede("plan", "editar")} aprobar={s.puede("plan", "aprobar")} exportar={s.puede("tx", "exportar")} dinero={s.puede("tx", "aprobar")} />;
+  return <Planes d={d} ing={ing} imp={imp} conc={conc} tab={tab} est={est} editar={s.puede("plan", "editar")} aprobar={s.puede("plan", "aprobar")} exportar={s.puede("tx", "exportar")} dinero={s.puede("tx", "aprobar")} />;
 }
