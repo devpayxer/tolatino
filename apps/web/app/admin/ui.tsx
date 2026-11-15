@@ -7,6 +7,7 @@ import type { Resultado } from "./acciones";
 import { tomarSiguiente } from "./acciones-colas";
 import { elegirCiudad } from "./acciones";
 import { tec } from "@/lib/tec";
+import { IdiomaAdmin, type LangAdmin } from "./idioma-admin";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Icono = UI.Icon as ComponentType<any>;
 
@@ -29,7 +30,8 @@ function useDesk() {
 export type ItemNav = { key: string; label: string; icon: string; href: string | null; fase?: string };
 export type GrupoNav = { label: string; items: ItemNav[] };
 
-export function Shell({ yo, grupos, casos, ciudades = [], vista = null, children }: { yo: { nombre: string; rol: string; iniciales: string }; grupos: GrupoNav[]; casos: { n: number; late: boolean; tomar: boolean }; ciudades?: { id: string; nombre: string }[]; vista?: string | null; children: ReactNode }) {
+export function Shell({ yo, grupos, casos, ciudades = [], vista = null, lang = "es", children }: { yo: { nombre: string; rol: string; iniciales: string }; grupos: GrupoNav[]; casos: { n: number; late: boolean; tomar: boolean }; ciudades?: { id: string; nombre: string }[]; vista?: string | null; lang?: LangAdmin; children: ReactNode }) {
+  const E = (es: string, en: string) => (lang === "en" ? en : es);
   const desk = useDesk();
   const router = useRouter();
   const ruta = usePathname();
@@ -56,17 +58,19 @@ export function Shell({ yo, grupos, casos, ciudades = [], vista = null, children
   // cinco segmentos: «Todas» y la ciudad elegida (tocarla pasa a la siguiente).
   const elegir = (id: string | null) => void elegirCiudad(id).then(() => router.refresh());
   const siguiente = () => { const i = ciudades.findIndex((c) => c.id === vista); elegir(ciudades[(i + 1) % ciudades.length]?.id ?? null); };
-  const segmentos = ciudades.length < 2 ? [{ label: "Todas", on: true }]
-    : desk ? [{ label: "Todas", on: !vista, onClick: () => elegir(null) }, ...ciudades.map((c) => ({ label: c.nombre, on: vista === c.id, onClick: () => elegir(c.id) }))]
-    : [{ label: "Todas", on: !vista, onClick: () => elegir(null) }, { label: vista ? ciudades.find((c) => c.id === vista)?.nombre ?? "Ciudad" : "Ciudad…", on: !!vista, onClick: siguiente }];
+  const todas = E("Todas", "All");
+  const segmentos = ciudades.length < 2 ? [{ label: todas, on: true }]
+    : desk ? [{ label: todas, on: !vista, onClick: () => elegir(null) }, ...ciudades.map((c) => ({ label: c.nombre, on: vista === c.id, onClick: () => elegir(c.id) }))]
+    : [{ label: todas, on: !vista, onClick: () => elegir(null) }, { label: vista ? ciudades.find((c) => c.id === vista)?.nombre ?? E("Ciudad", "City") : E("Ciudad…", "City…"), on: !!vista, onClick: siguiente }];
   return (
+    <IdiomaAdmin lang={lang}>
     <div className="min-h-dvh bg-paper">
       <div className="sticky top-0 z-30">
         <A.AdminBar
           desk={desk}
           assetBase="/assets/"
           onHome={() => router.push("/admin")}
-          searchPlaceholder="Buscar negocio, usuario, # de operación…"
+          searchPlaceholder={E("Buscar negocio, usuario, # de operación…", "Search business, user, order #…")}
           onSearch={() => router.push("/admin/buscar")}
           onBell={() => router.push("/admin/colas")}
           cities={segmentos}
@@ -87,7 +91,7 @@ export function Shell({ yo, grupos, casos, ciudades = [], vista = null, children
         /* Barra inferior del teléfono (Super Admin.dc.html SA:251-262): Inicio · Colas · Negocios · Usuarios.
            Transacciones llega en la Fase 2. */
         <nav style={{ position: "fixed", insetInline: 0, bottom: 0, zIndex: 40, background: "rgba(247,246,243,.96)", backdropFilter: "blur(14px)", borderTop: "1px solid rgba(11,14,18,.08)", padding: "8px 8px 14px", display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))" }}>
-          {([["/admin", "home", "Inicio"], ["/admin/colas", "bell", "Colas"], ["/admin/negocios", "store", "Negocios"], ["/admin/usuarios", "users", "Usuarios"]] as const).map(([href, icon, l]) => {
+          {([["/admin", "home", E("Inicio", "Home")], ["/admin/colas", "bell", E("Colas", "Queues")], ["/admin/negocios", "store", E("Negocios", "Businesses")], ["/admin/usuarios", "users", E("Usuarios", "Users")]] as const).map(([href, icon, l]) => {
             const on = href === "/admin" ? ruta === "/admin" : ruta.startsWith(href);
             return (
               <div key={href} role="link" onClick={() => router.push(href)} {...tec(() => router.push(href))} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "6px 0", cursor: "pointer", color: on ? "var(--tl-ink)" : "rgba(11,14,18,.42)" }}>
@@ -99,6 +103,7 @@ export function Shell({ yo, grupos, casos, ciudades = [], vista = null, children
         </nav>
       )}
     </div>
+    </IdiomaAdmin>
   );
 }
 

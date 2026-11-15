@@ -14,6 +14,7 @@ import { cuerpoEventos, tituloEventos } from "./ColasEventos";
 import { dlvResolver } from "./acciones-repartidores";
 import { asignarCaso, colaVisibilidad, equipoDeCola, feriadoEquipo, quitarFeriadoEquipo, tomarLote } from "./acciones-colas";
 import type { AjustesColas } from "@/lib/admin-colas";
+import { useE } from "./idioma-admin";
 
 import { crearSemilla,
  decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, reponerSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, decidirNoche, decidirEstafa, pausaEstafa, decidirVivienda, type ResAdm, verNinoCaso } from "./acciones-colas";
@@ -53,17 +54,18 @@ export type Confirmar = { titulo: string; sub?: string; plantillas?: string[]; p
 
 /* Confirmación con motivo (patrón 2ao): ReasonConfirm, con elección y, si hace falta, el campo del valor nuevo. */
 export function ConfirmarMotivo({ c, onBack, onDone, desk }: { c: Confirmar; onBack: () => void; onDone: (r: ResAdm) => void; desk: boolean }) {
+  const E = useE();
   const [motivo, setMotivo] = useState(c.ini ?? ""), [elegido, setElegido] = useState<string | null>(null), [valor, setValor] = useState(c.valor?.ini ?? "");
   const [pend, start] = useTransition(), [err, setErr] = useState<string | null>(null);
   const falta = !motivo.trim() || (!!c.elegir && !elegido) || (!!c.valor && !valor.trim() && c.valor.k !== "QUIÉNES SOMOS");
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {c.valor ? <PanelBloques bloques={[{ type: "field", k: c.valor.k, val: valor, onChange: setValor, area: c.valor.area, rows: 4, max: c.valor.max, count: `${valor.length}/${c.valor.max}` }]} /> : null}
-      <A.ReasonConfirm desk={desk} title={c.titulo} sub={c.sub ?? "El motivo lo ve la persona afectada y queda en la auditoría."}
-        choices={c.elegir ? [{ label: c.elegir.label, items: c.elegir.items.map((x) => ({ label: x.l, on: elegido === x.k, onClick: () => setElegido(x.k) })), empty: "No hay a quién elegir." }] : []}
+      <A.ReasonConfirm desk={desk} title={c.titulo} sub={c.sub ?? E("El motivo lo ve la persona afectada y queda en la auditoría.", "The person affected sees the reason, and it stays in the audit log.")}
+        choices={c.elegir ? [{ label: c.elegir.label, items: c.elegir.items.map((x) => ({ label: x.l, on: elegido === x.k, onClick: () => setElegido(x.k) })), empty: E("No hay a quién elegir.", "No one to choose.") }] : []}
         templates={(c.plantillas ?? []).map((t) => ({ label: t, on: motivo === t, onClick: () => setMotivo(t) }))}
         reason={motivo} onReason={(e: { target: { value: string } } | string) => setMotivo(typeof e === "string" ? e : e.target.value)}
-        autoFocus={!c.plantillas?.length} cta={pend ? "Guardando…" : c.cta ?? "Confirmar"} danger={c.peligro} disabled={falta || pend}
+        autoFocus={!c.plantillas?.length} cta={pend ? E("Guardando…", "Saving…") : c.cta ?? E("Confirmar", "Confirm")} danger={c.peligro} disabled={falta || pend}
         onConfirm={() => { if (falta || pend) return; start(async () => { const r = await c.hacer(motivo.trim(), elegido, valor); if (!r.ok) setErr(r.mensaje); else onDone(r); }); }}
         onBack={onBack} />
       {err ? <A.AdminNote tone="bad">{err}</A.AdminNote> : null}

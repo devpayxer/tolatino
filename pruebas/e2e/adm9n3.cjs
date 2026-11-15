@@ -372,6 +372,15 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
     ok(sql(`select count(*) from operations where number like 'N-9065%' and is_test`) === '7', 'las 7 operaciones del demo están (todas is_test)');
     await a.goto(B + '/admin/transacciones?q=N-906501');
     ok(await contiene(a, '906501'), 'Transacciones › Noche las encuentra');
+    // 11 · 9f-4 · El marco del Super Admin en inglés (el idioma de la persona): menú, buscador y la confirmación con motivo.
+    console.log('11 · El Super Admin en inglés (marco y menú)');
+    await a.context().addCookies([{ name: 'tl_lang', value: 'en', url: B }]);
+    await a.goto(B + '/admin');
+    ok(await contiene(a, 'Queues') && await contiene(a, 'Businesses'), 'el menú sale en inglés');
+    ok(await a.getByPlaceholder('Search business, user, order #…').count() > 0, 'el buscador también');
+    await a.context().addCookies([{ name: 'tl_lang', value: 'es', url: B }]);
+    await a.goto(B + '/admin');
+    ok(await contiene(a, 'Colas'), 'y vuelve a español');
     const ok2 = err.filter((e) => !/hydrat|Hydrat/.test(e));
     ok(ok2.length === 0, `sin errores en las páginas (${ok2.slice(0, 3).join(' | ')})`);
     console.log(`\nadm9n3: ${n} comprobaciones ✓`);

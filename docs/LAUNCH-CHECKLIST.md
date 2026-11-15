@@ -1603,7 +1603,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9f** · **9f-4 · El resto del Super Admin en inglés:** el mecanismo está y Textos y páginas ya sale completo; faltan los demás módulos (Colas, Usuarios, Negocios,
       Transacciones, Soporte, El Compa, Contenido, Eventos y boletos, Planes, Notificaciones, Confianza, Analítica, Sistema…) y las piezas compartidas
       (`ConfirmarMotivo`/`ReasonConfirm`, `Toast`, `Shell`: su «Confirmar», «Volver», «Guardando…» y el menú siguen en español). Las líneas de 5i, 6a, 6b, 6c, 6j y 7g de arriba se cierran
-      con esto. (9f, 14 nov)
+      con esto. (9f, 14 nov) — _(9f-4a, 15 nov): la base está: `app/admin/idioma-admin.tsx` (el marco da el idioma de la persona; `useE()` en cada pantalla cliente); el marco (buscador, ciudades, barra del teléfono), el menú (admin_sections es/en, grupos) y la confirmación con motivo («Confirmar», «Guardando…», el texto del motivo) ya salen en inglés (adm9n3 §11). Faltan las pantallas, módulo por módulo, con `useE()`._
 - [ ] **→ 9f** · **9f-5 · La ayuda: inglés ampliado y editor:** ~25 artículos de `docs/ayuda/` tienen un inglés de menos de una quinta parte del español (L969) y el Super Admin solo
       pausa (L975): falta ampliar el inglés y el editor que guarda «cambio propuesto» para el siguiente commit (la tabla de cambios propuestos no se creó). (9f, 14 nov)
 - [x] **→ 9n** · **«Cuenta borrada» en los demás paneles** (Apartados, Citas, Reservas, Rentas, Inscripciones, Fiestas, Noche…): solo el de Pedidos pasa el nombre por `nombreVisible()`;

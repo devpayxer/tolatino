@@ -2364,3 +2364,4 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **9n-16 · Editor de lo que se renta** en el panel (Hogar y Transporte): agregar, editar, encender/apagar y quitar; unidades nunca por debajo de las vivas. renta4f §10–11.
 - **9n-17 · Puerta: buscar por nombre con índice** (**0165** `tickets.door_name` derivado + trigramas); la carga `eventos` lo mide.
 - **9n-18 · Negocio 360° › Operación** (del prototipo): cifras 90/30 días, vistas 7 días, toques, Free, operaciones por tipo → Transacciones. neg9n8 §6.
+- **9f-4a · Super Admin en inglés, la base:** contexto de idioma (`idioma-admin.tsx`, `useE()`), marco, menú y confirmar con motivo. adm9n3 §11. Siguen los módulos.
