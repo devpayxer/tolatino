@@ -2275,3 +2275,15 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **Guardianes:** `plazoAbiertoSeLee` (el número de fábrica no vuelve a un texto), `purgaPorRazon`; al revés `alreves9b3` 47/47. `tsc` limpio; 0149 aplicada
   dos veces sobre una copia local en 0148 (idempotente). Hecho en paralelo con dos ayudantes (visitas; salud y pro) y juntado aquí.
 - **No corrió aquí:** e2e (sin Docker) → CI.
+
+## Fase 9 · 9n-6 — más plazos a Configuración y la confirmación del CI (15 nov)
+- **9n-6 (0150_plazos_abiertos2):** el día de pago de eventos (`evt_pago_dia`) se edita y el panel/Super Admin dicen ese día; sección nueva
+  «Hogar y Auto» (`sol_pre_h` 24 h, `sol_pq_h` 48 h, `sol_em_min` 15 min, `apartado_h` 48 h: motor y textos); `free_ops_cap` entra al catálogo
+  (las 12 lecturas pasan a `cfg_int`); Analítica dice los días de `lic_aviso_dias`. `pagos_banco_dia` sigue fijo (decisión del fundador).
+  Abierto: `tax_rules` editables (pide pantalla nueva: el fundador decide), el apartado de rentas 48 h, la validez de 7 días del pre-estimado.
+- **Confirmación completa (run 43659397723, f9c80e4):** todas las fases y los 9 dispositivos en verde. Dos rojos de independencia:
+  · barajada: `sis9j` — un «teléfono libre al azar» de din9n4 tomó el de Rita (570-555-0961). Arreglo: `pruebas/lib/telefonos-fijos.cjs`
+    (los generadores saltan los números que otra prueba usa por su número). Guardián `telefonoAlAzarRespetaFijos`.
+  · dos veces seguidas: `pan9n2` — la segunda vuelta corrió a las 10:51 PM del Este y el SMS «tx» quedó en silencio. Arreglo: apaga el
+    silencio de quien invita. Guardián `smsFueraDeSilencio`. Al revés 50/50.
+- Siguiente: CI dirigido (9n-5 + 9n-6 + los dos arreglos) y, en verde, la confirmación completa otra vez para cerrar 9b-3.
