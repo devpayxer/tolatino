@@ -2405,3 +2405,6 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   montar, y la prueba emula el teléfono completo) y sop7b (dependía de casos vencidos de otras pruebas: ahora vence uno propio). Escritorio 1280: el Inicio
   del Super Admin seguía en CLS 0,91 por SeccionesMovil (arreglado en 1d06358). Siguiente corrida completa: 43759335047.
 
+- **9j/9k · Reporte diario completo (L1633, L1635):** el reporte lleva la conciliación de ayer con Stripe («cuadra», «no cuadra · $», «no corrió ayer»)
+  y el último despliegue (commit, resultado, entorno) de `deploy_releases`. Analítica › Dinero suma «CONCILIACIÓN CON STRIPE» del período (solo para
+  quien ve todas las ciudades: Stripe no sabe de ciudades). Ayuda: reporte-diario.md y admin-analitica.md. ana9g lo comprueba contra la base.

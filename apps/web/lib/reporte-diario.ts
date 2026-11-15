@@ -13,7 +13,7 @@ import { dbAnalisis } from "./db-analisis";
    guardianes en vivo y «lo que necesita de ti» (los pasos pendientes de Sistema › Apps › «Lo que te toca»). Uno por día (founder_reports, solo
    inserción: el cuerpo y a dónde salió). Si a las 8:00 no salió (o salió tarde), queda la alerta del día y un aviso a los Admins (guardián
    reporteDiarioSale). Solo cifras, nombres de negocios y los pasos del fundador: nunca una persona (guardián analiticaSinPersonas).
-   La conciliación del dinero llega con 9k; las vueltas atrás de ayer las cuenta vueltas_atras_del_dia() (0145, 9o: el azul/verde las anota en
+   La conciliación de ayer con Stripe la da conciliacion_del_dia() (0141, 9k); el último despliegue, deploy_releases (0145); las vueltas atrás de ayer las cuenta vueltas_atras_del_dia() (0145, 9o: el azul/verde las anota en
    deploy_releases). */
 export const HORA_REPORTE = { h: 7, m: 30 };       // 7:30 AM de Hazleton
 export const HORA_ALERTA = { h: 8, m: 0 };         // si a las 8:00 no salió, alerta
@@ -27,6 +27,7 @@ export type CuerpoReporte = {
   dinero: { bruto: number; comision: number; devuelto: number; mrr: number; conciliacion: null | { ok: boolean; diferencia: number } };
   errores: { grupos_nuevos: number; eventos: number; barrido: string[] };
   vueltas: null | { n: number };
+  despliegue: null | { commit: string; result: string; entorno: string };
   colas: { cola: string; n: number }[]; soporte_vencidos: number;
   guardianes: { sobreventa: number; compa_pct: number | null; errores_vivos: number };
   pendientes: { paquete: string; es: string; en: string }[];
@@ -36,7 +37,7 @@ export type CuerpoReporte = {
 export async function armarReporte(): Promise<CuerpoReporte> {
   const sla = slaCase(cfgSql);
   const AYER = `((now() at time zone 'America/New_York')::date - 1)`;
-  const [dias, neg, ops, din, mrr, err, bar, colas, sop, sv, cg, vu] = await Promise.all([
+  const [dias, neg, ops, din, mrr, err, bar, colas, sop, sv, cg, vu, con, dep] = await Promise.all([
     dbAnalisis().query<{ dia: string; ayer: string }>(`select (now() at time zone 'America/New_York')::date::text as dia, ${AYER}::text as ayer`),
     dbAnalisis().query<{ n: number; nombres: string[] }>(
       `select count(*)::int as n, coalesce((array_agg(b.name order by b.created_at))[1:5], '{}') as nombres from businesses b
@@ -65,6 +66,10 @@ export async function armarReporte(): Promise<CuerpoReporte> {
       `select case when cfg_int('compa_tope_mes_cents') > 0 then least(100, floor((coalesce(s.spent_microusd, 0) / 10000.0) / cfg_int('compa_tope_mes_cents') * 100))::int end as pct
          from (select 1) x left join compa_spend_month s on s.month = compa_mes()`),
     dbAnalisis().query<{ n: number }>(`select vueltas_atras_del_dia(${AYER}) as n`),
+    // 9k · La conciliación de ayer con Stripe (conciliacion_del_dia, 0141): si corrió, si quedó alguna diferencia sin dueño y cuánto.
+    dbAnalisis().query<{ corrio: boolean; sin_dueno: number; dif: string }>(`select corrio, sin_dueno, diferencia_cents::text as dif from conciliacion_del_dia(${AYER})`),
+    // 9j · El último despliegue y su resultado (deploy_releases, 9o): solo sale lo que pasó el CI (tipos, guardianes, pruebas) y el deploy lo anota.
+    dbAnalisis().query<{ commit: string; result: string; entorno: string }>(`select commit_sha as commit, result, entorno from deploy_releases order by finished_at desc, id desc limit 1`),
   ]);
   // Lo que necesita del fundador: los pasos pendientes de «Lo que te toca» (Sistema › Apps). Si no se puede saber (sin red), se dice.
   let pendientes: CuerpoReporte["pendientes"] = [];
@@ -77,9 +82,10 @@ export async function armarReporte(): Promise<CuerpoReporte> {
     dia: dias.rows[0]!.dia, ayer: dias.rows[0]!.ayer,
     negocios: { nuevos: neg.rows[0]!.n, nombres: neg.rows[0]!.nombres ?? [] },
     operaciones: ops.rows[0]!,
-    dinero: { bruto: d.bruto, comision: d.comision, devuelto: d.devuelto, mrr: mrr.rows[0]?.mrr ?? 0, conciliacion: null },   // 9k: conciliación diaria con Stripe
+    dinero: { bruto: d.bruto, comision: d.comision, devuelto: d.devuelto, mrr: mrr.rows[0]?.mrr ?? 0, conciliacion: con.rows[0]?.corrio ? { ok: con.rows[0].sin_dueno === 0 && Number(con.rows[0].dif) === 0, diferencia: Number(con.rows[0].dif) } : null },   // 9k: conciliación diaria con Stripe
     errores: { grupos_nuevos: err.rows[0]!.grupos, eventos: err.rows[0]!.eventos, barrido: bar.rows.map((x) => x.name) },
-    vueltas: { n: vu.rows[0]?.n ?? 0 },                                                                                     // 9o: vuelta atrás automática (deploy_releases)
+    vueltas: { n: vu.rows[0]?.n ?? 0 },
+    despliegue: dep.rows[0] ? { commit: dep.rows[0].commit.slice(0, 7), result: dep.rows[0].result, entorno: dep.rows[0].entorno } : null,                                                                                     // 9o: vuelta atrás automática (deploy_releases)
     colas: colas.rows.map((x) => ({ cola: COLAS[x.queue]?.es ?? x.queue, n: x.n })), soporte_vencidos: sop.rows[0]!.n,
     guardianes: { sobreventa: sv.rows[0]!.n, compa_pct: cg.rows[0]?.pct ?? null, errores_vivos: err.rows[0]!.vivos },
     pendientes,
@@ -93,10 +99,11 @@ export function textoReporte(b: CuerpoReporte, es: boolean) {
     [E("Negocios nuevos", "New businesses"), `${b.negocios.nuevos}${b.negocios.nombres.length ? ` · ${b.negocios.nombres.join(", ")}` : ""}`, true],
     [E("Operaciones enviadas", "Transactions sent"), String(b.operaciones.enviadas)], [E("Aceptadas · hechas · canceladas", "Accepted · done · cancelled"), `${b.operaciones.aceptadas} · ${b.operaciones.hechas} · ${b.operaciones.canceladas}`],
     [E("Vendido en línea", "Sold online"), usd(b.dinero.bruto), true], [E("Comisión", "Commission"), usd(b.dinero.comision)], [E("Devuelto", "Refunded"), usd(b.dinero.devuelto)], ["MRR", usd(b.dinero.mrr)],
-    [E("Conciliación con Stripe", "Stripe reconciliation"), b.dinero.conciliacion ? (b.dinero.conciliacion.ok ? E("cuadra", "matches") : usd(b.dinero.conciliacion.diferencia)) : E("llega con 9k", "arrives with 9k")],
+    [E("Conciliación con Stripe", "Stripe reconciliation"), b.dinero.conciliacion ? (b.dinero.conciliacion.ok ? E("cuadra", "matches") : `${E("no cuadra", "does not match")} · ${usd(b.dinero.conciliacion.diferencia)}`) : E("no corrió ayer", "did not run yesterday")],
     [E("Errores nuevos · eventos", "New errors · events"), `${b.errores.grupos_nuevos} · ${b.errores.eventos}`],
     [E("Tareas del barrido con error", "Sweep tasks with errors"), b.errores.barrido.length ? b.errores.barrido.join(", ") : E("ninguna", "none")],
-    [E("Vueltas atrás", "Rollbacks"), b.vueltas ? String(b.vueltas.n) : E("llegan con 9o", "arrive with 9o")],
+    [E("Vueltas atrás", "Rollbacks"), b.vueltas ? String(b.vueltas.n) : E("sin dato", "no data")],
+    [E("Último despliegue", "Last deploy"), b.despliegue ? `${b.despliegue.commit} · ${b.despliegue.result === "ok" ? E("sirvió", "served") : b.despliegue.result === "vuelta_atras" ? E("volvió atrás", "rolled back") : E("no salió", "failed")} · ${b.despliegue.entorno}` : E("ninguno anotado", "none recorded")],
     [E("Colas vencidas", "Overdue queues"), b.colas.length ? b.colas.map((x) => `${x.cola} ${x.n}`).join(" · ") : E("ninguna", "none")], [E("Soporte fuera de plazo", "Support past deadline"), String(b.soporte_vencidos)],
     [E("Guardianes en vivo", "Live guardians"), E(`sobreventa ${b.guardianes.sobreventa} · errores sin revisar ${b.guardianes.errores_vivos} · El Compa ${b.guardianes.compa_pct ?? "—"} % del tope`,
       `overselling ${b.guardianes.sobreventa} · unreviewed errors ${b.guardianes.errores_vivos} · El Compa ${b.guardianes.compa_pct ?? "—"} % of the cap`)],

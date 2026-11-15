@@ -497,7 +497,7 @@ const DESDE_DIA = `(now() at time zone 'America/New_York')::date - ($2::int - 1)
    dinero por estado de los cobros del período. */
 export async function dinero(s: Alcance, dias: number) {
   type Tipo = { tipo: string; operaciones: number; bruto: number; comision: number; devoluciones: number; devuelto: number; cerradas: number; no_llegaron: number };
-  const [tipos, antes, semanas, pro, foto, estados] = await Promise.all([
+  const [tipos, antes, semanas, pro, foto, estados, concil] = await Promise.all([
     dbAnalisis().query<Tipo>(
       `select x.tipo, sum(x.operaciones)::int as operaciones, sum(x.bruto_cents)::float8 as bruto, sum(x.comision_cents)::float8 as comision, sum(x.devoluciones)::int as devoluciones,
               sum(x.devuelto_cents)::float8 as devuelto, sum(x.cerradas)::int as cerradas, sum(x.no_llegaron)::int as no_llegaron
@@ -522,8 +522,16 @@ export async function dinero(s: Alcance, dias: number) {
     dbAnalisis().query<{ estado: string; monto: number; devuelto: number; n: number }>(
       `select p.status as estado, coalesce(sum(p.amount_cents - p.refunded_cents), 0)::float8 as monto, coalesce(sum(p.refunded_cents), 0)::float8 as devuelto, count(*)::int as n
          from payments p where p.created_at > now() - make_interval(days => $2) and ${scope("p.city_id")} group by p.status`, [s.cities, dias]),
+    // 9k · La conciliación diaria con Stripe (conciliacion_del_dia, 0141) de los días del período: es de toda la plataforma (Stripe no sabe de
+    // ciudades), así que solo sale a quien ve todas las ciudades. Días que cuadraron, con diferencias, que fallaron o no corrieron.
+    s.cities.length ? Promise.resolve(null) : dbAnalisis().query<{ cuadra: number; diferencias: number; fallo: number; sin_correr: number; sin_dueno: number; diferencia: number; ultimo: string | null }>(
+      `select count(*) filter (where x.estado = 'cuadra')::int as cuadra, count(*) filter (where x.estado = 'diferencias')::int as diferencias,
+              count(*) filter (where x.estado = 'fallo')::int as fallo, count(*) filter (where x.estado = 'sin_correr')::int as sin_correr,
+              coalesce(sum(x.sin_dueno), 0)::int as sin_dueno, coalesce(sum(abs(x.diferencia_cents)) filter (where x.sin_dueno > 0), 0)::float8 as diferencia,
+              max(x.dia) filter (where x.corrio)::text as ultimo
+         from generate_series((now() at time zone 'UTC')::date - $1::int, (now() at time zone 'UTC')::date - 1, interval '1 day') g, conciliacion_del_dia(g::date) x`, [Math.min(dias, 90)]),
   ]);
-  return { tipos: tipos.rows, antes: antes.rows[0]!, semanas: semanas.rows, pro: pro.rows[0]!, foto: foto.rows[0]!, estados: estados.rows };
+  return { tipos: tipos.rows, antes: antes.rows[0]!, semanas: semanas.rows, pro: pro.rows[0]!, foto: foto.rows[0]!, estados: estados.rows, concil: concil ? concil.rows[0]! : null };
 }
 
 /* Retención por cohorte semanal (metricas_retencion): las últimas 12 semanas; de los que ya tienen la edad, cuántos volvieron el día 1, 7 y 30. */

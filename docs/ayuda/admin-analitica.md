@@ -115,7 +115,7 @@ días y toda la historia una vez al día, de madrugada):
   que terminaron en el período, cuántas pasaron a pagar), **en prueba**, las que pasaron a Free y lo cobrado de Pro, con el embudo **prueba Pro →
   dejaron su tarjeta → primer cobro**.
 - **Dinero por estado:** de los cobros creados en el período, cuánto está cobrado, retenido, liberado o devuelto.
-- La **conciliación diaria con Stripe** (lo cobrado aquí contra lo que dice Stripe) todavía no sale: cuando esté, sale aquí y en el reporte diario.
+- **Conciliación con Stripe** (cada noche se compara lo cobrado aquí contra lo que dice Stripe): cuántos días del período cuadraron, cuántos tuvieron diferencias (y cuántas siguen sin dueño, con su monto; tocar la cifra abre Planes, donde se toman) y cuántos no corrieron o fallaron. Es de toda la plataforma, porque Stripe no sabe de ciudades: solo la ve quien ve todas las ciudades. El reporte diario lleva la del día anterior.
 - Solo cifras por ciudad, día y tipo: nunca quién pagó.
 
 ## Gente: retención por cohorte y embudos
@@ -195,8 +195,10 @@ and the whole history once a day, overnight): **sold online** (charged by card i
 passed); **sold per week · 8 weeks** (charged minus refunded); average ticket **by type** and **by transaction type**; **Pro**: **MRR** (what Pro
 businesses pay each month; a yearly plan counts as a twelfth), **paying Pro**, **Pro conversion** (of the trials that ended in the period, how many
 started paying), **on trial**, those that went to Free and Pro charged, with the funnel **Pro trial → left their card → first charge**; and **money by
-state** (charged, held, released, refunded). The daily **Stripe reconciliation** does not show yet: when it is ready, it shows here and in the daily
-report. Figures only: never who paid.
+state** (charged, held, released, refunded). **Stripe reconciliation** (every night what was charged here is compared with what Stripe says): how many days
+of the period matched, how many had differences (and how many are still unowned, with the amount; tapping it opens Plans, where they are taken) and
+how many did not run or failed. It covers the whole platform, since Stripe does not know about cities: only someone who sees all cities sees it. The
+daily report carries the previous day's. Figures only: never who paid.
 
 ### People: retention by cohort and funnels
 **Retention by cohort:** the neighbors who signed up each week and, of those old enough, how many came back on **day 1, 7 and 30** («—» = not that old

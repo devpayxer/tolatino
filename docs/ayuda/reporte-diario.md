@@ -8,9 +8,10 @@ Cada día a las **7:30 AM de Hazleton** el sistema arma el reporte del día ante
 (el correo, a quien tiene correo en su cuenta). Lleva:
 - **Negocios nuevos** de ayer (cuántos y los nombres de los primeros).
 - **Operaciones:** enviadas, aceptadas, hechas y canceladas.
-- **Dinero:** vendido en línea, comisión, devuelto y el MRR de Pro. La **conciliación con Stripe** tiene su renglón, que dice que todavía no sale
-  mientras no esté lista.
+- **Dinero:** vendido en línea, comisión, devuelto y el MRR de Pro. La **conciliación con Stripe** de ayer: «cuadra», «no cuadra» con la
+  diferencia, o «no corrió ayer» si esa noche no corrió.
 - **Errores:** grupos de errores nuevos y cuántos hubo, y las tareas del barrido que fallaron.
+- **Último despliegue:** su versión (commit), si salió bien o se volvió atrás, y dónde (pruebas o producción).
 - **Vueltas atrás:** tiene su renglón, que dice que todavía no hay mientras la vuelta atrás automática no esté encendida.
 - **Colas vencidas** (las que pasaron su plazo) y los casos de **Soporte fuera de plazo**.
 - **Guardianes en vivo:** sobreventa de boletos, errores sin revisar y cuánto va El Compa de su tope del mes.
@@ -49,8 +50,8 @@ Reportes.
 ### What it does
 Every day at **7:30 AM Hazleton time** the system builds the previous day's report and sends it **by email and as a push notification** to each
 active Admin (the email, to those with an email on their account). It has: **new businesses** from yesterday; **transactions** sent, accepted, done
-and cancelled; **money** sold online, commission, refunded and Pro MRR (the **Stripe reconciliation** line says it does not show yet while it is not
-ready); **errors** (new error groups, how many, and sweep tasks that failed); **rollbacks** (its line says there are none yet while automatic
+and cancelled; **money** sold online, commission, refunded and Pro MRR (yesterday's **Stripe reconciliation**: «matches», «does not match» with the
+difference, or «did not run yesterday»); the **last deploy** (its commit, whether it went well or was rolled back, and where); **errors** (new error groups, how many, and sweep tasks that failed); **rollbacks** (its line says there are none yet while automatic
 rollback is not on); **overdue queues** and **Support past deadline**; **live guardians** (ticket overselling, unreviewed errors, El Compa's share of
 its monthly cap); and **what needs you**: your pending steps in System › Apps › «Your part» (or «Nothing for now»). Figures, business names and your
 steps only: never a person.

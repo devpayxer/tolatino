@@ -101,6 +101,11 @@ let SEMILLA = null;
     ok(t.includes(`MRR ${usd(mrr)}`), `MRR = las suscripciones Pro que pagan (${usd(mrr)})`);
     ok(t.includes('VENDIDO POR SEMANA · 8 SEMANAS') && t.includes('EMBUDO · PRUEBA PRO → PAGO') && t.includes('CONVERSIÓN A PRO') && t.includes('NO LLEGARON'), 'semanas, prueba Pro → pago, conversión y no llegaron');
     ok(t.includes('Solo cifras por ciudad, día y tipo: nunca quién pagó.') && SIN_PERSONAS(t), 'sin personas');
+    // 9k · La conciliación con Stripe del período (toda la plataforma: el Admin ve todas las ciudades), contra conciliacion_del_dia() de la base.
+    const cc = sql(`select count(*) filter (where x.estado = 'cuadra') || '|' || count(*) || '|' || count(*) filter (where x.estado in ('sin_correr', 'fallo'))
+      from generate_series((now() at time zone 'UTC')::date - 30, (now() at time zone 'UTC')::date - 1, interval '1 day') g, conciliacion_del_dia(g::date) x`).split('|');
+    ok(t.includes('CONCILIACIÓN CON STRIPE') && t.includes(`DÍAS QUE CUADRARON ${cc[0]} / ${cc[1]}`) && t.includes(`NO CORRIÓ O FALLÓ ${cc[2]}`),
+      `conciliación con Stripe: ${cc[0]} de ${cc[1]} días cuadraron, ${cc[2]} no corrieron o fallaron (la base)`);
     // En inglés (el admin en el idioma de quien lo usa).
     const ce = await ctxDesk(b); await ce.addCookies([{ name: 'tl_lang', value: 'en', url: B }]); abiertas.push(ce); const pe = await ce.newPage(); await entrarComo(pe, ADM);
     await pe.goto(B + '/admin/analitica?tab=dinero'); await pe.getByText('SOLD ONLINE').first().waitFor();
@@ -209,8 +214,9 @@ let SEMILLA = null;
     await pd.getByText('Mándamelo ahora', { exact: true }).first().click(); await toast(pd, /Te lo mandamos/);
     ok(Number(sql(`select count(*) from email_outbox where tpl = 'founder_daily' and user_id = '${UB}'`)) === f0 + 1, 'el reporte llegó al simulador de correo');
     const fh = sql(`select html from email_outbox where tpl = 'founder_daily' and user_id = '${UB}' order by id desc limit 1`);
-    ok(fh.includes('Negocios nuevos') && fh.includes('Operaciones enviadas') && fh.includes('Vendido en línea') && fh.includes('Errores nuevos') && fh.includes('Vueltas atrás') && fh.includes('Colas vencidas') && fh.includes('Guardianes en vivo'),
-      'el reporte: negocios nuevos, operaciones, dinero, errores, vueltas atrás, colas vencidas y guardianes en vivo');
+    ok(fh.includes('Negocios nuevos') && fh.includes('Operaciones enviadas') && fh.includes('Vendido en línea') && fh.includes('Errores nuevos') && fh.includes('Vueltas atrás') && fh.includes('Conciliación con Stripe') && fh.includes('Último despliegue') && fh.includes('Colas vencidas') && fh.includes('Guardianes en vivo'),
+      'el reporte: negocios nuevos, operaciones, dinero, conciliación, errores, vueltas atrás, último despliegue, colas vencidas y guardianes en vivo');
+    ok(!/llega con 9k|llegan con 9o/.test(fh), 'ningún renglón dice que «llega con» un bloque');
     const pend = /Lo que necesita de ti: ([^<]*)</.exec(fh)?.[1] ?? '';
     ok(pend && (/^Nada por ahora\./.test(pend) || /\b8-[0-3] · /.test(pend)), `«Lo que necesita de ti»: ${pend.slice(0, 120)}`);
     ok(!/570555\d{4}/.test(fh), 'sin teléfonos');
