@@ -27,6 +27,7 @@ _Pantallas: ADM-CAT (`/admin/catalogo`), teléfono y escritorio. Para el equipo 
 | Quitar una subcategoría con negocios | Pide confirmar: «Afecta a N negocios: pierden la etiqueta, no la ficha.» |
 | Sinónimo con formato equivocado | «Usa el formato palabra → sinónimos.» |
 | Lo que trae el sistema | Las semillas nunca vuelven a encender lo que el equipo apagó ni pisan lo que agregó. |
+| Agregas o quitas una subcategoría | También cambia en «Publica tu negocio»: la nueva sale al buscar «¿Qué haces?» y en «Ver más» de su categoría; la quitada deja de salir. |
 
 Todo queda en el historial de cada pestaña y en la auditoría. Nada se borra.
 
@@ -46,3 +47,5 @@ minute. Searches without supply: what neighbors searched and asked to be alerted
 not seeds. Filter families: per category, each filter with its switch and how many businesses have it; turning one off
 removes it from the filter sheet and quick filters at once. Modules and Free/Pro: read only. Only Admin edits; every
 change is audited; seeds never undo the team's changes.
+
+**Publica your business follows the Catalog:** a subcategory you add shows up when someone searches "What do you do?" and under "See more" in its category; one you remove stops showing.

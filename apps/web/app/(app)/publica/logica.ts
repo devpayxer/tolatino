@@ -34,6 +34,23 @@ export function ahora(tz = "America/New_York") {
 
 export const F = (d: Borrador) => (d.cat ? Fl.of(d.cat) : null);
 export const own = (d: Borrador): Record<string, unknown> => (d.cat ? Fl.answers(d.cat, d.own, d) : d.own || {});
+/* 9n · El Catálogo del Super Admin manda sobre la lista del diseño (es lo que el servidor guarda: subcategorias_vivas por nombre): una
+   subcategoría nueva sale en el paso de subcategorías y en la búsqueda de Publica, una apagada o renombrada deja de salir con su nombre viejo.
+   Se rehace cada vez desde la copia del diseño (su orden primero); sin lista viva de una categoría, queda la del diseño. */
+export type SubsVivas = Record<string, [string, string][]>;
+let SUBS0: Record<string, string[][]> | null = null;
+const nS = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+export function catalogoVivo(c: SubsVivas) {
+  const S = X.SUBS as Record<string, string[][]>;
+  if (!SUBS0) SUBS0 = Object.fromEntries(Object.entries(S).map(([k, v]) => [k, v.slice()]));
+  for (const k of Object.keys(SUBS0)) {
+    const vivas = c[k];
+    if (!vivas?.length) { S[k] = SUBS0[k]!; continue; }
+    const llaves = new Set(vivas.map((x) => nS(x[0])));
+    const base = SUBS0[k]!.filter((x) => llaves.has(nS(x[0]!)));
+    S[k] = [...base, ...vivas.filter((x) => !base.some((y) => nS(y[0]!) === nS(x[0]))).map((x) => [x[0], x[1]])];
+  }
+}
 export const subL = (cat: string | null, sub: string, es: boolean) => { const s = cat ? Fl.subsOf(cat).find((x: string[]) => x[2] === sub) : null; return s ? (es ? s[0] : s[1]) : sub; };
 export function opOf(d: Borrador): string {
   const f = F(d); if (!f) return d.op || "local";

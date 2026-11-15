@@ -36,6 +36,18 @@ const cuenta = async (p, url, re) => { await p.goto(B + url); await p.waitForLoa
   // Agregar subcategoría
   await t(a, 'Agregar subcategoría').click(); await a.locator('input').last().fill(`Pupusería ${Date.now() % 10000} / Pupuseria ${Date.now() % 10000}`); await a.locator('textarea').last().fill('La piden los vecinos'); await t(a, 'Agregar').click();
   await a.locator('text=/Agregada/').waitFor(); console.log('nueva:', sql("select id || ' ' || (name->>'es') from subcategories where name->>'es' like 'Pupusería %' order by updated_at desc limit 1"));
+  // 9n · La subcategoría nueva sale en «Publica tu negocio» (búsqueda de «¿Qué haces?» y «Ver más» de su categoría).
+  {
+    const NUEVA = sql("select name->>'es' from subcategories where name->>'es' like 'Pupusería %' and created_by is not null order by updated_at desc limit 1");
+    const pb = await (await b.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, isMobile: true })).newPage(); watch(pb, 'publica');
+    sql("delete from onboarding_drafts where user_id = (select id from users where phone = '+15705550391')");
+    await entrar(pb, '5705550391'); await pb.goto(B + '/publica?paso=B1');
+    await pb.getByLabel('¿Qué haces?').fill(NUEVA.split(' ')[1]);
+    ok(await pb.getByText(NUEVA, { exact: true }).first().isVisible({ timeout: 8000 }).catch(() => false), `Publica tu negocio encuentra la subcategoría nueva «${NUEVA}»`);
+    await pb.getByText(NUEVA, { exact: true }).first().click();
+    ok(await pb.getByText(NUEVA, { exact: true }).first().isVisible(), 'y queda elegida en el paso de subcategorías');
+    await shot(pb, 'm4b-publica-nueva-m.png', false); await pb.context().close();
+  }
   // Sinónimo: agregar, Buscar lo usa (60 s de memoria), apagar
   await a.goto(B + '/admin/catalogo?tab=syn'); await t(a, 'Agregar sinónimo').click(); await a.locator('textarea').last().fill('zzrecorte → barberia'); await t(a, 'Agregar').click(); await a.locator('text=/Buscar lo entiende/').waitFor();
   await a.locator('input[aria-label="Buscar sinónimo"]').fill('zzrecorte'); await a.keyboard.press('Enter'); await a.locator('text=/zzrecorte/').first().waitFor(); await shot(a, 'm4-sinonimos-d.png');

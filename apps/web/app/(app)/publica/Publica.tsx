@@ -7,7 +7,7 @@ import * as UI from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { empezarDeNuevo, guardarBorrador, leerBorrador, negocioIgual, publicar, publicarOtro } from "./acciones";
-import { cap, D0, dig, F, Fl, fmtPh, items, ok, opOf, own, SEQ, subL, X, zoneOf, type Borrador, type Paso } from "./logica";
+import { cap, catalogoVivo, D0, dig, F, Fl, fmtPh, items, ok, opOf, own, SEQ, subL, X, zoneOf, type Borrador, type Paso, type SubsVivas } from "./logica";
 import { K, PasoB1, PasoC1, type UiB } from "./PasosBC";
 import { PasoD1, PasoE1 } from "./PasosDE";
 import { fechasPrueba, foto, PasoF1, PasoH1, type Publicado } from "./PasosFH";
@@ -21,7 +21,7 @@ const KEY = "tl-onb-neg-v2";
 const KF = "@keyframes oFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes pvFade{from{opacity:0}to{opacity:1}}.ohs{scrollbar-width:none}.ohs::-webkit-scrollbar{display:none}";
 
 export type VistaPublica = {
-  lang: "es" | "en"; ciudad: string; ciudadId: string;
+  lang: "es" | "en"; ciudad: string; ciudadId: string; subs: SubsVivas;
   usuario: { nombre: string; primero: string } | null;
   inicial: { paso: string; d: Partial<Borrador> } | null; publicado: Publicado | null; prueba: boolean;
 };
@@ -37,6 +37,7 @@ function useAncho() {
 const leerLocal = (): Partial<Borrador> | null => { try { return JSON.parse(localStorage.getItem(KEY) ?? "null"); } catch { return null; } };
 
 export function Publica({ v }: { v: VistaPublica }) {
+  catalogoVivo(v.subs); // 9n · las subcategorías vivas del Catálogo (antes de que los pasos lean la lista)
   const es = v.lang === "es", E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), ruta = usePathname(), sp = useSearchParams();
   const dw = useAncho(), desk = dw >= 1024;

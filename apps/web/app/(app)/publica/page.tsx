@@ -21,11 +21,15 @@ export default async function Page() {
             extract(epoch from (o.completed_at - o.started_at))::int / 60 as minutos
        from onboarding_drafts o left join businesses b on b.id = o.business_id left join business_stats_cache s on s.business_id = b.id
       where o.user_id = $1`, [u.id])).rows[0] : null;
+  // 9n · Las subcategorías vivas del Catálogo (lo que el servidor guarda al publicar): Publica las ofrece en vez de la lista fija del diseño.
+  const subs: Record<string, [string, string][]> = {};
+  for (const x of (await db().query<{ cat: string; es: string; en: string }>(
+    `select category_id as cat, name->>'es' as es, coalesce(nullif(name->>'en', ''), name->>'es') as en from subcategorias_vivas order by category_id, sort`)).rows) (subs[x.cat] ??= []).push([x.es, x.en]);
   const nombre = u ? { nombre: [u.first_name, u.last_name?.[0] ? `${u.last_name[0]}.` : ""].filter(Boolean).join(" ") || u.nick || "", primero: u.first_name ?? "" } : null;
   const mes = (s: string | null) => (s && lang === "es" ? s.replace(/Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/, (m) => ({ Jan: "ene", Feb: "feb", Mar: "mar", Apr: "abr", May: "may", Jun: "jun", Jul: "jul", Aug: "ago", Sep: "sep", Oct: "oct", Nov: "nov", Dec: "dic" })[m]!) : s ?? "");
   return (
     <Publica v={{
-      lang, ciudad: loc.c.name, ciudadId: loc.ciudad, usuario: nombre, prueba: ENTORNO !== "produccion",
+      lang, subs, ciudad: loc.c.name, ciudadId: loc.ciudad, usuario: nombre, prueba: ENTORNO !== "produccion",
       inicial: r && !r.business_id ? { paso: r.step, d: r.answers } : null,
       publicado: r?.business_id ? { id: r.business_id, nombre: r.name ?? "", minutos: r.minutos ?? 0, hasta: mes(r.hasta), items: r.items, fotos: r.fotos } : null,
     }} />
