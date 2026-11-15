@@ -7,6 +7,7 @@
    · llave: tiene llave de acceso → salir y entrar con ella.
    · bloqueado: 5 intentos malos en 15 minutos.
    El servidor decide todo (lib/equipo/dos-pasos.ts); aquí solo se muestra. ES/EN por la cookie del idioma, sin emoji. */
+import { FIJAS } from "@/lib/textos-fijas";
 import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
@@ -17,10 +18,8 @@ import { accionCodigo, accionConfirmarAlta, accionEmpezarAlta, accionRecuperacio
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { QrCode } = UI as unknown as Record<"QrCode", ComponentType<any>>;
 type L = "es" | "en";
-const LINEA: Record<L, string> = {
-  es: "Tu cuenta del equipo necesita tu llave de acceso o tu app de códigos. El SMS solo no alcanza.",
-  en: "Your team account needs your passkey or your code app. SMS alone is not enough.",
-};
+// La línea fija de §1c (lib/textos-fijas.ts): una sola fuente, con candado en Textos y páginas.
+const LINEA: Record<L, string> = { es: FIJAS.es.equipoDosPasos, en: FIJAS.en.equipoDosPasos };
 
 export function DosPasos({ estado, espera, quedan, l }: { estado: Exclude<EstadoDosPasos, "ok">; espera: number; quedan: number; l: L }) {
   const E = (es: string, en: string) => (l === "es" ? es : en);

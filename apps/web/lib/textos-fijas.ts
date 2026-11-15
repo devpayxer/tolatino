@@ -1,6 +1,6 @@
 /* 9f · Las líneas fijas de §1c (fase9-apertura.md), tal cual. NO se editan desde el Super Admin (Textos y páginas › Cadenas las muestra con candado):
-   solo cambian con el código, en un commit. Las usa quien las necesita (hoy «Descargar mis datos»); las demás esperan a su pantalla
-   (la landing, la página de mantenimiento, la doble verificación del equipo) y ya están protegidas. */
+   solo cambian con el código, en un commit. Las usan la landing (/acceso), «Descargar mis datos» y los dos pasos del equipo (/admin/dos-pasos);
+   la de mantenimiento es la página estática de infra/comun/mantenimiento (sin la app: el mismo texto, lo revisa lineaFijaBloqueada). */
 export const FIJAS = {
   es: {
     landing: "Alguien cerca de ti hace justo lo que buscas. Encontrarlo es lo difícil.",
