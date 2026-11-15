@@ -205,6 +205,16 @@ export async function tomarSiguienteSop(s: Staff): Promise<ResE> {
    7g · Si el texto salió de un borrador del copiloto (`borrador` = su id, de ESTE caso, de ESTA persona del equipo, sin usar y de hoy), el mensaje
    queda from_draft y el borrador anota, una vez, si salió tal cual o editado. Un id que no cuadra no cambia nada: el mensaje sale igual, sin marca.
    El que envía es siempre la persona del equipo, con este botón: el copiloto nunca llega aquí. */
+/* 7g · El borrador del copiloto que se usó: de ESTE caso, de ESTA persona del equipo, sin usar y de hoy (si no cuadra, nada). */
+type Q = { query: (q: string, v?: unknown[]) => Promise<{ rows: { id: string; draft: string }[] }> };
+async function borradorDe(c: Q, borrador: string | null | undefined, caseId: string, staffId: string) {
+  return borrador && UUID.test(String(borrador)) ? (await c.query(
+    `select id::text, draft from compa_drafts where id = $1::uuid and case_id = $2::bigint and staff_id = $3 and used is null and at > now() - interval '1 day' for update`, [borrador, caseId, staffId])).rows[0] : undefined;
+}
+/* Anota en el borrador, una vez, si salió tal cual o editado, y con qué mensaje. */
+async function usarBorrador(c: Q, bd: { id: string; draft: string } | undefined, texto: string, mid: string) {
+  if (bd) await c.query(`update compa_drafts set used = $2, message_id = $3::bigint where id = $1::uuid`, [bd.id, texto.replace(/\s+/g, " ").trim() === bd.draft.replace(/\s+/g, " ").trim() ? "sent_as_is" : "edited", mid]);
+}
 export async function responder(s: Staff, numero: string, texto: string, macro?: string | null, borrador?: string | null): Promise<ResE> {
   if (!puedeEditar(s)) return no("Tu rol solo puede ver Soporte.");
   const crudo = limpio(texto, 2000);
@@ -220,11 +230,10 @@ export async function responder(s: Staff, numero: string, texto: string, macro?:
       if (!mk) return no("Esa macro ya no está. Escribe la respuesta.");
     }
     const t = tapar(crudo.replace(/\{nombre\}|\{name\}/g, k.first ?? "")).texto;
-    const bd = borrador && UUID.test(String(borrador)) ? (await c.query<{ id: string; draft: string }>(
-      `select id::text, draft from compa_drafts where id = $1::uuid and case_id = $2::bigint and staff_id = $3 and used is null and at > now() - interval '1 day' for update`, [borrador, k.id, s.id])).rows[0] : undefined;
+    const bd = await borradorDe(c, borrador, k.id, s.id);
     const m = (await c.query<{ id: string }>(`insert into support_messages (case_id, city_id, sender, staff_id, body, macro_key, from_draft) values ($1, $2, 'staff', $3, $4, $5, $6) returning id::text`,
       [k.id, k.city_id, s.id, t, mk, !!bd])).rows[0]!;
-    if (bd) await c.query(`update compa_drafts set used = $2, message_id = $3::bigint where id = $1::uuid`, [bd.id, t.replace(/\s+/g, " ").trim() === bd.draft.replace(/\s+/g, " ").trim() ? "sent_as_is" : "edited", m.id]);
+    await usarBorrador(c, bd, t, m.id);
     enviada = { caseId: k.id, mid: m.id, texto: t };
     await c.query(`update support_cases set status = 'waiting', first_reply_at = coalesce(first_reply_at, now()), assigned_staff_id = coalesce(assigned_staff_id, $2) where id = $1`, [k.id, s.id]);
     await audit(c, s, k, "soporte.responder", { estado: EST[k.status] }, { estado: EST.waiting, ...(mk ? { macro: mk } : {}), ...(bd ? { borrador: "de El Compa" } : {}) });
@@ -249,8 +258,9 @@ export async function notaInterna(s: Staff, numero: string, texto: string): Prom
     return { ok: true, mensaje: "Nota guardada. Solo la ve el equipo." };
   });
 }
-/* Resolver (con un mensaje para la persona, si se escribe). */
-export async function resolver(s: Staff, numero: string, texto: string): Promise<ResE> {
+/* Resolver (con un mensaje para la persona, si se escribe). 9n-7 · Con el texto del borrador del copiloto, como «Enviar»: from_draft y el
+   borrador anota si salió tal cual o editado (LAUNCH «7g · Resolver y Resolver y devolver con el texto del borrador»). */
+export async function resolver(s: Staff, numero: string, texto: string, borrador?: string | null): Promise<ResE> {
   if (!puedeEditar(s)) return no("Tu rol solo puede ver Soporte.");
   const crudo = limpio(texto, 2000);
   if (crudo.length < 5) return no("Escribe cómo se resolvió (lo lee la persona).");
@@ -258,10 +268,12 @@ export async function resolver(s: Staff, numero: string, texto: string): Promise
     const k = await abrir(c, s, numero);
     if (typeof k === "string") return no(k);
     if (cerrado(k)) return no(cerrado(k)!);
-    await c.query(`insert into support_messages (case_id, city_id, sender, staff_id, body) values ($1, $2, 'staff', $3, $4)`, [k.id, k.city_id, s.id, tapar(crudo).texto]);
+    const t = tapar(crudo).texto, bd = await borradorDe(c, borrador, k.id, s.id);
+    const m = (await c.query<{ id: string }>(`insert into support_messages (case_id, city_id, sender, staff_id, body, from_draft) values ($1, $2, 'staff', $3, $4, $5) returning id::text`, [k.id, k.city_id, s.id, t, !!bd])).rows[0]!;
+    await usarBorrador(c, bd, t, m.id);
     await c.query(`insert into support_messages (case_id, city_id, sender, sys_key) values ($1, $2, 'system', 'resuelto_equipo')`, [k.id, k.city_id]);
     await c.query(`update support_cases set status = 'resolved', resolved_by = 'staff', resolved_at = now(), first_reply_at = coalesce(first_reply_at, now()), assigned_staff_id = coalesce(assigned_staff_id, $2) where id = $1`, [k.id, s.id]);
-    await audit(c, s, k, "soporte.resolver", { estado: EST[k.status] }, { estado: EST.resolved }, crudo.slice(0, 300));
+    await audit(c, s, k, "soporte.resolver", { estado: EST[k.status] }, { estado: EST.resolved, ...(bd ? { borrador: "de El Compa" } : {}) }, crudo.slice(0, 300));
     return { ok: true, mensaje: "Resuelto. La persona lo ve y puede decir si se resolvió.", numero: k.number };
   });
   if (r.ok) await avisarCaso(r.numero!, "sop_resuelto");
@@ -271,7 +283,7 @@ export async function resolver(s: Staff, numero: string, texto: string): Promise
 /* «Resolver y devolver»: devuelve a la tarjeta lo pagado en la app por la operación del caso, por devolverPago (la misma de siempre) con la
    llave del intento (tk-{clave}: tocar dos veces = una devolución). La base pone el tope del rol al insertar la fila pendiente; si se pasa,
    no se llama a Stripe. Solo quien insertó la fila llama a devolverPago; otro toque con la misma llave espera el resultado. */
-export async function resolverYDevolver(s: Staff, numero: string, monto: string, clave: string, texto: string): Promise<ResE> {
+export async function resolverYDevolver(s: Staff, numero: string, monto: string, clave: string, texto: string, borrador?: string | null): Promise<ResE> {
   if (!puedeDevolverRol(s)) return no("Tu rol no devuelve dinero.");
   if (!UUID.test(String(clave ?? ""))) return no("Prueba de nuevo.");
   const crudo = limpio(texto, 2000);
@@ -326,11 +338,13 @@ export async function resolverYDevolver(s: Staff, numero: string, monto: string,
     if (!u) return { ok: true, mensaje: "Ya se devolvió." };
     const k = await abrir(c, s, numero);
     if (typeof k === "string") return no(k);
-    await c.query(`insert into support_messages (case_id, city_id, sender, staff_id, body) values ($1, $2, 'staff', $3, $4)`, [k.id, k.city_id, s.id, tapar(crudo).texto]);
+    const t = tapar(crudo).texto, bd = await borradorDe(c, borrador, k.id, s.id);
+    const m = (await c.query<{ id: string }>(`insert into support_messages (case_id, city_id, sender, staff_id, body, from_draft) values ($1, $2, 'staff', $3, $4, $5) returning id::text`, [k.id, k.city_id, s.id, t, !!bd])).rows[0]!;
+    await usarBorrador(c, bd, t, m.id);
     await c.query(`insert into support_messages (case_id, city_id, sender, sys_key, vars) values ($1, $2, 'system', 'devuelto', $3)`, [k.id, k.city_id, JSON.stringify({ monto: money(fila!.amount) })]);
     await c.query(`update support_cases set refunded_cents = refunded_cents + $2, status = 'resolved', resolved_by = 'staff', resolved_at = now(), first_reply_at = coalesce(first_reply_at, now()),
                     assigned_staff_id = coalesce(assigned_staff_id, $3) where id = $1 and status not in ('resolved', 'merged')`, [k.id, fila!.amount, s.id]);
-    await audit(c, s, k, "soporte.devolver", { estado: EST[k.status] }, { estado: EST.resolved, devuelto: money(fila!.amount) }, crudo.slice(0, 300));
+    await audit(c, s, k, "soporte.devolver", { estado: EST[k.status] }, { estado: EST.resolved, devuelto: money(fila!.amount), ...(bd ? { borrador: "de El Compa" } : {}) }, crudo.slice(0, 300));
     return { ok: true, mensaje: `Resuelto y devueltos ${money(fila!.amount)} a su tarjeta.`, numero: k.number };
   });
   if (r.ok && r.numero) await avisarCaso(r.numero, "sop_resuelto");

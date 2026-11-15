@@ -17,10 +17,10 @@ export async function sopResponder(numero: string, texto: string, macro?: string
   return listo(await S.responder(s, String(numero ?? ""), String(texto ?? ""), macro ? String(macro) : null, borrador ? String(borrador) : null));
 }
 export async function sopNota(numero: string, texto: string): Promise<R> { const s = await staff(); if (!s) return SIN; return listo(await S.notaInterna(s, String(numero ?? ""), String(texto ?? ""))); }
-export async function sopResolver(numero: string, texto: string): Promise<R> { const s = await staff(); if (!s) return SIN; return listo(await S.resolver(s, String(numero ?? ""), String(texto ?? ""))); }
-export async function sopDevolver(numero: string, monto: string, clave: string, texto: string): Promise<R> {
+export async function sopResolver(numero: string, texto: string, borrador?: string | null): Promise<R> { const s = await staff(); if (!s) return SIN; return listo(await S.resolver(s, String(numero ?? ""), String(texto ?? ""), borrador ? String(borrador) : null)); }
+export async function sopDevolver(numero: string, monto: string, clave: string, texto: string, borrador?: string | null): Promise<R> {
   const s = await staff(); if (!s) return SIN;
-  return listo(await S.resolverYDevolver(s, String(numero ?? ""), String(monto ?? ""), String(clave ?? ""), String(texto ?? "")));
+  return listo(await S.resolverYDevolver(s, String(numero ?? ""), String(monto ?? ""), String(clave ?? ""), String(texto ?? ""), borrador ? String(borrador) : null));
 }
 export async function sopEscalar(numero: string, a: string, motivo: string): Promise<R> { const s = await staff(); if (!s) return SIN; return listo(await S.pasarAFinanzas(s, String(numero ?? ""), String(a ?? ""), String(motivo ?? ""))); }
 export async function sopUnir(numero: string, destino: string, motivo: string): Promise<R> { const s = await staff(); if (!s) return SIN; return listo(await S.unir(s, String(numero ?? ""), String(destino ?? ""), String(motivo ?? ""))); }

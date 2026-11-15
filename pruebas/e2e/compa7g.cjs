@@ -157,6 +157,22 @@ const UUIDRE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
   ok(sql(`select from_draft || '|' || coalesce(macro_key, '') from support_messages where case_id = ${TK1.id} order by id desc limit 1`) === 'false|ya-lo-veo', 'y NO marca from_draft (la macro reemplazó el borrador)');
   void b2;
 
+  console.log('3b · 9n-7: «Resolver» con el texto del borrador = from_draft y el borrador «tal cual» (como Enviar)');
+  const TK4 = nuevoCaso('Quiero saber si ya quedó resuelto lo de mi pedido de El Fogón.');
+  await ficha(pd, TK4.num);
+  await pd.getByRole('button', { name: 'Sugerir respuesta con El Compa' }).click();
+  ok(await espera(async () => (await campo(pd).inputValue()).length > 10), 'el borrador al campo');
+  const d4 = (await campo(pd).inputValue()).trim(), b4 = borr(TK4.id, DU);
+  await pd.getByRole('button', { name: 'Resolver', exact: true }).click();
+  await pd.getByRole('button', { name: d4.slice(0, 40) }).first().click();
+  await pd.getByRole('button', { name: 'Confirmar', exact: true }).click();
+  ok(await espera(() => sql(`select status from support_cases where id = ${TK4.id}`) === 'resolved'), 'Resolver con el texto del borrador: el caso queda resuelto');
+  const u4 = sql(`select from_draft || '|' || id from support_messages where case_id = ${TK4.id} and sender = 'staff' order by id desc limit 1`).split('|');
+  ok(u4[0] === 't', '  … su mensaje sale from_draft');
+  const b4b = borr(TK4.id, DU);
+  ok(b4b[0] === b4[0] && b4b[1] === (d4.length <= 300 ? 'sent_as_is' : 'edited') && b4b[3] === u4[1], '  … y el borrador quedó anotado con ese mensaje («tal cual»; la plantilla corta a 300 letras)');
+  ok(sql(`select after->>'borrador' from audit_entries where action = 'soporte.resolver' and target_id = '${TK4.num}' order by id desc limit 1`) === 'de El Compa', '  … y la auditoría dice que salió de El Compa');
+
   console.log('4 · Admin: su contexto dice «hasta lo cobrado»; Omar (Finanzas), Lucía (Lectura) y Sofía (Soporte de Allentown) no reciben nada');
   const pa = await como(ADM);
   await interno(pa, { op: 'olvidar' });

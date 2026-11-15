@@ -1093,8 +1093,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       (cobro doble, devolución que no llega, cuenta, técnico; ES/EN; inyección en el mensaje de la persona y en una nota interna; notas internas que
       no deben salir; montos que pide la persona) cuando haya llave. Con el simulador el borrador es fijo («Ya estoy revisando…») y el resumen dice
       el tema; con Sonnet debería resumir de verdad y elegir la macro. Revisar también si el esfuerzo bajo alcanza para Sonnet. (7g, 11 nov)
-- [ ] **→ 9n** · **7g · «Resolver» y «Resolver y devolver» de un caso TK- con el texto del borrador:** solo «Enviar» marca `from_draft` (y tal cual / editado);
-      si alguien usa el borrador para resolver, el borrador queda «descartado» al día. ¿Llevar el borrador también a esos dos? (7g, 11 nov)
+- [x] **→ 9n** · **7g · «Resolver» y «Resolver y devolver» de un caso TK- con el texto del borrador:** solo «Enviar» marca `from_draft` (y tal cual / editado);
+      si alguien usa el borrador para resolver, el borrador queda «descartado» al día. ¿Llevar el borrador también a esos dos? (7g, 11 nov) — _(9n-7, 15 nov): hecho (decisión AB: sí). Los dos toman el borrador como «Enviar» (borradorDe: de ese caso, de esa persona, sin usar y de hoy) → from_draft y el borrador «tal cual»/«editado»; la auditoría lo dice. Guardián copilotoSoloBorrador cubre los tres; compa7g §3b._
 - [x] **7g · El copiloto en Cuidado de niños, No me dejan cancelar y Posible estafa:** no sale (datos de niños, constancias y sanciones: decide
       una persona sin IA). Y no lee operaciones de Salud, Profesionales, inscripciones ni con datos privados. Si se quiere, es decisión del
       fundador. (7g, 11 nov) — **✓ 9a (11 nov):** el copiloto no sale en Cuidado de niños, No me dejan cancelar ni Posible estafa, ni lee Salud, Profesionales ni inscripciones (REVISION 9a).

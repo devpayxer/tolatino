@@ -230,15 +230,15 @@ export function SoporteAdmin({ tab, filas, sig, kpis, caso, plazo, macros, q, f,
         { type: "acts", items: [
           { l: pend ? "Enviando…" : modo === "persona" ? "Enviar" : "Guardar nota", v: "action", icon: modo === "persona" ? "right" : "edit", off: !resp.trim() || pend,
             onClick: () => run(() => (modo === "persona" ? sopResponder(k.num, resp, macro, borrador) : sopNota(k.num, resp)), () => { setResp(""); setMacro(null); if (modo === "persona") { setBorrador(null); setCop(null); } }) },
-          { l: "Resolver", icon: "check", onClick: () => setConf({ titulo: "¿Cómo se resolvió?", sub: "Lo lee la persona en su caso; después le preguntamos si se resolvió.", plantillas: resp.trim() ? [resp.trim().slice(0, 300)] : [], hacer: (m) => sopResolver(k.num, m) }) },
+          { l: "Resolver", icon: "check", onClick: () => setConf({ titulo: "¿Cómo se resolvió?", sub: "Lo lee la persona en su caso; después le preguntamos si se resolvió.", plantillas: resp.trim() ? [resp.trim().slice(0, 300)] : [], hacer: (m) => sopResolver(k.num, m, borrador).then((r) => { if (r.ok) { setBorrador(null); setCop(null); } return r; }) }) },
         ] },
       ]} />);
     }
     if (abierto && puede.devolver && k.puedeDevolver && pago && queda > 0) {
       out.push(<PanelBloques key="dev2" bloques={[{ type: "acts", items: [{ l: "Resolver y devolver", icon: "card", onClick: () => { const clave = nuevaClave(); setConf({
         titulo: "Resolver y devolver", sub: `A su ${pago.tarjeta ?? "tarjeta"}. Cobrado ${money(pago.amount)}, ya devuelto ${money(pago.devuelto)}. ${k.tope == null ? "Tu rol devuelve hasta lo cobrado." : `Tu rol devuelve hasta ${money(k.tope)} por caso${k.devueltoCaso ? ` (ya ${money(k.devueltoCaso)})` : ""}; más, Finanzas o un Admin.`} El mensaje lo lee la persona.`,
-        valor: { k: "MONTO A DEVOLVER (USD)", ini: "", max: 9 }, plantillas: ["Tienes razón. Te devolvemos lo cobrado de más a tu tarjeta: lo ves en 3 a 5 días hábiles."], cta: "Resolver y devolver", peligro: true,
-        hacer: (m, _e, monto) => sopDevolver(k.num, monto, clave, m) }); } }] }]} />);
+        valor: { k: "MONTO A DEVOLVER (USD)", ini: "", max: 9 }, plantillas: [...(borrador && resp.trim() ? [resp.trim().slice(0, 300)] : []), "Tienes razón. Te devolvemos lo cobrado de más a tu tarjeta: lo ves en 3 a 5 días hábiles."], cta: "Resolver y devolver", peligro: true,
+        hacer: (m, _e, monto) => sopDevolver(k.num, monto, clave, m, borrador).then((r) => { if (r.ok) { setBorrador(null); setCop(null); } return r; }) }); } }] }]} />);
     }
     if (abierto && puede.editar) {
       out.push(<PanelBloques key="mas" bloques={[{ type: "acts", items: [

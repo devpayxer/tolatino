@@ -5009,8 +5009,13 @@ const guardianes = {
     const tCO = sinComent(CO), co = trozo(tCO, tCO.indexOf("const sugerir = "));
     if (!/copilotoSugerir\(\{ cola: id \}\)/.test(co) || /decidirSop|decidir[A-Z]/.test(co)) falla(G, CO, 0, "Colas: el borrador solo va al mensaje de «Resolver con un mensaje»; se resuelve con ese botón");
     if (!/const copOn = k\.queue === "sop" && "copiloto" in k && !!k\.copiloto/.test(sinComent(CO))) falla(G, CO, 0, "Colas: el copiloto solo en la cola «sop» y cuando el servidor dice que está");
-    const r = cuerpoFn(sinComent(E), "responder");
-    if (!/from compa_drafts where id = \$1::uuid and case_id = \$2::bigint and staff_id = \$3 and used is null/.test(r) || !/\[k\.id, k\.city_id, s\.id, t, mk, !!bd\]/.test(r)) falla(G, E, 0, "from_draft solo con un borrador de ESE caso y de ESA persona del equipo, sin usar");
+    // 9n-7 · «Enviar», «Resolver» y «Resolver y devolver» toman el borrador por borradorDe (ESE caso, ESA persona, sin usar, de hoy) y marcan from_draft con él.
+    const bdf = cuerpoFn(sinComent(E), "borradorDe");
+    if (!/from compa_drafts where id = \$1::uuid and case_id = \$2::bigint and staff_id = \$3 and used is null/.test(bdf)) falla(G, E, 0, "from_draft solo con un borrador de ESE caso y de ESA persona del equipo, sin usar (borradorDe)");
+    for (const [fn, ins] of [["responder", /\[k\.id, k\.city_id, s\.id, t, mk, !!bd\]/], ["resolver", /\[k\.id, k\.city_id, s\.id, t, !!bd\]/], ["resolverYDevolver", /\[k\.id, k\.city_id, s\.id, t, !!bd\]/]]) {
+      const r = cuerpoFn(sinComent(E), fn);
+      if (!/const (t = tapar\(crudo\)\.texto, )?bd = await borradorDe\(c, borrador, k\.id, s\.id\);/.test(r) || !ins.test(r) || !/await usarBorrador\(c, bd, t, m\.id\);/.test(r)) falla(G, E, 0, `${fn}: el borrador por borradorDe, from_draft con él y anotado (usarBorrador)`);
+    }
     if (!existsSync(M)) return falla(G, M, 0, "falta la migración del copiloto");
     const m = readFileSync(M, "utf8");
     if (!/check \(not from_draft or \(sender = 'staff' and not internal\)\)/.test(m) || !/raise exception 'compa_borrador_mensaje/.test(ultimaFn("compa_drafts_antes"))) falla(G, M, 0, "la base: from_draft solo en un mensaje del equipo a la persona, y el mensaje de un borrador es de ese caso y de esa persona");

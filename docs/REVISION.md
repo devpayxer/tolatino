@@ -4913,5 +4913,7 @@ Qué mirar:
   que una persona mire el registro; nunca marca nada vencido sola.
 - **«Si no contestas en 10 min» por WhatsApp y SMS cuenta como «Fuera de tu horario»:** ahí el negocio contesta desde su teléfono, fuera
   de To'Latino, y no se puede saber si ya contestó. Con «Si no contestas», El Compa también reemplaza la respuesta fija (como hoy fuera de horario).
+- **El borrador del copiloto también en «Resolver» y «Resolver y devolver»** (la LAUNCH preguntaba): sale con from_draft y queda anotado igual que
+  con «Enviar»; nunca se envía solo (lo toca la persona del equipo).
 - **Apelar desde «Entrar» solo con el código por SMS** (no con Face ID / huella): el código prueba el teléfono; la ficha dura 30 minutos y vale para
   esa sanción. La respuesta de esa apelación va por SMS porque la persona no puede abrir la app.

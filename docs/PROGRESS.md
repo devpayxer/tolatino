@@ -2301,4 +2301,6 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **El Compa · CUÁNDO (LAUNCH 7f):** «Fuera de tu horario», «Si no contestas en N min» y «Siempre, al instante» en Panel › El Compa (y la fila
   de Mensajes dice el elegido). La espera vive en `chat_threads.compa_wait_until` (**0153**, con índice parcial) y el barrido la pasa al turno;
   `compa_auto_espera_min` se abre en Configuración. Guardián `compaRespuestaAuto` actualizado (al revés `alreves7f` 41/41); compa7f §12.
+- **Soporte · copiloto (LAUNCH 7g):** «Resolver» y «Resolver y devolver» con el texto del borrador marcan `from_draft` y el borrador queda «tal cual» o
+  «editado», como «Enviar» (`borradorDe`/`usarBorrador` en lib/soporte-equipo.ts). Guardián `copilotoSoloBorrador` cubre los tres (al revés 44/44); compa7g §3b.
 - **No corrió aquí:** e2e (sin Docker) → CI dirigido cuando termine la confirmación completa de 9b-3 (run 43683346297, en curso).
