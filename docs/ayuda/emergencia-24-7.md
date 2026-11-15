@@ -38,8 +38,34 @@ Hoy (arriba, en rojo) y el detalle de la emergencia. Versión: 6 nov 2026. Audie
 ## English
 
 ### What it does
-Pick what is happening, your home and access notes; it goes to every Pro 24/7 business that does that job and reaches you.
-The first to accept comes: you see their name, arrival and call-out price, and it becomes an "on the way" visit. Nobody
-within 15 minutes → "Nobody available" (nothing charged). The 911 line is always shown.
+> **If you smell gas, or there are sparks or smoke, get out of the house and call 911.** This line always shows in an emergency.
 
-**The time limits on this page** (minutes for a business to accept) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
+- You pick **what is happening** (a leak that won't stop, no heating, sparks or no power, an overflowing toilet or drain, you got locked out,
+  storm damage), your home, how to get in if you are not there, photos if you can (up to 3) and whether it is now or in 3 hours. Before sending
+  you see how many businesses can come and the **range of their call-out prices with the surcharge**.
+- It goes to **all Pro businesses with 24-hour service** that do that job and reach your home.
+- **The first one that accepts, goes.** You see their name, when they arrive and their call-out price (with the surcharge already included), and
+  your emergency becomes an «on the way» visit that you follow like any other.
+- **Nothing is charged today.** The call-out is paid when it is done; whatever is needed afterward is quoted to you in the app first.
+
+#### For the business
+- The emergency shows **at the top of Today, in red**, with how many minutes are left, and it reaches you by SMS. «View and accept» shows what is
+  happening, the home, the miles, your call-out price, how to get in and the photos. **«Accept · leaving now»** takes it if nobody took it first.
+- If another business accepted first, you will see «Another business took it».
+- To receive emergencies: Pro plan and «24 h emergencies» turned on in Your tool, with an emergency service.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Two businesses accept at the same time | Only one wins; the other is told it was already taken. |
+| Nobody accepts in 15 minutes | «Nobody available». Nothing was charged. You can **send it again** or call one on the list directly. |
+| Nobody 24/7 reaches your home for that | It doesn't let you send it and tells you to call directly. |
+| You no longer need it | «No longer needed» cancels it. |
+| You already have an emergency searching | That one opens; another is not sent. |
+
+**The time limits on this page** (how many minutes a business has to accept) are today's: To'Latino sets them in its Settings and the screen always
+shows the one in force at that moment.
+
+### FAQ
+**How much does it cost?** The call-out price you see (with the emergency surcharge included). Everything else is quoted to you before it is done.
+**Why doesn't a business show up?** Only Pro businesses with 24 h service that do that job and reach your home receive emergencies.

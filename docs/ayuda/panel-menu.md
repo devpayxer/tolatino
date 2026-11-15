@@ -48,15 +48,45 @@ Cada cambio queda en la auditoría.
 
 ## English
 
-What you sell › Menu lets the owner build the menu: items (search, filters, available switch with "sold out today" or
-"until I turn it on", reorder, bulk select to sell out, turn on, move, change price, set delivery/pickup or remove),
-categories (order, show/hide, own hours, remove moving items to another), option groups (required or optional, how
-many, price add-ons, which items use them, sold-out options), stock (sold out now, daily counts that reset at 6 AM or
-stock quantities, −/+ and auto sold out at 0, low-stock alert preference) and hours (pause online orders, busy extra
-time, last online order). Each item has a live preview, up to 5 photos, Spanish and English name and description,
-category, price, tax (6% prepared food or exempt), options, availability, stock, max per order, delivery/pickup,
-allergens, extra kitchen time and "Pin to Popular". Nothing is deleted; past orders keep their copy; To'Latino can
-hide an item or pause the Menu or online orders with a reason the owner sees. The menu tab on the business page and
-ordering are described in pedir-comida.md. New orders show in Today › Awaiting your reply (accept or decline them there) and decrease daily counts or stock when sent.
+### What it does
+The owner (or whoever has access to «What you sell») builds their menu:
+- **Items:** search, filter (all, sold out, catalog only, to complete), an available switch on each item («Sold out today · back tomorrow» or
+  «Until I turn it on»), reorder within the category, and **Select** several to sell out today, turn on, move to a category, change the price (+5 %,
+  +10 %, +$0.50, +$1, −$1; rounds to $0.25), where it is ordered (delivery and pickup, pickup only, catalog only) or remove.
+- **Categories:** in menu order, show or hide (their items are not deleted), their own hours (e.g. Lunch 11 AM–4 PM), remove (their items move to
+  another).
+- **Options:** reusable groups (Choose the meat, Size, Add-ons): required or optional, up to how many, how much each option adds, which items use
+  it, sell out an option.
+- **Stock:** what is sold out now (items and options), what is counted («daily count» that comes back every morning at 6 AM, or «stock quantity»),
+  − / + and at 0 it sells out by itself, and the low-stock notice.
+- **Hours:** pause online orders (15 min, 30 min, 1 hour, rest of the day), extra kitchen time, last order before closing and whatever has its own
+  hours.
+- **Each item:** a «This is how it looks on your menu» preview, up to 5 photos (upload or pick from the gallery), name and description in Spanish
+  and English, category, price, tax (6 % prepared food or exempt), options, availability, stock, maximum per order, delivery / pickup, allergens
+  (spicy, vegetarian, gluten-free, fish or shellfish, dairy, egg, peanuts or tree nuts), extra kitchen time and «Pin to Popular». Duplicate or
+  remove.
 
-**The Free cap** (10 online orders, bookings or requests a month) is today's: To'Latino sets it in its Configuration and the screen always shows the one in force.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| «Sold out today» | It comes back by itself at 6 AM the next day. «Until Friday»: Friday at 6 AM. «Until you turn it on»: until you turn it on. |
+| The daily count reaches 0 | It sells out by itself; at 6 AM it goes back to its number. |
+| Remove an item or a category | It isn't deleted: it stops showing. Orders already placed keep their copy. |
+| To'Latino hides an item or pauses the Menu or orders | The owner sees the notice with the reason above the menu and the label «HIDDEN BY TO'LATINO» on the item. |
+| Free | 5 items show on the page and up to 10 online orders a month. |
+| No access to «What you sell» | «No access to this area». |
+| The Menu has items and is on | The module says «ON YOUR PAGE»: the Menu tab shows on your page (Pro) or 5 items in the Overview (Free). |
+| An order arrives | It shows in **Today · Awaiting you** with the number, who, how many items, total and «before X». You accept or decline it from there (see `panel-pedidos.md`); if nobody answers in 10 min, it becomes NO ANSWER and nothing is charged. |
+| An order deducts stock | The daily count or the stock goes down when the order is sent; at 0 the item sells out by itself. |
+
+Every change is recorded in the audit.
+
+**The Free ceiling** (the 10 orders, appointments or requests online a month) is today's: To'Latino sets it in its Settings and the screen always
+shows the one in force at that moment.
+
+### FAQ
+**Does changing a price change the orders I already have?** No. Each order keeps the price it was made with.
+
+**Do I get the «running low» SMS?** The preference is saved; the SMS arrives with notifications.
+
+**Is there a button to translate the menu?** No: write the English yourself or leave it empty (in English the Spanish shows).

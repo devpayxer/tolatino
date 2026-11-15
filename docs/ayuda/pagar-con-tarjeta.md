@@ -51,25 +51,44 @@ devoluciones siguen llegando a esa tarjeta. La que paga el Pro de tu negocio se 
 ## English
 
 ### What it does
-- The customer picks **Card** or **Pay at the store / Cash on delivery**. With card: a saved one or a new one. To'Latino
-  never sees the full number; only brand and last 4 are kept.
-- On send, **the total is held**. **It is charged when the business accepts**; if not accepted within 10 minutes,
-  declined or cancelled first, **it is fully released**. Instant-accept businesses charge on send.
-- **The business** connects a payout account in **Payouts › Connect with Stripe**, then turns on **Card in the app** in
-  Orders. Payouts shows this week (taken, fee, refunded, **you get it on Tuesday**) and each charge.
-- **Fee:** 10% of the subtotal on card orders; delivery fee and tip go in full; card processing comes out of the fee.
-- **Refunds:** the owner from the order, To'Latino from Transactions; the fee drops proportionally; 3–5 business days.
+- **The customer** picks **Card** or **Pay at the store / Cash on delivery**. With a card they pick a saved one or add one (number, expiry, CVC,
+  ZIP code, name; «Save for next time»). To'Latino never sees the full number: Stripe takes it; we only keep the brand and the last 4 digits.
+- When you send, **the total is held** on the card. **It is charged when the business accepts**; if the business doesn't accept it within 10
+  minutes, declines it, or the customer cancels before, **it is released in full**. If the business accepts orders instantly, it is charged on
+  send. The order shows HELD, PAID, RELEASED or REFUNDED.
+- **The business** connects its payout account in **Payouts › Connect with Stripe** (your details, tax information, your bank, verification: all
+  on Stripe's page). With the account ready, turn on **Card in the app** in Orders. In Payouts you see the week's numbers (charged, fee,
+  refunded, **you get it on Tuesday**) and each charge.
+- **Fee:** on orders paid by card, To'Latino keeps **10 % of the subtotal**; delivery and tip go in full to the business; the card's processing
+  charge comes out of that fee. On cash or in-store payments, nothing.
+- **Refunds:** the owner, from the order (full or partial, with a reason); To'Latino, from Transactions. The fee goes down in proportion. The
+  customer gets the notice; it reaches their card in 3 to 5 business days.
 
-- **3-D Secure:** if your bank asks to confirm, the «Your bank asks you to confirm» sheet opens; tap «Confirm with my bank» and confirm in your bank's
-  window. The order then goes through with the same hold: never charged twice. Closing without confirming means no order and the hold is released.
-  It works for **everything you pay by card in the app**: orders, the market (also the OK for more), store holds and shipping, layaway, tickets, the
-  deposit of a booking or a shop/home visit, the party date, a Noche table, a trip, an enrollment fee, a private event, a move and a repair estimate
-  (and «something else»). Pro renewals send you a link; tool rentals are charged at pickup without you in the app (if your bank asks to confirm, we
-  ask you to change the card).
-- **Saved cards:** see and remove them in **My account › Settings › Payments**.
+- **Event tickets:** the charge is **authorized and captured at payment** (it doesn't wait for the business) and stays with To'Latino; the
+  organizer is transferred the money after the date, net of the ticket fee (5 % + $1 per ticket, from Plans › Fees). The price the customer sees
+  already includes the charges. If the capture fails, the tickets are voided and the authorization is released. See `comprar-boletos`.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| The bank declines the card | «Your bank declined it. Try another card.» No order is created. |
+| Insufficient funds / expired / wrong code | The message says so; there is no order and no charge. |
+| The bank asks for extra verification (3D Secure) | The **«Your bank asks you to confirm»** sheet opens: tap **Confirm with my bank** and confirm in your bank's window (right here; To'Latino doesn't see what you type). Afterward the order goes through on its own, with the same hold: you are never charged twice. If you close without confirming, there is no order and what was held is released by itself. It applies to **everything you pay by card in the app**: orders, the market (also the OK for more), store holds and shipments, the layaway plan, tickets, the deposit for a booking or a visit (shop and home), the party date, the Noche table, the trip, an enrollment fee, the private event, the move and the estimate (and «something else») from the shop or the home service. |
+| The bank asks to confirm when renewing something you don't see in the app (Pro, tool rental at pickup) | Pro: you get the notice with the link to the sheet. The rental: it is charged at pickup, without you in the app; if your bank asks to confirm, we ask you to change the card. |
+| Your bank doesn't confirm («It wasn't me») | There is no order and no charge: try another card. |
+| The same order is sent twice (double tap) | Only one hold: each attempt has its own key. |
+| You change cards after a decline | It is a new attempt with the other card. |
+| The business has no payout account or turned it off | «Card» doesn't show: only in-store payment. |
+| Stripe asks the business for one more piece of information | Payouts says «Stripe needs one more piece of information» with «Complete in Stripe». |
+| To'Latino holds payouts to the business | Payouts says so with the reason; nothing is lost. |
+| Refund larger than what remains | It doesn't allow it: «You can refund up to $X». |
+| Sandbox (testing) | Everything runs against To'Latino's simulator: 4242 4242 4242 4242 approves, 4000 0000 0000 0002 declines, 4000 0000 0000 9995 insufficient funds, 4000 0027 6000 3184 asks to confirm (the test «bank» answers in the sheet). Nothing real is charged. |
 
 ### FAQ
-**Why do I see a charge if the order did not happen?** It is a hold, not a charge: fully released, your bank removes it in
-1–5 days.
-**Why did my bank ask me to confirm my booking deposit?** Some banks ask to confirm any online payment (3-D Secure). Confirm it in the sheet and the
-booking goes through with that same deposit; if you say «It wasn't me», there is no booking and no charge.
+**Why do I see a charge if the order didn't happen?** It is a hold, not a charge: it is released in full and your bank removes it in 1 to 5 days.
+**Where do I see my cards?** In the «Payment method» sheet when you pay and in **My account › Settings › Payments**; the last one that paid stays as the default.
+**How do I remove a card?** In **My account › Settings › Payments**, tap **Remove** and confirm. It stops showing when you pay; what you already paid
+doesn't change and refunds keep arriving on that card. The card that pays for your business's Pro is changed first in the dashboard.
+**When does the money reach the business?** Every Tuesday, what was charged from Monday to Sunday.
+**Why did my bank ask me to confirm when I paid my booking deposit?** Some banks ask to confirm any online payment (3D Secure). Confirm it in the
+sheet and the booking goes through with that same deposit; if you say «It wasn't me», there is no booking and no charge.

@@ -41,10 +41,38 @@ Puedes poner cuánto te cobraron de más (opcional).
 
 ## English
 
-From your appointment: **Appointment help**. The office replies within 24 h; otherwise or if you disagree, To'Latino
-reviews it within 48 h. Up to 7 days after a finished visit; one request per visit. Reasons: charged something not
-mentioned, billed my insurance for something I did not request, insurance not taken after confirming, no interpreter,
-waited much longer than stated, treated badly, something else. A photo of the bill is required for charge and insurance
-reasons; it is **private** (only you, that office and the To'Latino team see it; team views are logged), never public, and
-deleted 90 days after the request closes. Cover medical details. You can ask for a refund (the office refunds you), a
-corrected insurance bill, or just let them know. Alerts never name the office, the patient or the reason.
+### What it is
+If something went wrong at a health appointment you made through To'Latino, you ask for help from the appointment: **Your appointment › Appointment
+help**. The office replies within 24 hours; if it doesn't reply or you disagree, To'Latino reviews it within 48 hours.
+
+### When you can
+- When the appointment has already passed (finished), up to 7 days later. One request per appointment.
+- If the appointment didn't happen, there is nothing to claim here: in Doctors nothing is charged in the app (there is no deposit).
+
+### The reasons
+I was charged something they didn't mention · They billed my insurance for something I didn't ask for · They didn't accept my insurance after
+confirming · There was no interpreter · I waited much longer than they said · Bad treatment · Something else.
+
+### The photo of the bill
+- **Required** for the three charge and insurance reasons; optional for the others. Up to 4 photos.
+- **It is private:** only you, the office of that appointment and the To'Latino team see it (and every time someone on the team opens it, it is
+  logged). It is never published and has no public link.
+- Cover any medical details that appear: only the charge is needed.
+- It is deleted 90 days after the request is closed.
+
+### What you can ask for
+- **Have them review it and refund me** — what was overcharged is refunded to you by the office, the way you paid.
+- **Have them correct the charge to my insurance** — they send you the corrected bill (in about 10 days).
+- **I just want to let you know.**
+You can enter how much you were overcharged (optional).
+
+### What happens next
+1. The office gets a notice **without your name or the reason** («A patient is asking for help with appointment C-…»).
+2. It replies: accepts, offers something else or says it can't. You get a neutral notice («Your request was answered»); you see the details in
+   the app.
+3. If it doesn't work for you, tap **Ask To'Latino to review**.
+
+### FAQ
+- **Does To'Latino refund my money?** No: in Doctors nothing goes through the app. The office refunds it.
+- **Does my request delete my review?** No.
+- **Does anyone else see my bill?** No. Only the office of that appointment and the To'Latino team.

@@ -29,6 +29,24 @@ eventos._
 ## English
 
 ### What it does
-**Cancelled**: you get a text and an in-app notice; **we refund everything you paid, fees included**, in 3–5 business days; nothing to do.
-**Date or time changed**: you get a text; on your order choose, until the new start, **Keep the new date** or **Full refund** (100 %); no answer
-means you keep it. **Sales paused**: if you bought, you still get in. Organizer notices show in the app, on your order and in “Before you go”.
+- **It is canceled** (by the organizer or To'Latino): you get an **SMS** and a notice in the app. **We refund everything you paid, fees included**,
+  to your card in 3–5 business days. **You don't have to do anything.** The order says «This event was canceled by the organizer · You are
+  refunded in full» and the event's link says «Event canceled» with the reason. Your tickets stop being valid.
+- **The date or time changes**: you get an **SMS** with the new date. In your order you choose, **until the new date starts**: **«Keep the new
+  date»** (your tickets are valid the same, with the same QR) or **«Full refund»** (we refund 100 %, fees included). If you don't choose anything,
+  you keep the new date.
+- **Sales paused**: the organizer paused sales; **if you already bought, you get in anyway**.
+- **Organizer notices** (parking, guest artist…): you get them in the app and they show in your order and in «Before you go».
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| The ticket was transferred to you | The money goes back to whoever paid for it; we notify you that the ticket is no longer valid. |
+| You already used the ticket and it was canceled afterward | It is also refunded. |
+| You opened a dispute with your bank over that charge | The bank already carries your refund; it isn't refunded twice. |
+| You bought after the date change | You bought for the new date: there is no choice; the normal policy applies. |
+| The new date has already started | The full refund can no longer be requested from the order. |
+
+### FAQ
+- **How long does the refund take?** 3–5 business days to show on your card.
+- **Do you charge me anything for the cancellation?** No. We refund everything.

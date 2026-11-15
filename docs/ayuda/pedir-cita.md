@@ -36,9 +36,32 @@ Detalles → Revisa y envía) y **Tu cita** (`/cita/C-xxxx`). Versión: 6 nov 20
 
 ## English
 
-**Services** lists each service with time and price; with chair rental you see the price range and pick who. The service
-sheet asks for options, optional extras and **With whom?**. **Day and time** shows 14 days of real openings in that
-person's schedule (existing bookings plus clean-up time); today from 30 minutes out. **Details**: for you, someone else or
-a child; a note (no phone numbers), up to 3 reference photos and a reminder in Alerts. **Review and send** shows the price,
-how you pay (deposit today, the rest on the day) and what happens to your deposit. Deposits are held on your card when you send, charged
-once confirmed and released if the booking is not confirmed within 2 h. If someone takes the time first, you are asked to pick another.
+### What it does
+- **Services:** each service with its time and price. If the shop rents chairs, you see the range («$22–$28») and how many barbers do it; the
+  exact price shows when you choose who with. **By barber** shows each one with their chair, whether they confirm instantly or how long they take
+  to reply, and their next free time.
+- **The service sheet:** you choose the options (required), the extras (they add time and price) and **With whom?** (with rented chairs it is
+  required; with employees you can leave **Any**). If it asks for a deposit, it says so there.
+- **Day and time:** 14 days. You only see times where your whole service fits, in that person's real schedule (their appointments and the
+  clean-up time between them). Today, from 30 minutes from now. It opens on the first day with free times.
+- **Details:** for you, for another person (you get the notices) or for a child (up to 12 years old); a note for the barber (280 characters, no
+  phone numbers), up to 3 reference photos and the reminder (24 h and 2 h before, in Alerts).
+- **Review and send:** the price, how it is paid (the deposit today; the rest on the day of the appointment, to whoever serves you) and what
+  happens to your deposit in each case. **Send request** (the business confirms) or **Confirm booking** (it confirms instantly).
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| It asks for a deposit | It is held on your card when you send, charged when they confirm and deducted from the total. If they don't confirm or don't reply within 2 h, it is released. |
+| It confirms instantly | The appointment is confirmed and the deposit is charged at that moment. |
+| Your bank declines the card | There is no appointment or charge: «Your card was declined». Use another one. |
+| Someone else took that time while you were choosing | «That time is no longer free. Choose another.» and you go back to Day and time. |
+| No times left in 14 days | «Tell me if a time opens up»: we notify you in Alerts and by SMS if you have it turned on. |
+| You have 3 requests without a reply | You can't request another until they reply. |
+| The business doesn't take online appointments (paused, no spot in the plan) | Booking doesn't show: «call or stop by the shop». |
+| Rented chair | The deposit goes to that chair's payout account; if the chair didn't connect one, it doesn't ask for an online deposit (see `silla-propia.md`). |
+
+### FAQ
+**When is my deposit charged?** When you send the request; it is deducted from the total. If it isn't confirmed, it goes back to your card.
+**Does the business see my phone number?** No. It sees your name, the service, the note and the photos you send.
+**Can I change or cancel?** From Your appointment (see `tu-cita.md`): free up to the number of hours the business states.

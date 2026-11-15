@@ -42,11 +42,35 @@ confirmen.**
 ## English
 
 ### What it does
-Parties answer one question: **is that date free?** The rule never changes: **the date is not yours until they confirm it.**
-**Your date** stores the day (next Saturdays and Sundays or any date), guests and, optionally, what you celebrate and where. Saving
-it holds nothing. With an account it is saved to your account and works on every Parties business and in Search; without one it
-stays on this phone and moves to your account when you sign in. Each business shows its real calendar: «Free on Sat Nov 14 · fits
-your 150», «Booked on … · free …», «Fits up to 120 · you expect 150», or the next free date. Services show the price, how it is
-charged, what is included and whether your date is free. The deposit is **held** when you send the request and **charged once the
-business confirms**; it is credited to the total and fully released if they do not confirm. In Search › Parties, your saved date
-is the first chip and shows only businesses free that day.
+The question in Parties is only one: **is that date free?** And the rule doesn't change: **the date is not yours until they confirm it.**
+- **Your date:** you say what you are celebrating (optional), what day (the next Saturdays and Sundays, or any other date), how many guests and
+  where (optional). You tap **See who is free**. **Saving your date holds nothing:** it only shows you who is free.
+  - With an account, it is saved in your account and works on **all** Parties businesses and in Search.
+  - Without an account, it stays **on this phone**. When you sign in, it moves to your account by itself.
+- **At each business** you see the real calendar (what the business marked and the parties it already confirmed):
+  - «Free on Sat Nov 14 · fits your 150»;
+  - «Booked on Sat Nov 14 · free Sun Nov 15 and Sat Nov 21»;
+  - «Fits up to 120 · you expect 150»;
+  - with no date: «Next free date: …».
+- **Services:** each with its price and how it is charged (package, hourly with a minimum, per unit, fixed price, free visit, «From $X» with the
+  written total), what it includes and whether your date is free. On the service sheet: **Request the date**, **Request a tour** or, if your
+  date is booked, **Pick another date**.
+- **The deposit** is **held** on your card when you send the request and **charged when the business confirms**; it is deducted from the total. If
+  they don't confirm, it is released in full.
+- **Search › Parties:** with your date saved, the first chip of «Is your date free?» is **Your date · Sat Nov 14** and it only shows the
+  businesses free that day.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Your date is booked at that business | It tells you the next free ones; the sheet offers «Pick another date». |
+| You expect more guests than fit | «Fits up to N · you expect M». |
+| Your date is farther out than the business holds in the app | «It doesn't hold that far ahead in the app: call for the …». |
+| Your date has already passed | It asks you to change it. |
+| The store doesn't take appointments (party supplies) | The button is «Directions». |
+| The business wrote its own question on Your page | Theirs wins over the automatic one. |
+
+### FAQ
+- **Does saving my date hold it?** No. It only shows you who is free. It is held when the business confirms.
+- **When is my deposit charged?** When they confirm. When you send, it is only held.
+- **Can I change my date?** Yes, whenever you want, from any Parties business.

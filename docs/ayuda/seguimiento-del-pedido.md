@@ -25,9 +25,25 @@ el repartidor del negocio. Teléfono y escritorio. Versión: 11 nov 2026. Audien
 - **¿Alguien más ve el mapa de mi pedido?** Solo tú y el negocio. Nadie más puede abrirlo.
 
 ## English
+
 ### What it does
-When your driver taps **Picked up, on my way**, a live map shows up in your order: **the purple dot is your driver**, the black one **your
-address**. It moves on its own. The time at the top right is the driver's **last position** (no made-up arrival time; **ARRIVES** is the
-business estimate). Without a new position for a couple of minutes it says **"Last position N min ago"**. When your order is delivered the map
-disappears. You only see where the driver is now, from pickup to delivery; only you and the business can open it. External delivery apps use
-their own tracking link; pickup orders have no map.
+- When your driver taps **Picked up, on my way**, the map appears in your order: **the purple dot is your driver** and the black one is **your
+  address**. It moves on its own, without reloading.
+- At the top right, the **time of their last position**. We don't make up an arrival time: the one you see in **ARRIVES** is the one the business
+  calculated.
+- If a new position doesn't arrive in a couple of minutes, it says **«Last position N min ago»** (your driver may have no signal).
+- When it is **delivered to you**, the map disappears.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| The order is still being prepared | There is no map: the driver hasn't picked up your order. |
+| An external app carries it (DoorDash, Uber Eats…) | You follow the order with its link («Follow on …»). |
+| You pick it up yourself (pickup) | There is no map. |
+| The driver has no signal | You see the last position with its time; it updates by itself when it returns. |
+| The driver didn't share their location | You see the order status as always, without a map. |
+| It is delivered to you | The map disappears; you can no longer see where the driver is. |
+
+### FAQ
+- **Can I see where they were before?** No. You only see where they are going now, from when they picked up your order until they deliver it.
+- **Does anyone else see my order's map?** Only you and the business. Nobody else can open it.

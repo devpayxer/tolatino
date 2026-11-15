@@ -41,18 +41,38 @@ El mapa es nuestro (OpenStreetMap), no de Google.
 
 ## English
 
-**What it does.** Shows businesses around the point you chose on our own map (OpenStreetMap), with the nearest-first
-list beside or below. From a category it keeps your filters.
+### What it does
+It shows on a map the businesses around the point you chose (center, neighborhood or your location) and, beside or below it, the list with the
+nearest first. If you arrive from a category, the map keeps the same filters you had. The map is ours (OpenStreetMap), not Google's.
 
-**How to use it.** Desktop category → **Map** (or open `/mapa`). Drag to move, **+ / −** to zoom, the purple pin
-recenters. Tap a pin for **See business** and **Directions**. Filter by **Open now**, **Verified**, **Featured** or a
-category; **Clear filters** resets. **5 mi · Change** opens “Where are you looking?”.
+### How to use it
+1. On desktop, in a category, tap **Map**. You can also open `/mapa` to see all businesses.
+2. Drag the map to move; **+** and **−** to zoom in or out; the **purple pin** goes back to your point.
+3. Tap a pin: its card shows with **See business** and **Directions**.
+4. Filter with **Open now**, **Verified**, **Featured** or a category. **Clear filters** goes back to everything.
+5. **5 mi · Change** opens «Where are you looking?» to change the point or the distance.
 
-**Cases.** Black pin = featured (Pro) · purple = Free · gray = outside your distance · dotted circle = works from home,
-approximate area only (about 500 m), never the address · no venue = listed, not pinned · nothing matches → remove a
-filter or widen the distance · city not open yet → Coming soon.
+### What happens in each case
+| Case | What the person sees | What to do |
+|---|---|---|
+| Black pin | Featured business (Pro). | — |
+| Purple pin | Free business. | — |
+| Gray pin | Outside the chosen distance (it shows, but doesn't count). | Widen the distance. |
+| Dotted circle | Works from home: the pin is the approximate area (about 500 m), never the address. | The address arrives when you confirm. |
+| Business with no premises | It has no pin; it shows in the list and a note explains why. | — |
+| No business with that filter | «Nothing with that filter». | Remove a filter or widen the distance. |
+| The city hasn't opened yet | **Coming soon** screen (see «Where are you looking»). | — |
 
-### Mini map, Directions and many businesses
-The mini map shows on each business page (its point, or its area if it works from home) and, on a computer, in the Home right column. **Directions**
-opens your phone's map app (Apple Maps on iPhone; on Android, the one you choose); on a computer it opens directions on the web. When an area has more
-than 400 businesses, releasing the map after moving it loads the ones in the box you are looking at.
+### The mini map, «Directions» and many businesses
+- **The mini map** shows on each business's page (its point, or its area if it works from home) and, on a computer, in the right column of Home
+  with the businesses near you. Tap it to open the Map or the directions.
+- **Directions** opens your phone's maps app (Maps on iPhone; on Android, the one you choose) with the business as the destination. On a computer
+  it opens the directions on the web. To'Latino's map and addresses are ours: we don't ask anyone else.
+- **Many businesses:** if your area has more than 400, when you release the map after moving it, the ones in the box you are looking at show.
+
+### FAQ
+**Why don't I see the house of a business that works from home?** For safety: the map only shows the area.
+
+**Why does a business show in the list and not on the map?** It has no premises: it goes to homes or serves by phone.
+
+**Does «Directions» use Google Maps?** It opens your phone's maps app (the one you use) for the directions; To'Latino's map is ours.

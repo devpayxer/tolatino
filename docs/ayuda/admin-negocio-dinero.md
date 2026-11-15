@@ -51,10 +51,46 @@ Solo negocios de tus ciudades. Todo pide motivo y queda en el Historial.
 
 ## English
 
-Business 360° › **Money**: 90-day charged / held / refunded / To'Latino fee; Stripe account status, bank last 4 and weekly
-Tuesday payouts (SENT, NEXT, ON HOLD). **Pause payouts / Resume payouts** with a reason: charging continues but nothing goes
-to the bank until resumed (with real Stripe the payout schedule switches to manual); the owner gets a notice and sees it in
-Payouts. **Plan & invoices**: courtesy Pro (30/60/90 days), end courtesy, extend trial (7/14/30 days), retry charge, cancel
-subscription (paid Pro runs to period end; trial ends on its last day; failed charge → Free today). Last 12 card charges.
-Permissions: transactions·view to see, transactions·approve to pause, plans·edit/approve for plan actions. Everything is
-audited with its reason.
+### What it does
+- **90-day numbers:** charged by card, held now (orders the business has not accepted yet), refunded, and To'Latino's fee on what was charged.
+- **Stripe:** status of the payout account (enabled, needs verification, restricted or not connected), the bank's last 4 digits and how payouts
+  go out (every week, on Tuesdays). A list of the bank payouts of the last weeks with their status: SENT, NEXT or ON HOLD.
+- **Pause payouts / Resume payouts** (with a reason): the business keeps charging, but nothing goes out to the bank until you resume. For
+  disputes or suspected fraud. With real Stripe, the account's payout schedule switches to manual and goes back to weekly.
+- **Plan and invoices:** plan, status (trial, Pro, failed charge, courtesy, Free), next charge and since when; Pro charges, failed ones and what
+  the team did. Actions: **Courtesy Pro** (30, 60 or 90 days), **Remove courtesy**, **Extend trial** (7, 14 or 30 days), **Retry charge** and
+  **Cancel subscription**.
+- **Card charges:** the last 12 (number, customer, card, fee, refunded) and «View in Transactions».
+
+### Who can
+| Action | Permission |
+|---|---|
+| See the Money tab | transactions · view |
+| Pause / resume payouts | transactions · approve |
+| Extend trial, retry charge | plans · edit |
+| Courtesy, remove courtesy, cancel | plans · approve |
+Only businesses in your cities. Everything asks for a reason and goes into the History.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Pause payouts | The account shows «Paused by To'Latino» with who, when and the reason. The owner gets «Bank payouts paused» and sees it in Payouts. Charging continues. |
+| Resume | What is pending goes out next Tuesday. The owner gets «Bank payouts resumed». |
+| Stripe does not respond when pausing | Nothing changes and it says so; it is tried again. |
+| Tapping twice | If it was already that way, the notice and the audit entry are not repeated. |
+| Cancel with paid Pro | It stays Pro until the end of the period and then Free. What was charged is not refunded. |
+| Cancel during a trial | On the last day of the trial it goes to Free. |
+| Cancel with a failed charge | It goes to Free today (that period was not paid). |
+| Business without a payout account | It says «Not connected · does not charge online»; there are no payouts to pause. |
+| Sandbox | Everything goes against the simulator: no real money moves. Bank payouts are calculated from what was charged. |
+
+### FAQ
+**Does pausing payouts stop charges?** No. The customer keeps paying; the money waits in Stripe until you resume.
+**Is anything deleted when you cancel?** No. What is Pro goes to sleep and comes back the same if the business returns to Pro.
+
+### Event payouts
+- Tickets are charged in To'Latino and paid **per date, the Tuesday after**, with a Stripe transfer to the organizer's account
+  (Super Admin › Events and tickets › **Settlements**). **Pause payouts** here also holds event payouts («HELD · account») until you
+  resume them. See «admin-eventos-y-boletos» (Settlements).
+
+**English:** ticket sales are paid per date the Tuesday after through a Stripe transfer; pausing payouts here also holds event payouts until resumed.

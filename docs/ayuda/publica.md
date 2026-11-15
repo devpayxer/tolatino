@@ -45,11 +45,42 @@ nuevo en blanco (el primero sigue igual y lo ves en tu panel). Hasta 5 negocios 
 
 ## English
 
-List your business in about 5 minutes, free, with Pro free for 30 days (no card). Sign in with your phone and a 6-digit
-code, pick your category and what you do, answer your category's questions, check what you sell and set prices, add
-where and when, take or choose a cover photo and publish — it goes live right away. Everything saves automatically and
-you can continue from another phone. Photos are cleaned on the server (camera data and GPS location removed). If the
-name already exists we ask whether it's yours. A promoter code (HZL30, or a promoter's own code) gives 60 days of Pro; your own code does not count.
+### What it does
+List a business in about 5 minutes, free, with Pro free for 30 days (no card). Each category comes with its own questions, a suggested list of
+what it sells with typical prices for the area (you adjust them) and its typical hours. While you fill it in, you see your page the way
+neighbors will see it.
 
-Already listed? On /publica tap **List another business** to start a new one from scratch (the first one stays as it is, in your
-dashboard). Up to 5 businesses per account; for more, write to Support.
+### How to use it
+1. **Sign in:** your phone and the 6-digit code that reaches you by text. If you are new, your first and last name.
+2. **Your business:** the category (or search for it: «nails», «shop»…), up to 3 things you do and the name.
+3. **What's specific to you:** your category's questions (how you serve, how many chairs, whether you deliver…).
+4. **What you sell:** check what you do and adjust the price with − and +; «Add another» for what isn't there.
+5. **Where and when:** your address (or how far you go if you go to homes) and your hours.
+6. **Your photo:** «Take a photo» or «Choose from photos». The first is the cover; tap another to make it the cover.
+7. **Publish.** It goes live right away in your city.
+Everything saves by itself: if you leave, you go back to /publica (also from another phone) and continue where you left off.
+
+### What happens in each case
+| Case | What the person sees | What to do |
+|---|---|---|
+| A business with that name already exists | «There is already a «…» on To'Latino. Is it yours?» | «It's a different one» to continue. Claiming an existing one is done with «Claim business». |
+| Something is missing in the step | A note above the button (e.g. «THE ADDRESS IS MISSING») and the button off | Complete it. |
+| The photo isn't a photo | «That doesn't look like a photo. Try another.» | Choose another. |
+| Many photos in a row (60 in one hour) | «You uploaded many photos in a row. Try again in a while.» | Wait. |
+| Promoter code | «Have a promoter code?» → 60 days of Pro with HZL30 or with a promoter's code. Your own code doesn't count: «That code does not exist or has expired». | Type it and «Apply». |
+| Already published | «… is now live in …» and «See my page» | — |
+
+### Security and privacy
+- Photos are cleaned on the server: the camera's hidden data (including the GPS location) is removed.
+- For those who work from home: only the street shows on the page; on the map, an approximate area.
+- We never ask for immigration status or Social Security number.
+
+### FAQ
+**How much does it cost?** Listing is free. Pro is free for 30 days; if you don't continue, your page goes to Free and nothing is deleted.
+
+**Can I change everything later?** Yes, from your dashboard.
+
+**Am I charged anything today?** No. We don't ask for a card.
+
+**Can I list another business?** Yes. Go to /publica: with your business already listed, tap **List another business** and you start a new blank
+one (the first one stays as it is and you see it in your dashboard). Up to 5 businesses per account; for more, write to Support.

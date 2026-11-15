@@ -42,10 +42,39 @@ habla en persona.
 ## English
 
 ### What it does
-Enroll from your phone in a course, a kids program or a sports membership or league. Pick who it is for, the group (or the age,
-at a daycare) and see what you pay today and at the place before sending. The place confirms your enrollment.
+You enroll from your phone in a course (English, CDL, barbering…), a kids program (daycare, after school, camp) or a sports membership or league.
+You pick **who it is for**, the **group** (or the age, at a daycare) and you see **how much you pay today and how much at the place** before
+sending. The place confirms your enrollment.
 
-**The time limits on this page** (hours to reply, how long a spot is held, when a cancellation goes through, after how many days private data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
+### How to use it
+1. **Who it is for:** you, your son or daughter (first name, age or grade and «I am the parent or legal guardian») or another person. The level
+   if the course asks for it and the team name in a league.
+2. **Group:** full ones can't be chosen. If there is no spot, **«Join the waitlist»**.
+3. **Review and send:** the summary, how it is paid, what happens to your enrollment fee in each case and, if the course has one, the **written
+   payment plan** that you accept.
+
+### What happens in each case
+- **A course's enrollment fee:** today it is **held** on your card; it is **charged when the place confirms** and deducted from the total.
+- **There is no spot, they don't reply in time or they offer you another group that doesn't work for you:** it is released in full. Nothing is
+  charged.
+- **You cancel before it starts:** we refund the whole enrollment fee. **After it starts:** the school keeps the enrollment fee.
+- **The group doesn't open or the place cancels:** we refund everything, always, with the reason.
+- **Monthly fee, daycare week, class or pass:** they are paid **at the place**; the app doesn't ask for a card or charge anything later.
+- **Membership:** «Cancel my membership» records the cancellation **with date and time** as proof. The gym confirms it or after 72 hours it is
+  canceled by itself. To'Latino never charges penalties.
+- **Payment plan:** the installments are paid at the school; the school marks each one as paid and you see it in Your enrollment.
+- **Waitlist:** if a spot opens, you get a notice and they hold it for you for **48 hours**.
+- **First class free:** once per person and place every 90 days.
+
+### Your child's data
+Only their first name, age or grade, the school if they are picked up there and a short note, **encrypted**. You and the place see them; they
+**never** appear in a notice. They are deleted 30 days after it ends. We don't ask for a date of birth, photos, birth certificate, vaccines or
+medical data: that is discussed in person.
+
+**The time limits on this page** (how many hours to reply, how long a spot is held, when a cancellation takes effect, after how many days private
+data is deleted) are today's: To'Latino sets them in its Settings and the screen always shows the one in force at that moment.
 
 ### FAQ
-The fee is held to save your spot and fully released if not confirmed. One enrollment per child. Nothing is charged later.
+- **Why do you hold my enrollment fee if they haven't confirmed?** To set your spot aside; if they don't confirm, it is released in full.
+- **Can I enroll two children in the same group?** Yes, one enrollment per child.
+- **Can they charge me something later?** No. Only what you see when you send.

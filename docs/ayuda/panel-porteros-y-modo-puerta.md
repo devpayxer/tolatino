@@ -52,12 +52,46 @@ Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: negocio. Tema: panel._
 ## English
 
 ### What it does
-On the event page: **DOOR** (inside, came in, incidents, **Open door mode**), **DOOR STAFF · SCAN AT THE DOOR** → **Add** (name, phone, this event or
-all your events) → they get a **7-day code by text** (also shown in the dashboard); they sign in with **their own To'Latino account** and that
-phone and type the code in To'Latino Door. Staff only scan: no selling, no phones or payment details, only your events assigned to them, only on
-the day. **Remove** with a reason closes their door immediately. **DOOR RULES** (no review needed): re-entry, check ID (21+), door closing time
-(none, 1, 2 or 3 h after start), capacity per door. **Door mode**: **Start scanning** opens your own door session; **Scan ticket** opens the
-full-screen camera with the same results as To'Latino Door; search by name or code and **Let in** with a reason. **Live monitor**: inside, to come,
-rejected, latest at the door, who is at each door (close their door) and incidents (close them). It updates on its own.
+- **DOOR** on the event page: **INSIDE**, **CAME IN** and **INCIDENTS** for the date you are viewing, and **Open door mode**.
+- **DOOR STAFF · SCAN AT THE DOOR** → **Add**: name, their phone and **which events they scan** (only this event or all your events) →
+  **Invite**. They get an **SMS with a 7-day code** (you also see it in the dashboard to tell them). The door staff member signs in with **their
+  own To'Latino account** and that phone, and types the code into To'Latino Door. Each one says ACTIVE or INVITED, the last 4 digits of their
+  phone and whether they are at the door now. **Add to this event** / **Remove from this event** / **Remove** (with a reason).
+- **Door staff only scan**: they don't sell, they don't see phones or what each person paid, and they only see **your** events assigned to them,
+  **on the day of the event** (2 hours before doors open and up to 2 hours after the end).
+- **DOOR RULES** (they don't go through To'Latino review):
+  - **People can leave and come back in**: the QR marks the exit and lets them back.
+  - **Ask for ID · 21+** (if the event has an age limit): the door asks to see ID before marking each entry.
+  - **Door closing time**: no time, or 1, 2 or 3 hours after it starts; after that nobody new gets in.
+  - **Capacity per door**: a door's cap (for example VIP 50). When full, that door lets no more in.
+- **Door mode** (you or whoever has «Events»): **Start scanning** opens your door session; **Scan ticket** opens the camera full screen (the same
+  as in To'Latino Door, with the same results); **Search by name or code** → **Let in** with a reason; **Open in To'Latino Door** for the full
+  app. For a multi-day event you pick the day.
+- **Live monitor**: inside, to come, rejected (and how many tried to get in again), **LATEST AT THE DOOR**, **AT THE DOOR** (each door staff
+  member, their door, since what time and how many they let in; **Close their door**) and **INCIDENTS** (with **Close**). It updates on its own.
+- **No signal**: each door is a phone. The Monitor says how many scans it uploaded **offline** and at what time, how many ended up **repeated**
+  and whether its **clock** is ahead or behind. Offline scans show marked in LATEST. The incidents **«Got in twice (offline)»** (with both doors
+  and times) and **«Got in offline with a ticket that was no longer valid»** are opened by To'Latino automatically.
+- **Revoke this phone**: for a lost phone or one in the wrong hands. Its door closes, its list is wiped on the next signal and whatever it hadn't
+  uploaded **no longer counts**. **Close their door**, instead, lets it upload what it scanned without signal before the close.
 
-**Offline:** each door is a phone. The Monitor shows how many scans it uploaded offline (and when), how many were **repeated**, and whether its clock is ahead or behind; offline scans are marked in LATEST. The incidents “Got in twice (offline)” and “Got in offline with a ticket that was no longer valid” are opened automatically. **Revoke this phone** (lost or misused phone): its door closes, its list is wiped on the next signal and anything not uploaded no longer counts; **Close their door** still lets offline scans made before the close upload.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You remove a door staff member | Their door closes at once on all their phones and they can no longer scan. It is recorded in the audit with the reason. |
+| You invite a phone that is already one of your door staff | It isn't allowed: that phone is already your door staff. |
+| You invite many in one day | There is a daily cap (Settings › Events); and a maximum of door staff per business. |
+| The code expires (7 days) | Invite them again. |
+| A door staff member scans a ticket from another event | NOT FOR THIS EVENT, with no data about that person. |
+| Two door staff scan the same ticket at once | It gets in once; the other sees «Already in by … at …». |
+| A door staff member reports an incident | You get a notice and it shows in the Monitor; you close it when it is resolved. |
+| You cancel the event | That event's open doors close by themselves. |
+| Two door staff without signal let the same ticket in | When the signal returns it gets in only once: the first wins by time; the other is marked REPEATED with an incident. |
+| A door staff member lost their phone | **Revoke this phone** (in the Monitor): its list is wiped and what wasn't uploaded doesn't count. |
+
+### FAQ
+- **Can door staff sell tickets?** No (decision D1). Nothing is sold at the door: you scan.
+- **Do door staff see my buyers' phone numbers?** No. Only name and initial.
+- **Do they need an account?** Yes: their To'Latino account with the phone you entered. Nobody gets in with a loose code and no account.
+- **Can I scan myself?** Yes: **Open door mode** on the event page, or To'Latino Door with your account.
+- **Where do I see who got in?** In the Monitor (latest at the door) and in the list of buyers (INSIDE).

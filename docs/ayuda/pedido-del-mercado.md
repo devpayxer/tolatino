@@ -43,16 +43,42 @@ hasta que el cliente diga que está bien; si dice que no, corta menos y manda el
 
 ## English
 
-Add products (by the pound is an estimate), choose pickup or delivery, what to do if something is out, and a time. With a card
-the estimate + 10% of by-weight items + delivery is held, not charged. EBT or cash: pay at the market (pickup only). Not
-accepted within 10 minutes → everything is released. They weigh in front of you with a scale photo per item; swaps need your OK
-within 10 minutes; a substitute can also be sold by the pound (you see its price per pound and it is weighed with a photo).
-"Looks good, charge" captures only the real weight (never more than held) and releases the rest. If you have not tapped it 10
-minutes after the weight is sent, you get one reminder; otherwise the real total is charged at pickup or delivery.
+### How it works
+1. You add products on the market's page. What is sold **by the pound** is an estimate.
+2. **Your order:** how you get it (free pickup or delivery with its cost and minimum), **if something is out** (Call me · A similar one, with my
+   OK · Do not substitute) and a note.
+3. **When:** today or tomorrow. Pickup every 30 min (starting 45 min from now); delivery in 1-hour windows. Full times don't show.
+4. **Review and send:** with a card, the estimate + **10 % of what is sold by weight** + delivery is **held**. **It is not charged yet.** If you
+   pay with **EBT or cash**, choose **pay at the market** (pickup only): nothing is held in the app.
 
-If it weighed more than the hold, the market **asks your OK for $X more**. "Looks good, charge" is your OK: those $X are held on
-the same card (your bank's confirmation sheet opens if it asks) and the real total is charged once. "No, cut less": they weigh
-again with less. Never more than the hold without your OK.
+### After you send
+- **If the market doesn't accept it within 10 minutes**, it is canceled and **everything is released**. You can cancel it for free as long as
+  they haven't accepted.
+- **They weigh it in front of you and with a photo:** in your order you see «You asked for 3 lb · it weighed 2.84 lb» and the **scale's photo**
+  for each item.
+- **If something is out**, they offer another with its price: you say **Yes, swap it** or **No, remove it**. If you don't answer within 10
+  minutes, it is removed and **nothing is charged**. Nothing is substituted without your OK. The substitute can also be **by the pound**: you see
+  its price per pound («$4.99/lb · 2 lb, weighed with a photo») and, if you accept it, they weigh it with a photo like the rest.
+- **Looks good, charge:** **what it weighed** is charged (never more than what was held) and **the rest is released** (3–5 business days). If
+  **10 minutes** after the weight is sent you haven't tapped it, you get **a reminder**; if you still haven't tapped it, the real amount is
+  charged when you pick it up or it reaches you (never more than what was held).
+- **If it weighed more than what was held**, the market **asks for your OK for $X more**: you see how much it goes over and the real total.
+  **Looks good, charge** is your OK: that $X more is held **on the same card** (if your bank asks to confirm, your bank's sheet opens) and the
+  real amount is charged. **No, cut less**: the market weighs again with less and sends you the weight again; nothing more than what was held is
+  ever charged without your OK.
+- Then: **Ready for pickup** or **On the way** → **Picked up / Delivered**. All of it shows in My account › Orders.
 
-FAQ: Can they charge more than the hold? Only with your OK. Charged twice? No: only the difference is held and the real total is
-charged once. If I do not answer? One reminder at 10 minutes, then the real total (never more than held) at pickup or delivery.
+### For the market (Dashboard › Today › Market orders)
+**Accept** or **Can't** (10 min) → for each by-the-pound item: **real weight + scale photo** (required; the weight can't go over 3 times what was
+asked) → **Out of stock**: remove it (not charged) or offer another product (by the unit or **by the pound**) → **Send to the client**. If the
+real total goes over what was held, **Ask OK for $X more** appears (or cut less): the order isn't marked ready until the customer says it's fine;
+if they say no, cut less and send the weight again → **It's ready / On the way** → **Picked up / Delivered**.
+
+### FAQ
+- **Can they charge me more than what was held?** Only with your OK: if it weighs more, the market asks you («Ask OK for $X more») and you decide
+  whether it's fine or they should cut less. Never without your OK.
+- **Am I charged twice if they ask for my OK for more?** No: only what is missing is held and at the end the real amount is charged once; what is
+  left over from each hold is released.
+- **What happens if I don't answer?** At 10 minutes you get a reminder. If you don't answer, the real amount is charged at pickup or delivery,
+  never more than what was held.
+- **What about the fee?** To'Latino charges its fee to the market on what was sold; nothing is ever added to you.

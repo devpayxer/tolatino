@@ -40,9 +40,32 @@ panel._
 ## English
 
 ### What it does
-**The trip price is fixed before leaving.** Services are sold per seat (a route with daily departure times, seats, destination,
-length and child price), as a whole vehicle (up to N people, included wait, destination), per box or delivery, or as a fixed price
-from photos («From $X»). Each lists what the price includes; nothing outside that list is charged later. Your tool shows the next
-departures (today's remaining or tomorrow's) with seats left, lets you turn a departure off, count seats sold at the office (taken
-off what the app sells), and set included bags and the extra bag price. Box shippers set the ship day and transit time. Everyone can
-set «Available today» (resets at midnight), child seat and wheelchair ramp. «Seats left» is always derived, never typed.
+**The trip price is fixed before leaving.**
+- **Services · how you sell it:**
+  - *By seat:* a route with its departures each day (the times you mark), how many seats, where it goes, how long it takes and the child price.
+  - *Whole vehicle:* up to how many people, the wait included and the destination.
+  - *Box or shipment:* the price per box or per delivery.
+  - *Fixed price with photos:* «From $X»; the final price is fixed with photos before the trip.
+  - For all: **what the price includes** (tolls, bags, wait…). What isn't there is not charged later.
+- **Your tool:**
+  - **Departures and seats** (vans and routes):
+    - the next departures (today's remaining ones or, if they have all left, tomorrow's) with how many seats are left;
+    - **Doesn't run**: you turn it off with a tap;
+    - **sold at the office**: they are deducted by themselves from what is left in the app;
+    - **bags included** and the price of the **extra bag**.
+  - **Box departures** (shipments): which day it leaves and how long it takes to arrive.
+  - For all: **Available today** (it turns off by itself at midnight), **child seat** and **wheelchair ramp**. Your page and Search say so right away.
+- **«Left»** is never typed by hand: it is seats minus those sold at the office minus those booked in the app.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| A departure has passengers from the app and you want to turn it off | It can't be turned off from here: the departure is canceled so each passenger is notified and refunded. |
+| You sell a seat at the office | Tap «+» on that departure: the app sells one fewer. |
+| No seats left | «+» doesn't let you sell more. |
+| A route with no departures or no seats | It isn't saved until you mark the times and the seats. |
+| To'Latino adjusts your business type | You see it in Your tool; if it isn't right, write to us. |
+
+### FAQ
+- **Why can't I type «4 left»?** Because it is calculated only from what has been sold; that way a seat that doesn't exist is never sold.
+- **Does «Available today» stay on?** No, it only applies to that day.

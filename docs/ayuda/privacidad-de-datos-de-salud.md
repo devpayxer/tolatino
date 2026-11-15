@@ -26,7 +26,23 @@ de caso, A-number, documentos ni estatus migratorio.
 
 ## English
 
-To'Latino does not keep medical records, diagnoses, medicines, results, case numbers, A-numbers, documents or immigration
-status. Insurance: type, plan and last 4 only. Your note is encrypted and deleted 30 days after the visit ends. Help photos
-are private and deleted 90 days after closing. Reviews cannot include health or case details. Doctor alerts are neutral (no
-office, service or reason); professional alerts may name the office, never the case.
+### What To'Latino stores
+To'Latino **is not** a doctor's office or a firm's office: it doesn't store medical history, diagnoses, medicines, results, case numbers,
+A-numbers, documents or immigration status.
+
+| Data | What is stored | Who sees it |
+|---|---|---|
+| Your insurance | Type, plan and only the **last 4** digits | You; the office of that appointment while it is active |
+| Reason for the appointment | Only the option you tapped | The business of that appointment |
+| Your note | **Encrypted**; deleted 30 days after the appointment ends | Whoever handles appointments at that business |
+| Photo of a bill or receipt (Help) | Private; deleted 90 days after the request is closed | The business and the To'Latino team (it is logged) |
+| Your review | The text and your replies | Everyone: that is why it isn't posted with diagnoses, medicines, A-numbers or case numbers |
+
+### Notices
+- **Doctors:** text messages, push and emails are neutral: «Your Thursday 3:40 PM appointment is confirmed. Details in the app.» They never name the
+  office, the service or the reason. Inside the app (with your account) you see everything.
+- **Professionals:** the notice may state the office's name, never the case.
+
+### What never happens
+- Your note, your reason and your insurance don't appear in searches, analytics, exports or in El Compa.
+- Nobody on the To'Latino team sees your note or your photos without opening a Help case, and that is logged.

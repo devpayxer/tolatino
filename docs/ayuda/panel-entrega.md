@@ -58,17 +58,54 @@ repartidor, si ya lo tiene). Apagado de fábrica; queda en la auditoría.
 
 ## English
 
-Delivery settings: turn Delivery and/or Pickup on (at least one), add pickup instructions, delivery area (1–10 mi), fee,
-free-from amount, delivery minimum, travel time, last delivery time and who delivers (your team or an external app such as
-DoorDash or Uber Eats — external apps don't collect cash). "How the client sees it" summarizes it; every change is
-audited. Cash on delivery and asking for a tip live in Online orders. If To'Latino pauses your delivery, your page offers
-pickup only and you see the reason. Invite drivers in Delivery › Your drivers (they sign in to To'Latino Driver with their code); without drivers you mark delivery
-orders "Out for delivery" and "Delivered" in the dashboard. In a delivery order's detail you see **DRIVER · LIVE** from the moment your driver
-taps "Heading to pick up" (or "Picked up"): their position, where they went since starting and the customer address, with the time of the last
-position; it disappears on Delivered. The customer sees only the current point, from pickup. Positions are kept 14 days, then deleted.
+### What it does
+- **How you deliver:** Delivery (you take it to the home) and Pickup (they pick it up at your location). At least one on.
+- **Pickup · how it is picked up** (optional, up to 120 characters): the customer sees it when ordering and in their order.
+- **Area and cost** (with Delivery): how far you deliver (1, 3, 5 or 10 miles), what you charge to deliver (free to $5), **free from** ($25, $40,
+  $60) and **delivery minimum** for delivery ($10 to $25).
+- **Time and hours:** travel time (10–20, 15–30, 20–40 min; the customer sees preparation + travel) and last delivery (with your last order, 30
+  min or 1 h before closing).
+- **Who delivers:** My team, or an external app (DoorDash, Uber Eats or another): you take the order here, send it through the app and paste the
+  tracking link in the order. With an external app, cash is not collected on delivery.
+- **How the customer sees it** and **Save**. Every change is recorded in the audit.
+- In **Online orders** are **Cash on delivery** (your driver collects) and **Ask for a tip on delivery** (15, 18 or 20 % or another amount; it
+  goes in full to whoever delivers).
+
+### The driver on the map
+In the detail of a home-delivery order with your team, from the moment your driver taps **Heading to pick up** (or **Picked up**) you see
+**DRIVER · LIVE**: the large dot is your driver, the faint ones show where they have been since they started, the black one is the customer, and
+at the top the time of their last position. If a new one doesn't arrive in a couple of minutes, it says **«Last position N min ago»**. When you
+mark **Delivered** (or if it is canceled or you pass it to another driver) the map disappears. The customer sees only the dot, from Picked up.
+Positions are kept for 14 days to clear up a claim and are then deleted.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Delivery and Pickup both off | It isn't saved: «With everything off nobody can order in the app». |
+| Delivery on without a way to be paid | Notice «Missing how you get paid on delivery» with the link to Online orders. |
+| The minimum is equal to or greater than «free from» | Notice: all deliveries go out free. |
+| You choose an external app | Cash on delivery turns off by itself. |
+| The customer's address is farther than your area | Delivery can't be ordered: «Doesn't reach your address · order pickup». |
+| To'Latino paused your delivery | Notice with the reason; your page offers only pickup. |
+| Your driver didn't share their location (said no to the permission or has no signal) | The order shows no map, or shows the last position with its time. |
+| An external app carries it | There is no To'Latino map: the customer follows that app's link. |
+| Online orders off | It is saved anyway; it applies when you turn it on. |
+
+### FAQ
+**Where do I invite my drivers?** In **Delivery › Your drivers**: name and phone, and the person signs in with their code to To'Latino Driver
+(see `repartidor.md`). If you have no drivers, you mark the orders yourself in the dashboard («Out for delivery» and «Delivered»).
 
 ### Offer automatically and scheduled orders
-In **Delivery › At pickup and delivery**, **Offer to drivers automatically**: an accepted delivery without a driver is offered
-to the drivers online (same countdown offer). If it expires, it is offered again, up to 3 times (Settings). If nobody takes it,
-or nobody is online, you get **one notice** and assign it yourself. **Scheduled orders** are offered **30 minutes before** they
-are ready, with a reminder to you (and to the driver if assigned). Off by default; audited.
+In **Delivery › At pickup and delivery**, **Offer to drivers automatically**: when you accept a delivery that has no driver, it is offered
+**automatically** to those who are online (the same offer with a countdown: the first to accept gets it). If it expires with nobody, it is offered
+again, up to 3 times (Settings). If nobody takes it, or nobody is online, you get **a notice** («Nobody took the order») and you assign it
+yourself or mark it yourself. **Scheduled orders** are not offered when you accept them: they are offered **30 minutes before** they are ready,
+and at that time you get the reminder «The order is for …» (also the driver, if they already have it). Off by default; recorded in the audit.
+
+| Case | What happens |
+|---|---|
+| You deliver with an external app | «Offer automatically» does nothing: the order goes through that app. |
+| The order already has a driver or an open offer | It isn't offered again. |
+| Nobody takes it | One notice, and it stops being offered automatically for that order. |
+
+**Does the driver get the customer's phone number?** No: the offer is the usual one (street, miles and total).

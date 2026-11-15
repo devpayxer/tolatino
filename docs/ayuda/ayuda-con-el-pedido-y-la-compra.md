@@ -47,12 +47,41 @@ puedo**. Solo quien tiene permiso de dinero devuelve a la tarjeta.
 ## English
 
 ### What it does
-**El Compa first:** tapping **Help** opens El Compa (To'Latino's AI assistant) over your item with fixed options; **Something went wrong** (on
-tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, the monthly AI cap is reached, or you already opened
-a request, you come straight here.
+- **El Compa first:** when you tap **Help**, the **El Compa** sheet (To'Latino's AI assistant) opens over your operation, with fixed options;
+  **Something went wrong** (on tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, if To'Latino reached
+  the month's AI cap, or if you already opened a help request, you come straight here. See `el-compa.md`.
+If something went wrong with your market order or with what you put on hold at a store, you ask here. A review does not refund money; help
+can.
+1. **What happened?**
+   - Market: the weight doesn't add up · something was missing · it wasn't fresh · they swapped something without asking · they didn't charge
+     the shelf price · it arrived late · something else.
+   - Store: they charged more at the register · they didn't keep my hold · wrong size or item · they won't accept my exchange · it arrived
+     damaged · something else.
+2. You tell us what happened (15 characters or more) and, if you want, how much. **A photo is required** for weight, something missing, not
+   fresh, price, exchange and damage (of the product, the label or the receipt). In the market we compare your photo with the **scale's photo**.
+3. **What do you want?** Refund me · Replace it for me (market: on your next pickup or delivery, at no cost) / Exchange it (store: for another
+   size or item) · I just want to let you know.
+4. The business replies within **24 hours**: it accepts, offers you something else (for example, refunding you $X) or says it can't. If it
+   doesn't reply, or you disagree, **To'Latino reviews it within 48 hours**.
 
-If something went wrong with your market order or a store hold, ask here (a review does not refund money). Pick what happened,
-tell us (15+ characters), add a photo when required (we compare market photos with the market's scale photo) and choose what you
-want: a refund, a replacement / exchange, or just letting them know. The business replies within 24 hours; if not, or if you
-disagree, To'Latino reviews it within 48 hours. Card payments go back to your card in 3–5 business days; what you paid in store
-(EBT, cash) the business returns directly.
+**Money:** what was charged in the app (card) goes back to your card in 3–5 business days. What you paid at the market or at the register (EBT,
+cash) the business returns to you directly; To'Latino mediates.
+
+#### For the business
+Today › «Help waiting for your reply» shows each request (Order #M-… / Hold #A-…). In the detail you see what happened, what they ask for, their
+note and their photos, and you reply: **They are right** (with an amount if you refund to the card), **Propose something else** or **Can't**.
+Only someone with money permission refunds to the card.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| The business doesn't reply in 24 h | It goes to To'Latino (Help queue). We review within 48 h. |
+| They refund to the card | It returns in 3–5 business days; the fee goes down in proportion. |
+| You paid at the location | The business refunds you at the location; To'Latino can mediate. |
+| You already asked for help with that order | One per order or hold; you see its status on the same screen. |
+| More than 7 days have passed | It can no longer be requested from the app; write to Support. |
+| You opened many today | Up to 5 requests per day. |
+
+### FAQ
+- **Does the review refund my money?** No. That is what help is for.
+- **Who sees my photos?** The business and To'Latino.

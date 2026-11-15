@@ -62,31 +62,62 @@ iPhone sin firma. **No sube nada** y no manda ningún token. En cuanto el domini
 - **¿Qué es el token de GitHub?** Un permiso del dueño del repositorio para lanzar el flujo de las tiendas. Se guarda cifrado como las demás llaves.
 
 ## English
+
 ### What it does
-The four apps are built automatically on GitHub (iPhone on a GitHub Mac, Android on Linux), **signed**, uploaded to **TestFlight internal**,
-**Play internal** and kept as an **own APK** for testers outside Play. Everything comes from the test branch and points to the sandbox; **public
-stores are never touched**. **No key lives in GitHub or in the (public) repository**: the build presents a **GitHub token issued for that run** and
-the server checks it all — our repository, the test branch, the store workflow, the «tiendas» environment, a GitHub machine, not a pull request,
-not expired and **never used before** — before handing over **only the keys of that job**, logging every read. **HTTPS only.** The server decides
-the status: the build says building, uploaded or failed; **processing** and **available** come from Apple or Google (or, for the own APK, when the
-file arrived with a matching fingerprint). The Google Play service account never leaves the server. One shared version for the four apps; native
-changes require a version bump.
+- The four apps (To'Latino, Negocios, Repartidor and Puerta) are built automatically on GitHub: the iPhone on a GitHub Mac and Android on Linux.
+  Each build is **signed**, uploaded to **internal TestFlight** (iPhone) and **internal Play** (Android), and kept as an **own APK** for testers who
+  are not on Play. Everything comes from the test branch and points at the sandbox; **the public stores are not touched** (the founder asks for that
+  later, with their OK).
+- **No key lives on GitHub or in the repository** (which is public). The build shows up with a **GitHub token from that moment**, and the server
+  checks everything before handing over anything: that it comes from **our repository**, from the **test branch**, from the **stores workflow**,
+  from the «stores» environment, from a GitHub machine, that it is not a pull request, that it has not expired and that it **has not been used
+  before**. Only then does it hand over **the keys for its job** (iPhone: the App Store Connect one; Android: the upload key) and log the read.
+  When it finishes, the build deletes them.
+- **Only over HTTPS.** If the connection is not secure, the server accepts nothing and the build does not send its token.
+- The server decides the status: the build says «building», «uploaded» or «failed»; **processing** and **available** are set by the server when
+  Apple or Google answer (or, for the own APK, when the file arrived whole and its fingerprint matches).
+- The Google Play service account **never leaves the server**: the build hands over the .aab and the server uploads it to internal Play.
+- **Version:** the four apps share one version (for example 1.0.0). If the apps' native code changes, the version goes up; if not, CI does not
+  build. The build number goes up by itself with every run.
 
 ### How to use it
-**Versions** shows builds in progress, available, pipeline keys (of 4) and last CI; it updates itself while something is in progress («Live»).
-**What the pipeline needs** lists the four keys as LIVE or MISSING. **Request a build** (Admin only): app (or all four), platform and reason →
-it appears under **REQUESTS**, and its builds show «request N». **Integrations** shows **CI READS** and **PIPELINE ATTEMPTS**.
+1. **Versions** shows at the top: builds **in progress**, **available**, **pipeline keys** (out of 4) and **last CI**. While something is in
+   progress, the screen updates by itself (you will see «Live»).
+2. **What the pipeline needs:** the App Store Connect key, the Android upload key, the Google Play service account and the GitHub token. Each
+   one says **LIVE** or **MISSING**; tapping it takes you to Integrations to upload it.
+3. **Request a build** (Admin only): pick the app (or all four), the platform (iPhone, Android or both) and the reason (it goes in the audit) →
+   **Request the build**. It shows in **REQUESTS** and, when the build starts, its rows appear below with «request N».
+4. Each build shows platform, version and number, channel, commit, size, fingerprint, whether it carries symbols and what the store said.
+   Tapping one with a link opens its run on GitHub.
+5. In **Integrations**, below the keys: **CI READS** (which key each run read) and **PIPELINE ATTEMPTS** (what was rejected and the latest that
+   got in).
 
 ### What happens in each case
 | Case | What happens |
 |---|---|
-| iPhone uploaded | UPLOADED → PROCESSING while Apple checks it → AVAILABLE in the internal TestFlight group. Rejected by Apple → FAILED. |
-| Android without the Play account | Stays UPLOADED («waiting for the Play account»); it goes out by itself once the account is uploaded. |
-| Request without the GitHub token | Recorded as NO TOKEN; nothing is started. |
-| Too many requests in an hour | «N builds were requested in the last hour: wait a bit.» |
-| Someone poses as the CI (another repo or branch, no HTTPS, a reused token) | Rejected and listed with the reason; it gets nothing. |
-| Support or Read only | See Versions and requests; no «Request a build», no keys. |
+| The build is compiling | **BUILDING**. It takes about 15 minutes per app. |
+| iPhone uploaded to Apple | **UPLOADED**, then **PROCESSING** while Apple reviews it, and **AVAILABLE** when it enters the internal TestFlight group. |
+| Apple rejects it | **FAILED** with «Apple: INVALID» (or FAILED). Check the build and request another. |
+| Android without the Google Play account | It stays **UPLOADED** with «waiting for the Play account». When you upload the account in Integrations, it goes out by itself in a couple of minutes. |
+| Google answers with an error | The reason is logged; it retries by itself. After three errors, **FAILED**. |
+| Own APK | **AVAILABLE** as soon as the file arrives and its fingerprint matches. Testers download it with their one-use link. |
+| Requesting a build without the GitHub token | It is logged as **NO TOKEN** and nothing is launched: upload the token in Integrations. |
+| Many builds were already requested in the hour | «N builds were already requested in the last hour: wait a little.» (Settings › Apps). |
+| GitHub does not accept the request | **ERROR** with what GitHub said (for example, the token expired or lacks permission). |
+| Someone presents as CI from another repository, another branch, without HTTPS or with a repeated token | Rejected; it is logged in **PIPELINE ATTEMPTS** with the reason. It receives nothing. |
+| Many rejected attempts in one minute | The pipeline answers «wait» without checking further, until the next minute. |
+| A key expires | Apple and Google email the owner. Generate a new one in their console and upload it in Integrations (the old one retires by itself). |
+| Support or Read-only | They see Versions and the requests; they do not see «Request a build» or the keys. |
+
+### What is missing today before it can go to the stores
+As long as the test server has no domain with HTTPS and the Apple and Google accounts with their keys do not exist, CI builds the four apps,
+signs Android with a **disposable key that says «NOT FOR DISTRIBUTION»** (created and deleted in the same run) and archives the iPhone
+unsigned. It **uploads nothing** and sends no token. As soon as the domain and the keys are in place, it starts uploading by itself.
 
 ### FAQ
-- **Can I download the CI keys?** No one can. **A key leaked?** Retire it in Integrations and upload a new one.
-- **Does this publish the app to everyone?** No: only internal testing. Publishing is a separate step with the founder's OK.
+- **Can I download the keys CI uses?** No. Nobody can: the server gives them only to the build that asks for them, over HTTPS, and logs it.
+- **What do I do if a key leaked?** In Integrations, **Retire** with the reason; generate another in the Apple or Google console and upload it.
+- **Why don't I see the build I requested?** The request shows first (SENT); the build appears when GitHub starts it (a minute or two).
+- **Does this publish the app to everyone?** No. Only internal TestFlight, internal Play and the own APK. Publishing is another step, with the
+  founder's OK.
+- **What is the GitHub token?** A permission from the repository owner to launch the stores workflow. It is stored encrypted like the other keys.

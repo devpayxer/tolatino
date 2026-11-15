@@ -34,9 +34,28 @@ equipo. Tema: equipo._
 ## English
 
 ### What it does
-Read-only door audit for disputes (“I paid and was not let in”). **NOW**: today’s doors with inside, to come, rejected, repeated and open doors;
-**LAST 7 DAYS**: dates with scans. One date: **INSIDE · TO COME · REJECTED · REPEATED**, **BY DOOR**, **DOOR STAFF SESSIONS**, **LATEST AT THE DOOR**
-and **INCIDENTS**, refreshed every 10 seconds. A ticket’s page adds **DOOR SCANS**: every scan with result, door, who scanned it, date and time,
-and manual entries with their reason. No full phones or amounts anywhere. Limited to your team’s cities.
+- **Read-only**, to review an «I was charged and did not get in» or a problem at the door. Nobody sells at the door.
+- **NOW**: today's doors (from 2 hours before doors open until 2 hours after the end) with inside, to come, rejected, repeated and how many doors
+  are open. **LAST 7 DAYS**: the dates that had scans. «No door open now» if there are none.
+- **One date**: **INSIDE · TO COME · REJECTED · REPEATED** (repeated = had already come in), **BY DOOR**, **DOOR STAFF SESSIONS** (who, at which
+  door, since what time, how many they let in and how many they rejected; the business team's say «business team»), **LATEST AT THE DOOR**
+  (result, door and time) and **INCIDENTS**. It refreshes every 10 seconds.
+- **A ticket's page** adds **DOOR SCANS**: every time it went through the door, with the result (VALID, ALREADY IN, QR VOIDED…), the door, who
+  scanned it, the date and time, and whether it came in **by hand** with its reason. It serves as evidence in a dispute.
+- No door data carries full phone numbers or amounts.
 
-**Offline entries:** they show **OFFLINE**, with the phone time corrected, when they arrived and whether the clock was off. If two doors let the same ticket in offline, one shows **REPEATED** (re-decided when the other door uploaded) and there is an incident. Door sessions show how many scans came in offline and whether the phone was revoked.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| A customer says they paid and were not let in | Look up the ticket: in SCANS you see whether it was scanned, with what result, at which door and by whom. With no scans, it never reached the door. |
+| A ticket shows ALREADY IN twice | The first one got in; the others were attempts with the same QR (photos or screenshots). Check the doors and the times. |
+| An entry «by hand» | It shows the reason (did not bring the QR, the QR does not read…) and the door staff member who marked it. |
+| The date is in a city that is not yours | It does not show. |
+| A ticket got in twice with no signal | In SCANS: VALID at one door and REPEATED · OFFLINE at the other; the first one wins by time (corrected). |
+
+### FAQ
+- **Can I mark an entry from here?** No: it is read-only. The door staff member or the business marks it at the door.
+- **How long are scans kept?** They stay in the audit (insert-only, never deleted or changed).
+- **What about offline entries?** They show marked **OFFLINE**, with the phone's corrected time, when they arrived and whether the clock was off.
+  If two doors let the same ticket in without signal, one stays **REPEATED** («decided again when another door uploaded») and there is an
+  incident. Door staff sessions show how many scans were uploaded offline and whether the phone was revoked.

@@ -115,51 +115,115 @@ Solo lectura ve las cifras. Si el texto ya se borró por la retención, la fila 
 
 ## English
 
-Community: the 360° Community tab shows rank, points, coins (no cash value), votes received, followers, blocks and mutes, and a
-"possible network" notice with "Abrir caso de red de cuentas" (opens a User reports case, audited). Sub-tabs: Posts · Comments · Followers
-and following · Points and coins · Coupons and referrals (no El Patio). The users list adds "With reports" and "Community rank" filters.
+### What it does
+- **List:** all the accounts of your cities (the person's My city; an account without a city is seen only by whoever works all the cities).
+  Search by name, phone, email or id; WHO (business owners, customers only), STATUS (active, warned, muted, suspended, banned, deleted),
+  «More filters» (new 30 d, active 7 d, not signed in 30 d+, several devices, no email) and SORT (last seen, newest). 14 per page.
+- **360°** with four tabs:
+  - **Overview:** phone and whether it is verified, email, city, role, since when, last seen, devices (in red if it shares a device with
+    another account), internal notes, their businesses and the actions.
+  - **Security:** devices and sessions (close one, close all, block or unblock a device), other accounts that signed in from the same device,
+    phone verification (reset), phone changes, and their city with the history and «Change city».
+    **Passkeys** (Face ID / fingerprint): each key with its device and the app where it was born, when it was added, the last time, how many
+    sign-ins and whether it is synced; removed ones say who (the person, the team or the system) and why. **Revoke** asks for a reason, notifies
+    the person by text and in the app, and is logged in the audit. In Verification, passkey changes show up.
+    Each device says where it signed in from: «Web» or the app, its version and the system (for example «To'Latino Puerta 1.0.0 (12) · iOS 17.5»).
+    It is informational only: the app never changes what the person can do.
+  - **Trust:** their status, each sanction (in force, ended or lifted, with its reason and who) and the photos they reported.
+  - **Privacy:** export their data (a JSON file, for a privacy request).
+  - **Community:** rank, posts and comments, votes received, best answers; followers, following, whom they blocked and muted (lists of 50, with
+    «SAME DEVICE» in red); how many private conversations they have (**never their content**: it is read only with an open report in Queues ›
+    Reported messages); their declaration of being 18 or older (yes/no and when; never a date of birth) and their welcome. A **possible network**
+    notice: followers who signed in from the same device as this account (the account-network case is opened from Queues › User reports).
+  - At the bottom, the history: which team member did what, before → after and the reason.
 
-Users lists every account in your cities (search by name, phone, email or id; who, status, more filters, sort; 14 per
-page). The 360° has Overview (phone and verification, email, city, role, since, last seen, devices, internal notes,
-their businesses, actions), Security (devices and sessions: sign out one or all, block or unblock a device; passkeys
-with device, last use and number of sign-ins, revoke one with a reason (the person is notified, audited); accounts
-on the same device; reset phone verification; city with history and "Change city"), Trust (status, every sanction
-with its reason and who, photos they reported) and Privacy (export their data as JSON). Sanctions: warning (no
-restriction, shown in My account), mute 7 days / block posting 30 days (cannot send recommendations; lifts
-automatically), suspend 14 days (sessions closed; sees "suspended until {date}" and the reason when signing in; lifts
-automatically), ban (Admin only). "Delete data" goes to Sensitive changes and another person applies it: the account
-cannot sign in and has 30 grace days; an Admin can restore it. Resetting phone verification also removes their passkeys. A passkey never
-bypasses a suspension, a ban or a blocked device. System › Team shows whether each team member has a passkey. Nobody sanctions or deletes themselves; team members
-must lose their role first. Every action asks for a reason and is audited. Moderation notices are not texted: the person
-sees them in the bell and in My account › Moderation notices, where they can appeal.
+#### Users 360° › Community in full
+- **At the top:** rank, points (and the month's), coins (no money value), votes received (+ / −, best answers), posts and comments, followers
+  and following, how many they blocked and muted, private conversations (never their content), 18+ and welcome.
+- **Possible network:** if a follower signed in from the same device as this account, the notice carries **«Open account-network case»**: with a
+  reason, it opens (or reuses) the case in **Queues › User reports** with the «possible network» mark; a person decides it with the sanction
+  ladder. It is logged in the audit.
+- **Sub-tabs:** **Posts** (with their status and reports; tap to see the thread; «See all in Content») · **Comments** (opens the thread with the
+  comment highlighted) · **Followers and following** (and blocked / muted; SAME DEVICE) · **Points and coins** (movements and adjustments with a
+  cap by role) · **Coupons and referrals** (redeemed coupons with their status and the code covered; their invitation code, how many they invited
+  and who invited them; no money). Without El Patio (decision G).
+- **Users list › More filters:** **With reports** (about the person or what they wrote in the Community) and **Community rank** (4, 7 or 9 or
+  more).
+
+### Actions and what the person sees
+| Action | Permission | What happens |
+|---|---|---|
+| Internal note | usr · edit | Only the team sees it. It is not deleted. |
+| Warning | usr · withdraw | No restriction. They see it in My account with the reason until someone lifts it. |
+| Mute 7 days / Block posting 30 days | usr · withdraw | They cannot send recommendations (nor post in the Community when it opens). They see it in My account and when they try to recommend, with the date and the reason. It lifts by itself. |
+| Suspend 14 days | usr · withdraw | Their sessions are closed. When they try to sign in they see «suspended until {date}» and the reason. It lifts by itself. |
+| Ban | usr · withdraw and Admin role | Their sessions are closed; they cannot sign in. They see the reason when they try to sign in. |
+| Lift | usr · withdraw | It ends the sanctions in force; the account goes back to active. |
+| Sign out / Sign out all | usr · edit | They sign in again on that device (or on all), with the SMS code or their passkey. |
+| Revoke a passkey | usr · edit | That key no longer signs in; they still sign in with the code and can add another. They get a notice (text and app) saying «removed by the To'Latino team». |
+| Block device | usr · withdraw | No account signs in from that device; all its sessions are closed. The device you are working from cannot be blocked. |
+| Reset verification | usr · edit | Their sessions are closed, **their passkeys are removed** and when they sign in we ask for the code again (the passkey does not skip it). |
+| Change city | usr · edit | It skips the 30-day rule. If the city has not opened, they stay on its waitlist. |
+| Remove profile photo | usr · edit | The photo is removed; the reason stays. |
+| Delete data | usr · edit | It enters Sensitive changes. **Another person** applies it: the account cannot sign in and has a 30-day grace period; an Admin can restore it. |
+| Export their data | usr · export | Downloads the file. It is logged in the audit. |
+
+Nobody sanctions or deletes themselves, and a To'Latino team member first has the role removed (System › Team). Every action asks for a reason and
+is logged in the audit. Nothing is deleted: statuses.
+
+### FAQ
+**Do they get a text when they are sanctioned?** No: moderation notices do not go out by SMS. They see it in the bell and in My account ›
+Moderation notices.
+
+**Can they appeal?** Yes: the sanction notice carries «Appeal» (My account › Moderation notices) and a team member other than the one who
+sanctioned reviews it.
+
+**What does «shares a device» mean?** That another account signed in from the same phone or browser. It is a signal, not proof: a family can
+share a phone. If they clear their cookies, the device changes.
+
+**Where are orders, appointments, Wallet, rank and Community?** In the Activity, Money and Community tabs, each with its own module.
+
+### Activity
+**Users 360° › Activity:** orders, appointments and reservations from the last 90 days, and **EVENT TICKETS** (code, type, price or comp, order,
+whether they received it or passed it on by transfer, what time it got in and its status: VALID · USED · REFUNDED · VOIDED · TRANSFERRED) and
+**RSVPs** (people, how many came). Each ticket opens Find ticket; each RSVP, the event's page. Never another person's phone.
+**English:** Users 360° › Activity shows 90-day counts and the person's event tickets (status, comp, transfers, entry time) and RSVPs.
 
 ### El Compa
-**Users 360° › El Compa** (with El Compa permission): that person's 30-day El Compa numbers and **their conversations** by CP- number, outcome
-and city, **without the text**. Admin and Support tap one to open its record (the read is logged); Read-only sees numbers only.
+**Users 360° › El Compa** (with the El Compa permission): what that person talked about with El Compa in 30 days, in numbers (conversations by
+level, resolved on its own, confirmed actions, to a person, without AI, flagged and unanswered questions) and **THEIR CONVERSATIONS** by CP-
+number, outcome and city, **without the text**. Admin and Support tap one to open its record in El Compa › Conversations (the reading is
+logged); Read-only sees the numbers. If the text was already deleted by retention, the row says so. **Support** (next to it) are their cases.
 
-### Send message and the sanction SMS notice
-- **Send message** (Summary): the team writes to a person **in the app** (their bell and push) or **by SMS**. No links, up to 280 letters, with an internal reason that stays in the audit. Cap: 30 messages an hour per team member and 3 a day per recipient. SMS needs a verified phone, does not go out at night or to someone who said STOP, and in the sandbox it goes to no phone.
-- **A sanction also notifies by SMS** when there is no push to carry it (someone suspended or banned may no longer open the app); the notice carries the reason and how to appeal.
+### Sending a message and the sanction notice by SMS
+- **Send message** (Overview): the team writes to a person **through the app** (their bell and push) or **by SMS**. No links, up to 280
+  characters, with an internal reason that goes in the audit. Cap: 30 messages an hour per team member and 3 a day per recipient. SMS requires a
+  verified phone, does not go out at night or to someone who said STOP, and in the sandbox it goes to no phone.
+- **A sanction also notifies by SMS** when there is no push to carry it (someone suspended or banned may no longer open the app); the notice
+  carries the reason and how to appeal.
 
 | Case | What happens |
 |---|---|
-| You send the message with a link | It is refused: the person sees what reaches them in their account. |
-| They already got 3 messages today | Refused until tomorrow. |
-| You pick SMS and their phone is not verified | Refused: send it in the app. |
+| You send the message with a link | It is rejected: the person sees what reaches them in their account. |
+| They already got 3 messages today | It is rejected until tomorrow. |
+| You choose SMS and their phone is not verified | It is rejected: send it through the app. |
 | The person deletes their account | The text of the team's messages is emptied after 30 days; who, when and the reason stay. |
 
 **Does the person know who wrote to them?** They see «Message from To'Latino», not your name; your name stays in the audit.
 
 ### Each person's numbers and Money
-- **The list** has the **RANK** (Community) and **ACTIVITY** columns (orders · bookings; below, reviews · posts · reports). WHO adds **Promoters** (accounts marked as promoters in Growth) and SORT adds **Most purchases**, **Most reports** and **Rank**. On the phone each row shows the rank and how many purchases.
-- **Top of the 360°:** ORDERS, BOOKINGS and RANK.
-- **Money tab** (only if you can see Transactions): charged in 90 days, held now and refunded; saved cards (brand and last 4) and the latest charges with the business and status (each opens that business's Money).
+- **The list** has the columns **RANK** (from the Community) and **ACTIVITY** (orders · appointments; below, reviews · posts · reports). In WHO
+  there is **Promoters** (the accounts marked as promoter in Growth) and in SORT **Most purchases**, **Most reports** and **Rank**. On the phone,
+  each row shows its rank and how many purchases it has.
+- **At the top of the 360°:** ORDERS, APPOINTMENTS and RANK.
+- **Money tab** (only for those who see Transactions): what was charged in 90 days, what is held now and what was refunded; their saved cards
+  (brand and last 4) and their latest charges with the business and the status (each opens that business's Money).
 
 | Case | What happens |
 |---|---|
-| Someone reports the person or something they wrote | The report count goes up on its own (the database recalculates it); the list uses it for «With reports» and «Most reports». |
-| Your role cannot see Transactions (e.g. Moderator) | You do not see the Money tab, not even with ?tab=din. |
-| The person saved no card or never paid by card | It says so: «No saved card yet» / «No card charges». |
+| Someone reports the person or something they wrote | The reports number goes up by itself (the database recalculates it); the list uses it for «With reports» and «Most reports». |
+| Your role does not see Transactions (e.g. Moderator) | You do not see the Money tab, not even by typing ?tab=din. |
+| The person has not saved a card or has not paid by card | It says so: «Has not saved a card yet» / «No card charges». |
 
-**What about the Wallet?** To’Latino has no Wallet yet (cards only): it is not shown.
-**Do test accounts count?** In that person's 360°, yes (they are their numbers). Platform numbers (Analytics) leave them out.
+**What about the Wallet?** To'Latino has no Wallet yet (card only): it does not show on the screen.
+**Do the numbers count test accounts?** In that person's 360°, yes (they are their numbers). The platform's numbers (Analytics) leave them out.

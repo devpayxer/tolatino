@@ -32,7 +32,27 @@ el total por escrito». 3. Cuando contrata, al terminar: «Terminó el trámite�
 ## English
 
 ### What it is
-After the consultation the office sends the **written total** in the app: fee, consultation credit, government fee
-(separate, paid to the agency) and optional extras. Accept and hire (your agreement is saved with time, version and origin,
-and cannot be changed), call to ask, or decline (consultation only). A new version replaces the old one; it expires in 30
-days. Nothing is charged in the app. No one guarantees a result. Overcharged? Use Case help.
+After your consultation, the office sends you **the total in writing** in the app: its fee, the consultation credit (if it is deducted), the
+government fee **separately** and the optional extras. You review it calmly and decide.
+
+### How to use it
+- **Accept and hire:** you check the extras you want and tap «Accept and hire». Your agreement is saved with the time, the version and where you
+  accepted it from. That agreement **can't be changed** afterward (not by the office or by To'Latino).
+- **Call to ask** before deciding.
+- **No, thanks · consultation only:** you don't hire; the consultation is finished.
+
+### What happens in each case
+- **The office sends a new version:** the previous one stops being valid. If you try to accept the old one, the app tells you «The office sent a
+  new version of the total. Review it.»
+- **It expires after 30 days** if you don't decide.
+- **Nothing is charged in the app.** You pay the office; the government fee you pay yourself to the agency (To'Latino never charges it).
+- **Nobody guarantees you a result:** the total is what they charge for the work, not a promise of a result.
+- If you are charged more than what is written: **Case help**.
+
+### For the office (Dashboard › Today › the consultation)
+1. «Consultation done». 2. Fill in your fee, the government fee (separate), estimated hours and an optional extra → «Send the written total».
+3. When they hire, at the end: «Case finished». You can send a new version while they haven't accepted it.
+
+### FAQ
+- **Can I change the total after they accepted it?** No. If something changes, you ask for their OK and send a new version beforehand.
+- **Is the government fee added to my fee?** It is shown separately and paid to the agency.

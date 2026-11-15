@@ -52,14 +52,46 @@ Los avisos (SMS) nunca llevan el nombre del niño.
 ## English
 
 ### What it does
-What a family asks before leaving their child: **is it safe, licensed, and is there room?** Here the daycare sets its **openings by
-age**, the **weekly price without subsidy**, whether it takes **CCIS**, extended hours, meals or a night shift, and the ages it serves. The
-**DHS child care certificate** is always on display: To'Latino checks it against the public registry and **only it** makes the page and
-search say “licensed”.
+What a family asks before leaving their child: **is it safe, does it have a license, and is there room?** Here the daycare sets its **open spots
+by age**, the **weekly price without subsidy**, whether it accepts the **CCIS subsidy**, whether it has extended hours, meals or a night shift,
+and the ages it serves. The **DHS child care license** is always visible: To'Latino verifies it against the public registry, and **only that**
+makes the page and the search say «licensed».
 
-**The time limits on this page** (hours to reply, how long a spot is held, when a cancellation goes through, after how many days private data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
+### How to use it
+1. **Your page › Licenses › Add › «Child care license (DHS)»**: the certificate number. While it is being reviewed, your page says «License in
+   process».
+2. **What you sell › Openings and license**: openings by age (−/+; 0 = full, waitlist), add an age group (babies, 2 years, 3 years, 4 and 5
+   years, 6 to 12 years), weekly price without subsidy (−/+ $5), CCIS, extended hours, meals, night shift, Spanish and the ages you serve.
+3. **After school, camps, classes, therapies and family**: your programs in Services (by the week, by the month, by the class or a season with
+   enrollment) and their groups with spots, as in Education, without a payment plan. A price of $0 says «Free if you qualify» (Head Start,
+   evaluations). Therapies: the wait for the evaluation («Evaluation in 4 weeks»). What you offer: school pickup or transportation, Medicaid and
+   CHIP.
+
+### What happens in each case
+- **License verified**: your page and your card say «licensed» and you can receive spot requests through the app (they are part of
+  enrollments).
+- **No license, under review or expired** (daycare or home care): the page says so («Has no state license», «License in process», «License
+  expired») and **spots are not requested through the app**: families call you or write to you. Your card says «Call to ask for a spot».
+- **To'Latino expires or withdraws a license**: the «licensed» label is removed at that same moment, with the reason in your dashboard.
+- **All openings at 0**: the card says «Waitlist» and you don't appear in the «Has openings» filter.
+- **Nanny or sitter (no premises)**: contact by message or phone only; To'Latino doesn't verify background checks and your page doesn't promise
+  it.
+
+### Children's data
+Once enrollments are open, only a child's **first name, age or grade, the school if they are picked up there, and a short note** are stored, all
+encrypted; only their mom or dad and your business see them, and **it is deleted 30 days** after it ends. The app **never** asks for a date of
+birth, photos, vaccines, allergies, medicines, diagnoses, Medicaid or the list of who can pick them up: that is handed over in person. Notices
+(SMS) never carry the child's name.
+
+### Rules that cannot be turned off
+- **PA license (DHS) in view**: verified by To'Latino; if it expires, your page says so.
+- **Only authorized people pick up**, with ID, always.
+
+**The time limits on this page** (how many hours to reply, how long a spot is held, when a cancellation takes effect, after how many days private
+data is deleted) are today's: To'Latino sets them in its Settings and the screen always shows the one in force at that moment.
 
 ### FAQ
-“Licensed” disappears when there is no verified DHS certificate: add it under Your page › Licenses. CCIS is paid by the state, not
-To'Latino. Children's photos are not sent through the app; public photos are reviewed and must not show a child's face without written
-parental consent.
+- **Why doesn't my page say «licensed» anymore?** Because there is no verified DHS license. Add it in Your page › Licenses.
+- **Does To'Latino pay my CCIS?** No: the state pays part of it directly; what the family owes is stated beforehand.
+- **Can I send photos of the children through the app?** No. Your place's public photos go through review and must not show a child's face
+  without written permission from their parents.

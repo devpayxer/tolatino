@@ -46,14 +46,42 @@ qué incluye (luz, agua, internet, amueblado) y si aceptan mascotas. **Ver una p
 ## English
 
 ### What it does
-Find where to move or what home to buy **with what you will actually pay**: each rental shows «To move in» = first month + deposit +
-anything required, calculated by To'Latino. It says which papers are accepted (no SSN, ITIN), what is included and whether pets are OK.
-**Viewing a property is free**, and so is requesting the visit in the app.
+You find where to move or which house to buy **with what you will really pay**: on every rental property, **«To move in»** = first month +
+deposit + whatever is required (if anything), calculated by To'Latino. It says which papers they accept («No Social Security number», «With
+ITIN»), what is included (power, water, internet, furnished) and whether they accept pets. **Viewing a property is free** and so is requesting the
+visit through the app.
 
-**The time limits on this page** (hours to reply, how long a spot is held, when a cancellation goes through, after how many days private data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
+### How to use it
+1. **Search** in Real estate: «Rent», «Buy a house», «A room» or «Commercial space», and «No Social Security number», «With ITIN», «Utilities
+   included», «Pets accepted».
+2. **Open the property:** photos, «To move in», what is included, what they ask for (which papers to bring in person), the **area** (city and ZIP
+   code) and the footer «Equal Housing Opportunity». For sale: the price and the **estimated monthly payment** with the down payment it states
+   (estimated, not a loan offer).
+3. **Request a tour:** a free day and time → you review and send. Today you pay $0.
+4. **Your visit:** PENDING → CONFIRMED → HAPPENED, with Message and Cancel (free).
+5. **Loans:** on the lender's page, «Get pre-qualified» = the day and time they call you. Nobody can guarantee approval.
+
+### What happens in each case
+- **They reply within 4 hours** of the business's hours, never later than one hour before your visit; if not, it stays unanswered.
+- **Rooms and shared housing:** before confirming you only see the area; **the exact address reaches you when they confirm** your visit.
+- **It was rented or sold before your visit:** it is canceled with no fault of yours and we notify you.
+- **The total you saw is saved** in your visit even if they change the price afterward.
+- **Fair housing:** no listing may prefer or exclude anyone for race, color, religion, sex, disability, children, origin or age (except housing
+  for people over 62 confirmed by To'Latino). «Section 8» is accepted, never excluded. Service and support animals are not pets: they are always
+  accepted.
+- **Scams:** **never pay a deposit before seeing the property and signing the contract**, and nobody charges to view. If you were charged to view
+  or asked for more to move in than what was posted, in Help choose «I was charged to view the property» or «They asked for more to move in than
+  posted» (with a photo): it goes **straight to To'Latino** with priority and **the property stops showing** while we review it.
+- **They didn't show up for the visit:** ask for Help («They didn't show up for the visit») up to 7 days later.
+
+**The time limits on this page** (how many hours to reply, how long a spot is held, when a cancellation takes effect, after how many days private
+data is deleted) are today's: To'Latino sets them in its Settings and the screen always shows the one in force at that moment.
 
 ### FAQ
-To'Latino never asks for your SSN. Search «ITIN» or «No SSN» to rent with ITIN, passport or a work letter. Deposits are at most
-2 months' rent on To'Latino. The estimated payment is an estimate, not a loan offer. Never pay a deposit before seeing the property and
-signing; if you were charged to view or asked for more than posted, report it in Help: it goes straight to To'Latino and the listing is
-paused while we review it.
+- **Do they ask me for a Social Security number?** The page says whether they ask for it. To'Latino never asks you for it (see
+  `privacidad-de-tus-datos-en-visitas`).
+- **Can I rent with an ITIN?** Search «With ITIN» or «No Social Security number»: they accept an ITIN, a passport or a letter from work.
+- **Can the deposit be any amount?** On To'Latino it doesn't go over 2 months of rent.
+- **Is the estimated payment what I will pay?** Not exactly: it is an estimate with a reference rate, taxes and insurance; the lender gives you the
+  real figure.
+- **Why don't I see the address of the room?** To protect whoever rents it in their home: it reaches you when they confirm.

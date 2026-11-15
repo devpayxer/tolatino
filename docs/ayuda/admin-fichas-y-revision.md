@@ -60,27 +60,59 @@ Audiencia: equipo. Tema: equipo._
   cuenta: queda para cuando el fundador dé su OK.
 
 ## English
+
 ### What it does
 - **Listings**: each app's text on the App Store and Google Play (name, subtitle, short and full description, keywords, promotional text and what's
-  new), in Spanish and English. The source is the repository, written from this Help, plain, no emoji, no superlatives and within each store's
-  limits. Here you see the 16 listings (4 apps × 2 stores × 2 languages) with their fingerprint against the last upload: **UP TO DATE**, **CHANGED**,
-  **NOT UPLOADED** or **ERROR**.
-- **Upload as draft** sends listings, screenshots, the age rating and review notes to **App Store Connect** (only the version being prepared) and to
-  **Google Play** (an edit committed **without sending it for review**). **Nothing is sent for review from here.**
-- **Review accounts**: Apple and Google need to sign in without a real text message. Each app has an account with a **reserved number** that signs in
-  with a **fixed code** stored in the server's secrets (never here, in the repository or in the chat). Only that number, only while the account is
-  **active** and review accounts are **on**. It does not pay by card, and the Negocios one only sees a **hidden review business**.
-- **What's on you**: each founder step with Apple, Google, Cloudflare and Firebase, with its status and a button to open the console.
-- **Declarations**: side by side, each Apple and Google question, our answer and where it comes from (the real data inventory, the same that
-  writes /privacidad).
+  new), in Spanish and English. The source is the repository (`apps/mobile/tiendas/{app}/{es,en}.md`), written from this Help, plain, no emoji, no
+  superlatives and within each store's limits (if a listing goes over, the build does not ship). Here you see each of the 16 (4 apps × 2 stores ×
+  2 languages) with its fingerprint compared with the last upload: **UP TO DATE**, **CHANGED**, **NOT UPLOADED** or **ERROR**.
+- **Upload as draft** sends the listings, their screenshots, the age rating and the review notes to **App Store Connect** (only to the version
+  being prepared) and to **Google Play** (a committed edit **without sending it for review**). Every upload is saved with the file's fingerprint.
+  **Nothing is sent for review from here.**
+- **Screenshots**: CI makes them on demand (5 to 8 per app, in Spanish and English, at each store's size) with the sandbox's test data, and they
+  go into the private storage through the pipeline.
+- **Review accounts**: Apple and Google need to sign in to each app without a real text message. Each app has an account with a **reserved
+  number** that signs in with a **fixed code** stored in the server's secrets (never here, in the repository or in the chat). Only that number,
+  only while the account is **active** and review accounts are **on**. It does not pay by card, and the Negocios one only sees a **hidden review
+  business** (nobody else sees it).
+- **What's on you**: each founder step with the Apple, Google, Cloudflare and Firebase accounts, with its status and the button that opens the
+  console.
+- **Declarations**: side by side, each Apple question (App Privacy, age rating) and Google question (Data safety, IARC, target audience…), the
+  answer we give and where it comes from. The privacy ones come from the **real data inventory**, the same one that writes /privacidad.
 
 ### How to use it
-- **Upload listings**: Listings and review › **Upload as draft** › the app (or all four) › reason. Without a store's key, that store stays «no key».
-- **Review accounts**: the top switch turns them all on or off (reason); each account has its own switch. Turning off cancels codes already requested.
-- **What's on you**: **Open** goes to the console; **Copy** copies the only value a console makes you type; **I did it** marks a step the system cannot see.
-- **Declarations**: pick the app; **Download the Data safety CSV** to import it in Play Console.
+- **Upload the listings**: Listings and review › **Upload as draft** › the app (or all four) › reason. Without a store's key, that store stays
+  «no key» and nothing is touched. Daily cap in Settings › Apps (**Listings · uploads to the stores per day**).
+- **Change a listing**: you change the file in the repository (not here); when you upload, the row goes to UP TO DATE.
+- **Review accounts**: the switch at the top turns them all on or off (reason); each account turns on or off with its own switch (reason). When
+  you turn off or deactivate, codes that were already requested stop working at that moment. «Secret … present» says the code is on the server;
+  it is never shown.
+- **What's on you**: **Open** takes you to the third party's console; **Copy** copies the only value a console makes you type (the email of
+  Google's service account); **I did it** marks a step the system cannot see (with a note). What the system can check (the domain with https, the
+  keys in the keychain, the apps created in App Store Connect) is marked by itself.
+- **Declarations**: pick the app; **Download the Data safety CSV** downloads the file to import in Play Console.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Apple's or Google's key is missing | That store stays «no key»; the other one is uploaded anyway. |
+| Apple has no version in preparation | Nothing is touched for that app in Apple: «There is no version in preparation». |
+| A listing changed in the repository | The row says CHANGED until the next upload. |
+| The store answered with an error | The row says ERROR with what the store said; upload again once it is fixed. |
+| An account's fixed code is not on the server | The account says NO SECRET and cannot sign in. |
+| Someone tries to pay with the review account | Nothing is charged: «This is a review account: it does not pay by card», and it is logged. |
+| The switch is turned off with a reviewer inside | Their session continues, but no fixed code signs in again. |
 
 ### FAQ
-- **Does this send the apps for review?** No. It only leaves the listing as a draft.
-- **Why can't I see the review account code?** It is a secret: the server gives it to Apple through the API, with the review notes.
-- **Does the review account see people's data?** No. It sees what any neighbor sees and, in Negocios, only its hidden business.
+- **Does this send the apps for review?** No. It only leaves the listing as a draft. The founder asks for the review before opening to the public.
+- **Why can't I see the review account code?** Because it is a secret: the server gives it to Apple through the API, with the review notes.
+- **Does the review account see people's data?** No. It sees what is public like any neighbor and, in Negocios, only its hidden business.
+- **Where do the privacy answers come from?** From the data inventory in the repository: every column with personal data has its place there, or
+  the build does not ship.
+
+#### For the team
+<!-- solo-equipo -->
+- Production review accounts are created at launch, by hand, with the founder's OK; in the sandbox the seed creates them and they are born off
+  (switch `app.revision.cuentas`). In production they do not sign in without `app.tiendas.publico`.
+- Google allows uploading Data safety through the API (`applications.dataSafety`); the server does not do it on its own because it is a legal
+  declaration by the account owner: it waits for the founder's OK.

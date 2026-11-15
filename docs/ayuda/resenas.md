@@ -82,29 +82,77 @@ adelante).
 
 ## English
 
-Every business page shows "What neighbors say": with 5+ reviews the average, stars, how many are verified and, for food,
-"What matters" (served hot, on time, worth the price, flavor) from rated orders in the last 90 days; with 1–4 only the
-count; with none, "No reviews yet". Pro pages also have a Reviews tab with star bars (tap to filter), most recommended
-dishes, filters (all, verified, with photos, replied, critical), sorting, "See more reviews" six at a time and "How reviews
-work". Each review shows the name and last initial, review count, stars, when (and EDITED), VERIFIED · DELIVERY / PICKUP /
-BOOKED or VISITOR, order facts that cannot be edited, text, photos, "Recommends", the business reply (Pro only), Helpful and
-Report. Write a review from the page or from a finished order: which visit (a finished order or booking in the last 30 days
-makes it verified; otherwise visitor), stars, what matters, what you recommend, 20–1000 characters without phones or
-emails, up to 6 photos. It posts instantly; you can edit it for 48 h and delete it any time. One review per business.
-Reporting needs a sign-in, a reason and an optional 300-character note; the review stays visible while a person at
-To'Latino reviews it (48 h). Businesses cannot delete or change reviews; To'Latino only hides those that break the rules,
-and the author sees the reason.
+### What it does
+- **What neighbors say (Overview):** with 5 reviews or more, the average, the stars, how many are verified and «What matters in food» (served hot,
+  on time, worth the price, flavor) from orders rated in 90 days. With 1 to 4, only how many («we don't show an average with fewer than 5»). With
+  no reviews, «No reviews yet». Below, 2 reviews (Pro: the most helpful ones of 4★ or more; Free: the 3 most recent) and **Write a review** or
+  **View your review**.
+- **Reviews tab (Pro):** bars from 5 to 1 star (tapping one filters), «Most recommended» (the dishes people recommend most), filters (All,
+  Verified, With photos, Replied, Critical 1 to 3★), sorting (most recent, most helpful, highest, lowest), 6 at a time with **See more
+  reviews**, and «How reviews work».
+- **Each review:** name and the initial of the last name, how many reviews they have, stars, when (and EDITED), VERIFIED · DELIVERY / PICKUP /
+  BOOKED or VISITOR, the order detail (arrived hot, on time or N min late, price), the text, photos (they open large), «Recommends:», the
+  business's reply (only if the business is Pro), **Helpful** and **Report**.
+- **Write a review:** about which visit (the order or booking finished in the last 30 days that makes it verified, or «I went without ordering
+  through To'Latino»), stars, what matters (flavor, temperature or how it arrived, how long you waited if it wasn't an order, price), what you
+  recommend, the text (20 to 1000 characters), up to 6 photos and the rules. On desktop, «This is how it will look». **Post review** (it posts
+  instantly).
+- **From your finished order:** a **Write a review** button (it shows as verified by that order). If the order finished today, the tab and the
+  Overview show «Your order today · How was it?» with 5 stars to start.
+- **Your review:** how it is doing (posted, the business replied, the business asked for it to be reviewed, reviewed, hidden by To'Latino with the
+  reason), how neighbors see it, the steps with their time, until when it can be edited, **Edit** and **Delete**.
+- **Report** (signed in): why (they weren't a customer or it is false, offensive, personal data, spam, written by the owner or the competition,
+  something else) and an optional detail of 300 characters. The review stays visible while a To'Latino person reviews it (48 h).
 
-### Auto and home reviews
-Verified when the visit or appointment was booked through To'Latino and finished. Arrival in the window, approved vs.
-charged and extra work with your OK come from the booking and cannot be edited. Home asks: right the first time, the
-booked person came, cleaned up, took care of your home, care. Auto asks: fixed the first time, asked your OK before extra
-work, showed the old part, car returned clean, care. With 1–2 stars, a review does not refund or request a return visit:
-use Visit/Appointment help.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Not signed in | You can read. Helpful, Report and Write lead to Sign in and come back. |
+| You already have a review for that business | One per business: «Write» opens «Your review» (to edit or delete it). |
+| Text with a phone number or email | Red notice and it can't be posted («MISSING: REMOVE PHONE NUMBERS OR EMAILS»). |
+| Fewer than 20 characters or no stars | The button says what is missing. |
+| 48 h have passed | It can no longer be edited; it can be deleted. |
+| The order isn't yours, didn't finish, was canceled or already has a review | It doesn't show as verified; you can write as a visitor. |
+| A rating of 2★ or less | Notice: «Say what happened, without insults or personal data». |
+| Free business | Reviews are seen and written; the business doesn't reply and the page is a single one (no tab). |
+| You delete your review | It leaves the page and the stars (it is kept as removed by you). You can write another. |
+| To'Latino hides it | It leaves the page and the stars; in «Your review» you see HIDDEN and the reason. |
+| The business asks for it to be reviewed | It stays posted; you see «In review» and then «Reviewed» if it follows the rules. |
+| You mark «Helpful» on your own | It can't be done; on others' reviews, it is marked and unmarked. |
+
+### FAQ
+**Can the business delete my review?** No. It can reply (if it is Pro) or ask To'Latino to review it. It is hidden only if it breaks the rules:
+insults, personal data or fake reviews.
+
+**What is «verified»?** That you ordered, picked up or booked through To'Latino. The order detail (on time or N minutes late) is set by To'Latino
+and can't be edited.
+
+**Does the review get me my money back?** No. For a problem with an order, call the business (Help with the order comes later).
+
+### Shop and home service reviews
+- **Verified** if the visit (Home) or the appointment (Auto) was made through To'Latino and finished.
+- **The visit detail** comes from To'Latino and can't be edited: whether they arrived in the 2-hour window (Home, from «I arrived»), what was
+  approved in the estimate against what was charged («what was quoted» / «what was in the estimate») and whether there was something extra with
+  your OK.
+- **The questions:** Home — was it right the first time?, did the person you booked come?, did they clean up?, did they take care of your home?,
+  treatment. Auto — was it fixed right the first time?, did they ask for your OK before anything extra?, did they show you the old part?, did they
+  return the car clean?, treatment. Without a visit through To'Latino (visitor) it also asks about the window / whether it was ready and the price.
+- **With 1 or 2 stars:** the review doesn't refund money or ask them to come back; that is what **Help with the visit / with the appointment** is
+  for (the business replies within 24 h).
+- On the page, each review shows that data as marks (green = good, red = bad).
 
 ### Doctor and professional reviews
-Verified when the appointment or consultation was booked through To'Latino and finished. From the booking (not editable):
-for doctors, whether your insurance was accepted and what you paid — never your plan name, card number or the reason for
-the visit; for professionals, the written total you accepted or "You did not hire". Reviews with diagnoses, medicines,
-doses, an A-number or a USCIS case number are not published until you remove them. With 1–2 stars, use Appointment/Case
-help. Business pages show "What matters in health / in a case" (6 bars, % who answered yes in the last year).
+- **Verified** if the appointment (Doctors) or the consultation (Professionals) was made through To'Latino and finished.
+- **The appointment detail** comes from To'Latino and can't be edited. Doctors: the service, whether they **accepted your insurance** (Accepted /
+  They didn't accept it / No insurance), what you paid and with whom. The name of your plan, your card number and the reason for the visit are
+  **never** stored or posted. Professionals: the **written total** you accepted («· what they said») or «You didn't hire». What your case is about
+  is never posted.
+- **The questions:** Doctors — did they understand you in your language? (the doctor spoke Spanish / with an interpreter / no), did you wait as
+  long as they said?, did they explain?, did they charge what they said?, treatment; if you went without an appointment through To'Latino, also
+  did they accept your insurance? Professionals — did they charge the total they said?, did they do what they said they could?, did they explain?,
+  in your language?, did they meet the date?, treatment.
+- **Private data:** if the text carries diagnoses, medicines, doses («500 mg»), an A-number or a USCIS case number, the review is **not posted**
+  until you remove them («Remove health or case details»). The server decides.
+- **With 1 or 2 stars:** the review doesn't refund money, correct a charge or change your case; that is what **Help with the appointment / with
+  the case** is for (the business replies within 24 h).
+- On the page: «What matters in Health» / «What matters in a case» (6 bars, % who answered yes in the last year).

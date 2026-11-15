@@ -55,13 +55,49 @@ ventas; las piezas y los materiales sí (6 %).
 ## English
 
 ### What it does
-For auto shops (diagnosis, "from", quote) and home services (visit, estimate, hourly, by measure), the business sends
-the **estimate** (Home: **full price**). **Nothing is done or charged without your OK.**
-- Each line shows what it is, why it is needed, the part or material, labor (hours × the business rate), tax and a photo,
-  grouped as needed now / recommended soon / can wait. You approve line by line.
-- If the business takes cards in the app, only what you approve is **held**; otherwise you pay at the business.
-- **Something else:** they stop and ask with a photo and price. No = not done or charged.
-- **The final amount never goes up.** At pickup the final amount minus the deposit is charged and the rest released.
-- Holds over 7 days renew automatically; if the bank refuses, that amount is paid in person and both sides are told.
+At a shop (diagnosis, «from», quoted) or in a home service (visit, estimate, hourly, by measure), the business reviews and sends you the
+**estimate** (in Home it is called **full price**). **Nothing is done or charged without your OK.**
 
-**Can I be charged more than I approved?** No.
+- **Each line** says what it is, **why** it is needed (the measurement or the code), the part or material with its price, the labor (hours × the
+  business's rate), the tax and a photo. It comes grouped as **needed now**, **recommended soon** and **can wait**. What is needed comes
+  checked; you check or uncheck whatever you want.
+- **You approve line by line.** If the business charges by card in the app, only what you approve is **held** on your card; otherwise you pay at
+  the business when it is done.
+- **The diagnosis or visit is deducted** if the business says so and you approve some repair. If you approve nothing, you pay only for the
+  diagnosis or the visit.
+- **Something else:** if they find something else while working, they **stop** and ask you with a photo and a price. If you say no, it is not
+  done or charged. If you say yes, it is held separately.
+- **The final amount never goes up:** if a part turns out cheaper, the business lowers that line's price and the difference is released.
+- **At pickup / when it is done** you see what was approved, the deposit, what you pay now and the warranty. You tap «Picked it up · pay» or «All
+  good · pay»: the final amount minus the deposit is charged and the rest is released. You get the «Paid» notice.
+
+#### For the business (dashboard)
+- With the car received (or already at the home), tap **Build the estimate** (or «Build the full price»). Start with a **template** (brakes,
+  engine, plumbing, panel…) or **add a line** by hand: how urgent, what it is, why, the part and its price, the labor hours and the photo.
+  **What is needed now goes with a photo** (the customer sees it).
+- The total you see while building is for reference; the amounts are calculated by To'Latino when it is sent (labor = hours × your rate from Your
+  tool; PA tax only on parts or materials).
+- While the customer hasn't replied you can **send a new version** (photos are kept). Once they have replied, what is new goes as **Found
+  something else**.
+- **The final amount:** before handing over you can lower the price of an approved line; never raise it.
+- A service with an estimate **cannot be started** without the customer's OK.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| The customer approves some lines and not others | Only the approved ones are done and charged. |
+| The customer approves nothing | The booking goes to «Ready for pickup»; they pay only the diagnosis or the visit. |
+| The bank declines the card when approving | Nothing is approved; the customer chooses another card and approves again. |
+| The business doesn't charge by card in the app | Nothing is held; the total is paid at the business. The dashboard says how much to charge. |
+| The part turned out cheaper | The business lowers the final amount; less is charged and the difference is released. |
+| The job lasts more than 7 days | The hold renews by itself with the same card. If the bank won't allow it, that amount is paid at the business and we notify both. |
+| The booking is canceled with something held | What is held is released. |
+| Something went wrong afterward | **Appointment help** from Your appointment. |
+
+### FAQ
+**Can they charge me more than I approved?** No. The final amount can go down, never up, and To'Latino verifies it.
+
+**What is «held»?** The bank sets that money aside on your card without charging it. At the end only what was approved is charged and the rest is
+released (it may take a few days to show depending on your bank).
+
+**Why is the tax only on the parts?** In Pennsylvania, repair labor pays no sales tax; parts and materials do (6 %).

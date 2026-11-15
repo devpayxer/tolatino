@@ -34,7 +34,30 @@ precio?** No: en la visita te dan el precio completo línea por línea y aprueba
 ## English
 
 ### What it does
-Send the same home-project request to up to 3 Pro businesses that do that work and reach your home. Each replies within
-48 h with a range, the measuring-visit fee and timing. Compare, tap one to book its visit; the others close automatically.
+For big jobs at home (bathroom, roof, plumbing, panel, boiler…) you send **the same request to up to 3 businesses** and compare their estimates in
+the app. It is free and doesn't commit you.
+- **What you send:** your home, where (kitchen, bathroom, basement, roof, outside, whole house), what you want done (at least 10 characters), the
+  measurements if you have them and 1 to 6 photos.
+- **To whom:** Pro businesses that do that kind of job; the one from the page you were on goes first. Those that don't reach your home are marked
+  and can't be chosen.
+- **They reply within 48 hours** from their dashboard with a range, what they charge for the visit to measure and how long it takes; or «it has
+  to be seen», or «we don't do it».
+- **You compare** («the lowest» is marked) and tap one to book its visit. **The others close by themselves** and are notified. Nothing is charged
+  until the visit.
 
-**The time limits on this page** (hours businesses have to reply) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| One replies and others are missing | You can book now or wait. |
+| Nobody replies within 48 h | It stays «No answer»; you can send it again. |
+| One doesn't do that job | It shows «Doesn't do this job» with their message. |
+| You book with one | The others close (including those that hadn't replied). |
+| You no longer need them | «No longer needed» cancels the request; nothing is charged. |
+| 7 days pass since the first reply | Booking no longer offers it. |
+
+**The time limits on this page** (how many hours businesses have to reply) are today's: To'Latino sets them in its Settings and the screen always
+shows the one in force at that moment.
+
+### FAQ
+**Why only 3?** So ten businesses don't call you and so they know they are competing with only a few. **Is the range the price?** No: at the visit
+they give you the full price line by line and you approve each part.

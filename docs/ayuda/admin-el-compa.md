@@ -121,60 +121,115 @@ Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 ## English
 
 ### What it does
-**Overview** (first tab): 7-day numbers (conversations, solved alone, to a person, confirmed actions), bars for why it went to a person, where it
-answers and which channel, the support copilot, conversations flagged by the team, the team hours and **WHAT EL COMPA DIDN'T KNOW · FOR THE HELP
-CENTER**: every «I don't have that information», as the covered question without the person, its audience, language, city and CP- number; mark
-it **Noted** (with a reason) or **Fixed in {article}**; the status only moves forward. Only Admin and Support see the question. In a
-conversation record, **Flag wrong answer** (wrong info · should have handed off · tone · language · other, plus a note) and **Remove flag** (with a
-reason); one live flag per conversation, never deleted, shown in the record's **HISTORY**; the neighbor gets nothing. **Retention:** after the
-months in Settings (12) the sweep empties a closed conversation's text and keeps the numbers; 30 days after an account deletion request, the
-same for that person's conversations and Support cases (and their photos). Everyone sees the conversations of their own cities.
-
-Super Admin › El Compa · AI also shows this month's AI spend (API prices plus the U.S. surcharge), the **cap** ($100 a month by default), the
-**warning** (80 %) and what is in flight. Every AI call **reserves** its maximum cost before going out and settles with the real cost; if it does
-not fit under the cap, the AI is not called: the fixed rules answer and the person keeps «Talk to a person». Many calls at once never go over
-the cap. **Switches BY LEVEL** (neighbors, business panel, auto-replies, copilot) and **BY CHANNEL** (To'Latino chat, WhatsApp, SMS): off means
-the usual path. **BY CITY** and **BY BUSINESS** pause all of El Compa or one level in one place. Models: Claude Haiku 5.5 for everyday use,
-Claude Sonnet 5.5 only for the team copilot; «Answers now» says whether Claude, the test-server simulator or the fixed rules are running. Fixed
-rules cannot be turned off. **Conversations** (filters WHERE · OUTCOME · CHANNEL and a CP- search; tapping one opens its record with who,
-business, channel, outcome, reason, Support case, the stored (covered) thread, actions and **WHO READ IT** — only Admin and Support open it, and
-every opening is logged before the thread shows; Read-only sees numbers only) shows 7-day numbers and the list (CP- number, level, channel, messages, city, outcome, reason,
-answered without AI) without any text; it also counts conversations per level (neighbors, business dashboard…). **WHERE › Business dashboard**
-are the dashboard assistant's conversations. Businesses › a business › **El Compa** shows that business's 30-day dashboard numbers (conversations,
-«Go to …» taps, cases passed to Support, answered without AI) and whether El Compa is paused there, without text or people.
-
-**Channels tab (WhatsApp and SMS):** counts (signed entries, rejected ones, replies, STOPs, one-use links), each channel's mode (sandbox simulator,
-real provider or off), the **receiving numbers** (To'Latino's = El Compa for neighbors; a business's = its auto-replies) with **Connect a number**
-and **Retire** (Admin, with reason and audit), the **inbound log** without text or phone (a short fingerprint, account yes/no, result, CP-) and,
-in the sandbox only, a **simulator** that sends a message as a phone and shows El Compa's reply.
+- **Overview** (the first thing you see): the 7-day numbers (**CONVERSATIONS**, **RESOLVED ON ITS OWN**, **TO A PERSON** —with a Support case or sent
+  to the owner—, **ACTIONS CONFIRMED**), three bars (**WHY IT WENT TO A PERSON**: money, their account, security, asked for a person, didn't
+  know, to the owner; **WHERE IT ANSWERS**: neighbors, dashboard, auto-replies, copilot; **WHERE THEY WRITE FROM**: To'Latino chat, WhatsApp, SMS),
+  **COPILOT IN SUPPORT** (30-day drafts and what was done with them), **FLAGGED BY THE TEAM** and **TEAM MEMBERS** (the hours from
+  Settings › Support). And **WHAT EL COMPA DIDN'T KNOW · FOR THE HELP CENTER**: every time it answers «I don't have that information», the
+  question —covered, without the person— with its audience (neighbor or business), language, city and the CP- conversation. Mark it **Noted**
+  (with a reason) or **Fixed in {article}** (a Help Center article); the status only moves forward (Open → Noted → Fixed). The article text is
+  fixed in the repo and goes out with the next release; here it is only noted. Admin and Support see the question; Read-only sees
+  «A neighbor's question» and the numbers.
+- **Flag wrong answer** (in a conversation record): you pick what went wrong (Wrong information · Should have handed off to a person · Tone ·
+  Language · Something else) and write the reason. The record says «Flagged by {who} · {reason}: {note}», and it shows up in **OUTCOME › Flagged**
+  and in Overview. **Remove the flag** asks for a reason. One live flag per conversation; it is never deleted (it keeps who removed it and why).
+  Everything shows in the record's **HISTORY**. The neighbor gets nothing.
+- **Retention:** after the months set in Settings › El Compa (12 by default), the sweep empties the text of a closed conversation (what the person
+  said, what El Compa answered, the summary when it handed off to a person, the «didn't know» question, a flag's note, the copilot's drafts and
+  the encrypted phone) and keeps the numbers: outcome, reason, usage, spend. The record says «The text was deleted on {day}…» and can no longer be
+  flagged. 30 days after someone asks to delete their account, the same happens to their conversations and their Support cases (and those cases'
+  photos).
+- **The month's spend:** how much El Compa has used in AI (API prices plus the U.S. surcharge), the **cap** ($100 a month by default), the
+  **warning** (80 %) and what is in flight. Every AI call **reserves** its maximum cost before going out and settles with what it really
+  cost; if it does not fit under the cap, the AI is not called: the fixed rules answer and the person has «Talk to a person». Many calls at once
+  never go over the cap.
+- **Switches BY LEVEL** (neighbors, business dashboard, auto-replies, copilot) and **BY CHANNEL** (To'Latino chat, WhatsApp, SMS). Off = the usual
+  path: Help opens the form, Support says «Write to us», the dashboard shows a notice, there are no auto-replies and the copilot does not appear.
+  **BY CITY** and **BY BUSINESS**: pause all of El Compa or one level in one place.
+- **Model:** Claude Haiku 5.5 for neighbors, the dashboard and auto-replies; Claude Sonnet 5.5 only for the team copilot. «Answers now» says
+  whether Claude is running (with the key), the test-server simulator (without a key) or the fixed rules.
+- **Fixed rules (they cannot be turned off):** it always says it is AI, never moves money or changes the account, never asks for a card,
+  passwords, SSN or status, gives no legal, medical or immigration advice, and answers in the person's language.
+- **Conversations:** 7-day numbers (how many, resolved on its own, to a person, confirmed actions; with a WHERE selected, those of that level) and
+  how many per level (**NEIGHBORS · 7 D**, **BUSINESS DASHBOARD · 7 D**…), the filters **WHERE · OUTCOME · CHANNEL**, the search by **CP-** number
+  and the list (number, level, where —Support, help sheet or Dashboard—, channel, messages, city, outcome, reason and whether it answered without
+  AI), without the text. **WHERE › Business dashboard** are the dashboard assistant's conversations (owners and their team). Tapping one opens
+  **the record**: WHO · BUSINESS · CHANNEL · OUTCOME · REASON · SUPPORT CASE · WHERE, the thread as it was stored (covered), «Replied without AI
+  (fixed rules)» if that happened, the actions it prepared and how they ended, and **WHO READ IT**. **Admin and Support** open the record;
+  **every opening is logged** (who and when) before the thread is shown, and that list is never deleted. Read-only sees the numbers, not the
+  thread.
+- **COPILOT IN SUPPORT · 30 D** (Conversations): how many drafts the team asked for (in cases and in escalated help requests) and what was done
+  with them: **sent as is**, **edited**, **discarded** (they asked for another, picked a macro, or nobody sent it within a day) and how many
+  without AI (rules). No people and no text. In **BY LEVEL**, the **Copilot** row shows what it spent this month (it uses Claude Sonnet) and its
+  calls; in **WHERE › Copilot**, its conversations (one per case and per team member; the record with the draft, reading logged). The copilot is
+  explained in the Support help.
+- **Businesses › a business › El Compa:** the 30-day numbers of the assistant in that business's dashboard (conversations, the «Go to …» links
+  they tapped, cases passed to Support, answered without AI, by outcome) and whether El Compa is paused there. No text or people; the thread is in
+  Conversations (reading logged). And **AUTOMATIC REPLIES** (Pro): whether the business turned them on, what it answered and what was passed to
+  the business in 30 days, the «An El Compa reply» reports, and **Turn off El Compa here** (with a reason; the owner is notified and appeals through
+  Support) or **Allow them again**.
+- **Businesses tab:** where auto-replies are on and where To'Latino turned them off, with their 30-day numbers; each row leads to the business's
+  record. **WHERE › Auto-replies** in Conversations shows their conversations (the record with the thread, logged).
+- **Channels tab (WhatsApp and SMS):** numbers (ENTRIES · 24 H with a good signature, REJECTED · 24 H for signature, time or size, REPLIES · 24 H,
+  STOP · 30 D and the one-use links of 7 days), each channel's **mode** (sandbox simulator, real provider or off), the **NUMBERS THAT RECEIVE**
+  (To'Latino's = El Compa for neighbors; a business's = its auto-replies) with **Connect a number** and **Retire** (Admin, with a reason and
+  audit), the **INBOUND LOG** without text or phone (a short fingerprint to see it is the same phone, whether it was an account, to which number,
+  what happened, what went out and the CP- conversation) and, in the sandbox only, the **SIMULATOR** (it sends a message as a phone and shows what
+  El Compa answered, with the real link; it is logged in the audit with only the last 4 digits).
+- **Queues › Reported messages:** if El Compa answered in the conversation, its messages are marked **EL COMPA** and the case offers **Turn off
+  El Compa here** (only in that conversation; the business still sees it and keeps answering) and **El Compa in the business**.
 
 ### How to use it
-Tap a switch, pick or write a reason, then **Pause** or **Turn on**. **Pause here** on a city or **Pause in a business** (id or exact name),
-choosing all or one level; **Lift** turns it back on. **Change the cap** in dollars ($0 to $10,000; $0 = no AI) with a reason. Everything is
-logged with who, when and why.
+1. **Pause a level or a channel:** tap its switch, pick or write the reason and **Pause**. To come back: the switch, a reason and **Turn on**. It
+   applies from the next message.
+2. **Pause in a city:** **Pause here**, pick what is paused (all or one level) and the reason. **Lift** turns it back on.
+3. **Pause in a business:** **Pause for a business**, write its id or exact name, pick what is paused and the reason.
+4. **Change the cap:** **Change the cap**, the amount in dollars (between $0 and $10,000; $0 = no AI) and the reason. It applies from the next
+   call. It is also in Settings › El Compa, with the warning, the maximum wait, the per-person limits and the expiry of actions.
+5. **Channels › Connect a number:** pick the channel (WhatsApp · Meta or SMS · Telnyx; in the sandbox also «test»), write the number (SMS: 10
+   digits; WhatsApp: Meta's phone_number_id) and, if it belongs to a business, its id after a comma («100200300401, sabor-dominicano»), and the
+   reason. **Retire** leaves it not receiving (it is not deleted). The **simulator**: pick the number, the phone you «write» from and the message.
+6. **What it didn't know:** in Overview, **Noted** (pick or write the reason) or **Fixed in…** (pick the article and the reason); **View
+   conversation** opens its record (your reading is logged). The chips **Open · Noted · Fixed** change the list.
+7. **Flag:** in the record, **Flag wrong answer** → what went wrong → reason → **Flag**. To undo it, **Remove the flag** with a reason.
+8. **Conversations:** filter by WHERE, OUTCOME and CHANNEL or search a **CP-**; **Next** to see more. Tap one to open its record (your reading is
+   logged); from there, **View TK-… in Support** and **View the person**.
 
 ### What happens in each case
-At the warning, the Admin team is notified once a month and Home shows an alert; at the cap, a «reached the cap» notice and a red alert, and the
-fixed rules answer until next month or a higher cap. A slow (over 8 s) or failing AI falls back to the rules; a timeout counts the reserved cost.
-The output checker blocks answers without a source, invented prices or terms, «I already cancelled it», phone numbers, covered data, outside
-links and emoji. After 20 messages an hour (60 a day) it offers a person without calling the AI. Non-Admin roles see everything but cannot
-change switches. In production El Compa stays off until everything is turned on. With «Business dashboard» paused (or the business, or its city)
-or at the cap, the dashboard's El Compa section says it is not available and links to Help and Support; the rest of the dashboard is unchanged. A
-team member asking about a part they don't have gets «The business owner handles that», with no link. **Auto-replies (Pro):** a business's card (Businesses ›
-a business › El Compa) shows whether it turned them on, 30-day counts and reports, and **Turn off El Compa here** (with a reason; the owner is
-notified and appeals through Support) or **Allow them again**; the **Businesses** tab lists where they are on or turned off by To'Latino. In
-Queues › Reported messages, El Compa's replies are marked and the case offers **Turn off El Compa here** for that conversation only. With
-auto-replies paused at any level or at the cap, Messages works exactly as before (the business's fixed reply, if it has one).
+| Case | What happens |
+|---|---|
+| Spend passes the warning (80 %) | Notice to the Admin team (once a month) and the alert in Super Admin › Home. |
+| It reaches the cap | «Reached the cap» notice to the Admin team (once) and a red alert in Home. Until next month (or until the cap is raised) the fixed rules answer. |
+| The AI takes longer than the maximum wait (8 s) or fails | The fixed rules answer; the conversation is marked «replied without AI». A timeout counts what was reserved. |
+| The AI answers something that cannot be said | The checker stops it (no source, an invented price or deadline, «I already cancelled it», a phone number, covered data, an outside link, emoji) and the rules answer. |
+| Someone writes many messages | After 20 in an hour (or 60 in a day) El Compa offers «Talk to a person» without calling the AI. |
+| Your role is not Admin | You see everything; when you tap a switch: «Your role can't change switches.» |
+| Production server | El Compa stays off until everything is turned on, even if the switches say otherwise. |
+| You pause «Business dashboard» (or the business, or its city) | In the dashboard, the El Compa section says «El Compa isn't available right now» and leads to Help and Support; the rest of the dashboard stays the same. Same at the cap. |
+| A business team member asks about a part of the dashboard they don't have | El Compa answers «The business owner handles that», with no link; nothing from that part reaches the AI. |
+| You turn off a business's auto-replies | Its customers go back to the usual fixed reply (if the business has one); the owner sees the reason and cannot turn them on. |
+| A customer reports an El Compa reply | A case in Reported messages with the reason «An El Compa reply»; there you turn it off in that conversation or go to the business. |
+| You pause «Auto-replies», the channel or the city, or it reaches the cap | Messages works exactly as before: the usual fixed reply, if the business has one. |
+| You pause the WhatsApp or SMS channel | Nothing goes out through that channel (not even the fixed reply); a STOP is still recorded. The app stays the same. |
+| An entry arrives with no signature, a bad signature or a time outside the window | It is rejected (401) without saving anything; it is only counted in REJECTED. |
+| The same message arrives twice (the provider retries) | One entry and one reply. |
+| A number without an account, or an account that did not turn the channel on, writes | The same fixed reply (how to sign in and where to turn it on); nothing from any account. |
+| You want to flag a conversation that is already flagged | «It is already flagged»: remove the flag first. |
+| Read-only, or Support from another city, tries to flag or open a thread | «Your role sees the numbers…» or «That conversation doesn't exist»; no reading is logged. |
+| A conversation closed more than 12 months ago | The sweep empties its text; the numbers stay and analytics counts the same. |
+| Someone deleted their account 30 days ago | Their Support cases and closed conversations are left without text (and without photos); the case keeps its status and topic. |
+| You pause «Copilot», the channel or the city, or it reaches the cap | In Support and in Queues › Help with orders and appointments, «Suggest a reply with El Compa» does not appear: everything as before (macros, Send, Resolve). |
 
 ### FAQ
-- **Can El Compa charge or refund?** No. It only prepares: cancel a pending free request, open a screen, or go to a panel section; the person
-  confirms and the usual function and permissions apply.
-- **What does the AI see?** The minimum about that person, covered. Never anyone else, Health, Professionals, Kids, private messages or Super
-  Admin data.
-- **Where do I see the support copilot?** Conversations › SUPPORT COPILOT · 30 D: drafts requested by the team and whether they were sent as is,
-  edited or discarded (no people, no text); its monthly spend is in BY LEVEL › Copilot. Pausing the Copilot level (or the channel, the city, or
-  reaching the cap) removes «Suggest a reply with El Compa» from Support and the help queue; everything else stays as before.
-- **What does the provider signature prove?** That Meta or Telnyx sent the message, not who wrote it. So El Compa only replies to that phone,
-  only to an account that turned it on, and never acts by message: it sends a one-use link confirmed in the app after signing in.
-- **Where does the Anthropic key go?** In the server secrets, never in the repo or chat. Without it, the simulator runs on the test server and
-  the fixed rules in production.
+- **Can El Compa charge or refund?** No. It only prepares: cancel a pending free request, open a screen or go to a dashboard section. The person
+  confirms with a tap and the action goes through the same function and the same permissions as always.
+- **What does the AI see?** The minimum about that person, covered: their recent operations and the help for their audience. Never about another
+  person, nor Health, Professionals, Kids, private messages or anything from Super Admin.
+- **Is what people said stored?** Conversations are stored covered; the usage ledger (tokens, cost, model, wait) stores no text. After the
+  retention months (12) only the numbers remain.
+- **Does what it didn't know get fixed by itself?** No: someone notes it and the article is fixed in the repo; «Fixed in …» says where it landed.
+- **What does the provider's signature prove?** That Meta or Telnyx sent the message, not who wrote it. That is why El Compa only answers that
+  phone, only an account that turned it on in My account › Notices, and never does anything by message: it sends a one-use link that is
+  confirmed in the app after signing in with the code.
+- **Where does the Anthropic key go?** In the server secrets, never in the repo or in chat. Without a key, the simulator runs on the test server
+  and the fixed rules in production.
