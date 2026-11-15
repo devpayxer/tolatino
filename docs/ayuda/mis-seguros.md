@@ -22,5 +22,17 @@ cuánto pagas.
 ## English
 
 ### What it does
-Save your insurance, plan, who it is for and optionally your member ID (we keep only the last 4). We tell you at every clinic
-whether they take it and what you pay. Pick your main one, remove any (visits already requested do not change).
+You save your insurance (Medicaid, Medicare, CHIP, through work or private, or «No insurance»), its plan, who it is for (for me, for my son or
+daughter, for someone else) and, if you want, your member number. At each clinic we tell you whether they accept it and how much you pay.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You type your member number | We keep **only the last 4 digits**. The clinic that confirms your appointment sees them. |
+| You have several | One is the **primary** (the one we use first). «Use this one» changes the primary. |
+| You remove one | It is no longer used; the appointments you already requested do not change. If it was the primary, the most recent one becomes it. |
+| Up to 6 | To add another, remove one. |
+| To'Latino hides an insurance from the catalog | You can no longer choose it; clinics stop showing it. |
+
+### FAQ
+- **Does To'Latino see my medical history?** No. Your insurance is only used to tell you whether they accept it and how much you pay.

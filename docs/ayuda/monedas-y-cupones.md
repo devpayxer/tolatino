@@ -43,18 +43,38 @@ Versión: 7 nov 2026. Audiencia: vecino. Tema: comunidad._
 ## English
 
 ### What it does
-- **Coins are earned, never bought. No cash value:** they can’t be sold, passed to someone else or exchanged for money or credit, and they
-  **don’t expire**.
-- **How to earn:** welcome, once **+100**; top 3 of the monthly Neighborhood Table **+200** (credited when the month closes). Being online,
-  following or posting earns no coins.
-- **Coupons:** each business in the city you are viewing sets them; To’Latino approves them and sets the cost (80 to 1,000 coins).
-  **Redeem** → confirm → your code **TL-CQ-xxxx** with «Show it in store» and its expiry. The business scans its QR or types it in its dashboard and it is
-  **used**, once.
-- **Cases:** not enough coins → «Need N»; already redeemed → «See my code»; sold out this month → «Gone this month» (two people redeeming the
-  last one at the same time: only one gets it, the other keeps their coins); code expires unused → **coins returned**; coupon paused or
-  ended → your code stays valid until it expires; another business can’t find your code.
+- **Coins are earned, never bought. No cash value:** they are not sold, not passed to another person, not exchanged for money or for balance,
+  and they **do not expire**. No money is gambled here.
+- **How you earn them** (To'Latino can adjust the values; the screen always shows the current ones):
+  - **Welcome, once: +100** (when you finish the Community welcome with «I am 18 or older»).
+  - **Finishing in the top 3 of the month's Neighborhood Leaderboard: +200** (they arrive when the month closes, with the notice).
+  - Being connected, following or posting does not give coins. The «daily coins» arrive when El Patio opens.
+- **Exchange them for coupons:** each neighborhood business (in the city you are viewing) sets its coupons; To'Latino approves them and sets how
+  many coins they cost (from 80 to 1,000). Each card shows the cost and the business, and the button **Redeem**, **You need N more**, **See my
+  code** or **Gone this month**.
+- **Redeem:** the sheet confirms how much it costs, how many you have, «One per person. Expires 30 days after you redeem it. Not exchanged for
+  money.» and the business's conditions → **Redeem for N coins** → your code **TL-CQ-xxxx** (without 0, O, 1 or I), with «Show it at the
+  business» and the date it expires.
+- **At the business:** you show the code (or its QR, under the code); the business scans it or types it in its dashboard and it becomes **used**
+  (only once). You get «You used your coupon».
+- **Your coupons:** live codes first, then used and expired ones. **Activity:** every coin that comes in and goes out.
 
-### FAQ (English)
-- **Can I buy coins or cash them out?** No. They have no cash value. **Can I send coins to someone?** No.
-- **Do they expire?** Coins don’t. A redeemed code does; if it expires unused, the coins come back.
-- **Does To’Latino pay the business for my coupon?** No. The coupon is a discount the business chooses to give in its store.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You are short of coins | The button says «You need N more»; it cannot be redeemed. |
+| You already redeemed that coupon | «See my code». One per person while your code is live or used. |
+| The month's coupons ran out | «Gone this month» until day 1 of next month. If two people redeem the last unit at the same time, only one goes through; the other sees «This month's are gone» and does not lose coins. |
+| You tap «Redeem» twice | A single code and a single spend. |
+| Your code expires unused | It becomes «Expired» and **we return the coins** (notice with the code). You can redeem that coupon again. |
+| The business pauses or ends the coupon, or To'Latino pauses it | It stops showing; **your code stays valid** until it expires. |
+| Another business validates the code | It does not find it: it is only valid at the coupon's business. |
+| To'Latino adjusts your coins | You get the notice with the amount and the reason. They never go negative. |
+| It is a coupon from your own business | You cannot redeem it. |
+
+### FAQ
+- **Can I buy coins or exchange them for money?** No. They have no cash value.
+- **Can I pass coins to another person?** No.
+- **Do they expire?** Coins do not. A redeemed code does (after the number of days the coupon says); if it expires unused, the coins come back.
+- **Does To'Latino pay the business for my coupon?** No. The coupon is a discount the business decides to give at its location; nobody pays anybody.
+- **Are points and coins the same?** No: points raise your rank; coins are exchanged for coupons. They are two separate accounts.

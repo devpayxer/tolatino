@@ -50,16 +50,44 @@ o código. Desde el detalle de cada reserva respondes, marcas la puerta o cancel
 ## English
 
 ### What it does
-**Today** gathers the whole night: tables waiting for your answer (you have **60 minutes**, never later than 15 minutes
-before the customer's time), tonight's confirmed tables and **the door list** with search by name or code. From each booking's
-detail you answer, mark the door or cancel with a reason.
+It gathers in **Today** everything about the night: the tables awaiting your answer (you have **60 minutes**, never later than 15 minutes
+before the customer's time), tonight's confirmed tables and **the door list** with search by name or code. From the detail of each reservation
+you answer, mark the door or cancel with a reason.
+
+### How to use it
+1. **Answer a table:** **Confirm** (if it asked for a deposit, it is charged at that moment and deducted from their bill), **Another time**
+   (the customer has 30 minutes to accept) or **No table available** (everything is released, nothing is charged). At the top you see how many
+   tables of that type are left if you confirm.
+2. **The door, list:** search the name or the 4-digit code the customer says at the door and mark **how many got in** (0 up to those who
+   signed up).
+3. **The door, table:** **They arrived**; **They did not show up** (it can be marked from 30 minutes after their time, how long the table is
+   held); **Turned away: no ID**.
+4. **Cancel a confirmed table:** type the reason (the customer sees it). **The whole deposit is always refunded.**
+
+### What happens in each case
+- **You confirm:** the held deposit is charged and the customer gets the notice with their code. **Another time accepted:** it is charged;
+  **rejected or unanswered:** it is released in full.
+- **You do not answer in time:** the request expires on its own and the deposit is released.
+- **They did not show up / no ID:** the night is closed and the deposit stays with the venue (the age and ID rule was shown to them before
+  paying). The app **never** stores a photo of an ID or asks for a date of birth.
+- **You cancel:** full refund to the customer, always. It counts toward the **Tables not honored** review.
+- **At 6 AM** the night closes on its own: the list that got in stays «got in»; the one that did not, «did not get in»; a table left unmarked,
+  «unmarked».
+- **To'Latino review:** if within 30 nights a venue reaches **3 tables not honored** (canceled by the venue or with the help request «they did
+  not honor the table or the list») or **3 «no ID» with a deposit**, the team reviews it. It can pause tables and list on your page; what is
+  already confirmed stands and you see the reason in your dashboard.
 
 ### FAQ
-The code is visible on your door list and the booking detail while it is confirmed, never on the public page or in
-SMS. «No-show» can be marked from 30 minutes after the booking time. Someone without ID does not get in: mark «No ID». The deposit
-is charged by card in the app and reaches you with To'Latino payouts minus the Night fee ($1 + 5%); cover, drinks and minimums
-are charged by you at the venue.
+- **Why don't I see the list code in my dashboard?** You do see it in «The door list» and in the detail while the reservation is confirmed; it
+  never appears on the public page or in SMS messages.
+- **Can I mark «They did not show up» earlier?** No: the table is held for 30 minutes after its time; the button says until what time.
+- **What do I do if someone without ID insists?** They do not get in; mark «Turned away: no ID». Do not ask the app for their data.
+- **Who pays me the deposit?** It is charged by card in the app and reaches your account with the To'Latino payouts, minus the Nightlife
+  fee ($1 + 5 %). The cover, the drinks and the minimum you charge yourself at the venue.
 
 ### The list in To'Latino Door
-Your door staff can check in tonight’s list and tables from **To'Latino Door › Tonight’s list** while a door of one of your events is
-  open that night; it is the same booking and shows here. Their screen never shows the code, phone or what is paid at the venue.
+- Besides the dashboard's «The door list», **your door staff** (Dashboard › Events › DOOR STAFF) mark the list and tonight's tables from
+  **To'Latino Door › Tonight's list**, while they have a door open for an event at your venue that night: they search by name or by the 4-digit
+  code the customer says and tap **1 got in** or **N got in**. What they mark shows up here the same (it is the same reservation) and counts
+  toward that door's capacity. The door staff's screen **never** shows the code, the phone or what is paid at the venue. A night **without a
+  published event** is still marked from this dashboard.

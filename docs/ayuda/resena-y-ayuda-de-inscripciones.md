@@ -36,12 +36,31 @@ lugar responde en 24 horas y, si no responde o no estás de acuerdo, To'Latino l
 ## English
 
 ### What it does
-**El Compa first:** tapping **Help** opens El Compa (To'Latino's AI assistant) over your item with fixed options; **Something went wrong** (on
-tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, the monthly AI cap is reached, or you already opened
-a request, you come straight here.
+- **El Compa first:** when you tap **Help**, the **El Compa** sheet (To'Latino's AI assistant) opens over your booking, with fixed options;
+  **Something went wrong** (on tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, if To'Latino has
+  reached the monthly AI cap, or if you already opened a help request, you come straight here. See `el-compa.md`.
+When you finish a course or program (or your membership has been active for 4 weeks) you can leave a **verified review** with the questions
+that matter in each case. If something went wrong while you are enrolled or up to 7 days after it ends, you ask for **Help**: the place replies
+within 24 hours and, if it does not reply or you do not agree, To'Latino reviews it within 48 hours.
 
-When a course or program ends (or your membership has been active 4 weeks) you can leave a verified review. If something went
-wrong while enrolled or up to 7 days after it ends, ask for Help: the place replies within 24 hours; otherwise To'Latino reviews in 48 h.
+### How to use it
+- **Review:** stars, the questions for your case (Education: the total, the certificate, the teachers, the schedule, whether you learned;
+  Kids: what was charged, the license in plain sight, whether they took good care of your child, the schedule, whether they told you how
+  your child was doing; Sports: the fee, whether they let you leave, the trainers, the schedule, the cleanliness and the equipment) and your
+  text. The enrollment data (when it started, what was paid in the app, whether they handed over the certificate) comes from To'Latino and
+  is not edited.
+- **Help:** choose what happened, tell it, add the photo when one is requested (of the receipt, the contract or what was posted) and what you
+  want: a refund, to finish in another group without paying again (Education), to have it fixed (Kids) or to cancel the membership (Sports).
+
+### What happens in each case
+- **«Charged more» and «They won't let me cancel»** require a photo.
+- **«They did not take good care of my child»** goes **straight to To'Latino** with priority, without waiting 24 hours. If a child is in
+  danger, call 911; if you suspect mistreatment or abuse, call Pennsylvania ChildLine: 1-800-932-0313.
+- **«They had no license»** also puts the place's license under review.
+- **Money:** tuition charged in the app goes back to your card (exact, what the place accepts or To'Latino decides); what was paid at the
+  place, the place returns to you.
+- **Kids:** the review **carries no photos or your child's name** (the server checks it); the photos of a Kids help request are private.
 
 ### FAQ
-A review does not refund money; use Enrollment help. Memberships can be reviewed after 4 active weeks.
+- **Does the review give money back?** No. If something went wrong, ask for it in Enrollment help.
+- **Why can't I review my membership yet?** It can be reviewed once it has been active for 4 weeks.

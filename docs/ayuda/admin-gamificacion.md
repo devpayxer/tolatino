@@ -78,25 +78,72 @@ _Pantallas: **Super Admin › Gamification** (`/admin/gamificacion`: pestañas R
 ## English
 
 ### What it does
-- **Ranks:** the 10 ranks with requirements, minimum points, unlocks (El Patio ones say «When El Patio opens») and how many neighbors hold
-  each (that count refreshes every 10 minutes). **Rename** in Spanish and English with a **preview**; asks for a reason, is audited and shows in Community instantly.
-  **Change requirements** (Neighbor to Commander): minimum points and the number in its condition (and, for Commander, the days without
-  sanctions), with a "Before / Now" preview in both languages. Minimum points stay between the rank below and the rank above; the "To rank
-  up" text is rewritten with the new number. Applies from now on: ranks only go up, so whoever has the rank keeps it.
-- **Points:** the **daily cap** per person (50 · 100 · 150 · 200; default 100) and each rule’s value (0–100) and switch. Applies from now on.
-- **Neighborhood Table:** per city and month (current or previous) with **PRIZE**, **NEIGHBORHOOD GENERAL** and **EXCLUDED** marks.
-  **Exclude / Include again** with a reason (the person is notified). **Close the month** (Admin only, frozen previous month): 1 table fixed
-  · 2 excluded get no prize · 3 top 3 notified (badge; those already Commander take the General seats) · 4 coupon redemption report. Cannot be undone; the sweep closes it on day 3 if nobody does.
-- **User 360° › Community › Points and rank:** current rank, points, next requirement, rank floor and recent entries. **Adjust points**
-  (Add / Subtract, amount, reason): Admin up to 5,000 at once, other roles that edit Users up to 500; never below zero; the person is
-  notified. **Change rank** (Admin only): grant **Colonel (9)** or lower the floor for fraud, with a reason.
-- **Coins:** IN CIRCULATION · ISSUED THIS MONTH · REDEEMED · VALUE «No cash value»; earning rules (welcome +100, monthly prize +200)
-  with value and switch; last movements. **User 360° › Community › Coins:** balance and **Adjust coins** (Admin up to 1,000, others 500;
-  never below zero; the person is notified).
-- **Coupons:** by city and status; **Approve** with the cost (80–1,000 coins; the business is notified), **Reject**, **Change cost**,
-  **Pause** with a reason (business notified; redeemed codes stay valid), **Activate**; last redemptions.
+- **Ranks:** the 10 ranks with what they require, their minimum points, what they unlock (the El Patio ones say «When El Patio opens») and how
+  many neighbors are in each (in your cities; that count refreshes every 10 minutes). **«Rename»**: Spanish and English with a **preview**
+  (this is how the rank pill looks); it asks for a reason, goes into the audit trail and the Community shows it instantly. **«Change
+  requirements»** (Neighbor to Commander): the minimum points and the number in its condition (and, for Commander, the days without sanctions),
+  with a «Before / Now» **preview** in both languages. The minimum points stay between those of the rank below and the rank above. The «To rank
+  up» text rewrites itself with the new number. It counts from now on: a rank only goes up, so whoever already has it keeps it. Recruit,
+  Colonel (given by the team) and General (3 seats) are not changed here.
+- **Points:** the **daily cap** per person (50 · 100 · 150 · 200; default 100) and each rule with its value (0–100) and its switch. It counts
+  from now on; what was already earned does not change. The 4 fixed rules are shown as text.
+- **Neighborhood Board:** by city and month (current or previous), with points, what came from recommending and from answering, and the
+  marks **PRIZE** (top 3), **NEIGHBORHOOD GENERAL** and **EXCLUDED**.
+  - **Exclude / Include again** (open month): with a reason; the person gets «You are not on this month's Board: {reason}». It does not
+    change their points or their rank.
+  - **Close the month** (Admin only, previous month frozen): **1** the board is fixed with its positions · **2** excluded people get no
+    prize · **3** the top 3 are notified («Top of the month» badge; those who are already Commander take the Neighborhood General seats) ·
+    **4** the month's coupon redemption report for the city (a report: nothing is paid to or charged to the business). The top 3 also
+    receive the month's prize coins (the «monthly prize» rule, 200 by default), once. **It cannot be undone.** If nobody closes it, the sweep
+    closes it by itself on day 3 of the city.
+- **Users 360° › Community › Points and rank:** current rank, points (total, this month, today), what the next rank requires, the cap rule,
+  the rank floor and the latest movements (with who on the team and the reason for adjustments).
+  - **Adjust points** (Add / Subtract, amount, reason): an Admin up to **5,000** at once; other roles that edit Users, up to **500**. It never
+    leaves points negative; nobody adjusts their own. The person gets the notice with the amount and the reason.
+  - **Change rank** (Admin only): give **Colonel (9)** to someone who moderates with good judgment, or lower the floor for fraud. With a
+    reason and a notice. Neighborhood General is not given by hand: it comes from the Board close.
 
-### FAQ (English)
-- **Can points be deleted?** No. The points ledger is insert-only: every change is a new entry (reversal or adjustment) with its reason.
-- **Do coins have cash value?** No: never bought, sold, transferred or cashed out, and they don’t expire. **Does To’Latino pay businesses
-  for redemptions?** No; the month close only reports them. El Patio after launch. Business rank is not built yet.
+- **Coins:** **IN CIRCULATION** (the sum of the balances in your cities) · **ISSUED THIS MONTH** (welcome, prizes and + adjustments) ·
+  **REDEEMED** (coins and coupon codes of the month, and those returned for expired codes) · **VALUE «No cash value»** (they are not bought or
+  exchanged). The earning rules (**Welcome, once** +100 and **monthly prize** +200) with their value (0–1,000) and their switch: with a
+  reason, they count from now on. The latest 20 movements (tapping one opens that person's 360°).
+- **Coupons:** by city and status (**To approve · In the Community · Paused · Ended**), with their business, monthly allowance, days,
+  redemptions this month, used and live codes. **Approve** with the cost (80–1,000 coins; the business gets the notice with the cost) ·
+  **Reject** with a reason · **Change cost** (it counts for redemptions from then on) · **Pause** with a reason (it leaves the Community
+  instantly, codes already redeemed stay valid, the business gets the notice) · **Activate** what the team paused. **Latest redemptions** in
+  the city (code, coupon, business, neighbor, ISSUED · USED · EXPIRED · RETURNED). Approving and rejecting require «approve» in Gamification.
+- **Users 360° › Community › Coins:** balance, live codes, VALUE «No cash value» and the latest movements. **Adjust coins** (Add / Subtract,
+  amount, reason): an Admin up to **1,000** at once, other roles that edit Users up to **500**. It never leaves the balance negative; nobody
+  adjusts their own; the person gets the notice with the amount and the reason.
+
+### Settings
+- The **daily points cap** is a value in **System › Settings** (10–1,000; default 100). Here you choose among 50 · 100 · 150 · 200; there,
+  any whole number within its limits. It is the same value and the same audit trail (before → after).
+- The **El Patio** sub-tab is not built (decision G): the El Patio unlocks say «When El Patio opens». The business rank is not built either
+  (LAUNCH-CHECKLIST).
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You rename a rank | It shows in the pill, the profile, comments (from Sergeant up), reviews and the Board. It is marked «EDITED» and goes into the audit trail. |
+| You turn a rule off | It gives no points from now on. What was already earned stays. |
+| You lower the daily cap | It counts from now on; today's points already past the new cap are not taken away. |
+| You exclude someone and then include them | They go back on the board; both decisions stay in the audit trail. |
+| You try to close the current month | It cannot be done: the last day is frozen at midnight. |
+| You try to close a month that is already closed | «That month is already closed.» A closed month does not change. |
+| The same neighbor wins with votes from accounts on their own phone | Those votes give no points (the database prevents it); Trust & safety › Fraud shows the possible network. Exclude or adjust with a reason if needed. |
+| Adjustment above your role's cap | «Your role adjusts up to 500 (or 5,000) points at once.» (coins: 500 or 1,000) |
+| Subtracting more coins than the person has | «The adjustment leaves the coins negative.» It is not applied. |
+| Approving with a cost outside 80–1,000 | «The cost goes from 80 to 1,000 coins.» |
+| You pause a coupon with live codes | The codes stay valid until they expire; if they expire unused, the coins go back to the neighbor. |
+| You change the monthly prize or turn it off | It counts for the next close; what was already credited does not change. |
+
+### FAQ
+- **Can points be deleted?** No. The points ledger is insert-only: every change is a new entry (a reversal or an adjustment) with its reason.
+- **Are coins worth money?** No. They are not bought, not sold, not transferred, not exchanged for money and they do not expire; they live
+  in their own ledger (insert-only), separate from the points ledger.
+- **Does To'Latino pay the business for redemptions?** No. «Settle» at month close is a redemption report; no payment in either direction.
+- **Can a coupon or a redemption be deleted?** No: a coupon is ended (status) and a code becomes used or expired, never deleted.
+- El Patio comes after the opening. «Business rank» is not built yet.
+- **Why isn't Altagracia (Colonel) a General if she finished first?** The Colonel is given by the team to moderate; the General seats go to
+  the top 3 who are already Commander (decision noted in REVISION; it can be changed).

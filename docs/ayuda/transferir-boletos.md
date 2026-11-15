@@ -38,13 +38,33 @@ Tema: eventos._
 ## English
 
 ### What it does
-**Transfer** a ticket to someone else by phone: pick which, type the phone, **Send ticket**. **THE OLD QR IS VOIDED** right away: while it is
-pending no QR of that ticket gets in. **Undo** until someone receives it (it comes back with a new QR). They get a notice with a link (in
-To'Latino if they have an account; by text once the SMS provider is connected), **sign in with that phone** and tap **Get ticket**: it goes to
-their account with their own QR. **Only the account with that phone** can receive it — never the sender. **Change a name** for free. Deadlines
-come from Settings: up to **2 h before** the event; up to **10 transfers a day**.
+- **You pass a ticket to another person** using their phone: you choose which one (if you have several), type the phone number and **Send
+  ticket**.
+- **THE PREVIOUS QR IS VOIDED** at that moment: while the other person has not received it, **no QR of that ticket gets in** (not yours nor a
+  screenshot). In your order it shows under **SENT · WAITING FOR THEM TO RECEIVE** with «To ••23» and until when.
+- **Undo** while nobody has received it: the ticket comes back to you with a **new QR**.
+- That person gets a notice with the link (in To'Latino if they already have an account; by SMS once the SMS provider is connected). When they
+  open it they see the event, the ticket type and who is sending it (name and initial), **sign in with their phone** and tap **Receive
+  ticket**: the ticket moves to **their** My account › Tickets with **its own QR** (another ticket code).
+- **Only the account with that phone can receive it.** If the link reaches someone else, they see «This ticket was sent to another phone» and
+  cannot receive it. The sender cannot either.
+- **Changing a name** on the ticket is free, up to the same deadline. The name is not in the QR.
+- Deadlines (Super Admin › Settings › Events): **transfer and change the name up to 2 hours before** the event (`bol_transferir_h`); **up to
+  10 transfers per day** per person (`bol_transferencias_dia_max`).
 
-### Cases and FAQ (English)
-Received → you get «Your ticket was received» and it shows **TRANSFERRED**. Nobody receives it in time → it expires and comes back with a new QR.
-Less than 2 h → no transfers or name changes. Your own phone → refused. The link reaches someone else → they cannot receive it; the phone is never
-shown. No reselling in the app. The receiver cannot cancel for a refund (the money belongs to the payer); they can transfer it again.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| The other person receives it | You get «Your ticket was received». In your order that ticket says **TRANSFERRED** and its QR does not get in. |
+| Nobody receives it before the deadline | It expires on its own: the ticket comes back to you with a new QR and we notify you. |
+| You undo it | The transfer falls through and the ticket comes back with a new QR. The link says «The sender undid it». |
+| Less than 2 hours remain | The ticket can no longer be transferred or have its name changed: it stays with whoever has it. |
+| You type your own phone | «That is your phone»: it is not sent. |
+| The recipient has no account | They create one in a minute with that phone and receive it. |
+| The link reaches someone else | They cannot receive it: it is compared with the phone it was sent to. That phone is never shown. |
+| The organizer cancels or refunds that ticket | The transfer falls through; the money goes back to whoever paid. |
+
+### FAQ
+- **Can I sell my ticket?** No: transferring is free and without a price (there is no resale in the app).
+- **Can whoever receives the ticket cancel it for a refund?** No: the money belongs to whoever paid. They can transfer it again.
+- **Does the other person see my phone?** No. They see your name and initial. You only see the last 2 digits of theirs.

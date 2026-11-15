@@ -58,9 +58,52 @@ la milla de más se descuenta del depósito y te enseñan la foto del odómetro 
 ## English
 
 ### What it does
-At a Pro transportation business with a verified license you can book **a seat** on a route with fixed departures, or **the
-whole vehicle** picked up at your address. The price is fixed before leaving. Shipping a box and requesting a move have their own flow (see Shipping a box and requesting a move).
+At a Transportation business with the Pro plan and a verified license you can book **one seat** on a route with fixed departures (for
+example, Hazleton → Washington Heights at 5 AM, 1 PM and 7 PM) or **the whole vehicle** with pickup at your address. The price is fixed before
+you leave: what you see is what you pay, with what it includes (tolls, luggage). Sending a box and moving with a fixed price from photos are
+requested by phone until they are available in the app.
+
+### How to use it
+1. Business page › Services › tap the route › **Book**.
+2. **Your trip:** how many adults and children (up to 14 seats per booking), child seat at no cost, extra bags if the business charges for
+   them. For the whole vehicle: how many people and where they pick you up (your addresses within their zone).
+3. **Day and time:** today and the next 6 days; each departure says how many seats are left.
+4. **Review and send:** the fixed price, the card and what happens if you cancel. **Book.**
+
+### What happens with your money
+| Moment | Your money |
+|---|---|
+| You book | The total is **held** on your card (not charged). |
+| The business confirms | The total is **charged**. |
+| They do not confirm in time, there is no room or the other departure does not work for you | It is **released** in full. |
+| You cancel with 24 hours or more | We **refund everything**. |
+| You cancel with less than 24 hours | **Half is charged** and we refund the rest. |
+| The business cancels the departure | We **refund everything**, with the reason. |
+| You do not make it to the departure | The charge does not change. |
+
+### What happens in each case
+- **Pending:** the business has 2 hours if you leave today, 24 hours if it is another day. Your seats are already held.
+- **Another departure proposed:** if your departure has no room, the business proposes another. «Accept this departure» confirms it and
+  charges it; «Doesn’t work» releases your money.
+- **No answer:** if they do not reply in time, it is released automatically.
+- **Running late:** we tell you the new time in Notifications.
+- **On the way / You arrived:** you see it in «Your trip» and we ask for your review.
+- **The last seat:** if two people book the last seat at the same time, only one gets it; the other is told there are none left.
+
+### For the business
+Dashboard › Today: **Trips awaiting your answer** (Confirm · Another departure or time · No room), **Departures with passengers** (Running
+late · Left · Arrived · Cancel the departure with a reason, which refunds everything to each passenger) and **Whole vehicle** (Left ·
+Arrived). On each passenger: Boarded / Did not show. Seats sold outside the app are added in What you sell › Departures and seats.
+
+### FAQ
+- **Do you charge me when I book?** No: it is held. It is charged when the business confirms.
+- **Can I cancel?** Yes, from «Your trip». With 24 hours or more we refund everything; with less, half is charged.
+- **What if the business does not leave?** We refund everything and you see the reason.
+- **How many seats can I book?** Up to 14 per booking.
+- **Where do I see my trips?** My account › Appointments and bookings.
 
 ### Renting a vehicle
-Bring a valid license (21+). At pickup the business checks it and writes down the miles; rent is charged and the deposit
-held. Extra miles over the daily allowance come out of the deposit, with the odometer photo shown to you first.
+At a business that rents vans or trailers: business page › **Rent** › the vehicle › **Reserve**. Nothing is charged today; they hold it for
+you for 48 hours. **Bring your valid license: you have to be 21 or older.** When you pick it up, the business checks your license and notes
+the miles; the rental is charged and the deposit is held. Each day includes the miles the vehicle states (for example, 150); the extra mile
+is deducted from the deposit and they show you the photo of the odometer beforehand. If you return it late, one more day is charged.

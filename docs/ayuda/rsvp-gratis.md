@@ -34,10 +34,29 @@ Versión: 10 nov 2026. Audiencia: vecino. Tema: eventos._
 ## English
 
 ### What it does
-On a **Free with RSVP** event, **I'm going** holds your spot. Pick **how many are going** (up to the organizer's limit, max 10). With a
-capacity the page shows **N SPOTS LEFT**; without one, **Optional RSVP**. Once going: **You are going · RSVP · N people**, **Not going**
-(frees the spot) and **Invite**. You can change the number until the day of the event (more people = the capacity is checked again).
-Nothing is charged: your RSVP only holds your spot, **until N minutes after doors open** (set by To'Latino; today 30). In-app notices
-(no SMS): when you RSVP, the day before and when doors open. If the event is full you see **Full**; when several people try for the last
-spots at once, the server counts them one by one and never goes over capacity. The organizer sees your first name and last initial and
-how many are coming, never your phone. Free entry with no list needs no RSVP.
+- On a **Free with RSVP** event, **I'm going** holds your spot. **How many are going?** you choose the people (up to what the organizer says,
+  10 at most) and the button says **I'm going · N**.
+- At the top you see **N SPOTS LEFT** if the organizer set a capacity, or **Optional RSVP** if there is no limit.
+- Once you have an RSVP: **You are going · RSVP · N people**, **I'm not going anymore** (frees the spot for another neighbor) and **Invite**
+  (share). You can change the number of people until the day of the event: if you ask for more, the capacity is counted again.
+- **Nothing is charged: your RSVP only holds your spot.** Your spot is held **until {N} minutes after doors open** (To'Latino sets it in
+  Settings; today 30). After that, whoever arrives gets in.
+- Notifications (in the app, no SMS): **«You are going to …»** when you RSVP, **«Tomorrow: …»** the day before and **«Doors are open …»** with
+  the time until which your spot is held.
+- Your RSVPs are in **My account › Saved › Events** (Going) and in **My tickets and RSVPs** above Events.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| No spots left | **Full**: the button does not let you RSVP. If someone removes theirs, a spot is freed. |
+| You ask for more people than are left | «Only N spots left. Lower the number of people or try another date.» |
+| Several people at once for the last spots | The server counts them one by one: whoever arrived first gets in; the others see «Full». It never goes over capacity. |
+| Doors + the hold time have already passed | «RSVP for this date is closed.» Your RSVP expires and your spot is freed. |
+| Free entry (no list) | There is no RSVP: you arrive and get in. |
+| The organizer paused it | «RSVP paused». |
+| You have not signed in | It asks you to sign in and you return to the event page. |
+
+### FAQ
+- **Do you charge me anything?** No. The RSVP is free and only holds your spot.
+- **What if I can't go?** Tap **I'm not going anymore**: the spot is freed for another neighbor.
+- **Does the organizer see my phone?** No. They see your name with the initial of your last name and how many people are going.

@@ -42,15 +42,42 @@ repartidores del propio negocio. Hecha para el teléfono. Versión: 11 nov 2026.
 - **¿Por qué en Android hay un aviso fijo?** Es lo que pide Android para seguir con la pantalla apagada, y te recuerda que estás compartiendo.
 
 ## English
+
 ### What it does
-Your location is shared **only during a delivery**: from **Heading to pick up** (or **Picked up, on my way**) until **Delivered**. The
-**business** of that order sees it from the start; the **customer** of that order from **Picked up**, and only where you are now (not your
-path). Nobody else; the To'Latino team can see a delivery route only with a written reason, which is logged. With the To'Latino Repartidor app
-it keeps working **with the screen off** (Android shows a fixed notice "Sharing your location with {business} and the customer · Delivery #…";
-iPhone shows the blue indicator). The app asks for **"While using the app"**, never "Always". Without signal, positions are saved on the phone
-and sent together when it is back. Positions are kept **14 days** and then deleted (only distance and time remain).
+- **Only during a delivery.** Your location is shared from when you tap **I'm going for the order** (or **Picked up, on my way**, if you did
+  not tap the first) until you tap **Delivered**. Before and after, nothing: not when you are «online» waiting, nor between deliveries.
+- **Who sees it:** the **business** of that order from when you start (to know when you arrive to pick up) and the **customer** of that order
+  from **Picked up** (only where you are going now, not where you have been). Nobody else. The To'Latino team can only see a delivery's route
+  with a written reason (for example, a claim), and it is logged.
+- **With the To'Latino Driver app** it continues with **the screen off**: on Android you see the fixed notice **«Sharing your location with
+  {business} and the customer · Delivery #…»**; on iPhone, the blue indicator at the top. The app asks for the **«While using the app»**
+  permission: never «Always».
+- **At the top of the app** the green banner **Sharing your location · Delivery #… · last 3:42 PM** appears. While there is a delivery, the
+  screen stays on.
+- **Without a signal** the positions are saved on the phone and uploaded together when it comes back; the banner says **No signal · sent when
+  back**.
+- **In the browser** (without the app) it is shared only with the page open and the screen on; with the screen off the browser does not allow
+  it. That is why the app is better.
+- **It is kept for 14 days** (to settle a delivery claim) and then deleted; only the distance and the time of the delivery remain.
+
 ### How to use it
-Open the assigned order, tap **Heading to pick up** (allow location "while using the app"), then **Picked up, on my way**, **I'm here** and
-**Delivered**. Sharing stops on Delivered, or as soon as the business cancels or reassigns the order.
+1. When the business assigns you an order, open it and tap **I'm going for the order**. The first time the phone asks about your location: the
+   app tells you beforehand what it is for; tap **Continue** and choose **Allow while using the app**.
+2. When you have the order: **Picked up, on my way**. From here the customer sees your dot on the map.
+3. **I arrived** and **Delivered** (if it is cash, **Collected $… · Delivered**). At that moment it stops being shared.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You say «Not now» or do not give permission | The delivery goes on the same, but the banner says you are not sharing and the business and the customer do not see the map. Tap **Share** on the banner to try again; if you said no, open the phone's Settings. |
+| The signal goes away | The positions wait on the phone and upload when it comes back. The customer sees «Last position N min ago». |
+| The app closes or the phone restarts | When you open the app with the delivery in progress, it starts sharing again by itself. |
+| The business cancels the order or hands it to another driver | It stops being shared right away (the server tells the phone). |
+| You tapped **Delivered** without a signal | The step is saved; when the signal comes back it is marked delivered and sharing stops. |
+| You turn off the phone's location | It is not shared; the customer sees the last position with its time. |
+
 ### FAQ
-**Am I tracked when I'm not delivering?** No. **Does the customer see my route?** No, only your current point from Picked up to Delivered.
+- **Do they follow me when I am not delivering?** No. Without a delivery started, the app neither asks for nor sends your location.
+- **Does the customer see my route?** No: only the dot where you are now, and only from Picked up to Delivered.
+- **Does it use a lot of battery?** It sends your position every 10 seconds or when you move (To'Latino adjusts it) and only during the delivery.
+- **Why is there a fixed notice on Android?** It is what Android requires to keep going with the screen off, and it reminds you that you are sharing.

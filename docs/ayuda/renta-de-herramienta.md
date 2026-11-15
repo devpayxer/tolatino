@@ -49,27 +49,41 @@ alfombras). En la pestaña **Tienda** ves el precio por día, el depósito y cu�
 ## English
 
 ### What it does
-Some home-service businesses rent tools by the day. The **Shop** tab shows the daily price, deposit and how many are left.
-- **Hold:** pick the days (1, 2, 3 or a week, which **pays 5 days**), the pickup day and your card. **Nothing is charged
-  today**; it is held **48 hours** from the pickup day.
-- **At pickup** (the business taps "Picked up"): the rent is charged and the deposit is **held** on your card (a hold is
-  not a charge).
-- **One more day** while you have it: one day is charged and the return date moves.
-- **On return**: the deposit is released. Late days come out of the deposit; damage is shown with a photo and amount and
-  you decide (or To'Latino reviews it if you disagree or do not answer in 72 hours).
-- **No longer needed** while on hold: nothing is charged and it goes back on the shelf.
+Some home-service businesses rent tools by the day (drain snake, ladder, pressure washer, carpet machine). In the **Store** tab you see the
+price per day, the deposit and how many are left.
+- **Reserve:** you choose how many days (1, 2, 3 or the week, which **pays 5 days**), what day you come to pick it up (today if it is still
+  open, tomorrow, Saturday) and the card. **Nothing is charged today**; they hold it for you for **48 hours** from the pickup day.
+- **When you pick it up** (the business taps «Picked up»): the rental is charged and the deposit is **held** on your card. What is held is not
+  a charge: it goes back to your card when you return it.
+- **One more day:** while you have it, from your rental; one day is charged and the return date moves.
+- **When you return it** (the business taps «Returned»): the deposit is released.
+- **No longer needed:** while it is reserved; nothing is charged and it goes back to the store.
 
+#### For the business
+- Today › **Rentals**: reserved ones (with the day they pick up), the ones people have (with the day they return and whether they are late)
+  and returned ones with something pending. In the detail: **Picked up**, **Returned**, **Returned with damage** and **Cancel the reservation**.
+- Your tool › **What you rent**: each item opens its editor: photos (up to 4; the first shows in your Store), name, what it includes,
+  **price per day** (whole dollars; the week costs 5 days), **deposit** (in steps of 5) and **how many you have**. In Transportation, also the
+  miles included per day and the extra mile. **Shows in your Store** turns it on or off (off = it cannot be reserved; what is already reserved
+  stays). **Add something to rent** opens a new one. **Remove from the list** takes it off (it stays in your history) and can only be done
+  when nobody has it reserved or rented. You cannot lower the units below those people have now. Your plans with their switch are there too.
+- To rent in the app you need your payout account connected (Payouts and plan). To'Latino's fee is the rentals fee.
+
+### What happens in each case
 | Case | What happens |
 |---|---|
-| 48 hours pass without pickup | The hold expires, the item returns to the shelf, nothing is charged. |
-| Your bank declines at pickup | Nothing is charged or held; it stays on hold until you change the card. |
-| Returned late | Each late day comes out of the deposit; the rest is released. |
-| Returned damaged | Photo and amount first; you accept or disagree (To'Latino reviews). |
-| Kept more than 7 days | The deposit hold renews automatically. |
+| The 48 hours pass and you do not pick it up | The reservation expires, goes back to the store and we notify you. Nothing is charged. |
+| No units left | The Store says «Rented today» and does not let you reserve. Two people at once for the last one: one of them gets it. |
+| You already have it reserved or rented | It does not let you reserve the same tool twice. |
+| Your bank does not allow the charge at pickup | Nothing is charged or held; it stays reserved. We notify you so you change the card in your rental; we notify the business when you do. |
+| You return it late | The day after the return day we notify you once. When you return it, each late day is deducted from the deposit (up to the deposit) and the rest is released. Without a deposit, the late days are charged to the card. |
+| It comes back damaged | The business shows you the damage **with a photo and an amount** (up to what is left of the deposit). You decide: **It's fine** (it is deducted, the rest goes back) or **I disagree** (To'Latino reviews it). If you do not respond in 72 hours, To'Latino reviews it too. The deposit stays held meanwhile. |
+| You have it more than 7 days | The card releases holds after 7 days: the deposit renews itself at 6 days and 20 hours. If the bank no longer allows it, the business is notified. |
+| The business cancels the reservation | We notify you. Nothing is charged. |
+| The business does not charge in the app | It cannot be reserved in the app: you have to call. |
 
-### For the business: what you rent
-In Your tool › **What you rent**, each item opens its editor: photos (up to 4; the first shows in your Shop), name, what's
-included, **daily price** (whole dollars; a week costs 5 days), **deposit** (in $5 steps) and **how many you have**. For
-Transportation, also the miles included per day and each extra mile. **Shows in your Shop** turns it on or off (off = it can't
-be held; existing holds continue). **Add something to rent** opens a new one. **Remove from the list** takes it out (it stays in
-your history) and only works when nobody has it on hold or rented. You can't set fewer units than people have right now.
+### FAQ
+- **Do you charge me anything when I reserve?** No. It is charged when you pick it up.
+- **Is the deposit a charge?** No, it is a hold: the money does not leave your account and is released when you return it.
+- **Can I keep it more days?** Yes: «One more day» in your rental, or call the business.
+- **Who decides whether there was damage?** First you, looking at the photo. If you disagree, To'Latino reviews it with both of you.

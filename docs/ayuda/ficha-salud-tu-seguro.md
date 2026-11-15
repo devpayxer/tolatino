@@ -26,6 +26,23 @@ _Pantallas: la página de un negocio de Doctores › Servicios y Resumen. Versi�
 ## English
 
 ### What it does
-Add your insurance and every service shows what you pay with it (or the uninsured price). If they do not take it, we say so
-and show the uninsured price; it never blocks you. Only verified licensed providers can be picked. The walk-in wait shows only
-if updated in the last 3 hours. We never see your medical records.
+- **Your insurance:** you add your insurance (Medicaid, Medicare, CHIP, through work or private, or «No insurance») and on every service we
+  tell you whether they accept it and how much you pay: «$0 · WITH YOUR INSURANCE», «Copay · DEPENDS ON YOUR PLAN», «From $20 · BASED ON YOUR
+  INCOME» or «$85 · NO INSURANCE». If you signed in to your account, it is saved (My account › My insurance); if not, it works **only for
+  this visit**.
+- **If they do not accept it,** we tell you and show you the price without insurance. **It never blocks you.**
+- **The service sheet:** price, what is IMPORTANT, your insurance and **With whom?**: only providers with a verified license, with their
+  language («SPEAKS SPANISH», «FREE INTERPRETER»). The front desk is not selectable.
+- **Walk-in:** if the clinic updated its wait in the last 3 hours, you see «WALK-IN · NOW · Wait ~25 min · 6 MIN AGO». If it has not updated
+  it, it is not shown (nothing is made up).
+- **Summary:** insurance, price without insurance, languages, payment and «How it works».
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Medicaid or CHIP that they accept | «$0 · WITH YOUR INSURANCE». |
+| Private insurance that they accept | «Copay · DEPENDS ON YOUR PLAN». |
+| Insurance that they do not accept | «They do not accept …· $85 without insurance». You can still request the appointment. |
+| No insurance and the clinic charges based on income | «From $20 · BASED ON YOUR INCOME». |
+| Emergency | The page always says: call 911. To'Latino does not give medical advice. |
+| Booking the appointment | «Choose a time» opens Doctors Booking (see `cita-con-doctores.md`). If the clinic does not take appointments in the app: «Call to book». |

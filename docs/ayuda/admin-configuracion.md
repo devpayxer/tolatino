@@ -145,29 +145,128 @@ many **rejected attempts per minute** it takes before answering «wait» (60) an
 
 ## English
 
-- **What it does:** platform deadlines and limits in one place (Community limits per day, minutes to edit a post, days to appeal, longest
-  poll, translations per hour, daily digest hour, proposed coupon days; points cap; the deadlines of clinics, professionals, nightlife, education, kids, sports, churches, real estate and cars). Each has a unit, a factory value,
-  a minimum and a maximum, and who changed it last. **CHANGED** = not the factory value. **READ ONLY** = read from here but not editable yet
-  because a screen tells people the number. The dealer fee cap is changed in Catalog (it also lowers dealers above it).
-- **How to use:** tap the value → new whole number → reason → **Save**. Applies now in every city; logged before → after with the reason.
-- **Each case:** out of bounds → refused («Between 5 min and 1,440 min»), the database also refuses it; not a whole number → refused;
-  read only → says why; not Admin → view only. Every server sees the change right away (the database tells them); one that missed that
-  notice sees it within 15 seconds. Per-minute caps (errors, Wallet, the driver's position) are counted across all servers together. In
-  **Apps**, **months each analytics event is kept** (1–36, **13**, what the store listings say): after that the sweep summarizes the month by
-  day and city and drops the individual events; if you change it, change the stores' data inventory too.
-- **FAQ:** lowering the edit minutes applies from now on; to go back, type the factory value.
+### What it does
+- It gathers in one place the **deadlines and limits of the platform** that used to be written into the code: those of the Community and those
+  of Doctors, Professionals, Night, Education, Kids, Sports, Churches, Real Estate and Cars. Each value has a **unit**, a **factory value**, a
+  **minimum and maximum**, and who changed it last.
+- By section: **Community** (posts, comments, votes, new conversations and reports per person per day; minutes to edit a post; days to
+  appeal; the longest a poll can last; «See translation» per hour; time of the daily summary; days proposed for a coupon) · **Gamification**
+  (daily points cap) · **Doctors and Professionals** · **Night** · **Education · Kids · Sports** · **Churches · Real Estate · Cars** ·
+  **Events** (private event: factory deposit 25 %, free cancellation 72 hours, the restaurant replies within 24 hours, a proposal is valid for 24
+  hours, minimum notice 3 days, up to 180 days ahead, 3 open requests per person, 10 proposals and 3 «ask for a change» per request; the
+  cancellation deadline is written on each proposal when it is sent).
+- **CHANGED**: the value is no longer the factory one.
+- **READ-ONLY**: the value is already read from here, but it cannot be changed yet because some text the person sees states the number (for
+  example «24 h»). The row says which one. It opens once that text reads the value (noted in LAUNCH-CHECKLIST).
+- **Changed on its own screen**: the dealer fee cap goes to Catalog › Dealer fee (lowering it lowers the dealers who are above it).
+- **Auto-hide by reports** shows here and is changed in Content › Auto-moderation, together with the switch of its rule.
+
+### How to use it
+1. Tap the value. 2. Type the new value (a whole number). 3. Choose or type the reason. 4. **Save**.
+- It applies **from now on in all cities**. What already happened does not change (an edited post stays edited).
+- It goes into the audit trail with **before → after**, who and the reason.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Value within its limits | It is saved, applies at once and goes into the audit trail. |
+| Outside its limits (e.g. 2 min to edit, minimum 5) | «Between 5 min and 1,440 min.» It is not saved. The database rejects it too. |
+| Not a whole number | «Type a whole number.» |
+| The same value | «It already has that value.» |
+| READ-ONLY row | «It cannot be changed here yet: …» with the reason. |
+| You are not an Admin | You see the values; «Only an Admin changes settings.» |
+| Daily limits and translations | They are also changed in Content › Auto-moderation: it is the same value and the same audit trail. |
+| Several servers | All of them see the new value right away: the database tells them about the change. If a server missed that notice (its connection restarted), it sees the value within 15 seconds at most. |
+| Per-minute caps (errors, Wallet, the driver's position) | They are counted across all servers together: a cap of 600 per minute is 600 in total, not 600 on each server. |
+
+### FAQ
+- **Does lowering the minutes to edit affect what is already posted?** From that moment on, only what is within the new deadline can be edited.
+- **How do I go back to the factory value?** Type the factory value shown in the row (reason «Back to default»).
+- **Why are there values I cannot change?** Because a screen tells the person the number; changing it here would make that text false.
+
+### Support
+The **Support** section: business hours for the first reply to a case (8), days the team works (5 = Monday to Friday; 6 up to Saturday; 7
+every day), the hour it starts (9) and ends (18), cases one person opens per day (5; a safety case is never held back), the **Support role
+refund cap** per case (5000 cents = $50; Finance or an Admin refund more) and days to reopen a resolved case (7). The Support screens, My
+account (also Notifications › Support), the dashboard and El Compa state the hours with these values (at the top of the section it shows how
+they say it: «The team is available Monday to Friday, 9 AM to 6 PM»); the database computes each case's deadline with them, and it reads the
+cap at the moment of the refund.
+
+### El Compa
+The **El Compa** section: the monthly spending cap (10000 cents = $100; 0 = no AI), the warning before the cap (80 %), the longest wait for
+the AI (8000 ms; after that the fixed rules answer), the longest reply, messages per person per hour (20) and per day (60), turns per
+conversation (20), closing a conversation (24 hours), expiry of a prepared action (15 minutes), operations of the person that El Compa sees
+(10), **how long conversations are kept (12 months; after that, numbers only)**, the limits for auto-replies, for the copilot and for WhatsApp
+and SMS (one-use link, messages per day, retention of the incoming log), and the help it reads (chunks and threshold). Below, **MODEL FOR EACH
+ROLE**: the model for neighbors, dashboard and replies (Claude Haiku 5.5) and the team copilot's model (Claude Sonnet 5.5). You choose among
+the models turned on in the price list (never the simulator); a model does not have two roles; each one's price is not written in the code.
+Only an Admin, with a reason and an audit trail; it applies from the next call. «If you do not reply in» for auto-replies is still
+**READ-ONLY** (today they only answer outside the business's hours).
+
+### For El Compa
+<!-- solo-equipo -->
+- Explain what each value does and its current value (the screen says it); never change a value for someone: only an Admin, with a reason.
+
+### Events
+The **Events** section is in subgroups: **Publish and review** (24-hour review, dates in a series 52, days ahead 180, photos 6, consecutive
+days 30) · **RSVP and sales** (an RSVP holds the spot for 30 minutes, tickets held while you pay 8 minutes, 10 per order, 20 per person and
+date, code attempts, holds at the same time) · **After purchase** (transfer up to 2 hours before, cancel with a refund up to 24 hours before,
+30 minutes to pay for the waitlist spot, 50 comps per date, 10 transfers per day) · **Changes and payment to the organizer** (3 notices per
+date, payout day, holding the first event from $2,000, cancellations that open a case and their deadline, adjustment, instant refunds) ·
+**Notices and reminders** (time of the day-before reminder, 10 AM; sold-out notice to the organizer, 90 %) · **The door** · **Private event** ·
+**Trust** (orders from one device and in how many minutes; tickets received and passed on to someone else). Each text the person sees reads
+the value (for example «we hold tickets and a table for 8 minutes», «it turns on 2 hours before»). **Event payout day** (1 = Monday … 7 =
+Sunday; factory 2 = Tuesday) can now be changed here: the dashboard (Events and Payouts), Settlements and the help state the day of the key
+(«it reaches you on Tuesday after the event»). **Bank payouts · the day** stays fixed (Tuesdays, a founder decision). The Education, Kids and
+Sports limits (reply, waitlist offer, membership cancellation, deleting a child's data) and the Visits and Churches limits (reply, «It
+happened», deleting private data) can now be changed here too: their screens and notices show this value.
+
+### Apps
+The **Apps** section shows each app's minimum build and notice build for every platform (To'Latino, Business, Driver and Door, on iPhone and
+Android). They are changed in **System › Apps** (row «Changed on its own screen»), because there it is also checked that the notice build
+stays above the minimum. See the help «Super Admin: Apps».
+
+Also in **Apps**, the **driver's location during delivery**: how often they send their position (5–60 s, 10 by default), the minimum distance
+(25 m), the **days it is kept** (1–90, **14**: to settle a claim; after that only the distance and the time remain), whether **the customer
+sees the map** from «Picked up, on my way» (1) or never (0), the **impossible speed** (a faster position is rejected) and when a position is
+**stale**. The route of a delivery is seen in **Transactions › See route**, only by writing the reason, which goes into the audit trail.
+
+And the **app pipeline**: how many times per hour the team can **request a build** (1–20, **4**), how many **rejected attempts per minute** it
+takes before answering «wait» without checking further (10–1000, **60**) and the **maximum size** of a file the CI uploads (10–500 MB,
+**200**). See «Super Admin: the app pipeline».
+
+And the **store listings and review accounts**: how many times per hour a review account can ask for its fixed code (1–30, **10**) and how
+many times per day the listings can be uploaded as drafts to the stores (1–20, **6**). See «Super Admin: store listings and review accounts».
+
+And **analytics**: how many **months each event is kept** (1–36, **13**, what the store listings say). After that time the sweep summarizes
+the month by day and city and drops the events one by one: the Analytics figures stay, what belongs to each person does not. If you change
+it, the stores' data inventory (System › Apps) changes too.
+
+The **per-minute caps** of this section (errors per minute and per phone, Wallet requests per address) are counted **across all servers
+together**, and what the error cap discards is counted over the last 24 hours (System › Apps).
 
 ### Night: deadlines and the 6 PM cutoff
-- **Night** is now changed here: how long the venue takes to answer a table (`noche_responder_min`), how long the table is held (`noche_mesa_guardada_min`), how long the «now» line lasts (`noche_fila_viva_min`) and the **free-cancellation cutoff** (`noche_corte_min`, 360 = 6 PM; it never falls less than 2 h before arrival).
-- Each booking copies the cutoff when it is made: a change only affects new ones. The booking shows the minutes the venue really has left.
+- **Night** can now be changed here: how long the venue has to answer a table request (`noche_responder_min`), how long the table is held
+  (`noche_mesa_guardada_min`), how long the «now» queue lasts (`noche_fila_viva_min`) and the **cutoff for free cancellation**
+  (`noche_corte_min`, 360 = 6 PM; it never falls below 2 hours before arrival).
+- Each reservation copies the cutoff when it is booked: a change only affects new ones. The reservation shows the minutes the venue really has left.
 
-**Why are other deadlines still «read only»?** Because their on-screen texts still say the number written out («24 h», «30 days»); they open when each text reads the value.
+**Why do other deadlines remain «read-only»?** Because their on-screen texts still state the number written out («24 h», «30 days»); they open
+once each text reads the value. The ones for Education, Kids and Sports (replying, the waitlist offer, ending a membership, deleting the
+child's data) and for Visits and Churches (replying, «It happened», deleting private data) can already be changed here too: their screens and
+notices show the value from here.
 
-### Home and Auto, and the Free cap
-**Home and Auto** (new section): photo pre-estimate reply (`sol_pre_h`, 24 h), quote from up to 3 reply (`sol_pq_h`, 48 h), 24/7 emergency
-accept (`sol_em_min`, 15 min) and the auto and home hold (`apartado_h`, 48 h; stores pick their own). Each request and hold keeps the limit it
-was sent with. **Money › Free plan · online orders or bookings a month** (`free_ops_cap`, 10; 0–1000): once reached, the page shows Call. The
-license review notice (`lic_aviso_dias`, 14 days) is also what Analytics says.
+### New keys: the Driver and «They refunded me»
+- **Driver › Offer only · offers before notifying the business** (`rep_auto_intentos`, 3; 1–10).
+- **Driver › Scheduled order · offered and announced before it is ready** (`rep_programado_min`, 30 minutes; 10–120).
+- **Churches, Real Estate and Cars › «They refunded me» closes by itself if nobody answers within** (`ayuda_devuelto_dias`, 14 days; 7–60).
 
-### New keys: Driver and «They refunded me»
-`rep_auto_intentos` (3), `rep_programado_min` (30 min) in Driver, and `ayuda_devuelto_dias` (14 days) in Churches, Real Estate and Car dealers.
+### Home and Auto, and the Free ceiling
+- **Home and Auto** (new section): **Pre-estimate with photos · hours to reply** (`sol_pre_h`, 24 hours; 2–72), **Quote from up to 3 · hours
+  to reply** (`sol_pq_h`, 48 hours; 12–120), **24/7 emergency · minutes for someone to accept** (`sol_em_min`, 15 minutes; 5–60) and **Hold in
+  Auto and Home · hours it is held** (`apartado_h`, 48 hours; 12–168; Stores choose their own in their tool). Each request and each hold keep
+  the deadline they were sent with: a change only affects new ones. The screens and notices state the value.
+- **Money › Free plan · online orders or appointments per month** (`free_ops_cap`, 10; 0–1000): the ceiling for a Free business (online
+  orders, appointments, reservations and requests, per month of its city). When it is reached, its page shows Call. The dashboard (Plan, Menu,
+  Services) and the Super Admin (Plans, Catalog) state the value.
+- **Licenses:** the review notice (`lic_aviso_dias`, 14 days) is also stated by Analytics («EXPIRING IN 14 DAYS»).

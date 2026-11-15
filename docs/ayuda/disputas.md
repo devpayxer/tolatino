@@ -46,9 +46,41 @@ already paid it is deducted once from the next payout (or reversed after 14 days
 
 ## English
 
-When a customer disputes a To'Latino card charge with their bank, Stripe tells us and a case opens in **Bank disputes**
-(Admin and Finance) with the order, amount, customer, the bank's deadline, the reason and the evidence we already have
-(what was ordered, from which account, when it was accepted, ready and delivered or picked up, the address, messages and
-refunds). **Respond with evidence** sends a summary plus that evidence; **Accept refund** closes it and returns the money.
-The business is notified, sees DISPUTED in Payouts and gets the result. In the sandbox, Transactions has "Simulate
-dispute" and the bank's result.
+### What it does
+- When a customer disputes with their bank a card charge made on To'Latino (a chargeback), Stripe tells us. A case opens in the **Bank
+  disputes** queue (Admin and Finance) with: the order, the amount, the customer, the **bank's deadline** and the reason, plus **the evidence
+  we already have**: what they ordered, from which account, when the business accepted it, when it was ready, delivered or picked up, the
+  delivery address, the messages and the refunds.
+- **Respond with evidence**: the team writes a summary for the bank (preferably in English) and it is sent with that evidence. The bank decides
+  later; the result arrives on its own.
+- **Accept refund**: the dispute is closed and the money goes back to the customer.
+- The **business** receives the notice («A customer disputed a charge…») and sees it in Payouts with the label IN DISPUTE; it does not have to
+  do anything. At the end it gets the result (won or lost).
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| A dispute arrives | Case in the queue (high priority), notice to the owner, the charge shows «in dispute». |
+| Responded | «Bank reviewing». It can no longer be responded to again. |
+| The bank sides with the business | DISPUTE WON; the money stays. Notice to the owner. |
+| The bank sides with the customer / it is accepted | DISPUTE LOST or ACCEPTED; the money goes back to the customer. |
+| Stripe does not accept the response | Nothing changes and it says so; it is tried again. |
+| The same dispute arrives twice | It is saved only once (it does not open two cases or send two notices). |
+| Who decides | Permission for queues and for money is needed (Admin, Finance). Everything goes in the History with the reason. |
+| Sandbox | There is no bank: Transactions › «Simulate dispute» and, once responded, «Bank: business wins / customer wins». |
+
+### FAQ
+**Does the business lose money?** If the bank sides with the customer, that charge goes back to the customer.
+**What can the business do?** Nothing required: To'Latino responds with the evidence. If it has something more (a photo of the delivery, a
+conversation), it can write to Support.
+
+### Event ticket disputes
+- A chargeback on a **ticket charge** (the charge belongs to To'Latino) goes into the same **Bank disputes** queue. The **evidence** comes
+  from the ticket: the order B-…, the event, the date and the place, each ticket with its status (valid · used at the door · refunded ·
+  transferred), from which account it was bought and what was already refunded (and, if it got in, the time and the door of the scan). Never
+  phone numbers.
+- **While it is open**, the payout for that date stays **HELD (dispute)** and the organizer is not paid. When it closes it is released on its
+  own.
+- **Lost or accepted**: that charge is not paid to the organizer (and To'Latino does not charge its fee on that charge). If the date **had
+  already been paid**, what was paid from that charge is **deducted once** from their next payout; with no other payout in 14 days (Settings),
+  it is reversed from the transfer. To'Latino absorbs the cost of the Stripe chargeback.

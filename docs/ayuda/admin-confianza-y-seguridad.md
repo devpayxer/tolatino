@@ -72,17 +72,66 @@ case** sends it to Queues › User reports.
 
 ## English
 
-- **Trust & safety** (`/admin/confianza`): overview with queues and how it works, sanction catalog with the Community effect of each,
-  sanctioned people, appeals, fraud (vote and follower rings from one device, review bursts, devices with 3+ accounts, blocked devices) and
-  privacy (read-only).
-- **Queues:** Community post/comment reports (keep — restores if auto-hidden — or hide with optional sanction; reporters get the result),
-  user reports (no action or sanction), Community photos the model flagged or could not check (hidden until you decide), appeals (lift or
-  uphold; **if you hid or sanctioned it you cannot decide it** — the database enforces it too).
-- **Content › Auto-moderation:** rule toggles with their text and values (phones are always on), term lists ES/EN (turned off, never
-  deleted), daily limits; everything with a reason and audit trail. The photo rule shows whether our own model responds.
-- **Content › Auto-moderation › See translation (our own translator)**: whether our own translator (Spanish ↔ English, on our
-  server) **responds** and how fast, or why not («not configured here», «not responding», or «stopped calling it for a minute» after
-  repeated failures); and the **per-person hourly translation limit** (default 60; «Change» with reason and audit). The Super Admin
+### What it does
+- **Overview:** open reports, appeals, active sanctions and 30-day fraud; what waits in each queue (including what is past its deadline) and how it
+  works: a report or a rule → a person decides with a reason → the person is notified + a 14-day appeal → another person reviews it.
+- **Queues › Content reports (a Community post or comment):** the text, the photos, the status (visible while you decide; «Hidden by reports
+  (auto)» if it hid itself), the reports (reason, note, who, rank) and what the rules flagged. **Keep** (if it was auto-hidden, it comes back
+  and its author gets the notice) or **Hide** with a reason and an optional sanction. The people who reported get the result.
+- **Queues › User reports:** the person (360°), their numbers (posts, hidden items, reviews with no transaction in 24 hours, devices and
+  other accounts on them), the reports, what rev5 and the account network flagged, and their history. **No action** or **Sanction**.
+- **Queues › Flagged media (Community photos):** the photo that our own model flagged or could not check. It is **not shown** until you
+  decide: «It's fine» publishes it; «Remove photo» notifies the person with the reason and opens the appeal.
+- **Queues › Appeals:** who is appealing, what, the reason they were given, what they wrote, what is being appealed and their history.
+  **Lift** (the content comes back or the sanction ends; open cases on that content are closed) or **Uphold** (final). **If you hid or
+  sanctioned it, you see a lock and cannot decide it** (the database does not allow it either).
+- **Sanction catalog** with the effect of each on the Community: warning (nothing), silence for 7 days (cannot post, comment or write; can
+  still read, vote and report), block posting for 30 days (cannot post; can still comment), suspend for 14 days and ban (cannot get in; only an
+  Admin can ban).
+- **Fraud and blocks:** vote and follower rings from one device, review bursts (30 days), devices with 3 or more accounts (90 days) and how
+  many devices are blocked (they are blocked in Users › 360°).
+- **Privacy:** read-only.
+- **Content › Auto-moderation:** the rules with their switch and their text: Phones (always on: the database enforces it), Addresses of
+  people, Repeated links and sales (3 in 24 hours), Discriminatory language (lists), Review bursts (5 in 10 minutes), Photos (our own model;
+  it says whether it **responds** and, if it is off or not responding, what happens to photos) and Auto-hide by reports (5 different people
+  in 24 hours, accounts older than 72 hours). «Change values» edits their numbers. **Term lists** ES/EN (Hate · Scam · Immigration ·
+  Self-harm): add or turn off (they are never deleted). **Daily limits** (posts, comments, votes, new conversations, reports). Everything
+  with a reason and an audit trail.
+- **Content › Auto-moderation › See translation (our own translator)**: whether our own translator (Spanish ↔ English, on our server)
+  **responds** and how fast, or why not («not configured here», «not responding», or «stopped calling it for a minute» after several
+  failures); and the **cap on translations per person per hour** (default 60; «Change» with a reason and an audit trail). The Super Admin
   **always sees the original**: there is no «See translation» here (see `ver-traduccion.md`).
-- Five accounts on one phone count as one person for auto-hide. A photo is never published unchecked: if the model is down it waits for a
-  person.
+
+### What happens in each case
+- **Five accounts on the same phone report:** they count as one person; nothing is hidden. If they come from one device and vote for
+  someone, the votes do not count and the sweep opens «Possible account network».
+- **The photo rule is on and the service does not respond:** each new photo waits in Flagged media (closed, never published without
+  review). The screen says so.
+- **You hide something that was already auto-hidden:** now you decided it; another person decides the appeal.
+- **Self-harm:** priority case; the person already saw the 988 line. Write to them with care.
+- **Immigration:** priority. Warnings about enforcement operations are allowed without photos of people, license plates or addresses;
+  pointing out someone's status gets hidden.
+- **A sanction on someone on the team:** it is not applied from here (System › Team).
+
+### FAQ
+- **Can I read the messages between two neighbors?** Only with an open report on that conversation, or the appealed message while the appeal
+  is open.
+- **Why can't I decide an appeal?** Because you hid or sanctioned that item; another person decides it.
+- **Can a flag or an appeal be deleted?** No: they are insert-only.
+
+### For El Compa
+<!-- solo-equipo -->
+- Never say who reported. Never promise the result of an appeal.
+- The appeal is decided by another person on the team, within 72 hours, once.
+
+#### Settings
+- The **daily limits** and the **hourly «See translation» cap** in Content › Auto-moderation are values from **System › Settings**: you change
+  them on either screen, always within their limits and with the before → after audit trail. The **days to appeal** (14 by default) are too;
+  Queues and Trust & safety show the current value.
+
+### Events and tickets
+**Fraud › EVENTS AND TICKETS · 30 DAYS:** burst orders from one device (how many and in how many minutes: Settings › Events › Trust),
+tickets received by transfer and passed on to someone else (chain transfers: possible scalping), duplicate entries at the door (two offline
+door staff) and ticket chargebacks (90 days). The signal does not sanction on its own: **Open case** (whoever edits people) sends it to
+Queues › User reports with the «Events signal» flag; a person decides it with the sanction ladder, the notice and the appeal. The same card on
+several accounts needs the Stripe card fingerprint (LAUNCH-CHECKLIST).

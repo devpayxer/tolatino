@@ -37,9 +37,34 @@ documento · No me contesta · Mal trato · Otra cosa.
 
 ## English
 
-From your consultation: **Case help**. Allowed while the office has your case (hired) and up to 7 days after it ends.
-Reasons: charged more than the written total, offered something they could not legally do, did not do what was agreed,
-missed a deadline or lost a document, does not answer, treated badly, something else. Photos are private and deleted 90 days
-after closing. "Not legally allowed" sends all the office's licenses back to To'Latino's license review with high priority;
-you can also report immigration fraud to the Pennsylvania Attorney General. You can ask for a refund (from the office),
-for them to finish what was agreed at no extra charge, or just let them know.
+### What it is
+If something went wrong with an office (lawyer, accountant, notary, filing agent…) that you hired through To'Latino, you ask for help from your
+consultation: **Case help**. The office replies within 24 hours; if it does not, or if you do not agree, To'Latino reviews it within 48
+hours.
+
+### When you can
+- While the office has your case (hired), at any time.
+- When it has ended (case finished, or consultation only), up to 7 days after. One request per consultation.
+
+### The reasons
+Charged more than the written total · Offered something they could not legally do · Did not do what was agreed · Missed a deadline or lost a
+document · Does not answer me · Bad treatment · Something else.
+
+### Photos
+- Of the receipt or the written total: **required** if the reason is a charge; optional for the rest.
+- **Private**, as in Doctors: only you, the office and To'Latino see them; they are deleted 90 days after the case is closed.
+- Cover your case numbers if they appear.
+
+### «Offered something they could not legally do»
+- To'Latino checks **all the licenses** of that office again against the official registry (with priority).
+- If you were offered an immigration filing by someone who is not a lawyer or an accredited representative, you can also report it to the
+  Pennsylvania Attorney General.
+
+### What you can ask for
+- **Refund me** — the office refunds you, the way you paid (in Professionals nothing is charged in the app).
+- **Finish what was agreed** — without charging you more.
+- **I just want to let you know.**
+
+### FAQ
+- **Do they guarantee a result?** Nobody can guarantee a result; what was agreed in the written total, yes.
+- **Does the office see my name?** Yes: it is your case with them. What it is about is never published.

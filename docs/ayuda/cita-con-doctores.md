@@ -38,6 +38,35 @@ _Pantallas: la página de un consultorio › un servicio › «Elegir hora» (Bo
 ## English
 
 ### What it does
-Pick your insurance (or “No insurance”), who it is for and optionally the reason and a note; choose the day, time and provider;
-review and send. You pay $0 today and the copay or uninsured price at the visit. The reason is seen only by the clinic, the note
-is encrypted and deleted 30 days after the visit, and alerts never name the clinic or the service.
+1. **Your insurance** (required): you pick one from your account or «No insurance». We tell you whether they accept it; if not, you can still
+   request the appointment and pay the price without insurance. **Who is it for?** (me, my son or daughter, someone else) and, if you want,
+   **What is the appointment for?** and a **note**.
+2. **Day and time**, and with whom (only providers with a verified license, or «the first one free»). Today, from 1 hour from now (by video,
+   30 minutes).
+3. **Review and send**: today you pay **$0**; at the visit you pay your copay or the price without insurance. If the provider does not speak
+   Spanish, you can ask for a **free interpreter** (it is your right).
+
+### Your privacy
+- **The reason** is seen only by the clinic of that appointment; it never appears in reviews.
+- **The note** is stored **encrypted** and deleted 30 days after the appointment. Do not send photos of documents or results.
+- **Notifications** (SMS, Notifications) do not say the name of the clinic or the service: «Your appointment on Thu 24 at 3:40 PM is confirmed.
+  Details in the app.»
+- To'Latino does not see your medical history or give medical advice. If it is an emergency, call 911.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You sent the request | «They are checking your insurance and will confirm in about 30 min. Nothing has been charged.» |
+| You have 3 requests waiting | You cannot send another until they answer you. |
+| The time was taken while you were choosing | It asks you for another time. |
+| The clinic only sees its own patients | You can only request if you already had an appointment there. |
+| Changing the time | Cancel for free and request another: the clinic checks your insurance again. |
+| The clinic does not accept your insurance | Your time stays held for **2 hours**. You choose: **Continue without insurance · $85** (it is confirmed), **Change insurance** or **Find another clinic** (they cancel for free). If you do not choose, the time is released automatically. |
+| Confirmed | «Arrive 15 minutes early with your insurance card and an ID.» By video: the link arrives in your Notifications. |
+
+### For the clinic (Dashboard › Today › the appointment)
+- You see the insurance (with the last 4 digits), who it is for, what they pay at the visit, the reason, whether they asked for an interpreter
+  and the **private note** (deleted 30 days after the appointment).
+- **Confirm · Another time · I can't** and, if you do not accept that insurance, **We don't accept their insurance**: the patient decides within
+  2 hours.
+- On the day of the appointment: **Arrived · being seen**, **Finished** or **Did not show**.

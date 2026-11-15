@@ -41,13 +41,35 @@ acepta, se devuelve solo a su tarjeta.
 ## English
 
 ### What it does
-**El Compa first:** tapping **Help** opens El Compa (To'Latino's AI assistant) over your item with fixed options; **Something went wrong** (on
-tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, the monthly AI cap is reached, or you already opened
-a request, you come straight here.
-
-If something went wrong with a party or trip booked on To'Latino, ask from “Your party” / “Your trip” › **Help** (up to 7 days
-after). The business replies within 24 hours; otherwise, or if you disagree, To'Latino reviews it within 48 hours.
+- **El Compa first:** when you tap **Help**, the **El Compa** sheet (To'Latino's AI assistant) opens over your booking, with fixed options;
+  **Something went wrong** (on tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, if To'Latino has
+  reached the monthly AI cap, or if you already opened a help request, you come straight here. See `el-compa.md`.
+If something went wrong at a party or a trip booked through To'Latino, you ask for help from «Your party» or «Your trip» › **Help** (up to 7
+days after). The business replies within 24 hours; if it does not reply or you do not agree, To'Latino reviews it within 48 hours.
 
 ### Private event
-From “Your private event” › **Event help**, after the event (up to 7 days). Same flow: the restaurant replies within 24 h, otherwise
-To'Latino reviews it; card refunds come from the deposit charged in the app (never more than was charged).
+From «Your private event» (`/privado/EP-…`) › **Event help**, once it has happened (up to 7 days). Reasons: it was not as agreed (photo) ·
+something agreed was missing (photo) · they charged more than agreed (photo) · bad treatment · the deposit was not deducted (photo) · something
+else. What you want: **Refund me** · **A discount** · **I just want to let you know**. The restaurant replies within 24 hours; if not,
+To'Latino reviews it (Queues › Support). What is refunded to the card comes out of the deposit charged in the app (never more than was charged).
+
+### Party
+Reasons: they did not show up · they arrived late · it was not as agreed (photo) · something in the package was missing (photo) · they
+charged more than the package (photo) · they damaged something or did not pick up (photo) · something else. What you want: **Refund me**
+(what was missing or overcharged) · **A discount** (you agree on it with the business) · **I just want to let you know**. What was charged in the app
+(the deposit) goes back to your card; what you paid to the business, the business returns to you.
+
+### Trip
+Reasons: they charged more than the fixed price (photo of the receipt) · left or arrived very late · did not pick me up · **unsafe driving** ·
+lost or damaged my luggage or box (photo) · something else. **Unsafe driving goes straight to To'Latino with priority** (it does not wait for the
+business and does not count toward the daily limit of requests). What you want: a refund · a replacement · just let you know.
+
+### For the business
+The request shows up in Dashboard › Today («Help awaiting your reply · 24 hours») and in the detail of the party or trip: **They are right** ·
+**Propose something else** (with the amount to refund, up to what was charged in the app) · **I can't**. If you propose an amount and the customer
+accepts it, it is refunded to their card automatically.
+
+### FAQ
+- **Does asking for help delete my review?** No.
+- **How much can be refunded through the app?** Up to what was charged in the app (the party deposit or the trip price).
+- **What happens if the business does not reply?** After 24 hours it goes to To'Latino automatically.

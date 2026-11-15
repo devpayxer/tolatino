@@ -59,17 +59,57 @@ boletos. Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: negocio. Tema
 ## English
 
 ### What it does
-**DURATION** in the editor: **One day** · **Several days in a row** · **Repeats**. **Repeats**: every week (pick **WHICH DAYS**; the first date’s day
-is always on), every 2 weeks, or every month (the same weekday of the month, or **the last** one). **HOW MANY DATES** is capped by Settings (52
-today). To'Latino creates the dates up to the publishing window (180 days today) and the rest are created automatically as they come. **Each date
-has its own tickets and its own RSVP spots.** **Several days in a row** (2–30): different hours each day, **Create one ticket per day + pass**
-(an all-days pass at 20 % off, editable), **VALID FOR** one day or every day (one entry per day), and a **daily capacity** that counts passes and
-that day’s tickets; multi-day events do not sell tables. On the event page: **DATE YOU ARE VIEWING** (everything below is for that date), **DATES**
-with **Skip** (only with nobody in) / **Add it back**, **WHO PERFORMS · THIS DATE ONLY**, **SOLD PER DAY**, and for multi-day events **BY DAY ·
-HOW MANY ARE GOING**. To change every upcoming date, use Edit (an unverified organizer’s change goes to review; dates with people keep their
-time); to change one date, use “Change {date}” (attendees get a text and buyers choose to keep it or get a full refund). Cancel **only that
-date** (refunds only that date’s buyers) or **the whole series**; a multi-day event is cancelled as a whole. Clients see a series once in lists
-(“EVERY THURSDAY · +7 DATES”), the dates on the page, and on multi-day events the days, hours and “Valid only on …”. Payouts stay per date, the
-Tuesday after each date (multi-day: after the last day).
+- **DURATION** in the editor: **One day** · **Several days in a row** · **Repeats**.
+- **Repeats**: **every week** (you choose **WHICH DAYS**: the day of the first date is always included; you can add others), **every 2 weeks**
+  or **every month** (the same weekday of the month: «the second Thursday», or **«the last Friday»** if the first date is the last one of its
+  month). **HOW MANY DATES** (4, 6, 8, 12, 26; monthly: 3, 4, 6, 12; the cap is set by Settings › Events, today 52). The calendar marks the dates
+  of the series; before publishing you can tap one to **skip it**.
+- **To'Latino creates the dates**: they are created as far ahead as can be published (today 180 days, Settings); the ones further out are
+  **created automatically** when they come within range. **Each date has its own tickets** (the same types and quantities) and **its own RSVP
+  capacity**: the customer chooses the date.
+- **Several days in a row** (2 to 30): **HOW MANY DAYS**, **Different hours each day** (day 1 uses the hours above) and, with tickets,
+  **«Create one ticket per day + pass»** (a pass for all days at 20 % less —you can change it— and one ticket per day). Each ticket says **VALID
+  FOR**: one day or **all days · pass** (gets in once each day). **Capacity per day**: the most that get in each day, counting passes and tickets
+  of that day (0 = no limit). A multi-day event **does not sell tables** (a table is for one night: do it as a series). With RSVP, the customer
+  says which day they are going and each day has its own capacity.
+- **A series' detail page**: at the top, **DATE YOU ARE VIEWING** (tap a date: everything below —what was sold, buyers, «Change», «Cancel»—
+  belongs to that date). **DATES · EVERY THURSDAY**: each date with what was sold; **Skip** (only if nobody has bought or said they are going)
+  and **Put it back**; canceled ones say CANCELED. **WHO PERFORMS · THIS DATE ONLY**: **Change performer for this date only** (we notify in the
+  app those going on that date) and **Go back to the usual one**. **SOLD PER DAY** for that date over the last 7 days.
+- **A multi-day event's detail page**: **PER DAY · HOW MANY ARE GOING** (with the capacity and FULL when it fills up).
+- **Change**: **all the dates to come** = Edit (the time, the days, how many dates). **Only one date** = «Change {date}» on the detail page (like a
+  one-day event: we notify those going by SMS and whoever bought chooses to stay or take the full refund).
+- **Cancel**: **WHAT YOU CANCEL · Only {date}** (refunds 100 % only to whoever bought THAT date) or **The whole series**. A multi-day event is
+  canceled as a whole.
+- **What the customer sees**: the list shows the series **once** (its next date) with «EVERY THURSDAY · +7 DATES»; the page says **DATES · EVERY
+  THURSDAY** with the dates and «Each date has its own tickets.»; a multi-day event says «FRI NOV 20 – SUN NOV 22 · 3 DAYS», **DAYS AND HOURS**
+  and on each ticket «Valid only Sat Nov 21» or «Valid all 3 days».
+- **Your money**: it is paid **per date**, on the Tuesday after each date. For multi-day events, everything is paid on the Tuesday after the
+  **last day**.
 
-**The time limits on this page** (the payout day: the Tuesday after each date) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You change the time of the series and you are not a verified organizer | The change goes to To'Latino review; meanwhile, the dates stay as they were. |
+| You change the time of the series and a date already has tickets or RSVPs | That date stays at its time; the others change. Change it alone with «Change {date}» (with notice). |
+| You change the days or how many dates and a date with people would drop out of the series | It will not let you save: cancel that date with a refund or move it first. |
+| You want to skip a date with tickets or RSVPs | It cannot be skipped: it is canceled with a refund. |
+| You want to skip the first date | Change the first date in the editor. |
+| You move a date and then edit the series | The moved date stays where you put it. |
+| A day of a multi-day event fills up | That day's ticket and the pass show SOLD OUT; the other days stay on sale. |
+| You already sold on a multi-day event | The days and the duration can no longer change (cancel and create another if needed). |
+| A one-day ticket was already sold | The day it is valid for no longer changes. |
+| A date of the series passes | It stays as «happened»; the following ones keep appearing. |
+
+**The deadlines on this page** (the payout day: the Tuesday after each date) are today's: To'Latino sets them in its Settings and the screen
+always shows the one in force at that moment.
+
+### FAQ
+- **Up to how many dates?** The number set by Settings › Events (today 52). If they do not fit within the days that can be published, the rest
+  are created automatically when they come within range.
+- **Until when is the pass sold?** Until the cutoff of the first day (at start, at doors open or one day before, as you chose). Each one-day
+  ticket, until its day's cutoff.
+- **Does the door staff know which day a ticket is valid for?** Yes: each ticket keeps its days; the pass gets in once each day and a ticket
+  for another day shows «IT'S FOR ANOTHER DAY» with the day it is valid (To'Latino Door).
+- **Can I change the performer for a single date?** Yes, on the detail page: «Change performer for this date only». We notify in the app those who
+  are going.

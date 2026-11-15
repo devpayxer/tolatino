@@ -26,7 +26,22 @@ _Pantallas: **Panel › Eventos › tu evento › CÓDIGOS DE DESCUENTO**. Telé
 ## English
 
 ### What it does
-**Create code**: 3–16 letters or numbers, **Percent** (5–90%) or **Fixed amount** ($1–$500) and how many **uses**; each code shows **N of M
-uses** and an on/off switch. **The discount comes out of your share**: it lowers ticket prices, not To'Latino's fee; tickets only, never below
-$2. Customers type it in **Have a code?** and see **CODE APPLIED · −$X**. Used up → "That code has been used up." One use per person per event.
-Random guessing is rate limited. Turning a code off stops it from then on. Codes are never deleted, only turned off.
+- **Create a code**: the code (3 to 16 letters or numbers, e.g. AMIGOS10), **Percentage** (5 % to 90 %) or **Fixed amount** ($1 to $500) and
+  how many **uses**. Each code shows **N of M uses** and a switch to turn it off or on.
+- **The discount comes out of your share**: it lowers the ticket price, not To'Latino's fee. It applies to tickets (not to the table or the
+  extras) and never leaves a ticket below $2.
+- The customer types it in **Have a code?** and sees **CODE APPLIED · −$X**.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| The uses ran out | The customer sees «That code has already been used all the times.» |
+| Someone is in the middle of paying with the code | It counts as held («N in a payment»); if they do not pay, the use comes back. |
+| The same person tries it twice | «You already used that code on this event.» One use per person and event. |
+| Someone tries random codes | After several attempts with codes that do not exist, they have to wait. |
+| You turn the code off | It stops applying from that moment; what was already sold does not change. |
+| You already have that code | «You already have that code on this event.» |
+
+### FAQ
+- **Does To'Latino have its own codes?** No: only the organizer's.
+- **Can I delete a code?** It is turned off (nothing is deleted; the history of uses stays).

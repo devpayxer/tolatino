@@ -40,13 +40,37 @@ antes de firmar. También el millaje, el **título** (limpio, reconstruido o sal
 ## English
 
 ### What it does
-Each car shows **OUT THE DOOR**: the total with tax (6% in PA), tags and the dealer fee (capped at the PA limit), before you sign;
-plus mileage, title, history (as the dealer states it), warranty and whether it is street-legal. If the dealer finances, the example payment
-always shows down payment, months and APR and says «estimate, subject to approval». **Test drives are free.**
+Every car shows **AT THE DOOR**: the total with tax (6 % in PA), plates and the **dealer fee** (which does not exceed the PA cap), before you
+sign. It also shows the mileage, the **title** (clean, rebuilt or salvage), the history (what the dealer declares and from whom), the
+**warranty** and whether it is street legal. If the dealer finances, the **sample payment** always includes the **down payment, months and rate
+(APR)** and says «estimate, subject to approval». The **test drive is free**.
 
-**The time limits on this page** (hours to reply, how long a spot is held, when a cancellation goes through, after how many days private data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
+### How to use it
+1. **Search** in Car Sales: «Car», «Pickup», «Van or SUV», «They finance with ITIN», «No credit», «With warranty», «Clean title».
+2. **Open the car:** the AT THE DOOR breakdown (price + tax + plates + fee = total), the details and what you should know.
+3. **Test drive:** a free day and time; if the dealer offers it, **at your home**. You check «Yes, I have a valid license» (you show it in
+   person) and, if you want, the car you are trading in. Today you pay $0.
+4. **Your test drive:** PENDING → CONFIRMED → IT HAPPENED, with Message and Cancel (free).
+
+### What happens in each case
+- **Financing in writing:** with ITIN, the rate and the months are in writing before you sign. «Buy here pay here» states the down payment,
+  weekly payment, how many payments, the **total you pay** and the rate; if they report the payments to credit, the page says so.
+- **Salvage title:** the page says it clearly and the car is not street legal until it passes inspection.
+- **Warranty:** «Sold as is» or the months and miles on engine and transmission, the same as the car's Buyers Guide.
+- **They reply within 4 hours** of the dealer's business hours; if not, it is left unanswered. If the car sells first, your test drive is
+  canceled with no fault to you.
+- **Test drive at your home:** the dealer sees your address only when they confirm; it is encrypted, every view is logged and it is deleted
+  after 30 days.
+- **The price at the door was higher:** in Help choose «The price at the door was higher» with a photo; the dealer replies within 24 hours and,
+  if not, To'Latino reviews it. **The car was not there** or **was not as in the photos**: also in Help.
+- **The total you saw is saved** in your test drive even if the dealer changes the price later.
+
+**The deadlines on this page** (how many hours to reply, how long a spot is held, when a cancellation takes effect, after how many days private
+data is deleted) are today's: To'Latino sets them in its Settings and the screen always shows the one in force at that moment.
 
 ### FAQ
-We never ask for your license number. Search «ITIN financing» to buy with ITIN. The monthly payment is an example with the
-dealer's rate, months and down payment. Extended warranties and GAP are optional. To'Latino does not buy vehicle histories: the dealer
-states it and its source. If the out-the-door price was higher, report it in Help with a photo.
+- **Do they ask for my license number?** No. You only check that you have a valid one; you show it in person.
+- **Can I buy with ITIN?** Search «They finance with ITIN»: the rate and the months are in writing.
+- **Is the monthly payment certain?** It is an example with the dealer's rate, months and down payment; whoever finances gives the approval.
+- **Is the extended warranty required?** No, nor is GAP.
+- **Does To'Latino check the car's history?** We do not buy history reports: the dealer declares it and says where it comes from.

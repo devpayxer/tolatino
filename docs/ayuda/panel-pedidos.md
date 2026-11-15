@@ -51,15 +51,47 @@ por SMS y en el teléfono llegan con las notificaciones.
 
 ## English
 
-Today shows four figures (awaiting your reply, today's agenda, sold today, views today), the Free plan notice, orders
-awaiting your reply with Accept and Decline, and today's agenda (accepted and ready). The order detail shows the client,
-promised time, payment (at the store), client note, each item with options and kitchen instructions, total, a history
-timeline and the next step: Accept / Decline → Ready for pickup → Delivered. Clients › Orders lists every order with
-filters, search by name or number and "See more". Online orders lets you turn ordering on or off and set prep time,
-scheduled orders, instant accept and how they pay (cash at pickup; card once payouts are connected), with a preview of
-what the client sees. If you do not reply within 10 minutes the order shows NO REPLY and its stock returns; declined and
-client-cancelled orders also return stock. Every step is recorded in the order history and the audit log.
-**Delivery:** today's agenda also keeps orders that are on the way. A delivery's detail shows the address with ZIP and
-distance, Directions and Call, how the client wants it (hand it to me or leave at door, bell, note), the total with
-delivery fee and tip, and the steps Accept → Out for delivery → Delivered (paid in cash). With an external app, paste
-the tracking link (https://…) and the client sees "Track on DoorDash".
+### What it does
+- **Today:** four figures (awaiting your answer — in black when there are any —, today on your agenda, sold today, views today), the Free plan
+  notice (how many orders so far this month), **Awaiting you** with **Accept** and **Reject** on each order and **Today on your agenda** with
+  the accepted ones, the ready ones and those on the way.
+- **A delivery's detail:** **Delivery** with the address, the ZIP code and the distance, **Directions** and **Call** the customer; how they
+  want it (in hand or at the door, doorbell, note); the total with delivery fee and tip; and what comes next: Accept → **Out for delivery** →
+  **Delivered** (collected in cash). With an outside app, the **Tracking link** field (https://…): once you save it, the customer sees
+  «Follow on DoorDash».
+- **An order's detail:** customer, what time was promised, how they pay (at the business), the customer's note, each dish with its options
+  and the kitchen instructions, the total, the **history** (came in through To’Latino, accepted by Rosa, ready, delivered…) and what comes
+  next: Accept / Reject → **Ready for pickup** → **Delivered**.
+- **Customers › Orders:** all the orders with a filter (all, awaiting your answer, confirmed and in progress, finished, could not be done),
+  search by name or number and «See more».
+- **Online orders:** turn on or off, how it is going today (you receive orders, paused, closed), busy and last order (in Menu › Hours),
+  **preparation time** (5–120 min), **scheduled orders**, **accept instantly**, **how you get paid** (cash at pickup; card when you connect your
+  payouts) and «This is how the customer sees it».
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You accept | The customer sees «In the kitchen» and what time it is ready. |
+| You reject | The customer sees «They could not take your order · nothing was charged». The inventory comes back. |
+| You do not respond in 10 minutes | The order is left **NO ANSWER**: it leaves «Awaiting», the customer sees it and the inventory comes back. It can no longer be accepted. |
+| The customer cancels before you accept | It shows as CANCELED («The customer canceled it»); the inventory comes back. After you accept they can no longer cancel from the app: they call you. |
+| Ready for pickup | The customer sees «Ready for pickup · come by with your order number». |
+| Delivered | The order ends («Delivered · paid at the business») and counts in «Sold today». |
+| Delivery · Out for delivery | The customer sees «On the way»; the order stays in «Today on your agenda» as ON THE WAY until you mark Delivered. |
+| Delivery · Delivered | It ends as delivered and collected in cash; it counts in «Sold today». |
+| Tracking link that does not start with https:// | It is not saved: «Paste the full link (starts with https://)». |
+| Accept instantly turned on | Orders come in accepted while you are open and not paused; they still reach Today so you can prepare them. Scheduled ones you always accept yourself. |
+| Cash at pickup turned off | It cannot be saved: today it is the only way to pay (card comes with payouts). |
+| Online orders turned off or paused by To’Latino | The page and the menu show, but nobody orders in the app; the reason shows at the top. |
+| Two people on the team respond at the same time | The first one wins; the other sees «This order already changed». |
+| No access to «Today and orders» | «No access to this area»; an order's detail does not open. |
+
+Every step goes into the order's history and the audit trail.
+
+### FAQ
+**Do you notify me when an order comes in?** Today you see it in Today (the customer's order page updates on its own). SMS and phone
+notifications come with the notifications.
+
+**Can I propose a change if a dish is missing?** Not on a food order: reject the order or call the customer.
+
+**How much does To’Latino charge?** On orders paid at your business, nothing.

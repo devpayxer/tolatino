@@ -35,8 +35,31 @@ se hace ni se cobra sin tu OK. **¿Puedo poner mi teléfono en la nota?** No; el
 ## English
 
 ### What it does
-For services without a fixed price you send photos and describe the problem; the business replies within 24 h with a
-**range**, "needs an inspection" or "we don't do it". The range is valid 7 days; "Book with this pre-estimate" carries
-your note and photos into the booking, and the estimate later tells you if it is within the range. Free, no commitment.
+For services without a fixed price (auto shop: «from» and «quoted»; home: visit, by the hour and by measure) you send photos and tell what is
+going on, and the business answers with a **range** before you book. It is **free and does not commit you**.
 
-**The time limits on this page** (hours the business has to reply) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
+- **What you send:** your vehicle or your home (the business must work with it or come to your home), what is going on (at least 10
+  characters; at the auto shop also the warning lights on and the scanner code; at home, where it is, the brand and the age of the
+  equipment), 1 to 6 photos and when you need it.
+- **The business replies within 24 hours** from its dashboard: a **range** (from–to, what it includes, what could change it, how long it
+  takes), **«Needs an inspection»** (a wide range and you book the diagnosis or the visit) or **«we don't do it»** (we show you other
+  businesses in the city that do).
+- **The range is valid for 7 days.** «Book with this pre-estimate» opens the service and Booking; your note and your photos go with the
+  appointment. When the estimate or the full price arrives, it tells you whether it is **within your pre-estimate** or why it goes over.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| There is no reply in 24 hours | It stays «No answer» and we notify you; you can **send it again** (a new 24 hours). |
+| You no longer need it | «No longer needed» cancels it; nothing is charged. |
+| The 7 days passed | Booking no longer offers it; ask for another. |
+| You already booked with it | It cannot be used twice; the request says «You booked» and takes you to your appointment. |
+| The service has a fixed price | There is no pre-estimate: you book directly. |
+| The business sets a very wide range | If «to» goes over 4 times «from», we ask it to use «Needs an inspection». |
+
+**The deadlines on this page** (how many hours the business has to reply) are today's: To'Latino sets them in its Settings and the screen always
+shows the one in force at that moment.
+
+### FAQ
+**Do you charge me for asking?** No. **Is the range the price?** No: the real price goes in the estimate, after seeing it, and nothing is done
+or charged without your OK. **Can I put my phone number in the note?** No; the business writes to you through Messages.

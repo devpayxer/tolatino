@@ -57,16 +57,53 @@ teléfono. Versión: 10 nov 2026. Audiencia: portero. Tema: puerta._
 ## English
 
 ### What it does
-**When you open your door with signal**, the phone downloads **that date’s list** (“Preparing the door · N tickets”): each ticket’s version, entries,
-status, first name and initial, last 4 of the code and valid days — **never** phones, emails or what anyone paid. It comes **signed by To'Latino** and
-is stored **encrypted** on the phone with a key only **your open door** has. **With signal**, every 15 seconds the phone uploads your scans and
-downloads changes (refunds, transfers, new tickets, who got in through another door): **ONLINE · Synced · list from 10:42 PM**. **Without signal**
-you keep scanning: the phone checks **the QR signature** and **the list** with the same rules (VALID, ALREADY IN, QR VOIDED, REFUNDED, BEING
-TRANSFERRED, WRONG DAY, NOT FOR THIS EVENT, INVALID QR…); the result says **“OFFLINE · decided on this phone”** and the top shows **OFFLINE · N TO
-UPLOAD · list from …**. Search works offline (name, code or its last 4). After **10 minutes offline** a big warning appears. Opening the app offline
-shows **Your doors on this phone**. **When the signal returns** everything uploads in order and To'Latino has the final word: if **two door staff
-let the same ticket in offline**, the **first by time** wins (each phone’s clock is corrected) and the other becomes **REPEATED** with an incident
-“Got in twice (offline)”; a ticket that was **no longer valid** (refunded or transferred while offline) is **rejected** with an incident; uploading the
-same scans twice changes nothing. **Close my door** uploads first, then **wipes the list, the key and the queue** from the phone. If the business
-**revokes your phone**, it wipes everything on the next signal and anything not uploaded no longer counts. Signing out wipes it too. The list expires
-6 hours after the end.
+- **When you open your door with a signal**, the phone downloads **that date's list** («Preparing the door · N tickets»): each ticket with its
+  version, its entries, its status, the name and the initial, the last 4 digits of the code and the days it is valid. It **never** brings
+  phone numbers, emails or what each person paid. It comes **signed by To'Latino** and is stored **encrypted** on the phone with a key that
+  only **your open door** has.
+- **With a signal**, every 15 seconds (Settings) the phone uploads what you scanned and downloads the changes: refunded, transferred, new
+  tickets and who got in through another door. At the top it says **ONLINE · Synced · list from 10:42**.
+- **Without a signal** you keep scanning the same: the phone checks **the QR's signature** and **the list**, and decides with the same rules as
+  with a signal (**VALID**, **ALREADY IN**, **QR VOIDED**, **REFUNDED**, **BEING TRANSFERRED**, **IT'S FOR ANOTHER DAY**, **NOT FOR THIS
+  EVENT**, **INVALID QR**…). The result says **«OFFLINE · decided on this phone»** and at the top **OFFLINE · N TO UPLOAD · list from 10:42**.
+- **Search** without a signal: by name, by the code or by its **last 4 digits**, in the phone's list. **Let in** asks for the reason, the same
+  as with a signal. An RSVP that shows up: **Arrived 1**.
+- After **10 minutes without a signal** (Settings) a large notice appears: what was refunded or transferred after the list, that phone does
+  not know about.
+- **If you open the app without a signal**, «Your doors on this phone» opens with the door you had open: you scan and search the same. When the
+  signal comes back and everything is uploaded: **Back to the door**.
+- **When the signal comes back** everything is uploaded in order. To'Latino has the last word:
+  - If **two door staff without a signal let the same ticket in**, **the first by time** wins (each phone's time is corrected if its clock
+    is ahead or behind). The other is marked **DUPLICATE** and an incident **«Got in twice (offline)»** is opened with both doors and times.
+    Nothing is undone: the person already got in.
+  - If you let in a ticket that **was no longer valid** (it was refunded or transferred while there was no signal), it is **rejected** and the
+    incident **«Got in offline with a ticket that was no longer valid»** is opened.
+  - Uploading the same thing twice does not count twice.
+- **Close my door** first uploads everything and then **erases the list, the key and the queue** from the phone. Without a signal it does not
+  close (what was scanned would be lost).
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| The signal goes away | You keep scanning; at the top it says OFFLINE and how many scans are left to upload. |
+| The signal comes back | Everything uploads by itself; the top goes back to ONLINE · Synced. |
+| Two door staff without a signal scan the same ticket | Both let it in; when uploading, one stays VALID and the other DUPLICATE with its incident (the first by time wins). |
+| A ticket was refunded while there was no signal | The phone does not know and lets it in; when uploading it is rejected with an incident. That is why you should look for a signal often. |
+| The phone's clock is wrong | It is corrected on upload (it is measured on every upload) and the door staff/dashboard sees «clock off». |
+| A ticket sold after the last list | If its QR is from To'Latino, the door asks: if you let it in, it is checked when the signal comes back. |
+| The business closes your door | What you scanned without a signal before the closing still uploads; after that, everything is erased from the phone. |
+| The business **revokes your phone** (for example, it was lost) | On the next signal the phone erases everything. What was not uploaded **no longer counts**. |
+| You sign out of your account | Everything about the door stored on the phone is erased. |
+| 6 hours pass after the end (Settings) | The list expires: the phone erases it and nothing more can be uploaded for that date. |
+| Another phone with your same account | It does not receive your door's list: it opens its own door. |
+
+### FAQ
+- **Can someone read the list if the phone is stolen?** It is encrypted with your door's key. If the phone is lost, the business taps **Revoke
+  this phone** and on the next signal everything is erased. And the list does not carry phone numbers or what anyone paid.
+- **Can someone fabricate a ticket?** No. Every QR is signed by To'Latino; the phone can only check the signature, never create one.
+- **What is a DUPLICATE?** The same ticket got in twice without a signal (for example, someone shared a screenshot). The incident stays for the
+  organizer and To'Latino.
+- **Do I need to install anything?** No, but you can **add To'Latino Door to your home screen** from the browser: that way it opens even with
+  no signal.
+- **Does it work between phones without internet?** No: each phone decides with its own list; when the signal comes back they are merged. (A
+  network between phones is not available yet.)

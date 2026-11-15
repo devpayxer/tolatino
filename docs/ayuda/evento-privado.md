@@ -48,14 +48,43 @@ eventos._
 ## English
 
 ### What it does
-**Request** a private event from a restaurant: what you are celebrating, how many guests (between the restaurant’s minimum and maximum), where you sit
-(dining room, patio or “The whole place”, which has an extra cost), the day (with the restaurant’s notice; 3 days or more), time, length, what you
-will eat, budget per person, extras (cake, decorations, music…) and a note. **Nothing is charged when you ask.** The restaurant replies in time (24 h,
-Settings) with **its proposal**: each line (menu × guests, the area, extras), the **city tax**, the **total**, the **deposit** (a percent the
-restaurant sets: 10%, 25% or 50%) and what **you pay there on the event day** — or **another date**, or **“I can’t”** with the reason. **Accept and
-pay $N** charges **only that proposal’s deposit** (To'Latino calculates it) and the event is **CONFIRMED**. **Ask for a change** (to a proposal or a
-confirmed event) also goes to **Messages** with your request number; a change to a confirmed event never charges more. If the restaurant does not
-reply in time, the request expires; a proposal not accepted in time expires and can no longer be paid; only the latest proposal can be accepted;
-a declined card charges nothing; tapping twice charges once. **Cancel** a confirmed event **72 h or more** before (the window written in your
-proposal) and the full deposit comes back in 3–5 business days; **less than 72 h** and the restaurant keeps it. **If the restaurant cancels, you
-always get the full deposit back.** The restaurant sees your first name and last initial, never your phone.
+- **You request** a private event from a restaurant: what you are celebrating, how many people (between the restaurant's minimum and maximum),
+  where they seat you (dining room, terrace or «The whole place», which costs extra), the day (with the days of notice the restaurant asks for;
+  3 or more), the time, how long it lasts, what they will eat, your budget per person, what else you need (cake, decoration, music…) and a
+  note. **Nothing is charged when you request.**
+- **The restaurant replies** within the deadline (24 hours in Settings): it sends **its proposal** with each line (menu × people, the area, the
+  extras), the **city tax**, the **total**, the **deposit** (a percentage of the total set by the restaurant: 10 %, 25 % or 50 %) and what you
+  **pay at the venue on the day of the event**. It can also **propose another date** or tell you **«I can't»** with the reason.
+- **Your request** shows where it stands: **PENDING · THEY SENT YOU THEIR PROPOSAL · THEY PROPOSE A CHANGE · CONFIRMED · COULD NOT · NO ANSWER ·
+  CANCELED**.
+- **Accept and pay the deposit**: you choose your card and tap **Accept and pay $N**. **Only the deposit of that proposal** is charged
+  (To'Latino calculates it; nobody types it by hand) and it becomes **CONFIRMED**. You pay the rest at the venue.
+- **Ask for a change** (on a proposal or on an already confirmed event): how many people, another date or time and what you want to change. It
+  reaches the restaurant and also stays in **Messages** with your request number. While they answer, the proposal (or what was agreed) stands.
+- **A change to a confirmed event** reaches you as «The change from…»: **Accept the change** (nothing more is charged: the deposit already paid
+  is deducted) or **Keep it as it was**.
+- **Message**, **Add to calendar**, **Directions** and, once the event has passed, **Rate** and **Event help**.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| The restaurant does not reply in time | The request expires on its own (NO ANSWER). Nothing was charged. We show you other restaurants that do private events. |
+| You do not accept the proposal in time | The proposal **expires** (24 hours in Settings, never after the event) and can no longer be paid. Nothing was charged. |
+| The restaurant sends a new proposal | The previous one is **replaced**: only the latest can be accepted. If you had the old screen open, it tells you «sent a new proposal». |
+| Your card is declined | «Nothing was charged; the proposal stands». Try another card. |
+| You tap «Accept and pay» twice | You are charged **only once**. |
+| You cancel before confirming | Nothing was charged; the restaurant gets the notice. |
+| You cancel a confirmed event with **72 hours or more** of notice (the deadline your proposal states) | We refund **the whole deposit** to your card within 3–5 business days. |
+| You cancel with **less than 72 hours** | The deposit **stays with the restaurant** (your proposal says so before you accept). |
+| **The restaurant cancels** | We refund **the whole deposit**, always, and it tells you the reason. |
+| «I can't» | COULD NOT with the reason. Nothing was charged. «Try another date», «Book separate tables» or other restaurants. |
+| The event has passed | It is marked finished; the deposit was already deducted at the venue. You can rate it or ask for help (7 days). |
+
+### FAQ
+- **When do you charge me?** Only when you accept a proposal, and only the deposit. Nothing is charged when you request.
+- **Is the deposit deducted?** Yes: from the total of the event; you pay the rest at the venue.
+- **Who decides the deposit?** The restaurant chooses the percentage in its dashboard; To'Latino calculates it on the total of the proposal.
+- **Can I talk to the restaurant?** Yes, through **Message** (it stays with your request number). For safety, no phone numbers in the notes.
+- **What if the restaurant does not deliver what was agreed?** Use **Event help**: the restaurant replies within 24 hours; if not, To'Latino
+  reviews it.
+- **Does the restaurant see my phone?** No: it sees your name and the initial of your last name. You talk through Messages.

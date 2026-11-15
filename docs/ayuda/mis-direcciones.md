@@ -30,9 +30,27 @@ un pedido viejo.
 
 ## English
 
-Save delivery addresses (Home, Work, Other) with street and number, apt, ZIP and notes for the driver; mark one as
-default (the first one is). When you save, To’Latino places the address on the map using the public US Census street
-data, without sending it to any other service, so we know whether a business can deliver there. Addresses outside the
-city you're browsing are saved but marked "outside the delivery area" (pickup only); addresses we can't find are saved and
-marked so you can fix them. Deleting the default makes the next one default. Up to 20 addresses. Only you can see them,
-plus the business and its driver for your own delivery orders.
+### What it does
+- It saves your delivery addresses: **what it is** (Home, Work, Other), **street and number**, apartment or floor, **ZIP code** and directions
+  **for the driver** (up to 160 characters).
+- **Use as default:** the one we choose first when you order. The first one you save is the default on its own.
+- When you save, To’Latino **places the address on the map** with its number (or at least the street) using the public street data of the U.S.
+  Census, without sending your address to any other service. That way we know whether a business can bring it to you.
+- On desktop, on the right: the **delivery zone** (the ZIP codes of the city you are viewing).
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| The street or the number is missing, or the ZIP code does not have 5 digits | It is not saved and it says what is missing. |
+| The ZIP code is not in the city you are viewing | Notice «Outside the delivery area»: it is saved anyway, good for pickup. |
+| We do not find the street in that ZIP code | It is saved; the list says «We couldn’t find it on the map»: good for pickup; for delivery, check the street and the number. |
+| The street exists but not that number | It is placed on the street (as close as possible); good for delivery. |
+| You delete the default one | The next one becomes the default. |
+| More than 20 addresses | It asks you to delete one you do not use. |
+| Someone else’s address | Nobody else sees it or can open it. |
+
+### FAQ
+**Who sees my address?** You, and the business and its driver only on the delivery orders you place.
+
+**Is it really deleted?** It stops showing in your account and is not used any more; it stays stored as deleted in case there is a claim about
+an old order.

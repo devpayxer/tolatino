@@ -32,8 +32,27 @@ parte «Eventos» del equipo). Se llena sin sesión; para enviar pide entrar. Ve
 ## English
 
 ### What it does
-Pick which of your businesses hosts it (or list your business for free), name, kind, poster and description, one of the next 14 days,
-times and doors, at your place or somewhere else, entry (free with no list, free with RSVP and capacity, or in-app tickets with price and
-capacity — the price you set is what neighbors pay, fees included; bought in the app; never at the door), age. **Send for review** →
-«Your event is under review» (up to 24 h) → manage it in **Dashboard › Events**. Free plan: Events is Pro (30-day trial, no card).
-Verified organizers go live at once. Blocked organizers cannot send and can appeal.
+- **Which business is organizing it?** Your businesses. If yours is not there: «My business isn’t here · List it free» (List your business).
+- **The event:** name (70), type (those of that business's category), **poster** (upload a photo) and what it is about (400).
+- **When and where:** one of the next 14 days, start and end, when doors open, at your business or at another place (name and address).
+- **Entry:** **Free entry** (no list), **Free with RSVP** (you set the capacity) or **Tickets in the app** (price and how many fit; the price you
+  set is what the neighbor pays, fees included; they are bought in the app). Payment is never taken at the door. Age.
+- **If something changes:** if you cancel or change the date, To'Latino refunds everything to whoever bought.
+- **This is how neighbors see it** (the event card) and **Missing** (what is missing to send).
+- **Send for review** → «Your event is under review»: Sent · To'Latino review (up to 24 hours) · Published in Events, with **See in the
+  dashboard**. After that you manage it from **Dashboard › Events** (all the fields are there too). The draft is saved on your phone until you
+  send it.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You have not signed in | «Sign in to publish»: you sign in with your phone and come back here with what you wrote. |
+| Your business is on Free | «Events is part of Pro»: start the 30-day trial (no card) in your dashboard › Payouts and plan. |
+| You are a verified organizer | It is published when you send it: «Your event is live». |
+| To'Latino blocked your events | «You cannot publish events» with the reason; you can appeal from the notice. |
+| Something is missing | «Missing» says it (business, name, type, poster, address, entry, price, capacity). |
+
+### FAQ
+- **Does it cost to publish?** No. Events is part of Pro (the trial is free and needs no card).
+- **When do you notify me?** When To'Latino approves it, asks for a change or does not approve it (with the reason).
+- **Can I sell at the door?** No: tickets are not sold at the door; the door staff only scans.

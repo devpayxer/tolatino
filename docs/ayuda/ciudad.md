@@ -49,20 +49,45 @@ siguen.
 
 ## English
 
-**What it does.** Chooses what you see in Home, Businesses, categories and Search: the **city**, **where we measure
-from** (downtown, a neighborhood or your location) and **how far** (2, 5, 10 or 30 miles). Distances are counted from
-the point you chose. If the city isn't open yet, you see how close it is and can join the waitlist. It does **not**
-change My city (your community city).
+### What it does
+It chooses what you see in Home, Businesses, the categories and Search: **the city**, **where we measure from** (the center, a neighborhood or
+your location) and **how far** (2, 5, 10 or 30 miles). The distance to each business is counted from the point you chose. If the city has not
+opened yet, you see how far along it is and you can sign up so we let you know.
 
-**How to use it.** Tap the pin button at the top → pick a starting point → pick a distance (the map shows the circle,
-the businesses inside and the towns included) → **See N businesses within X mi**. **Back to Hazleton · downtown · 5 mi**
-resets it. You can also type an address, neighborhood, town, city or ZIP code.
+This **does not change My city** (the community one: your posts, votes and the Leaderboard).
 
-**Cases.** No location permission → pick a neighborhood. Far from all our cities → “Tell me when it reaches my area”.
-A nearby town widens the distance for you. A city that isn't open shows **Coming soon** with businesses ready, neighbors
-waiting, Notify me, List your business and Recommend a business. Joining requires signing in; requesting a new city
-without an account asks for your phone. Too many requests from one place → “Try again later”.
+### How to use it
+1. Tap the button at the top with the pin (on the phone it says «5 MI»; on the computer «Hazleton, PA · 5 mi»).
+2. Choose where we measure from: **Center**, a neighborhood (North End, The Heights…) or **Use my location**.
+3. Choose the distance. The map shows the circle, the businesses (black = Pro, purple = free, gray = outside) and how many fall inside and
+   which towns it includes.
+4. Tap **See N businesses within X mi**. The header changes and everything is counted from there.
+5. To go back to the usual: **Back to Hazleton · center · 5 mi**.
+6. You can also type an address, neighborhood, town, city or ZIP code in the search box at the top.
 
-**FAQ.** We never store your location point (only that you measure “from your location”). Businesses outside the
-distance don't show, except those that come to you and reach your area. Changing the city here doesn't change your
-community city. Your choice follows your account to other phones.
+### What happens in each case
+| Case | What the person sees | What to do |
+|---|---|---|
+| Taps **Use my location** | The phone asks for permission. If they give it: «Your location · North End, Hazleton · 0.9 mi from the center». | Nothing else. |
+| Does not give permission | «No permission. Pick a neighborhood or an address.» | Pick a neighborhood. |
+| Is far from all our cities | **Notify me when it reaches my area** opens. | Sign up. |
+| Types a nearby town (Freeland) | «Freeland, PA · 5.7 mi from Hazleton · shown with 10 mi». Tapping it widens to 10 mi. | Tap it. |
+| Between one distance and the next there are no more businesses | Note: «Between 5 and 10 mi there are no businesses on To'Latino yet. You see the same ones.» | Nothing. |
+| Chooses a city that has not opened yet | **Coming soon** screen: businesses ready toward the goal, neighbors waiting, distance, Notify me, List your business, Recommend a business and, meanwhile, the closest open city. | Sign up or see the open city. |
+| Signs up on «Coming soon» without being signed in | Takes them to **Sign in** and returns. | Sign in. |
+| Asks for a new city without an account | Asks for a phone number to let them know. | Type 10 digits. |
+| Asks many times in a row from the same place | «We got many requests from here. Try again later.» | Wait. |
+| Wants to remove a request | In **YOU ALREADY ASKED**, **Remove**. | — |
+
+### FAQ
+**Do you keep my location?** No. Your location is used on your phone to measure distances; in your account we only keep that you measure
+«from your location», never the point.
+
+**Why doesn't a business that is farther away show up?** Only the ones within the chosen distance appear, plus the ones that go to your home
+and reach your area. Widen the distance.
+
+**Does changing the city here change my community?** No. My city (community) is changed separately, once every 30 days.
+
+**When does my city open?** When it has enough businesses ready (the goal shows in the bar). We write to you only to let you know it opened.
+
+**Is what I chose saved if I change phones?** Yes, if you signed in with your account: the city, the neighborhood and the distance follow you.

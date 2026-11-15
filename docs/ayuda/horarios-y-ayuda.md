@@ -58,13 +58,50 @@ Todo sale en su página, en la tarjeta del buscador («Misa en español: domingo
 ## English
 
 ### What it does
-What people ask most: **is there a service in Spanish and will they help me if I need it?** The church states **when the Spanish
-mass** or **weekly services** are, whether they are **also in English** and **what free help it gives** (food pantry, clothing, rides on
-service days, youth group, kids Bible school, weddings and quinceañeras). The parish states whether **catechism** registration is open. The
-pantry states whether **food ran out today**, whether it asks for papers and **how often a family can come**. The funeral home states whether
-it is **open 24 hours**, the **written total price** of each service, whether there is a **payment plan** and **how many days** repatriation
-to the DR takes. It all shows on the page, the search card and the filters.
+What people ask most about Churches: **is there a service in Spanish, and will they help me if I need it?** The church states **what time the
+Spanish mass is** or **its services of the week**, whether it is **also in English** and **what help it gives for free** (food pantry, clothing,
+rides on service days, youth group, Bible school for kids, weddings and quinceañeras). The parish states whether **catechism** has registration
+open. The pantry states whether **it ran out for today**, whether it asks for papers and **how often a family can come**. The funeral home
+states whether it is open **24 hours**, the **written total price** of each service, whether there is a **payment plan** and **in how many
+days** repatriation to the DR arrives. It all shows on its page, on the search card («Spanish mass: Sunday 12 PM and Saturday 6 PM») and in the
+filters («Spanish mass», «Food pantry», «Rides», «For youth», «No papers», «Repatriation», «24 hours»).
+
+### How to use it
+1. **Services › Add**: each service with its form: **Free** (masses, services, groups, pantry, prayer, counseling: they arrive at the time),
+   **Suggested donation** (sacraments and celebrations: «if you can't, nothing is charged»), **Written total price** (funeral homes only, from
+   $500 to $30,000) or **Course with groups** (catechism, first communion: weeks; then «Open a group» with a start date and capacity). You can
+   say when and how long it lasts («By appointment · 1 hour»), what it includes and what is extra.
+2. **Your tool**: tap the times in the list to turn them on or off; a time that is not in the list goes in **Other times › Add** (day, time,
+   name, language and what it is). Turn «Also in English» and each free help on or off. Every tap is saved and your page says it right away.
+3. **Your page › Your licenses**: the funeral home adds its PA license; an immigrant-help ministry adds its DOJ-accredited representative;
+   the 501(c)(3) is optional. To'Latino checks them against the public registry before showing the seal.
+
+### What happens in each case
+- **Mass or service**: there is always at least one time left; if you try to remove the last one, the app tells you and does not remove it.
+- **The search card** comes out of your times by itself: «Spanish mass: Sunday 12 PM and Saturday 6 PM» or «Service: Sunday 11 AM · Youth:
+  Friday 7 PM». Below it says «Catechism: registration open» (if you have catechism in Services), «Free rides on Sundays» or «Spanish and
+  English».
+- **«Out for today»** (pantry): your page and the card say «Out for today» **only that day**; at midnight in your city it turns off by itself
+  and goes back to «No papers or appointment needed» (or «No appointment · bring an ID»).
+- **How often a family can come**: the card says «One box per family per week» (every 15 days, per month).
+- **The funeral home's total price**: the −/+ change the price of the service ($100 per tap, from $500 to $30,000): a single source. The
+  payment plan is a text you agree on with the family: To'Latino does not charge it.
+- **Repatriation**: it only appears if you have repatriation (in your subcategories or in Services); the card says «Repatriation to the DR in
+  5–7 days».
+- **Churches charge nothing in the app**: there is no deposit (the database does not let it be saved), the donation is suggested and the catechism
+  tuition is paid at the parish. There are no online tithes or offerings.
+- **Religious goods stores and botánicas** work by contact: people call or write.
+
+### Rules that cannot be turned off
+- **Help is free.** The donation is always suggested; if you can't, nothing is charged.
+- **Nobody asks your status.** Not for the pantry and not for the sacraments.
+- Funeral homes: **the price is the total** (in writing before signing; nothing is added later) and **no pressure** (the family decides
+  calmly; there is no charge for asking).
+- Fixed line: «The church's help is free; nothing is ever charged for pantry, clothing or prayer.»
 
 ### FAQ
-Donations and tithes are not taken through the app. A church always keeps at least one service time. «Out for today» turns off
-by itself at midnight in your city. «Written total price» is only for funeral homes; churches use «Free» or «Suggested donation».
+- **Can I receive donations or tithes through the app?** No. Churches charge nothing in the app; if it is decided to build it, it will come
+  with its own plan (receipts and 501(c)(3)).
+- **Why can't I remove my only mass?** A parish or church always shows at least one time: it is the first thing people look for.
+- **Do I have to turn off «Out for today» tomorrow?** No: it turns off by itself at midnight in your city.
+- **Why doesn't «Written total price» show up for me?** It is only for funeral homes; a church uses «Free» or «Suggested donation».

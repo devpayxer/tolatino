@@ -42,14 +42,37 @@ de poner el **sello**; sin licencia verificada no hay sello. Las de este grupo:
 ## English
 
 ### What it does
-Show your licenses so people know you may legally do what you offer. To'Latino checks each one in the official registry before
-showing a badge; no verified license, no badge. Kinds for churches (PA funeral home, DOJ accredited representative, 501(c)(3)), real estate
-(PA broker or salesperson, NMLS lender, PA certified appraiser, home inspector) and car dealers (PA dealer, PA salesperson, PA installment
-seller, NMLS lender).
+You show your licenses so people know you can do what you offer. To'Latino checks it in the **official registry** before putting the **seal**;
+without a verified license there is no seal. The ones in this group:
+- **Churches:** Funeral home licensed in PA · Accredited representative (DOJ) · Nonprofit organization 501(c)(3).
+- **Real Estate:** PA real estate broker or salesperson · Licensed lender (NMLS) · PA certified appraiser · Home inspector (national
+  association).
+- **Car Sales:** PA licensed dealer · PA licensed vehicle salesperson · Vehicle installment sales (PA) · Licensed lender (NMLS).
+
+### How to use it
+1. **Your page › Your licenses › Add:** you choose the type and type the number exactly as it appears in the registry. What it allows, who
+   issues it and the link to the registry come from To'Latino's catalog (you do not type them).
+2. It stays **«under review»** and goes to Super Admin › Queues › Licenses. A person on the team looks it up in the registry and decides:
+   **Verified**, **Expired** or **Not found** (with a reason).
+3. **Verified:** the seal appears on your page and on the card (e.g. the PA dealer at the top of the page: «Verified by To'Latino with the
+   public registry»). It is checked again **every 3 months**.
+
+### What happens in each case
+- **About to expire:** 14 days before its review date, the sweep sends it back by itself to Queues › Licenses to be looked at again. If it is
+  still valid in the registry, «Verified» moves the next review 3 months out.
+- **Overdue review:** if the date passed and nobody looked at it, it goes back to the queue **with priority**. The seal is not removed by
+  itself: it changes when a person confirms in the registry that it expired (nothing is decided without looking at it).
+- **Expired or Not found:** the seal leaves your page and the card; you see the reason in your dashboard. When you renew it, add it again.
+- **DOJ representative:** without that verified seal, the page of a church that gives immigration help says «Ask if they have a DOJ-accredited
+  representative».
+- **Withdrawing a license:** you remove it in Your licenses; nothing is deleted (it stays in the history).
+
+**The deadlines on this page** (how many days before its review a license goes back to the queue) are today's: To'Latino sets them in its
+Settings and the screen always shows the one in force at that moment.
 
 ### FAQ
-The badge shows only after a person checks the official registry; meanwhile it says «in review». To'Latino confirms the license
-exists, it does not guarantee the business. Licenses come back to the queue 14 days before their review date (with priority if the date
-passed); the badge changes only when a person confirms in the registry.
-
-**The time limits on this page** (how many days before its review a license comes back to the queue) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
+- **Why doesn't my seal show if I already entered the number?** Because a person checks it in the official registry; meanwhile, it says «under
+  review».
+- **Does To'Latino guarantee the business?** No: it confirms that the license exists in the official registry.
+- **What happens if my license expires?** Renew it with the state and add it again; the team verifies it again.
+- **Is the dealer fee cap here?** No: it is in `inventario-del-lote` (and the team changes it in Catalog › Dealer fee).

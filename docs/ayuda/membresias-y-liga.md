@@ -39,11 +39,35 @@ clase gratis»).
 ## English
 
 ### What it does
-What people ask most: **what do I really pay and can I leave whenever I want?** The gym states the **contract** (none, 6 or 12 months)
-and the **early cancellation cost** (always stated, even $0), the **monthly fee**, **signup fee**, **day pass** or drop-in class, free first
-visit and childcare. The league states the **season fee** (per team or per player), the **deposit**, the **signup deadline**, **spots left**,
-field per hour and free agents. It all shows on the page, the search card and the filters.
+What people ask most about Sports: **how much do I really pay, and can I leave whenever I want?** The gym states whether there is a
+**contract** (no contract, 6 or 12 months) and **how much it costs to cancel early** (it is always stated, even if it is $0), the **monthly
+fee**, the **sign-up fee**, the **day pass** or drop-in class, the free first visit and whether they watch the children. The league states the
+**fee for the whole season** (per team or per player), the **deposit** that holds the spot, **until when** you can sign up, **how many spots
+are left**, the court per hour and whether it accepts individual players. It all shows on its page, on the search card and in the filters («No
+contract», «Childcare», «Free first class»).
+
+### How to use it
+1. **Services › Add**: the membership (per month), the pass or drop-in class, the league season (with weeks, deposit and «per team» or «per
+   player») or the hour (court or trainer).
+2. **Your tool**: tap the −/+ and the switches; every tap is saved and your page says it right away. In the league, open the season (start
+   date and spots) if it does not have a date yet.
+
+### What happens in each case
+- **No contract**: canceling costs nothing (the database does not let a penalty be saved without a contract) and you appear in the «No
+  contract» filter.
+- **With a contract**: the card says «12-month contract · canceling early costs $50» (or «costs nothing»). It never says that you cannot cancel.
+- **The prices are those of the service**: changing the monthly fee here changes the price of the service (a single source).
+- **League with no spots**: the card says «League full · waitlist».
+- **The league deposit** is always less than the fee: it holds the spot and is deducted. If the league does not open, it is refunded in full
+  (handled with the signups).
+- **To'Latino never charges the membership or the penalty**: they are paid at your location; the app only states them before signing.
+- **Bowling, golf, clubs, fishing, shooting and nutrition** work by contact: people call or write.
+
+### Rules that cannot be turned off
+- **What it costs to cancel, before signing.** No contract = you cancel whenever you want, with no penalty.
+- **Only the membership is charged.** Nothing that shows up on the card later.
+- League: **the fee covers the whole season** (nothing per game) and **if the league does not open, the deposit is refunded** in full.
 
 ### FAQ
-Monthly fees are not charged through the app in this phase; they are paid at your place. «No signup fee» shows when the signup
-fee is $0.
+- **Can I charge the monthly fee through the app?** Not yet: the app does not make monthly charges; it is paid at your location.
+- **Why does my card say «no sign-up fee»?** Because you have it at $0; raise it in the tool if you charge one.
