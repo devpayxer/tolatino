@@ -5,6 +5,7 @@ import { mismoOrigen, yo } from "@/lib/cuenta";
 import { ENTORNO } from "@/lib/entorno";
 import { contexto, evento } from "@/lib/eventos";
 import { crearPedido, type PedidoIn, type PedidoOut } from "@/lib/pedir";
+import { revisarCupon } from "@/lib/cupon-seguidores";
 import { ACEPTABLES, aceptar, contextoAceptar } from "@/lib/legal";
 
 /* Enviar el pedido (APP-NEG-CHECKOUT · Enviar pedido). Sin sesión → entrar y volver con el carrito igual; sin nombre →
@@ -21,4 +22,13 @@ export async function enviarPedido(p: PedidoIn): Promise<PedidoOut> {
   if (r.ok) after(() => evento("pedir", { ref: r.numero, userId: u.id, props: { negocio: p.negocio } }, ctx));
   if (r.ok) after(() => avisarNegocio(String(p.negocio), "biz_req", { tipo: "pedido", cliente: u.first_name ?? "", min: 10 }, { href: `/panel/${p.negocio}/hoy?det=ped:${r.numero}`, ref: ["order", r.numero] }));
   return r;
+}
+
+/* 9n-21 · «Aplicar» un cupón para seguidores en el pago: el servidor revisa (sin apartar nada); el pedido lo vuelve a revisar con el candado puesto. */
+export async function cuponPago(negocio: string, codigo: string, sub: number): Promise<{ ok: true; code: string; off: number } | { ok: false; msg: { es: string; en: string }; entrar?: true }> {
+  if (!(await mismoOrigen())) return { ok: false, msg: { es: "Recarga la página.", en: "Reload the page." } };
+  const u = await yo();
+  if (!u) return { ok: false, entrar: true, msg: { es: "Entra para usar un cupón.", en: "Sign in to use a coupon." } };
+  const r = await revisarCupon(String(negocio ?? ""), String(codigo ?? "").slice(0, 20), u.id, Number(sub));
+  return r.ok ? { ok: true, code: r.code, off: r.off } : { ok: false, msg: r.msg };
 }

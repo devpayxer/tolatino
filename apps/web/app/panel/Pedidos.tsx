@@ -122,7 +122,7 @@ export function pedidoDetalle(c: Ctx): Sec {
   out.push({ type: "rows", k: E2("DETALLE", "DETAIL"), items: [
     ...x.lineas.map((l): Fila => ({ icon: "check", ibg: "var(--tl-paper)", ifg: "rgba(11,14,18,.6)", t: `${l.q} × ${es ? l.name.es : l.name.en || l.name.es}`,
       s: [l.opts.map((o) => (es ? o.es : o.en || o.es)).join(" · "), l.nota ? `“${l.nota}”` : ""].filter(Boolean).join(" · ") || undefined, r: money(l.cents), compact: true, chev: false })),
-    { icon: "wallet", t: E2("Total", "Total"), s: [`${E2("platos", "items")} ${money(x.sub)}`, x.entrega ? `${E2("envío", "delivery")} ${money(x.envio)}` : "", x.propina ? `${E2("propina", "tip")} ${money(x.propina)}` : "", `${E2("impuestos", "taxes")} ${money(x.tax)}`].filter(Boolean).join(" · "), r: money(x.amt), compact: true, chev: false },
+    { icon: "wallet", t: E2("Total", "Total"), s: [`${E2("platos", "items")} ${money(x.sub)}`, x.entrega ? `${E2("envío", "delivery")} ${money(x.envio)}` : "", x.propina ? `${E2("propina", "tip")} ${money(x.propina)}` : "", x.cupon ? `${E2("cupón", "coupon")} ${x.cupon.code} −${money(x.cupon.cents)}` : "", `${E2("impuestos", "taxes")} ${money(x.tax)}`].filter(Boolean).join(" · "), r: money(x.amt), compact: true, chev: false },
   ] });
   if (x.tl.length) out.push({ type: "timeline", k: E2("HISTORIAL", "HISTORY"), items: x.tl.map((t, i) => ({ t: es ? t.t.es : t.t.en, s: t.at, now: i === x.tl.length - 1 }))
     .concat(x.st === "pend" ? [{ t: E2("Tu respuesta", "Your reply"), s: E2("AHORA", "NOW"), future: true } as never] : []) });

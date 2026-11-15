@@ -24,6 +24,7 @@ const T = (es: boolean): Record<Post["kind"], [string, string, string]> => ({
   oferta: [es ? "OFERTA" : "DEAL", "ink", es ? "Ofertas" : "Deals"], hoy: [es ? "HOY HAY" : "TODAY", "signal", es ? "Hoy hay" : "Today"],
   aviso: [es ? "HORARIO" : "HOURS", "danger", es ? "Avisos" : "Notices"], encuesta: [es ? "ENCUESTA" : "POLL", "action", es ? "Encuestas" : "Polls"],
   novedad: [es ? "NOVEDAD" : "NEWS", "neutral", es ? "Novedades" : "News"],
+  cupon: [es ? "CUPÓN" : "COUPON", "pro", es ? "Cupones" : "Coupons"],
 });
 
 export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesFicha; logo: string | null; sesion: boolean; es: boolean; onItem: (id: string) => void; onHoras: () => void }) {
@@ -92,6 +93,24 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
             <div className="mt-[3px] font-display text-[15px] font-bold leading-[1.25] tracking-[-0.02em]">{(es ? h[0] : h[1]) + (p.aviso.hrsT && p.aviso.hrs !== "closed" ? ` · ${p.aviso.hrsT}` : "")}</div>
           </div>
           <button type="button" onClick={onHoras} className="flex-none text-[12px] font-bold text-action">{E2("Ver horario", "See hours")}</button>
+        </div>
+      );
+    }
+    // 9n-21 · Cupón para seguidores (diseño: «código visible solo si sigues»): el código llega del servidor solo a quien sigue; se usa en el pago.
+    if (p.kind === "cupon" && p.cupon) {
+      const C = p.cupon;
+      return (
+        <div data-cupon={C.code ? "visible" : "oculto"} className={`${caja} flex items-center gap-3`}>
+          <span className="grid size-[38px] flex-none place-items-center rounded-xl bg-pro/[.14]"><Icon name="dollar" size={18} color="var(--tl-pro-ink)" /></span>
+          <div className="min-w-0 flex-1">
+            <div className="font-mono text-[15px] font-bold tracking-[0.06em]">{C.code ?? E2("SOLO PARA SEGUIDORES", "FOLLOWERS ONLY")}</div>
+            <div className="mt-[3px] text-[12.5px] font-semibold leading-[1.35] text-ink/60">
+              {E2(`−${money(C.off)} en pedidos de ${money(C.min)} o más`, `−${money(C.off)} on orders of ${money(C.min)} or more`)}
+              {C.usado ? E2(" · YA LO USASTE", " · YOU USED IT") : C.quedan > 0 ? E2(` · quedan ${C.quedan}`, ` · ${C.quedan} left`) : E2(" · SE TERMINÓ", " · RAN OUT")}
+            </div>
+          </div>
+          {C.code ? (!C.usado && C.quedan > 0 ? <button type="button" onClick={() => onItem("")} className="flex-none text-[12px] font-bold text-action">{E2("Pedir", "Order")}</button> : null)
+            : <button type="button" disabled={busy} onClick={() => hacer(() => seguir(v.negocio.id), () => setFol(true))} className="flex-none text-[12px] font-bold text-action">{E2("Seguir para verlo", "Follow to see it")}</button>}
         </div>
       );
     }

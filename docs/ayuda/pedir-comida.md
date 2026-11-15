@@ -81,6 +81,12 @@ delivery de hoy o lo tiene en pausa. Pickup sigue disponible.
 
 **¿Qué es «Lleva o es» en un plato?** Las etiquetas que marcó el negocio en su panel (picante, vegetariano, sin gluten, pescado o mariscos, lácteos, huevo, maní o nueces). Las pone el negocio, no To'Latino: no son una garantía médica. Si tienes una alergia, pregúntale al negocio antes de pedir (Mensaje o Llamar) y escríbelo en las instrucciones del plato.
 
+## Cupón
+Si sigues a un negocio y publicó un **cupón para seguidores**, al pagar escribe el código en **Código de cupón** y toca **Aplicar**. Si vale, dice «−$3.00 ·
+APLICADO» (o el descuento que sea) y el resumen suma la línea del cupón; el impuesto se calcula sobre lo que queda. Si no vale, te dice por qué: no
+existe o venció, es solo para seguidores, ya lo usaste, se terminó o tu pedido no llega a la compra mínima. Lo decide To'Latino al enviar el pedido,
+no la pantalla: si algo cambió mientras pagabas, te lo dice y el pedido no sale con un descuento que no vale.
+
 ## English
 
 ### What it does
@@ -158,3 +164,9 @@ Pickup is still available.
 **What is «CONTAINS OR IS» on a dish?** The labels the business marked in its panel (spicy, vegetarian, gluten-free, fish or shellfish, dairy, egg, peanuts or tree
 nuts). The business sets them, not To'Latino: they are not a medical guarantee. If you have an allergy, ask the business before ordering (Message or Call) and
 write it in the dish instructions.
+
+### Coupon
+If you follow a business and it posted a **follower coupon**, type the code in **Coupon code** at checkout and tap **Apply**. If it works, it says «−$3.00 ·
+APPLIED» (or whatever the discount is) and the summary adds the coupon line; tax is calculated on what is left. If it does not work, it tells you why: it
+does not exist or expired, it is for followers only, you already used it, it ran out or your order does not reach the minimum. To'Latino decides when the
+order is sent, not the screen: if something changed while you were paying, it tells you and the order does not go out with a discount that is not valid.

@@ -49,6 +49,19 @@ En «Cuándo se publica», **Repetir** saca la misma novedad los días que elija
 | Llega su fecha de fin | Sale la última vez y termina. |
 | Los votos y comentarios | Siguen: es la misma publicación. |
 
+## Cupón para seguidores
+En **Publicar novedad › Cupón para seguidores** pones un **código** (de 4 a 12 letras o números, por ejemplo SABOR3), el **descuento** (de $1 a $50), la
+**compra mínima** (al menos $1 más que el descuento) y **cuántos usos** tiene en total. Siempre vence: eliges cuándo en VENCE.
+- **Quién lo ve:** la novedad sale en tu página como cualquier otra, pero el **código solo lo ven quienes te siguen**. Quien no te sigue ve «Solo para
+  seguidores» y un botón para seguirte.
+- **Dónde se usa:** en los **pedidos en línea** de tu negocio, al pagar («Código de cupón» y «Aplicar»). Cada persona lo usa **una vez**. El pedido dice
+  el cupón y el descuento, y tú lo ves en el detalle del pedido.
+- **Quién lo pone:** el descuento **lo pones tú**: sale de lo que cobras. La comisión de To'Latino se calcula sobre lo que paga el cliente. El impuesto se
+  calcula sobre lo que queda después del descuento.
+- **Si el pedido no sigue** (lo rechazas, vence sin respuesta o se cancela), el uso **vuelve** y la persona lo puede usar otra vez.
+- **Cuando ya se usó**, el código, el descuento y el mínimo no cambian. Para otro, termina este y crea uno nuevo. Dos cupones vivos no pueden tener el mismo
+  código.
+
 ## English
 
 ### What it does
@@ -97,3 +110,17 @@ Under "When it goes out", **Repeat** brings the same update back on the days you
 
 ### The «Message» button
 Under «The button · what the client taps», **Message** shows «Message {your business}»: tapping it opens Messages with you. If your business has no owner on To’Latino yet, the button does not show.
+
+### Follower coupon
+In **Post an update › Follower coupon** you set a **code** (4 to 12 letters or numbers, for example SABOR3), the **discount** ($1 to $50), the **minimum
+order** (at least $1 more than the discount) and **how many uses** it has in total. It always expires: you pick when under ENDS.
+- **Who sees it:** the update shows on your page like any other, but **only your followers see the code**. Someone who does not follow you sees «Followers
+  only» and a button to follow you.
+- **Where it is used:** on your business's **online orders**, at checkout («Coupon code» and «Apply»). Each person uses it **once**. The order shows the
+  coupon and the discount, and you see it in the order detail.
+- **Who pays for it:** **you give** the discount: it comes out of what you charge. To'Latino's commission is calculated on what the customer pays. Tax is
+  calculated on what is left after the discount.
+- **If the order does not go through** (you decline it, it expires without an answer or it is cancelled), the use **comes back** and the person can use
+  it again.
+- **Once it has been used**, the code, discount and minimum do not change. For another one, end this one and create a new one. Two live coupons cannot
+  have the same code.

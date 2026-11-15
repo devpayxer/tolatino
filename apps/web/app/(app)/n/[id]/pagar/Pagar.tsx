@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ComponentType } from "react";
 import type { DropPref, MenuPublico } from "@/lib/pedir";
 import { calc, carritoGuardado, entrega, EnvioGratis, guardarCarrito, guardarModo, limpiar, modoDe, modoGuardado, Modos, type Linea, type Modo } from "../MenuCliente";
-import { enviarPedido } from "../acciones-pedido";
+import { cuponPago, enviarPedido } from "../acciones-pedido";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
 import { useVerificacion } from "../../../pago/Verificacion";
 import { uuid } from "@/lib/uuid";
@@ -51,6 +51,8 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []);
   const [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas[0] ?? null);
   const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null);
+  // 9n-21 · Cupón para seguidores (diseño del pago: «Código de cupón», «Aplicar», «Quitar», línea «Cupón CODE −$X»). El servidor decide.
+  const [cupIn, setCupIn] = useState(""), [cup, setCup] = useState<{ code: string; off: number } | null>(null), [cupErr, setCupErr] = useState(""), [cupBusy, setCupBusy] = useState(false);
   // 9k · 3-D Secure: si el banco pide confirmar, la hoja lo completa y el pedido se vuelve a enviar con la misma clave.
   const V = useVerificacion(es, pago?.modo, pago?.pk);
   const conTarjeta = !!pago && payK === "card";
@@ -62,7 +64,9 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
   const C = calc(m, lines), ENT = entrega(m, lines, modo, es);
   const tipOn = dl && !!D?.tip;
   const tipC = !tipOn ? 0 : tip === "otro" ? Math.max(0, Math.min(10000, Math.round((parseFloat(tipAmt) || 0) * 100))) : tip === "p0" ? 0 : Math.round((C.sub * Number(tip.slice(1))) / 100);
-  const total = ENT.total + tipC;
+  // Con cupón: el descuento sale del subtotal y el impuesto va sobre lo que queda (como en el servidor: lib/cupon-seguidores.ts).
+  const cupOff = cup ? Math.min(cup.off, C.sub) : 0, taxCup = cupOff && C.sub > 0 ? Math.round((C.tax * (C.sub - cupOff)) / C.sub) : C.tax;
+  const total = ENT.total - cupOff - (C.tax - taxCup) + tipC;
   const volver = () => router.push(`/n/${biz}?tab=menu`);
   const aqui = encodeURIComponent(`/n/${biz}/pagar`);
   // Platos con horario propio (p. ej. almuerzo hasta las 4): se programa hasta media hora antes.
@@ -109,13 +113,14 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
     try {
       const r = await enviarPedido({
         negocio: biz, cuando, clave, modo, lineas: lines.map((l) => ({ item: l.id, ch: l.ch, k: l.k, q: l.q, nota: l.nt })),
-        pago: conTarjeta && tarjeta ? { tipo: "tarjeta", pm: tarjeta.pm } : { tipo: "efectivo" },
+        pago: conTarjeta && tarjeta ? { tipo: "tarjeta", pm: tarjeta.pm } : { tipo: "efectivo" }, ...(cup ? { cupon: cup.code } : {}),
         ...(dl ? { direccion: dir?.id, propina: tipOn ? { k: tip, monto: tipC } : undefined, entrega: { drop, at, note: nota.trim(), guardar } } : {}),
       });
       if (r.ok) { vibrar("hecho"); guardarCarrito(biz, []); router.push(`/pedido/${r.numero}`); return; }
       if (r.entrar || r.perfil) { router.push(`/entrar?volver=${aqui}`); return; }
       if (V.pide(r, () => { void enviar(); })) { setEnviando(false); return; }
       if (r.tarjeta && tarjeta) setDeclinada(tarjeta.pm);
+      if (r.cupon) { setCup(null); setCupErr(es ? r.msg.es : r.msg.en); }
       setError({ msg: es ? r.msg.es : r.msg.en, menu: !!r.menu }); window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
       setError({ msg: E2("No se pudo enviar. Revisa tu conexión y prueba de nuevo.", "Could not send. Check your connection and try again."), menu: false });
@@ -147,7 +152,8 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
         <div className="flex justify-between"><span>Subtotal</span><span className="font-mono text-ink">{money(C.sub)}</span></div>
         {dl && <div className="flex justify-between"><span>{E2("Envío", "Delivery")}</span><span className="font-mono text-ink">{ENT.fee ? money(ENT.fee) : E2("Gratis", "Free")}</span></div>}
         {tipOn && <div className="flex justify-between"><span>{E2("Propina", "Tip")}</span><span className="font-mono text-ink">{money(tipC)}</span></div>}
-        <div className="flex justify-between"><span>{taxL}</span><span className="font-mono text-ink">{money(C.tax)}</span></div>
+        {cup && <div className="flex justify-between" data-cupon-linea><span>{E2(`Cupón ${cup.code}`, `Coupon ${cup.code}`)}</span><span className="font-mono text-open-text">−{money(cupOff)}</span></div>}
+        <div className="flex justify-between"><span>{taxL}</span><span className="font-mono text-ink">{money(taxCup)}</span></div>
         <div className="h-px bg-line" />
         <div className="flex items-baseline justify-between"><span className="text-[13.5px] font-bold text-ink">Total</span><span className="font-display text-[20px] font-extrabold leading-none tracking-[-0.02em] text-ink">{money(total)}</span></div>
       </div>
@@ -322,6 +328,32 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
                   <span className="flex-none text-[12.5px] font-bold text-action">{tarjeta ? E2("Cambiar", "Change") : ""}</span>
                 </button>
               )}
+              <div data-cupon className="mt-3 border-t border-ink/[.07] pt-3">
+                {cup ? (
+                  <div className="flex items-center gap-[11px]">
+                    <span className="grid h-[26px] w-[38px] flex-none place-items-center rounded-[6px] bg-action/10"><Icon name="dollar" size={15} color="var(--tl-action)" /></span>
+                    <div className="min-w-0 flex-1"><div className="font-mono text-[13px] font-bold">{cup.code}</div>
+                      <div className="mt-0.5 font-mono text-[10.5px] font-semibold text-open-text">{`−${money(cupOff)}${E2(" · APLICADO", " · APPLIED")}`}</div></div>
+                    <button type="button" onClick={() => { setCup(null); setCupErr(""); }} className="text-[12px] font-bold text-action">{E2("Quitar", "Remove")}</button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex gap-2">
+                      <div className={`flex h-[42px] min-w-0 flex-1 items-center rounded-[12px] border px-3 ${cupErr ? "border-danger/40" : "border-ink/[.12]"}`}>
+                        <input value={cupIn} onChange={(e) => { setCupIn(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12)); setCupErr(""); }} placeholder={E2("Código de cupón", "Coupon code")}
+                          aria-label={E2("Código de cupón", "Coupon code")} autoCapitalize="characters" className="min-w-0 flex-1 bg-transparent font-mono text-[13px] font-bold tracking-[0.06em] text-ink outline-none" />
+                      </div>
+                      <Button variant="secondary" size="md" disabled={!cupIn || cupBusy} onClick={async () => {
+                        setCupBusy(true); setCupErr("");
+                        try { const r = await cuponPago(biz, cupIn, C.sub); if (r.ok) { setCup({ code: r.code, off: r.off }); setCupIn(""); } else if (r.entrar) router.push(`/entrar?volver=${aqui}`); else setCupErr(es ? r.msg.es : r.msg.en); }
+                        catch { setCupErr(E2("No se pudo revisar el cupón. Prueba de nuevo.", "Could not check the coupon. Try again.")); }
+                        setCupBusy(false);
+                      }}>{E2("Aplicar", "Apply")}</Button>
+                    </div>
+                    {cupErr && <div role="alert" className="mt-[7px] text-[11.5px] font-medium leading-[1.45] text-danger">{cupErr}</div>}
+                  </>
+                )}
+              </div>
             </div>
             <div className={`${caja} lg:hidden`}>{resumen}</div>
             <div className="lg:hidden">{notaPago}</div>

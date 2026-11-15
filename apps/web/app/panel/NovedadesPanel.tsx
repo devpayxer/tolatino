@@ -13,7 +13,7 @@ type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
 const NOVT = (c: Ctx): [Tipo, string, string][] => [
   ["oferta", c.E2("Oferta", "Deal"), "dollar"], ["hoy", c.E2("Hoy hay", "Today"), "hot"], ["aviso", c.E2("Aviso de horario", "Hours notice"), "clock"],
-  ["encuesta", c.E2("Encuesta", "Poll"), "help"], ["novedad", c.E2("Novedad", "News"), "news"],
+  ["encuesta", c.E2("Encuesta", "Poll"), "help"], ["novedad", c.E2("Novedad", "News"), "news"], ["cupon", c.E2("Cupón para seguidores", "Follower coupon"), "dollar"],
 ];
 const horaL = (m: number) => { const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 
@@ -119,6 +119,7 @@ type FN = {
   kind: Tipo; title: string; body: string; fotos: { id: string; url: string }[]; link: string; item: string | null; url: string; was: string; now: string;
   day: string; hrs: string; hrsT: string; o1: string; o2: string; o3: string; o4: string; audience: "all" | "fol"; ends: string; when: "now" | "once" | "rep"; sD: number; sM: number; evento: string | null; job: string | null; avisar: boolean;
   rDias: number[]; rDur: string; rHasta: string;
+  cCode: string; cOff: string; cMin: string; cUses: string; // 9n-21 · cupón para seguidores
 };
 function editor(c: Ctx, id: string): Sec {
   const { E2, d } = c, ed = id.startsWith("edit:") ? c.nov?.det : id.startsWith("dup:") ? c.nov?.det : null, edita = id.startsWith("edit:") && !!ed;
@@ -129,10 +130,11 @@ function editor(c: Ctx, id: string): Sec {
     o1: ed?.poll?.[0] ?? "", o2: ed?.poll?.[1] ?? "", o3: ed?.poll?.[2] ?? "", o4: ed?.poll?.[3] ?? "", audience: ed?.audience ?? "all", ends: "24h",
     when: edita && ed?.rep ? "rep" : edita && ed?.st === "prog" ? "once" : "now", sD: 1, sM: ed?.rep?.m ?? 660, evento: ed?.event_id ?? null, job: ed?.job_id ?? null, avisar: false,
     rDias: ed?.rep?.dias ?? [], rDur: ed?.rep?.dur ?? "close", rHasta: "no",
+    cCode: ed?.coupon_code ?? "", cOff: ed?.coupon_off_cents ? String(ed.coupon_off_cents / 100) : "", cMin: ed?.coupon_min_cents ? String(ed.coupon_min_cents / 100) : "", cUses: ed?.coupon_uses ? String(ed.coupon_uses) : "",
   };
   const F = c.form<FN>(`det:nov:${id}`, b0), x = F.d, ty = x.kind, out: (Bloque | null)[] = [], TT = NOVT(c), T = TT.find((t) => t[0] === ty) ?? TT[0]!;
-  const TD: Record<Tipo, string> = { oferta: E2("Un precio especial en algo que vendes. Lo piden desde la novedad, y se cobra ese precio.", "A special price on something you sell. They order it from the update, at that price."), hoy: E2("Lo que hay hoy: el plato del día, algo que acaba de llegar.", "What you have today: the daily special, something that just arrived."), aviso: E2("Cierres, feriados o cambios de horario.", "Closures, holidays or hours changes."), encuesta: E2("Una pregunta corta. Votan en tu página.", "A short question. They vote on your page."), novedad: E2("Cualquier otra cosa que quieras contar.", "Anything else you want to share.") };
-  const PH: Record<Tipo, string> = { oferta: E2("Ej. Pernil + arroz $10 hasta las 3", "e.g. Pernil + rice $10 until 3"), hoy: E2("Ej. Hoy hay sancocho", "e.g. Sancocho today"), aviso: E2("Ej. Cerramos el jueves", "e.g. Closed Thursday"), encuesta: E2("Ej. ¿Qué sopa quieren el domingo?", "e.g. Which soup on Sunday?"), novedad: E2("Ej. Estrenamos terraza", "e.g. Our new patio is open") };
+  const TD: Record<Tipo, string> = { oferta: E2("Un precio especial en algo que vendes. Lo piden desde la novedad, y se cobra ese precio.", "A special price on something you sell. They order it from the update, at that price."), hoy: E2("Lo que hay hoy: el plato del día, algo que acaba de llegar.", "What you have today: the daily special, something that just arrived."), aviso: E2("Cierres, feriados o cambios de horario.", "Closures, holidays or hours changes."), encuesta: E2("Una pregunta corta. Votan en tu página.", "A short question. They vote on your page."), novedad: E2("Cualquier otra cosa que quieras contar.", "Anything else you want to share."), cupon: E2("Un descuento solo para quienes te siguen: ven el código y lo usan una vez en un pedido en línea. El descuento lo pones tú.", "A discount only for your followers: they see the code and use it once on an online order. You give the discount.") };
+  const PH: Record<Tipo, string> = { oferta: E2("Ej. Pernil + arroz $10 hasta las 3", "e.g. Pernil + rice $10 until 3"), hoy: E2("Ej. Hoy hay sancocho", "e.g. Sancocho today"), aviso: E2("Ej. Cerramos el jueves", "e.g. Closed Thursday"), encuesta: E2("Ej. ¿Qué sopa quieren el domingo?", "e.g. Which soup on Sunday?"), novedad: E2("Ej. Estrenamos terraza", "e.g. Our new patio is open"), cupon: E2("Ej. $3 menos en pedidos de $15 o más", "e.g. $3 off orders of $15 or more") };
   out.push({ type: "head", eye: E2("NOVEDAD", "UPDATE"), t: edita ? E2("Editar novedad", "Edit update") : E2("Publicar novedad", "Post an update"), s: E2("Sale en tu página.", "Shows on your page."), onBack: c.closeDet });
   out.push({ type: "chips", k: E2("QUÉ PUBLICAS", "WHAT YOU POST"), items: TT.map(([k, l]) => ({ l, v: ty === k ? "selected" : "filter", onClick: () => F.set({ kind: k, link: k === "oferta" ? "item" : k === ty ? x.link : "none" }) })) },
     { type: "note", tone: "info", icon: T[2], t: TD[ty] });
@@ -207,6 +209,21 @@ function editor(c: Ctx, id: string): Sec {
     }
   }
   const bf = it ? it.cents : 0, nw = Math.round(Number(x.now) * 100);
+  // 9n-21 · Cupón para seguidores (diseño Novedades: código visible solo si sigues; demo SABOR3 −$3 desde $15). Lo revisa el servidor al guardar y al pedir.
+  const cOff = Math.round(Number(x.cOff) * 100), cMin = Math.round(Number(x.cMin) * 100), cUses = Math.floor(Number(x.cUses));
+  const cupOk = /^[A-Z0-9]{4,12}$/.test(x.cCode) && cOff >= 100 && cOff <= 5000 && cMin >= cOff + 100 && cMin <= 20000 && cUses >= 1 && cUses <= 500 && x.ends !== "no";
+  if (ty === "cupon") {
+    const usados = edita ? ed?.coupon_usados ?? 0 : 0;
+    out.push({ type: "group", k: E2("EL CUPÓN", "THE COUPON") },
+      { type: "field", k: E2("CÓDIGO", "CODE"), val: x.cCode, ph: "SABOR3", max: 12, lock: usados > 0, help: E2("De 4 a 12 letras o números. Solo lo ven quienes te siguen.", "4 to 12 letters or numbers. Only your followers see it."), onChange: (v) => F.set({ cCode: v.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12) }) },
+      { type: "field", k: E2("DESCUENTO", "DISCOUNT"), val: x.cOff, pre: "$", im: "decimal", max: 5, lock: usados > 0, help: E2("De $1 a $50. Lo pones tú: sale de lo que cobras.", "$1 to $50. You give it: it comes out of what you charge."), onChange: (v) => F.set({ cOff: v.replace(/[^\d.]/g, "").slice(0, 5) }) },
+      { type: "field", k: E2("COMPRA MÍNIMA", "MINIMUM ORDER"), val: x.cMin, pre: "$", im: "decimal", max: 6, lock: usados > 0, help: E2("Al menos $1 más que el descuento.", "At least $1 more than the discount."), onChange: (v) => F.set({ cMin: v.replace(/[^\d.]/g, "").slice(0, 6) }) },
+      { type: "field", k: E2("CUÁNTOS USOS EN TOTAL", "HOW MANY USES IN TOTAL"), val: x.cUses, im: "numeric", max: 3, help: E2("Cada persona lo usa una vez. Si un pedido no sigue, el uso vuelve.", "Each person uses it once. If an order does not go through, the use comes back."), onChange: (v) => F.set({ cUses: v.replace(/\D/g, "").slice(0, 3) }) },
+      { type: "note", tone: usados > 0 ? "warn" : "info", icon: "dollar", t: usados > 0
+        ? E2(`Ya se usó ${usados} ${usados === 1 ? "vez" : "veces"}: el código, el descuento y el mínimo no cambian. Para otro, termínalo y crea uno nuevo.`, `Already used ${usados} ${usados === 1 ? "time" : "times"}: the code, discount and minimum do not change. For another, end it and create a new one.`)
+        : E2("Vale en pedidos en línea de tu negocio, una vez por persona, mientras la novedad esté en vivo. Siempre vence.", "It works on your online orders, once per person, while the update is live. It always expires.") });
+    if (x.ends === "no") out.push({ type: "note", tone: "warn", t: E2("Un cupón siempre vence: elige cuándo en VENCE.", "A coupon always expires: pick when under ENDS.") });
+  }
   if (ty === "oferta") {
     out.push({ type: "group", k: E2("EL PRECIO", "THE PRICE") },
       // El precio normal es el de tu menú (no se escribe): así el «antes» siempre es verdad.
@@ -249,13 +266,13 @@ function editor(c: Ctx, id: string): Sec {
     out.push({ type: "chips", k: E2("QUÉ DÍA", "WHICH DAY"), items: dias.map(([i, l]) => ({ l, v: x.sD === i ? "selected" : "filter", onClick: () => F.set({ sD: i }) })) },
       { type: "step", t: E2("A qué hora", "At what time"), v: horaL(x.sM), onM: () => F.set({ sM: Math.max(0, x.sM - 30) }), onP: () => F.set({ sM: Math.min(1410, x.sM + 30) }) });
   }
-  out.push({ type: "nprev", k: E2("ASÍ SE VE", "HOW IT LOOKS"), name: d.name, logo: d.logo ?? undefined, tags: [{ label: T[1].toUpperCase(), tone: ty === "oferta" ? "ink" : ty === "hoy" ? "signal" : ty === "aviso" ? "danger" : ty === "encuesta" ? "action" : "neutral" }],
-    body: x.title ? (x.body ? `${x.title}. ${x.body}` : x.title) : E2("Tu título sale aquí.", "Your title shows here."), photos: x.fotos.map((f) => f.url), foot: ty === "oferta" && it && nw > 0 ? `${it.name} · ${money(nw)}` : undefined });
+  out.push({ type: "nprev", k: E2("ASÍ SE VE", "HOW IT LOOKS"), name: d.name, logo: d.logo ?? undefined, tags: [{ label: T[1].toUpperCase(), tone: ty === "oferta" ? "ink" : ty === "hoy" ? "signal" : ty === "aviso" ? "danger" : ty === "encuesta" ? "action" : ty === "cupon" ? "pro" : "neutral" }],
+    body: x.title ? (x.body ? `${x.title}. ${x.body}` : x.title) : E2("Tu título sale aquí.", "Your title shows here."), photos: x.fotos.map((f) => f.url), foot: ty === "oferta" && it && nw > 0 ? `${it.name} · ${money(nw)}` : ty === "cupon" && cupOk ? `${x.cCode} · −${money(cOff)} ${E2("desde", "from")} ${money(cMin)}` : undefined });
   const poll = [x.o1, x.o2, x.o3, x.o4].map((o) => o.trim()).filter(Boolean);
-  const valid = x.title.trim().length >= 3 && (ty !== "oferta" || (!!it && nw > 0 && nw < bf)) && (ty !== "encuesta" || poll.length >= 2) && (ty !== "aviso" || !!x.day.trim()) && (lk !== "item" || ty === "aviso" || ty === "encuesta" || !!x.item) && (lk !== "job" || !!x.job) && (lk !== "web" || /^https:\/\//.test(x.url)) && (lk !== "event" || !!x.evento);
+  const valid = x.title.trim().length >= 3 && (ty !== "cupon" || cupOk) && (ty !== "oferta" || (!!it && nw > 0 && nw < bf)) && (ty !== "encuesta" || poll.length >= 2) && (ty !== "aviso" || !!x.day.trim()) && (lk !== "item" || ty === "aviso" || ty === "encuesta" || !!x.item) && (lk !== "job" || !!x.job) && (lk !== "web" || /^https:\/\//.test(x.url)) && (lk !== "event" || !!x.evento);
   return { blocks: out, ed: {
     F, l: x.when === "once" || x.when === "rep" ? E2("Programar", "Schedule") : edita ? E2("Guardar", "Save") : E2("Publicar", "Post"), valid: valid && (x.when !== "rep" || x.rDias.length > 0), always: true,
-    apply: (v: FN) => novGuardar(d.id, { id: edita ? ed!.id : null, kind: v.kind, title: v.title, body: v.body, link: v.kind === "oferta" ? "item" : v.kind === "aviso" || v.kind === "encuesta" ? "none" : v.link, item: v.item,
+    apply: (v: FN) => novGuardar(d.id, { id: edita ? ed!.id : null, kind: v.kind, title: v.title, body: v.body, cupon: v.kind === "cupon" ? { code: v.cCode, off: Number(v.cOff), min: Number(v.cMin), uses: Number(v.cUses) } : null, link: v.kind === "oferta" ? "item" : v.kind === "aviso" || v.kind === "encuesta" || v.kind === "cupon" ? "none" : v.link, item: v.item,
       url: v.url, was: v.was ? Number(v.was) : null, now: v.now ? Number(v.now) : null, aviso: v.kind === "aviso" ? { day: v.day, hrs: v.hrs, hrsT: v.hrsT } : null,
       poll: [v.o1, v.o2, v.o3, v.o4].map((o) => o.trim()).filter(Boolean), audience: v.audience, ends: v.ends, prog: v.when === "once" ? { d: v.sD, m: v.sM } : null, rep: v.when === "rep" ? { dias: v.rDias, m: v.sM, dur: v.rDur, hasta: v.rHasta } : null, fotos: v.fotos.map((f) => f.id), evento: v.evento, job: v.job, avisar: v.when === "now" && v.avisar }),
     toast: x.when === "rep" ? E2("Programada: se repite los días que elegiste.", "Scheduled: it repeats on the days you picked.") : x.when === "once" ? E2("Programada.", "Scheduled.") : E2("Publicada. Ya sale en tu página.", "Posted. It is on your page now."),

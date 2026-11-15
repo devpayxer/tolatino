@@ -2416,3 +2416,6 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   `depositoRetenido` ampliado a frases partidas); e2e `ayu9f5`. Corregidos de paso: el depósito de Hogar/Auto, las opciones de cobro de Fiestas y Wallet.
 - **9n-20 · «Ver como cliente» de un negocio no activo (L147):** ficha(…, { equipo: true }) solo para el equipo con neg:ver, desde el 360° (`?equipo=1`),
   con aviso VISTA DEL EQUIPO (InfoCard), auditada y sin contar como vista. Guardián `fichaOcultaSoloEquipo` (alreves9n20 5/5); e2e `neg9n20`.
+- **9n-21 · Cupón para seguidores (L311):** 0169 (`business_posts.kind 'cupon'` + código/descuento/mínimo/usos, `operations.discount_cents`, `follower_coupon_uses`
+  con trigger de vuelta); `lib/cupon-seguidores.ts` (cuponDe en la transacción de crearPedido); pago con «Código de cupón» del prototipo; ficha, pedido, panel,
+  Transacciones y el editor del panel. Guardián `cuponDelServidor` (alreves9n21 9/9); e2e `cup9n21`; ayuda (panel-novedades, novedades, pedir-comida).

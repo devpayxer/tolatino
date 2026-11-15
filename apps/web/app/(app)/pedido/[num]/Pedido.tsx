@@ -144,6 +144,7 @@ export function Pedido({ p, es, ayuda, ruta = false }: { p: PedidoVista; es: boo
         <div className="flex justify-between"><span>Subtotal</span><span className="font-mono text-ink">{p.sub}</span></div>
         {p.envio && <div className="flex justify-between"><span>{E2("Envío", "Delivery")}</span><span className="font-mono text-ink">{p.envio === "$0.00" ? E2("Gratis", "Free") : p.envio}</span></div>}
         {p.propina && <div className="flex justify-between"><span>{E2("Propina", "Tip")}</span><span className="font-mono text-ink">{p.propina}</span></div>}
+        {p.cupon && <div className="flex justify-between" data-cupon-linea><span>{E2(`Cupón ${p.cupon.code}`, `Coupon ${p.cupon.code}`)}</span><span className="font-mono text-open-text">−{p.cupon.monto}</span></div>}
         <div className="flex justify-between"><span>{p.taxL}</span><span className="font-mono text-ink">{p.tax}</span></div>
         <div className="h-px bg-line" />
         <div className="flex items-baseline justify-between"><span className="text-[13.5px] font-bold text-ink">Total</span><span className="font-display text-[20px] font-extrabold leading-none tracking-[-0.02em] text-ink">{p.total}</span></div>

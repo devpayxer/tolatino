@@ -8,6 +8,7 @@ import { AGOTADO_SQL, QUEDAN_SQL, type Av } from "./menu";
 import { ITEMS_FREE } from "./plan";
 import { vencer } from "./pedidos";
 import { cobrarOperacion, registrarRetencion, retenerPedido, tarjetaDe } from "./cobros";
+import { cuponDe, impuestoConDescuento } from "./cupon-seguidores";
 
 /* El menú que ve el cliente (pestaña Menú de la ficha, Resumen · menú y checkout) y las reglas del pedido de Comida
    con pago en el local (Fase 2 · bloque 2b). El servidor decide todo: qué se ve, qué se puede pedir, a qué precio,
@@ -266,8 +267,9 @@ export type PedidoIn = {
   negocio: string; lineas: LineaIn[]; cuando: string; nota?: string; clave: string;
   modo?: "pickup" | "delivery"; direccion?: string; propina?: { k: string; monto?: number }; entrega?: DropPref & { guardar?: boolean };
   pago?: { tipo: "tarjeta" | "efectivo"; pm?: string };   // tarjeta: la referencia de Stripe (pm_…), nunca el número
+  cupon?: string;                                           // 9n-21 · el código que escribió; el servidor decide si vale y cuánto
 };
-export type PedidoOut = { ok: true; numero: string } | { ok: false; msg: Bi; entrar?: true; perfil?: true; menu?: true; tarjeta?: true; verificar?: import("./pagos/pasarela").Verificar };
+export type PedidoOut = { ok: true; numero: string } | { ok: false; msg: Bi; entrar?: true; perfil?: true; menu?: true; tarjeta?: true; cupon?: true; verificar?: import("./pagos/pasarela").Verificar };
 
 const ID = /^\d{1,18}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -356,7 +358,15 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
     if (programado != null) for (const x of L) { const h = m.items[x.it.id]!.hasta; if (h != null && programado > h - 30) { await c.query("rollback"); return no(`«${x.name.es}» se sirve hasta las ${hora(h)}: programa hasta las ${hora(h - 30)}.`, `“${x.name.en}” is served until ${hora(h)}: schedule up to ${hora(h - 30)}.`); } }
 
     const sub = L.reduce((a, x) => a + x.unit * x.q, 0);
-    const tax = Math.round(L.reduce((a, x) => a + (x.unit * x.q * x.tax) / 100, 0));
+    // 9n-21 · Cupón para seguidores: lo decide el servidor (lib/cupon-seguidores.ts) con el candado del negocio puesto; el descuento lo pone el
+    // negocio y el impuesto va sobre lo que queda.
+    let desc = 0, cup: Extract<Awaited<ReturnType<typeof cuponDe>>, { ok: true }> | null = null;
+    if (typeof p.cupon === "string" && p.cupon.trim()) {
+      const r = await cuponDe(c, b.id, p.cupon, userId, sub);
+      if (!r.ok) { await c.query("rollback"); return no(r.msg.es, r.msg.en, { cupon: true }); }
+      cup = r; desc = r.off;
+    }
+    const tax = impuestoConDescuento(Math.round(L.reduce((a, x) => a + (x.unit * x.q * x.tax) / 100, 0)), sub, desc);
     // Delivery: la dirección de la persona dentro de la zona, el mínimo, el envío (gratis desde) y la propina.
     let envio = 0, propina = 0, dir: DirEntrega | null = null;
     const D = est.dlv;
@@ -373,12 +383,12 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
         propina = k === "otro" ? Math.max(0, Math.min(10000, Math.round(Number(p.propina.monto) || 0))) : ["p15", "p18", "p20"].includes(k) ? Math.round((sub * Number(k.slice(1))) / 100) : 0;
       }
     }
-    const total = sub + tax + envio + propina;
+    const total = sub - desc + tax + envio + propina;
     const num = (await c.query<{ n: string }>(`select nextval('operations_order_seq')::text as n`)).rows[0]!.n;
     // Tarjeta: se retiene el total antes de guardar el pedido (si el banco la rechaza, no hay pedido).
     let ret: Awaited<ReturnType<typeof retenerPedido>> | null = null;
     if (conTarjeta && T?.cuenta && pm) {
-      ret = await retenerPedido({ negocio: b.id, cuenta: T.cuenta, clave: p.clave, total, subtotal: sub, pm, userId, numero: num }, c);
+      ret = await retenerPedido({ negocio: b.id, cuenta: T.cuenta, clave: p.clave, total, subtotal: sub - desc, pm, userId, numero: num }, c);
       if (!ret.ok) { await c.query("rollback"); return no(ret.mensaje.es, ret.mensaje.en, { tarjeta: true }); }
       retenido = ret.pi;
       if (ret.estado === "accion") {
@@ -397,11 +407,11 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
     const auto = b.auto_accept && b.open && !b.pause_until && programado == null;
     const op = await c.query<{ id: string }>(
       `insert into operations (number, kind, city_id, business_id, user_id, status, stage, mode, scheduled_at, ready_at, customer_note, subtotal_cents, tax_cents, total_cents,
-                               pay_mode, respond_by, confirmed_at, answered_at, free_quota_month, client_key, is_test, details, delivery_cents, tip_cents)
+                               pay_mode, respond_by, confirmed_at, answered_at, free_quota_month, client_key, is_test, details, delivery_cents, tip_cents, discount_cents, coupon_post_id)
        values ($1, 'order', $2, $3, $4, $5, $6, $19,
                case when $7::int is null then null else ($8::date + make_interval(mins => $7::int)) at time zone $9 end,
                ($8::date + make_interval(mins => $10::int)) at time zone $9, nullif($11, ''), $12, $13, $14, $20,
-               now() + interval '10 minutes', case when $5 = 'confirmed' then now() end, case when $5 = 'confirmed' then now() end, $15, $16, $17, $18::jsonb, $21, $22)
+               now() + interval '10 minutes', case when $5 = 'confirmed' then now() end, case when $5 = 'confirmed' then now() end, $15, $16, $17, $18::jsonb, $21, $22, $23, $24::bigint)
        returning id::text`,
       [num, b.city, b.id, userId, auto ? "confirmed" : "pending", auto ? "accepted" : "sent", programado, b.hoy, b.tz, listoMin, notaCliente, sub, tax, total,
         b.plan === "pro" ? null : b.mes, p.clave, entorno !== "produccion",
@@ -410,9 +420,12 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
           to: { label: dir.label, street: dir.street, apt: dir.apt, zip: dir.zip, mi: dir.mi, addressId: dir.id }, drop, ext: D.ext,
           eta: { d1: (programado ?? est.now + extra) + (programado != null ? 0 : D.d1), d2: (programado ?? est.now + extra) + (programado != null ? 10 : D.d2) },
         } : { pickupNote: b.pickup_note ?? null, address: b.address }),
-        modo, ret?.ok ? "app" : modo === "delivery" ? "entrega" : "local", envio, propina],
+        modo, ret?.ok ? "app" : modo === "delivery" ? "entrega" : "local", envio, propina, desc, cup?.post ?? null],
     );
     const opId = op.rows[0]!.id;
+    // 9n-21 · El uso del cupón (una vez por persona: el índice único lo cierra aunque lleguen dos a la vez; vuelve solo si el pedido no sigue).
+    if (cup) await c.query(`insert into follower_coupon_uses (post_id, business_id, city_id, user_id, operation_id, code, off_cents) values ($1::bigint, $2, $3, $4, $5::bigint, $6, $7)`,
+      [cup.post, b.id, b.city, userId, opId, cup.code, desc]);
     if (ret?.ok) await registrarRetencion(c, { opId, userId, negocio: b.id, city: b.city, total, comision: ret.comision, r: ret, pm: pm ?? undefined });
     for (const x of L) {
       await c.query(
@@ -469,6 +482,7 @@ export type PedidoVista = {
   tiempos: Record<string, string>; canceladoPor: string | null;
   // Delivery: a dónde, cómo, cuánto el envío y la propina, cuándo llega y el enlace de la app externa.
   delivery: boolean; envio: string | null; propina: string | null;
+  cupon: { code: string; monto: string } | null; // 9n-21 · cupón para seguidores aplicado
   entrega: { to: { label: string; street: string; apt: string | null; zip: string } | null; drop: DropPref | null; ext: string | null; seguimiento: string | null; llega: string | null } | null;
   // Tarjeta en la app: el estado del dinero (retenido, cobrado, liberado, devuelto) y con qué tarjeta.
   pago: { estado: string; monto: string; devuelto: string | null; tarjeta: string | null } | null;
@@ -485,14 +499,14 @@ export async function pedidoDe(userId: string, numero: string, lang: Lang): Prom
     id: string; number: string; business_id: string; name: string; address: string | null; phone: string | null; lat: number | null; lng: number | null;
     status: string; stage: string | null; vencido: boolean; enviado: string | null; listo: string | null; programado: string | null; responde: string | null; customer_note: string | null;
     subtotal_cents: number; tax_cents: number; total_cents: number; pickup_note: Bi | null; cancelled_by: string | null;
-    mode: string | null; delivery_cents: number; tip_cents: number; repartidor: string | null; llego: boolean; det: { to?: { label: string; street: string; apt: string | null; zip: string }; drop?: DropPref; ext?: string | null; tracking?: string | null; eta?: { d1: number; d2: number } } | null;
+    mode: string | null; delivery_cents: number; tip_cents: number; discount_cents: number; cupon: string | null; repartidor: string | null; llego: boolean; det: { to?: { label: string; street: string; apt: string | null; zip: string }; drop?: DropPref; ext?: string | null; tracking?: string | null; eta?: { d1: number; d2: number } } | null;
   }>(
     `select o.id::text, o.number, o.business_id, b.name, b.address, b.phone, st_y(b.geo::geometry) as lat, st_x(b.geo::geometry) as lng,
             o.status, o.stage, (o.status = 'pending' and o.respond_by <= now()) as vencido,
             to_char(o.sent_at at time zone c.timezone, 'HH24:MI') as enviado, to_char(o.ready_at at time zone c.timezone, 'HH24:MI') as listo,
             to_char(o.scheduled_at at time zone c.timezone, 'HH24:MI') as programado, to_char(o.respond_by at time zone c.timezone, 'HH24:MI') as responde,
             o.customer_note, o.subtotal_cents, o.tax_cents, o.total_cents, o.details->'pickupNote' as pickup_note, o.cancelled_by,
-            o.mode, o.delivery_cents, o.tip_cents, o.details as det,
+            o.mode, o.delivery_cents, o.tip_cents, o.discount_cents, (select p.coupon_code from business_posts p where p.id = o.coupon_post_id) as cupon, o.details as det,
             (select split_part(display_name, ' ', 1) from delivery_drivers where id = o.driver_id) as repartidor,
             exists (select 1 from operation_events e where e.operation_id = o.id and e.kind = 'driver_arrived') as llego
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id
@@ -535,6 +549,7 @@ export async function pedidoDe(userId: string, numero: string, lang: Lang): Prom
     taxL: taxes.length === 1 ? (es ? `Impuestos (${taxes[0]}%)` : `Taxes (${taxes[0]}%)`) : es ? "Impuestos" : "Taxes", count: ls.rows.reduce((a, l) => a + l.q, 0),
     subC: o.subtotal_cents, taxC: o.tax_cents, tiempos, canceladoPor: o.cancelled_by,
     delivery: o.mode === "delivery", envio: o.mode === "delivery" ? money(o.delivery_cents) : null, propina: o.tip_cents ? money(o.tip_cents) : null,
+    cupon: o.discount_cents > 0 ? { code: o.cupon ?? "", monto: money(o.discount_cents) } : null,
     entrega: o.mode === "delivery" ? { to: o.det?.to ?? null, drop: o.det?.drop ?? null, ext: o.det?.ext === "doordash" ? "DoorDash" : o.det?.ext === "uber_eats" ? "Uber Eats" : o.det?.ext ? (es ? "una app externa" : "an external app") : null,
       seguimiento: o.det?.tracking ?? null, llega: o.det?.eta ? `${hora(o.det.eta.d1)}–${hora(o.det.eta.d2)}` : null } : null,
   };

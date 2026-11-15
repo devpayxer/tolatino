@@ -4377,6 +4377,32 @@ const guardianes = {
     }
   },
 
+  /* 9n-21 · El cupón para seguidores lo decide el servidor (dinero): la pantalla solo manda el CÓDIGO; crearPedido toma el descuento de cuponDe
+     (lib/cupon-seguidores.ts), que revisa que la novedad esté en vivo, que quien pide siga al negocio, que no lo haya usado, que queden usos y el
+     mínimo; el total resta ese descuento, la comisión se calcula sobre lo que paga el cliente y el uso queda en follower_coupon_uses (una vez por
+     persona: índice único; vuelve solo si el pedido no sigue: trigger). Al revés: un descuento que llega del cliente, cuponDe sin seguir o sin vencer,
+     la comisión sobre el subtotal entero o sin el trigger que devuelve el uso → falla. */
+  cuponDelServidor() {
+    const G = "cuponDelServidor", L = "apps/web/lib/cupon-seguidores.ts", P = "apps/web/lib/pedir.ts", M = "packages/db/migrations/0169_cupon_seguidores.sql", C = "apps/web/app/(app)/n/[id]/pagar/Pagar.tsx";
+    if (!existsSync(L) || !existsSync(M)) return falla(G, L, 0, "falta el cupón para seguidores (lib/cupon-seguidores.ts y 0169)");
+    const q = cuerpoFn(sinComent(L), "cuponDe");
+    for (const [re, que] of [[/p\.status = 'live' and p\.hidden_at is null/, "en vivo y sin ocultar"], [/p\.publish_at <= now\(\) and p\.ends_at > now\(\)/, "publicada y sin vencer"],
+      [/from follows f where f\.follower_user_id = \$3/, "solo quien sigue al negocio"], [/u\.user_id = \$3 and u\.status = 'usado'/, "una vez por persona"],
+      [/if \(p\.usados >= p\.uses\)/, "quedan usos"], [/if \(sub < p\.min\)/, "la compra mínima"]])
+      if (!re.test(q)) falla(G, L, 0, `cuponDe revisa ${que}`);
+    const c = cuerpoFn(sinComent(P), "crearPedido");
+    if (!/const r = await cuponDe\(c, b\.id, p\.cupon, userId, sub\);/.test(c) || !/cup = r; desc = r\.off;/.test(c)) falla(G, P, 0, "crearPedido toma el descuento de cuponDe (con su transacción y el candado del negocio)");
+    if (!/const total = sub - desc \+ tax \+ envio \+ propina;/.test(c)) falla(G, P, 0, "el total resta el descuento del cupón");
+    if (!/subtotal: sub - desc,/.test(c)) falla(G, P, 0, "la comisión se calcula sobre lo que paga el cliente (subtotal menos el cupón)");
+    if (!/if \(cup\) await c\.query\(`insert into follower_coupon_uses/.test(c)) falla(G, P, 0, "el uso del cupón queda en follower_coupon_uses en la misma transacción");
+    { const t = existsSync(C) ? sinComent(C) : "", i = t.indexOf("await enviarPedido({"), blk = i < 0 ? "" : t.slice(i, t.indexOf("});", i));
+      if (!/cupon: cup\.code/.test(blk) || /\b(descuento|discount|desc|off|cupOff)\b/.test(blk)) falla(G, C, 0, "la pantalla manda solo el código del cupón, nunca el descuento"); }
+    const m = readFileSync(M, "utf8");
+    if (!/create unique index if not exists follower_coupon_uses_una_vez on follower_coupon_uses \(post_id, user_id\) where status = 'usado'/.test(m)) falla(G, M, 0, "una vez por persona (índice único)");
+    if (!/create trigger operations_cupon_vuelve after update of status on operations/.test(m)) falla(G, M, 0, "el uso vuelve si el pedido no sigue (trigger operations_cupon_vuelve)");
+    if (!/create trigger follower_coupon_uses_solo_vuelta before update or delete on follower_coupon_uses/.test(m)) falla(G, M, 0, "follower_coupon_uses es solo de inserción (solo vuelve)");
+  },
+
   /* 9n · «Ver como cliente» de un negocio no activo: la ficha de un negocio oculto, suspendido o en borrador solo se arma para el equipo con neg:ver
      (ficha(…, { equipo: true }) solo en page.tsx, después de staff() y s.puede("neg", "ver")), cada apertura va a la auditoría y no cuenta como
      vista ni como evento. ficha() sin ese permiso sigue en «active». Al revés: abrirla sin permiso, sin auditar, contando la vista o aflojar el

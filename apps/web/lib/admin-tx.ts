@@ -20,6 +20,7 @@ export const EST_TX = `case when o.status in ('pending', 'change_proposed') then
   when o.status = 'done' or o.stage in ('delivered', 'picked_up') then 'done' when o.status = 'cancelled' then 'cx' else 'no' end`;
 export type FilaTx = { num: string; k: "order" | "table" | "appointment" | "plan" | "rental" | "hold" | "market_order" | "party" | "trip" | "night" | "enrollment" | "visit" | "tickets" | "private_event"; svc: string | null; dep: number; biz: string; bname: string; uid: string; quien: string; at: string; total: number; p: number | null; mode: string | null; st: EstTx; detalle: string | null;
   pago: string | null; devuelto: number; comision: number; tarjeta: string | null; pid: string | null; disputa: string | null;
+  cup: { code: string; c: number } | null; // 9n-21 · cupón para seguidores
   // 4d: estimado de Auto y Hogar (versiones, aprobado, cobrado en la app y retenciones que no se pudieron renovar).
   estV: number; estAp: number; estCob: number; estFallo: number;
   // 4f: planes, rentas y apartados (lo cobrado con tarjeta en la app y lo retenido, de todos sus cobros).
@@ -62,6 +63,7 @@ export async function listaTx(s: Staff, f: FiltrosTx) {
               to_char(o.sent_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, o.total_cents as total, o.party_size as p, o.mode, ${EST_TX} as st, o.cancelled_by as detalle,
               py.status as pago, coalesce(py.refunded_cents, 0) as devuelto, coalesce(py.fee_cents, 0) as comision, case when py.card_last4 is null then null else upper(py.card_brand) || ' ·· ' || py.card_last4 end as tarjeta,
               py.id::text as pid, (select d.status from disputes d where d.payment_id = py.id order by d.id desc limit 1) as disputa,
+              case when o.discount_cents > 0 then jsonb_build_object('code', (select bp.coupon_code from business_posts bp where bp.id = o.coupon_post_id), 'c', o.discount_cents) end as cup,
               case when o.details->>'rubro' = 'salud' then null else o.details->'svc'->>'es' end as svc, coalesce(o.deposit_cents, 0) as dep,
               o.details->>'rubro' as rub, case when o.details->>'rubro' = 'salud' and coalesce(o.details->'seguro'->>'kind', 'none') <> 'none' then (o.details->'seguro'->>'acepta')::boolean end as "segOk",
               case when o.details->>'rubro' = 'pro' then (select t.total_cents from written_totals t where t.operation_id = o.id order by t.version desc limit 1) end as "proTot",

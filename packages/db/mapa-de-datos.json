@@ -129,6 +129,7 @@
     "coin_entries": { "equipo": ["by_staff"], "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "dinero", "exporta": "monedas", "fusion": "no" } ] },
     "points_entries": { "equipo": ["by_staff"], "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "auditoria", "exporta": "puntos", "fusion": "no" } ] },
     "coupon_redemptions": { "equipo": ["used_by"], "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "dinero", "exporta": "cupones", "fusion": "no" } ] },
+    "follower_coupon_uses": { "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "dinero", "exporta": "cupones_de_seguidores", "fusion": "no" } ] },
     "user_badges": { "equipo": ["by_staff"], "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "insignias", "fusion": "no" } ] },
     "monthly_boards": { "equipo": ["excluded_by"], "reglas": [ { "col": "user_id", "accion": "guardar", "porque": "dinero", "fusion": "no" } ] },
     "content_reports": { "equipo": ["decided_by"], "reglas": [ { "col": "reporter_user_id", "accion": "seudonimizar", "porque": "seguridad", "exporta": "reportaste", "fusion": "no", "set": { "note": "null", "device": "null" } } ] },

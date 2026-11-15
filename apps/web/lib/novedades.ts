@@ -8,9 +8,9 @@ import { quedanEnHoy } from "./hoy";
    terminada se derivan de las fechas; «oculta» = la ocultó To'Latino. La oferta se cobra de verdad: el menú y el pedido
    usan oferta_precio() mientras está en vivo. Votos, encuesta, guardar, comentarios y seguir piden sesión. */
 type Bi = { es: string; en: string };
-export type Tipo = "oferta" | "hoy" | "aviso" | "encuesta" | "novedad";
+export type Tipo = "oferta" | "hoy" | "aviso" | "encuesta" | "novedad" | "cupon";
 export type Enlace = "none" | "item" | "menu" | "tel" | "msg" | "web" | "event" | "job";
-export const TIPOS: Tipo[] = ["oferta", "hoy", "aviso", "encuesta", "novedad"];
+export const TIPOS: Tipo[] = ["oferta", "hoy", "aviso", "encuesta", "novedad", "cupon"];
 export const MAX_FOTOS_POST = 4;
 const nombreCorto = (f: string | null, l: string | null) => `${(f ?? "").trim()}${l ? ` ${l.trim().slice(0, 1).toUpperCase()}.` : ""}`.trim() || "Vecino";
 const iso = (col: string) => `to_char((${col}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
@@ -27,6 +27,8 @@ export type Post = {
   evento: { href: string; t: Bi; dia: string } | null;
   /* 9n-2 · Una novedad con botón «Ver vacante»: la vacante abierta (si ya no está abierta, el botón no sale). */
   vacante: { href: string; t: Bi } | null;
+  /* 9n-21 · Cupón para seguidores: descuento, mínimo y cuántos quedan; el CÓDIGO solo llega a quien sigue al negocio (lo decide la consulta). */
+  cupon: { off: number; min: number; quedan: number; code: string | null; usado: boolean } | null;
   was: number | null; now: number | null; aviso: { day: string; hrs: string; hrsT: string } | null;
   poll: { opts: { l: string; n: number }[]; mine: number | null; total: number; closesH: number | null } | null;
   score: number; myVote: number; saved: boolean; cm: Comentario[];
@@ -45,7 +47,7 @@ export async function novedadesFicha(negocio: string, userId: string | null) {
   const r = await db().query<{
     id: string; kind: Tipo; title: string; body: string; fotos: string[]; h: number; pinned: boolean; ends: string | null; link_kind: Enlace; url: string | null;
     was: number | null; now: number | null; aviso: Post["aviso"]; poll: string[] | null; poll_n: number[]; poll_mine: number | null; closes_h: number | null;
-    score: number; my_vote: number; saved: boolean; item_id: string | null; item_name: Bi | null; item_ph: string | null; item_cents: number | null; ev: { href: string; t: Bi; dia: string } | null; vac: { href: string; t: Bi } | null;
+    score: number; my_vote: number; saved: boolean; item_id: string | null; item_name: Bi | null; item_ph: string | null; item_cents: number | null; ev: { href: string; t: Bi; dia: string } | null; vac: { href: string; t: Bi } | null; cup: Post["cupon"];
   }>(
     `select p.id::text, p.kind, p.title, p.body, p.pinned, p.link_kind, p.url, p.price_was_cents as was, p.price_now_cents as now, p.aviso, p.poll,
             floor(extract(epoch from now() - p.publish_at) / 3600)::int as h, ${iso("p.ends_at")} as ends,
@@ -59,6 +61,10 @@ export async function novedadesFicha(negocio: string, userId: string | null) {
             i.id::text as item_id, i.name as item_name, i.photos[1] as item_ph, coalesce(oferta_precio(i.id, $2::uuid), i.price_cents) as item_cents,
             case when p.link_kind = 'event' then (select json_build_object('href', '/eventos/' || e.slug || '?fecha=' || d.id, 't', e.title, 'dia', d.local_date::text) from events e join event_dates d on d.event_id = e.id
                                                    where e.id = p.event_id and d.listable and d.ends_at > now() order by d.starts_at limit 1) end as ev,
+            case when p.kind = 'cupon' then json_build_object('off', p.coupon_off_cents, 'min', p.coupon_min_cents,
+                   'quedan', greatest(0, p.coupon_uses - (select count(*)::int from follower_coupon_uses u where u.post_id = p.id and u.status = 'usado')),
+                   'code', case when $2::uuid is not null and exists (select 1 from follows f where f.follower_user_id = $2::uuid and f.target_kind = 'business' and f.target_id = p.business_id) then p.coupon_code end,
+                   'usado', coalesce($2::uuid is not null and exists (select 1 from follower_coupon_uses u where u.post_id = p.id and u.user_id = $2::uuid and u.status = 'usado'), false)) end as cup,
             case when p.link_kind = 'job' then (select json_build_object('href', '/n/' || p.business_id || '/empleo/' || j.id, 't', j.title) from job_postings j where j.id = p.job_id and j.business_id = p.business_id and vacante_en_vivo(j)) end as vac
        from business_posts p left join items i on i.id = p.item_id and i.removed_at is null and i.status = 'live'
       where p.business_id = $1 and post_en_vivo(p)
@@ -73,7 +79,7 @@ export async function novedadesFicha(negocio: string, userId: string | null) {
        from post_comments c join users u on u.id = c.user_id where c.post_id = any($1::bigint[]) and c.status = 'visible' order by c.created_at limit 500`, [ids, userId])).rows : [];
   const posts: Post[] = r.rows.map((x) => ({
     id: x.id, kind: x.kind, title: x.title, body: x.body, fotos: x.fotos, h: Math.max(0, x.h), pinned: x.pinned, ends: x.ends, link: x.link_kind, url: x.url, was: x.was, now: x.now, aviso: x.aviso,
-    item: x.item_id && x.item_name ? { id: x.item_id, name: x.item_name, ph: x.item_ph, cents: x.item_cents ?? 0 } : null, evento: x.ev, vacante: x.vac,
+    item: x.item_id && x.item_name ? { id: x.item_id, name: x.item_name, ph: x.item_ph, cents: x.item_cents ?? 0 } : null, evento: x.ev, vacante: x.vac, cupon: x.cup ?? null,
     poll: x.poll ? { opts: x.poll.map((l, i) => ({ l, n: x.poll_n[i] ?? 0 })), mine: x.poll_mine, total: x.poll_n.reduce((a, n) => a + n, 0), closesH: x.closes_h } : null,
     score: x.score, myVote: x.my_vote, saved: x.saved, hoy: enHoy.get(x.id) ?? null,
     cm: cms.filter((c) => c.post === x.id).map((c) => { const name = nombreCorto(c.first_name, c.last_name); return { id: c.id, name, ini: name.split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase(), h: Math.max(0, c.h), body: c.body, lang: c.lang, up: c.up, mine: c.mine, reply: c.reply, propio: c.propio }; }),
@@ -202,8 +208,10 @@ export type NovEdit = {
 };
 export async function novedadPanel(negocio: string, id: string) {
   if (!/^\d{1,18}$/.test(id)) return null;
-  const p = (await db().query<FilaNov & { link_kind: Enlace; item_id: string | null; url: string | null; was: number | null; now: number | null; aviso: NovEdit["aviso"]; poll: string[] | null; audience: "all" | "fol"; item_name: Bi | null; item_ph: string | null; item_cents: number | null; event_id: string | null; job_id: string | null; avisada: boolean }>(
+  const p = (await db().query<FilaNov & { link_kind: Enlace; item_id: string | null; url: string | null; was: number | null; now: number | null; aviso: NovEdit["aviso"]; poll: string[] | null; audience: "all" | "fol"; coupon_code: string | null; coupon_off_cents: number | null; coupon_min_cents: number | null; coupon_uses: number | null; coupon_usados: number; item_name: Bi | null; item_ph: string | null; item_cents: number | null; event_id: string | null; job_id: string | null; avisada: boolean }>(
     `select ${FILA_NOV}, p.link_kind, p.item_id::text, p.url, p.price_was_cents as was, p.price_now_cents as now, p.aviso, p.poll, p.audience, p.event_id::text as event_id, p.job_id::text as job_id, p.followers_notified_at is not null as avisada,
+            p.coupon_code, p.coupon_off_cents, p.coupon_min_cents, p.coupon_uses,
+            (select count(*)::int from follower_coupon_uses u where u.post_id = p.id and u.status = 'usado') as coupon_usados,
             i.name as item_name, i.photos[1] as item_ph, i.price_cents as item_cents
        from business_posts p join cities ci on ci.id = p.city_id left join items i on i.id = p.item_id
       where p.business_id = $1 and p.id = $2::bigint and p.status <> 'removed'`, [negocio, id])).rows[0];
@@ -238,6 +246,8 @@ export type NovIn = {
   evento?: string | null; job?: string | null; avisar?: boolean;
   /* 9n-11 · «Repetir»: qué días (0 = domingo), a qué minuto, cuánto se ve cada vez y hasta cuándo. */
   rep?: { dias: number[]; m: number; dur: string; hasta: string } | null;
+  /* 9n-21 · Cupón para seguidores: código (4 a 12 letras o números), descuento y compra mínima en dólares, cuántos usos en total. */
+  cupon?: { code?: string; off?: number; min?: number; uses?: number } | null;
 };
 export async function guardarNovedad(negocio: string, p: NovIn, actorId: string): Promise<{ ok: true; id: string } | { ok: false; msg: Bi }> {
   const kind = TIPOS.includes(p.kind as Tipo) ? (p.kind as Tipo) : null;
@@ -257,6 +267,18 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string)
   if (aviso && !aviso.day) return { ok: false, msg: { es: "Di qué día.", en: "Say which day." } };
   const audience = p.audience === "fol" ? "fol" : "all";
   const ENDS = ["3pm", "24h", "semana", "no"], ends = ENDS.includes(String(p.ends)) ? String(p.ends) : "24h";
+  // 9n-21 · Cupón para seguidores: el servidor revisa el código, el descuento (de $1 a $50), la compra mínima (al menos $1 más que el descuento,
+  // hasta $200) y los usos (1 a 500); vence siempre (nunca «sin fecha»).
+  let cupon: { code: string; off: number; min: number; uses: number } | null = null;
+  if (kind === "cupon") {
+    const c0 = p.cupon ?? {}, code = String(c0.code ?? "").trim().toUpperCase(), off = Math.round(Number(c0.off) * 100), min = Math.round(Number(c0.min) * 100), uses = Math.floor(Number(c0.uses));
+    if (!/^[A-Z0-9]{4,12}$/.test(code)) return { ok: false, msg: { es: "El código va de 4 a 12 letras o números, sin espacios.", en: "The code is 4 to 12 letters or numbers, no spaces." } };
+    if (!(off >= 100 && off <= 5000)) return { ok: false, msg: { es: "El descuento va de $1 a $50.", en: "The discount is $1 to $50." } };
+    if (!(min >= off + 100 && min <= 20000)) return { ok: false, msg: { es: "La compra mínima tiene que ser al menos $1 más que el descuento (hasta $200).", en: "The minimum purchase must be at least $1 more than the discount (up to $200)." } };
+    if (!(uses >= 1 && uses <= 500)) return { ok: false, msg: { es: "Los usos van de 1 a 500.", en: "Uses go from 1 to 500." } };
+    if (ends === "no") return { ok: false, msg: { es: "Un cupón siempre vence: elige cuándo.", en: "A coupon always expires: pick when." } };
+    cupon = { code, off, min, uses };
+  }
   // 9n-11 · «Repetir» (diseño schedBlocks): días, «Sale a las», CADA VEZ SE VE y HASTA CUÁNDO. La primera vez y cuánto se ve las calcula la base
   // (novedad_siguiente / novedad_fin, 0161), que se salta los días que el negocio cierra.
   const REP_DUR = ["close", "3h", "6h", "24h"], REP_HASTA: Record<string, number | null> = { no: null, "2w": 14, "1m": 30, "3m": 90 };
@@ -318,14 +340,23 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string)
       pubV = r.pub; finV = r.fin; hastaV = r.hasta;
     }
     const vals = [kind, title, body, link, item?.id ?? null, url || null, was, now, aviso, kind === "encuesta" ? poll : null, audience, pubV, finV, evento, job,
-      rep ? rep.dias : null, rep ? rep.m : null, rep ? rep.dur : null, hastaV];
+      rep ? rep.dias : null, rep ? rep.m : null, rep ? rep.dur : null, hastaV, cupon?.code ?? null, cupon?.off ?? null, cupon?.min ?? null, cupon?.uses ?? null];
+    // 9n-21 · Un cupón que ya se usó no cambia su código, su descuento ni su mínimo (lo que se cobró tiene que poder explicarse): se crea otro.
+    if (p.id && /^\d{1,18}$/.test(String(p.id))) {
+      const ya = (await c.query<{ code: string | null; off: number | null; min: number | null; n: number }>(
+        `select bp.coupon_code as code, bp.coupon_off_cents as off, bp.coupon_min_cents as min, (select count(*)::int from follower_coupon_uses u where u.post_id = bp.id) as n
+           from business_posts bp where bp.id = $1::bigint and bp.business_id = $2`, [p.id, negocio])).rows[0];
+      if (ya && ya.n > 0 && (!cupon || ya.code !== cupon.code || ya.off !== cupon.off || ya.min !== cupon.min))
+        return { ok: false as const, msg: { es: "Este cupón ya se usó: su código, descuento y mínimo no cambian. Termínalo y crea otro.", en: "This coupon was already used: its code, discount and minimum do not change. End it and create another." } };
+    }
     let id: string;
     if (p.id) {
       if (!/^\d{1,18}$/.test(String(p.id))) return { ok: false as const, msg: { es: "Esa publicación no existe.", en: "That post does not exist." } };
       const u = await c.query<{ id: string }>(
         `update business_posts set kind = $3, title = $4, body = $5, link_kind = $6, item_id = $7, url = $8, price_was_cents = $9, price_now_cents = $10, aviso = $11, poll = $12,
                 audience = $13, publish_at = $14, ends_at = $15, event_id = $16::bigint, job_id = $17::bigint, status = 'live', stopped_at = null, updated_at = now(),
-                repeat_days = $18::smallint[], repeat_min = $19, repeat_dur = $20, repeat_until = $21::date
+                repeat_days = $18::smallint[], repeat_min = $19, repeat_dur = $20, repeat_until = $21::date,
+                coupon_code = $22, coupon_off_cents = $23, coupon_min_cents = $24, coupon_uses = $25
           where id = $1::bigint and business_id = $2 and status <> 'removed' and hidden_at is null returning id::text`, [p.id, negocio, ...vals]);
       if (!u.rows[0]) return { ok: false as const, msg: { es: "Esa publicación ya no se puede editar.", en: "That post can no longer be edited." } };
       id = u.rows[0].id;
@@ -334,8 +365,8 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string)
       if (n >= 20) return { ok: false as const, msg: { es: "Publicaste muchas novedades hoy. Prueba mañana.", en: "You posted many updates today. Try tomorrow." } };
       id = (await c.query<{ id: string }>(
         `insert into business_posts (business_id, city_id, kind, title, body, link_kind, item_id, url, price_was_cents, price_now_cents, aviso, poll, audience, publish_at, ends_at, event_id, job_id,
-                                     repeat_days, repeat_min, repeat_dur, repeat_until, created_by)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::bigint, $17::bigint, $18::smallint[], $19, $20, $21::date, $22) returning id::text`, [negocio, b.city_id, ...vals, actorId])).rows[0]!.id;
+                                     repeat_days, repeat_min, repeat_dur, repeat_until, coupon_code, coupon_off_cents, coupon_min_cents, coupon_uses, created_by)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::bigint, $17::bigint, $18::smallint[], $19, $20, $21::date, $22, $23, $24, $25, $26) returning id::text`, [negocio, b.city_id, ...vals, actorId])).rows[0]!.id;
       // Publicar la primera enciende Novedades en la página (el dueño lo puede apagar).
       await c.query(`update businesses set modules_on = array(select distinct x from unnest(modules_on || array['nov']) x) where id = $1 and not ('nov' = any(modules_on))`, [negocio]);
     }
@@ -354,7 +385,9 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string)
     }
     await c.query(`update media set status = 'removed', removed_reason = 'autor', removed_at = now() where owner_kind = 'post' and owner_id = $1 and status = 'visible' and not (id = any($2::uuid[]))`, [id, fotos]);
     return { ok: true as const, id };
-  }).catch((e: { fotoAjena?: boolean }) => (e?.fotoAjena ? { ok: false as const, msg: { es: "Una de las fotos ya no está. Súbela otra vez.", en: "One of the photos is gone. Upload it again." } } : Promise.reject(e)));
+  }).catch((e: { fotoAjena?: boolean; constraint?: string }) => (e?.fotoAjena ? { ok: false as const, msg: { es: "Una de las fotos ya no está. Súbela otra vez.", en: "One of the photos is gone. Upload it again." } }
+    : e?.constraint === "business_posts_cupon_codigo" ? { ok: false as const, msg: { es: "Ya tienes un cupón con ese código. Usa otro.", en: "You already have a coupon with that code. Use another." } }
+    : Promise.reject(e)));
 }
 
 /* Acciones de una fila: detener, publicar ya, publicar de nuevo (24 h), fijar (una a la vez), quitar. */

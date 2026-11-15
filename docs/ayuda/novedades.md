@@ -51,6 +51,11 @@ precio. El «antes» es el precio del menú.
 sale en **Hoy en el barrio** (24 h, negocios Pro; la persona lo apaga en Mi cuenta › Avisos › «Lo que traen hoy»). Las publicaciones «solo
 para seguidores» se ven en tu página, no en Hoy. Ver `hoy-en-el-barrio.md`.
 
+## Cupón para seguidores
+Algunos negocios publican un **cupón para quienes los siguen**: un descuento en sus pedidos en línea desde una compra mínima. El código solo lo ves si
+sigues al negocio (si no, la novedad dice «Solo para seguidores» y puedes seguirlo ahí mismo). Lo escribes al pagar, en «Código de cupón», y tocas
+«Aplicar». Lo usas una vez; si tu pedido no sigue (el negocio no lo acepta o se cancela), lo puedes usar otra vez.
+
 ## English
 
 ### What it does
@@ -96,3 +101,8 @@ para seguidores» se ven en tu página, no en Hoy. Ver `hoy-en-el-barrio.md`.
 **Do my followers get a notice?** Yes, in the bell (no SMS): «Today at a business you follow» when your update for everyone shows in **Today nearby** (24 h, Pro
 businesses; the person turns it off in My account › Notices › «What’s in today»). Posts «for followers only» show on your page, not in Today. See
 `hoy-en-el-barrio.md`.
+
+### Follower coupon
+Some businesses post a **coupon for their followers**: a discount on their online orders from a minimum order. You only see the code if you follow the
+business (if not, the update says «Followers only» and you can follow it right there). You type it at checkout, in «Coupon code», and tap «Apply». You use
+it once; if your order does not go through (the business does not accept it or it is cancelled), you can use it again.
