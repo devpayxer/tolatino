@@ -30,10 +30,10 @@ tu caso no lo garantiza nadie.
 
 **¿Por qué dice «no puede»?** Porque la ley lo limita (p. ej. un notario en EE. UU. no es abogado). Lo decimos claro.
 
-**¿Cada cuánto se revisa?** Cada 3 meses. En Iglesias, Bienes Raíces y Venta de Autos (corredores, avaluadores, NMLS,
-dealers, vendedores, venta a plazos, funerarias, representante del DOJ, 501(c)(3)) el barrido la devuelve sola a la cola
-«Licencias» 14 días antes de su fecha de revisión (y con prioridad si ya pasó); en las demás categorías ese aviso sigue
-pendiente (ver LAUNCH-CHECKLIST).
+**¿Cada cuánto se revisa?** Cada 3 meses. En todas las categorías con licencia (Salud, Profesionales, Niños, Educación,
+Transporte, Fiestas, Noche, Iglesias, Bienes Raíces, Venta de Autos…) el barrido la devuelve sola a la cola «Licencias» 14 días
+antes de su fecha de revisión (y con prioridad si ya pasó; los 14 días se cambian en Sistema › Configuración). Nadie la marca
+vencida sin mirarla: el sello sigue mientras una persona la revisa en el registro oficial.
 
 ## English
 
@@ -42,3 +42,7 @@ status and a link to the official registry to check it yourself ("No one can gua
 Businesses declare licenses when listing and in their dashboard (Your page › Your licenses: add, number, "what you do
 not do"). The team checks each new license (or new number) in the official registry within 72 h and marks it Verified,
 Expired or Not found; only verified licenses count for the page card, the list chip and the "Verified license" filter.
+
+Every license is checked again every 3 months: in every licensed category, the sweep sends it back to the "Licenses" queue
+14 days before its review date (with priority if the date already passed; the 14 days are set in System › Settings). No one
+marks it expired without looking: the badge stays while a person checks it in the official registry.

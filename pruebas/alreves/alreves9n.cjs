@@ -53,6 +53,8 @@ const casos = [
   ['colaConVista', CO, 'slaCfg: "cola_sla_entrega"', 'slaCfg: "cola_sla_entrega_x" as never'],
   // configDesdeUnLugar: la clave del plazo falta en ClaveConfig
   ['configDesdeUnLugar', CF, ' | "cola_sla_rec" | "cola_sla_entrega"\n', ' | "cola_sla_rec"\n'],
+  // licenciasVuelvenTodas (9n-7): el barrido vuelve a devolver a revisión solo las licencias de Iglesias, Bienes Raíces y Autos
+  ['licenciasVuelvenTodas', 'apps/web/lib/licencias.ts', "      where l.status = 'valid' and l.next_review", "      where l.business_id in (select id from businesses where category_id = any(array['NEG-FE','NEG-INMUEBLE','NEG-DEALER'])) and l.status = 'valid' and l.next_review"],
   // disputaConEvidencia: la respuesta deja de mandar los archivos
   ['disputaConEvidencia', DI, 'archivos: { recibo: archivos.recibo, conversacion: archivos.conversacion, entrega: archivos.entrega, otro: archivos.foto_entrega } });', 'texto: "" });'],
 ];

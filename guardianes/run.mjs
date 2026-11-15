@@ -9318,6 +9318,22 @@ const guardianes = {
     }
   },
 
+  /* 9n-7 · licenciasVuelvenTodas: la vuelta a revisión de las licencias (el insert de 'lic', 'license' en queue_items desde el barrido) no
+     filtra por categoría: empezó con Iglesias, Bienes Raíces y Autos (4ig) y las de Salud, Profesionales, Niños, Transporte… nunca volvían.
+     Al revés (alreves9n): volver a poner la lista de categorías en barrerLicencias. */
+  licenciasVuelvenTodas() {
+    const G = "licenciasVuelvenTodas";
+    let visto = false;
+    for (const f of archivos.filter((x) => /^apps\/web\/lib\/[^/]+\.ts$/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      for (const m of t.matchAll(/insert into queue_items[^`]*?select 'lic', 'license'[^`]*/g)) {
+        if (f.endsWith("/licencias.ts")) visto = true;
+        if (/category_id|CATS_LIC/.test(m[0])) falla(G, f, t.slice(0, m.index).split("\n").length, "la vuelta a revisión de las licencias filtra por categoría: las de las demás categorías nunca vuelven a la cola «Licencias»");
+      }
+    }
+    if (!visto) falla(G, "apps/web/lib/licencias.ts", 1, "no encontré el barrido que devuelve las licencias a la cola «Licencias» (insert … select 'lic', 'license')");
+  },
+
   telefonoAlAzarRespetaFijos() {
     const G = "telefonoAlAzarRespetaFijos";
     for (const f of archivos.filter((x) => /^pruebas\/(e2e|lib|alreves)\/[^/]+\.(cjs|mjs)$/.test(x))) {

@@ -55,7 +55,7 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // Visitas y pruebas de manejo (4ie): sin respuesta a las 4 h hábiles (nunca después de la hora − 1 h), «Pasó» a las 24 h si nadie marca
         // (abre la reseña), recordatorio 2 h antes, avisos de «ya no está disponible», horas de prueba 14 días adelante y la purga a los 30 días.
         ["visitas", () => vis.barrerVisitas({})],
-        // Licencias de las tres (4ig): la verificada cuya revisión vence en 14 días o ya venció vuelve a la cola «Licencias».
+        // Licencias (4ig; todas las categorías desde 9n-7): la verificada cuya revisión vence en 14 días o ya venció vuelve a la cola «Licencias».
         ["licencias", () => lic.barrerLicencias()],
         // Comunidad (5b): las encuestas que vencieron se cierran y el resultado se avisa una vez a quien la publicó y a quienes votaron.
         ["cerrarEncuestas", () => com.barrerEncuestas()],
