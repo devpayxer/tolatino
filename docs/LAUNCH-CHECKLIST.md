@@ -1497,12 +1497,12 @@ en el momento. Se marca solo cuando está hecho de verdad.
       textos chicos (9,5–10 px, en mayúsculas y con espacio entre letras) en gris sobre fondo claro que no llegan a 4,5:1. Es del sistema de diseño
       (tokens), no de una pantalla. Entra en `pruebas/visual/axe-conocidas.json` con destino 9c; cuando 9c lo arregle se borra de esa lista y el CI
       lo vigila. (9b-2, 13 nov)
-- [ ] **→ 9c** · **axe `scrollable-region-focusable` (serio) en inicio y ficha:** la fila de categorías/pestañas con `overflow-x-auto` (`div[role="tablist"]`
-      en la ficha) no se alcanza con el teclado. Mismo trato que el anterior. (9b-2, 13 nov)
+- [x] **→ 9c** · **axe `scrollable-region-focusable` (serio) en inicio y ficha:** la fila de categorías/pestañas con `overflow-x-auto` (`div[role="tablist"]`
+      en la ficha) no se alcanza con el teclado. Mismo trato que el anterior. (9b-2, 13 nov) — **✓ 9c (15 nov):** ya no sale en ningún dispositivo (CI 43749374007: axe en los 9 con `axe-conocidas.json` vacío): las pestañas tienen foco (`__key`) y ahora flechas; la fila de PanelBloques es `role="tablist"`.
 - [ ] **→ 9c** · **presupuesto-velocidad:mi-cuenta y presupuesto-velocidad:admin-hoy (escritorio 1280):** el CLS medido en el CI es 0,261 (mi cuenta) y 0,889
       (admin hoy), contra 0,1 que es lo bueno; el presupuesto de esas dos pantallas es lo medido con margen (0,4 y 1,2) para que el CI no mienta. 9b-3
       busca qué se mueve (contenido que llega después y empuja) y baja el presupuesto a 0,1 en `pruebas/velocidad/presupuesto.json`. El LCP (80–350 ms)
-      y el TBT (0) son de laboratorio sin red ni CPU limitadas y con las fotos de fuera cortadas: lo de campo (RUM) llega con 9g. (9b-2, 13 nov) — _9b-3 (13 nov): no se buscó qué se mueve en 9b-3 (la escala de la base primero); va con el sistema de diseño en 9c, que toca esas pantallas._
+      y el TBT (0) son de laboratorio sin red ni CPU limitadas y con las fotos de fuera cortadas: lo de campo (RUM) llega con 9g. (9b-2, 13 nov) — _9b-3 (13 nov): no se buscó qué se mueve en 9b-3 (la escala de la base primero); va con el sistema de diseño en 9c, que toca esas pantallas._ — **9c-8 (15 nov):** la causa: las pantallas pintaban primero el teléfono (useState(390) / useState(false) + matchMedia) y saltaban al escritorio. Con el ancho que estima el servidor (`lib/ancho.ts`, `<AnchoInicial>`), Mi cuenta bajó de 0,261 a 0,022 y el panel de 0,046 a 0,002 (CI 43749374007); el Inicio del Super Admin seguía en 0,909 por `SeccionesMovil` (otro hook igual, corregido con otros cinco en 1d06358). Presupuesto de las seis pantallas: 0,1. Se cierra con la próxima corrida en verde.
 - [ ] **→ 9t** · **Semgrep `tolatino-sql-con-texto-interpolado` solo ve nombres de afuera** (`texto`, `q`, `body.x`, `searchParams.get(...)`…): el código tiene
       282 consultas con `${...}` dentro del SQL, ~210 con fragmentos fijos por convención (`PCT`, `ISO(…)`, `scope(…)`, `cfgSql(…)`) y 73 armadas con
       variables locales (`where`, `orden`, `col`, `fm`, `w.join(" and ")`…). Revisadas por encima, todas salen de constantes o de listas fijas del
