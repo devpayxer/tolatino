@@ -976,10 +976,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **→ después de abrir (DA-22)** · **6j · Wallet como forma de pago** (§6 #8): solo tarjeta; el Wallet de To'Latino y Apple/Google Pay llegan con su fase. (6j, 10 nov) — _9a (11 nov): Wallet de To'Latino como forma de pago y Apple / Google Pay (§3.9). En `docs/DESPUES-DE-ABRIR.md`._
 - [x] **→ 9n** · **6j · Panel › Eventos con cursor:** la lista del panel trae hasta 200 eventos (ahora lo vivo y próximo primero); un organizador con cientos de
       eventos necesita «Ver más» con cursor en Pasados y cancelados. (6j, 10 nov) — **✓ 9n-2 (14 nov):** lo vivo completo y lo pasado de a 20 con cursor (fecha+id) y «Ver más». Guardián eventosPanelConCursor; pan9n2 §6.
-- [ ] **→ 9b** · **6j · Pruebas que fallaron una vez en la corrida seguida de la fase y pasaron solas:** `evt6b-6c` (un aviso de React #418, texto distinto entre
+- [x] **→ 9b** · **6j · Pruebas que fallaron una vez en la corrida seguida de la fase y pasaron solas:** `evt6b-6c` (un aviso de React #418, texto distinto entre
       servidor y navegador, en una de sus ~40 pantallas; dos corridas más, una con la URL de cada error, salieron limpias) y `evt6i` (el paso de la
       propuesta que vence espera 52 s con el reloj real). Hacerlas deterministas: registrar la URL del error de hidratación y mover el reloj en la
-      base en vez de esperar. (6j, 10 nov)
+      base en vez de esperar. (6j, 10 nov) — **✓ (15 nov):** evt6i ya no espera con el reloj real (adelanta el vencimiento en la base y espera 8 s); evt6b-6c (78 ✓), evt6c (70 ✓) y evt6i (75 ✓) en verde en la confirmación completa 43759335047, sin el aviso de hidratación.
 - [x] **6j · Pruebas al revés viejas:** 4 casos ya no cazan porque cambian textos que un bloque posterior reemplazó (alreves6b `rsvpConCupo` sobre
       0107 y alreves6g `escaneoIdempotente` / `libroSoloInsercion` sobre 0112: la función viva es la redefinida en 0111 / 0113; alreves6d
       `devolverCoincide` sobre Transacciones.tsx de antes de 6i). Fallan igual con los guardianes de HEAD; apuntarlas a la última definición. (6j, 10 nov) — **✓ 9a (11 nov):** alreves6b apunta a la última definición (0110 / 0112) y alreves6d / 6g pasan: 31/31, 42/42, 32/32.
@@ -1496,16 +1496,16 @@ en el momento. Se marca solo cuando está hecho de verdad.
       vuelta anterior) con su guardián.
 
 ## Fase 9 · 9b-2 (la tubería en el CI; 13 nov)
-- [ ] **→ 9c** · **axe `color-contrast` (serio) en las seis pantallas clave** (inicio 13 nodos, ficha 24, mi cuenta 23, panel hoy 8, admin hoy 13; en buscar solo en tres dispositivos):
+- [x] **→ 9c** · **axe `color-contrast` (serio) en las seis pantallas clave** (inicio 13 nodos, ficha 24, mi cuenta 23, panel hoy 8, admin hoy 13; en buscar solo en tres dispositivos):
       textos chicos (9,5–10 px, en mayúsculas y con espacio entre letras) en gris sobre fondo claro que no llegan a 4,5:1. Es del sistema de diseño
       (tokens), no de una pantalla. Entra en `pruebas/visual/axe-conocidas.json` con destino 9c; cuando 9c lo arregle se borra de esa lista y el CI
-      lo vigila. (9b-2, 13 nov)
+      lo vigila. (9b-2, 13 nov) — **✓ (15 nov):** la confirmación completa del CI 43759335047 (3f99c21: todas las fases, al revés, 9 dispositivos con axe y velocidad, seguridad, build) salió en verde; está en main y en pruebas.
 - [x] **→ 9c** · **axe `scrollable-region-focusable` (serio) en inicio y ficha:** la fila de categorías/pestañas con `overflow-x-auto` (`div[role="tablist"]`
       en la ficha) no se alcanza con el teclado. Mismo trato que el anterior. (9b-2, 13 nov) — **✓ 9c (15 nov):** ya no sale en ningún dispositivo (CI 43749374007: axe en los 9 con `axe-conocidas.json` vacío): las pestañas tienen foco (`__key`) y ahora flechas; la fila de PanelBloques es `role="tablist"`.
-- [ ] **→ 9c** · **presupuesto-velocidad:mi-cuenta y presupuesto-velocidad:admin-hoy (escritorio 1280):** el CLS medido en el CI es 0,261 (mi cuenta) y 0,889
+- [x] **→ 9c** · **presupuesto-velocidad:mi-cuenta y presupuesto-velocidad:admin-hoy (escritorio 1280):** el CLS medido en el CI es 0,261 (mi cuenta) y 0,889
       (admin hoy), contra 0,1 que es lo bueno; el presupuesto de esas dos pantallas es lo medido con margen (0,4 y 1,2) para que el CI no mienta. 9b-3
       busca qué se mueve (contenido que llega después y empuja) y baja el presupuesto a 0,1 en `pruebas/velocidad/presupuesto.json`. El LCP (80–350 ms)
-      y el TBT (0) son de laboratorio sin red ni CPU limitadas y con las fotos de fuera cortadas: lo de campo (RUM) llega con 9g. (9b-2, 13 nov) — _9b-3 (13 nov): no se buscó qué se mueve en 9b-3 (la escala de la base primero); va con el sistema de diseño en 9c, que toca esas pantallas._ — **9c-8 (15 nov):** la causa: las pantallas pintaban primero el teléfono (useState(390) / useState(false) + matchMedia) y saltaban al escritorio. Con el ancho que estima el servidor (`lib/ancho.ts`, `<AnchoInicial>`), Mi cuenta bajó de 0,261 a 0,022 y el panel de 0,046 a 0,002 (CI 43749374007); el Inicio del Super Admin seguía en 0,909 por `SeccionesMovil` (otro hook igual, corregido con otros cinco en 1d06358). Presupuesto de las seis pantallas: 0,1. Se cierra con la próxima corrida en verde.
+      y el TBT (0) son de laboratorio sin red ni CPU limitadas y con las fotos de fuera cortadas: lo de campo (RUM) llega con 9g. (9b-2, 13 nov) — _9b-3 (13 nov): no se buscó qué se mueve en 9b-3 (la escala de la base primero); va con el sistema de diseño en 9c, que toca esas pantallas._ — **9c-8 (15 nov):** la causa: las pantallas pintaban primero el teléfono (useState(390) / useState(false) + matchMedia) y saltaban al escritorio. Con el ancho que estima el servidor (`lib/ancho.ts`, `<AnchoInicial>`), Mi cuenta bajó de 0,261 a 0,022 y el panel de 0,046 a 0,002 (CI 43749374007); el Inicio del Super Admin seguía en 0,909 por `SeccionesMovil` (otro hook igual, corregido con otros cinco en 1d06358). Presupuesto de las seis pantallas: 0,1. Se cierra con la próxima corrida en verde. — **✓ (15 nov):** la confirmación completa del CI 43759335047 (3f99c21: todas las fases, al revés, 9 dispositivos con axe y velocidad, seguridad, build) salió en verde; está en main y en pruebas.
 - [ ] **→ 9t** · **Semgrep `tolatino-sql-con-texto-interpolado` solo ve nombres de afuera** (`texto`, `q`, `body.x`, `searchParams.get(...)`…): el código tiene
       282 consultas con `${...}` dentro del SQL, ~210 con fragmentos fijos por convención (`PCT`, `ISO(…)`, `scope(…)`, `cfgSql(…)`) y 73 armadas con
       variables locales (`where`, `orden`, `col`, `fm`, `w.join(" and ")`…). Revisadas por encima, todas salen de constantes o de listas fijas del
@@ -1553,14 +1553,14 @@ en el momento. Se marca solo cuando está hecho de verdad.
       cumple AA, es mejorable. (9c, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._ — **✓ 9c-3 (15 nov):** ← → (en círculo), Inicio y Fin entre pestañas en `Tabs` (por el script de portar), PanelBloques y las tres pestañas propias; Enter elige (activación manual). Cada pestaña sigue en el orden de Tab (a11y9c lo exige). a11y9c prueba las flechas en la ficha. Los radios de día y hora quedan como están (Tab + Enter: AA).
 - [x] **→ 9t** · **Foco visible sobre fondos oscuros:** el contorno global es el morado de marca (más de 3 : 1 sobre blanco, papel y tinta); mirarlo en las pantallas
       oscuras (Puerta, Patio, el menú del Compa) con teclado físico y, si hace falta, un tono más claro con `:focus-visible` dentro de `[data-oscuro]`. (9c, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._ — **✓ 9c (15 nov), medido:** el contorno Brand #7B61FF da 4,6 : 1 sobre la tinta #0B0E12, 4,2 : 1 sobre `dark-2` y 3,8 : 1 sobre `dark-3` (el mínimo de WCAG 2.4.11 para el foco es 3 : 1): no hace falta otro tono.
-- [ ] **→ 9b** · **a11y9c no se corrió en local** (sin Docker en la sesión que la escribió): `a11y9c` entra a la regresión de la fase 9; si alguna de sus
+- [x] **→ 9b** · **a11y9c no se corrió en local** (sin Docker en la sesión que la escribió): `a11y9c` entra a la regresión de la fase 9; si alguna de sus
       pantallas tiene un selector distinto, la prueba lo dice con el texto de la página. Los avisos «clics con mano sin teclado» de a11y9c son una heurística de la página
-      servida: lo que falla es lo estático (`sistemaClicMudo`, `clicConTeclado`) y los roles fuera del orden de tabulación. (9c, 14 nov)
+      servida: lo que falla es lo estático (`sistemaClicMudo`, `clicConTeclado`) y los roles fuera del orden de tabulación. (9c, 14 nov) — **✓ (15 nov):** la confirmación completa del CI 43759335047 (3f99c21: todas las fases, al revés, 9 dispositivos con axe y velocidad, seguridad, build) salió en verde; está en main y en pruebas.
 
 ## Fase 9 · 9d — tus datos: exportar, borrar a los 30 días, retener y fusionar (14 nov)
-- [ ] **→ 9b** · **datos9d y alreves9d entran a la regresión del CI:** en local (Postgres 16 + PostGIS, un S3 de mentira en vez de Garage, Chrome del sistema)
+- [x] **→ 9b** · **datos9d y alreves9d entran a la regresión del CI:** en local (Postgres 16 + PostGIS, un S3 de mentira en vez de Garage, Chrome del sistema)
       datos9d pasó 61 ✓ dos veces seguidas, alreves9d 23/23, y usr1l, cuenta2h, adm7i, alreves7i y alreves8i siguen en verde. La corrida de verdad (con Garage y los
-      9 dispositivos) es la del CI. (9d, 14 nov)
+      9 dispositivos) es la del CI. (9d, 14 nov) — **✓ (15 nov):** la confirmación completa del CI 43759335047 (3f99c21: todas las fases, al revés, 9 dispositivos con axe y velocidad, seguridad, build) salió en verde; está en main y en pruebas.
 - [x] **Aviso «Tu cuenta se borró» (`cuenta_borrada`):** la plantilla existe (crítica, SMS) pero la purga no la manda: al purgar, el teléfono queda vacío y
       un SMS a un número sin cuenta se guarda (cifrado) en `phone_messages`, que hoy no tiene retención. Mandarla antes de vaciar el teléfono y darle su retención
       a `phone_messages` van juntos con los canales. (9d, 14 nov) — **✓ 9l (14 nov):** purgarVencidas() lo manda al número de antes cuando la purga termina (una vez); phone_messages se vacía a retener_sms_dias. avi9l lo prueba.
@@ -1591,10 +1591,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **El pie de la web en todas las páginas** y **Super Admin › Textos y páginas › Páginas en inglés:** _hecho en 9f (14 nov): `<PieWeb>` bajo el Inicio, la ficha y Buscar detrás del
       interruptor `web.pie_todas` (apagado de fábrica: las capturas aprobadas no cambian; se enciende en Páginas con motivo, `cms:aprobar`); Páginas, Ayuda, Cadenas, Rótulos y Home
       salen en los dos idiomas (cms9f). Evidencia: cms9f 91 ✓ dos veces seguidas._ Lo que falta, abajo («Fase 9 · 9f»).
-- [ ] **→ 9b** · **leg9e y alreves9e entran a la regresión del CI:** en local (Postgres 16 + PostGIS, un S3 de mentira, Chrome del sistema, perfil basico)
+- [x] **→ 9b** · **leg9e y alreves9e entran a la regresión del CI:** en local (Postgres 16 + PostGIS, un S3 de mentira, Chrome del sistema, perfil basico)
       leg9e pasó 72 ✓ dos veces seguidas, alreves9e 18/18, datos9d 61 ✓, alreves8i y alreves9d siguen en verde. fich8i no se corrió entera en local (pide los
       simuladores de las tiendas y los documentos de Google): su paso 1 (/privacidad) se comprobó aparte con las mismas aserciones. La corrida de verdad es
-      la del CI. (9e, 14 nov)
+      la del CI. (9e, 14 nov) — **✓ (15 nov):** la confirmación completa del CI 43759335047 (3f99c21: todas las fases, al revés, 9 dispositivos con axe y velocidad, seguridad, build) salió en verde; está en main y en pruebas.
 - [ ] **→ 9t** · **El índice legal en producción:** el despliegue del sandbox indexa docs/legal/ (deploy.sh 3c-ter); el de producción (todavía no existe)
       hace lo mismo, sin la semilla 0053: allí la base es producción y nada se publica sin el abogado. (9e, 14 nov)
 
@@ -1619,9 +1619,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       `lib/textos-fijas.ts` con candado y comparadas con el plan palabra por palabra (`lineaFijaBloqueada`); cada pantalla las usa cuando exista (hoy solo «Exportar mis datos»). (9f, 14 nov) — **✓ 9h (14 nov):** la landing usa `FIJAS.landing` y `FIJAS.landingTel` tal cual (guardián `listaConPermiso`; cre9h las lee palabra por palabra en ES y EN). Las otras dos siguen abajo, cada una con su bloque.
 - [x] **→ 9o** · **La línea fija de mantenimiento espera su pantalla** («Estamos haciendo un cambio. Volvemos en unos minutos.», `FIJAS.mantenimiento`): la página que sirve nginx con la app caída. (9h, 14 nov; de la línea de 9f) — **✓ 9o (14 nov):** `infra/comun/mantenimiento/index.html` sale del sistema de diseño con `FIJAS.mantenimiento` tal cual (ES y EN; `scripts/produccion/mantenimiento.mjs`) y nginx de producción la sirve con la app caída (502/503/504) y durante la ventana; guardián mantenimientoFijo (alreves9o).
 - [x] **→ 9j** · **La línea fija «el equipo entra con dos pasos» espera su pantalla** (`FIJAS.equipoDosPasos`): el alta del segundo factor del equipo. (9h, 14 nov; de la línea de 9f) — **✓ (15 nov):** sale en `/admin/dos-pasos` (debajo de cada título) y ahora la pantalla la lee de `FIJAS` (antes era una copia).
-- [ ] **→ 9b** · **cms9f y alreves9f entran a la regresión del CI** (y a los 9 dispositivos): en local (Postgres 16 + PostGIS, un S3 de mentira, Chrome del sistema, perfil basico, :3110)
+- [x] **→ 9b** · **cms9f y alreves9f entran a la regresión del CI** (y a los 9 dispositivos): en local (Postgres 16 + PostGIS, un S3 de mentira, Chrome del sistema, perfil basico, :3110)
       cms9f pasó 91 ✓ dos veces seguidas y alreves9f 30/30; la corrida de verdad es la del CI. El paso nuevo del CI indexa las cadenas dos veces y comprueba que una línea fija y una edición
-      sin autor se rechazan. (9f, 14 nov)
+      sin autor se rechazan. (9f, 14 nov) — **✓ (15 nov):** la confirmación completa del CI 43759335047 (3f99c21: todas las fases, al revés, 9 dispositivos con axe y velocidad, seguridad, build) salió en verde; está en main y en pruebas.
 - [ ] **→ 9t** · **El indexador de cadenas en producción:** el despliegue del sandbox corre `scripts/cms/indexar.mjs` (deploy.sh 3c-quater); el de producción (todavía no existe) hace
       lo mismo, sin la semilla 0054 (los anuncios de ejemplo son solo del sandbox). (9f, 14 nov)
 
@@ -1643,8 +1643,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       cuántas sin dueño con su monto → Planes, no corrió o falló). Es de toda la plataforma: solo lo ve quien ve todas las ciudades. ana9g contra la base.
 - [x] **→ 9o** · **Las vueltas atrás en el reporte diario:** el renglón existe (`vueltas: null`); lo llena la vuelta atrás automática de 9o. La alerta «el reporte no salió» la da el barrido:
       si el barrido entero se cae, nadie alerta; el monitoreo externo de 9o mira `system_jobs` (barrido.reporteDiario). (9g, 14 nov) — **✓ 9o (14 nov):** el renglón cuenta las de ayer (`vueltas_atras_del_dia`, 0145). Si el barrido entero se cae: Prometheus (BarridoCallado, ReporteDiarioNoCorre, por postgres_exporter) y el segundo testigo de GitHub Actions (`barrido_s` en /api/salud) avisan desde fuera.
-- [ ] **→ 9g** · **Corridas del CI de 9g:** `ana9g` pasó dos veces seguidas en una base local (85 ✓) con un docker de mentira; falta la regresión entera, la barajada y los 9
-      dispositivos en el CI, y `pruebas/visual` del Inicio del Super Admin (Ciudad viva va al final de la pantalla). (9g, 14 nov)
+- [x] **→ 9g** · **Corridas del CI de 9g:** `ana9g` pasó dos veces seguidas en una base local (85 ✓) con un docker de mentira; falta la regresión entera, la barajada y los 9
+      dispositivos en el CI, y `pruebas/visual` del Inicio del Super Admin (Ciudad viva va al final de la pantalla). (9g, 14 nov) — **✓ (15 nov):** la confirmación completa del CI 43759335047 (3f99c21: todas las fases, al revés, 9 dispositivos con axe y velocidad, seguridad, build) salió en verde; está en main y en pruebas.
 
 ## Fase 9 · 9j — Super Admin › Sistema completo y la seguridad del equipo (14 nov)
 - [x] **→ 9o** · **Respaldos reales y la restauración de prueba semanal:** Sistema › Respaldos lee `backup_runs` y `restore_drills`; en el sandbox solo hay la semilla
@@ -1664,12 +1664,12 @@ en el momento. Se marca solo cuando está hecho de verdad.
       se quiera acotar pasa sus lectores a `flagPara` y se marca en una migración (guardián `flagPorPersona`). (9j, 14 nov) — _(9n-3, 14 nov): `app.ubicacion_vivo` pasó a «scopable» (se decide por el repartidor que comparte); el procedimiento para el siguiente sigue igual. Prueba `adm9n3` paso 8._ — **✓ (15 nov):** queda como procedimiento, no como tarea: `app.reportar` y `app.ubicacion_vivo` son «scopables»; cualquier interruptor nuevo que se quiera acotar pasa sus lectores a `flagPara` y se marca en su migración (lo exige el guardián `flagPorPersona`). Ninguno más está pedido.
 - [x] **→ 9f** · **Equipo y permisos, Configuración, Apps e Integraciones en inglés:** las pestañas de 9j (Flags, Salud, Respaldos, Estados, los dos pasos) ya salen
       en los dos idiomas; esas cuatro siguen en español (como el resto del Super Admin). (9j, 14 nov) — **✓ 9f-4 (15 nov):** el Super Admin entero sale en el idioma de la persona del equipo (`useE()` / `idioma()`; adm9n3 §11). Lo que arma el servidor (mensajes de las acciones, títulos de colas) sigue en español: va con 9f-3.
-- [ ] **→ 9k** · **`sis9j`, `ayu4m` y la regresión en el CI:** `sis9j` pasó dos veces seguidas en una base local (78 ✓); `ayu4m` (vidrio roto) no corrió aquí (necesita
-      Garage) y la regresión entera de las pruebas que entran como equipo corre en el CI (decisión AD: en el hito después de 9k). (9j, 14 nov)
+- [x] **→ 9k** · **`sis9j`, `ayu4m` y la regresión en el CI:** `sis9j` pasó dos veces seguidas en una base local (78 ✓); `ayu4m` (vidrio roto) no corrió aquí (necesita
+      Garage) y la regresión entera de las pruebas que entran como equipo corre en el CI (decisión AD: en el hito después de 9k). (9j, 14 nov) — **✓ (15 nov):** la confirmación completa del CI 43759335047 (3f99c21: todas las fases, al revés, 9 dispositivos con axe y velocidad, seguridad, build) salió en verde; está en main y en pruebas.
 
 ## Fase 9 · 9h — Crecimiento, la landing de acceso anticipado, los QR de calle y el SEO (14 nov)
-- [ ] **→ 9b** · **cre9h y alreves9h entran a la regresión del CI** (y a los 9 dispositivos): en local (Postgres 16 + PostGIS de la máquina, un S3 de mentira, Chrome del sistema, sin Docker,
-      en :3119) cre9h pasó 95 ✓ dos veces seguidas y alreves9h cazó 53/53; la corrida de verdad es la del CI. (9h, 14 nov)
+- [x] **→ 9b** · **cre9h y alreves9h entran a la regresión del CI** (y a los 9 dispositivos): en local (Postgres 16 + PostGIS de la máquina, un S3 de mentira, Chrome del sistema, sin Docker,
+      en :3119) cre9h pasó 95 ✓ dos veces seguidas y alreves9h cazó 53/53; la corrida de verdad es la del CI. (9h, 14 nov) — **✓ (15 nov):** la confirmación completa del CI 43759335047 (3f99c21: todas las fases, al revés, 9 dispositivos con axe y velocidad, seguridad, build) salió en verde; está en main y en pruebas.
 - [ ] **→ 9b** · **`pruebas/visual` · admin-hoy:** «Crecimiento» dejó de verse «en construcción» en el menú del Super Admin (antes atenuado y con candado; en el teléfono, la lista de secciones
       decía «Se construye en la Fase 9»). Si la captura aprobada del Inicio del admin cambia más de lo tolerado, se aprueba la nueva (REVISION 9h). No se corrió aquí. (9h, 14 nov)
 - [ ] **→ 9q** · **El mensaje de texto que promete la landing** («Te avisamos por mensaje de texto cuando abra tu zona. Nada más.»): sale con Telnyx (9q); el guardián `promesaSms` la tiene
@@ -1709,13 +1709,13 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9q** · **La conciliación y 3-D Secure con Stripe de verdad (modo prueba):** aquí corren contra el simulador y el contrato (stripe-mock no guarda estado: no hay banco que pida
       verificar ni listas con objetos). Con la llave de prueba: la tarjeta 4000 0027 6000 3184 en la hoja (handleNextAction), una renovación con `authentication_required`, una conciliación de
       un día con objetos reales (paginación, payouts por cuenta conectada) y un archivo de evidencia real. (9k, 14 nov)
-- [ ] **→ 9b** · **din9k y alreves9k entran a la corrida dirigida del CI** (y a la confirmación completa después de 9k, decisión AD): aquí no hay Docker; alreves9k 38/38, la lógica del
+- [x] **→ 9b** · **din9k y alreves9k entran a la corrida dirigida del CI** (y a la confirmación completa después de 9k, decisión AD): aquí no hay Docker; alreves9k 38/38, la lógica del
       dinero contra Postgres 16 local (41 ✓) y din9k 39 ✓ dos veces seguidas con el build servido en local (perfil basico, S3 de mentira, Chrome del sistema); la corrida
-      de verdad es la del CI. El contrato con stripe-mock (cliente con el doble de la base, intento, huella, delDia, archivos) también corre allí. (9k, 14 nov)
+      de verdad es la del CI. El contrato con stripe-mock (cliente con el doble de la base, intento, huella, delDia, archivos) también corre allí. (9k, 14 nov) — **✓ (15 nov):** la confirmación completa del CI 43759335047 (3f99c21: todas las fases, al revés, 9 dispositivos con axe y velocidad, seguridad, build) salió en verde; está en main y en pruebas.
 
 ## Fase 9 · 9i — Ciudades: el asistente de apertura, la regla, la lista de espera, el estado «beta» y los barrios de las cinco (14 nov)
-- [ ] **→ 9b** · **ciu9i y alreves9i entran a la regresión del CI** (y a los 9 dispositivos): en local (Postgres 16 + PostGIS de la máquina, sin Docker, Chrome del sistema, el build
-      standalone en :3149) `ciu9i` pasó dos veces seguidas (61 ✓) y `alreves9i` cazó 46/46; la corrida de verdad es la del CI. (9i, 14 nov)
+- [x] **→ 9b** · **ciu9i y alreves9i entran a la regresión del CI** (y a los 9 dispositivos): en local (Postgres 16 + PostGIS de la máquina, sin Docker, Chrome del sistema, el build
+      standalone en :3149) `ciu9i` pasó dos veces seguidas (61 ✓) y `alreves9i` cazó 46/46; la corrida de verdad es la del CI. (9i, 14 nov) — **✓ (15 nov):** la confirmación completa del CI 43759335047 (3f99c21: todas las fases, al revés, 9 dispositivos con axe y velocidad, seguridad, build) salió en verde; está en main y en pruebas.
 - [ ] **→ 9b** · **`pruebas/visual` · admin-hoy:** el Inicio del Super Admin suma la cifra «LISTA DE ESPERA» (y «Ciudades» cuenta beta con próximamente): si la captura aprobada cambia más de
       lo tolerado, se aprueba la nueva con tu OK (REVISION 9i). No se corrió aquí. (9i, 14 nov)
 - [ ] **→ Paquete 9-4** · **El equipo local de cada ciudad** (paso 4 del asistente): un Ciudad manager por ciudad, con su nombre y su teléfono, lo da el fundador. En el sandbox, Reading tiene a Raúl
@@ -1753,8 +1753,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       entrega): confirmarlos con la cuenta. (9l, 14 nov)
 - [ ] **→ 9q** · **Una sola respuesta de STOP:** al conectar Telnyx y Meta, apagar la de su perfil (o la nuestra en Configuración › Avisos y canales). (9l, 14 nov)
 - [x] **→ 9n** · **Avisos al quitar a alguien del equipo y a quien pidió unirse:** van con aceptar la invitación con el código (L101). (9l, 14 nov) — **✓ 9n-2 (14 nov):** al quitar (equipo_quitado), al aceptar o no a quien pidió unirse (equipo_unirse_ok/no), al dueño cuando alguien acepta (biz_equipo_acepto) o pide unirse (biz_equipo_pide). pan9n2 §1.
-- [ ] **→ 9b** · **avi9l y alreves9l en la corrida dirigida del CI** (perfil completo de servir.sh: el certificado de «SNS» lo sirve la prueba en :4409); la
-      regresión entera, la matriz de 9 dispositivos y `pruebas/visual` (Notificaciones y Soporte suman pestañas) no corrieron aquí. (9l, 14 nov)
+- [x] **→ 9b** · **avi9l y alreves9l en la corrida dirigida del CI** (perfil completo de servir.sh: el certificado de «SNS» lo sirve la prueba en :4409); la
+      regresión entera, la matriz de 9 dispositivos y `pruebas/visual` (Notificaciones y Soporte suman pestañas) no corrieron aquí. (9l, 14 nov) — **✓ (15 nov):** la confirmación completa del CI 43759335047 (3f99c21: todas las fases, al revés, 9 dispositivos con axe y velocidad, seguridad, build) salió en verde; está en main y en pruebas.
 - [x] **→ 9b** · **alreves8c, caso `permisosMinimos`:** no encuentra su texto en apps/mobile/apps.json (también en la rama base; no es de 9l). (9l, 14 nov)
 
 ## Fase 9 · 9m — lo diferido del vecino que entra antes de abrir (14 nov) — **✓ (comprobado 15 nov):** `alreves8c` 37/37.
@@ -1775,9 +1775,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9b** · **Cargas reales en el sandbox y en CI:** TIGER de Pensilvania con la muestra de CA/TX/NY (workflow «Direcciones», ampliado con
       `dir_sugerir`, `dir_inversa` y ≤ 100 ms) y la primera carga de NHTSA en `tolatino-pruebas-1` (paso de 3 h de `deploy.sh`); aquí la red no llega a
       census.gov ni a nhtsa.gov: se probó con archivos del mismo formato (`pruebas/infra/direcciones-espejo.py`, 19/19). (9m, 14 nov)
-- [ ] **→ 9b** · **`dir9m`, `vec9m` y `alreves9m` en la corrida dirigida del CI;** la regresión entera, la matriz de 9 dispositivos y `pruebas/visual` no
+- [x] **→ 9b** · **`dir9m`, `vec9m` y `alreves9m` en la corrida dirigida del CI;** la regresión entera, la matriz de 9 dispositivos y `pruebas/visual` no
       corrieron aquí. Cambian capturas: el Inicio de escritorio (mini mapa a la derecha), la ficha (mini mapa en «Cómo llegar», «¿Es tu negocio?»), las
-      tarjetas con chips largos (dos líneas), la vacante (reportar), Mensajes (sin cambios visibles). (9m, 14 nov)
+      tarjetas con chips largos (dos líneas), la vacante (reportar), Mensajes (sin cambios visibles). (9m, 14 nov) — **✓ (15 nov):** la confirmación completa del CI 43759335047 (3f99c21: todas las fases, al revés, 9 dispositivos con axe y velocidad, seguridad, build) salió en verde; está en main y en pruebas.
 
 
 ## Fase 9 · 9n — lo diferido del negocio, el Repartidor y la operación del Super Admin (14 nov)
@@ -1803,9 +1803,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [x] **→ 9n** · **La temporada en las citas** (hoy la ficha y el estado abierto/cerrado la miran;
       el calendario de citas todavía ofrece días fuera de temporada si el horario de la semana los tiene abiertos). (9n, 14 nov) — _(9n-3, 14 nov): el tope de 200 de Colas ya no existe: de a 50 por página, conteos y «Vencidos» desde la base (prueba `adm9n3` paso 3; guardián `colasSinTope`). Queda la temporada en el calendario de citas._ — **✓ 9n-10 (15 nov):** y su clase: TODOS los calendarios a futuro (citas, reservaciones, pedidos programados de hoy, Noche, apartados, rentas, mercado, planes, entrevistas y visitas) leen feriados, vacaciones, días con otras horas, cierre temporal y temporada con `lib/dias-especiales.ts` (o `negocio_dia_cerrado`, **0160**, en SQL). Guardián `calendarioConDiasEspeciales`; cit3b §6a (temporada). Las visitas armadas en SQL respetan los días cerrados; un día especial con otras horas usa todavía el horario de la semana ahí (LAUNCH abajo).
 - [x] **→ 9n** · **Colas: tope de 200 casos por vista:** — **✓ 9n-3 (14 nov):** paginado de a 50, conteos y filtros en la base; `adm9n3` con 279 casos abiertos.
-- [ ] **→ 9b** · **neg9n y alreves9n en la corrida dirigida del CI** (perfil completo de servir.sh: el almacén de fotos es Garage); la regresión entera, la matriz de 9
+- [x] **→ 9b** · **neg9n y alreves9n en la corrida dirigida del CI** (perfil completo de servir.sh: el almacén de fotos es Garage); la regresión entera, la matriz de 9
       dispositivos y `pruebas/visual` (Panel › Entrega y Horario, el detalle del pedido y el Repartidor suman bloques: cambian sus capturas aprobadas) no corrieron aquí.
-      rep2l/app8e/ruta8e no cambian de flujo (prueba y código apagados de fábrica) pero el detalle del Repartidor ya no tiene «Llamar» al cliente. (9n, 14 nov)
+      rep2l/app8e/ruta8e no cambian de flujo (prueba y código apagados de fábrica) pero el detalle del Repartidor ya no tiene «Llamar» al cliente. (9n, 14 nov) — **✓ (15 nov):** la confirmación completa del CI 43759335047 (3f99c21: todas las fases, al revés, 9 dispositivos con axe y velocidad, seguridad, build) salió en verde; está en main y en pruebas.
 - [x] **→ 9b** · **Íconos que no existen en el sistema:** `"camera"` en app/(app)/n/[id]/Resenas.tsx (de antes de 9n; 9n usaba el mismo y lo cambió a `image`) sale como
       un cuadro vacío. Un guardián que compare cada `icon: "…"` con el mapa de packages/ui/src/ds/core/Icon.js. (9n, 14 nov) — **✓ 9c (15 nov):** «camera» → «image»; con el guardián nuevo **`iconoExiste`** salieron otros cuatro («undo» en Hoy del Super Admin, «download» en Integraciones, «chevronUp» en el panel, «receipt» en el buscador): corregidos; alreves9c.
 - [x] **→ 9b** · **alreves8e, caso `permisosMinimos`:** no encuentra su texto en apps/mobile/apps.json (igual que alreves8c; de antes de 9n). (9n, 14 nov) — **✓ (15 nov):** alreves8e y alreves8c pasan enteros (rc 0) con el apps.json de hoy; el ancla ya coincide.

@@ -2419,3 +2419,6 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **9n-21 · Cupón para seguidores (L311):** 0169 (`business_posts.kind 'cupon'` + código/descuento/mínimo/usos, `operations.discount_cents`, `follower_coupon_uses`
   con trigger de vuelta); `lib/cupon-seguidores.ts` (cuponDe en la transacción de crearPedido); pago con «Código de cupón» del prototipo; ficha, pedido, panel,
   Transacciones y el editor del panel. Guardián `cuponDelServidor` (alreves9n21 9/9); e2e `cup9n21`; ayuda (panel-novedades, novedades, pedir-comida).
+- **Confirmación completa CI 43759335047 (3f99c21) en verde** → main y pruebas en 3f99c21. Cerradas en LAUNCH las 15 líneas que esperaban esa corrida (contraste
+  axe, CLS, a11y9c, datos9d, leg9e, cms9f, ana9g, sis9j/ayu4m, cre9h, din9k, ciu9i, avi9l, dir9m/vec9m, neg9n, evt6b-6c/evt6i). Corrida dirigida de lo nuevo
+  (reporte, ayuda, editor, ver como cliente, cupón): 43769029540.
