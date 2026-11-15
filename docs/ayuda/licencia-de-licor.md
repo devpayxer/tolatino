@@ -30,10 +30,24 @@ local»), su número y el enlace al registro para que cualquiera la verifique.
 ## English
 
 ### What it does
-A venue serving alcohol in Pennsylvania needs a **PLCB** license. The venue adds it under **Your licenses** with its
-number; the team checks the **official PLCB registry** and marks it valid, not found or expired. The venue page shows what the
-license allows, its number and a link to the registry.
+A venue that serves alcohol in Pennsylvania needs a license from the **Pennsylvania Liquor Control Board (PLCB)**. In To'Latino the venue adds it
+under **Your licenses** with its number; the team looks it up in the **official PLCB registry** and marks it valid, not found or expired. The
+venue's page shows what the license allows ("Sell and serve alcohol at the venue"), its number and the link to the registry so anyone can verify it.
+
+### How to use it
+1. Dashboard › Your page › **Your licenses** › Add › "Liquor license (PLCB)" › enter the number exactly as it appears at the PLCB.
+2. It goes into the Super Admin **Licenses** queue (72 hours). There the official registry is opened, compared and a decision is made.
+3. If the number changes or it is renewed, edit it: it goes back to review.
+
+### What happens in each case
+- **Valid:** it shows on the page with its number and the link to the registry.
+- **Not found:** it does not show as valid; the owner sees the reason in their dashboard.
+- **Expired:** the page says so; it counts in Analytics › Night ("expired liquor licenses") until it is renewed.
+- **To'Latino does not sell alcohol** or charge for drinks: the app only publishes the cover, the list and the tables; alcohol is paid for at the
+  venue. A customer's ID photo is never requested or kept.
 
 ### FAQ
-Not required to list the venue on To'Latino; what the law requires of a venue serving alcohol is decided by the PLCB, not To'Latino (pending lawyer review). DJs and promoters work under contract and need no liquor license.
-It is rechecked when the number changes and at its review date; past that date it counts as expired.
+- **Is it required to list?** Not to list the venue on To'Latino. What the law requires of a venue that serves alcohol is decided by the PLCB, not
+  by To'Latino. (Pending review with a lawyer: docs/LAUNCH-CHECKLIST.md.)
+- **Does a DJ or promoter need a liquor license?** No: they work by contract at someone else's venue.
+- **How often is it reviewed?** When the number changes and on its review date; if the date passes, it counts as expired.

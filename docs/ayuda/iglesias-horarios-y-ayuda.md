@@ -54,20 +54,50 @@ devolvieron, escríbenos en **Soporte**: la solicitud cerrada queda con toda su 
 ## English
 
 ### What it does
-It tells you when the next mass or service in Spanish is, what free help a church gives (food pantry, clothing, rides, youth,
-Bible school, weddings and quinceañeras) and whether help is still available today. You just show up to mass, services and the pantry; no
-sign-up. In the app you can ask for a date (baptism, house blessing, counseling) or sign your child up for catechism. **Nothing is charged
-in the app for churches**: help is free and donations are voluntary.
+It tells you when the next mass or service **in Spanish** is, what help they give **for free** (food pantry, clothing, transport, youth, Bible
+school, weddings and quinceañeras) and whether help is still available today. For mass, services and the food pantry **you just show up on time:
+no sign-up**. What you do ask for through the app is a **date** (baptism, house blessing, counseling) or your child's **catechism**.
+**In Churches nothing is charged in the app**: the help is free and the donation is voluntary ("if you cannot, nothing is charged").
 
-**The time limits on this page** (hours to reply, how long a spot is held, when a cancellation goes through, after how many days private data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
+### How to use it
+1. **Search or the Churches category:** filter by "Mass in Spanish," "Food pantry," "Transport," "Youth" or "In Spanish." The card shows the next
+   mass or service and, for a food pantry, "Out for today" when there is no more.
+2. **The page:** the Today card (NEXT MASS · LANGUAGE · FREE HELP), "DO I HAVE TO SIGN UP? No: you come to the service" and the tab with each
+   service ("Free" or "Suggested donation · if you cannot, nothing is charged"). A funeral home states the **total price in writing**, whether
+   there is a **payment plan** and in how many days **repatriation to the Dominican Republic** arrives; to talk with them, "Ask for info" (call
+   or write).
+3. **Ask for a date:** pick the date you would like (from the day after tomorrow up to 60 days) and the time slot (morning, afternoon or night).
+   The office confirms, proposes another date or tells you there is none. **Catechism:** "Sign up" with your child's name and age.
+4. **Your spot** (`/insc/I-…`): the status, Message and Cancel (free). When it is over, you can leave your review and, for up to 7 days after, ask
+   for **Church help**.
+
+### What happens in each case
+- **They reply within 48 hours.** If not, the request is left unanswered and we tell you; ask for another date whenever you want.
+- **Out for today:** the food pantry marks it and the card says so only that day; at midnight it turns back on by itself.
+- **No papers:** if the food pantry marks "No papers or SSN," they do not ask for ID. If they ask for one, the page says so.
+- **Counseling, chaplaincy, prayer and recovery:** the notices to your phone do not name the place or the service ("You have a confirmed
+  appointment"); your note is encrypted and is deleted after 30 days.
+- **They asked you for money for the help:** in Help choose "They asked me for money for the help" (with a photo if you have one). It goes
+  **straight to To'Latino** with priority and "Ask for a date" for that place stays paused while it is reviewed. What you paid outside the app
+  is returned to you by the place, and you confirm "They refunded me."
+- **Immigration help:** only a DOJ-accredited representative can guide you on a procedure. If the place does not have that verified seal, the
+  page says "Ask whether they have a DOJ-accredited representative." "This is not legal advice."
+- **Counseling:** "This is not medical therapy. If you are thinking of harming yourself, call or text 988."
+
+**The time limits on this page** (how many hours to reply, how long a spot is held, when a cancellation takes effect, after how many days private
+data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force at that moment.
 
 ### FAQ
-You do not book mass: you show up. Tithes and offerings are not taken in the app. Catechism tuition, if any, is paid at the
-parish. Church reviews have no photos. To'Latino never counts or shows people by religion. If you were asked for money for help, choose
-«They asked me for money for the help»: it goes straight to To'Latino and the place's «Ask for a date» is paused while we review it.
+- **Do I have to book to go to mass?** No. You come at the time; the page says when.
+- **Can I give a tithe or an offering through the app?** No. Churches charge nothing in the app; the donation is given in person if you want.
+- **Is catechism tuition paid here?** No: the page says how much it is and it is paid at the parish.
+- **Do church reviews carry photos?** No, so as not to show anyone without permission.
+- **Does To'Latino know which church I go to?** Only the place knows you asked for a date. To'Latino never counts or shows people by religion.
 
-### If you never say «They refunded me»
-When the place agrees to refund you outside the app, your request waits for **They refunded me** or **They did not refund me**.
-If you say nothing, you get **one reminder** halfway and after **14 days** (set by To'Latino) it **closes on its own**. Notices
-never name the place or the service. If you were not refunded, write to **Support**: the closed request keeps its history.
-Also for Real Estate and Car dealers.
+### If you never say "They refunded me"
+When the place agrees to refund you something outside the app, your request waits for you to say **They refunded me** or **They did not refund
+me**. If you say nothing, halfway through the period you get **a reminder** and, after **14 days** (To'Latino sets the period in Configuration),
+the request **closes by itself**. The notices do not name the place or the service. If it later turns out they did not refund you, write to us in
+**Support**: the closed request keeps its whole history. This also applies to Real Estate and Cars.
+
+**Does it close even if they did not refund me?** It closes for lack of an answer; if they did not refund you, Support picks it back up.

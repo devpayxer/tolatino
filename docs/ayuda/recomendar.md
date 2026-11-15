@@ -32,8 +32,29 @@ negocio diga que sí. Te avisamos cuando publique.
 
 ## English
 
-Recommend a business that isn't on To'Latino yet: we look it up and, if you left their phone, text them once on your
-behalf so they can list for free. Nothing goes live until the business says yes; we tell you when it does. Fill in the
-name, category and where it is (or "no storefront"); optionally their phone or Instagram, why you recommend it and
-whether to tell them it was you. Sending requires signing in (your draft stays on your phone). Duplicates and more than
-20 a day are refused with a message. The business never sees your number, only your short name if you allow it.
+### What it does
+If you know a business that is not on To'Latino yet, you recommend it: we look it up, check that it exists and, if you left its phone number, we
+text it once on your behalf so it can list for free. Nothing is published unless the business says yes. We notify you when it publishes.
+
+### How to use it
+1. From Search ("Recommend a business"), a category, or the "Coming soon" city.
+2. Enter the name, choose what it is and where it is (or mark that it has no storefront).
+3. Optional: its phone or Instagram, why you recommend it and whether to tell it that it was you.
+4. **Send recommendation**. If you have not signed in, it asks you to sign in and brings you back with everything you wrote.
+
+### What happens in each case
+| Case | What the person sees | What to do |
+|---|---|---|
+| Something is missing | **STILL NEEDED** with the list | Complete it. |
+| Not signed in | "Sign in to send" → sign in and come back (what you wrote stays on the phone) | Sign in. |
+| Already recommended it before | "You already recommended this business. We will tell you when it publishes." | Nothing. |
+| It is theirs | "If it is yours, list it yourself" and **List your business** | List it. |
+| Many in one day (20) | "You already sent many recommendations today. Try tomorrow." | Wait. |
+| Telling it that it was you (off) | The message says "a neighbor recommended you" | — |
+
+### FAQ
+**Do they give my number to the business?** No. If you leave it on, it only knows your short name (e.g. "Rosa M.").
+
+**Do they text it many times?** No: a single message, and only if you left its phone number.
+
+**When does the business appear?** When the business publishes and we review it. We notify you.

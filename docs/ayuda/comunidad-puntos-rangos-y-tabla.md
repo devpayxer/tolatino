@@ -78,27 +78,71 @@ _Pantallas: **Tu rango** (`/comunidad/rango`, desde la pastilla del rango arriba
 ## English
 
 ### What it does
-- **Nothing is bought here: points come from your neighbors’ votes, never from being online.**
-- **Points:** upvote on your post **+2**; on your comment **+1**; «Me too» / «Add my vote» on your recommendation **+3**; the asker marks
-  **«Helped me»** **+10**; **verified review** **+15** (your review card says «+15 POINTS»); **first recommendation of a business** in your
-  city that gets **3 votes** **+50**, once per business.
-- **Rules:** up to **100 points a day** (your city’s day) — anything over is not stored; being online, following or followers earn nothing;
-  a downvote lowers the post, not your rank; if something is removed or hidden for breaking the rules, its points go too (and removing your
-  vote takes back what it gave); accounts that used **the same phone** never give each other points.
-- **10 ranks** (minimum points + a condition, in order): Recruit · Neighbor (100, a post with 5 upvotes) · Corporal (300, 5 upvoted
-  comments → **polls**) · Sergeant (800, 3 upvoted recommendations → **rank shows on comments and reviews**) · Sergeant Major (1,500, 4
-  active weeks in a row → **feature 1 recommendation a month**, 7 days in Businesses) · Lieutenant (2,300, 3 verified reviews → El Patio,
-  **when El Patio opens**) · Captain (3,500, 3 invitees who take part → El Patio, **when it opens**) · Commander (5,000, clean record, 200
-  upvotes → **your reports are reviewed first**) · Colonel (team invitation → **local moderation**) · Neighborhood General (**3 seats per
-  city**: the top 3 of the month who are already Commander, until the next close).
-- **Ranks only go up.** Points taken back never lower a rank you earned; only the team can lower it, with a reason, for fraud.
-- **The Neighborhood Table** (per city): this month and last month; **Overall · Recommendations · Answers**; «You are #N with X points». The
-  month freezes on the last day at midnight, has 72 h for fraud review and **closes on day 3**: the top 3 get the «Top of the month» badge
-  and a notice. Excluded people and the official city account never appear.
-- **Invite neighbors:** your code (e.g. **RAMON-12**) and link `/i/{code}`. Invitees show as **JOINED** and count toward Captain once they
-  **take part**. **No cash rewards.**
+- **Nothing is bought here: points come from your neighbors' votes, never from being online.**
+- **How points are earned** (To'Latino can adjust the values; the screen always shows the current ones):
+  - Upvote on your post: **+2**. Upvote on your comment: **+1**.
+  - "Me too" or "Add my vote" on your recommendation (a recommendation post or a comment that recommends a business): **+3**.
+  - The person who asked marks **"Helped me"** on your answer: **+10**.
+  - **Verified review** of a business (from an order, a table or a booking of yours): **+15**. Your review card says so: "+15 POINTS".
+  - **First recommendation of a business** in your city that gets **3 votes**: **+50**, only once per business.
+- **Rules for points:**
+  - **At most 100 points a day** (your city's day). Whatever goes over the cap **is not saved**.
+  - Being online, following or having followers **does not give points**.
+  - A downvote lowers the post's order, **not your rank**.
+  - If something is deleted or hidden under the rules, **its points are subtracted**. If you remove your vote, what it gave is subtracted too.
+  - Between accounts that used **the same phone** there are no points (neither votes nor "Helped me"). Votes still set the order, but they do not add up.
+- **The 10 ranks** (minimum points + what they ask for; you move up in order):
+  1. Recruit · you verified your phone → post, comment and vote.
+  2. Neighbor · 100 points and a post with 5 upvotes → neighbor badge and full profile.
+  3. Corporal · 300 and 5 comments with upvotes → **create polls**.
+  4. Sergeant · 800 and 3 recommendations with votes → **your rank shows on your comments and your reviews**.
+  5. Sergeant Major · 1,500 and 4 active weeks in a row → **feature 1 recommendation a month** (it shows for 7 days in Businesses › Recommended by
+     neighbors with "FEATURED"; the feed does not change).
+  6. Lieutenant · 2,300 and 3 verified reviews → private tables in El Patio (**when El Patio opens**).
+  7. Captain · 3,500 and 3 neighbors you invited who take part → neighborhood tournaments (**when El Patio opens**).
+  8. Commander · 5,000, a clean record (no sanctions in 180 days) and 200 upvotes received → **your reports are reviewed first**.
+  9. Colonel · by invitation of the team → **local moderation** (your reports weigh more to hide something while it is reviewed; you never hide
+     anything on your own).
+  10. Neighborhood General · **3 seats per city**: when the month's Board closes, they are taken by the top 3 who are already Commander, until the
+      next close.
+- **Rank only goes up.** If points are subtracted (for example, for something hidden), the rank you already earned does not go down. Only the team
+  can lower it, with a reason, for fraud. The General seat lasts from one close to the next.
+- **Your rank** shows: the number and the name, your points (total and today's, "X OF 100 TODAY"), what is missing for the next one (points and
+  the condition, for example "3 / 5 UPVOTES ON A POST"), what you can already do, the full ladder, how points are earned, your latest moves
+  (including what was subtracted or came back) and your badges.
+- **When you move up** you get the notice "You moved up a rank · You are now {rank}. You can now: …".
+- **Badges:** Founder (first 500 in your city), Best answer ×10, 50 recommendations voted, **Top of the month** (the first 3 on the Board), City
+  notices and Local moderation (given by the team). They show on your profile and in Your rank.
+- **The Neighborhood Board** (per city): the current month and the previous one; tabs **Overall · Recommendations · Answers**; "You are #N with X
+  points"; the first 3 in gold; "See more". Recommendations = "Add my vote", first recommendation and votes on recommendations; Answers =
+  "Helped me" and votes on comments.
+  - The month **freezes** on the last day at midnight (your city's time). There are 72 hours to review cheating and it **closes on day 3** (or
+    earlier, if the team closes it): the first 3 get the "Top of the month" badge and the notice; whoever is already Commander takes the General seat.
+  - Whoever cheated **does not appear** (the team excludes them with a reason and they are told; their points and rank stay the same).
+  - The official account "To'Latino {City}" **earns no points and does not appear on the Board**.
+- **Invite neighbors:** your code is your name and your neighbor number (for example **RAMON-12**); your link is `/i/{code}`. Whoever creates an
+  account through your link shows in "Your invitees" (**JOINED**) and counts toward Captain once they **take part** (post, comment, order or
+  book). **There are no cash rewards.** A second account of yours on your own phone does not count.
 
-### FAQ (English)
-- **Can I buy points?** No. **Do points expire?** No; the Table restarts each month, your total and rank stay.
-- **Why didn’t I move up?** Each rank also asks for something (e.g. a post with 5 upvotes); Your rank shows how far you are.
-- **Is my rank visible?** From Sergeant (4) on your comments and reviews; always on your profile.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Someone upvotes yours and then removes it | First +2 (or +1, +3); when removed, an entry that subtracts it. If they vote again, it adds again (never more than once). |
+| They change their vote to a downvote | What it gave is subtracted. The downvote does not take away extra points or lower your rank. |
+| You reached 100 points today | The rest of today is not saved. Tomorrow (your city's day) you add again. |
+| Votes from accounts on your own phone | They count once for the order and give no points; if there are many, the team checks for a possible network of accounts. |
+| To'Latino hides yours under the rules | Its points are subtracted. If you appeal and you were right (another team member decides), it shows again and the points come back. |
+| You delete yours | Its points are subtracted. If you tap "Undo" within 10 seconds, they come back. |
+| The person who asked changes the answer that helped them | The +10 moves to the new answer (it is subtracted from the previous one). |
+| Your verified review is hidden or you remove it | Its +15 is subtracted; the card stops saying "+15 POINTS". |
+| You end up in the top 3 of the month | When the month closes: the "Top of the month" badge and the prize coins (200 by default; no cash value), only once. See "Coins and coupons". |
+| You are excluded from the Board | You do not appear this month or get a prize; you get a notice with the reason. Your points and rank do not change. |
+| The team adjusts your points | You get a notice with the amount and the reason; it shows in Your points as "Team adjustment". |
+
+### FAQ
+- **Can I buy points or coins?** No. Nothing is bought here.
+- **Why don't I move up if I already have the points?** Each rank also asks for something (for example, a post with 5 upvotes). Your rank
+  tells you how far along you are.
+- **Do points expire?** No. The Board starts from zero each month, but your total and your rank stay.
+- **Is my rank visible?** From Sergeant (4) it shows on your comments and your reviews. It always shows on your profile.
+- **What do I get for inviting?** It only counts toward Captain. There is no money or gifts.

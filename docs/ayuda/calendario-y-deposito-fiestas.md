@@ -36,9 +36,30 @@ Para salones, decoradores, DJ, mariachis, fotógrafos, renta de mesas y sillas, 
 ## English
 
 ### What it does
-Party businesses set how each service is charged (package with hours, guests, setup and what is included; hourly with a
-minimum; per unit with guests per unit; fixed; free venue visit; quoted «from $X» with the total in writing) and their
-**Calendar and deposit**: the deposit to hold a date (held when requested, charged when you confirm, released if not), maximum
-guests, events per day, travel distance, how far ahead the app books, and the dates already taken. A date with a confirmed party
-cannot be freed. Search shows «Free this Saturday / Sunday / the following Saturday» only when it is really free; those change
-on their own at midnight.
+For venues, decorators, DJs, mariachis, photographers, table and chair rentals, cakes and everything party-related.
+- **Services · how you charge:** *Package* (with hours, how many guests, whether setup is included and the list of what it includes: what is not
+  written down is not included), *Hourly* (with a minimum), *Per unit* (set, tablecloth, slice…; if you say how many guests each one covers, your
+  page tells the customer how many they need), *Fixed*, *Free venue visit* (to see the venue) and *Quoted* ("From $X", the total in writing).
+- **Calendar and deposit:**
+  - **Deposit to hold the date** (in steps of $50): it is held when they ask for the date and charged when you confirm; if you do not confirm, it
+    is released in full.
+  - **Maximum guests** (or "N/A"): if they ask for more, the app says they do not fit.
+  - **Events the same day:** how many parties you handle in a day; when it fills, the date shows as booked.
+  - **How far you travel** (miles) and **how many days ahead** a date can be held in the app (90, 180 or 365).
+  - **Your dates:** you tap a Friday, Saturday or Sunday of the coming weeks to mark it booked or free, or you type any other date. A date with a
+    confirmed party cannot be freed: cancel the party first.
+- In Search, your business shows up under **"Free this Saturday"** (and Sunday, and the following Saturday) only if it is really free. Those
+  dates change by themselves at midnight.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| I mark a Saturday as booked | It stops showing under "Free this Saturday" right away. |
+| I want to free a day with a confirmed party | Not allowed: "You have party F-… that day; cancel it first." |
+| A "per unit" service with no unit | It is not saved until you write the unit. |
+| A "free visit" | Always $0. |
+| To'Latino hides a service | You see it with the reason; it does not show on your page. |
+
+### FAQ
+- **When is the deposit charged?** When you confirm the date. Before that it is only held.
+- **Can I have two parties on the same day?** Yes: raise "Events the same day".

@@ -34,12 +34,29 @@ orden. Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: vecino. Tema: e
 ## English
 
 ### What it does
-**Cancel my tickets**: pick which; the sheet shows **what we refund** for each: **what you paid minus the service fee** (5 % + $1 of that ticket).
-Cancelling **everything** in the order also refunds the extras (minus their 5 %). Up to **24 h before** the event (Settings); after that you can only
-transfer (up to 2 h before). Money goes back **to your card in 3–5 business days**; cancelled tickets stop working and their spot goes back on sale
-(or to the waitlist, in order). If the organizer cancels, you get **everything** back.
+- **Cancel my tickets**: you pick which ones (one, several or all) and the sheet shows **how much we refund** for each: **what you paid minus the
+  service fee** (the 5 % + $1 of that ticket; for a table, the table's). If you cancel **everything** in the order, the extras are refunded too
+  (minus their 5 %). **Cancel and refund $X** does it right away.
+- **Up to 24 hours before** the event (`bol_cancelar_h`, Configuration › Events). After that **you can only transfer** (up to 2 hours before).
+- The money goes back **to your card in 3–5 business days**. Cancelled tickets **stop working** and their spot goes back on sale (or to the
+  waitlist, in order).
+- **The price you see is the price you pay: fees included.** If **the organizer cancels** the event, we refund you **everything**.
+- The order and the receipt show what was refunded ("It is on its way to your card").
 
-### Cases and FAQ (English)
-Less than 24 h → no refund, transfer instead. Used tickets are not refunded. Tickets transferred to you cannot be cancelled for a refund (the money is
-the payer's). Double taps or dropped connections refund **once**; if the bank is slow we retry with the same refund request. Organizer refunds are
-100 %. Payment problems → «Help with this order › A payment problem», reviewed by To'Latino.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You cancel in time | We refund the price minus the service fee. You get "You cancelled your tickets." |
+| Less than 24 hours left | The sheet says you can no longer cancel with a refund and until when you can transfer. |
+| A ticket was already used | It is not refunded. |
+| A ticket that was transferred to you | It cannot be cancelled with a refund (the money belongs to whoever paid). You can transfer it. |
+| A ticket that is on its way to another person | Undo the transfer first. |
+| You tap "Cancel" twice or the connection drops | It is refunded **only once**. If the bank is slow to respond, we retry by ourselves with the same refund order, without charging you or refunding you too much. |
+| The organizer refunds you | **100 %** of those tickets goes back; you get "Your tickets were refunded." |
+| A payment problem (double charge, a different amount) | "Help with this order › A payment problem": To'Latino reviews it. |
+
+### FAQ
+- **Why don't they refund the service fee?** It is this event's policy: if you cancel, the ticket is refunded minus the fee. If the event is
+  cancelled or changes date and you cannot go, everything is refunded.
+- **When do I see the money?** In 3–5 business days, depending on your bank.
+- **Can I cancel just one of my tickets?** Yes: uncheck the ones you are keeping.

@@ -74,20 +74,69 @@ Nunca te avisamos de lo tuyo, y nunca de alguien con quien hay un bloqueo (en cu
 
 ## English
 
-Below each post is its thread: comments 20 at a time ("See more comments"), sorted by Top (or Newest). The answer the asker
-marked "Helped me" shows on top in green ("HELPED {name} · N VOTES"); otherwise the top comment with 5+ upvotes shows as "TOP
-VOTED". "Recommended in this thread" lists every business neighbors recommended in a comment with a % bar by votes (computed by
-To'Latino, adding up to 100) and its vote count; tap the count to add your vote (again to remove it). If the highlighted answer
-already recommends a business, the list is "Also recommended" without repeating it. Each comment shows name, rank (from
-Sergeant), time, text, the business it recommends, +/− votes and Reply; "See N replies" opens the replies, and answering a reply
-goes one level down starting with "@Name". On the phone you write in the bottom bar (store button to recommend a business); on
-desktop the box is in the thread (Ctrl + Enter sends; Reply opens a box under that comment, Esc cancels). Up to 600 characters,
-or just the business. If the business is already in the thread you are offered "Add my vote" instead of repeating it. One vote per
-person on each post and comment: the same tap removes it, the other sign switches it; a vote from a second account on the same
-phone is kept but does not count. Only the person who asked can mark "Helped me": the question becomes SOLVED and that answer goes
-on top; "This one helped me more" in another answer's menu changes it (always one). Polls: vote once to see the %; when a poll
-closes everyone sees the result and its author and voters get one notice with it. Notices (bell, never SMS): new comment on your
-post, reply to your comment, mention or reply with "@Name", your answer helped, 10 upvotes (once), poll closed — never about your
-own content and never from someone with a block between you. Phones, emails, SSN, cards and exact addresses are rejected, you
-can't recommend your own business, closed comments can't be answered, and blocked neighbors can't see, comment, vote or reply on
-each other's content. Points for votes and "Helped me" arrive with ranks.
+### What it does
+- **The thread:** below the post are the comments, **20 at a time** ("See more comments" brings the next ones), sorted by **Top voted** (or
+  **Newest**, with the button at the top).
+- **The highlighted one:** if the person who asked marked **"Helped me"**, that answer shows at the top in green with **"HELPED {name} · N
+  VOTES"**. If nobody marked one, the one with **5 votes or more** that is the top voted shows at the top as **"TOP VOTED · N VOTES"**. If it
+  recommends a business, the business shows large with **View**.
+- **Recommended in this thread:** every business that neighbors recommended in a comment, with a **% bar** based on its votes and the number of
+  votes. Tap the number to **add your vote** (tap again to remove it). If the highlighted answer already carries a business, that one is not
+  repeated and the list is called **"Also recommended"**. To'Latino calculates the % and they add up to 100.
+- **Each comment on its card:** name, rank (from Sergeant), how long ago, the text, the business it recommends, **+ / −** votes and **Reply**.
+- **Replies:** "See N replies" (with the faces of those who replied) opens them. If you answer a reply, yours goes one level down and starts with
+  **"@Name"**.
+- **Writing:**
+  - On the **phone**, the bar at the bottom: the store button to recommend a business, the text box and send. If you are replying, the top says
+    "Replying to {name}" (the X cancels it).
+  - On **desktop**, the box is in the thread itself: **Ctrl + Enter** sends. When you tap **Reply**, the box appears under that comment; **Esc**
+    cancels it.
+  - Up to **600 characters**. You can send just the business, with no text.
+- **Recommending a business in the comment:** you look for the business in your city. If **it was already recommended in this thread**, it tells you
+  ("ALREADY RECOMMENDED HERE") and offers **"Add my vote"** (it raises it without repeating it) or recommending it with your comment.
+- **Votes:** one vote per person on each post and each comment. The same tap removes it; the other one changes it. Once you voted, the button
+  keeps a border and a purple tint. Replies can only be voted up.
+- **"Helped me"** (only on questions and only the person who asked): you mark the comment that helped you. The question becomes **RESOLVED** and
+  that answer goes to the top. If another one helps you more later, in that comment's menu (⌄) there is **"This one helped me more"**: there is
+  always only one.
+- **Polls:** you vote for one option and see the **%** (before voting they are not visible). Your vote cannot be changed. When it closes, everyone
+  sees the result, and the person who posted it and those who voted get a notice with the result (only once).
+- **Your comment:** in its menu (⌄) there is **Delete comment**. If it had replies, it stays as "Comment deleted" and the replies are still shown.
+
+### Notices you get (in the bell, no SMS)
+| When | Who | Notice |
+|---|---|---|
+| Someone comments on your post | You | "They commented on your post" |
+| Someone replies to your comment | You | "They replied to you" |
+| Someone answers your reply or names you with "@Name" in the thread | You | "They mentioned you" |
+| The person who asked marks your answer | You | "Your answer helped" |
+| Your post or comment reaches 10 upvotes | You | "You reached 10 votes" (once) |
+| A poll closes | Whoever posted it and those who voted | "The poll closed" with the result |
+We never notify you about your own content, and never about someone you have a block with (in either direction).
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You write a phone number, email, Social Security number, card or exact address | It is not posted; the reason shows right away (the same rules as when posting). |
+| You recommend your own business (or where you work) | "You cannot recommend your own business. Your business posts in its Updates." |
+| Comments are closed | "Comments on this post are closed." What was already there stays. |
+| You vote on your own content | "Others vote on yours." |
+| You vote from the same phone with another account | The vote is saved as yours, but it does not count or move the order (one phone, one vote). |
+| Two neighbors vote at the same time | Both count, exactly. |
+| You vote on a closed poll | "This poll has already closed." |
+| You vote twice on the poll | "You already voted: your vote cannot be changed." |
+| There is a block between you and whoever posted or commented | You do not see theirs and they do not see yours; you cannot comment, vote or reply there. |
+| Your account is muted | You read everything; commenting tells you until when and why. |
+| More than 100 comments in 24 hours (50 if the account is from today) | "You reached … comments in 24 hours." Deleted ones count. |
+| To'Latino hides your comment | It leaves the thread for everyone and you get a notice with the reason (no SMS); if it had replies, it stays as "Comment hidden under the neighborhood rules." If it is restored, it comes back and we tell you. |
+
+### FAQ
+**What order do comments have?** By neighbors' votes (or the newest, if you choose). Nobody pays to be at the top.
+
+**Why did my vote not raise the number?** If another account already voted from the same phone, yours is saved but does not count.
+
+**Can I change the answer that helped me?** Yes, in the other answer's menu: "This one helped me more." There is always one.
+
+**What about points?** Votes and "Helped me" count toward the order and give points (see `comunidad-puntos-rangos-y-tabla.md`).
+
+**Can I change my poll vote?** No: one vote per person and it cannot be changed.

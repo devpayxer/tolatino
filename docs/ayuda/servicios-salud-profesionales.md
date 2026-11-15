@@ -31,6 +31,24 @@ Cada servicio dice **cómo lo cobras**, y la ficha lo muestra tal cual:
 ## English
 
 ### What it does
-Each clinic or professional service says how it is charged: visit, video, walk-in, free with insurance, fixed price
-(clinics; optional sliding scale and an IMPORTANT line) or consultation, flat fee plus separate government fee (the page
-shows the total), hourly with estimated hours, % only if you win (1–50 %), walk-in, quoted (professionals; optional remote).
+Each service says **how you charge for it**, and the page shows it as is:
+- **Doctors:** Visit (price without insurance; with insurance, whatever it covers) · By video · Walk-in · **Free with your insurance** (with
+  insurance $0; without insurance, the visit price) · Fixed price. You can mark **"Sliding scale"** (it shows "From $X · sliding scale") and an
+  **IMPORTANT** line (for example, "Chest pain… call 911").
+- **Professionals:** Consultation (free or priced; **"credited if they hire you"**) · **Flat fee** (+ the **government fee** separately: the page
+  states the **total**, e.g. $350 + $465 = $815; or "per month") · **Hourly** (with estimated hours, "8–15") · **% only if you win** (1 to 50 %; if
+  they do not win, $0; of what they win, of the check, of the bond or per load) · Walk-in · **Quoted** (the total in writing at the consultation).
+  Any of them can be **also by video or phone**, and you can state **what it does not include**.
+- As with all services: name (ES/EN), description, category, duration, who does it, photo, options and whether it shows.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| A percentage over 50 or under 1 | It is not saved: "The percentage goes from 1 to 50." |
+| A % with a government fee | Not allowed. |
+| Free with your insurance | It does not ask for a price; without insurance the visit is charged. |
+| Flat fee with no fee | "Enter the fee." |
+| Estimated hours written wrong | "Estimated hours go like this: 8–15." |
+
+### FAQ
+- **Does To'Latino charge for these services?** No. Doctors and Professionals do not charge in the app for now: payment is made at the office.

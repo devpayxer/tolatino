@@ -52,17 +52,50 @@ persona confirma «Me lo devolvieron». Si no respondes, o la persona dice que n
 ## English
 
 ### What it does
-Reply to each visit, test drive, appointment, pre-qualification or offer request, and mark whether it happened. Nothing is charged in the app.
+You answer each request for a visit, test drive, appointment, pre-qualification or offer, and mark whether it happened. Nothing is charged in the app.
 
-### Help requests
-Help requests on visits, test drives or church dates show in Today («Help awaiting your reply»); reply within 24 hours. Nothing was
-charged on To'Latino: if you agree to refund, refund directly and the customer confirms. Charging to view, asking for more to move in or
-asking money for church help go straight to To'Latino and the listing (or «Ask for a date») is paused until To'Latino decides.
+### How to use it
+- **Reply** (in Today or in the detail): **Confirm** (the person gets the notice with the address), **Another time** (you pick a free time; the
+  person has up to 24 hours to accept) or **Can't**.
+- **Today:** when the time arrives, **Happened** (we ask for their review) or **No-show** (no penalty).
+- **Cancelling a confirmed one:** with a reason; the person sees it and it stays in your history.
+- **Visit hours:** on each property (Properties › Visit hours). **Test drive hours:** in Your tool, for any car on the lot (day, time and how many
+  people per hour). They open 14 days ahead.
+- **Churches:** Confirm, **Another date** (date and time slot) or **No date**; catechism with its groups.
 
-**The time limits on this page** (hours to reply, how long a spot is held, when a cancellation goes through, after how many days private data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
+### What happens in each case
+- **You have 4 hours of your business hours to reply**, and never later than one hour before the visit. If not, it expires and the time becomes
+  free again.
+- **If you mark a property Rented / Sold (or a car Sold) or you hide it**, the live visits are cancelled by themselves, with no fault to
+  anyone, and we notify each person.
+- **The same time is not given twice:** if two people ask for the last one, only one takes it.
+- **What the person saw is saved as a copy** (rent, deposit, move-in total, price, out-the-door total, example payment): if you change the price,
+  their visits do not change.
+- **Test drive at home:** you see the customer's address only after confirming; each view is recorded and is deleted after 30 days.
+- **License:** the customer marks that they have a current one; you see it in person. To'Latino never keeps the number.
+- **Note:** if it carries a Social Security number or a card number, it already arrives covered.
+- **3 "No-shows" in 30 days** open a To'Latino review ("No-shows"): "No-show" does not open the review, so it is not used to hold reviews back.
+- **Counseling and chaplaincy (Churches):** the person's note is encrypted; you see it only in the detail and each view is recorded.
+- **Free plan:** you receive up to 10 requests a month; after that, your page tells people to call you.
+
+### Help with a visit, a test drive or a date
+If someone asks for help with a visit, a test drive or a church date, you get the notice and it shows in Today, under "Help awaiting your reply."
+Open the detail: you see what happened, what they want, their photos and what they saw when asking (the copy of the total). You reply within 24
+hours: **They are right**, **Propose something else** or **Can't**. Nothing was charged in To'Latino: if you agree to refund, you refund
+directly and the person confirms "They refunded me." If you do not reply, or the person says you did not refund them, To'Latino reviews it
+within 48 hours.
+- **"They charged me to view," "They asked for more to move in" and, in Churches, "They asked me for money for the help"** do not wait for your
+  reply: they go straight to To'Latino ("Possible scam") and the property, the car or "Ask for a date" stay paused while it is reviewed. You see
+  the reason in your dashboard and you cannot turn it back on; To'Latino decides: "No action" shows it again; "Sanction" leaves it out and gives
+  you a warning.
+
+**The time limits on this page** (how many hours to reply, how long a spot is held, when a cancellation takes effect, after how many days private
+data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force at that moment.
+
+**The Free cap** (the 10 online orders, bookings or requests a month) is today's: To'Latino sets it in its Configuration and the screen always
+shows the one in force at that moment.
 
 ### FAQ
-You cannot charge for viewing or for holding a car in the app. Changing your hours only affects new requests. 3 no-shows in 30 days
-open a To'Latino review. You cannot reply to a «Possible scam» help request: To'Latino decides it.
-
-**The Free cap** (10 online orders, bookings or requests a month) is today's: To'Latino sets it in its Configuration and the screen always shows the one in force.
+- **Can I charge for the visit or for holding a car in the app?** No. Viewing and test driving are free; money is discussed in person and in writing.
+- **Can I change my hours?** Yes: the new ones apply to new requests; the ones already requested stay.
+- **Can I reply to a "Possible scam" help request?** No: To'Latino decides it.

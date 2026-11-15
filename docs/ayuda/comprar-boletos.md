@@ -42,19 +42,37 @@ orden** (`/eventos/orden/B-…`). Teléfono y escritorio. Para vecinos con cuent
 ## English
 
 ### What it does
-On a ticketed event, **Tickets** opens checkout. Pick how many of each type (**MAX. N PER PERSON**), **one table per order** (it includes its
-entries; the deposit comes off your spend that night) and **extras** (some are **TABLE ONLY**). Each type says **Only N left.** or **Sold out.**
-**Have a code?** Type it and tap **Apply**: the server answers **CODE APPLIED · −$X** or why it does not work (codes lower ticket prices only).
-**Continue** holds your tickets and table for **N minutes** while you pay (set by To'Latino; today 8). **Payment** shows the time left,
-optional names per ticket, your card, the summary and **Pay $X**. **The price you see is what you pay: fees included. Nothing extra at the
-door.** After paying: **You are going!** with your tickets and their **QR code**, an in-app notice and an email receipt (if your email is
-confirmed).
+- On an event with tickets, **Tickets** opens checkout. You pick how many of each type (with **MAX. N PER PERSON**), **one table per order** (it
+  comes with its entries: "4 people · includes their entries"; the deposit comes off your spend that night) and the **extras** (some are
+  **TABLE ONLY**). Below each ticket it says **Only N left.** or **Sold out.**
+- **Have a code?** Type it and tap **Apply**: the server says **CODE APPLIED · −$X** or why it is not valid. The code lowers the price of the
+  tickets (not the table or the extras).
+- **Continue** holds your tickets and table for **{N} minutes** while you pay (To'Latino sets this in Configuration; today 8). If you do not pay in
+  time, they go back on sale.
+- **Payment**: "YOUR TICKETS ARE HELD" with the time left, a **name on each ticket** (optional), your card (saved or new), the summary and
+  **Pay $X**. **The price you see is the price you pay: fees included. Nothing extra at the door.**
+- When you pay: **You are going!** with your tickets and their **QR code**. You also get a notice in the app and the receipt by email (if you
+  confirmed it in My account).
 
-### Cases (English)
-Card declined → nothing charged, tickets still held. Time ran out → we try to hold them again; if they are gone: "They sold out while you were
-paying. Nothing was charged." Several people for the last ticket → only one gets it, never oversold. Double tap on Pay → one order, one
-charge. Limits per order and per person (account, phone and card). Code used up / already used by you / too many wrong codes → clear
-message. 18+/21+ → "If you do not show ID at the door, you do not get in." Paused / closed / organizer not selling → no checkout.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Your bank declines the card | "Nothing was charged and your tickets are still held." Change cards and pay. |
+| Time ran out while you were paying | When you tap Pay we try to hold them again. If someone else took them: "They sold out while you were paying. Nothing was charged." |
+| Several people go for the last ticket at once | Only one holds it; the others see "sold out." It is never oversold. |
+| You tap Pay twice | You are charged only once: it is a single order. |
+| You ask for more than allowed | "Up to N tickets per order" or "Up to N entries per person for this date" (we count your account, your phone and your card). |
+| The code has already been used the maximum number of times | "That code has already been used all its times." |
+| You already used that code on this event | "You already used that code on this event." (one per person) |
+| You try many codes that do not exist | After several attempts: "Wait a few minutes and try again." |
+| The event is 18+ or 21+ | Before paying: "If you do not show ID at the door, you do not get in." |
+| The organizer paused sales / sales closed / the organizer does not sell on To'Latino | **Sales paused** · **Sales closed** ("No tickets are sold at the door") · **Not on sale**. |
+| The charge does not complete after issuing | The tickets are voided and the authorization is released: nothing is charged. |
 
-### FAQ (English)
-No hidden fees (To'Latino's fee comes out of the organizer's share). No sales at the door. Card only for now. Event cancelled → full refund. You cancel (up to 24 h before) → ticket minus the service fee; transfer up to 2 h before; sold out → waitlist.
+### FAQ
+- **Are there hidden fees?** No. The price you see already includes the fees; To'Latino's commission comes out of the organizer's share.
+- **Can I pay at the door?** No. No tickets are sold at the door: the door staff only scans.
+- **Can I pay with Wallet?** For now only with a credit or debit card.
+- **What if the event is cancelled?** We refund you everything. **If you cancel** (up to 24 hours before), the ticket is refunded minus the service
+  fee; after that, you can **transfer it** up to 2 hours before. If it sold out, join the **waitlist**. See "Transfer tickets", "Cancelling and
+  ticket refunds" and "Waitlist".

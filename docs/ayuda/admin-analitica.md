@@ -158,77 +158,153 @@ frena un pedido.
 
 ## English
 
-Community: posts, comments, % of questions solved, time to first answer, reports per 1,000 posts, appeals lifted, coins issued and
-redeemed, redemptions per business, active neighbors by rank and by city. Figures only, from per-city, per-day views with no people.
+### What it does
+It shows what happens on the platform with **first-party data**: nothing goes to Google, Meta or any other company. A period of 7, 30 or 90 days,
+only for your cities.
+- **Overview:** the directory funnel, counted in people (account or device): how many searched or opened a category → how many opened a business
+  page → how many tapped Call, WhatsApp or Directions.
+- **People and businesses:** neighbors with an account and new ones in the period, % active (they came in during the period), Pro and Free
+  businesses, % verified, retention of new accounts (they come back on day 1, 7 and 30) and businesses by category.
+- **Support and trust:** neighbors with an active sanction, % of queue cases decided within their deadline, the open queues with their deadline,
+  **reports per 1,000 transactions** and the period's **Support cases**.
+- **Doctors and Professionals · Markets and Stores · Parties and Transport:** figures only, for each group.
+- **Night:** tables and VIP requested, **% confirmed within 60 minutes**, % expired without a reply, **tables not honored** (the venue cancelled
+  a table that was already confirmed, or the customer asked for help because their table or list spot was not honored), deposits (charged, held,
+  refunded and what the **venue kept**), **% of the guest list that got in** (for nights already closed), **times the cover went up after it was
+  posted** that same night (from the "Tonight" history, which is never deleted), **% "the line was as posted"** in reviews, **"charged more
+  cover"** help requests **per 100 nights** and **expired liquor licenses** (PLCB). Below, the night's help reasons.
+- **Education · Kids · Sports:** enrollments requested by category, **% confirmed in 24 hours**, % expired, **groups that did not open**, **group
+  occupancy**, tuition (charged, held, refunded and what the **venue kept**), people on the **waitlist** and average days, **membership
+  cancellations** requested and confirmed in 72 hours, % "charged the full amount" and "promised certificate" in reviews, **help requests per 100
+  enrollments** and **daycares with a current DHS license**. Never data about a child or an enrolled person.
+- **Churches · Real Estate · Cars:** viewing requests (and **how many per property**), test drives and appointments (and **how many per car**),
+  **% confirmed on time** (before their 4 business-hour deadline expired; the server does not allow confirming after that), % expired without a
+  reply, **no-shows** ("No-show"), **days to rent**, **to sell a house** and **to sell a car**, **properties and cars live today by city**, **% "the
+  total was what I saw"** in reviews ("To move in" and "Out the door"), **help requests per 100 visits**, **listings paused for a possible scam**
+  (in the period, paused today and sanctioned), **texts blocked** by the fair housing list, **over-62 declarations to review**, in Churches the
+  **dates and catechism requested** and **% answered within 48 hours**, and the **licenses** of the three (current, due within 14 days, expired and
+  in review). Below, the help reasons. **Never people by religion** (neither the denomination nor who goes to which church) **nor credit data**
+  (the app does not ask for it or keep it).
+- **Searches with no listings:** what was searched for and was not there (they asked for a notice), with a link to Catalog.
+- **Money, Home and Auto, and Reports:** see below.
+- **Export:** Businesses, History and Searches with no listings as CSV (opens in Excel or Sheets). Analytics export permission; every download is
+  recorded in the audit log.
 
-Analytics shows what happens on the platform with first-party data only (nothing goes to third parties), for 7, 30 or
-90 days in your cities: the directory funnel (search or open a category → open a business page → tap Call, WhatsApp
-or Directions, counted in people), people and businesses (neighbors, new, % active, Pro/Free, % verified, new-account
-retention on day 1/7/30, businesses by category), support and trust (sanctioned, % of queue cases decided within SLA,
-open queues), searches without supply, and CSV exports (businesses, history, searches without supply; audited). Events
-store the account or a random device id, the city and event data — never name, phone, email, IP or form text; bots
-are not counted.
+#### Community
+**Community** tab (7 · 30 · 90 days; each city's local days): **posts** and **comments**, **% of questions solved** (with "Helped me"), **time to
+first reply** (average, from another person), **reports per 1,000 posts**, **appeals lifted** (of those decided), **coins issued** (welcome and
+rewards) and **redeemed** (and those returned for expired codes), **redemptions** and **redemptions per business**, **active neighbors by rank**
+(they posted, commented or voted) and **by city**. Figures only: it comes from views by city and day that have no people; never who posted, voted
+or redeemed. What the official account does does not count as neighbor posts. **The numbers are refreshed every 10 minutes** (a summary per city
+and day that the system rebuilds by itself for the last 40 days; what happened longer ago no longer changes): something posted a moment ago can
+take up to 10 minutes to be added.
 
-Per-category tabs show numbers only. **Night:** table and VIP requests, % confirmed within 60 minutes, % expired
-without a reply, tables not honored (the venue cancelled a confirmed table or the customer asked for help because the
-table or list spot was not honored), deposits (charged, held, refunded and kept by the venue), % of the guest list that
-got in, times the cover went up after it was posted that same night (from the append-only «Tonight» history), % of
-reviews saying «the line was as posted», «charged more cover» help requests per 100 nights and expired liquor licenses
-(PLCB), plus the night's help reasons. **Churches · Real estate · Cars:** viewing requests (and per property), test drives and
-appointments (and per car), % confirmed on time (before the 4 business-hour deadline expired), % expired, no-shows, days to rent, to sell a
-house and to sell a car, properties and cars live today by city, % of reviews saying «the total was what I saw», help requests per 100
-visits, listings paused for a possible scam, texts blocked by the fair housing list, 62-and-over declarations to review, church dates and
-catechism requested and % answered within 48 h, and licenses of the three (valid, due within 14 days, past review, in review). Never people
-by religion and never credit data.
+### What is counted and what is not
+| Kept | Not kept |
+|---|---|
+| The event (view category, view business page, search, contact, sign in, sign up, list a business, recommend, claim, report photo, ask for a notice), the account or device, the city and event data (e.g. how many results a search had) | Name, phone, email, IP or what the person types in a form |
+| One active day per account and per device | Robots and search engines (they do not count) |
+
+The device is a random number in a cookie that only To'Latino's server reads; if the person clears their cookies, they count as a new device.
+
+**The deadlines on this page** (how many days before its review a license goes back to the queue) are today's: To'Latino sets them in its
+Configuration and the screen always shows the one in force at that moment.
+
+### FAQ
+**Why does retention say there is no data yet?** You need new accounts that are at least 1, 7 or 30 days old.
+
+**Why does "the cover went up" count only increases?** Lowering the cover on the night is in the customer's favor. Each increase is recorded with
+its time in the venue's history (Businesses 360° › Tonight) and the people on the list get the notice.
+
+**Is "Tables not honored" the same as the queue?** It is the total for the period. The "Tables not honored" queue opens by itself when the same
+venue reaches 3 in 30 nights.
+
+**Why are Churches not split by denomination?** Because Analytics counts what happens in the app, not what people believe. No figure says how many
+people go to a Catholic, evangelical or other church (guardian `analiticaSinCreencias`).
+
+**Where does "Confirmed on time" come from?** From the visits and test drives the business confirmed: the server only allows confirming before the
+deadline expires (4 business hours, never later than the time minus 1 hour); those that expired are counted separately.
+
+**Does an "expired" license lose its seal by itself?** No: "expired" here means its review date has passed. It goes back to Queues › Licenses with
+priority and a person checks it in the official registry; the seal changes when they decide.
+
+**Where are sold, commission and transactions?** In the **Money** tab; the ranks and community numbers are in **Community**.
+
+**Why did a number not change right away?** Money, Events, El Compa and Support, retention and Community are refreshed every 10 minutes.
+
+### Events
+- **From viewing to going:** event views, saves, RSVPs (and people), ticket orders, tickets and comps, waitlist and how many bought. The "% of views"
+  shows only when it makes sense (views are counted from when the listing exists).
+- **Ticket money:** gross (charged: tickets, table and extras, fees included), commission ("tickets" rule) and refunded.
+- **At the door · dates that already passed:** attendance (came in / had a ticket), no-shows, RSVPs that arrived, incidents per 1,000 entries (for
+  those same dates).
+- **Private event:** requested, with a quote, no reply, accepted, deposits, cancelled on time · late · by the restaurant.
+- **By format, by city and by organizer** (a business, not a person).
+- **No people:** figures only by city, local day and format (tables by city and day that the system rebuilds every 10 minutes); never who bought,
+  went or came in. Guardian `analiticaSinPersonas`.
 
 ### El Compa and Support
-The **El Compa and Support** tab (7, 30 or 90 days) reads two views without people, by city, day, level, channel and topic: El Compa
-conversations, solved alone, to a person, AI spend, AI wait (period average and the worst day's p95), fallbacks to the rules, didn't know and
-flagged; Support cases, deadline met, first reply (average and the worst day's p90), «Was it solved?», by topic and by city. Never names, phones,
-CP- or TK- numbers or text.
-- **Community** numbers are refreshed every 10 minutes (a per-city, per-day summary the system rebuilds for the last 40 days; older days no longer change): something posted a moment ago can take up to 10 minutes to count.
+The **El Compa and Support** tab (7, 30 or 90 days) comes from two views without people, by city, day, level, channel and topic:
+- **El Compa:** conversations (with AI and with fixed rules), solved alone (and confirmed actions), to a person (and to the owner), **AI spend**
+  (and how many times it did not call because of the cap, being off or the limit), **AI wait** (period average and the worst day's p95: each day's
+  percentiles are not added up), to rules (slow, error, refusal or an output that did not pass the checker), **didn't know** and **flagged**. Bars
+  **WHY IT WENT TO A PERSON** and rows **WHERE IT ANSWERS** (neighbors, dashboard, automatic replies, copilot) and **WHERE THEY WRITE FROM**.
+- **Support:** cases (from El Compa, from businesses, high priority), **deadline met** (first reply within the business hours of the case's
+  current deadline), past deadline, **first reply** (average and the worst day's p90), **Was it solved?** (yes/no) and **BY TOPIC** and **BY CITY**.
+- Never who talked to El Compa or who opened a case: no names, no phones, no CP- or TK- numbers, no text. For a conversation or a case, go to El
+  Compa › Conversations or Support (with your permission; reading the thread is recorded).
 
 ### Money
-The **Money** tab (7 · 30 · 90 days; each city's days) comes from daily figures the system rebuilds on its own (every 10 minutes for the last 40 days,
-and the whole history once a day, overnight): **sold online** (charged by card in the app), To'Latino's **commission**, **paid transactions**,
-**refunds** (% and amount) and **average ticket**, each against the previous period; **no-shows** (bookings, tables, nights and visits whose time has
-passed); **sold per week · 8 weeks** (charged minus refunded); average ticket **by type** and **by transaction type**; **Pro**: **MRR** (what Pro
-businesses pay each month; a yearly plan counts as a twelfth), **paying Pro**, **Pro conversion** (of the trials that ended in the period, how many
-started paying), **on trial**, those that went to Free and Pro charged, with the funnel **Pro trial → left their card → first charge**; and **money by
-state** (charged, held, released, refunded). **Stripe reconciliation** (every night what was charged here is compared with what Stripe says): how many days
-of the period matched, how many had differences (and how many are still unowned, with the amount; tapping it opens Plans, where they are taken) and
-how many did not run or failed. It covers the whole platform, since Stripe does not know about cities: only someone who sees all cities sees it. The
-daily report carries the previous day's. Figures only: never who paid.
+The **Money** tab (7 · 30 · 90 days; each city's days) comes from daily figures that the system rebuilds by itself (every 10 minutes for the last 40
+days and the whole history once a day, overnight):
+- **Sold online** (what was charged by card in the app), To'Latino's **commission**, **paid transactions**, **refunds** (% and amount) and **average
+  ticket** (sold ÷ transactions), each against the previous period.
+- **Did not show:** of the bookings, tables, nights and visits whose time has already passed, how many ended as "no-show".
+- **Sold per week · 8 weeks:** what was charged minus what was refunded; the last bar is the current week.
+- **Average ticket by type** and **by transaction type** (order, booking, table, tickets, private event…).
+- **Pro:** **MRR** (what Pro businesses pay each month; a yearly plan counts one twelfth), **paying Pro**, **Pro conversion** (of the trials that
+  ended in the period, how many started paying), **on trial**, those that moved to Free and what was charged for Pro, with the funnel **Pro trial →
+  left their card → first charge**.
+- **Money by status:** of the charges created in the period, how much is charged, held, released or refunded.
+- **Stripe reconciliation** (every night what was charged here is compared with what Stripe says): how many days of the period matched, how many had
+  differences (and how many are still unowned, with the amount; tapping it opens Plans, where they are taken) and how many did not run or failed. It
+  covers the whole platform, since Stripe does not know about cities: only someone who sees all cities sees it. The daily report carries the previous day's.
+- Figures only by city, day and type: never who paid.
 
 ### People: retention by cohort and funnels
-**Retention by cohort:** the neighbors who signed up each week and, of those old enough, how many came back on **day 1, 7 and 30** («—» = not that old
-yet; test accounts do not count). **New neighbors funnel:** signed up → searched or opened a page → contacted or ordered → came back another day.
-**List your business, step by step:** of the drafts started in the period, how many reached each step and how many published.
+- **Retention by cohort:** the neighbors who signed up each week (Monday to Sunday, their city's time) and, of those old enough, how many came back
+  on **day 1, 7 and 30**. "—" means that week is not old enough yet. Test accounts do not count.
+- **New neighbors funnel:** signed up → searched or opened a business page → contacted or ordered → came back another day.
+- **List your business funnel, step by step:** of the drafts started in the period, how many reached each step (type of business, what they do,
+  what they sell and its prices, where and when, review and publish) and how many published.
 
 ### Overview: from search to accepted, seeds and views
-The funnel goes from searching to **the business accepted** (distinct people; charges of a plan already signed do not count as a new order). **Business
-page views** and **unique views** (once per person or phone a day; the system keeps only a fingerprint that changes every day and drops it after 2 days;
-bots and the business's own people do not count). **«Call» on a seed:** taps on Call for a business a neighbor recommended that has not claimed its page
-yet, the seeds claimed in the period and the **most called seeds**.
+- **Funnel from search to accepted:** searched or opened a category → opened a business page → contacted → sent an order or a booking → the
+  business accepted (distinct people). Charges for a plan already signed do not count as a new order.
+- **Business page views** and **unique** (once per person or phone per day; the system keeps only a fingerprint that changes every day and drops
+  it after 2 days). Robots and the business's own people do not count.
+- **"Call" on a seed:** how many times people tapped Call on a business that a neighbor recommended and that has not yet claimed its page, in how
+  many seeds, the ones claimed in the period and **the seeds that get called most** (to go out and find them).
 
 ### Searches with no results
-Under **Searches without supply**, what was searched and found nothing in 30 days, in distinct people, only when **2 or more people** searched it (one
-person's search can be a name and does not show). All searches without an account count as one person.
+In **Searches with no listings**, besides the notices requested, it shows what was **searched for and nothing was found** in 30 days, in distinct
+people. Only what **2 or more people** searched for (a single person's search can be a name and does not show). All searches without an account
+count as a single person.
 
 ### Home and Auto
-Pre-estimates and quotes that **end in a booking**, emergencies answered and **emergency response time**, **% arrived in the window** (Home: «Arrived»
-before the 2-hour window ends), customer no-shows, Auto bookings and, for finished jobs with an estimate, **approved vs. charged** (never more than
-approved) and extras the customer approved. Never the home, the car or who asked.
+Pre-estimates and quotes **that end in a booking**, emergencies handled and **emergency response time**, **% that arrived in the window** (Home:
+"Arrived" before the 2-hour window ends), customers who did not show, Auto bookings and, of finished jobs with an estimate, **approved against
+charged** (more than what was approved is never charged) and the extras the customer approved. Never the house, the car or who asked.
 
 ### Reports
-With export permission, each tab can be scheduled **every day, every Monday or on the first day of the month** at 8:00 AM Hazleton time, to your email and in your
-language, with your cities' figures (last 7 days; monthly, 30). Pause it with the same switch; it is never deleted; every change is audited. It stops if
-you leave the team or lose Analytics access, and it does not go out without an email on your account. The **daily report to the founder** has its own
-article; Admins see it, and **Send it to me now** sends today's to your email and as a notification.
+- **Scheduled reports:** with export permission, each tab (Overview, Money, People and businesses, Searches with no results, Events, El Compa and
+  Support, Businesses) can be scheduled **every day, every Monday or on the first of the month**, at 8:00 AM Hazleton time, to your email and in your language,
+  with the figures of your cities (the last 7 days; the monthly one, 30). It is paused with the same switch; it is never deleted. Every change is
+  recorded in the audit log. If you leave the team or lose the Analytics permission, it stops going out. With no email on your account, it does not go out.
+- **Daily report to the founder:** see the article "Daily report". Admins see it; **Send it to me now** sends you today's to your email and as a notice.
 
-### Figures up to date and the analysis database
-Events, El Compa and Support, Money, retention and Community come from **figure tables only the system writes** (nobody on the team can change them; the
-database prevents it). They refresh every 10 minutes (last 40 days) and once a day with the whole history. In production, Analytics reads from an
-**analysis database** (a read-only copy): a heavy query never slows down an order.
-
-**The time limits on this page** (how many days before its review a license comes back to the queue) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
+### Up-to-date figures and the analytics database
+Events, El Compa and Support, Money, retention and Community come from **figure tables that only the system writes** (nobody on the team can change
+them; the database prevents it). They are refreshed every 10 minutes (the last 40 days) and once a day with the whole history: something that
+happened a moment ago can take up to 10 minutes to be added. In production, Analytics reads from an **analytics database** (a read-only copy): a
+heavy query never slows down an order.

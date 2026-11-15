@@ -25,8 +25,23 @@ Audiencia: portero. Tema: puerta._
 - **¿Puedo dejar el teléfono fijo en la puerta?** Sí: ver «Fijar la Puerta en esta pantalla».
 
 ## English
+
 ### What it does
-The To'Latino Door app **opens without signal**: it shows **No signal** and **Your doors on this phone**, where you keep scanning with the list
-you downloaded. The list lives encrypted in the phone keychain (it is not deleted after 7 days like in a browser). The **screen stays on**
-while scanning, **Flashlight** turns on the phone light to read QR codes in the dark (if your phone has one), and each result **vibrates and
-beeps**. If you never opened a door on that phone with signal, there is no saved list.
+- **It opens even without signal.** The To'Latino Door app keeps the door screen saved: if you open it in a basement or somewhere with no signal,
+  it shows **No signal** with the button to **Your doors on this phone**, and you keep scanning with the list you downloaded (see "To'Latino Door
+  without signal").
+- **The list lives in the phone's keychain** (encrypted); it is not deleted by itself after 7 days like in the browser.
+- **The screen stays on** while you scan; when you leave Scan, it goes back to turning off as usual.
+- **Flashlight:** in Scan, the **Flashlight** button turns on the phone's light so you can read the QR in the dark (if your phone has a light).
+- **Each result vibrates and beeps:** one short buzz if the person gets in, three if not.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You open the app without signal and you never opened a door on that phone | It shows "No signal": there is no saved list. Find signal and open your door once. |
+| You do not see the Flashlight button | Your phone does not let the light be turned on from the camera. |
+| The screen turns off anyway | Check that you do not have the phone's extreme "battery saver" on. |
+| You use the Door in the browser | It works the same with signal; without signal, only if you already opened the door with signal in that browser. |
+
+### FAQ
+- **Can I leave the phone fixed at the door?** Yes: see "Pin the Door to this screen."

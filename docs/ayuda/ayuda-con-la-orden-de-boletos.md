@@ -31,11 +31,26 @@ _Pantallas: **la orden** (`/eventos/orden/B-…` › **Ayuda con esta orden**), 
 ## English
 
 ### What it does
-**El Compa first:** tapping **Help** opens El Compa (To'Latino's AI assistant) over your item with fixed options; **Something went wrong** (on
-tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, the monthly AI cap is reached, or you already opened
-a request, you come straight here.
+- **El Compa first:** tapping **Help** opens the **El Compa** sheet (To'Latino's AI assistant) over your item, with fixed options; **Something
+  went wrong** (on tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, if To'Latino reached the monthly
+  AI cap, or if you already opened a help request, you come straight here. See `el-compa.md`.
+- **Help with this order** opens **What happened?** with four options:
+  - **I can't see my tickets** → we send a notice to your account with your tickets (they are also in My account › Tickets).
+  - **Change a name** → free up to 2 hours before the event.
+  - **A payment problem** → the **B-** request ("I was charged twice" · "The charge is not what I saw" · "I paid and I do not have my tickets" ·
+    "Something else about the payment"), what you want (to be refunded what was overcharged, or to have it reviewed) and your note.
+    **To'Latino reviews it**: To'Latino made the ticket charge, not the organizer. One request per order.
+  - **Cancel my tickets** → the cancel sheet (see "Cancelling and ticket refunds").
+- The request goes **straight** to the Super Admin **Order help** queue ("Help with a ticket order"). To'Latino answers with a message and, if
+  it applies, **refunds to your card** (whatever it decides, with a reason and an audit record). Your tickets **stay valid** while it is reviewed.
+- The organizer sees it in their dashboard (**ORDER HELP**, name and initial, the reason and the status), with nothing to answer.
 
-**Help with this order** opens **What happened?**: I can't see my tickets (we send a notice to your account) · Change a name (free up to 2 h before)
-· **A payment problem** (request **B-**: charged twice, charge not what I saw, paid but no tickets, other) · Cancel my tickets. Payment problems go
-**straight to To'Latino** (it made the charge), queue «Help with orders»; To'Latino answers and may **refund to your card**. Your tickets stay valid
-while it is reviewed. The organizer sees it in their dashboard with nothing to answer. One request per order, up to 7 days after the event.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| To'Latino resolves with a message | You see it on your request and get a notice. |
+| To'Latino refunds money | It goes back to your card in 3–5 business days; your tickets stay valid (to remove them, they are cancelled). |
+| You already have a request on that order | Another one is not opened; you see the one you have. |
+| More than 7 days have passed since the event | A new request can no longer be opened. |
+| A comp ticket | It has no payment help (nothing was charged). |
+| Another person opens your request | It does not exist for them. |

@@ -98,50 +98,88 @@ motivo. En **Reglas**: «Soporte: lo del caso siempre llega».
 
 ## English
 
-### New notifications and how texts arrive
-- **New:** «Your order is running late», «Your order was delivered», «You have a table today» (if you asked for the text when booking), the result of a
-  photo you reported, «{business} is now on To'Latino» (a business you recommended), «There is {what you searched} now» («Notify me when there is»),
-  «To'Latino opened in {city}» (one text, the day it opens) and «Your To'Latino number changed» (to the old number).
-- **Businesses:** the badge decision with its reason, «Running low» (Menu › Inventory), a new review, their week (Mondays) and days 20 and last of the Pro
-  trial (10 AM).
-- **How texts arrive:** every To'Latino text goes through one path. If the carrier does not deliver it, it is retried automatically with growing waits;
-  invalid numbers and STOP are not retried. An expired sign-in code is not retried: ask for a new one.
-- **STOP:** reply STOP and no more texts arrive (the bell keeps working); you get ONE confirmation. Reply START to come back.
-- **Email:** «Weekly neighborhood digest» (off by default) on Mondays. Campaign emails have «Unsubscribe» at the bottom and your mail app's one-tap
-  unsubscribe works.
-
 ### What it does
-- When something happens with your stuff, To'Latino lets you know: **your order was accepted or not, is ready, is on the
-  way; your table was confirmed, another time was proposed or no table was available; your job application got a reply;
-  your order help got a reply or was resolved; we hid something you wrote** (with the reason).
-- **Businesses** are told about: a new order or booking, a customer asking for help with an order, someone applying to a job.
-- Every notification stays in the **inbox** (the bell shows a dot when there is something new). Tap one to open the order,
-  booking or application. Opening the inbox marks them read.
-- Besides the in-app notice, it reaches **your phone**: first as a **push notification** (on the phones and browsers where you turned on
-  «Notifications on this phone») and, if you have none on or the push does not arrive, as a **text message** when that notice carries one.
-  Critical ones (a cancellation or a date or time change of your event) always also arrive by text. All in your language. More in
-  «Notifications on your phone».
+- When something happens with what is yours, To'Latino lets you know: **the business accepted your order or not, it is ready, it is on the way;
+  confirmed your table, proposes another time or could not give you a table; replied to your job application; replied to or resolved your order
+  help; we hid something you wrote** (with the reason).
+- We notify the **business** about: a new order or booking, a customer asking for help with an order, someone who applied to a job opening.
+- Each notice stays in the **inbox** (the bell: a dot when there are new ones). Tapping a notice takes you to the order, the booking or the
+  request. Opening the inbox marks them as read.
+- Besides the notice in the app, it reaches **your phone**: first as a **push notification** (on the phones and browsers where you turned on
+  "Notifications on this phone") and, if you have no notifications on or the push does not arrive, as a **text message** when that notice carries
+  one. The critical ones (a cancellation or a change of date or time of your event) always also arrive by text. All in your language. More in
+  "Notifications on your phone."
 
-Community: in My account › Notifications › Community, "Replies and votes" and "Messages from neighbors" can be turned off (they no
-longer arrive); "One daily digest instead of each alert" holds Community alerts and sends one a day at the Settings hour (7 PM local by
-default). Blocked people's activity is not counted. Moderation and coins always arrive. No Community alert is sent as SMS.
+#### Community
+- In **My account › Notifications › Community**: **Replies and votes** (comments, replies, mentions, "Helped me," 10 votes, closed polls, new
+  followers and your rank) and **Messages from neighbors** can be turned off: when off, **they do not reach** the bell. **One summary a day
+  instead of each notice**: Community items are saved and **one** arrives at the hour in Configuration (7 PM your city's time by default), e.g.
+  "Today in Community: 3 replies and 1 new follower." Once a day. Anything from someone you have a block with is not counted.
+- Moderation items (we hid, sanction, appeal) and coins **always arrive**. Nothing from Community goes by SMS.
 
 ### What happens in each case
 | Case | What happens |
 |---|---|
-| You turned off Orders, Bookings or Jobs in My account › Notifications | It reaches your inbox, not your phone. |
-| Between 10 PM and 7 AM (your city's time) | No text goes out; it stays in the inbox. You can turn quiet hours off. |
-| An order not accepted, or a reply to your help request | No switch: always delivered. |
-| A business gets a new order at night | It still arrives: it only takes orders while open. |
-| You turned on "To'Latino updates" in My account › Notifications | You get To'Latino campaigns for your city: never from 10 PM to 7 AM and with a weekly limit. Off by default. |
-| Sandbox | No text message leaves: it shows as «test mode» in Super Admin › Notifications › Sends. |
+| You turned off "Orders," "Bookings and reservations" or "Jobs" in My account › Notifications | It reaches the inbox, not the phone. |
+| It is between 10 PM and 7 AM (your city's time) | The text message does not go out; the notice stays in the inbox. You can remove quiet hours in My account › Notifications. |
+| An order that was not accepted, or the reply to your help request | They have no switch: they always arrive. |
+| The business receives a new order at night | It arrives anyway: it only receives orders while open. |
+| You turned on "To'Latino updates" in My account › Notifications | You get To'Latino campaigns for your city: never from 10 PM to 7 AM and with a weekly cap. Off by default. |
+| Sandbox (testing) | No text message goes out: it stays "in test mode" and shows in Super Admin › Notifications › Sends. |
+| No message provider | It stays "no provider" in Sends; the inbox works the same. |
+
+### Super Admin › Notifications
+- **24-hour numbers:** notices, messages sent, held back (by the person's notice settings or quiet hours) and with a problem.
+- **Templates:** each event with its text in Spanish and English. **Edit** asks for the reason (it goes in the audit log) and only lets you use
+  the variables the template already had (`{negocio}`, `{num}`…); 160 characters if it goes out as a text message. **Test on my phone** sends you
+  the notice with sample values.
+- **Sends:** each notice with its status (inbox only, in testing, sent, off, quiet hours, failed); tap to see the person.
+- **Rules:** critical ones always arrive, quiet hours, the inbox always, each person decides, in their language.
 
 ### FAQ
-**I didn't get the text.** Check the bell: it is there. Check My account › Notifications and whether it was quiet hours.
-**Can I delete a notification?** No; they stay in the inbox, newest first.
+**I did not get the text message.** Look at the bell: the notice is there. Check My account › Notifications (maybe you turned it off) and whether
+it was at night (quiet hours).
+**Can I delete a notice?** No; they stay in the inbox, newest at the top.
+
+### Events
+- **My account › Notifications › EVENTS:** **Tickets and changes** (notices from the organizer, a change of program, your RSVP, the transfer they
+  received, the waitlist turn that expired), **Reminders** ("Tomorrow: …" and "It's today!", from the hour in Configuration, 10 AM by default) and
+  **Events you save** (one day before). Off = it does not arrive, not even in the bell.
+- **It always reaches you** (no switch): your ticket bought, refunded or voided, the new QR, the ticket sent to you, a comp, your waitlist spot,
+  the full refund, the proposal and the confirmation of a private event; the **cancellation** and the **change of date or time** also go out at night.
+- By SMS only the critical ones: cancellation, change of date or time, the ticket sent to you, a comp, the waitlist spot, the door invitation and
+  the proposal and confirmation of a private event.
+- **To the business:** "Your event is almost sold out" (it sold 90 % of a date, Configuration; once per date) and "To'Latino adjusted your event"
+  (capacity or extended sale, with the reason).
+- **Super Admin › Notifications › Events only:** the Events templates with their switch (TURNED OFF IN …).
 
 ### Support
-In **My account › Notifications › Support**, your case updates **always reach you** and cannot be turned off: when we get your case, when the
-team replies, when it is resolved and when El Compa passes you to a person (also your business's case). They arrive in the bell, without SMS,
-and the section shows the team hours. In Super Admin › Notifications, **Only Support and El Compa** shows those templates (group **SUPPORT**),
-editable in Spanish and English with a reason.
+In **My account › Notifications › Support**: what is about your cases **always reaches you** and has no switch — when we receive your case, when the
+team replies to you, when it is resolved and when El Compa passes you to a person (also your business's case). It arrives in the bell (no SMS).
+Right there it states the team's hours ("The team is available Monday to Friday, 9 AM to 6 PM," according to what To'Latino has configured).
+
+In **Super Admin › Notifications**, the **Support and El Compa only** chip shows those templates (group **SUPPORT · CASE UPDATES ALWAYS ARRIVE**),
+the team's (El Compa cap, case past its deadline) and the business's (automatic replies), each one in Spanish and English and editable with a
+reason. In **Rules**: "Support: case updates always arrive."
+
+### New notices and how the text message arrives
+- **New notices:** "Your order is running late" (if it passes its ready time), "Your order arrived" (with delivery), "You have a table today" (the
+  day of your reservation, if you asked for the SMS when booking), the result of the photo you reported, "{business} is now on To'Latino" (the
+  business you recommended published its page), "{what you searched for} is now available" (when a new business matches "Let me know when
+  there is"), "To'Latino opened in {city}" (if you were on the waitlist: a single message, the day it opens) and "Your To'Latino number changed"
+  (to the old number, in case it was not you).
+- **To the business:** the seal decision (approved, one detail missing or not approved, with the reason), "Running low" (Menu › Inventory: when 2, 3
+  or 5 are left), a new review, their week (on Mondays: visits, orders and reviews) and days 20 and the last day of the Pro trial (at 10 AM).
+- **How the SMS arrives:** all To'Latino text messages (notices, the sign-in code and El Compa) go out the same way. If the carrier does not
+  deliver it, it is retried by itself, with a wait that grows; if your number is invalid or you asked STOP, it is not pushed. A sign-in code is
+  not retried if it already expired: ask for another one.
+- **STOP:** you reply STOP to To'Latino's number and you get no more SMS notices or El Compa messages (the bell keeps working). You get ONE
+  confirmation. To come back, reply START.
+- **Email:** "Weekly neighborhood digest" (My account › Notifications › Email, off by default): on Mondays, the new businesses and what is coming in
+  your city. Email campaigns carry "Unsubscribe" at the bottom and your mail app's unsubscribe button (Gmail, Yahoo) works with one tap.
+
+| Case | What happens |
+|---|---|
+| The SMS did not arrive on the first attempt | To'Latino retries by itself (up to 3 times). In Super Admin › Notifications › SMS and WhatsApp each attempt is visible. |
+| Many numbers write to To'Latino's number at once | Past the per-minute cap, there is no reply in that minute (it protects against fake numbers). STOP is always respected. |
+| You booked without "Text me" | The notices for your reservation arrive in the bell and by push, without SMS. |

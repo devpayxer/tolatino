@@ -50,20 +50,48 @@ el equipo puede **resolver y reponer** igual, o **resolver y devolver** a tu tar
 
 ## English
 
-**El Compa first:** tapping **Help** opens El Compa (To'Latino's AI assistant) over your item with fixed options; **Something went wrong** (on
-tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, the monthly AI cap is reached, or you already opened
-a request, you come straight here.
+### What it does
+- **El Compa first:** tapping **Help** opens the **El Compa** sheet (To'Latino's AI assistant) over your item, with fixed options; **Something
+  went wrong** (on tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, if To'Latino reached the monthly
+  AI cap, or if you already opened a help request, you come straight here. See `el-compa.md`.
+- **The customer**, on an order already received (up to **7 days** later), taps **Order help** and picks what happened: something is missing,
+  the wrong thing arrived, cold or badly prepared, damaged or spilled; on delivery also arrived late or did not arrive; a payment problem or
+  other. If it is about dishes, they pick which ones and how many. Then what they would like: **to have it replaced** (delivery), **to be
+  refunded for those dishes** or **just let them know**, and a detail (300 characters; required for "other").
+- It is a **request to the business**: they reply within **24 hours** and the customer sees it on their order. If they do not reply, it goes to
+  To'Latino by itself. If the business replied and it was not fixed, the customer taps **Ask To'Latino to review it**.
+- **The business** sees it in **Today** ("Order help · reply within 24 h") and in the order detail, with what happened, the dishes, what the
+  customer wants and their note, and **Send reply** (500 characters).
+- **To'Latino** (Super Admin › Support = the "Order and booking help" queue, 24-hour deadline): the case with the request, the business's reply
+  and **Resolve with a message** (templates) or, if it was paid by card, **Resolve and refund**. The customer sees "Request resolved by
+  To'Latino" on their order.
 
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Order not received or from more than 7 days ago | The button does not appear; the screen says help can be requested up to 7 days later. |
+| There is already a request | One per order: the order shows its status. |
+| Many requests | Up to 5 a day per person. |
+| 24 hours pass with no reply | It goes to To'Latino (the Order and booking help queue). |
+| Refund | If you paid by card, it goes back to that card (the business does it from the order, or To'Latino when resolving) and arrives in 3 to 5 business days. If you paid at the venue or on receipt, it is settled with the business. |
 
-After receiving an order (up to 7 days), the customer opens an order-help request: what happened, which dishes, what they
-want (replacement on delivery, refund of those dishes settled with the business, or just letting them know) and details. The
-business replies within 24 hours from Today or the order detail; otherwise, or if the customer asks after the reply, it goes to
-To'Latino's Order help queue, where staff resolve it with a message the customer sees on the order (and, if the order was paid by card, a refund to that card).
+### FAQ
+**Do I get my money back automatically?** If you paid by card, the refund goes back to that card when the business or To'Latino makes it (see
+`pagar-con-tarjeta.md`). If you paid at the venue, what you agree with the business is settled there. To'Latino steps in if the business does
+not reply.
 
-### Replacement at no cost
-If you asked **«Replace it»**, the business can answer with **Replace at no cost**: a **new $0 order** with those dishes (or the
-whole order if it never arrived), to the same address or for pickup. It goes straight to the kitchen as accepted and, for
-delivery, their driver takes it like any order. You get a notice with the new order number. If the business does not answer in
-24 hours or you ask To'Latino to review, the team can **resolve and replace** too, or **resolve and refund** what you paid in the app.
+### Replace at no cost
+If you asked **"Replace it"** (something was missing, the wrong thing arrived, cold or damaged, or it did not arrive), the business can answer
+you with **Replace at no cost**: it is a **new $0 order** with those dishes (or the whole order if it never arrived), to the same address or for
+pickup. It goes to the kitchen already accepted and, if it is delivery, its driver takes it like any order. You get a notice with the new
+order's number and you follow it in My account › Orders. If the business does not reply within 24 hours or you ask To'Latino to review it, the
+team can **resolve and replace** just the same, or **resolve and refund** to your card what you paid in the app.
 
-**Does the replacement cost anything?** No: $0, no delivery fee or tip. **Can it be replaced twice?** No, once per request.
+| Case | What happens |
+|---|---|
+| They replace your order | A new $0 order: nothing is charged and your card is not touched. |
+| It was already replaced | The same request is not replaced twice. |
+| You paid by card and prefer the money | The business refunds it from the order, or To'Latino with "Resolve and refund" (3 to 5 business days). |
+
+**Does the replacement order cost anything?** No: it is $0, with no delivery fee or tip.
+**Does it count as a new order?** It shows in your orders with its number, but it is not charged and does not count toward the business's cap.

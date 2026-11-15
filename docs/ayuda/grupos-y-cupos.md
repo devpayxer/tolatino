@@ -46,11 +46,41 @@ momento en tu página, en tu tarjeta del buscador («$80 al mes · primera clase
 ## English
 
 ### What it does
-What people ask before enrolling is **what they walk away with and the total cost**. Here the school lists its courses with how it
-charges, opens **groups** with a start date and counts each group's **seats left**. It shows right away on your page, your search card and
-the filters (evenings, weekends, online, certificate, payment plan, free first class).
+What people ask most before enrolling is **what they walk away with and what it costs in total**. Here the school lists its courses with how it
+charges, opens **groups** with a start date and counts the **open seats** of each one. What you set shows right away on your page, on your
+search card ("$80 a month · first class free," "CDL Class A: starts Oct 12") and in the filters (evenings, weekends, online, with certificate,
+payment plan, first class free).
+
+### How to use it
+1. **Services › Add**: name, category and **how you charge**:
+   - **Full course**: total price, weeks, hours, **registration fee** (it holds the seat and is deducted from the total; always less than the
+     price), an interest-free **payment plan** (3, 6 or 12), **certificate** and who issues it (the state or a board = official; the school =
+     certificate of attendance), what is included and what is separate (for example, the official exam).
+   - **Per month**, **per class** or **per hour**: the price and, if you want, **first class free** (no card and no commitment).
+2. **Your tool › Groups and seats**:
+   - **How you teach**: in person, online, hybrid and classes in Spanish (at least one way).
+   - Per course: **price** (−/+), **registration fee** (−/+ $5), **payment plan** and the **seats** of each group (0 = full).
+   - **Open a group**: the day it starts, the class days, the time, the seats and its name ("Mon and Wed 7 PM"). If you teach online, the link
+     (only confirmed enrollees see it; it never shows on your page).
+   - **See groups**: how many seats, how many enrolled in the app and outside it, how many open; **Remove this group** if nobody enrolled in the app.
+
+### What happens in each case
+- **Seats at 0**: the group shows as full and nobody can enroll. If it is the **only group with seats** for that course, it does not let you:
+  "Leave at least one group with seats. If it filled up, open another group."
+- **The seats you count are the open ones**: the total never goes below those already enrolled (in the app or outside it).
+- **Registration fee equal to or greater than the price**: it is not saved (the registration fee holds the seat; it is not the full payment).
+- **A group that has started** stops being "the next one" on your card (it recalculates by itself every day).
+- **A group with people enrolled in the app**: it cannot be removed from here; cancelling it refunds each one (this comes with enrollments).
+- **Changing the price or the registration fee** does not change what customers already sent (this comes with enrollments: the copy of the price).
+- Every change is recorded in the history that To'Latino sees.
+
+### Rules that cannot be turned off
+- **The price is the total**: books and exam, included or stated separately before enrolling.
+- **Which certificate you take home**, and who issues it.
 
 ### FAQ
-Today the app only holds the seat with a course registration fee (with enrollments: held when sent, charged when you confirm); the
-monthly fee, drop-in class and hourly sessions are paid at your school. You say whether a certificate is official and who issues it; To'Latino
-checks it against your licenses. «Next group» on your card is the open group with seats that starts first.
+- **When do they pay?** Today, with the app, only the seat is held with a course's registration fee (when enrollments come: it is held when sent
+  and charged when you confirm). The monthly fee, the single class and the hour are paid at your school.
+- **Who decides if it is an "official certificate"?** You say it when you create the course; if the state or a board issues it, put its name.
+  To'Latino checks it against your licenses.
+- **Why does my card say "Next group"?** It is the open group with seats that starts first.

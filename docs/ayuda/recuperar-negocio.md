@@ -50,15 +50,42 @@ permiso de la cola la abre.
 
 ## English
 
-Recover your business lets the owner of a business already on To'Latino take it over. They pick their role (owner,
-partner, manager) and how we check it: a 6-digit **code texted to the business phone** (decision R1; only when the
-business has no owner and has a phone, shown masked) or a **document** (business license, utility bill or IRS EIN
-letter, stored privately and only opened by the team, every view audited). We never ask for ID or immigration status.
-Every claim goes to the **Sensitive changes** queue (48 h); a person applies or rejects it with a reason. If the
-business **already has an owner** (decision R2), only a document works, the current owner sees a notice in their
-dashboard with 7 days to answer, and after that only an Admin can apply it. Approved: the claimant becomes the owner
-and opens the dashboard; the previous owner leaves the team; reviews and followers stay. Rejected: they see the reason
-and can try with a document. Limits: 3 codes per hour and 5 per day per phone; 5 claims per month per person; one open
-claim per person and business. **Seeds:** from the Neighbor recommendations queue, "Create seed" lists the recommended
-business at the end of its category as "UNCLAIMED"; it is not a page (not in Search or Map) and becomes claimed when
-the owner publishes it. In the sandbox the code is shown on screen ("TEST MODE"); in production it arrives by SMS.
+### What it does
+- **For whoever owns a business that is already on To'Latino** (a neighbor listed it, the team loaded it, or another account manages it): they
+  ask to take it over. They pick what they are to the business (owner, partner, manager) and how we check it:
+  - **A code to the business's phone** (decision R1): we send a 6-digit code by text message to the phone the page has (shown covered:
+    (570) 5••-••80). Only if the business has no owner and has a phone.
+  - **A document:** the business license, a utility bill, or the IRS letter with the EIN. The photo is private: it never appears on the page and
+    only the team reviewing the case opens it (every time it is opened it goes in the audit log).
+  We never ask for identity documents or immigration status.
+- **For the team:** each claim goes into the **Sensitive changes** queue (48 hours). The person sees who is asking, the business, how they proved
+  it (verified code or the photo of the document), the note and, if the business already has an owner, how many days the notice has been out. They
+  decide **Apply change** or **Reject** with a reason.
+- **Seeds (decision I / D2):** from the **Neighbor recommendations** queue, "Create seed" puts the recommended business at the end of its category
+  as "UNCLAIMED · {address}" with "Is it yours? Claim it for free." It is not a listing: it does not show in Search or on the Map. When tapped,
+  the owner goes into List your business and, when they publish, the seed is claimed and stops showing.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Business with no owner, with the right code | Claim "in review" with high priority; a person approves it |
+| Business with no owner, with a document | Claim "in review"; it is reviewed within 48 hours |
+| Business **with an owner** (decision R2) | Only with a document. The current owner sees in their dashboard "Someone asked to recover {business} with a document. If you do not recognize this, write to us from Help before {date}. Until then nothing changes." After 7 days, only an Admin can apply it |
+| Approved | The person who claimed becomes the owner and sees "It is yours" with "Open your dashboard." The previous owner leaves the team (reason: claim). Reviews and followers stay |
+| Rejected | They see "We could not approve it" with the reason and "Try with a document" |
+| Wrong or expired code | "That code is not right" / "The code expired. Ask for another" |
+| Many attempts | 3 codes per hour and 5 per day per phone; 5 claims per month per person. After that: "Write to us from Help" |
+| Already asked for that business | "You already asked to recover it. We are reviewing it" (one open claim per person and business) |
+
+While To'Latino reviews, the page stays the same. Everything is recorded in the audit log (who asked, who decided, the change of owner). Nothing is
+deleted.
+
+### FAQ
+**Why a text code and not a call?** The founder decided it (R1): no extra voice service. If the business only has a landline, a document is used.
+
+**In the sandbox, does the SMS arrive?** No: in testing the code shows on the screen ("TEST MODE"). In production it arrives through the SMS provider.
+
+**Someone claimed my business and I do not know them.** Write to us from Help before the date in the notice. Until a person at To'Latino decides,
+nothing changes.
+
+**What does everyone else see of the document photo?** Nothing. To'Latino keeps it private; only the team with permission for the queue opens it.

@@ -41,9 +41,38 @@ Todo queda en la auditoría: `com.oficial.publicar`, `com.oficial.programar`, `c
 
 ## English
 
-Each city has its "To'Latino {City}" account, written by the team (Admin and City manager roles, in their cities): question of
-the week, poll of the week and notices. It shows with the To'Latino seal and "Official account", and its pinned post also shows on
-Home › Community. It is not a person: no phone or user row, no points, never on the leaderboard, cannot be followed or messaged.
-Write it under Content › Official account: type, text and language (same rules as neighbors), post now or schedule at a city-local
-time up to 30 days ahead, and pin for 1, 3 or 7 days from when it goes out (one pinned per city: the previous one is unpinned).
-Pin/unpin asks for a reason; everything is audited.
+### What it is
+Each city has its **"To'Latino {City}"** account (Hazleton, Allentown, Wilkes-Barre, Scranton, Reading). The team writes it: **question of the
+week**, **poll of the week** and city **notices**. It shows on the wall with the **To'Latino seal** and the "Official account" mark, and
+whatever it has pinned also shows on **Home › Community** (for everyone, with its real numbers).
+
+**It is not a person:** it has no phone and no user row, it earns no points, it is not on the Neighborhood Board, nobody follows it or
+messages it, and tapping its name does not open a profile (guardian `oficialNoEsPersona`). The system records which team member wrote each post.
+
+### How to use it
+1. **New post** → if you have several cities, pick the city.
+2. **What it is:** Question of the week (with a topic), Poll of the week (2 to 4 options; lasts 1, 3 or 7 days) or Notice.
+3. **The text** (10 to 1,000 characters) and its **language**. The same rules as neighbors: no phone numbers and no one's personal data.
+4. **When it goes out:** **Now** or **Schedule** with a date and time **in the city's time** ("2026-11-09 09:00"), up to 30 days ahead.
+   It goes out by itself at that time; before then nobody sees it. In the list it says **SCHEDULED** and when it goes out.
+5. **Pinned to the top of the wall:** No · 1 · 3 · 7 days, counted from when it goes out. **One at a time per city:** when a new one goes out,
+   the previous one is unpinned by itself.
+6. **Publish / Schedule as To'Latino {City}**.
+- In the list: each post with its type, when it went out (or goes out), votes, comments, poll votes, how long it stays pinned and who wrote
+  it. **Pin 7 days** / **Unpin** ask for a reason. **View** opens it the way a neighbor sees it.
+- Hiding a post (for example, a mistake) is done from **Content › Posts** with a reason, like any post.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You schedule a pinned post for Monday 9 AM and another one is pinned | On Monday at 9 it goes to the top; the other one stops being pinned |
+| The time to schedule has already passed | It is not saved: "The time to schedule has already passed." |
+| A moderator tries to write | They cannot: only Admin and City manager |
+| A Hazleton City manager tries to write for Reading | They cannot: it is not their city |
+| The text has a phone number | It is not saved: "Do not post phone numbers or anyone's personal data." |
+
+Everything is recorded in the audit log: `com.oficial.publicar`, `com.oficial.programar`, `com.oficial.fijar`, `com.oficial.desfijar`.
+
+### FAQ
+- **Does the official account compete for votes?** No. It is pinned to the top and shown as an official account; the order of the rest is set by votes.
+- **Can it recommend a business?** No. The official account does not recommend businesses.

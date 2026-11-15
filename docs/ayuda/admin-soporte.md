@@ -82,44 +82,72 @@ devuelve a su tarjeta hasta lo cobrado (con el permiso de dinero). Una reposici�
 ## English
 
 ### What it does
-Neighbor and business cases with To'Latino (TK-…), each with its **context**: the person (phone, city, language, case count), the business if
-opened from its dashboard, the linked operation or help request, what was paid in the app, and device and app version. **Deadline:** first reply
-within the business hours set in Configuration (8 by default, Mon–Fri 9 AM–6 PM, city time); the database queues the case when it is the team's
-turn and removes it when it is the person's. A case past its deadline becomes **high** priority and notifies its assignee. **Macros** ES/EN with
-{name} fill the reply in the person's language. **Internal notes** are team-only and never reach the person.
+- Cases from neighbors and businesses with To'Latino (TK-…). Each case comes with its **context**: the person (phone, city, language, how many
+  cases), the business if they opened it from their dashboard, the linked operation or help request, what was paid in the app, and the device and version.
+- **Deadline:** first reply within the business hours set in Configuration (8 by default, Monday to Friday from 9 AM to 6 PM, city time). The
+  database sets the deadline and puts the case in the queue when it is the team's turn (new, the person wrote again, reopened) and takes it out
+  when it is the person's turn (answered, resolved, merged). A case that passes its deadline goes up to **high** priority and notifies whoever has it.
+- **Macros** ES/EN with {name}: one tap fills the reply in the person's language; you review it and send it.
+- **Internal notes:** only the team sees them; they never reach the person (the person's screen does not receive them).
+- **The copilot (El Compa):** "Suggest a reply with El Compa" leaves a **summary** of the case and the **next step** (for you) and a **draft**
+  reply in the person's language, in the REPLY box. **Nothing is sent on its own:** you read it, change it if you want and send it yourself with
+  **Send**; it goes out under your name. The copilot never refunds money, never changes the case status and never promises refunds, amounts,
+  deadlines or sanctions; at most it tells you which macro fits or that, if a refund is due, "Resolve and refund" is your decision. It also
+  appears in **Queues › Order and booking help** (the help requests the business did not answer): the draft goes into the "Resolve with a message" text.
 
 ### How to use it
-Take the next case or open one. Reply **To the person** (macro or text) or write an **Internal note**. **Resolve** with a message; the person
-then says if it was solved («No» within 7 days reopens it). **Resolve and refund** refunds the case's operation payment to the card: Support up to
-**$50 per case** (Configuration › Support, counting what was already refunded); more needs Finance or an Admin (up to what was charged). The
-database checks your role's cap at decision time; tapping twice refunds once. **Link** an operation or help request, **Merge** duplicates of the
-same person, **Reopen**, **Hide a message**. **Macros:** create, edit, turn off or on, with a reason (audited); plain text only.
+1. **Take the next case** (the most urgent unassigned one) or open one from the list. Taking it tells the person "They are looking at it."
+2. **To the person:** pick a macro or write, and **Send** (they get the notice; the case moves to "They answered you"). **Internal note:** for the
+   team.
+3. **Resolve** with the message for the person; afterwards they say whether it was solved (if they say no within 7 days, it goes back to the queue).
+4. **Resolve and refund:** the amount and the message. What was paid for the case's operation is refunded to the card. Support refunds up to **$50
+   per case** (Configuration › Support, counting what was already refunded); more than that, **Escalate to Finance** or an Admin (up to what was
+   charged). The database checks your role's cap when deciding; tapping twice refunds only once.
+5. **Link to an operation** (1234, C-…, H-…) of that person or their business; **Merge into another case** (same owner); **Reopen** a resolved
+   one; **Hide a message** that carries data that is not kept.
+6. **Macros:** new, edit, turn off or on (with a reason; it goes in the audit log). Text only: no tags and no key other than {name}.
+7. **Suggest a reply with El Compa** (in "To the person"): the note "EL COMPA · {summary} Next step: …" appears and the draft in REPLY.
+   Review it, change it and **Send**. **Another draft with El Compa** asks for a new one (the previous one is discarded). If you pick a macro, it
+   replaces the draft. If the note says "(no AI: rules draft)", the draft is a fixed one (the AI did not answer in time or what it said did not
+   pass the rules): complete it yourself.
+8. **In an escalated help request** (Queues › Order and booking help): **Suggest a reply with El Compa** → the note and the DRAFT; **Resolve with
+   a message** opens with the draft already written. Complete it with what you decided and **Resolve**.
 
 ### What happens in each case
-Over the Support cap: refused before reaching the payment provider. More than charged: refused, nothing moves, the attempt is logged as failed.
-No paid operation: link it first. Different people cannot be merged. City-scoped roles only see their cities. Opening a case photo is audited.
-Card or SSN numbers arrive covered; the database refuses them uncovered.
-
-**The copilot (El Compa):** «Suggest a reply with El Compa» (for people who can reply; in Queues › Order and booking help, for people who can
-resolve) leaves a **summary** and **next step** for you and a **draft** in the person's language in the REPLY box (in a help request, in the
-«Resolve with a message» text). **Nothing is sent on its own:** you read it, edit it and send it with your own button, under your name. It never
-refunds, never changes the case and never promises refunds, amounts, deadlines or sanctions; at most it suggests a macro or points to «Resolve
-and refund», which you decide. «Another draft» discards the previous one; a macro replaces it; unused drafts are marked discarded after a day.
-«(no AI: rules draft)» means a fixed draft (the AI was late or its answer broke a rule). Copilot off (level, channel, city, business) or El Compa
-at its cap: no button, the case looks as before. Health, Professionals, kids' enrollments and private-data operations are never read. The AI sees
-what you see in that case, covered (no phone, email, card, passwords or ids); internal notes are marked and never reach the draft. Daily limit:
-200 drafts per team member (Configuration › El Compa).
+| Case | What happens |
+|---|---|
+| Support refunds more than its cap | "Your role refunds up to $50 per case…": the payment gateway is not called. Pass it to Finance or an Admin. |
+| A refund larger than what was charged is requested | "You can refund up to $…": nothing moves; the attempt is recorded as failed with its reason. |
+| The case has no paid operation | Link the operation first; if nothing was paid in the app, nothing is refunded here. |
+| Merging cases from different people | Not possible. |
+| Your role is for one city | You only see and work the cases of your cities. |
+| Viewing a photo from the case | It opens separately and is recorded in the audit log. |
+| The person wrote a card number or an SSN | It already arrived covered; the database refuses to save it uncovered. |
+| You ask for a draft and do not send it | Nothing is sent and nothing changes in the case. At the end of the day it is counted as "discarded" in El Compa's numbers. |
+| The copilot is off ("Copilot" level, the channel, the city or the business) or El Compa reached its cap | The button does not appear: the case view and the queue are as usual (macros, Send, Resolve). |
+| The draft contained something that cannot be said (promising a refund, an amount that is not in the case, an internal note, a phone number) | It is not shown: the rules draft appears, "(no AI: rules draft)". |
+| A case about a Health or Professionals operation, a kids' enrollment, or private data | The copilot does not read that operation (it calls it private); in the help queue, the button does not appear. |
+| You reach the daily draft limit (200, Configuration › El Compa) | "You reached El Compa's draft limit for today": write your reply; macros still work. |
+| Your role only sees Support (Finance) or does not see it | The button does not appear; if someone tries anyway, the server gives nothing. |
 
 ### FAQ
-- **Where are unanswered order and booking help requests?** Queues › Order and booking help.
-- **Does the person see who replied?** Your first name and «To'Latino».
-- **Is anything deleted?** No: messages are append-only (text can be hidden with a reason), cases change status, macros are turned off.
+- **Where are the order and booking help requests the business did not answer?** In Queues › Order and booking help (the link is at the bottom
+  of Open).
+- **Does the person see who replied?** They see your first name and "To'Latino".
+- **Is anything deleted?** No: messages are only added (the text is hidden with a reason), cases change status and macros are turned off.
+- **What does the copilot's AI see?** What you see in that case's view, covered: the topic, the conversation, the operation and what was paid in
+  the app as they appear in the view, your role's refund cap, the macros and the internal notes (marked: they never go into the draft). Never the
+  phone, email, card, passwords or ids. It uses the larger model (Claude Sonnet) and counts toward El Compa's cap.
+- **Does the person know El Compa wrote it?** The message goes out under your name: you reviewed it and sent it yourself. The database records
+  that it came from a draft (as is or edited), for the numbers.
 
 ### The 30-day deadline
-Under the numbers: **DEADLINE MET · 30 D**, **PAST DEADLINE · 30 D** and **FROM EL COMPA** (30 days); by topic and city in Analytics › El Compa
-and Support. If the person's account was deleted more than 30 days ago, the case messages say so and the case keeps its status and topic.
+Under the numbers: **DEADLINE MET · 30 D** (of the cases with a reply, how many were answered within the deadline's business hours),
+**PAST DEADLINE · 30 D** and **FROM EL COMPA** (30 days). By topic and by city, in Analytics › El Compa and Support. If the person's account was
+deleted more than 30 days ago, the case messages say "(Deleted: the account was closed more than 30 days ago.)": the case keeps its status and topic.
 
 ### Order help: replace or refund
-For a **food order** help asking for a replacement, **Resolve and replace** creates a new **$0** order with those dishes,
-accepted and with the driver flow; the case is resolved and audited. If paid in the app, **Resolve and refund** returns up to
-what was charged (money permission). One replacement per request.
+In the "Order and booking help" queue, a help request about a **food order** that asks for a replacement has **Resolve and replace**: it creates
+a new **$0** order with those dishes (or the whole order if it never arrived), already accepted by the business and, if it is delivery, with the
+Repartidor; the case is resolved with your reply and recorded in the audit log. If the customer paid in the app, **Resolve and refund** refunds
+their card up to what was charged (with the money permission). One replacement per request.

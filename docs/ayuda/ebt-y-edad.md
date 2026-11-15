@@ -27,6 +27,22 @@ la tienda» para cualquier otro que no quieras vender por la app.
 ## English
 
 ### What it does
-Markets mark whether they take EBT and which products qualify; To'Latino never charges EBT in the app — choose **pay at the
-market** (pickup only). Delivery is paid by card. **21+ products** (liquor, beer and wine, tobacco, vape) show as «IN STORE ONLY ·
-21+»: they cannot be ordered or held in the app; you buy them in store with your ID.
+- **EBT:** the market marks in Your tool whether it accepts EBT and, on each product, whether it can be paid with EBT. On the listing you see the
+  tag. To'Latino **does not charge EBT in the app**: if you pay with EBT (or cash) you choose **pay at the market**, which is **pickup** only, and
+  nothing is held in the app. Delivery to your home is paid by card.
+- **21+ (liquor, beer and wine, tobacco, vape):** those products show on the listing with "IN STORE ONLY · 21+". **They are not ordered or held
+  through the app**: they are bought at the store by showing your ID. The dashboard does not let you put them on sale online.
+
+#### For the business
+In What you sell › Products you mark each product: EBT yes/no, 21+ (it becomes "in store only" and is not sold online) and "in store only" for
+any other you do not want to sell through the app.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| I want to pay with EBT and have it delivered | Not possible: delivery is paid by card. Choose pickup and pay at the market. |
+| A 21+ product | It shows with its price, but it is bought at the store with your ID. |
+| I mix EBT and non-EBT | You sort it out at the market's register; the app does not separate EBT payments. |
+
+### FAQ
+- **Does To'Latino keep my EBT card?** No. EBT never goes through To'Latino.

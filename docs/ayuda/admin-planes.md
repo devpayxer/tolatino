@@ -59,8 +59,31 @@ or deleted — schedule a new one; past quotes and sales keep their percent.
 
 ## English
 
-`/admin/plans`: MRR, trials (ending within 7 days), failed charges and Free at cap. Plans (what Free and Pro include).
-Subscriptions per business with actions: extend trial, courtesy Pro, remove courtesy, retry charge — each with a reason
-and audited. Fees: current and scheduled; a change applies in 30 days and never touches past sales.
+### What it does
+- **Numbers:** MRR (active Pro, annual plans prorated), in trial (how many end within 7 days), failed charge and Free at the cap (Free
+  businesses that have already used their 10 online orders or bookings for the month).
+- **Plans:** what Free and Pro include, the price, the trial and the failed-charge rule.
+- **Subscriptions:** each business in your cities with its status (in trial, Pro, moving to Free, failed charge, courtesy, Free), when it ends
+  or is charged, and the owner. Actions with a reason: **Extend trial** (1 to 60 days), **Courtesy** (Pro with no charge for N days),
+  **Remove courtesy** (moves to Free; nothing is deleted), **Retry charge**.
+- **Fees:** the current one by type (orders 10 %, bookings 8 %, tickets 5 % + $1, holds 6 %, reservations $0) and the scheduled ones.
+  **Schedule change**: applies in 30 days; what was already sold does not change.
 
-**The Free cap** (10 online orders, bookings or requests a month) is today's: To'Latino sets it in its Configuration and the screen always shows the one in force.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Extending a trial that already ended | Not allowed: only active trials. |
+| Courtesy for a business on Free | It moves to Pro today; when it ends it goes back to Free with its content saved. |
+| Retrying and the bank declines | It says so; the attempt count continues. |
+| Fee outside 0–30 % | Not allowed. |
+| Business in another city | It does not appear and cannot be touched. |
+
+Everything is recorded in the audit log with the reason.
+
+**The Free cap** (the 10 online orders, bookings or requests a month) is today's: To'Latino sets it in its Configuration and the screen always
+shows the one in force at that moment.
+
+### Revenue
+**Revenue** tab in Plans and subscriptions: **8-week fees** (what To'Latino keeps from each card charge, net of refunds; the current week
+highlighted), **8-week Pro charges** (with the MRR) and **fee by category over 90 days**. Weeks run Monday to Sunday, Eastern time; your
+cities only. **Export CSV** (export-transactions permission) is recorded in the History.

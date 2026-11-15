@@ -58,17 +58,52 @@ promete nada; la IA solo ve la página del negocio y esta conversación.
 
 ## English
 
-Write to any business already on To'Latino (with an owner) from its page, your order or your booking: one conversation
-per business, your number is never shared, replies arrive live while the chat is open and as a notification otherwise.
-No phone numbers in messages (the business shares theirs with a button). Limits: 20 messages per 10 minutes, 8 new
-conversations a day. Businesses reply from the dashboard (quick replies, share phone, who handles it with Pro, block,
-report) and can turn on an auto-reply when closed (once every 12 hours per customer). Some Pro businesses turn on **El Compa
-auto-replies**: when the business is closed, El Compa answers from the business page (hours, address, what it offers with prices, how to order),
-introduces itself the first time and marks every reply **EL COMPA · AI** (it is not the owner). It never confirms, gives discounts or promises
-anything: it passes that to the business, which still gets your message. If an El Compa reply is wrong, use **Report › An El Compa reply**. To'Latino reads a conversation
-only when someone reports it, while that case is open; it can hide a message (the author sees the reason). Nothing is
-deleted.
+### What it does
+- **Neighbor:** you write to any business that is already on To'Latino (it has an owner). One conversation per business; if you come from an order
+  or a booking, the top says which one ("Order #1051"). Your number is not shared. The reply reaches you by itself while you have the
+  conversation open and, if not, we notify you.
+- **Business:** replies from the dashboard (the owner or whoever on the team has Messages). Quick replies, **Share my phone** (it shows as a notice
+  inside the conversation), **Who handles it** (Pro with a team), **Block** and **Report to To'Latino**. **Auto-reply outside business hours**:
+  when the business is closed it answers by itself "Thanks for writing… we will answer when we open" (once every 12 hours per customer).
+- **El Compa · AI:** some Pro businesses turn on El Compa's automatic replies. When the business is **closed**, El Compa answers you with what the
+  business page says (hours, address, what it offers and its prices, how to order). The first time it introduces itself ("I am El Compa, the AI
+  assistant of {business}.") and every reply says **EL COMPA · AI**: it is not the owner. It never confirms, gives discounts or promises
+  anything: it passes that to the business, which reads your message and answers you when it opens. While it answers you see "El Compa is writing…".
+- **To'Latino:** does not read conversations. Only when someone reports one, a case is opened in "Reported messages" and the team can read it
+  while the case is open. It can **hide a message** (whoever wrote it sees the reason) and close the case (**All good** or **Resolved**). Nothing
+  is deleted.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You write a phone number | It is not sent: "For safety, no phone numbers in messages." The business shares theirs with the button. |
+| The business is not on To'Latino (no owner) | The Message button does not show; call them. |
+| You write too fast | At most 20 messages every 10 minutes and 8 new conversations a day. |
+| The business is closed and has the auto-reply | It answers you by itself once; the business reads your message when it opens. |
+| The business blocks you | You can no longer write to them: "This business does not receive messages from you." |
+| Notices | The business gets a notice with the first unread message (not one for every message). You get one when the business replies. |
+| To'Latino hides a message | The conversation shows "Message hidden by To'Latino" and whoever wrote it gets the reason. |
+| The business is closed and has El Compa | El Compa answers you using the business page (marked **EL COMPA · AI**); the fixed reply does not show. Your message still reaches the business. |
+| You ask El Compa for a discount, to hold something for you or whether there is room | "{business} decides that: I passed on your message and they will answer you when they open." |
+| An El Compa reply is not right | **Report › An El Compa reply**. To'Latino reviews it and can turn El Compa off in that conversation. |
+
+### Messages between neighbors and reports
+- **My account › Messages** leads to **Community › Messages** ("Messages with neighbors · only with people who follow you"). Rules and cases in
+  `comunidad-vecinos-seguir-bloquear-y-mensajes.md`.
+- **Queues › Reported messages** also receives conversations between neighbors ("Messages between neighbors · Community"): they are read only with
+  a case and a report open; "Hide" on a message notifies whoever wrote it ("We hid your message," with the reason).
+- **Reporting again:** if you had already reported a conversation and the case was closed, the new report reopens it (before, it gave an error).
 
 ### Live and what gets covered
-Messages show up the moment they are sent while the conversation is open, and the list updates by itself; after a dropped connection it catches up.
-Card numbers, Social Security numbers, codes and passwords are saved as "[tapado]" ("covered") and you are told not to share them here.
+- **Live:** when the business (or the neighbor) writes to you, the message appears right away while you have the conversation open, without
+  reloading. The list of conversations also updates by itself. If the connection drops, when it returns it brings what you missed.
+- **What gets covered:** if you write a card number, a Social Security number, a code or a password, it is saved as "[tapado]" (covered) and we
+  tell you "Do not share that here. We never ask you for it." Nobody at To'Latino or at the business sees it. Phone numbers cannot be written:
+  the business shares theirs with a button.
+
+### FAQ
+**Does the business see my phone?** No. Only your name and what you write.
+**Does To'Latino read my messages?** No, unless you or the business report the conversation.
+**What is "EL COMPA · AI"?** To'Latino's AI assistant answering for the business while it is closed. It is not the owner and it never confirms or
+promises anything; the AI only sees the business page and this conversation.
+**Can I write to another neighbor?** It comes with Community (only to people who follow you).

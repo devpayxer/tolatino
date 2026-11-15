@@ -49,7 +49,42 @@ Cada toque se guarda al momento y tu página y Buscar lo dicen enseguida.
 ## English
 
 ### What it does
-Clinics set the insurers they take, the uninsured visit price, languages, video visits, interpreter, new patients, the
-walk-in wait and who can come (income-based, no papers). Professionals: legal ones manage licenses, what they do not do,
-payment plan, urgent cases and THE TOTAL, IN WRITING (fee + government fee per flat-fee service); others set delivery days,
-warranty, estimate first, or how many insurers they compare. Every tap saves; your page and Search update right away.
+Every tap is saved right away, and your page and Search say so immediately.
+
+**Doctors · Insurance and languages**
+- **Public and private:** turn on each insurance you accept (Pennsylvania catalog: Medicaid, Medicare, CHIP, Highmark, Geisinger, UPMC…). Your page
+  and Search say "Takes Medicaid, Medicare, CHIP and 4 more."
+- **Uninsured:** whether you see patients without insurance and the visit price ($20 to $400, in steps of 5). The Search card says, for example,
+  "Medicaid and Medicare · uninsured $85."
+- **Languages at the visit:** Spanish, English, Português, Kreyòl (at least one).
+- **Video visit**, **interpreter**, **new patients**.
+- **Walk-in wait right now** (only if you have a "Walk-in" service): change it when it fills up.
+- **Who can come:** sliding scale pricing; no papers or Social Security number.
+
+**Professionals**
+- **Legal** (lawyers, immigration, notaries, taxes, finance): your licenses (the same ones as Your page › Licenses), what you do not do,
+  **payment plan**, **urgent cases** and **THE TOTAL, IN WRITING**: for each flat-fee service you enter what the government charges and the page
+  states the total (Fee $350 + government $465 = total $815).
+- **The rest:** "Ready in" or "You deliver in" (1 to 90 days), warranty (0 to 365 days, in steps of 15; repairs and digital), estimate before
+  starting; insurance agencies: how many companies you work with and whether you compare prices.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You remove the last insurance and you do not see uninsured patients | It is not saved: "Leave at least one insurance or mark 'Uninsured'." |
+| You remove the last language | It is not saved: "Leave at least one language." |
+| You change the government fee | The total on your page changes. A total you already sent in writing to a customer does not change. |
+| A new license | It shows on your page only when To'Latino verifies it. |
+| To'Latino (Super Admin) | Sees your tool read-only in the 360 › What it sells and verifies your licenses. |
+
+### FAQ
+- **Does To'Latino see my patients' history?** No. The patient's insurance is only used to tell them whether you accept it and how much they pay.
+- **Why can't I set the filters by hand?** They come from what you mark here and from your services, so that Search always tells the truth.
+
+### Each professional's license
+- **Dashboard › Your page › Team › (the person) › THEIR LICENSE:** you pick their license (Physician MD/DO, PA-C, nurse practitioner, dentist,
+  lawyer…), enter the number and tap **Send for verification**. To'Latino looks it up in the state's official registry (in Pennsylvania, PALS)
+  within 72 hours.
+- While it is not verified, the person shows on your team but **cannot be chosen under "With whom?"**. Reception is never chosen.
+- If someone on the team with a verified license speaks Spanish, Search says **"Doctor speaks Spanish."**
+- If the person leaves the team, their license is withdrawn with them.

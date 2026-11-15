@@ -44,13 +44,41 @@ tuyo, te llega el recordatorio «El pedido es para las …».
 
 ## English
 
-The business invites a driver from Delivery (name + phone → a 6-character code, valid 7 days). The driver opens
-`tolatino.com/repartidor`, signs in with that same phone, enters the code and picks a vehicle, then goes **Online**. The
-business assigns accepted deliveries from the order detail. The driver taps one big step at a time: **Picked up, on my
-way** → **I'm here** → **Collect $X / Collected · Delivered** or **Delivered** if paid by card. The customer sees each step.
-Problems go to the business. Earnings show deliveries, tips and cash per day. Without signal, steps are saved on the
-phone and sent automatically. The business sees today's cash per driver.
+### What it does
+- **The business** (Delivery, with "My team") taps **Invite a driver**: name and phone → To'Latino creates a **6-character code of letters and
+  numbers** (it expires in 7 days). They give it to their driver.
+- **The driver** opens `tolatino.com/repartidor`, signs in with **that same phone**, enters the code and picks how they deliver (on foot, bike,
+  motorcycle, car, van). From Home they go **Online**.
+- **The business** accepts a delivery and in the order detail picks **Who delivers it?** → Assign. The driver gets "You have a delivery."
+- **The driver** opens the delivery: address (Open map, Call), how to hand it over, what they are carrying, how much to collect, and one big
+  button per step: **Picked up, on my way** → **I'm here** → (**Collect $X** → **Collected $X · Delivered**) or **Delivered** if it is already paid.
+  The customer sees each step ("Juan arrived with your order") and gets the notice.
+- **Report a problem**: the customer does not answer, wrong address, the business is slow, incomplete order, accident or other; it goes to the
+  business.
+- **Earnings**: deliveries, tips and cash collected per day (14 days). The business pays them directly.
+- **Cash reconciliation**: in Delivery, "Today's cash" per driver.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Another person uses the code | It does not work: the code is only for the invited phone. |
+| Many attempts with wrong codes | It is stopped for an hour. |
+| The code expired | Ask the business for a new one (Cancel and invite again). |
+| No signal | The step is saved on the phone and sent by itself when the signal returns; it is not repeated. |
+| Cash payment | You have to confirm the exact amount before marking delivered; it goes into the reconciliation. |
+| Paid by card | Nothing is collected: it says "Paid by card." |
+| The business removes the driver | What was assigned to them is left with no driver so it can be given to someone else. |
+| The driver leaves the team | They cannot if they have active deliveries. |
+| The business delivers with an outside app | There is no dispatch: the tracking link is pasted. |
+
+### FAQ
+**Do I need another account?** No: the same To'Latino account; one person can be a customer, a business and a driver.
+**Does To'Latino pay me?** Not in version 1: the business pays its driver. To'Latino charges no commission on cash.
 
 ### Automatic offers and scheduled orders
-If the business turned on **Offer automatically**, accepted deliveries reach you as an **offer** while you are online. A
-**scheduled** order reaches you as an offer near its time and, if already yours, you get a reminder «Order is for …».
+If the business has **Offer automatically**, accepted deliveries reach you as an **offer** without anyone sending it (if you are online): you
+accept it before it expires or you decline it. A **scheduled** order reaches you as an offer close to its time and, if it is already yours, you
+get the reminder "The order is for …".
+
+**Why do I get offers without the business writing to me?** Because the business turned on "Offer automatically." If you are not online, they
+do not reach you.

@@ -36,10 +36,33 @@ la parte «Cobros»). Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: 
 ## English
 
 ### What it does
-**COMPS**: **Give comp** with name, optional phone and how many entries (1–10); they count at the door like a ticket, come out of your tickets and are
-never sold; up to **50 per date** (Settings); **Remove** an unused comp to free its spot. **BUYERS › Refund**: pick which tickets; **100 % of what
-they paid** goes back (plus extras if the order is left empty); To'Latino does not charge its fee on what you refund; used tickets are not
-refundable; needs the Payouts part. **REFUNDS**, **TRANSFERRED**, **WAITLIST** (with **Notify the list** when there is room) and **ORDER HELP**
-(reviewed by To'Latino). Phones are never shown.
+- **COMPS · N OF M** (evCompDet): **Give comp** with a **name**, a **phone (optional)** and **how many entries** (1–10); if you have several
+  tickets, which one they come from. They get in free with their QR and **at the door it counts as one ticket**. With a phone, we notify them
+  with the link to receive it in To'Latino; without a phone, the door looks it up by name. **They come out of your tickets** (they take a spot
+  from the capacity) and are **never sold**. Cap per date: **50** (`evt_cortesias_max`, Configuration). **Remove** a comp that has not been used
+  returns its spot.
+- **BUYERS › Refund**: you choose which tickets of that order you refund and the screen says how much goes back: **100 % of what they paid** for
+  those tickets (and their extras if the order is left with no tickets). **To'Latino does not charge its commission** on what you refund. Refunded
+  tickets stop working and their spot goes back on sale or to the waitlist. A ticket that was **used is not refunded**.
+- **REFUNDS · N**: the buyers' cancellations (the ticket minus the service fee) and your own, with their status (REFUNDED · ON THE WAY).
+- **TRANSFERRED** and **ON THE WAY TO ANOTHER PERSON**: how many tickets passed from one person to another (you never see phones).
+- **WAITLIST · N** with **Notify the list** when there is room (see "Waitlist").
+- **ORDER HELP**: the payment problems your buyers opened; To'Latino reviews them.
+- **MONEY**: what is refunded is subtracted from the gross; the commission that To'Latino does not charge on your refunds is not counted. You get
+  it the Tuesday after the event.
 
-**The time limits on this page** (the payout day: the Tuesday after each date) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You already gave the cap of comps for that date | "Up to 50 comps per date (you already gave N)." |
+| No tickets of that type are left | "Raise the quantity in the editor." |
+| You refund the same order twice | It is refunded only once. |
+| Someone on the team without "Payouts" taps Refund | "Only whoever manages Payouts can refund money." |
+| The buyer cancels | You get "Tickets went back on sale"; that ticket is not paid to you (the service fee stays with To'Latino). |
+
+**The time limits on this page** (the payout day: the Tuesday after each date) are today's: To'Latino sets them in its Configuration and the
+screen always shows the one in force at that moment.
+
+### FAQ
+- **Can I sell comps to promoters?** No: comps are not sold. For promoters, use discount codes.
+- **Does the buyer see that it was me who refunded?** Yes: they get "{your business} refunded you $X."

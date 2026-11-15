@@ -31,7 +31,28 @@ Los archivos se guardan en el almacén privado (nunca públicos) y quedan anotad
 
 ## English
 
-`/admin/transacciones/disputas`: the 120-hour queue with each bank deadline and the evidence status. Open the case to respond: the receipt PDF, the customer
-conversation (no phone numbers) and the delivery record with the timeline are uploaded through Stripe's file API and sent together with your summary in a
-single submission; if one file fails, nothing is sent. «Accept refund» closes it and returns the money. Three days before the deadline an unanswered
-dispute alerts the team.
+### What it does
+- When a customer disputes a charge with their bank, Stripe notifies us and the dispute enters the **120-hour** queue with its **bank deadline**. The
+  business gets the notice; To'Latino responds.
+- **Transactions › Disputes**: numbers (needs a response, **due soon**, the bank is reviewing, won and lost in 90 days), filters, and one row per
+  dispute: the order, the amount, the reason, the deadline (N hours left) and the **evidence** (not built, ready or sent). Tap the row to open the case.
+- **The case**: what we have about the order (the timeline) and the **files for the bank**: the **PDF receipt**, the **conversation with the
+  customer** (no phone numbers) and the **delivery record** with the timeline. **Respond with evidence** builds the files, uploads them through
+  Stripe's file API and sends them together with your summary **in a single submission**. If a file fails to upload, nothing is sent (try again).
+  **Accept refund** closes the dispute and the money goes back to the customer.
+- **Three days before the deadline** (Configuration › Money), an unanswered dispute alerts the team.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Responding twice | Not allowed: "This dispute was already answered or closed." |
+| Stripe does not accept the response | Nothing changes; try again. |
+| The order has no delivery photo | The delivery record goes with the timeline (the photo will come with the Repartidor app). |
+| The bank decides | It arrives through Stripe: won (the money stays) or lost; the business receives the result. |
+| Sandbox | The dispute and the result are simulated from Transactions; the simulator's "bank" receives the same files. |
+
+Files are kept in private storage (never public) and recorded with their fingerprint; nothing is deleted.
+
+### FAQ
+**What language do I respond in?** In English if you can: the bank reads it.
+**Can I change a file after sending?** No: submitted evidence cannot be changed.

@@ -49,9 +49,44 @@ un **abono** y lo pagas en partes, **sin intereses**. Te lo entregan cuando term
 ## English
 
 ### What it does
-Some stores sell **on layaway**: you hold the item with a **down payment** and pay the rest in parts, **no interest**; you get
-it when fully paid. Before sending you read **the agreement in writing** (total, down payment, payments, how often, what happens
-if you stop, that the item is kept for you) and check **“I read the agreement and accept it”**; we keep the exact text and time.
-The down payment is **held** today and **charged** when the store confirms it has the item (released if not). Pay each payment
-with **Pay $X** in the app or at the store — nothing is charged automatically. If you cancel, or the store cancels after 14 days
-late, you get back what you paid minus the fee in the agreement (app payments to your card; store payments from the store).
+Some stores (furniture, appliances, quinceañera or wedding dresses, jewelry…) sell **on a plan**: you hold the item with a **down payment** and
+pay for it in parts, **with no interest**. They hand it to you when you finish paying.
+1. On the item you see "DOWN PAYMENT 20 % · 4 PAYMENTS" (whatever the store says). What goes on a plan is held by itself: if you had other things
+   in your hold, they are removed.
+2. **Your plan:** today's down payment, each payment with its day and the total.
+3. **The agreement, in writing:** total, down payment, payments, how often, what happens if you do not finish, that they keep it for you while
+   you pay and that they hand it to you when you finish. You choose the card for the down payment and check **"I read the agreement and accept
+   it."** Without that it is not sent. We keep the exact text you accepted, with the time; it never changes. You can read it again in your hold
+   ("The agreement you accepted").
+4. **Accept and hold:** today the down payment is **held** on your card. When the store confirms it has it, **it is charged** and the schedule
+   starts (the days count from that moment).
+5. In your hold you see **Your plan**: down payment, paid, remaining and each payment (paid in the app or at the store, due or late). You tap
+   **Pay $X** to pay the next one with your card. **Nothing is charged automatically.** You can also pay at the store.
+6. When you finish paying: **Ready for pickup**. You come by and the store marks it "Picked up."
+
+#### For the business
+- Today › Holds: "ON LAYAWAY," "PLAN · LATE" or "PAID · TO PICK UP."
+- On arrival: **I have it · hold it** (the down payment is charged and the plan starts) or **Not in stock** (the down payment is released). A plan
+  is not changed ("One is missing" does not appear).
+- On a live plan: what was paid, what is left, the next payment and the list of payments. **Paid at the store · $X** records the next payment
+  (no commission). With **14 days late**, **Cancel the plan** appears.
+- The values (down payment %, number of payments, how many days apart, fee if cancelled) are changed in **What you sell › Your tool**. A plan
+  that was already accepted continues with the values it had.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| The store does not have it | The whole down payment is released. Nothing is charged. |
+| The store does not reply within 4 hours | It expires and the down payment is released. |
+| You cancel before they confirm | The down payment is released. |
+| You cancel a live plan | They refund you **what you paid minus the fee** (10 % of what you paid, or whatever the agreement says): what was paid in the app goes back to your card; what was paid at the store is refunded by the store. The item goes back on the shelf. |
+| A payment is late | It is marked late and we notify you. We also notify you 2 days before each payment. |
+| 14 days late | The store can cancel the plan with the same refund rule. |
+| Your bank asks for extra verification | For now that card does not work for the plan: use another one or pay at the store. |
+| You finished paying | "Ready for pickup." The store hands it to you. |
+
+### FAQ
+- **Do they charge interest?** No. The total is the item's price.
+- **Are the payments charged automatically?** No. You tap "Pay" in the app or pay at the store.
+- **Can I pay early?** Yes: "Pay $X" pays the next one; you can pay several in a row.
+- **Where is what I accepted?** In your hold, "The agreement you accepted," with the date.

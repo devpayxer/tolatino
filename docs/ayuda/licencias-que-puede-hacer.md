@@ -24,7 +24,18 @@ cada servicio, **«¿Puede hacerlo por ley?»**. Así sabes si quien te ofrece u
 ## English
 
 ### What it is
-A professional's page shows **verified licenses** (checked against the official registry) and, per service, "Can they do it
-by law?". In the US a **notary public is not a lawyer** and cannot give legal advice or handle immigration cases: only a
-licensed attorney or a DOJ-accredited representative can. If someone offered something they could not legally do, use Case
-help ("not legally allowed"); To'Latino rechecks all their licenses, and you can report it to the Pennsylvania Attorney General.
+On a professional's page you see their **verified licenses** (To'Latino checks them against the official registry) and, on each service, **"Are
+they allowed by law?"**. That way you know whether the person offering you a procedure can do it.
+
+### The most important thing: a notary is not a lawyer
+- In the United States a **notary public** only certifies signatures. A notary **is not a lawyer** and cannot give you legal advice or handle
+  your immigration case (in other countries "notario" means something else).
+- An immigration procedure can only be handled by a licensed **lawyer** or a **representative accredited** by the Department of Justice (at a
+  recognized organization).
+- A **tax preparer** needs a PTIN; a **certified public accountant (CPA)** has a state license.
+
+### What happens in each case
+- **Verified license:** it shows with its number and the date it was checked.
+- **In review / expired:** it shows that way; it does not count as verified.
+- **They offered you something they could not do by law:** ask in **Case help** › "Offered something they could not do by law." To'Latino
+  rechecks all their licenses with priority. You can also report it to the Pennsylvania Attorney General.

@@ -70,15 +70,68 @@ semanas) y la tasa que resulta.
 ## English
 
 ### What it does
-What people ask most at a car lot: **how much do I pay in total and is the car clean?** Each vehicle shows its **VIN** (checked by its
-check digit), year, make, model, trim, body, **mileage** (engine hours for boats), transmission, fuel, drivetrain, **title** (clean, rebuilt
-or salvage), whether it has a **history report** and from whom (you provide it; To'Latino does not buy reports), **PA inspection**, the
-**warranty** (or «sold as is»), whether it is **not street legal** and whether it needs a **CDL**. From the price, To'Latino calculates
-**«Out the door: $X»** = price + city tax (6% in all five) + tags and title + dealer fee, shown with its breakdown as you type the price. If
-you finance, To'Latino calculates the **example payment** with your APR, term and down payment, always «estimated, subject to approval». For
-buy here pay here it calculates the **total paid** (down payment + weekly payment × weeks) and the resulting rate.
+What people ask most at a car lot: **how much do I pay in total, and is the car clean?** Each vehicle shows its **VIN** (checked by its check
+digit), year, make, model, trim, body style, **mileage** (or engine hours for boats), transmission, fuel, drivetrain, **title** (clean, rebuilt or
+salvage), whether it has a **history report** and from whom (you provide it; To'Latino does not buy history reports), whether the **PA
+inspection** is current, the **warranty** (or "sold as is"), whether it is **not street legal** and whether it needs a **CDL**. From the price,
+To'Latino calculates **"Out the door: $X"** = price + city tax (6 % in all five) + tags and title + dealer fee, and shows it with its breakdown
+as you type the price. If you finance, To'Latino calculates the **example payment** with your rate (APR), your months and your down payment, and
+it always says "estimated, subject to approval." For buy here pay here it calculates the **total paid** (down payment + weekly payment × weeks)
+and the resulting rate.
+
+### How to use it
+1. **What you sell › Inventory › Add**: enter the **VIN** (17 letters and numbers, no I, O or Q: it is on the windshield and the driver's door;
+   "Fill year and make from the VIN" helps you), the year, make, model and trim, the mileage, the title, the history report, the inspection, the
+   warranty and the **price before tax, tags and fees**. Upload up to 12 photos: **take a photo of the windshield price** so the app's price is
+   the same as the car's. "Add" saves it with its out-the-door total.
+2. **The status** changes with one tap: **On the lot**, **Held in person**, **Sold** and **Hidden**. Sold or hidden ones do not show on your page.
+   Selling a car lowers "Cars on the lot" by one.
+3. **Your tool › Lot inventory**: "You finance in-house," "You finance with ITIN," "You finance with no credit history," "You take trade-ins,"
+   "Test drive at your home"; **ITIN down payment from** (−/+ $100, from $500); the **example payment** (24 to 72 months or "No example," and
+   the rate −/+ 0.5 %); the **warranty on engine and transmission** (sold as is · 3 months · 6 months); the **dealer fee** (−/+ $50, up to the PA
+   cap); **Cars on the lot** (even if not all are in the app); and per car **On the lot / Sold** and the **Price** (−/+ $100). In buy here pay
+   here: **Down payment**, **Weekly payment** (from $25), **Months** (12, 18, 24 or 36) and "You report payments to credit." **Every tap is
+   saved and recalculates the out-the-door total and the example payment of all your cars.**
+4. **Your page › Your licenses**: add your **PA dealer** license, the **salesperson** license, the **installment sales** license (if you finance
+   or sell on installments) or the **lender (NMLS)** license. To'Latino checks it against the public registry before showing the seal.
+
+### What happens in each case
+- **The out-the-door total** is calculated by To'Latino (and the database checks it): it is never typed by hand. The tax comes from the city; if
+  To'Latino changes it, all the cars are recalculated by themselves in batches.
+- **The dealer fee does not exceed the PA cap** (today $477, to be verified every year). If you go over it, it is not saved. If To'Latino lowers
+  the cap, your fee drops to the cap and your totals are recalculated; it is recorded in the audit log.
+- **VIN**: if the check digit does not add up, it is not saved and the app tells you to check it character by character. If the 10th character
+  says a different year, it is not saved either. Boats, golf carts and vehicles from before 1981 can go without a VIN. A VIN is not repeated in
+  your inventory.
+- **Salvage title**: it always says "Salvage title: not driven on the road until it passes the PA inspection," and it is marked "not street
+  legal."
+- **The warranty** you mark has to be the same as the **Buyers Guide** on the car's window. The dealer warranty from the tool is applied to each
+  car that does not come with the factory or certified one.
+- **The example payment** only shows with rate (APR), months and down payment together, on the out-the-door total minus the down payment, and it
+  says "estimated, subject to approval." Without a rate there is no example. **Do not write payments or down payments in the description**: it is
+  not saved.
+- **Buy here pay here**: if your down payment and your weekly payment do not cover a car's out-the-door total, that car does not show a plan and
+  the dashboard tells you.
+- **Free**: **5 vehicles** are shown at a time (sold or hidden ones do not count). With Pro, all of them.
+- **To'Latino can hide a vehicle** (a price that does not match, a possible scam, photos that are not of the car, salvage not stated): you see the
+  reason and you cannot turn it back on yourself.
+- **The search card** shows by itself: "38 cars on the lot" and "They finance with ITIN · rate, months and down payment in writing" (or the
+  warranty, or "Test drive at your home"). The filters (With ITIN, No credit, Low down payment, With warranty, They take your car, Clean title,
+  Test drive at home) also show by themselves.
+- **Nothing is charged in the app**: not the test drive, not holding a car. To'Latino does not check credit, does not make loans and nobody
+  guarantees approval. The papers (license, proof documents) are brought in person; the app never asks for them.
+
+### Rules that cannot be turned off
+- **Out-the-door total before signing.** Price + tax + tags + dealer fee.
+- **With ITIN: rate and months in writing.** Before the test drive, nothing is charged.
+- Fixed line: "The out-the-door price: with taxes, tags and dealer fees, before signing."
+- The extended warranty and GAP **are not required**: nobody can require them from you to give you the loan.
 
 ### FAQ
-The dealer fee cannot exceed the PA cap. Payments in the description are not saved: To'Latino calculates them with rate, term
-and down payment (Regulation Z); the search card never shows a down payment or payment on its own. To'Latino does not buy history reports.
-Driver's license or ITIN are never requested through the app.
+- **Why won't it let me put a $599 dealer fee?** The PA cap is lower; it is state law.
+- **Can I put "$199 a month" in the description?** No. To'Latino calculates the payment with the rate, the months and the down payment
+  (Regulation Z).
+- **Why doesn't the search card show my down payment?** Because a down payment or a payment on its own, without the rate and the months, cannot be
+  advertised; each car states them together.
+- **Does To'Latino buy the Carfax?** No. You say whether you have a history report and from whom.
+- **Can I ask for the person's license or ITIN through the app?** No. They are seen in person.

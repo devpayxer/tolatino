@@ -42,13 +42,39 @@ misma hoja.
 
 ## English
 
-Publishing starts a **30-day Pro trial** (60 with HZL30), no card. In **Your plan**: **Keep Pro** (pick or add a card —
-nothing is charged today, the first charge is on day 30; $14.99/month or $149.90/year) or **Don't keep Pro** (day 30
-switches to Free; nothing is deleted). Reminders on day 20, 25 and the last day. With Pro: next charge, change card,
-switch to Free at the end of the paid period, receipts. With Free: **Back to Pro** charges that day (no second trial).
-Failed charges retry 3 times over 7 days, then Free. Never charged twice for the same period.
-In the To'Latino Negocios app you see your plan status only (Pro, trial or Free, and until when); Pro is bought and changed in the web dashboard, with the same account.
+### What it does
+- When you publish the business, the **30-day Pro trial** starts (60 with the code HZL30): all of Pro, no card.
+- In **Your plan** you see how many days are left and what happens on day 30. You can:
+  - **Keep Pro**: you pick or add your card (it is saved). **Nothing is charged today**: the first charge is on day 30. Monthly **$14.99** or
+    yearly **$149.90** (2 months free).
+  - **Don't keep Pro**: on day 30 the page moves to **Free**. Nothing is deleted: the Pro content goes to sleep and comes back the same.
+- Notices: on day 20 (what happened during your trial), on **day 25** (message) and on the last day.
+- With **Pro**: you see the next charge and the card; **Change card** or **Switch to Free** (you keep Pro until the end of the month already
+  paid). Receipts for each charge.
+- With **Free**: "Your Pro content is saved" → **Back to Pro** is charged that day (there is no second trial).
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Day 30 arrives with a card | $14.99 (or the year) is charged and you keep Pro. You get "Pro charge." |
+| Day 30 arrives with no card or you decided not to keep it | It moves to Free. You get "Your page moved to Free." Nothing is deleted. |
+| The charge fails | Attempt 1 of 3 (notice); it is retried after 3 and 7 days. On the third, Free. Changing the card retries it right away. |
+| You switch to Free with Pro paid | You keep Pro until the end of the period; then Free. You can undo it before then. |
+| Back to Pro with a declined card | Nothing changes: it stays Free and it tells you why. |
+| Courtesy Pro (To'Latino) | No charge until the date; then Free. |
+| Reloading or tapping twice | The same period is never charged twice. |
+| Sandbox | Charges go against the simulator: 4242… approves, 0002 declines. |
+
+### FAQ
+**Is anything deleted when I switch to Free?** No. The Pro content (gallery, team, Pro modules) goes to sleep and comes back the same.
+**Who can change the plan?** Only the owner (Payouts and plan involves money).
+**Can I buy Pro from the To'Latino Negocios app?** No: in the app you see your plan's status (Pro, trial or Free, and until when); Pro is bought and
+changed in the web dashboard, with the same account.
 
 ### Back to Pro and your bank
-If your bank asks to confirm when you go **Back to Pro** from Free, the «Your bank asks you to confirm» sheet opens right in
-Your plan; confirm and Pro is active with that single charge. Closing it charges nothing. Monthly renewals send you a link.
+If, when you go **Back to Pro** (from Free, in Payouts and plan › Your plan), your bank asks you to confirm the payment (3D Secure), the sheet
+**"Your bank asks you to confirm"** opens right there: confirm it and Pro becomes active with that single charge (you are not charged again). If
+you close it, nothing is charged and you can try again. On each month's renewal, if the bank asks for confirmation, you get the notice with the
+link to the same sheet.
+
+**Am I charged twice if I confirm later?** No: the confirmed charge is the one that leaves Pro active.

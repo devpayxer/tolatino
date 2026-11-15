@@ -66,15 +66,60 @@ en la caja) o *Envío a tu casa* (llega en los días que dice la tienda, con el 
 ## English
 
 ### What it does
-In an auto shop's or home-service business's **Shop**, you can **hold** items and pay at the register when you come.
-**Holding costs nothing**; the price you see is the price you pay. Pick the size or number if it has one (a sold-out size cannot be picked), how many, review your hold, choose when you come
-(today, tomorrow or the day after, at an open hour) and send. The store confirms it has it and **keeps it the hours the store sets** (24, 48 or
-72; auto and home shops: 48) from your time. If something is missing you can remove it and keep the rest, or cancel. If your
-size is out, the store offers the next size at the same price: take it, remove it, or cancel. If the store does not reply in time, or
-you do not come in time, it goes back on the shelf and nothing is charged.
-**Shipping (stores that ship):** choose *Ship to your home*, your address and card. The total is **held** today, not charged.
-When the store marks it **Shipped** you are charged for what actually ships (never more than the hold); you see the tracking
-link if there is one, then **Delivered**. If the store does not have it, you cancel before it ships, or it is not shipped within
-6 days, the hold is released.
+In the Store of a shop or a home business (batteries, tires, thermostats, water heaters…) you can **hold** what you want and pay at the register
+when you come by. **Holding costs nothing.** The price you see is the price you pay at the register.
+1. Tap **Hold** on the item, pick the **size** or **number** if it has one (a sold-out size cannot be picked; if only 1 or 2 are left, it says so),
+   pick how many (1 to 3, never more than are left in that size) and it is added to **Your hold** (saved on your phone). You can hold two sizes
+   of the same piece; the card says "HOLD: N".
+2. **View hold:** you review what you held (you can remove something), leave a note for the store and choose whether you want SMS notices.
+3. **When you come by:** today, tomorrow or the day after, at an hour when the store is open.
+4. **Review and send:** $0 today, the total at the register. When you send it, the units (and the size) are reserved for you.
+5. The store confirms it has it → **they keep it for the hours the store says** (24, 48 or 72; auto shops and home businesses: 48) from the time
+   you chose. You come by, you pay and the store marks it "Picked up". Afterwards you can leave a verified review.
 
-**The time limits on this page** (the 48 hours of auto shops and home businesses) are today's: stores pick their own hours in their tool; for auto shops and home businesses To'Latino sets them in its Configuration, and the screen always shows the ones in force.
+#### Shipping to your home (stores that ship)
+If the store ships and takes card payments, in **Your hold** you choose **How do you get it?**: *I pick it up in store* (free, you pay at the
+register) or *Ship to your home* (it arrives in the days the store says, with the shipping cost; free from the amount the store sets).
+- With shipping you choose **where to** (your address from My addresses) and **which card**. **Today the total is held** on your card; **it is
+  not charged yet**.
+- The store confirms it has it and ships it. **When it marks it "Shipped," you are charged for what is actually shipped to you** (if you removed
+  something that was missing, you are charged less and the rest is released). You are never charged more than what was held.
+- You see **On the way** and, if the store pasted the link, **Track it**. After that the store marks it **Delivered**.
+- Once shipped it cannot be cancelled from the app: use Messages or the purchase help.
+
+#### For the business
+- Today › **Holds**: the ones waiting for you to confirm (at the top), the kept ones and today's picked-up ones.
+- With shipping: in the detail you paste the **tracking link** (optional, https) and tap **Shipped** (what is on the customer's card is charged);
+  then **Delivered**. If you do not ship it within 6 days, it is released by itself. Today marks it "TO SHIP" for you.
+- In the detail: **I have it · hold it**, **Size is out · offer another** (you pick the next size that you do have, at the same price; only sizes
+  with enough stock appear), **One is missing** (you pick which one; the customer decides whether to continue), **Not in stock** and, when it
+  happens, **Picked up**.
+- Stores: how many hours you keep a hold is changed in **What you sell › Your tool** (24, 48 or 72). Each hold keeps the hours that were set when
+  it was sent. You get paid at the register; To'Latino charges no commission on a hold paid at the register.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Fewer are left than you ask for | You cannot hold more than there are. Two people at once for the last ones: one gets them. |
+| The store does not reply in time | It has until 30 minutes before your time (at least 30 minutes). If not, it expires, goes back on the shelf and we tell you. Nothing is charged. |
+| Something is missing | You see what is missing: **Remove it and continue** (they keep the rest for you) or **Cancel**. If you do not decide within 24 hours, it closes. |
+| Your size is missing | The store offers you another size at the same price: **Yes, size X** (they keep it for you if any is still left), **Remove it** (you continue with the rest) or **Cancel**. While you decide, the other size is not held. You have 24 hours. |
+| The size sold out while you were holding | It does not let you send: "sold out in size X." Pick another. |
+| They do not have it | We tell you. Nothing is charged. That item is marked "Sold out" in the Store until the store corrects it. |
+| You do not come by in time (24, 48 or 72 hours) | It expires and goes back on the shelf (the size too). Nothing is charged. |
+| You cancel | It goes back on the shelf and the store knows. |
+| With shipping: the store does not have it, you cancel before it leaves, or it is not shipped within 6 days | The hold on your card is released. Nothing is charged. |
+| With shipping: your bank asks for extra verification | For now it cannot be done with that card: try another or pick it up in store. |
+| You already have 3 open holds at that store | It does not let you open another until you close one. |
+| Tires | Filter by your car's size (if you saved it in Your vehicle), all sizes, new or used. The price is per tire installed. |
+
+**The time limits on this page** (the 48 hours a hold is kept at auto shops and home businesses) are today's: Stores pick their hours in their tool;
+for auto shops and home businesses, To'Latino sets them in its Configuration, and the screen always shows the ones in force at that moment.
+
+### FAQ
+- **Do they charge me anything?** No. You pay at the register the same price you see.
+- **How long do they keep it for me?** The hours the store says (24, 48 or 72) from the time you chose to come by. You see it on the item's sheet
+  and in "Review and send".
+- **What if they do not have my size?** They offer you the next one at the same price; you decide.
+- **When am I charged for shipping?** When the store ships it. Before that it is only held.
+- **Can I hold several things?** Yes, up to 10 different items and 3 of each.

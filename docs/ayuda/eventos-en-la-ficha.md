@@ -36,10 +36,31 @@ Audiencia: vecino. Tema: eventos._
 ## English
 
 ### What it does
-Pro businesses with upcoming live events get an **Events** tab on their page (a replica: each card opens the event page). **Home › This
-week** shows the next 7 days of events in your radius. **Search** has an **Events** section and tab (All · Today · This weekend · Free).
-**City** shows how many events are within the radius. A Nightlife **special night** service links to one of your events and shows only
-while it is live (**See event**). An update can have an **Event** button: it shows **See event** on your page and **EVENT · SEE EVENT** in
-**Today nearby**, only while the event is live. In **Dashboard › Events** the **Events on To'Latino** switch turns all your events off or on
-(To'Latino can pause it with a reason), and each event shows **WHO IS GOING** (first name and initial, people, capacity). For events
-somewhere else, add the **ZIP code**: To'Latino places them on the map for directions and distance. Home-based organizers show only the area.
+- **Business page › Events** (Pro businesses only, and only if they have upcoming published events): **Upcoming events** with the same card as
+  Events; each one opens the event page. It is a replica: the event is managed in Dashboard › Events.
+- **Home › This week**: the events of the next 7 days in your radius (the party or show ones in dark), with **See all** → Events.
+- **Search**: under "All," the **Events** section (up to 4, with "See all N"); the **Events** tab brings All · Today · This weekend · Free. If
+  nothing fits: "No events with that filter."
+- **City**: next to the businesses, how many events there are in the radius you pick ("120 businesses · 25 events").
+- **Nightlife › the special night**: in the dashboard, the "Special night" service is linked to one of your events (**The event it leads to**).
+  On your page it shows only if that event is published, and its **See event** button opens the event page.
+- **Updates › "Event" button**: an update or a "Today" post can lead to one of your events. On your page it says **See event**; in **Today
+  nearby** it shows as **EVENT · SEE EVENT** and at the end of the story it opens the event. It shows only while the event is published.
+- **Dashboard › Events › the "Events on To'Latino" switch** (also in What you sell › Events): when off, none of your events shows (their status
+  does not change; they come back when you turn it on). If To'Latino paused your events, the dashboard says **PAUSED BY TO'LATINO** with the reason.
+- **Dashboard › Events › the event page › WHO IS GOING**: the RSVPs with people (name and initial), how many are going, the capacity and who is no
+  longer going.
+- **Another location**: when you create an event somewhere else, enter the name, the address and the **ZIP code**: with that, To'Latino places it
+  on the map (for "Directions" and distance). If the address cannot be found, it shows with the written address and no map.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Free business | The Events tab does not show on its page (Events is Pro); its published events do show in Events. |
+| No upcoming published events | There is no Events tab or special night; the update with an event does not show. |
+| The event is hidden, the module is paused or the organizer is blocked | It disappears from Events, Home, Search, City, the tab, the special night and Today. |
+| You work from home and the event is "at my place" | It shows "{City} area"; your address and your exact point never show. |
+
+### FAQ
+- **Why doesn't my event show?** Check Dashboard › Events: it may be in review, hidden, with the module off or paused by To'Latino.
+- **Can I put a button for my event on an update?** Yes: in the update pick the **Event** button and the event.

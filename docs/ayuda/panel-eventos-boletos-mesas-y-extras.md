@@ -34,15 +34,31 @@ _Pantallas: **Panel › Eventos › tu evento** (`/panel/{negocio}/eventos?det=e
 ## English
 
 ### What it does
-In the editor you set **tickets** (name, price, quantity), **tables** (area, people, minimum spend, deposit, how many) and **extras** (never
-alcohol, bottles or hookah). **The price you set is what the customer pays: fees included.** Once live, the event shows **SELLING**, **SOLD ·
-TABLES · ORDERS**, tickets with **N LEFT / SOLD OUT**, **TABLES · WHO HAS THEM**, **MONEY** (gross, deposits, extras, discounts, **To'Latino fee
-5% + $1 per ticket**, **you get · to your bank the Tuesday after the event**) and **BUYERS** (first name + initial, **Resend tickets**). The event
-list shows a sales bar.
+- In the editor you set the **tickets** (name, price, quantity), the **tables** (area, people, minimum spend, deposit, how many) and the
+  **extras** (detail, material, service or other; never alcohol, bottles or hookah). **The price you set is the price the customer pays: fees
+  included.**
+- Once the event is published, the event page says **SELLING** and shows **SOLD · TABLES · ORDERS**, **TICKETS** with **ONLY N LEFT** or **SOLD
+  OUT**, **TABLES · WHO HAS THEM** (name and initial), **MONEY** (gross, table deposits, extras, discounts, **To'Latino commission 5 % + $1 per
+  ticket** and **You get · to your bank the Tuesday after the event**) and **BUYERS** (All · With a table · With extras, search, **Resend
+  tickets**).
+- In the Events list, each event with tickets carries its sales bar: **N of M sold**.
+- **Resend tickets** sends the person a notice in their account with their tickets. You never see their phone or their email.
 
-### Cases and FAQ (English)
-Free plan → the event shows but tickets are not sold (Pro). Payouts off → "Not on sale". Quantity cannot go below what is sold or held. Removing
-a sold ticket stops selling it; sold tickets stay valid. Payout: Tuesday after the event, net of fees and discounts. No door
-sales.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Your plan is Free | Your event shows, but **tickets are not sold**: selling is part of Pro (30-day trial). |
+| You do not have Payouts turned on | "To sell tickets, turn on Payouts." Until then the event page says **Not on sale**. |
+| You lower a ticket's quantity | It does not go below what is already sold or held at that moment. |
+| You remove a ticket that already sold | It stops being sold; what was sold stays valid. |
+| You want to switch from tickets to free with tickets sold | Not possible: to cancel with refunds, use Cancel (it refunds everything to each buyer). |
+| A change to tickets on a published event (unverified organizer) | It goes back to review; the previous version stays on sale until To'Latino decides. |
 
-**The time limits on this page** (the payout day: the Tuesday after each date) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
+**The time limits on this page** (the payout day: the Tuesday after each date) are today's: To'Latino sets them in its Configuration and the
+screen always shows the one in force at that moment.
+
+### FAQ
+- **When do I get paid?** The charge stays with To'Latino and is transferred to your account the Tuesday after the event, minus the commission and
+  the discounts (this way, if it is cancelled, everything is always refunded). The transfer goes out the Tuesday after the event (see
+  `panel-eventos-cobros.md`).
+- **Are tickets sold at the door?** No. No tickets are sold at the door: the door staff only scans.
