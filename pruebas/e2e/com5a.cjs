@@ -148,7 +148,9 @@ const A = '5705550299', BB = '5705550288', Y = '5705550433', ADM = '5705550199';
   await a.goto(B + `/comunidad/nuevo?editar=${Q}`); ok(await contiene(a, 'Ya no se puede editar'), 'después de 30 minutos: «Ya no se puede editar» (lo decide el servidor)');
   await a.goto(B + '/comunidad/p/' + Q); await clic(a.locator('[data-screen-label="APP-COM-POST · publicación"] span[style*="-9px"]'));
   ok(await (await vis(a.getByRole('button').filter({ hasText: /^Editar/ }))).getAttribute('aria-disabled') === 'true', 'el menú ya no deja editar');
-  await a.keyboard.press('Escape'); await clic(a.getByRole('button', { name: 'Cerrar' }));
+  // 9c · Escape cierra la hoja del menú (FocoHojas); antes hacía falta «Cerrar».
+  await a.keyboard.press('Escape');
+  ok(await espera(async () => !(await a.getByRole('button').filter({ hasText: /^Editar/ }).isVisible().catch(() => false)), 4000), 'Escape cierra el menú de la publicación');
 
   // ── 8 · Votar: B vota la pregunta de A; A no vota lo suyo; B vota la encuesta ──
   const bp = await tel(); await entrar(bp, BB);

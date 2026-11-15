@@ -31,7 +31,8 @@ const espera = async (f, v) => { let x; for (let i = 0; i < 40; i++) { x = f(); 
   await m.getByText(/No aceptan Cigna · sin seguro \$85/).first().waitFor(); ok(true, 'Cigna (no lo aceptan): «No aceptan Cigna · sin seguro $85» — no bloquea');
   await clic(m.getByText('Cambiar', { exact: true }));
   ok(!!(await vis(m.getByText('SOLO ESTA VISITA', { exact: true }))), 'sin cuenta: «SOLO ESTA VISITA»');
-  await m.keyboard.press('Escape').catch(() => {}); await clic(m.getByRole('button', { name: 'Listo' }));
+  // 9c · Escape ya cierra la hoja (FocoHojas); si sigue abierta (otra capa), «Listo».
+  await m.keyboard.press('Escape').catch(() => {}); if (await m.getByRole('button', { name: 'Listo' }).isVisible().catch(() => false)) await clic(m.getByRole('button', { name: 'Listo' }));
   // ── Con cuenta (Marisol: Medicaid · UPMC for You) ──
   const MU = sql(`select id from users where phone = '+15705550122'`);
   sql(`update user_insurances set removed_at = now() where user_id = '${MU}' and removed_at is null`);

@@ -16,12 +16,15 @@ const enfocables = (h: HTMLElement) => [...h.querySelectorAll<HTMLElement>(FOCO)
 export function FocoHojas() {
   useEffect(() => {
     const vuelta = new WeakMap<HTMLElement, HTMLElement | null>();
+    // Si quien la abrió se desmonta mientras la hoja está abierta (la barra del pedido), se busca otra vez por su data-screen-label.
+    const marca = new WeakMap<HTMLElement, string | null>();
     let abiertas: HTMLElement[] = [];
     const revisar = () => {
       const ahora = hojas();
       for (const h of ahora) if (!abiertas.includes(h)) {
         const antes = document.activeElement as HTMLElement | null;
         vuelta.set(h, antes && antes !== document.body && !h.contains(antes) ? antes : null);
+        marca.set(h, antes && !h.contains(antes) ? antes.closest("[data-screen-label]")?.getAttribute("data-screen-label") ?? null : null);
         if (!h.contains(document.activeElement)) {
           const p = enfocables(h)[0];
           if (p) p.focus({ preventScroll: true });
@@ -29,9 +32,14 @@ export function FocoHojas() {
         }
       }
       for (const h of abiertas) if (!ahora.includes(h)) {
-        const v = vuelta.get(h);
         const foco = document.activeElement;
-        if (v && v.isConnected && (!foco || foco === document.body || !foco.isConnected)) v.focus({ preventScroll: true });
+        if (foco && foco !== document.body && foco.isConnected) continue;
+        let v = vuelta.get(h) ?? null;
+        if (!v || !v.isConnected) {
+          const m = marca.get(h), el = m ? document.querySelector<HTMLElement>(`[data-screen-label="${CSS.escape(m)}"]`) : null;
+          v = el ? (el.matches(FOCO) ? el : enfocables(el)[0] ?? null) : null;
+        }
+        if (v) v.focus({ preventScroll: true });
       }
       abiertas = ahora;
     };
