@@ -18,7 +18,7 @@ const A = UI as unknown as Record<"AdminList", ComponentType<any>>;
 export function TextosAyuda({ d, l, aud, est, q, desde, editar }: { d: DatosAyudaAdmin; l: L; aud: Audiencia | null; est: "paused" | "retired" | null; q: string; desde: string | null; editar: boolean }) {
   const E = par(l), cuando = cuandoL(l), router = useRouter(), w = useAncho(), desk = w >= 1024;
   const AUD: Record<Audiencia, string> = { vecino: E("VECINOS", "NEIGHBORS"), negocio: E("NEGOCIOS", "BUSINESSES"), portero: E("PORTEROS", "DOORMEN"), equipo: E("EQUIPO", "TEAM") };
-  const ACCION: Record<string, string> = { indexed: E("Desplegado", "Deployed"), paused: E("Pausado", "Paused"), resumed: E("Vuelto a usar", "Back in use"), flagged: E("Marcado", "Flagged"), retired: E("Retirado del repo", "Removed from the repo") };
+  const ACCION: Record<string, string> = { edited: E("Editado", "Edited"), reverted: E("Edición deshecha", "Edit undone"), indexed: E("Desplegado", "Deployed"), paused: E("Pausado", "Paused"), resumed: E("Vuelto a usar", "Back in use"), flagged: E("Marcado", "Flagged"), retired: E("Retirado del repo", "Removed from the repo") };
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast(), [v, setV] = useState(q);
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E("Listo.", "Done.")); setConf(null); router.refresh(); };
   const ir = (p: { aud?: string | null; est?: string | null; q?: string; desde?: string | null }) => {
@@ -35,7 +35,7 @@ export function TextosAyuda({ d, l, aud, est, q, desde, editar }: { d: DatosAyud
   );
   const k = d.kpi;
   const B: Bloque[] = [
-    { type: "head", eye: "CONTROL", t: E("Textos y páginas", "Copy and pages"), s: E("La ayuda de docs/ayuda/, como está desplegada. El texto se corrige en el repo; aquí se pausa un artículo para el Centro de ayuda y El Compa.", "The help in docs/ayuda/, as deployed. The text is fixed in the repo; here you pause an article for the Help Center and El Compa."), h1: desk ? 26 : 22 },
+    { type: "head", eye: "CONTROL", t: E("Textos y páginas", "Copy and pages"), s: E("La ayuda de docs/ayuda/, como está desplegada. Aquí se edita una sección (sale al instante; el repo sigue mandando) o se pausa un artículo para el Centro de ayuda y El Compa.", "The help in docs/ayuda/, as deployed. Here you edit a section (it goes live right away; the repo still rules) or pause an article for the Help Center and El Compa."), h1: desk ? 26 : 22 },
     pestanas(l, "ayuda", router),
     selectorIdioma(l, router),
     { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
@@ -50,6 +50,8 @@ export function TextosAyuda({ d, l, aud, est, q, desde, editar }: { d: DatosAyud
   ];
   const acciones = (x: DatosAyudaAdmin["filas"][number]) => [
     ...(x.status !== "retired" ? [{ label: E("Ver", "View"), variant: "secondary", onClick: () => window.open(`/ayuda/${x.slug}`, "_blank", "noopener") }] : []),
+    // 9f-5 · Editar por secciones (con cms:ver solo se mira).
+    ...(x.status !== "retired" ? [{ label: editar ? E("Editar", "Edit") : E("Secciones", "Sections"), variant: "secondary", onClick: () => router.push(`/admin/textos?ed=${encodeURIComponent(x.slug)}`) }] : []),
     ...(editar && x.status === "live" ? [{ label: E("Pausar", "Pause"), variant: "secondary", onClick: () => setConf({ titulo: `${E("Pausar", "Pause")} · ${x.title[l]}`, cta: E("Pausar", "Pause"), peligro: true,
       sub: E("Deja de salir en el Centro de ayuda (y El Compa no lo usará). El texto no cambia: se corrige en el repo. Queda en el historial con tu motivo.", "It stops showing in the Help Center (and El Compa will not use it). The text does not change: it is fixed in the repo. It goes in the history with your reason."),
       plantillas: [E("Dice algo que ya no es cierto.", "It says something that is no longer true."), E("Le falta un caso importante.", "It is missing an important case."), E("Se está reescribiendo en el repo.", "It is being rewritten in the repo.")], hacer: (m) => ayudaPausar(x.slug, m) }) }] : []),

@@ -4995,3 +4995,13 @@ de obra, Venta de autos sobre el precio, Comida en eventos privados), y «Progra
 que viene o el 1.º de enero) y el porcentaje. **Pantalla compuesta con piezas del sistema (la misma forma que Comisiones; el diseño no la trae):** dime si
 la quieres distinta. **Decisión por defecto (AB):** solo el permiso «aprobar» de Planes la cambia; nunca se edita una regla: se programa otra.
 
+
+## Fase 9 · 9f-5 — La ayuda: inglés completo y editor en el Super Admin (15 nov)
+**Qué mirar:**
+- Centro de ayuda en inglés (botón ES/EN): cualquier artículo ya trae su inglés completo, no un resumen.
+- Super Admin › Textos y páginas › Ayuda › **Editar** en un artículo: cambiar una sección con motivo → abrir ese artículo como vecino y ver el texto nuevo;
+  **Deshacer** lo vuelve al de antes. Un texto con «bloque 4j» o con un encabezado (#) no se guarda.
+
+**Decisión tomada (reversible):** lo editado sale **al instante**, pero **el repo sigue mandando**: mientras el archivo no cambie, el despliegue no lo pisa;
+cuando cambia, gana el repo. Lo editado de vecinos, negocios y porteros lo paso yo al repo leyendo el trabajo «Ayuda editada» (GitHub); lo del equipo nunca
+sale de la base. Si prefieres que una edición quede como **borrador** hasta que la revise alguien más, se cambia sin perder nada.

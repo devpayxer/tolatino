@@ -195,6 +195,7 @@
     "founder_steps": { "equipo": ["by"] },
     "health_settings": { "equipo": ["updated_by"] },
     "help_article_log": { "equipo": ["by"] },
+    "help_edits": { "equipo": ["staff_id", "ended_by"] },
     "help_articles": { "equipo": ["paused_by"] },
     "inm_settings": { "equipo": ["updated_by"] },
     "insc_settings": { "equipo": ["updated_by"] },

@@ -1,0 +1,26 @@
+# 9f-5 · La ayuda editada en el Super Admin del sandbox (Textos y páginas › Ayuda › Editar), para pasarla al repo: el repo es la fuente (fase7-compa.md
+# §6 #12). Solo lectura: imprime lo editado y vivo (/api/ayuda/ediciones: el texto de lo público; de lo del equipo, solo la sección). Claude lo lee aquí y
+# lo lleva a docs/ayuda/ en su siguiente commit; al desplegarse, la edición queda «Pasó al repo». A mano o una vez al día.
+name: Ayuda editada
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '41 9 * * *'
+permissions:
+  contents: read
+jobs:
+  leer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ediciones vivas del sandbox
+        run: |
+          curl -s -m 30 http://2.31.196.167/api/ayuda/ediciones -o ed.json || { echo "sin respuesta"; exit 0; }
+          python3 - <<'PY'
+          import json
+          d = json.load(open("ed.json")).get("ediciones", [])
+          print(f"{len(d)} ediciones vivas")
+          for e in d:
+              print(f"\n=== {e['slug']} · {e['lang']} · {e['heading']} · {e['at']}")
+              print(e["texto"] if e["texto"] is not None else "(sección del equipo: el texto no sale de la base)")
+          PY

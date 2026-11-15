@@ -186,3 +186,91 @@ export async function pausarAyuda(s: Staff, slug: string, motivo: string, pausar
     return { ok: true };
   });
 }
+
+/* 9f-5 · Editar la ayuda desde el Super Admin (0168; fase9-apertura.md §4 9f, fase7-compa.md §6 #12). Una SECCIÓN de un artículo, con motivo: sale al
+   instante (sus trozos se rehacen con el mismo partidor del indexador, scripts/ayuda/forma.mjs), queda en help_edits y en el libro, y se audita. El repo
+   sigue siendo la fuente: mientras el archivo no cambie, el despliegue no pisa lo editado; cuando cambia, manda el repo («en_repo» si ya dice lo
+   editado). El texto nuevo pasa la misma revisión que un archivo del repo: sin lenguaje interno (fases, bloques), sin encabezados (# …) que
+   rompan la forma, sin HTML. «Deshacer» vuelve la sección al texto de antes de esa edición. */
+import { FASE_INTERNA, TROZO_MAX, trozos } from "../../../../scripts/ayuda/forma.mjs";
+export type SeccionEd = { lang: Lang; sec: number; heading: string; nivel: number; equipo: boolean; body: string; edicion: { id: string; at: string; quien: string | null; motivo: string } | null };
+export type EdicionAyuda = { id: string; slug: string; lang: Lang; heading: string; status: "viva" | "deshecha" | "reemplazada" | "en_repo"; at: string; quien: string | null; motivo: string; fin: string | null; finMotivo: string | null };
+export type ArticuloEd = { slug: string; title: Bi; audience: Audiencia; status: "live" | "paused"; editado: boolean; secciones: SeccionEd[]; ediciones: EdicionAyuda[] };
+
+export async function articuloParaEditar(slug: string): Promise<ArticuloEd | null> {
+  const a = (await db().query<{ slug: string; title: Bi; audience: Audiencia; status: "live" | "paused"; editado: boolean }>(
+    `select slug, title, audience, status, sha256 <> coalesce(repo_sha256, sha256) as editado from help_articles where slug = $1 and status in ('live', 'paused')`, [String(slug ?? "").slice(0, 80)])).rows[0];
+  if (!a) return null;
+  const [sec, ed] = await Promise.all([
+    db().query<SeccionEd & { eid: string | null; eat: string | null; equien: string | null; emotivo: string | null }>(
+      `select c.lang, c.sec, min(c.heading) as heading, min(c.nivel)::int as nivel, bool_or(c.audience = 'equipo' and $2 <> 'equipo') as equipo,
+              string_agg(c.body, E'\n\n' order by c.ord) as body, e.id::text as eid, e.at as eat, e.reason as emotivo,
+              nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), '') as equien
+         from help_chunks c
+         left join help_edits e on e.slug = c.slug and e.lang = c.lang and e.sec = c.sec and e.status = 'viva'
+         left join users u on u.id = e.staff_id
+        where c.slug = $1 group by c.lang, c.sec, e.id, e.at, e.reason, u.first_name, u.last_name order by min(c.ord)`, [a.slug, a.audience]),
+    db().query<EdicionAyuda>(
+      `select e.id::text, e.slug, e.lang, e.heading, e.status, e.at, e.reason as motivo, e.ended_at as fin, e.ended_reason as "finMotivo",
+              nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), '') as quien
+         from help_edits e left join users u on u.id = e.staff_id where e.slug = $1 order by e.at desc, e.id desc limit 20`, [a.slug]),
+  ]);
+  return { ...a, secciones: sec.rows.map(({ eid, eat, equien, emotivo, ...x }) => ({ ...x, edicion: eid ? { id: eid, at: eat!, quien: equien, motivo: emotivo ?? "" } : null })), ediciones: ed.rows };
+}
+
+const limpio = (t: unknown, max: number) => String(t ?? "").replace(/\r/g, "").replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "").trim().slice(0, max);
+/* La misma revisión que un archivo del repo, para el texto de una sección. Devuelve el problema (ES/EN) o null. */
+export function revisarTextoAyuda(t: string, equipo: boolean): Bi | null {
+  if (t.length < 1) return { es: "La sección no puede quedar vacía.", en: "The section cannot be empty." };
+  if (t.length > 12000) return { es: "La sección es demasiado larga (máximo 12 000 letras).", en: "The section is too long (12,000 characters at most)." };
+  if (/^#{1,6}\s/m.test(t)) return { es: "Sin encabezados (# …): cada sección ya tiene el suyo.", en: "No headings (# …): each section already has its own." };
+  if (/<\/?[a-z][^>]*>/i.test(t)) return { es: "Sin HTML: solo texto, listas y **negritas**.", en: "No HTML: only text, lists and **bold**." };
+  if (/<!--/.test(t)) return { es: "Sin comentarios <!-- -->.", en: "No <!-- --> comments." };
+  if (!equipo) for (const [re, que] of FASE_INTERNA as [RegExp, string][]) if (re.test(t)) return { es: `Lenguaje interno para quien lee la ayuda: ${que}. Dilo como es hoy.`, en: `Internal language for readers: ${que}. Say it as it is today.` };
+  return null;
+}
+const partir = (t: string, s: { lang: Lang; nivel: number; heading: string; equipo: boolean }): string[] =>
+  (trozos([{ lang: s.lang, nivel: s.nivel, heading: s.heading, equipo: s.equipo, cuerpo: t }]) as { body: string }[]).map((c) => c.body).filter((b) => b.length <= TROZO_MAX);
+
+export async function editarSeccionAyuda(s: Staff, x: { slug: string; lang: string; sec: number; texto: string; motivo: string }): Promise<{ ok: true } | { ok: false; msg: Bi }> {
+  const m = limpio(x.motivo, 300), t = limpio(x.texto, 12001), lang: Lang = x.lang === "en" ? "en" : "es", n = Math.trunc(Number(x.sec));
+  if (m.length < 3) return { ok: false, msg: { es: "Escribe el motivo: queda en el historial.", en: "Write the reason: it goes in the history." } };
+  if (!Number.isFinite(n) || n < 0 || n > 200) return { ok: false, msg: { es: "Esa sección no existe.", en: "That section does not exist." } };
+  const a = await articuloParaEditar(x.slug);
+  const sc = a?.secciones.find((y) => y.lang === lang && y.sec === n);
+  if (!a || !sc) return { ok: false, msg: { es: "Esa sección no existe o el artículo ya no está en uso.", en: "That section does not exist or the article is no longer in use." } };
+  const mal = revisarTextoAyuda(t, sc.equipo || a.audience === "equipo");
+  if (mal) return { ok: false, msg: mal };
+  if (t.replace(/\s+/g, " ") === sc.body.replace(/\s+/g, " ").trim()) return { ok: false, msg: { es: "El texto es el mismo: no hay nada que guardar.", en: "The text is the same: nothing to save." } };
+  const piezas = partir(t, sc);
+  return tx(async (c) => {
+    const id = (await c.query<{ id: string }>(`select ayuda_editar($1, $2, $3, $4, $5::jsonb, $6, $7)::text as id`, [a.slug, lang, n, t, JSON.stringify(piezas), s.id, m])).rows[0]!.id;
+    await auditar(c, { actor: s.id, action: "ayuda.editar", targetKind: "help_article", targetId: a.slug,
+      before: { sección: `${lang} · ${sc.heading}`, texto: sc.body.slice(0, 600) }, after: { edición: id, texto: t.slice(0, 600) }, reason: m });
+    return { ok: true as const };
+  });
+}
+
+export async function deshacerEdicionAyuda(s: Staff, id: string, motivo: string): Promise<{ ok: true } | { ok: false; msg: Bi }> {
+  const m = limpio(motivo, 300);
+  if (m.length < 3) return { ok: false, msg: { es: "Escribe el motivo: queda en el historial.", en: "Write the reason: it goes in the history." } };
+  if (!/^\d{1,18}$/.test(String(id ?? ""))) return { ok: false, msg: { es: "Esa edición no existe.", en: "That edit does not exist." } };
+  const e = (await db().query<{ slug: string; lang: Lang; sec: number; heading: string; equipo: boolean; body_old: string; nivel: number; status: string }>(
+    `select e.slug, e.lang, e.sec, e.heading, e.equipo, e.body_old, e.status, coalesce((select min(c.nivel) from help_chunks c where c.slug = e.slug and c.lang = e.lang and c.sec = e.sec), 2)::int as nivel
+       from help_edits e where e.id = $1`, [id])).rows[0];
+  if (!e || e.status !== "viva") return { ok: false, msg: { es: "Esa edición ya no está en uso.", en: "That edit is no longer in use." } };
+  const piezas = partir(e.body_old, e);
+  return tx(async (c) => {
+    await c.query(`select ayuda_deshacer($1, $2::jsonb, $3, $4)`, [id, JSON.stringify(piezas), s.id, m]);
+    await auditar(c, { actor: s.id, action: "ayuda.deshacer", targetKind: "help_article", targetId: e.slug, before: { edición: id, sección: `${e.lang} · ${e.heading}` }, after: { texto: "el de antes de la edición" }, reason: m });
+    return { ok: true as const };
+  });
+}
+
+/* Lo editado y vivo, para llevarlo al repo (GET /api/ayuda/ediciones, público): de las audiencias públicas, el texto nuevo (ya se ve en el Centro de
+   ayuda); de lo del equipo o de una sección solo-equipo, solo qué sección cambió y cuándo (el texto no sale de la base). Sin nombres de personas. */
+export async function edicionesVivas(): Promise<{ slug: string; lang: Lang; heading: string; at: string; texto: string | null }[]> {
+  return (await db().query<{ slug: string; lang: Lang; heading: string; at: string; texto: string | null }>(
+    `select e.slug, e.lang, e.heading, e.at, case when a.audience <> 'equipo' and not e.equipo and a.status = 'live' then e.body_new end as texto
+       from help_edits e join help_articles a on a.slug = e.slug where e.status = 'viva' order by e.at limit 200`)).rows;
+}

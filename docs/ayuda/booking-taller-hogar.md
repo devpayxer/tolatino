@@ -18,8 +18,8 @@ APP-NEG-HOGAR-BOOKING). Versión: 6 nov 2026. Audiencia: vecino. Tema: citas._
     hoy el depósito o nada, antes de tocar el carro el estimado, al recogerlo lo final; «Guárdame las piezas viejas»).
   - Hogar: **Tu casa** (¿dónde es?, qué pasa, fotos) → **Franja de llegada** de 2 horas y si vas a estar en casa o cómo
     entrar → **Revisa y envía** (si alquilas, «Tengo el permiso de mi landlord» es obligatorio).
-  - Es una solicitud: el negocio confirma (o confirma al instante si lo tiene encendido). El depósito se cobra al
-    enviar y se descuenta del total; si no confirman, se devuelve.
+  - Es una solicitud: el negocio confirma (o confirma al instante si lo tiene encendido). El depósito se retiene al
+    enviar y se cobra cuando el negocio confirma (se descuenta del total); si no confirman, se libera.
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
@@ -55,8 +55,8 @@ APP-NEG-HOGAR-BOOKING). Versión: 6 nov 2026. Audiencia: vecino. Tema: citas._
     the estimate before touching the car, the final amount at pickup; «Keep my old parts»).
   - Home: **Your home** (where is it?, what is happening, photos) → **Arrival window** of 2 hours and whether you will be home or how to get in → **Review and
     send** (if you rent, «I have my landlord's permission» is required).
-  - It is a request: the business confirms (or confirms instantly if it has that on). The deposit is charged when you send and deducted from the total; if
-    they do not confirm, it is refunded.
+  - It is a request: the business confirms (or confirms instantly if it has that on). The deposit is held when you send and charged when the business confirms
+    (it is deducted from the total); if they do not confirm, it is released.
 
 ### What happens in each case
 | Case | What happens |

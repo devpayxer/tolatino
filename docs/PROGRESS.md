@@ -2410,3 +2410,7 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   quien ve todas las ciudades: Stripe no sabe de ciudades). Ayuda: reporte-diario.md y admin-analitica.md. ana9g lo comprueba contra la base.
 - **9f · Copiloto en el idioma del equipo (L1105):** resumen, siguiente paso y avisos en el idioma del Super Admin (`tl_lang`); el borrador, en el de la
   persona. compa7g. En curso: el inglés completo de 143 artículos de ayuda (L992/L1607), en cuatro grupos.
+- **9f-5 · La ayuda (L992, L998, L1607):** inglés completo en los 210 artículos (165 rehechos en cinco grupos, español intacto byte a byte; 78–105 % del
+  español). Editor por sección en Textos y páginas › Ayuda (0168 `help_edits`, `repo_sha256`, `ayuda_editar`/`ayuda_deshacer`, `ayuda_indexar` que no pisa lo
+  editado mientras el archivo no cambie); `/api/ayuda/ediciones` + workflow «Ayuda editada»; guardián `ayudaEditadaRepoManda` (alreves9f5 10/10, con
+  `depositoRetenido` ampliado a frases partidas); e2e `ayu9f5`. Corregidos de paso: el depósito de Hogar/Auto, las opciones de cobro de Fiestas y Wallet.

@@ -31,7 +31,7 @@ escritorio. Versión: 10 nov 2026. Audiencia: vecino. Tema: eventos._
 - **¿Puedo mandarle un boleto a otra persona?** Sí: **Transferir** desde la orden o el boleto (hasta 2 h antes). El QR anterior queda anulado y
   la otra persona recibe el suyo. Ver «Transferir boletos».
 - **¿Una captura de pantalla sirve?** Sí, el QR es el mismo; pero si To'Latino lo reemite, la captura vieja ya no entra.
-- **¿Apple Wallet o Google Wallet?** Todavía no: tu QR vive en la app y, si lo abriste una vez con señal, se ve sin señal.
+- **¿Apple Wallet o Google Wallet?** Sí: desde el boleto lo guardas en el de tu teléfono (el mismo QR). Si no lo guardas, tu QR vive en la app y, si lo abriste una vez con señal, se ve sin señal.
 - **¿Qué guarda el teléfono?** El QR, el código, el tipo y el evento, cifrados con la llave de tu sesión. Nada de lo que pagaste.
 
 ## En la puerta
@@ -69,7 +69,7 @@ escritorio. Versión: 10 nov 2026. Audiencia: vecino. Tema: eventos._
 - **Can I send a ticket to another person?** Yes: **Transfer** from the order or the ticket (up to 2 hours before). The previous QR is voided and
   the other person receives their own. See «Transfer tickets».
 - **Does a screenshot work?** Yes, the QR is the same; but if To'Latino reissues it, the old screenshot no longer gets in.
-- **Apple Wallet or Google Wallet?** Not yet: your QR lives in the app and, if you opened it once with signal, it shows without signal.
+- **Apple Wallet or Google Wallet?** Yes: from the ticket you save it to your phone's wallet (the same QR). If you do not save it, your QR lives in the app and, if you opened it once with signal, it shows without signal.
 - **What does the phone store?** The QR, the code, the type and the event, encrypted with your session's key. Nothing of what you paid.
 
 ### At the door

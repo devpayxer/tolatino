@@ -8,7 +8,7 @@
    idioma de quien las usa. */
 import { cookies } from "next/headers";
 import { staff } from "@/lib/admin";
-import { pausarAyuda } from "@/lib/compa/ayuda-indice";
+import { deshacerEdicionAyuda, editarSeccionAyuda, pausarAyuda } from "@/lib/compa/ayuda-indice";
 import { crearAnuncio, editarCadena, editarRotulo, fijarPie, guardarHome, ponerEstado, retirarAnuncio, revisarIngles, volverAlCodigo, type Res } from "@/lib/cms-admin";
 import { idioma } from "@/lib/idioma";
 import { marcarRevisada, publicarLegal, retirarLegal } from "@/lib/legal";
@@ -36,6 +36,21 @@ export async function ayudaVolver(slug: string, motivo: string): Promise<ResAdm>
   if (!s || !s.puede("cms", "editar")) return no("Tu rol no cambia artículos de ayuda.", "Your role cannot change help articles.");
   const r = await pausarAyuda(s, String(slug ?? ""), String(motivo ?? ""), false);
   return r.ok ? si("Otra vez en uso en el Centro de ayuda. Quedó en el historial.", "Back in use in the Help Center. It is in the history.") : { ok: false, mensaje: r.msg };
+}
+
+/* 9f-5 · Editar una sección de un artículo de ayuda (sale al instante; el repo sigue siendo la fuente) y deshacer esa edición. cms:editar, motivo. */
+export async function ayudaEditar(slug: string, lang: string, sec: number, texto: string, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !s.puede("cms", "editar")) return no("Tu rol no edita la ayuda.", "Your role cannot edit help.");
+  const r = await editarSeccionAyuda(s, { slug: String(slug ?? ""), lang: String(lang ?? ""), sec: Number(sec), texto: String(texto ?? ""), motivo: String(motivo ?? "") });
+  return r.ok ? si("Guardado: ya sale así en el Centro de ayuda y para El Compa. Queda en el historial hasta que pase al repo.", "Saved: it now shows like this in the Help Center and for El Compa. It stays in the history until it moves to the repo.")
+    : { ok: false, mensaje: r.msg[await idioma()] };
+}
+export async function ayudaDeshacer(id: string, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !s.puede("cms", "editar")) return no("Tu rol no edita la ayuda.", "Your role cannot edit help.");
+  const r = await deshacerEdicionAyuda(s, String(id ?? ""), String(motivo ?? ""));
+  return r.ok ? si("Deshecho: la sección volvió al texto de antes. Quedó en el historial.", "Undone: the section is back to its earlier text. It is in the history.") : { ok: false, mensaje: r.msg[await idioma()] };
 }
 
 export async function legalRevisada(id: string, despacho: string, fecha: string, motivo: string): Promise<ResAdm> {

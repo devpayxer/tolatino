@@ -23,7 +23,7 @@ const casos = [
   ['ayudaSinFaseInterna', 'docs/ayuda/cancelar-y-devoluciones-de-boletos.md', 'te devolvemos **todo**.', 'te devolvemos **todo** (llega con 6e).'],
   ['ayudaSinFaseInterna', P1, '| Devolución | Si pagaste con tarjeta', '| Devolución | Desde la Fase 2, si pagaste con tarjeta'],
   ['ayudaSinFaseInterna', P1, '| Devolución |', '| Devolución (2i) |'],
-  ['ayudaSinFaseInterna', P1, 'and, if the order was paid by card, a refund to that card', 'Card refunds arrive with Stripe'],
+  ['ayudaSinFaseInterna', P1, 'the refund goes back to that card when the business or To\'Latino makes it', 'Card refunds arrive with Stripe'],
   ['ayudaSinFaseInterna', P2, '## Para El Compa\n<!-- solo-equipo -->', '## Para El Compa (llega con el bloque 7d)'],
   ['ayudaSinFaseInterna', EQ, 'Invitación guardada, pero el SMS no salió (ese número pidió no recibir mensajes de To\'Latino): avísale tú a la persona.', 'El SMS sale con la Fase 2.'], // 9b-3 · el texto de hoy
   // compaAyudaPorAudiencia
@@ -31,7 +31,8 @@ const casos = [
   ['compaAyudaPorAudiencia', P4, 'Audiencia: negocio. Tema: panel._', 'Audiencia: vecino. Tema: pedidos._'],
   ['compaAyudaPorAudiencia', M, "check (slug not like 'admin-%' or audience = 'equipo'),", ''],
   ['compaAyudaPorAudiencia', M, 'create trigger help_chunks_audiencia before insert or update on help_chunks', '-- sin trigger'],
-  ['compaAyudaPorAudiencia', M, "case when coalesce((c->>'equipo')::boolean, false) then 'equipo' else a->>'audience' end", "a->>'audience'"],
+  // 9f-5 · ayuda_indexar se redefine en 0168 (no pisa lo editado): el guardián lee la ÚLTIMA definición, así que el defecto va ahí.
+  ['compaAyudaPorAudiencia', 'packages/db/migrations/0168_ayuda_editar.sql', "case when coalesce((c->>'equipo')::boolean, false) then 'equipo' else a->>'audience' end", "a->>'audience'"],
   ['compaAyudaPorAudiencia', X, 'equipo: c.equipo', 'equipo: false'],
   ['compaAyudaPorAudiencia', L, 'where q.tq is not null and c.tsv @@ q.tq and c.lang = $2 and c.audience = any($3::text[]))', 'where q.tq is not null and c.tsv @@ q.tq and c.lang = $2)'],
   ['compaAyudaPorAudiencia', L, "where t.k = 1 and a.status = 'live' and a.audience = any($3::text[])", "where t.k = 1 and a.audience = any($3::text[])"],

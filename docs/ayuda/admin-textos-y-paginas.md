@@ -23,10 +23,16 @@ teléfono. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
   - **Anuncios:** un banner arriba del Inicio de la ciudad **dentro de sus fechas** (desde, hasta; hasta 31 días; hora de la ciudad), para todos o solo para vecinos
     con cuenta. Con **Negocios** sale en **Hoy del panel** de los negocios de la ciudad (no en el Inicio). Un anuncio no se edita ni se borra: se **retira** (con motivo) y se crea otro. Vencidos y retirados se quedan en la lista.
   - Un bloque apagado ni se consulta. Sin cambios, el Inicio sale exactamente como antes.
+- **Ayuda · Editar:** cada artículo de la ayuda se abre por **secciones**, en español o en inglés. **Editar** una sección (con motivo) la cambia **al instante**
+  en el Centro de ayuda y para El Compa. Se escribe texto, listas (- …) y **negritas**; no entran encabezados (#), HTML ni lenguaje interno (fases, bloques).
+  La sección queda **EDITADA** con quién, cuándo y por qué, y **Deshacer** (con motivo) la vuelve al texto de antes de esa edición. **El repo sigue siendo la
+  fuente:** mientras el archivo de la ayuda no cambie, el despliegue no pisa lo editado; cuando cambia, manda el repo y la edición se cierra («Pasó al repo» si
+  el archivo ya dice lo editado, o «Lo reemplazó el repo»). Lo editado de vecinos, negocios y porteros se pasa al repo en el siguiente cambio del equipo
+  técnico; lo del equipo (artículos admin-* y secciones solo-equipo) nunca sale de la base. Quien solo puede ver Textos y páginas ve las secciones sin editar.
 - **Páginas y Ayuda:** como antes (ver «Super Admin: las páginas legales»). Páginas suma el interruptor del **pie de la web**: encendido, Términos, Privacidad, Ayuda y
   Soporte salen al final del Inicio, la ficha del negocio y Buscar (siempre salen en las páginas legales). Nace apagado: encenderlo cambia las capturas aprobadas
   de la tubería, así que primero se revisan las capturas nuevas.
-- **Idioma del admin:** **Español / English** arriba de cada pestaña. Esta sección sale completa en los dos idiomas; el resto del Super Admin sigue en español.
+- **Idioma del admin:** **Español / English** arriba de cada pestaña. Esta sección sale completa en los dos idiomas.
 
 ## Cómo se usa
 1. **Corregir un texto:** Cadenas › busca la llave o el texto › **Editar** › escribe los dos idiomas › el motivo › **Guardar el texto**. Míralo en la web.
@@ -71,10 +77,17 @@ teléfono. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
   - **Announcements:** a banner at the top of the city Home **within its dates** (from, until; up to 31 days; city time), for everyone or only for neighbors with
     an account. With **Businesses** it shows on **Today in the dashboard** of the city's businesses (not on the Home). An announcement is not edited or deleted: it is **retired** (with a reason) and another is created. Expired and retired ones stay in the list.
   - A block that is off is not even queried. Without changes the Home looks exactly as before.
+- **Help · Edit:** each help article opens by **sections**, in Spanish or English. **Edit** a section (with a reason) and it changes **right away** in the Help
+  Center and for El Compa. You can write text, lists (- …) and **bold**; headings (#), HTML and internal language (phases, blocks) are not accepted. The
+  section shows **EDITED** with who, when and why, and **Undo** (with a reason) puts it back to its text before that edit. **The repo is still the source:**
+  while the help file does not change, a deploy does not overwrite the edit; when it changes, the repo wins and the edit closes («Moved to the repo» if the
+  file already says the edited text, or «Replaced by the repo or another edit»). Edits for neighbors, businesses and doormen move to the repo in the
+  technical team's next change; team content (admin-* articles and team-only sections) never leaves the database. Someone who can only view Copy and pages
+  sees the sections without editing.
 - **Pages and Help:** as before (see “Super Admin: the legal pages”). Pages adds the **web footer** switch: when on, Terms, Privacy, Help and Support show at the end of
   Home, the business listing and Search (they always show on the legal pages). It starts off: turning it on changes the pipeline's approved screenshots, so the
   new ones are reviewed first.
-- **Admin language:** **Español / English** above each tab. This section is fully in both languages; the rest of the Super Admin is still in Spanish.
+- **Admin language:** **Español / English** above each tab. This section is fully in both languages.
 
 ### How to use it
 1. **Fix a text:** Strings › search the key or the text › **Edit** › write both languages › the reason › **Save the text**. Look at it on the web.

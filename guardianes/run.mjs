@@ -1217,10 +1217,12 @@ const guardianes = {
 
   /* 4u. «Se cobra al enviar»: el prototipo de Fiestas lo decía y Belleza y Hogar lo copiaron, pero el depósito de una
      solicitud se RETIENE al enviar y se cobra cuando confirman (citas.ts, visitas.ts). Un texto que diga que se cobra al
-     enviar le miente al cliente sobre su dinero. («Se cobra al enviarlo», del envío de una tienda, sí es cierto.) */
+     enviar le miente al cliente sobre su dinero. («Se cobra al enviarlo», del envío de una tienda, sí es cierto; y un pedido que el negocio
+     acepta «al instante, se cobra al enviar».) */
   depositoRetenido() {
-    const MAL = /se cobra al enviar(?!lo)|charged (when you send|on sending|when sending)/i;
-    const ver = (f) => readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (MAL.test(l)) falla("depositoRetenido", f, i + 1, "dice que el depósito se cobra al enviar: se retiene al enviar y se cobra cuando confirman"); });
+    // 9f-5 · También partido en dos líneas («se cobra al\n    enviar»): se busca en el texto entero con los espacios y saltos juntos.
+    const MAL = /(?<!al instante,\s+)se\s+cobra\s+al\s+enviar(?!lo)|charged\s+(when\s+you\s+send|on\s+sending|when\s+sending)/gi;
+    const ver = (f) => { const t = readFileSync(f, "utf8"); for (const m of t.matchAll(MAL)) falla("depositoRetenido", f, t.slice(0, m.index).split("\n").length, "dice que el depósito se cobra al enviar: se retiene al enviar y se cobra cuando confirman"); };
     for (const f of archivos) if ((/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(f) && !/(lib\/pedir\.ts|pagar\/Pagar\.tsx)$/.test(f)) || /^docs\/ayuda\/.*\.md$/.test(f)) ver(f);
   },
 
@@ -4373,6 +4375,26 @@ const guardianes = {
           if (FASE.test(m[1]) || FASE.test(m[2])) falla(G, f, i + 1, "un texto de la pantalla habla de fases o bloques: dilo como es hoy");
       });
     }
+  },
+
+  /* 9f-5 · La ayuda editada en el Super Admin (0168): el repo sigue siendo la fuente y lo del equipo no sale. (1) El despliegue compara contra el sha
+     del ARCHIVO (repo_sha256): mientras no cambie, no pisa lo editado; si cambia, manda el repo y cierra las ediciones vivas. (2) help_edits es solo
+     de inserción (trigger). (3) editarSeccionAyuda pasa la misma revisión que un archivo (revisarTextoAyuda: sin lenguaje interno, encabezados ni
+     HTML), escribe con ayuda_editar y audita; la acción pide cms:editar. (4) /api/ayuda/ediciones solo da el texto de lo público: nunca el de un
+     artículo del equipo ni el de una sección solo-equipo. Al revés: indexar contra sha256, sin revisión, sin permiso o sacar el texto del equipo → falla. */
+  ayudaEditadaRepoManda() {
+    const G = "ayudaEditadaRepoManda", M = "packages/db/migrations/0168_ayuda_editar.sql", L = "apps/web/lib/compa/ayuda-indice.ts", A = "apps/web/app/admin/acciones-textos.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración de la ayuda editada (0168)");
+    const ix = ultimaFn("ayuda_indexar");
+    if (!/coalesce\(v\.repo_sha256, v\.sha256\) = h/.test(ix)) falla(G, M, 0, "ayuda_indexar compara contra el sha del archivo (repo_sha256): si no, el despliegue pisa lo editado o lo deja contra el repo");
+    if (!/repo_sha256 = excluded\.repo_sha256/.test(ix) || !/update help_edits e set ended_at = now\(\)[\s\S]*?where e\.slug = s and e\.status = 'viva'/.test(ix)) falla(G, M, 0, "cuando el archivo cambia, manda el repo y las ediciones vivas se cierran");
+    if (!/create trigger help_edits_cierre before update or delete on help_edits/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "help_edits es solo de inserción (trigger help_edits_cierre)");
+    const t = sinComent(L), ed = cuerpoFn(t, "editarSeccionAyuda"), vv = cuerpoFn(t, "edicionesVivas");
+    if (!/revisarTextoAyuda\(/.test(ed) || !/ayuda_editar\(/.test(ed) || !/auditar\(c, \{[^}]*action: "ayuda\.editar"/.test(ed)) falla(G, L, 0, "editarSeccionAyuda: revisa el texto (revisarTextoAyuda), escribe con ayuda_editar y audita «ayuda.editar»");
+    if (!/FASE_INTERNA/.test(cuerpoFn(t, "revisarTextoAyuda")) || !/\^#\{1,6\}/.test(cuerpoFn(t, "revisarTextoAyuda"))) falla(G, L, 0, "revisarTextoAyuda: sin lenguaje interno (FASE_INTERNA de forma.mjs) ni encabezados");
+    if (!/case when a\.audience <> 'equipo' and not e\.equipo and a\.status = 'live' then e\.body_new end/.test(vv)) falla(G, L, 0, "edicionesVivas: el texto solo de lo público (nunca un artículo del equipo ni una sección solo-equipo)");
+    const a = existsSync(A) ? sinComent(A) : "";
+    for (const fn of ["ayudaEditar", "ayudaDeshacer"]) if (!/s\.puede\("cms", "editar"\)/.test(cuerpoFn(a, fn))) falla(G, A, 0, `${fn}: pide cms:editar`);
   },
 
   /* 7a · Un artículo del equipo nunca llega a un vecino o a un negocio (§3 «De dónde contesta», compaAyudaPorAudiencia). (1) La base: un

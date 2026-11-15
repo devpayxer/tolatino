@@ -7,8 +7,9 @@ Ver: permiso «Textos y páginas» (ver); pausar y volver a usar: «Textos y pá
 ## Qué hace
 - Enseña la ayuda de `docs/ayuda/` **tal como está desplegada**: cada artículo con su audiencia (vecinos · negocios · porteros · equipo), su
   versión, su huella (sha256) y cuándo se desplegó, cuántos trozos tiene para la búsqueda y cuántos son «solo equipo».
-- **El repo es la fuente.** El texto no se edita aquí: se corrige en `docs/ayuda/` y el siguiente despliegue lo vuelve a indexar (lo que no
-  cambió queda igual). Lo que ya no está en el repo sale como **Retirado**.
+- **El repo es la fuente.** El texto vive en `docs/ayuda/` y cada despliegue lo vuelve a indexar (lo que no cambió queda igual). Lo que ya no
+  está en el repo sale como **Retirado**. Una sección se puede **editar** aquí (sale al instante, con motivo; ver «Super Admin: Textos y páginas»):
+  mientras el archivo no cambie, el despliegue no la pisa; cuando cambia, manda el repo.
 - **Pausar** (con motivo): el artículo deja de salir en el Centro de ayuda (lista, búsqueda y enlace; el vecino ve «Este artículo se está
   revisando») y El Compa no lo usará. **Volver a usar** (con motivo) lo devuelve. Los dos quedan en el **historial** (solo se agrega) y en la
   auditoría.
@@ -41,8 +42,9 @@ Ver: permiso «Textos y páginas» (ver); pausar y volver a usar: «Textos y pá
 ### What it does
 - Shows the help in `docs/ayuda/` **exactly as deployed**: each article with its audience (neighbors · businesses · door staff · team), its
   version, its fingerprint (sha256) and when it was deployed, how many chunks it has for search and how many of them are «team only».
-- **The repo is the source.** Text is not edited here: it is fixed in `docs/ayuda/` and the next deploy indexes it again (anything that did not
-  change stays the same). What is no longer in the repo shows as **Retired**.
+- **The repo is the source.** Text lives in `docs/ayuda/` and every deploy indexes it again (anything that did not change stays the same). What is
+  no longer in the repo shows as **Retired**. A section can be **edited** here (it goes live right away, with a reason; see “Super Admin: Copy and
+  pages”): while the file does not change, a deploy does not overwrite it; when it changes, the repo wins.
 - **Pause** (with a reason): the article stops showing in the Help center (list, search and link; the neighbor sees «This article is being
   reviewed») and El Compa will not use it. **Use again** (with a reason) brings it back. Both go to the **history** (append-only) and to the
   audit log.
