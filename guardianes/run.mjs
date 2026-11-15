@@ -9374,6 +9374,19 @@ const guardianes = {
     }
   },
 
+  /* 9n-7 · boolUnidoEsTrue: en Postgres un boolean unido con || a un texto sale «true»/«false», no «t»/«f» (eso es solo cuando se lee solo). Una prueba que parte
+     esa cadena y compara un pedazo con 't' nunca pasa (compa7g §3b, 15 nov). Al revés (alreves9n). */
+  boolUnidoEsTrue() {
+    const G = "boolUnidoEsTrue";
+    for (const f of archivos.filter((x) => /^pruebas\/e2e\/[^/]+\.cjs$/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      for (const m of t.matchAll(/const (\w+) = sql\(`[^`]*\|\|[^`]*`\)\.split\('\|'\)/g)) {
+        const re = new RegExp(`\\b${m[1]}\\[\\d+\\] === '[tf]'`, "g");
+        for (const x of t.matchAll(re)) falla(G, f, t.slice(0, x.index).split("\n").length, `«${x[0]}»: un boolean unido con || sale «true»/«false», no «t»/«f»`);
+      }
+    }
+  },
+
   /* 9n-7 · corteDeCitas: «la última cita termina N min antes de cerrar» (booking_policies.close_cut_min, Panel › Citas) lo aplica el motor de horas
      (lib/citas.ts huecos) y el contexto lo lee de la base; si no, la página ofrece horas que el negocio pidió no dar. Al revés (alreves9n). */
   corteDeCitas() {

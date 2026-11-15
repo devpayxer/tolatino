@@ -168,7 +168,7 @@ const UUIDRE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
   await pd.getByRole('button', { name: 'Confirmar', exact: true }).click();
   ok(await espera(() => sql(`select status from support_cases where id = ${TK4.id}`) === 'resolved'), 'Resolver con el texto del borrador: el caso queda resuelto');
   const u4 = sql(`select from_draft || '|' || id from support_messages where case_id = ${TK4.id} and sender = 'staff' order by id desc limit 1`).split('|');
-  ok(u4[0] === 't', '  … su mensaje sale from_draft');
+  ok(u4[0] === 'true', '  … su mensaje sale from_draft');   // boolean || text en Postgres da «true», no «t»
   const b4b = borr(TK4.id, DU);
   ok(b4b[0] === b4[0] && b4b[1] === (d4.length <= 300 ? 'sent_as_is' : 'edited') && b4b[3] === u4[1], '  … y el borrador quedó anotado con ese mensaje («tal cual»; la plantilla corta a 300 letras)');
   ok(sql(`select after->>'borrador' from audit_entries where action = 'soporte.resolver' and target_id = '${TK4.num}' order by id desc limit 1`) === 'de El Compa', '  … y la auditoría dice que salió de El Compa');
