@@ -27,8 +27,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       http). Construidas y probadas en 8d (11 nov); se usan cuando `pruebas.tolatino.com` esté detrás de Cloudflare (ver «Fase 8 · 8d»).
 - [x] **→ 9m** · **Onboarding del vecino pasos 3–5** (Tu zona, Lo que te gusta, El barrio) y la bienvenida de Fundadores:
       hoy después de «Tú» se va a Mi cuenta mínima. — **✓ 9m (14 nov):** Entra (sin destino) sigue después de «Tú» a Tu zona, Lo que te gusta, El barrio y la bienvenida con el número de Fundadores (5c, `trasNombre`); quien venía de un pedido sigue a donde iba. Prueba: `vec9m` (Entra → paso 3 de 5 → bienvenida).
-- [ ] **→ 9c** · **Accesibilidad de `Button` del sistema:** es un `div` con onClick (no se enfoca con teclado ni lo anuncia
-      un lector de pantalla). Pasa a `<button>` real cuando se tipe el componente; el guardián WCAG lo exigirá.
+- [x] **→ 9c** · **Accesibilidad de `Button` del sistema:** es un `div` con onClick (no se enfoca con teclado ni lo anuncia
+      un lector de pantalla). Pasa a `<button>` real cuando se tipe el componente; el guardián WCAG lo exigirá. — **✓ (comprobado 15 nov):** ya resuelto en 9c: `scripts/portar-sistema.mjs` (`accesibilizar`, tabla A11Y) da a cada `<div>`/`<span>` con clic del sistema rol, foco y teclado con `__ds_scope.__btn` (packages/ui/src/ds/scope.js); Button e IconButton con su parche; lo vigilan los guardianes `botonAccesible` y `clicConTeclado` y axe en el CI.
 - [x] **Super Admin:** sesiones por dispositivo (cerrar / bloquear), cuentas, cambios de cuenta — en el bloque 3c. — **✓ 9a (11 nov):** Usuarios 360°: cerrar todas las sesiones y cerrar o bloquear un dispositivo (app/admin/U360.tsx: cerrarSesiones, dispositivoAccion); prueba usr1l.
 
 ## Super Admin (bloque 3c, 5 nov 2026)
@@ -137,10 +137,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
   cierre temporal, ocultar/suspender/cerrar, sello). El horario queda en lectura en el admin (como el prototipo).
 - [x] **9g** · **Vistas:** se cuentan al servir la ficha (sin robots ni gente del negocio). Revisar con tráfico real si hace falta
   dedupe por persona/día como los contactos. — **✓ 9g (14 nov):** una vez por persona (o teléfono) y día: `business_views_daily.unicos` + `business_view_marks` (huella con la sal del día, se suelta a los 2 días); Analítica › Resumen muestra vistas y sin repetidos. El panel sigue con todas las vistas (LAUNCH «Fase 9 · 9g» → 9n). Evidencia: `ana9g` (dos vistas = +2 y +1 sin repetidos; sin correr aquí).
-- [ ] **→ 9c** · **Botones del sistema de diseño (`Button`) son `<div>` sin `role="button"`:** accesibilidad por teclado/lector de
+- [x] **→ 9c** · **Botones del sistema de diseño (`Button`) son `<div>` sin `role="button"`:** accesibilidad por teclado/lector de
   pantalla en todo el sitio. Corregir en `portar-sistema.mjs` (guardián de accesibilidad) antes de la fase 9.
 
-## Super Admin · Negocios y Colas (bloque 1i, 5 nov 2026)
+## Super Admin · Negocios y Colas (bloque 1i, 5 nov 2026) — **✓ (comprobado 15 nov):** ya resuelto en 9c: `scripts/portar-sistema.mjs` (`accesibilizar`, tabla A11Y) da a cada `<div>`/`<span>` con clic del sistema rol, foco y teclado con `__ds_scope.__btn` (packages/ui/src/ds/scope.js); Button e IconButton con su parche; lo vigilan los guardianes `botonAccesible` y `clicConTeclado` y axe en el CI.
 - [x] **Colas que llegan con su pantalla:** Licencias (con la ficha «Licencia»: número de licencia en Publica/panel,
   filas `licenses` en revisión, estado «No aparece»); «Crear semilla» en Recomendaciones (con Reclamar negocio y la fila
   «SIN RECLAMAR» de la categoría); Reportes de contenido/negocio/usuario, Cambios sensibles, Ciudad nueva (sus fases). — **✓ 9a (11 nov):** Colas: Licencias, «Crear semilla» en Recomendaciones con «SIN RECLAMAR», Reportes, Cambios sensibles (app/admin/Colas.tsx, lib/colas.ts; 1k, 2k, 5d); Ciudad nueva → 9i con el asistente.
@@ -255,8 +255,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **Delivery** (zona, envío, mínimo, propina, cómo te lo entregamos): hecho en el 2f, con efectivo al entregar.
 - [x] **→ 9m** · **Hoja «Entra para pedir» (AuthSheet 2m):** el componente del sistema solo trae textos en español y no muestra
   errores; mientras, «Ir a pagar» sin cuenta usa la pantalla Entra (bilingüe) y vuelve al pago con el pedido igual. — **✓ 9m (14 nov):** `HojaEntrar` sobre la ficha (el pedido se queda igual) con el AuthSheet del sistema en ES/EN (props nuevas por `portar-sistema.mjs`) y el error del servidor (`role="alert"`). Pruebas: `vec9m` (en inglés, código malo), `menu2b`.
-- [ ] **→ 9c** · **Accesibilidad del sistema de diseño:** `Button` es un `div` sin `role="button"` ni teclado (lo cazó la prueba del
-  2b). Corregir en `packages/ui` y sumar la regla a la revisión de accesibilidad.
+- [x] **→ 9c** · **Accesibilidad del sistema de diseño:** `Button` es un `div` sin `role="button"` ni teclado (lo cazó la prueba del
+  2b). Corregir en `packages/ui` y sumar la regla a la revisión de accesibilidad. — **✓ (comprobado 15 nov):** ya resuelto en 9c: `scripts/portar-sistema.mjs` (`accesibilizar`, tabla A11Y) da a cada `<div>`/`<span>` con clic del sistema rol, foco y teclado con `__ds_scope.__btn` (packages/ui/src/ds/scope.js); Button e IconButton con su parche; lo vigilan los guardianes `botonAccesible` y `clicConTeclado` y axe en el CI.
 - [x] **Mi cuenta › Pedidos** (la lista de los pedidos de la persona): 2h. Hoy se llega por el enlace del pedido. — **✓ 9a (11 nov):** Mi cuenta › Pedidos (app/(app)/cuenta/pedidos); prueba cuenta2h.
 - [x] **Super Admin › Transacciones** (línea de tiempo por pedido): 2i. Hoy el 360° muestra cuántos pedidos van este mes. — **✓ 9a (11 nov):** Super Admin › Transacciones con la línea de tiempo (app/admin/Transacciones.tsx, 2i/4g).
 - [x] **→ 9m** · **Alergias en el menú del cliente:** el panel las guarda; el prototipo del cliente no las muestra. Preguntar al
@@ -803,8 +803,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       ahora produce exactamente lo que hay en el repo (comprobado en una copia aparte, dos veces). Guardián nuevo `sistemaSincronizado`:
       corre el script en una carpeta temporal y falla si un archivo portado o los tokens no son idénticos (probado al revés: un arreglo a
       mano y un parche quitado fallan)._
-- [ ] **→ 9c** · **6c · `QtyStepper` del sistema sin rol ni teclado** (los «+» y «−» son `div`): lo usan el menú y la pantalla de boletos; parche
-      de accesibilidad como el de Button. (6c, 10 nov)
+- [x] **→ 9c** · **6c · `QtyStepper` del sistema sin rol ni teclado** (los «+» y «−» son `div`): lo usan el menú y la pantalla de boletos; parche
+      de accesibilidad como el de Button. (6c, 10 nov) — **✓ (comprobado 15 nov):** ya resuelto en 9c: `scripts/portar-sistema.mjs` (`accesibilizar`, tabla A11Y) da a cada `<div>`/`<span>` con clic del sistema rol, foco y teclado con `__ds_scope.__btn` (packages/ui/src/ds/scope.js); Button e IconButton con su parche; lo vigilan los guardianes `botonAccesible` y `clicConTeclado` y axe en el CI.
 - [ ] **→ 9c** · **6c · Eventos en los 9 dispositivos:** `evt6c` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6c, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9f** · **6c · Textos del Super Admin de boletos en inglés:** como el resto del admin, en español. (6c, 10 nov)
 

@@ -67,7 +67,10 @@ const VITALS = () => {
   window.__v = { lcp: 0, cls: 0, tbt: 0 };
   const ver = (tipo, f) => { try { new PerformanceObserver((l) => l.getEntries().forEach(f)).observe({ type: tipo, buffered: true }); } catch { /* el motor no lo da */ } };
   ver("largest-contentful-paint", (e) => { window.__v.lcp = e.startTime; });
-  ver("layout-shift", (e) => { if (!e.hadRecentInput) window.__v.cls += e.value; });
+  // 9c · qué se movió: las fuentes de cada salto (el nodo, su clase y cuánto), para buscar el CLS con datos y no a ciegas.
+  window.__v.saltos = [];
+  const nom = (n) => !n || !n.tagName ? "?" : `${n.tagName.toLowerCase()}${n.id ? `#${n.id}` : ""}${typeof n.className === "string" && n.className ? `.${n.className.trim().split(/\s+/).slice(0, 3).join(".")}` : ""}${n.getAttribute && n.getAttribute("data-screen-label") ? `[${n.getAttribute("data-screen-label")}]` : ""}`;
+  ver("layout-shift", (e) => { if (!e.hadRecentInput) { window.__v.cls += e.value; if (window.__v.saltos.length < 12) window.__v.saltos.push({ v: +e.value.toFixed(3), t: Math.round(e.startTime), de: (e.sources || []).slice(0, 3).map((x) => `${nom(x.node)} ${Math.round(x.previousRect.y)}→${Math.round(x.currentRect.y)}`) }); } });
   ver("longtask", (e) => { window.__v.tbt += Math.max(0, e.duration - 50); });
 };
 // Texto que depende de la hora: «9 PM», «8:48», «abierto», «cerrado», «hoy», «hace 3 min», «quedan 22 h», «vie 13 nov», «+0 por día».
@@ -101,17 +104,19 @@ try {
     if (flag("--velocidad")) {
       const lim = presupuesto.pantallas?.[pa.id]?.[perfil];
       if (disp.motor !== "chromium") { falla(`${pa.id}: la velocidad solo se mide en Chromium (LCP y TBT)`); continue; }
-      const m = { lcp: [], cls: [], tbt: [] };
+      const m = { lcp: [], cls: [], tbt: [] }, saltos = [];
       for (let i = 0; i < 3; i++) {
         const cx = await contexto(navegador);
         if (pa.cuenta) await entrar(cx, pa.cuenta);
         const p = await cx.newPage(); await p.addInitScript(VITALS);
         await p.goto(BASE + pa.ruta, { waitUntil: "load", timeout: 45000 }); await p.waitForTimeout(3000);
         const v = await p.evaluate(() => window.__v); m.lcp.push(v.lcp); m.cls.push(v.cls); m.tbt.push(v.tbt);
+        if (i === 0) saltos.push(...(v.saltos ?? []));
         await cx.close();
       }
       const r = { lcp: Math.round(mediana(m.lcp)), cls: +mediana(m.cls).toFixed(3), tbt: Math.round(mediana(m.tbt)) };
-      resumen.push({ pantalla: pa.id, ...r });
+      resumen.push({ pantalla: pa.id, ...r, saltos });
+      if (r.cls > 0.1) for (const z of saltos.slice(0, 6)) console.log(`    salto ${z.v} a los ${z.t} ms: ${z.de.join(" · ")}`);
       console.log(`  LCP ${r.lcp} ms · CLS ${r.cls} · TBT ${r.tbt} ms  (mediana de 3, ${perfil})${lim ? ` · presupuesto ${lim.lcp} ms · ${lim.cls} · ${lim.tbt} ms` : ""}`);
       if (flag("--medir")) continue;
       if (!lim) { falla(`${pa.id}: no tiene presupuesto de velocidad (${perfil}) en pruebas/velocidad/presupuesto.json`); continue; }
@@ -151,7 +156,10 @@ try {
     const axe = await new AxeBuilder({ page: p }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
     const graves = axe.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
     const nuevas = graves.filter((v) => !conocidas.some((k) => k.regla === v.id && (k.pantallas === "*" || k.pantallas.includes(pa.id))));
-    resumen.push({ pantalla: pa.id, axe: graves.map((v) => ({ regla: v.id, impacto: v.impact, nodos: v.nodes.length, conocida: !nuevas.includes(v) })) });
+    // 9c · Cada nodo (selector, trozo del html y, en contraste, colores y razón), también de las conocidas: con esto se arreglan.
+    resumen.push({ pantalla: pa.id, axe: graves.map((v) => ({ regla: v.id, impacto: v.impact, nodos: v.nodes.length, conocida: !nuevas.includes(v),
+      muestras: v.nodes.slice(0, 40).map((n) => ({ t: n.target.join(" "), html: n.html.slice(0, 180), d: n.any?.[0]?.data ? JSON.stringify(n.any[0].data).slice(0, 220) : "" })) })) });
+    for (const v of graves) for (const n of v.nodes.slice(0, 25)) console.log(`    axe ${v.id} · ${n.target.join(" ")} · ${n.any?.[0]?.data ? JSON.stringify(n.any[0].data).slice(0, 160) : ""} · ${n.html.slice(0, 120).replace(/\s+/g, " ")}`);
     if (!nuevas.length) bien(`axe: ${graves.length ? `${graves.length} conocidas (con destino), ninguna nueva` : "sin violaciones serias ni críticas"}`);
     for (const v of nuevas) falla(`${pa.id}: axe ${v.id} (${v.impact}, ${v.nodes.length} nodos) · ${v.help} · ${v.nodes.slice(0, 2).map((n) => n.target.join(" ")).join(" | ")}`);
     await p.close();
