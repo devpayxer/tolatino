@@ -409,6 +409,7 @@ function QtyStepper({
   size = 'md',
   onDec,
   onInc,
+  lang,
   incLabel = typeof lang !== 'undefined' && lang === 'EN' ? "One more" : "Uno más",
   decLabel = typeof lang !== 'undefined' && lang === 'EN' ? "One less" : "Uno menos"
 }) {

@@ -228,6 +228,7 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv, llaves 
     <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-white">
       <div className="grid flex-none">
         <OnbTopBar
+          lang={lang === "en" ? "EN" : "ES"}
           label={top.label}
           saved={top.saved}
           segments={top.segments}

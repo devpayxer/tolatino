@@ -96,6 +96,7 @@ function AdminBar({
   me = {},
   onMe,
   badge = 'ADMIN',
+  lang,
   meLabel = typeof lang !== 'undefined' && lang === 'EN' ? "My account" : "Mi cuenta",
   bellLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Notifications" : "Notificaciones",
   searchLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Search" : "Buscar"

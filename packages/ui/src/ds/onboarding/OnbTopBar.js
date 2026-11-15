@@ -78,6 +78,7 @@ function OnbTopBar({
   label,
   saved,
   segments,
+  lang,
   exitLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Exit" : "Salir",
   backLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Back" : "Volver"
 }) {

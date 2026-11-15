@@ -17,6 +17,7 @@ function StoryCard({
   width = 230,
   height = 300,
   onEnd,
+  lang,
   prevLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Previous" : "Anterior",
   nextLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Next" : "Siguiente"
 }) {

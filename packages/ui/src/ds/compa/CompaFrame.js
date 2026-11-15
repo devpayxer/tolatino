@@ -69,6 +69,7 @@ function CompaFrame({
   bodyRef,
   maxWidth,
   children,
+  lang,
   backLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Back" : "Volver",
   closeLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Close" : "Cerrar"
 }) {
@@ -634,6 +635,7 @@ function CompaComposer({
   placeholder,
   canSend,
   maxWidth = 'none',
+  lang,
   sendLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Send" : "Enviar"
 }) {
   return /*#__PURE__*/React.createElement("div", {

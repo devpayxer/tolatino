@@ -247,7 +247,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
         </div>
       )}
       {h.recs.length > 0 && (
-        <AlsoRecommended screenLabel="Publicación · recomendados" title={T?.negocio ? E2("También recomiendan", "Also recommended") : E2("Recomendados en este hilo", "Recommended in this thread")}
+        <AlsoRecommended lang={es ? "ES" : "EN"} screenLabel="Publicación · recomendados" title={T?.negocio ? E2("También recomiendan", "Also recommended") : E2("Recomendados en este hilo", "Recommended in this thread")}
           sub={E2("POR VOTOS DE VECINOS · VOTA SI TÚ TAMBIÉN LO RECOMIENDAS", "BY NEIGHBOR VOTES · VOTE IF YOU RECOMMEND IT TOO")}
           items={h.recs.map((b) => ({ name: b.negocio.nombre, meta: (es ? b.negocio.meta.es : b.negocio.meta.en) || E2(`${b.recomiendan} ${b.recomiendan === 1 ? "VECINO LO RECOMIENDA" : "VECINOS LO RECOMIENDAN"}`, `${b.recomiendan} ${b.recomiendan === 1 ? "NEIGHBOR RECOMMENDS IT" : "NEIGHBORS RECOMMEND IT"}`), image: fondo(b.negocio.foto), pct: `${b.pct}%`, count: String(b.votos),
             border: b.miVoto === 1 ? "var(--tl-action)" : undefined, color: b.miVoto === 1 || b.mia ? "var(--tl-action)" : "var(--tl-ink)", onOpen: () => router.push(`/n/${b.negocio.id}`), onVote: () => void votarRec(b) }))} />

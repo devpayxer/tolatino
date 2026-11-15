@@ -34,6 +34,7 @@ function DominoTile({
   opacity = 1,
   lift,
   onClick,
+  lang,
   tileLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Tile" : "Ficha"
 }) {
   return /*#__PURE__*/React.createElement("div", {
@@ -548,6 +549,7 @@ function ParchisBoard({
   center,
   slots = [],
   pieces = [],
+  lang,
   pieceLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Piece" : "Pieza"
 }) {
   return /*#__PURE__*/React.createElement("div", {

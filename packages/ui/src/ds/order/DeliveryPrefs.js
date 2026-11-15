@@ -556,6 +556,7 @@ function AuthSheet({
   verifyLabel = 'Verificar y seguir',
   changeLabel = 'Cambiar número',
   resendLabel = 'REENVIAR EN 30 S',
+  lang,
   closeLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Close" : "Cerrar"
 }) {
   const input = {

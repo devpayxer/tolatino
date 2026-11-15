@@ -51,6 +51,7 @@ function ReviewCard({
   helpful,
   edit,
   report,
+  lang,
   helpfulLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Helpful" : "Útil",
   photoLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Photo" : "Foto"
 }) {

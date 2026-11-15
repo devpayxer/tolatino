@@ -240,7 +240,7 @@ export function Publica({ v }: { v: VistaPublica }) {
   return (
     <div data-screen-label={`ONB-NEG-${st}${desk ? " · desktop" : " · móvil"}`} style={{ minHeight: "100%", background: L.bg, fontFamily: "Manrope,system-ui,sans-serif", color: "var(--tl-ink)", boxSizing: "border-box" }}>
       <style>{KF}</style>
-      {!desk && st !== "H1" && !(a1 && ui.back) ? <OnbTopBar label={label} saved={saved} segments={segs} onBack={atras} onExit={salir} /> : null}
+      {!desk && st !== "H1" && !(a1 && ui.back) ? <OnbTopBar lang={es ? "ES" : "EN"} label={label} saved={saved} segments={segs} onBack={atras} onExit={salir} /> : null}
       <div style={{ display: "grid", gridTemplateColumns: L.cols, gap: L.gap, maxWidth: L.maxW, margin: "0 auto", padding: L.pad, alignItems: "start", boxSizing: "border-box" }}>
         {rail ? <aside data-screen-label="Publica tu negocio · pasos" style={{ minWidth: 0 }}><div style={{ position: "sticky", top: 172 }}><OnbPhases label={E2("PUBLICA TU NEGOCIO", "LIST YOUR BUSINESS")} saved={d.started ? E2("GUARDADO · SIGUES CUANDO QUIERAS", "SAVED · CONTINUE ANYTIME") : ""} exitLabel={E2("Salir y seguir después", "Exit and continue later")} onExit={salir} phases={phases} /></div></aside> : null}
         <main style={{ minWidth: 0, background: L.mainBg, borderRadius: L.mainR, border: L.mainBd, padding: L.mainPad, boxSizing: "border-box" }}>

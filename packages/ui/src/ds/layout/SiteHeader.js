@@ -81,6 +81,7 @@ function Bell({
 function Avatar({
   initials,
   onClick,
+  lang,
   avatarLabel = typeof lang !== 'undefined' && lang === 'EN' ? "My account" : "Mi cuenta"
 }) {
   return /*#__PURE__*/React.createElement("span", {

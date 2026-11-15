@@ -141,7 +141,7 @@ export function propsTarjeta(c: Tarjeta, o: { es: boolean; negocio: string; summ
   // Cita con una persona (3d): «VERIFICADA · CON KELVIN».
   const src: [string, string, string] = c.src === "cita" && c.pro ? [`VERIFICADA · CON ${c.pro.toUpperCase()}`, `VERIFIED · WITH ${c.pro.toUpperCase()}`, "signal"] : SRC[c.src];
   return {
-    summary: S, padding: o.padding, bodySize: o.bodySize,
+    lang: o.es ? "ES" : "EN", summary: S, padding: o.padding, bodySize: o.bodySize,
     border: c.mine ? "1.5px solid var(--tl-ink)" : "1px solid rgba(11,14,18,.08)", initials: c.ini, name: c.name, mine: c.mine ? E2("TU RESEÑA", "YOUR REVIEW") : undefined,
     // 5f · «SARGENTO · 23 RESEÑAS» (el rango se ve desde Sargento) y «+15 PUNTOS» si la reseña verificada sumó al rango.
     who: [c.rango ? (o.es ? c.rango.es : c.rango.en).toUpperCase() : null, `${c.cnt} ${c.cnt === 1 ? E2("RESEÑA", "REVIEW") : E2("RESEÑAS", "REVIEWS")}`,

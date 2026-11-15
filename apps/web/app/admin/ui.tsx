@@ -67,6 +67,7 @@ export function Shell({ yo, grupos, casos, ciudades = [], vista = null, lang = "
     <div className="min-h-dvh bg-paper">
       <div className="sticky top-0 z-30">
         <A.AdminBar
+          lang={lang === "en" ? "EN" : "ES"}
           desk={desk}
           assetBase="/assets/"
           onHome={() => router.push("/admin")}

@@ -112,6 +112,7 @@ function CommentActions({
   solve,
   onMenu,
   menuLabel = 'Opciones',
+  lang,
   downLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Downvote" : "Votar en contra",
   upLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Upvote" : "Votar a favor"
 }) {
@@ -384,6 +385,7 @@ const ReplyBody = ({
   font,
   avatarSize,
   children,
+  lang,
   upLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Upvote" : "Votar a favor"
 }) => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
   style: {
@@ -619,6 +621,7 @@ function AlsoRecommended({
   title,
   sub,
   items = [],
+  lang,
   voteLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Vote" : "Votar"
 }) {
   return /*#__PURE__*/React.createElement("div", {

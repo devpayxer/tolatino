@@ -19,6 +19,7 @@ function SelectionBar({
   subLabel,
   sub = [],
   top = '12px',
+  lang,
   closeLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Close" : "Cerrar"
 }) {
   return /*#__PURE__*/React.createElement("div", {
@@ -150,6 +151,7 @@ function SelectionBar({
 function SelectBox({
   on,
   onClick,
+  lang,
   selectLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Select" : "Seleccionar"
 }) {
   return /*#__PURE__*/React.createElement("span", {

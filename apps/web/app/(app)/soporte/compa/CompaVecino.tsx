@@ -193,7 +193,7 @@ export function CompaVecino({ modo, es, nombre, hoja, ops, hor, conSesion }: {
   const disc = <>{E2("EL COMPA ES UNA IA Y PUEDE EQUIVOCARSE. LO QUE MUEVE DINERO O CAMBIA TU CUENTA LO REVISA UNA PERSONA.", "EL COMPA IS AN AI AND CAN MAKE MISTAKES. ANYTHING THAT MOVES MONEY OR CHANGES YOUR ACCOUNT IS REVIEWED BY A PERSON.")}
     {" "}<a href="/ayuda/privacidad-de-el-compa" data-privacidad style={{ color: "var(--tl-action)", textDecoration: "none" }}>{E2("QUÉ VE Y QUIÉN LO LEE", "WHAT IT SEES AND WHO READS IT")}</a></>;
   const frame = (
-    <C.CompaFrame mode={modo} desktop={desk} top={0} title={sheet ? "El Compa" : E2("Ayuda", "Help")} sub={sheet ? E2("ASISTENTE DE IA", "AI ASSISTANT") : E2("TE GUÍA EL COMPA · IA", "EL COMPA GUIDES YOU · AI")}
+    <C.CompaFrame lang={es ? "ES" : "EN"} mode={modo} desktop={desk} top={0} title={sheet ? "El Compa" : E2("Ayuda", "Help")} sub={sheet ? E2("ASISTENTE DE IA", "AI ASSISTANT") : E2("TE GUÍA EL COMPA · IA", "EL COMPA GUIDES YOU · AI")}
       onClose={cerrar} onBack={() => router.push("/soporte")} personLabel={E2("Con una persona", "Talk to a person")} person2Label={E2("Hablar con una persona", "Talk to a person")}
       onPerson={() => { if (!busy && !pend && conSesion) persona(); else if (!conSesion) router.push(`/entrar?volver=${encodeURIComponent("/soporte/compa")}`); }}
       disclaimer={disc} bodyRef={body}

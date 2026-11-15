@@ -72,7 +72,7 @@ export function EnlaceCompa({ es, token, nombre, e }: { es: boolean; token: stri
     {" "}<a href="/ayuda/privacidad-de-el-compa" data-privacidad style={{ color: "var(--tl-action)", textDecoration: "none" }}>{E2("QUÉ VE Y QUIÉN LO LEE", "WHAT IT SEES AND WHO READS IT")}</a></>;
   return (
     <div data-pantalla="APP-COMPA-ENLACE" data-enlace={e.k} data-screen-label={`El Compa · enlace de ${canal ?? "mensaje"} · ${desk ? "desktop" : "móvil"}`} className="bg-paper">
-      <C.CompaFrame mode="page" desktop={desk} top={0} title="El Compa" sub={canal ? E2(`TE ESCRIBIÓ POR ${canal.toUpperCase()} · IA`, `WROTE TO YOU BY ${canal.toUpperCase()} · AI`) : E2("ASISTENTE DE IA", "AI ASSISTANT")}
+      <C.CompaFrame lang={es ? "ES" : "EN"} mode="page" desktop={desk} top={0} title="El Compa" sub={canal ? E2(`TE ESCRIBIÓ POR ${canal.toUpperCase()} · IA`, `WROTE TO YOU BY ${canal.toUpperCase()} · AI`) : E2("ASISTENTE DE IA", "AI ASSISTANT")}
         onBack={() => router.push("/soporte")} personLabel={E2("Con una persona", "Talk to a person")} person2Label={E2("Hablar con una persona", "Talk to a person")}
         onPerson={() => router.push("/soporte/compa")} disclaimer={disc}
         confirm={ok && ok.tipo === "cancel_request" && vivo ? { note: E2("EL COMPA LO PREPARÓ · CONFÍRMALO TÚ", "EL COMPA PREPARED IT · YOU CONFIRM"), okLabel: E2("Sí, cancelar la solicitud", "Yes, cancel the request"),

@@ -107,7 +107,9 @@ function agregarProp(t, comp, name, es, en) {
   if (fin < 0) throw new Error(`accesibilidad: no encuentro el cierre de los parámetros de ${comp}`);
   if (new RegExp(`(^|\\n)  ${name}\\b`).test(t.slice(ini - 1, fin + 1))) return t;
   const def = `typeof lang !== 'undefined' && lang === 'EN' ? ${JSON.stringify(en)} : ${JSON.stringify(es)}`;
-  return t.slice(0, fin) + `,\n  ${name} = ${def}` + t.slice(fin);
+  // 9c · Sin `lang` entre los parámetros, el EN nunca salía (lang no existía): se agrega `lang` («EN» | «ES»), antes de los nombres.
+  const conLang = /(^|\n)  lang\b/.test(t.slice(ini - 1, fin + 1)) ? "" : ",\n  lang";
+  return t.slice(0, fin) + `${conLang},\n  ${name} = ${def}` + t.slice(fin);
 }
 
 /* 9c · Contraste AA (4,5:1): el texto gris del sistema (ink al 40–55 %) no llegaba (2,8–4,3:1 sobre blanco y papel). Pasa a ink al 60 %
