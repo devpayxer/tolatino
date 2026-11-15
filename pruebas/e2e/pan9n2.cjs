@@ -39,6 +39,8 @@ const lang = async (p, l) => { await p.context().addCookies([{ name: 'tl_lang', 
   sql(`insert into users (phone, phone_verified_at, first_name, last_name, home_city_id, lang, is_test) values
         ('+1${INV}', now(), 'Ines', 'Equipo${ID}', 'hzl', 'es', true), ('+1${OTRO}', now(), 'Otto', 'Otro${ID}', 'hzl', 'es', true), ('+1${CLI}', now(), 'Celia', 'Cli${ID}', 'hzl', 'es', true),
         ('+1${SIN}', now(), 'Sara', 'Sin${ID}', 'hzl', 'es', true), ('+1${SEG}', now(), 'Sergio', 'Seg${ID}', 'hzl', 'es', true), ('+1${PIDE}', now(), 'Paula', 'Pide${ID}', 'hzl', 'es', true) on conflict (phone) do nothing;`);
+  // 9b-3 · el SMS de la invitación es «tx»: de 9 PM a 7 AM queda en silencio y no sale (la segunda vuelta del CI corrió a las 10:51 PM del Este).
+  sql(`update users set notif_prefs = coalesce(notif_prefs, '{}'::jsonb) || '{"quiet": false}'::jsonb where phone = '+1${INV}'`);
   const uid = (t) => sql(`select id from users where phone = '+1${t}'`);
   const IU = uid(INV), OU = uid(OTRO), CU = uid(CLI), SU = uid(SEG), PU = uid(PIDE), DU = uid(DUENO);
   const b = await chromium.launch();

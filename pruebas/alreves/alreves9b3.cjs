@@ -90,6 +90,8 @@ const casos = [
   // purgaPorRazon: la purga de Salud vuelve a borrar también lo de los niños y la casa
   ['purgaPorRazon', 'apps/web/lib/citas-flujo.ts', "        and p.reason not in ('nino', 'fe', 'casa') -- ", "        and true -- "],
   // telefonoAlAzarRespetaFijos: telLibre vuelve a sacar al azar un número sin saltar los que otra prueba usa por su número (Rita de sis9j)
+  // smsFueraDeSilencio: pan9n2 vuelve a esperar el SMS de la invitación sin apagar las horas de silencio
+  ['smsFueraDeSilencio', 'pruebas/e2e/pan9n2.cjs', "'{\"quiet\": false}'::jsonb where phone = '+1${INV}'", "'{}'::jsonb where phone = '+1${INV}'"],
   ['telefonoAlAzarRespetaFijos', 'pruebas/lib/negocio-nuevo.cjs', "    if (!esFijo(t) && sql(", "    if (sql("],
   // textoQueExiste: una prueba busca en la pantalla un texto que ya no está en ningún lado (lo que le pasó a sis9j con 9o)
   ['textoQueExiste', 'pruebas/e2e/sis9j.cjs', "await contiene(a, 'DESPLIEGUES Y VUELTAS ATRÁS')", "await contiene(a, 'Llegan cuando se encienda producción')"],

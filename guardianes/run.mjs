@@ -9306,6 +9306,18 @@ const guardianes = {
      los números que otra prueba o la semilla usan por su número (esFijo, pruebas/lib/telefonos-fijos.cjs). En la barajada del 15 nov din9n4 sacó al
      azar 570-555-0961 (Rita de sis9j) y la dio de alta como «Rita Nueve»; sis9j no la creó y el Equipo ya no decía «Rita Prueba».
      Al revés (alreves9b3): quitar esFijo(t) de telLibre. */
+  /* 9b-3 · smsFueraDeSilencio: una prueba que espera un SMS en sms_outbox (los avisos «tx» y «mkt» quedan en silencio de 9 PM a 7 AM, hora de la
+     ciudad) apaga el silencio de quien lo recibe ('{"quiet": false}') o usa smsEsperado; si no, falla según la hora del CI (pan9n2 en la segunda
+     vuelta del 15 nov, 10:51 PM del Este). Al revés (alreves9b3): quitar el quiet de pan9n2. */
+  smsFueraDeSilencio() {
+    const G = "smsFueraDeSilencio";
+    for (const f of archivos.filter((x) => /^pruebas\/e2e\/[^/]+\.(cjs|mjs)$/.test(x))) {
+      const t = readFileSync(f, "utf8"), m = /from sms_outbox\b/.exec(t);
+      if (m && !/\\?"quiet\\?": false|smsEsperado\(/.test(t))
+        falla(G, f, t.slice(0, m.index).split("\n").length, "espera un SMS en sms_outbox sin apagar las horas de silencio de quien lo recibe (notif_prefs || '{\"quiet\": false}'): de 9 PM a 7 AM no sale");
+    }
+  },
+
   telefonoAlAzarRespetaFijos() {
     const G = "telefonoAlAzarRespetaFijos";
     for (const f of archivos.filter((x) => /^pruebas\/(e2e|lib|alreves)\/[^/]+\.(cjs|mjs)$/.test(x))) {
