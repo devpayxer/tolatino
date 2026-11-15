@@ -246,7 +246,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const ins = insOk && (ruta.sec === "hoy" || ruta.sub === "inscripciones" || ruta.det?.startsWith("insc:")) ? await (async () => {
     const I = await import("@/lib/inscripciones");
     if (ruta.sec === "hoy") await (await import("@/lib/cobros")).repararPagos(d.id).catch(() => undefined);
-    return { panel: ruta.sec === "hoy" || ruta.sub === "inscripciones" ? await I.inscPanel(d.id) : undefined, det: ruta.det?.startsWith("insc:") ? await I.inscDetalle(d.id, ruta.det.slice(5), acc.yo.id) : undefined };
+    // 9n-5: el plazo de Iglesias que dice la cabecera sale de Configuración (fe_responder_h), el mismo que decide la base.
+    const { fe_responder_h: feResponderH } = await (await import("@/lib/config")).valores("fe_responder_h");
+    return { feResponderH, panel: ruta.sec === "hoy" || ruta.sub === "inscripciones" ? await I.inscPanel(d.id) : undefined, det: ruta.det?.startsWith("insc:") ? await I.inscDetalle(d.id, ruta.det.slice(5), acc.yo.id) : undefined };
   })() : undefined;
   // Visitas y pruebas de manejo (4ie): esperan, hoy, próximas, por propiedad o carro y el detalle (la dirección del cliente de una prueba en
   // casa solo confirmada y auditada). Pide «Hoy y pedidos».
@@ -254,7 +256,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (ruta.det?.startsWith("vis:") && !visOk) ruta.det = null;
   const vis = visOk && (ruta.sec === "hoy" || ruta.sub === "visitas" || ruta.det?.startsWith("vis:")) ? await (async () => {
     const V = await import("@/lib/visitas-inm");
-    return { dl: d.cat === "NEG-DEALER", panel: ruta.sec === "hoy" || ruta.sub === "visitas" ? await V.visPanel(d.id) : undefined, det: ruta.det?.startsWith("vis:") ? await V.visDetalle(d.id, ruta.det.slice(4), acc.yo.id) : undefined };
+    // 9n-5: los textos dicen los plazos de Configuración (vis_responder_h, vis_purga_dias), los mismos que deciden la base y el barrido.
+    const cfg = await (await import("@/lib/config")).valores("vis_responder_h", "vis_purga_dias");
+    return { dl: d.cat === "NEG-DEALER", responderH: cfg.vis_responder_h, purgaDias: cfg.vis_purga_dias, panel: ruta.sec === "hoy" || ruta.sub === "visitas" ? await V.visPanel(d.id) : undefined, det: ruta.det?.startsWith("vis:") ? await V.visDetalle(d.id, ruta.det.slice(4), acc.yo.id) : undefined };
   })() : undefined;
   // Eventos (6a · DASH-EVENTOS): la lista, los formatos de su categoría, el organizador (verificado / bloqueado) y la ficha o el editor.
   // Pide la parte «evt» del equipo (el dueño siempre).

@@ -262,7 +262,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
           { k: "MAYORES DE 62 POR REVISAR", v: String(vj.mayores), s: "declaraciones en Colas › Vivienda justa" },
         ]), { type: "group", k: "IGLESIAS" }, kpis([
           { k: "FECHAS Y CATECISMO PEDIDOS", v: String(fe.n), s: `${fe.vencidas} vencidas sin respuesta` },
-          { k: "RESPONDIDAS EN 48 H", v: pct(fe.en48, fe.n), s: `${fe.en48} solicitudes` },
+          { k: `RESPONDIDAS EN ${fe.h} H`, v: pct(fe.enplazo, fe.n), s: `${fe.enplazo} solicitudes` },
           { k: "AYUDAS CON UNA FECHA", v: String(nAyF), s: "nada se cobra en la app" },
         ]), { type: "group", k: "LICENCIAS" }, kpis([
           { k: "LICENCIAS VIGENTES", v: String(tot("vigentes")), s: `Iglesias ${li[0]!.vigentes} · Bienes Raíces ${li[1]!.vigentes} · Autos ${li[2]!.vigentes}`, dark: true },

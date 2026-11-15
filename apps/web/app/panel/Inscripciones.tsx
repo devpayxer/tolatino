@@ -13,7 +13,7 @@ import { ayudaCita } from "./Citas";
 import type { Ctx, Editor } from "./Panel";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
-export type InsPanel = { panel?: InscPanel; det?: InscDetalle | null };
+export type InsPanel = { feResponderH: number; panel?: InscPanel; det?: InscDetalle | null };
 const nm = (c: Ctx, b: Bi | null | undefined) => (b ? (c.es ? b.es : b.en || b.es) : "");
 const venceL = (c: Ctx, t: string | null) => {
   if (!t) return "";
@@ -51,9 +51,10 @@ export function filaInscripciones(c: Ctx): Fila | null {
 
 export function inscripcionesBloques(c: Ctx): Sec {
   const { E2, ui } = c, P = c.ins?.panel;
-  const fe = c.svc?.rubro === "fe";
+  const fe = c.svc?.rubro === "fe", fh = c.ins?.feResponderH ?? 0;
+  // 9n-5: el plazo de Iglesias sale de Configuración (fe_responder_h), el mismo que decide el servidor.
   const out: (Bloque | null)[] = [{ type: "head", eye: E2("LO QUE VENDES", "WHAT YOU SELL"), t: fe ? E2("Fechas e inscripciones", "Dates and sign-ups") : E2("Inscripciones", "Enrollments"), onBack: () => c.go("mod"),
-    s: fe ? E2("Confirmas cada fecha o lugar en 48 horas, propones otra fecha o dices que no hay. Nada se cobra en la app: el donativo siempre es sugerido.", "You confirm each date or spot within 48 hours, propose another date or say there is none. Nothing is charged in the app: donations are always suggested.") : E2("Confirmas cada inscripción. La matrícula se cobra al confirmar; si un grupo no abre, se devuelve todo a todos.", "You confirm each enrollment. The fee is charged when you confirm; if a group does not open, everyone gets everything back.") }];
+    s: fe ? E2(`Confirmas cada fecha o lugar en ${fh} ${fh === 1 ? "hora" : "horas"}, propones otra fecha o dices que no hay. Nada se cobra en la app: el donativo siempre es sugerido.`, `You confirm each date or spot within ${fh} ${fh === 1 ? "hour" : "hours"}, propose another date or say there is none. Nothing is charged in the app: donations are always suggested.`) : E2("Confirmas cada inscripción. La matrícula se cobra al confirmar; si un grupo no abre, se devuelve todo a todos.", "You confirm each enrollment. The fee is charged when you confirm; if a group does not open, everyone gets everything back.") }];
   if (!P) return { blocks: out, ed: null };
   out.push({ type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [{ k: E2("ESPERAN", "PENDING"), v: String(P.esperan.length) }, { k: E2("ACTIVAS", "ACTIVE"), v: String(P.activas.length) }, { k: E2("EN ESPERA", "WAITLIST"), v: String(P.espera.length) }] });
   if (P.esperan.length) out.push({ type: "rows", k: E2("ESPERAN TU RESPUESTA", "AWAITING YOUR REPLY"), items: P.esperan.map((x) => fila(c, x)) });

@@ -15,7 +15,7 @@ import { ayudaCita } from "./Citas";
 import type { Ctx, Editor } from "./Panel";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
-export type VisP = { dl: boolean; panel?: VisPanel; det?: VisDetalle | null };
+export type VisP = { dl: boolean; responderH: number; purgaDias: number; panel?: VisPanel; det?: VisDetalle | null };
 const nm = (c: Ctx, b: Bi | null | undefined) => (b ? (c.es ? b.es : b.en || b.es) : "");
 const venceL = (c: Ctx, t: string | null) => {
   if (!t) return "";
@@ -68,10 +68,11 @@ export function filaVisitas(c: Ctx): Fila | null {
 }
 
 export function visitasBloques(c: Ctx): Sec {
-  const { E2 } = c, P = c.vis?.panel, dl = !!c.vis?.dl;
+  const { E2 } = c, P = c.vis?.panel, dl = !!c.vis?.dl, h = c.vis?.responderH ?? 0;
+  // 9n-5: las horas de tu horario para responder salen de Configuración (vis_responder_h), las mismas que decide el servidor.
   const out: (Bloque | null)[] = [{ type: "head", eye: E2("LO QUE VENDES", "WHAT YOU SELL"), t: dl ? E2("Pruebas de manejo", "Test drives") : E2("Visitas", "Visits"), onBack: () => c.go("mod"),
-    s: E2("Respondes cada solicitud en 4 horas de tu horario. Nada se cobra: ni por ver ni por la prueba. Si se renta o se vende, las que estaban vivas se cancelan solas, sin culpa de nadie.",
-      "Reply to each request within 4 of your business hours. Nothing is charged: not to view, not to test drive. If it gets rented or sold, live requests are cancelled automatically, with no one at fault.") }];
+    s: E2(`Respondes cada solicitud en ${h} ${h === 1 ? "hora" : "horas"} de tu horario. Nada se cobra: ni por ver ni por la prueba. Si se renta o se vende, las que estaban vivas se cancelan solas, sin culpa de nadie.`,
+      `Reply to each request within ${h} business ${h === 1 ? "hour" : "hours"}. Nothing is charged: not to view, not to test drive. If it gets rented or sold, live requests are cancelled automatically, with no one at fault.`) }];
   if (!P) return { blocks: out, ed: null };
   out.push({ type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [{ k: E2("ESPERAN", "PENDING"), v: String(P.esperan.length) }, { k: E2("HOY", "TODAY"), v: String(P.hoy.length) }, { k: E2("PRÓXIMAS", "UPCOMING"), v: String(P.proximas.length) }] });
   if (P.esperan.length) out.push({ type: "rows", k: E2("ESPERAN TU RESPUESTA", "AWAITING YOUR REPLY"), items: P.esperan.map((x) => fila(c, x, true)) });
@@ -108,7 +109,9 @@ export function visDetalleBloques(c: Ctx): Sec {
     x.nota ? { type: "note", tone: "ink", icon: "bubble", t: `«${x.nota}»` } : null,
     x.que === "visita" ? pie(es) : null,
   ];
-  if (x.casa) out.push({ type: "note", tone: "info", icon: "shield", t: E2("La dirección de su casa solo la ves tú y tu equipo, y solo con la prueba confirmada. Cada vista queda registrada y se borra a los 30 días.", "Only you and your team see their home address, and only with the test drive confirmed. Each view is logged and it is deleted after 30 days.") });
+  // 9n-5: los días hasta que se borra salen de Configuración (vis_purga_dias), los mismos del barrido.
+  const pd = c.vis?.purgaDias ?? 0;
+  if (x.casa) out.push({ type: "note", tone: "info", icon: "shield", t: E2(`La dirección de su casa solo la ves tú y tu equipo, y solo con la prueba confirmada. Cada vista queda registrada y se borra a los ${pd} ${pd === 1 ? "día" : "días"}.`, `Only you and your team see their home address, and only with the test drive confirmed. Each view is logged and it is deleted after ${pd} ${pd === 1 ? "day" : "days"}.`) });
   if (x.estado === "pending") {
     const otra = ui.vOtra === x.numero;
     out.push({ type: "acts", items: [

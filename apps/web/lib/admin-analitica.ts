@@ -321,9 +321,11 @@ export async function feInmAutos(s: Alcance, dias: number) {
               count(*) filter (where l.status = 'review')::int as revision
          from licenses l join license_kinds k on k.key = l.kind join businesses b on b.id = l.business_id
         where k.category_id = any($2::text[]) and b.status = 'active' and ${scope("b.city_id")} group by 1`, [s.cities, CATS_4I]),
-    // Iglesias: fechas, catecismo y consejería pedidos por la app y cuántos se respondieron en 48 h. Sin denominación ni quién.
-    dbAnalisis().query<{ n: number; en48: number; vencidas: number }>(
-      `select count(*)::int as n, count(*) filter (where o.confirmed_at is not null and o.confirmed_at - o.sent_at <= interval '48 hours')::int as en48,
+    // Iglesias: fechas, catecismo y consejería pedidos por la app y cuántos se respondieron en el plazo de Configuración (fe_responder_h,
+    // 48 h de fábrica; 9n-5: la etiqueta dice ese mismo número). Sin denominación ni quién.
+    dbAnalisis().query<{ n: number; enplazo: number; h: number; vencidas: number }>(
+      `select count(*)::int as n, count(*) filter (where o.confirmed_at is not null and o.confirmed_at - o.sent_at <= make_interval(hours => ${cfgSql("fe_responder_h")}))::int as enplazo,
+              ${cfgSql("fe_responder_h")} as h,
               count(*) filter (where o.status = 'expired')::int as vencidas
          from operations o join businesses b on b.id = o.business_id where o.kind = 'enrollment' and b.category_id = 'NEG-FE' and o.sent_at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
     // Vivienda justa: textos frenados en el período y declaraciones de mayores por revisar.
