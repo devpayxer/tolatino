@@ -32,7 +32,7 @@ const casos = [
   ['analiticaSinPersonas', AN, "`select k.negocio, ci.name as ciudad,", "`select k.negocio, (select author_user_id from com_posts limit 1) as autor, ci.name as ciudad,"],
   ['analiticaSinPersonas', AN, 'from com_activos_por_rango($1::text[],', 'from com_posts p, com_activos_por_rango($1::text[],'],
   ['analiticaSinPersonas', K, 'select x.city_id, (x.created_at at time zone ci.timezone)::date as dia, x.business_id, b.name as negocio,', 'select x.city_id, (x.created_at at time zone ci.timezone)::date as dia, x.business_id, x.user_id, b.name as negocio,'],
-  ['analiticaSinPersonas', UI, '{ type: "note", tone: "info", icon: "lock", t: "Solo cifras por ciudad y día: nunca quién publicó, votó o canjeó." },', '{ type: "note", tone: "info", icon: "lock", t: "Solo cifras", cta: "Ver", onCta: () => router.push("/admin/usuarios") },'],
+  ['analiticaSinPersonas', UI, '{ type: "note", tone: "info", icon: "lock", t: E("Solo cifras por ciudad y día: nunca quién publicó, votó o canjeó.", "Figures only by city and day: never who posted, voted or redeemed.") },', '{ type: "note", tone: "info", icon: "lock", t: "Solo cifras", cta: "Ver", onCta: () => router.push("/admin/usuarios") },'],
   // loteNoTocaOficial
   ['loteNoTocaOficial', LO, '    if (x.oficial || !x.autor) return "Es de la cuenta oficial: no se oculta en lote.";\n', ''],
   ['loteNoTocaOficial', LO, "${k === \"pub\" ? \"t.author_kind = 'official'\" : \"false\"} as oficial", 'false as oficial'],
