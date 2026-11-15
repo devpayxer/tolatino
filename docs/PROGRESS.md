@@ -2373,4 +2373,9 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   `scripts/portar-sistema.mjs`), en las pantallas y piezas propias (`scripts/contraste-aa.mjs`: style color, Icon color, text-[…], text-ink/40…55; sombras,
   bordes, fondos y contornos no) y en los tokens (`--tl-text-muted`, `--tl-text-faint`). Guardián **`contrasteTexto`** (al revés **alreves9c** 6/6, con un caso
   al derecho: una sombra no es texto). Falta: que axe lo confirme en las pantallas clave y aprobar las capturas nuevas (cambia el gris en todas).
+- **9c-3 · Flechas entre pestañas:** ← → en círculo, Inicio y Fin (`__ds_scope.__flechas` por el script de portar; `flechas()` en `lib/tec.ts`; PanelBloques).
+  a11y9c lo prueba en la ficha.
+- **9c-4 · Hojas con teclado:** `app/FocoHojas.tsx` en el layout raíz (foco al abrir, Tab que da la vuelta, Escape, foco de vuelta) para toda hoja
+  `role="dialog" aria-modal="true"`; 8 hojas con nombre nuevo, 7 capas que pasan a diálogo. Guardián **`hojaAccesible`** (alreves9c 11/11); a11y9c lo prueba
+  en «Tu pedido». Foco visible sobre oscuros: medido (Brand 4,6 / 4,2 / 3,8 : 1 sobre tinta, dark-2, dark-3; mínimo 3): cerrado sin cambio.
 
