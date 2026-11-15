@@ -43,7 +43,6 @@ export async function reglasMod(c: Q = db()): Promise<Reglas> {
   cacheR = { at: Date.now(), r: out };
   return out;
 }
-export async function limpiar() { await db().query(`delete from mod_flags where created_at < now() - interval '1 year'`); }
 export const olvidarReglas = () => { cacheR = null; cacheT = null; };
 
 /* ── Límites del día ── */
