@@ -97,6 +97,8 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAQ0lEQVR
   console.log('2 · El equipo (Admin, 1360): SLA en la cola, macro, nota interna');
   c = await esc(); p = await c.newPage(); p.on('pageerror', (e) => console.log('   ERR', e.message));
   await entrar(p, ADM);
+  // 9c · Precondición propia: un caso de esta prueba ya vencido (antes dependía de los casos viejos de otras pruebas; en una base nueva podía no haber).
+  sql(`set session_replication_role = replica; update support_cases set sla_due_at = now() - interval '2 hours' where number = '${TK2}'`);
   await p.goto(B + '/admin/soporte');
   let t = await texto(p);
   // 8f · La base local acumula ~180 casos abiertos de corridas anteriores con plazo antes que el nuevo: la primera página (61) ya no lo trae.
@@ -106,7 +108,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAQ0lEQVR
   ok(t.includes('Soporte') && t.includes('ABIERTOS') && enLista, 'Super Admin › Soporte con cifras y el caso nuevo');
   // 9a · Con tantos casos viejos vencidos, la primera página ya no trae uno «por vencer»: el nuevo (TK1) se busca por su número.
   const tk = (await (async () => { await p.goto(B + '/admin/soporte?q=' + TK1); const x = await texto(p); await p.goto(B + '/admin/soporte'); return x; })());
-  ok(/VENCIDO · hace/.test(t) && /vence /.test(tk), 'la cola dice el plazo: «vence …» (el caso nuevo) y «VENCIDO» (los viejos)');
+  ok(/VENCIDO · (hace|ahora)/.test(t + (await (async () => { await p.goto(B + '/admin/soporte?q=' + TK2); const x = await texto(p); await p.goto(B + '/admin/soporte'); return x; })())) && /vence /.test(tk), 'la cola dice el plazo: «vence …» (el caso nuevo) y «VENCIDO» (los viejos)');
   await p.goto(B + '/admin'); await p.getByText('Soporte', { exact: true }).first().click();
   ok(await espera(async () => new URL(p.url()).pathname === '/admin/soporte'), 'el menú «Soporte» lleva a /admin/soporte');
   await p.goto(B + '/admin/colas?cola=ticket');

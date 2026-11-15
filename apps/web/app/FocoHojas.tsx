@@ -18,13 +18,18 @@ export function FocoHojas() {
     const vuelta = new WeakMap<HTMLElement, HTMLElement | null>();
     // Si quien la abrió se desmonta mientras la hoja está abierta (la barra del pedido), se busca otra vez por su data-screen-label.
     const marca = new WeakMap<HTMLElement, string | null>();
+    // El último foco fuera de una hoja: quien la abre a veces se desmonta en el mismo instante en que aparece la hoja (la barra del pedido).
+    let ultimo: { el: HTMLElement; marca: string | null } | null = null;
+    const alEnfocar = (e: FocusEvent) => { const el = e.target as HTMLElement | null; if (el && el !== document.body && !el.closest?.('[role="dialog"][aria-modal="true"]')) ultimo = { el, marca: el.closest("[data-screen-label]")?.getAttribute("data-screen-label") ?? null }; };
+    document.addEventListener("focusin", alEnfocar);
     let abiertas: HTMLElement[] = [];
     const revisar = () => {
       const ahora = hojas();
       for (const h of ahora) if (!abiertas.includes(h)) {
-        const antes = document.activeElement as HTMLElement | null;
-        vuelta.set(h, antes && antes !== document.body && !h.contains(antes) ? antes : null);
-        marca.set(h, antes && !h.contains(antes) ? antes.closest("[data-screen-label]")?.getAttribute("data-screen-label") ?? null : null);
+        const act = document.activeElement as HTMLElement | null;
+        const antes = act && act !== document.body && act.isConnected && !h.contains(act) ? act : ultimo?.el ?? null;
+        vuelta.set(h, antes && !h.contains(antes) ? antes : null);
+        marca.set(h, antes && antes === ultimo?.el ? ultimo.marca : antes && !h.contains(antes) ? antes.closest("[data-screen-label]")?.getAttribute("data-screen-label") ?? null : null);
         if (!h.contains(document.activeElement)) {
           const p = enfocables(h)[0];
           if (p) p.focus({ preventScroll: true });
@@ -64,7 +69,7 @@ export function FocoHojas() {
     };
     document.addEventListener("keydown", tecla);
     revisar();
-    return () => { obs.disconnect(); document.removeEventListener("keydown", tecla); };
+    return () => { obs.disconnect(); document.removeEventListener("keydown", tecla); document.removeEventListener("focusin", alEnfocar); };
   }, []);
   return null;
 }

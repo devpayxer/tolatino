@@ -12,13 +12,15 @@ export function useAncho() {
   const [w, setW] = useState(w0);
   useEffect(() => {
     let t: number | undefined;
+    const guardar = (x: number) => { try { document.cookie = `tl_ancho=${x}; path=/; max-age=31536000; samesite=lax`; } catch { /* sin cookies: la próxima vez se estima otra vez */ } };
     const f = () => {
       const x = window.innerWidth;
       setW(x);
       clearTimeout(t);
-      t = window.setTimeout(() => { try { document.cookie = `tl_ancho=${x}; path=/; max-age=31536000; samesite=lax`; } catch { /* sin cookies: la próxima vez se estima otra vez */ } }, 400);
+      t = window.setTimeout(() => guardar(x), 400);
     };
-    f();
+    setW(window.innerWidth);
+    guardar(window.innerWidth); // al montar, ya: la página siguiente (aunque se cambie enseguida) se pinta con el ancho bueno
     window.addEventListener("resize", f);
     return () => { window.removeEventListener("resize", f); clearTimeout(t); };
   }, []);
