@@ -8,6 +8,8 @@ import { Shell } from "./ui";
 import { casosAbiertos } from "@/lib/admin-colas";
 import { db } from "@/lib/db";
 import { idioma } from "@/lib/idioma";
+import { anchoInicial } from "@/lib/ancho";
+import { AnchoInicial } from "@/app/_ancho/Ancho";
 
 export const metadata: Metadata = { title: "Admin · To'Latino", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -40,8 +42,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const ciudades = (await db().query<{ id: string; nombre: string }>(
     `select id, name as nombre from cities where (cardinality($1::text[]) = 0 or id = any($1::text[])) order by (status = 'on') desc, sort, name`, [s.ciudadesRol])).rows;
   return (
+    <AnchoInicial w={await anchoInicial()}>
     <Shell yo={{ nombre, rol: s.roleName.toUpperCase(), iniciales }} grupos={grupos} casos={{ ...(await casosAbiertos(s)), tomar: s.puede("colas", "aprobar") }} ciudades={ciudades} vista={s.ciudadVista} lang={lang}>
       {children}
     </Shell>
+    </AnchoInicial>
   );
 }

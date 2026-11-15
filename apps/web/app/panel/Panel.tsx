@@ -3,6 +3,7 @@
    menú de 264 px, contenido y columna de detalle en escritorio) y un renderizador de bloques (@tolatino/ui · panel).
    Cada sección arma su lista de bloques con los datos que ya calculó el servidor; los cambios van por acciones del
    servidor (acciones.ts) y después se vuelve a leer. Aquí solo se muestra. */
+import { useAncho as useAnchoComun } from "@/app/_ancho/Ancho";
 import { compartir as compartirNativo } from "@/lib/nativo/compartir";
 import { useEsteTelefono, type EsteTelefono } from "@/app/_cascara/useEsteTelefono";
 import * as UI from "@tolatino/ui";
@@ -104,9 +105,7 @@ const DIA_L: Bi[] = [["DOMINGO", "SUNDAY"], ["LUNES", "MONDAY"], ["MARTES", "TUE
 const DIAS: Bi[] = [["Lunes", "Monday"], ["Martes", "Tuesday"], ["Miércoles", "Wednesday"], ["Jueves", "Thursday"], ["Viernes", "Friday"], ["Sábado", "Saturday"], ["Domingo", "Sunday"]];
 
 function useAncho() {
-  const [w, setW] = useState(390);
-  useEffect(() => { const f = () => setW(window.innerWidth); f(); window.addEventListener("resize", f); return () => window.removeEventListener("resize", f); }, []);
-  return w;
+  return useAnchoComun(); // 9c · sin salto al cargar: app/_ancho/Ancho.tsx
 }
 
 /* Fecha corta en la zona de la ciudad: «jue 24 sep» / «Thu Sep 24» (prototipo fd). */

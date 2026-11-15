@@ -4,6 +4,7 @@
    estado (RECIBIDO · LO ESTÁN VIENDO · TE RESPONDIERON · RESUELTO), la operación ligada, el hilo (las notas internas del equipo nunca llegan
    aquí: las filtra el servidor), «Ya se resolvió», el composer con foto privada y, resuelto, «¿Se resolvió?» Sí / No (hueco #4) y «Abrir
    otro caso» enlazado. Todo lo decide el servidor; aquí solo se muestra. */
+import { useAncho as useAnchoComun } from "@/app/_ancho/Ancho";
 import * as UI from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type ComponentType } from "react";
@@ -21,9 +22,7 @@ const MONO = "'JetBrains Mono',monospace";
 const BORRADOR = "tl-soporte-borrador";
 
 function useAncho() {
-  const [w, setW] = useState(390);
-  useEffect(() => { const f = () => setW(window.innerWidth); f(); window.addEventListener("resize", f); return () => window.removeEventListener("resize", f); }, []);
-  return w;
+  return useAnchoComun(); // 9c · sin salto al cargar: app/_ancho/Ancho.tsx
 }
 const corta = (t: string, n: number) => (t.length > n ? `${t.slice(0, n - 1).trimEnd()}…` : t);
 const nuevaClave = () => (uuid());

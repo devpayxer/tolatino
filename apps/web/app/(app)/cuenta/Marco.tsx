@@ -3,6 +3,7 @@
    escritorio, chips, título, bloques (sección, filas, nota, formulario, KV, vacío, acciones), tarjetas de la derecha,
    barra de abajo, hoja (confirmar) y aviso. Copiado 1:1 de la plantilla; los colores son tokens. Cada pantalla de Mi
    cuenta arma sus bloques y los pinta con <Marco>. */
+import { useAncho as useAnchoComun } from "@/app/_ancho/Ancho";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
@@ -63,11 +64,8 @@ const NAV: ([string, string] | [string, string, string, string, string])[] = [
   ["USR-AYUDA", "Ayuda", "Help", "help", "/ayuda"], ["APP-SOPORTE", "Ayuda y soporte", "Help and support", "chat", "/soporte"],
 ];
 
-export function useAnchoCuenta() {
-  const [w, setW] = useState(390);
-  useEffect(() => { const f = () => setW(window.innerWidth); f(); window.addEventListener("resize", f); return () => window.removeEventListener("resize", f); }, []);
-  return w;
-}
+/* 9c · El ancho sin salto al cargar (arranca con la estimación del servidor): app/_ancho/Ancho.tsx. */
+export const useAnchoCuenta = useAnchoComun;
 
 /* Hoja de confirmar y aviso de abajo: los usa cada pantalla. */
 export function useCuentaUi() {

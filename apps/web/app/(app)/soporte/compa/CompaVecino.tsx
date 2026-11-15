@@ -6,6 +6,7 @@
    - page  = 2at · pasos guiados en Soporte (/soporte/compa): Una cita o reservación · Un pedido · Un boleto · Un pago o cobro · Mi cuenta.
    Siempre: el aviso de IA con su línea de privacidad, «Con una persona» y la fuente que abre /ayuda/[slug]. Aquí solo se MUESTRA: todo lo
    decide el servidor (acciones-compa.ts → lib/compa). Una acción preparada se confirma con otro toque (otra petición, el id de un uso). */
+import { useAncho as useAnchoComun } from "@/app/_ancho/Ancho";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
@@ -25,9 +26,7 @@ type Blq =
 type Pend = { id: string; negocio: string };
 
 function useAncho() {
-  const [w, setW] = useState(390);
-  useEffect(() => { const f = () => setW(window.innerWidth); f(); window.addEventListener("resize", f); return () => window.removeEventListener("resize", f); }, []);
-  return w;
+  return useAnchoComun(); // 9c · sin salto al cargar: app/_ancho/Ancho.tsx
 }
 
 export function CompaVecino({ modo, es, nombre, hoja, ops, hor, conSesion }: {

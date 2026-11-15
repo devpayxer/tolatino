@@ -6,6 +6,7 @@
    del teléfono y en la navegación. 5e: las pestañas del módulo (Tabs «title»: Conversación · Hoy en el barrio) debajo del encabezado del
    teléfono y Hoy en el barrio en la navegación de escritorio. 5f: la pastilla del rango abre «Tu rango» (APP-GAM-RANGO); la Tabla del Barrio
    es la tercera pestaña y está en la navegación; la columna de escritorio lleva tu rango con cuánto falta y la Tabla del mes. */
+import { useAncho as useAnchoComun } from "@/app/_ancho/Ancho";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
@@ -31,9 +32,7 @@ export const LINE = "1px solid rgba(11,14,18,.07)";
 type Fn = () => void;
 
 export function useAncho() {
-  const [w, setW] = useState(390);
-  useEffect(() => { const f = () => setW(window.innerWidth); f(); window.addEventListener("resize", f); return () => window.removeEventListener("resize", f); }, []);
-  return w;
+  return useAnchoComun(); // 9c · sin salto al cargar: app/_ancho/Ancho.tsx
 }
 
 type Bi = { es: string; en: string };

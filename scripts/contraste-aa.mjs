@@ -10,7 +10,7 @@ import { join, relative } from "node:path";
 
 const RAIZ = new URL("..", import.meta.url).pathname;
 export const GRIS_AA = "rgba(11,14,18,.6)";
-const BAJO = /rgba\(11,\s?14,\s?18,\s?0?\.(4|42|45|5|55)\)/g;
+const BAJO = /rgba\(11,\s?14,\s?18,\s?0?\.(34|4|42|45|5|55)\)/g;
 const NO_TEXTO = /shadow|border|background|outline|stroke|ring|divide|^bg$|^line|^fill-?soft$|^fill$/i;
 
 /* La propiedad que le toca al valor: la última «nombre:» antes, en la misma línea. Sin propiedad (constantes, ternarios), es texto. */

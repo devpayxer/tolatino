@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { CompuertaApp } from "@/app/_cascara/Compuerta";
 import { MomentoAvisos } from "@/app/_cascara/HojaPermiso";
 import { idioma } from "@/lib/idioma";
+import { anchoInicial } from "@/lib/ancho";
+import { AnchoInicial } from "@/app/_ancho/Ancho";
 
 export const metadata: Metadata = { title: "Panel · To'Latino", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -10,7 +12,7 @@ export const dynamic = "force-dynamic";
    escritorio. Cada página revisa la cuenta y la membresía en el servidor. */
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
   // 8a · Dentro de To'Latino Negocios: «Actualiza la app», la pausa o el aviso suave (en la web, nada).
-  const [aviso, lang] = await Promise.all([CompuertaApp(), idioma()]);
+  const [aviso, lang, w] = await Promise.all([CompuertaApp(), idioma(), anchoInicial()]);
   // 8c · En Negocios, al abrir el panel: la hoja previa de los avisos (una vez por teléfono).
-  return <>{aviso}{children}<MomentoAvisos es={lang === "es"} /></>;
+  return <AnchoInicial w={w}>{aviso}{children}<MomentoAvisos es={lang === "es"} /></AnchoInicial>;
 }

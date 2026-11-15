@@ -114,10 +114,10 @@ function agregarProp(t, comp, name, es, en) {
 
 /* 9c · Contraste AA (4,5:1): el texto gris del sistema (ink al 40–55 %) no llegaba (2,8–4,3:1 sobre blanco y papel). Pasa a ink al 60 %
    (5,1:1 sobre blanco, 5,0:1 sobre papel), el mismo gris de --tl-text-3. No toca sombras, bordes ni fondos (no son texto), ni el 30–35 %
-   (deshabilitado o separadores: axe no los exige). Una sola regla para los 132 componentes: lo mismo al volver a portar. */
+   (deshabilitado, flechas decorativas: axe no los exige; el 34 % sí: las pestañas inactivas de BottomNav). Una sola regla para los 132 componentes: lo mismo al volver a portar. */
 export const GRIS_AA = "rgba(11,14,18,.6)";
 function contraste(t) {
-  return t.split("\n").map((l) => l.replace(/rgba\(11,14,18,\.(4|42|45|5|55)\)/g, (m, a, i) =>
+  return t.split("\n").map((l) => l.replace(/rgba\(11,14,18,\.(34|4|42|45|5|55)\)/g, (m, a, i) =>
     /(boxShadow|border\w*|background\w*|outline|stroke|fill|textShadow)\s*:/.test(l.slice(0, i)) ? m : GRIS_AA)).join("\n");
 }
 

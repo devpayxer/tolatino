@@ -3,6 +3,7 @@
    guiados 2at) con lo que El Compa preparó por mensaje — SOBRE ESTA OPERACIÓN, «Así queda» y la barra «EL COMPA LO PREPARÓ · CONFÍRMALO TÚ»
    (cancelar) o «Abrir» (una pantalla) —, siempre con el aviso de IA y «Con una persona». Usado, vencido o de otra cuenta: una línea, sin datos.
    Aquí solo se MUESTRA: lo decide el servidor (acciones.ts → lib/compa/enlace.ts → confirmar()). */
+import { useAncho } from "@/app/_ancho/Ancho";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType, type ReactNode } from "react";
@@ -14,11 +15,7 @@ const C = UI as unknown as Record<"CompaFrame" | "CompaSysLine" | "CompaMsg" | "
 type Bi = { es: string; en: string };
 type Linea = { k: "sys" | "note"; t: string };
 
-function useAncho() {
-  const [w, setW] = useState(390);
-  useEffect(() => { const f = () => setW(window.innerWidth); f(); window.addEventListener("resize", f); return () => window.removeEventListener("resize", f); }, []);
-  return w;
-}
+// 9c · El ancho sin salto al cargar: app/_ancho/Ancho.tsx.
 const hora = (iso: string, _es: boolean) => new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" }).format(new Date(iso));
 
 export function EnlaceCompa({ es, token, nombre, e }: { es: boolean; token: string; nombre: string | null; e: EstadoEnlace }) {

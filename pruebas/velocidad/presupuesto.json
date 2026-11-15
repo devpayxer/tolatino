@@ -1,5 +1,5 @@
 {
-  "comentario": "9b-2 · Presupuesto de velocidad por pantalla (Web Vitals de laboratorio, Chromium sin limitar red ni CPU, fotos de fuera cortadas, mediana de 3): LCP en ms, CLS sin unidad, TBT en ms. Perfil teléfono = Pixel 7 · escritorio = 1280. Una pantalla que pasa de su presupuesto frena el CI; el presupuesto solo se sube con una línea en docs/REVISION.md. Lo bueno de Google es LCP 2500 · CLS 0,1 · TBT 200: donde hoy se pasa del CLS (medido el 13 nov: mi-cuenta 0,261 y admin-hoy 0,889 en escritorio) el presupuesto es lo medido con margen y baja a 0,1 en 9b (LAUNCH «presupuesto-velocidad»).",
+  "comentario": "9b-2 · Presupuesto de velocidad por pantalla (Web Vitals de laboratorio, Chromium sin limitar red ni CPU, fotos de fuera cortadas, mediana de 3): LCP en ms, CLS sin unidad, TBT en ms. Perfil teléfono = Pixel 7 · escritorio = 1280. Una pantalla que pasa de su presupuesto frena el CI; el presupuesto solo se sube con una línea en docs/REVISION.md. Lo bueno de Google es LCP 2500 · CLS 0,1 · TBT 200. 9c (15 nov): mi-cuenta y admin-hoy pintaban primero el teléfono y saltaban al escritorio (useState(390) que después medía): con el ancho que estima el servidor (lib/ancho.ts) el CLS de todas vuelve a 0,1.",
   "pantallas": {
     "inicio": {
       "telefono": {
@@ -33,7 +33,7 @@
       },
       "escritorio": {
         "lcp": 2500,
-        "cls": 0.15,
+        "cls": 0.1,
         "tbt": 200
       }
     },
@@ -45,7 +45,7 @@
       },
       "escritorio": {
         "lcp": 2500,
-        "cls": 0.4,
+        "cls": 0.1,
         "tbt": 200
       }
     },
@@ -69,7 +69,7 @@
       },
       "escritorio": {
         "lcp": 2500,
-        "cls": 1.2,
+        "cls": 0.1,
         "tbt": 200
       }
     }

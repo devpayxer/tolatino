@@ -51,7 +51,7 @@ function BottomNav({
       justifyContent: 'space-between'
     }
   }, items.map(it => {
-    const c = it.id === active || it.id === highlight ? accent : 'rgba(11,14,18,.34)';
+    const c = it.id === active || it.id === highlight ? accent : 'rgba(11,14,18,.6)';
     return /*#__PURE__*/React.createElement("div", {
       key: it.id,
       onClick: () => onChange && onChange(it.id),

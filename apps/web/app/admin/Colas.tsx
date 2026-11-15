@@ -2,6 +2,7 @@
 /* ADM-COLAS (Super Admin.dc.html secColas / qDetail): todo lo que espera una decisión de una persona. Lista de
    QueueCard (la más vieja contra su plazo primero), detalle al lado (≥ 1200) o a pantalla completa, confirmación con
    motivo (ReasonConfirm). El servidor decide qué ve y qué puede decidir cada quien. */
+import { useAncho } from "@/app/_ancho/Ancho";
 import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -54,11 +55,8 @@ const PLANT_EN: typeof PLANT = {
 };
 export const plantE = (E: EF): typeof PLANT => (E("", "x") === "x" ? PLANT_EN : PLANT);
 
-export function useAncho() {
-  const [w, setW] = useState(390);
-  useEffect(() => { const f = () => setW(window.innerWidth); f(); window.addEventListener("resize", f); return () => window.removeEventListener("resize", f); }, []);
-  return w;
-}
+/* 9c · El ancho sin salto al cargar (arranca con la estimación del servidor): app/_ancho/Ancho.tsx. */
+export { useAncho };
 
 const CAMBIO_NEG: Record<string, string> = { mergeBiz: "Fusionar negocios", changeCategory: "Cambio de categoría", transferOwner: "Transferir dueño" };
 const CAMBIO_NEG_EN: Record<string, string> = { mergeBiz: "Merge businesses", changeCategory: "Category change", transferOwner: "Transfer owner" };

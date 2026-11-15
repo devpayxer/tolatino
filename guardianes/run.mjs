@@ -1403,6 +1403,22 @@ const guardianes = {
     }
   },
 
+  /* 9c · anchoSinSalto: elegir teléfono o escritorio con un useState(390) que después mide window.innerWidth pinta primero el teléfono y salta al
+     escritorio (CLS 0,91 en el Inicio del Super Admin y 0,26 en Mi cuenta, escritorio 1280). El ancho sale de useAncho() (app/_ancho/Ancho.tsx),
+     que arranca con la estimación del servidor (lib/ancho.ts); los layouts de la app, el panel y el Super Admin la dan con <AnchoInicial>.
+     Al revés: alreves9c. */
+  anchoSinSalto() {
+    const G = "anchoSinSalto";
+    for (const f of codigo) {
+      if (!/^apps\/web\/app\/.*\.tsx$/.test(f) || f.startsWith("apps/web/app/_ancho/")) continue;
+      const s = readFileSync(f, "utf8");
+      const m = /useState\((?:390|1280|1024)\)[\s\S]{0,240}?setW\(window\.innerWidth\)/.exec(s);
+      if (m) falla(G, f, s.slice(0, m.index).split("\n").length, "ancho que arranca en un número fijo y después mide (salto al cargar): usa useAncho() de app/_ancho/Ancho.tsx");
+    }
+    for (const L of ["apps/web/app/(app)/layout.tsx", "apps/web/app/panel/layout.tsx", "apps/web/app/admin/layout.tsx"])
+      if (existsSync(L) && !/<AnchoInicial w=\{/.test(readFileSync(L, "utf8"))) falla(G, L, 0, "el layout no da el ancho estimado (<AnchoInicial w={await anchoInicial()}>): sus pantallas saltan al cargar");
+  },
+
   /* 3o. Todo interruptor (role="switch") se usa con teclado: si no es un <button>, lleva tabIndex y onKeyDown; si es un
      <span> suelto, además su nombre (aria-label). 6 nov, 2p: el de «Respuesta automática» y otros cuatro no tenían. */
   interruptorAccesible() {

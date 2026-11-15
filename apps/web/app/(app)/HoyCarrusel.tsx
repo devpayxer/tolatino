@@ -2,6 +2,7 @@
 /* Hoy en el barrio en carrusel (MEM 1179–1182, prototipo homeToday / nh.today / feed.hoy): StoryCard 8a, una tarjeta por negocio con
    hasta 3 avisos; toque derecha = siguiente, izquierda = anterior, al final abre la página del negocio. Swipe en el teléfono y flechas
    en escritorio. Lo usan Inicio, Negocios y el muro de la Comunidad. Sin historias no se pinta (nada inventado). */
+import { useAncho as useAnchoComun } from "@/app/_ancho/Ancho";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType } from "react";
@@ -25,8 +26,7 @@ export function TarjetaHoy({ h, es, w, alto, flechas }: { h: Historia; es: boole
 export function HoyCarrusel({ es, historias, titulo, sub, verTodo, ancho: a0 = 230, alto = 300, flechas: f0, pad: p0 = 20, dot, escritorio }: {
   es: boolean; historias: Historia[]; titulo: string; sub?: string; verTodo?: string; ancho?: number; alto?: number; flechas?: boolean; pad?: number; dot?: string; escritorio?: boolean;
 }) {
-  const router = useRouter(), ref = useRef<HTMLDivElement>(null), [w, setW] = useState(390);
-  useEffect(() => { if (!escritorio) return; const f = () => setW(window.innerWidth); f(); window.addEventListener("resize", f); return () => window.removeEventListener("resize", f); }, [escritorio]);
+  const router = useRouter(), ref = useRef<HTMLDivElement>(null), w = useAnchoComun(); // 9c · sin salto al cargar
   const D = !!escritorio && w >= 1024, ancho = D ? 240 : a0, flechas = D || f0, pad = D ? 0 : p0;
   if (!historias.length) return null;
   const mover = (d: number) => ref.current?.scrollBy({ left: d * ref.current.clientWidth * 0.85, behavior: "smooth" });
