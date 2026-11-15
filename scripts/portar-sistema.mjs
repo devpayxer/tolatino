@@ -445,6 +445,15 @@ for (const src of archivos) {
   t = accesibilizar(t, rel);
   t = parchesAccesibilidad(t, rel);
   t = contraste(t);
+  // 9c-5 · ReplyThread pasa el idioma a cada respuesta (ReplyBody nombra su voto con lang).
+  if (rel === "community/Thread.js") {
+    const antes = t;
+    t = t.replace("  replies = [],\n  screenLabel = 'Comentario · respuestas'\n}) {", "  replies = [],\n  screenLabel = 'Comentario · respuestas',\n  lang\n}) {")
+      .replace("React.createElement(ReplyBody, {\n    r: r,\n", "React.createElement(ReplyBody, {\n    lang: lang,\n    r: r,\n")
+      .replace("React.createElement(ReplyBody, {\n    r: k,\n", "React.createElement(ReplyBody, {\n    lang: lang,\n    r: k,\n");
+    if ((t.match(/lang: lang,\n    r: [rk],/g) || []).length !== 2 || !t.includes("screenLabel = 'Comentario · respuestas',\n  lang\n}) {")) throw new Error("parche ReplyThread (lang): el origen cambió, revisar");
+    if (t === antes) throw new Error("parche ReplyThread (lang): sin cambios");
+  }
   if (rel === "navigation/Tabs.js") {
     const antes = t;
     t = t.replace('    role: "tablist",\n', '    role: "tablist",\n    onKeyDown: __ds_scope.__flechas,\n');

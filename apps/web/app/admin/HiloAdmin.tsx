@@ -47,7 +47,7 @@ export function HiloAdmin({ h, marcado, puede }: { h: H; marcado: string | null;
       <div key={c.id} id={`c${c.id}`} {...(foco ? { "data-adm-focus": "1" } : {})} style={{ marginLeft: c.parent ? (desk ? 44 : 22) : 0, borderRadius: 20, outline: foco ? "2px solid var(--tl-action)" : "none", outlineOffset: 2, opacity: oc ? 0.75 : 1 }}>
         <D.CommentCard screenLabel="Contenido · hilo · comentario" bg={foco ? "rgba(75,55,245,.05)" : oc ? "rgba(192,57,43,.04)" : "var(--tl-white)"}
           initials={c.who.slice(0, 1)} avatarColor="var(--tl-desk)" name={c.who} rank={rk(c.rango, en)} time={`${fecha(c.at, en)}${c.parent ? E(" · RESPUESTA", " · REPLY") : ""}`}
-          body={c.body} business={c.biz ? { name: c.biz } : undefined} actions={{ vote: { score: `+${c.up} / −${c.dn}` } }}>
+          body={c.body} business={c.biz ? { name: c.biz } : undefined} actions={{ lang: en ? "EN" : "ES", vote: { score: `+${c.up} / −${c.dn}` } }}>
           <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             {foco ? <span style={{ font: "800 9.5px 'JetBrains Mono',monospace", letterSpacing: ".12em", color: "var(--tl-action)" }}>{E("COMENTARIO DE ORIGEN", "SOURCE COMMENT")}</span> : null}
             {oc ? <span style={{ font: "800 9.5px 'JetBrains Mono',monospace", letterSpacing: ".12em", color: "var(--tl-danger)" }}>{`${E("OCULTO", "HIDDEN")}${c.hiddenBy === "auto" ? E(" POR REPORTES", " BY REPORTS") : ""}${c.why ? ` · ${c.why.toUpperCase()}` : ""}`}</span> : null}
@@ -69,7 +69,7 @@ export function HiloAdmin({ h, marcado, puede }: { h: H; marcado: string | null;
         <D.PostCard card screenLabel="Contenido · hilo · publicación" avatarColor={p.oficial ? "var(--tl-ink)" : "var(--tl-desk)"} initials={<span style={{ color: p.oficial ? "var(--tl-white)" : "var(--tl-ink)" }}>{p.who.slice(0, 1)}</span>}
           name={p.who} rank={p.oficial ? { label: E("Cuenta oficial", "Official account"), shield: null } : p.rango >= 4 ? { label: en ? rango(p.rango).en : rango(p.rango).es, shield: p.rango >= 9 ? "gold" : "gray" } : null}
           time={fecha(p.at, en)} place={p.inv ? E(`Invitado · de ${p.inv}`, `Guest · from ${p.inv}`) : p.ciudad} placeColor={p.inv ? "var(--tl-pro-ink)" : undefined}
-          tags={[{ label: TP[p.kind] ?? E("PUBLICACIÓN", "POST"), tone: "neutral" }, ...(tema ? [{ label: tema.toUpperCase(), tone: "neutral" }] : [])]} body={p.body} vote={{ score: p.score }}>
+          tags={[{ label: TP[p.kind] ?? E("PUBLICACIÓN", "POST"), tone: "neutral" }, ...(tema ? [{ label: tema.toUpperCase(), tone: "neutral" }] : [])]} body={p.body} vote={{ score: p.score, labels: en ? { up: "Upvote", down: "Downvote", comments: "Comments", save: "Save", share: "Share" } : undefined }}>
           {p.fotos.length ? <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: `repeat(${Math.min(2, p.fotos.length)},minmax(0,1fr))`, gap: 6, borderRadius: 14, overflow: "hidden" }}>
             {p.fotos.map((u, i) => <span key={i} style={{ height: 150, background: `url(${u}) center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />)}</div> : null}
           {p.opts ? <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>{p.opts.map((o, i) => (

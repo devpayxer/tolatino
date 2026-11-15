@@ -480,7 +480,8 @@ function ReplyThread({
   toggleLabel,
   onToggle,
   replies = [],
-  screenLabel = 'Comentario · respuestas'
+  screenLabel = 'Comentario · respuestas',
+  lang
 }) {
   if (!open) return /*#__PURE__*/React.createElement("div", {
     onClick: onToggle,
@@ -554,6 +555,7 @@ function ReplyThread({
       minWidth: 0
     }
   }, /*#__PURE__*/React.createElement(ReplyBody, {
+    lang: lang,
     r: r,
     size: 13.5
   })), (r.kids || []).map((k, j) => /*#__PURE__*/React.createElement("div", {
@@ -602,6 +604,7 @@ function ReplyThread({
       minWidth: 0
     }
   }, /*#__PURE__*/React.createElement(ReplyBody, {
+    lang: lang,
     r: k,
     size: 13
   }))))))), has(toggleLabel) ? /*#__PURE__*/React.createElement("span", {

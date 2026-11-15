@@ -157,7 +157,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
   });
   const voto = (c: Cm) => ({ score: String(c.score), onUp: () => void votar(c, 1), onDown: () => void votar(c, -1), upColor: c.miVoto === 1 ? "var(--tl-action)" : undefined, downColor: c.miVoto === -1 ? "var(--tl-danger)" : undefined, scoreColor: c.miVoto ? "var(--tl-action)" : "var(--tl-ink)" });
   const acciones = (c: Cm) => ({
-    vote: voto(c), replyLabel: E2("Responder", "Reply"), onReply: h.cerrados ? undefined : () => responder(c, null),
+    lang: es ? "ES" : "EN", vote: voto(c), replyLabel: E2("Responder", "Reply"), onReply: h.cerrados ? undefined : () => responder(c, null),
     solve: h.puedeMarcar && !h.resuelta && !c.mia && c.estado === "visible" ? { label: E2("Me sirvió", "Helped me"), onClick: () => void sirvio(c) } : null,
     onMenu: c.estado === "visible" || c.mia ? () => menu(c, true) : undefined, menuLabel: E2("Opciones del comentario", "Comment options"),
   });
@@ -183,7 +183,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
     }
     return (
       <>
-        <ReplyThread open={!!st?.abierta} onToggle={() => void abrir(c.id)} faces={c.caras.map((f) => ({ image: fondo(f.foto), initials: f.foto ? "" : f.ini }))}
+        <ReplyThread lang={es ? "ES" : "EN"} open={!!st?.abierta} onToggle={() => void abrir(c.id)} faces={c.caras.map((f) => ({ image: fondo(f.foto), initials: f.foto ? "" : f.ini }))}
           toggleLabel={st?.abierta ? E2("Ocultar respuestas", "Hide replies") : E2(`Ver ${n} ${n === 1 ? "respuesta" : "respuestas"}`, `See ${n} ${n === 1 ? "reply" : "replies"}`)}
           replies={grupos.map((g) => respuesta(c, g.c, g.kids))} />
         {st?.abierta && st.mas && <div style={{ marginTop: 10 }}><span role="button" onClick={() => void masResp(c.id)} {...tec(() => void masResp(c.id))} style={{ font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Ver más respuestas", "See more replies")}</span></div>}
