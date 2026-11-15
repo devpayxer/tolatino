@@ -79,7 +79,7 @@ export function responderAutoConReglas(x: { texto: string; lang: Lang; ctx: CtxA
    (el nombre de pila, el tema y la operación como la ve la persona): nunca lo que escribió ella, ni una nota interna, ni montos. Saluda, dice que
    se está revisando y no promete nada; el resumen y el siguiente paso son para el equipo. Pasa por verificarCopiloto igual que el modelo. */
 export type CopilotoReglas = { lang: Lang; nombre: string; tema: { es: string; en: string }; ayuda: boolean; op: { tipo: { es: string; en: string }; numero: string; negocio: string } | null;
-  dinero: boolean; macro: string; devolver: boolean };
+  dinero: boolean; macro: string; devolver: boolean; eq?: Lang };
 export function borradorCopilotoConReglas(x: CopilotoReglas) {
   const es = x.lang === "es", n = x.nombre ? ` ${x.nombre}` : "", op = x.op;
   const sobre = op ? (es ? ` sobre tu ${x.op!.tipo.es} en ${op.negocio}` : ` about your ${op.tipo.en} at ${op.negocio}`) : "";
@@ -87,7 +87,13 @@ export function borradorCopilotoConReglas(x: CopilotoReglas) {
   const borrador = x.ayuda ? (es ? `Hola${n}. Revisamos tu solicitud${sobre} y lo que nos contaste.` : `Hi${n}. We reviewed your request${sobre} and what you told us.`) : es
     ? `Hola${n}. Gracias por escribirnos. ${x.dinero ? `Ya estoy revisando el cobro${sobre} y te escribo en cuanto tenga la respuesta.` : `Ya estoy revisando tu caso${sobre} y te escribo en cuanto tenga la respuesta.`}`
     : `Hi${n}. Thanks for writing to us. ${x.dinero ? `I'm reviewing the charge${sobre} and will write to you as soon as I have the answer.` : `I'm reviewing your case${sobre} and will write to you as soon as I have the answer.`}`;
-  // Lo del equipo va en español (el Super Admin es en español).
+  // Lo del equipo va en el idioma de quien usa el Super Admin (eq; español si no se dice).
+  if (x.eq === "en") {
+    const resumen = `${x.nombre || "The person"} ${x.ayuda ? "asked for help with" : "writes about"} ${x.tema.en}${op ? ` (${op.tipo.en} ${op.numero} at ${op.negocio})` : ""}.`;
+    const siguiente = x.ayuda ? `Complete the message with what you decided before resolving${x.devolver ? "; if a refund is due, «Resolve and refund» is your call" : ""}.` : x.devolver
+      ? "Check what was paid in the app; if it applies, «Resolve and refund» is your call." : x.dinero ? "Check the transaction and what was paid in the app before replying." : x.op ? "Check the transaction and reply." : "Reply and wait for their answer.";
+    return { resumen, borrador, siguiente, macro: x.macro, fuente: "", sugerir_devolver: x.devolver };
+  }
   const resumen = `${x.nombre || "La persona"} ${x.ayuda ? "pidió ayuda con" : "escribe sobre"} ${x.tema.es}${op ? ` (${op.tipo.es} ${op.numero} en ${op.negocio})` : ""}.`;
   const siguiente = x.ayuda ? `Completa el mensaje con lo que decidiste antes de resolver${x.devolver ? "; si corresponde devolver, «Resolver y devolver» lo decides tú" : ""}.` : x.devolver ? "Revisa lo pagado en la app; si corresponde, «Resolver y devolver» lo decides tú." : x.dinero ? "Revisa la operación y lo pagado en la app antes de contestar." : x.op ? "Revisa la operación y contesta." : "Contesta y espera su respuesta.";
   return { resumen, borrador, siguiente, macro: x.macro, fuente: "", sugerir_devolver: x.devolver };

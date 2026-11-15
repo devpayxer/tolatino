@@ -2408,3 +2408,5 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **9j/9k · Reporte diario completo (L1633, L1635):** el reporte lleva la conciliación de ayer con Stripe («cuadra», «no cuadra · $», «no corrió ayer»)
   y el último despliegue (commit, resultado, entorno) de `deploy_releases`. Analítica › Dinero suma «CONCILIACIÓN CON STRIPE» del período (solo para
   quien ve todas las ciudades: Stripe no sabe de ciudades). Ayuda: reporte-diario.md y admin-analitica.md. ana9g lo comprueba contra la base.
+- **9f · Copiloto en el idioma del equipo (L1105):** resumen, siguiente paso y avisos en el idioma del Super Admin (`tl_lang`); el borrador, en el de la
+  persona. compa7g. En curso: el inglés completo de 143 artículos de ayuda (L992/L1607), en cuatro grupos.

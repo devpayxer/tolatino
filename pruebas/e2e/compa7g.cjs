@@ -225,6 +225,13 @@ const UUIDRE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
   // Lento y error: reglas, sin romper.
   sql(`insert into support_messages (case_id, city_id, sender, user_id, body) values (${TK3.id}, 'hzl', 'user', '${MU}', 'simular-error')`);
   ok(/"motor":"reglas"/.test(await accion(pd, 'copilotoSugerir', [{ caso: TK3.num }])), 'el proveedor falla → borrador de reglas');
+  // 9f · Lo del equipo (resumen y siguiente paso) en el idioma de quien usa el Super Admin; el borrador sigue en el de la persona.
+  await pd.context().addCookies([{ name: 'tl_lang', value: 'en', url: B }]);
+  sql(`insert into support_messages (case_id, city_id, sender, user_id, body) values (${TK3.id}, 'hzl', 'user', '${MU}', 'simular-error')`);
+  const ren = JSON.parse(/\{"ok":true[^\n]*\}/.exec(await accion(pd, 'copilotoSugerir', [{ caso: TK3.num }]))?.[0] ?? '{}');
+  ok(/ writes about /.test(ren.resumen ?? '') && !/escribe sobre/.test(ren.resumen ?? '') && /^(Reply|Check|Complete)/.test(ren.siguiente ?? '') && /^Hola/.test(ren.borrador ?? ''),
+    `equipo en inglés: resumen «${(ren.resumen ?? '').slice(0, 60)}», siguiente en inglés; el borrador, en el idioma de la persona («${(ren.borrador ?? '').slice(0, 20)}»)`);
+  await pd.context().addCookies([{ name: 'tl_lang', value: 'es', url: B }]);
   // Y sin falla, el mismo caso vuelve a tener el borrador del modelo (el verificador no lo frena por nada).
   sql(`insert into support_messages (case_id, city_id, sender, user_id, body) values (${TK3.id}, 'hzl', 'user', '${MU}', '¿Cuándo me llega la devolución?')`);
   ok(/"motor":"simulador"/.test(await accion(pd, 'copilotoSugerir', [{ caso: TK3.num }])), 'sin la falla guionada: el borrador del modelo pasa');

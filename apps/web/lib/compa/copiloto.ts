@@ -1,6 +1,7 @@
 import "server-only";
 import type { Staff } from "../admin";
 import { borradorCopiloto, type BorradorCopiloto } from "./conversacion";
+import type { Lang } from "./modelo";
 import { disponible } from "./interruptores";
 import { alTope } from "./tope";
 
@@ -14,7 +15,8 @@ export async function copilotoDisponible(x: { ciudad: string | null; negocio?: s
   const [d, tope] = await Promise.all([disponible({ uso: "copilot", canal: "app", ciudad: x.ciudad, negocio: x.negocio ?? null }), alTope()]);
   return d.ok && !tope;
 }
-export async function borrador(s: Staff, x: { caso?: string | null; cola?: string | null }): Promise<BorradorCopiloto> {
-  return borradorCopiloto(s, x);
+// eq: el idioma de la persona del equipo (lo del equipo: resumen, siguiente paso y los avisos); el borrador sale en el de la persona.
+export async function borrador(s: Staff, x: { caso?: string | null; cola?: string | null }, eq: Lang = "es"): Promise<BorradorCopiloto> {
+  return borradorCopiloto(s, x, eq);
 }
 export type { BorradorCopiloto };

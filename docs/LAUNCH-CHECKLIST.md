@@ -1102,9 +1102,12 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **7g · El copiloto en Cuidado de niños, No me dejan cancelar y Posible estafa:** no sale (datos de niños, constancias y sanciones: decide
       una persona sin IA). Y no lee operaciones de Salud, Profesionales, inscripciones ni con datos privados. Si se quiere, es decisión del
       fundador. (7g, 11 nov) — **✓ 9a (11 nov):** el copiloto no sale en Cuidado de niños, No me dejan cancelar ni Posible estafa, ni lee Salud, Profesionales ni inscripciones (REVISION 9a).
-- [ ] **→ 9f** · **7g · Lo del equipo (resumen y siguiente paso) en español** (el Super Admin es en español); el borrador sale en el idioma de la persona.
+- [x] **→ 9f** · **7g · Lo del equipo (resumen y siguiente paso) en español** (el Super Admin es en español); el borrador sale en el idioma de la persona.
       Cuando el Super Admin tenga inglés, pedirlos en el idioma de quien lo usa. (7g, 11 nov)
       _9f-1/2 (14 nov): el mecanismo está (cookie `tl_lang`, selector Español / English, `par(l)` en `app/admin/TextosComun.tsx`) y Textos y páginas ya sale completo en los dos idiomas; este módulo sigue en español → resto del Super Admin en inglés (9f-4)._
+      **✓ 9f (15 nov):** el resumen, el siguiente paso y los avisos del copiloto salen en el idioma de quien usa el Super Admin (cookie `tl_lang`):
+      `copilotoSugerir` lo pasa a `borradorCopiloto`; el modelo lo recibe en los datos (`equipo.idioma`, regla 2 de SISTEMA_COPILOTO) y el borrador de
+      reglas tiene su versión en inglés. El borrador sigue en el idioma de la persona. compa7g lo comprueba con un equipo en inglés.
 - [ ] **→ 9s** · **7g · Para el abogado y Privacidad:** el texto de un caso de Soporte (tapado, sin teléfono ni correo) y las notas internas del equipo se
       procesan con Anthropic en EE. UU. cuando el equipo pide un borrador (la ayuda `privacidad-de-el-compa` ya lo dice). Va con la retención cero
       y el aviso de IA de 7c. (7g, 11 nov)
