@@ -18,6 +18,7 @@ import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { N360Dinero } from "./N360Dinero";
 import { compaAutoNegocio } from "./acciones-compa";
+import { destacadoFijar } from "./acciones-crecimiento";
 import { accionesOrg, estadoEvt } from "./ColasEventos";
 import { diaCorto, hora, type Bi } from "@/lib/evt-comun";
 import { useAhora } from "@/lib/ahora";
@@ -34,7 +35,7 @@ const FOTO = ["No es de este negocio", "Contenido inapropiado", "Muestra datos p
 const SELLO_NO = ["La dirección no coincide con la página", "No pudimos confirmar que representas el negocio", "Las fotos no son del local", "El nombre puede confundirse con otro negocio"];
 /* Verbo de cada acción en el historial (prototipo actL). */
 const VERBO: Record<string, string> = {
-  "negocio.mensaje": "le mandó un mensaje al dueño de",
+  "negocio.mensaje": "le mandó un mensaje al dueño de", "mkt.destacado.fijar": "destacó a", "mkt.destacado.quitar": "sacó de la rotación a",
   "resena.ocultar": "ocultó una reseña de", "resena.mostrar": "volvió a mostrar una reseña de", "novedad.ocultar": "ocultó una novedad de", "novedad.mostrar": "volvió a mostrar una novedad de",
   "vacante.ocultar": "ocultó una vacante de", "vacante.mostrar": "volvió a mostrar una vacante de", "comentario.ocultar": "ocultó un comentario en", "comentario.mostrar": "volvió a mostrar un comentario en",
   "negocio.modulo.pausar": "pausó un módulo de", "negocio.modulo.reanudar": "reanudó un módulo de", "negocio.noche.tipo": "ajustó el tipo de local de",
@@ -363,6 +364,10 @@ export function N360({ n, tab, din, evts = null, sop, cpa }: { n: Negocio360; ta
       cta: "Enviar", elegir: { label: "POR DÓNDE", items: [{ k: "push", l: "En la app (campana y push)" }, ...(n.owner_phone ? [{ k: "sms", l: "Por SMS" }] : [])] },
       valor: { k: "MENSAJE (HASTA 280 LETRAS)", ini: "", area: true, max: 280 }, plantillas: ["Aviso sobre su página", "Respuesta a lo que pidió por Soporte", "Falta un dato para el sello"],
       hacer: (m, e, v) => mensajeAlDueno(n.id, e ?? "push", v ?? "", m) }) });
+    // 9n-7 · «Destacar»: lo mismo que Crecimiento › Destacados › Fijar (mkt:editar), sin salir del 360°: sale primero en Destacados de su ciudad los días de
+    // Configuración (destacados_dias) y vuelve solo a la rotación; el tope por ciudad lo pone la base.
+    if (P.destacar && n.status === "active") acts.push({ l: "Destacar", icon: "star", onClick: () => setConf({ titulo: `Destacar ${n.name}`, sub: "Sale primero en Negocios › Destacados de su ciudad por los días de Configuración y vuelve solo a la rotación. Se retira en Crecimiento › Destacados.",
+      cta: "Destacar", plantillas: ["Negocio fundador", "Campaña de la ciudad", "Buen servicio comprobado"], hacer: (m) => destacadoFijar(n.city, n.id, "fijar", m) }) });
     if (P.retirar && n.status === "active") {
       acts.push({ l: "Ocultar", v: "danger", icon: "ban", onClick: () => setConf({ titulo: `¿Por qué se oculta ${n.name}?`, plantillas: BIZ, peligro: true, hacer: (m) => cambiarEstado(n.id, "hidden", m) }) });
       acts.push({ l: "Suspender", v: "danger", icon: "lock", onClick: () => setConf({ titulo: `¿Por qué se suspende ${n.name}?`, plantillas: BIZ, peligro: true, hacer: (m) => cambiarEstado(n.id, "suspended", m) }) });

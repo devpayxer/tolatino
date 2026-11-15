@@ -267,7 +267,7 @@ export async function negocio360(s: Staff, id: string) {
     herramientaFiesta: b.cat_id === "NEG-FIESTA" ? await (async () => { const h = await herramientaFiesta(id); return h ? { resumen: resumenFiesta(h, true) } : null; })() : null,
     herramientaSP: b.cat_id === "NEG-SALUD" || b.cat_id === "NEG-PRO" ? await (async () => { const h = await herramientaSP(id, b.cat_id === "NEG-SALUD" ? "salud" : "pro"); return h ? { resumen: resumenSP(h, true, { ok: lic.filter((l) => l.status === "valid").length, rev: lic.filter((l) => l.status === "review").length }), gov: h.rubro === "pro" ? h.gov : [], acepta: h.rubro === "salud" && h.ins.length ? aceptaTexto(h, true) : null } : null; })() : null,
     rsvMes: mods.rows[0]?.rmes ?? 0, rsvPend: mods.rows[0]?.rpend ?? 0, rsvOn: !!mods.rows[0]?.rsv,
-    puede: { editar: s.puede("neg", "editar"), retirar: s.puede("neg", "retirar"), cerrar: s.puede("neg", "retirar") && s.role === "admin" },
+    puede: { editar: s.puede("neg", "editar"), retirar: s.puede("neg", "retirar"), cerrar: s.puede("neg", "retirar") && s.role === "admin", destacar: s.puede("mkt", "editar") },
     // Contenido · reseñas (las 8 más recientes, visibles u ocultas; el caso abierto si alguien la reportó).
     resenas: (await db().query<{ id: string; name: string; stars: number; body: string; reply: boolean; status: string; hidden_reason: string | null; caso: string | null }>(
       `select r.id::text, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(left(u.last_name, 1), '')), ''), 'Vecino') as name, r.stars, r.body,

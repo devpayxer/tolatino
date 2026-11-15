@@ -222,6 +222,15 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
         ok(sql(`select target_kind || '|' || (user_id is null)::text || '|' || by_staff::text from admin_messages where target_id = '${NEGM}' order by id desc limit 1`) === `business|true|${AU}`, 'AdminMessage del negocio: quién y a qué negocio');
         ok(sql(`select count(*) from audit_entries where action = 'negocio.mensaje' and target_id = '${NEGM}' and at > now() - interval '2 minutes'`) !== '0', 'queda en la auditoría');
       } else ok(await contiene(a, 'ya le llegaron 3 mensajes del equipo hoy'), 'tope de 3 mensajes al día por negocio (corridas anteriores de hoy)');
+      // 9n-7 · «Destacar» desde el 360° = Crecimiento › Destacados › Fijar (se retira al final: nada se borra).
+      sql(`update featured set retired_at = now(), retired_by = '${AU}', retired_reason = 'adm9n3 antes' where business_id = '${NEGM}' and retired_at is null`);
+      await a.goto(B + `/admin/negocios/${NEGM}`); await clic(a.getByText('Destacar', { exact: true }));
+      await confirmar(a, 'Campaña de la ciudad', 'Destacar');
+      const lleno = Number(sql(`select count(*) from featured f join businesses b on b.id = f.business_id where b.city_id = (select city_id from businesses where id = '${NEGM}') and f.mode = 'fijar' and f.retired_at is null and f.to_at > now() and f.business_id <> '${NEGM}'`)) >= Number(sql(`select coalesce((select (value)::text from platform_config where key = 'destacados_por_ciudad'), (select def::text from config_keys where key = 'destacados_por_ciudad'))`));
+      if (lleno) ok(await contiene(a, 'fijados en esta ciudad: retira uno antes'), '«Destacar» con la ciudad llena: lo dice (el tope lo pone la base)');
+      else ok(await contiene(a, 'sale primero en Destacados por'), '«Destacar» desde el 360°: sale primero en Destacados');
+      if (!lleno) ok(sql(`select mode || '|' || (by_staff_id = '${AU}')::text from featured where business_id = '${NEGM}' and retired_at is null order by id desc limit 1`) === 'fijar|true', 'queda fijado (featured), con quién');
+      sql(`update featured set retired_at = now(), retired_by = '${AU}', retired_reason = 'adm9n3' where business_id = '${NEGM}' and retired_at is null`);
     }
     // Sanción: avisa por la campana y, sin push, por SMS de respaldo.
     await a.goto(B + `/admin/usuarios/${VU}`); await clic(a.getByText('Sancionar', { exact: true }));
