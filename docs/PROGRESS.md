@@ -2399,4 +2399,9 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   0,002 en escritorio; axe en cero en los 8 dispositivos con la lista de «conocidas» vacía.
 - **9j-2 · Web Vitals de teléfonos reales (L1629):** `Vitales.tsx` en el layout raíz → `/api/vitales` → **0167** `web_vitals_dia` (por día, familia de ruta,
   perfil y métrica; tres cubetas; sin personas) → Sistema › Salud. Flag `app.vitals`. Guardián **`vitalesSinPersonas`** (alreves9c 26/26); sis9j §9.
+- **Regresión completa CI 43749374007 (ff687fd):** 176/179 de punta a punta; al revés 57/59 (casos viejos que apuntaban al layout y a la lista de axe:
+  reapuntados). Los tres rojos, arreglados en 3f99c21: a11y9c (la barra que abre «Tu pedido» se desmonta en el mismo instante: FocoHojas recuerda el último
+  foco con focusin), disp9b (el teléfono por defecto de la prueba usaba User-Agent de escritorio y la cookie del ancho se escribía a los 400 ms: ahora al
+  montar, y la prueba emula el teléfono completo) y sop7b (dependía de casos vencidos de otras pruebas: ahora vence uno propio). Escritorio 1280: el Inicio
+  del Super Admin seguía en CLS 0,91 por SeccionesMovil (arreglado en 1d06358). Siguiente corrida completa: 43759335047.
 
