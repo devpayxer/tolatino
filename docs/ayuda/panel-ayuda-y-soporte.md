@@ -43,26 +43,40 @@ dinero» en el pedido (solo el dueño).
 ## English
 
 ### What it does
-You write to **a person on the To'Latino team** about your business: **payouts or plan**, **your account**, **the app is not working well** or
-**an idea**. The team works **Monday to Friday, 9 AM to 6 PM** (your city's time). Your business cases show in **Your business cases** with their
-number (**TK-…**) and status. A customer's request about an order or booking stays in **Today**; Support is your conversation with To'Latino. If
-**El Compa** (Dashboard › El Compa) passed you to a person, that case shows here too, with the summary.
+- You write to **a person on the To'Latino team** about your business: **your payouts or your plan**, **your account**, **the app is not
+  working well** or **an idea**. The team works **Monday to Friday, 9 AM to 6 PM** (your city's time).
+- Your business's cases show in **Your business cases**, with their number (**TK-…**) and their status (Received · They are looking at it · They
+  replied · Resolved).
+- What a customer asks you about an order or an appointment stays in **Today** (the help of each operation): Support is your conversation with
+  To'Latino.
+- If you asked **El Compa** (Dashboard › El Compa) and it passed you to a person, that case also shows here, with the summary of what you
+  talked about.
 
 ### How to use it
-Dashboard › **More** › **Help and Support** › **Write to us**. Pick the topic, tell us what happened, add a photo if it helps and **Send**. You get
-a notice when the team replies; answer in the same case. Once resolved, tell us if it was solved or open a linked case.
+1. Dashboard › **More** › **Help and Support**. Tap **Write to us**.
+2. Choose what it is about, tell us what happened (10 characters or more) and, if it helps, add a photo (only you, the owner and the team see it).
+3. Tap **Send**. When the team replies, you get a notice; answer in the same case.
+4. When it is resolved, tell us whether it was solved (Yes / No) or open another linked case.
 
 ### What happens in each case
-A team member without Payouts cannot open a payouts case. A case opened by a team member is seen by that person, the owner and the To'Latino
-team only. A dashboard notice from To'Latino has **Write to Support**. Card numbers, bank accounts and passwords are covered before saving. A case
-that needs a payment review goes to Finance; you stay in the same case.
+| Case | What happens |
+|---|---|
+| You are on the dashboard team without access to Payouts | You cannot open a payouts case; the rest you can. |
+| Someone on your team opens it | That person, the business owner and the To'Latino team see it. No one else in the business. |
+| To'Latino paused something of your business | The dashboard notice carries **Write to Support**: it opens a new case for your account. |
+| You type a card number, a bank account or a password | It is covered before being saved. We never ask you for them. |
+| Your case needs a payment reviewed | The team passes it to Finance; you stay in the same case. |
 
 ### FAQ
-- **Do my customers see my cases?** No.
-- **Can I write from my personal account?** Yes: My account › Help and support is for your own matters.
-- **Where is the help on how the dashboard works?** More › **Help**, or ask **El Compa**.
+- **Do my customers see my cases?** No. Only you, whoever opened it and the To'Latino team.
+- **Can I write from my personal account?** Yes: My account › Help and support is for your own matters; this is for your business.
+- **Where is the help on how the dashboard works?** In More › **Help** (the articles for your dashboard), or ask **El Compa**.
 
-### Replace at no cost (order help)
-When the customer asks **«Replace it»**, write your reply in the order's help and tap **Replace at no cost**: a **new $0 order**
-with those dishes (or the whole order if it never arrived) appears in Today as accepted and, for delivery, goes to your driver.
-Nothing is charged and it does not count toward the Free cap. Once per request. To refund money instead, use «Refund» on the order.
+### Replace at no cost (help with an order)
+When the customer asks **«Replace it»**, in the order's detail (Help with the order) write your reply and tap **Replace at no cost**. A **new
+$0 order** is created with the dishes in the request (or the whole order if it never arrived), already accepted: it shows in Today like any
+order and, if it is delivery, it goes to your driver (or it is offered automatically if you have «Offer automatically»). Nothing is charged
+and it does not count toward the Free cap. Only one replacement per request. If you prefer to give money back, use «Refund» on the order (owner
+only).
+
+**Can I replace and refund?** Yes, they are two separate things: the replacement does not touch the customer's card.

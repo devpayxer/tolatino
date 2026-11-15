@@ -49,28 +49,45 @@ Teléfono y escritorio. Versión: 11 nov 2026. Audiencia: negocio. Tema: panel._
 ## English
 
 ### What it does
-**El Compa** is To'Latino's artificial intelligence (AI) assistant inside your dashboard. Ask in your own words how to do something and it answers
-from the dashboard help and tells you which section to use. Under the answer you get **Go to {section}**, but only for sections **you** can open
-in that business. It **changes nothing in your dashboard** and never moves money. Money (a payout that did not arrive, a charge), your account,
-claiming or transferring the business, sanctions or fake reviews go to **a person on the team**: El Compa opens your business case in Support
-with a summary. **Talk to a person** is always visible. Every answer says **EL COMPA · AI** and its source (**PER THE HELP CENTER** with the
-article, or **PER YOUR DASHBOARD**). Below it, **Auto-replies** (Pro, for the owner or whoever handles Messages): El Compa replies to your clients
-when you are closed, from your page; see the help article «Dashboard: El Compa auto-replies».
+- **El Compa** is To'Latino's artificial intelligence (AI) assistant inside your dashboard. Ask it in your own words how something is done and it
+  answers from the dashboard help and tells you which section to use.
+- Under the answer **Go to {section}** appears: one tap and it takes you there. It only offers sections that **you** can open in that business.
+- **It changes nothing in your dashboard**: it does not approve or reject anything, it does not touch your business's data and it does not move
+  money. It tells you where it is done and you do it.
+- Anything about **money** (a payout that did not reach you, a charge), **your account**, **claiming or transferring the business**,
+  **sanctions** or **fake reviews** is seen by **a person on the team**: El Compa opens your business's case in Support with a summary, so you do
+  not have to repeat it.
+- **With a person** is always in view: it opens a Support case for your business. The team works **Monday to Friday, 9 AM to 6 PM** (your
+  city's time).
+- Every answer says **EL COMPA · AI** and where it came from: **PER THE HELP CENTER** (with the article, which you can open) or **PER YOUR
+  DASHBOARD**.
+- Below, **Auto-replies** (Pro, for the owner or whoever handles Messages): El Compa replies to your customers when your business is closed,
+  with what your page says. All of it in the help «Dashboard: El Compa auto-replies».
 
 ### How to use it
-Open **El Compa** (desktop: left menu, **Your business**; phone: **More**). Tap a suggested question or type yours (up to 400 characters) and tap
-**Ask**. Tap **Go to {section}** to go straight there. **Talk to a person** opens a Support case for your business. **Start over** closes the
-conversation and starts a new one.
+1. Open **El Compa**: on desktop, in the left menu (**Your business**); on the phone, in **More**.
+2. Tap one of the suggested questions or type yours in **Your question** (up to 400 characters) and tap **Ask**.
+3. Read the answer. If **Go to {section}** appears, tap it to go straight there.
+4. If you need someone, tap **Talk to a person**. You will see **Your case went to Support · TK-…** and **See my case**.
+5. **Start over** closes the conversation and starts another (the previous one is not deleted: To'Latino keeps it like any conversation with El Compa).
 
 ### What happens in each case
-The owner can be taken to any section. A team member with only some parts of the dashboard only gets those; asking about another part (for
-example Payouts) gets **The business owner handles that**, with no link. Card numbers, bank accounts and passwords are covered and never reach the
-AI. If the AI is slow or fails, fixed rules answer with the dashboard help (**EL COMPA · NO AI**). If To'Latino paused El Compa or the monthly
-spending cap was reached, the screen says El Compa is not available and takes you to **Help and Support**; the rest of the dashboard works the same.
+| Case | What happens |
+|---|---|
+| You are the owner | El Compa knows all the sections of your dashboard and can take you to any of them. |
+| You are on the team with some parts of the dashboard | It only knows and takes you to what you can open. If you ask about something in another part, it says **The business owner handles that**, without a link. |
+| Something about money that does not add up | It passes your case to Support with the summary (if your part of the dashboard includes Payouts and plan; if not, it tells you the owner handles that). |
+| Transferring or claiming the business, a sanction or something you think is false on your page | It passes your case to Support with the summary. |
+| You type a card number, a bank account or a password | It is covered before being saved and does not reach the AI. We never ask you for them. |
+| El Compa does not know the answer | It tells you «I don't have that information» and you can tap **Talk to a person**. |
+| The AI is slow or fails | Fixed rules answer with the dashboard help (it says **EL COMPA · NO AI**). |
+| To'Latino paused El Compa or the monthly spending cap was reached | The screen says «El Compa is not available right now» and takes you to **Help and Support**. The rest of the dashboard works the same. |
+| You write many messages in a row | It asks you to wait; **Talk to a person** is still available. |
 
 ### FAQ
 - **Does El Compa make the changes for me?** No. It takes you to the section and you do it.
-- **Does it see my clients or my payouts?** No: only your business name and category, your role, the sections you can open and a few counts from
-  your parts. Never names, phones, addresses or amounts.
-- **Who reads what I write?** Only To'Latino staff with permission (Admin and Support), and every read is logged.
+- **Does it see my customers or what I get paid?** No. It knows your business's name and category, your role, the sections you can open and a few
+  counts from your parts. Never names, phones, addresses or amounts.
+- **Who reads what I write to it?** Only To'Latino staff with permission (Admin and Support), and every read is logged. Neither your customers
+  nor the rest of your team see it.
 - **Is it a person?** No, it is an AI and can make mistakes. Anything that moves money or changes your account is reviewed by a person.

@@ -87,3 +87,20 @@ shows the one in force at that moment.
 **Revenue** tab in Plans and subscriptions: **8-week fees** (what To'Latino keeps from each card charge, net of refunds; the current week
 highlighted), **8-week Pro charges** (with the MRR) and **fee by category over 90 days**. Weeks run Monday to Sunday, Eastern time; your
 cities only. **Export CSV** (export-transactions permission) is recorded in the History.
+
+### Taxes
+**Taxes** tab: the tax of each city and category — Repair shop (Auto) and Home on parts or materials and on labor, Car sales on the price
+(it goes into the total at the door) and Food on consumption at a private event — the current one and the scheduled ones, with who and why.
+**Schedule change** (approve permission): you choose what changes (parts / price or labor) and from when (**now**, **the first day of next
+month** or **January 1**, at midnight Eastern), the percent (0 to 20 %) and the reason.
+
+| Case | What happens |
+|---|---|
+| Scheduling from January 1 | It shows **SCHEDULED**; until that date the current one is charged. That day it takes effect on its own and the at-the-door totals for Car sales are recalculated on their own. |
+| Scheduling from now | It applies from that moment to whatever is quoted or sold afterward. |
+| An estimate already sent, a closed appointment or a car already sold | They do not change: they keep the percent of their moment. |
+| Making a mistake | A rule is never edited or deleted: you schedule another with the right percent and the reason. |
+| Percent outside 0–20 % or no reason | Not allowed. |
+| A city that is not in your role | It does not appear and cannot be touched. |
+
+Check it with the accountant before changing it (state and local tax).

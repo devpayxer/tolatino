@@ -38,27 +38,33 @@ a todos, con o sin cuenta. Versión: 10 nov 2026. Audiencia: vecino. Tema: cuent
 ## English
 
 ### What it does
-The Help center gathers answers to what people ask most: orders, bookings, tickets, payments, your account, the Community and your business,
-all in **Spanish and English**.
-- **Search:** type one or more words («refund», «cancel ticket», «card»). Each article shows with the part that best answers. If nothing
-  matches all words, it searches for any of them; if nothing in your language, it searches the other one.
+- Gathers in one place the answers to what people ask us most: orders, appointments, tickets, payments, your account, the Community and your
+  business. All in **Spanish and English**.
+- **Search:** type one or more words («refund», «cancel ticket», «card»). Each article shows with the part that best answers. If nothing has
+  all the words, it searches for any of them; if nothing in your language, it searches the other one.
 - **Topics:** Your account and notifications · Search and explore · Orders, purchases and payments · Appointments, bookings and services ·
   Events and tickets · Community · Your business on To'Latino. Tap one to see only that topic.
-- **Each article** says what it does, how to use it, what happens in each case and the FAQ, with the date it was updated. **See in
-  English** (or **Ver en español**) switches only that article; the app language does not change.
+- **Each article** says what it does, how to use it, what happens in each case and the FAQ, with the date it was updated. **See in English**
+  (or **See in Spanish**) switches only that article; the app language does not change.
 
 ### Who sees what
-Without an account or as a neighbor: neighbor help. With a business on To'Latino (owner or dashboard team): also **Your dashboard** (Dashboard
-› More › **Help** goes straight there). Door staff: also **The door** (To'Latino Door › **How the door works**). The To'Latino team's internal help is
-never shown to a neighbor or a business: not in the list, not in search, not by link.
+- **Without an account or as a neighbor:** the help for neighbors.
+- **If you have a business on To'Latino** (owner or dashboard team): also the topic **Your dashboard**. From Dashboard › More › **Help** you go
+  straight there.
+- **If you are door staff** of a business: also **The door** (scanning and working offline). From To'Latino Puerta › **How the door works**.
+- The To'Latino team's internal help is never seen by a neighbor or a business: not in the list, not when searching, not with the link.
 
 ### What happens in each case
-Nothing found: try another word or browse the topics. An article being reviewed says so and shows the others in its topic. A link to an
-article that is not for you does not open. A problem with an order, booking or ticket: open it and tap **Help**; the business replies and
-To'Latino reviews it. Didn't find it: **Write to us** at the bottom of each article opens Support.
+| Case | What happens |
+|---|---|
+| You find nothing | «We found nothing with that»: try another word or look at the topics. |
+| An article is being reviewed | It says «This article is being reviewed» and lets you see the others in the topic. |
+| You open the link of an article that is not for you | It does not exist for you (the page does not show it). |
+| Your problem is with an order, an appointment or a ticket | Open it and tap **Help**: the business replies and To'Latino reviews it. |
+| You did not find what you were looking for | The foot of each article, **Write to us**, opens Support: a person on the team replies (`soporte.md`). |
 
 ### FAQ
-- **Do I need to sign in?** No. Signing in only adds your business or door help, if it applies.
-- **Who writes the help?** The To'Latino team, with each app feature. If something is no longer true, the team can pause the article while
-  it is fixed.
-- **Can I talk to a person?** Yes. About an order, booking or ticket, from its **Help**; for anything else, **Write to us** (Support).
+- **Do I have to sign in to read the help?** No. Signing in only adds the help for your business or the door, if it applies to you.
+- **Who writes the help?** The To'Latino team, along with each feature of the app. If something is no longer true, the team can pause the
+  article while it fixes it.
+- **Can I talk to a person?** Yes. About an order, an appointment or a ticket, from its **Help**; for anything else, **Write to us** (Support).

@@ -39,17 +39,33 @@ Ver: permiso «Textos y páginas» (ver); pausar y volver a usar: «Textos y pá
 ## English
 
 ### What it does
-Super Admin › Texts and pages › **Help** shows the help in `docs/ayuda/` **as deployed**: each article with its audience (neighbors · businesses
-· door staff · team), version, fingerprint (sha256), when it was deployed, how many search chunks it has and how many are team-only. **The repo
-is the source:** text is fixed in `docs/ayuda/` and the next deploy re-indexes it (unchanged files stay the same); files no longer in the repo
-show as **Retired**. **Pause** (with a reason) removes an article from the Help center (list, search and link; neighbors see «This article is
-being reviewed») and El Compa will not use it; **Use again** (with a reason) brings it back. Both go to the append-only history and the audit log.
+- Shows the help in `docs/ayuda/` **exactly as deployed**: each article with its audience (neighbors · businesses · door staff · team), its
+  version, its fingerprint (sha256) and when it was deployed, how many chunks it has for search and how many of them are «team only».
+- **The repo is the source.** Text is not edited here: it is fixed in `docs/ayuda/` and the next deploy indexes it again (anything that did not
+  change stays the same). What is no longer in the repo shows as **Retired**.
+- **Pause** (with a reason): the article stops showing in the Help center (list, search and link; the neighbor sees «This article is being
+  reviewed») and El Compa will not use it. **Use again** (with a reason) brings it back. Both go to the **history** (append-only) and to the
+  audit log.
 
 ### How to use it
-Filter by audience or status, or search by slug or title. **See** opens the article as people see it (you also see team-only sections). Pause
-an article that says something no longer true and note what is missing; once the fix is deployed, use it again.
+1. Filter by audience (All · Neighbors · Businesses · Door staff · Team) or by status (In use and paused · Paused · Retired), or search by slug
+   or title.
+2. **See** opens the article as people see it (you also see the «team only» sections).
+3. **Pause** when an article says something that is no longer true; note what is missing. Once the fix is deployed, **Use again**.
 
 ### What happens in each case
-A deploy with no help changes changes nothing. A changed article gets its chunks rebuilt and a «Deployed · old sha → new» line; a paused
-article stays paused. A file removed from the repo becomes Retired (nothing is deleted). An `admin-*` file is always team-only (the database
-enforces it). A `<!-- solo-equipo -->` section is stored as team-only. Without «edit» on Texts and pages you only see the list and history.
+| Case | What happens |
+|---|---|
+| A deploy with no changes to the help | Nothing changes (same sha256). The history adds nothing. |
+| A deploy with a changed article | Its chunks are rebuilt and the history says «Deployed · old sha → new». If it was paused, it stays paused. |
+| A file leaves the repo | It becomes **Retired** (nothing is deleted); if it comes back, it is in use again. |
+| An `admin-*` file | It is always team-only: the database does not let it be for neighbors or businesses. |
+| A section marked `<!-- solo-equipo -->` | It is stored as «team»: a neighbor, a business or door staff never see it. |
+| Your role does not have «edit» on Texts and pages | You see the list and the history; you cannot pause. |
+
+### FAQ
+- **Why can't I edit the text here?** Because the help is versioned with the app: what it says has to match what is deployed. The full text
+  editor arrives with the CMS.
+- **What does a neighbor see of a paused article?** That it is being reviewed, without the text or the reason.
+- **How do I know what El Compa reads?** The articles in use for each person's audience, leaving out what is paused and what is «team only»
+  (for neighbors and businesses).

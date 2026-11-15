@@ -51,36 +51,47 @@ escritorio (tus casos a la izquierda, el caso a la derecha). Versión: 14 nov 20
 
 ## English
 
-### By email and WhatsApp
-- **If you cannot sign in**, write to the **To'Latino Support email** from the email you **confirmed in your account**. A TK- case opens and you get «We got
-  your email · TK-…». To continue, **reply to that email keeping the subject**: your reply goes into the same case.
-- Only real email gets in: if your provider does not sign it (SPF or DKIM) or it looks like spam, no case opens. If it is not the confirmed email of an
-  account, we reply with how to reach us (once a day).
-- **When the team replies**, you also get an email (if your email is confirmed and «Receipts» is on; always if you wrote by email, with the reply). If
-  your case started on **WhatsApp** and you wrote in the last 24 hours, the reply also reaches you there.
-- **Never send** card or Social Security numbers: if you write them in an email, we cover them before saving it.
-
 ### What it does
-With El Compa on, the top card says **El Compa helps you right away** with **Ask El Compa** (guided steps) and **Write to us** below it to go
-straight to a person; a case El Compa passes on says «Your case went to Support» and comes with its summary.
-Support is your conversation with **a person on the To'Latino team** about things that are not about a single business: your account, a payment
-or a charge, the app, a business or a review, or an idea for To'Latino. The team works **Monday to Friday, 9 AM to 6 PM** (your city's time). For
-an order, a booking or a ticket, open it and tap **Help** first: the business replies and, if not, To'Latino reviews it; those show at the top in
-**To'Latino is reviewing**. Each case has a number (**TK-…**) and a status: **Received** · **In review** · **They replied** · **Resolved**.
+- It is your conversation with **a person on the To'Latino team** about what is not about a single business: your account, a payment or a
+  charge, the app, a business or a review, or an idea for To'Latino. The team works **Monday to Friday, 9 AM to 6 PM** (your city's time).
+- If your problem is with **an order, an appointment or a ticket**, open it first and tap **Help**: the business replies and, if not, To'Latino
+  reviews it. Those help requests show up here at the top in **To'Latino is reviewing**.
+- Each case has a number (**TK-…**) and a status: **Received** · **In review** · **They replied** · **Resolved**.
 
 ### How to use it
-Tap **Write to us**, pick what it is about (and which order, booking or payment), tell us what happened (10+ characters), add a photo if it
-helps (only you and the team see it) and **Send**. We tell you by when a person replies. Reply in the same case; tap **It is resolved** when it
-is. Once resolved, tell us **Was it solved? Yes / No**: «No» within 7 days sends it back to the team; **Open another case** links a new one.
+0. With El Compa on, at the top you see **El Compa helps you right away** with **Ask El Compa** (the guided steps, `el-compa.md`) and, below it,
+   **Write to us** to go straight to a person. If El Compa is off, only Write to us shows.
+1. Tap **Write to us**. Choose **what it is about**; if it is an order, an appointment or a payment, choose **which one** (or «None in particular»).
+2. Tell us what happened (10 characters or more). You can **add a photo** (a receipt, a screen): only you and the team see it.
+3. Tap **Send**. We tell you by when a person replies (for example, «today before 4 PM» or «Monday before 11 AM»).
+4. When the team writes to you, you get a notice. Reply in the same case; if it is already fixed, tap **It is resolved**.
+5. When the case is resolved, tell us **Was it solved? Yes / No**. If you say no (within the next 7 days), the case goes back to the team. If you
+   need something else about it, tap **Open another case**: it is linked to the previous one.
 
 ### What happens in each case
-Card numbers, codes and passwords are covered before saving («[tapado]»); we never ask for them. Outside team hours, it tells you when they
-will write. After 5 cases in a day we ask you to use one you have; a safety case (someone got into your account) is never blocked and goes
-first. A refund shows in the case and you get the refund notice. A merged case points you to the one that stays open. A link to someone else's
-case does not open. Without signing in you can write; **Sign in and send** keeps your text.
+| Case | What happens |
+|---|---|
+| You type a card number, a code or a password | It is covered before being saved («[tapado]»). We never ask you for that data. |
+| You write outside the team's hours | It tells you when they will write to you (for example, Monday from 9 AM). |
+| You open many cases on the same day | After 5 we ask you to write in one of those you already have. If it is about safety (someone got into your account), it is never held back and goes first. |
+| The team refunds you money | You see «We refunded $… to your card» in the case and you get the refund notice. Your bank shows it in 3 to 5 business days. |
+| The team merges your case with an identical one | It says «This case was merged into TK-…» and takes you to the one that stays open. |
+| You tap a link to a case that is not yours | It does not exist for you. |
+| You have not signed in | You can write; **Sign in and send** asks for your phone and comes back with what you wrote. |
 
 ### FAQ
-- **Does a person reply?** Yes, someone on the To'Latino team.
-- **Who sees my case?** You and the To'Latino team. The business you mention does not.
-- **Does the team write things I don't see?** It can leave notes for the rest of the team; everything it tells you is in your case.
+- **Does a person reply?** Yes, someone on the To'Latino team, in Spanish (or in English if you prefer).
+- **Who sees my case?** You and the To'Latino team. The business you are talking about does not see it.
+- **Does the team write things I do not see?** It can leave notes for the rest of the team; what it tells you is always in your case.
 - **Can I close a case?** Yes: **It is resolved**.
+
+### By email and WhatsApp
+- **If you cannot sign in** (your account is suspended or you lost your phone), write to **To'Latino's Support email** from the email you
+  **confirmed in your account**. A TK- case is opened and you get an email «We got your email · TK-…». To continue, **reply to that email
+  without changing the subject**: your reply goes into the same case.
+- Only real email gets in: if your email provider does not sign it (SPF or DKIM) or it looks like spam, the case is not opened. If the email is
+  not the confirmed one of an account, we reply with how to write to us (once a day).
+- **When the team replies to you**, besides the bell you get an email (if your email is confirmed and you have «Receipts» on; if you wrote by
+  email, always, with the reply). If your case started on **WhatsApp** with El Compa and you wrote in the last 24 hours, the reply also reaches
+  you by WhatsApp.
+- **Never send us** card or Social Security numbers: if you write them in an email, we cover them before saving it.

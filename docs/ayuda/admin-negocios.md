@@ -114,28 +114,69 @@ Citas, Mesas, Boletos, Apartados), de 8 en 8; tocar una abre Transacciones con s
 
 ## English
 
-Queues: everything waiting for a team decision, oldest against its SLA first — Verification badge (48 h), New
-businesses (24 h light review), Flagged media (4 h), Neighbor recommendations (7 days), Licenses (72 h) and Sensitive changes (48 h, business claims). You only see your role's
-queues in your cities; "Take next" assigns you the most urgent unassigned case; "Take" shows others "X is on it".
-Businesses: searchable list with category, plan, status, more filters and sorting; the 360° shows the business as
-clients see it, what the owner did and what the team did (Overview, Page, Team, Trust; with permission, Support and El Compa — the dashboard
-assistant's 30-day numbers, without text or people). Every action asks for a
-reason (approvals store a fixed one), writes the audit log, and the owner sees the result and reason in their
-dashboard; the page reflects it (temporarily closed, hidden, photo removed, badge). Team decisions are not texted: the owner
-sees them in the dashboard and the bell. **Message the owner** (360, needs an owner): in the app (bell and push, opens their
-dashboard) or by SMS, no links, with an internal reason; up to 3 a day per business. **Feature** pins it first in its city's Featured (like Growth › Featured). **Invite to claim** texts an unclaimed business's phone the link to claim it for free (once every 30 days). "Create seed" lists a recommended business as unclaimed in its category; "Apply change"
-makes the claimant the owner (an already-owned business: Admin only, 7 days after the owner's notice); claim
-documents are private and every view is audited. In What it sells, Reservations shows this month's bookings and pending
-requests; Pause (with a reason) removes the tab from the page and the owner sees why.
-Content reports (reviews, 24 h): Keep (if the business asked for a review, the client sees "Reviewed"), Hide, or Hide and
-sanction the author (warning, 7-day mute, 30-day posting block, 14-day suspension). The review stays visible while you
-decide. 360 › Content lists the latest reviews with their state and open report, with Hide / Restore and a reason.
-360 › Content also lists the business updates (deals, polls, notices) with Hide / Show, and Pause Updates removes the tab
-and stops deal prices; the owner sees the reason.
+### What it does
+- **Queues:** everything waiting for a decision from someone on the team, the oldest against its deadline first:
+  **Verification badge** (48 h), **New businesses** (24 h, light review), **Flagged media** (4 h, photos a neighbor
+  reported), **Neighbor recommendations** (7 days), **Licenses** (72 h) and **Sensitive changes** (48 h,
+  the «Recover your business» claims and requests to delete an account; see `admin-usuarios.md`). Each person sees only the queues of their role
+  and their cities. «Take next» assigns you the most urgent case without an owner; «Take» tells the others «X is on it».
+- **Businesses:** a list with search (name, id, phone, address, subcategory), category, plan, status, «More filters» and sorting. The **360°**
+  shows the business as the customer sees it, what the owner did and what the team did: Overview (data, profile strength, internal notes,
+  actions), Page (photos and fields that are edited on their behalf, hours), Money (charges, payouts to the bank and their pause, plan; see
+  `admin-negocio-dinero.md`), Team (who enters the dashboard, staff) and Trust (open cases, badge, sanctions). With Support permission,
+  **Support** (the cases it opened from its dashboard); with El Compa permission, **El Compa** (the assistant's 30-day numbers in its dashboard
+  and whether it is paused there; no text and no people).
 
-### The business's El Compa and Support
-**Businesses 360° › El Compa** shows the dashboard assistant's 30-day numbers, the auto-replies (Pro) with **Turn off El Compa here** (with a
-reason and a notice to the owner) and any pause, without text or people. **Businesses 360° › Support** lists the cases the business opened.
+### Decisions and what the business sees
+| Action | Where | Permission | What the owner / the page sees |
+|---|---|---|---|
+| Approve badge (checking the 3 checks) | Badge queue | queues · approve | Verified check on the page; «You have the badge» in their dashboard |
+| Ask for a detail / Do not approve (with a reason) | Badge queue | queues · approve | «To’Latino needs one more detail» / «Not approved this time» with the reason, and the button to ask again |
+| All good / Hide | New businesses | queues · approve | Hide: it leaves search and its category; a notice with the reason in their dashboard |
+| It's fine / Remove photo | Flagged media | queues · approve | The photo leaves the page; «To'Latino removed 1 photo…» with the reason in Photos. The only visible photo is not removed |
+| Already listed (which) / Create seed / Dismiss | Recommendations | queues · approve | Create seed: it shows at the end of its category as «Unclaimed · Is this yours?» until the owner publishes it |
+| Apply change / Reject (with a reason) | Sensitive changes | queues · approve | Apply: whoever claimed becomes the owner and opens the dashboard; the previous owner leaves the team. If it already had an owner, only an Admin and after 7 days from the notice in their dashboard (R2). Reject: they see the reason |
+| Give / Remove badge | 360 › Overview | biz · edit | Page and dashboard; when it is removed, a notice in their dashboard |
+| Temporary closure (1, 3, 7, 14 days) / Reopen | 360 › Overview | biz · edit | Page and lists: «Temporarily closed»; dashboard: «To’Latino closed your page for a few days…»; it comes back on its own |
+| Invite to claim | 360 › Overview (business without an owner, with a phone) | biz · edit | An SMS to the page's phone with the link to claim it for free; once every 30 days; it respects STOP and quiet hours |
+| Feature | 360 › Overview | mkt · edit | It shows first in Businesses › Featured in its city for the days set in Settings and returns to the rotation on its own (it is removed in Growth › Featured) |
+| Message the owner (app or SMS, no links, up to 280 characters) | 360 › Overview | biz · edit | It reaches the owner in the bell and the push (opens their dashboard); with SMS, also by text (not at night and not to anyone who said STOP). Up to 3 a day per business; internal reason in the audit log |
+| Hide · Suspend · Close (Admin only) · Restore | 360 › Overview | biz · remove | It leaves search and its category; a notice with the reason in their dashboard |
+| Edit name, About us, phone, address | 360 › Page | biz · edit | Shows «EDITED BY TO’LATINO»; dashboard: «To’Latino corrected your name…» / «To’Latino edited your «About us»». If the owner changes it, theirs wins |
+| Remove / Restore photo | 360 › Page | biz · remove | Same as in Flagged media |
+| Remove from the page / Show again (staff) | 360 › Team | biz · remove | The person stays on their team; in their dashboard «REMOVED BY TO’LATINO» |
+| Internal note | 360 › Overview | biz · edit | The business never sees it |
+| Pause / Resume Menu or Online orders (Food) | 360 › What it sells | biz · remove | Menu: the tab leaves its page. Orders: the menu shows, without being able to order. A notice with the reason in their dashboard. The module says how many online orders it has this month (and, with Free, how many of its cap) |
+| Hide / Show a dish again | 360 › What it sells | biz · remove | The dish leaves its menu; «HIDDEN BY TO’LATINO» with the reason in their dashboard |
+| Keep / Hide / Hide and sanction (warning, 7-day mute, 30-day posting block, 14-day suspension) | Content reports (reviews, 24 h) | queues · approve | Keep: the review stays; if the business asked for a review of it, the customer sees «Reviewed». Hide: it leaves the page and the ★; the author sees HIDDEN and the reason in «Your review» |
+| Hide / Restore a review | 360 › Content | biz · remove | Same as Hide in Content reports; Restore puts it back on the page and in the ★ |
+| Hide / Show an update · Pause / Resume Updates | 360 › Content | biz · remove | The update leaves its page; dashboard: «HIDDEN BY TO’LATINO» with the reason. When paused: no tab and no deal prices; the owner sees the reason |
+| Hide / Show an opening · Pause / Resume Jobs | 360 › Content | biz · remove | The opening leaves its page and no new person applies (applications stay); dashboard: «HIDDEN BY TO’LATINO» with the reason. When paused: no Jobs tab; the owner sees the reason |
+
+Every action asks for a reason (except approvals, which store a fixed one) and goes to the audit log: who, what, before → after, reason and when.
+Nothing is deleted.
+
+### FAQ
+**Why don't I see a queue?** Your role does not work it (for example Media belongs to moderation) or your city has no cases.
+
+**Does «Take» block everyone else?** It is a soft lock: it says «X is on it»; another person can take it.
+
+**Does the owner get an SMS?** Not for what the team decides: the owner sees it in their dashboard and in the bell. Notices about their
+operation (orders, bookings, reservations…) can go out by SMS if they have them on.
+
+**Where do I see the photo of a claim's document?** In the Sensitive changes case. It is private: it has no public link and every time it is
+opened it goes to the audit log. More in `recuperar-negocio.md` and `licencia.md`.
+
+#### What it sells · Reservations
+In the 360° › **What it sells** of a restaurant, **Reservations** shows how many there are this month and how many are waiting for a reply.
+**Pause** (with a reason, remove permission) takes the tab off its page; reservations already made continue and the owner sees the reason in
+their dashboard. **Resume** brings it back. The month's orders no longer count reservations.
+
+### El Compa and the business's Support
+**Businesses 360° › El Compa**: the assistant's 30-day numbers in that business's dashboard, its auto-replies (Pro) with **Turn off El Compa
+here** (with a reason and a notice to the owner) and whether El Compa is paused there; no text and no people (the thread is in El Compa ›
+Conversations, with the read logged). **Businesses 360° › Support**: the cases the business opened from its dashboard. **El Compa ›
+Businesses** lists all the businesses with auto-replies.
 
 ### Cursor list, new filters and Export CSV
 - **The list pages by cursor** (14 at a time, no page cap): the ← and → arrows continue where you were even if the data changes. New filters under «More filters»: **With orders 30 d**, **No activity 30 d**, **With payouts (Stripe)**, **Pro without payouts** and **With verified license**.
@@ -154,31 +195,31 @@ At the top of Businesses there are three views: **List**, **Possible duplicates*
 
 - **Possible duplicates**: two businesses in the same city with almost the same name show up on their own (the database finds them when a business is created or renamed). Each pair says why (almost the same name, and whether it is also the same address) and its state: **TO REVIEW**, **LINKED · LOCATION** (both businesses confirmed they are locations), **NOT A DUPLICATE**, **MERGE IN QUEUE** or **MERGED**.
   - **Merge**: you pick which one stays. It goes to Queues › Sensitive changes and **another team member** applies it. Then the other one's reviews, followers and saves move to the one that stays; the other leaves every list and **its page leads to the one that stays**. Its orders and payments stay with it (its payout belongs to its payment account).
-  - **Not a duplicate**: with a reason; the pair never goes back to "to review" (it cannot be changed later).
-- **Claims**: claims to decide (they open their Queues case) and the **Unclaimed** list (active businesses without an owner) with **Invite to claim** (an SMS to the page's phone, once every 30 days; afterwards it says "invite sent").
-- In the 360° (Overview): **Change category** (pick the new one) and **Transfer owner** (the phone of an active, verified To’Latino account). Both go to Sensitive changes and the 360° says they are waiting. Trust lists that business's possible duplicates with the same actions.
+  - **Not a duplicate**: with a reason; the pair never goes back to «to review» (it cannot be changed later).
+- **Claims**: claims to decide (they open their case in Queues) and the **Unclaimed** list (active businesses without an owner) with **Invite to claim** (an SMS to the page's phone, once every 30 days; afterwards it says «invite sent»).
+- In the 360° (Overview): **Change category** (pick the new one) and **Transfer owner** (the phone of an active, verified To’Latino account). Both go to Sensitive changes and the 360° says they are waiting. In Trust, that business's possible duplicates show with the same actions.
 
 | Case | What happens |
 |---|---|
-| The person who asked opens the case | They see "You asked for it" and cannot apply it. |
+| The person who asked opens the case | They see «You requested it» and cannot apply it. |
 | The duplicate has open orders, bookings or reservations | It is not applied: wait until they finish. |
 | The duplicate pays for Pro | It is not applied: cancel it first in its Money tab. |
 | Both have different owners | It cannot be requested or applied: one claims or transfers first. |
-| The one that stays has no owner and the duplicate does | The owner moves with it. |
-| The same person reviewed both | The review on the one that stays is kept; the other stays on the duplicate (not shown). |
-| Transferring a business that already has an owner | Only an Admin applies it. The previous owner leaves the dashboard and is notified; the new one gets full access. |
-| Changing the category | Its modules on the page, its filters and "what matters" in reviews change; subcategories are cleared and the owner is notified to pick new ones. |
-| Someone opens a merged business's page | It leads to the page of the one that stayed. |
+| The one that stays has no owner and the duplicate does | The owner moves with it to the one that stays. |
+| The same person left a review on both | The review on the one that stays is kept; the other stays on the duplicate (not shown). |
+| Transferring a business that already has an owner | Only an Admin applies the change. The previous owner leaves the dashboard and gets their notice; the new one gets full access. |
+| Changing the category | Its modules on the page, its filters and «what matters» in reviews change; subcategories are cleared and the owner gets a notice to pick the new ones. |
+| Someone opens the page of a merged business | It leads to the page of the one that stayed. |
 
 **Does the payment account change on a transfer?** No: it belongs to the business. If the new owner gets paid under another name, they reconnect it in their dashboard › Payments.
 
-### Remove someone's dashboard access
-In the 360° › **Team**, each team member with dashboard access has **Remove access** (with a reason). From then on they cannot open the dashboard or see it in their list; what the owner gave them does not change, so **Restore access** puts it back as it was. The owner gets a notice in the bell. The owner's own access is not removed here: that is an ownership change (Transfer owner).
+### Remove access to the dashboard from someone on the team
+In the 360° › **Team**, each team member with dashboard access has **Remove access** (with a reason). From that moment they cannot open the dashboard or see it in their list; what the owner had given them does not change, so **Restore access** leaves it as it was. The owner gets a notice in their bell. The owner's own access is not removed here: that is an ownership change (Transfer owner).
 
 ### Operations (360°)
-The **Operations** tab of the Business 360° shows how the business handles what people ask for: in 90 days, how many purchases it had,
-how much of what's requested it accepts, how many minutes it takes to reply (average) and how many were cancelled or didn't happen; in 30
-days, its views, contacts (taps on its page: Call, WhatsApp, Directions…), orders or bookings and the conversion; views for the last 7 days;
-what people tap on its page and, if it's Free, how many online orders or bookings it has left this month. Below, its purchases from the
-last 90 days by type (Orders, Bookings, Tables, Tickets, Holds), 8 at a time; tapping one opens Transactions with its number. Only people
-who can see Transactions see it (like Money).
+The **Operations** tab of the Business 360° shows how the business handles what people ask for: in 90 days, how many operations it had, how much
+of what is requested it accepts, in how many minutes it replies (average) and how many were cancelled or did not happen; in 30 days, its views,
+contacts (taps on its page: Call, WhatsApp, Directions…), orders or bookings and the conversion; views for the last 7 days; what people tap on its
+page and, if it is Free, how many online orders or bookings it has left this month. Below, its operations from the last 90 days by type (Orders,
+Bookings, Tables, Tickets, Holds), 8 at a time; tapping one opens Transactions with its number. Only people who can see Transactions see it
+(like Money).

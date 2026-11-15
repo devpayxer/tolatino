@@ -49,32 +49,48 @@ comprobar y retirar). Teléfono y escritorio. Ver y cambiar: **solo un Admin**. 
 - **¿Dónde está cifrada?** En la base del servidor, en un sobre: una llave al azar cifra el archivo y esa llave va cifrada con la del entorno.
 
 ## English
+
 ### What it does
-**Super Admin › System › Integrations › Store keys** keeps the keys Apple and Google give only to the account owner: the App Store Connect
-API key, the Apple push key (APNs), the Firebase, Google Play and Google Wallet service accounts, the Android upload key and the Apple
-certificates (distribution and Wallet), and the **GitHub token** used to request a build (a one-line .txt file). Nine kinds, one live per kind. The Apple Wallet certificate is not uploaded as a .p12: its key is
-**born on the server** (Integrations › Wallet generates the request, you upload it to Apple and upload the .cer back here; a .cer that does not
-match the request is rejected; the team is warned 30 days before it expires); the Google Wallet account goes with its **issuer ID**. Each file is **encrypted on the server** with the environment key
-(never in the public repository nor in GitHub). Afterwards only its **fingerprint** (SHA-256), who uploaded it, when, when it expires, its
-public data and how many times it was read are shown. **The content is never shown again**, to anyone. Every read is logged and can't be
-deleted. Below the keys, **CI READS** (which key each build read, with its run and commit) and **PIPELINE ATTEMPTS** (who presented itself as
-the CI, whether it got in or why it was rejected).
+- Keeps the **keys that Apple and Google give only to the account owner**: the App Store Connect API key, the Apple push key (APNs), the service
+  accounts for Firebase, Google Play and Google Wallet, the Android upload key and the Apple certificates (distribution and Apple Wallet), and
+  the **GitHub token** used to request a build (a one-line .txt file). Nine kinds; one live per kind.
+- **The Apple Wallet certificate is not uploaded as a .p12:** its key is **born on the server**. In Integrations › **Wallet** you generate the
+  request (CSR), download it and upload it to developer.apple.com; the .cer Apple gives you is uploaded here and the server joins it with its
+  key and Apple's intermediate certificate (it checks this: if the .cer is not from that request, it is not accepted). It expires every year:
+  the team is warned 30 days before. See `admin-eventos-y-boletos` (Wallet). The Google Wallet account is uploaded with the **issuer ID**.
+- Each file is **encrypted on the server** with the key from the environment secrets (never in the repository, which is public, nor in GitHub).
+  Afterwards you only see its **fingerprint** (SHA-256), who uploaded it, when, when it expires, its public data (the key id, the Team ID, the
+  service account email) and how many times it was read. **The content is never shown again**, to anyone.
+- Every read is logged (the server's and the store CI's) and cannot be deleted. Below the keys, **CI READS**: which key the build read, with its
+  run number and its commit; and **PIPELINE ATTEMPTS**: every time someone presented themselves as the CI, whether it got in or why it was
+  rejected (another repository, another branch, a repeated token, it arrived without HTTPS…). The CI never stores a key: it identifies itself
+  with the GitHub token of that moment (see «Super Admin: the apps pipeline»).
 
 ### How to use it
-1. On the row, **Upload file** (or **Replace**). 2. **Send the code**: a 6-digit code goes to your Admin phone (asked again even if you are
-signed in). 3. Type the code, the data that kind needs (Apple Team ID, App Store Connect Issuer ID, Android key alias), the optional expiry
-date and the **reason**. 4. **Choose the file** and **Save to the key store**: you see «Saved · SHA-256 …». **Check** opens the envelope on the
-server and compares the fingerprint (logged as a read). **Retire** takes a reason; it stops being used at once and the record stays.
+1. On the row of the kind, **Upload file** (or **Replace** if one already exists).
+2. **Send the code**: a 6-digit code arrives on the phone of your Admin account (it is asked again even if you already signed in).
+3. Type the code, the data that kind asks for (Apple Team ID, App Store Connect Issuer ID, Android key alias), the expiry date if you want, and
+   the **reason**.
+4. **Choose the file** (from Files or Downloads on the phone) and **Save to the keychain**. You see «Saved · SHA-256 …».
+- **Check**: the server opens the envelope and compares the fingerprint; it tells you if it is fine (logged as a read).
+- **Retire**: with a reason; it stops being used at once and the record stays.
 
 ### What happens in each case
 | Case | What happens |
 |---|---|
-| Wrong or expired code | Nothing is saved; ask for another code. |
-| A file that is not that kind | Rejected without echoing its content. |
-| Over 64 KB | Rejected. |
-| One of the same kind existed | The new one is live; the old one is retired with «Replaced by version N». |
-| Any role other than Admin | No section; uploading or asking for the code returns 403. |
+| Wrong code | «The code is not correct.» Nothing is saved. After too many tries: «Too many attempts: ask for another code.» |
+| Expired code (10 minutes) | «The code expired: ask for another.» |
+| Asking for another code too soon | «Wait 30 s to ask for another code.» |
+| A file that is not that kind | For example «Not an Apple .p8 key» or «Not a Google service account». It is not saved and its content is not echoed. |
+| Over 64 KB | «The file is too large (64 KB).» |
+| One of the same kind already existed | The new one is live and the old one is retired on its own with «Replaced by version N». |
+| The keychain key is missing on the server | It shows in red at the top and no key is saved. |
+| Support, Finance or any other role | They do not see the section; if they try to upload or ask for the code, the server answers 403. |
 
 ### FAQ
-- **Can I download a key I uploaded?** No one can: only the server reads it, and every read is logged.
-- **A key leaked or was revoked?** **Retire** it with the reason, create a new one in Apple's or Google's console and upload it here.
+- **Can I download a key I uploaded?** No. No one can: only the server reads it, for what needs it, and every read is logged.
+- **What do I do if a key leaked or Apple / Google revoked it?** **Retire** it with the reason «The key leaked or was revoked…», create a new one
+  in the Apple or Google console and upload it here.
+- **Why does it ask me for the code again?** Because a store key gives access to publish apps: it confirms it is you at that moment.
+- **Where is it encrypted?** In the server's database, in an envelope: a random key encrypts the file and that key is encrypted with the
+  environment's key.

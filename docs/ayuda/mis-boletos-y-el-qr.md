@@ -42,18 +42,37 @@ escritorio. Versión: 10 nov 2026. Audiencia: vecino. Tema: eventos._
 ## English
 
 ### What it does
-**My account › Tickets**: **Upcoming** and **Past**, one row per order with the date, how many tickets and **WITH QR** (or USED · REFUNDED ·
-VOID). **The ticket** page shows the big QR, the human code (**TL-XXX-0000**), the name and status. **Tap the code to see it big. Turn up the
-brightness.** Your QR is your entry; no need to print. It is **signed by To'Latino**: the door checks it offline and nobody can forge one. It
-carries no name or phone. A **table** is one QR with its entries. **Save it to Apple Wallet or Google Wallet** from the ticket: the same QR,
-and it updates by itself if you transfer it, refund it or the event changes (see `boletos-en-wallet`).
+- **My account › Tickets**: **Upcoming** and **Past**, one row per order with the date, how many tickets and **WITH QR** (or **USED** ·
+  **REFUNDED** · **VOID**). Tapping opens the order with all the QRs.
+- **The ticket**: the big QR, the human code (**TL-XXX-0000**), whose name it is under and its status. **Tap the code to see it big. Turn up the
+  brightness.** If the door staff cannot read it, tell them the code.
+- **Your QR is your entry; you do not need to print it.** The QR is **signed by To'Latino**: the door checks it offline and nobody can make
+  one up. It carries neither your name nor your phone.
+- A **table** is a single QR with its entries («Table · Floor · 4 entries»).
+- **Save it to Apple Wallet or Google Wallet** from the ticket: the same QR, and it updates on its own if you transfer it, refund it or the
+  event changes. See `boletos-en-wallet`.
+- At the top of **Events**, **My tickets and RSVP** shows when you have upcoming tickets or RSVPs.
 
-### Cases and FAQ (English)
-Reissued by To'Latino → notice, new QR, the old QR no longer works. Voided → notice with the reason; the QR is dimmed. Past events → Past, no
-QR. Only the buying account can open a ticket. Offline at the door: the signature is checked offline. Transfers are available from the order or the ticket (up to 2 h before); received tickets show as RECEIVED. Wallet passes
-are not available yet.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| To'Latino reissues your ticket (you lost your phone, you shared it by mistake) | You get a notice; My account shows the new QR. **The previous QR stops working at the door.** |
+| A ticket is voided | You get a notice with the reason; the QR shows dimmed and does not get in. |
+| The event already happened | The ticket stays in **Past**, without a QR. |
+| Another person opens the link to your ticket | They do not see it: each ticket only opens with the account that has it. |
+| A ticket was transferred to you | It shows in My account › Tickets as **RECEIVED · WITH QR** and the ticket opens (the order belongs to whoever paid). |
+| You sent a ticket and nobody has received it yet | It shows as **SENT**; no QR until they receive it or you undo it. |
+| There is no signal at the door | The door staff checks the QR's signature offline. And you see it without signal: the ticket you opened once with signal stays **saved on this phone** (encrypted) and opens the same. |
+| You sign out of your account | The tickets saved on the phone are erased. Another account on the same phone does not see yours. |
+
+### FAQ
+- **Can I send a ticket to another person?** Yes: **Transfer** from the order or the ticket (up to 2 hours before). The previous QR is voided and
+  the other person receives their own. See «Transfer tickets».
+- **Does a screenshot work?** Yes, the QR is the same; but if To'Latino reissues it, the old screenshot no longer gets in.
+- **Apple Wallet or Google Wallet?** Not yet: your QR lives in the app and, if you opened it once with signal, it shows without signal.
+- **What does the phone store?** The QR, the code, the type and the event, encrypted with your session's key. Nothing of what you paid.
 
 ### At the door
-The door scans your QR with their phone; then your ticket says «Used · you got in at 10:42». A **multi-day pass** keeps saying **VALID ·
-ANOTHER DAY**: show the same QR each day (one entry per day). A group with a table can enter some now and others later with the same QR. If
-you don't have the QR at hand, the door finds you by your name or the last 4 digits of the code. **Offline:** a ticket you opened once with signal is **saved on this phone** (encrypted with your session’s key) and opens without signal — the door verifies the QR signature offline too. Signing out erases it, and another account on the same phone never sees yours. Nothing about what you paid is stored.
+- The door staff scans your QR with their phone. Afterward your ticket says **«Used · you got in at 10:42»**. A **multi-day pass** keeps saying
+  **VALID · ANOTHER DAY**: show the same QR each day (one entry per day). If you go in a group with a table, some can enter now and others
+  later with the same QR. If you do not have the QR at hand, the door staff looks you up by your name or the last 4 digits of the code.

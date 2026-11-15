@@ -65,45 +65,58 @@ Cada página responde primero la pregunta de su tipo, con datos de verdad:
 
 ### What it does
 Each page first answers the question for its kind of place, with real data:
-- **Churches:** «DO I NEED TO SIGN UP? No: just come», the **next service** from the weekly schedule, the language and free help. Food
-  pantry: «DO THEY ASK FOR PAPERS?» and whether there is help today. Funeral home: «DO THEY GIVE ME THE PRICE FIRST? Yes, the total in
-  writing» and repatriation. Fixed line: **«Church help is free; food, clothing and prayer are never charged.»**
-- **Real estate:** «DO THEY ASK FOR SOCIAL SECURITY?», **«To move in: rent + deposit = total»** on every property and how many are
-  available; for sale, the price and the **estimated payment**; for loans, «DO THEY GUARANTEE APPROVAL? No, nobody can». Fixed line:
-  **«What you pay to move in is all here: nobody charges to see a property.»**
-- **Car dealers:** «HOW MUCH DO I PAY IN TOTAL? Price + 6 % + tags + fee» and, on each car, the **OUT-THE-DOOR** total with its breakdown,
-  mileage, title, history and warranty. Fixed line: **«The out-the-door price: with taxes, tags and dealer fees, before you sign.»**
+- **Churches:** «DO I NEED TO SIGN UP? No: you just come to the service», the **next Mass** (or service, or meeting) taken from the weekly
+  schedule, the language and the free help. Food pantry: «DO THEY ASK FOR PAPERS?» and whether there is help today («Out for today»). Funeral
+  home: «DO THEY GIVE ME THE PRICE FIRST? Yes, the total in writing» and repatriation. Fixed line: **«Church help is free; food, clothing and
+  prayer are never charged.»**
+- **Real Estate:** «DO THEY ASK FOR SOCIAL SECURITY?», **«To move in: rent + deposit = total»** on every property, how many are available; for
+  sale, the price and the **estimated payment**; for loans, «DO THEY GUARANTEE MY APPROVAL? No, nobody can». Fixed line: **«What you pay to
+  move in is all here: nobody charges to see a property.»**
+- **Car Sales:** «HOW MUCH DO I PAY IN TOTAL? Price + 6 % + tags + fee» and, on each car, **OUT THE DOOR** with its breakdown, the mileage, the
+  title, the history and the warranty. Fixed line: **«The out-the-door price: with taxes, tags and dealer fees, before you sign.»**
 
 ### How to use it
-- **Overview:** today's card, the top card, the short list and the side rail.
+- **Overview:** today's card (NEXT MASS · LANGUAGE · FREE HELP; TO MOVE IN · REQUIREMENTS · AVAILABLE; OUT THE DOOR · WITH ITIN · WARRANTY…),
+  the top card, the short list and the side rail.
 - **Tab** («Masses and sacraments», «Properties», «Rooms», «For sale», «On the lot»…): each service, property or car with its price and what
-  matters. Tap it for the sheet: a property shows photos, «To move in», what is included, what they ask for, the area, «Never pay a deposit
-  before seeing the property and signing the lease.» and **Equal housing opportunity** («Service and support animals are not pets: they are
-  always accepted.»). A car shows the out-the-door breakdown and, if the dealer finances, an **example payment with down payment, months and
-  APR, estimated and subject to approval**.
+  matters («$1,050/month · TO MOVE IN $2,100 · VIEWING IS FREE»; «$11,900 · OUT THE DOOR $13,163 · 88,400 MILES · CLEAN TITLE»).
+- **Sheet:** tap it. A property brings photos, «To move in», what is included, what they ask for, the area, «Never pay a deposit before seeing
+  the property and signing the lease.» and, at the bottom, **Equal housing opportunity** with «Service and support animals are not pets: they
+  are always accepted.». A car brings the out-the-door breakdown, the data, what you should know and, if the dealer finances, the **example
+  payment with down payment, months and rate (APR), estimated and subject to approval**.
+- **Category page:** how many places there are, how many open now and how many are «In Spanish», «No Social Security» or «With ITIN».
 
 ### What happens in each case
-- **Requests:** visits, test drives, appointments, pre-qualification and offers (real estate and cars) and «Ask for a date» or «Sign up»
-  (churches) are made in the app from the sheet: day and time, review and send. You pay $0. See Request a visit, a test drive or a date.
-- **Funeral home · «Ask for information»:** call, write or WhatsApp. No pressure, and asking is free.
-- **Donations:** always «suggested · if you can't, nothing is charged». To'Latino takes no donations or tithes.
-- **Rooms:** the page shows the area (city and ZIP), **never the address**; the address arrives when your visit is accepted.
-- **A car's monthly payment** only shows with down payment, months and rate together. A **salvage title** always says it cannot be
-  driven on the street until it passes the PA inspection. **Badges** («PA licensed dealer», «NMLS», «PA licensed funeral home») show only
-  when To'Latino verified the license.
-- **Free plan:** the list shows up to 5; tapping a property, car or date goes straight to the request (up to 10 a month per business).
-- To'Latino **never asks** for social security, ITIN, income, bank statements or a driver's license: papers are taken in person.
+- **Asking for a visit, test drive, appointment, pre-qualification or offer** (Real Estate and Cars) and **Ask for a date** or **Sign me up**
+  (Churches) are already requested in the app from the sheet: day and time, then review and send. Today you pay $0. See
+  `pedir-visita-y-prueba-de-manejo.md`. Seeing a property and the test drive are free; nothing is charged or held in the app.
+- **Funeral home · «Ask for information»:** it lets you call, write or WhatsApp (if it has it). No pressure: the family decides calmly and
+  nobody charges for asking.
+- **Donation:** always «suggested · if you can't, nothing is charged». To'Latino does not receive donations or tithes.
+- **Rooms and «area only»:** the page says the area (city and ZIP code) and **never the address**; the address arrives when they accept your
+  visit. The page of someone who rents rooms in their home does not show their address either.
+- **A car's monthly payment:** it only shows with down payment, months and rate together; if one is missing, there is no payment. Buy here pay
+  here says the total you pay at the end.
+- **Salvage title:** it always says «not to be driven on the street until it passes the PA inspection».
+- **Badges** («PA licensed dealer», «NMLS», «PA licensed funeral home»): only when To'Latino verified the license.
+- **Free plan:** the list shows up to 5; tapping a property, a car or a date takes you straight to requesting it (up to 10 requests a month per
+  business); the button below is still to call or write.
+- To'Latino **never asks** for social security, ITIN, income, bank statements or a driver's license: papers are brought in person.
 
 ### Reviews and help
-«What matters» comes from verified visits, test drives, bookings and dates in the last year; funeral homes and religious stores show
-neighbor reviews only; church reviews have no photos. A listing may be paused while To'Latino reviews a possible scam. See Review and help
-with your visit.
+- **What matters:** in Real Estate, Cars and Churches it comes from the verified reviews of visits, test drives, appointments and dates made
+  through To'Latino in the last year («From N visits and appointments through To'Latino in the last 12 months.»). Funeral homes and religious
+  stores show «Neighbor reviews», without a count of verified ones. Church reviews carry no photos.
+- **Help:** see `resena-y-ayuda-con-tu-visita`. If a property, a car or «Ask for a date» does not show, it may be paused while To'Latino
+  reviews a possible scam.
+
+**The Free cap** (the 10 online orders, bookings or requests a month) is today's: To'Latino sets it in its Configuration and the screen always
+shows the one in force at that moment.
 
 ### FAQ
-- **How much do I need to move in?** What «To move in» says: rent + deposit (+ application fee if any). Nothing beyond what is posted.
+- **How much do I need to move in?** What «To move in» says on the property: rent + deposit (+ application fee if there is one). Nothing
+  beyond what is posted.
 - **Is the house payment fixed?** No: it is an estimate; the real one depends on the loan.
-- **Can the out-the-door total go up?** No: price + tax + tags + dealer fee, before you sign. If they charge more, ask for help.
-- **Do I pay to go to Mass or the food pantry?** No. Food, clothing and prayer are never charged.
-- **Why can't I see the room's address?** To protect the person renting it: you get it once your visit is accepted.
-
-**The Free cap** (10 online orders, bookings or requests a month) is today's: To'Latino sets it in its Configuration and the screen always shows the one in force.
+- **Can the out-the-door total go up?** No: price + tax + tags + dealer fee, before you sign. If they charge you more, ask for help.
+- **Do I have to pay to go to Mass or to the food pantry?** No. Food, clothing and prayer are never charged.
+- **Why can't I see the room's address?** To look after the person renting it: it reaches you when they accept your visit.

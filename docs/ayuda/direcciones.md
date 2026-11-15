@@ -38,24 +38,34 @@ teléfono no se guarda.
 ## English
 
 ### What it does
-Type your address and real suggestions show up as you type: street and number, city, state and ZIP code, anywhere in the United States. They come
-from our own database (public Census data and the address points that counties and states publish): what you type never goes to Google or anyone.
-Pick one and the map shows the **pin**. If it is not exactly at your door, **move the map** until it is: that is the point the driver uses. **Use my
-location** fills in the closest address (with your phone's location permission); your phone's point is not saved.
+You type your address and, while you type, real suggestions show up: the street with the number, the city, the state and the ZIP code. It works
+for any address in the United States (also outside your city). The addresses come from our own database, built from the public data of the
+Census and of the counties and states that publish their address points: we do not ask Google or anyone else what you type.
+
+When you pick one, the map shows with the **pin**. If the pin does not land right at your door, **move the map** until it is at the door: that
+point is the one the driver uses. **Use my location** puts the address closest to where you are (with the phone's location permission); your
+phone's point is not saved.
 
 ### How to use it
 1. In **My account › Addresses**, tap **Add address** (or **Change** from checkout).
-2. Type the street and number, for example "123 N Wyo", and pick the right suggestion (arrow keys and Enter on a computer).
-3. If needed, move the map until the pin is at your door. **Back to the address point** resets it.
-4. Add the apartment and driver notes, then **Save address**. Business owners do the same in **Dashboard › Your page › Address and map**.
+2. Type the street and the number: for example «123 N Wyo». Pick the right suggestion (with arrow keys and Enter on a computer).
+3. If needed, move the map until the pin is at your door. **Back to the address point** leaves it as it was.
+4. Add the apartment and the notes for the driver, and tap **Save address**.
+5. Do you have a business? In **Dashboard › Your page › Address and map** you do the same with your business's address.
 
 ### What happens in each case
-- **Street exists, number does not:** the suggestion says "number missing".
-- **No suggestions:** type it in full with the ZIP code; it is saved, but without a point it cannot be used for delivery.
-- **Pin moved too far:** keep it within 250 meters of the address.
-- **No location permission:** type it, or allow it in your phone settings.
+| Case | What the person sees | What to do |
+|---|---|---|
+| The street exists but not that number | The suggestion says «number missing». | Check the number. |
+| No suggestion shows | «We could not find it like that». | Type it in full with the ZIP code; it is saved anyway, but without a point it is no good for delivery. |
+| You moved the pin too far | «The pin ended up too far from that address». | Put it at the door: up to 250 meters from the address. |
+| No location permission | «No location permission: type it above». | Type it, or give permission in the phone's settings. |
+| The address is in another city | It is saved; «Outside the delivery area». | It works for pickup; businesses in your city do not deliver there. |
+| The team corrected your business's point | In your dashboard: «To'Latino corrected the point…». | If you change it, yours stays. |
 
 ### FAQ
-**Do you send my address to Google?** No. Suggestions and the map are ours. Only **Directions** opens your phone's map app.
+**Do you send my address to Google?** No. The suggestions and the map are ours. Only **Directions** opens your phone's map app.
 
-**Do you save where I am?** No. "Use my location" only looks up the closest address.
+**Why is the pin not at my door?** Some addresses are placed by the block. Move the map and leave the pin at the door: it stays saved.
+
+**Do you save where I am?** No. «Use my location» only looks up the closest address; the phone's point is not saved.

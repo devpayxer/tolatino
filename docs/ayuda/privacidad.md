@@ -29,18 +29,29 @@ del teléfono. Teléfono y escritorio. Versión: 11 nov 2026. Audiencia: vecino.
 - **¿Por qué dice «borrador»?** Porque el texto legal final todavía se revisa; lo que dice de tus datos ya es lo que hacemos.
 
 ## English
+
 ### What it does
-- The **/privacidad** page says what data To'Latino keeps, why, in which apps and for how long, taken from the real list of what we keep (the same one
-  we give Apple and Google). Today it is a **draft**: the final legal text is published before To'Latino opens to the public.
-- The main points: **we do not track you** across apps or websites, there is no third-party advertising, we do not sell your data and analytics are
-  our own.
+- The **/privacidad** page says what data To'Latino keeps, why, in which apps and for how long, taken from the real list of what we keep (the
+  same one we give Apple and Google). Today it is a **draft**: the final legal text is published before To'Latino opens to the public.
+- The main points: **we do not track you** across apps or sites, there is no third-party advertising, we do not sell your data and the
+  analytics are our own.
 
 ### How to use it
-- Open it from any browser or from **My account › Settings › Privacy and security › How To'Latino uses your data**. No sign-in needed.
-- **Delete your account**: My account › Settings › Delete my account, on the web and in the four apps. It is fully erased after 30 days; if you sign
-  in before then, it is cancelled.
-- **Notifications**: turn each type off in My account › Notifications.
+- Open it from any browser or from **My account › Settings › Privacy and security › How To'Latino uses your data**. You do not need to sign in.
+- **Read in English**: tap «Read in English» at the top.
+- **Delete your account**: My account › Settings › Delete my account, on the web and in the four apps. It is fully erased after 30 days; if you
+  sign in before then, it is canceled.
+- **Notifications**: turn off each type in My account › Notifications. **Sessions and keys**: in My account › Settings › Privacy and security.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You say no to the camera, location or notifications | The app keeps working; it asks you again only when you use it. |
+| You are a driver | Your location is shared only during an active delivery and stops being shared when you mark «Delivered». |
+| You delete your account | Your data is erased after 30 days; what the law requires keeping about a payment stays without your name. |
+| You have a question about your data | Write to us in Support: a person on the team replies. |
 
 ### FAQ
-- **Does To'Latino sell my data?** No, not to businesses, not to anyone.
-- **Does a business see my phone?** Only on what you do with it (an order, an appointment) and only what it needs to serve you.
+- **Does To'Latino sell my data?** No, not to businesses and not to anyone.
+- **Does a business see my phone?** Only in what you do with it (an order, an appointment) and only what it needs to serve you.
+- **Why does it say «draft»?** Because the final legal text is still being reviewed; what it says about your data is already what we do.

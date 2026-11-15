@@ -36,28 +36,41 @@ WhatsApp» en español y en inglés (el selector de idioma del admin). Versión:
 **¿Puedo ver el teléfono de un SMS?** No: aquí solo los últimos 4. La persona y su historial están en Usuarios 360°.
 
 ## English
-_Screens: **Super Admin › Notifications** (`/admin/notifications`) with **Templates**, **Sends**, **Push**, **SMS and WhatsApp**, **WhatsApp templates**,
-**Emails** and **Rules**. View: Notifications · view. Edit a template, send a WhatsApp template to Meta and simulate its answer in the sandbox:
-Notifications · edit. «SMS and WhatsApp» and «WhatsApp templates» follow the admin language selector._
+
+_Screens: **Super Admin › Notifications** (`/admin/notifications`) with its tabs **Templates**, **Sends**, **Push**, **SMS and WhatsApp**,
+**WhatsApp templates**, **Emails** and **Rules**. View: Notifications · view. Edit a template, send a WhatsApp template to Meta and simulate its
+answer in the sandbox: Notifications · edit. The numbers are for the cities of whoever is looking. Desktop and phone; «SMS and WhatsApp» and
+«WhatsApp templates» in Spanish and English (the admin language selector)._
 
 ### What it does
-- **Templates:** every notification in Spanish and English, editable with a reason. The sign-in code (`cuenta_codigo`) is editable too, but it must keep
-  `{codigo}`; To'Latino adds the line phones use to autofill the code (not editable).
-- **SMS and WhatsApp:** delivery of every SMS, which goes out through **one path** (notifications, the sign-in code, SMS to numbers without an account
-  and El Compa by SMS): sent, **delivered** (confirmed by the carrier through Telnyx's signed webhook), **retrying**, **failed** or **no provider**, with its
-  attempts. No phone numbers: only the last 4. Also WhatsApp delivery (Meta's signed statuses) and the **global sender cap** with its alerts.
-- **WhatsApp templates:** To'Latino's templates to write first on WhatsApp (the code, your tickets, your confirmed appointment and «Support replied», in
-  Spanish and English) with their **status at Meta**. **Send to Meta** asks for a reason; Meta's answer arrives on its own, signed.
+- **Templates:** every notification with its text in Spanish and English, editable with a reason (it goes to the audit log). It only lets you use
+  the variables the template already had. **The sign-in code** (`cuenta_codigo`) is also edited here, but it must always carry `{codigo}`; at the
+  end of the SMS To'Latino adds the line the phone recognizes to fill in the code on its own (that one is not editable).
+- **Sends:** each notification with the status of its SMS and its push.
+- **SMS and WhatsApp:** the **delivery** of every SMS, which goes out through **one path** (notifications, the sign-in code, SMS to numbers
+  without an account and El Compa by SMS): sent, **delivered** (confirmed by the carrier through Telnyx's signed notice), **retrying**,
+  **failed** or **no provider**, with its attempts. No phone numbers: only the last 4. Also the delivery of WhatsApp (Meta's signed notices) and
+  the **global sender cap** with its alerts.
+- **WhatsApp templates:** To'Latino's templates to write first on WhatsApp (the code, your tickets, your confirmed appointment and «Support
+  replied you», in Spanish and English) with their **status at Meta**: draft, in review at Meta, approved, rejected (with Meta's reason), paused
+  or disabled. **Send to Meta** asks for a reason; Meta's answer arrives on its own, signed.
+- **Emails:** every email in the outbox (receipts, confirm the email, Support, the weekly summary, campaigns) with its status.
 
 ### What happens in each case
 | Case | What happens |
 |---|---|
-| The provider rejects an SMS or the carrier does not deliver it | It is retried with growing waits up to the attempt cap. Permanent failures (STOP, invalid number) are not retried. |
-| A sign-in code would expire before the next attempt | Not retried: it stays «failed». The person asks for a new one. |
-| More than 60 different numbers text in one minute | Those over the cap get no reply that minute; Admins get «Many numbers are texting at once» (once every 10 minutes). STOP is always honored. |
-| Someone texts STOP | The opt-out is always recorded. Only ONE confirmation goes out: ours or the provider's (Configuration › Notifications and channels). |
-| Sandbox | No SMS reaches a real phone: the simulator answers like Telnyx. WhatsApp templates go to the Meta simulator and its answer is simulated here. |
+| The provider does not accept an SMS or the carrier does not deliver it | It is retried with growing waits (2, 4, 8 minutes by default) up to the attempt cap (3). Permanent failures (the number asked for STOP, invalid number) are not retried. |
+| The SMS carries a sign-in code and the code expires before the next attempt | It is not retried: it stays «failed». The person asks for another. |
+| The delivery notice of an OLD attempt arrives | Nothing changes: only the last attempt decides. |
+| More than 60 different numbers text in one minute (WhatsApp and SMS) | Those over the cap get no reply that minute; Admins get «Many numbers are texting at once» (once every 10 minutes). STOP is always honored. The cap is in System › Configuration › Notifications and channels. |
+| Someone texts STOP | The opt-out is always recorded. The confirmation goes out ONCE: ours (in their language) or the provider's (Configuration › Notifications and channels › «STOP · who confirms the opt-out»). |
+| A WhatsApp template is in review | Its text does not change until Meta answers. If rejected, it is fixed and sent again. |
+| Sandbox | No SMS goes out to a phone: the simulator answers like Telnyx (570-555-0911 fails once, 570-555-0912 is invalid, 570-555-0913 does not answer once). WhatsApp templates go to the Meta simulator and its answer is simulated here («Simulate: approved / rejected»). |
+| Production without the Telnyx and Meta accounts | SMS stay «no provider» and go out when the keys arrive; «Send to Meta» says the account is missing. |
 
 ### FAQ
-**Why does one SMS say «delivered» and another only «sent»?** «Sent» = the provider accepted it; «delivered» = the carrier confirmed it arrived.
-**Can I see an SMS phone number?** No: only the last 4 here.
+**Why does one SMS say «delivered» and another only «sent»?** «Sent» = the provider accepted it; «delivered» = the phone's carrier confirmed it arrived.
+
+**Where do I change how many times it is retried?** System › Configuration › Notifications and channels (attempts and the wait before the first retry).
+
+**Can I see the phone number of an SMS?** No: here only the last 4. The person and their history are in Users 360°.

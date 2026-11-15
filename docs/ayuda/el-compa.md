@@ -53,29 +53,48 @@ Audiencia: vecino. Tema: cuenta._
 ## English
 
 ### What it does
-**El Compa is To'Latino's AI assistant** and always says so («El Compa is an AI and can make mistakes. Anything that moves money or changes your
-account is reviewed by a person.», with a link to what it sees and who reads it). When you tap **Help** on an order, booking, reservation, ticket
-order, private event, market order, layaway, party, trip, night out, enrollment or visit, El Compa opens first over that screen with **About this
-item** (its status as To'Latino has it) and fixed options: **Cancel it** (a request the business has not confirmed and that has no charge: El
-Compa shows **Here's how it ends up** — Charge $0, any hold released, the business sees it right away — and **you confirm**; if it is already
-confirmed, it opens the item so you see its policy), **Ask for another time** or **Running late** (opens your booking), **Something went wrong**
-(or **A payment problem** on tickets: the usual help form), **I was overcharged** (goes to a person with a summary) and **Something else** (type
-your question; it answers from the Help center, citing the article, and from your own items). In **Support › Ask El Compa** you pick a booking,
-an order, a ticket, a payment or your account. **Talk to a person** is always visible and opens a Support case (TK-…) with a summary.
+- **El Compa is To'Latino's AI** and always says so: at the top of every conversation you see «El Compa is an AI and can make mistakes.
+  Anything that moves money or changes your account is reviewed by a person.» and the link **What it sees and who reads it** (the «El Compa
+  privacy» help).
+- In the **help for an operation**, El Compa opens first, over the screen of your order or your appointment: **About this item** (the status
+  just as To'Latino has it) and the usual options depending on what it is and how it stands:
+  - **Cancel it** (a request the business has not confirmed yet and that has no charge): El Compa shows you **Here's how it ends up** (Charge
+    $0 · whatever was held is released · the business sees it right away) and **you confirm** with «Yes, cancel the request». If it is already
+    confirmed, it opens the operation so you see its policy and cancel there.
+  - **Ask for another time** or **Running late**: it opens your appointment or your reservation, where those buttons are.
+  - **Something went wrong** (or **A payment problem** on a ticket): it opens the usual **Help with …** form.
+  - **I was overcharged**: it passes your case to **a person on the team** with a summary.
+  - **Something else**: you write it in your own words and El Compa answers with the **Help center** (it tells you which article it comes
+    from, with its link) and with your own operations.
+- In **Support › Ask El Compa** you choose what it is about: **An appointment or reservation · An order · A ticket · A payment or charge · My
+  account**, and then which one. Payment matters and «Someone got into my account» go to a person; changing your phone, your city or your
+  privacy opens **My account** (you confirm each change).
+- **With a person** is always in view: it opens a Support case (TK-…) with a summary of what you talked about, so you do not have to repeat it.
 
 ### How to use it
-Tap **Help** (or **Ask El Compa**), tap an option or type. If El Compa prepares something, read **Here's how it ends up** and tap **Yes** or
-**No, keep it**; nothing happens without your tap. If it goes to a person you see **Your case went to Support** with **See my case**.
+1. Tap **Help** on your order, your appointment or your ticket (or **Ask El Compa** in Support).
+2. Tap an option or write your question.
+3. If El Compa prepares something for you, you read **Here's how it ends up** and decide: **Yes** does it; **No, keep it** leaves it as it was.
+   Without your tap nothing happens.
+4. If it goes to a person, you see **Your case went to Support** with the number, when they will write to you and **See my case**.
 
 ### What happens in each case
-If the business confirms while you look at it, confirming says «It already changed» and nothing is cancelled. A prepared action expires after
-15 minutes. Other people's data: «I don't have that information». Card numbers, codes and passwords are covered. Money, account and safety go
-to a person. Too many messages in a row: it asks you to wait and offers «Talk to a person». If El Compa is off, paused or the monthly AI cap is
-reached, Help opens the usual form (and Support says «Write to us» when it is off). An item that already has a help request opens its status.
-Health, professional and kids' items never go through El Compa.
+| Case | What happens |
+|---|---|
+| The business confirms your request while you look at «Here's how it ends up» | When you confirm you see «It already changed: … already replied» and nothing is canceled. |
+| More than 15 minutes pass without confirming | The preparation expires; ask for it again. |
+| You ask about another person's data | «I don't have that information»: El Compa only sees what is yours. |
+| You write a card, a code or a password | It is masked and you see «Don't share that here. We never ask for it.». |
+| It is money, your account or safety | El Compa does not resolve it: it goes to a person with the summary. |
+| You write many messages in a row | It asks you to wait and offers «Talk to a person». |
+| El Compa is off or paused | Help opens the usual form directly and Support says «Write to us». |
+| To'Latino reached the month's cap for the AI | Help opens the usual form; in Support, fixed rules answer and you always have «Talk to a person». |
+| You already opened a help request about that operation | Its status opens, without El Compa. |
+| It is a health appointment, one with professionals or one for kids | El Compa does not come in: Help opens the usual form. |
 
 ### FAQ
-- **Can it charge or refund me?** No. It never moves money or changes your account.
-- **What can it do?** Only cancel a request that is still free, after you confirm, and open the right screen.
-- **Does it answer in English?** Yes, in the language you write in.
-- **Legal, medical or immigration advice?** No, and it never asks for your status, card or passwords.
+- **Can El Compa charge me or refund me?** No. It never moves money or changes your account: a person reviews that.
+- **What can it do for me?** Only cancel a request that is still free, after you confirm, and open the right screen for you.
+- **Does it answer in English?** Yes: it answers in the language you write to it in.
+- **Does it give me legal, medical or immigration advice?** No, and it never asks for your status, your card or your passwords.
+- **Who sees what I write to it?** See «El Compa privacy».

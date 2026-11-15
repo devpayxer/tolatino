@@ -45,33 +45,39 @@ Una sola cuenta de To'Latino con tu número de teléfono de EE. UU. Sin contrase
 ## English
 
 ### What it does
-One To'Latino account with your US phone number. No passwords: we text you a 6-digit code. If the number already has an account
-you go straight in; if it is new, we ask for your name.
+One To'Latino account with your US phone number. No passwords: we text you a 6-digit code. If the number already has an account, you go
+straight in; if it is new, we ask for your name.
 
 ### How to use it
-1. Type your phone (10 digits) and tap **Send me the code**.
-2. Type the 6-digit code and tap **Verify**. Tap **Change** if you typed the number wrong, or **Resend** to get another one.
-3. New here: type your **first name** and **last name** (a nickname is optional) and tap **Continue**.
-4. Coming from My account or the Community, three more steps follow (**Your area · What you like · The neighborhood**, with the
-   rules and «I am 18 or older»). Coming from an order or a booking, you finish here and carry on; you do those steps when you enter
-   the Community.
+1. Type your phone (10 digits) and tap **Text me the code**.
+2. Type the 6-digit code and tap **Verify**. You can tap **Change** if you typed the number wrong, or **Resend** to get another one.
+3. If you are new: type your **first name** and **last name** (a nickname is optional) and tap **Continue**.
+4. If you come from My account or from the Community, three more steps follow (**Your area · What you like · The neighborhood**, with the
+   rules and «I am 18 or older»). If you come from an order or an appointment, you finish here and carry on with what you were doing; you do
+   those steps when you enter the Community. Details: `comunidad-vecinos-seguir-bloquear-y-mensajes.md`.
 5. Your session stays open on that phone. To leave: **My account → Sign out**.
 
 ### What happens in each case
-- Fewer than 10 digits or not a US number: «Check the number: 10 US digits».
-- Asking for another code within 30 seconds: wait a few seconds and tap Resend.
-- Wrong code: check the text you got and try again. 5 wrong codes, or more than 5 codes in an hour: «Too many attempts. Try again in an
-  hour» (it protects your account). A code older than 10 minutes expires: ask for a new one.
-- Suspended account (14 days): the screen says until when and why; it lifts on its own. Banned, closed or merged account, an account
-  being deleted (30-day grace) or a device blocked by the team: the screen says so and points you to Support.
+| Case | What the person sees | What to do |
+|---|---|---|
+| A number with fewer than 10 digits or that is not a US number | «Check the number: 10 US digits.» | Correct the number. |
+| Asks for another code before 30 seconds | «Wait a few seconds to ask for another code.» | Wait and tap Resend. |
+| Wrong code | «That code is not right. Check it and try again.» | Check the text you received. |
+| 5 wrong codes, or more than 5 codes asked in an hour | «Too many attempts. Try again in an hour.» | Wait an hour. It is to protect your account. |
+| The code is more than 10 minutes old | «The code expired. Ask for a new one.» | Tap Resend. |
+| Suspended account (14 days) | «Your account is suspended until {date}. Reason: {reason}.» | Wait for the date (it lifts on its own) or write to Support. |
+| Banned, closed or merged account | «This account cannot sign in. Reason: {reason}. Write to Support.» | Pass to a Support person. |
+| Account being deleted (30 days of grace) | «This account is being deleted: it is fully deleted on {date}. If it was a mistake, write to Support before then.» | Support can ask an Admin to restore it before the date. |
+| Device blocked by the team | «You cannot sign in from this device. Write to Support.» | Pass to Support (it may be a lost or stolen phone). |
 
 ### FAQ
 - **Do you ask for my status, ITIN or social security number?** Never. Only your phone and your name.
-- **Do I sign in every time?** No. The session lasts 180 days on that phone, or until you sign out.
-- **I changed phones.** Sign in with the same number on the new phone and you get the code.
-- **The code does not arrive.** Check the number and wait 30 seconds to Resend.
+- **Do I have to sign in every time?** No. The session lasts 180 days on that phone, or until you sign out.
+- **I changed phones.** Sign in with the same number on the new phone and the code arrives.
+- **The code does not arrive.** Check that the number is typed correctly and wait 30 seconds to Resend.
 
 ### For El Compa
 <!-- solo-equipo -->
-Never ask for the code or repeat it. Never offer to change an account's number: a Support person does that. If someone says they did
-not ask for a code, suggest not sharing it and pass the case to Support (possible attempt to get into their account).
+- Never ask the person for the code or repeat it. Never offer to change the number of an account: a Support person does that.
+- If someone says they did not ask for a code, suggest they not share it and pass the case to Support (possible attempt to get into their
+  account).

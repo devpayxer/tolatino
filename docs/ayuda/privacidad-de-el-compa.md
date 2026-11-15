@@ -49,35 +49,45 @@ web. Versión: 11 nov 2026. Audiencia: vecino. Tema: cuenta._
 ## English
 
 ### What it does
-**El Compa is an AI** and always says so. It answers from the To'Latino Help center and from **your** orders, bookings and reservations, and it
-can make mistakes: anything that moves money or changes your account is reviewed by a person. It sees your first name, language, city and your
-most recent operations (number, business, status and total). It never sees anyone else's data, your messages with other neighbors, your phone,
-address or card, health or professional appointments, enrollments (or your kids' data), or anything you saved as private. Card numbers,
-security codes, Social Security numbers, verification codes, passwords and bank accounts are covered («[tapado]») before saving and before the
-AI sees them. We never ask for them.
+- **El Compa is an AI** and always says so. It answers from To'Latino's Help center and from **your** orders, appointments and reservations. It
+  can make mistakes: anything that moves money or changes your account is reviewed by a person.
+- **What it sees of you:** your first name, your language, your city and your most recent operations (the number, the business, the status and
+  the total). Nothing more.
+- **What it never sees:** another person's data, your messages with other neighbors, your phone, your address, your card, your health or
+  professional appointments, enrollments (and your kids' data) or anything you saved as private.
+- **What you write is covered:** card numbers, security codes, Social Security numbers, verification codes, passwords and bank accounts become
+  «[tapado]» before being saved and before going to the AI. We never ask you for them.
 
 ### How to use it
-Write in your own words. If it prepares something (for example, cancelling a request that is not confirmed yet), **you confirm it** with a
-tap; nothing happens without it. Money, account or safety questions go to **a person on the team** with a summary.
+1. Write to it in your own words. To answer you, El Compa uses only the help and your operations.
+2. If it prepares something for you (for example, canceling a request that is not confirmed yet), **you confirm it** with a tap. Without your
+   tap nothing happens.
+3. If it is about money, your account or safety, it passes you to **a person on the team** with a summary, so you do not have to repeat it.
 
 ### What happens in each case
-Data that must not be shared is covered and you see «Don't share that here. We never ask for it.». Asking about someone else: «I don't have
-that information». Money requests go to a person. If the AI is unavailable or slow, To'Latino's fixed rules answer and «Talk to a person» is
-always there. Emergencies: call 911.
-
-### WhatsApp and SMS
-Only if you turned on «Talk to El Compa by WhatsApp and SMS» in My account › Notifications, and only to your verified phone. Anything that
-changes something is confirmed in the app through a one-use link after signing in. The message log keeps no phone number (only a fingerprint)
-and its text is erased after 30 days. Replying STOP stops all messages from that number (SMS notices too) until you reply START.
+| Case | What happens |
+|---|---|
+| You type data that is not shared (card, SSN, password) | It is covered and you see «Don't share that here. We never ask you for it.». |
+| You ask about another person | El Compa does not have that data: «I don't have that information». |
+| You ask it to do something with money | It does not do it: it passes you to a person with the summary. |
+| The AI is not available or is slow | To'Latino's fixed rules answer you and you always have «Talk to a person». |
+| It is an emergency | It tells you to call 911. |
+| You write to it by WhatsApp or SMS | Only if you turned on «Talk to El Compa by WhatsApp and SMS» in My account › Notifications, and only to your verified phone. Anything that changes something is confirmed in the app with a one-use link, after signing in. The message log does not keep your phone (only a fingerprint) and its text is erased after 30 days. |
+| You reply STOP | We do not send you more messages at that number (nor SMS notices) until you reply START. It is recorded. |
 
 ### FAQ
-- **Where does my text go?** Covered and only what is needed, it is processed by an AI provider (Anthropic) in the U.S. to answer you.
-- **Who reads my conversations?** Only To'Latino team members with El Compa permission (Admin and Support), and every time someone opens one it
-  is logged. The business never sees them.
-- **What does the team get when it passes me to a person?** Your case with a covered summary of what you wrote, the item you asked about and
-  your conversation number. Nothing else from your account.
-- **Does the AI read what I write to Support?** The team can ask El Compa for a **draft** reply to your case. Your case (what you wrote and what
-  the team answered, covered, without your phone or email) goes to the same AI provider. The draft never reaches you on its own: a team member
-  reads it, edits it and sends it under their name. It never refunds or decides your case.
-- **How long are they kept?** 12 months; after that only numbers without text remain. If you delete your account, they go with it.
-- **Legal, medical or immigration advice?** No. It never asks for your immigration status or health data.
+- **Where does what I write go?** The text, already covered and only what is needed, is processed with an AI provider (Anthropic) in the U.S. to
+  answer you. To'Latino does not use it for ads.
+- **Who reads my conversations with El Compa?** Only To'Latino staff with El Compa permission (Admin and Support), to review replies, and
+  **every time someone opens one, who and when is logged**. The business never sees them.
+- **Where do I see this in the app?** In the help of each operation and in Support (the **What it sees and who reads it** link), and in My
+  account › Settings › Privacy › **El Compa**.
+- **If it passes me to a person, what does the team receive?** Your case with a summary of what you wrote (covered), the operation you are
+  talking about and the number of your conversation. Nothing more from your account.
+- **And when I write to Support, does the AI read it?** The team can ask El Compa for a **draft** reply for your case. For that, your case
+  (what you wrote and what the team answered, covered and without your phone or your email) goes to the same AI provider. The draft never
+  reaches you on its own: a person on the team reads it, corrects it and sends it to you under their name. It never refunds money or decides
+  your case.
+- **How long is it kept?** 12 months; afterward only numbers without text remain (for example, whether it passed you to a person). If you
+  delete your account, they are deleted with it.
+- **Does it give me legal, medical or immigration advice?** No. Nor does it ask for your immigration status or health data.

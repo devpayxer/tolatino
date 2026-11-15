@@ -42,28 +42,40 @@ Audiencia: equipo. Tema: equipo._
 - **¿Dónde se ve la app y la versión de una persona?** En Usuarios 360° › Seguridad › Dispositivos y sesiones («To'Latino Puerta 1.0.0 (12) · iOS 17.5»).
 
 ## English
+
 ### What it does
-**Super Admin › System › Apps** lists the **four store apps** (To'Latino, Negocios, Repartidor, Puerta) with their iOS and Android ids and entry
-path. All four open the same served web; the app only says which one it is and its version. Per app: the **emergency pause** (paused, the app
-shows «This app is paused · Open on the web»; the web is unchanged). Per app and platform: the **minimum build** (below it: «Update the app»)
-and the **notice build** (below it: a dismissible note that comes back after 7 days); 0 = no limit. **Active sessions by app and version**
-(seen in 30 days; 7-day counts apart), counts only.
+- The **four store apps** (To'Latino, To'Latino Negocios, To'Latino Repartidor, To'Latino Puerta) with their iOS and Android ids and their entry
+  path (`/`, `/panel`, `/repartidor`, `/puerta`). All four open the same served web; the app only says which one it is and what version it has.
+- **The emergency pause** of each app (a switch): when paused, the app does not open its entry and shows «This app is paused · Open on the web».
+  The web stays the same.
+- Per app and per platform (iPhone, Android): the **minimum build** (below it: «Update the app», it does not continue) and the **notice build**
+  (below it: a note on top «There is a new version of …» that can be closed and comes back in 7 days). 0 = no limit.
+- **Active sessions by app and version** (seen in 30 days; the 7-day ones apart) and, on top, the 7-day sessions per app and the web's. No
+  people: only how many.
 
 ### How to use it
-- **Pause or reopen an app:** tap its switch, choose or write the reason, confirm. It goes to the audit log.
+- **Pause or open an app:** tap its switch, choose or write the reason and confirm. It goes to the audit log with before → after.
 - **Change a build:** on the platform row, **Minimum** or **Notice**, type the build number and the reason, **Save**.
-- Changes reach every server **within 15 seconds**, and the app sees them the next time it opens an entry screen.
-- **The other Apps tabs** (Versions, Testers, Health · errors and Reports) are explained in «Errors, beta and reports in Super Admin».
+- Changes apply on every server **within 15 seconds at most** (like all of Configuration) and the app sees them the next time it opens a screen
+  of its entry.
+- **The other Apps tabs** (Versions, Testers, Health · errors and Reports) are explained in «Errors, beta and reports in Super Admin»;
+  **Listings and review**, **Your steps** and **Declarations**, in «Super Admin: store listings and review accounts».
 
 ### What happens in each case
 | Case | What happens |
 |---|---|
-| Notice build not above the minimum | Rejected: «it has to be greater than the minimum; 0 = no notice». |
-| Out of range or negative | Rejected with the range. |
-| Not an Admin | You see everything; only an Admin changes versions or pauses an app. |
-| A route of another app | The server sends it to «This opens in …»; the Super Admin never opens inside an app. |
+| Minimum build within its limits | It is saved and goes to the audit log; apps with a lower build see «Update the app». |
+| Notice build equal to or lower than the minimum | «The notice build has to be greater than the minimum; 0 = no notice.» It is not saved. |
+| A number out of range or negative | «Between 0 builds and 999,999 builds.» It is not saved. |
+| iPhone minimum | It does not touch Android (each platform has its own). |
+| App paused | It opens «This app is paused»; **Open on the web** takes it to the browser. To open it again: the switch once more, with a reason. |
+| You are not an Admin | You see everything; «Only an Admin changes versions or pauses an app.» |
+| Finance, Moderator, Verifier | They do not have this section. |
+| Someone opens a route of another app | The server sends it to «This opens in …» (it never opens it inside the wrong app); the Super Admin never opens in an app. |
 
 ### FAQ
-- **Can an old app skip a permission?** No. The app version never decides what a person can do, see or pay; the server decides with the
-  session.
-- **Where do I see a person's app and version?** Users 360° › Security › Devices and sessions.
+- **Can an old app skip a permission?** No. The app version never decides what the person can do, see or pay: the server decides that with
+  their session. The minimum exists so old native code does not fail.
+- **When do I use the pause?** When an app has a serious problem and the web does not: people keep going with the web until it is fixed.
+- **Why are web sessions here?** To compare: how many people use the web and how many use each app.
+- **Where do I see a person's app and version?** In Users 360° › Security › Devices and sessions («To'Latino Puerta 1.0.0 (12) · iOS 17.5»).

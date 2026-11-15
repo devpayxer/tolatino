@@ -47,30 +47,46 @@ campana y en el correo.
 Reportes.
 
 ## English
+
 ### What it does
-Every day at **7:30 AM Hazleton time** the system builds the previous day's report and sends it **by email and as a push notification** to each
-active Admin (the email, to those with an email on their account). It has: **new businesses** from yesterday; **transactions** sent, accepted, done
-and cancelled; **money** sold online, commission, refunded and Pro MRR (yesterday's **Stripe reconciliation**: «matches», «does not match» with the
-difference, or «did not run yesterday»); the **last deploy** (its commit, whether it went well or was rolled back, and where); **errors** (new error groups, how many, and sweep tasks that failed); **rollbacks** (its line says there are none yet while automatic
-rollback is not on); **overdue queues** and **Support past deadline**; **live guardians** (ticket overselling, unreviewed errors, El Compa's share of
-its monthly cap); and **what needs you**: your pending steps in System › Apps › «Your part» (or «Nothing for now»). Figures, business names and your
-steps only: never a person.
+Every day at **7:30 AM Hazleton time** the system builds the report for the previous day and sends it **by email and as a notification (push)** to
+every active Admin (the email, to whoever has an email on their account). It carries:
+- **New businesses** from yesterday (how many and the names of the first ones).
+- **Operations:** sent, accepted, done and canceled.
+- **Money:** sold online, commission, refunded and the Pro MRR. Yesterday's **reconciliation with Stripe**: «it matches», «it does not match» with
+  the difference, or «it did not run yesterday» if it did not run that night.
+- **Errors:** new error groups and how many there were, and the sweep tasks that failed.
+- **Last deploy:** its version (commit), whether it went well or was rolled back, and where (testing or production).
+- **Rollbacks:** it has its own line, which says there are none yet while automatic rollback is not on.
+- **Overdue queues** (those that went past their deadline) and the **Support past deadline** cases.
+- **Live guardians:** ticket overselling, unreviewed errors and how much of its monthly cap El Compa has used.
+- **What needs you:** the steps that are yours and still pending in System › Apps › «Your steps» (the domain, the Apple and Google accounts,
+  the keys…). If there are none, it says «Nothing for now».
+
+Only figures, business names and your steps: **never a person** (no names, no phones, no emails of neighbors).
 
 ### How to use it
-It arrives on its own; tapping the notification opens Analytics › Reports, which lists the last 14 days with the time each went out, how many emails
-and notifications, and **what needs you** from the newest one. **Send it to me now** sends today's, built at that moment, to your email and as a
-notification; it is a copy, does not count as the day's report and is audited. The switch is `reporte.diario` (on by default).
+- **Reading it:** it reaches you on its own. Tapping the notification opens Analytics › Reports.
+- **Seeing it later:** Analytics › **Reports** shows the ones from the last 14 days with the time they went out, to how many emails and
+  notifications, and **what needs you** from the newest (each step opens «Your steps»).
+- **Send it to me now:** in Analytics › Reports, it sends you today's, built at that moment, to your email and as a notification. It is a
+  copy: it does not count as the day's report and it goes to the audit log.
+- **Turning it off:** it is the `reporte.diario` switch (on by default).
 
 ### What happens in each case
-It goes out once a day and is stored (its figures and where it went); it cannot be changed or deleted. If the system stops halfway, it finishes
-without repeating emails or notifications. **If by 8:00 it has not gone out, or it went out after 8:00,** the day's alert appears in Analytics ›
-Reports, Admins get «The daily report did not go out» and the task is marked with an error; one alert per day. The notification respects quiet hours
-(10 PM to 7 AM). In the sandbox the email stays in the Super Admin's email simulator. Without an email on your account you only get the notification.
+- **It goes out once a day.** It is stored (with its figures and where it went) and cannot be changed or deleted. If the system goes down halfway,
+  when it comes back it finishes without repeating the emails or notifications that already went out.
+- **If it did not go out by 8:00, or it went out after 8:00:** the **day's alert** stays in Analytics › Reports, the notice «The daily report
+  did not go out» reaches the Admins and the task is left with an error in the system. Only one alert per day.
+- **It does not sound at night:** the notification respects quiet hours (10 PM to 7 AM); at 7:30 it already arrives.
+- **In the sandbox** the email does not really go out: it stays in the Super Admin's email simulator.
+- **With no email on your account** you only get the notification; add your email in My account › Profile.
 
 ### FAQ
-**Why yesterday?** At 7:30 today has just started; the report counts what happened yesterday (Hazleton time) and today's MRR.
+**Why is it about the previous day?** At 7:30 today is only starting; the report counts what happened yesterday (Hazleton time) and today's MRR.
 
-**Why does the notification not show the figures?** Team notifications do not show their content on the lock screen; the full text is in the bell
-and the email.
+**Why doesn't the notification show the figures?** Team notifications do not show their content on the lock screen: the full text is in the
+bell and in the email.
 
-**Do other roles see it?** No, only Admins; other roles schedule their own email reports in Analytics › Reports.
+**Do other roles see it?** No. Only Admins receive it and see it in Reports; the others schedule their own email reports in Analytics ›
+Reports.
