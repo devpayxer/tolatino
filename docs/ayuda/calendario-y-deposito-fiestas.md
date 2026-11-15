@@ -6,9 +6,9 @@ Buscar › Fiestas (filtros «Libre este sábado / domingo / el sábado siguient
 ## Qué hace
 Para salones, decoradores, DJ, mariachis, fotógrafos, renta de mesas y sillas, pasteles y todo lo de fiestas.
 - **Servicios · cómo lo cobras:** *Paquete* (con horas, cuántos invitados, si incluye montaje y la lista de lo que incluye: lo
-  que no está escrito, no está incluido) (con mínimo) (juego, mantel, porción…; si dices cuántos
-  invitados cubre cada una, tu página le dice al cliente cuántas necesita) (para ver el
-  salón) («Desde $X», el total va por escrito).
+  que no está escrito, no está incluido), *Por hora* (con mínimo), *Por unidad* (juego, mantel, porción…; si dices cuántos
+  invitados cubre cada una, tu página le dice al cliente cuántas necesita), *Fijo*, *Visita al salón gratis* (para ver el
+  salón) y *Cotizado* («Desde $X», el total va por escrito).
 - **Calendario y depósito:**
   - **Depósito para apartar la fecha** (en pasos de $50): se retiene cuando te piden la fecha y se cobra cuando confirmas; si no
     confirmas, se libera completo.
