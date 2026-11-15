@@ -12,7 +12,7 @@ import { mesesDe } from "./tabla";
 type Bi = { es: string; en: string };
 export type FilaGamTabla = { id: string; nombre: string; puntos: number; recs: number; resp: number; pos: number | null; excluido: boolean; motivo: string | null; general: boolean; premio: number };
 export type Gam = {
-  rangos: { n: number; name: Bi; req: Bi; unl: Bi; min: number | null; patio: boolean; vecinos: number; editado: boolean }[];
+  rangos: { n: number; name: Bi; req: Bi; unl: Bi; min: number | null; patio: boolean; vecinos: number; editado: boolean; cond: { tipo?: string; n?: number; dias?: number } }[];
   reglas: { key: string; label: Bi; v: number; on: boolean; editado: boolean }[]; tope: number;
   ciudades: { id: string; name: string }[]; ciudad: string;
   tabla: { mes: string; actual: string; anterior: string; cerrada: { at: string; por: string | null; canjes: number } | null; congelada: boolean; dia: number; filas: FilaGamTabla[] };
@@ -37,8 +37,8 @@ export async function gamificacion(s: Staff, q: { ciudad?: string; mes?: string;
   const M = (await mesesDe(ciudad))!;
   const mes = q.mes === "anterior" ? M.anterior : M.actual;
   const [R, P, T, C, A] = await Promise.all([
-    db().query<{ n: number; name: Bi; req: Bi; unl: Bi; min: number | null; patio: boolean; vecinos: number; editado: boolean }>(
-      `select r.level as n, r.name, r.requirement as req, r.unlocks as unl, r.min_points as min, r.patio, r.updated_by is not null as editado,
+    db().query<{ n: number; name: Bi; req: Bi; unl: Bi; min: number | null; patio: boolean; vecinos: number; editado: boolean; cond: { tipo?: string; n?: number; dias?: number } }>(
+      `select r.level as n, r.name, r.requirement as req, r.unlocks as unl, r.min_points as min, r.patio, r.updated_by is not null as editado, r.cond,
               (select coalesce(sum(x.vecinos), 0)::int from com_rangos_ciudad x where x.rank_level = r.level and ($1::text[] = '{}' or x.city_id = any($1))) as vecinos
          from ranks r order by r.level`, [s.cities]),
     db().query<{ key: string; label: Bi; v: number; on: boolean; editado: boolean }>(`select key, label, points as v, enabled as on, updated_by is not null as editado from points_rules order by sort`),

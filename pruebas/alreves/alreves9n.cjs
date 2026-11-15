@@ -56,6 +56,8 @@ const casos = [
   // apelarSinSesionConFicha (9n-7): la ruta de apelar sin sesión toma a la persona del cuerpo, y la ficha deja de vencer
   ['apelarSinSesionConFicha', 'apps/web/app/api/cuenta/apelar/route.ts', 'await apelar(f.uid, "sanction"', 'await apelar(String((await req.clone().json()).uid), "sanction"'],
   ['apelarSinSesionConFicha', 'apps/web/lib/cuenta.ts', '  if (Number(m[3]) * 1000 < Date.now()) return null;\n', ''],
+  // rangoDiceLoQuePide (9n-7): cambiar lo que pide Cabo sin reescribir «Para subir»
+  ['rangoDiceLoQuePide', 'apps/web/app/admin/acciones-gam.ts', "cond = $3::jsonb, requirement = $4::jsonb, updated_by", "cond = $3::jsonb, updated_by"],
   // licenciasVuelvenTodas (9n-7): el barrido vuelve a devolver a revisión solo las licencias de Iglesias, Bienes Raíces y Autos
   ['licenciasVuelvenTodas', 'apps/web/lib/licencias.ts', "      where l.status = 'valid' and l.next_review", "      where l.business_id in (select id from businesses where category_id = any(array['NEG-FE','NEG-INMUEBLE','NEG-DEALER'])) and l.status = 'valid' and l.next_review"],
   // disputaConEvidencia: la respuesta deja de mandar los archivos

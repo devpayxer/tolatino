@@ -42,3 +42,23 @@ export function nombreMes(iso: string, es: boolean) {
   const [y, m] = iso.split("-").map(Number);
   return new Date(Date.UTC(y!, (m ?? 1) - 1, 15)).toLocaleDateString(es ? "es-US" : "en-US", { month: "long", timeZone: "UTC" });
 }
+
+/* 9n-7 · Lo que pide un rango, escrito desde su condición (cond de ranks): cuando el equipo cambia el número en Gamification › Rangos, el
+   texto «Para subir» se reescribe con el número nuevo (nunca queda el viejo). Coronel (equipo) y General (plazas) no se editan aquí. */
+export type CondRango = { tipo?: string; n?: number; dias?: number };
+export const COND_EDITABLE = ["post_votos", "comentarios_votados", "recs_votadas", "semanas", "resenas", "invitados", "limpio_votos"] as const;
+export const COND_N_MAX = 1000, COND_DIAS = [30, 365] as const, MIN_PUNTOS_MAX = 100000;
+export function reqDeCond(c: CondRango): Bi | null {
+  const n = Math.max(1, Math.floor(c.n ?? 0)), uno = n === 1, d = Math.floor(c.dias ?? 180);
+  switch (c.tipo) {
+    case "post_votos": return { es: `Una publicación con ${n} ${uno ? "voto" : "votos"} +`, en: `One post with ${n} ${uno ? "upvote" : "upvotes"}` };
+    case "comentarios_votados": return { es: `${n} ${uno ? "comentario" : "comentarios"} con votos +`, en: `${n} ${uno ? "comment" : "comments"} with upvotes` };
+    case "recs_votadas": return { es: `${n} ${uno ? "recomendación" : "recomendaciones"} de negocio con votos`, en: `${n} business ${uno ? "recommendation" : "recommendations"} with votes` };
+    case "semanas": return { es: `${n} ${uno ? "semana activa" : "semanas activas seguidas"}`, en: `${n} active ${uno ? "week" : "weeks in a row"}` };
+    case "resenas": return { es: `Aportes constantes y ${n} ${uno ? "reseña verificada" : "reseñas verificadas"}`, en: `Steady help and ${n} verified ${uno ? "review" : "reviews"}` };
+    case "invitados": return { es: `${n} ${uno ? "vecino que invitaste y participa" : "vecinos que invitaste y participan"}`, en: `${n} ${uno ? "neighbor you invited who takes" : "neighbors you invited who take"} part` };
+    case "limpio_votos": return { es: `Historial limpio ${d} días y ${n} votos +`, en: `Clean record for ${d} days and ${n} upvotes` };
+    default: return null;
+  }
+}
+

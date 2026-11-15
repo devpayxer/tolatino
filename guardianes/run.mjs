@@ -9352,6 +9352,20 @@ const guardianes = {
     else if (!/timingSafeEqual\(/.test(cuerpo) || !/< Date\.now\(\)/.test(cuerpo)) falla(G, "apps/web/lib/cuenta.ts", c.slice(0, i).split("\n").length, "la ficha para apelar se compara en tiempo constante y vence (timingSafeEqual y Date.now())");
   },
 
+  /* 9n-7 · rangoDiceLoQuePide: quien cambia lo que pide un rango (cond o min_points de ranks) reescribe también su texto «Para subir» con
+     reqDeCond, en la misma sentencia: si no, el vecino lee «5 comentarios» y el rango pide 6. Al revés (alreves9n): quitar requirement del update. */
+  rangoDiceLoQuePide() {
+    const G = "rangoDiceLoQuePide";
+    for (const f of archivos.filter((x) => /^apps\/web\/(app|lib)\/.+\.tsx?$/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      for (const m of t.matchAll(/update ranks set ([^`]*)/g)) {
+        if (!/\b(cond|min_points)\s*=/.test(m[1])) continue;
+        const linea = t.slice(0, m.index).split("\n").length;
+        if (!/\brequirement\s*=/.test(m[1]) || !/reqDeCond\(/.test(t)) falla(G, f, linea, "cambia lo que pide un rango sin reescribir su texto «Para subir» (requirement con reqDeCond)");
+      }
+    }
+  },
+
   telefonoAlAzarRespetaFijos() {
     const G = "telefonoAlAzarRespetaFijos";
     for (const f of archivos.filter((x) => /^pruebas\/(e2e|lib|alreves)\/[^/]+\.(cjs|mjs)$/.test(x))) {

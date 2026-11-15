@@ -2295,4 +2295,7 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **Apelar una suspensión o un baneo (LAUNCH 5d):** tras el código por SMS, «Entrar» muestra el bloque «APELAR» (20–500 letras, una vez, 14 días) con una
   ficha firmada de 30 min (HMAC, sin sesión; `/api/cuenta/apelar`); si ya apeló, dice cómo va. La respuesta a esa apelación sale por SMS (**0152**: apel_lifted
   y apel_upheld con `sin_push`; el resto de apelaciones sigue sin SMS). Guardián `apelarSinSesionConFicha`; e2e nuevo `apl9n7`; al revés `alreves9n` 27/27.
+- **Rangos (LAUNCH 5f):** Gamification › Rangos › «Cambiar lo que pide» (Vecino a Comandante): puntos mínimos (entre el rango de abajo y el de
+  arriba), el número de la condición y los días de Comandante, con vista previa Antes/Ahora ES/EN, motivo y auditoría; el texto «Para subir» se
+  reescribe con `reqDeCond` (lib/puntos-comun.ts). Guardián `rangoDiceLoQuePide`; com5f §12b (lo deja como estaba).
 - **No corrió aquí:** e2e (sin Docker) → CI dirigido cuando termine la confirmación completa de 9b-3 (run 43683346297, en curso).

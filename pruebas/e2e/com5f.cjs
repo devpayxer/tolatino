@@ -246,6 +246,29 @@ const tarjeta = (p, t) => p.locator('[data-screen-label="Publicación · comenta
   await clic(ad.getByText('Lo pidió el fundador', { exact: true })); await clic(ad.getByRole('button', { name: 'Guardar' }));
   ok(await espera(() => sql(`select name->>'es' || '/' || (name->>'en') from ranks where level = 2`) === 'Vecino/Neighbor'), 'nombre de vuelta: Vecino / Neighbor');
 
+  // ── 12b · 9n-7 · Lo que pide un rango (Cabo): puntos y condición con vista previa y motivo → «Para Cabo» lo dice; se deja como estaba ──
+  const C0 = sql(`select min_points || '|' || cond::text || '|' || requirement::text || '|' || coalesce(updated_by::text, '') from ranks where level = 3`).split('|');
+  try {
+    const cabo = () => ad.locator('div').filter({ has: ad.getByText('3 · Cabo', { exact: true }) }).filter({ has: ad.getByRole('button', { name: 'Cambiar lo que pide' }) }).last().getByRole('button', { name: 'Cambiar lo que pide' });
+    ok(!(await vis(ad.locator('div').filter({ has: ad.getByText('9 · Coronel', { exact: true }) }).last().getByRole('button', { name: 'Cambiar lo que pide' }))), 'Coronel (lo da el equipo) no tiene «Cambiar lo que pide»');
+    await clic(cabo());
+    await ad.getByLabel('PUNTOS MÍNIMOS').fill('90'); await ad.getByLabel(/^CUÁNTOS/).fill('6');
+    ok(await contiene(ad, 'Antes: 5 comentarios con votos + · 300 puntos') && await contiene(ad, 'Ahora: 6 comentarios con votos + · 90 puntos') && await contiene(ad, 'EN: 6 comments with upvotes'), 'vista previa: antes y ahora, en los dos idiomas');
+    await clic(ad.getByText('Subir de rango era muy fácil', { exact: true })); await clic(ad.getByRole('button', { name: 'Guardar' }));
+    ok(await contiene(ad, 'Tiene que pedir más puntos que el rango de abajo (100).'), 'menos puntos que Vecino: no se guarda (el orden de los rangos no se rompe)');
+    ok(sql(`select min_points from ranks where level = 3`) === '300', 'nada cambió');
+    await ad.goto(B + '/admin/gamificacion'); await clic(cabo());
+    await ad.getByLabel('PUNTOS MÍNIMOS').fill('350'); await ad.getByLabel(/^CUÁNTOS/).fill('6');
+    await ad.screenshot({ path: OUT + 'c5f-admin-condicion-d.png', fullPage: true });
+    await clic(ad.getByText('Subir de rango era muy fácil', { exact: true })); await clic(ad.getByRole('button', { name: 'Guardar' }));
+    ok(await espera(() => sql(`select min_points || ':' || (cond->>'n') || ':' || (requirement->>'es') from ranks where level = 3`) === '350:6:6 comentarios con votos +'), 'guardado: 350 puntos, 6 comentarios, y el texto «Para subir» con el número nuevo');
+    ok(sql(`select (before->>'puntos') || '>' || (after->>'puntos') from audit_entries where action = 'gam.rango.condicion' and target_id = '3' order by id desc limit 1`) === '300>350', 'auditoría antes → después');
+    await pp.goto(B + '/comunidad/rango'); ok(await contiene(pp, 'Para Cabo') && await contiene(pp, '6 comentarios con votos +'), 'el vecino ya ve lo que pide Cabo ahora');
+  } finally {
+    sql(`update ranks set min_points = ${C0[0]}, cond = '${C0[1]}'::jsonb, requirement = '${C0[2].replace(/'/g, "''")}'::jsonb, updated_by = ${C0[3] ? `'${C0[3]}'` : 'null'} where level = 3`);
+  }
+  ok(sql(`select min_points || ':' || (cond->>'n') from ranks where level = 3`) === '300:5', 'Cabo de vuelta: 300 puntos, 5 comentarios');
+
   // ── 13 · Perfil con insignias (Ramón) · Invitar: código NOMBRE-N → la cuenta nueva por el enlace queda como invitada ──
   // 9b-1 · Se recarga hasta 30 s: la insignia del cierre del mes llega después (antes una sola carga; a veces todavía no estaba).
   { let v = false; for (let i = 0; i < 6 && !v; i++) { await pp.goto(B + `/comunidad/v/${RR}`); v = await contiene(pp, 'INSIGNIAS', 2000) && await contiene(pp, 'Top del mes', 2000) && await contiene(pp, 'Avisos de la ciudad', 2000); if (!v) await new Promise((r) => setTimeout(r, 3000)); }

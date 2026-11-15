@@ -7,7 +7,11 @@ _Pantallas: **Super Admin › Gamification** (`/admin/gamificacion`: pestañas R
 ## Qué hace
 - **Rangos:** los 10, con lo que piden, sus puntos mínimos, lo que desbloquean (lo de El Patio dice «Cuando abra El Patio») y cuántos
   vecinos hay en cada uno (en tus ciudades; esa cuenta se pone al día cada 10 minutos). **«Cambiar nombre»**: español e inglés con **vista previa** (así se ve la pastilla del rango);
-  pide motivo, queda en la auditoría y la Comunidad lo muestra al instante. Lo que piden y los puntos mínimos no se cambian aquí.
+  pide motivo, queda en la auditoría y la Comunidad lo muestra al instante. **«Cambiar lo que pide»** (Vecino a Comandante): los puntos
+  mínimos y el número de su condición (y, en Comandante, los días sin sanciones), con **vista previa** «Antes / Ahora» en los dos idiomas.
+  Los puntos mínimos quedan entre los del rango de abajo y los del de arriba. El texto «Para subir» se reescribe solo con el número nuevo.
+  Cuenta desde ahora: el rango solo sube, así que quien ya lo tiene lo conserva. Recluta, Coronel (lo da el equipo) y General (3 plazas)
+  no se cambian aquí.
 - **Puntos:** el **tope del día** por persona (50 · 100 · 150 · 200; de fábrica 100) y cada regla con su valor (0–100) y su interruptor.
   Cuenta desde ahora; lo ya ganado no cambia. Las 4 reglas fijas se muestran como texto.
 - **Tabla del Barrio:** por ciudad y mes (en curso o anterior), con puntos, lo que vino de recomendar y de responder, y las marcas
@@ -76,6 +80,9 @@ _Pantallas: **Super Admin › Gamification** (`/admin/gamificacion`: pestañas R
 ### What it does
 - **Ranks:** the 10 ranks with requirements, minimum points, unlocks (El Patio ones say «When El Patio opens») and how many neighbors hold
   each (that count refreshes every 10 minutes). **Rename** in Spanish and English with a **preview**; asks for a reason, is audited and shows in Community instantly.
+  **Change requirements** (Neighbor to Commander): minimum points and the number in its condition (and, for Commander, the days without
+  sanctions), with a "Before / Now" preview in both languages. Minimum points stay between the rank below and the rank above; the "To rank
+  up" text is rewritten with the new number. Applies from now on: ranks only go up, so whoever has the rank keeps it.
 - **Points:** the **daily cap** per person (50 · 100 · 150 · 200; default 100) and each rule’s value (0–100) and switch. Applies from now on.
 - **Neighborhood Table:** per city and month (current or previous) with **PRIZE**, **NEIGHBORHOOD GENERAL** and **EXCLUDED** marks.
   **Exclude / Include again** with a reason (the person is notified). **Close the month** (Admin only, frozen previous month): 1 table fixed

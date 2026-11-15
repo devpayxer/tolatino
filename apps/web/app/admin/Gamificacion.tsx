@@ -11,9 +11,9 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import type { Gam } from "@/lib/admin-gam";
-import { CUANDO_PATIO, REGLAS_PUNTOS, nombreMes } from "@/lib/puntos-comun";
+import { COND_DIAS, COND_EDITABLE, CUANDO_PATIO, REGLAS_PUNTOS, UNIDAD, nombreMes, reqDeCond } from "@/lib/puntos-comun";
 import type { ResAdm } from "./acciones-colas";
-import { gamCerrarMes, gamCuponActivar, gamCuponAprobar, gamCuponCosto, gamCuponPausar, gamCuponRechazar, gamExcluir, gamMonedaRegla, gamRegla, gamRenombrar, gamTope } from "./acciones-gam";
+import { gamCerrarMes, gamCuponActivar, gamCuponAprobar, gamCuponCosto, gamCuponPausar, gamCondicion, gamCuponRechazar, gamExcluir, gamMonedaRegla, gamRegla, gamRenombrar, gamTope } from "./acciones-gam";
 import { COSTO_MAX, COSTO_MIN, SIN_VALOR } from "@/lib/monedas-comun";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 
@@ -27,10 +27,13 @@ export function Gamificacion({ d, tab, edita, admin }: { d: Gam; tab: Tab; edita
   const [regla, setRegla] = useState<{ key: string; v: string; on: boolean; mon?: boolean } | null>(null);
   const nRef = useRef(nombre); nRef.current = nombre;
   const rRef = useRef(regla); rRef.current = regla;
+  // 9n-7 · Lo que pide un rango (puntos mínimos, el número de su condición y, en Comandante, los días de historial limpio).
+  const [cond, setCond] = useState<{ n: number; tipo: string; p: string; k: string; d: string; p0: number | null; req0: string } | null>(null);
+  const cRef = useRef(cond); cRef.current = cond;
   const ir = (p: Record<string, string | null>) => { const q = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v === null) q.delete(k); else q.set(k, v); } router.push(`${path}${q.size ? `?${q}` : ""}`, { scroll: false }); };
-  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); setNombre(null); setRegla(null); router.refresh(); };
+  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); setNombre(null); setRegla(null); setCond(null); router.refresh(); };
   const sinPermiso = () => setToast("Tu rol no edita Gamification.");
-  const cerrarConf = () => { setConf(null); setNombre(null); setRegla(null); };
+  const cerrarConf = () => { setConf(null); setNombre(null); setRegla(null); setCond(null); };
 
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
@@ -46,6 +49,19 @@ export function Gamificacion({ d, tab, edita, admin }: { d: Gam; tab: Tab; edita
         { type: "field", k: regla.mon ? "MONEDAS · 0–1,000" : "PUNTOS · 0–100", val: regla.v, im: "numeric", max: 4, onChange: (v: string) => setRegla((x) => (x ? { ...x, v: v.replace(/[^\d]/g, "").slice(0, x.mon ? 4 : 3) } : x)) },
         { type: "rows", items: [{ key: "on", icon: "star", t: regla.on ? "Encendida" : "Apagada", s: "Apagada no da puntos desde ahora; lo ya ganado no cambia.", tgOn: regla.on, onTg: () => setRegla((x) => (x ? { ...x, on: !x.on } : x)) }] },
       ]} />}
+      {cond && (() => {
+        const nuevo = reqDeCond({ tipo: cond.tipo, n: Number(cond.k) || 0, dias: Number(cond.d) || 0 }), pts = Number(cond.p) || 0;
+        return <PanelBloques bloques={[
+          { type: "field", k: "PUNTOS MÍNIMOS", val: cond.p, im: "numeric", max: 6, onChange: (v: string) => setCond((x) => (x ? { ...x, p: v.replace(/[^\d]/g, "").slice(0, 6) } : x)) },
+          { type: "field", k: `CUÁNTOS · ${(UNIDAD[cond.tipo]?.es ?? "").toUpperCase()}`, val: cond.k, im: "numeric", max: 4, onChange: (v: string) => setCond((x) => (x ? { ...x, k: v.replace(/[^\d]/g, "").slice(0, 4) } : x)) },
+          ...(cond.tipo === "limpio_votos" ? [{ type: "field", k: `DÍAS SIN SANCIONES · ${COND_DIAS[0]}–${COND_DIAS[1]}`, val: cond.d, im: "numeric", max: 3, onChange: (v: string) => setCond((x) => (x ? { ...x, d: v.replace(/[^\d]/g, "").slice(0, 3) } : x)) } as Bloque] : []),
+          { type: "group", k: "VISTA PREVIA · ASÍ LO VE EL VECINO" },
+          { type: "rows", items: [
+            { key: "antes", icon: "shield", dim: true, t: `Antes: ${cond.req0}${cond.p0 != null ? ` · ${cond.p0.toLocaleString("en-US")} puntos` : ""}`, s: "Para subir" },
+            { key: "ahora", icon: "shield", t: `Ahora: ${nuevo?.es ?? "—"}${pts ? ` · ${pts.toLocaleString("en-US")} puntos` : ""}`, s: `EN: ${nuevo?.en ?? "—"}` }] },
+          { type: "note", tone: "info", icon: "info", t: "Cuenta desde ahora. El rango solo sube: quien ya lo tiene lo conserva aunque pidas más." },
+        ]} />;
+      })()}
       <ConfirmarMotivo c={{ ...conf, titulo: "¿Por qué?" }} desk={desk} onBack={cerrarConf} onDone={hecho} />
       <Toast t={toast} desk={desk} />
     </div>);
@@ -60,7 +76,10 @@ export function Gamificacion({ d, tab, edita, admin }: { d: Gam; tab: Tab; edita
       t: `${r.n} · ${r.name.es}`, s: `Para subir: ${r.req.es}${r.min != null ? ` · ${r.min.toLocaleString("en-US")} puntos` : ""} · EN: ${r.name.en}`, m: `DESBLOQUEA: ${r.unl.es}${r.patio ? ` · ${CUANDO_PATIO.es}` : ""}`.toUpperCase(),
       tag: r.editado ? "EDITADO" : undefined, tone: "action", r: String(r.vecinos),
       acts: edita ? [{ l: "Cambiar nombre", v: "secondary", icon: "edit", onClick: () => { setNombre({ n: r.n, es: r.name.es, en: r.name.en }); setConf({ titulo: `Nombre del rango ${r.n}`, sub: "Español e inglés. La Comunidad lo muestra al instante. Queda en la auditoría.", cta: "Guardar",
-        plantillas: ["Lo pidió el fundador", "Más claro para los vecinos"], hacer: (m) => { const x = nRef.current; return x ? gamRenombrar(x.n, x.es, x.en, m) : Promise.resolve({ ok: false, mensaje: "Escribe el nombre." } as ResAdm); } }); } }] : undefined })) });
+        plantillas: ["Lo pidió el fundador", "Más claro para los vecinos"], hacer: (m) => { const x = nRef.current; return x ? gamRenombrar(x.n, x.es, x.en, m) : Promise.resolve({ ok: false, mensaje: "Escribe el nombre." } as ResAdm); } }); } },
+        ...((COND_EDITABLE as readonly string[]).includes(r.cond?.tipo ?? "") ? [{ l: "Cambiar lo que pide", v: "secondary", icon: "edit", onClick: () => { setCond({ n: r.n, tipo: r.cond.tipo!, p: String(r.min ?? ""), k: String(r.cond.n ?? ""), d: String(r.cond.dias ?? 180), p0: r.min, req0: r.req.es });
+          setConf({ titulo: `Lo que pide ${r.name.es}`, sub: "Los puntos mínimos y su condición. Queda en la auditoría.", cta: "Guardar", plantillas: ["Lo pidió el fundador", "Subir de rango era muy fácil", "Subir de rango era muy difícil"],
+            hacer: (m) => { const x = cRef.current; return x ? gamCondicion(x.n, x.p, x.k, x.d, m) : Promise.resolve({ ok: false, mensaje: "Escribe los valores." } as ResAdm); } }); } }] : [])] : undefined })) });
   }
   if (tab === "pts") {
     B.push({ type: "chips", k: "TOPE DIARIO POR PERSONA", items: [50, 100, 150, 200].map((v) => ({ l: `${v} al día`, v: d.tope === v ? "selected" : "filter",

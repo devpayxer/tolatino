@@ -12,6 +12,7 @@ import { olvidarRangos, recalcularRango, rangos } from "@/lib/puntos";
 import { cerrarMes, excluir } from "@/lib/tabla";
 import type { ResAdm } from "./acciones-colas";
 import { COSTO_MAX, COSTO_MIN } from "@/lib/monedas-comun";
+import { COND_DIAS, COND_EDITABLE, COND_N_MAX, MIN_PUNTOS_MAX, reqDeCond, type CondRango } from "@/lib/puntos-comun";
 
 const no = (mensaje: string): ResAdm => ({ ok: false, mensaje });
 const motivoOk = (m: unknown) => (typeof m === "string" ? m.replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "").trim().slice(0, 500) : "");
@@ -41,6 +42,39 @@ export async function gamRenombrar(nivel: number, es: string, en: string, motivo
   if (r) return no(r);
   olvidarRangos(); listo();
   return { ok: true, mensaje: "Listo. La Comunidad ya lo muestra." };
+}
+
+/* 9n-7 · Rangos · lo que pide un rango (LAUNCH «5f · Condiciones de los rangos editables»): los puntos mínimos y el número de su condición
+   (y los días de historial limpio de Comandante), con motivo y auditoría antes → después. El texto «Para subir» se reescribe con el número
+   nuevo (reqDeCond). Los puntos mínimos quedan entre los del rango de abajo y los del de arriba (el orden de los rangos no se rompe). Cuenta
+   desde ahora: el rango solo sube, así que quien ya lo tiene lo conserva. Recluta (1), Coronel (9) y General (10) no se editan aquí. */
+export async function gamCondicion(nivel: number, puntos: string, n: string, dias: string, motivo: string): Promise<ResAdm> {
+  const s = await quien(); if (!s) return no("Tu rol no edita rangos.");
+  const m = motivoOk(motivo), p = Number(String(puntos ?? "").replace(/[^\d]/g, "")), k = Number(String(n ?? "").replace(/[^\d]/g, "")), d = Number(String(dias ?? "").replace(/[^\d]/g, ""));
+  if (!Number.isInteger(nivel) || nivel < 2 || nivel > 8) return no("Lo que pide ese rango no se cambia aquí.");
+  if (!m) return no("Escribe el motivo.");
+  if (!Number.isInteger(p) || p < 1 || p > MIN_PUNTOS_MAX) return no(`Los puntos mínimos: de 1 a ${MIN_PUNTOS_MAX.toLocaleString("en-US")}.`);
+  if (!Number.isInteger(k) || k < 1 || k > COND_N_MAX) return no(`El número de la condición: de 1 a ${COND_N_MAX.toLocaleString("en-US")}.`);
+  const r = await tx(async (c) => {
+    const R = (await c.query<{ level: number; min: number | null; cond: CondRango; req: { es: string; en: string } }>(
+      `select level, min_points as min, cond, requirement as req from ranks where level between $1 - 1 and $1 + 1 order by level for update`, [nivel])).rows;
+    const antes = R.find((x) => x.level === nivel), abajo = R.find((x) => x.level === nivel - 1), arriba = R.find((x) => x.level === nivel + 1);
+    if (!antes) return "Ese rango no existe.";
+    if (!(COND_EDITABLE as readonly string[]).includes(antes.cond?.tipo ?? "")) return "Lo que pide ese rango no se cambia aquí.";
+    if (abajo?.min != null && p <= abajo.min) return `Tiene que pedir más puntos que el rango de abajo (${abajo.min.toLocaleString("en-US")}).`;
+    if (arriba?.min != null && p >= arriba.min) return `Tiene que pedir menos puntos que el rango de arriba (${arriba.min.toLocaleString("en-US")}).`;
+    const limpio = antes.cond.tipo === "limpio_votos";
+    if (limpio && (!Number.isInteger(d) || d < COND_DIAS[0] || d > COND_DIAS[1])) return `Los días de historial limpio: de ${COND_DIAS[0]} a ${COND_DIAS[1]}.`;
+    const cond: CondRango = limpio ? { tipo: antes.cond.tipo, n: k, dias: d } : { tipo: antes.cond.tipo, n: k };
+    if (antes.min === p && antes.cond.n === k && (!limpio || antes.cond.dias === d)) return "No cambió nada.";
+    const req = reqDeCond(cond)!;
+    await c.query(`update ranks set min_points = $2, cond = $3::jsonb, requirement = $4::jsonb, updated_by = $5, updated_at = now() where level = $1`, [nivel, p, JSON.stringify(cond), JSON.stringify(req), s.id]);
+    await auditar(c, { actor: s.id, action: "gam.rango.condicion", targetKind: "rank", targetId: String(nivel), before: { puntos: antes.min, cond: antes.cond, pide: antes.req }, after: { puntos: p, cond, pide: req }, reason: m });
+    return null;
+  });
+  if (r) return no(r);
+  olvidarRangos(); listo();
+  return { ok: true, mensaje: "Listo. Cuenta desde ahora; quien ya tiene el rango lo conserva." };
 }
 
 /* Puntos · el valor de una regla (0–100) o apagarla. */

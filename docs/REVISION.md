@@ -4904,6 +4904,8 @@ Qué mirar:
    pantalla de apelar): mirar que se lea bien.
 2. **Super Admin › Colas › Apelaciones:** la apelación de la suspensión llega como las demás; al levantarla, la persona recibe el SMS y vuelve a entrar.
 3. **Colas › Licencias:** ahora también llegan las de Salud, Profesionales, Niños, Transporte, Fiestas y Noche 14 días antes de su revisión.
+4. **Gamification › Rangos › «Cambiar lo que pide»** (captura `c5f-admin-condicion-d.png`): puntos mínimos, cuántos y la vista previa Antes / Ahora.
+   Pieza compuesta con los campos y filas que ya usa «Cambiar nombre».
 
 **Decisiones tomadas por defecto (AB: lo más seguro y reversible):**
 - **La vuelta a revisión de las licencias, en todas las categorías** (estaba pendiente «decidir si se extiende»): solo pone un caso en la cola para
