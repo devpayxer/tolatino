@@ -176,7 +176,7 @@ function HojaConfirmar({ h, M, es, cerrar }: { h: NonNullable<Hoja>; M: boolean;
   return (
     <div data-screen-label="Mi cuenta · conf" style={{ position: "fixed", inset: 0, zIndex: 80 }}>
       <div onClick={cerrar} style={{ position: "absolute", inset: 0, background: "rgba(11,14,18,.5)" }} />
-      <div role="dialog" aria-modal="true" style={{ ...caja, background: "var(--tl-white)", boxSizing: "border-box", overflowY: "auto" }}>
+      <div role="dialog" aria-modal="true" aria-label={h.title} style={{ ...caja, background: "var(--tl-white)", boxSizing: "border-box", overflowY: "auto" }}>
         {M && <div style={{ width: 38, height: 4, borderRadius: 9, background: "rgba(11,14,18,.15)", margin: "0 auto 16px" }} />}
         <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "800 20px/1.2 Sora,sans-serif", letterSpacing: "-.03em", textWrap: "pretty" }}>{h.title}</div>{h.sub && <div style={{ marginTop: 6, font: "500 13px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.62)", textWrap: "pretty" }}>{h.sub}</div>}</div>

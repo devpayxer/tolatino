@@ -28,7 +28,7 @@ export function Hoja({ titulo, label, onClose, children, es, fondo = "bg-white" 
   return (
     <div className="fixed inset-0 z-[60]">
       <div onClick={onClose} className="absolute inset-0 bg-ink/50" />
-      <div role="dialog" aria-modal="true" aria-label={titulo} data-screen-label={label}
+      <div role="dialog" aria-modal="true" data-escape="propio" aria-label={titulo} data-screen-label={label}
         className={`absolute inset-x-0 bottom-0 max-h-[88dvh] overflow-y-auto rounded-t-[26px] ${fondo} px-4 pb-6 pt-[18px] lg:inset-auto lg:left-1/2 lg:top-1/2 lg:w-[460px] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-[26px] lg:px-5`}>
         <div className="flex items-center justify-between gap-2.5">
           <span className="font-display text-[17px] font-extrabold tracking-[-0.02em]">{titulo}</span>

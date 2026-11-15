@@ -257,11 +257,11 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
         <>
           <div data-screen-label="Reserva · cancelar" className="fixed inset-0 z-[90] lg:hidden">
             <button type="button" aria-label={E2("Cerrar", "Close")} onClick={() => setCx(false)} className="absolute inset-0 bg-ink/50" />
-            <div role="dialog" aria-modal="true" className="absolute inset-x-0 bottom-0 rounded-t-[26px] bg-white px-5 pb-7 pt-3"><div className="mx-auto mb-4 h-1 w-[38px] rounded-full bg-ink/15" />{cancelar}</div>
+            <div role="dialog" aria-modal="true" aria-label={E2("Cancelar la reservación", "Cancel the reservation")} className="absolute inset-x-0 bottom-0 rounded-t-[26px] bg-white px-5 pb-7 pt-3"><div className="mx-auto mb-4 h-1 w-[38px] rounded-full bg-ink/15" />{cancelar}</div>
           </div>
           <div data-screen-label="Reserva · cancelar · desktop" className="fixed inset-0 z-[90] hidden lg:block">
             <button type="button" aria-label={E2("Cerrar", "Close")} onClick={() => setCx(false)} className="absolute inset-0 bg-ink/45" />
-            <div role="dialog" aria-modal="true" className="absolute left-1/2 top-[18vh] w-[460px] -translate-x-1/2 rounded-[22px] bg-white p-6 shadow-[0_30px_60px_-20px_rgba(11,14,18,.5)]">{cancelar}</div>
+            <div role="dialog" aria-modal="true" aria-label={E2("Cancelar la reservación", "Cancel the reservation")} className="absolute left-1/2 top-[18vh] w-[460px] -translate-x-1/2 rounded-[22px] bg-white p-6 shadow-[0_30px_60px_-20px_rgba(11,14,18,.5)]">{cancelar}</div>
           </div>
         </>
       )}

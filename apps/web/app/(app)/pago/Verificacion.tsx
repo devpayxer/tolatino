@@ -75,11 +75,11 @@ export function Verificacion({ es, v, modo, pk, onListo, onCerrar }: { es: boole
     <>
       <div data-screen-label="Verificación del banco" className="fixed inset-0 z-[96] lg:hidden">
         <button type="button" aria-label={E2("Cerrar", "Close")} onClick={onCerrar} className="absolute inset-0 bg-ink/50" />
-        <div role="dialog" aria-modal="true" className="absolute inset-x-0 bottom-0 max-h-[92dvh] overflow-y-auto rounded-t-[26px] bg-paper px-5 pb-7 pt-3"><div className="mx-auto mb-4 h-1 w-[38px] rounded-full bg-ink/15" />{cuerpo}</div>
+        <div role="dialog" aria-modal="true" aria-label={E2("Verificación del banco", "Bank verification")} className="absolute inset-x-0 bottom-0 max-h-[92dvh] overflow-y-auto rounded-t-[26px] bg-paper px-5 pb-7 pt-3"><div className="mx-auto mb-4 h-1 w-[38px] rounded-full bg-ink/15" />{cuerpo}</div>
       </div>
       <div data-screen-label="Verificación del banco · desktop" className="fixed inset-0 z-[96] hidden lg:block">
         <button type="button" aria-label={E2("Cerrar", "Close")} onClick={onCerrar} className="absolute inset-0 bg-ink/45" />
-        <div role="dialog" aria-modal="true" className="absolute left-1/2 top-[10vh] max-h-[80vh] w-[560px] -translate-x-1/2 overflow-y-auto rounded-[22px] bg-paper p-6 shadow-[0_30px_60px_-20px_rgba(11,14,18,.5)]">{cuerpo}</div>
+        <div role="dialog" aria-modal="true" aria-label={E2("Verificación del banco", "Bank verification")} className="absolute left-1/2 top-[10vh] max-h-[80vh] w-[560px] -translate-x-1/2 overflow-y-auto rounded-[22px] bg-paper p-6 shadow-[0_30px_60px_-20px_rgba(11,14,18,.5)]">{cuerpo}</div>
       </div>
     </>
   );

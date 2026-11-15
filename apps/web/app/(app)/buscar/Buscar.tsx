@@ -492,7 +492,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
       {voz !== "no" && (
         <div className="fixed inset-0 z-[60] flex flex-col justify-end lg:items-center lg:justify-center">
           <div onClick={() => { recRef.current?.stop(); setVoz("no"); }} className="absolute inset-0 bg-ink/45" />
-          <div role="dialog" aria-modal="true" className="relative flex flex-col items-center gap-4 rounded-t-[26px] bg-white px-6 pb-[34px] pt-7 lg:w-[420px] lg:rounded-[22px]">
+          <div role="dialog" aria-modal="true" aria-label={E2("Buscar con la voz", "Search by voice")} className="relative flex flex-col items-center gap-4 rounded-t-[26px] bg-white px-6 pb-[34px] pt-7 lg:w-[420px] lg:rounded-[22px]">
             <span className="relative grid size-[92px] place-items-center">
               {voz === "escuchando" && <span className="absolute inset-0 animate-ping rounded-full bg-action/20" />}
               <span className="relative grid size-16 place-items-center rounded-full bg-action"><Icon name="mic" size={26} color="var(--tl-white)" /></span>

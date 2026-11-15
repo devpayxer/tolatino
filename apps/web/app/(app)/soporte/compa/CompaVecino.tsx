@@ -207,7 +207,7 @@ export function CompaVecino({ modo, es, nombre, hoja, ops, hor, conSesion }: {
   if (!sheet) return <div data-pantalla="APP-COMPA" data-screen-label={`APP-COMPA · pasos guiados (2at) · ${desk ? "desktop" : "móvil"}`} className="bg-paper">{frame}</div>;
   // 2as: la hoja va sobre la operación. Escritorio: panel de 420 a la derecha, de arriba abajo.
   return (
-    <div data-pantalla="APP-COMPA-HOJA" data-hoja-compa data-screen-label={`El Compa · hoja de ayuda (2as) · ${desk ? "desktop" : "móvil"}`} className="fixed inset-0 z-[96]">
+    <div role="dialog" aria-modal="true" aria-label="El Compa" data-pantalla="APP-COMPA-HOJA" data-hoja-compa data-screen-label={`El Compa · hoja de ayuda (2as) · ${desk ? "desktop" : "móvil"}`} className="fixed inset-0 z-[96]">
       {desk ? <style>{"[data-hoja-compa]>div>div:nth-child(2){height:auto!important;bottom:0}"}</style> : null}
       {frame}
     </div>

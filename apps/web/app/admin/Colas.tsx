@@ -650,7 +650,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
         desk ? (
           <>{columnaLista}
             <div onClick={() => ir({ caso: null })} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(11,14,18,.45)", display: "flex", justifyContent: "center", alignItems: "flex-start", paddingTop: 70 }}>
-              <div onClick={(e) => e.stopPropagation()} style={{ width: 600, maxHeight: "86vh", overflowY: "auto", padding: 18, borderRadius: 24, background: "var(--tl-white)", display: "flex", flexDirection: "column", gap: 14 }}>{detalle}</div>
+              <div role="dialog" aria-modal="true" aria-label={E("Caso", "Case")} onClick={(e) => e.stopPropagation()} style={{ width: 600, maxHeight: "86vh", overflowY: "auto", padding: 18, borderRadius: 24, background: "var(--tl-white)", display: "flex", flexDirection: "column", gap: 14 }}>{detalle}</div>
             </div>
           </>
         ) : <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>{detalle}</div>

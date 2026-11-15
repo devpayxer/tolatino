@@ -39,7 +39,7 @@ export function HojaEntrar({ es, destino, titulo, sub, onClose }: { es: boolean;
   return (
     <div data-pieza="hoja-entrar" className="fixed inset-0 z-[80] flex flex-col justify-end lg:items-center lg:justify-center">
       <div onClick={onClose} className="absolute inset-0 bg-ink/45" />
-      <div role="dialog" aria-modal="true" aria-label={titulo ?? E2("Entra para pedir", "Sign in to order")} className="relative">
+      <div role="dialog" aria-modal="true" data-escape="propio" aria-label={titulo ?? E2("Entra para pedir", "Sign in to order")} className="relative">
         <AuthSheet step={paso} desktop={desk} title={titulo ?? E2("Entra para pedir", "Sign in to order")} sub={sub ?? E2("Te mandamos un código por SMS. Tu pedido se queda igual.", "We text you a code. Your order stays the same.")}
           phone={fmt(tel)} code={cod} onPhone={(e: { target?: { value?: string } }) => setTel(String(e?.target?.value ?? "").replace(/\D/g, "").slice(0, 10))} onCode={(e: { target?: { value?: string } }) => setCod(String(e?.target?.value ?? "").replace(/\D/g, "").slice(0, 6))}
           onSend={pedir} onVerify={verificar} onChange={() => { setPaso("phone"); setError(null); }} onClose={onClose} error={error ?? undefined}

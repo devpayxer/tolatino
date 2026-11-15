@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Arranque } from "./_cascara/Arranque";
+import { FocoHojas } from "./FocoHojas";
 import { AhoraProvider } from "@/lib/ahora";
 import { BASE_URL } from "@/lib/correo";
 import { ENTORNO } from "@/lib/entorno";
@@ -38,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       {/* 8a · Dentro de una de las cuatro cáscaras: splash, botón «atrás» y registro técnico (en la web no hace nada). */}
       {/* 9b-1 · El «ahora» de los tiempos relativos («hace 5 min»): el mismo en el servidor y en la hidratación (lib/ahora.tsx). */}
-      <body><AhoraProvider t={Date.now()}>{children}<Arranque /></AhoraProvider></body>
+      <body><AhoraProvider t={Date.now()}>{children}<Arranque /><FocoHojas /></AhoraProvider></body>
     </html>
   );
 }

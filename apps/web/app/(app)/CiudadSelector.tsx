@@ -341,7 +341,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
   );
 
   if (sheet) return (
-    <div data-screen-label="APP-CIUDAD · móvil" role="dialog" aria-modal="true" aria-label={head.t} style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+    <div data-screen-label="APP-CIUDAD · móvil" role="dialog" aria-modal="true" data-escape="propio" aria-label={head.t} style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
       <style>{KF_CIUDAD}</style>
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(11,14,18,.45)", animation: "cFade .2s ease-out" }} />
       <div style={{ position: "relative", height: "calc(100% - 54px)", background: "var(--tl-white)", borderRadius: "26px 26px 0 0", display: "flex", flexDirection: "column", overflow: "hidden", animation: "cUp .26s ease-out" }}>
@@ -389,7 +389,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
     <>
       <style>{KF_CIUDAD}</style>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(11,14,18,.32)", animation: "cFade .2s ease-out" }} />
-      <div data-screen-label="APP-CIUDAD · desktop" role="dialog" aria-modal="true" aria-label={head.t}
+      <div data-screen-label="APP-CIUDAD · desktop" role="dialog" aria-modal="true" data-escape="propio" aria-label={head.t}
         style={{ position: "fixed", top: ancla?.top ?? 80, left: ancla?.left ?? 24, zIndex: 61, width: 780, maxWidth: "calc(100vw - 32px)", background: "var(--tl-white)", borderRadius: 22, border: "1px solid rgba(11,14,18,.08)", boxShadow: "0 30px 70px -24px rgba(11,14,18,.45)", overflow: "hidden", animation: "cDrop .18s ease-out", cursor: "default" }}>
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 360px" }}>
           <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", gap: 18, maxHeight: 560, overflowY: "auto", scrollbarWidth: "thin" }}>

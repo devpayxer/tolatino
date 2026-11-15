@@ -640,7 +640,7 @@ export function ResCapas({ v }: { v: CtlResenas }) {
         </div>
       )}
       {pv && n > 0 && (
-        <div data-screen-label="Reseñas · foto" role="dialog" aria-modal="true" className="fixed inset-0 z-[70] flex animate-[tlFade_.2s_ease-out] flex-col bg-ink">
+        <div data-screen-label="Reseñas · foto" role="dialog" aria-modal="true" aria-label={E2("Foto de la reseña", "Review photo")} className="fixed inset-0 z-[70] flex animate-[tlFade_.2s_ease-out] flex-col bg-ink">
           <div className="flex items-center gap-3 p-4">
             <div className="min-w-0 flex-1">
               <div className="text-[13px] font-bold text-white">{`${pv.c.name} · ${revWhen(pv.c.d, es).toLowerCase()}`}</div>

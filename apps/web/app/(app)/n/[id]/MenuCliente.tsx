@@ -548,7 +548,7 @@ function Plato({ mn }: { mn: Mn }) {
   );
   if (sh.desk) return (
     <div data-screen-label="Menú · plato · desktop" onClick={sh.onClose} className="fixed inset-0 z-[60] hidden bg-ink/45 lg:block">
-      <div onClick={stop} className="absolute left-1/2 top-[60px] flex max-h-[calc(100vh-100px)] w-[560px] -translate-x-1/2 flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_30px_60px_-20px_rgba(11,14,18,.5)]">
+      <div role="dialog" aria-modal="true" aria-label={sh.name} onClick={stop} className="absolute left-1/2 top-[60px] flex max-h-[calc(100vh-100px)] w-[560px] -translate-x-1/2 flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_30px_60px_-20px_rgba(11,14,18,.5)]">
         <div className="hs flex-1 overflow-y-auto">{cuerpo}</div>{pie}
       </div>
     </div>
@@ -556,7 +556,7 @@ function Plato({ mn }: { mn: Mn }) {
   return (
     <div data-screen-label="Menú · plato y opciones" className="fixed inset-0 z-[60] lg:hidden">
       <div onClick={sh.onClose} className="absolute inset-0 bg-ink/50" />
-      <div className="absolute inset-x-0 bottom-0 top-[60px] flex flex-col overflow-hidden rounded-t-[26px] bg-white">
+      <div role="dialog" aria-modal="true" aria-label={sh.name} className="absolute inset-x-0 bottom-0 top-[60px] flex flex-col overflow-hidden rounded-t-[26px] bg-white">
         <div className="hs flex-1 overflow-y-auto">{cuerpo}</div>{pie}
       </div>
     </div>
@@ -622,13 +622,13 @@ function Pregunta({ mn }: { mn: Mn }) {
   const etiqueta = a.kind === "again" ? "Menú · otra igual o con cambios" : "Menú · cuál quitas";
   if (a.desk) return (
     <div data-screen-label={`${etiqueta} · desktop`} onClick={mn.closeAsk} className="fixed inset-0 z-[60] hidden bg-ink/45 lg:block">
-      <div onClick={stop} className="absolute left-1/2 top-[80px] flex max-h-[80vh] w-[460px] -translate-x-1/2 flex-col overflow-hidden rounded-[22px] bg-white">{cab}{otra}</div>
+      <div role="dialog" aria-modal="true" aria-label={a.kind === "again" ? mn.E2("¿Otra igual o con cambios?", "Same again or with changes?") : mn.E2("¿Cuál quitas?", "Which one do you remove?")} onClick={stop} className="absolute left-1/2 top-[80px] flex max-h-[80vh] w-[460px] -translate-x-1/2 flex-col overflow-hidden rounded-[22px] bg-white">{cab}{otra}</div>
     </div>
   );
   return (
     <div data-screen-label={etiqueta} className="fixed inset-0 z-[60] lg:hidden">
       <div onClick={mn.closeAsk} className="absolute inset-0 bg-ink/50" />
-      <div className="absolute inset-x-0 bottom-0 flex max-h-[88%] flex-col overflow-hidden rounded-t-[26px] bg-white">
+      <div role="dialog" aria-modal="true" aria-label={a.kind === "again" ? mn.E2("¿Otra igual o con cambios?", "Same again or with changes?") : mn.E2("¿Cuál quitas?", "Which one do you remove?")} className="absolute inset-x-0 bottom-0 flex max-h-[88%] flex-col overflow-hidden rounded-t-[26px] bg-white">
         <div className="grid place-items-center pt-2.5"><span className="h-[5px] w-10 rounded-[9px] bg-ink/15" /></div>
         {cab}{otra}
       </div>
@@ -642,7 +642,7 @@ function Carrito({ mn, nombre }: { mn: Mn; nombre: string }) {
   return (
     <div data-screen-label="Menú · tu pedido" className="fixed inset-0 z-[60] lg:hidden">
       <div onClick={mn.closeCart} className="absolute inset-0 bg-ink/50" />
-      <div className="absolute inset-x-0 bottom-0 top-24 flex flex-col overflow-hidden rounded-t-[26px] bg-paper">
+      <div role="dialog" aria-modal="true" aria-label={mn.lbl.order} className="absolute inset-x-0 bottom-0 top-24 flex flex-col overflow-hidden rounded-t-[26px] bg-paper">
         <div className="flex flex-none items-center gap-3 border-b border-line pb-[13px] pl-5 pr-4 pt-[17px]">
           <div className="min-w-0 flex-1">
             <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.03em]">{mn.lbl.order}</div>

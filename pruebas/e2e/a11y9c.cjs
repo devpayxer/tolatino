@@ -137,6 +137,17 @@ const chicos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=butt
     await act(m, bar);
     const car = m.locator('[data-screen-label="Menú · tu pedido"]'); await car.waitFor();
     ok(/ARTÍCULO/.test(await car.innerText()), 'Enter en la barra: se abre «Tu pedido»');
+    // La hoja con el teclado (FocoHojas): el foco entra a la hoja, el Tab no sale de ella, Escape la cierra y el foco vuelve a la barra
+    { const dentro = () => m.evaluate(() => !!document.activeElement?.closest('[role="dialog"][aria-modal="true"]'));
+      await m.waitForFunction(() => !!document.activeElement?.closest('[role="dialog"][aria-modal="true"]'), null, { timeout: 5000 }).catch(() => {});
+      ok(await dentro(), 'al abrir «Tu pedido» el foco entra a la hoja');
+      let fuera = 0; for (let k = 0; k < 25; k++) { await m.keyboard.press(k % 5 === 4 ? 'Shift+Tab' : 'Tab'); if (!(await dentro())) fuera++; }
+      ok(fuera === 0, `el Tab no sale de la hoja abierta (25 pasos, ${fuera} fuera)`);
+      await m.keyboard.press('Escape');
+      await car.waitFor({ state: 'detached', timeout: 5000 }).catch(() => {});
+      ok(!(await car.count()), 'Escape cierra «Tu pedido»');
+      ok(await m.evaluate(() => !!document.activeElement?.closest('[data-screen-label="Ficha · barra del pedido"]')), 'al cerrar, el foco vuelve a la barra que la abrió');
+      await act(m, bar); await car.waitFor(); }
     snap = await arbol(m); ok(/button "Uno (más|menos)"/.test(snap) || /button "Quitar"/.test(snap), 'árbol: el pedido tiene «Uno más» / «Uno menos» / «Quitar» con nombre');
     await act(m, car.getByText(/^Ir a pagar/));
     await m.waitForURL(/\/pagar$/); await m.locator('[data-pantalla="APP-NEG-CHECKOUT"]').waitFor();

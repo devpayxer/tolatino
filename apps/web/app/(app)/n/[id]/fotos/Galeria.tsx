@@ -98,7 +98,7 @@ export function Galeria({ g, inicial, conSesion, t, motivos }: {
 
       {/* ── Visor: pantalla completa en el teléfono, ventana en escritorio ── */}
       {x && (
-        <div role="dialog" aria-modal="true" aria-label={g.nombre} data-screen-label="Galería · foto"
+        <div role="dialog" aria-modal="true" data-escape="propio" aria-label={g.nombre} data-screen-label="Galería · foto"
           className="fixed inset-0 z-[96] flex flex-col bg-ink lg:block lg:bg-ink/90" onClick={(e) => { if (e.target === e.currentTarget) setVi(-1); }}>
           <div className="contents lg:absolute lg:left-1/2 lg:top-20 lg:flex lg:w-[980px] lg:max-w-[calc(100%-80px)] lg:-translate-x-1/2 lg:flex-col lg:gap-3.5">
             <div className="flex items-center gap-3 px-4 pb-3 pt-14 lg:p-0">
@@ -140,7 +140,7 @@ export function Galeria({ g, inicial, conSesion, t, motivos }: {
 
       {/* ── Reportar foto: hoja abajo en el teléfono, ventana en escritorio ── */}
       {rep && (
-        <div role="dialog" aria-modal="true" aria-label={t.rpTitulo} className="fixed inset-0 z-[97]">
+        <div role="dialog" aria-modal="true" data-escape="propio" aria-label={t.rpTitulo} className="fixed inset-0 z-[97]">
           <div onClick={() => setRep(null)} className="absolute inset-0 bg-ink/55" />
           <div className="absolute inset-x-0 bottom-0 flex flex-col gap-3.5 rounded-t-[26px] bg-white px-5 pb-[30px] pt-5 lg:inset-x-auto lg:bottom-auto lg:left-1/2 lg:top-[120px] lg:w-[480px] lg:-ml-[240px] lg:rounded-[22px] lg:px-[26px] lg:pb-[26px] lg:pt-6">
             {!rep.sent ? (

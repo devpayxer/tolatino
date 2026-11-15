@@ -165,11 +165,11 @@ export function MetodoPago({ es, tarjetas, sel, declinada, nota, modo, pk, onUsa
     <>
       <div data-screen-label="Método de pago" className="fixed inset-0 z-[95] lg:hidden">
         <button type="button" aria-label={E2("Cerrar", "Close")} onClick={onClose} className="absolute inset-0 bg-ink/50" />
-        <div role="dialog" aria-modal="true" className="absolute inset-x-0 bottom-0 max-h-[92dvh] overflow-y-auto rounded-t-[26px] bg-paper px-5 pb-7 pt-3"><div className="mx-auto mb-4 h-1 w-[38px] rounded-full bg-ink/15" />{cuerpo}</div>
+        <div role="dialog" aria-modal="true" aria-label={E2("Método de pago", "Payment method")} className="absolute inset-x-0 bottom-0 max-h-[92dvh] overflow-y-auto rounded-t-[26px] bg-paper px-5 pb-7 pt-3"><div className="mx-auto mb-4 h-1 w-[38px] rounded-full bg-ink/15" />{cuerpo}</div>
       </div>
       <div data-screen-label="Método de pago · desktop" className="fixed inset-0 z-[95] hidden lg:block">
         <button type="button" aria-label={E2("Cerrar", "Close")} onClick={onClose} className="absolute inset-0 bg-ink/45" />
-        <div role="dialog" aria-modal="true" className="absolute left-1/2 top-[10vh] max-h-[80vh] w-[560px] -translate-x-1/2 overflow-y-auto rounded-[22px] bg-paper p-6 shadow-[0_30px_60px_-20px_rgba(11,14,18,.5)]">{cuerpo}</div>
+        <div role="dialog" aria-modal="true" aria-label={E2("Método de pago", "Payment method")} className="absolute left-1/2 top-[10vh] max-h-[80vh] w-[560px] -translate-x-1/2 overflow-y-auto rounded-[22px] bg-paper p-6 shadow-[0_30px_60px_-20px_rgba(11,14,18,.5)]">{cuerpo}</div>
       </div>
     </>
   );

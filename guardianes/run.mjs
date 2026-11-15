@@ -1359,6 +1359,33 @@ const guardianes = {
     }
   },
 
+  /* 9c · hojaAccesible: una hoja (diálogo) se usa con el teclado (WCAG 2.1.2 y 2.4.3). Antes, ≈ 40 hojas no atrapaban el foco, no cerraban con
+     Escape ni devolvían el foco, y 8 no tenían nombre. Ahora lo hace un solo gestor (app/FocoHojas.tsx, montado en el layout raíz) para toda
+     hoja con role="dialog" aria-modal="true"; aquí se vigila que: cada role="dialog" tenga aria-modal="true" y nombre (aria-label o
+     aria-labelledby), que toda capa de pantalla completa que se cierra al tocarla (fixed inset-0 con onClick) tenga su hoja con role="dialog"
+     en el mismo archivo, y que el gestor siga montado y con sus cuatro partes (foco al abrir, Tab que da la vuelta, Escape, foco de vuelta).
+     Al revés: alreves9c. */
+  hojaAccesible() {
+    const G = "hojaAccesible";
+    for (const f of codigo) {
+      if (!/^(apps\/web\/app|packages\/ui\/src\/panel)\/.*\.tsx$/.test(f) || f.endsWith("FocoHojas.tsx")) continue;
+      const s = readFileSync(f, "utf8");
+      for (const m of s.matchAll(/role=["']dialog["']([^>]*)/g)) {
+        const tag = m[1], linea = s.slice(0, m.index).split("\n").length;
+        if (!/aria-modal=["']true["']/.test(tag)) falla(G, f, linea, 'role="dialog" sin aria-modal="true": el gestor de hojas (FocoHojas) no la ve (foco, Tab, Escape)');
+        if (!/aria-label(ledby)?=/.test(tag)) falla(G, f, linea, 'role="dialog" sin nombre: agrega aria-label (ES/EN) o aria-labelledby');
+      }
+      const capa = /className="[^"]*\bfixed inset-0\b[^"]*"|position: "fixed", inset: 0/.test(s) && /onClick=\{/.test(s);
+      if (capa && !/role=["']dialog["']/.test(s)) falla(G, f, 0, 'capa de pantalla completa que se cierra al tocarla sin hoja con role="dialog" aria-modal="true" y nombre');
+    }
+    const L = "apps/web/app/layout.tsx", F = "apps/web/app/FocoHojas.tsx";
+    if (!existsSync(L) || !/<FocoHojas \/>/.test(readFileSync(L, "utf8"))) falla(G, L, 0, "el layout raíz tiene que montar <FocoHojas /> (foco, Tab, Escape y vuelta de las hojas)");
+    const fh = existsSync(F) ? readFileSync(F, "utf8") : "";
+    for (const [re, que] of [[/MutationObserver/, "ver cuándo abre y cierra una hoja"], [/\.focus\(/, "llevar el foco a la hoja al abrir"], [/e\.key === "Tab"/, "que el Tab dé la vuelta dentro de la hoja"],
+      [/e\.key === "Escape"/, "cerrar con Escape"], [/vuelta\.get\(/, "devolver el foco a quien la abrió"]])
+      if (!re.test(fh)) falla(G, F, 0, `el gestor de hojas ya no sabe ${que}`);
+  },
+
   /* 3o. Todo interruptor (role="switch") se usa con teclado: si no es un <button>, lleva tabIndex y onKeyDown; si es un
      <span> suelto, además su nombre (aria-label). 6 nov, 2p: el de «Respuesta automática» y otros cuatro no tenían. */
   interruptorAccesible() {
