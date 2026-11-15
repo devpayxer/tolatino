@@ -2315,3 +2315,19 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **9b-3 CERRADA:** la confirmación completa (run 43683346297, ffb35d0) salió toda en verde: todas las fases, barajada, dos veces seguidas, al revés,
   los 9 dispositivos, seguridad y la tubería completa.
 - **9n-7 · CI dirigido:** run 43698497496 (681b429) con adm4ig adm9n3 apl9n7 cit3b cms9f com5f compa7f compa7g cre9h publica svc3a com5d msg2p llave8d y todas las al revés.
+- **9n-7 · en verde y arriba:** compa7g falló una vez (comparaba el from_draft unido con «t»; Postgres da «true»): arreglada la prueba + guardián
+  `boolUnidoEsTrue`; rerun 43702153876 todo en verde. 9n-7 pasó a `main` y `pruebas` (4189bd6).
+
+## Fase 9 · 9n-8 — Negocios: Posibles duplicados, Reclamos y los cambios sensibles de un negocio (15 nov)
+- **Migración 0158** (`0158_negocios_duplicados.sql`): `biz_norm_name` / `biz_first_word` (inmutables, sin acentos) + índice GIN de trigramas;
+  `business_dup_pairs` (DERIVADO: lo escribe el trigger `businesses_dup` al crear o renombrar; tope 50 vecinos por el índice) y
+  `business_dup_decisions` («No es duplicado», solo inserción, en el mapa de datos como equipo); `removed_reason` 'transfer' y 'merged';
+  plantillas `biz_categoria_cambio`, `biz_transferido_nuevo`, `biz_transferido_antes` (support), `biz_fusionado`.
+- **Negocios › Lista · Posibles duplicados · Reclamos** (prototipo secNeg): `lib/admin-negocios-dup.ts` (pares con los nombres de hoy y su estado,
+  cursor; reclamos por decidir + «Sin reclamar» con su última invitación); `app/admin/DupFila.tsx` (Fusionar con «QUEDA», No es duplicado).
+- **Cambios sensibles de un negocio:** se PIDEN en el 360° (Cambiar categoría, Transferir dueño por teléfono) o en Posibles duplicados (Fusionar):
+  `pedirFusion` / `pedirCategoria` / `pedirTransferencia` / `noEsDuplicado` (acciones-negocios.ts, `encolarCambio`); se APLICAN en Colas por OTRA
+  persona (`decidirCambio` → `lib/negocio-cambios.ts`: fusionar mueve reseñas sin chocar, seguidores y guardados, deja el duplicado «merged» y su
+  ficha redirige; no se aplica con operaciones abiertas ni Pro pagado; transferir con dueño, solo Admin). El 360° dice lo que espera en la cola,
+  «Fusionado con …» y en Confianza sus posibles duplicados. Colas muestra el caso (queda/se cierra, de → a, dueño hoy → nuevo).
+- **Guardián `cambioNegocioOtraPersona`** (al revés alreves9n 35/35). **e2e `neg9n8`** (escritorio pide, teléfono aplica). Ayuda: admin-negocios.md.

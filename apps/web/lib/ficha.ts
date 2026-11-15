@@ -276,3 +276,15 @@ function quienDetras(gente: { kind: string; name: string; nick: string | null; r
       ...(founded ? [{ icon: "store", label: L(`En ${ciudad} desde ${founded}`, `In ${ciudad} since ${founded}`), tone: "info" }] : [])],
   };
 }
+
+/* 9n-8 · Si el negocio se fusionó con otro (Super Admin › Negocios › Posibles duplicados), a cuál lleva su página. Sigue la cadena (tope 5). */
+export async function fusionadoEn(id: string): Promise<string | null> {
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(id) || id.length > 80) return null;
+  let x = id;
+  for (let i = 0; i < 5; i++) {
+    const r = (await db().query<{ into: string | null; st: string }>(`select merged_into as into, status as st from businesses where id = $1`, [x])).rows[0];
+    if (!r || r.st !== "merged" || !r.into) return x === id ? null : x;
+    x = r.into;
+  }
+  return x === id ? null : x;
+}

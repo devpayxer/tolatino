@@ -64,6 +64,12 @@ const casos = [
   ['corteDeCitas', 'apps/web/lib/citas.ts', 't + dur <= z - (x.pol.corte ?? 0); t += step', 't + dur <= z; t += step'],
   // licenciasVuelvenTodas (9n-7): el barrido vuelve a devolver a revisión solo las licencias de Iglesias, Bienes Raíces y Autos
   ['licenciasVuelvenTodas', 'apps/web/lib/licencias.ts', "      where l.status = 'valid' and l.next_review", "      where l.business_id in (select id from businesses where category_id = any(array['NEG-FE','NEG-INMUEBLE','NEG-DEALER'])) and l.status = 'valid' and l.next_review"],
+  // cambioNegocioOtraPersona (9n-8): quien lo pidió también lo aplica; el 360° aplica la fusión sin la cola; la ficha fusionada sin redirigir; la decisión editable
+  ['cambioNegocioOtraPersona', 'apps/web/app/admin/acciones-colas.ts', '    if (sc.requested_by === s.id) return "Lo pediste tú: lo aplica otra persona del equipo.";\n', ''],
+  ['cambioNegocioOtraPersona', 'apps/web/app/admin/acciones-negocios.ts', '    const cs = await encolarCambio(c, { tipo: "mergeBiz", negocio: b.id, ciudad: b.city_id, payload: { dup: o.id }, motivo: m, quien: s.id });',
+    '    const cs = "x"; await c.query(`update businesses set status = \'merged\', merged_into = $1 where id = $2`, [b.id, o.id]);'],
+  ['cambioNegocioOtraPersona', 'apps/web/app/(app)/n/[id]/page.tsx', '    if (into) permanentRedirect(`/n/${into}`);\n', ''],
+  ['cambioNegocioOtraPersona', 'packages/db/migrations/0158_negocios_duplicados.sql', 'before update or delete on business_dup_decisions', 'before delete on business_dup_decisions'],
   // disputaConEvidencia: la respuesta deja de mandar los archivos
   ['disputaConEvidencia', DI, 'archivos: { recibo: archivos.recibo, conversacion: archivos.conversacion, entrega: archivos.entrega, otro: archivos.foto_entrega } });', 'texto: "" });'],
 ];
@@ -72,6 +78,8 @@ const crear = [
   ['diaEspecialActivo', 'packages/db/migrations/0199_zz9n.sql', 'begin;\ndelete from special_hours where date_to < current_date;\ncommit;\n'],
   // sinTelefonoAlRepartidor: una pantalla nueva del Repartidor con el teléfono del cliente
   ['sinTelefonoAlRepartidor', 'apps/web/app/repartidor/zz9n.tsx', 'export const x = (o: { telCliente: string }) => o.telCliente;\n'],
+  // cambioNegocioOtraPersona (9n-8): una pantalla nueva del admin que aplica la fusión directo
+  ['cambioNegocioOtraPersona', 'apps/web/app/admin/zz9n8.ts', 'import { aplicarFusion } from "@/lib/negocio-cambios";\nexport const x = aplicarFusion;\n'],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

@@ -9,7 +9,17 @@ const CATS = [["NEG-FOOD", "Comida"], ["NEG-BELL", "Belleza"], ["NEG-AUTO", "Aut
 
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const s = await requerir("neg", "ver");
-  const f = leerFiltros(await searchParams);
-  const r = await listaNegocios(s, f);
-  return <Negocios filas={r.filas} siguiente={r.siguiente} total={r.total} porCat={r.porCat} cab={r.cab} f={f} cats={CATS} porPagina={POR_PAGINA} puedeExportar={s.puede("neg", "exportar")} />;
+  const sp = await searchParams;
+  const f = leerFiltros(sp);
+  // 9n-8 · Vistas del prototipo (secNeg): Lista · Posibles duplicados · Reclamos. Cada vista lee solo lo suyo.
+  const vista = sp.vista === "dup" || sp.vista === "rec" ? sp.vista : "lista";
+  const D = await import("@/lib/admin-negocios-dup");
+  const [r, n, dup, rec] = await Promise.all([
+    listaNegocios(s, vista === "lista" ? f : { ...f, cur: null, ant: [] }),
+    D.cuentasVistas(s),
+    vista === "dup" ? D.paresDup(s, { cur: sp.cur ?? null }) : null,
+    vista === "rec" ? D.vistaReclamos(s, sp.cur ?? null) : null,
+  ]);
+  return <Negocios vista={vista} cuentas={n} dup={dup} rec={rec} filas={r.filas} siguiente={r.siguiente} total={r.total} porCat={r.porCat} cab={r.cab} f={f} cats={CATS} porPagina={POR_PAGINA}
+    puedeExportar={s.puede("neg", "exportar")} puedeEditar={s.puede("neg", "editar")} />;
 }

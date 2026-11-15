@@ -10,10 +10,12 @@ import { useState, useTransition, type ComponentType, type ReactNode } from "rea
 import type { Dinero } from "@/lib/admin-dinero";
 import type { CompaNegocio } from "@/lib/compa/admin-compa";
 import type { Negocio360 } from "@/lib/admin-negocios";
+import type { ParDup } from "@/lib/admin-negocios-dup";
+import { filasDup } from "./DupFila";
 import { fmtHora } from "@/lib/panel-reglas";
 import { KINDS_LOCAL } from "@/lib/noche-comun";
 import { PuntoAdmin } from "./PuntoAdmin";
-import { cambiarEstado, tipoNoche, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, vacanteOcultar, platoOcultar, propiedadOcultar, mayoresRevisar, carroOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina, mensajeAlDueno, invitarReclamar } from "./acciones-negocios";
+import { cambiarEstado, tipoNoche, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, vacanteOcultar, platoOcultar, propiedadOcultar, mayoresRevisar, carroOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina, mensajeAlDueno, invitarReclamar, pedirCategoria, pedirTransferencia } from "./acciones-negocios";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { N360Dinero } from "./N360Dinero";
@@ -35,6 +37,8 @@ const FOTO = ["No es de este negocio", "Contenido inapropiado", "Muestra datos p
 const SELLO_NO = ["La dirección no coincide con la página", "No pudimos confirmar que representas el negocio", "Las fotos no son del local", "El nombre puede confundirse con otro negocio"];
 /* Verbo de cada acción en el historial (prototipo actL). */
 const VERBO: Record<string, string> = {
+  "negocio.fusion.pedir": "pidió fusionar un duplicado con", "negocio.duplicado.no": "marcó que no es duplicado", "negocio.categoria.pedir": "pidió cambiar la categoría de",
+  "negocio.transferir.pedir": "pidió transferir", "negocio.fusionar": "fusionó un duplicado con", "negocio.fusionado": "fusionó con otro negocio a", "negocio.categoria.cambiar": "cambió la categoría de",
   "negocio.mensaje": "le mandó un mensaje al dueño de", "negocio.invitar_reclamar": "invitó por SMS a reclamar", "mkt.destacado.fijar": "destacó a", "mkt.destacado.quitar": "sacó de la rotación a",
   "resena.ocultar": "ocultó una reseña de", "resena.mostrar": "volvió a mostrar una reseña de", "novedad.ocultar": "ocultó una novedad de", "novedad.mostrar": "volvió a mostrar una novedad de",
   "vacante.ocultar": "ocultó una vacante de", "vacante.mostrar": "volvió a mostrar una vacante de", "comentario.ocultar": "ocultó un comentario en", "comentario.mostrar": "volvió a mostrar un comentario en",
@@ -62,7 +66,8 @@ const feL = (i: { k: string | null; cents: number; a: Record<string, unknown> })
 const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA", "NEG-TRANS", "NEG-NOCHE", "NEG-EDU", "NEG-NINOS", "NEG-DEPORTE", "NEG-FE", "NEG-INMUEBLE", "NEG-DEALER"];
 const VENDE_RET = ["NEG-MERC", "NEG-TIENDA"];
 const VENDE = ["NEG-FOOD", ...VENDE_SVC, ...VENDE_RET];
-export function N360({ n, tab, din, evts = null, sop, cpa }: { n: Negocio360; tab: string; din?: Dinero | null; evts?: Evts360 | null; sop?: CasoSop[]; cpa?: CompaNegocio | null }) {
+export function N360({ n, tab, din, evts = null, sop, cpa, cambios = [], cats = [], dups = null }: { n: Negocio360; tab: string; din?: Dinero | null; evts?: Evts360 | null; sop?: CasoSop[]; cpa?: CompaNegocio | null;
+  cambios?: { id: string; type: string; caso: string | null }[]; cats?: { id: string; l: string }[]; dups?: ParDup[] | null }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
@@ -87,8 +92,15 @@ export function N360({ n, tab, din, evts = null, sop, cpa }: { n: Negocio360; ta
   const notasEstado: ReactNode[] = [];
   if (malo) notasEstado.push(<A.AdminNote key="e" tone="bad" icon="ban" cta={P.retirar ? "Restaurar" : undefined} onCta={() => setConf({ titulo: "¿Por qué se restaura?", hacer: (m) => restaurar(n.id, m) })}>
     {`${n.estado === "cerrado" ? "Cerrado" : n.estado === "susp" ? "Suspendido" : "Oculto"}: ${n.status_reason ?? "sin motivo"} · No sale en búsquedas ni en la categoría; el dueño ve el motivo en su panel.`}</A.AdminNote>);
+  else if (n.status === "merged") notasEstado.push(<A.AdminNote key="m" tone="info" icon="users" cta={n.merged_into ? "Ver el que queda" : undefined} onCta={() => router.push(`/admin/negocios/${n.merged_into}`)}>
+    {`Fusionado con ${n.merged_name ?? "otro negocio"}: sus reseñas, seguidores y guardados pasaron allá y su página lleva a ese negocio. Sus pedidos y cobros se quedan aquí.`}</A.AdminNote>);
   else if (n.temp_until && new Date(n.temp_until).getTime() > Date.now()) notasEstado.push(<A.AdminNote key="t" tone="warn" icon="clock" cta={P.editar ? "Reabrir" : undefined} onCta={() => setConf({ titulo: "¿Por qué se reabre?", hacer: (m) => reabrir(n.id, m) })}>
     {`Cerrado temporalmente hasta el ${fecha(n.temp_until)}: ${n.temp_reason ?? ""}. La ficha dice «Cerrado temporalmente».`}</A.AdminNote>);
+  // 9n-8 · Lo que espera en Cambios sensibles sobre este negocio.
+  const CAMBIO_N: Record<string, string> = { mergeBiz: "Una fusión", changeCategory: "Un cambio de categoría", transferOwner: "Una transferencia de dueño" };
+  for (const c of cambios) notasEstado.push(<A.AdminNote key={`cs-${c.id}`} tone="warn" icon="lock" cta={c.caso ? "Ver en Colas" : undefined} onCta={() => router.push(`/admin/colas?caso=${c.caso}`)}>
+    {`${CAMBIO_N[c.type] ?? "Un cambio sensible"} espera en Cambios sensibles (#${c.id}): lo aplica otra persona del equipo.`}</A.AdminNote>);
+  const pendiente = (t: string) => cambios.some((c) => c.type === t);
   const LIC_ST: Record<string, [string, string, string]> = { valid: ["Verificada", "VERIFICADA", "signal"], review: ["Pide revisión", "EN REVISIÓN", "action"], expired: ["Vencida según el registro", "VENCIDA", "danger"], not_found: ["No se pudo verificar", "NO", "danger"], revoked: ["No se pudo verificar", "NO", "danger"] };
   const licPeor = n.licencias.find((l) => l.status === "review") ?? n.licencias.find((l) => l.status !== "valid") ?? n.licencias[0];
   const tabs: Bloque = { type: "tabs", items: [["resumen", "Resumen"], ["ficha", "Ficha"], ...(VENDE.includes(n.cat_id) ? [["vende", "Lo que vende"]] : []), ...(din !== undefined ? [["din", "Dinero"]] : []), ["equipo", "Equipo"], ["cont", "Contenido"], ["confianza", "Confianza"], ...(sop ? [["soporte", "Soporte"]] : []), ...(cpa !== undefined ? [["compa", "El Compa"]] : [])].map(([k, l]) => ({ l: l!, n: k === "confianza" && casosAbiertos.length ? String(casosAbiertos.length) : undefined, on: tab === k, onClick: () => ir(k!) })) };
@@ -347,7 +359,11 @@ export function N360({ n, tab, din, evts = null, sop, cpa }: { n: Negocio360; ta
           : <PanelBloques bloques={[{ type: "group", k: "REPORTES ABIERTOS · 0", first: true }]} />}
         {!casosAbiertos.length ? <A.AdminNote tone="ok">Ninguno.</A.AdminNote> : null}
         <PanelBloques bloques={[{ type: "group", k: "SELLO Y LICENCIA" }, { type: "kv", cols: 2, items: [{ k: "SELLO", v: selloL, fg: n.verified ? "var(--tl-open-text)" : undefined }, { k: "LICENCIA", v: licPeor ? (LIC_ST[licPeor.status] ?? LIC_ST.review!)[0] : "No la necesita", fg: licPeor ? (licPeor.status === "valid" ? "var(--tl-open-text)" : "var(--tl-danger)") : undefined }] }, { type: "group", k: "ESTADO Y SANCIONES" }]} />
-        {historial((a) => /ocultar|suspender|cerrar|restaurar|sello|cierre|reabrir/.test(a))}
+        {dups ? <>
+          <PanelBloques bloques={[{ type: "group", k: `POSIBLES DUPLICADOS · ${dups.filter((d) => d.st === "open").length}` }]} />
+          {dups.length ? <A.AdminList rows={filasDup(dups, { desde: n.id, puede: P.editar, setConf, ir: (h) => router.push(h) })} /> : <A.AdminNote tone="ok">Ninguno.</A.AdminNote>}
+        </> : null}
+        {historial((a) => /ocultar|suspender|cerrar|restaurar|sello|cierre|reabrir|fusion|duplicado|categoria|dueno|transferir/.test(a))}
       </>);
   } else {
     const selloL = n.verified ? "Verificado" : n.sello?.status === "review" ? "En revisión" : n.sello?.status === "info" ? "Te falta un dato" : n.sello?.status === "no" ? "No aprobado" : n.sello?.status === "revoked" ? "Quitado por To’Latino" : "Sin sello";
@@ -372,6 +388,17 @@ export function N360({ n, tab, din, evts = null, sop, cpa }: { n: Negocio360; ta
     // Configuración (destacados_dias) y vuelve solo a la rotación; el tope por ciudad lo pone la base.
     if (P.destacar && n.status === "active") acts.push({ l: "Destacar", icon: "star", onClick: () => setConf({ titulo: `Destacar ${n.name}`, sub: "Sale primero en Negocios › Destacados de su ciudad por los días de Configuración y vuelve solo a la rotación. Se retira en Crecimiento › Destacados.",
       cta: "Destacar", plantillas: ["Negocio fundador", "Campaña de la ciudad", "Buen servicio comprobado"], hacer: (m) => destacadoFijar(n.city, n.id, "fijar", m) }) });
+    // 9n-8 · «Cambiar categoría» y «Transferir dueño» (prototipo): se piden aquí y entran a Cambios sensibles; los aplica otra persona del equipo.
+    if (P.editar && ["active", "temp_closed", "hidden", "suspended"].includes(n.status)) {
+      if (!pendiente("changeCategory")) acts.push({ l: "Cambiar categoría", icon: "grid", onClick: () => setConf({ titulo: `Cambiar la categoría de ${n.name}`, cta: "Enviar a la cola",
+        sub: "Cambian sus módulos en la página, sus filtros y «lo que importa» en reseñas; el dueño vuelve a elegir sus subcategorías. Entra a Cambios sensibles; otra persona lo aprueba.",
+        elegir: { label: "CATEGORÍA NUEVA", items: cats.filter((c) => c.id !== n.cat_id).map((c) => ({ k: c.id, l: c.l })) },
+        plantillas: ["Lo publicaron en la categoría equivocada", "El dueño lo pidió por Soporte", "Cambió lo que vende"], hacer: (m, e) => pedirCategoria(n.id, e ?? "", m) }) });
+      if (!pendiente("transferOwner")) acts.push({ l: "Transferir dueño", icon: "users", onClick: () => setConf({ titulo: `Transferir ${n.name}`, cta: "Enviar a la cola",
+        sub: "El nuevo dueño necesita una cuenta de To’Latino con el teléfono verificado. Entra a Cambios sensibles; otra persona del equipo lo aprueba (si ya tiene dueño, un Admin).",
+        valor: { k: "TELÉFONO DEL NUEVO DUEÑO", ini: "", max: 20 },
+        plantillas: ["Vendió el negocio", "El dueño lo pidió con documento", "Cambio de encargado a dueño"], hacer: (m, _e, v) => pedirTransferencia(n.id, v ?? "", m) }) });
+    }
     if (P.retirar && n.status === "active") {
       acts.push({ l: "Ocultar", v: "danger", icon: "ban", onClick: () => setConf({ titulo: `¿Por qué se oculta ${n.name}?`, plantillas: BIZ, peligro: true, hacer: (m) => cambiarEstado(n.id, "hidden", m) }) });
       acts.push({ l: "Suspender", v: "danger", icon: "lock", onClick: () => setConf({ titulo: `¿Por qué se suspende ${n.name}?`, plantillas: BIZ, peligro: true, hacer: (m) => cambiarEstado(n.id, "suspended", m) }) });

@@ -379,6 +379,7 @@ export async function decidirCambio(id: string, aprobar: boolean, motivo: string
   if (!s) return no("Tu rol solo puede ver esta cola.");
   const m = motivoOk(motivo);
   if (!m) return no("Escribe el motivo.");
+  let avisosNeg: import("@/lib/negocio-cambios").Aviso[] = [], negocioCambiado: string | null = null;
   const r = await tx(async (c) => {
     const q = await abrir(c, s, id);
     if (typeof q === "string") return q;
@@ -387,7 +388,24 @@ export async function decidirCambio(id: string, aprobar: boolean, motivo: string
       `select id, type, status, target_id, requested_by from sensitive_changes where id = $1 for update`, [q.subject_id])).rows[0];
     if (!sc || sc.status !== "pending") return "Este cambio ya se decidió.";
     if (sc.requested_by === s.id) return "Lo pediste tú: lo aplica otra persona del equipo.";
-    if (sc.type !== "deleteUser" && sc.type !== "mergeUser") return "Este cambio todavía no se puede aplicar.";
+    if (!["deleteUser", "mergeUser", "mergeBiz", "changeCategory", "transferOwner"].includes(sc.type)) return "Este cambio todavía no se puede aplicar.";
+    // 9n-8 · Los cambios de un NEGOCIO (fusionar, categoría, dueño): lo que pasa al aplicarlos vive en lib/negocio-cambios.ts. Quitarle el negocio a
+    // un dueño que ya lo tiene lo aplica solo un Admin (como un reclamo de un negocio con dueño).
+    if (["mergeBiz", "changeCategory", "transferOwner"].includes(sc.type) && aprobar) {
+      const p = (await c.query<{ dup: string | null; to: string | null }>(`select payload->>'dup' as dup, payload->>'to' as to from sensitive_changes where id = $1`, [sc.id])).rows[0]!;
+      const NC = await import("@/lib/negocio-cambios");
+      if (sc.type === "transferOwner" && s.role !== "admin" && (await c.query(`select 1 from businesses where id = $1 and owner_user_id is not null`, [sc.target_id])).rowCount)
+        return "Este negocio tiene dueño: solo un Admin aplica la transferencia.";
+      const ap = sc.type === "mergeBiz" ? (p.dup ? await NC.aplicarFusion(c, { queda: sc.target_id, dup: p.dup, aprobo: s.id, motivo: m }) : { ok: false as const, msg: "Al pedido le falta el otro negocio." })
+        : !p.to ? { ok: false as const, msg: "Al pedido le falta el dato nuevo." }
+        : sc.type === "changeCategory" ? await NC.aplicarCategoria(c, { id: sc.target_id, a: p.to }) : await NC.aplicarTransferencia(c, { id: sc.target_id, a: p.to });
+      if (!ap.ok) return ap.msg;
+      const accion = sc.type === "mergeBiz" ? "negocio.fusionar" : sc.type === "changeCategory" ? "negocio.categoria.cambiar" : "negocio.dueno.cambiar";
+      await auditar(c, { actor: s.id, action: accion, targetKind: "business", targetId: sc.target_id, city: q.city_id, before: ap.antes, after: { ...ap.despues, pedido: sc.id }, reason: m });
+      if (sc.type === "mergeBiz" && p.dup) await auditar(c, { actor: s.id, action: "negocio.fusionado", targetKind: "business", targetId: p.dup, city: q.city_id, before: { estado: "visible" }, after: { estado: "fusionado", queda: sc.target_id, pedido: sc.id }, reason: m });
+      avisosNeg = ap.avisos;
+      negocioCambiado = sc.target_id;
+    }
     // 9d · Fusionar cuentas (L186): la aplica OTRA persona del equipo (fusionar() y la base lo vuelven a exigir).
     if (sc.type === "mergeUser" && aprobar) {
       const p = (await c.query<{ into: string | null; reason: string }>(`select payload->>'into' as into, reason from sensitive_changes where id = $1`, [sc.id])).rows[0];
@@ -409,12 +427,14 @@ export async function decidirCambio(id: string, aprobar: boolean, motivo: string
     await c.query(`update sensitive_changes set status = $2, decided_by = $3, decided_at = now(), decision_reason = $4 where id = $1`, [sc.id, aprobar ? "applied" : "rejected", s.id, m]);
     await cerrar(c, q, s, aprobar ? "aplicar" : "rechazar", m);
     await auditar(c, { actor: s.id, action: aprobar ? "cambio.aplicar" : "cambio.rechazar", targetKind: "sensitive_change", targetId: sc.id, city: q.city_id, before: { estado: "pendiente" }, after: { estado: aprobar ? "aplicado" : "rechazado" }, reason: m });
-    return sc.type === "mergeUser" ? "ok-fusion" : "ok";
+    return sc.type === "mergeUser" ? "ok-fusion" : ["mergeBiz", "changeCategory", "transferOwner"].includes(sc.type) ? "ok-negocio" : "ok";
   });
-  if (r !== "ok" && r !== "ok-fusion") return no(r);
+  if (r !== "ok" && r !== "ok-fusion" && r !== "ok-negocio") return no(r);
   listo();
   revalidatePath("/admin/usuarios");
-  return { ok: true, mensaje: !aprobar ? "Rechazado. Queda en el historial." : r === "ok-fusion" ? "Aplicado. Las cuentas quedaron fusionadas; quedó en la auditoría." : "Aplicado. La cuenta tiene 30 días de gracia." };
+  if (negocioCambiado) { revalidatePath("/admin/negocios"); revalidatePath(`/admin/negocios/${negocioCambiado}`); }
+  if (avisosNeg.length) { const { avisar } = await import("@/lib/avisos"); for (const a of avisosNeg) await avisar(a.uid, a.tpl, a.vars, { href: a.href, ref: a.ref }).catch(() => undefined); }
+  return { ok: true, mensaje: !aprobar ? "Rechazado. Queda en el historial." : r === "ok-fusion" ? "Aplicado. Las cuentas quedaron fusionadas; quedó en la auditoría." : r === "ok-negocio" ? "Aplicado. El dueño recibe su aviso; quedó en la auditoría." : "Aplicado. La cuenta tiene 30 días de gracia." };
 }
 
 /* Recomendaciones · «Crear semilla»: negocio no reclamado que sale al final de «También en {ciudad}» de su categoría

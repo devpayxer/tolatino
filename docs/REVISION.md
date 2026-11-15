@@ -4919,3 +4919,23 @@ Qué mirar:
   con «Enviar»; nunca se envía solo (lo toca la persona del equipo).
 - **Apelar desde «Entrar» solo con el código por SMS** (no con Face ID / huella): el código prueba el teléfono; la ficha dura 30 minutos y vale para
   esa sanción. La respuesta de esa apelación va por SMS porque la persona no puede abrir la app.
+
+## Fase 9 · 9n-8 — Negocios: Posibles duplicados, Reclamos y cambios sensibles de un negocio (15 nov)
+**Qué mirar (sandbox):**
+1. **Super Admin › Negocios** (capturas `n8-duplicados-d.png`, `n8-reclamos-d.png`): arriba las pestañas **Lista · Posibles duplicados · Reclamos** con
+   el número de lo que falta. En duplicados, cada par con su estado y los botones «Fusionar» / «No es duplicado». En el sandbox salen pares de la
+   semilla (p. ej. «Sabor Dominicano» y su copia, «Empanadas Doña Luz / Doña Tere», «Agua y Hielo Cristal» y las cuentas «Demo …» de revisión de las
+   tiendas): márcalos «No es duplicado» o fusiónalos para ver la cola.
+2. **Fusionar:** eliges cuál queda → Colas › Cambios sensibles; quien lo pidió ve «Lo pediste tú»; otra persona lo aplica (captura `n8-fusion-caso-m.png`).
+   Después, la página del duplicado lleva sola a la del que quedó.
+3. **Negocio 360° › Resumen:** «Cambiar categoría» y «Transferir dueño» (teléfono del nuevo dueño) → la cola; el 360° dice qué espera (captura `n8-transferir-caso-m.png`).
+4. **Reclamos › Sin reclamar:** «Invitar a reclamar» sale una vez; luego dice «invitación enviada hoy».
+
+**Decisiones tomadas por defecto (AB: lo más seguro y reversible):**
+- **Al fusionar, los pedidos y cobros del duplicado se quedan con él** (el prototipo decía «transacciones pasan»): su liquidación es de la cuenta
+  de cobro de ESE negocio, moverlos rompería pagos y contabilidad. Pasan reseñas, seguidores y guardados; el 360° del duplicado sigue mostrando lo suyo.
+- **No se fusiona** si el duplicado tiene pedidos/citas/reservas abiertas o paga Pro, ni si los dos tienen dueño distinto (que uno reclame o transfiera antes).
+- **Transferir un negocio que ya tiene dueño lo aplica solo un Admin** (como un reclamo de un negocio con dueño). La cuenta de cobro no cambia.
+- **Cambiar de categoría vacía las subcategorías** y deja solo los filtros que existen en la nueva; el dueño recibe aviso para elegir las nuevas.
+- **Duplicado = nombre casi igual en la misma ciudad** (trigramas ≥ 0.75, o ≥ 0.6 con la misma primera palabra). La misma dirección sola NO lo marca
+  (plazas con muchos locales); se dice como dato extra del par.

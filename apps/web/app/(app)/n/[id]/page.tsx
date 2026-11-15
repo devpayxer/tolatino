@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { after } from "next/server";
 import { yo } from "@/lib/cuenta";
 import { valor } from "@/lib/config";
 import { guardados } from "@/lib/categoria";
 import { contexto, evento } from "@/lib/eventos";
-import { ficha, registrarVista } from "@/lib/ficha";
+import { ficha, fusionadoEn, registrarVista } from "@/lib/ficha";
 import { menuPublico } from "@/lib/pedir";
 import { rsvPublica } from "@/lib/reservas";
 import { citasPublica } from "@/lib/citas";
@@ -55,7 +55,12 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const [{ id }, lang, u, sp] = await Promise.all([params, idioma(), yo(), searchParams]);
   const loc = await ubicacion(u);
   const f = await ficha(id, lang, loc);
-  if (!f) notFound();
+  if (!f) {
+    // 9n-8 · La página de un negocio fusionado lleva al que quedó (enlaces viejos, guardados y buscadores).
+    const into = await fusionadoEn(id);
+    if (into) permanentRedirect(`/n/${into}`);
+    notFound();
+  }
   const [ua, ctx] = [(await headers()).get("user-agent"), await contexto()];
   after(() => registrarVista(f.id, u?.id ?? null, ua, ctx.dev).catch(() => undefined));
   after(() => evento("ver_ficha", { ref: f.id, ciudad: loc.c.id, userId: u?.id ?? null }, ctx));

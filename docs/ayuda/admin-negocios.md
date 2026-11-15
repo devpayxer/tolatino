@@ -79,6 +79,29 @@ con respuestas automáticas.
 
 **¿El CSV trae datos personales?** Solo lo del negocio (nombre, ciudad, categoría, plan, calificación, estado, pedidos de 30 días, si cobra con Stripe y si tiene licencia verificada). Nada de clientes.
 
+## Posibles duplicados, Reclamos y los cambios sensibles de un negocio
+Arriba de Negocios hay tres vistas: **Lista**, **Posibles duplicados** y **Reclamos** (el número es lo que falta por revisar o decidir).
+
+- **Posibles duplicados**: dos negocios de la misma ciudad con el nombre casi igual salen solos (la base los encuentra al crear o renombrar un negocio). Cada par dice por qué sale (nombre casi igual, y si también es la misma dirección) y su estado: **POR REVISAR**, **VINCULADOS · SUCURSAL** (los dos negocios confirmaron que son sucursales), **NO ES DUPLICADO**, **FUSIÓN EN LA COLA** o **FUSIONADOS**.
+  - **Fusionar**: eliges cuál queda. Entra a Colas › Cambios sensibles y lo aplica **otra persona** del equipo. Al aplicarlo, las reseñas, los seguidores y los guardados del otro pasan al que queda; el otro sale de todo y **su página lleva al que queda**. Sus pedidos y cobros se quedan con él (su liquidación es de su cuenta de cobro).
+  - **No es duplicado**: con motivo; el par ya no vuelve a «por revisar» (no se puede cambiar después).
+- **Reclamos**: los reclamos por decidir (abren su caso en Colas) y la lista **Sin reclamar** (negocios activos sin dueño) con **Invitar a reclamar** (un SMS al teléfono de su página, una vez cada 30 días; después dice «invitación enviada»).
+- En el 360° (Resumen): **Cambiar categoría** (eliges la nueva) y **Transferir dueño** (el teléfono de una cuenta de To’Latino activa y verificada). Los dos entran a Cambios sensibles y el 360° dice que esperan. En Confianza salen los posibles duplicados de ese negocio con las mismas acciones.
+
+| Caso | Qué pasa |
+|---|---|
+| Quien lo pidió abre el caso | Ve «Lo pediste tú» y no puede aplicarlo. |
+| El duplicado tiene pedidos, citas o reservas abiertas | No se aplica: hay que esperar a que terminen. |
+| El duplicado paga Pro | No se aplica: primero se cancela en su pestaña Dinero. |
+| Los dos tienen dueño distinto | No se pide ni se aplica: que uno reclame o transfiera antes. |
+| El que queda no tiene dueño y el duplicado sí | El dueño pasa con él al que queda. |
+| La misma persona dejó reseña en los dos | Queda la del que queda; la otra se queda en el duplicado (no se ve). |
+| Transferir un negocio que ya tiene dueño | Solo un Admin aplica el cambio. El dueño anterior sale del panel y recibe su aviso; el nuevo entra con todo el acceso. |
+| Cambiar la categoría | Cambian sus módulos en la página, sus filtros y «lo que importa» en reseñas; las subcategorías se vacían y el dueño recibe un aviso para elegir las nuevas. |
+| Alguien abre la página de un negocio fusionado | Lo lleva a la página del que quedó. |
+
+**¿La cuenta de cobro cambia al transferir?** No: es del negocio. Si el nuevo dueño cobra a otro nombre, la vuelve a conectar en su panel › Cobros.
+
 ## English
 
 Queues: everything waiting for a team decision, oldest against its SLA first — Verification badge (48 h), New
@@ -115,3 +138,26 @@ reason and a notice to the owner) and any pause, without text or people. **Busin
 | You pick a city in the header | The list, the filters and the CSV are only for that city. |
 
 **Does the CSV carry personal data?** Only the business's own (name, city, category, plan, rating, status, 30-day orders, whether it takes Stripe payouts and whether it has a verified license). No customers.
+
+### Possible duplicates, Claims and a business's sensitive changes
+At the top of Businesses there are three views: **List**, **Possible duplicates** and **Claims** (the number is what is left to review or decide).
+
+- **Possible duplicates**: two businesses in the same city with almost the same name show up on their own (the database finds them when a business is created or renamed). Each pair says why (almost the same name, and whether it is also the same address) and its state: **TO REVIEW**, **LINKED · LOCATION** (both businesses confirmed they are locations), **NOT A DUPLICATE**, **MERGE IN QUEUE** or **MERGED**.
+  - **Merge**: you pick which one stays. It goes to Queues › Sensitive changes and **another team member** applies it. Then the other one's reviews, followers and saves move to the one that stays; the other leaves every list and **its page leads to the one that stays**. Its orders and payments stay with it (its payout belongs to its payment account).
+  - **Not a duplicate**: with a reason; the pair never goes back to "to review" (it cannot be changed later).
+- **Claims**: claims to decide (they open their Queues case) and the **Unclaimed** list (active businesses without an owner) with **Invite to claim** (an SMS to the page's phone, once every 30 days; afterwards it says "invite sent").
+- In the 360° (Overview): **Change category** (pick the new one) and **Transfer owner** (the phone of an active, verified To’Latino account). Both go to Sensitive changes and the 360° says they are waiting. Trust lists that business's possible duplicates with the same actions.
+
+| Case | What happens |
+|---|---|
+| The person who asked opens the case | They see "You asked for it" and cannot apply it. |
+| The duplicate has open orders, bookings or reservations | It is not applied: wait until they finish. |
+| The duplicate pays for Pro | It is not applied: cancel it first in its Money tab. |
+| Both have different owners | It cannot be requested or applied: one claims or transfers first. |
+| The one that stays has no owner and the duplicate does | The owner moves with it. |
+| The same person reviewed both | The review on the one that stays is kept; the other stays on the duplicate (not shown). |
+| Transferring a business that already has an owner | Only an Admin applies it. The previous owner leaves the dashboard and is notified; the new one gets full access. |
+| Changing the category | Its modules on the page, its filters and "what matters" in reviews change; subcategories are cleared and the owner is notified to pick new ones. |
+| Someone opens a merged business's page | It leads to the page of the one that stayed. |
+
+**Does the payment account change on a transfer?** No: it belongs to the business. If the new owner gets paid under another name, they reconnect it in their dashboard › Payments.

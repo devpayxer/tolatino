@@ -225,6 +225,7 @@
     "sanctions": { "equipo": ["by_staff", "lifted_by"] },
     "seed_listings": { "equipo": ["created_by", "removed_by"] },
     "sensitive_changes": { "equipo": ["decided_by", "requested_by"] },
+    "business_dup_decisions": { "equipo": ["decided_by"] },
     "store_listings": { "equipo": ["pushed_by"] },
     "store_secrets": { "equipo": ["retired_by", "uploaded_by"] },
     "store_submissions": { "equipo": ["by_user"] },

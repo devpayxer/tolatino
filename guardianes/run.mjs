@@ -9374,6 +9374,33 @@ const guardianes = {
     }
   },
 
+  /* 9n-8 · cambioNegocioOtraPersona: fusionar negocios, cambiarles la categoría o el dueño son cambios sensibles: el 360° y «Posibles duplicados» solo
+     los PIDEN (sensitive_changes + su caso en la cola «cambio»); los aplica OTRA persona del equipo en Colas (decidirCambio, después de «Lo pediste tú»).
+     Las funciones que los aplican (lib/negocio-cambios.ts) solo se importan desde acciones-colas.ts; la página de un negocio fusionado lleva al que
+     quedó; «No es duplicado» es solo inserción. Al revés (alreves9n): aplicar desde el 360°, quitar el «Lo pediste tú», la ficha sin redirigir, la
+     decisión editable → falla. */
+  cambioNegocioOtraPersona() {
+    const G = "cambioNegocioOtraPersona", NC = "apps/web/lib/negocio-cambios.ts", AC = "apps/web/app/admin/acciones-colas.ts", AN = "apps/web/app/admin/acciones-negocios.ts";
+    if (!existsSync(NC)) return falla(G, NC, 0, "falta lib/negocio-cambios.ts (lo que pasa al aplicar un cambio sensible de un negocio)");
+    for (const f of archivos.filter((x) => x.startsWith("apps/web/") && /\.tsx?$/.test(x) && x !== AC && x !== NC)) {
+      const t = sinComent(f);
+      if (/negocio-cambios/.test(t) && /aplicar(Fusion|Categoria|Transferencia)/.test(t)) falla(G, f, 1, "aplica un cambio sensible de un negocio fuera de Colas: el 360° solo lo pide; lo aplica otra persona en decidirCambio");
+    }
+    const ac = cuerpoFn(sinComent(AC), "decidirCambio");
+    const iMio = ac.indexOf("if (sc.requested_by === s.id) return"), iNeg = ac.search(/NC\.aplicar(Fusion|Categoria|Transferencia)/);
+    if (iMio < 0 || iNeg < 0 || iMio > iNeg) falla(G, AC, 0, "decidirCambio aplica el cambio de un negocio sin antes rechazar a quien lo pidió («Lo pediste tú»)");
+    const an = sinComent(AN);
+    for (const fn of ["pedirFusion", "pedirCategoria", "pedirTransferencia"]) {
+      const c = cuerpoFn(an, fn);
+      if (!c) falla(G, AN, 0, `falta ${fn}`);
+      else if (!/encolarCambio\(c, \{ tipo: "(mergeBiz|changeCategory|transferOwner)"/.test(c) || /update businesses/.test(c)) falla(G, AN, 0, `${fn}: solo pide el cambio (encolarCambio); no toca el negocio`);
+    }
+    const P = "apps/web/app/(app)/n/[id]/page.tsx";
+    if (!/const into = await fusionadoEn\(id\);\s+if \(into\) permanentRedirect\(`\/n\/\$\{into\}`\);/.test(sinComent(P))) falla(G, P, 0, "la página de un negocio fusionado no lleva al que quedó (fusionadoEn + permanentRedirect)");
+    const M = "packages/db/migrations/0158_negocios_duplicados.sql";
+    if (!/create trigger business_dup_decisions_no_cambia before update or delete on business_dup_decisions/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "«No es duplicado» se puede cambiar o borrar (business_dup_decisions es solo inserción)");
+  },
+
   /* 9n-7 · boolUnidoEsTrue: en Postgres un boolean unido con || a un texto sale «true»/«false», no «t»/«f» (eso es solo cuando se lee solo). Una prueba que parte
      esa cadena y compara un pedazo con 't' nunca pasa (compa7g §3b, 15 nov). Al revés (alreves9n). */
   boolUnidoEsTrue() {

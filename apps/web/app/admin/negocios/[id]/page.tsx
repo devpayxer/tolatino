@@ -22,5 +22,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const sop = s.puede("sop", "ver") ? (tab === "soporte" ? await (await import("@/lib/soporte-equipo")).casosDe(s, { negocio: n.id }) : []) : undefined;
   // 7e · El Compa en el panel de este negocio: cifras (quien ve El Compa).
   const cpa = s.puede("compa", "ver") ? (tab === "compa" ? await (await import("@/lib/compa/admin-compa")).compaDeNegocio(s, n.id) : null) : undefined;
-  return <N360 n={n} tab={tab} din={din} evts={evts} sop={sop} cpa={cpa} />;
+  // 9n-8 · Los cambios sensibles que esperan (para no pedirlos dos veces), las categorías (Cambiar categoría) y, en Confianza, sus posibles duplicados.
+  const D = await import("@/lib/admin-negocios-dup");
+  const [cambios, cats, dups] = await Promise.all([D.cambiosPendientes(n.id), D.categorias(), tab === "confianza" ? D.paresDup(s, { negocio: n.id }).then((r) => r.filas) : null]);
+  return <N360 n={n} tab={tab} din={din} evts={evts} sop={sop} cpa={cpa} cambios={cambios} cats={cats} dups={dups} />;
 }

@@ -7,20 +7,25 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { FiltrosNeg } from "@/lib/admin-negocios";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
-import { exportarNegocios } from "./acciones-negocios";
+import { exportarNegocios, invitarReclamar } from "./acciones-negocios";
+import type { ParDup, ReclamoFila, SinDueno } from "@/lib/admin-negocios-dup";
+import { filasDup } from "./DupFila";
 
 import { tec } from "@/lib/tec";
+import { useAhora } from "@/lib/ahora";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"DenseTable" | "AdminList" | "Pager" | "Icon", ComponentType<any>>;
 type Fila = { id: string; name: string; cat: string; cat_id: string; subs: string | null; plan: string; trial: boolean; verified: boolean; rating: number | null; reviews: number; perfil: number; estado: string; cover: string | null };
 const EST: Record<string, [string, string]> = { activo: ["ACTIVO", "neutral"], temp: ["CERRADO TEMPORAL", "action"], oculto: ["OCULTO", "danger"], susp: ["SUSPENDIDO", "danger"], cerrado: ["CERRADO", "danger"] };
 const estadoDe = (r: Fila) => (r.estado === "activo" && r.verified ? ["VERIFICADO", "signal"] : EST[r.estado] ?? EST.activo!);
 
-export function Negocios({ filas, siguiente, total, porCat, cab, f, cats, porPagina, puedeExportar = false }: {
+export function Negocios({ filas, siguiente, total, porCat, cab, f, cats, porPagina, puedeExportar = false, vista = "lista", cuentas = { dup: 0, rec: 0 }, dup = null, rec = null, puedeEditar = false }: {
   filas: Fila[]; siguiente: string | null; puedeExportar?: boolean; total: number; porCat: Record<string, number>; cab: { n: number; pro: number; ver: number }; f: FiltrosNeg;
-  cats: { id: string; s: string }[]; porPagina: number;
+  cats: { id: string; s: string }[]; porPagina: number; vista?: string; cuentas?: { dup: number; rec: number }; puedeEditar?: boolean;
+  dup?: { filas: ParDup[]; siguiente: string | null } | null; rec?: { reclamos: ReclamoFila[]; sinDueno: SinDueno[]; sinDuenoTotal: number; siguiente: string | null } | null;
 }) {
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
+  const ahora = useAhora(); // 9n-8 · «hace N días» igual en el servidor y en la hidratación
   const w = useAncho(), desk = w >= 1024;
   const [q, setQ] = useState(f.q), [mas, setMas] = useState(f.mas.length > 0);
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
@@ -30,6 +35,9 @@ export function Negocios({ filas, siguiente, total, porCat, cab, f, cats, porPag
   const hayFiltro = !!(f.q || f.cat || f.plan.length || f.est.length || f.mas.length);
   const bloques: (Bloque | null)[] = [
     { type: "head", eye: "TODOS LOS NEGOCIOS", t: "Negocios", s: `${cab.n} en tus ciudades · ${cab.pro} Pro · ${cab.n - cab.pro} Free · ${cab.ver} verificados`, h1: desk ? 26 : 22 },
+    // 9n-8 · Las vistas del prototipo (secNeg): Lista · Posibles duplicados · Reclamos (el número es lo que falta por revisar o decidir).
+    { type: "tabs", items: ([["lista", "Lista", 0], ["dup", "Posibles duplicados", cuentas.dup], ["rec", "Reclamos", cuentas.rec]] as const).map(([k, l, n]) => ({ l, n: n ? String(n) : undefined, on: vista === k,
+      onClick: () => router.push(k === "lista" ? path : `${path}?vista=${k}`) })) },
   ];
   const despues: (Bloque | null)[] = [
     { type: "tabs", items: [{ l: "Todas", n: String(Object.values(porCat).reduce((a, b) => a + b, 0) || ""), on: !f.cat, onClick: () => ir({ cat: null }) }, ...cats.filter((c) => porCat[c.id]).map((c) => ({ l: c.s, n: String(porCat[c.id]), on: f.cat === c.id, onClick: () => ir({ cat: c.id }) }))] },
@@ -55,6 +63,31 @@ export function Negocios({ filas, siguiente, total, porCat, cab, f, cats, porPag
       if (r.ok && r.csv) { const url = URL.createObjectURL(new Blob([r.csv], { type: "text/csv;charset=utf-8" })), el = document.createElement("a"); el.href = url; el.download = r.nombre ?? "negocios.csv"; document.body.appendChild(el); el.click(); el.remove(); URL.revokeObjectURL(url); }
       return r; } });
   const abrir = (id: string) => router.push(`/admin/negocios/${id}`);
+  const hace = (iso: string) => { const d = Math.floor((ahora - new Date(iso).getTime()) / 86_400_000); return d < 1 ? "hoy" : d === 1 ? "hace 1 día" : `hace ${d} días`; };
+  const otraPag = (sig: string | null) => (f.cur || sig ? <A.Pager label="" hasPrev={!!f.cur} hasNext={!!sig} onPrev={() => router.push(`${path}?vista=${vista}`)} onNext={() => router.push(`${path}?vista=${vista}&cur=${encodeURIComponent(sig ?? "")}`)} /> : null);
+  const vistaOtra = vista === "dup" && dup ? (
+    <>
+      <PanelBloques bloques={[{ type: "note", tone: "info", icon: "store", t: "Negocios con nombre casi igual en la misma ciudad. Si son sucursales vinculadas, no son duplicados. Fusionar entra a Cambios sensibles y lo aplica otra persona." }]} />
+      {dup.filas.length ? <A.AdminList rows={filasDup(dup.filas, { puede: puedeEditar, setConf, ir: (h) => router.push(h) })} /> : <PanelBloques bloques={[{ type: "empty", icon: "check", t: "Sin duplicados", s: "Cuando dos negocios se parezcan, salen aquí." }]} />}
+      {otraPag(dup.siguiente)}
+    </>
+  ) : vista === "rec" && rec ? (
+    <>
+      <PanelBloques bloques={[{ type: "note", tone: "info", icon: "shield", t: "Cuando alguien puso un negocio en la app sin ser el dueño, el dueño real lo reclama: le mandamos un código al teléfono del negocio o pedimos un documento. Al aprobarlo, el panel y los avisos pasan a esa persona." },
+        { type: "group", k: `RECLAMOS POR DECIDIR · ${rec.reclamos.length}` }]} />
+      {rec.reclamos.length ? <A.AdminList rows={rec.reclamos.map((x) => ({ icon: "shield", title: `Reclamo · ${x.negocio}`, sub: `${x.quien ?? "Sin nombre"} · ${hace(x.at)}${x.tieneDueno ? " · ya tiene dueño" : ""}`, tag: x.tieneDueno ? "CON DUEÑO" : undefined, tone: "action", chevron: true, onClick: () => router.push(`/admin/colas?caso=${x.caso}`) }))} />
+        : <PanelBloques bloques={[{ type: "note", tone: "ok", icon: "check", t: "Ninguno." }]} />}
+      <PanelBloques bloques={[{ type: "group", k: `SIN RECLAMAR · ${rec.sinDuenoTotal}` }]} />
+      {rec.sinDueno.length ? <A.AdminList rows={rec.sinDueno.map((x) => {
+        const reciente = !!x.inv && ahora - new Date(x.inv).getTime() < 30 * 86_400_000;
+        return { icon: "store", title: x.name, sub: `${x.cat} · Sin dueño en To’Latino${x.inv ? ` · invitación enviada ${hace(x.inv)}` : ""}`, chevron: true, onClick: () => abrir(x.id),
+          actions: puedeEditar && x.phone && !reciente ? [{ label: "Invitar a reclamar", variant: "secondary", icon: "chat", onClick: () => setConf({ titulo: `Invitar a ${x.name} a reclamar su página`,
+            sub: "Le llega un SMS al teléfono de su página con el enlace para reclamarla gratis. Una vez cada 30 días; respeta STOP y las horas de silencio.", cta: "Enviar el SMS",
+            plantillas: ["Lo recomendaron vecinos", "Semilla de la apertura", "Pidió información"], hacer: (m) => invitarReclamar(x.id, m) }) }] : undefined };
+      })} /> : <PanelBloques bloques={[{ type: "note", tone: "ok", icon: "check", t: "Todos los negocios de tus ciudades tienen dueño." }]} />}
+      {otraPag(rec.siguiente)}
+    </>
+  ) : null;
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
       <PanelBloques bloques={[{ type: "head", eye: "NEGOCIOS", t: conf.titulo, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
@@ -65,6 +98,7 @@ export function Negocios({ filas, siguiente, total, porCat, cab, f, cats, porPag
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <Toast t={toast} desk={desk} />
       <PanelBloques bloques={bloques} h1={desk ? 26 : 22} />
+      {vistaOtra ?? <>
       <form onSubmit={(e) => { e.preventDefault(); ir({ q: q.trim() || null }); }} style={{ position: "relative" }}>
         <span style={{ position: "absolute", left: 15, top: 14.5, display: "grid" }}><A.Icon name="search" size={17} color="rgba(11,14,18,.45)" /></span>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nombre, id, teléfono, dirección o subcategoría" aria-label="Buscar negocio"
@@ -101,6 +135,7 @@ export function Negocios({ filas, siguiente, total, porCat, cab, f, cats, porPag
           <A.Pager {...pager} />
         </>
       )}
+      </>}
     </div>
   );
 }

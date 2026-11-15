@@ -457,3 +457,88 @@ export async function exportarNegocios(filtros: Record<string, string | undefine
   if (!hecho) return no("Ya exportaste 5 veces en la última hora. Espera un rato.");
   return { ok: true, mensaje: `Exportadas ${hecho.n} ${hecho.n === 1 ? "fila" : "filas"}. Quedó en la auditoría.`, nombre: `negocios-${hoyEn()}.csv`, csv: hecho.csv };
 }
+
+/* 9n-8 · Cambios sensibles de un negocio (prototipo: «Fusionar», «Cambiar categoría», «Transferir dueño» → cola Cambios sensibles). Aquí solo se
+   PIDEN (neg:editar, con motivo y auditoría): entra un sensitive_change pendiente y su caso en la cola «cambio»; lo aplica OTRA persona del equipo
+   (acciones-colas.ts decidirCambio → lib/negocio-cambios.ts). Uno pendiente por tipo y negocio (la base lo exige: sensitive_changes_abierto_idx). */
+const VIVO_NEG = ["active", "temp_closed", "hidden", "suspended"];
+async function encolarCambio(c: PoolClient, x: { tipo: "mergeBiz" | "changeCategory" | "transferOwner"; negocio: string; ciudad: string; payload: Record<string, string>; motivo: string; quien: string }) {
+  const cs = (await c.query<{ id: string }>(
+    `insert into sensitive_changes (type, target_kind, target_id, city_id, payload, reason, requested_by) values ($1, 'business', $2, $3, $4::jsonb, $5, $6) returning id`,
+    [x.tipo, x.negocio, x.ciudad, JSON.stringify(x.payload), x.motivo, x.quien])).rows[0]!;
+  await c.query(`insert into queue_items (queue, subject_kind, subject_id, city_id, business_id) values ('cambio', 'sensitive_change', $1, $2, $3)`, [cs.id, x.ciudad, x.negocio]);
+  return cs.id;
+}
+const yaPendiente = async (c: PoolClient, tipo: string, id: string) =>
+  !!(await c.query(`select 1 from sensitive_changes where type = $1 and status = 'pending' and (target_id = $2 or payload->>'dup' = $2)`, [tipo, id])).rowCount;
+
+/* «Fusionar»: desde un par de «Posibles duplicados» (el par tiene que existir y estar por revisar). `queda` es el que se queda. */
+export async function pedirFusion(queda: string, otro: string, motivo: string): Promise<ResAdm> {
+  if (typeof otro !== "string" || !ID.test(otro) || otro === queda) return no("Elige cuál queda.");
+  return hacer(queda, "editar", motivo, async (c, s, b, m) => {
+    const o = (await c.query<{ id: string; name: string; status: string; city_id: string; owner: string | null }>(
+      `select id, name, status, city_id, owner_user_id::text as owner from businesses where id = $1 and (cardinality($2::text[]) = 0 or city_id = any($2::text[])) for update`, [otro, s.cities])).rows[0];
+    if (!o) return "Ese negocio no existe.";
+    if (!VIVO_NEG.includes(b.status) || !VIVO_NEG.includes(o.status)) return "Uno de los dos ya está cerrado o fusionado.";
+    const [a1, b1] = [b.id, o.id].sort();
+    if (!(await c.query(`select 1 from business_dup_pairs where a_id = $1 and b_id = $2`, [a1, b1])).rowCount) return "Estos dos no salen como posibles duplicados.";
+    if ((await c.query(`select 1 from business_dup_decisions where a_id = $1 and b_id = $2`, [a1, b1])).rowCount) return "Ya se decidió que no son duplicados.";
+    if ((await c.query(`select 1 from business_links where status = 'ok' and ((a_id = $1 and b_id = $2) or (a_id = $2 and b_id = $1))`, [a1, b1])).rowCount) return "Son sucursales vinculadas: no son duplicados.";
+    if (await yaPendiente(c, "mergeBiz", b.id) || await yaPendiente(c, "mergeBiz", o.id)) return "Ya hay una fusión de uno de los dos en la cola.";
+    const dq = (await c.query<{ owner: string | null }>(`select owner_user_id::text as owner from businesses where id = $1`, [b.id])).rows[0]?.owner ?? null;
+    if (dq && o.owner && dq !== o.owner) return "Los dos tienen dueño distinto: que uno reclame o transfiera antes de fusionar.";
+    const cs = await encolarCambio(c, { tipo: "mergeBiz", negocio: b.id, ciudad: b.city_id, payload: { dup: o.id }, motivo: m, quien: s.id });
+    await auditar(c, { actor: s.id, action: "negocio.fusion.pedir", targetKind: "business", targetId: b.id, city: b.city_id, after: { queda: b.name, se_cierra: o.name, pedido: cs, ref: { negocio: o.id } }, reason: m });
+    return null;
+  }, "En la cola de Cambios sensibles: lo aplica otra persona del equipo.");
+}
+
+/* «No es duplicado»: queda para siempre (business_dup_decisions, solo inserción) y el par sale de «por revisar». */
+export async function noEsDuplicado(a: string, b: string, motivo: string): Promise<ResAdm> {
+  if (typeof b !== "string" || !ID.test(b) || a === b) return no("Ese par no existe.");
+  return hacer(a, "editar", motivo, async (c, s, x, m) => {
+    const o = (await c.query<{ name: string }>(`select name from businesses where id = $1 and (cardinality($2::text[]) = 0 or city_id = any($2::text[]))`, [b, s.cities])).rows[0];
+    if (!o) return "Ese negocio no existe.";
+    const [a1, b1] = [x.id, b].sort();
+    if (!(await c.query(`select 1 from business_dup_pairs where a_id = $1 and b_id = $2`, [a1, b1])).rowCount) return "Estos dos no salen como posibles duplicados.";
+    const n = (await c.query(`insert into business_dup_decisions (a_id, b_id, city_id, reason, decided_by) values ($1, $2, $3, $4, $5) on conflict do nothing`, [a1, b1, x.city_id, m, s.id])).rowCount;
+    if (!n) return "Ya se decidió que no son duplicados.";
+    await auditar(c, { actor: s.id, action: "negocio.duplicado.no", targetKind: "business", targetId: x.id, city: x.city_id, before: { estado: "posible duplicado" }, after: { estado: `no es duplicado de ${o.name}`, ref: { negocio: b } }, reason: m });
+    return null;
+  }, "Listo. Ya no sale como posible duplicado.");
+}
+
+/* «Cambiar categoría»: cambian sus módulos, filtros y «lo que importa» en reseñas; entra a la cola. */
+export async function pedirCategoria(id: string, cat: string, motivo: string): Promise<ResAdm> {
+  if (typeof cat !== "string" || !/^NEG-[A-Z]+$/.test(cat)) return no("Elige la categoría nueva.");
+  return hacer(id, "editar", motivo, async (c, s, b, m) => {
+    if (!VIVO_NEG.includes(b.status)) return "El negocio ya no está activo.";
+    const x = (await c.query<{ antes: string; ant: string; nueva: string | null }>(
+      `select b.category_id as antes, o.name->>'es' as ant, (select n.name->>'es' from categories n where n.id = $2) as nueva from businesses b join categories o on o.id = b.category_id where b.id = $1`, [b.id, cat])).rows[0]!;
+    if (!x.nueva) return "Esa categoría no existe.";
+    if (x.antes === cat) return "Ya está en esa categoría.";
+    if (await yaPendiente(c, "changeCategory", b.id)) return "Ya hay un cambio de categoría de este negocio en la cola.";
+    const cs = await encolarCambio(c, { tipo: "changeCategory", negocio: b.id, ciudad: b.city_id, payload: { from: x.antes, to: cat }, motivo: m, quien: s.id });
+    await auditar(c, { actor: s.id, action: "negocio.categoria.pedir", targetKind: "business", targetId: b.id, city: b.city_id, before: { categoria: x.ant }, after: { categoria: x.nueva, pedido: cs }, reason: m });
+    return null;
+  }, "En la cola de Cambios sensibles: lo aplica otra persona del equipo.");
+}
+
+/* «Transferir dueño»: el nuevo dueño es una cuenta de To'Latino activa con el teléfono verificado (se busca por su teléfono). */
+export async function pedirTransferencia(id: string, telefono: string, motivo: string): Promise<ResAdm> {
+  const tel = normalizarTelefono(typeof telefono === "string" ? telefono : "");
+  if (!tel) return no("Escribe el teléfono de EE. UU. del nuevo dueño.");
+  return hacer(id, "editar", motivo, async (c, s, b, m) => {
+    if (!VIVO_NEG.includes(b.status)) return "El negocio ya no está activo.";
+    const u = (await c.query<{ id: string; nombre: string | null; ok: boolean; status: string }>(
+      `select id::text, nullif(trim(coalesce(first_name, '') || ' ' || coalesce(last_name, '')), '') as nombre, phone_verified_at is not null as ok, status from users where phone = $1`, [tel])).rows[0];
+    if (!u || u.status !== "active") return "Ese teléfono no tiene una cuenta activa en To’Latino. Pídele que entre a la app primero.";
+    if (!u.ok) return "Esa cuenta no tiene el teléfono verificado.";
+    const dueno = (await c.query<{ owner: string | null }>(`select owner_user_id::text as owner from businesses where id = $1`, [b.id])).rows[0]?.owner ?? null;
+    if (dueno === u.id) return "Esa persona ya es la dueña.";
+    if (await yaPendiente(c, "transferOwner", b.id)) return "Ya hay una transferencia de este negocio en la cola.";
+    const cs = await encolarCambio(c, { tipo: "transferOwner", negocio: b.id, ciudad: b.city_id, payload: { to: u.id }, motivo: m, quien: s.id });
+    await auditar(c, { actor: s.id, action: "negocio.transferir.pedir", targetKind: "business", targetId: b.id, city: b.city_id, after: { nuevo_dueno: u.nombre ?? `…${tel.slice(-4)}`, pedido: cs, ref: { usuario: u.id } }, reason: m });
+    return null;
+  }, "En la cola de Cambios sensibles: lo aplica otra persona del equipo.");
+}

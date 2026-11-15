@@ -125,7 +125,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "lic" ? { title: `Licencia · ${b}`, sub: `${x.ltitle ?? "Licencia"} · ${licEstado(x.lst, x.lnext)}` }
       : x.queue === "vivienda" && x.subject_kind === "listing" ? { title: `Vivienda para mayores · ${b}`, sub: `Declaración de 62 o más por revisar · «${x.vji ?? "Propiedad"}»` }
       : x.queue === "vivienda" ? { title: `Vivienda justa · ${b}`, sub: `${x.vjn} texto${x.vjn === 1 ? "" : "s"} frenado${x.vjn === 1 ? "" : "s"} en 30 días${x.vjf ? ` · «${x.vjf}»` : ""} · nada se publicó` }
-      : x.queue === "cambio" && x.subject_kind === "sensitive_change" ? { title: `${CAMBIO_L[x.sctype ?? ""] ?? "Cambio sensible"} · ${x.sname ?? ""}`, sub: "Cambio sensible · lo aprueba otra persona" }
+      : x.queue === "cambio" && x.subject_kind === "sensitive_change" ? { title: `${CAMBIO_L[x.sctype ?? ""] ?? "Cambio sensible"} · ${x.sname ?? b}`, sub: "Cambio sensible · lo aprueba otra persona" }
       : x.queue === "cambio" ? { title: `Reclamo · ${b}`, sub: "Cambio sensible · lo aprueba una persona" }
       : x.queue === "cuidado" ? { title: `Cuidado de niños · ${b}`, sub: "No cuidaron bien a su niño · directo a To'Latino" }
       : x.queue === "salir" ? { title: `No le dejan cancelar · ${b}`, sub: "Membresía con la baja pedida en la app" }
@@ -174,7 +174,7 @@ export function licEstado(st: string | null, next: string | null, hoy = hoyEn())
 }
 /* 4if · Lo que dice la persona en una «Posible estafa» (para la lista; el detalle usa motivoAyuda). */
 const ESTAFA_L: Record<string, string> = { ver: "Le cobraron por ver la propiedad", mudar: "Le pidieron más para mudarse de lo publicado", cobro: "Le pidieron dinero por la ayuda" };
-export const CAMBIO_L: Record<string, string> = { deleteUser: "Borrar cuenta", mergeUser: "Fusionar cuentas" };
+export const CAMBIO_L: Record<string, string> = { deleteUser: "Borrar cuenta", mergeUser: "Fusionar cuentas", mergeBiz: "Fusionar negocios", changeCategory: "Cambio de categoría", transferOwner: "Transferir dueño" };
 export const MOTIVO_FOTO: Record<string, string> = { no_es: "No es de este negocio", inapropiado: "Contenido inapropiado", datos: "Muestra datos personales", spam: "Es publicidad o spam", otro: "Otro motivo" };
 
 /* Casos abiertos que ve la persona (contador de la barra y del menú). */
@@ -215,6 +215,17 @@ export async function caso(s: Staff, id: string) {
     return { ...base, negocio, sello: v ?? null };
   }
   if (q.queue === "cambio" && q.subject_kind === "sensitive_change") {
+    // 9n-8 · El cambio de un NEGOCIO: fusionar (cuál queda y cuál se cierra), categoría (de → a) o dueño (el de hoy → el nuevo).
+    const nb = (await db().query<{ id: string; type: string; reason: string; requested_by: string; quien: string | null; target_id: string; nombre: string; ciudad: string | null;
+      dup_id: string | null; dup: string | null; de: string | null; a: string | null; dueno: string | null; nuevo: string | null; nuevo_tel: string | null; nuevo_id: string | null }>(
+      `select sc.id, sc.type, sc.reason, sc.requested_by, nullif(trim(coalesce(r.first_name, '') || ' ' || coalesce(r.last_name, '')), '') as quien, sc.target_id, b.name as nombre, ci.name as ciudad,
+              d.id as dup_id, d.name as dup, (select c1.name->>'es' from categories c1 where c1.id = sc.payload->>'from') as de, (select c2.name->>'es' from categories c2 where c2.id = sc.payload->>'to') as a,
+              nullif(trim(coalesce(o.first_name, '') || ' ' || coalesce(o.last_name, '')), '') as dueno,
+              coalesce(nullif(trim(coalesce(t.first_name, '') || ' ' || coalesce(t.last_name, '')), ''), 'Sin nombre') as nuevo, t.phone as nuevo_tel, t.id::text as nuevo_id
+         from sensitive_changes sc join users r on r.id = sc.requested_by join businesses b on b.id = sc.target_id left join cities ci on ci.id = b.city_id
+         left join businesses d on d.id = sc.payload->>'dup' left join users o on o.id = b.owner_user_id left join users t on t.id::text = sc.payload->>'to'
+        where sc.id = $1 and sc.target_kind = 'business'`, [q.subject_id])).rows[0];
+    if (nb) return { ...base, negocio, cambioNeg: { ...nb, nuevo_tel: nb.nuevo_tel ? telefonoBonito(nb.nuevo_tel) : null, mio: nb.requested_by === s.id } };
     const sc = (await db().query<{ id: string; type: string; status: string; reason: string; created_at: string; requested_by: string; quien: string | null; target_id: string;
       nombre: string | null; phone: string; ciudad: string | null; creado: string; negocios: number; estado: string; hacia: string | null }>(
       `select sc.id, sc.type, sc.status, sc.reason, sc.created_at, sc.requested_by, nullif(trim(coalesce(a.first_name, '') || ' ' || coalesce(a.last_name, '')), '') as quien, sc.target_id,

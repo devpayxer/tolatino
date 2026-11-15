@@ -48,6 +48,7 @@ export function useAncho() {
   return w;
 }
 
+const CAMBIO_NEG: Record<string, string> = { mergeBiz: "Fusionar negocios", changeCategory: "Cambio de categoría", transferOwner: "Transferir dueño" };
 export type Confirmar = { titulo: string; sub?: string; plantillas?: string[]; peligro?: boolean; cta?: string; ini?: string; elegir?: { label: string; items: { k: string; l: string }[] }; valor?: { k: string; ini: string; area?: boolean; max: number }; hacer: (motivo: string, elegido: string | null, valor: string) => Promise<ResAdm> };
 
 /* Confirmación con motivo (patrón 2ao): ReasonConfirm, con elección y, si hace falta, el campo del valor nuevo. */
@@ -153,7 +154,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
   function cuerpo(): ReactNode {
     const k = caso!, Q = COLAS[k.queue], n = k.negocio, out: (Bloque | null)[] = [];
     const esEntrega = k.queue === "entrega";
-    const titulo = (esEntrega ? `Incidencia de entrega${n?.name ? ` · ${n.name}` : ""}` : null) ?? tituloComunidad(k) ?? tituloEventos(k) ?? (k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : k.cambio.type === "mergeUser" ? "Fusionar cuentas" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "cuidado" ? `Cuidado de niños · ${n?.name ?? ""}` : k.queue === "salir" ? `No le dejan cancelar · ${n?.name ?? ""}` : k.queue === "grupo" ? `Grupos que no abrieron · ${n?.name ?? ""}` : k.queue === "plantones" ? `Plantones · ${n?.name ?? ""}` : k.queue === "vivienda" ? `${k.subject_kind === "listing" ? "Vivienda para mayores" : "Vivienda justa"} · ${n?.name ?? ""}` : k.queue === "estafa" ? `Posible estafa · ${n?.name ?? ""}` : k.queue === "ticket" ? `Soporte · ${"tk" in k && k.tk ? k.tk : "caso"}` : k.queue === "sop" ? `${AYUDA_DE["ayuda" in k && k.ayuda ? k.ayuda.k : "order"] ?? "Ayuda con un pedido"} · ${n?.name ?? ""}` : k.queue === "mesa" ? `Mesas no respetadas · ${n?.name ?? ""}` : k.queue === "noid" ? `Sin identificación · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "");
+    const titulo = (esEntrega ? `Incidencia de entrega${n?.name ? ` · ${n.name}` : ""}` : null) ?? tituloComunidad(k) ?? tituloEventos(k) ?? ("cambioNeg" in k && k.cambioNeg ? `${CAMBIO_NEG[k.cambioNeg.type] ?? "Cambio sensible"} · ${k.cambioNeg.nombre}` : null) ?? (k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : k.cambio.type === "mergeUser" ? "Fusionar cuentas" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "cuidado" ? `Cuidado de niños · ${n?.name ?? ""}` : k.queue === "salir" ? `No le dejan cancelar · ${n?.name ?? ""}` : k.queue === "grupo" ? `Grupos que no abrieron · ${n?.name ?? ""}` : k.queue === "plantones" ? `Plantones · ${n?.name ?? ""}` : k.queue === "vivienda" ? `${k.subject_kind === "listing" ? "Vivienda para mayores" : "Vivienda justa"} · ${n?.name ?? ""}` : k.queue === "estafa" ? `Posible estafa · ${n?.name ?? ""}` : k.queue === "ticket" ? `Soporte · ${"tk" in k && k.tk ? k.tk : "caso"}` : k.queue === "sop" ? `${AYUDA_DE["ayuda" in k && k.ayuda ? k.ayuda.k : "order"] ?? "Ayuda con un pedido"} · ${n?.name ?? ""}` : k.queue === "mesa" ? `Mesas no respetadas · ${n?.name ?? ""}` : k.queue === "noid" ? `Sin identificación · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "");
     out.push({ type: "head", eye: `${Q.es.toUpperCase()} · ${k.esp.r >= 1 ? `${k.esp.t} · VENCIDO` : `${k.esp.t} esperando`}`, t: titulo, h1: 22, onBack: lado ? undefined : () => ir({ caso: null }) });
     if (k.status !== "open") return <><PanelBloques bloques={[out[0]!, { type: "empty", icon: "check", t: "Ya se decidió", s: "Este caso salió de la cola." }]} /></>;
     // 7b · Un caso de Soporte se trabaja en su ficha de Soporte (hilo, macros, notas internas, devolver).
@@ -226,6 +227,29 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
       acts = c.mio ? [] : [
         { l: "Aplicar cambio", v: "action", icon: "check", onClick: () => setConf(fusion ? { titulo: "Confirmar la fusión", sub: "Todo lo que se mueve pasa a la otra cuenta y esta ya no entra. Queda en la auditoría.", cta: "Aplicar", peligro: true, hacer: (m) => decidirCambio(k.id, true, m) }
           : { titulo: "Confirmar el borrado", sub: "La cuenta no puede entrar desde ahora y tiene 30 días de gracia. Queda en la auditoría.", cta: "Aplicar", peligro: true, hacer: (m) => decidirCambio(k.id, true, m) }) },
+        { l: "Rechazar", v: "danger", icon: "close", onClick: () => setConf({ titulo: "¿Por qué no se aplica?", hacer: (m) => decidirCambio(k.id, false, m) }) },
+      ];
+    }
+    // 9n-8 · El cambio de un NEGOCIO (lo pidió alguien desde el 360° o desde «Posibles duplicados»): lo aplica otra persona.
+    if (k.queue === "cambio" && "cambioNeg" in k && k.cambioNeg) {
+      const c = k.cambioNeg, T = c.type;
+      extra = <A.AdminList rows={[
+        { icon: "store", title: c.nombre, sub: T === "mergeBiz" ? `Queda${c.ciudad ? ` · ${c.ciudad}` : ""}` : c.ciudad ?? "", chevron: true, onClick: () => router.push(`/admin/negocios/${c.target_id}`) },
+        ...(T === "mergeBiz" && c.dup_id ? [{ icon: "store", title: c.dup ?? c.dup_id, sub: "Se cierra y su página lleva al que queda", chevron: true, onClick: () => router.push(`/admin/negocios/${c.dup_id}`) }] : []),
+        ...(T === "transferOwner" && c.nuevo_id ? [{ initials: (c.nuevo ?? "?").slice(0, 1), title: c.nuevo ?? "Sin nombre", sub: `Nuevo dueño · ${c.nuevo_tel ?? ""}`, chevron: true, onClick: () => router.push(`/admin/usuarios/${c.nuevo_id}`) }] : []),
+      ]} />;
+      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "LO PIDIÓ", v: c.quien ?? "Equipo" }, { k: "PEDIDO", v: `#${c.id}` },
+        ...(T === "mergeBiz" ? [{ k: "SE CIERRA", v: c.dup ?? "—" }, { k: "AFECTA A", v: "Reseñas, seguidores y guardados del duplicado pasan a este; el duplicado se cierra" }]
+          : T === "changeCategory" ? [{ k: "DE", v: c.de ?? "—" }, { k: "A", v: c.a ?? "—" }]
+          : [{ k: "DUEÑO HOY", v: c.dueno ?? "Sin dueño" }, { k: "NUEVO DUEÑO", v: c.nuevo ?? "Sin nombre" }])] });
+      cuerpoB.push({ type: "note", tone: "ink", icon: "quote", t: `MOTIVO · «${c.reason}»` });
+      cuerpoB.push({ type: "note", tone: "info", t: T === "mergeBiz"
+        ? "Al aplicarlo, el duplicado sale de búsquedas y su página lleva al que queda. Sus pedidos y cobros se quedan con él (su liquidación es de su cuenta de cobro). Si tiene pedidos o citas abiertas, o paga Pro, no se puede todavía."
+        : T === "changeCategory" ? "Al aplicarlo cambian sus módulos en la página, sus filtros y «lo que importa» en reseñas. Las subcategorías las elige el dueño otra vez; le llega un aviso."
+        : "Al aplicarlo, el nuevo dueño entra al panel con todo el acceso y el anterior sale; los dos reciben su aviso. La cuenta de cobro es del negocio y no cambia." });
+      if (c.mio) cuerpoB.push({ type: "note", tone: "warn", icon: "lock", t: "Lo pediste tú: lo aplica otra persona del equipo." });
+      acts = c.mio ? [] : [
+        { l: "Aplicar cambio", v: "action", icon: "check", onClick: () => setConf({ titulo: "Confirmar el cambio", sub: "Queda en la auditoría con tu motivo.", cta: "Aplicar", peligro: T !== "changeCategory", hacer: (m) => decidirCambio(k.id, true, m) }) },
         { l: "Rechazar", v: "danger", icon: "close", onClick: () => setConf({ titulo: "¿Por qué no se aplica?", hacer: (m) => decidirCambio(k.id, false, m) }) },
       ];
     }
@@ -545,7 +569,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
     // 6a · Eventos a revisar (k.queue === "evt"): ./ColasEventos.tsx.
     const evt = cuerpoEventos(k, { setConf, abrir: (h) => (h.startsWith("/admin/") ? router.push(h) : window.open(h, "_blank", "noopener")), negocio: (id) => router.push(`/admin/negocios/${id}`) });
     if (evt) { cuerpoB.push(...evt.bloques); acts = evt.acts; extra = null; }
-    const arriba = k.queue === "medios" || ("cambio" in k && !!k.cambio);
+    const arriba = k.queue === "medios" || ("cambio" in k && !!k.cambio) || ("cambioNeg" in k && !!k.cambioNeg);
     if (conf) return <><PanelBloques bloques={[out[0]!]} h1={22} /><ConfirmarMotivo c={conf} desk={false} onBack={() => setConf(null)} onDone={hecho} /></>;
     // 9n · Asignar este caso a alguien del equipo (quien reparte) y lo que hacen los atajos A/R.
     if (puedeRepartir) acts = [...acts, { l: k.assigned_to ? "Asignar a otra persona" : "Asignar a…", v: "secondary", icon: "users", onClick: () => asignarA([k.id]) }];
