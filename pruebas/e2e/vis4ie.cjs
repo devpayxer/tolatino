@@ -248,6 +248,19 @@ async function inscFe(p, neg, svc, o = {}) {
   /* 9b-3 · «Todas» las colas van por página (9n-3): con muchos casos abiertos (barajada) el de Plantones queda más abajo. Se abre su cola. */
   await ad.goto(`${B}/admin/colas?cola=plantones`); await ad.getByText(/Plantones · /).first().waitFor(); ok(true, 'Super Admin › Colas › Plantones');
 
+  // 10b · 9n (0164) · Un día especial con OTRAS horas: la cita de Bienes Raíces ofrece esas, no las de la semana.
+  const RB = 'realty-bilingue-hzl', SV = sql(`select id from items where business_id = '${RB}' and module = 'svc' and name->>'es' = 'Consulta para primer comprador' and removed_at is null order by id limit 1`);
+  sql(`update special_hours set status = 'removed', removed_at = now() where business_id = '${RB}' and status = 'active' and label->>'es' = 'prueba 0164'`);
+  const DE = sql(`select d::date::text from generate_series((now() at time zone 'America/New_York')::date + 3, (now() at time zone 'America/New_York')::date + 12, interval '1 day') d
+    where negocio_rangos_dia('${RB}', d::date) <> '[]'::jsonb order by d limit 1`);
+  sql(`insert into special_hours (business_id, kind, date_from, date_to, closed, ranges, label) values ('${RB}', 'holiday', '${DE}', '${DE}', false, '[["10:00","12:00"]]', '{"es":"prueba 0164","en":"test 0164"}')`);
+  await d2.goto(`${B}/n/${RB}/ver?item=${SV}`); await d2.getByRole('radiogroup').first().waitFor();
+  await clic(d2.getByRole('button', { name: diaL(DE), exact: true }));
+  const horasDE = (await d2.locator('button[role="radio"]').allInnerTexts()).map((x) => x.trim());
+  ok(horasDE.some((x) => x.includes('10 AM')) && horasDE.some((x) => x.includes('11 AM')) && !horasDE.some((x) => /\b(9|1|2|3|4|5|6) (AM|PM)/.test(x) || x.includes('12 PM')),
+    `el día especial (${DE}, 10 AM a 12 PM) ofrece solo sus horas: ${horasDE.join(' · ')}`);
+  sql(`update special_hours set status = 'removed', removed_at = now() where business_id = '${RB}' and status = 'active' and label->>'es' = 'prueba 0164'`);
+
   // 11 · Ningún pago en todo el flujo.
   ok(pagos() === pagos0 && pagos0 === '0', 'ningún pago ni retención en visitas ni en Iglesias');
   ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ') : ''));

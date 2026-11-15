@@ -9417,6 +9417,11 @@ const guardianes = {
       const m = /(from|join) business_hours\b/.exec(t);
       if (m && !/diasEspeciales\(|negocio_dia_cerrado\(|negocio_abierto\(/.test(t)) falla(G, f, t.slice(0, m.index).split("\n").length, "arma días con el horario de la semana sin los días especiales ni la temporada (lib/dias-especiales.ts o negocio_dia_cerrado)");
     }
+    // Las horas armadas en SQL salen de negocio_rangos_dia (0164): leer h.ranges de la semana ofrece las horas de siempre en un día especial.
+    for (const f of archivos.filter((x) => x.startsWith("apps/web/lib/") && x.endsWith(".ts") && !MUESTRA.has(x))) {
+      const t = sinComent(f), m = /jsonb_array_elements\(h\.ranges\)/.exec(t);
+      if (m) falla(G, f, t.slice(0, m.index).split("\n").length, "arma las horas de una fecha con la semana: un día especial con otras horas ofrece las de siempre (negocio_rangos_dia)");
+    }
     const C = "apps/web/lib/citas.ts";
     if (!/if \(x\.temporadas\.length && !x\.temporadas\.some\(\(t\) => t\.desde <= ymd && ymd <= t\.hasta\)\) return \[\];/.test(sinComent(C))) falla(G, C, 0, "el calendario de citas ofrece días fuera de la temporada");
   },

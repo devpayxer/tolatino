@@ -124,12 +124,12 @@ async function horasDe(c: Q, x: Ctx, it: ItemVis, _quien: string | null): Promis
         order by g.starts_on, g.start_min limit 120`, [x.id, it.que, it.id, x.hoy, x.tz]);
     return r.rows;
   }
-  // Cita, precalificación u oferta: una hora en punto del horario del negocio, 14 días adelante (sin cupo: el negocio confirma).
+  // Cita, precalificación u oferta: una hora en punto del horario del negocio, 14 días adelante (sin cupo: el negocio confirma). Las horas de cada
+  // fecha salen de negocio_rangos_dia (0164): día cerrado, temporada y día especial con horas propias.
   const r = await c.query<{ dia: string; min: number }>(
     `select d::date::text as dia, m::int as min
        from generate_series($2::date, $2::date + 13, interval '1 day') d
-       join business_hours h on h.business_id = $1 and h.module = '' and h.weekday = extract(dow from d)::int and h.open and not negocio_dia_cerrado($1, d::date)
-       cross join jsonb_array_elements(h.ranges) rg
+       cross join jsonb_array_elements(negocio_rangos_dia($1, d::date)) rg
        cross join lateral generate_series(split_part(rg->>0, ':', 1)::int * 60 + split_part(rg->>0, ':', 2)::int,
                    (case when rg->>1 in ('00:00', '24:00') then 1440 else split_part(rg->>1, ':', 1)::int * 60 + split_part(rg->>1, ':', 2)::int end) - 60, 60) m
       where ((d::date + make_interval(mins => m::int)) at time zone $3) > now() + interval '2 hours'
@@ -144,8 +144,7 @@ async function plazo(c: Q, negocio: string, tz: string, ini: string): Promise<{ 
        select (d::date + (rg->>0)::time) at time zone $2 as a,
               (d::date + case when rg->>1 in ('00:00', '24:00') then interval '24 hours' else (rg->>1)::time::interval end) at time zone $2 as z
          from generate_series((now() at time zone $2)::date, (now() at time zone $2)::date + 8, interval '1 day') d
-         join business_hours h on h.business_id = $1 and h.module = '' and h.weekday = extract(dow from d)::int and h.open and not negocio_dia_cerrado($1, d::date)
-         cross join jsonb_array_elements(h.ranges) rg),
+         cross join jsonb_array_elements(negocio_rangos_dia($1, d::date)) rg),
      v as (select greatest(a, now()) as a, z from r where z > now()),
      s as (select z, sum(extract(epoch from z - a)) over (order by a) as cum from v),
      k as (select ${cfgSql("vis_responder_h")} * 3600 as seg),

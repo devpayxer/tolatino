@@ -81,6 +81,8 @@ const casos = [
   ['novedadRepetida', 'packages/db/migrations/0161_novedad_repetir.sql', ' and x.t > desde and not negocio_dia_cerrado(bid, x.dia)', ' and x.t > desde'],
   ['novedadRepetida', 'apps/web/lib/novedades.ts', "where p.repeat_days is not null and p.status = 'live' and p.hidden_at is null and p.ends_at <= now()", "where p.repeat_days is not null and p.ends_at <= now()"],
   ['novedadRepetida', 'apps/web/lib/novedades.ts', 'repeat_n = p.repeat_n + 1, updated_at = now()', 'repeat_n = p.repeat_n + 1, followers_notified_at = null, updated_at = now()'],
+  // calendarioConDiasEspeciales (0164): las visitas vuelven a armar las horas con la semana
+  ['calendarioConDiasEspeciales', 'apps/web/lib/visitas-inm.ts', "cross join jsonb_array_elements(negocio_rangos_dia($1, d::date)) rg),", "join business_hours h on h.business_id = $1 and h.module = '' and h.weekday = extract(dow from d)::int and h.open and not negocio_dia_cerrado($1, d::date)\n         cross join jsonb_array_elements(h.ranges) rg),"],
   // panelSinAccesoBloqueado (9n-13): el panel vuelve a dejar entrar a quien se le quitó el acceso
   ['panelSinAccesoBloqueado', 'apps/web/lib/panel.ts', "where m.business_id = $1 and m.user_id = $2 and m.status = 'active' and m.panel_off_at is null and b.status <> 'merged'", "where m.business_id = $1 and m.user_id = $2 and m.status = 'active' and b.status <> 'merged'"],
   // disputaConEvidencia: la respuesta deja de mandar los archivos
