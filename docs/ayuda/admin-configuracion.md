@@ -87,8 +87,8 @@ el panel, Publica tu evento y la ayuda dicen «el martes después del evento»; 
 
 **English:** the **Events** section is grouped (publish and review, RSVP and sales, after purchase, changes and organizer payouts, notices and
 reminders, the door, private events, trust). Every customer-facing text reads the value. **Event payout day** is read-only until the dashboard
-and help texts that say «Tuesday» read it. Since 9n-5 the Education, Kids and Sports limits (reply, waitlist offer, membership cancellation, deleting a child's data) and the Visits and
-Churches limits (reply, «It happened», deleting private data) can be changed here too: their screens and notices show this value.
+and help texts that say «Tuesday» read it. The Education, Kids and Sports limits (reply, waitlist offer, membership cancellation, deleting a child's data) and the Visits and
+Churches limits (reply, «It happened», deleting private data) can now be changed here too: their screens and notices show this value.
 
 ## Apps
 La sección **Apps** muestra el build mínimo y el de aviso de cada app y plataforma (To'Latino, Negocios, Repartidor y Puerta, en iPhone y
@@ -124,7 +124,7 @@ many **rejected attempts per minute** it takes before answering «wait» (60) an
 - **Noche** ya se cambia aquí: cuánto responde el local una mesa (`noche_responder_min`), cuánto se guarda la mesa (`noche_mesa_guardada_min`), cuánto dura la fila «ahora» (`noche_fila_viva_min`) y el **corte para cancelar gratis** (`noche_corte_min`, 360 = 6 PM; nunca cae a menos de 2 h antes de la llegada).
 - Cada reserva copia el corte al reservar: un cambio solo toca las nuevas. La reserva dice los minutos de verdad que le quedan al local.
 
-**¿Por qué otros plazos siguen en «solo lectura»?** Porque sus textos en pantalla todavía dicen el número escrito («24 h», «30 días»); se abren cuando cada texto lee el valor. Desde 9n-5 ya se cambian aquí los de Educación, Niños y Deporte (responder, la oferta de la lista de espera, la baja de una membresía, el borrado de los datos del niño) y los de Visitas e Iglesias (responder, «Pasó», el borrado de lo privado): sus pantallas y avisos dicen el valor de aquí.
+**¿Por qué otros plazos siguen en «solo lectura»?** Porque sus textos en pantalla todavía dicen el número escrito («24 h», «30 días»); se abren cuando cada texto lee el valor. Ya se cambian aquí también los de Educación, Niños y Deporte (responder, la oferta de la lista de espera, la baja de una membresía, el borrado de los datos del niño) y los de Visitas e Iglesias (responder, «Pasó», el borrado de lo privado): sus pantallas y avisos dicen el valor de aquí.
 
 ## Claves nuevas: el Repartidor y «Me lo devolvieron»
 - **Repartidor › Ofrecer solo · ofertas antes de avisar al negocio** (`rep_auto_intentos`, 3; 1–10).
