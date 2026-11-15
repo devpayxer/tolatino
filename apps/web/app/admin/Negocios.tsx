@@ -70,7 +70,7 @@ export function Negocios({ filas, siguiente, total, porCat, cab, f, cats, porPag
   const vistaOtra = vista === "dup" && dup ? (
     <>
       <PanelBloques bloques={[{ type: "note", tone: "info", icon: "store", t: E("Negocios con nombre casi igual en la misma ciudad. Si son sucursales vinculadas, no son duplicados. Fusionar entra a Cambios sensibles y lo aplica otra persona.", "Businesses with almost the same name in the same city. Linked branches are not duplicates. Merging goes to Sensitive changes and someone else applies it.") }]} />
-      {dup.filas.length ? <A.AdminList rows={filasDup(dup.filas, { puede: puedeEditar, setConf, ir: (h) => router.push(h) })} /> : <PanelBloques bloques={[{ type: "empty", icon: "check", t: E("Sin duplicados", "No duplicates"), s: E("Cuando dos negocios se parezcan, salen aquí.", "When two businesses look alike, they show here.") }]} />}
+      {dup.filas.length ? <A.AdminList rows={filasDup(dup.filas, { puede: puedeEditar, setConf, ir: (h) => router.push(h), E })} /> : <PanelBloques bloques={[{ type: "empty", icon: "check", t: E("Sin duplicados", "No duplicates"), s: E("Cuando dos negocios se parezcan, salen aquí.", "When two businesses look alike, they show here.") }]} />}
       {otraPag(dup.siguiente)}
     </>
   ) : vista === "rec" && rec ? (
