@@ -88,7 +88,7 @@ export function EventosAdmin({ f, filas, total, cab, siguiente, sla, orgs, puede
         {L.length ? <A.AdminList rows={L.map((o) => ({
           image: o.foto ?? undefined, initials: o.foto ? undefined : o.name.slice(0, 1), title: o.name, sub: `${o.ciudad} · ${E(`${o.eventos} eventos · ${o.tickets} con boletos`, `${o.eventos} events · ${o.tickets} with tickets`)}${o.bloqueado ? ` · ${E("Bloqueado", "Blocked")}: ${o.bloqueado}` : ""}`,
           tag: o.bloqueado ? E("BLOQUEADO", "BLOCKED") : o.verificado ? E("VERIFICADO", "VERIFIED") : undefined, tone: o.bloqueado ? "danger" : "signal",
-          actions: accionesOrg(o, { setConf, puede }).map((a) => ({ label: a.l, variant: a.v === "danger" ? "danger" : a.v === "action" ? "primary" : "secondary", onClick: a.onClick })),
+          actions: accionesOrg(o, { setConf, puede, E }).map((a) => ({ label: a.l, variant: a.v === "danger" ? "danger" : a.v === "action" ? "primary" : "secondary", onClick: a.onClick })),
         }))} /> : <PanelBloques bloques={[{ type: "empty", icon: "store", t: E("Sin organizadores", "No organizers"), s: E("Aquí salen los negocios que envían eventos.", "Businesses that send events show here.") }]} />}
         <Toast t={toast} desk={desk} />
       </div>);
@@ -105,11 +105,11 @@ export function EventosAdmin({ f, filas, total, cab, siguiente, sla, orgs, puede
       <PanelBloques bloques={[chips]} />
       {!filas.length ? <PanelBloques bloques={[{ type: "empty", icon: "ticket", t: E("Sin eventos", "No events"), s: E("Nada coincide con ese filtro.", "Nothing matches that filter.") }]} />
         : desk ? <A.DenseTable columns="minmax(0,2.2fr) minmax(0,1.1fr) minmax(0,1.3fr) 90px 170px" head={[{ label: E("EVENTO", "EVENT") }, { label: E("CUÁNDO", "WHEN") }, { label: E("ORGANIZA", "ORGANIZER") }, { label: E("ENTRADA", "ENTRY") }, { label: E("ESTADO", "STATUS") }]}
-          rows={filas.map((e) => { const [tag, tone] = estadoEvt(e.st, e.hidden, e.pending); return {
+          rows={filas.map((e) => { const [tag, tone] = estadoEvt(e.st, e.hidden, e.pending, E); return {
             opacity: e.hidden || e.st === "cancelled" || e.st === "rejected" ? 0.6 : 1, onClick: () => abrir(e.id),
             cells: [{ image: e.foto ?? undefined, initials: e.foto ? undefined : txt(e.t, en).slice(0, 1), text: txt(e.t, en), bold: true, sub: `${e.venue} · ${e.ciudad}` }, { text: `${diaCorto(e.dia, !en)} · ${hora(e.h0)}${formaAdm(e, E, en)}` }, { text: e.org }, { text: ent[e.entrada] ?? e.entrada }, { tag, tone }],
           }; })} page={pager} />
-        : <><A.AdminList rows={filas.map((e) => { const [tag, tone] = estadoEvt(e.st, e.hidden, e.pending); return { image: e.foto ?? undefined, initials: e.foto ? undefined : txt(e.t, en).slice(0, 1), title: txt(e.t, en), sub: `${diaCorto(e.dia, !en)} · ${hora(e.h0)}${formaAdm(e, E, en)} · ${e.org}`, tag, tone, chevron: true, onClick: () => abrir(e.id) }; })} /><A.Pager {...pager} /></>}
+        : <><A.AdminList rows={filas.map((e) => { const [tag, tone] = estadoEvt(e.st, e.hidden, e.pending, E); return { image: e.foto ?? undefined, initials: e.foto ? undefined : txt(e.t, en).slice(0, 1), title: txt(e.t, en), sub: `${diaCorto(e.dia, !en)} · ${hora(e.h0)}${formaAdm(e, E, en)} · ${e.org}`, tag, tone, chevron: true, onClick: () => abrir(e.id) }; })} /><A.Pager {...pager} /></>}
       <Toast t={toast} desk={desk} />
     </div>);
 }
@@ -124,8 +124,8 @@ export function EventoAdmin({ e, puede, rsvp = [], publico = null, ventas = null
   const router = useRouter(), w = useAncho(), desk = w >= 1024, E = useE(), en = E("", "x") === "x", loc = en ? "en-US" : "es-US";
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); router.refresh(); };
-  const [tag] = estadoEvt(e.st, !!e.hidden, e.pendiente ? "review" : null);
-  const x = { setConf, abrir: (h: string) => window.open(h, "_blank", "noopener"), negocio: (id: string) => router.push(`/admin/negocios/${id}?tab=cont`), puede };
+  const [tag] = estadoEvt(e.st, !!e.hidden, e.pendiente ? "review" : null, E);
+  const x = { E, setConf, abrir: (h: string) => window.open(h, "_blank", "noopener"), negocio: (id: string) => router.push(`/admin/negocios/${id}?tab=cont`), puede };
   const head: Bloque = { type: "head", eye: `${tag} · ${txt(e.fmtL, en).toUpperCase()}`, t: txt(e.t, en), s: `${e.org.name} · ${e.ciudad}${e.caso ? E(` · en la cola desde hace ${e.esperaH ?? 0} h (plazo ${e.sla} h)`, ` · in the queue for ${e.esperaH ?? 0} h (${e.sla} h deadline)`) : ""}`, onBack: () => router.push("/admin/eventos"), h1: desk ? 26 : 22 };
   if (conf) return <><PanelBloques bloques={[head]} h1={22} /><ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={hecho} /><Toast t={toast} desk={desk} /></>;
   const acts = accionesEvt(e, x), org = accionesOrg({ id: e.org.id, name: e.org.name, verificado: e.org.verificado, bloqueado: e.org.bloqueado }, x);

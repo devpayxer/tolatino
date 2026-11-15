@@ -335,7 +335,7 @@ export function N360({ n, tab, din, oper, operK = "all", evts = null, sop, cpa, 
         }))} />
         {!n.vacantes.length ? <A.AdminNote tone="info" icon="brief">{E("Sin vacantes.", "No jobs.")}</A.AdminNote> : null}
         {evts ? <>
-          <A.AdminList label={E(`EVENTOS · ${evts.filas.length}${evts.org.bloqueado ? " · ORGANIZADOR BLOQUEADO" : evts.org.verificado ? " · ORGANIZADOR VERIFICADO" : ""}`, `EVENTS · ${evts.filas.length}${evts.org.bloqueado ? " · ORGANIZER BLOCKED" : evts.org.verificado ? " · ORGANIZER VERIFIED" : ""}`)} rows={evts.filas.map((e) => { const [tag, tone] = estadoEvt(e.st, e.hidden, e.pending); return {
+          <A.AdminList label={E(`EVENTOS · ${evts.filas.length}${evts.org.bloqueado ? " · ORGANIZADOR BLOQUEADO" : evts.org.verificado ? " · ORGANIZADOR VERIFICADO" : ""}`, `EVENTS · ${evts.filas.length}${evts.org.bloqueado ? " · ORGANIZER BLOCKED" : evts.org.verificado ? " · ORGANIZER VERIFIED" : ""}`)} rows={evts.filas.map((e) => { const [tag, tone] = estadoEvt(e.st, e.hidden, e.pending, E); return {
             icon: "ticket", title: bi(e.t), sub: `${diaCorto(e.dia, !en)} · ${hora(e.h0)} · ${e.entrada === "tickets" ? E("Boletos", "Tickets") : e.entrada === "rsvp" ? "RSVP" : E("Libre", "Free")}`, tag, tone, chevron: true, onClick: () => router.push(`/admin/eventos/${e.id}`) }; })} />
           {!evts.filas.length ? <A.AdminNote tone="info" icon="ticket">{E("Sin eventos enviados.", "No events submitted.")}</A.AdminNote> : null}
           {/* 6j · Liquidaciones del martes (por estado) y cancelaciones del organizador. */}
@@ -343,7 +343,7 @@ export function N360({ n, tab, din, oper, operK = "all", evts = null, sop, cpa, 
           {evts.cx.length ? <A.AdminList label={E(`CANCELACIONES · ${evts.cx.length}`, `CANCELLATIONS · ${evts.cx.length}`)} rows={evts.cx.map((x) => ({ icon: "ban", title: `${bi(x.evento)} · ${x.scope === "date" ? E("una fecha", "one date") : E("el evento", "the event")}`,
             sub: `${x.by === "admin" ? "To’Latino" : E("El organizador", "The organizer")} · ${new Date(x.at).toLocaleDateString(en ? "en-US" : "es-US", { day: "numeric", month: "short", year: "numeric" })} · ${E(`${x.ordenes} órdenes · devuelto`, `${x.ordenes} orders · refunded`)} $${(x.devuelto / 100).toFixed(2)}` }))} /> : null}
           {evts.org.bloqueado ? <A.AdminNote tone="bad" icon="ban">{E(`Bloqueado para publicar eventos: ${evts.org.bloqueado}`, `Blocked from publishing events: ${evts.org.bloqueado}`)}</A.AdminNote> : null}
-          {(() => { const L = accionesOrg({ id: n.id, name: n.name, verificado: evts.org.verificado, bloqueado: evts.org.bloqueado }, { setConf, puede: evts.puede }); return L.length ? <PanelBloques bloques={[{ type: "acts", items: L }]} /> : null; })()}
+          {(() => { const L = accionesOrg({ id: n.id, name: n.name, verificado: evts.org.verificado, bloqueado: evts.org.bloqueado }, { setConf, puede: evts.puede, E }); return L.length ? <PanelBloques bloques={[{ type: "acts", items: L }]} /> : null; })()}
           {/* 6b · Pausar el módulo Eventos de este negocio: ninguno de sus eventos sale; el dueño ve el motivo en su panel. */}
           {P.retirar ? (n.modsOff.eventos
             ? <A.AdminNote tone="bad" icon="ban" cta={E("Reanudar", "Resume")} onCta={() => setConf({ titulo: E("¿Por qué se reanuda Eventos?", "Why are Events resuming?"), hacer: (m) => moduloPausar(n.id, "eventos", false, m) })}>{E(`Eventos en pausa: ${n.modsOff.eventos.reason}`, `Events paused: ${n.modsOff.eventos.reason}`)}</A.AdminNote>
