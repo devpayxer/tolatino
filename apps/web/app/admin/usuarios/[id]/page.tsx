@@ -6,7 +6,7 @@ import { monedas360, puntos360 } from "@/lib/admin-gam";
 import { U360 } from "../../U360";
 
 /* ADM-USR · 360° de una persona (pantalla completa, como el prototipo por defecto en Usuarios). ?tab= la pestaña. */
-const TABS = new Set(["resumen", "act", "seguridad", "confianza", "privacidad", "comunidad", "soporte", "compa"]);
+const TABS = new Set(["resumen", "act", "din", "seguridad", "confianza", "privacidad", "comunidad", "soporte", "compa"]);
 const SUBS = new Set(["pub", "cm", "seg", "pym", "cup"]);
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; sub?: string }> }) {
   const s = await requerir("usr", "ver");
@@ -24,5 +24,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const cpa = s.puede("compa", "ver") ? (tab === "compa" ? await (await import("@/lib/compa/admin-compa")).compaDeUsuario(s, u.id) : null) : undefined;
   // 9d · Privacidad: archivos, borrado y su purga por tabla, términos, avisos y fusiones (después de usuario360(): permiso y ciudad ya revisados).
   const pri = tab === "privacidad" ? await (await import("@/lib/datos/admin")).privacidad360(u.id) : null;
-  return <U360 pri={pri} cpa={cpa} sop={sop} act={act} u={u} tab={tab} sub={SUBS.has(sp.sub ?? "") ? sp.sub! : "pub"} com={com} pts={pts} mon={mon} topeAjuste={s.role === "admin" ? 5000 : 500} topeMonedas={s.role === "admin" ? 1000 : 500} />;
+  // 9n-9 · Las cifras del encabezado (derivadas) y Dinero (solo quien ve transacciones, tx:ver; se lee solo en su pestaña).
+  const U = await import("@/lib/admin-usuarios");
+  const cif = await U.cifras360(u.id);
+  const din = !s.puede("tx", "ver") ? undefined : tab === "din" ? await U.dinero360(u.id) : null;
+  return <U360 cif={cif} din={din} pri={pri} cpa={cpa} sop={sop} act={act} u={u} tab={tab} sub={SUBS.has(sp.sub ?? "") ? sp.sub! : "pub"} com={com} pts={pts} mon={mon} topeAjuste={s.role === "admin" ? 5000 : 500} topeMonedas={s.role === "admin" ? 1000 : 500} />;
 }

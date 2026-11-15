@@ -99,6 +99,20 @@ Solo lectura ve las cifras. Si el texto ya se borró por la retención, la fila 
 
 **¿La persona sabe quién le escribió?** Ve «Mensaje de To'Latino», no tu nombre; tu nombre queda en la auditoría.
 
+## Cifras de cada persona y Dinero
+- **La lista** tiene las columnas **RANGO** (de la Comunidad) y **ACTIVIDAD** (pedidos · citas; abajo reseñas · posts · reportes). En QUIÉN está **Promotores** (las cuentas marcadas como promotor en Crecimiento) y en ORDENAR **Más compras**, **Más reportes** y **Rango**. En el teléfono, cada fila dice su rango y cuántas compras lleva.
+- **Arriba del 360°:** PEDIDOS, CITAS y RANGO.
+- **Pestaña Dinero** (solo quien ve Transacciones): lo cobrado en 90 días, lo retenido ahora y lo devuelto; sus tarjetas guardadas (marca y últimos 4) y sus últimos cobros con el negocio y el estado (cada uno abre el Dinero de ese negocio).
+
+| Caso | Qué pasa |
+|---|---|
+| Alguien reporta a la persona o algo que escribió | La cifra de reportes sube sola (la base la recalcula); la lista la usa para «Con reportes» y «Más reportes». |
+| Tu rol no ve Transacciones (p. ej. Moderador) | No ves la pestaña Dinero, ni escribiendo ?tab=din. |
+| La persona no guardó tarjeta o no pagó con tarjeta | Lo dice: «Todavía no ha guardado una tarjeta» / «Sin cobros con tarjeta». |
+
+**¿Y el Wallet?** To’Latino no tiene Wallet todavía (solo tarjeta): no sale en la pantalla.
+**¿Las cifras cuentan las cuentas de prueba?** En el 360° de esa persona, sí (son sus cifras). Los números de la plataforma (Analítica) las dejan fuera.
+
 ## English
 
 Community: the 360° Community tab shows rank, points, coins (no cash value), votes received, followers, blocks and mutes, and a
@@ -135,3 +149,17 @@ and city, **without the text**. Admin and Support tap one to open its record (th
 | The person deletes their account | The text of the team's messages is emptied after 30 days; who, when and the reason stay. |
 
 **Does the person know who wrote to them?** They see «Message from To'Latino», not your name; your name stays in the audit.
+
+### Each person's numbers and Money
+- **The list** has the **RANK** (Community) and **ACTIVITY** columns (orders · bookings; below, reviews · posts · reports). WHO adds **Promoters** (accounts marked as promoters in Growth) and SORT adds **Most purchases**, **Most reports** and **Rank**. On the phone each row shows the rank and how many purchases.
+- **Top of the 360°:** ORDERS, BOOKINGS and RANK.
+- **Money tab** (only if you can see Transactions): charged in 90 days, held now and refunded; saved cards (brand and last 4) and the latest charges with the business and status (each opens that business's Money).
+
+| Case | What happens |
+|---|---|
+| Someone reports the person or something they wrote | The report count goes up on its own (the database recalculates it); the list uses it for «With reports» and «Most reports». |
+| Your role cannot see Transactions (e.g. Moderator) | You do not see the Money tab, not even with ?tab=din. |
+| The person saved no card or never paid by card | It says so: «No saved card yet» / «No card charges». |
+
+**What about the Wallet?** To’Latino has no Wallet yet (cards only): it is not shown.
+**Do test accounts count?** In that person's 360°, yes (they are their numbers). Platform numbers (Analytics) leave them out.

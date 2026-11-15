@@ -13,7 +13,8 @@ import { useAhora } from "@/lib/ahora";
 import { tec } from "@/lib/tec";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"DenseTable" | "AdminList" | "Pager" | "Icon", ComponentType<any>>;
-type Fila = { id: string; nombre: string | null; phone: string; photo: string | null; zona: string | null; ciudad: string | null; estado: string; dueno: boolean; staff: string | null; creado: string; visto: string | null };
+type Fila = { id: string; nombre: string | null; phone: string; photo: string | null; zona: string | null; ciudad: string | null; estado: string; dueno: boolean; staff: string | null; creado: string; visto: string | null;
+  rango: number; pedidos: number; citas: number; reportes: number; promo: boolean; posts: number; resenas: number };
 export const EST_USR: Record<string, string> = { adv: "ADVERTIDO", mute: "SILENCIADO", susp: "SUSPENDIDO", ban: "BANEADO", del: "BORRADO" };
 export const haceUsr = (iso: string | null, ahora: number) => {
   if (!iso) return "nunca";
@@ -35,11 +36,11 @@ export function Usuarios({ filas, total, cab, f, porPagina }: { filas: Fila[]; t
   const tag = (r: Fila): [string, string] => r.estado !== "ok" ? [EST_USR[r.estado] ?? r.estado.toUpperCase(), "danger"] : r.staff ? [r.staff.toUpperCase(), "ink"] : r.dueno ? ["DUEÑO", "action"] : ["ACTIVO", "neutral"];
   const bloques: Bloque[] = [{ type: "head", eye: "TODAS LAS CUENTAS", t: "Usuarios", s: `${cab.n} ${cab.n === 1 ? "vecino" : "vecinos"} con cuenta · ${cab.duenos} ${cab.duenos === 1 ? "dueño" : "dueños"} · ${cab.sanc} con sanción`, h1: desk ? 26 : 22 }];
   const despues: (Bloque | null)[] = [
-    chips("quien", "QUIÉN", [["own", "Dueños de negocio"], ["cli", "Solo clientes"]]),
+    chips("quien", "QUIÉN", [["own", "Dueños de negocio"], ["promo", "Promotores"], ["cli", "Solo clientes"]]),
     chips("est", "ESTADO", [["ok", "Activo"], ["adv", "Advertido"], ["mute", "Silenciado"], ["susp", "Suspendido"], ["ban", "Baneado"], ["del", "Borrado"]]),
     mas ? chips("mas", "ACTIVIDAD", [["new", "Nuevos 30 d"], ["act7", "Activos 7 d"], ["inact", "Sin entrar 30 d+"], ["mdev", "Varios dispositivos"], ["noemail", "Sin correo"], ["rep", "Con reportes"]]) : null,
     mas ? { type: "chips", k: "RANGO EN LA COMUNIDAD", items: ([["", "Cualquiera"], ["4", "4 o más"], ["7", "7 o más"], ["9", "9 o más"]] as [string, string][]).map(([v, l]) => ({ l, v: String(f.rk ?? "") === v ? "selected" : "filter", onClick: () => ir({ rk: v || null }) })) } : null,
-    { type: "chips", k: "ORDENAR", items: ([["last", "Última vez"], ["new", "Más nuevos"]] as const).map(([v, l]) => ({ l, v: f.orden === v ? "selected" : "filter", onClick: () => ir({ orden: v === "last" ? null : v }) })) },
+    { type: "chips", k: "ORDENAR", items: ([["last", "Última vez"], ["new", "Más nuevos"], ["ped", "Más compras"], ["rep", "Más reportes"], ["rk", "Rango"]] as const).map(([v, l]) => ({ l, v: f.orden === v ? "selected" : "filter", onClick: () => ir({ orden: v === "last" ? null : v }) })) },
     { type: "acts", items: [
       { l: mas ? "Menos filtros" : `Más filtros${f.mas.length ? ` (${f.mas.length})` : ""}`, icon: "grid", onClick: () => setMas(!mas) },
       ...(hayFiltro ? [{ l: "Quitar filtros", icon: "close", onClick: () => router.push(path) }] : []),
@@ -61,8 +62,8 @@ export function Usuarios({ filas, total, cab, f, porPagina }: { filas: Fila[]; t
       {!filas.length ? (
         <PanelBloques bloques={[{ type: "empty", icon: "users", t: "Nadie con esos filtros", s: "Quita un filtro o busca por teléfono." }]} />
       ) : desk ? (
-        <A.DenseTable columns="minmax(0,2fr) minmax(0,1.3fr) 110px 130px"
-          head={[{ label: "USUARIO" }, { label: "ZONA" }, { label: "ÚLTIMA VEZ" }, { label: "ESTADO" }]}
+        <A.DenseTable columns="minmax(0,2fr) minmax(0,1.1fr) 60px minmax(0,1.4fr) 90px 110px"
+          head={[{ label: "USUARIO" }, { label: "ZONA" }, { label: "RANGO" }, { label: "ACTIVIDAD" }, { label: "ÚLTIMA VEZ" }, { label: "ESTADO" }]}
           rows={filas.map((r) => {
             const [t, tone] = tag(r);
             return {
@@ -70,6 +71,8 @@ export function Usuarios({ filas, total, cab, f, porPagina }: { filas: Fila[]; t
               cells: [
                 { image: r.photo ?? undefined, initials: r.photo ? undefined : nombre(r).slice(0, 1), text: nombre(r), bold: true, sub: r.phone },
                 { text: lugar(r) },
+                { text: String(r.rango) },
+                { text: `${r.pedidos} ${r.pedidos === 1 ? "pedido" : "pedidos"} · ${r.citas} ${r.citas === 1 ? "cita" : "citas"}`, sub: `${r.resenas} ${r.resenas === 1 ? "reseña" : "reseñas"} · ${r.posts} posts${r.reportes ? ` · ${r.reportes} ${r.reportes === 1 ? "reporte" : "reportes"}` : ""}` },
                 { text: haceUsr(r.visto, ahora) },
                 { tag: t, tone },
               ],
@@ -79,7 +82,7 @@ export function Usuarios({ filas, total, cab, f, porPagina }: { filas: Fila[]; t
       ) : (
         <>
           <A.AdminList rows={filas.map((r) => ({
-            image: r.photo ?? undefined, initials: r.photo ? undefined : nombre(r).slice(0, 1), title: nombre(r), sub: `${lugar(r)}${r.dueno ? " · dueño" : ""}`,
+            image: r.photo ?? undefined, initials: r.photo ? undefined : nombre(r).slice(0, 1), title: nombre(r), sub: `${lugar(r)}${r.dueno ? " · dueño" : ""}${r.promo ? " · promotor" : ""} · rango ${r.rango} · ${r.pedidos + r.citas} ${r.pedidos + r.citas === 1 ? "compra" : "compras"}`,
             tag: r.estado !== "ok" ? EST_USR[r.estado] : undefined, tone: "danger", chevron: true, onClick: () => abrir(r.id),
           }))} />
           <A.Pager {...pager} />

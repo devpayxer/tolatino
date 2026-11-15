@@ -4939,3 +4939,14 @@ Qué mirar:
 - **Cambiar de categoría vacía las subcategorías** y deja solo los filtros que existen en la nueva; el dueño recibe aviso para elegir las nuevas.
 - **Duplicado = nombre casi igual en la misma ciudad** (trigramas ≥ 0.75, o ≥ 0.6 con la misma primera palabra). La misma dirección sola NO lo marca
   (plazas con muchos locales); se dice como dato extra del par.
+
+## Fase 9 · 9n-9 — Usuarios: cifras de cada persona y pestaña Dinero (15 nov)
+**Qué mirar (sandbox):**
+1. **Super Admin › Usuarios** (captura `u9-lista-d.png`): columnas RANGO y ACTIVIDAD; QUIÉN › Promotores; ORDENAR › Más compras / Más reportes / Rango.
+2. **Usuarios 360°:** arriba PEDIDOS · CITAS · RANGO; pestaña **Dinero** (captura `u9-dinero-m.png`): cobrado 90 d, retenido, devuelto, tarjetas y últimos cobros.
+
+**Decisiones tomadas por defecto (AB):**
+- **Sin Wallet:** el prototipo trae el KPI WALLET, el filtro «Con saldo en Wallet», los movimientos y «Ajustar» (crédito/débito con motivo). El Wallet
+  no existe en el código (plan fase 6 §6 #8: solo tarjeta) y sería dinero nuevo: no se inventó. **Pendiente de tu decisión:** ¿se abre el Wallet
+  (saldo a favor del vecino, devoluciones y pagos a promotores)? Si sí, llega con su módulo y estas piezas se encienden.
+- **Las cifras de una cuenta de prueba cuentan en su 360°** (son suyas); Analítica las sigue dejando fuera.

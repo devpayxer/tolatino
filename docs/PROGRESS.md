@@ -2331,3 +2331,12 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   ficha redirige; no se aplica con operaciones abiertas ni Pro pagado; transferir con dueño, solo Admin). El 360° dice lo que espera en la cola,
   «Fusionado con …» y en Confianza sus posibles duplicados. Colas muestra el caso (queda/se cierra, de → a, dueño hoy → nuevo).
 - **Guardián `cambioNegocioOtraPersona`** (al revés alreves9n 35/35). **e2e `neg9n8`** (escritorio pide, teléfono aplica). Ayuda: admin-negocios.md.
+
+## Fase 9 · 9n-9 — Usuarios: cifras de cada persona y pestaña Dinero (15 nov)
+- **Migración 0159** (`0159_usuarios_cifras.sql`): `user_stats_cache` (DERIVADO: pedidos, citas, reportes por persona; lo recalcula
+  `user_stats_refresh` desde los triggers de `operations` y `content_reports`; en el mapa de datos: se borra con la cuenta) + índices
+  `payments_usuario_idx`, `users_promotores_idx`, `community_profiles_rango_idx`.
+- **Lista de Usuarios:** QUIÉN › Promotores; ORDENAR › Más compras / Más reportes / Rango; columnas RANGO y ACTIVIDAD; «Con reportes» ya no
+  recorre los reportes (usa la cifra).
+- **Usuarios 360°:** PEDIDOS · CITAS · RANGO arriba (`cifras360`) y la pestaña **Dinero** (`dinero360`, solo tx:ver).
+- **Guardián `cifrasUsuarioDerivadas`** (al revés alreves9n 38/38). **e2e `usr9n9`**. Ayuda: admin-usuarios.md.

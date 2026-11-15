@@ -188,9 +188,13 @@ en el momento. Se marca solo cuando está hecho de verdad.
   (mismo `$n` usado como texto y uuid). Hoy lo caza la prueba punta a punta; falta un guardián estático.
 
 ## Usuarios 360° (bloque 1l, 5 nov 2026)
-- [ ] **→ 9n** · **Pestañas Actividad, Dinero y Comunidad** y los KPI del encabezado (pedidos, citas, Wallet, rango): con sus
+- [x] **→ 9n** · **Pestañas Actividad, Dinero y Comunidad** y los KPI del encabezado (pedidos, citas, Wallet, rango): con sus
   módulos. Igual la columna RANGO/ACTIVIDAD de la lista y los filtros «Con reportes», «Con saldo en Wallet», rango y
-  «Promotores».
+  «Promotores». — **✓ 9n-9 (15 nov):** Actividad (6j) y Comunidad (5i) ya estaban; ahora **Dinero** (solo tx:ver: cobrado 90 d, retenido, devuelto,
+  tarjetas con últimos 4, últimos cobros), las cifras de arriba PEDIDOS · CITAS · RANGO, las columnas RANGO y ACTIVIDAD, «Promotores» y ORDENAR
+  › Más compras / Más reportes / Rango, sobre el derivado `user_stats_cache` (**0159**, lo recalcula la base). Guardián `cifrasUsuarioDerivadas`;
+  prueba usr9n9; ayuda admin-usuarios. **Wallet** (KPI, «Con saldo en Wallet», movimientos y «Ajustar») no existe en el código (solo tarjeta,
+  plan fase 6 §6 #8): queda con su módulo, ver REVISION 9n-9.
 - [x] **→ 9n** · **Enviar mensaje** (SMS/push, AdminMessage) y **avisos por SMS** de sanciones: con las notificaciones (Fase 2). — _9a (11 nov): los avisos de sanciones salen (mod_sancion en lib/apelaciones.ts) y existe la plantilla msg_user (lib/mensajes.ts). Falta el botón «Enviar mensaje» en Usuarios 360°._ — **✓ 9n-3 (14 nov):** Usuarios 360° › «Enviar mensaje» (app o SMS; sin enlaces; 30 por hora por persona del equipo y 3 al día por destinatario; `admin_messages` solo inserción y vaciable al borrar la cuenta) y las sanciones que quitan algo (silencio, bloqueo, suspensión, baneo) avisan también por SMS de respaldo (`mod_sancion` sin_push; la advertencia solo por la campana). Prueba `adm9n3` paso 5. El «Mensaje al dueño» de un negocio sigue abierto (necesita la bandeja del panel).
 - [x] **Apelaciones** (cola de 72 h y botón en Mi cuenta): con Soporte / Confianza y seguridad. Hoy la persona ve el
   motivo y «Escríbele a Soporte». — **✓ 9a (11 nov):** apelaciones con su cola de 72 h y el botón en Mi cuenta (lib/apelaciones.ts, app/admin/Confianza.tsx; 5d); prueba com5d.

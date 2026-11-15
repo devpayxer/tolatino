@@ -9374,6 +9374,23 @@ const guardianes = {
     }
   },
 
+  /* 9n-9 · cifrasUsuarioDerivadas: las cifras de una persona (pedidos, citas, reportes) son un DERIVADO (user_stats_cache, 0159) que solo escribe la
+     base (user_stats_refresh, por sus triggers): el código nunca la escribe, y la lista de Usuarios filtra y ordena por ella, nunca contando
+     operaciones o reportes de cada fila (con 1 M de vecinos eso es una vista de segundos). La pestaña Dinero del 360° solo la lee quien ve
+     transacciones (tx:ver). Al revés (alreves9n): el código escribe la cifra, la lista vuelve a contar reportes, Dinero sin el permiso → falla. */
+  cifrasUsuarioDerivadas() {
+    const G = "cifrasUsuarioDerivadas", L = "apps/web/lib/admin-usuarios.ts", P = "apps/web/app/admin/usuarios/[id]/page.tsx";
+    for (const f of archivos.filter((x) => x.startsWith("apps/web/") && /\.tsx?$/.test(x))) {
+      const t = sinComent(f);
+      const m = /(insert into|update|delete from)\s+user_stats_cache\b/.exec(t);
+      if (m) falla(G, f, t.slice(0, m.index).split("\n").length, "escribe user_stats_cache: es un derivado que solo escribe la base (user_stats_refresh)");
+    }
+    const lista = cuerpoFn(sinComent(L), "listaUsuarios");
+    if (!lista) falla(G, L, 0, "falta listaUsuarios");
+    else if (/from (content_reports|operations)\b/.test(lista)) falla(G, L, 0, "la lista de Usuarios cuenta reportes u operaciones en cada vista: filtra y ordena por user_stats_cache");
+    if (!/const din = !s\.puede\("tx", "ver"\) \? undefined : tab === "din" \? await U\.dinero360\(u\.id\) : null;/.test(sinComent(P))) falla(G, P, 0, "la pestaña Dinero del 360° se lee sin el permiso de transacciones (tx:ver)");
+  },
+
   /* 9n-8 · cambioNegocioOtraPersona: fusionar negocios, cambiarles la categoría o el dueño son cambios sensibles: el 360° y «Posibles duplicados» solo
      los PIDEN (sensitive_changes + su caso en la cola «cambio»); los aplica OTRA persona del equipo en Colas (decidirCambio, después de «Lo pediste tú»).
      Las funciones que los aplican (lib/negocio-cambios.ts) solo se importan desde acciones-colas.ts; la página de un negocio fusionado lleva al que

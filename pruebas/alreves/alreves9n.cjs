@@ -70,6 +70,10 @@ const casos = [
     '    const cs = "x"; await c.query(`update businesses set status = \'merged\', merged_into = $1 where id = $2`, [b.id, o.id]);'],
   ['cambioNegocioOtraPersona', 'apps/web/app/(app)/n/[id]/page.tsx', '    if (into) permanentRedirect(`/n/${into}`);\n', ''],
   ['cambioNegocioOtraPersona', 'packages/db/migrations/0158_negocios_duplicados.sql', 'before update or delete on business_dup_decisions', 'before delete on business_dup_decisions'],
+  // cifrasUsuarioDerivadas (9n-9): la lista vuelve a contar reportes por fila; Dinero sin tx:ver
+  ['cifrasUsuarioDerivadas', 'apps/web/lib/admin-usuarios.ts', 'w.push("exists (select 1 from user_stats_cache k2 where k2.user_id = u.id and k2.reportes > 0)");',
+    'w.push("exists (select 1 from content_reports x where x.target_kind = \'user\' and x.target_id = u.id::text)");'],
+  ['cifrasUsuarioDerivadas', 'apps/web/app/admin/usuarios/[id]/page.tsx', 'const din = !s.puede("tx", "ver") ? undefined : tab === "din" ? await U.dinero360(u.id) : null;', 'const din = tab === "din" ? await U.dinero360(u.id) : null;'],
   // disputaConEvidencia: la respuesta deja de mandar los archivos
   ['disputaConEvidencia', DI, 'archivos: { recibo: archivos.recibo, conversacion: archivos.conversacion, entrega: archivos.entrega, otro: archivos.foto_entrega } });', 'texto: "" });'],
 ];
@@ -78,6 +82,8 @@ const crear = [
   ['diaEspecialActivo', 'packages/db/migrations/0199_zz9n.sql', 'begin;\ndelete from special_hours where date_to < current_date;\ncommit;\n'],
   // sinTelefonoAlRepartidor: una pantalla nueva del Repartidor con el teléfono del cliente
   ['sinTelefonoAlRepartidor', 'apps/web/app/repartidor/zz9n.tsx', 'export const x = (o: { telCliente: string }) => o.telCliente;\n'],
+  // cifrasUsuarioDerivadas (9n-9): una acción nueva que escribe la cifra a mano
+  ['cifrasUsuarioDerivadas', 'apps/web/app/admin/zz9n9.ts', 'export const q = "update user_stats_cache set reportes = 0 where user_id = $1";\n'],
   // cambioNegocioOtraPersona (9n-8): una pantalla nueva del admin que aplica la fusión directo
   ['cambioNegocioOtraPersona', 'apps/web/app/admin/zz9n8.ts', 'import { aplicarFusion } from "@/lib/negocio-cambios";\nexport const x = aplicarFusion;\n'],
 ];

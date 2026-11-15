@@ -16,11 +16,11 @@ export function leerFiltros(sp: Record<string, string | undefined>): FiltrosUsr 
   const lista = (v: string | undefined, ok: string[]) => (v ?? "").split(",").filter((x) => ok.includes(x));
   return {
     q: (sp.q ?? "").trim().slice(0, 80),
-    quien: lista(sp.quien, ["own", "cli"]),
+    quien: lista(sp.quien, ["own", "cli", "promo"]),
     est: lista(sp.est, ["ok", "adv", "mute", "susp", "ban", "del"]),
     mas: lista(sp.mas, ["new", "act7", "inact", "mdev", "noemail", "rep"]),
     rk: [4, 7, 9].includes(Number(sp.rk)) ? Number(sp.rk) : null,
-    orden: sp.orden === "new" ? "new" : "last",
+    orden: ["new", "ped", "rep", "rk"].includes(sp.orden ?? "") ? sp.orden! : "last",
     pag: Math.min(100, Math.max(1, Number(sp.pag) || 1)),
   };
 }
@@ -45,7 +45,10 @@ export async function listaUsuarios(s: Staff, f: FiltrosUsr) {
     add(`(lower(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')) like '%' || lower($1) || '%' or lower(coalesce(u.nick, '')) like '%' || lower($1) || '%'
           or ($2 <> '' and length($2) >= 3 and u.phone like '%' || $2 || '%') or lower(coalesce(u.email::text, '')) like '%' || lower($1) || '%' or u.id::text = lower($1))`, f.q, dig);
   }
-  if (f.quien.length === 1) w.push(f.quien[0] === "own" ? DUENO : `not ${DUENO}`);
+  // 9n-9 · «Promotores» (atributo de la cuenta, no un rol) se suma a «Dueños» o «Solo clientes» si se eligen juntos.
+  const quien = f.quien.filter((x) => x !== "promo");
+  if (quien.length === 1) w.push(quien[0] === "own" ? DUENO : `not ${DUENO}`);
+  if (f.quien.includes("promo")) w.push("u.is_promoter");
   if (f.est.length) add(`${ESTADO_USR} = any($1::text[])`, f.est);
   if (f.mas.includes("new")) w.push("u.created_at > now() - interval '30 days'");
   if (f.mas.includes("act7")) w.push("u.last_seen_at > now() - interval '7 days'");
@@ -53,20 +56,26 @@ export async function listaUsuarios(s: Staff, f: FiltrosUsr) {
   if (f.mas.includes("mdev")) w.push("(select count(distinct coalesce(se.device::text, se.id::text)) from sessions se where se.user_id = u.id) > 1");
   if (f.mas.includes("noemail")) w.push("u.email is null");
   // 5i · Comunidad: con reportes recibidos (a la persona o a lo que escribió en la Comunidad) y rango mínimo.
-  if (f.mas.includes("rep")) w.push(`exists (select 1 from content_reports x where (x.target_kind = 'user' and x.target_id = u.id::text)
-      or (x.target_kind = 'com_post' and x.target_id in (select p.id::text from com_posts p where p.author_user_id = u.id))
-      or (x.target_kind = 'com_comment' and x.target_id in (select c.id::text from com_comments c where c.author_user_id = u.id)))`);
+  // 9n-9 · por la cifra derivada (user_stats_cache.reportes, la recalcula la base con cada reporte) en vez de buscar en todos los reportes.
+  if (f.mas.includes("rep")) w.push("exists (select 1 from user_stats_cache k2 where k2.user_id = u.id and k2.reportes > 0)");
   if (f.rk) add("coalesce((select cp.rank_level from community_profiles cp where cp.user_id = u.id), 1) >= $1::int", f.rk);
   const where = w.length ? w.join(" and ") : "true";
-  const orden = f.orden === "new" ? "u.created_at desc, u.id" : "u.last_seen_at desc nulls last, u.id";
+  // 9n-9 · «Más compras» y «Más reportes» por las cifras derivadas (user_stats_cache, 0159, con su índice); «Rango» por el perfil de la Comunidad.
+  const orden = f.orden === "new" ? "u.created_at desc, u.id" : f.orden === "ped" ? "coalesce(k.pedidos, 0) + coalesce(k.citas, 0) desc, u.last_seen_at desc nulls last, u.id"
+    : f.orden === "rep" ? "coalesce(k.reportes, 0) desc, u.last_seen_at desc nulls last, u.id" : f.orden === "rk" ? "coalesce(cp.rank_level, 1) desc, coalesce(cp.points_total, 0) desc, u.id"
+    : "u.last_seen_at desc nulls last, u.id";
   const cab = s.cities.length ? "u.home_city_id = any($1::text[])" : "cardinality($1::text[]) = 0";
   const sinFiltros = w.length === (s.cities.length ? 1 : 0);
   const [filas, total, k] = await Promise.all([
-    db().query<{ id: string; nombre: string | null; phone: string; photo: string | null; zona: string | null; ciudad: string | null; estado: string; dueno: boolean; staff: string | null; creado: string; visto: string | null }>(
+    db().query<{ id: string; nombre: string | null; phone: string; photo: string | null; zona: string | null; ciudad: string | null; estado: string; dueno: boolean; staff: string | null; creado: string; visto: string | null;
+      rango: number; pedidos: number; citas: number; reportes: number; promo: boolean; posts: number; resenas: number }>(
       `select u.id, ${NOMBRE} as nombre, u.phone, u.photo_url as photo, z.name->>'es' as zona, c.name as ciudad, ${ESTADO_USR} as estado, ${DUENO} as dueno,
               (select r.name->>'es' from staff_members m join staff_roles r on r.key = m.role where m.user_id = u.id and m.status = 'active') as staff,
-              u.created_at as creado, u.last_seen_at as visto
+              u.created_at as creado, u.last_seen_at as visto, coalesce(cp.rank_level, 1)::int as rango, coalesce(k.pedidos, 0) as pedidos, coalesce(k.citas, 0) as citas,
+              coalesce(k.reportes, 0) as reportes, u.is_promoter as promo, coalesce(cp.posts_n, 0) as posts,
+              (select count(*)::int from reviews rv where rv.user_id = u.id and rv.status <> 'removed') as resenas
          from users u left join cities c on c.id = u.home_city_id left join zones z on z.city_id = u.home_city_id and z.id = u.zone_id
+         left join user_stats_cache k on k.user_id = u.id left join community_profiles cp on cp.user_id = u.id
         where ${where} order by ${orden} limit ${POR_PAGINA} offset ${(f.pag - 1) * POR_PAGINA}`, p),
     // Sin filtros (solo las ciudades de quien mira), el total es el de arriba: no se cuenta dos veces el millón.
     sinFiltros ? Promise.resolve(null) : db().query<{ n: number }>(`select count(*)::int as n from users u where ${where}`, p),
@@ -163,3 +172,35 @@ export async function usuario360(s: Staff, id: string) {
   };
 }
 export type Usuario360 = NonNullable<Awaited<ReturnType<typeof usuario360>>>;
+
+/* 9n-9 · Usuarios 360° › Dinero (prototipo usrDetail «din»; solo quien ve transacciones, tx:ver): lo cobrado en 90 días, lo retenido ahora y lo
+   devuelto; sus tarjetas guardadas (marca y últimos 4: el número completo lo guarda Stripe) y sus últimos cobros con el negocio y el estado.
+   El Wallet del prototipo no existe en el código (plan fase 6 §6 #8: solo tarjeta): no se muestra. Después de usuario360() (permiso y ciudad). */
+export async function dinero360(uid: string) {
+  const [k, tarjetas, cobros] = await Promise.all([
+    db().query<{ cobrado: number; retenido: number; devuelto: number; n: number }>(
+      `select coalesce(sum(p.amount_cents - p.refunded_cents) filter (where p.captured_at > now() - interval '90 days'), 0)::int as cobrado,
+              coalesce(sum(p.amount_cents) filter (where p.status = 'held'), 0)::int as retenido,
+              coalesce(sum(p.refunded_cents) filter (where p.created_at > now() - interval '90 days'), 0)::int as devuelto,
+              count(*)::int as n
+         from payments p where p.user_id = $1`, [uid]),
+    db().query<{ brand: string; last4: string; exp: string; def: boolean; sim: boolean }>(
+      `select brand, last4, exp, is_default as def, simulated as sim from payment_methods where user_id = $1 and status = 'active' order by is_default desc, created_at desc limit 10`, [uid]),
+    db().query<{ id: string; negocio: string; biz: string; num: string | null; cents: number; devuelto: number; status: string; kind: string; at: string; last4: string | null }>(
+      `select p.id::text, b.name as negocio, b.id as biz, o.number as num, p.amount_cents as cents, p.refunded_cents as devuelto, p.status, p.kind, p.created_at as at, p.card_last4 as last4
+         from payments p join businesses b on b.id = p.business_id left join operations o on o.id = p.operation_id
+        where p.user_id = $1 order by p.created_at desc limit 20`, [uid]),
+  ]);
+  return { ...(k.rows[0] ?? { cobrado: 0, retenido: 0, devuelto: 0, n: 0 }), tarjetas: tarjetas.rows, cobros: cobros.rows };
+}
+export type Dinero360 = Awaited<ReturnType<typeof dinero360>>;
+export type Cifras360 = Awaited<ReturnType<typeof cifras360>>;
+
+/* 9n-9 · Las cifras del encabezado del 360° (prototipo: PEDIDOS · CITAS · RANGO): derivadas (user_stats_cache, 0159) y el rango de la Comunidad. */
+export async function cifras360(uid: string) {
+  return (await db().query<{ pedidos: number; citas: number; reportes: number; rango: number; rango_es: string | null }>(
+    `select coalesce(k.pedidos, 0) as pedidos, coalesce(k.citas, 0) as citas, coalesce(k.reportes, 0) as reportes, coalesce(cp.rank_level, 1)::int as rango,
+            (select r.name->>'es' from ranks r where r.level = coalesce(cp.rank_level, 1)) as rango_es
+       from users u left join user_stats_cache k on k.user_id = u.id left join community_profiles cp on cp.user_id = u.id where u.id = $1`, [uid])).rows[0]
+    ?? { pedidos: 0, citas: 0, reportes: 0, rango: 1, rango_es: null };
+}

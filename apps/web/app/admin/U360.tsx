@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Usuario360 } from "@/lib/admin-usuarios";
 import type { Comunidad360 } from "@/lib/admin-vecinos";
+import type { Cifras360, Dinero360 } from "@/lib/admin-usuarios";
 import type { Monedas360, Puntos360 } from "@/lib/admin-gam";
 import type { Actividad360 } from "@/lib/evt-admin";
 import { diaCorto } from "@/lib/evt-comun";
@@ -47,7 +48,8 @@ const fecha = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("e
 const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Record<string, unknown>).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : String(x ?? "—"));
 const OK = "var(--tl-open-text)", WARN = "var(--tl-pro-ink)", BAD = "var(--tl-danger)";
 
-export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, topeMonedas = 500, act = null, sop, cpa, pri = null }: { sop?: CasoSop[]; cpa?: CompaUsuario | null; u: Usuario360; tab: string; sub?: string; com?: Comunidad360 | null; pts?: Puntos360 | null; mon?: Monedas360 | null; topeAjuste?: number; topeMonedas?: number; act?: Actividad360 | null; pri?: Privacidad360 | null }) {
+export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, topeMonedas = 500, act = null, sop, cpa, pri = null, cif = null, din }: { sop?: CasoSop[]; cpa?: CompaUsuario | null; u: Usuario360; tab: string; sub?: string; com?: Comunidad360 | null; pts?: Puntos360 | null; mon?: Monedas360 | null; topeAjuste?: number; topeMonedas?: number; act?: Actividad360 | null; pri?: Privacidad360 | null;
+  cif?: Cifras360 | null; din?: Dinero360 | null }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
@@ -64,7 +66,9 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
   const rol = ["Cliente", ...(u.negocios.some((n) => n.kind === "owner") ? ["Dueño"] : u.negocios.length ? ["Equipo de un negocio"] : []), ...(u.staff ? [`Equipo de To’Latino · ${u.staff}`] : [])].join(" · ");
   const cab: Bloque[] = [{
     type: "hero", t: nombre, s: `${lugar} · ${u.lang === "en" ? "English" : "Español"}${u.negocios.some((n) => n.kind === "owner") ? " · dueño" : ""}`,
-    ph: u.photo ? `url("${u.photo}")` : "", ini: u.photo ? "" : nombre.slice(0, 1), st: stL, stFg: u.estado === "ok" ? "var(--tl-signal)" : "var(--tl-pro)", stDot: u.estado === "ok" ? "var(--tl-signal)" : "var(--tl-pro)", kpis: [], acts: [],
+    ph: u.photo ? `url("${u.photo}")` : "", ini: u.photo ? "" : nombre.slice(0, 1), st: stL, stFg: u.estado === "ok" ? "var(--tl-signal)" : "var(--tl-pro)", stDot: u.estado === "ok" ? "var(--tl-signal)" : "var(--tl-pro)", acts: [],
+    // 9n-9 · Las cifras del prototipo (PEDIDOS · CITAS · RANGO), derivadas; el Wallet del prototipo no existe (solo tarjeta).
+    kn: 3, kpis: cif ? [{ v: String(cif.pedidos), k: "PEDIDOS" }, { v: String(cif.citas), k: "CITAS" }, { v: String(cif.rango), k: `RANGO · ${(cif.rango_es ?? "Vecino").toUpperCase()}` }] : [],
   }];
 
   /* Avisos de arriba: prueba, borrada (con Restaurar), sanción vigente (con Levantar), pedido de borrado en la cola. */
@@ -87,7 +91,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
     {`Pedido de borrado en Cambios sensibles (#${pedido.id}): lo aplica otra persona del equipo.`}</A.AdminNote>);
 
   const alertas = u.compartidos.length + (u.phone_ok ? 0 : 1);
-  const tabs: Bloque = { type: "tabs", items: ([["resumen", "Resumen"], ["act", "Actividad"], ["seguridad", "Seguridad", alertas], ["confianza", "Confianza", vigentes.length], ["privacidad", "Privacidad"], ["comunidad", "Comunidad"], ...(sop ? [["soporte", "Soporte"] as [string, string]] : []), ...(cpa !== undefined ? [["compa", "El Compa"] as [string, string]] : [])] as [string, string, number?][])
+  const tabs: Bloque = { type: "tabs", items: ([["resumen", "Resumen"], ["act", "Actividad"], ...(din !== undefined ? [["din", "Dinero"] as [string, string]] : []), ["seguridad", "Seguridad", alertas], ["confianza", "Confianza", vigentes.length], ["privacidad", "Privacidad"], ["comunidad", "Comunidad"], ...(sop ? [["soporte", "Soporte"] as [string, string]] : []), ...(cpa !== undefined ? [["compa", "El Compa"] as [string, string]] : [])] as [string, string, number?][])
     .map(([k, l, n]) => ({ l, n: n ? String(n) : undefined, on: tab === k, onClick: () => ir(k) })) };
 
   const historial = (): ReactNode => u.historial.length
@@ -288,6 +292,21 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
       act.rsvp.length ? { type: "rows", k: `RSVP · ${act.rsvp.length}`, items: act.rsvp.map((r, i) => ({ key: `r${i}`, icon: "users", t: `${r.evento.es} · ${diaCorto(r.dia, true)}`, s: `${r.party} ${r.party === 1 ? "persona" : "personas"}${r.llegaron ? ` · llegaron ${r.llegaron}` : ""}`,
         tag: RV[r.st] ?? r.st, tone: r.st === "going" ? "signal" : "neutral", chev: true, onClick: () => router.push(`/admin/eventos/${r.eid}`) })) } as Bloque
         : { type: "note", tone: "info", icon: "users", t: "Sin RSVP." } as Bloque,
+    ]} />;
+  } else if (tab === "din" && din) {
+    // 9n-9 · Dinero (prototipo usrDetail «din», solo tx:ver): cobrado 90 d, retenido ahora y devuelto; sus tarjetas (últimos 4) y sus últimos cobros.
+    const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
+    const PST: Record<string, [string, string]> = { held: ["RETENIDO", "action"], captured: ["COBRADO", "neutral"], released: ["LIBERADO", "neutral"], refunded: ["DEVUELTO", "neutral"], partially_refunded: ["DEVUELTO EN PARTE", "neutral"], failed: ["FALLÓ", "danger"] };
+    cuerpo = <PanelBloques bloques={[
+      { type: "kpis", cols: desk ? "repeat(3,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [{ k: "COBRADO · 90 D", v: usd(din.cobrado) }, { k: "RETENIDO AHORA", v: usd(din.retenido) }, { k: "DEVUELTO · 90 D", v: usd(din.devuelto) }] },
+      { type: "group", k: "MÉTODOS DE PAGO" },
+      din.tarjetas.length ? { type: "rows", items: din.tarjetas.map((t, i) => ({ key: `t${i}`, icon: "card", t: `${t.brand} •••• ${t.last4}`, s: `Vence ${t.exp}${t.def ? " · predeterminada" : ""}${t.sim ? " · simulada" : ""}`, m: "STRIPE" })) } as Bloque
+        : { type: "note", tone: "info", icon: "card", t: "Todavía no ha guardado una tarjeta." } as Bloque,
+      { type: "note", tone: "info", icon: "lock", t: "El número completo lo guarda Stripe; aquí solo se ven los últimos 4." },
+      din.cobros.length ? { type: "rows", k: `ÚLTIMOS COBROS · ${din.n}`, items: din.cobros.map((c) => ({ key: c.id, icon: "dollar", t: `${c.negocio}${c.num ? ` · ${c.num}` : ""}`,
+        s: `${new Date(c.at).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric" })}${c.last4 ? ` · •••• ${c.last4}` : ""}${c.devuelto ? ` · devuelto ${usd(c.devuelto)}` : ""}`,
+        r: usd(c.cents), tag: PST[c.status]?.[0] ?? c.status, tone: PST[c.status]?.[1] ?? "neutral", chev: true, onClick: () => router.push(`/admin/negocios/${c.biz}?tab=din`) })) } as Bloque
+        : { type: "note", tone: "info", icon: "dollar", t: "Sin cobros con tarjeta." } as Bloque,
     ]} />;
   } else if (tab === "soporte" && sop) {
     cuerpo = <SoporteDe360 casos={sop} vacio="Esta persona no ha escrito a Soporte." />;
