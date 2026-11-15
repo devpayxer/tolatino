@@ -2265,3 +2265,13 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   - El resto eran precondiciones de orden que ahora cada prueba se pone (free2b y menu2b abren Sabor; adm4m pide la cita de salud de sal4j; vec9m pone la
     etiqueta antes de abrir la ficha; cit3e espera el cierre —reembolso y cierre son dos escrituras—; compa7d usa a la dueña de la cita).
 - **Sigue:** la tercera vuelta de confirmación; en verde → `main` y `pruebas` avanzan (el sandbox recibe de golpe las migraciones 0133–0148: mirarlo).
+
+## Fase 9 · 9n-5 — los plazos de la Fase 4 se cambian desde Configuración (15 nov)
+- **Qué:** las 12 claves que estaban en SOLO LECTURA (`insc_*`, `ninos_purga_dias`, `fe_responder_h`, `vis_*`, `sp_*`, `ayuda_negocio_h`) ahora las dicen
+  las pantallas, el panel, el Super Admin, la analítica y los avisos con el valor de Configuración; la migración **0149** las abre y cambia 7 plantillas de
+  aviso a `{horas}`/`{hours}`. Helper `lib/plazo-txt.ts` (horasTxt/diasTxt). Las ayudas dicen que los plazos los fija To'Latino en Configuración.
+- **Arreglado de paso:** la ayuda con el pedido y la de las citas vencían a 24 h fijas aunque escalaban con la clave (ahora las dos con la clave); la purga de
+  notas de Salud borraba también lo del niño y la casa con su plazo (ahora cada razón con el suyo).
+- **Guardianes:** `plazoAbiertoSeLee` (el número de fábrica no vuelve a un texto), `purgaPorRazon`; al revés `alreves9b3` 47/47. `tsc` limpio; 0149 aplicada
+  dos veces sobre una copia local en 0148 (idempotente). Hecho en paralelo con dos ayudantes (visitas; salud y pro) y juntado aquí.
+- **No corrió aquí:** e2e (sin Docker) → CI.

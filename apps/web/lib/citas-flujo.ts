@@ -141,6 +141,7 @@ async function borrarNotas() {
   await db().query(
     `update op_private p set note_enc = null, purge_at = now() from operations o
       where o.id = p.operation_id and p.note_enc is not null and o.status in ('done', 'cancelled', 'expired', 'declined')
+        and p.reason not in ('nino', 'fe', 'casa') -- 9n-5 · esas tienen su plazo (ninos_purga_dias, vis_purga_dias) y su barrido; aquí, solo lo de Salud, Pro y el destinatario
         and coalesce(o.done_at, o.cancelled_at, o.updated_at) < now() - make_interval(days => ${cfgSql("sp_notas_purga_dias")})`);
 }
 

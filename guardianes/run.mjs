@@ -9233,12 +9233,31 @@ const guardianes = {
       ["vis_responder_h", /^apps\/web\/app\/panel\/Visitas\.tsx$/, /en 4 horas de tu horario|within 4 (of your )?business hours/],
       ["vis_purga_dias", /^apps\/web\/app\/panel\/Visitas\.tsx$/, /se borra a los 30 d[ií]as|deleted after 30 days/],
       ["fe_responder_h", /^apps\/web\/(app\/panel\/Inscripciones\.tsx|app\/admin\/Analitica\.tsx|lib\/admin-analitica\.ts)$/, /lugar en 48 horas|within 48 hours, propose|RESPONDIDAS EN 48 H|sent_at <= interval '48 hours'/],
+      ["ayuda_negocio_h", /^apps\/web\/app\/(\(app\)\/(cita|pedido)\/\[num\]\/ayuda\/|\(app\)\/pedido\/\[num\]\/AyudaEstado\.tsx|panel\/(Pedidos|Citas)\.tsx|admin\/Colas\.tsx)/, /[Rr]espond(e|i[oó]) en 24 h|(Reply|reply|answer) within 24 hours|no respondi[oó] en 24/],
+      ["sp_seguro_guardar_h", /^apps\/web\/app\/(\(app\)\/cita\/\[num\]\/Estado\.tsx|panel\/Citas\.tsx)$/, /guardada 2 horas|held (for )?2 hours|tiene 2 horas/],
       ["ninos_purga_dias", /^apps\/web\/app\/(\(app\)\/n\/\[id\]\/(?!consulta\/)|admin\/acciones-colas\.ts|panel\/Inscripciones\.tsx)/, /borran? a los 30 d[ií]as|deleted (after )?30 days|30 d[ií]as (despu[eé]s )?de terminar|30 days after it ends/],
     ];
     for (const x of codigo) {
       const fs = T.filter(([, f]) => f.test(x));
       if (!fs.length) continue;
       sinComent(x).split("\n").forEach((l, i) => { for (const [k, , re] of fs) if (re.test(l)) falla(G, x, i + 1, `dice el plazo «${k}» con el número de fábrica: léelo de Configuración (valor/valores/cfgSql de lib/config.ts)`); });
+    }
+  },
+
+  /* 9n-5 · purgaPorRazon: lo privado de una operación (op_private) se borra con el plazo de SU clave: Salud/Pro/destinatario con sp_notas_purga_dias,
+     el niño y la nota de la iglesia con ninos_purga_dias, la dirección de la prueba en casa con vis_purga_dias. Una purga sin filtro por razón
+     borraba todo con la clave más corta (si el Admin alargaba la de los niños, no valía). Cada «update op_private … note_enc = null» filtra
+     p.reason, y la de sp_notas_purga_dias deja fuera nino, fe y casa. Al revés (alreves9b3): quitar el filtro de citas-flujo. */
+  purgaPorRazon() {
+    const G = "purgaPorRazon";
+    for (const x of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.*\.tsx?$/.test(x)) continue;
+      const t = sinComent(x);
+      for (const m of t.matchAll(/`update op_private p set note_enc = null[^`]*`/g)) {
+        const q = m[0], l = t.slice(0, m.index).split("\n").length;
+        if (!/p\.reason (not )?in \(|p\.reason = '/.test(q)) falla(G, x, l, "purga op_private sin filtrar p.reason: borraría lo de otra clave con este plazo");
+        if (/sp_notas_purga_dias/.test(q) && !/p\.reason not in \('nino', 'fe', 'casa'\)/.test(q)) falla(G, x, l, "la purga de sp_notas_purga_dias debe dejar fuera nino, fe y casa (tienen su plazo)");
+      }
     }
   },
 
