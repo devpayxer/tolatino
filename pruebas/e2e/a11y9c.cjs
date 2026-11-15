@@ -89,6 +89,12 @@ async function recorrerConTab(p, pasos) {
 const chicos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=button],[role=link],[role=tab],[role=radio],[role=checkbox],[role=switch],button,a[href]')]
   .filter((e) => e.getClientRects().length > 0 && !e.closest('[aria-hidden=true]')).filter((e) => { const r = e.getBoundingClientRect(); return r.width < 44 || r.height < 44; }).length);
 
+// WCAG 2.2 AA (2.5.8): objetivo mínimo de 24 × 24 px (44 es AAA). Se informan los que miden menos, con su nombre (no los enlaces dentro de un texto).
+const minimos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=button],[role=link],[role=tab],[role=radio],[role=checkbox],[role=switch],button,a[href]')]
+  .filter((e) => e.getClientRects().length > 0 && !e.closest('[aria-hidden=true]') && !(e.tagName === 'A' && e.parentElement && /^(P|SPAN|LI)$/.test(e.parentElement.tagName) && (e.parentElement.textContent || '').length > (e.textContent || '').length + 8))
+  .filter((e) => { const r = e.getBoundingClientRect(); return r.width < 24 || r.height < 24; })
+  .map((e) => { const r = e.getBoundingClientRect(); return `${(e.getAttribute('aria-label') || e.textContent || e.tagName).trim().slice(0, 24)} ${Math.round(r.width)}×${Math.round(r.height)}`; }));
+
 (async () => {
   const br = await chromium.launch(); const err = [];
   const watch = (p, tag) => { p.on('pageerror', (e) => err.push(tag + ' ' + e.message)); p.on('console', (x) => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push(tag + ' console ' + x.text()); }); };
@@ -115,6 +121,7 @@ const chicos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=butt
     const rec = await recorrerConTab(m, 30);
     ok(rec.distintos >= 12, `Tab recorre la ficha: ${rec.distintos} elementos distintos en 30 pasos, sin quedarse atrapado`);
     ok(rec.sinContorno.length === 0, 'cada elemento con foco se ve (contorno): ' + (rec.sinContorno.slice(0, 6).join(' · ') || 'todos'));
+    { const mi = await minimos(m); console.log(`  (informe AA 2.5.8: ${mi.length} controles de la ficha miden menos de 24 px${mi.length ? ': ' + mi.slice(0, 12).join(' · ') : ''})`); }
     const mudos0 = await sinFoco(m); ok(mudos0.length === 0, 'la ficha: ningún control con rol queda fuera del orden de tabulación ' + mudos0.slice(0, 6).join(' · '));
     const cm0 = await clicMudo(m); if (cm0.length) console.log('  (aviso: la ficha: clics con mano sin teclado: ' + cm0.slice(0, 5).join(' · ') + ')'); else ok(true, 'la ficha: ningún clic de ratón sin teclado');
     let snap = await arbol(m);
@@ -275,6 +282,7 @@ const chicos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=butt
 
     // ═══ Informe (no falla) ═══
     const ch = await chicos(a); console.log(`  (informe: ${ch} controles del Super Admin miden menos de 44 px; va a LAUNCH-CHECKLIST: cambiarlos cambia las capturas aprobadas)`);
+    { const mi = await minimos(a); console.log(`  (informe AA 2.5.8: ${mi.length} controles del Super Admin miden menos de 24 px${mi.length ? ': ' + mi.slice(0, 12).join(' · ') : ''})`); }
     console.log('  controles operados con el teclado (' + nombres.length + '): ' + [...new Set(nombres)].slice(0, 40).join(' · '));
     ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ').slice(0, 400) : ''));
     console.log(`\n${n} ✓ · a11y9c`);
