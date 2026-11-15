@@ -11,7 +11,7 @@ import { nombreMes, type FilaTabla, type Tabla } from "@/lib/puntos-comun";
 import { tablaMas } from "../acciones";
 import { Avatar, LINE, MONO, Marco, useAncho, useComUi, type YoCom } from "../Marco";
 
-import { tec } from "@/lib/tec";
+import { tec, flechas } from "@/lib/tec";
 type N = "Button" | "Chip" | "Icon";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Button, Chip, Icon } = UI as unknown as Record<N, ComponentType<any>>;
@@ -48,7 +48,7 @@ export function TablaBarrio({ es, yo, ciudad, d }: { es: boolean; yo: YoCom; ciu
     <Marco es={es} yo={yo} ui={ui} code="APP-GAM-TABLA" titulo={E2("Tabla del Barrio", "Leaderboard")} sub={sub}>
       <div data-screen-label="APP-GAM-TABLA · Tabla del Barrio" style={{ padding: D ? 0 : 16, display: "flex", flexDirection: "column", gap: 12, maxWidth: 720 }}>
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <div role="tablist" aria-label={E2("Mes", "Month")} style={{ display: "flex", gap: 2, padding: 3, borderRadius: 12, background: "rgba(11,14,18,.06)" }}>
+          <div role="tablist" onKeyDown={flechas} aria-label={E2("Mes", "Month")} style={{ display: "flex", gap: 2, padding: 3, borderRadius: 12, background: "rgba(11,14,18,.06)" }}>
             {(["actual", "anterior"] as const).map((k) => (
               <span key={k} role="tab" aria-selected={d.mes === k} onClick={() => ir({ m: k })} {...tec(() => ir({ m: k }))} style={{ padding: "7px 12px", borderRadius: 9, background: d.mes === k ? "var(--tl-white)" : "transparent", color: d.mes === k ? "var(--tl-ink)" : "rgba(11,14,18,.6)", font: "700 12px Manrope,sans-serif", cursor: "pointer", textTransform: "capitalize" }}>{nombreMes(k === "actual" ? d.meses.actual : d.meses.anterior, es)}</span>))}
           </div>

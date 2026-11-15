@@ -2,6 +2,7 @@
 /* APP-NEG-CHECKOUT · móvil y desktop (prototipo ckVals). Delivery o Pickup: a dónde (tu dirección, o el local), cuándo
    (lo antes posible o una hora de hoy), cómo te lo entregamos y la propina (delivery), cómo pagas (efectivo al recibir o
    en el local) y el resumen. El servidor vuelve a calcular todo al enviar: precios, zona, mínimo, envío y propina. */
+import { flechas } from "@/lib/tec";
 import { vibrar } from "@/lib/nativo/haptica";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
@@ -305,7 +306,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
             )}
             <div className={caja}>
               <div className={K}>{E2("PAGO", "PAYMENT")}</div>
-              <div role="tablist" className="mt-[11px] flex gap-1.5 rounded-[14px] bg-ink/5 p-1">
+              <div role="tablist" onKeyDown={flechas} className="mt-[11px] flex gap-1.5 rounded-[14px] bg-ink/5 p-1">
                 {(pago ? [["card", "card", E2("Tarjeta", "Card")], ["cash", "dollar", dl ? E2("Efectivo al recibir", "Cash on delivery") : E2("Pagas en el local", "Pay at the store")]] as const
                   : [["cash", "dollar", dl ? E2("Efectivo al recibir", "Cash on delivery") : E2("Pagas en el local", "Pay at the store")]] as const).map(([k, ic, l]) => (
                   <button key={k} type="button" role="tab" aria-selected={payK === k} onClick={() => { setPayK(k); setError(null); }}

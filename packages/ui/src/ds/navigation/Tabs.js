@@ -29,6 +29,7 @@ function Tabs({
     }
   }, /*#__PURE__*/React.createElement("div", {
     role: "tablist",
+    onKeyDown: __ds_scope.__flechas,
     style: {
       display: 'flex',
       gap: T ? 22 : 2,

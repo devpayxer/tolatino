@@ -120,6 +120,16 @@ const chicos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=butt
     let snap = await arbol(m);
     ok(/button "Agregar"/.test(snap), 'árbol de accesibilidad: «Agregar» es un botón con nombre (el + de cada plato)');
     ok(/tab "Menú/.test(snap) || /tab "Menu/.test(snap), 'árbol de accesibilidad: las pestañas de la ficha son tabs');
+    // Las flechas entre pestañas (WAI-ARIA tabs): con el foco en una pestaña, → lleva a la siguiente y ← vuelve; Fin a la última (sin cambiar de pestaña)
+    { const tabs = m.locator('[role="tablist"] [role="tab"]'); const n = await tabs.count();
+      await tabs.nth(0).focus(); await m.keyboard.press('ArrowRight');
+      const i1 = await m.evaluate(() => [...document.querySelectorAll('[role="tablist"] [role="tab"]')].indexOf(document.activeElement));
+      await m.keyboard.press('ArrowLeft');
+      const i0 = await m.evaluate(() => [...document.querySelectorAll('[role="tablist"] [role="tab"]')].indexOf(document.activeElement));
+      await m.keyboard.press('End');
+      const iF = await m.evaluate(() => { const L = [...document.activeElement?.closest('[role="tablist"]')?.querySelectorAll('[role="tab"]') ?? []]; return [L.indexOf(document.activeElement), L.length]; });
+      ok(n >= 2 && i1 === 1 && i0 === 0 && iF[0] === iF[1] - 1, `las flechas mueven el foco entre las pestañas de la ficha (→ ${i1}, ← ${i0}, Fin ${iF[0]}/${iF[1]})`);
+      ok(new URL(m.url()).searchParams.get('tab') === 'menu', 'moverse con las flechas no cambia de pestaña (activación con Enter)'); }
     const fila = (p, nombre) => p.locator('[data-msec^="m-"]:not([data-msec="m-pop"]) div.grid').filter({ has: p.getByText(nombre, { exact: true }) }).last();
     await act(m, fila(m, 'Tostones').getByRole('button', { name: 'Agregar' }));
     const bar = m.locator('[data-screen-label="Ficha · barra del pedido"]'); await bar.waitFor();

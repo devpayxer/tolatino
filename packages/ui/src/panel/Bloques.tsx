@@ -15,6 +15,18 @@ type Fn = () => void;
 const tecla = (fn?: Fn) => fn ? (e: React.KeyboardEvent<HTMLElement>) => { if ((e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) { e.preventDefault(); fn(); } } : undefined;
 const K: CSSProperties = { font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)" };
 
+/* 9c · Las flechas entre pestañas (como __ds_scope.__flechas del sistema y flechas() de apps/web/lib/tec.ts): ← → en círculo, Inicio y Fin. */
+function flechas(e: React.KeyboardEvent<HTMLElement>) {
+  const k = e.key;
+  if (k !== "ArrowRight" && k !== "ArrowLeft" && k !== "Home" && k !== "End") return;
+  const L = [...e.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]')], i = L.indexOf(document.activeElement as HTMLElement);
+  if (i < 0 || !L.length) return;
+  e.preventDefault();
+  const j = k === "Home" ? 0 : k === "End" ? L.length - 1 : (i + (k === "ArrowRight" ? 1 : -1) + L.length) % L.length;
+  L[j]!.focus();
+  L[j]!.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+}
+
 export type Accion = { l: string; v?: string; icon?: string | null; off?: boolean; onClick?: Fn };
 export type Fila = {
   t: string; s?: string; m?: string; mFg?: string; tFg?: string; img?: string; imgIni?: string; imgW?: string; icon?: string; ibg?: string; ifg?: string;
@@ -173,7 +185,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
           </div>))}
       </div>);
     case "tabs": return (
-      <div className="d2hs" style={{ display: "flex", gap: 6, overflowX: "auto", margin: "0 -2px", padding: 2, scrollbarWidth: "none" }}>
+      <div className="d2hs" role="tablist" onKeyDown={flechas} style={{ display: "flex", gap: 6, overflowX: "auto", margin: "0 -2px", padding: 2, scrollbarWidth: "none" }}>
         {b.items.map((x, i) => (
           <span key={i} role="tab" aria-selected={x.on} onClick={x.onClick} style={{ flex: "none", height: 36, padding: "0 13px", borderRadius: 12, background: x.on ? "var(--tl-ink)" : "var(--tl-white)", color: x.on ? "var(--tl-white)" : "var(--tl-ink)", border: x.on ? "1px solid var(--tl-ink)" : "1px solid rgba(11,14,18,.1)", display: "flex", alignItems: "center", gap: 7, font: "700 12.5px Manrope,sans-serif", cursor: "pointer", whiteSpace: "nowrap", boxSizing: "border-box" }}>
             {x.l}{x.n ? <span style={{ font: `800 10px ${MONO}`, opacity: 0.75 }}>{x.n}</span> : null}

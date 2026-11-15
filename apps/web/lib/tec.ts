@@ -16,3 +16,16 @@ export function tec(fn?: ((e?: any) => unknown) | null): { tabIndex?: number; on
     },
   };
 }
+
+/* 9c · Las flechas entre pestañas de un role="tablist" (lo mismo que __ds_scope.__flechas en el sistema): ← → mueven el foco en círculo,
+   Inicio y Fin a la primera y la última; Enter o Espacio eligen. `<div role="tablist" onKeyDown={flechas}>`. */
+export function flechas(e: KeyboardEvent<HTMLElement>) {
+  const k = e.key;
+  if (k !== "ArrowRight" && k !== "ArrowLeft" && k !== "Home" && k !== "End") return;
+  const L = [...e.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]')], i = L.indexOf(document.activeElement as HTMLElement);
+  if (i < 0 || !L.length) return;
+  e.preventDefault();
+  const j = k === "Home" ? 0 : k === "End" ? L.length - 1 : (i + (k === "ArrowRight" ? 1 : -1) + L.length) % L.length;
+  L[j]!.focus();
+  L[j]!.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+}

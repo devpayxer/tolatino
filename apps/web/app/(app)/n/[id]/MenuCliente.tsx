@@ -3,6 +3,7 @@
    cambios», «cuál quitas» y sus versiones desktop; menuVals). Compuesto con el sistema de diseño (MenuItemRow, MenuTile,
    OptionGroup, QtyStepper, CartLine, OrderBar). El carrito vive en este teléfono (por negocio); el precio, las opciones
    y el inventario los vuelve a decidir el servidor al enviar. */
+import { flechas } from "@/lib/tec";
 import * as UI from "@tolatino/ui";
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties } from "react";
 import type { MenuPublico, PItem } from "@/lib/pedir";
@@ -312,7 +313,7 @@ const k10 = "font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60";
 
 export function Modos({ modes }: { modes: { k: string; l: string; icon: string; on: boolean; onClick: () => void }[] }) {
   return (
-    <div role="tablist" className="flex gap-1.5 rounded-[14px] bg-ink/5 p-1">
+    <div role="tablist" onKeyDown={flechas} className="flex gap-1.5 rounded-[14px] bg-ink/5 p-1">
       {modes.map((x) => (
         <button key={x.k} type="button" role="tab" aria-selected={x.on} onClick={x.onClick}
           className={`flex h-[38px] flex-1 items-center justify-center gap-[7px] rounded-[11px] text-[12.5px] font-bold ${x.on ? "bg-white text-ink shadow-[0_1px_4px_rgba(11,14,18,.1)]" : "bg-transparent text-ink/60"}`}>
