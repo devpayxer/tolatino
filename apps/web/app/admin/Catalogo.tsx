@@ -10,6 +10,7 @@ import { filtroActivo, filtrosTodos, fraseActiva, fraseAgregar, seguroVisible, s
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { useAhora } from "@/lib/ahora";
+import { useE } from "./idioma-admin";
 
 import { tec } from "@/lib/tec";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,68 +31,70 @@ export type DatosCatalogo = {
   dealer?: { tope: number; nota: string | null; dealers: number; enTope: number; carros: number; historial: Hist; admin: boolean };
   vj?: { filas: { id: string; phrase: string; lang: "es" | "en"; active: boolean; base: boolean; quien: string | null }[]; frenadas: number; historial: Hist; admin: boolean };
 };
-const TX: Record<string, string> = { order: "Pedido", booking: "Cita / solicitud", ticket: "Boletos", none: "Sin transacción" };
+type EF = (es: string, en: string) => string;
+const TX = (E: EF): Record<string, string> => ({ order: E("Pedido", "Order"), booking: E("Cita / solicitud", "Appointment / request"), ticket: E("Boletos", "Tickets"), none: E("Sin transacción", "No transaction") });
 /* Lo que ve Free y lo que ve Pro (diseño, Módulos y Free/Pro). */
-const FP: [string, boolean, boolean][] = [["Página con pestañas", false, true], ["Hasta 5 ítems / carta completa", true, true], ["Pedidos y citas en línea", true, true], ["Techo mensual en línea", true, false],
-  ["Novedades y Hoy en el barrio", false, true], ["Staff, Relacionados, Jobs", false, true], ["Responder reseñas", false, true], ["Destacado en la categoría", false, true], ["Insights", false, true]];
-const VERBO: Record<string, string> = {
-  "catalogo.sub.agregar": "agregó la subcategoría", "catalogo.sub.quitar": "quitó la subcategoría", "catalogo.sub.restaurar": "restauró la subcategoría",
-  "catalogo.sinonimo.agregar": "agregó un sinónimo", "catalogo.sinonimo.apagar": "apagó un sinónimo", "catalogo.sinonimo.encender": "encendió un sinónimo",
-  "catalogo.filtro.apagar": "apagó un filtro", "catalogo.filtro.encender": "encendió un filtro", "autos.cargo.tope": "cambió el tope del cargo del dealer",
-};
+const FP: [string, string, boolean, boolean][] = [["Página con pestañas", "Page with tabs", false, true], ["Hasta 5 ítems / carta completa", "Up to 5 items / full menu", true, true], ["Pedidos y citas en línea", "Online orders and appointments", true, true], ["Techo mensual en línea", "Monthly online cap", true, false],
+  ["Novedades y Hoy en el barrio", "Updates and Today in the neighborhood", false, true], ["Staff, Relacionados, Jobs", "Staff, Related, Jobs", false, true], ["Responder reseñas", "Reply to reviews", false, true], ["Destacado en la categoría", "Featured in the category", false, true], ["Insights", "Insights", false, true]];
+const VERBO = (E: EF): Record<string, string> => ({
+  "catalogo.sub.agregar": E("agregó la subcategoría", "added the subcategory"), "catalogo.sub.quitar": E("quitó la subcategoría", "removed the subcategory"), "catalogo.sub.restaurar": E("restauró la subcategoría", "restored the subcategory"),
+  "catalogo.sinonimo.agregar": E("agregó un sinónimo", "added a synonym"), "catalogo.sinonimo.apagar": E("apagó un sinónimo", "turned off a synonym"), "catalogo.sinonimo.encender": E("encendió un sinónimo", "turned on a synonym"),
+  "catalogo.filtro.apagar": E("apagó un filtro", "turned off a filter"), "catalogo.filtro.encender": E("encendió un filtro", "turned on a filter"), "autos.cargo.tope": E("cambió el tope del cargo del dealer", "changed the dealer fee cap"),
+});
 const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Record<string, unknown>).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : String(x ?? "—"));
-const hace = (iso: string, ahora: number) => { const h = (ahora - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "hace un momento" : h < 24 ? `hace ${Math.floor(h)} h` : `hace ${Math.floor(h / 24)} d`; };
+const hace = (iso: string, ahora: number, E: EF) => { const h = (ahora - new Date(iso).getTime()) / 3_600_000; return h < 1 ? E("hace un momento", "just now") : h < 24 ? E(`hace ${Math.floor(h)} h`, `${Math.floor(h)} h ago`) : E(`hace ${Math.floor(h / 24)} d`, `${Math.floor(h / 24)} d ago`); };
 
 export function Catalogo({ d }: { d: DatosCatalogo }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
-  const router = useRouter(), path = usePathname(), sp = useSearchParams(), w = useAncho(), desk = w >= 1024;
+  const router = useRouter(), path = usePathname(), sp = useSearchParams(), w = useAncho(), desk = w >= 1024, E = useE();
+  const en = E("", "x") === "x", tx = TX(E), verbo = VERBO(E);
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
   const [pend, start] = useTransition();
   const [q, setQ] = useState(d.sin?.q ?? "");
   const ir = (p: Record<string, string | null>) => { const u = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v) u.set(k, v); else u.delete(k); } router.push(`${path}${u.size ? `?${u}` : ""}`, { scroll: false }); };
-  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
+  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); router.refresh(); };
   const run = (f: () => Promise<ResAdm>) => start(async () => { const r = await f(); if (r.ok) hecho(r); else setToast(r.mensaje); });
   const historial = (h: Hist): ReactNode => h.length
-    ? <A.AuditLog rows={h.slice(0, 8).map((x) => ({ who: x.quien ?? "Equipo", initials: (x.quien ?? "E").slice(0, 1), action: VERBO[x.action] ?? x.action, before: val(x.before), after: val(x.after), why: x.reason ?? undefined, when: hace(x.at, ahora) }))} />
-    : <A.AdminNote tone="info" icon="folder">Nadie del equipo ha hecho cambios aquí todavía.</A.AdminNote>;
+    ? <A.AuditLog rows={h.slice(0, 8).map((x) => ({ who: x.quien ?? E("Equipo", "Team"), initials: (x.quien ?? "E").slice(0, 1), action: verbo[x.action] ?? x.action, before: val(x.before), after: val(x.after), why: x.reason ?? undefined, when: hace(x.at, ahora, E) }))} />
+    : <A.AdminNote tone="info" icon="folder">{E("Nadie del equipo ha hecho cambios aquí todavía.", "No one on the team has made changes here yet.")}</A.AdminNote>;
 
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
-      <PanelBloques bloques={[{ type: "head", eye: "CATÁLOGO", t: d.cat?.es ?? d.filt?.es ?? "Catálogo", onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <PanelBloques bloques={[{ type: "head", eye: E("CATÁLOGO", "CATALOG"), t: (en ? d.cat?.en || d.cat?.es : d.cat?.es) ?? d.filt?.es ?? E("Catálogo", "Catalog"), onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
       <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={hecho} />
       <Toast t={toast} desk={desk} />
     </div>);
 
   /* Detalle de una categoría. */
   if (d.cat) {
-    const c = d.cat, vivas = c.subs.filter((s) => s.status === "on"), quitadas = c.subs.filter((s) => s.status !== "on");
+    const c = d.cat, cN = en ? c.en || c.es : c.es, vivas = c.subs.filter((s) => s.status === "on"), quitadas = c.subs.filter((s) => s.status !== "on");
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 1120 }}>
-        <span role="link" onClick={() => ir({ c: null })} {...tec(() => ir({ c: null }))} style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><A.Icon name="chevronLeft" size={15} color="var(--tl-action)" />Catálogo</span>
+        <span role="link" onClick={() => ir({ c: null })} {...tec(() => ir({ c: null }))} style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><A.Icon name="chevronLeft" size={15} color="var(--tl-action)" />{E("Catálogo", "Catalog")}</span>
         <PanelBloques bloques={[
-          { type: "head", eye: "CATEGORÍA", t: c.es, s: `${c.id} · ${c.negocios.length ? "" : "sin negocios todavía · "}${vivas.length} subcategorías`, h1: desk ? 26 : 22 },
-          c.line ? { type: "note", tone: "ink", icon: "warning", t: `Línea fija (nunca se suaviza): ${c.line.es}` } : null,
-          { type: "kv", cols: desk ? 4 : 2, items: [{ k: "TRANSACCIÓN", v: TX[c.op_kind ?? ""] ?? "—" }, { k: "TESIS", v: c.title ?? "—" }, { k: "FILTROS RÁPIDOS", v: c.rapidos.join(" · ") || "—" }, { k: "CAPÍTULOS", v: String(c.capitulos) }] },
-          d.puede ? { type: "acts", items: [{ l: "Agregar subcategoría", v: "action", icon: "plus", off: pend, onClick: () => setConf({
-            titulo: `Nueva subcategoría en ${c.es}`, sub: "Entra al final del listado y a Buscar. Escribe el nombre en español y, después de «/», en inglés.", cta: "Agregar",
-            valor: { k: "NOMBRE · ES / EN", ini: "", max: 120 }, hacer: (m, _e, v) => subAgregar(c.id, v, m) }) }] } : null,
-          { type: "group", k: `SUBCATEGORÍAS · ${vivas.length}` },
+          { type: "head", eye: E("CATEGORÍA", "CATEGORY"), t: cN, s: `${c.id} · ${c.negocios.length ? "" : E("sin negocios todavía · ", "no businesses yet · ")}${vivas.length} ${E("subcategorías", "subcategories")}`, h1: desk ? 26 : 22 },
+          c.line ? { type: "note", tone: "ink", icon: "warning", t: `${E("Línea fija (nunca se suaviza)", "Fixed line (never softened)")}: ${en ? c.line.en || c.line.es : c.line.es}` } : null,
+          { type: "kv", cols: desk ? 4 : 2, items: [{ k: E("TRANSACCIÓN", "TRANSACTION"), v: tx[c.op_kind ?? ""] ?? "—" }, { k: E("TESIS", "THESIS"), v: c.title ?? "—" }, { k: E("FILTROS RÁPIDOS", "QUICK FILTERS"), v: c.rapidos.join(" · ") || "—" }, { k: E("CAPÍTULOS", "CHAPTERS"), v: String(c.capitulos) }] },
+          d.puede ? { type: "acts", items: [{ l: E("Agregar subcategoría", "Add subcategory"), v: "action", icon: "plus", off: pend, onClick: () => setConf({
+            titulo: E(`Nueva subcategoría en ${c.es}`, `New subcategory in ${cN}`), sub: E("Entra al final del listado y a Buscar. Escribe el nombre en español y, después de «/», en inglés.", "It goes at the end of the list and into Search. Write the name in Spanish and, after “/”, in English."), cta: E("Agregar", "Add"),
+            valor: { k: E("NOMBRE · ES / EN", "NAME · ES / EN"), ini: "", max: 120 }, hacer: (m, _e, v) => subAgregar(c.id, v, m) }) }] } : null,
+          { type: "group", k: `${E("SUBCATEGORÍAS", "SUBCATEGORIES")} · ${vivas.length}` },
         ].filter(Boolean) as Bloque[]} />
         <PanelBloques bloques={[{ type: "rows", cols: desk ? "repeat(auto-fill,minmax(340px,1fr))" : undefined, items: vivas.map((s) => ({
-          key: s.id, icon: "grid", t: s.es, s: `${s.n} ${s.n === 1 ? "negocio" : "negocios"}${s.en !== s.es ? ` · ${s.en}` : ""}${s.equipo ? " · agregada por el equipo" : ""}`,
-          m: s.n === 0 ? "SIN OFERTA" : undefined, mFg: "var(--tl-pro-ink)",
-          acts: d.puede ? [{ l: "Quitar", icon: "trash", onClick: () => setConf({ titulo: `¿Quitar «${s.es}»?`, sub: s.n ? `Afecta a ${s.n} ${s.n === 1 ? "negocio" : "negocios"}: pierden la etiqueta, no la ficha.` : "Nadie la usa hoy.", peligro: s.n > 0, cta: "Quitar", hacer: (m) => subEstado(s.id, false, m) }) }] : undefined,
+          key: s.id, icon: "grid", t: en ? s.en || s.es : s.es, s: `${s.n} ${s.n === 1 ? E("negocio", "business") : E("negocios", "businesses")}${s.en !== s.es ? ` · ${en ? s.es : s.en}` : ""}${s.equipo ? E(" · agregada por el equipo", " · added by the team") : ""}`,
+          m: s.n === 0 ? E("SIN OFERTA", "NO LISTINGS") : undefined, mFg: "var(--tl-pro-ink)",
+          acts: d.puede ? [{ l: E("Quitar", "Remove"), icon: "trash", onClick: () => setConf({ titulo: E(`¿Quitar «${s.es}»?`, `Remove “${s.en || s.es}”?`), sub: s.n ? E(`Afecta a ${s.n} ${s.n === 1 ? "negocio" : "negocios"}: pierden la etiqueta, no la ficha.`, `Affects ${s.n} ${s.n === 1 ? "business" : "businesses"}: they lose the tag, not the listing.`) : E("Nadie la usa hoy.", "No one uses it today."), peligro: s.n > 0, cta: E("Quitar", "Remove"), hacer: (m) => subEstado(s.id, false, m) }) }] : undefined,
         })) }]} />
-        {quitadas.length ? <PanelBloques bloques={[{ type: "group", k: `QUITADAS · ${quitadas.length}` }, { type: "rows", items: quitadas.map((s) => ({
-          key: s.id, icon: "ban", t: s.es, s: `${s.reason ?? "Quitada"} · ${s.n} ${s.n === 1 ? "negocio la tiene" : "negocios la tienen"}`, dim: true,
-          acts: d.puede ? [{ l: "Restaurar", v: "action", icon: "check", onClick: () => setConf({ titulo: `¿Por qué vuelve «${s.es}»?`, cta: "Restaurar", hacer: (m) => subEstado(s.id, true, m) }) }] : undefined,
+        {quitadas.length ? <PanelBloques bloques={[{ type: "group", k: `${E("QUITADAS", "REMOVED")} · ${quitadas.length}` }, { type: "rows", items: quitadas.map((s) => ({
+          key: s.id, icon: "ban", t: en ? s.en || s.es : s.es, s: `${s.reason ?? E("Quitada", "Removed")} · ${s.n} ${s.n === 1 ? E("negocio la tiene", "business has it") : E("negocios la tienen", "businesses have it")}`, dim: true,
+          acts: d.puede ? [{ l: E("Restaurar", "Restore"), v: "action", icon: "check", onClick: () => setConf({ titulo: E(`¿Por qué vuelve «${s.es}»?`, `Why is “${s.en || s.es}” coming back?`), cta: E("Restaurar", "Restore"), hacer: (m) => subEstado(s.id, true, m) }) }] : undefined,
         })) }]} /> : null}
         {c.negocios.length ? <>
-          <PanelBloques bloques={[{ type: "group", k: "NEGOCIOS", link: "Ver todos", onLink: () => router.push(`/admin/negocios?cat=${c.id}`) }]} />
-          <A.AdminList rows={c.negocios.map((b) => ({ image: b.cover ?? undefined, initials: b.cover ? undefined : b.name.slice(0, 1), title: b.name, sub: `${b.plan === "pro" ? "Pro" : "Free"}${b.verified ? " · Verificado" : ""}`, chevron: true, onClick: () => router.push(`/admin/negocios/${b.id}`) }))} />
+          <PanelBloques bloques={[{ type: "group", k: E("NEGOCIOS", "BUSINESSES"), link: E("Ver todos", "See all"), onLink: () => router.push(`/admin/negocios?cat=${c.id}`) }]} />
+          <A.AdminList rows={c.negocios.map((b) => ({ image: b.cover ?? undefined, initials: b.cover ? undefined : b.name.slice(0, 1), title: b.name, sub: `${b.plan === "pro" ? "Pro" : "Free"}${b.verified ? E(" · Verificado", " · Verified") : ""}`, chevron: true, onClick: () => router.push(`/admin/negocios/${b.id}`) }))} />
         </> : null}
-        <PanelBloques bloques={[{ type: "group", k: "HISTORIAL RECIENTE" }]} />
+        <PanelBloques bloques={[{ type: "group", k: E("HISTORIAL RECIENTE", "RECENT HISTORY") }]} />
         {historial(c.historial)}
         <Toast t={toast} desk={desk} />
       </div>);
@@ -102,99 +105,99 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
     const f = d.filt, off = f.opciones.filter((o) => !o.active).length, grupos = [...new Map(f.opciones.map((o) => [o.group_key, o.grupo])).entries()];
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 1120 }}>
-        <span role="link" onClick={() => ir({ f: null })} {...tec(() => ir({ f: null }))} style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><A.Icon name="chevronLeft" size={15} color="var(--tl-action)" />Familias de filtros</span>
-        <PanelBloques bloques={[{ type: "head", eye: "FILTROS DE LA CATEGORÍA", t: f.es, s: "Lo que apagues deja de salir al instante en la hoja de filtros y en los filtros rápidos de la página de la categoría.", h1: desk ? 26 : 22 }]} />
-        {!f.opciones.length ? <PanelBloques bloques={[{ type: "empty", icon: "grid", t: "Solo los globales", s: "Esta categoría no tiene filtros propios." }]} /> : grupos.map(([g, label]) => (
+        <span role="link" onClick={() => ir({ f: null })} {...tec(() => ir({ f: null }))} style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><A.Icon name="chevronLeft" size={15} color="var(--tl-action)" />{E("Familias de filtros", "Filter families")}</span>
+        <PanelBloques bloques={[{ type: "head", eye: E("FILTROS DE LA CATEGORÍA", "CATEGORY FILTERS"), t: f.es, s: E("Lo que apagues deja de salir al instante en la hoja de filtros y en los filtros rápidos de la página de la categoría.", "What you turn off stops showing right away in the filter sheet and in the quick filters on the category page."), h1: desk ? 26 : 22 }]} />
+        {!f.opciones.length ? <PanelBloques bloques={[{ type: "empty", icon: "grid", t: E("Solo los globales", "Global only"), s: E("Esta categoría no tiene filtros propios.", "This category has no filters of its own.") }]} /> : grupos.map(([g, label]) => (
           <PanelBloques key={g} bloques={[{ type: "group", k: label }, { type: "rows", items: f.opciones.filter((o) => o.group_key === g).map((o) => ({
-            key: o.id, icon: "grid", t: o.es, s: `${o.active ? "Sale en la página" : "Apagado"} · ${o.negocios} ${o.negocios === 1 ? "negocio lo tiene" : "negocios lo tienen"}`, m: o.quick ? "RÁPIDO" : undefined,
-            tgOn: o.active, onTg: d.puede ? () => run(() => filtroActivo(o.id, !o.active)) : () => setToast("Tu rol no edita filtros."),
+            key: o.id, icon: "grid", t: o.es, s: `${o.active ? E("Sale en la página", "Shows on the page") : E("Apagado", "Off")} · ${o.negocios} ${o.negocios === 1 ? E("negocio lo tiene", "business has it") : E("negocios lo tienen", "businesses have it")}`, m: o.quick ? E("RÁPIDO", "QUICK") : undefined,
+            tgOn: o.active, onTg: d.puede ? () => run(() => filtroActivo(o.id, !o.active)) : () => setToast(E("Tu rol no edita filtros.", "Your role can’t edit filters.")),
           })) }]} />))}
-        <PanelBloques bloques={[{ type: "acts", items: [...(off && d.puede ? [{ l: "Encender todos", icon: "check", off: pend, onClick: () => run(() => filtrosTodos(f.id)) }] : []), { l: "Ver la página de la categoría", icon: "search", onClick: () => window.open(`/c/${f.slug}`, "_blank") }] }]} />
-        <PanelBloques bloques={[{ type: "group", k: "HISTORIAL RECIENTE" }]} />
+        <PanelBloques bloques={[{ type: "acts", items: [...(off && d.puede ? [{ l: E("Encender todos", "Turn all on"), icon: "check", off: pend, onClick: () => run(() => filtrosTodos(f.id)) }] : []), { l: E("Ver la página de la categoría", "View the category page"), icon: "search", onClick: () => window.open(`/c/${f.slug}`, "_blank") }] }]} />
+        <PanelBloques bloques={[{ type: "group", k: E("HISTORIAL RECIENTE", "RECENT HISTORY") }]} />
         {historial(f.historial)}
         <Toast t={toast} desk={desk} />
       </div>);
   }
 
-  const tabs: Bloque = { type: "tabs", items: ([["cats", "Categorías", String(d.cats?.length ?? 17)], ["syn", "Sinónimos"], ["nosup", "Búsquedas sin oferta"], ["filt", "Familias de filtros"], ["mod", "Módulos y Free/Pro"], ["seg", "Seguros"], ["vj", "Vivienda justa"], ["dealer", "Cargo del dealer"]] as [string, string, string?][])
+  const tabs: Bloque = { type: "tabs", items: ([["cats", E("Categorías", "Categories"), String(d.cats?.length ?? 17)], ["syn", E("Sinónimos", "Synonyms")], ["nosup", E("Búsquedas sin oferta", "Searches with no listings")], ["filt", E("Familias de filtros", "Filter families")], ["mod", E("Módulos y Free/Pro", "Modules and Free/Pro")], ["seg", E("Seguros", "Insurance")], ["vj", E("Vivienda justa", "Fair housing")], ["dealer", E("Cargo del dealer", "Dealer fee")]] as [string, string, string?][])
     .map(([k, l, n]) => ({ l, n, on: d.tab === k, onClick: () => router.push(k === "cats" ? path : `${path}?tab=${k}`, { scroll: false }) })) };
   let cuerpo: ReactNode = null;
   if (d.tab === "cats" && d.cats) {
     cuerpo = desk ? (
       <A.DenseTable columns="minmax(0,2fr) 120px 110px 90px 60px minmax(0,1.2fr)"
-        head={[{ label: "CATEGORÍA" }, { label: "CLAVE" }, { label: "SUBCATEGORÍAS", align: "right" }, { label: "NEGOCIOS", align: "right" }, { label: "PRO", align: "right" }, { label: "TRANSACCIÓN" }]}
-        rows={d.cats.map((c) => ({ onClick: () => ir({ c: c.id }), cells: [{ text: c.es, sub: c.line ?? undefined, bold: true }, { text: c.id, color: "rgba(11,14,18,.55)" }, { text: String(c.subs), align: "right" }, { text: String(c.negocios), align: "right" }, { text: String(c.pro), align: "right" }, { text: TX[c.op_kind ?? ""] ?? "—" }] }))} />
-    ) : <PanelBloques bloques={[{ type: "rows", items: d.cats.map((c) => ({ key: c.id, icon: c.icon, t: c.es, s: `${c.subs} subcategorías · ${c.negocios} negocios · ${c.pro} Pro`, m: c.id, chev: true, onClick: () => ir({ c: c.id }) })) }]} />;
+        head={[{ label: E("CATEGORÍA", "CATEGORY") }, { label: E("CLAVE", "KEY") }, { label: E("SUBCATEGORÍAS", "SUBCATEGORIES"), align: "right" }, { label: E("NEGOCIOS", "BUSINESSES"), align: "right" }, { label: "PRO", align: "right" }, { label: E("TRANSACCIÓN", "TRANSACTION") }]}
+        rows={d.cats.map((c) => ({ onClick: () => ir({ c: c.id }), cells: [{ text: c.es, sub: c.line ?? undefined, bold: true }, { text: c.id, color: "rgba(11,14,18,.55)" }, { text: String(c.subs), align: "right" }, { text: String(c.negocios), align: "right" }, { text: String(c.pro), align: "right" }, { text: tx[c.op_kind ?? ""] ?? "—" }] }))} />
+    ) : <PanelBloques bloques={[{ type: "rows", items: d.cats.map((c) => ({ key: c.id, icon: c.icon, t: c.es, s: E(`${c.subs} subcategorías · ${c.negocios} negocios · ${c.pro} Pro`, `${c.subs} subcategories · ${c.negocios} businesses · ${c.pro} Pro`), m: c.id, chev: true, onClick: () => ir({ c: c.id }) })) }]} />;
   } else if (d.tab === "syn" && d.sin) {
     const s = d.sin, a = s.total ? (s.pag - 1) * s.porPagina + 1 : 0, b = Math.min(s.total, s.pag * s.porPagina);
     cuerpo = (
       <>
         <form onSubmit={(e) => { e.preventDefault(); ir({ q: q.trim() || null, pag: null }); }} style={{ position: "relative" }}>
           <span style={{ position: "absolute", left: 15, top: 14.5, display: "grid" }}><A.Icon name="search" size={17} color="rgba(11,14,18,.45)" /></span>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Palabra o sinónimo" aria-label="Buscar sinónimo"
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={E("Palabra o sinónimo", "Word or synonym")} aria-label={E("Buscar sinónimo", "Search synonym")}
             style={{ width: "100%", height: 46, boxSizing: "border-box", padding: "0 16px 0 42px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", background: "var(--tl-white)", font: "600 14.5px Manrope,sans-serif", outline: "none" }} />
         </form>
         <PanelBloques bloques={[
-          { type: "note", tone: "info", icon: "search", t: "Lo que el vecino escribe (izquierda) se busca también como lo de la derecha. ES/EN, sin acentos. Buscar lo usa en menos de un minuto." },
-          ...(d.puede ? [{ type: "acts", pt: "0", items: [{ l: "Agregar sinónimo", v: "action", icon: "plus", off: pend, onClick: () => setConf({ titulo: "Nuevo sinónimo", sub: "Escribe: palabra → sinónimo1, sinónimo2 (ej.: pelado → corte, barberia).", cta: "Agregar", hacer: (m) => sinAgregar(m) }) }] } as Bloque] : []),
+          { type: "note", tone: "info", icon: "search", t: E("Lo que el vecino escribe (izquierda) se busca también como lo de la derecha. ES/EN, sin acentos. Buscar lo usa en menos de un minuto.", "What a neighbor types (left) is also searched as what’s on the right. ES/EN, no accents. Search picks it up in under a minute.") },
+          ...(d.puede ? [{ type: "acts", pt: "0", items: [{ l: E("Agregar sinónimo", "Add synonym"), v: "action", icon: "plus", off: pend, onClick: () => setConf({ titulo: E("Nuevo sinónimo", "New synonym"), sub: E("Escribe: palabra → sinónimo1, sinónimo2 (ej.: pelado → corte, barberia).", "Write: word → synonym1, synonym2 (e.g.: pelado → corte, barberia)."), cta: E("Agregar", "Add"), hacer: (m) => sinAgregar(m) }) }] } as Bloque] : []),
         ]} />
         {s.filas.length ? <PanelBloques bloques={[{ type: "rows", items: s.filas.map((x) => ({
           key: `${x.term}|${x.lang}`, icon: "search", ibg: !x.on ? "rgba(192,57,43,.08)" : x.equipo ? "rgba(75,55,245,.1)" : "rgba(11,14,18,.05)", ifg: !x.on ? "var(--tl-danger)" : x.equipo ? "var(--tl-action)" : "rgba(11,14,18,.6)",
-          t: `${x.term}  →  ${x.destinos.join(", ")}`, s: !x.on ? "Apagado por el equipo" : x.equipo ? "Agregado por el equipo" : "Del sistema", dim: !x.on,
-          acts: d.puede ? [x.on ? { l: "Apagar", icon: "ban", onClick: () => run(() => sinActivo(x.term, x.lang, false)) } : { l: "Encender", icon: "check", onClick: () => run(() => sinActivo(x.term, x.lang, true)) }] : undefined,
-        })) }]} /> : <PanelBloques bloques={[{ type: "empty", icon: "search", t: "Ningún sinónimo", s: s.q ? `Nada coincide con «${s.q}».` : "Todavía no hay sinónimos." }]} />}
+          t: `${x.term}  →  ${x.destinos.join(", ")}`, s: !x.on ? E("Apagado por el equipo", "Turned off by the team") : x.equipo ? E("Agregado por el equipo", "Added by the team") : E("Del sistema", "From the system"), dim: !x.on,
+          acts: d.puede ? [x.on ? { l: E("Apagar", "Turn off"), icon: "ban", onClick: () => run(() => sinActivo(x.term, x.lang, false)) } : { l: E("Encender", "Turn on"), icon: "check", onClick: () => run(() => sinActivo(x.term, x.lang, true)) }] : undefined,
+        })) }]} /> : <PanelBloques bloques={[{ type: "empty", icon: "search", t: E("Ningún sinónimo", "No synonyms"), s: s.q ? E(`Nada coincide con «${s.q}».`, `Nothing matches “${s.q}”.`) : E("Todavía no hay sinónimos.", "No synonyms yet.") }]} />}
         {s.total > s.porPagina ? <A.Pager label={`${a}–${b} · ${s.total}`} hasPrev={s.pag > 1} hasNext={b < s.total} onPrev={() => ir({ pag: String(s.pag - 1) })} onNext={() => ir({ pag: String(s.pag + 1) })} /> : null}
-        <PanelBloques bloques={[{ type: "group", k: "HISTORIAL RECIENTE" }]} />
+        <PanelBloques bloques={[{ type: "group", k: E("HISTORIAL RECIENTE", "RECENT HISTORY") }]} />
         {historial(s.historial)}
       </>);
   } else if (d.tab === "nosup" && d.nosup) {
     const L = d.nosup;
     cuerpo = (
       <>
-        <PanelBloques bloques={[{ type: "note", tone: "ink", icon: "bolt", t: "Lo que los vecinos buscan y no existe en tus ciudades (con «Avísame cuando haya»). Es la lista de reclutamiento. No crea semillas: solo salen de recomendaciones de vecinos." }]} />
+        <PanelBloques bloques={[{ type: "note", tone: "ink", icon: "bolt", t: E("Lo que los vecinos buscan y no existe en tus ciudades (con «Avísame cuando haya»). Es la lista de reclutamiento. No crea semillas: solo salen de recomendaciones de vecinos.", "What neighbors search for that doesn’t exist in your cities (with “Notify me when available”). It’s the recruiting list. It doesn’t create seeds: those only come from neighbor recommendations.") }]} />
         {L.length ? <>
-          <A.HBars label="MÁS BUSCADO SIN OFERTA · 30 DÍAS" help="personas que pidieron aviso" items={L.slice(0, 8).map((x) => ({ label: x.q, width: `${Math.round((x.n / (L[0]!.n || 1)) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
-          <PanelBloques bloques={[{ type: "rows", items: L.map((x, i) => ({ key: String(i), icon: "search", t: x.q, s: `${x.cat ?? "Sin categoría"} · ${x.n} ${x.n === 1 ? "aviso pedido" : "avisos pedidos"}`,
-            acts: [{ l: "Agregar sinónimo", icon: "edit", onClick: () => router.push(`${path}?tab=syn`) }] })) }]} />
-        </> : <PanelBloques bloques={[{ type: "empty", icon: "search", t: "Nadie ha pedido aviso todavía", s: "Cuando un vecino busca algo que no hay y toca «Avísame cuando haya», sale aquí." }]} />}
+          <A.HBars label={E("MÁS BUSCADO SIN OFERTA · 30 DÍAS", "TOP SEARCHES WITH NO LISTINGS · 30 DAYS")} help={E("personas que pidieron aviso", "people who asked to be notified")} items={L.slice(0, 8).map((x) => ({ label: x.q, width: `${Math.round((x.n / (L[0]!.n || 1)) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
+          <PanelBloques bloques={[{ type: "rows", items: L.map((x, i) => ({ key: String(i), icon: "search", t: x.q, s: `${x.cat ?? E("Sin categoría", "No category")} · ${x.n} ${x.n === 1 ? E("aviso pedido", "notice requested") : E("avisos pedidos", "notices requested")}`,
+            acts: [{ l: E("Agregar sinónimo", "Add synonym"), icon: "edit", onClick: () => router.push(`${path}?tab=syn`) }] })) }]} />
+        </> : <PanelBloques bloques={[{ type: "empty", icon: "search", t: E("Nadie ha pedido aviso todavía", "No one has asked to be notified yet"), s: E("Cuando un vecino busca algo que no hay y toca «Avísame cuando haya», sale aquí.", "When a neighbor searches for something that isn’t there and taps “Notify me when available”, it shows here.") }]} />}
       </>);
   } else if (d.tab === "filt" && d.cats) {
     cuerpo = (
       <>
-        <PanelBloques bloques={[{ type: "note", tone: "info", icon: "grid", t: "Globales en toda categoría: ciudad/zona y radio, abierto ahora, Pro/Free, verificado, calificación, idioma, precio, pago, acepta citas, a domicilio, ordenar por." },
-          { type: "group", k: "POR CATEGORÍA · LO QUE VE EL VECINO" },
+        <PanelBloques bloques={[{ type: "note", tone: "info", icon: "grid", t: E("Globales en toda categoría: ciudad/zona y radio, abierto ahora, Pro/Free, verificado, calificación, idioma, precio, pago, acepta citas, a domicilio, ordenar por.", "Global in every category: city/area and radius, open now, Pro/Free, verified, rating, language, price, payment, takes appointments, at-home service, sort by.") },
+          { type: "group", k: E("POR CATEGORÍA · LO QUE VE EL VECINO", "BY CATEGORY · WHAT THE NEIGHBOR SEES") },
           { type: "rows", cols: desk ? "repeat(auto-fill,minmax(320px,1fr))" : undefined, items: d.cats.map((c) => ({
-            key: c.id, icon: c.icon || "grid", t: c.es, s: c.filtros ? `${c.filtros} opciones${c.filtros_off ? ` · ${c.filtros_off} apagadas` : ""}` : "Solo los globales",
-            tag: c.filtros_off ? "EDITADO" : null, tone: "action", chev: true, onClick: () => ir({ f: c.id }) })) }]} />
+            key: c.id, icon: c.icon || "grid", t: c.es, s: c.filtros ? E(`${c.filtros} opciones${c.filtros_off ? ` · ${c.filtros_off} apagadas` : ""}`, `${c.filtros} options${c.filtros_off ? ` · ${c.filtros_off} off` : ""}`) : E("Solo los globales", "Global only"),
+            tag: c.filtros_off ? E("EDITADO", "EDITED") : null, tone: "action", chev: true, onClick: () => ir({ f: c.id }) })) }]} />
       </>);
   } else if (d.tab === "seg" && d.seg) {
     // Catálogo › Seguros (4h-3): el de Pensilvania. Ocultar pide motivo; nada se borra.
-    const fila = (x: NonNullable<DatosCatalogo["seg"]>["filas"][number]) => ({ key: x.key, icon: "insurance", t: x.es, s: `${x.hidden ? "Oculto · " : ""}${x.consultorios} ${x.consultorios === 1 ? "consultorio lo acepta" : "consultorios lo aceptan"} · ${x.personas} en Mis seguros${x.planes ? ` · ${x.planes} planes` : ""}`,
-      tag: x.hidden ? "OCULTO" : null, tone: "danger", tgOn: !x.hidden,
-      onTg: !d.puede ? () => setToast("Tu rol no edita el catálogo.") : x.hidden ? () => setConf({ titulo: `¿Por qué vuelve ${x.es}?`, hacer: (m) => seguroVisible(x.key, true, m) })
-        : () => setConf({ titulo: `Ocultar ${x.es}`, sub: `Deja de salir en Tu herramienta, en las fichas y en «Tu seguro». ${x.consultorios} consultorios lo tienen marcado: lo conservan y vuelve si lo muestras otra vez.`, peligro: true, plantillas: ["El seguro ya no opera en Pensilvania", "Nombre equivocado o duplicado"], hacer: (m) => seguroVisible(x.key, false, m) }) });
+    const fila = (x: NonNullable<DatosCatalogo["seg"]>["filas"][number]) => ({ key: x.key, icon: "insurance", t: en ? x.en || x.es : x.es, s: `${x.hidden ? E("Oculto · ", "Hidden · ") : ""}${x.consultorios} ${x.consultorios === 1 ? E("consultorio lo acepta", "practice accepts it") : E("consultorios lo aceptan", "practices accept it")} · ${x.personas} ${E("en Mis seguros", "in My insurance")}${x.planes ? ` · ${x.planes} ${E("planes", "plans")}` : ""}`,
+      tag: x.hidden ? E("OCULTO", "HIDDEN") : null, tone: "danger", tgOn: !x.hidden,
+      onTg: !d.puede ? () => setToast(E("Tu rol no edita el catálogo.", "Your role can’t edit the catalog.")) : x.hidden ? () => setConf({ titulo: E(`¿Por qué vuelve ${x.es}?`, `Why is ${x.en || x.es} coming back?`), hacer: (m) => seguroVisible(x.key, true, m) })
+        : () => setConf({ titulo: E(`Ocultar ${x.es}`, `Hide ${x.en || x.es}`), sub: E(`Deja de salir en Tu herramienta, en las fichas y en «Tu seguro». ${x.consultorios} consultorios lo tienen marcado: lo conservan y vuelve si lo muestras otra vez.`, `It stops showing in Your tool, on listings and in “Your insurance”. ${x.consultorios} practices have it checked: they keep it and it comes back if you show it again.`), peligro: true, plantillas: [E("El seguro ya no opera en Pensilvania", "The insurer no longer operates in Pennsylvania"), E("Nombre equivocado o duplicado", "Wrong or duplicate name")], hacer: (m) => seguroVisible(x.key, false, m) }) });
     cuerpo = (
       <>
-        <PanelBloques bloques={[{ type: "note", tone: "info", icon: "insurance", t: "Los seguros que un consultorio puede marcar en «Seguros e idiomas» y que el vecino elige en «Tu seguro». To’Latino no guarda el historial médico de nadie: de la tarjeta del seguro solo se guardan los últimos 4." },
-          { type: "rows", k: "PÚBLICOS", cols: desk ? "repeat(2,minmax(0,1fr))" : undefined, items: d.seg.filas.filter((x) => x.kind === "pub").map(fila) },
-          { type: "rows", k: "PRIVADOS", cols: desk ? "repeat(2,minmax(0,1fr))" : undefined, items: d.seg.filas.filter((x) => x.kind === "priv").map(fila) },
-          { type: "note", tone: "ink", t: "Un seguro nuevo entra con una migración del catálogo (datos reales, revisados), no desde aquí." },
-          { type: "group", k: "HISTORIAL RECIENTE" }]} />
+        <PanelBloques bloques={[{ type: "note", tone: "info", icon: "insurance", t: E("Los seguros que un consultorio puede marcar en «Seguros e idiomas» y que el vecino elige en «Tu seguro». To’Latino no guarda el historial médico de nadie: de la tarjeta del seguro solo se guardan los últimos 4.", "The insurance a practice can check in “Insurance and languages” and the neighbor picks in “Your insurance”. To’Latino doesn’t store anyone’s medical history: only the last 4 of the insurance card are kept.") },
+          { type: "rows", k: E("PÚBLICOS", "PUBLIC"), cols: desk ? "repeat(2,minmax(0,1fr))" : undefined, items: d.seg.filas.filter((x) => x.kind === "pub").map(fila) },
+          { type: "rows", k: E("PRIVADOS", "PRIVATE"), cols: desk ? "repeat(2,minmax(0,1fr))" : undefined, items: d.seg.filas.filter((x) => x.kind === "priv").map(fila) },
+          { type: "note", tone: "ink", t: E("Un seguro nuevo entra con una migración del catálogo (datos reales, revisados), no desde aquí.", "A new insurer comes in with a catalog migration (real, reviewed data), not from here.") },
+          { type: "group", k: E("HISTORIAL RECIENTE", "RECENT HISTORY") }]} />
         {historial(d.seg.historial)}
       </>);
   } else if (d.tab === "vj" && d.vj) {
     // Catálogo › Vivienda justa (4ib · §3): frases que frenan un anuncio de Bienes Raíces. Las de fábrica no se apagan; solo un Admin cambia.
-    const v = d.vj, fila = (x: NonNullable<DatosCatalogo["vj"]>["filas"][number]) => ({ key: x.id, icon: "law", t: x.phrase, s: `${x.lang === "es" ? "Español" : "Inglés"} · ${x.base ? "De fábrica · no se apaga" : x.quien ? `Agregada por ${x.quien}` : "De la lista inicial"}${x.active ? "" : " · apagada"}`,
-      dim: !x.active, tag: x.base ? "SIEMPRE" : x.active ? null : "APAGADA", tone: x.base ? "ink" : "danger",
-      tgOn: x.base ? undefined : x.active, onTg: x.base ? undefined : !v.admin ? () => setToast("Solo un Admin cambia esta lista.") : x.active ? () => setConf({ titulo: `Apagar «${x.phrase}»`, sub: "Deja de frenar anuncios desde ya. Queda en la auditoría.", peligro: true, plantillas: ["La revisó el abogado: no es discriminatoria"], hacer: (m) => fraseActiva(x.id, false, m) })
-        : () => setConf({ titulo: `¿Por qué vuelve «${x.phrase}»?`, hacer: (m) => fraseActiva(x.id, true, m) }) });
+    const v = d.vj, fila = (x: NonNullable<DatosCatalogo["vj"]>["filas"][number]) => ({ key: x.id, icon: "law", t: x.phrase, s: `${x.lang === "es" ? E("Español", "Spanish") : E("Inglés", "English")} · ${x.base ? E("De fábrica · no se apaga", "Built in · can’t be turned off") : x.quien ? E(`Agregada por ${x.quien}`, `Added by ${x.quien}`) : E("De la lista inicial", "From the initial list")}${x.active ? "" : E(" · apagada", " · off")}`,
+      dim: !x.active, tag: x.base ? E("SIEMPRE", "ALWAYS") : x.active ? null : E("APAGADA", "OFF"), tone: x.base ? "ink" : "danger",
+      tgOn: x.base ? undefined : x.active, onTg: x.base ? undefined : !v.admin ? () => setToast(E("Solo un Admin cambia esta lista.", "Only an Admin changes this list.")) : x.active ? () => setConf({ titulo: E(`Apagar «${x.phrase}»`, `Turn off “${x.phrase}”`), sub: E("Deja de frenar anuncios desde ya. Queda en la auditoría.", "It stops blocking listings right away. It stays in the audit log."), peligro: true, plantillas: [E("La revisó el abogado: no es discriminatoria", "The lawyer reviewed it: it’s not discriminatory")], hacer: (m) => fraseActiva(x.id, false, m) })
+        : () => setConf({ titulo: E(`¿Por qué vuelve «${x.phrase}»?`, `Why is “${x.phrase}” coming back?`), hacer: (m) => fraseActiva(x.id, true, m) }) });
     cuerpo = (
       <>
-        <PanelBloques bloques={[{ type: "note", tone: "ink", icon: "law", t: `Un anuncio de Bienes Raíces con una de estas frases no se guarda y el dueño ve cuál quitar (Fair Housing Act y ley de PA). Frenados en 30 días: ${v.frenadas}. La lista está por revisar con un abogado.` },
-          ...(v.admin ? [{ type: "acts", pt: "0", items: [{ l: "Agregar frase", v: "action", icon: "plus", off: pend, onClick: () => setConf({ titulo: "Nueva frase", sub: "Escribe: idioma: frase (ej.: es: solo parejas · en: couples only).", cta: "Agregar", hacer: (m) => fraseAgregar(m) }) }] } as Bloque] : []),
-          { type: "rows", k: "ESPAÑOL", cols: desk ? "repeat(2,minmax(0,1fr))" : undefined, items: v.filas.filter((x) => x.lang === "es").map(fila) },
-          { type: "rows", k: "INGLÉS", cols: desk ? "repeat(2,minmax(0,1fr))" : undefined, items: v.filas.filter((x) => x.lang === "en").map(fila) },
-          { type: "group", k: "HISTORIAL RECIENTE" }]} />
+        <PanelBloques bloques={[{ type: "note", tone: "ink", icon: "law", t: E(`Un anuncio de Bienes Raíces con una de estas frases no se guarda y el dueño ve cuál quitar (Fair Housing Act y ley de PA). Frenados en 30 días: ${v.frenadas}. La lista está por revisar con un abogado.`, `A Real Estate listing with one of these phrases isn’t saved and the owner sees which one to remove (Fair Housing Act and PA law). Blocked in 30 days: ${v.frenadas}. The list is pending review with a lawyer.`) },
+          ...(v.admin ? [{ type: "acts", pt: "0", items: [{ l: E("Agregar frase", "Add phrase"), v: "action", icon: "plus", off: pend, onClick: () => setConf({ titulo: E("Nueva frase", "New phrase"), sub: E("Escribe: idioma: frase (ej.: es: solo parejas · en: couples only).", "Write: language: phrase (e.g.: es: solo parejas · en: couples only)."), cta: E("Agregar", "Add"), hacer: (m) => fraseAgregar(m) }) }] } as Bloque] : []),
+          { type: "rows", k: E("ESPAÑOL", "SPANISH"), cols: desk ? "repeat(2,minmax(0,1fr))" : undefined, items: v.filas.filter((x) => x.lang === "es").map(fila) },
+          { type: "rows", k: E("INGLÉS", "ENGLISH"), cols: desk ? "repeat(2,minmax(0,1fr))" : undefined, items: v.filas.filter((x) => x.lang === "en").map(fila) },
+          { type: "group", k: E("HISTORIAL RECIENTE", "RECENT HISTORY") }]} />
         {historial(v.historial)}
       </>);
   } else if (d.tab === "dealer" && d.dealer) {
@@ -202,27 +205,27 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
     const v = d.dealer, usdC = (x: number) => `$${Math.round(x / 100).toLocaleString("en-US")}`;
     cuerpo = (
       <>
-        <PanelBloques bloques={[{ type: "note", tone: "warn", icon: "law", t: `Tope de PA a verificar cada año con el Board of Vehicles. ${v.nota ?? ""}` },
-          { type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [{ k: "TOPE", v: usdC(v.tope) }, { k: "DEALERS", v: String(v.dealers), s: `${v.enTope} en el tope` }, { k: "CARROS A LA VISTA", v: String(v.carros) }] },
-          { type: "note", tone: "ink", icon: "dollar", t: "Ningún cargo del dealer pasa del tope: al bajarlo, los cargos que pasan bajan al tope y el total en la puerta de cada carro se recalcula por lotes." },
-          ...(v.admin ? [{ type: "acts", pt: "0", items: [{ l: "Cambiar el tope", v: "action", icon: "edit", off: pend, onClick: () => setConf({ titulo: "Tope del cargo del dealer", sub: "Escribe el tope nuevo en dólares y el motivo (el registro del estado, el año).", cta: "Guardar", valor: { k: "TOPE EN DÓLARES", ini: String(Math.round(v.tope / 100)), max: 5 }, plantillas: ["Ajuste anual de PA verificado"], hacer: (m, _e, val) => topeCargoDealer(val, m) }) }] } as Bloque] : [{ type: "note", tone: "info", t: "Solo un Admin cambia el tope." } as Bloque]),
-          { type: "group", k: "HISTORIAL RECIENTE" }]} />
+        <PanelBloques bloques={[{ type: "note", tone: "warn", icon: "law", t: `${E("Tope de PA a verificar cada año con el Board of Vehicles.", "PA cap to verify every year with the Board of Vehicles.")} ${v.nota ?? ""}` },
+          { type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [{ k: E("TOPE", "CAP"), v: usdC(v.tope) }, { k: "DEALERS", v: String(v.dealers), s: E(`${v.enTope} en el tope`, `${v.enTope} at the cap`) }, { k: E("CARROS A LA VISTA", "CARS LISTED"), v: String(v.carros) }] },
+          { type: "note", tone: "ink", icon: "dollar", t: E("Ningún cargo del dealer pasa del tope: al bajarlo, los cargos que pasan bajan al tope y el total en la puerta de cada carro se recalcula por lotes.", "No dealer fee goes over the cap: when it’s lowered, fees above it drop to the cap and each car’s out-the-door total is recalculated in batches.") },
+          ...(v.admin ? [{ type: "acts", pt: "0", items: [{ l: E("Cambiar el tope", "Change the cap"), v: "action", icon: "edit", off: pend, onClick: () => setConf({ titulo: E("Tope del cargo del dealer", "Dealer fee cap"), sub: E("Escribe el tope nuevo en dólares y el motivo (el registro del estado, el año).", "Write the new cap in dollars and the reason (the state record, the year)."), cta: E("Guardar", "Save"), valor: { k: E("TOPE EN DÓLARES", "CAP IN DOLLARS"), ini: String(Math.round(v.tope / 100)), max: 5 }, plantillas: [E("Ajuste anual de PA verificado", "Verified annual PA adjustment")], hacer: (m, _e, val) => topeCargoDealer(val, m) }) }] } as Bloque] : [{ type: "note", tone: "info", t: E("Solo un Admin cambia el tope.", "Only an Admin changes the cap.") } as Bloque]),
+          { type: "group", k: E("HISTORIAL RECIENTE", "RECENT HISTORY") }]} />
         {historial(v.historial)}
       </>);
   } else if (d.tab === "mod" && d.mods) {
     cuerpo = (
       <>
-        <PanelBloques bloques={[{ type: "rows", cols: desk ? "repeat(auto-fill,minmax(320px,1fr))" : undefined, items: d.mods.map((m) => ({ key: m.key, icon: "grid", t: m.es, s: `${m.cats.join(" · ") || "Ninguna categoría"}` })) },
-          { type: "group", k: "QUÉ VE FREE Y QUÉ VE PRO" }]} />
+        <PanelBloques bloques={[{ type: "rows", cols: desk ? "repeat(auto-fill,minmax(320px,1fr))" : undefined, items: d.mods.map((m) => ({ key: m.key, icon: "grid", t: m.es, s: `${m.cats.join(" · ") || E("Ninguna categoría", "No category")}` })) },
+          { type: "group", k: E("QUÉ VE FREE Y QUÉ VE PRO", "WHAT FREE SEES AND WHAT PRO SEES") }]} />
         <div style={{ overflowX: "auto", borderRadius: 18, border: "1px solid rgba(11,14,18,.08)", background: "var(--tl-white)" }}>
-          <A.PermMatrix columns="minmax(0,2.4fr) minmax(0,1fr) minmax(0,1fr)" head={["FREE", "PRO"]} rows={FP.map(([l, f, p]) => ({ label: l, cells: [{ on: f }, { on: p }] }))} />
+          <A.PermMatrix columns="minmax(0,2.4fr) minmax(0,1fr) minmax(0,1fr)" head={["FREE", "PRO"]} rows={FP.map(([l, lEn, f, p]) => ({ label: E(l, lEn), cells: [{ on: f }, { on: p }] }))} />
         </div>
-        <PanelBloques bloques={[{ type: "note", tone: "info", t: `Techo Free: ${d.topeFree ?? "—"} pedidos o citas en línea al mes (Sistema › Configuración); después, Llamar.` }]} />
+        <PanelBloques bloques={[{ type: "note", tone: "info", t: E(`Techo Free: ${d.topeFree ?? "—"} pedidos o citas en línea al mes (Sistema › Configuración); después, Llamar.`, `Free cap: ${d.topeFree ?? "—"} online orders or appointments a month (System › Settings); then, Call.`) }]} />
       </>);
   }
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 1120 }}>
-      <PanelBloques bloques={[{ type: "head", eye: "CONTENIDO Y OFERTA", t: "Catálogo", s: "17 categorías, subcategorías, sinónimos del buscador, familias de filtros y módulos. Un cambio aquí se ve en la página de categoría al instante y en Buscar en menos de un minuto.", h1: desk ? 26 : 22 }, tabs]} />
+      <PanelBloques bloques={[{ type: "head", eye: E("CONTENIDO Y OFERTA", "CONTENT AND LISTINGS"), t: E("Catálogo", "Catalog"), s: E("17 categorías, subcategorías, sinónimos del buscador, familias de filtros y módulos. Un cambio aquí se ve en la página de categoría al instante y en Buscar en menos de un minuto.", "17 categories, subcategories, search synonyms, filter families and modules. A change here shows on the category page right away and in Search in under a minute."), h1: desk ? 26 : 22 }, tabs]} />
       {cuerpo}
       <Toast t={toast} desk={desk} />
     </div>);
