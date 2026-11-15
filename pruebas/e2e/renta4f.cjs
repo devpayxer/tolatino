@@ -174,7 +174,7 @@ const limpiar = () => {
   await clic(h.getByText('Lavadora a presión', { exact: true }));
   await h.getByText('Sale en tu Tienda', { exact: true }).first().waitFor();
   await clic(h.getByRole('switch', { name: /Sale en tu Tienda/ }));
-  ok(await espera(() => sql(`select sell from items where business_id = '${D}' and module = 'renta' and name->>'es' = 'Lavadora a presión'`) === 'f'), 'apagada desde su editor');
+  await espera(() => sql(`select sell from items where business_id = '${D}' and module = 'renta' and name->>'es' = 'Lavadora a presión'`) === 'f', 'apagada desde su editor');
   await m.goto(B + `/n/${D}?tab=shop`); await m.locator('[data-screen-label="Ficha · tienda"]').waitFor(); ok(!(await vis(m.getByText('Lavadora a presión'))), 'no sale en la Tienda');
   sql(`update items set sell = true where business_id = '${D}' and module = 'renta' and removed_at is null`);
 
@@ -190,17 +190,16 @@ const limpiar = () => {
   await clic(h.locator('[aria-label="Cuántas tienes +"]'));
   await h.screenshot({ path: OUT + 'r12-agregar-renta-d.png', fullPage: true });
   await clic(h.getByRole('button', { name: 'Agregar', exact: true }));
-  ok(await espera(() => sql(`select price_cents || '|' || deposit_cents || '|' || stock_left || '|' || sell from items where business_id = '${D}' and module = 'renta' and name->>'es' = '${NUEVO}' and removed_at is null`) === '2000|5000|2|t'),
-    'agregado: $20 por día, $50 de depósito, 2 unidades, en la Tienda');
+  await espera(() => sql(`select price_cents || '|' || deposit_cents || '|' || stock_left || '|' || sell from items where business_id = '${D}' and module = 'renta' and name->>'es' = '${NUEVO}' and removed_at is null`) === '2000|5000|2|t', 'agregado: $20 por día, $50 de depósito, 2 unidades, en la Tienda');
   ok(sql(`select count(*) from audit_entries where action = 'renta.articulo.crear' and target_id = '${D}' and after->>'articulo' = '${NUEVO}'`) === '1', 'queda en la auditoría');
   await m.goto(B + `/n/${D}?tab=shop`); await m.locator('[data-screen-label="Ficha · tienda"]').waitFor(); ok(!!(await vis(m.getByText(NUEVO))), 'sale en la Tienda de la ficha');
   const NID = sql(`select id from items where business_id = '${D}' and module = 'renta' and name->>'es' = '${NUEVO}' and removed_at is null`);
   await h.goto(B + `/panel/${D}/vendes/herramienta?det=art:${NID}`); await h.getByText('Sale en tu Tienda', { exact: true }).first().waitFor();
   const precio = await vis(h.getByPlaceholder('45')); await precio.fill('25');
   await clic(h.getByRole('button', { name: 'Guardar', exact: true }));
-  ok(await espera(() => sql(`select price_cents from items where id = ${NID}`) === '2500'), 'editado: ahora $25 por día');
+  await espera(() => sql(`select price_cents from items where id = ${NID}`) === '2500', 'editado: ahora $25 por día');
   await clic(h.getByText('Quitar de la lista', { exact: true }));
-  ok(await espera(() => sql(`select (removed_at is not null)::text || '|' || sell from items where id = ${NID}`) === 'true|f'), 'quitado: fuera de la lista y de la Tienda (nada se borra)');
+  await espera(() => sql(`select (removed_at is not null)::text || '|' || sell from items where id = ${NID}`) === 'true|f', 'quitado: fuera de la lista y de la Tienda (nada se borra)');
   ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ') : ''));
   await b.close(); console.log('OK renta4f');
 })().catch((e) => { console.error(e); process.exit(1); });
