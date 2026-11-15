@@ -207,6 +207,22 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
     for (let i = 0; i < 2; i++) { await a.goto(B + `/admin/usuarios/${VU}`); await clic(a.getByText('Enviar mensaje', { exact: true })); await clic(a.getByText('En la app (campana y push)', { exact: true })); await a.locator('textarea').first().fill(`Otro aviso ${i} del equipo para ti.`); await confirmar(a, 'Aviso de seguridad', 'Enviar'); await dormir(600); }
     ok(await contiene(a, 'ya le llegaron 3 mensajes del equipo hoy') || sql(`select count(*) from admin_messages where user_id = '${VU}'`) === '3', 'tope de 3 mensajes al día por persona');
     await a.screenshot({ path: OUT + 'adm9n3-mensaje-1360.png', fullPage: true });
+    // 9n-7 · «Mensaje al dueño» desde el Negocio 360° (la misma pieza): le llega al dueño con el enlace a su panel; tope de 3 al día por negocio.
+    {
+      const NEGM = 'sabor-dominicano', DU = sql(`select owner_user_id from businesses where id = '${NEGM}'`);
+      const n0 = Number(sql(`select count(*) from admin_messages where target_kind = 'business' and target_id = '${NEGM}' and at > now() - interval '1 day'`));
+      const t0 = sql(`select coalesce(max(id), 0) from notifications where user_id = '${DU}'`);
+      await a.goto(B + `/admin/negocios/${NEGM}`); await clic(a.getByText('Mensaje al dueño', { exact: true }));
+      await clic(a.getByText('En la app (campana y push)', { exact: true }));
+      await a.locator('textarea').first().fill('Revisamos tu página y falta la foto de la fachada para el sello.');
+      await confirmar(a, 'Falta un dato para el sello', 'Enviar');
+      if (n0 < 3) {
+        ok(await contiene(a, 'Mensaje enviado al dueño en su app'), '«Mensaje al dueño» sale');
+        ok(await espera(() => sql(`select count(*) from notifications where user_id = '${DU}' and id > ${t0} and tpl = 'biz_msg_equipo' and href = '/panel/${NEGM}'`) === '1'), 'le llega al dueño con el enlace a su panel');
+        ok(sql(`select target_kind || '|' || (user_id is null)::text || '|' || by_staff::text from admin_messages where target_id = '${NEGM}' order by id desc limit 1`) === `business|true|${AU}`, 'AdminMessage del negocio: quién y a qué negocio');
+        ok(sql(`select count(*) from audit_entries where action = 'negocio.mensaje' and target_id = '${NEGM}' and at > now() - interval '2 minutes'`) !== '0', 'queda en la auditoría');
+      } else ok(await contiene(a, 'ya le llegaron 3 mensajes del equipo hoy'), 'tope de 3 mensajes al día por negocio (corridas anteriores de hoy)');
+    }
     // Sanción: avisa por la campana y, sin push, por SMS de respaldo.
     await a.goto(B + `/admin/usuarios/${VU}`); await clic(a.getByText('Sancionar', { exact: true }));
     await clic(a.getByText(/^Silencio 7 días/).first());

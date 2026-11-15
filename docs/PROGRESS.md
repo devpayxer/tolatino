@@ -2308,4 +2308,6 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **Publica · «Publicar otro negocio» (L49 (11)):** en A1 publicado; el publicado pasa a `onboarding_drafts_done` (**0154**, solo inserción, en el mapa de datos) y el borrador empieza en blanco; tope 5 negocios por cuenta. publica.cjs lo prueba.
 - **Citas · la última cita termina antes de cerrar (L128):** Panel › Citas › «LA ÚLTIMA CITA TERMINA» (al cerrar, 15/30 min, 1 h antes; **0155**
   `booking_policies.close_cut_min`); `huecos` lo aplica. Guardián `corteDeCitas` (al revés 29/29); svc3a y cit3b lo prueban.
+- **Negocio 360° · «Mensaje al dueño»:** la misma pieza que «Enviar mensaje» de Usuarios 360° (app o SMS, sin enlaces, motivo interno, 3 al día por
+  negocio); plantillas `biz_msg_equipo` / `biz_msg_equipo_sms` (**0156**, el push abre su panel); `admin_messages` con target_kind 'business'. adm9n3 lo prueba.
 - **No corrió aquí:** e2e (sin Docker) → CI dirigido cuando termine la confirmación completa de 9b-3 (run 43683346297, en curso).

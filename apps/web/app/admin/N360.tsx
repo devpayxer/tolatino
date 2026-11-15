@@ -13,7 +13,7 @@ import type { Negocio360 } from "@/lib/admin-negocios";
 import { fmtHora } from "@/lib/panel-reglas";
 import { KINDS_LOCAL } from "@/lib/noche-comun";
 import { PuntoAdmin } from "./PuntoAdmin";
-import { cambiarEstado, tipoNoche, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, vacanteOcultar, platoOcultar, propiedadOcultar, mayoresRevisar, carroOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina } from "./acciones-negocios";
+import { cambiarEstado, tipoNoche, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, vacanteOcultar, platoOcultar, propiedadOcultar, mayoresRevisar, carroOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina, mensajeAlDueno } from "./acciones-negocios";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { N360Dinero } from "./N360Dinero";
@@ -34,6 +34,7 @@ const FOTO = ["No es de este negocio", "Contenido inapropiado", "Muestra datos p
 const SELLO_NO = ["La dirección no coincide con la página", "No pudimos confirmar que representas el negocio", "Las fotos no son del local", "El nombre puede confundirse con otro negocio"];
 /* Verbo de cada acción en el historial (prototipo actL). */
 const VERBO: Record<string, string> = {
+  "negocio.mensaje": "le mandó un mensaje al dueño de",
   "resena.ocultar": "ocultó una reseña de", "resena.mostrar": "volvió a mostrar una reseña de", "novedad.ocultar": "ocultó una novedad de", "novedad.mostrar": "volvió a mostrar una novedad de",
   "vacante.ocultar": "ocultó una vacante de", "vacante.mostrar": "volvió a mostrar una vacante de", "comentario.ocultar": "ocultó un comentario en", "comentario.mostrar": "volvió a mostrar un comentario en",
   "negocio.modulo.pausar": "pausó un módulo de", "negocio.modulo.reanudar": "reanudó un módulo de", "negocio.noche.tipo": "ajustó el tipo de local de",
@@ -356,6 +357,12 @@ export function N360({ n, tab, din, evts = null, sop, cpa }: { n: Negocio360; ta
       if (n.verified) acts.push({ l: "Quitar sello", icon: "shield", onClick: () => setConf({ titulo: "¿Por qué se quita el sello?", plantillas: SELLO_NO, peligro: true, hacer: (m) => sello(n.id, false, m) }) });
       if (!(n.temp_until && new Date(n.temp_until).getTime() > Date.now())) acts.push({ l: "Cierre temporal", icon: "clock", onClick: () => setConf({ titulo: `Cerrar ${n.name} por unos días`, sub: "La ficha dice «Cerrado temporalmente» y no recibe pedidos ni citas. Vuelve sola al vencer. El dueño ve el motivo en su panel.", elegir: { label: "POR CUÁNTO", items: [["1", "1 día"], ["3", "3 días"], ["7", "7 días"], ["14", "14 días"]].map(([k, l]) => ({ k: k!, l: l! })) }, plantillas: BIZ, hacer: (m, e) => cierreTemporal(n.id, Number(e), m) }) });
     }
+    // 9n-7 · «Mensaje al dueño»: la misma pieza que «Enviar mensaje» de Usuarios 360° (app o SMS, sin enlaces, motivo interno); le llega con el enlace a su panel.
+    if (P.editar && n.owner_id) acts.push({ l: "Mensaje al dueño", icon: "chat", onClick: () => setConf({
+      titulo: `Mensaje al dueño de ${n.name}`, sub: "Lo ve en su campana y en su panel; si eliges SMS, también por texto (no sale de noche ni a quien dijo STOP). Sin enlaces. El motivo de abajo es interno: queda en la auditoría.",
+      cta: "Enviar", elegir: { label: "POR DÓNDE", items: [{ k: "push", l: "En la app (campana y push)" }, ...(n.owner_phone ? [{ k: "sms", l: "Por SMS" }] : [])] },
+      valor: { k: "MENSAJE (HASTA 280 LETRAS)", ini: "", area: true, max: 280 }, plantillas: ["Aviso sobre su página", "Respuesta a lo que pidió por Soporte", "Falta un dato para el sello"],
+      hacer: (m, e, v) => mensajeAlDueno(n.id, e ?? "push", v ?? "", m) }) });
     if (P.retirar && n.status === "active") {
       acts.push({ l: "Ocultar", v: "danger", icon: "ban", onClick: () => setConf({ titulo: `¿Por qué se oculta ${n.name}?`, plantillas: BIZ, peligro: true, hacer: (m) => cambiarEstado(n.id, "hidden", m) }) });
       acts.push({ l: "Suspender", v: "danger", icon: "lock", onClick: () => setConf({ titulo: `¿Por qué se suspende ${n.name}?`, plantillas: BIZ, peligro: true, hacer: (m) => cambiarEstado(n.id, "suspended", m) }) });

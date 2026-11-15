@@ -378,6 +378,8 @@ const guardianes = {
       // Lo que explica el camino del SMS (el respaldo del push, lo crítico, el código): lo cumple el SMS del código para entrar (crit, siempre) y el único camino.
       "apps/web/app/(app)/cuenta/avisos/Avisos.tsx": ["cuenta_codigo"], "apps/web/app/admin/IntegracionesPush.tsx": ["cuenta_codigo"], "apps/web/lib/push/admin.ts": ["cuenta_codigo"],
       "apps/web/app/admin/Notificaciones.tsx": ["cuenta_codigo"], "apps/web/app/admin/U360.tsx": ["cuenta_codigo", "msg_equipo_sms"], "apps/web/app/admin/acciones-usuarios.ts": ["msg_equipo_sms"],
+      // 9n-7 · «Mensaje al dueño» (Negocio 360°): «Por SMS» lo cumple biz_msg_equipo_sms (0156).
+      "apps/web/app/admin/N360.tsx": ["biz_msg_equipo_sms"], "apps/web/app/admin/acciones-negocios.ts": ["biz_msg_equipo_sms"],
     };
     const sms = new Map(); // clave → ¿lleva SMS? (la última migración que la define)
     for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) for (const m of readFileSync(`packages/db/migrations/${x}`, "utf8").matchAll(/\(\s*'([a-z0-9_]+)',\s*'(?:crit|tx|mod|biz|mkt|community|events|support)',\s*(?:'\w+'|null),\s*(true|false)(?:,\s*'(siempre|sin_push|nunca)')?/g)) sms.set(m[1], m[2] === "true" && m[3] !== "nunca");

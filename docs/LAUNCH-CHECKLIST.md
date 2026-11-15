@@ -148,7 +148,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
   (Destacados), Cambiar categoría / Transferir / Fusionar / Reclamos (cola Cambios sensibles), Invitar a reclamar
   (SMS), Pro de cortesía / prueba / pagos (Fase 2), quitar acceso al panel (Moderadores), pausar módulos, «Panel del
   dueño» y «Ver como cliente» de un negocio no activo (vista del equipo). Pestañas Lo que vende, Operación, Dinero,
-  Contenido: con sus módulos.
+  Contenido: con sus módulos. — _(9n-7, 15 nov): «Mensaje al dueño» hecho (app o SMS, campana y push que abren su panel; 0156; adm9n3). Siguen abiertas las demás acciones de esta línea._
 - [x] **Avisos por SMS** al dueño (sello, ocultar, foto quitada) y al vecino que reportó o recomendó: Fase 2. Los
   textos del admin dicen «lo ve en su panel» (verdad hoy). — _9a (11 nov): el dueño recibe aviso de foto quitada y de ocultar (mod_foto, mod_hide) y el vecino el resultado de su reporte (com_rep_ok / com_rep_no). Falta el aviso del sello (verificación del negocio) y el del vecino que recomendó cuando el negocio publica._ — **✓ 9l (14 nov):** el sello decidido llega al dueño con su motivo (`sello_ok` / `sello_info` / `sello_no`, push y SMS de respaldo; app/admin/acciones-colas.ts decidirSello); quien reportó una foto recibe el resultado (`foto_rep_quitada` / `foto_rep_queda`); quien recomendó, «ya publicó» (`rec_publico`). Ocultar y foto quitada siguen en la campana y el push (moderación: sin SMS, REVISION 9l).
 - [x] **Avisos del panel sin diseño propio:** «To’Latino ocultó / suspendió / cerró tu página: {motivo}» usan el patrón

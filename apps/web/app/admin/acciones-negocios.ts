@@ -43,6 +43,35 @@ async function hacer(id: string, accion: "editar" | "retirar", motivo: unknown, 
   listo(id);
   return { ok: true, mensaje: ok };
 }
+/* 9n-7 · «Mensaje al dueño» (LAUNCH «Acciones del 360°»): como el mensaje del equipo de Usuarios 360° (9n-3) — por la app (campana y push) o por SMS,
+   sin enlaces, con motivo interno, auditoría y la fila de admin_messages (target_kind 'business', solo inserción). Le llega al dueño con el enlace a su
+   panel. Topes: 30 por hora por persona del equipo y 3 al día por negocio. neg:editar y la ciudad de quien actúa. */
+const MSG_HORA_NEG = 30, MSG_DIA_NEG = 3;
+export async function mensajeAlDueno(id: string, canal: string, texto: string, motivo: string): Promise<ResAdm> {
+  if (canal !== "sms" && canal !== "push") return no("Elige por dónde se manda.");
+  const t = motivoOk(texto).replace(/\s+/g, " ");
+  if (t.length < 3) return no("Escribe el mensaje.");
+  if (t.length > 280) return no("El mensaje es de hasta 280 letras.");
+  if (/https?:\/\/|www\.|[a-z0-9-]+\.(com|net|org|co|io|us|app|link)\b/i.test(t)) return no("El mensaje no lleva enlaces: el dueño lo ve en su panel.");
+  let dueno: string | null = null;
+  const r = await hacer(id, "editar", motivo, async (c, s, b, m) => {
+    const o = (await c.query<{ uid: string | null; ok: boolean }>(`select u.id::text as uid, (u.phone_verified_at is not null) as ok from businesses x left join users u on u.id = x.owner_user_id where x.id = $1`, [b.id])).rows[0];
+    if (!o?.uid) return "Este negocio no tiene dueño todavía: invítalo a reclamarlo.";
+    if (o.uid === s.id) return "Eso no se manda a uno mismo.";
+    if (canal === "sms" && !o.ok) return "El teléfono del dueño no está verificado: manda el mensaje por la app.";
+    await c.query(`select pg_advisory_xact_lock(hashtextextended($1, 0))`, [`msg-equipo:${s.id}`]);
+    const h = (await c.query<{ n: number }>(`select count(*)::int as n from admin_messages where by_staff = $1 and at > now() - interval '1 hour'`, [s.id])).rows[0]!.n;
+    if (h >= MSG_HORA_NEG) return `Ya mandaste ${MSG_HORA_NEG} mensajes en la última hora. Espera un rato.`;
+    const d = (await c.query<{ n: number }>(`select count(*)::int as n from admin_messages where target_kind = 'business' and target_id = $1 and at > now() - interval '1 day'`, [b.id])).rows[0]!.n;
+    if (d >= MSG_DIA_NEG) return `A este negocio ya le llegaron ${MSG_DIA_NEG} mensajes del equipo hoy. Espera a mañana.`;
+    await c.query(`insert into admin_messages (target_kind, target_id, user_id, city_id, channel, body, reason, by_staff) values ('business', $1, null, $2, $3, $4, $5, $6)`, [b.id, b.city_id, canal, t, m, s.id]);
+    await auditar(c, { actor: s.id, action: "negocio.mensaje", targetKind: "business", targetId: b.id, city: b.city_id, after: { canal: canal === "sms" ? "SMS" : "App", mensaje: t.slice(0, 120) }, reason: m });
+    dueno = o.uid;
+    return null;
+  }, canal === "sms" ? "Mensaje enviado al dueño por SMS (y en su campana). Quedó en la auditoría." : "Mensaje enviado al dueño en su app. Quedó en la auditoría.");
+  if (r.ok && dueno) await avisar(dueno, canal === "sms" ? "biz_msg_equipo_sms" : "biz_msg_equipo", { texto: t, texto_en: t }, { href: `/panel/${id}`, ref: ["admin_message", id] });
+  return r;
+}
 const LIC_EST: Record<string, string> = { review: "en revisión", valid: "verificada", expired: "vencida", not_found: "no se pudo verificar", revoked: "retirada por To'Latino" };
 const ESTADO_L: Record<string, string> = { active: "visible", hidden: "oculto", suspended: "suspendido", closed: "cerrado", temp_closed: "cerrado temporal", draft: "borrador" };
 

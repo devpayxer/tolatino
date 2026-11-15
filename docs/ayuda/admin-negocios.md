@@ -27,6 +27,7 @@ Compa como copiloto del equipo). Versión: 11 nov 2026. Audiencia: equipo. Tema:
 | Aplicar cambio / Rechazar (con motivo) | Cambios sensibles | colas · aprobar | Aplicar: quien reclamó queda como dueño y abre el panel; el dueño anterior sale del equipo. Si ya tenía dueño, solo un Admin y pasados 7 días del aviso en su panel (R2). Rechazar: ve el motivo |
 | Dar / Quitar sello | 360 › Resumen | neg · editar | Ficha y panel; al quitarlo, aviso en su panel |
 | Cierre temporal (1, 3, 7, 14 días) / Reabrir | 360 › Resumen | neg · editar | Ficha y listas: «Cerrado temporalmente»; panel: «To’Latino cerró tu página por unos días…»; vuelve solo |
+| Mensaje al dueño (app o SMS, sin enlaces, hasta 280 letras) | 360 › Resumen | neg · editar | Le llega al dueño en la campana y el push (abre su panel); con SMS, también por texto (no de noche ni a quien dijo STOP). Hasta 3 al día por negocio; motivo interno en la auditoría |
 | Ocultar · Suspender · Cerrar (solo Admin) · Restaurar | 360 › Resumen | neg · retirar | Sale de búsquedas y categoría; aviso con el motivo en su panel |
 | Editar nombre, Quiénes somos, teléfono, dirección | 360 › Ficha | neg · editar | Marca «EDITADO POR TO’LATINO»; panel: «To’Latino corrigió tu nombre…» / «To’Latino editó tu «Quiénes somos»». Si el dueño lo cambia, gana lo suyo |
 | Quitar / Restaurar foto | 360 › Ficha | neg · retirar | Igual que en Medios marcados |
@@ -86,7 +87,8 @@ clients see it, what the owner did and what the team did (Overview, Page, Team, 
 assistant's 30-day numbers, without text or people). Every action asks for a
 reason (approvals store a fixed one), writes the audit log, and the owner sees the result and reason in their
 dashboard; the page reflects it (temporarily closed, hidden, photo removed, badge). Team decisions are not texted: the owner
-sees them in the dashboard and the bell. "Create seed" lists a recommended business as unclaimed in its category; "Apply change"
+sees them in the dashboard and the bell. **Message the owner** (360, needs an owner): in the app (bell and push, opens their
+dashboard) or by SMS, no links, with an internal reason; up to 3 a day per business. "Create seed" lists a recommended business as unclaimed in its category; "Apply change"
 makes the claimant the owner (an already-owned business: Admin only, 7 days after the owner's notice); claim
 documents are private and every view is audited. In What it sells, Reservations shows this month's bookings and pending
 requests; Pause (with a reason) removes the tab from the page and the owner sees why.
