@@ -52,7 +52,7 @@ const casos = [
   // … su plazo de una clave que no está en Configuración
   ['colaConVista', CO, 'slaCfg: "cola_sla_entrega"', 'slaCfg: "cola_sla_entrega_x" as never'],
   // configDesdeUnLugar: la clave del plazo falta en ClaveConfig
-  ['configDesdeUnLugar', CF, ' | "cola_sla_entrega";', ';'],
+  ['configDesdeUnLugar', CF, ' | "cola_sla_rec" | "cola_sla_entrega"\n', ' | "cola_sla_rec"\n'],
   // disputaConEvidencia: la respuesta deja de mandar los archivos
   ['disputaConEvidencia', DI, 'archivos: { recibo: archivos.recibo, conversacion: archivos.conversacion, entrega: archivos.entrega, otro: archivos.foto_entrega } });', 'texto: "" });'],
 ];
