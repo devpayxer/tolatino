@@ -9372,6 +9372,16 @@ const guardianes = {
     }
   },
 
+  /* 9n-7 · corteDeCitas: «la última cita termina N min antes de cerrar» (booking_policies.close_cut_min, Panel › Citas) lo aplica el motor de horas
+     (lib/citas.ts huecos) y el contexto lo lee de la base; si no, la página ofrece horas que el negocio pidió no dar. Al revés (alreves9n). */
+  corteDeCitas() {
+    const G = "corteDeCitas", F = "apps/web/lib/citas.ts";
+    if (!existsSync(F)) return falla(G, F, 0, "falta el motor de horas de las citas");
+    const t = readFileSync(F, "utf8"), h = cuerpoFn(t, "huecos");
+    if (!/t \+ dur <= z - \(x\.pol\.corte \?\? 0\)/.test(h)) falla(G, F, 0, "huecos: las horas que se ofrecen terminan pol.corte minutos antes de cerrar");
+    if (!/corte: p\.close_cut_min \?\? 0/.test(cuerpoFn(t, "contexto"))) falla(G, F, 0, "contexto: el corte sale de booking_policies.close_cut_min");
+  },
+
   telefonoAlAzarRespetaFijos() {
     const G = "telefonoAlAzarRespetaFijos";
     for (const f of archivos.filter((x) => /^pruebas\/(e2e|lib|alreves)\/[^/]+\.(cjs|mjs)$/.test(x))) {

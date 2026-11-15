@@ -29,7 +29,7 @@ const fp = (cents: number) => { const p = (Number(cents) || 0) / 100; return "$"
 const durL = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}` : `${m} min`);
 const minPositivo = (L: number[]) => { const P = L.filter((v) => v > 0); return P.length ? Math.min(...P) : 0; };
 const first = (n: string) => n.split(" ")[0] ?? n;
-const S = (c: Ctx): SvcPanel => c.svc ?? { rubro: null, sp: null, fiesta: null, trans: null, noche: null, edu: null, ninos: null, dep: null, fe: null, feEdu: null, inm: null, autos: null, model: "emp", rent: null, comm: null, secciones: [], servicios: [], gente: [], pol: { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2 }, on: false, off: { svc: null, citas: null } };
+const S = (c: Ctx): SvcPanel => c.svc ?? { rubro: null, sp: null, fiesta: null, trans: null, noche: null, edu: null, ninos: null, dep: null, fe: null, feEdu: null, inm: null, autos: null, model: "emp", rent: null, comm: null, secciones: [], servicios: [], gente: [], pol: { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2, corte: 0 }, on: false, off: { svc: null, citas: null } };
 const MODEL = (c: Ctx): Record<SvcPanel["model"], [string, string]> => ({
   chair: [c.E2("Rentan silla", "Rent chairs"), c.E2("Cada barbero pone su precio y su agenda. Tú cobras la renta.", "Each barber sets their price and schedule. You collect rent.")],
   comm: [c.E2("A comisión", "On commission"), c.E2("Un precio para todos; a cada uno le toca su porcentaje.", "One price for everyone; each gets their percentage.")],
@@ -412,10 +412,10 @@ export function modeloDetalle(c: Ctx): Sec {
 }
 
 /* ── Citas: las reglas (Panel v2 · k === 'citas') ── */
-type FCit = { auto: boolean; resp: number; dep: number; cxh: number; pick: boolean };
+type FCit = { auto: boolean; resp: number; dep: number; cxh: number; pick: boolean; corte: number };
 export function citasBloques(c: Ctx): Sec {
   const { E2 } = c, X = S(c), chair = X.model === "chair", solo = X.gente.length <= 1;
-  const F = c.form<FCit>("cit", { auto: X.pol.auto, resp: X.pol.resp, dep: X.pol.dep, cxh: X.pol.cxh, pick: X.pol.pick }), d = F.d;
+  const F = c.form<FCit>("cit", { auto: X.pol.auto, resp: X.pol.resp, dep: X.pol.dep, cxh: X.pol.cxh, pick: X.pol.pick, corte: X.pol.corte ?? 0 }), d = F.d;
   const out: (Bloque | null)[] = [{ type: "head", eye: E2("LO QUE VENDES", "WHAT YOU SELL"), t: E2("Citas", "Bookings"), s: E2("Cómo te piden cita en tu página: si confirmas tú, el depósito y hasta cuándo se cancela gratis.", "How clients book on your page: whether you confirm, the deposit and the free cancellation window."), onBack: () => c.go("mod") }];
   if (X.off.citas != null) out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`To’Latino pausó tus Citas: tu página no recibe solicitudes en línea y dice «llama o pasa por el local». Motivo: ${X.off.citas}`, `To’Latino paused your Bookings: your page takes no online requests and says “call or stop by”. Reason: ${X.off.citas}`) });
   else if (!X.on) out.push({ type: "note", tone: "warn", icon: "calendar", t: E2("Citas está apagado: tu página no recibe solicitudes en línea.", "Bookings is off: your page takes no online requests."), cta: E2("Encender", "Turn on"), onCta: () => c.run(() => citasModulo(c.d.id, true), E2("Citas encendido.", "Bookings on.")) });
@@ -427,6 +427,9 @@ export function citasBloques(c: Ctx): Sec {
     items: ([[0, E2("Sin depósito", "No deposit")], [500, "$5"], [1000, "$10"], [2000, "$20"], [5000, "$50"]] as [number, string][]).map(([n, l]) => ({ l, v: d.dep === n ? "selected" : "filter", onClick: () => F.set({ dep: n }) })) });
   out.push({ type: "chips", k: chair ? E2("TU SILLA · CANCELAR GRATIS HASTA", "YOUR CHAIR · FREE CANCELLATION UP TO") : E2("CANCELAR GRATIS HASTA", "FREE CANCELLATION UP TO"), help: E2("SI CANCELAN MÁS TARDE O NO LLEGAN, EL DEPÓSITO SE QUEDA CONTIGO", "IF THEY CANCEL LATER OR DON’T SHOW, YOU KEEP THE DEPOSIT"),
     items: ([[2, E2("2 h antes", "2 h before")], [4, E2("4 h antes", "4 h before")], [24, E2("24 h antes", "24 h before")], [72, E2("3 días antes", "3 days before")]] as [number, string][]).map(([n, l]) => ({ l, v: d.cxh === n ? "selected" : "filter", onClick: () => F.set({ cxh: n }) })) });
+  // 9n-7 · Horario por módulo: las citas dejan de entrar antes de cerrar (el «último pedido» de Pedidos ya existe).
+  out.push({ type: "chips", k: E2("LA ÚLTIMA CITA TERMINA", "THE LAST BOOKING ENDS"), help: E2("TU PÁGINA NO OFRECE HORAS QUE TERMINEN DESPUÉS · PARA RECOGER Y CERRAR A TIEMPO", "YOUR PAGE OFFERS NO TIMES THAT END LATER · TO CLEAN UP AND CLOSE ON TIME"),
+    items: ([[0, E2("Al cerrar", "At closing")], [15, E2("15 min antes", "15 min before")], [30, E2("30 min antes", "30 min before")], [60, E2("1 h antes", "1 h before")]] as [number, string][]).map(([n, l]) => ({ l, v: d.corte === n ? "selected" : "filter", onClick: () => F.set({ corte: n }) })) });
   if (!chair && !solo) out.push({ type: "rows", items: [{ icon: "users", t: E2("El cliente elige con quién", "Client picks the person"), s: E2("Si lo apagas, se asigna a quien esté libre.", "If off, whoever is free is assigned."), tgOn: d.pick, onTg: () => F.set({ pick: !d.pick }) },
     { icon: "users", t: E2("Quién recibe citas", "Who takes bookings"), s: X.gente.filter((p) => p.recibe).map((p) => first(p.nombre)).join(" · ") || "—", chev: true, onClick: () => c.go("pag", "equipo") }] });
   if (!chair) {

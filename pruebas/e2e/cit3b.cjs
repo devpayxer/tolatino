@@ -130,6 +130,26 @@ const limpiar = () => {
   // 6b. Hoy cerrado (si hoy no tiene horas) → abre en el primer día con horas
   await m.goto(B + `/n/${BIZ}/cita?s=${sql(`select ${SV('Fade')}`)}&con=${sql(`select ${LUIS}`)}`); await bk.getByText('DÍA', { exact: true }).waitFor(); await m.waitForTimeout(300); await m.waitForFunction(() => !document.querySelector('[aria-busy="true"]'));
   ok(await bk.getByRole('radio').filter({ hasText: '' }).count() > 0 && !(await vis(bk.getByText(/No quedan horas el/))), 'abre en un día con horas libres');
+  // 6c. 9n-7 · «La última cita termina 1 h antes de cerrar» (Panel › Citas): la última hora que se ofrece ese día sale 60 min antes.
+  {
+    const aMin = (t) => { const x = /^(\d{1,2}):(\d{2}) (AM|PM)$/.exec(t); return x ? ((Number(x[1]) % 12) + (x[3] === 'PM' ? 12 : 0)) * 60 + Number(x[2]) : -1; };
+    const ultima = async () => {
+      await m.goto(B + `/n/${BIZ}/cita?s=${sql(`select ${SV('Fade')}`)}&con=${sql(`select ${LUIS}`)}`); await bk.getByText('DÍA', { exact: true }).waitFor();
+      await bk.getByRole('radio', { name: /^(LUN|MAR|MIÉ|JUE|VIE|SÁB|DOM) / }).nth(1).click(); await m.waitForTimeout(300); await m.waitForFunction(() => !document.querySelector('[aria-busy="true"]'));
+      const horas = (await bk.getByRole('radio', { name: /^\d{1,2}:\d{2} (AM|PM)$/ }).allInnerTexts()).map((t) => aMin(t.trim())).filter((x) => x >= 0);
+      return horas.length ? Math.max(...horas) : -1;
+    };
+    const c0 = sql(`select coalesce((select close_cut_min::text from booking_policies where business_id = '${BIZ}'), 'x')`);
+    try {
+      sql(`insert into booking_policies (business_id, close_cut_min) values ('${BIZ}', 0) on conflict (business_id) do update set close_cut_min = 0`);
+      const sinCorte = await ultima();
+      sql(`update booking_policies set close_cut_min = 60 where business_id = '${BIZ}'`);
+      const conCorte = await ultima();
+      ok(sinCorte > 0 && conCorte > 0 && sinCorte - conCorte === 60, `con «1 h antes» la última hora ofrecida sale 60 min antes (${sinCorte} → ${conCorte} min)`);
+    } finally {
+      sql(c0 === 'x' ? `update booking_policies set close_cut_min = 0 where business_id = '${BIZ}'` : `update booking_policies set close_cut_min = ${c0} where business_id = '${BIZ}'`);
+    }
+  }
   // 7. No se cuela HTML/JS ni scroll de lado
   const ancho = await m.evaluate(() => document.documentElement.scrollWidth - window.innerWidth); ok(ancho <= 0, 'teléfono sin scroll de lado');
   // 8. Escritorio

@@ -15,7 +15,8 @@ belleza). Versión: 6 nov 2026. Audiencia: negocio. Tema: panel._
   precio de cada silla; vacío = esa silla no lo hace.
 - **Citas (reglas):** confirmar al instante o revisar cada solicitud, cuánto tardas en contestar (15 min, 30 min, 1 h,
   3 h), depósito ($0, $5, $10, $20, $50), hasta cuándo se cancela gratis (2, 4, 24 o 72 h antes), tolerancia de
-  llegada y si el cliente elige con quién.
+  llegada, si el cliente elige con quién y **cuándo termina la última cita**: al cerrar, o 15 min, 30 min o 1 h antes
+  (tu página no ofrece horas que terminen después; sirve para recoger y cerrar a tiempo).
 - **Sillas:** con sillas rentadas, cada barbero decide sus reglas (al instante o no, cuánto tarda, depósito) y si recibe
   citas en línea.
 - **To'Latino:** en Negocio 360° › Lo que vende puede **pausar Servicios** o **pausar Citas** y **ocultar un servicio**,
@@ -44,5 +45,6 @@ free on the calendar, never shown to customers), price, "from · varies" and up 
 time; **Extras** can be added to any service. Reorder, hide (nothing is deleted) or remove. **How your business works**:
 employees, commission or chair rental (each chair sets its own price; blank means that chair doesn't offer it).
 **Booking rules**: instant confirm or review, response time (15 min–3 h), deposit ($0–$50), free cancellation window
-(2–72 h), arrival tolerance and staff choice. With chair rental each chair sets its own rules. To'Latino can pause
+(2–72 h), arrival tolerance, staff choice and when the last booking ends (at closing, or 15 min, 30 min or 1 h before:
+your page offers no times that end later). With chair rental each chair sets its own rules. To'Latino can pause
 Services or Booking and hide a service, always with a reason the owner sees in the panel; existing appointments continue.

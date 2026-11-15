@@ -29,8 +29,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const ID = /^\d{1,18}$/;
 export const DIAS = 14;
 
-export type Politica = { auto: boolean; resp: number; dep: number; cxh: number; tol: number; pick: boolean; exp: number };
-const POL: Politica = { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2 };
+export type Politica = { auto: boolean; resp: number; dep: number; cxh: number; tol: number; pick: boolean; exp: number; corte: number };
+const POL: Politica = { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2, corte: 0 };
 
 export type OpcionPub = { t: Bi; o: { n: Bi; p: number; m: number }[] };
 export type ServicioPub = {
@@ -77,7 +77,7 @@ export async function contexto(c: Q, negocio: string, cats: string[] = ["NEG-BEL
   const horas: Ctx["horas"] = {};
   for (const d of h.rows) horas[d.weekday] = d.open ? rng(d.ranges) : [];
   const p = b.pol as Record<string, never> | null;
-  const pol: Politica = p ? { auto: !!p.auto_approve, resp: p.response_min ?? 30, dep: p.deposit_cents ?? 0, cxh: p.cancel_free_h ?? 2, tol: p.tolerance_min ?? 15, pick: p.staff_pick ?? true, exp: p.expires_h ?? 2 } : POL;
+  const pol: Politica = p ? { auto: !!p.auto_approve, resp: p.response_min ?? 30, dep: p.deposit_cents ?? 0, cxh: p.cancel_free_h ?? 2, tol: p.tolerance_min ?? 15, pick: p.staff_pick ?? true, exp: p.expires_h ?? 2, corte: p.close_cut_min ?? 0 } : POL;
   // Cuenta de cobro para depósitos: una simulada solo en el sandbox; una real, solo con la clave de Stripe.
   const modo = pasarela.modo(), cuenta = b.acct && modo !== "apagado" && b.acct.startsWith("acct_sim_") === (modo === "simulador") ? b.acct : null;
   return {
@@ -229,7 +229,8 @@ export function huecos(x: Ctx, cand: Persona[], i: number, dur: number, buf: num
   for (const p of [...cand].sort((a, b) => (carga.get(a.id) ?? 0) - (carga.get(b.id) ?? 0))) {
     const mias = occ.filter((o) => o.m === p.id && o.ymd === ymd);
     for (const [a, z] of rangos(x, p, i)) {
-      for (let t = Math.ceil(a / step) * step; t + dur <= z; t += step) {
+      // 9n-7 · La última cita termina pol.corte minutos antes de cerrar (Panel › Citas); 0 = hasta el cierre.
+      for (let t = Math.ceil(a / step) * step; t + dur <= z - (x.pol.corte ?? 0); t += step) {
         if (t < desde) continue;
         const libre = !mias.some((o) => t < o.e && o.s < t + dur + buf);
         const h = porM.get(t);

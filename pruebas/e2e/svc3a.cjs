@@ -55,6 +55,13 @@ const restaurar = () => { try {
   await p.goto(B + `/panel/${BIZ}/vendes/servicios?det=svm`); await p.getByText('Cómo trabaja tu negocio').first().waitFor(); await clic(p.locator(DET).getByText('Empleados', { exact: true }));
   await p.getByRole('button', { name: 'Guardar' }).last().click(); await p.waitForTimeout(1200); ok(sql(`select svc_model from businesses where id = '${BIZ}'`) === 'emp', 'modelo: empleados');
   await p.goto(B + `/panel/${BIZ}/vendes/citas`); await p.getByText('Aprobar citas al instante').first().waitFor(); ok(true, 'con empleados: aprobar al instante y depósito del negocio');
+  // 9n-7 · Horario por módulo: «LA ÚLTIMA CITA TERMINA» 1 h antes de cerrar (se guarda con la auditoría) y se deja «Al cerrar».
+  await p.getByText('LA ÚLTIMA CITA TERMINA').first().waitFor(); await clic(p.getByText('1 h antes', { exact: true }));
+  await p.getByRole('button', { name: 'Guardar' }).last().click(); await p.waitForTimeout(1200);
+  ok(sql(`select close_cut_min from booking_policies where business_id = '${BIZ}'`) === '60' && sql(`select after->>'ultima_cita' from audit_entries where action = 'citas.reglas' and target_id = '${BIZ}' order by id desc limit 1`) === '60 min antes de cerrar', 'la última cita termina 1 h antes de cerrar (con auditoría)');
+  await p.goto(B + `/panel/${BIZ}/vendes/citas`); await p.getByText('LA ÚLTIMA CITA TERMINA').first().waitFor(); await clic(p.getByText('Al cerrar', { exact: true }));
+  await p.getByRole('button', { name: 'Guardar' }).last().click(); await p.waitForTimeout(1200);
+  ok(sql(`select close_cut_min from booking_policies where business_id = '${BIZ}'`) === '0', 'y de vuelta «Al cerrar»');
   sql(`update businesses set svc_model = 'chair' where id = '${BIZ}'`);
   // Citas (sillas): cancelar gratis 24 h
   await p.goto(B + `/panel/${BIZ}/vendes/citas`); await p.getByText('TU SILLA · CANCELAR GRATIS HASTA').first().waitFor(); await clic(p.getByText('24 h antes', { exact: true }));

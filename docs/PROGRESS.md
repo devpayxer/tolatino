@@ -2306,4 +2306,6 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **Anuncios para negocios:** Super Admin › Textos › Inicio › «¿A QUIÉN?» › Negocios (sale en Hoy del panel, nunca en el Inicio); cms9f lo crea por la pantalla.
 - **Campañas · «Free con N ítems»:** chips «ÍTEMS EN SU CATÁLOGO» (5/10/20/50+, solo dueños) en Crecimiento › Campañas; la cuenta usa `items_biz_idx` con `limit`. cre9h lo comprueba.
 - **Publica · «Publicar otro negocio» (L49 (11)):** en A1 publicado; el publicado pasa a `onboarding_drafts_done` (**0154**, solo inserción, en el mapa de datos) y el borrador empieza en blanco; tope 5 negocios por cuenta. publica.cjs lo prueba.
+- **Citas · la última cita termina antes de cerrar (L128):** Panel › Citas › «LA ÚLTIMA CITA TERMINA» (al cerrar, 15/30 min, 1 h antes; **0155**
+  `booking_policies.close_cut_min`); `huecos` lo aplica. Guardián `corteDeCitas` (al revés 29/29); svc3a y cit3b lo prueban.
 - **No corrió aquí:** e2e (sin Docker) → CI dirigido cuando termine la confirmación completa de 9b-3 (run 43683346297, en curso).

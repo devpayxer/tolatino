@@ -153,14 +153,17 @@ export async function modeloGuardar(negocio: string, model: string, renta: numbe
 }
 
 /* ── Reglas de citas del negocio ── */
-export async function citasGuardar(negocio: string, p: { auto: boolean; resp: number; dep: number; cxh: number; pick: boolean }): Promise<Res> {
+// 9n-7 · Horario por módulo: la última cita termina N min antes de cerrar (0 = al cerrar, como antes).
+const CORTES_CITA = [0, 15, 30, 60];
+export async function citasGuardar(negocio: string, p: { auto: boolean; resp: number; dep: number; cxh: number; pick: boolean; corte?: number }): Promise<Res> {
   return hacer(negocio, async (c, a) => {
     const resp = [15, 30, 60, 180].includes(Number(p?.resp)) ? Number(p.resp) : 30, cxh = [2, 4, 24, 72].includes(Number(p?.cxh)) ? Number(p.cxh) : 2;
     const dep = [0, 500, 1000, 2000, 5000].includes(Number(p?.dep)) ? Number(p.dep) : 0;
-    await c.query(`insert into booking_policies (business_id, auto_approve, response_min, deposit_cents, cancel_free_h, staff_pick, updated_by, updated_at) values ($1, $2, $3, $4, $5, $6, $7, now())
-                   on conflict (business_id) do update set auto_approve = $2, response_min = $3, deposit_cents = $4, cancel_free_h = $5, staff_pick = $6, updated_by = $7, updated_at = now()`,
-      [a.negocio.id, !!p?.auto, resp, dep, cxh, p?.pick !== false, a.yo.id]);
-    await auditar(c, a, "citas.reglas", null, { al_instante: p?.auto ? "sí" : "no", contesta_en: `${resp} min`, deposito: `$${dep / 100}`, cancelar_gratis: `${cxh} h` });
+    const corte = CORTES_CITA.includes(Number(p?.corte)) ? Number(p.corte) : 0;
+    await c.query(`insert into booking_policies (business_id, auto_approve, response_min, deposit_cents, cancel_free_h, staff_pick, updated_by, updated_at, close_cut_min) values ($1, $2, $3, $4, $5, $6, $7, now(), $8)
+                   on conflict (business_id) do update set auto_approve = $2, response_min = $3, deposit_cents = $4, cancel_free_h = $5, staff_pick = $6, updated_by = $7, updated_at = now(), close_cut_min = $8`,
+      [a.negocio.id, !!p?.auto, resp, dep, cxh, p?.pick !== false, a.yo.id, corte]);
+    await auditar(c, a, "citas.reglas", null, { al_instante: p?.auto ? "sí" : "no", contesta_en: `${resp} min`, deposito: `$${dep / 100}`, cancelar_gratis: `${cxh} h`, ultima_cita: corte ? `${corte} min antes de cerrar` : "al cerrar" });
     return null;
   });
 }
