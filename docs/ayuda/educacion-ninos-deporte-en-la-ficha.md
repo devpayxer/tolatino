@@ -29,6 +29,8 @@ Antes de inscribirte ves lo que más se pregunta en cada caso:
 - To'Latino **no pide estatus ni seguro social** para inscribirte, y de un niño solo guarda su nombre de pila, la edad o el grado y una nota,
   cifrados, que se borran a los 30 días.
 
+**Los plazos de esta página** (cuántas horas para responder, cuánto se guarda un cupo, cuándo queda una baja, a los cuántos días se borra lo privado) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## FAQ
 - **¿El precio incluye libros y examen?** El precio es el total; lo que va aparte se dice en la hoja antes de inscribirte.
 - **¿Puedo cancelar la membresía?** Siempre: sin contrato no cuesta nada; con contrato, la página dice cuánto cuesta salirse antes.
@@ -60,6 +62,8 @@ Before you enroll you see what people ask most:
 - **Free plan:** «You don't enroll in the app here: call or write to the place.»
 - To'Latino **never asks for status or social security** to enroll, and for a child it keeps only the first name, age or grade and a note,
   encrypted, deleted after 30 days.
+
+**The time limits on this page** (hours to reply, how long a spot is held, when a cancellation goes through, after how many days private data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
 
 ### FAQ
 - **Does the price include books and the exam?** The price is the total; anything extra is listed on the sheet before you enroll.

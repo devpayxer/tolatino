@@ -40,6 +40,8 @@ persona confirma «Me lo devolvieron». Si no respondes, o la persona dice que n
   panel y no lo puedes volver a encender; To'Latino decide: «Sin acción» lo vuelve a mostrar; «Sancionar» lo deja fuera y te deja una
   advertencia.
 
+**Los plazos de esta página** (cuántas horas para responder, cuánto se guarda un cupo, cuándo queda una baja, a los cuántos días se borra lo privado) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## FAQ
 - **¿Puedo cobrar por la visita o por apartar un carro en la app?** No. Ver y probar es gratis; el dinero se habla en persona y por escrito.
 - **¿Puedo cambiar mis horas?** Sí: las nuevas salen para las nuevas solicitudes; las que ya pidieron siguen.
@@ -54,6 +56,8 @@ Reply to each visit, test drive, appointment, pre-qualification or offer request
 Help requests on visits, test drives or church dates show in Today («Help awaiting your reply»); reply within 24 hours. Nothing was
 charged on To'Latino: if you agree to refund, refund directly and the customer confirms. Charging to view, asking for more to move in or
 asking money for church help go straight to To'Latino and the listing (or «Ask for a date») is paused until To'Latino decides.
+
+**The time limits on this page** (hours to reply, how long a spot is held, when a cancellation goes through, after how many days private data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
 
 ### FAQ
 You cannot charge for viewing or for holding a car in the app. Changing your hours only affects new requests. 3 no-shows in 30 days

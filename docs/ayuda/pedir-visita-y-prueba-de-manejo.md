@@ -34,6 +34,8 @@ catecismo. **Nada se cobra en la app: hoy pagas $0, siempre.**
   borra a los 30 días.
 - **Para tu hijo (catecismo):** su nombre y edad van cifrados; solo los ve la parroquia y se borran a los 30 días de terminar.
 
+**Los plazos de esta página** (cuántas horas para responder, cuánto se guarda un cupo, cuándo queda una baja, a los cuántos días se borra lo privado) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## FAQ
 - **¿Me cobran por ver una propiedad o por la prueba de manejo?** No. Nadie cobra por ver. Si alguien te pide dinero antes de ver, repórtalo.
 - **¿Me piden seguro social, ingresos o crédito?** No en la app. La ficha dice qué papeles piden; se llevan en persona.
@@ -46,6 +48,8 @@ catecismo. **Nada se cobra en la app: hoy pagas $0, siempre.**
 Request to view a property (Real Estate), test drive a car (Car Dealers) or the time they call you to pre-qualify or make an offer. At a
 church you ask for the date of a baptism, a blessing or a counseling appointment, or sign your child up for catechism. **Nothing is charged in
 the app: you pay $0 today, always.**
+
+**The time limits on this page** (hours to reply, how long a spot is held, when a cancellation goes through, after how many days private data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
 
 ### FAQ
 Viewing and test drives are free; nobody may charge you to view. No SSN, income or credit is asked in the app. One live request per

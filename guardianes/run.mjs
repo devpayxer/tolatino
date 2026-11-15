@@ -9230,6 +9230,9 @@ const guardianes = {
     const T = [
       ["insc_oferta_h", /^apps\/web\/app\/(\(app\)\/n\/\[id\]\/inscribirme\/|panel\/Inscripciones\.tsx)/, /guardan 48 horas|held 48 hours|OFRECIDO · 48 H|OFFERED · 48 H|48 horas para tomarlo|48 hours to take it/],
       ["insc_baja_h", /^apps\/web\/(app\/\(app\)\/insc\/|lib\/inscripciones\.ts|lib\/admin-analitica\.ts|app\/admin\/Analitica\.tsx)/, /a las 72 horas|after 72 hours|confirmadas en 72 h|interval '72 hours'/],
+      ["vis_responder_h", /^apps\/web\/app\/panel\/Visitas\.tsx$/, /en 4 horas de tu horario|within 4 (of your )?business hours/],
+      ["vis_purga_dias", /^apps\/web\/app\/panel\/Visitas\.tsx$/, /se borra a los 30 d[ií]as|deleted after 30 days/],
+      ["fe_responder_h", /^apps\/web\/(app\/panel\/Inscripciones\.tsx|app\/admin\/Analitica\.tsx|lib\/admin-analitica\.ts)$/, /lugar en 48 horas|within 48 hours, propose|RESPONDIDAS EN 48 H|sent_at <= interval '48 hours'/],
       ["ninos_purga_dias", /^apps\/web\/app\/(\(app\)\/n\/\[id\]\/(?!consulta\/)|admin\/acciones-colas\.ts|panel\/Inscripciones\.tsx)/, /borran? a los 30 d[ií]as|deleted (after )?30 days|30 d[ií]as (despu[eé]s )?de terminar|30 days after it ends/],
     ];
     for (const x of codigo) {

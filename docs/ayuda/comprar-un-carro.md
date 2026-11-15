@@ -28,6 +28,8 @@ antes de firmar. También el millaje, el **título** (limpio, reconstruido o sal
   To'Latino lo revisa. **El carro no estaba** o **no era como en las fotos**: también en Ayuda.
 - **El total que viste queda guardado** en tu prueba aunque el dealer cambie el precio después.
 
+**Los plazos de esta página** (cuántas horas para responder, cuánto se guarda un cupo, cuándo queda una baja, a los cuántos días se borra lo privado) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## FAQ
 - **¿Me piden el número de mi licencia?** No. Solo marcas que la tienes vigente; la enseñas en persona.
 - **¿Puedo comprar con ITIN?** Busca «Financian con ITIN»: la tasa y los meses van por escrito.
@@ -41,6 +43,8 @@ antes de firmar. También el millaje, el **título** (limpio, reconstruido o sal
 Each car shows **OUT THE DOOR**: the total with tax (6% in PA), tags and the dealer fee (capped at the PA limit), before you sign;
 plus mileage, title, history (as the dealer states it), warranty and whether it is street-legal. If the dealer finances, the example payment
 always shows down payment, months and APR and says «estimate, subject to approval». **Test drives are free.**
+
+**The time limits on this page** (hours to reply, how long a spot is held, when a cancellation goes through, after how many days private data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
 
 ### FAQ
 We never ask for your license number. Search «ITIN financing» to buy with ITIN. The monthly payment is an example with the

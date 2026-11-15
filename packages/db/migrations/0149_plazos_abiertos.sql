@@ -6,7 +6,8 @@
 begin;
 
 update config_keys set editable = true, bloqueo = null
- where key in ('insc_responder_h', 'insc_oferta_h', 'insc_baja_h', 'ninos_purga_dias')
+ where key in ('insc_responder_h', 'insc_oferta_h', 'insc_baja_h', 'ninos_purga_dias',
+               'fe_responder_h', 'vis_responder_h', 'vis_paso_h', 'vis_purga_dias')
    and not editable;
 
 -- El aviso al negocio de una baja pedida decía «a las 72 h»: ahora {horas}, que manda inscripciones.ts con el valor de insc_baja_h.

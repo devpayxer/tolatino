@@ -22,6 +22,8 @@ Aquí respondes cada inscripción, ves tus grupos con sus inscritos y cupos, la 
   El acta, las vacunas y quién puede recogerlo se entregan en persona.
 - **Plan Free:** tu página dice «Aquí no te inscribes por la app»; la gente te llama.
 
+**Los plazos de esta página** (cuántas horas para responder, cuánto se guarda un cupo, cuándo queda una baja, a los cuántos días se borra lo privado) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## FAQ
 - **¿Cuándo recibo la matrícula?** Al confirmar se cobra; llega a tu cuenta con tus otros cobros.
 - **¿Puedo cambiar el precio después?** Sí, para las nuevas. Lo que ya te enviaron no cambia.
@@ -46,6 +48,8 @@ Here you reply to each enrollment and see your groups with their students and se
 - **A child's data:** only you and your team see it, in the detail; every view is logged and it is deleted 30 days after the end. Birth
   certificates, vaccines and pickup authorizations are handed over in person.
 - **Free plan:** your page says «You don't enroll in the app here»; people call you.
+
+**The time limits on this page** (hours to reply, how long a spot is held, when a cancellation goes through, after how many days private data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
 
 ### FAQ
 - **When do I get the fee?** It is charged when you confirm and reaches your account with your other payouts.

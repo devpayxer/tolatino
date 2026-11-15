@@ -34,6 +34,8 @@ inscribirse**. Lo que sí se pide por la app es una **fecha** (bautizo, bendici�
   la página dice «Pregunta si tienen un representante acreditado del DOJ». «No es consejo legal.»
 - **Consejería:** «No es terapia médica. Si piensas hacerte daño, llama o escribe al 988.»
 
+**Los plazos de esta página** (cuántas horas para responder, cuánto se guarda un cupo, cuándo queda una baja, a los cuántos días se borra lo privado) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## FAQ
 - **¿Tengo que reservar para ir a misa?** No. Llegas a la hora; la página dice cuándo.
 - **¿Puedo dar el diezmo o una ofrenda por la app?** No. Iglesias no cobra nada en la app; el donativo se da en persona si quieres.
@@ -56,6 +58,8 @@ It tells you when the next mass or service in Spanish is, what free help a churc
 Bible school, weddings and quinceañeras) and whether help is still available today. You just show up to mass, services and the pantry; no
 sign-up. In the app you can ask for a date (baptism, house blessing, counseling) or sign your child up for catechism. **Nothing is charged
 in the app for churches**: help is free and donations are voluntary.
+
+**The time limits on this page** (hours to reply, how long a spot is held, when a cancellation goes through, after how many days private data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
 
 ### FAQ
 You do not book mass: you show up. Tithes and offerings are not taken in the app. Catechism tuition, if any, is paid at the

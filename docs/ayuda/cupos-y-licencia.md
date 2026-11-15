@@ -41,6 +41,8 @@ Los avisos (SMS) nunca llevan el nombre del niño.
 - **Licencia de PA (DHS) a la vista**: verificada por To'Latino; si vence, tu página lo dice.
 - **Solo recogen las personas autorizadas**, con identificación, siempre.
 
+**Los plazos de esta página** (cuántas horas para responder, cuánto se guarda un cupo, cuándo queda una baja, a los cuántos días se borra lo privado) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## FAQ
 - **¿Por qué mi página ya no dice «con licencia»?** Porque no hay una licencia del DHS verificada. Agrégala en Tu página › Licencias.
 - **¿El CCIS me lo paga To'Latino?** No: el estado paga una parte directamente; lo que le toca a la familia se dice antes.
@@ -54,6 +56,8 @@ What a family asks before leaving their child: **is it safe, licensed, and is th
 age**, the **weekly price without subsidy**, whether it takes **CCIS**, extended hours, meals or a night shift, and the ages it serves. The
 **DHS child care certificate** is always on display: To'Latino checks it against the public registry and **only it** makes the page and
 search say “licensed”.
+
+**The time limits on this page** (hours to reply, how long a spot is held, when a cancellation goes through, after how many days private data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
 
 ### FAQ
 “Licensed” disappears when there is no verified DHS certificate: add it under Your page › Licenses. CCIS is paid by the state, not

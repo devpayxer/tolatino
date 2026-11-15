@@ -32,6 +32,8 @@ Solo su nombre de pila, la edad o el grado, la escuela si los recogen ahí y una
 salen en un aviso. Se borran a los 30 días de terminar. No pedimos fecha de nacimiento, fotos, acta, vacunas ni datos médicos: eso se
 habla en persona.
 
+**Los plazos de esta página** (cuántas horas para responder, cuánto se guarda un cupo, cuándo queda una baja, a los cuántos días se borra lo privado) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## FAQ
 - **¿Por qué me retienen la matrícula si no me han confirmado?** Para apartar tu cupo; si no te confirman, se libera completa.
 - **¿Puedo inscribir a dos hijos en el mismo grupo?** Sí, una inscripción por niño.
@@ -42,6 +44,8 @@ habla en persona.
 ### What it does
 Enroll from your phone in a course, a kids program or a sports membership or league. Pick who it is for, the group (or the age,
 at a daycare) and see what you pay today and at the place before sending. The place confirms your enrollment.
+
+**The time limits on this page** (hours to reply, how long a spot is held, when a cancellation goes through, after how many days private data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
 
 ### FAQ
 The fee is held to save your spot and fully released if not confirmed. One enrollment per child. Nothing is charged later.

@@ -33,6 +33,8 @@ qué incluye (luz, agua, internet, amueblado) y si aceptan mascotas. **Ver una p
   publicado» (con foto): va **directo a To'Latino** con prioridad y **la propiedad deja de verse** mientras lo revisamos.
 - **No llegaron a la visita:** pide Ayuda («No llegaron a la visita») hasta 7 días después.
 
+**Los plazos de esta página** (cuántas horas para responder, cuánto se guarda un cupo, cuándo queda una baja, a los cuántos días se borra lo privado) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## FAQ
 - **¿Me piden seguro social?** La página dice si lo piden. To'Latino nunca te lo pide (ver `privacidad-de-tus-datos-en-visitas`).
 - **¿Puedo rentar con ITIN?** Busca «Con ITIN» o «Sin seguro social»: aceptan ITIN, pasaporte o carta del trabajo.
@@ -47,6 +49,8 @@ qué incluye (luz, agua, internet, amueblado) y si aceptan mascotas. **Ver una p
 Find where to move or what home to buy **with what you will actually pay**: each rental shows «To move in» = first month + deposit +
 anything required, calculated by To'Latino. It says which papers are accepted (no SSN, ITIN), what is included and whether pets are OK.
 **Viewing a property is free**, and so is requesting the visit in the app.
+
+**The time limits on this page** (hours to reply, how long a spot is held, when a cancellation goes through, after how many days private data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
 
 ### FAQ
 To'Latino never asks for your SSN. Search «ITIN» or «No SSN» to rent with ITIN, passport or a work letter. Deposits are at most

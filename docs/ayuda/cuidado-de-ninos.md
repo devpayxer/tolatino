@@ -21,6 +21,8 @@ horario extendido. Toda guardería muestra su licencia del estado; si no la tien
 - **Si algo pasó con tu niño:** «Ayuda con la inscripción» › «No cuidaron bien a mi niño» va directo a To'Latino. Si un niño corre
   peligro, llama al 911; si sospechas maltrato o abuso, ChildLine de Pennsylvania: 1-800-932-0313.
 
+**Los plazos de esta página** (cuántas horas para responder, cuánto se guarda un cupo, cuándo queda una baja, a los cuántos días se borra lo privado) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## FAQ
 - **¿Puedo cancelar?** Sí, en Tu inscripción; la baja queda con fecha y hora.
 - **¿Qué datos de mi niño guardan?** Mira «Los datos de tu niño».
@@ -44,6 +46,8 @@ Every daycare shows its state license; if it has none, the page says so.
 - **Pickup:** only authorized people, with ID; the list is handed over in person.
 - **If something happened to your child:** «Enrollment help» › «They did not care for my child well» goes straight to To'Latino. If a child
   is in danger, call 911; if you suspect abuse, Pennsylvania ChildLine: 1-800-932-0313.
+
+**The time limits on this page** (hours to reply, how long a spot is held, when a cancellation goes through, after how many days private data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
 
 ### FAQ
 - **Can I cancel?** Yes, from Your enrollment; the cancellation is dated.
