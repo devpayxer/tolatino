@@ -13,7 +13,7 @@ const MONO = "'JetBrains Mono',monospace";
 type Fn = () => void;
 // 9c · Enter y Espacio activan lo que es un botón con rol (solo con el foco en el propio elemento, para no robarle la tecla a un campo de dentro).
 const tecla = (fn?: Fn) => fn ? (e: React.KeyboardEvent<HTMLElement>) => { if ((e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) { e.preventDefault(); fn(); } } : undefined;
-const K: CSSProperties = { font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" };
+const K: CSSProperties = { font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)" };
 
 export type Accion = { l: string; v?: string; icon?: string | null; off?: boolean; onClick?: Fn };
 export type Fila = {
@@ -94,7 +94,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
       </div>);
     case "nprev": return (
       <div>
-        {b.k ? <div style={{ ...K, color: "rgba(11,14,18,.5)", marginBottom: 8 }}>{b.k}</div> : null}
+        {b.k ? <div style={{ ...K, color: "rgba(11,14,18,.6)", marginBottom: 8 }}>{b.k}</div> : null}
         <DS.PostCard card screenLabel="Novedades · publicación" avatar={b.logo ? `url(${b.logo}) center/cover` : undefined} avatarColor="var(--tl-photo-bg)" initials={b.logo ? undefined : b.name.slice(0, 1)}
           name={b.name} nameFont="700 14.5px/1.2" tags={b.tags} body={b.body} bodyFont="500 14px/1.55" bodyGap={10}
           vote={{ score: 0 }} voteStyle={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(11,14,18,.07)", gap: 6 }}>
@@ -110,13 +110,13 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
         {b.items.map((m, i) => (
           <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: m.mine ? "flex-end" : "flex-start", gap: 3 }}>
             <span style={{ maxWidth: "82%", padding: "10px 13px", borderRadius: m.mine ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: m.soft ? "rgba(75,55,245,.07)" : m.mine ? "var(--tl-ink)" : "var(--tl-paper)", color: m.soft ? "rgba(11,14,18,.62)" : m.mine ? "var(--tl-white)" : "var(--tl-ink)", font: "600 13px/1.45 Manrope,sans-serif", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{m.t}</span>
-            {m.m ? <span style={{ font: "600 8.5px 'JetBrains Mono',monospace", letterSpacing: ".06em", color: "rgba(11,14,18,.42)" }}>{m.m}</span> : null}
+            {m.m ? <span style={{ font: "600 8.5px 'JetBrains Mono',monospace", letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{m.m}</span> : null}
           </div>
         ))}
       </div>);
     case "timeline": return (
       <div style={{ padding: "14px 15px", borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 2 }}>
-        {b.k ? <span style={{ ...K, color: "rgba(11,14,18,.5)", marginBottom: 8 }}>{b.k}</span> : null}
+        {b.k ? <span style={{ ...K, color: "rgba(11,14,18,.6)", marginBottom: 8 }}>{b.k}</span> : null}
         {b.items.map((x, i) => (
           <div key={i} style={{ display: "grid", gridTemplateColumns: "16px minmax(0,1fr)", gap: 10 }}>
             <span style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -124,8 +124,8 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
               <span style={{ flex: 1, width: 2, background: i === b.items.length - 1 ? "transparent" : "rgba(11,14,18,.12)", margin: "3px 0" }} />
             </span>
             <span style={{ paddingBottom: 12, minWidth: 0 }}>
-              <span style={{ display: "block", font: "700 13px/1.35 Manrope,sans-serif", color: x.future ? "rgba(11,14,18,.45)" : "var(--tl-ink)" }}>{x.t}</span>
-              {x.s ? <span style={{ display: "block", marginTop: 2, font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.45)" }}>{x.s}</span> : null}
+              <span style={{ display: "block", font: "700 13px/1.35 Manrope,sans-serif", color: x.future ? "rgba(11,14,18,.6)" : "var(--tl-ink)" }}>{x.t}</span>
+              {x.s ? <span style={{ display: "block", marginTop: 2, font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{x.s}</span> : null}
             </span>
           </div>
         ))}
@@ -134,7 +134,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12, paddingTop: 2 }}>
         {b.onBack ? <span role="button" aria-label="Atrás" onClick={b.onBack} tabIndex={0} onKeyDown={tecla(b.onBack)} style={{ width: 36, height: 36, borderRadius: 12, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none", marginTop: 2 }}><Icon name="chevronLeft" size={17} strokeWidth={2} /></span> : null}
         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 5 }}>
-          {b.eye ? <span style={{ ...K, color: "rgba(11,14,18,.45)" }}>{b.eye}</span> : null}
+          {b.eye ? <span style={{ ...K, color: "rgba(11,14,18,.6)" }}>{b.eye}</span> : null}
           <h1 style={{ margin: 0, font: `800 ${b.h1 ?? h1}px/1.12 Sora,sans-serif`, letterSpacing: "-.035em" }}>{b.t}</h1>
           {b.s ? <span style={{ font: "500 13.5px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{b.s}</span> : null}
         </div>
@@ -200,12 +200,12 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
             <div key={x.key ?? i} style={{ minWidth: 0, padding: x.compact ? "10px 12px" : "13px 14px", borderRadius: x.compact ? 14 : 17, background: x.bg ?? "var(--tl-white)", border: x.bd ?? "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 11, opacity: x.dim ? 0.55 : 1 }}>
               <div role={x.onClick ? "button" : undefined} onClick={x.onClick} style={{ display: "flex", alignItems: "center", gap: 12, cursor: x.onClick ? "pointer" : "default" }}>
                 {x.sel ? <SelectBox on={x.sel.on} onClick={x.sel.onClick} /> : null}
-                {x.img || x.imgIni ? <span style={{ width: x.imgW ?? "44px", height: x.imgW ?? "44px", borderRadius: 13, backgroundImage: x.img, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", flex: "none", display: "grid", placeItems: "center", font: "800 15px/1 Sora,sans-serif", color: "rgba(11,14,18,.4)" }}>{x.img ? "" : x.imgIni}</span>
+                {x.img || x.imgIni ? <span style={{ width: x.imgW ?? "44px", height: x.imgW ?? "44px", borderRadius: 13, backgroundImage: x.img, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", flex: "none", display: "grid", placeItems: "center", font: "800 15px/1 Sora,sans-serif", color: "rgba(11,14,18,.6)" }}>{x.img ? "" : x.imgIni}</span>
                   : x.icon ? <span style={{ width: 40, height: 40, borderRadius: 12, background: x.ibg ?? "rgba(75,55,245,.08)", display: "grid", placeItems: "center", flex: "none" }}><Icon name={x.icon} size={18} color={x.ifg ?? "var(--tl-action)"} /></span> : null}
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: "block", font: "700 14px/1.3 Manrope,sans-serif", color: x.tFg ?? "var(--tl-ink)" }}>{x.t}</span>
                   {x.s ? <span style={{ display: "block", marginTop: 3, font: "500 12.5px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{x.s}</span> : null}
-                  {x.m ? <span style={{ display: "block", marginTop: 4, font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: x.mFg ?? "rgba(11,14,18,.5)" }}>{x.m}</span> : null}
+                  {x.m ? <span style={{ display: "block", marginTop: 4, font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: x.mFg ?? "rgba(11,14,18,.6)" }}>{x.m}</span> : null}
                 </span>
                 {x.tag ? <Tag tone={x.tone ?? "neutral"}>{x.tag}</Tag> : null}
                 {x.r ? <span style={{ font: "800 15px/1 Sora,sans-serif", flex: "none", textAlign: "right" }}>{x.r}</span> : null}
@@ -233,18 +233,18 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
       </div>);
     case "kv": return (
       <div style={{ padding: "14px 15px", borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "grid", gridTemplateColumns: `repeat(${b.cols ?? 2},minmax(0,1fr))`, gap: "12px 14px" }}>
-        {b.items.map((x, i) => <span key={i} style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}><span style={{ font: `700 8.5px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.5)" }}>{x.k}</span><span style={{ font: "700 13.5px/1.35 Manrope,sans-serif", color: x.fg ?? "var(--tl-ink)" }}>{x.v}</span></span>)}
+        {b.items.map((x, i) => <span key={i} style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}><span style={{ font: `700 8.5px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.6)" }}>{x.k}</span><span style={{ font: "700 13.5px/1.35 Manrope,sans-serif", color: x.fg ?? "var(--tl-ink)" }}>{x.v}</span></span>)}
       </div>);
     case "field": { const bg = b.lock ? "var(--tl-paper)" : "var(--tl-white)"; return (
       <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <span style={{ ...K, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}><span style={{ display: "flex", alignItems: "center", gap: 7 }}>{b.k}{b.lock ? <Chip variant="pro">PRO</Chip> : null}</span>{b.count ? <span style={{ fontWeight: 600 }}>{b.count}</span> : null}</span>
         {b.area ? <textarea aria-label={b.k} value={b.val} onChange={(e) => b.onChange(e.target.value.slice(0, b.max ?? 300))} placeholder={b.ph} rows={b.rows ?? 3} disabled={b.lock} style={{ width: "100%", boxSizing: "border-box", padding: "12px 15px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", outline: "none", resize: "none", background: bg, font: "500 14.5px/1.55 Manrope,sans-serif", color: "var(--tl-ink)" }} />
           : <span style={{ height: 50, padding: "0 15px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", background: bg, display: "flex", alignItems: "center", gap: 8, boxSizing: "border-box" }}>
-              {b.pre ? <span style={{ font: "800 16px Sora,sans-serif", color: "rgba(11,14,18,.45)" }}>{b.pre}</span> : null}
+              {b.pre ? <span style={{ font: "800 16px Sora,sans-serif", color: "rgba(11,14,18,.6)" }}>{b.pre}</span> : null}
               <input aria-label={b.k} value={b.val} onChange={(e) => b.onChange(e.target.value.slice(0, b.max ?? 80))} placeholder={b.ph} disabled={b.lock} inputMode={(b.im ?? "text") as "text"} style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", font: "700 15px Manrope,sans-serif", color: "var(--tl-ink)" }} />
-              {b.suf ? <span style={{ font: `700 11px ${MONO}`, color: "rgba(11,14,18,.45)" }}>{b.suf}</span> : null}
+              {b.suf ? <span style={{ font: `700 11px ${MONO}`, color: "rgba(11,14,18,.6)" }}>{b.suf}</span> : null}
             </span>}
-        {b.help ? <span style={{ font: "500 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{b.help}</span> : null}
+        {b.help ? <span style={{ font: "500 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{b.help}</span> : null}
       </label>); }
     case "step": return (
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 16, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)" }}>
@@ -286,7 +286,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
                 <div key={t} style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 }}>
                   {([[b.openK, aL, aM, aP], [b.closeK, bL, bM, bP]] as const).map(([k, v, m, p]) => (
                     <div key={k} style={{ padding: 9, borderRadius: 13, background: "var(--tl-paper)", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                      <span style={{ font: `700 9px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>{k}</span>
+                      <span style={{ font: `700 9px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{k}</span>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <button type="button" aria-label="−" onClick={m} style={{ width: 30, height: 30, borderRadius: 10, border: 0, padding: 0, background: "var(--tl-white)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="minus" size={14} /></button>
                         <span style={{ minWidth: 66, textAlign: "center", font: "800 14px Sora,sans-serif" }}>{v}</span>
@@ -319,7 +319,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
         </div>
         {b.on && (b.chips.length > 0 || !b.open) ? (
           <div role="button" onClick={b.onClick} tabIndex={0} onKeyDown={tecla(b.onClick)} style={{ display: "flex", flexWrap: "wrap", gap: 6, cursor: "pointer" }}>
-            {b.chips.map((l, i) => <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 28, padding: "0 10px", borderRadius: 9, background: "rgba(11,14,18,.05)", font: "700 11.5px Manrope,sans-serif", color: "var(--tl-ink)" }}><span style={{ display: "grid" }}><Icon name="users" size={13} color="rgba(11,14,18,.55)" /></span>{l.l}</span>)}
+            {b.chips.map((l, i) => <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 28, padding: "0 10px", borderRadius: 9, background: "rgba(11,14,18,.05)", font: "700 11.5px Manrope,sans-serif", color: "var(--tl-ink)" }}><span style={{ display: "grid" }}><Icon name="users" size={13} color="rgba(11,14,18,.6)" /></span>{l.l}</span>)}
             {b.editL ? <span style={{ display: "inline-flex", alignItems: "center", height: 28, padding: "0 4px", font: "700 12px Manrope,sans-serif", color: "var(--tl-action)" }}>{b.editL}</span> : null}
           </div>) : null}
       </div>);
@@ -329,7 +329,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
           <div key={x.key ?? i} style={{ padding: "13px 14px", borderRadius: 17, background: "var(--tl-white)", border: x.pend ? "1.5px solid var(--tl-ink)" : x.open ? "1.5px solid rgba(11,14,18,.5)" : "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 10, opacity: x.dim ? 0.6 : 1 }}>
             <div role="button" aria-expanded={x.open} onClick={x.onClick} tabIndex={0} onKeyDown={tecla(x.onClick)} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
               <span style={{ width: 40, height: 40, flex: "none", borderRadius: 99, background: x.pend ? "rgba(75,55,245,.1)" : "rgba(11,14,18,.06)", color: x.pend ? "var(--tl-action)" : "var(--tl-ink)", display: "grid", placeItems: "center", font: "800 13px Sora,sans-serif", letterSpacing: "-.02em" }}>{x.ini}</span>
-              <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", font: "700 14px/1.3 Manrope,sans-serif", color: "var(--tl-ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.n}</span>{x.m ? <span style={{ display: "block", marginTop: 3, font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.m}</span> : null}</span>
+              <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", font: "700 14px/1.3 Manrope,sans-serif", color: "var(--tl-ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.n}</span>{x.m ? <span style={{ display: "block", marginTop: 3, font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.m}</span> : null}</span>
               <span style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>{x.total ? <span style={{ font: "800 15px/1 Sora,sans-serif", letterSpacing: "-.02em", color: "var(--tl-ink)" }}>{x.total}</span> : null}{x.tag ? <Tag tone={x.tone ?? "neutral"}>{x.tag}</Tag> : null}</span>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -352,15 +352,15 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
           {b.tag ? <span style={{ flex: "none", display: "flex" }}><Tag tone={b.tone ?? "neutral"}>{b.tag}</Tag></span> : null}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}><span style={{ minWidth: 0, font: "700 13px Manrope,sans-serif", color: "var(--tl-ink)" }}>{b.progT}</span><span style={{ flex: "none", font: `700 11px ${MONO}`, color: "rgba(11,14,18,.55)" }}>{b.progR}</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}><span style={{ minWidth: 0, font: "700 13px Manrope,sans-serif", color: "var(--tl-ink)" }}>{b.progT}</span><span style={{ flex: "none", font: `700 11px ${MONO}`, color: "rgba(11,14,18,.6)" }}>{b.progR}</span></div>
           <span style={{ display: "block", height: 6, borderRadius: 99, background: "rgba(11,14,18,.07)", overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: b.pct, borderRadius: 99, background: b.barC }} /></span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", paddingTop: 12, borderTop: "1px solid rgba(11,14,18,.07)" }}>
           {b.stats.map((x, i) => (
             <span key={i} style={{ minWidth: 0, padding: i === 0 ? "0 10px 0 0" : "0 10px", borderLeft: i === 0 ? "none" : "1px solid rgba(11,14,18,.07)" }}>
-              <span style={{ display: "block", font: `700 9px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.k}</span>
+              <span style={{ display: "block", font: `700 9px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.k}</span>
               <span style={{ display: "block", marginTop: 6, font: "800 17px/1 Sora,sans-serif", letterSpacing: "-.03em", color: x.fg ?? "var(--tl-ink)", whiteSpace: "nowrap" }}>{x.v}</span>
-              {x.s ? <span style={{ display: "block", marginTop: 5, font: "500 11px Manrope,sans-serif", color: "rgba(11,14,18,.55)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.s}</span> : null}
+              {x.s ? <span style={{ display: "block", marginTop: 5, font: "500 11px Manrope,sans-serif", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.s}</span> : null}
             </span>))}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: `repeat(${b.tools.length},minmax(0,1fr))`, gap: 4, margin: "-4px -4px -6px" }}>
@@ -383,7 +383,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
             </span>
             <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 5 }}>
               <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                <span style={{ minWidth: 0, font: `700 9px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.m}</span>
+                <span style={{ minWidth: 0, font: `700 9px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.m}</span>
                 {x.tag ? <span style={{ flex: "none", display: "flex" }}><Tag tone={x.tone ?? "neutral"}>{x.tag}</Tag></span> : null}
               </span>
               <span style={{ font: "800 15px/1.22 Sora,sans-serif", letterSpacing: "-.02em", color: "var(--tl-ink)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{x.t}</span>
@@ -408,7 +408,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
           </span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,minmax(0,1fr))", gap: 3 }}>
-          {b.wd.map((w, i) => <span key={`w${i}`} style={{ textAlign: "center", padding: "2px 0 4px", font: `700 9.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.42)" }}>{w}</span>)}
+          {b.wd.map((w, i) => <span key={`w${i}`} style={{ textAlign: "center", padding: "2px 0 4px", font: `700 9.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.6)" }}>{w}</span>)}
           {b.days.map((x, i) => (
             <button type="button" key={i} aria-label={x.label} aria-pressed={!!x.bg && x.bg !== "transparent"} disabled={x.off || !x.onClick} onClick={x.onClick}
               style={{ font: "inherit", padding: 0, border: 0, height: 44, borderRadius: 12, background: x.bg ?? "transparent", color: x.fg ?? (x.off ? "rgba(11,14,18,.22)" : "var(--tl-ink)"), boxShadow: x.ring ?? "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, cursor: x.onClick && !x.off ? "pointer" : "default" }}>
@@ -425,11 +425,11 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {b.onBack ? <button type="button" aria-label="Atrás" onClick={b.onBack} style={{ padding: 0, color: "inherit", width: 36, height: 36, flex: "none", borderRadius: 12, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.1)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="chevronLeft" size={16} /></button> : null}
-          <span style={{ flex: 1, minWidth: 0, font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.eye}</span>
+          <span style={{ flex: 1, minWidth: 0, font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.eye}</span>
           {b.tag ? <span style={{ flex: "none", display: "flex" }}><Tag tone={b.tone ?? "neutral"}>{b.tag}</Tag></span> : null}
         </div>
         {b.dates && b.dates.length ? <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-          <span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>{b.datesK}</span>
+          <span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{b.datesK}</span>
           <div className="d2hs" role="group" aria-label={b.datesK} style={{ display: "flex", gap: 6, overflowX: "auto", margin: "0 -2px", padding: 2 }}>
             {b.dates.map((x, i) => (
               <button type="button" key={x.key ?? i} aria-pressed={x.on} onClick={x.onClick} style={{ flex: "none", height: 34, padding: "0 12px", borderRadius: 10, background: x.on ? "var(--tl-ink)" : "var(--tl-white)", color: x.on ? "var(--tl-white)" : "var(--tl-ink)",
@@ -441,20 +441,20 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
             <span style={{ width: 72, height: 96, flex: "none", borderRadius: 12, backgroundImage: b.img, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)" }} />
             <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 7 }}>
               <span style={{ font: "800 19px/1.18 Sora,sans-serif", letterSpacing: "-.03em", color: "var(--tl-ink)", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", textWrap: "pretty" } as CSSProperties}>{b.t}</span>
-              <span style={{ display: "flex", alignItems: "flex-start", gap: 6, font: "600 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.65)" }}><span style={{ display: "grid", flex: "none", paddingTop: 1 }}><Icon name="calendar" size={14} color="rgba(11,14,18,.5)" /></span><span style={{ minWidth: 0 }}>{b.when}</span></span>
-              <span style={{ display: "flex", alignItems: "flex-start", gap: 6, font: "600 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.65)" }}><span style={{ display: "grid", flex: "none", paddingTop: 1 }}><Icon name="pin" size={14} color="rgba(11,14,18,.5)" /></span><span style={{ minWidth: 0 }}>{b.where}</span></span>
+              <span style={{ display: "flex", alignItems: "flex-start", gap: 6, font: "600 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.65)" }}><span style={{ display: "grid", flex: "none", paddingTop: 1 }}><Icon name="calendar" size={14} color="rgba(11,14,18,.6)" /></span><span style={{ minWidth: 0 }}>{b.when}</span></span>
+              <span style={{ display: "flex", alignItems: "flex-start", gap: 6, font: "600 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.65)" }}><span style={{ display: "grid", flex: "none", paddingTop: 1 }}><Icon name="pin" size={14} color="rgba(11,14,18,.6)" /></span><span style={{ minWidth: 0 }}>{b.where}</span></span>
             </span>
           </div>
           {b.progT ? <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}><span style={{ minWidth: 0, font: "700 13px Manrope,sans-serif", color: "var(--tl-ink)" }}>{b.progT}</span><span style={{ flex: "none", font: `700 11px ${MONO}`, color: "rgba(11,14,18,.55)" }}>{b.progR}</span></div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}><span style={{ minWidth: 0, font: "700 13px Manrope,sans-serif", color: "var(--tl-ink)" }}>{b.progT}</span><span style={{ flex: "none", font: `700 11px ${MONO}`, color: "rgba(11,14,18,.6)" }}>{b.progR}</span></div>
             {b.pct ? <span style={{ display: "block", height: 6, borderRadius: 99, background: "rgba(11,14,18,.07)", overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: b.pct, borderRadius: 99, background: b.barC }} /></span> : null}
           </div> : null}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", paddingTop: 12, borderTop: "1px solid rgba(11,14,18,.07)" }}>
             {b.stats.map((x, i) => (
               <span key={i} style={{ minWidth: 0, padding: i === 0 ? "0 12px 0 0" : "0 0 0 12px", borderLeft: i === 0 ? "none" : "1px solid rgba(11,14,18,.07)" }}>
-                <span style={{ display: "block", font: `700 9px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.k}</span>
+                <span style={{ display: "block", font: `700 9px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.k}</span>
                 <span style={{ display: "block", marginTop: 6, font: "800 17px/1 Sora,sans-serif", letterSpacing: "-.03em", color: "var(--tl-ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.v}</span>
-                {x.s ? <span style={{ display: "block", marginTop: 5, font: "500 11px Manrope,sans-serif", color: "rgba(11,14,18,.55)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.s}</span> : null}
+                {x.s ? <span style={{ display: "block", marginTop: 5, font: "500 11px Manrope,sans-serif", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.s}</span> : null}
               </span>))}
           </div>
           {b.mainL ? <div style={{ display: "flex" }}><Button variant="primary" size="md" block icon={b.mainIcon ?? "check"} onClick={b.onMain}>{b.mainL}</Button></div> : null}
@@ -474,14 +474,14 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
           {b.bars.map((x, i) => (
             <span key={i} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, height: "100%", justifyContent: "flex-end" }}>
               <span style={{ width: "100%", height: x.h, borderRadius: "5px 5px 2px 2px", background: x.on ? "var(--tl-action)" : "rgba(75,55,245,.35)" }} />
-              {x.l ? <span style={{ font: `700 8.5px ${MONO}`, color: "rgba(11,14,18,.45)" }}>{x.l}</span> : null}
+              {x.l ? <span style={{ font: `700 8.5px ${MONO}`, color: "rgba(11,14,18,.6)" }}>{x.l}</span> : null}
             </span>))}
         </div>
         {b.s ? <span style={{ font: "600 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{b.s}</span> : null}
       </div>);
     case "utabs": return (
       <div className="d2hs" style={{ display: "flex", flexWrap: b.wrap ? "wrap" : "nowrap", columnGap: b.wrap ? 20 : 22, overflowX: "auto", borderBottom: "1px solid rgba(11,14,18,.08)" }}>
-        {b.items.map((x, i) => { const fg = x.on ? "var(--tl-ink)" : "rgba(11,14,18,.5)", nbg = x.warn ? "var(--tl-danger)" : x.on ? "var(--tl-ink)" : "rgba(11,14,18,.08)"; return (
+        {b.items.map((x, i) => { const fg = x.on ? "var(--tl-ink)" : "rgba(11,14,18,.6)", nbg = x.warn ? "var(--tl-danger)" : x.on ? "var(--tl-ink)" : "rgba(11,14,18,.08)"; return (
           <span key={i} role="tab" aria-selected={x.on} onClick={x.onClick} style={{ flex: "none", display: "flex", alignItems: "center", gap: 7, height: 42, marginBottom: -1, borderBottom: `2.5px solid ${x.on ? "var(--tl-ink)" : "transparent"}`, color: fg, font: `800 12px ${MONO}`, letterSpacing: ".06em", textTransform: "uppercase", cursor: "pointer", whiteSpace: "nowrap", boxSizing: "border-box" }}>
             <Icon name={x.icon} size={15} color={fg} />{x.l}
             {x.n && x.n !== "0" ? <span style={{ minWidth: 18, height: 18, padding: "0 5px", borderRadius: 999, background: nbg, color: x.warn || x.on ? "var(--tl-white)" : "rgba(11,14,18,.6)", display: "grid", placeItems: "center", font: `800 10px ${MONO}`, letterSpacing: 0, boxSizing: "border-box" }}>{x.n}</span> : null}
@@ -490,7 +490,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
     case "search": return (
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ flex: 1, minWidth: 0, height: 46, padding: "0 14px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", background: "var(--tl-white)", display: "flex", alignItems: "center", gap: 9, boxSizing: "border-box" }}>
-          <Icon name="search" size={17} color="rgba(11,14,18,.45)" />
+          <Icon name="search" size={17} color="rgba(11,14,18,.6)" />
           <input value={b.val} onChange={(e) => b.onChange(e.target.value)} placeholder={b.ph} aria-label={b.ph} style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", font: "600 14.5px Manrope,sans-serif", color: "var(--tl-ink)" }} />
           {b.val ? <span role="button" aria-label="Borrar" onClick={b.onClear} tabIndex={0} onKeyDown={tecla(b.onClear)} style={{ width: 24, height: 24, borderRadius: 8, background: "rgba(11,14,18,.06)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="close" size={12} strokeWidth={2.2} /></span> : null}
         </span>

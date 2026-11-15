@@ -102,7 +102,7 @@ export function Marco({ es, code, t, s, back, act, blocks, rcards = [], bar, yo,
       {M && !home && (
         <div data-screen-label="Mi cuenta · encabezado" style={{ position: "sticky", top: 57, zIndex: 20, padding: "12px 16px", background: "var(--tl-white)", borderBottom: LINE, display: "flex", alignItems: "center", gap: 12 }}>
           <span role="button" aria-label={E2("Volver", "Back")} onClick={() => ir(back ?? "/cuenta")} {...tec(() => ir(back ?? "/cuenta"))} style={{ width: 34, height: 34, borderRadius: 11, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="chevronLeft" size={16} strokeWidth={2} /></span>
-          <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "800 15px/1.2 Sora,sans-serif", letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t}</div><div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s}</div></div>
+          <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "800 15px/1.2 Sora,sans-serif", letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t}</div><div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s}</div></div>
         </div>
       )}
       <div style={{ display: "grid", gridTemplateColumns: lay.cols, alignItems: "start", padding: lay.pad }}>
@@ -113,13 +113,13 @@ export function Marco({ es, code, t, s, back, act, blocks, rcards = [], bar, yo,
                 <span style={{ width: 40, height: 40, borderRadius: 99, boxSizing: "border-box", border: "2px solid var(--tl-signal)", background: "rgba(255,255,255,.12)", display: "grid", placeItems: "center", font: "800 13px Sora,sans-serif", color: "var(--tl-white)", flex: "none" }}>{yo.ini}</span>
                 <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px/1.2 Manrope,sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{yo.nombre}</div><div style={{ marginTop: 4, font: `700 8.5px ${MONO}`, letterSpacing: ".12em", color: "var(--tl-signal)" }}>{yo.badge}</div></div>
               </div>
-              {items.map((n, i) => n.isH ? <div key={i} style={{ marginTop: 14, padding: "0 10px 6px", font: `700 9px ${MONO}`, letterSpacing: ".18em", color: "rgba(11,14,18,.42)" }}>{n.l}</div> : (() => {
+              {items.map((n, i) => n.isH ? <div key={i} style={{ marginTop: 14, padding: "0 10px 6px", font: `700 9px ${MONO}`, letterSpacing: ".18em", color: "rgba(11,14,18,.6)" }}>{n.l}</div> : (() => {
                 const on = activo === n.code; return (
                   <div key={i} role="link" aria-current={on ? "page" : undefined} onClick={() => ir(n.href!)} {...tec(() => ir(n.href!))} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 11, cursor: "pointer", background: on ? "rgba(75,55,245,.1)" : "transparent", color: on ? "var(--tl-action)" : "var(--tl-ink)" }}>
                     <span style={{ display: "grid" }}><Icon name={n.ic!} size={17} color={on ? "var(--tl-action)" : "var(--tl-ink)"} /></span><span style={{ flex: 1, minWidth: 0, font: `${on ? 800 : 600} 13px Manrope,sans-serif` }}>{n.l}</span>
                   </div>); })())}
               <div role="button" onClick={() => ui.setHoja({ title: E2("¿Cerrar sesión?", "Sign out?"), sub: E2("Para volver a entrar te pedimos tu teléfono.", "To sign back in we ask for your phone."), yes: E2("Cerrar sesión", "Sign out"), onYes: salir })} {...tec(() => ui.setHoja({ title: E2("¿Cerrar sesión?", "Sign out?"), sub: E2("Para volver a entrar te pedimos tu teléfono.", "To sign back in we ask for your phone."), yes: E2("Cerrar sesión", "Sign out"), onYes: salir }))}
-                style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 11, cursor: "pointer", color: "rgba(11,14,18,.6)" }}><Icon name="close" size={16} color="rgba(11,14,18,.5)" /><span style={{ font: "600 13px Manrope,sans-serif" }}>{E2("Cerrar sesión", "Sign out")}</span></div>
+                style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 11, cursor: "pointer", color: "rgba(11,14,18,.6)" }}><Icon name="close" size={16} color="rgba(11,14,18,.6)" /><span style={{ font: "600 13px Manrope,sans-serif" }}>{E2("Cerrar sesión", "Sign out")}</span></div>
             </div>
           </div>
         )}
@@ -129,7 +129,7 @@ export function Marco({ es, code, t, s, back, act, blocks, rcards = [], bar, yo,
             <div data-screen-label="Mi cuenta · título" style={{ marginBottom: 20 }}>
               {back && <div role="link" onClick={() => ir(back)} {...tec(() => ir(back))} style={{ marginBottom: 12, display: "inline-flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="chevronLeft" size={15} strokeWidth={2} color="var(--tl-action)" />{E2("Volver", "Back")}</div>}
               <div style={{ display: "flex", alignItems: "flex-end", gap: 16, flexWrap: "wrap" }}>
-                <div style={{ flex: 1, minWidth: 0 }}><h1 style={{ margin: 0, font: "800 30px/1.1 Sora,sans-serif", letterSpacing: "-.04em", textWrap: "pretty" }}>{t}</h1><div style={{ marginTop: 8, font: `600 10.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{s}</div></div>
+                <div style={{ flex: 1, minWidth: 0 }}><h1 style={{ margin: 0, font: "800 30px/1.1 Sora,sans-serif", letterSpacing: "-.04em", textWrap: "pretty" }}>{t}</h1><div style={{ marginTop: 8, font: `600 10.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{s}</div></div>
                 {act && <div style={{ display: "flex" }}><Button variant="secondary" size="md" icon={act.ic} onClick={act.on}>{act.l}</Button></div>}
               </div>
             </div>
@@ -141,12 +141,12 @@ export function Marco({ es, code, t, s, back, act, blocks, rcards = [], bar, yo,
             <div style={{ position: "sticky", top: 140, display: "flex", flexDirection: "column", gap: 14 }}>
               {rc.map((k, i) => (
                 <div key={i} data-screen-label={k.label ?? "Mi cuenta · tarjeta"} style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: 16 }}>
-                  {k.k && <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".18em", color: "rgba(11,14,18,.42)" }}>{k.k}</div>}
+                  {k.k && <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".18em", color: "rgba(11,14,18,.6)" }}>{k.k}</div>}
                   {k.t && <div style={{ marginTop: k.k ? 8 : 0, font: "800 16px/1.2 Sora,sans-serif", letterSpacing: "-.02em", textWrap: "pretty" }}>{k.t}</div>}
                   {k.s && <div style={{ marginTop: 6, font: "500 12.5px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.6)", textWrap: "pretty" }}>{k.s}</div>}
                   {(k.rows ?? []).map((x, j) => (
                     <div key={j} onClick={x.on} role="button" {...tec(x.on)} style={{ display: "flex", gap: 10, alignItems: "center", padding: "10px 0", borderTop: j || k.k || k.t ? LINE : "none", cursor: x.on ? "pointer" : "default" }}>
-                      <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13px/1.35 Manrope,sans-serif", textWrap: "pretty" }}>{x.t}</div>{x.s && <div style={{ marginTop: 3, font: `600 9px/1.4 ${MONO}`, letterSpacing: ".05em", color: "rgba(11,14,18,.5)" }}>{x.s}</div>}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13px/1.35 Manrope,sans-serif", textWrap: "pretty" }}>{x.t}</div>{x.s && <div style={{ marginTop: 3, font: `600 9px/1.4 ${MONO}`, letterSpacing: ".05em", color: "rgba(11,14,18,.6)" }}>{x.s}</div>}</div>
                       {x.v != null && <span style={{ flex: "none", font: "800 13px Sora,sans-serif" }}>{x.v}</span>}
                     </div>))}
                   {k.cta && <div style={{ marginTop: 12, display: "flex" }}><Button variant="secondary" size="md" block icon="right" onClick={k.onCta}>{k.cta}</Button></div>}
@@ -195,7 +195,7 @@ function Pieza({ b, M }: { b: Bloque; M: boolean }): ReactNode {
   switch (b.type) {
     case "sec": return (
       <div style={{ display: "flex", alignItems: "flex-end", gap: 12, marginTop: b.mt ?? "8px" }}>
-        <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: `800 ${b.fs ?? "17px"}/1.2 Sora,sans-serif`, letterSpacing: "-.02em" }}>{b.t}</div>{b.s && <div style={{ marginTop: 5, font: `600 9.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{b.s}</div>}</div>
+        <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: `800 ${b.fs ?? "17px"}/1.2 Sora,sans-serif`, letterSpacing: "-.02em" }}>{b.t}</div>{b.s && <div style={{ marginTop: 5, font: `600 9.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{b.s}</div>}</div>
         {b.a && <span role="button" onClick={b.onA} {...tec(b.onA)} style={{ font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer", flex: "none" }}>{b.a}</span>}
       </div>);
     case "note": { const [bg, fg] = TONE[b.tone ?? "info"]; return (
@@ -213,11 +213,11 @@ function Pieza({ b, M }: { b: Bloque; M: boolean }): ReactNode {
             {r.ic && <span style={{ width: 40, height: 40, borderRadius: 12, background: r.ibg ?? "rgba(75,55,245,.1)", display: "grid", placeItems: "center", flex: "none" }}><Icon name={r.ic} size={18} color={r.ifg ?? "var(--tl-action)"} /></span>}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", rowGap: 4 }}><span style={{ font: "700 14px/1.3 Manrope,sans-serif", textWrap: "pretty" }}>{r.t}</span>{r.tag && <Tag tone={r.tag[1]}>{r.tag[0]}</Tag>}</div>
-              {r.s && <div style={{ marginTop: 4, font: `600 9.5px/1.45 ${MONO}`, letterSpacing: ".05em", color: "rgba(11,14,18,.5)" }}>{r.s}</div>}
+              {r.s && <div style={{ marginTop: 4, font: `600 9.5px/1.45 ${MONO}`, letterSpacing: ".05em", color: "rgba(11,14,18,.6)" }}>{r.s}</div>}
               {r.x && <div style={{ marginTop: 5, font: "500 12.5px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.64)", textWrap: "pretty" }}>{r.x}</div>}
               {r.acts?.length ? <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>{r.acts.map(([l, v, on], j) => <span key={j} onClick={(e) => { e.stopPropagation(); on(); }}><Button variant={v} size="sm">{l}</Button></span>)}</div> : null}
             </div>
-            {r.v != null && <div style={{ textAlign: "right", flex: "none" }}><div style={{ font: "800 14px Sora,sans-serif" }}>{r.v}</div>{r.vs && <div style={{ marginTop: 4, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.45)" }}>{r.vs}</div>}</div>}
+            {r.v != null && <div style={{ textAlign: "right", flex: "none" }}><div style={{ font: "800 14px Sora,sans-serif" }}>{r.v}</div>{r.vs && <div style={{ marginTop: 4, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{r.vs}</div>}</div>}
             {r.tog != null && <span role="switch" aria-checked={r.tog} aria-label={r.t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); r.onTog?.(); } }} onClick={(e) => { e.stopPropagation(); r.onTog?.(); }} style={{ width: 44, height: 26, borderRadius: 99, background: r.tog ? "var(--tl-action)" : "rgba(11,14,18,.18)", position: "relative", flex: "none", cursor: "pointer", transition: "background .2s" }}><span style={{ position: "absolute", top: 3, left: r.tog ? 21 : 3, width: 20, height: 20, borderRadius: 99, background: "var(--tl-white)", transition: "left .2s" }} /></span>}
             {r.chev && <span style={{ display: "grid", flex: "none" }}><Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" /></span>}
           </div>))}
@@ -238,7 +238,7 @@ function Pieza({ b, M }: { b: Bloque; M: boolean }): ReactNode {
       <div data-screen-label="Mi cuenta · tu apoyo al barrio" style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: 16 }}>
         <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".16em", color: "var(--tl-open-text)" }}>{b.k}</div>
         <div style={{ marginTop: 7, font: "800 17px/1.3 Sora,sans-serif", letterSpacing: "-.02em", textWrap: "pretty" }}>{b.t}</div>
-        <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 8 }}>{b.cells.map((x, i) => <div key={i} style={{ padding: 10, borderRadius: 13, background: "var(--tl-paper)", minWidth: 0 }}><div style={{ font: "800 18px/1 Sora,sans-serif", letterSpacing: "-.02em" }}>{x.v}</div><div style={{ marginTop: 6, font: `700 8.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.5)" }}>{x.l}</div></div>)}</div>
+        <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 8 }}>{b.cells.map((x, i) => <div key={i} style={{ padding: 10, borderRadius: 13, background: "var(--tl-paper)", minWidth: 0 }}><div style={{ font: "800 18px/1 Sora,sans-serif", letterSpacing: "-.02em" }}>{x.v}</div><div style={{ marginTop: 6, font: `700 8.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.6)" }}>{x.l}</div></div>)}</div>
       </div>);
     case "chat": return (
       <div data-screen-label="Mi cuenta · chat con el negocio" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -249,7 +249,7 @@ function Pieza({ b, M }: { b: Bloque; M: boolean }): ReactNode {
         {b.msgs.map((m, i) => (
           <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: m.yo ? "flex-end" : "flex-start", gap: 3 }}>
             <div style={{ maxWidth: "78%", padding: "10px 13px", borderRadius: m.yo ? "18px 18px 6px 18px" : "18px 18px 18px 6px", background: m.suave || m.ia ? "rgba(75,55,245,.07)" : m.yo ? "var(--tl-ink)" : "var(--tl-white)", color: m.suave && !m.ia ? "rgba(11,14,18,.6)" : m.yo ? "var(--tl-white)" : "var(--tl-ink)", border: m.yo && !m.suave ? "none" : "1px solid rgba(11,14,18,.08)", font: "500 14px/1.45 Manrope,sans-serif", textWrap: "pretty", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{m.t}</div>
-            <span style={{ font: `600 8.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.42)" }}>{m.time}</span>
+            <span style={{ font: `600 8.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{m.time}</span>
           </div>))}
         {b.nota ? <div style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(75,55,245,.07)", color: "var(--tl-action-ink)", font: "600 13px/1.45 Manrope,sans-serif", textAlign: "center" }}>{b.nota}</div> : null}
         {!b.off && (
@@ -267,7 +267,7 @@ function Pieza({ b, M }: { b: Bloque; M: boolean }): ReactNode {
     case "more": return <div style={{ display: "flex", justifyContent: "center" }}><Button variant="secondary" size="md" onClick={b.on}>{b.l}</Button></div>;
     case "kv": return (
       <div style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: "4px 16px" }}>
-        {b.rows.map((x, i) => <div key={i} style={{ display: "flex", gap: 12, padding: "12px 0", borderTop: i ? LINE : "none", alignItems: "flex-start" }}><span style={{ width: b.kw ?? "96px", flex: "none", font: `700 9.5px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.45)", paddingTop: 3 }}>{x.k}</span><div style={{ flex: 1, minWidth: 0, font: "600 13.5px/1.45 Manrope,sans-serif", textWrap: "pretty" }}>{x.v}</div>{x.l && <span role="button" onClick={x.on} {...tec(x.on)} style={{ font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer", flex: "none" }}>{x.l}</span>}</div>)}
+        {b.rows.map((x, i) => <div key={i} style={{ display: "flex", gap: 12, padding: "12px 0", borderTop: i ? LINE : "none", alignItems: "flex-start" }}><span style={{ width: b.kw ?? "96px", flex: "none", font: `700 9.5px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.6)", paddingTop: 3 }}>{x.k}</span><div style={{ flex: 1, minWidth: 0, font: "600 13.5px/1.45 Manrope,sans-serif", textWrap: "pretty" }}>{x.v}</div>{x.l && <span role="button" onClick={x.on} {...tec(x.on)} style={{ font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer", flex: "none" }}>{x.l}</span>}</div>)}
       </div>);
     case "empty": return (
       <div data-screen-label="Mi cuenta · vacío" style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: "26px 18px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
@@ -293,11 +293,11 @@ function Pieza({ b, M }: { b: Bloque; M: boolean }): ReactNode {
           const base: CSSProperties = { marginTop: 8, width: "100%", boxSizing: "border-box", borderRadius: 13, border: `1.5px solid ${bd}`, outline: "none", color: "var(--tl-ink)", background: "var(--tl-white)" };
           return (
             <label key={i} style={{ display: "block" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}><span style={{ font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.42)" }}>{f.k}</span>{f.opt && <span style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.4)" }}>{f.opt}</span>}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}><span style={{ font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.6)" }}>{f.k}</span>{f.opt && <span style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{f.opt}</span>}</div>
               {f.chips ? <div style={{ marginTop: 9, display: "flex", gap: 6, flexWrap: "wrap" }}>{f.chips.map((c, j) => <Chip key={j} variant={c.on ? "selected" : "filter"} onClick={c.onClick}>{c.l}</Chip>)}</div>
                 : f.ta ? <textarea value={f.v} onChange={(e) => f.onV(e.target.value.slice(0, f.max ?? 60))} placeholder={f.ph} rows={3} aria-invalid={!!f.err} style={{ ...base, minHeight: 86, padding: "12px 14px", resize: "vertical", font: "500 15px/1.5 Manrope,sans-serif" }} />
                 : <input type={f.type ?? "text"} inputMode={f.im} value={f.v} onChange={(e) => f.onV(e.target.value.slice(0, f.max ?? 60))} placeholder={f.ph} aria-invalid={!!f.err} style={{ ...base, height: 50, padding: "0 14px", font: "600 16px Manrope,sans-serif" }} />}
-              {(f.err || f.h) && <div role={f.err ? "alert" : undefined} style={{ marginTop: 6, font: "500 12px/1.45 Manrope,sans-serif", color: f.err ? "var(--tl-danger)" : "rgba(11,14,18,.5)", textWrap: "pretty" }}>{f.err || f.h}</div>}
+              {(f.err || f.h) && <div role={f.err ? "alert" : undefined} style={{ marginTop: 6, font: "500 12px/1.45 Manrope,sans-serif", color: f.err ? "var(--tl-danger)" : "rgba(11,14,18,.6)", textWrap: "pretty" }}>{f.err || f.h}</div>}
             </label>);
         })}
       </div>);

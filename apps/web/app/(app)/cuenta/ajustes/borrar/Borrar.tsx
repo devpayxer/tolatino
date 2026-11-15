@@ -29,7 +29,7 @@ export function Borrar({ d, tel, es, yo, pruebas }: { d: { d: string | null; adm
     if (r?.ok) { router.push("/cuenta"); router.refresh(); return; }
     setErr(r && !r.ok ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Revisa tu conexión.", "Could not do it. Check your connection.")); setCode("");
   };
-  const paso = (n: number, l: string) => ({ ic: step > n ? "check" : String(n) === "1" ? "help" : n === 2 ? "info" : "lock", ibg: step > n ? "rgba(0,229,196,.16)" : step === n ? undefined : "rgba(11,14,18,.05)", ifg: step > n ? "var(--tl-open-text)" : step === n ? undefined : "rgba(11,14,18,.4)", t: l, s: `${E2("PASO", "STEP")} ${n} ${E2("DE", "OF")} 3` });
+  const paso = (n: number, l: string) => ({ ic: step > n ? "check" : String(n) === "1" ? "help" : n === 2 ? "info" : "lock", ibg: step > n ? "rgba(0,229,196,.16)" : step === n ? undefined : "rgba(11,14,18,.05)", ifg: step > n ? "var(--tl-open-text)" : step === n ? undefined : "rgba(11,14,18,.6)", t: l, s: `${E2("PASO", "STEP")} ${n} ${E2("DE", "OF")} 3` });
   const B: Bloque[] = [{ type: "rows", rows: [paso(1, E2("Por qué te vas", "Why you are leaving")), paso(2, E2("Qué pasa con tu cuenta", "What happens to your account")), paso(3, E2("Confirma con un código", "Confirm with a code"))] }];
   if (step === 1) {
     B.push({ type: "form", fields: [{ k: E2("¿POR QUÉ TE VAS?", "WHY ARE YOU LEAVING?"), v: why, onV: () => undefined, opt: E2("OPCIONAL", "OPTIONAL"),

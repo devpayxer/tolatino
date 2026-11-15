@@ -26,7 +26,7 @@ export function Inventario({ lang, ciudad, t, casa, carro, r }: {
     router.replace(`${ruta}?${q}`, { scroll: false });
   };
   const chip = (l: string, on: boolean, f: () => void, k: string) => <span key={k} style={{ flex: "none", display: "flex" }}><Chip variant={on ? "selected" : "filter"} onClick={f}>{l}</Chip></span>;
-  const K: CSSProperties = { font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" };
+  const K: CSSProperties = { font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)" };
   const meta = (x: FilaInv) => (t === "casa"
     ? [x.d.rec != null ? `${x.d.rec} ${E2("REC", "BD")}` : "", x.d.banos ? `${x.d.banos} ${E2("BAÑOS", "BA")}` : "", x.d.ft2 ? `${x.d.ft2.toLocaleString("en-US")} FT²` : "", x.zona ?? ""]
     : [x.d.anio ? String(x.d.anio) : "", x.d.millas != null ? `${x.d.millas.toLocaleString("en-US")} MI` : "", E2("EN LA PUERTA", "OUT THE DOOR")]).filter(Boolean).join(" · ");
@@ -34,7 +34,7 @@ export function Inventario({ lang, ciudad, t, casa, carro, r }: {
     <div key={x.id} data-inventario={x.id} style={{ display: "grid" }}>
       <BusinessRow name={x.titulo} meta={`${meta(x)}`.toUpperCase()} slot={`${usd(x.precio)}${t === "casa" && casa?.modo === "renta" ? E2("/mes", "/mo") : ""}`} image={x.foto ?? undefined}
         onClick={() => router.push(`/n/${x.biz}?tab=svc&item=${x.id}`)} />
-      <span style={{ margin: "4px 0 0 4px", font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.45)" }}>{x.negocio.toUpperCase()}</span>
+      <span style={{ margin: "4px 0 0 4px", font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{x.negocio.toUpperCase()}</span>
     </div>
   );
   return (
@@ -71,7 +71,7 @@ export function Inventario({ lang, ciudad, t, casa, carro, r }: {
       ) : null}
       <form onSubmit={(e) => { e.preventDefault(); ir({ max: max.replace(/\D/g, "") || null }); }} className="flex items-center gap-2">
         <span className="flex h-[46px] min-w-0 flex-1 items-center gap-2 rounded-[13px] border-[1.5px] border-ink/[.14] bg-white px-3.5">
-          <Icon name="dollar" size={16} color="rgba(11,14,18,.45)" />
+          <Icon name="dollar" size={16} color="rgba(11,14,18,.6)" />
           <input value={max} onChange={(e) => setMax(e.target.value.replace(/\D/g, "").slice(0, 8))} inputMode="numeric" placeholder={t === "casa" && casa?.modo === "renta" ? E2("Precio máximo al mes", "Max price per month") : E2("Precio máximo", "Max price")}
             aria-label={E2("Precio máximo", "Max price")} className="min-w-0 flex-1 border-0 bg-transparent text-[15px] font-semibold outline-none" />
         </span>

@@ -41,7 +41,7 @@ export function ArticuloAyuda({ es, ver, a, tema, mismos, vis, conSesion }: { es
       {mismos.map((x) => (
         <div key={x.slug} role="link" tabIndex={0} onClick={() => router.push(`/ayuda/${x.slug}`)} onKeyDown={(e) => { if (e.key === "Enter") router.push(`/ayuda/${x.slug}`); }}
           className="flex cursor-pointer items-center justify-between gap-2.5 border-t border-ink/[.06] py-3 text-[13.5px] font-bold text-ink">
-          <span>{L(x.title)}</span><Icon name="chevronRight" size={15} strokeWidth={2} color="rgba(11,14,18,.4)" />
+          <span>{L(x.title)}</span><Icon name="chevronRight" size={15} strokeWidth={2} color="rgba(11,14,18,.6)" />
         </div>))}
     </div>) : null;
 
@@ -54,10 +54,10 @@ export function ArticuloAyuda({ es, ver, a, tema, mismos, vis, conSesion }: { es
             <Icon name="chevronLeft" size={15} strokeWidth={2} />{E2("Centro de ayuda", "Help center")}
           </div>
           <div data-screen-label="Ayuda · artículo · título" className="flex flex-col gap-2.5">
-            <span className="text-ink/45" style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em" }}>{(tema ? L(tema.label) : E2("AYUDA", "HELP")).toUpperCase()}</span>
+            <span className="text-ink/60" style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em" }}>{(tema ? L(tema.label) : E2("AYUDA", "HELP")).toUpperCase()}</span>
             <h1 className="m-0 font-display text-[28px] font-extrabold leading-[1.08] tracking-[-0.04em] [text-wrap:balance] lg:text-[40px]">{enIngles ? a.title.en : a.title.es}</h1>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <span className="text-ink/45" style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".12em" }}>{`${V("ACTUALIZADO EL ", "UPDATED ")}${fecha.toUpperCase()}`}</span>
+              <span className="text-ink/60" style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".12em" }}>{`${V("ACTUALIZADO EL ", "UPDATED ")}${fecha.toUpperCase()}`}</span>
               {a.audience === "equipo" ? tag(E2("SOLO EQUIPO", "TEAM ONLY")) : a.audience === "negocio" ? tag(E2("PARA TU NEGOCIO", "FOR YOUR BUSINESS")) : a.audience === "portero" ? tag(E2("PARA LA PUERTA", "FOR THE DOOR")) : null}
               {a.status === "live" || a.paused_reason ? (
                 <button type="button" data-idioma={enIngles ? "es" : "en"} onClick={() => router.replace(`/ayuda/${a.slug}?l=${enIngles ? "es" : "en"}`, { scroll: false })}

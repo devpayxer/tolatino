@@ -65,7 +65,7 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
         <div className="font-display text-[15px] font-bold leading-[1.25] tracking-[-0.02em]">{es ? p.item.name.es : p.item.name.en || p.item.name.es}</div>
         <div className="mt-[5px] flex flex-wrap items-baseline gap-[7px]">
           <span className="font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{money(p.kind === "oferta" && p.now ? p.now : p.item.cents)}</span>
-          {p.kind === "oferta" && p.was && <span className="text-[12.5px] font-medium text-ink/50 line-through">{money(p.was)}</span>}
+          {p.kind === "oferta" && p.was && <span className="text-[12.5px] font-medium text-ink/60 line-through">{money(p.was)}</span>}
         </div>
       </div>
     </div>
@@ -149,14 +149,14 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-baseline gap-2">
                       <span className="text-[13px] font-bold">{c.name}</span>
-                      <span className="font-mono text-[9.5px] font-semibold text-ink/45">{ago(c.h)}</span>
+                      <span className="font-mono text-[9.5px] font-semibold text-ink/60">{ago(c.h)}</span>
                       {j === 0 && cms.length > 1 && c.up >= 5 && <Tag tone="signal">{E2("MÁS VOTADO", "TOP")}</Tag>}
                     </div>
                     <div className="mt-[3px] text-pretty text-[13px] font-medium leading-[1.5]">{t.body}</div>
                     <LineaTr t={t.translate} mt={3} />
                     <div className="mt-1.5 flex items-center gap-3.5 text-[11.5px] font-bold">
-                      <button type="button" disabled={c.propio} onClick={() => hacer(() => novLikeComentario(c.id))} className="flex items-center gap-[5px]" style={{ color: c.mine ? "var(--tl-action)" : "rgba(11,14,18,.55)" }}>
-                        <Icon name="like" size={13} color={c.mine ? "var(--tl-action)" : "rgba(11,14,18,.55)"} />{c.up}
+                      <button type="button" disabled={c.propio} onClick={() => hacer(() => novLikeComentario(c.id))} className="flex items-center gap-[5px]" style={{ color: c.mine ? "var(--tl-action)" : "rgba(11,14,18,.6)" }}>
+                        <Icon name="like" size={13} color={c.mine ? "var(--tl-action)" : "rgba(11,14,18,.6)"} />{c.up}
                       </button>
                     </div>
                     {c.reply && (
@@ -228,7 +228,7 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
           </PostCard>
         );
       })}
-      {!lista.length && <div className="p-6 text-center text-[13px] font-medium text-ink/55">{E2("No hay publicaciones de este tipo.", "No posts of this type.")}</div>}
+      {!lista.length && <div className="p-6 text-center text-[13px] font-medium text-ink/60">{E2("No hay publicaciones de este tipo.", "No posts of this type.")}</div>}
     </div>
   );
 }

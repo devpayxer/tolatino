@@ -51,7 +51,7 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas,
         <div className="min-w-0">
           {tag && <div className="mb-[5px] flex"><Tag tone={tag.tone}>{tag.t}</Tag></div>}
           <div className="text-[13.5px] font-bold leading-[1.3]">{nm(x.n)}</div>
-          {nm(x.d) && <div className="mt-0.5 text-[11.5px] font-medium leading-[1.4] text-ink/55">{nm(x.d)}</div>}
+          {nm(x.d) && <div className="mt-0.5 text-[11.5px] font-medium leading-[1.4] text-ink/60">{nm(x.d)}</div>}
         </div>
         <div className="flex items-baseline justify-between gap-2">
           <span className="font-display text-[15px] font-extrabold leading-none tracking-[-0.02em]">{precio}</span>
@@ -90,7 +90,7 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas,
         <div data-screen-label="Tienda · tu apartado" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-paper/95 px-5 pb-[22px] pt-[13px] backdrop-blur-[14px] lg:static lg:mt-2 lg:max-w-[460px] lg:rounded-[18px] lg:border lg:bg-white lg:p-4">
           <div className="min-w-0 flex-1">
             <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{`${dinero(totC)}${E2(" en la caja", " at the register")}`}</div>
-            <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">{`${E2("TU APARTADO · ", "YOUR HOLD · ")}${nC} ${nC === 1 ? E2("ARTÍCULO", "ITEM") : E2("ARTÍCULOS", "ITEMS")} · ${E2("HOY NO SE COBRA NADA", "NOTHING TODAY")}`}</div>
+            <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{`${E2("TU APARTADO · ", "YOUR HOLD · ")}${nC} ${nC === 1 ? E2("ARTÍCULO", "ITEM") : E2("ARTÍCULOS", "ITEMS")} · ${E2("HOY NO SE COBRA NADA", "NOTHING TODAY")}`}</div>
           </div>
           <Button icon="bag" onClick={() => router.push(`/n/${negocio}/apartar`)}>{E2("Ver apartado", "View hold")}</Button>
         </div>
@@ -112,7 +112,7 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas,
                 <div className="px-5 pb-6 pt-[18px]">
                   <div className="font-display text-[22px] font-extrabold leading-[1.15] tracking-[-0.035em]">{nm(hoja.n)}</div>
                   <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{dinero(hoja.precio)}</span>
-                    <span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/50">{hoja.quedan <= 3 ? `${E2("QUEDAN ", "ONLY ")}${hoja.quedan}` : E2("EN EXISTENCIA", "IN STOCK")}</span></div>
+                    <span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{hoja.quedan <= 3 ? `${E2("QUEDAN ", "ONLY ")}${hoja.quedan}` : E2("EN EXISTENCIA", "IN STOCK")}</span></div>
                   {nm(hoja.d) && <p className="mt-2.5 text-pretty text-[13px] leading-[1.6] text-ink/65">{nm(hoja.d)}</p>}
                   {hoja.tallas.length > 0 && <div className="mt-5 grid"><OptionGroup title={tit} meta={E2("ELIGE 1", "CHOOSE 1")} required done={!falta} reqLabel={E2("Elige: ", "Choose: ")} doneLabel={E2("Listo", "Done")}
                     options={hoja.tallas.map((t, i) => ({ label: t.label, price: t.quedan < 1 ? E2("Agotada", "Sold out") : t.quedan <= 2 ? `${E2("quedan ", "")}${t.quedan}${E2("", " left")}` : "", selected: i === ti, disabled: t.quedan < 1 }))} onToggle={(i: number) => { if (hoja.tallas[i]!.quedan > 0) { setTi(i); setQi(0); } }} /></div>}
@@ -124,7 +124,7 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas,
                 </div>
               </div>
               <div className="flex flex-none items-center gap-3.5 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
-                <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{cu ? E2("ABONO HOY", "DOWN TODAY") : E2("EN LA CAJA", "AT THE REGISTER")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{dinero(cu ? cu.abono : hoja.precio * qv)}</div></div>
+                <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{cu ? E2("ABONO HOY", "DOWN TODAY") : E2("EN LA CAJA", "AT THE REGISTER")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{dinero(cu ? cu.abono : hoja.precio * qv)}</div></div>
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5"><div className="flex"><Button block disabled={falta} onClick={() => agregar(hoja, qv, tl?.id)}>{E2("Apartar", "Hold")}</Button></div>
                   {falta && <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-pro-ink">{`${E2("ELIGE LA ", "CHOOSE THE ")}${tit.toUpperCase()}`}</div>}</div>
               </div>

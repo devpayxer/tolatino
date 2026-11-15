@@ -38,7 +38,7 @@ function Tabs({
     }
   }, items.map(t => {
     const on = t.id === active,
-      fg = T ? on ? 'var(--tl-ink)' : 'rgba(11,14,18,.5)' : on ? 'var(--tl-ink)' : 'rgba(11,14,18,.42)';
+      fg = T ? on ? 'var(--tl-ink)' : 'rgba(11,14,18,.6)' : on ? 'var(--tl-ink)' : 'rgba(11,14,18,.6)';
     return /*#__PURE__*/React.createElement("div", {
       key: t.id,
       role: "tab",

@@ -22,7 +22,7 @@ const H2 = {
 const SUB = {
   font: '600 9.5px/1.25 ' + mono,
   letterSpacing: '.06em',
-  color: 'rgba(11,14,18,.5)'
+  color: 'rgba(11,14,18,.6)'
 };
 const BIG = {
   font: '800 15px/1 Sora,sans-serif',
@@ -40,7 +40,7 @@ const CELL = {
 const COVER = {
   font: '700 9.5px ' + mono,
   letterSpacing: '.14em',
-  color: 'rgba(11,14,18,.4)'
+  color: 'rgba(11,14,18,.6)'
 };
 const bgc = (img, c) => ({
   background: img ? img + ' center/cover' : c,
@@ -139,7 +139,7 @@ function BusinessPreview({
     style: {
       font: '600 9.5px ' + mono,
       letterSpacing: '.05em',
-      color: 'rgba(11,14,18,.5)',
+      color: 'rgba(11,14,18,.6)',
       ...ell
     }
   }, P.meta)), /*#__PURE__*/React.createElement("span", {
@@ -161,7 +161,7 @@ function BusinessPreview({
   }), P.stLabel), /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "chevronDown",
     size: 15,
-    color: "rgba(11,14,18,.4)"
+    color: "rgba(11,14,18,.6)"
   }));
   if (mode !== 'page') return /*#__PURE__*/React.createElement("div", {
     "data-screen-label": "Vista previa \xB7 tarjeta en resultados",
@@ -179,7 +179,7 @@ function BusinessPreview({
       gap: 8,
       font: '700 9.5px ' + mono,
       letterSpacing: '.14em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
@@ -220,7 +220,7 @@ function BusinessPreview({
       marginTop: 6,
       font: '600 10.5px ' + mono,
       letterSpacing: '.04em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, P.meta), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -309,7 +309,7 @@ function BusinessPreview({
     style: {
       marginTop: 4,
       font: '600 10.5px ' + mono,
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, P.metaFree), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -567,7 +567,7 @@ function BusinessPreview({
       marginTop: 9,
       font: '600 10px ' + mono,
       letterSpacing: '.06em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, L.freeCap) : null), photos.length ? /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: H2
@@ -726,7 +726,7 @@ function BusinessPreview({
       marginTop: 4,
       font: '600 10px ' + mono,
       letterSpacing: '.04em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, P.addrMeta), P.hasAmen ? /*#__PURE__*/React.createElement("div", {
     style: {
@@ -800,7 +800,7 @@ function BusinessPreview({
       marginTop: 2,
       font: '600 9.5px ' + mono,
       letterSpacing: '.06em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, p.role)))))) : null) : null, pro && cur.kind === 'items' ? /*#__PURE__*/React.createElement("div", {
     style: {
@@ -850,7 +850,7 @@ function BusinessPreview({
       marginTop: 3,
       font: '600 9.5px ' + mono,
       letterSpacing: '.06em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, p.role))))) : null);
 }

@@ -78,7 +78,7 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
       <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:top-0">
         <button type="button" aria-label={E2("Volver al lugar", "Back to the place")} onClick={() => router.push(`/n/${x.negocio.id}`)} className="grid h-[38px] w-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="close" size={15} strokeWidth={2.4} /></button>
         <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{fe ? E2("Tu lugar", "Your spot") : E2("Tu inscripción", "Your enrollment")}</div>
-          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${fe ? E2("TU LUGAR #", "YOUR SPOT #") : E2("INSCRIPCIÓN #", "ENROLLMENT #")}${x.numero} · ${B}`.toUpperCase()}</div></div>
+          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${fe ? E2("TU LUGAR #", "YOUR SPOT #") : E2("INSCRIPCIÓN #", "ENROLLMENT #")}${x.numero} · ${B}`.toUpperCase()}</div></div>
       </div>
       <div className="mx-auto flex max-w-[560px] flex-col gap-3 px-4 pt-4">
         {flash && <div role="status" className="flex items-center gap-[9px] rounded-[14px] bg-signal/[.16] px-3.5 py-[11px]"><Icon name="check" size={15} color="var(--tl-open-text)" strokeWidth={2.4} /><span className="text-[12.5px] font-bold text-open-text">{flash}</span></div>}
@@ -114,7 +114,7 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
           <div data-screen-label="Inscripción · plan por escrito" className={caja}>
             <div className="border-b border-ink/[.07] px-[15px] py-3"><span className={Kh}>{E2("PLAN DE PAGOS · POR ESCRITO", "PAYMENT PLAN · IN WRITING")}</span></div>
             <div className="px-[15px] py-0.5">{x.plan.cal.map((p, n) => <div key={p.n} className={`flex justify-between gap-3 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="text-[12.5px] font-semibold">{E2(`Pago ${p.n}`, `Payment ${p.n}`)} · {fechaCorta(p.due, es)}</span><span className="text-[12.5px] font-bold">{usdI(p.cents)} · {x.plan!.pagadas.includes(p.n) ? E2("PAGADO", "PAID") : E2("EN LA ESCUELA", "AT THE SCHOOL")}</span></div>)}</div>
-            <div className="border-t border-ink/[.07] px-[15px] py-3 text-[11.5px] font-medium leading-[1.5] text-ink/55">{nm(x.plan.texto)}</div>
+            <div className="border-t border-ink/[.07] px-[15px] py-3 text-[11.5px] font-medium leading-[1.5] text-ink/60">{nm(x.plan.texto)}</div>
           </div>)}
         <div className="flex flex-col gap-2.5">
           {vivo && x.negocio.direccion && <Button variant="secondary" icon="pin" onClick={llegar}>{E2("Cómo llegar", "Directions")}</Button>}
@@ -124,7 +124,7 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
           {(x.estado === "done" || (x.estado === "confirmed" && (x.detalle === "started" || x.detalle === "cancel_req")) || (x.estado === "cancelled" && (!!x.motivoNeg || x.mat > 0))) && <Button variant="secondary" icon="help" onClick={() => router.push(`/insc/${x.numero}/ayuda`)}>{fe ? E2("Ayuda con la iglesia", "Church help") : E2("Ayuda con la inscripción", "Enrollment help")}</Button>}
           {!vivo && x.estado !== "confirmed" && <Button variant="secondary" icon="calendar" onClick={() => router.push(`/n/${x.negocio.id}?tab=svc`)}>{fe ? E2("Pedir otra fecha", "Ask for another date") : E2("Ver otros grupos", "See other groups")}</Button>}
         </div>
-        <div className="text-pretty text-center text-[12px] font-medium leading-[1.5] text-ink/50">{fe ? nm(LINEA_FE) : x.rubro === "edu" ? nm(LINEA_EDU) : E2("Solo se cobra lo que ves aquí: nada que aparezca después en la tarjeta.", "Only what you see here is charged: nothing showing up later on your card.")}</div>
+        <div className="text-pretty text-center text-[12px] font-medium leading-[1.5] text-ink/60">{fe ? nm(LINEA_FE) : x.rubro === "edu" ? nm(LINEA_EDU) : E2("Solo se cobra lo que ves aquí: nada que aparezca después en la tarjeta.", "Only what you see here is charged: nothing showing up later on your card.")}</div>
       </div>
       {confirmar && (
         <div data-screen-label="Inscripción · cancelar" className="fixed inset-0 z-[70]">

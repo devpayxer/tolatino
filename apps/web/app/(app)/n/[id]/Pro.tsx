@@ -15,7 +15,7 @@ type N = "Icon" | "Button";
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: MouseEvent) => e?.stopPropagation();
-const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/45";
+const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
 const LANG: Record<string, [string, string]> = { es: ["Español", "Spanish"], en: ["English", "English"], pt: ["Português", "Portuguese"], ht: ["Kreyòl", "Haitian Creole"] };
 
 export function usePro(pp: ProPublico | null, es: boolean) {
@@ -63,7 +63,7 @@ function Fila({ v, it, tarjeta }: { v: Pr; it: Pr["top"][number]; tarjeta?: bool
       <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(it.foto)} />
       <div className="min-w-0 flex-1">
         <div className="text-[14.5px] font-bold leading-[1.3]">{it.name}</div>
-        <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/50">{it.meta}</div>
+        <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{it.meta}</div>
         <div className="mt-1.5 font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{it.price}</div>
       </div>
       <Button variant="soft" size="md" onClick={(e: MouseEvent) => { if (it.walk) { stop(e); v.llegar(); } else v.abrir(it.id, e); }}>{it.walk ? v.E2("Cómo llegar", "Directions") : "Booking"}</Button>
@@ -81,7 +81,7 @@ export function PrTab({ v, desk }: { v: Pr; desk: boolean }) {
       <div className="flex flex-col gap-[22px]">
         {v.secs.map((sc) => (
           <div key={sc.title}>
-            <div className="font-mono text-[11px] font-extrabold tracking-[0.14em] text-ink/45">{sc.title}</div>
+            <div className="font-mono text-[11px] font-extrabold tracking-[0.14em] text-ink/60">{sc.title}</div>
             <div className={desk ? "mt-3 grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5" : "mt-1"}>{sc.items.map((it) => <Fila key={it.id} v={v} it={it} tarjeta={desk} />)}</div>
           </div>
         ))}
@@ -114,12 +114,12 @@ export function PrHoja({ v }: { v: Pr }) {
           <div className="flex flex-col gap-4 px-5 pb-6 pt-[18px]">
             <div>
               <div className="font-display text-[22px] font-extrabold leading-[1.15] tracking-[-0.035em]">{nm(s.name)}</div>
-              <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</span><span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/50">{P.s}</span></div>
+              <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</span><span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{P.s}</span></div>
               {nm(s.desc) && <p className="mt-2.5 text-pretty text-[13px] leading-[1.6] text-ink/65">{nm(s.desc)}</p>}
             </div>
             {s.k === "fijo" && s.gov > 0 && (
               <div data-screen-label="Servicio · el total" className="rounded-2xl border border-ink/[.08] px-4 py-1">
-                <div className="pb-1 pt-3 font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{E2("EL TOTAL", "THE TOTAL")}</div>
+                <div className="pb-1 pt-3 font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("EL TOTAL", "THE TOTAL")}</div>
                 {[[E2(`Honorario de ${pp.negocio.nombre}`, `${pp.negocio.nombre} fee`), usd(s.cents)], [E2("Tarifa del gobierno (se paga aparte, a la agencia)", "Government fee (paid separately, to the agency)"), usd(s.gov)]].map(([k, val]) => (
                   <div key={k} className="flex justify-between gap-3 border-b border-ink/[.06] py-2.5 text-[13px] font-semibold"><span className="text-ink/70">{k}</span><span>{val}</span></div>))}
                 <div className="flex justify-between gap-3 py-3 text-[14px] font-extrabold"><span>Total</span><span>{usd(s.cents + s.gov)}</span></div>
@@ -138,7 +138,7 @@ export function PrHoja({ v }: { v: Pr }) {
                   {[{ id: "any", t: E2("Cualquiera", "Anyone"), s: E2("EL PRIMERO LIBRE", "FIRST AVAILABLE") }, ...gente.map((p) => ({ id: p.id, t: p.nombre, s: [p.lic ? nm(p.lic).toUpperCase() : "", p.langs.map((l) => (LANG[l] ?? [l, l])[es ? 0 : 1]).join(" · ").toUpperCase()].filter(Boolean).join(" · ") }))].map((o) => (
                     <button key={o.id} type="button" role="radio" aria-checked={con === o.id} onClick={() => setCon(o.id)} className={`flex items-center gap-3 rounded-[14px] px-3.5 py-3 text-left ${con === o.id ? "border-[1.5px] border-ink" : "border border-ink/10"}`}>
                       <span className={`box-border h-5 w-5 flex-none rounded-full ${con === o.id ? "border-[6px] border-ink" : "border-[1.5px] border-ink/25"}`} />
-                      <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{o.t}</span><span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{o.s}</span></span>
+                      <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{o.t}</span><span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{o.s}</span></span>
                     </button>))}
                 </div>
               </div>)}
@@ -146,7 +146,7 @@ export function PrHoja({ v }: { v: Pr }) {
           </div>
         </div>
         <div className="flex flex-none items-center gap-3.5 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
-          <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">TOTAL</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</div></div>
+          <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">TOTAL</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</div></div>
           <div className="flex min-w-0 flex-1"><Button block icon={walk ? "pin" : llamar ? "phone" : "calendar"} onClick={go}>{cta}</Button></div>
         </div>
       </div>
@@ -182,8 +182,8 @@ export function PrResumen({ v, desk, onAll }: { v: Pr; desk: boolean; onAll?: ()
         <div data-screen-label="Resumen · datos del profesional" className="rounded-[18px] border border-ink/[.08] bg-white px-4">
           {facts.map(([ic, k, val], i) => (
             <div key={k} className={`flex items-start gap-3 py-3.5 ${i ? "border-t border-ink/[.06]" : ""}`}>
-              <span className="grid flex-none pt-0.5"><Icon name={ic} size={17} color="rgba(11,14,18,.55)" /></span>
-              <div className="min-w-0 flex-1"><div className="font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{k}</div><div className="mt-1 text-pretty text-[13.5px] font-semibold leading-[1.45]">{val}</div></div>
+              <span className="grid flex-none pt-0.5"><Icon name={ic} size={17} color="rgba(11,14,18,.6)" /></span>
+              <div className="min-w-0 flex-1"><div className="font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</div><div className="mt-1 text-pretty text-[13.5px] font-semibold leading-[1.45]">{val}</div></div>
             </div>))}
         </div>
         <div data-screen-label="Resumen · cómo funciona">
@@ -201,7 +201,7 @@ export function PrRiel({ v, onCta }: { v: Pr; onCta: () => void }) {
     <div data-screen-label="Ficha · Booking · columna" className="flex flex-col gap-4 rounded-[22px] border border-ink/10 bg-white p-[22px] shadow-[0_24px_48px_-34px_rgba(11,14,18,.45)]">
       <div className="font-display text-[28px] font-extrabold leading-none tracking-[-0.04em]">{v.desde}</div>
       <div className="grid grid-cols-3 gap-2">
-        {v.riel.map((m) => <div key={m.k} className="min-w-0 rounded-[14px] bg-paper px-2.5 py-[11px]"><div className="font-mono text-[8.5px] font-bold tracking-[0.1em] text-ink/45">{m.k}</div><div className="mt-1.5 text-[13px] font-bold leading-[1.3]">{m.v}</div></div>)}
+        {v.riel.map((m) => <div key={m.k} className="min-w-0 rounded-[14px] bg-paper px-2.5 py-[11px]"><div className="font-mono text-[8.5px] font-bold tracking-[0.1em] text-ink/60">{m.k}</div><div className="mt-1.5 text-[13px] font-bold leading-[1.3]">{m.v}</div></div>)}
       </div>
       <div className="text-pretty text-[12.5px] font-medium leading-[1.55] text-ink/60">{v.legal ? E2("Nadie te garantiza un resultado. El precio dice el total.", "No one can guarantee a result. The price shows the total.") : E2("Nada se cobra sin tu OK.", "Nothing is charged without your OK.")}</div>
       <div className="flex">{v.soloSinCita ? <Button icon="pin" block onClick={v.llegar}>{E2("Cómo llegar", "Directions")}</Button> : <Button icon="calendar" block onClick={onCta}>Booking</Button>}</div>
@@ -215,7 +215,7 @@ export function PrBarra({ v, onCta }: { v: Pr; onCta: () => void }) {
     <div data-screen-label="Ficha · barra de citas" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-paper/95 px-5 pb-[22px] pt-[13px] backdrop-blur-[14px] lg:hidden">
       <div className="min-w-0 flex-1">
         <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{v.desde}</div>
-        <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">{`${v.riel[0]!.k} · ${v.riel[0]!.v}`.toUpperCase()}</div>
+        <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{`${v.riel[0]!.k} · ${v.riel[0]!.v}`.toUpperCase()}</div>
       </div>
       {v.soloSinCita ? <Button icon="pin" onClick={v.llegar}>{E2("Cómo llegar", "Directions")}</Button> : <Button icon="calendar" onClick={onCta}>Booking</Button>}
     </div>

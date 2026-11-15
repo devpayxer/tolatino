@@ -65,7 +65,7 @@ export function Boletos({ p, es, yo, ini }: { p: PantallaBoletos; es: boolean; y
       <span className="h-[58px] w-[46px] flex-none rounded-[12px] bg-photo-bg" style={p.evento.img ? { backgroundImage: `url(${p.evento.img})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
       <div className="min-w-0 flex-1">
         <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{p.evento.title}</div>
-        <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${cuando} · ${p.evento.venue}`.toUpperCase()}</div>
+        <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${cuando} · ${p.evento.venue}`.toUpperCase()}</div>
       </div>
       <button type="button" onClick={volver} className="flex-none text-[12px] font-bold text-action">{E2("Ver evento", "See event")}</button>
     </div>
@@ -73,14 +73,14 @@ export function Boletos({ p, es, yo, ini }: { p: PantallaBoletos; es: boolean; y
   const linea = <div className="flex items-start gap-2.5 rounded-[14px] bg-action/[.07] px-3.5 py-3"><span className="grid flex-none pt-px"><Icon name="dollar" size={16} color="var(--tl-action)" /></span><span className="text-pretty text-[12.5px] font-bold leading-[1.45] text-action-hover">{E2("El precio que ves es el que pagas: cargos incluidos.", "The price you see is what you pay: fees included.")}</span></div>;
   const tipos = p.tipos.length ? (
     <div data-screen-label="Boletos · tipos" className={`flex flex-col p-4 ${caja}`}>
-      <div className="flex flex-wrap items-baseline justify-between gap-2"><span className={K}>{E2("BOLETOS", "TICKETS")}</span><span className="font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/45">{E2(`MÁX. ${Math.min(p.maxPersona, p.maxOrden)} POR PERSONA`, `MAX. ${Math.min(p.maxPersona, p.maxOrden)} PER PERSON`)}</span></div>
+      <div className="flex flex-wrap items-baseline justify-between gap-2"><span className={K}>{E2("BOLETOS", "TICKETS")}</span><span className="font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/60">{E2(`MÁX. ${Math.min(p.maxPersona, p.maxOrden)} POR PERSONA`, `MAX. ${Math.min(p.maxPersona, p.maxOrden)} PER PERSON`)}</span></div>
       {p.tipos.map((t, i) => {
         const n = q[t.id] ?? 0;
         return (
           <div key={t.id} data-tipo={t.id} className={`flex items-center gap-3 py-3 ${i ? "border-t border-ink/[.06]" : "mt-1"}`}>
             <div className="min-w-0 flex-1">
               <div className="text-[14px] font-bold">{t.n}</div>
-              {t.s && <div className="mt-0.5 text-[12px] font-medium text-ink/55">{t.s}</div>}
+              {t.s && <div className="mt-0.5 text-[12px] font-medium text-ink/60">{t.s}</div>}
               {t.vale && <div className="mt-0.5 font-mono text-[9.5px] font-bold tracking-[0.06em] text-action">{t.vale.toUpperCase()}</div>}
               <div className="mt-1 flex flex-wrap items-center gap-2"><span className="font-display text-[15px] font-extrabold">{dinero(t.p)}</span>
                 {t.quedan === 0 ? <span className="font-mono text-[9.5px] font-bold tracking-[0.08em] text-danger">{E2("AGOTADO.", "SOLD OUT.")}</span>
@@ -94,7 +94,7 @@ export function Boletos({ p, es, yo, ini }: { p: PantallaBoletos; es: boolean; y
   ) : null;
   const mesas = p.mesas.length ? (
     <div data-screen-label="Boletos · mesas" className={`flex flex-col gap-2.5 p-4 ${caja}`}>
-      <div className="flex flex-wrap items-baseline justify-between gap-2"><span className={K}>{E2("MESA · UNA POR ORDEN", "TABLE · ONE PER ORDER")}</span><span className="font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/45">{E2("SE VENDEN UNA SOLA VEZ", "EACH SOLD ONLY ONCE")}</span></div>
+      <div className="flex flex-wrap items-baseline justify-between gap-2"><span className={K}>{E2("MESA · UNA POR ORDEN", "TABLE · ONE PER ORDER")}</span><span className="font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/60">{E2("SE VENDEN UNA SOLA VEZ", "EACH SOLD ONLY ONCE")}</span></div>
       <div role="radiogroup" aria-label={E2("Mesa", "Table")} className="flex flex-col gap-2">
         {p.mesas.map((m) => {
           const on = mesa === m.id, off = m.quedan === 0;
@@ -103,14 +103,14 @@ export function Boletos({ p, es, yo, ini }: { p: PantallaBoletos; es: boolean; y
               className={`flex items-center gap-3 rounded-[14px] px-3.5 py-3 text-left ${on ? "border-[1.5px] border-ink" : "border border-ink/[.1]"} ${off ? "opacity-50" : ""}`}>
               <span className="grid size-[36px] flex-none place-items-center rounded-xl bg-action/[.08] text-action"><Icon name="drink" size={17} /></span>
               <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{m.z}</span>
-                <span className="mt-0.5 block text-[11.5px] font-medium text-ink/55">{E2(`${m.seats} personas · incluye sus entradas · consumo mínimo ${dinero(m.min)}`, `${m.seats} people · entry included · minimum spend ${dinero(m.min)}`)}</span></span>
+                <span className="mt-0.5 block text-[11.5px] font-medium text-ink/60">{E2(`${m.seats} personas · incluye sus entradas · consumo mínimo ${dinero(m.min)}`, `${m.seats} people · entry included · minimum spend ${dinero(m.min)}`)}</span></span>
               <span className="text-right"><span className="block font-display text-[14px] font-extrabold">{dinero(m.dep)}</span>
-                <span className={`mt-0.5 block font-mono text-[9px] font-bold tracking-[0.06em] ${off ? "text-danger" : "text-ink/45"}`}>{off ? E2("AGOTADA", "SOLD OUT") : E2(`QUEDAN ${m.quedan}`, `${m.quedan} LEFT`)}</span></span>
+                <span className={`mt-0.5 block font-mono text-[9px] font-bold tracking-[0.06em] ${off ? "text-danger" : "text-ink/60"}`}>{off ? E2("AGOTADA", "SOLD OUT") : E2(`QUEDAN ${m.quedan}`, `${m.quedan} LEFT`)}</span></span>
             </button>
           );
         })}
       </div>
-      <div className="text-[11.5px] font-medium leading-[1.5] text-ink/55">{E2("El depósito aparta tu mesa y se descuenta de tu consumo esa noche.", "The deposit holds your table and is deducted from your spend that night.")}</div>
+      <div className="text-[11.5px] font-medium leading-[1.5] text-ink/60">{E2("El depósito aparta tu mesa y se descuenta de tu consumo esa noche.", "The deposit holds your table and is deducted from your spend that night.")}</div>
     </div>
   ) : null;
   const extrasB = p.extras.length ? (
@@ -121,7 +121,7 @@ export function Boletos({ p, es, yo, ini }: { p: PantallaBoletos; es: boolean; y
         return (
           <div key={x.id} className={bloqueado ? "opacity-50" : ""}>
             <AddOnRow label={`${x.n}${x.mesa ? E2(" · SOLO CON MESA", " · TABLE ONLY") : ""}`} price={dinero(x.p)} checked={on} onToggle={() => { if (bloqueado) return; setExtras((L) => (on ? L.filter((a) => a !== x.id) : [...L, x.id])); }} />
-            {x.s && <div className="mt-1 px-1 text-[11.5px] font-medium text-ink/55">{x.s}</div>}
+            {x.s && <div className="mt-1 px-1 text-[11.5px] font-medium text-ink/60">{x.s}</div>}
           </div>
         );
       })}
@@ -139,7 +139,7 @@ export function Boletos({ p, es, yo, ini }: { p: PantallaBoletos; es: boolean; y
       {codErr && <div role="alert" className="text-[12px] font-semibold text-danger">{codErr}</div>}
     </div>
   ) : null;
-  const guarda = <div className="text-center text-[11.5px] font-medium leading-[1.5] text-ink/55">{E2(`Al continuar te guardamos boletos y mesa por ${p.apartadoMin} minutos mientras pagas.`, `When you continue we hold your tickets and table for ${p.apartadoMin} minutes while you pay.`)}</div>;
+  const guarda = <div className="text-center text-[11.5px] font-medium leading-[1.5] text-ink/60">{E2(`Al continuar te guardamos boletos y mesa por ${p.apartadoMin} minutos mientras pagas.`, `When you continue we hold your tickets and table for ${p.apartadoMin} minutes while you pay.`)}</div>;
   const errorBox = error ? <div role="alert" className="rounded-[14px] bg-danger/[.08] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{error}</div> : null;
   const cta = ocupado ? E2("Guardando…", "Holding…") : E2("Continuar", "Continue");
 
@@ -150,7 +150,7 @@ export function Boletos({ p, es, yo, ini }: { p: PantallaBoletos; es: boolean; y
         <div className="flex flex-col gap-3 px-4 pt-4">{cabeza}{tipos}{mesas}{extrasB}{codigoB}{linea}{errorBox}</div>
         <div data-screen-label="Boletos · barra" className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/[.08] bg-paper/[.96] px-4 pb-5 pt-3 backdrop-blur-[14px]">
           <div className="flex items-center gap-3.5">
-            <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{E2("TOTAL · CARGOS INCLUIDOS", "TOTAL · FEES INCLUDED")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{dinero(Math.max(0, vista))}</div></div>
+            <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{E2("TOTAL · CARGOS INCLUIDOS", "TOTAL · FEES INCLUDED")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{dinero(Math.max(0, vista))}</div></div>
             <div className="flex min-w-0 flex-1"><Button block disabled={!elegido || ocupado || admits > libres} onClick={() => void seguir()}>{cta}</Button></div>
           </div>
           <div className="mt-[9px]">{falta ? <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-pro-ink">{falta.toUpperCase()}</div> : guarda}</div>
@@ -158,14 +158,14 @@ export function Boletos({ p, es, yo, ini }: { p: PantallaBoletos; es: boolean; y
       </div>
       <div data-screen-label="APP-EVT-BOLETOS · desktop" className="mx-auto hidden max-w-[1180px] px-[30px] pb-[60px] pt-[22px] lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{p.evento.title}</button>
-        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{E2("Elige tus boletos", "Pick your tickets")}</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{`${cuando} · ${p.evento.venue}`.toUpperCase()}</div></div>
+        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{E2("Elige tus boletos", "Pick your tickets")}</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{`${cuando} · ${p.evento.venue}`.toUpperCase()}</div></div>
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-x-12">
           <div className="flex min-w-0 flex-col gap-3">{tipos}{mesas}{extrasB}{codigoB}</div>
           <aside className="sticky top-[96px] flex flex-col gap-3">
             {cabeza}{linea}
             <div className="flex flex-col gap-3 rounded-[22px] border border-ink/10 bg-white px-5 py-[18px] shadow-[var(--shadow-float)]">
               <div className="flex items-center gap-3.5">
-                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{E2("TOTAL · CARGOS INCLUIDOS", "TOTAL · FEES INCLUDED")}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">{dinero(Math.max(0, vista))}</div></div>
+                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{E2("TOTAL · CARGOS INCLUIDOS", "TOTAL · FEES INCLUDED")}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">{dinero(Math.max(0, vista))}</div></div>
                 <div className="flex min-w-0 flex-1"><Button variant="primary" block disabled={!elegido || ocupado || admits > libres} onClick={() => void seguir()}>{cta}</Button></div>
               </div>
               {falta ? <div className="text-center text-[12px] font-bold text-pro-ink">{falta}</div> : guarda}

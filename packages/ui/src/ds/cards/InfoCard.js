@@ -26,7 +26,7 @@ function InfoCard({
     style: {
       font: "800 10px 'JetBrains Mono',monospace",
       letterSpacing: '.12em',
-      color: labelColor || 'rgba(11,14,18,.5)',
+      color: labelColor || 'rgba(11,14,18,.6)',
       marginBottom: 8
     }
   }, label) : null, children);

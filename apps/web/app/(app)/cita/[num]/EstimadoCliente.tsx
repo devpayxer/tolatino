@@ -41,7 +41,7 @@ export function EstimadoCliente({ c, es, pago, aviso }: { c: CitaVista; es: bool
   const selCred = selL.length ? est?.credit ?? 0 : 0, base = est?.base ?? d.base;
   const selHold = Math.max(0, base - selCred + selRep + d.aprobado - d.dep - d.retenido - d.cobrado);
   const CAT: Record<LineaEst["urg"], [string, string, string]> = { now: [E2("NECESARIO AHORA", "NEEDED NOW"), "var(--tl-danger)", E2("Seguridad o la falla que traes.", "Safety or the problem you came in with.")],
-    soon: [E2("RECOMENDADO PRONTO", "RECOMMENDED SOON"), "var(--tl-pro-ink)", E2("No es urgente, pero conviene este año.", "Not urgent, but worth doing this year.")], later: [E2("PUEDE ESPERAR", "CAN WAIT"), "rgba(11,14,18,.55)", E2("Te lo dicen para que lo sepas.", "So you know.")] };
+    soon: [E2("RECOMENDADO PRONTO", "RECOMMENDED SOON"), "var(--tl-pro-ink)", E2("No es urgente, pero conviene este año.", "Not urgent, but worth doing this year.")], later: [E2("PUEDE ESPERAR", "CAN WAIT"), "rgba(11,14,18,.6)", E2("Te lo dicen para que lo sepas.", "So you know.")] };
   const linea = (l: LineaEst, on: boolean, toca: boolean) => (
     <div key={l.id} role={toca ? "checkbox" : undefined} aria-checked={toca ? on : undefined} tabIndex={toca ? 0 : undefined} aria-label={toca ? `${nm(l.t)} · ${dinero(l.tot)}` : undefined}
       onClick={toca ? () => setSel((s) => (on ? s.filter((x) => x !== l.id) : [...s, l.id])) : undefined}
@@ -51,7 +51,7 @@ export function EstimadoCliente({ c, es, pago, aviso }: { c: CitaVista; es: bool
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2.5"><span className="min-w-0 flex-1 text-[13.5px] font-bold leading-[1.35]">{nm(l.t)}</span><span className="text-[14px] font-extrabold">{l.final != null && l.final < l.tot ? dinero(l.final) : dinero(l.tot)}</span></div>
         <div className="mt-1 text-pretty text-[12px] font-medium leading-[1.45] text-ink/65">{nm(l.why)}</div>
-        <div className="mt-[7px] font-mono text-[9.5px] font-semibold leading-[1.6] tracking-[0.03em] text-ink/50">
+        <div className="mt-[7px] font-mono text-[9.5px] font-semibold leading-[1.6] tracking-[0.03em] text-ink/60">
           {l.parts.length > 0 && <div>{l.parts.map((p) => `${nm(p.n)} ${dinero(p.cents)}`).join(" · ")}</div>}
           <div>{l.hrs ? `${E2("Mano de obra ", "Labor ")}${l.hrs} h × ${dinero(est?.rate ?? 0)} = ${dinero(l.lab)}` : E2("Mano de obra incluida", "Labor included")}</div>
           {l.tax > 0 && <div>{auto ? E2("Impuesto de PA sobre piezas ", "PA sales tax on parts ") : E2("Impuesto de PA sobre materiales ", "PA sales tax on materials ")}{dinero(l.tax)}</div>}
@@ -66,7 +66,7 @@ export function EstimadoCliente({ c, es, pago, aviso }: { c: CitaVista; es: bool
     <button type="button" onClick={() => setHoja(true)} className="mt-3 flex w-full items-center gap-3 rounded-[14px] border border-ink/10 px-3 py-2.5 text-left" data-screen-label="Cita · tarjeta">
       <span className="grid h-8 w-8 flex-none place-items-center rounded-[10px] bg-ink/5"><Icon name="card" size={15} /></span>
       <span className="min-w-0 flex-1"><span className="block text-[13px] font-bold">{tarjeta ? tarjetaL(tarjeta) : E2("Elige tu tarjeta", "Choose your card")}</span>
-        <span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{declinada && tarjeta?.pm === declinada ? E2("TU BANCO LA RECHAZÓ · CAMBIA DE TARJETA", "YOUR BANK DECLINED IT · CHANGE CARD") : E2("SE RETIENE AQUÍ · SE COBRA AL FINAL SOLO LO APROBADO", "HELD HERE · ONLY WHAT YOU APPROVE IS CHARGED AT THE END")}</span></span>
+        <span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{declinada && tarjeta?.pm === declinada ? E2("TU BANCO LA RECHAZÓ · CAMBIA DE TARJETA", "YOUR BANK DECLINED IT · CHANGE CARD") : E2("SE RETIENE AQUÍ · SE COBRA AL FINAL SOLO LO APROBADO", "HELD HERE · ONLY WHAT YOU APPROVE IS CHARGED AT THE END")}</span></span>
       <span className="text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</span>
     </button>
   );
@@ -84,7 +84,7 @@ export function EstimadoCliente({ c, es, pago, aviso }: { c: CitaVista; es: bool
             <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-pro-ink">{E2("ALGO MÁS · TU OK", "SOMETHING ELSE · YOUR OK")}</div>
             <div className="mt-1.5 flex items-baseline gap-2.5"><span className="min-w-0 flex-1 font-display text-[17px] font-extrabold leading-[1.25] tracking-[-0.02em]">{nm(xt.t)}</span><span className="font-display text-[17px] font-extrabold">{dinero(xt.tot)}</span></div>
             <div className="mt-1.5 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/65">{nm(xt.why)}</div>
-            <div className="mt-2 font-mono text-[9.5px] font-semibold leading-[1.6] text-ink/50">{xt.parts.map((p) => `${nm(p.n)} ${dinero(p.cents)}`).join(" · ")}<br />{xt.hrs ? `${E2("Mano de obra ", "Labor ")}${xt.hrs} h × ${dinero(est?.rate ?? 0)} = ${dinero(xt.lab)}` : E2("Sin mano de obra", "No labor")}</div>
+            <div className="mt-2 font-mono text-[9.5px] font-semibold leading-[1.6] text-ink/60">{xt.parts.map((p) => `${nm(p.n)} ${dinero(p.cents)}`).join(" · ")}<br />{xt.hrs ? `${E2("Mano de obra ", "Labor ")}${xt.hrs} h × ${dinero(est?.rate ?? 0)} = ${dinero(xt.lab)}` : E2("Sin mano de obra", "No labor")}</div>
             {tarjetaFila}
             <div className="mt-3.5 flex flex-col gap-2">
               <div className="grid"><Button size="md" disabled={ocupado || faltaTarjeta} onClick={() => correr(() => extraDecidir(c.numero, true, pm), E2("Aprobado: siguen con eso", "Approved: they go ahead"))}>{`${E2("Sí, hazlo · +", "Yes, do it · +")}${dinero(xt.tot)}`}</Button></div>
@@ -96,18 +96,18 @@ export function EstimadoCliente({ c, es, pago, aviso }: { c: CitaVista; es: bool
       {est && (
         <div data-screen-label="Cita auto · estimado" className="rounded-[18px] border border-ink/[.08] bg-white p-4">
           <div className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{auto ? E2("Estimado", "Estimate") : E2("Precio completo", "Full price")}</div>
-          <div className="mt-1.5 font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">{`${auto ? E2("ESTIMADO #", "ESTIMATE #") : E2("PRECIO COMPLETO #", "FULL PRICE #")}${c.numero.replace("C-", "E-")}${est.v > 1 ? ` · V${est.v}` : ""}${c.veh ? ` · ${c.veh.toUpperCase()}` : c.casa ? ` · ${c.casa.toUpperCase()}` : ""}`}</div>
+          <div className="mt-1.5 font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{`${auto ? E2("ESTIMADO #", "ESTIMATE #") : E2("PRECIO COMPLETO #", "FULL PRICE #")}${c.numero.replace("C-", "E-")}${est.v > 1 ? ` · V${est.v}` : ""}${c.veh ? ` · ${c.veh.toUpperCase()}` : c.casa ? ` · ${c.casa.toUpperCase()}` : ""}`}</div>
           {c.pre && (() => { const rep = abierto ? selRep : est.lineas.filter((l) => l.dec === "ok").reduce((n, l) => n + l.tot, 0), inR = rep <= c.pre.hi + 50, extra = (abierto ? selL : est.lineas.filter((l) => l.dec === "ok")).some((l) => l.urg !== "now");
             const rg = `${dinero(c.pre.lo)}–${dinero(c.pre.hi)}`;
             return <div data-screen-label="Cita · contra tu pre-estimado" className={`mt-3 flex items-start gap-[9px] rounded-[13px] px-[13px] py-[11px] ${inR ? "bg-signal/[.14]" : "bg-pro/[.16]"}`}><span className="grid flex-none pt-px"><Icon name={inR ? "check" : "warning"} size={15} color={inR ? "var(--tl-open-text)" : "var(--tl-pro-ink)"} /></span>
               <span className="text-pretty text-[12.5px] font-bold leading-[1.45]" style={{ color: inR ? "var(--tl-open-text)" : "var(--tl-pro-ink)" }}>{inR ? E2(`Dentro de tu pre-estimado (${rg}).`, `Within your pre-estimate (${rg}).`)
                 : extra ? E2(`Pasa tu pre-estimado (${rg}) porque marcaste trabajos recomendados. Puedes quitarlos.`, `Over your pre-estimate (${rg}) because you checked recommended work. You can uncheck it.`)
                   : E2(`Pasa tu pre-estimado (${rg}). Cada línea explica por qué; pregunta antes de aprobar.`, `Over your pre-estimate (${rg}). Each line explains why; ask before approving.`)}</span></div>; })()}
-          <div className="mt-[3px] text-[12px] font-medium text-ink/55">{`${E2("Lo hizo ", "By ")}${est.by ?? who}${E2(` · mano de obra ${dinero(est.rate)} la hora`, ` · labor ${dinero(est.rate)}/h`)}`}</div>
+          <div className="mt-[3px] text-[12px] font-medium text-ink/60">{`${E2("Lo hizo ", "By ")}${est.by ?? who}${E2(` · mano de obra ${dinero(est.rate)} la hora`, ` · labor ${dinero(est.rate)}/h`)}`}</div>
           {(["now", "soon", "later"] as const).map((k) => { const L = est.lineas.filter((l) => l.urg === k); if (!L.length) return null; return (
             <div key={k} className="mt-4">
               <div className="font-mono text-[10px] font-extrabold tracking-[0.14em]" style={{ color: CAT[k][1] }}>{CAT[k][0]}</div>
-              <div className="mt-0.5 text-[11.5px] font-medium text-ink/50">{CAT[k][2]}</div>
+              <div className="mt-0.5 text-[11.5px] font-medium text-ink/60">{CAT[k][2]}</div>
               <div className="mt-[9px] flex flex-col gap-2">{L.map((l) => linea(l, abierto ? sel.includes(l.id) : l.dec === "ok", abierto))}</div>
             </div>); })}
           <div className="mt-3.5 border-t border-ink/[.08] pt-3">
@@ -119,8 +119,8 @@ export function EstimadoCliente({ c, es, pago, aviso }: { c: CitaVista; es: bool
             </div>
             {abierto && (
               <>
-                <div className="mt-2.5 flex items-baseline gap-2.5"><span className="flex-1 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/50">{conTarjeta ? E2("SE RETIENE AL APROBAR", "HELD ON APPROVAL") : E2("PAGAS AL TERMINAR", "YOU PAY WHEN DONE")}</span><span className="font-display text-[20px] font-extrabold leading-none">{dinero(selHold)}</span></div>
-                <div className="mt-1.5 text-[12px] font-medium text-ink/55">{conTarjeta ? E2("Se retiene en tu tarjeta; al final se cobra solo lo aprobado y se libera el resto.", "Held on your card; at the end only what you approved is charged and the rest is released.") : E2(`Pagas en ${who} al terminar, en efectivo o tarjeta.`, `You pay at ${who} when done, cash or card.`)}</div>
+                <div className="mt-2.5 flex items-baseline gap-2.5"><span className="flex-1 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{conTarjeta ? E2("SE RETIENE AL APROBAR", "HELD ON APPROVAL") : E2("PAGAS AL TERMINAR", "YOU PAY WHEN DONE")}</span><span className="font-display text-[20px] font-extrabold leading-none">{dinero(selHold)}</span></div>
+                <div className="mt-1.5 text-[12px] font-medium text-ink/60">{conTarjeta ? E2("Se retiene en tu tarjeta; al final se cobra solo lo aprobado y se libera el resto.", "Held on your card; at the end only what you approved is charged and the rest is released.") : E2(`Pagas en ${who} al terminar, en efectivo o tarjeta.`, `You pay at ${who} when done, cash or card.`)}</div>
                 {tarjetaFila}
                 <div className="mt-3 flex flex-col gap-2">
                   <div className="grid"><Button size="md" block disabled={ocupado || (faltaTarjeta && selHold > 0)} onClick={() => correr(() => estimadoDecidir(c.numero, sel, pm), selL.length ? E2("Aprobado: empiezan con eso", "Approved: they start on it") : E2("Listo: no se hace ningún arreglo", "Done: no repairs"))}>
@@ -140,7 +140,7 @@ export function EstimadoCliente({ c, es, pago, aviso }: { c: CitaVista; es: bool
           <div className="mt-2.5">
             {[[E2("APROBADO", "APPROVED"), dinero(d.base - d.credito + d.aprobado)], ...(d.final < d.base - d.credito + d.aprobado ? [[E2("LO FINAL", "FINAL"), dinero(d.final)]] : []), ...(d.dep ? [[E2("DEPÓSITO PAGADO", "DEPOSIT PAID"), `−${dinero(d.dep)}`]] : []), [E2("PAGAS AHORA", "YOU PAY NOW"), dinero(pagaAhora)],
               [E2("GARANTÍA", "WARRANTY"), garantia ?? E2("Pregunta al recoger", "Ask at pickup")]].map(([k, v]) => (
-              <div key={k} className="grid grid-cols-[118px_minmax(0,1fr)] gap-2.5 border-t border-ink/[.06] py-[9px]"><span className="font-mono text-[9.5px] font-bold leading-[1.6] tracking-[0.12em] text-ink/45">{k}</span><span className="text-pretty text-[13px] font-semibold leading-[1.45]">{v}</span></div>))}
+              <div key={k} className="grid grid-cols-[118px_minmax(0,1fr)] gap-2.5 border-t border-ink/[.06] py-[9px]"><span className="font-mono text-[9.5px] font-bold leading-[1.6] tracking-[0.12em] text-ink/60">{k}</span><span className="text-pretty text-[13px] font-semibold leading-[1.45]">{v}</span></div>))}
           </div>
           <div className="mt-2.5 text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Si al recogerlo algo no está bien, dilo antes de irte. Después, en Ayuda con la cita.", "If something is not right at pickup, say so before leaving. Afterwards, use Appointment help.")}</div>
           <div className="mt-3.5 grid"><Button size="md" block disabled={ocupado} onClick={() => correr(() => citaAccion(c.numero, "recibi"), auto ? E2("Listo: cita terminada", "Done: booking finished") : E2("Listo: visita terminada", "Done: visit finished"))}>
@@ -158,7 +158,7 @@ export function EstimadoCliente({ c, es, pago, aviso }: { c: CitaVista; es: bool
               <div key={`${k}${i}`} className="flex gap-2.5"><span className="min-w-0 flex-1 text-[12.5px] font-semibold leading-[1.45] text-ink/65">{k}</span><span className="text-[13px] font-bold">{v}</span></div>))}
           </div>
           <div className="mt-3 flex items-baseline gap-2.5 border-t border-ink/[.08] pt-3">
-            <span className="flex-1 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/50">{c.st === "done" ? (d.cobrado ? E2("COBRADO", "CHARGED") : E2("PAGADO EN EL LOCAL", "PAID IN PERSON")) : d.retenido ? E2("RETENIDO AHORA", "HELD NOW") : E2("POR AHORA", "SO FAR")}</span>
+            <span className="flex-1 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{c.st === "done" ? (d.cobrado ? E2("COBRADO", "CHARGED") : E2("PAGADO EN EL LOCAL", "PAID IN PERSON")) : d.retenido ? E2("RETENIDO AHORA", "HELD NOW") : E2("POR AHORA", "SO FAR")}</span>
             <span className="font-display text-[20px] font-extrabold leading-none">{dinero(c.st === "done" ? (d.cobrado || Math.max(0, d.final - d.dep)) : d.retenido)}</span>
           </div>
           <div className="mt-2 text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{c.st === "done"

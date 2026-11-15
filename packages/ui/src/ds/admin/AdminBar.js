@@ -22,7 +22,7 @@ const ell = {
 const KEY = {
   font: '700 9.5px ' + mono,
   letterSpacing: '.14em',
-  color: 'rgba(11,14,18,.5)'
+  color: 'rgba(11,14,18,.6)'
 };
 const px = v => typeof v === 'number' ? v + 'px' : v;
 const has = v => v !== undefined && v !== null && v !== '' && v !== false;
@@ -173,20 +173,20 @@ function AdminBar({
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "search",
     size: 17,
-    color: "rgba(11,14,18,.45)"
+    color: "rgba(11,14,18,.6)"
   }), /*#__PURE__*/React.createElement("span", {
     style: {
       flex: 1,
       minWidth: 0,
       font: '500 13.5px Manrope,sans-serif',
-      color: 'rgba(11,14,18,.45)',
+      color: 'rgba(11,14,18,.6)',
       ...ell
     }
   }, searchPlaceholder), /*#__PURE__*/React.createElement("span", {
     style: {
       font: '700 9.5px ' + mono,
       letterSpacing: '.08em',
-      color: 'rgba(11,14,18,.4)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, shortcut)) : null), cities.length ? /*#__PURE__*/React.createElement("span", {
     style: {
@@ -305,12 +305,12 @@ function AdminBar({
     style: {
       font: '700 8.5px/1 ' + mono,
       letterSpacing: '.1em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, me.role)), /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "chevronDown",
     size: 13,
-    color: "rgba(11,14,18,.45)"
+    color: "rgba(11,14,18,.6)"
   })) : null));
 }
 
@@ -347,10 +347,10 @@ function AdminNav({
       padding: '6px 10px',
       font: '700 9px ' + mono,
       letterSpacing: '.16em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, g.label), (g.items || []).map((n, i) => {
-    const fg = n.on ? INK : n.lock ? 'rgba(11,14,18,.45)' : 'rgba(11,14,18,.75)';
+    const fg = n.on ? INK : n.lock ? 'rgba(11,14,18,.6)' : 'rgba(11,14,18,.75)';
     return /*#__PURE__*/React.createElement("span", {
       key: i,
       onClick: n.onClick,
@@ -393,7 +393,7 @@ function AdminNav({
     }, n.count) : null, n.lock ? /*#__PURE__*/React.createElement(__ds_scope.Icon, {
       name: "lock",
       size: 13,
-      color: "rgba(11,14,18,.4)"
+      color: "rgba(11,14,18,.6)"
     }) : null);
   }))));
 }
@@ -423,7 +423,7 @@ function Cell({
       display: 'grid',
       placeItems: 'center',
       font: '800 11px/1 Sora,sans-serif',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, c.image ? '' : c.initials) : null, has(c.dot) ? /*#__PURE__*/React.createElement("span", {
     style: {
@@ -452,7 +452,7 @@ function Cell({
   }, c.text), has(c.sub) ? /*#__PURE__*/React.createElement("span", {
     style: {
       font: '500 11.5px/1.3 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.55)',
+      color: 'rgba(11,14,18,.6)',
       ...ell
     }
   }, c.sub) : null) : null);
@@ -492,7 +492,7 @@ function Pager({
     style: {
       font: '600 11px ' + mono,
       letterSpacing: '.06em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, label), /*#__PURE__*/React.createElement("span", {
     style: {
@@ -541,7 +541,7 @@ function DenseTable({
         minWidth: 0,
         font: '700 9px ' + mono,
         letterSpacing: '.12em',
-        color: 'rgba(11,14,18,.5)',
+        color: 'rgba(11,14,18,.6)',
         textAlign: o.align || 'left',
         ...ell
       }
@@ -580,7 +580,7 @@ function AdminRow({
   titleColor = INK,
   sub,
   meta,
-  metaColor = 'rgba(11,14,18,.5)',
+  metaColor = 'rgba(11,14,18,.6)',
   tag,
   tone = 'neutral',
   right,
@@ -630,7 +630,7 @@ function AdminRow({
       display: 'grid',
       placeItems: 'center',
       font: '800 14px/1 Sora,sans-serif',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, image ? '' : initials) : icon ? /*#__PURE__*/React.createElement("span", {
     style: {
@@ -693,7 +693,7 @@ function AdminRow({
     style: {
       font: '600 9.5px ' + mono,
       letterSpacing: '.06em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, right2) : null) : null, toggle != null ? /*#__PURE__*/React.createElement("span", {
     onClick: onToggle,
@@ -874,7 +874,7 @@ function QueueCard({
     style: {
       font: '600 9.5px ' + mono,
       letterSpacing: '.06em',
-      color: 'rgba(11,14,18,.45)',
+      color: 'rgba(11,14,18,.6)',
       ...ell
     }
   }, meta) : null), wide ? /*#__PURE__*/React.createElement("span", {
@@ -895,7 +895,7 @@ function QueueCard({
       display: 'grid',
       placeItems: 'center',
       font: '800 10px/1 Sora,sans-serif',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, who.image ? '' : who.initials), /*#__PURE__*/React.createElement("span", {
     style: {
@@ -927,7 +927,7 @@ function QueueCard({
       gap: 5,
       font: '600 9.5px ' + mono,
       letterSpacing: '.06em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
@@ -1010,7 +1010,7 @@ function AuditRow({
     }
   }, has(before) ? before : '—'), /*#__PURE__*/React.createElement("span", {
     style: {
-      color: 'rgba(11,14,18,.4)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, "\u2192"), /*#__PURE__*/React.createElement("span", {
     style: {
@@ -1036,14 +1036,14 @@ function AuditRow({
     style: {
       font: '600 9.5px ' + mono,
       letterSpacing: '.06em',
-      color: 'rgba(11,14,18,.5)',
+      color: 'rgba(11,14,18,.6)',
       whiteSpace: 'nowrap'
     }
   }, when), has(section) ? /*#__PURE__*/React.createElement("span", {
     style: {
       font: '700 8.5px ' + mono,
       letterSpacing: '.1em',
-      color: 'rgba(11,14,18,.4)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, section) : null));
 }
@@ -1092,7 +1092,7 @@ function PermMatrix({
     style: {
       font: '700 8.5px ' + mono,
       letterSpacing: '.1em',
-      color: 'rgba(11,14,18,.5)',
+      color: 'rgba(11,14,18,.6)',
       textAlign: 'center',
       ...ell
     }
@@ -1175,7 +1175,7 @@ function KpiCard({
   }, value), has(sub) ? /*#__PURE__*/React.createElement("span", {
     style: {
       font: '600 11px/1.3 Manrope,sans-serif',
-      color: subColor || (dark ? 'rgba(255,255,255,.7)' : 'rgba(11,14,18,.55)')
+      color: subColor || (dark ? 'rgba(255,255,255,.7)' : 'rgba(11,14,18,.6)')
     }
   }, sub) : null);
 }
@@ -1258,7 +1258,7 @@ function BarChart({
   }), has(b.label) ? /*#__PURE__*/React.createElement("span", {
     style: {
       font: '700 8.5px ' + mono,
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, b.label) : null))), has(note) ? /*#__PURE__*/React.createElement("span", {
     style: {
@@ -1294,7 +1294,7 @@ function HBars({
   }, label), has(help) ? /*#__PURE__*/React.createElement("span", {
     style: {
       font: '600 11px Manrope,sans-serif',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, help) : null), items.map((x, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
@@ -1355,7 +1355,7 @@ const Field = ({
 }, /*#__PURE__*/React.createElement("span", null, label)), children, has(help) ? /*#__PURE__*/React.createElement("span", {
   style: {
     font: '500 12px/1.4 Manrope,sans-serif',
-    color: 'rgba(11,14,18,.55)'
+    color: 'rgba(11,14,18,.6)'
   }
 }, help) : null);
 const ChipGroup = ({
@@ -1462,7 +1462,7 @@ function ReasonConfirm({
     style: {
       font: '700 9.5px ' + mono,
       letterSpacing: '.14em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, eyebrow) : null, /*#__PURE__*/React.createElement("h1", {
     style: {

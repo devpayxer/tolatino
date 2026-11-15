@@ -61,7 +61,7 @@ export function FiestaEstado({ x, es }: { x: FiestaVista; es: boolean }) {
       <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:top-0">
         <button type="button" aria-label={E2("Volver al negocio", "Back to the business")} onClick={() => router.push(`/n/${x.negocio.id}`)} className="grid h-[38px] w-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="close" size={15} strokeWidth={2.4} /></button>
         <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{vis ? E2("Tu visita", "Your tour") : E2("Tu fiesta", "Your party")}</div>
-          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${E2("FIESTA #", "PARTY #")}${x.numero} · ${B}`.toUpperCase()}</div></div>
+          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${E2("FIESTA #", "PARTY #")}${x.numero} · ${B}`.toUpperCase()}</div></div>
       </div>
       <div className="mx-auto flex max-w-[560px] flex-col gap-3 px-4 pt-4">
         {flash && <div role="status" className="flex items-center gap-[9px] rounded-[14px] bg-signal/[.16] px-3.5 py-[11px]"><Icon name="check" size={15} color="var(--tl-open-text)" strokeWidth={2.4} /><span className="text-[12.5px] font-bold text-open-text">{flash}</span></div>}
@@ -87,7 +87,7 @@ export function FiestaEstado({ x, es }: { x: FiestaVista; es: boolean }) {
           <div data-screen-label="Fiesta · tu dinero" className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">
             <div className="border-b border-ink/[.07] px-[15px] py-3"><span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("TU DINERO", "YOUR MONEY")}</span></div>
             <div className="px-[15px] py-0.5">
-              <div className="flex justify-between gap-3 py-[11px]"><span className="text-[12.5px] font-semibold">{E2("Depósito", "Deposit")}{x.pago.l4 ? <span className="ml-1.5 font-mono text-[9.5px] text-ink/45">{`${(x.pago.marca ?? "").toUpperCase()} ·· ${x.pago.l4}`}</span> : null}</span><span className="text-[12.5px] font-bold">{dep ? `${dinero(dep)}${depEstado ? ` · ${depEstado}` : ""}` : E2("No pidió", "None")}</span></div>
+              <div className="flex justify-between gap-3 py-[11px]"><span className="text-[12.5px] font-semibold">{E2("Depósito", "Deposit")}{x.pago.l4 ? <span className="ml-1.5 font-mono text-[9.5px] text-ink/60">{`${(x.pago.marca ?? "").toUpperCase()} ·· ${x.pago.l4}`}</span> : null}</span><span className="text-[12.5px] font-bold">{dep ? `${dinero(dep)}${depEstado ? ` · ${depEstado}` : ""}` : E2("No pidió", "None")}</span></div>
               <div className="flex justify-between gap-3 border-t border-ink/[.06] py-[11px]"><span className="text-[12.5px] font-semibold">{E2("Resto, el día del evento", "Rest, on the event day")}</span><span className="text-[12.5px] font-bold">{["declined", "expired", "cancelled"].includes(x.status) ? E2("No se cobra", "Not charged") : cotiza ? E2("Según el acuerdo", "Per the agreement") : `${dinero(resto)} · ${E2("a ", "to ")}${B}`}</span></div>
               <div className="flex justify-between gap-3 border-t border-ink/[.06] py-3 text-[14px] font-extrabold"><span>TOTAL</span><span>{cotiza ? `${E2("Desde ", "From ")}${dinero(x.tot)}` : dinero(x.tot)}</span></div>
             </div>

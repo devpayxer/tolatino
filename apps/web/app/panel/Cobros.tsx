@@ -32,7 +32,7 @@ export function cobrosBloques(c: Ctx, x: CobrosPanel | undefined): Bloque[] {
     ["Tu banco", "Your bank", "Número de ruta y de cuenta.", "Routing and account number."],
     ["Verificación", "Verification", "La hace Stripe, nuestro socio de pagos, en minutos.", "Done by Stripe, our payments partner, in minutes."],
   ];
-  out.push({ type: "rows", items: pasos.map(([te, tn, se, sn], i): Fila => { const ok = done; return { icon: ok ? "check" : "lock", ifg: ok ? "var(--tl-open-text)" : "rgba(11,14,18,.45)", ibg: "var(--tl-paper)", t: `${i + 1}. ${E2(te, tn)}`, s: E2(se, sn), compact: true, chev: false }; }) });
+  out.push({ type: "rows", items: pasos.map(([te, tn, se, sn], i): Fila => { const ok = done; return { icon: ok ? "check" : "lock", ifg: ok ? "var(--tl-open-text)" : "rgba(11,14,18,.6)", ibg: "var(--tl-paper)", t: `${i + 1}. ${E2(te, tn)}`, s: E2(se, sn), compact: true, chev: false }; }) });
   if (done) {
     out.push({ type: "kv", items: [
       { k: E2("BANCO", "BANK"), v: x.cuenta.banco ? `·· ${x.cuenta.banco}` : E2("En Stripe", "In Stripe") },

@@ -94,8 +94,8 @@ export function Tuya({ m, es, nombre, flash }: { m: MiResena; es: boolean; nombr
             {i < pasos.length - 1 && <span className="min-h-[22px] w-0.5 flex-1 bg-ink/15" />}
           </div>
           <div className="flex min-w-0 flex-1 justify-between gap-2.5 pb-3.5">
-            <span className={`text-pretty text-[13.5px] leading-[1.3] ${s.done ? "font-bold text-ink" : "font-semibold text-ink/50"}`}>{s.l}</span>
-            <span className="flex-none font-mono text-[11px] font-bold text-ink/50">{s.tm}</span>
+            <span className={`text-pretty text-[13.5px] leading-[1.3] ${s.done ? "font-bold text-ink" : "font-semibold text-ink/60"}`}>{s.l}</span>
+            <span className="flex-none font-mono text-[11px] font-bold text-ink/60">{s.tm}</span>
           </div>
         </div>
       ))}
@@ -129,13 +129,13 @@ export function Tuya({ m, es, nombre, flash }: { m: MiResena; es: boolean; nombr
       <div data-screen-label="APP-NEG-RESENA-ESTADO · móvil" className="lg:hidden">
         <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3">
           <button type="button" aria-label={E2(`Volver a ${b.name}`, `Back to ${b.name}`)} onClick={ficha} className="grid size-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="chevronLeft" size={18} strokeWidth={2} /></button>
-          <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{b.name}</div><div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{num}</div></div>
+          <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{b.name}</div><div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{num}</div></div>
         </div>
         <div className="flex flex-col gap-3 px-4 pt-4">{aviso}{principal(false)}{asi}{estado}{editarB}{ver}</div>
       </div>
       <div data-screen-label="APP-NEG-RESENA-ESTADO · desktop" className="mx-auto hidden max-w-[1080px] lg:block">
         <button type="button" onClick={ficha} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2(`Volver a ${b.name}`, `Back to ${b.name}`)}</button>
-        <div className="mt-4 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{num}</div>
+        <div className="mt-4 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{num}</div>
         <div className="mt-3.5 grid items-start gap-x-12 gap-y-8 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
           <div className="flex min-w-0 flex-col gap-3.5">{aviso}{principal(true)}{asi}</div>
           <div className="flex flex-col gap-3.5 min-[1100px]:sticky min-[1100px]:top-[96px]">{estado}{editarB}{ver}</div>

@@ -65,7 +65,7 @@ function Cuerpo({ es, ciudad, cat, d, nuevos, ancho }: { es: boolean; ciudad: st
         <span style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(0,168,143,.14)", display: "grid", placeItems: "center", flex: "none" }}><Icon name="store" size={18} color="var(--tl-open-text)" /></span>
         <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px/1.35 Manrope,sans-serif" }}>{E2("¿Tienes negocio? Publica tus Novedades y salen aquí 24 horas.", "Have a business? Post your Updates and they show here for 24 hours.")}</div>
           <div style={{ marginTop: 3, font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2("Con el plan Pro: ofertas, «Hoy hay», avisos y encuestas.", "With the Pro plan: deals, “Today”, notices and polls.")}</div></div>
-        <Icon name="chevronRight" size={16} color="rgba(11,14,18,.4)" />
+        <Icon name="chevronRight" size={16} color="rgba(11,14,18,.6)" />
       </div>
     </div>
   );
@@ -89,7 +89,7 @@ export function HoyPublico({ es, ciudad, estado, cat, d, nuevos, conSesion }: { 
   const entrar = () => router.push(conSesion ? "/comunidad" : `/entrar?volver=${encodeURIComponent("/comunidad")}`);
   const invita = (
     <div data-screen-label="Hoy en el barrio · la conversación" style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Icon name="lock" size={14} color="rgba(11,14,18,.5)" /><span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.55)" }}>{E2("LA CONVERSACIÓN · SOLO VECINOS", "THE CONVERSATION · NEIGHBORS ONLY")}</span></div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Icon name="lock" size={14} color="rgba(11,14,18,.6)" /><span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{E2("LA CONVERSACIÓN · SOLO VECINOS", "THE CONVERSATION · NEIGHBORS ONLY")}</span></div>
       <div style={{ font: "800 16px/1.3 Sora,sans-serif", letterSpacing: "-.02em", textWrap: "pretty" }}>{E2("Pregunta y recomienda con la gente de tu barrio", "Ask and recommend with people from your neighborhood")}</div>
       <div style={{ font: "500 12.5px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.6)", textWrap: "pretty" }}>{E2("La comunidad es para vecinos con cuenta. Entra para leer las respuestas y recomendar.", "Community is for neighbors with an account. Sign in to read answers and recommend.")}</div>
       <div style={{ font: "700 12.5px/1.45 Manrope,sans-serif", textWrap: "pretty" }}>{es ? LINEA_FIJA.es : LINEA_FIJA.en}</div>
@@ -100,7 +100,7 @@ export function HoyPublico({ es, ciudad, estado, cat, d, nuevos, conSesion }: { 
     <div data-screen-label={`APP-COM-HOY · ${D ? "desktop" : "móvil"} · público`} style={{ minHeight: "calc(100dvh - 57px)", background: D ? "var(--tl-paper)" : "var(--tl-white)", paddingBottom: D ? 40 : 110 }}>
       {!D && (
         <div data-screen-label="Comunidad · encabezado del módulo" style={{ background: "var(--tl-white)" }}>
-          <div style={{ padding: "16px 20px 12px" }}><h1 style={{ margin: 0, font: "800 26px/1.05 Sora,sans-serif", letterSpacing: "-.04em" }}>{E2("Comunidad", "Community")}</h1><div style={{ marginTop: 6, font: `600 10px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{`${ciudad.toUpperCase()}, ${estado}`}</div></div>
+          <div style={{ padding: "16px 20px 12px" }}><h1 style={{ margin: 0, font: "800 26px/1.05 Sora,sans-serif", letterSpacing: "-.04em" }}>{E2("Comunidad", "Community")}</h1><div style={{ marginTop: 6, font: `600 10px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{`${ciudad.toUpperCase()}, ${estado}`}</div></div>
           <PestanasModulo es={es} code="APP-COM-HOY" />
         </div>
       )}
@@ -109,7 +109,7 @@ export function HoyPublico({ es, ciudad, estado, cat, d, nuevos, conSesion }: { 
           {D && (
             <div style={{ marginBottom: 18 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ width: 9, height: 9, borderRadius: 99, background: "var(--tl-open)" }} /><h1 style={{ margin: 0, font: "800 30px/1.1 Sora,sans-serif", letterSpacing: "-.04em" }}>{E2("Hoy en el barrio", "Today nearby")}</h1></div>
-              <div style={{ marginTop: 8, font: `600 10.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{E2(`LO QUE TRAEN HOY LOS NEGOCIOS DE ${ciudad.toUpperCase()} · SE BORRA A LAS 24 H`, `WHAT ${ciudad.toUpperCase()} BUSINESSES HAVE TODAY · GONE IN 24 H`)}</div>
+              <div style={{ marginTop: 8, font: `600 10.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{E2(`LO QUE TRAEN HOY LOS NEGOCIOS DE ${ciudad.toUpperCase()} · SE BORRA A LAS 24 H`, `WHAT ${ciudad.toUpperCase()} BUSINESSES HAVE TODAY · GONE IN 24 H`)}</div>
             </div>
           )}
           <Cuerpo es={es} ciudad={ciudad} cat={cat} d={d} nuevos={nuevos} ancho={w} />

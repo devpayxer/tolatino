@@ -91,7 +91,7 @@ export function Tarjeta({ p, es, full, tr, onOpen, onMenu, onVote, onPoll, onSav
                 {ver && <span style={{ position: "relative", font: "700 13px Sora,sans-serif", letterSpacing: "-.02em" }}>{pc}%</span>}
               </button>);
           })}
-          <div style={{ marginTop: 4, font: `700 9.5px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.45)" }}>
+          <div style={{ marginTop: 4, font: `700 9.5px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.6)" }}>
             {`${ver ? `${enc.total} ${E2("VOTOS", "VOTES")}` : E2("VOTA PARA VER CÓMO VA", "VOTE TO SEE RESULTS")} · ${dias(enc.cierra, es)}${enc.mio != null ? E2(" · TU VOTO NO SE CAMBIA", " · YOUR VOTE IS FINAL") : ""}`}
           </div>
         </div>

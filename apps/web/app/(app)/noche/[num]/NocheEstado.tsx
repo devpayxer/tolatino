@@ -73,7 +73,7 @@ export function NocheEstado({ x, es }: { x: NocheVista; es: boolean }) {
       <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:top-0">
         <button type="button" aria-label={E2("Volver al local", "Back to the venue")} onClick={() => router.push(`/n/${x.negocio.id}`)} className="grid h-[38px] w-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="close" size={15} strokeWidth={2.4} /></button>
         <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{E2("Tu noche", "Your night")}</div>
-          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${E2("RESERVA #", "BOOKING #")}${x.numero} · ${B}`.toUpperCase()}</div></div>
+          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${E2("RESERVA #", "BOOKING #")}${x.numero} · ${B}`.toUpperCase()}</div></div>
       </div>
       <div className="mx-auto flex max-w-[560px] flex-col gap-3 px-4 pt-4">
         {flash && <div role="status" className="flex items-center gap-[9px] rounded-[14px] bg-signal/[.16] px-3.5 py-[11px]"><Icon name="check" size={15} color="var(--tl-open-text)" strokeWidth={2.4} /><span className="text-[12.5px] font-bold text-open-text">{flash}</span></div>}
@@ -105,7 +105,7 @@ export function NocheEstado({ x, es }: { x: NocheVista; es: boolean }) {
           <div data-screen-label="Noche · tu dinero" className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">
             <div className="border-b border-ink/[.07] px-[15px] py-3"><span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("TU DINERO", "YOUR MONEY")}</span></div>
             <div className="px-[15px] py-0.5">
-              <div className="flex justify-between gap-3 py-[11px]"><span className="text-[12.5px] font-semibold">{E2("Depósito", "Deposit")}{x.pago.l4 ? <span className="ml-1.5 font-mono text-[9.5px] text-ink/45">{`${(x.pago.marca ?? "").toUpperCase()} ·· ${x.pago.l4}`}</span> : null}</span>
+              <div className="flex justify-between gap-3 py-[11px]"><span className="text-[12.5px] font-semibold">{E2("Depósito", "Deposit")}{x.pago.l4 ? <span className="ml-1.5 font-mono text-[9.5px] text-ink/60">{`${(x.pago.marca ?? "").toUpperCase()} ·· ${x.pago.l4}`}</span> : null}</span>
                 <span className="text-[12.5px] font-bold">{dep ? `${usdN(dep)}${depEstado ? ` · ${depEstado}` : ""}` : E2("Sin depósito", "No deposit")}</span></div>
               <div className="flex justify-between gap-3 border-t border-ink/[.06] py-[11px]"><span className="text-[12.5px] font-semibold">{E2("Mínimo", "Minimum")}</span><span className="text-right text-[12.5px] font-bold">{`${x.puerta[es ? "es" : "en"]} · ${E2("es consumo, no un cargo aparte", "it is spend, not an extra fee")}`}</span></div>
             </div>
@@ -118,7 +118,7 @@ export function NocheEstado({ x, es }: { x: NocheVista; es: boolean }) {
           {(x.status === "done" || (x.status === "cancelled" && !!x.motivoNeg)) && <Button variant="secondary" icon="help" onClick={() => router.push(`/noche/${x.numero}/ayuda`)}>{E2("Ayuda con la noche", "Night help")}</Button>}
           {!vivo && <Button variant="secondary" icon="drink" onClick={() => router.push(`/n/${x.negocio.id}?tab=svc`)}>{E2("Otra noche", "Another night")}</Button>}
         </div>
-        <div className="text-pretty text-center text-[12px] font-medium leading-[1.5] text-ink/50">{`${linea} ${E2("Si alguien corre peligro, llama al 911.", "If someone is in danger, call 911.")}`}</div>
+        <div className="text-pretty text-center text-[12px] font-medium leading-[1.5] text-ink/60">{`${linea} ${E2("Si alguien corre peligro, llama al 911.", "If someone is in danger, call 911.")}`}</div>
       </div>
       {confirmar && (
         <div data-screen-label="Noche · cancelar" className="fixed inset-0 z-[70]">

@@ -116,7 +116,7 @@ export function Detalles({ h, es }: { h: RsvHold; es: boolean }) {
       <div className={K}>{E2("A NOMBRE DE", "NAME")}</div>
       <div className="mt-[9px] flex items-center gap-[11px]">
         <span className="grid size-9 flex-none place-items-center rounded-[11px] bg-action/10"><Icon name="users" size={17} color="var(--tl-action)" /></span>
-        <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{h.quien}</div><div className="mt-0.5 font-mono text-[11px] font-semibold text-ink/50">{tel(h.telefono)}</div></div>
+        <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{h.quien}</div><div className="mt-0.5 font-mono text-[11px] font-semibold text-ink/60">{tel(h.telefono)}</div></div>
       </div>
       <div className="mt-3 border-t border-line pt-3"><Caja on={other} onClick={() => setOther(!other)}>{E2("La reservación es para otra persona", "The reservation is for someone else")}</Caja></div>
       {other && (
@@ -146,11 +146,11 @@ export function Detalles({ h, es }: { h: RsvHold; es: boolean }) {
   const politicas = (
     <div className={caja}>
       <div className={K}>{E2("ANTES DE ENVIAR", "BEFORE YOU SEND")}</div>
-      <div className="mt-[11px] flex flex-col gap-2.5">{pol.map(([ic, l]) => <div key={ic} className="flex items-start gap-2.5"><span className="grid flex-none pt-px"><Icon name={ic} size={15} color="rgba(11,14,18,.55)" /></span><span className="text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/70">{l}</span></div>)}</div>
+      <div className="mt-[11px] flex flex-col gap-2.5">{pol.map(([ic, l]) => <div key={ic} className="flex items-start gap-2.5"><span className="grid flex-none pt-px"><Icon name={ic} size={15} color="rgba(11,14,18,.6)" /></span><span className="text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/70">{l}</span></div>)}</div>
     </div>
   );
   const boton = <Button variant="primary" icon="calendar" block disabled={exp || enviando} onClick={enviar}>{cta}</Button>;
-  const nota = <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/45">{ctaNote}</div>;
+  const nota = <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/60">{ctaNote}</div>;
 
   return (
     <div data-pantalla="APP-NEG-RESERVA" className="min-h-dvh bg-paper pb-[130px] lg:px-[30px] lg:pb-[60px] lg:pt-[22px]">
@@ -158,7 +158,7 @@ export function Detalles({ h, es }: { h: RsvHold; es: boolean }) {
       <div data-screen-label="APP-NEG-RESERVA · móvil" className="lg:hidden">
         <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3">
           <button type="button" aria-label={E2("Volver", "Back")} onClick={volver} className="grid size-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="chevronLeft" size={18} strokeWidth={2} /></button>
-          <div className="min-w-0 flex-1"><div className="font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{title}</div><div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{meta}</div></div>
+          <div className="min-w-0 flex-1"><div className="font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{title}</div><div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{meta}</div></div>
         </div>
         <div className="flex flex-col gap-3 px-4 pt-4">{fallo}{retenida}{editando}{mesa(false)}{nombreCaja}{ocasion}{necesitan}{notaCaja}{politicas}</div>
         <div data-screen-label="Reserva · barra" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/95 px-4 pb-5 pt-3 backdrop-blur-[14px]">
@@ -168,7 +168,7 @@ export function Detalles({ h, es }: { h: RsvHold; es: boolean }) {
       {/* Escritorio */}
       <div data-screen-label="APP-NEG-RESERVA · desktop" className="mx-auto hidden max-w-[1380px] lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{nombre}</button>
-        <div className="mt-3.5"><h1 className="font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{title}</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{meta}</div></div>
+        <div className="mt-3.5"><h1 className="font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{title}</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{meta}</div></div>
         <div className="mt-6 grid items-start gap-x-12 gap-y-8 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
           <div className="flex min-w-0 flex-col gap-3.5">{fallo}{editando}{mesa(true)}{nombreCaja}{ocasion}{necesitan}{notaCaja}</div>
           <div className="flex flex-col gap-3.5 min-[1100px]:sticky min-[1100px]:top-[96px]">{retenida}{politicas}<div className="flex">{boton}</div>{nota}</div>

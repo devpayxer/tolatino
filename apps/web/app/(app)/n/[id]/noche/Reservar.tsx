@@ -73,7 +73,7 @@ export function ReservarNoche({ b, es, pago, yo, pax0 }: { b: BookingNoche; es: 
       <span className="h-[54px] w-[54px] flex-none rounded-[15px] bg-photo-bg" style={s.foto ? { backgroundImage: `url(${s.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
       <div className="min-w-0 flex-1">
         <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nm(s.name)}</div>
-        <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{[P.l, P.s, dep ? `${E2("DEPÓSITO ", "DEPOSIT ")}${usdN(dep)}` : ""].filter(Boolean).join(" · ").toUpperCase()}</div>
+        <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{[P.l, P.s, dep ? `${E2("DEPÓSITO ", "DEPOSIT ")}${usdN(dep)}` : ""].filter(Boolean).join(" · ").toUpperCase()}</div>
       </div>
       <button type="button" onClick={volver} className="flex-none text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
     </div>
@@ -91,7 +91,7 @@ export function ReservarNoche({ b, es, pago, yo, pax0 }: { b: BookingNoche; es: 
       <div>
         <div className={K}>{E2("OCASIÓN · OPCIONAL", "OCCASION · OPTIONAL")}</div>
         <div className="mt-2 flex flex-wrap gap-2">{OCC.map(([k, a, z]) => <Chip key={k} variant={occ === k ? "selected" : "filter"} onClick={() => setOcc(occ === k ? "" : k)}>{es ? a : z}</Chip>)}</div>
-        <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/55">{E2("Si es cumpleaños, algunos locales traen algo a la mesa.", "If it is a birthday, some venues bring something to the table.")}</div>
+        <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/60">{E2("Si es cumpleaños, algunos locales traen algo a la mesa.", "If it is a birthday, some venues bring something to the table.")}</div>
       </div>
       <div>
         <div className="flex justify-between gap-2.5"><span className={K}>{E2("NOTA · OPCIONAL", "NOTE · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length}/200</span></div>
@@ -112,12 +112,12 @@ export function ReservarNoche({ b, es, pago, yo, pax0 }: { b: BookingNoche; es: 
       {N && elegible(N) ? (<>
         <div className="flex items-center gap-3 rounded-[15px] bg-paper px-3.5 py-[13px]">
           <span className="grid h-[38px] w-[38px] flex-none place-items-center rounded-[12px] bg-ink"><Icon name="drink" size={18} color="var(--tl-white)" /></span>
-          <span className="min-w-0 flex-1"><span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{nocheL(noche).toUpperCase()}</span>
+          <span className="min-w-0 flex-1"><span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{nocheL(noche).toUpperCase()}</span>
             <span className="mt-0.5 block text-[14px] font-bold">{coverTexto({ cover: N.cover, after: N.after, edad: b.edad, fecha: N.fecha, dow: N.dow, cuando: "hoy", lista: null, cierra: null }, es)} · {b.edad}+</span>
             <span className="mt-1 block text-[11.5px] font-bold text-open-text">{lista ? (b.listaHasta != null ? E2(`La lista vale hasta las ${hNoche(b.listaHasta)}`, `The list is valid until ${hNoche(b.listaHasta)}`) : "") : N.cupo != null ? (N.cupo === 1 ? E2("Queda 1 mesa así esa noche", "1 table like this left that night") : E2(`Quedan ${N.cupo} mesas así esa noche`, `${N.cupo} tables like this left that night`)) : ""}</span></span>
         </div>
         <div><div className={K}>{E2("¿A QUÉ HORA LLEGAN?", "WHAT TIME DO YOU ARRIVE?")}</div><div className="mt-[9px] grid"><TimeSlots slots={slots} selected={llega != null ? hNoche(llega) : ""} onSelect={(t: string) => { const m = N.slots.find((z) => hNoche(z) === t); if (m != null) setLlega(m); }} /></div>
-          {!lista && <div className="mt-2 text-[11.5px] font-medium leading-[1.45] text-ink/55">{E2(`La mesa se guarda ${b.hold} minutos después de tu hora.`, `The table is held ${b.hold} minutes after your time.`)}</div>}</div>
+          {!lista && <div className="mt-2 text-[11.5px] font-medium leading-[1.45] text-ink/60">{E2(`La mesa se guarda ${b.hold} minutos después de tu hora.`, `The table is held ${b.hold} minutes after your time.`)}</div>}</div>
       </>) : <div className="rounded-[15px] bg-paper px-[15px] py-3.5 text-[13.5px] font-bold leading-[1.4]">{ya ? E2("Ya estás en la lista de esa noche.", "You are already on that night's list.") : N && N.abre && N.cupo === 0 ? E2("Esa noche ya no quedan mesas así.", "No tables like this are left that night.") : N?.llena ? E2("La lista de esa noche está llena: puedes entrar con el cover normal.", "That night's list is full: you can get in with the regular cover.") : E2("Esa noche no abre.", "Closed that night.")}</div>}
       {lineaNota}
     </div>
@@ -159,7 +159,7 @@ export function ReservarNoche({ b, es, pago, yo, pax0 }: { b: BookingNoche; es: 
   const extras = (
     <div className={`flex flex-col gap-3.5 p-4 ${caja}`}>
       <div role="switch" aria-checked={sms} aria-label={E2("Avisos", "Alerts")} tabIndex={0} onClick={() => setSms(!sms)} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setSms(!sms); } }} className="flex cursor-pointer items-center gap-3">
-        <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{E2("Avisos", "Alerts")}</div><div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/55">{E2("Si sube el cover de esa noche, te avisamos en Avisos. La fila la ves en la página del local.", "If that night's cover goes up, we let you know in Alerts. The line shows on the venue page.")}</div></div>
+        <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{E2("Avisos", "Alerts")}</div><div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/60">{E2("Si sube el cover de esa noche, te avisamos en Avisos. La fila la ves en la página del local.", "If that night's cover goes up, we let you know in Alerts. The line shows on the venue page.")}</div></div>
         <span className={`relative h-6 w-[42px] flex-none rounded-full transition-colors ${sms ? "bg-ink" : "bg-ink/20"}`}><span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-transform ${sms ? "translate-x-[21px]" : "translate-x-[3px]"}`} /></span>
       </div>
     </div>
@@ -180,7 +180,7 @@ export function ReservarNoche({ b, es, pago, yo, pax0 }: { b: BookingNoche; es: 
         </div>
         <div data-screen-label="Reserva · barra" className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/[.08] bg-paper/[.96] px-4 pb-5 pt-3 backdrop-blur-[14px]">
           <div className="flex items-center gap-3.5">
-            <div className="min-w-0 flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{payK}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{usdN(dep)}</div><div className="mt-1 max-w-[140px] truncate font-mono text-[8.5px] font-semibold tracking-[0.06em] text-ink/45">{barSub}</div></div>
+            <div className="min-w-0 flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{payK}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{usdN(dep)}</div><div className="mt-1 max-w-[140px] truncate font-mono text-[8.5px] font-semibold tracking-[0.06em] text-ink/60">{barSub}</div></div>
             <div className="flex min-w-0 flex-1"><Button block disabled={!okPaso || ocupado} onClick={sigue}>{paso === 2 ? (ocupado ? E2("Enviando…", "Sending…") : enviarL) : E2("Continuar", "Continue")}</Button></div>
           </div>
           {!okPaso && falta && <div className="mt-[9px] text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-pro-ink">{falta.toUpperCase()}</div>}
@@ -188,7 +188,7 @@ export function ReservarNoche({ b, es, pago, yo, pax0 }: { b: BookingNoche; es: 
       </div>
       <div data-screen-label="APP-NEG-NOCHE-RESERVA · desktop" className="mx-auto hidden max-w-[1180px] px-[30px] pb-[60px] pt-[22px] lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{b.negocio.nombre}</button>
-        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{lista ? E2("Anotarme en la lista", "Join the list") : E2("Pedir la mesa", "Request the table")}</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{`${b.negocio.nombre} · ${nm(s.name)}`.toUpperCase()}</div></div>
+        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{lista ? E2("Anotarme en la lista", "Join the list") : E2("Pedir la mesa", "Request the table")}</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{`${b.negocio.nombre} · ${nm(s.name)}`.toUpperCase()}</div></div>
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-x-12 gap-y-8">
           <div className="flex min-w-0 flex-col gap-[26px]">
             <div><div className="mb-3 font-display text-[20px] font-extrabold leading-[1.1] tracking-[-0.03em]">{TT[0]}</div><div className="flex flex-col gap-3">{tarjetaSvc}{bloqueNoche}</div></div>
@@ -200,10 +200,10 @@ export function ReservarNoche({ b, es, pago, yo, pax0 }: { b: BookingNoche; es: 
             <div className="flex flex-col gap-3 rounded-[22px] border border-ink/10 bg-white px-5 py-[18px] shadow-[var(--shadow-float)]">
               {!listo && <div className="text-center text-[12px] font-bold text-pro-ink">{falta}</div>}
               <div className="flex items-center gap-3.5">
-                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{payK}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">{usdN(dep)}</div></div>
+                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{payK}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">{usdN(dep)}</div></div>
                 <div className="flex min-w-0 flex-1"><Button variant="primary" block disabled={!listo || ocupado} onClick={() => void enviar()}>{ocupado ? E2("Enviando…", "Sending…") : enviarL}</Button></div>
               </div>
-              <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">{barSub}</div>
+              <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{barSub}</div>
               {errorBox}
             </div>
           </aside>

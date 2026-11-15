@@ -61,7 +61,7 @@ export function Galeria({ g, inicial, conSesion, t, motivos }: {
         <div className="flex items-center gap-3 px-5 pt-3.5">
           <IconButton icon="chevronLeft" size={38} onClick={volver} />
           <div className="min-w-0 flex-1">
-            <div className="font-mono text-[10px] font-bold tracking-[0.12em] text-ink/50">{t.ojo}</div>
+            <div className="font-mono text-[10px] font-bold tracking-[0.12em] text-ink/60">{t.ojo}</div>
             <div className="mt-[3px] truncate font-display text-[20px] font-extrabold leading-[1.15] tracking-[-0.03em]">{g.nombre}</div>
           </div>
         </div>
@@ -81,7 +81,7 @@ export function Galeria({ g, inicial, conSesion, t, motivos }: {
             <Icon name="chevronLeft" size={15} color="var(--tl-action)" strokeWidth={2} />{t.volver}
           </button>
           <div className="min-w-0">
-            <div className="font-mono text-[10.5px] font-bold tracking-[0.12em] text-ink/50">{t.ojo}</div>
+            <div className="font-mono text-[10.5px] font-bold tracking-[0.12em] text-ink/60">{t.ojo}</div>
             <h1 className="mt-1.5 text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.035em]">{t.titulo}</h1>
           </div>
           <div className="flex flex-col gap-3 pt-1.5">
@@ -159,7 +159,7 @@ export function Galeria({ g, inicial, conSesion, t, motivos }: {
                   ))}
                 </div>
                 <label className="flex flex-col gap-2">
-                  <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/40">{t.notaK}</span>
+                  <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{t.notaK}</span>
                   <textarea value={rep.note} onChange={(e) => setRep({ ...rep, note: e.target.value.slice(0, 200) })} placeholder={t.notaPh} rows={3}
                     className="w-full resize-none rounded-[13px] border-[1.5px] border-line-strong px-3.5 py-3 text-[14px] font-medium leading-[1.45] outline-none" />
                 </label>

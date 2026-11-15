@@ -56,7 +56,7 @@ export function Rentar({ o, es, yo, pago }: { o: OpcionesRenta; es: boolean; yo:
   }
   const barra = (
     <div className="flex flex-col gap-2">
-      {miss.length > 0 && <div className="text-[12px] font-semibold leading-[1.45] text-ink/60"><span className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{E2("TE FALTA · ", "STILL NEEDED · ")}</span>{miss.join(" · ")}</div>}
+      {miss.length > 0 && <div className="text-[12px] font-semibold leading-[1.45] text-ink/60"><span className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{E2("TE FALTA · ", "STILL NEEDED · ")}</span>{miss.join(" · ")}</div>}
       <span className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-open-text">{E2("HOY NO SE COBRA NADA", "NOTHING IS CHARGED TODAY")}</span>
       <div className="grid"><Button block disabled={miss.length > 0 || ocupado || !o.tarjeta} onClick={enviar}>{ocupado ? E2("Apartando…", "Holding…") : `${E2("Apartar · ", "Hold · ")}${dinero(cost)}${E2(" al recoger", " at pickup")}`}</Button></div>
     </div>
@@ -66,23 +66,23 @@ export function Rentar({ o, es, yo, pago }: { o: OpcionesRenta; es: boolean; yo:
       <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:top-0">
         <button type="button" aria-label={E2("Volver", "Back")} onClick={() => router.push(`/n/${o.negocio.id}?tab=shop`)} className="grid h-[38px] w-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="chevronLeft" size={16} strokeWidth={2.4} /></button>
         <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{`${E2("Rentar · ", "Rent · ")}${name}`}</div>
-          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${dinero(a.precio)}${E2("/DÍA · ", "/DAY · ")}${sinDep ? E2("SIN DEPÓSITO", "NO DEPOSIT") : `${E2("DEPÓSITO ", "DEPOSIT ")}${dinero(a.dep)}`} · ${o.negocio.nombre}`.toUpperCase()}</div></div>
+          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${dinero(a.precio)}${E2("/DÍA · ", "/DAY · ")}${sinDep ? E2("SIN DEPÓSITO", "NO DEPOSIT") : `${E2("DEPÓSITO ", "DEPOSIT ")}${dinero(a.dep)}`} · ${o.negocio.nombre}`.toUpperCase()}</div></div>
       </div>
       <div className="mx-auto flex max-w-[620px] flex-col gap-3 px-4 pt-4">
         <div className={`flex flex-col gap-3 p-4 ${caja}`}>
           <div className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{E2("Dónde la recoges", "Where you pick it up")}</div>
           <div className="flex w-full items-center gap-3 rounded-[15px] bg-paper px-3.5 py-[13px]">
             <span className="grid h-[42px] w-[42px] flex-none place-items-center rounded-[13px] bg-ink"><Icon name="store" size={20} color="var(--tl-white)" /></span>
-            <span className="min-w-0 flex-1"><span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{E2("RECOGES EN", "PICK UP AT")}</span>
+            <span className="min-w-0 flex-1"><span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{E2("RECOGES EN", "PICK UP AT")}</span>
               <span className="mt-1 block text-[14.5px] font-bold leading-[1.3]">{o.negocio.nombre}</span>
-              {o.negocio.dir && <span className="mt-[3px] block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{o.negocio.dir.replace(/, Hazleton,? PA.*$/i, "").toUpperCase()}</span>}
+              {o.negocio.dir && <span className="mt-[3px] block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{o.negocio.dir.replace(/, Hazleton,? PA.*$/i, "").toUpperCase()}</span>}
               <span className="mt-1.5 flex items-center gap-[5px] text-[11.5px] font-bold text-open-text"><Icon name="check" size={13} color="currentColor" />{E2("Te la guardan 48 horas", "Held for you 48 hours")}</span></span>
             <button type="button" onClick={() => abrirComoLlegar({ dir: o.negocio.dir || o.negocio.nombre })} className="flex-none text-[12.5px] font-bold text-action">{E2("Cómo llegar", "Directions")}</button>
           </div>
         </div>
         <div className={`flex flex-col gap-3 p-4 ${caja}`}>
           <div><div className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{E2("¿Cuántos días?", "How many days?")}</div>
-            <div className="mt-1 text-[12px] font-medium text-ink/55">{E2("Precio por día. La semana cuesta 5 días.", "Price per day. A week costs 5 days.")}</div></div>
+            <div className="mt-1 text-[12px] font-medium text-ink/60">{E2("Precio por día. La semana cuesta 5 días.", "Price per day. A week costs 5 days.")}</div></div>
           <div className="flex flex-wrap gap-2">{DIAS.map((d) => <Chip key={d} variant={dias === d ? "selected" : "filter"} onClick={() => setDias(d)}>{d === 7 ? E2("Semana · paga 5 días", "Week · pay 5 days") : `${d}${d === 1 ? E2(" día", " day") : E2(" días", " days")}`}</Chip>)}</div>
         </div>
         <div className={`flex flex-col gap-2.5 p-4 ${caja}`} role="radiogroup" aria-label={E2("¿Cuándo la recoges?", "When do you pick it up?")}>
@@ -91,15 +91,15 @@ export function Rentar({ o, es, yo, pago }: { o: OpcionesRenta; es: boolean; yo:
           {o.dias.map((d) => { const on = pick === d.f; return (
             <button key={d.f} type="button" role="radio" aria-checked={on} onClick={() => setPick(d.f)} className={`flex items-center gap-3 rounded-[14px] px-3.5 py-3 text-left ${on ? "border-[1.5px] border-ink" : "border border-ink/10"}`}>
               <span className={`h-[18px] w-[18px] flex-none rounded-full ${on ? "border-[6px] border-ink" : "border-[1.5px] border-ink/25"}`} />
-              <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{pickL(d)}</span><span className="mt-0.5 block text-[12px] font-medium text-ink/55">{pickS(d)}</span></span>
+              <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{pickL(d)}</span><span className="mt-0.5 block text-[12px] font-medium text-ink/60">{pickS(d)}</span></span>
             </button>); })}
         </div>
         {o.tarjeta && pago ? (
           <button type="button" data-screen-label="Rentar · tarjeta" onClick={() => (yo ? setHoja(true) : entrar())} className={`flex w-full items-center gap-3 p-4 text-left ${caja}`}>
             <span className="grid h-9 w-9 flex-none place-items-center rounded-[11px] bg-ink/5"><Icon name="card" size={16} /></span>
-            <span className="min-w-0 flex-1"><span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{E2("SE COBRA AL RECOGER CON", "CHARGED AT PICKUP TO")}</span>
+            <span className="min-w-0 flex-1"><span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{E2("SE COBRA AL RECOGER CON", "CHARGED AT PICKUP TO")}</span>
               <span className="mt-1 block text-[14px] font-bold">{tarjeta ? tarjetaL(tarjeta) : E2("Elige tu tarjeta", "Choose your card")}</span>
-              <span className="mt-0.5 block font-mono text-[9.5px] font-semibold text-ink/50">{declinada && tarjeta?.pm === declinada ? E2("TU BANCO LA RECHAZÓ · CAMBIA DE TARJETA", "YOUR BANK DECLINED IT · CHANGE CARD") : E2("HOY NO SE COBRA NADA", "NOTHING IS CHARGED TODAY")}</span></span>
+              <span className="mt-0.5 block font-mono text-[9.5px] font-semibold text-ink/60">{declinada && tarjeta?.pm === declinada ? E2("TU BANCO LA RECHAZÓ · CAMBIA DE TARJETA", "YOUR BANK DECLINED IT · CHANGE CARD") : E2("HOY NO SE COBRA NADA", "NOTHING IS CHARGED TODAY")}</span></span>
             <span className="text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</span>
           </button>
         ) : <div className="rounded-[14px] bg-pro/[.14] px-3.5 py-3 text-[12.5px] font-semibold text-pro-ink">{E2("Este negocio todavía no renta en la app. Llámalo para apartarla.", "This business does not take rentals in the app yet. Call them to hold it.")}</div>}

@@ -30,13 +30,13 @@ export function Invitado({ es, ciudad, d }: { es: boolean; ciudad: string; d: Re
   const vista = (
     <div data-screen-label="Comunidad · solo vecinos" style={{ borderRadius: 20, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", overflow: "hidden" }}>
       <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(11,14,18,.07)", display: "flex", alignItems: "center", gap: 8 }}>
-        <Icon name="lock" size={14} color="rgba(11,14,18,.5)" /><span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.55)" }}>{E2("ASÍ VA LA CONVERSACIÓN HOY · SOLO VECINOS", "TODAY IN THE CONVERSATION · NEIGHBORS ONLY")}</span>
+        <Icon name="lock" size={14} color="rgba(11,14,18,.6)" /><span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{E2("ASÍ VA LA CONVERSACIÓN HOY · SOLO VECINOS", "TODAY IN THE CONVERSATION · NEIGHBORS ONLY")}</span>
       </div>
       {d.actividad.map((x, i) => (
         <div key={i} style={{ padding: "14px 16px", borderBottom: "1px solid rgba(11,14,18,.07)" }}>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <span style={{ width: 34, height: 34, borderRadius: 99, background: "var(--tl-desk)", display: "grid", placeItems: "center", flex: "none" }}><Icon name={TIPO[x.kind].ic} size={15} color="rgba(11,14,18,.5)" /></span>
-            <div style={{ flex: 1, minWidth: 0, font: "700 13px Manrope,sans-serif" }}>{E2("Un vecino", "A neighbor")} <span style={{ font: `600 10.5px ${MONO}`, color: "rgba(11,14,18,.42)" }}>{`· ${ACT[x.kind]} · ${hace(x.at, es).toUpperCase()}`}</span></div>
+            <span style={{ width: 34, height: 34, borderRadius: 99, background: "var(--tl-desk)", display: "grid", placeItems: "center", flex: "none" }}><Icon name={TIPO[x.kind].ic} size={15} color="rgba(11,14,18,.6)" /></span>
+            <div style={{ flex: 1, minWidth: 0, font: "700 13px Manrope,sans-serif" }}>{E2("Un vecino", "A neighbor")} <span style={{ font: `600 10.5px ${MONO}`, color: "rgba(11,14,18,.6)" }}>{`· ${ACT[x.kind]} · ${hace(x.at, es).toUpperCase()}`}</span></div>
           </div>
           <div aria-hidden style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
             <span style={{ height: 10, borderRadius: 6, background: "rgba(11,14,18,.07)", width: "92%" }} /><span style={{ height: 10, borderRadius: 6, background: "rgba(11,14,18,.07)", width: "64%" }} />

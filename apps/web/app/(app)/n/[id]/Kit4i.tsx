@@ -29,7 +29,7 @@ export function Top({ top, top2, label }: { top: TopT; top2?: TopT; label: strin
       </div>
       {top2 && (
         <div data-screen-label={`Ficha · ${label} · lo segundo`} className="rounded-[18px] border border-ink/[.08] bg-white px-4 py-4">
-          <div className="font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{top2.k}</div>
+          <div className="font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{top2.k}</div>
           <div className="mt-1.5 text-pretty font-display text-[18px] font-extrabold leading-[1.2] tracking-[-0.03em]">{top2.v}</div>
           {top2.s && <div className="mt-2 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/65">{top2.s}</div>}
         </div>)}
@@ -47,7 +47,7 @@ export function Fila({ it, can, abrir, tarjeta, desc }: { it: Item; can: boolean
       <div className="min-w-0 flex-1">
         <div className="text-[14.5px] font-bold leading-[1.3]">{it.name}</div>
         {desc && it.desc && <div className="mt-1 line-clamp-3 text-pretty text-[12.5px] leading-[1.5] text-ink/60">{it.desc}</div>}
-        {it.meta && <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/50">{it.meta}</div>}
+        {it.meta && <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{it.meta}</div>}
         {it.aviso && <div className="mt-1.5 flex items-start gap-1.5 text-pretty text-[12px] font-semibold leading-[1.45] text-pro-ink"><span className="grid flex-none pt-px"><Icon name="warning" size={13} color="var(--tl-pro-ink)" /></span>{it.aviso}</div>}
         <div className="mt-1.5 font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{it.price}</div>
       </div>
@@ -61,7 +61,7 @@ export function Lista({ secs, desk, can, abrir, vacio, children }: { secs: Sec[]
     <div className="flex flex-col gap-[22px]">
       {secs.map((sc) => (
         <div key={sc.title}>
-          <div className="font-mono text-[11px] font-extrabold tracking-[0.14em] text-ink/45">{sc.title}</div>
+          <div className="font-mono text-[11px] font-extrabold tracking-[0.14em] text-ink/60">{sc.title}</div>
           <div className={desk ? "mt-3 grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5" : "mt-1"}>{sc.items.map((it) => <Fila key={it.id} it={it} can={can} abrir={abrir} tarjeta={desk} desc />)}</div>
         </div>
       ))}
@@ -91,7 +91,7 @@ export function Riel({ desde, td, linea, cta, label, nota }: { desde: string; td
     <div data-screen-label={`Ficha · ${label} · columna`} className="flex flex-col gap-4 rounded-[22px] border border-ink/10 bg-white p-[22px] shadow-[0_24px_48px_-34px_rgba(11,14,18,.45)]">
       <div className="font-display text-[28px] font-extrabold leading-none tracking-[-0.04em]">{desde}</div>
       {td.length > 0 && <div className="grid grid-cols-3 gap-2">
-        {td.map((m) => <div key={m.k} className="min-w-0 rounded-[14px] bg-paper px-2.5 py-[11px]"><div className="font-mono text-[8.5px] font-bold tracking-[0.1em] text-ink/45">{m.k}</div><div className="mt-1.5 text-[13px] font-bold leading-[1.25]">{m.v}</div></div>)}
+        {td.map((m) => <div key={m.k} className="min-w-0 rounded-[14px] bg-paper px-2.5 py-[11px]"><div className="font-mono text-[8.5px] font-bold tracking-[0.1em] text-ink/60">{m.k}</div><div className="mt-1.5 text-[13px] font-bold leading-[1.25]">{m.v}</div></div>)}
       </div>}
       <div className="text-pretty text-[12.5px] font-medium leading-[1.55] text-ink/60">{linea}</div>
       {nota && <div className="text-pretty text-[12px] font-semibold leading-[1.5] text-ink/70">{nota}</div>}
@@ -104,7 +104,7 @@ export function Barra({ desde, sub, cta, label }: { desde: string; sub: string; 
     <div data-screen-label={`Ficha · barra de ${label}`} className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-paper/95 px-5 pb-[22px] pt-[13px] backdrop-blur-[14px] lg:hidden">
       <div className="min-w-0 flex-1">
         <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{desde}</div>
-        {sub && <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">{sub.toUpperCase()}</div>}
+        {sub && <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{sub.toUpperCase()}</div>}
       </div>
       {cta && <Button icon={cta.icon} onClick={cta.go}>{cta.l}</Button>}
     </div>
@@ -114,7 +114,7 @@ export function Barra({ desde, sub, cta, label }: { desde: string; sub: string; 
 export function Caja({ k, children, label }: { k: string; children: ReactNode; label?: string }) {
   return (
     <div data-screen-label={label} className="rounded-2xl border border-ink/[.08] px-4 py-3">
-      <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{k}</div>
+      <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{k}</div>
       {children}
     </div>
   );
@@ -127,7 +127,7 @@ export function Datos({ L }: { L: Td[] }) {
   if (!L.length) return null;
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-      {L.map((m) => <div key={m.k} className="min-w-0 rounded-[14px] bg-paper px-3 py-[11px]"><div className="font-mono text-[8.5px] font-bold tracking-[0.1em] text-ink/45">{m.k}</div><div className="mt-1.5 text-[13px] font-bold leading-[1.25]">{m.v}</div></div>)}
+      {L.map((m) => <div key={m.k} className="min-w-0 rounded-[14px] bg-paper px-3 py-[11px]"><div className="font-mono text-[8.5px] font-bold tracking-[0.1em] text-ink/60">{m.k}</div><div className="mt-1.5 text-[13px] font-bold leading-[1.25]">{m.v}</div></div>)}
     </div>
   );
 }
@@ -150,14 +150,14 @@ export function Hoja({ label, titulo, fotos, price, meta, desc, cerrar, cerrarL,
           <div className="flex flex-col gap-4 px-5 pb-6 pt-[18px]">
             <div>
               <div className="font-display text-[22px] font-extrabold leading-[1.15] tracking-[-0.035em]">{titulo}</div>
-              <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{price}</span><span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/50">{meta}</span></div>
+              <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{price}</span><span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{meta}</span></div>
               {desc && <p className="mt-2.5 text-pretty text-[13px] leading-[1.6] text-ink/65">{desc}</p>}
             </div>
             {children}
           </div>
         </div>
         <div className="flex flex-none items-center gap-3.5 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
-          <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{pieK}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.03em]">{pieV}</div></div>
+          <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{pieK}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.03em]">{pieV}</div></div>
           {cta && <div className="flex min-w-0 flex-1"><Button block icon={cta.icon} onClick={cta.go}>{cta.l}</Button></div>}
         </div>
       </div>

@@ -44,7 +44,7 @@ export function Boleto({ x, es, wallet = { apple: false, google: false }, wallet
       <div className="mx-auto flex max-w-[460px] flex-col gap-4 px-4 pb-12 pt-4 lg:pt-8">
         <button type="button" onClick={() => router.push(x.mia ? `/eventos/orden/${x.numero}` : "/cuenta/boletos")} className="inline-flex items-center gap-1.5 self-start text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{x.mia ? `${E2("Orden", "Order")} ${x.numero}` : E2("Mis boletos", "My tickets")}</button>
         <div>
-          <div className="font-mono text-[10.5px] font-bold tracking-[0.16em] text-ink/50">{cuando}</div>
+          <div className="font-mono text-[10.5px] font-bold tracking-[0.16em] text-ink/60">{cuando}</div>
           <h1 className="m-0 mt-1.5 font-display text-[26px] font-extrabold leading-[1.08] tracking-[-0.04em]">{ev.title}</h1>
           <div className="mt-1.5 text-[13px] font-semibold text-ink/65">{ev.venue}</div>
         </div>
@@ -66,7 +66,7 @@ export function Boleto({ x, es, wallet = { apple: false, google: false }, wallet
             <Button variant="secondary" icon="share" onClick={() => setHoja("tr")}>{E2("Transferir este boleto", "Transfer this ticket")}</Button>
             <Button variant="secondary" icon="edit" onClick={() => setHoja("nombre")}>{E2("Cambiar el nombre", "Change the name")}</Button>
           </div>
-        ) : <div className="text-[12px] font-medium leading-[1.5] text-ink/55">{E2(`Ya no se transfiere ni cambia de nombre: era hasta ${V.horasTransferir} h antes del evento.`, `It can no longer be transferred or renamed: that was up to ${V.horasTransferir} h before the event.`)}</div>)}
+        ) : <div className="text-[12px] font-medium leading-[1.5] text-ink/60">{E2(`Ya no se transfiere ni cambia de nombre: era hasta ${V.horasTransferir} h antes del evento.`, `It can no longer be transferred or renamed: that was up to ${V.horasTransferir} h before the event.`)}</div>)}
         {/* 8g · El boleto en Apple Wallet / Google Wallet (el mismo QR; se actualiza solo). */}
         {guardable && <WalletBotones code={b.code} es={es} d={wallet} avisar={toast} />}
         {walletNo && <div role="status" className="rounded-[18px] bg-ink/[.06] p-4 text-[12.5px] font-semibold leading-[1.5] text-ink/70">{E2("Este boleto no se puede guardar en Wallet ahora: ya no vale, se está transfiriendo o ya pasó.", "This ticket cannot be saved to Wallet right now: it is no longer valid, it is being transferred or it is past.")}</div>}
@@ -86,7 +86,7 @@ export function Boleto({ x, es, wallet = { apple: false, google: false }, wallet
           <div className="flex flex-col items-center gap-4">
             <QrCode matrix={b.matriz} size={Math.min(340, typeof window !== "undefined" ? window.innerWidth - 48 : 320)} label={E2(`Código QR del boleto ${b.code}`, `QR code for ticket ${b.code}`)} faded={b.estado !== "valid" && !b.sigue} />
             <div className="font-mono text-[15px] font-bold tracking-[0.12em]">{b.code}</div>
-            <div className="text-[12px] font-semibold text-ink/55">{E2("Toca para cerrar", "Tap to close")}</div>
+            <div className="text-[12px] font-semibold text-ink/60">{E2("Toca para cerrar", "Tap to close")}</div>
           </div>
         </div>
       )}

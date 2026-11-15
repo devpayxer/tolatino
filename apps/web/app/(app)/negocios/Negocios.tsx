@@ -31,12 +31,12 @@ export function Negocios({ titulo, sub, intenciones, cats, destacados, nuevos, t
             <button key={x.id} type="button" onClick={() => router.push(`/n/${x.id}`)} className="flex items-center gap-3 border-t border-ink/[.07] py-[11px] text-left">
               <span className="w-[22px] flex-none font-mono text-[13px] font-extrabold text-ink/30">{i + 1}</span>
               <span className="min-w-0 flex-1"><span className="flex items-center gap-1.5"><span className="block truncate text-[13.5px] font-bold text-ink">{x.nombre}</span>{x.destacada && <Tag tone="action">{E2("DESTACADA", "FEATURED")}</Tag>}</span>
-                <span className="mt-[3px] block font-mono text-[10px] font-semibold tracking-[0.04em] text-ink/50">{`${x.rating && x.resenas ? `★ ${x.rating.toFixed(1)} · ` : ""}${x.vecinos} ${x.vecinos === 1 ? E2("VECINO LO RECOMIENDA", "NEIGHBOR RECOMMENDS") : E2("VECINOS LO RECOMIENDAN", "NEIGHBORS RECOMMEND")}`}</span></span>
+                <span className="mt-[3px] block font-mono text-[10px] font-semibold tracking-[0.04em] text-ink/60">{`${x.rating && x.resenas ? `★ ${x.rating.toFixed(1)} · ` : ""}${x.vecinos} ${x.vecinos === 1 ? E2("VECINO LO RECOMIENDA", "NEIGHBOR RECOMMENDS") : E2("VECINOS LO RECOMIENDAN", "NEIGHBORS RECOMMEND")}`}</span></span>
               <span className="grid text-ink/30"><Icon name="chevronRight" size={16} strokeWidth={2} /></span>
             </button>
           ))}
         </div>
-        <div className="border-t border-ink/[.07] pb-2 pt-2.5 text-[11.5px] font-semibold leading-[1.5] text-ink/50">{E2("Aquí nada se compra: el orden lo ponen los votos de los vecinos.", "Nothing here is bought: neighbors’ votes set the order.")}</div>
+        <div className="border-t border-ink/[.07] pb-2 pt-2.5 text-[11.5px] font-semibold leading-[1.5] text-ink/60">{E2("Aquí nada se compra: el orden lo ponen los votos de los vecinos.", "Nothing here is bought: neighbors’ votes set the order.")}</div>
       </InfoCard>
     </div>
   );
@@ -53,7 +53,7 @@ export function Negocios({ titulo, sub, intenciones, cats, destacados, nuevos, t
       <div className="flex flex-col gap-[26px] px-5 pt-[18px] lg:gap-4 lg:border-b lg:border-line lg:bg-white lg:px-[30px] lg:pb-[22px] lg:pt-7">
         <div className="lg:flex lg:flex-wrap lg:items-baseline lg:gap-4">
           <h1 className="font-display text-[26px] font-extrabold leading-[1.05] tracking-[-0.04em] lg:text-[32px]">{titulo}</h1>
-          <div className="mt-[7px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50 lg:mt-0">{sub}</div>
+          <div className="mt-[7px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60 lg:mt-0">{sub}</div>
         </div>
         <div className="hs -mx-5 flex gap-2 overflow-x-auto px-5 lg:-mx-[30px] lg:px-[30px]">
           {intenciones.map((c) => (
@@ -72,10 +72,10 @@ export function Negocios({ titulo, sub, intenciones, cats, destacados, nuevos, t
                 className="flex min-w-0 flex-col gap-2.5 rounded-[17px] border border-line bg-white p-3.5 text-left hover:border-ink/20">
                 <span className="flex items-center justify-between">
                   <span className="grid size-[38px] flex-none place-items-center rounded-xl bg-open/15 text-open"><Icon name={c.icon} size={19} /></span>
-                  {c.n > 0 && <span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/45">{c.n}</span>}
+                  {c.n > 0 && <span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{c.n}</span>}
                 </span>
                 <span className="text-[13.5px] font-bold leading-[1.25] text-ink">{c.name}</span>
-                <span className="text-pretty text-[11.5px] font-medium leading-[1.45] text-ink/55">{c.linea}</span>
+                <span className="text-pretty text-[11.5px] font-medium leading-[1.45] text-ink/60">{c.linea}</span>
               </button>
             ))}
           </div>

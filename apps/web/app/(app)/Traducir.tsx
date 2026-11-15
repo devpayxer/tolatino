@@ -16,7 +16,7 @@ export type TrProp = { label: ReactNode };
 export type Tr = (kind: KindTr, id: string, lang: string | null | undefined, body: string, mio?: boolean) => { body: string; translate?: TrProp };
 
 const BOTON: CSSProperties = { font: "inherit", color: "inherit", background: "none", border: 0, padding: 0, margin: 0, cursor: "pointer" };
-const TENUE: CSSProperties = { fontWeight: 600, color: "rgba(11,14,18,.55)" };
+const TENUE: CSSProperties = { fontWeight: 600, color: "rgba(11,14,18,.6)" };
 
 export function useTraducir(es: boolean): Tr {
   const [m, setM] = useState<Record<string, Est>>({});

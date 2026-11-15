@@ -78,7 +78,7 @@ export function Orden({ o, es, cambio = null }: { o: OrdenVista; es: boolean; ca
   ];
   const cab = (d: boolean) => (
     <div data-screen-label="Orden · estado" className={d ? "" : "px-4 pt-4"}>
-      <div className="font-mono text-[10.5px] font-bold tracking-[0.16em] text-ink/50">{`${E2("ORDEN", "ORDER")} ${o.numero}`}</div>
+      <div className="font-mono text-[10.5px] font-bold tracking-[0.16em] text-ink/60">{`${E2("ORDEN", "ORDER")} ${o.numero}`}</div>
       <h1 className="m-0 mt-1.5 font-display font-extrabold leading-[1.05] tracking-[-0.045em]" style={{ fontSize: d ? 32 : 26 }}>{cancelada ? E2("No se completó", "Not completed") : E2("¡Listo, vas!", "You are going!")}</h1>
       <div className="mt-2 text-[13.5px] font-semibold text-ink/70">{`${ev.title} · ${cuando} · ${ev.venue}`}</div>
       {devuelto > 0 && <div role="status" data-screen-label="Orden · devolución" className="mt-3 rounded-[14px] bg-signal/[.14] px-3.5 py-3 text-[12.5px] font-semibold leading-[1.5] text-open-text">
@@ -98,10 +98,10 @@ export function Orden({ o, es, cambio = null }: { o: OrdenVista; es: boolean; ca
         {cambio.movido.puede ? <div className="mt-2.5 flex flex-wrap gap-2">
           <Button variant="primary" size="md" disabled={elige} onClick={() => void elegir("keep")}>{E2("Me quedo con la nueva fecha", "Keep the new date")}</Button>
           <Button variant="secondary" size="md" disabled={elige} onClick={() => void elegir("refund")}>{E2("Devolución total", "Full refund")}</Button>
-        </div> : <div className="mt-2 font-mono text-[10.5px] font-bold tracking-[0.12em] text-ink/55">{cambio.movido.eleccion === "keep" ? E2("ELEGISTE QUEDARTE CON LA NUEVA FECHA", "YOU KEPT THE NEW DATE") : cambio.movido.eleccion === "refund" ? E2("PEDISTE LA DEVOLUCIÓN TOTAL", "YOU ASKED FOR A FULL REFUND") : E2("YA EMPEZÓ: TUS BOLETOS VALEN PARA LA NUEVA FECHA", "IT STARTED: YOUR TICKETS ARE FOR THE NEW DATE")}</div>}
+        </div> : <div className="mt-2 font-mono text-[10.5px] font-bold tracking-[0.12em] text-ink/60">{cambio.movido.eleccion === "keep" ? E2("ELEGISTE QUEDARTE CON LA NUEVA FECHA", "YOU KEPT THE NEW DATE") : cambio.movido.eleccion === "refund" ? E2("PEDISTE LA DEVOLUCIÓN TOTAL", "YOU ASKED FOR A FULL REFUND") : E2("YA EMPEZÓ: TUS BOLETOS VALEN PARA LA NUEVA FECHA", "IT STARTED: YOUR TICKETS ARE FOR THE NEW DATE")}</div>}
       </div>}
       {cambio && cambio.avisos.length > 0 && <div data-screen-label="Orden · avisos del organizador" className={`mt-3 px-3.5 py-3 ${caja}`}>
-        <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{E2("AVISOS DEL ORGANIZADOR", "NOTICES FROM THE ORGANIZER")}</div>
+        <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("AVISOS DEL ORGANIZADOR", "NOTICES FROM THE ORGANIZER")}</div>
         {cambio.avisos.map((a, i) => <div key={i} className="mt-1.5 text-[12.5px] font-semibold leading-[1.5] text-ink/80">{a.t}</div>)}
       </div>}
       {cancelada && <div role="alert" className="mt-3 rounded-[14px] bg-danger/[.08] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{E2("Tu banco no completó el cobro. No se cobró nada y estos boletos no valen. Puedes comprar otra vez.", "Your bank did not complete the charge. Nothing was charged and these tickets are not valid. You can buy again.")}</div>}
@@ -111,12 +111,12 @@ export function Orden({ o, es, cambio = null }: { o: OrdenVista; es: boolean; ca
     <div data-screen-label="Orden · boletos">
       <div className={`flex items-baseline justify-between gap-2 ${d ? "" : "px-4"}`}>
         <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{ev.pasado ? E2("TUS BOLETOS", "YOUR TICKETS") : E2("MUÉSTRALO EN LA PUERTA · SUBE EL BRILLO", "SHOW IT AT THE DOOR · TURN UP THE BRIGHTNESS")}</span>
-        <span className="font-mono text-[10px] font-bold tracking-[0.1em] text-ink/45">{`${vivos}/${o.boletos.filter((b) => !b.envio).length}`}</span>
+        <span className="font-mono text-[10px] font-bold tracking-[0.1em] text-ink/60">{`${vivos}/${o.boletos.filter((b) => !b.envio).length}`}</span>
       </div>
       <div className={d ? "mt-3 grid grid-cols-2 gap-4" : "hs mt-3 flex gap-3 overflow-x-auto px-4 pb-1"}>
         {o.boletos.filter((b) => !b.envio).map((b) => <TarjetaBoleto key={b.code} b={b} es={es} cuando={cuando} ancho={d ? undefined : 250} onClick={() => router.push(`/cuenta/boletos/${b.code}`)} />)}
       </div>
-      <div className={`mt-2.5 text-[11.5px] font-medium leading-[1.5] text-ink/55 ${d ? "" : "px-4"}`}>{E2("Tu QR es la entrada; no hace falta imprimir. Si no hay señal, el código funciona igual. Toca un boleto para verlo grande.", "Your QR is your entry; no need to print. Without signal, the code still works. Tap a ticket to see it big.")}</div>
+      <div className={`mt-2.5 text-[11.5px] font-medium leading-[1.5] text-ink/60 ${d ? "" : "px-4"}`}>{E2("Tu QR es la entrada; no hace falta imprimir. Si no hay señal, el código funciona igual. Toca un boleto para verlo grande.", "Your QR is your entry; no need to print. Without signal, the code still works. Tap a ticket to see it big.")}</div>
       {enviando.length > 0 && (
         <div data-screen-label="Orden · enviados" className={`mt-3 flex flex-col gap-2 ${d ? "" : "px-4"}`}>
           <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("ENVIADOS · ESPERANDO QUE LOS RECIBAN", "SENT · WAITING TO BE RECEIVED")}</div>
@@ -124,7 +124,7 @@ export function Orden({ o, es, cambio = null }: { o: OrdenVista; es: boolean; ca
             <div key={b.code} data-enviado={b.code} className={`flex items-center gap-3 px-3.5 py-3 ${caja}`}>
               <span className="grid size-9 flex-none place-items-center rounded-[11px] bg-pro/[.16]"><Icon name="share" size={16} color="var(--tl-pro-ink)" /></span>
               <span className="min-w-0 flex-1"><span className="block text-[13px] font-bold">{`${b.tipo} · ${b.code}`}</span>
-                <span className="mt-0.5 block text-[11.5px] font-medium text-ink/55">{E2(`A ${b.envio!.a} · lo puede recibir hasta ${fechaHora(b.envio!.hasta, ev.tz, true)} · EL QR ANTERIOR QUEDA ANULADO`, `To ${b.envio!.a} · they can receive it until ${fechaHora(b.envio!.hasta, ev.tz, false)} · THE OLD QR IS VOIDED`)}</span></span>
+                <span className="mt-0.5 block text-[11.5px] font-medium text-ink/60">{E2(`A ${b.envio!.a} · lo puede recibir hasta ${fechaHora(b.envio!.hasta, ev.tz, true)} · EL QR ANTERIOR QUEDA ANULADO`, `To ${b.envio!.a} · they can receive it until ${fechaHora(b.envio!.hasta, ev.tz, false)} · THE OLD QR IS VOIDED`)}</span></span>
               <Button variant="secondary" size="md" onClick={() => void deshacer(b.code)}>{E2("Deshacer", "Undo")}</Button>
             </div>
           ))}
@@ -144,7 +144,7 @@ export function Orden({ o, es, cambio = null }: { o: OrdenVista; es: boolean; ca
   // 6d · Hasta cuándo (Configuración): transferir y cancelar con devolución.
   const plazos = cancelada || ev.pasado ? null : (
     <div data-screen-label="Orden · política" className="text-[11.5px] font-medium leading-[1.55] text-ink/60">
-      <span className="block font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{E2("POLÍTICA DE ESTE EVENTO", "THIS EVENT’S POLICY")}</span>
+      <span className="block font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("POLÍTICA DE ESTE EVENTO", "THIS EVENT’S POLICY")}</span>
       {E2(`Transfieres hasta ${fechaHora(V.transferirHasta, ev.tz, true)} (${V.horasTransferir} h antes). Cancelas con devolución, menos el cargo de servicio, hasta ${fechaHora(V.cancelarHasta, ev.tz, true)} (${V.horasCancelar} h antes). Si el evento se cancela, te devolvemos todo.`,
         `You can transfer until ${fechaHora(V.transferirHasta, ev.tz, false)} (${V.horasTransferir} h before). You can cancel with a refund, minus the service fee, until ${fechaHora(V.cancelarHasta, ev.tz, false)} (${V.horasCancelar} h before). If the event is cancelled, you get everything back.`)}
     </div>

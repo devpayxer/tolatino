@@ -94,7 +94,7 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
       <span className="h-[54px] w-[54px] flex-none rounded-[15px] bg-photo-bg" style={s.foto ? { backgroundImage: `url(${s.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
       <div className="min-w-0 flex-1">
         <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nm(s.name)}</div>
-        <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{[precioL, curso && s.mat ? `${nm(V.mat)} ${usdI(s.mat)}` : "", s.sem ? E2(`${s.sem} semanas`, `${s.sem} weeks`) : ""].filter(Boolean).join(" · ").toUpperCase()}</div>
+        <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{[precioL, curso && s.mat ? `${nm(V.mat)} ${usdI(s.mat)}` : "", s.sem ? E2(`${s.sem} semanas`, `${s.sem} weeks`) : ""].filter(Boolean).join(" · ").toUpperCase()}</div>
       </div>
       <button type="button" onClick={volver} className="flex-none text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
     </div>
@@ -120,7 +120,7 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
           <span className={`mt-px grid h-[20px] w-[20px] flex-none place-items-center rounded-[6px] ${tutor ? "bg-ink" : "border-[1.5px] border-ink/30 bg-white"}`}>{tutor && <Icon name="check" size={13} color="var(--tl-white)" strokeWidth={2.4} />}</span>
           <span className="text-[13px] font-bold leading-[1.4]">{E2("Soy su mamá, papá o tutor legal.", "I am the parent or legal guardian.")}</span>
         </div>
-        <div className="text-[11.5px] font-medium leading-[1.5] text-ink/55">{E2("No pedimos fecha de nacimiento, fotos, acta ni vacunas: eso se entrega en persona al lugar.", "We do not ask for birth date, photos, birth certificate or vaccines: those are handed in person.")}</div>
+        <div className="text-[11.5px] font-medium leading-[1.5] text-ink/60">{E2("No pedimos fecha de nacimiento, fotos, acta ni vacunas: eso se entrega en persona al lugar.", "We do not ask for birth date, photos, birth certificate or vaccines: those are handed in person.")}</div>
       </div>}
       {s.lvl && <div>
         <div className={K}>{E2("TU NIVEL", "YOUR LEVEL")}</div>
@@ -131,7 +131,7 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
         <div className="flex justify-between gap-2.5"><span className={K}>{E2("NOTA · OPCIONAL", "NOTE · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length}/200</span></div>
         <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 200))} rows={2} aria-label={E2("Nota", "Note")} placeholder={E2("Ej.: trabajo de noche los viernes…", "E.g. I work nights on Fridays…")}
           className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
-        <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/55">{fe ? `${nm(AVISO_NOTA)}${b.neutro ? E2(` Tu nota va cifrada: solo la ve la oficina y se borra a los ${b.plazos.purga} días.`, ` Your note is encrypted: only the office sees it and it is deleted after ${b.plazos.purga} days.`) : ""}` : E2("No escribas datos médicos aquí; los hablas en persona con el lugar.", "Do not write medical details here; talk about them in person with the place.")}</div>
+        <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/60">{fe ? `${nm(AVISO_NOTA)}${b.neutro ? E2(` Tu nota va cifrada: solo la ve la oficina y se borra a los ${b.plazos.purga} días.`, ` Your note is encrypted: only the office sees it and it is deleted after ${b.plazos.purga} days.`) : ""}` : E2("No escribas datos médicos aquí; los hablas en persona con el lugar.", "Do not write medical details here; talk about them in person with the place.")}</div>
       </div>
       {lineaNota}
     </div>
@@ -140,8 +140,8 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
     <button key={k} type="button" role="radio" aria-checked={sel} aria-disabled={!ok} disabled={!ok} onClick={on}
       className={`flex w-full items-center gap-3 rounded-[15px] px-3.5 py-[13px] text-left ${sel ? "border-[1.5px] border-ink bg-white" : "border border-ink/[.1] bg-white"} ${ok ? "" : "opacity-50"}`}>
       <span className={`grid h-[20px] w-[20px] flex-none place-items-center rounded-full ${sel ? "bg-ink" : "border-[1.5px] border-ink/30"}`}>{sel && <span className="h-2 w-2 rounded-full bg-white" />}</span>
-      <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold leading-[1.3]">{titulo}</span><span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">{sub.toUpperCase()}</span></span>
-      <span className="flex-none font-mono text-[10px] font-bold tracking-[0.08em]" style={{ color: ok ? "var(--tl-open-text)" : "rgba(11,14,18,.45)" }}>{der}</span>
+      <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold leading-[1.3]">{titulo}</span><span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{sub.toUpperCase()}</span></span>
+      <span className="flex-none font-mono text-[10px] font-bold tracking-[0.08em]" style={{ color: ok ? "var(--tl-open-text)" : "rgba(11,14,18,.6)" }}>{der}</span>
     </button>
   );
   const libresL = (n: number, mia: boolean) => (mia ? E2("TU CUPO", "YOUR SPOT") : n ? E2(n === 1 ? "QUEDA 1" : `QUEDAN ${n}`, `${n} LEFT`) : E2("LLENO", "FULL"));
@@ -210,7 +210,7 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
   const bloquePlan = curso && b.plan > 0 && resto > 0 ? (
     <div data-screen-label="Inscripción · plan de pagos" className={`flex flex-col gap-3 p-4 ${caja}`}>
       <div role="switch" aria-checked={plan} aria-label={E2("Plan de pagos", "Payment plan")} tabIndex={0} onClick={() => { setPlan(!plan); setAcepto(false); }} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setPlan(!plan); setAcepto(false); } }} className="flex cursor-pointer items-center gap-3">
-        <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{E2(`Pagar el resto en ${b.plan} pagos sin intereses`, `Pay the rest in ${b.plan} interest-free payments`)}</div><div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/55">{E2("Se pagan en la escuela. To'Latino no cobra cuotas ni las carga a tu tarjeta.", "Paid at the school. To'Latino does not charge installments or put them on your card.")}</div></div>
+        <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{E2(`Pagar el resto en ${b.plan} pagos sin intereses`, `Pay the rest in ${b.plan} interest-free payments`)}</div><div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/60">{E2("Se pagan en la escuela. To'Latino no cobra cuotas ni las carga a tu tarjeta.", "Paid at the school. To'Latino does not charge installments or put them on your card.")}</div></div>
         <span className={`relative h-6 w-[42px] flex-none rounded-full transition-colors ${plan ? "bg-ink" : "bg-ink/20"}`}><span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-transform ${plan ? "translate-x-[21px]" : "translate-x-[3px]"}`} /></span>
       </div>
       {plan && G && <>
@@ -235,7 +235,7 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
   const extras = (
     <div className={`flex flex-col gap-3.5 p-4 ${caja}`}>
       <div role="switch" aria-checked={sms} aria-label={E2("Avisos", "Alerts")} tabIndex={0} onClick={() => setSms(!sms)} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setSms(!sms); } }} className="flex cursor-pointer items-center gap-3">
-        <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{E2("Avisos", "Alerts")}</div><div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/55">{E2("Te avisamos en Avisos cuando te confirmen, si cambia el grupo y el día antes de empezar.", "We let you know in Alerts when you are confirmed, if the group changes and the day before you start.")}</div></div>
+        <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{E2("Avisos", "Alerts")}</div><div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/60">{E2("Te avisamos en Avisos cuando te confirmen, si cambia el grupo y el día antes de empezar.", "We let you know in Alerts when you are confirmed, if the group changes and the day before you start.")}</div></div>
         <span className={`relative h-6 w-[42px] flex-none rounded-full transition-colors ${sms ? "bg-ink" : "bg-ink/20"}`}><span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-transform ${sms ? "translate-x-[21px]" : "translate-x-[3px]"}`} /></span>
       </div>
     </div>
@@ -257,7 +257,7 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
         </div>
         <div data-screen-label="Inscripción · barra" className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/[.08] bg-paper/[.96] px-4 pb-5 pt-3 backdrop-blur-[14px]">
           <div className="flex items-center gap-3.5">
-            <div className="min-w-0 flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{payK}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{usdI(mat)}</div><div className="mt-1 max-w-[140px] truncate font-mono text-[8.5px] font-semibold tracking-[0.06em] text-ink/45">{barSub}</div></div>
+            <div className="min-w-0 flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{payK}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{usdI(mat)}</div><div className="mt-1 max-w-[140px] truncate font-mono text-[8.5px] font-semibold tracking-[0.06em] text-ink/60">{barSub}</div></div>
             <div className="flex min-w-0 flex-1"><Button block disabled={!okPaso || ocupado} onClick={sigue}>{paso === 2 ? (ocupado ? E2("Enviando…", "Sending…") : enviarL) : E2("Continuar", "Continue")}</Button></div>
           </div>
           {!okPaso && falta && <div className="mt-[9px] text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-pro-ink">{falta.toUpperCase()}</div>}
@@ -265,7 +265,7 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
       </div>
       <div data-screen-label="APP-NEG-EDU-INSCRIPCION · desktop" className="mx-auto hidden max-w-[1180px] px-[30px] pb-[60px] pt-[22px] lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{b.negocio.nombre}</button>
-        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{fe ? (b.fecha ? E2("Pedir fecha", "Ask for a date") : E2("Inscribirme", "Sign up")) : nm(V.inscribir)}</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{`${b.negocio.nombre} · ${nm(s.name)}`.toUpperCase()}</div></div>
+        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{fe ? (b.fecha ? E2("Pedir fecha", "Ask for a date") : E2("Inscribirme", "Sign up")) : nm(V.inscribir)}</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{`${b.negocio.nombre} · ${nm(s.name)}`.toUpperCase()}</div></div>
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-x-12 gap-y-8">
           <div className="flex min-w-0 flex-col gap-[26px]">
             <div><div className="mb-3 font-display text-[20px] font-extrabold leading-[1.1] tracking-[-0.03em]">{TT[0]}</div><div className="flex flex-col gap-3">{tarjetaSvc}{bloquePara}</div></div>
@@ -277,10 +277,10 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
             <div className="flex flex-col gap-3 rounded-[22px] border border-ink/10 bg-white px-5 py-[18px] shadow-[var(--shadow-float)]">
               {!listo && <div className="text-center text-[12px] font-bold text-pro-ink">{falta}</div>}
               <div className="flex items-center gap-3.5">
-                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{payK}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">{usdI(mat)}</div></div>
+                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{payK}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">{usdI(mat)}</div></div>
                 <div className="flex min-w-0 flex-1"><Button variant="primary" block disabled={!listo || ocupado} onClick={() => void enviar()}>{ocupado ? E2("Enviando…", "Sending…") : enviarL}</Button></div>
               </div>
-              <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">{barSub}</div>
+              <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{barSub}</div>
               {errorBox}
             </div>
           </aside>

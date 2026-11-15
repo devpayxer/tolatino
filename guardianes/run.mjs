@@ -17,6 +17,7 @@ import { paginasLegales } from "../scripts/legal/indexar.mjs";
 import { BORRADOR as BORRADOR_LEGAL, CLAVES as CLAVES_LEGALES } from "../scripts/legal/forma.mjs";
 // 9f · Las cadenas de la interfaz: el guardián usa el MISMO extractor que genera apps/web/lib/cms-cadenas.json.
 import { cadenasDelCodigo, comoJson as cmsComoJson, SALIDA as CMS_SALIDA } from "../scripts/cms/extraer.mjs";
+import { contrasteLinea, GRIS_AA } from "../scripts/contraste-aa.mjs";
 
 const solo = process.argv.includes("--solo") ? process.argv[process.argv.indexOf("--solo") + 1] : null;
 // 9f · Lo que el extractor saca del código (si el código no se deja leer, el guardián lo dice).
@@ -1334,6 +1335,27 @@ const guardianes = {
         if (!tag.includes("onClick={") || /tec\(|tabIndex|onKeyDown|role="presentation"|onPointer|inset-0|inset: 0|stopPropagation|onClick=\{(stop|parar)\}/.test(tag)) continue;
         falla(G, f, s.slice(0, m.index).split("\n").length, `<${m[1]}> con onClick sin teclado: agrega {...tec(clic)} (lib/tec.ts) y su role, o role="presentation" si repite a otro control`);
       }
+    }
+  },
+
+  /* 9c · contrasteTexto: el texto gris llega a AA (4,5:1). axe (9b-2) encontró en las seis pantallas clave textos chicos en ink al 42–55 % (2,8–4,3:1
+     sobre blanco y papel). Ahora el gris de texto es ink al 60 % (5:1): en el sistema portado lo pone scripts/portar-sistema.mjs (contraste) y en
+     las pantallas y piezas propias scripts/contraste-aa.mjs, y aquí se vigila con la misma regla: ningún color de texto (style color, fg, Icon color,
+     text-[…], text-ink/40…55) con ink por debajo del 60 %. Sombras, bordes, fondos y contornos no son texto. Al revés: alreves9c. */
+  contrasteTexto() {
+    const G = "contrasteTexto";
+    for (const f of codigo) {
+      if (!/^(apps\/web\/(app|lib)|packages\/ui\/src)\/.*\.(tsx?|css|js)$/.test(f)) continue;
+      const enDs = f.startsWith("packages/ui/src/ds/");
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (contrasteLinea(l) !== l)
+          falla(G, f, i + 1, `texto gris por debajo de AA (ink al 40–55 %): usa ${GRIS_AA} o text-ink/60 (node scripts/contraste-aa.mjs lo arregla${enDs ? "; en el sistema portado, node scripts/portar-sistema.mjs" : ""})`);
+      });
+    }
+    const tk = existsSync("packages/ui/src/tokens.css") ? readFileSync("packages/ui/src/tokens.css", "utf8") : "";
+    for (const k of ["--tl-text-muted", "--tl-text-faint", "--tl-text-3"]) {
+      const m = new RegExp(`${k}:\\s*rgba\\(11,14,18,\\.(\\d+)\\)`).exec(tk);
+      if (!m || parseFloat(`0.${m[1]}`) < 0.6) falla(G, "packages/ui/src/tokens.css", 0, `${k} tiene que ser ink al 60 % o más (contraste AA)`);
     }
   },
 

@@ -61,7 +61,7 @@ export function Tramite({ pp, svcId, con0, notaDias, es, yo }: { pp: ProPublico;
   const radio = (on: boolean, t: string, sub: string, onClick: () => void, key: string) => (
     <button key={key} type="button" role="radio" aria-checked={on} onClick={onClick} className={`flex items-center gap-3 rounded-[14px] px-3.5 py-3 text-left ${on ? "border-[1.5px] border-ink" : "border border-ink/10"}`}>
       <span className={`box-border h-5 w-5 flex-none rounded-full ${on ? "border-[6px] border-ink" : "border-[1.5px] border-ink/25"}`} />
-      <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{t}</span>{sub && <span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{sub}</span>}</span>
+      <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{t}</span>{sub && <span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{sub}</span>}</span>
     </button>
   );
   const bloque0 = (
@@ -80,7 +80,7 @@ export function Tramite({ pp, svcId, con0, notaDias, es, yo }: { pp: ProPublico;
       <div>
         <div className="flex justify-between gap-2.5"><span className={K}>{E2("NOTA PARA LA OFICINA · OPCIONAL", "NOTE FOR THE OFFICE · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length}/300</span></div>
         <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 300))} rows={3} aria-label={E2("Nota para la oficina", "Note for the office")} placeholder={E2("Ej.: es para renovar; vence en noviembre", "E.g. it is a renewal; it expires in November")} className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
-        <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/55">{E2(`Solo lo ve la oficina; nunca sale en reseñas. No escribas números de caso, A-number ni documentos. Se borra ${diasTxt(notaDias, true)} después.`, `Only the office sees it; never in reviews. Do not write case numbers, A-numbers or documents. Deleted ${diasTxt(notaDias, false)} later.`)}</div>
+        <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/60">{E2(`Solo lo ve la oficina; nunca sale en reseñas. No escribas números de caso, A-number ni documentos. Se borra ${diasTxt(notaDias, true)} después.`, `Only the office sees it; never in reviews. Do not write case numbers, A-numbers or documents. Deleted ${diasTxt(notaDias, false)} later.`)}</div>
       </div>
     </div>
   );
@@ -118,7 +118,7 @@ export function Tramite({ pp, svcId, con0, notaDias, es, yo }: { pp: ProPublico;
   const pago = (
     <div className={`flex flex-col gap-2 p-4 ${caja}`}>
       <div className="flex items-baseline justify-between gap-3"><span className={K}>{E2("PRECIO", "PRICE")}</span><span className="font-display text-[18px] font-extrabold">{P.l}</span></div>
-      <div className="text-right font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{P.s}</div>
+      <div className="text-right font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{P.s}</div>
       <div className="mt-1 border-t border-ink/[.07] pt-3"><div className={K}>{E2("CÓMO SE PAGA", "HOW YOU PAY")}</div>
         {como.map(([k, v2]) => <div key={k} className="mt-2 flex justify-between gap-3 text-[13px] font-bold"><span>{k}</span><span className="text-right">{v2}</span></div>)}</div>
     </div>
@@ -131,7 +131,7 @@ export function Tramite({ pp, svcId, con0, notaDias, es, yo }: { pp: ProPublico;
         legal ? E2("To’Latino no da consejo legal. Nadie te garantiza un resultado.", "To’Latino does not give legal advice. No one can guarantee a result.") : E2("Nada se cobra sin tu OK.", "Nothing is charged without your OK.")]
         .map((t) => <div key={t} className="flex items-start gap-2 text-[12.5px] font-medium leading-[1.5] text-ink/70"><span className="grid flex-none pt-0.5"><Icon name="check" size={13} color="var(--tl-open)" /></span>{t}</div>)}
       <div role="switch" aria-checked={sms} aria-label={E2("Avisos", "Alerts")} tabIndex={0} onClick={() => setSms(!sms)} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setSms(!sms); } }} className="mt-1 flex cursor-pointer items-center gap-3 border-t border-ink/[.07] pt-3.5">
-        <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{E2("Avisos", "Alerts")}</div><div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/55">{E2("Te avisamos cuando confirmen y el día antes.", "We let you know when confirmed and the day before.")}</div></div>
+        <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{E2("Avisos", "Alerts")}</div><div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/60">{E2("Te avisamos cuando confirmen y el día antes.", "We let you know when confirmed and the day before.")}</div></div>
         <span className={`relative h-6 w-[42px] flex-none rounded-full transition-colors ${sms ? "bg-ink" : "bg-ink/20"}`}><span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-transform ${sms ? "translate-x-[21px]" : "translate-x-[3px]"}`} /></span>
       </div>
     </div>
@@ -145,7 +145,7 @@ export function Tramite({ pp, svcId, con0, notaDias, es, yo }: { pp: ProPublico;
         <div className="flex flex-col gap-3 px-4 pt-4">{paso === 0 && bloque0}{paso === 1 && bloque1}{paso === 2 && <>{resumen}{pago}{bueno}</>}{errorBox}</div>
         <div data-screen-label="Booking · barra" className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/[.08] bg-paper/[.96] px-4 pb-5 pt-3 backdrop-blur-[14px]">
           <div className="flex items-center gap-3.5">
-            <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{E2("HOY PAGAS", "TODAY YOU PAY")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">$0</div></div>
+            <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{E2("HOY PAGAS", "TODAY YOU PAY")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">$0</div></div>
             <div className="flex min-w-0 flex-1"><Button block disabled={!okPaso || ocupado} onClick={sigue}>{paso === 2 ? (ocupado ? E2("Enviando…", "Sending…") : enviarL) : E2("Continuar", "Continue")}</Button></div>
           </div>
           {!okPaso && falta && <div className="mt-[9px] text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-pro-ink">{falta.toUpperCase()}</div>}
@@ -153,7 +153,7 @@ export function Tramite({ pp, svcId, con0, notaDias, es, yo }: { pp: ProPublico;
       </div>
       <div data-screen-label="APP-NEG-PRO-BOOKING · desktop" className="mx-auto hidden max-w-[1180px] px-[30px] pb-[60px] pt-[22px] lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{pp.negocio.nombre}</button>
-        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">Booking</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{`${pp.negocio.nombre} · ${nm(s.name)}`.toUpperCase()}</div></div>
+        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">Booking</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{`${pp.negocio.nombre} · ${nm(s.name)}`.toUpperCase()}</div></div>
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-x-12 gap-y-8">
           <div className="flex min-w-0 flex-col gap-[26px]">
             <div><div className="mb-3 font-display text-[20px] font-extrabold leading-[1.1] tracking-[-0.03em]">{T[0]}</div>{bloque0}</div>
@@ -165,7 +165,7 @@ export function Tramite({ pp, svcId, con0, notaDias, es, yo }: { pp: ProPublico;
             <div className="flex flex-col gap-3 rounded-[22px] border border-ink/10 bg-white px-5 py-[18px] shadow-[var(--shadow-float)]">
               {!listo && <div className="text-center text-[12px] font-bold text-pro-ink">{falta}</div>}
               <div className="flex items-center gap-3.5">
-                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{E2("HOY PAGAS", "TODAY YOU PAY")}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">$0</div></div>
+                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{E2("HOY PAGAS", "TODAY YOU PAY")}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">$0</div></div>
                 <div className="flex min-w-0 flex-1"><Button variant="primary" block disabled={!listo || ocupado} onClick={() => void enviar()}>{ocupado ? E2("Enviando…", "Sending…") : enviarL}</Button></div>
               </div>
               {errorBox}

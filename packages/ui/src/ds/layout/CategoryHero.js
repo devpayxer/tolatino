@@ -183,12 +183,12 @@ function CategoryHero({
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "search",
     size: d ? 18 : 17,
-    color: "rgba(11,14,18,.45)"
+    color: "rgba(11,14,18,.6)"
   }), /*#__PURE__*/React.createElement("span", {
     style: {
       flex: 1,
       font: `500 ${d ? 14.5 : 14}px Manrope,sans-serif`,
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, placeholder), d ? /*#__PURE__*/React.createElement(__ds_scope.Button, {
     size: "md",
@@ -276,7 +276,7 @@ function CategoryHero({
         alignSelf: 'flex-start',
         font: `800 ${d ? 10.5 : 10}px ${mono}`,
         letterSpacing: '.1em',
-        color: 'rgba(11,14,18,.5)',
+        color: 'rgba(11,14,18,.6)',
         whiteSpace: 'nowrap',
         textTransform: 'uppercase'
       }

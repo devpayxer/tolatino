@@ -115,8 +115,8 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
     const d = dias.find((x) => x.weekday === wd), esHoy = wd === b.dow;
     const lineas = d?.open && d.ranges.length
       ? d.ranges.map((rg) => ({ range: rango(rg, lang), type: "", color: "var(--tl-ink)", dash: "transparent", fg: "var(--tl-ink)", weight: esHoy ? 800 : 600 }))
-      : [{ range: L("Cerrado", "Closed"), type: "", color: "rgba(11,14,18,.12)", dash: "transparent", fg: "rgba(11,14,18,.45)", weight: 600 }];
-    return { d: esHoy ? L("HOY", "TODAY") : DIA_CORTO[lang][wd], dc: esHoy ? (b.open ? "var(--tl-open-text)" : "var(--tl-danger)") : "rgba(11,14,18,.55)", lines: lineas, tag: "", tagDisp: "none", tagBg: "", tagFg: "" };
+      : [{ range: L("Cerrado", "Closed"), type: "", color: "rgba(11,14,18,.12)", dash: "transparent", fg: "rgba(11,14,18,.6)", weight: 600 }];
+    return { d: esHoy ? L("HOY", "TODAY") : DIA_CORTO[lang][wd], dc: esHoy ? (b.open ? "var(--tl-open-text)" : "var(--tl-danger)") : "rgba(11,14,18,.6)", lines: lineas, tag: "", tagDisp: "none", tagBg: "", tagFg: "" };
   });
   const cambios = await db().query<{ desde: string; hasta: string; closed: boolean; ranges: Rango[]; label: Bi | null }>(
     `select to_char(h.date_from, 'YYYY-MM-DD') as desde, to_char(h.date_to, 'YYYY-MM-DD') as hasta, h.closed, h.ranges, h.label

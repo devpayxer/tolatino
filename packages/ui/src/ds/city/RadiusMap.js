@@ -13,7 +13,7 @@ const has = v => v !== undefined && v !== null && v !== '' && v !== false;
 const K = {
   font: '800 10px ' + mono,
   letterSpacing: '.14em',
-  color: 'rgba(11,14,18,.45)'
+  color: 'rgba(11,14,18,.6)'
 };
 const Tiles = ({
   scale = 1,
@@ -176,7 +176,7 @@ function RadiusMap({
       display: 'grid',
       placeItems: 'center',
       background: r.on ? 'var(--tl-white)' : 'transparent',
-      color: r.on ? 'var(--tl-ink)' : 'rgba(11,14,18,.55)',
+      color: r.on ? 'var(--tl-ink)' : 'rgba(11,14,18,.6)',
       boxShadow: r.on ? '0 1px 3px rgba(11,14,18,.15)' : 'none',
       font: '700 ' + (desk ? 12.5 : 13) + 'px Manrope,sans-serif',
       cursor: 'pointer'
@@ -210,7 +210,7 @@ function RadiusMap({
   }, note) : null, has(foot) ? /*#__PURE__*/React.createElement("span", {
     style: {
       font: '500 12px/1.5 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.55)',
+      color: 'rgba(11,14,18,.6)',
       textWrap: 'pretty'
     }
   }, foot) : null) : null);
@@ -266,7 +266,7 @@ function CitySoon({
     style: {
       font: '800 9.5px ' + mono,
       letterSpacing: '.14em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, meanwhile.kicker), /*#__PURE__*/React.createElement("span", {
     style: {
@@ -377,7 +377,7 @@ function CitySoon({
     style: {
       font: '700 10.5px ' + mono,
       letterSpacing: '.14em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, eyebrow), /*#__PURE__*/React.createElement("span", {
     style: {
@@ -456,7 +456,7 @@ function CitySoon({
     style: {
       font: '700 9px ' + mono,
       letterSpacing: '.1em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, s.label)))) : null), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -512,7 +512,7 @@ function CitySoon({
   }, a)))) : null, meanwhile && meanwhileAt === 'mob' ? Mean(true) : null, has(foot) ? /*#__PURE__*/React.createElement("span", {
     style: {
       font: '500 12px/1.55 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.55)',
+      color: 'rgba(11,14,18,.6)',
       textWrap: 'pretty'
     }
   }, foot) : null));

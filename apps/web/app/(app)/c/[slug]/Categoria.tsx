@@ -82,12 +82,12 @@ export function Categoria({ v }: { v: Vista }) {
           <div className="font-mono text-[10.5px] font-bold tracking-[0.08em] lg:hidden">{v.cifrasCorta}</div>
           <div className="hidden font-mono text-[12px] font-bold tracking-[0.08em] lg:block">{v.cifrasLarga}</div>
           <button type="button" onClick={buscar} className="flex items-center gap-2.5 rounded-[14px] bg-white px-3.5 py-[11px] text-left lg:hidden">
-            <Icon name="search" size={17} color="rgba(11,14,18,.45)" />
-            <span className="text-[14px] font-medium text-ink/50">{v.buscador}</span>
+            <Icon name="search" size={17} color="rgba(11,14,18,.6)" />
+            <span className="text-[14px] font-medium text-ink/60">{v.buscador}</span>
           </button>
           <div className="mt-1.5 hidden max-w-[640px] items-center gap-2.5 rounded-2xl bg-white py-1.5 pl-4 pr-1.5 lg:flex">
-            <Icon name="search" size={18} color="rgba(11,14,18,.45)" />
-            <button type="button" onClick={buscar} className="flex-1 cursor-text text-left text-[14.5px] font-medium text-ink/50">{v.buscador}</button>
+            <Icon name="search" size={18} color="rgba(11,14,18,.6)" />
+            <button type="button" onClick={buscar} className="flex-1 cursor-text text-left text-[14.5px] font-medium text-ink/60">{v.buscador}</button>
             <Button size="md" onClick={buscar}>{T.buscar}</Button>
           </div>
         </div>
@@ -159,7 +159,7 @@ export function Categoria({ v }: { v: Vista }) {
               const ultimo = i === v.capitulos.length - 1;
               return (
                 <div key={g.key} className={`flex flex-none flex-col gap-[9px] lg:gap-2.5 ${ultimo ? "" : "mr-[18px] border-r border-line pr-[18px]"}`}>
-                  <div className="sticky left-0 self-start whitespace-nowrap font-mono text-[10px] font-extrabold tracking-[0.1em] text-ink/50 lg:text-[10.5px]">{g.titulo}</div>
+                  <div className="sticky left-0 self-start whitespace-nowrap font-mono text-[10px] font-extrabold tracking-[0.1em] text-ink/60 lg:text-[10.5px]">{g.titulo}</div>
                   <div className="flex gap-2.5 lg:gap-3.5">
                     {g.items.map((c) => (
                       <button key={c.key} type="button" onClick={() => elegirSub(c.key)} className="flex w-[84px] flex-none snap-start flex-col gap-[7px] text-left lg:w-[112px] lg:gap-2">
@@ -222,7 +222,7 @@ export function Categoria({ v }: { v: Vista }) {
           <div className="flex flex-col gap-3">
             <div className="hidden flex-wrap items-baseline gap-3 lg:flex">
               <span className="font-display text-[22px] font-extrabold tracking-[-0.035em]">{T.freeTitulo}</span>
-              <span className="font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{T.freeSub}</span>
+              <span className="font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{T.freeSub}</span>
             </div>
             <div className="flex flex-col gap-3 lg:mt-0.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">
               {frees.map(tarjeta)}

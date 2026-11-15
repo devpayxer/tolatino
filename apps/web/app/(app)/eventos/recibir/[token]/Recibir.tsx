@@ -51,7 +51,7 @@ export function Recibir({ x, token, es }: { x: R; token: string; es: boolean }) 
         <div className="flex items-center gap-3">
           <span className="size-[56px] flex-none rounded-[14px] bg-ink bg-cover bg-center" style={ev.img ? { backgroundImage: `url(${ev.img})` } : undefined} />
           <div className="min-w-0">
-            <div className="font-mono text-[10.5px] font-bold tracking-[0.16em] text-ink/50">{comp ? E2(`CORTESÍA DE ${x.de.toUpperCase()}`, `COMP FROM ${x.de.toUpperCase()}`) : E2(`TE LO MANDA ${x.de.toUpperCase()}`, `SENT BY ${x.de.toUpperCase()}`)}</div>
+            <div className="font-mono text-[10.5px] font-bold tracking-[0.16em] text-ink/60">{comp ? E2(`CORTESÍA DE ${x.de.toUpperCase()}`, `COMP FROM ${x.de.toUpperCase()}`) : E2(`TE LO MANDA ${x.de.toUpperCase()}`, `SENT BY ${x.de.toUpperCase()}`)}</div>
             <h1 className="m-0 mt-1 font-display text-[22px] font-extrabold leading-[1.1] tracking-[-0.035em]">{ev.title}</h1>
             <div className="mt-1 text-[12.5px] font-semibold text-ink/65">{`${cuando} · ${ev.venue}`}</div>
           </div>

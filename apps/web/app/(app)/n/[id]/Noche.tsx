@@ -89,8 +89,8 @@ export function NoNoche({ v }: { v: No }) {
       </div>
       <div data-screen-label="Ficha · Noche · la fila" className="rounded-[18px] border border-ink/[.08] bg-white px-4 py-4">
         <div className="flex items-center justify-between gap-2">
-          <div className="font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{E2("LA FILA", "THE LINE")}</div>
-          {up && <div className="font-mono text-[9px] font-bold tracking-[0.1em] text-ink/55">{up}</div>}
+          <div className="font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{E2("LA FILA", "THE LINE")}</div>
+          {up && <div className="font-mono text-[9px] font-bold tracking-[0.1em] text-ink/60">{up}</div>}
         </div>
         <div className="mt-1.5 font-display text-[20px] font-extrabold leading-none tracking-[-0.03em]">{f ? filaCorta(f, v.es) : "—"}</div>
         <div className="mt-2 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/65">{f ? filaCuando(f, v.es) : E2("El local todavía no ha puesto la fila. Sale en vivo desde que abren.", "The venue has not posted the line yet. It shows live from opening.")}</div>
@@ -109,7 +109,7 @@ function Fila({ v, it, tarjeta, desc }: { v: No; it: No["top"][number]; tarjeta?
       <div className="min-w-0 flex-1">
         <div className="text-[14.5px] font-bold leading-[1.3]">{it.name}</div>
         {desc && it.desc && <div className="mt-1 line-clamp-3 text-pretty text-[12.5px] leading-[1.5] text-ink/60">{it.desc}</div>}
-        {it.meta && <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/50">{it.meta}</div>}
+        {it.meta && <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{it.meta}</div>}
         <div className="mt-1.5 font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{it.price}</div>
       </div>
       {can && <Button variant="soft" size="md" onClick={(e: MouseEvent) => v.abrir(it.id, it.k, e)}>{it.btn}</Button>}
@@ -128,7 +128,7 @@ export function NoTab({ v, desk }: { v: No; desk: boolean }) {
       <div className="flex flex-col gap-[22px]">
         {v.secs.map((sc) => (
           <div key={sc.title}>
-            <div className="font-mono text-[11px] font-extrabold tracking-[0.14em] text-ink/45">{sc.title}</div>
+            <div className="font-mono text-[11px] font-extrabold tracking-[0.14em] text-ink/60">{sc.title}</div>
             <div className={desk ? "mt-3 grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5" : "mt-1"}>{sc.items.map((it) => <Fila key={it.id} v={v} it={it} tarjeta={desk} desc />)}</div>
           </div>
         ))}
@@ -162,12 +162,12 @@ export function NoHoja({ v }: { v: No }) {
           <div className="flex flex-col gap-4 px-5 pb-6 pt-[18px]">
             <div>
               <div className="font-display text-[22px] font-extrabold leading-[1.15] tracking-[-0.035em]">{nm(s.name)}</div>
-              <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</span><span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/50">{P.s}</span></div>
+              <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</span><span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{P.s}</span></div>
               {texto && <p className="mt-2.5 text-pretty text-[13px] leading-[1.6] text-ink/65">{texto}</p>}
             </div>
             {s.k !== "cover" && (
               <div role="radiogroup" aria-label={E2("¿Cuántos van?", "How many are going?")}>
-                <div className="flex items-baseline justify-between"><div className="text-[14px] font-bold">{E2("¿Cuántos van?", "How many are going?")}</div><div className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{E2("ELIGE 1", "CHOOSE 1")}</div></div>
+                <div className="flex items-baseline justify-between"><div className="text-[14px] font-bold">{E2("¿Cuántos van?", "How many are going?")}</div><div className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{E2("ELIGE 1", "CHOOSE 1")}</div></div>
                 <div className="mt-2.5 flex flex-wrap gap-2">
                   {Array.from({ length: max }, (_, i) => i + 1).map((n) => (
                     <button key={n} type="button" role="radio" aria-checked={pn === n} aria-label={String(n)} onClick={() => v.setPax(n)} className={`h-10 min-w-10 rounded-xl px-3 text-[14px] font-bold ${pn === n ? "bg-ink text-white" : "border border-ink/[.12] bg-white"}`}>{n}</button>
@@ -176,21 +176,21 @@ export function NoHoja({ v }: { v: No }) {
               </div>)}
             {e && (
               <div data-screen-label="Servicio · esta noche" className="rounded-2xl bg-paper px-4 py-3">
-                <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{v.cuando}</div>
+                <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{v.cuando}</div>
                 <div className="mt-1 text-[14px] font-bold">{coverTexto(e, es)}</div>
-                <div className="mt-1 font-mono text-[10px] font-semibold tracking-[0.04em] text-ink/50">{[`${e.edad}+`, np.vestimenta ? nm(np.vestimenta) : ""].filter(Boolean).join(" · ").toUpperCase()}</div>
+                <div className="mt-1 font-mono text-[10px] font-semibold tracking-[0.04em] text-ink/60">{[`${e.edad}+`, np.vestimenta ? nm(np.vestimenta) : ""].filter(Boolean).join(" · ").toUpperCase()}</div>
               </div>)}
             {s.inc.length > 0 && (
               <div className="rounded-2xl border border-ink/[.08] px-4 py-3">
-                <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{E2("INCLUYE", "INCLUDES")}</div>
+                <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("INCLUYE", "INCLUDES")}</div>
                 {s.inc.map((z) => <div key={z.es} className="mt-2 flex items-start gap-2 text-[13px] font-semibold leading-[1.45]"><span className="grid flex-none pt-0.5"><Icon name="check" size={14} color="var(--tl-open-text)" /></span>{nm(z)}</div>)}
               </div>)}
             <Nota ic={s.k === "lista" ? "check" : "dollar"} t={pago} />
-            {s.k !== "cover" && !app && <div className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/55">{E2("Este local no toma listas ni mesas en To’Latino por ahora: llama al local.", "This venue is not taking lists or tables on To’Latino right now: call the venue.")}</div>}
+            {s.k !== "cover" && !app && <div className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Este local no toma listas ni mesas en To’Latino por ahora: llama al local.", "This venue is not taking lists or tables on To’Latino right now: call the venue.")}</div>}
           </div>
         </div>
         <div className="flex flex-none items-center gap-3.5 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
-          <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{P.s || E2("PRECIO", "PRICE")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</div></div>
+          <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{P.s || E2("PRECIO", "PRICE")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</div></div>
           <div className="flex min-w-0 flex-1"><Button block icon={s.k === "cover" ? "pin" : !app ? "phone" : s.k === "lista" ? "check" : "drink"} onClick={go}>{cta}</Button></div>
         </div>
       </div>
@@ -226,8 +226,8 @@ export function NoResumen({ v, desk, onAll }: { v: No; desk: boolean; onAll?: ()
         <div data-screen-label="Resumen · datos de la noche" className="mt-6 rounded-[18px] border border-ink/[.08] bg-white px-4">
           {facts.map(([ic, k, val], i) => (
             <div key={k} className={`flex items-start gap-3 py-3.5 ${i ? "border-t border-ink/[.06]" : ""}`}>
-              <span className="grid flex-none pt-0.5"><Icon name={ic} size={17} color="rgba(11,14,18,.55)" /></span>
-              <div className="min-w-0 flex-1"><div className="font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{k}</div><div className="mt-1 text-pretty text-[13.5px] font-semibold leading-[1.45]">{val}</div></div>
+              <span className="grid flex-none pt-0.5"><Icon name={ic} size={17} color="rgba(11,14,18,.6)" /></span>
+              <div className="min-w-0 flex-1"><div className="font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</div><div className="mt-1 text-pretty text-[13.5px] font-semibold leading-[1.45]">{val}</div></div>
             </div>))}
         </div>)}
     </div>
@@ -242,7 +242,7 @@ export function NoRiel({ v, onCta }: { v: No; onCta: () => void }) {
     <div data-screen-label="Ficha · Noche · columna" className="flex flex-col gap-4 rounded-[22px] border border-ink/10 bg-white p-[22px] shadow-[0_24px_48px_-34px_rgba(11,14,18,.45)]">
       <div className="font-display text-[28px] font-extrabold leading-none tracking-[-0.04em]">{v.desde}</div>
       {v.pro && <div className="grid grid-cols-3 gap-2">
-        {v.td.map((m) => <div key={m.k} className="min-w-0 rounded-[14px] bg-paper px-2.5 py-[11px]"><div className="font-mono text-[8.5px] font-bold tracking-[0.1em] text-ink/45">{m.k}</div><div className="mt-1.5 text-[13px] font-bold leading-[1.3]">{m.v}</div></div>)}
+        {v.td.map((m) => <div key={m.k} className="min-w-0 rounded-[14px] bg-paper px-2.5 py-[11px]"><div className="font-mono text-[8.5px] font-bold tracking-[0.1em] text-ink/60">{m.k}</div><div className="mt-1.5 text-[13px] font-bold leading-[1.3]">{m.v}</div></div>)}
       </div>}
       <div className="text-pretty text-[12.5px] font-medium leading-[1.55] text-ink/60">{v.np.porFecha ? v.E2("Trabaja por fecha: pide la tuya y te mandan el precio por escrito.", "Works by date: ask for yours and get the price in writing.") : v.linea}</div>
       <div className="flex"><Cta v={v} onCta={onCta} block /></div>
@@ -256,7 +256,7 @@ export function NoBarra({ v, onCta }: { v: No; onCta: () => void }) {
     <div data-screen-label="Ficha · barra de Noche" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-paper/95 px-5 pb-[22px] pt-[13px] backdrop-blur-[14px] lg:hidden">
       <div className="min-w-0 flex-1">
         <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{v.desde}</div>
-        {sub && <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">{sub.toUpperCase()}</div>}
+        {sub && <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{sub.toUpperCase()}</div>}
       </div>
       <Cta v={v} onCta={onCta} />
     </div>

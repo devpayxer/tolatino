@@ -12,7 +12,7 @@ const has = v => v !== undefined && v !== null && v !== '' && v !== false;
 const K = {
   font: '700 10px ' + mono,
   letterSpacing: '.2em',
-  color: 'rgba(11,14,18,.42)'
+  color: 'rgba(11,14,18,.6)'
 };
 
 /* Precio (líneas con sub), Total del servicio, CÓMO SE PAGA con barra (hoy / en el local), filas con punto y monto, aviso del depósito retenido y la tarjeta con Cambiar.
@@ -70,7 +70,7 @@ function PaymentSummary({
     style: {
       marginTop: 2,
       font: '500 11.5px/1.4 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.55)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, l.sub) : null), /*#__PURE__*/React.createElement("span", {
     style: {
@@ -92,7 +92,7 @@ function PaymentSummary({
     style: totalMono ? {
       font: '700 9.5px ' + mono,
       letterSpacing: '.12em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     } : {
       font: '700 13.5px Manrope,sans-serif'
     }
@@ -266,7 +266,7 @@ function PaymentSummary({
     style: {
       marginTop: 8,
       font: '500 11px/1.45 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, hold.foot) : null) : null, card ? /*#__PURE__*/React.createElement("div", {
     "data-screen-label": card.screenLabel,
@@ -310,7 +310,7 @@ function PaymentSummary({
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "card",
     size: 15,
-    color: "rgba(11,14,18,.55)"
+    color: "rgba(11,14,18,.6)"
   })) : /*#__PURE__*/React.createElement("span", {
     style: {
       width: 38,
@@ -337,7 +337,7 @@ function PaymentSummary({
       marginTop: 3,
       font: '600 9px/1.4 ' + mono,
       letterSpacing: '.1em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, card.sub) : null), has(card.change) ? /*#__PURE__*/React.createElement("span", {
     style: {
@@ -424,7 +424,7 @@ function DepositOutcomes({
       paddingTop: 11,
       borderTop: '1px solid rgba(11,14,18,.07)',
       font: '500 11.5px/1.5 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, foot) : null);
 }

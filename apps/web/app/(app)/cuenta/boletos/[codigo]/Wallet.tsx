@@ -56,7 +56,7 @@ export function WalletBotones({ code, es, d, avisar }: { code: string; es: boole
   };
   return (
     <div data-screen-label="Boleto · Wallet" className="flex flex-col gap-2.5 rounded-[18px] border border-ink/[.07] bg-white p-4">
-      <div className="font-mono text-[10px] font-bold tracking-[0.14em] text-ink/50">{E2("GUÁRDALO EN TU TELÉFONO", "SAVE IT ON YOUR PHONE")}</div>
+      <div className="font-mono text-[10px] font-bold tracking-[0.14em] text-ink/60">{E2("GUÁRDALO EN TU TELÉFONO", "SAVE IT ON YOUR PHONE")}</div>
       <div className="flex flex-wrap items-center gap-2.5">
         {apple && (app ? <Insignia marca="apple" es={es} ocupado={ocupado === "apple"} onClick={() => void enApple()} /> : <Insignia marca="apple" es={es} href={`/api/pases/apple/${code}`} />)}
         {google && <Insignia marca="google" es={es} ocupado={ocupado === "google"} onClick={() => void enGoogle()} />}

@@ -12,7 +12,7 @@ type N = "Icon" | "Button" | "Chip" | "Tag" | "DateStrip" | "TimeSlots";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, Tag, DateStrip, TimeSlots } = UI as unknown as Record<N, ComponentType<any>>;
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
-const K = "font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45";
+const K = "font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60";
 const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
 const MES = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
 export function diaL(ymd: string, i: number, es: boolean, largo = false) {
@@ -105,7 +105,7 @@ function Mia({ v }: { v: Rsv }) {
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2"><span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{v.E2("TU RESERVACIÓN", "YOUR RESERVATION")}</span><Tag tone={m.tone}>{m.tag}</Tag></div>
         <div className="mt-2 text-[13.5px] font-bold leading-[1.3]">{m.t}</div>
-        <div className="mt-[3px] text-[11.5px] font-medium leading-[1.45] text-ink/55">{m.s}</div>
+        <div className="mt-[3px] text-[11.5px] font-medium leading-[1.45] text-ink/60">{m.s}</div>
       </div>
       <Icon name="chevronRight" size={16} color="rgba(11,14,18,.35)" />
     </button>
@@ -117,7 +117,7 @@ function Politicas({ v, borde = true }: { v: Rsv; borde?: boolean }) {
     <div className={borde ? "rounded-[17px] border border-line px-[15px] py-3.5" : ""}>
       <div className="flex flex-col gap-2.5">
         {v.pol.map(([ic, l]) => (
-          <div key={ic} className="flex items-start gap-2.5"><span className="grid flex-none pt-px"><Icon name={ic} size={15} color="rgba(11,14,18,.55)" /></span><span className="text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/70">{l}</span></div>
+          <div key={ic} className="flex items-start gap-2.5"><span className="grid flex-none pt-px"><Icon name={ic} size={15} color="rgba(11,14,18,.6)" /></span><span className="text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/70">{l}</span></div>
         ))}
       </div>
     </div>
@@ -155,7 +155,7 @@ export function RsvTab({ v, desk }: { v: Rsv; desk: boolean }) {
             <div className="text-[14px] font-bold leading-[1.35]">{E2(`Para ${r.max + 1} o más personas`, `For ${r.max + 1} or more guests`)}</div>
             <div className="mt-1 text-pretty text-[12.5px] font-medium leading-[1.55] text-ink/[.62]">{E2(`${r.negocio.nombre} atiende los grupos grandes como evento privado: menú, horario y depósito se acuerdan con ellos.`, `${r.negocio.nombre} handles large groups as a private event: menu, time and deposit are agreed with them.`)}</div>
             {r.evp ? <div className="mt-3 flex flex-wrap gap-2"><Button icon="party" onClick={v.onEvp}>{E2("Pedir evento privado", "Request private event")}</Button>
-              <span className="w-full text-[12px] font-medium leading-[1.45] text-ink/55">{E2("Nada se cobra hasta que aceptes su propuesta.", "Nothing is charged until you accept their proposal.")}</span></div>
+              <span className="w-full text-[12px] font-medium leading-[1.45] text-ink/60">{E2("Nada se cobra hasta que aceptes su propuesta.", "Nothing is charged until you accept their proposal.")}</span></div>
               : r.negocio.telefono && <div className="mt-3 flex"><Button variant="secondary" icon="phone" onClick={() => { location.href = `tel:${r.negocio.telefono}`; }}>{E2(`Llamar a ${r.negocio.nombre}`, `Call ${r.negocio.nombre}`)}</Button></div>}
           </div>
         </div>
@@ -208,7 +208,7 @@ export function RsvRiel({ v }: { v: Rsv }) {
       <span className="font-display text-[20px] font-extrabold leading-none tracking-[-0.03em]">{E2("Tu mesa", "Your table")}</span>
       <div className="grid grid-cols-2 gap-x-3.5 gap-y-3">{rows.map(([k, val]) => <div key={k} className="min-w-0"><div className={K}>{k}</div><div className="mt-[5px] text-[13.5px] font-bold leading-[1.35]">{val}</div></div>)}</div>
       <div className="flex"><Button variant="primary" icon="calendar" block disabled={v.sel == null || v.ocupado} onClick={v.continuar}>{v.barCta}</Button></div>
-      <div className="text-[11.5px] font-medium leading-[1.5] text-ink/55">{v.railNote}</div>
+      <div className="text-[11.5px] font-medium leading-[1.5] text-ink/60">{v.railNote}</div>
       <div className="border-t border-line pt-3"><Politicas v={v} borde={false} /></div>
     </div>
   );
@@ -226,7 +226,7 @@ export function RsvRapida({ v, onMas }: { v: Rsv; onMas: (p?: number, i?: number
         <span className="font-display text-[16px] font-extrabold leading-[1.1] tracking-[-0.02em]">{E2("Reservar mesa", "Book a table")}</span>
         <button type="button" onClick={() => onMas()} className="flex-none text-[12px] font-bold text-action">{E2("Más horarios", "More times")}</button>
       </div>
-      <div className="mt-[5px] font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/50">
+      <div className="mt-[5px] font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">
         {v.qp ? (!q ? v.P(v.qp).toUpperCase() : q.horas.length && d ? `${diaL(d.ymd, q.i, es, true)} · ${v.P(v.qp)}`.toUpperCase() : `${E2("SIN MESAS PRONTO PARA ", "NO TABLES SOON FOR ")}${v.P(v.qp).toUpperCase()}`) : E2("¿CUÁNTOS SON?", "HOW MANY GUESTS?")}
       </div>
       <div className="mt-3 flex flex-wrap gap-1.5">
@@ -246,7 +246,7 @@ export function RsvBarra({ v }: { v: Rsv }) {
     <div data-screen-label="Ficha · barra de pedido" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-paper/95 px-5 pb-[22px] pt-[13px] backdrop-blur-[14px] lg:hidden">
       <div className="min-w-0 flex-1">
         <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{v.barLabel}</div>
-        <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">{v.barSub}</div>
+        <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{v.barSub}</div>
       </div>
       <Button icon="calendar" disabled={v.sel == null || v.ocupado} onClick={v.continuar}>{v.barCta}</Button>
     </div>

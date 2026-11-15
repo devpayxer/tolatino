@@ -85,7 +85,7 @@ export function Visita({ b, es, yo }: { b: BookingVis; es: boolean; yo: boolean 
       <span className="h-[54px] w-[54px] flex-none rounded-[15px] bg-photo-bg" style={it.foto ? { backgroundImage: `url(${it.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
       <div className="min-w-0 flex-1">
         <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nm(it.name)}</div>
-        <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{[nm(it.sub), `${totalK} ${totalL}`].filter(Boolean).join(" · ").toUpperCase()}</div>
+        <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{[nm(it.sub), `${totalK} ${totalL}`].filter(Boolean).join(" · ").toUpperCase()}</div>
       </div>
       <button type="button" onClick={volver} className="flex-none text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
     </div>
@@ -95,13 +95,13 @@ export function Visita({ b, es, yo }: { b: BookingVis; es: boolean; yo: boolean 
       className={`flex w-full items-center gap-3 rounded-[15px] px-3.5 py-[13px] text-left ${sel ? "border-[1.5px] border-ink bg-white" : "border border-ink/[.1] bg-white"} ${ok ? "" : "opacity-50"}`}>
       <span className={`grid h-[20px] w-[20px] flex-none place-items-center rounded-full ${sel ? "bg-ink" : "border-[1.5px] border-ink/30"}`}>{sel && <span className="h-2 w-2 rounded-full bg-white" />}</span>
       <span className="min-w-0 flex-1 text-[14px] font-bold leading-[1.3]">{titulo}</span>
-      <span className="flex-none font-mono text-[10px] font-bold tracking-[0.08em]" style={{ color: ok ? "var(--tl-open-text)" : "rgba(11,14,18,.45)" }}>{der}</span>
+      <span className="flex-none font-mono text-[10px] font-bold tracking-[0.08em]" style={{ color: ok ? "var(--tl-open-text)" : "rgba(11,14,18,.6)" }}>{der}</span>
     </button>
   );
   const libresL = (h: BookingVis["horas"][number]) => (h.libres == null ? E2("LIBRE", "OPEN") : h.libres ? E2(h.libres === 1 ? "QUEDA 1" : `QUEDAN ${h.libres}`, `${h.libres} LEFT`) : E2("TOMADA", "TAKEN"));
   const toggle = (on: boolean, set: (v: boolean) => void, t: string, s: string, label: string) => (
     <div role="switch" aria-checked={on} aria-label={label} tabIndex={0} onClick={() => set(!on)} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); set(!on); } }} className="flex cursor-pointer items-center gap-3">
-      <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{t}</div>{s && <div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/55">{s}</div>}</div>
+      <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{t}</div>{s && <div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/60">{s}</div>}</div>
       <span className={`relative h-6 w-[42px] flex-none rounded-full transition-colors ${on ? "bg-ink" : "bg-ink/20"}`}><span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-transform ${on ? "translate-x-[21px]" : "translate-x-[3px]"}`} /></span>
     </div>
   );
@@ -162,7 +162,7 @@ export function Visita({ b, es, yo }: { b: BookingVis; es: boolean; yo: boolean 
           <span className={`mt-px grid h-[20px] w-[20px] flex-none place-items-center rounded-[6px] ${licencia ? "bg-ink" : "border-[1.5px] border-ink/30 bg-white"}`}>{licencia && <Icon name="check" size={13} color="var(--tl-white)" strokeWidth={2.4} />}</span>
           <span className="text-[13px] font-bold leading-[1.4]">{nm(TENGO_LICENCIA)}</span>
         </div>
-        <div className="text-[11.5px] font-medium leading-[1.5] text-ink/55">{E2("No pedimos el número ni la foto de tu licencia: la enseñas en persona.", "We do not ask for your license number or photo: you show it in person.")}</div>
+        <div className="text-[11.5px] font-medium leading-[1.5] text-ink/60">{E2("No pedimos el número ni la foto de tu licencia: la enseñas en persona.", "We do not ask for your license number or photo: you show it in person.")}</div>
       </>}
     </div>
   );
@@ -181,7 +181,7 @@ export function Visita({ b, es, yo }: { b: BookingVis; es: boolean; yo: boolean 
         <div className="flex justify-between gap-2.5"><span className={K}>{E2("NOTA · OPCIONAL", "NOTE · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length}/200</span></div>
         <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 200))} rows={2} aria-label={E2("Nota", "Note")} placeholder={E2(`Algo que deba saber ${nm(QUIEN[b.rubro])}…`, `Anything ${nm(QUIEN[b.rubro])} should know…`)}
           className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
-        <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/55">{nm(AVISO_NOTA)} {E2(`Solo la ve ${b.negocio.nombre}.`, `Only ${b.negocio.nombre} sees it.`)}</div>
+        <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/60">{nm(AVISO_NOTA)} {E2(`Solo la ve ${b.negocio.nombre}.`, `Only ${b.negocio.nombre} sees it.`)}</div>
       </div>
       {toggle(sms, setSms, E2("Avisos", "Alerts"), E2("Te avisamos en Avisos cuando confirmen y 2 horas antes de ir.", "We let you know in Alerts when they confirm and 2 hours before you go."), E2("Avisos", "Alerts"))}
     </div>
@@ -200,7 +200,7 @@ export function Visita({ b, es, yo }: { b: BookingVis; es: boolean; yo: boolean 
         </div>
         {!bloqueado && <div data-screen-label="Visita · barra" className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/[.08] bg-paper/[.96] px-4 pb-5 pt-3 backdrop-blur-[14px]">
           <div className="flex items-center gap-3.5">
-            <div className="min-w-0 flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{payK}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">$0</div><div className="mt-1 max-w-[140px] truncate font-mono text-[8.5px] font-semibold tracking-[0.06em] text-ink/45">{barSub}</div></div>
+            <div className="min-w-0 flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{payK}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">$0</div><div className="mt-1 max-w-[140px] truncate font-mono text-[8.5px] font-semibold tracking-[0.06em] text-ink/60">{barSub}</div></div>
             <div className="flex min-w-0 flex-1"><Button block disabled={!okPaso || ocupado} onClick={sigue}>{paso === 1 ? (ocupado ? E2("Enviando…", "Sending…") : enviarL) : E2("Continuar", "Continue")}</Button></div>
           </div>
           {!okPaso && falta && <div className="mt-[9px] text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-pro-ink">{falta.toUpperCase()}</div>}
@@ -208,7 +208,7 @@ export function Visita({ b, es, yo }: { b: BookingVis; es: boolean; yo: boolean 
       </div>
       <div data-screen-label="APP-NEG-VISITA · desktop" className="mx-auto hidden max-w-[1180px] px-[30px] pb-[60px] pt-[22px] lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{b.negocio.nombre}</button>
-        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{nm(Q.pedir)}</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{`${b.negocio.nombre} · ${nm(it.name)}`.toUpperCase()}</div></div>
+        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{nm(Q.pedir)}</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{`${b.negocio.nombre} · ${nm(it.name)}`.toUpperCase()}</div></div>
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-x-12 gap-y-8">
           <div className="flex min-w-0 flex-col gap-[26px]">
             <div><div className="mb-3 font-display text-[20px] font-extrabold leading-[1.1] tracking-[-0.03em]">{TT[0]}</div><div className="flex flex-col gap-3">{tarjetaItem}{bloqueHora}</div></div>
@@ -219,10 +219,10 @@ export function Visita({ b, es, yo }: { b: BookingVis; es: boolean; yo: boolean 
             {!bloqueado && <div className="flex flex-col gap-3 rounded-[22px] border border-ink/10 bg-white px-5 py-[18px] shadow-[var(--shadow-float)]">
               {!listo && <div className="text-center text-[12px] font-bold text-pro-ink">{falta}</div>}
               <div className="flex items-center gap-3.5">
-                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{payK}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">$0</div></div>
+                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{payK}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">$0</div></div>
                 <div className="flex min-w-0 flex-1"><Button variant="primary" block disabled={!listo || ocupado} onClick={() => void enviar()}>{ocupado ? E2("Enviando…", "Sending…") : enviarL}</Button></div>
               </div>
-              <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">{barSub}</div>
+              <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{barSub}</div>
               {errorBox}
             </div>}
           </aside>

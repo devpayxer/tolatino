@@ -111,9 +111,9 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
       </div>
       <div className="mt-[18px] flex flex-wrap items-end justify-between gap-3 border-t border-line pt-4">
         <div className="min-w-0">
-          <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{E2("TU MESA", "YOUR TABLE")}</div>
+          <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("TU MESA", "YOUR TABLE")}</div>
           <div className="mt-1.5 font-display text-[20px] font-extrabold leading-[1.15] tracking-[-0.035em]">{dL} · {T}</div>
-          <div className="mt-[5px] font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/50">{`${P(r.p)} · ${areaL(r.area)}`.toUpperCase()}</div>
+          <div className="mt-[5px] font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{`${P(r.p)} · ${areaL(r.area)}`.toUpperCase()}</div>
         </div>
         <span className={`rounded-lg px-[9px] py-1.5 font-mono text-[9.5px] font-extrabold tracking-[0.08em] ${chipBg} ${chipFg}`}>{chip}</span>
       </div>
@@ -132,7 +132,7 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
         ] as const).map(([i, l, s, dg, on]) => (
           <button key={i} type="button" disabled={ocupado} onClick={on} className="flex w-full items-center gap-3 rounded-[14px] border border-ink/[.12] px-3.5 py-3 text-left">
             <span className={`grid size-[34px] flex-none place-items-center rounded-[10px] ${dg ? "bg-danger/10" : "bg-action/10"}`}><Icon name={i} size={16} color={dg ? "var(--tl-danger)" : "var(--tl-action)"} /></span>
-            <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold leading-[1.3]">{l}</div><div className="mt-0.5 text-[11.5px] font-medium leading-[1.45] text-ink/55">{s}</div></div>
+            <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold leading-[1.3]">{l}</div><div className="mt-0.5 text-[11.5px] font-medium leading-[1.45] text-ink/60">{s}</div></div>
             <Icon name="chevronRight" size={16} color="rgba(11,14,18,.35)" />
           </button>
         ))}
@@ -169,7 +169,7 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
           </div>
           <div className="flex min-w-0 flex-1 justify-between gap-2.5 pb-3.5">
             <span className={`text-[13.5px] leading-[1.2] ${s.k === "c" ? "font-extrabold" : "font-bold"} ${s.k ? "text-ink" : "text-ink/[.42]"}`}>{s.l}</span>
-            <span className="flex-none font-mono text-[11px] font-bold text-ink/50">{s.tm}</span>
+            <span className="flex-none font-mono text-[11px] font-bold text-ink/60">{s.tm}</span>
           </div>
         </div>
       ))}
@@ -180,7 +180,7 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
       {r.tarde ? (
         <div className="flex items-center gap-[11px]">
           <span className="grid size-9 flex-none place-items-center rounded-[11px] bg-signal/[.16]"><Icon name="clock" size={17} color="var(--tl-open-text)" /></span>
-          <div className="min-w-0"><div className="text-[13.5px] font-bold leading-[1.3]">{E2(`Avisaste que llegas ${r.tarde} min tarde`, `You said you will be ${r.tarde} min late`)}</div><div className="mt-[3px] text-[12px] font-medium leading-[1.45] text-ink/55">{E2(`Te guardan la mesa hasta ${aLas(holdM).slice(2)}.`, `Your table is held until ${hora(holdM)}.`)}</div></div>
+          <div className="min-w-0"><div className="text-[13.5px] font-bold leading-[1.3]">{E2(`Avisaste que llegas ${r.tarde} min tarde`, `You said you will be ${r.tarde} min late`)}</div><div className="mt-[3px] text-[12px] font-medium leading-[1.45] text-ink/60">{E2(`Te guardan la mesa hasta ${aLas(holdM).slice(2)}.`, `Your table is held until ${hora(holdM)}.`)}</div></div>
         </div>
       ) : (
         <>
@@ -195,14 +195,14 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
   const detalles = (
     <div className={caja}>
       <div className={K}>{E2("DETALLES", "DETAILS")}</div>
-      <div className="mt-2.5 grid grid-cols-2 gap-x-3.5 gap-y-3">{rows.map(([k, v]) => <div key={k} className="min-w-0"><div className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{k}</div><div className="mt-[5px] text-pretty text-[13px] font-semibold leading-[1.4]">{v}</div></div>)}</div>
-      {r.sms && !cxd && !lost && <div className="mt-3 flex items-center gap-[9px] border-t border-line pt-3"><Icon name="chat" size={15} color="rgba(11,14,18,.55)" /><span className="text-[12px] font-medium text-ink/65">{E2("Te avisamos por SMS al ", "We text you at ")}{tel(telefono)}</span></div>}
+      <div className="mt-2.5 grid grid-cols-2 gap-x-3.5 gap-y-3">{rows.map(([k, v]) => <div key={k} className="min-w-0"><div className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{k}</div><div className="mt-[5px] text-pretty text-[13px] font-semibold leading-[1.4]">{v}</div></div>)}</div>
+      {r.sms && !cxd && !lost && <div className="mt-3 flex items-center gap-[9px] border-t border-line pt-3"><Icon name="chat" size={15} color="rgba(11,14,18,.6)" /><span className="text-[12px] font-medium text-ink/65">{E2("Te avisamos por SMS al ", "We text you at ")}{tel(telefono)}</span></div>}
     </div>
   );
   const recuerda = (ok || pend) && (
     <div className={caja}>
       <div className={K}>{E2("RECUERDA", "REMEMBER")}</div>
-      <div className="mt-[11px] flex flex-col gap-2.5">{pol.map(([i, l]) => <div key={i} className="flex items-start gap-2.5"><span className="grid flex-none pt-px"><Icon name={i} size={15} color="rgba(11,14,18,.55)" /></span><span className="text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/70">{l}</span></div>)}</div>
+      <div className="mt-[11px] flex flex-col gap-2.5">{pol.map(([i, l]) => <div key={i} className="flex items-start gap-2.5"><span className="grid flex-none pt-px"><Icon name={i} size={15} color="rgba(11,14,18,.6)" /></span><span className="text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/70">{l}</span></div>)}</div>
     </div>
   );
   const botones = (
@@ -226,7 +226,7 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
         {cxFree ? E2(`Cancelas gratis. ${n} libera la mesa para otra persona.`, `You cancel for free. ${n} frees the table for someone else.`)
           : E2(`Faltan menos de ${r.cxH} ${r.cxH === 1 ? "hora" : "horas"}: ${n} lo verá como cancelación tardía. No hay cargo.`, `Less than ${r.cxH} ${r.cxH === 1 ? "hour" : "hours"} left: ${n} will see it as a late cancellation. No charge.`)}
       </div>
-      <div className="mt-3.5 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{E2("¿POR QUÉ? · OPCIONAL", "WHY? · OPTIONAL")}</div>
+      <div className="mt-3.5 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{E2("¿POR QUÉ? · OPCIONAL", "WHY? · OPTIONAL")}</div>
       <div className="mt-[9px] flex flex-wrap gap-[7px]">{WHY.map(([k, a, b]) => <Chip key={k} variant={why === k ? "selected" : "filter"} onClick={() => setWhy(why === k ? "" : k)}>{es ? a : b}</Chip>)}</div>
       <div className="mt-3.5 flex flex-col gap-2">
         <div className="flex"><Button variant="primary" block disabled={ocupado} onClick={() => hacer("cancelar", why || undefined, pend ? E2("Cancelaste tu solicitud.", "You cancelled your request.") : E2("Cancelaste tu reservación.", "You cancelled your reservation."))}>{E2("Sí, cancelar", "Yes, cancel")}</Button></div>
@@ -241,13 +241,13 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
       <div data-screen-label="APP-NEG-RESERVA-ESTADO · móvil" className="lg:hidden">
         <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3">
           <button type="button" aria-label={E2("Cerrar", "Close")} onClick={() => tab()} className="grid size-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="close" size={15} strokeWidth={2.4} /></button>
-          <div className="min-w-0 flex-1"><div className="font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{n}</div><div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{num}</div></div>
+          <div className="min-w-0 flex-1"><div className="font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{n}</div><div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{num}</div></div>
         </div>
         <div className="flex flex-col gap-3 px-4 pt-4">{aviso}{principal(false)}{propuesta}{cambio}{horasOtra}{linea}{tarde}{detalles}{recuerda}{botones}</div>
       </div>
       <div data-screen-label="APP-NEG-RESERVA-ESTADO · desktop" className="mx-auto hidden max-w-[1380px] lg:block">
         <button type="button" onClick={() => tab()} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{`${E2("Volver a ", "Back to ")}${n}`}</button>
-        <div className="mt-3 font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{num}</div>
+        <div className="mt-3 font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{num}</div>
         <div className="mt-4 grid items-start gap-x-12 gap-y-8 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
           <div className="flex min-w-0 flex-col gap-3.5">{aviso}{principal(true)}{propuesta}{cambio}{horasOtra}{linea}{tarde}</div>
           <div className="flex flex-col gap-3.5 min-[1100px]:sticky min-[1100px]:top-[96px]">{detalles}{recuerda}{botones}</div>

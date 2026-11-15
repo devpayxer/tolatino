@@ -33,7 +33,7 @@ export function AyudaEstado({ numero, negocio, a, puede, es }: { numero: string;
         <span className="grid flex-none pt-px"><Icon name={ic} size={16} color={tono === "ok" ? "var(--tl-open-text)" : "var(--tl-pro-ink)"} /></span>
         <div className="min-w-0 flex-1">
           <div className={`text-[13.5px] font-bold ${fg}`}>{t}</div>
-          <div className="mt-0.5 font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/50">{`${a.number} · ${es ? mot[0] : mot[1]}`.toUpperCase()}{a.items.length ? ` · ${a.items.map((x) => `${x.q} × ${x.n}`).join(", ")}` : ""}</div>
+          <div className="mt-0.5 font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/60">{`${a.number} · ${es ? mot[0] : mot[1]}`.toUpperCase()}{a.items.length ? ` · ${a.items.map((x) => `${x.q} × ${x.n}`).join(", ")}` : ""}</div>
           {s && <div className="mt-1.5 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/70">{s}</div>}
         </div>
       </div>

@@ -95,7 +95,7 @@ export function Recuperar({ r, cands, ciudad, lang, conSesion, origen, id }: {
             {hows.map((x, i) => (
               <div key={x.k} role="radio" aria-checked={f.metodo === x.k} onClick={() => up({ metodo: x.k })} {...tec(() => up({ metodo: x.k }))} style={{ display: "flex", gap: 12, alignItems: "center", padding: "13px 0", borderTop: i ? "1px solid rgba(11,14,18,.08)" : "none", cursor: "pointer" }}>
                 <span style={{ width: 20, height: 20, boxSizing: "border-box", borderRadius: 99, border: f.metodo === x.k ? "6px solid var(--tl-ink)" : "1.5px solid rgba(11,14,18,.25)", flex: "none" }} />
-                <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.35 Manrope,sans-serif" }}>{x.t}</div><div style={{ marginTop: 2, font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{x.s}</div></div>
+                <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.35 Manrope,sans-serif" }}>{x.t}</div><div style={{ marginTop: 2, font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{x.s}</div></div>
               </div>))}
           </div>
         </div>
@@ -114,14 +114,14 @@ export function Recuperar({ r, cands, ciudad, lang, conSesion, origen, id }: {
           <span style={K}>{E2("ALGO QUE DEBAMOS SABER · OPCIONAL", "ANYTHING WE SHOULD KNOW · OPTIONAL")}</span>
           <textarea value={f.nota} onChange={(e) => up({ nota: e.target.value.slice(0, 300) })} rows={3} placeholder={E2("Ej. Lo abrí en 2019; alguien lo puso en la app sin preguntarme.", "e.g. I opened it in 2019; someone listed it without asking me.")} style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", background: "var(--tl-white)", font: "500 14px/1.5 Manrope,sans-serif", color: "var(--tl-ink)", resize: "none", outline: "none" }} />
         </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}><Icon name="shield" size={16} color="rgba(11,14,18,.55)" /><span style={{ flex: 1, minWidth: 0, font: "500 12.5px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.62)" }}>{E2("Nunca te pedimos documentos de identidad ni tu estatus migratorio.", "We never ask for ID documents or your immigration status.")}</span></div>
+        <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}><Icon name="shield" size={16} color="rgba(11,14,18,.6)" /><span style={{ flex: 1, minWidth: 0, font: "500 12.5px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.62)" }}>{E2("Nunca te pedimos documentos de identidad ni tu estatus migratorio.", "We never ask for ID documents or your immigration status.")}</span></div>
       </>);
   } else if (paso === "codigo") {
     cuerpo = (
       <div style={{ padding: 18, borderRadius: 20, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 14 }}>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}><span style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(0,229,196,.16)", display: "grid", placeItems: "center", flex: "none" }}><Icon name="phone" size={20} color="var(--tl-open-text)" /></span>
           <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "800 16px/1.3 Sora,sans-serif", letterSpacing: "-.02em" }}>{E2(`Revisa los mensajes del ${r!.tel}`, `Check the texts at ${r!.tel}`)}</div><div style={{ marginTop: 3, font: "500 12.5px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.62)" }}>{E2("Te llegó un código de 6 números. Escríbelo aquí.", "You got a 6-digit code. Type it here.")}</div></div></div>
-        <span style={{ font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.42)" }}>{E2("CÓDIGO", "CODE")}</span>
+        <span style={{ font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.6)" }}>{E2("CÓDIGO", "CODE")}</span>
         <input value={codigo} onChange={(e) => setCodigo(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" maxLength={6} placeholder="000000" aria-label={E2("Código", "Code")} style={{ height: 56, boxSizing: "border-box", width: "100%", padding: "0 16px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", font: `800 24px ${MONO}`, letterSpacing: ".4em", textAlign: "center", color: "var(--tl-ink)", outline: "none", background: "var(--tl-white)" }} />
         {prueba ? <div data-modo-pruebas style={{ display: "flex", alignItems: "center", gap: 8 }}><Tag tone="danger">{E2("MODO PRUEBAS", "TEST MODE")}</Tag><span style={{ font: "600 13px Manrope,sans-serif" }}>{E2("Tu código es ", "Your code is ")}<b>{prueba}</b></span></div> : null}
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
@@ -145,13 +145,13 @@ export function Recuperar({ r, cands, ciudad, lang, conSesion, origen, id }: {
     const kv: [string, string][] = [[E2("CÓMO", "HOW"), porCodigo ? E2(`Código al ${r!.tel ?? "teléfono del negocio"}`, `Code to ${r!.tel ?? "the business phone"}`) : E2(...(DOC_L[rc.doc_kind ?? "otro"] ?? DOC_L.otro!))], [E2("ERES", "ROLE"), E2(...(ROL_L[rc.role] ?? ROL_L.dueno!))], ...(rc.note ? [[E2("NOTA", "NOTE"), rc.note] as [string, string]] : [])];
     cuerpo = (
       <>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}><Tag tone={st === "approved" ? "signal" : st === "rejected" ? "danger" : "action"}>{st === "approved" ? E2("APROBADO", "APPROVED") : st === "rejected" ? E2("NO APROBADO", "NOT APPROVED") : E2("EN REVISIÓN", "IN REVIEW")}</Tag><span style={{ font: `700 10.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.5)" }}>{E2("RECLAMO", "CLAIM")} #{rc.id}</span></div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}><Tag tone={st === "approved" ? "signal" : st === "rejected" ? "danger" : "action"}>{st === "approved" ? E2("APROBADO", "APPROVED") : st === "rejected" ? E2("NO APROBADO", "NOT APPROVED") : E2("EN REVISIÓN", "IN REVIEW")}</Tag><span style={{ font: `700 10.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.6)" }}>{E2("RECLAMO", "CLAIM")} #{rc.id}</span></div>
         <OrderTracker steps={steps} horizontal={desk} />
         <div style={{ padding: "14px 16px", borderRadius: 17, background: nota.bg, display: "flex", gap: 10, alignItems: "flex-start" }}><Icon name={nota.ic} size={17} color={nota.fg} strokeWidth={2} /><span style={{ flex: 1, minWidth: 0, font: "600 13.5px/1.5 Manrope,sans-serif", color: nota.fg }}>{nota.t}</span></div>
         {acts.length ? <div style={{ display: "grid", gridTemplateColumns: desk ? "repeat(2,minmax(0,1fr))" : "minmax(0,1fr)", gap: 8 }}>{acts.map((a) => <div key={a.l} style={{ display: "flex" }}><Button variant={a.v} block icon={a.ic} onClick={a.on}>{a.l}</Button></div>)}</div> : null}
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <span style={K}>{E2("LO QUE MANDASTE", "WHAT YOU SENT")}</span>
-          <div style={{ borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: "4px 16px" }}>{kv.map(([k, v], i) => <div key={k} style={{ display: "flex", gap: 14, padding: "11px 0", borderTop: i ? "1px solid rgba(11,14,18,.08)" : "none" }}><span style={{ flex: "none", width: 100, font: `700 9.5px/1.6 ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.5)" }}>{k}</span><span style={{ flex: 1, minWidth: 0, font: "600 13.5px/1.45 Manrope,sans-serif" }}>{v}</span></div>)}</div>
+          <div style={{ borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: "4px 16px" }}>{kv.map(([k, v], i) => <div key={k} style={{ display: "flex", gap: 14, padding: "11px 0", borderTop: i ? "1px solid rgba(11,14,18,.08)" : "none" }}><span style={{ flex: "none", width: 100, font: `700 9.5px/1.6 ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.6)" }}>{k}</span><span style={{ flex: 1, minWidth: 0, font: "600 13.5px/1.45 Manrope,sans-serif" }}>{v}</span></div>)}</div>
         </div>
       </>);
   }
@@ -166,13 +166,13 @@ export function Recuperar({ r, cands, ciudad, lang, conSesion, origen, id }: {
           {desk ? (
             <div>
               <span role="link" onClick={volver} {...tec(volver)} style={{ display: "inline-flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="chevronLeft" size={15} strokeWidth={2} />{E2("Volver", "Back")}</span>
-              <div style={{ marginTop: 14, font: `700 10.5px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.5)" }}>{eye}</div>
+              <div style={{ marginTop: 14, font: `700 10.5px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.6)" }}>{eye}</div>
               <h1 style={{ margin: "6px 0 0", font: "800 30px/1.1 Sora,sans-serif", letterSpacing: "-.035em", textWrap: "balance" }}>{titulo}</h1>
             </div>
           ) : (
             <div style={{ paddingTop: 14, display: "flex", alignItems: "center", gap: 12 }}>
               <IconButton icon="chevronLeft" size={38} onClick={volver} />
-              <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: `700 10px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.5)" }}>{eye}</div><div style={{ marginTop: 3, font: "800 21px/1.15 Sora,sans-serif", letterSpacing: "-.035em" }}>{titulo}</div></div>
+              <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: `700 10px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.6)" }}>{eye}</div><div style={{ marginTop: 3, font: "800 21px/1.15 Sora,sans-serif", letterSpacing: "-.035em" }}>{titulo}</div></div>
             </div>
           )}
           {intro ? <p style={{ margin: 0, maxWidth: 640, font: "500 14px/1.6 Manrope,sans-serif", color: "rgba(11,14,18,.68)" }}>{intro}</p> : null}
@@ -183,8 +183,8 @@ export function Recuperar({ r, cands, ciudad, lang, conSesion, origen, id }: {
           <div style={{ position: "sticky", top: 96, display: "flex", flexDirection: "column", gap: 14 }}>
             {negocio}
             <div style={{ padding: "16px 18px", borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 10 }}>
-              <span style={{ font: `800 10px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.5)" }}>{E2("AL RECUPERARLO", "WHEN YOU RECOVER IT")}</span>
-              {what.map(([ic, t]) => <div key={ic} style={{ display: "flex", gap: 10, alignItems: "flex-start", font: "600 13px/1.45 Manrope,sans-serif" }}><Icon name={ic} size={15} color="rgba(11,14,18,.55)" /><span style={{ flex: 1, minWidth: 0 }}>{t}</span></div>)}
+              <span style={{ font: `800 10px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.6)" }}>{E2("AL RECUPERARLO", "WHEN YOU RECOVER IT")}</span>
+              {what.map(([ic, t]) => <div key={ic} style={{ display: "flex", gap: 10, alignItems: "flex-start", font: "600 13px/1.45 Manrope,sans-serif" }}><Icon name={ic} size={15} color="rgba(11,14,18,.6)" /><span style={{ flex: 1, minWidth: 0 }}>{t}</span></div>)}
             </div>
             {conCta ? <>{err ? <span style={{ font: "600 12.5px/1.45 Manrope,sans-serif", color: "var(--tl-danger)" }}>{err}</span> : null}<div style={{ display: "flex" }}><Button block disabled={ctaOff} onClick={cta}>{ctaL}</Button></div></> : null}
           </div>

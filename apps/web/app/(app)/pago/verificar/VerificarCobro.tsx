@@ -20,7 +20,7 @@ export function VerificarCobro({ es, v, estado, negocio, modo, pk }: { es: boole
   return (
     <>
     <main data-pantalla="PAGO-VERIFICAR" className="mx-auto flex min-h-dvh max-w-[560px] flex-col gap-4 bg-paper px-5 pb-10 pt-8">
-      <div className="font-mono text-[10px] font-bold tracking-[0.16em] text-ink/45">{E2("PAGO SEGURO · 3D SECURE", "SECURE PAYMENT · 3D SECURE")}</div>
+      <div className="font-mono text-[10px] font-bold tracking-[0.16em] text-ink/60">{E2("PAGO SEGURO · 3D SECURE", "SECURE PAYMENT · 3D SECURE")}</div>
       <h1 className="font-display text-[24px] font-extrabold leading-[1.15] tracking-[-0.03em]">{t[0]}</h1>
       <p className="text-pretty text-[14px] font-medium leading-[1.55] text-ink/70">{t[1]}</p>
       <div className="flex flex-col gap-2.5">

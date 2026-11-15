@@ -71,7 +71,7 @@ export function Consulta({ sa, svcId, con0, seg0, notaDias, es, yo }: { sa: Salu
   const radio = (on: boolean, t: string, sub: string, tag: string, onClick: () => void, key: string) => (
     <button key={key} type="button" role="radio" aria-checked={on} onClick={onClick} className={`flex items-center gap-3 rounded-[14px] px-3.5 py-3 text-left ${on ? "border-[1.5px] border-ink" : "border border-ink/10"}`}>
       <span className={`box-border h-5 w-5 flex-none rounded-full ${on ? "border-[6px] border-ink" : "border-[1.5px] border-ink/25"}`} />
-      <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{t}</span>{sub && <span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{sub}</span>}</span>
+      <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{t}</span>{sub && <span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{sub}</span>}</span>
       {tag && <span className="flex-none font-mono text-[8.5px] font-bold tracking-[0.1em] text-open-text">{tag}</span>}
     </button>
   );
@@ -93,14 +93,14 @@ export function Consulta({ sa, svcId, con0, seg0, notaDias, es, yo }: { sa: Salu
         {para === "otro" && <div className="mt-2 rounded-[12px] bg-pro/[.14] px-3 py-2.5 text-[12px] font-semibold leading-[1.5] text-pro-ink">{E2("La persona tiene que estar de acuerdo con la cita.", "The person has to agree to the visit.")}</div>}
       </div>
       <div><div className={K}>{E2("¿PARA QUÉ ES LA CITA? · OPCIONAL", "WHAT IS THE VISIT FOR? · OPTIONAL")}</div>
-        <div className="mt-1 text-[11.5px] font-medium leading-[1.45] text-ink/55">{E2("Solo lo ve el consultorio; nunca sale en reseñas.", "Only the clinic sees it; never in reviews.")}</div>
+        <div className="mt-1 text-[11.5px] font-medium leading-[1.45] text-ink/60">{E2("Solo lo ve el consultorio; nunca sale en reseñas.", "Only the clinic sees it; never in reviews.")}</div>
         <div className="mt-2 flex flex-wrap gap-2">{WHY.map(([k, a, b]) => <Chip key={k} variant={why === k ? "selected" : "filter"} onClick={() => setWhy(why === k ? null : k)}>{es ? a : b}</Chip>)}</div>
       </div>
       <div>
         <div className="flex justify-between gap-2.5"><span className={K}>{E2("NOTA PARA EL CONSULTORIO · OPCIONAL", "NOTE FOR THE CLINIC · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length}/300</span></div>
         <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 300))} rows={3} aria-label={E2("Nota para el consultorio", "Note for the clinic")}
           placeholder={E2("Ej.: es para mi hija Ana, 6 años", "E.g. it is for my daughter Ana, age 6")} className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
-        <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/55">{E2(`No mandes fotos de documentos ni resultados. Se guarda cifrada y se borra ${diasTxt(notaDias, true)} después de la cita.`, `Do not send photos of documents or results. It is stored encrypted and deleted ${diasTxt(notaDias, false)} after the visit.`)}</div>
+        <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/60">{E2(`No mandes fotos de documentos ni resultados. Se guarda cifrada y se borra ${diasTxt(notaDias, true)} después de la cita.`, `Do not send photos of documents or results. It is stored encrypted and deleted ${diasTxt(notaDias, false)} after the visit.`)}</div>
       </div>
     </div>
   );
@@ -137,18 +137,18 @@ export function Consulta({ sa, svcId, con0, seg0, notaDias, es, yo }: { sa: Salu
   const pago = (
     <div className={`flex flex-col gap-3 p-4 ${caja}`}>
       <div className="flex items-baseline justify-between gap-3"><span className={K}>{E2("PRECIO", "PRICE")}</span><span className="font-display text-[18px] font-extrabold">{P.l}</span></div>
-      {P.s && <div className="text-right font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{P.s}</div>}
+      {P.s && <div className="text-right font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{P.s}</div>}
       {cp && !cp.ok && <div className="rounded-[12px] bg-pro/[.14] px-3 py-2.5 text-[12px] font-semibold leading-[1.5] text-pro-ink">{cp.t}{E2(". Puedes pedir la cita igual y pagar el precio sin seguro.", ". You can still request and pay the uninsured price.")}</div>}
       <div className="border-t border-ink/[.07] pt-3"><div className={K}>{E2("CÓMO SE PAGA", "HOW YOU PAY")}</div>
         <div className="mt-2 flex justify-between gap-3 text-[13px] font-bold"><span>{E2("Hoy, al enviar", "Today, when you send")}</span><span>$0</span></div>
-        <div className="text-[11.5px] font-medium text-ink/55">{E2("No se cobra nada al pedir la cita.", "Nothing is charged when you request.")}</div>
+        <div className="text-[11.5px] font-medium text-ink/60">{E2("No se cobra nada al pedir la cita.", "Nothing is charged when you request.")}</div>
         <div className="mt-2 flex justify-between gap-3 text-[13px] font-bold"><span>{E2("En la consulta", "At the visit")}</span><span>{P.l}</span></div>
-        <div className="text-[11.5px] font-medium text-ink/55">{E2("Lo que te toque según tu seguro.", "Whatever applies with your insurance.")}</div></div>
+        <div className="text-[11.5px] font-medium text-ink/60">{E2("Lo que te toque según tu seguro.", "Whatever applies with your insurance.")}</div></div>
     </div>
   );
   const toggle = (on: boolean, set: (x: boolean) => void, t: string, s2: string) => (
     <div role="switch" aria-checked={on} aria-label={t} tabIndex={0} onClick={() => set(!on)} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); set(!on); } }} className="flex cursor-pointer items-center gap-3 border-t border-ink/[.07] pt-3.5 first:border-0 first:pt-0">
-      <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{t}</div><div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/55">{s2}</div></div>
+      <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{t}</div><div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/60">{s2}</div></div>
       <span className={`relative h-6 w-[42px] flex-none rounded-full transition-colors ${on ? "bg-ink" : "bg-ink/20"}`}><span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-transform ${on ? "translate-x-[21px]" : "translate-x-[3px]"}`} /></span>
     </div>
   );
@@ -181,16 +181,16 @@ export function Consulta({ sa, svcId, con0, seg0, notaDias, es, yo }: { sa: Salu
         </div>
         <div data-screen-label="Booking · barra" className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/[.08] bg-paper/[.96] px-4 pb-5 pt-3 backdrop-blur-[14px]">
           <div className="flex items-center gap-3.5">
-            <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{E2("HOY PAGAS", "TODAY YOU PAY")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">$0</div></div>
+            <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{E2("HOY PAGAS", "TODAY YOU PAY")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">$0</div></div>
             <div className="flex min-w-0 flex-1"><Button block disabled={!okPaso || ocupado} onClick={sigue}>{paso === 2 ? (ocupado ? E2("Enviando…", "Sending…") : enviarL) : E2("Continuar", "Continue")}</Button></div>
           </div>
           {!okPaso && falta && <div className="mt-[9px] text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-pro-ink">{falta.toUpperCase()}</div>}
-          {paso === 2 && <div className="mt-[7px] text-center font-mono text-[9px] font-semibold tracking-[0.08em] text-ink/45">{`${E2("EN LA CONSULTA: ", "AT THE VISIT: ")}${P.l}`.toUpperCase()}</div>}
+          {paso === 2 && <div className="mt-[7px] text-center font-mono text-[9px] font-semibold tracking-[0.08em] text-ink/60">{`${E2("EN LA CONSULTA: ", "AT THE VISIT: ")}${P.l}`.toUpperCase()}</div>}
         </div>
       </div>
       <div data-screen-label="APP-NEG-SALUD-BOOKING · desktop" className="mx-auto hidden max-w-[1180px] px-[30px] pb-[60px] pt-[22px] lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{sa.negocio.nombre}</button>
-        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">Booking</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{`${sa.negocio.nombre} · ${nm(s.name)}`.toUpperCase()}</div></div>
+        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">Booking</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{`${sa.negocio.nombre} · ${nm(s.name)}`.toUpperCase()}</div></div>
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-x-12 gap-y-8">
           <div className="flex min-w-0 flex-col gap-[26px]">
             <div><div className="mb-3 font-display text-[20px] font-extrabold leading-[1.1] tracking-[-0.03em]">{T[0]}</div>{bloqueSeguro}</div>
@@ -202,7 +202,7 @@ export function Consulta({ sa, svcId, con0, seg0, notaDias, es, yo }: { sa: Salu
             <div className="flex flex-col gap-3 rounded-[22px] border border-ink/10 bg-white px-5 py-[18px] shadow-[var(--shadow-float)]">
               {!listo && <div className="text-center text-[12px] font-bold text-pro-ink">{falta}</div>}
               <div className="flex items-center gap-3.5">
-                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{E2("HOY PAGAS", "TODAY YOU PAY")}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">$0</div></div>
+                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{E2("HOY PAGAS", "TODAY YOU PAY")}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">$0</div></div>
                 <div className="flex min-w-0 flex-1"><Button variant="primary" block disabled={!listo || ocupado} onClick={() => void enviar()}>{ocupado ? E2("Enviando…", "Sending…") : enviarL}</Button></div>
               </div>
               {errorBox}

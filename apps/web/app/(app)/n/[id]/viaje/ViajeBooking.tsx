@@ -90,7 +90,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
   const cuando = sel ? `${cap(diaL)} · ${horaL(sel.m)}` : "—";
 
   const fila = (t: string, s2: string, val: number, dec: () => void, inc: () => void) => (
-    <div className="flex items-center justify-between gap-3"><div><div className="text-[13.5px] font-bold">{t}</div><div className="mt-0.5 text-[11.5px] font-medium text-ink/55">{s2}</div></div><QtyStepper decLabel={E2("Uno menos", "One less")} incLabel={E2("Uno más", "One more")} value={val} onDec={dec} onInc={inc} /></div>
+    <div className="flex items-center justify-between gap-3"><div><div className="text-[13.5px] font-bold">{t}</div><div className="mt-0.5 text-[11.5px] font-medium text-ink/60">{s2}</div></div><QtyStepper decLabel={E2("Uno menos", "One less")} incLabel={E2("Uno más", "One more")} value={val} onDec={dec} onInc={inc} /></div>
   );
   const lineaNota = <div className="flex items-start gap-2.5 rounded-[14px] bg-action/[.07] px-3.5 py-3"><span className="grid flex-none pt-px"><Icon name="dollar" size={16} color="var(--tl-action)" /></span><span className="text-pretty text-[12.5px] font-bold leading-[1.45] text-action-hover">{linea}</span></div>;
   const bloqueViaje = (
@@ -98,7 +98,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
       <div className="flex items-center gap-[13px]">
         <span className="h-[54px] w-[54px] flex-none rounded-[15px] bg-photo-bg" style={s.foto ? { backgroundImage: `url(${s.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
         <div className="min-w-0 flex-1"><div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nm(s.name)}</div>
-          <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{(esCaja ? `${dinero(s.cents)} ${E2("POR CAJA", "PER BOX")}` : cot ? `${E2("DESDE ", "FROM ")}${dinero(s.cents)} · ${E2("PRECIO CERRADO CON FOTOS", "FIXED PRICE FROM PHOTOS")}` : asiento ? `${dinero(s.cents)} ${E2("POR PERSONA", "PER PERSON")}${s.child ? E2(` · NIÑO ${dinero(s.child)}`, ` · CHILD ${dinero(s.child)}`) : ""}` : `${dinero(s.cents)}${s.pax ? E2(` · HASTA ${s.pax} PERSONAS`, ` · UP TO ${s.pax} PEOPLE`) : ""}`).toUpperCase()}</div></div>
+          <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{(esCaja ? `${dinero(s.cents)} ${E2("POR CAJA", "PER BOX")}` : cot ? `${E2("DESDE ", "FROM ")}${dinero(s.cents)} · ${E2("PRECIO CERRADO CON FOTOS", "FIXED PRICE FROM PHOTOS")}` : asiento ? `${dinero(s.cents)} ${E2("POR PERSONA", "PER PERSON")}${s.child ? E2(` · NIÑO ${dinero(s.child)}`, ` · CHILD ${dinero(s.child)}`) : ""}` : `${dinero(s.cents)}${s.pax ? E2(` · HASTA ${s.pax} PERSONAS`, ` · UP TO ${s.pax} PEOPLE`) : ""}`).toUpperCase()}</div></div>
         <button type="button" onClick={volver} className="flex-none text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
       </div>
       {!cot && <div className={K}>{esCaja ? E2("¿CUÁNTAS CAJAS?", "HOW MANY BOXES?") : E2("¿CUÁNTOS VIAJAN?", "HOW MANY ARE TRAVELING?")}</div>}
@@ -107,7 +107,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
         {fila(E2("Niños", "Children"), `${dinero(child)} ${E2("cada uno", "each")}`, kids, () => setKids(Math.max(0, kids - 1)), () => setKids(Math.min(14 - adults, kids + 1)))}
         {b.aj.nino && kids > 0 && (
           <div role="switch" aria-checked={ninoSeat} aria-label={E2("Asiento de niño", "Child seat")} tabIndex={0} onClick={() => setNinoSeat(!ninoSeat)} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setNinoSeat(!ninoSeat); } }} className="flex cursor-pointer items-center gap-3">
-            <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{E2("Asiento de niño", "Child seat")}</div><div className="mt-0.5 text-[12px] font-medium text-ink/55">{E2("Sin costo.", "Free.")}</div></div>
+            <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{E2("Asiento de niño", "Child seat")}</div><div className="mt-0.5 text-[12px] font-medium text-ink/60">{E2("Sin costo.", "Free.")}</div></div>
             <span className={`relative h-6 w-[42px] flex-none rounded-full ${ninoSeat ? "bg-ink" : "bg-ink/20"}`}><span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-transform ${ninoSeat ? "translate-x-[21px]" : "translate-x-[3px]"}`} /></span>
           </div>)}
         <div className="border-t border-ink/[.07] pt-3.5"><div className={K}>{E2("MALETAS", "BAGS")}</div>
@@ -120,10 +120,10 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
         {cot && (
           <div className="flex flex-col gap-2.5">
             <div className="flex items-baseline justify-between gap-2.5"><span className={K}>{E2("FOTOS", "PHOTOS")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{fotos.length} / 6</span></div>
-            <div className="text-[12px] font-medium leading-[1.5] text-ink/55">{E2("Cuartos, muebles grandes y escaleras. Con fotos el precio es cerrado.", "Rooms, large furniture and stairs. With photos the price is fixed.")}</div>
+            <div className="text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Cuartos, muebles grandes y escaleras. Con fotos el precio es cerrado.", "Rooms, large furniture and stairs. With photos the price is fixed.")}</div>
             <div className="flex flex-wrap gap-2.5">
               {fotos.map((f) => <span key={f.id} className="relative h-[76px] w-[76px] rounded-[13px] bg-photo-bg" style={{ backgroundImage: `url(${f.url})`, backgroundSize: "cover" }}><button type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="absolute -right-1.5 -top-1.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-ink"><Icon name="close" size={10} color="var(--tl-white)" strokeWidth={2.6} /></button></span>)}
-              {fotos.length < 6 && <button type="button" disabled={subiendo} onClick={() => (yo ? fileRef.current?.click() : entrar())} className="box-border flex h-[76px] w-[76px] flex-col items-center justify-center gap-1 rounded-[13px] border-[1.5px] border-dashed border-ink/[.22] text-ink/55"><Icon name="image" size={18} color="rgba(11,14,18,.5)" /><span className="text-[10.5px] font-bold">{subiendo ? E2("Subiendo…", "Uploading…") : E2("Foto", "Photo")}</span></button>}
+              {fotos.length < 6 && <button type="button" disabled={subiendo} onClick={() => (yo ? fileRef.current?.click() : entrar())} className="box-border flex h-[76px] w-[76px] flex-col items-center justify-center gap-1 rounded-[13px] border-[1.5px] border-dashed border-ink/[.22] text-ink/60"><Icon name="image" size={18} color="rgba(11,14,18,.6)" /><span className="text-[10.5px] font-bold">{subiendo ? E2("Subiendo…", "Uploading…") : E2("Foto", "Photo")}</span></button>}
               <input ref={fileRef} type="file" accept="image/*" className="hidden" aria-label={E2("Subir foto", "Upload photo")} onChange={(e) => { void subir(e.target.files?.[0]); e.target.value = ""; }} />
             </div>
           </div>)}
@@ -133,21 +133,21 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
             {b.dirs.map((d) => { const on = pickup === d.id; return (
               <button key={d.id} type="button" role="radio" aria-checked={on} disabled={!d.enZona} onClick={() => setPickup(d.id)} className={`flex w-full items-center gap-3 rounded-[14px] px-3.5 py-3 text-left ${on ? "border-[1.5px] border-ink" : "border border-ink/10"} ${d.enZona ? "" : "opacity-50"}`}>
                 <span className={`box-border h-5 w-5 flex-none rounded-full ${on ? "border-[6px] border-ink" : "border-[1.5px] border-ink/25"}`} />
-                <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{d.t}</span><span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{d.enZona ? E2("TU DIRECCIÓN", "YOUR ADDRESS") : E2("FUERA DE SU ZONA", "OUTSIDE THEIR AREA")}</span></span>
+                <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{d.t}</span><span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{d.enZona ? E2("TU DIRECCIÓN", "YOUR ADDRESS") : E2("FUERA DE SU ZONA", "OUTSIDE THEIR AREA")}</span></span>
               </button>); })}
           </div>
           <button type="button" onClick={() => (yo ? router.push(`/cuenta/direcciones?volver=${encodeURIComponent(location.pathname + location.search)}`) : entrar())} className="mt-2.5 text-[12.5px] font-bold text-action">{yo ? E2("Agregar otra dirección", "Add another address") : E2("Entra para elegir tu dirección", "Sign in to pick your address")}</button>
         </div>
         {esCaja && (
           <div data-screen-label="Envío · destinatario" className="flex flex-col gap-3 border-t border-ink/[.07] pt-3.5">
-            <div><div className={K}>{E2("DESTINATARIO", "RECIPIENT")}</div><div className="mt-1 text-[12px] font-medium leading-[1.5] text-ink/55">{E2("Solo lo ven tú y el negocio, para entregarla.", "Only you and the business see it, to deliver it.")}</div></div>
+            <div><div className={K}>{E2("DESTINATARIO", "RECIPIENT")}</div><div className="mt-1 text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Solo lo ven tú y el negocio, para entregarla.", "Only you and the business see it, to deliver it.")}</div></div>
             {campo("nombre", E2("NOMBRE", "NAME"), E2("Ej.: Ana Rodríguez", "E.g. Ana Rodríguez"), 80)}
             {campo("tel", E2("TELÉFONO", "PHONE"), "+1 809 555 0101", 24, "tel")}
             {campo("prov", E2("PROVINCIA O CIUDAD", "PROVINCE OR CITY"), E2("Ej.: Santiago", "E.g. Santiago"), 60)}
             {campo("dir", E2("DIRECCIÓN", "ADDRESS"), E2("Calle, número, sector", "Street, number, area"), 200)}
             {campo("ref", E2("REFERENCIA · OPCIONAL", "LANDMARK · OPTIONAL"), E2("Ej.: frente al colmado", "E.g. across from the corner store"), 120)}
             <div role="switch" aria-checked={prohibido} aria-label={E2("Lo que no se puede mandar", "What can’t be shipped")} tabIndex={0} onClick={() => setProhibido(!prohibido)} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setProhibido(!prohibido); } }} className="flex cursor-pointer items-center gap-3 rounded-[14px] bg-paper px-3.5 py-3">
-              <div className="min-w-0 flex-1"><div className="text-[13px] font-bold">{E2("No lleva nada de lo que no se puede mandar", "It has nothing that can’t be shipped")}</div><div className="mt-0.5 text-[11.5px] font-medium leading-[1.45] text-ink/55">{E2("Armas, municiones, drogas, dinero en efectivo, líquidos inflamables, baterías sueltas y comida fresca.", "Weapons, ammunition, drugs, cash, flammable liquids, loose batteries and fresh food.")}</div></div>
+              <div className="min-w-0 flex-1"><div className="text-[13px] font-bold">{E2("No lleva nada de lo que no se puede mandar", "It has nothing that can’t be shipped")}</div><div className="mt-0.5 text-[11.5px] font-medium leading-[1.45] text-ink/60">{E2("Armas, municiones, drogas, dinero en efectivo, líquidos inflamables, baterías sueltas y comida fresca.", "Weapons, ammunition, drugs, cash, flammable liquids, loose batteries and fresh food.")}</div></div>
               <span className={`relative h-6 w-[42px] flex-none rounded-full ${prohibido ? "bg-ink" : "bg-ink/20"}`}><span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-transform ${prohibido ? "translate-x-[21px]" : "translate-x-[3px]"}`} /></span>
             </div>
           </div>)}
@@ -209,7 +209,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
   const extras = (
     <div className={`flex flex-col gap-3.5 p-4 ${caja}`}>
       <div role="switch" aria-checked={sms} aria-label={E2("Recordatorio", "Reminder")} tabIndex={0} onClick={() => setSms(!sms)} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setSms(!sms); } }} className="flex cursor-pointer items-center gap-3">
-        <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{E2("Recordatorio", "Reminder")}</div><div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/55">{E2("Te avisamos en Avisos cuando confirman, cuando sale y si va tarde.", "We let you know in Alerts when they confirm, when it leaves and if it is late.")}</div></div>
+        <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{E2("Recordatorio", "Reminder")}</div><div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/60">{E2("Te avisamos en Avisos cuando confirman, cuando sale y si va tarde.", "We let you know in Alerts when they confirm, when it leaves and if it is late.")}</div></div>
         <span className={`relative h-6 w-[42px] flex-none rounded-full transition-colors ${sms ? "bg-ink" : "bg-ink/20"}`}><span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-transform ${sms ? "translate-x-[21px]" : "translate-x-[3px]"}`} /></span>
       </div>
     </div>
@@ -229,7 +229,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
         </div>
         <div data-screen-label="Reserva · barra" className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/[.08] bg-paper/[.96] px-4 pb-5 pt-3 backdrop-blur-[14px]">
           <div className="flex items-center gap-3.5">
-            <div className="min-w-0 flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{payK}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{dinero(tot)}</div><div className="mt-1 font-mono text-[8.5px] font-semibold tracking-[0.06em] text-ink/45">{cot ? E2("NO SE COBRA NADA", "NOTHING CHARGED") : E2("PRECIO CERRADO", "FIXED PRICE")}</div></div>
+            <div className="min-w-0 flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{payK}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{dinero(tot)}</div><div className="mt-1 font-mono text-[8.5px] font-semibold tracking-[0.06em] text-ink/60">{cot ? E2("NO SE COBRA NADA", "NOTHING CHARGED") : E2("PRECIO CERRADO", "FIXED PRICE")}</div></div>
             <div className="flex min-w-0 flex-1"><Button block disabled={!okPaso || ocupado} onClick={sigue}>{paso === 2 ? (ocupado ? E2("Enviando…", "Sending…") : cta) : E2("Continuar", "Continue")}</Button></div>
           </div>
           {!okPaso && falta && <div className="mt-[9px] text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-pro-ink">{falta.toUpperCase()}</div>}
@@ -237,7 +237,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
       </div>
       <div data-screen-label="APP-NEG-TRANS-RESERVA · desktop" className="mx-auto hidden max-w-[1180px] px-[30px] pb-[60px] pt-[22px] lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{b.negocio.nombre}</button>
-        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{E2("Reservar", "Book")}</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{`${b.negocio.nombre} · ${nm(s.name)}`.toUpperCase()}</div></div>
+        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{E2("Reservar", "Book")}</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{`${b.negocio.nombre} · ${nm(s.name)}`.toUpperCase()}</div></div>
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-x-12 gap-y-8">
           <div className="flex min-w-0 flex-col gap-[26px]">
             <div><div className="mb-3 font-display text-[20px] font-extrabold leading-[1.1] tracking-[-0.03em]">{TT[0]}</div>{bloqueViaje}</div>
@@ -249,7 +249,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
             <div className="flex flex-col gap-3 rounded-[22px] border border-ink/10 bg-white px-5 py-[18px] shadow-[var(--shadow-float)]">
               {!listo && <div className="text-center text-[12px] font-bold text-pro-ink">{falta}</div>}
               <div className="flex items-center gap-3.5">
-                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{payK}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">{dinero(tot)}</div></div>
+                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{payK}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">{dinero(tot)}</div></div>
                 <div className="flex min-w-0 flex-1"><Button variant="primary" block disabled={!listo || ocupado} onClick={() => void enviar()}>{ocupado ? E2("Enviando…", "Sending…") : cta}</Button></div>
               </div>
               {errorBox}

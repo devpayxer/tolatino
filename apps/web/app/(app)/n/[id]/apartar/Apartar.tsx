@@ -63,7 +63,7 @@ export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApa
   const tarjetaAp = (
     <div className={`flex items-center gap-3 p-4 ${caja}`}>
       <span className="grid h-[42px] w-[42px] flex-none place-items-center rounded-[13px] bg-ink"><Icon name="bag" size={20} color="var(--tl-white)" /></span>
-      <span className="min-w-0 flex-1"><span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{E2("TU APARTADO", "YOUR HOLD")}</span>
+      <span className="min-w-0 flex-1"><span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{E2("TU APARTADO", "YOUR HOLD")}</span>
         <span className="mt-1 block text-[14.5px] font-bold leading-[1.3]">{`${n} ${n === 1 ? E2("artículo", "item") : E2("artículos", "items")} · ${dinero(sub)}`}</span>
         <span className="mt-1.5 flex items-center gap-[5px] text-[11.5px] font-bold text-open-text"><Icon name="check" size={13} color="currentColor" />{LINE}</span></span>
       <button type="button" onClick={volver} className="flex-none text-[12.5px] font-bold text-action">{E2("Editar", "Edit")}</button>
@@ -75,7 +75,7 @@ export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApa
       {L.map((l) => (
         <div key={l.k} className="flex items-center gap-3">
           <span className="h-12 w-12 flex-none rounded-xl bg-photo-bg" style={l.a.foto ? { backgroundImage: `url(${l.a.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined} />
-          <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold leading-[1.3]">{nm(l.a.n)}</span><span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{`${talla(l)}× ${l.qty} · ${dinero(l.a.precio * l.qty)}`}</span></span>
+          <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold leading-[1.3]">{nm(l.a.n)}</span><span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{`${talla(l)}× ${l.qty} · ${dinero(l.a.precio * l.qty)}`}</span></span>
           <button type="button" onClick={() => quitar(l.k)} aria-label={`${E2("Quitar", "Remove")} ${nm(l.a.n)}`} className="flex-none text-[12px] font-bold text-danger">{E2("Quitar", "Remove")}</button>
         </div>))}
     </div>
@@ -88,14 +88,14 @@ export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApa
       <div className={K}>{E2("TU PLAN", "YOUR PLAN")}</div>
       <div className="mt-2.5 flex flex-col">{([[E2("Abono hoy (se retiene)", "Down payment today (held)"), dinero(cu.abono)], ...cu.pagos.map((p, i) => [`${E2("Pago", "Payment")} ${i + 1} · ${E2(`día ${(i + 1) * o.plan!.cada}`, `day ${(i + 1) * o.plan!.cada}`)}`, dinero(p)]), [E2("Total · sin intereses", "Total · no interest"), dinero(sub)]] as [string, string][]).map(([k, v2], z, arr) =>
         <div key={k} className={`flex justify-between gap-3 py-2 ${z ? "border-t border-ink/[.06]" : ""} ${z === arr.length - 1 ? "font-bold" : ""}`}><span className="text-[13px] font-semibold text-ink/70">{k}</span><span className="text-[13px] font-bold">{v2}</span></div>)}</div>
-      <div className="mt-2 text-pretty text-[12px] font-medium leading-[1.45] text-ink/55">{E2("Los días cuentan desde que la tienda confirma que lo tiene. Te lo entregan al terminar de pagar.", "Days count from when the store confirms it has it. You get it when fully paid.")}</div>
+      <div className="mt-2 text-pretty text-[12px] font-medium leading-[1.45] text-ink/60">{E2("Los días cuentan desde que la tienda confirma que lo tiene. Te lo entregan al terminar de pagar.", "Days count from when the store confirms it has it. You get it when fully paid.")}</div>
     </div>
   ) : null;
   const acuerdoB = conPlan && acuerdo ? (
     <div data-screen-label="Apartado · acuerdo del plan" className={`flex flex-col gap-4 p-4 ${caja}`}>
       <div><div className={K}>{E2("EL ACUERDO, POR ESCRITO", "THE AGREEMENT, IN WRITING")}</div><p className="m-0 mt-2 text-pretty text-[13px] leading-[1.6] text-ink/75">{es ? acuerdo.es : acuerdo.en}</p></div>
       <div><div className={K}>{E2("CON QUÉ PAGAS EL ABONO", "CARD FOR THE DOWN PAYMENT")}</div>
-        <div className="mt-2 flex items-center gap-3"><span className="grid h-9 w-9 flex-none place-items-center rounded-[11px] bg-paper"><Icon name="card" size={16} /></span><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{tarjeta ? tarjetaL(tarjeta) : E2("Agrega una tarjeta", "Add a card")}</span><span className="block text-[12px] font-medium text-ink/55">{E2("Se retiene hoy y se cobra cuando confirman.", "Held today, charged when they confirm.")}</span></span><button type="button" onClick={() => setHojaT(true)} className="flex-none text-[12.5px] font-bold text-action">{tarjeta ? E2("Cambiar", "Change") : E2("Agregar", "Add")}</button></div></div>
+        <div className="mt-2 flex items-center gap-3"><span className="grid h-9 w-9 flex-none place-items-center rounded-[11px] bg-paper"><Icon name="card" size={16} /></span><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{tarjeta ? tarjetaL(tarjeta) : E2("Agrega una tarjeta", "Add a card")}</span><span className="block text-[12px] font-medium text-ink/60">{E2("Se retiene hoy y se cobra cuando confirman.", "Held today, charged when they confirm.")}</span></span><button type="button" onClick={() => setHojaT(true)} className="flex-none text-[12.5px] font-bold text-action">{tarjeta ? E2("Cambiar", "Change") : E2("Agregar", "Add")}</button></div></div>
       <button type="button" role="checkbox" aria-checked={acepto} onClick={() => setAcepto(!acepto)} className="flex items-start gap-3 text-left"><span className={`mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-[6px] ${acepto ? "bg-ink" : "border-[1.5px] border-ink/25"}`}>{acepto && <Icon name="check" size={13} color="var(--tl-white)" strokeWidth={2.6} />}</span><span className="text-[13px] font-semibold leading-[1.45]">{E2("Leí el acuerdo y lo acepto", "I read the agreement and accept it")}</span></button>
     </div>
   ) : null;
@@ -103,18 +103,18 @@ export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApa
     <div data-screen-label="Apartado · cómo lo recibes" className={`p-4 ${caja}`}>
       <div className={K}>{E2("¿CÓMO LO RECIBES?", "HOW DO YOU GET IT?")}</div>
       <div role="radiogroup" aria-label={E2("Cómo lo recibes", "How you get it")} className="mt-2.5 flex flex-col gap-2">
-        <button type="button" role="radio" aria-checked={!envio} onClick={() => setComo("tienda")} className={opcion(!envio)}><span className={radio(!envio)} /><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Lo recojo en la tienda", "I pick it up in store")}</span><span className="block text-[12px] font-medium text-ink/55">{E2("Hoy no se cobra nada · pagas en la caja", "Nothing today · pay at the register")}</span></span><span className="text-[12.5px] font-bold">{E2("Gratis", "Free")}</span></button>
-        <button type="button" role="radio" aria-checked={envio} onClick={() => setComo("envio")} className={opcion(envio)}><span className={radio(envio)} /><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Envío a tu casa", "Ship to your home")}</span><span className="block text-[12px] font-medium text-ink/55">{`${E2("Llega en ", "Arrives in ")}${o.envio!.dias} ${E2("días · con tarjeta", "days · by card")}`}</span></span><span className="text-right text-[12.5px] font-bold">{feeL}</span></button>
+        <button type="button" role="radio" aria-checked={!envio} onClick={() => setComo("tienda")} className={opcion(!envio)}><span className={radio(!envio)} /><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Lo recojo en la tienda", "I pick it up in store")}</span><span className="block text-[12px] font-medium text-ink/60">{E2("Hoy no se cobra nada · pagas en la caja", "Nothing today · pay at the register")}</span></span><span className="text-[12.5px] font-bold">{E2("Gratis", "Free")}</span></button>
+        <button type="button" role="radio" aria-checked={envio} onClick={() => setComo("envio")} className={opcion(envio)}><span className={radio(envio)} /><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Envío a tu casa", "Ship to your home")}</span><span className="block text-[12px] font-medium text-ink/60">{`${E2("Llega en ", "Arrives in ")}${o.envio!.dias} ${E2("días · con tarjeta", "days · by card")}`}</span></span><span className="text-right text-[12.5px] font-bold">{feeL}</span></button>
       </div>
     </div>
   ) : null;
   const adonde = (
     <div data-screen-label="Apartado · envío" className={`flex flex-col gap-4 p-4 ${caja}`}>
       <div><div className={K}>{E2("A DÓNDE", "WHERE TO")}</div>
-        {dir ? <div className="mt-2 flex items-center gap-3"><span className="grid h-9 w-9 flex-none place-items-center rounded-[11px] bg-paper"><Icon name="pin" size={16} /></span><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{dir.label}</span><span className="block truncate text-[12px] font-medium text-ink/55">{dir.street}</span></span><button type="button" onClick={() => router.push("/cuenta/direcciones")} className="flex-none text-[12.5px] font-bold text-action">{E2("Cambiar", "Change")}</button></div>
+        {dir ? <div className="mt-2 flex items-center gap-3"><span className="grid h-9 w-9 flex-none place-items-center rounded-[11px] bg-paper"><Icon name="pin" size={16} /></span><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{dir.label}</span><span className="block truncate text-[12px] font-medium text-ink/60">{dir.street}</span></span><button type="button" onClick={() => router.push("/cuenta/direcciones")} className="flex-none text-[12.5px] font-bold text-action">{E2("Cambiar", "Change")}</button></div>
           : <button type="button" onClick={() => router.push("/cuenta/direcciones")} className="mt-2 text-[12.5px] font-bold text-action">{E2("Agrega tu dirección en Mis direcciones", "Add your address in My addresses")}</button>}</div>
       <div><div className={K}>{E2("CÓMO PAGAS", "HOW YOU PAY")}</div>
-        <div className="mt-2 flex items-center gap-3"><span className="grid h-9 w-9 flex-none place-items-center rounded-[11px] bg-paper"><Icon name="card" size={16} /></span><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{tarjeta ? tarjetaL(tarjeta) : E2("Agrega una tarjeta", "Add a card")}</span><span className="block text-[12px] font-medium text-ink/55">{E2("Se retiene hoy y se cobra al enviarlo.", "Held today, charged when it ships.")}</span></span><button type="button" onClick={() => setHojaT(true)} className="flex-none text-[12.5px] font-bold text-action">{tarjeta ? E2("Cambiar", "Change") : E2("Agregar", "Add")}</button></div></div>
+        <div className="mt-2 flex items-center gap-3"><span className="grid h-9 w-9 flex-none place-items-center rounded-[11px] bg-paper"><Icon name="card" size={16} /></span><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{tarjeta ? tarjetaL(tarjeta) : E2("Agrega una tarjeta", "Add a card")}</span><span className="block text-[12px] font-medium text-ink/60">{E2("Se retiene hoy y se cobra al enviarlo.", "Held today, charged when it ships.")}</span></span><button type="button" onClick={() => setHojaT(true)} className="flex-none text-[12.5px] font-bold text-action">{tarjeta ? E2("Cambiar", "Change") : E2("Agregar", "Add")}</button></div></div>
       <div className="flex items-start gap-2 rounded-[12px] bg-paper px-3 py-2.5"><span className="grid flex-none pt-0.5"><Icon name="clock" size={14} color="var(--tl-open-text)" /></span><span className="text-pretty text-[12px] font-semibold leading-[1.45] text-ink/70">{E2(`La tienda confirma que lo tiene y lo envía; llega en ${o.envio?.dias ?? ""} días después de enviarlo.`, `The store confirms it has it and ships it; it arrives ${o.envio?.dias ?? ""} days after it ships.`)}</span></div>
     </div>
   );
@@ -125,7 +125,7 @@ export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApa
         <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 200))} rows={2} aria-label={E2("Nota para la tienda", "Note for the store")} placeholder={E2("Ej.: es para regalo…", "E.g. it is a gift…")} className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
       </div>
       <div className="flex items-center gap-3">
-        <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Avisos por SMS", "Text updates")}</span><span className="mt-0.5 block text-[12px] font-medium text-ink/55">{E2("Cuando esté listo y antes de que venza.", "When it is ready and before it expires.")}</span></span>
+        <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Avisos por SMS", "Text updates")}</span><span className="mt-0.5 block text-[12px] font-medium text-ink/60">{E2("Cuando esté listo y antes de que venza.", "When it is ready and before it expires.")}</span></span>
         <span role="switch" aria-checked={sms} aria-label={E2("Avisos por SMS", "Text updates")} tabIndex={0} onClick={() => setSms(!sms)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSms(!sms); } }} className="relative h-6 w-[42px] flex-none cursor-pointer rounded-full" style={{ background: sms ? "var(--tl-ink)" : "rgba(11,14,18,.15)" }}><span className="absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-[left]" style={{ left: sms ? 21 : 3 }} /></span>
       </div>
     </div>
@@ -144,7 +144,7 @@ export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApa
     : [[E2("ARTÍCULOS", "ITEMS"), String(n)], [E2("CÓMO", "HOW"), E2("Recoger en tienda", "Pick up in store")], [E2("CUÁNDO", "WHEN"), whenL], [E2("TE LO GUARDAN", "HELD UNTIL"), E2(`${H} horas`, `${H} hours`)]];
   const resumen = (
     <div className={`overflow-hidden ${caja}`}>
-      <div className="border-b border-ink/[.07] px-[15px] py-3.5"><div className={K}>{E2("RESUMEN", "SUMMARY")}</div><div className="mt-[5px] font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{E2("Tu apartado", "Your hold")}</div><div className="mt-1 font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{o.negocio.nombre.toUpperCase()}</div></div>
+      <div className="border-b border-ink/[.07] px-[15px] py-3.5"><div className={K}>{E2("RESUMEN", "SUMMARY")}</div><div className="mt-[5px] font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{E2("Tu apartado", "Your hold")}</div><div className="mt-1 font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{o.negocio.nombre.toUpperCase()}</div></div>
       <div className="px-[15px] py-0.5">{filas.map(([k, v2], z) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${z ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v2}</span></div>)}</div>
     </div>
   );
@@ -174,8 +174,8 @@ export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApa
         </div>
         <div data-screen-label="Apartado · barra" className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/[.08] bg-paper/[.96] px-4 pb-5 pt-3 backdrop-blur-[14px]">
           <div className="flex items-center gap-3.5">
-            <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{hoyL}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{hoyV}</div>
-              <div className="mt-1 font-mono text-[8.5px] font-semibold tracking-[0.08em] text-ink/45">{conPlan ? E2("SE COBRA AL CONFIRMAR", "CHARGED ON CONFIRMATION") : envio ? E2("SE COBRA AL ENVIARLO", "CHARGED WHEN IT SHIPS") : `${E2("EN LA CAJA ", "AT THE REGISTER ")}${dinero(tot)}`}</div></div>
+            <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{hoyL}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{hoyV}</div>
+              <div className="mt-1 font-mono text-[8.5px] font-semibold tracking-[0.08em] text-ink/60">{conPlan ? E2("SE COBRA AL CONFIRMAR", "CHARGED ON CONFIRMATION") : envio ? E2("SE COBRA AL ENVIARLO", "CHARGED WHEN IT SHIPS") : `${E2("EN LA CAJA ", "AT THE REGISTER ")}${dinero(tot)}`}</div></div>
             <div className="flex min-w-0 flex-1"><Button block disabled={!okPaso || ocupado} onClick={sigue}>{paso === 2 ? (ocupado ? E2("Apartando…", "Holding…") : botonL) : E2("Continuar", "Continue")}</Button></div>
           </div>
           {!okPaso && miss[0] && <div className="mt-[9px] text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-pro-ink">{(paso === 0 ? miss[0] : miss[miss.length - 1]!).toUpperCase()}</div>}
@@ -183,7 +183,7 @@ export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApa
       </div>
       <div data-screen-label="APP-NEG-TIENDA-APARTADO · desktop" className="mx-auto hidden max-w-[1180px] px-[30px] pb-[60px] pt-[22px] lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{o.negocio.nombre}</button>
-        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{E2("Tu apartado", "Your hold")}</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{o.negocio.nombre.toUpperCase()}</div></div>
+        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{E2("Tu apartado", "Your hold")}</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{o.negocio.nombre.toUpperCase()}</div></div>
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-x-12 gap-y-8">
           <div className="flex min-w-0 flex-col gap-[26px]">
             <div><div className="mb-3 font-display text-[20px] font-extrabold leading-[1.1] tracking-[-0.03em]">{T[0]}</div><div className="flex flex-col gap-3">{tarjetaAp}{lineas}{planB}{comoB}{notaB}</div></div>
@@ -195,7 +195,7 @@ export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApa
             <div className="flex flex-col gap-3 rounded-[22px] border border-ink/10 bg-white px-5 py-[18px] shadow-[var(--shadow-float)]">
               {miss.length > 0 && <div className="text-center text-[12px] font-bold text-pro-ink">{miss[0]}</div>}
               <div className="flex items-center gap-3.5">
-                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{hoyL}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">{hoyV}</div></div>
+                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{hoyL}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">{hoyV}</div></div>
                 <div className="flex min-w-0 flex-1"><Button variant="primary" block disabled={miss.length > 0 || ocupado} onClick={() => void enviar()}>{ocupado ? E2("Apartando…", "Holding…") : botonL}</Button></div>
               </div>
               {errorBox}

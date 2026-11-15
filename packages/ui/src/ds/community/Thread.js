@@ -98,7 +98,7 @@ const Head = p => /*#__PURE__*/React.createElement("div", {
     marginTop: 4,
     font: '600 9.5px ' + mono,
     letterSpacing: '.06em',
-    color: 'rgba(11,14,18,.45)'
+    color: 'rgba(11,14,18,.6)'
   }
 }, p.time) : null), has(p.best) ? /*#__PURE__*/React.createElement(__ds_scope.Tag, {
   tone: "signal"
@@ -216,7 +216,7 @@ function CommentActions({
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "chevronDown",
     size: 15,
-    color: "rgba(11,14,18,.4)"
+    color: "rgba(11,14,18,.6)"
   })) : null);
 }
 
@@ -323,7 +323,7 @@ function TopAnswer({
       marginTop: 4,
       font: '600 9.5px ' + mono,
       letterSpacing: '.04em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, business.meta) : null), has(business.cta) ? /*#__PURE__*/React.createElement("div", {
     style: {
@@ -398,7 +398,7 @@ const ReplyBody = ({
   style: {
     font: '600 9px ' + mono,
     letterSpacing: '.06em',
-    color: 'rgba(11,14,18,.45)'
+    color: 'rgba(11,14,18,.6)'
   }
 }, r.time)), r.hasText ? /*#__PURE__*/React.createElement("div", {
   style: {
@@ -428,7 +428,7 @@ const ReplyBody = ({
     alignItems: 'center',
     gap: 14,
     font: '700 12px Manrope,sans-serif',
-    color: 'rgba(11,14,18,.55)'
+    color: 'rgba(11,14,18,.6)'
   }
 }, /*#__PURE__*/React.createElement("span", {
   onClick: r.vote && r.vote.onUp,
@@ -468,7 +468,7 @@ const ReplyBody = ({
 }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
   name: "chevronDown",
   size: 13,
-  color: "rgba(11,14,18,.4)"
+  color: "rgba(11,14,18,.6)"
 })) : null));
 
 /* 18a · Respuestas: cerradas = caras de quienes respondieron + «Ver N respuestas»; abiertas = cada respuesta con su línea y, debajo, las que le contestan a esa persona (codo de línea). */
@@ -639,7 +639,7 @@ function AlsoRecommended({
       marginTop: 4,
       font: '600 9px ' + mono,
       letterSpacing: '.08em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, sub) : null, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -708,7 +708,7 @@ function AlsoRecommended({
       marginTop: 3,
       font: '600 9px ' + mono,
       letterSpacing: '.04em',
-      color: 'rgba(11,14,18,.5)',
+      color: 'rgba(11,14,18,.6)',
       whiteSpace: 'nowrap',
       overflow: 'hidden',
       textOverflow: 'ellipsis'

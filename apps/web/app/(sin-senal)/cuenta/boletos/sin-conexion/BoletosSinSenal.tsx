@@ -27,7 +27,7 @@ export function BoletosSinSenal() {
         {L === null ? null : b ? (<>
           {L.length > 1 ? <button type="button" onClick={() => setSel(null)} className="inline-flex items-center gap-1.5 self-start text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2("Tus boletos en este teléfono", "Your tickets on this phone")}</button> : null}
           <div>
-            <div className="font-mono text-[10.5px] font-bold tracking-[0.16em] text-ink/50">{b.cuando}</div>
+            <div className="font-mono text-[10.5px] font-bold tracking-[0.16em] text-ink/60">{b.cuando}</div>
             <h1 className="m-0 mt-1.5 font-display text-[26px] font-extrabold leading-[1.08] tracking-[-0.04em]">{b.titulo}</h1>
             <div className="mt-1.5 text-[13px] font-semibold text-ink/65">{b.lugar}</div>
           </div>
@@ -61,7 +61,7 @@ export function BoletosSinSenal() {
           <div className="flex flex-col items-center gap-4">
             <QrCode matrix={matrizDe(b.filas)} size={Math.min(340, typeof window !== "undefined" ? window.innerWidth - 48 : 320)} label={E2(`Código QR del boleto ${b.code}`, `QR code for ticket ${b.code}`)} />
             <div className="font-mono text-[15px] font-bold tracking-[0.12em]">{b.code}</div>
-            <div className="text-[12px] font-semibold text-ink/55">{E2("Toca para cerrar", "Tap to close")}</div>
+            <div className="text-[12px] font-semibold text-ink/60">{E2("Toca para cerrar", "Tap to close")}</div>
           </div>
         </div>
       )}

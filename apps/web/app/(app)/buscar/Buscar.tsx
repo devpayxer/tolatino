@@ -141,12 +141,12 @@ export function Buscar({ v }: { v: VistaBuscar }) {
       <span className="flex items-center gap-[9px]">
         <span className="grid size-7 flex-none place-items-center rounded-full bg-desk bg-cover bg-center text-[10px] font-extrabold" style={x.foto ? { backgroundImage: `url("${x.foto}")` } : undefined}>{x.foto ? "" : x.ini}</span>
         <span className="text-[13px] font-bold">{x.who}{x.oficial ? <span className="ml-1.5 font-mono text-[9.5px] font-bold tracking-[0.08em] text-action">{E2("CUENTA OFICIAL", "OFFICIAL")}</span> : null}</span>
-        <span className="font-mono text-[10px] font-semibold text-ink/45">{x.when}</span>
+        <span className="font-mono text-[10px] font-semibold text-ink/60">{x.when}</span>
       </span>
       <span className="text-[13.5px] font-medium leading-[1.55] text-ink/80" style={{ display: "-webkit-box", WebkitLineClamp: lineas, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{x.parts[0]}<span className="font-extrabold text-ink">{x.parts[1]}</span>{x.parts[2]}</span>
-      <span className="flex gap-3.5 font-mono text-[11px] font-bold text-ink/50">
-        <span className="flex items-center gap-[5px]"><Icon name="like" size={14} color="rgba(11,14,18,.5)" />{x.votes}</span>
-        <span className="flex items-center gap-[5px]"><Icon name="chat" size={14} color="rgba(11,14,18,.5)" />{x.cms}</span>
+      <span className="flex gap-3.5 font-mono text-[11px] font-bold text-ink/60">
+        <span className="flex items-center gap-[5px]"><Icon name="like" size={14} color="rgba(11,14,18,.6)" />{x.votes}</span>
+        <span className="flex items-center gap-[5px]"><Icon name="chat" size={14} color="rgba(11,14,18,.6)" />{x.cms}</span>
       </span>
     </button>
   );
@@ -154,7 +154,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
     if (!vecMas || vecCarga) return; setVecCarga(true);
     try { const r = await vecinosMas(v.q, vecMas); setVecL((l) => [...l, ...r.items.filter((y) => !l.some((z) => z.id === y.id))]); setVecMas(r.mas); } catch { /* sin red */ } finally { setVecCarga(false); }
   };
-  const lineaFija = <span className="text-[11.5px] font-semibold leading-[1.5] text-ink/50">{es ? LINEA_FIJA.es : LINEA_FIJA.en}</span>;
+  const lineaFija = <span className="text-[11.5px] font-semibold leading-[1.5] text-ink/60">{es ? LINEA_FIJA.es : LINEA_FIJA.en}</span>;
   const seccionVecinos = R?.vecinos && vecL.length > 0 && (
     <div data-screen-label="APP-BUSCAR · lo que dicen los vecinos" className="flex flex-col gap-2.5">
       <div className="flex items-baseline justify-between gap-2.5">
@@ -193,13 +193,13 @@ export function Buscar({ v }: { v: VistaBuscar }) {
     <div data-screen-label="APP-BUSCAR · empleos" className="flex flex-col gap-2.5">
       <div className="flex items-baseline justify-between gap-2.5">
         <span className="font-display text-[18px] font-extrabold tracking-[-0.03em] lg:text-[20px]">{E2("Empleos", "Jobs")}</span>
-        <span className="font-mono text-[10px] font-bold tracking-[0.1em] text-ink/50">{`${VA.total} ${VA.total === 1 ? E2("VACANTE", "OPENING") : E2("VACANTES", "OPENINGS")} · ${v.ciudad.toUpperCase()}`}</span>
+        <span className="font-mono text-[10px] font-bold tracking-[0.1em] text-ink/60">{`${VA.total} ${VA.total === 1 ? E2("VACANTE", "OPENING") : E2("VACANTES", "OPENINGS")} · ${v.ciudad.toUpperCase()}`}</span>
       </div>
       <div className="flex flex-col overflow-hidden rounded-[18px] border border-ink/[.08] bg-white">
         {VA.items.map((x, i) => (
           <button key={x.id} type="button" data-vacante={x.id} onClick={() => router.push(`/n/${x.biz}/empleo/${x.id}`)} className={`flex items-center gap-3 px-4 py-3 text-left ${i ? "border-t border-ink/[.07]" : ""}`}>
             <span className="grid size-[42px] flex-none place-items-center rounded-[12px] bg-photo-bg font-display text-[13px] font-extrabold" style={x.logo ? { background: `url("${x.logo}") center/cover` } : undefined}>{x.logo ? "" : x.negocio.slice(0, 1)}</span>
-            <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{x.puesto}</span><span className="mt-1 block truncate font-mono text-[9.5px] font-semibold tracking-[0.05em] text-ink/50">{`${x.negocio}${x.pago ? ` · ${x.pago}` : ""}`.toUpperCase()}</span></span>
+            <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{x.puesto}</span><span className="mt-1 block truncate font-mono text-[9.5px] font-semibold tracking-[0.05em] text-ink/60">{`${x.negocio}${x.pago ? ` · ${x.pago}` : ""}`.toUpperCase()}</span></span>
             <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" />
           </button>
         ))}
@@ -213,11 +213,11 @@ export function Buscar({ v }: { v: VistaBuscar }) {
   /* ── Piezas ── */
   const caja = (desk: boolean) => (
     <div className={`flex min-w-0 flex-1 items-center gap-[9px] rounded-[14px] border-[1.5px] pl-[13px] pr-1.5 ${desk ? "h-[52px]" : "h-[46px]"} ${foco ? "border-ink bg-white" : "border-transparent bg-paper"}`}>
-      <Icon name="search" size={18} color="rgba(11,14,18,.45)" />
+      <Icon name="search" size={18} color="rgba(11,14,18,.6)" />
       <input ref={inRef} value={q} onChange={(e) => setQ(e.target.value.slice(0, 120))} onFocus={() => setFoco(true)} onBlur={() => setTimeout(() => setFoco(false), 150)}
         onKeyDown={(e) => { if (e.key === "Enter") buscar(q); if (e.key === "Escape") { setQ(v.q); inRef.current?.blur(); } }}
         placeholder={placeholder} enterKeyHint="search" autoComplete="off" aria-label={t.search}
-        className="h-full min-w-0 flex-1 border-none bg-transparent p-0 text-[15px] font-semibold text-ink outline-none placeholder:text-ink/40" />
+        className="h-full min-w-0 flex-1 border-none bg-transparent p-0 text-[15px] font-semibold text-ink outline-none placeholder:text-ink/60" />
       {q ? (
         <button type="button" aria-label={t.clear} onClick={() => { setQ(""); inRef.current?.focus(); }} className="grid size-[30px] flex-none place-items-center rounded-full bg-ink/[.07]"><Icon name="close" size={13} strokeWidth={2.2} /></button>
       ) : (
@@ -229,7 +229,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
     <div data-screen-label="APP-BUSCAR · sugerencias" className="flex-1 bg-white px-2 pb-6 pt-1.5">
       {sug.intenciones.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 px-3 pb-1.5 pt-2.5">
-          <span className="mr-0.5 font-mono text-[9.5px] font-extrabold tracking-[0.14em] text-ink/45">{t.und}</span>
+          <span className="mr-0.5 font-mono text-[9.5px] font-extrabold tracking-[0.14em] text-ink/60">{t.und}</span>
           {sug.intenciones.map((l) => <Tag key={l} tone="signal">{l}</Tag>)}
         </div>
       )}
@@ -237,13 +237,13 @@ export function Buscar({ v }: { v: VistaBuscar }) {
         <span className="grid size-11 flex-none place-items-center rounded-xl bg-action/[.09]"><Icon name="search" size={19} color="var(--tl-action)" /></span>
         <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
           <span className="truncate text-[14.5px] font-bold leading-[1.3] text-action">{f(t.ir, { q: q.trim() })}{v.cat ? f(t.irEn, { x: v.cat.label }) : ""}</span>
-          <span className="truncate font-mono text-[10.5px] font-semibold tracking-[0.04em] text-ink/50">{conteoGo}</span>
+          <span className="truncate font-mono text-[10.5px] font-semibold tracking-[0.04em] text-ink/60">{conteoGo}</span>
         </span>
         <Icon name="chevronRight" size={16} strokeWidth={2} color="rgba(11,14,18,.35)" />
       </button>
       {secciones.map((s) => (
         <div key={s}>
-          <div className="px-3 pb-1.5 pt-4 font-mono text-[10px] font-extrabold tracking-[0.14em] text-ink/45">{s}</div>
+          <div className="px-3 pb-1.5 pt-4 font-mono text-[10px] font-extrabold tracking-[0.14em] text-ink/60">{s}</div>
           {sug.filas.filter((x) => x.seccion === s).map((x, i) => (
             <div key={i} className="grid" onMouseDown={(e) => e.preventDefault()}>
               <SearchResultRow size="sug" parts={x.parts} image={x.image} icon={x.icon} meta={x.meta} right={x.right} rightColor={x.rightColor ?? undefined} onClick={() => router.push(x.href)} />
@@ -277,20 +277,20 @@ export function Buscar({ v }: { v: VistaBuscar }) {
           <aside className="hidden lg:block">
             <div className="sticky top-[96px] flex flex-col gap-5">
               <div className="flex flex-col gap-1">
-                <span className="px-2.5 font-mono text-[10px] font-extrabold tracking-[0.14em] text-ink/45">{t.resU}</span>
+                <span className="px-2.5 font-mono text-[10px] font-extrabold tracking-[0.14em] text-ink/60">{t.resU}</span>
                 {[["all", t.todo, "search", null], ["biz", t.biz, "store", R.total], ...(R.eventos?.total ? [["evt", E2("Eventos", "Events"), "ticket", R.eventos.total >= 100 ? "100+" : R.eventos.total]] : []), ...(R.vecinos?.total ? [["vec", E2("Vecinos", "Neighbors"), "users", R.vecinos.total >= 100 ? "100+" : R.vecinos.total]] : [])].map(([id, l, ic, n]) => (
                   <button key={String(id)} type="button" onClick={() => ir({ tab: id === "all" ? null : String(id), p: null })}
                     className={`flex items-center gap-2.5 rounded-[11px] px-2.5 py-2 text-left text-[13.5px] font-bold ${R.tab === id ? "bg-ink/[.06] text-ink" : "text-ink/65"}`}>
-                    <Icon name={String(ic)} size={17} /><span className="flex-1">{l}</span><span className="font-mono text-[11px] text-ink/45">{n ?? ""}</span>
+                    <Icon name={String(ic)} size={17} /><span className="flex-1">{l}</span><span className="font-mono text-[11px] text-ink/60">{n ?? ""}</span>
                   </button>
                 ))}
               </div>
               {R.subsLado.length > 0 && (
                 <div className="flex flex-col gap-1">
-                  <span className="px-2.5 font-mono text-[10px] font-extrabold tracking-[0.14em] text-ink/45">{t.catsU}</span>
+                  <span className="px-2.5 font-mono text-[10px] font-extrabold tracking-[0.14em] text-ink/60">{t.catsU}</span>
                   {R.subsLado.map((s) => (
                     <button key={s.href} type="button" onClick={() => router.push(s.href)} className="flex flex-col gap-0.5 rounded-[11px] px-2.5 py-2 text-left hover:bg-paper">
-                      <span className="text-[13px] font-bold">{s.l}</span><span className="font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/45">{s.m}</span>
+                      <span className="text-[13px] font-bold">{s.l}</span><span className="font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{s.m}</span>
                     </button>
                   ))}
                 </div>
@@ -301,7 +301,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
             {!R.nada || R.intenciones.length > 0 ? (
               <div className="flex flex-col gap-3 border-b border-ink/[.07] bg-white px-5 pb-3.5 pt-3 lg:rounded-[20px] lg:border lg:border-line lg:p-5">
                 <div className="hidden flex-col gap-1 lg:flex">
-                  <span className="font-mono text-[10px] font-bold tracking-[0.12em] text-ink/45">{R.eb}</span>
+                  <span className="font-mono text-[10px] font-bold tracking-[0.12em] text-ink/60">{R.eb}</span>
                   <span className="font-display text-[28px] font-extrabold leading-[1.1] tracking-[-0.035em]">{R.titulo}</span>
                 </div>
                 {R.mostrarEntendido && <UnderstoodBar label={t.und} words={R.palabras} filters={R.intenciones.map((i) => ({ label: i.label, onRemove: () => router.push(i.quitar) }))} />}
@@ -322,7 +322,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                         <span className="size-[18px] flex-none rounded-full" style={{ border: R.orden === o ? "5px solid var(--tl-ink)" : "1.5px solid rgba(11,14,18,.25)" }} />{t.sorts[o]}
                       </button>
                     ))}
-                    <div className="px-3 pb-1.5 pt-1 text-[11.5px] font-medium leading-[1.5] text-ink/55">{t.proNote}</div>
+                    <div className="px-3 pb-1.5 pt-1 text-[11.5px] font-medium leading-[1.5] text-ink/60">{t.proNote}</div>
                   </div>
                 )}
               </div>
@@ -341,7 +341,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
               </div>
             ) : R.tab === "vec" && R.vecinos ? (
               <div data-screen-label="APP-BUSCAR · vecinos" className="flex flex-col gap-3 px-5 pb-12 pt-4 lg:px-0">
-                <span className="font-mono text-[10.5px] font-bold tracking-[0.08em] text-ink/50">{E2(`${R.vecinos.total >= 100 ? "100+" : R.vecinos.total} PUBLICACIONES DE VECINOS · ORDEN POR VOTOS`, `${R.vecinos.total >= 100 ? "100+" : R.vecinos.total} NEIGHBOR POSTS · ORDERED BY VOTES`)}</span>
+                <span className="font-mono text-[10.5px] font-bold tracking-[0.08em] text-ink/60">{E2(`${R.vecinos.total >= 100 ? "100+" : R.vecinos.total} PUBLICACIONES DE VECINOS · ORDEN POR VOTOS`, `${R.vecinos.total >= 100 ? "100+" : R.vecinos.total} NEIGHBOR POSTS · ORDERED BY VOTES`)}</span>
                 <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">{vecL.map((x) => fichaVecino(x, 4))}</div>
                 {vecMas && <div className="flex justify-center"><Button variant="secondary" size="md" disabled={vecCarga} onClick={vecinosMasCargar}>{vecCarga ? E2("Cargando…", "Loading…") : E2("Ver más", "See more")}</Button></div>}
                 {lineaFija}
@@ -349,7 +349,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
               </div>
             ) : R.nada ? (
               <div data-screen-label="APP-BUSCAR · sin resultados" className="flex flex-col items-center gap-3.5 px-6 pb-12 pt-9 text-center lg:items-start lg:px-0 lg:text-left">
-                <span className="grid size-16 place-items-center rounded-[22px] border border-line bg-white lg:hidden"><Icon name="search" size={26} color="rgba(11,14,18,.5)" /></span>
+                <span className="grid size-16 place-items-center rounded-[22px] border border-line bg-white lg:hidden"><Icon name="search" size={26} color="rgba(11,14,18,.6)" /></span>
                 <span className="text-balance font-display text-[22px] font-extrabold leading-[1.2] tracking-[-0.035em]">{R.nadaT}</span>
                 <span className="max-w-[320px] text-pretty text-[13.5px] font-medium leading-[1.6] text-ink/60 lg:max-w-[520px]">{f(t.noneB, { c: v.ciudad })}</span>
                 {R.dym && <button type="button" onClick={() => buscar(R.dym!)} className="text-[14px] font-bold text-action">{f(t.dym, { x: R.dym })}</button>}
@@ -362,13 +362,13 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                 {seccionVacantes && <div className="mt-3 w-full text-left">{seccionVacantes}</div>}
                 {seccionVecinos && <div className="mt-3 w-full text-left">{seccionVecinos}</div>}
                 <div className="mt-3.5 flex w-full flex-col gap-2.5 text-left">
-                  <span className="font-mono text-[10px] font-extrabold tracking-[0.14em] text-ink/45">{t.tryCats}</span>
+                  <span className="font-mono text-[10px] font-extrabold tracking-[0.14em] text-ink/60">{t.tryCats}</span>
                   <div className="flex flex-wrap gap-2">{R.probar.map((c) => <Chip key={c.slug} onClick={() => router.push(`/c/${c.slug}`)}>{c.l}</Chip>)}</div>
                 </div>
               </div>
             ) : R.tab === "biz" ? (
               <div className="flex flex-col gap-3 px-5 pb-12 pt-4 lg:px-0">
-                <span className="font-mono text-[10.5px] font-bold tracking-[0.08em] text-ink/50">{f(t.conteo, { n: R.total })}{R.paginas > 1 ? ` · ${f(t.pagina, { p: R.pagina + 1, n: R.paginas })}` : ""}</span>
+                <span className="font-mono text-[10.5px] font-bold tracking-[0.08em] text-ink/60">{f(t.conteo, { n: R.total })}{R.paginas > 1 ? ` · ${f(t.pagina, { p: R.pagina + 1, n: R.paginas })}` : ""}</span>
                 <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))] lg:gap-4">
                   {R.tarjetas.map((b) => <div key={b.id} className="grid"><TarjetaNegocio b={b} origen="buscar" textos={{ hoy: TX[v.lang].todayTag, llamar: TX[v.lang].call }} /></div>)}
                 </div>
@@ -417,7 +417,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                     <Button size="sm" variant="soft" icon="users" onClick={preguntar}>{E2("Pregúntale al barrio", "Ask the neighborhood")}</Button>
                     <Button size="sm" variant="secondary" icon="store" onClick={() => router.push(`/recomendar?${new URLSearchParams(v.q ? { q: v.q } : {})}`)}>{t.rec}</Button>
                   </div>
-                  <span className="text-[12px] font-medium leading-[1.5] text-ink/55">{E2("Pregúntale al barrio: los vecinos recomiendan y el orden lo ponen sus votos.", "Ask the neighborhood: neighbors recommend and their votes set the order.")}</span>
+                  <span className="text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Pregúntale al barrio: los vecinos recomiendan y el orden lo ponen sus votos.", "Ask the neighborhood: neighbors recommend and their votes set the order.")}</span>
                 </div>
               </div>
             )}
@@ -427,7 +427,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
         /* ── Explorar ── */
         <div data-screen-label="APP-BUSCAR · explorar" className="flex flex-col gap-7 px-5 pb-12 pt-5 lg:mx-auto lg:w-full lg:max-w-[880px] lg:px-[30px]">
           <div className="hidden flex-col gap-1.5 lg:flex">
-            <span className="font-mono text-[10.5px] font-bold tracking-[0.12em] text-ink/45">{f(t.ebCity, { C: v.ciudad.toUpperCase() })}</span>
+            <span className="font-mono text-[10.5px] font-bold tracking-[0.12em] text-ink/60">{f(t.ebCity, { C: v.ciudad.toUpperCase() })}</span>
             <span className="font-display text-[36px] font-extrabold leading-[1.05] tracking-[-0.04em]">{t.hero}</span>
             <span className="text-[14px] font-medium text-ink/60">{t.heroSub}</span>
           </div>
@@ -437,9 +437,9 @@ export function Buscar({ v }: { v: VistaBuscar }) {
               <div className="overflow-hidden rounded-[17px] border border-line bg-white">
                 {rec.slice(0, 6).map((x, i) => (
                   <div key={x} className={`flex items-center gap-3 px-3.5 py-3 ${i ? "border-t border-ink/[.07]" : ""}`}>
-                    <Icon name="clock" size={17} color="rgba(11,14,18,.42)" />
+                    <Icon name="clock" size={17} color="rgba(11,14,18,.6)" />
                     <button type="button" onClick={() => buscar(x)} className="min-w-0 flex-1 truncate text-left text-[14px] font-semibold">{x}</button>
-                    <button type="button" aria-label={t.clear} onClick={() => { const l = rec.filter((y) => y !== x); guardar(l); setRec(l); }} className="grid size-7 flex-none place-items-center"><Icon name="close" size={13} strokeWidth={2} color="rgba(11,14,18,.4)" /></button>
+                    <button type="button" aria-label={t.clear} onClick={() => { const l = rec.filter((y) => y !== x); guardar(l); setRec(l); }} className="grid size-7 flex-none place-items-center"><Icon name="close" size={13} strokeWidth={2} color="rgba(11,14,18,.6)" /></button>
                   </div>
                 ))}
               </div>
@@ -461,13 +461,13 @@ export function Buscar({ v }: { v: VistaBuscar }) {
           </div>
           {v.explorar.tendencias.length >= 3 && (
             <div className="flex flex-col gap-2.5">
-              <div className="flex items-baseline justify-between"><span className="font-display text-[18px] font-extrabold tracking-[-0.03em]">{f(t.trend, { c: v.ciudad })}</span><span className="font-mono text-[10px] font-bold tracking-[0.12em] text-ink/45">{t.week}</span></div>
+              <div className="flex items-baseline justify-between"><span className="font-display text-[18px] font-extrabold tracking-[-0.03em]">{f(t.trend, { c: v.ciudad })}</span><span className="font-mono text-[10px] font-bold tracking-[0.12em] text-ink/60">{t.week}</span></div>
               <div className="overflow-hidden rounded-[17px] border border-line bg-white">
                 {v.explorar.tendencias.map((x, i) => (
                   <button key={x.q} type="button" onClick={() => buscar(x.q)} className={`flex w-full items-center gap-3 px-3.5 py-3 text-left ${i ? "border-t border-ink/[.07]" : ""}`}>
                     <span className="w-[22px] flex-none font-display text-[15px] font-extrabold text-ink/30">{i + 1}</span>
                     <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">{x.q}</span>
-                    {x.cat && <span className="flex-none font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/45">{x.cat.toUpperCase()}</span>}
+                    {x.cat && <span className="flex-none font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/60">{x.cat.toUpperCase()}</span>}
                   </button>
                 ))}
               </div>

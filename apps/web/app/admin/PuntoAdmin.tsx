@@ -27,7 +27,7 @@ export function PuntoAdmin({ id, lat, lng, centro, fijado, motivoFijado, puede }
     <div data-pieza="punto-admin" style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ font: `800 10px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.45)" }}>{E("PUNTO EN EL MAPA", "MAP PIN")}</div>
+          <div style={{ font: `800 10px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{E("PUNTO EN EL MAPA", "MAP PIN")}</div>
           <div style={{ marginTop: 6, font: "700 14px/1.4 Manrope,sans-serif" }}>{lat != null && lng != null ? `${lat.toFixed(5)}, ${lng.toFixed(5)}` : E("Sin punto: no sale como pin y cuenta como dentro del radio", "No pin: it doesn’t show on the map and counts as inside the radius")}</div>
           {fijado ? <div style={{ marginTop: 4, font: "500 12.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E(`Corregido por el equipo el ${fijado}${motivoFijado ? ` · ${motivoFijado}` : ""}`, `Corrected by the team on ${fijado}${motivoFijado ? ` · ${motivoFijado}` : ""}`)}</div> : null}
         </div>
@@ -36,9 +36,9 @@ export function PuntoAdmin({ id, lat, lng, centro, fijado, motivoFijado, puede }
       {abierto ? (
         <>
           <MapaPin es={!en} origen={origen} pin={pin} onPin={setPin} maxM={60000} etiqueta={E("MUEVE EL MAPA · EL PIN QUEDA DONDE ESTÁ LA PUERTA", "MOVE THE MAP · THE PIN STAYS WHERE THE DOOR IS")} />
-          {pin ? <div style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.55)" }}>{E(`NUEVO · ${pin[0].toFixed(5)}, ${pin[1].toFixed(5)} · ${metrosEntre(origen, pin)} M DEL PUNTO DE HOY`, `NEW · ${pin[0].toFixed(5)}, ${pin[1].toFixed(5)} · ${metrosEntre(origen, pin)} M FROM THE CURRENT PIN`)}</div> : null}
+          {pin ? <div style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{E(`NUEVO · ${pin[0].toFixed(5)}, ${pin[1].toFixed(5)} · ${metrosEntre(origen, pin)} M DEL PUNTO DE HOY`, `NEW · ${pin[0].toFixed(5)}, ${pin[1].toFixed(5)} · ${metrosEntre(origen, pin)} M FROM THE CURRENT PIN`)}</div> : null}
           <label style={{ display: "block" }}>
-            <span style={{ font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.42)" }}>{E("MOTIVO", "REASON")}</span>
+            <span style={{ font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.6)" }}>{E("MOTIVO", "REASON")}</span>
             <textarea value={motivo} onChange={(e) => setMotivo(e.target.value.slice(0, 300))} rows={2} placeholder={E("El pin estaba en la calle de atrás; la entrada da a N Wyoming St.", "The pin was on the back street; the entrance faces N Wyoming St.")}
               style={{ marginTop: 8, width: "100%", boxSizing: "border-box", borderRadius: 13, border: "1.5px solid rgba(11,14,18,.14)", padding: "10px 12px", font: "500 14px/1.45 Manrope,sans-serif", resize: "vertical" }} />
           </label>

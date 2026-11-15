@@ -59,7 +59,7 @@ function Paso({ es, paso, motivo0, nota0, r, ir, cerrar }: { es: boolean; paso: 
       <div data-screen-label="Reportar · detalle" style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
         <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, MAX_NOTA))} rows={4} aria-label={E2("Qué pasó (opcional)", "What happened (optional)")} placeholder={E2("Opcional", "Optional")}
           style={{ width: "100%", boxSizing: "border-box", padding: "10px 14px", borderRadius: 13, border: "1px solid rgba(11,14,18,.12)", outline: "none", font: "500 14px/1.45 Manrope,sans-serif", resize: "none" }} />
-        <div style={{ textAlign: "right", font: "600 10px 'JetBrains Mono',monospace", color: "rgba(11,14,18,.45)" }}>{`${nota.length}/${MAX_NOTA}`}</div>
+        <div style={{ textAlign: "right", font: "600 10px 'JetBrains Mono',monospace", color: "rgba(11,14,18,.6)" }}>{`${nota.length}/${MAX_NOTA}`}</div>
         <div role="note" style={{ padding: "10px 12px", borderRadius: 12, background: "rgba(192,57,43,.06)", font: "600 12.5px/1.45 Manrope,sans-serif", color: "var(--tl-danger)" }}>{E2("Si alguien está en peligro ahora mismo, llama al 911.", "If someone is in danger right now, call 911.")}</div>
         {err && <div role="alert" style={{ font: "600 13px/1.4 Manrope,sans-serif", color: "var(--tl-danger)" }}>{err}</div>}
         <div style={{ display: "flex" }}><Button variant="primary" block disabled={busy} onClick={enviar}>{busy ? E2("Enviando…", "Sending…") : E2("Enviar reporte", "Send report")}</Button></div>

@@ -263,12 +263,12 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
                 <div role="button" onClick={() => setUi({ sheet: "biz" })} {...tec(() => setUi({ sheet: "biz" }))} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
                   {avatar(40)}
                   <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: 5, font: "800 13.5px/1.2 Sora,sans-serif", letterSpacing: "-.02em" }}>{d.name}<Icon name="chevronDown" size={13} color="rgba(11,14,18,.45)" /></span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 5, font: "800 13.5px/1.2 Sora,sans-serif", letterSpacing: "-.02em" }}>{d.name}<Icon name="chevronDown" size={13} color="rgba(11,14,18,.6)" /></span>
                     <span style={{ display: "block", marginTop: 3 }}>{estadoL(9, ".08em")}</span>
                   </span>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 6 }}>
-                  {kpis.map((k) => <span key={k.k} role={k.onClick ? "button" : undefined} onClick={k.onClick} {...tec(k.onClick)} style={{ padding: "7px 6px", borderRadius: 10, background: "var(--tl-paper)", display: "flex", flexDirection: "column", gap: 2, alignItems: "center", cursor: k.onClick ? "pointer" : "default" }}><span style={{ font: "800 14px Sora,sans-serif" }}>{k.v}</span><span style={{ font: `700 7.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)", textAlign: "center" }}>{k.k}</span></span>)}
+                  {kpis.map((k) => <span key={k.k} role={k.onClick ? "button" : undefined} onClick={k.onClick} {...tec(k.onClick)} style={{ padding: "7px 6px", borderRadius: 10, background: "var(--tl-paper)", display: "flex", flexDirection: "column", gap: 2, alignItems: "center", cursor: k.onClick ? "pointer" : "default" }}><span style={{ font: "800 14px Sora,sans-serif" }}>{k.v}</span><span style={{ font: `700 7.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)", textAlign: "center" }}>{k.k}</span></span>)}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
                   {navIt(sec === "pag" && !ruta.sub, "store", E2("Tu página", "Your page"), () => go("pag"), true)}
@@ -277,7 +277,7 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
               </div>
               {d.sells ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 1, padding: "0 2px" }}>
-                  <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.45)" }}>{E2("CADA DÍA", "EVERY DAY")}</span>
+                  <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.6)" }}>{E2("CADA DÍA", "EVERY DAY")}</span>
                   {navIt(sec === "hoy", "home", E2("Hoy", "Today"), () => go("hoy"))}
                   {navIt(sec === "cli", "users", E2("Clientes", "Clients"), () => go("cli"))}
                   {msgs ? navIt(sec === "msg", "chat", msj?.n ? E2(`Mensajes · ${msj.n}`, `Messages · ${msj.n}`) : E2("Mensajes", "Messages"), () => go("msg")) : null}
@@ -289,12 +289,12 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
               ) : null}
               {d.sells || (!vende && !msgs) ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 1, padding: "0 2px" }}>
-                  <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.45)" }}>{E2("TU NEGOCIO", "YOUR BUSINESS")}</span>
+                  <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.6)" }}>{E2("TU NEGOCIO", "YOUR BUSINESS")}</span>
                   {cpaIt}
                 </div>
               ) : vende ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 1, padding: "0 2px" }}>
-                  <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.45)" }}>{E2("TU NEGOCIO", "YOUR BUSINESS")}</span>
+                  <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.6)" }}>{E2("TU NEGOCIO", "YOUR BUSINESS")}</span>
                   {navIt(sec === "mod", "grid", E2("Lo que vendes", "What you sell"), () => go("mod"))}
                   {evts ? navIt(sec === "evt", "ticket", E2("Eventos", "Events"), () => go("evt")) : null}
                   {msgs ? navIt(sec === "msg", "chat", msj?.n ? E2(`Mensajes · ${msj.n}`, `Messages · ${msj.n}`) : E2("Mensajes", "Messages"), () => go("msg")) : null}
@@ -302,14 +302,14 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
                 </div>
               ) : msgs ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 1, padding: "0 2px" }}>
-                  <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.45)" }}>{E2("TU NEGOCIO", "YOUR BUSINESS")}</span>
+                  <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.6)" }}>{E2("TU NEGOCIO", "YOUR BUSINESS")}</span>
                   {navIt(sec === "msg", "chat", msj?.n ? E2(`Mensajes · ${msj.n}`, `Messages · ${msj.n}`) : E2("Mensajes", "Messages"), () => go("msg"))}
                   {cpaIt}
                 </div>
               ) : null}
               {/* 8i · Mi cuenta (también en escritorio y dentro de la app): Ajustes, privacidad y Borrar mi cuenta (guardián borrarCuentaEnCadaApp). */}
               <div style={{ display: "flex", flexDirection: "column", gap: 1, padding: "0 2px" }}>
-                <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.45)" }}>{E2("TU CUENTA", "YOUR ACCOUNT")}</span>
+                <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.6)" }}>{E2("TU CUENTA", "YOUR ACCOUNT")}</span>
                 {navIt(false, "shield", E2("Mi cuenta y ajustes", "My account and settings"), () => router.push("/cuenta/ajustes"))}
               </div>
             </div>
@@ -336,8 +336,8 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
       ) : !desk && mnav.length > 1 ? (
         <div style={{ position: "sticky", bottom: 0, zIndex: 40, background: "rgba(247,246,243,.96)", backdropFilter: "blur(14px)", borderTop: "1px solid rgba(11,14,18,.08)", padding: "8px 8px 14px", display: "grid", gridTemplateColumns: `repeat(${mnav.length},minmax(0,1fr))` }}>
           {mnav.map((n) => { const on = n.k === sec || (n.k === "mas" && ["mod", "dlv", "pay", "evt", "cpa"].includes(sec) && !mtabs.has(sec)); return (
-            <div key={n.k} role="link" onClick={() => go(n.k as Ruta["sec"])} {...tec(() => go(n.k as Ruta["sec"]))} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "6px 0", cursor: "pointer", color: on ? "var(--tl-ink)" : "rgba(11,14,18,.42)" }}>
-              <Icon name={n.icon} size={21} color={on ? "var(--tl-ink)" : "rgba(11,14,18,.42)"} /><span style={{ font: "700 10.5px Manrope,sans-serif" }}>{n.l}</span>
+            <div key={n.k} role="link" onClick={() => go(n.k as Ruta["sec"])} {...tec(() => go(n.k as Ruta["sec"]))} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "6px 0", cursor: "pointer", color: on ? "var(--tl-ink)" : "rgba(11,14,18,.6)" }}>
+              <Icon name={n.icon} size={21} color={on ? "var(--tl-ink)" : "rgba(11,14,18,.6)"} /><span style={{ font: "700 10.5px Manrope,sans-serif" }}>{n.l}</span>
             </div>); })}
         </div>
       ) : null}
@@ -644,7 +644,7 @@ function horario(c: Ctx): { blocks: (Bloque | null)[]; ed: Editor } {
       const x = F.d.hours[i]!, open = c.ui.dayOpen === i && x.on, stp = (k: keyof DiaPanel, dv: number, lo: number, hi: number) => () => setDay(i, { [k]: cl((x[k] as number) + dv, lo, hi) } as Partial<DiaPanel>);
       return {
         d: E2(...D), today: i === todayIdx, on: x.on, onTg: () => setDay(i, { on: !x.on }),
-        h: x.on ? `${fmtHora(x.a)} – ${fmtHora(x.b)}${x.two ? ` · ${fmtHora(x.a2)} – ${fmtHora(x.b2)}` : ""}` : E2("Cerrado", "Closed"), hFg: x.on ? "var(--tl-ink)" : "rgba(11,14,18,.42)",
+        h: x.on ? `${fmtHora(x.a)} – ${fmtHora(x.b)}${x.two ? ` · ${fmtHora(x.a2)} – ${fmtHora(x.b2)}` : ""}` : E2("Cerrado", "Closed"), hFg: x.on ? "var(--tl-ink)" : "rgba(11,14,18,.6)",
         open, onOpen: () => { if (x.on) c.setUi({ dayOpen: c.ui.dayOpen === i ? -1 : i }); },
         aL: fmtHora(x.a), bL: fmtHora(x.b), aM: stp("a", -0.5, 5, x.b - 0.5), aP: stp("a", 0.5, 5, x.b - 0.5), bM: stp("b", -0.5, x.a + 0.5, x.two ? x.a2 : 26), bP: stp("b", 0.5, x.a + 0.5, x.two ? x.a2 : 26),
         ...(x.two ? { a2L: fmtHora(x.a2), b2L: fmtHora(x.b2), a2M: stp("a2", -0.5, x.b, x.b2 - 0.5), a2P: stp("a2", 0.5, x.b, x.b2 - 0.5), b2M: stp("b2", -0.5, x.a2 + 0.5, Math.min(26, x.a + 24)), b2P: stp("b2", 0.5, x.a2 + 0.5, Math.min(26, x.a + 24)) } : {}),

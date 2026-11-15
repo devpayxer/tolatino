@@ -39,7 +39,7 @@ function HoursPro({
     style: {
       font: '800 10px ' + mono,
       letterSpacing: '.12em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, dateLabel), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -120,7 +120,7 @@ function HoursPro({
     style: {
       marginTop: 2,
       font: '500 11.5px Manrope,sans-serif',
-      color: 'rgba(11,14,18,.55)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, t.label))))), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -245,7 +245,7 @@ function HoursPro({
   }, l.range), /*#__PURE__*/React.createElement("span", {
     style: {
       font: '600 10px ' + mono,
-      color: 'rgba(11,14,18,.42)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, l.type)))), r.tagDisp !== 'none' ? /*#__PURE__*/React.createElement("span", {
     style: {

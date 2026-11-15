@@ -30,12 +30,12 @@ function SearchBar({
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "search",
     size: 18,
-    color: "rgba(11,14,18,.4)"
+    color: "rgba(11,14,18,.6)"
   }), /*#__PURE__*/React.createElement("span", {
     style: {
       flex: 1,
       font: '500 14px Manrope,sans-serif',
-      color: 'rgba(11,14,18,.42)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, placeholder), mic ? /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "mic",

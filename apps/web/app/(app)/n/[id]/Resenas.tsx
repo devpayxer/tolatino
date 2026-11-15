@@ -154,7 +154,7 @@ export function propsTarjeta(c: Tarjeta, o: { es: boolean; negocio: string; summ
     helpful: foot ? (!c.mine ? { label: E2("Útil", "Helpful") + (hN ? ` · ${hN}` : ""), bg: hOn ? "var(--tl-action-tint)" : "var(--tl-white)", border: hOn ? "rgba(75,55,245,.35)" : "rgba(11,14,18,.14)", color: hOn ? "var(--tl-action)" : "var(--tl-ink)", onClick: o.onHelp }
       : hN > 0 ? { label: E2("Útil", "Helpful") + ` · ${hN}` } : null) : null,
     edit: foot && c.mine ? { label: E2("Ver y editar", "View and edit"), onClick: o.onEdit } : null,
-    report: foot && !c.mine ? { label: rep ? E2("Reportada · en revisión", "Reported · in review") : E2("Reportar", "Report"), color: rep ? "rgba(11,14,18,.42)" : "rgba(11,14,18,.55)", onClick: rep ? undefined : o.onRep } : null,
+    report: foot && !c.mine ? { label: rep ? E2("Reportada · en revisión", "Reported · in review") : E2("Reportar", "Report"), color: rep ? "rgba(11,14,18,.6)" : "rgba(11,14,18,.6)", onClick: rep ? undefined : o.onRep } : null,
   };
 }
 
@@ -201,7 +201,7 @@ function Cifras({ v, size }: { v: CtlResenas; size: number }) {
       <span className="font-display font-extrabold leading-none tracking-[-0.05em]" style={{ fontSize: size }}>{r.avg?.toFixed(1)}</span>
       <div>
         <div className="text-[14px] font-bold leading-none tracking-[1.5px]"><span className="text-[var(--tl-pro)]">{"★★★★★".slice(0, s)}</span><span className="text-ink/[.16]">{"★★★★★".slice(s)}</span></div>
-        <div className="mt-[7px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{r.n} {es ? "RESEÑAS" : "REVIEWS"}</div>
+        <div className="mt-[7px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{r.n} {es ? "RESEÑAS" : "REVIEWS"}</div>
       </div>
     </div>
   );
@@ -209,14 +209,14 @@ function Cifras({ v, size }: { v: CtlResenas; size: number }) {
 function Verif({ v }: { v: CtlResenas }) {
   const { r, es } = v, vl = r.negocio.verL, ok = r.ver > 0 && (!vl || vl.ok != null);
   if (vl) return (
-    <div className="flex items-start gap-1.5 font-mono text-[9.5px] font-bold leading-[1.4] tracking-[0.08em]" style={{ color: ok ? BIEN : "rgba(11,14,18,.5)" }}>
-      <Icon name={ok ? "verified" : "users"} size={13} color={ok ? BIEN : "rgba(11,14,18,.5)"} />
+    <div className="flex items-start gap-1.5 font-mono text-[9.5px] font-bold leading-[1.4] tracking-[0.08em]" style={{ color: ok ? BIEN : "rgba(11,14,18,.6)" }}>
+      <Icon name={ok ? "verified" : "users"} size={13} color={ok ? BIEN : "rgba(11,14,18,.6)"} />
       {ok ? `${r.ver} ${vl.ok}` : vl.no}
     </div>
   );
   return (
-    <div className="flex items-start gap-1.5 font-mono text-[9.5px] font-bold leading-[1.4] tracking-[0.08em]" style={{ color: ok ? BIEN : "rgba(11,14,18,.5)" }}>
-      <Icon name={ok ? "verified" : "users"} size={13} color={ok ? BIEN : "rgba(11,14,18,.5)"} />
+    <div className="flex items-start gap-1.5 font-mono text-[9.5px] font-bold leading-[1.4] tracking-[0.08em]" style={{ color: ok ? BIEN : "rgba(11,14,18,.6)" }}>
+      <Icon name={ok ? "verified" : "users"} size={13} color={ok ? BIEN : "rgba(11,14,18,.6)"} />
       {ok ? `${r.ver} ${es ? "VERIFICADAS POR PEDIDO O RESERVA" : "VERIFIED BY ORDER OR BOOKING"}` : es ? "RESEÑAS DE VISITANTES · AÚN SIN PEDIDOS VERIFICADOS" : "VISITOR REVIEWS · NO VERIFIED ORDERS YET"}
     </div>
   );
@@ -372,11 +372,11 @@ export function ResResumen({ v, desk, onAll }: { v: CtlResenas; desk: boolean; o
             {asp.map((a) => (
               <div key={a.k} className="flex min-w-0 items-center gap-[9px]">
                 <span className="grid size-[30px] flex-none place-items-center rounded-[10px]" style={{ background: a.bg }}><Icon name={a.ic} size={15} color={a.fg} /></span>
-                <div className="min-w-0"><div className="font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{a.v}</div><div className="mt-1 font-mono text-[8.5px] font-bold leading-[1.3] tracking-[0.08em] text-ink/50">{a.k}</div></div>
+                <div className="min-w-0"><div className="font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{a.v}</div><div className="mt-1 font-mono text-[8.5px] font-bold leading-[1.3] tracking-[0.08em] text-ink/60">{a.k}</div></div>
               </div>
             ))}
           </div>
-          <div className="mt-[11px] text-[11.5px] font-medium leading-[1.5] text-ink/55">{aspNota(v)}</div>
+          <div className="mt-[11px] text-[11.5px] font-medium leading-[1.5] text-ink/60">{aspNota(v)}</div>
         </>
       )}
     </div>
@@ -441,9 +441,9 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
     <div className={desk ? "" : "min-w-0 flex-1"}>
       {r.bars.map(([n, p]) => (
         <button key={n} type="button" onClick={() => cambiar({ star: q.star === n ? 0 : n })} className="flex w-full items-center gap-2 py-[3px]">
-          <span className="w-2 font-mono text-[10px] font-bold" style={{ color: q.star === n ? "var(--tl-action)" : "rgba(11,14,18,.45)" }}>{n}</span>
+          <span className="w-2 font-mono text-[10px] font-bold" style={{ color: q.star === n ? "var(--tl-action)" : "rgba(11,14,18,.6)" }}>{n}</span>
           <span className="h-1.5 flex-1 overflow-hidden rounded-[9px] bg-ink/[.08]"><span className="block h-full" style={{ width: `${p}%`, background: q.star === n ? "var(--tl-action)" : "var(--tl-ink)" }} /></span>
-          <span className="w-[30px] text-right font-mono text-[9.5px] font-semibold text-ink/45">{p}%</span>
+          <span className="w-[30px] text-right font-mono text-[9.5px] font-semibold text-ink/60">{p}%</span>
         </button>
       ))}
     </div>
@@ -454,7 +454,7 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
       <div className="flex items-end gap-3">
         <span className="font-display text-[52px] font-extrabold leading-none tracking-[-0.05em]">{r.avg?.toFixed(1)}</span>
         <div className="pb-[5px]"><span className="whitespace-nowrap text-[14px] font-bold leading-none tracking-[1.5px]"><span className="text-[var(--tl-pro)]">{"★★★★★".slice(0, s)}</span><span className="text-ink/[.16]">{"★★★★★".slice(s)}</span></span>
-          <div className="mt-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/45">{r.n} {E2("RESEÑAS", "REVIEWS")}</div></div>
+          <div className="mt-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{r.n} {E2("RESEÑAS", "REVIEWS")}</div></div>
       </div>
       <div className="mt-3"><Verif v={v} /></div>
     </div>
@@ -463,7 +463,7 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
       <div className="flex-none">
         <div className="font-display text-[44px] font-extrabold leading-none tracking-[-0.05em]">{r.avg?.toFixed(1)}</div>
         <div className="mt-[7px]"><span className="whitespace-nowrap text-[13px] font-bold leading-none tracking-[1.5px]"><span className="text-[var(--tl-pro)]">{"★★★★★".slice(0, s)}</span><span className="text-ink/[.16]">{"★★★★★".slice(s)}</span></span></div>
-        <div className="mt-[7px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/45">{r.n} {E2("RESEÑAS", "REVIEWS")}</div>
+        <div className="mt-[7px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{r.n} {E2("RESEÑAS", "REVIEWS")}</div>
       </div>
       {barras}
     </div>
@@ -475,12 +475,12 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
         {asp.map((a) => (
           <div key={a.k} className="flex items-center gap-2.5">
             <span className="grid size-[30px] flex-none place-items-center rounded-[10px]" style={{ background: a.bg }}><Icon name={a.ic} size={15} color={a.fg} /></span>
-            <span className="min-w-0 flex-1 font-mono text-[9.5px] font-bold leading-[1.3] tracking-[0.08em] text-ink/55">{a.k}</span>
+            <span className="min-w-0 flex-1 font-mono text-[9.5px] font-bold leading-[1.3] tracking-[0.08em] text-ink/60">{a.k}</span>
             <span className="font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{a.v}</span>
           </div>
         ))}
       </div>
-      <div className="mt-[11px] text-pretty text-[11px] font-medium leading-[1.5] text-ink/50">{aspNota(v)}</div>
+      <div className="mt-[11px] text-pretty text-[11px] font-medium leading-[1.5] text-ink/60">{aspNota(v)}</div>
     </div>
   ) : (
     <div className="rounded-[18px] border border-ink/[.07] bg-white p-[15px]">
@@ -489,11 +489,11 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
         {asp.map((a) => (
           <div key={a.k} className="flex min-w-0 items-center gap-[9px]">
             <span className="grid size-[34px] flex-none place-items-center rounded-[11px]" style={{ background: a.bg }}><Icon name={a.ic} size={16} color={a.fg} /></span>
-            <div className="min-w-0"><div className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{a.v}</div><div className="mt-1 font-mono text-[9px] font-bold leading-[1.3] tracking-[0.08em] text-ink/50">{a.k}</div></div>
+            <div className="min-w-0"><div className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{a.v}</div><div className="mt-1 font-mono text-[9px] font-bold leading-[1.3] tracking-[0.08em] text-ink/60">{a.k}</div></div>
           </div>
         ))}
       </div>
-      <div className="mt-3 text-pretty text-[11.5px] font-medium leading-[1.5] text-ink/55">{aspNota(v)}</div>
+      <div className="mt-3 text-pretty text-[11.5px] font-medium leading-[1.5] text-ink/60">{aspNota(v)}</div>
     </div>
   ));
   const cta = r.prompt ? <Prompt v={v} /> : <div className="flex"><Button variant="secondary" icon={r.tengo ? "star" : "edit"} block onClick={v.escribir}>{ctaL(v)}</Button></div>;
@@ -505,7 +505,7 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
           <button key={d.id} type="button" onClick={onMenu} className={desk ? "min-w-0 text-left" : "w-[132px] flex-none text-left"}>
             <div className={`${desk ? "h-24" : "h-[86px]"} rounded-[14px] bg-photo-bg`} style={d.ph ? { backgroundImage: `url(${d.ph})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
             <div className={`mt-[7px] font-bold leading-[1.25] ${desk ? "text-[13px]" : "text-[12.5px]"}`}>{es ? d.name.es : d.name.en || d.name.es}</div>
-            <div className="mt-1 flex items-center gap-[5px] font-mono text-[9.5px] font-semibold text-ink/50"><Icon name="like" size={12} color="var(--tl-action)" />{d.n}{E2(" la recomiendan", " recommend it")}</div>
+            <div className="mt-1 flex items-center gap-[5px] font-mono text-[9.5px] font-semibold text-ink/60"><Icon name="like" size={12} color="var(--tl-action)" />{d.n}{E2(" la recomiendan", " recommend it")}</div>
           </button>
         ))}
       </div>
@@ -519,7 +519,7 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
       <div className="flex flex-wrap items-center gap-3.5">
         <span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/[.42]">{E2("ORDENAR", "SORT")}</span>
         {SO.map(([k, l]) => (
-          <button key={k} type="button" onClick={() => cambiar({ sort: k })} className="border-b-2 pb-[3px] text-[12.5px] font-bold" style={{ color: q.sort === k ? "var(--tl-ink)" : "rgba(11,14,18,.5)", borderColor: q.sort === k ? "var(--tl-ink)" : "transparent" }}>{l}</button>
+          <button key={k} type="button" onClick={() => cambiar({ sort: k })} className="border-b-2 pb-[3px] text-[12.5px] font-bold" style={{ color: q.sort === k ? "var(--tl-ink)" : "rgba(11,14,18,.6)", borderColor: q.sort === k ? "var(--tl-ink)" : "transparent" }}>{l}</button>
         ))}
       </div>
       {filt && lista && (
@@ -532,7 +532,7 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
       {lista && lista.cards.length === 0 && (
         <div className="rounded-[18px] border border-dashed border-ink/[.18] bg-white px-[18px] py-[22px] text-center">
           <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{E2("Ninguna reseña con estos filtros", "No reviews with these filters")}</div>
-          <div className="mt-1.5 text-[12.5px] font-medium leading-[1.5] text-ink/55">{E2("Prueba con otros o quítalos.", "Try others or clear them.")}</div>
+          <div className="mt-1.5 text-[12.5px] font-medium leading-[1.5] text-ink/60">{E2("Prueba con otros o quítalos.", "Try others or clear them.")}</div>
         </div>
       )}
       {lista?.cursor && <div className={desk ? "flex justify-center" : "flex"}><Button variant="secondary" block={!desk} disabled={cargando} onClick={() => pedir(q, lista.cursor)}>{E2("Ver más reseñas", "See more reviews")}</Button></div>}
@@ -558,7 +558,7 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
       <div className="mt-2.5 flex flex-wrap gap-1.5">
         {r.temas.map((x) => <Tag key={x.k} tone="neutral">{`${(es ? x.es : x.en).toUpperCase()} · ${x.n}`}</Tag>)}
       </div>
-      <div className="mt-2 text-pretty text-[11px] font-medium leading-[1.5] text-ink/50">{E2("Cuántas reseñas lo mencionan. Sale de lo que escriben los clientes.", "How many reviews mention it. Taken from what customers write.")}</div>
+      <div className="mt-2 text-pretty text-[11px] font-medium leading-[1.5] text-ink/60">{E2("Cuántas reseñas lo mencionan. Sale de lo que escriben los clientes.", "How many reviews mention it. Taken from what customers write.")}</div>
     </div>
   );
   if (desk) return (
@@ -600,7 +600,7 @@ export function ResCapas({ v }: { v: CtlResenas }) {
                 <div className="flex items-start gap-3 px-5 pt-3 lg:pt-5">
                   <div className="min-w-0 flex-1">
                     <div className="font-display text-[20px] font-extrabold leading-[1.15] tracking-[-0.03em]">{E2("Reportar reseña", "Report review")}</div>
-                    <div className="mt-[5px] font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/50">{`${E2("Reseña de ", "Review by ")}${rep.name} · ${rep.when}`.toUpperCase()}</div>
+                    <div className="mt-[5px] font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{`${E2("Reseña de ", "Review by ")}${rep.name} · ${rep.when}`.toUpperCase()}</div>
                   </div>
                   <button type="button" aria-label={E2("Cerrar", "Close")} onClick={() => setRep(null)} className="grid p-1"><Icon name="close" size={20} strokeWidth={2} /></button>
                 </div>
@@ -621,7 +621,7 @@ export function ResCapas({ v }: { v: CtlResenas }) {
                   <textarea value={rep.note} onChange={(e) => setRep({ ...rep, note: e.target.value.slice(0, 300) })} placeholder={E2("Cuéntanos qué viste…", "Tell us what you saw…")} rows={3}
                     aria-label={E2("Detalle", "Details")} className="w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] text-ink outline-none" />
                   <div className="flex items-start gap-[9px]">
-                    <span className="grid flex-none pt-px"><Icon name="shield" size={15} color="rgba(11,14,18,.55)" /></span>
+                    <span className="grid flex-none pt-px"><Icon name="shield" size={15} color="rgba(11,14,18,.6)" /></span>
                     <span className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/[.62]">{E2("Reportar no la quita: la revisa una persona de To'Latino. Solo se oculta si rompe las reglas.", "Reporting does not remove it: a person at To'Latino reviews it. It is only hidden if it breaks the rules.")}</span>
                   </div>
                   {rep.err && <div role="alert" className="text-[12.5px] font-semibold text-danger">{rep.err}</div>}

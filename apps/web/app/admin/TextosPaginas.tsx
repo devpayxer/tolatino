@@ -102,7 +102,7 @@ export function TextosPaginas({ d, adm, pie, k, j, det, dif, editar, aprobar }: 
           { type: "group", k: `${E("DIFERENCIAS · VERSIÓN", "DIFFERENCES · VERSION")} ${det.versiones.find((v) => v.id === dif.a)?.version ?? "?"} → ${det.versiones.find((v) => v.id === dif.b)?.version ?? "?"} · ${dif.lang.toUpperCase()}`,
             link: dif.lang === "es" ? E("Ver en inglés", "View in English") : E("Ver en español", "View in Spanish"), onLink: () => ir({ k, j, dif: dif.b, con: dif.a, l: dif.lang === "es" ? "en" : null }), link2: E("Cerrar", "Close"), onLink2: () => ir({ k, j }) },
           { type: "rows", items: soloCambios(dif.r).map((x, i) => ({ key: `d${i}`, icon: x.t === "+" ? "plus" : x.t === "-" ? "minus" : "info", t: x.l || " ", compact: true, chev: false,
-            tFg: x.t === "+" ? "var(--tl-open-text)" : x.t === "-" ? "var(--tl-danger)" : "rgba(11,14,18,.5)" })) },
+            tFg: x.t === "+" ? "var(--tl-open-text)" : x.t === "-" ? "var(--tl-danger)" : "rgba(11,14,18,.6)" })) },
         ]} /> : null}
         <PanelBloques bloques={[
           { type: "rows", k: E("HISTORIAL", "HISTORY"), items: det.log.length ? det.log.map((l, i) => ({ key: `l${i}`, icon: l.action === "publicada" ? "check" : l.action === "retirada" ? "ban" : l.action === "revisada" ? "shield" : "folder",

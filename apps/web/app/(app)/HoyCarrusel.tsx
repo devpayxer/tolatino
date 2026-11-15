@@ -35,7 +35,7 @@ export function HoyCarrusel({ es, historias, titulo, sub, verTodo, ancho: a0 = 2
       <div style={{ padding: `0 ${pad}px`, display: "flex", alignItems: "center", gap: 8 }}>
         <div style={{ flex: 1, minWidth: 0, display: "grid" }}>
           <SectionHeader title={titulo} dot={dot} action={verTodo ? (es ? "Ver todo" : "See all") : undefined} onAction={verTodo ? () => router.push(verTodo) : undefined} />
-          {sub && <div style={{ marginTop: 6, font: "600 9.5px 'JetBrains Mono',monospace", letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{sub}</div>}
+          {sub && <div style={{ marginTop: 6, font: "600 9.5px 'JetBrains Mono',monospace", letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{sub}</div>}
         </div>
         {flechas && historias.length > 2 && (
           <span style={{ display: "flex", gap: 8, flex: "none" }}>

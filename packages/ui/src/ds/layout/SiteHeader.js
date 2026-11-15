@@ -212,13 +212,13 @@ function SiteHeader({
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "search",
     size: 18,
-    color: "rgba(11,14,18,.4)"
+    color: "rgba(11,14,18,.6)"
   }), /*#__PURE__*/React.createElement("span", {
     style: {
       flex: 1,
       minWidth: 0,
       font: '500 14px Manrope,sans-serif',
-      color: 'rgba(11,14,18,.42)',
+      color: 'rgba(11,14,18,.6)',
       whiteSpace: 'nowrap',
       overflow: 'hidden',
       textOverflow: 'ellipsis'
@@ -296,13 +296,13 @@ function SiteHeader({
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "search",
     size: 18,
-    color: "rgba(11,14,18,.4)"
+    color: "rgba(11,14,18,.6)"
   }), /*#__PURE__*/React.createElement("span", {
     style: {
       flex: 1,
       minWidth: 0,
       font: '500 14px Manrope,sans-serif',
-      color: 'rgba(11,14,18,.42)',
+      color: 'rgba(11,14,18,.6)',
       whiteSpace: 'nowrap',
       overflow: 'hidden',
       textOverflow: 'ellipsis'
@@ -368,7 +368,7 @@ function SiteHeader({
         padding: '12px 0 13px',
         font: '800 12.5px ' + mono,
         letterSpacing: '.08em',
-        color: on ? 'var(--tl-ink)' : 'rgba(11,14,18,.42)',
+        color: on ? 'var(--tl-ink)' : 'rgba(11,14,18,.6)',
         borderBottom: '2.5px solid ' + (on ? 'var(--tl-ink)' : 'transparent'),
         cursor: 'pointer',
         whiteSpace: 'nowrap'

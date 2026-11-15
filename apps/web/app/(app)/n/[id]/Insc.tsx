@@ -130,7 +130,7 @@ function Top({ v }: { v: In }) {
       </div>
       {v.top2 && (
         <div data-screen-label="Ficha · inscripciones · lo segundo" className="rounded-[18px] border border-ink/[.08] bg-white px-4 py-4">
-          <div className="font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{v.top2.k}</div>
+          <div className="font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{v.top2.k}</div>
           <div className="mt-1.5 text-pretty font-display text-[18px] font-extrabold leading-[1.2] tracking-[-0.03em]">{v.top2.v}</div>
           {v.top2.s && <div className="mt-2 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/65">{v.top2.s}</div>}
         </div>)}
@@ -146,7 +146,7 @@ function Fila({ v, it, tarjeta, desc }: { v: In; it: In["primeros"][number]; tar
       <div className="min-w-0 flex-1">
         <div className="text-[14.5px] font-bold leading-[1.3]">{it.name}</div>
         {desc && it.desc && <div className="mt-1 line-clamp-3 text-pretty text-[12.5px] leading-[1.5] text-ink/60">{it.desc}</div>}
-        {it.meta && <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/50">{it.meta}</div>}
+        {it.meta && <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{it.meta}</div>}
         <div className="mt-1.5 font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{it.price}</div>
       </div>
       {can && <Button variant="soft" size="md" onClick={(e: MouseEvent) => v.abrir(it.id, e)}>{v.btn}</Button>}
@@ -165,7 +165,7 @@ export function InTab({ v, desk }: { v: In; desk: boolean }) {
       <div className="flex flex-col gap-[22px]">
         {v.secs.map((sc) => (
           <div key={sc.title}>
-            <div className="font-mono text-[11px] font-extrabold tracking-[0.14em] text-ink/45">{sc.title}</div>
+            <div className="font-mono text-[11px] font-extrabold tracking-[0.14em] text-ink/60">{sc.title}</div>
             <div className={desk ? "mt-3 grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5" : "mt-1"}>{sc.items.map((it) => <Fila key={it.id} v={v} it={it} tarjeta={desk} desc />)}</div>
           </div>
         ))}
@@ -204,39 +204,39 @@ export function InHoja({ v }: { v: In }) {
           <div className="flex flex-col gap-4 px-5 pb-6 pt-[18px]">
             <div>
               <div className="font-display text-[22px] font-extrabold leading-[1.15] tracking-[-0.035em]">{nm(s.name)}</div>
-              <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{it.price}</span><span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/50">{it.meta}</span></div>
+              <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{it.price}</span><span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{it.meta}</span></div>
               {it.desc && <p className="mt-2.5 text-pretty text-[13px] leading-[1.6] text-ink/65">{it.desc}</p>}
             </div>
             {(s.cert || s.horas) && R === "edu" && (
               <div className="rounded-2xl bg-paper px-4 py-3">
-                <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{E2("TE LLEVAS", "YOU WALK AWAY WITH")}</div>
+                <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("TE LLEVAS", "YOU WALK AWAY WITH")}</div>
                 <div className="mt-1 text-[14px] font-bold">{s.cert ? `${s.oficial ? E2("Certificado oficial", "Official certificate") : E2("Constancia de la escuela", "School certificate")}: ${nm(s.cert)}` : E2("Lo que aprendes en clase", "What you learn in class")}</div>
-                <div className="mt-1 font-mono text-[10px] font-semibold tracking-[0.04em] text-ink/50">{[s.horas ? `${s.horas} ${E2("HORAS", "HOURS")}` : "", s.certBy ? `${E2("LO DA", "ISSUED BY")} ${nm(s.certBy).toUpperCase()}` : ""].filter(Boolean).join(" · ")}</div>
+                <div className="mt-1 font-mono text-[10px] font-semibold tracking-[0.04em] text-ink/60">{[s.horas ? `${s.horas} ${E2("HORAS", "HOURS")}` : "", s.certBy ? `${E2("LO DA", "ISSUED BY")} ${nm(s.certBy).toUpperCase()}` : ""].filter(Boolean).join(" · ")}</div>
               </div>)}
             {s.inc.length > 0 && (
               <div className="rounded-2xl border border-ink/[.08] px-4 py-3">
-                <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{E2("INCLUYE", "INCLUDES")}</div>
+                <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("INCLUYE", "INCLUDES")}</div>
                 {s.inc.map((z) => <div key={z.es} className="mt-2 flex items-start gap-2 text-[13px] font-semibold leading-[1.45]"><span className="grid flex-none pt-0.5"><Icon name="check" size={14} color="var(--tl-open-text)" /></span>{nm(z)}</div>)}
               </div>)}
             {s.no.length > 0 && (
               <div className="rounded-2xl border border-ink/[.08] px-4 py-3">
-                <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{E2("VA APARTE", "EXTRA")}</div>
+                <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("VA APARTE", "EXTRA")}</div>
                 {s.no.map((z) => <div key={z.es} className="mt-2 text-pretty text-[13px] font-semibold leading-[1.45]">{nm(z)}</div>)}
               </div>)}
             {s.grupos.length > 0 && (
               <div data-screen-label="Servicio · grupos" className="rounded-2xl border border-ink/[.08] px-4 py-1">
                 {s.grupos.map((g, i) => (
                   <div key={g.id} className={`flex items-center justify-between gap-3 py-3 ${i ? "border-t border-ink/[.06]" : ""}`}>
-                    <div className="min-w-0"><div className="text-[13.5px] font-bold">{nm(g.label)}</div><div className="mt-0.5 font-mono text-[10px] font-semibold tracking-[0.04em] text-ink/50">{`${E2("EMPIEZA", "STARTS")} ${fechaCorta(g.inicio, es).toUpperCase()}${g.min != null && !nm(g.label).includes(horaInsc(g.min)) ? ` · ${horaInsc(g.min)}` : ""}`}</div></div>
-                    <div className="flex-none font-mono text-[10px] font-bold tracking-[0.08em]" style={{ color: g.libres ? "var(--tl-open-text)" : "rgba(11,14,18,.45)" }}>{g.libres ? E2(`${g.libres} CUPOS`, `${g.libres} SEATS`) : E2("LLENO", "FULL")}</div>
+                    <div className="min-w-0"><div className="text-[13.5px] font-bold">{nm(g.label)}</div><div className="mt-0.5 font-mono text-[10px] font-semibold tracking-[0.04em] text-ink/60">{`${E2("EMPIEZA", "STARTS")} ${fechaCorta(g.inicio, es).toUpperCase()}${g.min != null && !nm(g.label).includes(horaInsc(g.min)) ? ` · ${horaInsc(g.min)}` : ""}`}</div></div>
+                    <div className="flex-none font-mono text-[10px] font-bold tracking-[0.08em]" style={{ color: g.libres ? "var(--tl-open-text)" : "rgba(11,14,18,.6)" }}>{g.libres ? E2(`${g.libres} CUPOS`, `${g.libres} SEATS`) : E2("LLENO", "FULL")}</div>
                   </div>))}
               </div>)}
             <Nota ic="dollar" t={pago} />
-            {!ip.booking && <div className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/55">{E2("Para inscribirte, llama o escribe al lugar: te dicen si hay cupo y te lo apartan.", "To enroll, call or message the place: they tell you if there is room and hold it for you.")}</div>}
+            {!ip.booking && <div className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Para inscribirte, llama o escribe al lugar: te dicen si hay cupo y te lo apartan.", "To enroll, call or message the place: they tell you if there is room and hold it for you.")}</div>}
           </div>
         </div>
         <div className="flex flex-none items-center gap-3.5 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
-          <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{E2("PRECIO", "PRICE")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.03em]">{it.price}</div></div>
+          <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{E2("PRECIO", "PRICE")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.03em]">{it.price}</div></div>
           <div className="flex min-w-0 flex-1"><Button block icon={ip.booking ? "calendar" : v.cta.icon} onClick={go}>{ctaL}</Button></div>
         </div>
       </div>
@@ -265,7 +265,7 @@ export function InRiel({ v }: { v: In }) {
     <div data-screen-label="Ficha · inscripciones · columna" className="flex flex-col gap-4 rounded-[22px] border border-ink/10 bg-white p-[22px] shadow-[0_24px_48px_-34px_rgba(11,14,18,.45)]">
       <div className="font-display text-[28px] font-extrabold leading-none tracking-[-0.04em]">{v.desde}</div>
       {v.pro && <div className="grid grid-cols-3 gap-2">
-        {v.td.map((m) => <div key={m.k} className="min-w-0 rounded-[14px] bg-paper px-2.5 py-[11px]"><div className="font-mono text-[8.5px] font-bold tracking-[0.1em] text-ink/45">{m.k}</div><div className="mt-1.5 text-[13px] font-bold leading-[1.25]">{m.v}</div></div>)}
+        {v.td.map((m) => <div key={m.k} className="min-w-0 rounded-[14px] bg-paper px-2.5 py-[11px]"><div className="font-mono text-[8.5px] font-bold tracking-[0.1em] text-ink/60">{m.k}</div><div className="mt-1.5 text-[13px] font-bold leading-[1.25]">{m.v}</div></div>)}
       </div>}
       <div className="text-pretty text-[12.5px] font-medium leading-[1.55] text-ink/60">{v.linea}</div>
       <div className="flex"><Button icon={v.cta.icon} block onClick={v.cta.go}>{v.cta.l}</Button></div>
@@ -279,7 +279,7 @@ export function InBarra({ v }: { v: In }) {
     <div data-screen-label="Ficha · barra de inscripciones" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-paper/95 px-5 pb-[22px] pt-[13px] backdrop-blur-[14px] lg:hidden">
       <div className="min-w-0 flex-1">
         <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{v.desde}</div>
-        {sub && <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">{sub.toUpperCase()}</div>}
+        {sub && <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{sub.toUpperCase()}</div>}
       </div>
       <Button icon={v.cta.icon} onClick={v.cta.go}>{v.cta.l}</Button>
     </div>

@@ -133,7 +133,7 @@ export function DlHoja({ v }: { v: DlV }) {
             <div key={x.campana} data-retiro={x.campana} className="mt-2 border-t border-ink/[.07] pt-2 first:mt-1 first:border-0 first:pt-0">
               <div className="text-[13px] font-bold">{x.noManejar ? E2("NO LO MANEJES · ", "DO NOT DRIVE · ") : ""}{x.componente ?? E2("Retiro", "Recall")}</div>
               {x.resumen ? <div className="mt-1 text-pretty text-[12px] font-medium leading-[1.5] text-ink/65">{x.resumen}</div> : null}
-              <div className="mt-1 font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/45">{`NHTSA ${x.campana}${x.fecha ? ` · ${x.fecha}` : ""}`}</div>
+              <div className="mt-1 font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`NHTSA ${x.campana}${x.fecha ? ` · ${x.fecha}` : ""}`}</div>
             </div>))}
           <div className="mt-2 text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{(c.retiros?.length ?? 0) > 0
             ? E2(`Son los retiros de este modelo y año. Si ESTE carro ya se arregló lo confirma su VIN${c.vin ? ` (${c.vin})` : ""}: pídele el comprobante al dealer o búscalo en nhtsa.gov/recalls. Arreglarlo es gratis en el concesionario de la marca.`, `These are the recalls for this model and year. Whether THIS car was fixed is confirmed by its VIN${c.vin ? ` (${c.vin})` : ""}: ask the dealer for proof or look it up at nhtsa.gov/recalls. The repair is free at the brand's dealership.`)

@@ -54,7 +54,7 @@ function DesktopTabs({
         padding: '20px 0 17px',
         font: "800 13px 'JetBrains Mono',monospace",
         letterSpacing: '.08em',
-        color: on ? 'var(--tl-ink)' : 'rgba(11,14,18,.42)',
+        color: on ? 'var(--tl-ink)' : 'rgba(11,14,18,.6)',
         borderBottom: '2.5px solid ' + (on ? 'var(--tl-ink)' : 'transparent'),
         cursor: 'pointer',
         whiteSpace: 'nowrap'
@@ -72,7 +72,7 @@ function DesktopTabs({
       gap: 8,
       font: "600 11px 'JetBrains Mono',monospace",
       letterSpacing: '.04em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, aside ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
     style: {

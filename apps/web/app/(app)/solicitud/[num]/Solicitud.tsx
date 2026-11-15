@@ -89,8 +89,8 @@ export function Solicitud({ a, es, enviada }: { a: MiSolicitud; es: boolean; env
                 {i < 2 && <span className="min-h-[22px] w-0.5 flex-1" style={{ background: i < lvl ? "rgba(11,14,18,.8)" : "rgba(11,14,18,.12)" }} />}
               </div>
               <div className="flex min-w-0 flex-1 justify-between gap-2.5 pb-3.5">
-                <span className={`text-[13.5px] leading-[1.2] ${i <= lvl ? "font-extrabold text-ink" : "font-semibold text-ink/45"}`}>{l}</span>
-                <span className="flex-none font-mono text-[11px] font-bold text-ink/50">{i <= lvl ? tm : ""}</span>
+                <span className={`text-[13.5px] leading-[1.2] ${i <= lvl ? "font-extrabold text-ink" : "font-semibold text-ink/60"}`}>{l}</span>
+                <span className="flex-none font-mono text-[11px] font-bold text-ink/60">{i <= lvl ? tm : ""}</span>
               </div>
             </div>
           );
@@ -99,7 +99,7 @@ export function Solicitud({ a, es, enviada }: { a: MiSolicitud; es: boolean; env
       <div className="rounded-[18px] border border-ink/[.07] bg-white p-[15px]">
         <div className={K}>{E2("LO QUE ENVIASTE", "WHAT YOU SENT")}</div>
         <div className="mt-2.5 grid grid-cols-2 gap-x-3.5 gap-y-3">
-          {rows.map(([k, v]) => <div key={k} className="min-w-0"><div className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{k}</div><div className="mt-[5px] text-pretty break-words text-[13px] font-semibold leading-[1.4]">{v}</div></div>)}
+          {rows.map(([k, v]) => <div key={k} className="min-w-0"><div className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{k}</div><div className="mt-[5px] text-pretty break-words text-[13px] font-semibold leading-[1.4]">{v}</div></div>)}
         </div>
       </div>
       {a.sim.length > 0 && (
@@ -109,7 +109,7 @@ export function Solicitud({ a, es, enviada }: { a: MiSolicitud; es: boolean; env
             {a.sim.map((x) => (
               <button key={x.id} type="button" onClick={() => router.push(`/n/${x.biz}/empleo/${x.id}`)} className="flex w-full items-center gap-3 border-t border-ink/[.07] py-[11px] text-left">
                 <span className="size-11 flex-none rounded-xl bg-photo-bg bg-cover bg-center" style={x.logo ? { backgroundImage: `url(${x.logo})` } : {}} />
-                <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold leading-[1.3]">{bi(x.title, es)}</div><div className="mt-[3px] font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{`${x.bname} · ${tipoL(x.kind, es)}`.toUpperCase()}</div></div>
+                <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold leading-[1.3]">{bi(x.title, es)}</div><div className="mt-[3px] font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{`${x.bname} · ${tipoL(x.kind, es)}`.toUpperCase()}</div></div>
                 <span className="flex-none font-display text-[13px] font-extrabold">{pagoL(x.payFrom, x.payTo, es)}</span>
               </button>
             ))}
@@ -133,14 +133,14 @@ export function Solicitud({ a, es, enviada }: { a: MiSolicitud; es: boolean; env
       <div data-screen-label="APP-NEG-JOB-ESTADO · móvil" className="lg:hidden">
         <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3">
           <button type="button" aria-label={E2("Volver", "Back")} onClick={volver} className="grid size-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="chevronLeft" size={18} strokeWidth={2} /></button>
-          <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{a.bname}</div><div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{num}</div></div>
+          <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{a.bname}</div><div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{num}</div></div>
         </div>
         <div className="flex flex-col gap-3 px-4 pt-4">{cuerpo(false)}</div>
       </div>
       <div data-screen-label="APP-NEG-JOB-ESTADO · desktop" className="hidden lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2("Volver a la vacante", "Back to the job")}</button>
         <div className="mx-auto mt-4 flex max-w-[720px] flex-col gap-3.5">
-          <div className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{num}</div>
+          <div className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{num}</div>
           {cuerpo(true)}
         </div>
       </div>

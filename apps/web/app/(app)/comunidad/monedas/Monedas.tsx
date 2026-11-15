@@ -18,7 +18,7 @@ type N = "Icon" | "Button" | "Tag" | "QrCode";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Tag, QrCode } = UI as unknown as Record<N, ComponentType<any>>;
 const CARD = { borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: 16 } as const;
-const K = { font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.42)" } as const;
+const K = { font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.6)" } as const;
 const dia = (iso: string, es: boolean) => new Date(iso).toLocaleDateString(es ? "es-US" : "en-US", { day: "numeric", month: "long", timeZone: "America/New_York" });
 
 export function Monedas({ es, yo, d }: { es: boolean; yo: YoCom; d: MisMonedas }) {
@@ -36,10 +36,10 @@ export function Monedas({ es, yo, d }: { es: boolean; yo: YoCom; d: MisMonedas }
     extra: (
       <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
         <div data-screen-label="Monedas · tu código" style={{ padding: "18px 16px", borderRadius: 16, background: "var(--tl-paper)", textAlign: "center" }}>
-          <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.5)" }}>{m.estado === "used" ? E2("CÓDIGO USADO", "CODE USED") : E2("TU CÓDIGO", "YOUR CODE")}</div>
+          <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.6)" }}>{m.estado === "used" ? E2("CÓDIGO USADO", "CODE USED") : E2("TU CÓDIGO", "YOUR CODE")}</div>
           {/* 8e · El QR del código: el negocio lo lee con «Escanear cupón» en su panel (también lo puede escribir). Solo el código. */}
           {m.estado !== "used" && <div data-qr-cupon={m.codigo} style={{ marginTop: 12, display: "flex", justifyContent: "center" }}><QrCode matrix={matrizTexto(m.codigo)} size={176} label={E2(`Código QR del cupón ${m.codigo}`, `QR code for coupon ${m.codigo}`)} /></div>}
-          <div data-codigo={m.codigo} style={{ marginTop: 8, font: `800 30px/1.1 ${MONO}`, letterSpacing: ".06em", color: m.estado === "used" ? "rgba(11,14,18,.4)" : "var(--tl-ink)", textDecoration: m.estado === "used" ? "line-through" : "none" }}>{m.codigo}</div>
+          <div data-codigo={m.codigo} style={{ marginTop: 8, font: `800 30px/1.1 ${MONO}`, letterSpacing: ".06em", color: m.estado === "used" ? "rgba(11,14,18,.6)" : "var(--tl-ink)", textDecoration: m.estado === "used" ? "line-through" : "none" }}>{m.codigo}</div>
           <div style={{ marginTop: 8, font: "500 13px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.65)", textWrap: "pretty" }}>
             {m.estado === "used" ? E2(`Ya lo usaste en ${c.negocio.nombre}.`, `You already used it at ${c.negocio.nombre}.`)
               : E2(`Muéstralo en el local de ${c.negocio.nombre}. Lo validan desde su panel y queda usado.`, `Show it in store at ${c.negocio.nombre}. They validate it from their dashboard and it is used.`)}
@@ -78,7 +78,7 @@ export function Monedas({ es, yo, d }: { es: boolean; yo: YoCom; d: MisMonedas }
       extra: (
         <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
           <div data-screen-label="Monedas · cuesta" style={{ padding: 14, borderRadius: 16, background: "var(--tl-paper)" }}>
-            <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.5)" }}>{E2("CUESTA", "COSTS")}</div>
+            <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.6)" }}>{E2("CUESTA", "COSTS")}</div>
             <div style={{ marginTop: 6, font: "800 22px/1.1 Sora,sans-serif", letterSpacing: "-.03em" }}>{E2(`${c.costo} monedas`, `${c.costo} coins`)}</div>
             <div style={{ marginTop: 4, font: "500 13px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.62)" }}>{E2(`Tienes ${saldo.toLocaleString("en-US")} monedas.`, `You have ${saldo.toLocaleString("en-US")} coins.`)}</div>
           </div>
@@ -116,7 +116,7 @@ export function Monedas({ es, yo, d }: { es: boolean; yo: YoCom; d: MisMonedas }
             style={{ marginTop: 10, padding: 12, borderRadius: 14, border: `1.5px dashed ${vivo ? "rgba(11,14,18,.25)" : "rgba(11,14,18,.12)"}`, display: "flex", gap: 10, alignItems: "center", cursor: "pointer", opacity: vivo ? 1 : 0.6 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ font: "700 13px Manrope,sans-serif" }}>{t(x.titulo)}</div>
-              <div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)" }}>
+              <div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>
                 {`${x.negocio.nombre.toUpperCase()} · ${vivo ? E2(`VENCE EL ${dia(x.vence, true)}`, `EXPIRES ${dia(x.vence, false)}`).toUpperCase() : x.estado === "used" ? E2("USADO", "USED") : E2("VENCIÓ · MONEDAS DEVUELTAS", "EXPIRED · COINS RETURNED")}`}
               </div>
             </div>
@@ -173,7 +173,7 @@ export function Monedas({ es, yo, d }: { es: boolean; yo: YoCom; d: MisMonedas }
                   </div>
                   <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
                     <div style={{ font: "800 14px/1.25 Sora,sans-serif", letterSpacing: "-.02em" }}>{t(c.titulo)}</div>
-                    <div style={{ font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)" }}>{c.negocio.nombre.toUpperCase()}</div>
+                    <div style={{ font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{c.negocio.nombre.toUpperCase()}</div>
                     <div style={{ flex: 1 }} />
                     <div style={{ display: "flex", marginTop: 4 }}><Button variant={c.mio || c.agotado || falta > 0 ? "secondary" : "primary"} size="sm" block onClick={() => abrir(c)}>{l}</Button></div>
                   </div>
@@ -182,7 +182,7 @@ export function Monedas({ es, yo, d }: { es: boolean; yo: YoCom; d: MisMonedas }
           </div>
         ) : (
           <div style={{ ...CARD, display: "flex", gap: 12, alignItems: "flex-start" }}>
-            <span style={{ display: "grid", flex: "none" }}><Icon name="ticket" size={20} color="rgba(11,14,18,.45)" /></span>
+            <span style={{ display: "grid", flex: "none" }}><Icon name="ticket" size={20} color="rgba(11,14,18,.6)" /></span>
             <div><div style={{ font: "800 14px Sora,sans-serif" }}>{E2(`Todavía no hay cupones en ${d.ciudad}`, `No coupons in ${d.ciudad} yet`)}</div>
               <div style={{ marginTop: 4, font: "500 12.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2("Cuando un negocio del barrio ofrezca uno, sale aquí. Tus monedas te esperan: no vencen.", "When a neighborhood business offers one, it shows here. Your coins wait for you: they don't expire.")}</div></div>
           </div>
@@ -196,7 +196,7 @@ export function Monedas({ es, yo, d }: { es: boolean; yo: YoCom; d: MisMonedas }
             <div style={K}>{E2("MOVIMIENTOS", "ACTIVITY")}</div>
             {log.filas.map((x, i) => (
               <div key={x.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "10px 0", borderTop: i ? LINE : "none", marginTop: i ? 0 : 6 }}>
-                <div style={{ minWidth: 0 }}><div style={{ font: "600 13px/1.4 Manrope,sans-serif" }}>{t(x.t)}</div><div style={{ marginTop: 2, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.45)" }}>{hace(x.at, es).toUpperCase()}</div></div>
+                <div style={{ minWidth: 0 }}><div style={{ font: "600 13px/1.4 Manrope,sans-serif" }}>{t(x.t)}</div><div style={{ marginTop: 2, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{hace(x.at, es).toUpperCase()}</div></div>
                 <span style={{ font: "800 13px Sora,sans-serif", color: x.v < 0 ? "var(--tl-danger)" : "var(--tl-open-text)", flex: "none" }}>{x.v > 0 ? `+${x.v}` : `−${Math.abs(x.v)}`}</span>
               </div>))}
             {log.mas && <div style={{ marginTop: 8, display: "flex" }}><Button variant="secondary" size="sm" block onClick={() => mas("log")}>{E2("Ver más", "See more")}</Button></div>}

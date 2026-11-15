@@ -71,14 +71,14 @@ export function PedirEvp({ x, es, p0 }: { x: PaginaEvp; es: boolean; p0: number 
       <div role="radiogroup" aria-label={E2("Dónde los sientan", "Where you sit")} className={`px-4 ${CAJA}`}>{areas.map((k, i) => (
         <button key={k} type="button" role="radio" aria-checked={area === k} onClick={() => setArea(k)} className={`flex w-full items-center gap-3 py-[13px] text-left ${i ? "border-t border-ink/[.08]" : ""}`}>
           <span className={radio(area === k)} /><span className="min-w-0 flex-1"><span className="block text-[14px] font-bold leading-[1.35]">{es ? AREAS_EVP[k]?.es : AREAS_EVP[k]?.en}</span>
-            <span className="mt-0.5 block text-[12px] font-medium leading-[1.45] text-ink/55">{k === "todo" ? (a.wholeCents ? E2(`Cierran el local para ustedes. Tiene costo aparte (${dinero(a.wholeCents)}).`, `They close the place for you. Extra cost (${dinero(a.wholeCents)}).`) : E2("Cierran el local para ustedes.", "They close the place for you.")) : E2("Juntan las mesas para su grupo.", "They put tables together for your group.")}</span></span>
+            <span className="mt-0.5 block text-[12px] font-medium leading-[1.45] text-ink/60">{k === "todo" ? (a.wholeCents ? E2(`Cierran el local para ustedes. Tiene costo aparte (${dinero(a.wholeCents)}).`, `They close the place for you. Extra cost (${dinero(a.wholeCents)}).`) : E2("Cierran el local para ustedes.", "They close the place for you.")) : E2("Juntan las mesas para su grupo.", "They put tables together for your group.")}</span></span>
         </button>))}</div></div>
   </>);
   const sec2 = (<>
     <div className="flex flex-col gap-2.5"><span className={K}>{E2("¿QUÉ DÍA?", "WHICH DAY?")}</span>
       <div className="grid min-w-0"><DateStrip days={dias} selected={lejos ? "" : dia} onSelect={(id: string) => { setDia(id); setError(null); }} /></div>
       <span className="text-[12px] font-medium leading-[1.45] text-ink/60">{E2(`Con ${Math.round((Date.parse(x.desde) - Date.parse(x.hoy)) / 864e5)} días o más para que preparen la comida.`, `At least ${Math.round((Date.parse(x.desde) - Date.parse(x.hoy)) / 864e5)} days ahead so they can prepare the food.`)}</span>
-      <label className="block"><span className={`${K} text-ink/50`}>{E2("OTRA FECHA", "ANOTHER DATE")}</span>
+      <label className="block"><span className={`${K} text-ink/60`}>{E2("OTRA FECHA", "ANOTHER DATE")}</span>
         <input type="date" aria-label={E2("Otra fecha", "Another date")} value={lejos} min={x.desde} max={x.hasta} onChange={(e) => { if (e.target.value) setDia(e.target.value); }}
           className={`mt-2 box-border h-11 w-full rounded-[13px] border bg-white px-3.5 font-mono text-[13.5px] font-bold outline-none ${lejos ? "border-ink" : "border-ink/[.12]"}`} /></label>
     </div>
@@ -93,7 +93,7 @@ export function PedirEvp({ x, es, p0 }: { x: PaginaEvp; es: boolean; p0: number 
       <div role="radiogroup" aria-label={E2("Qué van a comer", "What you will eat")} className={`px-4 ${CAJA}`}>{a.menus.map((z, i) => (
         <button key={z.k} type="button" role="radio" aria-checked={menu === z.k} onClick={() => setMenu(z.k)} className={`flex w-full items-center gap-3 py-[13px] text-left ${i ? "border-t border-ink/[.08]" : ""}`}>
           <span className={radio(menu === z.k)} /><span className="min-w-0 flex-1"><span className="block text-[14px] font-bold leading-[1.35]">{es ? z.es : z.en || z.es}</span>
-            <span className="mt-0.5 block text-[12px] font-medium leading-[1.45] text-ink/55">{[es ? z.des : z.desEn || z.des, z.cents != null ? E2(`Desde ${dinero(z.cents)} por persona`, `From ${dinero(z.cents)} per person`) : ""].filter(Boolean).join(" · ")}</span></span>
+            <span className="mt-0.5 block text-[12px] font-medium leading-[1.45] text-ink/60">{[es ? z.des : z.desEn || z.des, z.cents != null ? E2(`Desde ${dinero(z.cents)} por persona`, `From ${dinero(z.cents)} per person`) : ""].filter(Boolean).join(" · ")}</span></span>
         </button>))}</div></div>
     <div className="flex flex-col gap-2.5"><span className={K}>{E2("PRESUPUESTO POR PERSONA", "BUDGET PER PERSON")}</span>
       <div className="flex flex-wrap gap-2">{PRESUPUESTOS.map(([k, l1, l2]) => <Chip key={k} variant={bud === k ? "selected" : "filter"} onClick={() => setBud(k)}>{es ? l1 : l2}</Chip>)}</div></div>
@@ -106,7 +106,7 @@ export function PedirEvp({ x, es, p0 }: { x: PaginaEvp; es: boolean; p0: number 
     <DepositNote>{E2("Nada se cobra hasta que aceptes su propuesta. Al aceptar, se cobra el depósito y se descuenta del total.", "Nothing is charged until you accept their proposal. When you accept, the deposit is charged and taken off the total.")}</DepositNote>
     <div className={`flex items-center gap-3 px-4 py-3.5 ${CAJA}`}><Icon name="users" size={18} color="rgba(11,14,18,.6)" />
       <div className="min-w-0 flex-1"><div className="text-[14px] font-bold leading-[1.35]">{x.yo ? `${E2("A nombre de ", "Under ")}${x.yo.nombre || E2("tu cuenta", "your account")}` : E2("Entra para enviarla", "Sign in to send it")}</div>
-        <div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/55">{x.yo ? `··${x.yo.tel4}${E2(" · te avisamos en tus avisos", " · we notify you in your notifications")}` : E2("Te mandamos un código por SMS. Lo que llenaste se queda igual.", "We text you a code. What you filled in stays the same.")}</div></div></div>
+        <div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/60">{x.yo ? `··${x.yo.tel4}${E2(" · te avisamos en tus avisos", " · we notify you in your notifications")}` : E2("Te mandamos un código por SMS. Lo que llenaste se queda igual.", "We text you a code. What you filled in stays the same.")}</div></div></div>
   </>);
   const errorB = error ? <div role="alert" className="text-[12.5px] font-semibold leading-[1.45] text-danger">{error}</div> : null;
   const llenoB = lleno ? <div className="rounded-[14px] bg-pro/[.14] px-3.5 py-3 text-[12.5px] font-bold leading-[1.45] text-pro-ink">{E2(`Tienes ${x.pendientes} solicitudes esperando respuesta. Espera a que te contesten para pedir otra.`, `You have ${x.pendientes} requests waiting for a reply. Wait for an answer before requesting another.`)}</div> : null;
@@ -121,7 +121,7 @@ export function PedirEvp({ x, es, p0 }: { x: PaginaEvp; es: boolean; p0: number 
         <div className="sticky bottom-0 flex flex-col gap-2 border-t border-ink/[.08] bg-paper/[.96] px-5 pb-6 pt-3 backdrop-blur-[14px]">
           {errorB}
           <div className="flex items-center gap-3.5">
-            <div className="min-w-0 flex-1"><div className="font-mono text-[10px] font-bold tracking-[0.1em] text-ink/50">{`${E2("PASO ", "STEP ")}${paso}${E2(" DE 3", " OF 3")}`}</div>
+            <div className="min-w-0 flex-1"><div className="font-mono text-[10px] font-bold tracking-[0.1em] text-ink/60">{`${E2("PASO ", "STEP ")}${paso}${E2(" DE 3", " OF 3")}`}</div>
               <div className="mt-[3px] truncate font-display text-[14px] font-extrabold leading-[1.3] tracking-[-0.02em]">{`${p} ${E2("personas", "guests")} · ${diaCorto(dia, es)}${h != null ? ` · ${horaL(h)}` : ""}`}</div></div>
             <div className="flex min-w-[150px] flex-none"><Button block disabled={ocupado || (paso === 3 && lleno)} onClick={sigue}>{paso === 3 ? sendL : E2("Continuar", "Continue")}</Button></div>
           </div>
@@ -132,7 +132,7 @@ export function PedirEvp({ x, es, p0 }: { x: PaginaEvp; es: boolean; p0: number 
         <div className="flex min-w-0 flex-col gap-[22px]">
           <div className="flex flex-col gap-2">
             <button type="button" onClick={() => router.push(`/n/${x.negocio.id}?tab=rsv`)} className="flex items-center gap-1.5 self-start text-[13px] font-bold text-action"><Icon name="chevronLeft" size={15} color="var(--tl-action)" strokeWidth={2} />{B}</button>
-            <span className="font-mono text-[10.5px] font-bold tracking-[0.12em] text-ink/50">{`${E2("EVENTO PRIVADO · ", "PRIVATE EVENT · ")}${B}`.toUpperCase()}</span>
+            <span className="font-mono text-[10.5px] font-bold tracking-[0.12em] text-ink/60">{`${E2("EVENTO PRIVADO · ", "PRIVATE EVENT · ")}${B}`.toUpperCase()}</span>
             <h1 className="m-0 text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.035em]">{E2("Pide tu evento privado", "Request your private event")}</h1>
             <p className="m-0 max-w-[620px] text-pretty text-[14px] font-medium leading-[1.6] text-ink/65">{E2(`${B} atiende grupos de ${a.minParty} o más como evento privado. Cuéntales qué necesitas y te mandan una propuesta con el precio total.`, `${B} hosts groups of ${a.minParty} or more as a private event. Tell them what you need and they send a proposal with the full price.`)}</p>
           </div>
@@ -140,8 +140,8 @@ export function PedirEvp({ x, es, p0 }: { x: PaginaEvp; es: boolean; p0: number 
         </div>
         <div data-sticky-rail="1" className="sticky top-6 flex flex-col gap-3.5">
           <BusinessRow name={B} meta={`${x.negocio.ciudad}${x.negocio.direccion ? ` · ${x.negocio.direccion}` : ""}`.toUpperCase()} image={x.negocio.foto ?? undefined} />
-          <div className={`flex flex-col gap-[9px] px-[18px] py-4 ${CAJA}`}><span className="font-mono text-[10px] font-extrabold tracking-[0.12em] text-ink/50">{E2("TU EVENTO", "YOUR EVENT")}</span>
-            {resumen.map(([ic, t]) => <div key={ic} className="flex items-center gap-2.5 text-[13.5px] font-semibold leading-[1.4]"><Icon name={ic} size={15} color="rgba(11,14,18,.55)" /><span className="min-w-0 flex-1">{t}</span></div>)}</div>
+          <div className={`flex flex-col gap-[9px] px-[18px] py-4 ${CAJA}`}><span className="font-mono text-[10px] font-extrabold tracking-[0.12em] text-ink/60">{E2("TU EVENTO", "YOUR EVENT")}</span>
+            {resumen.map(([ic, t]) => <div key={ic} className="flex items-center gap-2.5 text-[13.5px] font-semibold leading-[1.4]"><Icon name={ic} size={15} color="rgba(11,14,18,.6)" /><span className="min-w-0 flex-1">{t}</span></div>)}</div>
           {errorB}
           <div className="flex"><Button block disabled={ocupado || lleno} onClick={() => void enviar()}>{sendL}</Button></div>
           <span className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{respL}</span>

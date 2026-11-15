@@ -248,7 +248,7 @@ export function Publica({ v }: { v: VistaPublica }) {
           {H.show ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 7, marginBottom: 20, animation: "oFade .2s ease-out" }}>
               {H.tag ? <div style={{ display: "flex", marginBottom: 4 }}><Tag tone="signal">{H.tag}</Tag></div> : null}
-              {H.eye ? <div style={{ font: "700 10px 'JetBrains Mono',monospace", letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>{H.eye}</div> : null}
+              {H.eye ? <div style={{ font: "700 10px 'JetBrains Mono',monospace", letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{H.eye}</div> : null}
               <h1 style={{ margin: 0, font: "800 27px/1.12 Sora,sans-serif", letterSpacing: "-.04em" }}>{H.t}</h1>
               {H.s ? <div style={{ font: "500 14px/1.55 Manrope,sans-serif", color: "rgba(11,14,18,.64)" }}>{H.s}</div> : null}
             </div>
@@ -312,7 +312,7 @@ export function Publica({ v }: { v: VistaPublica }) {
                     <div style={{ display: "flex", flexDirection: "column", padding: "4px 14px", borderRadius: 16, border: "1px solid rgba(11,14,18,.1)" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 0" }}>
                         <span style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(75,55,245,.08)", display: "grid", placeItems: "center", flex: "none" }}><Icon name="clock" size={16} color="var(--tl-action)" /></span>
-                        <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 9.5px 'JetBrains Mono',monospace", letterSpacing: ".12em", color: "rgba(11,14,18,.5)" }}>{E2("PASO ", "STEP ")}{Math.max(0, (SEQ as readonly string[]).indexOf(d.last)) + 1}{E2(" DE 5", " OF 5")}</div><div style={{ marginTop: 3, font: "700 13.5px/1.35 Manrope,sans-serif" }}>{NAMES[Math.max(0, (SEQ as readonly string[]).indexOf(d.last))]}</div></div>
+                        <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 9.5px 'JetBrains Mono',monospace", letterSpacing: ".12em", color: "rgba(11,14,18,.6)" }}>{E2("PASO ", "STEP ")}{Math.max(0, (SEQ as readonly string[]).indexOf(d.last)) + 1}{E2(" DE 5", " OF 5")}</div><div style={{ marginTop: 3, font: "700 13.5px/1.35 Manrope,sans-serif" }}>{NAMES[Math.max(0, (SEQ as readonly string[]).indexOf(d.last))]}</div></div>
                       </div>
                     </div>
                   ) : null}
@@ -338,7 +338,7 @@ export function Publica({ v }: { v: VistaPublica }) {
             <div style={{ position: "sticky", top: 172, display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}><span style={K}>{E2("TU PÁGINA EN VIVO", "YOUR PAGE, LIVE")}</span><span style={{ font: "800 10px 'JetBrains Mono',monospace", letterSpacing: ".12em", padding: "4px 8px", borderRadius: 8, background: "var(--tl-pro)", color: "var(--tl-pro-ink)" }}>PRO</span></div>
               <div className="ohs" style={{ maxHeight: "calc(100vh - 260px)", overflowY: "auto", borderRadius: 22, border: "1px solid rgba(11,14,18,.08)", background: "var(--tl-white)" }}><BusinessPreview pv={pv} mode="page" view="pro" lang={v.lang} /></div>
-              <div style={{ font: "500 12px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{st === "H1" ? E2(`Así la ven hoy los vecinos de ${v.ciudad}.`, `This is how ${v.ciudad} neighbors see it today.`) : E2("Se arma con lo que llenas. Así te verán los vecinos con Pro.", "It builds as you fill it in. This is how neighbors will see you with Pro.")}</div>
+              <div style={{ font: "500 12px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{st === "H1" ? E2(`Así la ven hoy los vecinos de ${v.ciudad}.`, `This is how ${v.ciudad} neighbors see it today.`) : E2("Se arma con lo que llenas. Así te verán los vecinos con Pro.", "It builds as you fill it in. This is how neighbors will see you with Pro.")}</div>
             </div>
           </aside>
         ) : null}

@@ -78,12 +78,12 @@ export function Marco({ es, yo, ui, titulo, sub, back, children, aside, code }: 
       {!D && (back ? (
         <div data-screen-label="Comunidad · encabezado" style={{ position: "sticky", top: 57, zIndex: 20, padding: "12px 16px", background: "var(--tl-white)", borderBottom: LINE, display: "flex", alignItems: "center", gap: 12 }}>
           <span role="button" aria-label={E2("Volver", "Back")} onClick={() => router.push(back)} {...tec(() => router.push(back))} style={{ width: 34, height: 34, borderRadius: 11, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="chevronLeft" size={16} strokeWidth={2} /></span>
-          <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "800 15px/1.2 Sora,sans-serif", letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{titulo}</div><div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div></div>
+          <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "800 15px/1.2 Sora,sans-serif", letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{titulo}</div><div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div></div>
         </div>
       ) : (
         <div data-screen-label="Comunidad · encabezado del módulo" style={{ background: "var(--tl-white)" }}>
           <div style={{ padding: "16px 20px 12px", display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ flex: 1, minWidth: 0 }}><h1 style={{ margin: 0, font: "800 26px/1.05 Sora,sans-serif", letterSpacing: "-.04em" }}>{titulo}</h1><div style={{ marginTop: 6, font: `600 10px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{sub}</div></div>
+            <div style={{ flex: 1, minWidth: 0 }}><h1 style={{ margin: 0, font: "800 26px/1.05 Sora,sans-serif", letterSpacing: "-.04em" }}>{titulo}</h1><div style={{ marginTop: 6, font: `600 10px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{sub}</div></div>
             <span role="link" aria-label={E2(yo.sinLeer ? `Mensajes, ${yo.sinLeer} sin leer` : "Mensajes", yo.sinLeer ? `Messages, ${yo.sinLeer} unread` : "Messages")} onClick={() => router.push("/comunidad/mensajes")} {...tec(() => router.push("/comunidad/mensajes"))} style={{ position: "relative", width: 40, height: 40, boxSizing: "border-box", borderRadius: 13, border: "1px solid rgba(11,14,18,.1)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}>
               <Icon name="chat" size={18} />
               {yo.sinLeer > 0 && <span aria-hidden style={{ position: "absolute", top: 7, right: 7, width: 8, height: 8, borderRadius: 99, background: "var(--tl-action)" }} />}
@@ -127,7 +127,7 @@ export function Marco({ es, yo, ui, titulo, sub, back, children, aside, code }: 
             <div data-screen-label="Comunidad · título" style={{ marginBottom: 18, maxWidth: 720 }}>
               {back && <div role="link" onClick={() => router.push(back)} {...tec(() => router.push(back))} style={{ marginBottom: 12, display: "inline-flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="chevronLeft" size={15} strokeWidth={2} color="var(--tl-action)" />{E2("Volver", "Back")}</div>}
               <h1 style={{ margin: 0, font: "800 30px/1.1 Sora,sans-serif", letterSpacing: "-.04em" }}>{titulo}</h1>
-              <div style={{ marginTop: 8, font: `600 10.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{sub}</div>
+              <div style={{ marginTop: 8, font: `600 10.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{sub}</div>
             </div>
           )}
           {children}
@@ -160,7 +160,7 @@ export function Marco({ es, yo, ui, titulo, sub, back, children, aside, code }: 
 export function Reglas({ es, R }: { es: boolean; R: { es: string; en: string }[] }) {
   return (
     <div data-screen-label="Publicación · reglas" style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: 16 }}>
-      <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".18em", color: "rgba(11,14,18,.42)" }}>{es ? "REGLAS DEL BARRIO" : "NEIGHBORHOOD RULES"}</div>
+      <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".18em", color: "rgba(11,14,18,.6)" }}>{es ? "REGLAS DEL BARRIO" : "NEIGHBORHOOD RULES"}</div>
       <div style={{ marginTop: 8, font: "800 14px/1.3 Sora,sans-serif", letterSpacing: "-.02em", textWrap: "pretty" }}>{es ? LINEA_FIJA.es : LINEA_FIJA.en}</div>
       <div style={{ marginTop: 8 }}>
         {R.map((x, i) => (
@@ -227,14 +227,14 @@ function TablaRail({ es, t, ciudad }: { es: boolean; t: NonNullable<YoCom["tabla
   const router = useRouter();
   return (
     <div data-screen-label="Comunidad · tabla" style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: 16 }}>
-      <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".18em", color: "rgba(11,14,18,.42)" }}>{`${es ? "TABLA DEL BARRIO" : "LEADERBOARD"} · ${nombreMes(t.mes, es).toUpperCase()} · ${ciudad.toUpperCase()}`}</div>
+      <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".18em", color: "rgba(11,14,18,.6)" }}>{`${es ? "TABLA DEL BARRIO" : "LEADERBOARD"} · ${nombreMes(t.mes, es).toUpperCase()} · ${ciudad.toUpperCase()}`}</div>
       <div style={{ marginTop: 8 }}>
         {t.filas.length ? t.filas.map((x, i) => (
           <div key={x.id} role="link" onClick={() => router.push(`/comunidad/v/${x.yo ? "yo" : x.id}`)} {...tec(() => router.push(`/comunidad/v/${x.yo ? "yo" : x.id}`))} style={{ display: "flex", gap: 10, alignItems: "center", padding: "8px 0", borderTop: i ? LINE : "none", cursor: "pointer" }}>
-            <span style={{ width: 18, font: "800 13px Sora,sans-serif", color: x.pos <= 3 ? "var(--tl-pro-ink)" : "rgba(11,14,18,.4)", textAlign: "center", flex: "none" }}>{x.pos}</span>
+            <span style={{ width: 18, font: "800 13px Sora,sans-serif", color: x.pos <= 3 ? "var(--tl-pro-ink)" : "rgba(11,14,18,.6)", textAlign: "center", flex: "none" }}>{x.pos}</span>
             <Avatar foto={x.foto} ini={x.ini} size={30} />
             <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 12.5px/1.25 Manrope,sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.yo ? `${x.nombre} · ${es ? "tú" : "you"}` : x.nombre}</div>
-              <div style={{ marginTop: 2, font: `600 8.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{(es ? rango(x.rango).es : rango(x.rango).en).toUpperCase()}</div></div>
+              <div style={{ marginTop: 2, font: `600 8.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{(es ? rango(x.rango).es : rango(x.rango).en).toUpperCase()}</div></div>
             <span style={{ font: "800 13px Sora,sans-serif", flex: "none" }}>{x.v.toLocaleString("en-US")}</span>
           </div>)) : <div style={{ font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{es ? "Todavía nadie suma puntos este mes." : "Nobody has points this month yet."}</div>}
       </div>

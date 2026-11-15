@@ -45,7 +45,7 @@ export function JobsTab({ jobs, negocio, sesion, es }: { jobs: VacanteFicha[]; n
               </div>
               {tg && <Tag tone={tg[1]}>{tg[0]}</Tag>}
               <button type="button" aria-label={saved[j.id] ? E2("Quitar de guardadas", "Unsave") : E2("Guardar", "Save")} aria-pressed={!!saved[j.id]} onClick={(e) => { e.stopPropagation(); void guardar(j.id); }} className="grid size-[34px] flex-none place-items-center rounded-[11px]">
-                <Icon name="heart" size={17} color={saved[j.id] ? "var(--tl-danger)" : "rgba(11,14,18,.4)"} />
+                <Icon name="heart" size={17} color={saved[j.id] ? "var(--tl-danger)" : "rgba(11,14,18,.6)"} />
               </button>
             </div>
             <div className="flex flex-wrap items-baseline gap-2">
@@ -53,8 +53,8 @@ export function JobsTab({ jobs, negocio, sesion, es }: { jobs: VacanteFicha[]; n
               {j.tips && <Chip variant="slot">{E2("+ PROPINAS", "+ TIPS")}</Chip>}
             </div>
             <div className="flex flex-col gap-1.5 text-[12.5px] font-medium leading-[1.4] text-ink/70">
-              <span className="flex items-center gap-2"><Icon name="clock" size={14} color="rgba(11,14,18,.5)" />{diasL(j.days, es)} · {horarioL(j.start, j.end)}</span>
-              <span className="flex items-center gap-2"><Icon name="language" size={14} color="rgba(11,14,18,.5)" />{idiomasL(j.langEs, j.langEn, es)}</span>
+              <span className="flex items-center gap-2"><Icon name="clock" size={14} color="rgba(11,14,18,.6)" />{diasL(j.days, es)} · {horarioL(j.start, j.end)}</span>
+              <span className="flex items-center gap-2"><Icon name="language" size={14} color="rgba(11,14,18,.6)" />{idiomasL(j.langEs, j.langEn, es)}</span>
             </div>
             {j.ben.length > 0 && <div className="flex flex-wrap gap-[5px]">{j.ben.slice(0, 3).map((b, i) => <Chip key={i} variant="feature">{es ? b[0] : b[1] || b[0]}</Chip>)}</div>}
           </div>

@@ -114,7 +114,7 @@ function OwnerCard({
       marginTop: 5,
       font: '700 9px ' + mono,
       letterSpacing: '.12em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, nick) : null);
   return /*#__PURE__*/React.createElement("div", {
@@ -177,7 +177,7 @@ function OwnerCard({
       marginTop: 8,
       font: '600 10px ' + mono,
       letterSpacing: '.08em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, since) : null) : null, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -239,7 +239,7 @@ function TodayCard({
     style: {
       font: '700 9px ' + mono,
       letterSpacing: '.12em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, c.k), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -266,7 +266,7 @@ function TodayCard({
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "ban",
     size: 14,
-    color: "rgba(11,14,18,.5)"
+    color: "rgba(11,14,18,.6)"
   }), noLabel) : /*#__PURE__*/React.createElement("span", null), linkLabel ? /*#__PURE__*/React.createElement("span", {
     onClick: onLink,
     ...__ds_scope.__btn(onLink, undefined, undefined),
@@ -280,7 +280,7 @@ function TodayCard({
     style: {
       font: '700 10px ' + mono,
       letterSpacing: '.16em',
-      color: 'rgba(11,14,18,.42)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, eyebrow), /*#__PURE__*/React.createElement("div", {
     style: {

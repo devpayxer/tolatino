@@ -72,7 +72,7 @@ export function Mapa({ v }: { v: VistaMapa }) {
     const bg = !b.dentro ? "rgba(11,14,18,.3)" : ap ? "rgba(75,55,245,.14)" : b.pro ? "var(--tl-ink)" : "var(--tl-action)";
     return { id: b.id, name: b.name, x: Math.round(x), y: Math.round(y), s, on, bg: on ? (ap ? "rgba(75,55,245,.3)" : "var(--tl-ink)") : bg,
       bd: ap ? "1.5px dashed var(--tl-action)" : on ? "3px solid var(--tl-white)" : "2px solid var(--tl-white)",
-      sh: on ? "0 0 0 5px rgba(11,14,18,.18)" : "0 2px 6px -2px rgba(11,14,18,.45)", z: on ? 30 : b.pro ? 12 : 10 };
+      sh: on ? "0 0 0 5px rgba(11,14,18,.18)" : "0 2px 6px -2px rgba(11,14,18,.6)", z: on ? 30 : b.pro ? 12 : 10 };
   }).filter((p): p is NonNullable<typeof p> => !!p);
 
   // ── Lista ──
@@ -123,7 +123,7 @@ export function Mapa({ v }: { v: VistaMapa }) {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span role="button" aria-label={E2("Volver", "Back")} onClick={atras} {...tec(atras)} style={{ ...boton, flex: "none" }}><Icon name="chevronLeft" size={18} strokeWidth={2} /></span>
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
-            <span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>{`${E2("MAPA · ", "MAP · ")}${v.ciudad} · ${rad} MI`.toUpperCase()}</span>
+            <span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{`${E2("MAPA · ", "MAP · ")}${v.ciudad} · ${rad} MI`.toUpperCase()}</span>
             <h1 style={{ margin: 0, font: `800 ${L.h1}/1.12 Sora,sans-serif`, letterSpacing: "-.035em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{v.titulo}</h1>
           </div>
           <span role="button" onClick={cambiarRadio} {...tec(cambiarRadio)} style={{ flex: "none", height: 36, padding: "0 12px", borderRadius: 12, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.12)", display: "flex", alignItems: "center", gap: 7, font: "700 12.5px Manrope,sans-serif", cursor: "pointer", whiteSpace: "nowrap" }}>
@@ -171,12 +171,12 @@ export function Mapa({ v }: { v: VistaMapa }) {
               </div>
             ) : null}
           </div>
-          <span style={{ display: "block", margin: desk ? "8px 0 0" : "8px 16px 14px", font: "600 11px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.5)" }}>{E2("Negro: destacados · morado: Free · círculo punteado: trabaja desde casa, zona aproximada.", "Black: featured · purple: Free · dotted circle: works from home, approximate area.")}</span>
+          <span style={{ display: "block", margin: desk ? "8px 0 0" : "8px 16px 14px", font: "600 11px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2("Negro: destacados · morado: Free · círculo punteado: trabaja desde casa, zona aproximada.", "Black: featured · purple: Free · dotted circle: works from home, approximate area.")}</span>
         </div>
 
         <div style={{ order: L.listOrder, minWidth: 0, display: "flex", flexDirection: "column", gap: 10, maxHeight: L.listMax, overflowY: L.listOv as CSSProperties["overflowY"], padding: L.listPad }}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-            <span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>
+            <span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>
               {`${v.total} ${v.total === 1 ? E2("NEGOCIO", "BUSINESS") : E2("NEGOCIOS", "BUSINESSES")}${E2(" · EL MÁS CERCA PRIMERO", " · NEAREST FIRST")}${v.ctx ? E2(" · TUS FILTROS", " · YOUR FILTERS") : ""}`}
             </span>
             {hayFiltros ? <span role="button" onClick={() => ir({ m: null, ...(v.ctx ? {} : { cat: null }) })} {...tec(() => ir({ m: null, ...(v.ctx ? {} : { cat: null }) }))} style={{ font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Quitar filtros", "Clear filters")}</span> : null}

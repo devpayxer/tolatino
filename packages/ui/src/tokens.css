@@ -35,8 +35,8 @@
   --tl-text: #0B0E12;
   --tl-text-2: rgba(11,14,18,.75);
   --tl-text-3: rgba(11,14,18,.6);
-  --tl-text-muted: rgba(11,14,18,.5);
-  --tl-text-faint: rgba(11,14,18,.42);
+  --tl-text-muted: rgba(11,14,18,.6);
+  --tl-text-faint: rgba(11,14,18,.6);
 
   /* Líneas y rellenos */
   --tl-line: rgba(11,14,18,.08);

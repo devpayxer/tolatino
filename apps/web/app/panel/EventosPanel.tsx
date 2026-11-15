@@ -527,7 +527,7 @@ export function calendario(c: Ctx, Fm: Form<FormEvt>, e0: EvtPanel | null): Bloq
       const dw = dowDe(iso), ds = d.rep.days;
       Fm.set({ dia: iso, rep: d.rep.k === "none" ? d.rep : { ...d.rep, skip: [], days: d.rep.k === "m" ? [] : ds.length <= 1 ? [dw] : [...new Set([...ds.filter((z) => z !== dowDe(d.dia)), dw])] } });
     };
-    days.push({ n: String(i), off, bg: on ? "var(--tl-ink)" : oc === "on" ? "rgba(75,55,245,.12)" : "transparent", fg: on ? "var(--tl-white)" : off ? "rgba(11,14,18,.22)" : oc === "on" ? "var(--tl-action)" : oc === "skip" || cerr ? "rgba(11,14,18,.42)" : "var(--tl-ink)",
+    days.push({ n: String(i), off, bg: on ? "var(--tl-ink)" : oc === "on" ? "rgba(75,55,245,.12)" : "transparent", fg: on ? "var(--tl-white)" : off ? "rgba(11,14,18,.22)" : oc === "on" ? "var(--tl-action)" : oc === "skip" || cerr ? "rgba(11,14,18,.6)" : "var(--tl-ink)",
       ring: oc === "skip" ? "inset 0 0 0 1.5px rgba(75,55,245,.4)" : iso === hoy && !on ? "inset 0 0 0 1.5px rgba(11,14,18,.55)" : "none", td: oc === "skip" ? "line-through" : undefined, fw: on || oc === "on" || iso === hoy ? 800 : 600,
       dot: ot ? "var(--tl-pro)" : "transparent", label: `${diaCorto(iso, es)}${oc === "skip" ? E2(" · saltada", " · skipped") : oc === "on" ? E2(" · del evento", " · event date") : ""}`, onClick: elegir });
   }

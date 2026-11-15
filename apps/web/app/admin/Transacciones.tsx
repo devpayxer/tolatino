@@ -108,7 +108,7 @@ export function Transacciones({ d, f, porPagina, exportar, devolver, sim, rutas 
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <PanelBloques bloques={bloques} h1={desk ? 26 : 22} />
       <form onSubmit={(e) => { e.preventDefault(); ir({ q: q.trim() || null }); }} style={{ position: "relative" }}>
-        <span style={{ position: "absolute", left: 15, top: 14.5, display: "grid" }}><A.Icon name="search" size={17} color="rgba(11,14,18,.45)" /></span>
+        <span style={{ position: "absolute", left: 15, top: 14.5, display: "grid" }}><A.Icon name="search" size={17} color="rgba(11,14,18,.6)" /></span>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={E("# de pedido, reservación o cita, negocio o cliente", "Order, reservation or booking #, business or customer")} aria-label={E("Buscar transacción", "Search transaction")}
           style={{ width: "100%", height: 46, boxSizing: "border-box", padding: "0 40px 0 42px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", background: "var(--tl-white)", font: "600 14.5px Manrope,sans-serif", outline: "none" }} />
       </form>

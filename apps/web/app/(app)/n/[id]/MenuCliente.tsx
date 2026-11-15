@@ -308,14 +308,14 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
 export type Mn = NonNullable<ReturnType<typeof useMenu>>;
 
 /* ── Piezas ── */
-const k10 = "font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/55";
+const k10 = "font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60";
 
 export function Modos({ modes }: { modes: { k: string; l: string; icon: string; on: boolean; onClick: () => void }[] }) {
   return (
     <div role="tablist" className="flex gap-1.5 rounded-[14px] bg-ink/5 p-1">
       {modes.map((x) => (
         <button key={x.k} type="button" role="tab" aria-selected={x.on} onClick={x.onClick}
-          className={`flex h-[38px] flex-1 items-center justify-center gap-[7px] rounded-[11px] text-[12.5px] font-bold ${x.on ? "bg-white text-ink shadow-[0_1px_4px_rgba(11,14,18,.1)]" : "bg-transparent text-ink/50"}`}>
+          className={`flex h-[38px] flex-1 items-center justify-center gap-[7px] rounded-[11px] text-[12.5px] font-bold ${x.on ? "bg-white text-ink shadow-[0_1px_4px_rgba(11,14,18,.1)]" : "bg-transparent text-ink/60"}`}>
           <Icon name={x.icon} size={15} />{x.l}
         </button>
       ))}
@@ -365,7 +365,7 @@ export function MenuMovil({ mn }: { mn: Mn }) {
         <div key={c.k} data-msec={`m-${c.k}`} className="px-5 pt-6">
           <div className="flex items-baseline gap-2.5">
             <span className="font-display text-[18px] font-extrabold leading-none tracking-[-0.03em]">{c.title}</span>
-            {c.note && <span className="font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">{c.note}</span>}
+            {c.note && <span className="font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{c.note}</span>}
           </div>
           {c.items.map((it) => (
             <div key={it.id} className="grid min-w-0">
@@ -385,10 +385,10 @@ export function PedidoTarjeta({ mn }: { mn: Mn }) {
     <div data-screen-label="Ficha · menú · tu pedido" className="flex flex-col gap-3.5 rounded-[22px] border border-ink/10 bg-white p-5 shadow-[var(--shadow-float)]">
       <div className="flex items-baseline justify-between gap-2.5">
         <span className="font-display text-[20px] font-extrabold leading-none tracking-[-0.03em]">{mn.lbl.order}</span>
-        <span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/50">{mn.countCaps}</span>
+        <span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{mn.countCaps}</span>
       </div>
       {mn.canOrd && <Modo mn={mn} />}
-      {mn.empty && <div className="py-[22px] text-center text-[13px] font-medium text-ink/50">{mn.lbl.emptySub}</div>}
+      {mn.empty && <div className="py-[22px] text-center text-[13px] font-medium text-ink/60">{mn.lbl.emptySub}</div>}
       {mn.has && (
         <>
           <div>
@@ -401,7 +401,7 @@ export function PedidoTarjeta({ mn }: { mn: Mn }) {
         </>
       )}
       <div className="flex"><Button block disabled={mn.empty} onClick={mn.onPay}>{mn.cta}</Button></div>
-      <div className="text-pretty text-[11.5px] font-medium leading-[1.5] text-ink/55">{mn.lbl.payNote}</div>
+      <div className="text-pretty text-[11.5px] font-medium leading-[1.5] text-ink/60">{mn.lbl.payNote}</div>
     </div>
   );
 }
@@ -437,7 +437,7 @@ export function MenuDesk({ mn, unaColumna }: { mn: Mn; unaColumna: boolean }) {
         <div className="sticky top-5 flex flex-col">
           {mn.chips.map((c) => (
             <button key={c.k} type="button" onClick={c.onDesk} className="py-2.5 pl-3.5 text-left text-[13.5px]"
-              style={{ borderLeft: `2.5px solid ${c.on ? "var(--tl-ink)" : "transparent"}`, fontWeight: c.on ? 800 : 600, color: c.on ? "var(--tl-ink)" : "rgba(11,14,18,.5)" }}>{c.l}</button>
+              style={{ borderLeft: `2.5px solid ${c.on ? "var(--tl-ink)" : "transparent"}`, fontWeight: c.on ? 800 : 600, color: c.on ? "var(--tl-ink)" : "rgba(11,14,18,.6)" }}>{c.l}</button>
           ))}
         </div>
         <div className="min-w-0">
@@ -453,7 +453,7 @@ export function MenuDesk({ mn, unaColumna }: { mn: Mn; unaColumna: boolean }) {
             <div key={c.k} data-msec={`d-${c.k}`} className="pt-[30px]">
               <div className="flex items-baseline gap-2.5">
                 <span className="font-display text-[20px] font-extrabold leading-none tracking-[-0.03em]">{c.title}</span>
-                {c.note && <span className="font-mono text-[10px] font-semibold tracking-[0.08em] text-ink/50">{c.note}</span>}
+                {c.note && <span className="font-mono text-[10px] font-semibold tracking-[0.08em] text-ink/60">{c.note}</span>}
               </div>
               <div className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-2.5">
                 {c.items.map((it) => (
@@ -514,9 +514,9 @@ function Plato({ mn }: { mn: Mn }) {
         {sh.desc && <p className="mt-2.5 text-pretty text-[13px] leading-[1.6] text-ink/65">{sh.desc}</p>}
         {sh.lleva.length > 0 && (
           <div data-bloque="lleva" className="mt-3">
-            <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/50">{E2("LLEVA O ES · LO MARCÓ EL NEGOCIO", "CONTAINS OR IS · MARKED BY THE BUSINESS")}</div>
+            <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("LLEVA O ES · LO MARCÓ EL NEGOCIO", "CONTAINS OR IS · MARKED BY THE BUSINESS")}</div>
             <div className="mt-1.5 flex flex-wrap gap-1.5">{sh.lleva.map((x) => <Tag key={x} tone="neutral">{x}</Tag>)}</div>
-            <div className="mt-1.5 text-pretty text-[11.5px] leading-[1.45] text-ink/55">{E2("Si tienes una alergia, pregúntale al negocio antes de pedir.", "If you have an allergy, ask the business before ordering.")}</div>
+            <div className="mt-1.5 text-pretty text-[11.5px] leading-[1.45] text-ink/60">{E2("Si tienes una alergia, pregúntale al negocio antes de pedir.", "If you have an allergy, ask the business before ordering.")}</div>
           </div>
         )}
         {sh.isCustom && (
@@ -570,7 +570,7 @@ function Pregunta({ mn }: { mn: Mn }) {
       <span className="size-[52px] flex-none rounded-[14px] bg-photo-bg" style={foto(a.img)} />
       <div className="min-w-0 flex-1">
         <div className="font-display text-[18px] font-extrabold leading-[1.15] tracking-[-0.025em]">{a.title}</div>
-        <div className="mt-[5px] font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/50">{a.meta}</div>
+        <div className="mt-[5px] font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/60">{a.meta}</div>
       </div>
       <button type="button" aria-label={mn.lbl.close} onClick={mn.closeAsk} className="grid size-9 flex-none place-items-center rounded-xl bg-ink/5"><Icon name="close" size={15} strokeWidth={2.2} /></button>
     </div>
@@ -582,7 +582,7 @@ function Pregunta({ mn }: { mn: Mn }) {
         <button key={k} type="button" onClick={x.onAdd} className="flex items-center gap-3 rounded-[15px] border-[1.5px] border-ink py-[13px] pl-[15px] pr-3 text-left">
           <div className="min-w-0 flex-1">
             <div className="text-pretty text-[13.5px] font-bold leading-[1.4]">{x.sum}</div>
-            <div className="mt-1 font-mono text-[9.5px] font-bold tracking-[0.08em] text-ink/50">{x.inL}</div>
+            <div className="mt-1 font-mono text-[9.5px] font-bold tracking-[0.08em] text-ink/60">{x.inL}</div>
           </div>
           <span className="flex h-10 flex-none items-center gap-1.5 rounded-xl bg-ink px-[13px] font-display text-[13px] font-extrabold leading-none text-white"><Icon name="plus" size={14} color="var(--tl-white)" strokeWidth={2.4} />{x.price}</span>
         </button>
@@ -591,7 +591,7 @@ function Pregunta({ mn }: { mn: Mn }) {
         <span className="grid size-[38px] flex-none place-items-center rounded-xl bg-action/[.08]"><Icon name="edit" size={17} color="var(--tl-action)" /></span>
         <div className="min-w-0 flex-1">
           <div className="text-[13.5px] font-bold leading-[1.3]">{mn.lbl.customT}</div>
-          <div className="mt-[3px] text-[12px] font-medium leading-[1.45] text-ink/55">{mn.lbl.customS}</div>
+          <div className="mt-[3px] text-[12px] font-medium leading-[1.45] text-ink/60">{mn.lbl.customS}</div>
         </div>
         <Icon name="chevronRight" size={16} color="rgba(11,14,18,.35)" />
       </button>
@@ -645,13 +645,13 @@ function Carrito({ mn, nombre }: { mn: Mn; nombre: string }) {
         <div className="flex flex-none items-center gap-3 border-b border-line pb-[13px] pl-5 pr-4 pt-[17px]">
           <div className="min-w-0 flex-1">
             <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.03em]">{mn.lbl.order}</div>
-            <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{nombre} · {mn.countCaps}</div>
+            <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{nombre} · {mn.countCaps}</div>
           </div>
           <button type="button" aria-label={mn.lbl.close} onClick={mn.closeCart} className="grid size-9 flex-none place-items-center rounded-xl bg-ink/5"><Icon name="close" size={15} strokeWidth={2.4} /></button>
         </div>
         <div className="hs flex flex-1 flex-col gap-2.5 overflow-y-auto px-4 pb-[18px] pt-3.5">
           {mn.canOrd && <Modo mn={mn} card />}
-          {mn.empty && <div className="px-4 py-10 text-center"><div className="text-[14px] font-bold">{mn.lbl.empty}</div><div className="mt-1.5 text-[12.5px] font-medium text-ink/50">{mn.lbl.emptySub}</div></div>}
+          {mn.empty && <div className="px-4 py-10 text-center"><div className="text-[14px] font-bold">{mn.lbl.empty}</div><div className="mt-1.5 text-[12.5px] font-medium text-ink/60">{mn.lbl.emptySub}</div></div>}
           {mn.has && (
             <>
               <div className="rounded-[17px] border border-line bg-white px-3.5">
@@ -660,7 +660,7 @@ function Carrito({ mn, nombre }: { mn: Mn; nombre: string }) {
               <EnvioGratis e={mn.ENT} />
               <Totales mn={mn} />
               <div className="flex items-start gap-[9px] px-1 py-0.5 text-[12px] font-medium leading-[1.5] text-ink/60">
-                <span className="grid flex-none pt-px"><Icon name="info" size={15} color="rgba(11,14,18,.45)" /></span><span className="text-pretty">{mn.lbl.payNote}</span>
+                <span className="grid flex-none pt-px"><Icon name="info" size={15} color="rgba(11,14,18,.6)" /></span><span className="text-pretty">{mn.lbl.payNote}</span>
               </div>
             </>
           )}

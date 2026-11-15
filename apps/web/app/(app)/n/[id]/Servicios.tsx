@@ -146,7 +146,7 @@ function Fila({ v, it, tarjeta }: { v: Svc; it: Svc["top"][number]; tarjeta?: bo
       <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(it.foto)} />
       <div className="min-w-0 flex-1">
         <div className="text-[14.5px] font-bold leading-[1.3]">{it.name}</div>
-        <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/50">{it.meta}</div>
+        <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{it.meta}</div>
         <div className="mt-1.5 font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{it.price}</div>
       </div>
       {v.cp.can && <Button variant="soft" size="md" onClick={(e: MouseEvent) => v.abrir(it.id, e)}>Booking</Button>}
@@ -165,7 +165,7 @@ export function SvcTab({ v, desk }: { v: Svc; desk: boolean }) {
           {([["svc", E2("Por servicio", "By service"), "scissors"], ["pro", E2(`Por ${v.w.uno}`, `By ${v.w.uno}`), "users"]] as const).map(([k, l, ic]) => {
             const on = v.modo === k;
             return (
-              <button key={k} type="button" onClick={() => v.setModo(k)} className={`flex h-[38px] flex-1 items-center justify-center gap-[7px] rounded-[11px] text-[12.5px] font-bold ${on ? "bg-white text-ink shadow-[0_1px_3px_rgba(11,14,18,.12)]" : "text-ink/55"}`}>
+              <button key={k} type="button" onClick={() => v.setModo(k)} className={`flex h-[38px] flex-1 items-center justify-center gap-[7px] rounded-[11px] text-[12.5px] font-bold ${on ? "bg-white text-ink shadow-[0_1px_3px_rgba(11,14,18,.12)]" : "text-ink/60"}`}>
                 <Icon name={ic} size={15} />{l}
               </button>
             );
@@ -183,7 +183,7 @@ export function SvcTab({ v, desk }: { v: Svc; desk: boolean }) {
         <div className="flex flex-col gap-[22px]">
           {v.secs.map((sc) => (
             <div key={sc.title}>
-              <div className="font-mono text-[11px] font-extrabold tracking-[0.14em] text-ink/45">{sc.title}</div>
+              <div className="font-mono text-[11px] font-extrabold tracking-[0.14em] text-ink/60">{sc.title}</div>
               <div className={desk ? "mt-3 grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5" : "mt-1"}>{sc.items.map((it) => <Fila key={it.id} v={v} it={it} tarjeta={desk} />)}</div>
             </div>
           ))}
@@ -193,10 +193,10 @@ export function SvcTab({ v, desk }: { v: Svc; desk: boolean }) {
           {v.pros.map(({ p, seat, meta, next, hoy }) => (
             <div key={p.id} className="flex flex-col gap-[13px] rounded-[18px] border border-ink/[.08] bg-white p-3.5">
               <div className="flex items-center gap-[13px]">
-                <span className="grid h-[60px] w-[60px] flex-none place-items-center rounded-[18px] bg-photo-bg font-display text-[20px] font-extrabold text-ink/40" style={fondo(p.foto)}>{p.foto ? null : p.corto.charAt(0)}</span>
+                <span className="grid h-[60px] w-[60px] flex-none place-items-center rounded-[18px] bg-photo-bg font-display text-[20px] font-extrabold text-ink/60" style={fondo(p.foto)}>{p.foto ? null : p.corto.charAt(0)}</span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-baseline gap-2"><span className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{p.nombre}</span>{seat && <span className="font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/45">{seat}</span>}</div>
-                  {meta && <div className="mt-[5px] font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/50">{meta}</div>}
+                  <div className="flex flex-wrap items-baseline gap-2"><span className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{p.nombre}</span>{seat && <span className="font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/60">{seat}</span>}</div>
+                  {meta && <div className="mt-[5px] font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{meta}</div>}
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span className={`rounded-[7px] px-2 py-1 font-mono text-[9px] font-bold tracking-[0.1em] ${aprC(p)}`}>{aprL(p, v.es)}</span>
                     {next && <span className={`text-[11.5px] font-bold ${hoy ? "text-open-text" : "text-ink/60"}`}>{next}</span>}
@@ -261,13 +261,13 @@ export function SvcHoja({ v }: { v: Svc }) {
       </div>
       <div className="px-5 pb-6 pt-[18px]">
         <div className="font-display text-[22px] font-extrabold leading-[1.15] tracking-[-0.035em]">{v.nm(s.name)}</div>
-        <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{total}</span><span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/50">{meta}</span></div>
+        <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{total}</span><span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{meta}</span></div>
         {v.nm(s.desc) && <p className="mt-2.5 text-pretty text-[13px] leading-[1.6] text-ink/65">{v.nm(s.desc)}</p>}
         {groups.map((g, gi) => <div key={gi} className="mt-5 grid"><OptionGroup title={g.title} meta={E2("ELIGE 1", "CHOOSE 1")} required done={g.done} reqLabel={lbl.req} doneLabel={lbl.ready} options={g.opts} onToggle={g.onToggle} /></div>)}
         {adds.length > 0 && (
           <div className="mt-5 border-t border-ink/[.08] pt-[18px]">
             <div className="text-[15px] font-bold">Extras</div>
-            <div className="mt-1 font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/45">{E2("OPCIONAL · SE SUMAN AL TIEMPO", "OPTIONAL · ADDS TIME")}</div>
+            <div className="mt-1 font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{E2("OPCIONAL · SE SUMAN AL TIEMPO", "OPTIONAL · ADDS TIME")}</div>
             <div className="mt-[11px] flex flex-col gap-2">{adds.map((a) => <div key={a.id} className="grid"><AddOnRow label={a.label} price={a.price} checked={a.checked} onToggle={a.onToggle} /></div>)}</div>
           </div>
         )}
@@ -278,19 +278,19 @@ export function SvcHoja({ v }: { v: Svc }) {
               {needWho && <Tag tone="action">{lbl.req}</Tag>}
               {v.silla && q.con && <span className="flex items-center gap-[5px] font-mono text-[9.5px] font-bold tracking-[0.1em] text-open-text"><Icon name="check" size={13} color="var(--tl-open)" strokeWidth={2.4} />{lbl.ready}</span>}
             </div>
-            <div className="mt-1 font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/45">{v.silla ? E2("CADA UNO PONE SU PRECIO Y SU AGENDA", "EACH SETS THEIR OWN PRICE AND SCHEDULE") : stfName ? `${E2("CON ", "WITH ")}${stfName}`.toUpperCase() : E2("CUALQUIERA: TE TOCA QUIEN ESTÉ LIBRE", "ANYONE: WHOEVER IS FREE")}</div>
+            <div className="mt-1 font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{v.silla ? E2("CADA UNO PONE SU PRECIO Y SU AGENDA", "EACH SETS THEIR OWN PRICE AND SCHEDULE") : stfName ? `${E2("CON ", "WITH ")}${stfName}`.toUpperCase() : E2("CUALQUIERA: TE TOCA QUIEN ESTÉ LIBRE", "ANYONE: WHOEVER IS FREE")}</div>
             {v.silla ? (
               <div className="mt-[11px] flex flex-col gap-2">
                 {pros.map((x) => (
                   <button key={x.p.id} type="button" onClick={() => up({ con: x.p.id })} aria-pressed={x.on}
                     className={`flex items-center gap-3 rounded-[15px] text-left ${x.on ? "border-[1.5px] border-ink p-[11.5px]" : "border border-ink/10 p-3"}`}>
-                    <span className="grid h-[46px] w-[46px] flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[16px] font-extrabold text-ink/40" style={fondo(x.p.foto)}>{x.p.foto ? null : x.p.corto.charAt(0)}</span>
+                    <span className="grid h-[46px] w-[46px] flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[16px] font-extrabold text-ink/60" style={fondo(x.p.foto)}>{x.p.foto ? null : x.p.corto.charAt(0)}</span>
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-baseline gap-[7px]"><span className="text-[13.5px] font-bold">{x.p.nombre}</span>{x.seat && <span className="font-mono text-[9px] font-bold tracking-[0.1em] text-ink/45">{x.seat}</span>}</div>
-                      {x.meta && <div className="mt-1 font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{x.meta}</div>}
+                      <div className="flex flex-wrap items-baseline gap-[7px]"><span className="text-[13.5px] font-bold">{x.p.nombre}</span>{x.seat && <span className="font-mono text-[9px] font-bold tracking-[0.1em] text-ink/60">{x.seat}</span>}</div>
+                      {x.meta && <div className="mt-1 font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{x.meta}</div>}
                       <span className={`mt-[7px] inline-block rounded-md px-[7px] py-[3px] font-mono text-[8.5px] font-bold tracking-[0.1em] ${aprC(x.p)}`}>{aprL(x.p, es)}</span>
                     </div>
-                    <div className="flex-none text-right"><div className="font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{x.price}</div><div className="mt-[5px] font-mono text-[8.5px] font-bold tracking-[0.08em] text-ink/45">{x.dep}</div></div>
+                    <div className="flex-none text-right"><div className="font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{x.price}</div><div className="mt-[5px] font-mono text-[8.5px] font-bold tracking-[0.08em] text-ink/60">{x.dep}</div></div>
                   </button>
                 ))}
               </div>
@@ -305,7 +305,7 @@ export function SvcHoja({ v }: { v: Svc }) {
   );
   const pie = (
     <div className="flex flex-none items-center gap-3.5 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
-      <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{durL(P.dur).toUpperCase()}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{total}</div></div>
+      <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{durL(P.dur).toUpperCase()}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{total}</div></div>
       <div className="flex min-w-0 flex-1"><Button block disabled={!!pend || needWho} onClick={go}>{cta}</Button></div>
     </div>
   );
@@ -344,7 +344,7 @@ export function SvcRiel({ v, onCta }: { v: Svc; onCta: () => void }) {
       {v.mia && <div className="grid"><ReservationCard label={v.mia.k} tag={v.mia.tag} tone={v.mia.tone} title={v.mia.t} sub={v.mia.s} onClick={v.mia.onClick} /></div>}
       <div className="font-display text-[30px] font-extrabold leading-none tracking-[-0.04em]">{E2("Desde ", "From ")}{dinero(v.desde)}</div>
       <div className="grid grid-cols-3 gap-2">
-        {v.riel.map((m) => <div key={m.k} className="min-w-0 rounded-[14px] bg-paper px-2.5 py-[11px]"><div className="font-mono text-[8.5px] font-bold tracking-[0.1em] text-ink/45">{m.k}</div><div className="mt-1.5 text-[13px] font-bold leading-[1.3]">{m.v}</div></div>)}
+        {v.riel.map((m) => <div key={m.k} className="min-w-0 rounded-[14px] bg-paper px-2.5 py-[11px]"><div className="font-mono text-[8.5px] font-bold tracking-[0.1em] text-ink/60">{m.k}</div><div className="mt-1.5 text-[13px] font-bold leading-[1.3]">{m.v}</div></div>)}
       </div>
       <div className="text-pretty text-[12.5px] font-medium leading-[1.55] text-ink/60">{v.nota}</div>
       {v.cp.can && <div className="flex"><Button icon="calendar" block onClick={onCta}>Booking</Button></div>}
@@ -361,7 +361,7 @@ export function SvcBarra({ v, onCta }: { v: Svc; onCta: () => void }) {
     <div data-screen-label="Ficha · barra de citas" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-paper/95 px-5 pb-[22px] pt-[13px] backdrop-blur-[14px] lg:hidden">
       <div className="min-w-0 flex-1">
         <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{E2("Desde ", "From ")}{dinero(v.desde)}</div>
-        <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">{`${E2("DEPÓSITO", "DEPOSIT")} ${dep}`.toUpperCase()}</div>
+        <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{`${E2("DEPÓSITO", "DEPOSIT")} ${dep}`.toUpperCase()}</div>
       </div>
       <Button icon="calendar" onClick={onCta}>Booking</Button>
     </div>

@@ -246,7 +246,7 @@ function CompleteAccount({
       flex: 1,
       minWidth: 0,
       font: `${x.done ? 600 : 700} 13.5px Manrope, sans-serif`,
-      color: x.done ? 'rgba(11,14,18,.5)' : 'var(--tl-ink)'
+      color: x.done ? 'rgba(11,14,18,.6)' : 'var(--tl-ink)'
     }
   }, x.label), !x.done && x.onClick ? /*#__PURE__*/React.createElement("span", {
     style: {
@@ -293,7 +293,7 @@ function WeekAgenda({
       style: {
         font: `700 8.5px ${MONO}`,
         letterSpacing: '.12em',
-        color: x.today ? 'var(--tl-action)' : 'rgba(11,14,18,.5)'
+        color: x.today ? 'var(--tl-action)' : 'rgba(11,14,18,.6)'
       }
     }, x.day), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -337,7 +337,7 @@ function WeekAgenda({
         marginTop: 4,
         font: `600 9.5px/1.45 ${MONO}`,
         letterSpacing: '.05em',
-        color: 'rgba(11,14,18,.5)'
+        color: 'rgba(11,14,18,.6)'
       }
     }, x.meta) : null), x.tag ? /*#__PURE__*/React.createElement("span", {
       style: {

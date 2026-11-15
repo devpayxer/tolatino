@@ -161,7 +161,7 @@ export function N360({ n, tab, din, oper, operK = "all", evts = null, sop, cpa, 
         <A.AdminList label={E("LO QUE VE EL CLIENTE", "WHAT THE CUSTOMER SEES")} rows={[campo("name", E("Nombre", "Name"), n.name), campo("about", E("Quiénes somos", "About us"), n.about?.es ?? "", true), { icon: "grid", title: E("Categoría y subcategorías", "Category and subcategories"), sub: `${n.cat}${n.subs ? ` · ${n.subs}` : ""}` }, campo("phone", E("Teléfono", "Phone"), n.phone), campo("address", E("Dirección", "Address"), n.address ?? "")]} />
         {/* 9m · El punto en el mapa y «Corregir el punto» (con motivo; el dueño lo ve en su panel). */}
         <PuntoAdmin id={n.id} lat={n.lat} lng={n.lng} centro={[n.clat, n.clng]} fijado={n.geo_fixed} motivoFijado={n.geo_fixed_reason} puede={!!P.editar} />
-        <PanelBloques bloques={[{ type: "group", k: E("HORARIO", "HOURS") }, { type: "kv", cols: 2, items: DIAS.map(([d, , dEn], i) => { const x = n.horas[i]!; return { k: (en ? dEn : d).toUpperCase(), v: x.on ? `${fmtHora(x.a)} – ${fmtHora(x.b)}${x.two ? ` · ${fmtHora(x.a2)} – ${fmtHora(x.b2)}` : ""}` : E("Cerrado", "Closed"), fg: x.on ? undefined : "rgba(11,14,18,.45)" }; }) }]} />
+        <PanelBloques bloques={[{ type: "group", k: E("HORARIO", "HOURS") }, { type: "kv", cols: 2, items: DIAS.map(([d, , dEn], i) => { const x = n.horas[i]!; return { k: (en ? dEn : d).toUpperCase(), v: x.on ? `${fmtHora(x.a)} – ${fmtHora(x.b)}${x.two ? ` · ${fmtHora(x.a2)} – ${fmtHora(x.b2)}` : ""}` : E("Cerrado", "Closed"), fg: x.on ? undefined : "rgba(11,14,18,.6)" }; }) }]} />
       </>);
   } else if (tab === "vende" && n.cat_id === "NEG-FOOD") {
     const MOD: ["menu" | "pedidos" | "delivery" | "rsv", string, string][] = [["menu", E("Menú", "Menu"), E("La pestaña Menú de su página", "The Menu tab on their page")], ["pedidos", E("Pedidos en línea", "Online orders"), E(`Que se pueda pedir desde su menú · ${n.pedidosMes} este mes${n.plan === "pro" ? "" : ` (${n.pedidosFree} de ${n.pedidosCap} con Free)`}`, `Ordering from their menu · ${n.pedidosMes} this month${n.plan === "pro" ? "" : ` (${n.pedidosFree} of ${n.pedidosCap} on Free)`}`)],
@@ -467,7 +467,7 @@ export function N360({ n, tab, din, oper, operK = "all", evts = null, sop, cpa, 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 1120 }}>
       <span role="link" onClick={() => router.push("/admin/negocios")} {...tec(() => router.push("/admin/negocios"))} style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><A.Icon name="chevronLeft" size={15} color="var(--tl-action)" />{E("Negocios", "Businesses")}</span>
-      <span style={{ font: "700 9.5px 'JetBrains Mono',monospace", letterSpacing: ".14em", color: "rgba(11,14,18,.45)" }}>{E("NEGOCIO 360°", "BUSINESS 360°")}</span>
+      <span style={{ font: "700 9.5px 'JetBrains Mono',monospace", letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{E("NEGOCIO 360°", "BUSINESS 360°")}</span>
       <PanelBloques bloques={cab} />
       {notasEstado}
       <PanelBloques bloques={[tabs]} />

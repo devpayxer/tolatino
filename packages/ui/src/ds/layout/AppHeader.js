@@ -88,7 +88,7 @@ function AppHeader({
   }, city), /*#__PURE__*/React.createElement("div", {
     style: {
       font: "500 10px/1.2 'JetBrains Mono',monospace",
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, radius, " DE RADIO"))), /*#__PURE__*/React.createElement("div", {
     onClick: onLang,

@@ -17,7 +17,7 @@ const { Icon, Button, Chip, OptionGroup, AddOnRow, DepositNote } = UI as unknown
 const dinero = (c: number) => { const d = c / 100; return `$${d % 1 ? d.toFixed(2) : Math.round(d).toLocaleString("en-US")}`; };
 const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: MouseEvent) => e?.stopPropagation();
-const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/45";
+const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
 
 export const SZ: Record<string, [string, string]> = { c: ["Carro", "Car"], s: ["SUV o pickup", "SUV or pickup"], v: ["Van o 3 filas", "Van or 3 rows"], m: ["Moto", "Motorcycle"], d: ["Camión o diésel", "Truck or diesel"] };
 const TOPV = ["toyota", "honda", "nissan", "ford", "chevy", "hyundai", "kia", "jeep"];
@@ -129,7 +129,7 @@ function Fila({ v, it, tarjeta }: { v: Of; it: Of["top"][number]; tarjeta?: bool
       <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(it.foto)} />
       <div className="min-w-0 flex-1">
         <div className="text-[14.5px] font-bold leading-[1.3]">{it.name}</div>
-        <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/50">{it.meta}</div>
+        <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{it.meta}</div>
         <div className="mt-1.5 font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{it.price}</div>
       </div>
       <Button variant="soft" size="md" onClick={(e: MouseEvent) => v.abrir(it.id, e)}>{cta}</Button>
@@ -147,9 +147,9 @@ function Bloque({ v, sz }: { v: Of; sz?: boolean }) {
     <button type="button" onClick={() => v.setSheet(auto ? "veh" : "casa")} className="flex w-full items-center gap-3 rounded-[15px] bg-paper px-3.5 py-[13px] text-left">
       <span className="grid h-[42px] w-[42px] flex-none place-items-center rounded-[13px] bg-ink"><Icon name={auto ? "car" : "home"} size={20} color="var(--tl-white)" /></span>
       <span className="min-w-0 flex-1">
-        <span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{auto ? (v.veh ? E2("TU VEHÍCULO", "YOUR VEHICLE") : E2("¿QUÉ CARRO ES?", "WHICH CAR?")) : v.casa ? E2("VA A TU CASA", "COMING TO YOUR HOME") : E2("¿DÓNDE ES?", "WHERE IS IT?")}</span>
+        <span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{auto ? (v.veh ? E2("TU VEHÍCULO", "YOUR VEHICLE") : E2("¿QUÉ CARRO ES?", "WHICH CAR?")) : v.casa ? E2("VA A TU CASA", "COMING TO YOUR HOME") : E2("¿DÓNDE ES?", "WHERE IS IT?")}</span>
         <span className="mt-1 block text-[14.5px] font-bold leading-[1.3]">{t}</span>
-        {s && <span className="mt-[3px] block font-mono text-[9.5px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/50">{s}</span>}
+        {s && <span className="mt-[3px] block font-mono text-[9.5px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{s}</span>}
         {v.cp && <span className="mt-1.5 flex items-center gap-[5px] text-[11.5px] font-bold" style={{ color: v.cp.ok ? ("warn" in v.cp && v.cp.warn ? "var(--tl-pro-ink)" : "var(--tl-open-text)") : "var(--tl-danger)" }}>
           <Icon name={v.cp.ok && !("warn" in v.cp && v.cp.warn) ? "check" : "warning"} size={13} color="currentColor" />{v.cp.t}</span>}
       </span>
@@ -171,7 +171,7 @@ export function OfTab({ v, desk }: { v: Of; desk: boolean }) {
       <div className="flex flex-col gap-[22px]">
         {v.secs.map((sc) => (
           <div key={sc.title}>
-            <div className="font-mono text-[11px] font-extrabold tracking-[0.14em] text-ink/45">{sc.title}</div>
+            <div className="font-mono text-[11px] font-extrabold tracking-[0.14em] text-ink/60">{sc.title}</div>
             <div className={desk ? "mt-3 grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5" : "mt-1"}>{sc.items.map((it) => <Fila key={it.id} v={v} it={it} tarjeta={desk} />)}</div>
           </div>
         ))}
@@ -239,19 +239,19 @@ export function OfHoja({ v }: { v: Of }) {
       </div>
       <div className="px-5 pb-6 pt-[18px]">
         <div className="font-display text-[22px] font-extrabold leading-[1.15] tracking-[-0.035em]">{v.nm(s.name)}</div>
-        <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{totalL}</span><span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/50">{detalleL(op.rubro, { ...s, dur: dur || s.dur }, es).toUpperCase()}</span></div>
+        <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{totalL}</span><span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{detalleL(op.rubro, { ...s, dur: dur || s.dur }, es).toUpperCase()}</span></div>
         {v.nm(s.desc) && <p className="mt-2.5 text-pretty text-[13px] leading-[1.6] text-ink/65">{v.nm(s.desc)}</p>}
         {(a.inc?.length || a.no?.length) ? (
           <div className="mt-3 flex flex-col gap-1.5">
             {(a.inc ?? []).map((z) => <div key={z.es} className="flex items-start gap-2 text-[12.5px] font-medium leading-[1.45] text-ink/75"><span className="grid flex-none pt-0.5"><Icon name="check" size={13} color="var(--tl-open)" strokeWidth={2.2} /></span>{v.nm(z)}</div>)}
-            {(a.no ?? []).map((z) => <div key={z.es} className="flex items-start gap-2 text-[12.5px] font-medium leading-[1.45] text-ink/60"><span className="grid flex-none pt-0.5"><Icon name="info" size={13} color="rgba(11,14,18,.45)" /></span>{v.nm(z)}</div>)}
+            {(a.no ?? []).map((z) => <div key={z.es} className="flex items-start gap-2 text-[12.5px] font-medium leading-[1.45] text-ink/60"><span className="grid flex-none pt-0.5"><Icon name="info" size={13} color="rgba(11,14,18,.6)" /></span>{v.nm(z)}</div>)}
           </div>) : null}
         {!llamar && !a.walk && <div className="mt-5"><Bloque v={v} sz={!!a.sz} /></div>}
         {groups.map((g, gi) => <div key={gi} className="mt-5 grid"><OptionGroup title={g.title} meta={g.meta} required done={g.done} reqLabel={lbl.req} doneLabel={lbl.ready} options={g.opts} onToggle={g.onToggle} /></div>)}
         {extras.length > 0 && !llamar && (
           <div className="mt-5 border-t border-ink/[.08] pt-[18px]">
             <div className="text-[15px] font-bold">Extras</div>
-            <div className="mt-1 font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/45">{E2("OPCIONAL", "OPTIONAL")}</div>
+            <div className="mt-1 font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{E2("OPCIONAL", "OPTIONAL")}</div>
             <div className="mt-[11px] flex flex-col gap-2">{extras.map((x, i) => <div key={i} className="grid"><AddOnRow label={`${v.nm(x.n)}${x.m ? ` · +${x.m} min` : ""}`} price={`+${dinero(x.p)}`} checked={q.adds.includes(i)} onToggle={() => up({ adds: q.adds.includes(i) ? q.adds.filter((z) => z !== i) : [...q.adds, i] })} /></div>)}</div>
           </div>
         )}
@@ -281,7 +281,7 @@ export function OfHoja({ v }: { v: Of }) {
   );
   const pie = (
     <div className="flex flex-none items-center gap-3.5 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
-      <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{E2("TOTAL", "TOTAL")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{totalL}</div></div>
+      <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{E2("TOTAL", "TOTAL")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{totalL}</div></div>
       <div className="flex min-w-0 flex-1"><Button block icon={emer ? "warning" : llamar ? "phone" : undefined} variant={emer ? "danger" : undefined} disabled={!emer && !plan && !llamar && !a.walk && !sinDato && (bad || !!pend)} onClick={go}>{cta}</Button></div>
     </div>
   );
@@ -315,7 +315,7 @@ function Marco({ v, titulo, sub, children, pie }: { v: Of; titulo: string; sub: 
 const Radio = ({ on, t, s, tag, onClick }: { on: boolean; t: string; s: string; tag: string; onClick: () => void }) => (
   <button type="button" role="radio" aria-checked={on} onClick={onClick} className={`flex items-center gap-3 rounded-[14px] px-3.5 py-3 text-left ${on ? "border-[1.5px] border-ink" : "border border-ink/10"}`}>
     <span className={`box-border h-5 w-5 flex-none rounded-full ${on ? "border-[6px] border-ink" : "border-[1.5px] border-ink/25"}`} />
-    <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{t}</span><span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{s}</span></span>
+    <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{t}</span><span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{s}</span></span>
     <span className="flex-none font-mono text-[8.5px] font-bold tracking-[0.1em] text-open-text">{tag}</span>
   </button>
 );
@@ -353,7 +353,7 @@ export function HojaVehiculo({ v }: { v: Of }) {
         <Chips k={E2("AÑO", "YEAR")} items={Array.from({ length: 27 }, (_, i) => new Date().getFullYear() - i).map((y) => ({ l: String(y), on: f.y === y, onClick: () => setF({ ...f, y }) }))} />
         <div><div className={K}>{E2("MILLAJE · OPCIONAL", "MILEAGE · OPTIONAL")}</div><input aria-label={E2("Millaje", "Mileage")} inputMode="numeric" value={f.mi} onChange={(e) => setF({ ...f, mi: e.target.value.replace(/\D/g, "").slice(0, 7) })} placeholder={E2("Ej.: 84200", "E.g. 84200")} className="mt-2 box-border h-11 w-full rounded-[13px] border border-ink/[.12] px-3.5 font-mono text-[13.5px] font-bold outline-none" /></div>
         <Chips k={E2("TIPO", "TYPE")} items={(["c", "s", "v", "m", "d"] as const).map((k) => ({ l: SZ[k]![es ? 0 : 1], on: f.sz === k, onClick: () => setF({ ...f, sz: k }) }))} />
-        <div className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/55">{E2("Se guarda en tu cuenta. El precio, el estimado y la garantía van con tu vehículo.", "Saved to your account. The price, estimate and warranty go with your vehicle.")}</div>
+        <div className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Se guarda en tu cuenta. El precio, el estimado y la garantía van con tu vehículo.", "Saved to your account. The price, estimate and warranty go with your vehicle.")}</div>
       </>)}
     </Marco>
   );
@@ -397,7 +397,7 @@ export function HojaCasa({ v }: { v: Of }) {
         <Chips k={E2("CALENTADOR DE AGUA", "WATER HEATER")} items={ch("wh", WH)} />
         <Chips k={E2("EDAD DEL CALENTADOR", "WATER HEATER AGE")} items={ch("whAge", AGE)} />
         <div><div className={K}>{E2("DÓNDE ESTACIONAR Y CÓMO ENTRAR · OPCIONAL", "PARKING AND ACCESS · OPTIONAL")}</div><input aria-label={E2("Cómo entrar", "Access")} value={f.access ?? ""} onChange={(e) => setF({ ...f, access: e.target.value.slice(0, 120) })} placeholder={E2("Ej.: entrada al lado, timbre no sirve", "E.g. side driveway, doorbell broken")} className="mt-2 box-border h-11 w-full rounded-[13px] border border-ink/[.12] px-3.5 text-[13.5px] font-semibold outline-none" /></div>
-        <div className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/55">{E2("Se guarda en tu cuenta. La dirección exacta solo la ve el negocio que confirma tu visita.", "Saved to your account. Only the business that confirms your visit sees the exact address.")}</div>
+        <div className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Se guarda en tu cuenta. La dirección exacta solo la ve el negocio que confirma tu visita.", "Saved to your account. Only the business that confirms your visit sees the exact address.")}</div>
       </>)}
     </Marco>
   );
@@ -423,7 +423,7 @@ export function OfRiel({ v, onCta }: { v: Of; onCta: () => void }) {
     <div data-screen-label="Ficha · Booking · columna" className="flex flex-col gap-4 rounded-[22px] border border-ink/10 bg-white p-[22px] shadow-[0_24px_48px_-34px_rgba(11,14,18,.45)]">
       <div className="font-display text-[30px] font-extrabold leading-none tracking-[-0.04em]">{v.desde ? `${E2("Desde ", "From ")}${dinero(v.desde)}` : E2("Servicios", "Services")}</div>
       <div className="grid grid-cols-3 gap-2">
-        {v.riel.map((m) => <div key={m.k} className="min-w-0 rounded-[14px] bg-paper px-2.5 py-[11px]"><div className="font-mono text-[8.5px] font-bold tracking-[0.1em] text-ink/45">{m.k}</div><div className="mt-1.5 text-[13px] font-bold leading-[1.3]">{m.v}</div></div>)}
+        {v.riel.map((m) => <div key={m.k} className="min-w-0 rounded-[14px] bg-paper px-2.5 py-[11px]"><div className="font-mono text-[8.5px] font-bold tracking-[0.1em] text-ink/60">{m.k}</div><div className="mt-1.5 text-[13px] font-bold leading-[1.3]">{m.v}</div></div>)}
       </div>
       <div className="text-pretty text-[12.5px] font-medium leading-[1.55] text-ink/60">{v.nota}</div>
       {v.op.can && <div className="flex"><Button icon="calendar" block onClick={onCta}>Booking</Button></div>}
@@ -437,7 +437,7 @@ export function OfBarra({ v, onCta }: { v: Of; onCta: () => void }) {
     <div data-screen-label="Ficha · barra de citas" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-paper/95 px-5 pb-[22px] pt-[13px] backdrop-blur-[14px] lg:hidden">
       <div className="min-w-0 flex-1">
         <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{v.desde ? `${E2("Desde ", "From ")}${dinero(v.desde)}` : E2("Servicios", "Services")}</div>
-        <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">{`${v.riel[2]!.k} ${v.riel[2]!.v}`.toUpperCase()}</div>
+        <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{`${v.riel[2]!.k} ${v.riel[2]!.v}`.toUpperCase()}</div>
       </div>
       <Button icon="calendar" onClick={onCta}>Booking</Button>
     </div>

@@ -69,14 +69,14 @@ export function Soporte({ es, conSesion, negocio, temas, casos, ops, revs, horar
       {!desk ? (
         <div className="flex items-center gap-3 pt-3.5">
           <C.IconButton icon="chevronLeft" size={38} onClick={atras} label={E2("Volver", "Back")} />
-          <div className="min-w-0 flex-1"><div className="text-ink/50" style={{ font: `700 10px ${MONO}`, letterSpacing: ".12em" }}>{eye}</div>
+          <div className="min-w-0 flex-1"><div className="text-ink/60" style={{ font: `700 10px ${MONO}`, letterSpacing: ".12em" }}>{eye}</div>
             <div className="mt-[3px] font-display text-[22px] font-extrabold leading-[1.15] tracking-[-0.035em]">{titulo}</div></div>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
           <span role="link" tabIndex={0} onClick={atras} onKeyDown={(e) => { if (e.key === "Enter") atras(); }} className="flex cursor-pointer items-center gap-1.5 self-start text-[13px] font-bold text-action">
             <C.Icon name="chevronLeft" size={15} color="var(--tl-action)" strokeWidth={2} />{E2("Volver", "Back")}</span>
-          <span className="text-ink/50" style={{ font: `700 10.5px ${MONO}`, letterSpacing: ".12em" }}>{eye}</span>
+          <span className="text-ink/60" style={{ font: `700 10.5px ${MONO}`, letterSpacing: ".12em" }}>{eye}</span>
           <h1 className="m-0 font-display text-[28px] font-extrabold leading-[1.1] tracking-[-0.035em]">{titulo}</h1>
         </div>
       )}
@@ -122,7 +122,7 @@ export function Soporte({ es, conSesion, negocio, temas, casos, ops, revs, horar
           return <div key={x.num} data-caso={x.num}><C.RequestCard label={`${x.num} · ${corto(x.tema)}`} tag={L(e.l)} tone={e.tone} title={corta(x.titulo, 80)}
             sub={`${quien}${corta(u.t || (u.foto ? E2("Foto", "Photo") : ""), 70)} · ${ago(u.at).toLowerCase()}`} onClick={() => ir(`caso=${x.num}`)} /></div>;
         })}
-        {!casos.length ? <span className="text-[13px] font-medium leading-normal text-ink/55">{conSesion ? E2("Todavía no tienes casos.", "You have no cases yet.") : E2("Entra para ver tus casos.", "Sign in to see your cases.")}</span> : null}
+        {!casos.length ? <span className="text-[13px] font-medium leading-normal text-ink/60">{conSesion ? E2("Todavía no tienes casos.", "You have no cases yet.") : E2("Entra para ver tus casos.", "Sign in to see your cases.")}</span> : null}
       </div>
     </div>
   );
@@ -130,7 +130,7 @@ export function Soporte({ es, conSesion, negocio, temas, casos, ops, revs, horar
   // ── Vacío (escritorio) ──
   const vacio = (
     <div className="mt-24 flex flex-col items-center gap-2.5 rounded-[20px] border-[1.5px] border-dashed border-ink/[.14] p-7 text-center">
-      <C.Icon name="chat" size={26} color="rgba(11,14,18,.42)" />
+      <C.Icon name="chat" size={26} color="rgba(11,14,18,.6)" />
       <span className="font-display text-[17px] font-extrabold leading-[1.3] tracking-[-0.02em]">{E2("Elige un caso o escríbenos", "Pick a case or write to us")}</span>
       <span className="max-w-[360px] text-[13px] font-medium leading-normal text-ink/60">{E2("Lo que nos escribas queda aquí, con cada respuesta del equipo.", "What you write stays here, with every reply from the team.")}</span>
     </div>
@@ -196,7 +196,7 @@ function Nuevo({ es, desk, conSesion, negocio, temas, ops, pre, toHome, onCreado
       <input ref={file} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void subir(f); e.target.value = ""; }} />
       <div className="flex items-center gap-3" style={{ paddingTop: desk ? 0 : 14 }}>
         {!desk ? <C.IconButton icon="chevronLeft" size={38} onClick={toHome} label={E2("Volver", "Back")} /> : null}
-        <div className="min-w-0 flex-1"><div className="text-ink/50" style={{ font: `700 10px ${MONO}`, letterSpacing: ".12em" }}>{E2("CASO NUEVO", "NEW CASE")}{pre.otro ? ` · ${E2("ENLAZADO A", "LINKED TO")} ${pre.otro}` : ""}</div>
+        <div className="min-w-0 flex-1"><div className="text-ink/60" style={{ font: `700 10px ${MONO}`, letterSpacing: ".12em" }}>{E2("CASO NUEVO", "NEW CASE")}{pre.otro ? ` · ${E2("ENLAZADO A", "LINKED TO")} ${pre.otro}` : ""}</div>
           <div className="mt-[3px] font-display text-[22px] font-extrabold leading-[1.15] tracking-[-0.035em]">{E2("¿En qué te ayudamos?", "How can we help?")}</div></div>
       </div>
       <div className="flex flex-col gap-2.5">
@@ -213,7 +213,7 @@ function Nuevo({ es, desk, conSesion, negocio, temas, ops, pre, toHome, onCreado
             {[...lasOps.map((x) => ({ k: x.num, t: L(x.t), s: x.s })), { k: "", t: E2("Ninguno en especial", "None in particular"), s: "" }].map((x, i) => (
               <div key={x.k || "ninguno"} role="radio" aria-checked={op === x.k} tabIndex={0} data-op={x.k} onClick={() => setOp(x.k)} onKeyDown={(e) => { if (e.key === "Enter") setOp(x.k); }}
                 className="flex cursor-pointer items-center gap-3 py-[13px]" style={{ borderTop: i ? "1px solid rgba(11,14,18,.08)" : "none" }}>
-                {radio(op === x.k)}<div className="min-w-0 flex-1"><div className="text-[14px] font-bold leading-[1.35]">{x.t}</div>{x.s ? <div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/55">{x.s}</div> : null}</div>
+                {radio(op === x.k)}<div className="min-w-0 flex-1"><div className="text-[14px] font-bold leading-[1.35]">{x.t}</div>{x.s ? <div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/60">{x.s}</div> : null}</div>
               </div>))}
           </div>
         </div>
@@ -226,9 +226,9 @@ function Nuevo({ es, desk, conSesion, negocio, temas, ops, pre, toHome, onCreado
           {foto ? <span className="size-14 flex-none rounded-[12px] bg-photo-bg bg-cover bg-center" style={{ backgroundImage: `url("${foto.url}")` }} /> : null}
           <span role="button" tabIndex={0} onClick={() => file.current?.click()} onKeyDown={(e) => { if (e.key === "Enter") file.current?.click(); }} className="flex cursor-pointer items-center gap-2 text-[13px] font-bold text-action">
             <C.Icon name="image" size={16} color="var(--tl-action)" />{subiendo ? E2("Subiendo…", "Uploading…") : foto ? E2("Cambiar foto", "Change photo") : E2("Agregar una foto", "Add a photo")}</span>
-          {foto ? <span role="button" tabIndex={0} onClick={() => setFoto(null)} className="cursor-pointer text-[13px] font-bold text-ink/55">{E2("Quitar", "Remove")}</span> : null}
+          {foto ? <span role="button" tabIndex={0} onClick={() => setFoto(null)} className="cursor-pointer text-[13px] font-bold text-ink/60">{E2("Quitar", "Remove")}</span> : null}
         </div>
-        <span className="text-[12px] font-medium leading-normal text-ink/55">{E2("No escribas números de tarjeta ni contraseñas. Nunca te los pedimos.", "Do not write card numbers or passwords. We never ask for them.")}</span>
+        <span className="text-[12px] font-medium leading-normal text-ink/60">{E2("No escribas números de tarjeta ni contraseñas. Nunca te los pedimos.", "Do not write card numbers or passwords. We never ask for them.")}</span>
       </div>
       {err ? <span role="alert" className="text-[12.5px] font-semibold leading-[1.45] text-danger">{err}</span> : null}
       <div className="flex"><C.Button block onClick={enviar} disabled={pend || subiendo}>{pend ? E2("Enviando…", "Sending…") : conSesion ? E2("Enviar", "Send") : E2("Entrar y enviar", "Sign in and send")}</C.Button></div>
@@ -292,7 +292,7 @@ function Caso({ es, desk, caso, negocio, toHome, ago, toNew, hor }: {
       <input ref={file} type="file" accept="image/*" className="hidden" onChange={(ev) => { const f = ev.target.files?.[0]; if (f) void subir(f); ev.target.value = ""; }} />
       <div className="flex items-center gap-3" style={{ paddingTop: desk ? 0 : 14 }}>
         {!desk ? <C.IconButton icon="chevronLeft" size={38} onClick={toHome} label={E2("Volver", "Back")} /> : null}
-        <div className="min-w-0 flex-1"><div className="text-ink/50" style={{ font: `700 10px ${MONO}`, letterSpacing: ".12em" }}>{caso.num} · {L(TEMAS[caso.tema].corto).toUpperCase()}</div>
+        <div className="min-w-0 flex-1"><div className="text-ink/60" style={{ font: `700 10px ${MONO}`, letterSpacing: ".12em" }}>{caso.num} · {L(TEMAS[caso.tema].corto).toUpperCase()}</div>
           <div className="mt-[3px] font-display text-[20px] font-extrabold leading-[1.2] tracking-[-0.03em] [text-wrap:pretty]">{caso.titulo.length > 90 ? `${caso.titulo.slice(0, 88).trimEnd()}…` : caso.titulo}</div></div>
       </div>
       <div className="flex flex-wrap items-center gap-2.5 rounded-[15px] border border-ink/[.08] bg-white px-3.5 py-3">
@@ -303,15 +303,15 @@ function Caso({ es, desk, caso, negocio, toHome, ago, toNew, hor }: {
         {caso.estado === "unido" && caso.unidoA ? <span role="link" tabIndex={0} onClick={() => router.push(`?${negocio ? `negocio=${negocio.id}&` : ""}caso=${caso.unidoA}`)} className="flex-none cursor-pointer text-[12.5px] font-bold text-action">{E2("Ir al caso", "Go to the case")}</span> : null}
       </div>
       {caso.ref ? <div className="self-center rounded-full border border-ink/[.08] bg-white px-3 py-1.5 text-ink/60" style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".06em" }}>{L(caso.ref).toUpperCase()}</div> : null}
-      {caso.enlazado ? <div className="self-center text-ink/50" style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".06em" }}>{E2(`ENLAZADO A ${caso.enlazado}`, `LINKED TO ${caso.enlazado}`)}</div> : null}
+      {caso.enlazado ? <div className="self-center text-ink/60" style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".06em" }}>{E2(`ENLAZADO A ${caso.enlazado}`, `LINKED TO ${caso.enlazado}`)}</div> : null}
       <div className="flex flex-col gap-3" data-screen-label="Soporte · hilo">
         {caso.msjs.map((m) => {
-          if (m.sender === "system") { const t = sistema(m); return t ? <div key={m.id} data-msg="sistema" className="max-w-[86%] self-center text-center text-ink/50 [text-wrap:pretty]" style={{ font: `600 10px/1.6 ${MONO}`, letterSpacing: ".06em" }}>{t.toUpperCase()}</div> : null; }
+          if (m.sender === "system") { const t = sistema(m); return t ? <div key={m.id} data-msg="sistema" className="max-w-[86%] self-center text-center text-ink/60 [text-wrap:pretty]" style={{ font: `600 10px/1.6 ${MONO}`, letterSpacing: ".06em" }}>{t.toUpperCase()}</div> : null; }
           const yo = m.sender === "user" && m.mio;
           const nombre = m.sender === "staff" ? `${(m.equipo ?? "To'Latino").toUpperCase()} · TO'LATINO` : yo ? "" : E2("TU NEGOCIO", "YOUR BUSINESS");
           return (
             <div key={m.id} data-msg={m.sender} className="flex flex-col gap-1" style={{ alignItems: yo ? "flex-end" : "flex-start" }}>
-              {nombre ? <span className="text-ink/55" style={{ font: `700 10px ${MONO}`, letterSpacing: ".08em" }}>{nombre}</span> : null}
+              {nombre ? <span className="text-ink/60" style={{ font: `700 10px ${MONO}`, letterSpacing: ".08em" }}>{nombre}</span> : null}
               <div className="flex max-w-[82%] flex-col gap-2 px-[13px] py-2.5 text-[14px] font-medium leading-[1.45] [text-wrap:pretty]"
                 style={{ borderRadius: yo ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: yo ? "var(--tl-ink)" : "var(--tl-white)", color: yo ? "var(--tl-white)" : "var(--tl-ink)", border: yo ? "none" : "1px solid rgba(11,14,18,.08)" }}>
                 {m.foto ? <a href={m.foto} target="_blank" rel="noopener noreferrer" className="block h-[140px] w-[180px] max-w-full rounded-[10px] bg-photo-bg bg-cover bg-center" style={{ backgroundImage: `url("${m.foto}")` }} aria-label={E2("Foto", "Photo")} /> : null}
@@ -332,7 +332,7 @@ function Caso({ es, desk, caso, negocio, toHome, ago, toNew, hor }: {
                 <C.Chip variant="filter" onClick={() => calificar(true)}>{E2("Sí", "Yes")}</C.Chip>
                 <C.Chip variant="filter" onClick={() => calificar(false)}>{E2("No", "No")}</C.Chip>
               </div>
-              {!caso.puedeReabrir ? <span className="text-[12px] font-medium text-ink/55">{E2("Si dices que no, abre otro caso: queda enlazado a este.", "If you say no, open another case: it stays linked to this one.")}</span> : null}
+              {!caso.puedeReabrir ? <span className="text-[12px] font-medium text-ink/60">{E2("Si dices que no, abre otro caso: queda enlazado a este.", "If you say no, open another case: it stays linked to this one.")}</span> : null}
             </div>
           ) : caso.csat ? <span className="text-[12.5px] font-semibold text-ink/65">{caso.csat === "yes" ? E2("Nos dijiste que sí se resolvió. Gracias.", "You told us it was solved. Thanks.") : E2("Nos dijiste que no se resolvió.", "You told us it was not solved.")}</span> : null}
           <span className="text-[12.5px] font-medium leading-normal text-ink/65 [text-wrap:pretty]">{E2("Si necesitas algo más con esto, abre otro caso: queda enlazado a este.", "If you need anything else about this, open another case: it stays linked to this one.")}</span>
@@ -344,7 +344,7 @@ function Caso({ es, desk, caso, negocio, toHome, ago, toNew, hor }: {
       {abierto ? (
         <div className="sticky bottom-0 z-[5] -mx-1 flex flex-col gap-2 bg-paper/95 px-1 pb-[18px] pt-2.5 backdrop-blur-[14px]" data-screen-label="Soporte · escribir">
           {foto ? <div className="flex items-center gap-2.5"><span className="size-12 rounded-[10px] bg-photo-bg bg-cover bg-center" style={{ backgroundImage: `url("${foto.url}")` }} />
-            <span role="button" tabIndex={0} onClick={() => setFoto(null)} className="cursor-pointer text-[12.5px] font-bold text-ink/55">{E2("Quitar foto", "Remove photo")}</span></div> : null}
+            <span role="button" tabIndex={0} onClick={() => setFoto(null)} className="cursor-pointer text-[12.5px] font-bold text-ink/60">{E2("Quitar foto", "Remove photo")}</span></div> : null}
           <div className="flex items-center gap-2">
             <C.IconButton icon="image" size={44} onClick={() => file.current?.click()} label={E2("Agregar una foto", "Add a photo")} />
             <input name="respuesta" value={txt} onChange={(ev) => setTxt(ev.target.value.slice(0, 600))} onKeyDown={(ev) => { if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); enviar(); } }}
@@ -354,7 +354,7 @@ function Caso({ es, desk, caso, negocio, toHome, ago, toNew, hor }: {
               className="grid size-11 flex-none cursor-pointer place-items-center rounded-[13px]" style={{ background: puede ? "var(--tl-ink)" : "rgba(11,14,18,.25)" }}>
               <C.Icon name="right" size={18} strokeWidth={2} color="var(--tl-white)" /></span>
           </div>
-          <span className="text-[11.5px] font-medium text-ink/50">{E2(`No escribas números de tarjeta ni contraseñas. El equipo atiende ${hor}.`, `Do not write card numbers or passwords. The team works ${hor}.`)}</span>
+          <span className="text-[11.5px] font-medium text-ink/60">{E2(`No escribas números de tarjeta ni contraseñas. El equipo atiende ${hor}.`, `Do not write card numbers or passwords. The team works ${hor}.`)}</span>
         </div>
       ) : null}
     </div>

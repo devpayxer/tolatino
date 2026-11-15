@@ -11,7 +11,7 @@ const mono = "'JetBrains Mono',monospace";
 const K = {
   font: '700 10px ' + mono,
   letterSpacing: '.2em',
-  color: 'rgba(11,14,18,.42)'
+  color: 'rgba(11,14,18,.6)'
 };
 const card = {
   padding: 15,
@@ -109,7 +109,7 @@ function DeliveryPrefs({
     style: {
       marginTop: 3,
       font: '500 11px/1.4 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.55)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, o.sub)), wide ? /*#__PURE__*/React.createElement(Radio, {
     on: o.selected
@@ -118,7 +118,7 @@ function DeliveryPrefs({
       marginTop: 14,
       font: '700 9.5px ' + mono,
       letterSpacing: '.14em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, arrivalLabel), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -138,7 +138,7 @@ function DeliveryPrefs({
       justifyContent: 'space-between',
       font: '700 9.5px ' + mono,
       letterSpacing: '.14em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, /*#__PURE__*/React.createElement("span", null, noteLabel), /*#__PURE__*/React.createElement("span", null, note.length, "/200")), /*#__PURE__*/React.createElement("textarea", {
     value: note,
@@ -240,13 +240,13 @@ function OrderTracker({
     style: {
       marginTop: 10,
       font: (p.state === 'current' ? 800 : 700) + ' 13px/1.25 Manrope,sans-serif',
-      color: p.state === 'next' ? 'rgba(11,14,18,.42)' : 'var(--tl-ink)'
+      color: p.state === 'next' ? 'rgba(11,14,18,.6)' : 'var(--tl-ink)'
     }
   }, p.label), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 4,
       font: '700 10.5px ' + mono,
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, p.time))));
   return /*#__PURE__*/React.createElement("div", {
@@ -296,12 +296,12 @@ function OrderTracker({
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       font: (p.state === 'current' ? 800 : 700) + ' 13.5px/1.2 Manrope,sans-serif',
-      color: p.state === 'next' ? 'rgba(11,14,18,.42)' : 'var(--tl-ink)'
+      color: p.state === 'next' ? 'rgba(11,14,18,.6)' : 'var(--tl-ink)'
     }
   }, p.label), /*#__PURE__*/React.createElement("span", {
     style: {
       font: '700 11px ' + mono,
-      color: 'rgba(11,14,18,.5)',
+      color: 'rgba(11,14,18,.6)',
       flex: 'none'
     }
   }, p.time)))));
@@ -405,7 +405,7 @@ function ChangeProposal({
     style: {
       marginTop: 2,
       font: '500 11.5px/1.45 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.55)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, x.sub)), /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "chevronRight",
@@ -415,7 +415,7 @@ function ChangeProposal({
     style: {
       marginTop: 11,
       font: '500 11.5px/1.5 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.55)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, note) : null);
 }
@@ -468,7 +468,7 @@ function HelpReasonList({
     style: {
       marginTop: 2,
       font: '500 11.5px/1.45 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.55)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, r.sub)), /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "chevronRight",
@@ -523,7 +523,7 @@ function RequestCard({
     style: {
       marginTop: 3,
       font: '500 11.5px/1.45 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.55)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, sub)), /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "chevronRight",
@@ -652,7 +652,7 @@ function AuthSheet({
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       font: '700 14px ' + mono,
-      color: 'rgba(11,14,18,.55)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, "+1"), /*#__PURE__*/React.createElement("span", {
     style: {
@@ -684,7 +684,7 @@ function AuthSheet({
       marginTop: 12,
       textAlign: 'center',
       font: '500 11.5px/1.5 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, terms) : null) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -740,7 +740,7 @@ function AuthSheet({
     style: {
       font: '600 10px ' + mono,
       letterSpacing: '.1em',
-      color: 'rgba(11,14,18,.42)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, resendLabel))));
 }
@@ -804,7 +804,7 @@ function ReceiptCard({
     style: {
       font: '700 9.5px ' + mono,
       letterSpacing: '.14em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, m.k), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -842,7 +842,7 @@ function ReceiptCard({
     style: {
       marginTop: 2,
       font: '500 11.5px Manrope,sans-serif',
-      color: 'rgba(11,14,18,.55)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, l.sum) : null), /*#__PURE__*/React.createElement("span", {
     style: {
@@ -910,7 +910,7 @@ function ReceiptCard({
     style: {
       marginTop: 2,
       font: '500 11.5px Manrope,sans-serif',
-      color: 'rgba(11,14,18,.55)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, e.sub)), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -925,7 +925,7 @@ function ReceiptCard({
     style: {
       marginTop: 2,
       font: '600 10.5px ' + mono,
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, e.t)))), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -940,7 +940,7 @@ function ReceiptCard({
     style: {
       font: '700 9.5px ' + mono,
       letterSpacing: '.14em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, netLabel), /*#__PURE__*/React.createElement("span", {
     style: {
@@ -950,7 +950,7 @@ function ReceiptCard({
     style: {
       marginTop: 16,
       font: '500 11.5px/1.5 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, foot) : null);
 }

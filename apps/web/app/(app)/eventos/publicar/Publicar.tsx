@@ -25,7 +25,7 @@ type F = { org: string | null; fmt: string | null; name: string; desc: string; f
 const F0: F = { org: null, fmt: null, name: "", desc: "", foto: null, dia: 2, h0: 1260, h1: 1500, puertas: 0, donde: "own", lugar: "", dir: "", cp: "", entrada: null, precio: "", cupo: "", edad: 0 };
 const DK = "tl-evt-publica-borrador";
 const MONO = "'JetBrains Mono',monospace";
-const K: CSSProperties = { font: `700 10px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.42)" };
+const K: CSSProperties = { font: `700 10px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.6)" };
 const caja: CSSProperties = { padding: 16, borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.07)", display: "flex", flexDirection: "column" };
 const entrada: CSSProperties = { height: 48, padding: "0 14px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", font: "600 15px Manrope,sans-serif", color: "var(--tl-ink)", outline: "none", background: "var(--tl-white)", boxSizing: "border-box", width: "100%" };
 const HRS = Array.from({ length: 15 }, (_, i) => (12 + i) * 60);
@@ -42,7 +42,7 @@ function Opcion({ on, t, s, img, onClick }: { on: boolean; t: string; s: string;
   return (
     <button type="button" onClick={onClick} aria-pressed={on} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, borderRadius: 15, border: r.border, background: "var(--tl-white)", cursor: "pointer", textAlign: "left", font: "inherit", color: "inherit", width: "100%" }}>
       {img !== undefined ? <span style={{ width: 40, height: 40, borderRadius: 12, background: img ? `url("${img}") center/cover` : "var(--tl-photo-bg)", flex: "none" }} /> : null}
-      <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", font: "700 14px Manrope,sans-serif" }}>{t}</span><span style={{ display: "block", marginTop: 2, font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{s}</span></span>
+      <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", font: "700 14px Manrope,sans-serif" }}>{t}</span><span style={{ display: "block", marginTop: 2, font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{s}</span></span>
       <span style={{ width: 20, height: 20, borderRadius: 99, boxSizing: "border-box", border: r.ring, flex: "none" }} />
     </button>);
 }
@@ -114,7 +114,7 @@ export function Publicar({ v }: { v: VistaPub }) {
       {!D ? (
         <div style={{ position: "sticky", top: 0, zIndex: 20, padding: "12px 16px", background: "var(--tl-white)", borderBottom: "1px solid rgba(11,14,18,.07)", display: "flex", alignItems: "center", gap: 12 }}>
           <button type="button" aria-label={E2("Volver a Eventos", "Back to Events")} onClick={atras} style={{ width: 34, height: 34, borderRadius: 11, background: "var(--tl-paper)", border: 0, display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="chevronLeft" size={16} strokeWidth={2} /></button>
-          <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "800 15px/1.2 Sora,sans-serif", letterSpacing: "-.02em" }}>{E2("Publica tu evento", "Publish your event")}</div><div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)" }}>{cityK}</div></div>
+          <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "800 15px/1.2 Sora,sans-serif", letterSpacing: "-.02em" }}>{E2("Publica tu evento", "Publish your event")}</div><div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{cityK}</div></div>
         </div>
       ) : null}
       <div style={{ maxWidth: lay.max, margin: "0 auto", padding: lay.pad, display: "grid", gridTemplateColumns: lay.cols, gap: lay.gap, alignItems: "start" }}>
@@ -141,13 +141,13 @@ export function Publicar({ v }: { v: VistaPub }) {
                 <input value={f.name} onChange={(e) => up({ name: e.target.value.slice(0, 70) })} placeholder={F ? bi(F.f.ph, es) : E2("Ej.: Noche de merengue en vivo", "E.g. Live merengue night")} style={entrada} /></label>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}><span style={{ font: "700 13px Manrope,sans-serif" }}>{E2("Tipo", "Type")}</span>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{(Fs.length ? Fs : []).map((x) => <Chip key={x.key} variant={f.fmt === x.key ? "selected" : "filter"} onClick={() => up({ fmt: x.key, h0: x.f.h0, h1: x.f.h0 + x.f.len, puertas: x.f.dr, edad: x.ages.includes(f.edad) ? f.edad : x.f.age0, entrada: f.entrada ?? x.f.entry })}>{bi(x.label, es)}</Chip>)}
-                  {!Fs.length ? <span style={{ font: "500 12.5px Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{E2("Elige primero el negocio: cada uno publica sus tipos.", "Pick the business first: each one publishes its own types.")}</span> : null}</div></div>
+                  {!Fs.length ? <span style={{ font: "500 12.5px Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2("Elige primero el negocio: cada uno publica sus tipos.", "Pick the business first: each one publishes its own types.")}</span> : null}</div></div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}><span style={{ font: "700 13px Manrope,sans-serif" }}>{E2("Cartel", "Poster")}</span>
                 <label style={{ position: "relative", aspectRatio: "4 / 3", maxWidth: 260, borderRadius: 13, background: f.foto ? `url("${f.foto.url}") center/cover` : "var(--tl-paper)", border: f.foto ? "0" : "1.5px dashed rgba(11,14,18,.2)", display: "grid", placeItems: "center", cursor: "pointer" }}>
                   <input type="file" accept="image/*" aria-label={E2("Subir cartel", "Upload poster")} onChange={(e) => subir(e.target.files?.[0])} style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }} />
                   {!f.foto ? <span style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}><Icon name="image" size={16} />{subiendo ? E2("Subiendo…", "Uploading…") : E2("Subir cartel", "Upload poster")}</span> : null}
                 </label></div>
-              <label style={{ display: "flex", flexDirection: "column", gap: 7 }}><span style={{ display: "flex", justifyContent: "space-between", gap: 10, font: "700 13px Manrope,sans-serif" }}><span>{E2("De qué se trata · Opcional", "What it’s about · Optional")}</span><span style={{ font: `600 10px ${MONO}`, color: "rgba(11,14,18,.42)" }}>{f.desc.length} / 400</span></span>
+              <label style={{ display: "flex", flexDirection: "column", gap: 7 }}><span style={{ display: "flex", justifyContent: "space-between", gap: 10, font: "700 13px Manrope,sans-serif" }}><span>{E2("De qué se trata · Opcional", "What it’s about · Optional")}</span><span style={{ font: `600 10px ${MONO}`, color: "rgba(11,14,18,.6)" }}>{f.desc.length} / 400</span></span>
                 <textarea value={f.desc} onChange={(e) => up({ desc: e.target.value.slice(0, 400) })} placeholder={E2("Quién toca, qué hay de comer, si hay parqueo…", "Who plays, what food there is, parking…")} rows={3} style={{ padding: "12px 14px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", font: "500 14px/1.5 Manrope,sans-serif", color: "var(--tl-ink)", outline: "none", resize: "none", boxSizing: "border-box", width: "100%" }} /></label>
             </div>
 
@@ -160,7 +160,7 @@ export function Publicar({ v }: { v: VistaPub }) {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 }}>
                 {([["h0", E2("EMPIEZA", "STARTS")], ["h1", E2("TERMINA", "ENDS")]] as const).map(([k, l]) => (
-                  <label key={k} style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}><span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.5)" }}>{l}</span>
+                  <label key={k} style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}><span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.6)" }}>{l}</span>
                     <select value={String(f[k])} onChange={(e) => up({ [k]: Number(e.target.value) } as Partial<F>)} style={sel}>{HRS.map((h) => <option key={h} value={h}>{hora(h)}</option>)}</select></label>))}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}><span style={{ font: "700 13px Manrope,sans-serif" }}>{E2("Abren puertas", "Doors open")}</span>
@@ -181,21 +181,21 @@ export function Publicar({ v }: { v: VistaPub }) {
               <Opcion on={f.entrada === "tickets"} t={E2("Boletos en la app", "Tickets in the app")} s={E2("Pagan con tarjeta en la app y entran con QR. En la puerta no se vende.", "They pay by card in the app and get in with a QR. No sales at the door.")} onClick={() => up({ entrada: "tickets" })} />
               {f.entrada === "rsvp" || f.entrada === "tickets" ? (
                 <div style={{ display: "grid", gridTemplateColumns: f.entrada === "rsvp" ? "minmax(0,1fr)" : "repeat(2,minmax(0,1fr))", gap: 8 }}>
-                  {f.entrada === "tickets" ? <label style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}><span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.5)" }}>{E2("PRECIO", "PRICE")}</span>
+                  {f.entrada === "tickets" ? <label style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}><span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.6)" }}>{E2("PRECIO", "PRICE")}</span>
                     <input value={f.precio} onChange={(e) => up({ precio: e.target.value.replace(/[^\d.]/g, "").slice(0, 6) })} inputMode="decimal" placeholder="15" style={num} /></label> : null}
-                  <label style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}><span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.5)" }}>{E2("CUÁNTOS CABEN", "CAPACITY")}</span>
+                  <label style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}><span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.6)" }}>{E2("CUÁNTOS CABEN", "CAPACITY")}</span>
                     <input value={f.cupo} onChange={(e) => up({ cupo: e.target.value.replace(/\D/g, "").slice(0, 4) })} inputMode="numeric" placeholder="80" style={num} /></label>
                 </div>) : null}
               {f.entrada === "tickets" ? <span style={{ font: "500 12.5px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2(`El vecino paga ${precioC ? money(precioC) : "$—"}: el precio que ve es el que paga, cargos incluidos. La comisión de To'Latino sale de lo tuyo.`, `Neighbors pay ${precioC ? money(precioC) : "$—"}: the price they see is what they pay, fees included. To'Latino's fee comes out of your side.`)}</span> : null}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}><span style={{ font: "700 13px Manrope,sans-serif" }}>{E2("Edad", "Age")}</span>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{ages.map((a) => <Chip key={a} variant={f.edad === a ? "selected" : "filter"} onClick={() => up({ edad: a })}>{a ? `${a}+` : E2("Todas las edades", "All ages")}</Chip>)}</div></div>
-              <div style={{ padding: "12px 14px", borderRadius: 14, background: "var(--tl-paper)", display: "flex", flexDirection: "column", gap: 4 }}><span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>{E2("SI ALGO CAMBIA", "IF SOMETHING CHANGES")}</span><span style={{ font: "500 12.5px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.7)" }}>{pol}</span></div>
+              <div style={{ padding: "12px 14px", borderRadius: 14, background: "var(--tl-paper)", display: "flex", flexDirection: "column", gap: 4 }}><span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{E2("SI ALGO CAMBIA", "IF SOMETHING CHANGES")}</span><span style={{ font: "500 12.5px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.7)" }}>{pol}</span></div>
             </div>
 
             {!D ? <div style={{ display: "flex", flexDirection: "column", gap: 8 }}><span style={K}>{E2("ASÍ LO VEN LOS VECINOS", "HOW NEIGHBORS SEE IT")}</span><div style={{ display: "flex", justifyContent: "center" }}><EventCard {...pv} width={300} /></div></div> : null}
-            {miss.length ? <div style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(11,14,18,.04)", display: "flex", flexDirection: "column", gap: 4 }}><span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>{E2("TE FALTA", "STILL NEEDED")}</span>{miss.map((t) => <span key={t} style={{ font: "600 13px Manrope,sans-serif", color: "rgba(11,14,18,.7)" }}>· {t}</span>)}</div> : null}
+            {miss.length ? <div style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(11,14,18,.04)", display: "flex", flexDirection: "column", gap: 4 }}><span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{E2("TE FALTA", "STILL NEEDED")}</span>{miss.map((t) => <span key={t} style={{ font: "600 13px Manrope,sans-serif", color: "rgba(11,14,18,.7)" }}>· {t}</span>)}</div> : null}
             {error ? <span role="alert" style={{ font: "700 13px/1.5 Manrope,sans-serif", color: "var(--tl-danger)" }}>{error}</span> : null}
-            {!D ? <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 24 }}><div style={{ display: "flex" }}>{boton}</div><span style={{ textAlign: "center", font: "600 11.5px Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{revS}</span></div> : null}
+            {!D ? <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 24 }}><div style={{ display: "flex" }}>{boton}</div><span style={{ textAlign: "center", font: "600 11.5px Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{revS}</span></div> : null}
           </>) : (
             <div data-screen-label="Publica tu evento · en revisión" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <span style={{ width: 54, height: 54, borderRadius: 18, background: "var(--tl-signal)", display: "grid", placeItems: "center" }}><Icon name="check" size={26} strokeWidth={2.2} /></span>
@@ -208,7 +208,7 @@ export function Publicar({ v }: { v: VistaPub }) {
               <div style={{ padding: "6px 16px", borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.07)" }}>
                 {([[E2("EVENTO", "EVENT"), sent.f.name], [E2("CUÁNDO", "WHEN"), `${diaCorto(sumarDias(hoy, sent.f.dia), es)} · ${hora(sent.f.h0)} – ${hora(sent.f.h1)}`], [E2("DÓNDE", "WHERE"), sent.f.donde === "other" ? `${sent.f.lugar} · ${sent.f.dir}` : O?.name ?? ""],
                   [E2("ENTRADA", "ENTRY"), sent.f.entrada === "free" ? E2("Entrada libre", "Free entry") : sent.f.entrada === "rsvp" ? E2(`Gratis con RSVP · ${sent.f.cupo}`, `Free with RSVP · ${sent.f.cupo}`) : `$${sent.f.precio} · ${sent.f.cupo}${E2(" boletos", " tickets")}`]] as [string, string][]).map(([k, val]) => (
-                  <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 14, padding: "11px 0", borderBottom: "1px solid rgba(11,14,18,.06)" }}><span style={{ font: `700 10px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.5)", paddingTop: 2 }}>{k}</span><span style={{ font: "600 13.5px/1.4 Manrope,sans-serif", textAlign: "right", minWidth: 0 }}>{val}</span></div>))}
+                  <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 14, padding: "11px 0", borderBottom: "1px solid rgba(11,14,18,.06)" }}><span style={{ font: `700 10px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.6)", paddingTop: 2 }}>{k}</span><span style={{ font: "600 13.5px/1.4 Manrope,sans-serif", textAlign: "right", minWidth: 0 }}>{val}</span></div>))}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8, paddingBottom: 24 }}>
                 <Button variant="primary" size="md" block onClick={() => router.push(`/panel/${sent.org}/eventos?det=evt:${sent.id}`)}>{E2("Ver en el panel", "See in the panel")}</Button>
@@ -222,9 +222,9 @@ export function Publicar({ v }: { v: VistaPub }) {
             <div style={{ ...caja, gap: 12 }}>
               <span style={K}>{E2("ASÍ LO VEN LOS VECINOS", "HOW NEIGHBORS SEE IT")}</span>
               <div style={{ display: "flex", justifyContent: "center" }}><EventCard {...pv} width={300} /></div>
-              {pvRows.map(([k, val]) => <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 12, font: "600 12.5px Manrope,sans-serif" }}><span style={{ color: "rgba(11,14,18,.55)" }}>{k}</span><span style={{ textAlign: "right" }}>{val}</span></div>)}
+              {pvRows.map(([k, val]) => <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 12, font: "600 12.5px Manrope,sans-serif" }}><span style={{ color: "rgba(11,14,18,.6)" }}>{k}</span><span style={{ textAlign: "right" }}>{val}</span></div>)}
             </div>
-            {!sent ? <div style={{ display: "flex", flexDirection: "column", gap: 8 }}><div style={{ display: "flex" }}>{boton}</div><span style={{ textAlign: "center", font: "600 11.5px Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{revS}</span></div> : null}
+            {!sent ? <div style={{ display: "flex", flexDirection: "column", gap: 8 }}><div style={{ display: "flex" }}>{boton}</div><span style={{ textAlign: "center", font: "600 11.5px Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{revS}</span></div> : null}
           </div></div>
         ) : null}
       </div>

@@ -73,7 +73,7 @@ export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast }: {
       <input ref={cam} type="file" accept="image/*" capture="environment" onChange={(e) => { void subir(e.target.files); e.target.value = ""; }} style={{ display: "none" }} />
       <input ref={rollo} type="file" accept="image/*" multiple onChange={(e) => { void subir(e.target.files); e.target.value = ""; }} style={{ display: "none" }} />
       <div style={{ position: "relative", aspectRatio: "16 / 10", borderRadius: 20, overflow: "hidden", background: d.cover ? `url("${foto(d.cover, 600)}") center/cover, var(--tl-photo-bg)` : "repeating-linear-gradient(135deg,var(--tl-ds-e7e5e0, var(--tl-photo-bg)) 0 10px,var(--tl-desk) 10px 20px)", display: "grid", placeItems: "center" }}>
-        {!d.cover ? <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}><Icon name="image" size={26} color="rgba(11,14,18,.4)" /><span style={K}>{subiendo ? E2("SUBIENDO…", "UPLOADING…") : E2("TU PORTADA", "YOUR COVER")}</span></div>
+        {!d.cover ? <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}><Icon name="image" size={26} color="rgba(11,14,18,.6)" /><span style={K}>{subiendo ? E2("SUBIENDO…", "UPLOADING…") : E2("TU PORTADA", "YOUR COVER")}</span></div>
           : <div style={{ position: "absolute", left: 12, bottom: 12, display: "flex" }}><Tag tone="ink">{E2("PORTADA", "COVER")}{(d.gallery || []).length ? ` · +${(d.gallery || []).length}` : ""}</Tag></div>}
       </div>
       <div style={{ display: "flex", gap: 8 }}>
@@ -107,7 +107,7 @@ export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast }: {
           <div key={x.t} style={{ display: "flex", alignItems: "center", gap: 11, padding: "9px 0", borderBottom: "1px solid rgba(11,14,18,.07)" }}>
             <span style={{ width: 30, height: 30, borderRadius: 10, background: "rgba(0,229,196,.14)", display: "grid", placeItems: "center", flex: "none" }}><Icon name={x.icon} size={15} color="var(--tl-open-text)" /></span>
             <span style={{ flex: 1, minWidth: 0, font: "700 13.5px/1.35 Manrope,sans-serif" }}>{x.t}</span>
-            <span style={{ flex: "none", maxWidth: "40%", font: "700 9px/1.4 'JetBrains Mono',monospace", letterSpacing: ".08em", color: "rgba(11,14,18,.5)", textAlign: "right" }}>{x.f}</span>
+            <span style={{ flex: "none", maxWidth: "40%", font: "700 9px/1.4 'JetBrains Mono',monospace", letterSpacing: ".08em", color: "rgba(11,14,18,.6)", textAlign: "right" }}>{x.f}</span>
           </div>
         ))}
       </div>

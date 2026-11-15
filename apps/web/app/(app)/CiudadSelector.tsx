@@ -16,7 +16,7 @@ const { Icon, Button, Chip, Tag, RadiusMap } = UI as unknown as Record<N, Compon
 
 export const KF_CIUDAD = "@keyframes cFade{from{opacity:0}to{opacity:1}}@keyframes cUp{from{transform:translateY(64px);opacity:0}to{transform:none;opacity:1}}@keyframes cDrop{from{transform:translateY(-6px);opacity:0}to{transform:none;opacity:1}}@keyframes cPulse{0%{transform:scale(.5);opacity:.8}100%{transform:scale(2.2);opacity:0}}";
 const MONO = "'JetBrains Mono',monospace";
-const K: CSSProperties = { font: `800 10px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.45)" };
+const K: CSSProperties = { font: `800 10px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)" };
 
 type Dr = { c: string; z: string; r: number; g: [number, number] | null };
 type Medida = Awaited<ReturnType<typeof medirBorrador>>;
@@ -102,14 +102,14 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
 
   // ── Búsqueda de lugar ──
   const qRows = filas.map((r) => {
-    if (r.k === "city") return { icon: "building", t: r.n, m: r.on ? E2("CIUDAD ACTIVA", "ACTIVE CITY") : E2(`PRÓXIMAMENTE · ${r.espera} EN LA LISTA`, `COMING SOON · ${r.espera} ON THE LIST`), mc: r.on ? "var(--tl-open-text)" : "rgba(11,14,18,.5)",
+    if (r.k === "city") return { icon: "building", t: r.n, m: r.on ? E2("CIUDAD ACTIVA", "ACTIVE CITY") : E2(`PRÓXIMAMENTE · ${r.espera} EN LA LISTA`, `COMING SOON · ${r.espera} ON THE LIST`), mc: r.on ? "var(--tl-open-text)" : "rgba(11,14,18,.6)",
       onClick: () => { const c = d.ciudades.find((x) => x.id === r.id)!; setQ(""); setDr({ c: c.id, z: "centro", r: c.radios.includes(dr.r) ? dr.r : c.radio, g: null }); } };
-    if (r.k === "zone") { const c = d.ciudades.find((x) => x.id === r.ciudad)!; return { icon: "pin", t: es ? r.es : r.en, m: E2(`BARRIO DE ${c.corto.toUpperCase()} · `, `${c.corto.toUpperCase()} NEIGHBORHOOD · `) + (es ? r.calleEs : r.calleEn).toUpperCase(), mc: "rgba(11,14,18,.5)",
+    if (r.k === "zone") { const c = d.ciudades.find((x) => x.id === r.ciudad)!; return { icon: "pin", t: es ? r.es : r.en, m: E2(`BARRIO DE ${c.corto.toUpperCase()} · `, `${c.corto.toUpperCase()} NEIGHBORHOOD · `) + (es ? r.calleEs : r.calleEn).toUpperCase(), mc: "rgba(11,14,18,.6)",
       onClick: () => { setQ(""); setDr({ c: c.id, z: r.id, r: c.radios.includes(dr.r) ? dr.r : c.radio, g: null }); } }; }
     if (r.k === "town") { const c = d.ciudades.find((x) => x.id === r.ciudad)!, need = c.radios.find((x) => x >= r.d) ?? c.radios[c.radios.length - 1]!, fits = r.d <= c.radios[c.radios.length - 1]!, CC = c.corto.toUpperCase();
       return { icon: "pin", t: `${r.n}, PA`, m: fits ? E2(`${r1(r.d)} MI DE ${CC} · SE VE CON ${need} MI`, `${r1(r.d)} MI FROM ${CC} · SHOWN WITHIN ${need} MI`) : E2(`${r1(r.d)} MI DE ${CC}`, `${r1(r.d)} MI FROM ${CC}`), mc: "var(--tl-action)",
         onClick: () => { setQ(""); setDr({ c: c.id, z: "centro", r: need, g: null }); } }; }
-    return { icon: "plus", t: E2(`Pedir ${r.a}`, `Request ${r.a}`), m: E2("AÚN NO ESTAMOS AHÍ · TE AVISAMOS", "NOT THERE YET · WE WILL LET YOU KNOW"), mc: "rgba(11,14,18,.5)",
+    return { icon: "plus", t: E2(`Pedir ${r.a}`, `Request ${r.a}`), m: E2("AÚN NO ESTAMOS AHÍ · TE AVISAMOS", "NOT THERE YET · WE WILL LET YOU KNOW"), mc: "rgba(11,14,18,.6)",
       onClick: () => { setQ(""); setView("ask"); setAskV(r.a); setAskDone(null); } };
   });
 
@@ -226,7 +226,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
   const buscador = (
     <div style={{ display: "flex", flexDirection: "column", gap: sheet ? 8 : 6 }}>
       <div style={{ height: sheet ? 46 : 44, boxSizing: "border-box", display: "flex", alignItems: "center", gap: 9, padding: "0 6px 0 13px", borderRadius: sheet ? 14 : 13, background: "var(--tl-paper)", border: `1.5px solid ${qf ? "var(--tl-action)" : "transparent"}` }}>
-        <Icon name="search" size={sheet ? 17 : 16} color="rgba(11,14,18,.45)" />
+        <Icon name="search" size={sheet ? 17 : 16} color="rgba(11,14,18,.6)" />
         <input value={q} onChange={(e) => setQ(e.target.value)} onFocus={() => setQf(true)} onBlur={() => setQf(false)} placeholder={L.qPh} autoComplete="off" aria-label={L.qPh}
           style={{ flex: 1, minWidth: 0, height: "100%", border: "none", outline: "none", background: "transparent", padding: 0, font: `600 ${sheet ? 14.5 : 14}px Manrope,sans-serif`, color: "var(--tl-ink)" }} />
         {q ? <span role="button" aria-label={E2("Borrar", "Clear")} onClick={() => setQ("")} {...tec(() => setQ(""))} style={{ width: sheet ? 30 : 28, height: sheet ? 30 : 28, borderRadius: 99, display: "grid", placeItems: "center", background: "rgba(11,14,18,.07)", cursor: "pointer", flex: "none" }}><Icon name="close" size={sheet ? 12 : 11} strokeWidth={2.2} /></span> : null}
@@ -257,7 +257,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
           {ctrs.map((c) => (
             <div key={c.k} onClick={c.onClick} role="button" {...tec(c.onClick)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderTop: c.bt, background: c.bg, cursor: "pointer" }}>
               <span style={{ width: 20, height: 20, borderRadius: 99, boxSizing: "border-box", border: c.ring, flex: "none" }} />
-              <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}><span style={txt("700 14px Manrope,sans-serif")}>{c.t}</span><span style={txt(`600 10.5px ${MONO}`, { letterSpacing: ".04em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" })}>{c.s}</span></span>
+              <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}><span style={txt("700 14px Manrope,sans-serif")}>{c.t}</span><span style={txt(`600 10.5px ${MONO}`, { letterSpacing: ".04em", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" })}>{c.s}</span></span>
             </div>))}
         </div>
       ) : (
@@ -265,7 +265,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
           {ctrs.map((c) => (
             <div key={c.k} onClick={c.onClick} role="button" {...tec(c.onClick)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 11px", borderRadius: 13, border: `1.5px solid ${c.bd}`, background: c.bg, cursor: "pointer" }}>
               <span style={{ width: 16, height: 16, borderRadius: 99, boxSizing: "border-box", border: c.ring, flex: "none" }} />
-              <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 1 }}><span style={txt("700 13px Manrope,sans-serif", { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" })}>{c.t}</span><span style={txt(`600 9.5px ${MONO}`, { letterSpacing: ".04em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" })}>{c.s}</span></span>
+              <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 1 }}><span style={txt("700 13px Manrope,sans-serif", { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" })}>{c.t}</span><span style={txt(`600 9.5px ${MONO}`, { letterSpacing: ".04em", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" })}>{c.s}</span></span>
             </div>))}
         </div>
       )}
@@ -279,20 +279,20 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
         {cities.map((c) => sheet ? (
           <div key={c.id} onClick={c.onClick} role="button" {...tec(c.onClick)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderTop: c.bt, background: c.bg, cursor: "pointer" }}>
             <span style={{ width: 20, height: 20, borderRadius: 99, boxSizing: "border-box", border: c.ring, flex: "none" }} />
-            <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}><span style={{ display: "flex", alignItems: "center", gap: 7 }}><span style={txt("700 14px Manrope,sans-serif")}>{c.t}</span><Tag tone={c.tone}>{c.tag}</Tag></span><span style={txt(`600 10.5px ${MONO}`, { letterSpacing: ".04em", color: "rgba(11,14,18,.5)" })}>{c.s}</span></span>
+            <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}><span style={{ display: "flex", alignItems: "center", gap: 7 }}><span style={txt("700 14px Manrope,sans-serif")}>{c.t}</span><Tag tone={c.tone}>{c.tag}</Tag></span><span style={txt(`600 10.5px ${MONO}`, { letterSpacing: ".04em", color: "rgba(11,14,18,.6)" })}>{c.s}</span></span>
           </div>
         ) : (
           <div key={c.id} onClick={c.onClick} role="button" {...tec(c.onClick)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderTop: c.bt, background: c.bg, cursor: "pointer" }}>
             <span style={{ width: 16, height: 16, borderRadius: 99, boxSizing: "border-box", border: c.ring, flex: "none" }} />
             <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}><span style={txt("700 13.5px Manrope,sans-serif")}>{c.t}</span><Tag tone={c.tone}>{c.tag}</Tag></span>
-            <span style={txt(`600 10px ${MONO}`, { letterSpacing: ".04em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap" })}>{c.s}</span>
+            <span style={txt(`600 10px ${MONO}`, { letterSpacing: ".04em", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap" })}>{c.s}</span>
           </div>
         ))}
         <div onClick={() => { setView("ask"); setAskDone(null); }} role="button" {...tec(() => { setView("ask"); setAskDone(null); })} style={{ display: "flex", alignItems: "center", gap: sheet ? 12 : 10, padding: sheet ? "12px 14px" : "10px 12px", borderTop: "1px solid rgba(11,14,18,.07)", cursor: "pointer" }}>
           <Icon name="plus" size={sheet ? 18 : 16} color="var(--tl-action)" /><span style={txt(`700 ${sheet ? 13.5 : 13}px Manrope,sans-serif`, { flex: sheet ? 1 : undefined, color: "var(--tl-action)" })}>{L.askRow}</span>
         </div>
       </div>
-      <span style={{ display: "flex", alignItems: "center", gap: 7, padding: "2px 2px 0", font: `700 10.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.5)" }}><Icon name="globe" size={14} color="rgba(11,14,18,.5)" />{L.nw}</span>
+      <span style={{ display: "flex", alignItems: "center", gap: 7, padding: "2px 2px 0", font: `700 10.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.6)" }}><Icon name="globe" size={14} color="rgba(11,14,18,.6)" />{L.nw}</span>
     </div>
   );
   const entrada: CSSProperties = { height: sheet ? 48 : 46, boxSizing: "border-box", padding: "0 14px", borderRadius: sheet ? 14 : 13, border: "1.5px solid rgba(11,14,18,.14)", outline: "none", font: `600 ${sheet ? 15 : 14.5}px Manrope,sans-serif`, color: "var(--tl-ink)", background: "var(--tl-white)" };
@@ -301,7 +301,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
       {mios.map((x) => (
         <div key={x.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: sheet ? "10px 12px" : "9px 12px", borderRadius: sheet ? 13 : 12, border: "1px solid rgba(11,14,18,.08)" }}>
           <Icon name="bell" size={sheet ? 15 : 14} color="var(--tl-action)" /><span style={txt(`700 ${sheet ? 13 : 12.5}px Manrope,sans-serif`, { flex: 1 })}>{x.t}</span>
-          <span role="button" onClick={() => quitar(x.id)} {...tec(() => quitar(x.id))} style={txt(`700 ${sheet ? 12 : 11.5}px Manrope,sans-serif`, { color: "rgba(11,14,18,.55)", cursor: "pointer" })}>{L.remove}</span>
+          <span role="button" onClick={() => quitar(x.id)} {...tec(() => quitar(x.id))} style={txt(`700 ${sheet ? 12 : 11.5}px Manrope,sans-serif`, { color: "rgba(11,14,18,.6)", cursor: "pointer" })}>{L.remove}</span>
         </div>))}
     </div>) : null;
   const listo = askDone ? (sheet ? (
@@ -330,7 +330,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
         : <input value={askPh} onChange={(e) => setAskPh(e.target.value)} placeholder={L.askPhone2} inputMode="tel" autoComplete="tel" aria-label={L.askPhone2} maxLength={20} style={entrada} />) : null}
       {d.sesion ? <span style={txt(`500 ${sheet ? 13 : 12.5}px/1.5 Manrope,sans-serif`, { color: "rgba(11,14,18,.62)" })}>{ask.userT}</span> : null}
       {error ? <span role="alert" style={txt("700 12.5px/1.5 Manrope,sans-serif", { color: "var(--tl-danger)" })}>{error}</span> : null}
-      <span style={txt(`500 ${sheet ? 12.5 : 12}px/1.55 Manrope,sans-serif`, { color: "rgba(11,14,18,.55)", textWrap: "pretty" } as CSSProperties)}>{L.askWhy}</span>
+      <span style={txt(`500 ${sheet ? 12.5 : 12}px/1.55 Manrope,sans-serif`, { color: "rgba(11,14,18,.6)", textWrap: "pretty" } as CSSProperties)}>{L.askWhy}</span>
       {!sheet ? <div style={{ display: "flex" }}><Button size="md" icon="bell" disabled={askDis} onClick={enviar}>{E2("Avísame", "Notify me")}</Button></div> : null}
     </div>) : null;
   const pie = (
@@ -414,9 +414,9 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
           </div>
         </div>
         <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "10px 20px", borderTop: "1px solid rgba(11,14,18,.07)", font: "500 12px Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>
-          <Icon name="users" size={15} color="rgba(11,14,18,.5)" /><span style={{ flex: 1, minWidth: 0 }}>{my.short}</span>
+          <Icon name="users" size={15} color="rgba(11,14,18,.6)" /><span style={{ flex: 1, minWidth: 0 }}>{my.short}</span>
           {my.a ? <span role="button" onClick={irMiCiudad} {...tec(irMiCiudad)} style={txt("700 12px Manrope,sans-serif", { color: "var(--tl-action)", cursor: "pointer", whiteSpace: "nowrap" })}>{my.a}</span> : null}
-          <span style={txt(`700 9.5px ${MONO}`, { letterSpacing: ".1em", color: "rgba(11,14,18,.42)" })}>{L.esc}</span>
+          <span style={txt(`700 9.5px ${MONO}`, { letterSpacing: ".1em", color: "rgba(11,14,18,.6)" })}>{L.esc}</span>
         </div>
       </div>
       {hoja}

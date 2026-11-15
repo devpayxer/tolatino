@@ -17,7 +17,7 @@ type N = "Icon" | "Button" | "Chip" | "OrderTracker";
 const { Icon, Button, Chip, OrderTracker } = UI as unknown as Record<N, ComponentType<any>>;
 const dinero = (c: number) => (c % 100 === 0 ? `$${c / 100}` : `$${(c / 100).toFixed(2)}`);
 const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
-const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/45";
+const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-4";
 const T17 = "font-display text-[17px] font-extrabold leading-[1.2] tracking-[-0.03em]";
 const RSN_B: [MotivoCita, string, string, boolean][] = [["cobro", "Cobraron más del precio publicado", "Charged more than the posted price", true], ["quien", "No me atendió quien reservé", "Not the person I booked", false],
@@ -138,11 +138,11 @@ export function AyudaCita({ c, v, es }: { c: CabezaAyuda; v: CitaAyudaVista; es:
     <>
       <div data-screen-label={`${v.a ? "APP-NEG-CITA-AYUDA-ESTADO" : "APP-NEG-CITA-AYUDA"} · móvil`} className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:hidden">
         <button type="button" aria-label={E2("Volver", "Back")} onClick={volver} className="grid h-[34px] w-[34px] flex-none place-items-center rounded-[11px] bg-paper"><Icon name="chevronLeft" size={16} strokeWidth={2} /></button>
-        <div className="min-w-0 flex-1"><div className="truncate font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{titulo}</div><div className="mt-[3px] truncate font-mono text-[9px] font-semibold tracking-[0.06em] text-ink/50">{sub}</div></div>
+        <div className="min-w-0 flex-1"><div className="truncate font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{titulo}</div><div className="mt-[3px] truncate font-mono text-[9px] font-semibold tracking-[0.06em] text-ink/60">{sub}</div></div>
       </div>
       <div className="hidden lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{v.a ? E2("Volver a la cita", "Back to the appointment") : E2("Volver", "Back")}</button>
-        <div className="mt-4 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{sub}</div>
+        <div className="mt-4 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{sub}</div>
         <h1 className="m-0 mt-1.5 font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.04em]">{titulo}</h1>
       </div>
     </>
@@ -220,7 +220,7 @@ export function AyudaCita({ c, v, es }: { c: CabezaAyuda; v: CitaAyudaVista; es:
     const rep = respondio && (
       <div data-screen-label="Ayuda con la cita · respuesta" className={caja}>
         <div className="flex items-center gap-[11px]"><span className="h-[38px] w-[38px] flex-none rounded-xl bg-photo-bg" style={fondo(c.con?.foto && c.model === "chair" ? c.con.foto : c.negocio.foto)} />
-          <div className="min-w-0 flex-1"><div className={K}>{`${E2("RESPUESTA DE ", "REPLY FROM ")}${quien.toUpperCase()}`}</div><div className="mt-[3px] font-mono text-[9.5px] font-semibold text-ink/45">{hora(a.replyAt)}</div></div></div>
+          <div className="min-w-0 flex-1"><div className={K}>{`${E2("RESPUESTA DE ", "REPLY FROM ")}${quien.toUpperCase()}`}</div><div className="mt-[3px] font-mono text-[9.5px] font-semibold text-ink/60">{hora(a.replyAt)}</div></div></div>
         <div className="mt-3 text-pretty text-[13.5px] font-medium leading-[1.55]">«{a.reply}»</div>
         {c.negocio.telefono && <div className="mt-3.5 flex"><Button size="md" icon="phone" block onClick={llamar}>{`${E2("Llamar a ", "Call ")}${c.negocio.nombre}`}</Button></div>}
       </div>);
@@ -229,7 +229,7 @@ export function AyudaCita({ c, v, es }: { c: CabezaAyuda; v: CitaAyudaVista; es:
       <div data-screen-label="Ayuda con la cita · lo que mandaste" className={caja}>
         <div className={K}>{E2("LO QUE MANDASTE", "WHAT YOU SENT")}</div>
         {a.fotos.length > 0 && <div className="mt-2.5 flex flex-wrap gap-2">{a.fotos.map((u) => <span key={u} className="h-[60px] w-[60px] rounded-xl bg-photo-bg" style={fondo(u)} />)}</div>}
-        <div className="mt-2 flex flex-col">{filas.map(([k, x]) => <div key={k} className="grid grid-cols-[110px_minmax(0,1fr)] gap-2.5 border-t border-ink/[.06] py-[9px]"><span className="font-mono text-[9.5px] font-bold leading-[1.6] tracking-[0.12em] text-ink/45">{k}</span><span className="text-pretty text-[13px] font-semibold leading-[1.45]">{x}</span></div>)}</div>
+        <div className="mt-2 flex flex-col">{filas.map(([k, x]) => <div key={k} className="grid grid-cols-[110px_minmax(0,1fr)] gap-2.5 border-t border-ink/[.06] py-[9px]"><span className="font-mono text-[9.5px] font-bold leading-[1.6] tracking-[0.12em] text-ink/60">{k}</span><span className="text-pretty text-[13px] font-semibold leading-[1.45]">{x}</span></div>)}</div>
       </div>);
     const botones = acts.length > 0 && <div className="grid grid-cols-1 gap-2">{acts.map(([icon, l, on]) => <div key={l} className="grid"><Button variant="secondary" size="md" icon={icon} block disabled={ocupado} onClick={on}>{l}</Button></div>)}</div>;
     const track = <div className="grid"><OrderTracker steps={steps} /></div>;
@@ -273,8 +273,8 @@ export function AyudaCita({ c, v, es }: { c: CabezaAyuda; v: CitaAyudaVista; es:
       <div className={T17}>{rub === "evt" ? E2("Tu orden de boletos", "Your ticket order") : rub === "fe" ? E2("Tu fecha", "Your date") : rub === "inm" || rub === "dealer" ? (prueba ? E2("Tu prueba de manejo", "Your test drive") : E2("Tu visita", "Your visit")) : ins ? E2("Tu inscripción", "Your enrollment") : rub === "noche" ? E2("Tu noche", "Your night") : rub === "evp" ? E2("Tu evento privado", "Your private event") : rub === "fiesta" ? E2("Tu fiesta", "Your party") : rub === "trans" ? E2("Tu viaje", "Your trip") : rub === "merc" ? E2("Tu pedido", "Your order") : rub === "tienda" ? E2("Tu compra", "Your purchase") : E2("Tu cita", "Your appointment")}</div>
       <button type="button" onClick={volver} className="mt-3 flex w-full items-center gap-3 rounded-[15px] bg-paper px-3.5 py-[13px] text-left">
         <span className="grid h-[42px] w-[42px] flex-none place-items-center rounded-[13px] bg-ink"><Icon name="verified" size={20} color="var(--tl-white)" /></span>
-        <span className="min-w-0 flex-1"><span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{rub === "evt" ? E2("TU ORDEN", "YOUR ORDER") : rub === "fe" ? E2("TU LUGAR", "YOUR SPOT") : rub === "inm" || rub === "dealer" ? (prueba ? E2("TU PRUEBA DE MANEJO", "YOUR TEST DRIVE") : E2("TU VISITA", "YOUR VISIT")) : ins ? E2("TU INSCRIPCIÓN", "YOUR ENROLLMENT") : rub === "noche" ? E2("TU NOCHE", "YOUR NIGHT") : rub === "evp" ? E2("TU EVENTO", "YOUR EVENT") : rub === "fiesta" ? E2("TU FIESTA", "YOUR PARTY") : rub === "trans" ? E2("TU VIAJE", "YOUR TRIP") : rub === "merc" ? E2("TU PEDIDO", "YOUR ORDER") : rub === "tienda" ? E2("TU APARTADO", "YOUR HOLD") : E2("TU CITA", "YOUR APPOINTMENT")}</span><span className="mt-1 block text-[14.5px] font-bold leading-[1.3]">{svcT}</span>
-          <span className="mt-[3px] block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{(c.con ? c.con.nombre : c.negocio.nombre).toUpperCase()}</span>
+        <span className="min-w-0 flex-1"><span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{rub === "evt" ? E2("TU ORDEN", "YOUR ORDER") : rub === "fe" ? E2("TU LUGAR", "YOUR SPOT") : rub === "inm" || rub === "dealer" ? (prueba ? E2("TU PRUEBA DE MANEJO", "YOUR TEST DRIVE") : E2("TU VISITA", "YOUR VISIT")) : ins ? E2("TU INSCRIPCIÓN", "YOUR ENROLLMENT") : rub === "noche" ? E2("TU NOCHE", "YOUR NIGHT") : rub === "evp" ? E2("TU EVENTO", "YOUR EVENT") : rub === "fiesta" ? E2("TU FIESTA", "YOUR PARTY") : rub === "trans" ? E2("TU VIAJE", "YOUR TRIP") : rub === "merc" ? E2("TU PEDIDO", "YOUR ORDER") : rub === "tienda" ? E2("TU APARTADO", "YOUR HOLD") : E2("TU CITA", "YOUR APPOINTMENT")}</span><span className="mt-1 block text-[14.5px] font-bold leading-[1.3]">{svcT}</span>
+          <span className="mt-[3px] block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{(c.con ? c.con.nombre : c.negocio.nombre).toUpperCase()}</span>
           <span className="mt-1.5 flex items-center gap-[5px] text-[11.5px] font-bold text-open-text"><Icon name="check" size={13} color="var(--tl-open-text)" />{sd ? `${E2("Nada se cobró en la app", "Nothing was charged in the app")}${c.copia ? ` · ${es ? c.copia.k.es : c.copia.k.en}: ${dinero(c.copia.cents)}` : ""}` : rub === "evt" ? `${E2("Pagado en la app: ", "Paid in the app: ")}${dinero(c.dep)}` : compra || rub === "fiesta" || rub === "evp" || rub === "trans" || rub === "noche" || ins ? `${E2("Total: ", "Total: ")}${dinero(c.total)}${c.dep ? E2(` · en la app ${dinero(c.dep)}`, ` · in the app ${dinero(c.dep)}`) : E2(" · pagado en el local", " · paid in store")}` : sp ? (rub === "pro" && c.pro?.total ? `${E2("Total por escrito: ", "Written total: ")}${dinero(c.pro.total.total)}` : E2("Nada se cobró en la app", "Nothing was charged in the app")) : sinDar ? `${E2("Depósito: ", "Deposit: ")}${dinero(c.dep)}` : `${E2("Precio publicado: ", "Posted price: ")}${dinero(c.total)}`}</span></span>
         <span className="flex-none text-[12.5px] font-bold text-action">{E2("Ver", "See")}</span>
       </button>
@@ -287,10 +287,10 @@ export function AyudaCita({ c, v, es }: { c: CabezaAyuda; v: CitaAyudaVista; es:
         {fotos.map((f) => <button key={f.id} type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="relative h-[76px] w-[76px] overflow-hidden rounded-[14px] bg-photo-bg" style={fondo(f.url)}>
           <span className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-white/95"><Icon name="close" size={10} strokeWidth={2.6} /></span></button>)}
         {fotos.length < 4 && <button type="button" disabled={subiendo} onClick={() => fileRef.current?.click()} className="box-border flex h-[76px] w-[76px] flex-col items-center justify-center gap-1 rounded-[14px] border-[1.5px] border-dashed border-ink/20">
-          <Icon name="image" size={20} color="rgba(11,14,18,.5)" /><span className="font-mono text-[9px] font-bold text-ink/55">{subiendo ? "…" : E2("Foto", "Photo")}</span></button>}
+          <Icon name="image" size={20} color="rgba(11,14,18,.6)" /><span className="font-mono text-[9px] font-bold text-ink/60">{subiendo ? "…" : E2("Foto", "Photo")}</span></button>}
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { void subir(e.target.files?.[0]); e.target.value = ""; }} />
       </div>
-      <div className="mt-1.5 text-right font-mono text-[9.5px] font-semibold text-ink/40">{fotos.length} / 4</div>
+      <div className="mt-1.5 text-right font-mono text-[9.5px] font-semibold text-ink/60">{fotos.length} / 4</div>
     </div>);
   const quePaso = (
     <div data-screen-label="Ayuda con la cita · qué pasó" className={caja}>
@@ -300,7 +300,7 @@ export function AyudaCita({ c, v, es }: { c: CabezaAyuda; v: CitaAyudaVista; es:
         <div className="mt-[9px] flex flex-wrap gap-2">{rsn.map(([k, l1, l2]) => <Chip key={k} variant={r === k ? "selected" : "filter"} onClick={() => setR(r === k ? null : k)}>{es ? l1 : l2}</Chip>)}</div></div>
       <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 500))} aria-label={E2("Qué pasó", "What happened")} placeholder={rub === "inm" ? E2("Ej.: al llegar me pidieron $50 para enseñarme el apartamento…", "E.g. when I arrived they asked for $50 to show me the apartment…") : rub === "dealer" ? E2("Ej.: el total en la puerta decía $9,800 y en la oficina me pidieron $10,600…", "E.g. the out-the-door total said $9,800 and at the office they asked for $10,600…") : rub === "fe" ? E2("Ej.: para darme la despensa me pidieron $20…", "E.g. they asked me for $20 to give me groceries…") : rub === "salud" ? E2("Ej.: me dijeron $0 con Medicaid y me llegó una factura de $60…", "E.g. they said $0 with Medicaid and I got a $60 bill…") : rub === "pro" ? E2("Ej.: el total decía $740 y me pidieron $900 para mandar los papeles…", "E.g. the total said $740 and they asked for $900 to file the papers…") : rub === "hogar" ? E2("Ej.: el grifo volvió a gotear a los dos días…", "E.g. the faucet started dripping again two days later…") : rub === "auto" ? E2("Ej.: me cobraron $80 de más por una pieza que no aprobé…", "E.g. they charged $80 more for a part I did not approve…") : E2("Ej.: pedí un fade bajo y me lo dejaron alto…", "E.g. I asked for a low fade and it came out high…")} rows={3}
         className="mt-3.5 box-border w-full resize-none rounded-[13px] border border-ink/[.12] bg-white px-3.5 py-3 text-[13.5px] font-medium leading-[1.5] text-ink outline-none" />
-      <div className="mt-1 text-right font-mono text-[9.5px] font-semibold text-ink/40">{nota.length} / 500</div>
+      <div className="mt-1 text-right font-mono text-[9.5px] font-semibold text-ink/60">{nota.length} / 500</div>
       {r === "ley" && <div className="mt-2 rounded-[13px] bg-paper px-3.5 py-3 text-pretty text-[12px] font-semibold leading-[1.5] text-ink/70">{E2("Si te ofrecieron un trámite de inmigración sin ser abogado ni representante acreditado, también puedes reportarlo a la Fiscalía de Pennsylvania.", "If someone offered you an immigration case without being a lawyer or accredited representative, you can also report it to the Pennsylvania Attorney General.")}</div>}
       {(r === "cobro" || r === "more" || r === "ver" || r === "mudar" || r === "precio") && (sol === "rev" || sp) && <div className="mt-2"><div className={K}>{sp ? E2("¿CUÁNTO TE COBRARON DE MÁS? · OPCIONAL", "HOW MUCH WERE YOU OVERCHARGED? · OPTIONAL") : E2("¿CUÁNTO? · OPCIONAL", "HOW MUCH? · OPTIONAL")}</div>
         <input value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^\d.]/g, "").slice(0, 7))} inputMode="decimal" aria-label={E2("Cuánto", "How much")} placeholder={E2("Ej.: 40", "E.g. 40")}
@@ -312,7 +312,7 @@ export function AyudaCita({ c, v, es }: { c: CabezaAyuda; v: CitaAyudaVista; es:
       <div role="radiogroup" aria-label={E2("Qué quieres", "What would you like")} className="mt-3 flex flex-col gap-2">
         {sols.map(([k, l1, l2, s1, s2]) => <button key={k} type="button" role="radio" aria-checked={sol === k} onClick={() => setSol(k)} className={`flex items-center gap-3 rounded-[14px] px-3.5 py-3 text-left ${sol === k ? "border-[1.5px] border-ink" : "border border-ink/10"}`}>
           <span className={`box-border h-5 w-5 flex-none rounded-full ${sol === k ? "border-[6px] border-ink" : "border-[1.5px] border-ink/25"}`} />
-          <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{es ? l1 : l2}</span><span className="mt-0.5 block text-[12px] font-medium text-ink/55">{es ? s1 : s2}</span></span></button>)}
+          <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{es ? l1 : l2}</span><span className="mt-0.5 block text-[12px] font-medium text-ink/60">{es ? s1 : s2}</span></span></button>)}
       </div>
     </div>);
   const como = (

@@ -15,7 +15,7 @@ import { uuid } from "@/lib/uuid";
 type N = "Icon" | "Button" | "HelpReasonList" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, HelpReasonList, Chip } = UI as unknown as Record<N, ComponentType<any>>;
-const K = "font-mono text-[10px] font-bold tracking-[0.16em] text-ink/45";
+const K = "font-mono text-[10px] font-bold tracking-[0.16em] text-ink/60";
 /* Una hora del servidor (UTC) en la zona de la ciudad, con el formato de la app: «dom 15 nov · 8 PM». */
 export const fechaHora = (iso: string, tz: string, es: boolean) => {
   const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit", hour: "numeric", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(iso)).map((x) => [x.type, x.value]));
@@ -67,7 +67,7 @@ export function HojaTransferir({ es, boletos, horas, hasta, tz, onClose, onDone 
           className="w-full rounded-[14px] border-[1.5px] border-ink/[.14] bg-paper px-[15px] py-[13px] text-[15px] font-bold outline-none" /></label>
       {error && <div role="alert" className="mt-2 text-[12.5px] font-semibold text-danger">{error}</div>}
       <div className="mt-3 flex"><Button variant="primary" size="lg" block disabled={ocupado} onClick={() => void enviar()}>{ocupado ? E2("Enviando…", "Sending…") : E2("Enviar boleto", "Send ticket")}</Button></div>
-      <div className="mt-[9px] text-center font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/45">{E2("EL QR ANTERIOR QUEDA ANULADO", "THE OLD QR IS VOIDED")}</div>
+      <div className="mt-[9px] text-center font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{E2("EL QR ANTERIOR QUEDA ANULADO", "THE OLD QR IS VOIDED")}</div>
     </Hoja>
   );
 }
@@ -91,7 +91,7 @@ export function HojaCancelar({ es, numero, tz, onClose, onDone }: { es: boolean;
   };
   return (
     <Hoja titulo={E2("Cancelar mis boletos", "Cancel my tickets")} label="Orden · cancelar" onClose={onClose} es={es}>
-      {p === "cargando" ? <div className="mt-4 text-[13px] text-ink/55">{E2("Calculando lo que se devuelve…", "Working out the refund…")}</div>
+      {p === "cargando" ? <div className="mt-4 text-[13px] text-ink/60">{E2("Calculando lo que se devuelve…", "Working out the refund…")}</div>
         : !p || !p.boletos.length ? <div className="mt-3 text-[13px] leading-[1.55] text-ink/65">{E2("No tienes boletos de esta orden para cancelar.", "You have no tickets in this order to cancel.")}</div>
         : !p.abierto ? (
           <div data-estado="cerrado" className="mt-3 flex flex-col gap-3">
@@ -108,13 +108,13 @@ export function HojaCancelar({ es, numero, tz, onClose, onDone }: { es: boolean;
                   className={`flex items-center gap-3 rounded-[14px] px-3.5 py-3 text-left ${on ? "border-[1.5px] border-ink" : "border border-ink/10"}`}>
                   <span className={`grid size-5 flex-none place-items-center rounded-[6px] ${on ? "bg-ink" : "border-[1.5px] border-ink/25"}`}>{on && <Icon name="check" size={13} color="var(--tl-white)" />}</span>
                   <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{`${b.tipo} · ${b.code}`}</span>
-                    <span className="mt-0.5 block text-[11.5px] font-medium text-ink/55">{E2(`Pagaste ${dinero(b.precio)} · cargo ${dinero(b.cargo)}`, `You paid ${dinero(b.precio)} · fee ${dinero(b.cargo)}`)}</span></span>
+                    <span className="mt-0.5 block text-[11.5px] font-medium text-ink/60">{E2(`Pagaste ${dinero(b.precio)} · cargo ${dinero(b.cargo)}`, `You paid ${dinero(b.precio)} · fee ${dinero(b.cargo)}`)}</span></span>
                   <span className="flex-none font-display text-[14px] font-extrabold">{dinero(b.devuelve)}</span>
                 </button>); })}
               {p.extras && todos && <div className="flex items-center justify-between gap-3 rounded-[14px] bg-paper px-3.5 py-3 text-[12.5px] font-semibold text-ink/70"><span>{E2(`Extras · pagaste ${dinero(p.extras.monto)} · cargo ${dinero(p.extras.cargo)}`, `Extras · you paid ${dinero(p.extras.monto)} · fee ${dinero(p.extras.cargo)}`)}</span><span className="font-display text-[14px] font-extrabold text-ink">{dinero(p.extras.devuelve)}</span></div>}
             </div>
             <div className="mt-3 flex items-baseline justify-between gap-3 border-t border-ink/[.08] pt-3"><span className={K}>{E2("TE DEVOLVEMOS", "WE REFUND")}</span><span className="font-display text-[22px] font-extrabold tracking-[-0.03em]">{dinero(total)}</span></div>
-            <div className="mt-1 text-[11.5px] text-ink/55">{E2("A tu tarjeta en 3–5 días hábiles. Los boletos cancelados dejan de entrar.", "To your card in 3–5 business days. Cancelled tickets no longer get in.")}</div>
+            <div className="mt-1 text-[11.5px] text-ink/60">{E2("A tu tarjeta en 3–5 días hábiles. Los boletos cancelados dejan de entrar.", "To your card in 3–5 business days. Cancelled tickets no longer get in.")}</div>
             {error && <div role="alert" className="mt-2 text-[12.5px] font-semibold text-danger">{error}</div>}
             <div className="mt-3 flex flex-col gap-2">
               <div className="grid"><Button variant="danger" disabled={ocupado || !sel.length} onClick={() => void cancelar()}>{ocupado ? E2("Cancelando…", "Cancelling…") : E2(`Cancelar y devolver ${dinero(total)}`, `Cancel and refund ${dinero(total)}`)}</Button></div>
@@ -163,7 +163,7 @@ export function HojaNombre({ es, horas, boletos, onClose, onDone }: { es: boolea
       {boletos.length > 1 && <div className="mt-3 flex flex-wrap gap-2">{boletos.map((b) => <Chip key={b.code} variant={b.code === code ? "selected" : "filter"} onClick={() => { setCode(b.code); setN(b.nombre ?? ""); }}>{`${b.tipo} · ${b.code}`}</Chip>)}</div>}
       <input value={n} maxLength={40} onChange={(e) => setN(e.target.value.slice(0, 40))} placeholder={E2("A nombre de…", "Name…")} aria-label={E2("Nombre en el boleto", "Name on the ticket")}
         className="mt-3 w-full rounded-[14px] border-[1.5px] border-ink/[.14] bg-paper px-[15px] py-[13px] text-[15px] font-bold outline-none" />
-      <div className="mt-2 text-[11.5px] text-ink/55">{E2(`Gratis hasta ${horas} h antes del evento. El nombre no va en el QR.`, `Free up to ${horas} h before the event. The name is not in the QR.`)}</div>
+      <div className="mt-2 text-[11.5px] text-ink/60">{E2(`Gratis hasta ${horas} h antes del evento. El nombre no va en el QR.`, `Free up to ${horas} h before the event. The name is not in the QR.`)}</div>
       {error && <div role="alert" className="mt-2 text-[12.5px] font-semibold text-danger">{error}</div>}
       <div className="mt-3 flex"><Button variant="primary" block disabled={ocupado} onClick={() => void guardar()}>{E2("Guardar", "Save")}</Button></div>
     </Hoja>

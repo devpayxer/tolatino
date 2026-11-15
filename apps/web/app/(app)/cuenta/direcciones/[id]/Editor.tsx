@@ -43,7 +43,7 @@ export function Editor({ es, yo, cur, primera, zona, volver, centro }: { es: boo
     // Calle (con sus sugerencias y «Usar mi ubicación»), apartamento y código postal en ese orden (el de siempre); debajo, el pin ajustable.
     { type: "pieza", el: <DireccionCampo es={es} v={dir} onV={conDir} err={errS} errZip={errZ} centro={centro} desk={desk} marco="Mi cuenta · formulario" ph="58 W Oak St"
       entre={<label style={{ display: "block" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}><span style={{ font: "700 10px 'JetBrains Mono',monospace", letterSpacing: ".2em", color: "rgba(11,14,18,.42)" }}>{E2("APARTAMENTO O PISO", "APT OR FLOOR")}</span><span style={{ font: "600 9.5px 'JetBrains Mono',monospace", letterSpacing: ".08em", color: "rgba(11,14,18,.4)" }}>{E2("OPCIONAL", "OPTIONAL")}</span></div>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}><span style={{ font: "700 10px 'JetBrains Mono',monospace", letterSpacing: ".2em", color: "rgba(11,14,18,.6)" }}>{E2("APARTAMENTO O PISO", "APT OR FLOOR")}</span><span style={{ font: "600 9.5px 'JetBrains Mono',monospace", letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{E2("OPCIONAL", "OPTIONAL")}</span></div>
         <input value={f.apt} onChange={(e) => set({ apt: e.target.value.slice(0, 20) })} placeholder="Apt 2" style={{ marginTop: 8, width: "100%", boxSizing: "border-box", borderRadius: 13, border: `1.5px solid ${f.apt.trim() ? "var(--tl-ink)" : "rgba(11,14,18,.14)"}`, outline: "none", color: "var(--tl-ink)", background: "var(--tl-white)", height: 50, padding: "0 14px", font: "600 16px Manrope,sans-serif" }} />
       </label>} /> },
     { type: "form", fields: [

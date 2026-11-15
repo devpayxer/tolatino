@@ -209,7 +209,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
           <textarea autoFocus aria-label={E2("Tu respuesta", "Your reply")} value={rTxt} maxLength={MAX_COMENTARIO} onChange={(e) => setRTxt(e.target.value)} onKeyDown={tecla("inline")} placeholder={E2("Escribe tu respuesta…", "Write your reply…")} rows={2}
             style={{ width: "100%", boxSizing: "border-box", minHeight: 56, padding: 0, border: "none", outline: "none", resize: "none", background: "transparent", font: "500 14px/1.5 Manrope,sans-serif", color: "var(--tl-ink)" }} />
           <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>{botonNegocio}<span style={{ flex: 1 }} />
-            <span style={{ font: `600 9px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.42)" }}>{E2("ESC CANCELA", "ESC CANCELS")}</span>
+            <span style={{ font: `600 9px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{E2("ESC CANCELA", "ESC CANCELS")}</span>
             <Button variant="secondary" size="sm" onClick={cancelar}>{E2("Cancelar", "Cancel")}</Button>
             <Button variant="primary" size="sm" disabled={busy || !(rTxt.trim() || att)} onClick={() => void enviar("inline")}>{E2("Responder", "Reply")}</Button></div>
         </div></div>
@@ -219,7 +219,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
   const cuerpo = (c: Cm) => { const t = tr("com_comment", c.id, c.lang, c.body, c.mia); return { body: t.body || undefined, translate: t.translate }; };
   const tarjeta = (c: Cm) => c.estado !== "visible" ? (
     <div key={c.id} id={`c${c.id}`} data-screen-label="Publicación · comentario eliminado" style={{ borderRadius: 18, background: "var(--tl-paper)", border: "1px solid rgba(11,14,18,.08)", padding: "14px 16px 12px" }}>
-      <div style={{ font: "600 13px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{c.estado === "hidden" ? E2("Comentario oculto por las reglas del barrio", "Comment hidden under the neighborhood rules") : E2("Comentario eliminado", "Comment deleted")}</div>
+      <div style={{ font: "600 13px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{c.estado === "hidden" ? E2("Comentario oculto por las reglas del barrio", "Comment hidden under the neighborhood rules") : E2("Comentario eliminado", "Comment deleted")}</div>
       {hiloDe(c)}
     </div>) : (
     <div key={c.id} id={`c${c.id}`}>
@@ -258,7 +258,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
           <div role="group" aria-label={E2("Orden de los comentarios", "Comment order")} style={{ display: "flex", gap: 2, padding: 3, borderRadius: 11, background: "rgba(11,14,18,.06)", flex: "none" }}>
             {([["top", "Más votados", "Top"], ["new", "Recientes", "Newest"]] as const).map(([k, a, b]) => (
               <span key={k} role="button" aria-pressed={orden === k} onClick={() => router.replace(`/comunidad/p/${pub.id}${k === "new" ? "?o=new" : ""}`, { scroll: false })} {...tec(() => router.replace(`/comunidad/p/${pub.id}${k === "new" ? "?o=new" : ""}`, { scroll: false }))}
-                style={{ padding: "5px 10px", borderRadius: 8, background: orden === k ? "var(--tl-white)" : "transparent", color: orden === k ? "var(--tl-ink)" : "rgba(11,14,18,.55)", font: "700 11px Manrope,sans-serif", cursor: "pointer", whiteSpace: "nowrap" }}>{es ? a : b}</span>))}
+                style={{ padding: "5px 10px", borderRadius: 8, background: orden === k ? "var(--tl-white)" : "transparent", color: orden === k ? "var(--tl-ink)" : "rgba(11,14,18,.6)", font: "700 11px Manrope,sans-serif", cursor: "pointer", whiteSpace: "nowrap" }}>{es ? a : b}</span>))}
           </div>
         </div>
         {D && !h.cerrados && (
@@ -270,7 +270,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
                 <textarea aria-label={E2("Tu comentario", "Your comment")} value={txt} maxLength={MAX_COMENTARIO} onChange={(e) => setTxt(e.target.value)} onKeyDown={tecla("main")} placeholder={ph} rows={2}
                   style={{ width: "100%", boxSizing: "border-box", minHeight: 52, padding: "6px 0 0", border: "none", outline: "none", resize: "none", background: "transparent", font: "500 14.5px/1.5 Manrope,sans-serif", color: "var(--tl-ink)" }} />
                 <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>{botonNegocio}<span style={{ flex: 1 }} />
-                  <span style={{ font: `600 9px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.42)" }}>{E2("CTRL + ENTER PARA ENVIAR", "CTRL + ENTER TO SEND")}</span>
+                  <span style={{ font: `600 9px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{E2("CTRL + ENTER PARA ENVIAR", "CTRL + ENTER TO SEND")}</span>
                   <Button variant="primary" size="sm" disabled={busy || !(txt.trim() || (att && !dest))} onClick={() => void enviar("main")}>{E2("Comentar", "Comment")}</Button></div>
               </div>
             </div>
@@ -320,7 +320,7 @@ function BuscaNegocio({ es, onPick }: { es: boolean; onPick: (b: NegocioCm & { m
         {L.map((b, i) => (
           <div key={b.id} role="option" aria-selected={false} onClick={() => onPick({ ...b, metaT: es ? b.meta.es : b.meta.en })} {...tec(() => onPick({ ...b, metaT: es ? b.meta.es : b.meta.en }))} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 2px", borderTop: i ? "1px solid rgba(11,14,18,.07)" : "none", cursor: "pointer" }}>
             <span style={{ width: 40, height: 40, borderRadius: 11, background: fondo(b.foto), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
-            <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{b.nombre}</div><div style={{ marginTop: 3, font: `600 9.5px/1.4 ${MONO}`, color: "rgba(11,14,18,.5)" }}>{(es ? b.meta.es : b.meta.en).toUpperCase()}</div></div>
+            <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{b.nombre}</div><div style={{ marginTop: 3, font: `600 9.5px/1.4 ${MONO}`, color: "rgba(11,14,18,.6)" }}>{(es ? b.meta.es : b.meta.en).toUpperCase()}</div></div>
           </div>))}
         {listo && !L.length && <div style={{ padding: "10px 2px", font: "500 13px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2("No lo encontramos en tu ciudad. Si todavía no está, invítalo a publicar gratis.", "Not found in your city. If they are not listed yet, invite them to list for free.")}</div>}
       </div>

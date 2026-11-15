@@ -23,8 +23,8 @@ export function ReportarContenido({ kind, id, es, conSesion, volver }: { kind: "
   });
   return (
     <div data-reportar={`${kind}:${id}`} className="flex flex-col gap-2">
-      <button type="button" onClick={abrir} className="inline-flex items-center gap-1.5 self-start py-1 text-[12.5px] font-bold text-ink/55">
-        <Icon name="warning" size={14} color="rgba(11,14,18,.5)" />{kind === "job" ? E2("Reportar esta vacante", "Report this job") : E2("Reportar esta publicación", "Report this post")}
+      <button type="button" onClick={abrir} className="inline-flex items-center gap-1.5 self-start py-1 text-[12.5px] font-bold text-ink/60">
+        <Icon name="warning" size={14} color="rgba(11,14,18,.6)" />{kind === "job" ? E2("Reportar esta vacante", "Report this job") : E2("Reportar esta publicación", "Report this post")}
       </button>
       {abierto ? (
         <div className="flex flex-col gap-2.5 rounded-[16px] border border-ink/[.08] bg-white p-3.5">

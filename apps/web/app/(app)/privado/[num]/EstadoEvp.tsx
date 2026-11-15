@@ -130,11 +130,11 @@ export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { m
 
   const tablaQ = (z: Q, titulo: string, valida: string, conPago: boolean) => (
     <div data-screen-label="Evento privado · propuesta" className="flex flex-col gap-3 rounded-[20px] border-[1.5px] border-ink bg-white p-[18px]">
-      <div className="flex items-baseline justify-between gap-3"><span className="font-display text-[17px] font-extrabold leading-[1.2] tracking-[-0.02em]">{titulo}</span>{valida ? <span className="flex-none font-mono text-[10px] font-bold tracking-[0.08em] text-ink/50">{valida}</span> : null}</div>
+      <div className="flex items-baseline justify-between gap-3"><span className="font-display text-[17px] font-extrabold leading-[1.2] tracking-[-0.02em]">{titulo}</span>{valida ? <span className="flex-none font-mono text-[10px] font-bold tracking-[0.08em] text-ink/60">{valida}</span> : null}</div>
       <div className="text-[12.5px] font-semibold text-ink/60">{`${cuando(z.ymd, z.m, z.dur)} · ${z.p} ${E2("personas", "guests")} · ${E2("versión", "version")} ${z.v}`}</div>
       {z.lines.map((r, i) => (
         <div key={i} className={`flex justify-between gap-3 pt-2.5 ${i ? "border-t border-ink/[.07]" : ""}`}>
-          <div className="min-w-0"><div className="text-[13.5px] font-bold leading-[1.35]">{nm(r.l, es)}</div><div className="mt-0.5 text-[12px] font-medium leading-[1.4] text-ink/55">{r.cents ? (r.q > 1 ? `${r.q} × ${dinero(r.unit)}` : "") : E2("Sin cargo", "No charge")}</div></div>
+          <div className="min-w-0"><div className="text-[13.5px] font-bold leading-[1.35]">{nm(r.l, es)}</div><div className="mt-0.5 text-[12px] font-medium leading-[1.4] text-ink/60">{r.cents ? (r.q > 1 ? `${r.q} × ${dinero(r.unit)}` : "") : E2("Sin cargo", "No charge")}</div></div>
           <span className="flex-none font-mono text-[13px] font-bold">{r.cents ? dinero(r.cents) : "—"}</span>
         </div>))}
       <div className="flex flex-col gap-[7px] border-t border-ink/[.08] pt-2.5 text-[13px] font-medium text-ink/70">
@@ -148,7 +148,7 @@ export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { m
       {z.st === "sent" && z.kind !== "change" && pago && (
         <button type="button" onClick={() => setHoja(true)} className="flex items-center gap-3 rounded-[14px] border border-ink/10 px-3.5 py-3 text-left">
           <Icon name="card" size={17} color="rgba(11,14,18,.6)" />
-          <span className="min-w-0 flex-1"><span className="block font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{E2("TARJETA DEL DEPÓSITO · SE COBRA AL ACEPTAR", "DEPOSIT CARD · CHARGED WHEN YOU ACCEPT")}</span>
+          <span className="min-w-0 flex-1"><span className="block font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{E2("TARJETA DEL DEPÓSITO · SE COBRA AL ACEPTAR", "DEPOSIT CARD · CHARGED WHEN YOU ACCEPT")}</span>
             <span className="mt-0.5 block text-[13.5px] font-bold">{tarjeta ? tarjetaL(tarjeta) : E2("Elige tu tarjeta", "Choose your card")}</span></span>
           <span className="flex-none text-[12px] font-bold text-action">{tarjeta ? E2("Cambiar", "Change") : E2("Elegir", "Choose")}</span>
         </button>)}
@@ -164,7 +164,7 @@ export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { m
     <div className="flex min-w-0 flex-col gap-[22px]">
       <div className="flex flex-col gap-2">
         <button type="button" onClick={() => router.push(`/n/${x.negocio.id}`)} className="flex items-center gap-1.5 self-start text-[13px] font-bold text-action"><Icon name="chevronLeft" size={15} color="var(--tl-action)" strokeWidth={2} />{B}</button>
-        <div className="flex flex-wrap items-center gap-2.5"><Tag tone={tag[1]}>{tag[0]}</Tag><span className="font-mono text-[10.5px] font-bold tracking-[0.1em] text-ink/50">{`${E2("EVENTO PRIVADO #", "PRIVATE EVENT #")}${x.numero}`}</span></div>
+        <div className="flex flex-wrap items-center gap-2.5"><Tag tone={tag[1]}>{tag[0]}</Tag><span className="font-mono text-[10.5px] font-bold tracking-[0.1em] text-ink/60">{`${E2("EVENTO PRIVADO #", "PRIVATE EVENT #")}${x.numero}`}</span></div>
         <h1 className="m-0 text-balance font-display text-[24px] font-extrabold leading-[1.12] tracking-[-0.035em] lg:text-[30px]">{h[0]}</h1>
         {h[1] ? <p className="m-0 text-pretty text-[14px] font-medium leading-[1.6] text-ink/[.68]">{h[1]}</p> : null}
       </div>
@@ -188,7 +188,7 @@ export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { m
       {error && <div role="alert" className="rounded-[14px] bg-danger/[.08] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{error}</div>}
       <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">{acts.map((a) => <div key={a.l} className="flex"><Button block size="lg" variant={a.v} icon={a.ic} disabled={a.off} onClick={a.on}>{a.l}</Button></div>)}</div>
       <div className="flex flex-col gap-2.5"><span className={K}>{E2("LO QUE PEDISTE", "WHAT YOU ASKED FOR")}</span>
-        <div className={`px-4 py-1 ${CAJA}`}>{kv.map(([k, v], i) => <div key={`${k}${i}`} className={`flex gap-3.5 py-[11px] ${i ? "border-t border-ink/[.07]" : ""}`}><span className="w-24 flex-none font-mono text-[9.5px] font-bold leading-[1.6] tracking-[0.1em] text-ink/50">{k}</span><span className="min-w-0 flex-1 text-pretty text-[13.5px] font-semibold leading-[1.45]">{v}</span></div>)}</div></div>
+        <div className={`px-4 py-1 ${CAJA}`}>{kv.map(([k, v], i) => <div key={`${k}${i}`} className={`flex gap-3.5 py-[11px] ${i ? "border-t border-ink/[.07]" : ""}`}><span className="w-24 flex-none font-mono text-[9.5px] font-bold leading-[1.6] tracking-[0.1em] text-ink/60">{k}</span><span className="min-w-0 flex-1 text-pretty text-[13.5px] font-semibold leading-[1.45]">{v}</span></div>)}</div></div>
       {x.otros.length > 0 && <div className="flex flex-col gap-2.5"><span className={K}>{E2("OTROS QUE HACEN EVENTOS PRIVADOS", "OTHERS THAT HOST PRIVATE EVENTS")}</span>
         {x.otros.map((o) => <BusinessRow key={o.id} name={o.nombre} meta={E2(`HASTA ${o.cap} PERSONAS`, `UP TO ${o.cap} GUESTS`)} image={o.foto ?? undefined} slot={E2("Pedir", "Request")} onClick={() => router.push(`/n/${o.id}/evento-privado?p=${x.p}`)} />)}</div>}
     </div>
@@ -199,8 +199,8 @@ export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { m
         {izq}
         <div data-sticky-rail="1" className="hidden flex-col gap-3.5 lg:sticky lg:top-6 lg:flex">
           <BusinessRow name={B} meta={(x.negocio.direccion ?? "").toUpperCase()} image={x.negocio.foto ?? undefined} />
-          <div className={`flex flex-col gap-[9px] px-[18px] py-4 ${CAJA}`}><span className="font-mono text-[10px] font-extrabold tracking-[0.12em] text-ink/50">{E2("TU EVENTO", "YOUR EVENT")}</span>
-            {resumen.map(([ic, t]) => <div key={ic} className="flex items-center gap-2.5 text-[13.5px] font-semibold leading-[1.4]"><Icon name={ic} size={15} color="rgba(11,14,18,.55)" /><span className="min-w-0 flex-1">{t}</span></div>)}</div>
+          <div className={`flex flex-col gap-[9px] px-[18px] py-4 ${CAJA}`}><span className="font-mono text-[10px] font-extrabold tracking-[0.12em] text-ink/60">{E2("TU EVENTO", "YOUR EVENT")}</span>
+            {resumen.map(([ic, t]) => <div key={ic} className="flex items-center gap-2.5 text-[13.5px] font-semibold leading-[1.4]"><Icon name={ic} size={15} color="rgba(11,14,18,.6)" /><span className="min-w-0 flex-1">{t}</span></div>)}</div>
         </div>
       </div>
       {cx && (
@@ -219,18 +219,18 @@ export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { m
           <div role="dialog" aria-modal="true" aria-label={E2("Pedir un cambio", "Ask for a change")} className="absolute inset-x-0 bottom-0 flex max-h-[90dvh] flex-col gap-3.5 overflow-y-auto rounded-t-[26px] bg-white px-[22px] pb-7 pt-[22px] lg:inset-auto lg:left-1/2 lg:top-16 lg:w-[480px] lg:-translate-x-1/2 lg:rounded-[22px]">
             <span className="font-display text-[20px] font-extrabold leading-[1.2] tracking-[-0.03em]">{E2("Pedir un cambio", "Ask for a change")}</span>
             <span className="text-pretty text-[13px] font-medium leading-[1.55] text-ink/[.68]">{st === "confirmed" ? E2(`${B} te responde con el cambio. Mientras, sigue lo acordado y no se cobra nada más.`, `${B} replies with the change. Meanwhile, the agreement stands and nothing more is charged.`) : E2(`${B} te manda una propuesta nueva. Mientras, esta sigue y la puedes aceptar.`, `${B} sends you a new proposal. Meanwhile, this one stands and you can accept it.`)}</span>
-            <div className="flex flex-col gap-2"><span className={`${K} text-ink/50`}>{E2("PERSONAS · OPCIONAL", "GUESTS · OPTIONAL")}</span>
+            <div className="flex flex-col gap-2"><span className={`${K} text-ink/60`}>{E2("PERSONAS · OPCIONAL", "GUESTS · OPTIONAL")}</span>
               <div className={`flex items-center gap-3.5 px-4 py-3 ${CAJA}`}><span className="min-w-0 flex-1 font-display text-[18px] font-extrabold">{cP ?? x.p} {E2("personas", "guests")}</span>
                 <IconButton icon="minus" size={40} label={E2("Menos", "Fewer")} onClick={() => setCP(Math.max(2, (cP ?? x.p) - 1))} /><IconButton icon="plus" size={40} label={E2("Más", "More")} onClick={() => setCP(Math.min(500, (cP ?? x.p) + 1))} /></div></div>
-            <label className="flex flex-col gap-2"><span className={`${K} text-ink/50`}>{E2("OTRA FECHA · OPCIONAL", "ANOTHER DATE · OPTIONAL")}</span>
+            <label className="flex flex-col gap-2"><span className={`${K} text-ink/60`}>{E2("OTRA FECHA · OPCIONAL", "ANOTHER DATE · OPTIONAL")}</span>
               <input type="date" aria-label={E2("Otra fecha", "Another date")} value={cFecha} onChange={(e) => setCFecha(e.target.value)} className="box-border h-11 w-full rounded-[13px] border border-ink/[.12] bg-white px-3.5 font-mono text-[13.5px] font-bold outline-none" /></label>
-            {cFecha && <label className="flex flex-col gap-2"><span className={`${K} text-ink/50`}>{E2("HORA", "TIME")}</span>
+            {cFecha && <label className="flex flex-col gap-2"><span className={`${K} text-ink/60`}>{E2("HORA", "TIME")}</span>
               <select aria-label={E2("Hora", "Time")} value={cH ?? ""} onChange={(e) => setCH(e.target.value ? Number(e.target.value) : null)} className="box-border h-11 w-full rounded-[13px] border border-ink/[.12] bg-white px-3 text-[14px] font-bold outline-none">
                 <option value="">{horaL(x.m)}</option>{HORAS_EVP.map((m) => <option key={m} value={m}>{horaL(m)}</option>)}</select></label>}
-            <label className="flex flex-col gap-2"><span className={`${K} text-ink/50`}>{E2("QUÉ QUIERES CAMBIAR", "WHAT YOU WANT TO CHANGE")}</span>
+            <label className="flex flex-col gap-2"><span className={`${K} text-ink/60`}>{E2("QUÉ QUIERES CAMBIAR", "WHAT YOU WANT TO CHANGE")}</span>
               <textarea value={cNota} onChange={(e) => setCNota(e.target.value.slice(0, 300))} rows={3} placeholder={E2("Ej.: somos 30, ¿pueden hacer pollo en vez de cerdo?", "E.g.: we are 30, can you do chicken instead of pork?")}
                 className="box-border w-full resize-none rounded-[14px] border-[1.5px] border-ink/[.14] bg-white px-3.5 py-3 text-[14px] font-medium leading-[1.5] outline-none" /></label>
-            <span className="text-[12px] font-medium leading-[1.45] text-ink/55">{E2("Va también a Mensajes, con el número de tu solicitud. Sin teléfonos.", "It also goes to Messages, with your request number. No phone numbers.")}</span>
+            <span className="text-[12px] font-medium leading-[1.45] text-ink/60">{E2("Va también a Mensajes, con el número de tu solicitud. Sin teléfonos.", "It also goes to Messages, with your request number. No phone numbers.")}</span>
             {error && <div role="alert" className="text-[12.5px] font-semibold text-danger">{error}</div>}
             <div className="flex"><Button block disabled={ocupado || cNota.trim().length < 4} onClick={() => void correr(() => cambioEvpAccion(x.numero, { nota: cNota, personas: cP, fecha: cFecha || null, m: cFecha ? cH : null }), E2("Listo: le pediste el cambio", "Done: you asked for the change"), () => { setCambio(false); setCNota(""); setCP(null); setCFecha(""); setCH(null); })}>{E2("Enviar", "Send")}</Button></div>
             <div className="flex"><Button block variant="secondary" onClick={() => setCambio(false)}>{E2("Volver", "Back")}</Button></div>

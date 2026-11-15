@@ -17,7 +17,7 @@ type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, OrderTracker } = UI as unknown as Record<N, ComponentType<any>>;
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
-const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/45";
+const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-4";
 
 export function MercadoEstado({ v, es, pago = null }: { v: MercadoVista; es: boolean; pago?: { modo: ModoTarjeta; pk: string | null } | null }) {
@@ -93,7 +93,7 @@ export function MercadoEstado({ v, es, pago = null }: { v: MercadoVista; es: boo
       <div className="mt-1 flex flex-col">{v.lineas.map((l) => (
         <div key={l.id} className="border-b border-ink/[.06] py-3">
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0"><div className={`text-[13.5px] font-bold ${l.st === "out" ? "text-ink/40 line-through" : ""}`}>{nm(l.name)}{l.subOf ? E2(" · cambio con tu OK", " · swap with your OK") : ""}</div>
+            <div className="min-w-0"><div className={`text-[13.5px] font-bold ${l.st === "out" ? "text-ink/60 line-through" : ""}`}>{nm(l.name)}{l.subOf ? E2(" · cambio con tu OK", " · swap with your OK") : ""}</div>
               <div className="mt-0.5 text-[12px] font-medium text-ink/60">{l.st === "out" ? E2("No había · no se cobra", "Out · not charged") : l.peso ? (l.lbReal != null ? E2(`Pediste ${l.lb} lb · pesó ${l.lbReal} lb`, `You asked ${l.lb} lb · weighed ${l.lbReal} lb`) : E2(`${l.lb} lb · estimado`, `${l.lb} lb · estimate`)) : `× ${l.q}`}{l.ops.length ? ` · ${l.ops.join(" · ")}` : ""}</div></div>
             <div className="text-right text-[13.5px] font-bold">{l.st === "out" ? "$0.00" : money(pesado ? l.final : l.est)}</div>
           </div>
@@ -124,7 +124,7 @@ export function MercadoEstado({ v, es, pago = null }: { v: MercadoVista; es: boo
       <div className="mx-auto lg:max-w-[1080px]">
         <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:static lg:border-0 lg:bg-transparent lg:px-0">
           <button type="button" aria-label={E2("Volver", "Back")} onClick={() => router.push(`/n/${v.negocio.id}`)} className="grid h-[34px] w-[34px] flex-none place-items-center rounded-[11px] bg-paper lg:bg-white"><Icon name="chevronLeft" size={16} strokeWidth={2} /></button>
-          <div className="min-w-0 flex-1"><div className="truncate font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em] lg:text-[26px]">{`${E2("Pedido ", "Order ")}${v.numero}`}</div><div className="mt-[3px] truncate font-mono text-[9px] font-semibold tracking-[0.06em] text-ink/50">{`${v.negocio.nombre} · ${del ? E2("ENVÍO", "DELIVERY") : "PICKUP"} · ${cuando}`.toUpperCase()}</div></div>
+          <div className="min-w-0 flex-1"><div className="truncate font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em] lg:text-[26px]">{`${E2("Pedido ", "Order ")}${v.numero}`}</div><div className="mt-[3px] truncate font-mono text-[9px] font-semibold tracking-[0.06em] text-ink/60">{`${v.negocio.nombre} · ${del ? E2("ENVÍO", "DELIVERY") : "PICKUP"} · ${cuando}`.toUpperCase()}</div></div>
         </div>
         <div className="flex flex-col gap-3 px-4 pt-4 lg:mt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-10 lg:px-0 lg:pt-0">
           <div className="flex min-w-0 flex-col gap-3">

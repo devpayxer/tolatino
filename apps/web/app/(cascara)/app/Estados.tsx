@@ -11,7 +11,7 @@ export function Actualizar({ es, nombre, tienda, plataforma }: { es: boolean; no
   return <PantallaApp id="APP-ACTUALIZAR" eye={E2("VERSIÓN NUEVA", "NEW VERSION")} icono="bolt" titulo={E2("Actualiza la app", "Update the app")}
     texto={E2(`Hay una versión nueva de ${nombre}. Actualízala para seguir.`, `There is a new version of ${nombre}. Update it to continue.`)}
     boton={{ l: E2("Actualizar", "Update"), onClick: () => { void abrirFuera(tienda); } }}>
-    <span style={{ font: "500 12.5px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>
+    <span style={{ font: "500 12.5px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>
       {plataforma === "ios" ? E2("Se abre la tienda de apps (en las pruebas, TestFlight).", "The App Store opens (during testing, TestFlight).") : E2("Se abre Google Play.", "Google Play opens.")}
     </span>
   </PantallaApp>;

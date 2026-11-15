@@ -102,7 +102,7 @@ function ReviewCard({
       marginTop: 3,
       font: '600 ' + (S ? 9 : 9.5) + 'px ' + mono,
       letterSpacing: '.06em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, who) : null)), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -130,7 +130,7 @@ function ReviewCard({
     style: {
       font: '600 9.5px ' + mono,
       letterSpacing: '.06em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, when) : null, source && has(source.label) ? /*#__PURE__*/React.createElement(__ds_scope.Tag, {
     tone: source.tone || 'signal'
@@ -221,7 +221,7 @@ function ReviewCard({
     style: {
       font: '700 9px ' + mono,
       letterSpacing: '.12em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, reply.kicker), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -263,7 +263,7 @@ function ReviewCard({
   }), helpful.label) : null, helpful && !helpful.onClick && has(helpful.label) ? /*#__PURE__*/React.createElement("span", {
     style: {
       font: '600 12px Manrope,sans-serif',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, helpful.label) : null, /*#__PURE__*/React.createElement("span", {
     style: {
@@ -282,7 +282,7 @@ function ReviewCard({
     ...__ds_scope.__btn(report.onClick, undefined, undefined),
     style: {
       font: '600 12px Manrope,sans-serif',
-      color: report.color || 'rgba(11,14,18,.5)',
+      color: report.color || 'rgba(11,14,18,.6)',
       cursor: 'pointer'
     }
   }, report.label) : null) : null);

@@ -46,9 +46,9 @@ export function Publicacion({ es, yo, ciudad, d, h, orden, nueva, editada, crisi
       aside={<>
         {!a.oficial && (
           <div data-screen-label="Publicación · autor" style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: 16 }}>
-            <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".18em", color: "rgba(11,14,18,.42)" }}>{E2("QUIEN PUBLICA", "POSTED BY")}</div>
+            <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".18em", color: "rgba(11,14,18,.6)" }}>{E2("QUIEN PUBLICA", "POSTED BY")}</div>
             <div role="link" onClick={() => a.id && router.push(`/comunidad/v/${a.id}`)} {...tec(() => a.id && router.push(`/comunidad/v/${a.id}`))} style={{ marginTop: 10, display: "flex", gap: 10, alignItems: "center", cursor: "pointer" }}><Avatar foto={a.foto} ini={a.ini} size={38} />
-              <div style={{ minWidth: 0 }}><div style={{ font: "700 13.5px Manrope,sans-serif" }}>{a.nombre}</div><div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)" }}>{`${(es ? rango(a.rango).es : rango(a.rango).en).toUpperCase()} · ${(es ? pub.lugar.es : pub.lugar.en).toUpperCase()}`}</div></div></div>
+              <div style={{ minWidth: 0 }}><div style={{ font: "700 13.5px Manrope,sans-serif" }}>{a.nombre}</div><div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{`${(es ? rango(a.rango).es : rango(a.rango).en).toUpperCase()} · ${(es ? pub.lugar.es : pub.lugar.en).toUpperCase()}`}</div></div></div>
           </div>
         )}
         <Reglas es={es} R={R} />

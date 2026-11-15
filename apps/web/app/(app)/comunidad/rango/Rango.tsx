@@ -15,7 +15,7 @@ type N = "Icon" | "Button" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Tag } = UI as unknown as Record<N, ComponentType<any>>;
 const CARD = { borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: 16 } as const;
-const K = { font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.42)" } as const;
+const K = { font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.6)" } as const;
 
 export function Rango({ es, yo, d }: { es: boolean; yo: YoCom; d: MiRango }) {
   const E2 = (a: string, b: string) => (es ? a : b);
@@ -74,7 +74,7 @@ export function Rango({ es, yo, d }: { es: boolean; yo: YoCom; d: MiRango }) {
             {R.filter((x) => x.n <= d.n).map((x) => (
               <div key={x.n} style={{ display: "flex", gap: 9, alignItems: "center", padding: "7px 0" }}>
                 <span style={{ display: "grid", flex: "none" }}><Icon name="check" size={15} strokeWidth={2.2} color={x.patio ? "rgba(11,14,18,.35)" : "var(--tl-open)"} /></span>
-                <span style={{ font: "600 13px/1.4 Manrope,sans-serif", color: x.patio ? "rgba(11,14,18,.55)" : "var(--tl-ink)" }}>{`${es ? x.unl.es : x.unl.en}${x.patio ? ` · ${es ? CUANDO_PATIO.es : CUANDO_PATIO.en}` : ""}`}</span>
+                <span style={{ font: "600 13px/1.4 Manrope,sans-serif", color: x.patio ? "rgba(11,14,18,.6)" : "var(--tl-ink)" }}>{`${es ? x.unl.es : x.unl.en}${x.patio ? ` · ${es ? CUANDO_PATIO.es : CUANDO_PATIO.en}` : ""}`}</span>
               </div>))}
           </div>
         </div>
@@ -90,7 +90,7 @@ export function Rango({ es, yo, d }: { es: boolean; yo: YoCom; d: MiRango }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}><span style={{ font: "800 14px/1.25 Sora,sans-serif", letterSpacing: "-.02em" }}>{es ? x.name.es : x.name.en}</span>{tag && <Tag tone={tag.tone}>{tag.l}</Tag>}</div>
                   <div style={{ marginTop: 3, font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{`${es ? x.req.es : x.req.en}${x.min ? ` · ${x.min.toLocaleString("en-US")} ${E2("puntos", "points")}` : ""}`}</div>
-                  <div style={{ marginTop: 3, font: "700 12px/1.45 Manrope,sans-serif", color: st === "lock" ? "rgba(11,14,18,.55)" : "var(--tl-open-text)" }}>{`${es ? x.unl.es : x.unl.en}${x.patio ? ` · ${es ? CUANDO_PATIO.es : CUANDO_PATIO.en}` : ""}`}</div>
+                  <div style={{ marginTop: 3, font: "700 12px/1.45 Manrope,sans-serif", color: st === "lock" ? "rgba(11,14,18,.6)" : "var(--tl-open-text)" }}>{`${es ? x.unl.es : x.unl.en}${x.patio ? ` · ${es ? CUANDO_PATIO.es : CUANDO_PATIO.en}` : ""}`}</div>
                 </div>
               </div>);
           })}
@@ -103,7 +103,7 @@ export function Rango({ es, yo, d }: { es: boolean; yo: YoCom; d: MiRango }) {
             <div style={K}>{E2("TUS PUNTOS", "YOUR POINTS")}</div>
             {d.log.map((x, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "10px 0", borderTop: i ? LINE : "none", marginTop: i ? 0 : 6 }}>
-                <div style={{ minWidth: 0 }}><div style={{ font: "600 13px/1.4 Manrope,sans-serif" }}>{es ? x.t.es : x.t.en}</div><div style={{ marginTop: 2, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.45)" }}>{hace(x.at, es).toUpperCase()}</div></div>
+                <div style={{ minWidth: 0 }}><div style={{ font: "600 13px/1.4 Manrope,sans-serif" }}>{es ? x.t.es : x.t.en}</div><div style={{ marginTop: 2, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{hace(x.at, es).toUpperCase()}</div></div>
                 <span style={{ font: "800 13px Sora,sans-serif", color: x.v < 0 ? "var(--tl-danger)" : "var(--tl-open-text)", flex: "none" }}>{x.v > 0 ? `+${x.v}` : `−${Math.abs(x.v)}`}</span>
               </div>))}
           </div>
@@ -116,7 +116,7 @@ export function Rango({ es, yo, d }: { es: boolean; yo: YoCom; d: MiRango }) {
               {d.insignias.map((b) => (
                 <div key={b.k} style={{ padding: "11px 12px", borderRadius: 13, background: "var(--tl-paper)", display: "flex", gap: 9, alignItems: "flex-start" }}>
                   <span style={{ display: "grid", flex: "none", paddingTop: 1 }}><Icon name="star" size={15} color="var(--tl-pro-ink)" /></span>
-                  <div style={{ minWidth: 0 }}><div style={{ font: "700 12.5px/1.3 Manrope,sans-serif" }}>{es ? b.t.es : b.t.en}</div><div style={{ marginTop: 3, font: "500 11px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{es ? b.s.es : b.s.en}</div></div>
+                  <div style={{ minWidth: 0 }}><div style={{ font: "700 12.5px/1.3 Manrope,sans-serif" }}>{es ? b.t.es : b.t.en}</div><div style={{ marginTop: 3, font: "500 11px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{es ? b.s.es : b.s.en}</div></div>
                 </div>))}
             </div>
           </div>

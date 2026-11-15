@@ -114,7 +114,7 @@ function SearchResultRow({
     style: {
       font: '600 10.5px ' + mono,
       letterSpacing: '.04em',
-      color: 'rgba(11,14,18,.5)',
+      color: 'rgba(11,14,18,.6)',
       ...ell
     }
   }, meta) : null, status ? /*#__PURE__*/React.createElement("span", {
@@ -159,7 +159,7 @@ function UnderstoodBar({
     style: {
       font: '800 9.5px ' + mono,
       letterSpacing: '.14em',
-      color: 'rgba(11,14,18,.45)',
+      color: 'rgba(11,14,18,.6)',
       marginRight: 2
     }
   }, label), words.map((w, i) => /*#__PURE__*/React.createElement(__ds_scope.Chip, {
@@ -202,7 +202,7 @@ function SearchPanel({
       borderTop: '1px solid rgba(11,14,18,.07)',
       font: '700 9.5px ' + mono,
       letterSpacing: '.1em',
-      color: 'rgba(11,14,18,.42)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, /*#__PURE__*/React.createElement("span", null, hint), /*#__PURE__*/React.createElement("span", {
     style: {
@@ -264,7 +264,7 @@ function NotYetCard({
     style: {
       font: '800 9.5px ' + mono,
       letterSpacing: '.14em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, kicker), /*#__PURE__*/React.createElement("span", {
     style: {

@@ -132,11 +132,11 @@ function TicketQR({
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, code), /*#__PURE__*/React.createElement("span", {
     style: {
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, when)));
 }

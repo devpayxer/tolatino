@@ -157,7 +157,7 @@ export function InmHoja({ v }: { v: InmV }) {
       <Caja k={E2("LO QUE PIDEN", "WHAT THEY ASK FOR")} label="Propiedad · lo que piden">
         <Renglon t={x.ssnReq ? E2("Seguro social o ITIN.", "SSN or ITIN.") : E2("Sin seguro social: aceptan ITIN, pasaporte o carta del trabajo.", "No SSN: they accept ITIN, passport or a work letter.")} ok={!x.ssnReq} />
         {x.papers && nm(x.papers) && <Renglon t={nm(x.papers)} />}
-        <div className="mt-2 text-pretty text-[12px] font-medium leading-[1.5] text-ink/55">{E2("Los papeles se llevan en persona; nunca se mandan por la app.", "Papers are brought in person; never sent through the app.")}</div>
+        <div className="mt-2 text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Los papeles se llevan en persona; nunca se mandan por la app.", "Papers are brought in person; never sent through the app.")}</div>
       </Caja>
       {x.lease && nm(x.lease) && <Caja k={E2("CONTRATO", "LEASE")}><Renglon t={nm(x.lease)} /></Caja>}
       <Caja k={E2("ZONA", "AREA")} label="Propiedad · zona">

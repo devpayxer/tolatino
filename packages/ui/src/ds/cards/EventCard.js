@@ -56,7 +56,7 @@ function EventCard({
     style: {
       marginTop: 6,
       font: "600 11px 'JetBrains Mono',monospace",
-      color: dark ? 'rgba(255,255,255,.5)' : 'rgba(11,14,18,.45)'
+      color: dark ? 'rgba(255,255,255,.5)' : 'rgba(11,14,18,.6)'
     }
   }, meta)));
 }

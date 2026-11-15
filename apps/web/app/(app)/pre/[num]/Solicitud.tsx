@@ -94,7 +94,7 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
       <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:top-0">
         <button type="button" aria-label={E2("Volver al negocio", "Back to the business")} onClick={() => router.push(`/n/${d.negocio.id}?tab=svc`)} className="grid h-[38px] w-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="close" size={15} strokeWidth={2.4} /></button>
         <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{nm(s.svc)}</div>
-          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${em ? E2("EMERGENCIA #", "EMERGENCY #") : pq ? E2("PRESUPUESTOS #", "ESTIMATES #") : E2("PRE-ESTIMADO #", "PRE-ESTIMATE #")}${s.numero} · ${pq || em ? s.form.casa?.dir ?? "" : d.negocio.nombre}`.toUpperCase()}</div></div>
+          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${em ? E2("EMERGENCIA #", "EMERGENCY #") : pq ? E2("PRESUPUESTOS #", "ESTIMATES #") : E2("PRE-ESTIMADO #", "PRE-ESTIMATE #")}${s.numero} · ${pq || em ? s.form.casa?.dir ?? "" : d.negocio.nombre}`.toUpperCase()}</div></div>
       </div>
       <div className="mx-auto flex max-w-[560px] flex-col gap-3 px-4 pt-4">
         {error && <div role="alert" className="rounded-[14px] bg-danger/[.08] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{error}</div>}
@@ -112,7 +112,7 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
             <div className="mt-2.5 flex flex-col gap-2">{s.destinos.map((x) => <a key={x.negocio.id} href={x.negocio.telefono ? `tel:${x.negocio.telefono}` : `/n/${x.negocio.id}`} className="flex items-center gap-3 rounded-[14px] border border-ink/[.08] px-3 py-2.5">
               <span className="h-10 w-10 flex-none rounded-xl bg-photo-bg" style={fondo(x.negocio.foto)} />
               <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{x.negocio.nombre}</span>
-                <span className="mt-0.5 block font-mono text-[9.5px] font-semibold text-ink/55">{`${stE === "sent" ? E2("ESPERANDO · ", "WAITING · ") : ""}${E2("SALIDA ", "CALL-OUT ")}${dinero(x.precio ?? 0)}${x.eta ? E2(` · LLEGA EN ~${x.eta} MIN`, ` · ~${x.eta} MIN`) : ""}`}</span></span>
+                <span className="mt-0.5 block font-mono text-[9.5px] font-semibold text-ink/60">{`${stE === "sent" ? E2("ESPERANDO · ", "WAITING · ") : ""}${E2("SALIDA ", "CALL-OUT ")}${dinero(x.precio ?? 0)}${x.eta ? E2(` · LLEGA EN ~${x.eta} MIN`, ` · ~${x.eta} MIN`) : ""}`}</span></span>
               <Icon name={x.negocio.telefono ? "phone" : "chevronRight"} size={15} color="rgba(11,14,18,.35)" /></a>)}</div>
           </div>
         )}
@@ -125,7 +125,7 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
               return <button key={x.negocio.id} type="button" disabled={!puede} onClick={() => reservar(x.item ?? "", x.negocio.id)} className={`flex items-center gap-3 rounded-[14px] px-3 py-2.5 text-left ${x.st === "used" ? "border-[1.5px] border-ink" : "border border-ink/[.08]"} ${["no", "expired", "closed"].includes(x.st) ? "opacity-55" : ""}`}>
                 <span className="h-10 w-10 flex-none rounded-xl bg-photo-bg" style={fondo(x.negocio.foto)} />
                 <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{x.negocio.nombre}{best && x === best && got.length > 1 ? E2(" · el más bajo", " · lowest") : ""}</span>
-                  <span className="mt-0.5 block font-mono text-[9.5px] font-semibold leading-[1.5] text-ink/55">{meta.toUpperCase()}</span>
+                  <span className="mt-0.5 block font-mono text-[9.5px] font-semibold leading-[1.5] text-ink/60">{meta.toUpperCase()}</span>
                   {r.nota && <span className="mt-1 block text-pretty text-[12px] font-medium leading-[1.45] text-ink/70">{r.nota}</span>}</span>
                 {puede && <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" />}</button>; })}</div>
           </div>
@@ -133,13 +133,13 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
         {!pq && !em && (st === "rng" || st === "see") && (
           <div data-screen-label="Pre-estimado · respuesta" className="rounded-[18px] border border-ink/[.07] bg-white p-4">
             <div className="flex items-center gap-2.5"><span className="h-9 w-9 flex-none rounded-full bg-photo-bg" style={fondo(d.negocio.foto)} />
-              <div className="min-w-0 flex-1"><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{`${E2("RESPUESTA DE ", "REPLY FROM ")}${who}`.toUpperCase()}</div><div className="mt-0.5 font-mono text-[9.5px] font-semibold text-ink/40">{d.at}</div></div></div>
+              <div className="min-w-0 flex-1"><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{`${E2("RESPUESTA DE ", "REPLY FROM ")}${who}`.toUpperCase()}</div><div className="mt-0.5 font-mono text-[9.5px] font-semibold text-ink/60">{d.at}</div></div></div>
             {r.nota && <p className="m-0 mt-3 text-pretty text-[13.5px] font-medium leading-[1.55]">{r.nota}</p>}
-            {st === "rng" && (r.inc ?? []).length > 0 && <div className="mt-3.5"><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{E2("LO QUE INCLUYE EL RANGO", "WHAT THE RANGE COVERS")}</div>
+            {st === "rng" && (r.inc ?? []).length > 0 && <div className="mt-3.5"><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("LO QUE INCLUYE EL RANGO", "WHAT THE RANGE COVERS")}</div>
               <div className="mt-2 flex flex-col gap-1.5">{r.inc!.map((t) => <div key={t} className="flex items-start gap-2 text-[12.5px] font-medium leading-[1.45] text-ink/75"><span className="grid flex-none pt-0.5"><Icon name="check" size={13} color="var(--tl-open)" strokeWidth={2.2} /></span>{t}</div>)}</div></div>}
-            {(r.chg ?? []).length > 0 && <div className="mt-3.5"><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{E2("LO QUE PUEDE CAMBIARLO", "WHAT CAN CHANGE IT")}</div>
-              <div className="mt-2 flex flex-col gap-1.5">{r.chg!.map((t) => <div key={t} className="flex items-start gap-2 text-[12.5px] font-medium leading-[1.45] text-ink/65"><span className="grid flex-none pt-0.5"><Icon name="info" size={13} color="rgba(11,14,18,.45)" /></span>{t}</div>)}</div></div>}
-            {s.valida && <div className="mt-3.5 text-[12px] font-semibold text-ink/55">{E2(`Válido 7 días: hasta el ${s.valida.es}.`, `Valid 7 days: until ${s.valida.en}.`)}{r.dias ? ` ${E2("Suele tardar ", "Usually takes ")}${r.dias}.` : ""}</div>}
+            {(r.chg ?? []).length > 0 && <div className="mt-3.5"><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("LO QUE PUEDE CAMBIARLO", "WHAT CAN CHANGE IT")}</div>
+              <div className="mt-2 flex flex-col gap-1.5">{r.chg!.map((t) => <div key={t} className="flex items-start gap-2 text-[12.5px] font-medium leading-[1.45] text-ink/65"><span className="grid flex-none pt-0.5"><Icon name="info" size={13} color="rgba(11,14,18,.6)" /></span>{t}</div>)}</div></div>}
+            {s.valida && <div className="mt-3.5 text-[12px] font-semibold text-ink/60">{E2(`Válido 7 días: hasta el ${s.valida.es}.`, `Valid 7 days: until ${s.valida.en}.`)}{r.dias ? ` ${E2("Suele tardar ", "Usually takes ")}${r.dias}.` : ""}</div>}
             {cta && <div className="mt-3.5 grid"><Button block onClick={cta.on}>{cta.l}</Button></div>}
           </div>
         )}
@@ -155,7 +155,7 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
           <div className="rounded-[18px] border border-ink/[.07] bg-white p-4">
             <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("LO HACEN EN TU CIUDAD", "BUSINESSES IN YOUR CITY THAT DO IT")}</div>
             <div className="mt-2.5 flex flex-col gap-2">{s.otros.map((o) => <button key={o.id} type="button" onClick={() => router.push(`/n/${o.id}?tab=svc`)} className="flex items-center gap-3 rounded-[14px] border border-ink/[.08] px-3 py-2.5 text-left">
-              <span className="h-10 w-10 flex-none rounded-xl bg-photo-bg" style={fondo(o.foto)} /><span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{o.nombre}</span><span className="mt-0.5 block truncate font-mono text-[9.5px] font-semibold text-ink/50">{o.meta.toUpperCase()}</span></span>
+              <span className="h-10 w-10 flex-none rounded-xl bg-photo-bg" style={fondo(o.foto)} /><span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{o.nombre}</span><span className="mt-0.5 block truncate font-mono text-[9.5px] font-semibold text-ink/60">{o.meta.toUpperCase()}</span></span>
               <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" /></button>)}</div>
           </div>
         )}

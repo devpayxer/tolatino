@@ -10,7 +10,7 @@ const mono = "'JetBrains Mono',monospace";
 const K = {
   font: '700 10px ' + mono,
   letterSpacing: '.2em',
-  color: 'rgba(11,14,18,.42)'
+  color: 'rgba(11,14,18,.6)'
 };
 
 /* 2o · Reservar mesa. Primero "¿Cuántos son?": sin personas no se muestran fechas ni horas. max = personas en línea; max+1 "N+" = evento privado. */
@@ -42,7 +42,7 @@ function PartyPicker({
     style: {
       font: '700 9.5px ' + mono,
       letterSpacing: '.12em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, label), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -105,7 +105,7 @@ function ReservationCard({
     style: {
       marginTop: 3,
       font: '500 11.5px/1.45 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.55)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, sub) : null), /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "chevronRight",

@@ -24,7 +24,7 @@ export function PasoD1({ d, up, es }: { d: Borrador; up: Up; es: boolean }) {
   const setRow = (key: string, patch: Record<string, unknown>) => up((z) => ({ sel: { ...z.sel, [key]: { ...(z.sel || {})[key], ...patch } } }));
   const ancho = (p: number | string) => Math.max(22, (String(money(p)).length - 1) * 9.5) + "px";
   const caja = (op: number, bd: string): CSSProperties => ({ flex: "none", display: "flex", alignItems: "center", height: 34, padding: "0 2px", borderRadius: 11, border: `1px solid ${bd}`, background: "var(--tl-white)", opacity: op });
-  const boton: CSSProperties = { width: 26, height: 30, display: "grid", placeItems: "center", cursor: "pointer", color: "rgba(11,14,18,.55)" };
+  const boton: CSSProperties = { width: 26, height: 30, display: "grid", placeItems: "center", cursor: "pointer", color: "rgba(11,14,18,.6)" };
   const addOk = add.n.trim().length >= 2;
   return (
     <div data-screen-label="ONB-NEG-D1 · lo que vendes" style={{ display: "flex", flexDirection: "column", gap: 12, animation: "oFade .2s ease-out" }}>
@@ -39,7 +39,7 @@ export function PasoD1({ d, up, es }: { d: Borrador; up: Up; es: boolean }) {
               <span style={{ display: "grid", flex: "none" }}><SelectBox on={r.on} /></span>
               <div style={{ flex: 1, minWidth: 0, opacity: op }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}><span style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{r.n[es ? 0 : 1]}</span>{r.flag ? <Tag tone="neutral">{E2("REVISA", "CHECK")}</Tag> : null}</div>
-                <div style={{ marginTop: 3, font: `700 9px/1.45 ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{metaOf(r, true, es)}</div>
+                <div style={{ marginTop: 3, font: `700 9px/1.45 ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{metaOf(r, true, es)}</div>
               </div>
             </div>
             {!free ? (
@@ -55,7 +55,7 @@ export function PasoD1({ d, up, es }: { d: Borrador; up: Up; es: boolean }) {
           <div key={"c" + i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid rgba(11,14,18,.08)" }}>
             <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 12 }}>
               <span style={{ display: "grid", flex: "none" }}><SelectBox on /></span>
-              <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{x.n}</div><div style={{ marginTop: 3, font: `700 9px/1.45 ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{E2("AGREGADO POR TI", "ADDED BY YOU")}</div></div>
+              <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{x.n}</div><div style={{ marginTop: 3, font: `700 9px/1.45 ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{E2("AGREGADO POR TI", "ADDED BY YOU")}</div></div>
             </div>
             <div style={caja(1, "rgba(11,14,18,.12)")}>
               <span role="button" aria-label="−" onClick={() => up((z) => ({ cust: z.cust.map((y, j) => j === i ? { ...y, p: Math.max(0, (Number(y.p) || 0) - stepOf(y.p)) } : y) }))} {...tec(() => up((z) => ({ cust: z.cust.map((y, j) => j === i ? { ...y, p: Math.max(0, (Number(y.p) || 0) - stepOf(y.p)) } : y) })))} style={boton}><Icon name="minus" size={13} /></span>
@@ -63,7 +63,7 @@ export function PasoD1({ d, up, es }: { d: Borrador; up: Up; es: boolean }) {
               <input value={String(x.p)} onChange={(e) => { const v = precio(e.target.value); up((z) => ({ cust: z.cust.map((y, j) => j === i ? { ...y, p: v } : y) })); }} inputMode="decimal" aria-label={E2("Precio", "Price")} style={{ width: ancho(x.p), border: 0, outline: "none", background: "none", padding: 0, font: "800 14px Sora,sans-serif", color: "var(--tl-ink)" }} />
               <span role="button" aria-label="+" onClick={() => up((z) => ({ cust: z.cust.map((y, j) => j === i ? { ...y, p: (Number(y.p) || 0) + stepOf(y.p) } : y) }))} {...tec(() => up((z) => ({ cust: z.cust.map((y, j) => j === i ? { ...y, p: (Number(y.p) || 0) + stepOf(y.p) } : y) })))} style={{ ...boton, color: undefined }}><Icon name="plus" size={13} /></span>
             </div>
-            <span role="button" aria-label={E2("Quitar", "Remove")} onClick={() => up((z) => ({ cust: z.cust.filter((_, j) => j !== i) }))} {...tec(() => up((z) => ({ cust: z.cust.filter((_, j) => j !== i) })))} style={{ width: 28, height: 28, borderRadius: 9, display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="trash" size={15} color="rgba(11,14,18,.5)" /></span>
+            <span role="button" aria-label={E2("Quitar", "Remove")} onClick={() => up((z) => ({ cust: z.cust.filter((_, j) => j !== i) }))} {...tec(() => up((z) => ({ cust: z.cust.filter((_, j) => j !== i) })))} style={{ width: 28, height: 28, borderRadius: 9, display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="trash" size={15} color="rgba(11,14,18,.6)" /></span>
           </div>
         ))}
       </div>
@@ -110,7 +110,7 @@ export function PasoE1({ d, up, es, ciudad, irA }: { d: Borrador; up: Up; es: bo
   const entrada: CSSProperties = { flex: 1, minWidth: 0, border: 0, outline: "none", background: "none", font: "600 15px Manrope,sans-serif", color: "var(--tl-ink)" };
   const paso = (lbl: string, val: string, menos: () => void, mas: () => void) => (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
-      <span style={{ font: `700 9px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.5)" }}>{lbl}</span>
+      <span style={{ font: `700 9px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.6)" }}>{lbl}</span>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 40, padding: "0 4px", borderRadius: 12, background: "var(--tl-paper)" }}>
         <span role="button" aria-label="−" onClick={menos} {...tec(menos)} style={{ width: 32, height: 32, display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="minus" size={14} /></span>
         <span style={{ font: "800 13.5px Sora,sans-serif", whiteSpace: "nowrap" }}>{val}</span>
@@ -136,19 +136,19 @@ export function PasoE1({ d, up, es, ciudad, irA }: { d: Borrador; up: Up; es: bo
             {d.join || d.joinName ? (
               <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 16, border: "1.5px solid var(--tl-ink)" }}>
                 <span style={{ width: 38, height: 38, borderRadius: 12, background: "var(--tl-paper)", display: "grid", placeItems: "center", flex: "none" }}><Icon name="store" size={17} /></span>
-                <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{d.joinName}</div><div style={{ marginTop: 3, font: `700 9.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{(d.addr ? d.addr + " · " : "") + E2("TE AVISA CUANDO TE ACEPTE", "THEY CONFIRM YOU")}</div></div>
+                <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{d.joinName}</div><div style={{ marginTop: 3, font: `700 9.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{(d.addr ? d.addr + " · " : "") + E2("TE AVISA CUANDO TE ACEPTE", "THEY CONFIRM YOU")}</div></div>
                 <span role="button" onClick={() => up({ join: null, joinName: "", addr: "" })} {...tec(() => up({ join: null, joinName: "", addr: "" }))} style={{ flex: "none", font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Cambiar", "Change")}</span>
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ height: 50, boxSizing: "border-box", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", background: "var(--tl-white)", display: "flex", alignItems: "center", gap: 10, padding: "0 14px" }}>
-                  <Icon name="search" size={17} color="rgba(11,14,18,.45)" />
+                  <Icon name="search" size={17} color="rgba(11,14,18,.6)" />
                   <input value={hostQ} onChange={(e) => setHostQ(e.target.value.slice(0, 40))} placeholder={E2("Busca el negocio", "Search the business")} aria-label={E2("Busca el negocio", "Search the business")} style={entrada} />
                 </div>
                 {hosts.map((h) => (
                   <div key={h.id} role="button" className="hover:bg-[var(--tl-paper)]" onClick={() => up({ join: h.id, joinName: h.name, addr: h.addr || d.addr })} {...tec(() => up({ join: h.id, joinName: h.name, addr: h.addr || d.addr }))} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 14, border: "1px solid rgba(11,14,18,.1)", cursor: "pointer" }}>
                     <span style={{ width: 34, height: 34, borderRadius: 11, background: h.foto ? `url("${h.foto}") center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
-                    <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px/1.3 Manrope,sans-serif" }}>{h.name}</div><div style={{ marginTop: 2, font: `700 9.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{(h.addr || ciudad).toUpperCase()}</div></div>
+                    <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px/1.3 Manrope,sans-serif" }}>{h.name}</div><div style={{ marginTop: 2, font: `700 9.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{(h.addr || ciudad).toUpperCase()}</div></div>
                   </div>
                 ))}
                 {hostQ.trim().length >= 3 && !hosts.length ? <div role="button" onClick={() => up({ join: null, joinName: hostQ.trim() })} {...tec(() => up({ join: null, joinName: hostQ.trim() }))} style={{ font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2(`No está en To’Latino: usar «${hostQ.trim()}»`, `Not on To’Latino: use “${hostQ.trim()}”`)}</div> : null}
@@ -161,9 +161,9 @@ export function PasoE1({ d, up, es, ciudad, irA }: { d: Borrador; up: Up; es: bo
             {op === "truck" ? (<>
               <span style={K}>{E2("¿DÓNDE TE PONES?", "WHERE DO YOU PARK?")}</span>
               <div style={{ height: 52, boxSizing: "border-box", borderRadius: 14, border: `1.5px solid ${aq.length >= 4 ? "var(--tl-ink)" : "rgba(11,14,18,.14)"}`, background: "var(--tl-white)", display: "flex", alignItems: "center", gap: 10, padding: "0 14px" }}>
-                <Icon name="pin" size={17} color="rgba(11,14,18,.45)" />
+                <Icon name="pin" size={17} color="rgba(11,14,18,.6)" />
                 <input value={d.addr || ""} onChange={(e) => up({ addr: e.target.value.slice(0, 60) })} placeholder={E2("Ej.: Wyoming St y E Broad St", "E.g. Wyoming St & E Broad St")} autoComplete="street-address" aria-label={E2("Dirección", "Address")} style={entrada} />
-                <span style={{ flex: "none", font: `700 9.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.45)" }}>{ciudad.toUpperCase()}</span>
+                <span style={{ flex: "none", font: `700 9.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.6)" }}>{ciudad.toUpperCase()}</span>
               </div>
             </>) : (
               // 9m · La dirección como DoorDash (decisión AC): sugerencias reales, «Usar mi ubicación» y el pin ajustable; el servidor la ubica al publicar.
@@ -173,7 +173,7 @@ export function PasoE1({ d, up, es, ciudad, irA }: { d: Borrador; up: Up; es: bo
                 onV={(x) => up({ addr: x.calle.slice(0, 120), zip: x.zip, dirOrigen: x.origen, pin: x.pin, dirLugar: x.lugar, dirEstado: x.estado })} />
             )}
             {op === "local" || op === "ambos" ? <input value={d.ref || ""} onChange={(e) => up({ ref: e.target.value.slice(0, 50) })} placeholder={E2("Referencia (opcional): frente al parque, 2.º piso…", "Landmark (optional): across from the park, 2nd floor…")} aria-label={E2("Referencia", "Landmark")} style={{ height: 46, boxSizing: "border-box", borderRadius: 13, border: "1.5px solid rgba(11,14,18,.1)", background: "var(--tl-white)", padding: "0 14px", outline: "none", font: "500 14px Manrope,sans-serif", color: "var(--tl-ink)", width: "100%" }} /> : null}
-            {op === "home" ? <div style={{ display: "flex", gap: 9, alignItems: "flex-start", font: "500 12.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.62)" }}><Icon name="lock" size={15} color="rgba(11,14,18,.5)" /><span>{E2("Tu dirección exacta solo la ve quien confirmas. En tu página sale la calle.", "Only people you confirm see your exact address. Your page shows the street.")}</span></div> : null}
+            {op === "home" ? <div style={{ display: "flex", gap: 9, alignItems: "flex-start", font: "500 12.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.62)" }}><Icon name="lock" size={15} color="rgba(11,14,18,.6)" /><span>{E2("Tu dirección exacta solo la ve quien confirmas. En tu página sale la calle.", "Only people you confirm see your exact address. Your page shows the street.")}</span></div> : null}
           </div>
         ) : null}
         {hasZone ? (
@@ -198,7 +198,7 @@ export function PasoE1({ d, up, es, ciudad, irA }: { d: Borrador; up: Up; es: bo
               <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0" }}>
                 <span role="switch" aria-checked={x.on} aria-label={es ? DAYS[i]![2] : DAYS[i]![3]} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDay(i, { on: !x.on }); } }} onClick={() => setDay(i, { on: !x.on })} style={{ width: 40, height: 24, boxSizing: "border-box", borderRadius: 99, padding: 3, background: x.on ? "var(--tl-ink)" : "rgba(11,14,18,.15)", display: "flex", justifyContent: x.on ? "flex-end" : "flex-start", flex: "none", cursor: "pointer" }}><span style={{ width: 18, height: 18, borderRadius: 99, background: "var(--tl-white)", boxShadow: "0 1px 2px rgba(11,14,18,.2)" }} /></span>
                 <span style={{ width: 86, flex: "none", font: `${i === t.hoy ? 800 : 700} 13.5px Manrope,sans-serif` }}>{es ? DAYS[i]![2] : DAYS[i]![3]}</span>
-                <span role="button" onClick={() => x.on && setAbierto(open ? -1 : i)} {...tec(() => x.on && setAbierto(open ? -1 : i))} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 6, font: "700 13px Manrope,sans-serif", color: x.on ? "var(--tl-ink)" : "rgba(11,14,18,.45)", cursor: "pointer", textAlign: "right" }}>{x.on ? fmt(x.a) + " – " + fmt(x.b) : E2("Cerrado", "Closed")}{x.on ? <Icon name={open ? "chevronDown" : "chevronRight"} size={13} color="rgba(11,14,18,.45)" /> : null}</span>
+                <span role="button" onClick={() => x.on && setAbierto(open ? -1 : i)} {...tec(() => x.on && setAbierto(open ? -1 : i))} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 6, font: "700 13px Manrope,sans-serif", color: x.on ? "var(--tl-ink)" : "rgba(11,14,18,.6)", cursor: "pointer", textAlign: "right" }}>{x.on ? fmt(x.a) + " – " + fmt(x.b) : E2("Cerrado", "Closed")}{x.on ? <Icon name={open ? "chevronDown" : "chevronRight"} size={13} color="rgba(11,14,18,.6)" /> : null}</span>
               </div>
               {open ? (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 10, padding: "0 0 12px" }}>

@@ -456,7 +456,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 1120 }}>
       <span role="link" onClick={() => router.push("/admin/usuarios")} {...tec(() => router.push("/admin/usuarios"))} style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><A.Icon name="chevronLeft" size={15} color="var(--tl-action)" />{E("Usuarios", "Users")}</span>
-      <span style={{ font: "700 9.5px 'JetBrains Mono',monospace", letterSpacing: ".14em", color: "rgba(11,14,18,.45)" }}>{E("USUARIO 360°", "USER 360°")}</span>
+      <span style={{ font: "700 9.5px 'JetBrains Mono',monospace", letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{E("USUARIO 360°", "USER 360°")}</span>
       <PanelBloques bloques={cab} />
       {avisos}
       <PanelBloques bloques={[tabs]} />

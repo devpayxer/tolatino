@@ -227,7 +227,7 @@ function PollOptions({
       marginTop: 2,
       font: '700 9.5px ' + mono,
       letterSpacing: '.12em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, meta) : null);
 }
@@ -311,7 +311,7 @@ function PostCard({
     name: "shield",
     size: 14,
     strokeWidth: 1.9,
-    color: gold ? 'var(--tl-pro-ink)' : 'rgba(11,14,18,.5)',
+    color: gold ? 'var(--tl-pro-ink)' : 'rgba(11,14,18,.6)',
     fill: gold ? 'rgba(255,176,32,.3)' : 'none'
   }) : null, rank.label));
   if (has(pl)) parts.push(/*#__PURE__*/React.createElement("span", {
@@ -466,7 +466,7 @@ function PostCard({
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "more",
     size: 18,
-    color: "rgba(11,14,18,.42)"
+    color: "rgba(11,14,18,.6)"
   })) : null), parts.length ? /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',

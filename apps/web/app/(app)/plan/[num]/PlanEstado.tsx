@@ -52,7 +52,7 @@ export function PlanEstado({ p, es, pago }: { p: PlanVista; es: boolean; pago: {
       <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:top-0">
         <button type="button" aria-label={E2("Volver al negocio", "Back to the business")} onClick={() => router.push(`/n/${p.negocio.id}?tab=svc`)} className="grid h-[38px] w-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="close" size={15} strokeWidth={2.4} /></button>
         <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{nm(p.svc)}</div>
-          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${E2("PLAN #", "PLAN #")}${p.numero} · ${p.negocio.nombre}`.toUpperCase()}</div></div>
+          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${E2("PLAN #", "PLAN #")}${p.numero} · ${p.negocio.nombre}`.toUpperCase()}</div></div>
       </div>
       <div className="mx-auto flex max-w-[560px] flex-col gap-3 px-4 pt-4">
         {flash && <div role="status" className="flex items-center gap-[9px] rounded-[14px] bg-signal/[.16] px-3.5 py-[11px]"><Icon name="check" size={15} color="var(--tl-open-text)" strokeWidth={2.4} /><span className="text-[12.5px] font-bold text-open-text">{flash}</span></div>}
@@ -72,21 +72,21 @@ export function PlanEstado({ p, es, pago }: { p: PlanVista; es: boolean; pago: {
               <button key={v.fecha} type="button" disabled={!v.cita} onClick={() => v.cita && router.push(`/cita/${v.cita}`)} className="flex items-center gap-3 rounded-[14px] border border-ink/[.08] px-3 py-2.5 text-left">
                 <span className="h-10 w-10 flex-none rounded-xl bg-photo-bg" style={fondo(p.negocio.foto)} />
                 <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{`${cap(fL(v.fecha))} · ${win}`}</span>
-                  <span className="mt-0.5 block font-mono text-[9.5px] font-semibold text-ink/55">{`${i === 0 && p.st === "active" ? E2("PRÓXIMA · ", "NEXT · ") : ""}${dinero(p.precio)}${E2(" AL MES", " A MONTH")}`}</span></span>
+                  <span className="mt-0.5 block font-mono text-[9.5px] font-semibold text-ink/60">{`${i === 0 && p.st === "active" ? E2("PRÓXIMA · ", "NEXT · ") : ""}${dinero(p.precio)}${E2(" AL MES", " A MONTH")}`}</span></span>
                 {v.cita && <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" />}</button>))}</div>
           </div>
         )}
         <div className="rounded-[18px] border border-ink/[.07] bg-white p-4">
           <div className="flex items-center gap-2.5"><span className="h-9 w-9 flex-none rounded-full bg-photo-bg" style={fondo(p.negocio.foto)} />
-            <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{`${E2("TU PLAN · ", "YOUR PLAN · ")}${p.negocio.nombre}`.toUpperCase()}</div></div>
+            <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{`${E2("TU PLAN · ", "YOUR PLAN · ")}${p.negocio.nombre}`.toUpperCase()}</div></div>
           <p className="m-0 mt-3 text-pretty text-[13px] font-medium leading-[1.55]">{E2("Cada visita te llega con lo que se hizo. Si algo necesita más tiempo o piezas, te piden tu OK antes.", "Each visit comes with what was done. If something needs more time or parts, they ask your OK first.")}</p>
-          {p.inc.length > 0 && <div className="mt-3.5"><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{E2("INCLUYE", "INCLUDES")}</div>
+          {p.inc.length > 0 && <div className="mt-3.5"><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("INCLUYE", "INCLUDES")}</div>
             <div className="mt-2 flex flex-col gap-1.5">{p.inc.map((t) => <div key={t.es} className="flex items-start gap-2 text-[12.5px] font-medium leading-[1.45] text-ink/75"><span className="grid flex-none pt-0.5"><Icon name="check" size={13} color="var(--tl-open)" strokeWidth={2.2} /></span>{nm(t)}</div>)}</div></div>}
-          <div className="mt-3.5"><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{E2("CÓMO SE COBRA", "HOW YOU ARE CHARGED")}</div>
+          <div className="mt-3.5"><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("CÓMO SE COBRA", "HOW YOU ARE CHARGED")}</div>
             <div className="mt-2 flex flex-col gap-1.5 text-[12.5px] font-medium leading-[1.45] text-ink/70">
               <div>{E2(`${dinero(p.precio)} cada mes en tu ${p.tarjeta ?? "tarjeta"}${p.proxCobro && p.st !== "cancelled" ? `; el próximo, el ${fL(p.proxCobro)}` : ""}.`, `${dinero(p.precio)} monthly on your ${p.tarjeta ?? "card"}${p.proxCobro && p.st !== "cancelled" ? `; next on ${fL(p.proxCobro)}` : ""}.`)}</div>
               <div>{E2("Lo que pase de lo incluido se cotiza aparte y solo se hace con tu OK.", "Anything beyond what is included is quoted separately and only done with your OK.")}</div>
-              {p.cobros.map((c) => <div key={c.seq} className="flex justify-between gap-3 font-mono text-[10.5px] font-semibold text-ink/55"><span>{E2(`COBRO ${c.seq}`, `CHARGE ${c.seq}`)}</span><span>{dinero(c.monto)}</span></div>)}
+              {p.cobros.map((c) => <div key={c.seq} className="flex justify-between gap-3 font-mono text-[10.5px] font-semibold text-ink/60"><span>{E2(`COBRO ${c.seq}`, `CHARGE ${c.seq}`)}</span><span>{dinero(c.monto)}</span></div>)}
             </div></div>
         </div>
         <div className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">

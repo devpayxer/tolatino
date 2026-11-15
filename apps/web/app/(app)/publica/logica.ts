@@ -67,7 +67,7 @@ export function fmt(h: number) { const H = ((h % 24) + 24) % 24, hh = Math.floor
 
 export function status(d: Borrador, es: boolean, days = daysOf(d), t = ahora()) {
   const E2 = (a: string, b: string) => (es ? a : b), TODAY = t.hoy, NOW = t.hora;
-  if (!days.some((x) => x.on)) return { k: "none", l: E2("Horario", "Hours"), n: E2("POR DEFINIR", "NOT SET"), s: E2("Horario por definir", "Hours not set"), c: "rgba(11,14,18,.55)", dot: "rgba(11,14,18,.25)" };
+  if (!days.some((x) => x.on)) return { k: "none", l: E2("Horario", "Hours"), n: E2("POR DEFINIR", "NOT SET"), s: E2("Horario por definir", "Hours not set"), c: "rgba(11,14,18,.6)", dot: "rgba(11,14,18,.25)" };
   if (d.cita) return { k: "cita", l: E2("Por cita", "By appt."), n: E2("SOLO CITA", "APPOINTMENT ONLY"), s: E2("Solo con cita", "By appointment only"), c: "var(--tl-ink)", dot: "var(--tl-action)" };
   const x = days[TODAY]!, y = days[(TODAY + 6) % 7]!;
   const open = (cl: number) => ({ k: "open", l: E2("Abierto", "Open"), n: E2("CIERRA ", "CLOSES ") + fmt(cl), s: E2("Abierto · cierra ", "Open · closes ") + fmt(cl), c: "var(--tl-open-text)", dot: "var(--tl-open)" });

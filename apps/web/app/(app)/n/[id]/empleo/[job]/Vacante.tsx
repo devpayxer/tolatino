@@ -46,20 +46,20 @@ export function Vacante({ v, negocio, sesion, es }: { v: VacanteDet; negocio: st
     <div className={caja}>
       <div className="flex items-center gap-[11px]">
         <span className="size-[42px] flex-none rounded-xl bg-photo-bg bg-cover bg-center" style={v.logo ? { backgroundImage: `url(${v.logo})` } : {}} />
-        <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{v.bname}</div><div className="mt-[3px] font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{[v.subs, v.ciudad].filter(Boolean).join(" · ").toUpperCase()}</div></div>
+        <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{v.bname}</div><div className="mt-[3px] font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{[v.subs, v.ciudad].filter(Boolean).join(" · ").toUpperCase()}</div></div>
       </div>
       <div className="mt-3.5 font-display text-[22px] font-extrabold leading-[1.15] tracking-[-0.03em]">{title}</div>
       <div className="mt-1.5 flex flex-wrap items-baseline gap-2">
         <span className="font-display text-[24px] font-extrabold leading-none tracking-[-0.03em]">{pagoL(v.payFrom, v.payTo, es)}</span>
         {v.tips && <Chip variant="slot">{E2("+ PROPINAS", "+ TIPS")}</Chip>}
       </div>
-      <div className="mt-1 text-[12px] font-medium text-ink/55">{E2("Por hora, antes de impuestos.", "Per hour, before taxes.")}</div>
+      <div className="mt-1 text-[12px] font-medium text-ink/60">{E2("Por hora, antes de impuestos.", "Per hour, before taxes.")}</div>
       <div className="mt-4 grid grid-cols-2 gap-x-3.5 gap-y-3 border-t border-ink/[.07] pt-4">
         {([["clock", E2("HORARIO", "HOURS"), horarioL(v.start, v.end)], ["calendar", E2("DÍAS", "DAYS"), diasL(v.days, es)], ["language", E2("IDIOMAS", "LANGUAGES"), idiomasL(v.langEs, v.langEn, es)],
           ["users", E2("PUESTOS", "OPENINGS"), `${v.openings} ${v.openings > 1 ? E2("personas", "people") : E2("persona", "person")}`]] as [string, string, string][]).map(([ic, k, val]) => (
           <div key={k} className="flex min-w-0 items-start gap-[9px]">
-            <span className="grid flex-none pt-px"><Icon name={ic} size={15} color="rgba(11,14,18,.55)" /></span>
-            <div className="min-w-0"><div className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{k}</div><div className="mt-1 text-pretty text-[13px] font-bold leading-[1.35]">{val}</div></div>
+            <span className="grid flex-none pt-px"><Icon name={ic} size={15} color="rgba(11,14,18,.6)" /></span>
+            <div className="min-w-0"><div className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{k}</div><div className="mt-1 text-pretty text-[13px] font-bold leading-[1.35]">{val}</div></div>
           </div>
         ))}
       </div>
@@ -85,7 +85,7 @@ export function Vacante({ v, negocio, sesion, es }: { v: VacanteDet; negocio: st
         {v.sim.map((x) => (
           <button key={x.id} type="button" onClick={() => router.push(`/n/${x.biz}/empleo/${x.id}`)} className="flex w-full items-center gap-3 border-t border-ink/[.07] py-[11px] text-left">
             <span className="size-11 flex-none rounded-xl bg-photo-bg bg-cover bg-center" style={x.logo ? { backgroundImage: `url(${x.logo})` } : {}} />
-            <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold leading-[1.3]">{bi(x.title, es)}</div><div className="mt-[3px] font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{`${x.bname} · ${tipoL(x.kind, es)}`.toUpperCase()}</div></div>
+            <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold leading-[1.3]">{bi(x.title, es)}</div><div className="mt-[3px] font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{`${x.bname} · ${tipoL(x.kind, es)}`.toUpperCase()}</div></div>
             <span className="flex-none font-display text-[13px] font-extrabold">{pagoL(x.payFrom, x.payTo, es)}</span>
           </button>
         ))}
@@ -103,7 +103,7 @@ export function Vacante({ v, negocio, sesion, es }: { v: VacanteDet; negocio: st
       <div data-screen-label="APP-NEG-JOB · móvil" className="lg:hidden">
         <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3">
           <button type="button" aria-label={E2("Volver", "Back")} onClick={volver} className="grid size-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="chevronLeft" size={18} strokeWidth={2} /></button>
-          <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{title}</div><div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{meta}</div></div>
+          <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{title}</div><div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{meta}</div></div>
           <button type="button" aria-label={E2("Compartir", "Share")} onClick={compartir} className="grid size-[38px] flex-none place-items-center rounded-[13px]"><Icon name="share" size={17} /></button>
         </div>
         <div className="flex flex-col gap-3 px-4 pt-4">{solicitud}{principal}{trabajo}{piden}{seguro}{sim}
@@ -115,14 +115,14 @@ export function Vacante({ v, negocio, sesion, es }: { v: VacanteDet; negocio: st
       </div>
       <div data-screen-label="APP-NEG-JOB · desktop" className="mx-auto hidden max-w-[1080px] lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{v.bname}</button>
-        <div className="mt-4 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{meta}</div>
+        <div className="mt-4 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{meta}</div>
         <h1 className="mt-1.5 font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.04em]">{title}</h1>
         <div className="mt-[18px] grid items-start gap-x-12 gap-y-8 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
           <div className="flex min-w-0 flex-col gap-3.5">{principal}{trabajo}{piden}{sim}</div>
           <div className="flex flex-col gap-3.5 min-[1100px]:sticky min-[1100px]:top-[96px]">
             {solicitud}{seguro}
             <div className="flex items-center gap-2.5">{corazon}<div className="flex min-w-0 flex-1">{boton}</div></div>
-            {!vivo && <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/45">{E2("SIN CV · TOMA 1 MINUTO", "NO RESUME · TAKES 1 MINUTE")}</div>}
+            {!vivo && <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/60">{E2("SIN CV · TOMA 1 MINUTO", "NO RESUME · TAKES 1 MINUTE")}</div>}
             <button type="button" onClick={compartir} className="inline-flex items-center justify-center gap-1.5 text-[13px] font-bold text-action"><Icon name="share" size={15} />{E2("Compartir", "Share")}</button>
             {/* 9m · Reportar esta vacante (L309) → Super Admin › Contenido. */}
             <ReportarContenido kind="job" id={v.id} es={es} conSesion={sesion} volver={`/n/${negocio}/empleo/${v.id}`} />

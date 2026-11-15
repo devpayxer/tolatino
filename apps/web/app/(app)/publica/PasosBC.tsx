@@ -10,7 +10,7 @@ type N = "Icon" | "Button" | "Chip" | "SearchSelect" | "OptionCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, SearchSelect, OptionCard } = UI as unknown as Record<N, ComponentType<any>>;
 const MONO = "'JetBrains Mono',monospace";
-export const K: CSSProperties = { font: `700 10px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" };
+export const K: CSSProperties = { font: `700 10px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)" };
 export type UiB = { q: string; allCats: boolean; moreSubs: boolean; dupOk: boolean };
 type Up = (p: Partial<Borrador> | ((d: Borrador) => Partial<Borrador>)) => void;
 
@@ -34,7 +34,7 @@ export function PasoB1({ d, up, ui, setUi, es, desk, dup, onClaim, toast }: {
   return (
     <div data-screen-label="ONB-NEG-B1 · tu negocio" style={{ display: "flex", flexDirection: "column", gap: 14, animation: "oFade .2s ease-out" }}>
       <div style={{ height: 48, boxSizing: "border-box", borderRadius: 14, border: `1.5px solid ${q ? "var(--tl-ink)" : "rgba(11,14,18,.14)"}`, background: "var(--tl-white)", display: "flex", alignItems: "center", gap: 10, padding: "0 8px 0 14px" }}>
-        <Icon name="search" size={18} color="rgba(11,14,18,.45)" />
+        <Icon name="search" size={18} color="rgba(11,14,18,.6)" />
         <input value={q} onChange={(e) => setUi({ q: e.target.value.slice(0, 40) })} placeholder={E2("Barbería, taller, panadería…", "Barbershop, auto shop, bakery…")} aria-label={E2("¿Qué haces?", "What do you do?")} style={{ flex: 1, minWidth: 0, border: 0, outline: "none", background: "none", font: "600 15px Manrope,sans-serif", color: "var(--tl-ink)" }} />
         {q ? <span role="button" aria-label={E2("Borrar", "Clear")} onClick={() => setUi({ q: "" })} {...tec(() => setUi({ q: "" }))} style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(11,14,18,.06)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="close" size={13} /></span> : null}
       </div>
@@ -43,8 +43,8 @@ export function PasoB1({ d, up, ui, setUi, es, desk, dup, onClaim, toast }: {
           {res.map((r, i) => { const kk = X.cat(r.cat); return (
             <div key={i} role="button" className="hover:bg-[var(--tl-paper)]" onClick={() => { setCat(r.cat); const S = d.cat === r.cat ? d.subs || [] : []; up({ subs: S.includes(r.sub) ? S : S.concat([r.sub]).slice(-3) }); }} {...tec(() => { setCat(r.cat); const S = d.cat === r.cat ? d.subs || [] : []; up({ subs: S.includes(r.sub) ? S : S.concat([r.sub]).slice(-3) }); })} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderTop: i ? "1px solid rgba(11,14,18,.07)" : "none", cursor: "pointer" }}>
               <span style={{ width: 34, height: 34, borderRadius: 11, background: "var(--tl-paper)", display: "grid", placeItems: "center", flex: "none" }}><Icon name={kk ? kk[3] : "grid"} size={16} /></span>
-              <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{es ? cap(r.sub) : r.en}</div><div style={{ marginTop: 2, font: `700 9.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.5)" }}>{(kk ? (es ? kk[1] : kk[2]) : "").toUpperCase()}</div></div>
-              <Icon name="chevronRight" size={15} color="rgba(11,14,18,.4)" />
+              <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{es ? cap(r.sub) : r.en}</div><div style={{ marginTop: 2, font: `700 9.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.6)" }}>{(kk ? (es ? kk[1] : kk[2]) : "").toUpperCase()}</div></div>
+              <Icon name="chevronRight" size={15} color="rgba(11,14,18,.6)" />
             </div>); })}
         </div>
       ) : null}
@@ -65,8 +65,8 @@ export function PasoB1({ d, up, ui, setUi, es, desk, dup, onClaim, toast }: {
         <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 4 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, font: `700 10px ${MONO}`, letterSpacing: ".14em" }}>
-              <span style={{ color: "rgba(11,14,18,.5)" }}>{((kc ? (es ? kc[1] : kc[2]) : "") + E2(" · ¿QUÉ HACES?", " · WHAT DO YOU DO?")).toUpperCase()}</span>
-              <span style={{ flex: "none", color: (d.subs || []).length ? "var(--tl-action)" : "rgba(11,14,18,.42)" }}>{(d.subs || []).length ? (d.subs || []).length + E2(" DE 3", " OF 3") : E2("HASTA 3", "UP TO 3")}</span>
+              <span style={{ color: "rgba(11,14,18,.6)" }}>{((kc ? (es ? kc[1] : kc[2]) : "") + E2(" · ¿QUÉ HACES?", " · WHAT DO YOU DO?")).toUpperCase()}</span>
+              <span style={{ flex: "none", color: (d.subs || []).length ? "var(--tl-action)" : "rgba(11,14,18,.6)" }}>{(d.subs || []).length ? (d.subs || []).length + E2(" DE 3", " OF 3") : E2("HASTA 3", "UP TO 3")}</span>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
               {extra.concat(top).map((t: string[]) => <Chip key={t[2]} variant={(d.subs || []).includes(t[2]!) ? "selected" : "filter"} onClick={() => togSub(t[2]!)}>{es ? t[0] : t[1]}</Chip>)}
@@ -108,7 +108,7 @@ export function PasoC1({ d, up, es }: { d: Borrador; up: Up; es: boolean }) {
           <div key={q.k} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {(q.type === "chips" || q.type === "one") && t ? (
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, font: `700 10px ${MONO}`, letterSpacing: ".14em" }}>
-                <span style={{ color: "rgba(11,14,18,.5)" }}>{t}</span>
+                <span style={{ color: "rgba(11,14,18,.6)" }}>{t}</span>
                 <span style={{ flex: "none", color: "var(--tl-action)" }}>{q.type === "chips" && arr.length ? arr.length + (es ? (arr.length === 1 ? " ELEGIDO" : " ELEGIDOS") : " PICKED") : ""}</span>
               </div>
             ) : null}

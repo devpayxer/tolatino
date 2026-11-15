@@ -95,7 +95,7 @@ export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCo
             </div>
           </div>
           {v.bio && <div style={{ marginTop: 12, font: "500 13.5px/1.55 Manrope,sans-serif", color: "rgba(11,14,18,.75)", textWrap: "pretty", whiteSpace: "pre-wrap" }}>{v.bio}</div>}
-          {meta && <div style={{ marginTop: 10, font: `600 9.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{meta}</div>}
+          {meta && <div style={{ marginTop: 10, font: `600 9.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{meta}</div>}
           {v.fundador && <div style={{ marginTop: 10, display: "flex" }}><Tag tone="action">{v.yo ? E2(`FUNDADORES · #${v.fundador.toLocaleString("en-US")}`, `FOUNDERS · #${v.fundador.toLocaleString("en-US")}`) : E2(`FUNDADOR DE ${(v.ciudad ?? ciudad).split(",")[0]!.toUpperCase()}`, `${(v.ciudad ?? ciudad).split(",")[0]!.toUpperCase()} FOUNDER`)}</Tag></div>}
           {stats && (
             <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 8 }}>
@@ -103,7 +103,7 @@ export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCo
                 <div key={l} role={v.yo && l !== stats[0]![1] ? "link" : undefined} onClick={v.yo && l !== stats[0]![1] ? () => router.push(`/cuenta/vecinos?l=${l === stats[1]![1] ? "seguidores" : "siguiendo"}`) : undefined} {...tec(v.yo && l !== stats[0]![1] ? () => router.push(`/cuenta/vecinos?l=${l === stats[1]![1] ? "seguidores" : "siguiendo"}`) : undefined)}
                   style={{ padding: 10, borderRadius: 13, background: "var(--tl-paper)", cursor: v.yo && l !== stats[0]![1] ? "pointer" : "default" }}>
                   <div style={{ font: "800 18px/1 Sora,sans-serif", letterSpacing: "-.02em" }}>{n.toLocaleString("en-US")}</div>
-                  <div style={{ marginTop: 5, font: `700 8.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.5)" }}>{l}</div>
+                  <div style={{ marginTop: 5, font: `700 8.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.6)" }}>{l}</div>
                 </div>))}
             </div>
           )}
@@ -114,7 +114,7 @@ export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCo
                 <div style={{ display: "flex", flex: 1 }}><Button variant="secondary" size="md" block icon="chat" disabled={!v.puedeEscribir} onClick={() => router.push(`/comunidad/mensajes/${v.id}`)}>{E2("Mensaje", "Message")}</Button></div>
                 <IconButton icon="chevronDown" size={40} label={E2("Opciones", "Options")} onClick={menu} />
               </div>
-              {!v.puedeEscribir && <div style={{ marginTop: 8, font: "500 11.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{E2(`Solo puedes escribirle si ${primero(v.nombre)} te sigue.`, `You can only message ${primero(v.nombre)} if they follow you.`)}</div>}
+              {!v.puedeEscribir && <div style={{ marginTop: 8, font: "500 11.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2(`Solo puedes escribirle si ${primero(v.nombre)} te sigue.`, `You can only message ${primero(v.nombre)} if they follow you.`)}</div>}
             </>
           )}
         </div>
@@ -128,18 +128,18 @@ export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCo
         {v.yo && <MisEnlaces es={es} v={v} ui={ui} margen={margen} />}
         {v.insignias.length > 0 && (
           <div data-screen-label="APP-COM-VECINO · insignias" style={{ ...CARD, borderRadius: 18, margin: margen, padding: 16 }}>
-            <div style={{ font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.42)" }}>{E2("INSIGNIAS", "BADGES")}</div>
+            <div style={{ font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.6)" }}>{E2("INSIGNIAS", "BADGES")}</div>
             <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 }}>
               {v.insignias.map((b) => (
                 <div key={b.k} style={{ padding: "11px 12px", borderRadius: 13, background: "var(--tl-paper)", display: "flex", gap: 9, alignItems: "flex-start" }}>
                   <span style={{ display: "grid", flex: "none", paddingTop: 1 }}><Icon name="star" size={15} color="var(--tl-pro-ink)" /></span>
-                  <div style={{ minWidth: 0 }}><div style={{ font: "700 12.5px/1.3 Manrope,sans-serif" }}>{es ? b.t.es : b.t.en}</div><div style={{ marginTop: 3, font: "500 11px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{es ? b.s.es : b.s.en}</div></div>
+                  <div style={{ minWidth: 0 }}><div style={{ font: "700 12.5px/1.3 Manrope,sans-serif" }}>{es ? b.t.es : b.t.en}</div><div style={{ marginTop: 3, font: "500 11px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{es ? b.s.es : b.s.en}</div></div>
                 </div>))}
             </div>
           </div>
         )}
         <div data-screen-label="APP-COM-VECINO · publicaciones" style={{ background: "var(--tl-white)", overflow: "hidden" }} className="lg:rounded-[20px] lg:border lg:border-ink/[.08]">
-          <div style={{ padding: "14px 20px", borderBottom: LINE, font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.42)" }}>{v.yo ? E2("LO QUE PUBLICASTE", "WHAT YOU POSTED") : E2("LO QUE PUBLICÓ", "WHAT THEY POSTED")}</div>
+          <div style={{ padding: "14px 20px", borderBottom: LINE, font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.6)" }}>{v.yo ? E2("LO QUE PUBLICASTE", "WHAT YOU POSTED") : E2("LO QUE PUBLICÓ", "WHAT THEY POSTED")}</div>
           {pubs.map((p) => (
             <Tarjeta key={p.id} p={p} es={es} tr={tr} onOpen={() => router.push(`/comunidad/p/${p.id}`)} onMenu={() => acc.menu(p)} onVote={(x) => void acc.votar(p, x)} onPoll={(i) => void acc.encuesta(p, i)}
               onSave={() => void acc.guardar(p)} onShare={() => void acc.compartir(p)} onBiz={(id) => router.push(`/n/${id}`)} />
@@ -176,7 +176,7 @@ function MisEnlaces({ es, v, ui, margen }: { es: boolean; v: V; ui: ComUi; marge
       {filas.map(([ic, t, s, on], i) => (
         <div key={t} role="link" onClick={on} {...tec(on)} style={{ display: "flex", gap: 12, alignItems: "center", padding: "12px 0", borderTop: i ? LINE : "none", cursor: "pointer" }}>
           <span style={{ display: "grid", flex: "none" }}><Icon name={ic} size={18} color="var(--tl-action)" /></span>
-          <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px Manrope,sans-serif" }}>{t}</div>{s && <div style={{ marginTop: 2, font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)" }}>{s}</div>}</div>
+          <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px Manrope,sans-serif" }}>{t}</div>{s && <div style={{ marginTop: 2, font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{s}</div>}</div>
           <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" />
         </div>))}
     </div>
@@ -197,7 +197,7 @@ function Editar({ es, v, ui }: { es: boolean; v: V; ui: ComUi }) {
     ui.setHoja(null); ui.setAviso({ t: E2("Guardado.", "Saved.") }); router.refresh();
   };
   const campo = { width: "100%", boxSizing: "border-box", borderRadius: 13, border: "1px solid rgba(11,14,18,.12)", outline: "none", font: "600 14px Manrope,sans-serif", color: "var(--tl-ink)", background: "var(--tl-white)" } as const;
-  const k = (t: string) => <span style={{ font: `700 10px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>{t}</span>;
+  const k = (t: string) => <span style={{ font: `700 10px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{t}</span>;
   return (
     <div data-screen-label="APP-COM-VECINO · editar" style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
       <label style={{ display: "flex", flexDirection: "column", gap: 7 }}>{k(`${E2("PRESENTACIÓN", "INTRO")} · ${bio.length}/${MAX_BIO}`)}

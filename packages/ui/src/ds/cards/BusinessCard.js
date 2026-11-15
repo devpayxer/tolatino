@@ -40,7 +40,7 @@ const Stars = ({
 }, r, note ? /*#__PURE__*/React.createElement("span", {
   style: {
     fontWeight: 500,
-    color: 'rgba(11,14,18,.42)'
+    color: 'rgba(11,14,18,.6)'
   }
 }, " ", note) : null) : /*#__PURE__*/React.createElement("span", {
   style: {
@@ -55,7 +55,7 @@ const Stars = ({
 }, "\u2605"), " ", r, " ", /*#__PURE__*/React.createElement("span", {
   style: {
     fontWeight: 500,
-    color: 'rgba(11,14,18,.42)'
+    color: 'rgba(11,14,18,.6)'
   }
 }, "(", n, ")"));
 const bg = p => p ? {
@@ -129,7 +129,7 @@ function BusinessCard({
     style: {
       marginTop: 4,
       font: '600 10.5px ' + mono,
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, meta) : null, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -186,7 +186,7 @@ function BusinessCard({
       marginTop: 6,
       font: '600 10.5px ' + mono,
       letterSpacing: '.04em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, meta) : null, /*#__PURE__*/React.createElement("div", {
     style: {

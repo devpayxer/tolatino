@@ -89,7 +89,7 @@ export function Pedido({ p, es, ayuda, ruta = false }: { p: PedidoVista; es: boo
         </div>
       </div>
       <div className="mt-[18px] flex flex-wrap items-end justify-between gap-3 border-t border-ink/[.07] pt-4">
-        {etaK && eta ? <div><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{etaK}</div><div className="mt-1.5 font-display text-[26px] font-extrabold leading-none tracking-[-0.045em]">{eta}</div></div> : <div />}
+        {etaK && eta ? <div><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{etaK}</div><div className="mt-1.5 font-display text-[26px] font-extrabold leading-none tracking-[-0.045em]">{eta}</div></div> : <div />}
         <span className={`rounded-lg px-[9px] py-1.5 font-mono text-[9.5px] font-extrabold tracking-[0.08em] ${cerrado ? "bg-signal/[.16] text-open-text" : "bg-pro/[.16] text-pro-ink"}`}>{money}</span>
       </div>
     </div>
@@ -99,7 +99,7 @@ export function Pedido({ p, es, ayuda, ruta = false }: { p: PedidoVista; es: boo
       <div className={K}>{E2("ENTREGA", "DELIVER TO")}</div>
       <div className="mt-2 text-[13.5px] font-bold">{ENT?.to ? `${ENT.to.street}${ENT.to.apt ? `, ${ENT.to.apt}` : ""}` : "—"}</div>
       {ENT?.drop && <div className="mt-1 text-[12px] font-medium leading-[1.45] text-ink/60">{ENT.drop.drop === "puerta" ? E2("Dejar en la puerta", "Leave at door") : E2("En la mano", "Hand it to me")}{ENT.drop.note ? ` · “${ENT.drop.note}”` : ""}</div>}
-      {p.nota && <div className="mt-1 text-pretty text-[12px] font-medium leading-[1.45] text-ink/50">“{p.nota}”</div>}
+      {p.nota && <div className="mt-1 text-pretty text-[12px] font-medium leading-[1.45] text-ink/60">“{p.nota}”</div>}
       {/* 9n · El código para recibir (se lo dices al repartidor), lo que te escribió y la foto de la entrega. */}
       {p.rep9n?.codigo && p.repartidor && <div data-codigo-cliente className="mt-3 rounded-[14px] bg-paper px-3.5 py-3">
         <div className={K}>{E2("TU CÓDIGO PARA RECIBIR", "YOUR CODE TO RECEIVE")}</div>
@@ -119,14 +119,14 @@ export function Pedido({ p, es, ayuda, ruta = false }: { p: PedidoVista; es: boo
       <div className={K}>{E2("RECOGES EN", "PICK UP AT")}</div>
       <div className="mt-2 text-[13.5px] font-bold">{p.negocio.direccion ?? p.negocio.nombre}</div>
       {p.pickupNote && <div className="mt-1 text-[12px] font-medium leading-[1.45] text-ink/60">{p.pickupNote}</div>}
-      {p.nota && <div className="mt-1 text-pretty text-[12px] font-medium leading-[1.45] text-ink/50">“{p.nota}”</div>}
+      {p.nota && <div className="mt-1 text-pretty text-[12px] font-medium leading-[1.45] text-ink/60">“{p.nota}”</div>}
     </div>
   );
   const lineas = (
     <div className={`${caja} p-[15px]`}>
       <div className="flex items-baseline justify-between gap-2.5">
         <span className="font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{E2("Tu pedido", "Your order")}</span>
-        <span className="font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${p.count} ${es ? (p.count === 1 ? "ARTÍCULO" : "ARTÍCULOS") : p.count === 1 ? "ITEM" : "ITEMS"}`}</span>
+        <span className="font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${p.count} ${es ? (p.count === 1 ? "ARTÍCULO" : "ARTÍCULOS") : p.count === 1 ? "ITEM" : "ITEMS"}`}</span>
       </div>
       <div className="mt-2">
         {p.lineas.map((l, i) => (
@@ -134,7 +134,7 @@ export function Pedido({ p, es, ayuda, ruta = false }: { p: PedidoVista; es: boo
             <span className="min-w-5 flex-none font-display text-[12px] font-extrabold leading-[1.4]">{l.q}×</span>
             <div className="min-w-0 flex-1">
               <div className="text-[13px] font-bold leading-[1.35]">{l.name}</div>
-              {l.sum && <div className="mt-0.5 text-[11.5px] font-medium leading-[1.4] text-ink/55">{l.sum}</div>}
+              {l.sum && <div className="mt-0.5 text-[11.5px] font-medium leading-[1.4] text-ink/60">{l.sum}</div>}
             </div>
             <span className="flex-none font-mono text-[12.5px] font-bold">{l.price}</span>
           </div>
@@ -168,7 +168,7 @@ export function Pedido({ p, es, ayuda, ruta = false }: { p: PedidoVista; es: boo
       {puedeCancelar && (
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" onClick={() => router.push(`/pedido/${p.numero}/cancelar`)} className="text-[13px] font-bold text-danger">{E2("Cancelar pedido", "Cancel order")}</button>
-          <span className="text-[12px] font-medium text-ink/55">{E2("Puedes cancelar sin costo hasta que el negocio lo acepte.", "Cancel for free until the business accepts it.")}</span>
+          <span className="text-[12px] font-medium text-ink/60">{E2("Puedes cancelar sin costo hasta que el negocio lo acepte.", "Cancel for free until the business accepts it.")}</span>
         </div>
       )}
     </div>
@@ -181,12 +181,12 @@ export function Pedido({ p, es, ayuda, ruta = false }: { p: PedidoVista; es: boo
         <button type="button" aria-label={E2("Cerrar", "Close")} onClick={volver} className="grid size-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="close" size={15} strokeWidth={2.4} /></button>
         <div className="min-w-0 flex-1">
           <div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{p.negocio.nombre}</div>
-          <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{E2("PEDIDO #", "ORDER #")}{p.numero}</div>
+          <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{E2("PEDIDO #", "ORDER #")}{p.numero}</div>
         </div>
       </div>
       <div className="mx-auto hidden max-w-[1180px] lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2("Volver a ", "Back to ")}{p.negocio.nombre}</button>
-        <div className="mt-2.5 font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{E2("PEDIDO #", "ORDER #")}{p.numero}</div>
+        <div className="mt-2.5 font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{E2("PEDIDO #", "ORDER #")}{p.numero}</div>
       </div>
       <div className="mx-auto flex max-w-[1180px] flex-col gap-3 px-4 pt-4 lg:mt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_372px] lg:items-start lg:gap-x-12 lg:gap-y-4 lg:px-0 lg:pt-0">
         <div className="flex min-w-0 flex-col gap-3 lg:gap-4">

@@ -34,7 +34,7 @@ export function Licencia({ l, lang }: { l: { id: string; nombre: string; cant: s
       <div style={{ maxWidth: lay.max, margin: "0 auto", padding: lay.pad, display: "flex", flexDirection: "column", gap: 14 }}>
         {desk ? <Link href={`/n/${l.id}`} style={{ display: "inline-flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)" }}><Icon name="chevronLeft" size={15} strokeWidth={2} />{E2("Volver a la ficha", "Back to the page")}</Link> : null}
         <div>
-          <div style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.45)" }}>{bizK}</div>
+          <div style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.6)" }}>{bizK}</div>
           <h1 style={{ margin: "6px 0 0", font: `800 ${lay.h1}px/1.08 Sora,sans-serif`, letterSpacing: "-.04em", textWrap: "balance" }}>{E2("¿Puede hacerlo por ley?", "Are they allowed by law?")}</h1>
           <p style={{ margin: "8px 0 0", font: "500 14px/1.55 Manrope,sans-serif", color: "rgba(11,14,18,.65)" }}>{E2("Lo que su licencia le permite, quién la emitió y cómo la verificas tú mismo.", "What their license allows, who issued it and how to check it yourself.")}</p>
         </div>

@@ -96,13 +96,13 @@ export function Chat({ es, yo, ciudad, c }: { es: boolean; yo: YoCom; ciudad: st
         {msjs.map((m) => (
           <div key={m.id} data-screen-label="Chat · mensaje" style={{ display: "flex", flexDirection: "column", alignItems: m.mio ? "flex-end" : "flex-start", gap: 3 }}>
             <div style={{ maxWidth: "78%", padding: "10px 13px", borderRadius: m.mio ? "18px 18px 6px 18px" : "18px 18px 18px 6px", background: m.oculto ? "rgba(11,14,18,.05)" : m.mio ? "var(--tl-ink)" : "var(--tl-white)",
-              color: m.oculto ? "rgba(11,14,18,.55)" : m.mio ? "var(--tl-white)" : "var(--tl-ink)", border: m.mio || m.oculto ? "none" : "1px solid rgba(11,14,18,.08)", font: `${m.oculto ? "600 13px" : "500 14px"}/1.45 Manrope,sans-serif`, textWrap: "pretty", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+              color: m.oculto ? "rgba(11,14,18,.6)" : m.mio ? "var(--tl-white)" : "var(--tl-ink)", border: m.mio || m.oculto ? "none" : "1px solid rgba(11,14,18,.08)", font: `${m.oculto ? "600 13px" : "500 14px"}/1.45 Manrope,sans-serif`, textWrap: "pretty", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
               {m.oculto ? E2("Mensaje oculto por To'Latino", "Message hidden by To'Latino") : m.t}
             </div>
-            <span style={{ font: `600 8.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.42)" }}>{hace(m.at, es).toUpperCase()}</span>
+            <span style={{ font: `600 8.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{hace(m.at, es).toUpperCase()}</span>
           </div>
         ))}
-        {!msjs.length && c.puede && <div style={{ textAlign: "center", font: "500 13px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{E2(`Escríbele a ${primero(o.nombre)}. Solo texto.`, `Write to ${primero(o.nombre)}. Text only.`)}</div>}
+        {!msjs.length && c.puede && <div style={{ textAlign: "center", font: "500 13px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2(`Escríbele a ${primero(o.nombre)}. Solo texto.`, `Write to ${primero(o.nombre)}. Text only.`)}</div>}
         {!c.puede && c.motivo && <div role="note" style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(11,14,18,.05)", font: "600 12.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.62)", textAlign: "center" }}>{es ? c.motivo.es : c.motivo.en}</div>}
         <div ref={fin} style={{ height: D ? 0 : c.puede ? 96 : 0 }} />
         {c.puede && (

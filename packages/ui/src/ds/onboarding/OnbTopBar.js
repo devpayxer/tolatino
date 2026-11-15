@@ -131,7 +131,7 @@ function OnbTopBar({
 const PH = {
   done: ['transparent', 'rgba(11,14,18,.75)', 'var(--tl-ink)', 'var(--tl-white)'],
   cur: ['rgba(75,55,245,.08)', 'var(--tl-ink)', 'var(--tl-action)', 'var(--tl-white)'],
-  next: ['transparent', 'rgba(11,14,18,.5)', 'rgba(11,14,18,.07)', 'rgba(11,14,18,.45)']
+  next: ['transparent', 'rgba(11,14,18,.6)', 'rgba(11,14,18,.07)', 'rgba(11,14,18,.6)']
 };
 function OnbPhases({
   label,
@@ -150,7 +150,7 @@ function OnbPhases({
     style: {
       font: '700 9.5px ' + mono,
       letterSpacing: '.14em',
-      color: 'rgba(11,14,18,.45)',
+      color: 'rgba(11,14,18,.6)',
       padding: '0 12px 10px'
     }
   }, label) : null, phases.map((f, i) => {
@@ -197,7 +197,7 @@ function OnbPhases({
         marginTop: 2,
         font: '600 9.5px ' + mono,
         letterSpacing: '.06em',
-        color: 'rgba(11,14,18,.45)'
+        color: 'rgba(11,14,18,.6)'
       }
     }, f.sub) : null));
   }), has(saved) || has(exitLabel) ? /*#__PURE__*/React.createElement("div", {
@@ -338,7 +338,7 @@ function OnbActionBar({
     style: {
       font: '600 9.5px ' + mono,
       letterSpacing: '.08em',
-      color: 'rgba(11,14,18,.5)',
+      color: 'rgba(11,14,18,.6)',
       textAlign: 'center'
     }
   }, note) : null, /*#__PURE__*/React.createElement("div", {
@@ -394,7 +394,7 @@ function OnbActionBar({
       minWidth: 0,
       font: '600 10px ' + mono,
       letterSpacing: '.08em',
-      color: 'rgba(11,14,18,.5)',
+      color: 'rgba(11,14,18,.6)',
       textAlign: 'right'
     }
   }, note), alt ? /*#__PURE__*/React.createElement(__ds_scope.Button, {

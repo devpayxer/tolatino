@@ -135,7 +135,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
               <span className="min-w-5 flex-none font-display text-[12px] font-extrabold leading-[1.4]">{l.q}×</span>
               <div className="min-w-0 flex-1">
                 <div className="text-[13px] font-bold leading-[1.35]">{it.name}</div>
-                {sum && <div className="mt-0.5 text-[11.5px] font-medium leading-[1.4] text-ink/55">{sum}</div>}
+                {sum && <div className="mt-0.5 text-[11.5px] font-medium leading-[1.4] text-ink/60">{sum}</div>}
               </div>
               <span className="flex-none font-mono text-[12.5px] font-bold">{money(C.unit(it, l.ch) * l.q)}</span>
             </div>
@@ -173,7 +173,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
         <button type="button" aria-label={E2("Volver", "Back")} onClick={volver} className="grid size-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="chevronLeft" size={18} strokeWidth={2} /></button>
         <div className="min-w-0 flex-1">
           <div className="font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{E2("Finalizar pedido", "Checkout")}</div>
-          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{countCaps}</div>
+          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{countCaps}</div>
         </div>
         <Icon name="shield" size={19} color="var(--tl-open)" />
       </div>
@@ -181,13 +181,13 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
       <div className="mx-auto hidden max-w-[1380px] lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{m.negocio.nombre}</button>
         <div className="mt-3.5 flex items-center gap-3"><h1 className="font-display text-[32px] font-extrabold leading-none tracking-[-0.045em]">{E2("Finalizar pedido", "Checkout")}</h1><Icon name="shield" size={22} color="var(--tl-open)" /></div>
-        <div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{countCaps}</div>
+        <div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{countCaps}</div>
       </div>
 
       {cart && !lines.length && (
         <div className="flex flex-col items-center gap-2 px-5 py-12 text-center">
           <div className="text-[15px] font-bold">{E2("Tu pedido está vacío", "Your order is empty")}</div>
-          <div className="text-[12.5px] font-medium text-ink/55">{E2("Vuelve al menú para agregar platos.", "Go back to the menu to add dishes.")}</div>
+          <div className="text-[12.5px] font-medium text-ink/60">{E2("Vuelve al menú para agregar platos.", "Go back to the menu to add dishes.")}</div>
           <div className="mt-2.5 flex"><Button variant="secondary" onClick={volver}>{E2("Volver al menú", "Back to menu")}</Button></div>
         </div>
       )}
@@ -216,7 +216,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
                   <span className="grid size-9 flex-none place-items-center rounded-[11px] bg-action/10"><Icon name="home" size={17} color="var(--tl-action)" /></span>
                   <div className="min-w-0 flex-1">
                     <div className="text-[13.5px] font-bold">{dir ? dirT : E2("Agrega tu dirección", "Add your address")}</div>
-                    <div className="mt-0.5 text-[11.5px] font-medium text-ink/50">{dir ? [dir.apt, dropL].filter(Boolean).join(" · ") : E2("A dónde te lo llevan", "Where to deliver")}</div>
+                    <div className="mt-0.5 text-[11.5px] font-medium text-ink/60">{dir ? [dir.apt, dropL].filter(Boolean).join(" · ") : E2("A dónde te lo llevan", "Where to deliver")}</div>
                   </div>
                   <button type="button" onClick={() => router.push(dir ? `/cuenta/direcciones?volver=${aqui}` : `/cuenta/direcciones/nueva?volver=${aqui}`)} className="flex-none text-[12px] font-bold text-action">{dir ? E2("Cambiar", "Change") : E2("Agregar", "Add")}</button>
                 </div>
@@ -225,7 +225,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
                   <span className="grid size-9 flex-none place-items-center rounded-[11px] bg-action/10"><Icon name="store" size={17} color="var(--tl-action)" /></span>
                   <div className="min-w-0 flex-1">
                     <div className="text-[13.5px] font-bold">{E2("Recoges en ", "Pick up at ")}{m.negocio.direccion ?? m.negocio.nombre}</div>
-                    <div className="mt-0.5 text-[11.5px] font-medium text-ink/50">{m.negocio.pickupNote || E2("Di tu número de pedido.", "Give your order number.")}</div>
+                    <div className="mt-0.5 text-[11.5px] font-medium text-ink/60">{m.negocio.pickupNote || E2("Di tu número de pedido.", "Give your order number.")}</div>
                   </div>
                   {m.negocio.lat != null && m.negocio.lng != null && (
                     <button type="button" onClick={() => abrirComoLlegar({ lat: m.negocio.lat, lng: m.negocio.lng })} className="flex-none text-[12px] font-bold text-action">{E2("Cómo llegar", "Directions")}</button>
@@ -236,7 +236,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
                 <span className="grid size-9 flex-none place-items-center rounded-[11px] bg-signal/[.14]"><Icon name="clock" size={17} color="var(--tl-open-text)" /></span>
                 <div className="min-w-0 flex-1">
                   <div className="text-[13.5px] font-bold">{whenL}</div>
-                  <div className="mt-0.5 text-[11.5px] font-medium text-ink/50">{whenSub}</div>
+                  <div className="mt-0.5 text-[11.5px] font-medium text-ink/60">{whenSub}</div>
                 </div>
                 {chips.length > 1 && <span className="flex-none text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</span>}
               </button>
@@ -263,14 +263,14 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
                           <span className={`grid size-8 place-items-center rounded-[10px] ${on ? "bg-action/10" : "bg-ink/5"}`}><Icon name={ic} size={16} color={on ? "var(--tl-action)" : "rgba(11,14,18,.6)"} /></span>
                           <span className={`size-[18px] rounded-full bg-white ${on ? "border-[5.5px] border-ink" : "border-[1.5px] border-ink/20"}`} />
                         </div>
-                        <div><div className="text-[13px] font-bold leading-[1.25]">{l}</div><div className="mt-[3px] text-pretty text-[11px] font-medium leading-[1.4] text-ink/55">{sub}</div></div>
+                        <div><div className="text-[13px] font-bold leading-[1.25]">{l}</div><div className="mt-[3px] text-pretty text-[11px] font-medium leading-[1.4] text-ink/60">{sub}</div></div>
                       </button>
                     );
                   })}
                 </div>
-                <div className="mt-3.5 font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{E2("AL LLEGAR", "ON ARRIVAL")}</div>
+                <div className="mt-3.5 font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("AL LLEGAR", "ON ARRIVAL")}</div>
                 <div className="mt-2 flex flex-wrap gap-[7px]">{AT.map(([k, a, b]) => <Chip key={k} variant={at.includes(k) ? "selected" : "filter"} onClick={() => togAt(k)}>{es ? a : b}</Chip>)}</div>
-                <div className="mt-3.5 flex items-baseline justify-between gap-2.5"><span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{E2("INSTRUCCIONES PARA EL REPARTIDOR", "NOTES FOR THE DRIVER")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length}/200</span></div>
+                <div className="mt-3.5 flex items-baseline justify-between gap-2.5"><span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("INSTRUCCIONES PARA EL REPARTIDOR", "NOTES FOR THE DRIVER")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length}/200</span></div>
                 <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 200))} placeholder={E2("Portón, piso, dónde estacionar…", "Gate, floor, where to park…")} aria-label={E2("Instrucciones para el repartidor", "Notes for the driver")} rows={2}
                   className="mt-2 w-full resize-none rounded-[13px] border border-ink/[.12] bg-white px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] text-ink outline-none" />
                 {/* La foto al dejarlo y la espera de 5 min las hace la app Repartidor (aún sin diseño): no se promete aquí hasta que exista. */}
@@ -289,18 +289,18 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
                     return (
                       <button key={k} type="button" aria-pressed={on} onClick={() => setTip(k)} className={`flex h-12 flex-col items-center justify-center gap-[3px] rounded-xl border ${on ? "border-ink bg-ink text-white" : "border-ink/10 bg-white text-ink"}`}>
                         <span className="text-[12.5px] font-bold">{l}</span>
-                        {k !== "otro" && <span className={`font-mono text-[9.5px] font-semibold ${on ? "text-white/60" : "text-ink/50"}`}>{money(Math.round((C.sub * Number(k.slice(1))) / 100))}</span>}
+                        {k !== "otro" && <span className={`font-mono text-[9.5px] font-semibold ${on ? "text-white/60" : "text-ink/60"}`}>{money(Math.round((C.sub * Number(k.slice(1))) / 100))}</span>}
                       </button>
                     );
                   })}
                 </div>
                 {tip === "otro" && (
                   <div className="mt-2.5 flex h-[46px] items-center gap-1.5 rounded-[13px] border border-ink/[.12] px-3.5">
-                    <span className="text-[14px] font-bold text-ink/50">$</span>
+                    <span className="text-[14px] font-bold text-ink/60">$</span>
                     <input value={tipAmt} onChange={(e) => setTipAmt(e.target.value.replace(/[^0-9.]/g, "").slice(0, 6))} placeholder={E2("Monto en dólares", "Amount in dollars")} inputMode="decimal" aria-label={E2("Monto de la propina", "Tip amount")} className="min-w-0 flex-1 border-0 bg-transparent text-[14px] font-bold text-ink outline-none" />
                   </div>
                 )}
-                <div className="mt-2.5 text-[11.5px] font-medium text-ink/55">{E2("La propina va completa al repartidor.", "The full tip goes to the driver.")}</div>
+                <div className="mt-2.5 text-[11.5px] font-medium text-ink/60">{E2("La propina va completa al repartidor.", "The full tip goes to the driver.")}</div>
               </div>
             )}
             <div className={caja}>
@@ -309,7 +309,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
                 {(pago ? [["card", "card", E2("Tarjeta", "Card")], ["cash", "dollar", dl ? E2("Efectivo al recibir", "Cash on delivery") : E2("Pagas en el local", "Pay at the store")]] as const
                   : [["cash", "dollar", dl ? E2("Efectivo al recibir", "Cash on delivery") : E2("Pagas en el local", "Pay at the store")]] as const).map(([k, ic, l]) => (
                   <button key={k} type="button" role="tab" aria-selected={payK === k} onClick={() => { setPayK(k); setError(null); }}
-                    className={`flex h-[38px] min-w-0 flex-1 items-center justify-center gap-[7px] rounded-[11px] text-[12.5px] font-bold ${payK === k ? "bg-white text-ink shadow-[0_1px_4px_rgba(11,14,18,.1)]" : "text-ink/55"}`}><Icon name={ic} size={15} />{l}</button>
+                    className={`flex h-[38px] min-w-0 flex-1 items-center justify-center gap-[7px] rounded-[11px] text-[12.5px] font-bold ${payK === k ? "bg-white text-ink shadow-[0_1px_4px_rgba(11,14,18,.1)]" : "text-ink/60"}`}><Icon name={ic} size={15} />{l}</button>
                 ))}
               </div>
               {conTarjeta && (

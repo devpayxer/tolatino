@@ -86,7 +86,7 @@ export function VisEstado({ x, es }: { x: VisVista; es: boolean }) {
       <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:top-0">
         <button type="button" aria-label={E2("Volver al lugar", "Back to the place")} onClick={() => router.push(`/n/${x.negocio.id}`)} className="grid h-[38px] w-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="close" size={15} strokeWidth={2.4} /></button>
         <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{E2(`Tu ${nm(Q.t).toLowerCase()}`, `Your ${nm(Q.t).toLowerCase()}`)}</div>
-          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${nm(Q.num)}${x.numero} · ${B}`.toUpperCase()}</div></div>
+          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${nm(Q.num)}${x.numero} · ${B}`.toUpperCase()}</div></div>
       </div>
       <div className="mx-auto flex max-w-[560px] flex-col gap-3 px-4 pt-4">
         {flash && <div role="status" className="flex items-center gap-[9px] rounded-[14px] bg-signal/[.16] px-3.5 py-[11px]"><Icon name="check" size={15} color="var(--tl-open-text)" strokeWidth={2.4} /><span className="text-[12.5px] font-bold text-open-text">{flash}</span></div>}
@@ -108,19 +108,19 @@ export function VisEstado({ x, es }: { x: VisVista; es: boolean }) {
           <div data-screen-label="Visita · calificar" className="flex flex-col items-center gap-2.5 rounded-[18px] border border-ink/[.07] bg-white p-4 text-center">
             <div className="font-display text-[17px] font-extrabold tracking-[-0.02em]">{prueba ? E2("¿Cómo te fue en la prueba?", "How was the test drive?") : x.que === "visita" ? E2("¿Cómo te fue en la visita?", "How was the visit?") : E2("¿Cómo te fue?", "How was it?")}</div>
             <div className="flex gap-1.5">{[1, 2, 3, 4, 5].map((n) => <button key={n} type="button" aria-label={E2(`${n} estrellas`, `${n} stars`)} onClick={() => router.push(`/n/${x.negocio.id}/resena?pedido=${x.numero}&e=${n}`)} className="grid h-10 w-10 place-items-center rounded-[12px] bg-ink/[.05]"><Icon name="star" size={20} color="var(--tl-pro)" /></button>)}</div>
-            <div className="text-[12px] font-medium text-ink/55">{E2("Tu reseña sale verificada.", "Your review shows as verified.")}</div>
+            <div className="text-[12px] font-medium text-ink/60">{E2("Tu reseña sale verificada.", "Your review shows as verified.")}</div>
           </div>)}
         <div data-screen-label="Visita · lo que pediste" className={caja}>
           <div className="border-b border-ink/[.07] px-[15px] py-3"><span className={Kh}>{`${E2("TU ", "YOUR ")}${nm(Q.t).toUpperCase()}`}</span></div>
           <div className="px-[15px] py-0.5">{rows.map(([k, v], n) => <div key={`${k}${n}`} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v}</span></div>)}</div>
-          {x.que === "visita" && !conf && x.estado !== "done" && <div className="border-t border-ink/[.07] px-[15px] py-3 text-[11.5px] font-medium leading-[1.5] text-ink/55">{E2("La dirección exacta te llega cuando confirman la visita.", "The exact address arrives once the visit is confirmed.")}</div>}
+          {x.que === "visita" && !conf && x.estado !== "done" && <div className="border-t border-ink/[.07] px-[15px] py-3 text-[11.5px] font-medium leading-[1.5] text-ink/60">{E2("La dirección exacta te llega cuando confirman la visita.", "The exact address arrives once the visit is confirmed.")}</div>}
         </div>
         <div data-screen-label="Visita · tu dinero" className={caja}>
           <div className="border-b border-ink/[.07] px-[15px] py-3"><span className={Kh}>{E2("TU DINERO", "YOUR MONEY")}</span></div>
           <div className="px-[15px] py-0.5">
             <div className="flex justify-between gap-3 py-[11px]"><span className="text-[12.5px] font-semibold">{E2("Hoy", "Today")}</span><span className="text-right text-[12.5px] font-bold">{`$0 · ${nm(Q.gratis)}`}</span></div>
             {detalleTotal && <div className="flex justify-between gap-3 border-t border-ink/[.06] py-[11px]"><span className="flex-none text-[12.5px] font-semibold">{x.que === "visita" ? E2("Si la rentas o compras", "If you rent or buy") : E2("Si lo compras", "If you buy it")}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{detalleTotal}</span></div>}
-            <div className="border-t border-ink/[.06] py-[11px] text-[11.5px] font-medium leading-[1.5] text-ink/55">{E2("Lo de arriba es lo que viste al pedir: queda guardado aunque cambie después.", "This is what you saw when you asked: it stays saved even if it changes later.")}</div>
+            <div className="border-t border-ink/[.06] py-[11px] text-[11.5px] font-medium leading-[1.5] text-ink/60">{E2("Lo de arriba es lo que viste al pedir: queda guardado aunque cambie después.", "This is what you saw when you asked: it stays saved even if it changes later.")}</div>
           </div>
         </div>
         {x.que === "visita" && pie(es)}
@@ -129,10 +129,10 @@ export function VisEstado({ x, es }: { x: VisVista; es: boolean }) {
           {conf && <Button variant="secondary" icon="calendar" onClick={ics}>{E2("Calendario", "Calendar")}</Button>}
           <Button variant="secondary" icon="bubble" onClick={() => router.push(`/cuenta/mensajes/${x.negocio.id}?op=${encodeURIComponent(x.numero)}`)}>{E2("Mensaje", "Message")}</Button>
           {vivo && <Button variant="ghost" icon="close" disabled={ocupado} onClick={() => void hacer("cancelar", E2("Listo: cancelada. No se cobró nada.", "Done: cancelled. Nothing was charged."))}>{E2(`Cancelar la ${nm(Q.t).toLowerCase()}`, `Cancel the ${nm(Q.t).toLowerCase()}`)}</Button>}
-          {vivo && <div className="text-center text-[11.5px] font-medium text-ink/50">{E2("Cancelar es gratis, con un toque.", "Cancelling is free, with one tap.")}</div>}
+          {vivo && <div className="text-center text-[11.5px] font-medium text-ink/60">{E2("Cancelar es gratis, con un toque.", "Cancelling is free, with one tap.")}</div>}
           {/* 4if · Ayuda (pasó, o confirmada y ya llegó la hora; hasta 7 días). «Me cobraron por ver» va directo a To'Latino. */}
           {(x.ayuda.puede || x.ayuda.hay) && <Button variant="secondary" icon="help" onClick={() => router.push(`/vis/${x.numero}/ayuda`)}>{x.ayuda.hay ? E2("Ver tu solicitud de ayuda", "See your help request") : x.rubro === "dealer" ? E2("Ayuda con el dealer", "Dealer help") : E2("Ayuda con la visita", "Visit help")}</Button>}
-          {x.ayuda.puede && <div data-screen-label="Visita · ayuda" className="text-pretty text-center text-[11.5px] font-medium leading-[1.5] text-ink/50">{x.rubro === "dealer" ? E2(`¿El precio en la puerta fue más, o no te enseñaron el título? Pídelo en Ayuda: el dealer responde en ${x.ayuda.h} h.`, `Was the out-the-door price higher, or did they not show the title? Ask in Help: the dealer replies within ${x.ayuda.h} h.`) : E2("¿Te cobraron por ver o te pidieron más para mudarte? Pídelo en Ayuda: va directo a To'Latino.", "Were you charged to view or asked for more to move in? Ask in Help: it goes straight to To'Latino.")}</div>}
+          {x.ayuda.puede && <div data-screen-label="Visita · ayuda" className="text-pretty text-center text-[11.5px] font-medium leading-[1.5] text-ink/60">{x.rubro === "dealer" ? E2(`¿El precio en la puerta fue más, o no te enseñaron el título? Pídelo en Ayuda: el dealer responde en ${x.ayuda.h} h.`, `Was the out-the-door price higher, or did they not show the title? Ask in Help: the dealer replies within ${x.ayuda.h} h.`) : E2("¿Te cobraron por ver o te pidieron más para mudarte? Pídelo en Ayuda: va directo a To'Latino.", "Were you charged to view or asked for more to move in? Ask in Help: it goes straight to To'Latino.")}</div>}
           {!vivo && x.estado !== "done" && <Button variant="secondary" icon="calendar" onClick={() => router.push(x.cancelo === "retirado" ? `/n/${x.negocio.id}` : `/n/${x.negocio.id}/ver?item=${x.itemId}`)}>{x.cancelo === "retirado" ? E2("Ver otras opciones", "See other options") : E2("Pedir otra hora", "Request another time")}</Button>}
         </div>
       </div>

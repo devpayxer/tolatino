@@ -80,11 +80,11 @@ export async function PaginaLegal({ clave, searchParams, children }: { clave: Cl
       <div className="mx-auto grid max-w-[1120px] items-start px-4 pb-10 pt-[18px] lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-12 lg:px-8 lg:pb-14 lg:pt-6">
         <article className="flex min-w-0 flex-col gap-[18px]" lang={ver}>
           <div data-screen-label="Página · título" className="flex flex-col gap-2.5">
-            <span className="text-ink/45" style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em" }}>{grupo.toUpperCase()}</span>
+            <span className="text-ink/60" style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em" }}>{grupo.toUpperCase()}</span>
             <h1 className="m-0 font-display text-[28px] font-extrabold leading-[1.08] tracking-[-0.04em] [text-wrap:balance] lg:text-[40px]">{v ? L(v.title) : E2("Esta página se está revisando", "This page is being reviewed")}</h1>
             {v ? <p className="m-0 text-[15px] font-medium leading-[1.6] text-ink/70 [text-wrap:pretty]">{L(v.lead)}</p> : null}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              {v ? <span data-version-linea className="text-ink/45" style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".12em" }}>{linea(v, en)}</span> : null}
+              {v ? <span data-version-linea className="text-ink/60" style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".12em" }}>{linea(v, en)}</span> : null}
               <CambiarIdioma clave={clave} en={en} />
             </div>
           </div>
@@ -98,10 +98,10 @@ export async function PaginaLegal({ clave, searchParams, children }: { clave: Cl
           {p?.adenda ? (
             <div data-adenda={p.adenda.jurisdiction} className="flex flex-col gap-[18px]">
               <div className="flex flex-col gap-1.5 pt-2">
-                <span className="text-ink/45" style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em" }}>{(ESTADOS[p.estado] ? L(ESTADOS[p.estado]!) : p.estado).toUpperCase()}</span>
+                <span className="text-ink/60" style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em" }}>{(ESTADOS[p.estado] ? L(ESTADOS[p.estado]!) : p.estado).toUpperCase()}</span>
                 <h2 className="m-0 font-display text-[22px] font-extrabold leading-[1.15] tracking-[-0.03em]">{L(p.adenda.title)}</h2>
                 <p className="m-0 text-[14px] font-medium leading-[1.6] text-ink/70">{L(p.adenda.lead)}</p>
-                <span className="text-ink/45" style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".12em" }}>{linea(p.adenda, en)}</span>
+                <span className="text-ink/60" style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".12em" }}>{linea(p.adenda, en)}</span>
               </div>
               <Cuerpo md={L(p.adenda.body)} es={!en} />
             </div>) : null}

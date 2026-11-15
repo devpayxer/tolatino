@@ -38,7 +38,7 @@ export function LadoLegal({ en, actual, titulo, mas }: { en: boolean; actual: st
           {mas.map((x) => (
             <div key={x.k} role="link" tabIndex={0} aria-current={x.k === actual ? "page" : undefined} onClick={() => ir(x.k)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ir(x.k); } }}
               className={`flex cursor-pointer items-center justify-between gap-2.5 border-t border-ink/[.06] py-3 text-[13.5px] font-bold ${x.k === actual ? "text-action" : "text-ink"}`}>
-              <span>{x.t}</span><Icon name="chevronRight" size={15} strokeWidth={2} color="rgba(11,14,18,.4)" />
+              <span>{x.t}</span><Icon name="chevronRight" size={15} strokeWidth={2} color="rgba(11,14,18,.6)" />
             </div>))}
         </div>) : null}
       <div className="flex flex-col gap-2.5 rounded-[18px] bg-ink p-4 text-white" data-screen-label="Página · ¿no encontraste?">

@@ -16,7 +16,7 @@ const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: MouseEvent) => e?.stopPropagation();
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
-const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/45";
+const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
 const QTY: Record<ProdMerc["k"], number[]> = { peso: [1, 2, 3, 5, 10], unid: [1, 2, 3, 6, 12], plato: [1, 2, 3, 4] };
 
 /* El carrito del mercado: uno a la vez en el teléfono. */
@@ -77,7 +77,7 @@ function Fila({ v, p, tarjeta }: { v: Me; p: ProdMerc; tarjeta?: boolean }) {
       <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(p.foto)} />
       <div className="min-w-0 flex-1">
         <div className="text-[14.5px] font-bold leading-[1.3]">{v.nm(p.name)}</div>
-        {v.meta(p) && <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/50">{v.meta(p)}</div>}
+        {v.meta(p) && <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{v.meta(p)}</div>}
         <div className="mt-1.5 font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</div>
       </div>
       {puede ? <Button variant="soft" size="md" onClick={(e: MouseEvent) => v.abrir(p.id, e)}>{v.E2("Agregar", "Add")}</Button>
@@ -114,7 +114,7 @@ export function MeTab({ v, desk }: { v: Me; desk: boolean }) {
       <div className="flex flex-col gap-[22px]">
         {v.secs.map((sc) => (
           <div key={sc.title}>
-            <div className="font-mono text-[11px] font-extrabold tracking-[0.14em] text-ink/45">{sc.title}</div>
+            <div className="font-mono text-[11px] font-extrabold tracking-[0.14em] text-ink/60">{sc.title}</div>
             <div className={desk ? "mt-3 grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5" : "mt-1"}>{sc.items.map((p) => <Fila key={p.id} v={v} p={p} tarjeta={desk} />)}</div>
           </div>
         ))}
@@ -149,7 +149,7 @@ export function MeHoja({ v }: { v: Me }) {
           <div className="flex flex-col gap-4 px-5 pb-6 pt-[18px]">
             <div>
               <div className="font-display text-[22px] font-extrabold leading-[1.15] tracking-[-0.035em]">{nm(p.name)}</div>
-              <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</span>{P.s && <span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/50">{P.s}</span>}</div>
+              <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</span>{P.s && <span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{P.s}</span>}</div>
               {nm(p.desc) && <p className="mt-2.5 text-pretty text-[13px] leading-[1.6] text-ink/65">{nm(p.desc)}</p>}
             </div>
             {puede ? grupos.map((g) => (
@@ -168,7 +168,7 @@ export function MeHoja({ v }: { v: Me }) {
           </div>
         </div>
         <div className="flex flex-none items-center gap-3.5 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
-          {puede && <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{p.k === "peso" ? E2("ESTIMADO", "ESTIMATE") : "TOTAL"}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{`${money(est)}${p.k === "peso" ? E2(" aprox.", " approx.") : ""}`}</div></div>}
+          {puede && <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{p.k === "peso" ? E2("ESTIMADO", "ESTIMATE") : "TOTAL"}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{`${money(est)}${p.k === "peso" ? E2(" aprox.", " approx.") : ""}`}</div></div>}
           <div className="flex min-w-0 flex-1">{puede ? <Button block icon="bag" onClick={() => v.agregar(p, q, p.opc && p.opc.o.length ? oi : null)}>{E2("Agregar al pedido", "Add to order")}</Button> : <Button block icon="pin" onClick={v.llegar}>{E2("Cómo llegar", "Directions")}</Button>}</div>
         </div>
       </div>
@@ -230,7 +230,7 @@ export function MeRiel({ v, onCta }: { v: Me; onCta: () => void }) {
     <div data-screen-label="Ficha · pedido del mercado · columna" className="flex flex-col gap-4 rounded-[22px] border border-ink/10 bg-white p-[22px] shadow-[0_24px_48px_-34px_rgba(11,14,18,.45)]">
       <div className="font-display text-[26px] font-extrabold leading-none tracking-[-0.04em]">{v.mio && v.tot.n ? `${E2("Estimado ", "Estimate ")}${money(v.tot.est)}` : v.ord ? E2("Pide para pickup", "Order for pickup") : E2("Ve directo", "Walk in")}</div>
       <div className="grid grid-cols-3 gap-2">
-        {v.riel.map((m) => <div key={m.k} className="min-w-0 rounded-[14px] bg-paper px-2.5 py-[11px]"><div className="font-mono text-[8.5px] font-bold tracking-[0.1em] text-ink/45">{m.k}</div><div className="mt-1.5 text-[12.5px] font-bold leading-[1.3]">{m.v}</div></div>)}
+        {v.riel.map((m) => <div key={m.k} className="min-w-0 rounded-[14px] bg-paper px-2.5 py-[11px]"><div className="font-mono text-[8.5px] font-bold tracking-[0.1em] text-ink/60">{m.k}</div><div className="mt-1.5 text-[12.5px] font-bold leading-[1.3]">{m.v}</div></div>)}
       </div>
       <div className="text-pretty text-[12.5px] font-medium leading-[1.55] text-ink/60">{`${v.linea}${v.ord ? E2(" Pides aquí; se cobra lo que pesó.", " Order here; you pay what it weighed.") : ""}`}</div>
       <div className="flex">{v.ord ? (v.mio && v.tot.n ? <Button icon="bag" block onClick={v.verPedido}>{E2("Ver pedido", "View order")}</Button> : <Button icon="bag" block onClick={onCta}>{E2("Ordenar", "Order")}</Button>) : <Button icon="pin" block onClick={v.llegar}>{E2("Cómo llegar", "Directions")}</Button>}</div>
@@ -246,7 +246,7 @@ export function MeBarra({ v, onCta }: { v: Me; onCta: () => void }) {
       {v.aviso && <div role="status" className="absolute inset-x-5 -top-12 rounded-[14px] bg-ink px-3.5 py-2.5 text-center text-[12.5px] font-bold text-white">{v.aviso}</div>}
       <div className="min-w-0 flex-1">
         <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{hay ? `${E2("Estimado ", "Estimate ")}${money(v.tot.est)}` : v.ord ? E2("Pide para pickup", "Order for pickup") : E2("Ve directo", "Walk in")}</div>
-        <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">{`${v.riel[0]!.k} · ${v.riel[0]!.v}`.toUpperCase()}</div>
+        <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{`${v.riel[0]!.k} · ${v.riel[0]!.v}`.toUpperCase()}</div>
       </div>
       {v.ord ? <Button icon="bag" onClick={hay ? v.verPedido : onCta}>{hay ? E2("Ver pedido", "View order") : E2("Ordenar", "Order")}</Button> : <Button icon="pin" onClick={v.llegar}>{E2("Cómo llegar", "Directions")}</Button>}
     </div>

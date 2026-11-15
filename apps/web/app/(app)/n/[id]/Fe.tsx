@@ -105,8 +105,8 @@ export function FeHoja({ v }: { v: FeV }) {
         <div data-screen-label="Servicio · grupos" className="rounded-2xl border border-ink/[.08] px-4 py-1">
           {s.grupos.map((g, i) => (
             <div key={g.id} className={`flex items-center justify-between gap-3 py-3 ${i ? "border-t border-ink/[.06]" : ""}`}>
-              <div className="min-w-0"><div className="text-[13.5px] font-bold">{nm(g.label)}</div><div className="mt-0.5 font-mono text-[10px] font-semibold tracking-[0.04em] text-ink/50">{`${E2("EMPIEZA", "STARTS")} ${fechaCorta(g.inicio, es).toUpperCase()}`}</div></div>
-              <div className="flex-none font-mono text-[10px] font-bold tracking-[0.08em]" style={{ color: g.libres ? "var(--tl-open-text)" : "rgba(11,14,18,.45)" }}>{g.libres ? E2(`${g.libres} CUPOS`, `${g.libres} SEATS`) : E2("LLENO", "FULL")}</div>
+              <div className="min-w-0"><div className="text-[13.5px] font-bold">{nm(g.label)}</div><div className="mt-0.5 font-mono text-[10px] font-semibold tracking-[0.04em] text-ink/60">{`${E2("EMPIEZA", "STARTS")} ${fechaCorta(g.inicio, es).toUpperCase()}`}</div></div>
+              <div className="flex-none font-mono text-[10px] font-bold tracking-[0.08em]" style={{ color: g.libres ? "var(--tl-open-text)" : "rgba(11,14,18,.6)" }}>{g.libres ? E2(`${g.libres} CUPOS`, `${g.libres} SEATS`) : E2("LLENO", "FULL")}</div>
             </div>))}
         </div>)}
       <Nota ic={s.forma === "tot" ? "dollar" : "check"} t={con} />
@@ -129,7 +129,7 @@ export function FeContacto({ v }: { v: FeV }) {
         </div>
         <div className="text-pretty text-[13px] font-medium leading-[1.6] text-ink/65">{`${fp.negocio.nombre}. ${E2("Te explican cada paso y te dan el total por escrito antes de firmar.", "They explain each step and give you the written total before you sign.")}`}</div>
         <div className="rounded-2xl bg-paper px-4 py-3">
-          <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{nm(REGLAS_FUN[1]![0]).toUpperCase()}</div>
+          <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{nm(REGLAS_FUN[1]![0]).toUpperCase()}</div>
           <div className="mt-1 text-pretty text-[13px] font-semibold leading-[1.5]">{nm(REGLAS_FUN[1]![1])}</div>
         </div>
         <div className="flex flex-col gap-2">

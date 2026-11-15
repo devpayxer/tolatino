@@ -34,7 +34,7 @@ function SearchSelect({
           padding: '10px 16px 4px',
           font: "700 10px 'JetBrains Mono',monospace",
           letterSpacing: '.14em',
-          color: 'rgba(11,14,18,.45)'
+          color: 'rgba(11,14,18,.6)'
         }
       }, c));
     }
@@ -83,7 +83,7 @@ function SearchSelect({
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "search",
     size: 16,
-    color: "rgba(11,14,18,.5)"
+    color: "rgba(11,14,18,.6)"
   }), /*#__PURE__*/React.createElement("input", {
     value: q,
     onChange: e => setQ(e.target.value.slice(0, 30)),

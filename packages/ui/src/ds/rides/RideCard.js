@@ -41,7 +41,7 @@ function RideCard({
       height: 46,
       borderRadius: 14,
       background: featured ? 'var(--tl-ds-edf3ff)' : 'var(--tl-ds-f1f0ec)',
-      color: featured ? 'var(--tl-mod-transport)' : 'rgba(11,14,18,.5)',
+      color: featured ? 'var(--tl-mod-transport)' : 'rgba(11,14,18,.6)',
       display: 'grid',
       placeItems: 'center'
     }
@@ -70,7 +70,7 @@ function RideCard({
   }) : null), /*#__PURE__*/React.createElement("div", {
     style: {
       font: "600 10.5px 'JetBrains Mono',monospace",
-      color: 'rgba(11,14,18,.45)',
+      color: 'rgba(11,14,18,.6)',
       marginTop: 3
     }
   }, meta)), /*#__PURE__*/React.createElement("div", {
@@ -86,7 +86,7 @@ function RideCard({
   }, price), /*#__PURE__*/React.createElement("div", {
     style: {
       font: "600 10px 'JetBrains Mono',monospace",
-      color: 'rgba(11,14,18,.4)',
+      color: 'rgba(11,14,18,.6)',
       marginTop: 3
     }
   }, unit))), depart ? /*#__PURE__*/React.createElement("div", {
@@ -103,7 +103,7 @@ function RideCard({
       display: 'flex',
       gap: 14,
       font: "600 11px 'JetBrains Mono',monospace",
-      color: 'rgba(11,14,18,.55)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, /*#__PURE__*/React.createElement("span", null, depart), /*#__PURE__*/React.createElement("span", {
     style: {

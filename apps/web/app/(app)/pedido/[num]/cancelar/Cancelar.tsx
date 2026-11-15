@@ -46,7 +46,7 @@ export function Cancelar({ p, es }: { p: PedidoVista; es: boolean }) {
         <button type="button" aria-label={E2("Volver al pedido", "Back to order")} onClick={volver} className="grid size-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="chevronLeft" size={18} strokeWidth={2} /></button>
         <div className="min-w-0 flex-1">
           <div className="font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{E2("Ayuda con el pedido", "Order help")}</div>
-          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${E2("PEDIDO #", "ORDER #")}${p.numero} · ${p.negocio.nombre.toUpperCase()}`}</div>
+          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${E2("PEDIDO #", "ORDER #")}${p.numero} · ${p.negocio.nombre.toUpperCase()}`}</div>
         </div>
       </div>
       <div className="mx-auto flex max-w-[720px] flex-col gap-3 px-4 pt-4">
@@ -73,7 +73,7 @@ export function Cancelar({ p, es }: { p: PedidoVista; es: boolean }) {
                 <div className="flex justify-between gap-3"><span className="min-w-0">{p.taxL}</span><span className="flex-none font-mono text-ink">{p.tax}</span></div>
               </div>
               <div className="mt-3 flex items-baseline justify-between gap-3 border-t border-line pt-3">
-                <span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/50">{E2("NO PAGAS NADA", "YOU PAY NOTHING")}</span>
+                <span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("NO PAGAS NADA", "YOU PAY NOTHING")}</span>
                 <span className="font-display text-[20px] font-extrabold leading-none tracking-[-0.02em]">{p.total}</span>
               </div>
             </div>

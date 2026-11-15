@@ -44,7 +44,7 @@ export function Mensajes({ es, yo, ciudad, d }: { es: boolean; yo: YoCom; ciudad
               style={{ padding: "13px 16px", borderTop: i ? LINE : "none", display: "flex", gap: 12, alignItems: "center", cursor: "pointer", background: x.unread ? "rgba(75,55,245,.04)" : "var(--tl-white)" }}>
               <Avatar foto={x.otro.foto} ini={x.otro.ini} size={44} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}><span style={{ font: "700 13.5px Manrope,sans-serif" }}>{x.otro.nombre}</span><span style={{ font: `600 9px ${MONO}`, color: "rgba(11,14,18,.45)", flex: "none" }}>{hace(x.at, es).toUpperCase()}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}><span style={{ font: "700 13.5px Manrope,sans-serif" }}>{x.otro.nombre}</span><span style={{ font: `600 9px ${MONO}`, color: "rgba(11,14,18,.6)", flex: "none" }}>{hace(x.at, es).toUpperCase()}</span></div>
                 <div style={{ marginTop: 3, font: `${x.unread ? 700 : 500} 12.5px/1.4 Manrope,sans-serif`, color: "rgba(11,14,18,.65)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {(x.mio ? E2("Tú: ", "You: ") : "") + (x.oculto ? E2("Mensaje oculto por To'Latino", "Message hidden by To'Latino") : x.last)}
                 </div>
@@ -57,7 +57,7 @@ export function Mensajes({ es, yo, ciudad, d }: { es: boolean; yo: YoCom; ciudad
         {mas && <div style={{ display: "flex", justifyContent: "center" }}><Button variant="secondary" size="md" disabled={busy} onClick={verMas}>{busy ? E2("Cargando…", "Loading…") : E2("Ver más", "See more")}</Button></div>}
         <div role="link" onClick={() => router.push("/cuenta/mensajes")} {...tec(() => router.push("/cuenta/mensajes"))} style={{ padding: "12px 16px", borderRadius: 16, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", gap: 12, alignItems: "center", cursor: "pointer" }}>
           <Icon name="store" size={18} color="var(--tl-action)" />
-          <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px Manrope,sans-serif" }}>{E2("Mensajes con negocios", "Messages with businesses")}</div><div style={{ marginTop: 2, font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)" }}>{E2(`EN MI CUENTA · ${ciudad.toUpperCase()}`, `IN MY ACCOUNT · ${ciudad.toUpperCase()}`)}</div></div>
+          <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px Manrope,sans-serif" }}>{E2("Mensajes con negocios", "Messages with businesses")}</div><div style={{ marginTop: 2, font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{E2(`EN MI CUENTA · ${ciudad.toUpperCase()}`, `IN MY ACCOUNT · ${ciudad.toUpperCase()}`)}</div></div>
           <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" />
         </div>
       </div>

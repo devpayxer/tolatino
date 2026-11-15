@@ -64,7 +64,7 @@ function MenuItemRow({
     style: {
       marginTop: 4,
       font: '400 12px/1.45 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.55)',
+      color: 'rgba(11,14,18,.6)',
       textWrap: 'pretty'
     }
   }, desc) : null, /*#__PURE__*/React.createElement("div", {
@@ -83,7 +83,7 @@ function MenuItemRow({
   }, price), was ? /*#__PURE__*/React.createElement("span", {
     style: {
       font: "600 11px 'JetBrains Mono',monospace",
-      color: 'rgba(11,14,18,.4)',
+      color: 'rgba(11,14,18,.6)',
       textDecoration: 'line-through'
     }
   }, was) : null, forms ? /*#__PURE__*/React.createElement("span", {
@@ -292,7 +292,7 @@ function MenuTile({
   }, price), was ? /*#__PURE__*/React.createElement("span", {
     style: {
       font: "600 10.5px 'JetBrains Mono',monospace",
-      color: 'rgba(11,14,18,.4)',
+      color: 'rgba(11,14,18,.6)',
       textDecoration: 'line-through'
     }
   }, was) : null));
@@ -347,7 +347,7 @@ function OptionGroup({
       marginTop: 4,
       font: "600 10px 'JetBrains Mono',monospace",
       letterSpacing: '.06em',
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, meta) : null, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -398,7 +398,7 @@ function OptionGroup({
     }, o.label), /*#__PURE__*/React.createElement("span", {
       style: {
         font: "700 12px 'JetBrains Mono',monospace",
-        color: 'rgba(11,14,18,.55)'
+        color: 'rgba(11,14,18,.6)'
       }
     }, o.price));
   })));
@@ -571,7 +571,7 @@ function CartLine({
     style: {
       marginTop: 3,
       font: '500 11.5px/1.45 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.55)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, summary) : null, onEdit ? /*#__PURE__*/React.createElement("span", {
     onClick: onEdit,

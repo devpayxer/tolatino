@@ -58,7 +58,7 @@ export function PreEstimado({ op, svcId, es, yo }: { op: OficiosPublico; svcId: 
       <div className={`flex items-center gap-3 p-3.5 ${caja}`}>
         <span className="h-[54px] w-[54px] flex-none rounded-[15px] bg-photo-bg" style={s.foto ? { backgroundImage: `url(${s.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
         <div className="min-w-0 flex-1"><div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nm(s.name)}</div>
-          <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{op.negocio.nombre.toUpperCase()}</div>
+          <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{op.negocio.nombre.toUpperCase()}</div>
           <span className="mt-2 inline-block rounded-[9px] bg-signal/20 px-2 py-1 font-mono text-[9px] font-bold tracking-[0.1em] text-open-text">{E2("GRATIS · NO TE COMPROMETE", "FREE · NO COMMITMENT")}</span></div>
       </div>
       <div className={`flex flex-col gap-4 p-4 ${caja}`}>
@@ -66,9 +66,9 @@ export function PreEstimado({ op, svcId, es, yo }: { op: OficiosPublico; svcId: 
         <button type="button" onClick={() => v.setSheet(auto ? "veh" : "casa")} className="flex w-full items-center gap-3 rounded-[15px] bg-paper px-3.5 py-[13px] text-left">
           <span className="grid h-[42px] w-[42px] flex-none place-items-center rounded-[13px] bg-ink"><Icon name={auto ? "car" : "home"} size={20} color="var(--tl-white)" /></span>
           <span className="min-w-0 flex-1">
-            <span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{dato ? (auto ? E2("TU VEHÍCULO", "YOUR VEHICLE") : E2("TU CASA", "YOUR HOME")) : E2("OBLIGATORIO", "REQUIRED")}</span>
+            <span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{dato ? (auto ? E2("TU VEHÍCULO", "YOUR VEHICLE") : E2("TU CASA", "YOUR HOME")) : E2("OBLIGATORIO", "REQUIRED")}</span>
             <span className="mt-1 block text-[14.5px] font-bold leading-[1.3]">{auto ? (v.veh ? vehName(v.veh, es) : E2("Agrega tu vehículo", "Add your vehicle")) : v.casa ? v.casa.dir : E2("Agrega tu casa", "Add your home")}</span>
-            {dato && <span className="mt-[3px] block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{auto && v.veh ? vehMeta(v.veh, es) : v.casa ? casaMeta(v.casa, es) : ""}</span>}
+            {dato && <span className="mt-[3px] block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{auto && v.veh ? vehMeta(v.veh, es) : v.casa ? casaMeta(v.casa, es) : ""}</span>}
             {cp && <span className="mt-1.5 flex items-center gap-[5px] text-[11.5px] font-bold" style={{ color: cp.ok ? "var(--tl-open-text)" : "var(--tl-danger)" }}><Icon name={cp.ok ? "check" : "warning"} size={13} color="currentColor" />{cp.t}</span>}
           </span>
           <span className="flex-none text-[12.5px] font-bold text-action">{dato ? E2("Cambiar", "Change") : E2("Agregar", "Add")}</span>
@@ -76,7 +76,7 @@ export function PreEstimado({ op, svcId, es, yo }: { op: OficiosPublico; svcId: 
       </div>
       <div className={`flex flex-col gap-4 p-4 ${caja}`}>
         <div><div className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{auto ? E2("¿Qué le pasa?", "What is wrong?") : E2("¿Qué pasa?", "What is going on?")}</div>
-          <div className="mt-1 text-[12px] font-medium text-ink/55">{E2("Mientras más detalle, más cerrado el rango.", "The more detail, the tighter the range.")}</div></div>
+          <div className="mt-1 text-[12px] font-medium text-ink/60">{E2("Mientras más detalle, más cerrado el rango.", "The more detail, the tighter the range.")}</div></div>
         {auto ? (
           <div><div className={K}>{E2("LUCES ENCENDIDAS", "WARNING LIGHTS ON")}</div>
             <div className="mt-2 flex flex-wrap gap-2">{LIGHTS.map(([k, l1, l2]) => <Chip key={k} variant={luces.includes(k) ? "selected" : "filter"} onClick={() => setLuces(luces.includes(k) ? luces.filter((z) => z !== k) : [...luces, k])}>{es ? l1 : l2}</Chip>)}</div></div>
@@ -103,10 +103,10 @@ export function PreEstimado({ op, svcId, es, yo }: { op: OficiosPublico; svcId: 
       </div>
       <div className={`flex flex-col gap-3 p-4 ${caja}`}>
         <div className="flex items-baseline justify-between gap-2.5"><span className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{E2("Fotos", "Photos")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{fotos.length} / 6</span></div>
-        <div className="text-[12px] font-medium leading-[1.5] text-ink/55">{auto ? E2("La pieza, la luz del tablero o donde suena.", "The part, the dash light or where the noise is.") : E2("Lo que se ve: la fuga, el equipo, la pared o la medida.", "What you can see: the leak, the equipment, the wall or the size.")}</div>
+        <div className="text-[12px] font-medium leading-[1.5] text-ink/60">{auto ? E2("La pieza, la luz del tablero o donde suena.", "The part, the dash light or where the noise is.") : E2("Lo que se ve: la fuga, el equipo, la pared o la medida.", "What you can see: the leak, the equipment, the wall or the size.")}</div>
         <div className="flex flex-wrap gap-2.5">
           {fotos.map((f) => <span key={f.id} className="relative h-[76px] w-[76px] rounded-[13px] bg-photo-bg" style={{ backgroundImage: `url(${f.url})`, backgroundSize: "cover" }}><button type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="absolute -right-1.5 -top-1.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-ink"><Icon name="close" size={10} color="var(--tl-white)" strokeWidth={2.6} /></button></span>)}
-          {fotos.length < 6 && <button type="button" disabled={subiendo} onClick={() => (yo ? fileRef.current?.click() : entrar())} className="box-border flex h-[76px] w-[76px] flex-col items-center justify-center gap-1 rounded-[13px] border-[1.5px] border-dashed border-ink/[.22] text-ink/55"><Icon name="image" size={18} color="rgba(11,14,18,.5)" /><span className="text-[10.5px] font-bold">{subiendo ? E2("Subiendo…", "Uploading…") : E2("Foto", "Photo")}</span></button>}
+          {fotos.length < 6 && <button type="button" disabled={subiendo} onClick={() => (yo ? fileRef.current?.click() : entrar())} className="box-border flex h-[76px] w-[76px] flex-col items-center justify-center gap-1 rounded-[13px] border-[1.5px] border-dashed border-ink/[.22] text-ink/60"><Icon name="image" size={18} color="rgba(11,14,18,.6)" /><span className="text-[10.5px] font-bold">{subiendo ? E2("Subiendo…", "Uploading…") : E2("Foto", "Photo")}</span></button>}
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { void subir(e.target.files?.[0]); e.target.value = ""; }} />
         </div>
       </div>
@@ -115,20 +115,20 @@ export function PreEstimado({ op, svcId, es, yo }: { op: OficiosPublico; svcId: 
         {WHEN.map(([k, l, sub]) => { const on = cuando === k; return (
           <button key={k} type="button" role="radio" aria-checked={on} onClick={() => setCuando(k)} className={`flex items-center gap-3 rounded-[14px] px-3.5 py-3 text-left ${on ? "border-[1.5px] border-ink" : "border border-ink/10"}`}>
             <span className={`h-[18px] w-[18px] flex-none rounded-full ${on ? "border-[6px] border-ink" : "border-[1.5px] border-ink/25"}`} />
-            <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{l}</span>{sub && <span className="mt-0.5 block text-[12px] font-medium text-ink/55">{sub}</span>}</span>
+            <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{l}</span>{sub && <span className="mt-0.5 block text-[12px] font-medium text-ink/60">{sub}</span>}</span>
           </button>); })}
       </div>
       <div className={`p-4 ${caja}`}>
         <div className={K}>{E2("CÓMO FUNCIONA", "HOW IT WORKS")}</div>
         <div className="mt-3 flex flex-col gap-2.5">{como.map((t, i) => <div key={i} className="flex items-start gap-2.5"><span className="grid h-[22px] w-[22px] flex-none place-items-center rounded-full bg-ink font-mono text-[10px] font-bold text-white">{i + 1}</span><span className="text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/70">{t}</span></div>)}</div>
-        <div className="mt-3 text-pretty text-[11.5px] font-semibold leading-[1.5] text-ink/55">{E2("Es un rango, no un precio final: con fotos no se ve todo. Pedirlo es gratis y no te compromete.", "It is a range, not a final price: photos do not show everything. It is free and there is no commitment.")}</div>
+        <div className="mt-3 text-pretty text-[11.5px] font-semibold leading-[1.5] text-ink/60">{E2("Es un rango, no un precio final: con fotos no se ve todo. Pedirlo es gratis y no te compromete.", "It is a range, not a final price: photos do not show everything. It is free and there is no commitment.")}</div>
       </div>
       {error && <div role="alert" className="rounded-[14px] bg-danger/[.08] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{error}</div>}
     </div>
   );
   const barra = (
     <div className="flex flex-col gap-2">
-      {miss.length > 0 && <div className="text-[12px] font-semibold leading-[1.45] text-ink/60"><span className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{E2("TE FALTA · ", "STILL NEEDED · ")}</span>{miss.join(" · ")}</div>}
+      {miss.length > 0 && <div className="text-[12px] font-semibold leading-[1.45] text-ink/60"><span className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{E2("TE FALTA · ", "STILL NEEDED · ")}</span>{miss.join(" · ")}</div>}
       <div className="grid"><Button block icon="image" disabled={miss.length > 0 || ocupado} onClick={enviar}>{ocupado ? E2("Enviando…", "Sending…") : E2("Enviar para pre-estimado", "Send for pre-estimate")}</Button></div>
     </div>
   );
@@ -137,7 +137,7 @@ export function PreEstimado({ op, svcId, es, yo }: { op: OficiosPublico; svcId: 
       <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:top-0">
         <button type="button" aria-label={E2("Volver", "Back")} onClick={() => router.push(`/n/${op.negocio.id}?tab=svc`)} className="grid h-[38px] w-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="chevronLeft" size={16} strokeWidth={2.4} /></button>
         <div className="min-w-0 flex-1"><div className="font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{E2("Pre-estimado con fotos", "Pre-estimate from photos")}</div>
-          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${nm(s.name)} · ${op.negocio.nombre}`.toUpperCase()}</div></div>
+          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${nm(s.name)} · ${op.negocio.nombre}`.toUpperCase()}</div></div>
       </div>
       <div className="mx-auto max-w-[620px] px-4 pt-4">{cuerpo}<div className="mt-4 hidden lg:block">{barra}</div></div>
       <div data-screen-label="Pre-estimado · barra" className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/[.08] bg-paper/[.96] px-4 pb-5 pt-3 backdrop-blur-[14px] lg:hidden">{barra}</div>

@@ -52,7 +52,7 @@ export function Plan({ op, svcId, o, es, yo, pago }: { op: OficiosPublico; svcId
     E2("Pausas, saltas una visita o cancelas desde tu plan. Si cancelas, no se cobra el mes siguiente.", "Pause, skip a visit or cancel from your plan. If you cancel, next month is not charged.")];
   const barra = (
     <div className="flex flex-col gap-2">
-      {miss.length > 0 && <div className="text-[12px] font-semibold leading-[1.45] text-ink/60"><span className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{E2("TE FALTA · ", "STILL NEEDED · ")}</span>{miss.join(" · ")}</div>}
+      {miss.length > 0 && <div className="text-[12px] font-semibold leading-[1.45] text-ink/60"><span className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{E2("TE FALTA · ", "STILL NEEDED · ")}</span>{miss.join(" · ")}</div>}
       <span className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-open-text">{E2("HOY NO SE COBRA NADA · CANCELAS CUANDO QUIERAS", "NOTHING TODAY · CANCEL ANY TIME")}</span>
       <div className="grid"><Button block disabled={miss.length > 0 || ocupado} onClick={enviar}>{ocupado ? E2("Empezando…", "Starting…") : `${E2("Empezar el plan · ", "Start the plan · ")}${dinero(o.precio)}${E2("/mes", "/mo")}`}</Button></div>
     </div>
@@ -62,23 +62,23 @@ export function Plan({ op, svcId, o, es, yo, pago }: { op: OficiosPublico; svcId
       <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:top-0">
         <button type="button" aria-label={E2("Volver", "Back")} onClick={() => router.push(`/n/${op.negocio.id}?tab=svc`)} className="grid h-[38px] w-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="chevronLeft" size={16} strokeWidth={2.4} /></button>
         <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{nm(s.name)}</div>
-          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${dinero(o.precio)}${E2(" AL MES · ", " A MONTH · ")}${op.negocio.nombre}`.toUpperCase()}</div></div>
+          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${dinero(o.precio)}${E2(" AL MES · ", " A MONTH · ")}${op.negocio.nombre}`.toUpperCase()}</div></div>
       </div>
       <div className="mx-auto flex max-w-[620px] flex-col gap-3 px-4 pt-4">
         <div className={`flex flex-col gap-3 p-4 ${caja}`}>
           <div className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{E2("Tu casa", "Your home")}</div>
           <button type="button" onClick={() => v.setSheet("casa")} className="flex w-full items-center gap-3 rounded-[15px] bg-paper px-3.5 py-[13px] text-left">
             <span className="grid h-[42px] w-[42px] flex-none place-items-center rounded-[13px] bg-ink"><Icon name="home" size={20} color="var(--tl-white)" /></span>
-            <span className="min-w-0 flex-1"><span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{v.casa ? E2("TU CASA", "YOUR HOME") : E2("OBLIGATORIO", "REQUIRED")}</span>
+            <span className="min-w-0 flex-1"><span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{v.casa ? E2("TU CASA", "YOUR HOME") : E2("OBLIGATORIO", "REQUIRED")}</span>
               <span className="mt-1 block text-[14.5px] font-bold leading-[1.3]">{v.casa ? v.casa.dir : E2("Agrega tu casa", "Add your home")}</span>
-              {v.casa && <span className="mt-[3px] block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{casaMeta(v.casa, es)}</span>}
+              {v.casa && <span className="mt-[3px] block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{casaMeta(v.casa, es)}</span>}
               {cp && <span className="mt-1.5 flex items-center gap-[5px] text-[11.5px] font-bold" style={{ color: cp.ok ? "var(--tl-open-text)" : "var(--tl-danger)" }}><Icon name={cp.ok ? "check" : "warning"} size={13} color="currentColor" />{cp.t}</span>}</span>
             <span className="flex-none text-[12.5px] font-bold text-action">{v.casa ? E2("Cambiar", "Change") : E2("Agregar", "Add")}</span>
           </button>
         </div>
         <div className={`flex flex-col gap-3 p-4 ${caja}`}>
           <div><div className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{E2("¿Qué día?", "Which day?")}</div>
-            <div className="mt-1 text-[12px] font-medium text-ink/55">{mesesL ? E2(`Tus visitas son en ${mesesL}.`, `Your visits are in ${mesesL}.`) : E2("Tu día fijo cada mes.", "Your fixed day each month.")}</div></div>
+            <div className="mt-1 text-[12px] font-medium text-ink/60">{mesesL ? E2(`Tus visitas son en ${mesesL}.`, `Your visits are in ${mesesL}.`) : E2("Tu día fijo cada mes.", "Your fixed day each month.")}</div></div>
           <div><div className={K}>{E2("DÍA FIJO", "FIXED DAY")}</div>
             <div className="mt-2 flex flex-wrap gap-2">{o.dias.map((d) => <Chip key={d.dow} variant={dow === d.dow ? "selected" : "filter"} onClick={() => { setDow(d.dow); setFi(0); }}>{(es ? DC.es : DC.en)[d.dow]}</Chip>)}</div></div>
         </div>
@@ -88,7 +88,7 @@ export function Plan({ op, svcId, o, es, yo, pago }: { op: OficiosPublico; svcId
             {dia.fechas.map((f, i) => { const on = fi === i; return (
               <button key={f} type="button" role="radio" aria-checked={on} onClick={() => setFi(i)} className={`flex items-center gap-3 rounded-[14px] px-3.5 py-3 text-left ${on ? "border-[1.5px] border-ink" : "border border-ink/10"}`}>
                 <span className={`h-[18px] w-[18px] flex-none rounded-full ${on ? "border-[6px] border-ink" : "border-[1.5px] border-ink/25"}`} />
-                <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{`${cap(fL(f))} · ${win}`}</span>{i === 0 && <span className="mt-0.5 block text-[12px] font-medium text-ink/55">{E2("La más cercana", "The soonest")}</span>}</span>
+                <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{`${cap(fL(f))} · ${win}`}</span>{i === 0 && <span className="mt-0.5 block text-[12px] font-medium text-ink/60">{E2("La más cercana", "The soonest")}</span>}</span>
               </button>); })}
           </div>
         )}
@@ -105,9 +105,9 @@ export function Plan({ op, svcId, o, es, yo, pago }: { op: OficiosPublico; svcId
         {o.tarjeta && pago ? (
           <button type="button" data-screen-label="Plan · tarjeta" onClick={() => (yo ? setHoja(true) : entrar())} className={`flex w-full items-center gap-3 p-4 text-left ${caja}`}>
             <span className="grid h-9 w-9 flex-none place-items-center rounded-[11px] bg-ink/5"><Icon name="card" size={16} /></span>
-            <span className="min-w-0 flex-1"><span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{E2("TARJETA DEL PLAN", "PLAN CARD")}</span>
+            <span className="min-w-0 flex-1"><span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{E2("TARJETA DEL PLAN", "PLAN CARD")}</span>
               <span className="mt-1 block text-[14px] font-bold">{tarjeta ? tarjetaL(tarjeta) : E2("Elige tu tarjeta", "Choose your card")}</span>
-              <span className="mt-0.5 block font-mono text-[9.5px] font-semibold text-ink/50">{declinada && tarjeta?.pm === declinada ? E2("TU BANCO LA RECHAZÓ · CAMBIA DE TARJETA", "YOUR BANK DECLINED IT · CHANGE CARD") : E2(`SE COBRA ${dinero(o.precio)} CADA MES · HOY NADA`, `${dinero(o.precio)} EACH MONTH · NOTHING TODAY`)}</span></span>
+              <span className="mt-0.5 block font-mono text-[9.5px] font-semibold text-ink/60">{declinada && tarjeta?.pm === declinada ? E2("TU BANCO LA RECHAZÓ · CAMBIA DE TARJETA", "YOUR BANK DECLINED IT · CHANGE CARD") : E2(`SE COBRA ${dinero(o.precio)} CADA MES · HOY NADA`, `${dinero(o.precio)} EACH MONTH · NOTHING TODAY`)}</span></span>
             <span className="text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</span>
           </button>
         ) : <div className="rounded-[14px] bg-pro/[.14] px-3.5 py-3 text-[12.5px] font-semibold text-pro-ink">{E2("Este negocio todavía no cobra planes en la app. Llámalo para empezar.", "This business does not charge plans in the app yet. Call them to start.")}</div>}

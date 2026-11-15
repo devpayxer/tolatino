@@ -55,7 +55,7 @@ function BusinessRow({
   }) : null), /*#__PURE__*/React.createElement("div", {
     style: {
       font: "600 11px 'JetBrains Mono',monospace",
-      color: 'rgba(11,14,18,.45)',
+      color: 'rgba(11,14,18,.6)',
       marginTop: 4
     }
   }, meta)), slot ? /*#__PURE__*/React.createElement("div", {

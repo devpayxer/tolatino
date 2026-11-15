@@ -57,7 +57,7 @@ export function Ayuda({ p, puede, delivery, lineas, plazoH, es }: { p: PedidoVis
       {keys.map((x, j) => (
         <button key={x} type="button" onClick={() => { setK(x); setPaso(0); setSel({}); setQuiere(delivery && (POR_PLATO.has(x) || x === "nollego") ? "reponer" : "avisar"); }} className={`flex w-full items-center gap-3 px-4 py-3.5 text-left ${j ? "border-t border-ink/[.07]" : ""}`}>
           <span className="grid size-10 flex-none place-items-center rounded-xl bg-[rgba(75,55,245,.1)]"><Icon name={R[x][0]} size={18} color="var(--tl-action)" /></span>
-          <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{R[x][1]}</span><span className="mt-0.5 block text-[12px] font-medium text-ink/55">{R[x][2]}</span></span>
+          <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{R[x][1]}</span><span className="mt-0.5 block text-[12px] font-medium text-ink/60">{R[x][2]}</span></span>
           <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" />
         </button>))}
     </div></>);
@@ -87,7 +87,7 @@ export function Ayuda({ p, puede, delivery, lineas, plazoH, es }: { p: PedidoVis
             ["avisar", E2("Solo quiero que lo sepan", "I just want them to know"), E2("Para que no vuelva a pasar", "So it doesn't happen again")]] as [Quiere, string, string][]).map(([v, l, s]) => (
             <button key={v} type="button" role="radio" aria-checked={quiere === v} onClick={() => setQuiere(v)} className={`flex items-center gap-3 rounded-[14px] border px-3.5 py-3 text-left ${quiere === v ? "border-ink border-[1.5px]" : "border-ink/[.1]"}`}>
               <span className={`box-border grid size-5 flex-none place-items-center rounded-full border-[1.5px] ${quiere === v ? "border-ink bg-ink" : "border-ink/25"}`}>{quiere === v && <span className="size-2 rounded-full bg-white" />}</span>
-              <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{l}</span><span className="mt-0.5 block text-[12px] font-medium text-ink/55">{s}</span></span>
+              <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{l}</span><span className="mt-0.5 block text-[12px] font-medium text-ink/60">{s}</span></span>
             </button>))}
         </div>
       </div>)}
@@ -107,14 +107,14 @@ export function Ayuda({ p, puede, delivery, lineas, plazoH, es }: { p: PedidoVis
       <div data-screen-label="APP-NEG-PEDIDO-AYUDA · móvil" className="lg:hidden">
         <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3">
           <button type="button" aria-label={E2("Volver", "Back")} onClick={volver} className="grid size-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="chevronLeft" size={18} strokeWidth={2} /></button>
-          <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{titulo}</div><div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{meta}</div></div>
+          <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{titulo}</div><div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{meta}</div></div>
         </div>
         <div className="flex flex-col gap-3 px-4 pt-4">{error && <div role="alert" className="rounded-[14px] bg-[rgba(192,57,43,.07)] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{error}</div>}{cuerpo}</div>
         {boton && <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/95 px-4 pb-5 pt-3 backdrop-blur-[14px]"><div className="flex">{boton}</div></div>}
       </div>
       <div data-screen-label="APP-NEG-PEDIDO-AYUDA · desktop" className="mx-auto hidden max-w-[720px] lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{step === "home" ? E2("Volver al pedido", "Back to order") : E2("Ayuda con el pedido", "Order help")}</button>
-        <div className="mt-4 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{meta}</div>
+        <div className="mt-4 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{meta}</div>
         <h1 className="mt-1.5 font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.04em]">{titulo}</h1>
         <div className="mt-[18px] flex flex-col gap-3.5">{error && <div role="alert" className="rounded-[14px] bg-[rgba(192,57,43,.07)] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{error}</div>}{cuerpo}{boton && <div className="flex max-w-[320px]">{boton}</div>}</div>
       </div>

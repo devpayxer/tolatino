@@ -26,7 +26,7 @@ function useKF() {
 const meta = {
   font: '600 9px ' + mono,
   letterSpacing: '.06em',
-  color: 'rgba(11,14,18,.5)'
+  color: 'rgba(11,14,18,.6)'
 };
 const M = '12px 14px 0';
 
@@ -322,7 +322,7 @@ function CompaSysLine({
       textAlign: 'center',
       font: '600 9.5px/1.6 ' + mono,
       letterSpacing: '.06em',
-      color: 'rgba(11,14,18,.5)',
+      color: 'rgba(11,14,18,.6)',
       textWrap: 'pretty'
     }
   }, children);
@@ -384,7 +384,7 @@ function CompaMsg({
       gap: 6,
       font: '700 9.5px ' + mono,
       letterSpacing: '.08em',
-      color: 'rgba(11,14,18,.55)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, name, /*#__PURE__*/React.createElement(__ds_scope.Tag, {
     tone: "action"
@@ -467,7 +467,7 @@ function CompaActionCard({
     style: {
       font: '700 9.5px ' + mono,
       letterSpacing: '.12em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, label) : null, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -588,7 +588,7 @@ function CompaHandoffCard({
     style: {
       font: '700 9px ' + mono,
       letterSpacing: '.12em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, label) : null, lines.map((x, i) => /*#__PURE__*/React.createElement("span", {
     key: i,
@@ -719,7 +719,7 @@ function CompaConfirmBar({
       textAlign: 'center',
       font: '700 9px ' + mono,
       letterSpacing: '.1em',
-      color: 'rgba(11,14,18,.5)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, note) : null, /*#__PURE__*/React.createElement("div", {
     style: {

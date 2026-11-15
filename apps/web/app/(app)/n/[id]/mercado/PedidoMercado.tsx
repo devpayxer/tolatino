@@ -17,7 +17,7 @@ type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
-const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/45";
+const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-4";
 const T17 = "font-display text-[17px] font-extrabold leading-[1.2] tracking-[-0.03em]";
 
@@ -70,15 +70,15 @@ export function PedidoMercado({ o, es, yo, pago }: { o: OpcionesMerc; es: boolea
         <div key={`${x.l.item}-${x.l.o}-${i}`} className="flex items-center gap-3 border-b border-ink/[.06] py-3">
           <span className="h-11 w-11 flex-none rounded-xl bg-photo-bg" style={x.p.foto ? { backgroundImage: `url(${x.p.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
           <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{nm(x.p.name)}</div>
-            <div className="mt-0.5 font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{[x.p.k === "peso" ? `${x.l.q} LB · ${E2("ESTIMADO", "ESTIMATE")}` : `× ${x.l.q}`, x.p.opc && x.l.o != null ? nm(x.p.opc.o[x.l.o] ?? { es: "", en: "" }).toUpperCase() : ""].filter(Boolean).join(" · ")}</div></div>
+            <div className="mt-0.5 font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{[x.p.k === "peso" ? `${x.l.q} LB · ${E2("ESTIMADO", "ESTIMATE")}` : `× ${x.l.q}`, x.p.opc && x.l.o != null ? nm(x.p.opc.o[x.l.o] ?? { es: "", en: "" }).toUpperCase() : ""].filter(Boolean).join(" · ")}</div></div>
           <div className="text-right"><div className="text-[13.5px] font-bold">{money(est(x.p, x.l.q))}{x.p.k === "peso" ? E2(" aprox.", " approx.") : ""}</div>
             <button type="button" onClick={() => quitar(i)} className="mt-0.5 text-[12px] font-bold text-danger">{E2("Quitar", "Remove")}</button></div>
         </div>))}</div>
         : <div className="mt-2 text-[13px] font-medium text-ink/60">{E2("Tu pedido está vacío. Agrega productos en la página del mercado.", "Your order is empty. Add products on the market page.")}</div>}
       <div className="mt-4"><div className={K}>{E2("¿CÓMO LO RECIBES?", "HOW DO YOU GET IT?")}</div>
         <div role="radiogroup" aria-label={E2("Cómo lo recibes", "How you get it")} className="mt-2 flex flex-col gap-2">
-          {o.pk && <button type="button" role="radio" aria-checked={modo === "pickup"} onClick={() => setModo("pickup")} className={opcion(modo === "pickup")}><span className={radio(modo === "pickup")} /><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Pickup en el mercado", "Pickup at the market")}</span><span className="block text-[12px] font-medium text-ink/55">{o.negocio.dir}</span></span><span className="text-[12.5px] font-bold">{E2("Gratis", "Free")}</span></button>}
-          {o.env && <button type="button" role="radio" aria-checked={modo === "delivery"} onClick={() => setModo("delivery")} className={opcion(modo === "delivery")}><span className={radio(modo === "delivery")} /><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Envío a tu casa", "Delivery to your home")}</span><span className="block text-[12px] font-medium text-ink/55">{o.min ? E2(`El envío pide un mínimo de ${money(o.min)}`, `Delivery needs a ${money(o.min)} minimum`) : E2("Sin mínimo", "No minimum")}</span></span><span className="text-[12.5px] font-bold">{o.fee ? money(o.fee) : E2("Gratis", "Free")}</span></button>}
+          {o.pk && <button type="button" role="radio" aria-checked={modo === "pickup"} onClick={() => setModo("pickup")} className={opcion(modo === "pickup")}><span className={radio(modo === "pickup")} /><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Pickup en el mercado", "Pickup at the market")}</span><span className="block text-[12px] font-medium text-ink/60">{o.negocio.dir}</span></span><span className="text-[12.5px] font-bold">{E2("Gratis", "Free")}</span></button>}
+          {o.env && <button type="button" role="radio" aria-checked={modo === "delivery"} onClick={() => setModo("delivery")} className={opcion(modo === "delivery")}><span className={radio(modo === "delivery")} /><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Envío a tu casa", "Delivery to your home")}</span><span className="block text-[12px] font-medium text-ink/60">{o.min ? E2(`El envío pide un mínimo de ${money(o.min)}`, `Delivery needs a ${money(o.min)} minimum`) : E2("Sin mínimo", "No minimum")}</span></span><span className="text-[12.5px] font-bold">{o.fee ? money(o.fee) : E2("Gratis", "Free")}</span></button>}
         </div>
         {modo === "delivery" && (o.dir ? <div className={`mt-2 rounded-[13px] px-3.5 py-2.5 text-[12.5px] font-semibold ${o.dir.dentro ? "bg-paper text-ink/70" : "bg-danger/[.08] text-danger"}`}>{o.dir.dentro ? `${E2("A ", "To ")}${o.dir.label} · ${o.dir.street}` : E2(`Tu dirección queda a ${o.dir.mi ?? "?"} mi y el mercado lleva hasta ${o.zona} mi. Elige pickup.`, `Your address is ${o.dir.mi ?? "?"} mi away; the market delivers up to ${o.zona} mi. Choose pickup.`)}</div>
           : <button type="button" onClick={() => router.push("/cuenta/direcciones")} className="mt-2 text-[12.5px] font-bold text-action">{E2("Agrega tu dirección en Mis direcciones", "Add your address in My addresses")}</button>)}
@@ -88,12 +88,12 @@ export function PedidoMercado({ o, es, yo, pago }: { o: OpcionesMerc; es: boolea
           {([["call", E2("Llámame", "Call me")], ["similar", E2("Uno parecido, con mi OK", "A similar one, with my OK")], ["no", E2("No sustituir", "Do not substitute")]] as const).map(([k, l]) => (
             <button key={k} type="button" role="radio" aria-checked={sub === k} onClick={() => setSub(k)} className={opcion(sub === k)}><span className={radio(sub === k)} /><span className="text-[13.5px] font-bold">{l}</span></button>))}
         </div>
-        <div className="mt-1.5 text-[12px] font-medium text-ink/55">{E2("Sin tu OK no se cambia nada.", "Nothing is swapped without your OK.")}</div>
+        <div className="mt-1.5 text-[12px] font-medium text-ink/60">{E2("Sin tu OK no se cambia nada.", "Nothing is swapped without your OK.")}</div>
       </div>
       <div className="mt-4"><div className={K}>{E2("NOTA · OPCIONAL", "NOTE · OPTIONAL")}</div>
         <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 200))} rows={2} aria-label={E2("Nota para el mercado", "Note for the market")} placeholder={E2("Ej.: el pernil con cuero, plátanos bien verdes…", "E.g. pork leg with skin, very green plantains…")}
           className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] bg-white px-3.5 py-3 text-[13.5px] font-medium leading-[1.5] text-ink outline-none" />
-        <div className="mt-1 text-right font-mono text-[9.5px] font-semibold text-ink/40">{nota.length} / 200</div></div>
+        <div className="mt-1 text-right font-mono text-[9.5px] font-semibold text-ink/60">{nota.length} / 200</div></div>
     </div>);
 
   const cuando = (
@@ -113,12 +113,12 @@ export function PedidoMercado({ o, es, yo, pago }: { o: OpcionesMerc; es: boolea
         <div className="flex justify-between gap-3 py-3 text-[15px] font-extrabold"><span>{local ? E2("Pagas en el mercado", "You pay at the market") : E2("Hoy se retiene", "Held today")}</span><span>{local ? money(total) : money(retener)}</span></div></div>
       {pago && <div><div className={K}>{E2("CÓMO PAGAS", "HOW YOU PAY")}</div>
         <div role="radiogroup" aria-label={E2("Cómo pagas", "How you pay")} className="mt-2 flex flex-col gap-2">
-          <button type="button" role="radio" aria-checked={!enMercado} onClick={() => setEnMercado(false)} className={opcion(!enMercado)}><span className={radio(!enMercado)} /><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Tarjeta", "Card")}</span><span className="block text-[12px] font-medium text-ink/55">{tarjeta ? tarjetaL(tarjeta) : E2("Agrega una tarjeta", "Add a card")}</span></span>{!enMercado && <span role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setHoja(true); }} className="text-[12.5px] font-bold text-action">{E2("Cambiar", "Change")}</span>}</button>
-          {modo === "pickup" && <button type="button" role="radio" aria-checked={enMercado} onClick={() => setEnMercado(true)} className={opcion(enMercado)}><span className={radio(enMercado)} /><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Pagar en el mercado", "Pay at the market")}</span><span className="block text-[12px] font-medium text-ink/55">{o.ebt ? E2("EBT, efectivo o tarjeta al recoger", "EBT, cash or card at pickup") : E2("Efectivo o tarjeta al recoger", "Cash or card at pickup")}</span></span></button>}
+          <button type="button" role="radio" aria-checked={!enMercado} onClick={() => setEnMercado(false)} className={opcion(!enMercado)}><span className={radio(!enMercado)} /><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Tarjeta", "Card")}</span><span className="block text-[12px] font-medium text-ink/60">{tarjeta ? tarjetaL(tarjeta) : E2("Agrega una tarjeta", "Add a card")}</span></span>{!enMercado && <span role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setHoja(true); }} className="text-[12.5px] font-bold text-action">{E2("Cambiar", "Change")}</span>}</button>
+          {modo === "pickup" && <button type="button" role="radio" aria-checked={enMercado} onClick={() => setEnMercado(true)} className={opcion(enMercado)}><span className={radio(enMercado)} /><span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Pagar en el mercado", "Pay at the market")}</span><span className="block text-[12px] font-medium text-ink/60">{o.ebt ? E2("EBT, efectivo o tarjeta al recoger", "EBT, cash or card at pickup") : E2("Efectivo o tarjeta al recoger", "Cash or card at pickup")}</span></span></button>}
         </div></div>}
       {!local && <div><div className={K}>{E2("CÓMO SE COBRA", "HOW YOU ARE CHARGED")}</div>
         {[[E2("Hoy, al enviar", "Today, when you send"), `${E2("Se retiene ", "")}${money(retener)}${E2("", " held")}`, E2("No se cobra todavía. Incluye un 10 % extra en lo que va por peso.", "Nothing is charged yet. Includes 10% extra for by-weight items.")], [E2("Al pesar", "When weighed"), E2("Peso real", "Real weight"), E2("Te mandan la foto de la balanza y se cobra lo que pesó.", "They send the scale photo and you pay what it weighed.")], [E2("Al terminar", "When done"), E2("Se libera", "Released"), E2("Lo que sobre de la retención, en 3–5 días.", "Whatever is left of the hold, in 3–5 days.")]].map(([k, v, s]) => (
-          <div key={k} className="flex items-start justify-between gap-3 border-b border-ink/[.06] py-2.5"><div><div className="text-[13px] font-bold">{k}</div><div className="text-[11.5px] font-medium text-ink/55">{s}</div></div><div className="text-[13px] font-bold">{v}</div></div>))}</div>}
+          <div key={k} className="flex items-start justify-between gap-3 border-b border-ink/[.06] py-2.5"><div><div className="text-[13px] font-bold">{k}</div><div className="text-[11.5px] font-medium text-ink/60">{s}</div></div><div className="text-[13px] font-bold">{v}</div></div>))}</div>}
       <div className="rounded-[14px] bg-paper px-3.5 py-3"><div className={K}>{E2("BUENO SABER", "GOOD TO KNOW")}</div>
         {[E2("Lo que va por peso se pesa delante de ti y se cobra el peso real.", "What goes by weight is weighed in front of you and you pay the real weight."), E2("Si algo no hay, te preguntan antes; si no contestas en 10 minutos, se quita y no se cobra.", "If something is out, they ask first; if you do not answer in 10 minutes, it is removed and not charged."),
           E2("Si el mercado no acepta el pedido en 10 minutos, se libera la retención.", "If the market does not accept within 10 minutes, the hold is released."), ...(o.ebt ? [E2("¿Pagas con EBT? Elige pagar en el mercado al recoger.", "Paying with EBT? Choose to pay at the market at pickup.")] : [])].map((t) => <div key={t} className="mt-1.5 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/75">{t}</div>)}</div>
@@ -132,7 +132,7 @@ export function PedidoMercado({ o, es, yo, pago }: { o: OpcionesMerc; es: boolea
       <div className="mx-auto lg:max-w-[1080px]">
         <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:static lg:border-0 lg:bg-transparent lg:px-0">
           <button type="button" aria-label={E2("Volver", "Back")} onClick={() => router.push(`/n/${o.negocio.id}?tab=svc`)} className="grid h-[34px] w-[34px] flex-none place-items-center rounded-[11px] bg-paper lg:bg-white"><Icon name="chevronLeft" size={16} strokeWidth={2} /></button>
-          <div className="min-w-0 flex-1"><div className="truncate font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em] lg:text-[26px]">{E2("Tu pedido del mercado", "Your market order")}</div><div className="mt-[3px] truncate font-mono text-[9px] font-semibold tracking-[0.06em] text-ink/50">{o.negocio.nombre.toUpperCase()}</div></div>
+          <div className="min-w-0 flex-1"><div className="truncate font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em] lg:text-[26px]">{E2("Tu pedido del mercado", "Your market order")}</div><div className="mt-[3px] truncate font-mono text-[9px] font-semibold tracking-[0.06em] text-ink/60">{o.negocio.nombre.toUpperCase()}</div></div>
         </div>
         <div className="flex flex-col gap-3 px-4 pt-4 lg:mt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-x-10 lg:px-0 lg:pt-0">
           <div className="flex min-w-0 flex-col gap-3">{tuPedido}{cuando}</div>
@@ -140,7 +140,7 @@ export function PedidoMercado({ o, es, yo, pago }: { o: OpcionesMerc; es: boolea
         </div>
       </div>
       <div data-screen-label="Pedido del mercado · barra" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-ink/[.08] bg-paper/95 px-5 pb-[22px] pt-3 backdrop-blur-[14px] lg:hidden">
-        <div className="min-w-0 flex-1"><div className="font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/50">{local ? E2("PAGAS EN EL MERCADO", "YOU PAY AT THE MARKET") : E2("HOY SE RETIENE", "HELD TODAY")}</div><div className="mt-1 font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{money(local ? total : retener)}</div></div>
+        <div className="min-w-0 flex-1"><div className="font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/60">{local ? E2("PAGAS EN EL MERCADO", "YOU PAY AT THE MARKET") : E2("HOY SE RETIENE", "HELD TODAY")}</div><div className="mt-1 font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{money(local ? total : retener)}</div></div>
         <Button icon="bag" disabled={(yo && miss.length > 0) || ocupado} onClick={() => void enviar()}>{ocupado ? E2("Enviando…", "Sending…") : yo ? E2("Enviar pedido", "Send order") : E2("Entra para enviar", "Sign in to send")}</Button>
       </div>
       {V.hoja}

@@ -108,7 +108,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
       <div className="min-w-0 flex-1">
         <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nm(s.name)}</div>
         {(ol.length > 0 || al.length > 0) && <div className="mt-[3px] text-[12px] font-medium leading-[1.4] text-ink/60">{[...ol.map((x) => nm(x.o!.n)), ...al.map((x) => nm(x.n))].join(" · ")}</div>}
-        <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${warr ? E2("Garantía · sin cargo", "Warranty · no charge") : precioL}${dep ? ` · ${E2("DEPÓSITO ", "DEPOSIT ")}${dinero(dep)}` : ""}`.toUpperCase()}</div>
+        <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${warr ? E2("Garantía · sin cargo", "Warranty · no charge") : precioL}${dep ? ` · ${E2("DEPÓSITO ", "DEPOSIT ")}${dinero(dep)}` : ""}`.toUpperCase()}</div>
       </div>
       <button type="button" onClick={volver} className="flex-none text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
     </div>
@@ -122,9 +122,9 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
       <button type="button" onClick={() => v.setSheet(auto ? "veh" : "casa")} className="flex w-full items-center gap-3 rounded-[15px] bg-paper px-3.5 py-[13px] text-left">
         <span className="grid h-[42px] w-[42px] flex-none place-items-center rounded-[13px] bg-ink"><Icon name={auto ? "car" : "home"} size={20} color="var(--tl-white)" /></span>
         <span className="min-w-0 flex-1">
-          <span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{auto ? E2("TU VEHÍCULO", "YOUR VEHICLE") : E2("VA A TU CASA", "COMING TO YOUR HOME")}</span>
+          <span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{auto ? E2("TU VEHÍCULO", "YOUR VEHICLE") : E2("VA A TU CASA", "COMING TO YOUR HOME")}</span>
           <span className="mt-1 block text-[14.5px] font-bold leading-[1.3]">{auto ? (v.veh ? vehName(v.veh, es) : E2("Agrega tu vehículo", "Add your vehicle")) : v.casa ? v.casa.dir : E2("Agrega tu casa", "Add your home")}</span>
-          {dato && <span className="mt-[3px] block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{auto && v.veh ? vehMeta(v.veh, es) : v.casa ? casaMeta(v.casa, es) : ""}</span>}
+          {dato && <span className="mt-[3px] block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{auto && v.veh ? vehMeta(v.veh, es) : v.casa ? casaMeta(v.casa, es) : ""}</span>}
           {cp && <span className="mt-1.5 flex items-center gap-[5px] text-[11.5px] font-bold" style={{ color: cp.ok ? ("warn" in cp && cp.warn ? "var(--tl-pro-ink)" : "var(--tl-open-text)") : "var(--tl-danger)" }}><Icon name={cp.ok && !("warn" in cp && cp.warn) ? "check" : "warning"} size={13} color="currentColor" />{cp.t}</span>}
         </span>
         <span className="flex-none text-[12.5px] font-bold text-action">{dato ? E2("Cambiar", "Change") : E2("Agregar", "Add")}</span>
@@ -147,7 +147,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
         <div><div className={K}>{E2("FOTOS · OPCIONAL", "PHOTOS · OPTIONAL")}</div>
           <div className="mt-[9px] flex flex-wrap gap-2.5">
             {fotos.map((f) => <span key={f.id} className="relative h-[68px] w-[68px] rounded-[13px] bg-photo-bg" style={{ backgroundImage: `url(${f.url})`, backgroundSize: "cover" }}><button type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="absolute -right-1.5 -top-1.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-ink"><Icon name="close" size={10} color="var(--tl-white)" strokeWidth={2.6} /></button></span>)}
-            {fotos.length < 6 && <button type="button" disabled={subiendo} onClick={() => fileRef.current?.click()} className="box-border flex h-[68px] w-[68px] flex-col items-center justify-center gap-1 rounded-[13px] border-[1.5px] border-dashed border-ink/[.22] text-ink/55"><Icon name="image" size={18} color="rgba(11,14,18,.55)" /><span className="text-[10.5px] font-bold">{subiendo ? "…" : E2("Agregar", "Add")}</span></button>}
+            {fotos.length < 6 && <button type="button" disabled={subiendo} onClick={() => fileRef.current?.click()} className="box-border flex h-[68px] w-[68px] flex-col items-center justify-center gap-1 rounded-[13px] border-[1.5px] border-dashed border-ink/[.22] text-ink/60"><Icon name="image" size={18} color="rgba(11,14,18,.6)" /><span className="text-[10.5px] font-bold">{subiendo ? "…" : E2("Agregar", "Add")}</span></button>}
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { void subir(e.target.files?.[0]); e.target.value = ""; }} />
           </div></div>
       )}
@@ -165,7 +165,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
         </div>
       )}
       {hSel != null && <div className="flex items-center gap-[9px] rounded-[13px] bg-action/[.07] px-[13px] py-[11px]"><Icon name="clock" size={15} color="var(--tl-action)" /><span className="text-[12.5px] font-bold leading-[1.4] text-action-hover">{cuandoL}</span></div>}
-      {auto && <div className="text-pretty text-[11.5px] font-medium leading-[1.5] text-ink/55">{a.days ? E2(`Lo tienen ${a.days[0]}–${a.days[1]} días en el taller. Te avisan cuando esté listo.`, `They keep it ${a.days[0]}–${a.days[1]} days at the shop. They let you know when it is ready.`) : `${wL}.`}</div>}
+      {auto && <div className="text-pretty text-[11.5px] font-medium leading-[1.5] text-ink/60">{a.days ? E2(`Lo tienen ${a.days[0]}–${a.days[1]} días en el taller. Te avisan cuando esté listo.`, `They keep it ${a.days[0]}–${a.days[1]} days at the shop. They let you know when it is ready.`) : `${wL}.`}</div>}
       {!auto && s.k !== "pres" && (
         <div className="border-t border-ink/[.07] pt-3.5"><div className={K}>{E2("¿VAS A ESTAR EN CASA?", "WILL YOU BE HOME?")}</div>
           <div className="mt-2 flex flex-wrap gap-2">{([["casa", E2("Sí, estaré en casa", "Yes, I will be home")], ["llave", E2("No: dejo cómo entrar", "No: I leave access instructions")]] as const).map(([k, l]) => <Chip key={k} variant={acceso === k ? "selected" : "filter"} onClick={() => setAcceso(k)}>{l}</Chip>)}</div>
@@ -208,7 +208,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
     foot: E2("Los reembolsos vuelven a tu tarjeta en 3 a 5 días hábiles.", "Refunds go back to your card in 3 to 5 business days.") } : null;
   const toggle = (on: boolean, set: (x: boolean) => void, t: string, s2: string) => (
     <div role="switch" aria-checked={on} aria-label={t} tabIndex={0} onClick={() => set(!on)} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); set(!on); } }} className="flex cursor-pointer items-center gap-3 border-t border-ink/[.07] pt-3.5 first:border-0 first:pt-0">
-      <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{t}</div><div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/55">{s2}</div></div>
+      <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{t}</div><div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/60">{s2}</div></div>
       <span className={`relative h-6 w-[42px] flex-none rounded-full transition-colors ${on ? "bg-ink" : "bg-ink/20"}`}><span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-transform ${on ? "translate-x-[21px]" : "translate-x-[3px]"}`} /></span>
     </div>
   );
@@ -236,7 +236,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
         </div>
         <div data-screen-label="Booking · barra" className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/[.08] bg-paper/[.96] px-4 pb-5 pt-3 backdrop-blur-[14px]">
           <div className="flex items-center gap-3.5">
-            <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{paso === 2 ? payK : desdeK ? E2("DESDE", "FROM") : "TOTAL"}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{paso === 2 ? payV : s.k === "cotiza" ? E2("Se cotiza", "Quoted") : dinero(total)}</div></div>
+            <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{paso === 2 ? payK : desdeK ? E2("DESDE", "FROM") : "TOTAL"}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{paso === 2 ? payV : s.k === "cotiza" ? E2("Se cotiza", "Quoted") : dinero(total)}</div></div>
             <div className="flex min-w-0 flex-1"><Button block disabled={!okPaso || ocupado} onClick={sigue}>{paso === 2 ? (ocupado ? E2("Enviando…", "Sending…") : enviarL) : E2("Continuar", "Continue")}</Button></div>
           </div>
           {!okPaso && falta && <div className="mt-[9px] text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-pro-ink">{falta.toUpperCase()}</div>}
@@ -244,7 +244,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
       </div>
       <div data-screen-label={`${label} · desktop`} className="mx-auto hidden max-w-[1180px] px-[30px] pb-[60px] pt-[22px] lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{op.negocio.nombre}</button>
-        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">Booking</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{`${op.negocio.nombre} · ${nm(s.name)}`.toUpperCase()}</div></div>
+        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">Booking</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{`${op.negocio.nombre} · ${nm(s.name)}`.toUpperCase()}</div></div>
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-x-12 gap-y-8">
           <div className="flex min-w-0 flex-col gap-[26px]">
             <div><div className="mb-3 font-display text-[20px] font-extrabold leading-[1.1] tracking-[-0.03em]">{T[0]}</div><div className="flex flex-col gap-3">{tarjetaSvc}{bloqueDato}</div></div>
@@ -256,7 +256,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
             <div className="flex flex-col gap-3 rounded-[22px] border border-ink/10 bg-white px-5 py-[18px] shadow-[var(--shadow-float)]">
               {!listo && <div className="text-center text-[12px] font-bold text-pro-ink">{falta}</div>}
               <div className="flex items-center gap-3.5">
-                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{payK}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">{payV}</div></div>
+                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{payK}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">{payV}</div></div>
                 <div className="flex min-w-0 flex-1"><Button variant="primary" block disabled={!listo || ocupado} onClick={() => void enviar()}>{ocupado ? E2("Enviando…", "Sending…") : enviarL}</Button></div>
               </div>
               {errorBox}

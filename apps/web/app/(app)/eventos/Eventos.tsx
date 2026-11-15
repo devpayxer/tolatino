@@ -123,7 +123,7 @@ export function Eventos({ es, ciudad, estado, d, t, generos, lista, noche, feat,
             {tipos.map(([k, l]) => <button key={k} type="button" aria-pressed={t === k} onClick={() => ir(d, k)} className="flex-none whitespace-nowrap rounded-full px-3 py-2 text-[12px] font-bold" style={chip(t === k)}>{l}</button>)}
           </div>
         </div>
-        <div className="px-5 pt-3.5 text-ink/45" style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em" }}>{conteo}</div>
+        <div className="px-5 pt-3.5 text-ink/60" style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em" }}>{conteo}</div>
         {!items.length && !vacioModulo ? vacio(false) : null}
         {secs.map((s) => (
           <div key={s.k + s.items[0]!.fecha} className="px-5 pt-[18px]">
@@ -184,7 +184,7 @@ export function Eventos({ es, ciudad, estado, d, t, generos, lista, noche, feat,
           {tipos.map(([k, l]) => <button key={k} type="button" aria-pressed={t === k} onClick={() => ir(d, k)} className="rounded-full px-3.5 py-[9px] text-[12.5px] font-bold" style={chip(t === k)}>{l}</button>)}
         </div>
         <div className="mt-4 flex items-center justify-between gap-3">
-          <span className="text-ink/45" style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em" }}>{conteo}</span>
+          <span className="text-ink/60" style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em" }}>{conteo}</span>
           {mios > 0 && <span role="link" onClick={() => router.push("/cuenta/guardados?f=evt")} {...tec(() => router.push("/cuenta/guardados?f=evt"))} className="flex cursor-pointer items-center gap-[7px] text-[12px] font-bold text-action"><Icon name="ticket" size={15} />{E2("Mis boletos y RSVP", "My tickets & RSVPs")}</span>}
         </div>
         {!items.length && !vacioModulo ? vacio(true) : null}

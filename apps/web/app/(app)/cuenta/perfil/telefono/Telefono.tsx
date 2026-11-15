@@ -27,7 +27,7 @@ export function Telefono({ actual, es, yo, pruebas }: { actual: string; es: bool
   };
   const B: Bloque[] = [{ type: "rows", rows: [
     { ic: step > 1 ? "check" : "phone", ibg: step > 1 ? "rgba(0,229,196,.16)" : undefined, ifg: step > 1 ? "var(--tl-open-text)" : undefined, t: E2("Tu número nuevo", "Your new number"), s: step > 1 ? `+1 ${fmt(ph)}` : E2("PASO 1 DE 2", "STEP 1 OF 2") },
-    { ic: "lock", ibg: step === 2 ? undefined : "rgba(11,14,18,.05)", ifg: step === 2 ? undefined : "rgba(11,14,18,.4)", t: E2("Confirma con el código que te mandamos", "Confirm with the code we send"), s: E2("PASO 2 DE 2", "STEP 2 OF 2") },
+    { ic: "lock", ibg: step === 2 ? undefined : "rgba(11,14,18,.05)", ifg: step === 2 ? undefined : "rgba(11,14,18,.6)", t: E2("Confirma con el código que te mandamos", "Confirm with the code we send"), s: E2("PASO 2 DE 2", "STEP 2 OF 2") },
   ] }];
   if (step === 1) {
     B.push({ type: "kv", kw: "130px", rows: [{ k: E2("NÚMERO ACTUAL", "CURRENT NUMBER"), v: `+1 ${fmt(cur)}${E2(" · verificado", " · verified")}` }] });

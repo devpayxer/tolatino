@@ -56,7 +56,7 @@ export function Aplicar({ v, negocio, nombre, tel, es }: { v: VacanteDet; negoci
       <div role="radiogroup" aria-label={E2("Experiencia", "Experience")} className="mt-[11px] flex flex-wrap gap-[7px]">
         {([0, 1, 3, 4] as const).map((k) => <Chip key={k} variant={exp === k ? "selected" : "filter"} role="radio" aria-checked={exp === k} onClick={() => setExp(k)}>{EX[k]}</Chip>)}
       </div>
-      <div className="mt-3.5 flex justify-between gap-2.5"><span className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{E2("CUÉNTALES (OPCIONAL)", "TELL THEM (OPTIONAL)")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{note.length}/200</span></div>
+      <div className="mt-3.5 flex justify-between gap-2.5"><span className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{E2("CUÉNTALES (OPCIONAL)", "TELL THEM (OPTIONAL)")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{note.length}/200</span></div>
       <textarea value={note} onChange={(e) => setNote(e.target.value.slice(0, 200))} rows={3} aria-label={E2("Cuéntales (opcional)", "Tell them (optional)")} placeholder={E2("Dónde has trabajado, qué sabes hacer…", "Where you have worked, what you can do…")}
         className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] text-ink outline-none" />
     </div>
@@ -68,10 +68,10 @@ export function Aplicar({ v, negocio, nombre, tel, es }: { v: VacanteDet; negoci
         {DL.map((l, d) => {
           const on = days.includes(d), nd = v.days.includes(d);
           return <button key={d} type="button" aria-pressed={on} onClick={() => setDays((x) => tog(x, d))}
-            className={`rounded-xl border py-2.5 text-center font-mono text-[11px] font-bold ${on ? "border-ink bg-ink text-white" : nd ? "border-[rgba(75,55,245,.3)] bg-[rgba(75,55,245,.08)] text-action" : "border-ink/[.12] bg-white text-ink/50"}`}>{l}</button>;
+            className={`rounded-xl border py-2.5 text-center font-mono text-[11px] font-bold ${on ? "border-ink bg-ink text-white" : nd ? "border-[rgba(75,55,245,.3)] bg-[rgba(75,55,245,.08)] text-action" : "border-ink/[.12] bg-white text-ink/60"}`}>{l}</button>;
         })}
       </div>
-      <div className="mt-2 text-[11.5px] font-medium leading-[1.45] text-ink/55">{E2(`Este puesto: ${diasL(v.days, es).toLowerCase()}, ${horarioL(v.start, v.end)}.`, `This job: ${diasL(v.days, es)}, ${horarioL(v.start, v.end)}.`)}</div>
+      <div className="mt-2 text-[11.5px] font-medium leading-[1.45] text-ink/60">{E2(`Este puesto: ${diasL(v.days, es).toLowerCase()}, ${horarioL(v.start, v.end)}.`, `This job: ${diasL(v.days, es)}, ${horarioL(v.start, v.end)}.`)}</div>
     </div>
   );
   const idiomas = (
@@ -100,7 +100,7 @@ export function Aplicar({ v, negocio, nombre, tel, es }: { v: VacanteDet; negoci
     </div>
   );
   const boton = <Button variant="primary" block disabled={!!miss || enviando} onClick={enviar}>{E2("Enviar solicitud", "Send application")}</Button>;
-  const nota = <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/45">{miss ? `${E2("FALTA: ", "MISSING: ")}${miss}` : E2("LO VES EN TU SOLICITUD CUANDO RESPONDAN", "YOU SEE IT IN YOUR APPLICATION WHEN THEY REPLY")}</div>;
+  const nota = <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/60">{miss ? `${E2("FALTA: ", "MISSING: ")}${miss}` : E2("LO VES EN TU SOLICITUD CUANDO RESPONDAN", "YOU SEE IT IN YOUR APPLICATION WHEN THEY REPLY")}</div>;
   const sum: [string, string][] = [[E2("PUESTO", "JOB"), title], [E2("PAGO", "PAY"), pay], [E2("DÍAS", "DAYS"), diasL(v.days, es)], [E2("HORARIO", "HOURS"), horarioL(v.start, v.end)],
     [E2("TUS DÍAS", "YOUR DAYS"), days.length ? [...days].sort((a, b) => a - b).map((d) => DL[d]).join(" · ") : "—"]];
   const cuerpo = <>{fallo}{puesto}{datos}{experiencia}{dias}{idiomas}{priv}</>;
@@ -110,7 +110,7 @@ export function Aplicar({ v, negocio, nombre, tel, es }: { v: VacanteDet; negoci
       <div data-screen-label="APP-NEG-JOB-APLICAR · móvil" className="lg:hidden">
         <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3">
           <button type="button" aria-label={E2("Volver", "Back")} onClick={volver} className="grid size-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="chevronLeft" size={18} strokeWidth={2} /></button>
-          <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{E2("Aplicar", "Apply")}</div><div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{meta}</div></div>
+          <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{E2("Aplicar", "Apply")}</div><div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{meta}</div></div>
         </div>
         <div className="flex flex-col gap-3 px-4 pt-4">{cuerpo}</div>
         <div data-screen-label="Aplicar · barra" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/95 px-4 pb-5 pt-3 backdrop-blur-[14px]">
@@ -120,12 +120,12 @@ export function Aplicar({ v, negocio, nombre, tel, es }: { v: VacanteDet; negoci
       <div data-screen-label="APP-NEG-JOB-APLICAR · desktop" className="mx-auto hidden max-w-[1080px] lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{title}</button>
         <h1 className="mt-3.5 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{E2("Aplicar", "Apply")}</h1>
-        <div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{meta}</div>
+        <div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{meta}</div>
         <div className="mt-6 grid items-start gap-x-12 gap-y-8 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
           <div className="flex min-w-0 flex-col gap-3.5">{cuerpo}</div>
           <div className="flex flex-col gap-3 rounded-[22px] border border-ink/10 bg-white p-5 shadow-float min-[1100px]:sticky min-[1100px]:top-[96px]">
             <div className={K}>{E2("RESUMEN", "SUMMARY")}</div>
-            {sum.map(([k, val]) => <div key={k} className="flex justify-between gap-3 text-[12.5px] font-medium"><span className="text-ink/55">{k}</span><span className="text-right font-bold">{val}</span></div>)}
+            {sum.map(([k, val]) => <div key={k} className="flex justify-between gap-3 text-[12.5px] font-medium"><span className="text-ink/60">{k}</span><span className="text-right font-bold">{val}</span></div>)}
             <div className="flex">{boton}</div>{nota}
           </div>
         </div>

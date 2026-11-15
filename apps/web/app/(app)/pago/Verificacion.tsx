@@ -15,7 +15,7 @@ const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 /* Lo que el servidor manda cuando el banco pide verificar (lib/pagos/pasarela.ts · Verificar). */
 export type VerificarT = { pi: string; secreto: string; monto: number; pm: string | null; vence: string; renovacion: boolean };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
-const K = "font-mono text-[10px] font-bold tracking-[0.16em] text-ink/45";
+const K = "font-mono text-[10px] font-bold tracking-[0.16em] text-ink/60";
 
 export function Verificacion({ es, v, modo, pk, onListo, onCerrar }: { es: boolean; v: VerificarT; modo: ModoTarjeta; pk: string | null; onListo: () => void; onCerrar: () => void }) {
   const E2 = (a: string, b: string) => (es ? a : b);
@@ -49,7 +49,7 @@ export function Verificacion({ es, v, modo, pk, onListo, onCerrar }: { es: boole
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="font-display text-[19px] font-extrabold leading-[1.2] tracking-[-0.03em]">{E2("Tu banco pide confirmar", "Your bank asks you to confirm")}</div>
-          <div className="mt-1 font-mono text-[10px] font-bold tracking-[0.12em] text-ink/45">{`3-D SECURE · ${money(v.monto)}`}</div>
+          <div className="mt-1 font-mono text-[10px] font-bold tracking-[0.12em] text-ink/60">{`3-D SECURE · ${money(v.monto)}`}</div>
         </div>
         <button type="button" aria-label={E2("Cerrar", "Close")} onClick={onCerrar} className="grid size-9 flex-none place-items-center rounded-[11px] bg-ink/5"><Icon name="close" size={15} /></button>
       </div>
@@ -67,8 +67,8 @@ export function Verificacion({ es, v, modo, pk, onListo, onCerrar }: { es: boole
       {error && <div role="alert" className="text-[12px] font-semibold text-danger">{error}</div>}
       <div className="flex"><Button variant="primary" block disabled={ocupado} onClick={confirmar}>{ocupado ? E2("Esperando a tu banco…", "Waiting for your bank…") : E2("Confirmar con mi banco", "Confirm with my bank")}</Button></div>
       {modo === "simulador" && <div className="flex"><Button variant="secondary" block disabled={ocupado} onClick={noFuiYo}>{E2("No fui yo", "It was not me")}</Button></div>}
-      <div className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/55">{E2("Si cierras sin confirmar, no se cobra nada: lo retenido se suelta solo.", "If you close without confirming, nothing is charged: the hold is released on its own.")}</div>
-      <div className="text-center font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/40">{E2("PAGO SEGURO CON STRIPE · 3D SECURE", "SECURED BY STRIPE · 3D SECURE")}</div>
+      <div className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Si cierras sin confirmar, no se cobra nada: lo retenido se suelta solo.", "If you close without confirming, nothing is charged: the hold is released on its own.")}</div>
+      <div className="text-center font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{E2("PAGO SEGURO CON STRIPE · 3D SECURE", "SECURED BY STRIPE · 3D SECURE")}</div>
     </div>
   );
   return (

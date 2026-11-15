@@ -29,7 +29,7 @@ export function planBloques(c: Ctx, x: PlanPanel | undefined): Bloque[] {
   const seguir = (ciclo: "month" | "year" = p.ciclo) => c.setUi({ planHoja: { ciclo } });
   const out: Bloque[] = [];
   if (x.modo === "simulador") out.push({ type: "note", tone: "info", icon: "info", t: E2("Sandbox: el cobro de Pro va contra el simulador de To’Latino. Ninguna tarjeta real se cobra.", "Sandbox: Pro charges run against To’Latino’s simulator. No real card is charged.") });
-  const duerme: Fila = { icon: "lock", ibg: "var(--tl-paper)", ifg: "rgba(11,14,18,.55)", t: E2("Se duerme · queda guardado", "Goes to sleep · stays saved"), s: d.duerme, chev: false, compact: true };
+  const duerme: Fila = { icon: "lock", ibg: "var(--tl-paper)", ifg: "rgba(11,14,18,.6)", t: E2("Se duerme · queda guardado", "Goes to sleep · stays saved"), s: d.duerme, chev: false, compact: true };
   if (p.st === "trial") {
     out.push({ type: "rows", items: [{ icon: "star", t: E2(`Pro · prueba · quedan ${p.quedan} ${p.quedan === 1 ? "día" : "días"}`, `Pro · trial · ${p.quedan} ${p.quedan === 1 ? "day" : "days"} left`),
       s: E2(`Termina el ${fin}.`, `Ends ${fin}.`), tag: "PRO", tone: "action", chev: false }] });
@@ -63,7 +63,7 @@ export function planBloques(c: Ctx, x: PlanPanel | undefined): Bloque[] {
       if (p.phase === "leaving") out.push({ type: "rows", k: E2(`EL ${fin.toUpperCase()} SE DUERME · QUEDA GUARDADO`, `ON ${fin.toUpperCase()} GOES TO SLEEP · STAYS SAVED`), items: [duerme] });
     }
   } else {
-    out.push({ type: "rows", items: [{ icon: "star", ibg: "var(--tl-paper)", ifg: "rgba(11,14,18,.55)", t: "Free", s: p.desde ? E2(`Desde el ${fechaPlan(es, p.desde)}.`, `Since ${fechaPlan(es, p.desde)}.`) : E2(`Una sola página y hasta ${d.tope} pedidos o citas en línea al mes.`, `Single page and up to ${d.tope} online orders or bookings a month.`), tag: "FREE", tone: "neutral", chev: false }] });
+    out.push({ type: "rows", items: [{ icon: "star", ibg: "var(--tl-paper)", ifg: "rgba(11,14,18,.6)", t: "Free", s: p.desde ? E2(`Desde el ${fechaPlan(es, p.desde)}.`, `Since ${fechaPlan(es, p.desde)}.`) : E2(`Una sola página y hasta ${d.tope} pedidos o citas en línea al mes.`, `Single page and up to ${d.tope} online orders or bookings a month.`), tag: "FREE", tone: "neutral", chev: false }] });
     out.push({ type: "lock", t: E2("Tu contenido Pro está guardado", "Your Pro content is saved"), s: `${d.duerme.charAt(0).toUpperCase()}${d.duerme.slice(1)}. ${E2("Vuelve igual que lo dejaste, cuando quieras.", "It comes back as you left it, whenever you want.")}`,
       cta: p.pruebaUsada ? E2(`Volver a Pro · ${mes}/mes`, `Back to Pro · ${mes}/mo`) : E2(`Pro · ${mes}/mes`, `Pro · ${mes}/mo`), onCta: () => seguir("month") });
     if (p.pruebaUsada) out.push({ type: "note", tone: "ink", icon: "info", t: E2("Ya usaste tu prueba: al volver a Pro se cobra el primer mes ese día.", "You already used your trial: coming back to Pro charges the first month that day.") });
@@ -79,7 +79,7 @@ function estadoPlan(c: Ctx, x: PlanPanel): Bloque[] {
   const fila: Fila = p.st === "trial" ? { icon: "star", t: E2(`Pro · prueba · quedan ${p.quedan} ${p.quedan === 1 ? "día" : "días"}`, `Pro · trial · ${p.quedan} ${p.quedan === 1 ? "day" : "days"} left`), s: E2(`Termina el ${fin}.`, `Ends ${fin}.`), tag: "PRO", tone: "action", chev: false }
     : p.st === "courtesy" ? { icon: "star", t: E2("Pro de cortesía", "Courtesy Pro"), s: E2(`Hasta el ${fin}.`, `Until ${fin}.`), tag: "PRO", tone: "action", chev: false }
     : p.st === "pro" ? { icon: "star", t: "Pro", s: p.phase === "leaving" ? E2(`Pasa a Free el ${fin}.`, `Switches to Free on ${fin}.`) : p.proximo ? E2(`Renueva el ${fechaPlan(es, p.proximo)}.`, `Renews ${fechaPlan(es, p.proximo)}.`) : E2("Activo.", "Active."), tag: "PRO", tone: "action", chev: false }
-    : { icon: "star", ibg: "var(--tl-paper)", ifg: "rgba(11,14,18,.55)", t: "Free", s: p.desde ? E2(`Desde el ${fechaPlan(es, p.desde)}.`, `Since ${fechaPlan(es, p.desde)}.`) : E2("Una sola página.", "A single page."), tag: "FREE", tone: "neutral", chev: false };
+    : { icon: "star", ibg: "var(--tl-paper)", ifg: "rgba(11,14,18,.6)", t: "Free", s: p.desde ? E2(`Desde el ${fechaPlan(es, p.desde)}.`, `Since ${fechaPlan(es, p.desde)}.`) : E2("Una sola página.", "A single page."), tag: "FREE", tone: "neutral", chev: false };
   const out: Bloque[] = [{ type: "rows", items: [fila] }];
   if (x.recibos.length) out.push({ type: "rows", k: E2("RECIBOS", "RECEIPTS"), items: x.recibos.map((r, i): Fila => ({ key: String(i), icon: "card", t: `Pro · ${money(r.monto)}`, s: fechaPlan(es, r.at), chev: false, compact: true })) });
   out.push({ type: "note", tone: "ink", icon: "shield", t: E2("Pasar a Free nunca borra nada: tu contenido Pro queda guardado.", "Switching to Free never deletes anything: your Pro content stays saved.") });

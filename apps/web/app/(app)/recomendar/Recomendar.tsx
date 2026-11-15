@@ -20,7 +20,7 @@ type F = { name: string; cat: string | null; where: string; casa: boolean; con: 
 const F0: F = { name: "", cat: null, where: "", casa: false, con: "", know: null, why: "", show: true };
 const DK = "tl-rec-borrador";
 const MONO = "'JetBrains Mono',monospace";
-const K: CSSProperties = { font: `700 10px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.42)" };
+const K: CSSProperties = { font: `700 10px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.6)" };
 const caja: CSSProperties = { padding: 16, borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.07)", display: "flex", flexDirection: "column" };
 const entrada: CSSProperties = { height: 48, padding: "0 14px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", font: "600 15px Manrope,sans-serif", color: "var(--tl-ink)", outline: "none", background: "var(--tl-white)", boxSizing: "border-box", width: "100%" };
 
@@ -121,7 +121,7 @@ export function Recomendar({ v }: { v: VistaRec }) {
           <span role="button" aria-label={E2("Volver", "Back")} onClick={atras} {...tec(atras)} style={{ width: 34, height: 34, borderRadius: 11, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="chevronLeft" size={16} strokeWidth={2} /></span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ font: "800 15px/1.2 Sora,sans-serif", letterSpacing: "-.02em" }}>{E2("Recomienda un negocio", "Recommend a business")}</div>
-            <div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)" }}>{cityK}</div>
+            <div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{cityK}</div>
           </div>
         </div>
       ) : null}
@@ -179,13 +179,13 @@ export function Recomendar({ v }: { v: VistaRec }) {
                   </div>
                 ) : null}
                 <label style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                  <span style={{ display: "flex", justifyContent: "space-between", gap: 10, font: "700 13px Manrope,sans-serif" }}><span>{E2("¿Por qué lo recomiendas? · Opcional", "Why do you recommend it? · Optional")}</span><span style={{ font: `600 10px ${MONO}`, color: "rgba(11,14,18,.42)" }}>{f.why.length} / 280</span></span>
+                  <span style={{ display: "flex", justifyContent: "space-between", gap: 10, font: "700 13px Manrope,sans-serif" }}><span>{E2("¿Por qué lo recomiendas? · Opcional", "Why do you recommend it? · Optional")}</span><span style={{ font: `600 10px ${MONO}`, color: "rgba(11,14,18,.6)" }}>{f.why.length} / 280</span></span>
                   <textarea value={f.why} onChange={(e) => up({ why: e.target.value.slice(0, 280) })} placeholder={E2("Ej.: el mejor sancocho del barrio, siempre a tiempo…", "E.g. best sancocho around, always on time…")} rows={3} style={{ padding: "12px 14px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", font: "500 14px/1.5 Manrope,sans-serif", color: "var(--tl-ink)", outline: "none", resize: "none", boxSizing: "border-box", width: "100%" }} />
                 </label>
                 <div role="switch" aria-checked={f.show} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); up({ show: !f.show }); } }} onClick={() => up({ show: !f.show })} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
                   <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
                     <span style={{ font: "700 13.5px Manrope,sans-serif" }}>{E2("Decirle que fuiste tú", "Tell them it was you")}</span>
-                    <span style={{ font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{f.show ? E2(`El mensaje dice «${who} te recomendó».`, `The message says "${who} recommended you".`) : E2("El mensaje dice «un vecino te recomendó».", "The message says \"a neighbor recommended you\".")}</span>
+                    <span style={{ font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{f.show ? E2(`El mensaje dice «${who} te recomendó».`, `The message says "${who} recommended you".`) : E2("El mensaje dice «un vecino te recomendó».", "The message says \"a neighbor recommended you\".")}</span>
                   </span>
                   <Interruptor on={f.show} />
                 </div>
@@ -194,7 +194,7 @@ export function Recomendar({ v }: { v: VistaRec }) {
               {!D ? comoFunciona : null}
               {miss.length ? (
                 <div role="alert" style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(11,14,18,.04)", display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>{E2("TE FALTA", "STILL NEEDED")}</span>
+                  <span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{E2("TE FALTA", "STILL NEEDED")}</span>
                   {miss.map((m) => <span key={m} style={{ font: "600 13px Manrope,sans-serif", color: "rgba(11,14,18,.7)" }}>· {m}</span>)}
                 </div>
               ) : null}
@@ -216,7 +216,7 @@ export function Recomendar({ v }: { v: VistaRec }) {
               <div style={{ padding: "6px 16px", borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.07)" }}>
                 {([[E2("NEGOCIO", "BUSINESS"), sent.name], [E2("CATEGORÍA", "CATEGORY"), catL(sent.cat)], [E2("DÓNDE", "WHERE"), sent.casa ? `${E2("Sin local · ", "No storefront · ")}${sent.ciudad}` : `${sent.where} · ${sent.ciudad}`], [E2("CONTACTO", "CONTACT"), sent.con || E2("No lo dejaste", "Not given")], [E2("SALE COMO", "SHOWS AS"), sent.show ? who : E2("Un vecino", "A neighbor")]] as const).map(([k, val]) => (
                   <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 14, padding: "11px 0", borderBottom: "1px solid rgba(11,14,18,.06)" }}>
-                    <span style={{ font: `700 10px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.5)", paddingTop: 2 }}>{k}</span>
+                    <span style={{ font: `700 10px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.6)", paddingTop: 2 }}>{k}</span>
                     <span style={{ font: "600 13.5px/1.4 Manrope,sans-serif", textAlign: "right", minWidth: 0 }}>{val}</span>
                   </div>
                 ))}
@@ -235,7 +235,7 @@ export function Recomendar({ v }: { v: VistaRec }) {
               <div data-screen-label="Recomendar · lo que recibe" style={{ ...caja, gap: 10 }}>
                 <span style={K}>{E2("LO QUE RECIBE EL NEGOCIO", "WHAT THE BUSINESS GETS")}</span>
                 <div style={{ alignSelf: "flex-start", maxWidth: "100%", padding: "12px 14px", borderRadius: "16px 16px 16px 5px", background: "var(--tl-paper)", font: "500 13.5px/1.5 Manrope,sans-serif", textWrap: "pretty" } as CSSProperties}>{sms}</div>
-                <span style={{ font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{E2("Solo si dejaste su teléfono. Un solo mensaje.", "Only if you left their phone. One message only.")}</span>
+                <span style={{ font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2("Solo si dejaste su teléfono. Un solo mensaje.", "Only if you left their phone. One message only.")}</span>
               </div>
               {comoFunciona}
               {!sent ? <div style={{ display: "flex" }}>{boton}</div> : null}

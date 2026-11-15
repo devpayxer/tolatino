@@ -52,7 +52,7 @@ function FeedPost({
   }, author, " ", /*#__PURE__*/React.createElement("span", {
     style: {
       font: "600 11px 'JetBrains Mono',monospace",
-      color: 'rgba(11,14,18,.4)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, "\xB7 ", action, time ? ' · ' + time : '')), place ? /*#__PURE__*/React.createElement("div", {
     style: {
@@ -116,7 +116,7 @@ function FeedPost({
   }) : null), /*#__PURE__*/React.createElement("div", {
     style: {
       font: "600 10.5px 'JetBrains Mono',monospace",
-      color: 'rgba(11,14,18,.5)',
+      color: 'rgba(11,14,18,.6)',
       marginTop: 3
     }
   }, answer.meta)), /*#__PURE__*/React.createElement("div", {
@@ -136,7 +136,7 @@ function FeedPost({
       display: 'flex',
       gap: 18,
       alignItems: 'center',
-      color: 'rgba(11,14,18,.5)',
+      color: 'rgba(11,14,18,.6)',
       font: '600 12px Manrope,sans-serif'
     }
   }, stats.map((s, i) => /*#__PURE__*/React.createElement("span", {

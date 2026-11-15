@@ -47,7 +47,7 @@ export function HojaTerminos({ es, faltan }: { es: boolean; faltan: FaltaHoja[] 
           </div>
         </div>
         <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 14, background: "var(--tl-paper)" }}>
-          <div style={{ font: "700 9.5px 'JetBrains Mono',monospace", letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>{E2("LO QUE CAMBIÓ", "WHAT CHANGED")}</div>
+          <div style={{ font: "700 9.5px 'JetBrains Mono',monospace", letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{E2("LO QUE CAMBIÓ", "WHAT CHANGED")}</div>
           <ul data-cambios style={{ margin: "8px 0 0", padding: "0 0 0 18px", listStyle: "disc", display: "flex", flexDirection: "column", gap: 6, font: "600 13.5px/1.45 Manrope,sans-serif" }}>
             {lineas.map((l, i) => <li key={i}>{l}</li>)}
           </ul>

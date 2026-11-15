@@ -19,7 +19,7 @@ export const marcaB = (b: string) => BR[b]?.[0] ?? b.toUpperCase().slice(0, 4);
 export const tarjetaL = (t: Tarjeta) => `${marcaL(t.marca)} ·· ${t.ultimos4}`;
 const brandOf = (n: string) => (/^4/.test(n) ? "visa" : /^(5[1-5]|2[2-7])/.test(n) ? "mc" : /^3[47]/.test(n) ? "amex" : /^6(011|5)/.test(n) ? "disc" : null);
 const dg = (x: string) => x.replace(/\D/g, "");
-const K = "font-mono text-[10px] font-bold tracking-[0.16em] text-ink/45";
+const K = "font-mono text-[10px] font-bold tracking-[0.16em] text-ink/60";
 const campo = (err: boolean) => `h-[46px] w-full rounded-[13px] bg-white px-3.5 text-[14.5px] font-semibold outline-none ${err ? "border-[1.5px] border-danger" : "border border-ink/[.12]"}`;
 
 // Stripe.js (solo con Stripe de verdad): se carga una vez desde Stripe, como exige su norma de seguridad (PCI).
@@ -105,7 +105,7 @@ export function MetodoPago({ es, tarjetas, sel, declinada, nota, modo, pk, onUsa
         {paso === "add" && tarjetas.length > 0 && <button type="button" aria-label={E2("Volver", "Back")} onClick={() => setPaso("list")} className="grid size-9 flex-none place-items-center rounded-[11px] bg-ink/5"><Icon name="chevronLeft" size={16} /></button>}
         <div className="min-w-0 flex-1">
           <div className="font-display text-[19px] font-extrabold leading-[1.2] tracking-[-0.03em]">{paso === "add" ? E2("Agregar tarjeta", "Add a card") : E2("Método de pago", "Payment method")}</div>
-          {nota && <div className="mt-1 font-mono text-[10px] font-bold tracking-[0.12em] text-ink/45">{nota}</div>}
+          {nota && <div className="mt-1 font-mono text-[10px] font-bold tracking-[0.12em] text-ink/60">{nota}</div>}
         </div>
         <button type="button" aria-label={E2("Cerrar", "Close")} onClick={onClose} className="grid size-9 flex-none place-items-center rounded-[11px] bg-ink/5"><Icon name="close" size={15} /></button>
       </div>
@@ -117,7 +117,7 @@ export function MetodoPago({ es, tarjetas, sel, declinada, nota, modo, pk, onUsa
               <button key={t.pm} type="button" onClick={() => setElegida(t.pm)} className={`flex w-full items-center gap-3 rounded-[15px] bg-white px-3.5 py-3 text-left ${on ? "border-[1.5px] border-ink" : "border border-ink/10"}`}>
                 <span className="grid h-[26px] w-[40px] flex-none place-items-center rounded-[6px] bg-ink font-mono text-[8.5px] font-extrabold tracking-[0.06em] text-white">{marcaB(t.marca)}</span>
                 <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold leading-[1.3]">{tarjetaL(t)}</span>
-                  <span className={`mt-0.5 block font-mono text-[9.5px] font-bold tracking-[0.08em] ${dec ? "text-danger" : "text-ink/50"}`}>{dec ? E2("TU BANCO LA RECHAZÓ HACE UN MOMENTO", "YOUR BANK DECLINED IT A MOMENT AGO") : `${E2("VENCE ", "EXPIRES ")}${t.vence}${t.def ? E2(" · PREDETERMINADA", " · DEFAULT") : ""}${t.unaVez ? E2(" · SOLO PARA ESTE PAGO", " · THIS PAYMENT ONLY") : ""}`}</span></span>
+                  <span className={`mt-0.5 block font-mono text-[9.5px] font-bold tracking-[0.08em] ${dec ? "text-danger" : "text-ink/60"}`}>{dec ? E2("TU BANCO LA RECHAZÓ HACE UN MOMENTO", "YOUR BANK DECLINED IT A MOMENT AGO") : `${E2("VENCE ", "EXPIRES ")}${t.vence}${t.def ? E2(" · PREDETERMINADA", " · DEFAULT") : ""}${t.unaVez ? E2(" · SOLO PARA ESTE PAGO", " · THIS PAYMENT ONLY") : ""}`}</span></span>
                 <span className={`size-[18px] flex-none rounded-full ${on ? "border-[6px] border-ink" : "border-[1.5px] border-ink/25"}`} />
               </button>); })}
             <button type="button" onClick={() => setPaso("add")} className="flex w-full items-center gap-3 rounded-[15px] border border-dashed border-ink/20 px-3.5 py-3 text-left">
@@ -125,7 +125,7 @@ export function MetodoPago({ es, tarjetas, sel, declinada, nota, modo, pk, onUsa
               <span className="text-[13.5px] font-bold text-action">{E2("Agregar tarjeta de crédito o débito", "Add a credit or debit card")}</span>
             </button>
           </div>
-          <div className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/55">{E2(`Si hay un reembolso, vuelve a tu ${elegidaT ? tarjetaL(elegidaT) : "tarjeta"} en 3 a 5 días hábiles.`, `If there is a refund, it goes back to your ${elegidaT ? tarjetaL(elegidaT) : "card"} in 3 to 5 business days.`)}</div>
+          <div className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{E2(`Si hay un reembolso, vuelve a tu ${elegidaT ? tarjetaL(elegidaT) : "tarjeta"} en 3 a 5 días hábiles.`, `If there is a refund, it goes back to your ${elegidaT ? tarjetaL(elegidaT) : "card"} in 3 to 5 business days.`)}</div>
           <div className="flex"><Button variant="primary" block disabled={!elegidaT} onClick={() => elegidaT && onUsar(elegidaT)}>{`${E2("Usar ", "Use ")}${elegidaT ? tarjetaL(elegidaT) : ""}`}</Button></div>
         </>
       ) : (
@@ -150,13 +150,13 @@ export function MetodoPago({ es, tarjetas, sel, declinada, nota, modo, pk, onUsa
           )}
           <div><div className={K}>{E2("NOMBRE EN LA TARJETA", "NAME ON CARD")}</div><input value={f.nm} onChange={(e) => uf({ nm: e.target.value.replace(/[0-9]/g, "").slice(0, 40) })} autoComplete="cc-name" placeholder={E2("Como aparece en la tarjeta", "As it appears on the card")} aria-label={E2("Nombre en la tarjeta", "Name on card")} className={`mt-1.5 ${campo(false)}`} /></div>
           {!guardarSiempre && <button type="button" role="switch" aria-checked={f.save} onClick={() => uf({ save: !f.save })} className="flex w-full items-center gap-3 text-left">
-            <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Guardar para la próxima", "Save for next time")}</span><span className="mt-0.5 block text-[11.5px] font-medium text-ink/55">{E2("To'Latino nunca ve el número completo.", "To'Latino never sees the full number.")}</span></span>
+            <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Guardar para la próxima", "Save for next time")}</span><span className="mt-0.5 block text-[11.5px] font-medium text-ink/60">{E2("To'Latino nunca ve el número completo.", "To'Latino never sees the full number.")}</span></span>
             <span className={`relative h-[22px] w-10 flex-none rounded-full ${f.save ? "bg-ink" : "bg-ink/[.18]"}`}><span className="absolute top-0.5 size-[18px] rounded-full bg-white transition-all" style={{ left: f.save ? 20 : 2 }} /></span>
           </button>}
           {modo === "simulador" && <div className="rounded-[12px] bg-action/[.08] px-3 py-2.5 text-[11.5px] font-semibold leading-[1.5] text-action">{E2("Sandbox: usa 4242 4242 4242 4242 (aprobada), 4000 0000 0000 0002 (rechazada), 4000 0000 0000 9995 (sin fondos) o 4000 0027 6000 3184 (el banco pide confirmar). No se cobra nada real.", "Sandbox: use 4242 4242 4242 4242 (approved), 4000 0000 0000 0002 (declined), 4000 0000 0000 9995 (no funds) or 4000 0027 6000 3184 (the bank asks to confirm). Nothing real is charged.")}</div>}
           {error && <div role="alert" className="text-[12px] font-semibold text-danger">{error}</div>}
           <div className="flex"><Button variant="primary" block disabled={!ok || ocupado} onClick={usarNueva}>{ocupado ? E2("Guardando…", "Saving…") : ok ? E2("Usar esta tarjeta", "Use this card") : `${E2("Falta: ", "Missing: ")}${falta}`}</Button></div>
-          <div className="text-center font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/40">{E2("PAGO SEGURO CON STRIPE · 3D SECURE", "SECURED BY STRIPE · 3D SECURE")}</div>
+          <div className="text-center font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{E2("PAGO SEGURO CON STRIPE · 3D SECURE", "SECURED BY STRIPE · 3D SECURE")}</div>
         </>
       )}
     </div>

@@ -177,24 +177,24 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
       <div className="flex"><Button block disabled={ocupado} onClick={() => void hacer("sinseguro", E2("Listo: tu cita quedó confirmada con el precio sin seguro.", "Done: your visit is confirmed at the uninsured price."))}>{`${E2("Seguir sin seguro", "Continue uninsured")}${sal.sinSeg ? ` · ${dinero(sal.sinSeg)}` : ""}`}</Button></div>
       <div className="flex"><Button block variant="secondary" disabled={ocupado} onClick={() => void hacer("cancelar", "", undefined, () => router.push(`/n/${c.negocio.id}/consulta?s=${c.svcId ?? ""}`))}>{E2("Cambiar de seguro", "Change insurance")}</Button></div>
       <div className="flex"><Button block variant="secondary" disabled={ocupado} onClick={() => void hacer("cancelar", "", undefined, () => router.push("/c/doctores"))}>{E2("Buscar otro consultorio", "Find another clinic")}</Button></div>
-      <div className="text-pretty text-[11.5px] font-medium leading-[1.5] text-ink/55">{E2("Cambiar de seguro o buscar otro consultorio cancela esta solicitud (es gratis). Si no eliges, la hora se libera sola.", "Changing insurance or finding another clinic cancels this request (free). If you do not choose, the time frees up on its own.")}</div>
+      <div className="text-pretty text-[11.5px] font-medium leading-[1.5] text-ink/60">{E2("Cambiar de seguro o buscar otro consultorio cancela esta solicitud (es gratis). Si no eliges, la hora se libera sola.", "Changing insurance or finding another clinic cancels this request (free). If you do not choose, the time frees up on its own.")}</div>
     </div>
   ) : null;
   const [xOk, setXOk] = useState<number[]>([]);
   const tot = prof?.total;
   const totalCard = prof && tot && (c.paso === "quote" || c.paso === "hired") ? (
     <div data-screen-label="Cita · total por escrito" className="flex flex-col gap-3 rounded-[20px] border-[1.5px] border-ink bg-white p-4">
-      <div className="flex items-baseline justify-between gap-3"><div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{`${E2("DE ", "FROM ")}${c.negocio.nombre}`.toUpperCase()}</div><div className="font-mono text-[9px] font-bold tracking-[0.1em] text-ink/45">{tot.status === "accepted" ? `${E2("ACEPTADO ", "ACCEPTED ")}${tot.aceptado ?? ""}` : `${E2("VÁLIDO HASTA ", "VALID UNTIL ")}${tot.vence} · V${tot.version}`}</div></div>
+      <div className="flex items-baseline justify-between gap-3"><div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{`${E2("DE ", "FROM ")}${c.negocio.nombre}`.toUpperCase()}</div><div className="font-mono text-[9px] font-bold tracking-[0.1em] text-ink/60">{tot.status === "accepted" ? `${E2("ACEPTADO ", "ACCEPTED ")}${tot.aceptado ?? ""}` : `${E2("VÁLIDO HASTA ", "VALID UNTIL ")}${tot.vence} · V${tot.version}`}</div></div>
       {prof.legal && <div className="rounded-[12px] bg-paper px-3 py-2.5 text-[12px] font-semibold leading-[1.5] text-ink/70">{E2("Nadie te garantiza un resultado. Este total es lo que cobran por el trabajo, no una promesa de resultado.", "No one can guarantee a result. This total is what they charge for the work, not a promise of a result.")}</div>}
       <div className="flex flex-col">
         {[[E2("Honorario", "Fee"), dinero(tot.fee), tot.hours ? E2(`Estimado de ${tot.hours} horas. Si pasa, te piden tu OK antes.`, `Estimated ${tot.hours} hours. If it goes over, they ask for your OK first.`) : E2(`A ${c.negocio.nombre}`, `To ${c.negocio.nombre}`)],
           ...(tot.credit ? [[E2("Crédito de la consulta", "Consultation credit"), `−${dinero(tot.credit)}`, ""]] : []),
           ...(tot.gov ? [[E2("Gobierno", "Government"), dinero(tot.gov), E2("Se paga aparte, a la agencia. Lo pagas tú.", "Paid separately, to the agency. You pay it.")]] : [])].map(([k, v2, sub]) => (
-          <div key={k} className="flex items-start justify-between gap-3 border-b border-ink/[.06] py-2.5"><div><div className="text-[13px] font-bold">{k}</div>{sub && <div className="text-[11.5px] font-medium text-ink/55">{sub}</div>}</div><div className="text-[13px] font-bold">{v2}</div></div>))}
+          <div key={k} className="flex items-start justify-between gap-3 border-b border-ink/[.06] py-2.5"><div><div className="text-[13px] font-bold">{k}</div>{sub && <div className="text-[11.5px] font-medium text-ink/60">{sub}</div>}</div><div className="text-[13px] font-bold">{v2}</div></div>))}
         {tot.extras.map((z, k) => { const on = tot.status === "accepted" ? tot.extrasOk.includes(k) : xOk.includes(k); return (
           <label key={k} className="flex cursor-pointer items-start justify-between gap-3 border-b border-ink/[.06] py-2.5">
             <span className="flex items-start gap-2.5"><input type="checkbox" aria-label={nm(z.name)} checked={on} disabled={tot.status === "accepted"} onChange={() => setXOk(on ? xOk.filter((q) => q !== k) : [...xOk, k])} className="mt-0.5 h-[18px] w-[18px] accent-[var(--tl-ink)]" />
-              <span><span className="block text-[13px] font-bold">{nm(z.name)}</span><span className="block font-mono text-[9px] font-bold tracking-[0.1em] text-pro-ink">{E2("OPCIONAL · TU OK", "OPTIONAL · YOUR OK")}</span><span className="block text-[11.5px] font-medium text-ink/55">{E2("Te lo piden aparte. Puedes traerlo tú.", "Asked separately. You can bring it yourself.")}</span></span></span>
+              <span><span className="block text-[13px] font-bold">{nm(z.name)}</span><span className="block font-mono text-[9px] font-bold tracking-[0.1em] text-pro-ink">{E2("OPCIONAL · TU OK", "OPTIONAL · YOUR OK")}</span><span className="block text-[11.5px] font-medium text-ink/60">{E2("Te lo piden aparte. Puedes traerlo tú.", "Asked separately. You can bring it yourself.")}</span></span></span>
             <span className="text-[13px] font-bold">{dinero(z.cents)}</span>
           </label>); })}
         <div className="flex justify-between gap-3 py-3 text-[15px] font-extrabold"><span>{E2("TOTAL POR ESCRITO", "TOTAL IN WRITING")}</span><span>{dinero(tot.total + (tot.status === "accepted" ? tot.extras.filter((_, k) => tot.extrasOk.includes(k)).reduce((n, z) => n + z.cents, 0) : tot.extras.filter((_, k) => xOk.includes(k)).reduce((n, z) => n + z.cents, 0)))}</span></div>
@@ -203,7 +203,7 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
         <div className="flex"><Button block disabled={ocupado} onClick={async () => { setOcupado(true); setError(null); const r = await totalDecidir(c.numero, true, tot.version, xOk).catch(() => ({ ok: false as const, msg: { es: "No se pudo.", en: "Could not." } })); setOcupado(false); if (r.ok) { aviso(E2("Contrataste. Tu acuerdo quedó guardado.", "Hired. Your agreement is saved.")); router.refresh(); } else setError(es ? r.msg.es : r.msg.en); }}>{E2("Aceptar y contratar", "Accept and hire")}</Button></div>
         <div className="flex"><Button block variant="secondary" icon="phone" onClick={llamar}>{E2("Llamar para preguntar", "Call to ask")}</Button></div>
         <div className="flex"><Button block variant="ghost" disabled={ocupado} onClick={async () => { setOcupado(true); const r = await totalDecidir(c.numero, false, tot.version, []).catch(() => ({ ok: false as const, msg: { es: "No se pudo.", en: "Could not." } })); setOcupado(false); if (r.ok) router.refresh(); else setError(es ? r.msg.es : r.msg.en); }}>{E2("No, gracias · solo la consulta", "No, thanks · consultation only")}</Button></div>
-        <div className="text-pretty text-[11.5px] font-medium leading-[1.5] text-ink/55">{E2("Nada se cobra en la app: pagas a la oficina; lo del gobierno, a la agencia.", "Nothing is charged in the app: you pay the office; the government fee, the agency.")}</div>
+        <div className="text-pretty text-[11.5px] font-medium leading-[1.5] text-ink/60">{E2("Nada se cobra en la app: pagas a la oficina; lo del gobierno, a la agencia.", "Nothing is charged in the app: you pay the office; the government fee, the agency.")}</div>
       </>}
     </div>
   ) : null;
@@ -217,7 +217,7 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
       <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b lg:top-0 border-ink/[.07] bg-white px-4 py-3">
         <button type="button" aria-label={E2("Cerrar", "Close")} onClick={() => router.push(`/n/${c.negocio.id}?tab=svc`)} className="grid h-[38px] w-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="close" size={15} strokeWidth={2.4} /></button>
         <div className="min-w-0 flex-1"><div className="font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{t}</div>
-          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${E2("CITA ", "BOOKING ")}#${c.numero} · ${c.negocio.nombre}`.toUpperCase()}</div></div>
+          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${E2("CITA ", "BOOKING ")}#${c.numero} · ${c.negocio.nombre}`.toUpperCase()}</div></div>
       </div>
       <div className="mx-auto flex max-w-[560px] flex-col gap-3 px-4 pt-4">
         {flash && <div role="status" className="flex items-center gap-[9px] rounded-[14px] bg-signal/[.16] px-3.5 py-[11px]"><Icon name="check" size={15} color="var(--tl-open-text)" strokeWidth={2.4} /><span className="text-[12.5px] font-bold text-open-text">{flash}</span></div>}
@@ -262,16 +262,16 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
         )}
         {c.ayuda && <button type="button" onClick={() => router.push(`/cita/${c.numero}/ayuda`)} className="flex w-full items-center gap-3 rounded-[18px] border border-ink/[.07] bg-white px-[15px] py-3.5 text-left">
           <span className="grid h-[34px] w-[34px] flex-none place-items-center rounded-[11px] bg-action/10"><Icon name="help" size={16} color="var(--tl-action)" /></span>
-          <span className="min-w-0 flex-1"><span className="block font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{`${E2("SOLICITUD ", "REQUEST ")}#${c.ayuda.n}`}</span><span className="mt-1 block text-[13px] font-bold">{{ open: E2("Ayuda con la cita · esperando respuesta", "Appointment help · waiting for a reply"), answered: E2("Ayuda con la cita · ya respondieron", "Appointment help · they replied"), escalated: E2("Ayuda con la cita · To’Latino revisa", "Appointment help · To’Latino is reviewing"), resolved: E2("Ayuda con la cita · terminada", "Appointment help · finished") }[c.ayuda.st]}</span></span>
+          <span className="min-w-0 flex-1"><span className="block font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{`${E2("SOLICITUD ", "REQUEST ")}#${c.ayuda.n}`}</span><span className="mt-1 block text-[13px] font-bold">{{ open: E2("Ayuda con la cita · esperando respuesta", "Appointment help · waiting for a reply"), answered: E2("Ayuda con la cita · ya respondieron", "Appointment help · they replied"), escalated: E2("Ayuda con la cita · To’Latino revisa", "Appointment help · To’Latino is reviewing"), resolved: E2("Ayuda con la cita · terminada", "Appointment help · finished") }[c.ayuda.st]}</span></span>
           <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" /></button>}
         {dead && c.dep > 0 && !c.ayuda && (c.pago === "captured" || c.pago === "partially_refunded") && <div className="py-1 text-center"><button type="button" onClick={() => router.push(`/cita/${c.numero}/ayuda`)} className="text-[12.5px] font-bold text-action">{E2("Ayuda con el depósito", "Help with the deposit")}</button></div>}
         {dead && c.cxRazon !== "chg" && <div className="flex"><Button variant="primary" icon="calendar" block onClick={() => router.push(otra)}>{E2("Buscar otra hora", "Find another time")}</Button></div>}
         <div className="grid"><OrderTracker steps={steps} /></div>
         <div className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">
           <div className="flex items-center gap-3 border-b border-ink/[.07] px-[15px] py-3.5">
-            <span className="grid h-11 w-11 flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[15px] font-extrabold text-ink/40" style={fondo(foto)}>{foto ? null : who1.charAt(0)}</span>
+            <span className="grid h-11 w-11 flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[15px] font-extrabold text-ink/60" style={fondo(foto)}>{foto ? null : who1.charAt(0)}</span>
             <div className="min-w-0 flex-1"><div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("TU CITA", "YOUR BOOKING")}</div><div className="mt-[5px] font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{withL}</div>
-              <div className="mt-[3px] font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{(c.negocio.direccion ?? c.negocio.nombre).toUpperCase()}</div></div>
+              <div className="mt-[3px] font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{(c.negocio.direccion ?? c.negocio.nombre).toUpperCase()}</div></div>
           </div>
           <div className="px-[15px] py-0.5">
             {rows.map(([k, v], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v}</span></div>)}
@@ -285,7 +285,7 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
             {plata.map(([icon, k, v, fg, sub]) => (
               <div key={k} className="flex items-center gap-[11px]">
                 <span className="grid h-[34px] w-[34px] flex-none place-items-center rounded-[11px] bg-ink/5"><Icon name={icon} size={16} color={fg} /></span>
-                <div className="min-w-0 flex-1"><div className="text-[13px] font-bold" style={{ color: fg }}>{k}</div><div className="mt-[3px] font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{sub}</div></div>
+                <div className="min-w-0 flex-1"><div className="text-[13px] font-bold" style={{ color: fg }}>{k}</div><div className="mt-[3px] font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{sub}</div></div>
                 <span className="font-display text-[15px] font-extrabold leading-none tracking-[-0.02em]">{v}</span>
               </div>
             ))}

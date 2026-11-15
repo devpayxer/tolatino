@@ -157,7 +157,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
     screenLabel: "Booking · pago", priceLabel: E2("PRECIO", "PRICE"), lines: lineas, totalLabel: E2("Total del servicio", "Service total"), total: dinero(P.cents), howLabel: E2("CÓMO SE PAGA", "HOW YOU PAY"),
     bar: dep > 0 ? { a: dep, b: Math.max(rest, 1) } : null,
     rows: [carry ? { label: E2("Ya pagado", "Already paid"), sub: E2(`Depósito de tu cita actual. Pasa a la nueva cuando ${who1} confirme; no se cobra otra vez.`, `Deposit from your current booking. It moves to the new one once ${who1} confirms; you are not charged again.`), value: dinero(carry), dot: "var(--tl-open)", color: "var(--tl-open-text)" } : dep ? { label: auto ? E2("Hoy, al confirmar", "Today, on confirmation") : E2("Hoy, al enviar", "Today, when you send"), sub: E2("Depósito. Se descuenta del total.", "Deposit. Taken off the total."), value: dinero(dep), dot: "var(--tl-ink)", color: "var(--tl-ink)" }
-      : { label: E2("Hoy", "Today"), sub: E2("No pide depósito. No se cobra nada ahora.", "No deposit. Nothing is charged now."), value: "$0", dot: "rgba(11,14,18,.18)", color: "rgba(11,14,18,.45)" },
+      : { label: E2("Hoy", "Today"), sub: E2("No pide depósito. No se cobra nada ahora.", "No deposit. Nothing is charged now."), value: "$0", dot: "rgba(11,14,18,.18)", color: "rgba(11,14,18,.6)" },
       { label: `${hSel != null ? cap(diaLargo(cp.hoy, i, es)) : E2("El día de tu cita", "On the day")}, ${restW}`, sub: silla && quien ? E2(`Efectivo o tarjeta, a ${quien.corto}. No al local.`, `Cash or card, to ${quien.corto}. Not to the shop.`) : E2("Efectivo o tarjeta.", "Cash or card."), value: dinero(rest), dot: dep ? "rgba(11,14,18,.18)" : "var(--tl-ink)", color: "var(--tl-ink)" }],
     card: necesitaTarjeta ? { screenLabel: "Booking · método de pago", kind: yo && tarjeta ? "brand" : "none", brand: tarjeta ? marcaB(tarjeta.marca) : "", label: yo && tarjeta ? tarjetaL(tarjeta) : E2("Tu tarjeta", "Your card"),
       sub: !yo ? E2("ENTRA PARA ELEGIRLA", "SIGN IN TO CHOOSE IT") : declinada && tarjeta?.pm === declinada ? E2("TU BANCO LA RECHAZÓ · CAMBIA DE TARJETA", "YOUR BANK DECLINED IT · CHANGE CARD") : auto ? E2("EL DEPÓSITO SE COBRA AL CONFIRMAR", "DEPOSIT CHARGED ON CONFIRMATION") : E2("EL DEPÓSITO SE RETIENE AL ENVIAR", "DEPOSIT HELD WHEN YOU SEND"),
@@ -214,7 +214,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
       <div className="min-w-0 flex-1">
         <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nm(s.name)}</div>
         {(optL || addL || nm(s.desc)) && <div className="mt-[3px] text-[12px] font-medium leading-[1.4] text-ink/60">{optL || addL || nm(s.desc)}</div>}
-        <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${durL(P.dur)} · ${dinero(P.cents)}${dep ? ` · ${E2("DEPÓSITO ", "DEPOSIT ")}${dinero(dep)}` : ""}`.toUpperCase()}</div>
+        <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${durL(P.dur)} · ${dinero(P.cents)}${dep ? ` · ${E2("DEPÓSITO ", "DEPOSIT ")}${dinero(dep)}` : ""}`.toUpperCase()}</div>
       </div>
       <button type="button" onClick={volver} className="flex-none text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
     </div>
@@ -222,8 +222,8 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
   const bloqueHora = (
     <div className={`flex flex-col gap-4 p-4 ${caja}`}>
       <div className="flex items-center gap-3">
-        <span className="grid h-[46px] w-[46px] flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[16px] font-extrabold text-ink/40" style={fondo(pFoto)}>{pFoto ? null : whoCard.name.charAt(0)}</span>
-        <div className="min-w-0 flex-1"><div className="text-[14px] font-bold">{whoCard.name}</div>{whoCard.line && <div className="mt-1 font-mono text-[9.5px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/50">{whoCard.line}</div>}</div>
+        <span className="grid h-[46px] w-[46px] flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[16px] font-extrabold text-ink/60" style={fondo(pFoto)}>{pFoto ? null : whoCard.name.charAt(0)}</span>
+        <div className="min-w-0 flex-1"><div className="text-[14px] font-bold">{whoCard.name}</div>{whoCard.line && <div className="mt-1 font-mono text-[9.5px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{whoCard.line}</div>}</div>
         <span className={`flex-none rounded-[7px] px-2 py-1 font-mono text-[8.5px] font-bold tracking-[0.1em] ${whoCard.aprC}`}>{whoCard.apr}</span>
       </div>
       {people.length > 0 && (
@@ -250,7 +250,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
         <div className="flex items-center gap-[9px] rounded-[13px] bg-action/[.07] px-[13px] py-[11px]"><Icon name="clock" size={15} color="var(--tl-action)" />
           <span className="text-[12.5px] font-bold leading-[1.4] text-action-hover">{E2(`De ${horaL(hSel)} a ~${horaL(end!)} · ${durL(P.dur)}`, `From ${horaL(hSel)} to ~${horaL(end!)} · ${durL(P.dur)}`)}</span></div>
       )}
-      {agenda && <div className="text-pretty text-[11.5px] font-medium leading-[1.5] text-ink/50">{agenda}</div>}
+      {agenda && <div className="text-pretty text-[11.5px] font-medium leading-[1.5] text-ink/60">{agenda}</div>}
     </div>
   );
   const bloqueDet = (
@@ -261,7 +261,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
           {whos.map(([k, l, sub]) => (
             <button key={k} type="button" role="radio" aria-checked={para === k} onClick={() => setPara(k)} className={`flex items-center gap-3 rounded-[14px] bg-white px-3.5 py-[13px] text-left ${radio(para === k)}`}>
               <span className={`box-border h-5 w-5 flex-none rounded-full ${anillo(para === k)}`} />
-              <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold leading-[1.35]">{l}</div><div className="mt-[3px] font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/50">{sub}</div></div>
+              <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold leading-[1.35]">{l}</div><div className="mt-[3px] font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{sub}</div></div>
             </button>
           ))}
         </div>
@@ -291,8 +291,8 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
             </span>
           ))}
           {fotos.length < 3 && (
-            <button type="button" disabled={subiendo} onClick={() => fileRef.current?.click()} className="box-border flex h-[68px] w-[68px] flex-col items-center justify-center gap-1 rounded-[13px] border-[1.5px] border-dashed border-ink/[.22] text-ink/55">
-              <Icon name="image" size={18} color="rgba(11,14,18,.55)" /><span className="text-[10.5px] font-bold">{subiendo ? "…" : E2("Agregar", "Add")}</span>
+            <button type="button" disabled={subiendo} onClick={() => fileRef.current?.click()} className="box-border flex h-[68px] w-[68px] flex-col items-center justify-center gap-1 rounded-[13px] border-[1.5px] border-dashed border-ink/[.22] text-ink/60">
+              <Icon name="image" size={18} color="rgba(11,14,18,.6)" /><span className="text-[10.5px] font-bold">{subiendo ? "…" : E2("Agregar", "Add")}</span>
             </button>
           )}
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { void subir(e.target.files?.[0]); e.target.value = ""; }} />
@@ -300,7 +300,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
       </div>
       <div role="switch" aria-checked={sms} aria-label={E2("Recordatorio", "Reminder")} tabIndex={0} onClick={() => setSms(!sms)} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setSms(!sms); } }}
         className="flex cursor-pointer items-center gap-3 border-t border-ink/[.07] pt-3.5">
-        <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{E2("Recordatorio", "Reminder")}</div><div className="mt-[3px] text-[12px] font-medium text-ink/55">{E2("24 horas y 2 horas antes, en Avisos", "24 hours and 2 hours before, in Alerts")}</div></div>
+        <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{E2("Recordatorio", "Reminder")}</div><div className="mt-[3px] text-[12px] font-medium text-ink/60">{E2("24 horas y 2 horas antes, en Avisos", "24 hours and 2 hours before, in Alerts")}</div></div>
         <span className={`relative h-6 w-[42px] flex-none rounded-full transition-colors ${sms ? "bg-ink" : "bg-ink/[.18]"}`}><span className={`absolute left-[3px] top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-transform ${sms ? "translate-x-[18px]" : ""}`} /></span>
       </div>
     </div>
@@ -308,8 +308,8 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
   const resumen = (
     <div className={`overflow-hidden ${caja}`}>
       <div className="flex items-center gap-3 border-b border-ink/[.07] px-[15px] py-3.5">
-        <span className="grid h-11 w-11 flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[15px] font-extrabold text-ink/40" style={fondo(pFoto)}>{pFoto ? null : whoCard.name.charAt(0)}</span>
-        <div className="min-w-0 flex-1"><div className={K}>{E2("TU CITA", "YOUR BOOKING")}</div><div className="mt-[5px] font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{whoCard.name}</div>{whoCard.line && <div className="mt-[3px] font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{whoCard.line}</div>}</div>
+        <span className="grid h-11 w-11 flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[15px] font-extrabold text-ink/60" style={fondo(pFoto)}>{pFoto ? null : whoCard.name.charAt(0)}</span>
+        <div className="min-w-0 flex-1"><div className={K}>{E2("TU CITA", "YOUR BOOKING")}</div><div className="mt-[5px] font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{whoCard.name}</div>{whoCard.line && <div className="mt-[3px] font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{whoCard.line}</div>}</div>
       </div>
       <div className="px-[15px] py-0.5">
         {filas.map(([k, v2], n) => (
@@ -330,7 +330,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
   const politicas = (
     <div className={`p-[15px] ${caja}`}>
       <div className={K}>{E2("ANTES DE ENVIAR", "BEFORE YOU SEND")}</div>
-      <div className="mt-2.5 flex flex-col gap-2.5">{pol.map(([ic, l]) => <div key={ic} className="flex items-start gap-2.5"><span className="grid flex-none pt-px"><Icon name={ic} size={15} color="rgba(11,14,18,.55)" /></span><span className="text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/70">{l}</span></div>)}</div>
+      <div className="mt-2.5 flex flex-col gap-2.5">{pol.map(([ic, l]) => <div key={ic} className="flex items-start gap-2.5"><span className="grid flex-none pt-px"><Icon name={ic} size={15} color="rgba(11,14,18,.6)" /></span><span className="text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/70">{l}</span></div>)}</div>
     </div>
   );
   const errorBox = error ? <div role="alert" className="rounded-[14px] bg-danger/[.08] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{error}</div> : null;
@@ -354,17 +354,17 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
         </div>
         <div data-screen-label="Booking · barra" className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/[.08] bg-paper/[.96] px-4 pb-5 pt-3 backdrop-blur-[14px]">
           <div className="flex items-center gap-3.5">
-            <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{paso === 2 ? payK : durL(P.dur).toUpperCase()}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{paso === 2 ? payV : dinero(P.cents)}</div></div>
+            <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{paso === 2 ? payK : durL(P.dur).toUpperCase()}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{paso === 2 ? payV : dinero(P.cents)}</div></div>
             <div className="flex min-w-0 flex-1"><Button block disabled={!okPaso || ocupado} onClick={sigue}>{paso === 2 ? (ocupado ? E2("Enviando…", "Sending…") : enviarL) : E2("Continuar", "Continue")}</Button></div>
           </div>
-          {paso === 2 && <div className="mt-[9px] text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/45">{payNote}</div>}
+          {paso === 2 && <div className="mt-[9px] text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/60">{payNote}</div>}
         </div>
       </div>
 
       {/* Escritorio: todo en una página, el pago en la columna */}
       <div data-screen-label="APP-NEG-BOOKING · desktop" className="mx-auto hidden max-w-[1180px] px-[30px] pb-[60px] pt-[22px] lg:block">
         <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{cp.negocio.nombre}</button>
-        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">Booking</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{`${cp.negocio.nombre} · ${nm(s.name)}`.toUpperCase()}</div></div>
+        <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">Booking</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{`${cp.negocio.nombre} · ${nm(s.name)}`.toUpperCase()}</div></div>
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-x-12 gap-y-8">
           <div className="flex min-w-0 flex-col gap-[26px]">
             <div>{cambiar && (<div className="mb-4">
@@ -383,10 +383,10 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
             <div className="flex flex-col gap-3 rounded-[22px] border border-ink/10 bg-white px-5 py-[18px] shadow-[var(--shadow-float)]">
               {!listo && <div className="text-center text-[12px] font-bold text-pro-ink">{falta}</div>}
               <div className="flex items-center gap-3.5">
-                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{payK}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">{payV}</div></div>
+                <div className="flex-none pl-0.5"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{payK}</div><div className="mt-1 font-display text-[21px] font-extrabold leading-none tracking-[-0.02em]">{payV}</div></div>
                 <div className="flex min-w-0 flex-1"><Button variant="primary" block disabled={!listo || ocupado} onClick={() => void enviar()}>{ocupado ? E2("Enviando…", "Sending…") : enviarL}</Button></div>
               </div>
-              <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/45">{payNote}</div>
+              <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/60">{payNote}</div>
               {errorBox}
             </div>
           </aside>

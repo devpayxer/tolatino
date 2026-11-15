@@ -54,7 +54,7 @@ function SectionHeader({
 }
 function Eyebrow({
   children,
-  color = 'rgba(11,14,18,.42)',
+  color = 'rgba(11,14,18,.6)',
   style
 }) {
   return /*#__PURE__*/React.createElement("div", {

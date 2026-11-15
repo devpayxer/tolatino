@@ -68,7 +68,7 @@ export function Pagar({ p, es, pago }: { p: PantallaPago; es: boolean; pago: { m
   );
   const nombresB = nombresN > 0 ? (
     <div data-screen-label="Pago · nombres" className={`flex flex-col gap-2.5 p-4 ${caja}`}>
-      <div className="flex flex-wrap items-baseline justify-between gap-2"><span className={K}>{E2("NOMBRE EN CADA BOLETO", "NAME ON EACH TICKET")}</span><span className="text-[11.5px] font-medium text-ink/50">{E2("Opcional", "Optional")}</span></div>
+      <div className="flex flex-wrap items-baseline justify-between gap-2"><span className={K}>{E2("NOMBRE EN CADA BOLETO", "NAME ON EACH TICKET")}</span><span className="text-[11.5px] font-medium text-ink/60">{E2("Opcional", "Optional")}</span></div>
       {etiquetas.map((l, i) => (
         <label key={i} className="flex flex-col gap-1"><span className="text-[11.5px] font-bold text-ink/60">{l}</span>
           <input value={nombres[i] ?? ""} maxLength={40} onChange={(e) => setNombres((L) => L.map((x, k) => (k === i ? e.target.value.slice(0, 40) : x)))} placeholder={E2("A nombre de…", "Name…")}
@@ -102,7 +102,7 @@ export function Pagar({ p, es, pago }: { p: PantallaPago; es: boolean; pago: { m
     <div className={`flex items-center gap-[13px] px-[15px] py-3.5 ${caja}`}>
       <span className="h-[58px] w-[46px] flex-none rounded-[12px] bg-photo-bg" style={p.evento.img ? { backgroundImage: `url(${p.evento.img})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
       <div className="min-w-0 flex-1"><div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{p.evento.title}</div>
-        <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${cuando} · ${p.evento.venue}`.toUpperCase()}</div></div>
+        <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${cuando} · ${p.evento.venue}`.toUpperCase()}</div></div>
     </div>
   );
   const errorBox = error && !fin ? <div role="alert" className="rounded-[14px] bg-danger/[.08] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{error}</div> : null;

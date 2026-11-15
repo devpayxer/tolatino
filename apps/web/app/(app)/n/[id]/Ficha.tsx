@@ -125,8 +125,8 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
   // La página de una silla rentada (3d, prototipo «Ficha · renta su silla en»): el local donde renta, con «Ver el local».
   const sillaCard = silla ? (
     <button type="button" data-screen-label="Ficha · renta su silla en" onClick={() => router.push(silla.href)} className="mt-3.5 flex w-full items-center gap-3 rounded-[17px] border border-ink/[.07] bg-paper px-3.5 py-[13px] text-left">
-      <span className="grid h-11 w-11 flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[14px] font-extrabold text-ink/40" style={fondo(silla.logo)}>{silla.logo ? null : silla.name.charAt(0)}</span>
-      <div className="min-w-0 flex-1"><div className="font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{silla.k}</div><div className="mt-[5px] text-[13.5px] font-bold">{silla.name}</div><div className="mt-1 font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{silla.meta}</div></div>
+      <span className="grid h-11 w-11 flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[14px] font-extrabold text-ink/60" style={fondo(silla.logo)}>{silla.logo ? null : silla.name.charAt(0)}</span>
+      <div className="min-w-0 flex-1"><div className="font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{silla.k}</div><div className="mt-[5px] text-[13.5px] font-bold">{silla.name}</div><div className="mt-1 font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{silla.meta}</div></div>
       <Icon name="chevronRight" size={16} color="rgba(11,14,18,.35)" />
     </button>
   ) : null;
@@ -203,11 +203,11 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
     <div>
       <div className={`${h2} lg:hidden`}>{t.hours}</div>
       <div className="mt-3 rounded-[17px] border border-line px-[15px] py-1 lg:mt-0 lg:px-[18px] lg:py-4">
-        <div className="hidden font-mono text-[10px] font-extrabold tracking-[0.12em] text-ink/50 lg:block">{t.hoursCaps}</div>
+        <div className="hidden font-mono text-[10px] font-extrabold tracking-[0.12em] text-ink/60 lg:block">{t.hoursCaps}</div>
         <div className="lg:mt-1.5">
           {f.semana.map((w) => (
             <div key={w.d} className={`flex items-center py-2.5 lg:border-t lg:border-ink/[.06] lg:py-[9px] ${w.primero ? "" : "border-t border-ink/[.06]"}`}>
-              <span className="w-[52px] font-mono text-[10.5px] font-extrabold tracking-[0.08em] lg:w-14" style={{ color: w.hoy ? stColor : "rgba(11,14,18,.55)" }}>{w.d}</span>
+              <span className="w-[52px] font-mono text-[10.5px] font-extrabold tracking-[0.08em] lg:w-14" style={{ color: w.hoy ? stColor : "rgba(11,14,18,.6)" }}>{w.d}</span>
               <span className={`text-[12.5px] lg:text-[13px] ${w.hoy ? "font-extrabold" : "font-semibold"}`}>{w.v}</span>
             </div>
           ))}
@@ -227,7 +227,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
       <div className="mt-3 flex items-center gap-3 lg:mt-4 lg:rounded-[20px] lg:border lg:border-line lg:px-6 lg:py-[22px]">
         <div className="min-w-0 flex-1">
           <div className="text-[13.5px] font-bold lg:text-[17px] lg:leading-[1.35]">{f.direccion ?? f.zona}</div>
-          <div className="mt-1 font-mono text-[10px] font-semibold text-ink/45 lg:mt-3 lg:text-[11px] lg:tracking-[0.04em] lg:text-ink/55">{f.direccionMeta}</div>
+          <div className="mt-1 font-mono text-[10px] font-semibold text-ink/60 lg:mt-3 lg:text-[11px] lg:tracking-[0.04em] lg:text-ink/60">{f.direccionMeta}</div>
         </div>
         {f.direccion && f.lat != null && (
           <button type="button" onClick={llegar} className="grid h-[38px] flex-none place-items-center rounded-xl bg-ink/5 px-[15px] text-[12.5px] font-bold">{t.openMaps}</button>
@@ -235,7 +235,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
       </div>
       {f.amen.length > 0 && (
         <>
-          <div className="mt-3.5 font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{f.amenK}</div>
+          <div className="mt-3.5 font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{f.amenK}</div>
           <div className="mt-1.5 grid grid-cols-2 gap-x-3.5 gap-y-0.5">
             {f.amen.map((a) => (
               <div key={a.l} className="flex items-center gap-[9px] py-2"><Icon name={a.icon} size={17} color="var(--tl-action)" /><span className="text-[12.5px] font-semibold text-ink/70">{a.l}</span></div>
@@ -251,7 +251,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
       className="flex items-center gap-3 rounded-[17px] border border-line bg-white px-3.5 py-[13px]" style={{ cursor: f.ley.enlace ? "pointer" : "default" }}>
       <span className="grid size-[42px] flex-none place-items-center rounded-xl bg-ink"><Icon name={f.ley.enlace ? "verified" : "ban"} size={20} color="var(--tl-white)" /></span>
       <span className="min-w-0 flex-1">
-        <span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{f.ley.enlace ? t.leyK : t.leyNoK}</span>
+        <span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{f.ley.enlace ? t.leyK : t.leyNoK}</span>
         <span className="mt-1 block text-[14px] font-bold leading-[1.3]">{f.ley.titulo}</span>
         {f.ley.texto ? <span className="mt-0.5 block text-[12px] font-medium leading-[1.45] text-ink/60">{f.ley.texto}</span> : null}
         {f.ley.cant ? <span className="mt-1 flex items-center gap-1.5 text-[12px] font-semibold text-pro-ink"><Icon name="warning" size={13} color="var(--tl-pro-ink)" />{`${t.leyNo} ${f.ley.cant}`}</span> : null}
@@ -272,7 +272,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
           <button key={i} type="button" onClick={() => setFaq(faq === i ? null : i)} className="block w-full border-b border-line py-3.5 text-left" aria-expanded={faq === i}>
             <span className="flex items-center gap-2.5">
               <span className="flex-1 text-[13.5px] font-bold lg:text-[15px]">{q.q}</span>
-              <span className="grid text-ink/40 transition-transform" style={{ transform: `rotate(${faq === i ? 180 : 0}deg)` }}><Icon name="chevronDown" size={16} strokeWidth={2} /></span>
+              <span className="grid text-ink/60 transition-transform" style={{ transform: `rotate(${faq === i ? 180 : 0}deg)` }}><Icon name="chevronDown" size={16} strokeWidth={2} /></span>
             </span>
             {faq === i && <span className="mt-2 block text-pretty text-[13px] leading-[1.6] text-ink/70 lg:text-[14.5px]">{q.a}</span>}
           </button>
@@ -290,7 +290,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
         const items = f.relacionados.filter((x) => x.grupo === g);
         return (
           <div key={g} className="flex flex-col gap-2.5">
-            <div className="px-1 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45 lg:px-0">{g} · {items.length}</div>
+            <div className="px-1 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60 lg:px-0">{g} · {items.length}</div>
             <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))] lg:gap-4">
               {items.map((x) => (
                 <div key={x.id} role="link" tabIndex={0} onClick={() => router.push(`/n/${x.id}`)} onKeyDown={(e) => e.key === "Enter" && router.push(`/n/${x.id}`)}
@@ -303,13 +303,13 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
                       <span className="min-w-0 font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{x.nombre}</span>
                       {x.verificado && <span className="grid flex-none"><Icon name="verified" size={16} color="var(--tl-action)" /></span>}
                     </div>
-                    <div className="font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{x.meta}</div>
+                    <div className="font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{x.meta}</div>
                     <div className="flex items-center gap-1.5 text-[12px] font-bold" style={{ color: x.abierto ? "var(--tl-open-text)" : "var(--tl-danger)" }}>
                       <span className="size-[7px] flex-none rounded-full" style={{ background: x.abierto ? "var(--tl-open)" : "var(--tl-danger)" }} />{x.abierto ? t.open : t.closed}
                     </div>
                     {x.nota && (
                       <div className="mt-0.5 flex items-start gap-[9px] rounded-xl bg-paper px-3 py-2.5">
-                        <span className="grid flex-none pt-px"><Icon name="quote" size={14} color="rgba(11,14,18,.45)" /></span>
+                        <span className="grid flex-none pt-px"><Icon name="quote" size={14} color="rgba(11,14,18,.6)" /></span>
                         <span className="text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/75">{x.nota}</span>
                       </div>
                     )}
@@ -361,7 +361,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
                 {f.verificado && verificado(20)}
               </div>
               <div className="mt-[9px] text-[15px] font-semibold leading-[1.3] text-ink/60">{f.subsLinea}</div>
-              <div className="mt-2.5 font-mono text-[12px] font-semibold tracking-[0.06em] text-ink/50">{f.metaD}</div>
+              <div className="mt-2.5 font-mono text-[12px] font-semibold tracking-[0.06em] text-ink/60">{f.metaD}</div>
               <div className="mt-2.5 flex flex-wrap items-center gap-[9px] text-[14px] font-semibold">
                 <span className="size-2 flex-none rounded-full" style={{ background: stDot }} />
                 <span className="font-bold" style={{ color: stColor }}>{f.estadoCorto}</span>
@@ -411,17 +411,17 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
           <div className="mt-4 grid grid-cols-3 rounded-[17px] border border-line">
             <div className="flex min-w-0 flex-col items-center gap-[5px] px-1.5 pb-[11px] pt-3 text-center">
               <div className="font-display text-[15px] font-extrabold leading-none tracking-[-0.02em]">{f.s1Estrella && <span className="text-[var(--tl-pro)]">★ </span>}{f.s1}</div>
-              <div className="font-mono text-[9.5px] font-semibold leading-[1.25] tracking-[0.06em] text-ink/50">{f.s1Sub}</div>
+              <div className="font-mono text-[9.5px] font-semibold leading-[1.25] tracking-[0.06em] text-ink/60">{f.s1Sub}</div>
             </div>
             <div className="flex min-w-0 flex-col items-center gap-[5px] border-l border-line px-1.5 pb-[11px] pt-3 text-center">
               <div className="flex items-center gap-1.5 font-display text-[15px] font-extrabold leading-none tracking-[-0.02em]" style={{ color: stColor }}>
                 <span className="size-[7px] flex-none rounded-full" style={{ background: stDot }} />{f.estadoCorto}
               </div>
-              <div className="font-mono text-[9.5px] font-semibold leading-[1.25] tracking-[0.06em] text-ink/50">{f.estadoNota}</div>
+              <div className="font-mono text-[9.5px] font-semibold leading-[1.25] tracking-[0.06em] text-ink/60">{f.estadoNota}</div>
             </div>
             <button type="button" onClick={llegar} className="flex min-w-0 flex-col items-center gap-[5px] border-l border-line px-1.5 pb-[11px] pt-3 text-center">
               <span className="font-display text-[15px] font-extrabold leading-none tracking-[-0.02em]">{f.dist}</span>
-              <span className="font-mono text-[9.5px] font-semibold leading-[1.25] tracking-[0.06em] text-ink/50">{f.ciudad}</span>
+              <span className="font-mono text-[9.5px] font-semibold leading-[1.25] tracking-[0.06em] text-ink/60">{f.ciudad}</span>
             </button>
           </div>
           <div className="mt-3.5 flex gap-[9px]">
@@ -548,7 +548,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
                       <div key={it.id} className="flex items-baseline gap-3 border-t border-ink/[.07] py-[13px] first:border-t-0 lg:[&:nth-child(2)]:border-t-0">
                         <div className="min-w-0 flex-1">
                           <div className="text-[13.5px] font-bold leading-[1.3]">{it.name}</div>
-                          {it.desc && <div className="mt-[3px] text-[11.5px] font-medium leading-[1.45] text-ink/55">{it.desc}</div>}
+                          {it.desc && <div className="mt-[3px] text-[11.5px] font-medium leading-[1.45] text-ink/60">{it.desc}</div>}
                         </div>
                         <span className="flex-none font-display text-[15px] font-extrabold leading-none tracking-[-0.02em]">${(it.cents / 100).toFixed(2)}</span>
                       </div>
@@ -722,7 +722,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
         <div data-screen-label="Ficha · barra de pedido" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-paper/95 px-5 pb-[22px] pt-[13px] backdrop-blur-[14px] lg:hidden">
           <div className="min-w-0 flex-1">
             <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{es ? "Desde" : "From"} ${(mn.m.desde / 100).toFixed(2)}</div>
-            <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">
+            <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">
               {f.pro ? mn.etaCaps : freeOn ? (mn.est.modes.includes("delivery") ? (es ? "DELIVERY O PICKUP · PAGAS EN EFECTIVO" : "DELIVERY OR PICKUP · PAY CASH") : es ? "PICKUP · PAGAS EN EL LOCAL" : "PICKUP · PAY AT THE STORE") : (es ? "PAGO EN EL LOCAL" : "PAY IN STORE")}
             </div>
           </div>

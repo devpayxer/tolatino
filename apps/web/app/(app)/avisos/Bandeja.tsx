@@ -15,7 +15,7 @@ export function Bandeja({ d, es, yo, pagina }: { d: D; es: boolean; yo: Yo; pagi
   const hace = (iso: string) => { const m = (ahora - new Date(iso).getTime()) / 60_000; return m < 1 ? E2("AHORA", "NOW") : m < 60 ? E2(`HACE ${Math.floor(m)} MIN`, `${Math.floor(m)} MIN AGO`) : m < 1440 ? E2(`HACE ${Math.floor(m / 60)} H`, `${Math.floor(m / 60)} H AGO`) : E2(`HACE ${Math.floor(m / 1440)} D`, `${Math.floor(m / 1440)} D AGO`); };
   const B: Bloque[] = [];
   if (!d.filas.length) B.push({ type: "empty", ic: "bell", t: E2("No tienes notificaciones", "No notifications yet"), s: E2("Aquí te avisamos cuando acepten tu pedido, confirmen tu mesa o respondan tu solicitud.", "We let you know here when your order is accepted, your table is confirmed or your request gets a reply.") });
-  else B.push({ type: "rows", rows: d.filas.map((x) => ({ key: x.id, ic: IC[x.tpl] ?? "bell", ibg: x.leido ? "rgba(11,14,18,.05)" : undefined, ifg: x.leido ? "rgba(11,14,18,.55)" : undefined, al: "flex-start" as const,
+  else B.push({ type: "rows", rows: d.filas.map((x) => ({ key: x.id, ic: IC[x.tpl] ?? "bell", ibg: x.leido ? "rgba(11,14,18,.05)" : undefined, ifg: x.leido ? "rgba(11,14,18,.6)" : undefined, al: "flex-start" as const,
     t: x.title, tag: x.leido ? null : [E2("NUEVO", "NEW"), "action"] as [string, string], s: hace(x.at), x: x.body, chev: !!x.href, on: x.href ? () => router.push(x.href!) : undefined })) });
   if (d.sig) B.push({ type: "more", l: E2("Ver más", "See more"), on: () => router.push(`/avisos?antes=${d.sig}`) });
   if (pagina) B.push({ type: "more", l: E2("Volver a las más recientes", "Back to the latest"), on: () => router.push("/avisos") });

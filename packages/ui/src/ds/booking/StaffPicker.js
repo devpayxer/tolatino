@@ -50,7 +50,7 @@ function StaffPicker({
     }, p.name), /*#__PURE__*/React.createElement("div", {
       style: {
         font: '600 9.5px ' + mono,
-        color: p.soon ? 'var(--tl-open-text)' : 'rgba(11,14,18,.4)'
+        color: p.soon ? 'var(--tl-open-text)' : 'rgba(11,14,18,.6)'
       }
     }, p.next));
   }), anyoneLabel ? /*#__PURE__*/React.createElement("div", {
@@ -71,7 +71,7 @@ function StaffPicker({
       border: '1.5px dashed rgba(11,14,18,.2)',
       display: 'grid',
       placeItems: 'center',
-      color: 'rgba(11,14,18,.45)',
+      color: 'rgba(11,14,18,.6)',
       boxSizing: 'border-box'
     }
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
@@ -117,7 +117,7 @@ function ServiceRow({
   }, name), meta ? /*#__PURE__*/React.createElement("div", {
     style: {
       font: '600 10.5px ' + mono,
-      color: 'rgba(11,14,18,.5)',
+      color: 'rgba(11,14,18,.6)',
       marginTop: 3
     }
   }, meta) : null), /*#__PURE__*/React.createElement("div", {
@@ -318,7 +318,7 @@ function StepHeader({
   }, title), /*#__PURE__*/React.createElement("span", {
     style: {
       font: '600 11px ' + mono,
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, step, " / ", total)), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -354,7 +354,7 @@ function TotalBar({
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       font: '600 9.5px ' + mono,
-      color: 'rgba(11,14,18,.45)'
+      color: 'rgba(11,14,18,.6)'
     }
   }, label), /*#__PURE__*/React.createElement("div", {
     style: {

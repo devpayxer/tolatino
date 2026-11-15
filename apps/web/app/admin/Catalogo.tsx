@@ -126,14 +126,14 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
     cuerpo = desk ? (
       <A.DenseTable columns="minmax(0,2fr) 120px 110px 90px 60px minmax(0,1.2fr)"
         head={[{ label: E("CATEGORÍA", "CATEGORY") }, { label: E("CLAVE", "KEY") }, { label: E("SUBCATEGORÍAS", "SUBCATEGORIES"), align: "right" }, { label: E("NEGOCIOS", "BUSINESSES"), align: "right" }, { label: "PRO", align: "right" }, { label: E("TRANSACCIÓN", "TRANSACTION") }]}
-        rows={d.cats.map((c) => ({ onClick: () => ir({ c: c.id }), cells: [{ text: c.es, sub: c.line ?? undefined, bold: true }, { text: c.id, color: "rgba(11,14,18,.55)" }, { text: String(c.subs), align: "right" }, { text: String(c.negocios), align: "right" }, { text: String(c.pro), align: "right" }, { text: tx[c.op_kind ?? ""] ?? "—" }] }))} />
+        rows={d.cats.map((c) => ({ onClick: () => ir({ c: c.id }), cells: [{ text: c.es, sub: c.line ?? undefined, bold: true }, { text: c.id, color: "rgba(11,14,18,.6)" }, { text: String(c.subs), align: "right" }, { text: String(c.negocios), align: "right" }, { text: String(c.pro), align: "right" }, { text: tx[c.op_kind ?? ""] ?? "—" }] }))} />
     ) : <PanelBloques bloques={[{ type: "rows", items: d.cats.map((c) => ({ key: c.id, icon: c.icon, t: c.es, s: E(`${c.subs} subcategorías · ${c.negocios} negocios · ${c.pro} Pro`, `${c.subs} subcategories · ${c.negocios} businesses · ${c.pro} Pro`), m: c.id, chev: true, onClick: () => ir({ c: c.id }) })) }]} />;
   } else if (d.tab === "syn" && d.sin) {
     const s = d.sin, a = s.total ? (s.pag - 1) * s.porPagina + 1 : 0, b = Math.min(s.total, s.pag * s.porPagina);
     cuerpo = (
       <>
         <form onSubmit={(e) => { e.preventDefault(); ir({ q: q.trim() || null, pag: null }); }} style={{ position: "relative" }}>
-          <span style={{ position: "absolute", left: 15, top: 14.5, display: "grid" }}><A.Icon name="search" size={17} color="rgba(11,14,18,.45)" /></span>
+          <span style={{ position: "absolute", left: 15, top: 14.5, display: "grid" }}><A.Icon name="search" size={17} color="rgba(11,14,18,.6)" /></span>
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={E("Palabra o sinónimo", "Word or synonym")} aria-label={E("Buscar sinónimo", "Search synonym")}
             style={{ width: "100%", height: 46, boxSizing: "border-box", padding: "0 16px 0 42px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", background: "var(--tl-white)", font: "600 14.5px Manrope,sans-serif", outline: "none" }} />
         </form>

@@ -133,7 +133,7 @@ export function Muro({ es, yo, ciudad, abierta, filtros, inicial, hoy = [] }: { 
         <div data-screen-label="Comunidad · publicar" style={{ padding: "16px 20px", borderBottom: LINE }}>
           <div role="link" aria-label={E2("Publicar", "Post")} onClick={() => router.push("/comunidad/nuevo")} {...tec(() => router.push("/comunidad/nuevo"))} style={{ display: "flex", alignItems: "center", gap: 11, cursor: "pointer" }}>
             <Avatar foto={yo.foto} ini={yo.ini} />
-            <div style={{ flex: 1, minWidth: 0, height: 44, boxSizing: "border-box", padding: "0 14px", borderRadius: 14, background: "var(--tl-paper)", border: "1px solid rgba(11,14,18,.08)", display: "flex", alignItems: "center", font: "500 14px Manrope,sans-serif", color: "rgba(11,14,18,.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{E2(`¿Qué pasa en tu cuadra, ${yo.primer}?`, `What's happening on your block, ${yo.primer}?`)}</div>
+            <div style={{ flex: 1, minWidth: 0, height: 44, boxSizing: "border-box", padding: "0 14px", borderRadius: 14, background: "var(--tl-paper)", border: "1px solid rgba(11,14,18,.08)", display: "flex", alignItems: "center", font: "500 14px Manrope,sans-serif", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{E2(`¿Qué pasa en tu cuadra, ${yo.primer}?`, `What's happening on your block, ${yo.primer}?`)}</div>
             <span style={{ width: 44, height: 44, borderRadius: 14, background: "var(--tl-ink)", display: "grid", placeItems: "center", flex: "none" }}><Icon name="plus" size={18} strokeWidth={2.4} color="var(--tl-white)" /></span>
           </div>
         </div>
@@ -144,7 +144,7 @@ export function Muro({ es, yo, ciudad, abierta, filtros, inicial, hoy = [] }: { 
           {chips.map(([k, l, f, on]) => <Chip key={k} variant={on ? "selected" : "filter"} onClick={() => ir(f)}>{l}</Chip>)}
         </div>
         {filtOn && (
-          <div style={{ padding: "10px 20px", borderBottom: LINE, font: `600 9.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.5)" }}>
+          <div style={{ padding: "10px 20px", borderBottom: LINE, font: `600 9.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.6)" }}>
             {`${filtros.dist ? E2(`A ${filtros.dist} MI DE TI`, `WITHIN ${filtros.dist} MI`) : ciudad.toUpperCase()} · ${filtros.orden === "new" ? E2("RECIENTES", "NEWEST") : E2("MÁS VOTADOS", "TOP VOTED")}`}
           </div>
         )}

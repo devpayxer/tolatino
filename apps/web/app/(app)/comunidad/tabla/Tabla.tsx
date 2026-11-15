@@ -50,7 +50,7 @@ export function TablaBarrio({ es, yo, ciudad, d }: { es: boolean; yo: YoCom; ciu
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <div role="tablist" aria-label={E2("Mes", "Month")} style={{ display: "flex", gap: 2, padding: 3, borderRadius: 12, background: "rgba(11,14,18,.06)" }}>
             {(["actual", "anterior"] as const).map((k) => (
-              <span key={k} role="tab" aria-selected={d.mes === k} onClick={() => ir({ m: k })} {...tec(() => ir({ m: k }))} style={{ padding: "7px 12px", borderRadius: 9, background: d.mes === k ? "var(--tl-white)" : "transparent", color: d.mes === k ? "var(--tl-ink)" : "rgba(11,14,18,.55)", font: "700 12px Manrope,sans-serif", cursor: "pointer", textTransform: "capitalize" }}>{nombreMes(k === "actual" ? d.meses.actual : d.meses.anterior, es)}</span>))}
+              <span key={k} role="tab" aria-selected={d.mes === k} onClick={() => ir({ m: k })} {...tec(() => ir({ m: k }))} style={{ padding: "7px 12px", borderRadius: 9, background: d.mes === k ? "var(--tl-white)" : "transparent", color: d.mes === k ? "var(--tl-ink)" : "rgba(11,14,18,.6)", font: "700 12px Manrope,sans-serif", cursor: "pointer", textTransform: "capitalize" }}>{nombreMes(k === "actual" ? d.meses.actual : d.meses.anterior, es)}</span>))}
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", flex: 1, minWidth: 0 }}>
             {([["general", E2("General", "Overall")], ["rec", E2("Recomendaciones", "Recommendations")], ["resp", E2("Respuestas", "Answers")]] as const).map(([k, l]) => (
@@ -65,13 +65,13 @@ export function TablaBarrio({ es, yo, ciudad, d }: { es: boolean; yo: YoCom; ciu
         <div data-screen-label="Tabla · filas" style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", overflow: "hidden" }}>
           {filas.length ? filas.map((x, i) => (
             <div key={x.id} role="link" data-fila={x.pos} onClick={() => router.push(`/comunidad/v/${x.yo ? "yo" : x.id}`)} {...tec(() => router.push(`/comunidad/v/${x.yo ? "yo" : x.id}`))} style={{ padding: "11px 16px", borderTop: i ? LINE : "none", background: x.yo ? "rgba(75,55,245,.07)" : "var(--tl-white)", display: "flex", gap: 12, alignItems: "center", cursor: "pointer" }}>
-              <span style={{ width: 26, font: "800 15px Sora,sans-serif", color: x.pos <= 3 ? "var(--tl-pro-ink)" : "rgba(11,14,18,.4)", flex: "none", textAlign: "center" }}>{x.pos}</span>
+              <span style={{ width: 26, font: "800 15px Sora,sans-serif", color: x.pos <= 3 ? "var(--tl-pro-ink)" : "rgba(11,14,18,.6)", flex: "none", textAlign: "center" }}>{x.pos}</span>
               <Avatar foto={x.foto} ini={x.ini} size={38} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ font: "700 13.5px/1.25 Manrope,sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.yo ? `${x.nombre} · ${E2("tú", "you")}` : x.nombre}</div>
-                <div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{[es ? rango(x.rango).es : rango(x.rango).en, x.zona ? (es ? x.zona.es : x.zona.en) : null].filter(Boolean).join(" · ").toUpperCase()}</div>
+                <div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{[es ? rango(x.rango).es : rango(x.rango).en, x.zona ? (es ? x.zona.es : x.zona.en) : null].filter(Boolean).join(" · ").toUpperCase()}</div>
               </div>
-              <div style={{ textAlign: "right", flex: "none" }}><div style={{ font: "800 16px/1 Sora,sans-serif", letterSpacing: "-.02em" }}>{x.v.toLocaleString("en-US")}</div><div style={{ marginTop: 4, font: `600 8.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.45)" }}>{E2("PUNTOS", "POINTS")}</div></div>
+              <div style={{ textAlign: "right", flex: "none" }}><div style={{ font: "800 16px/1 Sora,sans-serif", letterSpacing: "-.02em" }}>{x.v.toLocaleString("en-US")}</div><div style={{ marginTop: 4, font: `600 8.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.6)" }}>{E2("PUNTOS", "POINTS")}</div></div>
             </div>))
             : <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 6 }}><div style={{ font: "800 16px/1.25 Sora,sans-serif" }}>{E2("Todavía nadie suma puntos", "Nobody has points yet")}</div><div style={{ font: "500 13px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2("Pregunta, responde o recomienda: los votos de tus vecinos te ponen aquí.", "Ask, answer or recommend: your neighbors’ votes put you here.")}</div></div>}
         </div>

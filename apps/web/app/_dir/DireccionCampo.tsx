@@ -62,7 +62,7 @@ export function DireccionCampo({ es, v, onV, err, errZip, centro, conMapa = true
 
   const bd = err ? "var(--tl-danger)" : v.calle.trim() ? "var(--tl-ink)" : "rgba(11,14,18,.14)";
   const campo: CSSProperties = { marginTop: 8, width: "100%", boxSizing: "border-box", borderRadius: 13, border: `1.5px solid ${bd}`, outline: "none", color: "var(--tl-ink)", background: "var(--tl-white)", height: 50, padding: "0 14px", font: "600 16px Manrope,sans-serif" };
-  const k: CSSProperties = { font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.42)" };
+  const k: CSSProperties = { font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.6)" };
   const lista = `${id}-lista`, verLista = abierta && items.length > 0;
   return (
     <div data-pieza="direccion" data-screen-label={marco} style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: 16, display: "flex", flexDirection: "column", gap: 16 }}>
@@ -90,14 +90,14 @@ export function DireccionCampo({ es, v, onV, err, errZip, centro, conMapa = true
                 <span style={{ width: 34, height: 34, borderRadius: 11, background: "rgba(75,55,245,.1)", display: "grid", placeItems: "center", flex: "none" }}><Icon name="pin" size={16} color="var(--tl-action)" /></span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: "block", font: "700 14px/1.3 Manrope,sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.linea}</span>
-                  <span style={{ display: "block", marginTop: 3, font: `600 9.5px/1.4 ${MONO}`, letterSpacing: ".05em", color: "rgba(11,14,18,.5)" }}>{s.sub.toUpperCase()}{s.calidad === "calle" ? E2(" · FALTA EL NÚMERO", " · NUMBER MISSING") : ""}</span>
+                  <span style={{ display: "block", marginTop: 3, font: `600 9.5px/1.4 ${MONO}`, letterSpacing: ".05em", color: "rgba(11,14,18,.6)" }}>{s.sub.toUpperCase()}{s.calidad === "calle" ? E2(" · FALTA EL NÚMERO", " · NUMBER MISSING") : ""}</span>
                 </span>
               </li>
             ))}
           </ul>
         ) : null}
         {abierta && !buscando && !items.length && v.calle.replace(/[^a-z0-9]/gi, "").length >= 3 ? (
-          <div role="status" style={{ marginTop: 6, font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{E2("No la encontramos así. Revisa el número y la calle, o escríbela completa con el código postal.", "We could not find it like that. Check the number and street, or type it in full with the ZIP code.")}</div>
+          <div role="status" style={{ marginTop: 6, font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2("No la encontramos así. Revisa el número y la calle, o escríbela completa con el código postal.", "We could not find it like that. Check the number and street, or type it in full with the ZIP code.")}</div>
         ) : null}
         {err ? <div role="alert" style={{ marginTop: 6, font: "500 12px/1.45 Manrope,sans-serif", color: "var(--tl-danger)" }}>{err}</div> : null}
         <button type="button" onClick={miUbicacion} disabled={gps === "buscando"} data-accion="mi-ubicacion"
@@ -114,7 +114,7 @@ export function DireccionCampo({ es, v, onV, err, errZip, centro, conMapa = true
           onChange={(e) => set({ zip: e.target.value.replace(/\D/g, "").slice(0, 5), origen: null, pin: null, calidad: null })}
           style={{ ...campo, border: `1.5px solid ${errZip ? "var(--tl-danger)" : v.zip ? "var(--tl-ink)" : "rgba(11,14,18,.14)"}` }} />
         {errZip ? <div role="alert" style={{ marginTop: 6, font: "500 12px/1.45 Manrope,sans-serif", color: "var(--tl-danger)" }}>{errZip}</div>
-          : v.lugar || v.estado ? <div style={{ marginTop: 6, font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.5)" }}>{[v.lugar, v.estado].filter(Boolean).join(", ")}</div> : null}
+          : v.lugar || v.estado ? <div style={{ marginTop: 6, font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{[v.lugar, v.estado].filter(Boolean).join(", ")}</div> : null}
       </div>
       {conMapa && v.origen ? <MapaPin es={es} desk={desk} origen={v.origen} pin={v.pin} onPin={(p) => set({ pin: p, calidad: p ? "puerta" : v.calidad === "puerta" ? "numero" : v.calidad })} /> : null}
     </div>
