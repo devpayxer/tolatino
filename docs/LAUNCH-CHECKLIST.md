@@ -1529,7 +1529,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       a 9t. (9b-3, 13 nov)
 
 ## Fase 9 · 9c — accesibilidad del sistema de diseño (14 nov)
-- [ ] **→ 9t (en curso: 9c-2, 15 nov)** · **Contraste de texto AA (4,5 : 1):** los grises de texto del sistema (`--tl-text-muted` = tinta al 50 %, `--tl-text-faint` al 42 % y los
+- [ ] **→ 9t** · **Contraste de texto AA (4,5 : 1):** los grises de texto del sistema (`--tl-text-muted` = tinta al 50 %, `--tl-text-faint` al 42 % y los
       `rgba(11,14,18,.42–.5)` en línea de muchos componentes) dan 2,9–3,7 : 1 sobre blanco y papel: no llegan a AA para texto pequeño. Subirlos a
       ≥ 60 % cambia pixeles en las capturas aprobadas de los 9 dispositivos, así que **no se hizo en 9c** (regla: lo visual no cambia sin OK).
       Se hace en un bloque con captura nueva aprobada en `docs/REVISION.md` (subir `muted` a .62 y `faint` a .55, `pruebas/visual/` por `aprobar`). (9c, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m (sistema de diseño entero; pide el OK del diseño)._ — **9c-2 (15 nov):** hecho en el código (ink al 60 % en el sistema portado, las pantallas y los tokens; guardián `contrasteTexto`); queda que axe lo confirme en las seis pantallas, aprobar las capturas nuevas y sacar `color-contrast` de `axe-conocidas.json`.
