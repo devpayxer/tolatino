@@ -2378,4 +2378,17 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **9c-4 · Hojas con teclado:** `app/FocoHojas.tsx` en el layout raíz (foco al abrir, Tab que da la vuelta, Escape, foco de vuelta) para toda hoja
   `role="dialog" aria-modal="true"`; 8 hojas con nombre nuevo, 7 capas que pasan a diálogo. Guardián **`hojaAccesible`** (alreves9c 11/11); a11y9c lo prueba
   en «Tu pedido». Foco visible sobre oscuros: medido (Brand 4,6 / 4,2 / 3,8 : 1 sobre tinta, dark-2, dark-3; mínimo 3): cerrado sin cambio.
+- **9c-5 · Nombres EN de los íconos sin texto:** el script de portar agrega `lang` a los componentes que nombran sus íconos (el EN no salía nunca) y
+  `ReplyThread` lo pasa a cada respuesta; las pantallas lo pasan (Super Admin, Entrar, Publica, Hoy, El Compa, Comunidad, reseñas).
+- **9c-6 · Anchos extremos:** trabajo nocturno **`anchos`** del CI: toda la punta a punta en iPhone SE, iPad y escritorio 1024 (a mano `anchos=si`); en
+  «tuberia»; `tuberiaNoSeSalta` lo vigila.
+- **9c-7 · Íconos que no existían** (camera, undo, download, chevronUp, receipt) → del sistema; guardián **`iconoExiste`**.
+- **9c-8 · Sin salto al cargar (CLS):** las pantallas pintaban primero el teléfono (useState(390)) y saltaban al escritorio: CLS 0,91 en el Inicio del
+  Super Admin y 0,26 en Mi cuenta (1280). Ahora el primer pintado usa la estimación del servidor (`lib/ancho.ts`: cookie `tl_ancho` o el tipo de
+  dispositivo) por `<AnchoInicial>` en los layouts de la app, el panel y el Super Admin; un solo `useAncho()` (`app/_ancho/Ancho.tsx`). Guardián
+  **`anchoSinSalto`**. Presupuesto de CLS de vuelta a 0,1 en las seis pantallas y `axe-conocidas.json` vacío (el CI lo confirma).
+- **CI 43746703196** (dirigido + 9 dispositivos): las capturas cambian < 0,11 % con el gris nuevo (siguen aprobadas); axe ya sin
+  `scrollable-region-focusable` y con un solo contraste (BottomNav al 34 %, corregido); com5a y sal4i usaban «Escape no cierra» (ahora sí cierra:
+  pruebas al día); a11y9c encontró que el foco no volvía a la barra desmontada (FocoHojas la busca por su `data-screen-label`).
+- Alreves9c: **17/17** (contrasteTexto, hojaAccesible, tuberiaNoSeSalta, iconoExiste, anchoSinSalto).
 
