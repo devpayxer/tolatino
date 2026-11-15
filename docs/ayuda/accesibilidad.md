@@ -1,6 +1,6 @@
 # Accesibilidad en To'Latino · Accessibility in To'Latino
 
-_Pantallas: toda la web y las cuatro apps (To'Latino, Negocios, Repartidor, Puerta); el teclado, el lector de pantalla, el tamaño de letra y los contrastes valen en todas. Teléfono y escritorio. Versión: 14 nov 2026. Audiencia: vecino. Tema: cuenta._
+_Pantallas: toda la web y las cuatro apps (To'Latino, Negocios, Repartidor, Puerta); el teclado, el lector de pantalla, el tamaño de letra y los contrastes valen en todas. Teléfono y escritorio. Versión: 15 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 To'Latino está hecha para que **todas las personas** la puedan usar: con el dedo, con un teclado, con el lector de pantalla del teléfono
@@ -19,6 +19,10 @@ Lo que cuidamos:
   - **Tab** pasa al siguiente botón o campo; **Shift + Tab** regresa.
   - **Enter** o **Espacio** activa el botón donde estás (abrir, agregar, elegir, enviar).
   - Las listas de opciones (día, hora, cuántas personas) se eligen con Tab y Enter.
+  - En una fila de **pestañas** (Resumen, Menú, Reseñas…), las **flechas ← →** pasan de una a otra e **Inicio** / **Fin** van a la primera y la
+    última; Enter abre la que quieres.
+  - Una **hoja** (una ventana que sube desde abajo, como «Tu pedido») recibe el foco al abrirse, el Tab no se sale de ella mientras está
+    abierta, **Escape** la cierra y el foco vuelve al botón que la abrió.
 - **Con el lector de pantalla del teléfono:** activa VoiceOver (Ajustes › Accesibilidad) o TalkBack, y desliza con un dedo para recorrer la
   pantalla. Cada botón dice qué hace y, cuando aplica, si está elegido.
 - **Letra más grande:** To'Latino respeta el tamaño de letra de tu teléfono (Ajustes › Pantalla y brillo, o Accesibilidad).
@@ -32,11 +36,12 @@ Lo que cuidamos:
 | Presionas Enter o Espacio sobre un botón | Hace lo mismo que tocarlo. |
 | Un botón no se puede usar ahora (por ejemplo, «Enviar código» sin el teléfono completo) | Se anuncia como no disponible y el teclado no se detiene en él. |
 | Escribes un código equivocado | El mensaje de error se lee en voz alta y el campo se marca como inválido. |
-| Un texto está en gris claro y no lo lees bien | Aumenta el contraste del teléfono (Accesibilidad › Aumentar contraste) y avísanos en Soporte: lo estamos mejorando. |
+| Presionas Escape con una hoja abierta | La hoja se cierra y vuelves a donde estabas. |
+| Un texto se te hace difícil de leer | Todo el texto cumple el contraste mínimo de AA (4,5 : 1). Si aun así te cuesta, aumenta el contraste del teléfono (Accesibilidad › Aumentar contraste) y avísanos en Soporte. |
 
 ## Preguntas frecuentes
 - **¿Cumplen con la ley (ADA)?** Trabajamos para cumplir las pautas WCAG 2.2 AA, que son la referencia que usan las leyes de accesibilidad.
-  Todavía estamos mejorando algunos contrastes de texto; si encuentras algo que no puedes usar, avísanos.
+  Si encuentras algo que no puedes usar, avísanos y lo tratamos como un error.
 - **¿La app necesita permisos especiales para el lector de pantalla?** No. Funciona con el lector de pantalla que ya trae tu teléfono.
 - **¿Puedo usar To'Latino solo con la voz?** Sí, con el control por voz de tu teléfono (Control por voz en iPhone, Voice Access en Android);
   los botones tienen nombre y puedes decir «toca Pedir».
@@ -57,7 +62,10 @@ What we take care of:
 
 ### How to use it
 - **With a keyboard (computer or tablet with a keyboard):** **Tab** moves to the next button or field, **Shift + Tab** goes back, **Enter** or
-  **Space** activates the button you are on. Option lists (day, time, party size) are chosen with Tab and Enter.
+  **Space** activates the button you are on. Option lists (day, time, party size) are chosen with Tab and Enter. In a row of **tabs**
+  (Overview, Menu, Reviews…), the **← → arrows** move between them and **Home** / **End** go to the first and last; Enter opens the one you
+  want. A **sheet** (a panel that slides up, like «Your order») gets focus when it opens, Tab stays inside it while it is open, **Escape**
+  closes it and focus returns to the button that opened it.
 - **With the phone's screen reader:** turn on VoiceOver (Settings › Accessibility) or TalkBack and swipe with one finger to move around. Each
   button says what it does and, when it applies, whether it is selected.
 - **Larger text:** To'Latino follows your phone's text size (Settings › Display, or Accessibility).
@@ -71,11 +79,12 @@ What we take care of:
 | You press Enter or Space on a button | It does the same as tapping it. |
 | A button is not available right now (for example «Send code» without the full phone number) | It is announced as unavailable and the keyboard skips it. |
 | You type a wrong code | The error message is read aloud and the field is marked invalid. |
-| Some text is light gray and hard to read | Raise your phone's contrast (Accessibility › Increase contrast) and tell us in Support: we are improving it. |
+| You press Escape with a sheet open | The sheet closes and you are back where you were. |
+| Some text is hard to read | All text meets the AA minimum contrast (4.5 : 1). If it is still hard, raise your phone's contrast (Accessibility › Increase contrast) and tell us in Support. |
 
 ### FAQ
-- **Do you comply with the law (ADA)?** We work to meet WCAG 2.2 AA, the reference accessibility laws use. We are still improving some text
-  contrasts; if you find something you cannot use, tell us.
+- **Do you comply with the law (ADA)?** We work to meet WCAG 2.2 AA, the reference accessibility laws use. If you find something you cannot
+  use, tell us and we treat it as a bug.
 - **Does the app need special permissions for the screen reader?** No. It works with the screen reader your phone already has.
 - **Can I use To'Latino by voice only?** Yes, with your phone's voice control (Voice Control on iPhone, Voice Access on Android); buttons have
   names, so you can say «tap Order».
