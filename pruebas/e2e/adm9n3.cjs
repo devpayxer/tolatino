@@ -377,7 +377,7 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
     await a.context().addCookies([{ name: 'tl_lang', value: 'en', url: B }]);
     await a.goto(B + '/admin');
     ok(await contiene(a, 'Queues') && await contiene(a, 'Businesses'), 'el menú sale en inglés');
-    ok(await a.getByPlaceholder('Search business, user, order #…').count() > 0, 'el buscador también');
+    ok(await contiene(a, 'Search business, user, order #'), 'el buscador también');
     await a.context().addCookies([{ name: 'tl_lang', value: 'es', url: B }]);
     await a.goto(B + '/admin');
     ok(await contiene(a, 'Colas'), 'y vuelve a español');

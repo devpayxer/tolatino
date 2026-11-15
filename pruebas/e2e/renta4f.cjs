@@ -190,7 +190,9 @@ const limpiar = () => {
   await clic(h.locator('[aria-label="Cuántas tienes +"]'));
   await h.screenshot({ path: OUT + 'r12-agregar-renta-d.png', fullPage: true });
   await clic(h.getByRole('button', { name: 'Agregar', exact: true }));
-  await espera(() => sql(`select price_cents || '|' || deposit_cents || '|' || stock_left || '|' || sell from items where business_id = '${D}' and module = 'renta' and name->>'es' = '${NUEVO}' and removed_at is null`) === '2000|5000|2|t', 'agregado: $20 por día, $50 de depósito, 2 unidades, en la Tienda');
+  { let v = ''; for (let k = 0; k < 40 && v !== '2000|5000|2|t'; k++) { v = sql(`select price_cents || '|' || deposit_cents || '|' || stock_left || '|' || sell from items where business_id = '${D}' and module = 'renta' and name->>'es' = '${NUEVO}' and removed_at is null`); if (v !== '2000|5000|2|t') await new Promise((r) => setTimeout(r, 250)); }
+    if (v !== '2000|5000|2|t') { await h.screenshot({ path: OUT + 'r12-agregar-renta-fallo-d.png', fullPage: true }); console.log('  en la base:', v || '(nada)', '· la página dice:', (await h.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 600)); }
+    ok(v === '2000|5000|2|t', 'agregado: $20 por día, $50 de depósito, 2 unidades, en la Tienda'); }
   ok(sql(`select count(*) from audit_entries where action = 'renta.articulo.crear' and target_id = '${D}' and after->>'articulo' = '${NUEVO}'`) === '1', 'queda en la auditoría');
   await m.goto(B + `/n/${D}?tab=shop`); await m.locator('[data-screen-label="Ficha · tienda"]').waitFor(); ok(!!(await vis(m.getByText(NUEVO))), 'sale en la Tienda de la ficha');
   const NID = sql(`select id from items where business_id = '${D}' and module = 'renta' and name->>'es' = '${NUEVO}' and removed_at is null`);
