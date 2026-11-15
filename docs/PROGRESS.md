@@ -2312,4 +2312,6 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   negocio); plantillas `biz_msg_equipo` / `biz_msg_equipo_sms` (**0156**, el push abre su panel); `admin_messages` con target_kind 'business'. adm9n3 lo prueba.
 - **Negocio 360° · «Destacar»:** fija el negocio en Destacados de su ciudad como Crecimiento › Destacados (mkt:editar, tope por ciudad de la base); adm9n3.
 - **Negocio 360° · «Invitar a reclamar»:** SMS `reclamar_invita` (**0157**) al teléfono de un negocio sin dueño con el enlace a /recuperar/{id}; una vez cada 30 días; adm9n3.
-- **No corrió aquí:** e2e (sin Docker) → CI dirigido cuando termine la confirmación completa de 9b-3 (run 43683346297, en curso).
+- **9b-3 CERRADA:** la confirmación completa (run 43683346297, ffb35d0) salió toda en verde: todas las fases, barajada, dos veces seguidas, al revés,
+  los 9 dispositivos, seguridad y la tubería completa.
+- **9n-7 · CI dirigido:** run 43698497496 (681b429) con adm4ig adm9n3 apl9n7 cit3b cms9f com5f compa7f compa7g cre9h publica svc3a com5d msg2p llave8d y todas las al revés.
