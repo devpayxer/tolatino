@@ -186,6 +186,20 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
     ok(await contiene(a, 'invitación enviada hoy'), 'después dice «invitación enviada hoy» y no se repite');
     await a.screenshot({ path: `${OUT}/n8-reclamos-d.png` });
 
+    // ── 6 · 9n-18 · 360° › Operación: las cifras de 90 días salen de la base y cada operación lleva a Transacciones ──
+    console.log('6 · 360° › Operación');
+    const OB = sql(`select business_id from operations where sent_at > now() - interval '90 days' and not (kind = 'tickets' and pay_mode = 'none') group by business_id order by count(*) desc limit 1`);
+    const OPS = sql(`select count(*) from operations where business_id = '${OB}' and sent_at > now() - interval '90 days' and not (kind = 'tickets' and pay_mode = 'none')`);
+    await a.goto(B + `/admin/negocios/${OB}?tab=oper`);
+    ok(await contiene(a, 'OPERACIONES · 90 D') && await contiene(a, 'VISTAS · 7 DÍAS') && await contiene(a, 'CONVERSIÓN'), 'la pestaña Operación con sus cifras');
+    ok(await contiene(a, `Todo · ${OPS}`), `cuenta las ${OPS} operaciones de 90 días, como la base`);
+    const NUM = sql(`select number from operations where business_id = '${OB}' and sent_at > now() - interval '90 days' and not (kind = 'tickets' and pay_mode = 'none') order by id desc limit 1`);
+    ok(await contiene(a, NUM), 'la más reciente arriba');
+    await a.screenshot({ path: `${OUT}/n8-operacion-d.png`, fullPage: true });
+    await clic(a.getByText(new RegExp(` ${NUM.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')}( ·|$)`)).first());
+    await a.waitForURL(/\/admin\/transacciones\?q=/, { timeout: 15000 });
+    ok(a.url().includes(encodeURIComponent(NUM)), 'tocar una operación abre Transacciones con su número');
+
     ok(!err.length, 'sin errores en la consola: ' + err.slice(0, 3).join(' | '));
     console.log(`\nneg9n8: ${n} comprobaciones`);
   } finally {

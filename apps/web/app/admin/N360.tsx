@@ -1,6 +1,6 @@
 "use client";
 /* ADM-NEG · 360° (Super Admin.dc.html negDetail): el negocio como lo ve el cliente, como lo edita el dueño y lo que
-   hizo el equipo. Pestañas: Resumen, Ficha, Lo que vende, Dinero (2o), Equipo, Contenido y Confianza (Operación llega con
+   hizo el equipo. Pestañas: Resumen, Ficha, Lo que vende, Operación (9n-18), Dinero (2o), Equipo, Contenido y Confianza (Operación llega con
    Analítica). Cada acción pide motivo y queda en la auditoría. */
 import { SoporteDe360, type CasoSop } from "./SoporteDe360";
 import * as UI from "@tolatino/ui";
@@ -19,6 +19,8 @@ import { cambiarEstado, tipoNoche, cierreTemporal, editarCampo, foto, licencia, 
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { N360Dinero } from "./N360Dinero";
+import { N360Oper } from "./N360Oper";
+import type { Oper360 } from "@/lib/admin-negocio-oper";
 import { compaAutoNegocio } from "./acciones-compa";
 import { destacadoFijar } from "./acciones-crecimiento";
 import { accionesOrg, estadoEvt } from "./ColasEventos";
@@ -67,7 +69,7 @@ const feL = (i: { k: string | null; cents: number; a: Record<string, unknown> })
 const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA", "NEG-TRANS", "NEG-NOCHE", "NEG-EDU", "NEG-NINOS", "NEG-DEPORTE", "NEG-FE", "NEG-INMUEBLE", "NEG-DEALER"];
 const VENDE_RET = ["NEG-MERC", "NEG-TIENDA"];
 const VENDE = ["NEG-FOOD", ...VENDE_SVC, ...VENDE_RET];
-export function N360({ n, tab, din, evts = null, sop, cpa, cambios = [], cats = [], dups = null }: { n: Negocio360; tab: string; din?: Dinero | null; evts?: Evts360 | null; sop?: CasoSop[]; cpa?: CompaNegocio | null;
+export function N360({ n, tab, din, oper, operK = "all", evts = null, sop, cpa, cambios = [], cats = [], dups = null }: { n: Negocio360; tab: string; din?: Dinero | null; oper?: Oper360 | null; operK?: string; evts?: Evts360 | null; sop?: CasoSop[]; cpa?: CompaNegocio | null;
   cambios?: { id: string; type: string; caso: string | null }[]; cats?: { id: string; l: string }[]; dups?: ParDup[] | null }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
@@ -104,7 +106,7 @@ export function N360({ n, tab, din, evts = null, sop, cpa, cambios = [], cats = 
   const pendiente = (t: string) => cambios.some((c) => c.type === t);
   const LIC_ST: Record<string, [string, string, string]> = { valid: ["Verificada", "VERIFICADA", "signal"], review: ["Pide revisión", "EN REVISIÓN", "action"], expired: ["Vencida según el registro", "VENCIDA", "danger"], not_found: ["No se pudo verificar", "NO", "danger"], revoked: ["No se pudo verificar", "NO", "danger"] };
   const licPeor = n.licencias.find((l) => l.status === "review") ?? n.licencias.find((l) => l.status !== "valid") ?? n.licencias[0];
-  const tabs: Bloque = { type: "tabs", items: [["resumen", "Resumen"], ["ficha", "Ficha"], ...(VENDE.includes(n.cat_id) ? [["vende", "Lo que vende"]] : []), ...(din !== undefined ? [["din", "Dinero"]] : []), ["equipo", "Equipo"], ["cont", "Contenido"], ["confianza", "Confianza"], ...(sop ? [["soporte", "Soporte"]] : []), ...(cpa !== undefined ? [["compa", "El Compa"]] : [])].map(([k, l]) => ({ l: l!, n: k === "confianza" && casosAbiertos.length ? String(casosAbiertos.length) : undefined, on: tab === k, onClick: () => ir(k!) })) };
+  const tabs: Bloque = { type: "tabs", items: [["resumen", "Resumen"], ["ficha", "Ficha"], ...(VENDE.includes(n.cat_id) ? [["vende", "Lo que vende"]] : []), ...(oper !== undefined ? [["oper", "Operación"]] : []), ...(din !== undefined ? [["din", "Dinero"]] : []), ["equipo", "Equipo"], ["cont", "Contenido"], ["confianza", "Confianza"], ...(sop ? [["soporte", "Soporte"]] : []), ...(cpa !== undefined ? [["compa", "El Compa"]] : [])].map(([k, l]) => ({ l: l!, n: k === "confianza" && casosAbiertos.length ? String(casosAbiertos.length) : undefined, on: tab === k, onClick: () => ir(k!) })) };
 
   const historial = (filtro?: (a: string) => boolean): ReactNode => {
     const h = n.historial.filter((x) => !filtro || filtro(x.action));
@@ -249,6 +251,8 @@ export function N360({ n, tab, din, evts = null, sop, cpa, cambios = [], cats = 
         })} /> : <A.AdminNote tone="info" icon="law">No declaró licencias.</A.AdminNote>}
         <A.AdminNote tone="info">Menú, servicios y lo demás que vende llegan con sus módulos.</A.AdminNote>
       </>);
+  } else if (tab === "oper" && oper) {
+    cuerpo = <N360Oper o={oper} id={n.id} grupo={operK} desk={desk} />;
   } else if (tab === "din" && din) {
     cuerpo = <N360Dinero d={din} id={n.id} nombre={n.name} desk={desk} setConf={setConf} />;
   } else if (tab === "equipo") {

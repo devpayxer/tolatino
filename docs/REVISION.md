@@ -4979,3 +4979,4 @@ cada apertura en la auditoría. ¿Lo hacemos así?
 - Panel de un servicio del hogar (o de renta de camionetas) › Lo que vendes › Tu herramienta › **Lo que rentas**: tocar un artículo,
   cambiar precio, depósito, unidades y fotos; «Agregar algo para rentar»; «Quitar de la lista». **Pantalla compuesta con piezas del
   sistema (el diseño no la trae):** dime si la quieres distinta.
+- Super Admin › Negocios › un negocio › **Operación** (nueva, del prototipo): cifras, vistas de 7 días, lo que tocan y la lista por tipo.

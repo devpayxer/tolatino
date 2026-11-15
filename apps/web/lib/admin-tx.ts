@@ -15,7 +15,7 @@ export function leerFiltrosTx(sp: Record<string, string | undefined>): FiltrosTx
   const st = String(sp.st ?? "").split(",").filter((x): x is EstTx => ESTS.has(x as EstTx));
   return { tab, q: String(sp.q ?? "").trim().slice(0, 60), st, pag: Math.max(1, Math.min(500, Number(sp.pag) || 1)) };
 }
-const EST = `case when o.status in ('pending', 'change_proposed') then 'pend'
+export const EST_TX = `case when o.status in ('pending', 'change_proposed') then 'pend'
   when o.status = 'confirmed' and (o.kind <> 'order' or coalesce(o.stage, '') not in ('delivered', 'picked_up')) then 'curso'
   when o.status = 'done' or o.stage in ('delivered', 'picked_up') then 'done' when o.status = 'cancelled' then 'cx' else 'no' end`;
 export type FilaTx = { num: string; k: "order" | "table" | "appointment" | "plan" | "rental" | "hold" | "market_order" | "party" | "trip" | "night" | "enrollment" | "visit" | "tickets" | "private_event"; svc: string | null; dep: number; biz: string; bname: string; uid: string; quien: string; at: string; total: number; p: number | null; mode: string | null; st: EstTx; detalle: string | null;
@@ -49,7 +49,7 @@ function donde(s: Staff, f: FiltrosTx) {
     "not (o.kind = 'tickets' and o.pay_mode = 'none')"], v: unknown[] = [s.cities];
   if (f.tab === "sal" || f.tab === "pro") w.push(`o.kind = 'appointment' and o.details->>'rubro' = '${f.tab === "sal" ? "salud" : "pro"}'`);
   else if (f.tab !== "all") w.push(`o.kind = '${({ ped: "order", merc: "market_order", cita: "appointment", rsv: "table", plan: "plan", renta: "rental", apt: "hold", fiesta: "party", viaje: "trip", noche: "night", insc: "enrollment", vis: "visit", bol: "tickets", evp: "private_event" } as const)[f.tab]}'`);
-  if (f.st.length) { v.push(f.st); w.push(`(${EST}) = any($${v.length}::text[])`); }
+  if (f.st.length) { v.push(f.st); w.push(`(${EST_TX}) = any($${v.length}::text[])`); }
   if (f.q) { v.push(`%${f.q.replace(/[%_\\]/g, (m) => `\\${m}`)}%`); w.push(`(o.number ilike $${v.length} or b.name ilike $${v.length} or o.business_id ilike $${v.length} or u.phone ilike $${v.length} or coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '') ilike $${v.length})`); }
   return { w: w.join(" and "), v };
 }
@@ -59,7 +59,7 @@ export async function listaTx(s: Staff, f: FiltrosTx) {
   const [L, n, k] = await Promise.all([
     db().query<FilaTx>(
       `select o.number as num, o.kind as k, o.business_id as biz, b.name as bname, u.id::text as uid, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as quien,
-              to_char(o.sent_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, o.total_cents as total, o.party_size as p, o.mode, ${EST} as st, o.cancelled_by as detalle,
+              to_char(o.sent_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, o.total_cents as total, o.party_size as p, o.mode, ${EST_TX} as st, o.cancelled_by as detalle,
               py.status as pago, coalesce(py.refunded_cents, 0) as devuelto, coalesce(py.fee_cents, 0) as comision, case when py.card_last4 is null then null else upper(py.card_brand) || ' ·· ' || py.card_last4 end as tarjeta,
               py.id::text as pid, (select d.status from disputes d where d.payment_id = py.id order by d.id desc limit 1) as disputa,
               case when o.details->>'rubro' = 'salud' then null else o.details->'svc'->>'es' end as svc, coalesce(o.deposit_cents, 0) as dep,
@@ -96,9 +96,9 @@ export async function listaTx(s: Staff, f: FiltrosTx) {
     db().query<{ n: number }>(`select count(*)::int as n ${DESDE} where ${w}`, v),
     db().query<{ hoy: number; hoyc: number; done: number; donec: number; perdidos: number; rsv: number; cit: number; citd: number; plan: number; renta: number; apt: number; ret: number; retc: number; com: number; dev: number; fallos: number }>(
       `select count(*) filter (where o.sent_at > now() - interval '1 day')::int as hoy, coalesce(sum(o.total_cents) filter (where o.sent_at > now() - interval '1 day' and o.kind = 'order'), 0)::int as hoyc,
-              count(*) filter (where (${EST}) = 'done' and o.kind = 'order')::int as done, coalesce(sum(o.total_cents) filter (where (${EST}) = 'done' and o.kind = 'order'), 0)::int as donec,
-              count(*) filter (where (${EST}) in ('cx', 'no'))::int as perdidos, count(*) filter (where o.kind = 'table')::int as rsv,
-              count(*) filter (where o.kind = 'appointment')::int as cit, count(*) filter (where o.kind = 'plan')::int as plan, count(*) filter (where o.kind = 'rental')::int as renta, count(*) filter (where o.kind = 'hold')::int as apt, coalesce(sum(o.deposit_cents) filter (where o.kind = 'appointment' and (${EST}) in ('curso', 'done')), 0)::int as citd,
+              count(*) filter (where (${EST_TX}) = 'done' and o.kind = 'order')::int as done, coalesce(sum(o.total_cents) filter (where (${EST_TX}) = 'done' and o.kind = 'order'), 0)::int as donec,
+              count(*) filter (where (${EST_TX}) in ('cx', 'no'))::int as perdidos, count(*) filter (where o.kind = 'table')::int as rsv,
+              count(*) filter (where o.kind = 'appointment')::int as cit, count(*) filter (where o.kind = 'plan')::int as plan, count(*) filter (where o.kind = 'rental')::int as renta, count(*) filter (where o.kind = 'hold')::int as apt, coalesce(sum(o.deposit_cents) filter (where o.kind = 'appointment' and (${EST_TX}) in ('curso', 'done')), 0)::int as citd,
               (select count(*)::int from payments p where p.status = 'held' and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))) as ret,
               (select coalesce(sum(amount_cents), 0)::int from payments p where p.status = 'held' and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))) as retc,
               (select coalesce(sum(fee_cents::bigint * (amount_cents - refunded_cents) / amount_cents), 0)::int from payments p where p.status in ('captured', 'partially_refunded') and p.captured_at > now() - interval '90 days' and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))) as com,
@@ -115,7 +115,7 @@ export async function filasExportTx(s: Staff, f: FiltrosTx) {
   const { w, v } = donde(s, f);
   const r = await db().query<{ num: string; at: string; k: string; bname: string; quien: string; total: number; st: string }>(
     `select o.number as num, to_char(o.sent_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, o.kind as k, b.name as bname,
-            coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as quien, o.total_cents as total, ${EST} as st
+            coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as quien, o.total_cents as total, ${EST_TX} as st
        ${DESDE} where ${w} order by o.id desc limit 5000`, v);
   const ST: Record<string, string> = { pend: "Pendiente", curso: "En curso", done: "Terminado", cx: "Cancelado", no: "No se dio" };
   return r.rows.map((x) => [x.num, x.at, ({ order: "Pedido", market_order: "Pedido del mercado", appointment: "Cita", table: "Reservación", plan: "Plan", rental: "Renta", hold: "Apartado", party: "Fiesta", trip: "Viaje", visit: "Visita", tickets: "Boletos", private_event: "Evento privado" } as Record<string, string>)[x.k] ?? x.k, x.bname, x.quien, (x.total / 100).toFixed(2), ST[x.st] ?? x.st]);

@@ -6,15 +6,19 @@ import { N360 } from "../../N360";
 
 /* ADM-NEG · 360° de un negocio (pantalla completa, como el prototipo por defecto en Negocios). ?tab= la pestaña.
    Dinero solo sale a quien ve transacciones (tx:ver); sus datos se leen solo en esa pestaña. */
-const TABS = new Set(["resumen", "ficha", "vende", "din", "equipo", "cont", "confianza", "soporte", "compa"]);
-export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
+const TABS = new Set(["resumen", "ficha", "vende", "oper", "din", "equipo", "cont", "confianza", "soporte", "compa"]);
+export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; k?: string; antes?: string }> }) {
   const s = await requerir("neg", "ver");
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const n = await negocio360(s, id);
   if (!n) notFound();
   const veDinero = s.puede("tx", "ver");
-  const tab = TABS.has(sp.tab ?? "") && (sp.tab !== "din" || veDinero) ? sp.tab! : "resumen";
+  const tab = TABS.has(sp.tab ?? "") && ((sp.tab !== "din" && sp.tab !== "oper") || veDinero) ? sp.tab! : "resumen";
   const din = !veDinero ? undefined : tab === "din" ? await datosDinero(s, n.id) : null;
+  // 9n-18 · Operación: cifras y operaciones de 90 días (con nombre del cliente y totales: quien ve transacciones, como Dinero).
+  const O = await import("@/lib/admin-negocio-oper");
+  const operK = sp.k && O.GRUPOS_OPER[sp.k] ? sp.k : "all";
+  const oper = !veDinero ? undefined : tab === "oper" ? await O.operacion360(n.id, operK, typeof sp.antes === "string" ? sp.antes : null) : null;
   // 6a · Contenido › Eventos (quien ve Eventos y boletos).
   // 6j · Más las liquidaciones (por estado) y las cancelaciones del organizador.
   const evts = tab === "cont" && s.puede("evt", "ver") ? { ...(await (await import("@/lib/evt-revision")).eventosDeNegocioAdmin(n.id)), ...(await (await import("@/lib/evt-admin")).eventos360(n.id)), puede: { aprobar: s.puede("evt", "aprobar"), retirar: s.puede("evt", "retirar") } } : null;
@@ -25,5 +29,5 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // 9n-8 · Los cambios sensibles que esperan (para no pedirlos dos veces), las categorías (Cambiar categoría) y, en Confianza, sus posibles duplicados.
   const D = await import("@/lib/admin-negocios-dup");
   const [cambios, cats, dups] = await Promise.all([D.cambiosPendientes(n.id), D.categorias(), tab === "confianza" ? D.paresDup(s, { negocio: n.id }).then((r) => r.filas) : null]);
-  return <N360 n={n} tab={tab} din={din} evts={evts} sop={sop} cpa={cpa} cambios={cambios} cats={cats} dups={dups} />;
+  return <N360 n={n} tab={tab} din={din} oper={oper} operK={operK} evts={evts} sop={sop} cpa={cpa} cambios={cambios} cats={cats} dups={dups} />;
 }

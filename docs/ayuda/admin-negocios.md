@@ -105,6 +105,13 @@ Arriba de Negocios hay tres vistas: **Lista**, **Posibles duplicados** y **Recla
 ## Quitar acceso al panel a alguien del equipo
 En el 360° › **Equipo**, cada persona del equipo con acceso al panel tiene **Quitar acceso** (con motivo). Desde ese momento no entra al panel ni lo ve en su lista; lo que el dueño le había dado no cambia, así que **Devolver acceso** lo deja como estaba. El dueño recibe un aviso en su campana. Al dueño no se le quita acceso desde aquí: eso es un cambio de dueño (Transferir dueño).
 
+## Operación (360°)
+La pestaña **Operación** del Negocio 360° dice cómo trabaja el negocio con lo que le piden: en 90 días, cuántas operaciones tuvo, cuánto
+acepta de lo que le piden, en cuántos minutos responde (promedio) y cuántas se cancelaron o no se dieron; en 30 días, sus vistas, los
+contactos (toques en su ficha: Llamar, WhatsApp, Cómo llegar…), pedidos o citas y la conversión; las vistas de los últimos 7 días; lo que
+tocan en su ficha y, si es Free, cuántos pedidos o citas en línea le quedan este mes. Abajo, sus operaciones de 90 días por tipo (Pedidos,
+Citas, Mesas, Boletos, Apartados), de 8 en 8; tocar una abre Transacciones con su número. Solo la ve quien ve Transacciones (como Dinero).
+
 ## English
 
 Queues: everything waiting for a team decision, oldest against its SLA first — Verification badge (48 h), New
@@ -167,3 +174,11 @@ At the top of Businesses there are three views: **List**, **Possible duplicates*
 
 ### Remove someone's dashboard access
 In the 360° › **Team**, each team member with dashboard access has **Remove access** (with a reason). From then on they cannot open the dashboard or see it in their list; what the owner gave them does not change, so **Restore access** puts it back as it was. The owner gets a notice in the bell. The owner's own access is not removed here: that is an ownership change (Transfer owner).
+
+### Operations (360°)
+The **Operations** tab of the Business 360° shows how the business handles what people ask for: in 90 days, how many purchases it had,
+how much of what's requested it accepts, how many minutes it takes to reply (average) and how many were cancelled or didn't happen; in 30
+days, its views, contacts (taps on its page: Call, WhatsApp, Directions…), orders or bookings and the conversion; views for the last 7 days;
+what people tap on its page and, if it's Free, how many online orders or bookings it has left this month. Below, its purchases from the
+last 90 days by type (Orders, Bookings, Tables, Tickets, Holds), 8 at a time; tapping one opens Transactions with its number. Only people
+who can see Transactions see it (like Money).
