@@ -15,7 +15,7 @@ de las ciudades de quien mira. Escritorio y teléfono. Versión: 14 nov 2026. Au
   aviso. El negocio que se publica con su código recibe esos días de prueba y queda como **traído**; cuando llega a los pedidos o citas de
   Configuración, **califica** y se anota su recompensa. **El pago a la Wallet llega con el dinero real**: hasta entonces se ve «pendiente de pago».
   Su propio negocio, o uno de su mismo teléfono, no cuenta (queda «rechazado»).
-- **Campañas**: un mensaje a un **segmento** (vecinos o dueños de negocios de una ciudad; sin entrar desde 30, 60 o 90 días; categoría y plan para
+- **Campañas**: un mensaje a un **segmento** (vecinos o dueños de negocios de una ciudad; sin entrar desde 30, 60 o 90 días; categoría, plan y cuántos ítems tiene a la venta —5, 10, 20 o 50 o más; p. ej. «Free con 10+ ítems»— para
   dueños) por un **canal** (en la app, push, SMS o correo), en español y en inglés, ahora o a una hora. Antes de programarla ves a cuántas personas llega.
 - **Destacados**: la vitrina de Negocios › Destacados rota sola cada día entre los Pro abiertos con foto. Aquí **fijas** uno arriba o lo **quitas** de la
   rotación por unos días, con motivo; ves la vitrina de hoy tal como la ve el vecino.
@@ -69,7 +69,7 @@ de las ciudades de quien mira. Escritorio y teléfono. Versión: 14 nov 2026. Au
   notice. A business that lists with the code gets those trial days and counts as **brought**; when it reaches the orders or bookings set in
   Configuration, it **qualifies** and its reward is recorded. **The Wallet payout comes with real money**: until then it shows "pending payout". Their own
   business, or one from the same phone, does not count (it is "rejected").
-- **Campaigns**: a message to a **segment** (neighbors or business owners in a city; inactive for 30, 60 or 90 days; category and plan for owners) on a
+- **Campaigns**: a message to a **segment** (neighbors or business owners in a city; inactive for 30, 60 or 90 days; category, plan and how many items they have for sale —5, 10, 20 or 50 or more; e.g. «Free with 10+ items»— for owners) on a
   **channel** (in the app, push, SMS or email), in Spanish and English, now or at a set time. Before scheduling you see how many people it reaches.
 - **Featured**: the Businesses › Featured showcase rotates on its own every day among open Pro businesses with a photo. Here you **pin** one at the top or
   **remove** one from the rotation for a few days, with a reason; you see today's showcase as neighbors see it.

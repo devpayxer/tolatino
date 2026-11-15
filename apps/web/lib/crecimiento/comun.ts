@@ -31,7 +31,9 @@ export const TIPO_CAMPANA: Record<TipoCampana, Bi> = {
   lanzamiento: { es: "Lanzamiento", en: "Launch" }, promocion: { es: "Promoción", en: "Promotion" }, reclutamiento: { es: "Reclutar negocios", en: "Recruit businesses" }, aviso: { es: "Aviso", en: "Notice" },
 };
 /* El segmento: a quién (vecinos de la ciudad o dueños de negocios), inactivos desde N días, categoría y plan (solo dueños). */
-export type Segmento = { rol: "vecinos" | "negocios"; inactivos?: number | null; cat?: string | null; plan?: "free" | "pro" | null };
+/* 9n-7 · items: el negocio tiene al menos N ítems a la venta en su catálogo (no retirados), p. ej. «Free con 10+ ítems» para ofrecerle Pro. */
+export type Segmento = { rol: "vecinos" | "negocios"; inactivos?: number | null; cat?: string | null; plan?: "free" | "pro" | null; items?: number | null };
+export const ITEMS_SEGMENTO = [5, 10, 20, 50] as const;
 
 /* ¿Cómo trabaja el negocio? (landing, «Tengo un negocio»; Coming Soon v3). */
 export const MODOS = ["local", "casa", "domicilio", "encargo", "tiempo_libre"] as const;

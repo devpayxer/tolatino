@@ -5,7 +5,7 @@ import { valores } from "../config";
 import { BASE_URL, enlaceBaja, encolar } from "../correo";
 import { marco } from "../correo/plantillas";
 import { db, tx } from "../db";
-import { CANALES, PLANTILLA, TIPOS_CAMPANA, bien, mal, rutaPropia, type Bi, type Canal, type Res, type Segmento } from "./comun";
+import { CANALES, PLANTILLA, TIPOS_CAMPANA, bien, mal, rutaPropia, type Bi, type Canal, type Res, type Segmento, ITEMS_SEGMENTO } from "./comun";
 
 /* 9h · Campañas (fase9-apertura.md §4 9h; admin-dashboard.md ADM-MKT; prototipo secMkt «Campañas»): segmento → plantilla → canal (en la app, push, SMS o
    correo). Las reglas las decide el servidor, siempre (guardián campanaConPermiso):
@@ -29,7 +29,8 @@ export function segmentoDe(x: unknown): Segmento {
   const rol = o.rol === "negocios" ? "negocios" : "vecinos";
   const inact = Number(o.inactivos);
   return { rol, inactivos: Number.isInteger(inact) && inact >= 7 && inact <= 365 ? inact : null, cat: rol === "negocios" && typeof o.cat === "string" && CAT.test(o.cat) ? o.cat : null,
-    plan: rol === "negocios" && (o.plan === "free" || o.plan === "pro") ? o.plan : null };
+    plan: rol === "negocios" && (o.plan === "free" || o.plan === "pro") ? o.plan : null,
+    items: rol === "negocios" && (ITEMS_SEGMENTO as readonly number[]).includes(Number(o.items)) ? Number(o.items) : null };
 }
 
 /* A quién llega: la consulta del segmento (parámetros desde $base). Siempre: la ciudad, «Novedades» encendido y la cuenta activa. */
@@ -42,6 +43,8 @@ function segmentoSql(seg: Segmento, base: number): { donde: string; params: unkn
     donde += ` and exists (select 1 from businesses b join business_stats_cache st on st.business_id = b.id where b.owner_user_id = u.id and b.city_id = $1 and b.status = 'active'`;
     if (seg.cat) donde += ` and b.category_id = ${$(seg.cat)}::text`;
     if (seg.plan) donde += ` and st.plan = ${$(seg.plan)}::text`;
+    // 9n-7 · Con N ítems o más (los que no se retiraron; el índice items_biz_idx los cuenta sin recorrer el catálogo entero).
+    if (seg.items) donde += ` and (select count(*) from (select 1 from items i where i.business_id = b.id and i.removed_at is null limit ${$(seg.items)}::int) x) >= ${$(seg.items)}::int`;
     donde += `)`;
   }
   return { donde, params: p };

@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { EntradaLista } from "@/lib/crecimiento/admin";
 import type { CampanaAdm } from "@/lib/crecimiento/campanas";
-import { CANAL, CANALES, MODO, TIPO_CAMPANA, TIPO_ENLACE, TIPOS_CAMPANA, TIPOS_ENLACE, type Canal, type Modo, type Segmento, type TipoCampana, type TipoEnlace } from "@/lib/crecimiento/comun";
+import { CANAL, CANALES, ITEMS_SEGMENTO, MODO, TIPO_CAMPANA, TIPO_ENLACE, TIPOS_CAMPANA, TIPOS_ENLACE, type Canal, type Modo, type Segmento, type TipoCampana, type TipoEnlace } from "@/lib/crecimiento/comun";
 import type { DestacadoAdm } from "@/lib/crecimiento/destacados";
 import type { EnlaceAdm } from "@/lib/crecimiento/enlaces";
 import type { PromotorAdm } from "@/lib/crecimiento/promotores";
@@ -129,14 +129,14 @@ const ESTADO_C: Record<string, [string, string, string]> = { borrador: ["BORRADO
   enviando: ["SALIENDO", "SENDING", "action"], enviada: ["ENVIADA", "SENT", "signal"], retirada: ["RETIRADA", "RETIRED", "neutral"] };
 function Campanas({ d, E, cuando, setConf, ir, nombreCiudad, l }: { d: DatosCrec; E: EFn; cuando: (iso: string | null) => string; setConf: SetConf; ir: (q: Record<string, string | null>) => void; nombreCiudad: (id: string | null) => string; l: L }) {
   const C = d.camp!;
-  const [f, setF] = useState({ nombre: "", tipo: "reclutamiento" as TipoCampana, canal: "inapp" as Canal, ciudad: d.ciudadForm, rol: "vecinos" as Segmento["rol"], inactivos: 0, cat: "", plan: "", tituloEs: "", tituloEn: "", textoEs: "", textoEn: "", href: "", cuando: "" });
+  const [f, setF] = useState({ nombre: "", tipo: "reclutamiento" as TipoCampana, canal: "inapp" as Canal, ciudad: d.ciudadForm, rol: "vecinos" as Segmento["rol"], inactivos: 0, cat: "", plan: "", items: 0, tituloEs: "", tituloEn: "", textoEs: "", textoEn: "", href: "", cuando: "" });
   const [n, setN] = useState<number | null>(null), ref = useRef(f); ref.current = f;
   const set = (x: Partial<typeof f>) => setF((v) => ({ ...v, ...x }));
-  const seg = (): Segmento => ({ rol: f.rol, inactivos: f.inactivos || null, cat: f.rol === "negocios" && f.cat ? f.cat : null, plan: f.rol === "negocios" && (f.plan === "free" || f.plan === "pro") ? f.plan : null });
+  const seg = (): Segmento => ({ rol: f.rol, inactivos: f.inactivos || null, cat: f.rol === "negocios" && f.cat ? f.cat : null, plan: f.rol === "negocios" && (f.plan === "free" || f.plan === "pro") ? f.plan : null, items: f.rol === "negocios" && f.items ? f.items : null });
   const segKey = JSON.stringify([f.ciudad, seg()]);
   useEffect(() => { let vivo = true; void campanaContar(f.ciudad, JSON.parse(segKey)[1]).then((x) => { if (vivo) setN(x); }); return () => { vivo = false; }; }, [segKey, f.ciudad]);
   const resumenSeg = (s: Segmento) => [s.rol === "negocios" ? E("dueños de negocios", "business owners") : E("vecinos", "neighbors"), s.inactivos ? E(`inactivos ${s.inactivos}+ días`, `inactive ${s.inactivos}+ days`) : null,
-    s.cat ? (CATS.find((c) => c[0] === s.cat)?.[l === "es" ? 1 : 2] ?? s.cat) : null, s.plan ? s.plan.toUpperCase() : null].filter(Boolean).join(" · ");
+    s.cat ? (CATS.find((c) => c[0] === s.cat)?.[l === "es" ? 1 : 2] ?? s.cat) : null, s.plan ? s.plan.toUpperCase() : null, s.items ? E(`${s.items}+ ítems`, `${s.items}+ items`) : null].filter(Boolean).join(" · ");
   const fila = (x: CampanaAdm): Fila => {
     const st = ESTADO_C[x.estado] ?? [x.estado, x.estado, "neutral"], acts: Fila["acts"] = [];
     if (x.estado === "por_aprobar" && d.puede.aprobar && !x.creadaPorMi) acts.push({ l: E("Aprobar", "Approve"), v: "action", onClick: () => setConf({ titulo: E(`Aprobar «${x.nombre}»`, `Approve “${x.nombre}”`), cta: E("Aprobar", "Approve"),
@@ -164,6 +164,8 @@ function Campanas({ d, E, cuando, setConf, ir, nombreCiudad, l }: { d: DatosCrec
       ...(f.rol === "negocios" ? [
         { type: "chips" as const, k: E("CATEGORÍA", "CATEGORY"), items: [{ l: E("Todas", "All"), v: f.cat ? "filter" : "selected", onClick: () => set({ cat: "" }) }, ...CATS.map((c) => ({ l: l === "es" ? c[1] : c[2], v: f.cat === c[0] ? "selected" : "filter", onClick: () => set({ cat: c[0] }) }))] },
         { type: "chips" as const, k: E("PLAN", "PLAN"), items: [["", E("Todos", "All")], ["free", "Free"], ["pro", "Pro"]].map(([v, lb]) => ({ l: lb!, v: f.plan === v ? "selected" : "filter", onClick: () => set({ plan: v! }) })) },
+        // 9n-7 · «Free con N ítems» (plan §7 9h): cuántos ítems a la venta tiene en su catálogo, como mínimo.
+        { type: "chips" as const, k: E("ÍTEMS EN SU CATÁLOGO", "ITEMS IN THEIR CATALOG"), items: [0, ...ITEMS_SEGMENTO].map((x) => ({ l: x ? E(`${x}+ ítems`, `${x}+ items`) : E("Todos", "All"), v: f.items === x ? "selected" : "filter", onClick: () => set({ items: x }) })) },
       ] : []),
       { type: "note" as const, tone: "ok" as const, icon: "users", t: n === null ? E("Contando…", "Counting…") : E(`Llega a ${n} ${n === 1 ? "persona" : "personas"} que encendieron Novedades.`, `It reaches ${n} ${n === 1 ? "person" : "people"} who turned on Updates.`) },
       { type: "chips" as const, k: E("CANAL", "CHANNEL"), items: CANALES.map((c) => ({ l: E(CANAL[c].es, CANAL[c].en), v: f.canal === c ? "selected" : "filter", onClick: () => set({ canal: c }) })) },
@@ -175,7 +177,7 @@ function Campanas({ d, E, cuando, setConf, ir, nombreCiudad, l }: { d: DatosCrec
       { type: "field" as const, k: E("CUÁNDO (AAAA-MM-DD HH:MM, HORA DE LA CIUDAD; VACÍO = AHORA)", "WHEN (YYYY-MM-DD HH:MM, CITY TIME; EMPTY = NOW)"), val: f.cuando, onChange: (v: string) => set({ cuando: v }), ph: "2026-11-20 10:00", max: 16 },
       { type: "acts" as const, items: [{ l: E("Programar la campaña", "Schedule the campaign"), v: "action", icon: "bell", off: !listo, onClick: () => setConf({ titulo: E("Programar la campaña", "Schedule the campaign"), cta: E("Programar", "Schedule"),
         sub: E("Sale a su hora (nunca de noche). Queda en la auditoría con tu motivo.", "It goes out on time (never at night). It goes in the audit trail with your reason."), plantillas: [E("Reclutar negocios para la apertura.", "Recruit businesses for the opening."), E("Aviso a los vecinos.", "Notice to neighbors.")],
-        hacer: (m) => { const v = ref.current; return campanaCrear({ nombre: v.nombre, tipo: v.tipo, canal: v.canal, ciudad: v.ciudad, segmento: { rol: v.rol, inactivos: v.inactivos || null, cat: v.cat || null, plan: v.plan || null }, tituloEs: v.tituloEs, tituloEn: v.tituloEn, textoEs: v.textoEs, textoEn: v.textoEn, href: v.href, cuando: v.cuando }, m); } }) }] },
+        hacer: (m) => { const v = ref.current; return campanaCrear({ nombre: v.nombre, tipo: v.tipo, canal: v.canal, ciudad: v.ciudad, segmento: { rol: v.rol, inactivos: v.inactivos || null, cat: v.cat || null, plan: v.plan || null, items: v.items || null }, tituloEs: v.tituloEs, tituloEn: v.tituloEn, textoEs: v.textoEs, textoEn: v.textoEn, href: v.href, cuando: v.cuando }, m); } }) }] },
     ] : []),
   ]} />;
 }

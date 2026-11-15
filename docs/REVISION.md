@@ -4906,6 +4906,8 @@ Qué mirar:
 3. **Colas › Licencias:** ahora también llegan las de Salud, Profesionales, Niños, Transporte, Fiestas y Noche 14 días antes de su revisión.
 4. **Gamification › Rangos › «Cambiar lo que pide»** (captura `c5f-admin-condicion-d.png`): puntos mínimos, cuántos y la vista previa Antes / Ahora.
    Pieza compuesta con los campos y filas que ya usa «Cambiar nombre».
+6. **Pendiente de tu decisión (no se inventó UI, regla 7):** la insignia «Fundadores» en la ficha del negocio (el número ya se guarda en
+   `early_access.founder_negocio_n` y la landing lo dice). Hace falta su pieza en el diseño: ¿pastilla junto al nombre, como el «N.º / Fundadores» del vecino?
 5. **Panel › El Compa › CUÁNDO CONTESTA** (captura `e7f-panel-cuando-390.png`): los tres chips del diseño y la línea que explica el elegido.
 
 **Decisiones tomadas por defecto (AB: lo más seguro y reversible):**

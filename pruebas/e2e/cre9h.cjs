@@ -225,6 +225,16 @@ async function anotarse(p, zip, tel, negocio = null) {
     await pa.getByText(/Llega a \d+ personas que encendieron Novedades/).waitFor();
     const aud = Number(sql(`select count(*) from users u where u.home_city_id = 'scr' and (u.notif_prefs->>'mkt') = 'true' and cuenta_estado(u.status, u.status_until) in ('active', 'muted')`));
     ok((await texto(pa)).includes(`Llega a ${aud} personas que encendieron Novedades`), `la cuenta del segmento antes de mandar: ${aud} personas (solo con «Novedades»)`);
+    { // 9n-7 · «Free con N ítems»: dueños de negocios Free con 5+ ítems a la venta; la cuenta es la de la base (y se vuelve a «Vecinos»).
+      const chip = (grupo, t) => pa.locator('div').filter({ has: pa.getByText(grupo, { exact: true }) }).last().getByText(t, { exact: true });   // el chip de ese grupo, no otro texto igual
+      await chip('A QUIÉN', 'Dueños de negocios').click(); await chip('PLAN', 'Free').click(); await chip('ÍTEMS EN SU CATÁLOGO', '5+ ítems').click();
+      const neg = Number(sql(`select count(*) from users u where u.home_city_id = 'scr' and (u.notif_prefs->>'mkt') = 'true' and cuenta_estado(u.status, u.status_until) in ('active', 'muted')
+        and exists (select 1 from businesses b join business_stats_cache st on st.business_id = b.id where b.owner_user_id = u.id and b.city_id = 'scr' and b.status = 'active' and st.plan = 'free'
+                    and (select count(*) from (select 1 from items i where i.business_id = b.id and i.removed_at is null limit 5) x) >= 5)`));
+      ok(await espera(async () => (await texto(pa)).includes(`Llega a ${neg} personas que encendieron Novedades`)), `«Free con 5+ ítems»: ${neg} dueños (la cuenta de la base)`);
+      await chip('A QUIÉN', 'Vecinos').click();
+      ok(await espera(async () => (await texto(pa)).includes(`Llega a ${aud} personas que encendieron Novedades`)), 'de vuelta a «Vecinos»');
+    }
     await pa.getByLabel('TÍTULO EN ESPAÑOL', { exact: true }).fill(`Hola ${TAG}`); await pa.getByLabel('TÍTULO EN INGLÉS', { exact: true }).fill(`Hello ${TAG}`);
     await pa.getByLabel('TEXTO EN ESPAÑOL', { exact: true }).fill('Ya puedes ver los negocios de tu zona.'); await pa.getByLabel('TEXTO EN INGLÉS', { exact: true }).fill('You can now see the businesses in your area.');
     await pa.getByLabel('A DÓNDE LLEVA (OPCIONAL, UNA RUTA DE TO\'LATINO)', { exact: true }).fill('/negocios');

@@ -2304,4 +2304,5 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **Soporte · copiloto (LAUNCH 7g):** «Resolver» y «Resolver y devolver» con el texto del borrador marcan `from_draft` y el borrador queda «tal cual» o
   «editado», como «Enviar» (`borradorDe`/`usarBorrador` en lib/soporte-equipo.ts). Guardián `copilotoSoloBorrador` cubre los tres (al revés 44/44); compa7g §3b.
 - **Anuncios para negocios:** Super Admin › Textos › Inicio › «¿A QUIÉN?» › Negocios (sale en Hoy del panel, nunca en el Inicio); cms9f lo crea por la pantalla.
+- **Campañas · «Free con N ítems»:** chips «ÍTEMS EN SU CATÁLOGO» (5/10/20/50+, solo dueños) en Crecimiento › Campañas; la cuenta usa `items_biz_idx` con `limit`. cre9h lo comprueba.
 - **No corrió aquí:** e2e (sin Docker) → CI dirigido cuando termine la confirmación completa de 9b-3 (run 43683346297, en curso).
