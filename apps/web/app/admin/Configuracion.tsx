@@ -12,6 +12,7 @@ import type { ModeloPapel } from "@/lib/compa/admin-compa";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { PESTANAS_SISTEMA } from "./sistema/Pestanas";
+import { useE } from "./idioma-admin";
 
 const SECCION: Record<Seccion, string> = {
   comunidad: "COMUNIDAD", gamificacion: "GAMIFICATION", salud_pro: "DOCTORES Y PROFESIONALES", hogar_auto: "HOGAR Y AUTO · PRE-ESTIMADO, PRESUPUESTO, EMERGENCIA Y APARTADO", noche: "NOCHE", edu: "EDUCACIÓN · NIÑOS · DEPORTE", fe_inm_autos: "IGLESIAS · BIENES RAÍCES · AUTOS", eventos: "EVENTOS", compa: "EL COMPA", soporte: "SOPORTE", apps: "APPS",
@@ -22,6 +23,15 @@ const SECCION: Record<Seccion, string> = {
   despliegues: "DESPLIEGUES · VUELTA ATRÁS Y MANTENIMIENTO",
   repartidor: "REPARTIDOR · OFERTAS Y PRUEBA DE ENTREGA",
   colas: "COLAS · PLAZOS Y CASOS TOMADOS",
+};
+// 9f-4 · Los nombres de las secciones en inglés (la persona del equipo con la app en inglés).
+const SECCION_EN: Record<string, string> = {
+  COMUNIDAD: "COMMUNITY", "DOCTORES Y PROFESIONALES": "DOCTORS AND PROFESSIONALS", "HOGAR Y AUTO · PRE-ESTIMADO, PRESUPUESTO, EMERGENCIA Y APARTADO": "HOME AND AUTO · PRE-ESTIMATE, QUOTE, EMERGENCY AND HOLDS", NOCHE: "NIGHTLIFE",
+  "EDUCACIÓN · NIÑOS · DEPORTE": "EDUCATION · KIDS · SPORTS", "IGLESIAS · BIENES RAÍCES · AUTOS": "CHURCHES · REAL ESTATE · CARS", EVENTOS: "EVENTS", SOPORTE: "SUPPORT", "RETENCIÓN · CUÁNTO SE GUARDA": "RETENTION · HOW LONG IT’S KEPT",
+  CRECIMIENTO: "GROWTH", "DINERO · PLAN FREE, PAGOS AL BANCO, CONCILIACIÓN Y ALERTAS": "MONEY · FREE PLAN, PAYOUTS, RECONCILIATION AND ALERTS", "AVISOS Y CANALES · SMS, WHATSAPP Y CORREO": "NOTIFICATIONS AND CHANNELS · SMS, WHATSAPP AND EMAIL",
+  "CIUDADES · EL AVISO DE APERTURA": "CITIES · THE LAUNCH NOTICE", "DESPLIEGUES · VUELTA ATRÁS Y MANTENIMIENTO": "DEPLOYS · ROLLBACK AND MAINTENANCE", "REPARTIDOR · OFERTAS Y PRUEBA DE ENTREGA": "DRIVER · OFFERS AND PROOF OF DELIVERY",
+  "COLAS · PLAZOS Y CASOS TOMADOS": "QUEUES · DEADLINES AND TAKEN CASES", "EVENTOS · PUBLICAR Y REVISAR": "EVENTS · PUBLISH AND REVIEW", "EVENTOS · RSVP Y VENTA": "EVENTS · RSVP AND SALES", "EVENTOS · DESPUÉS DE COMPRAR": "EVENTS · AFTER PURCHASE",
+  "EVENTOS · CAMBIOS Y PAGO AL ORGANIZADOR": "EVENTS · CHANGES AND ORGANIZER PAYOUT", "EVENTOS · AVISOS Y RECORDATORIOS": "EVENTS · NOTICES AND REMINDERS", "EVENTOS · LA PUERTA": "EVENTS · THE DOOR", "EVENTOS · EVENTO PRIVADO": "EVENTS · PRIVATE EVENT", "EVENTOS · CONFIANZA": "EVENTS · TRUST",
 };
 /* 9d · Retención: todo lo que dice cuánto se guarda algo (las claves nuevas de 0134 y las retenciones que ya corrían en su sección: El Compa,
    los errores, la ruta, la analítica, las notas privadas…) se ve junto aquí, cada una con sus límites. */
@@ -37,38 +47,41 @@ const SUB_EVT: [string, RegExp][] = [
   ["EVENTOS · EVENTO PRIVADO", /^evp_/],
   ["EVENTOS · CONFIANZA", /^evt_senal_/],
 ];
-const fmt = (f: { key: string; unidad: { es: string } }, v: number) => (f.key.endsWith("_cents") ? `$${(v / 100).toFixed(2)}` : `${v.toLocaleString("en-US")} ${f.unidad.es}`);
-const cuando = (iso: string) => new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
+let EN = false;
+const bi = (b: { es: string; en?: string } | null | undefined) => (b ? (EN ? b.en || b.es : b.es) : "");
+const fmt = (f: { key: string; unidad: { es: string; en?: string } }, v: number) => (f.key.endsWith("_cents") ? `$${(v / 100).toFixed(2)}` : `${v.toLocaleString("en-US")} ${bi(f.unidad)}`);
+const cuando = (iso: string) => new Intl.DateTimeFormat(EN ? "en-US" : "es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
 
 type Modelos = { papeles: ModeloPapel[]; modelos: { id: string; label: string; entrada: number; salida: number }[] };
 export function Configuracion({ filas, admin, autoOcultar, modelos = null, horario = null }: { filas: FilaConfig[]; admin: boolean; autoOcultar: { reportes: number; horas: number } | null;
   modelos?: Modelos | null; horario?: string | null }) {
-  const router = useRouter(), w = useAncho(), desk = w >= 1024;
+  const router = useRouter(), w = useAncho(), desk = w >= 1024, E = useE();
+  EN = E("", "x") === "x"; const secL = (k: string) => (EN ? SECCION_EN[k] ?? k : k);
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
-  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Guardado."); setConf(null); router.refresh(); };
-  const tabs: Bloque = { type: "tabs", items: PESTANAS_SISTEMA.map((p) => ({ l: p.l, on: p.k === "cfg", onClick: () => (p.k === "cfg" ? undefined : router.push(p.href)) })) };
+  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E("Guardado.", "Saved.")); setConf(null); router.refresh(); };
+  const tabs: Bloque = { type: "tabs", items: PESTANAS_SISTEMA.map((p) => ({ l: EN ? p.en : p.l, on: p.k === "cfg", onClick: () => (p.k === "cfg" ? undefined : router.push(p.href)) })) };
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
-      <PanelBloques bloques={[{ type: "head", eye: "SISTEMA", t: "Configuración", onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <PanelBloques bloques={[{ type: "head", eye: E("SISTEMA", "SYSTEM"), t: E("Configuración", "Settings"), onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
       <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={hecho} />
       <Toast t={toast} desk={desk} />
     </div>);
   const editar = (f: FilaConfig) => {
     if (f.editIn) return router.push(f.editIn);
-    if (!f.editable) return setToast(`Todavía no se cambia aquí: ${f.bloqueo?.es ?? ""}`);
-    if (!admin) return setToast("Solo un Admin cambia la configuración.");
+    if (!f.editable) return setToast(`${E("Todavía no se cambia aquí", "Can’t be changed here yet")}: ${bi(f.bloqueo)}`);
+    if (!admin) return setToast(E("Solo un Admin cambia la configuración.", "Only an Admin changes settings."));
     setConf({
-      titulo: f.label.es, cta: "Guardar",
-      sub: `Ahora: ${fmt(f, f.v)} · de fábrica: ${fmt(f, f.def)} · de ${fmt(f, f.min)} a ${fmt(f, f.max)}. Aplica desde ahora en todas las ciudades. El motivo queda en la auditoría.`,
-      valor: { k: `VALOR NUEVO (${f.unidad.es.toUpperCase()})`, ini: String(f.v), max: 7 },
-      plantillas: ["Lo pidió el fundador", "Ajuste con datos reales", "Volver al de fábrica"],
+      titulo: bi(f.label), cta: E("Guardar", "Save"),
+      sub: E(`Ahora: ${fmt(f, f.v)} · de fábrica: ${fmt(f, f.def)} · de ${fmt(f, f.min)} a ${fmt(f, f.max)}. Aplica desde ahora en todas las ciudades. El motivo queda en la auditoría.`, `Now: ${fmt(f, f.v)} · default: ${fmt(f, f.def)} · from ${fmt(f, f.min)} to ${fmt(f, f.max)}. Applies from now on in every city. The reason stays in the audit log.`),
+      valor: { k: E(`VALOR NUEVO (${bi(f.unidad).toUpperCase()})`, `NEW VALUE (${bi(f.unidad).toUpperCase()})`), ini: String(f.v), max: 7 },
+      plantillas: [E("Lo pidió el fundador", "The founder asked for it"), E("Ajuste con datos reales", "Adjusted with real data"), E("Volver al de fábrica", "Back to default")],
       hacer: (m, _e, v) => configCambiar(f.key, v, m),
     });
   };
   const B: Bloque[] = [
-    { type: "head", eye: "SUPER ADMIN · SISTEMA", t: "Configuración", s: "Plazos y límites de la plataforma, cada uno con sus límites. Cambiar un valor aplica a todas las ciudades y queda en la auditoría con antes → después.", h1: desk ? 26 : 22 },
+    { type: "head", eye: E("SUPER ADMIN · SISTEMA", "SUPER ADMIN · SYSTEM"), t: E("Configuración", "Settings"), s: E("Plazos y límites de la plataforma, cada uno con sus límites. Cambiar un valor aplica a todas las ciudades y queda en la auditoría con antes → después.", "Platform deadlines and limits, each with its bounds. Changing a value applies to every city and stays in the audit log with before → after."), h1: desk ? 26 : 22 },
     tabs,
-    { type: "note", tone: "info", icon: "info", t: `Moneda: USD · Hora: la de cada ciudad. ${admin ? "Toca un valor para cambiarlo." : "Solo un Admin cambia la configuración."}` },
+    { type: "note", tone: "info", icon: "info", t: E(`Moneda: USD · Hora: la de cada ciudad. ${admin ? "Toca un valor para cambiarlo." : "Solo un Admin cambia la configuración."}`, `Currency: USD · Time: each city’s. ${admin ? "Tap a value to change it." : "Only an Admin changes settings."}`) },
   ];
   for (const sec of Object.keys(SECCION) as Seccion[]) {
     const T = filas.filter((f) => (sec === "retencion" ? f.seccion === sec || RETIENE.test(f.key) : f.seccion === sec && !RETIENE.test(f.key)));
@@ -79,33 +92,33 @@ export function Configuracion({ filas, admin, autoOcultar, modelos = null, horar
       : [[SECCION[sec], T]];
     for (const [gk, L] of grupos) {
     if (!L.length) continue;
-    B.push({ type: "group", k: gk });
+    B.push({ type: "group", k: secL(gk) });
     const items: { key: string; icon: string; t: string; r: string; s: string; tag: string | null; tone: string; dim: boolean; chev: boolean; onClick: () => void }[] = L.map((f) => ({
-      key: f.key as string, icon: f.editable ? "edit" : "lock", t: desk ? f.label.es : `${f.label.es} · ${fmt(f, f.v)}`, r: desk ? fmt(f, f.v) : "",
-      s: [f.help?.es, f.editable ? `De fábrica ${fmt(f, f.def)} · de ${fmt(f, f.min)} a ${fmt(f, f.max)}` : `No se cambia todavía: ${f.bloqueo?.es ?? ""}`, f.editIn ? "Se cambia en su pantalla" : null,
-        f.at ? `Último cambio: ${f.quien ?? "equipo"} · ${cuando(f.at)}` : null].filter(Boolean).join(" · "),
-      tag: f.cambiado ? "CAMBIADO" : !f.editable ? "SOLO LECTURA" : null, tone: f.cambiado ? "action" : "neutral", dim: !f.editable,
+      key: f.key as string, icon: f.editable ? "edit" : "lock", t: desk ? bi(f.label) : `${bi(f.label)} · ${fmt(f, f.v)}`, r: desk ? fmt(f, f.v) : "",
+      s: [bi(f.help), f.editable ? E(`De fábrica ${fmt(f, f.def)} · de ${fmt(f, f.min)} a ${fmt(f, f.max)}`, `Default ${fmt(f, f.def)} · from ${fmt(f, f.min)} to ${fmt(f, f.max)}`) : `${E("No se cambia todavía", "Can’t be changed yet")}: ${bi(f.bloqueo)}`, f.editIn ? E("Se cambia en su pantalla", "Changed on its own screen") : null,
+        f.at ? `${E("Último cambio", "Last change")}: ${f.quien ?? E("equipo", "team")} · ${cuando(f.at)}` : null].filter(Boolean).join(" · "),
+      tag: f.cambiado ? E("CAMBIADO", "CHANGED") : !f.editable ? E("SOLO LECTURA", "READ ONLY") : null, tone: f.cambiado ? "action" : "neutral", dim: !f.editable,
       chev: f.editable && (admin || !!f.editIn), onClick: () => editar(f),
     }));
-    if (sec === "comunidad" && autoOcultar) items.push({ key: "autohide", icon: "shield", t: desk ? "Auto-ocultar por reportes" : `Auto-ocultar por reportes · ${autoOcultar.reportes} en ${autoOcultar.horas} h`, r: desk ? `${autoOcultar.reportes} en ${autoOcultar.horas} h` : "",
-      s: "Es un parámetro de su regla: se cambia en Contenido › Auto-moderación, junto con el interruptor de la regla.", tag: null, tone: "neutral", dim: false, chev: true, onClick: () => router.push("/admin/contenido?tab=auto") });
+    if (sec === "comunidad" && autoOcultar) items.push({ key: "autohide", icon: "shield", t: desk ? E("Auto-ocultar por reportes", "Auto-hide by reports") : `${E("Auto-ocultar por reportes", "Auto-hide by reports")} · ${autoOcultar.reportes} ${E("en", "in")} ${autoOcultar.horas} h`, r: desk ? `${autoOcultar.reportes} ${E("en", "in")} ${autoOcultar.horas} h` : "",
+      s: E("Es un parámetro de su regla: se cambia en Contenido › Auto-moderación, junto con el interruptor de la regla.", "It’s a parameter of its rule: change it in Content › Auto-moderation, with the rule’s switch."), tag: null, tone: "neutral", dim: false, chev: true, onClick: () => router.push("/admin/contenido?tab=auto") });
     // 7i · Soporte: cómo dicen las pantallas el horario del equipo con estos números («lunes a viernes, de 9 AM a 6 PM»).
-    if (sec === "soporte" && horario) B.push({ type: "note", tone: "info", icon: "clock", t: `Las pantallas de Soporte y El Compa dicen: «El equipo atiende ${horario}» (hora de cada ciudad). Cambia con los días y las horas de abajo.` });
+    if (sec === "soporte" && horario) B.push({ type: "note", tone: "info", icon: "clock", t: E(`Las pantallas de Soporte y El Compa dicen: «El equipo atiende ${horario}» (hora de cada ciudad). Cambia con los días y las horas de abajo.`, `The Support and El Compa screens say: “The team is available ${horario}” (each city’s time). It changes with the days and hours below.`) });
     B.push({ type: "rows", cols: desk ? "repeat(auto-fill,minmax(420px,1fr))" : "1fr", items });
     // 7i · El Compa: el modelo de cada papel, de los encendidos en la lista de precios (compa_models); motivo y auditoría.
     if (sec === "compa" && gk === SECCION.compa && modelos) {
-      const PAPEL: Record<string, [string, string]> = { cotidiano: ["Modelo de vecinos, panel y respuestas", "El más barato que cumpla (decisión F)."], copiloto: ["Modelo del copiloto del equipo", "Uno mayor, solo para los borradores de Soporte."] };
+      const PAPEL: Record<string, [string, string]> = { cotidiano: [E("Modelo de vecinos, panel y respuestas", "Model for neighbors, dashboard and replies"), E("El más barato que cumpla (decisión F).", "The cheapest that does the job (decision F).")], copiloto: [E("Modelo del copiloto del equipo", "Team copilot model"), E("Uno mayor, solo para los borradores de Soporte.", "A larger one, only for Support drafts.")] };
       const cambiarM = (p: ModeloPapel) => {
-        if (!admin) return setToast("Solo un Admin cambia la configuración.");
+        if (!admin) return setToast(E("Solo un Admin cambia la configuración.", "Only an Admin changes settings."));
         const otros = modelos.modelos.filter((m) => m.id !== p.id);
-        if (!otros.length) return setToast("No hay otro modelo encendido en la lista de precios.");
-        setConf({ titulo: PAPEL[p.papel]![0], cta: "Guardar", elegir: { label: "MODELO", items: otros.map((m) => ({ k: m.id, l: `${m.label} · $${m.entrada.toFixed(2)} / $${m.salida.toFixed(2)} por millón de tokens` })) },
-          sub: `Ahora: ${p.label ?? "ninguno"}. Solo los modelos encendidos en la lista de precios; el precio de cada uno no se escribe en el código. Vale desde la próxima llamada y queda en la auditoría.`,
-          plantillas: ["Lo pidió el fundador", "Mejor calidad al mismo costo", "Bajar el gasto"], hacer: (m, e) => configModelo(p.papel, e ?? "", m) });
+        if (!otros.length) return setToast(E("No hay otro modelo encendido en la lista de precios.", "No other model is on in the price list."));
+        setConf({ titulo: PAPEL[p.papel]![0], cta: E("Guardar", "Save"), elegir: { label: E("MODELO", "MODEL"), items: otros.map((m) => ({ k: m.id, l: `${m.label} · $${m.entrada.toFixed(2)} / $${m.salida.toFixed(2)} ${E("por millón de tokens", "per million tokens")}` })) },
+          sub: E(`Ahora: ${p.label ?? "ninguno"}. Solo los modelos encendidos en la lista de precios; el precio de cada uno no se escribe en el código. Vale desde la próxima llamada y queda en la auditoría.`, `Now: ${p.label ?? "none"}. Only models on in the price list; each one’s price isn’t written in the code. It applies from the next call and stays in the audit log.`),
+          plantillas: [E("Lo pidió el fundador", "The founder asked for it"), E("Mejor calidad al mismo costo", "Better quality at the same cost"), E("Bajar el gasto", "Lower spending")], hacer: (m, e) => configModelo(p.papel, e ?? "", m) });
       };
-      B.push({ type: "rows", k: "MODELO DE CADA PAPEL", cols: desk ? "repeat(auto-fill,minmax(420px,1fr))" : "1fr", items: modelos.papeles.map((p) => ({
-        key: `modelo-${p.papel}`, icon: admin ? "edit" : "lock", t: desk ? PAPEL[p.papel]![0] : `${PAPEL[p.papel]![0]} · ${p.label ?? "ninguno"}`, r: desk ? p.label ?? "ninguno" : "",
-        s: `${PAPEL[p.papel]![1]} De los modelos encendidos en la lista de precios.`, tag: null, tone: "neutral", dim: false, chev: admin, onClick: () => cambiarM(p) })) });
+      B.push({ type: "rows", k: E("MODELO DE CADA PAPEL", "MODEL FOR EACH ROLE"), cols: desk ? "repeat(auto-fill,minmax(420px,1fr))" : "1fr", items: modelos.papeles.map((p) => ({
+        key: `modelo-${p.papel}`, icon: admin ? "edit" : "lock", t: desk ? PAPEL[p.papel]![0] : `${PAPEL[p.papel]![0]} · ${p.label ?? E("ninguno", "none")}`, r: desk ? p.label ?? E("ninguno", "none") : "",
+        s: `${PAPEL[p.papel]![1]} ${E("De los modelos encendidos en la lista de precios.", "From the models on in the price list.")}`, tag: null, tone: "neutral", dim: false, chev: admin, onClick: () => cambiarM(p) })) });
     }
     }
   }
