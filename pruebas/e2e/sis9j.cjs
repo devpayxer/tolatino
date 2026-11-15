@@ -223,6 +223,22 @@ const enNY = (d) => { const p = Object.fromEntries(new Intl.DateTimeFormat('en-U
     await a.goto(B + '/admin/sistema/flags'); await clic(a.getByText('English', { exact: true }));
     ok(await contiene(a, 'Team and permissions') && await contiene(a, /\d+ FLAGS/) && await contiene(a, 'Health'), 'el admin en inglés (las pestañas y la pantalla)');
     await clic(a.getByText('Español', { exact: true })); ok(await contiene(a, 'Equipo y permisos'), 'y de vuelta en español');
+    // 9 · 9j-2 · Web Vitals de teléfonos reales (RUM): la puerta sin sesión solo acepta páginas nuestras y cifras con su forma; suma por día,
+    // familia de ruta (los números y nombres se vuelven «:x»), perfil y métrica en tres cubetas; Salud lo muestra. Sin personas.
+    console.log('9 · Web Vitals de teléfonos reales');
+    sql(`delete from rate_counters where scope like 'vitales%'`); // las páginas de esta prueba ya mandaron las suyas desde la misma conexión (tope 30/min)
+    const fam = '/n/:x', antes = Number(sql(`select coalesce(sum(n), 0) from web_vitals_dia where familia = '${fam}' and perfil = 'telefono' and metrica = 'lcp' and dia = (now() at time zone 'America/New_York')::date`));
+    const post = (cuerpo, conOrigen = true) => a.evaluate(async ([c, o]) => (await fetch('/api/vitales', { method: 'POST', headers: { 'content-type': 'application/json' }, body: typeof c === 'string' ? c : JSON.stringify(c), ...(o ? {} : { referrerPolicy: 'no-referrer', mode: 'cors' }) })).status, [cuerpo, conOrigen]);
+    ok(await post({ ruta: '/n/sabor-dominicano', perfil: 'telefono', lcp: 1800, inp: 650, cls: 0.02 }) === 204, 'la puerta acepta las cifras de una página nuestra (204)');
+    ok(sql(`select n - ${antes} || '|' || buenos || '|' || malos from web_vitals_dia where familia = '${fam}' and perfil = 'telefono' and metrica = 'lcp' and dia = (now() at time zone 'America/New_York')::date`).startsWith('1|'), 'suma uno en su día, familia «/n/:x» (sin el nombre del negocio), perfil y métrica');
+    ok(sql(`select malos from web_vitals_dia where familia = '${fam}' and perfil = 'telefono' and metrica = 'inp' and dia = (now() at time zone 'America/New_York')::date`) !== '0', 'un INP de 650 ms cuenta como malo (umbral 500)');
+    ok(await post({ ruta: '/n/x', perfil: 'telefono', lcp: -5 }) === 400 && await post({ ruta: 'https://otro.sitio/x', perfil: 'telefono', lcp: 100 }) === 400 && await post('no es json') === 400, 'lo que no tiene la forma se rechaza (400)');
+    ok(await post('x'.repeat(5000)) === 413, 'un cuerpo de más de 2 KB se corta antes de leerlo (413)');
+    const sinOrigen = Number(execSync(`curl -s -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' --data '{"ruta":"/","perfil":"telefono","lcp":1}' ${B}/api/vitales`).toString());
+    ok(sinOrigen === 403, `sin origen nuestro, nada (${sinOrigen})`);
+    ok(sql(`select count(*) from information_schema.columns where table_name = 'web_vitals_dia' and column_name ~ '(user|ip|url|dev|session|phone)'`) === '0', 'la tabla no tiene columnas de persona, conexión ni URL');
+    await a.goto(B + '/admin/sistema/salud');
+    ok(await contiene(a, 'VELOCIDAD EN TELÉFONOS REALES') && await contiene(a, '/n/:x'), 'Sistema › Salud muestra la velocidad en teléfonos reales por pantalla');
     // Un rol sin sys:editar ve Sistema pero no cambia nada: Rita (Solo lectura) no tiene Sistema.
     const ok2 = err.filter((e) => !/hydrat|Hydrat/.test(e));
     ok(ok2.length === 0, `sin errores en las páginas (${ok2.slice(0, 2).join(' | ')})`);

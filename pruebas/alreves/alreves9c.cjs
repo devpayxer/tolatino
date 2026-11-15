@@ -1,7 +1,7 @@
 // Prueba al revés de los guardianes de 9c. contrasteTexto (texto gris por debajo de AA): el gris de una pestaña del sistema portado vuelve al 42 %,
 // una etiqueta del Super Admin vuelve al 50 %, una clase text-ink/45 en Mi cuenta, un text-[rgba(…,.5)] nuevo y el token --tl-text-muted al 50 %.
 // hojaAccesible: una hoja sin aria-modal, otra sin nombre, el layout sin <FocoHojas />, el gestor sin Escape y una capa nueva que se cierra al
-// tocarla sin hoja con role="dialog". tuberiaNoSeSalta: el trabajo nocturno «anchos» sin sus tres anchos o fuera de «tuberia». iconoExiste: «undo» y «download» otra vez. anchoSinSalto: un ancho que arranca en 390 y mide, y el panel sin <AnchoInicial>. impuestoSoloNuevo: la firma de Autos con max(id), la acción sin permiso y un update de tax_rules.
+// tocarla sin hoja con role="dialog". tuberiaNoSeSalta: el trabajo nocturno «anchos» sin sus tres anchos o fuera de «tuberia». iconoExiste: «undo» y «download» otra vez. anchoSinSalto: un ancho que arranca en 390 y mide, y el panel sin <AnchoInicial>. impuestoSoloNuevo: la firma de Autos con max(id), la acción sin permiso y un update de tax_rules. vitalesSinPersonas: la URL en el cuerpo, la puerta sin origen, la base antes del tope, una columna ip y el layout sin <Vitales />.
 // Se inyecta el defecto, el guardián debe fallar con SU mensaje ([contrasteTexto]); se restaura. «crear»: se crea el archivo, se corre y se borra.
 // También al derecho: una sombra o un borde con ink al 50 % no es texto (el guardián no debe saltar).
 const ENT = require('../lib/entorno.cjs');
@@ -18,6 +18,11 @@ const casos = [
   ['hojaAccesible', 'apps/web/app/FocoHojas.tsx', 'e.key === "Escape"', 'e.key === "Esc"'],
   ['tuberiaNoSeSalta', '.github/workflows/ci.yml', 'id: [iphone-se, ipad, escritorio-1024]', 'id: [iphone-15]'],
   ['iconoExiste', 'apps/web/app/admin/HoyAdmin.tsx', 'icon: "plus"', 'icon: "undo"'],
+  ['vitalesSinPersonas', 'apps/web/app/_vitales/Vitales.tsx', 'const cuerpo = { ruta, perfil:', 'const cuerpo = { ruta, url: location.href, perfil:'],
+  ['vitalesSinPersonas', 'apps/web/app/api/vitales/route.ts', '  if (!mio) return nada(403);\n', ''],
+  ['vitalesSinPersonas', 'apps/web/lib/vitales.ts', '  const ok = await dentroDelTope("vitales_ip", e.ip ?? "?", 30) && await dentroDelTope("vitales", "todo", 20_000);', '  await db().query("select 1");\n  const ok = await dentroDelTope("vitales_ip", e.ip ?? "?", 30) && await dentroDelTope("vitales", "todo", 20_000);'],
+  ['vitalesSinPersonas', 'packages/db/migrations/0167_web_vitals.sql', '  n int not null default 0 check (n >= 0),', '  ip text,\n  n int not null default 0 check (n >= 0),'],
+  ['vitalesSinPersonas', 'apps/web/app/layout.tsx', '<FocoHojas /><Vitales />', '<FocoHojas />'],
   ['anchoSinSalto', 'apps/web/app/(app)/soporte/Soporte.tsx', '  return useAnchoComun(); // 9c · sin salto al cargar: app/_ancho/Ancho.tsx', '  const [w, setW] = useState(390);\n  useEffect(() => { const f = () => setW(window.innerWidth); f(); }, []);\n  return w;'],
   ['anchoSinSalto', 'apps/web/app/panel/layout.tsx', '<AnchoInicial w={w}>', '<>'],
   ['anchoSinSalto', 'apps/web/app/(app)/_legal/PieLegal.tsx', '  const d = useAnchoComun() >= 1024; // 9c · sin salto al cargar', '  const [d, setD] = useState(false);\n  useEffect(() => { const m = window.matchMedia("(min-width: 1024px)"); const f = () => setD(m.matches); f(); }, []);'],

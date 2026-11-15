@@ -10,6 +10,11 @@ _Pantallas: **Super Admin › Sistema** con sus pestañas **Flags** (`/admin/sis
 - **Salud:** cómo está la plataforma ahora. Disponibilidad y tiempo de la base, errores de las últimas 24 horas (del servidor, la web y las apps), una
   fila por servicio (la base, los trabajos del barrido, la cola de los avisos push, el disco y los errores) con lo último que se midió (cada 5 minutos),
   las tareas del barrido con error, las llaves y certificados que vencen y el **mantenimiento programado**.
+- **Velocidad en teléfonos reales (Salud):** lo que siente quien usa To'Latino, medido en su propio teléfono o computadora, de los últimos 7 días
+  y por pantalla: **LCP** (cuánto tarda en salir lo grande), **INP** (cuánto tarda en responder a un toque) y **CLS** (cuánto se mueve sola la
+  pantalla), en % de mediciones buenas. **BIEN** si 75 % o más son buenas en las tres; **REVISAR** si más de 25 % son malas en alguna. Solo cifras
+  por día y pantalla (el nombre del negocio o el número de un pedido se vuelve «:x»): nunca quién, ni su teléfono, ni la dirección. Se apaga con el
+  flag **app.vitals**.
 - **Respaldos:** lo que importa es que se puede restaurar: arriba la **restauración de prueba** (si restauró, cuánto tardó, el punto en el tiempo y las
   filas que contó), y después lo último de cada tipo (base completa, registro continuo, fotos y el sobre de llaves de recuperación) y la lista. Avisa si
   el respaldo de la base pasó de 26 horas, si la última restauración falló o si no hubo una buena en 8 días.
@@ -45,6 +50,8 @@ _Pantallas: **Super Admin › Sistema** con sus pestañas **Flags** (`/admin/sis
 ## Preguntas frecuentes
 - **¿Puedo borrar un respaldo, un mantenimiento o un motivo?** No: nada de esto se borra; un mantenimiento se cancela.
 - **¿Quién puede cambiar los interruptores?** Solo quien tiene Sistema · editar (el Admin), y cada cambio queda en la auditoría con antes y después.
+- **¿La velocidad en teléfonos reales sabe quién es cada uno?** No. Cada página manda tres números al cerrarse (y la pantalla, ya sin nombres ni números);
+  se suman por día. Si alguien manda de más desde la misma conexión, el resto se descarta.
 
 ## Lo que todavía no está
 <!-- solo-equipo -->
@@ -94,6 +101,9 @@ of identical ones. A key expiring in 30 days: each Admin gets one notice per sta
 ### FAQ
 - **Can I delete a backup, a maintenance window or a reason?** No: none of this is deleted; maintenance is cancelled.
 - **Who can change flags?** Only those with System · edit (the Admin), and every change goes to the audit log with before and after.
+- **Speed on real phones (Health):** LCP, INP and CLS measured on people's own phones and computers, last 7 days per screen, as % of good
+  measurements (GOOD if 75 % or more are good in all three; CHECK if more than 25 % are poor in one). Only numbers per day and screen (business names
+  and order numbers become «:x»): never who, their phone or their address. Flag **app.vitals** turns it off.
 
 ### What is not here yet
 <!-- solo-equipo -->

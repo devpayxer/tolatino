@@ -42,6 +42,18 @@ export function SistemaSalud({ d, l, editar }: { d: DatosSalud; l: L; editar: bo
     key: s.service, icon: s.ok === false ? "warning" : s.ok ? "check" : "clock", ibg: s.ok === false ? "rgba(138,90,0,.12)" : "rgba(0,168,143,.12)", t: E(SERV[s.service][0], SERV[s.service][1]),
     s: s.at ? `${s.detail ?? ""} · ${cuando(s.at)}${s.caidas24 ? ` · ${s.caidas24} ${E("fallos en 24 h", "failures in 24 h")}` : ""}` : E("Todavía sin medir: el barrido lo mide cada 5 minutos.", "Not measured yet: the sweep measures it every 5 minutes."),
     tag: s.ok == null ? E("SIN DATOS", "NO DATA") : s.ok ? E("BIEN", "HEALTHY") : E("REVISAR", "CHECK"), tone: s.ok == null ? "neutral" : s.ok ? "signal" : "danger" })) });
+  // 9j-2 · Web Vitals de teléfonos reales (RUM): por pantalla y perfil, % de mediciones buenas de LCP, INP y CLS en 7 días. Bien si ≥ 75 % buenas
+  // (el criterio de Google); revisar si más de 25 % malas. Sin personas: solo cifras por ruta y día (web_vitals_dia).
+  if (d.vitales) {
+    const pc = (x: { n: number; buenos: number } | null) => (x && x.n ? Math.round((100 * x.buenos) / x.n) : null);
+    const est = (f: NonNullable<typeof d.vitales>[number]) => { const ms = (["lcp", "inp", "cls"] as const).map((k) => f.m[k]).filter((x): x is { n: number; buenos: number; malos: number } => !!x && x.n > 0);
+      return ms.some((x) => x.malos / x.n > 0.25) ? "mal" : ms.every((x) => x.buenos / x.n >= 0.75) ? "bien" : "medio"; };
+    B.push({ type: "rows", k: E("VELOCIDAD EN TELÉFONOS REALES · 7 DÍAS (LCP · INP · CLS, % BUENAS)", "SPEED ON REAL PHONES · 7 DAYS (LCP · INP · CLS, % GOOD)"), cols: desk ? "repeat(auto-fill,minmax(320px,1fr))" : undefined,
+      items: d.vitales.length ? d.vitales.map((f) => { const e = est(f); return { key: `${f.familia}|${f.perfil}`, icon: f.perfil === "telefono" ? "phone" : "grid", t: f.familia,
+        s: `${f.perfil === "telefono" ? E("Teléfono", "Phone") : E("Escritorio", "Desktop")} · LCP ${pc(f.m.lcp) ?? "—"} % · INP ${pc(f.m.inp) ?? "—"} % · CLS ${pc(f.m.cls) ?? "—"} % · ${f.total} ${E("visitas", "visits")}`,
+        tag: e === "bien" ? E("BIEN", "GOOD") : e === "mal" ? E("REVISAR", "CHECK") : E("POR MEJORAR", "NEEDS WORK"), tone: e === "bien" ? "signal" : e === "mal" ? "danger" : "neutral" }; })
+        : [{ key: "nada", icon: "clock", t: E("Todavía sin mediciones", "No measurements yet"), s: E("Cada página manda sus cifras al cerrarse; salen aquí en cuanto alguien la usa.", "Each page sends its numbers when it closes; they show here as soon as someone uses it."), tag: E("SIN DATOS", "NO DATA"), tone: "neutral" }] });
+  }
   if (d.trabajosConError.length) B.push({ type: "rows", k: E("TAREAS DEL BARRIDO CON ERROR", "SWEEP TASKS WITH ERRORS"), items: d.trabajosConError.map((j) => ({ key: j.name, icon: "warning", t: j.name, s: `${j.error}${j.at ? ` · ${cuando(j.at)}` : ""}`, tag: E("REVISAR", "CHECK"), tone: "danger" })) });
   B.push({ type: "rows", k: E("LLAVES Y CERTIFICADOS QUE VENCEN", "KEYS AND CERTIFICATES THAT EXPIRE"), items: d.llaves.length ? d.llaves.map((k) => ({ key: `${k.kind}${k.version}`, icon: "key", t: `${k.kind} · v${k.version}`,
     s: k.dias < 0 ? E(`Venció el ${k.vence}`, `Expired on ${k.vence}`) : E(`Vence el ${k.vence} (en ${k.dias} días)`, `Expires on ${k.vence} (in ${k.dias} days)`),

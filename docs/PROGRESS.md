@@ -2394,4 +2394,9 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **9n-19 · Impuestos en el Super Admin (L471):** Planes › Impuestos (vigente + programadas por ciudad y categoría; «Programar cambio» con motivo →
   regla nueva desde ahora / el 1.º del mes que viene / el 1.º de enero). **0166** (created_by, reason, solo inserción). `firmaTotales` de Autos con la
   regla vigente de cada ciudad (antes max(id)). Guardián **`impuestoSoloNuevo`** (alreves9c 20/20); adm9n3 §12; ayuda admin-planes.
+- **9c-8b · El otro salto:** SeccionesMovil del Super Admin, el AppShell, el pie legal, Recuperar, Licencia y la página de acceso decidían escritorio con
+  useState(false) + matchMedia; ahora con el ancho estimado (`anchoSinSalto` caza los dos patrones). CI 43749374007: Mi cuenta 0,26 → 0,02 y el panel 0,05 →
+  0,002 en escritorio; axe en cero en los 8 dispositivos con la lista de «conocidas» vacía.
+- **9j-2 · Web Vitals de teléfonos reales (L1629):** `Vitales.tsx` en el layout raíz → `/api/vitales` → **0167** `web_vitals_dia` (por día, familia de ruta,
+  perfil y métrica; tres cubetas; sin personas) → Sistema › Salud. Flag `app.vitals`. Guardián **`vitalesSinPersonas`** (alreves9c 26/26); sis9j §9.
 

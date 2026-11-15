@@ -1446,6 +1446,28 @@ const guardianes = {
     if (!fi || /max\(id\)/.test(fi) || !/effective_from <= now\(\)/.test(fi)) falla(G, U, 0, "firmaTotales tiene que usar la regla de impuesto VIGENTE de cada ciudad (no la última creada)");
   },
 
+  /* 9j-2 · vitalesSinPersonas: los Web Vitals de teléfonos reales (RUM, L1629) son una puerta SIN SESIÓN y un script en todas las pantallas. Se
+     vigila que: la puerta corta el cuerpo a ≤ 4 KB antes de leerlo y solo acepta páginas nuestras; lib/vitales.ts pasa el tope (compartido)
+     ANTES de tocar la base y solo escribe web_vitals_dia; la tabla (0167) no tiene columnas de persona, conexión ni URL; el script del
+     navegador manda solo ruta, perfil, lcp, inp y cls (nada de cookie, usuario ni la URL completa); y el layout raíz lo monta. Al revés: alreves9c. */
+  vitalesSinPersonas() {
+    const G = "vitalesSinPersonas", R = "apps/web/app/api/vitales/route.ts", L = "apps/web/lib/vitales.ts", C = "apps/web/app/_vitales/Vitales.tsx", M = "packages/db/migrations/0167_web_vitals.sql";
+    for (const f of [R, L, C, M]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de los Web Vitals");
+    const r = sinComent(R), l = sinComent(L), c = sinComent(C), m = readFileSync(M, "utf8");
+    const max = Number(/const MAX = (\d+) \* 1024;/.exec(r)?.[1] ?? 0);
+    if (!max || max > 4 || /req\.(json|text|formData|arrayBuffer)\(\)/.test(r) || !/if \(n > MAX\) \{ await r\.cancel\(\)/.test(r)) falla(G, R, 0, "la puerta corta el cuerpo (≤ 4 KB) antes de leerlo entero");
+    if (!/if \(!mio\) return nada\(403\);/.test(r)) falla(G, R, 0, "la puerta solo acepta páginas nuestras (origen)");
+    const f = cuerpoFn(l, "recibirVital"), it = f.indexOf("dentroDelTope("), ib = f.search(/db\(\)|tx\(/);
+    if (it < 0 || ib < 0 || it > ib) falla(G, L, 0, "recibirVital pasa el tope ANTES de tocar la base");
+    if (/insert into (?!web_vitals_dia)/.test(f)) falla(G, L, 0, "recibirVital solo escribe web_vitals_dia");
+    const tabla = /create table if not exists web_vitals_dia \(([\s\S]*?)\n\);/.exec(m)?.[1] ?? "";
+    if (!tabla || /\b(user|usuario|ip|ua|url|device|dev|session|sesion|phone|telefono)\w*\s+(text|uuid|inet|bigint)/i.test(tabla.replace(/perfil text[^,]*,/, ""))) falla(G, M, 0, "web_vitals_dia no lleva persona, conexión, dispositivo ni URL");
+    const cuerpo = /const cuerpo = \{([^}]*)\}/.exec(c)?.[1] ?? "";
+    const claves = [...cuerpo.matchAll(/(\w+):/g)].map((x) => x[1]).filter((k) => k !== "null");
+    if (!cuerpo || claves.some((k) => !["ruta", "perfil", "lcp", "inp", "cls"].includes(k)) || /document\.cookie|localStorage|location\.href|location\.search/.test(c)) falla(G, C, 0, "el script manda solo ruta, perfil, lcp, inp y cls (nada de cookie, usuario ni la URL completa)");
+    if (!/<Vitales \/>/.test(readFileSync("apps/web/app/layout.tsx", "utf8"))) falla(G, "apps/web/app/layout.tsx", 0, "el layout raíz monta <Vitales />");
+  },
+
   /* 3o. Todo interruptor (role="switch") se usa con teclado: si no es un <button>, lleva tabIndex y onKeyDown; si es un
      <span> suelto, además su nombre (aria-label). 6 nov, 2p: el de «Respuesta automática» y otros cuatro no tenían. */
   interruptorAccesible() {

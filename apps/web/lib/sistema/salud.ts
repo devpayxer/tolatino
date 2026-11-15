@@ -56,6 +56,8 @@ export type DatosSalud = {
   mantenimiento: { id: string; desde: string; hasta: string; es: string; en: string; motivo: string; por: string | null; estado: "programado" | "en_curso" | "pasado" | "cancelado" }[];
   despliegues: { id: string; commit: string; fin: string; result: "ok" | "vuelta_atras" | "fallo"; motivo: string | null; entorno: string }[] | null; entorno: string;
   maquinas: { nombre: string; cpu: number | null; memoria: number | null; disco: number | null }[] | null;
+  // 9j-2 · Web Vitals de teléfonos reales (RUM): 7 días por familia de ruta y perfil.
+  vitales: import("../vitales").FilaVital[] | null;
 };
 
 /* 9o · Las máquinas de producción según Prometheus (la réplica, por la red privada): CPU, memoria y disco de cada una. 2 s como mucho; si no contesta,
@@ -80,7 +82,7 @@ async function maquinasPrometheus(): Promise<DatosSalud["maquinas"]> {
 const ISO = (c: string) => `to_char((${c}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
 
 export async function saludAdmin(): Promise<DatosSalud> {
-  const [k, s, e, j, ll, m, dep, maq] = await Promise.all([
+  const [k, s, e, j, ll, m, dep, maq, vit] = await Promise.all([
     db().query<{ disp: number | null; p95: number | null }>(
       `select round(100.0 * count(*) filter (where ok) / nullif(count(*), 0), 2)::float as disp,
               (select percentile_disc(0.95) within group (order by latency_ms) from health_checks where service = 'base' and at > now() - interval '24 hours' and latency_ms is not null)::float as p95
@@ -112,10 +114,11 @@ export async function saludAdmin(): Promise<DatosSalud> {
          from maintenance_windows w left join users u on u.id = w.by_staff order by w.from_at desc limit 10`),
     import("./despliegues").then((x) => x.ultimosDespliegues(5)).catch(() => null),
     maquinasPrometheus(),
+    import("../vitales").then((x) => x.resumenVitales(7, 25)).catch(() => null),
   ]);
   return {
     disponibilidad: k.rows[0]?.disp ?? null, p95: k.rows[0]?.p95 ?? null, errores: e.rows[0] ?? { web: 0, apps: 0, servidor: 0 }, trabajosConError: j.rows,
-    servicios: s.rows, llaves: ll.rows, mantenimiento: m.rows, despliegues: dep, entorno: ENTORNO, maquinas: maq,
+    servicios: s.rows, llaves: ll.rows, mantenimiento: m.rows, despliegues: dep, entorno: ENTORNO, maquinas: maq, vitales: vit,
   };
 }
 
