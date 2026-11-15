@@ -1,4 +1,5 @@
 import "server-only";
+import { diasEspeciales, rangosDia } from "./dias-especiales";
 import type { Pool, PoolClient } from "pg";
 import { db, tx } from "./db";
 import { PROHIBIDO } from "./jobs-txt";
@@ -255,9 +256,11 @@ export async function diasEntrevista(c: Q, negocio: string, tz: string) {
   const F = await c.query<{ d: number; ymd: string; dow: number }>(
       `select g as d, ((now() at time zone $1)::date + g)::text as ymd, extract(dow from (now() at time zone $1)::date + g)::int as dow from generate_series(1, 10) g
         where not exists (select 1 from special_hours s where s.business_id = $2 and s.status = 'active' and s.closed and ((now() at time zone $1)::date + g) between s.date_from and s.date_to)`, [tz, negocio]);
-  const R = new Map(H.rows.map((r) => [r.weekday, r.ranges]));
+  // 9n-10 · Además de los días cerrados, la temporada y los días con horas propias (lib/dias-especiales.ts).
+  const de = F.rows.length ? await diasEspeciales(c, negocio, F.rows[0]!.ymd, 10) : null;
+  const S = H.rows.map((r) => ({ weekday: r.weekday, open: true, ranges: r.ranges }));
   return F.rows.map((f) => {
-    const rg = R.get(f.dow) ?? [], horas: number[] = [];
+    const rg = de ? rangosDia(S, de, f.ymd) : [], horas: number[] = [];
     for (let h = 6; h <= 21; h++) if (rg.some(([x, z]) => { const A = hm(x), Z = hm(z) <= A ? hm(z) + 1440 : hm(z); return h * 60 >= A && h * 60 + 30 <= Z; })) horas.push(h);
     return { d: f.d, ymd: f.ymd, horas };
   }).filter((x) => x.horas.length > 0);

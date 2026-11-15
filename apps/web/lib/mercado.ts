@@ -1,4 +1,5 @@
 import "server-only";
+import { diasEspeciales, rangosDia } from "./dias-especiales";
 import type { PoolClient } from "pg";
 import { comision, liberarOperacion, registrarRetencion, retenerPedido, tarjetaDe } from "./cobros";
 import { db, tx } from "./db";
@@ -41,15 +42,16 @@ async function franjas(c: Q, negocio: string, cap: number): Promise<DiaMerc[]> {
             extract(dow from now() at time zone ci.timezone)::int as dow
        from businesses b join cities ci on ci.id = b.city_id where b.id = $1`, [negocio])).rows[0]!;
   const H = (await c.query<{ weekday: number; open: boolean; ranges: [string, string][] }>(`select weekday, open, ranges from business_hours where business_id = $1 and module = ''`, [negocio])).rows;
+  const de = await diasEspeciales(c, negocio, n.hoy, 2); // 9n-10 · feriados, días propios y temporada
   const usados = (await c.query<{ d: string; v: string; mode: string; n: number }>(
     `select (o.scheduled_at at time zone ci.timezone)::date::text as d, to_char(o.scheduled_at at time zone ci.timezone, 'HH24:MI') as v, o.mode, count(*)::int as n
        from operations o join cities ci on ci.id = o.city_id
       where o.business_id = $1 and o.kind = 'market_order' and o.status in ('pending', 'confirmed') and o.scheduled_at > now() - interval '1 hour' group by 1, 2, 3`, [negocio])).rows;
   const lleno = (d: string, v: string, mode: string) => (usados.find((u) => u.d === d && u.v === v && u.mode === mode)?.n ?? 0) >= cap;
   const toM = (s: string) => { const [h = 0, m = 0] = s.split(":").map(Number); return h * 60 + m; };
-  return ([["hoy", n.hoy, n.dow], ["man", n.man, (n.dow + 1) % 7]] as const).map(([k, f, dow]) => {
-    const d = H.find((x) => x.weekday === dow), pk: Franja[] = [], dl: Franja[] = [];
-    if (d?.open) for (const [a, z] of d.ranges ?? []) {
+  return ([["hoy", n.hoy, n.dow], ["man", n.man, (n.dow + 1) % 7]] as const).map(([k, f]) => {
+    const pk: Franja[] = [], dl: Franja[] = [];
+    for (const [a, z] of rangosDia(H, de, f)) {
       const ini = toM(a), fin = z === "00:00" || z === "24:00" ? 1440 : toM(z);
       for (let m = Math.max(ini + 30, k === "hoy" ? Math.ceil((n.m + 45) / 30) * 30 : 0); m + 30 <= fin && pk.length < 24; m += 30) pk.push({ v: hm(m), l: hl(m), lleno: lleno(f, hm(m), "pickup") });
       for (let m = Math.max(ini + 60, k === "hoy" ? Math.ceil((n.m + 90) / 30) * 30 : 0); m + 60 <= fin && dl.length < 12; m += 60) dl.push({ v: hm(m), l: `${hl(m)}–${hl(m + 60)}`, lleno: lleno(f, hm(m), "delivery") });

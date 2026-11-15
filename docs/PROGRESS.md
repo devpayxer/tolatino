@@ -2340,3 +2340,11 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   recorre los reportes (usa la cifra).
 - **Usuarios 360°:** PEDIDOS · CITAS · RANGO arriba (`cifras360`) y la pestaña **Dinero** (`dinero360`, solo tx:ver).
 - **Guardián `cifrasUsuarioDerivadas`** (al revés alreves9n 38/38). **e2e `usr9n9`**. Ayuda: admin-usuarios.md.
+
+## Fase 9 · 9n-10 — Días especiales y temporada en todos los calendarios (15 nov)
+- **Clase cazada:** el estado abierto/cerrado miraba feriados, vacaciones y temporada, pero los calendarios a futuro armaban el día con el horario de la
+  semana. Ahora `lib/dias-especiales.ts` (`diasEspeciales`, `horasDelDia`, `rangosDia`, `cerradoElDia`) y, en SQL, `negocio_dia_cerrado` (**0160**,
+  + índice de special_hours por negocio y fechas). Lo usan citas (temporada), reservaciones, pedidos programados de hoy, Noche, apartados, rentas,
+  mercado, planes, entrevistas y visitas.
+- **Guardián `calendarioConDiasEspeciales`** (al revés alreves9n 42/42; `diaEspecialActivo` apunta ahora a lib/dias-especiales.ts). cit3b §6a.
+- **neg9n8:** el CI falló porque la prueba buscaba `<button>` y los del sistema de diseño son `[role=button]`: arreglada + guardián `botonEsRole`.

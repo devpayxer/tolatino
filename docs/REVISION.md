@@ -4950,3 +4950,10 @@ Qué mirar:
   no existe en el código (plan fase 6 §6 #8: solo tarjeta) y sería dinero nuevo: no se inventó. **Pendiente de tu decisión:** ¿se abre el Wallet
   (saldo a favor del vecino, devoluciones y pagos a promotores)? Si sí, llega con su módulo y estas piezas se encienden.
 - **Las cifras de una cuenta de prueba cuentan en su 360°** (son suyas); Analítica las sigue dejando fuera.
+
+## Fase 9 · 9n-10 — Días especiales y temporada en todos los calendarios (15 nov)
+**Qué mirar (sandbox):** en el panel de un negocio, Horario › marca un feriado o «Abro por temporada» y abre su página: ese día ya no se ofrece en
+citas, reservaciones, Noche, apartados, rentas, mercado, planes, entrevistas ni visitas (antes solo «abierto/cerrado» lo respetaba).
+
+**Decisión tomada por defecto (AB):** lo que YA estaba agendado para un día que después se marca cerrado no se cancela solo (el negocio lo ve en su
+panel y decide); cancelar en automático tocaría dinero y avisos de clientes. Si quieres que se avise o se cancele solo, dímelo.

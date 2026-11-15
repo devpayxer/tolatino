@@ -1,4 +1,5 @@
 import "server-only";
+import { cerradoElDia, diasEspeciales } from "./dias-especiales";
 import { hoyEn } from "./fecha-local";
 import type { PoolClient } from "pg";
 import { db, tx } from "./db";
@@ -64,6 +65,7 @@ export async function opcionesPlan(negocio: string, svc: string): Promise<Opcion
   if (!it || !["mes", undefined].includes(it.a?.fr)) return null;
   const hoy = await hoyDe(db(), it.city);
   const H = (await db().query<{ weekday: number; open: boolean; ranges: [string, string][] }>(`select weekday, open, ranges from business_hours where business_id = $1 and module = ''`, [negocio])).rows;
+  const de = await diasEspeciales(db(), negocio, hoy, 60); // 9n-10 · la primera visita no cae en un feriado, vacaciones ni fuera de temporada
   const meses = Array.isArray(it.a?.vis) && it.a!.vis!.length ? it.a!.vis!.filter((m) => m >= 1 && m <= 12) : null;
   const dias: OpcionesPlan["dias"] = [];
   for (const dow of [1, 2, 3, 4, 5, 6]) {
@@ -73,7 +75,7 @@ export async function opcionesPlan(negocio: string, svc: string): Promise<Opcion
     if (fin && fin - m < 120 && fin > m) continue;
     // Las 3 primeras de ese día (desde mañana), como el N-ésimo del mes (si cae en el 5.º, no se ofrece).
     const fechas: string[] = [];
-    for (let i = 1; i < 60 && fechas.length < 3; i++) { const f = addD(hoy, i), d = s2d(f); if (d.getUTCDay() !== dow || d.getUTCDate() > 28) continue; if (meses && !meses.includes(d.getUTCMonth() + 1)) continue; fechas.push(f); }
+    for (let i = 1; i < 60 && fechas.length < 3; i++) { const f = addD(hoy, i), d = s2d(f); if (d.getUTCDay() !== dow || d.getUTCDate() > 28) continue; if (meses && !meses.includes(d.getUTCMonth() + 1)) continue; if (cerradoElDia(de, f)) continue; fechas.push(f); }
     if (fechas.length) dias.push({ dow, m, fechas });
   }
   return { dias, meses, precio: it.cents, tarjeta: !!(await cuentaDe(db(), negocio)) };

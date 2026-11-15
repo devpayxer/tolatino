@@ -1,4 +1,5 @@
 import "server-only";
+import { diasEspeciales, horasDelDia, type DiasEsp } from "./dias-especiales";
 import type { PoolClient } from "pg";
 import { db, tx } from "./db";
 import { foto } from "./directorio";
@@ -30,7 +31,7 @@ type Q = { query: PoolClient["query"] } | ReturnType<typeof db>;
 type Ctx = {
   id: string; name: string; tz: string; plan: string; phone: string | null; address: string | null; lat: number | null; lng: number | null;
   mods: string[]; off: Record<string, { reason?: string }>; hoy: string; dow: number; now: number; s: Ajustes;
-  horas: Record<number, [number, number][]>; cerradoHasta: string | null; cerradoHoy: boolean;
+  horas: Record<number, [number, number][]>; cerradoHasta: string | null; cerradoHoy: boolean; de: DiasEsp;
 };
 
 /* El negocio, sus ajustes (o los de fábrica) y su horario. */
@@ -51,13 +52,15 @@ async function contexto(c: Q, negocio: string): Promise<Ctx | null> {
   const h = await (c as ReturnType<typeof db>).query<{ weekday: number; open: boolean; ranges: [string, string][] }>(`select weekday, open, ranges from business_hours where business_id = $1 and module = ''`, [negocio]);
   const horas: Record<number, [number, number][]> = {};
   for (const d of h.rows) horas[d.weekday] = d.open ? d.ranges.map(([a, z]) => { const A = hm2m(a), Z = hm2m(z); return [A, Z <= A ? Z + 1440 : Z] as [number, number]; }) : [];
+  // 9n-10 · Días especiales y temporada (feriados, vacaciones, días con otras horas, fuera de temporada) para los días que se ofrecen.
+  const de = await diasEspeciales(c as ReturnType<typeof db>, negocio, b.hoy, 60);
   const x = b.s as Record<string, never> | null;
   const s: Ajustes = x ? {
     areas: x.areas ?? FABRICA.areas, join: x.join_tables ?? true, joinMax: x.join_max ?? 8, walk: x.walk_in ?? 0, dur: x.dur_min ?? 90, days: x.days ?? null,
     periods: x.periods ?? FABRICA.periods, auto: x.auto_confirm ?? false, hold: x.hold_min ?? 15, cxH: x.cancel_free_h ?? 2, minH: x.min_ahead_h ?? 1, maxD: x.max_days ?? 14, reply: x.reply_min ?? 10,
   } : FABRICA;
   return { id: b.id, name: b.name, tz: b.tz, plan: b.plan, phone: b.phone, address: b.address, lat: b.lat, lng: b.lng, mods: b.mods ?? [], off: b.off ?? {}, hoy: b.hoy, dow: b.dow,
-    now: hm2m(b.hm), s, horas, cerradoHasta: b.cerrado_hasta, cerradoHoy: b.cerrado_hoy };
+    now: hm2m(b.hm), s, horas, cerradoHasta: b.cerrado_hasta, cerradoHoy: b.cerrado_hoy, de };
 }
 
 const fecha = (hoy: string, i: number) => { const d = new Date(`${hoy}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + i); return d.toISOString().slice(0, 10); };
@@ -106,14 +109,17 @@ async function bloqueos(c: Q, x: Ctx, desde: string, hasta: string) {
   return r.rows;
 }
 
-type Dia = { i: number; ymd: string; dow: number; abierto: boolean };
+type Dia = { i: number; ymd: string; dow: number; abierto: boolean; hrs: [number, number][] };
 function dia(x: Ctx, i: number): Dia {
   const ymd = fecha(x.hoy, i), dow = dowDe(ymd);
   const cerradoTemp = !!x.cerradoHasta && ymd <= x.cerradoHasta;
-  const abierto = !(i === 0 && x.cerradoHoy) && !cerradoTemp && (x.s.days ? x.s.days.includes(dow) : true) && (x.horas[dow] ?? []).length > 0;
-  return { i, ymd, dow, abierto };
+  // 9n-10 · Las horas de ESE día: las propias de un día especial, ninguna si cierra (o está fuera de temporada), o las de la semana.
+  const esp = horasDelDia(x.de, ymd);
+  const hrs = esp === null ? (x.horas[dow] ?? []) : esp.map(([a, z]) => { const A = hm2m(a), Z = hm2m(z); return [A, Z <= A ? Z + 1440 : Z] as [number, number]; });
+  const abierto = !(i === 0 && x.cerradoHoy) && !cerradoTemp && (x.s.days ? x.s.days.includes(dow) : true) && hrs.length > 0;
+  return { i, ymd, dow, abierto, hrs };
 }
-const enHorario = (x: Ctx, d: Dia, h: number) => (x.horas[d.dow] ?? []).some(([a, z]) => h >= a && h + x.s.dur <= z);
+const enHorario = (x: Ctx, d: Dia, h: number) => d.hrs.some(([a, z]) => h >= a && h + x.s.dur <= z);
 const turnoDe = (x: Ctx, h: number) => Object.keys(TURNOS).find((k) => { const p = x.s.periods[k]; return p?.on && h >= p.f && h <= p.t; }) ?? "";
 
 /* ¿Hay mesa para p personas a las h (minutos) del día d? Devuelve el área (la pedida o la primera que sirva) o "". */

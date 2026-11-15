@@ -1,3 +1,4 @@
+import { diasEspeciales, horasDelDia } from "./dias-especiales";
 import { VENTAS_SQL, populares, type Ventas30 } from "./menu-ventas";
 import "server-only";
 import type { QueryResult, QueryResultRow } from "pg";
@@ -92,13 +93,15 @@ export async function base(c: Q, negocio: string) {
 }
 
 /* Rangos de hoy en minutos (el que pasa de medianoche termina después de 1440) y el de ayer que sigue abierto. */
-async function rangosHoy(c: Q, negocio: string, dow: number) {
+async function rangosHoy(c: Q, negocio: string, dow: number, ymd: string) {
   const r = await c.query<{ weekday: number; open: boolean; ranges: [string, string][] }>(
     `select weekday, open, ranges from business_hours where business_id = $1 and module = '' and weekday in ($2, ($2 + 6) % 7)`, [negocio, dow]);
   const hoy = r.rows.find((d) => d.weekday === dow), ayer = r.rows.find((d) => d.weekday === (dow + 6) % 7);
+  // 9n-10 · Hoy con sus días especiales y la temporada: un feriado o fuera de temporada no ofrece horas; un día con horas propias, esas.
+  const esp = horasDelDia(await diasEspeciales(c, negocio, ymd, 1), ymd);
   const R: [number, number][] = [];
   for (const [a, b] of ayer?.open ? ayer.ranges : []) { const A = hm2m(a), B = hm2m(b); if (B <= A && B > 0) R.push([0, B]); }
-  for (const [a, b] of hoy?.open ? hoy.ranges : []) { const A = hm2m(a), B = hm2m(b); R.push([A, B <= A ? B + 1440 : B]); }
+  for (const [a, b] of esp ?? (hoy?.open ? hoy.ranges : [])) { const A = hm2m(a), B = hm2m(b); R.push([A, B <= A ? B + 1440 : B]); }
   return R.sort((x, y) => x[0] - y[0]);
 }
 
@@ -235,7 +238,7 @@ export async function menuPublico(negocio: string, lang: Lang, userId?: string |
   const b = await base(db(), negocio);
   if (!b || b.cat !== "NEG-FOOD" || !b.mods.includes("menu") || b.off.menu) return null;
   await vencer({ negocio }); // lo que nadie contestó a tiempo devuelve su inventario antes de mostrar el menú
-  const [R, tope, F] = await Promise.all([rangosHoy(db(), negocio, b.dow), topeFree(db(), negocio, b.mes), filas(db(), negocio, b.tz, false, userId ?? null)]);
+  const [R, tope, F] = await Promise.all([rangosHoy(db(), negocio, b.dow, b.hoy), topeFree(db(), negocio, b.mes), filas(db(), negocio, b.tz, false, userId ?? null)]);
   const est = calcEstado(b, R, tope.usados, tope.cap, es);
   const m = armar(b, F, est, es);
   return {
@@ -300,7 +303,7 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
     const b = await base(c, p.negocio);
     if (!b || b.cat !== "NEG-FOOD" || !b.mods.includes("menu") || b.off.menu) { await c.query("rollback"); return no("Este negocio no toma pedidos en línea.", "This business does not take online orders."); }
     // Una conexión en transacción: las consultas van una tras otra (nunca en paralelo sobre el mismo cliente).
-    const R = await rangosHoy(c, b.id, b.dow), tope = await topeFree(c, b.id, b.mes), F = await filas(c, b.id, b.tz, true, userId);
+    const R = await rangosHoy(c, b.id, b.dow, b.hoy), tope = await topeFree(c, b.id, b.mes), F = await filas(c, b.id, b.tz, true, userId);
     const est = calcEstado(b, R, tope.usados, tope.cap, true);
     const modo = p.modo === "delivery" ? "delivery" : "pickup";
     if (est.canOrd && !est.modes.includes(modo)) { await c.query("rollback"); return modo === "delivery" ? no(`${b.name} no hace delivery ahora. Pide pickup.`, `${b.name} is not delivering now. Order pickup.`, { menu: true }) : no(`${b.name} no tiene pickup ahora.`, `${b.name} has no pickup now.`, { menu: true }); }

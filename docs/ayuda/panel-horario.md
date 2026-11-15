@@ -34,6 +34,9 @@ _Pantallas: Panel › Tu página › Horario (`/panel/{negocio}/pagina/hor`), te
 
 **¿Cuesta algo?** No. Feriados, vacaciones y temporada son para Free y Pro.
 
+## En todos los calendarios
+Los feriados que cierras, tus vacaciones, tus días con otras horas y «Abro por temporada» valen para **todo lo que la gente puede agendar o pedir a futuro**: citas, reservaciones, pedidos programados de hoy, mesas y lista de Noche, apartados, rentas, pedidos del mercado, la primera visita de un plan, entrevistas de trabajo y visitas de Bienes Raíces o del dealer. Un día cerrado no se ofrece; un día con otras horas ofrece esas horas; fuera de tu temporada no se ofrece ningún día. Las citas, reservaciones y pedidos que ya estaban hechos no se cancelan solos: los ves en tu panel y decides.
+
 ## English
 
 ### What it does
@@ -66,3 +69,6 @@ _Pantallas: Panel › Tu página › Horario (`/panel/{negocio}/pagina/hor`), te
 **Do clients with a booking that day find out?** Bookings you already had are not cancelled on their own: tell them or move them from Bookings.
 
 **Does it cost anything?** No. Holidays, vacations and seasons are for Free and Pro.
+
+### In every calendar
+Holidays you close, your vacation, your days with other hours and "Seasonal" apply to **everything people can book or order ahead**: appointments, reservations, today's scheduled orders, Night tables and list, holds, rentals, market orders, a plan's first visit, job interviews and Real Estate or dealer visits. A closed day is not offered; a day with other hours offers those hours; outside your season no day is offered. Bookings and orders already made are not cancelled on their own: you see them in your dashboard and decide.

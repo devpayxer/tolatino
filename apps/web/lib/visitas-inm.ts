@@ -128,7 +128,7 @@ async function horasDe(c: Q, x: Ctx, it: ItemVis, _quien: string | null): Promis
   const r = await c.query<{ dia: string; min: number }>(
     `select d::date::text as dia, m::int as min
        from generate_series($2::date, $2::date + 13, interval '1 day') d
-       join business_hours h on h.business_id = $1 and h.module = '' and h.weekday = extract(dow from d)::int and h.open
+       join business_hours h on h.business_id = $1 and h.module = '' and h.weekday = extract(dow from d)::int and h.open and not negocio_dia_cerrado($1, d::date)
        cross join jsonb_array_elements(h.ranges) rg
        cross join lateral generate_series(split_part(rg->>0, ':', 1)::int * 60 + split_part(rg->>0, ':', 2)::int,
                    (case when rg->>1 in ('00:00', '24:00') then 1440 else split_part(rg->>1, ':', 1)::int * 60 + split_part(rg->>1, ':', 2)::int end) - 60, 60) m
@@ -144,7 +144,7 @@ async function plazo(c: Q, negocio: string, tz: string, ini: string): Promise<{ 
        select (d::date + (rg->>0)::time) at time zone $2 as a,
               (d::date + case when rg->>1 in ('00:00', '24:00') then interval '24 hours' else (rg->>1)::time::interval end) at time zone $2 as z
          from generate_series((now() at time zone $2)::date, (now() at time zone $2)::date + 8, interval '1 day') d
-         join business_hours h on h.business_id = $1 and h.module = '' and h.weekday = extract(dow from d)::int and h.open
+         join business_hours h on h.business_id = $1 and h.module = '' and h.weekday = extract(dow from d)::int and h.open and not negocio_dia_cerrado($1, d::date)
          cross join jsonb_array_elements(h.ranges) rg),
      v as (select greatest(a, now()) as a, z from r where z > now()),
      s as (select z, sum(extract(epoch from z - a)) over (order by a) as cum from v),

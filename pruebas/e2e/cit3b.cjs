@@ -127,6 +127,12 @@ const limpiar = () => {
   await bk.getByText('Te avisamos en Avisos si se libera una hora').click(); await bk.getByText('Avísame si se libera una hora').waitFor();
   ok(sql(`select count(*) from appointment_alerts where user_id = ${MARISOL} and removed_at is null`) === '0', 'Avísame: se puede quitar');
   sql(`delete from special_hours where business_id = '${BIZ}' and label->>'es' = 'prueba'`);
+  // 6a. 9n-10 · «Abro por temporada»: la temporada empieza en 20 días → ninguno de los 14 días tiene horas (antes el calendario los ofrecía).
+  sql(`insert into special_hours (business_id, kind, date_from, date_to, closed, label) select '${BIZ}', 'season', (now() at time zone 'America/New_York')::date + 20, (now() at time zone 'America/New_York')::date + 40, false, '{"es":"prueba","en":"test"}'::jsonb`);
+  ok(sql(`select negocio_dia_cerrado('${BIZ}', (now() at time zone 'America/New_York')::date + 1)::text || '|' || negocio_dia_cerrado('${BIZ}', (now() at time zone 'America/New_York')::date + 25)::text`) === 'true|false', 'negocio_dia_cerrado: fuera de temporada cerrado, dentro no (0160)');
+  await m.goto(B + `/n/${BIZ}/cita?s=${sql(`select ${SV('Fade')}`)}&con=${sql(`select ${LUIS}`)}`); await bk.getByText(/No quedan horas el/).waitFor();
+  ok(await bk.getByRole('radio', { name: /^(LUN|MAR|MIÉ|JUE|VIE|SÁB|DOM) / }).first().getAttribute('aria-disabled') === 'true', 'fuera de la temporada: ningún día se puede elegir');
+  sql(`delete from special_hours where business_id = '${BIZ}' and label->>'es' = 'prueba'`);
   // 6b. Hoy cerrado (si hoy no tiene horas) → abre en el primer día con horas
   await m.goto(B + `/n/${BIZ}/cita?s=${sql(`select ${SV('Fade')}`)}&con=${sql(`select ${LUIS}`)}`); await bk.getByText('DÍA', { exact: true }).waitFor(); await m.waitForTimeout(300); await m.waitForFunction(() => !document.querySelector('[aria-busy="true"]'));
   ok(await bk.getByRole('radio').filter({ hasText: '' }).count() > 0 && !(await vis(bk.getByText(/No quedan horas el/))), 'abre en un día con horas libres');

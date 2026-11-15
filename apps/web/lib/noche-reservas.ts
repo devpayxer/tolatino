@@ -1,4 +1,5 @@
 import "server-only";
+import { diasEspeciales, rangosDia } from "./dias-especiales";
 import { cfgSql, valor } from "./config";
 import { randomInt } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
@@ -63,11 +64,12 @@ async function noches(c: Q, x: Ctx, s: Svc): Promise<NocheOpcion[]> {
   const h = await herramientaNoche(x.id, c);
   if (!h) return [];
   const H = (await c.query<{ weekday: number; open: boolean; ranges: [string, string][] }>(`select weekday, open, ranges from business_hours where business_id = $1 and coalesce(module, '') = ''`, [x.id])).rows;
+  const de = await diasEspeciales(c, x.id, x.hoy, 7); // 9n-10 · feriados, días propios y temporada
   const usados = (await c.query<{ d: string; n: number; p: number }>(
     `select night_date::text as d, count(*) filter (where details->>'item' = $2)::int as n, coalesce(sum(party_size) filter (where details->>'k' = 'lista'), 0)::int as p
        from operations where business_id = $1 and kind = 'night' and status = any($3::text[]) and night_date between $4::date and $4::date + 6 group by night_date`, [x.id, s.id, VIVAS, x.hoy])).rows;
   return h.noches.map((n, i) => {
-    const r = H.find((z) => z.weekday === n.dow), rg = r?.open && r.ranges?.length ? r.ranges : null;
+    const r0 = rangosDia(H, de, n.fecha), rg = r0.length ? r0 : null;
     const vale = !s.dows.length || s.dows.includes(n.dow);
     if (!rg || !vale || (s.k === "lista" && !h.lista)) return { fecha: n.fecha, dow: n.dow, abre: false, slots: [], cupo: null, cover: n.cover, after: null, llena: false, cierra: null };
     const abre = Math.max(0, hm(rg[0]![0]) - 720), ult = rg[rg.length - 1]!, cierra = hm(ult[1]) <= hm(ult[0]) ? hm(ult[1]) + 720 : hm(ult[1]) - 720;

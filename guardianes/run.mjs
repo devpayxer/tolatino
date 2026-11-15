@@ -9374,6 +9374,22 @@ const guardianes = {
     }
   },
 
+  /* 9n-10 · calendarioConDiasEspeciales: un calendario que arma días u horas a futuro con el horario de la semana (business_hours) mira también los
+     días especiales y la temporada (lib/dias-especiales.ts, o negocio_dia_cerrado / negocio_abierto en SQL): si no, ofrece Navidad, las vacaciones
+     o un día fuera de temporada (LAUNCH «La temporada en las citas»: reservaciones, Noche, apartados, rentas, mercado, planes y entrevistas
+     tampoco los miraban). Los que solo MUESTRAN el horario van en la lista. Al revés (alreves9n). */
+  calendarioConDiasEspeciales() {
+    const G = "calendarioConDiasEspeciales";
+    const MUESTRA = new Set(["compa/contexto-negocio.ts", "noche.ts", "ficha.ts", "trans-publico.ts", "equipo-invitacion.ts", "admin-negocios.ts", "directorio.ts", "panel.ts", "categoria.ts", "noche-publico.ts"].map((x) => `apps/web/lib/${x}`));
+    for (const f of archivos.filter((x) => x.startsWith("apps/web/lib/") && x.endsWith(".ts") && !MUESTRA.has(x))) {
+      const t = sinComent(f);
+      const m = /(from|join) business_hours\b/.exec(t);
+      if (m && !/diasEspeciales\(|negocio_dia_cerrado\(|negocio_abierto\(/.test(t)) falla(G, f, t.slice(0, m.index).split("\n").length, "arma días con el horario de la semana sin los días especiales ni la temporada (lib/dias-especiales.ts o negocio_dia_cerrado)");
+    }
+    const C = "apps/web/lib/citas.ts";
+    if (!/if \(x\.temporadas\.length && !x\.temporadas\.some\(\(t\) => t\.desde <= ymd && ymd <= t\.hasta\)\) return \[\];/.test(sinComent(C))) falla(G, C, 0, "el calendario de citas ofrece días fuera de la temporada");
+  },
+
   /* 9n-8 · botonEsRole: los botones del sistema de diseño (Button, acciones de AdminRow, chips) son [role=button], no <button>: una prueba que busca
      `locator('button')` a secas nunca los encuentra (neg9n8 se quedó sin «Fusionar» en el CI, 15 nov). Se busca 'button, [role=button]' o por
      rol/texto. Al revés (alreves9n). */

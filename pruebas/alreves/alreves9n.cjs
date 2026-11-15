@@ -35,7 +35,7 @@ const casos = [
   // … el texto libre deja pasar un número
   ['sinTelefonoAlRepartidor', RO, '(s.match(/\\d/g) ?? []).length >= 7', '(s.match(/\\d/g) ?? []).length >= 70'],
   // diaEspecialActivo: las citas leen los días quitados
-  ['diaEspecialActivo', CI, "from special_hours where business_id = $1 and status = 'active' and kind <> 'season'", 'from special_hours where business_id = $1'],
+  ['diaEspecialActivo', 'apps/web/lib/dias-especiales.ts', "where business_id = $1 and status = 'active' and (kind = 'season'", "where business_id = $1 and (kind = 'season'"],
   // … el estado abierto/cerrado de la base ya no mira la temporada
   ['diaEspecialActivo', M, "select bool_or(t::date between s.date_from and s.date_to) as dentro from special_hours s where s.business_id = bid and s.status = 'active' and s.kind = 'season'",
     'select true as dentro'],
@@ -74,6 +74,9 @@ const casos = [
   ['cifrasUsuarioDerivadas', 'apps/web/lib/admin-usuarios.ts', 'w.push("exists (select 1 from user_stats_cache k2 where k2.user_id = u.id and k2.reportes > 0)");',
     'w.push("exists (select 1 from content_reports x where x.target_kind = \'user\' and x.target_id = u.id::text)");'],
   ['cifrasUsuarioDerivadas', 'apps/web/app/admin/usuarios/[id]/page.tsx', 'const din = !s.puede("tx", "ver") ? undefined : tab === "din" ? await U.dinero360(u.id) : null;', 'const din = tab === "din" ? await U.dinero360(u.id) : null;'],
+  // calendarioConDiasEspeciales (9n-10): reservaciones vuelve a ignorar los días especiales; citas, la temporada
+  ['calendarioConDiasEspeciales', 'apps/web/lib/reservas.ts', '  const de = await diasEspeciales(c as ReturnType<typeof db>, negocio, b.hoy, 60);', '  const de = { esp: [], temporadas: [], cerradoHasta: null };'],
+  ['calendarioConDiasEspeciales', 'apps/web/lib/citas.ts', '  if (x.temporadas.length && !x.temporadas.some((t) => t.desde <= ymd && ymd <= t.hasta)) return [];\n', ''],
   // disputaConEvidencia: la respuesta deja de mandar los archivos
   ['disputaConEvidencia', DI, 'archivos: { recibo: archivos.recibo, conversacion: archivos.conversacion, entrega: archivos.entrega, otro: archivos.foto_entrega } });', 'texto: "" });'],
 ];
@@ -82,6 +85,8 @@ const crear = [
   ['diaEspecialActivo', 'packages/db/migrations/0199_zz9n.sql', 'begin;\ndelete from special_hours where date_to < current_date;\ncommit;\n'],
   // sinTelefonoAlRepartidor: una pantalla nueva del Repartidor con el teléfono del cliente
   ['sinTelefonoAlRepartidor', 'apps/web/app/repartidor/zz9n.tsx', 'export const x = (o: { telCliente: string }) => o.telCliente;\n'],
+  // calendarioConDiasEspeciales (9n-10): un calendario nuevo con el horario de la semana y nada más
+  ['calendarioConDiasEspeciales', 'apps/web/lib/zz9n10.ts', 'export const q = "select weekday, open, ranges from business_hours where business_id = $1";\n'],
   // botonEsRole (9n-8): una prueba nueva que busca <button> a secas
   ['botonEsRole', 'pruebas/e2e/zz9n8.cjs', "module.exports = (p) => p.locator('div').filter({ has: p.locator('button') });\n"],
   // cifrasUsuarioDerivadas (9n-9): una acción nueva que escribe la cifra a mano

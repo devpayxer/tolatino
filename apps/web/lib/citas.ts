@@ -1,4 +1,5 @@
 import "server-only";
+import { diasEspeciales } from "./dias-especiales";
 import { estadoEstimado, type EstadoEstimado } from "./estimados";
 import type { PoolClient } from "pg";
 import { db } from "./db";
@@ -52,7 +53,7 @@ export type CitasPublica = {
 export type Ctx = {
   id: string; name: string; tz: string; city: string; plan: string; address: string | null; phone: string | null; foto: string | null; mods: string[];
   off: Record<string, { reason?: string }>; hoy: string; now: number; model: CitasPublica["model"]; mes: string;
-  horas: Record<number, [number, number][]>; especiales: { desde: string; hasta: string; closed: boolean; ranges: [number, number][] }[];
+  horas: Record<number, [number, number][]>; especiales: { desde: string; hasta: string; closed: boolean; ranges: [number, number][] }[]; temporadas: { desde: string; hasta: string }[];
   cerradoHasta: string | null; cerradoHoy: boolean; pol: Politica; cuenta: string | null; barberia: boolean;
 };
 export type Persona = PersonaPub & { recibe: boolean; mismo: boolean; wk: ([number, number] | null)[] | null; cuenta: string | null }; // cuenta: a dónde va el depósito
@@ -71,8 +72,8 @@ export async function contexto(c: Q, negocio: string, cats: string[] = ["NEG-BEL
   if (!b) return null;
   // Una tras otra: `c` puede ser el cliente de la transacción de enviarCita.
   const h = await c.query<{ weekday: number; open: boolean; ranges: [string, string][] }>(`select weekday, open, ranges from business_hours where business_id = $1 and module = ''`, [negocio]);
-  const e = await c.query<{ desde: string; hasta: string; closed: boolean; ranges: [string, string][] }>(
-    `select date_from::text as desde, date_to::text as hasta, closed, ranges from special_hours where business_id = $1 and status = 'active' and kind <> 'season' and date_to >= $2::date and date_from <= $2::date + ${DIAS}`, [negocio, b.hoy]);
+  // 9n-10 · Días especiales Y la temporada («Abro por temporada»: fuera de ella no se ofrece ningún día), de lib/dias-especiales.ts.
+  const e = await diasEspeciales(c, negocio, b.hoy, DIAS);
   const rng = (L: [string, string][]) => L.map(([a, z]) => { const A = hm2m(a), Z = hm2m(z); return [A, Z <= A ? Math.min(Z + 1440, 1440) : Z] as [number, number]; });
   const horas: Ctx["horas"] = {};
   for (const d of h.rows) horas[d.weekday] = d.open ? rng(d.ranges) : [];
@@ -82,7 +83,7 @@ export async function contexto(c: Q, negocio: string, cats: string[] = ["NEG-BEL
   const modo = pasarela.modo(), cuenta = b.acct && modo !== "apagado" && b.acct.startsWith("acct_sim_") === (modo === "simulador") ? b.acct : null;
   return {
     id: b.id, name: b.name, tz: b.tz, city: b.city, plan: b.plan, address: b.address, phone: b.phone, foto: b.foto, mods: b.mods ?? [], off: b.off ?? {}, hoy: b.hoy, now: hm2m(b.hm), mes: b.mes,
-    model: b.model ?? "emp", horas, especiales: e.rows.map((x) => ({ desde: x.desde, hasta: x.hasta, closed: x.closed, ranges: rng(x.ranges ?? []) })),
+    model: b.model ?? "emp", horas, especiales: e.esp.map((x) => ({ desde: x.desde, hasta: x.hasta, closed: x.closed, ranges: rng(x.ranges ?? []) })), temporadas: e.temporadas,
     cerradoHasta: b.cerrado_hasta, cerradoHoy: b.cerrado_hoy, pol, cuenta, barberia: (b.subs ?? []).includes("NEG-BELL-01"),
   };
 }
@@ -214,6 +215,7 @@ function rangos(x: Ctx, p: Persona, i: number): [number, number][] {
   const ymd = fecha(x.hoy, i), dow = dowDe(ymd);
   if (i === 0 && x.cerradoHoy) return [];
   if (x.cerradoHasta && ymd <= x.cerradoHasta) return [];
+  if (x.temporadas.length && !x.temporadas.some((t) => t.desde <= ymd && ymd <= t.hasta)) return [];
   const esp = x.especiales.find((e) => e.desde <= ymd && ymd <= e.hasta);
   if (esp?.closed) return [];
   if (esp && esp.ranges.length) return esp.ranges;

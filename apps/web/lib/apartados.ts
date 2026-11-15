@@ -1,4 +1,5 @@
 import "server-only";
+import { diasEspeciales, rangosDia } from "./dias-especiales";
 import type { PoolClient } from "pg";
 import { cfgSql } from "./config";
 import { db, tx } from "./db";
@@ -70,9 +71,10 @@ export async function horasApartado(negocio: string): Promise<number> {
 async function diasDe(negocio: string, city: string): Promise<DiaApartar[]> {
   const now = (await db().query<{ h: string; m: number }>(`select (now() at time zone timezone)::date::text as h, extract(hour from now() at time zone timezone)::int * 60 + extract(minute from now() at time zone timezone)::int as m from cities where id = $1`, [city])).rows[0]!;
   const H = (await db().query<{ weekday: number; open: boolean; ranges: [string, string][] }>(`select weekday, open, ranges from business_hours where business_id = $1 and module = ''`, [negocio])).rows;
+  const de = await diasEspeciales(db(), negocio, now.h, 3); // 9n-10 · feriados, días propios y temporada
   return ([0, 1, 2] as const).map((i) => {
-    const f = addD(now.h, i), h = H.find((x) => x.weekday === s2d(f).getUTCDay()), horas: number[] = [];
-    if (h?.open && h.ranges?.length) for (const [a, z] of h.ranges) {
+    const f = addD(now.h, i), horas: number[] = [];
+    for (const [a, z] of rangosDia(H, de, f)) {
       const ini = mins(a), fin = z === "00:00" || z === "24:00" ? 1440 : mins(z);
       let m = i === 0 ? Math.max(ini + 60, Math.ceil((now.m + 60) / 30) * 30) : ini + 60;
       for (; m + 30 <= fin && horas.length < 16; m += 60) horas.push(m);

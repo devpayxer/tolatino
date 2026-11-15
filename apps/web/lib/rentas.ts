@@ -1,4 +1,5 @@
 import "server-only";
+import { diasEspeciales, rangosDia } from "./dias-especiales";
 import type { PoolClient } from "pg";
 import { db, tx } from "./db";
 import { comision } from "./cobros";
@@ -63,10 +64,11 @@ export async function opcionesRenta(negocio: string, itemId: string): Promise<Op
   const b = (await db().query<{ nombre: string; dir: string; city: string }>(`select name as nombre, coalesce(address, '') as dir, city_id as city from businesses where id = $1`, [negocio])).rows[0]!;
   const H = (await db().query<{ weekday: number; open: boolean; ranges: [string, string][] }>(`select weekday, open, ranges from business_hours where business_id = $1 and module = ''`, [negocio])).rows;
   const now = await ahoraDe(b.city), dias: DiaRecoger[] = [];
+  const de = await diasEspeciales(db(), negocio, now.h, 8); // 9n-10 · feriados, días propios y temporada
   for (let i = 0; i < 8 && dias.length < 3; i++) {
-    const f = addD(now.h, i), dow = s2d(f).getUTCDay(), h = H.find((x) => x.weekday === dow);
-    if (!h?.open || !h.ranges?.length) continue;
-    const a = h.ranges[0]![0], z = h.ranges[h.ranges.length - 1]![1], h24 = a === "00:00" && (z === "24:00" || z === "23:59" || z === "00:00");
+    const f = addD(now.h, i), dow = s2d(f).getUTCDay(), rg = rangosDia(H, de, f);
+    if (!rg.length) continue;
+    const a = rg[0]![0], z = rg[rg.length - 1]![1], h24 = a === "00:00" && (z === "24:00" || z === "23:59" || z === "00:00");
     if (i === 0 && !h24 && now.m > mins(z === "00:00" ? "24:00" : z) - 30) continue; // hoy ya cierra
     const k: DiaRecoger["k"] = i === 0 ? "hoy" : i === 1 ? "man" : "dia";
     // Como el diseño: hoy, mañana y el sábado; si alguno no abre, el siguiente día que abre.
