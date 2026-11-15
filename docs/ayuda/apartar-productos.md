@@ -53,6 +53,8 @@ en la caja) o *Envío a tu casa* (llega en los días que dice la tienda, con el 
 | Ya tienes 3 apartados abiertos en esa tienda | No deja abrir otro hasta cerrar alguno. |
 | Gomas | Filtra por la medida de tu carro (si la guardaste en Tu vehículo), todas las medidas, nuevas o usadas. El precio es por goma instalada. |
 
+**Los plazos de esta página** (las 48 horas que se guarda un apartado en los talleres y los negocios de hogar) son los de hoy: las Tiendas eligen sus horas en su herramienta; las de los talleres y el hogar las fija To'Latino en su Configuración, y la pantalla siempre dice las que valen en ese momento.
+
 ## FAQ
 - **¿Me cobran algo?** No. Pagas en la caja lo mismo que ves.
 - **¿Hasta cuándo me lo guardan?** Las horas que dice la tienda (24, 48 o 72) desde la hora que elegiste para pasar. Lo ves en
@@ -74,3 +76,5 @@ you do not come in time, it goes back on the shelf and nothing is charged.
 When the store marks it **Shipped** you are charged for what actually ships (never more than the hold); you see the tracking
 link if there is one, then **Delivered**. If the store does not have it, you cancel before it ships, or it is not shipped within
 6 days, the hold is released.
+
+**The time limits on this page** (the 48 hours of auto shops and home businesses) are today's: stores pick their own hours in their tool; for auto shops and home businesses To'Latino sets them in its Configuration, and the screen always shows the ones in force.

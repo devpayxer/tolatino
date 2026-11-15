@@ -92,7 +92,9 @@ export type ClaveConfig =
   // 9n · Colas: el «tomado» que vence y el plazo de cada cola (0144; Configuración › Colas)
   | "cola_tomado_min" | "cola_sla_sello" | "cola_sla_nuevo" | "cola_sla_lic" | "cola_sla_medios" | "cola_sla_cambio" | "cola_sla_rep" | "cola_sla_chat" | "cola_sla_disputa"
   | "cola_sla_sop" | "cola_sla_renta" | "cola_sla_mesa" | "cola_sla_noid" | "cola_sla_cuidado" | "cola_sla_salir" | "cola_sla_grupo" | "cola_sla_plantones" | "cola_sla_estafa"
-  | "cola_sla_vivienda" | "cola_sla_repusr" | "cola_sla_apel" | "cola_sla_evtcx" | "cola_sla_evtpago" | "cola_sla_rec" | "cola_sla_entrega";
+  | "cola_sla_vivienda" | "cola_sla_repusr" | "cola_sla_apel" | "cola_sla_evtcx" | "cola_sla_evtpago" | "cola_sla_rec" | "cola_sla_entrega"
+  // 9n-6 · Hogar y Auto: pre-estimado, presupuesto, emergencia y apartado (0150; Configuración › Hogar y Auto) y el techo de Free (Configuración › Dinero)
+  | "sol_pre_h" | "sol_pq_h" | "sol_em_min" | "apartado_h" | "free_ops_cap";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;
@@ -124,7 +126,7 @@ export async function valores<K extends ClaveConfig>(...ks: K[]): Promise<Record
 export const cfgSql = (k: ClaveConfig) => `cfg_int('${k}')`;
 
 /* ── Configuración (Super Admin › Sistema › Configuración) ── */
-export type Seccion = "comunidad" | "gamificacion" | "salud_pro" | "noche" | "edu" | "fe_inm_autos" | "eventos" | "compa" | "soporte" | "apps" | "retencion" | "crecimiento" | "dinero" | "ciudades" | "despliegues" | "avisos" | "repartidor" | "colas";
+export type Seccion = "comunidad" | "gamificacion" | "salud_pro" | "hogar_auto" | "noche" | "edu" | "fe_inm_autos" | "eventos" | "compa" | "soporte" | "apps" | "retencion" | "crecimiento" | "dinero" | "ciudades" | "despliegues" | "avisos" | "repartidor" | "colas";
 
 export type FilaConfig = {
   key: ClaveConfig; seccion: Seccion; label: Bi; help: Bi | null; unidad: Bi; min: number; max: number; def: number; v: number; cambiado: boolean;

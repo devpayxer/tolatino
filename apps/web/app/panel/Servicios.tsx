@@ -94,7 +94,7 @@ export function serviciosBloques(c: Ctx): Sec {
     const G = v === "ext" ? L : L.filter((x) => x.sec === g.id);
     out.push({ type: "rows", k: v === "ext" ? g.name.es : g.name.es.toUpperCase(), cols: c.desk && c.w >= 1100 && !c.ruta.det ? "repeat(2,minmax(0,1fr))" : undefined, items: G.map((s, j) => fila(c, X, s, j, G.length)) });
   }
-  if (!c.d.pro) out.push({ type: "note", tone: "warn", t: E2("Con Free se ven 5 en la página y hasta 10 pedidos o citas al mes.", "On Free, 5 show on the page and up to 10 online orders or bookings a month."), ...ctaPro(c, "Pro") });
+  if (!c.d.pro) out.push({ type: "note", tone: "warn", t: E2(`Con Free se ven 5 en la página y hasta ${c.d.tope} pedidos o citas al mes.`, `On Free, 5 show on the page and up to ${c.d.tope} online orders or bookings a month.`), ...ctaPro(c, "Pro") });
   return { blocks: out, ed: null };
 }
 function fila(c: Ctx, X: SvcPanel, s: Servicio, j: number, n: number): Fila {

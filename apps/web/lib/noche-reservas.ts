@@ -140,7 +140,7 @@ export async function reservarNoche(userId: string, negocio: string, f: NocheIn,
     }
     const pro = x.plan === "pro";
     if (!pro) {
-      const r = (await c.query<{ cap: number; usados: number }>(`select coalesce((select (value #>> '{}')::int from platform_config where key = 'free_ops_cap'), 10) as cap, (select count(*)::int from operations where business_id = $1 and kind <> 'table' and free_quota_month = $2) as usados`, [x.id, x.mes])).rows[0];
+      const r = (await c.query<{ cap: number; usados: number }>(`select cfg_int('free_ops_cap') as cap, (select count(*)::int from operations where business_id = $1 and kind <> 'table' and free_quota_month = $2) as usados`, [x.id, x.mes])).rows[0];
       if (r && r.usados >= r.cap) { await c.query("rollback"); return no(`${x.name} no recibe más listas ni mesas en línea este mes. Llama al local.`, `${x.name} takes no more online lists or tables this month. Call the venue.`); }
     }
     // Mesa: el local responde en reply_min, y nunca después de 15 min antes de la llegada.

@@ -26,6 +26,8 @@ cuentas qué pasa, y el negocio te responde con un **rango** antes de que reserv
 | El servicio tiene precio cerrado | No hay pre-estimado: se reserva directo. |
 | El negocio pone un rango muy amplio | Si «hasta» pasa de 4 veces «desde», le pedimos usar «Hay que verlo». |
 
+**Los plazos de esta página** (cuántas horas tiene el negocio para responder) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## Preguntas frecuentes
 **¿Me cobran por pedirlo?** No. **¿El rango es el precio?** No: el precio real va en el estimado, después de verlo, y nada
 se hace ni se cobra sin tu OK. **¿Puedo poner mi teléfono en la nota?** No; el negocio te escribe por Mensajes.
@@ -36,3 +38,5 @@ se hace ni se cobra sin tu OK. **¿Puedo poner mi teléfono en la nota?** No; el
 For services without a fixed price you send photos and describe the problem; the business replies within 24 h with a
 **range**, "needs an inspection" or "we don't do it". The range is valid 7 days; "Book with this pre-estimate" carries
 your note and photos into the booking, and the estimate later tells you if it is within the range. Free, no commitment.
+
+**The time limits on this page** (hours the business has to reply) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.

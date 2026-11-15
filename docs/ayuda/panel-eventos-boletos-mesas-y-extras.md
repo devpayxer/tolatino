@@ -24,6 +24,8 @@ _Pantallas: **Panel › Eventos › tu evento** (`/panel/{negocio}/eventos?det=e
 | Quieres pasar de boletos a gratis con boletos vendidos | No se puede: para cancelar con devolución, usa Cancelar (devuelve todo a cada comprador). |
 | Un cambio de boletos en un evento publicado (organizador sin verificar) | Vuelve a revisión; la versión anterior sigue a la venta hasta que To'Latino decide. |
 
+**Los plazos de esta página** (el día de pago: el martes después de cada fecha) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## Preguntas frecuentes
 - **¿Cuándo me pagan?** El cobro queda en To'Latino y se transfiere a tu cuenta el martes después del evento, menos la comisión y los
   descuentos (así, si se cancela, siempre se devuelve todo). La transferencia sale el martes después del evento (ver `panel-eventos-cobros.md`).
@@ -42,3 +44,5 @@ list shows a sales bar.
 Free plan → the event shows but tickets are not sold (Pro). Payouts off → "Not on sale". Quantity cannot go below what is sold or held. Removing
 a sold ticket stops selling it; sold tickets stay valid. Payout: Tuesday after the event, net of fees and discounts. No door
 sales.
+
+**The time limits on this page** (the payout day: the Tuesday after each date) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.

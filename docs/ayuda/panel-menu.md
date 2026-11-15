@@ -37,6 +37,8 @@ El dueño (o quien tenga acceso a «Lo que vendes») arma su carta:
 
 Cada cambio queda en la auditoría.
 
+**El techo de Free** (los 10 pedidos, citas o solicitudes en línea al mes) es el de hoy: To'Latino lo fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## Preguntas frecuentes
 **¿Cambiar un precio cambia los pedidos que ya tengo?** No. Cada pedido guarda el precio con el que se hizo.
 
@@ -56,3 +58,5 @@ category, price, tax (6% prepared food or exempt), options, availability, stock,
 allergens, extra kitchen time and "Pin to Popular". Nothing is deleted; past orders keep their copy; To'Latino can
 hide an item or pause the Menu or online orders with a reason the owner sees. The menu tab on the business page and
 ordering are described in pedir-comida.md. New orders show in Today › Awaiting your reply (accept or decline them there) and decrease daily counts or stock when sent.
+
+**The Free cap** (10 online orders, bookings or requests a month) is today's: To'Latino sets it in its Configuration and the screen always shows the one in force.

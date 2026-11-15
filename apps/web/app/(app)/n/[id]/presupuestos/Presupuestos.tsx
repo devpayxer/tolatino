@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, type ComponentType } from "react";
 import type { OficiosPublico } from "@/lib/oficios-publico";
 import type { CandPq } from "@/lib/solicitudes";
+import { horasTxt } from "@/lib/plazo-txt";
 import { subirFoto } from "@/lib/subir-foto";
 import { HojaCasa, casaMeta, compatCasa, useOficio } from "../Oficios";
 import { pedirPresupuestos } from "./acciones";
@@ -20,7 +21,7 @@ const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const dinero = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
 const AREAS: [string, string, string][] = [["cocina", "Cocina", "Kitchen"], ["bano", "Baño", "Bathroom"], ["sotano", "Sótano", "Basement"], ["techo", "Techo", "Roof"], ["afuera", "Afuera", "Outside"], ["toda", "Toda la casa", "Whole house"]];
 
-export function Presupuestos({ op, svcId, cands, es, yo }: { op: OficiosPublico; svcId: string; cands: CandPq[]; es: boolean; yo: boolean }) {
+export function Presupuestos({ op, svcId, cands, es, yo, plazoH }: { op: OficiosPublico; svcId: string; cands: CandPq[]; es: boolean; yo: boolean; plazoH: number }) {
   const E2 = (a: string, b: string) => (es ? a : b), router = useRouter();
   const v = useOficio(op, es, yo)!;
   const s = op.servicios.find((x) => x.id === svcId)!, nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
@@ -48,7 +49,7 @@ export function Presupuestos({ op, svcId, cands, es, yo }: { op: OficiosPublico;
   };
   const n = sel.length;
   const como = [E2(`Mandas la misma solicitud a ${n || "hasta 3"} ${n === 1 ? "negocio" : "negocios"}.`, `You send the same request to ${n || "up to 3"} ${n === 1 ? "business" : "businesses"}.`),
-    E2("Cada uno responde aquí con un rango y lo que cobra por la visita, en 48 horas.", "Each replies here with a range and what the visit costs, within 48 hours."),
+    E2(`Cada uno responde aquí con un rango y lo que cobra por la visita, en ${horasTxt(plazoH, true)}.`, `Each replies here with a range and what the visit costs, within ${horasTxt(plazoH, false)}.`),
     E2("Comparas y reservas la visita de uno. Los otros se cierran solos; no se cobra nada.", "Compare and book one visit. The others close on their own; nothing is charged.")];
   const cuerpo = (
     <div className="flex flex-col gap-3">

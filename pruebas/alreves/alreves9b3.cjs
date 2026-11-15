@@ -85,6 +85,8 @@ const casos = [
   ['almuerzoATodaHora', 'pruebas/e2e/vec9m.cjs', "sql(`update items set avail = 'siempre' where", "sql(`update items set avail = 'own' where"],
   // plazoAbiertoSeLee: Inscribirme vuelve a decir «48 horas» en vez del plazo de Configuración
   ['plazoAbiertoSeLee', 'apps/web/app/(app)/n/[id]/inscribirme/Inscribirme.tsx', 'te lo guardan ${b.plazos.oferta} horas.`', 'te lo guardan 48 horas.`'],
+  // … y el dinero del evento vuelve a decir «el martes» en vez del día de pago de Configuración (evt_pago_dia, 9n-6)
+  ['plazoAbiertoSeLee', 'apps/web/app/panel/EventosCambios.tsx', 'Te llega a tu banco ${diaSemanaTxt(L.pagoDia, true)} después de cada fecha', 'Te llega a tu banco el martes después de cada fecha'],
   // purgaPorRazon: la purga de Salud vuelve a borrar también lo de los niños y la casa
   ['purgaPorRazon', 'apps/web/lib/citas-flujo.ts', "        and p.reason not in ('nino', 'fe', 'casa') -- ", "        and true -- "],
   // telefonoAlAzarRespetaFijos: telLibre vuelve a sacar al azar un número sin saltar los que otra prueba usa por su número (Rita de sis9j)

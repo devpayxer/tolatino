@@ -7,6 +7,7 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition, type ComponentType } from "react";
 import type { FilaLiqAdm, LiqAdmin } from "@/lib/evt-liquidacion";
+import { diaSemanaTxt } from "@/lib/plazo-txt";
 import { liqCsv, liqRetener, liqSoltar } from "./acciones-eventos";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
@@ -23,7 +24,7 @@ export function Liquidaciones({ d, st, q, puede }: { d: LiqAdmin; st: string | n
   const [qq, setQ] = useState(q), [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast(), [pend, start] = useTransition();
   const ir = (p: Record<string, string | null>) => { const u = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v) u.set(k, v); else u.delete(k); } router.push(`${path}${u.size ? `?${u}` : ""}`); };
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
-  const head: Bloque = { type: "head", eye: "DINERO DE EVENTOS", t: "Liquidaciones de eventos", s: "Lo que se le transfiere a cada organizador por fecha, el martes después: lo cobrado menos la comisión, lo devuelto y lo perdido en disputas. Con una disputa abierta o un organizador nuevo, se retiene.", onBack: () => router.push("/admin/eventos"), h1: desk ? 26 : 22,
+  const head: Bloque = { type: "head", eye: "DINERO DE EVENTOS", t: "Liquidaciones de eventos", s: `Lo que se le transfiere a cada organizador por fecha, ${diaSemanaTxt(d.pagoDia, true)} después: lo cobrado menos la comisión, lo devuelto y lo perdido en disputas. Con una disputa abierta o un organizador nuevo, se retiene.`, onBack: () => router.push("/admin/eventos"), h1: desk ? 26 : 22,
     act: puede.exportar ? { l: pend ? "Exportando…" : "Exportar CSV", icon: "folder", onClick: () => start(async () => {
       const r = await liqCsv(st, q); if (!r.ok || !r.archivo) { setToast(r.ok ? "No se pudo." : r.mensaje); return; }
       const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([`﻿${r.archivo}`], { type: "text/csv;charset=utf-8" })); a.download = r.nombre ?? "tolatino-liquidaciones.csv"; document.body.appendChild(a); a.click(); a.remove(); setToast(r.mensaje ?? "Descargado."); }) } : undefined };
@@ -41,7 +42,7 @@ export function Liquidaciones({ d, st, q, puede }: { d: LiqAdmin; st: string | n
   const acciones = (x: FilaLiqAdm) => [
     { label: "Ver evento", variant: "secondary", onClick: () => router.push(`/admin/eventos/${x.eid}`) },
     ...(puede.decidir && (x.st === "pending" || (x.st === "held" && x.hk !== "admin" && x.hk !== "nuevo")) ? [{ label: "Retener", variant: "danger", onClick: () => setConf({ titulo: `Retener · ${x.negocio} · ${x.evento}`, sub: "No se transfiere hasta que la sueltes. El organizador ve el motivo en Cobros.", peligro: true, plantillas: ["Reportes de que el evento no pasó", "Revisión de Confianza", "Datos de la cuenta por confirmar"], cta: "Retener", hacer: (m) => liqRetener(x.id, m) }) }] : []),
-    ...(puede.decidir && x.st === "held" && (x.hk === "admin" || x.hk === "nuevo") ? [{ label: "Soltar", variant: "primary", onClick: () => setConf({ titulo: `Soltar · ${x.negocio} · ${x.evento}`, sub: x.hk === "nuevo" ? "Confianza ya lo miró: se paga en el siguiente barrido y sus próximos eventos no se retienen por ser nuevo." : "Se paga en el siguiente barrido si la fecha ya llegó a su martes.", plantillas: ["El evento pasó sin problemas", "Organizador conocido de la ciudad", "Revisión terminada"], cta: "Soltar", hacer: (m) => liqSoltar(x.id, m) }) }] : []),
+    ...(puede.decidir && x.st === "held" && (x.hk === "admin" || x.hk === "nuevo") ? [{ label: "Soltar", variant: "primary", onClick: () => setConf({ titulo: `Soltar · ${x.negocio} · ${x.evento}`, sub: x.hk === "nuevo" ? "Confianza ya lo miró: se paga en el siguiente barrido y sus próximos eventos no se retienen por ser nuevo." : "Se paga en el siguiente barrido si la fecha ya llegó a su día de pago.", plantillas: ["El evento pasó sin problemas", "Organizador conocido de la ciudad", "Revisión terminada"], cta: "Soltar", hacer: (m) => liqSoltar(x.id, m) }) }] : []),
   ];
   const sub = (x: FilaLiqAdm) => `${x.ciudad} · se paga el ${dia(x.payOn)} · bruto ${money(x.bruto)} · comisión ${money(x.comision)}${x.devuelto ? ` · devuelto ${money(x.devuelto)}` : ""}${x.disputa ? ` · disputas ${money(x.disputa)}` : ""}${x.descontado ? ` · ajuste ${money(x.descontado)}` : ""}${x.hk ? ` · ${HOLD[x.hk] ?? x.hk}${x.hn ? `: ${x.hn}` : ""}` : ""}${x.error ? ` · último error: ${x.error} (${x.intentos} intentos)` : ""}`;
   return (

@@ -63,7 +63,7 @@ export function planBloques(c: Ctx, x: PlanPanel | undefined): Bloque[] {
       if (p.phase === "leaving") out.push({ type: "rows", k: E2(`EL ${fin.toUpperCase()} SE DUERME · QUEDA GUARDADO`, `ON ${fin.toUpperCase()} GOES TO SLEEP · STAYS SAVED`), items: [duerme] });
     }
   } else {
-    out.push({ type: "rows", items: [{ icon: "star", ibg: "var(--tl-paper)", ifg: "rgba(11,14,18,.55)", t: "Free", s: p.desde ? E2(`Desde el ${fechaPlan(es, p.desde)}.`, `Since ${fechaPlan(es, p.desde)}.`) : E2("Una sola página y hasta 10 pedidos o citas en línea al mes.", "Single page and up to 10 online orders or bookings a month."), tag: "FREE", tone: "neutral", chev: false }] });
+    out.push({ type: "rows", items: [{ icon: "star", ibg: "var(--tl-paper)", ifg: "rgba(11,14,18,.55)", t: "Free", s: p.desde ? E2(`Desde el ${fechaPlan(es, p.desde)}.`, `Since ${fechaPlan(es, p.desde)}.`) : E2(`Una sola página y hasta ${d.tope} pedidos o citas en línea al mes.`, `Single page and up to ${d.tope} online orders or bookings a month.`), tag: "FREE", tone: "neutral", chev: false }] });
     out.push({ type: "lock", t: E2("Tu contenido Pro está guardado", "Your Pro content is saved"), s: `${d.duerme.charAt(0).toUpperCase()}${d.duerme.slice(1)}. ${E2("Vuelve igual que lo dejaste, cuando quieras.", "It comes back as you left it, whenever you want.")}`,
       cta: p.pruebaUsada ? E2(`Volver a Pro · ${mes}/mes`, `Back to Pro · ${mes}/mo`) : E2(`Pro · ${mes}/mes`, `Pro · ${mes}/mo`), onCta: () => seguir("month") });
     if (p.pruebaUsada) out.push({ type: "note", tone: "ink", icon: "info", t: E2("Ya usaste tu prueba: al volver a Pro se cobra el primer mes ese día.", "You already used your trial: coming back to Pro charges the first month that day.") });

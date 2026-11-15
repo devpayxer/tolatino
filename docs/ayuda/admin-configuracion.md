@@ -82,12 +82,14 @@ pagar el lugar de la lista de espera, 50 cortesías por fecha, 10 transferencias
 día de pago, retener el primer evento desde $2,000, cancelaciones que abren un caso y su plazo, ajuste, devoluciones al momento) · **Avisos y
 recordatorios** (hora del recordatorio del día antes, 10 AM; aviso de vendido al organizador, 90 %) · **La puerta** · **Evento privado** ·
 **Confianza** (órdenes desde un mismo dispositivo y en cuántos minutos; boletos recibidos y pasados a otro). Cada texto que ve la persona lee el
-valor (por ejemplo «te guardamos boletos y mesa por 8 minutos», «se activa 2 horas antes»). **Día de pago de eventos** está en **SOLO LECTURA**:
-el panel, Publica tu evento y la ayuda dicen «el martes después del evento»; se abre cuando esos textos lean el valor.
+valor (por ejemplo «te guardamos boletos y mesa por 8 minutos», «se activa 2 horas antes»). **Día de pago de eventos** (1 = lunes … 7 =
+domingo; de fábrica 2 = martes) ya se cambia aquí: el panel (Eventos y Cobros), Liquidaciones y la ayuda dicen el día de la clave («te llega
+el martes después del evento»). **Pagos al banco · el día** sigue fijo (los martes, decisión del fundador).
 
 **English:** the **Events** section is grouped (publish and review, RSVP and sales, after purchase, changes and organizer payouts, notices and
-reminders, the door, private events, trust). Every customer-facing text reads the value. **Event payout day** is read-only until the dashboard
-and help texts that say «Tuesday» read it. The Education, Kids and Sports limits (reply, waitlist offer, membership cancellation, deleting a child's data) and the Visits and
+reminders, the door, private events, trust). Every customer-facing text reads the value. **Event payout day** (1 = Monday … 7 = Sunday;
+factory 2 = Tuesday) can now be changed here: the dashboard (Events and Payouts), Settlements and help say that day. **Bank payouts · the day**
+stays fixed (Tuesdays, founder decision). The Education, Kids and Sports limits (reply, waitlist offer, membership cancellation, deleting a child's data) and the Visits and
 Churches limits (reply, «It happened», deleting private data) can now be changed here too: their screens and notices show this value.
 
 ## Apps
@@ -131,6 +133,16 @@ many **rejected attempts per minute** it takes before answering «wait» (60) an
 - **Repartidor › Pedido programado · se ofrece y se avisa antes de estar listo** (`rep_programado_min`, 30 min; 10–120).
 - **Iglesias, Bienes Raíces y Autos › «Me lo devolvieron» se cierra sola si nadie contesta en** (`ayuda_devuelto_dias`, 14 días; 7–60).
 
+## Hogar y Auto, y el techo de Free
+- **Hogar y Auto** (sección nueva): **Pre-estimado con fotos · horas para responder** (`sol_pre_h`, 24 h; 2–72), **Presupuesto a hasta 3 ·
+  horas para responder** (`sol_pq_h`, 48 h; 12–120), **Emergencia 24/7 · minutos para que alguien acepte** (`sol_em_min`, 15 min; 5–60) y
+  **Apartado en Auto y Hogar · horas que se guarda** (`apartado_h`, 48 h; 12–168; las Tiendas eligen las suyas en su herramienta). Cada
+  solicitud y cada apartado guardan el plazo con que se enviaron: un cambio solo toca los nuevos. Las pantallas y los avisos dicen el valor.
+- **Dinero › Plan Free · pedidos o citas en línea al mes** (`free_ops_cap`, 10; 0–1000): el techo de un negocio Free (pedidos, citas,
+  reservas y solicitudes en línea, por mes de su ciudad). Al llegar, su página muestra Llamar. El panel (Plan, Menú, Servicios) y el Super
+  Admin (Planes, Catálogo) dicen el valor.
+- **Licencias:** el aviso de revisión (`lic_aviso_dias`, 14 días) también lo dice Analítica («POR VENCER EN 14 DÍAS»).
+
 ## English
 
 - **What it does:** platform deadlines and limits in one place (Community limits per day, minutes to edit a post, days to appeal, longest
@@ -150,6 +162,12 @@ many **rejected attempts per minute** it takes before answering «wait» (60) an
 - Each booking copies the cutoff when it is made: a change only affects new ones. The booking shows the minutes the venue really has left.
 
 **Why are other deadlines still «read only»?** Because their on-screen texts still say the number written out («24 h», «30 days»); they open when each text reads the value.
+
+### Home and Auto, and the Free cap
+**Home and Auto** (new section): photo pre-estimate reply (`sol_pre_h`, 24 h), quote from up to 3 reply (`sol_pq_h`, 48 h), 24/7 emergency
+accept (`sol_em_min`, 15 min) and the auto and home hold (`apartado_h`, 48 h; stores pick their own). Each request and hold keeps the limit it
+was sent with. **Money › Free plan · online orders or bookings a month** (`free_ops_cap`, 10; 0–1000): once reached, the page shows Call. The
+license review notice (`lic_aviso_dias`, 14 days) is also what Analytics says.
 
 ### New keys: Driver and «They refunded me»
 `rep_auto_intentos` (3), `rep_programado_min` (30 min) in Driver, and `ayuda_devuelto_dias` (14 days) in Churches, Real Estate and Car dealers.

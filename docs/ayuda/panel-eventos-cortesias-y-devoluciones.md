@@ -27,6 +27,8 @@ la parte «Cobros»). Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: 
 | Alguien del equipo sin «Cobros» toca Devolver | «Solo quien maneja Cobros puede devolver dinero». |
 | El comprador cancela | Te llega «Volvieron boletos a la venta»; ese boleto no se te paga (el cargo de servicio se lo queda To'Latino). |
 
+**Los plazos de esta página** (el día de pago: el martes después de cada fecha) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## Preguntas frecuentes
 - **¿Puedo vender cortesías a promotores?** No: las cortesías no se venden. Para promotores, usa códigos de descuento.
 - **¿El comprador ve que fui yo quien devolvió?** Sí: le llega «{tu negocio} te devolvió $X».
@@ -39,3 +41,5 @@ never sold; up to **50 per date** (Settings); **Remove** an unused comp to free 
 they paid** goes back (plus extras if the order is left empty); To'Latino does not charge its fee on what you refund; used tickets are not
 refundable; needs the Payouts part. **REFUNDS**, **TRANSFERRED**, **WAITLIST** (with **Notify the list** when there is room) and **ORDER HELP**
 (reviewed by To'Latino). Phones are never shown.
+
+**The time limits on this page** (the payout day: the Tuesday after each date) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.

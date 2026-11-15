@@ -199,7 +199,7 @@ export async function negocio360(s: Staff, id: string) {
               (select count(*)::int from operations o where o.business_id = b.id and o.kind = 'table' and o.sent_at >= date_trunc('month', now() at time zone c.timezone) at time zone c.timezone) as rmes,
               (select count(*)::int from operations o where o.business_id = b.id and o.kind = 'table' and o.status = 'pending') as rpend, 'rsv' = any(b.modules_on) as rsv,
               (select count(*)::int from operations o where o.business_id = b.id and o.kind = 'order' and o.free_quota_month = to_char(now() at time zone c.timezone, 'YYYY-MM')) as free,
-              (select (value #>> '{}')::int from platform_config where key = 'free_ops_cap') as cap
+              cfg_int('free_ops_cap') as cap
          from businesses b join cities c on c.id = b.city_id where b.id = $1`, [id]),
   ]);
   const tr = prueba(b.trial_until, b.trial_days);

@@ -4,7 +4,7 @@ import type { QueryResult, QueryResultRow } from "pg";
 import { db } from "./db";
 import type { Lang } from "./idioma";
 import { AGOTADO_SQL, QUEDAN_SQL, type Av } from "./menu";
-import { ITEMS_FREE, TOPE_FREE } from "./plan";
+import { ITEMS_FREE } from "./plan";
 import { vencer } from "./pedidos";
 import { cobrarOperacion, registrarRetencion, retenerPedido, tarjetaDe } from "./cobros";
 
@@ -159,9 +159,9 @@ function calcEstado(b: Base, R: [number, number][], usados: number, cap: number,
 
 export async function topeFree(c: Q, negocio: string, mes: string) {
   const r = await c.query<{ cap: number; usados: number }>(
-    `select coalesce((select (value #>> '{}')::int from platform_config where key = 'free_ops_cap'), $3) as cap,
-            (select count(*)::int from operations where business_id = $1 and kind <> 'table' and free_quota_month = $2) as usados`, [negocio, mes, TOPE_FREE]);
-  return r.rows[0] ?? { cap: TOPE_FREE, usados: 0 };
+    `select cfg_int('free_ops_cap') as cap,
+            (select count(*)::int from operations where business_id = $1 and kind <> 'table' and free_quota_month = $2) as usados`, [negocio, mes]);
+  return r.rows[0]!;
 }
 
 type FilaItem = {

@@ -3,7 +3,6 @@ import { cfgSql } from "./config";
 import type { Pool, PoolClient } from "pg";
 import { cifrar, descifrar } from "./cifrado";
 import { db, tx } from "./db";
-import { TOPE_FREE } from "./plan";
 import { kindAutosDe, lineaAutos, type Bhph, type Pago, type Puerta, type Titulo } from "./autos-comun";
 import { kindInmDe, lineaInm, soloZona, type KindProp } from "./inmuebles-comun";
 import { usdI } from "./inscripciones-comun";
@@ -42,9 +41,9 @@ async function contexto(c: Q, negocio: string): Promise<(Ctx & { rubro: RubroVis
             (select s.kind_override from inm_settings s where s.business_id = b.id) as "ovInm", (select s.kind_override from dealer_settings s where s.business_id = b.id) as "ovAutos",
             coalesce((select s.home_test from dealer_settings s where s.business_id = b.id), false) as "homeTest", coalesce((select s.trade from dealer_settings s where s.business_id = b.id), false) as trade,
             (select count(*)::int from operations o where o.business_id = b.id and o.kind <> 'table' and o.free_quota_month = to_char(now() at time zone ci.timezone, 'YYYY-MM')) as usados,
-            coalesce((select (value #>> '{}')::int from platform_config where key = 'free_ops_cap'), $2) as cap
+            cfg_int('free_ops_cap') as cap
        from businesses b join cities ci on ci.id = b.city_id left join business_stats_cache st on st.business_id = b.id
-      where b.id = $1 and b.status = 'active' and b.category_id in ('NEG-INMUEBLE', 'NEG-DEALER')`, [negocio, TOPE_FREE])).rows[0];
+      where b.id = $1 and b.status = 'active' and b.category_id in ('NEG-INMUEBLE', 'NEG-DEALER')`, [negocio])).rows[0];
   if (!x) return null;
   return { ...x, rubro: x.cat === "NEG-DEALER" ? "dealer" : "inm" };
 }

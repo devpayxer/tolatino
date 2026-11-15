@@ -6,7 +6,6 @@ import { valor } from "./config";
 import { pasarela } from "./pagos/pasarela";
 import { bancoPide } from "./pagos/verificacion";
 import { cobrarOperacion, comision, registrarRetencion } from "./cobros";
-import { TOPE_FREE } from "./plan";
 
 /* Citas (Fase 3 · 3b). Lo que el cliente ve en la ficha (pestaña Servicios, hoja del servicio) y el Booking: el motor de
    disponibilidad y el envío. Fuente: prototipo neg-bell-book.js (priceOf, slotsFor, bookVals, submit) con los conflictos
@@ -135,8 +134,8 @@ async function puede(c: Q, x: Ctx): Promise<CitasPublica["off"]> {
   if (x.off.citas || x.off.svc) return "pausa";
   if (x.plan === "pro") return null;
   const r = (await c.query<{ cap: number; usados: number }>(
-    `select coalesce((select (value #>> '{}')::int from platform_config where key = 'free_ops_cap'), $3) as cap,
-            (select count(*)::int from operations where business_id = $1 and kind <> 'table' and free_quota_month = $2) as usados`, [x.id, x.mes, TOPE_FREE])).rows[0];
+    `select cfg_int('free_ops_cap') as cap,
+            (select count(*)::int from operations where business_id = $1 and kind <> 'table' and free_quota_month = $2) as usados`, [x.id, x.mes])).rows[0];
   return r && r.usados >= r.cap ? "tope" : null;
 }
 

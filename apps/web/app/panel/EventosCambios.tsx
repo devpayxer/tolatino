@@ -8,7 +8,8 @@
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { bi, diaCorto, dinero, hora, type BorradorEvt } from "@/lib/evt-comun";
 import type { EvtPanel } from "@/lib/evt";
-import type { FilaLiq } from "@/lib/evt-liquidacion";
+import type { FilaLiq, LiqPanel } from "@/lib/evt-liquidacion";
+import { diaSemanaTxt } from "@/lib/plazo-txt";
 import { evtAvisar, evtCancelar, evtMover, evtPausar } from "./acciones-eventos";
 import { calendario } from "./EventosPanel";
 import type { Ctx } from "./Panel";
@@ -42,8 +43,8 @@ function dineroBloques(c: Ctx): Bloque[] {
   if (!L || !L.filas.length) return [];
   return [
     { type: "rows", k: E2("DINERO DEL EVENTO · POR FECHA", "EVENT MONEY · BY DATE"), link: E2("Cobros", "Payouts"), onLink: () => c.go("pay"), items: L.filas.map((x) => filaLiq(c, x, false)) },
-    { type: "note", tone: "ink", icon: "wallet", t: E2(`Te llega a tu banco el martes después de cada fecha: lo cobrado menos la comisión de To’Latino y lo devuelto. Con una disputa abierta, esa fecha espera a que se cierre.${L.deuda ? ` Se descuentan ${dinero(L.deuda)} de devoluciones de fechas ya pagadas.` : ""}`,
-      `It reaches your bank the Tuesday after each date: what was charged minus To’Latino’s fee and refunds. With an open dispute, that date waits until it closes.${L.deuda ? ` ${dinero(L.deuda)} from refunds on dates already paid is deducted.` : ""}`) },
+    { type: "note", tone: "ink", icon: "wallet", t: E2(`Te llega a tu banco ${diaSemanaTxt(L.pagoDia, true)} después de cada fecha: lo cobrado menos la comisión de To’Latino y lo devuelto. Con una disputa abierta, esa fecha espera a que se cierre.${L.deuda ? ` Se descuentan ${dinero(L.deuda)} de devoluciones de fechas ya pagadas.` : ""}`,
+      `It reaches your bank the ${diaSemanaTxt(L.pagoDia, false)} after each date: what was charged minus To’Latino’s fee and refunds. With an open dispute, that date waits until it closes.${L.deuda ? ` ${dinero(L.deuda)} from refunds on dates already paid is deducted.` : ""}`) },
   ];
 }
 
@@ -121,12 +122,12 @@ export function cambiosBloques(c: Ctx, e: EvtPanel, v: BorradorEvt): (Bloque | n
 }
 
 /* Panel › Cobros › PAGOS DE EVENTOS (los boletos se pagan aparte de los pedidos: por fecha, el martes después). */
-export function pagosEventosBloques(c: Ctx, L: { filas: FilaLiq[]; deuda: number } | undefined): Bloque[] {
+export function pagosEventosBloques(c: Ctx, L: LiqPanel | undefined): Bloque[] {
   const { E2 } = c;
   if (!L || !L.filas.length) return [];
   return [
     { type: "rows", k: E2("PAGOS DE EVENTOS · POR FECHA", "EVENT PAYOUTS · BY DATE"), items: L.filas.slice(0, 20).map((x) => ({ ...filaLiq(c, x, true), chev: true, onClick: () => c.nav(`/panel/${c.d.id}/eventos?det=evt:${x.eid}`) })) },
-    { type: "note", tone: "info", icon: "info", t: E2(`Los boletos se cobran en To’Latino y se te transfieren el martes después de cada fecha, menos la comisión y lo devuelto. Así, si un evento se cancela, siempre se devuelve todo.${L.deuda ? ` Pendiente de descontar: ${dinero(L.deuda)} (devoluciones de fechas ya pagadas).` : ""}`,
-      `Tickets are charged by To’Latino and transferred to you the Tuesday after each date, minus the fee and refunds. That way, if an event is cancelled, everything is always refunded.${L.deuda ? ` Still to deduct: ${dinero(L.deuda)} (refunds on dates already paid).` : ""}`) },
+    { type: "note", tone: "info", icon: "info", t: E2(`Los boletos se cobran en To’Latino y se te transfieren ${diaSemanaTxt(L.pagoDia, true)} después de cada fecha, menos la comisión y lo devuelto. Así, si un evento se cancela, siempre se devuelve todo.${L.deuda ? ` Pendiente de descontar: ${dinero(L.deuda)} (devoluciones de fechas ya pagadas).` : ""}`,
+      `Tickets are charged by To’Latino and transferred to you the ${diaSemanaTxt(L.pagoDia, false)} after each date, minus the fee and refunds. That way, if an event is cancelled, everything is always refunded.${L.deuda ? ` Still to deduct: ${dinero(L.deuda)} (refunds on dates already paid).` : ""}`) },
   ];
 }

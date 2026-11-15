@@ -4,6 +4,7 @@
    del negocio (rango, qué incluye, qué puede cambiarlo, válido 7 días) con «Reservar con este pre-estimado», lo que mandaste
    y, si no lo hacen, otros negocios de la ciudad. Se actualiza solo mientras espera. */
 import { primerNombre } from "@/lib/nombre";
+import { minTxt } from "@/lib/plazo-txt";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
@@ -48,7 +49,7 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
     H.sent = ["clock", "bg-action/10", "var(--tl-action)", E2("ENVIADA", "SENT"), E2(`A ${n} ${n === 1 ? "negocio" : "negocios"}`, `To ${n} ${n === 1 ? "business" : "businesses"}`), E2(`Tienen hasta el ${s.vence?.es ?? ""} para responder. Te avisamos con cada respuesta.`, `They have until ${s.vence?.en ?? ""} to reply. We notify you with each reply.`)];
     H.part = ["dollar", "bg-pro/20", "var(--tl-pro-ink)", E2(`RESPONDIERON ${got.length} DE ${n}`, `REPLIED ${got.length} OF ${n}`), best?.reply?.lo ? `${dinero(best.reply.lo)}–${dinero(best.reply.hi ?? best.reply.lo)}` : "", E2("Puedes reservar ya o esperar a los demás.", "Book now or wait for the others.")];
     H.all = ["dollar", "bg-signal/[.18]", "var(--tl-open-text)", E2("YA RESPONDIERON TODOS", "EVERYONE REPLIED"), got.length && best?.reply?.lo ? `${E2("Desde ", "From ")}${dinero(best.reply.lo)}` : E2("Nadie lo hace", "Nobody does it"), E2("Compara y reserva la visita de uno. Los otros se cierran solos.", "Compare and book one visit. The others close on their own.")];
-    H.exp = ["clock", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("SIN RESPUESTA", "NO REPLY"), E2("Nadie respondió en 48 h", "Nobody replied in 48 h"), E2("Mándalo otra vez o a otros negocios.", "Send it again or to other businesses.")];
+    H.exp = ["clock", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("SIN RESPUESTA", "NO REPLY"), E2(`Nadie respondió en ${s.plazo} h`, `Nobody replied in ${s.plazo} h`), E2("Mándalo otra vez o a otros negocios.", "Send it again or to other businesses.")];
     H.used = ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("RESERVASTE", "YOU BOOKED"), chosen?.negocio.nombre ?? "", E2("Los otros presupuestos se cerraron. No se cobró nada.", "The other estimates were closed. Nothing was charged.")];
     H.cx = ["close", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("CANCELADA", "CANCELLED"), E2("Ya no los necesitas", "No longer needed"), E2("No se cobró nada.", "Nothing was charged.")];
   }
@@ -58,7 +59,7 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
   if (em) {
     H.sent = ["warning", "bg-danger/10", "var(--tl-danger)", E2("BUSCANDO QUIEN VAYA", "FINDING SOMEONE"), E2(`Se lo mandamos a ${n} ${n === 1 ? "negocio" : "negocios"} 24/7`, `Sent to ${n} ${n === 1 ? "business" : "businesses"} on 24/7 call`), E2("El primero que acepta, va. Suele tardar menos de 5 minutos. Hoy no se cobra nada.", "The first to accept comes. Usually under 5 minutes. Nothing is charged now.")];
     H.used = ["truck", "bg-action/10", "var(--tl-action)", E2("ACEPTÓ · VA EN CAMINO", "ACCEPTED · ON THE WAY"), acc?.negocio.nombre ?? "", acc ? E2(`Llega en unos ${acc.eta ?? 60} min. Salida ${dinero(acc.precio ?? 0)}${acc.recargo ? `, con el recargo de ${dinero(acc.recargo)} incluido` : ""}.`, `Arrives in about ${acc.eta ?? 60} min. Call-out ${dinero(acc.precio ?? 0)}${acc.recargo ? `, ${dinero(acc.recargo)} surcharge included` : ""}.`) : ""];
-    H.exp = ["warning", "bg-danger/10", "var(--tl-danger)", E2("NADIE DISPONIBLE", "NOBODY AVAILABLE"), E2("Nadie aceptó en 15 minutos", "Nobody accepted in 15 minutes"), E2("No se cobró nada. Mándalo otra vez o llama directo a uno.", "Nothing was charged. Send it again or call one directly.")];
+    H.exp = ["warning", "bg-danger/10", "var(--tl-danger)", E2("NADIE DISPONIBLE", "NOBODY AVAILABLE"), E2(`Nadie aceptó en ${minTxt(s.plazo, true)}`, `Nobody accepted in ${minTxt(s.plazo, false)}`), E2("No se cobró nada. Mándalo otra vez o llama directo a uno.", "Nothing was charged. Send it again or call one directly.")];
     H.cx = ["close", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("CANCELADA", "CANCELLED"), E2("Ya no la necesitas", "No longer needed"), E2("No se cobró nada.", "Nothing was charged.")];
   }
   const h = (em ? H[stE] : pq ? H[stQ] : H[st]) ?? H.sent!;

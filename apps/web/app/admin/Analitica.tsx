@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTransition, type ComponentType, type ReactNode } from "react";
 import { exportar, programar, reporteAhora } from "./acciones-analitica";
 import { motivoAyuda } from "@/lib/ayuda-motivos";
+import { diasTxt } from "@/lib/plazo-txt";
 import { Toast, useAncho, useToast } from "./Colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -234,7 +235,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
       </>);
   } else if (d.tab === "ia" && d.ia) {
     // Iglesias · Bienes Raíces · Autos (4ig): solo cifras por ciudad; nunca personas por religión ni datos de crédito.
-    const { inm, dealer, dias: dd, vivos, rev, ayuda, estafa, lic, fe, vj } = d.ia, mx = Math.max(1, ...ayuda.map((x) => x.n));
+    const { inm, dealer, dias: dd, vivos, rev, ayuda, estafa, lic, licAvisoDias, fe, vj } = d.ia, mx = Math.max(1, ...ayuda.map((x) => x.n));
     const visitas = inm.n + dealer.n, nAyV = ayuda.filter((x) => x.rub !== "fe").reduce((a, x) => a + x.n, 0), nAyF = ayuda.filter((x) => x.rub === "fe").reduce((a, x) => a + x.n, 0);
     const por = (a: number, b: number) => (b ? (Math.round((10 * a) / b) / 10).toString() : "—");
     const DIAS = (k: string) => dd.find((x) => x.que === k), RUB: Record<string, string> = { inm: "Bienes Raíces", dealer: "Autos", fe: "Iglesias" };
@@ -266,7 +267,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
           { k: "AYUDAS CON UNA FECHA", v: String(nAyF), s: "nada se cobra en la app" },
         ]), { type: "group", k: "LICENCIAS" }, kpis([
           { k: "LICENCIAS VIGENTES", v: String(tot("vigentes")), s: `Iglesias ${li[0]!.vigentes} · Bienes Raíces ${li[1]!.vigentes} · Autos ${li[2]!.vigentes}`, dark: true },
-          { k: "POR VENCER EN 14 DÍAS", v: String(tot("porvencer")), s: "vuelven a Colas › Licencias" },
+          { k: `POR VENCER EN ${diasTxt(licAvisoDias, true).toUpperCase()}`, v: String(tot("porvencer")), s: "vuelven a Colas › Licencias" },
           { k: "VENCIDAS", v: String(tot("vencidas")), s: "vuelven a Colas › Licencias con prioridad" },
           { k: "EN REVISIÓN", v: String(tot("revision")), s: "nuevas o cambiadas" },
         ])]} />

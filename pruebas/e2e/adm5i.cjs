@@ -75,7 +75,7 @@ const KEYS = ['com_editar_min', 'com_resumen_hora'];
     await ad.screenshot({ path: OUT + 'g5i-config-fuera-d.png' });
     ok(/fuera de los límites/.test(sqlFalla(`update platform_config set value = '3000' where key = 'com_editar_min'`) || ''), 'la base también rechaza un valor fuera de los límites (trigger)');
     ok(/entero/.test(sqlFalla(`update platform_config set value = '20.5' where key = 'com_editar_min'`) || ''), 'la base rechaza un valor que no es entero');
-    await ad.goto(B + '/admin/sistema/configuracion'); await clic(ad.getByText('El negocio responde una ayuda en', { exact: true }));
+    await ad.goto(B + '/admin/sistema/configuracion'); await clic(ad.getByText('Pagos al banco · el día', { exact: true })); // 9n-6: fijo los martes (decisión del fundador)
     ok(await contiene(ad, 'Todavía no se cambia aquí'), 'un valor bloqueado (un texto dice el número) no se edita y dice por qué');
 
     // ── 2 · El comportamiento cambia: con 20 min, una publicación de hace 25 min ya no se edita; con 30, sí ──

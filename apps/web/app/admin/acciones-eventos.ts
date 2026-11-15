@@ -86,7 +86,7 @@ export async function liqSoltar(id: string, motivo: string): Promise<ResAdm> {
   const r = await (await import("@/lib/evt-liquidacion")).soltarLiquidacion(s, String(id), motivoOk(motivo));
   if (!r.ok) return no(r.msg);
   revalidatePath("/admin/eventos/liquidaciones"); revalidatePath("/admin/colas");
-  return { ok: true, mensaje: "Soltada: se paga en el siguiente barrido si la fecha ya llegó a su martes." };
+  return { ok: true, mensaje: "Soltada: se paga en el siguiente barrido si la fecha ya llegó a su día de pago." };
 }
 export async function liqCsv(st: string | null, q: string): Promise<ResAdm & { archivo?: string; nombre?: string }> {
   const s = await requerir("tx", "exportar");

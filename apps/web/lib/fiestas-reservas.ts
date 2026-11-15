@@ -118,7 +118,7 @@ export async function pedirFecha(userId: string, negocio: string, f: FiestaIn, e
     if (!x || !s) { await c.query("rollback"); return no("Ese servicio no se pide en línea.", "That service is not requested online."); }
     if (!x.mods.includes("citas") || x.off.citas || x.off.svc) { await c.query("rollback"); return no(`${x.name} no toma fechas en línea por ahora: llama al negocio.`, `${x.name} is not taking dates online right now: call the business.`); }
     if (x.plan !== "pro") {
-      const r = (await c.query<{ cap: number; usados: number }>(`select coalesce((select (value #>> '{}')::int from platform_config where key = 'free_ops_cap'), 10) as cap, (select count(*)::int from operations where business_id = $1 and kind <> 'table' and free_quota_month = $2) as usados`, [x.id, x.mes])).rows[0];
+      const r = (await c.query<{ cap: number; usados: number }>(`select cfg_int('free_ops_cap') as cap, (select count(*)::int from operations where business_id = $1 and kind <> 'table' and free_quota_month = $2) as usados`, [x.id, x.mes])).rows[0];
       if (r && r.usados >= r.cap) { await c.query("rollback"); return no(`${x.name} no recibe más solicitudes en línea este mes. Llama para tu fecha.`, `${x.name} takes no more online requests this month. Call about your date.`); }
     }
     const aj = await ajustes(c, negocio), vis = s.k === "visita";

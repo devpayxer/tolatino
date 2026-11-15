@@ -14,9 +14,9 @@ import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Co
 import { PESTANAS_SISTEMA } from "./sistema/Pestanas";
 
 const SECCION: Record<Seccion, string> = {
-  comunidad: "COMUNIDAD", gamificacion: "GAMIFICATION", salud_pro: "DOCTORES Y PROFESIONALES", noche: "NOCHE", edu: "EDUCACIÓN · NIÑOS · DEPORTE", fe_inm_autos: "IGLESIAS · BIENES RAÍCES · AUTOS", eventos: "EVENTOS", compa: "EL COMPA", soporte: "SOPORTE", apps: "APPS",
+  comunidad: "COMUNIDAD", gamificacion: "GAMIFICATION", salud_pro: "DOCTORES Y PROFESIONALES", hogar_auto: "HOGAR Y AUTO · PRE-ESTIMADO, PRESUPUESTO, EMERGENCIA Y APARTADO", noche: "NOCHE", edu: "EDUCACIÓN · NIÑOS · DEPORTE", fe_inm_autos: "IGLESIAS · BIENES RAÍCES · AUTOS", eventos: "EVENTOS", compa: "EL COMPA", soporte: "SOPORTE", apps: "APPS",
   retencion: "RETENCIÓN · CUÁNTO SE GUARDA", crecimiento: "CRECIMIENTO",
-  dinero: "DINERO · PAGOS AL BANCO, CONCILIACIÓN Y ALERTAS",
+  dinero: "DINERO · PLAN FREE, PAGOS AL BANCO, CONCILIACIÓN Y ALERTAS",
   avisos: "AVISOS Y CANALES · SMS, WHATSAPP Y CORREO",
   ciudades: "CIUDADES · EL AVISO DE APERTURA",
   despliegues: "DESPLIEGUES · VUELTA ATRÁS Y MANTENIMIENTO",

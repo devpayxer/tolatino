@@ -1,6 +1,6 @@
 // 6j · Cierre de la Fase 6: Super Admin completo de Eventos, Configuración › Eventos, avisos `events` y analítica.
 // Escritorio 1360 (Super Admin, panel) y teléfono 390 (cliente y un pase del Super Admin). Contra la base local y el barrido real:
-//  1 Configuración › Eventos: subgrupos, unidades y límites; evt_pago_dia SOLO LECTURA; cambiar la hora del recordatorio (auditoría
+//  1 Configuración › Eventos: subgrupos, unidades y límites; evt_pago_dia se cambia aquí (9n-6); cambiar la hora del recordatorio (auditoría
 //    antes → después) y fuera de límites rechazado por la acción y por la base.
 //  2 «Mañana: …» (bol_recordatorio) a quien tiene boletos, UNA vez (dos barridos), con el título lleno (bug de títulos con {variables}).
 //  3 Mi cuenta › Avisos › Eventos: apagar Recordatorios = no llega; apagar «Boletos y cambios» no apaga lo crítico (Reemitir → llega).
@@ -76,7 +76,9 @@ const KEYS = ['evt_recordatorio_hora', 'evt_senal_ordenes_n'];
     const filas = Number(sql(`select count(*) from config_keys where section = 'eventos'`));
     ok(filas === 47, `las ${filas} claves de la sección eventos en config_keys (0106–0115)`);
     await clic(ad.getByText('Día de pago de eventos', { exact: true }));
-    ok(await contiene(ad, 'Todavía no se cambia aquí') && sql(`select editable from config_keys where key = 'evt_pago_dia'`) === 'f', 'evt_pago_dia en SOLO LECTURA: los textos dicen «el martes»');
+    // 9n-6 (0150): evt_pago_dia ya se cambia aquí (el panel, Liquidaciones y la ayuda dicen el día de la clave).
+    await vis(ad.locator('input[aria-label^="VALOR NUEVO"]'));
+    ok(sql(`select editable from config_keys where key = 'evt_pago_dia'`) === 't', 'evt_pago_dia se cambia aquí: los textos dicen el día de la clave');
     await ad.screenshot({ path: OUT + 'e6j-config-d.png', fullPage: true });
     const cambiar = async (label, v) => {
       await ad.goto(B + '/admin/sistema/configuracion'); await clic(ad.getByText(label, { exact: true }));

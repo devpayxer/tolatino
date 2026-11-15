@@ -23,6 +23,8 @@ el dueño o quien maneja Cobros. Versión: 10 nov 2026. Audiencia: negocio. Tema
 | Cancelaste una fecha | Se liquida en $0: todo volvió a los compradores. |
 | Hay devoluciones en camino | El pago de esa fecha espera a que terminen. |
 
+**Los plazos de esta página** (el día de pago: el martes después de cada fecha) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## Preguntas frecuentes
 - **¿Cuándo lo veo en mi banco?** La transferencia sale el martes a tu cuenta de Stripe y de ahí a tu banco con el calendario de pagos (cada martes).
 - **¿Me pueden pagar dos veces una fecha?** No: cada fecha tiene una sola transferencia.
@@ -36,3 +38,5 @@ Tickets are charged by To'Latino and transferred to you **the Tuesday after each
 with an open bank dispute is held until it closes; a new organizer's first event over $2,000 is held until To'Latino reviews it; an account that
 cannot receive payouts holds it until fixed. A refund or lost dispute after payout is deducted from your next payout or, with none within 14
 days, reversed from the transfer. Each date is paid once.
+
+**The time limits on this page** (the payout day: the Tuesday after each date) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.

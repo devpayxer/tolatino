@@ -25,6 +25,8 @@ y comparas sus presupuestos en la app. Es gratis y no te compromete.
 | Ya no los necesitas | «Ya no los necesito» cancela la solicitud; no se cobra nada. |
 | Pasan 7 días desde la primera respuesta | El Booking ya no la ofrece. |
 
+**Los plazos de esta página** (cuántas horas tienen los negocios para responder) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## Preguntas frecuentes
 **¿Por qué solo 3?** Para que no te llamen diez negocios y para que ellos sepan que compites con pocos. **¿El rango es el
 precio?** No: en la visita te dan el precio completo línea por línea y apruebas cada parte.
@@ -34,3 +36,5 @@ precio?** No: en la visita te dan el precio completo línea por línea y aprueba
 ### What it does
 Send the same home-project request to up to 3 Pro businesses that do that work and reach your home. Each replies within
 48 h with a range, the measuring-visit fee and timing. Compare, tap one to book its visit; the others close automatically.
+
+**The time limits on this page** (hours businesses have to reply) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.

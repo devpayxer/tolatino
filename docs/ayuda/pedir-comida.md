@@ -61,6 +61,8 @@ _Pantallas: pestaña **Menú** de la página del negocio (`/n/{negocio}?tab=menu
 | Delivery: después del último delivery del día o To'Latino pausó el delivery | Solo se ofrece Pickup. |
 | Delivery: el negocio marca «Salió en camino» | Ves «En camino»; ya no se cancela desde la app (llama al negocio). |
 
+**El techo de Free** (los 10 pedidos, citas o solicitudes en línea al mes) es el de hoy: To'Latino lo fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## Preguntas frecuentes
 **¿Me cobran algo en la app?** Solo si pagas con **tarjeta**: se retiene al enviar y se cobra cuando el negocio acepta (ver
 `pagar-con-tarjeta.md`). Si eliges pagar en el local, pagas cuando recoges.
@@ -104,3 +106,5 @@ the driver; you pay by card in the app or cash on delivery, depending on the bus
 where and how it is delivered, fee and tip, and Track on DoorDash when the business uses an external app and pastes the
 link. Out-of-zone addresses, minimums and fees are checked again by the server. With a card, the total is held when you send and charged when the business accepts (see Paying by card). If something
 went wrong, open Order help from your order (see Order help).
+
+**The Free cap** (10 online orders, bookings or requests a month) is today's: To'Latino sets it in its Configuration and the screen always shows the one in force.

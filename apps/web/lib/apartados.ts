@@ -1,5 +1,6 @@
 import "server-only";
 import type { PoolClient } from "pg";
+import { cfgSql } from "./config";
 import { db, tx } from "./db";
 
 /* Apartar productos (Fase 4 · bloque 4f-3). Diseño: TLApartar.hold → el apartado de Tiendas (neg-tienda-flow.js:
@@ -61,9 +62,10 @@ export async function dirEnvio(userId: string, negocio: string): Promise<{ id: s
   return d ? { id: d.id, label: d.label, street: d.street } : null;
 }
 export const envioCosto = (e: EnvioTienda, sub: number) => (e.free > 0 && sub >= e.free ? 0 : e.fee);
-/* Las horas que la tienda guarda un apartado (Tu herramienta de Tiendas: 24, 48 o 72); Auto y Hogar, 48. */
+/* Las horas que la tienda guarda un apartado (Tu herramienta de Tiendas: 24, 48 o 72); Auto, Hogar y los demás, las de Sistema ›
+   Configuración (apartado_h, 48 de fábrica; 9n-6). Cada apartado guarda las horas que valían al enviarlo (details.hold_hours). */
 export async function horasApartado(negocio: string): Promise<number> {
-  return Number((await db().query<{ h: number }>(`select coalesce((select r.hold_hours from retail_settings r join businesses b on b.id = r.business_id where r.business_id = $1 and b.category_id = 'NEG-TIENDA'), 48)::int as h`, [negocio])).rows[0]!.h);
+  return Number((await db().query<{ h: number }>(`select coalesce((select r.hold_hours from retail_settings r join businesses b on b.id = r.business_id where r.business_id = $1 and b.category_id = 'NEG-TIENDA'), ${cfgSql("apartado_h")})::int as h`, [negocio])).rows[0]!.h);
 }
 async function diasDe(negocio: string, city: string): Promise<DiaApartar[]> {
   const now = (await db().query<{ h: string; m: number }>(`select (now() at time zone timezone)::date::text as h, extract(hour from now() at time zone timezone)::int * 60 + extract(minute from now() at time zone timezone)::int as m from cities where id = $1`, [city])).rows[0]!;

@@ -217,7 +217,7 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
         <div style={{ overflowX: "auto", borderRadius: 18, border: "1px solid rgba(11,14,18,.08)", background: "var(--tl-white)" }}>
           <A.PermMatrix columns="minmax(0,2.4fr) minmax(0,1fr) minmax(0,1fr)" head={["FREE", "PRO"]} rows={FP.map(([l, f, p]) => ({ label: l, cells: [{ on: f }, { on: p }] }))} />
         </div>
-        <PanelBloques bloques={[{ type: "note", tone: "info", t: `Techo Free: ${d.topeFree ?? 10} pedidos o citas en línea al mes; después, Llamar.` }]} />
+        <PanelBloques bloques={[{ type: "note", tone: "info", t: `Techo Free: ${d.topeFree ?? "—"} pedidos o citas en línea al mes (Sistema › Configuración); después, Llamar.` }]} />
       </>);
   }
   return (

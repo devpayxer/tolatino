@@ -1,7 +1,8 @@
 import "server-only";
 import type { Staff } from "./admin";
 import { db } from "./db";
-import { PRECIO_PRO, PRUEBA_DIAS, TOPE_FREE } from "./plan";
+import { valor } from "./config";
+import { PRECIO_PRO, PRUEBA_DIAS } from "./plan";
 
 /* ADM-PLAN · Planes y suscripciones (Super Admin.dc.html secPlan): MRR, en prueba, cobro fallido, Free al techo; Planes
    (qué incluye cada uno), Suscripciones (estado de cada negocio de tus ciudades) y Comisiones (vigentes y programadas). */
@@ -16,7 +17,7 @@ export async function datosPlanes(s: Staff, tab: TabPlan, est: string | null) {
               count(*) filter (where x.status = 'past_due')::int as fallidos, count(*) filter (where x.status = 'courtesy')::int as cortesia,
               (select count(*)::int from businesses b join business_stats_cache st on st.business_id = b.id join cities c on c.id = b.city_id
                 where ${CIUD} and b.status = 'active' and st.plan = 'free'
-                  and (select count(*) from operations o where o.business_id = b.id and o.kind <> 'table' and o.sent_at >= date_trunc('month', now() at time zone c.timezone) at time zone c.timezone) >= ${TOPE_FREE}) as techo
+                  and (select count(*) from operations o where o.business_id = b.id and o.kind <> 'table' and o.sent_at >= date_trunc('month', now() at time zone c.timezone) at time zone c.timezone) >= cfg_int('free_ops_cap')) as techo
          from subscriptions x join businesses b on b.id = x.business_id where ${CIUD}`, [s.cities]),
     tab === "subs" ? db().query<FilaSub>(
       `select x.business_id as negocio, b.name as nombre, x.status as estado, x.cycle as ciclo, x.failed_attempts as intentos,
@@ -31,7 +32,7 @@ export async function datosPlanes(s: Staff, tab: TabPlan, est: string | null) {
         order by f.kind, f.effective_from`) : Promise.resolve({ rows: [] }),
   ]);
   const x = k.rows[0]!, precio = Math.round(PRECIO_PRO * 100);
-  return { kpi: { ...x, mrr: x.activos * precio + Math.round((x.anuales * precio * 10) / 12) }, subs: L.rows, fees: F.rows, cfg: { precio, prueba: PRUEBA_DIAS, tope: TOPE_FREE } };
+  return { kpi: { ...x, mrr: x.activos * precio + Math.round((x.anuales * precio * 10) / 12) }, subs: L.rows, fees: F.rows, cfg: { precio, prueba: PRUEBA_DIAS, tope: await valor("free_ops_cap") } };
 }
 export type DatosPlanes = Awaited<ReturnType<typeof datosPlanes>>;
 

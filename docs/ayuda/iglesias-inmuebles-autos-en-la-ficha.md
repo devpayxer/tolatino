@@ -50,6 +50,8 @@ Cada página responde primero la pregunta de su tipo, con datos de verdad:
 - **Ayuda:** ver `resena-y-ayuda-con-tu-visita`. Si una propiedad, un carro o «Pedir fecha» no se ve, puede estar en pausa mientras To'Latino
   revisa una posible estafa.
 
+**El techo de Free** (los 10 pedidos, citas o solicitudes en línea al mes) es el de hoy: To'Latino lo fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## FAQ
 - **¿Cuánto necesito para mudarme?** Lo que dice «Para mudarte» en la propiedad: renta + depósito (+ solicitud si la hay). Nada fuera de lo
   publicado.
@@ -103,3 +105,5 @@ with your visit.
 - **Can the out-the-door total go up?** No: price + tax + tags + dealer fee, before you sign. If they charge more, ask for help.
 - **Do I pay to go to Mass or the food pantry?** No. Food, clothing and prayer are never charged.
 - **Why can't I see the room's address?** To protect the person renting it: you get it once your visit is accepted.
+
+**The Free cap** (10 online orders, bookings or requests a month) is today's: To'Latino sets it in its Configuration and the screen always shows the one in force.

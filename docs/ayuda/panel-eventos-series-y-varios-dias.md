@@ -46,6 +46,8 @@ boletos. Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: negocio. Tema
 | Un boleto de un día ya se vendió | El día para el que vale ya no cambia. |
 | Pasa una fecha de la serie | Queda como «pasó»; las siguientes siguen saliendo. |
 
+**Los plazos de esta página** (el día de pago: el martes después de cada fecha) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## Preguntas frecuentes
 - **¿Hasta cuántas fechas?** Las que pone Configuración › Eventos (hoy 52). Si no caben en los días que se pueden publicar, las demás se crean
   solas cuando llegan.
@@ -69,3 +71,5 @@ time); to change one date, use “Change {date}” (attendees get a text and buy
 date** (refunds only that date’s buyers) or **the whole series**; a multi-day event is cancelled as a whole. Clients see a series once in lists
 (“EVERY THURSDAY · +7 DATES”), the dates on the page, and on multi-day events the days, hours and “Valid only on …”. Payouts stay per date, the
 Tuesday after each date (multi-day: after the last day).
+
+**The time limits on this page** (the payout day: the Tuesday after each date) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.

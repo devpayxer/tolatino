@@ -18,7 +18,6 @@ export type OficiosPublico = {
   compat: { veh: string[] | null; mk: string[] | null; tenure: string[] | null };
   vehiculos: Vehiculo[]; casas: Casa[]; dirs: { id: string; t: string }[]; hoy: string;
 };
-const TOPE_FREE = 10;
 
 export async function oficiosPublico(negocio: string, userId: string | null): Promise<OficiosPublico | null> {
   const b = (await db().query<{ id: string; name: string; cat: string; address: string | null; phone: string | null; foto: string | null; mods: string[]; off: Record<string, unknown> | null; attrs: Record<string, unknown>;
@@ -39,10 +38,10 @@ export async function oficiosPublico(negocio: string, userId: string | null): Pr
     db().query<OficiosPublico["tool"]>(`select labor_rate_cents as rate, warranty_months as "warrM", warranty_miles as "warrMi", same_day_cutoff_h as cut, h24, emergency_eta_min as eta, null::int as zone from trade_settings where business_id = $1`, [negocio]),
     db().query<PolPub>(`select auto_approve as auto, response_min as resp, deposit_cents as dep, cancel_free_h as cxh, expires_h as exp, deposit_kinds as kinds, deposit_big_over_cents as "bigOver", deposit_big_cents as big, deposit_min_price_cents as min from booking_policies where business_id = $1`, [negocio]),
     db().query<{ usados: number; cap: number }>(`select (select count(*)::int from operations where business_id = $1 and kind <> 'table' and free_quota_month = $2) as usados,
-       coalesce((select (value #>> '{}')::int from platform_config where key = 'free_ops_cap'), $3) as cap`, [negocio, b.mes, TOPE_FREE]),
+       cfg_int('free_ops_cap') as cap`, [negocio, b.mes]),
   ]);
   if (!I.rows.length) return null;
-  const offC: OficiosPublico["off"] = !mods.includes("citas") ? "apagado" : off.citas ? "pausa" : b.plan !== "pro" && (U.rows[0]?.usados ?? 0) >= (U.rows[0]?.cap ?? TOPE_FREE) ? "tope" : null;
+  const offC: OficiosPublico["off"] = !mods.includes("citas") ? "apagado" : off.citas ? "pausa" : b.plan !== "pro" && !!U.rows[0] && U.rows[0].usados >= U.rows[0].cap ? "tope" : null;
   const at = b.attrs ?? {}, fv = b.fv ?? [];
   // Con quién trabaja (Hogar): si el negocio marca solo dueños o landlords, el inquilino no puede pedir.
   const tenure = rubro === "hogar" && (fv.includes("dueno") || fv.includes("land") || fv.includes("inq")) ? ["inq", "dueno", "land"].filter((x) => fv.includes(x)) : null;

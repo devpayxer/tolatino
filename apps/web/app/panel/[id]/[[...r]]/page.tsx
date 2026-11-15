@@ -270,7 +270,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     // 6g · door:{evento}@{fecha} = el modo puerta del panel y el Monitor de esa fecha.
     const [eid = "", fver = null] = ruta.det?.startsWith("evt:") ? ruta.det.slice(4).replace(/^edit:/, "").split("@") : ruta.det?.startsWith("door:") ? ruta.det.slice(5).split("@") : [""];
     const [lista0, formatos, generos, org, cfg, fee, b, mod, quien] = await Promise.all([
-      E.eventosDelNegocio(d.id), E.formatosDe(d.cat, d.id), E.generos(), E.organizadorDe(d.id), valores("evt_revision_h", "evt_fotos_max", "evt_dias_adelante", "evt_fechas_max", "evt_dias_seguidos_max"),
+      E.eventosDelNegocio(d.id), E.formatosDe(d.cat, d.id), E.generos(), E.organizadorDe(d.id), valores("evt_revision_h", "evt_fotos_max", "evt_dias_adelante", "evt_fechas_max", "evt_dias_seguidos_max", "evt_pago_dia"),
       db().query<{ bp: number; fixed: number }>(`select rate_bp as bp, fixed_cents as fixed from fee_rules where kind = 'bol' and effective_from <= now() order by effective_from desc, id desc limit 1`),
       db().query<{ dir: string | null }>(`select address as dir from businesses where id = $1`, [d.id]),
       // 6b · El módulo Eventos: si su categoría lo admite, si está encendido y si To'Latino lo pausó (con el motivo).
@@ -295,7 +295,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     const chart = det6 && fv6 ? await (await import("@/lib/evt-series")).ventasPorDia(d.id, det6.kind === "span" ? det6.fechas.filter((x) => x.st === "scheduled").at(-1)?.id ?? fv6 : fv6) : null;
     // 6g · La puerta: porteros, reglas, la sesión del modo puerta de esta persona y el Monitor de la fecha (la del modo puerta o la que se ve).
     const puerta = det6 ? await (await import("@/lib/puerta-equipo")).puertaPanel(d.id, eid, ruta.det?.startsWith("door:") && fver ? fver : fv6, acc.yo.id, lang === "es") : null;
-    return { puerta, cambios, liq, lista, masPasados: lista0.mas, formatos, generos, org, det: det6, fver: fv6, chart, cfg: { revisionH: cfg.evt_revision_h, fotosMax: cfg.evt_fotos_max, diasAdelante: cfg.evt_dias_adelante, fechasMax: cfg.evt_fechas_max, diasMax: cfg.evt_dias_seguidos_max },
+    return { puerta, cambios, liq, lista, masPasados: lista0.mas, formatos, generos, org, det: det6, fver: fv6, chart, cfg: { revisionH: cfg.evt_revision_h, fotosMax: cfg.evt_fotos_max, diasAdelante: cfg.evt_dias_adelante, fechasMax: cfg.evt_fechas_max, diasMax: cfg.evt_dias_seguidos_max, pagoDia: cfg.evt_pago_dia },
       fee: fee.rows[0] ?? null, hoy: d.hoy.fecha, dir: b.rows[0]?.dir ?? null, mod: mod.rows[0] ?? { aplica: false, on: false, pausa: null }, quien, ventas, codigos, vendidos, despues, espera };
   })() : undefined;
   // 6i · Evento privado (restaurantes): las solicitudes en Hoy y su detalle piden «Hoy y pedidos»; los ajustes (Reservaciones › Evento privado),

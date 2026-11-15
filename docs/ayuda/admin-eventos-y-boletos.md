@@ -84,6 +84,8 @@ Ciudad (evt:aprobar); **ocultar y bloquear**: Admin (evt:retirar). Pestaña **Bu
 | Anulas un boleto | Queda **ANULADO** con el motivo; el dinero no se devuelve solo (devolver: el comprador cancela, el organizador devuelve o una ayuda B-; o cancelar el evento). |
 | Alguien intenta publicar sin revisión | La base no deja un evento en vivo sin aprobación (ni sin persona que apruebe, salvo organizador verificado). |
 
+**Los plazos de esta página** (el día de pago: el martes después de cada fecha) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## Preguntas frecuentes
 - **¿Se cambia el plazo de 24 h?** Sí, en Configuración › Eventos (con límites y auditoría).
 - **¿Puedo editar el evento de un negocio?** No: se pide el cambio o se oculta, con motivo.
@@ -204,3 +206,5 @@ event payouts**; new Event settings (notices per date, payout day, new-organizer
 - On an RSVP event's page, the «RSVP capacity (spots)» row has **Adjust capacity** (0 = no limit). It never drops below the spots already saved on any date, it overrides what the organizer saves, the organizer is told with your reason, and it is audited and shown in the event changes.
 
 **Can the organizer undo my RSVP adjustment?** No: To'Latino's last adjustment rules in the database; to change it, adjust again.
+
+**The time limits on this page** (the payout day: the Tuesday after each date) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.

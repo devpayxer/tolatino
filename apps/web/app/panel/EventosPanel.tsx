@@ -20,7 +20,8 @@ import type { DespuesPanel } from "@/lib/boletos-despues";
 import type { EsperaPanel } from "@/lib/espera";
 import type { CodigoPanel } from "@/lib/codigos-evt";
 import type { CambiosPanel } from "@/lib/evt-cambios";
-import type { FilaLiq } from "@/lib/evt-liquidacion";
+import type { LiqPanel } from "@/lib/evt-liquidacion";
+import { diaSemanaTxt } from "@/lib/plazo-txt";
 import { cambiosBloques } from "./EventosCambios";
 import { puertaFicha } from "./EventosPuerta";
 import type { PuertaPanel } from "@/lib/puerta-equipo";
@@ -31,7 +32,7 @@ import { uuid } from "@/lib/uuid";
 
 export type EvtData = {
   lista: FilaPanelEvt[]; masPasados?: boolean; formatos: FormatoEvt[]; generos: { key: string; label: Bi }[]; org: { verificado: boolean; bloqueado: string | null };
-  det: EvtPanel | null; cfg: { revisionH: number; fotosMax: number; diasAdelante: number; fechasMax: number; diasMax: number }; fee: { bp: number; fixed: number } | null; hoy: string; dir: string | null;
+  det: EvtPanel | null; cfg: { revisionH: number; fotosMax: number; diasAdelante: number; fechasMax: number; diasMax: number; pagoDia: number }; fee: { bp: number; fixed: number } | null; hoy: string; dir: string | null;
   /* 6b · El módulo Eventos (interruptor del negocio y pausa de To'Latino) y QUIÉN VA del evento abierto (nombre + inicial). */
   mod: { aplica: boolean; on: boolean; pausa: string | null }; quien: { nombre: string; party: number; st: string; at: string; dia: string }[];
   /* 6c · Lo vendido del evento abierto, sus códigos y lo vendido de cada evento (barra de la lista). */
@@ -39,7 +40,7 @@ export type EvtData = {
   /* 6d · Cortesías, devoluciones, transferencias, ayuda con órdenes y LISTA DE ESPERA del evento abierto. */
   despues: DespuesPanel | null; espera: EsperaPanel | null;
   /* 6e · Cambios del evento (venta, fecha, cancelación, avisos) y su dinero por fecha (la liquidación del martes). */
-  cambios: CambiosPanel | null; liq: { filas: FilaLiq[]; deuda: number } | null;
+  cambios: CambiosPanel | null; liq: LiqPanel | null;
   /* 6f · La FECHA QUE ESTÁS VIENDO de una serie (evt:{id}@{fecha}) y lo vendido (o apuntado) por día de esa fecha. */
   fver: string | null; chart: { dias: string[]; n: number[] } | null;
   /* 6g · La puerta: porteros, reglas, la sesión del modo puerta de esta persona y el Monitor de la fecha. */
@@ -180,7 +181,7 @@ function ventaBloques(c: Ctx, e: EvtPanel): (Bloque | null)[] {
   const fee = X.fee, feeL = fee ? `${(fee.bp / 100).toLocaleString(es ? "es-US" : "en-US")} % + ${dinero(fee.fixed)}` : "";
   if (V.venta === "abierta") out.push({ type: "note", tone: "ok", icon: "ticket", t: E2("VENDIENDO · El precio que pones es el que paga el cliente: cargos incluidos. En la puerta no se venden boletos.", "SELLING · The price you set is what the customer pays: fees included. No tickets are sold at the door.") });
   else if (!V.pro) out.push({ type: "note", tone: "warn", icon: "lock", t: E2("La venta de boletos es parte de Pro. Con Free tu evento se ve, pero no se venden boletos.", "Ticket sales are part of Pro. On Free your event shows, but tickets are not sold."), ...ctaPro(c, E2("Ver Pro", "See Pro")) });
-  else if (!V.cobros) out.push({ type: "note", tone: "warn", icon: "card", t: E2("Para vender boletos, enciende Cobros: tu cuenta de cobro recibe lo vendido el martes después del evento.", "To sell tickets, turn on Payouts: your payout account receives sales the Tuesday after the event."), cta: E2("Ir a Cobros", "Go to Payouts"), onCta: () => c.go("pay") });
+  else if (!V.cobros) out.push({ type: "note", tone: "warn", icon: "card", t: E2(`Para vender boletos, enciende Cobros: tu cuenta de cobro recibe lo vendido ${diaSemanaTxt(X.cfg.pagoDia, true)} después del evento.`, `To sell tickets, turn on Payouts: your payout account receives sales the ${diaSemanaTxt(X.cfg.pagoDia, false)} after the event.`), cta: E2("Ir a Cobros", "Go to Payouts"), onCta: () => c.go("pay") });
   else if (V.aviso) out.push({ type: "note", tone: "ink", icon: "ticket", t: V.aviso });
   const k = V.kpi;
   out.push({ type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [
@@ -195,7 +196,7 @@ function ventaBloques(c: Ctx, e: EvtPanel): (Bloque | null)[] {
     { k: E2("BRUTO", "GROSS"), v: dinero(k.bruto) }, { k: E2("DEPÓSITOS DE MESA", "TABLE DEPOSITS"), v: dinero(k.depositos) }, { k: E2("EXTRAS", "EXTRAS"), v: dinero(k.extras) },
     { k: E2("DESCUENTOS (CÓDIGOS)", "DISCOUNTS (CODES)"), v: k.descuentos ? `−${dinero(k.descuentos)}` : dinero(0) },
     { k: E2(`COMISIÓN TO'LATINO ${feeL} POR BOLETO`, `TO'LATINO FEE ${feeL} PER TICKET`), v: `−${dinero(k.comision)}` },
-    { k: E2("TE LLEGA · A TU BANCO EL MARTES DESPUÉS DEL EVENTO", "YOU GET · TO YOUR BANK THE TUESDAY AFTER THE EVENT"), v: dinero(k.neto), fg: "var(--tl-open-text)" }] });
+    { k: E2(`TE LLEGA · A TU BANCO ${diaSemanaTxt(X.cfg.pagoDia, true).toUpperCase()} DESPUÉS DEL EVENTO`, `YOU GET · TO YOUR BANK THE ${diaSemanaTxt(X.cfg.pagoDia, false).toUpperCase()} AFTER THE EVENT`), v: dinero(k.neto), fg: "var(--tl-open-text)" }] });
   // Códigos de descuento.
   const Fc = c.form<{ code: string; kind: "pct" | "amount"; value: string; usos: string }>(`det:evcod:${e.id}`, { code: "", kind: "pct", value: "10", usos: "20" });
   out.push({ type: "group", k: E2("CÓDIGOS DE DESCUENTO", "DISCOUNT CODES") });

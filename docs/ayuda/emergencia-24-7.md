@@ -29,6 +29,8 @@ Hoy (arriba, en rojo) y el detalle de la emergencia. Versión: 6 nov 2026. Audie
 | Ya no la necesitas | «Ya no la necesito» la cancela. |
 | Ya tienes una emergencia buscando | Se abre esa, no se manda otra. |
 
+**Los plazos de esta página** (cuántos minutos hay para que un negocio acepte) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## Preguntas frecuentes
 **¿Cuánto cuesta?** La salida que ves (con el recargo de emergencia incluido). Lo demás te lo cotizan antes de hacerlo.
 **¿Por qué no aparece un negocio?** Solo reciben emergencias los negocios Pro con 24 h que hacen ese trabajo y llegan a tu casa.
@@ -39,3 +41,5 @@ Hoy (arriba, en rojo) y el detalle de la emergencia. Versión: 6 nov 2026. Audie
 Pick what is happening, your home and access notes; it goes to every Pro 24/7 business that does that job and reaches you.
 The first to accept comes: you see their name, arrival and call-out price, and it becomes an "on the way" visit. Nobody
 within 15 minutes → "Nobody available" (nothing charged). The 911 line is always shown.
+
+**The time limits on this page** (minutes for a business to accept) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.

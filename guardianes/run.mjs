@@ -9224,7 +9224,7 @@ const guardianes = {
 
   /* 9n-5 · plazoAbiertoSeLee: un plazo de Sistema › Configuración que se abrió (editable) no puede seguir escrito como número en lo que ve la
      persona: si el Admin lo cambia, la pantalla diría otra cosa que la regla. Cada entrada: la clave, dónde se dice y cómo se decía con el de
-     fábrica. Al revés (alreves9b3): volver a escribir «48 horas» en Inscribirme. */
+     fábrica. Al revés (alreves9b3): volver a escribir «48 horas» en Inscribirme, o «el martes después de cada fecha» en el dinero del evento (9n-6). */
   plazoAbiertoSeLee() {
     const G = "plazoAbiertoSeLee";
     const T = [
@@ -9236,6 +9236,14 @@ const guardianes = {
       ["ayuda_negocio_h", /^apps\/web\/app\/(\(app\)\/(cita|pedido)\/\[num\]\/ayuda\/|\(app\)\/pedido\/\[num\]\/AyudaEstado\.tsx|panel\/(Pedidos|Citas)\.tsx|admin\/Colas\.tsx)/, /[Rr]espond(e|i[oó]) en 24 h|(Reply|reply|answer) within 24 hours|no respondi[oó] en 24/],
       ["sp_seguro_guardar_h", /^apps\/web\/app\/(\(app\)\/cita\/\[num\]\/Estado\.tsx|panel\/Citas\.tsx)$/, /guardada 2 horas|held (for )?2 hours|tiene 2 horas/],
       ["ninos_purga_dias", /^apps\/web\/app\/(\(app\)\/n\/\[id\]\/(?!consulta\/)|admin\/acciones-colas\.ts|panel\/Inscripciones\.tsx)/, /borran? a los 30 d[ií]as|deleted (after )?30 days|30 d[ií]as (despu[eé]s )?de terminar|30 days after it ends/],
+      // 9n-6 · el día de pago de eventos (evt_pago_dia), los plazos de Hogar y Auto (0150), el techo de Free y el aviso de las licencias.
+      ["evt_pago_dia", /^apps\/web\/app\/(panel\/(EventosPanel|EventosCambios)\.tsx|admin\/(Liquidaciones|EventosAdmin)\.tsx|admin\/acciones-eventos\.ts)$/, /el martes despu[eé]s|the Tuesday after|EL MARTES DESPU[EÉ]S|THE TUESDAY AFTER|LIQUIDACI[OÓ]N DEL MARTES|llegó a su martes/],
+      ["sol_pre_h", /^apps\/web\/lib\/solicitudes\.ts$/, /interval '24 hours'/],
+      ["sol_pq_h", /^apps\/web\/(app\/\(app\)\/(pre\/\[num\]\/|n\/\[id\]\/presupuestos\/)|lib\/solicitudes\.ts)/, /(respondi[oó]|responde) en 48 h|in 48 h\b|within 48 hours|en 48 horas|interval '48 hours'/],
+      ["sol_em_min", /^apps\/web\/(app\/\(app\)\/(pre\/\[num\]\/|emergencia\/)|lib\/solicitudes\.ts)/, /en 15 minutos|in 15 minutes|los 15 minutos|The 15 minutes|interval '15 minutes'/],
+      ["apartado_h", /^apps\/web\/(app\/\(app\)\/n\/\[id\]\/(Tienda|Ficha)\.tsx|lib\/apartados\.ts)$/, /guardan 48 horas|[Kk]ept for 48 hours|'NEG-TIENDA'\), 48\)|horas = 48\b|horas \?\? 48\b/],
+      ["free_ops_cap", /^apps\/web\/(app\/(panel|admin)\/|lib\/)/, /hasta 10 (pedidos|solicitudes)|up to 10 (online|requests)|\bTOPE_FREE\b|topeFree \?\? 10\b/],
+      ["lic_aviso_dias", /^apps\/web\/app\/admin\/Analitica\.tsx$/, /VENCER EN 14 D[IÍ]AS/],
     ];
     for (const x of codigo) {
       const fs = T.filter(([, f]) => f.test(x));

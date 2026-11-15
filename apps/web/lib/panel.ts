@@ -1,10 +1,11 @@
 import "server-only";
+import { valor } from "./config";
 import { db } from "./db";
 import { yo, type Yo } from "./cuenta";
 import type { Lang } from "./idioma";
 import { TLOnbNeg } from "./onb/datos";
 import { aPanel, fuerza, prueba, seDuerme, type DiaPanel } from "./panel-reglas";
-import { EQUIPO_FREE, ITEMS_FREE, TOPE_FREE } from "./plan";
+import { EQUIPO_FREE, ITEMS_FREE } from "./plan";
 import { topeFreeDe } from "./pedir";
 import { estado } from "./tarjeta";
 import { licenciasDe, licenciasEquipo } from "./licencias";
@@ -142,7 +143,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
   const k = cifras.rows[0] ?? { v7: 0, vhoy: 0, vprueba: 0, c7: 0, cprueba: 0 };
   const onb = !!b.attrs?.onb && Date.now() - Date.parse(b.created) < 45 * D;
   const ahoraHora = b.hora;
-  const tope = pro ? { cap: TOPE_FREE, usados: 0 } : await topeFreeDe(id);
+  const tope = pro ? { cap: await valor("free_ops_cap"), usados: 0 } : await topeFreeDe(id);
   // Novedades (2g): cuántas en vivo y programadas, para «Tu página › Novedades».
   const nv = (await db().query<{ vivas: number; prog: number }>(
     `select count(*) filter (where p.status = 'live' and p.hidden_at is null and p.publish_at <= now() and (p.ends_at is null or p.ends_at > now()))::int as vivas,

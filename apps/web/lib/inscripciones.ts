@@ -8,7 +8,6 @@ import { esCuidado, kindNinosDe, type KindNinos } from "./ninos-comun";
 import { guardarNino, guardarNotaFe, limpiarNino } from "./ninos-privado";
 import { kindFeDe } from "./fe-comun";
 import { FRANJAS, taparNumeros } from "./visitas-inm-comun";
-import { TOPE_FREE } from "./plan";
 import { pasarela } from "./pagos/pasarela";
 import { bancoPide } from "./pagos/verificacion";
 
@@ -106,9 +105,9 @@ export function fechasFe(hoy: string): string[] { return Array.from({ length: 59
 /* El tope de Free de Iglesias (§6 #6): 10 solicitudes al mes en la app. */
 async function topeFe(c: Q, negocio: string): Promise<boolean> {
   const r = (await c.query<{ cap: number; usados: number }>(
-    `select coalesce((select (value #>> '{}')::int from platform_config where key = 'free_ops_cap'), $2) as cap,
+    `select cfg_int('free_ops_cap') as cap,
             (select count(*)::int from operations o join businesses b on b.id = o.business_id join cities ci on ci.id = b.city_id
-              where o.business_id = $1 and o.kind <> 'table' and o.free_quota_month = to_char(now() at time zone ci.timezone, 'YYYY-MM')) as usados`, [negocio, TOPE_FREE])).rows[0];
+              where o.business_id = $1 and o.kind <> 'table' and o.free_quota_month = to_char(now() at time zone ci.timezone, 'YYYY-MM')) as usados`, [negocio])).rows[0];
   return !!r && r.usados >= r.cap;
 }
 

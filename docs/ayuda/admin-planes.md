@@ -24,6 +24,8 @@ comisiones). Versión: 6 nov 2026. Audiencia: equipo. Tema: equipo._
 
 Todo queda en la auditoría con el motivo.
 
+**El techo de Free** (los 10 pedidos, citas o solicitudes en línea al mes) es el de hoy: To'Latino lo fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## Ingresos
 Pestaña **Ingresos** en Planes y suscripciones: **comisiones de 8 semanas** (lo que To'Latino se queda de cada cobro con
 tarjeta, neto de devoluciones; la semana actual resaltada), **cobros de Pro de 8 semanas** (con el MRR) y **comisión por
@@ -38,3 +40,5 @@ days, for your cities; CSV export is audited.
 `/admin/plans`: MRR, trials (ending within 7 days), failed charges and Free at cap. Plans (what Free and Pro include).
 Subscriptions per business with actions: extend trial, courtesy Pro, remove courtesy, retry charge — each with a reason
 and audited. Fees: current and scheduled; a change applies in 30 days and never touches past sales.
+
+**The Free cap** (10 online orders, bookings or requests a month) is today's: To'Latino sets it in its Configuration and the screen always shows the one in force.

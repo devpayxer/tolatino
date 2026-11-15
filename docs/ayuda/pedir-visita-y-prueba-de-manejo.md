@@ -36,6 +36,8 @@ catecismo. **Nada se cobra en la app: hoy pagas $0, siempre.**
 
 **Los plazos de esta página** (cuántas horas para responder, cuánto se guarda un cupo, cuándo queda una baja, a los cuántos días se borra lo privado) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
 
+**El techo de Free** (los 10 pedidos, citas o solicitudes en línea al mes) es el de hoy: To'Latino lo fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## FAQ
 - **¿Me cobran por ver una propiedad o por la prueba de manejo?** No. Nadie cobra por ver. Si alguien te pide dinero antes de ver, repórtalo.
 - **¿Me piden seguro social, ingresos o crédito?** No en la app. La ficha dice qué papeles piden; se llevan en persona.
@@ -55,3 +57,5 @@ the app: you pay $0 today, always.**
 Viewing and test drives are free; nobody may charge you to view. No SSN, income or credit is asked in the app. One live request per
 property or car, up to 5 waiting. Free businesses take up to 10 requests a month. Notes with SSN, ITIN, card or account numbers are masked
 before saving. Counseling notices never name the place or the service.
+
+**The Free cap** (10 online orders, bookings or requests a month) is today's: To'Latino sets it in its Configuration and the screen always shows the one in force.

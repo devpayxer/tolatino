@@ -15,7 +15,8 @@ import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { accionesEvt, accionesOrg, bloquesEvt, estadoEvt } from "./ColasEventos";
 import type { CambiosPanel } from "@/lib/evt-cambios";
-import type { FilaLiq } from "@/lib/evt-liquidacion";
+import type { LiqPanel } from "@/lib/evt-liquidacion";
+import { diaSemana } from "@/lib/plazo-txt";
 import type { FechaPanel } from "@/lib/evt";
 import { evtCancelarAdmin, evtCongelar, evtCupo, evtExtenderVenta } from "./acciones-eventos";
 import type { CuposFecha, Sobreventa } from "@/lib/evt-admin";
@@ -113,7 +114,7 @@ type VentasAdm = { kpi: { vendidos: number; bruto: number; comision: number; dev
 /* 6f · En la lista: «Cada jueves · 8 fechas» o «3 días». */
 const formaAdm = (e: FilaEvtAdm) => (e.kind === "series" && e.rep ? ` · ${repL(e.dia, e.rep, true)} · ${e.nf} por delante` : e.kind === "span" ? ` · ${e.span} días` : "");
 export function EventoAdmin({ e, puede, rsvp = [], publico = null, ventas = null, cambios = null, liq = null, fechas = [], forma = null, cupos = null }: { fechas?: FechaPanel[]; forma?: { kind: string; l: string } | null; e: EvtAdm; puede: { aprobar: boolean; retirar: boolean; editar?: boolean; dinero?: boolean }; rsvp?: RsvpAdm[]; publico?: { href: string; van: number } | null; ventas?: VentasAdm | null;
-  cambios?: CambiosPanel | null; liq?: { filas: FilaLiq[]; deuda: number } | null; cupos?: CuposFecha | null }) {
+  cambios?: CambiosPanel | null; liq?: LiqPanel | null; cupos?: CuposFecha | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
@@ -157,13 +158,13 @@ export function EventoAdmin({ e, puede, rsvp = [], publico = null, ventas = null
 /* 6e · La ficha del evento en el Super Admin: lo que cambió y el dinero por fecha, y las dos acciones de To'Latino. */
 const LIQ_ST: Record<string, [string, string]> = { proxima: ["PRÓXIMA", "neutral"], pendiente: ["PENDIENTE", "action"], retenida: ["RETENIDA", "danger"], pagando: ["EN CAMINO", "action"], pagada: ["PAGADA", "signal"], revertida: ["AJUSTADA", "neutral"] };
 const CAMBIO_L: Record<string, string> = { paused: "Venta pausada", resumed: "Venta reanudada", moved: "Cambió de fecha", time_changed: "Cambió de hora", cancelled: "Evento cancelado", date_cancelled: "Fecha cancelada", frozen: "Venta congelada", unfrozen: "Venta descongelada", capacity_adjusted: "Cupo ajustado", sales_extended: "Venta extendida" };
-function cambiosAdm(e: EvtAdm, K: CambiosPanel | null, L: { filas: FilaLiq[]; deuda: number } | null, puede: { retirar: boolean; editar?: boolean; dinero?: boolean }, setConf: (c: Confirmar) => void): Bloque[] {
+function cambiosAdm(e: EvtAdm, K: CambiosPanel | null, L: LiqPanel | null, puede: { retirar: boolean; editar?: boolean; dinero?: boolean }, setConf: (c: Confirmar) => void): Bloque[] {
   const B: Bloque[] = [], usd = (c: number) => `$${(c / 100).toFixed(2)}`;
   if (K?.cancelacion) B.push({ type: "note", tone: "danger", icon: "ban", t: `CANCELADO · ${K.cancelacion.motivo} · ${K.cancelacion.ordenes} órdenes devueltas (${usd(K.cancelacion.devuelto)})${K.cancelacion.st === "running" ? " · siguen las que faltan (barrido)" : ""}${K.cancelacion.pendientes ? ` · ${K.cancelacion.pendientes} devoluciones pendientes en Stripe` : ""}` });
   if (K?.congelado) B.push({ type: "note", tone: "danger", icon: "lock", t: `VENTA CONGELADA POR TO'LATINO · ${K.congelado}` });
   if (K?.cambios.length) B.push({ type: "timeline", k: "CAMBIOS DEL EVENTO", items: K.cambios.map((x) => ({ t: CAMBIO_L[x.kind] ?? x.kind,
     s: `${x.by === "admin" ? "To'Latino" : "El organizador"} · ${new Date(x.at).toLocaleString("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}${x.antes ? ` · antes ${x.antes} → ${x.ahora}` : ""}${x.que ? ` · ${x.que.es}` : ""}${x.nota ? ` · ${x.nota}` : x.motivo ? ` · ${x.motivo}` : ""}` })) });
-  if (L?.filas.length && puede.dinero) B.push({ type: "rows", k: "DINERO POR FECHA · LIQUIDACIÓN DEL MARTES", items: L.filas.map((x) => ({ key: x.fecha, icon: x.st === "retenida" ? "lock" : "dollar", t: `${diaCorto(x.dia, true)} · ${hora(x.h0)}${x.cancelada ? " · cancelada" : ""}`,
+  if (L?.filas.length && puede.dinero) B.push({ type: "rows", k: `DINERO POR FECHA · LIQUIDACIÓN DEL ${diaSemana(L.pagoDia, true).toUpperCase()}`, items: L.filas.map((x) => ({ key: x.fecha, icon: x.st === "retenida" ? "lock" : "dollar", t: `${diaCorto(x.dia, true)} · ${hora(x.h0)}${x.cancelada ? " · cancelada" : ""}`,
     s: `Se paga el ${diaCorto(x.payOn, true)} · bruto ${usd(x.bruto)} · comisión ${usd(x.comision)} · devuelto ${usd(x.devuelto)}${x.disputa ? ` · disputas ${usd(x.disputa)}` : ""}${x.motivo ? ` · ${x.motivo.es}` : ""}`, r: usd(x.neto), tag: LIQ_ST[x.st]?.[0], tone: LIQ_ST[x.st]?.[1], compact: true, chev: false })) });
   const vivo = e.st === "live" || e.st === "paused";
   const A: { l: string; v?: string; icon?: string; onClick: () => void }[] = [];

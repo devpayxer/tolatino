@@ -200,7 +200,7 @@ export type CobrosPanel = {
   cobros: { num: string; quien: string; monto: number; comision: number; devuelto: number; estado: string; at: string; tarjeta: string | null; disputa: string | null }[];
   tasa: number;
   /* 6e · Los pagos de eventos por fecha (lib/evt-liquidacion.ts); los pone la página del panel. */
-  eventos?: { filas: import("./evt-liquidacion").FilaLiq[]; deuda: number };
+  eventos?: import("./evt-liquidacion").LiqPanel;
 };
 export async function cobrosPanel(negocio: string): Promise<CobrosPanel> {
   await repararPagos(negocio).catch(() => undefined);

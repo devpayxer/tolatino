@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { valor } from "@/lib/config";
 import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
 import { oficiosPublico } from "@/lib/oficios-publico";
@@ -17,5 +18,5 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const s = op.servicios.find((x) => x.id === sp.s);
   if (!op.can || op.rubro !== "hogar" || !s || s.k !== "pres") redirect(`/n/${id}?tab=svc`);
   const cands = await candidatosPq(u?.id ?? null, id, s.id);
-  return <Presupuestos op={op} svcId={s.id} cands={cands} es={lang === "es"} yo={!!u} />;
+  return <Presupuestos op={op} svcId={s.id} cands={cands} es={lang === "es"} yo={!!u} plazoH={await valor("sol_pq_h")} />;
 }

@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import type { Staff } from "./admin";
-import { cfgSql } from "./config";
+import { cfgSql, valor } from "./config";
 import { db, tx } from "./db";
 import { bi, diaCorto, dinero, hora, type Bi } from "./evt-comun";
 import { pasarela } from "./pagos/pasarela";
@@ -233,7 +233,9 @@ export type FilaLiq = {
   id: string | null; fecha: string; evento: Bi; eid: string; dia: string; h0: number; st: "proxima" | "pendiente" | "retenida" | "pagando" | "pagada" | "revertida";
   motivo: Bi | null; payOn: string; bruto: number; comision: number; devuelto: number; disputa: number; base: number; descontado: number; neto: number; pagada: string | null; cancelada: boolean;
 };
-export async function liquidacionesPanel(negocio: string, eventoId: string | null): Promise<{ filas: FilaLiq[]; deuda: number }> {
+/* 9n-6 · pagoDia: el día de la semana en que se paga (evt_pago_dia, ISO 1 = lunes); las pantallas lo dicen con diaSemanaTxt (lib/plazo-txt.ts). */
+export type LiqPanel = { filas: FilaLiq[]; deuda: number; pagoDia: number };
+export async function liquidacionesPanel(negocio: string, eventoId: string | null): Promise<LiqPanel> {
   const r = (await db().query<{ id: string | null; fid: string; t: Bi; eid: string; dia: string; h0: number; st: string | null; hk: string | null; hn: string | null; pay_on: string; gross: number; fee: number; refunded: number; disputed: number; base: number; carry: number; net: number; paid: string | null; cx: boolean;
     kg: number; kf: number; kr: number; kd: number; kb: number }>(
     `select s.id::text, d.id::text as fid, e.title as t, e.id::text as eid, d.local_date::text as dia,
@@ -251,7 +253,7 @@ export async function liquidacionesPanel(negocio: string, eventoId: string | nul
       order by (d.starts_at > now()), d.starts_at desc limit 60`, [negocio, eventoId])).rows;
   const deuda = (await db().query<{ d: number }>(`select evt_liq_deuda($1) as d`, [negocio])).rows[0]?.d ?? 0;
   return {
-    deuda,
+    deuda, pagoDia: await valor("evt_pago_dia"),
     filas: r.map((x): FilaLiq => {
       const fijo = x.st === "paying" || x.st === "paid" || x.st === "reversed";
       const st: FilaLiq["st"] = !x.st ? "proxima" : x.st === "pending" ? "pendiente" : x.st === "held" ? "retenida" : x.st === "paying" ? "pagando" : x.st === "paid" ? "pagada" : "revertida";
@@ -285,7 +287,7 @@ export async function liquidacionesAdmin(s: Staff, st: string | null, q: string)
               coalesce((select sum(evt_liq_deuda(z.business_id)) from (select distinct business_id from event_settlements y where (cardinality($1::text[]) = 0 or y.city_id = any($1::text[])) and y.status in ('paid', 'reversed')) z), 0)::int as deuda
          from event_settlements s where (cardinality($1::text[]) = 0 or s.city_id = any($1::text[]))`, [s.cities]),
   ]);
-  return { filas: L.rows, kpi: K.rows[0]! };
+  return { filas: L.rows, kpi: K.rows[0]!, pagoDia: await valor("evt_pago_dia") };
 }
 export type LiqAdmin = Awaited<ReturnType<typeof liquidacionesAdmin>>;
 /* CSV (como Ingresos, 2s): una fila por liquidación, montos en dólares; lo escribe lib/csv.ts. */

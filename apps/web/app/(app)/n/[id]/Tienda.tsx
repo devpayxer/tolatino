@@ -24,7 +24,7 @@ type Mia = { abiertos: { numero: string; st: string; n: number; tot: number }[];
 
 /* Una línea del carrito sigue valiendo si el artículo sigue a la venta y, si tiene tallas, la talla existe. */
 export const lineaValida = (V: ArticuloVenta[], l: { item: string; v?: string }) => { const a = V.find((x) => x.id === l.item); return !!a && (a.tallas.length ? a.tallas.some((t) => t.id === l.v) : !l.v); };
-export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas = 48, plan = null }: { L: ArticuloRenta[]; V: ArticuloVenta[]; negocio: string; es: boolean; mia: Mia; auto: boolean; tienda?: boolean; horas?: number; plan?: ReglaPlan | null }) {
+export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas, plan = null }: { L: ArticuloRenta[]; V: ArticuloVenta[]; negocio: string; es: boolean; mia: Mia; auto: boolean; tienda?: boolean; horas: number; plan?: ReglaPlan | null }) {
   const E2 = (a: string, b: string) => (es ? a : b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [carro, setCarro] = useState<Carrito>([]), [hoja, setHoja] = useState<ArticuloVenta | null>(null), [qi, setQi] = useState(0), [ti, setTi] = useState<number | null>(null);
   const gomas = V.some((x) => x.size), [fSize, setFSize] = useState<"mine" | "all">(mia.goma && gomas ? "mine" : "all"), [fCond, setFCond] = useState<"all" | "n" | "u">("all");
@@ -39,10 +39,10 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas 
   const H = `${horas}`, enCarro = (a: ArticuloVenta) => carro.filter((l) => l.item === a.id).reduce((s, l) => s + l.qty, 0);
   const ab = mia.abiertos[0];
   const nota = tienda ? E2(`El precio que ves es el que pagas en la caja. Apartar no cobra nada: te lo guardan ${H} horas y pagas en la caja lo mismo que ves aquí.`, `The price you see is the price you pay at the register. Holding costs nothing: they keep it ${H} hours and you pay at the register the same as you see here.`)
-    : L.length ? E2("Apartas en la app y pagas al recoger en el local; te lo guardan 48 horas. Herramienta: pagas el día y dejas un depósito que se devuelve al traerla.", "Hold it in the app and pay at pickup; kept for 48 hours. Tools: pay the day and leave a deposit, returned when you bring it back.")
-    : gomas ? E2("Precio por goma instalada: montaje, balanceo, válvula y desecho de la vieja. Apartas en la app y pagas al recogerla; te la guardan 48 horas.", "Price per installed tire: mounting, balancing, valve and old tire disposal. Hold it in the app and pay at pickup; kept for 48 hours.")
-      : auto ? E2("Apartas en la app y pagas al recogerlo en el taller. Te lo guardan 48 horas.", "Hold it in the app and pay at pickup. Kept for 48 hours.")
-        : E2("Apartas en la app y pagas al recoger en el local. Te lo guardan 48 horas. Lo que dice \"instalado\" incluye la visita.", "Hold it in the app and pay at pickup. Kept for 48 hours. \"Installed\" includes the visit.");
+    : L.length ? E2(`Apartas en la app y pagas al recoger en el local; te lo guardan ${H} horas. Herramienta: pagas el día y dejas un depósito que se devuelve al traerla.`, `Hold it in the app and pay at pickup; kept for ${H} hours. Tools: pay the day and leave a deposit, returned when you bring it back.`)
+    : gomas ? E2(`Precio por goma instalada: montaje, balanceo, válvula y desecho de la vieja. Apartas en la app y pagas al recogerla; te la guardan ${H} horas.`, `Price per installed tire: mounting, balancing, valve and old tire disposal. Hold it in the app and pay at pickup; kept for ${H} hours.`)
+      : auto ? E2(`Apartas en la app y pagas al recogerlo en el taller. Te lo guardan ${H} horas.`, `Hold it in the app and pay at pickup. Kept for ${H} hours.`)
+        : E2(`Apartas en la app y pagas al recoger en el local. Te lo guardan ${H} horas. Lo que dice "instalado" incluye la visita.`, `Hold it in the app and pay at pickup. Kept for ${H} hours. "Installed" includes the visit.`);
   const tarjeta = (x: { id: string; n: { es: string; en: string }; d: { es: string; en: string }; foto: string | null; quedan: number }, precio: string, tag: { t: string; tone: string } | null, onClick: () => void, renta: boolean, ya = 0) => {
     const pocos = x.quedan <= 3, agotado = x.quedan < 1;
     return (

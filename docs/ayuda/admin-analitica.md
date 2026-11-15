@@ -54,6 +54,8 @@ que pasó hace más tiempo ya no cambia): algo que se publicó hace un momento p
 El dispositivo es un número al azar en una cookie que solo lee el servidor de To'Latino; si la persona borra las
 cookies, cuenta como dispositivo nuevo.
 
+**Los plazos de esta página** (cuántos días antes de su revisión vuelve una licencia a la cola) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## Preguntas frecuentes
 **¿Por qué la retención dice que todavía no hay datos?** Hacen falta cuentas nuevas con al menos 1, 7 o 30 días de edad.
 
@@ -226,3 +228,5 @@ article; Admins see it, and **Send it to me now** sends today's to your email an
 Events, El Compa and Support, Money, retention and Community come from **figure tables only the system writes** (nobody on the team can change them; the
 database prevents it). They refresh every 10 minutes (last 40 days) and once a day with the whole history. In production, Analytics reads from an
 **analysis database** (a read-only copy): a heavy query never slows down an order.
+
+**The time limits on this page** (how many days before its review a license comes back to the queue) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.

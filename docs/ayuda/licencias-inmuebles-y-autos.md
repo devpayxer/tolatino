@@ -31,6 +31,8 @@ de poner el **sello**; sin licencia verificada no hay sello. Las de este grupo:
   representante acreditado del DOJ».
 - **Retirar una licencia:** la quitas en Tus licencias; nada se borra (queda en el historial).
 
+**Los plazos de esta página** (cuántos días antes de su revisión vuelve una licencia a la cola) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## FAQ
 - **¿Por qué no sale mi sello si ya puse el número?** Porque lo revisa una persona en el registro oficial; mientras, dice «en revisión».
 - **¿To'Latino garantiza al negocio?** No: confirma que la licencia existe en el registro oficial.
@@ -49,3 +51,5 @@ seller, NMLS lender).
 The badge shows only after a person checks the official registry; meanwhile it says «in review». To'Latino confirms the license
 exists, it does not guarantee the business. Licenses come back to the queue 14 days before their review date (with priority if the date
 passed); the badge changes only when a person confirms in the registry.
+
+**The time limits on this page** (how many days before its review a license comes back to the queue) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.

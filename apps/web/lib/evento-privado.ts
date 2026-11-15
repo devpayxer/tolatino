@@ -160,7 +160,7 @@ export async function pedirEvp(userId: string, negocio: string, f: EvpIn, entorn
     const pend = (await c.query<{ n: number }>(`select count(*)::int as n from operations where user_id = $1 and kind = 'private_event' and status in ('pending', 'change_proposed')`, [userId])).rows[0]?.n ?? 0;
     if (pend >= cfg.evp_pendientes_max) return no(`Tienes ${pend} solicitudes esperando. Espera a que te contesten.`, `You have ${pend} requests waiting. Wait for a reply.`);
     if (x.plan !== "pro") {
-      const r = (await c.query<{ cap: number; usados: number }>(`select coalesce((select (value #>> '{}')::int from platform_config where key = 'free_ops_cap'), 10) as cap, (select count(*)::int from operations where business_id = $1 and kind <> 'table' and free_quota_month = $2) as usados`, [x.id, x.mes])).rows[0];
+      const r = (await c.query<{ cap: number; usados: number }>(`select cfg_int('free_ops_cap') as cap, (select count(*)::int from operations where business_id = $1 and kind <> 'table' and free_quota_month = $2) as usados`, [x.id, x.mes])).rows[0];
       if (r && r.usados >= r.cap) return no(`${x.name} no recibe más solicitudes en línea este mes. Llama.`, `${x.name} takes no more online requests this month. Call.`);
     }
     const numero = `EP-${(await c.query<{ n: string }>(`select nextval('private_event_seq')::text as n`)).rows[0]!.n}`;

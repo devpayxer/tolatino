@@ -42,6 +42,8 @@ persona confirma «Me lo devolvieron». Si no respondes, o la persona dice que n
 
 **Los plazos de esta página** (cuántas horas para responder, cuánto se guarda un cupo, cuándo queda una baja, a los cuántos días se borra lo privado) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
 
+**El techo de Free** (los 10 pedidos, citas o solicitudes en línea al mes) es el de hoy: To'Latino lo fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
+
 ## FAQ
 - **¿Puedo cobrar por la visita o por apartar un carro en la app?** No. Ver y probar es gratis; el dinero se habla en persona y por escrito.
 - **¿Puedo cambiar mis horas?** Sí: las nuevas salen para las nuevas solicitudes; las que ya pidieron siguen.
@@ -62,3 +64,5 @@ asking money for church help go straight to To'Latino and the listing (or «Ask 
 ### FAQ
 You cannot charge for viewing or for holding a car in the app. Changing your hours only affects new requests. 3 no-shows in 30 days
 open a To'Latino review. You cannot reply to a «Possible scam» help request: To'Latino decides it.
+
+**The Free cap** (10 online orders, bookings or requests a month) is today's: To'Latino sets it in its Configuration and the screen always shows the one in force.

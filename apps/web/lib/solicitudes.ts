@@ -1,12 +1,16 @@
 import "server-only";
 import type { PoolClient } from "pg";
+import { cfgSql, valor, valores } from "./config";
 import { db, tx } from "./db";
+import { horasTxt } from "./plazo-txt";
 
 /* Solicitudes de servicio (Fase 4 · bloque 4e). Un solo motor para tres cosas del diseño:
    - pre: pre-estimado con fotos (neg-auto-pre.js / neg-hogar-pre.js): un negocio responde con un RANGO (rng), «hay que
-     verlo» (see) o «no lo hacemos» (no); 24 h para responder; el rango vale 7 días y se reserva con un toque.
-   - pq: presupuesto a hasta 3 negocios (Hogar, servicios «presupuesto»); 48 h; elegir uno cierra los otros.
-   - em: emergencia 24/7 (Hogar): a todos los Pro 24/7 que llegan a tu casa; el primero que acepta la toma; 15 min.
+     verlo» (see) o «no lo hacemos» (no); sol_pre_h para responder (24 h de fábrica); el rango vale 7 días y se reserva con un toque.
+   - pq: presupuesto a hasta 3 negocios (Hogar, servicios «presupuesto»); sol_pq_h (48 h); elegir uno cierra los otros.
+   - em: emergencia 24/7 (Hogar): a todos los Pro 24/7 que llegan a tu casa; el primero que acepta la toma; sol_em_min (15 min).
+   9n-6: los tres plazos son de Sistema › Configuración (Hogar y Auto): el motor los lee con cfgSql al enviar (respond_by) y cada
+   texto y aviso dice el valor (guardián plazoAbiertoSeLee).
    El servidor decide todo (quién puede, zona, plazos); la pantalla solo muestra. Nada se borra: estados. */
 type Q = PoolClient | ReturnType<typeof db>;
 type Bi = { es: string; en: string };
@@ -29,6 +33,9 @@ export const CUANDO = ["hoy", "sem", "nada"];
 /* Qué servicios admiten pre-estimado (diseño: Auto «desde» y «se cotiza»; Hogar visita, por hora y por medida). */
 export const PRE_K: Record<string, string[]> = { auto: ["desde", "cotiza"], hogar: ["visita", "hora", "area"] };
 const TEL = /(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/;
+
+/* El plazo del presupuesto para el aviso al negocio (biz_pq: «responde en {horas}» / «reply within {hours}»). */
+async function plazoPq() { const h = await valor("sol_pq_h"); return { horas: horasTxt(h, true), hours: horasTxt(h, false) }; }
 
 /* ── El vehículo o la casa de la persona, y que el negocio trabaje con ellos (lo mismo que el Booking) ── */
 async function suyo(c: Q, userId: string, negocio: string, rubro: "auto" | "hogar"): Promise<Res<{ veh: { id: string; t: string; mi: number | null } | null; casa: { id: string; dir: string; tenure: string } | null }>> {
@@ -89,7 +96,7 @@ export async function pedirPre(userId: string, f: PreIn): Promise<Res<{ numero: 
       veh: u.veh, casa: u.casa ? { dir: u.casa.dir, tenure: u.casa.tenure } : null };
     const id = (await c.query<{ id: string }>(
       `insert into service_requests (number, mode, user_id, city_id, category_id, rubro, vehicle_id, home_id, form, respond_by)
-       values ($1, 'pre', $2, $3, $4, $5, $6::uuid, $7::uuid, $8::jsonb, now() + interval '24 hours') returning id::text`,
+       values ($1, 'pre', $2, $3, $4, $5, $6::uuid, $7::uuid, $8::jsonb, now() + make_interval(hours => ${cfgSql("sol_pre_h")})) returning id::text`,
       [numero, userId, s.city, s.cat, rubro, u.veh?.id ?? null, u.casa?.id ?? null, JSON.stringify(form)])).rows[0]!.id;
     await c.query(`insert into request_targets (request_id, business_id, item_id) values ($1::bigint, $2, $3::bigint)`, [id, f.negocio, s.id]);
     const ok = await c.query(`update media set owner_kind = 'request', owner_id = $1, sort = array_position($3::uuid[], id) where id = any($3::uuid[]) and uploaded_by = $2 and owner_kind = 'user' and status = 'visible'`, [id, userId, fotos]);
@@ -172,11 +179,11 @@ export async function solicitudCliente(userId: string, numero: string, que: "can
       return { ok: true };
     }
     if (!(s.st === "expired" || (s.mode === "em" && s.st === "nobody"))) return no("Solo se manda otra vez lo que venció.", "Only an expired request can be sent again.");
-    await c.query(`update service_requests set status = 'sent', respond_by = now() + case when mode = 'pq' then interval '48 hours' when mode = 'em' then interval '15 minutes' else interval '24 hours' end, updated_at = now() where id = $1::bigint`, [s.id]);
+    await c.query(`update service_requests set status = 'sent', respond_by = now() + case when mode = 'pq' then make_interval(hours => ${cfgSql("sol_pq_h")}) when mode = 'em' then make_interval(mins => ${cfgSql("sol_em_min")}) else make_interval(hours => ${cfgSql("sol_pre_h")}) end, updated_at = now() where id = $1::bigint`, [s.id]);
     const B = (await c.query<{ b: string }>(`update request_targets set status = 'sent', notified_at = now() where request_id = $1::bigint and status = 'expired' returning business_id as b`, [s.id])).rows.map((x) => x.b);
     return { ok: true, biz: B, mode: s.mode, svc: s.svc, cl: s.cl };
   });
-  if (r.ok && "biz" in r && r.biz?.length) for (const b of r.biz) await (await import("./avisos")).avisarNegocio(b, r.mode === "pq" ? "biz_pq" : r.mode === "em" ? "biz_em" : "biz_preest", { cliente: r.cl ?? "", svc: r.svc ?? "", que: r.svc ?? "", mi: "—" }, { href: `/panel/${b}/hoy?det=sol:${numero}`, ref: ["request", numero] });
+  if (r.ok && "biz" in r && r.biz?.length) for (const b of r.biz) await (await import("./avisos")).avisarNegocio(b, r.mode === "pq" ? "biz_pq" : r.mode === "em" ? "biz_em" : "biz_preest", { cliente: r.cl ?? "", svc: r.svc ?? "", que: r.svc ?? "", mi: "—", ...(r.mode === "pq" ? await plazoPq() : {}) }, { href: `/panel/${b}/hoy?det=sol:${numero}`, ref: ["request", numero] });
   return r.ok ? { ok: true } : r;
 }
 
@@ -185,6 +192,8 @@ export type Destino = { negocio: { id: string; nombre: string; telefono: string 
   at: string | null; diag: { id: string; name: Bi; cents: number; cred: boolean } | null; resp: number; precio: number | null; dias: [number, number] | null; eta: number | null; recargo: number };
 export type SolicitudVista = {
   numero: string; mode: "pre" | "pq" | "em"; rubro: "auto" | "hogar"; st: string; enviada: string; vence: Bi | null; valida: Bi | null; svc: Bi; k: string;
+  /* 9n-6 · El plazo de Configuración de este tipo (pre y pq en horas, em en minutos): «Nadie respondió en 48 h», «Nadie aceptó en 15 minutos». */
+  plazo: number;
   form: { nota: string; luces: string[]; code: string | null; cuando: string; area: string | null; marca: string | null; edad: string | null; veh: { t: string; mi: number | null } | null; casa: { dir: string } | null; areas?: string[]; medidas?: string | null; acceso?: string | null; ek?: string | null };
   linea911: Bi;
   fotos: string[]; destinos: Destino[]; otros: { id: string; nombre: string; foto: string | null; meta: string }[]; cita: string | null;
@@ -217,7 +226,8 @@ export async function solicitudVista(userId: string, numero: string): Promise<So
       where b.category_id = $1 and b.city_id = $2 and b.status = 'active' and not (b.id = any($3::text[]))
         and exists (select 1 from items i where i.business_id = b.id and i.module = 'svc' and i.removed_at is null and i.sell and i.svc_kind = any($4::text[]))
       order by (coalesce(st.plan, 'free') = 'pro') desc, b.name limit 3`, [s.cat, s.city, D.map((d) => d.negocio.id), PRE_K[s.rubro]])).rows : [];
-  return { numero, mode: s.mode, rubro: s.rubro, st: s.st, enviada: s.enviada, vence: fechaBi(s.vence, s.tz, true), valida: fechaBi(s.valida, s.tz, false), svc: (f.svc as unknown as Bi) ?? { es: "", en: "" }, k: String(f.k ?? ""),
+  const P = await valores("sol_pre_h", "sol_pq_h", "sol_em_min");
+  return { numero, mode: s.mode, rubro: s.rubro, st: s.st, enviada: s.enviada, plazo: s.mode === "em" ? P.sol_em_min : s.mode === "pq" ? P.sol_pq_h : P.sol_pre_h, vence: fechaBi(s.vence, s.tz, true), valida: fechaBi(s.valida, s.tz, false), svc: (f.svc as unknown as Bi) ?? { es: "", en: "" }, k: String(f.k ?? ""),
     form: { nota: String(f.nota ?? ""), luces: (f.luces as unknown as string[]) ?? [], code: (f.code as unknown as string) ?? null, cuando: String(f.cuando ?? "sem"), area: (f.area as unknown as string) ?? null, marca: (f.marca as unknown as string) ?? null, edad: (f.edad as unknown as string) ?? null,
       veh: (f.veh as unknown as { t: string; mi: number | null }) ?? null, casa: (f.casa as unknown as { dir: string }) ?? null, areas: (f.areas as unknown as string[]) ?? [], medidas: (f.medidas as unknown as string) ?? null, acceso: (f.acceso as unknown as string) ?? null, ek: (f.ek as unknown as string) ?? null },
     linea911: LINE911,
@@ -336,7 +346,7 @@ export async function pedirPq(userId: string, f: PqIn): Promise<Res<{ numero: st
     numero = `Q-${(await c.query<{ n: string }>(`select nextval('service_request_seq')::text as n`)).rows[0]!.n}`;
     const form = { clave: f.clave, svc: s.name, k: "pres", nota, areas, medidas: medidas || null, cuando: "sem", casa: { dir: casa.dir, tenure: casa.tenure } };
     const id = (await c.query<{ id: string }>(
-      `insert into service_requests (number, mode, user_id, city_id, category_id, rubro, home_id, form, respond_by) values ($1, 'pq', $2, $3, 'NEG-HOGAR', 'hogar', $4::uuid, $5::jsonb, now() + interval '48 hours') returning id::text`,
+      `insert into service_requests (number, mode, user_id, city_id, category_id, rubro, home_id, form, respond_by) values ($1, 'pq', $2, $3, 'NEG-HOGAR', 'hogar', $4::uuid, $5::jsonb, now() + make_interval(hours => ${cfgSql("sol_pq_h")})) returning id::text`,
       [numero, userId, s.city, casa.id, JSON.stringify(form)])).rows[0]!.id;
     let k = 0;
     for (const x of elegidos) await c.query(`insert into request_targets (request_id, business_id, item_id, sort) values ($1::bigint, $2, $3::bigint, $4)`, [id, x!.id, x!.item, k++]);
@@ -347,7 +357,7 @@ export async function pedirPq(userId: string, f: PqIn): Promise<Res<{ numero: st
   if (r.ok && numero) {
     const cl = (await db().query<{ n: string }>(`select coalesce(nullif(first_name, ''), 'Un cliente') as n from users where id = $1`, [userId])).rows[0]?.n ?? "";
     const svc = (await db().query<{ s: string }>(`select form#>>'{svc,es}' as s from service_requests where number = $1`, [numero])).rows[0]?.s ?? "";
-    for (const x of elegidos) await (await import("./avisos")).avisarNegocio(x!.id, "biz_pq", { cliente: cl, svc }, { href: `/panel/${x!.id}/hoy?det=sol:${numero}`, ref: ["request", numero] });
+    for (const x of elegidos) await (await import("./avisos")).avisarNegocio(x!.id, "biz_pq", { cliente: cl, svc, ...(await plazoPq()) }, { href: `/panel/${x!.id}/hoy?det=sol:${numero}`, ref: ["request", numero] });
   }
   return r;
 }
@@ -405,7 +415,7 @@ export async function pedirEm(userId: string, f: EmIn): Promise<Res<{ numero: st
     numero = `E-${(await c.query<{ n: string }>(`select nextval('service_request_seq')::text as n`)).rows[0]!.n}`;
     const form = { clave: f.clave, svc: { es: EMER[f.ek]![0], en: EMER[f.ek]![1] }, k: "emer", ek: f.ek, nota, acceso: acceso || null, cuando: f.cuando === "3h" ? "3h" : "now", casa: { dir: casa.dir, tenure: casa.tenure } };
     const id = (await c.query<{ id: string }>(
-      `insert into service_requests (number, mode, user_id, city_id, category_id, rubro, home_id, form, respond_by) values ($1, 'em', $2, $3, 'NEG-HOGAR', 'hogar', $4::uuid, $5::jsonb, now() + interval '15 minutes') returning id::text`,
+      `insert into service_requests (number, mode, user_id, city_id, category_id, rubro, home_id, form, respond_by) values ($1, 'em', $2, $3, 'NEG-HOGAR', 'hogar', $4::uuid, $5::jsonb, now() + make_interval(mins => ${cfgSql("sol_em_min")})) returning id::text`,
       [numero, userId, city, casa.id, JSON.stringify(form)])).rows[0]!.id;
     let k = 0;
     for (const x of L) await c.query(`insert into request_targets (request_id, business_id, item_id, sort) values ($1::bigint, $2, $3::bigint, $4)`, [id, x.id, x.item, k++]);
@@ -433,7 +443,9 @@ export async function aceptarEm(negocio: string, numero: string, actorId: string
         where id = $1::bigint and accepted_business_id is null and status = 'sent' and respond_by > now() returning user_id::text as uid, home_id::text as home, form, city_id as city`, [t.rid, negocio])).rows[0];
     if (!gana) {
       const x = (await c.query<{ st: string; acc: string | null }>(`select status as st, accepted_business_id as acc from service_requests where id = $1::bigint`, [t.rid])).rows[0]!;
-      return x.acc ? no("Ya la tomó otro negocio.", "Another business already took it.") : no("Pasaron los 15 minutos: la emergencia se cerró.", "The 15 minutes passed: the emergency closed.");
+      if (x.acc) return no("Ya la tomó otro negocio.", "Another business already took it.");
+      const m = await valor("sol_em_min");
+      return no(`Pasaron los ${m} minutos: la emergencia se cerró.`, `The ${m} minutes passed: the emergency closed.`);
     }
     await c.query(`update request_targets set status = case when business_id = $2 then 'taken' else 'lost' end, answered_at = case when business_id = $2 then now() else answered_at end, answered_by = case when business_id = $2 then $3::uuid else answered_by end where request_id = $1::bigint`, [t.rid, negocio, actorId]);
     const it = (await c.query<{ name: Bi; cents: number; eta: number; mem: string | null; tz: string; m: number }>(
@@ -473,7 +485,7 @@ export async function vencerEmergencias(f: { userId?: string } = {}) {
      returning id::text, number, user_id::text as uid`, f.userId ? [f.userId] : [])).rows;
   for (const x of L) {
     await db().query(`update request_targets set status = 'expired' where request_id = $1::bigint and status = 'sent'`, [x.id]);
-    await (await import("./avisos")).avisar(x.uid, "em_nadie", { num: x.number }, { href: `/pre/${x.number}`, ref: ["request", x.number] });
+    await (await import("./avisos")).avisar(x.uid, "em_nadie", { num: x.number, min: String(await valor("sol_em_min")) }, { href: `/pre/${x.number}`, ref: ["request", x.number] });
   }
 }
 

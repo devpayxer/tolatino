@@ -1,5 +1,5 @@
 import "server-only";
-import { cfgSql } from "./config";
+import { cfgSql, valor } from "./config";
 import { COLAS, slaCase, type Cola } from "./colas";
 import { dbAnalisis } from "./db-analisis";
 
@@ -312,7 +312,7 @@ export async function feInmAutos(s: Alcance, dias: number) {
               count(*) filter (where h.paused_at is not null and h.unpaused_at is null)::int as hoy,
               (select count(*)::int from queue_items q where q.queue = 'estafa' and q.decision = 'sancion' and q.decided_at > now() - make_interval(days => $2) and ${scope("q.city_id")}) as sancion
          from help_requests h where h.paused_at is not null and ${scope("h.city_id")}`, [s.cities, dias]),
-    // Licencias de las tres: vigentes, por vencer (14 días), vencidas y en revisión, por categoría.
+    // Licencias de las tres: vigentes, por vencer (lic_aviso_dias, 14 de fábrica; 9n-6: la etiqueta dice el mismo número), vencidas y en revisión, por categoría.
     dbAnalisis().query<{ cat: string; vigentes: number; porvencer: number; vencidas: number; revision: number }>(
       `select k.category_id as cat,
               count(*) filter (where l.status = 'valid' and (l.next_review is null or l.next_review >= current_date))::int as vigentes,
@@ -334,7 +334,7 @@ export async function feInmAutos(s: Alcance, dias: number) {
               (select count(*)::int from property_listings pl join items i on i.id = pl.item_id where pl.senior_62 and pl.senior_status = 'review' and i.removed_at is null and ${scope("pl.city_id")}) as mayores`, [s.cities, dias]),
   ]);
   const V = (r: string) => vis.rows.find((x) => x.rub === r) ?? { rub: r, n: 0, items: 0, atiempo: 0, vencidas: 0, noshow: 0, pasaron: 0 };
-  return { inm: V("inm"), dealer: V("dealer"), dias: dias2.rows, vivos: vivos.rows, rev: rev.rows[0]!, ayuda: ay.rows, estafa: est.rows[0]!, lic: lic.rows, fe: fe.rows[0]!, vj: vj.rows[0]! };
+  return { inm: V("inm"), dealer: V("dealer"), dias: dias2.rows, vivos: vivos.rows, rev: rev.rows[0]!, ayuda: ay.rows, estafa: est.rows[0]!, lic: lic.rows, licAvisoDias: await valor("lic_aviso_dias"), fe: fe.rows[0]!, vj: vj.rows[0]! };
 }
 
 /* 5i · Analítica › Comunidad (fase5-comunidad.md §4 5i): publicaciones, comentarios, % de preguntas resueltas, tiempo a la primera respuesta,
