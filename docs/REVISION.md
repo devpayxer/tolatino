@@ -4895,3 +4895,18 @@ Qué mirar:
 - **La reposición no cuenta para el tope de Free** y va sin envío ni propina; **la visita de garantía tampoco** cuenta para el tope de citas.
 - **Rentas con 3-D Secure:** se cobran al recogerlas, sin la persona en la app; queda → 9q (el enlace a la hoja como la renovación de Pro).
 - **El envío del mercado con el repartidor propio** no entró: el Repartidor trabaja con pedidos de comida; sigue abierto (L489).
+
+## Fase 9 · 9n-7 — Licencias de todas las categorías y apelar desde «Entrar» (15 nov)
+**Qué mirar (sandbox):**
+1. **«Entrar» con una cuenta suspendida** (captura `g9n7-apelar-m.png`): después del código, el aviso rojo con hasta cuándo y el motivo, y debajo «APELAR»
+   con el texto, la caja y el contador; el botón de abajo dice «Enviar apelación». Al enviar: «Recibimos tu apelación. Te respondemos en 72 h por mensaje
+   de texto.» con el número AP-. En inglés a 1360 (`g9n7-apelar-en-d.png`). **Pieza compuesta** con lo que ya tiene «Entrar» (el diseño no trae una
+   pantalla de apelar): mirar que se lea bien.
+2. **Super Admin › Colas › Apelaciones:** la apelación de la suspensión llega como las demás; al levantarla, la persona recibe el SMS y vuelve a entrar.
+3. **Colas › Licencias:** ahora también llegan las de Salud, Profesionales, Niños, Transporte, Fiestas y Noche 14 días antes de su revisión.
+
+**Decisiones tomadas por defecto (AB: lo más seguro y reversible):**
+- **La vuelta a revisión de las licencias, en todas las categorías** (estaba pendiente «decidir si se extiende»): solo pone un caso en la cola para
+  que una persona mire el registro; nunca marca nada vencido sola.
+- **Apelar desde «Entrar» solo con el código por SMS** (no con Face ID / huella): el código prueba el teléfono; la ficha dura 30 minutos y vale para
+  esa sanción. La respuesta de esa apelación va por SMS porque la persona no puede abrir la app.

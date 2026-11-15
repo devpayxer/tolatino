@@ -634,8 +634,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       marcados. Solo las fotos de la Comunidad pasan por el modelo; reseñas y negocios siguen con el reporte de vecinos. (5d, 7 nov) — _9a (11 nov): un modelo de violencia y texto promocional en fotos; hoy decide una persona en Medios marcados. En `docs/DESPUES-DE-ABRIR.md`._
 - [ ] **→ 9q** · **5d · No se probó el modelo con una foto de desnudez real** (solo fotos limpias y el servicio caído); probar el umbral 0.6 con un
       juego de fotos de prueba aprobado antes de abrir. (5d, 7 nov) — _9b-3 (13 nov): con los proveedores y los datos reales del sandbox (9q)._
-- [ ] **→ 9n** · **5d · Apelar una suspensión o un baneo:** la persona no puede entrar, así que hoy lo pide por Soporte; falta la pantalla de apelar
-      desde «Entrar» (con el código por SMS, sin sesión). (5d, 7 nov)
+- [x] **→ 9n** · **5d · Apelar una suspensión o un baneo:** la persona no puede entrar, así que hoy lo pide por Soporte; falta la pantalla de apelar
+      desde «Entrar» (con el código por SMS, sin sesión). (5d, 7 nov) — _(9n-7, 15 nov): hecho. Tras el código por SMS, «Entrar» muestra «APELAR» (ficha firmada de 30 min, sin sesión; /api/cuenta/apelar); la respuesta sale por SMS (0152). Guardián apelarSinSesionConFicha, e2e apl9n7. Compuesto con las piezas de «Entrar»: captura en REVISION._
 - [ ] **→ 9s** · **5d · NCMEC (abuso infantil):** protocolo de preservación y reporte al CyberTipline (18 U.S.C. § 2258A) con abogado; hoy un Admin
       oculta y preserva a mano. (5d, 7 nov)
 - [x] **→ 9b** · **5d · Velocidad de moderación con 1 M:** `autoOcultar` (reportes de un contenido), `revisarAlEscribir` (parecidos con pg_trgm sobre lo

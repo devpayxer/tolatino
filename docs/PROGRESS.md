@@ -2287,3 +2287,12 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   · dos veces seguidas: `pan9n2` — la segunda vuelta corrió a las 10:51 PM del Este y el SMS «tx» quedó en silencio. Arreglo: apaga el
     silencio de quien invita. Guardián `smsFueraDeSilencio`. Al revés 50/50.
 - Siguiente: CI dirigido (9n-5 + 9n-6 + los dos arreglos) y, en verde, la confirmación completa otra vez para cerrar 9b-3.
+
+## Fase 9 · 9n-7 — licencias de todas las categorías y apelar desde «Entrar» (15 nov)
+- **Licencias (LAUNCH 4ig):** el barrido devuelve a la cola «Licencias» las de TODAS las categorías (no solo Iglesias, Bienes Raíces y Autos), 14 días
+  antes de su revisión (vencida = prioridad alta); nadie la marca vencida sin mirarla. Índice parcial **0151** (`licenses_vence_idx`). Guardián
+  `licenciasVuelvenTodas`; adm4ig §3 con la CDL de un chofer.
+- **Apelar una suspensión o un baneo (LAUNCH 5d):** tras el código por SMS, «Entrar» muestra el bloque «APELAR» (20–500 letras, una vez, 14 días) con una
+  ficha firmada de 30 min (HMAC, sin sesión; `/api/cuenta/apelar`); si ya apeló, dice cómo va. La respuesta a esa apelación sale por SMS (**0152**: apel_lifted
+  y apel_upheld con `sin_push`; el resto de apelaciones sigue sin SMS). Guardián `apelarSinSesionConFicha`; e2e nuevo `apl9n7`; al revés `alreves9n` 27/27.
+- **No corrió aquí:** e2e (sin Docker) → CI dirigido cuando termine la confirmación completa de 9b-3 (run 43683346297, en curso).

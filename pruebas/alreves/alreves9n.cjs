@@ -53,6 +53,9 @@ const casos = [
   ['colaConVista', CO, 'slaCfg: "cola_sla_entrega"', 'slaCfg: "cola_sla_entrega_x" as never'],
   // configDesdeUnLugar: la clave del plazo falta en ClaveConfig
   ['configDesdeUnLugar', CF, ' | "cola_sla_rec" | "cola_sla_entrega"\n', ' | "cola_sla_rec"\n'],
+  // apelarSinSesionConFicha (9n-7): la ruta de apelar sin sesión toma a la persona del cuerpo, y la ficha deja de vencer
+  ['apelarSinSesionConFicha', 'apps/web/app/api/cuenta/apelar/route.ts', 'await apelar(f.uid, "sanction"', 'await apelar(String((await req.clone().json()).uid), "sanction"'],
+  ['apelarSinSesionConFicha', 'apps/web/lib/cuenta.ts', '  if (Number(m[3]) * 1000 < Date.now()) return null;\n', ''],
   // licenciasVuelvenTodas (9n-7): el barrido vuelve a devolver a revisión solo las licencias de Iglesias, Bienes Raíces y Autos
   ['licenciasVuelvenTodas', 'apps/web/lib/licencias.ts', "      where l.status = 'valid' and l.next_review", "      where l.business_id in (select id from businesses where category_id = any(array['NEG-FE','NEG-INMUEBLE','NEG-DEALER'])) and l.status = 'valid' and l.next_review"],
   // disputaConEvidencia: la respuesta deja de mandar los archivos

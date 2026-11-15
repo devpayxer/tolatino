@@ -21,7 +21,7 @@ const MAX_POR_TELEFONO_HORA = 5;
 const MAX_POR_IP_HORA = 20;
 
 export class ErrorCuenta extends Error {
-  constructor(public codigo: string, public espera?: number, public detalle?: { es: string; en: string }) {
+  constructor(public codigo: string, public espera?: number, public detalle?: { es: string; en: string }, public extra?: Record<string, unknown>) {
     super(codigo);
   }
 }
@@ -157,9 +157,36 @@ export async function verificarCodigo(entrada: string, codigo: string): Promise<
       [tel],
     )).rows[0]!);
   });
-  if ("error" in res) throw new ErrorCuenta(res.error!, undefined, "detalle" in res ? res.detalle : undefined);
+  if ("error" in res) throw new ErrorCuenta(res.error!, undefined, "detalle" in res ? res.detalle : undefined,
+    "sancion" in res && res.sancion ? { apelar: await apelarDesdeEntrar(res.sancion.uid, res.sancion.id) } : undefined);
   await ponerSesion(res.token);
   return { nuevo: res.nuevo, nombre: res.nombre, id: res.id };
+}
+
+/* 9n-7 · Apelar una suspensión o un baneo desde «Entrar» (LAUNCH «5d · Apelar una suspensión o un baneo»). La persona no puede abrir
+   sesión, así que la prueba de que es ella es el código por SMS que acaba de verificar: verificarCodigo le da una FICHA firmada (HMAC con
+   AUTH_SECRET, separada de todo lo demás por «apelar-entrar:») que dice quién es, qué sanción y hasta cuándo vale (30 min). Con la ficha se
+   apela UNA vez esa sanción (lib/apelaciones.ts apelar: 20–500 letras, 14 días, la decide otra persona del equipo); sin sesión, sin cookie,
+   sin poder tocar nada más. Si ya apeló, la pantalla dice cómo va. Guardián apelarSinSesionConFicha. */
+const FICHA_MIN = 30;
+const firmaFicha = (cuerpo: string) => createHmac("sha256", secretoAuth()).update(`apelar-entrar:${cuerpo}`).digest("base64url");
+export function fichaApelacion(uid: string, sancion: string, ahora = Date.now()) {
+  const cuerpo = `${uid}.${sancion}.${Math.floor(ahora / 1000) + FICHA_MIN * 60}`;
+  return `${cuerpo}.${firmaFicha(cuerpo)}`;
+}
+export function leerFichaApelacion(ficha: string): { uid: string; sancion: string } | null {
+  const m = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.(\d{1,18})\.(\d{10})\.([A-Za-z0-9_-]{43})$/.exec(String(ficha ?? ""));
+  if (!m) return null;
+  const a = Buffer.from(m[4]!), b = Buffer.from(firmaFicha(`${m[1]}.${m[2]}.${m[3]}`));
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+  if (Number(m[3]) * 1000 < Date.now()) return null;
+  return { uid: m[1]!, sancion: m[2]! };
+}
+async function apelarDesdeEntrar(uid: string, sancion: string) {
+  const { avisoDe } = await import("./apelaciones");
+  const a = await avisoDe(uid, "sanction", sancion).catch(() => null);
+  if (!a) return null;
+  return { ficha: a.puedeApelar ? fichaApelacion(uid, sancion) : null, vence: a.vence, apelacion: a.apelacion ? { numero: a.apelacion.numero, estado: a.apelacion.estado } : null };
 }
 
 /* 8d · LA puerta de la sesión: el código por SMS (verificarCodigo) y la llave de acceso (lib/llaves/llaves.ts entrar) abren la sesión AQUÍ,
@@ -169,7 +196,7 @@ export async function verificarCodigo(entrada: string, codigo: string): Promise<
    se levantan; (5) la sesión nace igual (180 días, app y plataforma del rótulo TLApp), solo anota por dónde entró (`via`). Guardián
    passkeyNoSaltaBloqueo: nadie más inserta en sessions. */
 export type EntradaCuenta = { id: string; first_name: string | null; status: string; until: string | null; delete_at: string | null; nuevo: boolean };
-export type ResEntrada = { token: string; nuevo: boolean; nombre: string | null; id: string } | { error: "dispositivo_bloqueado" | "cuenta_bloqueada" | "sin_cuenta"; detalle?: { es: string; en: string } };
+export type ResEntrada = { token: string; nuevo: boolean; nombre: string | null; id: string } | { error: "dispositivo_bloqueado" | "cuenta_bloqueada" | "sin_cuenta"; detalle?: { es: string; en: string }; sancion?: { uid: string; id: string } };
 export async function abrirSesionEn(c: import("pg").PoolClient, ctx: { dev: string; ip: string | null; ua: string | null; via: "codigo" | "llave"; passkeyId?: string | null },
   cargar: () => Promise<EntradaCuenta | null>): Promise<ResEntrada> {
   if ((await c.query(`select 1 from blocked_devices where device = $1::uuid and lifted_at is null`, [ctx.dev])).rowCount)
@@ -183,15 +210,17 @@ export async function abrirSesionEn(c: import("pg").PoolClient, ctx: { dev: stri
   if (vencida && !["suspended", "banned"].includes(user.status))
     return { error: "cuenta_bloqueada" as const, detalle: { es: "Esta cuenta se borró. Si vuelves a entrar en unos minutos, empiezas una cuenta nueva.", en: "This account was deleted. If you sign in again in a few minutes, you start a new account." } };
   if (["suspended", "banned", "deleted_pending", "deleted", "merged"].includes(user.status)) {
-    const m = (await c.query<{ reason: string }>(
-      `select reason from sanctions where target_kind = 'user' and target_id = $1::text and lifted_at is null and kind in ('susp14', 'ban') order by starts_at desc limit 1`, [user.id])).rows[0]?.reason;
+    const sx = (await c.query<{ id: string; reason: string }>(
+      `select id::text, reason from sanctions where target_kind = 'user' and target_id = $1::text and lifted_at is null and kind in ('susp14', 'ban') order by starts_at desc limit 1`, [user.id])).rows[0];
+    const m = sx?.reason;
     const por = m ? { es: ` Motivo: ${m}.`, en: ` Reason: ${m}.` } : { es: "", en: "" };
     const det = user.status === "suspended" && user.until
       ? { es: `Tu cuenta está suspendida hasta el ${fechaCorta(user.until)}.${por.es}`, en: `Your account is suspended until ${fechaCorta(user.until, true)}.${por.en}` }
       : user.status === "deleted_pending" && user.delete_at
         ? { es: `Esta cuenta se está borrando: se borra del todo el ${fechaCorta(user.delete_at)}. Si fue un error, escríbele a Soporte antes.`, en: `This account is being deleted: it is fully erased on ${fechaCorta(user.delete_at, true)}. If this is a mistake, contact Support before then.` }
         : { es: `Esta cuenta no puede entrar.${por.es} Escríbele a Soporte.`, en: `This account can't sign in.${por.en} Contact Support.` };
-    return { error: "cuenta_bloqueada" as const, detalle: det };
+    // 9n-7 · Con la suspensión o el baneo vivo, quien probó su teléfono (código por SMS) puede apelarlo desde «Entrar» (verificarCodigo).
+    return { error: "cuenta_bloqueada" as const, detalle: det, ...(sx && ["suspended", "banned"].includes(user.status) && ctx.via === "codigo" ? { sancion: { uid: user.id, id: sx.id } } : {}) };
   }
   // Entrar antes de los 30 días cancela el borrado que pidió la persona (no el de To'Latino).
   if ((await c.query(`update users set delete_at = null, delete_reason = null where id = $1 and status = 'active' and delete_at > now() and coalesce(delete_reason, '') <> 'admin' returning 1`, [user.id])).rowCount)

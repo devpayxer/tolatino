@@ -221,5 +221,7 @@ export async function avisarDecision(a: { numero: string; k: Apelable; tid: stri
   const en = (await db().query<{ lang: string }>(`select coalesce(lang, 'es') as lang from users where id = $1`, [a.uid])).rows[0]?.lang === "en";
   const que = a.k === "sanction" ? (en ? "the sanction was lifted" : "levantamos la sanción") : a.k === "evt_org" ? (en ? "you can publish events again" : "puedes publicar eventos otra vez")
     : en ? `your ${APELABLE[a.k].en} is visible again` : `tu ${APELABLE[a.k].es} se ve otra vez`;
-  await avisar(a.uid, accion === "lifted" ? "apel_lifted" : "apel_upheld", { numero: a.numero, que, motivo: motivo.slice(0, 160) }, { href: RUTA_AVISO(a.k, a.tid), ref: ["appeal", a.numero], sinSms: true }).catch(() => undefined);
+  // 9n-7 · La respuesta a la apelación de una suspensión o un baneo también sale por SMS (sin push): esa persona no puede abrir la app (0152).
+  const fuera = a.k === "sanction" && !!(await db().query(`select 1 from sanctions where id = $1::bigint and kind in ('susp14', 'ban')`, [a.tid])).rowCount;
+  await avisar(a.uid, accion === "lifted" ? "apel_lifted" : "apel_upheld", { numero: a.numero, que, motivo: motivo.slice(0, 160) }, { href: fuera ? "/entrar" : RUTA_AVISO(a.k, a.tid), ref: ["appeal", a.numero], sinSms: !fuera }).catch(() => undefined);
 }

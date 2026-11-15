@@ -11,6 +11,7 @@ import type { DatosBienvenida } from "@/lib/vecinos";
 import { entrarConLlave, llaveDisponible } from "@/lib/nativo/llave";
 import { bvDatos, bvPaso } from "./acciones";
 import { HojaLlave } from "./HojaLlave";
+import { MAX_APELACION, MIN_APELACION } from "@/lib/moderacion-comun";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { OnbTopBar, OnbActionBar, Icon, Tag, Chip, Button } = UI as unknown as Record<"OnbTopBar" | "OnbActionBar" | "Icon" | "Tag" | "Chip" | "Button", ComponentType<any>>;
@@ -68,6 +69,10 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv, llaves 
   const [reenvios, setReenvios] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
+  /* 9n-7 · Suspendida o baneada: con el código ya verificado, apelar aquí mismo (ficha firmada de 30 min; /api/cuenta/apelar). */
+  const [apel, setApel] = useState<{ ficha: string | null; vence: string; apelacion: { numero: string; estado: "open" | "upheld" | "lifted" } | null } | null>(null);
+  const [apelTxt, setApelTxt] = useState("");
+  const [apelNum, setApelNum] = useState<string | null>(null);
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
   const [apodo, setApodo] = useState("");
@@ -107,7 +112,7 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv, llaves 
   const msg = (r: { mensaje?: { es: string; en: string } }) => setError(r.mensaje ? r.mensaje[lang] : E2("Algo falló.", "Something failed."));
 
   async function pedir(reenvio = false) {
-    setOcupado(true); setError(null);
+    setOcupado(true); setError(null); setApel(null); setApelNum(null);
     const r = await enviar("/api/cuenta/codigo", { telefono: tel });
     setOcupado(false);
     if (!r.ok) return msg(r);
@@ -115,11 +120,19 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv, llaves 
     setPrueba((r.codigoPrueba as string) ?? null);
     if (reenvio) setReenvios((n) => n + 1);
   }
+  async function apelarAqui() {
+    if (!apel?.ficha) return;
+    setOcupado(true);
+    const r = await enviar("/api/cuenta/apelar", { ficha: apel.ficha, texto: apelTxt });
+    setOcupado(false);
+    if (!r.ok) return msg(r);
+    setError(null); setApelNum(String(r.numero ?? ""));
+  }
   async function verificar() {
     setOcupado(true); setError(null);
     const r = await enviar("/api/cuenta/verificar", { telefono: tel, codigo });
     setOcupado(false);
-    if (!r.ok) return msg(r);
+    if (!r.ok) { setApel((r.apelar as typeof apel) ?? null); return msg(r); }
     if (r.nombre) return despues(() => router.replace(destino)); // ya tenía cuenta: entra directo
     setPaso(2);
   }
@@ -180,7 +193,11 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv, llaves 
           };
   const go =
     paso === 1
-      ? enviado
+      ? apel?.ficha && !apelNum
+        ? { label: E2("Enviar apelación", "Send appeal"), disabled: ocupado || apelTxt.trim().length < MIN_APELACION, onClick: () => apelTxt.trim().length >= MIN_APELACION && apelarAqui() }
+        : apel
+          ? { label: E2("Volver al inicio", "Back to home"), disabled: false, onClick: () => router.push("/") }
+      : enviado
         ? { label: E2("Verificar", "Verify"), disabled: codigo.length !== 6 || ocupado, onClick: () => codigo.length === 6 && verificar() }
         : { label: E2("Enviarme el código", "Text me the code"), disabled: tel.length !== 10 || ocupado, onClick: () => tel.length === 10 && pedir() }
       : paso === 2
@@ -199,7 +216,7 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv, llaves 
   const alt = paso === 3 && fueraOn ? { label: E2("Seguir con ", "Continue with ") + (d?.ciudad?.name ?? ""), onClick: () => setFueraOn(false) }
     : paso === 3 || paso === 4 ? { label: E2("Saltar por ahora", "Skip for now"), onClick: () => setPaso((paso + 1) as Paso) } : undefined;
   const atras = () => {
-    if (paso === 1 && enviado) return (setEnviado(false), setCodigo(""));
+    if (paso === 1 && enviado) return (setEnviado(false), setCodigo(""), setApel(null), setApelTxt(""), setApelNum(null));
     if (paso === 3 && fueraOn) return setFueraOn(false);
     if (paso === 4 || paso === 5) return setPaso((paso - 1) as Paso);
     if (paso === 3 && desde3) return router.push("/");
@@ -497,6 +514,35 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv, llaves 
           <p role="alert" data-error className="mt-4 rounded-sm bg-danger-tint px-3 py-2.5 text-[13px] font-semibold text-danger">
             {error}
           </p>
+        )}
+        {paso === 1 && apel && (
+          <div data-pantalla="ONB-USR-1 · apelar" className="mt-4 flex flex-col gap-2.5">
+            {apelNum || apel.apelacion ? (
+              <div className="flex flex-col gap-1.5 rounded-[14px] bg-paper p-3">
+                <span className="flex items-center gap-2"><Icon name="clock" size={15} /><Clave>{E2(`TU APELACIÓN · ${apelNum ?? apel.apelacion?.numero}`, `YOUR APPEAL · ${apelNum ?? apel.apelacion?.numero}`)}</Clave></span>
+                <span role="status" className="text-[13.5px] font-semibold leading-[1.45]">
+                  {apelNum || apel.apelacion?.estado === "open"
+                    ? E2("Recibimos tu apelación. Te respondemos en 72 h por mensaje de texto.", "We received your appeal. We will answer within 72 h by text message.")
+                    : E2("Ya revisamos tu apelación y la decisión es final. Te la mandamos por mensaje de texto.", "We already reviewed your appeal and the decision is final. We sent it to you by text message.")}
+                </span>
+                <span className="text-[12px] font-medium text-text-3">{E2("La revisa otra persona del equipo, no quien lo decidió.", "Another person on the team reviews it, not the one who decided.")}</span>
+              </div>
+            ) : apel.ficha ? (
+              <label className="flex flex-col gap-[7px]">
+                <Clave>{E2("APELAR", "APPEAL")}</Clave>
+                <span className="text-[13px] font-medium leading-[1.45] text-text-2">{E2("Cuéntanos por qué crees que es un error. Otra persona del equipo, no quien lo decidió, lo revisa en 72 h. Se apela una sola vez.", "Tell us why you think it is a mistake. Another person on the team, not the one who decided, reviews it within 72 h. You can appeal once.")}</span>
+                <textarea
+                  value={apelTxt}
+                  onChange={(e) => setApelTxt(e.target.value.slice(0, MAX_APELACION))}
+                  rows={5}
+                  className="w-full rounded-input border-[1.5px] border-line-strong bg-white px-3.5 py-3 text-[16px] font-medium text-ink outline-none focus:border-ink"
+                />
+                <span className="text-right font-mono text-[10px] font-bold tracking-[0.14em] text-text-muted">{`${apelTxt.trim().length}/${MAX_APELACION}`}</span>
+              </label>
+            ) : (
+              <span className="text-[12.5px] font-medium leading-normal text-text-3">{E2("Ya pasaron los días para apelar.", "The time to appeal has passed.")}</span>
+            )}
+          </div>
         )}
         <button type="submit" hidden aria-hidden="true" tabIndex={-1} />
       </form>

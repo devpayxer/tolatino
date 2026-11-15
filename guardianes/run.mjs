@@ -9334,6 +9334,24 @@ const guardianes = {
     if (!visto) falla(G, "apps/web/lib/licencias.ts", 1, "no encontré el barrido que devuelve las licencias a la cola «Licencias» (insert … select 'lic', 'license')");
   },
 
+  /* 9n-7 · apelarSinSesionConFicha: apelar sin sesión (la persona suspendida o baneada, desde «Entrar») solo con la ficha firmada que da el código
+     por SMS: quien llama a apelar() saca a la persona de la sesión (yo/sesion) o de leerFichaApelacion, nunca del cuerpo; la ficha se compara en
+     tiempo constante y vence. Al revés (alreves9n): la ruta toma la persona del cuerpo; la ficha deja de mirar el vencimiento. */
+  apelarSinSesionConFicha() {
+    const G = "apelarSinSesionConFicha";
+    for (const f of archivos.filter((x) => /^apps\/web\/app\/.+\.tsx?$/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      for (const m of t.matchAll(/\bapelar\(([^,]+),/g)) {
+        const linea = t.slice(0, m.index).split("\n").length, quien = m[1].trim();
+        if (/leerFichaApelacion\(/.test(t)) { if (quien !== "f.uid") falla(G, f, linea, `apelar() sin sesión toma a la persona de «${quien}»: solo de la ficha firmada (f.uid)`); }
+        else if (!/\b(yo|sesion|sesionUsuario|usuarioActual)\(/.test(t)) falla(G, f, linea, "apelar() sin sesión y sin ficha firmada: cualquiera apelaría por otra persona");
+      }
+    }
+    const c = readFileSync("apps/web/lib/cuenta.ts", "utf8"), i = c.indexOf("export function leerFichaApelacion"), cuerpo = i < 0 ? "" : c.slice(i, c.indexOf("\n}\n", i));
+    if (!cuerpo) falla(G, "apps/web/lib/cuenta.ts", 1, "no encontré leerFichaApelacion");
+    else if (!/timingSafeEqual\(/.test(cuerpo) || !/< Date\.now\(\)/.test(cuerpo)) falla(G, "apps/web/lib/cuenta.ts", c.slice(0, i).split("\n").length, "la ficha para apelar se compara en tiempo constante y vence (timingSafeEqual y Date.now())");
+  },
+
   telefonoAlAzarRespetaFijos() {
     const G = "telefonoAlAzarRespetaFijos";
     for (const f of archivos.filter((x) => /^pruebas\/(e2e|lib|alreves)\/[^/]+\.(cjs|mjs)$/.test(x))) {

@@ -29,7 +29,7 @@ const MENSAJES: Record<string, [number, string, string]> = {
 export function respuestaError(e: unknown) {
   if (e instanceof ErrorCuenta) {
     const [status, es, en] = MENSAJES[e.codigo] ?? [400, "No se pudo completar.", "Couldn't complete."];
-    return NextResponse.json({ ok: false, error: e.codigo, mensaje: e.detalle ?? { es, en }, espera: e.espera }, { status });
+    return NextResponse.json({ ok: false, error: e.codigo, mensaje: e.detalle ?? { es, en }, espera: e.espera, ...(e.extra ?? {}) }, { status });
   }
   console.error("[cuenta]", e);
   return NextResponse.json({ ok: false, error: "interno", mensaje: { es: "Algo falló de nuestro lado. Inténtalo otra vez.", en: "Something failed on our side. Try again." } }, { status: 500 });

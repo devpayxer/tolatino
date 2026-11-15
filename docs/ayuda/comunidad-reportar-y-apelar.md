@@ -39,8 +39,11 @@ Versión: 7 nov 2026. Audiencia: vecino. Tema: comunidad._
 - **Lo reportaron muchas cuentas del mismo teléfono:** cuenta como una persona; no se oculta por eso.
 - **Mi foto dice «espera revisión»:** el modelo la marcó o no pudo revisarla; una persona la mira (plazo 4 h). La publicación sí salió.
 - **Se me pasaron los días para apelar** (14 de fábrica; el aviso dice hasta cuándo): ya no se puede apelar desde la app; escribe a Soporte.
-- **Me suspendieron y no puedo entrar:** la apelación de una suspensión o un baneo se pide hoy por Soporte (la pantalla de apelar pide
-  entrar).
+- **Me suspendieron (o me banearon) y no puedo entrar:** en «Entrar», pide el código y escríbelo. La pantalla dice hasta cuándo y
+  por qué y, debajo, **Apelar**: cuéntanos por qué crees que es un error (20–500 letras) y «Enviar apelación». Vale una vez por sanción,
+  en sus 14 días, y la revisa otra persona del equipo en 72 h. Como no puedes abrir la app, **la respuesta te llega por mensaje de
+  texto**. Si vuelves a «Entrar» antes, ves cómo va (no se apela dos veces). Si se te pasó el tiempo de la pantalla (30 minutos
+  después del código), pide otro código.
 - **Apelé y se mantiene:** la segunda revisión es final.
 
 ## Preguntas frecuentes
@@ -53,6 +56,8 @@ Versión: 7 nov 2026. Audiencia: vecino. Tema: comunidad._
 <!-- solo-equipo -->
 - Reportar = ··· / ⌄ › Reportar. «Ya no lo ves. Lo revisamos en 48 h.» Nadie sabe quién reportó.
 - Apelar = el aviso o Mi cuenta › Avisos de moderación; 20–500 letras; una vez; 14 días; la decide otra persona; 72 h.
+- Suspendida o baneada (no puede entrar): Apelar está en «Entrar», después del código por SMS; la respuesta le llega por texto. No
+  hace falta Soporte.
 - Si alguien habla de hacerse daño: 988 (llamada o texto). Emergencia: 911.
 - Nunca prometas el resultado de una apelación ni digas quién reportó.
 
@@ -81,4 +86,7 @@ Versión: 7 nov 2026. Audiencia: vecino. Tema: comunidad._
 ### FAQ
 - **Does the person know I reported them?** No. Never.
 - **Who decides?** A person on the To'Latino team, with a saved reason. The appeal, a different person.
-- **Suspended and can't sign in?** Ask Support to appeal a suspension or ban for now.
+- **Suspended or banned and can't sign in?** On "Sign in", ask for the code and enter it. The screen says until when and why and,
+  below, **Appeal**: tell us why you think it is a mistake (20–500 characters) and "Send appeal". Once per sanction, within its 14 days;
+  another person on the team reviews it within 72 h, and **the answer reaches you by text message** because you can't open the app. If
+  you come back to "Sign in" before then, you see how it is going. If the screen timed out (30 minutes after the code), ask for a new code.
