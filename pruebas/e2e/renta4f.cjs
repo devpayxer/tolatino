@@ -201,7 +201,7 @@ const limpiar = () => {
   await clic(h.getByRole('button', { name: 'Guardar', exact: true }));
   await espera(() => sql(`select price_cents from items where id = ${NID}`) === '2500', 'editado: ahora $25 por día');
   await clic(h.getByText('Quitar de la lista', { exact: true }));
-  await espera(() => sql(`select (removed_at is not null)::text || '|' || sell from items where id = ${NID}`) === 'true|f', 'quitado: fuera de la lista y de la Tienda (nada se borra)');
+  await espera(() => sql(`select (removed_at is not null)::text || '|' || sell from items where id = ${NID}`) === 'true|false', 'quitado: fuera de la lista y de la Tienda (nada se borra)');
   ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ') : ''));
   await b.close(); console.log('OK renta4f');
 })().catch((e) => { console.error(e); process.exit(1); });
