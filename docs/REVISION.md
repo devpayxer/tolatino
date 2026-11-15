@@ -7,16 +7,19 @@ Cuentas de prueba: vecino Marisol (570) 555-0122 · dueño de Sabor Dominicano P
 
 Marca cada punto: ✅ bien · ✏️ cambiar (con lo que quieras) · ❓ duda.
 
-## Al final: lo que hace falta de tu lado (resumen, 6 nov)
-Todo lo de abajo ya está construido y probado contra simuladores; se enciende solo cuando estén las llaves. Las llaves se
-cargan por el **formulario seguro de secretos del entorno** (nunca por el chat). Lo que un tercero pida en persona va como
-paquete de pasos para el teléfono.
-1. **Stripe** (cobros con tarjeta, Pro, disputas): `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`
-   (webhook en `/api/stripe/webhook` con los eventos de cuenta, pagos, devoluciones y `charge.dispute.*`).
-2. **SMS · Telnyx** (códigos y avisos): `TELNYX_API_KEY`, `TELNYX_FROM` + registro 10DLC.
-3. **Correo · Amazon SES** (confirmar correo, recibos): `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY`, `SES_REGION`,
-   `CORREO_DE` + verificar el dominio (DKIM/SPF/DMARC en Cloudflare) y salir del «sandbox» de SES.
-4. **Revisar en el sandbox** cada bloque con su guía de abajo (2a → 2s) y responder las decisiones pendientes.
+## Lo que te toca, en orden (actualizado 15 nov)
+El código está construido y probado contra simuladores. Lo que falta para abrir depende de cuentas tuyas o de terceros. Las llaves van siempre por el
+**formulario seguro de secretos del entorno** (nunca por el chat); cada paquete trae su lista de toques para el teléfono (`docs/diseno/plan/fase9-apertura.md`,
+«Paquetes»). En este orden, porque los primeros tardan semanas en aprobarse:
+1. **Paquete 8-0 · Dominio:** cuenta gratis de Cloudflare y cambiar los servidores de nombres de `tolatino.com`. Desbloquea los enlaces de las apps, el correo
+   y producción. Es el más corto y el que más destraba.
+2. **Paquete 9-1 · Proveedores:** Stripe (verificación de la empresa y Connect), Telnyx con el **registro 10DLC** (tarda semanas), WhatsApp Business, Amazon SES
+   y Anthropic. Los textos que piden los dejo listos para tocar «Enviar».
+3. **Paquetes 8-1 a 8-3 · Tiendas:** D-U-N-S (tarda), Apple Developer y Google Play como empresa, Firebase, y las declaraciones de privacidad.
+4. **Paquete 9-2 · Abogado y contador:** contratarlos y reenviarles `docs/legal/para-el-abogado.md` y `para-el-contador.md`; el agente DMCA.
+5. **Paquete 9-3 · Producción:** el proyecto «tolatino-real» con forma de pago y su token, y dónde te llegan las alertas.
+6. **Paquete 9-4 · Personas:** quién entra al Super Admin, el equipo de cada ciudad, los invitados de la beta de Hazleton.
+7. **Paquete 9-5 · Esta lista** (lo de abajo, paso a paso) y tus tres OK: encender producción, mandar las apps a revisión y abrir las cinco ciudades.
 
 ## Decisiones pendientes (no se inventaron: se esperan aquí)
 1. **Alergias en el menú del cliente.** El panel las guarda por plato (picante, vegetariano, sin gluten…); el prototipo
