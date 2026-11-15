@@ -14,6 +14,7 @@
 // Precondiciones propias: la base dice «pruebas», teléfonos 555 libres, los números de SMS y WhatsApp de To'Latino conectados, el equipo de prueba, el correo de
 // cada persona puesto por la prueba. Lo que la prueba cambia vuelve a como estaba.
 const ENT = require('../lib/entorno.cjs');
+const { esFijo } = require('../lib/telefonos-fijos.cjs'); // 9b-3 · nunca un número que otra prueba usa por su número
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const c = require('crypto'), fs = require('fs'), http = require('http'), path = require('path');
 const { entrarComo, telLibre } = require('../lib/negocio-nuevo.cjs');
@@ -143,7 +144,7 @@ const VARS = { ultimos: '0123', enlace: 'https://pruebas.tolatino.com/soporte', 
     ok(tope === 60, `el tope de fábrica: ${tope} números por minuto`);
     const usados = new Set(), ids = [];
     for (let i = 0; i < 61; i++) {
-      let t; do { t = '570555' + String(Math.floor(Math.random() * 10000)).padStart(4, '0'); } while (usados.has(t) || ['0911', '0912', '0913'].includes(t.slice(-4)));
+      let t; do { t = '570555' + String(Math.floor(Math.random() * 10000)).padStart(4, '0'); } while (usados.has(t) || esFijo(t) || ['0911', '0912', '0913'].includes(t.slice(-4)));
       usados.add(t);
       const cu = smsEntra(t, `hola ${RUN} ${i}`); ids.push(cu.data.payload.id);
       if ((await telnyx(cu)) !== 200) throw new Error('ASSERT el SMS firmado no entró');

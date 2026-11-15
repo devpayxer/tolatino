@@ -9,6 +9,7 @@
 // muestra · invitar: código NOMBRE-N y enlace → invitado «SE UNIÓ». Sin errores de consola. Deja todo como estaba (lo que el libro guarda
 // queda como historia, revertido).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { esFijo } = require('../lib/telefonos-fijos.cjs'); // 9b-3 · nunca un número que otra prueba usa por su número
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const S = ENT.S, OUT = S + '/cap/', B = 'http://localhost:3100';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -24,7 +25,7 @@ const contiene = (p, t, ms) => espera(async () => (await texto(p)).includes(t), 
 const uid = (tel) => sql(`select id from users where phone = '+1${tel}'`);
 const TAG = '[c5f]';
 const ADM = '5705550199', ADM2 = '5705550188', V = ['5705550751', '5705550752', '5705550753', '5705550754', '5705550755'], D2 = '5705550761', D3 = '5705550762';
-const libre = (pre) => { for (;;) { const t = pre + String(Math.floor(Math.random() * 1000)).padStart(3, '0'); if (!sql(`select 1 from users where phone = '+1${t}'`)) return t; } };
+const libre = (pre) => { for (;;) { const t = pre + String(Math.floor(Math.random() * 1000)).padStart(3, '0'); if (!esFijo(t) && !sql(`select 1 from users where phone = '+1${t}'`)) return t; } };
 const P_ = libre('5705558'), Q_ = libre('5705558'), N_ = libre('5705558');
 const total = (u) => +sql(`select coalesce((select points_total from community_profiles where user_id = '${u}'), 0)`);
 const hoyBruto = (u) => +sql(`select coalesce(sum(delta), 0) from points_entries e join users x on x.id = e.user_id join cities c on c.id = x.home_city_id where e.user_id = '${u}' and e.motive = 'regla' and e.delta > 0 and e.local_day = (now() at time zone c.timezone)::date`);

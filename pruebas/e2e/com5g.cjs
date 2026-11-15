@@ -8,6 +8,7 @@
 // ajusta ± (auditado; nunca negativo) · 11 ningún pago · invariantes del libro en SQL · Mi cuenta › MONEDAS. Sin errores de consola. Deja
 // todo como estaba (cupón de prueba terminado; códigos de prueba vencidos y sus monedas devueltas).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { esFijo } = require('../lib/telefonos-fijos.cjs'); // 9b-3 · nunca un número que otra prueba usa por su número
 const { chromium } = require('playwright'); const { execSync, exec } = require('child_process');
 const S = ENT.S, OUT = S + '/cap/', B = 'http://localhost:3100';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -27,7 +28,7 @@ const sinScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth <
 const barrido = () => execSync(`curl -s -X POST -H 'x-barrido-token: ${ENT.TOK}' ${B}/api/interno/barrido`).toString();
 const TAG = 'prueba c5g';
 const ADM = '5705550199', ROSA = '5705550166', PEDRO = '5705550133', YES = '5705550433';
-const libre = (pre) => { for (;;) { const t = pre + String(Math.floor(Math.random() * 1000)).padStart(3, '0'); if (!sql(`select 1 from users where phone = '+1${t}'`)) return t; } };
+const libre = (pre) => { for (;;) { const t = pre + String(Math.floor(Math.random() * 1000)).padStart(3, '0'); if (!esFijo(t) && !sql(`select 1 from users where phone = '+1${t}'`)) return t; } };
 const N1_ = libre('5705556'), N2_ = libre('5705556'), N3_ = libre('5705556'), N4_ = libre('5705556'), N5_ = libre('5705556');
 // Mover el reloj de un código (solo en esta prueba): el trigger no deja cambiar lo emitido, así que se apaga un momento.
 const vencerYa = (where) => sql(`alter table coupon_redemptions disable trigger coupon_redemptions_guardia; update coupon_redemptions set expires_at = now() - interval '1 minute' where status = 'issued' and ${where}; alter table coupon_redemptions enable trigger coupon_redemptions_guardia;`);

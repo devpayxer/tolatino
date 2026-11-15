@@ -87,6 +87,8 @@ const casos = [
   ['plazoAbiertoSeLee', 'apps/web/app/(app)/n/[id]/inscribirme/Inscribirme.tsx', 'te lo guardan ${b.plazos.oferta} horas.`', 'te lo guardan 48 horas.`'],
   // purgaPorRazon: la purga de Salud vuelve a borrar también lo de los niños y la casa
   ['purgaPorRazon', 'apps/web/lib/citas-flujo.ts', "        and p.reason not in ('nino', 'fe', 'casa') -- ", "        and true -- "],
+  // telefonoAlAzarRespetaFijos: telLibre vuelve a sacar al azar un número sin saltar los que otra prueba usa por su número (Rita de sis9j)
+  ['telefonoAlAzarRespetaFijos', 'pruebas/lib/negocio-nuevo.cjs', "    if (!esFijo(t) && sql(", "    if (sql("],
   // textoQueExiste: una prueba busca en la pantalla un texto que ya no está en ningún lado (lo que le pasó a sis9j con 9o)
   ['textoQueExiste', 'pruebas/e2e/sis9j.cjs', "await contiene(a, 'DESPLIEGUES Y VUELTAS ATRÁS')", "await contiene(a, 'Llegan cuando se encienda producción')"],
 ];

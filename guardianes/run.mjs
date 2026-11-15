@@ -9294,6 +9294,21 @@ const guardianes = {
           falla(G, f, t.slice(0, m.index).split("\n").length, `guarda el precio en ${m[1]} para cambiarlo y no lo devuelve al salir: process.on('exit', () => sql(\`update items set price_cents = \${${m[1]}} …\`))`);
     }
   },
+  /* 9b-3 · telefonoAlAzarRespetaFijos: un generador de «teléfono libre al azar» en las pruebas (prefijo + String(…), '570555' + String(…)) salta
+     los números que otra prueba o la semilla usan por su número (esFijo, pruebas/lib/telefonos-fijos.cjs). En la barajada del 15 nov din9n4 sacó al
+     azar 570-555-0961 (Rita de sis9j) y la dio de alta como «Rita Nueve»; sis9j no la creó y el Equipo ya no decía «Rita Prueba».
+     Al revés (alreves9b3): quitar esFijo(t) de telLibre. */
+  telefonoAlAzarRespetaFijos() {
+    const G = "telefonoAlAzarRespetaFijos";
+    for (const f of archivos.filter((x) => /^pruebas\/(e2e|lib|alreves)\/[^/]+\.(cjs|mjs)$/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      for (const m of t.matchAll(/(?:\bpre(?:fijo)?|'570555')\s*\+\s*String\(/g)) {
+        const i = t.lastIndexOf("\n", m.index) + 1, fin = t.indexOf("\n", m.index), sig = t.indexOf("\n", fin + 1);
+        if (!/esFijo\(t\)/.test(t.slice(i, sig < 0 ? undefined : sig)))
+          falla(G, f, t.slice(0, m.index).split("\n").length, "saca un teléfono al azar sin saltar los fijos: añade !esFijo(t) (pruebas/lib/telefonos-fijos.cjs) o puede tomar el número de otra prueba");
+      }
+    }
+  },
 };
 
 

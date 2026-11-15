@@ -43,7 +43,7 @@ const enNY = (d) => { const p = Object.fromEntries(new Intl.DateTimeFormat('en-U
 
 (async () => {
   // ── Preparar: Rita del equipo (Solo lectura), sin segundo factor y sin bloqueos de corridas anteriores ──
-  sql(`insert into users (phone, phone_verified_at, first_name, last_name, home_city_id, lang, is_test) values ('+1${RITA}', now(), 'Rita', 'Prueba', 'hzl', 'es', true) on conflict (phone) do nothing`);
+  sql(`insert into users (phone, phone_verified_at, first_name, last_name, home_city_id, lang, is_test) values ('+1${RITA}', now(), 'Rita', 'Prueba', 'hzl', 'es', true) on conflict (phone) do update set first_name = 'Rita', last_name = 'Prueba'`);
   const AU = uid(ADM), RU = uid(RITA), MU = uid(MARI);
   ok(!!AU && !!RU && !!MU, 'Ana (Admin), Rita y Marisol existen');
   ok(sql(`select count(*) from staff_mfa_pruebas where phone = '+1${ADM}'`) === '1' && sql(`select count(*) from staff_mfa_pruebas where phone = '+1${RITA}'`) === '0', 'Ana está en la lista de las pruebas; Rita no');

@@ -3,6 +3,7 @@
 // de una máquina (la hizo una corrida de publica.cjs del 5 nov): en una base nueva no estaba y las cuatro fallaban. Ahora cada corrida hace el
 // suyo, con un teléfono 555 libre (el repo es público), y nada depende del orden ni de lo que dejó otra prueba.
 const ENT = require('./entorno.cjs');
+const { esFijo } = require('./telefonos-fijos.cjs'); // 9b-3 · los números que una prueba usa por su número no salen al azar
 const { execSync } = require('child_process');
 const B = ENT.B, FP = ENT.rec('fotos') + '/';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -17,7 +18,7 @@ const medios = (ctx) => ctx.route('**/medios/**', async (r) => {
 const telLibre = (pre = '570555') => {
   for (let i = 0; i < 200; i++) {
     const t = pre + String(Math.floor(Math.random() * 10000)).padStart(4, '0');
-    if (sql(`select count(*) from users where phone = '+1${t}'`) === '0' && sql(`select count(*) from businesses where id like 'barberia-${t.slice(-4)}%'`) === '0') return t;
+    if (!esFijo(t) && sql(`select count(*) from users where phone = '+1${t}'`) === '0' && sql(`select count(*) from businesses where id like 'barberia-${t.slice(-4)}%'`) === '0') return t;
   }
   throw new Error('no hay un teléfono 555 libre');
 };
