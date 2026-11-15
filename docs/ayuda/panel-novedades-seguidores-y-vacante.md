@@ -34,6 +34,18 @@ _Pantallas: Panel › Tu página › Novedades (`/panel/{negocio}/pagina/nov`, e
 
 **¿Puedo avisar una novedad vieja?** Solo si está en vivo.
 
+## Repetir
+En «Cuándo se publica», **Repetir** saca la misma novedad los días que elijas: atajos (todos los días, lunes a viernes, lun · mié · vie, fines de semana) o día por día; **Sale a las** (cada día que toca); **Cada vez se ve** (hasta que cierras, 3 h, 6 h o 24 h) y **Hasta cuándo** (hasta que la detengas, 2 semanas, 1 mes o 3 meses). Abajo te dice lo que va a pasar. En tu lista dice «Se repite · L · X · V · 11:00 AM» y cuándo sale la próxima.
+
+| Caso | Qué pasa |
+|---|---|
+| Ese día cierras (feriado, vacaciones, fuera de temporada) | Ese día no sale; sale el siguiente que toca. |
+| Tus seguidores | Les avisamos solo la primera vez. Cada vez sale en tu página y en Hoy en el barrio. |
+| La detienes («Terminar ahora» / «Cancelar programación») | Ya no vuelve a salir. |
+| To’Latino la oculta | No vuelve a salir mientras esté oculta. |
+| Llega su fecha de fin | Sale la última vez y termina. |
+| Los votos y comentarios | Siguen: es la misma publicación. |
+
 ## English
 
 ### What it does
@@ -67,3 +79,15 @@ _Pantallas: Panel › Tu página › Novedades (`/panel/{negocio}/pagina/nov`, e
 **Who is a follower?** Anyone who saves your business on To'Latino.
 
 **Can I announce an old update?** Only if it is live.
+
+### Repeat
+Under "When it goes out", **Repeat** brings the same update back on the days you pick: shortcuts (every day, Mon to Fri, Mon · Wed · Fri, weekends) or day by day; **Goes out at** (each day it runs); **Each time it shows** (until you close, 3 h, 6 h or 24 h) and **Until when** (until you stop it, 2 weeks, 1 month or 3 months). Below, it tells you what will happen. Your list says "Repeats · M · W · F · 11:00 AM" and when the next one goes out.
+
+| Case | What happens |
+|---|---|
+| You are closed that day (holiday, vacation, out of season) | It does not go out that day; it goes out on the next day it runs. |
+| Your followers | They are notified only the first time. Each time it shows on your page and in Today nearby. |
+| You stop it ("End now" / "Cancel schedule") | It does not come back. |
+| To’Latino hides it | It does not come back while hidden. |
+| It reaches its end date | It goes out one last time and ends. |
+| Votes and comments | They stay: it is the same post. |

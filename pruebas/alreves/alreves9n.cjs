@@ -77,6 +77,10 @@ const casos = [
   // calendarioConDiasEspeciales (9n-10): reservaciones vuelve a ignorar los días especiales; citas, la temporada
   ['calendarioConDiasEspeciales', 'apps/web/lib/reservas.ts', '  const de = await diasEspeciales(c as ReturnType<typeof db>, negocio, b.hoy, 60);', '  const de = { esp: [], temporadas: [], cerradoHasta: null };'],
   ['calendarioConDiasEspeciales', 'apps/web/lib/citas.ts', '  if (x.temporadas.length && !x.temporadas.some((t) => t.desde <= ymd && ymd <= t.hasta)) return [];\n', ''],
+  // novedadRepetida (9n-11): la repetición sale en días cerrados; el barrido revive las detenidas; vuelve a avisar a los seguidores
+  ['novedadRepetida', 'packages/db/migrations/0161_novedad_repetir.sql', ' and x.t > desde and not negocio_dia_cerrado(bid, x.dia)', ' and x.t > desde'],
+  ['novedadRepetida', 'apps/web/lib/novedades.ts', "where p.repeat_days is not null and p.status = 'live' and p.hidden_at is null and p.ends_at <= now()", "where p.repeat_days is not null and p.ends_at <= now()"],
+  ['novedadRepetida', 'apps/web/lib/novedades.ts', 'repeat_n = p.repeat_n + 1, updated_at = now()', 'repeat_n = p.repeat_n + 1, followers_notified_at = null, updated_at = now()'],
   // disputaConEvidencia: la respuesta deja de mandar los archivos
   ['disputaConEvidencia', DI, 'archivos: { recibo: archivos.recibo, conversacion: archivos.conversacion, entrega: archivos.entrega, otro: archivos.foto_entrega } });', 'texto: "" });'],
 ];

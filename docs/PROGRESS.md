@@ -2348,3 +2348,11 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   mercado, planes, entrevistas y visitas.
 - **Guardián `calendarioConDiasEspeciales`** (al revés alreves9n 42/42; `diaEspecialActivo` apunta ahora a lib/dias-especiales.ts). cit3b §6a.
 - **neg9n8:** el CI falló porque la prueba buscaba `<button>` y los del sistema de diseño son `[role=button]`: arreglada + guardián `botonEsRole`.
+
+## Fase 9 · 9n-11 — Novedades que se repiten (15 nov)
+- **Migración 0161:** `business_posts.repeat_days / repeat_min / repeat_dur / repeat_until / repeat_n` (con su check) y las funciones
+  `novedad_siguiente` (se salta los días cerrados con `negocio_dia_cerrado`) y `novedad_fin` (3/6/24 h o hasta que cierra).
+- **Panel › Novedades:** «Repetir» con las piezas del diseño (QUÉ DÍAS, O ELIGE LOS DÍAS, Sale a las, CADA VEZ SE VE, HASTA CUÁNDO, la nota de lo que
+  pasará y el aviso de seguidores); VENCE no sale cuando se repite; la lista dice «Se repite · L · X · V · 11:00 AM · próxima …».
+- **Barrido `novedadesRepetir`** (`repetirNovedades`): la que dejó de verse vuelve a salir el siguiente día que toca (misma publicación).
+- **Guardián `novedadRepetida`** (al revés alreves9n 45/45). nov2g lo prueba (editor → base → barrido → lista). Ayuda: panel-novedades-seguidores-y-vacante.md.

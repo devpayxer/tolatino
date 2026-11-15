@@ -94,6 +94,25 @@ const limpiar = () => {
   await clic(d.getByText('Mañana', { exact: true }));
   await d.getByText('Programar', { exact: true }).last().scrollIntoViewIfNeeded(); await d.getByText('Programar', { exact: true }).last().click();
   ok(await espera(() => sql(`select (publish_at > now())::text from business_posts where title = 'Prueba novedad programada' and status = 'live' order by id desc limit 1`), 'true') === 'true', 'panel: programada para mañana (no sale todavía)');
+  // 9n-11 · «Repetir»: lun · mié · vie a las 11 AM, se ve 3 h; la base calcula la primera vez y el barrido la vuelve a sacar el siguiente día que toca.
+  await d.goto(B + `/panel/${BIZ}/pagina/nov?det=nov:new`); await d.getByText('Publicar novedad').first().waitFor();
+  await clic(d.getByText('Novedad', { exact: true }));
+  await (await vis(d.getByPlaceholder('Ej. Estrenamos terraza'))).fill('Prueba novedad que se repite');
+  await clic(d.getByText('Repetir', { exact: true }));
+  await clic(d.getByText('Lun · Mié · Vie', { exact: true }));
+  await clic(d.getByText('3 h', { exact: true }));
+  ok(!!(await vis(d.getByText(/Sale los lunes, miércoles y viernes a las 11:00 AM y se ve por 3 h/))), 'repetir: la nota dice lo que va a pasar');
+  await shot(d, 'v2b-repetir.png', true);
+  await d.getByText('Programar', { exact: true }).last().scrollIntoViewIfNeeded(); await d.getByText('Programar', { exact: true }).last().click();
+  const REP = `select repeat_days::text || '|' || repeat_min || '|' || repeat_dur || '|' || (extract(dow from publish_at at time zone 'America/New_York')::int in (1, 3, 5))::text || '|' || to_char(publish_at at time zone 'America/New_York', 'HH24:MI') || '|' || (ends_at - publish_at = interval '3 hours')::text from business_posts where title = 'Prueba novedad que se repite' and status = 'live' order by id desc limit 1`;
+  ok(await espera(() => sql(REP), '{1,3,5}|660|3h|true|11:00|true') === '{1,3,5}|660|3h|true|11:00|true', 'repetir: guardada con sus días, la primera vez un lun/mié/vie a las 11:00 y 3 h de vista');
+  const P1 = sql(`select publish_at::text from business_posts where title = 'Prueba novedad que se repite' and status = 'live' order by id desc limit 1`);
+  sql(`update business_posts set publish_at = publish_at - interval '30 days', ends_at = now() - interval '1 minute' where title = 'Prueba novedad que se repite' and status = 'live'`);
+  execSync(`curl -s -X POST -H 'x-barrido-token: ${ENT.TOK}' ${B}/api/interno/barrido`);
+  const R2 = sql(`select publish_at::text || '|' || repeat_n || '|' || (extract(dow from publish_at at time zone 'America/New_York')::int in (1, 3, 5))::text || '|' || (publish_at > now())::text from business_posts where title = 'Prueba novedad que se repite' and status = 'live' order by id desc limit 1`).split('|');
+  ok(R2[1] === '1' && R2[2] === 'true' && R2[3] === 'true' && R2[0] <= P1, 'repetir: el barrido la vuelve a sacar el siguiente lun/mié/vie (la misma publicación, repeat_n = 1)');
+  await d.goto(B + `/panel/${BIZ}/pagina/nov`);
+  ok(!!(await vis(d.getByText(/Se repite · L · X · V · 11:00 AM/).first())), 'panel: la lista dice que se repite, los días y la hora');
   await m.goto(B + `/n/${BIZ}?tab=nov`); await m.getByText('Mofongo de chicharrón a $10 hoy').first().waitFor();
   ok(!(await vis(m.getByText('Prueba novedad programada'))) && !!(await vis(m.getByText('Prueba encuesta del domingo'))), 'cliente: ve la encuesta, no la programada');
   // Fijar la encuesta (desfija la otra) y detenerla

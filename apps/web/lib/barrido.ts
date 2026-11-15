@@ -64,6 +64,8 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["moderacion", () => mod.barrerModeracion()],
         // Hoy en el barrio y la cuenta oficial (5e): quien sigue a un negocio recibe una vez «Hoy en un negocio que sigues» cuando una
         // novedad entra a Hoy (también la programada al salir), y si una oficial programada y fijada ya salió, queda una sola fijada.
+        // 9n-11 · Novedades que se repiten: la que dejó de verse vuelve a salir el siguiente día que toca (se salta los días que cierra).
+        ["novedadesRepetir", async () => (await import("./novedades")).repetirNovedades()],
         ["hoyGuardados", () => hoy.avisarHoyGuardados()], ["fijadaUna", async () => (await db().query<{ n: number }>(`select com_fijada_una() as n`)).rows[0]?.n ?? 0],
         // Tabla del Barrio (5f): el mes que terminó queda congelado (desde ahí, 72 h para excluir) y el día 3 se cierra solo si nadie lo
         // cerró (posiciones, insignia del mes, plazas de General y el aviso a los 3 primeros). Los invitados que ya participan cuentan

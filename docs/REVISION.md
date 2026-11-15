@@ -4957,3 +4957,10 @@ citas, reservaciones, Noche, apartados, rentas, mercado, planes, entrevistas ni 
 
 **Decisión tomada por defecto (AB):** lo que YA estaba agendado para un día que después se marca cerrado no se cancela solo (el negocio lo ve en su
 panel y decide); cancelar en automático tocaría dinero y avisos de clientes. Si quieres que se avise o se cancele solo, dímelo.
+
+## Fase 9 · 9n-11 — Novedades que se repiten (15 nov)
+**Qué mirar (sandbox):** Panel › Tu página › Novedades › Publicar novedad › «Repetir» (captura `v2b-repetir.png`): los atajos de días, los días
+uno por uno, «Sale a las», «Cada vez se ve», «Hasta cuándo» y la nota de lo que va a pasar. En la lista: «Se repite · L · X · V · 11:00 AM».
+
+**Decisiones por defecto (AB):** cuando se repite, VENCE no sale (lo manda CADA VEZ SE VE); «hasta que cierras» toma la última hora del horario de
+ese día (si no abre, 6 h); un día cerrado se salta.

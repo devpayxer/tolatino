@@ -9374,6 +9374,25 @@ const guardianes = {
     }
   },
 
+  /* 9n-11 · novedadRepetida: una novedad que se repite la vuelve a sacar la BASE (novedad_siguiente, que se salta los días que el negocio cierra y no pasa
+     de su fecha), nunca el navegador; el barrido solo toca las que siguen en vivo y no están ocultas (detener u ocultar la paran), y a los seguidores
+     se les avisa una sola vez (el barrido no toca followers_notified_at ni hoy_avisado_at). Al revés (alreves9n). */
+  novedadRepetida() {
+    const G = "novedadRepetida", M = "packages/db/migrations/0161_novedad_repetir.sql", N = "apps/web/lib/novedades.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración de «Repetir»");
+    const m = readFileSync(M, "utf8"), f = cuerpoFn(m.replace(/create or replace function (\w+)/g, "\nfunction $1"), "novedad_siguiente");
+    if (!/not negocio_dia_cerrado\(bid, x\.dia\)/.test(m)) falla(G, M, 0, "novedad_siguiente no se salta los días que el negocio cierra (negocio_dia_cerrado)");
+    if (!/\(hasta is null or x\.dia <= hasta\)/.test(m)) falla(G, M, 0, "novedad_siguiente no respeta HASTA CUÁNDO");
+    void f;
+    const r = cuerpoFn(sinComent(N), "repetirNovedades");
+    if (!r) falla(G, N, 0, "falta repetirNovedades (el barrido)");
+    else {
+      if (!/p\.status = 'live' and p\.hidden_at is null/.test(r)) falla(G, N, 0, "el barrido vuelve a sacar novedades detenidas u ocultas");
+      if (/followers_notified_at|hoy_avisado_at/.test(r)) falla(G, N, 0, "el barrido toca el aviso a los seguidores: se avisa una sola vez");
+    }
+    if (!/novedad_siguiente\(\$1, \$2::smallint\[\], \$3::int/.test(cuerpoFn(sinComent(N), "guardarNovedad"))) falla(G, N, 0, "la primera vez de una novedad que se repite la calcula la base (novedad_siguiente), no el navegador");
+  },
+
   /* 9n-10 · calendarioConDiasEspeciales: un calendario que arma días u horas a futuro con el horario de la semana (business_hours) mira también los
      días especiales y la temporada (lib/dias-especiales.ts, o negocio_dia_cerrado / negocio_abierto en SQL): si no, ofrece Navidad, las vacaciones
      o un día fuera de temporada (LAUNCH «La temporada en las citas»: reservaciones, Noche, apartados, rentas, mercado, planes y entrevistas

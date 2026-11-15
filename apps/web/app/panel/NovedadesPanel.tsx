@@ -18,8 +18,14 @@ const NOVT = (c: Ctx): [Tipo, string, string][] => [
 const horaL = (m: number) => { const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 
 /* «Cuándo»: ahora · quedan N h / programada para … / terminada. */
-function cuando(c: Ctx, n: { st: string; publish: string; ends: string | null; tz: string; hoy?: number | null; hoyOff?: string | null }) {
+function cuando(c: Ctx, n: { st: string; publish: string; ends: string | null; tz: string; hoy?: number | null; hoyOff?: string | null; rep?: { dias: number[]; m: number } | null }) {
   const { E2, es } = c, f = (iso: string) => new Intl.DateTimeFormat(es ? "es-US" : "en-US", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: n.tz }).format(new Date(iso)).replace(/\./g, "");
+  // 9n-11 · La que se repite dice sus días y la hora, y la próxima vez (o que está en vivo ahora).
+  if (n.rep && (n.st === "prog" || n.st === "live")) {
+    const LET = es ? ["D", "L", "M", "X", "J", "V", "S"] : ["S", "M", "T", "W", "T", "F", "S"], ORD = [1, 2, 3, 4, 5, 6, 0];
+    const dias = n.rep.dias.length === 7 ? E2("todos los días", "every day") : [...n.rep.dias].sort((a, b) => ORD.indexOf(a) - ORD.indexOf(b)).map((d) => LET[d]).join(" · ");
+    return `${E2("Se repite", "Repeats")} · ${dias} · ${horaL(n.rep.m)}${n.st === "prog" ? ` · ${E2("próxima", "next")} ${f(n.publish)}` : ` · ${E2("en vivo ahora", "live now")}`}`;
+  }
   if (n.st === "prog") return E2(`Programada · ${f(n.publish)}`, `Scheduled · ${f(n.publish)}`);
   if (n.st === "done") return E2("Terminada", "Ended");
   if (n.st === "adm") return E2("Oculta por To’Latino", "Hidden by To’Latino");
@@ -111,7 +117,8 @@ export function novDetalle(c: Ctx): Sec {
 /* Editor (nov:new · nov:edit:{id} · nov:dup:{id}). */
 type FN = {
   kind: Tipo; title: string; body: string; fotos: { id: string; url: string }[]; link: string; item: string | null; url: string; was: string; now: string;
-  day: string; hrs: string; hrsT: string; o1: string; o2: string; o3: string; o4: string; audience: "all" | "fol"; ends: string; when: "now" | "once"; sD: number; sM: number; evento: string | null; job: string | null; avisar: boolean;
+  day: string; hrs: string; hrsT: string; o1: string; o2: string; o3: string; o4: string; audience: "all" | "fol"; ends: string; when: "now" | "once" | "rep"; sD: number; sM: number; evento: string | null; job: string | null; avisar: boolean;
+  rDias: number[]; rDur: string; rHasta: string;
 };
 function editor(c: Ctx, id: string): Sec {
   const { E2, d } = c, ed = id.startsWith("edit:") ? c.nov?.det : id.startsWith("dup:") ? c.nov?.det : null, edita = id.startsWith("edit:") && !!ed;
@@ -120,7 +127,8 @@ function editor(c: Ctx, id: string): Sec {
     kind: ed?.kind ?? "oferta", title: ed?.title ?? "", body: ed?.body ?? "", fotos: ed && edita ? ed.fotos : [], link: ed?.link_kind ?? (items.length ? "item" : "none"), item: ed?.item_id ?? null,
     url: ed?.url ?? "", was: ed?.was ? String(ed.was / 100) : "", now: ed?.now ? String(ed.now / 100) : "", day: ed?.aviso?.day ?? "", hrs: ed?.aviso?.hrs ?? "closed", hrsT: ed?.aviso?.hrsT ?? "",
     o1: ed?.poll?.[0] ?? "", o2: ed?.poll?.[1] ?? "", o3: ed?.poll?.[2] ?? "", o4: ed?.poll?.[3] ?? "", audience: ed?.audience ?? "all", ends: "24h",
-    when: edita && ed?.st === "prog" ? "once" : "now", sD: 1, sM: 660, evento: ed?.event_id ?? null, job: ed?.job_id ?? null, avisar: false,
+    when: edita && ed?.rep ? "rep" : edita && ed?.st === "prog" ? "once" : "now", sD: 1, sM: ed?.rep?.m ?? 660, evento: ed?.event_id ?? null, job: ed?.job_id ?? null, avisar: false,
+    rDias: ed?.rep?.dias ?? [], rDur: ed?.rep?.dur ?? "close", rHasta: "no",
   };
   const F = c.form<FN>(`det:nov:${id}`, b0), x = F.d, ty = x.kind, out: (Bloque | null)[] = [], TT = NOVT(c), T = TT.find((t) => t[0] === ty) ?? TT[0]!;
   const TD: Record<Tipo, string> = { oferta: E2("Un precio especial en algo que vendes. Lo piden desde la novedad, y se cobra ese precio.", "A special price on something you sell. They order it from the update, at that price."), hoy: E2("Lo que hay hoy: el plato del día, algo que acaba de llegar.", "What you have today: the daily special, something that just arrived."), aviso: E2("Cierres, feriados o cambios de horario.", "Closures, holidays or hours changes."), encuesta: E2("Una pregunta corta. Votan en tu página.", "A short question. They vote on your page."), novedad: E2("Cualquier otra cosa que quieras contar.", "Anything else you want to share.") };
@@ -209,11 +217,33 @@ function editor(c: Ctx, id: string): Sec {
   }
   out.push({ type: "group", k: E2("QUIÉN LO VE Y CUÁNDO", "WHO SEES IT AND WHEN") },
     { type: "chips", k: E2("QUIÉN LO VE", "WHO SEES IT"), items: ([["all", E2("Todos", "Everyone")], ["fol", E2("Solo quienes te siguen", "Only your followers")]] as ["all" | "fol", string][]).map(([v, l]) => ({ l, v: x.audience === v ? "selected" : "filter", onClick: () => F.set({ audience: v }) })) },
-    { type: "chips", k: E2("VENCE", "ENDS"), items: ([["3pm", E2("Hoy 3 PM", "Today 3 PM")], ["24h", E2("En 24 h", "In 24 h")], ["semana", E2("Esta semana", "This week")], ["no", E2("Sin fecha", "No end")]] as [string, string][]).map(([v, l]) => ({ l, v: x.ends === v ? "selected" : "filter", onClick: () => F.set({ ends: v }) })) });
-  const W: ["now" | "once", string, string, string][] = [["now", "bolt", E2("Publicar ahora", "Post now"), E2("Sale en cuanto toques Publicar.", "Goes out as soon as you tap Post.")], ["once", "calendar", E2("Programar para otro día", "Schedule for another day"), E2("Elige el día y la hora.", "Pick the day and time.")]];
+    // 9n-11 · Con «Repetir», cuánto se ve lo dice CADA VEZ SE VE (abajo); VENCE no aplica.
+    ...(x.when === "rep" ? [] : [{ type: "chips" as const, k: E2("VENCE", "ENDS"), items: ([["3pm", E2("Hoy 3 PM", "Today 3 PM")], ["24h", E2("En 24 h", "In 24 h")], ["semana", E2("Esta semana", "This week")], ["no", E2("Sin fecha", "No end")]] as [string, string][]).map(([v, l]) => ({ l, v: x.ends === v ? "selected" : "filter", onClick: () => F.set({ ends: v }) })) }]));
+  const W: ["now" | "once" | "rep", string, string, string][] = [["now", "bolt", E2("Publicar ahora", "Post now"), E2("Sale en cuanto toques Publicar.", "Goes out as soon as you tap Post.")], ["once", "calendar", E2("Programar para otro día", "Schedule for another day"), E2("Elige el día y la hora.", "Pick the day and time.")], ["rep", "clock", E2("Repetir", "Repeat"), E2("Todos los días, solo los viernes, lun · mié · vie…", "Every day, Fridays only, Mon · Wed · Fri…")]];
   out.push({ type: "group", k: E2("CUÁNDO SE PUBLICA", "WHEN IT GOES OUT") }, { type: "rows", items: W.map(([v, ic, t, s]) => ({ icon: ic, ibg: x.when === v ? "var(--tl-ink)" : "rgba(75,55,245,.08)", ifg: x.when === v ? "var(--tl-white)" : "var(--tl-action)", t, s, compact: true, bd: x.when === v ? "1.5px solid var(--tl-ink)" : "1px solid rgba(11,14,18,.08)", chev: false, onClick: () => F.set({ when: v }), sel: { on: x.when === v, onClick: () => F.set({ when: v }) } })) });
   if (x.when === "now") out.push({ type: "rows", items: [{ icon: "bell", t: E2("Avisar a tus seguidores", "Tell your followers"), s: E2("Les llega a su campana a quienes te guardan y tienen encendido «Lo que traen hoy». Una vez por novedad; hasta 2 al día.", "It reaches the bell of people who saved you and have “What they have today” on. Once per update; up to 2 a day."), compact: true, chev: false,
     tgOn: x.avisar, onTg: () => F.set({ avisar: !x.avisar }) }] });
+  // 9n-11 · «Repetir» (diseño schedBlocks): QUÉ DÍAS (atajos), O ELIGE LOS DÍAS, Sale a las, CADA VEZ SE VE, HASTA CUÁNDO y lo que va a pasar.
+  if (x.when === "rep") {
+    const PRE: Record<string, number[]> = { all: [0, 1, 2, 3, 4, 5, 6], lv: [1, 2, 3, 4, 5], lmv: [1, 3, 5], fds: [0, 6] }, ORD = [1, 2, 3, 4, 5, 6, 0];
+    const LET = c.es ? ["D", "L", "M", "X", "J", "V", "S"] : ["S", "M", "T", "W", "T", "F", "S"], DN = c.es ? ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"] : ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const dias = x.rDias, es = (k: string) => PRE[k]!.length === dias.length && PRE[k]!.every((d) => dias.includes(d));
+    out.push({ type: "chips", k: E2("QUÉ DÍAS", "WHICH DAYS"), items: ([["all", E2("Todos los días", "Every day")], ["lv", E2("Lunes a viernes", "Mon to Fri")], ["lmv", E2("Lun · Mié · Vie", "Mon · Wed · Fri")], ["fds", E2("Fines de semana", "Weekends")]] as [string, string][])
+        .map(([k, l]) => ({ l, v: es(k) ? "selected" : "filter", onClick: () => F.set({ rDias: PRE[k]!.slice() }) })) },
+      { type: "chips", k: E2("O ELIGE LOS DÍAS", "OR PICK THE DAYS"), help: `${dias.length}${E2(" DE 7", " OF 7")}`, items: ORD.map((d) => ({ l: LET[d]!, v: dias.includes(d) ? "selected" : "filter", onClick: () => F.set({ rDias: dias.includes(d) ? dias.filter((y) => y !== d) : [...dias, d] }) })) },
+      { type: "step", t: E2("Sale a las", "Goes out at"), s: E2("Cada día que toca.", "Each day it runs."), v: horaL(x.sM), onM: () => F.set({ sM: Math.max(360, x.sM - 30) }), onP: () => F.set({ sM: Math.min(1320, x.sM + 30) }) },
+      { type: "chips", k: E2("CADA VEZ SE VE", "EACH TIME IT SHOWS"), items: ([["close", E2("Hasta que cierras", "Until you close")], ["3h", "3 h"], ["6h", "6 h"], ["24h", "24 h"]] as [string, string][]).map(([v, l]) => ({ l, v: x.rDur === v ? "selected" : "filter", onClick: () => F.set({ rDur: v }) })) },
+      { type: "chips", k: E2("HASTA CUÁNDO", "UNTIL WHEN"), items: ([["no", E2("Hasta que la detengas", "Until you stop it")], ["2w", E2("2 semanas", "2 weeks")], ["1m", E2("1 mes", "1 month")], ["3m", E2("3 meses", "3 months")]] as [string, string][]).map(([v, l]) => ({ l, v: x.rHasta === v ? "selected" : "filter", onClick: () => F.set({ rHasta: v }) })) });
+    if (!dias.length) out.push({ type: "note", tone: "warn", t: E2("Elige al menos un día.", "Pick at least one day.") });
+    else {
+      const ord = [...dias].sort((a, b) => ORD.indexOf(a) - ORD.indexOf(b)), junta = (a: string[]) => (a.length < 2 ? a.join("") : `${a.slice(0, -1).join(", ")}${E2(" y ", " and ")}${a[a.length - 1]}`);
+      const dt = es("all") ? E2("todos los días", "every day") : es("lv") ? E2("de lunes a viernes", "Monday to Friday") : es("fds") ? E2("los fines de semana", "on weekends") : ord.length === 1 ? E2(`solo los ${DN[ord[0]!]}`, `only on ${DN[ord[0]!]}s`) : E2(`los ${junta(ord.map((d) => DN[d]!))}`, `on ${junta(ord.map((d) => DN[d]!))}`);
+      const du = ({ close: E2("hasta que cierras", "until you close"), "3h": E2("por 3 h", "for 3 h"), "6h": E2("por 6 h", "for 6 h"), "24h": E2("por 24 h", "for 24 h") } as Record<string, string>)[x.rDur] ?? "";
+      const un = ({ no: "", "2w": E2(", durante 2 semanas", ", for 2 weeks"), "1m": E2(", durante 1 mes", ", for 1 month"), "3m": E2(", durante 3 meses", ", for 3 months") } as Record<string, string>)[x.rHasta] ?? "";
+      out.push({ type: "note", tone: "ok", icon: "calendar", t: `${E2("Sale ", "Goes out ")}${dt}${E2(" a las ", " at ")}${horaL(x.sM)}${E2(" y se ve ", " and shows ")}${du}${un}. ${E2("Los días que cierras no sale.", "It skips the days you are closed.")}` });
+    }
+    out.push({ type: "note", tone: "info", icon: "bell", t: E2("A tus seguidores les avisamos solo la primera vez, para no cansarlos. Cada vez sale en tu página y en Hoy en el barrio.", "Followers are notified only the first time, so they do not tire of it. Each time it shows on your page and in Today nearby.") });
+  }
   if (x.when === "once") {
     const dias = Array.from({ length: 7 }, (_, i) => { const t = new Date(Date.now() + i * 86_400_000); return [i, i === 0 ? E2("Hoy", "Today") : i === 1 ? E2("Mañana", "Tomorrow") : new Intl.DateTimeFormat(c.es ? "es-US" : "en-US", { weekday: "short", day: "numeric" }).format(t).replace(/\./g, "")] as [number, string]; });
     out.push({ type: "chips", k: E2("QUÉ DÍA", "WHICH DAY"), items: dias.map(([i, l]) => ({ l, v: x.sD === i ? "selected" : "filter", onClick: () => F.set({ sD: i }) })) },
@@ -224,11 +254,11 @@ function editor(c: Ctx, id: string): Sec {
   const poll = [x.o1, x.o2, x.o3, x.o4].map((o) => o.trim()).filter(Boolean);
   const valid = x.title.trim().length >= 3 && (ty !== "oferta" || (!!it && nw > 0 && nw < bf)) && (ty !== "encuesta" || poll.length >= 2) && (ty !== "aviso" || !!x.day.trim()) && (lk !== "item" || ty === "aviso" || ty === "encuesta" || !!x.item) && (lk !== "job" || !!x.job) && (lk !== "web" || /^https:\/\//.test(x.url)) && (lk !== "event" || !!x.evento);
   return { blocks: out, ed: {
-    F, l: x.when === "once" ? E2("Programar", "Schedule") : edita ? E2("Guardar", "Save") : E2("Publicar", "Post"), valid, always: true,
+    F, l: x.when === "once" || x.when === "rep" ? E2("Programar", "Schedule") : edita ? E2("Guardar", "Save") : E2("Publicar", "Post"), valid: valid && (x.when !== "rep" || x.rDias.length > 0), always: true,
     apply: (v: FN) => novGuardar(d.id, { id: edita ? ed!.id : null, kind: v.kind, title: v.title, body: v.body, link: v.kind === "oferta" ? "item" : v.kind === "aviso" || v.kind === "encuesta" ? "none" : v.link, item: v.item,
       url: v.url, was: v.was ? Number(v.was) : null, now: v.now ? Number(v.now) : null, aviso: v.kind === "aviso" ? { day: v.day, hrs: v.hrs, hrsT: v.hrsT } : null,
-      poll: [v.o1, v.o2, v.o3, v.o4].map((o) => o.trim()).filter(Boolean), audience: v.audience, ends: v.ends, prog: v.when === "once" ? { d: v.sD, m: v.sM } : null, fotos: v.fotos.map((f) => f.id), evento: v.evento, job: v.job, avisar: v.when === "now" && v.avisar }),
-    toast: x.when === "once" ? E2("Programada.", "Scheduled.") : E2("Publicada. Ya sale en tu página.", "Posted. It is on your page now."),
+      poll: [v.o1, v.o2, v.o3, v.o4].map((o) => o.trim()).filter(Boolean), audience: v.audience, ends: v.ends, prog: v.when === "once" ? { d: v.sD, m: v.sM } : null, rep: v.when === "rep" ? { dias: v.rDias, m: v.sM, dur: v.rDur, hasta: v.rHasta } : null, fotos: v.fotos.map((f) => f.id), evento: v.evento, job: v.job, avisar: v.when === "now" && v.avisar }),
+    toast: x.when === "rep" ? E2("Programada: se repite los días que elegiste.", "Scheduled: it repeats on the days you picked.") : x.when === "once" ? E2("Programada.", "Scheduled.") : E2("Publicada. Ya sale en tu página.", "Posted. It is on your page now."),
     onDone: () => c.go("pag", "nov"),
   } };
 }

@@ -166,12 +166,15 @@ export type FilaNov = {
   publish: string; ends: string | null; views: number; saves: number; cm: number; tz: string;
   /* 5e · Hoy en el barrio: horas que le quedan (null = no sale) y, si To'Latino la retiró de Hoy, el motivo. */
   hoy: number | null; hoyOff: string | null;
+  /* 9n-11 · Se repite: los días (0 = domingo), el minuto, cuánto se ve, hasta cuándo y cuántas veces salió. */
+  rep: { dias: number[]; m: number; dur: string; hasta: string | null; n: number } | null;
 };
 const FILA_NOV = `p.id::text, p.kind, p.title, p.body, ${ESTADO_SQL} as st, p.hidden_reason as hidden, p.pinned, ${iso("p.publish_at")} as publish, ${iso("p.ends_at")} as ends,
   (select count(*)::int from post_views v where v.post_id = p.id) as views, (select count(*)::int from post_saves s where s.post_id = p.id) as saves,
   (select count(*)::int from post_comments c where c.post_id = p.id and c.status = 'visible') as cm, ci.timezone as tz,
   case when post_en_hoy(p) then greatest(1, ceil(extract(epoch from least(p.publish_at + interval '24 hours', coalesce(p.ends_at, 'infinity'::timestamptz)) - now()) / 3600))::int end as hoy,
-  p.hoy_off_reason as "hoyOff"`;
+  p.hoy_off_reason as "hoyOff",
+  case when p.repeat_days is null then null else jsonb_build_object('dias', p.repeat_days, 'm', p.repeat_min, 'dur', p.repeat_dur, 'hasta', p.repeat_until::text, 'n', p.repeat_n) end as rep`;
 export async function novedadesPanel(negocio: string) {
   const [L, m] = await Promise.all([
     db().query<FilaNov>(`select ${FILA_NOV} from business_posts p join cities ci on ci.id = p.city_id where p.business_id = $1 and p.status <> 'removed'
@@ -233,6 +236,8 @@ export type NovIn = {
   id?: string | null; kind: string; title: string; body?: string; link?: string; item?: string | null; url?: string; was?: number | null; now?: number | null;
   aviso?: { day?: string; hrs?: string; hrsT?: string } | null; poll?: string[]; audience?: string; ends?: string; prog?: { d: number; m: number } | null; fotos?: string[];
   evento?: string | null; job?: string | null; avisar?: boolean;
+  /* 9n-11 · «Repetir»: qué días (0 = domingo), a qué minuto, cuánto se ve cada vez y hasta cuándo. */
+  rep?: { dias: number[]; m: number; dur: string; hasta: string } | null;
 };
 export async function guardarNovedad(negocio: string, p: NovIn, actorId: string): Promise<{ ok: true; id: string } | { ok: false; msg: Bi }> {
   const kind = TIPOS.includes(p.kind as Tipo) ? (p.kind as Tipo) : null;
@@ -252,6 +257,13 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string)
   if (aviso && !aviso.day) return { ok: false, msg: { es: "Di qué día.", en: "Say which day." } };
   const audience = p.audience === "fol" ? "fol" : "all";
   const ENDS = ["3pm", "24h", "semana", "no"], ends = ENDS.includes(String(p.ends)) ? String(p.ends) : "24h";
+  // 9n-11 · «Repetir» (diseño schedBlocks): días, «Sale a las», CADA VEZ SE VE y HASTA CUÁNDO. La primera vez y cuánto se ve las calcula la base
+  // (novedad_siguiente / novedad_fin, 0161), que se salta los días que el negocio cierra.
+  const REP_DUR = ["close", "3h", "6h", "24h"], REP_HASTA: Record<string, number | null> = { no: null, "2w": 14, "1m": 30, "3m": 90 };
+  const rp = p.rep && typeof p.rep === "object" ? p.rep : null;
+  const rep = rp ? { dias: [...new Set((Array.isArray(rp.dias) ? rp.dias : []).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort(), m: Number(rp.m), dur: String(rp.dur), hasta: String(rp.hasta) } : null;
+  if (rep && (!rep.dias.length || !Number.isInteger(rep.m) || rep.m < 0 || rep.m > 1439 || !REP_DUR.includes(rep.dur) || !(rep.hasta in REP_HASTA)))
+    return { ok: false, msg: { es: "Elige al menos un día.", en: "Pick at least one day." } };
   return tx(async (c) => {
     const b = (await c.query<{ city_id: string; tz: string; pro: boolean }>(
       `select b.city_id, ci.timezone as tz, coalesce(s.plan, 'free') = 'pro' as pro from businesses b join cities ci on ci.id = b.city_id left join business_stats_cache s on s.business_id = b.id where b.id = $1 for update of b`, [negocio])).rows[0];
@@ -295,13 +307,25 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string)
                                   when 'semana' then (date_trunc('week', pub at time zone $3) + interval '6 days 23 hours 59 minutes') at time zone $3
                                   else null end)::text as fin from x`, [pub ? pub.toISOString() : null, ends, b.tz])).rows[0]!;
     if (t.fin && new Date(t.fin) <= new Date(t.pub)) return { ok: false as const, msg: { es: "Ya pasaron las 3 PM de ese día: elige otro vencimiento.", en: "3 PM has already passed that day: pick another end." } };
-    const vals = [kind, title, body, link, item?.id ?? null, url || null, was, now, aviso, kind === "encuesta" ? poll : null, audience, t.pub, t.fin, evento, job];
+    let pubV = t.pub, finV = t.fin, hastaV: string | null = null;
+    if (rep) {
+      const r = (await c.query<{ pub: string | null; fin: string | null; hasta: string | null }>(
+        `with h as (select case when $5::int is null then null else (now() at time zone $6)::date + $5::int end as hasta),
+              s as (select novedad_siguiente($1, $2::smallint[], $3::int, (select hasta from h), now()) as pub)
+         select s.pub::text, novedad_fin($1, s.pub, $4)::text as fin, (select hasta from h)::text as hasta from s`,
+        [negocio, rep.dias, rep.m, rep.dur, REP_HASTA[rep.hasta], b.tz])).rows[0]!;
+      if (!r.pub) return { ok: false as const, msg: { es: "No hay un día que toque antes de que termine (o el negocio cierra esos días). Cambia los días o hasta cuándo.", en: "No day to post before it ends (or the business is closed those days). Change the days or the end." } };
+      pubV = r.pub; finV = r.fin; hastaV = r.hasta;
+    }
+    const vals = [kind, title, body, link, item?.id ?? null, url || null, was, now, aviso, kind === "encuesta" ? poll : null, audience, pubV, finV, evento, job,
+      rep ? rep.dias : null, rep ? rep.m : null, rep ? rep.dur : null, hastaV];
     let id: string;
     if (p.id) {
       if (!/^\d{1,18}$/.test(String(p.id))) return { ok: false as const, msg: { es: "Esa publicación no existe.", en: "That post does not exist." } };
       const u = await c.query<{ id: string }>(
         `update business_posts set kind = $3, title = $4, body = $5, link_kind = $6, item_id = $7, url = $8, price_was_cents = $9, price_now_cents = $10, aviso = $11, poll = $12,
-                audience = $13, publish_at = $14, ends_at = $15, event_id = $16::bigint, job_id = $17::bigint, status = 'live', stopped_at = null, updated_at = now()
+                audience = $13, publish_at = $14, ends_at = $15, event_id = $16::bigint, job_id = $17::bigint, status = 'live', stopped_at = null, updated_at = now(),
+                repeat_days = $18::smallint[], repeat_min = $19, repeat_dur = $20, repeat_until = $21::date
           where id = $1::bigint and business_id = $2 and status <> 'removed' and hidden_at is null returning id::text`, [p.id, negocio, ...vals]);
       if (!u.rows[0]) return { ok: false as const, msg: { es: "Esa publicación ya no se puede editar.", en: "That post can no longer be edited." } };
       id = u.rows[0].id;
@@ -309,8 +333,9 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string)
       const n = (await c.query<{ n: number }>(`select count(*)::int as n from business_posts where business_id = $1 and created_at > now() - interval '1 day'`, [negocio])).rows[0]!.n;
       if (n >= 20) return { ok: false as const, msg: { es: "Publicaste muchas novedades hoy. Prueba mañana.", en: "You posted many updates today. Try tomorrow." } };
       id = (await c.query<{ id: string }>(
-        `insert into business_posts (business_id, city_id, kind, title, body, link_kind, item_id, url, price_was_cents, price_now_cents, aviso, poll, audience, publish_at, ends_at, event_id, job_id, created_by)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::bigint, $17::bigint, $18) returning id::text`, [negocio, b.city_id, ...vals, actorId])).rows[0]!.id;
+        `insert into business_posts (business_id, city_id, kind, title, body, link_kind, item_id, url, price_was_cents, price_now_cents, aviso, poll, audience, publish_at, ends_at, event_id, job_id,
+                                     repeat_days, repeat_min, repeat_dur, repeat_until, created_by)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::bigint, $17::bigint, $18::smallint[], $19, $20, $21::date, $22) returning id::text`, [negocio, b.city_id, ...vals, actorId])).rows[0]!.id;
       // Publicar la primera enciende Novedades en la página (el dueño lo puede apagar).
       await c.query(`update businesses set modules_on = array(select distinct x from unnest(modules_on || array['nov']) x) where id = $1 and not ('nov' = any(modules_on))`, [negocio]);
     }
@@ -406,4 +431,17 @@ export async function avisarSeguidores(negocio: string, id: string, actorId: str
   if (!r.ok) return r;
   if (r.L.length) await (await import("./avisos")).avisarMuchos(r.L, r.kind === "oferta" ? "nov_oferta_seguidores" : "nov_seguidores", { es: { negocio: r.name, titulo: r.title }, en: { negocio: r.name, titulo: r.title } }, { href: `/n/${negocio}`, ref: ["post", id], actor: actorId });
   return { ok: true, n: r.L.length };
+}
+
+
+/* 9n-11 · El barrido (cada minuto): la novedad que se repite y ya dejó de verse vuelve a salir el siguiente día que toca (la misma publicación, con
+   sus votos y comentarios), con su nuevo «hasta». Se salta los días que el negocio cierra y termina en su fecha; detenida u oculta, no vuelve. */
+export async function repetirNovedades(): Promise<number> {
+  return (await db().query(
+    `with n as (select p.id, p.business_id, p.repeat_dur, novedad_siguiente(p.business_id, p.repeat_days, p.repeat_min, p.repeat_until, greatest(p.ends_at, now())) as t
+                  from business_posts p
+                 where p.repeat_days is not null and p.status = 'live' and p.hidden_at is null and p.ends_at <= now()
+                 order by p.ends_at limit 200 for update skip locked)
+     update business_posts p set publish_at = n.t, ends_at = novedad_fin(n.business_id, n.t, n.repeat_dur), repeat_n = p.repeat_n + 1, updated_at = now()
+       from n where p.id = n.id and n.t is not null`)).rowCount ?? 0;
 }
