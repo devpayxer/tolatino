@@ -52,7 +52,7 @@ export function IntegracionesWallet({ d, admin, listo }: { d: EstadoWallet; admi
   B.push({ type: "rows", cols: desk ? "repeat(3,minmax(0,1fr))" : "1fr", items: filas });
   if (admin && listo) B.push({ type: "acts", items: [
     { l: c.solicitud ? E("Generar otra solicitud", "Generate another request") : E("Generar la solicitud (CSR)", "Generate the request (CSR)"), icon: "key", v: c.tipo || c.solicitud ? undefined : "primary", onClick: () => setGenerar(true) },
-    ...(c.solicitud ? [{ l: E("Bajar la solicitud", "Download the request"), icon: "download", onClick: () => { location.href = "/api/admin/llavero/solicitud"; } }, { l: E("Subir el certificado (.cer)", "Upload the certificate (.cer)"), icon: "plus", v: "primary", onClick: () => subir("pass_type_cert") }] : []),
+    ...(c.solicitud ? [{ l: E("Bajar la solicitud", "Download the request"), icon: "folder", onClick: () => { location.href = "/api/admin/llavero/solicitud"; } }, { l: E("Subir el certificado (.cer)", "Upload the certificate (.cer)"), icon: "plus", v: "primary", onClick: () => subir("pass_type_cert") }] : []),
   ] });
   B.push({ type: "group", k: E("GOOGLE WALLET · CUENTA DE EMISOR", "GOOGLE WALLET · ISSUER ACCOUNT") });
   B.push(d.google.listo

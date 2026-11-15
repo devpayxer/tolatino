@@ -69,7 +69,7 @@ function hechos(c: Tarjeta, es: boolean) {
   // Mercados y Tiendas (4s): foto de cada peso, fresco, precio del estante / de la caja, sustituciones, talla, apartado, cambios.
   if (["fresco", "estante", "sust", "pesaron", "peso", "caja", "tenian", "talla", "guardo", "cambio"].some((k) => k in A) || F.nArt != null) {
     const add = (ok: boolean | null, icon: string, label: string) => f.push({ icon, label, color: ok === null ? NEUTRO : ok ? BIEN : MAL });
-    if (F.fotoPeso != null) add(F.fotoPeso, "camera", F.fotoPeso ? E2("Foto de cada peso", "Photo of each weight") : E2("Faltó la foto de algún peso", "A weight photo was missing"));
+    if (F.fotoPeso != null) add(F.fotoPeso, "image", F.fotoPeso ? E2("Foto de cada peso", "Photo of each weight") : E2("Faltó la foto de algún peso", "A weight photo was missing"));
     if (A.pesaron != null) add(A.pesaron === 1, "check", A.pesaron === 1 ? E2("Pesaron delante", "Weighed in front") : E2("No pesaron delante", "Did not weigh in front"));
     if (A.peso != null) add(A.peso === 1, "dollar", A.peso === 1 ? E2("Cobraron el peso real", "Charged the real weight") : E2("Cobraron más del peso", "Charged over the weight"));
     if (A.estante != null) add(A.estante === 1, "dollar", A.estante === 1 ? E2("La caja cobró el precio del estante", "Register charged the shelf price") : E2("La caja no cobró el precio del estante", "Register did not charge the shelf price"));

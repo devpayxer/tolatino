@@ -45,7 +45,7 @@ export async function buscarTodo(s: Staff, entrada: string): Promise<Resultados>
     q,
     negocios: (neg?.rows ?? []).map((x) => ({ t: x.name, s: `${x.cat} · ${x.ciudad}`, href: `/admin/negocios/${x.id}`, icon: "store" })),
     usuarios: (usr?.rows ?? []).map((x) => ({ t: x.nombre ?? "(sin nombre todavía)", s: `${telefonoBonito(x.phone)}${x.ciudad ? ` · ${x.ciudad}` : ""}`, href: `/admin/usuarios/${x.id}`, icon: "users" })),
-    operaciones: (ops?.rows ?? []).map((x) => ({ t: `#${x.number}`, s: `${x.bname ?? "Sin negocio"} · $${(x.total / 100).toFixed(2)}`, href: `/admin/transacciones?q=${encodeURIComponent(x.number)}`, icon: "receipt" })),
+    operaciones: (ops?.rows ?? []).map((x) => ({ t: `#${x.number}`, s: `${x.bname ?? "Sin negocio"} · $${(x.total / 100).toFixed(2)}`, href: `/admin/transacciones?q=${encodeURIComponent(x.number)}`, icon: "bag" })),
     secciones: grupos.flatMap((g) => g.items).filter((i) => i.href && i.label.toLowerCase().includes(ql)).slice(0, MAX).map((i) => ({ t: i.label, s: "Sección", href: i.href!, icon: i.icon })),
   };
 }

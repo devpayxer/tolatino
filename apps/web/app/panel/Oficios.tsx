@@ -81,7 +81,7 @@ export function oficiosBloques(c: Ctx): Sec {
   const row = (s: Oficio): Fila => ({ key: s.id, ...(s.foto ? { img: `url("${s.foto}")` } : { imgIni: (s.name.es || "?").slice(0, 1).toUpperCase() }), imgW: "44px", t: s.name.es || E2("Sin nombre", "Untitled"), s: detalleL(X.rubro, s, es), r: precioL(s, es),
     tag: s.adm != null ? E2("OCULTO POR TO’LATINO", "HIDDEN BY TO’LATINO") : s.oculto ? E2("OCULTO", "HIDDEN") : null, tone: s.adm != null ? "danger" : "neutral", dim: s.oculto || s.adm != null, tgOn: !s.oculto,
     onTg: () => c.run(() => servicioVisible(c.d.id, s.id, s.oculto), s.oculto ? E2(`«${s.name.es}» ya sale en tu página.`, `“${s.name.es}” now shows on your page.`) : E2(`«${s.name.es}» oculto: no sale ni se reserva.`, `“${s.name.es}” hidden: not shown or booked.`)),
-    onClick: () => c.det(`of:${s.id}`), acts: ord ? [{ l: E2("Subir", "Up"), icon: "chevronUp", onClick: () => c.run(() => servicioMover(c.d.id, s.id, -1)) }, { l: E2("Bajar", "Down"), icon: "chevronDown", onClick: () => c.run(() => servicioMover(c.d.id, s.id, 1)) }] : [] });
+    onClick: () => c.det(`of:${s.id}`), acts: ord ? [{ l: E2("Subir", "Up"), onClick: () => c.run(() => servicioMover(c.d.id, s.id, -1)) }, { l: E2("Bajar", "Down"), onClick: () => c.run(() => servicioMover(c.d.id, s.id, 1)) }] : [] });
   if (!X.servicios.length) out.push({ type: "empty", icon: "wrench", t: E2("Todavía no tienes servicios", "No services yet"), s: E2("Agrega lo que haces, cómo lo cobras y cuánto tarda.", "Add what you do, how you charge and how long it takes."), cta: E2("Agregar servicio", "Add service"), onCta: () => c.det("of:new") });
   for (const sec of X.secciones) {
     const L = X.servicios.filter((s) => s.sec === sec.id);

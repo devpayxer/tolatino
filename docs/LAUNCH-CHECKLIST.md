@@ -1799,8 +1799,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9b** · **neg9n y alreves9n en la corrida dirigida del CI** (perfil completo de servir.sh: el almacén de fotos es Garage); la regresión entera, la matriz de 9
       dispositivos y `pruebas/visual` (Panel › Entrega y Horario, el detalle del pedido y el Repartidor suman bloques: cambian sus capturas aprobadas) no corrieron aquí.
       rep2l/app8e/ruta8e no cambian de flujo (prueba y código apagados de fábrica) pero el detalle del Repartidor ya no tiene «Llamar» al cliente. (9n, 14 nov)
-- [ ] **→ 9b** · **Íconos que no existen en el sistema:** `"camera"` en app/(app)/n/[id]/Resenas.tsx (de antes de 9n; 9n usaba el mismo y lo cambió a `image`) sale como
-      un cuadro vacío. Un guardián que compare cada `icon: "…"` con el mapa de packages/ui/src/ds/core/Icon.js. (9n, 14 nov)
+- [x] **→ 9b** · **Íconos que no existen en el sistema:** `"camera"` en app/(app)/n/[id]/Resenas.tsx (de antes de 9n; 9n usaba el mismo y lo cambió a `image`) sale como
+      un cuadro vacío. Un guardián que compare cada `icon: "…"` con el mapa de packages/ui/src/ds/core/Icon.js. (9n, 14 nov) — **✓ 9c (15 nov):** «camera» → «image»; con el guardián nuevo **`iconoExiste`** salieron otros cuatro («undo» en Hoy del Super Admin, «download» en Integraciones, «chevronUp» en el panel, «receipt» en el buscador): corregidos; alreves9c.
 - [ ] **→ 9b** · **alreves8e, caso `permisosMinimos`:** no encuentra su texto en apps/mobile/apps.json (igual que alreves8c; de antes de 9n). (9n, 14 nov)
 
 - [x] **→ 9n** · **Visitas (Bienes Raíces y dealer) con las horas de un día especial:** hoy respetan los días cerrados y la temporada (negocio_dia_cerrado, 0160), pero un día especial con OTRAS horas ofrece las de la semana (las horas se arman en SQL). (9n-10, 15 nov) — **✓ (9n-14, 15 nov):** `negocio_rangos_dia` (**0164**) da las horas de cada fecha (cerrado, temporada, día especial con horas propias o la semana) y las visitas (horas y plazo de respuesta) la usan; guardián `calendarioConDiasEspeciales` ampliado (al revés 48/48); vis4ie §10b.

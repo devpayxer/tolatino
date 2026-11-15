@@ -1386,6 +1386,23 @@ const guardianes = {
       if (!re.test(fh)) falla(G, F, 0, `el gestor de hojas ya no sabe ${que}`);
   },
 
+  /* 9c · iconoExiste: un ícono que no está en el sistema sale vacío (un hueco donde iba el dibujo, y sin nombre para el lector de pantalla).
+     15 nov: «camera» en Reseñas, «undo» en Hoy del Super Admin, «download» en Integraciones, «chevronUp» en el panel y «receipt» en el buscador del
+     Super Admin. Todo nombre literal de ícono en las pantallas (<Icon name="…">, icon: "…", ic: "…") tiene que estar en DEFS de
+     packages/ui/src/ds/core/Icon.js. Al revés: alreves9c. */
+  iconoExiste() {
+    const G = "iconoExiste", I = "packages/ui/src/ds/core/Icon.js";
+    if (!existsSync(I)) return falla(G, I, 0, "falta el componente Icon del sistema");
+    const defs = new Set([...readFileSync(I, "utf8").matchAll(/^  "([\w-]+)": \[/gm)].map((m) => m[1]));
+    if (defs.size < 50) return falla(G, I, 0, `solo ${defs.size} íconos en DEFS: ¿cambió la forma del archivo?`);
+    for (const f of codigo) {
+      if (!/^(apps\/web\/(app|lib)|packages\/ui\/src\/panel)\/.*\.tsx?$/.test(f)) continue;
+      const s = readFileSync(f, "utf8");
+      for (const m of s.matchAll(/(?:<(?:Icon|[A-Z]\w*\.Icon)\s[^>]*?\bname=|\bicon: |\bic: )"([a-zA-Z][\w-]*)"/g))
+        if (!defs.has(m[1])) falla(G, f, s.slice(0, m.index).split("\n").length, `el ícono «${m[1]}» no existe en el sistema (Icon.js): usa uno de los ${defs.size} que hay`);
+    }
+  },
+
   /* 3o. Todo interruptor (role="switch") se usa con teclado: si no es un <button>, lleva tabIndex y onKeyDown; si es un
      <span> suelto, además su nombre (aria-label). 6 nov, 2p: el de «Respuesta automática» y otros cuatro no tenían. */
   interruptorAccesible() {
