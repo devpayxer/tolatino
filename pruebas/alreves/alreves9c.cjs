@@ -1,7 +1,7 @@
 // Prueba al revés de los guardianes de 9c. contrasteTexto (texto gris por debajo de AA): el gris de una pestaña del sistema portado vuelve al 42 %,
 // una etiqueta del Super Admin vuelve al 50 %, una clase text-ink/45 en Mi cuenta, un text-[rgba(…,.5)] nuevo y el token --tl-text-muted al 50 %.
 // hojaAccesible: una hoja sin aria-modal, otra sin nombre, el layout sin <FocoHojas />, el gestor sin Escape y una capa nueva que se cierra al
-// tocarla sin hoja con role="dialog".
+// tocarla sin hoja con role="dialog". tuberiaNoSeSalta: el trabajo nocturno «anchos» sin sus tres anchos o fuera de «tuberia».
 // Se inyecta el defecto, el guardián debe fallar con SU mensaje ([contrasteTexto]); se restaura. «crear»: se crea el archivo, se corre y se borra.
 // También al derecho: una sombra o un borde con ink al 50 % no es texto (el guardián no debe saltar).
 const ENT = require('../lib/entorno.cjs');
@@ -16,6 +16,8 @@ const casos = [
   ['hojaAccesible', 'apps/web/app/(app)/cuenta/Marco.tsx', '<div role="dialog" aria-modal="true" aria-label={h.title}', '<div role="dialog" aria-modal="true"'],
   ['hojaAccesible', 'apps/web/app/layout.tsx', '<FocoHojas />', ''],
   ['hojaAccesible', 'apps/web/app/FocoHojas.tsx', 'e.key === "Escape"', 'e.key === "Esc"'],
+  ['tuberiaNoSeSalta', '.github/workflows/ci.yml', 'id: [iphone-se, ipad, escritorio-1024]', 'id: [iphone-15]'],
+  ['tuberiaNoSeSalta', '.github/workflows/ci.yml', 'needs: [verificar, seguridad, regresion, dispositivos, confirmacion, anchos]', 'needs: [verificar, seguridad, regresion, dispositivos, confirmacion]'],
 ];
 const crear = [
   ['contrasteTexto', 'apps/web/app/admin/ContrasteAlReves.tsx', 'export const X = () => <span className="text-[rgba(11,14,18,.5)]">gris</span>;\n'],

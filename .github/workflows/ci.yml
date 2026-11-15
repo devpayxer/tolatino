@@ -42,6 +42,11 @@ on:
         description: "Confirmación barajada: la semilla del orden (para repetir una corrida); vacío = al azar"
         type: string
         default: ""
+      anchos:
+        description: "Toda la punta a punta también en los anchos extremos (iPhone SE, iPad, escritorio 1024); programado: siempre"
+        type: choice
+        options: ["no", "si"]
+        default: "no"
 
 permissions:
   contents: read
@@ -314,9 +319,43 @@ jobs:
         if: ${{ always() && inputs.aprobar == 'si' }}
         with: { name: "visual-aprobadas-${{ matrix.id }}", path: "pruebas/visual/*/${{ matrix.id }}.png", retention-days: 14, if-no-files-found: error }
 
+  # 9c · La punta a punta entera en los anchos extremos (LAUNCH L1511): 141 de las ~200 pruebas abren teléfono y escritorio, así que «las que
+  # dependen del ancho» son casi todas. En vez de elegir, la regresión completa corre de noche (programado) en el teléfono más chico (iPhone SE,
+  # 375), la tableta (iPad, 820) y el escritorio más angosto (1024); los anchos de en medio los cubren la regresión de siempre (390 y 1360) y
+  # disp9b + capturas + axe en los 9. El repo es público: el CI no cuesta minutos. A mano: anchos=si.
+  anchos:
+    name: punta a punta · ancho ${{ matrix.id }}
+    needs: web
+    if: ${{ github.event_name == 'schedule' || inputs.anchos == 'si' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        id: [iphone-se, ipad, escritorio-1024]
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/entorno-pruebas
+      - name: Toda la punta a punta en ${{ matrix.id }}, en base nueva
+        run: node pruebas/correr.mjs ${{ inputs.solo != '' && inputs.solo || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }} --dispositivo ${{ matrix.id }}
+      - name: Lo que dejó cada prueba
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/subir" && cp -r "$RUNNER_TEMP/salida/res" "$RUNNER_TEMP/subir/res" 2>/dev/null || true
+          cp "$RUNNER_TEMP/salida/server.log" "$RUNNER_TEMP/subir/" 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: "anchos-${{ matrix.id }}", path: "${{ runner.temp }}/subir", retention-days: 7, if-no-files-found: ignore }
+
   tuberia:
     name: la tubería completa (todo en verde, nada saltado)
-    needs: [verificar, seguridad, regresion, dispositivos, confirmacion]
+    needs: [verificar, seguridad, regresion, dispositivos, confirmacion, anchos]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -325,11 +364,12 @@ jobs:
           RESULTADOS: ${{ toJSON(needs) }}
           ALCANCE: ${{ inputs.alcance || 'todo' }}
           CONFIRMAR: ${{ inputs.confirmar }}
+          ANCHOS: ${{ (github.event_name == 'schedule' || inputs.anchos == 'si') && 'si' || 'no' }}
         run: |
           echo "$RESULTADOS" | node -e '
             const n = JSON.parse(require("fs").readFileSync(0, "utf8")), a = process.env.ALCANCE; let mal = 0;
             for (const [k, v] of Object.entries(n)) {
-              const parcial = (a === "pantallas" && k === "regresion") || (a === "regresion" && k === "dispositivos") || (k === "confirmacion" && process.env.CONFIRMAR !== "si");
+              const parcial = (a === "pantallas" && k === "regresion") || (a === "regresion" && k === "dispositivos") || (k === "confirmacion" && process.env.CONFIRMAR !== "si") || (k === "anchos" && process.env.ANCHOS !== "si");
               const ok = v.result === "success" || (v.result === "skipped" && parcial);
               console.log((ok ? "✓ " : "✗ ") + k + " · " + v.result + (v.result === "skipped" && parcial ? " (a propósito: alcance " + a + ")" : ""));
               if (!ok) mal++;

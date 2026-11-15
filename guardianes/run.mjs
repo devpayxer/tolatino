@@ -7162,6 +7162,11 @@ const guardianes = {
     for (const g of ["alreves", "fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios"]) if (!rg.includes(`--grupo ${g}"`)) falla(G, Y, 0, `la regresión no corre «--grupo ${g}»: toda la punta a punta va en UN trabajo, en el orden de las fases (las pruebas se heredan datos; repartida en trabajos con base propia fallaban 30 de 199) y las pruebas al revés en el suyo`);
     if (/--parte/.test(rg)) falla(G, Y, 0, "la regresión no se reparte con --parte: las pruebas de una fase dependen de las anteriores");
     if (!/\n  confirmacion:\n[\s\S]*?inputs\.confirmar == 'si'/.test(y)) falla(G, Y, 0, "falta el trabajo «confirmacion» (dos veces seguidas y barajada, a mano con confirmar=si)");
+    // 9c · La punta a punta entera en los anchos extremos, de noche (L1511): el trabajo «anchos» corre programado y cuenta en «tuberia».
+    const an = /\n  anchos:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";
+    if (!an || !/github\.event_name == 'schedule'/.test(an) || !["iphone-se", "ipad", "escritorio-1024"].every((d) => an.includes(d)) || !/--dispositivo \$\{\{ matrix\.id \}\}/.test(an))
+      falla(G, Y, 0, "falta el trabajo «anchos» (toda la punta a punta de noche en iPhone SE, iPad y escritorio 1024, con --dispositivo)");
+    if (!new RegExp("needs: \\[[^\\]]*\\banchos\\b").test(j)) falla(G, Y, 0, "«tuberia» no depende de «anchos»");
   },
 
   /* 9b-3 · Ningún tope por minuto (o por segundo) ni corta-circuito en la memoria de un proceso de la app (LAUNCH L685, L699, L1235, L1302): con
