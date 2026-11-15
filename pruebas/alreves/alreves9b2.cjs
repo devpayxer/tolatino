@@ -12,7 +12,7 @@ const casos = [
   ['tuberiaVisual', 'pruebas/visual/correr.mjs', 'captura nueva sin aprobar', 'captura nueva'],
   // tuberiaAccesibilidad: axe que ya no frena lo serio, una violación conocida sin destino, la versión de axe sin fijar
   ['tuberiaAccesibilidad', 'pruebas/visual/correr.mjs', 'v.impact === "serious" || v.impact === "critical"', 'v.impact === "critical"'],
-  ['tuberiaAccesibilidad', 'pruebas/visual/axe-conocidas.json', '"pantallas": "*",\n      "destino": "9c"', '"pantallas": "*",\n      "destino": "luego"'],
+  ['tuberiaAccesibilidad', 'pruebas/visual/axe-conocidas.json', '"conocidas": []', '"conocidas": [{ "regla": "color-contrast", "pantallas": "*", "destino": "luego" }]'],
   ['tuberiaAccesibilidad', 'pruebas/herramientas/package.json', '"@axe-core/playwright": "4.10.2"', '"@axe-core/playwright": "^4.10.2"'],
   // tuberiaSeguridad: el audit más flojo, Semgrep sin que un hallazgo rompa, el trabajo apagable
   ['tuberiaSeguridad', Y, 'pnpm audit --audit-level high', 'pnpm audit --audit-level critical'],
@@ -24,7 +24,7 @@ const casos = [
   ['tuberiaVelocidad', Y, '{ id: escritorio-1280, velocidad: true }', '{ id: escritorio-1280 }'],
   ['tuberiaVelocidad', Y, "${{ inputs.medir == 'si' && '--medir' || '' }}", '--medir'],
   // tuberiaNoSeSalta: «tuberia» sin una parte, saltando lo saltado, un grupo de la regresión fuera de la matriz, un continue-on-error
-  ['tuberiaNoSeSalta', Y, 'needs: [verificar, seguridad, regresion, dispositivos, confirmacion]', 'needs: [verificar, regresion, dispositivos, confirmacion]'],
+  ['tuberiaNoSeSalta', Y, 'needs: [verificar, seguridad, regresion, dispositivos, confirmacion, anchos]', 'needs: [verificar, regresion, dispositivos, confirmacion, anchos]'],
   ['tuberiaNoSeSalta', Y, 'const ok = v.result === "success" || (v.result === "skipped" && parcial);', 'const ok = v.result !== "failure";'],
   ['tuberiaNoSeSalta', Y, 'fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios" }', 'fase1,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios" }'],
   ['tuberiaNoSeSalta', Y, 'timeout-minutes: 300\n', 'timeout-minutes: 300\n    # --parte 1/3\n'],

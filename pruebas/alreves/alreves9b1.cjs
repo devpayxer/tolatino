@@ -18,7 +18,7 @@ const casos = [
   ['borrarCuentaEnCadaApp', 'apps/web/app/repartidor/Repartidor.tsx', '    B.push({ type: "rows", items: filasCuenta });\n  }\n', '  }\n'],
   // ahoraDeLaHidratacion: «hace N min» con el reloj de cada lado (error 418 al cambiar el minuto), o la raíz sin el proveedor del «ahora»
   ['ahoraDeLaHidratacion', 'apps/web/app/(app)/soporte/Soporte.tsx', 'Math.max(0, ahora - new Date(iso).getTime())', 'Math.max(0, Date.now() - new Date(iso).getTime())'],
-  ['ahoraDeLaHidratacion', 'apps/web/app/layout.tsx', '<body><AhoraProvider t={Date.now()}>{children}<Arranque /></AhoraProvider></body>', '<body>{children}<Arranque /></body>'],
+  ['ahoraDeLaHidratacion', 'apps/web/app/layout.tsx', '<body><AhoraProvider t={Date.now()}>{children}<Arranque /><FocoHojas /></AhoraProvider></body>', '<body>{children}<Arranque /><FocoHojas /></body>'],
   // listaPuertaCoherente: la lista de la noche vuelve a contar solo in_n en una reserva terminada («Entró 1» que el servidor rechaza)
   ['listaPuertaCoherente', 'apps/web/lib/noche-reservas.ts', "case when o.status = 'done' then o.party_size else coalesce((o.details->>'in_n')::int, 0) end as entraron", "coalesce((o.details->>'in_n')::int, 0) as entraron"],
   // bloquesConLlave: los bloques del panel vuelven a la posición como llave (un bloque nuevo arriba desmonta el campo que se está escribiendo)
