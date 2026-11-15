@@ -261,6 +261,21 @@ const toast = (p, re) => p.getByRole('status').filter({ hasText: re }).first().w
     ok(sql(`select (retired_by = '${UA}') || '|' || retired_reason from announcements where id = ${AID}`) === `true|Ya no aplica cms9f ${RUN}` && sql(`select count(*) from audit_entries where action = 'cms.anuncio.retirar' and target_id = '${AID}'`) === '1', 'retirado: quién, por qué y la auditoría (nada se borra)');
     await pp.goto(B + '/'); await pp.locator('[data-pantalla="APP-HOME"]').waitFor();
     ok(await pp.locator(`[data-anuncio="${AID}"]`).count() === 0, 'el retirado ya no sale');
+    // 9n-7 · «¿A QUIÉN?» › Negocios: sale en Hoy del panel de los negocios de la ciudad (pan9n2 §6), nunca en el Inicio.
+    await pa.goto(B + '/admin/textos/home?c=hzl'); await pa.locator('[data-home-ciudad="hzl"]').waitFor();
+    await pa.getByText('TEXTO EN ESPAÑOL', { exact: true }).waitFor();
+    { const c3 = pa.locator('textarea, input'), t3 = await c3.count();
+      await c3.nth(t3 - 4).fill(`Anuncio negocios [c9f ${RUN}]`); await c3.nth(t3 - 3).fill(`Business announcement [c9f ${RUN}]`);
+      await c3.nth(t3 - 2).fill(ny(-1)); await c3.nth(t3 - 1).fill(ny(24)); }
+    await pa.locator('div').filter({ has: pa.getByText('¿A QUIÉN?', { exact: true }) }).last().getByText('Negocios', { exact: true }).click();   // el chip, no «Negocios» del menú
+    await pa.getByText('Crear el anuncio', { exact: true }).first().click(); await motivo(pa, 'Aviso a los negocios cms9f'); await pa.getByText('Crear', { exact: true }).last().click();
+    await toast(pa, /Saldrá en Hoy del panel de los negocios/);
+    const NID = sql(`select id from announcements where text->>'es' = 'Anuncio negocios [c9f ${RUN}]'`);
+    ok(NID && sql(`select audience from announcements where id = ${NID}`) === 'negocios', 'creado por la pantalla para «Negocios»');
+    ok(/negocios \(Hoy del panel\)/.test(await texto(pa)), 'la lista dice a quién le sale');
+    await pp.goto(B + '/'); await pp.locator('[data-pantalla="APP-HOME"]').waitFor();
+    ok(await pp.locator(`[data-anuncio="${NID}"]`).count() === 0, 'el de negocios no sale en el Inicio');
+    sql(`update announcements set retired_at = now(), retired_by = '${UA}', retired_reason = 'cms9f ${RUN}' where id = ${NID}`);
 
     // ── 7 · El Super Admin en inglés ──
     console.log('7 · Super Admin › Textos y páginas en inglés (con el idioma de quien lo usa)');

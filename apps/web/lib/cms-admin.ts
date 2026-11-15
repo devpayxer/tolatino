@@ -216,7 +216,7 @@ export async function crearAnuncio(s: Staff, ciudad: string, audiencia: string, 
   if (!s.puede("cms", "editar")) return mal("Tu rol no crea anuncios.", "Your role cannot create announcements.");
   const E = limpio(es, 160), N = limpio(en, 160), m = limpio(motivo, 500);
   if (!E || !N) return mal("El anuncio lleva los dos idiomas.", "The announcement needs both languages.");
-  if (audiencia !== "todos" && audiencia !== "vecinos") return mal("Elige a quién le sale.", "Choose who sees it.");
+  if (audiencia !== "todos" && audiencia !== "vecinos" && audiencia !== "negocios") return mal("Elige a quién le sale.", "Choose who sees it.");
   if (!FECHA.test(desde) || !FECHA.test(hasta)) return mal("Las fechas van como AAAA-MM-DD HH:MM, en la hora de la ciudad.", "Dates go as YYYY-MM-DD HH:MM, in the city time.");
   if (m.length < 3) return mal("Escribe el motivo: queda en el historial.", "Write the reason: it goes in the history.");
   try {
@@ -230,7 +230,8 @@ export async function crearAnuncio(s: Staff, ciudad: string, audiencia: string, 
       await auditar(c, { actor: s.id, action: "cms.anuncio", targetKind: "announcement", targetId: id, city: ciudad, after: { es: E, en: N, audiencia, desde, hasta }, reason: m });
       return null;
     });
-    return r ?? bien("Listo. Saldrá en el Inicio de la ciudad dentro de sus fechas.", "Done. It will show on the city Home within its dates.");
+    return r ?? (audiencia === "negocios" ? bien("Listo. Saldrá en Hoy del panel de los negocios de la ciudad dentro de sus fechas.", "Done. It will show on the dashboard Today of the city's businesses within its dates.")
+      : bien("Listo. Saldrá en el Inicio de la ciudad dentro de sus fechas.", "Done. It will show on the city Home within its dates."));
   } catch (e) {
     if (String((e as Error).message).includes("announcements_check")) return mal("«Hasta» va después de «desde», con 31 días como máximo.", "“Until” must be after “from”, 31 days at most.");
     throw e;

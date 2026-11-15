@@ -21,7 +21,7 @@ teléfono. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
 - **Home por ciudad:** por ciudad, el **aviso** del Inicio (ES/EN), los **bloques** (categorías, Hoy en el barrio, Abierto ahora, Esta semana, Comunidad,
   Publica tu negocio) encendidos o apagados y su orden, y los **Anuncios**.
   - **Anuncios:** un banner arriba del Inicio de la ciudad **dentro de sus fechas** (desde, hasta; hasta 31 días; hora de la ciudad), para todos o solo para vecinos
-    con cuenta. Un anuncio no se edita ni se borra: se **retira** (con motivo) y se crea otro. Vencidos y retirados se quedan en la lista.
+    con cuenta. Con **Negocios** sale en **Hoy del panel** de los negocios de la ciudad (no en el Inicio). Un anuncio no se edita ni se borra: se **retira** (con motivo) y se crea otro. Vencidos y retirados se quedan en la lista.
   - Un bloque apagado ni se consulta. Sin cambios, el Inicio sale exactamente como antes.
 - **Páginas y Ayuda:** como antes (ver «Super Admin: las páginas legales»). Páginas suma el interruptor del **pie de la web**: encendido, Términos, Privacidad, Ayuda y
   Soporte salen al final del Inicio, la ficha del negocio y Buscar (siempre salen en las páginas legales). Nace apagado: encenderlo cambia las capturas aprobadas
@@ -69,7 +69,7 @@ teléfono. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
 - **City Home:** per city, the Home **notice** (ES/EN), the **blocks** (categories, Today nearby, Open now, This week, Community, Publish your business) on or off
   and their order, and the **Announcements**.
   - **Announcements:** a banner at the top of the city Home **within its dates** (from, until; up to 31 days; city time), for everyone or only for neighbors with
-    an account. An announcement is not edited or deleted: it is **retired** (with a reason) and another is created. Expired and retired ones stay in the list.
+    an account. With **Businesses** it shows on **Today in the dashboard** of the city's businesses (not on the Home). An announcement is not edited or deleted: it is **retired** (with a reason) and another is created. Expired and retired ones stay in the list.
   - A block that is off is not even queried. Without changes the Home looks exactly as before.
 - **Pages and Help:** as before (see “Super Admin: the legal pages”). Pages adds the **web footer** switch: when on, Terms, Privacy, Help and Support show at the end of
   Home, the business listing and Search (they always show on the legal pages). It starts off: turning it on changes the pipeline's approved screenshots, so the
