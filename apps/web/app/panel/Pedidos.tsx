@@ -6,6 +6,7 @@ import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { AjustesPed, DetallePed, Fila as FilaPed, FiltroPed, pedidosHoy, pedidosLista } from "@/lib/pedidos";
 import { menuAjustes } from "./acciones-menu";
 import type { Ayuda } from "@/lib/ayuda";
+import { horasTxt } from "@/lib/plazo-txt";
 import { repAsignar, repOfertaCancelar, repOfrecer, repRecogido } from "./acciones-repartidores";
 import { rutaBloque, type RutaUi } from "./RutaPanel";
 import { ayudaReponer, ayudaResponder, pedidoDevolver, pedidoPaso, pedidoPedirResena, pedidoSeguimiento, pedidosAjustes, pedidosModulo } from "./acciones-pedidos";
@@ -77,7 +78,7 @@ export function hoyPedidos(c: Ctx): (Bloque | null)[] {
 /* Detalle de un pedido (detBlocks): cliente, prometido, pago, nota, platos, total, historial y lo que sigue. */
 const MOT_AY: Record<string, [string, string]> = { falta: ["Falta algo", "Something is missing"], equivocado: ["Llegó algo equivocado", "Wrong item"], frio: ["Llegó frío o mal preparado", "Cold or poorly made"], danado: ["Llegó dañado o derramado", "Damaged or spilled"], tarde: ["Llegó tarde", "Arrived late"], nollego: ["No le llegó", "It never arrived"], pago: ["Problema con el pago", "Payment issue"], otro: ["Otro problema", "Something else"] };
 const QUIERE_AY: Record<string, [string, string]> = { reponer: ["Pide que se lo repongan", "Asks for a replacement"], devolver: ["Pide que le devuelvan lo de esos platos", "Asks for a refund of those dishes"], avisar: ["Solo quiere que lo sepan", "Just wants you to know"] };
-/* Ayuda con el pedido en el detalle (diseño Mi cuenta · solicitud; el negocio responde en 24 h). */
+/* Ayuda con el pedido en el detalle (diseño Mi cuenta · solicitud; el negocio responde en las horas de Configuración · ayuda_negocio_h). */
 function ayudaBloques(c: Ctx, numero: string): (Bloque | null)[] {
   const { E2, es, d } = c, a = c.ped?.ayuda;
   if (!a) return [];
@@ -85,7 +86,7 @@ function ayudaBloques(c: Ctx, numero: string): (Bloque | null)[] {
   const out: (Bloque | null)[] = [{ type: "group", k: `${E2("AYUDA CON EL PEDIDO · ", "ORDER HELP · ")}${a.number}` },
     { type: "kv", items: [{ k: E2("QUÉ PASÓ", "WHAT HAPPENED"), v: es ? m[0] : m[1] }, ...(a.items.length ? [{ k: E2("PLATOS", "DISHES"), v: a.items.map((x) => `${x.q} × ${x.n}`).join(" · ") }] : []), { k: E2("QUÉ QUIERE", "WANTS"), v: es ? q[0] : q[1] }, ...(a.body ? [{ k: E2("SU NOTA", "THEIR NOTE"), v: a.body }] : [])] }];
   if (a.status === "open") out.push(
-    { type: "note", tone: "warn", icon: "clock", t: E2("Respóndele en 24 horas. Si no, To’Latino revisa el caso. Si pagó con tarjeta, puedes devolverle dinero desde el pedido; si pagó en el local, la devolución la arreglan ustedes.", "Reply within 24 hours. If not, To’Latino reviews the case. If they paid by card, you can refund from the order; if they paid in store, you settle the refund yourselves.") },
+    { type: "note", tone: "warn", icon: "clock", t: E2(`Respóndele en ${horasTxt(a.plazoH, true)}. Si no, To’Latino revisa el caso. Si pagó con tarjeta, puedes devolverle dinero desde el pedido; si pagó en el local, la devolución la arreglan ustedes.`, `Reply within ${horasTxt(a.plazoH, false)}. If not, To’Latino reviews the case. If they paid by card, you can refund from the order; if they paid in store, you settle the refund yourselves.`) },
     { type: "field", area: true, rows: 3, max: 500, k: E2("TU RESPUESTA · LA VE EN SU PEDIDO", "YOUR REPLY · SHOWN ON THEIR ORDER"), val: txt, count: `${txt.length}/500`, ph: E2("Ej. Disculpa, te mandamos el plato que faltó en 30 minutos.", "e.g. Sorry, we'll send the missing dish in 30 minutes."), onChange: (v) => c.setUi({ ayT: v.slice(0, 500) }) },
     { type: "acts", items: [{ l: E2("Enviar respuesta", "Send reply"), v: "primary", icon: "check", off: txt.trim().length < 5 || c.pending, onClick: () => c.run(() => ayudaResponder(d.id, numero, txt), E2("Respuesta enviada. La ve en su pedido.", "Reply sent. They see it on their order."), () => c.setUi({ ayT: "" })) },
       // 9n-4 · Reponer sin costo: un pedido nuevo de $0 con esos platos, a la misma dirección; entra aceptado a tu cocina (y al Repartidor).
@@ -294,11 +295,11 @@ export function pedidosModBloques(c: Ctx): Sec {
   return { blocks: out, ed };
 }
 
-/* Hoy · «Ayuda con pedidos»: las solicitudes que esperan tu respuesta (24 h). */
+/* Hoy · «Ayuda con pedidos»: las solicitudes que esperan tu respuesta (en ayuda_negocio_h horas). */
 export function hoyAyudas(c: Ctx): Bloque[] {
   const { E2, es, d } = c, L = c.ped?.ayudas ?? [];
   if (!L.length) return [];
-  return [{ type: "rows", k: E2("AYUDA CON PEDIDOS · RESPONDE EN 24 H", "ORDER HELP · REPLY WITHIN 24 H"), items: L.map((a) => ({ icon: "help", t: `${a.quien} · ${E2("Pedido", "Order")} #${a.num}`,
+  return [{ type: "rows", k: E2(`AYUDA CON PEDIDOS · RESPONDE EN ${L[0]!.plazoH} H`, `ORDER HELP · REPLY WITHIN ${L[0]!.plazoH} H`), items: L.map((a) => ({ icon: "help", t: `${a.quien} · ${E2("Pedido", "Order")} #${a.num}`,
     s: `${(MOT_AY[a.reason] ?? MOT_AY.otro!)[es ? 0 : 1]}${a.items.length ? ` · ${a.items.map((x) => `${x.q} × ${x.n}`).join(", ")}` : ""}`, tag: E2("POR RESPONDER", "TO ANSWER"), tone: "action",
     onClick: () => c.nav(`/panel/${d.id}/hoy?det=ped:${a.num}`) })) }];
 }

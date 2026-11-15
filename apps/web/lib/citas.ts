@@ -2,6 +2,7 @@ import "server-only";
 import { estadoEstimado, type EstadoEstimado } from "./estimados";
 import type { PoolClient } from "pg";
 import { db } from "./db";
+import { valor } from "./config";
 import { pasarela } from "./pagos/pasarela";
 import { bancoPide } from "./pagos/verificacion";
 import { cobrarOperacion, comision, registrarRetencion } from "./cobros";
@@ -466,7 +467,7 @@ export type CitaVista = {
   pre: { num: string; lo: number; hi: number } | null; // 4e: el pre-estimado o presupuesto con que reservó
   // Doctores (4j): el seguro copiado a la cita, si lo aceptan, el precio en la consulta, para quién y si es por video.
   pro: { modo: string; precio: Bi; legal: boolean; total: import("./total-escrito").TotalVista | null } | null; // Profesionales (4l): la consulta y el total por escrito
-  salud: { seguro: Bi; acepta: boolean; ninguno: boolean; precio: Bi; para: "yo" | "hijo" | "otro"; tele: boolean; seg: boolean; segHasta: string | null; sinSeg: number } | null;
+  salud: { seguro: Bi; acepta: boolean; ninguno: boolean; precio: Bi; para: "yo" | "hijo" | "otro"; tele: boolean; seg: boolean; segHasta: string | null; segH: number; sinSeg: number } | null;
 };
 export async function citaVista(userId: string, numero: string): Promise<CitaVista | null> {
   if (!/^C-\d{1,10}$/.test(numero)) return null;
@@ -519,10 +520,11 @@ export async function citaVista(userId: string, numero: string): Promise<CitaVis
     garantia: r.warr?.m ? `${r.warr.m}|${r.warr.mi ?? 0}` : null,
     pre: (r.det as { pre?: { num: string; lo: number; hi: number } }).pre ?? null,
     pro: (r.det as { rubro?: string }).rubro === "pro" ? await (async () => { const z = r.det as { modo?: string; precio?: Bi; legal?: boolean }; const { totalDe } = await import("./total-escrito"); return { modo: z.modo ?? "oficina", precio: z.precio ?? { es: "", en: "" }, legal: !!z.legal, total: await totalDe(r.oid) }; })() : null,
-    salud: (r.det as { rubro?: string }).rubro === "salud" ? (() => {
+    salud: (r.det as { rubro?: string }).rubro === "salud" ? await (async () => {
       const z = r.det as { seguro?: { kind?: string; acepta?: boolean; nombre?: Bi }; precio?: Bi; para?: "yo" | "hijo" | "otro"; tele?: boolean; sinSeg?: number };
       return { seguro: z.seguro?.nombre ?? { es: "", en: "" }, acepta: !!z.seguro?.acepta, ninguno: z.seguro?.kind === "none", precio: z.precio ?? { es: "", en: "" }, para: z.para ?? "yo", tele: !!z.tele,
-        seg: r.paso === "seg", segHasta: r.paso === "seg" ? r.seg_hasta : null, sinSeg: Number(z.sinSeg ?? 0) };
+        seg: r.paso === "seg", segHasta: r.paso === "seg" ? r.seg_hasta : null, sinSeg: Number(z.sinSeg ?? 0),
+        segH: await valor("sp_seguro_guardar_h") }; // 9n-5 · cuánto se guarda la hora (Configuración)
     })() : null,
   };
 }

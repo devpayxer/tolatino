@@ -4,6 +4,7 @@ import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
 import { proPublico } from "@/lib/pro-publico";
 import { Tramite } from "./Tramite";
+import { valor } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Booking · To'Latino" };
@@ -17,5 +18,6 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const s = pp.servicios.find((x) => x.id === sp.s);
   if (!pp.booking || !s || s.k === "walk") redirect(`/n/${id}?tab=svc`);
   const con = sp.c && pp.gente.some((p) => p.id === sp.c) ? sp.c : "any";
-  return <Tramite pp={pp} svcId={s.id} con0={con} es={lang === "es"} yo={!!u} />;
+  // 9n-5 · A los cuántos días se borra la nota (Configuración · sp_notas_purga_dias).
+  return <Tramite pp={pp} svcId={s.id} con0={con} notaDias={await valor("sp_notas_purga_dias")} es={lang === "es"} yo={!!u} />;
 }

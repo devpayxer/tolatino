@@ -1,5 +1,6 @@
 import "server-only";
-import { cfgSql } from "./config";
+import { cfgSql, valor } from "./config";
+import { horasTxt } from "./plazo-txt";
 import { COLA_AYUDA_SQL } from "./colas";
 import { db, tx } from "./db";
 import { devolverOperacion } from "./cobros";
@@ -7,7 +8,7 @@ import { escalarVencidas } from "./ayuda";
 import { esEstafa, pausarPorAyuda } from "./ayuda-estafa";
 
 /* Ayuda con la cita (diseño neg-cita-help.js · TLCitaHelp bhelp: APP-NEG-CITA-AYUDA y su -ESTADO). La misma solicitud que
-   los pedidos (help_requests, una por operación), con los motivos de Belleza. Regla A7: el negocio responde en 24 h
+   los pedidos (help_requests, una por operación), con los motivos de Belleza. Regla A7: el negocio responde en las horas de Configuración (ayuda_negocio_h, 24 de fábrica)
    (acepta, propone un monto o no puede); si no responde, o la persona no está de acuerdo, To'Latino revisa en 48 h.
    Lo que vuelve a la tarjeta sale del depósito pagado en la app (Stripe); lo pagado en el local se arregla en el local. */
 type Bi = { es: string; en: string };
@@ -40,7 +41,7 @@ export const MOTIVOS: Record<RubroAyuda, MotivoCita[]> = { belleza: ["cobro", "q
   fe: ["cobro", "idioma", "horario", "trato", "otro"], inm: ["ver", "mudar", "fotos", "nollego", "otro"], dealer: ["precio", "titulo", "fotos", "nollego", "otro"],
   // 6d · Boletos (APP-EVT-AYUDA-PAGO, hueco #3): «Un problema con el pago» lo revisa To'Latino directamente (el cobro es de la plataforma).
   evt: ["doble", "monto", "sinbol", "otro"],
-  // 6i · Evento privado (hueco: el diseño no trae su ayuda; se compone con la de Fiestas): el restaurante responde en 24 h; lo devuelto sale del depósito.
+  // 6i · Evento privado (hueco: el diseño no trae su ayuda; se compone con la de Fiestas): el restaurante responde en ayuda_negocio_h; lo devuelto sale del depósito.
   evp: ["nocomo", "falto", "cobro", "trato", "dep", "otro"] };
 /* Salud y Pro: las fotos son privadas (factura, recibo) y lo que se pide cambia (corregir el cobro al seguro / terminar). */
 export const PRIVADA = (r: RubroAyuda) => r === "salud" || r === "pro" || r === "ninos" || r === "fe" || r === "inm" || r === "dealer";
@@ -88,10 +89,11 @@ export type AyudaCita = {
   refunded: number; closedBy: "user" | "admin" | "system" | null; porUsuario: boolean; at: string; vence: string; fotos: string[];
   // 4if · Sin dinero en la app: «Me lo devolvieron» (pending · confirmed · denied) y si lo ofrecido quedó en pausa por una posible estafa.
   fuera: "pending" | "confirmed" | "denied" | "expired" | null; pausa: "on" | "off" | null; directa: boolean;
+  plazoH: number; // 9n-5 · las horas del negocio para responder (Configuración · ayuda_negocio_h), para decirlas
 };
 const COLS = `h.id::text, h.number, h.reason, h.wants, coalesce(h.body, '') as body, h.amount_cents as amount, h.status, h.decision, h.offer_cents as offer, h.reply, ${ISO("h.reply_at")} as "replyAt",
   h.resolution, ${ISO("h.resolved_at")} as "resolvedAt", h.refunded_cents as refunded, h.closed_by as "closedBy", coalesce(h.escalated_by = 'user', false) as "porUsuario",
-  ${ISO("h.created_at")} as at, ${ISO(`h.created_at + make_interval(hours => ${cfgSql("ayuda_negocio_h")})`)} as vence, h.outside_refund as fuera,
+  ${ISO("h.created_at")} as at, ${ISO(`h.created_at + make_interval(hours => ${cfgSql("ayuda_negocio_h")})`)} as vence, ${cfgSql("ayuda_negocio_h")} as "plazoH", h.outside_refund as fuera,
   case when h.paused_at is null then null when h.unpaused_at is null then 'on' else 'off' end as pausa, coalesce(h.escalated_by = 'system' and h.reply_at is null, false) as directa,
   array(select ${FOTO_AYUDA_SQL} from media m where m.owner_kind = 'help' and m.owner_id = h.id::text and m.status = 'visible' order by m.sort) as fotos`;
 const fila = (x: Omit<AyudaCita, "wants"> & { wants: string }): AyudaCita => ({ ...x, wants: W2Q[x.wants] ?? "avis" });
@@ -120,7 +122,7 @@ const tarjetaL = (p: { brand: string | null; l4: string | null } | null) => (p?.
 /* 9n-4 · garantia: «que vuelva sin cargo» aceptado (Auto y Hogar): la persona reserva la visita de garantía a $0 en el Booking (?warr=H-…), sin
    depósito ni retención; una sola (help_requests.warranty_op_id). usada = el número de la cita de garantía. */
 export type GarantiaAyuda = { negocio: string; svc: string; num: string; usada: string | null; o: string; w: string | null };
-export type CitaAyudaVista = { rubro: RubroAyuda; puede: boolean; hecho: boolean; motivo: string | null; a: AyudaCita | null; depPagado: number; devolvible: number; tarjeta: string | null; garantia: GarantiaAyuda | null };
+export type CitaAyudaVista = { rubro: RubroAyuda; puede: boolean; hecho: boolean; motivo: string | null; a: AyudaCita | null; depPagado: number; devolvible: number; tarjeta: string | null; garantia: GarantiaAyuda | null; plazoH: number };
 export async function ayudaDeCita(userId: string, numero: string): Promise<CitaAyudaVista | null> {
   if (!NUM.test(numero)) return null;
   await escalarVencidas();
@@ -146,7 +148,8 @@ export async function ayudaDeCita(userId: string, numero: string): Promise<CitaA
                 coalesce((select string_agg(e.k || '-' || e.v, ',') from jsonb_each_text(case when jsonb_typeof(o.details->'sel') = 'object' then o.details->'sel' else '{}'::jsonb end) as e(k, v)), '') as o,
                 o.details->>'w' as w
            from help_requests h join operations o on o.id = h.operation_id where h.id = $1::bigint`, [a.id])).rows[0] ?? null : null;
-  return { rubro, puede: !motivo2 && !a, hecho, motivo, a: a ? fila(a) : null, depPagado: p && ["captured", "partially_refunded", "refunded"].includes(p.status) ? p.amount : 0, devolvible: devolvible(p), tarjeta: tarjetaL(p), garantia: garantia?.svc ? garantia : null };
+  return { rubro, puede: !motivo2 && !a, hecho, motivo, a: a ? fila(a) : null, depPagado: p && ["captured", "partially_refunded", "refunded"].includes(p.status) ? p.amount : 0, devolvible: devolvible(p), tarjeta: tarjetaL(p), garantia: garantia?.svc ? garantia : null,
+    plazoH: await valor("ayuda_negocio_h") };
 }
 
 export type AyudaCitaIn = { reason: string; wants?: string; body?: string; amount?: string | number | null; fotos?: string[] };
@@ -355,11 +358,11 @@ export async function responderAyudaCita(negocio: string, numero: string, x: { d
   return { ok: true, mensaje: devolver ? { es: `Respondida. Le devolvimos ${money(devolver)} a su tarjeta.`, en: `Replied. We refunded ${money(devolver)} to their card.` } : undefined };
 }
 
-/* Hoy · «Ayuda con citas»: las que esperan respuesta (24 h). */
+/* Hoy · «Ayuda con citas»: las que esperan respuesta (en las horas de Configuración · ayuda_negocio_h). */
 export async function ayudasCitasNegocio(negocio: string) {
   await escalarVencidas();
-  return (await db().query<{ num: string; quien: string; reason: MotivoCita; vence: string; rub: string | null }>(
-    `select o.number as num, coalesce(u.first_name, 'Cliente') as quien, h.reason, coalesce(o.details->>'rubro', case o.kind when 'party' then 'fiesta' when 'trip' then 'trans' when 'night' then 'noche' when 'market_order' then 'merc' when 'hold' then 'tienda' end) as rub, ${ISO("h.created_at + interval '24 hours'")} as vence
+  return (await db().query<{ num: string; quien: string; reason: MotivoCita; vence: string; rub: string | null; plazoH: number }>(
+    `select o.number as num, coalesce(u.first_name, 'Cliente') as quien, h.reason, coalesce(o.details->>'rubro', case o.kind when 'party' then 'fiesta' when 'trip' then 'trans' when 'night' then 'noche' when 'market_order' then 'merc' when 'hold' then 'tienda' end) as rub, ${ISO(`h.created_at + make_interval(hours => ${cfgSql("ayuda_negocio_h")})`)} as vence, ${cfgSql("ayuda_negocio_h")} as "plazoH"
        from help_requests h join operations o on o.id = h.operation_id join users u on u.id = h.user_id
       where h.business_id = $1 and h.status = 'open' and o.kind in ('appointment', 'market_order', 'hold', 'party', 'trip', 'night', 'enrollment', 'visit', 'tickets', 'private_event') order by h.created_at limit 10`, [negocio])).rows;
 }
@@ -371,19 +374,21 @@ export async function avisarAyudaCita(numero: string, tpl: "help_reply" | "help_
     `select h.user_id::text as uid, h.number as hnum, b.name as negocio, b.id as biz, u.first_name as cliente, b.category_id as cat from help_requests h join operations o on o.id = h.operation_id
        join businesses b on b.id = h.business_id join users u on u.id = h.user_id where o.number = $1 and o.kind in ('appointment', 'market_order', 'hold', 'party', 'trip', 'night', 'enrollment', 'visit', 'tickets', 'private_event')`, [numero])).rows[0];
   if (!h) return;
+  // 9n-5 · {horas}/{hours}: el plazo del negocio para responder (Configuración · ayuda_negocio_h), para las plantillas que lo digan con el valor.
+  const ph = tpl === "biz_help_cita" ? await valor("ayuda_negocio_h") : 0, pz: Record<string, string> = tpl === "biz_help_cita" ? { horas: horasTxt(ph, true), hours: horasTxt(ph, false) } : {};
   // 4if · Iglesias: a la persona, avisos NEUTROS (puede ser consejería: ni el lugar ni el servicio en la pantalla bloqueada).
   if (h.cat === "NEG-FE" && (tpl === "help_reply" || tpl === "help_done")) { await avisar(h.uid, tpl === "help_reply" ? "fe_help_reply" : "fe_help_done", { num: h.hnum }, { href: hrefAyuda(numero), ref: ["help", h.hnum] }); return; }
-  if (tpl === "biz_help_cita" && (h.cat === "NEG-FE" || numero.startsWith("D-"))) { await avisarNegocio(h.biz, h.cat === "NEG-FE" ? "biz_fe_help" : "biz_vis_help", { cliente: h.cliente ?? "", num: numero }, { href: detPanel(h.biz, numero), ref: ["help", h.hnum] }); return; }
+  if (tpl === "biz_help_cita" && (h.cat === "NEG-FE" || numero.startsWith("D-"))) { await avisarNegocio(h.biz, h.cat === "NEG-FE" ? "biz_fe_help" : "biz_vis_help", { cliente: h.cliente ?? "", num: numero, ...pz }, { href: detPanel(h.biz, numero), ref: ["help", h.hnum] }); return; }
   if (tpl === "biz_help_devuelto") { await avisarNegocio(h.biz, tpl, { cliente: h.cliente ?? "", num: h.hnum }, { href: detPanel(h.biz, numero), ref: ["help", h.hnum] }); return; }
   // Salud (§3): avisos neutros, sin consultorio ni paciente.
   if (h.cat === "NEG-SALUD") {
     const t = ({ help_reply: "sal_help_reply", help_done: "sal_help_done", biz_help_cita: "biz_sal_help", biz_help_rev: "biz_sal_help_rev" } as const)[tpl];
     const num = tpl === "biz_help_cita" ? numero : h.hnum;
-    if (tpl === "biz_help_cita" || tpl === "biz_help_rev") await avisarNegocio(h.biz, t, { num }, { href: detPanel(h.biz, numero), ref: ["help", h.hnum] });
+    if (tpl === "biz_help_cita" || tpl === "biz_help_rev") await avisarNegocio(h.biz, t, { num, ...pz }, { href: detPanel(h.biz, numero), ref: ["help", h.hnum] });
     else await avisar(h.uid, t, { num }, { href: hrefAyuda(numero), ref: ["help", h.hnum] });
     return;
   }
-  if (tpl === "biz_help_cita" || tpl === "biz_help_rev") await avisarNegocio(h.biz, tpl, { cliente: h.cliente ?? "", num: tpl === "biz_help_cita" ? numero : h.hnum }, { href: detPanel(h.biz, numero), ref: ["help", h.hnum] });
+  if (tpl === "biz_help_cita" || tpl === "biz_help_rev") await avisarNegocio(h.biz, tpl, { cliente: h.cliente ?? "", num: tpl === "biz_help_cita" ? numero : h.hnum, ...pz }, { href: detPanel(h.biz, numero), ref: ["help", h.hnum] });
   else await avisar(h.uid, tpl, { negocio: h.negocio, num: h.hnum }, { href: hrefAyuda(numero), ref: ["help", h.hnum] });
 }
 

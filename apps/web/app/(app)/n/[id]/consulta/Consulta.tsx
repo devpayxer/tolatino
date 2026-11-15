@@ -12,6 +12,7 @@ import type { SaludPublico } from "@/lib/salud-publico";
 import { SaSeguro, useSalud } from "../Salud";
 import { horasDeConsulta, pedirConsulta } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { diasTxt } from "@/lib/plazo-txt";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,7 +26,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const PARA = [["yo", "Para mí", "For me"], ["hijo", "Para mi hijo o hija", "For my child"], ["otro", "Para otra persona", "For someone else"]] as const;
 const WHY = [["nuevo", "Algo nuevo", "Something new"], ["seguimiento", "Seguimiento", "Follow-up"], ["receta", "Receta o resultados", "Prescription or results"], ["papeles", "Papeles (trabajo, escuela)", "Forms (work, school)"], ["chequeo", "Chequeo", "Checkup"]] as const;
 
-export function Consulta({ sa, svcId, con0, seg0, es, yo }: { sa: SaludPublico; svcId: string; con0: string; seg0: string | null; es: boolean; yo: boolean }) {
+export function Consulta({ sa, svcId, con0, seg0, notaDias, es, yo }: { sa: SaludPublico; svcId: string; con0: string; seg0: string | null; notaDias: number; es: boolean; yo: boolean }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
   const v = useSalud(sa, es)!;
@@ -99,7 +100,7 @@ export function Consulta({ sa, svcId, con0, seg0, es, yo }: { sa: SaludPublico; 
         <div className="flex justify-between gap-2.5"><span className={K}>{E2("NOTA PARA EL CONSULTORIO · OPCIONAL", "NOTE FOR THE CLINIC · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length}/300</span></div>
         <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 300))} rows={3} aria-label={E2("Nota para el consultorio", "Note for the clinic")}
           placeholder={E2("Ej.: es para mi hija Ana, 6 años", "E.g. it is for my daughter Ana, age 6")} className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
-        <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/55">{E2("No mandes fotos de documentos ni resultados. Se guarda cifrada y se borra 30 días después de la cita.", "Do not send photos of documents or results. It is stored encrypted and deleted 30 days after the visit.")}</div>
+        <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/55">{E2(`No mandes fotos de documentos ni resultados. Se guarda cifrada y se borra ${diasTxt(notaDias, true)} después de la cita.`, `Do not send photos of documents or results. It is stored encrypted and deleted ${diasTxt(notaDias, false)} after the visit.`)}</div>
       </div>
     </div>
   );

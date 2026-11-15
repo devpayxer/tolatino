@@ -16,6 +16,7 @@ import type { ApartadoFila, ApartadoVista } from "@/lib/apartados";
 import { solicitudFila } from "./Solicitudes";
 import { abrirEstimado, estimadoArmar, estimadoVista, loFinal } from "./Estimado";
 import { uuid } from "@/lib/uuid";
+import { diasTxt, horasTxt } from "@/lib/plazo-txt";
 
 export type CitasData = { apartados?: ApartadoFila[]; aptDet?: ApartadoVista | null; rentas?: RentaFila[]; rentaDet?: RentaVista | null; planes?: PlanPanelFila[]; em?: EmFila[]; emDet?: EmFila | null; sol?: SolFila[]; solDet?: SolPanel | null; vivas?: FilaCita[]; lista?: Awaited<ReturnType<typeof citasLista>>; f?: FiltroCita; q?: string; det?: CitaPanel | null; ayuda?: AyudaCitaPanel | null; ayudas?: Awaited<ReturnType<typeof ayudasCitasNegocio>> };
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
@@ -36,7 +37,7 @@ const TG = (E2: Ctx["E2"]): Record<string, [string, string] | undefined> => ({
   nos: [E2("NO LLEGÓ", "NO-SHOW"), "danger"], no: [E2("NO SE PUDO", "DECLINED"), "danger"], exp: [E2("SIN RESPUESTA", "NO REPLY"), "danger"], cx: [E2("CANCELADA", "CANCELLED"), "neutral"],
 });
 
-function paso(c: Ctx, x: { numero: string; who: string }, p: Paso) {
+function paso(c: Ctx, x: { numero: string; who: string; segH?: number }, p: Paso) {
   const { E2 } = c, n = x.who.split(" ")[0];
   const t = {
     confirmar: E2(`${n} ya ve su cita confirmada.`, `${n} now sees the booking confirmed.`), otra: E2(`${n} ya ve la hora que le propones.`, `${n} now sees the time you suggest.`),
@@ -45,7 +46,8 @@ function paso(c: Ctx, x: { numero: string; who: string }, p: Paso) {
     recibido: E2(`${n} ya sabe que su carro está en el taller.`, `${n} now knows the car is at the shop.`), camino: E2(`${n} ya sabe que vas en camino.`, `${n} now knows you are on the way.`),
     llegue: E2("Anotado · en la casa.", "Noted · at the home."), empezar: E2("Anotado · trabajando.", "Noted · in progress."), listo: E2(`${n} ya sabe que está listo.`, `${n} now knows it is ready.`),
     entregado: E2("Anotado · terminada.", "Noted · done."), nadie: E2("Anotado · no había nadie.", "Noted · nobody home."),
-    noseguro: E2(`${n} ya sabe que no aceptan su seguro. Su hora sigue guardada 2 horas mientras decide.`, `${n} now knows their insurance is not accepted. The time is held 2 hours while they decide.`),
+    // 9n-5 · Las horas que se guarda la hora: Configuración · sp_seguro_guardar_h (llegan con el detalle de la cita).
+    noseguro: x.segH != null ? E2(`${n} ya sabe que no aceptan su seguro. Su hora sigue guardada ${horasTxt(x.segH, true)} mientras decide.`, `${n} now knows their insurance is not accepted. The time is held ${horasTxt(x.segH, false)} while they decide.`) : E2(`${n} ya sabe que no aceptan su seguro.`, `${n} now knows their insurance is not accepted.`),
   }[p];
   c.run(() => citaResponder(c.d.id, x.numero, p), t);
 }
@@ -100,7 +102,7 @@ export function citaDetalle(c: Ctx): Sec {
     out.push({ type: "kv", items: [{ k: E2("CÓMO", "HOW"), v: (MO[p.modo] ?? MO.oficina!)[es ? 0 : 1] }, { k: E2("PRECIO", "PRICE"), v: nm(p.precio) }, ...(p.sit ? [{ k: E2("SITUACIÓN", "SITUATION"), v: (SIT[p.sit] ?? [p.sit, p.sit])[es ? 0 : 1] }] : [])] });
     if (p.nota) out.push({ type: "note", tone: "warn", icon: "lock", t: `${E2("Nota del cliente (privada): ", "Client note (private): ")}${p.nota}` });
   }
-  // Doctores (4j): el seguro, para quién, el motivo y la nota (cifrada; se borra 30 días después de la cita).
+  // Doctores (4j): el seguro, para quién, el motivo y la nota (cifrada; se borra a los sp_notas_purga_dias de la cita).
   if (x.sal) {
     const s = x.sal, MOT: Record<string, [string, string]> = { nuevo: ["Algo nuevo", "Something new"], seguimiento: ["Seguimiento", "Follow-up"], receta: ["Receta o resultados", "Prescription or results"], papeles: ["Papeles (trabajo, escuela)", "Forms (work, school)"], chequeo: ["Chequeo", "Checkup"] };
     const PA: Record<string, [string, string]> = { yo: ["El paciente", "The patient"], hijo: ["Su hijo o hija", "Their child"], otro: ["Otra persona", "Someone else"] };
@@ -112,7 +114,7 @@ export function citaDetalle(c: Ctx): Sec {
       ...(s.interp ? [{ k: E2("INTÉRPRETE", "INTERPRETER"), v: E2("Lo pidió · gratis, es su derecho", "Requested · free, it is their right") }] : []),
     ] });
     if (s.nota) out.push({ type: "note", tone: "warn", icon: "lock", t: `${E2("Nota del paciente (privada): ", "Patient note (private): ")}${s.nota}` });
-    if (x.st === "seg") out.push({ type: "note", tone: "info", icon: "clock", t: E2(`Le dijiste que no aceptan su seguro. ${n} tiene 2 horas para seguir sin seguro o buscar otro consultorio; si no elige, la hora se libera sola.`, `You said their insurance is not accepted. ${n} has 2 hours to continue uninsured or look elsewhere; if not, the time frees up automatically.`) });
+    if (x.st === "seg") out.push({ type: "note", tone: "info", icon: "clock", t: E2(`Le dijiste que no aceptan su seguro. ${n} tiene ${horasTxt(s.segH, true)} para seguir sin seguro o buscar otro consultorio; si no elige, la hora se libera sola.`, `You said their insurance is not accepted. ${n} has ${horasTxt(s.segH, false)} to continue uninsured or look elsewhere; if not, the time frees up automatically.`) });
   }
   if (x.late && x.st === "ok") out.push({ type: "note", tone: "warn", icon: "clock", t: E2(`Avisó que llega ${x.late} min tarde.`, `They said they will be ${x.late} min late.`) });
   if (x.of) {
@@ -145,7 +147,7 @@ export function citaDetalle(c: Ctx): Sec {
     .concat(x.st === "pend" ? [{ t: E2("Tu respuesta", "Your reply"), s: E2("AHORA", "NOW"), now: false, future: true } as never] : []) });
   if (x.st === "pend") {
     out.push({ type: "acts", pt: "4px", items: accionesPend(c, who) });
-    if (x.sal && !x.sal.ninguno) out.push({ type: "acts", items: [{ l: E2("No aceptamos su seguro", "We do not take their insurance"), v: "secondary", icon: "insurance", off: c.pending, onClick: () => paso(c, who, "noseguro") }] });
+    if (x.sal && !x.sal.ninguno) out.push({ type: "acts", items: [{ l: E2("No aceptamos su seguro", "We do not take their insurance"), v: "secondary", icon: "insurance", off: c.pending, onClick: () => paso(c, { ...who, segH: x.sal!.segH }, "noseguro") }] });
     out.push({ type: "note", tone: "info", t: E2(`Hasta que respondas, el cliente ve «Solicitud enviada». Nunca se confirma sola. «Otra hora» le propone tu siguiente hora libre.${x.responde ? ` Si no respondes antes de las ${x.responde}, vence${x.dep ? " y se devuelve el depósito" : ""}.` : ""}`, `Until you reply, the client sees “Request sent”. It never confirms itself. “Other time” suggests your next open time.${x.responde ? ` If you don't reply by ${x.responde}, it expires${x.dep ? " and the deposit is returned" : ""}.` : ""}`) });
   }
   // Auto y Hogar (4c): recibido · en camino / llegué · empezar · listo · entregado · no había nadie.
@@ -198,7 +200,7 @@ export function citaDetalle(c: Ctx): Sec {
         { type: "field", k: E2("HORAS ESTIMADAS · OPCIONAL", "ESTIMATED HOURS · OPTIONAL"), val: z.hrs, ph: "8–15", max: 9, onChange: (v) => F.set({ hrs: v.replace(/[^0-9–-]/g, "") }), help: E2("Si pasa, le pides su OK antes.", "If it goes over, ask for their OK first.") },
         { type: "field", k: E2("EXTRA OPCIONAL · OPCIONAL", "OPTIONAL EXTRA · OPTIONAL"), val: z.xn, ph: E2("Ej. Traducción certificada", "e.g. Certified translation"), max: 60, onChange: (v) => F.set({ xn: v }) },
         ...(z.xn.trim() ? [{ type: "field", k: E2("PRECIO DEL EXTRA", "EXTRA PRICE"), val: z.xp, pre: "$", im: "numeric", ph: "60", onChange: (v: string) => F.set({ xp: num(v) }), help: E2("El cliente lo acepta aparte; puede traerlo él.", "The client accepts it separately; they can bring it themselves.") } as Bloque] : []),
-        { type: "note", tone: "ink", icon: "law", t: E2(`Total por escrito: ${usd(fee + gov)}${gov ? ` (honorario ${usd(fee)} + gobierno ${usd(gov)})` : ""}. Vale 30 días. Nadie garantiza un resultado: es lo que cobras por el trabajo.`, `Written total: ${usd(fee + gov)}${gov ? ` (fee ${usd(fee)} + government ${usd(gov)})` : ""}. Valid 30 days. No one guarantees a result: it is what you charge for the work.`) });
+        { type: "note", tone: "ink", icon: "law", t: E2(`Total por escrito: ${usd(fee + gov)}${gov ? ` (honorario ${usd(fee)} + gobierno ${usd(gov)})` : ""}. Vale ${diasTxt(p.totalDias, true)}. Nadie garantiza un resultado: es lo que cobras por el trabajo.`, `Written total: ${usd(fee + gov)}${gov ? ` (fee ${usd(fee)} + government ${usd(gov)})` : ""}. Valid ${diasTxt(p.totalDias, false)}. No one guarantees a result: it is what you charge for the work.`) });
       return { blocks: out, ed: { F, l: E2("Mandar el total por escrito", "Send the written total"), valid: fee > 0 && (!z.xn.trim() || Number(z.xp) > 0), always: true,
         apply: (q: typeof z) => totalMandar(c.d.id, x.numero, { fee: Number(q.fee || 0) * 100, gov: Number(q.gov || 0) * 100, hours: q.hrs || null, extras: q.xn.trim() ? [{ es: q.xn.trim(), cents: Number(q.xp || 0) * 100 }] : [] }),
         toast: E2(`${n} ya tiene el total por escrito.`, `${n} now has the written total.`) } };
@@ -217,7 +219,7 @@ export function citaDetalle(c: Ctx): Sec {
   return { blocks: out, ed: null };
 }
 
-/* Ayuda con la cita en el detalle (diseño TLCitaHelp: el negocio responde en 24 h; acepta, propone otra cosa o no puede).
+/* Ayuda con la cita en el detalle (diseño TLCitaHelp: el negocio responde en ayuda_negocio_h; acepta, propone otra cosa o no puede).
    Lo que vuelve a la tarjeta sale del depósito pagado en la app; lo pagado en el local se arregla en el local. */
 export function ayudaCita(c: Ctx, numero: string, n: string): (Bloque | null)[] {
   const { E2, es, d } = c, a = c.citas?.ayuda;
@@ -234,7 +236,7 @@ export function ayudaCita(c: Ctx, numero: string, n: string): (Bloque | null)[] 
     const tarjeta = sd ? E2("Nada se cobró en To'Latino. Si aceptas devolver, lo devuelves tú directamente (efectivo, Zelle o como cobraste) y la persona confirma «Me lo devolvieron». Si no, To'Latino decide.", "Nothing was charged on To'Latino. If you agree to refund, you refund directly (cash, Zelle or however you charged) and they confirm «They refunded me». Otherwise, To'Latino decides.") : a.devolvible > 0 ? E2(`A su tarjeta puedes devolver hasta ${money(a.devolvible)} (lo pagado en la app${a.tarjeta ? ` · ${a.tarjeta}` : ""}). Lo pagado en el local se arregla en el local.`, `You can refund up to ${money(a.devolvible)} to their card (paid in the app${a.tarjeta ? ` · ${a.tarjeta}` : ""}). What was paid at the shop is settled at the shop.`) : rub ? E2("Nada se cobró en la app: lo que acuerden (devolver, corregir la factura, terminar) lo haces tú directamente.", "Nothing was charged in the app: whatever you agree (refund, corrected bill, finishing) you handle directly.") : E2("No pagó nada en la app: lo que acuerden se arregla en el local.", "Nothing was paid in the app: whatever you agree is settled at the shop.");
     const ph: Record<string, [string, string]> = { ok: ["Ej.: Tienes razón, disculpa. Ven el jueves y te lo arreglamos sin cargo.", "e.g. You are right, sorry. Come Thursday and we fix it at no charge."], alt: ["Ej.: Tienes razón en parte. Te devolvemos $10.", "e.g. You are partly right. We refund $10."], no: ["Ej.: Hicimos el servicio que reservaste. Si quieres, ven y lo vemos juntos.", "e.g. We did the service you booked. Come by and we can look at it together."] };
     const pideMonto = dec === "alt" || (dec === "ok" && a.wants === "rev" && a.devolvible > 0);
-    out.push({ type: "note", tone: "warn", icon: "clock", t: E2(`Respóndele a ${n} en 24 horas. Si no, o si no está de acuerdo, To’Latino revisa el caso en 48 h.`, `Reply to ${n} within 24 hours. Otherwise, or if they disagree, To’Latino reviews the case within 48 h.`) },
+    out.push({ type: "note", tone: "warn", icon: "clock", t: E2(`Respóndele a ${n} en ${horasTxt(a.plazoH, true)}. Si no, o si no está de acuerdo, To’Latino revisa el caso en 48 h.`, `Reply to ${n} within ${horasTxt(a.plazoH, false)}. Otherwise, or if they disagree, To’Latino reviews the case within 48 h.`) },
       { type: "chips", items: ([["ok", E2("Tiene razón", "They are right")], ["alt", E2("Proponer otra cosa", "Propose something else")], ["no", E2("No puedo", "I can’t")]] as const).map(([k, l]) => ({ l, v: dec === k ? "selected" : "filter", onClick: () => c.setUi({ acD: k }) })) });
     if (dec) {
       out.push({ type: "note", tone: "info", icon: "card", t: tarjeta });
@@ -253,7 +255,7 @@ export function ayudaCita(c: Ctx, numero: string, n: string): (Bloque | null)[] 
   return out;
 }
 
-/* Hoy · «Ayuda con citas»: las solicitudes que esperan tu respuesta (24 h). */
+/* Hoy · «Ayuda con citas»: las solicitudes que esperan tu respuesta (en ayuda_negocio_h horas). */
 /* Los planes del negocio (4f, hueco #5 del plan: lista compuesta con filas del panel). Cada visita ya entra a Hoy como cita. */
 export function hoyPlanes(c: Ctx): Bloque[] {
   const { E2, es } = c, L = c.citas?.planes ?? [];
@@ -268,7 +270,7 @@ export function hoyAyudasCitas(c: Ctx): Bloque[] {
   const { E2, es, d } = c, L = c.citas?.ayudas ?? [];
   if (!L.length) return [];
   const tipo = (n: string) => (n.startsWith("B-") ? ["evt", E2("Boletos", "Tickets")] : n.startsWith("EP-") ? ["evp", E2("Evento privado", "Private event")] : n.startsWith("D-") ? ["vis", d.cat === "NEG-DEALER" ? E2("Prueba o cita", "Test drive or booking") : E2("Visita", "Visit")] : n.startsWith("M-") ? ["merc", E2("Pedido", "Order")] : n.startsWith("A-") ? ["apt", E2("Apartado", "Hold")] : n.startsWith("F-") ? ["fiesta", E2("Fiesta", "Party")] : n.startsWith("V-") ? ["viaje", E2("Viaje", "Trip")] : n.startsWith("N-") ? ["noche", E2("Noche", "Night")] : n.startsWith("I-") ? ["insc", d.cat === "NEG-FE" ? E2("Fecha", "Date") : E2("Inscripción", "Enrollment")] : ["cita", E2("Cita", "Booking")]);
-  return [{ type: "rows", k: E2("AYUDA QUE ESPERA TU RESPUESTA · 24 H", "HELP AWAITING YOUR REPLY · 24 H"), items: L.map((a) => ({ icon: "help", t: `${a.quien} · ${tipo(a.num)[1]} #${a.num}`,
+  return [{ type: "rows", k: E2(`AYUDA QUE ESPERA TU RESPUESTA · ${L[0]!.plazoH} H`, `HELP AWAITING YOUR REPLY · ${L[0]!.plazoH} H`), items: L.map((a) => ({ icon: "help", t: `${a.quien} · ${tipo(a.num)[1]} #${a.num}`,
     s: motivoAyuda(a.reason, a.rub)[es ? 0 : 1], tag: E2("POR RESPONDER", "TO ANSWER"), tone: "action", onClick: () => c.nav(`/panel/${d.id}/hoy?det=${tipo(a.num)[0]}:${a.num}`) })) }];
 }
 

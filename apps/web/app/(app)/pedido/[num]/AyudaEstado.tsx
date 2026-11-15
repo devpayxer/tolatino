@@ -1,11 +1,12 @@
 "use client";
 /* La solicitud de ayuda en el pedido (diseño Mi cuenta · orderV, nota «Solicitud enviada / resuelta»): enviada (el negocio
-   responde en 24 h), la respuesta del negocio (y «Pedir que To'Latino la revise»), To'Latino la revisa, o resuelta. Si no
+   responde en las horas de Configuración · ayuda_negocio_h), la respuesta del negocio (y «Pedir que To'Latino la revise»), To'Latino la revisa, o resuelta. Si no
    hay solicitud y se puede, el botón «Ayuda con el pedido». */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { Ayuda } from "@/lib/ayuda";
+import { horasTxt } from "@/lib/plazo-txt";
 import { ayudaRevision } from "./acciones";
 
 type N = "Icon" | "Button";
@@ -21,7 +22,7 @@ export function AyudaEstado({ numero, negocio, a, puede, es }: { numero: string;
   const hora = (iso: string) => new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
   const mot = MOT[a.reason] ?? MOT.otro!;
   const [tono, ic, t, s] = a.status === "resolved" ? ["ok", "check", E2("Solicitud resuelta por To’Latino", "Request resolved by To’Latino"), a.resolution ?? ""]
-    : a.status === "escalated" ? ["warn", "shield", E2("To’Latino está revisando tu solicitud", "To’Latino is reviewing your request"), a.porUsuario ? E2("Pediste que la revisemos. Te respondemos aquí.", "You asked us to review it. We reply here.") : E2(`${negocio} no respondió en 24 horas. Te respondemos aquí.`, `${negocio} did not reply within 24 hours. We reply here.`)]
+    : a.status === "escalated" ? ["warn", "shield", E2("To’Latino está revisando tu solicitud", "To’Latino is reviewing your request"), a.porUsuario ? E2("Pediste que la revisemos. Te respondemos aquí.", "You asked us to review it. We reply here.") : E2(`${negocio} no respondió en ${horasTxt(a.plazoH, true)}. Te respondemos aquí.`, `${negocio} did not reply within ${horasTxt(a.plazoH, false)}. We reply here.`)]
     : a.status === "answered" ? ["ok", "chat", E2(`${negocio} respondió`, `${negocio} replied`), `“${a.reply ?? ""}”`]
     : ["warn", "clock", E2("Solicitud enviada", "Request sent"), E2(`${negocio} responde antes del ${hora(a.vence)}. Si no, To’Latino revisa.`, `${negocio} replies before ${hora(a.vence)}. If not, To’Latino reviews it.`)];
   const bg = tono === "ok" ? "bg-[rgba(0,229,196,.12)]" : "bg-[rgba(255,176,32,.14)]", fg = tono === "ok" ? "text-open-text" : "text-pro-ink";

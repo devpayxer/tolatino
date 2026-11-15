@@ -4,6 +4,7 @@ import { contexto } from "./citas";
 import { cobrarOperacion, comision, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
 import { cifrar } from "./cifrado";
 import { db, tx } from "./db";
+import { valor } from "./config";
 import { destinatarioDe, fotosDe, precioDe, type Precio } from "./envios";
 import { pasarela } from "./pagos/pasarela";
 import { bancoPide } from "./pagos/verificacion";
@@ -570,7 +571,8 @@ export async function viajesHoy(negocio: string): Promise<{ esperan: FilaViaje[]
     choferes: R.length ? (await db().query<{ id: string; nombre: string }>(`select id::text, display_name as nombre from delivery_drivers where business_id = $1 and status = 'active' order by display_name`, [negocio])).rows : [] };
 }
 export type ViajePanelV = FilaViaje & { pickup: string | null; nota: string | null; pay: string | null; alt: { ymd: string; m: number } | null; otras: { run: string; ymd: string; m: number; quedan: number }[]; eventos: { at: number; kind: string; note: Bi | null }[];
-  boxes: number; dest: Destino | null; rastreo: string | null; fotos: string[]; drop: string | null; precio: Precio | null };
+  boxes: number; dest: Destino | null; rastreo: string | null; fotos: string[]; drop: string | null; precio: Precio | null;
+  destDias: number }; // 9n-5 · a los cuántos días se borra el destinatario (con las notas cifradas: Configuración · sp_notas_purga_dias)
 export async function viajePanel(negocio: string, numero: string): Promise<ViajePanelV | null> {
   if (!NUM_V.test(numero)) return null;
   await barrerViajes({ negocio, numero });
@@ -600,5 +602,6 @@ export async function viajePanel(negocio: string, numero: string): Promise<Viaje
     tot: o.tot, resp: N.rows[0]?.resp ?? null, detalle: o.detail, run: (d.run as string | null) ?? null, abordo: null, pickup: (d.pickup as { t: string } | null)?.t ?? null, nota: N.rows[0]?.nota ?? null, pay: o.pay,
     alt: P.rows[0] ?? null, otras, eventos: E.rows,
     boxes: Number(d.boxes ?? 0), dest: d.k === "caja" ? await destinatarioDe(o.id) : null, rastreo: ((d.tracking as { code?: string } | undefined)?.code) ?? null,
-    fotos: d.k === "cotiza" ? await fotosDe(o.id) : [], drop: (d.drop as string | undefined) ?? null, precio: d.k === "cotiza" ? await precioDe(o.id) : null };
+    fotos: d.k === "cotiza" ? await fotosDe(o.id) : [], drop: (d.drop as string | undefined) ?? null, precio: d.k === "cotiza" ? await precioDe(o.id) : null,
+    destDias: await valor("sp_notas_purga_dias") };
 }

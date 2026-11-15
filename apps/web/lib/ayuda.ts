@@ -1,10 +1,11 @@
 import "server-only";
-import { cfgSql } from "./config";
+import { cfgSql, valor } from "./config";
+import { horasTxt } from "./plazo-txt";
 import { COLA_AYUDA_SQL } from "./colas";
 import { db, tx } from "./db";
 
 /* Ayuda con el pedido (diseño Mi cuenta · hoja help; Super Admin secSop). La persona abre una solicitud sobre un pedido
-   terminado (hasta 7 días); el negocio responde en 24 h; si no responde, o si la persona pide que To'Latino la revise,
+   terminado (hasta 7 días); el negocio responde en las horas de Configuración (ayuda_negocio_h); si no responde, o si la persona pide que To'Latino la revise,
    pasa a la cola «Ayuda con pedidos» (sop) y To'Latino la resuelve con un mensaje. Una por pedido. */
 type Bi = { es: string; en: string };
 export type Motivo = "falta" | "equivocado" | "frio" | "danado" | "tarde" | "nollego" | "pago" | "otro";
@@ -14,11 +15,11 @@ export type ItemAyuda = { n: string; q: number };
 export type ResA = { ok: true; numero?: string } | { ok: false; msg: Bi };
 const no = (es: string, en: string): ResA => ({ ok: false, msg: { es, en } });
 const ISO = (x: string) => `to_char((${x}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
-export type Ayuda = { id: string; number: string; reason: Motivo; items: ItemAyuda[]; wants: Quiere; body: string | null; status: "open" | "answered" | "escalated" | "resolved"; reply: string | null; replyAt: string | null; resolution: string | null; resolvedAt: string | null; at: string; vence: string; porUsuario: boolean };
+export type Ayuda = { id: string; number: string; reason: Motivo; items: ItemAyuda[]; wants: Quiere; body: string | null; status: "open" | "answered" | "escalated" | "resolved"; reply: string | null; replyAt: string | null; resolution: string | null; resolvedAt: string | null; at: string; vence: string; porUsuario: boolean; plazoH: number };
 const COLS = `h.id::text, h.number, h.reason, h.items, h.wants, h.body, h.status, h.reply, ${ISO("h.reply_at")} as "replyAt", h.resolution, ${ISO("h.resolved_at")} as "resolvedAt", ${ISO("h.created_at")} as at,
-  ${ISO("h.created_at + interval '24 hours'")} as vence, coalesce(h.escalated_by = 'user', false) as "porUsuario"`;
+  ${ISO(`h.created_at + make_interval(hours => ${cfgSql("ayuda_negocio_h")})`)} as vence, coalesce(h.escalated_by = 'user', false) as "porUsuario", ${cfgSql("ayuda_negocio_h")} as "plazoH"`;
 
-/* Pasa a To'Latino lo que el negocio no respondió en 24 h (barato: índice parcial de las abiertas). */
+/* Pasa a To'Latino lo que el negocio no respondió a tiempo (ayuda_negocio_h; barato: índice parcial de las abiertas). */
 export async function escalarVencidas() {
   const hay = await db().query(`select 1 from help_requests where status = 'open' and created_at <= now() - make_interval(hours => ${cfgSql("ayuda_negocio_h")}) limit 1`);
   if (!hay.rowCount) return;
@@ -40,7 +41,8 @@ export async function ayudaDePedido(userId: string, numero: string) {
        from operations o where o.number = $1 and o.user_id = $2 and o.kind = 'order'`, [numero, userId])).rows[0];
   if (!r) return null;
   const a = (await db().query<Ayuda>(`select ${COLS} from help_requests h join operations o on o.id = h.operation_id where o.number = $1 and h.user_id = $2`, [numero, userId])).rows[0] ?? null;
-  return { puede: r.puede && !a, hecho: r.hecho, delivery: r.delivery, lineas: r.lineas, a };
+  // 9n-5 · Las horas que tiene el negocio para responder (Configuración · ayuda_negocio_h), para decirlas antes de pedir.
+  return { puede: r.puede && !a, hecho: r.hecho, delivery: r.delivery, lineas: r.lineas, a, plazoH: await valor("ayuda_negocio_h") };
 }
 export type AyudaIn = { reason: string; items?: ItemAyuda[]; wants?: string; body?: string };
 const POR_PLATO = new Set(["falta", "equivocado", "frio", "danado"]);
@@ -168,6 +170,8 @@ export async function avisarAyuda(numeroPedido: string, tpl: "help_reply" | "hel
   const h = (await db().query<{ uid: string; hnum: string; negocio: string; biz: string; cliente: string | null }>(
     `select h.user_id::text as uid, h.number as hnum, b.name as negocio, b.id as biz, u.first_name as cliente from help_requests h join operations o on o.id = h.operation_id join businesses b on b.id = h.business_id join users u on u.id = h.user_id where o.number = $1`, [numeroPedido])).rows[0];
   if (!h) return;
-  if (tpl === "biz_help") await avisarNegocio(h.biz, "biz_help", { cliente: h.cliente ?? "", num: numeroPedido }, { href: `/panel/${h.biz}/hoy?det=ped:${numeroPedido}`, ref: ["help", h.hnum] });
+  // 9n-5 · {horas}/{hours}: el plazo del negocio (Configuración · ayuda_negocio_h), para la plantilla que lo diga con el valor.
+  const ph = tpl === "biz_help" ? await valor("ayuda_negocio_h") : 0;
+  if (tpl === "biz_help") await avisarNegocio(h.biz, "biz_help", { cliente: h.cliente ?? "", num: numeroPedido, horas: horasTxt(ph, true), hours: horasTxt(ph, false) }, { href: `/panel/${h.biz}/hoy?det=ped:${numeroPedido}`, ref: ["help", h.hnum] });
   else await avisar(h.uid, tpl, { negocio: h.negocio, num: h.hnum }, { href: `/pedido/${numeroPedido}`, ref: ["help", h.hnum] });
 }

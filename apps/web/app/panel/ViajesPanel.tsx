@@ -10,6 +10,7 @@ import type { FilaViaje, SalidaPanel, ViajePanelV } from "@/lib/viajes";
 import { viajeAbordo, viajeCancelarSalida, viajeChofer, viajeEnvio, viajePasoPriv, viajePrecio, viajeResponder, viajeSalida } from "./acciones-viajes";
 import { ayudaCita } from "./Citas";
 import type { Ctx, Editor } from "./Panel";
+import { diasTxt } from "@/lib/plazo-txt";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 type Bi = { es: string; en: string };
@@ -100,7 +101,7 @@ export function viajeDetalle(c: Ctx): Sec {
         : { k: E2("PRECIO CERRADO", "FIXED PRICE"), v: `${money(x.tot)} · ${payL}` },
     ] },
     x.k === "cotiza" && x.fotos.length ? { type: "photos", k: E2("SUS FOTOS", "THEIR PHOTOS"), cols: 3, items: x.fotos.map((u) => ({ bg: `url("${u}")`, key: u, onClick: () => window.open(u, "_blank", "noopener") })) } : null,
-    x.k === "caja" && x.dest ? { type: "note", tone: "info", icon: "lock", t: E2("El destinatario es privado: solo lo ven tú y el cliente, para entregar la caja. Se borra a los 30 días de entregada.", "The recipient is private: only you and the client see it, to deliver the box. It is deleted 30 days after delivery.") } : null,
+    x.k === "caja" && x.dest ? { type: "note", tone: "info", icon: "lock", t: E2(`El destinatario es privado: solo lo ven tú y el cliente, para entregar la caja. Se borra a los ${diasTxt(x.destDias, true)} de entregada.`, `The recipient is private: only you and the client see it, to deliver the box. It is deleted ${diasTxt(x.destDias, false)} after delivery.`) } : null,
     x.nota ? { type: "note", tone: "ink", icon: "bubble", t: `«${x.nota}»` } : null,
   ];
   if (x.st === "pending" && x.k === "cotiza") {

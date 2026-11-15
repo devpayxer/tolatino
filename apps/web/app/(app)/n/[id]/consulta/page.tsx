@@ -4,6 +4,7 @@ import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
 import { saludPublico } from "@/lib/salud-publico";
 import { Consulta } from "./Consulta";
+import { valor } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Booking · To'Latino" };
@@ -18,5 +19,6 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (!sa.booking || !s || s.k === "walk") redirect(`/n/${id}?tab=svc`);
   const con = sp.c && sa.gente.some((p) => p.id === sp.c) ? sp.c : "any";
   const seg = sp.seg && sa.segs.some((x) => x.id === sp.seg) ? sp.seg : null;
-  return <Consulta sa={sa} svcId={s.id} con0={con} seg0={seg} es={lang === "es"} yo={!!u} />;
+  // 9n-5 · A los cuántos días se borra la nota (Configuración · sp_notas_purga_dias).
+  return <Consulta sa={sa} svcId={s.id} con0={con} seg0={seg} notaDias={await valor("sp_notas_purga_dias")} es={lang === "es"} yo={!!u} />;
 }

@@ -3,6 +3,7 @@ import { estadoEstimado, type EstadoEstimado } from "./estimados";
 import { db } from "./db";
 import { vencerCitas } from "./citas-flujo";
 import { descifrar } from "./cifrado";
+import { valor } from "./config";
 
 /* Citas en el panel del negocio (Panel v2 · reqRow/detBlocks k='cita', Hoy y Clientes). El servidor decide el estado:
    antes de leer se vencen las que nadie contestó. Con sillas rentadas cada barbero ve las suyas y el dueño todas. */
@@ -62,9 +63,9 @@ export type CitaPanel = FilaCita & {
   tl: { t: Bi; at: string }[]; auto: boolean;
   est: EstadoEstimado | null; rate: number; taxBp: number; pre: { num: string; lo: number; hi: number } | null; plan: string | null; // 4d: el estimado, la tarifa y el impuesto de piezas (para ver el total mientras se arma)
   of: { veh: string | null; mi: number | null; casa: string | null; inq: boolean; w: string | null; win: number | null; luces: string[]; area: string | null; acceso: string | null; accesoNota: string | null; piezas: boolean } | null;
-  // Doctores (4j · §3): lo ve solo el consultorio de esta cita, con acceso a «Hoy y pedidos». La nota se descifra aquí y se borra a los 30 días.
-  prof: { modo: string; sit: string | null; nota: string | null; precio: Bi; paso: string | null; honorario: number; gov: number; hrs: string | null; total: import("./total-escrito").TotalVista | null } | null; // Profesionales (4l): situación (clave), nota cifrada, cómo
-  sal: { seguro: Bi; acepta: boolean; ninguno: boolean; last4: string | null; para: string; motivo: string | null; nota: string | null; interp: boolean; tele: boolean; precio: Bi } | null;
+  // Doctores (4j · §3): lo ve solo el consultorio de esta cita, con acceso a «Hoy y pedidos». La nota se descifra aquí y se borra a los sp_notas_purga_dias (Configuración).
+  prof: { modo: string; sit: string | null; nota: string | null; precio: Bi; paso: string | null; honorario: number; gov: number; hrs: string | null; total: import("./total-escrito").TotalVista | null; totalDias: number } | null; // Profesionales (4l): situación (clave), nota cifrada, cómo
+  sal: { seguro: Bi; acepta: boolean; ninguno: boolean; last4: string | null; para: string; motivo: string | null; nota: string | null; interp: boolean; tele: boolean; precio: Bi; segH: number } | null;
 };
 export async function citaPanel(negocio: string, numero: string): Promise<CitaPanel | null> {
   if (!/^C-\d{1,10}$/.test(numero)) return null;
@@ -112,13 +113,15 @@ export async function citaPanel(negocio: string, numero: string): Promise<CitaPa
       const p = (await db().query<{ reason: string | null; note_enc: Buffer | null; paso: string | null }>(`select p.reason, p.note_enc, o.status_detail as paso from op_private p join operations o on o.id = p.operation_id where p.operation_id = $1::bigint`, [r.id])).rows[0];
       const { totalDe } = await import("./total-escrito");
       return { modo: z.modo ?? "oficina", sit: p?.reason ?? null, nota: descifrar(p?.note_enc), precio: z.precio ?? { es: "", en: "" }, paso: p?.paso ?? null,
-        honorario: z.k === "fijo" || z.k === "hora" || z.k === "cotiza" ? Number(z.honorario ?? 0) : 0, gov: Number(z.gov ?? 0), hrs: z.hrs ?? null, total: await totalDe(r.id) };
+        honorario: z.k === "fijo" || z.k === "hora" || z.k === "cotiza" ? Number(z.honorario ?? 0) : 0, gov: Number(z.gov ?? 0), hrs: z.hrs ?? null, total: await totalDe(r.id),
+        totalDias: await valor("sp_total_escrito_dias") }; // 9n-5 · cuánto vale el total que se manda (Configuración)
     })() : null,
     sal: d.rubro === "salud" ? await (async () => {
       const z = r.det as { seguro?: { kind?: string; acepta?: boolean; last4?: string | null; nombre?: Bi }; para?: string; tele?: boolean; precio?: Bi };
       const p = (await db().query<{ reason: string | null; note_enc: Buffer | null; interp: boolean }>(`select reason, note_enc, interp from op_private where operation_id = $1::bigint`, [r.id])).rows[0];
       return { seguro: z.seguro?.nombre ?? { es: "", en: "" }, acepta: !!z.seguro?.acepta, ninguno: z.seguro?.kind === "none", last4: z.seguro?.last4 ?? null, para: z.para ?? "yo",
-        motivo: p?.reason ?? null, nota: descifrar(p?.note_enc), interp: !!p?.interp, tele: !!z.tele, precio: z.precio ?? { es: "", en: "" } };
+        motivo: p?.reason ?? null, nota: descifrar(p?.note_enc), interp: !!p?.interp, tele: !!z.tele, precio: z.precio ?? { es: "", en: "" },
+        segH: await valor("sp_seguro_guardar_h") }; // 9n-5 · cuánto se guarda la hora con «No aceptamos su seguro» (Configuración)
     })() : null,
     of: d.veh || d.casa ? { veh: d.veh?.t ?? null, mi: d.veh?.mi ?? null, casa: d.casa?.dir ?? null, inq: d.casa?.tenure === "inq", w: d.w ?? null, win: d.win ?? null, luces: d.luces ?? [], area: d.area ?? null, acceso: d.acceso ?? null, accesoNota: d.accesoNota ?? null, piezas: !!d.piezas } : null,
   };

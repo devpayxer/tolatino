@@ -165,7 +165,7 @@ export async function pasoEnvio(negocio: string, numero: string, paso: "recogida
     if (o.detail !== "camino") return no("Primero marca «Salió del almacén».", "Mark “Left the warehouse” first.");
     await c.query(`update operations set status = 'done', status_detail = 'entregada', done_at = now(), updated_at = now() where id = $1::bigint`, [o.id]);
     await ev(c, o.id, "box_delivered", "member", actorId); tpl = "caja_entregada";
-    // El destinatario se borra a los 30 días de entregada, con las notas cifradas (borrarNotas, lib/citas-flujo.ts).
+    // El destinatario se borra a los sp_notas_purga_dias de entregada, con las notas cifradas (borrarNotas, lib/citas-flujo.ts).
     return ok1;
   });
   if (r.ok && tpl) await avisar(numero, "cliente", tpl, { rastreo: code }).catch(() => undefined);

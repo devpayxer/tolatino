@@ -1,5 +1,6 @@
 import "server-only";
-import { cfgSql } from "./config";
+import { cfgSql, valor } from "./config";
+import { horasTxt } from "./plazo-txt";
 import { db, tx } from "./db";
 import { cobrarOperacion, devolverPago, liberarOperacion } from "./cobros";
 import { cobrarLiquidacion, conEstimado, planLiquidar } from "./estimados";
@@ -95,7 +96,7 @@ export async function vencerCitas(f: { negocio?: string; userId?: string; numero
       where o.kind = 'appointment' and o.status = 'pending' and o.respond_by < now() and coalesce(o.status_detail, '') <> 'seg'
         and ($1::text is null or o.business_id = $1) and ($2::uuid is null or o.user_id = $2) and ($3::text is null or o.number = $3)
       returning o.id::text, o.number`, [f.negocio ?? null, f.userId ?? null, f.numero ?? null])).rows;
-  // Doctores · «No aceptan tu seguro»: la hora se guarda 2 h; si el paciente no elige, se libera (nunca queda tomada).
+  // Doctores · «No aceptan tu seguro»: la hora se guarda sp_seguro_guardar_h; si el paciente no elige, se libera (nunca queda tomada).
   const seg = (await db().query<{ id: string; number: string }>(
     `update operations o set status = 'cancelled', cancelled_by = 'system', cancelled_at = now(), cancel_reason = 'seg_vencida', updated_at = now()
       where o.kind = 'appointment' and o.status = 'pending' and o.status_detail = 'seg' and o.respond_by < now()
@@ -134,7 +135,7 @@ export async function vencerCitas(f: { negocio?: string; userId?: string; numero
   if (Date.now() - ultimoBarrido > 60_000) { ultimoBarrido = Date.now(); await recordatorios().catch(() => undefined); await borrarNotas().catch(() => undefined); await import("./total-escrito").then((t) => t.vencerTotales()).catch(() => undefined); await import("./ayuda-cita").then((a) => a.purgarFotosAyuda()).catch(() => undefined); }
 }
 
-/* §3: la nota cifrada de una cita (op_private) se borra a los 30 días de que la cita termina (terminada, cancelada, vencida o
+/* §3: la nota cifrada de una cita (op_private) se borra a los sp_notas_purga_dias (Configuración) de que la cita termina (terminada, cancelada, vencida o
    no confirmada). Lo hace el barrido de citas; el guardián privacidadSalud vigila que nadie más la toque. */
 async function borrarNotas() {
   await db().query(
@@ -185,7 +186,7 @@ export async function citaPaso(negocio: string, numero: string, paso: PasoCita, 
       despues = async () => { await avisarSeg(numero); };
       return { ok: true };
     }
-    if (o.detail === "seg") return no("El paciente está eligiendo qué hacer (hasta 2 h).", "The patient is choosing what to do (up to 2 h).");
+    if (o.detail === "seg") { const h = await valor("sp_seguro_guardar_h"); return no(`El paciente está eligiendo qué hacer (hasta ${h} h).`, `The patient is choosing what to do (up to ${h} h).`); }
     if (paso === "confirmar" || paso === "nopuedo") {
       if (o.status !== "pending") return o.status === "expired" ? no("Pasó el tiempo para responder: la solicitud venció y se devolvió el depósito.", "The time to reply passed: the request expired and the deposit was returned.") : ya;
       const ok = paso === "confirmar";
@@ -390,6 +391,8 @@ async function avisarSeg(numero: string) {
   const d = await datos(numero);
   if (!d) return;
   const { avisar } = await import("./avisos");
-  await avisar(d.uid, "sal_cita_seg", {}, { href: `/cita/${numero}`, ref: ["appointment", numero] });
+  // 9n-5 · {horas}/{hours}: lo que se guarda la hora (Configuración · sp_seguro_guardar_h), para la plantilla que lo diga con el valor.
+  const h = await valor("sp_seguro_guardar_h");
+  await avisar(d.uid, "sal_cita_seg", { horas: horasTxt(h, true), hours: horasTxt(h, false) }, { href: `/cita/${numero}`, ref: ["appointment", numero] });
 }
 

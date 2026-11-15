@@ -1,6 +1,7 @@
 import "server-only";
 import type { Pool, PoolClient } from "pg";
 import { db, tx } from "./db";
+import { valor } from "./config";
 import { detectarIdioma, idiomaTexto } from "./traductor";
 import { hora } from "./pedir";
 
@@ -353,6 +354,7 @@ export async function paraEscribir(negocio: string, userId: string, numero: stri
     negocio: { id: b.id, name: b.name, pro: b.pro, food: b.food, logo: b.logo, ciudad: b.ciudad, meta: [b.subs, b.ciudad].filter(Boolean).join(" · "), rubro },
     op, hechos, cita, mia: mia ? { ...tarjeta(mia), puede: mia.puede, hasta: mia.hasta, numero: mia.numero, fotoIds: fotos } : null,
     pool: pool.map((x) => ({ id: x.id, name: x.name })),
+    ayudaH: await valor("ayuda_negocio_h"), // 9n-5 · las horas del negocio para responder una ayuda (Configuración), para el aviso de calificación baja
   };
 }
 export type ParaEscribir = NonNullable<Awaited<ReturnType<typeof paraEscribir>>>;

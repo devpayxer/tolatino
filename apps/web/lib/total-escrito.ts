@@ -7,7 +7,7 @@ import { usd } from "./pro-comun";
 /* «El total, por escrito» (Fase 4 · 4l-2 · fase4-salud-pro.md §4l). La consulta de un profesional (C-…, rubro 'pro'):
    confirmada → «Pasó la consulta» (status_detail 'consulted') → la oficina manda el total (versión 1, 2…; la nueva reemplaza)
    ('quote') → el cliente lo acepta con los extras que quiera ('hired', queda su acuerdo con hora, versión e IP) o no
-   ('nohire', status done) → «Terminó el trámite» ('done'). El total vale 30 días. Nada se cobra en la app (Preguntas #1): se
+   ('nohire', status done) → «Terminó el trámite» ('done'). El total vale sp_total_escrito_dias (Configuración). Nada se cobra en la app (Preguntas #1): se
    paga a la oficina, y lo del gobierno lo paga el cliente a la agencia; To'Latino nunca lo cobra. El servidor calcula el total. */
 type Bi = { es: string; en: string };
 const NUM = /^C-\d{1,10}$/;
@@ -134,7 +134,7 @@ export async function decidirTotal(userId: string, numero: string, acepta: boole
   return r;
 }
 
-/* Barrido: el total que nadie aceptó en 30 días vence (la consulta queda terminada sin contratar). */
+/* Barrido: el total que nadie aceptó a tiempo (valid_until, sp_total_escrito_dias) vence (la consulta queda terminada sin contratar). */
 export async function vencerTotales() {
   const L = (await db().query<{ op: string }>(
     `with v as (update written_totals set status = 'expired' where status = 'sent' and valid_until < now() returning operation_id)

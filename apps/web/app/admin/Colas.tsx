@@ -24,6 +24,7 @@ import type { BorradorCopiloto } from "@/lib/compa/copiloto";
 import { uuid } from "@/lib/uuid";
 import { hoyEn } from "@/lib/fecha-local";
 import { useAhora } from "@/lib/ahora";
+import { horasTxt } from "@/lib/plazo-txt";
 
 import { tec } from "@/lib/tec";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -79,9 +80,10 @@ export function useToast() {
 }
 
 
-export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, conteo, vencidos, total, visibles, caso, puedeAprobar, apelarDias = 0, slas = {}, puedeRepartir = false, ajustes = null, esAdmin = false, cfgTxt = {} }: {
+export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, conteo, vencidos, total, visibles, caso, puedeAprobar, apelarDias = 0, slas = {}, puedeRepartir = false, ajustes = null, esAdmin = false, cfgTxt = {}, ayudaH }: {
   casos: CasoLista[]; hay?: number; pag?: number; porPagina?: number; conteo: Record<string, number>; vencidos: number; total: number; visibles: Cola[]; caso: Caso | null; puedeAprobar: boolean; apelarDias?: number; slas?: Partial<Record<Cola, number>>;
   puedeRepartir?: boolean; ajustes?: AjustesColas | null; esAdmin?: boolean; cfgTxt?: Record<string, number>;
+  ayudaH: number; // 9n-5 · las horas del negocio para responder una ayuda (Configuración · ayuda_negocio_h)
 }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
@@ -307,7 +309,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
       cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "SOLICITUD", v: h.number }, { k: "PEDIDO", v: `#${h.num} · $${(h.total / 100).toFixed(2)}` }, { k: "CLIENTE", v: h.quien }, { k: "QUÉ PASÓ", v: MOT[h.reason] ?? h.reason },
         ...(h.items.length ? [{ k: "PLATOS", v: h.items.map((x) => `${x.q} × ${x.n}`).join(" · ") }] : []), { k: "QUÉ QUIERE", v: Q[h.wants] ?? h.wants }] });
       if (h.body) cuerpoB.push({ type: "note", tone: "ink", icon: "quote", t: `SU NOTA · «${h.body}»` });
-      cuerpoB.push(h.reply ? { type: "note", tone: "info", icon: "chat", t: `RESPUESTA DEL NEGOCIO · «${h.reply}»${h.escalated_by === "user" ? " · el cliente pidió que lo revisemos" : ""}` } : { type: "note", tone: "warn", icon: "clock", t: "El negocio no respondió en 24 horas." });
+      cuerpoB.push(h.reply ? { type: "note", tone: "info", icon: "chat", t: `RESPUESTA DEL NEGOCIO · «${h.reply}»${h.escalated_by === "user" ? " · el cliente pidió que lo revisemos" : ""}` } : { type: "note", tone: "warn", icon: "clock", t: `El negocio no respondió en ${horasTxt(ayudaH, true)}.` });
       cuerpoB.push(...copBloques);
       const plantP = ["Hablamos con el negocio: te reponen lo que faltó.", "Hablamos con el negocio: te devuelven lo de esos platos en el local.", "Gracias por avisar. Se lo dijimos al negocio para que no vuelva a pasar."];
       acts = [
@@ -572,7 +574,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
       <PanelBloques bloques={lista} h1={desk ? 26 : 22} />
       {lote ? <PanelBloques bloques={[lote]} /> : null}
       {desk && !sel ? <A.AdminNote tone="ink" icon="info">Atajos: J siguiente · K anterior · A aprobar · R rechazar.</A.AdminNote> : null}
-      {regla ? <A.AdminNote tone="ink" icon={regla.icon}>{`Plazo de esta cola: ${(cola && slas[cola]) ?? regla.sla} h${regla.regla ? ` · ${textoCola(regla.regla[0], cfgTxt)}` : ""}`}</A.AdminNote> : null}
+      {regla ? <A.AdminNote tone="ink" icon={regla.icon}>{`Plazo de esta cola: ${(cola && slas[cola]) ?? regla.sla} h${regla.regla ? ` · ${textoCola(regla.regla[0], cfgTxt).replace("{horas}", horasTxt(ayudaH, true))}` : ""}`}</A.AdminNote> : null}
       {casos.length ? <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{tarjetas}</div>
         : <PanelBloques bloques={[{ type: "empty", icon: "check", t: "Nada por aquí", s: "Esta cola está al día con los filtros que elegiste." }]} />}
       {/* 9n-3 · De a 50 casos por página (antes se cortaba en 200 sin avisar): el contador y las pestañas cuentan TODOS. */}

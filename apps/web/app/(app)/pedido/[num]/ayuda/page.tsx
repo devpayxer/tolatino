@@ -22,5 +22,5 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // 7d · El Compa primero: donde hoy se abre la «Ayuda con …», la hoja (2as) va antes, sobre la operación. Si no aplica (apagado, al tope, ya hay solicitud…) o falla: lo de siempre.
   const hoja = await hojaAyuda(u, num, (await searchParams).de, ["order"], () => <Operacion params={params} />);
   if (hoja) return hoja;
-  return <Ayuda p={p} puede={a.puede} delivery={a.delivery} lineas={a.lineas} es={lang === "es"} />;
+  return <Ayuda p={p} puede={a.puede} delivery={a.delivery} lineas={a.lineas} plazoH={a.plazoH} es={lang === "es"} />;
 }

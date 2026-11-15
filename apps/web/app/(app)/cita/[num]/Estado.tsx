@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
 import { citaAccion, totalDecidir } from "./acciones";
 import type { CitaVista } from "@/lib/citas";
+import { horasTxt } from "@/lib/plazo-txt";
 import { EstimadoCliente, type PagoEst } from "./EstimadoCliente";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 
@@ -85,7 +86,7 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
   const sal = c.salud;
   if (sal) {
     H.pend = ["clock", "bg-pro/[.18]", "var(--tl-pro-ink)", E2("Solicitud enviada", "Request sent"), E2(`Revisan tu seguro y confirman en unos ${mins}. No se ha cobrado nada.`, `They check your insurance and confirm in about ${mins}. Nothing has been charged.`), E2("PENDIENTE DE CONFIRMAR", "WAITING FOR CONFIRMATION"), "bg-pro/20", "var(--tl-pro-ink)"];
-    if (sal.seg) H.pend = ["warning", "bg-pro/[.18]", "var(--tl-pro-ink)", E2("No aceptan tu seguro", "They do not take your insurance"), E2(`La hora sigue guardada${sal.segHasta ? ` hasta las ${sal.segHasta}` : " 2 horas"}. Puedes seguir con el precio sin seguro o buscar otro consultorio.`, `Your time is held${sal.segHasta ? ` until ${sal.segHasta}` : " 2 hours"}. You can continue at the uninsured price or find another clinic.`), E2("NO ACEPTAN TU SEGURO", "INSURANCE NOT ACCEPTED"), "bg-pro/20", "var(--tl-pro-ink)"];
+    if (sal.seg) H.pend = ["warning", "bg-pro/[.18]", "var(--tl-pro-ink)", E2("No aceptan tu seguro", "They do not take your insurance"), E2(`La hora sigue guardada${sal.segHasta ? ` hasta las ${sal.segHasta}` : ` ${horasTxt(sal.segH, true)}`}. Puedes seguir con el precio sin seguro o buscar otro consultorio.`, `Your time is held${sal.segHasta ? ` until ${sal.segHasta}` : ` ${horasTxt(sal.segH, false)}`}. You can continue at the uninsured price or find another clinic.`), E2("NO ACEPTAN TU SEGURO", "INSURANCE NOT ACCEPTED"), "bg-pro/20", "var(--tl-pro-ink)"];
     H.ok = ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("Cita confirmada", "Visit confirmed"), `${cap(diaL)}${E2(" a las ", " at ")}${horaL(c.m)}. ${sal.acepta ? E2("Aceptaron tu seguro. ", "They took your insurance. ") : ""}${sal.tele ? E2("El enlace del video te llega a tus Avisos 10 minutos antes.", "The video link arrives in your Alerts 10 minutes before.") : E2("Llega 15 minutos antes con tu tarjeta del seguro y una identificación.", "Arrive 15 minutes early with your insurance card and an ID.")}`, E2("CONFIRMADA", "CONFIRMED"), "bg-signal/20", "var(--tl-open-text)"];
     H.done = ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("Cita terminada", "Visit done"), `${cap(diaL)}${E2(" con ", " with ")}${withL}. ${E2("Pagaste en la consulta.", "You paid at the visit.")}`, E2("TERMINADA", "DONE"), "bg-signal/20", "var(--tl-open-text)"];
   }
@@ -169,7 +170,7 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
       : pend ? [["edit", E2("Cambiar", "Change"), () => router.push(`/n/${c.negocio.id}/cita?cambiar=${c.numero}`)], ["close", E2("Cancelar solicitud", "Cancel request"), () => setHoja("cx")]] : [];
   // Doctores: cambiar = cancelar gratis y pedir otra (el consultorio revisa el seguro de nuevo); por video, sin «Cómo llegar».
   const actsV = prof ? (c.paso && c.st === "ok" ? (c.paso === "hired" && !c.ayuda ? [["help", E2("Ayuda con el trámite", "Case help"), () => router.push(`/cita/${c.numero}/ayuda`)]] as [string, string, () => void][] : []) : acts.filter(([i]) => i !== "edit" && !(prof.modo !== "oficina" && i === "pin"))) : sal ? acts.filter(([i]) => i !== "edit" && !(sal.tele && i === "pin")) : hogar && ok ? acts.filter(([i]) => i !== "pin" && i !== "clock") : acts;
-  // Doctores · «No aceptan tu seguro»: la hora sigue guardada 2 h; el paciente elige.
+  // Doctores · «No aceptan tu seguro»: la hora sigue guardada (Configuración · sp_seguro_guardar_h); el paciente elige.
   const segOpc = sal?.seg && pend ? (
     <div data-screen-label="Cita · no aceptan tu seguro" className="flex flex-col gap-2.5 rounded-[20px] border-[1.5px] border-ink bg-white p-4">
       <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("¿QUÉ QUIERES HACER?", "WHAT DO YOU WANT TO DO?")}</div>

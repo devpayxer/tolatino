@@ -10,6 +10,7 @@ import { precioPro, usd } from "@/lib/pro-comun";
 import type { ProPublico } from "@/lib/pro-publico";
 import { horasDeTramite, pedirTramite } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { diasTxt } from "@/lib/plazo-txt";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,7 +24,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const MODO = [["oficina", "En la oficina", "At the office"], ["video", "Por video", "By video"], ["telefono", "Por teléfono", "By phone"]] as const;
 const SIT = [["primera", "Primera vez", "First time"], ["caso", "Ya tengo un caso", "I already have a case"], ["carta", "Me llegó una carta", "I got a letter"], ["fecha", "Tengo fecha límite", "I have a deadline"]] as const;
 
-export function Tramite({ pp, svcId, con0, es, yo }: { pp: ProPublico; svcId: string; con0: string; es: boolean; yo: boolean }) {
+export function Tramite({ pp, svcId, con0, notaDias, es, yo }: { pp: ProPublico; svcId: string; con0: string; notaDias: number; es: boolean; yo: boolean }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
   const s = pp.servicios.find((x) => x.id === svcId)!, nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es), legal = pp.h.legal;
@@ -79,7 +80,7 @@ export function Tramite({ pp, svcId, con0, es, yo }: { pp: ProPublico; svcId: st
       <div>
         <div className="flex justify-between gap-2.5"><span className={K}>{E2("NOTA PARA LA OFICINA · OPCIONAL", "NOTE FOR THE OFFICE · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length}/300</span></div>
         <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 300))} rows={3} aria-label={E2("Nota para la oficina", "Note for the office")} placeholder={E2("Ej.: es para renovar; vence en noviembre", "E.g. it is a renewal; it expires in November")} className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
-        <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/55">{E2("Solo lo ve la oficina; nunca sale en reseñas. No escribas números de caso, A-number ni documentos. Se borra 30 días después.", "Only the office sees it; never in reviews. Do not write case numbers, A-numbers or documents. Deleted 30 days later.")}</div>
+        <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/55">{E2(`Solo lo ve la oficina; nunca sale en reseñas. No escribas números de caso, A-number ni documentos. Se borra ${diasTxt(notaDias, true)} después.`, `Only the office sees it; never in reviews. Do not write case numbers, A-numbers or documents. Deleted ${diasTxt(notaDias, false)} later.`)}</div>
       </div>
     </div>
   );

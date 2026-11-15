@@ -1,12 +1,13 @@
 "use client";
 /* APP-NEG-PEDIDO-AYUDA · móvil y desktop (prototipo helpVals, pedido entregado): qué pasó (falta, equivocado, frío, dañado y,
    en delivery, tarde o no llegó; pago; otro), qué platos y cuántos, qué te gustaría y un detalle. Todo es una solicitud al
-   negocio: responde en 24 horas; si no, To'Latino revisa. Con tarjeta, la devolución vuelve a la tarjeta; en el local, se arregla con el negocio. */
+   negocio: responde en las horas de Configuración (ayuda_negocio_h, `plazoH`); si no, To'Latino revisa. Con tarjeta, la devolución vuelve a la tarjeta; en el local, se arregla con el negocio. */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { ItemAyuda, Motivo, Quiere } from "@/lib/ayuda";
 import type { PedidoVista } from "@/lib/pedir";
+import { horasTxt } from "@/lib/plazo-txt";
 import { ayudaPedir } from "../acciones";
 
 type N = "Icon" | "Button";
@@ -16,7 +17,7 @@ const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-[15px]";
 const POR_PLATO = new Set<Motivo>(["falta", "equivocado", "frio", "danado"]);
 
-export function Ayuda({ p, puede, delivery, lineas, es }: { p: PedidoVista; puede: boolean; delivery: boolean; lineas: ItemAyuda[]; es: boolean }) {
+export function Ayuda({ p, puede, delivery, lineas, plazoH, es }: { p: PedidoVista; puede: boolean; delivery: boolean; lineas: ItemAyuda[]; plazoH: number; es: boolean }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
   const [k, setK] = useState<Motivo | null>(null), [sel, setSel] = useState<Record<string, number>>({}), [quiere, setQuiere] = useState<Quiere>("avisar");
@@ -51,7 +52,7 @@ export function Ayuda({ p, puede, delivery, lineas, es }: { p: PedidoVista; pued
     <div className={caja}><div className="text-[14px] font-bold">{E2("La ayuda se pide cuando ya recibiste el pedido, hasta 7 días después.", "Help can be asked once you got the order, up to 7 days after.")}</div>
       <div className="mt-1.5 text-[12.5px] font-medium leading-[1.5] text-ink/60">{E2(`Si necesitas algo ahora, llama a ${p.negocio.nombre}.`, `If you need something now, call ${p.negocio.nombre}.`)}</div></div>);
   else if (step === "home") cuerpo = (<>
-    <div className="px-1 text-pretty text-[13px] font-medium leading-[1.55] text-ink/60">{E2(`Todo es una solicitud a ${p.negocio.nombre}: responde en 24 horas; si no, To’Latino revisa.`, `Everything is a request to ${p.negocio.nombre}: they reply within 24 hours; if not, To’Latino reviews it.`)}</div>
+    <div className="px-1 text-pretty text-[13px] font-medium leading-[1.55] text-ink/60">{E2(`Todo es una solicitud a ${p.negocio.nombre}: responde en ${horasTxt(plazoH, true)}; si no, To’Latino revisa.`, `Everything is a request to ${p.negocio.nombre}: they reply within ${horasTxt(plazoH, false)}; if not, To’Latino reviews it.`)}</div>
     <div className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">
       {keys.map((x, j) => (
         <button key={x} type="button" onClick={() => { setK(x); setPaso(0); setSel({}); setQuiere(delivery && (POR_PLATO.has(x) || x === "nollego") ? "reponer" : "avisar"); }} className={`flex w-full items-center gap-3 px-4 py-3.5 text-left ${j ? "border-t border-ink/[.07]" : ""}`}>
@@ -96,7 +97,7 @@ export function Ayuda({ p, puede, delivery, lineas, es }: { p: PedidoVista; pued
         className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] text-ink outline-none" />
     </div>
     <div className="flex items-start gap-2.5 rounded-[14px] bg-ink/[.04] px-3.5 py-3"><span className="grid flex-none pt-px"><Icon name="clock" size={15} color="rgba(11,14,18,.6)" /></span>
-      <span className="text-pretty text-[12px] font-medium leading-[1.55] text-ink/[.68]">{E2(`${p.negocio.nombre} responde en 24 horas. Lo ves en tu pedido. Si no responde, To’Latino revisa tu caso.`, `${p.negocio.nombre} replies within 24 hours. You see it on your order. If they don't, To’Latino reviews your case.`)}</span></div>
+      <span className="text-pretty text-[12px] font-medium leading-[1.55] text-ink/[.68]">{E2(`${p.negocio.nombre} responde en ${horasTxt(plazoH, true)}. Lo ves en tu pedido. Si no responde, To’Latino revisa tu caso.`, `${p.negocio.nombre} replies within ${horasTxt(plazoH, false)}. You see it on your order. If they don't, To’Latino reviews your case.`)}</span></div>
   </>);
   const falta = step === "platos" ? !items.length : step === "det" ? k === "otro" && !txt.trim() : true;
   const boton = puede && step !== "home" && (
