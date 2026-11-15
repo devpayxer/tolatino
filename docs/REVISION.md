@@ -4971,3 +4971,11 @@ ese día (si no abre, 6 h); un día cerrado se salta.
 **Pendiente de tu decisión:** el prototipo trae «Panel del dueño» (que el equipo de To'Latino abra el panel de un negocio) y «Ver como cliente» de un
 negocio oculto. Los dos dejan ver lo que el negocio o el público no ven; lo seguro es un modo **solo lectura** del equipo, con aviso en pantalla y
 cada apertura en la auditoría. ¿Lo hacemos así?
+
+## Fase 9 · 9n-14 a 9n-16 (15 nov)
+**Qué mirar:**
+- Bienes Raíces / dealer: un día especial con otras horas (Panel › Horario) y pedir una cita ese día: solo salen esas horas.
+- «Publica tu negocio»: una subcategoría nueva del Catálogo sale al buscar «¿Qué haces?»; una quitada ya no.
+- Panel de un servicio del hogar (o de renta de camionetas) › Lo que vendes › Tu herramienta › **Lo que rentas**: tocar un artículo,
+  cambiar precio, depósito, unidades y fotos; «Agregar algo para rentar»; «Quitar de la lista». **Pantalla compuesta con piezas del
+  sistema (el diseño no la trae):** dime si la quieres distinta.

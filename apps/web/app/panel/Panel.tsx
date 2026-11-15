@@ -60,6 +60,8 @@ import { hoyVis, visDetalleBloques, visitasBloques, type VisP } from "./Visitas"
 import { herramientaRetailBloques } from "./Retail";
 import type { HerrRetail } from "@/lib/retail-comun";
 import type { OfiPanel } from "@/lib/oficios";
+import type { ArtPanel } from "@/lib/rentas";
+import { articuloRentaEditor } from "./RentaArticulo";
 import type { SvcPanel } from "@/lib/servicios";
 import { novBloques, novDetalle, type NovData } from "./NovedadesPanel";
 import { cupBloques, cupDetalle, hoyCupon, type CupData } from "./CuponesPanel";
@@ -130,10 +132,10 @@ export type Ctx = {
      sinCompraDigitalEnApp): ningún botón ni enlace para comprarlo, solo el estado del plan. Lo decide el servidor (lib/tiendas/reglas.ts). */
   compraPro: boolean;
   ahora: number; // 9b-1 · el «ahora» de los tiempos relativos (lib/ahora.tsx)
-  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData; nav: (href: string) => void; cpa?: CpaPanel | null; cpaAuto?: AutoPanel | null;
+  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData; arts?: ArtPanel[]; nav: (href: string) => void; cpa?: CpaPanel | null; cpaAuto?: AutoPanel | null;
 };
 
-function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp }: { cpa?: CpaPanel | null; cpaAuto?: AutoPanel | null; d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; compraPro: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData }) {
+function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp, arts }: { cpa?: CpaPanel | null; cpaAuto?: AutoPanel | null; d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; compraPro: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData; arts?: ArtPanel[] }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
@@ -181,7 +183,7 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
   // 8c · «Avisos del panel en este teléfono» (Más › Tus apps).
   const tel = useEsteTelefono(es, toast);
-  const ctx: Ctx = { ahora, d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, compraPro, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp, nav, cpa, cpaAuto, tel };
+  const ctx: Ctx = { ahora, d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, compraPro, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp, arts, nav, cpa, cpaAuto, tel };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -432,6 +434,7 @@ function detalle(c: Ctx): Sec | null {
   if (id.startsWith("cita:")) return citaDetalle(c);
   if (id.startsWith("sol:")) return solicitudDetalle(c);
   if (id.startsWith("renta:")) return rentaDetalle(c);
+  if (id.startsWith("art:")) return articuloRentaEditor(c, id.slice(4));
   if (id.startsWith("apt:")) return apartadoDetalle(c);
   if (id.startsWith("merc:")) return mercadoDetalle(c);
   if (id.startsWith("fiesta:")) return fiestaDetalle(c);

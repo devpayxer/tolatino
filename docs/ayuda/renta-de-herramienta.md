@@ -19,8 +19,12 @@ alfombras). En la pestaña **Tienda** ves el precio por día, el depósito y cu�
 - Hoy › **Rentas**: apartadas (con el día que recogen), las que tiene la gente (con el día que devuelven y si van tarde) y
   las devueltas con algo pendiente. En el detalle: **La recogió**, **La devolvió**, **La devolvió con un daño** y
   **Cancelar el apartado**.
-- Tu herramienta › «Renta de herramienta · apartada 48 h»: un interruptor por artículo (apagado = no sale en tu Tienda; lo
-  ya apartado sigue). También están ahí tus planes con su interruptor.
+- Tu herramienta › **Lo que rentas**: cada artículo abre su editor: fotos (hasta 4; la primera sale en tu Tienda), nombre,
+  qué incluye, **precio por día** (dólares enteros; la semana cuesta 5 días), **depósito** (de 5 en 5) y **cuántas tienes**.
+  En Transporte, también las millas incluidas por día y la milla de más. **Sale en tu Tienda** lo enciende o lo apaga
+  (apagado = no se aparta; lo ya apartado sigue). **Agregar algo para rentar** abre uno nuevo. **Quitar de la lista** lo
+  saca (queda en tu historial) y solo se puede cuando nadie lo tiene apartado ni rentado. No puedes bajar las unidades por
+  debajo de las que la gente tiene ahora. También están ahí tus planes con su interruptor.
 - Para rentar en la app necesitas tu cuenta de cobro conectada (Cobros y plan). La comisión de To'Latino es la de rentas.
 
 ## Qué pasa en cada caso
@@ -62,3 +66,10 @@ Some home-service businesses rent tools by the day. The **Shop** tab shows the d
 | Returned late | Each late day comes out of the deposit; the rest is released. |
 | Returned damaged | Photo and amount first; you accept or disagree (To'Latino reviews). |
 | Kept more than 7 days | The deposit hold renews automatically. |
+
+### For the business: what you rent
+In Your tool › **What you rent**, each item opens its editor: photos (up to 4; the first shows in your Shop), name, what's
+included, **daily price** (whole dollars; a week costs 5 days), **deposit** (in $5 steps) and **how many you have**. For
+Transportation, also the miles included per day and each extra mile. **Shows in your Shop** turns it on or off (off = it can't
+be held; existing holds continue). **Add something to rent** opens a new one. **Remove from the list** takes it out (it stays in
+your history) and only works when nobody has it on hold or rented. You can't set fewer units than people have right now.

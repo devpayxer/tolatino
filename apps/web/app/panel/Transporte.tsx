@@ -6,6 +6,7 @@
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { resumenTrans, tituloTrans } from "@/lib/transporte-comun";
 import { transFuera, transGuardar, transSalida } from "./acciones-transporte";
+import { filasRenta } from "./RentaArticulo";
 import type { Ctx, Sec } from "./Panel";
 
 const usd = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
@@ -57,5 +58,6 @@ export function herramientaTransBloques(c: Ctx): Sec {
     lock(E2("Si no sales, se devuelve todo", "If you do not run, everything is refunded"), E2("A cada pasajero, con aviso.", "To every passenger, with notice.")),
   ] });
   if (h.forzado) out.push({ type: "note", tone: "info", icon: "info", t: E2("To’Latino ajustó el tipo de tu negocio. Si no es correcto, escríbenos.", "To’Latino adjusted your business type. If it is wrong, write to us."), cta: E2("Escribir a Soporte", "Write to Support"), onCta: () => window.location.assign(`/soporte?negocio=${encodeURIComponent(c.d.id)}&nuevo=1&tema=cuenta`) });
+  out.push(...filasRenta(c)); // 9n-16 · lo que se renta (camionetas, remolques): agregar y editar
   return { blocks: out, ed: null };
 }

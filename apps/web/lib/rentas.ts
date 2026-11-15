@@ -54,6 +54,19 @@ export async function tiendaPublica(negocio: string): Promise<ArticuloRenta[]> {
       order by i.sort, i.id limit 60`, [negocio])).rows.map((x) => ({ ...x, d: { es: x.d?.es ?? "", en: x.d?.en ?? "" } }));
 }
 
+/* ── 9n-16 · Lo que se renta, para el editor del panel: las unidades = las libres (stock_left) + las que la gente tiene apartadas o
+   fuera (rentals vivas); el panel nunca deja bajar de esas. Vehículo (Transporte): millas incluidas por día y la milla de más. ── */
+export type ArtPanel = { id: string; n: Bi; d: Bi; p: number; dep: number; libres: number; vivas: number; fotos: string[]; on: boolean; veh: boolean; mpd: number | null; mi: number | null };
+export async function articulosRentaPanel(negocio: string): Promise<ArtPanel[]> {
+  return (await db().query<ArtPanel>(
+    `select i.id::text, i.name as n, coalesce(i.descr, '{}'::jsonb) as d, i.price_cents as p, i.deposit_cents as dep, greatest(i.stock_left, 0) as libres,
+            (select count(*)::int from rentals r where r.item_id = i.id and r.status in ('held', 'out')) as vivas, coalesce(i.photos, '{}') as fotos, i.sell as on,
+            b.category_id = 'NEG-TRANS' as veh, (i.svc_attrs->>'mpd')::int as mpd, (i.svc_attrs->>'mi')::int as mi
+       from items i join businesses b on b.id = i.business_id
+      where i.business_id = $1 and i.module = 'renta' and i.removed_at is null order by i.sort, i.id limit 60`, [negocio])).rows
+    .map((x) => ({ ...x, d: { es: x.d?.es ?? "", en: x.d?.en ?? "" } }));
+}
+
 /* ── Opciones para apartar: el artículo, los días para recoger (hoy si sigue abierto, mañana y el sábado) ── */
 export type DiaRecoger = { f: string; k: "hoy" | "man" | "dia"; a: string; z: string; h24: boolean };
 export type OpcionesRenta = { art: ArticuloRenta; dias: DiaRecoger[]; tarjeta: boolean; negocio: { id: string; nombre: string; dir: string } };

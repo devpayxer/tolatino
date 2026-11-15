@@ -34,12 +34,13 @@ import { conversacionNegocio, hilosNegocio } from "@/lib/mensajes";
 import { serviciosPanel } from "@/lib/servicios";
 import { herramientaRetail, rubroRetail } from "@/lib/retail";
 import { faltaAceptar } from "@/lib/legal";
+import { articulosRentaPanel } from "@/lib/rentas";
 import { HojaTerminos } from "../../../(app)/HojaTerminos";
 
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
 const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic", "resenas", "nov", "cup", "dir"]);   // 9m · «dir»: Dirección y mapa
-const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|cup:(new|edit:\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|noche:N-\d{1,10}|insc:I-\d{1,10}|vis:D-\d{1,10}|grp:(new|list):\d{1,18}|fe:hor:new|inm:(new|\d{1,18})|auto:(new|\d{1,18})|sol:[PQE]-\d{1,10}|renta:T-\d{1,10}|apt:A-\d{1,10}|merc:M-\d{1,10}|fiesta:F-\d{1,10}|evp:(aj|EP-\d{1,10})|viaje:V-\d{1,10}|salida:\d{1,18}|evt:(new(:[a-z]{2,12})?|edit:\d{1,18}|\d{1,18}(@\d{1,18})?)|door:\d{1,18}@\d{1,18})$/;
+const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|cup:(new|edit:\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|noche:N-\d{1,10}|insc:I-\d{1,10}|vis:D-\d{1,10}|grp:(new|list):\d{1,18}|fe:hor:new|inm:(new|\d{1,18})|auto:(new|\d{1,18})|sol:[PQE]-\d{1,10}|renta:T-\d{1,10}|art:(new|\d{1,18})|apt:A-\d{1,10}|merc:M-\d{1,10}|fiesta:F-\d{1,10}|evp:(aj|EP-\d{1,10})|viaje:V-\d{1,10}|salida:\d{1,18}|evt:(new(:[a-z]{2,12})?|edit:\d{1,18}|\d{1,18}(@\d{1,18})?)|door:\d{1,18}@\d{1,18})$/;
 const FILTROS = new Set(["all", "pend", "cur", "done", "no"]);
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string; vuelta?: string }> }) {
@@ -301,6 +302,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // 6i · Evento privado (restaurantes): las solicitudes en Hoy y su detalle piden «Hoy y pedidos»; los ajustes (Reservaciones › Evento privado),
   // «Lo que vendes». Solo de este negocio (evpPanel filtra por negocio).
   if (ruta.det?.startsWith("evp:") && !(food && (ruta.det === "evp:aj" ? catOk : ord))) ruta.det = null;
+  // 9n-16 · Lo que se renta (editor del panel): en Lo que vendes y en su detalle, si la página tiene «Renta».
+  const arts = d.mods.includes("renta") && (ruta.sec === "mod" || ruta.det?.startsWith("art:")) ? await articulosRentaPanel(d.id) : undefined;
   const evp = food ? await (async () => {
     const E = await import("@/lib/evento-privado"), { valores } = await import("@/lib/config"), { tarjetaDe } = await import("@/lib/cobros");
     const ajOn = catOk && ((ruta.sec === "mod" && ruta.sub === "reservaciones") || ruta.det === "evp:aj");
@@ -316,5 +319,5 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const cpaAuto = ruta.sec === "cpa" && RA ? await RA.ajustesAuto(d.id, acc.partes).catch(() => null) : undefined;
   // 9e · La hoja «Aceptar los términos nuevos» también en Hoy del panel (la pantalla de inicio de la app Negocios), sin un detalle abierto.
   const faltan = ruta.sec === "hoy" && !ruta.det ? await faltaAceptar(u.id).catch(() => []) : [];
-  return <>{faltan.length ? <HojaTerminos es={lang === "es"} faltan={faltan} /> : null}<Panel cpa={cpa} cpaAuto={cpaAuto} d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} compraPro={await (await import("@/lib/tiendas/reglas")).compraDigitalAqui()} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} evp={evp} /></>;
+  return <>{faltan.length ? <HojaTerminos es={lang === "es"} faltan={faltan} /> : null}<Panel cpa={cpa} cpaAuto={cpaAuto} d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} compraPro={await (await import("@/lib/tiendas/reglas")).compraDigitalAqui()} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} evp={evp} arts={arts} /></>;
 }

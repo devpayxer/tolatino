@@ -7,8 +7,9 @@ import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { subirFoto } from "@/lib/subir-foto";
 import type { Attrs, Bi, OfiPanel, Oficio, Rubro } from "@/lib/oficios";
 import { detalleL, precioL } from "@/lib/oficios-texto";
-import { citasOficioGuardar, herramientaGuardar, oficioGuardar, rentaVisible, type CitasOficioIn, type OficioForm } from "./acciones-oficios";
+import { citasOficioGuardar, herramientaGuardar, oficioGuardar, type CitasOficioIn, type OficioForm } from "./acciones-oficios";
 import { citasModulo, servicioMover, servicioQuitar, servicioVisible } from "./acciones-servicios";
+import { filasRenta } from "./RentaArticulo";
 import type { Ctx, Sec } from "./Panel";
 
 const money = (c: number) => { const d = (Number(c) || 0) / 100; return `$${d % 1 ? d.toFixed(2) : Math.round(d).toLocaleString("en-US")}`; };
@@ -220,8 +221,7 @@ export function herramientaBloques(c: Ctx): Sec {
       // dash2-cat.js blocksB: un interruptor por plan y por artículo que renta (apagado = no sale en tu página; lo ya empezado sigue).
       planesL.length ? { type: "rows", k: E2("PLANES · COBRO CADA MES", "PLANS · BILLED MONTHLY"), cols: cols2, items: planesL.map((p): Fila => ({ icon: "calendar", t: c.es ? p.name.es : p.name.en || p.name.es, s: E2(`${money(p.cents)} al mes · primer cobro el día de la primera visita`, `${money(p.cents)} a month · first charge on the first visit`), tgOn: !p.oculto,
         onTg: () => c.run(() => servicioVisible(c.d.id, p.id, p.oculto), p.oculto ? E2("El plan ya sale en tu página.", "The plan now shows on your page.") : E2("Plan apagado: no sale en tu página. Los que ya lo tienen siguen.", "Plan off: not on your page. Existing plans continue.")) })) } : null,
-      X.rentas.length ? { type: "rows", k: E2("RENTA DE HERRAMIENTA · APARTADA 48 H", "TOOL RENTAL · HELD 48 H"), cols: cols2, items: X.rentas.map((r): Fila => ({ icon: "wrench", t: c.es ? r.n.es : r.n.en || r.n.es, s: E2(`${money(r.p)} por día · depósito ${money(r.dep)} (se libera al devolver)`, `${money(r.p)} a day · deposit ${money(r.dep)} (released on return)`), tgOn: r.on,
-        onTg: () => c.run(() => rentaVisible(c.d.id, r.id, !r.on), r.on ? E2("Apagado: no sale en tu Tienda. Lo ya apartado sigue.", "Off: not in your Shop. Existing holds continue.") : E2("Ya sale en tu Tienda.", "Now shows in your Shop.")) })) } : null,
+      ...filasRenta(c), // 9n-16 · cada artículo abre su editor (nombre, precio, depósito, unidades, fotos y si sale en tu Tienda)
       { type: "rows", k: E2("REGLAS · NO SE APAGAN", "RULES · ALWAYS ON"), cols: cols2, items: [lock(E2("Precio completo antes de empezar", "Full price before starting"), E2("Presupuesto por línea; materiales con precio antes de comprarlos.", "Line-by-line quote; materials priced before buying.")),
         lock(E2("La visita se descuenta", "The visit is credited"), E2("Si el cliente aprueba el trabajo.", "If the customer approves the work.")), lock(E2("Impuesto solo en materiales", "Tax on materials only"), E2("6 % de PA sobre materiales.", "6% PA tax on materials."))] });
   }
