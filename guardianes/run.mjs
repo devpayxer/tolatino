@@ -9374,6 +9374,17 @@ const guardianes = {
     }
   },
 
+  /* 9n-8 · botonEsRole: los botones del sistema de diseño (Button, acciones de AdminRow, chips) son [role=button], no <button>: una prueba que busca
+     `locator('button')` a secas nunca los encuentra (neg9n8 se quedó sin «Fusionar» en el CI, 15 nov). Se busca 'button, [role=button]' o por
+     rol/texto. Al revés (alreves9n). */
+  botonEsRole() {
+    const G = "botonEsRole";
+    for (const f of readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs")).map((y) => `pruebas/e2e/${y}`)) {
+      const t = readFileSync(f, "utf8");
+      for (const m of t.matchAll(/locator\((['"`])button\1\)/g)) falla(G, f, t.slice(0, m.index).split("\n").length, "busca <button> a secas: los botones del sistema de diseño son [role=button] (usa 'button, [role=button]' o getByRole)");
+    }
+  },
+
   /* 9n-9 · cifrasUsuarioDerivadas: las cifras de una persona (pedidos, citas, reportes) son un DERIVADO (user_stats_cache, 0159) que solo escribe la
      base (user_stats_refresh, por sus triggers): el código nunca la escribe, y la lista de Usuarios filtra y ordena por ella, nunca contando
      operaciones o reportes de cada fila (con 1 M de vecinos eso es una vista de segundos). La pestaña Dinero del 360° solo la lee quien ve

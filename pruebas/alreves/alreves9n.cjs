@@ -82,6 +82,8 @@ const crear = [
   ['diaEspecialActivo', 'packages/db/migrations/0199_zz9n.sql', 'begin;\ndelete from special_hours where date_to < current_date;\ncommit;\n'],
   // sinTelefonoAlRepartidor: una pantalla nueva del Repartidor con el teléfono del cliente
   ['sinTelefonoAlRepartidor', 'apps/web/app/repartidor/zz9n.tsx', 'export const x = (o: { telCliente: string }) => o.telCliente;\n'],
+  // botonEsRole (9n-8): una prueba nueva que busca <button> a secas
+  ['botonEsRole', 'pruebas/e2e/zz9n8.cjs', "module.exports = (p) => p.locator('div').filter({ has: p.locator('button') });\n"],
   // cifrasUsuarioDerivadas (9n-9): una acción nueva que escribe la cifra a mano
   ['cifrasUsuarioDerivadas', 'apps/web/app/admin/zz9n9.ts', 'export const q = "update user_stats_cache set reportes = 0 where user_id = $1";\n'],
   // cambioNegocioOtraPersona (9n-8): una pantalla nueva del admin que aplica la fusión directo

@@ -28,7 +28,8 @@ const espera = async (f, ms = 12000) => { const t = Date.now(); while (Date.now(
 const texto = async (p) => (await p.innerText('body')).replace(/\s+/g, ' ');
 const contiene = (p, t, ms) => espera(async () => (t instanceof RegExp ? t.test(await texto(p)) : (await texto(p)).includes(t)), ms);
 const boton = (p, t) => p.locator('button, [role=button]').filter({ hasText: t instanceof RegExp ? t : new RegExp(`^${t}$`) });
-const fila = (p, t) => p.locator('div').filter({ hasText: t }).filter({ has: p.locator('button') });
+// La fila (AdminRow) que tiene el texto y su acción: los botones del sistema de diseño son [role=button], no <button>.
+const fila = (p, t, accion) => p.locator('div').filter({ hasText: t }).filter({ has: p.locator('[role=button]').filter({ hasText: new RegExp(`^${accion}$`) }) });
 const ID = crypto.randomBytes(3).toString('hex');
 const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'es-US' }, D = { viewport: { width: 1360, height: 900 }, locale: 'es-US' };
 
@@ -73,7 +74,7 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
 
     // ── 2 · Fusionar ──
     console.log('2 · Fusionar → Cambios sensibles → otra persona lo aplica');
-    const fF = fila(a, F2.nombre).filter({ hasText: F1.nombre }).last();
+    const fF = fila(a, F2.nombre, 'Fusionar').filter({ hasText: F1.nombre }).last();
     await clic(fF.getByText('Fusionar', { exact: true }));
     ok(await contiene(a, 'Elige cuál queda'), 'la confirmación pide cuál queda');
     await clic(a.getByText(`${F1.nombre} queda`, { exact: true }));
@@ -106,7 +107,7 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
     // ── 3 · No es duplicado ──
     console.log('3 · No es duplicado');
     await a.goto(B + '/admin/negocios?vista=dup');
-    const fN = fila(a, N2.nombre).filter({ hasText: N1.nombre }).last();
+    const fN = fila(a, N2.nombre, 'No es duplicado').filter({ hasText: N1.nombre }).last();
     await clic(fN.getByText('No es duplicado', { exact: true }));
     await clic(a.getByText('Son negocios distintos', { exact: true }));
     await clic(boton(a, 'Guardar').last());
@@ -154,7 +155,7 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
       if (!sig) break; await sig.click(); await dormir(600);
     }
     ok(encontrado, 'el negocio sin dueño sale en «Sin reclamar»');
-    await clic(fila(a, N2.nombre).last().getByText('Invitar a reclamar', { exact: true }));
+    await clic(fila(a, N2.nombre, 'Invitar a reclamar').last().getByText('Invitar a reclamar', { exact: true }));
     await clic(a.getByText('Lo recomendaron vecinos', { exact: true }));
     await clic(boton(a, 'Enviar el SMS').last());
     ok(await contiene(a, 'Invitación enviada por SMS'), 'sale la invitación');
