@@ -6443,7 +6443,7 @@ const guardianes = {
       if (!re.test(pt)) falla(G, M, 0, `pase_tocar: ${que}`);
     if (!/coalesce\(current_setting\('tl\.pase', true\), ''\) <> 'si' then\s+raise exception/.test(ultimaFn("ticket_passes_antes"))) falla(G, M, 0, "la versión y el estado de un pase solo los cambia pase_tocar (marca tl.pase)");
     // (2) Lo que una escritura cambia de un boleto, el trigger lo mira (más lo que siempre acompaña al estado).
-    const OK = new Set([...vigila, "void_reason", "replaced_by", "updated_at"]);
+    const OK = new Set([...vigila, "void_reason", "replaced_by", "updated_at", "door_name"]); // door_name (0165): el nombre derivado para buscar en la Puerta; el pase no lo muestra
     const textos = [...codigo.filter((f) => /^apps\/web\/.*\.tsx?$/.test(f)).map((f) => [f, sinComent(f)]),
       ...readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).map((x) => [`packages/db/migrations/${x}`, readFileSync(`packages/db/migrations/${x}`, "utf8").replace(/--.*$/gm, "")])];
     for (const [f, t] of textos) for (const u of t.matchAll(/update tickets set ([\s\S]*?)\s+(?:where|from|returning)\b/g)) {

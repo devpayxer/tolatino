@@ -2362,3 +2362,4 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **9n-14 · Visitas con las horas de un día especial:** **0164** `negocio_rangos_dia`; visitas-inm (horas y plazo) la usan; guardián ampliado (al revés 48/48); vis4ie §10b. L252 «Devolver dinero» ya existía (cerrada).
 - **9n-15 · Publica tu negocio sigue al Catálogo:** subcategorías nuevas salen y las apagadas no (`catalogoVivo`); cat1m §4b. Configuración en solo lectura: cerrada (solo `pagos_banco_dia`, por decisión).
 - **9n-16 · Editor de lo que se renta** en el panel (Hogar y Transporte): agregar, editar, encender/apagar y quitar; unidades nunca por debajo de las vivas. renta4f §10–11.
+- **9n-17 · Puerta: buscar por nombre con índice** (**0165** `tickets.door_name` derivado + trigramas); la carga `eventos` lo mide.

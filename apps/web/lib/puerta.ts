@@ -292,7 +292,8 @@ async function filas(ctx: CtxPuerta, f: FiltroF, es: boolean): Promise<FilaPuert
   if (f.orden) { wT.push(`o.number = ${p(f.orden)}`); wR.push("false"); }
   if (f.nom) {
     const x = p(`%${f.nom.replace(/[%_\\]/g, "")}%`);
-    wT.push(`unaccent(lower(coalesce(t.comp_name, '') || ' ' || coalesce(t.holder_name, '') || ' ' || coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, ''))) like unaccent(${x})`);
+    // 0165 · el nombre de puerta derivado (cortesía, titular y cuenta, sin acentos) con su índice de trigramas: no recorre la fecha entera.
+    wT.push(`t.door_name like tl_unaccent(${x})`);
     wR.push(`unaccent(lower(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, ''))) like unaccent(${x})`);
   }
   const k = f.filtro ?? "todos";
