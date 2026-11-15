@@ -21,8 +21,8 @@ export async function accesoPanel(negocioId: string, parte?: string): Promise<Ac
   const r = (await db().query<{ id: string; name: string; city_id: string; category_id: string; status: string; kind: Acceso["kind"]; panel_access: string[] }>(
     `select b.id, b.name, b.city_id, b.category_id, b.status, m.kind, m.panel_access
        from business_members m join businesses b on b.id = m.business_id
-      where m.business_id = $1 and m.user_id = $2 and m.status = 'active' and b.status <> 'merged'
-      order by (m.kind = 'owner') desc limit 1`, [negocioId, me.id])).rows[0];
+      where m.business_id = $1 and m.user_id = $2 and m.status = 'active' and m.panel_off_at is null and b.status <> 'merged'
+      order by (m.kind = 'owner') desc limit 1`, [negocioId, me.id])).rows[0]; // 9n-13 · sin acceso si To'Latino se lo quitó (panel_off_at)
   if (!r) return null;
   const partes = r.kind === "owner" ? ["all"] : r.panel_access ?? [];
   if (parte && !partes.includes("all") && !partes.includes(parte)) return null;
@@ -39,7 +39,7 @@ export async function misNegocios(userId: string) {
             (select to_char(x.trial_ends_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') from subscriptions x where x.business_id = b.id and x.status = 'trial') as until,
             (select round(extract(epoch from x.trial_ends_at - x.trial_started_at) / 86400)::int from subscriptions x where x.business_id = b.id and x.status = 'trial') as days
        from business_members m join businesses b on b.id = m.business_id left join business_stats_cache s on s.business_id = b.id
-      where m.user_id = $1 and m.status = 'active' and b.status <> 'merged'
+      where m.user_id = $1 and m.status = 'active' and m.panel_off_at is null and b.status <> 'merged'
       order by (m.kind = 'owner') desc, b.created_at`, [userId])).rows;
 }
 

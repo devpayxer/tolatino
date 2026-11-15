@@ -49,6 +49,7 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
        update queue_items set status = 'decided', decision = 'prueba', decided_at = now() where status = 'open' and business_id in (${MIOS});
        update sensitive_changes set status = 'rejected', decided_by = '${BU}', decided_at = now(), decision_reason = 'prueba' where status = 'pending' and target_id in (${MIOS});
        update staff_members set status = 'removed' where user_id in ('${AU}', '${BU}');
+       update business_members set status = 'removed', removed_reason = 'left', removed_at = now() where business_id in (${MIOS}) and kind = 'staff' and status = 'active';
        update sessions set signed_out_at = now() where user_id in ('${AU}', '${BU}') and signed_out_at is null;`);
   sql(`insert into staff_members (user_id, role, cities, status, added_by) values ('${AU}', 'admin', '{}', 'active', '${AU}'), ('${BU}', 'admin', '{}', 'active', '${AU}')
        on conflict (user_id) do update set role = excluded.role, cities = excluded.cities, status = 'active';
@@ -143,6 +144,29 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
     ok(sql(`select owner_user_id from businesses where id = '${C1.id}'`) === VU, 'Nora es la dueña');
     ok(sql(`select count(*) from business_members where business_id = '${C1.id}' and user_id = '${VU}' and kind = 'owner' and status = 'active'`) === '1', 'entra al panel como dueña');
     ok(sql(`select count(*) from notifications where user_id = '${VU}' and tpl = 'biz_transferido_nuevo'`) === '1', 'le llega su aviso (biz_transferido_nuevo)');
+
+    // ── 4b · 9n-13 · Equipo › Quitar acceso al panel (y devolverlo) ──
+    console.log('4b · Quitar y devolver el acceso al panel a alguien del equipo');
+    sql(`insert into business_members (business_id, user_id, kind, display_name, phone, panel_access, status) values ('${C1.id}', '${BU}', 'staff', 'Beto Ocho${ID}', '+1${AD2}', '{all}', 'active')`);
+    await b.goto(B + `/panel/${C1.id}`);
+    ok(!(await contiene(b, 'Sin acceso a esta área', 1500)), 'Beto, del equipo del negocio, entra al panel');
+    await a.goto(B + `/admin/negocios/${C1.id}?tab=equipo`);
+    await clic(fila(a, `Beto Ocho${ID}`, 'Quitar acceso').last().getByText('Quitar acceso', { exact: true }));
+    await clic(a.getByText('Lo pidió el dueño por Soporte', { exact: true }));
+    await clic(boton(a, 'Quitar acceso').last());
+    ok(await contiene(a, 'Ya no entra al panel'), 'el equipo de To’Latino le quita el acceso');
+    ok(sql(`select (panel_off_at is not null)::text || '|' || cardinality(panel_access) from business_members where business_id = '${C1.id}' and user_id = '${BU}'`) === 'true|1', 'queda marcado sin acceso; lo que el dueño le dio no cambia');
+    ok(sql(`select count(*) from notifications where user_id = '${VU}' and tpl = 'biz_equipo_sin_acceso'`) === '1', 'la dueña recibe el aviso');
+    await b.goto(B + `/panel/${C1.id}`);
+    ok(await contiene(b, 'Sin acceso a esta área'), 'Beto ya no entra al panel');
+    await a.goto(B + `/admin/negocios/${C1.id}?tab=equipo`);
+    ok(await contiene(a, 'SIN ACCESO'), 'el 360° dice «SIN ACCESO»');
+    await clic(fila(a, `Beto Ocho${ID}`, 'Devolver acceso').last().getByText('Devolver acceso', { exact: true }));
+    await a.locator('textarea').last().fill(`Lo pidió la dueña ${ID}`);
+    await clic(boton(a, 'Devolver').last());
+    ok(await contiene(a, 'Vuelve a entrar al panel'), 'se devuelve el acceso');
+    await b.goto(B + `/panel/${C1.id}`);
+    ok(!(await contiene(b, 'Sin acceso a esta área', 1500)), 'Beto vuelve a entrar con lo que la dueña le dio');
 
     // ── 5 · Reclamos › Sin reclamar ──
     console.log('5 · Reclamos › Sin reclamar');

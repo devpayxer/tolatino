@@ -542,3 +542,30 @@ export async function pedirTransferencia(id: string, telefono: string, motivo: s
     return null;
   }, "En la cola de Cambios sensibles: lo aplica otra persona del equipo.");
 }
+
+/* 9n-13 · Equipo › «Quitar acceso» / «Devolver acceso» al panel (prototipo teamOff): alguien del equipo deja de entrar al panel del negocio (accesoPanel
+   y misNegocios miran panel_off_at); lo que el dueño le dio no cambia, así que «Devolver acceso» lo deja como estaba. neg:retirar, con motivo, auditoría
+   y aviso al dueño. Al dueño no se le quita desde aquí (la base tampoco lo deja). */
+export async function accesoPanelEquipo(id: string, miembro: string, quitar: boolean, motivo: string): Promise<ResAdm> {
+  if (typeof miembro !== "string" || !UUID.test(miembro)) return no("Esa persona no está en el equipo.");
+  let aviso: { dueno: string; persona: string; negocio: string } | null = null;
+  const r = await hacer(id, "retirar", motivo, async (c, s, b, m) => {
+    const x = (await c.query<{ kind: string; status: string; name: string; off: boolean; panel: boolean }>(
+      `select kind, status, display_name as name, panel_off_at is not null as off, (user_id is not null and cardinality(panel_access) > 0) as panel
+         from business_members where id = $1::uuid and business_id = $2 for update`, [miembro, b.id])).rows[0];
+    if (!x || x.status !== "active") return "Esa persona no está en el equipo.";
+    if (x.kind === "owner") return "Al dueño no se le quita el acceso desde aquí: eso es un cambio de dueño.";
+    if (!x.panel) return "Esa persona no tiene acceso al panel.";
+    if (quitar === x.off) return quitar ? "Ya no tiene acceso." : "Ya tiene acceso.";
+    if (quitar) await c.query(`update business_members set panel_off_at = now(), panel_off_by = $2, panel_off_reason = $3, updated_at = now() where id = $1::uuid`, [miembro, s.id, m]);
+    else await c.query(`update business_members set panel_off_at = null, panel_off_by = null, panel_off_reason = null, updated_at = now() where id = $1::uuid`, [miembro]);
+    await auditar(c, { actor: s.id, action: quitar ? "negocio.equipo.quitar_acceso" : "negocio.equipo.devolver_acceso", targetKind: "business", targetId: b.id, city: b.city_id,
+      before: { acceso: quitar ? "con acceso" : "sin acceso" }, after: { acceso: quitar ? "sin acceso" : "con acceso", persona: x.name, ref: { miembro } }, reason: m });
+    const o = (await c.query<{ uid: string | null }>(`select owner_user_id::text as uid from businesses where id = $1`, [b.id])).rows[0];
+    if (o?.uid) aviso = { dueno: o.uid, persona: x.name, negocio: b.name };
+    return null;
+  }, quitar ? "Ya no entra al panel. El dueño recibe el aviso." : "Vuelve a entrar al panel. El dueño recibe el aviso.");
+  const a = aviso as { dueno: string; persona: string; negocio: string } | null;
+  if (r.ok && a) await avisar(a.dueno, quitar ? "biz_equipo_sin_acceso" : "biz_equipo_con_acceso", { persona: a.persona, negocio: a.negocio }, { href: `/panel/${id}/equipo`, ref: ["business", id] }).catch(() => undefined);
+  return r;
+}

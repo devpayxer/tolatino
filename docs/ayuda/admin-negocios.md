@@ -102,6 +102,9 @@ Arriba de Negocios hay tres vistas: **Lista**, **Posibles duplicados** y **Recla
 
 **¿La cuenta de cobro cambia al transferir?** No: es del negocio. Si el nuevo dueño cobra a otro nombre, la vuelve a conectar en su panel › Cobros.
 
+## Quitar acceso al panel a alguien del equipo
+En el 360° › **Equipo**, cada persona del equipo con acceso al panel tiene **Quitar acceso** (con motivo). Desde ese momento no entra al panel ni lo ve en su lista; lo que el dueño le había dado no cambia, así que **Devolver acceso** lo deja como estaba. El dueño recibe un aviso en su campana. Al dueño no se le quita acceso desde aquí: eso es un cambio de dueño (Transferir dueño).
+
 ## English
 
 Queues: everything waiting for a team decision, oldest against its SLA first — Verification badge (48 h), New
@@ -161,3 +164,6 @@ At the top of Businesses there are three views: **List**, **Possible duplicates*
 | Someone opens a merged business's page | It leads to the page of the one that stayed. |
 
 **Does the payment account change on a transfer?** No: it belongs to the business. If the new owner gets paid under another name, they reconnect it in their dashboard › Payments.
+
+### Remove someone's dashboard access
+In the 360° › **Team**, each team member with dashboard access has **Remove access** (with a reason). From then on they cannot open the dashboard or see it in their list; what the owner gave them does not change, so **Restore access** puts it back as it was. The owner gets a notice in the bell. The owner's own access is not removed here: that is an ownership change (Transfer owner).

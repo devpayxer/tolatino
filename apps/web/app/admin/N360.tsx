@@ -15,7 +15,7 @@ import { filasDup } from "./DupFila";
 import { fmtHora } from "@/lib/panel-reglas";
 import { KINDS_LOCAL } from "@/lib/noche-comun";
 import { PuntoAdmin } from "./PuntoAdmin";
-import { cambiarEstado, tipoNoche, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, vacanteOcultar, platoOcultar, propiedadOcultar, mayoresRevisar, carroOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina, mensajeAlDueno, invitarReclamar, pedirCategoria, pedirTransferencia } from "./acciones-negocios";
+import { cambiarEstado, tipoNoche, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, vacanteOcultar, platoOcultar, propiedadOcultar, mayoresRevisar, carroOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina, mensajeAlDueno, invitarReclamar, pedirCategoria, pedirTransferencia, accesoPanelEquipo } from "./acciones-negocios";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { N360Dinero } from "./N360Dinero";
@@ -37,6 +37,7 @@ const FOTO = ["No es de este negocio", "Contenido inapropiado", "Muestra datos p
 const SELLO_NO = ["La dirección no coincide con la página", "No pudimos confirmar que representas el negocio", "Las fotos no son del local", "El nombre puede confundirse con otro negocio"];
 /* Verbo de cada acción en el historial (prototipo actL). */
 const VERBO: Record<string, string> = {
+  "negocio.equipo.quitar_acceso": "le quitó el acceso al panel a alguien de", "negocio.equipo.devolver_acceso": "devolvió el acceso al panel a alguien de",
   "negocio.fusion.pedir": "pidió fusionar un duplicado con", "negocio.duplicado.no": "marcó que no es duplicado", "negocio.categoria.pedir": "pidió cambiar la categoría de",
   "negocio.transferir.pedir": "pidió transferir", "negocio.fusionar": "fusionó un duplicado con", "negocio.fusionado": "fusionó con otro negocio a", "negocio.categoria.cambiar": "cambió la categoría de",
   "negocio.mensaje": "le mandó un mensaje al dueño de", "negocio.invitar_reclamar": "invitó por SMS a reclamar", "mkt.destacado.fijar": "destacó a", "mkt.destacado.quitar": "sacó de la rotación a",
@@ -258,8 +259,11 @@ export function N360({ n, tab, din, evts = null, sop, cpa, cambios = [], cats = 
           : <A.AdminNote tone="warn" icon="lock">Nadie tiene acceso: el negocio no está reclamado.</A.AdminNote>}
         <A.AdminList label={`STAFF · COMO LO DEJÓ EL DUEÑO · ${staff.length}`} rows={staff.map((m) => ({
           icon: "users", title: m.name, sub: [m.role?.es, m.since ? `desde ${m.since}` : null, m.phone || null, m.hidden ? m.hidden_reason : null].filter(Boolean).join(" · "),
-          tag: m.hidden ? "QUITADO" : m.status === "invited" ? "INVITADO" : m.status === "requested" ? "PIDE UNIRSE" : !m.show ? "OCULTO POR EL DUEÑO" : n.plan !== "pro" ? "NO SALE CON FREE" : undefined, tone: m.hidden ? "danger" : "neutral",
-          actions: P.retirar && m.status === "active" ? [m.hidden
+          tag: m.panel_off ? "SIN ACCESO" : m.hidden ? "QUITADO" : m.status === "invited" ? "INVITADO" : m.status === "requested" ? "PIDE UNIRSE" : !m.show ? "OCULTO POR EL DUEÑO" : n.plan !== "pro" ? "NO SALE CON FREE" : undefined, tone: m.hidden || m.panel_off ? "danger" : "neutral",
+          actions: P.retirar && m.status === "active" ? [...(m.panel ? [m.panel_off
+            ? { label: "Devolver acceso", variant: "secondary", onClick: () => setConf({ titulo: `Devolver acceso a ${m.name}`, sub: "Vuelve a entrar al panel con lo que el dueño le dio. El dueño recibe el aviso.", cta: "Devolver", hacer: (x) => accesoPanelEquipo(n.id, m.id, false, x) }) }
+            : { label: "Quitar acceso", variant: "secondary", onClick: () => setConf({ titulo: `Quitar acceso a ${m.name}`, sub: `Deja de entrar al panel de ${n.name}. El dueño recibe el aviso.`, peligro: true, cta: "Quitar acceso",
+                plantillas: ["Lo pidió el dueño por Soporte", "Actividad sospechosa en el panel", "Ya no trabaja en el negocio"], hacer: (x) => accesoPanelEquipo(n.id, m.id, true, x) }) }] : []), m.hidden
             ? { label: "Volver a mostrar", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué vuelve ${m.name}?`, hacer: (x) => staffPagina(n.id, m.id, false, x) }) }
             : { label: "Quitar de la página", variant: "secondary", onClick: () => setConf({ titulo: `Quitar a ${m.name} de la página`, sub: "Sigue en el equipo del negocio; deja de salir en su página. El dueño ve el motivo en su panel.", plantillas: BIZ, peligro: true, hacer: (x) => staffPagina(n.id, m.id, true, x) }) }] : undefined,
         }))} />

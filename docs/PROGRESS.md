@@ -2358,3 +2358,4 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **Guardián `novedadRepetida`** (al revés alreves9n 45/45). nov2g lo prueba (editor → base → barrido → lista). Ayuda: panel-novedades-seguidores-y-vacante.md.
 - **9n-12 · «Escribir» en una novedad:** link_kind 'msg' (**0162**), chip «Escribir» en el editor y en la ficha «Escríbele a {negocio}» → Mensajes (solo con dueño); nov2g.
 - **9n-8 a 9n-12 · CI dirigido en verde** (runs 43709354083 + 43713010446: neg9n8, usr9n9, cit3b, nov2g, pan9n2, adm9n3, datos9d, rec1j, admin1i, usr1l, rsv2e, menu2b, noc4c, apt4f, renta4f, merc4p, plan4f, jobs2g, vis4ie, neg9n y al revés). Pasan a `main` y `pruebas`.
+- **9n-13 · Quitar acceso al panel** a alguien del equipo desde el 360° › Equipo (**0163** `panel_off_at/by/reason` + avisos `biz_equipo_sin_acceso/con_acceso`); accesoPanel y misNegocios lo respetan. Guardián `panelSinAccesoBloqueado` (al revés 47/47); neg9n8 §4b.

@@ -9374,6 +9374,18 @@ const guardianes = {
     }
   },
 
+  /* 9n-13 · panelSinAccesoBloqueado: cuando To'Latino le quita a alguien del equipo el acceso al panel (business_members.panel_off_at), no entra por
+     ningún lado: accesoPanel (todo el panel y sus acciones) y misNegocios (la lista para elegir) lo miran, y el panel y sus rutas no buscan al miembro
+     por su cuenta sin pasar por accesoPanel. Al revés (alreves9n). */
+  panelSinAccesoBloqueado() {
+    const G = "panelSinAccesoBloqueado", P = "apps/web/lib/panel.ts", t = sinComent(P);
+    for (const fn of ["accesoPanel", "misNegocios"]) if (!/m\.panel_off_at is null/.test(cuerpoFn(t, fn))) falla(G, P, 0, `${fn} deja entrar a quien To'Latino le quitó el acceso (panel_off_at)`);
+    for (const f of archivos.filter((x) => /^apps\/web\/app\/(panel|api\/panel)\//.test(x) && /\.tsx?$/.test(x))) {
+      const u = sinComent(f), m = /from business_members[^`]*user_id = \$\d/.exec(u);
+      if (m) falla(G, f, u.slice(0, m.index).split("\n").length, "busca al miembro por su cuenta sin accesoPanel: se salta el bloqueo de acceso");
+    }
+  },
+
   /* 9n-11 · novedadRepetida: una novedad que se repite la vuelve a sacar la BASE (novedad_siguiente, que se salta los días que el negocio cierra y no pasa
      de su fecha), nunca el navegador; el barrido solo toca las que siguen en vivo y no están ocultas (detener u ocultar la paran), y a los seguidores
      se les avisa una sola vez (el barrido no toca followers_notified_at ni hoy_avisado_at). Al revés (alreves9n). */

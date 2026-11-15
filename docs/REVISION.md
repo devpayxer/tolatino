@@ -4964,3 +4964,10 @@ uno por uno, «Sale a las», «Cada vez se ve», «Hasta cuándo» y la nota de 
 
 **Decisiones por defecto (AB):** cuando se repite, VENCE no sale (lo manda CADA VEZ SE VE); «hasta que cierras» toma la última hora del horario de
 ese día (si no abre, 6 h); un día cerrado se salta.
+
+## Fase 9 · 9n-13 — Quitar acceso al panel (15 nov)
+**Qué mirar:** Super Admin › Negocio 360° › Equipo: «Quitar acceso» / «Devolver acceso» junto a cada persona del equipo; la etiqueta «SIN ACCESO».
+
+**Pendiente de tu decisión:** el prototipo trae «Panel del dueño» (que el equipo de To'Latino abra el panel de un negocio) y «Ver como cliente» de un
+negocio oculto. Los dos dejan ver lo que el negocio o el público no ven; lo seguro es un modo **solo lectura** del equipo, con aviso en pantalla y
+cada apertura en la auditoría. ¿Lo hacemos así?

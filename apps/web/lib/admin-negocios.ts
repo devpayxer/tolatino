@@ -170,8 +170,10 @@ export async function negocio360(s: Staff, id: string) {
       `select id, url, status, removed_reason, removed_note, sort from media where owner_kind = 'business' and owner_id = $1
          and (status = 'visible' or removed_reason = 'admin') order by status = 'visible' desc, sort, created_at`, [id]),
     db().query<{ weekday: number; open: boolean; ranges: [string, string][] }>(`select weekday, open, ranges from business_hours where business_id = $1 and module = '' order by weekday`, [id]),
-    db().query<{ id: string; kind: string; status: string; name: string; role: { es: string } | null; since: number | null; phone: string | null; show: boolean; hidden: boolean; hidden_reason: string | null }>(
-      `select id, kind, status, display_name as name, role, since_year as since, phone, show_on_page as show, hidden_by_admin is not null as hidden, hidden_reason
+    db().query<{ id: string; kind: string; status: string; name: string; role: { es: string } | null; since: number | null; phone: string | null; show: boolean; hidden: boolean; hidden_reason: string | null;
+      panel: boolean; panel_off: string | null }>(
+      `select id, kind, status, display_name as name, role, since_year as since, phone, show_on_page as show, hidden_by_admin is not null as hidden, hidden_reason,
+              (user_id is not null and cardinality(panel_access) > 0) as panel, panel_off_reason as panel_off
          from business_members where business_id = $1 and status <> 'removed' order by (kind = 'owner') desc, sort, id`, [id]),
     db().query<{ text: string; quien: string | null; at: string }>(
       `select n.text, u.first_name as quien, n.at from admin_notes n left join users u on u.id = n.by_staff where n.target_kind = 'business' and n.target_id = $1 order by n.at desc limit 20`, [id]),

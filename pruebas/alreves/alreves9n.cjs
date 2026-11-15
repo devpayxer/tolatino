@@ -81,6 +81,8 @@ const casos = [
   ['novedadRepetida', 'packages/db/migrations/0161_novedad_repetir.sql', ' and x.t > desde and not negocio_dia_cerrado(bid, x.dia)', ' and x.t > desde'],
   ['novedadRepetida', 'apps/web/lib/novedades.ts', "where p.repeat_days is not null and p.status = 'live' and p.hidden_at is null and p.ends_at <= now()", "where p.repeat_days is not null and p.ends_at <= now()"],
   ['novedadRepetida', 'apps/web/lib/novedades.ts', 'repeat_n = p.repeat_n + 1, updated_at = now()', 'repeat_n = p.repeat_n + 1, followers_notified_at = null, updated_at = now()'],
+  // panelSinAccesoBloqueado (9n-13): el panel vuelve a dejar entrar a quien se le quitó el acceso
+  ['panelSinAccesoBloqueado', 'apps/web/lib/panel.ts', "where m.business_id = $1 and m.user_id = $2 and m.status = 'active' and m.panel_off_at is null and b.status <> 'merged'", "where m.business_id = $1 and m.user_id = $2 and m.status = 'active' and b.status <> 'merged'"],
   // disputaConEvidencia: la respuesta deja de mandar los archivos
   ['disputaConEvidencia', DI, 'archivos: { recibo: archivos.recibo, conversacion: archivos.conversacion, entrega: archivos.entrega, otro: archivos.foto_entrega } });', 'texto: "" });'],
 ];
@@ -93,6 +95,8 @@ const crear = [
   ['calendarioConDiasEspeciales', 'apps/web/lib/zz9n10.ts', 'export const q = "select weekday, open, ranges from business_hours where business_id = $1";\n'],
   // botonEsRole (9n-8): una prueba nueva que busca <button> a secas
   ['botonEsRole', 'pruebas/e2e/zz9n8.cjs', "module.exports = (p) => p.locator('div').filter({ has: p.locator('button') });\n"],
+  // panelSinAccesoBloqueado (9n-13): una acción del panel que busca al miembro por su cuenta
+  ['panelSinAccesoBloqueado', 'apps/web/app/panel/zz9n13.ts', 'export const q = `select 1 from business_members where business_id = $1 and user_id = $2 and status = \'active\'`;\n'],
   // cifrasUsuarioDerivadas (9n-9): una acción nueva que escribe la cifra a mano
   ['cifrasUsuarioDerivadas', 'apps/web/app/admin/zz9n9.ts', 'export const q = "update user_stats_cache set reportes = 0 where user_id = $1";\n'],
   // cambioNegocioOtraPersona (9n-8): una pantalla nueva del admin que aplica la fusión directo
