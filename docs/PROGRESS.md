@@ -2298,4 +2298,7 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **Rangos (LAUNCH 5f):** Gamification › Rangos › «Cambiar lo que pide» (Vecino a Comandante): puntos mínimos (entre el rango de abajo y el de
   arriba), el número de la condición y los días de Comandante, con vista previa Antes/Ahora ES/EN, motivo y auditoría; el texto «Para subir» se
   reescribe con `reqDeCond` (lib/puntos-comun.ts). Guardián `rangoDiceLoQuePide`; com5f §12b (lo deja como estaba).
+- **El Compa · CUÁNDO (LAUNCH 7f):** «Fuera de tu horario», «Si no contestas en N min» y «Siempre, al instante» en Panel › El Compa (y la fila
+  de Mensajes dice el elegido). La espera vive en `chat_threads.compa_wait_until` (**0153**, con índice parcial) y el barrido la pasa al turno;
+  `compa_auto_espera_min` se abre en Configuración. Guardián `compaRespuestaAuto` actualizado (al revés `alreves7f` 41/41); compa7f §12.
 - **No corrió aquí:** e2e (sin Docker) → CI dirigido cuando termine la confirmación completa de 9b-3 (run 43683346297, en curso).

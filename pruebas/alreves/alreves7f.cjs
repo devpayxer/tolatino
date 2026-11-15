@@ -10,8 +10,8 @@ const casos = [
   // compaRespuestaAuto: solo Pro, apagadas de fábrica, fuera del horario, quién las cambia, nunca promete, la fija igual que antes, nunca tapa al humano
   ['compaRespuestaAuto', M, '  enabled      boolean not null default false,', '  enabled      boolean not null default true,'],
   ['compaRespuestaAuto', M, "  if new.enabled and (tg_op = 'INSERT' or not old.enabled) and not compa_negocio_pro(new.business_id) then", "  if false and new.enabled and not compa_negocio_pro(new.business_id) then"],
-  ['compaRespuestaAuto', C, '  if (!r || !r.on || !r.pro || r.cuando !== "closed" || r.abierto) return false;', '  if (!r || !r.on || r.abierto) return false;'],
-  ['compaRespuestaAuto', C, '  if (!r || !r.on || !r.pro || r.cuando !== "closed" || r.abierto) return false;', '  if (!r || !r.on || !r.pro || r.cuando !== "closed") return false;'],
+  ['compaRespuestaAuto', C, '  if (!r || !r.on || !r.pro || !MODOS_AUTO.includes(r.cuando as ModoAuto) || (r.cuando === "closed" && r.abierto)) return false;', '  if (!r || !r.on || !MODOS_AUTO.includes(r.cuando as ModoAuto) || (r.cuando === "closed" && r.abierto)) return false;'],
+  ['compaRespuestaAuto', C, '  if (!r || !r.on || !r.pro || !MODOS_AUTO.includes(r.cuando as ModoAuto) || (r.cuando === "closed" && r.abierto)) return false;', '  if (!r || !r.on || !r.pro || !MODOS_AUTO.includes(r.cuando as ModoAuto)) return false;'],
   ['compaRespuestaAuto', C, 'hilo ? hiloApagado(hilo) : Promise.resolve(false)', 'Promise.resolve(false)'],
   ['compaRespuestaAuto', RA, '  if (!b.pro) return no(', '  if (false) return no('],
   ['compaRespuestaAuto', RA, '  if (x.enabled === true && pausa) return no(', '  if (x.enabled === true && false) return no('],
@@ -21,7 +21,9 @@ const casos = [
   ['compaRespuestaAuto', C, '    texto: [x.ctx.texto, ...trozos.map((z) => `${z.titulo} ${z.seccion} ${z.texto}`)].join("\\n") };', '    texto: [x.ctx.texto, ...trozos.map((z) => `${z.titulo} ${z.seccion} ${z.texto}`), x.ultimo].join("\\n") };'],
   ['compaRespuestaAuto', V, '  if (PCT_TODO.test(todo)) return { ok: false, motivo: "auto_porcentaje" };\n', ''],
   ['compaRespuestaAuto', V, 'const PROMETE = /descuent|', 'const PROMETE = /'],
-  ['compaRespuestaAuto', MS, '.compaContestara(b.id, previo.rows[0]?.id ?? null, userId).catch(() => false) : false;', '.compaContestara(b.id, previo.rows[0]?.id ?? null, userId) : false;'],
+  ['compaRespuestaAuto', MS, '.compaCuando(b.id, previo.rows[0]?.id ?? null, userId).catch(() => null);', '.compaCuando(b.id, previo.rows[0]?.id ?? null, userId);'],
+  // 9n-7 · «Si no contestas en N min» que contesta al instante (sin esperar)
+  ['compaRespuestaAuto', MS, "set compa_wait_until = coalesce(compa_wait_until, now() + make_interval(mins => cfg_int('compa_auto_espera_min')))", "set compa_pending_until = coalesce(compa_pending_until, now())"],
   ['compaRespuestaAuto', MS, '    else if (b.auto && !b.abierto && !t.auto_reciente) { await ponerRespuestaFija(', '    if (b.auto && !b.abierto && !t.auto_reciente) { await ponerRespuestaFija('],
   ['compaRespuestaAuto', MS, "m.sender = 'auto' and not m.compa and m.created_at > now() - interval '12 hours') as auto_reciente", "m.sender = 'auto' and m.created_at > now() - interval '12 hours') as auto_reciente"],
   ['compaRespuestaAuto', MS, 'Ahora estamos cerrados; te contestamos cuando abramos.`);', 'Ahora estamos cerrados; El Compa te contesta.`);'],

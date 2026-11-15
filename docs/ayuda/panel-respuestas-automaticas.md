@@ -25,7 +25,12 @@ Mensajes en el equipo. Teléfono y escritorio. Versión: 11 nov 2026. Audiencia:
 
 ## Cómo se usa
 1. Abre **El Compa** (escritorio: menú **Tu negocio**; teléfono: **Más**) y baja a **RESPUESTAS AUTOMÁTICAS**.
-2. Toca **El Compa contesta por ti** para encenderlo (o apagarlo). **Cuándo contesta:** fuera de tu horario.
+2. Toca **El Compa contesta por ti** para encenderlo (o apagarlo). **Cuándo contesta** (elige uno):
+   - **Fuera de tu horario** (de fábrica): solo con el negocio cerrado.
+   - **Si no contestas en 10 min**: a cualquier hora, espera ese tiempo a que alguien de tu equipo conteste; si nadie contesta, contesta El
+     Compa. Si contestas antes, no dice nada. Mientras espera, tu cliente no ve «El Compa está escribiendo». Los minutos los fija To'Latino en
+     Configuración (el chip dice los de hoy). Por WhatsApp y SMS cuenta como «Fuera de tu horario» (ahí contestas fuera de To'Latino).
+   - **Siempre, al instante**: contesta cada mensaje en el momento, también con el negocio abierto. Lo que no sabe te lo pasa a ti.
 3. **De qué puede hablar:** toca los temas (Horario y dirección · Menú, servicios y precios · Cómo pedir o reservar · Tus preguntas frecuentes).
    Deja al menos uno. Lo demás te lo pasa a ti.
 4. **Lo que El Compa debe saber** (hasta 400 letras): algo que tus clientes preguntan y no está en tu página, por ejemplo «Los sábados hay
@@ -79,7 +84,10 @@ rules. What it does not answer you see on your WhatsApp or phone as always; what
 without their phone.
 
 ### How to use it
-Open **El Compa** and scroll to **AUTO-REPLIES**. Tap **El Compa replies for you** to turn it on or off (it replies when you are closed). Pick the
+Open **El Compa** and scroll to **AUTO-REPLIES**. Tap **El Compa replies for you** to turn it on or off. **When it replies:** **When you
+are closed** (default); **If you do not reply in 10 min** (any time: it waits that long for your team and replies only if nobody did; the
+client does not see "El Compa is typing" while it waits; To'Latino sets the minutes in Settings; on WhatsApp and SMS it works like "When you
+are closed"); or **Always, right away** (every message, also while you are open). Pick the
 topics (keep at least one). Write **What El Compa should know** (up to 400 characters; **Translate** for English) and tap **Save note**. **Try it
 as a client** shows what it would reply (the test does not show in Messages). **What El Compa answered · N · Passed to you N** lists the latest
 replies (WhatsApp and SMS ones too, without the phone). **Where:** tap WhatsApp or SMS to turn it on or off (only with your number connected).

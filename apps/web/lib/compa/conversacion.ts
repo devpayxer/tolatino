@@ -617,14 +617,25 @@ async function ajustesNegocio(negocio: string): Promise<AjustesNeg> {
 /* ¿El Compa contesta este mensaje? (respuesta-auto.ts compaContestara la expone a Mensajes, siempre con .catch → no). Lo decide el servidor:
    encendido por el negocio, Pro AHORA, «fuera de tu horario» y cerrado (negocio_abierto, la regla de la respuesta fija), interruptores (nivel,
    canal, ciudad, negocio — «Apagar El Compa aquí» —), la conversación sin apagar, no al tope, el tope del día del negocio y los límites del cliente. */
+export const MODOS_AUTO = ["closed", "no_reply_10m", "always"] as const;
+export type ModoAuto = (typeof MODOS_AUTO)[number];
+/* 9n-7 · ¿Contesta El Compa este mensaje y cuándo? «ahora» (fuera de tu horario o siempre) o «espera» (si nadie del negocio contesta en
+   compa_auto_espera_min). null = no contesta (Mensajes sigue como siempre, con la fija si la tiene). */
+export async function cuandoContesta(negocio: string, hilo: string | null, userId: string): Promise<"ahora" | "espera" | null> {
+  // Lectura barata primero (la mayoría de los negocios no lo tiene encendido): solo entonces la decisión completa.
+  const m = (await db().query<{ on: boolean; cuando: string }>(`select enabled as on, coalesce("when", 'closed') as cuando from compa_business_settings where business_id = $1`, [negocio])).rows[0];
+  if (!m?.on || !(await debeContestarAuto(negocio, hilo, userId))) return null;
+  return m.cuando === "no_reply_10m" ? "espera" : "ahora";
+}
 export async function debeContestarAuto(negocio: string, hilo: string | null, userId: string): Promise<boolean> {
   const r = (await db().query<{ on: boolean; pro: boolean; cuando: string; ciudad: string; abierto: boolean; hoy: number }>(
     `select coalesce(s.enabled, false) as on, compa_negocio_pro(b.id) as pro, coalesce(s."when", 'closed') as cuando, b.city_id as ciudad,
             coalesce(negocio_abierto(b.id, now() at time zone c.timezone), false) as abierto,
             (select count(*)::int from chat_messages m join chat_threads t on t.id = m.thread_id where t.business_id = b.id and m.compa and m.created_at > now() - interval '1 day') as hoy
        from businesses b join cities c on c.id = b.city_id left join compa_business_settings s on s.business_id = b.id where b.id = $1 and b.status = 'active'`, [negocio])).rows[0];
-  // 7f solo contesta «fuera de tu horario»: abierto = el negocio contesta (o su respuesta fija no aplica), como siempre.
-  if (!r || !r.on || !r.pro || r.cuando !== "closed" || r.abierto) return false;
+  // 9n-7 · CUÁNDO: «Fuera de tu horario» (closed) solo con el negocio cerrado; «Si no contestas en N min» (no_reply_10m) y «Siempre, al instante»
+  // (always) a cualquier hora. La espera de no_reply_10m la lleva el hilo (compa_wait_until), no esta lectura.
+  if (!r || !r.on || !r.pro || !MODOS_AUTO.includes(r.cuando as ModoAuto) || (r.cuando === "closed" && r.abierto)) return false;
   const [d, tope, lim, off, n] = await Promise.all([
     disponible({ uso: "auto_reply", canal: "app", ciudad: r.ciudad, negocio }), alTope(), valores("compa_auto_dia_negocio", "compa_msgs_hora", "compa_msgs_dia"),
     hilo ? hiloApagado(hilo) : Promise.resolve(false),

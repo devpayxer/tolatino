@@ -4937,12 +4937,13 @@ const guardianes = {
     if (!/if new\.enabled and \(tg_op = 'INSERT' or not old\.enabled\) and not compa_negocio_pro\(new\.business_id\) then\s*raise exception 'compa_solo_pro/.test(ultimaFn("compa_business_settings_antes"))) falla(G, M, 0, "la base no deja encender sin Pro (compa_solo_pro)");
     if (!/raise exception 'los ajustes de las respuestas automáticas no se borran/.test(ultimaFn("compa_business_settings_antes"))) falla(G, M, 0, "los ajustes no se borran (estados)");
     const d = cuerpoFn(c, "debeContestarAuto");
-    for (const [re, q] of [[/compa_negocio_pro\(b\.id\) as pro/, "Pro AHORA (compa_negocio_pro)"], [/if \(!r \|\| !r\.on \|\| !r\.pro \|\| r\.cuando !== "closed" \|\| r\.abierto\) return false;/, "encendido, Pro, «fuera de tu horario» y cerrado"],
+    for (const [re, q] of [[/compa_negocio_pro\(b\.id\) as pro/, "Pro AHORA (compa_negocio_pro)"], [/if \(!r \|\| !r\.on \|\| !r\.pro \|\| !MODOS_AUTO\.includes\(r\.cuando as ModoAuto\) \|\| \(r\.cuando === "closed" && r\.abierto\)\) return false;/, "encendido, Pro, un CUÁNDO conocido y, «fuera de tu horario», cerrado (9n-7)"],
       [/negocio_abierto\(b\.id, now\(\) at time zone c\.timezone\)/, "el horario real del negocio (negocio_abierto)"], [/disponible\(\{ uso: "auto_reply", canal: "app"/, "el nivel y el canal de El Compa"], [/alTope\(\)/, "el tope"], [/hiloApagado\(hilo\)/, "la conversación sin apagar"]])
       if (!re.test(d)) falla(G, C, 0, `debeContestarAuto: falta ${q}`);
     const g = cuerpoFn(r, "guardarAuto");
     if (!/if \(!b\.pro\) return no\(/.test(g) || !/if \(x\.enabled === true && pausa\) return no\(/.test(g)) falla(G, R, 0, "guardarAuto: sin Pro o con la pausa de To'Latino no se enciende");
-    if (/"(no_reply_10m|always)"/.test(g)) falla(G, R, 0, "7f solo contesta «fuera de tu horario»");
+    // 9n-7 · CUÁNDO: solo los tres del diseño (la base los vuelve a exigir con su check).
+    if (!/const cuando = x\.cuando === undefined \? null : \(\["closed", "no_reply_10m", "always"\] as const\)\.find\(\(k\) => k === x\.cuando\) \?\? null;/.test(g)) falla(G, R, 0, "guardarAuto: el CUÁNDO es uno de los tres del diseño");
     for (const fn of ["compaAutoGuardar", "compaAutoProbar", "compaAutoTraducir", "compaSugerir"]) { const b = cuerpoFn(ac, fn);
       if (!b || !/if \(!\(await mismoOrigen\(\)\)\) return SIN;/.test(b) || !/await accesoPanel\(id, "msg"\)/.test(b)) falla(G, AC, 0, `${fn}: mismo origen y el dueño o quien lleva Mensajes (accesoPanel(id, "msg"))`); }
     const ra = cuerpoFn(c, "respuestaAuto");
@@ -4955,8 +4956,8 @@ const guardianes = {
     const pr = /const PROMETE = \/([^\n]*)\/;/.exec(v)?.[1] ?? "";
     for (const w of ["descuent", "confirmad", "disponib", "reembols", "refund", "discount", "gratis", "garantiz"]) if (!pr.includes(w)) falla(G, V, 0, `verificarAuto no frena «${w}»`);
     const ec = cuerpoFn(ms, "enviarCliente");
-    if (!/const compa = !b\.abierto \? await \(await import\("\.\/compa\/respuesta-auto"\)\)\.compaContestara\(b\.id, previo\.rows\[0\]\?\.id \?\? null, userId\)\.catch\(\(\) => false\) : false;/.test(ec)) falla(G, MS, 0, "Mensajes pregunta a El Compa solo fuera del horario y con .catch (si falla, lo de siempre)");
-    if (!/if \(compa\) await c\.query\(`update chat_threads set compa_pending_until = coalesce\(compa_pending_until, now\(\)\) where id = \$1`, \[t\.id\]\);\s*else if \(b\.auto && !b\.abierto && !t\.auto_reciente\) \{ await ponerRespuestaFija\(/.test(ec)) falla(G, MS, 0, "con El Compa no sale la fija; sin El Compa, la fija de siempre");
+    if (!/const compa = await \(await import\("\.\/compa\/respuesta-auto"\)\)\.compaCuando\(b\.id, previo\.rows\[0\]\?\.id \?\? null, userId\)\.catch\(\(\) => null\);/.test(ec)) falla(G, MS, 0, "Mensajes pregunta a El Compa (y su CUÁNDO) con .catch (si falla, lo de siempre)");
+    if (!/if \(compa === "ahora"\) await c\.query\(`update chat_threads set compa_pending_until = coalesce\(compa_pending_until, now\(\)\) where id = \$1`, \[t\.id\]\);[\s\S]{0,200}?else if \(compa === "espera"\) await c\.query\(`update chat_threads set compa_wait_until = coalesce\(compa_wait_until, now\(\) \+ make_interval\(mins => cfg_int\('compa_auto_espera_min'\)\)\) where id = \$1`, \[t\.id\]\);\s*else if \(b\.auto && !b\.abierto && !t\.auto_reciente\) \{ await ponerRespuestaFija\(/.test(ec)) falla(G, MS, 0, "con El Compa no sale la fija (ahora o después de la espera); sin El Compa, la fija de siempre");
     if (!/m\.sender = 'auto' and not m\.compa and m\.created_at > now\(\) - interval '12 hours'/.test(ec)) falla(G, MS, 0, "la fija sigue saliendo una vez cada 12 horas (sin contar las de El Compa)");
     if (!/export const textoFijo = \(nombre: string, lang: "es" \| "en"\) => \(lang === "en" \? `Thanks for writing to \$\{nombre\}\. We are closed now; we will reply when we open\.` : `Gracias por escribir a \$\{nombre\}\. Ahora estamos cerrados; te contestamos cuando abramos\.`\);/.test(ms)) falla(G, MS, 0, "la respuesta fija es la de siempre (texto a texto)");
     if (!/if \(x && t\.fija && !t\.abierto && !x\.reciente\) await ponerRespuestaFija\(/.test(cuerpoFn(c, "comoAntes"))) falla(G, C, 0, "sin El Compa entre el mensaje y la respuesta: la fija de siempre");

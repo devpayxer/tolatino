@@ -259,7 +259,9 @@ async function turnoNegocio(e: Fila, n: Numero, tel: string, texto: string, lang
             (select count(*)::int from compa_outbound o where o.business_id = b.id and o.kind = 'auto' and o.created_at > now() - interval '1 day') +
             (select count(*)::int from chat_messages m join chat_threads t on t.id = m.thread_id where t.business_id = b.id and m.compa and m.created_at > now() - interval '1 day') as hoy
        from businesses b join cities c on c.id = b.city_id left join compa_business_settings s on s.business_id = b.id where b.id = $1 and b.status = 'active'`, [negocio])).rows[0];
-  if (!b || !b.on || !b.pro || b.cuando !== "closed" || b.abierto || !b.canales.includes(canal)) return { result: "auto_nada" };
+  // 9n-7 · Por WhatsApp o SMS el negocio contesta fuera de To'Latino, así que «Si no contestas en N min» no se puede medir aquí: cuenta como «Fuera
+  // de tu horario». «Siempre, al instante» contesta a cualquier hora.
+  if (!b || !b.on || !b.pro || !["closed", "no_reply_10m", "always"].includes(b.cuando) || (b.cuando !== "always" && b.abierto) || !b.canales.includes(canal)) return { result: "auto_nada" };
   const [d, tope, dia] = await Promise.all([disponible({ uso: "auto_reply", canal, ciudad: b.ciudad, negocio }), alTope(), valor("compa_auto_dia_negocio")]);
   if (!d.ok || !(await canalEncendido(canal))) return { result: "apagado" };
   if (tope || b.hoy >= dia) return { result: tope ? "tope" : "auto_nada" };

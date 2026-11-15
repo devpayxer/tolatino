@@ -351,8 +351,49 @@ const FIJA = 'Gracias por escribir a Sabor Dominicano. Ahora estamos cerrados; t
   await pD.getByText('Revísalo antes de enviar. Sale con tu nombre.').first().waitFor(); await pD.waitForTimeout(400); await pD.screenshot({ path: OUT + 'e7f-panel-sugerir-1360.png', fullPage: true });
   for (const p of [pm, pd]) { const w = await p.evaluate(() => document.documentElement.scrollWidth); ok(w <= 390, `teléfono sin scroll horizontal (${w})`); }
 
+  console.log('12 · CUÁNDO (9n-7): «Si no contestas en 10 min» espera con el negocio ABIERTO (si el negocio contesta, nada; si no, El Compa) y «Siempre, al instante»');
+  try {
+    await pd.goto(B + `/panel/${NEG}/compa`); await pd.getByText('CUÁNDO CONTESTA').waitFor();
+    ok(/Si no contestas en 10 min/.test(await texto(pd)) && /Siempre, al instante/.test(await texto(pd)), 'los tres CUÁNDO del diseño (el 10 sale de Configuración)');
+    await pd.getByText('Si no contestas en 10 min', { exact: true }).first().click();
+    ok(await espera(() => sql(`select "when" from compa_business_settings where business_id = '${NEG}'`) === 'no_reply_10m'), 'guardado «Si no contestas en 10 min»');
+    ok(sql(`select after->>'Cuándo contesta' from audit_entries where action = 'compa.auto_ajustes' and target_id = '${NEG}' order by id desc limit 1`) === 'si no contestas', 'queda en la auditoría del negocio');
+    ok(await espera(async () => /Encendido · si no contestas en 10 min/.test(await texto(pd)) && /Espera 10 min a que alguien de tu equipo conteste/.test(await texto(pd))), 'el panel dice el CUÁNDO elegido');
+    await pd.waitForTimeout(300); await pd.screenshot({ path: OUT + 'e7f-panel-cuando-390.png', fullPage: true });
+    abrirTodoElDia(); resetHilo();
+    await pm.goto(B + `/cuenta/mensajes/${NEG}`); await caja(pm).waitFor();
+    const s0 = await nSim(pm);
+    await escribir(pm, '¿Tienen mofongo hoy?', { compa: false });
+    ok(sql(`select (compa_wait_until between now() + interval '9 minutes' and now() + interval '10 minutes')::text || ':' || (compa_pending_until is null)::text from chat_threads where id = ${TH()}`) === 'true:true', 'abierto: el hilo espera 10 min (sin «El Compa está escribiendo»)');
+    ok(!/^auto/.test(ultima()) && (await nSim(pm)) === s0, '  … y nadie contestó todavía (ni El Compa ni la fija)');
+    // Pasaron los 10 min sin que el negocio contestara → el barrido se lo pasa a El Compa.
+    sql(`update chat_threads set compa_wait_until = now() - interval '1 second' where id = ${TH()}`);
+    execSync(`curl -s -X POST -H 'x-barrido-token: ${TOK}' ${B}/api/interno/barrido`);
+    ok(await espera(() => /^auto\*\|/.test(ultima())), 'a los 10 min sin respuesta del negocio, contestó El Compa');
+    ok(sql(`select (compa_wait_until is null and compa_pending_until is null)::text from chat_threads where id = ${TH()}`) === 'true', '  … y el hilo dejó de esperar');
+    // Otra vez, pero el negocio contesta antes: El Compa no dice nada.
+    await escribir(pm, '¿Y tienen tostones?', { compa: false });
+    const TW = TH(); ok(sql(`select (compa_wait_until > now())::text from chat_threads where id = ${TW}`) === 'true', 'el segundo mensaje vuelve a esperar');
+    await pd.goto(B + `/panel/${NEG}/mensajes?det=msg:${TW}`); await pd.locator('textarea').first().waitFor();
+    await pd.locator('textarea').first().fill('Sí, Marisol: tostones todo el día.'); await pd.getByRole('button', { name: 'Enviar' }).click(); await pd.getByText('Enviado.').first().waitFor();
+    sql(`update chat_threads set compa_wait_until = now() - interval '1 second' where id = ${TW}`);
+    execSync(`curl -s -X POST -H 'x-barrido-token: ${TOK}' ${B}/api/interno/barrido`);
+    await dormir(2500);
+    ok(ultima(TW).startsWith('business|Sí, Marisol') && sql(`select (compa_wait_until is null and compa_pending_until is null)::text from chat_threads where id = ${TW}`) === 'true', 'el negocio contestó a tiempo: El Compa no dice nada');
+    // «Siempre, al instante»: con el negocio abierto, contesta ya.
+    await pd.goto(B + `/panel/${NEG}/compa`); await pd.getByText('CUÁNDO CONTESTA').waitFor();
+    await pd.getByText('Siempre, al instante', { exact: true }).first().click();
+    ok(await espera(() => sql(`select "when" from compa_business_settings where business_id = '${NEG}'`) === 'always'), 'guardado «Siempre, al instante»');
+    await pm.goto(B + `/cuenta/mensajes/${NEG}`); await caja(pm).waitFor();
+    await escribir(pm, '¿A qué hora cierran hoy?');
+    ok(/^auto\*\|/.test(ultima()), 'abierto y «Siempre, al instante»: contesta El Compa en el momento');
+  } finally {
+    sql(`update compa_business_settings set "when" = 'closed' where business_id = '${NEG}'`); sql(`update chat_threads set compa_wait_until = null where business_id = '${NEG}' and compa_wait_until is not null`);
+    cerrar();
+  }
+
   // Dejar todo como la semilla: encendidas en Sabor Dominicano con la nota del diseño, la fija apagada (como la deja la prueba de 2p), horario de siempre.
-  sql(`update compa_business_settings set enabled = true, owner_note = '${NOTA.replace(/'/g, "''")}' where business_id = '${NEG}'`);
+  sql(`update compa_business_settings set enabled = true, "when" = 'closed', owner_note = '${NOTA.replace(/'/g, "''")}' where business_id = '${NEG}'`);
   sql(`update businesses set chat_auto_reply = false where id = '${NEG}'`); horarioDeSiempre();
   ok(!errs.length, `sin errores en el navegador${errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''}`);
   console.log(`\n✓ compa7f: ${n} comprobaciones`);

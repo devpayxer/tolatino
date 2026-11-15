@@ -1066,8 +1066,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       si el dueño quería su cuenta personal, ¿mejor abrirle Mi cuenta como al vecino? Decisión del fundador. (7e, 11 nov) — **✓ 9a (11 nov):** «cambiar mi teléfono / ciudad / borrar la cuenta» escrito en el panel abre un caso de cuenta del negocio (REVISION 9a).
 
 ## Fase 7 · 7f (respuestas automáticas de El Compa y «Sugerir respuesta»)
-- [ ] **→ 9n** · **7f · «Si no contestas en 10 min» y «Siempre, al instante»** (CUÁNDO del diseño): hoy solo «Fuera de tu horario» (§6 #8). Se construyen con
-      `chat_threads.compa_pending_until` (ya existe) y el barrido; `compa_auto_espera_min` queda bloqueada en Configuración hasta entonces. (7f, 11 nov) — _(9n-2, 14 nov): no entró: pide el trabajo del barrido de compa_pending_until y su prueba; sigue abierto._
+- [x] **→ 9n** · **7f · «Si no contestas en 10 min» y «Siempre, al instante»** (CUÁNDO del diseño): hoy solo «Fuera de tu horario» (§6 #8). Se construyen con
+      `chat_threads.compa_pending_until` (ya existe) y el barrido; `compa_auto_espera_min` queda bloqueada en Configuración hasta entonces. (7f, 11 nov) — _(9n-2, 14 nov): no entró: pide el trabajo del barrido de compa_pending_until y su prueba; sigue abierto._ — _(9n-7, 15 nov): hecho. Los tres CUÁNDO en Panel › El Compa; «Si no contestas» marca `chat_threads.compa_wait_until` (0153) y el barrido lo pasa al turno al vencer (si el negocio contestó, nada); `compa_auto_espera_min` abierta en Configuración. Por WhatsApp/SMS «si no contestas» cuenta como fuera de horario. Guardián compaRespuestaAuto al día; compa7f §12._
 - [x] **7f · WhatsApp y SMS en las respuestas automáticas** (POR DÓNDE): 7h. Hoy solo el chat de To'Latino (`channels` = {app}). (7f, 11 nov)
       — 7h (11 nov): POR DÓNDE con WhatsApp y SMS, solo con el número del negocio conectado en Super Admin › El Compa › Canales (`compa7h`).
 - [x] **→ 9b** · **7f · «order by» sobre `id::text`** (clase): en Postgres `select id::text … order by id` ordena el texto (100 antes que 98). Cazado en 7f

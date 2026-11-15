@@ -4906,9 +4906,12 @@ Qué mirar:
 3. **Colas › Licencias:** ahora también llegan las de Salud, Profesionales, Niños, Transporte, Fiestas y Noche 14 días antes de su revisión.
 4. **Gamification › Rangos › «Cambiar lo que pide»** (captura `c5f-admin-condicion-d.png`): puntos mínimos, cuántos y la vista previa Antes / Ahora.
    Pieza compuesta con los campos y filas que ya usa «Cambiar nombre».
+5. **Panel › El Compa › CUÁNDO CONTESTA** (captura `e7f-panel-cuando-390.png`): los tres chips del diseño y la línea que explica el elegido.
 
 **Decisiones tomadas por defecto (AB: lo más seguro y reversible):**
 - **La vuelta a revisión de las licencias, en todas las categorías** (estaba pendiente «decidir si se extiende»): solo pone un caso en la cola para
   que una persona mire el registro; nunca marca nada vencido sola.
+- **«Si no contestas en 10 min» por WhatsApp y SMS cuenta como «Fuera de tu horario»:** ahí el negocio contesta desde su teléfono, fuera
+  de To'Latino, y no se puede saber si ya contestó. Con «Si no contestas», El Compa también reemplaza la respuesta fija (como hoy fuera de horario).
 - **Apelar desde «Entrar» solo con el código por SMS** (no con Face ID / huella): el código prueba el teléfono; la ficha dura 30 minutos y vale para
   esa sanción. La respuesta de esa apelación va por SMS porque la persona no puede abrir la app.

@@ -118,7 +118,8 @@ export async function enviarCliente(userId: string, negocio: string, texto: unkn
   const ctx = opId ? await contextoDe(userId, b.id, opId) : null;
   // 7f · ¿Contesta El Compa? Solo fuera del horario (la misma regla que la respuesta fija), y lo decide lib/compa (Pro, encendido, interruptores,
   // tope, límites). Cualquier falla = no: todo sigue como antes.
-  const compa = !b.abierto ? await (await import("./compa/respuesta-auto")).compaContestara(b.id, previo.rows[0]?.id ?? null, userId).catch(() => false) : false;
+  // 9n-7 · Con «Si no contestas en N min» o «Siempre, al instante» El Compa también contesta con el negocio abierto: el servidor decide el CUÁNDO.
+  const compa = await (await import("./compa/respuesta-auto")).compaCuando(b.id, previo.rows[0]?.id ?? null, userId).catch(() => null);
   const yo = (await db().query<{ nombre: string; lang: string }>(`select coalesce(nullif(trim(coalesce(first_name, '') || ' ' || left(coalesce(last_name, ''), 1)), ''), 'Un cliente') as nombre, coalesce(lang, 'es') as lang from users where id = $1`, [userId])).rows[0];
   const r = await tx(async (c) => {
     let t = (await c.query<{ id: string; blocked: boolean; biz_unread: number; auto_reciente: boolean }>(
@@ -139,7 +140,9 @@ export async function enviarCliente(userId: string, negocio: string, texto: unkn
                           operation_id = coalesce($3, operation_id), context = coalesce($4::jsonb, context) where id = $1`, [t.id, corto(L.t), ctx?.op ?? null, ctx ? JSON.stringify(ctx.ctx) : null]);
     let auto = false;
     // 7f · El Compa contesta aparte (sin que nadie espere): se marca el hilo y NO sale la fija. Si no, la respuesta fija de siempre.
-    if (compa) await c.query(`update chat_threads set compa_pending_until = coalesce(compa_pending_until, now()) where id = $1`, [t.id]);
+    if (compa === "ahora") await c.query(`update chat_threads set compa_pending_until = coalesce(compa_pending_until, now()) where id = $1`, [t.id]);
+    // 9n-7 · «Si no contestas en N min»: la espera empieza con el primer mensaje sin contestar (los que siguen no la alargan).
+    else if (compa === "espera") await c.query(`update chat_threads set compa_wait_until = coalesce(compa_wait_until, now() + make_interval(mins => cfg_int('compa_auto_espera_min'))) where id = $1`, [t.id]);
     else if (b.auto && !b.abierto && !t.auto_reciente) { await ponerRespuestaFija(c, t.id, b.name, yo?.lang === "en" ? "en" : "es"); auto = true; }
     return { ok: true as const, id: t.id, avisar: t.biz_unread === 0, auto, m: m.id };
   });
@@ -148,7 +151,7 @@ export async function enviarCliente(userId: string, negocio: string, texto: unkn
     await db().query(`update chat_threads set biz_notified_at = now() where id = $1`, [r.id]);
     await avisarEquipo(b.id, { cliente: yo?.nombre ?? "Un cliente", texto: corto(L.t).slice(0, 80) }, r.id!).catch(() => undefined);
   }
-  return { ok: true, id: r.id, compa, tapado: L.tapado };
+  return { ok: true, id: r.id, compa: compa === "ahora", tapado: L.tapado };   // 9n-7 · «espera» no corre el turno ya: lo hace el barrido al vencer
 }
 /* La respuesta fija fuera de horario (2p), tal cual: la usa enviarCliente y, si El Compa no pudo contestar al final (se apagó o llegó al tope
    entre el mensaje y su respuesta), lib/compa también, para que el cliente reciba exactamente lo de siempre. */

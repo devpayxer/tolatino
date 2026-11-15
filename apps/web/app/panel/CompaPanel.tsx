@@ -88,15 +88,21 @@ function autoBloques(c: Ctx): Bloque[] {
     cta: E2("Ayuda y Soporte", "Help and Support"), onCta: () => window.location.assign(sop) });
   const encender = (on: boolean) => {
     if (on && a.apagadoPor) { c.toast(E2("Lo apagó To’Latino. Escríbele a Soporte.", "Turned off by To’Latino. Write to Support.")); return; }
-    c.run(() => compaAutoGuardar(d.id, { enabled: on }), on ? E2("Encendido. Contesta fuera de tu horario.", "On. It replies when you are closed.") : E2("Apagado. Ya no contesta por ti.", "Off. It no longer replies for you."));
+    c.run(() => compaAutoGuardar(d.id, { enabled: on }), on ? E2(`Encendido. Contesta ${cuandoDe(a).es}.`, `On. It replies ${cuandoDe(a).en}.`) : E2("Apagado. Ya no contesta por ti.", "Off. It no longer replies for you."));
   };
   out.push({ type: "rows", items: [{ key: "on", icon: "chat", t: E2("El Compa contesta por ti", "El Compa replies for you"),
-    s: a.enabled && !a.apagadoPor ? (a.nivelOn ? E2("Encendido · fuera de tu horario", "On · when you are closed") : E2("Encendido, pero El Compa no está contestando ahora: tus clientes reciben tu respuesta de siempre.", "On, but El Compa is not replying right now: your clients get your usual reply."))
+    s: a.enabled && !a.apagadoPor ? (a.nivelOn ? E2(`Encendido · ${cuandoDe(a).es}`, `On · ${cuandoDe(a).en}`) : E2("Encendido, pero El Compa no está contestando ahora: tus clientes reciben tu respuesta de siempre.", "On, but El Compa is not replying right now: your clients get your usual reply."))
       : E2("Apagado. Tus clientes esperan tu respuesta.", "Off. Clients wait for your reply."),
     tgOn: a.enabled && !a.apagadoPor, onTg: () => encender(!a.enabled) }] });
   if (!a.enabled || a.apagadoPor) { out.push(...registro(c, a)); return out; }
   out.push(
-    { type: "chips", k: E2("CUÁNDO CONTESTA", "WHEN IT REPLIES"), items: [{ l: E2("Fuera de tu horario", "When you are closed"), v: "selected" }] },
+    // 9n-7 · CUÁNDO del diseño: fuera de tu horario, si no contestas en N min (Configuración › compa_auto_espera_min) o siempre, al instante.
+    { type: "chips", k: E2("CUÁNDO CONTESTA", "WHEN IT REPLIES"),
+      help: a.cuando === "no_reply_10m" ? E2(`Espera ${a.espera} min a que alguien de tu equipo conteste; si nadie contesta, contesta El Compa. Por WhatsApp y SMS, solo fuera de tu horario.`, `It waits ${a.espera} min for someone on your team to reply; if nobody does, El Compa replies. On WhatsApp and SMS, only when you are closed.`)
+        : a.cuando === "always" ? E2("Contesta cada mensaje al instante, también con el negocio abierto. Lo que no sabe te lo pasa a ti.", "It replies to every message right away, also while you are open. Anything it does not know it passes to you.")
+        : E2("Contesta solo cuando el negocio está cerrado.", "It replies only while the business is closed."),
+      items: ([["closed", E2("Fuera de tu horario", "When you are closed")], ["no_reply_10m", E2(`Si no contestas en ${a.espera} min`, `If you do not reply in ${a.espera} min`)], ["always", E2("Siempre, al instante", "Always, right away")]] as const).map(([k, l]) => ({
+        l, v: a.cuando === k ? "selected" : "filter", onClick: a.cuando === k ? undefined : () => c.run(() => compaAutoGuardar(d.id, { cuando: k }), E2("Guardado.", "Saved.")) })) },
     { type: "chips", k: E2("DE QUÉ PUEDE HABLAR", "WHAT IT CAN TALK ABOUT"), help: E2("Lo demás te lo pasa a ti.", "Anything else it passes to you."), items: Object.keys(TEMA_L).map((k) => {
       const has = a.temas.includes(k as AutoPanel["temas"][number]);
       return { l: TEMA_L[k]![es ? 0 : 1], v: has ? "selected" : "filter", onClick: () => {
@@ -151,6 +157,9 @@ function autoBloques(c: Ctx): Bloque[] {
   out.push(...registro(c, a));
   return out;
 }
+/* 9n-7 · El CUÁNDO en palabras (como cuandoTxt del servidor). */
+const cuandoDe = (a: AutoPanel) => a.cuando === "no_reply_10m" ? { es: `si no contestas en ${a.espera} min`, en: `if you do not reply in ${a.espera} min` }
+  : a.cuando === "always" ? { es: "siempre, al instante", en: "always, right away" } : { es: "fuera de tu horario", en: "when you are closed" };
 function registro(c: Ctx, a: AutoPanel): Bloque[] {
   const { E2 } = c;
   if (!a.registro.length) return [];

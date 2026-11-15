@@ -1,5 +1,6 @@
 import "server-only";
 import { db, tx } from "../db";
+import { valor } from "../config";
 import { disponible, estadoInterruptores, pausaAuto } from "./interruptores";
 import { TEMAS, type Tema } from "./contexto-negocio";
 import { alTope } from "./tope";
@@ -21,6 +22,10 @@ type Bi = { es: string; en: string };
 export async function compaContestara(negocio: string, hilo: string | null, userId: string): Promise<boolean> {
   return (await import("./conversacion")).debeContestarAuto(negocio, hilo, userId);
 }
+/* 9n-7 · Lo mismo, con el CUÁNDO: «ahora» o «espera» (Si no contestas en N min). */
+export async function compaCuando(negocio: string, hilo: string | null, userId: string): Promise<"ahora" | "espera" | null> {
+  return (await import("./conversacion")).cuandoContesta(negocio, hilo, userId);
+}
 
 /* El turno, aparte (lo llama after() de la acción del cliente; si el proceso se cae, el barrido lo retoma). Nunca lanza. */
 export async function contestarAuto(hilo: string | number): Promise<void> {
@@ -29,6 +34,8 @@ export async function contestarAuto(hilo: string | number): Promise<void> {
 }
 /* Barrido: los hilos que esperan a El Compa (o cuya respuesta se cortó: el reclamo vence a los 90 s). */
 export async function contestarPendientes(): Promise<number> {
+  // 9n-7 · «Si no contestas en N min»: la espera venció → le toca a El Compa (el turno no hace nada si el negocio ya contestó).
+  await db().query(`update chat_threads set compa_pending_until = coalesce(compa_pending_until, now()), compa_wait_until = null where compa_wait_until is not null and compa_wait_until <= now()`);
   const L = (await db().query<{ id: string }>(`select id::text from chat_threads where compa_pending_until is not null and compa_pending_until <= now() order by compa_pending_until limit 50`)).rows;
   for (const x of L) await contestarAuto(x.id);
   return L.length;
@@ -36,7 +43,7 @@ export async function contestarPendientes(): Promise<number> {
 
 /* ── Panel › El Compa › Respuestas automáticas ── */
 export type AutoPanel = {
-  pro: boolean; puede: boolean; enabled: boolean; on: boolean; cuando: "closed"; temas: Tema[]; canales: string[]; nota: Bi;
+  pro: boolean; puede: boolean; enabled: boolean; on: boolean; cuando: "closed" | "no_reply_10m" | "always"; espera: number; temas: Tema[]; canales: string[]; nota: Bi;
   apagadoPor: { motivo: string; at: string } | null; nivelOn: boolean; fija: boolean;
   conectados: { whatsapp: boolean; sms: boolean };   // 7h · ¿hay un número del negocio conectado a To'Latino por ese canal?
   registro: { id: string; quien: string; q: string; a: string; paso: boolean; at: string; canal?: string }[]; contesto: number; paso: number;
@@ -70,7 +77,7 @@ export async function ajustesAuto(negocio: string, partes: string[]): Promise<Au
   // on = lo que pasa HOY si un cliente escribe fuera de tu horario (encendido por ti, con Pro, sin pausa de To'Latino y El Compa disponible).
   const pro = !!P.rows[0]?.pro, enabled = !!s?.enabled;
   return {
-    pro, puede, enabled, on: enabled && pro && !pausa && nivel.ok, cuando: "closed", temas: (s?.temas ?? TEMAS).filter((t) => TEMAS.includes(t)), canales: s?.canales ?? ["app"],
+    pro, puede, enabled, on: enabled && pro && !pausa && nivel.ok, cuando: (["closed", "no_reply_10m", "always"] as const).find((k) => k === s?.cuando) ?? "closed", espera: await valor("compa_auto_espera_min"), temas: (s?.temas ?? TEMAS).filter((t) => TEMAS.includes(t)), canales: s?.canales ?? ["app"],
     nota: s?.nota ?? { es: "", en: "" }, apagadoPor: pausa ? { motivo: pausa.motivo, at: pausa.at } : null, nivelOn: nivel.ok && !(await alTope()),
     fija: !!s?.fija, registro: [...(R?.rows ?? []), ...(RC ?? [])].sort((x, y) => (x.at < y.at ? 1 : -1)).slice(0, 8), contesto: (k?.rows[0]?.n ?? 0) + (k?.rows[0]?.nc ?? 0), paso: k?.rows[0]?.p ?? 0,
     conectados: { whatsapp: NC.rows.some((x) => x.channel === "whatsapp"), sms: NC.rows.some((x) => x.channel === "sms") },
@@ -80,7 +87,7 @@ export async function ajustesAuto(negocio: string, partes: string[]): Promise<Au
 /* Guardar (el dueño o quien lleva Mensajes; lo revisa la acción con accesoPanel(negocio, "msg")). Encender pide Pro AHORA y que To'Latino no lo
    haya apagado ahí (la base vuelve a exigir Pro: compa_solo_pro). «Cuándo» solo «fuera de tu horario» en 7f; temas ≥ 1; la nota ≤ 400 por idioma.
    Queda en la auditoría del negocio (antes → después). */
-export type CambioAuto = { enabled?: boolean; temas?: string[]; nota?: { es?: string; en?: string }; canales?: string[] };
+export type CambioAuto = { enabled?: boolean; temas?: string[]; nota?: { es?: string; en?: string }; canales?: string[]; cuando?: string };
 export async function guardarAuto(userId: string, negocio: string, x: CambioAuto): Promise<{ ok: true } | { ok: false; msg: Bi }> {
   const no = (es: string, en: string) => ({ ok: false as const, msg: { es, en } });
   const [P, pausa] = await Promise.all([db().query<{ pro: boolean; ciudad: string }>(`select compa_negocio_pro(id) as pro, city_id as ciudad from businesses where id = $1`, [negocio]), pausaAuto(negocio)]);
@@ -100,6 +107,9 @@ export async function guardarAuto(userId: string, negocio: string, x: CambioAuto
     const N = (await db().query<{ channel: string }>(`select distinct channel from compa_channel_numbers where business_id = $1 and status = 'active'`, [negocio])).rows.map((r) => r.channel);
     if (canales.some((k) => k !== "app" && !N.includes(k))) return no("Para eso hace falta tu número conectado a To’Latino. Escríbele a Soporte.", "That needs your number connected to To’Latino. Write to Support.");
   }
+  // 9n-7 · CUÁNDO: fuera de tu horario, si no contestas en N min, o siempre.
+  const cuando = x.cuando === undefined ? null : (["closed", "no_reply_10m", "always"] as const).find((k) => k === x.cuando) ?? null;
+  if (x.cuando !== undefined && !cuando) return no("Elige cuándo contesta El Compa.", "Choose when El Compa replies.");
   const limpia = (t: unknown) => String(t ?? "").replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, " ").replace(/[ \t]+/g, " ").trim();
   let nota: Bi | null = null;
   if (x.nota) {
@@ -109,17 +119,19 @@ export async function guardarAuto(userId: string, negocio: string, x: CambioAuto
   }
   try {
     await tx(async (c) => {
-      const a = (await c.query<{ enabled: boolean; topics: string[]; owner_note: Bi; channels: string[] }>(`select enabled, topics, owner_note, channels from compa_business_settings where business_id = $1 for update`, [negocio])).rows[0];
+      const a = (await c.query<{ enabled: boolean; topics: string[]; owner_note: Bi; channels: string[]; when: string }>(`select enabled, topics, owner_note, channels, "when" from compa_business_settings where business_id = $1 for update`, [negocio])).rows[0];
       await c.query(
-        `insert into compa_business_settings (business_id, city_id, enabled, topics, owner_note, updated_by, channels) values ($1, $2, coalesce($3, false), coalesce($4::text[], '{hours,menu,how_to_order,faq}'), coalesce($5::jsonb, '{"es":"","en":""}'::jsonb), $6, coalesce($7::text[], '{app}'))
+        `insert into compa_business_settings (business_id, city_id, enabled, topics, owner_note, updated_by, channels, "when") values ($1, $2, coalesce($3, false), coalesce($4::text[], '{hours,menu,how_to_order,faq}'), coalesce($5::jsonb, '{"es":"","en":""}'::jsonb), $6, coalesce($7::text[], '{app}'), coalesce($8, 'closed'))
          on conflict (business_id) do update set enabled = coalesce($3, compa_business_settings.enabled), topics = coalesce($4::text[], compa_business_settings.topics),
-           owner_note = coalesce($5::jsonb, compa_business_settings.owner_note), updated_by = $6, channels = coalesce($7::text[], compa_business_settings.channels)`,
-        [negocio, b.ciudad, x.enabled ?? null, temas, nota ? JSON.stringify(nota) : null, userId, canales]);
+           owner_note = coalesce($5::jsonb, compa_business_settings.owner_note), updated_by = $6, channels = coalesce($7::text[], compa_business_settings.channels), "when" = coalesce($8, compa_business_settings."when")`,
+        [negocio, b.ciudad, x.enabled ?? null, temas, nota ? JSON.stringify(nota) : null, userId, canales, cuando]);
       const antes: Record<string, string> = {}, despues: Record<string, string> = {};
       if (x.enabled !== undefined && (a?.enabled ?? false) !== x.enabled) { antes["El Compa contesta por ti"] = a?.enabled ? "encendido" : "apagado"; despues["El Compa contesta por ti"] = x.enabled ? "encendido" : "apagado"; }
       if (temas) { antes["Temas"] = (a?.topics ?? TEMAS).length + " temas"; despues["Temas"] = temas.length + " temas"; }
       const CN = (L: string[]) => L.map((k) => (k === "app" ? "chat" : k === "whatsapp" ? "WhatsApp" : "SMS")).join(", ");
       if (canales) { antes["Por dónde"] = CN(a?.channels ?? ["app"]); despues["Por dónde"] = CN(canales); }
+      const CU = (k: string | undefined) => (k === "no_reply_10m" ? "si no contestas" : k === "always" ? "siempre" : "fuera de tu horario");
+      if (cuando && cuando !== (a?.when ?? "closed")) { antes["Cuándo contesta"] = CU(a?.when); despues["Cuándo contesta"] = CU(cuando); }
       if (nota) { antes["Lo que El Compa debe saber"] = a?.owner_note?.es ? "con nota" : "sin nota"; despues["Lo que El Compa debe saber"] = nota.es ? "con nota" : "sin nota"; }
       await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, 'compa.auto_ajustes', 'business', $2, $3, $4::jsonb, $5::jsonb)`,
         [userId, negocio, b.ciudad, JSON.stringify(antes), JSON.stringify(despues)]);
@@ -133,12 +145,17 @@ export async function guardarAuto(userId: string, negocio: string, x: CambioAuto
 
 /* Mensajes: la fila «El Compa contesta por ti» (lectura barata; la página la carga con .catch). on = lo que pasa HOY fuera de tu horario: encendido
    por ti, con Pro, sin pausa y El Compa disponible (nivel, canal, ciudad, negocio y tope). */
-export async function estadoAutoMensajes(negocio: string): Promise<{ pro: boolean; enabled: boolean; on: boolean; apagadoPor: boolean }> {
-  const r = (await db().query<{ pro: boolean; enabled: boolean; ciudad: string }>(
-    `select compa_negocio_pro(b.id) as pro, coalesce(s.enabled, false) as enabled, b.city_id as ciudad from businesses b left join compa_business_settings s on s.business_id = b.id where b.id = $1`, [negocio])).rows[0];
-  if (!r) return { pro: false, enabled: false, on: false, apagadoPor: false };
-  const [pausa, d, tope] = await Promise.all([pausaAuto(negocio), disponible({ uso: "auto_reply", canal: "app", ciudad: r.ciudad, negocio }), alTope()]);
-  return { pro: r.pro, enabled: r.enabled, on: r.pro && r.enabled && d.ok && !tope, apagadoPor: !!pausa };
+export async function estadoAutoMensajes(negocio: string): Promise<{ pro: boolean; enabled: boolean; on: boolean; apagadoPor: boolean; cuando: Bi }> {
+  const r = (await db().query<{ pro: boolean; enabled: boolean; ciudad: string; cuando: string }>(
+    `select compa_negocio_pro(b.id) as pro, coalesce(s.enabled, false) as enabled, b.city_id as ciudad, coalesce(s."when", 'closed') as cuando from businesses b left join compa_business_settings s on s.business_id = b.id where b.id = $1`, [negocio])).rows[0];
+  if (!r) return { pro: false, enabled: false, on: false, apagadoPor: false, cuando: cuandoTxt("closed", 0) };
+  const [pausa, d, tope, espera] = await Promise.all([pausaAuto(negocio), disponible({ uso: "auto_reply", canal: "app", ciudad: r.ciudad, negocio }), alTope(), valor("compa_auto_espera_min")]);
+  return { pro: r.pro, enabled: r.enabled, on: r.pro && r.enabled && d.ok && !tope, apagadoPor: !!pausa, cuando: cuandoTxt(r.cuando, espera) };
+}
+/* 9n-7 · El CUÁNDO en palabras (la fila de Mensajes y el panel de El Compa). */
+export function cuandoTxt(k: string, min: number): Bi {
+  return k === "no_reply_10m" ? { es: `si no contestas en ${min} min`, en: `if you do not reply in ${min} min` }
+    : k === "always" ? { es: "siempre, al instante", en: "always, right away" } : { es: "fuera de tu horario", en: "when you are closed" };
 }
 
 /* «Sugerir respuesta con El Compa» (Mensajes): ¿se ofrece? Pro, el nivel del panel y el tope. Lectura barata para la pantalla. */

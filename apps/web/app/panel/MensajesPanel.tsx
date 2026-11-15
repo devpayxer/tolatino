@@ -12,7 +12,7 @@ import { mensajeAsignar, mensajeAuto, mensajeBloquear, mensajeReportarNeg, mensa
 import type { Ctx, Sec } from "./Panel";
 
 export type MsjPanel = { lista?: { hilos: HiloNeg[]; mas: string | null; sinLeer: number; auto: boolean }; det?: ConvNeg | null; hoy?: HiloNeg[]; n: number;
-  compa?: { pro: boolean; enabled: boolean; on: boolean; apagadoPor: boolean } | null; sugerir?: boolean };
+  compa?: { pro: boolean; enabled: boolean; on: boolean; apagadoPor: boolean; cuando: { es: string; en: string } } | null; sugerir?: boolean };
 
 function hace(c: Ctx, iso: string, ahora: number) {
   const min = Math.floor((ahora - new Date(iso).getTime()) / 60000), E2 = c.E2;
@@ -41,7 +41,7 @@ export function mensajesBloques(c: Ctx): Sec {
     { type: "rows", items: [{ icon: "clock", t: E2("Respuesta automática fuera de horario", "Auto-reply when closed"), s: E2("«Gracias. Te contestamos cuando abramos.»", "“Thanks. We reply when we open.”"),
       tgOn: !!L?.auto, onTg: () => c.run(() => mensajeAuto(d.id, !L?.auto), L?.auto ? E2("Respuesta automática apagada.", "Auto-reply off.") : E2("Encendida: cuando estés cerrado, contesta sola (una vez cada 12 horas por cliente).", "On: when you are closed, it replies (once every 12 hours per client).")) },
       ...(c.msj?.compa ? [((k) => ({ icon: "help", t: E2("El Compa contesta por ti", "El Compa replies for you"),
-        s: k.pro ? (k.on ? E2("Encendido · fuera de tu horario", "On · when you are closed") : k.apagadoPor ? E2("Lo apagó To’Latino. Escríbele a Soporte.", "Turned off by To’Latino. Write to Support.")
+        s: k.pro ? (k.on ? E2(`Encendido · ${k.cuando.es}`, `On · ${k.cuando.en}`) : k.apagadoPor ? E2("Lo apagó To’Latino. Escríbele a Soporte.", "Turned off by To’Latino. Write to Support.")
           : k.enabled ? E2("Encendido, pero El Compa no está contestando ahora: sale tu respuesta de siempre.", "On, but El Compa is not replying right now: your usual reply goes out.") : E2("Apagado. Contesta horario, menú y cómo pedir con los datos de tu página.", "Off. Answers hours, menu and how to order from your page."))
           : E2("Con Pro: contesta horario, menú y cómo pedir cuando tú no puedes.", "With Pro: answers hours, menu and how to order when you can’t."),
         tag: k.pro ? (k.on ? E2("ENCENDIDO", "ON") : null) : "PRO", tone: k.on ? "signal" : "neutral", onClick: () => c.go("cpa") }))(c.msj.compa)] : []),
