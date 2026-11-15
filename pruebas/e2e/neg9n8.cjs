@@ -149,7 +149,7 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
     console.log('4b · Quitar y devolver el acceso al panel a alguien del equipo');
     sql(`insert into business_members (business_id, user_id, kind, display_name, phone, panel_access, status) values ('${C1.id}', '${BU}', 'staff', 'Beto Ocho${ID}', '+1${AD2}', '{all}', 'active')`);
     await b.goto(B + `/panel/${C1.id}`);
-    ok(!(await contiene(b, 'Sin acceso a esta área', 1500)), 'Beto, del equipo del negocio, entra al panel');
+    ok(await contiene(b, `Mudanzas Boricua ${ID}`) && !(await contiene(b, 'Sin acceso a esta área', 500)), 'Beto, del equipo del negocio, entra al panel');
     await a.goto(B + `/admin/negocios/${C1.id}?tab=equipo`);
     await clic(fila(a, `Beto Ocho${ID}`, 'Quitar acceso').last().getByText('Quitar acceso', { exact: true }));
     await clic(a.getByText('Lo pidió el dueño por Soporte', { exact: true }));
@@ -162,11 +162,12 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
     await a.goto(B + `/admin/negocios/${C1.id}?tab=equipo`);
     ok(await contiene(a, 'SIN ACCESO'), 'el 360° dice «SIN ACCESO»');
     await clic(fila(a, `Beto Ocho${ID}`, 'Devolver acceso').last().getByText('Devolver acceso', { exact: true }));
-    await a.locator('textarea').last().fill(`Lo pidió la dueña ${ID}`);
+    await clic(a.getByText('Se revisó y está bien', { exact: true }));
     await clic(boton(a, 'Devolver').last());
-    ok(await contiene(a, 'Vuelve a entrar al panel'), 'se devuelve el acceso');
+    ok(await contiene(a, 'Vuelve a entrar al panel. El dueño recibe el aviso.'), 'se devuelve el acceso');
+    ok(await espera(() => sql(`select (panel_off_at is null)::text from business_members where business_id = '${C1.id}' and user_id = '${BU}'`) === 'true'), 'en la base ya no está marcado sin acceso');
     await b.goto(B + `/panel/${C1.id}`);
-    ok(!(await contiene(b, 'Sin acceso a esta área', 1500)), 'Beto vuelve a entrar con lo que la dueña le dio');
+    ok(await contiene(b, `Mudanzas Boricua ${ID}`) && !(await contiene(b, 'Sin acceso a esta área', 500)), 'Beto vuelve a entrar con lo que la dueña le dio');
 
     // ── 5 · Reclamos › Sin reclamar ──
     console.log('5 · Reclamos › Sin reclamar');

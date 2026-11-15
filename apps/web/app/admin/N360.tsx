@@ -261,7 +261,8 @@ export function N360({ n, tab, din, evts = null, sop, cpa, cambios = [], cats = 
           icon: "users", title: m.name, sub: [m.role?.es, m.since ? `desde ${m.since}` : null, m.phone || null, m.hidden ? m.hidden_reason : null].filter(Boolean).join(" · "),
           tag: m.panel_off ? "SIN ACCESO" : m.hidden ? "QUITADO" : m.status === "invited" ? "INVITADO" : m.status === "requested" ? "PIDE UNIRSE" : !m.show ? "OCULTO POR EL DUEÑO" : n.plan !== "pro" ? "NO SALE CON FREE" : undefined, tone: m.hidden || m.panel_off ? "danger" : "neutral",
           actions: P.retirar && m.status === "active" ? [...(m.panel ? [m.panel_off
-            ? { label: "Devolver acceso", variant: "secondary", onClick: () => setConf({ titulo: `Devolver acceso a ${m.name}`, sub: "Vuelve a entrar al panel con lo que el dueño le dio. El dueño recibe el aviso.", cta: "Devolver", hacer: (x) => accesoPanelEquipo(n.id, m.id, false, x) }) }
+            ? { label: "Devolver acceso", variant: "secondary", onClick: () => setConf({ titulo: `Devolver acceso a ${m.name}`, sub: "Vuelve a entrar al panel con lo que el dueño le dio. El dueño recibe el aviso.", cta: "Devolver",
+                plantillas: ["Lo pidió el dueño por Soporte", "Se revisó y está bien"], hacer: (x) => accesoPanelEquipo(n.id, m.id, false, x) }) }
             : { label: "Quitar acceso", variant: "secondary", onClick: () => setConf({ titulo: `Quitar acceso a ${m.name}`, sub: `Deja de entrar al panel de ${n.name}. El dueño recibe el aviso.`, peligro: true, cta: "Quitar acceso",
                 plantillas: ["Lo pidió el dueño por Soporte", "Actividad sospechosa en el panel", "Ya no trabaja en el negocio"], hacer: (x) => accesoPanelEquipo(n.id, m.id, true, x) }) }] : []), m.hidden
             ? { label: "Volver a mostrar", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué vuelve ${m.name}?`, hacer: (x) => staffPagina(n.id, m.id, false, x) }) }
