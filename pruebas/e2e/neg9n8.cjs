@@ -148,20 +148,16 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
     console.log('5 · Reclamos › Sin reclamar');
     await a.goto(B + '/admin/negocios?vista=rec');
     ok(await contiene(a, 'RECLAMOS POR DECIDIR') && await contiene(a, 'SIN RECLAMAR'), 'la vista «Reclamos» con sus dos grupos');
-    let encontrado = false;
-    for (let i = 0; i < 40 && !encontrado; i++) {
-      if (await contiene(a, N2.nombre, 800)) { encontrado = true; break; }
-      const sig = await vis(a.getByText('→', { exact: true }));
-      if (!sig) break; await sig.click(); await dormir(600);
-    }
-    ok(encontrado, 'el negocio sin dueño sale en «Sin reclamar»');
+    // El sandbox tiene cientos de negocios sin dueño (la semilla): se abre «Sin reclamar» con el cursor de la propia pantalla justo antes de los de esta corrida.
+    const REC = B + `/admin/negocios?vista=rec&cur=${encodeURIComponent(`tortilleria azteca ${ID}`)}`;
+    await a.goto(REC);
+    ok(await contiene(a, N2.nombre), 'el negocio sin dueño sale en «Sin reclamar» (página por cursor)');
     await clic(fila(a, N2.nombre, 'Invitar a reclamar').last().getByText('Invitar a reclamar', { exact: true }));
     await clic(a.getByText('Lo recomendaron vecinos', { exact: true }));
     await clic(boton(a, 'Enviar el SMS').last());
     ok(await contiene(a, 'Invitación enviada por SMS'), 'sale la invitación');
     ok(sql(`select count(*) from audit_entries where action = 'negocio.invitar_reclamar' and target_id = '${N2.id}'`) === '1', 'queda en la auditoría');
-    await a.reload();
-    for (let i = 0; i < 40; i++) { if (await contiene(a, N2.nombre, 800)) break; const sig = await vis(a.getByText('→', { exact: true })); if (!sig) break; await sig.click(); await dormir(600); }
+    await a.goto(REC);
     ok(await contiene(a, 'invitación enviada hoy'), 'después dice «invitación enviada hoy» y no se repite');
     await a.screenshot({ path: `${OUT}/n8-reclamos-d.png` });
 

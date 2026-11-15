@@ -64,7 +64,7 @@ export function Negocios({ filas, siguiente, total, porCat, cab, f, cats, porPag
       return r; } });
   const abrir = (id: string) => router.push(`/admin/negocios/${id}`);
   const hace = (iso: string) => { const d = Math.floor((ahora - new Date(iso).getTime()) / 86_400_000); return d < 1 ? "hoy" : d === 1 ? "hace 1 día" : `hace ${d} días`; };
-  const otraPag = (sig: string | null) => (f.cur || sig ? <A.Pager label="" hasPrev={!!f.cur} hasNext={!!sig} onPrev={() => router.push(`${path}?vista=${vista}`)} onNext={() => router.push(`${path}?vista=${vista}&cur=${encodeURIComponent(sig ?? "")}`)} /> : null);
+  const otraPag = (sig: string | null) => (sp.get("cur") || sig ? <A.Pager label="" hasPrev={!!sp.get("cur")} hasNext={!!sig} onPrev={() => router.push(`${path}?vista=${vista}`)} onNext={() => router.push(`${path}?vista=${vista}&cur=${encodeURIComponent(sig ?? "")}`)} /> : null);
   const vistaOtra = vista === "dup" && dup ? (
     <>
       <PanelBloques bloques={[{ type: "note", tone: "info", icon: "store", t: "Negocios con nombre casi igual en la misma ciudad. Si son sucursales vinculadas, no son duplicados. Fusionar entra a Cambios sensibles y lo aplica otra persona." }]} />
