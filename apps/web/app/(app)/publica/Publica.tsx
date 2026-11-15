@@ -6,7 +6,7 @@
 import * as UI from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
-import { empezarDeNuevo, guardarBorrador, leerBorrador, negocioIgual, publicar } from "./acciones";
+import { empezarDeNuevo, guardarBorrador, leerBorrador, negocioIgual, publicar, publicarOtro } from "./acciones";
 import { cap, D0, dig, F, Fl, fmtPh, items, ok, opOf, own, SEQ, subL, X, zoneOf, type Borrador, type Paso } from "./logica";
 import { K, PasoB1, PasoC1, type UiB } from "./PasosBC";
 import { PasoD1, PasoE1 } from "./PasosDE";
@@ -138,6 +138,12 @@ export function Publica({ v }: { v: VistaPublica }) {
     if (!r.ok) return setUi({ err: r.mensaje ? r.mensaje[v.lang] : E2("Algo falló.", "Something failed.") });
     void tras({ nombre: `${fn} ${ln[0]}.`, primero: fn });
   };
+  // 9n-7 · «Publicar otro negocio»: el servidor guarda el publicado y deja el borrador en blanco; aquí se empieza en B1.
+  const otro = async () => {
+    setUi({ busy: true, err: null }); const r = await publicarOtro().catch(() => null); setUi({ busy: false });
+    if (!r?.ok) { setUi({ err: r?.mensaje ? E2(r.mensaje.es, r.mensaje.en) : E2("Algo falló.", "Something failed.") }); return; }
+    const n = D0(); try { localStorage.setItem(KEY, JSON.stringify(n)); } catch { /* */ } setD(n); setPublicado(null); go("B1");
+  };
   const reiniciar = async () => { await empezarDeNuevo(); const n = D0(); try { localStorage.setItem(KEY, JSON.stringify(n)); } catch { /* */ } setD(n); setUi({ askNew: false }); go("B1"); };
 
   // ── Textos de cada paso ──
@@ -176,6 +182,8 @@ export function Publica({ v }: { v: VistaPublica }) {
     else if (publicado) {
       H.tag = E2("PUBLICADA", "LIVE"); H.t = publicado.nombre + E2(` ya sale en ${v.ciudad}`, ` is live in ${v.ciudad}`); H.s = E2("Lo demás lo completas en tu panel cuando quieras.", "Finish the rest in your dashboard whenever you want.");
       goB.label = E2("Ir a mi panel", "Go to my dashboard"); goB.onClick = () => router.push(`/panel/${publicado.id}`);
+      // 9n-7 · Del diseño (A1 publicado → «Publicar otro negocio»): el publicado queda guardado y se empieza otro en B1.
+      alt = { label: E2("Publicar otro negocio", "List another business"), onClick: () => void otro() };
     } else {
       H.t = E2("Sigue donde lo dejaste", "Pick up where you left off"); H.s = E2("Todo lo que llenaste está guardado.", "Everything you filled in is saved.");
       goB.label = E2("Seguir donde lo dejé", "Continue where I left off"); goB.onClick = () => go((SEQ as readonly string[]).includes(d.last) ? (d.last as Paso) : "B1");

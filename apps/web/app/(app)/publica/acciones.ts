@@ -39,6 +39,29 @@ export async function guardarBorrador(paso: string, d: Record<string, unknown>) 
   return { ok: true as const };
 }
 
+/* 9n-7 · «Publicar otro negocio» (ONB-NEG-A1 publicado; LAUNCH L49 (11)): el borrador publicado se guarda tal cual en onboarding_drafts_done
+   (nada se borra; Analítica lo sigue contando) y el de la persona vuelve a empezar en B1, sin nada del negocio anterior. El panel ya maneja
+   varios negocios por cuenta. Tope: NEGOCIOS_POR_CUENTA activos como dueña (antiabuso; más, por Soporte). */
+const NEGOCIOS_POR_CUENTA = 5;
+export async function publicarOtro() {
+  if (!(await mismoOrigen())) return { ok: false as const, mensaje: { es: "No permitido.", en: "Not allowed." } };
+  const me = await yo();
+  if (!me) return { ok: false as const, mensaje: { es: "Entra para publicar.", en: "Sign in to publish." } };
+  const n = (await db().query<{ n: number }>(`select count(*)::int as n from businesses where owner_user_id = $1 and status = 'active'`, [me.id])).rows[0]?.n ?? 0;
+  if (n >= NEGOCIOS_POR_CUENTA) return { ok: false as const, mensaje: { es: `Ya tienes ${n} negocios. Para publicar otro, escríbele a Soporte.`, en: `You already have ${n} businesses. To list another, write to Support.` } };
+  const ok = await tx(async (c) => {
+    const r = (await c.query(
+      `insert into onboarding_drafts_done (user_id, step, answers, imported_from, promo_code, started_at, completed_at, business_id)
+       select user_id, step, answers, imported_from, promo_code, started_at, completed_at, business_id from onboarding_drafts
+        where user_id = $1 and completed_at is not null for update`, [me.id])).rowCount;
+    if (!r) return false;
+    await c.query(`update onboarding_drafts set step = 'B1', answers = '{}'::jsonb, imported_from = null, promo_code = null, started_at = now(), completed_at = null, business_id = null
+                    where user_id = $1 and completed_at is not null`, [me.id]);
+    return true;
+  });
+  return ok ? { ok: true as const } : { ok: false as const, mensaje: { es: "Todavía no has publicado un negocio.", en: "You have not listed a business yet." } };
+}
+
 /* Empezar de nuevo: el borrador se reemplaza (es trabajo en curso de la persona, no un registro publicado). */
 export async function empezarDeNuevo() {
   if (!(await mismoOrigen())) return { ok: false as const };

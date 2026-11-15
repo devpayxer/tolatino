@@ -49,6 +49,7 @@
     "com_mentions": { "reglas": [ { "col": "user_id", "accion": "borrar", "fusion": "no" } ] },
     "user_days": { "reglas": [ { "col": "user_id", "accion": "borrar", "fusion": "no" } ] },
     "onboarding_drafts": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "borrador_de_negocio", "fusion": "no" } ] },
+    "onboarding_drafts_done": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "negocios_publicados_antes", "fusion": "no" } ] },
     "notif_digests": { "reglas": [ { "col": "user_id", "accion": "borrar", "fusion": "no" } ] },
     "notifications": { "reglas": [
       { "col": "user_id", "accion": "vaciar", "exporta": "avisos", "fusion": "no", "set": { "title": "''", "body": "''", "href": "null", "sms_to": "null" } },

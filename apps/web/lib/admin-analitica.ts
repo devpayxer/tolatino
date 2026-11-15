@@ -550,8 +550,10 @@ export async function embudos(s: Alcance, dias: number) {
               count(*) filter (where exists (select 1 from user_days d where d.user_id = u.id and d.day > u.d0))::int as volvieron
          from u`, [s.cities, dias]),
     dbAnalisis().query<{ paso: string; n: number; publicaron: number }>(
+      // 9n-7 · Con «Publicar otro negocio» el publicado pasa a onboarding_drafts_done: el embudo cuenta los dos.
       `select d.step as paso, count(*)::int as n, count(*) filter (where d.completed_at is not null)::int as publicaron
-         from onboarding_drafts d join users u on u.id = d.user_id
+         from (select user_id, step, started_at, completed_at from onboarding_drafts union all select user_id, step, started_at, completed_at from onboarding_drafts_done) d
+         join users u on u.id = d.user_id
         where d.started_at > now() - make_interval(days => $2) and ${scope("u.home_city_id")} group by d.step`, [s.cities, dias]),
     dbAnalisis().query<{ buscaron: number; ficha: number; contactaron: number; enviaron: number; aceptadas: number }>(
       `with e as (select coalesce(user_id, device) as quien, name from app_events

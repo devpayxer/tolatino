@@ -40,6 +40,9 @@ Todo se guarda solo: si sales, vuelves a /publica (también desde otro teléfono
 
 **¿Me cobran algo hoy?** No. No pedimos tarjeta.
 
+**¿Puedo publicar otro negocio?** Sí. Entra a /publica: con tu negocio ya publicado, toca **Publicar otro negocio** y empiezas uno
+nuevo en blanco (el primero sigue igual y lo ves en tu panel). Hasta 5 negocios por cuenta; para más, escríbele a Soporte.
+
 ## English
 
 List your business in about 5 minutes, free, with Pro free for 30 days (no card). Sign in with your phone and a 6-digit
@@ -47,3 +50,6 @@ code, pick your category and what you do, answer your category's questions, chec
 where and when, take or choose a cover photo and publish — it goes live right away. Everything saves automatically and
 you can continue from another phone. Photos are cleaned on the server (camera data and GPS location removed). If the
 name already exists we ask whether it's yours. A promoter code (HZL30, or a promoter's own code) gives 60 days of Pro; your own code does not count.
+
+Already listed? On /publica tap **List another business** to start a new one from scratch (the first one stays as it is, in your
+dashboard). Up to 5 businesses per account; for more, write to Support.

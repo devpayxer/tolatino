@@ -65,6 +65,19 @@ const seguir = async (p) => { const b = p.locator('button:has-text("Seguir"), sp
   await p.waitForTimeout(800);
   ok(true, `publicada: «PUBLICADA» (${new URL(p.url()).pathname})`);
   await p.screenshot({ path: OUT + 'p6-h1.png', fullPage: true });
+  // 9n-7 · «Publicar otro negocio» (A1 publicado, del diseño): el publicado queda guardado y se empieza otro en B1, en blanco.
+  {
+    const sqlp = (q) => require('child_process').execSync(`docker exec -i ${ENT.DB} psql -U tolatino -d tolatino -qAt -v ON_ERROR_STOP=1`, { input: q, stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
+    const U = sqlp(`select id from users where phone = '+1${TEL}'`), NEG = sqlp(`select business_id from onboarding_drafts where user_id = '${U}'`);
+    await p.goto('http://localhost:3100/publica'); await p.getByText('PUBLICADA').first().waitFor({ timeout: 15000 });
+    await p.getByText('Publicar otro negocio', { exact: true }).first().click();
+    await p.getByText('¿Qué tipo de negocio tienes?').first().waitFor({ timeout: 15000 });
+    ok(sqlp(`select count(*) from onboarding_drafts_done where user_id = '${U}' and business_id = '${NEG}'`) === '1', '«Publicar otro negocio»: el publicado quedó guardado (nada se borra)');
+    ok(sqlp(`select (completed_at is null and business_id is null and answers = '{}'::jsonb)::text from onboarding_drafts where user_id = '${U}'`) === 'true', '  … y el borrador empieza en blanco');
+    ok(sqlp(`select status from businesses where id = '${NEG}'`) === 'active', '  … y el negocio publicado sigue igual');
+    ok(/no se editan/.test((() => { try { sqlp(`update onboarding_drafts_done set step = 'X' where user_id = '${U}'`); return ''; } catch (e) { return String(e.stderr); } })()), 'el publicado guardado no se edita (la base)');
+    await p.screenshot({ path: OUT + 'p6b-otro-b1.png' });
+  }
   // Escritorio: un negocio nuevo con otra cuenta, para ver el riel y la página en vivo
   const d = await b.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
   await medios(d);
