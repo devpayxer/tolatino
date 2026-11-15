@@ -4980,3 +4980,12 @@ cada apertura en la auditoría. ¿Lo hacemos así?
   cambiar precio, depósito, unidades y fotos; «Agregar algo para rentar»; «Quitar de la lista». **Pantalla compuesta con piezas del
   sistema (el diseño no la trae):** dime si la quieres distinta.
 - Super Admin › Negocios › un negocio › **Operación** (nueva, del prototipo): cifras, vistas de 7 días, lo que tocan y la lista por tipo.
+
+## Fase 9 · 9c-2 — Contraste del texto gris (15 nov)
+**Qué mirar (sandbox):** los textos chicos en gris (etiquetas en mayúsculas, horas, «hace 2 h», pestañas no elegidas, notas) se ven un poco más
+oscuros en toda la app. Antes no llegaban al mínimo de lectura de accesibilidad (WCAG AA 4,5:1): estaban en 2,8–4,3; ahora en 5. Es el mismo gris
+que ya usaba el texto secundario. **Las capturas aprobadas cambian por esto:** se vuelven a aprobar en el CI y quedan para tu OK.
+
+**Decisión por defecto (AB):** un solo gris (60 %) para lo que antes eran tres tonos (42 %, 50 % y 55 %); la jerarquía la siguen dando el tamaño y el peso.
+Si quieres conservar dos tonos, el más claro no puede bajar de 58 %.
+

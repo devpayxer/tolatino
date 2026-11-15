@@ -2366,3 +2366,11 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **9n-18 · Negocio 360° › Operación** (del prototipo): cifras 90/30 días, vistas 7 días, toques, Free, operaciones por tipo → Transacciones. neg9n8 §6.
 - **9f-4a · Super Admin en inglés, la base:** contexto de idioma (`idioma-admin.tsx`, `useE()`), marco, menú y confirmar con motivo. adm9n3 §11. Siguen los módulos.
 - **9f-4b…m · Todo el Super Admin en inglés** (≈60 pantallas; seis agentes en paralelo, revisado y subido por grupos). Queda en español lo que arma el servidor (va con 9f-3).
+- **9f-4n · Lo que faltaba del Super Admin en inglés:** el hilo de Contenido (HiloAdmin), el correo de la bandeja, las pestañas de categorías de Negocios,
+  el primer Admin (Arranque) y «Sin acceso»; Eventos y el 360° pasan el idioma a los ayudantes de la cola (estado, acciones del organizador, ficha).
+  Al revés `analiticaSinPersonas` apunta a la nota bilingüe (CI 43740085317 lo cazó).
+- **9c-2 · Contraste AA del texto gris:** ink al 40–55 % → ink al 60 % (5:1 sobre blanco y papel) en el sistema portado (`contraste()` en
+  `scripts/portar-sistema.mjs`), en las pantallas y piezas propias (`scripts/contraste-aa.mjs`: style color, Icon color, text-[…], text-ink/40…55; sombras,
+  bordes, fondos y contornos no) y en los tokens (`--tl-text-muted`, `--tl-text-faint`). Guardián **`contrasteTexto`** (al revés **alreves9c** 6/6, con un caso
+  al derecho: una sombra no es texto). Falta: que axe lo confirme en las pantallas clave y aprobar las capturas nuevas (cambia el gris en todas).
+
