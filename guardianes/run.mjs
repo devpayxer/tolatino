@@ -4377,6 +4377,24 @@ const guardianes = {
     }
   },
 
+  /* 9n · «Ver como cliente» de un negocio no activo: la ficha de un negocio oculto, suspendido o en borrador solo se arma para el equipo con neg:ver
+     (ficha(…, { equipo: true }) solo en page.tsx, después de staff() y s.puede("neg", "ver")), cada apertura va a la auditoría y no cuenta como
+     vista ni como evento. ficha() sin ese permiso sigue en «active». Al revés: abrirla sin permiso, sin auditar, contando la vista o aflojar el
+     filtro de ficha() → falla. */
+  fichaOcultaSoloEquipo() {
+    const G = "fichaOcultaSoloEquipo", F = "apps/web/lib/ficha.ts", P = "apps/web/app/(app)/n/[id]/page.tsx";
+    const q = cuerpoFn(sinComent(F), "ficha");
+    if (!/where b\.id = \$1 and \(b\.status = 'active' or \(\$2::boolean and b\.status <> 'merged'\)\)/.test(q) || !/\[id, o\?\.equipo === true\]/.test(q)) falla(G, F, 0, "ficha(): solo activos, salvo { equipo: true } (nunca un fusionado)");
+    for (const f of codigo.filter((x) => /^apps\/web\/.*\.tsx?$/.test(x) && x !== F && x !== P)) if (/\bficha\([^)]*\{ equipo: true \}/.test(sinComent(f))) falla(G, f, 0, "solo la página de la ficha pide la vista del equipo");
+    const t = existsSync(P) ? sinComent(P) : "";
+    const i = t.indexOf("{ equipo: true }");
+    if (i < 0) return falla(G, P, 0, "falta la vista del equipo en la ficha");
+    const antes = t.slice(Math.max(0, i - 400), i);
+    if (!/const s = await staff\(\);\s*if \(s\?\.puede\("neg", "ver"\)\)/.test(antes)) falla(G, P, 0, "la vista del equipo pide la sesión del equipo con neg:ver");
+    if (!/auditar\(c, \{ actor: s\.id, action: "negocio\.ver_como_cliente"/.test(t)) falla(G, P, 0, "cada «Ver como cliente» de un negocio no activo va a la auditoría");
+    if (!/if \(!vistaEquipo\) \{\s*after\(\(\) => registrarVista/.test(t)) falla(G, P, 0, "la vista del equipo no cuenta como vista del negocio");
+  },
+
   /* 9f-5 · La ayuda editada en el Super Admin (0168): el repo sigue siendo la fuente y lo del equipo no sale. (1) El despliegue compara contra el sha
      del ARCHIVO (repo_sha256): mientras no cambie, no pisa lo editado; si cambia, manda el repo y cierra las ediciones vivas. (2) help_edits es solo
      de inserción (trigger). (3) editarSeccionAyuda pasa la misma revisión que un archivo (revisarTextoAyuda: sin lenguaje interno, encabezados ni

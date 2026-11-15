@@ -2414,3 +2414,5 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   español). Editor por sección en Textos y páginas › Ayuda (0168 `help_edits`, `repo_sha256`, `ayuda_editar`/`ayuda_deshacer`, `ayuda_indexar` que no pisa lo
   editado mientras el archivo no cambie); `/api/ayuda/ediciones` + workflow «Ayuda editada»; guardián `ayudaEditadaRepoManda` (alreves9f5 10/10, con
   `depositoRetenido` ampliado a frases partidas); e2e `ayu9f5`. Corregidos de paso: el depósito de Hogar/Auto, las opciones de cobro de Fiestas y Wallet.
+- **9n-20 · «Ver como cliente» de un negocio no activo (L147):** ficha(…, { equipo: true }) solo para el equipo con neg:ver, desde el 360° (`?equipo=1`),
+  con aviso VISTA DEL EQUIPO (InfoCard), auditada y sin contar como vista. Guardián `fichaOcultaSoloEquipo` (alreves9n20 5/5); e2e `neg9n20`.

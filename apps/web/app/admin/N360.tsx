@@ -114,7 +114,8 @@ export function N360({ n, tab, din, oper, operK = "all", evts = null, sop, cpa, 
         { v: String(n.cifras.c30), k: E("CONTACTOS · 30 D", "CONTACTS · 30 D") },
         { v: n.mi != null ? `${n.mi} mi` : "—", k: E("DEL CENTRO", "FROM DOWNTOWN") },
       ],
-      acts: n.status === "active" ? [{ l: E("Ver como cliente", "View as customer"), icon: "search", onClick: () => window.open(`/n/${n.id}`, "_blank") }] : [] },
+      // 9n · Un negocio no activo (oculto, suspendido, borrador…) también se ve «como cliente», solo para el equipo: ?equipo=1 (aviso y auditoría en la ficha).
+      acts: n.status !== "merged" ? [{ l: E("Ver como cliente", "View as customer"), icon: "search", onClick: () => window.open(n.status === "active" ? `/n/${n.id}` : `/n/${n.id}?equipo=1`, "_blank") }] : [] },
   ];
   const notasEstado: ReactNode[] = [];
   if (malo) notasEstado.push(<A.AdminNote key="e" tone="bad" icon="ban" cta={P.retirar ? E("Restaurar", "Restore") : undefined} onCta={() => setConf({ titulo: E("¿Por qué se restaura?", "Why is it being restored?"), hacer: (m) => restaurar(n.id, m) })}>

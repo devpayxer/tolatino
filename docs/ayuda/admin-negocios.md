@@ -105,6 +105,11 @@ Arriba de Negocios hay tres vistas: **Lista**, **Posibles duplicados** y **Recla
 ## Quitar acceso al panel a alguien del equipo
 En el 360° › **Equipo**, cada persona del equipo con acceso al panel tiene **Quitar acceso** (con motivo). Desde ese momento no entra al panel ni lo ve en su lista; lo que el dueño le había dado no cambia, así que **Devolver acceso** lo deja como estaba. El dueño recibe un aviso en su campana. Al dueño no se le quita acceso desde aquí: eso es un cambio de dueño (Transferir dueño).
 
+## Ver como cliente un negocio que no está activo
+En el 360°, **Ver como cliente** también sale cuando el negocio está oculto, suspendido, en borrador o cerrado: abre su ficha tal como la vería un
+cliente, con el aviso **VISTA DEL EQUIPO** y su estado arriba. Solo la ve quien es del equipo y puede ver Negocios; para cualquier otra persona esa
+página no existe. Cada apertura queda en la auditoría y no cuenta como vista del negocio. No se hacen pedidos ni reservas desde ahí.
+
 ## Operación (360°)
 La pestaña **Operación** del Negocio 360° dice cómo trabaja el negocio con lo que le piden: en 90 días, cuántas operaciones tuvo, cuánto
 acepta de lo que le piden, en cuántos minutos responde (promedio) y cuántas se cancelaron o no se dieron; en 30 días, sus vistas, los
@@ -215,6 +220,11 @@ At the top of Businesses there are three views: **List**, **Possible duplicates*
 
 ### Remove access to the dashboard from someone on the team
 In the 360° › **Team**, each team member with dashboard access has **Remove access** (with a reason). From that moment they cannot open the dashboard or see it in their list; what the owner had given them does not change, so **Restore access** leaves it as it was. The owner gets a notice in their bell. The owner's own access is not removed here: that is an ownership change (Transfer owner).
+
+### View a business that is not active as a customer
+In the 360°, **View as customer** also shows when the business is hidden, suspended, a draft or closed: it opens its page the way a customer would see
+it, with the **TEAM VIEW** notice and its status on top. Only team members who can view Businesses see it; for anyone else that page does not exist.
+Each opening is logged in the audit trail and does not count as a view of the business. Do not place orders or bookings from there.
 
 ### Operations (360°)
 The **Operations** tab of the Business 360° shows how the business handles what people ask for: in 90 days, how many operations it had, how much

@@ -38,6 +38,9 @@ import { PieWeb } from "../../_legal/PieWeb";
 import { ubicacion } from "@/lib/ubicacion";
 import { Ficha } from "./Ficha";
 import { BASE_URL } from "@/lib/correo";
+import { auditar, staff } from "@/lib/admin";
+import { tx } from "@/lib/db";
+import { AvisoEquipo } from "./AvisoEquipo";
 
 export const dynamic = "force-dynamic";
 
@@ -51,10 +54,24 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     openGraph: { title: f.nombre, description: f.subsLinea, type: "website", url, ...(f.fotos[0] ? { images: [{ url: f.fotos[0] }] } : {}) } };
 }
 
-export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; p?: string; d?: string; h?: string; editar?: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; p?: string; d?: string; h?: string; editar?: string; equipo?: string }> }) {
   const [{ id }, lang, u, sp] = await Promise.all([params, idioma(), yo(), searchParams]);
   const loc = await ubicacion(u);
-  const f = await ficha(id, lang, loc);
+  let f = await ficha(id, lang, loc);
+  // 9n · «Ver como cliente» de un negocio que no está activo (oculto, suspendido, en borrador, cerrado): solo el equipo con neg:ver, desde el
+  // 360° (?equipo=1), con aviso arriba y cada apertura en la auditoría. Para cualquier otra persona sigue sin existir. No cuenta como vista.
+  let vistaEquipo = false;
+  if (!f && sp.equipo === "1") {
+    const s = await staff();
+    if (s?.puede("neg", "ver")) {
+      f = await ficha(id, lang, loc, { equipo: true });
+      if (f) {
+        vistaEquipo = true;
+        const fid = f.id, st = f.situacion;
+        await tx((c) => auditar(c, { actor: s.id, action: "negocio.ver_como_cliente", targetKind: "business", targetId: fid, after: { estado: st }, reason: "Ver como cliente (negocio no activo)" }));
+      }
+    }
+  }
   if (!f) {
     // 9n-8 · La página de un negocio fusionado lleva al que quedó (enlaces viejos, guardados y buscadores).
     const into = await fusionadoEn(id);
@@ -62,8 +79,11 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     notFound();
   }
   const [ua, ctx] = [(await headers()).get("user-agent"), await contexto()];
-  after(() => registrarVista(f.id, u?.id ?? null, ua, ctx.dev).catch(() => undefined));
-  after(() => evento("ver_ficha", { ref: f.id, ciudad: loc.c.id, userId: u?.id ?? null }, ctx));
+  const fid = f.id;
+  if (!vistaEquipo) {
+    after(() => registrarVista(fid, u?.id ?? null, ua, ctx.dev).catch(() => undefined));
+    after(() => evento("ver_ficha", { ref: fid, ciudad: loc.c.id, userId: u?.id ?? null }, ctx));
+  }
   const [evts, fav, menu, rsv, res, nov, jobs, svc, ofi, tienda, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl] = await Promise.all([
     // 6b · Ficha › Eventos: solo réplica de sus fechas vivas, en Pro.
     f.pro ? eventosDelOrganizador(f.id, u?.id ?? null, lang === "es") : Promise.resolve([]),
@@ -199,7 +219,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     ...(f.lat != null && f.lng != null ? { geo: { "@type": "GeoCoordinates", latitude: f.lat, longitude: f.lng } } : {}) };
   return (
     <>
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, "\\u003c") }} />
+    {vistaEquipo ? null : <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, "\\u003c") }} />}
+    {vistaEquipo ? <AvisoEquipo es={lang === "es"} estado={f.situacion} /> : null}
     <Ficha
       f={{ ...f, guardado: fav.has(f.id) }}
       menu={menu}

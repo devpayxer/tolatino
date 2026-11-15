@@ -40,7 +40,9 @@ const rango = ([a, b]: Rango, lang: Lang) => (a === b ? (lang === "es" ? "24 hor
 const duracion = (m: number) => { const h = Math.floor(m / 60), r = m % 60; return h ? `${h} h${r ? ` ${r} min` : ""}` : `${r} min`; };
 
 /* p = desde dónde mide la persona (APP-CIUDAD); sin él, desde el centro de la ciudad del negocio. */
-export async function ficha(id: string, lang: Lang, p?: Punto) {
+/* 9n · o.equipo: «Ver como cliente» de un negocio que no está activo (oculto, suspendido, en borrador…), solo para el equipo con neg:ver (lo
+   decide la página con la sesión del equipo y lo audita); nunca uno fusionado. Sin o.equipo, solo los activos. */
+export async function ficha(id: string, lang: Lang, p?: Punto, o?: { equipo?: boolean }) {
   const desde = p ? centroSQL(p) : "c.center";
   if (!ID_NEGOCIO.test(id) || id.length > 80) return null;
   const es = lang === "es", L = (a: string, b: string) => (es ? a : b);
@@ -49,6 +51,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
     subs: string[]; tags: string[]; attrs: Record<string, unknown>; about: Bi | null; founded: number | null; phone: string | null;
     address: string | null; radius: number | null; from_home: boolean; lat: number | null; lng: number | null; mi: number | null;
     open: boolean; ciudad: string; estado: string; dow: number; hm: string; dia: number; mes: number; logo: string | null; cerrado_hoy: boolean; cerrado_temp: boolean; chat: boolean;
+    st: string;
   }>(
     `select b.id, b.category_id as cat, b.city_id as city, b.name, s.plan, s.verified, s.rating_avg::float as rating, s.review_count as reviews,
             b.subcategory_ids as subs, b.filter_values as tags, b.category_attrs as attrs, b.about, b.founded_year as founded, b.phone,
@@ -60,10 +63,11 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
             c.name as ciudad, c.state as estado,
             extract(dow from now() at time zone c.timezone)::int as dow, to_char(now() at time zone c.timezone, 'HH24:MI') as hm,
             extract(day from now() at time zone c.timezone)::int as dia, extract(month from now() at time zone c.timezone)::int as mes,
-            b.logo_url as logo, coalesce(b.closed_on = (now() at time zone c.timezone)::date, false) as cerrado_hoy, coalesce(b.temp_closed_until > now(), false) as cerrado_temp
+            b.logo_url as logo, coalesce(b.closed_on = (now() at time zone c.timezone)::date, false) as cerrado_hoy, coalesce(b.temp_closed_until > now(), false) as cerrado_temp,
+            b.status as st
        from businesses b join business_stats_cache s on s.business_id = b.id join cities c on c.id = b.city_id
-      where b.id = $1 and b.status = 'active'`,
-    [id],
+      where b.id = $1 and (b.status = 'active' or ($2::boolean and b.status <> 'merged'))`,
+    [id, o?.equipo === true],
   );
   const b = r.rows[0];
   if (!b) return null;
@@ -156,7 +160,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
 
   const enCasa = b.from_home || (b.cat === "NEG-HOGAR" && !!b.radius);
   return {
-    id: b.id, cat: b.cat, pro, nombre: b.name, verificado: b.verified, abierto: b.open, telefono: b.phone, lat: b.lat, lng: b.lng,
+    id: b.id, cat: b.cat, pro, nombre: b.name, verificado: b.verified, abierto: b.open, telefono: b.phone, lat: b.lat, lng: b.lng, situacion: b.st,
     mensajes: b.chat, // Mensajes (2p): solo negocios con dueño en To'Latino
     hero: foto(urls[0] ?? null, 650), mosaico: [urls[1] ?? urls[0] ?? null, urls[2] ?? urls[0] ?? null].map((u) => foto(u, 650)),
     logo: pro && b.logo ? b.logo : null, iniciales, fotos: urls.map((u) => foto(u, 350)!), nFotos: urls.length,
