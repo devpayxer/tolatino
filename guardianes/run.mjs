@@ -9222,6 +9222,23 @@ const guardianes = {
     }
   },
 
+  /* 9n-5 · plazoAbiertoSeLee: un plazo de Sistema › Configuración que se abrió (editable) no puede seguir escrito como número en lo que ve la
+     persona: si el Admin lo cambia, la pantalla diría otra cosa que la regla. Cada entrada: la clave, dónde se dice y cómo se decía con el de
+     fábrica. Al revés (alreves9b3): volver a escribir «48 horas» en Inscribirme. */
+  plazoAbiertoSeLee() {
+    const G = "plazoAbiertoSeLee";
+    const T = [
+      ["insc_oferta_h", /^apps\/web\/app\/(\(app\)\/n\/\[id\]\/inscribirme\/|panel\/Inscripciones\.tsx)/, /guardan 48 horas|held 48 hours|OFRECIDO · 48 H|OFFERED · 48 H|48 horas para tomarlo|48 hours to take it/],
+      ["insc_baja_h", /^apps\/web\/(app\/\(app\)\/insc\/|lib\/inscripciones\.ts|lib\/admin-analitica\.ts|app\/admin\/Analitica\.tsx)/, /a las 72 horas|after 72 hours|confirmadas en 72 h|interval '72 hours'/],
+      ["ninos_purga_dias", /^apps\/web\/app\/(\(app\)\/n\/\[id\]\/(?!consulta\/)|admin\/acciones-colas\.ts|panel\/Inscripciones\.tsx)/, /borran? a los 30 d[ií]as|deleted (after )?30 days|30 d[ií]as (despu[eé]s )?de terminar|30 days after it ends/],
+    ];
+    for (const x of codigo) {
+      const fs = T.filter(([, f]) => f.test(x));
+      if (!fs.length) continue;
+      sinComent(x).split("\n").forEach((l, i) => { for (const [k, , re] of fs) if (re.test(l)) falla(G, x, i + 1, `dice el plazo «${k}» con el número de fábrica: léelo de Configuración (valor/valores/cfgSql de lib/config.ts)`); });
+    }
+  },
+
   /* 9b-3 · almuerzoATodaHora: los platos del Almuerzo de la semilla (sección con horario propio, 11:00–16:00) solo se piden en esa ventana;
      una prueba que abre el menú del cliente (?tab=menu) y hace clic en uno lo pone a toda hora (avail = 'siempre') o falla según la hora del CI
      (vec9m pasó a las 2 de la tarde y falló a las 4:30 y a las 6:20 del 14 nov). Al revés (alreves9b3): quitarlo de vec9m. */

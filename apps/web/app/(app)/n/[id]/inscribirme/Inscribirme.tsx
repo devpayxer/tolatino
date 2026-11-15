@@ -44,7 +44,7 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
   const VB = useVerificacion(es, pago?.modo, pago?.pk);
   const G = b.grupos.find((g) => g.id === grupo) ?? null, B = b.bandas.find((x) => x.id === banda) ?? null;
   const mat = b.mat, curso = s.k === "curso", resto = s.cents - (curso ? s.mat : 0);
-  const linea = fe ? nm(LINEA_FE) : b.rubro === "edu" ? nm(LINEA_EDU) : b.rubro === "dep" ? E2("Solo se cobra lo que ves aquí: nada que aparezca después en la tarjeta.", "Only what you see here is charged: nothing showing up later on your card.") : E2("Los datos de tu niño van cifrados y se borran a los 30 días.", "Your child's details are encrypted and deleted after 30 days.");
+  const linea = fe ? nm(LINEA_FE) : b.rubro === "edu" ? nm(LINEA_EDU) : b.rubro === "dep" ? E2("Solo se cobra lo que ves aquí: nada que aparezca después en la tarjeta.", "Only what you see here is charged: nothing showing up later on your card.") : E2(`Los datos de tu niño van cifrados y se borran a los ${b.plazos.purga} días.`, `Your child's details are encrypted and deleted after ${b.plazos.purga} days.`);
   // ── Validación de cada paso (el servidor lo vuelve a revisar todo) ──
   const okNino = para !== "hijo" || (tutor && /^[\p{L}][\p{L}' -]{0,29}$/u.test(nNombre.trim()) && (nEdad !== "" || nGrado !== ""));
   const ok0 = okNino && (!s.lvl || !!nivel) && (!s.team || equipo.trim().length >= 2);
@@ -131,7 +131,7 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
         <div className="flex justify-between gap-2.5"><span className={K}>{E2("NOTA · OPCIONAL", "NOTE · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length}/200</span></div>
         <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 200))} rows={2} aria-label={E2("Nota", "Note")} placeholder={E2("Ej.: trabajo de noche los viernes…", "E.g. I work nights on Fridays…")}
           className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
-        <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/55">{fe ? `${nm(AVISO_NOTA)}${b.neutro ? E2(" Tu nota va cifrada: solo la ve la oficina y se borra a los 30 días.", " Your note is encrypted: only the office sees it and it is deleted after 30 days.") : ""}` : E2("No escribas datos médicos aquí; los hablas en persona con el lugar.", "Do not write medical details here; talk about them in person with the place.")}</div>
+        <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/55">{fe ? `${nm(AVISO_NOTA)}${b.neutro ? E2(` Tu nota va cifrada: solo la ve la oficina y se borra a los ${b.plazos.purga} días.`, ` Your note is encrypted: only the office sees it and it is deleted after ${b.plazos.purga} days.`) : ""}` : E2("No escribas datos médicos aquí; los hablas en persona con el lugar.", "Do not write medical details here; talk about them in person with the place.")}</div>
       </div>
       {lineaNota}
     </div>
@@ -164,7 +164,7 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
           : <div className="rounded-[15px] bg-paper px-[15px] py-3.5 text-[13.5px] font-bold leading-[1.4]">{E2("Todavía no hay grupos con fecha.", "There are no dated groups yet.")}</div>}
       </> : <div className="rounded-[15px] bg-paper px-[15px] py-3.5 text-[13.5px] font-bold leading-[1.4]">{E2("Empiezas cuando el lugar te confirme; te dicen el primer día.", "You start once the place confirms; they tell you the first day.")}</div>}
       {sinCupo && <div className="flex flex-col gap-2.5 rounded-[15px] bg-paper px-[15px] py-3.5">
-        <div className="text-[13.5px] font-bold leading-[1.4]">{anotado ? (b.espera?.estado === "offered" ? E2("Te ofrecieron un cupo: tómalo antes de que venza.", "You were offered a spot: take it before it expires.") : E2(`Estás en la lista de espera${b.espera ? ` · hay ${b.espera.pos} antes que tú` : ""}.`, `You are on the waitlist${b.espera ? ` · ${b.espera.pos} ahead of you` : ""}.`)) : E2("No hay cupo ahora. Si se abre uno, te lo ofrecemos y te lo guardan 48 horas.", "No openings now. If one opens, we offer it to you and it is held 48 hours.")}</div>
+        <div className="text-[13.5px] font-bold leading-[1.4]">{anotado ? (b.espera?.estado === "offered" ? E2("Te ofrecieron un cupo: tómalo antes de que venza.", "You were offered a spot: take it before it expires.") : E2(`Estás en la lista de espera${b.espera ? ` · hay ${b.espera.pos} antes que tú` : ""}.`, `You are on the waitlist${b.espera ? ` · ${b.espera.pos} ahead of you` : ""}.`)) : E2(`No hay cupo ahora. Si se abre uno, te lo ofrecemos y te lo guardan ${b.plazos.oferta} horas.`, `No openings now. If one opens, we offer it to you and it is held ${b.plazos.oferta} hours.`)}</div>
         {!anotado && <Button variant="secondary" disabled={ocupado} onClick={() => void anotarme()}>{E2("Anotarme en la lista de espera", "Join the waitlist")}</Button>}
       </div>}
       {lineaNota}

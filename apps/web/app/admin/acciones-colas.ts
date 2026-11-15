@@ -714,7 +714,7 @@ export async function verNinoCaso(id: string, texto: string): Promise<ResAdm> {
   if (!q) return no("Ese caso ya no está abierto.");
   const n = await (await import("@/lib/ninos-privado")).leerNino(q.op, { cola: String(id) });
   await tx((c) => auditar(c, { actor: s.id, action: "nino.ver", targetKind: "case", targetId: String(id), city: q.city, before: null, after: { datos: n ? "vistos" : "ya borrados" }, reason: m }));
-  if (!n) return { ok: true, mensaje: "Los datos de ese niño ya se borraron (30 días después de terminar)." };
+  if (!n) return { ok: true, mensaje: `Los datos de ese niño ya se borraron (${await (await import("@/lib/config")).valor("ninos_purga_dias")} días después de terminar).` };
   return { ok: true, mensaje: `${n.nombre} · ${n.edad != null ? `${n.edad} años` : n.grado ?? "—"}${n.escuela ? ` · escuela: ${n.escuela}` : ""}${n.nota ? ` · nota: «${n.nota}»` : ""}` };
 }
 

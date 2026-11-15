@@ -245,9 +245,9 @@ export async function inscripcionesAnalitica(s: Alcance, dias: number) {
               round(avg(extract(epoch from coalesce(w.updated_at, now()) - w.created_at) / 86400) filter (where w.status in ('accepted', 'waiting')), 1)::float as dias,
               count(*) filter (where w.status in ('offered', 'accepted', 'expired') and w.offered_until is not null)::int as ofrecidas, count(*) filter (where w.status = 'accepted')::int as tomadas
          from waitlist_entries w where w.created_at > now() - make_interval(days => $2) and ${scope("w.city_id")}`, [s.cities, dias]),
-    dbAnalisis().query<{ pedidas: number; en72: number }>(
+    dbAnalisis().query<{ pedidas: number; en72: number; h: number }>(
       `select count(*)::int as pedidas,
-              count(*) filter (where exists (select 1 from operation_events e2 where e2.operation_id = e.operation_id and e2.kind = 'insc_cancel_ok' and e2.at <= e.at + interval '72 hours'))::int as en72
+              count(*) filter (where exists (select 1 from operation_events e2 where e2.operation_id = e.operation_id and e2.kind = 'insc_cancel_ok' and e2.at <= e.at + make_interval(hours => ${cfgSql("insc_baja_h")})))::int as en72, ${cfgSql("insc_baja_h")} as h
          from operation_events e join operations o on o.id = e.operation_id where e.kind = 'insc_cancel_req' and e.at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
     dbAnalisis().query<{ tn: number; tok: number; cn: number; cok: number }>(
       `select count(*) filter (where r.answers ? 'totalOk')::int as tn, count(*) filter (where (r.answers->>'totalOk')::int = 1)::int as tok,

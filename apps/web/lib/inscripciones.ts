@@ -1,5 +1,5 @@
 import "server-only";
-import { cfgSql } from "./config";
+import { cfgSql, valores } from "./config";
 import type { Pool, PoolClient } from "pg";
 import { cobrarOperacion, comision, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
 import { db, tx } from "./db";
@@ -21,7 +21,7 @@ import { bancoPide } from "./pagos/verificacion";
      Cancelar antes de empezar → devolución completa; después → la matrícula no se devuelve. El grupo no abre o el negocio cancela →
      devolución completa a todos, siempre.
    - CUPO: el grupo (class_groups.seats_booked) o la banda de edad (care_openings.openings) se mueve aquí y solo aquí, con el candado
-     `insc:{negocio}` (la última plaza no se da dos veces; la base tampoco deja pasarse). Una oferta de la lista de espera aparta el cupo 48 h.
+     `insc:{negocio}` (la última plaza no se da dos veces; la base tampoco deja pasarse). Una oferta de la lista de espera aparta el cupo insc_oferta_h horas (Configuración).
    - NIÑOS: con «Para mi hijo o hija» los datos del niño van cifrados por lib/ninos-privado.ts; nunca en avisos (guardián avisoNinosNeutro).
      Terapias y familia: avisos sin el nombre del servicio. */
 type Q = Pool | PoolClient;
@@ -123,7 +123,14 @@ export type BookingInsc = {
   g1: "si" | "usada" | null; para: Para[]; espera: { id: string; pos: number; estado: string; vence: string | null } | null; mias: number; free: boolean; tarjeta: boolean; hoy: string;
   // 4ie · Iglesias: «Pedir fecha» (sin grupos con fecha: la fecha deseada y la franja), neutro (consejería) y el tope de Free (10 al mes).
   fecha: boolean; fechas: string[]; tope: boolean;
+  // 9n-5 · Los plazos de Sistema › Configuración que la pantalla dice (la oferta de la lista, la baja de una membresía, el borrado de los datos del niño).
+  plazos: PlazosInsc;
 };
+export type PlazosInsc = { oferta: number; baja: number; purga: number };
+export async function plazosInsc(): Promise<PlazosInsc> {
+  const v = await valores("insc_oferta_h", "insc_baja_h", "ninos_purga_dias");
+  return { oferta: v.insc_oferta_h, baja: v.insc_baja_h, purga: v.ninos_purga_dias };
+}
 export async function bookingInsc(negocio: string, svcId: string, userId: string | null): Promise<BookingInsc | null> {
   if (!ID.test(svcId)) return null;
   const x = await contexto(db(), negocio);
@@ -150,7 +157,7 @@ export async function bookingInsc(negocio: string, svcId: string, userId: string
     plan: s.k === "curso" ? s.plan : 0, contrato: x.rubro === "dep" && s.k === "mes" ? x.contrato : 0, salir: x.rubro === "dep" && s.k === "mes" ? x.salir : 0,
     g1, para: x.rubro === "ninos" ? ["hijo"] : ["yo", "hijo", "otro"], espera, mias, free: x.plan !== "pro", tarjeta, hoy: x.hoy,
     neutro: x.neutro || (x.rubro === "fe" && NEUTRO_FE.test(`${s.name.es} ${s.name.en}`)), necesitaGrupo: !fecha && !B.length && (tieneGrupos || s.k === "curso" || s.k === "clase" || s.k === "hora"),
-    fecha, fechas: fecha ? fechasFe(x.hoy) : [], tope,
+    fecha, fechas: fecha ? fechasFe(x.hoy) : [], tope, plazos: await plazosInsc(),
   };
 }
 
@@ -440,13 +447,13 @@ export async function inscCliente(userId: string, numero: string, que: QueInsc):
     if (que === "cancelar") {
       if (!VIVAS.includes(o.status)) return ya;
       const memb = o.det.k === "mes" || o.det.k === "semana";
-      // Una membresía (o la semana de la guardería) ya confirmada: se pide la baja con fecha y hora; el lugar la confirma o a las 72 h queda.
+      // Una membresía (o la semana de la guardería) ya confirmada: se pide la baja con fecha y hora; el lugar la confirma o a las insc_baja_h horas queda (Configuración).
       if (o.status === "confirmed" && memb) {
-        if (o.detail === "cancel_req") return no("Ya pediste la cancelación. Queda cancelada cuando el lugar la confirme o a las 72 horas.", "You already asked to cancel. It is cancelled when the place confirms or after 72 hours.");
+        if (o.detail === "cancel_req") { const h = (await plazosInsc()).baja; return no(`Ya pediste la cancelación. Queda cancelada cuando el lugar la confirme o a las ${h} horas.`, `You already asked to cancel. It is cancelled when the place confirms or after ${h} hours.`); }
         await c.query(`update operations set status_detail = 'cancel_req', details = details || $2::jsonb, updated_at = now() where id = $1::bigint`, [o.id, JSON.stringify({ cancel_req_at: new Date().toISOString(), prev_detail: o.detail })]);
         await ev(c, o.id, "insc_cancel_req", "user", userId);
         baja = true;
-        despues = async () => { await avisarNeg(numero, "biz_insc_cancel_req"); };
+        despues = async () => { await avisarNeg(numero, "biz_insc_cancel_req", { horas: String((await plazosInsc()).baja) }); };
         return { ok: true };
       }
       // Un curso: antes de empezar, la matrícula se devuelve completa; después, se queda con la escuela.
@@ -634,7 +641,7 @@ export async function salirEspera(userId: string, id: string): Promise<ResI> {
   const u = await db().query(`update waitlist_entries set status = 'left', updated_at = now() where id = $1::bigint and user_id = $2 and status in ('waiting', 'offered')`, [id, userId]);
   return u.rowCount ? { ok: true } : no("Ya no estás en esa lista.", "You are no longer on that list.");
 }
-/* Ofrecer el cupo libre a la persona de la lista: lo aparta 48 h. Lo hace el lugar, o el barrido con la siguiente cuando una oferta vence. */
+/* Ofrecer el cupo libre a la persona de la lista: lo aparta insc_oferta_h horas. Lo hace el lugar, o el barrido con la siguiente cuando una oferta vence. */
 export async function ofrecerCupo(negocio: string, entrada: string, actorId: string | null): Promise<ResI> {
   if (!ID.test(entrada)) return no("Esa persona ya no está en la lista.", "That person is no longer on the list.");
   let aviso: { uid: string; negocio: string; vence: string; href: string } | null = null;
@@ -710,7 +717,7 @@ export async function vencerInsc(f: { negocio?: string; userId?: string; numero?
   for (const t of T) { await db().query(`insert into operation_events (operation_id, kind, actor) values ($1::bigint, 'insc_done', 'system')`, [t.id]); await avisarCliente(t.num, "insc_done"); }
   n += T.length;
   if (!w.length) await db().query(`update class_groups g set status = 'finished', updated_at = now() from cities c where c.id = g.city_id and g.purpose = 'insc' and g.status = 'started' and coalesce(g.ends_on + 7, g.starts_on + 1) <= (now() at time zone c.timezone)::date`);
-  // 5. La baja pedida de una membresía: a las 72 h queda cancelada sola, con su constancia.
+  // 5. La baja pedida de una membresía: a las insc_baja_h horas queda cancelada sola, con su constancia.
   const B = (await db().query<{ num: string; biz: string }>(`select o.number as num, o.business_id as biz from operations o where o.kind = 'enrollment' and o.status = 'confirmed' and o.status_detail = 'cancel_req' and (o.details->>'cancel_req_at')::timestamptz < now() - make_interval(hours => ${cfgSql("insc_baja_h")})${y} limit 200`, a)).rows;
   for (const b of B) { const r = await confirmarBaja(b.biz, b.num, null); if (r.ok) n++; }
   // 6. Ofertas de la lista de espera vencidas → se ofrece a la siguiente si sigue habiendo cupo.
@@ -735,7 +742,7 @@ export type InscVista = {
   cancelo: string | null; motivoNeg: string | null; bajaPedida: string | null; negocio: { id: string; nombre: string; foto: string | null; telefono: string | null; direccion: string | null };
   nino: { nombre: string } | null; enviada: string; pasos: { k: string; t: Bi; hecho: boolean }[]; resena: boolean; hoy: string;
   // 4ie · Iglesias: fecha deseada y franja, neutro (consejería) y la fecha propuesta.
-  fecha: boolean; franja: string | null; neutro: boolean; altFranja: string | null;
+  fecha: boolean; franja: string | null; neutro: boolean; altFranja: string | null; plazos: PlazosInsc;
 };
 export async function inscVista(userId: string, numero: string): Promise<InscVista | null> {
   if (!NUM_I.test(numero)) return null;
@@ -772,6 +779,7 @@ async function vista(o: Op, cliente: boolean): Promise<InscVista> {
       { k: "terminada", t: memb ? { es: "Cancelada", en: "Cancelled" } : { es: "Terminada", en: "Finished" }, hecho: memb ? o.status === "cancelled" && conf : o.status === "done" },
     ],
     resena: x.resena, hoy: o.hoy, fecha: !!o.det.fecha, franja: (o.det.franja as string) ?? null, neutro: !!o.det.neutro, altFranja: alt?.franja ?? null,
+    plazos: await plazosInsc(),
   };
 }
 
@@ -785,7 +793,7 @@ const FILA = `select o.number as numero, o.status as estado, o.status_detail as 
                 from operations o join users u on u.id = o.user_id and o.kind = 'enrollment'`;
 export type GrupoPanel = { id: string; svc: Bi; label: Bi; inicio: string; fin: string | null; estado: string; total: number; fuera: number; ocupados: number; libres: number; inscritos: number; espera: number };
 export type EsperaPanel = { id: string; cliente: string; svc: Bi; grupo: Bi | null; estado: string; vence: string | null; desde: string; libres: number | null };
-export type InscPanel = { esperan: FilaInsc[]; bajas: FilaInsc[]; activas: FilaInsc[]; grupos: GrupoPanel[]; espera: EsperaPanel[]; hoy: string };
+export type InscPanel = { esperan: FilaInsc[]; bajas: FilaInsc[]; activas: FilaInsc[]; grupos: GrupoPanel[]; espera: EsperaPanel[]; hoy: string; plazos: PlazosInsc };
 export async function inscPanel(negocio: string): Promise<InscPanel> {
   await vencerInsc({ negocio });
   const hoy = (await db().query<{ hoy: string }>(`select (now() at time zone ci.timezone)::date::text as hoy from businesses b join cities ci on ci.id = b.city_id where b.id = $1`, [negocio])).rows[0]?.hoy ?? "";
@@ -801,7 +809,7 @@ export async function inscPanel(negocio: string): Promise<InscPanel> {
             case when g.id is not null then greatest(0, g.seats_total - g.seats_outside - g.seats_booked) when o.id is not null then o.openings end as libres
        from waitlist_entries w join users u on u.id = w.user_id join items i on i.id = w.item_id left join class_groups g on g.id = w.group_id left join care_openings o on o.id = w.band_id
       where w.business_id = $1 and w.status in ('waiting', 'offered') order by w.id limit 100`, [negocio])).rows;
-  return { esperan: F.filter((x) => x.estado === "pending" || x.estado === "change_proposed"), bajas: F.filter((x) => x.detalle === "cancel_req"), activas: F.filter((x) => x.estado === "confirmed" && x.detalle !== "cancel_req"), grupos, espera, hoy };
+  return { esperan: F.filter((x) => x.estado === "pending" || x.estado === "change_proposed"), bajas: F.filter((x) => x.detalle === "cancel_req"), activas: F.filter((x) => x.estado === "confirmed" && x.detalle !== "cancel_req"), grupos, espera, hoy, plazos: await plazosInsc() };
 }
 /* El detalle en el panel: los datos del niño SOLO aquí, para el negocio de esa inscripción, y cada vista queda en la auditoría. */
 export type InscDetalle = InscVista & { cliente: string; nota: string | null; ninoPanel: { nombre: string; edad: number | null; grado: string | null; escuela: string | null; nota: string | null } | null;

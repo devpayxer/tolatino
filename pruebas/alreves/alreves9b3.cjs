@@ -83,6 +83,8 @@ const casos = [
   ['precioVuelve', 'pruebas/e2e/ret4n.cjs', "  process.on('exit', () => sql(`update items set price_cents = ${p0} where business_id = '${M}' and name->>'es' = 'Pierna de cerdo'`)); // 9b-3 · devuelve el precio: merc4p cuenta con el de la semilla\n", ''],
   // almuerzoATodaHora: vec9m vuelve a abrir «Pescado frito» sin ponerlo a toda hora (depende de la hora del CI)
   ['almuerzoATodaHora', 'pruebas/e2e/vec9m.cjs', "sql(`update items set avail = 'siempre' where", "sql(`update items set avail = 'own' where"],
+  // plazoAbiertoSeLee: Inscribirme vuelve a decir «48 horas» en vez del plazo de Configuración
+  ['plazoAbiertoSeLee', 'apps/web/app/(app)/n/[id]/inscribirme/Inscribirme.tsx', 'te lo guardan ${b.plazos.oferta} horas.`', 'te lo guardan 48 horas.`'],
   // textoQueExiste: una prueba busca en la pantalla un texto que ya no está en ningún lado (lo que le pasó a sis9j con 9o)
   ['textoQueExiste', 'pruebas/e2e/sis9j.cjs', "await contiene(a, 'DESPLIEGUES Y VUELTAS ATRÁS')", "await contiene(a, 'Llegan cuando se encienda producción')"],
 ];

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
 import { yo } from "@/lib/cuenta";
+import { valor } from "@/lib/config";
 import { guardados } from "@/lib/categoria";
 import { contexto, evento } from "@/lib/eventos";
 import { ficha, registrarVista } from "@/lib/ficha";
@@ -119,6 +120,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // y de Tu herramienta; si el negocio escribió la misma pregunta en Tu página, gana la suya.
   if (insc && f.pro) {
     const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b), ni = insc.ninos, dp = insc.dep;
+    const purga = insc.rubro === "ninos" ? await valor("ninos_purga_dias") : 0; // 9n-5 · el plazo de Configuración, no el número escrito
     const auto = insc.rubro === "edu" ? [
       { q: E2("¿El precio incluye todo?", "Does the price include everything?"), a: E2("El precio del curso es el total: libros y examen incluidos o dichos aparte, antes de inscribirte.", "The course price is the total: books and exam included or listed separately, before you enroll.") },
       ...(insc.cursos.some((x) => x.k === "curso" && x.mat) ? [{ q: E2("¿Para qué es la matrícula?", "What is the registration fee for?"), a: E2("Aparta tu cupo y se descuenta del total. Si el grupo no abre, se devuelve completa.", "It holds your seat and comes off the total. If the group does not open, it is refunded in full.") }] : []),
@@ -129,7 +131,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
         { q: E2("¿Aceptan el subsidio CCIS?", "Do you accept CCIS?"), a: ni.ccis ? E2("Sí. El estado paga una parte y te dicen lo que te toca antes de empezar.", "Yes. The state pays part and they tell you your share before you start.") : E2("No; pagas el precio de la semana.", "No; you pay the weekly price.") }] : []),
       { q: E2("¿Qué edades atienden?", "What ages do you serve?"), a: edadTexto(ni.edad, es) },
       { q: E2("¿Quién puede recoger al niño?", "Who can pick up my child?"), a: E2("Solo las personas autorizadas, siempre con identificación. La lista se entrega en persona.", "Only authorized people, always with ID. The list is handed in person.") },
-      { q: E2("¿Qué datos de mi niño guarda To’Latino?", "What data about my child does To’Latino keep?"), a: E2("Solo su nombre de pila, la edad o el grado y una nota, cifrados; se borran a los 30 días. Nunca la fecha de nacimiento, fotos ni datos médicos.", "Only first name, age or grade and a note, encrypted; deleted after 30 days. Never birth date, photos or medical data.") },
+      { q: E2("¿Qué datos de mi niño guarda To’Latino?", "What data about my child does To’Latino keep?"), a: E2(`Solo su nombre de pila, la edad o el grado y una nota, cifrados; se borran a los ${purga} días. Nunca la fecha de nacimiento, fotos ni datos médicos.`, `Only first name, age or grade and a note, encrypted; deleted after ${purga} days. Never birth date, photos or medical data.`) },
     ] : dp ? [
       ...(dp.memb ? [{ q: E2("¿Hay contrato?", "Is there a contract?"), a: contratoTexto({ contrato: dp.contrato, salir: dp.salir }, es) + "." }, { q: E2("¿Hay cuota de inscripción?", "Is there a signup fee?"), a: dp.inscripcion ? E2(`Sí: $${dp.inscripcion / 100}, una sola vez.`, `Yes: $${dp.inscripcion / 100}, once.`) : E2("No.", "No.") }] : []),
       ...(dp.liga ? [{ q: E2("¿La cuota es por partido?", "Is the fee per game?"), a: E2("No: es de toda la temporada. Si la liga no abre, el depósito se devuelve completo.", "No: it covers the whole season. If the league does not open, the deposit is refunded in full.") },

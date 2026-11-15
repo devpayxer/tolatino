@@ -222,7 +222,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
         ]), { type: "group", k: "MATRÍCULAS, LISTA Y MEMBRESÍAS" }, kpis([
           { k: "MATRÍCULAS COBRADAS", v: usd(mat.cob), s: `retenido ${usd(mat.ret)} · devuelto ${usd(mat.dev)} · se quedó con el lugar ${usd(mat.quedo)}`, dark: true },
           { k: "EN LISTA DE ESPERA", v: String(esp.esperando), s: `${esp.dias ?? "—"} días en promedio · ${esp.tomadas} de ${esp.ofrecidas} ofertas tomadas` },
-          { k: "BAJAS DE MEMBRESÍA", v: String(baja.pedidas), s: `${baja.en72} confirmadas en 72 h` },
+          { k: "BAJAS DE MEMBRESÍA", v: String(baja.pedidas), s: `${baja.en72} confirmadas en ${baja.h} h` },
           { k: "«COBRARON EL TOTAL»", v: pct(rev.tok, rev.tn), s: `${rev.tn} reseñas lo contestaron` },
           { k: "«CERTIFICADO PROMETIDO»", v: pct(rev.cok, rev.cn), s: `${rev.cn} reseñas lo contestaron` },
         ]), { type: "group", k: "AYUDA Y LICENCIAS" }, kpis([

@@ -1,7 +1,7 @@
 "use client";
 /* Inscripciones en el panel (4ee · hueco #2 del plan: compuesto con los bloques del panel). Hoy: «Inscripciones que esperan tu respuesta»
    (vencen a las `reply_h`) y «Cancelaciones de membresía pedidas». Lo que vendes › Inscripciones: Grupos (inscritos y cupos; Empezó ·
-   Terminó con «¿Entregaste el certificado?» · Cancelar el grupo con motivo = devolución a todos), Lista de espera (Ofrecer el cupo, 48 h),
+   Terminó con «¿Entregaste el certificado?» · Cancelar el grupo con motivo = devolución a todos), Lista de espera (Ofrecer el cupo, insc_oferta_h horas),
    Activas. El detalle: para quién, nivel, grupo, matrícula y lo que se copió al enviar; los datos del niño SOLO aquí (cada vista queda en
    la auditoría); Confirmar (cobra la matrícula) · Otro grupo · No hay cupo; el plan por escrito con «Marcar pagada»; Cancelar con motivo. */
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
@@ -84,7 +84,7 @@ export function inscripcionesBloques(c: Ctx): Sec {
   }
   if (P.espera.length) out.push({ type: "rows", k: E2("LISTA DE ESPERA · POR ORDEN DE LLEGADA", "WAITLIST · IN ORDER OF ARRIVAL"), items: P.espera.map((w): Fila => ({ key: `w${w.id}`, icon: "clock", t: `${w.cliente} · ${nm(c, w.svc)}`,
     s: `${w.grupo ? nm(c, w.grupo) : E2("Sin grupo todavía", "No group yet")}${w.libres != null ? ` · ${E2(`${w.libres} cupos libres`, `${w.libres} seats left`)}` : ""}`,
-    ...(w.estado === "offered" ? { tag: E2("CUPO OFRECIDO · 48 H", "SPOT OFFERED · 48 H"), tone: "action" } : { acts: [{ l: E2("Ofrecer el cupo", "Offer the spot"), v: "secondary", off: c.pending, onClick: () => c.run(() => inscOfrecer(c.d.id, w.id), E2("Le ofrecimos el cupo: tiene 48 horas para tomarlo.", "We offered the spot: they have 48 hours to take it.")) }] }) })) });
+    ...(w.estado === "offered" ? { tag: E2(`CUPO OFRECIDO · ${P.plazos.oferta} H`, `SPOT OFFERED · ${P.plazos.oferta} H`), tone: "action" } : { acts: [{ l: E2("Ofrecer el cupo", "Offer the spot"), v: "secondary", off: c.pending, onClick: () => c.run(() => inscOfrecer(c.d.id, w.id), E2(`Le ofrecimos el cupo: tiene ${P.plazos.oferta} horas para tomarlo.`, `We offered the spot: they have ${P.plazos.oferta} hours to take it.`)) }] }) })) });
   if (P.activas.length) out.push({ type: "rows", k: E2("ACTIVAS", "ACTIVE"), items: P.activas.slice(0, 60).map((x) => fila(c, x)) });
   if (!P.esperan.length && !P.activas.length && !P.grupos.length && !P.espera.length) out.push({ type: "empty", icon: "users", t: E2("Todavía no hay inscripciones", "No enrollments yet"), s: E2("Cuando alguien se inscriba desde tu página, lo ves aquí y en Hoy.", "When someone enrolls from your page, you see it here and in Today.") });
   return { blocks: out, ed: null };
@@ -107,13 +107,13 @@ export function inscDetalleBloques(c: Ctx): Sec {
       { k: E2("PRECIO", "PRICE"), v: fe ? (x.precio ? E2(`Donativo sugerido ${usdI(x.precio)} · si no puede, no se cobra`, `Suggested donation ${usdI(x.precio)} · no charge if they cannot`) : E2("Gratis", "Free")) : x.precio ? usdI(x.precio) : E2("Gratis", "Free") }, ...(x.mat ? [{ k: matL.toUpperCase(), v: `${usdI(x.mat)} · ${pay}` }] : x.matLocal ? [{ k: matL.toUpperCase(), v: `${usdI(x.matLocal)} · ${E2("en tu lugar", "at your place")}` }] : []),
       ...(x.g1 ? [{ k: E2("PRIMERA CLASE", "FIRST CLASS"), v: E2("Gratis (primera vez aquí)", "Free (first time here)") }] : []),
     ] },
-    x.nota ? { type: "note", tone: "ink", icon: x.notaPrivada ? "shield" : "bubble", t: x.notaPrivada ? E2(`Nota privada (cifrada; tu vista queda registrada y se borra a los 30 días): «${x.nota}»`, `Private note (encrypted; your view is logged and it is deleted after 30 days): “${x.nota}”`) : `«${x.nota}»` } : null,
+    x.nota ? { type: "note", tone: "ink", icon: x.notaPrivada ? "shield" : "bubble", t: x.notaPrivada ? E2(`Nota privada (cifrada; tu vista queda registrada y se borra a los ${x.plazos.purga} días): «${x.nota}»`, `Private note (encrypted; your view is logged and it is deleted after ${x.plazos.purga} days): “${x.nota}”`) : `«${x.nota}»` } : null,
   ];
-  // Los datos del niño: solo aquí, para tu negocio; quedan en la auditoría y se borran a los 30 días de terminar.
+  // Los datos del niño: solo aquí, para tu negocio; quedan en la auditoría y se borran a los ninos_purga_dias días de terminar.
   if (x.ninoPanel) out.push({ type: "group", k: E2("SU NIÑO O NIÑA · PRIVADO", "THEIR CHILD · PRIVATE") }, { type: "kv", items: [
     { k: E2("NOMBRE", "NAME"), v: x.ninoPanel.nombre }, { k: E2("EDAD O GRADO", "AGE OR GRADE"), v: x.ninoPanel.edad != null ? E2(`${x.ninoPanel.edad} años`, `${x.ninoPanel.edad} years`) : x.ninoPanel.grado ?? "—" },
     ...(x.ninoPanel.escuela ? [{ k: E2("ESCUELA", "SCHOOL"), v: x.ninoPanel.escuela }] : []), ...(x.ninoPanel.nota ? [{ k: E2("NOTA", "NOTE"), v: x.ninoPanel.nota }] : [])] });
-  if (x.ninoPanel) out.push({ type: "note", tone: "info", icon: "shield", t: E2("Solo tú y tu equipo lo ven. Cada vista queda registrada y se borra a los 30 días de terminar. El acta, las vacunas y quién puede recogerlo se entregan en persona.", "Only you and your team see this. Each view is logged and it is deleted 30 days after it ends. Birth certificate, vaccines and pickup list are handed in person.") });
+  if (x.ninoPanel) out.push({ type: "note", tone: "info", icon: "shield", t: E2(`Solo tú y tu equipo lo ven. Cada vista queda registrada y se borra a los ${x.plazos.purga} días de terminar. El acta, las vacunas y quién puede recogerlo se entregan en persona.`, `Only you and your team see this. Each view is logged and it is deleted ${x.plazos.purga} days after it ends. Birth certificate, vaccines and pickup list are handed in person.`) });
   if (x.estado === "pending") {
     const otro = ui.iOtro === x.numero;
     out.push({ type: "acts", items: [
