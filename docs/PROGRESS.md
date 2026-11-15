@@ -2356,3 +2356,4 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   pasará y el aviso de seguidores); VENCE no sale cuando se repite; la lista dice «Se repite · L · X · V · 11:00 AM · próxima …».
 - **Barrido `novedadesRepetir`** (`repetirNovedades`): la que dejó de verse vuelve a salir el siguiente día que toca (misma publicación).
 - **Guardián `novedadRepetida`** (al revés alreves9n 45/45). nov2g lo prueba (editor → base → barrido → lista). Ayuda: panel-novedades-seguidores-y-vacante.md.
+- **9n-12 · «Escribir» en una novedad:** link_kind 'msg' (**0162**), chip «Escribir» en el editor y en la ficha «Escríbele a {negocio}» → Mensajes (solo con dueño); nov2g.

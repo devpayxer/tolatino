@@ -10,6 +10,7 @@ import { useEffect, useState, type ComponentType } from "react";
 import type { NovedadesFicha, Post } from "@/lib/novedades";
 import { diaCorto } from "@/lib/evt-comun";
 import { novComentar, novEncuesta, novGuardar, novLikeComentario, novVista, novVoto, seguir } from "./acciones-novedades";
+import { registrarToque } from "../../acciones";
 import { LineaTr, useTraducir } from "../../Traducir";
 import { ReportarContenido } from "./ReportarContenido";
 
@@ -120,6 +121,8 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
       if (p.link === "item" && p.item) L = { t: es ? p.item.name.es : p.item.name.en || p.item.name.es, s: money(p.item.cents), ic: p.item.ph ? "" : "bag", bg: p.item.ph ?? undefined, cta: E2("Ver", "See"), on: () => onItem(p.item!.id) };
       else if (p.link === "menu") L = { t: E2("Menú", "Menu"), s: "", ic: "restaurant", cta: E2("Ver", "See"), on: () => onItem("") };
       else if (p.link === "tel" && v.negocio.tel) L = { t: E2(`Llama a ${v.negocio.name}`, `Call ${v.negocio.name}`), s: "", ic: "phone", cta: E2("Llamar", "Call"), on: () => { location.href = `tel:${v.negocio.tel}`; } };
+      // 9n-12 · «Escribir» (diseño Panel v2, lk 'msg'): abre Mensajes con el negocio (si recibe mensajes: tiene dueño).
+      else if (p.link === "msg" && v.negocio.chat) L = { t: E2(`Escríbele a ${v.negocio.name}`, `Message ${v.negocio.name}`), s: "", ic: "chat", cta: E2("Escribir", "Message"), on: () => { void registrarToque(v.negocio.id, "message", "novedad"); router.push(`/cuenta/mensajes/${v.negocio.id}`); } };
       else if (p.link === "event" && p.evento) { const ev = p.evento; L = { t: es ? ev.t.es : ev.t.en || ev.t.es, s: diaCorto(ev.dia, es).toUpperCase(), ic: "ticket", cta: E2("Ver evento", "See event"), on: () => router.push(ev.href) }; }
       else if (p.link === "job" && p.vacante) { const vc = p.vacante; L = { t: es ? vc.t.es : vc.t.en || vc.t.es, s: E2("VACANTE ABIERTA", "OPEN POSITION"), ic: "brief", cta: E2("Ver vacante", "See opening"), on: () => router.push(vc.href) }; }
       else if (p.link === "web" && p.url) { let h = p.url; try { h = new URL(p.url).host.replace(/^www\./, ""); } catch { /* enlace raro: se muestra entero */ } L = { t: h, s: E2("SALE DE TO'LATINO", "LEAVES TO'LATINO"), ic: "globe", cta: E2("Abrir", "Open"), on: () => window.open(p.url!, "_blank", "noopener,noreferrer") }; }

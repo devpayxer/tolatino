@@ -113,6 +113,17 @@ const limpiar = () => {
   ok(R2[1] === '1' && R2[2] === 'true' && R2[3] === 'true' && R2[0] <= P1, 'repetir: el barrido la vuelve a sacar el siguiente lun/mié/vie (la misma publicación, repeat_n = 1)');
   await d.goto(B + `/panel/${BIZ}/pagina/nov`);
   ok(!!(await vis(d.getByText(/Se repite · L · X · V · 11:00 AM/).first())), 'panel: la lista dice que se repite, los días y la hora');
+  // 9n-12 · El botón «Escribir» de una novedad abre Mensajes con el negocio.
+  await d.goto(B + `/panel/${BIZ}/pagina/nov?det=nov:new`); await d.getByText('Publicar novedad').first().waitFor();
+  await clic(d.getByText('Novedad', { exact: true }));
+  await (await vis(d.getByPlaceholder('Ej. Estrenamos terraza'))).fill('Prueba novedad con escribir');
+  await clic(d.getByText('Escribir', { exact: true }));
+  await d.getByText('Publicar', { exact: true }).last().scrollIntoViewIfNeeded(); await d.getByText('Publicar', { exact: true }).last().click();
+  ok(await espera(() => sql(`select link_kind from business_posts where title = 'Prueba novedad con escribir' and status = 'live' order by id desc limit 1`), 'msg') === 'msg', 'escribir: guardada con el botón «Escribir» (link msg)');
+  await m.goto(B + `/n/${BIZ}?tab=nov`); await m.getByText('Prueba novedad con escribir').first().waitFor();
+  ok(!!(await vis(m.getByText('Escríbele a Sabor Dominicano').first())), 'cliente: la novedad trae «Escríbele a Sabor Dominicano»');
+  await clic(m.getByText('Escribir', { exact: true }));
+  ok(await espera(() => new URL(m.url()).pathname, `/cuenta/mensajes/${BIZ}`) === `/cuenta/mensajes/${BIZ}`, 'escribir: abre Mensajes con el negocio');
   await m.goto(B + `/n/${BIZ}?tab=nov`); await m.getByText('Mofongo de chicharrón a $10 hoy').first().waitFor();
   ok(!(await vis(m.getByText('Prueba novedad programada'))) && !!(await vis(m.getByText('Prueba encuesta del domingo'))), 'cliente: ve la encuesta, no la programada');
   // Fijar la encuesta (desfija la otra) y detenerla

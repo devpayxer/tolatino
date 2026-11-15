@@ -34,6 +34,9 @@ _Pantallas: Panel › Tu página › Novedades (`/panel/{negocio}/pagina/nov`, e
 
 **¿Puedo avisar una novedad vieja?** Solo si está en vivo.
 
+## El botón «Escribir»
+En «El botón · lo que toca el cliente», **Escribir** pone «Escríbele a {tu negocio}»: al tocarlo, el cliente abre Mensajes contigo. Si tu negocio todavía no tiene dueño en To’Latino, el botón no sale.
+
 ## Repetir
 En «Cuándo se publica», **Repetir** saca la misma novedad los días que elijas: atajos (todos los días, lunes a viernes, lun · mié · vie, fines de semana) o día por día; **Sale a las** (cada día que toca); **Cada vez se ve** (hasta que cierras, 3 h, 6 h o 24 h) y **Hasta cuándo** (hasta que la detengas, 2 semanas, 1 mes o 3 meses). Abajo te dice lo que va a pasar. En tu lista dice «Se repite · L · X · V · 11:00 AM» y cuándo sale la próxima.
 
@@ -91,3 +94,6 @@ Under "When it goes out", **Repeat** brings the same update back on the days you
 | To’Latino hides it | It does not come back while hidden. |
 | It reaches its end date | It goes out one last time and ends. |
 | Votes and comments | They stay: it is the same post. |
+
+### The «Message» button
+Under «The button · what the client taps», **Message** shows «Message {your business}»: tapping it opens Messages with you. If your business has no owner on To’Latino yet, the button does not show.

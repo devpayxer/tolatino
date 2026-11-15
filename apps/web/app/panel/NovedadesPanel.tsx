@@ -174,7 +174,7 @@ function editor(c: Ctx, id: string): Sec {
   const lkOn = ty === "oferta" || ty === "hoy" || ty === "novedad", lk = ty === "oferta" ? "item" : x.link, it = items.find((i) => i.id === x.item);
   if (lkOn) {
     const LO: [string, string][] = [...(ty !== "oferta" ? [["none", E2("Sin botón", "No button")] as [string, string]] : []), ...(items.length ? [["item", E2("Algo que vendes", "Something you sell")] as [string, string]] : []),
-      ...(ty !== "oferta" ? [["menu", E2("Menú", "Menu")], ["tel", E2("Llamar", "Call")], ["web", E2("Enlace web", "Web link")]] as [string, string][] : []),
+      ...(ty !== "oferta" ? [["menu", E2("Menú", "Menu")], ["tel", E2("Llamar", "Call")], ["msg", E2("Escribir", "Message")], ["web", E2("Enlace web", "Web link")]] as [string, string][] : []),
       ...(ty !== "oferta" && evts.length ? [["event", E2("Evento", "Event")] as [string, string]] : []),
       ...(ty !== "oferta" && vacs.length ? [["job", E2("Vacante", "Opening")] as [string, string]] : [])];
     out.push({ type: "group", k: ty === "oferta" ? E2("QUÉ ESTÁ EN OFERTA", "WHAT IS ON SALE") : E2("EL BOTÓN · LO QUE TOCA EL CLIENTE", "THE BUTTON · WHAT THE CLIENT TAPS") });

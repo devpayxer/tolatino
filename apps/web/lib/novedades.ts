@@ -9,7 +9,7 @@ import { quedanEnHoy } from "./hoy";
    usan oferta_precio() mientras está en vivo. Votos, encuesta, guardar, comentarios y seguir piden sesión. */
 type Bi = { es: string; en: string };
 export type Tipo = "oferta" | "hoy" | "aviso" | "encuesta" | "novedad";
-export type Enlace = "none" | "item" | "menu" | "tel" | "web" | "event" | "job";
+export type Enlace = "none" | "item" | "menu" | "tel" | "msg" | "web" | "event" | "job";
 export const TIPOS: Tipo[] = ["oferta", "hoy", "aviso", "encuesta", "novedad"];
 export const MAX_FOTOS_POST = 4;
 const nombreCorto = (f: string | null, l: string | null) => `${(f ?? "").trim()}${l ? ` ${l.trim().slice(0, 1).toUpperCase()}.` : ""}`.trim() || "Vecino";
@@ -36,8 +36,8 @@ export type Post = {
 
 /* Pestaña Novedades de la ficha. Las de «solo seguidores» solo las ve quien sigue. */
 export async function novedadesFicha(negocio: string, userId: string | null) {
-  const b = (await db().query<{ name: string; pro: boolean; on: boolean; tel: string | null; fol: boolean; seguidores: number }>(
-    `select b.name, coalesce(s.plan, 'free') = 'pro' as pro, ('nov' = any(b.modules_on) and not (b.modules_off ? 'nov')) as on, b.phone as tel,
+  const b = (await db().query<{ name: string; pro: boolean; on: boolean; tel: string | null; chat: boolean; fol: boolean; seguidores: number }>(
+    `select b.name, coalesce(s.plan, 'free') = 'pro' as pro, ('nov' = any(b.modules_on) and not (b.modules_off ? 'nov')) as on, b.phone as tel, exists (select 1 from business_members m where m.business_id = b.id and m.kind = 'owner' and m.status = 'active') as chat,
             coalesce($2::uuid is not null and exists (select 1 from follows f where f.follower_user_id = $2::uuid and f.target_kind = 'business' and f.target_id = b.id), false) as fol,
             (select count(*)::int from follows f where f.target_kind = 'business' and f.target_id = b.id) as seguidores
        from businesses b left join business_stats_cache s on s.business_id = b.id where b.id = $1 and b.status = 'active'`, [negocio, userId])).rows[0];
@@ -78,7 +78,7 @@ export async function novedadesFicha(negocio: string, userId: string | null) {
     score: x.score, myVote: x.my_vote, saved: x.saved, hoy: enHoy.get(x.id) ?? null,
     cm: cms.filter((c) => c.post === x.id).map((c) => { const name = nombreCorto(c.first_name, c.last_name); return { id: c.id, name, ini: name.split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase(), h: Math.max(0, c.h), body: c.body, lang: c.lang, up: c.up, mine: c.mine, reply: c.reply, propio: c.propio }; }),
   }));
-  return { negocio: { id: negocio, name: b.name, tel: b.tel }, fol: b.fol, seguidores: b.seguidores, posts };
+  return { negocio: { id: negocio, name: b.name, tel: b.tel, chat: !!b.chat }, fol: b.fol, seguidores: b.seguidores, posts };
 }
 export type NovedadesFicha = NonNullable<Awaited<ReturnType<typeof novedadesFicha>>>;
 
@@ -244,7 +244,7 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string)
   if (!kind) return { ok: false, msg: { es: "Elige qué publicas.", en: "Pick what you post." } };
   const title = String(p.title ?? "").trim().slice(0, 60), body = String(p.body ?? "").trim().slice(0, 280);
   if (title.length < 3) return { ok: false, msg: { es: "Ponle un título de 3 letras o más.", en: "Give it a title of 3+ characters." } };
-  const linkOk: Enlace[] = kind === "oferta" ? ["item"] : kind === "hoy" || kind === "novedad" ? ["none", "item", "menu", "tel", "web", "event", "job"] : ["none"];
+  const linkOk: Enlace[] = kind === "oferta" ? ["item"] : kind === "hoy" || kind === "novedad" ? ["none", "item", "menu", "tel", "msg", "web", "event", "job"] : ["none"];
   const link = (linkOk.includes(p.link as Enlace) ? p.link : linkOk[0]) as Enlace;
   const fotos = Array.isArray(p.fotos) ? [...new Set(p.fotos.filter((x): x is string => typeof x === "string" && /^[0-9a-f-]{36}$/.test(x)))] : [];
   if (fotos.length > MAX_FOTOS_POST) return { ok: false, msg: { es: "Hasta 4 fotos.", en: "Up to 4 photos." } };
