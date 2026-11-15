@@ -14,7 +14,7 @@ const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos 
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
 const { entrarComo, telLibre } = require('../lib/negocio-nuevo.cjs');
 const B = ENT.B, OUT = ENT.OUT;
-const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
+const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -qAt -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 let n = 0; const ok = (x, m) => { if (!x) throw new Error('ASSERT ' + m); n++; console.log('  ✓', m); };
 const shot = (p, nom, full = true) => p.screenshot({ path: OUT + `d9m-${nom}.png`, fullPage: full });
 const espera = async (f, ms = 15000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await f()) return true; await new Promise((r) => setTimeout(r, 300)); } return false; };

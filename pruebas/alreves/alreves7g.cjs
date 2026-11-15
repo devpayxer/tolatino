@@ -12,7 +12,7 @@ const casos = [
   ['copilotoSoloBorrador', C, '  const d = await disponible({ uso: "copilot", canal: "app", ciudad, negocio: ctx.negocio });\n  if (!d.ok) return', '  const d = { ok: true } as { ok: boolean };\n  if (!d.ok) return'],
   ['copilotoSoloBorrador', C, '    if (n >= lim) return { limite: true };', '    if (n >= 100000) return { limite: true };'],
   ['copilotoSoloBorrador', CP, 'import { casoEquipo, money } from "../soporte-equipo";', 'import { casoEquipo, money, responder } from "../soporte-equipo"; void responder;'],
-  ['copilotoSoloBorrador', AC, '  if (!(await mismoOrigen())) return { ok: false, msg: "Abre Super Admin desde To\'Latino." };\n', ''],
+  ['copilotoSoloBorrador', AC, '  if (!(await mismoOrigen())) return { ok: false, msg: E("Abre Super Admin desde To\'Latino.", "Open Super Admin from To\'Latino.") };\n', ''],
   ['copilotoSoloBorrador', AC, '  if (caso && !(s.puede("sop", "ver") && s.puede("sop", "editar"))) return', '  if (caso && !s.puede("sop", "ver")) return'],
   ['copilotoSoloBorrador', AC, '  if (cola && !s.puede("colas", "aprobar")) return', '  if (cola && !s.puede("colas", "ver")) return'],
   ['copilotoSoloBorrador', SA, 'setCop({ ...r, num }); setModo("persona"); setResp(r.borrador);', 'setCop({ ...r, num }); setModo("persona"); setResp(r.borrador); void sopResponder(num, r.borrador, null, r.id);'],

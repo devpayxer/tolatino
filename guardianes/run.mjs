@@ -9706,6 +9706,20 @@ const guardianes = {
     if (!/corte: p\.close_cut_min \?\? 0/.test(cuerpoFn(t, "contexto"))) falla(G, F, 0, "contexto: el corte sale de booking_policies.close_cut_min");
   },
 
+  /* 9n-21 · «insert … returning» en una prueba lee lo que devuelve psql: sin -q, psql también imprime la etiqueta («INSERT 0 1», «INSERT 0 0»), así
+     que el id sale roto y un «on conflict do nothing returning» nunca da vacío. Cazó: cup9n21 (el id del cupón con «INSERT 0 1» rompía la
+     limpieza), push8c (el aviso abusivo con un id roto) y dir9m (anotaba como nuevos códigos postales que ya existían y al final los borraba).
+     Regla: un archivo de pruebas que lee un «returning» usa psql con -q (o toma solo la primera línea con .split). Al revés: quitar la q → falla. */
+  returningConPsqlCallado() {
+    const G = "returningConPsqlCallado";
+    for (const f of archivos.filter((x) => /^pruebas\/(e2e|lib|alreves|visual)\/[^/]+\.(cjs|mjs)$/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      if (!/psql[^\n]*?\s-At\b/.test(t)) continue;
+      const m = /\breturning [a-z_.,|' ]+`\)(?!\.split\()/.exec(t); // un «with … returning) select» es un SELECT: sin etiqueta
+      if (m) falla(G, f, t.slice(0, m.index).split("\n").length, "lee un «returning» con psql -At: psql imprime también «INSERT 0 1»; usa -qAt");
+    }
+  },
+
   telefonoAlAzarRespetaFijos() {
     const G = "telefonoAlAzarRespetaFijos";
     for (const f of archivos.filter((x) => /^pruebas\/(e2e|lib|alreves)\/[^/]+\.(cjs|mjs)$/.test(x))) {

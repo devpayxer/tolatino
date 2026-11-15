@@ -12,6 +12,7 @@ const texto = async (p) => (await p.innerText('body')).replace(/\s+/g, ' ');
 const ADM = '5705550199', VEC = '5705550122';
 (async () => {
   const neg = negocioSinDueno('bufete-almonte', 'Oculto');
+  sql(`insert into business_stats_cache (business_id, plan) values ('${neg.id}', 'free') on conflict (business_id) do nothing`); // la ficha la une; un negocio recién creado aún no la tiene
   const A = sql(`select id from users where phone = '+1${ADM}'`);
   sql(`update businesses set status = 'hidden', status_reason = 'Prueba neg9n20', status_by = '${A}', status_at = now() where id = '${neg.id}'`);
   const b = await chromium.launch(); const abiertas = [];

@@ -1,6 +1,6 @@
 // Prueba al revés del guardián de 9n-21. cuponDelServidor (cupón para seguidores, dinero): cuponDe sin revisar que la persona sigue al negocio, sin el
 // vencimiento o sin el mínimo; crearPedido sin restar el descuento, con la comisión sobre el subtotal entero o sin anotar el uso; la pantalla que manda
-// el descuento; la migración sin «una vez por persona» o sin el trigger que devuelve el uso.
+// el descuento; la migración sin «una vez por persona» o sin el trigger que devuelve el uso. Y returningConPsqlCallado: leer un «returning» con psql -At.
 // Se inyecta el defecto, el guardián debe fallar con SU mensaje; se restaura.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
@@ -16,6 +16,8 @@ const casos = [
   ['cuponDelServidor', C, '...(cup ? { cupon: cup.code } : {}),', '...(cup ? { cupon: cup.code, descuento: cupOff } : {}),'],
   ['cuponDelServidor', M, "create unique index if not exists follower_coupon_uses_una_vez on follower_coupon_uses (post_id, user_id) where status = 'usado';", ''],
   ['cuponDelServidor', M, 'create trigger operations_cupon_vuelve after update of status on operations', 'create trigger operations_cupon_vuelve after update of total_cents on operations'],
+  // returningConPsqlCallado: la prueba del cupón lee el id con psql sin -q (psql también imprime «INSERT 0 1»).
+  ['returningConPsqlCallado', 'pruebas/e2e/cup9n21.cjs', 'psql -U tolatino -d tolatino -qAt -c', 'psql -U tolatino -d tolatino -At -c'],
 ];
 const crear = [];
 let bien = 0, total = 0;

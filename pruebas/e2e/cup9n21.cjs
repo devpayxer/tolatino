@@ -8,7 +8,7 @@ const ENT = require('../lib/entorno.cjs');
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const { entrarComo, abiertoTodoElDia } = require('../lib/negocio-nuevo.cjs');
 const B = ENT.B, OUT = ENT.OUT;
-const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
+const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -qAt -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 let n = 0; const ok = (x, m) => { if (!x) throw new Error('ASSERT ' + m); n++; console.log('  ✓', m); };
 const texto = async (p) => (await p.innerText('body')).replace(/\s+/g, ' ');
 const espera = async (f, ms = 8000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await f()) return true; } catch { /* sigue */ } await new Promise((r) => setTimeout(r, 250)); } return false; };
@@ -83,7 +83,7 @@ const uid = (tel) => sql(`select id from users where phone = '+1${tel}'`);
   } finally {
     for (const c of abiertas) await c.close().catch(() => {});
     await b.close();
-    sql(`update business_posts set status = 'stopped', stopped_at = now() where id = ${post}`);
-    volver();
+    try { sql(`update business_posts set status = 'stopped', stopped_at = now() where id = ${post}`); } catch (e) { console.error('limpieza del cupón:', e.message); }
+    try { volver(); } catch (e) { console.error('horario:', e.message); }
   }
 })().catch((e) => { console.error(e); process.exit(1); });
