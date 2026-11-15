@@ -83,28 +83,78 @@ delivery de hoy o lo tiene en pausa. Pickup sigue disponible.
 
 ## English
 
-**Contains or is:** a dish sheet shows the tags the business marked in its panel (spicy, vegetarian, gluten-free, fish or shellfish, dairy, egg, peanuts or nuts). The business sets them, not To'Latino: they are not a medical guarantee. If you have an allergy, ask the business before ordering (Message or Call) and write it in the dish instructions.
+### What it does
+- **Menu (Pro):** a tab with the categories at the top (they stick as you scroll), **Popular**, and each dish with photo, price and its labels: SOLD OUT TODAY,
+  IN-STORE ONLY, 2 LEFT, POPULAR, its schedule (e.g. UNTIL 4 PM or SAT AND SUN) and TAKES 15 MIN.
+- **The +:** a dish without options is added directly; the + stretches into − quantity + (the trash can removes the last one). A dish with options opens its
+  sheet: what is required is marked, the button says what is missing («Choose: filling, broth») and adds the price of what you chose. Instructions for the
+  kitchen, up to 200 characters.
+- **Another one the same or with changes:** if you already have that dish, the + asks whether you repeat one the same or start another with changes. If you have
+  the same dish in several ways, the − asks which one you remove.
+- **Your order:** the black bar at the bottom (phone) or the card on the right (desktop): edit, − / +, subtotal, taxes (6 % on prepared food) and total. The
+  order is saved on your phone for 24 hours per business.
+- **Delivery / Pickup:** if the business delivers, at the top of the menu you choose **Delivery** or **Pickup** (the app remembers the last one you chose).
+  Delivery says «ARRIVES BETWEEN…» (preparation + travel); a dish that is only picked up says PICKUP ONLY and one that is only delivered says DELIVERY ONLY.
+  The cart shows the **delivery fee**, the bar «You need $X more for free delivery» and the delivery **minimum order** («Minimum $15 · $10 to go»).
+- **Page summary:** up to 4 dishes to order directly and the bar «From $X · Order». With delivery, the rail says «Pickup N min · Delivery $X».
+- **Checkout:** where you pick up (address, the business's note and Directions), when (as soon as possible or a time today every 30 minutes), how you pay
+  (**Card** if the business accepts it in the app, or **Pay at the place**) and the summary. **Send order**.
+- **Checkout with delivery:** **Delivery** (your default address from My addresses; **Change** takes you to choose another or add one and returns to checkout),
+  when it arrives, **How we deliver it** (hand it to me or leave at the door), **On arrival** (ring the bell, do not ring the bell, call me, text me),
+  instructions for the courier (200 characters), **Save for Home** (next time it comes out the same), **Courier tip** (15, 18, 20 % or another; all of it goes
+  to whoever delivers) and the summary with the delivery fee and tip. You pay by card in the app or in cash on receipt, depending on what the business accepts.
+- **Your sent order:** number, status (sent → accepted → in the kitchen → ready → picked up, with the real time of each step), what time it is ready, how much you
+  pay (or if it already goes by card: HELD or PAID), where you pick up and what you ordered. Call the business. It updates by itself while it is in progress.
+- **Your order with delivery:** sent → preparing → on its way → delivered, **ARRIVES** between such and such time, «You pay $X in cash on receipt» (or what was
+  paid by card), where it is delivered and how, delivery fee and tip. If the business uses an outside app (DoorDash, Uber Eats) and pastes the link, **Follow on
+  DoorDash** shows.
+- **Cancel order** (`/pedido/{número}/cancelar`): free while the business has not accepted it; you choose why (optional).
+- **Order again:** when it finishes or if it could not be done, it puts the same dishes with their options in your cart.
 
-The **Menu** tab shows categories (sticky), Popular, and each dish with photo, price and tags (sold out today, in store
-only, only N left, popular, its own hours, takes N min). The + adds dishes without options directly and stretches into
-− qty +; dishes with options open a sheet that marks what is required, adds option prices and takes kitchen
-instructions. Tapping + again asks "same again or with changes"; − asks which one when you have several versions. Your
-order (bottom bar on phones, right card on desktop) lets you edit, change quantities and see subtotal, 6% tax and total;
-it is kept on your phone for 24 hours per business. **Checkout** shows where you pick up (address, the business's note,
-directions), when (as soon as possible or a time today every 30 minutes), how you pay (**Card** if the business takes it in the app, or **Pay at the store**) and the summary.
-**Your order** shows its number and status (sent → accepted → in the kitchen → ready → picked up), ready time, what you
-pay at the store, pickup address and items, with Call the business; it refreshes while waiting. The server recalculates
-prices, options, stock, hours and the Free monthly cap on every order; a double tap creates only one order; with three
-orders waiting you must wait for a reply; if the business does not answer within 10 minutes the order shows NO REPLY and
-nothing is charged. Free businesses show 5 dishes and take up to 10 online orders a month, then show the list and Call.
-You can cancel for free until the business accepts (Cancel order), and Order again puts the same items back in your
-cart. **Delivery:** when the business delivers, choose Delivery or Pickup above the menu (remembered). Delivery shows the
-arrival window, PICKUP ONLY / DELIVERY ONLY tags, the delivery fee, the free-delivery bar and the delivery minimum.
-Checkout uses your default address from My addresses (Change goes there and back), when it arrives, hand it to me or
-leave at door, on-arrival options, driver notes, Save for this address, and a 15/18/20 % or custom tip that goes fully to
-the driver; you pay by card in the app or cash on delivery, depending on the business. Your order shows sent → preparing → on the way → delivered, the arrival window,
-where and how it is delivered, fee and tip, and Track on DoorDash when the business uses an external app and pastes the
-link. Out-of-zone addresses, minimums and fees are checked again by the server. With a card, the total is held when you send and charged when the business accepts (see Paying by card). If something
-went wrong, open Order help from your order (see Order help).
+### What happens in each case
+| Case | What happens |
+|---|---|
+| No account | «Go to pay» takes you to Sign in and returns to checkout with the order the same. Without a name, the name is asked for first. |
+| The business is closed and opens later today | «Opens at X · Schedule your order»: you pick the time (from 30 min after opening). If it does not take scheduled orders, you see the menu and order when it opens. |
+| Closed today | You see the menu; orders open when the business opens. |
+| Online orders paused (by the business) | You see the menu, without +, with the time it comes back. |
+| After the last online order (N min before closing) | «No more online orders today»: you see the menu; to order, call. |
+| A dish has a schedule (e.g. lunch until 4) | Outside its schedule it shows dimmed. Scheduled: you can until 30 min before it ends. |
+| Sold out, in-store only, or the required option sold out | Dimmed, without +. |
+| Daily count or stock | It does not let you order more than what is left or more than the maximum per order. When sent, it is deducted; at 0 it sells out on its own until 6 AM. |
+| Something changed between the cart and the payment (it sold out, an option changed, the price) | The server does not send the order and says what happened; the price that counts is the one on the menu at that moment. |
+| Same order sent twice (double tap, the network dropped) | Only one remains. |
+| Three orders waiting for a reply | It does not let you send another until they reply. |
+| Free business | A single page: 5 dishes show and are ordered from the Summary, up to 10 online orders a month (set by To'Latino). When it is reached, the page shows the list and Call. |
+| The business does not reply in 10 minutes | The order is left **UNANSWERED** and nothing is charged. |
+| The business rejects | «They could not take your order · nothing was charged». |
+| It was already accepted or is ready | It can no longer be canceled from the app: the cancel screen says so and offers to go back to the order. |
+| To'Latino paused the Menu or Online orders | No Menu tab, or you see the menu without being able to order. |
+| Delivery: your address is outside the business's area | «It does not reach your address · Your address is N mi away and the business delivers up to 3 mi. Order pickup.» Switching to Pickup lets you order. The server measures it again when sending. |
+| Delivery: you have no saved address | At checkout **Add address** shows; when you save it you return to checkout. |
+| Delivery: you do not reach the minimum | The button says how much is missing; the server does not send it either. |
+| Delivery: the order goes over «free from» | The delivery fee shows $0.00 («Free delivery»). |
+| Delivery: after the day's last delivery or To'Latino paused delivery | Only Pickup is offered. |
+| Delivery: the business marks «Out for delivery» | You see «On its way»; it can no longer be canceled from the app (call the business). |
 
-**The Free cap** (10 online orders, bookings or requests a month) is today's: To'Latino sets it in its Configuration and the screen always shows the one in force.
+**The Free ceiling** (the 10 online orders, appointments or requests a month) is today's: To'Latino sets it in its Configuration and the screen always says the one
+that applies at that moment.
+
+### FAQ
+**Do they charge me anything in the app?** Only if you pay by **card**: it is held when you send and charged when the business accepts (see `pagar-con-tarjeta.md`).
+If you choose to pay at the place, you pay when you pick up.
+
+**Can I cancel?** Yes, free, while the business has not accepted it («Cancel order» in your order). After that, call the business.
+
+**Why don't I see delivery?** That business does not deliver, your address is outside its area, its last delivery of today already passed or it has it paused.
+Pickup is still available.
+
+**Is the tip required?** No. You can choose 15, 18, 20 % or another amount, even $0. All of it goes to whoever delivers.
+
+**How do I pay for delivery?** By card in the app or in cash on receipt, depending on what the business accepts.
+
+**What if they change the price after I order?** Your order keeps the price you made it with.
+
+**What is «CONTAINS OR IS» on a dish?** The labels the business marked in its panel (spicy, vegetarian, gluten-free, fish or shellfish, dairy, egg, peanuts or tree
+nuts). The business sets them, not To'Latino: they are not a medical guarantee. If you have an allergy, ask the business before ordering (Message or Call) and
+write it in the dish instructions.

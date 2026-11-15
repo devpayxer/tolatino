@@ -26,8 +26,25 @@ teléfono que se queda en la entrada o que pasa de mano en mano.
 | Se acaba la batería o reinicias | Al volver, ya no está fijada. |
 
 ## English
+
 ### What it does
-Keeps the phone **on the Door only**: nobody can leave to another app or Home while it is pinned. **Android app:** More › **Pin the Door to
-this screen** → **Pin the screen**; Android asks you to confirm; unpin with More › **Unpin the screen** or by holding **Back** and **Recents**
-together. **iPhone:** apps cannot pin themselves; use **Guided Access** (Settings › Accessibility › Guided Access, then triple-click the side
-button and tap Start; triple-click and enter the passcode to end). **Android browser:** Settings › Security › App pinning, then pin from Recents.
+It leaves the phone **only on the Door**: nobody can leave to another app, to Home or to notifications while it is pinned. It is useful for the phone that stays
+at the entrance or is passed from hand to hand.
+
+### How to use it
+- **Android, with the To'Latino Door app:** More › **Pin the Door to this screen** → the app explains what happens → **Pin the screen**. Android asks you to
+  confirm. To release it: **More › Unpin the screen**, or hold **Back** and **Recents** at the same time (the system notice says so). If your phone does not
+  allow it, turn on **Settings › Security › Pin apps**.
+- **iPhone:** an iPhone does not let an app pin itself; **Guided Access** is used, which comes with the phone:
+  1. Once: **Settings › Accessibility › Guided Access** → turn it on and set a passcode.
+  2. With the Door open, **press the side button three times** and tap **Start**.
+  3. To release it: the side button three times, the passcode and **End**.
+- **In the Android browser:** Settings › Security › Pin apps; then, in Recents, tap the Door icon and **Pin**.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You tap «Not now» | Nothing is pinned. |
+| The phone did not allow pinning | «This phone did not allow pinning the screen» shows: turn on Pin apps in Settings. |
+| You close your door with the screen pinned | The screen stays pinned until you release it. |
+| The battery runs out or you restart | When it comes back, it is no longer pinned. |

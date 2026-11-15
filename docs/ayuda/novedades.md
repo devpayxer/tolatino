@@ -53,15 +53,46 @@ para seguidores» se ven en tu página, no en Hoy. Ver `hoy-en-el-barrio.md`.
 
 ## English
 
-Pro businesses post updates on their page: deals (a dish at a lower price that is actually charged in the menu, cart and
-order while live; the "before" price is always the menu price), "today" items with Add to order, hours notices, polls (2–4
-options, one vote each) and news with an optional button (a dish, the menu, call, or an https link). Clients follow the
-business, filter by type, vote up or down, comment (300 characters), like comments, save deals and share; the business
-replies to comments (280). In the dashboard owners see each post's state (live, scheduled, ended, pinned, hidden by
-To'Latino), views (one per person or device per day), saves and comments, and can edit, pin one at a time, stop, post now,
-reschedule, post again for 24 h, duplicate or remove. Posts can go out now or on a day this week at a time, end today at
-3 PM, in 24 h, this week or never, and target everyone or followers only. To'Latino can hide a post or pause Updates: the
-tab and deal prices disappear and the owner sees the reason.
+### What it does
+- **On the page (client):** «Follow {business}» (Follow / Following), filters by type (All, Deals, Today we have, Notices, Polls, Updates) and each post with the
+  business name, how long ago, PINNED and its type.
+  - **Deal:** the dish, the deal price and the crossed-out previous price, until when and **Order · $X** (opens the dish in the menu). **The deal price is what
+    is charged** while the deal is live (in the menu, the cart and the order).
+  - **Today we have:** the dish and **Add to order**.
+  - **Hours notice:** which day and what happens (closed, opens later, closes earlier, extended hours) and **See hours**.
+  - **Poll:** 2 to 4 options; when you vote you see the percentages and «you voted». One vote per person.
+  - **Update:** text, photos and, if the business wants, a button (a dish, the menu, call, an https link or **one of its events**: the button says **See
+    event** and opens the event page; in Today nearby it shows as «EVENT · SEE EVENT»).
+  - Votes + and − (one per person), comments (300 characters) with «Helpful», the **business reply** (BUSINESS) and «MOST VOTED»; save (deals) and share.
+- **In the panel (owner):** the posts with LIVE, SCHEDULED, ENDED, PINNED or HIDDEN BY TO'LATINO, their views (one per person or device per day), saves and
+  comments, and **Edit**, **Pin to top** (one at a time), **Stop**, **Post now**, **Reschedule**, **Post again · 24 h**, **Duplicate** and **Remove**.
+  - **Post:** what you post, up to 4 photos (the first is the cover), title (60) and text (280), what is specific to the type, the button, who sees it
+    (everyone or only those who follow you), when it ends (today 3 PM, 24 h, this week, no date) and when it goes out (now or a day this week at a time).
+    «How it looks» with the real card.
+  - **Deal:** you choose the dish; the **regular price is your menu's** (it is not typed) and the deal has to be lower.
+  - **Detail:** figures, the comments with **Reply** (280 characters; it shows as «Business reply»), «How it looks», Pin, Edit, End now or Cancel scheduling and
+    Remove.
+  - Posting the first one turns Updates on on your page; if you turn it off, they stay saved.
 
-An update can also carry an **Event** button (one of the business's events): it reads **See event**, opens the event page and
-shows as «EVENT · SEE EVENT» in Today nearby — only while the event is live.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Free business | No tab; the panel shows «Post deals and notices · See Pro». |
+| «Only your followers» | Only whoever follows the business sees it; on a deal, only that person is charged the deal price. |
+| Scheduled | It does not show until its time; the owner sees it SCHEDULED and can «Post now». |
+| It expires or is stopped | It leaves the page; the deal stops being charged and the menu price returns. |
+| Pin another | The previous one stops being pinned (one at a time). |
+| To'Latino hides it | It leaves the page; the owner sees HIDDEN BY TO'LATINO with the reason. |
+| To'Latino pauses Updates | No tab and no deal prices; the owner sees the pause with the reason. |
+| No session | You can read; voting, the poll, commenting, saving and following take you to Sign in. |
+| Muted account | It cannot comment. |
+| Poll already voted | You cannot vote twice. |
+| Link that is not https:// | It is not saved. |
+| «Event» button with the event unpublished, hidden or finished | The update does not show (not on the page or in Today nearby) until the event is published. |
+
+### FAQ
+**Is the deal price real?** Yes: while the deal is live, the menu, the cart and the order charge that price. The «before» is the menu price.
+
+**Do my followers get a notice?** Yes, in the bell (no SMS): «Today at a business you follow» when your update for everyone shows in **Today nearby** (24 h, Pro
+businesses; the person turns it off in My account › Notices › «What’s in today»). Posts «for followers only» show on your page, not in Today. See
+`hoy-en-el-barrio.md`.

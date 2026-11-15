@@ -40,21 +40,35 @@ completo antes de empezar y, si algo cambia, te preguntan primero.
 ## English
 
 ### What it does
-Once an auto shop booking or a home visit is confirmed, the business marks each step from its panel and the customer
-sees it right away in Your booking, with a notice in Notifications.
+When the appointment at a shop or the visit of a home service is already confirmed, the business marks each step from its panel and the client sees it right away
+in Your appointment, with a notice in Notices.
 
-- **Auto:** Car received → Start → Ready for pickup → Handed back. The customer taps **I picked it up** to finish.
-- **Home:** On my way → I arrived → Start → Done → Close the visit, or **Nobody home**. The customer taps **All good** to
-  finish. Directions and Running late are hidden: the pro comes to the home.
-- The panel detail shows the vehicle, mileage, drop-off or wait, warning lights, old parts; for Home, the address,
-  renter with landlord's permission, arrival window, room and access.
-- Every step goes to the booking history and the audit log.
+- **Shop (Auto):** Car received → Start → Ready for pickup → Handed back.
+  - The client sees «Checking your CR-V · AT THE SHOP», then «Fixing your CR-V · IN PROGRESS» and finally «Ready for pickup», with what is left to pay at pickup
+    (the deposit, if there was one, is already deducted).
+  - When they pick it up, the client taps **I picked it up** and the appointment is finished (or the shop taps «Handed back»).
+- **Home:** On my way → I arrived → Start → Done → Close the visit. Also **NOBODY HOME**.
+  - The client sees «is on the way · arrives within your window of 12 PM–2 PM», «At your home», «In progress» and «Check the work before paying». If everything
+    turned out fine, they tap **All good** and the visit is finished.
+  - In Home, «Directions» and «Running late» do not appear: it is the professional who goes to the home.
+- **The detail in the panel** shows the vehicle and its mileage, whether the client leaves it or waits, the warning lights on and whether they want the old parts;
+  in Home, the home, whether they are a renter with the landlord's permission, the window, the room and how to get in.
+- Every step goes in the appointment's history and in the audit log.
 
+### What happens in each case
 | Case | What happens |
 |---|---|
-| A step out of order | The server refuses it. |
-| Nobody home | Closed as "Nobody home"; a deposit stays with the business, otherwise nothing is charged. |
-| Customer wants to cancel after it started | Not from the app; use **Appointment help**. |
-| Something went wrong | **Appointment help** from Your booking. |
+| The business taps a step out of order (for example, «Ready» without having received the car) | The server does not allow it; the appointment stays at its step. |
+| Nobody was home | The visit closes as «Nobody home». If there was a deposit, it stays with the business (it is the rule the client accepted when asking); if not, nothing is charged. |
+| The client wants to cancel when it has already started | They can no longer cancel from the app; they use **Appointment help**. |
+| Something did not turn out right | The client taps **Appointment help** from Your appointment; the business replies and To'Latino reviews if needed. |
+| The business forgets to close the appointment | It stays open in its panel until it closes it, or until the client taps «I picked it up» / «All good». |
+| The appointment is Beauty | It follows the usual flow (Arrived · in progress → Done). |
 
-**Am I charged without approving?** No. Nothing is done or charged without your OK.
+### FAQ
+**Do they charge me anything without my approval?** No. At the shop nothing is done or charged without your OK; at home they give you the full price before
+starting and, if something changes, they ask you first.
+
+**How do I know they are coming?** Your appointment changes to «On the way» and you get a notice.
+
+**Where do I pay?** You pay the rest at the shop when you pick up your car, or at the end of the visit at your home.

@@ -45,11 +45,40 @@ o menos del centro de la ciudad.
 
 ## English
 
-**Businesses** lists the city's 17 categories with how many businesses each has, **Featured** (Pro businesses open
-right now; it rotates daily) and **New in the neighborhood** (joined in the last 60 days). Each **category page** has a
-cover, quick rows (e.g. «By country», «What do you need?», «Your insurance», «Car make»), themed tiles, filters and the
-list: Pro first (big card with photo), then Free (row with a Call button), within 5 miles of the city center.
-Tap a tile to narrow the list (tap again or **All** to clear), use quick filters or **Filters** for all of them and the
-sort order. The heart saves to **Saved**; signed-out users are sent to sign in and brought back. Fewer than 5 reviews
-shows «3 reviews» or «New · on To'Latino». When nothing matches, the user can ask to be notified, invite a business or
-clear the filters.
+### What it does
+**Businesses** shows the city's 17 categories with how many businesses each one has, the **Featured** ones (Pro businesses open right now; the showcase rotates
+every day so all of them show) and the **New in the neighborhood** ones (those that joined in the last 60 days).
+
+Each **category** has its cover, rows to pick quickly (e.g. «By country» in Food, «What do you need?» in Doctors, «Your insurance», «Car make» in Auto), «What
+are you craving» by themes, filters and the list of businesses: Pro first (big card with photo) and then Free (row with a Call button). Only businesses 5 miles
+or less from the city center show.
+
+### How to use it
+1. Tap **Businesses** at the bottom (or the tab at the top on a computer) and pick a category.
+2. Tap a circle or a photo in the rows to see only that. Tap it again (or **All**) to clear it.
+3. Use the quick filters (e.g. **Open now**, **Delivery**) or tap **Filters** to see all of them and the sort order.
+4. **Sort**: Relevance, Closest, Top rated or Most reviews.
+5. On each card: tap it to see the business; the main button does what that category does (Order, Booking, Sign up, Directions…); the heart saves it to
+   **Saved**.
+6. At the end of the list: **Previous / Next** (10 businesses per page).
+
+### What happens in each case
+| Case | What the person sees | What to do |
+|---|---|---|
+| No business with those filters | «No businesses with those filters» and the buttons Notify me, Recommend a business, Clear | Tap **Clear** or remove a filter. |
+| The category does not have that yet in the city | «There are no … in Hazleton yet» | **Notify me when there is one**: we tell you when one arrives. |
+| They tap the heart or «Notify me» without having signed in | It takes them to **Sign in** and then returns to the same list | Sign in with their phone. |
+| The business has fewer than 5 reviews | «3 reviews» or «New · on To'Latino» instead of stars | Normal: stars show from 5 reviews. |
+| «Closed · opens Fri 8 AM» | The business is closed now; it says when it opens | Come back at that time or call. |
+| «Directions» | Opens the phone's map with the route | — |
+
+### FAQ
+- **Why do some businesses show first?** Pro ones go on top; among them the order rotates every day. Then come the Free ones. If you choose «Closest» or «Top
+  rated», it is sorted that way inside each group.
+- **Is «Open now» real?** Yes: it uses the hours the business set and the city's time.
+- **I don't see a business I know.** It may be more than 5 miles away or not on To'Latino yet: use **Recommend a business**.
+
+### For El Compa
+<!-- solo-equipo -->
+- Do not promise a business is open if the card says «Closed»; repeat what the card says.
+- The «Featured» ones cannot be bought outside: they are Pro businesses that are open, and they rotate every day.

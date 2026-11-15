@@ -43,10 +43,36 @@ pago o carta del trabajo»).
 ## English
 
 ### What it does
-To request a visit, a test drive or a church date, To'Latino only uses your name, phone, the day and what you ask for. **We never
-ask for** your Social Security number, ITIN number, immigration status, income or pay stubs, credit (score, reports or bank accounts), date
-of birth, driver's license number or photo, or passport. Papers a landlord or dealer needs are shown in person; the page only says which.
+To ask for a visit, a test drive or a date at a church, To'Latino only uses your name, your phone, the day and what you ask for. **We never ask for:**
+- your **social security number** (SSN),
+- your **ITIN number**,
+- your **immigration status**,
+- your **income** or pay stubs,
+- your **credit** (score, reports or bank accounts),
+- your **date of birth**,
+- your **driver's license number** or its photo,
+- your **passport** or its number.
+The papers that an owner or a dealer asks for **are brought in person**; the page only says which ones («Any country ID», «2 pay stubs or a letter from work»).
+
+### How to use it
+- **The note** (optional, 200 characters) is for practical things («I'm coming by bus», «is there parking?»). Do not write numbers: if you write 9 digits (social
+  security or ITIN) or 13 to 19 (card or account), **they are covered before they are saved** and phone numbers are not accepted.
+- **Test drive:** you only check «Yes, I have a valid license».
+- **Test drive at your home:** you write street and ZIP code; they are encrypted.
+- **Catechism:** your child's name and age are encrypted.
+
+### What happens in each case
+- **Your address (test drive at home):** the dealer sees it **only when they confirm**; every time they open it, it is recorded; it is deleted 30 days after the
+  test drive is closed.
+- **A room's address:** the owner does not publish it; it reaches you when the visit is confirmed.
+- **Your note:** it is deleted 30 days after the visit is closed.
+- **Counseling, chaplaincy, prayer and recovery:** the notices do not say the place or the service, and the note is encrypted.
+- **Your child's data:** only the parish sees it and it is deleted 30 days after it ends.
+- **Photos in a Help request** (receipts, contracts): they are private; only the business and To'Latino see them to resolve it.
+- **To'Latino analytics:** only figures; never people by religion or credit data.
 
 ### FAQ
-Do not send your SSN through the app; pages say if a property requires it and you can search «No SSN». If you are charged to view,
-use Help («They charged me to view»): it goes straight to To'Latino. Notes and home addresses are deleted 30 days after the visit closes.
+- **The owner asks me for my social security number by message, what do I do?** Do not send it through the app. If a property asks for it, the page says so; you
+  can search «No SSN». If they charge you to see, ask for Help («They charged me to see the property»): it goes straight to To'Latino.
+- **Why can't I write my phone number in the note?** The business already has it through the visit; this way nobody copies it elsewhere.
+- **Can I delete what I sent?** Your note and your address are deleted on their own after 30 days; to delete your account, My account › «Delete my account».

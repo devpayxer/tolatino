@@ -40,8 +40,37 @@ APP-NEG-HOGAR-BOOKING). Versión: 6 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## English
 
-Save your vehicle (make, model, year, mileage, type) or your home (one of your addresses, type, owner or renter, rooms,
-year, heating, water heater, access) and each listing tells you right away whether the shop works on your vehicle or the
-business reaches your home. Book in three steps: your car or home, day and time (shops) or a 2-hour arrival window (home
-services), then review and send. It is a request the business confirms; a deposit, if any, is held when you send, charged
-once they confirm and released if they do not. Renters must confirm the landlord's permission.
+### What it does
+- **Your vehicle (Auto):** make, model, year, mileage and type (car, SUV or pickup, van, motorcycle, truck or diesel). It is saved in your account and the
+  listing tells you right away whether that shop **works on your vehicle** («They work on your CR-V» or «This shop does not work on Honda»). The car wash shows
+  the price for your size.
+- **Your home (Home):** one of your addresses (My account › Addresses) with the type of home, whether you are an owner or a renter, rooms, bathrooms, year
+  (lead warning for homes built before 1978), pets, heating, water heater and how to get in. The listing tells you whether they **reach your home** (miles)
+  and whether they work with renters.
+- **The service sheet:** price, what is included and what is not, your vehicle or your home, the options, «Wait or drop off?», extras and the deposit if the
+  business asks for one. Towing and emergencies have their own request (see `emergencia-24-7.md`) and plans are started from their sheet (see
+  `planes-del-hogar.md`); «Walk-in only» takes you to Directions.
+- **The Booking (3 steps):**
+  - Auto: **Your car** (warning lights on, what is wrong, photos) → **Day and time** → **Review and send** (how it is charged: today the deposit or nothing,
+    the estimate before touching the car, the final amount at pickup; «Keep my old parts»).
+  - Home: **Your home** (where is it?, what is happening, photos) → **Arrival window** of 2 hours and whether you will be home or how to get in → **Review and
+    send** (if you rent, «I have my landlord's permission» is required).
+  - It is a request: the business confirms (or confirms instantly if it has that on). The deposit is charged when you send and deducted from the total; if
+    they do not confirm, it is refunded.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| No session | You can see services and times; to save your vehicle or home and to send, you sign in. |
+| The shop does not work on your vehicle | The sheet says so and does not let you continue. |
+| Your home is outside their area | «Your home is X mi away: they reach up to Y mi»; it does not let you continue. |
+| You are a renter and the business only works with owners | It does not let you continue. |
+| Someone took the time while you were sending | «That time is no longer free»: you choose again. |
+| Card declined | The appointment is not created and nothing is charged. |
+| Home job over $1,000 | The deposit never goes over a third of the price. |
+| You have 3 requests waiting | It does not let you send another until they reply. |
+
+### FAQ
+**Do they charge me the full price when I book?** No: today only the deposit (if it asks for one); the rest when it is done.
+**Who sees my address?** Only the business of your visit.
+**Can I have several cars or homes?** Yes, up to 10; you choose which one to use on the sheet.

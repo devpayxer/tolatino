@@ -44,12 +44,38 @@ privados») y **el detalle de una solicitud** (`?det=evp:EP-…`). Para restaura
 ## English
 
 ### What it does
-**Turn on Private event** (needs Card payouts: the deposit is charged in the app and goes to your account) and set **groups from / up to**, **days
-ahead** (never below To'Latino’s minimum, 3), **deposit on accept** (10%, 25% or 50% of your proposal total), how fast you usually reply, **areas**,
-**“The whole place”** with its charge, **menus** with a price per person (or “Let them suggest”) and **extras**. Your page’s large-group card then says
-**“Request private event”**. **Today** shows new requests and change requests with the time left (24 h, Settings). In the detail (first name and
-initial only, never their phone) you **Send proposal** (lines: menu × guests at your price, the area, extras; what it includes; a note — To'Latino
-calculates tax, total and deposit when sent; valid 24 h and never after the event), **Propose another date**, or **I can’t** with a reason. A new
-proposal replaces the previous one. Once confirmed you see the charged deposit, what you get (minus the fee), what they pay you there and the free
-cancellation window; a change request is answered with **Send the change** (nothing more is charged) or **I can’t make the change**. **Cancel the
-event** (with a reason) always refunds the full deposit. If the client cancels 72 h or more before, the deposit is refunded; less than 72 h, you keep it.
+- **Turn on Private event** (it requires Card payments: the deposit is charged in the app and reaches your account). Rules: **groups from** and **up to** how
+  many people, **how many days ahead** (never less than To'Latino's minimum: 3), **deposit on acceptance** (10 %, 25 % or 50 % of the total of your proposal),
+  how long you **usually take to reply**, **areas** (hall, terrace, bar), **«The whole place»** with its fee, **menus** with a price per person (or «Let them
+  propose») and **extras** (with a price, «no charge» or «you quote it»). «HOW CLIENTS SEE IT» shows what they read. Everything goes in the audit log.
+- With Private event on, the large-groups card on your page says **«Request private event»** (before: call).
+- **Today** shows you the new requests and those that **ask for a change**, with how much time you have left to reply (24 h in Configuration).
+- **The detail**: what they are celebrating, how many, where, what day and time they asked for, the menu, the budget, the extras and their note (name and
+  initial; never their phone). Three replies:
+  - **Send proposal**: lines (menu × people at the price you set, the area, the extras and the ones you add), **what is included** (the client sees it) and a
+    note. While you build it you see the subtotal, the city tax, the total, the deposit and what they pay at the place; **when you send it To'Latino
+    calculates it** (nobody types the total or the deposit by hand). It is valid for 24 h (Configuration) and never after the event.
+  - **Propose another date**: the same proposal for another date and time, with the reason why.
+  - **I can't**: with the reason (the client sees it). Nothing was charged.
+- If the client **asks for a change**, you send another proposal (the previous one is replaced) or «I can't».
+- **Confirmed**: what was agreed, the deposit **charged**, what **reaches you** (minus the commission), what **they pay you at the place** and until when they
+  can cancel for free. If they ask for a change: **Send the change** (nothing more is charged) or **I can't make the change**.
+- **Cancel the event** (with a reason): the client gets **the whole deposit** back and it stays in your history.
+- **Write to them** (Messages, with the request number), **Help** (if the client asks for help, you reply within 24 h) and the **timeline**.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You do not reply in time | The request expires on its own and the client knows. |
+| The client does not accept in time | The proposal expires; nothing was charged. |
+| You send another proposal | The previous one can no longer be accepted. Maximum proposals per request: Configuration (10). |
+| The client accepts | The deposit of that proposal is charged to their card and reaches your account (minus To'Latino's commission). |
+| The client cancels 72 h or more ahead | The whole deposit is refunded. |
+| The client cancels less than 72 h ahead | The deposit stays with you. |
+| You cancel | The whole deposit is refunded, always. |
+| A day before | You get «Tomorrow you have a private event». |
+
+### FAQ
+- **How much does To'Latino charge?** The private events commission in Plans (today 8 % of the deposit). What is paid at the place is yours.
+- **Can I change the deposit percentage?** Yes, in the settings; it applies to the proposals you send from then on.
+- **Do I see the client's phone?** No. You write to them through Messages.

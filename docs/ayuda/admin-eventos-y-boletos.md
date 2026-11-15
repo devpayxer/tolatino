@@ -159,52 +159,141 @@ adds payouts by status and cancellations.
 ## English
 
 ### What it does
-KPIs (events, **to review** with the Configuration deadline, organizers); **Events** list with search, filters and cursor; the event page
-with everything needed to decide and, for an important change, **what changes** (the live version stays until you decide). **Approve** ·
-**Ask for changes** · **Do not approve** (reason list + note; the business can appeal). **Hide from module / Show again** with a reason
-(the business sees «HIDDEN BY TO’LATINO» and can appeal). **Organizers:** verify (publish without prior review) or block publishing (with
-reason, notice and appeal). **Queues › Events to review** has the same decisions. Appeals are decided by another team member. Everything
-goes to the audit log.
+- **Series and multi-day events:** the list says «Every Thursday · N ahead» or «3 days»; the page shows **DATES** (each date with what was sold, moved, skipped,
+  canceled or with an artist for that date only) or **DAYS** (with a ticket or pass and each day's capacity). When the rule of a series from an unverified
+  organizer changes, it reaches the queue as «WHAT CHANGES · Repeats».
+- **Figures:** EVENTS (and how many this week), **TO REVIEW** (with the deadline from Configuration › Events, 24 h by default; it leads to the queue),
+  ORGANIZERS.
+- **Events:** search by name, venue or organizer; filters In review · Today · With tickets · Free entry · Hidden / canceled; table on desktop, rows on the
+  phone; 20 per page with a cursor.
+- **Event page:** poster and photos, status, type, when, where, entry, age, music, version, ES/EN text, program, tables and extras, «Before you go», the
+  organizer (VERIFIED · BLOCKED, events sent and not approved) and the review log (who and when). If it is a **change that matters**, **WHAT CHANGES**
+  (before → after): while you decide, the published version stays live.
+- **Review:** **Approve** (it shows in Events and on its page; the business is notified, also by SMS) · **Ask for changes** (reason from the list + note; the
+  business fixes it and sends it again) · **Do not approve** (reason; the business gets it by SMS and can appeal). Reasons: minimum age is missing · the
+  capacity exceeds the venue's capacity · the description promises something that cannot be guaranteed · the photo does not match the event · other.
+- **Hide from the module / Show again** (with a reason): it leaves Events and its page; the business panel says «HIDDEN BY TO'LATINO» and the business gets
+  the notice with the appeal. Showing again brings back the status it had.
+- **Organizers:** **Verify** (their events are published when sent, with no prior review) / **Remove verified**; **Block publishing** (they cannot send or
+  publish; notice with the reason and appeal) / **Allow publishing**.
+- **Queues › Events to review:** every new event or change that matters from an unverified organizer; «Take», the deadline and the same decisions. Each
+  decision closes the case and is recorded in the audit log with before → after and the reason.
 
-The event page tells whether it **shows in Events** (with a link) and lists the **latest RSVPs** (first name and initial, people,
-status; never phones). Business 360° › Content › **Pause Events** (with a reason) hides all of a business's events until resumed; the
-owner sees the reason in the dashboard.
+- **The event page** says whether it **shows in Events** (the database decides: published and approved, not hidden, the business's Events module on and not
+  paused, organizer not blocked) with **See the page**, and the **latest RSVPs** (name with initial, people, status; never a phone number).
+- **Business 360° › Content › Pause Events** (with a reason): none of its events show (their status does not change); the owner sees «PAUSED BY TO'LATINO»
+  with the reason in their panel. **Resume** with a reason. Everything goes in the audit log.
 
-**Find ticket** (ticket code, order, last phone digits, name, or the pasted QR text, whose signature is checked with the public key:
-VALID SIGNATURE / INVALID SIGNATURE / old QR after a reissue); the ticket page (status, QR version, payment, order timeline, ticket history) with
-**Resend**, **Reissue** (new QR; the old one stops working) and **Void** (no automatic refund), all with a reason, audit and a notice; KPIs
-**TICKETS ISSUED** and **TICKET GROSS**; the event page adds **SOLD · GROSS · FEE · REFUNDED** and the latest orders; **Transactions › Tickets**.
+- **Figures:** **TICKETS ISSUED** (valid and used) and **TICKET GROSS** (charged, minus refunded) in your cities.
+- **Find ticket:** by ticket code (**TL-XXX-0000**), order (**B-…**), last digits of the phone, name, or by **pasting the QR text**: the signature is checked
+  with the public key and it says **VALID SIGNATURE** (and whether it is the current version: it gets in) or **INVALID SIGNATURE** (altered or from another
+  environment: it does not get in), or «old QR» if the ticket was reissued. The phone only shows its last 4 digits.
+- **The ticket:** status (**VALID · USED · REFUNDED · VOIDED · TRANSFERRED**), the QR version, event, type, entries, whose name it is under, what was paid, its
+  commission and discount, the order's payment (charged / held / released, the card and **SIMULATED** in the sandbox), the tickets of the same order, the
+  order's timeline and what happened to the ticket. Actions with a reason: **Resend** (notice in their account), **Reissue** (new QR; the old one stops
+  getting in) and **Void** (it stops getting in; it does not refund money: to refund, the buyer cancels, the organizer refunds, a B- help request is resolved
+  or the date is canceled). Everything goes in the audit log and the person gets the notice.
+- **The event page** adds **SOLD · GROSS · COMMISSION · REFUNDED** and the latest orders (they open the ticket). **Transactions › Tickets** lists the B-
+  orders with their charge and commission.
+- **The ticket** adds its **history** after purchase: **TRANSFERRED** (and to which ticket it went), **TRANSFERS** (from whom, to «••23», WAITING · RECEIVED ·
+  UNDONE · EXPIRED; never the phone number), **BEING TRANSFERRED: no QR gets in**, that ticket's **REFUND** (how much, who: the buyer or the organizer, the fee
+  To'Latino keeps or the commission it does not charge, done or on its way) and whether it is a **COMPLIMENTARY** ticket. Pasting the QR of a transferred
+  ticket or one in transfer says it does not get in. **Voiding** a ticket drops its transfer.
+- **The event page** adds **LIVE COMPLIMENTARY · TRANSFERRED · ON THE WAITLIST** and how many tickets were refunded. **Transactions › Tickets** shows what
+  was refunded on each order; complimentary tickets (no money) do not show there. Transactions **does not refund tickets by amount** (it would leave live
+  tickets): they are refunded from the order (the buyer) or the panel (the organizer).
+- **Queues › Order help:** «Help with a ticket order» (B-: double charge, different amount, paid and has no tickets) arrives directly, without waiting for the
+  organizer. **Resolve with a message** or **Resolve and refund** (up to what was charged; it goes back to the card; the tickets stay valid). Whoever approves
+  money in Transactions decides.
 
-The ticket page adds its **history after purchase** — **TRANSFERRED** (and the new ticket), **TRANSFERS** (from whom, to «••23», status; never
-the phone), **BEING TRANSFERRED: no QR gets in**, its **REFUND** (amount, who, the fee To'Latino keeps or waives, done or on its way) and **COMP**. The
-event page adds **LIVE COMPS · TRANSFERRED · ON THE WAITLIST** and refunded tickets. Transactions never refunds tickets by amount (tickets are refunded
-by the buyer or the organizer). **Queues › Help with orders** gets «Help with a ticket order» (B-) directly; resolve with a message or refund to the
-card (tickets stay valid).
+### Event changes and Payouts
+- **The event page** adds **EVENT CHANGES** (pauses, date or time changes, cancellations, freezes; who and when), the **CANCELED** notice with its progress
+  (orders refunded, what is left) and **MONEY BY DATE · TUESDAY PAYOUT** (Finance).
+- **Freeze sales** (Events · edit): online sales stop, those who already bought still get in and the organizer cannot reopen them; the organizer receives the
+  reason. **Unfreeze** opens them again.
+- **Cancel and refund everything** (Events · remove, Admin): module rule, it cancels the event → **full refund** to every buyer (tickets, table and extras; the
+  commission is not charged; To'Latino covers the card cost); each person is notified by SMS. With a reason; it goes in the audit log.
+- **Payouts** (tab of Events and tickets; Transactions · view): what is paid to each organizer by date: TO PAY · HELD · PAID IN 30 DAYS · TO DEDUCT; filters
+  Pending · Held · On its way · Paid · Adjusted; **Hold** and **Release** with a reason (Transactions · approve); **Export CSV** (Transactions · export,
+  audited). An open dispute or an account that cannot receive payouts holds and releases on its own; the first big event of a new organizer and anything
+  To'Latino holds is released by a person.
+- **Queues**: **Organizers who cancel** (2 cancellations with tickets in 90 days, Configuration): each cancellation with what was refunded and the card cost;
+  **Block publishing** or **Reviewed, no changes**. **Held event payouts** (first event over $2,000): **Release the payout** (the organizer is marked
+  reviewed) or **Keep held** with a reason.
+- **Configuration › Events**: organizer notices per date (3), payout day (2 = Tuesday), hold the first event from ($2,000), cancellations that open a case (2)
+  and their window (90 days), wait for another payout for an adjustment (14 days), instant refunds on cancellation (25 orders).
 
-the event page adds the change history, the cancellation progress and money by date; **Freeze sales** (organizer cannot reopen),
-**Cancel and refund everything** (100 % to every buyer); **Payouts** tab with hold/release and CSV; queues **Organizers who cancel** and **Held
-event payouts**; new Event settings (notices per date, payout day, new-organizer threshold, cancellations window, adjustment wait, refunds batch).
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You approve a change that matters | The change goes into the published version (the version goes up) and the public date moves. |
+| You ask for changes or do not approve a change | The previous version stays live; the business gets the reason in its panel. |
+| The business appeals a hidden or unapproved event, or a block | Case in **Queues › Appeals** (72 h); **another person** decides, never whoever hid, did not approve or blocked (the database prevents it). Lifting: the event shows again (or is approved), or the organizer can publish again. |
+| A blocked organizer tries to send | The screen, the server and the database all reject it. |
+| You paste a QR with an altered signature | **INVALID SIGNATURE**: it does not get in. |
+| You reissue a ticket | The QR version goes up: the old one shows as «old QR» and does not get in (online and offline). |
+| You void a ticket | It is left as **VOIDED** with the reason; the money is not refunded on its own (to refund: the buyer cancels, the organizer refunds or a B- help request; or cancel the event). |
+| Someone tries to publish without review | The database does not allow a live event without approval (or without a person who approves, except a verified organizer). |
 
-**Recurring and multi-day:** the list shows “Every Thursday · N ahead” or “3 days”; the event page shows DATES (sold, moved, skipped, cancelled, performer for one date) or DAYS (ticket or pass holders and the daily capacity). A rule change from an unverified organizer reaches the queue as “WHAT CHANGES · Repeats”.
+**The deadlines on this page** (payout day: the Tuesday after each date) are today's: To'Latino sets them in its Configuration and the screen always says the
+one that applies at that moment.
 
-#### Tickets in Apple Wallet and Google Wallet
-- **The ticket page › WALLET:** each pass of the ticket (Apple Wallet or Google Wallet) with its short serial, its **version** (it goes up with
-  every change of the ticket, the date or the event), **LIVE** or **VOIDED** and why (the ticket is no longer valid, changed owner, the date or
-  the event was cancelled), how many phones follow it, how many are still to be notified and the last notice to Apple; for Google, whether it is
-  up to date or which error it gave. Below, **THE PASSES**: their history. Without passes: «This ticket is not in Apple Wallet or Google Wallet».
-- **Every ticket change touches its pass in the same action:** transfer, receive, refund, cancel, void, reissue, rename, move the date or time
-  and cancel the event. The Apple pass updates on the phone (Apple notifies it and the phone downloads it) and the Google one is replaced.
-  **Void** on this page also voids its passes. The pass QR is the same as the ticket's: the door validates it the same way, online and offline.
-- **System › Integrations › Wallet** (Admin only): the **Apple pass certificate** (it expires every year; the team gets a notice 30 days before
-  and another when it expires), the **certificate request** (generated here with the code sent to your phone; the key stays on the server;
-  download it, upload it at developer.apple.com, then upload the .cer here), the **Google Wallet account** (service account + issuer ID), the
-  `app.wallet.apple` and `app.wallet.google` switches (off: no new passes; existing passes keep getting their changes) and the figures.
-- What goes through Apple and Google: event, date, venue, type and code. Never the person's name, phone or amounts; Faith, Health and Kids
-  events: «Event ticket», without name or venue.
+### FAQ
+- **Can the 24 h deadline be changed?** Yes, in Configuration › Events (with limits and audit).
+- **Can I edit a business's event?** No: you ask for the change or hide it, with a reason.
+- **Where do I see a business's events?** Business 360° › Content › Events.
 
-### Adjusting an RSVP capacity
-- On an RSVP event's page, the «RSVP capacity (spots)» row has **Adjust capacity** (0 = no limit). It never drops below the spots already saved on any date, it overrides what the organizer saves, the organizer is told with your reason, and it is audited and shown in the event changes.
+### Door mode and scans
+- **Door mode** tab (read only): today's doors and those of the last 7 days with inside, missing, rejected and repeated; for a date, by door, doorkeeper
+  sessions, latest at the door and incidents. A ticket page adds **SCANS AT THE DOOR** (result, door, who and time). Details in `admin-puerta-auditoria`.
 
-**Can the organizer undo my RSVP adjustment?** No: To'Latino's last adjustment rules in the database; to change it, adjust again.
+### The ticket in Apple Wallet and Google Wallet
+- **Ticket page › WALLET:** each pass of the ticket (Apple Wallet or Google Wallet) with its short serial, its **version** (it goes up with every change to the
+  ticket, the date or the event), **LIVE** or **VOIDED** and why (the ticket is no longer valid, it changed owner, the date or the event was canceled), how
+  many phones follow it, how many are left to notify and the last notice to Apple; on Google, whether it is up to date or what error it gave. Below, **THE
+  PASSES**: their history (issued, downloaded again, updated, voided, a phone follows it or left it, notice sent to Apple, Google up to date, notices that
+  stopped being retried). With no passes: «This ticket isn't in Apple Wallet or Google Wallet».
+- **Every change to the ticket touches its pass in the same action:** transfer, receive, refund, cancel, void, reissue, change the name, move the date or the
+  time and cancel the event. The Apple pass updates on the phone (Apple notifies it and the phone downloads it) and the Google one is replaced. **Voiding**
+  from this page voids its passes too.
+- **The pass's QR is the same as the ticket's:** the door validates it the same way, with and without signal. **Reissue** changes the QR in the pass too.
+- **System › Integrations › Wallet** (Admin only): the **Apple pass certificate** (it expires every year; the team gets a notice 30 days before —
+  Configuration › Apps, «Wallet · notify before it expires»— and another when it expires), the **request** (generated here with the code sent to your phone;
+  the key stays on the server; it is downloaded and uploaded to developer.apple.com; then the .cer is uploaded here), the **Google Wallet account** (service
+  account + issuer ID), the switches `app.wallet.apple` and `app.wallet.google` (off: no new passes are issued; the ones already issued keep receiving their
+  changes) and the figures: passes issued, phones that follow them, to notify, failures in 7 days.
+- What goes through Apple and Google: the event, the date, the place, the type and the code. Never the person's name, phone or amounts; Faith, Health and
+  Children events: «Event ticket», with no name or place.
 
-**The time limits on this page** (the payout day: the Tuesday after each date) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
+### Closing the loop: capacity, sales, oversell, catalog and signals
+- **Figures:** TICKET GROSS says the current commission (the «bol» rule in Plans, today 5 % + $1).
+- **Event page › CAPACITY** (for ONE date: the next one, or pick another in «DATE YOU'RE VIEWING»): each ticket type, table and the day's capacity with
+  sold / capacity, held and what is left. **Adjust capacity** (Events · edit): type the new capacity and the reason. **It never goes below sold + held** (it
+  says so before saving and the database enforces it again). It overrides what the organizer saves for that date (if their editor saves again, To'Latino's
+  adjustment stays). The organizer gets «To'Latino adjusted your event» with the reason and their panel says so.
+- **ONLINE SALES UNTIL** and **Extend sales** (Events · edit): if the organizer closes sales a day before or when doors open, you can leave them open until
+  doors or until it starts. **Never after the start: tickets are not sold at the door (D1).** With a reason, notice to the organizer, EVENT CHANGES and audit.
+- **OVERSOLD EVENT** (alert in Events and tickets and on the Super Admin home): it shows if a ticket type or a table on a date has more live tickets than its
+  stock. With the database rules it should never happen: if it shows, someone bypassed the rule; open the event and check the audit log.
+- **Catalog** (tab; only an Admin changes it): the **formats** (name and description ES/EN, turn on or off, which business categories publish it) with the
+  preview of «WHAT YOU CAN PUBLISH» and whether the page shows dark or light; the **music genres** (add, ES/EN name, turn on or off, move up or down) with the
+  preview of the Events filters. **Turning off does not delete:** events that already have it stay the same and the organizer keeps editing them; it just
+  stops being offered when creating. The fields of each format (tickets, tables, line-up…) are set by the design.
+- **Trust › Fraud › EVENTS AND TICKETS:** burst orders from one device (threshold in Configuration), tickets received and passed to another person (chain
+  transfers), duplicate entries at the door (offline) and ticket chargebacks. **Open case** sends it to Queues › User reports with the mark «Events signal»;
+  a person decides it with the ladder of sanctions and the appeal.
+- **Users 360° › Activity:** how many operations in 90 days and their **EVENT TICKETS** (status, complimentary, received or passed by transfer, what time it
+  got in) and **RSVPs**. **Business 360° › Content › Events:** adds its **payouts** by status and its **cancellations**.
+
+| Case | What happens |
+|---|---|
+| You adjust a capacity below what was sold | «It does not go below sold and held: N.» Nothing changes. |
+| The organizer saves their editor again with another capacity | To'Latino's adjustment for that date stays. |
+| You extend sales and they already close at that time | «Sales already close at that time or later.» |
+| You turn off a format | It is no longer offered when creating; events that have it stay the same. Each category publishes at least one. |
+
+### Adjust an RSVP's capacity
+- On the page of an event with RSVP, the «RSVP capacity (spots)» row has **Adjust capacity** (0 = no limit). It does not go below the spots already saved on any
+  date, it overrides what the organizer saves, the organizer gets the notice with the reason, and it is recorded in the audit log and in the event's changes.
+
+**Can the organizer undo my adjustment of an RSVP?** No: To'Latino's last adjustment rules in the database; to change it, adjust again.

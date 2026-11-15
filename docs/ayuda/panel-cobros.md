@@ -28,7 +28,25 @@ _Pantallas: **Panel › Cobros y plan › Cobros con tarjeta** y **Cobros y plan
 
 ## English
 
-Your money arrives on Tuesdays: Stripe pays your bank every Tuesday what you took by card Monday to Sunday, minus the fee and refunds. Payouts shows the
-week and each charge with its dispute, if any; To'Latino answers disputes with the order evidence. If your bank asks to confirm a Pro renewal (3-D Secure),
-you get «Your bank asks you to confirm the Pro charge» with a link: open it, tap «Confirm with my bank» and confirm at your bank. You keep Pro meanwhile;
-an old link never charges twice.
+### What it does
+- **Your money arrives on Tuesdays.** Stripe pays your bank every Tuesday what you charged by card from Monday to Sunday, minus the commission and what was
+  refunded. Your payout account is created with that calendar; if To'Latino pauses your payouts (with its reason), when they resume they go back to Tuesday.
+- **Charges** shows the week (charged, commission, refunded, what reaches you on Tuesday) and each charge with its status and, if there is one, its dispute.
+- **Disputes:** if a customer disputes a charge with their bank, we notify you and To'Latino responds with the order's evidence (receipt, conversation and
+  timeline). We tell you the result.
+- **Your Pro plan and the bank verification (3D Secure):** if your bank asks you to confirm it is you when Pro renews, you get the notice **«Your bank asks you
+  to confirm the Pro charge»** with a link. Open it, tap **Confirm with my bank** and confirm in your bank's window: the charge is done and your Pro continues.
+  Meanwhile you keep Pro; if you do not confirm, the next attempt goes out on its own (like a failed charge: 3 attempts in 7 days).
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You confirm late and another attempt already charged | The old link no longer works: you are never charged twice. |
+| Your bank rejects the confirmation | Nothing is charged; the next attempt goes out on its own and we notify you. |
+| Someone else opens your link | It does not exist for them: only whoever pays confirms it. |
+| A bank payout fails (closed account) | To'Latino gets the alert and writes to you; the money is not lost. |
+| Sandbox | The card 4000 0027 6000 3184 always asks for confirmation; the test «bank» answers in the sheet. |
+
+### FAQ
+**Why Tuesday?** It is To'Latino's fixed payout day for all businesses.
+**Where do I see when it arrives?** In Charges, «it reaches you on Tuesday».

@@ -41,14 +41,35 @@ _Pantallas: **Panel › Tu página › Cupones por monedas** (`/panel/{negocio}/
 ## English
 
 ### What it does
-- **Scan coupon:** the camera reads the QR next to the neighbor's code (in the To'Latino Negocios app or the browser): **VALID CODE** = now
-  used; **NOT VALID** if it was used, expired or belongs to another business.
-- **Validate a code:** type the code the neighbor shows on their phone → **Validate** → it becomes **used**, once. Used, expired or
-  another business’s code: a clear message, nothing changes.
-- **Create a coupon:** what you give (Spanish, optional English), terms, **how many a month** (1–500) and **days to use it** (7–90).
-  **To’Latino sets the cost in coins** (80–1,000) when approving it; you are notified. After approval only the monthly quantity and days
-  can change. **Pause / Resume / End**; up to 5 active or pending at once. Pro only.
-- **Coins have no cash value:** To’Latino neither pays nor charges you for redemptions. Redeemed codes stay valid if you pause or end.
+- **Scan coupon** (top): the camera reads the QR that the neighbor has next to their code; it validates the same as typing it.
+- **Validate a code** (top): type the code the neighbor shows you on their phone (TL-CQ- and 4 letters or numbers; uppercase or lowercase does not matter) →
+  **Validate** → «Valid code: «…» for {neighbor}: it is now used.» Each code is used **only once**.
+- **Create a coupon:** what you give (Spanish, and English if you want), conditions (optional), **how many per month** (1–500) and **days to use it** after
+  it is redeemed (7 · 15 · 30 · 60 · 90; the form suggests what To'Latino sets in Configuration, 30 by default). **The cost in coins is set by To'Latino** when
+  it approves it (from 80 to 1,000). It shows **Awaiting approval**; we notify you when it is **In the Community** (with the cost) or if it did not go out
+  (with the reason).
+- **Your coupons:** status, how many have gone out this month of your quota, how many were used and how many codes are still alive. **Edit** (awaiting approval:
+  everything; approved: only the quota and the days — the offer does not change under someone who already redeemed it; for another offer, end this one and
+  create another), **Pause** / **Resume**, **End** (with confirmation; it does not come back). Maximum 5 coupons active or awaiting approval at a time.
+- **Latest codes used:** the last 10. Codes issued but not used are not shown: only the neighbor has their code.
+- **Coins have no value in money:** To'Latino does not pay you or charge you for redemptions; you give the discount at your place. At the end of the month, the
+  report counts the city's redemptions.
 
-### FAQ (English)
-- **Can I set the cost?** No, To’Latino does. **Am I paid per redemption?** No. **Can I scan the code?** No: type it in «Validate a code».
+### What happens in each case
+| Case | What happens |
+|---|---|
+| The code was already used | «That code was already used on {date}. Each code is used only once.» |
+| The code expired | «That code expired without being used: the coins went back to the neighbor.» |
+| The code is from another business or does not exist | «We did not find that code in your coupons.» |
+| The monthly quota runs out | Neighbors see «Gone this month» until the first day of the month. |
+| You pause or end it | It stops showing in the Community at once; codes already redeemed stay valid until they expire. |
+| To'Latino pauses it | You get the notice with the reason and the panel says so; you cannot resume it yourself (write to us). |
+| Your business goes to Free | Coupons stop showing; you can keep validating the codes already redeemed. |
+| You put a phone number or an email in the text | It is not saved: «No phone numbers, emails or addresses in the coupon». |
+
+### FAQ
+- **Can I set the cost?** No: To'Latino sets it so it is even across businesses.
+- **Do they pay me for each redemption?** No. Nobody pays anybody: it is a discount you decide to give.
+- **Can I scan the code?** Yes: **Scan coupon** opens the camera (in the To'Latino Negocios app or in the browser) and reads the QR that the neighbor has next to
+  their code. If it says **VALID CODE**, it is now used; **NOT VALID** if it was already used, expired or belongs to another business. You can also type it.
+- **Can a neighbor redeem twice?** One per person while their code is alive or used.

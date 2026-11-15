@@ -49,14 +49,43 @@ con la cita.
 
 ## English
 
-**El Compa first:** tapping **Help** opens El Compa (To'Latino's AI assistant) over your item with fixed options; **Something went wrong** (on
-tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, the monthly AI cap is reached, or you already opened
-a request, you come straight here.
+### What it does
+- **El Compa first:** tapping **Help** opens the sheet of **El Compa** (To'Latino's AI assistant) over your item, with fixed options; **Something went wrong**
+  (on tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, if To'Latino reached the monthly AI cap or if you already
+  opened a request, you come straight here. See `el-compa.md`.
+- **The client** asks for help with an appointment that already happened (up to 7 days). Pick the reason: *They charged more than the posted price*, *The
+  person I booked did not see me*, *It did not turn out as I asked*, *I waited a long time despite the appointment*, *They did not refund my deposit* or
+  *Something else*; tell what happened (15 characters or more), add photos (required if it is a charge or if it did not turn out as asked; up to 4) and say
+  what you want: **that they fix it at no charge** (another appointment), **that they refund you** (with the amount, optional, if it is a charge) or **just
+  let them know**.
+- **The business** replies within 24 hours from Today or the appointment detail: **You are right** (accepts), **Propose something else** (an amount to
+  refund) or **I can't**, always with a message the client reads.
+- **The money:** the only thing paid in the app is the **deposit**. What goes back to the card comes from there (up to what is left of the deposit); what was
+  paid at the business is settled at the business. If the business accepts a refund, it is made right away; if it proposes an amount, it is refunded when the
+  client accepts it. Only the owner can refund money (Charges).
+- **To'Latino** reviews within 48 hours if the business did not reply within 24 hours or if the client disagrees («Ask To'Latino to review»). It resolves with
+  a message and, if needed, refunds the deposit to the card (only whoever approves money in Transactions).
+- **Transactions › Appointments** shows each appointment with its service, total, deposit, charge status, what was refunded and To'Latino's commission (8 % on
+  the deposit).
 
+### What happens in each case
+| Case | What happens |
+|---|---|
+| The appointment has not happened yet | «Help can be asked once the booking is over.» |
+| More than 7 days have passed | «Booking help can be asked up to 7 days after.» |
+| Appointment canceled, expired or no-show, with a deposit | You can only ask about the deposit or something else. |
+| Appointment canceled with no deposit | No help (there was no appointment or charge): Message or Call. |
+| There is already a request | The page shows its status; one per appointment. |
+| More than 5 requests in one day | «You opened many requests today. Try tomorrow.» |
+| The business accepts a refund with no deposit paid | It is settled at the business; the client sees it that way. |
+| The business proposes more than the deposit | It will not let it: «You can refund up to $X (the deposit) to their card». |
+| Someone on the team without Charges permission replies and a refund is needed | «Only the owner can refund money.» |
+| 24 h pass with no reply | It goes to To'Latino (Order and appointment help queue) and the client sees it. |
+| Stripe cannot refund | The reply is not saved; you can try again. |
 
-After a booking (up to 7 days), the client can ask for help: pick a reason, describe what happened (15+ characters), add
-photos (required for an overcharge or a bad result) and choose a fix (redo at no charge, a refund, or just let them know).
-The business replies within 24 hours from Today or the booking detail: accept, propose a refund amount, or decline, always
-with a message. Only the deposit paid in the app can go back to the card; anything paid at the shop is settled at the shop.
-If the business does not reply in 24 hours or the client disagrees, To'Latino reviews it within 48 hours and can refund the
-deposit. Admin › Transactions › Bookings lists every booking with deposit, refunds and To'Latino's 8 % fee on the deposit.
+### FAQ
+**Do I get back everything I paid?** At most, the deposit you paid in the app goes back to the card. What you paid at the business, the business refunds at
+the business.
+**When does the money arrive?** 3 to 5 business days to your card. We notify you in Notices.
+**Who sees my photos?** The business of that appointment and To'Latino.
+**Does a review work to ask for a refund?** No: the review tells your experience; for fixes and refunds there is Appointment help.

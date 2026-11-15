@@ -42,10 +42,36 @@ parte «Cobros» (devuelve dinero). Teléfono y escritorio. Versión: 10 nov 202
 ## English
 
 ### What it does
-**SALES · Selling / Sales paused** (toggle): buyers still get in; if To'Latino froze sales you cannot reopen them. **Change date or time** (a date
-that has not started): everyone going gets a text; buyers who bought before the change choose on their order, until the new start, **Keep the
-new date** or **Full refund** (100 %, fees included); no answer means they keep it. **Cancel event** (or a date): pick what and **why** (bad
-weather, the artist cannot come, problem at the venue, change of plans); every buyer gets 100 % back (tickets, table and extras) in 3–5 business
-days, To'Latino waives its fee and covers the card cost, comps are voided and everyone gets a text; it cannot be undone. Large cancellations
-finish on their own within minutes; nothing is refunded twice. **NOTICES TO ATTENDEES**: up to 160 characters, in the app (never text), up to 3
-per date; the latest shows first in “Before you go”. Two cancellations with tickets sold within 90 days open a Trust and Safety review.
+- **SALES · Selling / Sales paused** (switch): pause it if the place filled up or there is a problem. The event page says «Sales paused» and nobody else buys;
+  **those who bought still get in**. Turn it back on whenever you want. If **To'Latino froze sales**, the panel says so with the reason and you cannot reopen
+  them (write to us from Help).
+- **Change date or time** (a date that has not started yet): you pick the day on the calendar and the hours. When you save, **we notify everyone who is going
+  by SMS** (tickets and RSVPs). Whoever bought **before** the change chooses in their order, until the new date starts: **«I'll keep the new date»** or **«Full
+  refund»** (100 %, fees included). If they do not answer, they stay. On the event page you see how many stay, how many asked for a refund and how many have not
+  answered.
+- **Cancel event** (or **Cancel a date or the series** if it has several dates): **WHAT YOU CANCEL** (only the next date or everything) · **WHY? THOSE WHO WERE
+  GOING SEE IT** (Bad weather · The artist can't come · Problem at the venue · Change of plans). The screen says how much is refunded and to how many people.
+  When you confirm: the date stops showing, **every buyer receives 100 %** (tickets, table and extras) in 3–5 business days, **To'Latino does not charge its
+  commission and covers the card cost**, complimentary tickets are voided and everyone gets the notice by SMS. **It cannot be undone.**
+- **NOTICES TO THOSE GOING · N OF 3**: a short text (up to 160 characters) with **IDEAS** («We open doors 30 min early»…). It reaches them **in the app** (no
+  SMS) and shows first in «Before you go» on the event page and in their order. Up to **3 per date** (Configuration).
+- **EVENT MONEY · BY DATE**: what is yours from each date and when it arrives (see «Panel › Event payouts»).
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You cancel with 300 orders | Some are refunded right away and the rest in the next few minutes, on their own. Nothing is refunded twice. The event page says how many have gone. |
+| A buyer's card does not accept the refund at that moment | It stays «on its way» and is retried on its own until it goes through. |
+| A buyer opened a dispute with their bank | The bank already has that money: their tickets are voided and it is not refunded twice. |
+| You change the time twice | The last change counts; whoever bought earlier chooses again. |
+| The date already started | It can no longer be moved or canceled from here. |
+| You have a change in review | First wait for To'Latino's reply. |
+| You cancel often (2 in 90 days with tickets sold) | To'Latino reviews it in Trust; it may block your publishing (with a reason and appeal). |
+| You send a fourth notice for the same date | «Up to 3 notices per date». |
+| Someone on the team without «Charges» tries to cancel | «Only whoever handles Charges can cancel with a refund». |
+
+### FAQ
+- **How much does canceling cost me?** What was sold for that date is not paid to you (it goes back to the buyer). The commission is not charged and To'Latino
+  covers the card cost.
+- **Can I notify by SMS?** No: your notices go in the app. Only the notices To'Latino sends when a date changes or is canceled go by SMS.
+- **Can I change the place?** Not from here yet: cancel and publish another, or write to us.

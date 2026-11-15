@@ -33,7 +33,30 @@ momento, queda en el historial y cambia lo que dicen tu página y Buscar.
 
 ## English
 
-Panel › What you sell › Your tool. Markets: pickup/delivery, delivery fee and minimum, orders per time slot, what to do if
-something is out, EBT/SNAP and cash, weighed in front, price per pound and sold out today. Shops: hold for 24/48/72 h,
-layaway terms (down payment, payments, frequency, cancellation fee), returns with receipt, cash, and stock per size (a size
-at 0 cannot be held). Every tap saves, is logged and updates your page and Search filters; live orders keep their copy.
+### What it does
+In **Panel › What you sell › Your tool**, each market or shop puts what it is asked about the most. Every tap is saved right away, goes in the history and changes
+what your page and Search say.
+
+#### Markets · «Scale and orders»
+- **How you deliver:** Pickup and/or Home delivery (leave at least one). With delivery: **delivery fee** (in 50¢ steps) and **minimum order for delivery** (for
+  pickup there is no minimum). It is the same as Panel › Delivery.
+- **Orders per time slot:** how many orders you prepare at once; a full slot is not offered.
+- **If something is not available:** what is marked when ordering (call the customer · a similar one with their OK · remove it).
+- **How they pay you in the store:** EBT/SNAP (only food that is not hot; it does not cover alcohol, tobacco or delivery) and cash.
+- **Weighed in front of the customer:** «They weigh it in front of you» shows.
+- **Price per pound** of each product that is weighed (−/+ 10¢) and **Sold out today** (it comes back on its own tomorrow).
+- Rules that cannot be turned off: it is weighed in front of the customer and with a photo; the real weight is charged (the estimate + 10 % is held and the rest
+  is released); substitute only with the customer's OK.
+
+#### Shops · «Sizes and holds»
+- **You keep a hold** for 24, 48 or 72 hours.
+- **Layaway:** the customer pays in installments and takes it home when they finish paying. You set the down payment (10–50 %), the payments (2–6), how often (7, 14
+  or 30 days) and the fee if they do not finish (0–10 %). Everything is put in writing before the customer accepts.
+- **Exchanges with the receipt** (0 = no exchanges) and whether you **accept cash** (card is always accepted).
+- **Sizes:** how many are left of each size (−/+ 1). **A size at 0 cannot be put on hold.**
+- Rules that cannot be turned off: the app's price is the register's price; today the hold is not charged.
+
+### What happens in each case
+- What a customer already ordered or put on hold **keeps its copy**: changing the tool does not change their order.
+- The Search filters (Pickup, Delivery, EBT, Cash, Weighed in front, Layaway, Hold, Large sizes) come from here; nobody marks them by hand.
+- To'Latino sees your tool read only and can hide a product or pause Products or Orders with a reason (you see it in your panel).

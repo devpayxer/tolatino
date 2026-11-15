@@ -78,33 +78,68 @@ nov 2026. Audiencia: vecino. Tema: comunidad._
 ## English
 
 ### What it does
-- **Welcome (3 steps, once):** the first time you enter the Community (or when you create your account from My account): **Your
-  area** (city, changes every 30 days, and area; posts show your area, never your address), **What you like** (business categories
-  and Community interests; can be skipped), **The neighborhood** (the 6 rules, "You start as Recruit", neighbors to follow, and two
-  boxes: **"I accept the neighborhood rules"** and **"I am 18 or older"** — both required). You get the **100 welcome coins** (see coins
-  and coupons).
-- **18 or older** is a **declaration** (yes or no) with its date. **We never ask for or store your date of birth.** Someone who says
-  they are under 18 does not enter the Community or neighbor messages, and can keep using To'Latino to find, order and book.
-- **A neighbor's profile:** photo, name (last initial) and nickname, rank, intro, area and "in {city} since", founder, counts (each
-  person can hide them); **Follow**, **Message** (only if they follow you or already wrote to you) and **⌄** (mute, block); their posts.
-- **My profile:** edit intro (160), nickname (20), year you arrived, **hide my counts**; links to lists and Messages.
-- **Follow:** their posts show in **Community › Following**, even from another city. They get "You have a new follower" (once every
-  30 days per person). **Following earns no points.**
-- **Mute:** you stop seeing their posts and comments and their notifications. **They don't know.** With **Undo**.
-- **Block:** **mutual and invisible**. Neither of you sees the other anywhere: feed, threads, profile, mentions, notifications (also
-  the ones already received), messages, lists. You **stop following each other** and the conversation closes. **We don't tell them.**
-  With **Undo** (or My account › Neighbors › Unblock), everything returns as it was, including who followed whom.
-- **Neighbor messages:** **text only**, to people who **follow you** or replying to someone who already wrote to you. **No phone
-  numbers, emails or private numbers.** Up to **10 new conversations a day** and 20 messages every 10 minutes.
-- **Report a conversation:** ⌄ › "Report conversation" → reason → "We review it within 48 h". The To'Latino team can read it **only
-  with an open report**.
+- **The welcome (3 steps, once):** the first time you enter the Community (or when you create your account from My account) you do:
+  1. **Your area:** your city (can be changed every 30 days) and your area. In the Community your posts show your area, **never your address**. «I don't
+     live in {city}» saves your city so we can tell you when we open there.
+  2. **What you like:** business categories and what interests you in the Community. You can skip it.
+  3. **The neighborhood:** the 6 rules, «You start as Recruit · you can already post, comment and vote.», neighbors who help the most to follow (optional)
+     and two boxes: **«I accept the neighborhood rules»** and **«I am 18 or older»**. Without both you do not get in.
+  At the end: «Founders · #n · Recruit» (or «No. n · Recruit») and the greeting. You receive the **100 welcome coins** (see `monedas-y-cupones.md`).
+- **18 or older:** it is a **declaration** (yes or no) with its date. **We never ask for or save your date of birth.** Whoever says they are under 18 does not
+  enter the Community or messages between neighbors; they can keep using To'Latino to search, order and book.
+- **A neighbor's profile:** photo, name (last name as an initial) and «They call me …», rank, intro, area and «in {city} since», «founder», and how many
+  posts, followers and following they have (each person can hide their counts). Buttons: **Follow / Following**, **Message** (only if they follow you or
+  already wrote to you) and **⌄** (mute, block). Below, what they posted.
+- **My profile:** edit your intro (160 characters), what people call you (20), since which year you live here and **hide my counts**; links to Following and
+  followers, Blocked and muted, and Messages.
+- **Follow:** what the person posts shows in **Community › Following**, even if they live in another city. They get the notice «You have a new follower» (one
+  every 30 days per person). **Following gives no points.**
+- **Mute:** you stop seeing what they post and comment, and their notices do not reach you. **They do not find out.** With **Undo**.
+- **Block:** it is **mutual and invisible**. You see nothing of that person and they see nothing of you: not the wall, the threads, the profile, the
+  mentions, the notices (not even the ones that had already arrived), the messages or the lists. **You stop following each other** both ways and the
+  conversation closes. **We do not tell them.** With **Undo** (or in My account › Neighbors › Unblock): everything comes back as it was, including who
+  followed whom.
+- **Messages between neighbors:** **text only**. You write to whoever **follows you**, or reply to whoever already wrote to you. **No phone numbers, emails
+  or private numbers** (they are rejected with the reason). Up to **10 new conversations a day** and 20 messages every 10 minutes. Businesses write to you
+  from your orders and appointments (My account › Messages).
+- **Report a conversation:** ⌄ › «Report conversation» → reason (harassment, spam, private data, something else) → «We review it within 48 h». **Only with
+  an open report** can the To'Latino team read that conversation.
+- **My account › Neighbors:** Following · Followers · Blocked and muted, each with its action and **Undo**.
 
-### Notifications (bell only, no SMS)
-"You have a new follower", "Message from a neighbor" (once per batch), "We hid your message" (with the reason). Never from someone
-with a block in between or someone you muted.
+### Notices you get (in the bell, no SMS)
+- «You have a new follower»: «{name} started following you. You can write to them now.»
+- «Message from a neighbor»: «{name}: «…»» (one per batch: if you already had something unread from that person, it is not repeated).
+- «We hid your message»: with the reason, when the team hides a reported message of yours.
+- You never get a notice from someone with whom there is a block (in either direction) or from someone you muted.
+
+### What happens in each case
+| Case | What you see |
+|---|---|
+| You enter the Community without the welcome | It takes you to steps 3–5 and then returns you to where you were going. |
+| You check only the rules, not «I am 18 or older» | «Enter To'Latino» stays off. |
+| You say you are under 18 | «The Community is for people 18 or older»; you do not get in. If you made a mistake, you write to Help. |
+| You create your account from an order or an appointment | You end on your name and continue with the order; you do the welcome when you enter the Community. |
+| You open the profile of someone who blocked you (or who does not exist) | «We could not find this neighbor» (the same in both cases). |
+| You open the profile of someone you blocked | «You blocked {name}» with **Unblock**. |
+| You write to someone who does not follow you | «You can only message people who follow you.» and there is no box to write in. |
+| You type a phone number in a message | «For your safety, no phone numbers in messages.»; it is not sent. |
+| You start conversation 11 of the day | «You already started 10 conversations today. Continue tomorrow.» |
+| You open a conversation with someone with a block in between | «We could not find this conversation». |
+| The team hides a message | In the conversation it says «Message hidden by To'Latino»; whoever wrote it receives the reason. |
+| You put a phone number in your intro | «Don't post phone numbers…»; it is not saved. |
 
 ### FAQ
-- **Do they know if I block or mute them?** No. If they look for you, they see the same as if you didn't exist.
-- **Does To'Latino read my messages?** No. Only when someone in the conversation reports it, and only while the case is open.
-- **Why can't I message someone?** They don't follow you yet.
-- **Why "18 or older" and not my birth date?** We don't need it: just tell us if you are an adult.
+- **Do they find out if I block or mute them?** No. Nothing reaches that person; if they look for you, they see the same as if you did not exist.
+- **Can I report a conversation if I already blocked the person?** Yes, from the conversation before blocking; the report continues.
+- **Does To'Latino read my messages?** No. The team can only read them when someone in the conversation reports it, and only while the case is open.
+- **Why can't I write to someone?** Because they do not follow you. When they follow you, you get the notice and you can.
+- **Why do you ask for «18 or older» and not my date of birth?** Because we do not need it: only that you tell us whether you are an adult.
+- **Do followers give points or rank?** No. Points come from your neighbors' votes.
+
+### For El Compa
+<!-- solo-equipo -->
+- Block: profile › ⌄ › «Block …», or the menu (⋯) of a post or comment, or the conversation › ⌄. Undo: the notice at the bottom or My account › Neighbors ›
+  Blocked and muted › Unblock.
+- If someone says «I can't find a neighbor», that person may have blocked them: **never confirm it** (it is invisible by design); say the person may no longer
+  be in the Community.
+- If a minor declared their age wrongly, it goes to Support; the declaration is not changed from the app.

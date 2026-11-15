@@ -26,7 +26,22 @@ productos con nombre, descripción, fotos (hasta 5), precio e impuesto. Es el mi
 
 ## English
 
-Panel › What you sell › Products: sections and products (name, description, up to 5 photos, price, tax). Markets sell per
-pound (weighed in front with a photo, real weight charged), each, or ready-to-go; shops sell each, with sizes (comma
-separated; new sizes start at 0; a size at 0 cannot be held), with a payment plan, or as an in-store service. EBT only for
-non-hot food. 21+ items are in-store only with ID. Removing a size never deletes it; live orders keep their copy.
+### What it does
+**Panel › What you sell › Products** is where the market or the shop puts what it sells: sections («Butcher shop», «Clothing»…) and products with name,
+description, photos (up to 5), price and tax. It is the same builder as the restaurants' Menu.
+
+### How each product is sold
+- **Markets:** *By the pound · weighed in front of you* (the price is per pound; it is weighed with a photo of the scale and the real weight is charged) ·
+  *By the unit* (prepared food, no EBT).
+- **Shops:** *By the unit* (you type the sizes separated by commas, e.g. «S, M, L, XL»; new ones enter at 0 and how many are left you set in Your tool; a size at
+  0 cannot be put on hold) (it shows with its price, it is not ordered).
+- **EBT / SNAP** (markets only, by the pound or by the unit): only food that is not hot.
+- **It is 21+** (liquor, tobacco, vape): it shows with its price but **can only be bought in the store with ID**; it is never ordered or put on hold in the
+  app, and it does not take EBT.
+- **In-store only:** it shows on your page with its price, but it is not ordered or put on hold.
+- **Tax:** exempt (food for the home, clothing) or 6 % (ready food, what is not food). Check with your accountant.
+
+### What happens in each case
+- Removing a size does not delete it: it stays in the history and the holds that already have it keep it.
+- What a customer already ordered or put on hold keeps its copy of the price.
+- To'Latino can hide a product with a reason (you see it in your panel).

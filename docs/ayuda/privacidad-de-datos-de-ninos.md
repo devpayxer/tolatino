@@ -25,7 +25,22 @@ To'Latino guarda **lo mínimo** para que el lugar sepa a quién espera, y lo gua
 
 ## English
 
-To'Latino keeps the minimum, encrypted: first name, age or grade, school (only for pickup) and a short note. Never birth date, photos,
-birth certificate, vaccines, allergies, medicines, diagnoses, Medicaid or the pickup list (those are handed in person). It is deleted
-30 days after the enrollment ends. The place sees it in the enrollment detail (each view is logged); To'Latino only from a Child care case,
-with a Support or Admin role and a written reason (audited). The child's name never appears in alerts, search, analytics or reviews.
+### What To'Latino keeps
+To'Latino keeps **the minimum** so the place knows who to expect, and it keeps it **encrypted**.
+
+| Data | Is it kept | Who sees it |
+|---|---|---|
+| First name | Yes, encrypted | You and the place of that enrollment |
+| Age or grade | Yes, encrypted | You and the place |
+| School (only if they are picked up there) | Yes, encrypted | You and the place |
+| A short note | Yes, encrypted (no medical data) | You and the place |
+| Date of birth, photos, birth certificate, vaccines, allergies, medicines, diagnoses, Medicaid, who can pick them up | **Never** | Delivered in person to the place |
+
+- **It is deleted on its own** 30 days after the enrollment ends, is canceled or expires.
+- **The place** sees it in the enrollment detail, and every view is recorded.
+- **To'Latino** only sees it from a «Childcare» case, with a Support or Admin role and by writing the reason; it goes in the audit log.
+
+### What never happens
+- Your child's name does not appear in any notice (SMS, notification or email), in searches, analytics, exports or in El Compa.
+- Reviews of places for children carry no photos or the child's name (the server checks it).
+- The photos of a Children's Help request (the receipt) are private.

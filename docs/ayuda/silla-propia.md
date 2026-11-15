@@ -29,7 +29,25 @@ de cada barbero) y **Tu cuenta de cobro** del barbero (`/cuenta/silla/{id}`). Ve
 
 ## English
 
-Each rented chair has its own page (the person's services and prices, how they confirm, deposit, next opening and their
-own verified reviews) and its own payout account: the owner asks the barber to connect it from Panel › Chairs, the barber
-connects it from their To'Latino account (bank details go to Stripe only), and from then on the chair's booking deposits go
-to the barber's bank. Without a connected account the chair takes no online deposit.
+### What it does
+- **The chair page:** the barber as their own business inside the shop: «Barber · Chair 2 at Barbería El Primo», the card **CHAIR 2 · SINCE 2019** that leads to
+  the shop, their services with their prices, whether they confirm instantly or how long they take, their deposit, their next time slot and their reviews (only
+  those from appointments with them: «VERIFIED · WITH KELVIN»).
+- **Their payout account:** with rented chairs, the deposit for a barber's appointments goes to **their** bank, not the shop's. The owner, in Panel › Chairs,
+  taps **Ask Kelvin to connect it**; Kelvin gets the notice and connects it from his account (he enters his details and bank in Stripe; To'Latino does not see
+  them). When it is connected, the owner gets the notice and the chair starts asking for the deposit it has set.
+- **Who decides what:** the owner adjusts in their panel the prices, the schedule, whether it confirms instantly and the deposit of each chair («each chair
+  decides»); the barber only connects their payout account.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| The chair has a deposit but has not connected its account | It does not ask for an online deposit (their money never goes to the shop's account). |
+| The barber does not have an account on To'Latino | The panel says to invite them first from Your page › Team with their phone. |
+| They started connecting it and did not finish | Panel: «still needs to finish in Stripe»; their page: «Finish connecting». |
+| Someone else opens the payout link | They do not see it: only the barber of that chair. |
+| The chair does not do a service | It does not show on their page or in their list. |
+
+### FAQ
+**Does the shop see the barber's bank?** Only the last 4 digits, to know it is connected.
+**Does To'Latino charge a commission?** Yes, the appointments one (8 %) on the deposit; the rest reaches the barber.

@@ -85,26 +85,79 @@ nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## English
 
-Tabs All · Posts · Comments · Today nearby · Reviews · Auto-moderation · Official account (updates, update comments
-and job posts stay under All with the Type filter). Filters: type, city, visible/hidden, reported, downvoted, 10+ votes, from visitors, author
-rank and author; cursor pages (← →). "Ver hilo" shows the post as in the Community with all its comments (hidden ones marked) and the comment
-you came from highlighted. "Ocultar los N reportados" (desktop) hides every visible reported Community post and comment with one reason,
-shows progress and which ones failed and why; the official account is never hidden in bulk. Each author gets the reason with Appeal; reports
-and the queue case are closed; all audited. "Mover de ciudad" moves a post (not a recommendation) to another of your cities with its comments.
+### Content
+- **What it is:** everything neighbors and businesses write that already exists: **reviews**, **updates**, update **comments** and **job posts**. Figures
+  (reviews and comments, open reports, updates and job posts, hidden), tabs by type, search by text, author or business, and the filters **Reported**,
+  **Hidden** and **Downvoted**. What is reported comes first.
+- **Hide / Show** asks for a reason (templates or written). The review leaves the page and the stars and the author sees the reason; the update and the job post
+  leave the page and the owner sees the reason in their panel (the job post stops receiving applications; the ones it already has stay); the comment leaves the
+  update. Nothing is deleted; everything goes in the audit log.
+- **See business** opens its 360 › Content. Permission: view with `cont:ver`; hide with `neg:retirar`.
+- Community posts, neighbor comments, auto-moderation, «Today nearby» and the official account are below and in `admin-cuenta-oficial.md`.
 
-Today nearby: the "Hoy en el barrio" tab lists what is live in Today nearby in your cities (the same database rule people
-see: a Pro business's live, public update from the last 24 h), with its origin and hours left, plus what To'Latino took out in the
-last 24 h. "Retirar de Hoy" (Admin, Moderator) asks for a reason, keeps the update on the business page, notifies the business (no
-SMS) and is audited; "Devolver a Hoy" undoes it within the 24 h. The "Cuenta oficial" tab is described in admin-cuenta-oficial.md.
-Neighbor comments: the "Comentarios de vecinos" tab lists Community comments and replies; Admins and Moderators hide or
-restore them with a reason (the author gets a notice, no SMS; a hidden comment stops counting in the thread's recommended list),
-audited as com.comentario.*. Community posts: the Posts tab lists neighbors' and the official city account's posts; Admins and Moderators hide or
-restore them with a reason (the author still sees it with the reason and gets a notice, no SMS), and Admin, City and Moderator
-roles pin one per city for 7 days or lock comments, all audited.
+#### Community posts
+- **Posts** tab (and in **All**): questions, recommendations, polls and posts from neighbors and from the city's official account, with type, author, the
+  recommended business, votes + / −, whether it is pinned or has comments locked and, if hidden, the reason. The ones their author deleted do not show here
+  (they stay in the database as deleted).
+- **Hide / Restore** (Admin and Moderator): with a reason. It leaves the wall and its page for everyone; the author still sees it with the reason and gets the
+  notice «We hid your post» (no SMS). Restore brings it back and notifies them. Hiding it also unpins it.
+- **Pin / Unpin** (Admin, City, Moderator): with a reason; it goes to the top of its city's wall for **7 days**, one at a time (the one that was pinned gets
+  unpinned). It does not change anyone's votes.
+- **Lock / Open comments**: with a reason; nobody else comments or replies in the thread, and what is already there stays.
+- **View** opens the post the way a neighbor sees it. Everything goes in the audit log (`com.publicacion.*`) with before → after.
 
-Content lists reviews, business updates, update comments and job posts in your cities, with search, type tabs and filters
-(reported, hidden, downvoted); hiding or showing asks for a reason the author or owner sees, and is audited. Transactions lists
-orders and table reservations from the last 90 days with daily and 90-day figures, tabs, status filters, search and a CSV export
-(formula-safe, audited). Orders, reservations and appointments are paid at the store, on delivery or by card in the app; each charge
-shows its status (held · charged · released · refunded) and Refund (with a reason) returns up to what was charged.
-- On **Content**, the posts, comments and reviews totals at the top are recounted **every 10 minutes**; open reports, hidden, Today and «Hide the N reported» are counted right away.
+#### Neighbor comments
+- **Neighbor comments** tab (and in **All**): comments and replies in Community threads, with author, the business they recommend, votes + / − and, if hidden,
+  the reason. The ones their author deleted do not show here.
+- **Hide / Restore** (Admin and Moderator): with a reason. It leaves the thread for everyone (if it had replies, it stays as «Comment hidden under the
+  neighborhood rules») and stops counting in «Recommended in this thread»; the author gets «We hid your comment» with the reason (no SMS). Restore brings it
+  back and notifies them. **View** opens the post at that comment. Audit entries `com.comentario.*`.
+
+#### Today nearby
+- **Today nearby** tab (the «TODAY NEARBY» figure at the top opens it too): what shows **right now** in Today in your cities, with its **origin** (which
+  business's update, who posted it in their panel, how long ago, how many follow it) and the label **ON TODAY · N H LEFT**. Below it, what To'Latino **removed
+  from Today** in the last 24 h, with who and why.
+- It shows exactly what people see: the rule lives in the database (a live update from a **Pro** business with Updates turned on, not paused, not hidden, not
+  stopped, not expired, **for everyone** —not «followers only»—, posted less than **24 h** ago and not removed). Anything from a Free business, hidden, stopped,
+  expired or older than 24 h never shows (guardian `hoySoloEnVivo`).
+- **Remove from Today** (Admin and Moderator, `cont:retirar`): asks for a reason (templates: it is not an update, misleading or with a false price, someone
+  else's data, repeated, breaks the rules). The update **stays on the business page**; it only leaves Today. The business gets «We removed an update from Today
+  in the neighborhood» with the reason (no SMS) and sees it in their panel. **Put back on Today** undoes it if it is still within its 24 h. To remove it from
+  its page too, hide it from **Updates**. Audit entries `hoy.retirar` / `hoy.devolver`.
+- **See on their page** opens the business page › Updates; **Business 360** opens its content.
+
+#### Official account
+- **Official account** tab: write, schedule and pin as «To'Latino {City}». Details in `admin-cuenta-oficial.md`.
+
+#### Tabs, filters and actions in Content
+- **Tabs** (as in the prototype): **All · Posts · Comments · Today nearby · Reviews · Auto-moderation · Official account**. Updates, update comments and job
+  posts stay in **All** with the **Type** filter.
+- **Filters:** Type, **City**, **Visible / Hidden**, **Reported**, **Downvoted**, **10+ votes**, **From visitors** (lives in another city), **Author rank**
+  (4, 7 or 9 or more) and **author** (from Users 360° › Community › «See all in Content»). Search by text, author or business. What is reported comes first.
+  **Cursor pages** (← →): a row is never skipped or repeated even when new ones come in.
+- **View thread:** the post as in the Community (author, rank, topic, photos, poll with its votes, the recommended business, votes) and its comments, the most
+  voted first and each reply under its comment; what is hidden shows marked with its reason. When opened from a comment, that comment is **marked and in view**
+  («ORIGIN COMMENT»). From there: Hide / Restore with a reason, go to the author or to the report.
+- **Hide the N reported** (desktop, whoever can hide): hides at once the visible Community posts and comments that have an open report. It asks for a reason;
+  it shows the **progress** (N of M) and at the end how many were hidden and **which were not and why**. **The official account is never hidden in bulk**
+  (it shows as «COULD NOT»: if needed, hide it on its own from its row). Each author gets the reason with «Appeal»; those who reported get the result (no
+  names); the reports and the case in the Reports queue are decided; everything is in the audit log (`com.publicacion.ocultar_lote`, `com.comentario.ocultar_lote`).
+- **Move city** (Admin, City, Moderator; your cities): a post that talks about another city moves to that city's wall with its comments; the location is set
+  again by the system (center of the neighborhood or the city, never the person's) and it is unpinned. A **recommendation** or a thread with recommended
+  businesses **does not move** (it goes with its business): hide it with the reason. It goes in the audit log.
+- The figures and times in Content come from the database; the deadlines (minutes to edit, days to appeal) come from **System › Configuration**.
+- At the top, **POSTS**, comments and reviews are totals that the system recounts **every 10 minutes** (counting them on every view was too slow with
+  millions); **OPEN REPORTS**, **HIDDEN**, Today nearby and «Hide the N reported» are counted right away.
+
+### Transactions
+- **What it is:** orders, reservations and appointments from the **last 90 days**. Figures: today (and what was ordered today), what is held now, orders
+  finished in 90 days, the ones that did not happen (canceled, rejected or unanswered) and reservations. Tabs All, Orders and Reservations; statuses Pending,
+  In progress, Done, Canceled and Did not happen; search by number, business or customer.
+- **Export** (permission `tx:exportar`): CSV of what is filtered (up to 5,000 rows), with cells protected against formulas; it goes in the audit log.
+- **Money:** orders, reservations and appointments are paid at the business, on receipt or **by card in the app**; each charge shows its status
+  (**held · charged · released · refunded**) and **Refund** (with a reason) returns up to what was charged. For appointments, the card is the deposit and the
+  commission (8 %) applies to the deposit. Bank disputes have their own queue (see `disputas.md`).
+- **Private event** (the «Private event» tab): each EP-… request with people, for when, how many proposals, the accepted version, the total, the deposit and
+  its status (held · charged · refunded), whether it stayed with the restaurant, the commission and how it closed. **Refund** (permission `tx:aprobar`) returns
+  up to what was charged minus what was refunded, with a reason and audit. Help requests go to Queues › Support and bank disputes to Queues › Disputes, like
+  the rest.

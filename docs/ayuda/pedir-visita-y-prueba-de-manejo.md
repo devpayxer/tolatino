@@ -47,15 +47,43 @@ catecismo. **Nada se cobra en la app: hoy pagas $0, siempre.**
 ## English
 
 ### What it does
-Request to view a property (Real Estate), test drive a car (Car Dealers) or the time they call you to pre-qualify or make an offer. At a
-church you ask for the date of a baptism, a blessing or a counseling appointment, or sign your child up for catechism. **Nothing is charged in
-the app: you pay $0 today, always.**
+You ask to see a property (Real Estate), to test drive a car (Car Sales) or for the time they call you to pre-qualify or for an offer on your car or your home.
+At a church you ask for the date of a baptism, a blessing or a counseling appointment, or you enroll your child in catechism. **Nothing is charged in the
+app: today you pay $0, always.**
 
-**The time limits on this page** (hours to reply, how long a spot is held, when a cancellation goes through, after how many days private data is deleted) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
+### How to use it
+1. **Day and time:** pick the day and a free time. Times already taken cannot be chosen. In Cars, if the dealer offers it, you can ask for the **test drive at
+   your home** (street and ZIP code).
+2. **Review and send:** you see what you are asking for, the day and the **total**: «TO MOVE IN» (rent + deposit + what is required) or «AT THE DOOR» (price +
+   tax + plates + dealer fee). In Cars you check **«Yes, I have a valid license»** (we never ask for the number or the photo: you show it in person) and, if
+   you want, the **car you trade in**. The note is optional (200 characters).
+3. **Your visit:** PENDING → CONFIRMED → DONE. From there: **Directions**, **Calendar**, **Message** and **Cancel** (free, with one tap).
+- **Churches · Ask for a date:** you pick the date you would like and the time slot (morning, afternoon or evening); the office confirms or proposes another.
+
+### What happens in each case
+- **They reply within 4 hours** of the business's hours, and never later than one hour before your visit. If not, it is left **UNANSWERED** and the time is free
+  again. Churches: 48 hours.
+- **They propose another time:** **Accept** (it is confirmed) or **That doesn't work for me** (it is canceled, at no cost).
+- **It cannot be done:** they tell you «There is no visit at that time». Ask for another whenever you want.
+- **It was rented or sold before:** your visit is canceled **through no fault of yours** and we tell you.
+- **The exact address** of a room or of «area only» reaches you **when they confirm**; before that you see the area (city and ZIP code).
+- **Test drive at your home:** the dealer sees your address only when they confirm; it is encrypted, every view is recorded and it is deleted after 30 days.
+- **It's done:** we ask for your review; it shows as **verified**. If the business marks «No-show» there is no fine; if it is a mistake, write to them by Message.
+- **The total you saw is saved:** if the business changes the price afterwards, your visit keeps what you saw when you asked.
+- **Your note:** if you write a social security number, an ITIN or a card or account number, **it is covered before it is saved**. You don't need to: the
+  papers are brought in person. **Do not write your social security number or account numbers here.**
+- **Counseling, chaplaincy or prayer:** the notices do not say the place or the service («You have a confirmed appointment»); your note is encrypted and is
+  deleted after 30 days.
+- **For your child (catechism):** their name and age are encrypted; only the parish sees them and they are deleted 30 days after it ends.
+
+**The deadlines on this page** (how many hours to reply, how long a spot is held, when a cancellation stands, after how many days private data is deleted) are
+today's: To'Latino sets them in its Configuration and the screen always says the one that applies at that moment.
+
+**The Free ceiling** (the 10 online orders, appointments or requests a month) is today's: To'Latino sets it in its Configuration and the screen always says the one
+that applies at that moment.
 
 ### FAQ
-Viewing and test drives are free; nobody may charge you to view. No SSN, income or credit is asked in the app. One live request per
-property or car, up to 5 waiting. Free businesses take up to 10 requests a month. Notes with SSN, ITIN, card or account numbers are masked
-before saving. Counseling notices never name the place or the service.
-
-**The Free cap** (10 online orders, bookings or requests a month) is today's: To'Latino sets it in its Configuration and the screen always shows the one in force.
+- **Do they charge me to see a property or for the test drive?** No. Nobody charges to see. If someone asks you for money before you see it, report it.
+- **Do they ask me for a social security number, income or credit?** Not in the app. The listing says which papers they ask for; they are brought in person.
+- **How many can I ask for?** One active per property or car, and up to 5 waiting for a reply.
+- **Can I ask a business on the Free plan?** Yes, up to 10 requests a month per business; after that, call.

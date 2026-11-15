@@ -50,17 +50,43 @@ una iglesia**: lo que te cobraron fuera de la app te lo devuelve el negocio dire
 ## English
 
 ### What it does
-**El Compa first:** tapping **Help** opens El Compa (To'Latino's AI assistant) over your item with fixed options; **Something went wrong** (on
-tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, the monthly AI cap is reached, or you already opened
-a request, you come straight here.
+- **El Compa first:** tapping **Help** opens the sheet of **El Compa** (To'Latino's AI assistant) over your item, with fixed options; **Something went wrong**
+  (on tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, if To'Latino reached the monthly AI cap or if you already
+  opened a request, you come straight here. See `el-compa.md`.
+When your visit, your test drive or your date at the church (requested through To'Latino) has passed, you can leave a **verified review** with the questions that
+matter. If something was not as published, you ask for **Help** up to 7 days later: the business replies within 24 hours and, if it does not reply or you
+disagree, To'Latino reviews it within 48 hours. **At To'Latino nothing is charged for seeing, for the test drive or for a church's help**: what you were charged
+outside the app, the business refunds directly and you confirm «They refunded me».
 
-Once your visit, test drive or church date (booked on To'Latino) happens you can leave a verified review. If something was not as
-posted, ask for Help up to 7 days later: the business replies within 24 hours; otherwise To'Latino reviews it within 48 hours. Nothing is
-charged on To'Latino for viewing, test drives or church help: whatever you were charged outside the app, the business refunds you directly
-and you confirm «They refunded me».
+### How to use it
+- **Review:** stars, the questions for your case and your text. Real Estate: whether what you needed to move in was what you saw, whether seeing it was free,
+  whether it was like the photos, whether they arrived on time, whether they told you clearly what they ask for. Cars: whether the price at the door was the one
+  you saw, whether they showed you the title and the history, whether the car was like the photos, whether they attended you on time, whether they let you think
+  about it without pressure. Churches: whether the help was free, whether there was service in Spanish, whether they helped you, whether it started on time,
+  whether you felt welcome. The visit's data (the day and **what you saw when you asked**: «TO MOVE IN» or «AT THE DOOR») comes from To'Latino and is not edited.
+- **Help:** choose what happened, tell it (15 characters or more), add the photo when it is asked for (of the receipt, the contract or what was published) and
+  what you want: that they refund you, another visit with a confirmed time (Real Estate), that they fix it before signing (Cars), that they call you (Churches)
+  or just let them know.
+- **When:** when it has passed (or, once confirmed, when the time has arrived: «they charged me to see» happens at the door) and up to 7 days later.
+
+### What happens in each case
+- **«They charged me to see the property»** and **«They asked for more to move in than what was published»** (with a photo) go **straight to To'Latino**, with
+  priority, without waiting for the business. While we review it, **the property is not shown on To'Latino**. Never pay a deposit before seeing the property and
+  signing the contract.
+- **«They asked me for money for the help»** (Churches, with a photo) also goes straight to To'Latino and, while we review, «Ask for a date» for that place is
+  paused. A church's help is free; nothing is ever charged for groceries, clothing or prayer.
+- **«The price at the door was more»** (Cars, with a photo): the dealer replies within 24 hours. We compare with the total at the door that you saw when you
+  requested the test drive (it is saved even if it changes later).
+- **If the business agrees to refund**, it refunds you directly (cash, Zelle or however it charged you). When you have it, tap **«They refunded me»** and the
+  request closes. If not, tap **«They did not refund me»**: To'Latino reviews it and may sanction the business.
+- **To'Latino decides:** «Sanction» takes the listing down and gives the business a warning; «No action» shows it again. **There is never a refund through the
+  app**: nothing was charged in the app.
+- **Photos:** those in a help request are private (only the business and To'Latino). Church reviews **carry no photos**.
+- **Church notices:** neutral, without the name of the place or the service on the lock screen.
+- **Funeral homes and religious shops:** they have no dates through the app, so their reviews show as «NEIGHBOR REVIEWS», without a count of verified ones.
 
 ### FAQ
-A review does not refund money; use Help. Reviews show as verified only if the visit, test drive or date was booked on To'Latino
-and happened. If the business does not refund you, tap «They did not refund me» and To'Latino decides. If you were marked as a no-show but
-went and nobody came, choose «They did not show up for the visit». Charging to view, asking for more to move in than posted, or asking for
-money for church help goes straight to To'Latino and the listing is paused while we review.
+- **Does the review refund money?** No. If something went wrong, ask for it in Help.
+- **Why does my review show as a visitor?** It only shows as verified if the visit, the test drive or the date was through To'Latino and has already passed.
+- **What happens if the business does not refund me?** Tap «They did not refund me»: To'Latino reviews it within 48 hours and decides.
+- **If they marked me «No-show» but I went and they did not arrive, can I ask for help?** Yes: choose «They did not show up to the visit».

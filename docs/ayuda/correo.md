@@ -29,8 +29,25 @@ Admin › Notificaciones › **Correos** (y ver un correo). Versión: 6 nov 2026
 
 ## English
 
-In Profile, save your email and tap **Send the link**: the email has a button that works for 24 hours, once. With a
-confirmed email you get **receipts** (on by default; turn them off in Notifications): when your order is done, when a
-restaurant confirms your table and, for owners, each Pro charge — in your language, never twice. Every email is kept in
-To'Latino's outbox (the team sees the address masked and the confirm link hidden). In the sandbox no email goes out: it
-stays "in test mode", and Profile shows "Open the link" to confirm without email.
+### What it does
+- **Confirm your email:** in Profile you type your email and save it; «Confirm your email» shows → **Send the link**. You get an email with a button; the link
+  works **for 24 hours and only once**. If you change the email, you have to confirm it again.
+- **Receipts** (on by default; you turn them off in Notices): when your order is finished (picked up or delivered), when the restaurant confirms your table and,
+  for the owner, each Pro charge. They arrive in your language (Spanish or English).
+- **To'Latino** keeps every email in its outbox: what was sent, to whom (masked for the team), when and whether it went out. The team can see an email as it
+  reached you (the confirmation link shows covered).
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Unconfirmed email | You do not get receipts (everything stays in My account and in your order). |
+| You ask for the link many times | Maximum 3 per hour. |
+| The link expired or was already used | «That link does not work» → ask for another from Profile. |
+| You changed the email after asking for the link | The old link does not confirm the new email. |
+| The business marks the order again or a charge repeats | A receipt never arrives twice. |
+| The email provider fails | The email stays in the outbox and is retried (up to 5 times in 3 days). |
+| Sandbox | No email goes out: it stays «in test mode». In Profile, «Open the link» shows so you can confirm without email, and the team sees every email in Super Admin › Notifications › Emails. |
+
+### FAQ
+**What is my email for?** For your receipts and to recover your account. We do not send advertising by email.
+**Can I stop receiving receipts?** Yes: My account › Notices › Email › Receipts.

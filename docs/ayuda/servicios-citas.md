@@ -40,11 +40,32 @@ belleza). Versión: 6 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## English
 
-**Services** have a category, name and description (Spanish, optional English), photo, duration and clean-up time (kept
-free on the calendar, never shown to customers), price, "from · varies" and up to 3 option groups that change price and
-time; **Extras** can be added to any service. Reorder, hide (nothing is deleted) or remove. **How your business works**:
-employees, commission or chair rental (each chair sets its own price; blank means that chair doesn't offer it).
-**Booking rules**: instant confirm or review, response time (15 min–3 h), deposit ($0–$50), free cancellation window
-(2–72 h), arrival tolerance, staff choice and when the last booking ends (at closing, or 15 min, 30 min or 1 h before:
-your page offers no times that end later). With chair rental each chair sets its own rules. To'Latino can pause
-Services or Booking and hide a service, always with a reason the owner sees in the panel; existing appointments continue.
+### What it does
+- **Services:** each service has a category (Haircuts, Beard…), name and description (ES and optional EN), photo, **duration** and **time between
+  appointments** (cleanup: the schedule leaves it free, the client does not see it), price, «from · varies» and up to 3 groups of **options** that change
+  price and time («Hair length: Short · Long +$5 +10 min»). The **Extras** (wash, design…) are added to any service. They are ordered with Move up/Move down,
+  hidden from the page without losing them, or removed (nothing is deleted).
+- **How your business works:** with **employees** (the business's price), **on commission** (the business's price, you set the %) or **chair rental** (each
+  chair sets its own price and schedule; you collect the rent). If chairs are rented, the editor asks for each chair's price; empty = that chair does not do it.
+- **Appointments (rules):** confirm instantly or review each request, how long you take to reply (15 min, 30 min, 1 h, 3 h), deposit ($0, $5, $10, $20, $50),
+  until when you can cancel for free (2, 4, 24 or 72 h before), arrival grace period, whether the client chooses who with and **when the last appointment ends**:
+  at closing, or 15 min, 30 min or 1 h before (your page does not offer times that end later; it helps you tidy up and close on time).
+- **Chairs:** with rented chairs, each barber decides their own rules (instant or not, how long they take, deposit) and whether they receive online appointments.
+- **To'Latino:** in Business 360° › What it sells it can **pause Services** or **pause Appointments** and **hide a service**, always with a reason; the owner
+  sees the reason in their panel. Everything goes in the audit log.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Service without a name, price or category | It is not saved: «Type the service name» / «Set a price» / «Pick the category». |
+| Options | Maximum 3 groups of 2 to 5 options; a group without a name or with fewer than 2 options is not saved. Duration between 5 min and 8 h. |
+| Rented chair without a price on a service | That chair does not offer it; the client does not see the chair for that service. |
+| You switch from «chair rental» to «employees» | The per-chair prices are saved but not used; everyone charges the business's price. |
+| You hide a service | It stops showing on your page; it is not deleted and you show it again whenever you want. |
+| To'Latino pauses Appointments | Your page says «call or stop by»; the appointments already requested continue. You see the reason at the top of the panel. |
+| To'Latino hides a service | It shows «Hidden by To'Latino» with the reason; it cannot be shown again from the panel. |
+
+### FAQ
+**Does the client see the time between appointments?** No. They only see the service's duration with the options they choose.
+**Who decides the deposit if I rent chairs?** Each chair. The business's rules apply to anyone who does not have their own.
+**Can I have services and a menu at the same time?** What you sell adapts to the category: beauty uses Services.

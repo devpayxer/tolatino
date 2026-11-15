@@ -51,9 +51,44 @@ hasta 6 fotos.
 
 ## English
 
-The business page shows photos, what the business does, whether it is open now and until when, distance, how it
-serves today (delivery, pickup, dine-in), weekly hours, the address and, when available, FAQs and related
-businesses (branches or same owner, confirmed by both). Pro pages have a big cover, logo, full hours with upcoming
-changes and tabs; Free pages are simpler. Top actions: Call, Save (heart; signed-out users sign in and come back)
-and Share (phone share sheet, or the link is copied on a computer). «Open in maps» opens the phone's maps. Each business shows what it sells in its own tab (Menu, Services, Shop…). The photo gallery opens any photo full screen (arrows, swipe, ← → keys,
-Esc) and lets signed-in users report a photo once; it stays visible while To'Latino reviews it within 48 h.
+### What it does
+It shows everything you need to know about a business before going or calling: photos, what it does, whether it is open now and until what time, how far it is,
+how it serves today (delivery, pickup, dine-in), its hours for the week, the address and, if it has them, its frequently asked questions and its branches or
+businesses of the same owner.
+
+**Pro** businesses have a big cover, logo, the full hours with what changes (holidays) and tabs (Summary, Related…). **Free** ones have a simpler page with the
+hours for the week.
+
+### How to use it
+1. Tap any business card (on Home, Businesses or a category).
+2. At the top: **Call**, the heart to **save** and **share**. Tapping the distance opens the phone's map.
+3. **Summary**: today's status, the deal of the day if there is one, the photos, the hours and **Directions** → **Open in maps**.
+4. **Related** (if the tab exists): branches and businesses of the same owner, with what the business says about each one. **See branch** opens its page.
+
+### Photos
+Tap any photo (or «See all N photos») to open the **gallery**: all of the business's photos in a grid. Tap one to see it large; move with the arrows, by
+swiping or with the ← → keys on a computer (Esc closes). If a photo is not of the business, is inappropriate, shows personal data or is spam, tap **Report
+photo**, pick the reason and send. The photo stays visible while a To'Latino person reviews it (48 h). A Free business shows up to 6 photos.
+
+### What happens in each case
+| Case | What the person sees | What to do |
+|---|---|---|
+| The business is closed | «Closed» in red and when it opens («Opens tomorrow at 11 AM») | Come back at that time or call. |
+| It serves at your home | «Where it serves: Goes to your home up to 15 mi» instead of the address | Call to ask for the service. |
+| They tap the heart without having signed in | It takes them to **Sign in** and then returns to the page | Sign in with their phone. |
+| They tap **Share** | The phone opens its share sheet; on a computer the link is copied («Link copied») | — |
+| The business link does not exist or the business is not active | «Not found» page | Search for it by name. |
+| They report a photo without having signed in | It takes them to **Sign in** and returns to the same photo | Sign in and send the report. |
+| They already reported that photo | «You already reported it · To'Latino reviews it within 48 h» | Wait for the review. |
+| It has fewer than 5 reviews | «New · on To'Latino» or «3 reviews» instead of stars | Normal. |
+
+### FAQ
+- **Are the hours real?** Yes: they are the ones the business set, with the city's time. Holiday changes show in «Upcoming changes».
+- **Why don't I see the menu or the services?** Each business shows what it sells in its tab (Menu, Services, Shop…). If it does not show, that business has not
+  put it up yet or is Free with the essentials.
+- **What does «Related» mean?** That both businesses confirmed they are branches or have the same owner.
+
+### For El Compa
+<!-- solo-equipo -->
+- Repeat the status exactly as the page says («Open until 9 PM»); do not guess hours.
+- If someone says a detail of a business is wrong, suggest telling Support; the owner fixes it from their panel.

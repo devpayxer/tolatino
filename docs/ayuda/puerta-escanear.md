@@ -67,20 +67,59 @@ puerta desde el panel).
 ## English
 
 ### What it does
-**You only scan:** no tickets are sold and nothing is charged at the door. You see each person’s **first name and initial** (or the name on a comp),
-the ticket type, the table and the minimum age — **never** phones, emails or what they paid. The business invites you with your name and phone; you
-get a **6-character code** (valid 7 days), sign in to To'Latino with **your own account** and that same phone, open **To'Latino Door** and type it.
-**Your doors** lists today’s events and the next 7 days; door mode turns on 2 hours before doors open until 2 hours after the end. Pick the event,
-the door (Main, VIP…), and **Open the door**. **Scan**: the camera reads the ticket QR and shows a big result with color, word and sound — **VALID**,
-**IN · CHECK** (transferred ticket), **CHECK ID · 21+** (confirm with “Got in” or “No entry”), **CHECK THE GROUP** (choose how many get in now, e.g. 4
-of 6), **ALREADY IN** (“Already in through Main at 10:42”), **QR VOIDED / VOIDED / REFUNDED / BEING TRANSFERRED / WRONG DAY / NOT FOR THIS EVENT /
-INVALID QR / NOT FOUND**, **AT CAPACITY / DOOR IS CLOSED**. Flashlight, and ENTRIES/EXITS when re-entry is allowed. **Search** by name, last 4 digits
-of the code or phone, full code or B- order; comps show by name; **Let in** asks why and is logged. **List** with filters and RSVP arrivals;
-**Tonight’s list** for Night venues (by name or the 4-digit code). **Capacity** (alerts at 90 % and 100 %), **Tables** (give each group its table
-number, never twice), **Incidents** (security shows 911; the organizer is notified right away), **Team** and **Close the night**. The numbers at
-the top update live on every door phone. Without signal you keep scanning with the phone’s signed list (see “To'Latino Door without signal”). Two staff scanning the same ticket at once: it gets in once. Removed from the team: your door closes
-immediately.
+- **You only scan.** Tickets are not sold and nothing is charged at the door: the door lets in whoever already has their ticket, their RSVP or their spot on the
+  list. You see each person's **name and initial** (or the name the organizer put on a complimentary ticket), the ticket type, the table and the minimum age.
+  You **never** see phones, emails or what each person paid.
+- **Joining the team**: the business invites you with your name and phone and you get a **code of 6 letters and numbers** (valid for 7 days). You sign in to
+  To'Latino with **your own account** and that same phone, open **To'Latino Door** and type the code. Nobody scans without an account.
+- **Your doors**: the events assigned to you, **today** and the next 7 days. Door mode turns on the day of the event: **2 hours before doors open** and until 2
+  hours after it ends (Configuration). You tap the event, choose **which door you are at** (Main, VIP, Terrace…) and **Open the door**.
+- **Scan**: the camera reads the ticket's QR (also without the client's app open: the QR works without signal on their phone). In under a second the result shows
+  large, with color, word and sound:
+  - **VALID** (green): they get in. It says the name and the type.
+  - **ENTERS · CHECK** (amber): they got in, but they received the ticket from another person: check that the QR is on their phone.
+  - **ASK FOR ID · 21+** (amber): the event asks for identification. Look at it and tap **Entered**; if they do not show ID, tap **Not entering**.
+  - **CHECK THE GROUP** (amber): a table or group ticket. Choose **how many enter now** (for example 4 of 6) and tap **4 entered**; the other 2 enter later with
+    the same QR.
+  - **ALREADY ENTERED** (red): «Already entered through Main at 10:42». Do not let them through again.
+  - **VOIDED QR**, **VOIDED**, **REFUNDED**, **BEING TRANSFERRED**, **IT IS FOR ANOTHER DAY** (it says which day it is valid), **NOT FOR THIS EVENT**, **INVALID
+    QR** (the QR was altered or is not from To'Latino), **NOT FOUND**: they do not get in.
+  - **AT CAPACITY** / **THE DOOR ALREADY CLOSED**: according to what the organizer set.
+- **Flashlight** and, if the event lets people leave and re-enter, **Scanning ENTRIES / EXITS**.
+- **Search** (for someone without the QR): by name, by the **last 4 digits of the code or of the phone**, by the full code (TL-XXX-0000) or by the order (B-…).
+  Complimentary tickets show by their name. **Let in** asks **why** (they did not bring the QR, the QR does not read, phone out of battery, other) and it goes
+  in the audit log.
+- **List**: everyone for this date with filters (Missing, Inside, With table, Complimentary, RSVP). An RSVP who arrives: **1 arrived** or **N arrived**.
+- **Night list** (Nightlife businesses): tonight's list and tables; search by name or by the **4-digit code** the client tells you and mark **1 entered** or **N
+  entered** («3 of 4 entered»).
+- **Capacity**: inside, the capacity, by type, by door and entries per hour. At 90 % a warning shows; at 100 %, «You reached today's capacity».
+- **Tables**: «HAS A TABLE · WHICH ONE?»: you tap the group and give them their number. Two groups never have the same table.
+- **Incidents**: duplicate ticket, age or identification, **safety** (the **911** shows), asks for a refund or something else. It reaches the organizer right
+  away. Do not upload photos of identification.
+- **Team**: who is at each door and how many they let in.
+- **End of night**: entered, tickets, no-shows, complimentary, RSVPs, rejected, incidents; **Close my door**.
+- **Live**: the figures at the top (inside, missing, rejected) update on their own on all the door's phones.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Two doorkeepers scan the same ticket at the same time | It enters only once: one sees VALID and the other «Already entered through … at …». |
+| The signal drops | You keep scanning with your phone's list (at the top: OFFLINE · N TO UPLOAD); when the signal returns it uploads on its own. See «To'Latino Door without signal». |
+| The business removes you from its doorkeepers | Your door closes right away: «You no longer have access to this door». |
+| You scan the ticket of another event or another business | NOT FOR THIS EVENT, with no data about that person. |
+| A multi-day pass | It enters once each day. A single-day ticket, only that day (otherwise, IT IS FOR ANOTHER DAY). |
+| The client transferred the ticket | Their old QR shows VOIDED QR; the new one belongs to whoever received it. While it is being transferred, neither enters. |
+| The invitation code does not work | It expires after 7 days and only works with the phone the business gave. Ask for a new one. After many bad attempts you have to wait an hour. |
+| You search too often | There is a cap on searches per minute: wait a minute. |
+| The event's time passed | The door closes on its own 2 hours after the end. |
+
+### FAQ
+- **Can I sell a ticket at the door?** No. To'Latino does not sell at the door: the client buys in the app beforehand.
+- **Do I see the client's phone?** No. Only their name and the initial. You can search by the last 4 digits of the phone, but you do not see it.
+- **What if someone says they bought and they do not show up?** Search by name or by the last 4 of the code. If they are not there, they do not get in; if there is
+  a problem, report it in Incidents.
+- **Do I have to have an account?** Yes, your To'Latino account with the phone you gave the business.
+- **Where am I recorded?** Every scan keeps who did it, at which door and at what time. The organizer and To'Latino can review it.
 
 ### Door help
-In To'Latino Door, **How the door works** opens the Help center on **The door** (only for door staff and whoever opens the door from the
-dashboard).
+In To'Latino Door, **How the door works** opens the Help Center on the topic **The door** (only for doorkeepers and for whoever opens the door from the panel).

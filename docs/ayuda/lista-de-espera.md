@@ -33,12 +33,27 @@ ficha › LISTA DE ESPERA**. Teléfono y escritorio. Versión: 10 nov 2026. Audi
 ## English
 
 ### What it does
-When a date **sells out**, the event page lets you **join the waitlist** with your group size and shows **«On the list · #N»**. **First come, first
-served**: when a spot opens up, the first person whose group fits gets **«A spot opened up»** and **the spot is held in their name for 30 min**
-(Settings). If they do not pay in time it goes to the next person (checked every minute). Freed spots go to the list first. The dashboard shows
-**WAITLIST · N** with first name + initial, group size and status, and **Notify the list** only when there is a free spot.
+- When a date **sells out**, the event page says **Sold out · WAITLIST** and lets you sign up with **how many are in your group** (up to 10 per group). You are
+  **«On the list · #N»** and can **Leave the list**.
+- **In order of arrival.** When a spot opens up (someone cancels, the organizer refunds a ticket or raises the quantity), the **first person on the list whose
+  group fits** gets the notice **«A spot opened up»** and **the spot is held in their name for 30 min** (`espera_oferta_min`, Configuration). The event page
+  says **«It is your turn · A SPOT OPENED UP»** with **Pay for my spot**; the payment screen says **«A SPOT OPENED UP · IT IS YOUR TURN»** with the time left.
+- If they do not pay in time, it **goes to the next person** (To'Latino does this every minute) and they get «Your turn expired».
+- **What opens up goes to the list first**: nobody who is not signed up takes it while someone in the line can use it.
+- **Panel**: **WAITLIST · N** with each person (name and initial), how many they are and their status (WAITING · OFFERED · BOUGHT · DID NOT PAY IN TIME · LEFT).
+  **Notify the list** only shows when there is a free spot.
 
-### Cases and FAQ (English)
-Two people, one spot → one offer, to the first. Your group is bigger than what opened up → you stay first, the spot goes to whoever fits. Your time
-runs out → it goes to the next; you can join again. Nobody else can open your payment link. Joining is free. Waitlists for free RSVP events are not
-available yet.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Two people on the list and a spot opens up | A single offer: to the first. The second keeps waiting. |
+| Your group is bigger than what opened up | You stay first; that spot goes to whoever fits. |
+| Your time runs out | The spot goes to the next person; you can sign up again (at the end). |
+| You release your spot («Change» when paying) or leave the list | It goes to the next person. |
+| Someone opens another person's payment link | It does not exist for them: the spot belongs to the account it was offered to. |
+| It is no longer on sale (paused, closed) | No offers are made. |
+
+### FAQ
+- **Do they charge me for signing up?** No. You only pay if a spot opens up and you decide to pay for it.
+- **Can I skip the line?** No: your place in line is the time you signed up and nobody changes it.
+- **Is there a waitlist for free events with limited spots?** Not yet: an RSVP spot is released on its own at doors time + 30 min.

@@ -73,18 +73,63 @@ quienes tienen un negocio en To'Latino (`centro-de-ayuda.md`).
 
 ## English
 
-The dashboard is where an owner manages their To'Latino page; every change shows on the page right away. **El Compa** (desktop: **Your business**; phone: **More**) is the dashboard's AI assistant: ask how to do something and it takes you to the section (see `panel-el-compa.md`). **Your page**
-shows the business card (open/closed, real 7-day views and contacts, profile strength 30–100 computed by To'Latino),
-what is left to complete and the sections. **Today** (only if the business sells or books) shows what awaits a reply,
-today's agenda, sales, today's views and **Close for today** (the page and lists say "Closed today" and it reopens by
-itself the next day). **Hours**: weekly schedule with templates in 30-minute steps; two windows a day with Pro.
-**Photos**: the cover is always the first gallery photo; logo is separate; tap a photo to move it, make it the cover or
-remove it (the last photo can't be removed). Free shows 3 photos; the rest stay saved. **About us**: 300 characters in
-Spanish and optional English, plus what the place offers. **Team**: invite with name, phone and role; only people who
-accept show; each person sets their own photo, words and languages; the business sets role, since-year, specialties and
-schedule. Free shows only the owner. For now the invite text is not sent: the invite is saved and the screen says so; tell the person yourself. Nothing is ever
-deleted. Sign in at **/panel** with the phone you used to publish.
+### What it does
+This is where the owner manages their To'Latino page. Everything that changes here shows on their page right away:
+- **Your page:** their business on a black card (open or closed, views and contacts in the last 7 days, profile strength), what is missing for the page to be
+  complete and the sections.
+- **Today** (only if the business sells or books): greeting, what is waiting for a reply, the day's agenda, what was sold, today's views and **Close for today**.
+- **Hours:** the week with templates, in 30-minute steps; with Pro, two schedules on the same day.
+- **Photos and cover:** cover (always the first photo), logo separate and the gallery; tap a photo to move it, make it the cover or remove it.
+- **About us:** the business's text (300 characters, in Spanish and, if they want, in English) and what there is at the place.
+- **Verification and badge:** the phone, the email and the Verified badge. «Request badge» sends it to the team's review (about 48 h); if they ask for a detail,
+  «I sent it» sends it back to review; it can be canceled while it waits.
+- **Notices from To'Latino:** if the team hides, suspends or closes the page for a few days, corrects the name or «About us», removes a photo or the badge, the
+  panel says so with the reason.
+- **Team:** who shows on the page. You invite with a name, phone and what they do; only whoever accepts shows. Each person sets their photo, their words and
+  their languages; the business sets the role, since when, the specialties and the schedule.
 
-### Dashboard help
-Dashboard › More › **Help** opens the Help center on **Your dashboard**: how each part works, in Spanish and English. Only people with a
-business on To'Latino see it.
+- **El Compa:** the panel's AI assistant (in **Your business** on desktop and in **More** on the phone): you ask how to do something and it takes you to the
+  section (see `panel-el-compa.md`).
+
+Enter at **/panel** with the same account they published with (phone and code). If they have several businesses, tap the name at the top to switch.
+
+### Profile strength
+It starts at 30 and goes up to 100 with 11 things: 3 or more products or services (+12), 5 photos (+10), who they are (+8), logo (+4), Verified badge (+6),
+verified email (+4), frequently asked questions (+4, Pro only), answering critical reviews (+6, Pro only), team (+4; someone who works at customers' homes does not
+need it), hours (+8) and what there is at the place (+4). To'Latino calculates it; nobody can edit it.
+
+### What happens in each case
+| Case | What they see | What to do |
+|---|---|---|
+| Newly published business | «WHAT'S NEXT · YOUR PAGE AT N %» with all the tasks | Tapping a task takes you to the section. |
+| In the Pro trial (days 0–19) | «You are building with Pro · N trial days left. It ends on …» | Nothing. |
+| Day 20 of the trial | What happened during the trial: real views and contacts | — |
+| 5 days left / last day | Notice that the page goes to Free and what goes to sleep; nothing is deleted | Decide in Charges and plan. |
+| Free | «With Free your page is a single one… 3 photos and 5 …» | — |
+| Close for today | The page and the lists say «Closed today · opens tomorrow …»; the next day it opens on its own | **Open again** undoes it. |
+| Removing the only photo | It does not allow it: «Your page needs at least one photo» | Upload another first. |
+| More than 3 photos with Free | The others stay saved («HIDDEN») and show with Pro | — |
+| Two schedules in one day with Free | «On Free: one window per day. Windows are Pro.» | — |
+| Inviting a phone that is already there | «That phone is already on your team.» | — |
+| Team with Free | Only the owner shows; the others «NOT SHOWN ON FREE» | Pro. |
+| Someone asks to join (rents space) | «ASK TO JOIN» with their message | **Accept** or **Decline**. |
+| Remove from the team | Confirmation; they leave the page and the team (it stays in the history) | — |
+| No access (not from the business) | «No access to this area» | Ask the owner for access. |
+
+### FAQ
+**What is a «view»?** A visit to the business's page in the day (city time). The business's own visits and robots do not count.
+
+**What is a «contact»?** A tap on Call, WhatsApp, Directions, Share or Calendar. Each person counts once every 10 minutes, so nobody inflates the figures.
+
+**Why did my cover change?** The cover is always the first photo in the gallery. «Use as cover» puts it first.
+
+**Does the person I invite get the SMS?** For now it does not go out: the invitation stays saved and the screen tells you so. Tell the person yourself so they
+can enter with their phone.
+
+**Can I edit a team member's photo?** No: each person sets their photo, words and languages. You set their role, since when, their specialties and their schedule.
+
+**Is anything deleted?** No. What is removed stays saved with its status; what is Pro goes to sleep and comes back the same with Pro.
+
+### Panel help
+Panel › More › **Help** opens the Help Center on the topic **Your panel**: how each part works, in Spanish and in English. Only people who have a business on
+To'Latino see it (`centro-de-ayuda.md`).

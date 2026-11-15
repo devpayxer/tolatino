@@ -47,16 +47,44 @@ Para cualquier vecino, con o sin cuenta (guardar y RSVP piden entrar). Versión:
 ## English
 
 ### What it does
-**Events** lists the events in the city you are viewing, within your radius (the same one you pick in City). On top: **My tickets &
-RSVPs** (if you have any), **Tonight** as stories, a featured event and the fixed line «The price you see is what you pay: fees included».
-Date chips (All · Today · This weekend · Later) and type chips (All · Free · Ticketed · genres · Community), «N events in {city}» and
-sections Tonight · This week · This weekend · Coming up. Each card: poster, date box, heart (save), a tag (GOING · TONIGHT/TODAY · N LEFT
-· FULL · FREE), name, day, time, place and price. 20 at a time, **See more** loads the next ones. **Tonight** shows today's events as
-stories with **Going · Free** (RSVP for 1; change people on the event page), **Free entry** or **Tickets**. The **event page** is dark for
-parties and shows and light for food, classes, faith and community: when (**Calendar**), where (**Directions**), age, dress code, tags,
-dates, tickets and tables (bought in the app), RSVP, line-up or schedule, how many are going, photos, organizer, before
-you go, policy and «You may also like». Hidden, under-review, blocked-organizer or switched-off events never show and their links do not
-open. Home-based organizers show only the area, never their address. Saved events are in **My account › Saved › Events**, and you get a
-reminder the day before.
+- **Series and multi-day events:** an event that repeats shows **once** in the list (its next date) with «EVERY THURSDAY · +N DATES»; on its page you pick the date
+  (DATES · …: «Each date has its own tickets.»). A multi-day event says «FRI NOV 20 – SUN NOV 22 · 3 DAYS» and DAYS AND SCHEDULE; each ticket says which day it is
+  valid for.
+- **Events** shows the events of the city you are viewing, within your radius (the same one you choose in City for Businesses and Search):
+  - **My tickets and RSVPs**: if you have an RSVP to upcoming events, it takes you to My account › Saved › Events.
+  - **Tonight**: today's events as stories (tap one or «VIEW AS STORIES»).
+  - **The featured one**: the next party or show with a poster (if there is none, the next event with a poster).
+  - The fixed line: **«THE PRICE YOU SEE IS WHAT YOU PAY: FEES INCLUDED.»**
+  - **Date chips** (All · Today · This weekend · Upcoming) and **type chips** (All · Free · With ticket · genres · Community).
+  - **«N events in {city}»** and the sections **Tonight · This week · This weekend · Later** (with a filter: «Results»).
+  - Each card: the poster, the date in a box, the heart (save) and a label: **YOU'RE GOING** (you have an RSVP), **TONIGHT** or **TODAY**, **N LEFT**
+    (capacity of 20 or fewer), **FULL** or **FREE**. Below: name, day, time and place, and the price («Free» or «From $X»).
+  - **20 at a time** show; **See more** brings the next ones.
+  - **Does your business have an event?** → Publish your event.
+- **Tonight** (stories): one per event today, with when, the place and the distance, how many are going, the heart and **Share**. The button says
+  **I'm going · Free** (events with RSVP: it saves your spot for 1 person; you change the number of people on the event page), **Free entry** or **Tickets**
+  (opens the event page). On desktop, one at a time with arrows.
+- **The event page**: dark for a party or show, light for food, classes, faith and community. It shows when (**Calendar** downloads the event to your calendar),
+  where (**Directions** opens the map), age (with ID if required), dress code, tags, the dates (if it repeats), the tickets and tables (bought in the app: see
+  `comprar-boletos.md`), the RSVP, the program or line-up, how many are going, the photos, who organizes it (**See business**), **Before you go**, the event
+  policy and **You may like**. At the top: save and share.
 
-**Recurring and multi-day:** a recurring event shows once in lists (its next date) with “EVERY THURSDAY · +N DATES”; on its page you pick the date (each date has its own tickets). A multi-day event shows its range, DAYS AND HOURS, and what day each ticket is valid for.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| There are no events in your city | «Publish the first event» for businesses. |
+| The filter finds nothing | «Nothing with those filters · Try another date or another type of plan». |
+| There are no events today | «Tonight» does not show; the stories screen says «There are no events today in {city}». |
+| The event has tickets | You see the types, prices (fees included) and tables; the bar says «From $X» and its button opens the purchase. Sold out, sales paused or closed is shown on the button. |
+| Free entry (no list) | No RSVP needed: you arrive and get in. The button is **Invite**. |
+| The organizer paused it | «RSVP paused» or «Sales paused». |
+| The event already ended | «This event has ended». |
+| The organizer works from home | The area shows («Area of {city}»), never their address; the organizer gives you the address. |
+| To'Latino hid it, it is in review, the organizer is blocked or turned Events off | It does not show in Events, Search, Home or on its page; its link does not open. |
+| Saving without an account | It asks you to sign in and you return to the event page. What you saved is in **My account › Saved › Events**. |
+
+### FAQ
+- **Is the price final?** Yes: the price you see is the price you pay, fees included.
+- **Why don't I see an event someone sent me?** It may be outside your radius (change it in City), in review or no longer published.
+- **Can I buy tickets?** Yes, in the app with a card (see `comprar-boletos.md`). Tickets are not sold at the door at To'Latino.
+- **Will I be notified about an event I saved?** Yes: the day before, you get «An event you saved is tomorrow».

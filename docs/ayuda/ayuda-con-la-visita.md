@@ -47,16 +47,39 @@ sin cargo». No cuenta para el tope de citas del negocio.
 ## English
 
 ### What it does
-**El Compa first:** tapping **Help** opens El Compa (To'Latino's AI assistant) over your item with fixed options; **Something went wrong** (on
-tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, the monthly AI cap is reached, or you already opened
-a request, you come straight here.
+- **El Compa first:** tapping **Help** opens the sheet of **El Compa** (To'Latino's AI assistant) over your item, with fixed options; **Something went wrong**
+  (on tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, if To'Latino reached the monthly AI cap or if you already
+  opened a request, you come straight here. See `el-compa.md`.
 
-Up to 7 days after a finished visit or appointment, tell what happened (home or auto reasons), add photos when required,
-and choose: come back / check again at no charge (warranty), refund to your card, or just let them know. The business
-replies within 24 h; otherwise, or if you disagree, To'Latino reviews within 48 h. Refunds come only from what you paid by
-card in the app for that visit.
+Up to 7 days after the visit or appointment ended (or if it did not happen and you paid something):
+1. **What happened.** Home: they did not arrive in the window · charged more than approved · it turned out badly or failed again · damaged something in the
+   house · someone else came · they did not refund my deposit · something else. Auto: they charged more than the estimate without my OK · it was not ready
+   when they promised · same problem continues · damaged something on the car · they did not give me the old parts · deposit · something else.
+2. **Tell it** (15 characters or more) and add **photos** (required if it turned out badly, if something was damaged or if they overcharged in Auto).
+3. **What you want:** that they come back / check it **at no charge** (under the warranty), a **refund to your card** or just let them know.
+4. The business replies within 24 h: **you are right**, **proposes something else** (for example, refunding part) or **cannot**. If it does not reply, or you
+   disagree, To'Latino reviews it within 48 h. One request per visit; nothing is considered resolved before the reply.
+
+**Where the refund comes from:** from what you paid by card in the app for that visit (the approved estimate, «something more», the visit or the deposit),
+never more than that. What was paid at the business is settled at the business.
+
+#### For the business
+In Today › «Appointment help» you see the reason, the note and the photos. If you propose a refund, the panel tells you up to how much you can refund to their
+card. The client sees your reply in their appointment.
+
+### FAQ
+- **Can I ask them to come back at no charge?** Yes. If the business accepts, you arrange the new visit (by Messages or by phone).
+- **Does asking for help delete my review?** No.
 
 ### The free visit (warranty)
-If you asked for **«Fix it»** (come back at no charge) on a **shop or home** visit and the business accepts, your request shows
-**Book the free visit**: the same service's booking at **$0, no deposit and no card**. Pick the day and time as usual. Only one;
-afterwards it shows «See your free visit». Does not count toward the business's booking cap.
+If you asked for **«Fix it»** (come back at no charge) in the help for a visit from a **shop or home service** and the business accepts, your request shows
+**Book the free visit**: it opens the Booking for that same service with your options, **at $0, with no deposit or card**. You pick the day and time as
+usual and the business confirms it. It is only one: afterwards it shows «See your free visit». It does not count toward the business's appointment cap.
+
+| Case | What happens |
+|---|---|
+| The business accepted to come back at no charge | «Book the free visit» in your request. |
+| You already booked it | You cannot book another; you see the one you have. |
+| The business proposed something else or said no | There is no free visit; you can ask To'Latino to review it. |
+
+**Do they ask for a card?** No: it is $0. **Can I change the service?** No: it is the warranty of the same job.

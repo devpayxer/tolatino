@@ -39,13 +39,34 @@ categoría, en Buscar y en el admin.
 
 ## English
 
-Catalog shows the 17 categories (key, subcategories, businesses, Pro, transaction type and fixed line). In a category:
-add a subcategory ("Spanish name / English name"; next code NEG-<CAT>-<NN>), remove it (asks for a reason and shows how
-many businesses it affects: they lose the label, not their page; it disappears from the category page, cards, page,
-map and Search) and restore it. Synonyms: add ("word → synonym1, synonym2"), turn off and on; Search uses them within a
-minute. Searches without supply: what neighbors searched and asked to be alerted about (30 days); a recruiting list,
-not seeds. Filter families: per category, each filter with its switch and how many businesses have it; turning one off
-removes it from the filter sheet and quick filters at once. Modules and Free/Pro: read only. Only Admin edits; every
-change is audited; seeds never undo the team's changes.
+### What it does
+- **Categories:** all 17, with their key, subcategories, businesses, how many are Pro, the transaction type and the fixed line (the phrase that is never
+  softened, e.g. «No one can guarantee you a result.»). Each category's detail shows its subcategories with how many businesses each has («NO LISTINGS» if
+  none), the removed ones and their businesses.
+  - **Add a subcategory:** name in Spanish and, after «/», in English. It takes the next code (`NEG-<CAT>-<NN>`), goes at the end of the list and Search knows it.
+  - **Remove:** asks for a reason and says how many businesses it affects. The businesses **lose the label, not their page**: it stops showing on the
+    category page, in cards, on the business page, on the map and in Search. **Restore** brings it back exactly as it was.
+- **Synonyms:** what the neighbor types (left) is also searched as what is on the right. Add (format `word → synonym1, synonym2`, no accents), turn off and
+  turn on. Search uses them in under a minute.
+- **Searches without supply:** what neighbors searched for that does not exist in your cities, counting those who asked «Notify me» (30 days). It is the
+  recruiting list; it does not create seeds.
+- **Filter families:** per category, each filter with its switch and how many businesses have it («QUICK» = shows at the top of the page). What you turn off
+  stops showing at once in the filter sheet and in the quick filters. «Turn all on».
+- **Modules and Free/Pro:** which module each category can use and what Free sees and what Pro sees. Read only.
 
-**Publica your business follows the Catalog:** a subcategory you add shows up when someone searches "What do you do?" and under "See more" in its category; one you remove stops showing.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Your role is not Admin | You see everything; you cannot edit (permission cat · edit). |
+| Repeated name in the category | «A subcategory with that name already exists in this category.» |
+| Removing a subcategory that has businesses | It asks you to confirm: «Affects N businesses: they lose the label, not their page.» |
+| Synonym with the wrong format | «Use the format word → synonyms.» |
+| What the system brings | Seeds never turn back on what the team turned off and never overwrite what the team added. |
+| You add or remove a subcategory | It also changes in «LIST YOUR BUSINESS»: the new one shows when searching «What do you do?» and under «See more» in its category; the removed one stops showing. |
+
+Everything is recorded in each tab's history and in the audit log. Nothing is deleted.
+
+### FAQ
+**Does a new subcategory show in «LIST YOUR BUSINESS»?** Not yet: that flow uses the list from the design. It shows in the category, in Search and in the admin.
+
+**Why does Search take up to a minute?** It keeps the synonyms in memory for 60 seconds to answer fast.

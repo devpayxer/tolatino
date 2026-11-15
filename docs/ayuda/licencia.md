@@ -37,12 +37,32 @@ vencida sin mirarla: el sello sigue mientras una persona la revisa en el registr
 
 ## English
 
-The License page shows what a business's license allows by law, what it cannot do, who issued it, its number, its real
-status and a link to the official registry to check it yourself ("No one can guarantee you a result" is always shown).
-Businesses declare licenses when listing and in their dashboard (Your page › Your licenses: add, number, "what you do
-not do"). The team checks each new license (or new number) in the official registry within 72 h and marks it Verified,
-Expired or Not found; only verified licenses count for the page card, the list chip and the "Verified license" filter.
+### What it does
+- **For the neighbor:** it shows what the business's license allows it to do by law, what it cannot do, who issued it, its number, its real status and a link
+  to the **official registry** so you can verify it yourself. At the top, always: «No one can guarantee you a result.»
+- **For the business:** when publishing, it marks its licenses; in the panel (Your page › Your licenses) it adds others, types the number and chooses «what it
+  does not do» (if it is a lawyer, accredited representative or notary).
+- **For the team:** each new license, or one with a new number, enters the «Licenses» queue (72 h); it is looked up in the official registry and marked
+  **Verified**, **Expired** or **Not found**. Also from the 360° › What it sells.
 
-Every license is checked again every 3 months: in every licensed category, the sweep sends it back to the "Licenses" queue
-14 days before its review date (with priority if the date already passed; the 14 days are set in System › Settings). No one
-marks it expired without looking: the badge stays while a person checks it in the official registry.
+### What happens in each case
+| Status | What the neighbor sees | On the listing card, the chip and the «Verified license» filter | In the panel |
+|---|---|---|---|
+| In review | «PENDING · TO’LATINO CHECKS IT WITHIN 72 H» | Does not count | IN REVIEW |
+| Verified | «VERIFIED BY TO’LATINO · {date}», next review in 3 months | Yes | VERIFIED |
+| Expired | «EXPIRED · TO’LATINO IS CHECKING» | No | NOT VERIFIED |
+| Not found | «COULD NOT BE VERIFIED · ASK THE BUSINESS» | No | NOT VERIFIED |
+| Removed by the business | It does not show | No | It does not show (it stays in the history) |
+
+A new number sends the license back to review. The link to the registry comes from To'Latino's catalog, never from what the business writes. A business always
+keeps at least one license in the panel.
+
+### FAQ
+**Does To'Latino guarantee the professional?** No. We confirm that the license exists in the official registry; nobody guarantees the result of your case.
+
+**Why does it say «CANNOT»?** Because the law limits it (e.g. a notary in the US is not a lawyer). We say it clearly.
+
+**How often is it reviewed?** Every 3 months. In every category with licenses (Health, Professionals, Children, Education, Transportation, Parties,
+Nightlife, Churches, Real Estate, Car Sales…) the sweep sends it back to the «Licenses» queue on its own 14 days before its review date (and with priority if
+it already passed; the 14 days are changed in System › Configuration). Nobody marks it expired without looking at it: the badge stays while a person checks
+it in the official registry.

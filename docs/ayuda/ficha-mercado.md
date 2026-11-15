@@ -22,6 +22,18 @@ vecino. Tema: explorar._
 
 ## English
 
-Products by section; by-the-pound items show "/lb · you pay what it weighs". The sheet asks how much (an estimate) and the cut or
-ripeness. Your order keeps one market at a time. 21+ and in-store-only items show with their price and Directions. Markets that
-don't take To'Latino orders say "Walk in".
+### What it does
+- **Products** by section with their price. What goes **by the pound** says «/lb · YOU PAY WHAT IT WEIGHS»; what is ready to take away, «READY TO GO». What sold
+  out today shows dimmed («SOLD OUT TODAY»).
+- When you tap a product: **How much? · estimate** (1, 2, 3, 5 or 10 lb) or **How many?**, and if it applies **How do you want it?** (cut) or **How done?**. By
+  the pound it is an estimate: the estimate + 10 % is held and what it weighs is charged, with the photo of the scale.
+- **Your order** holds what you add and the estimate. **One market at a time:** if you add from another, it replaces the first.
+- **Do they weigh it in front of you?** — the market says so in its tool («Yes: the scale faces the customer» or «Ask at the counter»).
+- Anything **21+** (liquor, tobacco, vape) and anything **in-store only** shows with its price and «Directions»: it is not ordered in the app.
+- If the market does not take orders on To'Latino (or is Free), the page says «Walk in» and «Directions».
+
+### FAQ
+- **How is what goes by weight charged?** The estimate + 10 % is held. They weigh it, send you the photo and the real weight is charged; the rest is released
+  in 3–5 days.
+- **What if something is not available?** They ask you before replacing it; if you do not answer in 10 minutes, they remove it and it is not charged.
+- **Do you accept EBT?** If the market marked it, in the store and at pickup. It does not cover hot food, alcohol, tobacco or delivery.

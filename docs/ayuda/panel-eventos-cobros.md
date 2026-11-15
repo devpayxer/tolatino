@@ -33,10 +33,29 @@ el dueño o quien maneja Cobros. Versión: 10 nov 2026. Audiencia: negocio. Tema
 ## English
 
 ### What it does
-Tickets are charged by To'Latino and transferred to you **the Tuesday after each date**: gross − To'Latino's fee (5 % + $1 per ticket) − refunds
-− lost disputes − earlier adjustment = what you get. Statuses: UPCOMING · PENDING · HELD (with the reason) · ON ITS WAY · PAID · ADJUSTED. A date
-with an open bank dispute is held until it closes; a new organizer's first event over $2,000 is held until To'Latino reviews it; an account that
-cannot receive payouts holds it until fixed. A refund or lost dispute after payout is deducted from your next payout or, with none within 14
-days, reversed from the transfer. Each date is paid once.
+- Tickets are charged **at To'Latino** (not in your account) and are **transferred to you on the Tuesday after each date** (Configuration: payout day). That way,
+  if an event is canceled, every buyer always receives 100 %.
+- For each date you see: **Gross** (what was charged) − To'Latino's **commission** (5 % + $1 per ticket) − **refunded** − lost **disputes** − **previous
+  adjustment** (if we refunded something from a date already paid) = **what reaches you**. The amount is calculated by To'Latino from what was charged and
+  refunded; it is not typed by hand.
+- Statuses: **UPCOMING** (the date has not passed; it says which Tuesday it is paid) · **PENDING** · **HELD** with its reason · **ON ITS WAY** · **PAID** (with
+  the date) · **ADJUSTED** (reversed because of a refund after payment).
 
-**The time limits on this page** (the payout day: the Tuesday after each date) are today's: To'Latino sets them in its Configuration and the screen always shows the one in force.
+### What happens in each case
+| Case | What happens |
+|---|---|
+| A buyer opened a dispute with their bank | That date is left **HELD** until it closes; then it is paid on its own. If the bank sides with the buyer, that ticket is not paid to you. |
+| It is your first event and it sold more than $2,000 | It is left **HELD** until To'Latino reviews it (usually quick). After that, your events are not held for this reason. |
+| Your payout account does not receive payouts (a detail is missing or To'Latino paused it) | **HELD**; it is released on its own when the account is fine. |
+| To'Latino held it to review it | **HELD** with the reason; Finance releases it. |
+| We refund something from a date already paid (or you lose a dispute) | It is deducted from your next payout. If you have no other in 14 days, it is reversed from the transfer. It is never deducted twice. |
+| You canceled a date | It settles at $0: everything went back to the buyers. |
+| There are refunds on their way | That date's payout waits until they finish. |
+
+**The deadlines on this page** (payout day: the Tuesday after each date) are today's: To'Latino sets them in its Configuration and the screen always says the
+one that applies at that moment.
+
+### FAQ
+- **When do I see it in my bank?** The transfer goes out on Tuesday to your Stripe account and from there to your bank on the payout calendar (every Tuesday).
+- **Can they pay me twice for one date?** No: each date has a single transfer.
+- **What about extras and tables?** They enter the same way (the table deposit is transferred on Tuesday; you deduct it from the account that night).

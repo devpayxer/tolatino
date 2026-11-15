@@ -64,14 +64,54 @@ pedir trabajo. Lo que necesitas saber se habla en la entrevista.
 
 ## English
 
-Pro businesses (any category) post jobs with the full hourly pay (from $7.25, the Pennsylvania minimum; "+ tips" if any).
-People apply inside To'Latino without a resume: name, phone, experience, days available, languages and an optional note,
-and confirm the requirements. Immigration status, SSN, papers or a fee to apply are never asked: the editor warns and the
-server refuses those words. The Jobs tab lists each opening with pay, schedule, languages and benefits; the job page adds
-the description, requirements, benefits and similar jobs in the city. "Your application" (J-…) shows sent → seen → reply,
-the interview proposal to confirm or call, withdraw, and similar jobs when not selected; it refreshes on its own. In the
-dashboard (What you sell › Jobs) owners see live, closed and draft openings, filter applications, call, mark "I will
-call", invite to an interview on one of the next 10 days the business is open at an open hour, or mark not selected;
-opening an application marks it seen. They can edit, pause, repost, mark filled (pending applicants see "Not selected"),
-duplicate or remove (nothing is deleted), and new applications show in Today. To'Latino can hide an opening or pause Jobs:
-it disappears and the owner sees the reason. There are no text-message alerts yet: people see replies in their application.
+### Rules that do not change
+- The **hourly pay is shown in full** (from $7.25, Pennsylvania's minimum; «up to» higher than «from»; «+ tips» if there are tips).
+- You apply **without a résumé**: name, phone, experience, days you can work, languages and an optional note.
+- A résumé, immigration status, SSN, papers or a payment to apply is **never** asked for. The editor warns about it and the server does not save a job post
+  with those words (CV, resume, SSN, social security, status, papers, green card, ITIN, work permit, citizenship, deposit or paying to apply, fee).
+
+### What it does
+- **Jobs tab (client):** «They are hiring», each job post with the position, the type (full time, part time, weekends), how long ago, the pay, days and
+  schedule, languages, what they offer, the status of your application and **save**.
+- **The job post:** the business, the position, the pay «per hour, before taxes», schedule, days, languages, how many people they are looking for, the job,
+  **You need** and **They offer**, the notice that a résumé or papers are never asked for, your application if you already applied and **similar job posts** in
+  the city. **Apply** (asks you to sign in) or **See my application**; save and share.
+- **Apply:** your details (they come from your account and you can change them), experience in this, note (200 characters), the days you can work (the job's
+  days are checked; «You can work all days» if you cover all of them), languages and **confirm that you meet** the requirements. The button says what is
+  missing. Only that business sees your phone.
+- **Your application (J-…):** where it stands (sent → seen → reply), what you sent, the **interview proposal** to **Confirm** or **Call**, **Withdraw
+  application** and, if it did not work out, similar job posts. It updates by itself.
+- **Panel · Jobs (owner):** how many open job posts, applications in total and to answer; **Open** and **Closed and drafts** with their status (TO ANSWER,
+  PAUSED, FILLED, DRAFT, HIDDEN BY TO'LATINO).
+  - **The job post:** days, schedule, languages, how many you are looking for, when it was posted and the applications with a filter (All, To answer, You will
+    call, Interview, Not selected). **Edit**, **Pause** or **Publish / Publish again**, **I filled it**, **Duplicate** and **Remove**.
+  - **An application:** phone, experience, days they can work (and how many of yours they cover), languages and their note. **Call**, **I'll call them**,
+    **Invite to interview** (a day among the next 10 that your business is open, at a time when it is open) or **Not selected**. Opening it marks it **seen**.
+  - **Post a job:** position, type, how many people, pay from / up to, tips, days, start and end time, languages (required, adds, not needed), description,
+    what you ask for and what you offer (up to 5 each), the position and description in English (optional; if not, it shows in Spanish), «HOW CLIENTS SEE IT»
+    and **Publish when saving** (if you turn it off, it stays as a draft). Publishing the first one turns Jobs on on your page.
+  - **Today:** «NEW JOB APPLICATIONS».
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| Free business | No tab; the panel shows «Post jobs with real hourly pay · See Pro». |
+| You already applied | The job post says «See my application»; you cannot apply twice to the same one. |
+| You withdrew your application | The business no longer sees it; you can apply again while it stays open. |
+| The business pauses the job post | It does not show and nobody new applies; the applications stay. |
+| «I filled it» or «Remove» | It stops showing; whoever was waiting for a reply sees «Not selected» with similar job posts. |
+| Interview | The person sees the day and time and confirms it; the owner sees «Interview confirmed». If the time passed, it can no longer be confirmed. |
+| A day the business is closed | It cannot be proposed (nor a time outside its hours, nor a closed holiday). |
+| Forbidden word or pay under $7.25 | The editor flags it and the button does not allow it; the server does not save it either. |
+| Many applications | Up to 15 a day per person; up to 10 new job posts a day per business. |
+| To'Latino hides a job post | It leaves the page; the owner sees HIDDEN BY TO'LATINO with the reason. |
+| To'Latino pauses Jobs | No tab and nobody applies; the owner sees the pause with the reason. |
+| No session | You can view; saving and applying take you to Sign in and bring you back. |
+
+### FAQ
+**Will I be notified by SMS when they reply?** Not yet: you see it in your application (it updates by itself). Notices arrive with notifications.
+
+**Why can't I ask for the résumé or papers?** Because at To'Latino nobody has to show their status or SSN, or pay, to ask for work. What you need to know is
+discussed in the interview.
+
+**Who sees my phone?** Only the business you applied to and whoever on the team has access to «What you sell».

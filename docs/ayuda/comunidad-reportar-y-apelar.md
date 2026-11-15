@@ -64,29 +64,54 @@ Versión: 7 nov 2026. Audiencia: vecino. Tema: comunidad._
 ## English
 
 ### What it does
-- **Report** (3 steps): why (sales/spam/chain · someone else's personal info · insult or harassment · false information ·
-  self-promotion · something else) → anything else (optional, up to 300 characters; "If someone is in danger right now, call 911.") →
-  **"You won't see it anymore. We review it within 48 h."** It disappears **only for you**; others still see it while a person decides.
-  Reporting a person mutes them for you. **Nobody knows it was you**; you get the result.
-- **When To'Latino hides something of yours or sanctions you**, you get a notice with **the reason** and **Appeal**. You still see what was
-  hidden. Nothing is deleted.
-- **Appeal:** 20–500 characters → "We received your appeal. We will answer within 72 h." **Another person on the team, never the one who
-  decided**, reviews it. Once, within **14 days**. The answer is final; if you were right, your content is visible again (or the sanction
-  ends).
-- **Sanctions:** warning (no effect), mute 7 days (no posting, commenting or messaging; can read, vote, report), block posting 30 days
-  (no posting; can comment, vote, message), suspension 14 days and ban (cannot sign in). Post tells you until when and why.
-- **Automatic rules flag for a person** (never hide on their own): repeated near-identical posts (3 in 24 h), hate/scam/immigration
-  words, signs of where someone lives or plates, photos (our own model checks nudity before a photo shows). Phones, emails and private
-  numbers are never saved.
-- **Auto-hide:** 5 different people (different phones, accounts older than 3 days) reporting the same thing in 24 h hides it while we
-  review, with a notice and Appeal. Many accounts on one phone count as one person.
-- **Daily limits** (your city's day): 10 posts, 100 comments, 500 votes, 10 new conversations, 20 reports; half on your account's first day.
-- **If you write about hurting yourself**, we show the **988** line (call or text, Spanish available). Emergency: **911**.
+- **Report** (3 steps): **Why are you reporting it?** (Sales, spam or chain message · Another person's data · Insult or harassment · False information ·
+  Recommends themselves · Something else; in a conversation: harassment, spam, private data, something else) → **Anything else we should know?** (optional, up
+  to 300 characters; «If someone is in danger right now, call 911.») → **«You won't see it anymore. We review it within 48 h.»**
+  - What you report **stops showing, only for you**. Everyone else keeps seeing it while a To'Latino person decides.
+  - If you report **a person** (from their profile), you stop seeing what they post (they are muted for you; you can undo it in My account › Neighbors).
+  - **Nobody knows it was you.** When we decide, you get «We reviewed your report» with the result.
+- **When To'Latino hides something of yours** (post, comment, message or photo) or **sanctions you**, you get a notice with **the reason** («We hid your
+  comment: …») and **Appeal**. You still see what is hidden, with the reason. Nothing is deleted.
+- **Appeal:** from the notice or My account › Moderation notices. Write why you think it is a mistake (**20 to 500 characters**) → «We received your appeal.
+  We will answer within 72 h.». **Another person on the team** reviews it, **never whoever decided it**. You can appeal **once** and up to **14 days** after
+  the notice. The answer is final and reaches you with the reason: if you were right, your content shows again (or the sanction ends).
+- **Sanctions and what you can do:**
+  - Warning: it stays in your history; nothing changes.
+  - Mute for 7 days: you cannot post, comment or write messages; you can read, vote and report.
+  - Posting block for 30 days: you cannot post; you can comment, vote, write messages and read.
+  - Suspension for 14 days and ban: you cannot enter To'Latino.
+  Posting (and the thread and Messages) tells you **until when and why**, with «View and appeal».
+- **What the rules check on their own** (they flag it for a person to decide; they never hide anything on their own): very similar texts repeated (3 in 24 h),
+  hate words, scams or immigration scams, signs of where someone lives or license plates, and photos (our own model checks for nudity before the photo is
+  seen). **Phone numbers, emails and private numbers** are never saved: they are rejected as you type.
+- **Auto-hide:** if **5 different people** (from different phones and with accounts more than 3 days old) report the same thing in 24 h, it is hidden while we
+  review it, with a notice and Appeal. Several accounts from one phone count as one person.
+- **Daily limits** (the same for everyone, by your city's day): 10 posts, 100 comments, 500 votes, 10 new conversations and 20 reports; half on your account's
+  first day. When you reach one, we tell you which and to come back tomorrow.
+- **If you write that you plan to hurt yourself**, we show you the **988** line (call or text, also in Spanish). If it is an emergency, **911**.
+
+### What happens in each case
+- **I reported by mistake:** it cannot be undone, but nothing happens if it does not break the rules; you just stop seeing it.
+- **I had already reported it:** it does not count twice. You can report a person again if the earlier case is already closed.
+- **Many accounts from the same phone reported it:** it counts as one person; it is not hidden because of that.
+- **My photo says «awaiting review»:** the model flagged it or could not check it; a person looks at it (4 h window). The post did go out.
+- **The days to appeal passed** (14 by default; the notice says until when): you can no longer appeal from the app; write to Support.
+- **I was suspended (or banned) and cannot enter:** in «Enter», ask for the code and type it. The screen says until when and why and, below it, **Appeal**:
+  tell us why you think it is a mistake (20–500 characters) and «Send appeal». It works once per sanction, within its 14 days, and another person on the team
+  reviews it within 72 h. Since you cannot open the app, **the answer reaches you by text message**. If you go back to «Enter» earlier, you see how it is going
+  (you cannot appeal twice). If the screen's time ran out (30 minutes after the code), ask for another code.
+- **I appealed and it stands:** the second review is final.
 
 ### FAQ
 - **Does the person know I reported them?** No. Never.
-- **Who decides?** A person on the To'Latino team, with a saved reason. The appeal, a different person.
-- **Suspended or banned and can't sign in?** On "Sign in", ask for the code and enter it. The screen says until when and why and,
-  below, **Appeal**: tell us why you think it is a mistake (20–500 characters) and "Send appeal". Once per sanction, within its 14 days;
-  another person on the team reviews it within 72 h, and **the answer reaches you by text message** because you can't open the app. If
-  you come back to "Sign in" before then, you see how it is going. If the screen timed out (30 minutes after the code), ask for a new code.
+- **Who decides?** A person on the To'Latino team, with a reason that is kept. The appeal, another person.
+- **Do they read my messages?** Only if someone reports that conversation (and only while the case is open), or the message you appealed.
+- **Do they take away my points?** Yes: what is hidden under the rules subtracts the points it gave; if you win the appeal, they come back.
+
+### For El Compa
+<!-- solo-equipo -->
+- Report = ··· / ⌄ › Report. «You won't see it anymore. We review it within 48 h.» Nobody knows who reported.
+- Appeal = the notice or My account › Moderation notices; 20–500 characters; once; 14 days; another person decides; 72 h.
+- Suspended or banned (cannot enter): Appeal is in «Enter», after the SMS code; the answer reaches them by text. No need for Support.
+- If someone talks about hurting themselves: 988 (call or text). Emergency: 911.
+- Never promise the result of an appeal or say who reported.
