@@ -85,7 +85,11 @@ function BusinessCard({
   onOpen,
   onCta,
   onSave,
-  onContact
+  onContact,
+  media,
+  ring,
+  onRing,
+  ringLabel = 'Hoy en el barrio'
 }) {
   const stop = f => e => {
     if (e && e.stopPropagation) e.stopPropagation();
@@ -160,13 +164,51 @@ function BusinessCard({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
+      position: 'relative',
       height: 170,
-      background: 'var(--tl-photo-bg)',
+      background: 'var(--tl-photo-bg)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      inset: 0,
+      overflow: 'hidden',
       ...bg(photos[0])
     }
-  }), /*#__PURE__*/React.createElement("div", {
+  }, media || null), ring ? /*#__PURE__*/React.createElement("button", {
+    type: 'button',
+    'aria-label': ringLabel,
+    'data-anillo': '',
+    onClick: stop(onRing),
     style: {
-      padding: '14px 15px 15px'
+      position: 'absolute',
+      left: 14,
+      bottom: -24,
+      width: 54,
+      height: 54,
+      boxSizing: 'border-box',
+      borderRadius: 99,
+      padding: 3,
+      border: 0,
+      margin: 0,
+      background: 'var(--tl-action)',
+      cursor: 'pointer',
+      zIndex: 1
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'block',
+      width: '100%',
+      height: '100%',
+      boxSizing: 'border-box',
+      borderRadius: 99,
+      border: '3px solid var(--tl-white)',
+      backgroundColor: 'var(--tl-photo-bg)',
+      ...bg(ring)
+    }
+  })) : null), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: ring ? '32px 15px 15px' : '14px 15px 15px'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {

@@ -441,6 +441,20 @@ for (const src of archivos) {
     if (t === antes || !t.includes("matrix: matrix") || !t.includes("  matrix,\n  qrSize,") || /seed/.test(t)) throw new Error("parche TicketQR: el origen cambió, revisar");
   }
 
+  // C-001 (16 nov) · Video de presentación + anillo en la tarjeta Pro (canvas tolatino-master+, «Tarjeta · video y anillo (C-001)»). La zona
+  // de la foto (170) pasa a ser una capa: `media` (el <video> con su chip y su barra, lo pone la app: solo se mueve la del centro) encima de la
+  // portada, y el anillo (54, morado, 3 + 3 de borde blanco, 24 px por debajo del borde de la foto) con el logo, que abre «Hoy en el barrio».
+  // Con anillo, el cuerpo arranca a 32 (no a 14). Free no cambia.
+  if (rel === "cards/BusinessCard.js") {
+    const antes = t;
+    t = t.replace("  onSave,\n  onContact\n}) {", "  onSave,\n  onContact,\n  media,\n  ring,\n  onRing,\n  ringLabel = 'Hoy en el barrio'\n}) {");
+    t = t.replace("  }, /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      height: 170,\n      background: '#E4E1DA',\n      ...bg(photos[0])\n    }\n  }), ",
+      "  }, /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      position: 'relative',\n      height: 170,\n      background: '#E4E1DA'\n    }\n  }, /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      position: 'absolute',\n      inset: 0,\n      overflow: 'hidden',\n      ...bg(photos[0])\n    }\n  }, media || null), ring ? /*#__PURE__*/React.createElement(\"button\", {\n    type: 'button',\n    'aria-label': ringLabel,\n    'data-anillo': '',\n    onClick: stop(onRing),\n    style: {\n      position: 'absolute',\n      left: 14,\n      bottom: -24,\n      width: 54,\n      height: 54,\n      boxSizing: 'border-box',\n      borderRadius: 99,\n      padding: 3,\n      border: 0,\n      margin: 0,\n      background: '#4B37F5',\n      cursor: 'pointer',\n      zIndex: 1\n    }\n  }, /*#__PURE__*/React.createElement(\"span\", {\n    style: {\n      display: 'block',\n      width: '100%',\n      height: '100%',\n      boxSizing: 'border-box',\n      borderRadius: 99,\n      border: '3px solid #fff',\n      backgroundColor: '#E4E1DA',\n      ...bg(ring)\n    }\n  })) : null), ");
+    t = t.replace("      padding: '14px 15px 15px'\n", "      padding: ring ? '32px 15px 15px' : '14px 15px 15px'\n");
+    if (!t.includes("ringLabel = 'Hoy en el barrio'\n}) {") || !t.includes("'data-anillo': ''") || !t.includes("padding: ring ? '32px 15px 15px'")) throw new Error("parche BusinessCard (C-001 video y anillo): el origen cambió, revisar");
+    if (t === antes) throw new Error("parche BusinessCard (C-001): sin cambios");
+  }
+
   // AdminBar (anchos, 16 nov): en el teléfono la barra es logo + ADMIN + ciudades + buscar + campana + yo, todo fijo. A 375 (iPhone SE) se
   // salía 9 px y con una ciudad larga («Wilkes-Barre») también a 390. En el teléfono el selector de ciudad cede: la última opción se
   // encoge y corta su nombre con «…»; en escritorio todo queda igual.
