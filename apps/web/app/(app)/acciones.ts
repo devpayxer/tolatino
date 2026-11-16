@@ -4,10 +4,11 @@ import { db } from "@/lib/db";
 import { ipCliente, mismoOrigen, yo } from "@/lib/cuenta";
 import { ubicacion } from "@/lib/ubicacion";
 import { evento } from "@/lib/eventos";
+import { cookieSegura } from "@/lib/cookie-segura";
 
 export async function cambiarIdioma(lang: "es" | "en") {
   if (!(await mismoOrigen())) return;
-  (await cookies()).set("tl_lang", lang === "en" ? "en" : "es", { path: "/", maxAge: 365 * 86400, sameSite: "lax" });
+  (await cookies()).set("tl_lang", lang === "en" ? "en" : "es", { path: "/", maxAge: 365 * 86400, sameSite: "lax", secure: await cookieSegura() });
 }
 
 /* ── Acciones de las listas de negocios. El servidor valida todo; la pantalla solo pide. ── */

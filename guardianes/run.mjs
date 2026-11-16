@@ -7218,6 +7218,24 @@ const guardianes = {
     const m = existsSync("apps/web/middleware.ts") ? readFileSync("apps/web/middleware.ts", "utf8") : "";
     if (/NextResponse\.redirect\(/.test(m) && !/x-forwarded-host/.test(m)) falla(G, "apps/web/middleware.ts", 0, "el middleware arma la dirección con las cabeceras reenviadas, no con req.url");
   },
+  /* Anchos · Toda cookie que pone To'Latino lleva la marca «Secure» según la conexión real de la persona (lib/cookie-segura.ts: x-forwarded-proto,
+     como la sesión). Nunca según NODE_ENV (un servidor de producción servido por http, CI, perdía la ciudad del Super Admin en Safari) y nunca sin
+     la marca (el idioma, la ciudad que miras, el dispositivo y la invitación iban sin ella también con https). Al revés (alrevesAnchos). */
+  cookieSegura() {
+    const G = "cookieSegura", L = "apps/web/lib/cookie-segura.ts";
+    if (!existsSync(L)) return falla(G, L, 0, "falta lib/cookie-segura.ts");
+    if (!/x-forwarded-proto/.test(sinComent(L))) falla(G, L, 0, "cookieSegura mira la conexión de la persona (x-forwarded-proto)");
+    for (const f of [...codigo, "apps/web/middleware.ts"]) {
+      if (!/^apps\/web\/((app|lib)\/.*\.tsx?|middleware\.ts)$/.test(f) || !existsSync(f)) continue;
+      const t = readFileSync(f, "utf8");
+      for (const m of t.matchAll(/(?:cookies\(\)\)|\bjar|\.cookies)\.set\(/g)) {
+        const resto = t.slice(m.index), fin = resto.search(/\}\s*\)\s*;/), llamada = fin < 0 ? resto.slice(0, 600) : resto.slice(0, fin + 1);
+        const linea = t.slice(0, m.index).split("\n").length;
+        if (!/\bsecure:/.test(llamada)) falla(G, f, linea, "cookie sin la marca secure: usa cookieSegura() / esHttps(req.headers) (lib/cookie-segura.ts)");
+        else if (/secure:\s*process\.env/.test(llamada)) falla(G, f, linea, "la marca secure no se decide con NODE_ENV: la conexión de la persona (lib/cookie-segura.ts)");
+      }
+    }
+  },
   /* Anchos · Con la hoja o la ventana del detalle abierta (teléfono, o escritorio de 1024 a 1199) el fondo del panel queda inerte: ni teclado, ni
      lector de pantalla, ni toque llegan a lo de atrás (antes «Confirmar» de la lista competía con el del detalle: pro4l, ayu4if, sal4j2 a 1024).
      Al revés (alrevesAnchos). */

@@ -13,6 +13,7 @@ import { crearAnuncio, editarCadena, editarRotulo, fijarPie, guardarHome, ponerE
 import { idioma } from "@/lib/idioma";
 import { marcarRevisada, publicarLegal, retirarLegal } from "@/lib/legal";
 import type { ResAdm } from "./acciones-colas";
+import { cookieSegura } from "@/lib/cookie-segura";
 
 const bi = async (es: string, en: string) => ((await idioma()) === "en" ? en : es);
 const no = async (es: string, en: string): Promise<ResAdm> => ({ ok: false, mensaje: await bi(es, en) });
@@ -22,7 +23,7 @@ const sal = async (r: Res): Promise<ResAdm> => { const l = await idioma(); retur
 /* El idioma de quien usa el admin: la misma cookie que el botón ES/EN de la web. */
 export async function idiomaAdmin(l: string): Promise<void> {
   if (!(await staff())) return;
-  (await cookies()).set("tl_lang", l === "en" ? "en" : "es", { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax", httpOnly: false });
+  (await cookies()).set("tl_lang", l === "en" ? "en" : "es", { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax", httpOnly: false, secure: await cookieSegura() });
 }
 
 export async function ayudaPausar(slug: string, motivo: string): Promise<ResAdm> {

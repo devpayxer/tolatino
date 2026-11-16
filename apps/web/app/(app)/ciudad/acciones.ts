@@ -5,6 +5,7 @@ import { dispositivo, ipCliente, mismoOrigen, normalizarTelefono, yo } from "@/l
 import { millas, type LL } from "@/lib/mapa-geo";
 import { centroDe, ciudades, COOKIE_LOC, escribir, porDefecto, resolver, ubicacion, vista } from "@/lib/ubicacion";
 import { buscarLugar, ciudadDeTexto, cuantosPiden, masPedidas, medir, miCiudad, misPedidos, resumenCiudades, telefonoBonito } from "@/lib/ciudad";
+import { cookieSegura } from "@/lib/cookie-segura";
 
 /* Acciones de APP-CIUDAD. El servidor valida todo; la pantalla solo pide.
    9i · Una ciudad en «beta» se ve abierta solo para quien está invitado (vista de lib/ubicacion.ts); para los demás es «próximamente» y se puede pedir. */
@@ -21,7 +22,7 @@ export async function elegirUbicacion(p: { c: string; z: string; r: number; g?: 
   const u = resolver(cs, { c: String(p.c ?? ""), z: String(p.z ?? ""), r: Number(p.r), g });
   const jar = await cookies();
   jar.set(COOKIE_LOC, escribir({ ciudad: u.ciudad, ctr: u.ctr, rad: u.rad, g: u.gps ? [u.lat, u.lng] : null }),
-    { path: "/", maxAge: UN_ANO, sameSite: "lax", httpOnly: true });
+    { path: "/", maxAge: UN_ANO, sameSite: "lax", httpOnly: true, secure: await cookieSegura() });
   // En la cuenta se guarda que mide «desde mi ubicación», nunca el punto.
   if (me) await db().query(`update users set viewing_city_id = $2, viewing_center = $3, viewing_radius_mi = $4 where id = $1`, [me.id, u.ciudad, u.ctr, u.rad]);
   return { ok: true as const, abierta: u.c.status === "on" };

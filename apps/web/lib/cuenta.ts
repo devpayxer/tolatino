@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import { leerRotulo } from "./app-nativa-comun";
 import { db, tx } from "./db";
 import { MODO_SMS, secretoAuth } from "./entorno";
+import { cookieSegura } from "@/lib/cookie-segura";
 
 /* Cuenta: teléfono verificado con código de 6 números, sesión persistente por dispositivo (decisión E).
    Seguridad: el código y el token solo se guardan como huella; límites de intentos por teléfono y por IP;
@@ -34,7 +35,7 @@ export async function dispositivo(crear: boolean): Promise<string | null> {
   if (v && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v)) return v;
   if (!crear) return null;
   const n = randomUUID();
-  jar.set("tl_dev", n, { path: "/", maxAge: 5 * 365 * 86400, sameSite: "lax", httpOnly: true });
+  jar.set("tl_dev", n, { path: "/", maxAge: 5 * 365 * 86400, sameSite: "lax", httpOnly: true, secure: await cookieSegura() });
   return n;
 }
 const fechaCorta = (d: string | Date, en = false) => new Date(d).toLocaleDateString(en ? "en-US" : "es-US", { day: "numeric", month: "long", year: "numeric", timeZone: "America/New_York" });
@@ -242,8 +243,7 @@ export async function abrirSesionEn(c: import("pg").PoolClient, ctx: { dev: stri
 
 /* Las cookies de la sesión recién abierta (las mismas para el código y la llave). */
 export async function ponerSesion(token: string): Promise<void> {
-  const h = await headers();
-  const seguro = (h.get("x-forwarded-proto") || "").includes("https");
+  const seguro = await cookieSegura();
   (await cookies()).set(COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",

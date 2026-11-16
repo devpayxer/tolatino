@@ -29,7 +29,7 @@ const restaurar = () => { sql(`update business_hours set ranges='[["11:00","21:0
   await m.waitForURL(/\/pedido\/\d+$/); const num = m.url().split('/').pop();
   ok(/^\d{4}-\d{2}$/.test(sql(`select free_quota_month from operations where number='${num}'`)), 'Free: el pedido #' + num + ' cuenta para el techo del mes');
   await m.goto(B + N); await cart(sin, CH); await m.goto(B + N + '/pagar');
-  ok(await m.locator('[data-screen-label="Checkout · no se pudo enviar"]').isVisible(), 'Free con el techo lleno: el pago avisa y no deja enviar');
+  ok(await m.locator('[data-screen-label="Checkout · no se pudo enviar"]').waitFor({ timeout: 15000 }).then(() => true, () => false), 'Free con el techo lleno: el pago avisa y no deja enviar');
   await m.screenshot({ path: OUT + 'b21-free-tope-pagar-m.png' });
   // Y el servidor lo rechaza aunque la pantalla insista (llamada directa a la acción vía el botón deshabilitado no es posible: se prueba el SQL del techo)
   const tras = +sql(`select count(*) from operations where business_id='${BIZ}' and free_quota_month = to_char(now() at time zone 'America/New_York','YYYY-MM')`);

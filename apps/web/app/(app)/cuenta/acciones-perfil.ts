@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { mismoOrigen, sesionActual, yo } from "@/lib/cuenta";
 import { db } from "@/lib/db";
 import { borrarCuenta, cambiarCiudad, cambiarTelefono, cancelarBorrado, cerrarSesionOtra, codigoBorrar, codigoTelNuevo, fotoPerfil, guardarAviso, guardarPerfilTodo, type ResP } from "@/lib/perfil";
+import { cookieSegura } from "@/lib/cookie-segura";
 
 /* Mi cuenta · Perfil, Teléfono, Avisos, Ajustes, Mi ciudad, Privacidad y Borrar. Todo pide sesión y mismo origen. */
 const NO: ResP = { ok: false, msg: { es: "No se pudo. Recarga la página.", en: "Could not do it. Reload the page." } };
@@ -36,7 +37,7 @@ export async function idiomaCuenta(lang: "es" | "en"): Promise<ResP> {
   const u = await quien();
   if (!u) return NO;
   const l = lang === "en" ? "en" : "es";
-  (await cookies()).set("tl_lang", l, { path: "/", maxAge: 365 * 86400, sameSite: "lax" });
+  (await cookies()).set("tl_lang", l, { path: "/", maxAge: 365 * 86400, sameSite: "lax", secure: await cookieSegura() });
   await db().query(`update users set lang = $2 where id = $1`, [u.id, l]);
   return { ok: true };
 }

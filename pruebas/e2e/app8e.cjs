@@ -67,7 +67,8 @@ const sse = (p, url, ms = 6000) => p.evaluate(async ([url, ms]) => {
   while (Date.now() < fin) { const x = await Promise.race([rd.read(), new Promise((ok) => setTimeout(() => ok({ espera: true }), 500))]); if (x.done) break; if (x.value) t += dec.decode(x.value); const m = /event: (\w+)\ndata: (.*)\n\n/.exec(t); if (m) { rd.cancel().catch(() => {}); return { st: 200, ev: m[1], data: JSON.parse(m[2]) }; } }
   rd.cancel().catch(() => {}); return { st: 200, ev: null };
 }, [url, ms]);
-const postRuta = async (req, token, cuerpo) => { await dormir(1150); const r = await req.post(B + '/api/ruta/posicion', { headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, data: cuerpo }); let j = {}; try { j = await r.json(); } catch {} return { st: r.status(), ...j }; };
+// La página del repartidor sigue mandando con el MISMO token (una llamada por segundo por token): si justo le ganó el segundo, 429 y otra vez.
+const postRuta = async (req, token, cuerpo) => { for (let i = 0; ; i++) { await dormir(1150); const r = await req.post(B + '/api/ruta/posicion', { headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, data: cuerpo }); let j = {}; try { j = await r.json(); } catch {} if (r.status() !== 429 || i >= 4) return { st: r.status(), ...j }; } };
 // Una cámara de prueba (y4m 4:2:0) con una imagen centrada sobre blanco.
 async function y4m(png, archivo) {
   const W = 640, H = 480, img = await sharp(png).resize(300, 300, { fit: 'contain', background: '#ffffff' }).flatten({ background: '#ffffff' }).grayscale().raw().toBuffer();

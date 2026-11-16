@@ -338,7 +338,7 @@ const ws = async (metodo, ruta, token, cuerpo, extra = {}) => {
     // Anchos: con --dispositivo ipad la «computadora» es un iPad (su Safari): ahí lo correcto es solo Apple Wallet, como en el iPhone.
     const ipad = /iPad|iPhone/.test(await pd.evaluate(() => navigator.userAgent));
     ok(await espera(async () => (await pd.locator('[data-wallet="apple"]').count()) === 1 && (await pd.locator('[data-wallet="google"]').count()) === (ipad ? 0 : 1)), ipad ? 'iPad: solo Apple Wallet' : 'computadora: los dos botones (Apple y Google)');
-    ok((await pd.locator('[data-arte="provisional"]').count()) === 2, 'las insignias están marcadas como PROVISIONALES (el arte oficial espera las licencias)');
+    ok((await pd.locator('[data-arte="provisional"]').count()) === (ipad ? 1 : 2), 'las insignias están marcadas como PROVISIONALES (el arte oficial espera las licencias)');
     await pd.screenshot({ path: OUT + 'w8g-boleto-escritorio-d.png', fullPage: true });
     // Interruptor apagado: no salen pases nuevos.
     sql(`update feature_flags set enabled = false where key = 'app.wallet.apple'`); await new Promise((r) => setTimeout(r, 16000));

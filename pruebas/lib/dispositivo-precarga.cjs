@@ -51,6 +51,14 @@ if (id) {
       try { return await ir(u, o); } catch (e) {
         if (/interrupted by another navigation/.test(e.message)) { await page.waitForLoadState('load').catch(() => {}); return ir(u, o); }
         if (e.name === 'TimeoutError' && page.url() === antes && antes !== u) { console.log(`  · webkit: la navegación a ${u} no empezó en 30 s; otra vez`); return ir(u, o); }
+        // La página sí llegó pero «load» no salió en 30 s (silla3d, app8a, evt6b-6c en el SE y el iPad; Chromium nunca): se dice en qué estaba
+        // (estado del documento, imágenes sin terminar, qué recursos siguen abiertos) y se va otra vez UNA vez. Si vuelve a pasar, es un error.
+        if (e.name === 'TimeoutError') {
+          const est = await page.evaluate(() => ({ rs: document.readyState, img: [...document.images].filter((i) => !i.complete).map((i) => i.currentSrc || i.src).slice(0, 4),
+            sinFin: performance.getEntriesByType('resource').filter((r) => !r.responseEnd).map((r) => r.name).slice(0, 4) })).catch((x) => ({ error: String(x.message).slice(0, 120) }));
+          console.log(`  · webkit: «load» de ${u} no salió en 30 s (en ${page.url()}): ${JSON.stringify(est)}; otra vez`);
+          return ir(u, o);
+        }
         throw e;
       }
     };

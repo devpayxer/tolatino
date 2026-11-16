@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import { arrancar, auditar, COOKIE_CIUDAD, requerir, staff, type Accion } from "@/lib/admin";
 import { normalizarTelefono } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
+import { cookieSegura } from "@/lib/cookie-segura";
 
 export type Resultado = { ok: boolean; mensaje?: string };
 const motivoOk = (m: unknown) => (typeof m === "string" ? m.trim().slice(0, 500) : "");
@@ -102,7 +103,7 @@ export async function elegirCiudad(id: string | null): Promise<Resultado> {
   if (!id) { jar.delete({ name: COOKIE_CIUDAD, path: "/admin" }); revalidatePath("/admin", "layout"); return { ok: true }; }
   if (!/^[a-z0-9-]{2,24}$/.test(id) || (s.ciudadesRol.length && !s.ciudadesRol.includes(id))) return { ok: false, mensaje: "Esa ciudad no es de tu rol." };
   if (!(await db().query("select 1 from cities where id = $1", [id])).rowCount) return { ok: false, mensaje: "Esa ciudad no existe." };
-  jar.set(COOKIE_CIUDAD, id, { path: "/admin", httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", maxAge: 60 * 60 * 24 * 30 });
+  jar.set(COOKIE_CIUDAD, id, { path: "/admin", httpOnly: true, sameSite: "lax", secure: await cookieSegura(), maxAge: 60 * 60 * 24 * 30 });
   revalidatePath("/admin", "layout");
   return { ok: true };
 }
