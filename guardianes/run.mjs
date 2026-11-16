@@ -9766,6 +9766,14 @@ const guardianes = {
       "NEG-FE": "FeHoja", "NEG-INMUEBLE": "InmHoja", "NEG-DEALER": "DlHoja" };
     const tabla = readFileSync("apps/web/lib/ficha-nueva.ts", "utf8");
     for (const m of tabla.matchAll(/^\s+"(NEG-[A-Z]+)": \{/gm)) { const pz = PIEZAS[m[1]]; if (!pz || !new RegExp(`<${pz}\\b`).test(fn)) falla(G, F, 0, `${m[1]} está en la tabla de la ficha nueva sin sus piezas de siempre (${pz ?? "¿cuáles?"})`); }
+    // C-006: el Resumen de cada categoría trae lo suyo de siempre (la balanza, el total por escrito, ¿está libre tu fecha?…), no solo «lo más pedido».
+    const RESUMEN = { "NEG-FOOD": "MenuResumen", "NEG-AUTO": "OfResumen", "NEG-HOGAR": "OfResumen", "NEG-SALUD": "SaResumen", "NEG-NOCHE": "NoResumen", "NEG-MERC": "MeResumen",
+      "NEG-FIESTA": "FiResumen", "NEG-PRO": "PrResumen", "NEG-TRANS": "ViResumen", "NEG-EDU": "InResumen", "NEG-NINOS": "InResumen", "NEG-DEPORTE": "InResumen",
+      "NEG-FE": "FeResumen", "NEG-INMUEBLE": "InmResumen", "NEG-DEALER": "DlResumen" };
+    for (const [cat, pz] of Object.entries(RESUMEN)) if (!new RegExp(`<${pz}\\b`).test(fn)) falla(G, F, 0, `${cat}: el Resumen de la ficha nueva perdió lo suyo (${pz})`);
+    // Una sola copia de la página por aparato: con las dos, la tienda, el carrito y las hojas existen dos veces (dos estados, dos barras).
+    if (!/\{modo === "m" \? \(/.test(fn) || !/\{modo === "d" \? \(/.test(fn) || !/anchoInicial\(\)/.test(readFileSync("apps/web/app/(app)/n/[id]/page.tsx", "utf8")))
+      falla(G, F, 0, "la ficha nueva pinta teléfono y computadora a la vez: cada árbol va con {modo === \"m\"|\"d\" ? (…) : null} y el servidor elige con anchoInicial()");
   },
 
   telefonoAlAzarRespetaFijos() {

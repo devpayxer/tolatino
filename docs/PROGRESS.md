@@ -2432,3 +2432,7 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **Primera corrida de `anchos` (CI 43785123795, e066763): en rojo.** Regresión 180/182 (msg2p tiempo, cit3e), iPhone SE 136/182 (casi todo «Load failed» /
   «access control checks»: errores de WebKit con el emulador de iPhone; hay que revisar cómo corre la punta a punta en ese ancho), iPad 81/182 y escritorio
   1024 142/182. No se cierran las líneas «9 dispositivos» de LAUNCH; queda como bloque propio después del paquete C-005 → C-008.
+- **C-006 · Ficha nueva en las demás categorías (Pro)** — adaptador por categoría en `FichaNueva.tsx` (pestaña, hoja, barra, tarjeta y Resumen de
+  siempre), pestañas Tienda/Renta y Reservar, `equipo` en `lib/ficha.ts`, una sola copia por aparato (`lib/ancho`), `?tab=` en computadora baja a su
+  sección. Guardián `fichaNuevaSoloPro` ampliado (alrevesC005 8/8); e2e `fic006` (111 ✓ local); fie4u, tra4x, apt4f, menu2b y rsv2e a la ficha nueva.
+  Salud: «SIN SEGURO» ya no sale dos veces. Sigue C-007.

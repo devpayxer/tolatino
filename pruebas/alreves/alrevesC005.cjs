@@ -14,6 +14,9 @@ const casos = [
   ['fichaNuevaSoloPro', K, 'find((y) => y.m === inicial.h && y.free)', 'find((y) => y.m === inicial.h)'],
   // C-006: una categoría en la tabla sin sus piezas de siempre (la hoja de Salud).
   ['fichaNuevaSoloPro', F, '<SaHoja v={sa} />', '<span />'],
+  // C-006: el Resumen del mercado sin lo suyo (la balanza, cómo se cobra por peso) y la página pintada dos veces (teléfono y computadora a la vez).
+  ['fichaNuevaSoloPro', F, 'resumen: (d) => <MeResumen v={me} desk={d} onAll={irCat} />, ', ''],
+  ['fichaNuevaSoloPro', F, '{modo === "d" ? (', '{true ? ('],
 ];
 const crear = [];
 let bien = 0, total = 0;

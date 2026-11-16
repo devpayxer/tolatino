@@ -147,7 +147,9 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
     n: secs.reduce((a, g) => a + g.items.length, 0) });
   // Cada columna de la tarjeta de hoy, una sola vez (la clave es su nombre).
   const unicas = (c: { k: string; v: string }[]) => c.filter((x, i) => x.v && x.v !== "—" && c.findIndex((y) => y.k === x.k) === i);
-  const deRiel = (r: { k: string; v: string }[] | undefined | null) => (r && r.length ? { title: r[0]!.v, cols: unicas(r.slice(1)).filter((x) => x.k !== r[0]!.k).slice(0, 3) } : null);
+  // Un precio o una cifra sola no dice nada como título: va con su nombre («Sin seguro · $85»).
+  const titulo = (x: { k: string; v: string }) => (/^[$\d~]/.test(x.v) ? `${x.k.charAt(0)}${x.k.slice(1).toLowerCase()} · ${x.v}` : x.v);
+  const deRiel = (r: { k: string; v: string }[] | undefined | null) => (r && r.length ? { title: titulo(r[0]!), cols: unicas(r.slice(1)).filter((x) => x.k !== r[0]!.k).slice(0, 3) } : null);
   const deTd = (td: { k: string; v: string }[] | undefined | null, title: string) => (td && td.length ? { title, cols: unicas(td).slice(0, 3) } : null);
   const vende: Vende | null = useMemo(() => {
     const X = (v: { secs: { title: string; items: ItemV[] }[] }, o: Omit<Vende, "top" | "n">): Vende => ({ ...deSecs(v.secs), ...o });

@@ -5035,3 +5035,15 @@ el negocio (la comisión se cobra sobre lo que paga el cliente). Si quieres que 
   Si el servicio tiene extras, primero los extras (la hoja de siempre).
 **Decidido por mí (reversible):** el paso 3 «Revisa y envía» es la pantalla Booking que ya cobra el depósito (no se duplicó el cobro dentro de la
 ficha). La página de cada silla (`/n/…/silla/N`) y los negocios Free siguen con la ficha de antes. Si quieres el paso 3 dentro de la misma hoja, se cambia.
+
+## C-006 — Ficha nueva en las demás categorías (16 nov)
+**Dónde:** un negocio **Pro** de cada categoría, en el teléfono y en la computadora. Por ejemplo: Centro Médico Quisqueya (salud),
+Agua y Hielo Cristal (mercado), Andrea Events (fiestas), Van Express NYC (transporte), Autos El Cibao (venta de autos), Sabor Dominicano (comida con reservas).
+**Qué mirar:**
+- Las pestañas llevan el nombre de lo que vende cada uno (Servicios, Productos, Membresías, Misas, Propiedades, En el lote, Viajes, Esta noche…) y el equipo
+  con su nombre (Doctores, Vendedores…). Solo salen las que tienen algo.
+- El Resumen trae lo de siempre de cada categoría: la balanza del mercado, «¿está libre tu fecha?» en fiestas, «¿cuánto es en total?» en transporte,
+  «Cómo funciona» en salud y profesionales. Las preguntas están en «Antes de ir».
+- La barra de abajo (teléfono) y la tarjeta de la derecha (computadora) hacen lo mismo que antes: pedir, apartar, rentar, reservar mesa, inscribirse, pedir visita.
+**Decidido por mí (reversible):** «Tienda» (o «Renta» en transporte) y «Reservar» son pestañas aparte cuando el negocio tiene esas cosas; en computadora,
+la tarjeta de la derecha cambia a «Reservar mesa» cuando estás en esa parte o ya elegiste una hora.
