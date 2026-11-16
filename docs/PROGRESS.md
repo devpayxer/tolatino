@@ -2447,3 +2447,5 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   ella el panel que se abría después pintaba primero la computadora); el navegador manda su ancho (`Accept-CH: Sec-CH-Viewport-Width`, `lib/ancho.ts`
   lo lee primero). Guardianes `anchoSinSalto` y `fichaNuevaSoloPro` ampliados (alrevesC005 14/14). Pruebas: nin4b/inm4ib/autos4ic esperan la fila
   del panel, cup9n21 espera el cupón visible, dir9m abre Horario en el Pixel, rev1 acepta la sección de reseñas de la computadora.
+  **Regresión completa CI 43838619809: 186/186 en verde (7266 ✓, 92 min). 8514e1d en `main` y `pruebas`; el sandbox lo sirve (estado-sandbox: commit
+  8514e1d, 170 migraciones, salud ok). Paquete C-005 → C-008 cerrado.** Sigue: el bloque de anchos (WebKit «Load failed») y lo de LAUNCH del paquete.
