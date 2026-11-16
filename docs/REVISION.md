@@ -5067,3 +5067,15 @@ Cristal (Productos) y Boutique Yaritza (Productos).
 - «Lo más pedido» solo sale cuando hay pedidos de verdad o el negocio fija productos (en los negocios de ejemplo nuevos puede no salir).
 **Decidido por mí (reversible):** en el mercado y la tienda, «Tu pedido» es la pantalla de siempre (la que ya retiene, pesa y avisa al negocio), no una hoja nueva
 dentro de la ficha. El «precio anterior» tachado necesita un dato nuevo en el panel: queda anotado para después.
+
+## Anchos — iPhone SE, iPad y computadora de 1024 (16 nov)
+**Dónde:** en el sandbox, con un iPhone pequeño (SE), un iPad (de lado y de pie) y una computadora con la ventana a la mitad.
+**Qué mirar:**
+- **Super Admin en el iPhone SE:** la barra de arriba ya no se sale por la derecha. Si eliges una ciudad de nombre largo («Wilkes-Barre»), el
+  botón de la ciudad la corta con «…».
+- **Panel del negocio en una computadora de 1024 a 1199 de ancho:** al abrir un pedido o una cita sale como ventana encima; mientras está abierta,
+  lo de atrás no se puede tocar (se cierra con la X o tocando afuera). Los botones de la ventana hacen lo mismo que en la columna de una pantalla grande.
+- **El enlace para invitar vecinos** (`/i/…`) y los enlaces de los QR abren To'Latino bien desde Safari (antes podían mandar a una dirección
+  interna del servidor).
+**Decidido por mí (reversible):** las métricas de velocidad que el teléfono manda solas, pasado el tope, se descartan en silencio (antes
+el servidor respondía con un error que Safari mostraba en la consola). El aparato de un iPad se llama «iPad» en la lista de avisos push y en Soporte.

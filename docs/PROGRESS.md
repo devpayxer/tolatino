@@ -2449,3 +2449,21 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   del panel, cup9n21 espera el cupón visible, dir9m abre Horario en el Pixel, rev1 acepta la sección de reseñas de la computadora.
   **Regresión completa CI 43838619809: 186/186 en verde (7266 ✓, 92 min). 8514e1d en `main` y `pruebas`; el sandbox lo sirve (estado-sandbox: commit
   8514e1d, 170 migraciones, salud ok). Paquete C-005 → C-008 cerrado.** Sigue: el bloque de anchos (WebKit «Load failed») y lo de LAUNCH del paquete.
+- **Anchos (1) · f306378 (CI 43873696989):** regresión 186/186; escritorio 1024 182/186, iPhone SE 165/186, iPad 160/186 (antes 142, 136 y 81).
+  La precarga de dispositivos pone la tableta como se usa (teléfono en vertical, escritorio en horizontal), respeta el agente propio de cada prueba,
+  abre Chromium para lo que solo existe ahí y filtra el ruido de WebKit al navegar; el detalle del panel entre 1024 y 1199 es la misma pieza que la
+  columna; las pruebas miden «sin scroll de lado» contra la ventana (guardián `anchoContraLaVentana`, alrevesAnchos).
+- **Anchos (2) · a7f6f15 (CI 43898185881 en curso):** lo que cazó la corrida anterior.
+  · **Redirecciones relativas** (`lib/ir-a.ts`): /i/[code], correo/baja, datos/archivo, pases/apple, app/aviso y /q armaban la dirección con
+    `req.url` o `req.nextUrl.origin` = el host del proceso (`http://0.0.0.0:3100` en el servidor independiente): Safari no lo abre y detrás de nginx
+    era una dirección interna. Guardián `redireccionRelativa` (+ `enlaceSoloPropio` al día).
+  · **Fondo del panel inerte** con la hoja o la ventana del detalle abierta (guardián `panelFondoInerte`): «Confirmar» de la lista ya no competía
+    con el del detalle a 1024 (pro4l, ayu4if, sal4j2).
+  · **AdminBar a 375**: el selector de ciudad cede y corta con «…» (Safari se salía 9 px; con «Wilkes-Barre» también a 390). Parche en
+    `scripts/portar-sistema.mjs`.
+  · **/api/vitales** pasado el tope responde 204 (el 429 era un error en la consola de Safari); la etiqueta del aparato dice «iPad».
+  · Pruebas: ruido RSC de Safari, goto que no empezó (una vez y avisa), rueda en el iPad, Chromium forzado conserva su agente (push8c),
+    llave8d (CDP) en Chromium; dlv2f4, com5a, adm9n3, free2b, dir2f, wal8g, push8c, disp9b al día; diagnóstico en dir2f y din9n4.
+  · Guardianes en verde; alrevesAnchos 7/7, alreves9c 27/27, alreves9h 53/53. WebKit no se puede instalar en este contenedor (la descarga se
+    permitió en la red pero instalar navegadores no está autorizado aquí): lo de Safari se prueba en CI.
+  · Siguen sin explicar (diagnóstico en la corrida): app8e (Safari no sube posiciones), dir9m (pin del mapa), din9n4 (botón apagado en el iPad).
