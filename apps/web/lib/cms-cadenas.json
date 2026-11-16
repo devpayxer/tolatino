@@ -2802,6 +2802,15 @@
    "sha256": "028dd312330f9447a94f0511b3c54c32fe79acc373408f8b5ca05de9cfed549c"
   },
   {
+   "id": "WEB-GENERAL.radioCorto",
+   "screen": "WEB-GENERAL",
+   "es": "{n} MI",
+   "en": "{n} MI",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "9ab6a8efd0ced815e3e3c78f559be78bf010cb18e5f9355bebf15444c15f3f78"
+  },
+  {
    "id": "WEB-GENERAL.result",
    "screen": "WEB-GENERAL",
    "es": "resultado",
@@ -2926,6 +2935,24 @@
    "max_len": 40,
    "locked": false,
    "sha256": "6e7fb0cccd88d2d200b9a8b918e4db6a8cc5e21c96a0ce07023a20c1f0845385"
+  },
+  {
+   "id": "WEB-GENERAL.spon",
+   "screen": "WEB-GENERAL",
+   "es": "Patrocinados",
+   "en": "Sponsored",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "9334864511380b1f9003eec008119605a3c0412bc858b6883f1b6bcd497e5ef9"
+  },
+  {
+   "id": "WEB-GENERAL.sponMuted",
+   "screen": "WEB-GENERAL",
+   "es": "SIN SONIDO",
+   "en": "MUTED",
+   "max_len": 40,
+   "locked": false,
+   "sha256": "d2cf586db5674e93345b039c38d09009ee43abea37e2771539d48d8174cb889d"
   },
   {
    "id": "WEB-GENERAL.statsBiz",

@@ -19,6 +19,8 @@ export const T = {
     freeTitle: "También en {c}", freeSub: "NEGOCIOS FREE · LLAMA O PASA", seedUnclaimed: "SIN RECLAMAR", seedYours: "¿Es tuyo?", seedClaim: "Reclámalo gratis", seeAllN: "Ver todas",
     ddPh: "Busca la marca", ddNone: "No la encontramos",
     statsBiz: "NEGOCIOS", statsOpen: "ABIERTOS AHORA",
+    // C-002 · Patrocinados (el título es el único aviso) y la portada baja
+    spon: "Patrocinados", sponMuted: "SIN SONIDO", radioCorto: "{n} MI",
     // Negocios (APP-NEG-HOME)
     negTitle: "Negocios en {c}", negSub: "17 CATEGORÍAS · {l}", catsSec: "Categorías", featTitle: "Destacados en {c}",
     freshTitle: "Nuevos en el barrio",
@@ -78,6 +80,7 @@ export const T = {
     freeTitle: "Also in {c}", freeSub: "FREE LISTINGS · CALL OR STOP BY", seedUnclaimed: "UNCLAIMED", seedYours: "Is it yours?", seedClaim: "Claim it free", seeAllN: "See all",
     ddPh: "Search make", ddNone: "Not found",
     statsBiz: "BUSINESSES", statsOpen: "OPEN NOW",
+    spon: "Sponsored", sponMuted: "MUTED", radioCorto: "{n} MI",
     negTitle: "Businesses in {c}", negSub: "17 CATEGORIES · {l}", catsSec: "Categories", featTitle: "Featured in {c}",
     freshTitle: "New in the neighborhood",
     intents: { abierto: "Open now", delivery: "Delivery", verificados: "Verified", cita: "By appointment", domicilio: "Comes to you", pago: "Pay online" },

@@ -495,6 +495,25 @@ for (const src of archivos) {
     return `var(${nombre})`;
   });
 
+  // C-002 (16 nov) · La tarjeta Pro de la página de categoría (canvas tolatino-master+, «Página de categoría (variantes)», sección D, aprobada por
+  // Henry): `oneLine` = foto de 150, UNA línea de datos (★ reseñas · lo que es y la distancia · abierto/cerrado, la del medio se corta con «…»),
+  // sin chips y UN botón (sin el corazón: se guarda desde la página del negocio). La oferta de hoy sigue igual (solo si la app la manda). Sin
+  // `oneLine`, la tarjeta es la de siempre (Inicio, Buscar, Mapa…). Va después de los tokens: compara con el texto ya portado.
+  if (rel === "cards/BusinessCard.js") {
+    const antes = t;
+    t = t.replace("  ringLabel = 'Hoy en el barrio'\n}) {", "  ringLabel = 'Hoy en el barrio',\n  oneLine\n}) {");
+    t = t.replace("      position: 'relative',\n      height: 170,", "      position: 'relative',\n      height: oneLine ? 150 : 170,");
+    t = t.replace("verified ? /*#__PURE__*/React.createElement(Check, null) : null), meta ? /*#__PURE__*/React.createElement(\"div\", {", "verified ? /*#__PURE__*/React.createElement(Check, null) : null), meta && !oneLine ? /*#__PURE__*/React.createElement(\"div\", {");
+    t = t.replace("    note: reviewsNote\n  }), status ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(\"span\", {",
+      "    note: reviewsNote\n  }), oneLine && meta ? /*#__PURE__*/React.createElement(\"span\", {\n    'data-una-linea': '',\n    style: {\n      flex: '0 1 auto',\n      minWidth: 0,\n      overflow: 'hidden',\n      textOverflow: 'ellipsis',\n      whiteSpace: 'nowrap',\n      font: '600 12.5px Manrope,sans-serif',\n      color: 'rgba(11,14,18,.6)'\n    }\n  }, meta) : null, status ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(\"span\", {");
+    t = t.replace("      minWidth: 0,\n      font: '700 12.5px Manrope,sans-serif',\n      color: open ? 'var(--tl-open-text)' : 'var(--tl-danger)'\n    }\n  }, status)) : null), chips.length ? ",
+      "      minWidth: 0,\n      flex: oneLine ? 'none' : undefined,\n      whiteSpace: oneLine ? 'nowrap' : undefined,\n      font: '700 12.5px Manrope,sans-serif',\n      color: open ? 'var(--tl-open-text)' : 'var(--tl-danger)'\n    }\n  }, status)) : null), chips.length && !oneLine ? ");
+    t = t.replace("  }, cta)), /*#__PURE__*/React.createElement(__ds_scope.IconButton, {\n    icon: \"heart\",", "  }, cta)), oneLine ? null : /*#__PURE__*/React.createElement(__ds_scope.IconButton, {\n    icon: \"heart\",");
+    if (t === antes) throw new Error("parche BusinessCard (C-002): sin cambios");
+    for (const x of ["  oneLine\n}) {", "height: oneLine ? 150 : 170", "meta && !oneLine ?", "'data-una-linea': ''", "chips.length && !oneLine ?", "oneLine ? null : /*#__PURE__*/React.createElement(__ds_scope.IconButton"])
+      if (!t.includes(x)) throw new Error(`parche BusinessCard (C-002 una línea): el origen cambió, revisar (${x})`);
+  }
+
   const m = [...t.matchAll(/Object\.assign\(__ds_scope, \{([^}]*)\}\);/g)];
   for (const x of m) {
     const ns = x[1].split(",").map((s) => s.trim()).filter(Boolean);

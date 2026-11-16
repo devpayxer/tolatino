@@ -81,6 +81,8 @@ export type ClaveConfig =
   // 9h · Crecimiento: campañas, destacados, Fundadores y promotores (0138; Configuración › Crecimiento)
   | "campana_por_semana" | "campana_sms_por_mes" | "campana_aprobar_desde" | "campana_lote" | "destacados_por_ciudad" | "destacados_dias"
   | "fundadores_vecinos" | "fundadores_negocios" | "promotor_operaciones" | "promotor_recompensa_cents" | "promotor_dias_prueba"
+  // C-002 · Patrocinados de la página de categoría: puestos, precios y cuánto adelante se reserva (0173; Configuración › Crecimiento)
+  | "patrocinio_puestos" | "patrocinio_semana_cents" | "patrocinio_mes_cents" | "patrocinio_dias_adelante"
   // 9k · Dinero: pagos al banco (martes), la conciliación diaria, las alertas, 3-D Secure y la señal de la tarjeta (0141; Configuración › Dinero)
   | "pagos_banco_dia" | "conciliacion_hora" | "dinero_alerta_intentos" | "disputa_alerta_dias" | "verificacion_min" | "tarjeta_cuentas_senal"
   // 9l · Avisos y canales: reintentos del SMS, el tope global de remitentes, STOP, Soporte por WhatsApp, pedido tarde y las retenciones de SMS y correo (0142)

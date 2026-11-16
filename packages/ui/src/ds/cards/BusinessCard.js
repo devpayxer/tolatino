@@ -89,7 +89,8 @@ function BusinessCard({
   media,
   ring,
   onRing,
-  ringLabel = 'Hoy en el barrio'
+  ringLabel = 'Hoy en el barrio',
+  oneLine
 }) {
   const stop = f => e => {
     if (e && e.stopPropagation) e.stopPropagation();
@@ -165,7 +166,7 @@ function BusinessCard({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative',
-      height: 170,
+      height: oneLine ? 150 : 170,
       background: 'var(--tl-photo-bg)'
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -223,7 +224,7 @@ function BusinessCard({
     }
   }, /*#__PURE__*/React.createElement("span", {
     ...__ds_scope.__btn(onOpen)
-  }, name)), verified ? /*#__PURE__*/React.createElement(Check, null) : null), meta ? /*#__PURE__*/React.createElement("div", {
+  }, name)), verified ? /*#__PURE__*/React.createElement(Check, null) : null), meta && !oneLine ? /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 6,
       font: '600 10.5px ' + mono,
@@ -241,7 +242,18 @@ function BusinessCard({
     r: rating,
     n: reviews,
     note: reviewsNote
-  }), status ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
+  }), oneLine && meta ? /*#__PURE__*/React.createElement("span", {
+    'data-una-linea': '',
+    style: {
+      flex: '0 1 auto',
+      minWidth: 0,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      font: '600 12.5px Manrope,sans-serif',
+      color: 'rgba(11,14,18,.6)'
+    }
+  }, meta) : null, status ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
     style: {
       width: 3,
       height: 3,
@@ -252,10 +264,12 @@ function BusinessCard({
   }), /*#__PURE__*/React.createElement("span", {
     style: {
       minWidth: 0,
+      flex: oneLine ? 'none' : undefined,
+      whiteSpace: oneLine ? 'nowrap' : undefined,
       font: '700 12.5px Manrope,sans-serif',
       color: open ? 'var(--tl-open-text)' : 'var(--tl-danger)'
     }
-  }, status)) : null), chips.length ? /*#__PURE__*/React.createElement("div", {
+  }, status)) : null), chips.length && !oneLine ? /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 10,
       display: 'flex',
@@ -315,7 +329,7 @@ function BusinessCard({
     size: "md",
     icon: ctaIcon,
     onClick: stop(onCta)
-  }, cta)), /*#__PURE__*/React.createElement(__ds_scope.IconButton, {
+  }, cta)), oneLine ? null : /*#__PURE__*/React.createElement(__ds_scope.IconButton, {
     icon: "heart",
     size: 40,
     active: saved,
