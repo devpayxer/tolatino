@@ -119,7 +119,7 @@ async function y4m(png, archivo) {
   ok((await sse(m, `/api/ruta/vivo?pedido=${n1}`)).st === 404, 'el SSE del cliente antes de empezar → 404');
   ok((await sse(d, `/api/ruta/vivo?pedido=${n1}&negocio=${BIZ}`)).st === 404, 'el SSE del negocio sin ruta todavía → 404');
   // Juan: «Voy por el pedido» abre la ruta (y el token llega solo a su teléfono).
-  let token = null; await j.route('**/api/ruta/posicion', async (rt) => { const hh = await rt.request().allHeaders(); if (hh.authorization) token = hh.authorization.slice(7); else console.log('  (sin authorization)', Object.keys(hh).join(',')); await rt.continue(); });
+  let token = null; const envios = []; await j.route('**/api/ruta/posicion', async (rt) => { const hh = await rt.request().allHeaders(); if (hh.authorization) token = hh.authorization.slice(7); else console.log('  (sin authorization)', Object.keys(hh).join(',')); try { const b = JSON.parse(rt.request().postData() || '{}'); envios.push({ ahora: Date.now(), ts: (b.p || []).map((x) => x.t) }); } catch { /* no es JSON */ } await rt.continue(); });
   await j.goto(B + '/repartidor?p=' + n1); await j.getByRole('button', { name: 'Voy por el pedido' }).first().waitFor();
   ok(await j.locator('[data-banda="ubicacion"]').count() === 0, 'sin entrega empezada no hay banda');
   await j.screenshot({ path: OUT + 'e8-rep-antes-m.png', fullPage: true });
@@ -128,7 +128,11 @@ async function y4m(png, archivo) {
   ok(track(n1, "started_step||'|'||(token_hash is not null)||'|'||(customer_from is null)") === 'empezar|true|true', 'la ruta se abre con «Voy por el pedido» (token guardado como huella; el cliente todavía no)');
   ok(sql(`select count(*) from operation_events e join operations o on o.id = e.operation_id where o.number = '${n1}' and e.kind = 'driver_started'`) === '1', 'queda en la línea de tiempo del pedido');
   await j.context().setGeolocation(punto(1)); await dormir(1200); await j.context().setGeolocation(punto(2));
-  ok(await espera(() => +track(n1, 'positions_n') >= 1, 30000), `la web sube las posiciones (${track(n1, 'positions_n')})`);
+  const subio = await espera(() => +track(n1, 'positions_n') >= 1, 30000);
+  // Anchos · en Safari quedó en 0: se dice qué mandó la página (cuántas veces, la hora de cada punto contra la de la prueba) y qué rechazó el servidor.
+  if (!subio) console.log('  · envíos:', JSON.stringify(envios.slice(0, 5)), '· rechazadas:', track(n1, 'rejected_n'), '· desde:', track(n1, "extract(epoch from sharing_from)*1000"),
+    '· la página:', JSON.stringify(await j.evaluate(() => new Promise((ok) => navigator.geolocation.getCurrentPosition((g) => ok({ t: g.timestamp, ahora: Date.now(), lat: g.coords.latitude }), (e) => ok({ error: e.code, msg: e.message }), { timeout: 5000 }))).catch((e) => e.message)));
+  ok(subio, `la web sube las posiciones (${track(n1, 'positions_n')})`);
   ok(/^[A-Za-z0-9_-]{43}$/.test(token ?? ''), 'el teléfono manda el token de la entrega (Authorization: Bearer)');
   ok(sql(`select string_agg(distinct source, ',') from delivery_positions p join operations o on o.id = p.operation_id where o.number = '${n1}'`) === 'web', 'las posiciones de la web quedan como «web»');
   await j.screenshot({ path: OUT + 'e8-rep-banda-m.png', fullPage: false });
