@@ -5008,3 +5008,19 @@ la quieres distinta. **Decisión por defecto (AB):** solo el permiso «aprobar»
 **Decisión tomada (reversible):** lo editado sale **al instante**, pero **el repo sigue mandando**: mientras el archivo no cambie, el despliegue no lo pisa;
 cuando cambia, gana el repo. Lo editado de vecinos, negocios y porteros lo paso yo al repo leyendo el trabajo «Ayuda editada» (GitHub); lo del equipo nunca
 sale de la base. Si prefieres que una edición quede como **borrador** hasta que la revise alguien más, se cambia sin perder nada.
+
+## Fase 9 · 9n-20, 9n-21 y reporte — Ver como cliente, cupón para seguidores, conciliación (16 nov)
+**Qué mirar (teléfono para el vecino, escritorio para el panel y el Super Admin):**
+- **Cupón para seguidores.** Como Pedro (dueño, 570-555-0133): Panel › Novedades › Publicar novedad › **Cupón para seguidores** — código, descuento,
+  compra mínima, usos y VENCE. Como Marisol (570-555-0122): en la página de Sabor Dominicano › Novedades, si no lo sigue ve «SOLO PARA SEGUIDORES» y
+  «Seguir para verlo»; al seguir ve el código. En el pago (pagar en el local) escribe el código y toca **Aplicar**: con menos de la compra mínima dice el
+  mínimo; con el mínimo, «−$X · APLICADO» y la línea del cupón en el resumen. El pedido y el panel del negocio dicen el cupón. Un segundo uso dice «Ya
+  usaste este cupón.».
+- **Ver como cliente un negocio oculto.** Como Ana (Super Admin, 570-555-0199): Negocios › un negocio pausado u oculto › 360 › **Ver como cliente**: se abre
+  su página con el aviso «VISTA DEL EQUIPO · …» arriba. Un vecino que abre el mismo enlace no lo ve.
+- **Reporte diario y Analítica › Dinero:** la fila de conciliación con Stripe («cuadra», «no cuadra · $…» o «no corrió ayer») y el grupo «CONCILIACIÓN CON
+  STRIPE» con tres cifras (solo con todas las ciudades).
+- **Copiloto del equipo en inglés:** con el Super Admin en EN, el borrador del copiloto en Soporte sale en inglés.
+
+**Decisiones tomadas (reversibles):** el cupón solo vale en pedidos en línea de comida (no en citas ni boletos), una vez por persona, y el descuento lo pone
+el negocio (la comisión se cobra sobre lo que paga el cliente). Si quieres que también valga en otras ventas o que To'Latino ponga parte, se amplía.
