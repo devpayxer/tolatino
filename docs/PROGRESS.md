@@ -2436,3 +2436,6 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   siempre), pestañas Tienda/Renta y Reservar, `equipo` en `lib/ficha.ts`, una sola copia por aparato (`lib/ancho`), `?tab=` en computadora baja a su
   sección. Guardián `fichaNuevaSoloPro` ampliado (alrevesC005 8/8); e2e `fic006` (111 ✓ local); fie4u, tra4x, apt4f, menu2b y rsv2e a la ficha nueva.
   Salud: «SIN SEGURO» ya no sale dos veces. Sigue C-007.
+- **C-007 · La ficha nueva reemplaza APP-NEG-LISTING de los Pro (Free igual)** — interruptor `ficha_nueva_pro` (migración 0170, sección
+  «negocios» de Configuración; de fábrica 1); `page.tsx` lo lee en cada visita. Guardián `fichaNuevaSoloPro` (alrevesC005 9/9); e2e `fic007`
+  (22 ✓ local); ayuda `admin-configuracion.md`. Sigue C-008.

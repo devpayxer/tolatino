@@ -16,6 +16,8 @@ import { db, tx } from "./db";
 export type ClaveConfig =
   | "com_lim_publicaciones" | "com_lim_comentarios" | "com_lim_votos" | "com_lim_conversaciones" | "com_lim_reportes"
   | "com_editar_min" | "com_apelar_dias" | "com_encuesta_dias_max" | "com_traduccion_hora" | "com_resumen_hora" | "cup_dias_def"
+  // C-007 · la ficha nueva para los Pro (0170)
+  | "ficha_nueva_pro"
   | "pts_tope_dia"
   | "sp_seguro_guardar_h" | "sp_total_escrito_dias" | "sp_notas_purga_dias" | "sp_fotos_ayuda_dias" | "ayuda_negocio_h"
   | "noche_responder_min" | "noche_mesa_guardada_min" | "noche_fila_viva_min" | "noche_corte_min"
@@ -126,7 +128,7 @@ export async function valores<K extends ClaveConfig>(...ks: K[]): Promise<Record
 export const cfgSql = (k: ClaveConfig) => `cfg_int('${k}')`;
 
 /* ── Configuración (Super Admin › Sistema › Configuración) ── */
-export type Seccion = "comunidad" | "gamificacion" | "salud_pro" | "hogar_auto" | "noche" | "edu" | "fe_inm_autos" | "eventos" | "compa" | "soporte" | "apps" | "retencion" | "crecimiento" | "dinero" | "ciudades" | "despliegues" | "avisos" | "repartidor" | "colas";
+export type Seccion = "comunidad" | "gamificacion" | "salud_pro" | "hogar_auto" | "noche" | "edu" | "fe_inm_autos" | "eventos" | "compa" | "soporte" | "apps" | "retencion" | "crecimiento" | "dinero" | "ciudades" | "despliegues" | "avisos" | "repartidor" | "colas" | "negocios";
 
 export type FilaConfig = {
   key: ClaveConfig; seccion: Seccion; label: Bi; help: Bi | null; unidad: Bi; min: number; max: number; def: number; v: number; cambiado: boolean;

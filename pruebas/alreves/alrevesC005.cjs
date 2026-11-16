@@ -8,7 +8,9 @@ const R = ENT.RAIZ;
 const P = 'apps/web/app/(app)/n/[id]/page.tsx', F = 'apps/web/app/(app)/n/[id]/FichaNueva.tsx', B = 'apps/web/app/(app)/n/[id]/cita/page.tsx', K = 'apps/web/app/(app)/n/[id]/cita/Booking.tsx';
 const casos = [
   ['valorDeCliente', P, 'import { CFG_FICHA } from "@/lib/ficha-nueva";', 'import { CFG_FICHA } from "./FichaNueva";'],
-  ['fichaNuevaSoloPro', P, '{f.pro && CFG_FICHA[f.cat] ? (', '{CFG_FICHA[f.cat] ? ('],
+  ['fichaNuevaSoloPro', P, '{f.pro && CFG_FICHA[f.cat] && fichaNueva ? (', '{CFG_FICHA[f.cat] && fichaNueva ? ('],
+  // C-007: el interruptor de Configuración se salta (la ficha nueva siempre encendida).
+  ['fichaNuevaSoloPro', P, '(await valor("ficha_nueva_pro")) === 1 : false;', 'true : false;'],
   ['fichaNuevaSoloPro', F, 'void horasDeCita(v.cp.negocio.id,', 'void Promise.resolve(v.cp.negocio.id,'],
   ['fichaNuevaSoloPro', B, 'd >= 0 && d <= 13 && Number.isInteger(m) && m >= 0 && m < 1440', 'd >= 0 && Number.isInteger(m)'],
   ['fichaNuevaSoloPro', K, 'find((y) => y.m === inicial.h && y.free)', 'find((y) => y.m === inicial.h)'],

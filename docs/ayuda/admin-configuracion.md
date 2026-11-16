@@ -143,6 +143,12 @@ many **rejected attempts per minute** it takes before answering «wait» (60) an
   Admin (Planes, Catálogo) dicen el valor.
 - **Licencias:** el aviso de revisión (`lic_aviso_dias`, 14 días) también lo dice Analítica («POR VENCER EN 14 DÍAS»).
 
+## Negocios: la ficha nueva de los Pro
+- **Negocios › Ficha nueva para los negocios Pro** (`ficha_nueva_pro`, 1; 0–1): con **1**, la página de cada negocio Pro es la ficha nueva
+  (pestañas en el teléfono; una sola página con la tarjeta a la derecha en la computadora). Con **0**, todos los Pro vuelven a la ficha de
+  siempre al momento, sin desplegar nada. Los negocios Free siempre tienen la de siempre. Pedidos, citas, reservas y apartados funcionan igual
+  con las dos. El cambio pide motivo y queda en la auditoría.
+
 ## English
 
 ### What it does
@@ -270,3 +276,9 @@ notices show the value from here.
   orders, appointments, reservations and requests, per month of its city). When it is reached, its page shows Call. The dashboard (Plan, Menu,
   Services) and the Super Admin (Plans, Catalog) state the value.
 - **Licenses:** the review notice (`lic_aviso_dias`, 14 days) is also stated by Analytics («EXPIRING IN 14 DAYS»).
+
+### Businesses: the new page for Pro
+- **Businesses › New business page for Pro businesses** (`ficha_nueva_pro`, 1; 0–1): with **1**, every Pro business page is the new page
+  (tabs on the phone; one page with the card on the right on a computer). With **0**, every Pro goes back to the usual page right away, with no
+  deploy. Free businesses always have the usual one. Orders, appointments, reservations and holds work the same with both. The change asks
+  for a reason and stays in the audit log.

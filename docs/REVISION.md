@@ -5047,3 +5047,10 @@ Agua y Hielo Cristal (mercado), Andrea Events (fiestas), Van Express NYC (transp
 - La barra de abajo (teléfono) y la tarjeta de la derecha (computadora) hacen lo mismo que antes: pedir, apartar, rentar, reservar mesa, inscribirse, pedir visita.
 **Decidido por mí (reversible):** «Tienda» (o «Renta» en transporte) y «Reservar» son pestañas aparte cuando el negocio tiene esas cosas; en computadora,
 la tarjeta de la derecha cambia a «Reservar mesa» cuando estás en esa parte o ya elegiste una hora.
+
+## C-007 — La ficha nueva para todos los Pro, con interruptor (16 nov)
+**Dónde:** Super Admin › Sistema › Configuración › **Negocios** › «Ficha nueva para los negocios Pro».
+**Qué mirar:** en 1 (como viene), todos los Pro tienen la ficha nueva y los Free la de siempre. Si algo no te gusta, ponlo en 0 con un motivo:
+todos los Pro vuelven a la ficha de antes al momento, sin esperar un despliegue. Pedidos, citas y reservas siguen igual con las dos.
+**Decidido por mí (reversible):** el interruptor es uno solo para todos los Pro (no por categoría ni por negocio). Si prefieres encenderla por
+categoría, se agrega.

@@ -9753,7 +9753,10 @@ const guardianes = {
   fichaNuevaSoloPro() {
     const G = "fichaNuevaSoloPro", P = "apps/web/app/(app)/n/[id]/page.tsx", F = "apps/web/app/(app)/n/[id]/FichaNueva.tsx", B = "apps/web/app/(app)/n/[id]/cita/page.tsx", K = "apps/web/app/(app)/n/[id]/cita/Booking.tsx";
     if (!existsSync(F)) return;
-    if (!/\{f\.pro && CFG_FICHA\[f\.cat\] \? \(\s*<FichaNueva/.test(readFileSync(P, "utf8"))) falla(G, P, 0, "la ficha nueva solo para Pro con su categoría lista ({f.pro && CFG_FICHA[f.cat] ? <FichaNueva …)");
+    const pg = readFileSync(P, "utf8");
+    if (!/\{f\.pro && CFG_FICHA\[f\.cat\] && fichaNueva \? \(\s*<FichaNueva/.test(pg)) falla(G, P, 0, "la ficha nueva solo para Pro con su categoría lista y el interruptor encendido ({f.pro && CFG_FICHA[f.cat] && fichaNueva ? <FichaNueva …)");
+    // C-007 · el interruptor vive en Configuración (ficha_nueva_pro, 0170) y se lee en cada visita: con 0, todos vuelven a la de siempre sin desplegar.
+    if (!/const fichaNueva = f\.pro && CFG_FICHA\[f\.cat\] \? \(await valor\("ficha_nueva_pro"\)\) === 1 : false;/.test(pg)) falla(G, P, 0, "la ficha nueva se enciende con Configuración › Negocios (valor(\"ficha_nueva_pro\") === 1), no con un valor escrito en el código");
     const fn = sinComent(F);
     if (!/void horasDeCita\(v\.cp\.negocio\.id,/.test(fn)) falla(G, F, 0, "las horas de la hoja salen del servidor (horasDeCita)");
     if (/\bBASE\s*=\s*\[|taken:\s*[^!]*hash\(/.test(fn)) falla(G, F, 0, "la ficha no inventa horas en el cliente (eso era del prototipo)");

@@ -213,6 +213,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   }
   // Al volver de «Entra» la pestaña conserva personas, día y hora; «Cambiar» trae la solicitud a editar.
   const num = (x?: string) => (x && /^\d{1,4}$/.test(x) ? Number(x) : undefined);
+  // C-007 · el interruptor de Configuración › Negocios (0170): con 0, todos los Pro vuelven a la ficha de siempre al momento.
+  const fichaNueva = f.pro && CFG_FICHA[f.cat] ? (await valor("ficha_nueva_pro")) === 1 : false;
   const rsvInicial = { p: num(sp.p), i: num(sp.d), h: num(sp.h), editar: sp.editar && /^R-\d{1,10}$/.test(sp.editar) ? sp.editar : undefined };
   const t = (await textosT(lang)).ficha;
   // 9h · schema.org/LocalBusiness: lo que dice la ficha (nombre, teléfono público, dirección si tiene local, el punto público y la portada), sin datos de nadie.
@@ -225,7 +227,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     {vistaEquipo ? null : <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, "\\u003c") }} />}
     {vistaEquipo ? <AvisoEquipo es={lang === "es"} estado={f.situacion} /> : null}
     {/* C-005 · Ficha nueva (cambios.md · paquete C-005 → C-008): solo Pro y solo las categorías que ya tienen su versión nueva. Free sigue con la de siempre. */}
-    {f.pro && CFG_FICHA[f.cat] ? (
+    {f.pro && CFG_FICHA[f.cat] && fichaNueva ? (
       <FichaNueva f={{ ...f, guardado: fav.has(f.id) }} svc={svc} menu={menu} rsv={rsv} ofi={ofi} salud={salud} prof={prof} merc={merc} fiesta={fiesta} trans={trans}
         noche={noche} insc={insc} fe={fe} inm={inm} dl={dl} tienda={tienda} resenas={res} novedades={nov && nov.posts.length ? nov : null} jobs={jobs} eventos={evts}
         sesion={!!u} es={lang === "es"} tabInicial={sp.tab} rsvInicial={rsvInicial} desk0={(await anchoInicial()) >= 1024}
