@@ -110,7 +110,9 @@ const limpiar = () => {
     await espera(async () => (await opc.count()) > 0); await opc.first().click();
     await p.locator('[data-pieza="mapa-pin"] [role="application"]').waitFor();
     await p.locator('[data-pieza="mapa-pin"] [role="application"]').scrollIntoViewIfNeeded(); const m2 = await p.locator('[data-pieza="mapa-pin"] [role="application"]').boundingBox();
-    for (let i = 0; i < 4; i++) { await p.mouse.move(m2.x + m2.width / 2, m2.y + m2.height / 2); await p.mouse.down(); await p.mouse.move(m2.x + 10, m2.y + 10, { steps: 4 }); await p.mouse.up(); }
+    // Se arrastra hasta que el mapa diga «muy lejos» (tope 12): cuánto lleva cada arrastre depende del ancho y del zoom de cada aparato (iPad: más).
+    const lejos = () => p.locator('[data-pieza="mapa-pin"]').getAttribute('data-lejos');
+    for (let i = 0; i < 12 && (await lejos()) !== '1'; i++) { await p.mouse.move(m2.x + m2.width / 2, m2.y + m2.height / 2); await p.mouse.down(); await p.mouse.move(m2.x + 10, m2.y + 10, { steps: 4 }); await p.mouse.up(); await p.waitForTimeout(250); }
     ok(await espera(async () => (await p.locator('[data-pieza="mapa-pin"]').getAttribute('data-lejos')) === '1'), 'muy lejos: el mapa avisa antes de guardar');
     await p.locator('[data-screen-label="Mi cuenta · barra"]').getByText('Guardar dirección').click();
     ok(await espera(async () => /El pin quedó muy lejos de esa dirección/.test(await p.locator('body').innerText())), 'muy lejos: el servidor no lo acepta («El pin quedó muy lejos de esa dirección»)');

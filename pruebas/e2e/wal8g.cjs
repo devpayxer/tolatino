@@ -343,7 +343,8 @@ const ws = async (metodo, ruta, token, cuerpo, extra = {}) => {
     // Interruptor apagado: no salen pases nuevos.
     sql(`update feature_flags set enabled = false where key = 'app.wallet.apple'`); await new Promise((r) => setTimeout(r, 16000));
     await pd.goto(B + `/cuenta/boletos/${nuevo}`);
-    ok(await espera(async () => (await pd.locator('[data-wallet="apple"]').count()) === 0 && (await pd.locator('[data-wallet="google"]').count()) === 1), 'app.wallet.apple apagado: el botón de Apple no sale (Google sí)');
+    // En el iPad solo se ofrece Apple Wallet (Google Wallet no existe ahí): con Apple apagado no queda ningún botón.
+    ok(await espera(async () => (await pd.locator('[data-wallet="apple"]').count()) === 0 && (await pd.locator('[data-wallet="google"]').count()) === (ipad ? 0 : 1)), ipad ? 'app.wallet.apple apagado: en el iPad no queda botón de Wallet' : 'app.wallet.apple apagado: el botón de Apple no sale (Google sí)');
     sql(`update feature_flags set enabled = true where key = 'app.wallet.apple'`);
 
     // ── 12 · Límites: por teléfono por hora (en la base) y por dirección por minuto ──

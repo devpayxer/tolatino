@@ -61,7 +61,11 @@ if (id) {
               const pedidos = [...document.querySelectorAll('*')].flatMap((el) => [...getComputedStyle(el).backgroundImage.matchAll(/url\("?([^")]+)"?\)/g)].map((m) => new URL(m[1], location.href).href))
                 .concat([...document.scripts].map((x) => x.src), [...document.querySelectorAll('link[rel=stylesheet],link[rel=preload]')].map((x) => x.href)).filter((u) => u && !u.startsWith('data:'));
               return [...new Set(pedidos)].filter((u) => !hechos.has(u)).slice(0, 6); })(), iframes: document.querySelectorAll('iframe').length })).catch((x) => ({ error: String(x.message).slice(0, 120) }));
-          console.log(`  · webkit: «load» de ${u} no salió en 30 s (en ${page.url()}): ${JSON.stringify(est)}; otra vez`);
+          // Si la página ya está (el documento terminó de leerse) y lo único sin terminar son fotos de afuera (pexels de la semilla) o el script
+          // «nomodule» que un navegador moderno nunca baja, la prueba sigue: «load» no es lo que prueba, y lo que sí prueba lo espera ella.
+          const soloRuido = est.rs && est.rs !== 'loading' && (est.sinFin ?? []).every((x) => !x.startsWith(new URL(u, page.url()).origin) || /\/polyfills-[^/]+\.js$/.test(x));
+          console.log(`  · webkit: «load» de ${u} no salió en 30 s (en ${page.url()}): ${JSON.stringify(est)}; ${soloRuido ? 'la página ya está: sigue' : 'otra vez'}`);
+          if (soloRuido) return null;
           return ir(u, o);
         }
         throw e;
