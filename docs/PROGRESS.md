@@ -2453,7 +2453,7 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   La precarga de dispositivos pone la tableta como se usa (teléfono en vertical, escritorio en horizontal), respeta el agente propio de cada prueba,
   abre Chromium para lo que solo existe ahí y filtra el ruido de WebKit al navegar; el detalle del panel entre 1024 y 1199 es la misma pieza que la
   columna; las pruebas miden «sin scroll de lado» contra la ventana (guardián `anchoContraLaVentana`, alrevesAnchos).
-- **Anchos (2) · a7f6f15 (CI 43898185881 en curso):** lo que cazó la corrida anterior.
+- **Anchos (2) · a7f6f15 (CI 43898185881):** regresión 186/186; escritorio 1024 185/186, iPhone SE 180/186, iPad 178/186. Lo que cazó la corrida anterior:
   · **Redirecciones relativas** (`lib/ir-a.ts`): /i/[code], correo/baja, datos/archivo, pases/apple, app/aviso y /q armaban la dirección con
     `req.url` o `req.nextUrl.origin` = el host del proceso (`http://0.0.0.0:3100` en el servidor independiente): Safari no lo abre y detrás de nginx
     era una dirección interna. Guardián `redireccionRelativa` (+ `enlaceSoloPropio` al día).
@@ -2467,3 +2467,10 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   · Guardianes en verde; alrevesAnchos 7/7, alreves9c 27/27, alreves9h 53/53. WebKit no se puede instalar en este contenedor (la descarga se
     permitió en la red pero instalar navegadores no está autorizado aquí): lo de Safari se prueba en CI.
   · Siguen sin explicar (diagnóstico en la corrida): app8e (Safari no sube posiciones), dir9m (pin del mapa), din9n4 (botón apagado en el iPad).
+- **Anchos (3) · 8e90791 (CI 43929902521 en curso):**
+  · **Cookies con una sola regla** (`lib/cookie-segura.ts`, guardián `cookieSegura`, alrevesAnchos 10/10): la marca Secure sale de la conexión
+    real (x-forwarded-proto), como la sesión. La ciudad del Super Admin la decidía NODE_ENV (Safari la tiraba en http: adm9n3 en el SE y el iPad);
+    el idioma, la ciudad que miras, el dispositivo y la invitación no la llevaban nunca. Comprobado con curl: con https sale Secure, con http no.
+  · Pruebas: app8e reintenta el 429 del token (la página manda con el mismo; escritorio 1024); free2b espera el aviso; wal8g en el iPad, una
+    insignia; la precarga dice en qué quedó la página si «load» no sale en 30 s (silla3d, app8a, evt6b-6c) y va otra vez.
+  · din9n4 y dir2f pasaron en la corrida 2; dir9m y app8e llevan su diagnóstico/arreglo a esta.

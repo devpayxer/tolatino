@@ -5079,3 +5079,7 @@ dentro de la ficha. El «precio anterior» tachado necesita un dato nuevo en el 
   interna del servidor).
 **Decidido por mí (reversible):** las métricas de velocidad que el teléfono manda solas, pasado el tope, se descartan en silencio (antes
 el servidor respondía con un error que Safari mostraba en la consola). El aparato de un iPad se llama «iPad» en la lista de avisos push y en Soporte.
+- **Selector de ciudad del Super Admin en Safari:** elegir una ciudad filtra Negocios y Usuarios igual que en Chrome (la cookie de la ciudad
+  ahora sigue la misma regla que la sesión).
+**Decidido por mí (reversible):** todas las cookies (idioma, ciudad que miras, aparato, invitación) llevan la marca «solo por conexión segura»
+cuando la persona entra por https, igual que la sesión.
