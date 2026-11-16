@@ -12,7 +12,7 @@ import { abrirComoLlegar } from "@/lib/como-llegar";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
+const { Icon, Button, Chip, MenuTile, MenuItemRow, OrderBar } = UI as unknown as Record<N | "Chip" | "MenuTile" | "MenuItemRow" | "OrderBar", ComponentType<any>>;
 const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: MouseEvent) => e?.stopPropagation();
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
@@ -65,7 +65,9 @@ export function useMerc(mp: MercPublico | null, es: boolean) {
   const llegar = () => abrirComoLlegar({ dir: mp.negocio.direccion ?? mp.negocio.nombre });
   const llamar = () => { if (mp.negocio.telefono) location.href = `tel:${mp.negocio.telefono}`; };
   return { mp, es, E2, nm, h, ord, secs, notes, riel, precio, meta, pod, tot, mio, hoja, aviso, abrir: (id: string, e?: MouseEvent) => { stop(e); setHoja(id); }, cerrar: () => setHoja(null), agregar, quitar, verPedido, llegar, llamar, linea,
-    otroMercado: !!cart && cart.biz !== mp.negocio.id && cart.lines.length > 0, top: mp.prods.filter((p) => !p.ago).slice(0, 4) };
+    otroMercado: !!cart && cart.biz !== mp.negocio.id && cart.lines.length > 0, top: mp.prods.filter((p) => !p.ago).slice(0, 4),
+    // C-008 · «Lo más pedido» de verdad: lo que el mercado fija y lo más pedido en 30 días (lib/merc-publico).
+    pop: mp.pop.map((id) => mp.prods.find((p) => p.id === id)).filter((p): p is ProdMerc => !!p) };
 }
 export type Me = NonNullable<ReturnType<typeof useMerc>>;
 
@@ -119,6 +121,67 @@ export function MeTab({ v, desk }: { v: Me; desk: boolean }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/* C-008 · el menú «C» del mercado en la ficha nueva (canvas «Menú con fotos»): chips de sección, «Lo más pedido» con foto, cada producto en su
+   tarjeta con foto y +, y en el teléfono la barra negra «Ver pedido». La lógica es la de siempre: el + agrega directo solo lo que va por unidad, sin
+   corte ni punto y sin otro mercado en el carrito; lo demás abre la hoja del producto (cuánto, corte, lo que se retiene). «Ver pedido» lleva a
+   «Tu pedido» del mercado (pickup o envío, retener el estimado + 10 %, enviar). Sin foto sale el espacio gris del sistema de diseño. */
+export function MeMenu({ v, desk }: { v: Me; desk: boolean }) {
+  const { E2 } = v;
+  const lang = v.es ? "ES" : "EN";
+  const enPedido = (id: string) => (v.mio?.lines ?? []).filter((l) => l.item === id).reduce((a, l) => a + l.q, 0);
+  const directo = (p: ProdMerc) => v.pod(p) && p.k !== "peso" && !p.opc && !v.otroMercado;
+  const mas = (p: ProdMerc) => { if (!v.pod(p)) return; const q = enPedido(p.id); if (directo(p)) v.agregar(p, q + 1, null); else v.abrir(p.id); };
+  const menos = (p: ProdMerc) => { const q = enPedido(p.id); if (q > 1 && directo(p)) v.agregar(p, q - 1, null); else v.quitar(p.id, null); };
+  const tags = (p: ProdMerc) => [p.ago ? { label: E2("SE ACABÓ HOY", "SOLD OUT TODAY"), tone: "neutral" } : null,
+    p.edad ? { label: E2("21+ · SOLO EN LA TIENDA", "21+ · IN STORE ONLY"), tone: "neutral" } : p.tienda ? { label: E2("SOLO EN LA TIENDA", "IN STORE ONLY"), tone: "neutral" } : null,
+    !p.ago && v.precio(p).s ? { label: v.precio(p).s, tone: p.k === "peso" ? "signal" : "neutral" } : null, p.ebt && !p.edad ? { label: "EBT", tone: "neutral" } : null].filter(Boolean);
+  const [sec, setSec] = useState("all");
+  const secs = v.secs.filter((x) => sec === "all" || x.title === sec);
+  return (
+    <div data-screen-label={desk ? "Ficha · productos · desktop" : "Ficha · productos"} data-menu="c" className={desk ? "flex flex-col gap-5 pt-2" : "flex flex-col gap-4 pt-[18px]"}>
+      <div className={desk ? "" : "px-5"}><MeTuPedido v={v} /></div>
+      {v.secs.length > 1 ? (
+        <div className={`hs flex gap-2 overflow-x-auto ${desk ? "" : "px-5"}`}>
+          {[{ k: "all", l: E2("Todo", "All") }, ...v.secs.map((x) => ({ k: x.title, l: x.title.charAt(0) + x.title.slice(1).toLowerCase() }))].map((c) => (
+            <Chip key={c.k} variant={sec === c.k ? "selected" : "filter"} onClick={() => setSec(c.k)}>{c.l}</Chip>))}
+        </div>) : null}
+      {sec === "all" && v.pop.length ? (
+        <div data-screen-label="Ficha · productos · lo más pedido">
+          <div className={`font-display text-[18px] font-extrabold leading-none tracking-[-0.03em] ${desk ? "" : "px-5"}`}>{E2("Lo más pedido", "Most ordered")}</div>
+          <div className={`hs mt-3 flex gap-2.5 overflow-x-auto pb-1.5 ${desk ? "" : "px-5"}`}>
+            {v.pop.map((p) => <MenuTile key={p.id} lang={lang} name={v.nm(p.name)} price={v.precio(p).l} image={p.foto ?? undefined} qty={enPedido(p.id)} off={!v.pod(p)} width={156} height={124}
+              onOpen={() => v.abrir(p.id)} onPlus={() => mas(p)} onMinus={() => menos(p)} onExpand={() => v.abrir(p.id)} />)}
+          </div>
+        </div>) : null}
+      {secs.map((sc) => (
+        <div key={sc.title} className={desk ? "" : "px-5"}>
+          <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.03em]">{sc.title.charAt(0) + sc.title.slice(1).toLowerCase()}</div>
+          <div className={desk ? "mt-3 grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5" : "mt-1 flex flex-col"}>
+            {sc.items.map((p) => (
+              <div key={p.id} className={desk ? "grid min-w-0" : "mt-2.5 grid min-w-0"}>
+                <MenuItemRow lang={lang} card name={v.nm(p.name)} desc={v.nm(p.desc) || undefined} price={v.precio(p).l} tags={tags(p)} image={p.foto ?? undefined} qty={enPedido(p.id)} off={!v.pod(p)}
+                  onOpen={() => v.abrir(p.id)} onPlus={() => mas(p)} onMinus={() => menos(p)} onExpand={() => v.abrir(p.id)} />
+              </div>))}
+          </div>
+        </div>))}
+      {!desk ? <div className="flex flex-col gap-3 px-5">{v.notes.slice(0, 4).map(([ic, t]) => <Nota key={t} ic={ic} t={t} />)}</div> : null}
+      {!desk ? <MeOrderBar v={v} /> : null}
+    </div>
+  );
+}
+/* C-008 · en el teléfono, con algo en el pedido, la barra de abajo pasa a la barra negra «Ver pedido · N productos». */
+export function MeOrderBar({ v }: { v: Me }) {
+  const { E2 } = v;
+  if (v.hoja || !v.mio || !v.tot.n) return null;
+  return (
+    <div data-screen-label="Ficha · ver pedido del mercado" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/95 px-4 pb-[calc(16px+env(safe-area-inset-bottom))] pt-3 backdrop-blur-[14px] lg:hidden">
+      {v.aviso && <div role="status" className="absolute inset-x-5 -top-12 rounded-[14px] bg-ink px-3.5 py-2.5 text-center text-[12.5px] font-bold text-white">{v.aviso}</div>}
+      <OrderBar label={`${E2("Ver pedido", "View order")} · ${v.tot.n} ${v.tot.n === 1 ? E2("producto", "item") : E2("productos", "items")}`}
+        sub={v.tot.lb > 0 ? E2("SE COBRA LO QUE PESE", "YOU PAY WHAT IT WEIGHS") : `${v.riel[0]!.k} · ${v.riel[0]!.v}`.toUpperCase()} total={`${E2("Est. ", "Est. ")}${money(v.tot.est)}`} onClick={v.verPedido} />
     </div>
   );
 }

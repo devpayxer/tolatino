@@ -3,6 +3,7 @@ import { diasEspeciales, rangosDia } from "./dias-especiales";
 import type { PoolClient } from "pg";
 import { cfgSql } from "./config";
 import { db, tx } from "./db";
+import { populares, ventasSqlDe, type Ventas30 } from "./menu-ventas";
 
 /* Apartar productos (Fase 4 · bloque 4f-3). Diseño: TLApartar.hold → el apartado de Tiendas (neg-tienda-flow.js:
    APP-NEG-TIENDA-APARTADO / -ESTADO). Mismo motor para las tiendas de Auto y Hogar y, después, para Tiendas.
@@ -34,6 +35,16 @@ export type TallaVenta = { id: string; label: string; quedan: number };
 export type ArticuloVenta = { id: string; n: Bi; d: Bi; precio: number; foto: string | null; quedan: number; cond: "n" | "u" | null; size: string | null;
   // Tiendas (4q): cómo se vende, sección y tallas con lo que queda («Talla» / «Número»).
   k: string | null; sec: string | null; tallas: TallaVenta[]; label: Bi | null };
+/* C-008 · «Lo más pedido» de la tienda: lo que el negocio fija y lo más apartado (y recogido) en 30 días; solo lo que sigue a la venta. */
+export async function tiendaPopulares(negocio: string, V: ArticuloVenta[]): Promise<string[]> {
+  const [R, F] = await Promise.all([
+    db().query<{ id: string; pedidos: number; uds: number; cents: number }>(ventasSqlDe("hold"), [negocio]),
+    db().query<{ id: string }>(`select id::text from items where business_id = $1 and module = 'shop' and featured and removed_at is null and status = 'live' order by items.sort, items.id`, [negocio]),
+  ]);
+  const ventas: Ventas30 = Object.fromEntries(R.rows.map((r) => [r.id, { pedidos: r.pedidos, uds: r.uds, cents: r.cents }]));
+  const vende = (id: string) => V.some((x) => x.id === id && x.quedan > 0 && x.k !== "plan");
+  return populares(ventas, F.rows.map((r) => r.id).filter(vende), vende);
+}
 export async function tiendaVenta(negocio: string): Promise<ArticuloVenta[]> {
   return (await db().query<ArticuloVenta & { a: { cond?: string; size?: string } }>(
     `select i.id::text, i.name as n, i.descr as d, i.price_cents as precio, i.photos[1] as foto, i.attrs as a, i.shop_kind as k, i.section_id::text as sec, i.size_label as label,

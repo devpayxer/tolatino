@@ -19,6 +19,9 @@ const casos = [
   // C-006: el Resumen del mercado sin lo suyo (la balanza, cómo se cobra por peso) y la página pintada dos veces (teléfono y computadora a la vez).
   ['fichaNuevaSoloPro', F, 'resumen: (d) => <MeResumen v={me} desk={d} onAll={irCat} />, ', ''],
   ['fichaNuevaSoloPro', F, '{modo === "d" ? (', '{true ? ('],
+  // C-008: el mercado vuelve a la lista de siempre, y «Lo más pedido» sale de los primeros de la lista en vez de lo pedido de verdad.
+  ['fichaNuevaSoloPro', F, 'tab: (d) => <MeMenu v={me} desk={d} />', 'tab: (d) => <MeResumen v={me} desk={d} />'],
+  ['fichaNuevaSoloPro', 'apps/web/app/(app)/n/[id]/Mercado.tsx', '{v.pop.map((p) => <MenuTile', '{v.top.map((p) => <MenuTile'],
 ];
 const crear = [];
 let bien = 0, total = 0;

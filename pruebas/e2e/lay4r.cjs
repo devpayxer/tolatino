@@ -28,16 +28,16 @@ const PAYS = (n) => sql(`select string_agg(p.kind || case when p.kind = 'balance
   const h = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); await entrar(h, '5705550299');
   for (const p of [m, h]) { p.on('pageerror', e => err.push(e.message)); p.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); }); }
   const tienda = async () => { await m.goto(B + `/n/${T}?tab=shop`); await m.locator('[data-screen-label="Ficha · tienda"]').waitFor(); };
-  const card = (nm) => m.locator('[data-screen-label="Ficha · tienda"] > div.grid > div').filter({ hasText: nm });
+  const card = (nm) => m.locator('[data-menu="c"] > div').filter({ hasText: nm }).first(); // C-008: la tarjeta del menú «C»
   const hoja = m.locator('[data-screen-label="Tienda · artículo"]');
   const tomarPlan = async (cap) => {
-    await tienda(); await clic(card('Vestido de quince').getByRole('button', { name: 'Apartar' })); await hoja.waitFor();
+    await tienda(); await clic(card('Vestido de quince')); await hoja.waitFor();
     if (cap) { ok(await espera(hoja.getByText(/Plan: hoy se retiene el abono de \$64 \(20 %\) y el resto en 4 pagos de \$64, uno cada 14 días/)), 'hoja: el abono y los pagos'); await m.screenshot({ path: OUT + 'l2-hoja-m.png' }); }
     await clic(hoja.getByRole('button', { name: 'Apartar', exact: true })); await hoja.waitFor({ state: 'detached' });
   };
   const pg = m.locator('[data-screen-label="APP-NEG-TIENDA-APARTADO · móvil"]');
   const mandarPlan = async (cap) => {
-    await clic(m.getByRole('button', { name: 'Ver apartado' })); await m.waitForURL(/\/apartar$/); await pg.getByText('TU PLAN').waitFor();
+    await clic(m.getByRole('button', { name: /^(Ver apartado|Ver lo que apartas)/ }) /* C-008: en el teléfono, la barra negra */); await m.waitForURL(/\/apartar$/); await pg.getByText('TU PLAN').waitFor();
     if (cap) await m.screenshot({ path: OUT + 'l3-tu-plan-m.png', fullPage: true });
     await clic(m.getByRole('button', { name: 'Continuar' })); await pg.getByText('EL ACUERDO, POR ESCRITO').waitFor();
     if (cap) {
@@ -54,10 +54,10 @@ const PAYS = (n) => sql(`select string_agg(p.kind || case when p.kind = 'balance
   // ── 1. Ficha y apartar en plan ──
   await tienda(); ok(await espera(card('Vestido de quince').getByText('ABONO 20 % · 4 PAGOS')), 'ficha: ABONO 20 % · 4 PAGOS');
   // Lo que va en plan se aparta solo: con la blusa en el carrito, apartar el vestido en plan la quita.
-  await clic(card('Blusa de encaje').getByRole('button', { name: 'Apartar' })); await hoja.waitFor(); await clic(hoja.getByRole('radio', { name: /^S( |$)/ })); await clic(hoja.getByRole('button', { name: 'Apartar', exact: true })); await hoja.waitFor({ state: 'detached' });
-  await clic(card('Vestido de quince').getByRole('button', { name: 'Apartar' })); await hoja.waitFor(); ok(await espera(hoja.getByText(/Lo que va en plan se aparta solo/)), 'aviso: lo que va en plan se aparta solo'); await clic(hoja.getByRole('button', { name: 'Cerrar' }));
+  await clic(card('Blusa de encaje')); await hoja.waitFor(); await clic(hoja.getByRole('radio', { name: /^S( |$)/ })); await clic(hoja.getByRole('button', { name: 'Apartar', exact: true })); await hoja.waitFor({ state: 'detached' });
+  await clic(card('Vestido de quince')); await hoja.waitFor(); ok(await espera(hoja.getByText(/Lo que va en plan se aparta solo/)), 'aviso: lo que va en plan se aparta solo'); await clic(hoja.getByRole('button', { name: 'Cerrar' }));
   await tomarPlan(true);
-  ok(await espera(m.getByText(/TU APARTADO · 1 ARTÍCULO/)), 'el carrito quedó solo con el vestido en plan');
+  ok(await espera(m.getByText(/TU APARTADO · 1 ARTÍCULO|Ver lo que apartas · 1 artículo/)), 'el carrito quedó solo con el vestido en plan'); // C-008: en el teléfono, la barra negra
   const A1 = await mandarPlan(true);
   ok(PLAN(A1, "lp.status || '|' || lp.total_cents || '|' || lp.down_cents || '|' || lp.accepted_version || '|' || (lp.terms->>'es' like '%Total: \$320, sin intereses%')") === 'pending|32000|6400|lay-v1|true', `${A1}: plan por confirmar, $320, abono $64, acuerdo guardado (lay-v1)`);
   ok(LP(A1) === '0:due,1:due,2:due,3:due,4:due' && PAYS(A1) === 'deposit:held:6400:0', 'cinco pagos (abono + 4); el abono se retiene');

@@ -75,9 +75,9 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
   sql(`update operations set status = 'cancelled', cancelled_by = 'system', cancelled_at = now() where user_id = ${MARISOL} and kind = 'hold' and status in ('pending', 'change_proposed', 'confirmed')`);
   sql(`update item_variants v set stock_left = 3 from items i where i.id = v.item_id and i.business_id = '${T}' and i.name->>'es' = 'Blusa de encaje' and v.label = 'S'`);
   await m.goto(B + `/n/${T}?tab=shop`); await m.locator('[data-screen-label="Ficha · tienda"]').waitFor();
-  const card = m.locator('[data-screen-label="Ficha · tienda"] > div.grid > div').filter({ hasText: 'Blusa de encaje' }); await clic(card.getByRole('button', { name: 'Apartar' }));
+  await clic(m.locator('[data-menu="c"] > div').filter({ hasText: 'Blusa de encaje' }).first()); /* C-008: menú «C» */
   const hoja = m.locator('[data-screen-label="Tienda · artículo"]'); await hoja.waitFor(); await clic(hoja.getByRole('radio', { name: /^S( |$)/ })); await clic(hoja.getByRole('button', { name: 'Apartar', exact: true })); await hoja.waitFor({ state: 'detached' });
-  await clic(m.getByRole('button', { name: 'Ver apartado' })); await m.waitForURL(/\/apartar$/); await clic(m.getByRole('button', { name: 'Continuar' }));
+  await clic(m.getByRole('button', { name: /^(Ver apartado|Ver lo que apartas)/ }) /* C-008: en el teléfono, la barra negra */); await m.waitForURL(/\/apartar$/); await clic(m.getByRole('button', { name: 'Continuar' }));
   const pg = m.locator('[data-screen-label="APP-NEG-TIENDA-APARTADO · móvil"]'); await pg.getByText('HORA EN QUE PASAS').waitFor();
   await pg.getByRole('radio', { name: /^(LUN|MAR|MIÉ|JUE|VIE|SÁB|DOM) /, disabled: false }).first().click();
   await clic(pg.locator('[role="radio"]:not([aria-disabled="true"])').filter({ hasText: /^\d{1,2}(:\d\d)? [AP]M$/ }).first());

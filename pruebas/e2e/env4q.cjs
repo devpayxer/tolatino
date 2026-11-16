@@ -29,13 +29,13 @@ const STOCK = { 'Blusa de encaje': { S: 3, M: 2, L: 4, XL: 1, '2X': 0 }, 'Vestid
   for (const p of [m, h]) { p.on('pageerror', e => err.push(e.message)); p.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); }); }
   const tienda = async () => { await m.goto(B + `/n/${T}?tab=shop`); await m.locator('[data-screen-label="Ficha · tienda"]').waitFor(); };
   const tomar = async (nm, talla) => {
-    const card = m.locator('[data-screen-label="Ficha · tienda"] > div.grid > div').filter({ hasText: nm }); await clic(card.getByRole('button', { name: 'Apartar' }));
+    await clic(m.locator('[data-menu="c"] > div').filter({ hasText: nm }).first()); /* C-008: el artículo en su tarjeta del menú «C» abre su hoja */
     const hoja = m.locator('[data-screen-label="Tienda · artículo"]'); await hoja.waitFor(); await clic(hoja.getByRole('radio', { name: new RegExp(`^${talla}( |$)`) }));
     await clic(hoja.getByRole('button', { name: 'Apartar', exact: true })); await hoja.waitFor({ state: 'detached' });
   };
   const pg = m.locator('[data-screen-label="APP-NEG-TIENDA-APARTADO · móvil"]');
   const pedirEnvio = async (cap) => {
-    await clic(m.getByRole('button', { name: 'Ver apartado' })); await m.waitForURL(/\/apartar$/);
+    await clic(m.getByRole('button', { name: /^(Ver apartado|Ver lo que apartas)/ }) /* C-008: en el teléfono, la barra negra */); await m.waitForURL(/\/apartar$/);
     await pg.getByText('¿CÓMO LO RECIBES?').waitFor(); await clic(pg.getByRole('radio', { name: /Envío a tu casa/ }));
     if (cap) await m.screenshot({ path: OUT + 'e1-como-m.png', fullPage: true });
     await clic(m.getByRole('button', { name: 'Continuar' })); await pg.getByText('A DÓNDE', { exact: true }).waitFor();

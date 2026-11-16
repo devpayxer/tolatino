@@ -2439,3 +2439,6 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **C-007 · La ficha nueva reemplaza APP-NEG-LISTING de los Pro (Free igual)** — interruptor `ficha_nueva_pro` (migración 0170, sección
   «negocios» de Configuración; de fábrica 1); `page.tsx` lo lee en cada visita. Guardián `fichaNuevaSoloPro` (alrevesC005 9/9); e2e `fic007`
   (22 ✓ local); ayuda `admin-configuracion.md`. Sigue C-008.
+- **C-008 · Menú con fotos y botón + (Comida, Mercado, Tienda)** — `MenuMovil card`, `MeMenu`/`MeOrderBar` (Mercado), `TiendaTab c pop`; «Lo más pedido»
+  real con `ventasSqlDe("market_order"|"hold")` + `populares` (merc-publico, `tiendaPopulares`). Guardián `fichaNuevaSoloPro` (alrevesC005 11/11);
+  e2e `fic008` (10 ✓ local); merc4o, apt4q, lay4r, env4q, res4s al menú «C». Pendiente: precio anterior tachado (LAUNCH).

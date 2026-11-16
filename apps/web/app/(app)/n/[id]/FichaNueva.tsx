@@ -59,7 +59,7 @@ import { InBarra, InHoja, InRiel, InTab, useInsc, InResumen } from "./Insc";
 import { FeBarra, FeContacto, FeHoja, FeRiel, FeTab, useFe, FeResumen } from "./Fe";
 import { InmBarra, InmHoja, InmRiel, InmTab, useInm, InmResumen } from "./Inmueble";
 import { DlBarra, DlHoja, DlRiel, DlTab, useDealer, DlResumen } from "./Dealer";
-import { MeBarra, MeHoja, MeRiel, MeTab, useMerc, MeResumen } from "./Mercado";
+import { MeBarra, MeHoja, MeRiel, useMerc, MeResumen, MeMenu, MeOrderBar } from "./Mercado";
 import { TiendaTab } from "./Tienda";
 import { HojaEntrar } from "../../HojaEntrar";
 
@@ -82,7 +82,7 @@ type TiendaP = Pick<ComponentProps<typeof TiendaTab>, "L" | "V" | "mia" | "horas
 export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl, tienda, resenas, novedades, jobs, eventos = [], sesion, es, tabInicial, rsvInicial, desk0 = false }: {
   f: F; t: Textos; svc: CitasPublica | null; menu?: MenuPublico | null; rsv?: RsvPublica | null; ofi?: OficiosPublico | null; salud?: SaludPublico | null; prof?: ProPublico | null;
   merc?: MercPublico | null; fiesta?: FiestaPublico | null; trans?: TransPublico | null; noche?: NochePublica | null; insc?: InscPublica | null; fe?: FePublica | null;
-  inm?: InmPublica | null; dl?: AutosPublica | null; tienda?: (TiendaP & { L: ArticuloRenta[]; V: ArticuloVenta[] }) | null;
+  inm?: InmPublica | null; dl?: AutosPublica | null; tienda?: (TiendaP & { L: ArticuloRenta[]; V: ArticuloVenta[]; pop?: string[] }) | null;
   resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; eventos?: TarjetaEvt[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string }; desk0?: boolean;
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
@@ -165,9 +165,9 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
     if (fv) return X(fv, { resumen: (d) => <FeResumen v={fv} desk={d} onAll={irCat} />, tab: (d) => <FeTab v={fv} desk={d} />, riel: <FeRiel v={fv} />, barra: <FeBarra v={fv} />, capas: <><FeHoja v={fv} /><FeContacto v={fv} /></>, pick: (id) => fv.abrir(id), hoy: deTd(fv.td, f.hoy.sub || fv.linea) });
     if (iv) return X(iv, { resumen: (d) => <InmResumen v={iv} desk={d} onAll={irCat} />, tab: (d) => <InmTab v={iv} desk={d} />, riel: <InmRiel v={iv} />, barra: <InmBarra v={iv} />, capas: <InmHoja v={iv} />, pick: (id) => iv.abrir(id), hoy: deTd(iv.td, f.hoy.sub || iv.linea) });
     if (dv) return X(dv, { resumen: (d) => <DlResumen v={dv} desk={d} onAll={irCat} />, tab: (d) => <DlTab v={dv} desk={d} />, riel: <DlRiel v={dv} />, barra: <DlBarra v={dv} />, capas: <DlHoja v={dv} />, pick: (id) => dv.abrir(id), hoy: deTd(dv.td, f.hoy.sub || dv.linea) });
-    if (me) return { resumen: (d) => <MeResumen v={me} desk={d} onAll={irCat} />, tab: (d) => <MeTab v={me} desk={d} />, riel: <MeRiel v={me} onCta={irCat} />, barra: <MeBarra v={me} onCta={irCat} />, capas: <MeHoja v={me} />,
+    if (me) return { resumen: (d) => <MeResumen v={me} desk={d} onAll={irCat} />, tab: (d) => <MeMenu v={me} desk={d} />, riel: <MeRiel v={me} onCta={irCat} />, barra: me.mio && me.tot.n ? <MeOrderBar v={me} /> : <MeBarra v={me} onCta={irCat} />, capas: <MeHoja v={me} />,
       top: me.top.slice(0, 3).map((x) => ({ id: x.id, name: me.nm(x.name), meta: me.precio(x).s, price: me.precio(x).l })), n: me.secs.reduce((a, g) => a + g.items.length, 0), pick: (id) => me.abrir(id), hoy: deRiel(me.riel) };
-    if (mn) return { tab: (d) => (d ? <MenuDesk mn={mn} unaColumna={false} /> : <MenuMovil mn={mn} />), riel: <PedidoTarjeta mn={mn} />,
+    if (mn) return { tab: (d) => (d ? <MenuDesk mn={mn} unaColumna={false} /> : <MenuMovil mn={mn} card />), riel: <PedidoTarjeta mn={mn} />,
       barra: !mn.has ? (
         <div data-screen-label="Ficha · barra de pedido" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-ink/[.08] bg-paper/95 px-5 pb-[calc(22px+env(safe-area-inset-bottom))] pt-3 backdrop-blur-[14px] lg:hidden">
           <div className="min-w-0 flex-1"><div className="font-display text-[17px] font-extrabold leading-[1.1] tracking-[-0.03em]">{E2("Desde", "From")} ${(mn.m.desde / 100).toFixed(2)}</div><div className="mt-1 truncate font-mono text-[9px] font-bold tracking-[0.08em] text-open-text">{mn.etaCaps}</div></div>
@@ -175,7 +175,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
         </div>) : null,
       capas: <><MenuCapas mn={mn} nombre={f.nombre} />{entrar ? <HojaEntrar es={es} destino={`/n/${f.id}/pagar`} onClose={() => setEntrar(false)} /> : null}</>,
       top: [], n: 1, pick: () => setTab("cat"), hoy: null };
-    if (tienda && f.cat === "NEG-TIENDA" && (tienda.L.length || tienda.V.length)) return { tab: () => <TiendaTab L={tienda.L} V={tienda.V} mia={tienda.mia} auto={false} tienda horas={tienda.horas} plan={tienda.plan ?? null} negocio={f.id} es={es} />,
+    if (tienda && f.cat === "NEG-TIENDA" && (tienda.L.length || tienda.V.length)) return { tab: () => <TiendaTab L={tienda.L} V={tienda.V} mia={tienda.mia} auto={false} tienda horas={tienda.horas} plan={tienda.plan ?? null} negocio={f.id} es={es} c pop={tienda.pop ?? []} />,
       riel: null, barra: null, capas: null, top: [], n: tienda.L.length + tienda.V.length, pick: () => setTab("cat"), hoy: null };
     return null;
   }, [ov, sa, pr, fi, vi, no, ins, fv, iv, dv, me, mn, tienda, entrar, es]); // eslint-disable-line react-hooks/exhaustive-deps

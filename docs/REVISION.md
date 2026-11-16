@@ -5054,3 +5054,14 @@ la tarjeta de la derecha cambia a «Reservar mesa» cuando estás en esa parte o
 todos los Pro vuelven a la ficha de antes al momento, sin esperar un despliegue. Pedidos, citas y reservas siguen igual con las dos.
 **Decidido por mí (reversible):** el interruptor es uno solo para todos los Pro (no por categoría ni por negocio). Si prefieres encenderla por
 categoría, se agrega.
+
+## C-008 — Menú con fotos y botón + (16 nov)
+**Dónde:** un restaurante, un mercado y una tienda Pro, en el teléfono y en la computadora. Por ejemplo Sabor Dominicano (Menú), Agua y Hielo
+Cristal (Productos) y Boutique Yaritza (Productos).
+**Qué mirar:**
+- Cada plato o producto en su tarjeta con foto y el botón **+**. Sin foto sale el espacio gris (hasta que el negocio la suba).
+- En el mercado y la tienda, el **+** agrega directo lo sencillo; lo que necesita algo (libras, corte, talla, plan) abre su hoja.
+- Al agregar, abajo sale la barra negra: «Ver pedido · N productos» (mercado) o «Ver lo que apartas · N» (tienda). Lleva a Tu pedido / al apartado de siempre.
+- «Lo más pedido» solo sale cuando hay pedidos de verdad o el negocio fija productos (en los negocios de ejemplo nuevos puede no salir).
+**Decidido por mí (reversible):** en el mercado y la tienda, «Tu pedido» es la pantalla de siempre (la que ya retiene, pesa y avisa al negocio), no una hoja nueva
+dentro de la ficha. El «precio anterior» tachado necesita un dato nuevo en el panel: queda anotado para después.

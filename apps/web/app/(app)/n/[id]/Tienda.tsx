@@ -13,7 +13,7 @@ import { cuotas, type ReglaPlan } from "@/lib/layaway-comun";
 
 type N = "Button" | "Tag" | "Chip" | "Icon" | "OptionGroup" | "DepositNote" | "ReservationCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { Button, Tag, Chip, Icon, OptionGroup, DepositNote, ReservationCard } = UI as unknown as Record<N, ComponentType<any>>;
+const { Button, Tag, Chip, Icon, OptionGroup, DepositNote, ReservationCard, MenuTile, MenuItemRow, OrderBar } = UI as unknown as Record<N | "MenuTile" | "MenuItemRow" | "OrderBar", ComponentType<any>>;
 const dinero = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
 export type Carrito = { item: string; qty: number; v?: string }[];
 export const llaveLinea = (l: { item: string; v?: string }) => `${l.item}:${l.v ?? ""}`;
@@ -24,7 +24,10 @@ type Mia = { abiertos: { numero: string; st: string; n: number; tot: number }[];
 
 /* Una línea del carrito sigue valiendo si el artículo sigue a la venta y, si tiene tallas, la talla existe. */
 export const lineaValida = (V: ArticuloVenta[], l: { item: string; v?: string }) => { const a = V.find((x) => x.id === l.item); return !!a && (a.tallas.length ? a.tallas.some((t) => t.id === l.v) : !l.v); };
-export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas, plan = null }: { L: ArticuloRenta[]; V: ArticuloVenta[]; negocio: string; es: boolean; mia: Mia; auto: boolean; tienda?: boolean; horas: number; plan?: ReglaPlan | null }) {
+/* C-008 · `c`: el menú «C» de la ficha nueva para las Tiendas (canvas «Menú con fotos»): «Lo más pedido» (`pop`, de verdad: lo que el negocio fija y lo
+   más apartado en 30 días), cada artículo en su tarjeta con foto y +, y en el teléfono la barra negra «Ver lo que apartas». El + aparta directo lo que
+   no tiene talla ni va en plan; lo demás abre la hoja de siempre. «Ver lo que apartas» lleva al apartado de siempre (pagas al recoger). */
+export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas, plan = null, c = false, pop = [] }: { L: ArticuloRenta[]; V: ArticuloVenta[]; negocio: string; es: boolean; mia: Mia; auto: boolean; tienda?: boolean; horas: number; plan?: ReglaPlan | null; c?: boolean; pop?: string[] }) {
   const E2 = (a: string, b: string) => (es ? a : b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [carro, setCarro] = useState<Carrito>([]), [hoja, setHoja] = useState<ArticuloVenta | null>(null), [qi, setQi] = useState(0), [ti, setTi] = useState<number | null>(null);
   const gomas = V.some((x) => x.size), [fSize, setFSize] = useState<"mine" | "all">(mia.goma && gomas ? "mine" : "all"), [fCond, setFCond] = useState<"all" | "n" | "u">("all");
@@ -38,6 +41,10 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas,
   const agregar = (a: ArticuloVenta, q: number, v?: string) => { const n = { item: a.id, qty: q, ...(v ? { v } : {}) }; const c = [...carro.filter((l) => llaveLinea(l) !== llaveLinea(n) && esPlan(l.item) === (a.k === "plan") && a.k !== "plan"), n].slice(-10); setCarro(c); guardarCarrito(negocio, c); setHoja(null); };
   const H = `${horas}`, enCarro = (a: ArticuloVenta) => carro.filter((l) => l.item === a.id).reduce((s, l) => s + l.qty, 0);
   const ab = mia.abiertos[0];
+  const abrir = (x: ArticuloVenta) => { const l = carro.find((z) => z.item === x.id); setQi(Math.max(0, (l?.qty ?? 1) - 1)); const k = x.tallas.findIndex((t) => t.id === l?.v); setTi(k >= 0 ? k : x.tallas.length === 1 && x.tallas[0]!.quedan > 0 ? 0 : null); setHoja(x); };
+  const directo = (x: ArticuloVenta) => !x.tallas.length && x.k !== "plan" && x.quedan > 0;
+  const mas = (x: ArticuloVenta) => { const q = enCarro(x); if (directo(x) && q < Math.min(3, x.quedan)) agregar(x, q + 1); else abrir(x); };
+  const menos = (x: ArticuloVenta) => { const q = enCarro(x); if (directo(x) && q > 1) agregar(x, q - 1); else { const c2 = carro.filter((l) => l.item !== x.id); setCarro(c2); guardarCarrito(negocio, c2); } };
   const nota = tienda ? E2(`El precio que ves es el que pagas en la caja. Apartar no cobra nada: te lo guardan ${H} horas y pagas en la caja lo mismo que ves aquí.`, `The price you see is the price you pay at the register. Holding costs nothing: they keep it ${H} hours and you pay at the register the same as you see here.`)
     : L.length ? E2(`Apartas en la app y pagas al recoger en el local; te lo guardan ${H} horas. Herramienta: pagas el día y dejas un depósito que se devuelve al traerla.`, `Hold it in the app and pay at pickup; kept for ${H} hours. Tools: pay the day and leave a deposit, returned when you bring it back.`)
     : gomas ? E2(`Precio por goma instalada: montaje, balanceo, válvula y desecho de la vieja. Apartas en la app y pagas al recogerla; te la guardan ${H} horas.`, `Price per installed tire: mounting, balancing, valve and old tire disposal. Hold it in the app and pay at pickup; kept for ${H} hours.`)
@@ -82,12 +89,43 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas,
           <div className="mt-1.5 flex"><Button variant="secondary" size="sm" onClick={() => { setFSize("all"); setFCond("all"); }}>{E2("Ver todas", "See all")}</Button></div>
         </div>
       )}
+      {c ? (
+        <>
+          {L.length ? <div className="grid grid-cols-2 gap-x-3 gap-y-4 lg:grid-cols-4 lg:gap-x-5">{L.map((x) => tarjeta({ ...x }, `${dinero(x.precio)}${E2("/día", "/day")}`, { t: E2("RENTA", "RENTAL"), tone: "signal" }, () => router.push(`/n/${negocio}/rentar?a=${x.id}`), true))}</div> : null}
+          {pop.length ? (
+            <div data-screen-label="Ficha · tienda · lo más pedido">
+              <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.03em]">{E2("Lo más pedido", "Most ordered")}</div>
+              <div className="hs -mx-5 mt-3 flex gap-2.5 overflow-x-auto px-5 pb-1.5 lg:mx-0 lg:px-0">
+                {pop.map((id) => V.find((x) => x.id === id)).filter((x): x is ArticuloVenta => !!x).map((x) => (
+                  <MenuTile key={x.id} lang={es ? "ES" : "EN"} name={nm(x.n)} price={dinero(x.precio)} image={x.foto ?? undefined} qty={enCarro(x)} off={x.quedan < 1} width={156} height={124}
+                    onOpen={() => abrir(x)} onPlus={() => mas(x)} onMinus={() => menos(x)} onExpand={() => abrir(x)} />))}
+              </div>
+            </div>) : null}
+          <div data-menu="c" className="flex flex-col gap-2.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">
+            {ventas.map((x) => x.k === "plan" && !plan ? null : (
+              <div key={x.id} className="grid min-w-0">
+                <MenuItemRow lang={es ? "ES" : "EN"} card name={nm(x.n)} desc={nm(x.d) || undefined} price={dinero(x.precio)} image={x.foto ?? undefined} qty={enCarro(x)} off={x.quedan < 1}
+                  tags={[x.quedan < 1 ? { label: E2("AGOTADO", "SOLD OUT"), tone: "neutral" } : x.quedan <= 3 ? { label: `${E2("QUEDAN ", "ONLY ")}${x.quedan}`, tone: "pro" } : null,
+                    x.k === "plan" && plan ? { label: `${E2("ABONO", "DOWN")} ${plan.pct} % · ${plan.n} ${E2("PAGOS", "PAYMENTS")}`, tone: "signal" } : null,
+                    x.cond ? { label: x.cond === "u" ? E2("USADA", "USED") : E2("NUEVA", "NEW"), tone: x.cond === "u" ? "neutral" : "signal" } : null,
+                    x.tallas.length ? { label: nm(x.label ?? { es: "Tallas", en: "Sizes" }).toUpperCase(), tone: "neutral" } : null].filter(Boolean)}
+                  onOpen={() => abrir(x)} onPlus={() => mas(x)} onMinus={() => menos(x)} onExpand={() => abrir(x)} />
+              </div>))}
+          </div>
+        </>
+      ) : (
       <div className="grid grid-cols-2 gap-x-3 gap-y-4 lg:grid-cols-4 lg:gap-x-5">
         {L.map((x) => tarjeta({ ...x }, `${dinero(x.precio)}${E2("/día", "/day")}`, { t: E2("RENTA", "RENTAL"), tone: "signal" }, () => router.push(`/n/${negocio}/rentar?a=${x.id}`), true))}
-        {ventas.map((x) => x.k === "plan" && !plan ? null : tarjeta(x, dinero(x.precio), x.k === "plan" && plan ? { t: `${E2("ABONO", "DOWN")} ${plan.pct} % · ${plan.n} ${E2("PAGOS", "PAYMENTS")}`, tone: "signal" } : x.cond ? { t: x.cond === "u" ? E2("USADA", "USED") : E2("NUEVA", "NEW"), tone: x.cond === "u" ? "neutral" : "signal" } : null, () => { const l = carro.find((z) => z.item === x.id); setQi(Math.max(0, (l?.qty ?? 1) - 1)); const k = x.tallas.findIndex((t) => t.id === l?.v); setTi(k >= 0 ? k : x.tallas.length === 1 && x.tallas[0]!.quedan > 0 ? 0 : null); setHoja(x); }, false, enCarro(x)))}
+        {ventas.map((x) => x.k === "plan" && !plan ? null : tarjeta(x, dinero(x.precio), x.k === "plan" && plan ? { t: `${E2("ABONO", "DOWN")} ${plan.pct} % · ${plan.n} ${E2("PAGOS", "PAYMENTS")}`, tone: "signal" } : x.cond ? { t: x.cond === "u" ? E2("USADA", "USED") : E2("NUEVA", "NEW"), tone: x.cond === "u" ? "neutral" : "signal" } : null, () => abrir(x), false, enCarro(x)))}
       </div>
+      )}
+      {c && nC > 0 ? (
+        <div data-screen-label="Tienda · ver lo que apartas" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/95 px-4 pb-[calc(16px+env(safe-area-inset-bottom))] pt-3 backdrop-blur-[14px] lg:hidden">
+          <OrderBar label={`${E2("Ver lo que apartas", "View your hold")} · ${nC} ${nC === 1 ? E2("artículo", "item") : E2("artículos", "items")}`} sub={`${E2("TE LO GUARDAN ", "KEPT FOR ")}${H} H · ${E2("PAGAS AL RECOGER", "PAY AT PICKUP")}`}
+            total={dinero(totC)} onClick={() => router.push(`/n/${negocio}/apartar`)} />
+        </div>) : null}
       {nC > 0 && (
-        <div data-screen-label="Tienda · tu apartado" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-paper/95 px-5 pb-[22px] pt-[13px] backdrop-blur-[14px] lg:static lg:mt-2 lg:max-w-[460px] lg:rounded-[18px] lg:border lg:bg-white lg:p-4">
+        <div data-screen-label="Tienda · tu apartado" className={`${c ? "hidden lg:flex" : "flex"} fixed inset-x-0 bottom-0 z-30 items-center gap-3 border-t border-line bg-paper/95 px-5 pb-[22px] pt-[13px] backdrop-blur-[14px] lg:static lg:mt-2 lg:max-w-[460px] lg:rounded-[18px] lg:border lg:bg-white lg:p-4`}>
           <div className="min-w-0 flex-1">
             <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{`${dinero(totC)}${E2(" en la caja", " at the register")}`}</div>
             <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{`${E2("TU APARTADO · ", "YOUR HOLD · ")}${nC} ${nC === 1 ? E2("ARTÍCULO", "ITEM") : E2("ARTÍCULOS", "ITEMS")} · ${E2("HOY NO SE COBRA NADA", "NOTHING TODAY")}`}</div>

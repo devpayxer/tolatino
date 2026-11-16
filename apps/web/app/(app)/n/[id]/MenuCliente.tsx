@@ -346,7 +346,9 @@ function Cerrado({ mn, className = "" }: { mn: Mn; className?: string }) {
 }
 
 /* Ficha · menú (móvil) */
-export function MenuMovil({ mn }: { mn: Mn }) {
+/* C-008 · menú «C» (canvas, Comida/Mercado/Tienda en la ficha nueva): cada plato en su tarjeta con foto y + (`card`) y «Lo más pedido» más grande.
+   Sin `card`, la lista de siempre (la ficha Free). */
+export function MenuMovil({ mn, card = false }: { mn: Mn; card?: boolean }) {
   return (
     <div data-screen-label="Ficha · menú" className="lg:hidden">
       <Cerrado mn={mn} className="mx-5 mt-4" />
@@ -358,7 +360,7 @@ export function MenuMovil({ mn }: { mn: Mn }) {
         <div data-msec="m-pop" className="pt-[18px]">
           <div className="px-5 font-display text-[18px] font-extrabold leading-none tracking-[-0.03em]">{mn.lbl.pop}</div>
           <div className="hs mt-3 flex gap-2.5 overflow-x-auto px-5 pb-1.5">
-            {mn.pop.map((it) => <MenuTile lang={mn.es ? "ES" : "EN"} key={it.id} off={it.off} name={it.name} price={it.price} image={it.image} qty={it.qty} selected={it.selected} open={it.open} width={148} height={112} onOpen={it.onOpen} onPlus={it.onPlus} onMinus={it.onMinus} onExpand={it.onExp} />)}
+            {mn.pop.map((it) => <MenuTile lang={mn.es ? "ES" : "EN"} key={it.id} off={it.off} name={it.name} price={it.price} image={it.image} qty={it.qty} selected={it.selected} open={it.open} width={card ? 156 : 148} height={card ? 124 : 112} onOpen={it.onOpen} onPlus={it.onPlus} onMinus={it.onMinus} onExpand={it.onExp} />)}
           </div>
         </div>
       )}
@@ -369,8 +371,8 @@ export function MenuMovil({ mn }: { mn: Mn }) {
             {c.note && <span className="font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">{c.note}</span>}
           </div>
           {c.items.map((it) => (
-            <div key={it.id} className="grid min-w-0">
-              <MenuItemRow lang={mn.es ? "ES" : "EN"} name={it.name} desc={it.desc} price={it.price} tags={it.tags} image={it.image} qty={it.qty} forms={it.forms} off={it.off} selected={it.selected} open={it.open}
+            <div key={it.id} className={card ? "mt-2.5 grid min-w-0" : "grid min-w-0"}>
+              <MenuItemRow lang={mn.es ? "ES" : "EN"} card={card} name={it.name} desc={it.desc} price={it.price} tags={it.tags} image={it.image} qty={it.qty} forms={it.forms} off={it.off} selected={it.selected} open={it.open}
                 onOpen={it.onOpen} onPlus={it.onPlus} onMinus={it.onMinus} onExpand={it.onExp} />
             </div>
           ))}

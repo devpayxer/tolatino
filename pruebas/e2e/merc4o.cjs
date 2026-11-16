@@ -20,7 +20,7 @@ const verV = async (l) => { for (let i = 0; i < 60; i++) { if (await vis(l)) ret
   ok(!!(await vis(m.getByText('Cómo se cobra lo que va por peso'))), 'Resumen: cómo se cobra lo que va por peso (4 pasos)');
   await m.screenshot({ path: OUT + 'r1-ficha-mercado-m.png', fullPage: true });
   await clic(m.getByRole('button', { name: 'Productos' }).or(m.getByRole('tab', { name: 'Productos' })));
-  await verV(m.getByText('CARNICERÍA', { exact: true }));
+  await verV(m.getByText(/^carnicería$/i)); // C-008: el menú «C» escribe la sección como título
   ok(!!(await vis(m.getByText('$2.49/lb').first())) && !!(await vis(m.getByText(/SE COBRA LO QUE PESE/).first())), 'Productos: $2.49/lb · SE COBRA LO QUE PESE');
   ok(!!(await vis(m.getByText(/SE ACABÓ HOY/).first())), 'la yuca: SE ACABÓ HOY');
   ok(!!(await vis(m.getByText(/Acepta EBT \/ SNAP en la tienda/))), 'nota: acepta EBT');

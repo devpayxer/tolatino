@@ -23,7 +23,7 @@ const STOCK = { 'Blusa de encaje': { S: 3, M: 2, L: 4, XL: 1, '2X': 0 }, 'Vestid
   const h = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); await entrar(h, '5705550299');
   for (const p of [m, h]) { p.on('pageerror', e => err.push(e.message)); p.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); }); }
   const tienda = async () => { await m.goto(B + `/n/${T}?tab=shop`); await m.locator('[data-screen-label="Ficha · tienda"]').waitFor(); };
-  const abrir = async (nm) => { const card = m.locator('[data-screen-label="Ficha · tienda"] > div.grid > div').filter({ hasText: nm }); await clic(card.getByRole('button', { name: 'Apartar' })); const hoja = m.locator('[data-screen-label="Tienda · artículo"]'); await hoja.waitFor(); return hoja; };
+  const abrir = async (nm) => { await clic(m.locator('[data-menu="c"] > div').filter({ hasText: nm }).first()); /* C-008: el artículo en su tarjeta del menú «C» abre su hoja */ const hoja = m.locator('[data-screen-label="Tienda · artículo"]'); await hoja.waitFor(); return hoja; };
   const tomar = async (nm, talla, q) => {
     const hoja = await abrir(nm); await clic(hoja.getByRole('radio', { name: new RegExp(`^${talla}( |$)`) }));
     if (q > 1) await clic(hoja.getByText(String(q), { exact: true }));
@@ -31,7 +31,7 @@ const STOCK = { 'Blusa de encaje': { S: 3, M: 2, L: 4, XL: 1, '2X': 0 }, 'Vestid
   };
   const pg = m.locator('[data-screen-label="APP-NEG-TIENDA-APARTADO · móvil"]');
   const mandar = async (cap, dentro) => {
-    if (!dentro) { await clic(m.getByRole('button', { name: 'Ver apartado' })); await m.waitForURL(/\/apartar$/); }
+    if (!dentro) { await clic(m.getByRole('button', { name: /^(Ver apartado|Ver lo que apartas)/ }) /* C-008: en el teléfono, la barra negra */); await m.waitForURL(/\/apartar$/); }
     await m.getByText('TU APARTADO').first().waitFor(); if (cap) await m.screenshot({ path: OUT + 'q3-apartado-m.png', fullPage: true });
     await clic(m.getByRole('button', { name: 'Continuar' }));
     await pg.getByText('HORA EN QUE PASAS').waitFor();
@@ -57,7 +57,7 @@ const STOCK = { 'Blusa de encaje': { S: 3, M: 2, L: 4, XL: 1, '2X': 0 }, 'Vestid
   ok((await hoja.getByRole('radio', { name: /^3( |$)/ }).count()) === 0, 'M tiene 2: ¿cuántos? llega a 2');
   await clic(hoja.getByText('2', { exact: true })); await clic(hoja.getByRole('button', { name: 'Apartar', exact: true })); await hoja.waitFor({ state: 'detached' });
   await tomar('Blusa de encaje', 'L', 1);
-  ok(!!(await vis(m.getByText('APARTADO: 3'))), 'tarjeta: «APARTADO: 3» (dos tallas de la misma blusa)');
+  ok(!!(await vis(m.getByText('APARTADO: 3'))) || !!(await vis(m.locator('[data-menu="c"] > div').filter({ hasText: 'Blusa de encaje' }).getByRole('button', { name: 'Cantidad: 3' }))), 'tarjeta: 3 apartadas (dos tallas de la misma blusa)'); // C-008: la cantidad va en el botón de la tarjeta
 
   // ── 2. Mandar: la talla en cada línea, 72 horas, la talla se reserva ──
   await mandar(true);

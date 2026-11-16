@@ -9777,6 +9777,15 @@ const guardianes = {
     // Una sola copia de la página por aparato: con las dos, la tienda, el carrito y las hojas existen dos veces (dos estados, dos barras).
     if (!/\{modo === "m" \? \(/.test(fn) || !/\{modo === "d" \? \(/.test(fn) || !/anchoInicial\(\)/.test(readFileSync("apps/web/app/(app)/n/[id]/page.tsx", "utf8")))
       falla(G, F, 0, "la ficha nueva pinta teléfono y computadora a la vez: cada árbol va con {modo === \"m\"|\"d\" ? (…) : null} y el servidor elige con anchoInicial()");
+    // C-008 · menú «C» (con foto y +) en Comida, Mercado y Tienda de la ficha nueva; «Lo más pedido» sale de lo pedido de verdad (populares), nunca de
+    // «los primeros N» de la lista.
+    if (!/<MenuMovil mn=\{mn\} card \/>/.test(fn) || !/<MeMenu v=\{me\}/.test(fn) || !/<TiendaTab [^>]*\bc pop=\{tienda\.pop/.test(fn))
+      falla(G, F, 0, "Comida, Mercado y Tienda usan el menú «C» en la ficha nueva (MenuMovil card, MeMenu, TiendaTab c pop)");
+    const mp = readFileSync("apps/web/lib/merc-publico.ts", "utf8"), ap = readFileSync("apps/web/lib/apartados.ts", "utf8");
+    if (!/pop: populares\(ventas,/.test(mp) || !/ventasSqlDe\("market_order"\)/.test(mp)) falla(G, "apps/web/lib/merc-publico.ts", 0, "«Lo más pedido» del mercado sale de sus pedidos de 30 días y lo fijado (populares + ventasSqlDe(\"market_order\"))");
+    if (!/ventasSqlDe\("hold"\)/.test(ap) || !/return populares\(ventas,/.test(ap)) falla(G, "apps/web/lib/apartados.ts", 0, "«Lo más pedido» de la tienda sale de sus apartados de 30 días y lo fijado (populares + ventasSqlDe(\"hold\"))");
+    const me = readFileSync("apps/web/app/(app)/n/[id]/Mercado.tsx", "utf8");
+    if (/v\.top\.map\(\(p\) => <MenuTile/.test(me)) falla(G, "apps/web/app/(app)/n/[id]/Mercado.tsx", 0, "el carrusel «Lo más pedido» no usa los primeros productos de la lista (v.top): usa v.pop");
   },
 
   telefonoAlAzarRespetaFijos() {

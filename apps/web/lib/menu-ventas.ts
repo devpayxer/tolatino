@@ -4,11 +4,13 @@
    (lib/pedir.ts, lib/menu.ts) y las constantes, el panel (cliente). */
 export const POPULAR_MIN = 3, POPULAR_MAX = 6, DIAS_VENTAS = 30;
 
-/* La consulta (por negocio, $1). Un pedido cuenta UNA vez por plato aunque pida varias unidades; `uds` y `cents` suman lo pedido y lo cobrado. */
-export const VENTAS_SQL = `select l.item_id::text as id, count(distinct l.operation_id)::int as pedidos, sum(l.qty)::int as uds, sum(l.line_total_cents)::int as cents
+/* La consulta (por negocio, $1). Un pedido cuenta UNA vez por plato aunque pida varias unidades; `uds` y `cents` suman lo pedido y lo cobrado.
+   C-008 · la misma cuenta para los pedidos del mercado (market_order) y los apartados de las tiendas (hold): su «Lo más pedido». */
+export const ventasSqlDe = (kind: "order" | "market_order" | "hold") => `select l.item_id::text as id, count(distinct l.operation_id)::int as pedidos, sum(l.qty)::int as uds, sum(l.line_total_cents)::int as cents
   from operation_lines l join operations o on o.id = l.operation_id
- where o.business_id = $1 and o.kind = 'order' and o.status = 'done' and o.sent_at > now() - interval '${DIAS_VENTAS} days' and l.item_id is not null
+ where o.business_id = $1 and o.kind = '${kind}' and o.status = 'done' and o.sent_at > now() - interval '${DIAS_VENTAS} days' and l.item_id is not null
  group by l.item_id`;
+export const VENTAS_SQL = ventasSqlDe("order");
 
 export type Ventas30 = Record<string, { pedidos: number; uds: number; cents: number }>;
 
