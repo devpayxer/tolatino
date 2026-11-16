@@ -7218,6 +7218,33 @@ const guardianes = {
     const m = existsSync("apps/web/middleware.ts") ? readFileSync("apps/web/middleware.ts", "utf8") : "";
     if (/NextResponse\.redirect\(/.test(m) && !/x-forwarded-host/.test(m)) falla(G, "apps/web/middleware.ts", 0, "el middleware arma la dirección con las cabeceras reenviadas, no con req.url");
   },
+  /* Anchos · Las funciones que la base evalúa SOLA llaman a las demás con su esquema («public.»). Un índice por expresión y una columna generada se
+     evalúan también en el autovacuum y en pg_restore, que corren con search_path vacío: biz_norm_name llamaba a tl_unaccent a secas y el análisis de
+     businesses fallaba cada minuto en el sandbox (0171). Se siguen las llamadas en cadena desde cada índice y cada columna generada, con la ÚLTIMA
+     definición de cada función. Al revés (alrevesAnchos). */
+  funcionConEsquema() {
+    const G = "funcionConEsquema", D = "packages/db/migrations";
+    const migs = readdirSync(D).filter((f) => /^\d{4}_.*\.sql$/.test(f)).sort().map((f) => [join(D, f), readFileSync(join(D, f), "utf8").replace(/--[^\n]*/g, "")]);
+    const def = new Map(); // nombre → [archivo, cuerpo] (la última gana)
+    for (const [f, t] of migs) for (const m of t.matchAll(/create\s+(?:or\s+replace\s+)?function\s+(?:public\.)?([a-z_][a-z0-9_]*)\s*\([^)]*\)[\s\S]*?\$(\w*)\$([\s\S]*?)\$\2\$/gi)) def.set(m[1].toLowerCase(), [f, m[3]]);
+    const propias = (x) => [...x.matchAll(/(?<![.\w])([a-z_][a-z0-9_]*)\s*\(/gi)].map((m) => m[1].toLowerCase()).filter((n) => def.has(n));
+    const pendientes = new Set();
+    for (const [, t] of migs) {
+      for (const m of t.matchAll(/create\s+(?:unique\s+)?index[^;]*/gi)) for (const n of [...m[0].matchAll(/(?:public\.)?([a-z_][a-z0-9_]*)\s*\(/gi)].map((x) => x[1].toLowerCase())) if (def.has(n)) pendientes.add(n);
+      for (const m of t.matchAll(/generated\s+always\s+as\s*\(([^;]*?)\)\s*stored/gi)) for (const n of [...m[1].matchAll(/(?:public\.)?([a-z_][a-z0-9_]*)\s*\(/gi)].map((x) => x[1].toLowerCase())) if (def.has(n)) pendientes.add(n);
+    }
+    const vistas = new Set();
+    for (const n of pendientes) {
+      if (vistas.has(n)) continue;
+      vistas.add(n);
+      const [f, cuerpo] = def.get(n);
+      for (const c of propias(cuerpo)) {
+        if (c !== n) falla(G, f, 0, `${n} (la usa un índice o una columna generada) llama a ${c}( sin «public.»: el autovacuum y pg_restore corren con search_path vacío`);
+      }
+      for (const c of [...cuerpo.matchAll(/public\.([a-z_][a-z0-9_]*)\s*\(/gi)].map((x) => x[1].toLowerCase())) if (def.has(c)) pendientes.add(c);
+    }
+    if (!vistas.has("biz_norm_name")) falla(G, D, 0, "no encontré biz_norm_name entre las funciones de índices: el guardián ya no mira lo que debe");
+  },
   /* Anchos · Toda cookie que pone To'Latino lleva la marca «Secure» según la conexión real de la persona (lib/cookie-segura.ts: x-forwarded-proto,
      como la sesión). Nunca según NODE_ENV (un servidor de producción servido por http, CI, perdía la ciudad del Super Admin en Safari) y nunca sin
      la marca (el idioma, la ciudad que miras, el dispositivo y la invitación iban sin ella también con https). Al revés (alrevesAnchos). */
