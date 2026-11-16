@@ -1,6 +1,7 @@
 // Prueba al revés de C-005 (ficha nueva del negocio). valorDeCliente: el servidor importa un valor de un módulo de cliente (la tabla de
 // categorías desde FichaNueva). fichaNuevaSoloPro: la ficha nueva sin «f.pro &&», horas inventadas en el cliente, Booking sin validar el
 // día y la hora que llegan de la ficha, o quedándose con una hora que ya no está libre.
+// precioAntesReal (C-008): el precio tachado del menú que no es el precio de siempre del plato.
 // Se inyecta el defecto, el guardián debe fallar con SU mensaje; se restaura.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
@@ -25,6 +26,10 @@ const casos = [
   // C-008: el mercado vuelve a la lista de siempre, y «Lo más pedido» sale de los primeros de la lista en vez de lo pedido de verdad.
   ['fichaNuevaSoloPro', F, 'tab: (d) => <MeMenu v={me} desk={d} />', 'tab: (d) => <MeResumen v={me} desk={d} />'],
   ['fichaNuevaSoloPro', 'apps/web/app/(app)/n/[id]/Mercado.tsx', '{v.pop.map((p) => <MenuTile', '{v.top.map((p) => <MenuTile'],
+  // C-008 · precio de antes tachado: siempre (no solo con oferta), un número escrito en la tarjeta, y el «antes» de la oferta que escribe el negocio.
+  ['precioAntesReal', 'apps/web/lib/pedir.ts', 'was: i.base > i.cents ? i.base : null,', 'was: i.base,'],
+  ['precioAntesReal', 'apps/web/app/(app)/n/[id]/MenuCliente.tsx', 'price={it.price} was={it.was} image={it.image}', 'price={it.price} was={"$15.00"} image={it.image}'],
+  ['precioAntesReal', 'apps/web/lib/novedades.ts', 'was = item!.cents;', 'was = Math.round(Number(p.was) * 100);'],
 ];
 const crear = [];
 let bien = 0, total = 0;

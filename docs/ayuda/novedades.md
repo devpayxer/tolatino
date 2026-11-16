@@ -9,6 +9,8 @@ Audiencia: vecino. Tema: explorar._
   Encuestas, Novedades) y cada publicación con el nombre del negocio, hace cuánto, FIJADO y su tipo.
   - **Oferta:** el plato, el precio de la oferta y el de antes tachado, hasta cuándo y **Pedir · $X** (abre el plato en el
     menú). **El precio de la oferta es el que se cobra** mientras la oferta está en vivo (en el menú, el carrito y el pedido).
+    **En el menú del negocio**, ese plato también sale con el precio de la oferta y, al lado, **el precio de siempre tachado**
+    (el lector de pantalla dice «Antes»). Nadie escribe ese número: es el precio del plato en el menú. Sin oferta en vivo no hay tachado.
   - **Hoy hay:** el plato y **Agregar al pedido**.
   - **Aviso de horario:** qué día y qué pasa (cerrado, abre más tarde, cierra más temprano, horario extendido) y **Ver horario**.
   - **Encuesta:** de 2 a 4 opciones; al votar se ven los porcentajes y «ya votaste». Un voto por persona.
@@ -63,6 +65,8 @@ sigues al negocio (si no, la novedad dice «Solo para seguidores» y puedes segu
   business name, how long ago, PINNED and its type.
   - **Deal:** the dish, the deal price and the crossed-out previous price, until when and **Order · $X** (opens the dish in the menu). **The deal price is what
     is charged** while the deal is live (in the menu, the cart and the order).
+    **On the business menu**, that dish also shows the deal price and, next to it, **the usual price struck through** (screen
+    readers say «Was»). Nobody types that number: it is the dish's menu price. With no live deal there is no struck-through price.
   - **Today we have:** the dish and **Add to order**.
   - **Hours notice:** which day and what happens (closed, opens later, closes earlier, extended hours) and **See hours**.
   - **Poll:** 2 to 4 options; when you vote you see the percentages and «you voted». One vote per person.

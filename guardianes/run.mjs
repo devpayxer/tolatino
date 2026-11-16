@@ -7218,6 +7218,31 @@ const guardianes = {
     const m = existsSync("apps/web/middleware.ts") ? readFileSync("apps/web/middleware.ts", "utf8") : "";
     if (/NextResponse\.redirect\(/.test(m) && !/x-forwarded-host/.test(m)) falla(G, "apps/web/middleware.ts", 0, "el middleware arma la dirección con las cabeceras reenviadas, no con req.url");
   },
+  /* C-008 · El precio de antes (tachado) nunca es un número escrito a mano: es el precio de siempre del menú (items.price_cents) cuando una
+     oferta en vivo de Novedades lo baja (lib/pedir.ts), y solo eso llega a las tarjetas (was). Sin un «precio anterior» que el negocio invente
+     (descuento falso). Al revés (alrevesC008). */
+  precioAntesReal() {
+    const G = "precioAntesReal", P = "apps/web/lib/pedir.ts";
+    if (!existsSync(P)) return falla(G, P, 0, "falta lib/pedir.ts");
+    const t = sinComent(P);
+    if (!/i\.price_cents as base/.test(t) || !/was: i\.base > i\.cents \? i\.base : null/.test(t)) falla(G, P, 0, "el precio de antes sale de items.price_cents y solo cuando la oferta lo baja (was: i.base > i.cents ? i.base : null)");
+    // La oferta de Novedades guarda su «antes» desde el plato (el servidor ignora el que manda el formulario).
+    const N = "apps/web/lib/novedades.ts";
+    if (existsSync(N) && !/was = item!\.cents;/.test(sinComent(N))) falla(G, N, 0, "el «antes» de una oferta es el precio del plato en el menú (was = item!.cents), nunca el que escribe el negocio");
+    // Las tarjetas del menú (MenuTile / MenuItemRow) solo reciben el was de lib/pedir.ts.
+    for (const f of codigo) {
+      if (!/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(f)) continue;
+      const tx = readFileSync(f, "utf8");
+      if (!/\b(?:MenuTile|MenuItemRow)\b/.test(tx)) continue;
+      tx.split("\n").forEach((x, i) => {
+        for (const m of x.matchAll(/\bwas(?:=\{|:\s*)([^,}]*)/g)) {
+          const v = m[1].trim();
+          if (!v || /^(?:it|i|x|p)\.was\b/.test(v) || /^i\.base > i\.cents/.test(v) || /^(?:number|string|null)\b/.test(v)) continue;
+          falla(G, f, i + 1, `precio de antes que no viene del menú (${v.slice(0, 40)}): solo it.was (lib/pedir.ts)`);
+        }
+      });
+    }
+  },
   /* Anchos · La hora de una lectura del GPS del navegador pasa por horaPosicion (lib/nativo/ruta.ts): Safari la da en microsegundos y el
      servidor rechazaba todas las posiciones del repartidor en el iPhone (app8e en el SE y el iPad). Ninguna otra lectura usa .timestamp de
      una posición a secas. Al revés (alrevesAnchos). */

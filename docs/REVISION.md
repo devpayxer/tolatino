@@ -5083,3 +5083,11 @@ el servidor respondía con un error que Safari mostraba en la consola). El apara
   ahora sigue la misma regla que la sesión).
 **Decidido por mí (reversible):** todas las cookies (idioma, ciudad que miras, aparato, invitación) llevan la marca «solo por conexión segura»
 cuando la persona entra por https, igual que la sesión.
+
+## Precio de antes tachado en el menú (16 nov)
+**Dónde:** en el sandbox, la ficha de Sabor Dominicano › Menú (teléfono y computadora).
+**Qué mirar:** el mofongo, en oferta en Novedades, sale a $10.00 con el precio de siempre ($12.00) tachado al lado; los demás platos, igual que antes.
+**Decidido por mí (reversible):** no hay campo «precio anterior» que el negocio escriba (sería fácil inventar un descuento que nunca existió).
+El tachado sale solo de una oferta en vivo y siempre es el precio real del plato en el menú. Mercado y Tienda no tienen ofertas todavía, así
+que ahí no hay tachado.
+

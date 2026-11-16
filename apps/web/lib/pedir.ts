@@ -40,6 +40,7 @@ export type PItem = {
   id: string; sec: string; name: string; desc: string; cents: number; tax: number; img: string | null; tags: string[]; grp: string[];
   ago: boolean; left: number | null; maxQ: number; extra: number; nosell: boolean; hrsOff: boolean; hrsL: string | null; hasta: number | null;
   pick: boolean; dlv: boolean; // se pide para pickup / para delivery (Panel · Menú › Se piden)
+  was: number | null; // C-008 · el precio del menú cuando una oferta en vivo (Novedades) lo baja: sale tachado. Nunca un número escrito a mano.
 };
 export type PGrp = { id: string; name: string; req: boolean; max: number; o: { l: string; k: string; cents: number; off: boolean }[] };
 export type PSec = { id: string; name: string; note: string; items: string[] };
@@ -169,7 +170,7 @@ export async function topeFree(c: Q, negocio: string, mes: string) {
 }
 
 type FilaItem = {
-  id: string; sec: string; name: Bi; desc: Bi; cents: number; tax: number; photos: string[]; sell: boolean; ch: string[]; agotado: boolean; stk: string; quedan: number;
+  id: string; sec: string; name: Bi; desc: Bi; cents: number; base: number; tax: number; photos: string[]; sell: boolean; ch: string[]; agotado: boolean; stk: string; quedan: number;
   maxQ: number; tags: string[]; extra: number; feat: boolean; avail: string; av: Av | null; grp: string[]; sec_avail: string; sec_av: Av | null;
 };
 /* Precio: el de la oferta en vivo (Novedades) si la hay para esta persona; si no, el del menú. Lo mismo al mostrar y al cobrar. */
@@ -178,7 +179,7 @@ async function filas(c: Q, negocio: string, tz: string, lock = false, userId: st
   const qS = () => c.query<{ id: string; name: Bi; avail: string; av: Av | null }>(
       `select id::text, name, avail, av from item_sections where business_id = $1 and module = 'menu' and removed_at is null and visible order by sort, item_sections.id`, [negocio]);
   const qI = () => c.query<FilaItem>(
-      `select i.id::text, i.section_id::text as sec, i.name, i.descr as "desc", coalesce(oferta_precio(i.id, $2::uuid), i.price_cents) as cents, i.tax_pct::float as tax, i.photos, i.sell, i.channels as ch,
+      `select i.id::text, i.section_id::text as sec, i.name, i.descr as "desc", coalesce(oferta_precio(i.id, $2::uuid), i.price_cents) as cents, i.price_cents as base, i.tax_pct::float as tax, i.photos, i.sell, i.channels as ch,
               ${AGOTADO_SQL("i", tzq)} as agotado, i.stock_mode as stk, ${QUEDAN_SQL("i", tzq)} as quedan, i.max_qty as "maxQ", i.tags, i.extra_min as extra,
               i.featured as feat, i.avail, i.av, array(select x::text from unnest(i.group_ids) x) as grp, s.avail as sec_avail, s.av as sec_av
          from items i join item_sections s on s.id = i.section_id and s.removed_at is null and s.visible
@@ -217,6 +218,7 @@ function armar(b: Base, F: Awaited<ReturnType<typeof filas>>, est: PEstado, es: 
       id: i.id, sec: i.sec, name: tx(i.name, es), desc: tx(i.desc, es), cents: i.cents, tax: i.tax, img: i.photos[0] ?? null, tags: i.tags, grp,
       ago: i.agotado || (i.stk !== "none" && i.quedan <= 0) || reqAgotado, left: i.stk !== "none" ? Math.max(0, i.quedan) : null, maxQ: i.maxQ, extra: i.extra,
       nosell: !i.sell, hrsOff: !!own?.off, hrsL: i.avail === "own" ? own?.l ?? null : null, hasta: own?.hasta ?? null, pick: i.ch.includes("pick"), dlv: i.ch.includes("dlv"),
+      was: i.base > i.cents ? i.base : null,
     };
     sec.items.push(i.id);
   }

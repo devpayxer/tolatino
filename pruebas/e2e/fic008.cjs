@@ -30,6 +30,35 @@ const COMIDA = 'sabor-dominicano', TIENDA = 'boutique-yaritza';
     ok(await espera(async () => (await m.locator('[data-screen-label="Ficha · menú"]').getByRole('button', { name: /^Agregar|^Cantidad/ }).count()) > 2), 'teléfono: los platos con su botón +');
     await m.screenshot({ path: OUT + 'fic008-comida-390.png' });
 
+    console.log('1b · Precio de antes tachado: solo cuando una oferta en vivo (Novedades) baja el plato, y es el precio de siempre del menú');
+    const MOF = sql(`select id from items where business_id = '${COMIDA}' and name->>'es' = 'Mofongo de chicharrón' and removed_at is null and status = 'live' limit 1`);
+    const BASE = +sql(`select price_cents from items where id = ${MOF}`);
+    // Precondición propia: una oferta en vivo para todos a $10 (la semilla trae una; si venció o se quitó, la prueba pone la suya y la quita al final).
+    let propia = null;
+    if (sql(`select coalesce(oferta_precio(${MOF}, null)::text, '')`) !== '1000') {
+      propia = sql(`insert into business_posts (business_id, city_id, kind, title, body, link_kind, item_id, price_was_cents, price_now_cents, audience, publish_at, created_at)
+        values ('${COMIDA}', 'hzl', 'oferta', 'Mofongo a $10 (prueba fic008)', 'Prueba.', 'item', ${MOF}, ${BASE}, 1000, 'all', now(), now()) returning id`).split('\n')[0];
+    }
+    ok(sql(`select oferta_precio(${MOF}, null)`) === '1000' && BASE > 1000, `precondición: el mofongo en oferta a $10.00 (en el menú, $${(BASE / 100).toFixed(2)})`);
+    await m.reload(); await m.locator('[data-screen-label="Ficha · menú"]').waitFor();
+    const antes = m.locator('[data-precio-antes]');
+    ok(await espera(async () => (await antes.count()) > 0), 'el plato en oferta muestra el precio de antes');
+    const txts = await antes.allInnerTexts();
+    ok(txts.every((x) => x === `$${(BASE / 100).toFixed(2)}`), `el de antes es el precio de siempre del menú, nunca otro número (${[...new Set(txts)].join(', ')})`);
+    ok(await antes.first().evaluate((el) => getComputedStyle(el.parentElement).textDecorationLine.includes('line-through')), 'va tachado');
+    ok(await antes.first().evaluate((el) => (el.previousElementSibling?.textContent ?? '') === 'Antes '), 'el lector de pantalla oye «Antes»');
+    ok((await m.locator('[data-screen-label="Ficha · menú"]').getByText('$10.00').count()) > 0, 'y el precio que se cobra es el de la oferta ($10.00)');
+    await m.screenshot({ path: OUT + 'fic008-comida-oferta-390.png' });
+    if (propia) sql(`update business_posts set status = 'removed' where id = ${propia}`);
+    else {
+      // Sin oferta en vivo, ni rastro del tachado: la de la semilla se termina un momento y se vuelve a abrir.
+      const sem = sql(`select string_agg(id::text, ',') from business_posts where item_id = ${MOF} and kind = 'oferta' and status = 'live' and (ends_at is null or ends_at > now())`);
+      sql(`update business_posts set ends_at = now() - interval '1 second' where id in (${sem})`);
+      await m.reload(); await m.locator('[data-screen-label="Ficha · menú"]').getByText('Mofongo de chicharrón').first().waitFor();
+      ok((await antes.count()) === 0, 'sin oferta en vivo no hay precio tachado');
+      sql(`update business_posts set ends_at = null where id in (${sem})`);
+    }
+
     console.log('2 · Mercado: + directo y la barra negra «Ver pedido»');
     await m.goto(B + `/n/${MERC}?tab=svc`); const menu = m.locator('[data-menu="c"]'); await menu.waitFor();
     const uno = sql(`select name->>'es' from items i where i.business_id = '${MERC}' and i.module = 'shop' and i.status = 'live' and i.removed_at is null and i.sell and not i.in_store_only
