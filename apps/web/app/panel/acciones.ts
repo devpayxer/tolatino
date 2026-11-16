@@ -41,6 +41,21 @@ export async function cerrarPorHoy(id: string, cerrar: boolean): Promise<Res> {
   return { ok: true };
 }
 
+/* ── C-001 · Video de presentación: «Quitar» (el aprobado y el que está en revisión). Se sube con /api/negocio/video. Nada se borra:
+   quedan «quitado» y su caso en la cola Medios se cierra solo. La página vuelve a la foto de portada. ── */
+export async function videoQuitar(id: string): Promise<Res> {
+  const a = await entrar(id);
+  if (!a) return SIN_ACCESO;
+  const n = await tx(async (c) => {
+    const L = (await c.query<{ id: string }>(`update business_videos set status = 'quitado', ended_at = now() where business_id = $1 and status in ('aprobado', 'revision') returning id::text`, [a.negocio.id])).rows;
+    for (const v of L) await c.query(`update queue_items set status = 'decided', decision = 'quitado', reason = 'El negocio quitó su video.', decided_at = now() where queue = 'medios' and subject_kind = 'business_video' and subject_id = $1 and status = 'open'`, [v.id]);
+    return L.length;
+  });
+  if (!n) return no("No tienes un video puesto.", "You don’t have a video up.");
+  await auditar(a, "negocio.video.quitar", { videos: n }, null);
+  return { ok: true };
+}
+
 /* ── Fotos y portada ──
    Las fotos se suben con /api/medios (quedan a nombre de quien sube) y aquí pasan al negocio. La portada es siempre
    la primera de la galería (sort 0). El logo es una foto aparte (owner_kind 'logo'). */

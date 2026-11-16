@@ -32,6 +32,7 @@ services:
       MEDIOS_KEY_ID: ${MEDIOS_KEY_ID:-}
       MEDIOS_SECRET: ${MEDIOS_SECRET:-}
       MODERACION_IMG_URL: http://moderacion-img:8790
+      VIDEO_URL: http://video:8791
       TRADUCTOR_URL: http://traductor:5000
       PROMETHEUS_URL: http://${REPLICA_HOST}:9090
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}

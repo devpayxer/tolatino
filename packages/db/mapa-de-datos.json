@@ -216,6 +216,7 @@
     "private_event_settings": { "equipo": ["updated_by"] },
     "pro_settings": { "equipo": ["updated_by"] },
     "queue_items": { "equipo": ["assigned_to", "decided_by"] },
+    "business_videos": { "equipo": ["reviewed_by"], "reglas": [{ "col": "uploaded_by", "accion": "guardar", "porque": "negocio", "fusion": "no" }] },
     "ranks": { "equipo": ["updated_by"] },
     "refunds": { "equipo": ["actor_id", "manual_by"] },
     "recon_runs": { "equipo": ["actor_id"] },

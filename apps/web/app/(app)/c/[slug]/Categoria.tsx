@@ -62,7 +62,7 @@ export function Categoria({ v }: { v: Vista }) {
 
   const pros = v.tarjetas.filter((b) => b.plan === "pro"), frees = v.tarjetas.filter((b) => b.plan === "free");
   const tarjeta = (b: Tarjeta) => (
-    <div key={b.id} className="grid"><TarjetaNegocio b={b} origen="categoria" textos={{ hoy: T.hoy ?? "", llamar: T.llamar ?? "" }} /></div>
+    <div key={b.id} className="grid"><TarjetaNegocio es={v.lang === "es"} b={b} origen="categoria" textos={{ hoy: T.hoy ?? "", llamar: T.llamar ?? "" }} /></div>
   );
 
   return (

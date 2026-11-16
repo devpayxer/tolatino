@@ -16,7 +16,7 @@ import { aBase, fmtHora, type DiaPanel } from "@/lib/panel-reglas";
 import { FOTOS_FREE, ITEMS_FREE, PRECIO_PRO, dinero } from "@/lib/plan";
 import { subirFoto } from "@/lib/subir-foto";
 import { estado } from "@/lib/tarjeta";
-import { aboutGuardar, avisoNegocio, cerrarPorHoy, especialAgregar, especialQuitar, feriadoMarcar, fotoQuitar, fotosAgregar, fotosOrden, horarioGuardar, licenciaAgregar, licenciaNumero, licenciaQuitar, logoPoner, noHago, selloCancelar, selloPedir, type Res } from "./acciones";
+import { aboutGuardar, avisoNegocio, cerrarPorHoy, especialAgregar, especialQuitar, feriadoMarcar, fotoQuitar, fotosAgregar, fotosOrden, horarioGuardar, licenciaAgregar, licenciaNumero, licenciaQuitar, logoPoner, noHago, selloCancelar, selloPedir, videoQuitar, type Res } from "./acciones";
 import { LIC_LEGAL, NO_HAGO } from "@/lib/no-hago";
 import { equipoBloques, equipoDetalle } from "./Equipo";
 import { menuBloques, menuDetalle, vendesBloques } from "./Menu";
@@ -126,7 +126,7 @@ export type Ctx = {
   go: (sec: Ruta["sec"], sub?: string | null) => void; det: (id: string) => void; closeDet: () => void; ruta: Ruta;
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any> | ((z: Record<string, any>) => Record<string, any>)) => void; pending: boolean;
-  pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
+  pickFiles: (multi: boolean, cb: (f: File[]) => void, accept?: string) => void; modoPruebas: boolean; menu?: MenuPanel;
   /* 8i · ¿Se puede comprar Pro aquí? En la web sí; dentro de las apps de las tiendas, no (Apple 3.1.3(f), Pagos de Google; guardián
      sinCompraDigitalEnApp): ningún botón ni enlace para comprarlo, solo el estado del plan. Lo decide el servidor (lib/tiendas/reglas.ts). */
   compraPro: boolean;
@@ -177,7 +177,7 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
     return { key, d: cur, dirty: forms[key] !== undefined && JSON.stringify(cur) !== JSON.stringify(b), set: (p) => setForms((z) => ({ ...z, [key]: { ...((z[key] as T | undefined) ?? b), ...p } })) };
   }, [forms]);
   const fileRef = useRef<HTMLInputElement>(null), fileCb = useRef<((f: File[]) => void) | null>(null);
-  const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void) => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.value = ""; fileCb.current = cb; el.click(); }, []);
+  const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void, accept = "image/*") => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.accept = accept; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
   // 8c · «Avisos del panel en este teléfono» (Más › Tus apps).
@@ -610,6 +610,7 @@ function fotos(c: Ctx): (Bloque | null)[] {
     { img: d.logo ? `url("${d.logo}")` : undefined, imgIni: d.logo ? undefined : d.name.slice(0, 1), imgW: "56px", t: "Logo", s: d.logo ? E2("Se ve junto al nombre.", "Shows next to the name.") : E2("Sin logo: se usa tu inicial.", "No logo: your initial is used."),
       acts: [{ l: d.logo ? E2("Cambiar", "Change") : E2("Subir logo", "Upload logo"), icon: "image", off: c.pending, onClick: () => subir(false, "logo") }].concat(d.logo ? [{ l: E2("Usar inicial", "Use initial"), icon: null as any, off: c.pending, onClick: () => c.run(() => logoPoner(d.id, null), E2("Listo. Ya se ve en tu página.", "Done. It shows on your page now.")) }] : []) },
   ] });
+  out.push(...videoBloques(c));
   out.push({
     type: "photos", k: E2("GALERÍA · TOCA UNA PARA MOVERLA", "GALLERY · TAP ONE TO MOVE IT"), count: `${g.length}${E2(" FOTOS", " PHOTOS")}${!d.pro && g.length > FOTOS_FREE ? E2(` · FREE MUESTRA ${FOTOS_FREE}`, ` · FREE SHOWS ${FOTOS_FREE}`) : ""}`, cols: c.desk ? 4 : 3,
     items: g.map((p, i) => ({ key: p.id, bg: `url("${p.url}")`, tag: i === 0 ? E2("PORTADA", "COVER") : !d.pro && i >= FOTOS_FREE ? E2("NO SE VE", "HIDDEN") : "", on: sel === i, onClick: () => c.setUi({ gSel: sel === i ? -1 : i }) })),
@@ -623,6 +624,50 @@ function fotos(c: Ctx): (Bloque | null)[] {
   });
   out.push({ type: "note", tone: "info", icon: "image", t: E2("Las fotos con gente y comida real reciben más clics que los logos y los carteles.", "Photos with real people and food get more clicks than logos and posters.") });
   return out;
+}
+
+/* C-001 · «Video de presentación · Pro» y «Hoy en el barrio · tu anillo» (canvas tolatino-master+, Panel v2 · Tu página › Fotos). El video se
+   sube a /api/negocio/video (el servidor lo recorta, lo deja en 720p y saca la portada) y queda en revisión; el aprobado de antes sigue. */
+function videoBloques(c: Ctx): (Bloque | null)[] {
+  const { d, E2 } = c, v = d.video, cols2 = c.desk && c.w >= 1100 && !c.detCol ? "repeat(2,minmax(0,1fr))" : undefined;
+  if (!d.pro) return [{ type: "rows", k: E2("VIDEO DE PRESENTACIÓN · PRO", "INTRO VIDEO · PRO"), cols: cols2, items: [
+    { icon: "image", t: E2("Tu video", "Your video"), s: E2("Un video corto que se mueve en tu tarjeta y arriba de tu página. Es de Pro.", "A short video that plays on your card and at the top of your page. It is Pro."),
+      acts: [{ l: "Pro", icon: "lock", onClick: () => c.setUi({ planHoja: true }) }] }] }];
+  const pct: number | null = c.ui.vSub ?? null;
+  const subir = () => c.pickFiles(false, (files) => {
+    const f = files[0];
+    if (!f) return;
+    c.setUi({ vSub: 0 });
+    c.run(() => new Promise((ok) => {
+      const x = new XMLHttpRequest(), fd = new FormData();
+      fd.append("video", f);
+      x.open("POST", `/api/negocio/video?negocio=${encodeURIComponent(d.id)}`);
+      x.upload.onprogress = (e) => { if (e.lengthComputable) c.setUi({ vSub: Math.min(99, Math.round((e.loaded / e.total) * 100)) }); };
+      x.onload = () => { let j: { ok?: boolean; mensaje?: { es: string; en: string } } = {}; try { j = JSON.parse(x.responseText); } catch { /* sin cuerpo */ } ok(j.ok ? { ok: true } : { ok: false, mensaje: j.mensaje ?? { es: "No se pudo subir el video. Prueba otra vez.", en: "The video could not be uploaded. Try again." } }); };
+      x.onerror = () => ok({ ok: false, mensaje: { es: "Sin conexión. El video no se subió.", en: "No connection. The video was not uploaded." } });
+      x.send(fd);
+    }) as Promise<{ ok: true } | { ok: false; mensaje: { es: string; en: string } }>, E2("Video subido. Lo revisamos en menos de 24 h.", "Video uploaded. We review it in under 24 h."), () => c.setUi({ vSub: null }));
+  }, "video/*");
+  const mmss = (s: number) => `0:${String(Math.min(59, Math.round(s))).padStart(2, "0")}`;
+  const quitar = { l: E2("Quitar", "Remove"), icon: "trash", off: c.pending || pct != null, onClick: () => c.run(() => videoQuitar(d.id), E2("Quitamos tu video. Tu página vuelve a la foto de portada.", "Video removed. Your page goes back to the cover photo.")) };
+  const cambiar = { l: E2("Cambiar video", "Change video"), icon: "image", off: c.pending || pct != null, onClick: subir };
+  const fila = pct != null
+    ? { icon: "image", t: E2(`Subiendo… ${pct} %`, `Uploading… ${pct} %`), s: pct >= 99 ? E2("Lo estamos preparando. Puede tardar un minuto.", "We are getting it ready. It can take a minute.") : E2("No cierres esta pantalla.", "Don’t close this screen."), acts: [] }
+    : v.revision
+      ? { img: `url("${v.revision.poster}")`, imgW: "56px", t: `${E2("Tu video", "Your video")} · ${mmss(v.revision.segundos)}`, s: E2("En revisión · menos de 24 h. Mientras, sale tu foto de portada.", "In review · under 24 h. Meanwhile your cover photo shows.") + (v.aprobado ? E2(" (o el video que ya tenías)", " (or the video you already had)") : ""), acts: [cambiar, quitar] }
+      : v.aprobado
+        ? { img: `url("${v.aprobado.poster}")`, imgW: "56px", t: `${E2("Tu video", "Your video")} · ${mmss(v.aprobado.segundos)}`, s: E2("Aprobado · se mueve en tu tarjeta y arriba de tu página.", "Approved · plays on your card and at the top of your page."), acts: [cambiar, quitar] }
+        : v.rechazado
+          ? { icon: "image", t: E2("No aprobado", "Not approved"), s: `${E2("No aprobado", "Not approved")}${v.rechazado.motivo ? ` · ${v.rechazado.motivo}` : ""}`, acts: [{ ...cambiar, l: E2("Subir otro", "Upload another") }] }
+          : { icon: "image", t: E2("Sin video", "No video"), s: E2("Tu tarjeta y tu página muestran tu foto de portada.", "Your card and page show your cover photo."), acts: [{ l: E2("Subir video", "Upload video"), icon: "image", off: c.pending, onClick: subir }] };
+  return [
+    { type: "rows", k: E2("VIDEO DE PRESENTACIÓN · PRO", "INTRO VIDEO · PRO"), cols: cols2, items: [fila] },
+    { type: "note", tone: "info", icon: "image", t: E2("Hasta 30 segundos. Que se vea tu trabajo o tu local. Sin música de otros artistas: en Instagram tiene permiso, aquí no.", "Up to 30 seconds. Show your work or your place. No music by other artists: Instagram has permission, here it does not.") },
+    { type: "rows", k: E2("HOY EN EL BARRIO · TU ANILLO", "TODAY NEARBY · YOUR RING"), cols: cols2, items: [
+      { icon: "news", t: E2("Tus novedades de hoy", "Your updates today"), s: E2("Lo que publicas en Novedades sale 24 h en el anillo de tu logo.", "What you post in Updates shows for 24 h in the ring on your logo."), acts: [{ l: E2("Publicar", "Post"), icon: "plus", onClick: () => c.go("pag", "nov") }] },
+      { icon: "share", t: E2("Tus historias de Instagram", "Your Instagram stories"), s: E2("Pronto: conecta tu Instagram y tus historias salen en el mismo anillo.", "Coming soon: connect your Instagram and your stories show in the same ring."), acts: [] },
+    ] },
+  ];
 }
 
 /* Horario (sub hor). Free: un tramo por día; Pro: dos. 9n: feriados, vacaciones, días propios y temporada (especialesBloques). */

@@ -6,6 +6,9 @@ import type { Lang } from "./idioma";
 import { estado, hora12 } from "./tarjeta";
 import { FOTOS_FREE, FOTOS_PRO } from "./plan";
 import { licenciasDe, tarjetaLey } from "./licencias";
+import { videosVivos, type VideoVivo } from "./video-negocio";
+import { historiasDeNegocios } from "./hoy";
+import type { Historia } from "./hoy-comun";
 
 /* Ficha del negocio (APP-NEG-LISTING), base de la Fase 1: encabezado, Resumen, horario, fotos, cómo llegar,
    preguntas y Relacionados. Todo lo calcula el servidor; los módulos (menú, servicios, reseñas…) llegan en sus fases. */
@@ -72,7 +75,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto, o?: { equipo?: bo
   const b = r.rows[0];
   if (!b) return null;
 
-  const [fotos, horas, subs, faqs, enlaces, gente, amen, lic] = await Promise.all([
+  const [fotos, horas, subs, faqs, enlaces, gente, amen, lic, vids, hist] = await Promise.all([
     db().query<{ url: string }>(`select url from media where owner_kind = 'business' and owner_id = $1 and status = 'visible' order by sort limit $2`, [id, b.plan === "pro" ? FOTOS_PRO : FOTOS_FREE]),
     db().query<Dia>(`select weekday, open, ranges from business_hours where business_id = $1 and module = '' order by weekday`, [id]),
     db().query<{ n: string }>(`select name->>$2 as n from subcategorias_vivas where id = any($1::text[]) order by array_position($1::text[], id)`, [b.subs, lang]),
@@ -89,6 +92,9 @@ export async function ficha(id: string, lang: Lang, p?: Punto, o?: { equipo?: bo
       `select a.icon, a.label->>$2 as l from businesses b cross join unnest(b.amenities) with ordinality u(k, o) join amenities a on a.key = u.k where b.id = $1 order by u.o`, [id, lang]),
     // ¿Puede hacerlo por ley? (Trámites y profesionales): sus licencias con su estado real.
     b.cat === "NEG-PRO" ? licenciasDe(id) : Promise.resolve([]),
+    // C-001 · Pro: el video aprobado (portada) y la historia de Hoy (el anillo del logo en la ficha de siempre).
+    b.plan === "pro" ? videosVivos([id]) : Promise.resolve(new Map()),
+    b.plan === "pro" ? historiasDeNegocios([id]) : Promise.resolve(new Map()),
   ]);
   const pro = b.plan === "pro", n = b.reviews, dias = horas.rows, ahora = { dow: b.dow, hm: b.hm };
   const urls = fotos.rows.map((x) => x.url);
@@ -163,6 +169,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto, o?: { equipo?: bo
     id: b.id, cat: b.cat, pro, nombre: b.name, verificado: b.verified, abierto: b.open, telefono: b.phone, lat: b.lat, lng: b.lng, situacion: b.st,
     mensajes: b.chat, // Mensajes (2p): solo negocios con dueño en To'Latino
     hero: foto(urls[0] ?? null, 650), mosaico: [urls[1] ?? urls[0] ?? null, urls[2] ?? urls[0] ?? null].map((u) => foto(u, 650)),
+    video: pro ? (vids as Map<string, VideoVivo>).get(b.id) ?? null : null, historia: pro ? (hist as Map<string, Historia>).get(b.id) ?? null : null,
     logo: pro && b.logo ? b.logo : null, iniciales, fotos: urls.map((u) => foto(u, 350)!), nFotos: urls.length,
     subsLinea: subs.rows.map((x) => x.n).join(" · "),
     s1: n >= 5 ? (b.rating?.toFixed(1) ?? "") : n > 0 ? String(n) : L("Nuevo", "New"), s1Estrella: n >= 5,

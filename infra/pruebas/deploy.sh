@@ -112,6 +112,14 @@ if ! systemctl is-active --quiet tolatino-moderacion; then
   systemd-run --unit tolatino-moderacion --collect ${COMPOSE_MOD[*]} up -d --build moderacion-img || true
 fi
 
+# 3f-2) Video de presentación (C-001): ffmpeg propio, se construye y se enciende aparte (perfil «video»). Si falla, la app sigue arriba y
+#     subir un video dice «no está disponible ahora»; los videos que ya están se siguen viendo (los sirve el almacén de medios).
+COMPOSE_VID=(docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" --profile video)
+if ! systemctl is-active --quiet tolatino-video; then
+  # shellcheck disable=SC2048
+  systemd-run --unit tolatino-video --collect ${COMPOSE_VID[*]} up -d --build video || true
+fi
+
 # 3g) Traductor propio (5h, «Ver traducción»): se baja y se enciende aparte (perfil «traductor»). Primero los modelos español ↔ inglés
 #     (una sola vez, al volumen; si ya están, no baja nada) y después el traductor, solo en la red interna. Si algo falla, la app sigue
 #     arriba y «Ver traducción» dice «La traducción no está disponible ahora.»; el texto nunca va a un tercero.

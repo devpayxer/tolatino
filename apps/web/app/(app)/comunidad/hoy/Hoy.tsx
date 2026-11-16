@@ -54,7 +54,7 @@ function Cuerpo({ es, ciudad, cat, d, nuevos, ancho }: { es: boolean; ciudad: st
             <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <SectionHeader title={E2("Nuevos en el barrio", "New in the neighborhood")} />
               <div style={{ display: "grid", gridTemplateColumns: D ? "repeat(auto-fill,minmax(300px,1fr))" : "minmax(0,1fr)", gap: 12 }}>
-                {nuevos.map((b) => <div key={b.id} style={{ display: "grid" }}><TarjetaNegocio b={b} origen="hoy" textos={{ hoy: TX[es ? "es" : "en"].todayTag, llamar: TX[es ? "es" : "en"].call }} /></div>)}
+                {nuevos.map((b) => <div key={b.id} style={{ display: "grid" }}><TarjetaNegocio es={es} b={b} origen="hoy" textos={{ hoy: TX[es ? "es" : "en"].todayTag, llamar: TX[es ? "es" : "en"].call }} /></div>)}
               </div>
             </section>
           )}

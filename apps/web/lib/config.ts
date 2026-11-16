@@ -18,6 +18,8 @@ export type ClaveConfig =
   | "com_editar_min" | "com_apelar_dias" | "com_encuesta_dias_max" | "com_traduccion_hora" | "com_resumen_hora" | "cup_dias_def"
   // C-007 · la ficha nueva para los Pro (0170)
   | "ficha_nueva_pro"
+  // C-001 · cuánto dura como mucho el video de presentación (0172)
+  | "video_max_s"
   | "pts_tope_dia"
   | "sp_seguro_guardar_h" | "sp_total_escrito_dias" | "sp_notas_purga_dias" | "sp_fotos_ayuda_dias" | "ayuda_negocio_h"
   | "noche_responder_min" | "noche_mesa_guardada_min" | "noche_fila_viva_min" | "noche_corte_min"

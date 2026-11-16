@@ -9,6 +9,7 @@ import { EQUIPO_FREE, ITEMS_FREE } from "./plan";
 import { topeFreeDe } from "./pedir";
 import { estado } from "./tarjeta";
 import { licenciasDe, licenciasEquipo } from "./licencias";
+import { videoPanel } from "@/lib/video-negocio";
 
 /* Panel del negocio: quién entra. El servidor decide en cada lectura y cada cambio: la persona tiene que ser miembro
    activo del negocio (dueño, o equipo con acceso a esa parte del panel). Nunca se confía en lo que diga la pantalla. */
@@ -177,6 +178,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     ph: fotos.rows[0]?.url ?? null, logo: b.logo,
     kpis: { views7: k.v7, contacts7: k.c7, viewsToday: k.vhoy, viewsTrial: k.vprueba, contactsTrial: k.cprueba },
     fuerza: f, duerme: seDuerme({ galeria: fotos.rows.length, equipo: okEquipo.length, items, itemsW, itemsFree: ITEMS_FREE }, es),
+    video: await videoPanel(b.id), // C-001 · Video de presentación (Pro)
     fotos: fotos.rows, horas: dias, about: b.about, amen: b.amen, amenAll: amen.rows.map((a) => ({ key: a.key, l: a.label[lang] })),
     owner: b.owner, equipo, equipoFree: EQUIPO_FREE, tope: tope.cap, usadosMes: tope.usados,
     hoy: { fecha: b.hoy, tz: b.tz, dow: b.dow, hm: b.hm, saludo: ahoraHora < 12 ? (es ? "Buenos días" : "Good morning") : ahoraHora < 19 ? (es ? "Buenas tardes" : "Good afternoon") : es ? "Buenas noches" : "Good evening" },

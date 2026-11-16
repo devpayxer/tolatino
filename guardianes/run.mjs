@@ -7218,6 +7218,24 @@ const guardianes = {
     const m = existsSync("apps/web/middleware.ts") ? readFileSync("apps/web/middleware.ts", "utf8") : "";
     if (/NextResponse\.redirect\(/.test(m) && !/x-forwarded-host/.test(m)) falla(G, "apps/web/middleware.ts", 0, "el middleware arma la dirección con las cabeceras reenviadas, no con req.url");
   },
+  /* C-001 · El video de presentación solo se ve APROBADO y de un negocio Pro activo (lib/video-negocio.ts videosVivos, una consulta para toda
+     la lista). Subirlo exige Pro y pasa SIEMPRE por el servicio propio (procesarVideo: recorta, 720p, sin metadatos); el original nunca se
+     guarda. Ninguna pantalla pública lee business_videos por su cuenta. Al revés (alrevesC001). */
+  videoSoloAprobado() {
+    const G = "videoSoloAprobado", L = "apps/web/lib/video-negocio.ts", R = "apps/web/app/api/negocio/video/route.ts";
+    if (!existsSync(L) || !existsSync(R)) return falla(G, existsSync(L) ? R : L, 0, "falta la pieza del video de presentación");
+    const l = sinComent(L), i = l.indexOf("export async function videosVivos"), viv = i >= 0 ? l.slice(i, l.indexOf("\n}\n", i)) : "";
+    if (!/v\.status = 'aprobado'/.test(viv) || !/s\.plan = 'pro'/.test(viv) || !/b\.status = 'active'/.test(viv)) falla(G, L, 0, "videosVivos solo devuelve videos aprobados de negocios Pro activos");
+    const r = sinComent(R);
+    if (!/if \(plan !== "pro"\) return err\(403/.test(r)) falla(G, R, 0, "subir el video exige que el negocio sea Pro (lo decide el servidor)");
+    if (!/procesarVideo\(/.test(r)) falla(G, R, 0, "el video pasa por el servicio propio (procesarVideo) antes de guardarse");
+    for (const m of r.matchAll(/guardarObjeto\(([^,]+),\s*([^,]+),/g)) if (!/^(cv|cp)$/.test(m[1].trim()) || !/^(p\.mp4|portada)$/.test(m[2].trim())) falla(G, R, 0, `se guarda algo que no es el video procesado ni su portada (${m[2].trim()}): el original nunca se guarda`);
+    const PERMITIDOS = new Set([L, R, "apps/web/app/panel/acciones.ts", "apps/web/app/admin/acciones-colas.ts", "apps/web/lib/admin-colas.ts"]);
+    for (const f of codigo) {
+      if (!/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(f) || PERMITIDOS.has(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((x, n) => { if (/\bbusiness_videos\b/.test(x)) falla(G, f, n + 1, "lee business_videos por su cuenta: lo público va por videosVivos (solo aprobados y Pro)"); });
+    }
+  },
   /* C-008 · El precio de antes (tachado) nunca es un número escrito a mano: es el precio de siempre del menú (items.price_cents) cuando una
      oferta en vivo de Novedades lo baja (lib/pedir.ts), y solo eso llega a las tarjetas (was). Sin un «precio anterior» que el negocio invente
      (descuento falso). Al revés (alrevesC008). */

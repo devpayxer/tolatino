@@ -59,7 +59,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
     bname: string | null; cover: string | null; rname: string | null; rcat: string | null; mnote: string | null; mreason: string | null; nrep: number; ltitle: string | null;
     subject_kind: string; sctype: string | null; sname: string | null; rpreason: string | null; rpn: number; rpbiz: boolean; chreason: string | null; chn: number; chbiz: boolean; dpnum: string | null; sopk: string | null; sopr: string | null; dpamt: number | null; dpreason: string | null; dpdue: string | null;
     lst: string | null; lnext: string | null; vjn: number; vjf: string | null; vji: string | null;
-    ctext: string | null; cn: number; creason: string | null; cflag: string | null; uname: string | null; apel: string | null; mkind: string | null; evt: string | null; sla_h: number;
+    ctext: string | null; cn: number; creason: string | null; cflag: string | null; uname: string | null; apel: string | null; mkind: string | null; vseg: number | null; evt: string | null; sla_h: number;
     tk: string | null; dinc: string | null;
   }>(
     `select q.id::text, q.queue, q.opened_at, q.priority, q.assigned_to, u.first_name as assignee, q.subject_kind, sc.type as sctype,
@@ -96,6 +96,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
             (select coalesce(nullif(trim(coalesce(x.first_name, '') || ' ' || coalesce(x.last_name, '')), ''), 'Vecino') from users x where q.subject_kind = 'user' and x.id::text = q.subject_id) as uname,
             (select a.number || '|' || a.target_kind from appeals a where q.subject_kind = 'appeal' and a.id::text = q.subject_id) as apel,
             (select m.owner_kind from media m where q.queue = 'medios' and m.id::text = q.subject_id) as mkind,
+            (select v.seconds from business_videos v where q.subject_kind = 'business_video' and v.id::text = q.subject_id) as vseg,
             (select case when e.pending_status = 'review' then 'cambio' else 'nuevo' end || '|' || (e.title->>'es') from events e where q.queue = 'evt' and e.id::text = q.subject_id) as evt,
             (select sc.number || '|' || sc.topic || '|' || coalesce((select left(m.body, 80) from support_messages m where m.case_id = sc.id and m.sender = 'user' and m.hidden_at is null order by m.at, m.id limit 1), '')
                from support_cases sc where q.queue = 'ticket' and sc.id::text = q.subject_id) as tk,
@@ -149,6 +150,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "evt" ? { title: `Evento · ${(x.evt ?? "|").split("|").slice(1).join("|")}`, sub: `${b}${(x.evt ?? "").startsWith("cambio") ? " · cambio que importa · sigue en vivo la versión anterior" : " · nuevo · nada se publica antes"}` }
       : x.queue === "medios" && x.mkind === "com_post" ? { title: "Foto de la Comunidad", sub: x.cflag ? x.cflag.split("|").slice(1).join("|") : "Espera revisión" }
       : x.queue === "rep" ? { title: `Reseña reportada · ${b}`, sub: `${x.rpbiz ? "El negocio pidió revisarla" : MOTIVO_RESENA[x.rpreason ?? "otro"] ?? "Otro motivo"}${x.rpn > 1 ? ` · ${x.rpn} reportes` : ""}` }
+      : x.queue === "medios" && x.subject_kind === "business_video" ? { title: `Video de presentación · ${b}`, sub: `Subió su video de presentación${x.vseg ? ` (${Math.round(x.vseg)} s)` : ""}.` }
       : x.queue === "medios" ? { title: `Foto marcada · ${b}`, sub: `${MOTIVO_FOTO[x.mreason ?? "otro"] ?? "Otro motivo"}${x.mnote ? ` · «${x.mnote}»` : ""}${x.nrep > 1 ? ` · ${x.nrep} reportes` : ""}` }
       : { title: x.rname ?? "", sub: `Recomendado por un vecino${x.rcat ? ` · ${x.rcat}` : ""}` };
     return {
@@ -282,6 +284,11 @@ export async function caso(s: Staff, id: string) {
   if (q.queue === "apel") {
     const ap = q.status === "open" ? await (await import("./apelaciones")).apelacionDeCaso(q.subject_id) : null;
     return { ...base, negocio: null, apel: ap ? { ...ap, mia: ap.por === s.id } : null };
+  }
+  if (q.queue === "medios" && q.subject_kind === "business_video") {
+    // C-001 · El video de presentación: se ve con controles; aprobar o no aprobar con motivo.
+    const v = await (await import("./video-negocio")).casoVideo(q.subject_id);
+    return { ...base, negocio, video: v ? { src: v.src, poster: v.poster, segundos: Number(v.segundos), status: v.status, pro: v.plan === "pro" } : null };
   }
   if (q.queue === "medios") {
     const m = (await db().query<{ url: string; status: string; visibles: number }>(

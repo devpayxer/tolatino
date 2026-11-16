@@ -30,6 +30,8 @@ services:
       VAPID_PRIVADA: ${VAPID_PRIVADA:-}
       # 5d · Moderación de imágenes propia (regla `img`): solo por la red interna; si no responde, las fotos esperan revisión.
       MODERACION_IMG_URL: http://moderacion-img:8790
+      # C-001 · Video de presentación: servicio propio con ffmpeg (services/video), por la red interna. Sin él, subir un video dice que no está disponible.
+      VIDEO_URL: http://video:8791
       # 5h · Traductor propio («Ver traducción»): la única dirección de traducción de la app, por la red interna. Si no responde, la
       # pantalla dice «La traducción no está disponible ahora.» y sigue igual. El texto de los vecinos nunca va a un tercero.
       TRADUCTOR_URL: http://traductor:5000
@@ -79,6 +81,16 @@ services:
     profiles: ["moderacion"]
     restart: unless-stopped
     mem_limit: 768m
+    cpus: 1.0
+
+  # C-001 · Video de presentación del negocio: ffmpeg propio (services/video). Perfil propio: deploy.sh lo enciende aparte con `|| true`.
+  video:
+    build:
+      context: ../../services/video
+    image: tolatino/video:pruebas
+    profiles: ["video"]
+    restart: unless-stopped
+    mem_limit: 1024m
     cpus: 1.0
 
   # 5h · Traductor propio: LibreTranslate 1.9.6 (AGPL-3.0, sin modificar, como servicio aparte) con los modelos Argos español ↔ inglés.

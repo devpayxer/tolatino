@@ -59,6 +59,39 @@ export async function hoyEnElBarrio(ciudad: string, cat: string | null, cursor: 
   return { historias, mas: r.rows.length > n ? filas.at(-1)!.cur : null };
 }
 
+/* C-001 · El anillo del logo: la historia de Hoy de CADA negocio de una lista (tarjetas de resultados, ficha), con la misma regla que Hoy
+   en el barrio (post_en_hoy, < 24 h, hasta 3 avisos, del más nuevo al más viejo; guardián hoySoloEnVivo). Una sola consulta para toda la
+   lista (sin N+1). Sin historia, sin anillo. */
+export async function historiasDeNegocios(ids: string[]): Promise<Map<string, Historia>> {
+  const L = [...new Set(ids.filter((x) => typeof x === "string" && x))].slice(0, 200);
+  const m = new Map<string, Historia>();
+  if (!L.length) return m;
+  const r = await db().query<{ id: string; nombre: string; logo: string | null; avisos: { id: string; kind: string; texto: string; at: string; quedan: number; foto: string | null; ev: string | null }[] }>(
+    `with v as (
+       select p.id, p.business_id, p.kind, p.title, p.publish_at, p.ends_at, p.item_id, p.link_kind, p.event_id,
+              row_number() over (partition by p.business_id order by p.publish_at desc, p.id desc) as rn
+         from business_posts p
+         join business_stats_cache s on s.business_id = p.business_id and s.plan = 'pro'
+        where p.business_id = any($1::text[]) and p.status = 'live' and p.hidden_at is null and p.hoy_off_at is null
+          and p.publish_at > now() - interval '24 hours' and post_en_hoy(p)),
+     x as (select * from v where rn <= 3)
+     select x.business_id as id, b.name as nombre,
+            coalesce(b.logo_url, (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1)) as logo,
+            json_agg(json_build_object(
+              'id', x.id::text, 'kind', x.kind, 'texto', x.title, 'at', ${ISO("x.publish_at")},
+              'ev', case when x.link_kind = 'event' then (select '/eventos/' || e.slug from events e where e.id = x.event_id) end,
+              'quedan', greatest(1, ceil(extract(epoch from least(x.publish_at + interval '24 hours', coalesce(x.ends_at, 'infinity'::timestamptz)) - now()) / 3600))::int,
+              'foto', coalesce((select m.url from media m where m.owner_kind = 'post' and m.owner_id = x.id::text and m.status = 'visible' order by m.sort, m.created_at limit 1),
+                               (select i.photos[1] from items i where i.id = x.item_id and i.removed_at is null),
+                               (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1)))
+              order by x.publish_at desc, x.id desc) as avisos
+       from x join businesses b on b.id = x.business_id
+      group by x.business_id, b.id`, [L]).catch(() => ({ rows: [] as never[] }));
+  for (const h of r.rows) m.set(h.id, { id: h.id, nombre: h.nombre, logo: h.logo, mi: null, domicilio: false,
+    avisos: h.avisos.map((a) => ({ id: a.id, t: a.ev ? "ev" : TIPO_HOY[a.kind] ?? "nv", texto: a.texto, at: a.at, quedan: a.quedan, foto: a.foto, ev: a.ev })) });
+  return m;
+}
+
 /* ¿Cuánto le queda en Hoy a cada novedad de un negocio? (la ficha y el panel dicen «En Hoy en el barrio · quedan N h»). */
 export async function quedanEnHoy(negocio: string): Promise<Map<string, number>> {
   const r = await db().query<{ id: string; h: number }>(

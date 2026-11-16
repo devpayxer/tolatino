@@ -63,6 +63,7 @@ import { DlBarra, DlHoja, DlRiel, DlTab, useDealer, DlResumen } from "./Dealer";
 import { MeBarra, MeHoja, MeRiel, useMerc, MeResumen, MeMenu, MeOrderBar } from "./Mercado";
 import { TiendaTab } from "./Tienda";
 import { HojaEntrar } from "../../HojaEntrar";
+import { VideoPortada } from "../../VideoNegocio";
 
 type N = "Icon" | "Button" | "IconButton" | "Tabs" | "DesktopTabs" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard" | "SectionHeader" | "ServiceRow"
   | "Placeholder" | "ReviewCard" | "StaffPicker" | "DateStrip" | "TimeSlots" | "StepHeader" | "TotalBar" | "DepositNote" | "DepositOutcomes" | "Eyebrow"
@@ -411,7 +412,9 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
       {modo === "m" ? (
       <div className="pb-[116px] lg:hidden" data-screen-label="App · Ficha">
         <div className="relative h-[330px]">
+          {f.video ? <div className="absolute inset-0 overflow-hidden" data-portada-video=""><VideoPortada src={f.video.src} poster={f.video.poster} es={es} chipPos={{ left: 20, bottom: 16 }} /></div> : (
           <button type="button" aria-label={t.photosAll} onClick={verFotos} className="absolute inset-0 block">{f.hero ? <span className="block size-full bg-photo-bg-2" style={{ background: `center/cover url(${f.hero})` }} /> : <Placeholder height="100%" />}</button>
+          )}
           <div className="absolute inset-x-5 top-4 flex gap-2">
             <IconButton icon="chevronLeft" size={40} label={t.back} onClick={() => router.back()} />
             <div className="flex-1" />
@@ -536,7 +539,9 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
           {[f.subsLinea.toUpperCase(), `${f.ciudad}, PA`].filter(Boolean).map((x, i) => <span key={i}>{i ? "· " : ""}{x}</span>)}
         </div>
         <div className="relative grid h-[448px] grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] grid-rows-2 gap-2 overflow-hidden rounded-[22px]">
+          {f.video ? <div className="relative row-span-2 min-w-0 overflow-hidden" data-portada-video=""><VideoPortada src={f.video.src} poster={f.video.poster} es={es} desk onClick={verFotos} /></div> : (
           <button type="button" aria-label={t.photosAll} onClick={verFotos} className="row-span-2 min-w-0">{f.hero ? <span className="block size-full" style={{ background: `center/cover url(${f.hero})` }} /> : <Placeholder height="100%" />}</button>
+          )}
           {[1, 2, 3, 4].map((k) => <button key={k} type="button" aria-label={t.photosAll} onClick={verFotos} className="min-w-0">{f.fotos[k] ? <span className="block size-full" style={{ background: `center/cover url(${f.fotos[k]})` }} /> : <Placeholder height="100%" />}</button>)}
           {f.nFotos > 0 ? <button type="button" onClick={verFotos} className="absolute bottom-4 right-4 flex items-center gap-2 rounded-[13px] bg-white px-3.5 py-2.5 text-[13px] font-bold shadow-[var(--shadow-float)]"><Icon name="image" size={16} />{E2(`Ver las ${f.nFotos} fotos`, `See all ${f.nFotos} photos`)}</button> : null}
         </div>

@@ -51,6 +51,7 @@ import { tec } from "@/lib/tec";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { MiniMapa } from "@/app/_dir/MiniMapa";
 import { HojaEntrar } from "../../HojaEntrar";
+import { VideoPortada, VisorHoy } from "../../VideoNegocio";
 type N = "Icon" | "Button" | "IconButton" | "Tabs" | "DesktopTabs" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, IconButton, Tabs, DesktopTabs, TodayCard, HoursPro, Tag, Chip, OwnerCard } = UI as unknown as Record<N, ComponentType<any>>;
@@ -160,7 +161,14 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
       <path d="M7.6 12.4l3 3 5.9-6.4" stroke="var(--tl-white)" strokeWidth="2.4" fill="none" strokeLinecap="round" />
     </svg>
   );
-  const logo = (cls: string) => (
+  // C-001 · Pro con algo de hoy: el logo lleva el anillo (outline morado) y abre «Hoy en el barrio» de este negocio. Sin hoy, no hace nada.
+  const hoyAnillo = f.historia && f.historia.avisos.length ? f.historia : null;
+  const [anillo, setAnillo] = useState(false);
+  const logo = (cls: string, off = 2) => hoyAnillo ? (
+    <button type="button" onClick={() => setAnillo(true)} aria-label={`${es ? "Hoy en el barrio" : "Today nearby"} · ${f.nombre}`} data-anillo=""
+      className={`grid flex-none cursor-pointer place-items-center border border-line font-display font-extrabold leading-none text-white ${cls}`}
+      style={{ ...fondo(f.logo), backgroundColor: f.logo ? "var(--tl-photo-bg)" : "var(--tl-ink)", outline: "3px solid var(--tl-action)", outlineOffset: off }}>{f.logo ? "" : f.iniciales}</button>
+  ) : (
     <span className={`grid flex-none place-items-center border border-line font-display font-extrabold leading-none text-white ${cls}`}
       style={{ ...fondo(f.logo), backgroundColor: f.logo ? "var(--tl-photo-bg)" : "var(--tl-ink)" }}>{f.logo ? "" : f.iniciales}</span>
   );
@@ -336,6 +344,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
 
   return (
     <div data-pantalla="APP-NEG-LISTING" className="mx-auto w-full max-w-[1440px] bg-white pb-[110px] lg:px-[30px] lg:pb-14 lg:pt-[18px]">
+      {anillo && hoyAnillo ? <VisorHoy h={hoyAnillo} es={es} onClose={() => setAnillo(false)} /> : null}
       {/* ── Escritorio: volver, fotos y encabezado ── */}
       <div className="hidden lg:block">
         <button type="button" onClick={() => router.back()} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action">
@@ -343,7 +352,8 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
         </button>
         {f.pro ? (
           <div className="relative mt-4 grid h-[440px] grid-cols-[2fr_1fr] grid-rows-2 gap-2 overflow-hidden rounded-[24px]">
-            <button type="button" aria-label={t.photosAll} onClick={() => verFotos(0)} className="row-span-2 bg-photo-bg-2" style={fondo(f.hero)} />
+            {f.video ? <div className="relative row-span-2 overflow-hidden bg-photo-bg-2" data-portada-video=""><VideoPortada src={f.video.src} poster={f.video.poster} es={es} desk onClick={() => verFotos(0)} /></div>
+              : <button type="button" aria-label={t.photosAll} onClick={() => verFotos(0)} className="row-span-2 bg-photo-bg-2" style={fondo(f.hero)} />}
             {f.mosaico.map((u, i) => <button key={i} type="button" aria-label={t.photosAll} onClick={() => verFotos(Math.min(i + 1, f.nFotos - 1))} className="bg-photo-bg" style={fondo(u)} />)}
             <button type="button" onClick={() => verFotos()} className="absolute bottom-[18px] right-[18px] flex h-10 items-center gap-2 rounded-xl bg-white px-[15px] text-[13px] font-bold text-ink shadow-[0_10px_24px_-12px_rgba(11,14,18,.6)]">
               <Icon name="image" size={15} />{t.photosAll}
@@ -386,7 +396,8 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
 
       {/* ── Teléfono: portada y encabezado ── */}
       <div className="lg:hidden">
-        <div className={`relative bg-photo-bg-2 ${f.pro ? "h-[272px]" : "h-[210px]"}`} style={fondo(f.hero)}>
+        <div className={`relative overflow-hidden bg-photo-bg-2 ${f.pro ? "h-[272px]" : "h-[210px]"}`} style={fondo(f.hero)}>
+          {f.video ? <div className="absolute inset-0" data-portada-video=""><VideoPortada src={f.video.src} poster={f.video.poster} es={es} abajo={26} /></div> : null}
           <div className="absolute inset-x-0 top-0 h-[120px] bg-[linear-gradient(180deg,rgba(11,14,18,.55),transparent)]" />
           <button type="button" aria-label={t.back} onClick={() => router.back()} className="absolute left-4 top-3.5 grid size-[38px] place-items-center rounded-[13px] bg-white/95">
             <Icon name="chevronLeft" size={18} strokeWidth={2} />

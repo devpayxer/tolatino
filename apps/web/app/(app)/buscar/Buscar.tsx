@@ -370,7 +370,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
               <div className="flex flex-col gap-3 px-5 pb-12 pt-4 lg:px-0">
                 <span className="font-mono text-[10.5px] font-bold tracking-[0.08em] text-ink/60">{f(t.conteo, { n: R.total })}{R.paginas > 1 ? ` · ${f(t.pagina, { p: R.pagina + 1, n: R.paginas })}` : ""}</span>
                 <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))] lg:gap-4">
-                  {R.tarjetas.map((b) => <div key={b.id} className="grid"><TarjetaNegocio b={b} origen="buscar" textos={{ hoy: TX[v.lang].todayTag, llamar: TX[v.lang].call }} /></div>)}
+                  {R.tarjetas.map((b) => <div key={b.id} className="grid"><TarjetaNegocio es={v.lang === "es"} b={b} origen="buscar" textos={{ hoy: TX[v.lang].todayTag, llamar: TX[v.lang].call }} /></div>)}
                 </div>
                 {R.paginas > 1 && (
                   <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
@@ -399,7 +399,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                     <span className="font-display text-[18px] font-extrabold tracking-[-0.03em]">{t.biz}</span>
                     {R.total > 4 && <button type="button" onClick={() => ir({ tab: "biz" })} className="whitespace-nowrap text-[12.5px] font-bold text-action">{f(t.verN, { n: R.total })}</button>}
                   </div>
-                  {R.tarjetas[0]?.plan === "pro" && <div className="grid"><TarjetaNegocio b={R.tarjetas[0]} origen="buscar" textos={{ hoy: TX[v.lang].todayTag, llamar: TX[v.lang].call }} /></div>}
+                  {R.tarjetas[0]?.plan === "pro" && <div className="grid"><TarjetaNegocio es={v.lang === "es"} b={R.tarjetas[0]} origen="buscar" textos={{ hoy: TX[v.lang].todayTag, llamar: TX[v.lang].call }} /></div>}
                   {R.filas.slice(R.tarjetas[0]?.plan === "pro" ? 1 : 0, R.tarjetas[0]?.plan === "pro" ? 5 : 4).map((x) => (
                     <div key={x.id} className="grid">
                       <SearchResultRow size="row" parts={x.parts} pro={x.pro} image={x.image} meta={x.meta} status={x.status} statusColor={x.statusColor} onClick={() => router.push(`/n/${x.id}`)} />

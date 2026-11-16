@@ -83,14 +83,14 @@ export function Negocios({ titulo, sub, intenciones, cats, destacados, nuevos, t
 
         <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start xl:gap-[30px]">
           <div className="flex min-w-0 flex-col gap-[26px] lg:gap-[34px]">
-            {destacados.length > 0 && <Fila titulo={t.dest} items={destacados} t={t} />}
+            {destacados.length > 0 && <Fila titulo={t.dest} items={destacados} t={t} es={es} />}
             {hoy.length > 0 && (
               <div className="-mx-5 lg:mx-0">
               <HoyCarrusel es={es} historias={hoy} titulo={E2("Hoy en el barrio", "Today nearby")} verTodo="/comunidad/hoy" escritorio />
               </div>
             )}
             {recomendados && <div className="xl:hidden">{recomendados}</div>}
-            {nuevos.length > 0 && <Fila titulo={t.nuevos} items={nuevos} t={t} />}
+            {nuevos.length > 0 && <Fila titulo={t.nuevos} items={nuevos} t={t} es={es} />}
             <div className="xl:hidden lg:grid lg:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] lg:gap-3.5">
               <div className="grid">{publica}</div>
             </div>
@@ -105,7 +105,7 @@ export function Negocios({ titulo, sub, intenciones, cats, destacados, nuevos, t
 }
 
 /* Fila horizontal de tarjetas; en escritorio con flechas junto al título (prototipo car.featPrev/Next). */
-function Fila({ titulo, items, t }: { titulo: string; items: Tarjeta[]; t: Textos }) {
+function Fila({ titulo, items, t, es }: { titulo: string; items: Tarjeta[]; t: Textos; es: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const mover = (d: number) => ref.current?.scrollBy({ left: d * ref.current.clientWidth * 0.8, behavior: "smooth" });
   return (
@@ -120,7 +120,7 @@ function Fila({ titulo, items, t }: { titulo: string; items: Tarjeta[]; t: Texto
       <div ref={ref} className="hs -mx-5 -mb-3.5 flex snap-x snap-mandatory items-start gap-3 overflow-x-auto px-5 pb-3.5 scroll-px-5 lg:mx-0 lg:gap-3.5 lg:px-0">
         {items.map((b) => (
           <div key={b.id} className="grid w-[300px] flex-none snap-start lg:w-[320px]">
-            <TarjetaNegocio b={b} origen="negocios" textos={{ hoy: t.hoy, llamar: t.llamar }} />
+            <TarjetaNegocio es={es} b={b} origen="negocios" textos={{ hoy: t.hoy, llamar: t.llamar }} />
           </div>
         ))}
       </div>

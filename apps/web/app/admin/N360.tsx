@@ -41,6 +41,7 @@ const FOTO = (E: EF) => [E("No es de este negocio", "Not from this business"), E
 const SELLO_NO = (E: EF) => [E("La dirección no coincide con la página", "The address doesn’t match the page"), E("No pudimos confirmar que representas el negocio", "We couldn’t confirm you represent the business"), E("Las fotos no son del local", "The photos aren’t of the place"), E("El nombre puede confundirse con otro negocio", "The name can be confused with another business")];
 /* Verbo de cada acción en el historial (prototipo actL). */
 const VERBO: Record<string, string> = {
+  "negocio.video.subir": "subió el video de presentación de", "negocio.video.quitar": "quitó el video de presentación de", "negocio.video.aprobar": "aprobó el video de presentación de", "negocio.video.rechazar": "no aprobó el video de presentación de",
   "negocio.equipo.quitar_acceso": "le quitó el acceso al panel a alguien de", "negocio.equipo.devolver_acceso": "devolvió el acceso al panel a alguien de",
   "negocio.fusion.pedir": "pidió fusionar un duplicado con", "negocio.duplicado.no": "marcó que no es duplicado", "negocio.categoria.pedir": "pidió cambiar la categoría de",
   "negocio.transferir.pedir": "pidió transferir", "negocio.fusionar": "fusionó un duplicado con", "negocio.fusionado": "fusionó con otro negocio a", "negocio.categoria.cambiar": "cambió la categoría de",

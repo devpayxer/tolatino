@@ -18,7 +18,7 @@ import type { AjustesColas } from "@/lib/admin-colas";
 import { useE } from "./idioma-admin";
 
 import { crearSemilla,
- decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, reponerSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, decidirNoche, decidirEstafa, pausaEstafa, decidirVivienda, type ResAdm, verNinoCaso } from "./acciones-colas";
+ decidirCambio, decidirLicencia, decidirMedios, decidirVideo, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, reponerSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, decidirNoche, decidirEstafa, pausaEstafa, decidirVivienda, type ResAdm, verNinoCaso } from "./acciones-colas";
 import { compaHilo } from "./acciones-compa";
 import { verFotosSalud } from "./acciones-sistema";
 import { copilotoSugerir } from "./acciones-copiloto";
@@ -42,6 +42,8 @@ export const PLANT = {
   keep: ["No rompe las reglas del barrio", "Es una opinión sobre el servicio", "El reporte no trae evidencia"],
   // Fotos: los mismos motivos con los que un vecino reporta (photo_reports.reason).
   foto: ["No es de este negocio", "Contenido inapropiado", "Muestra datos personales", "Es publicidad o spam"],
+  // C-001 · Video de presentación (motivos propios del video; lib/video-negocio.ts MOTIVOS_VIDEO).
+  video: ["No se ve tu negocio ni tu trabajo.", "Tiene música de otros artistas.", "Se ve mal: borroso, oscuro o de lado.", "Tiene contenido que no se permite en To'Latino.", "Tiene teléfonos, precios o enlaces escritos encima."],
 };
 /* 9f-4 · Las mismas plantillas en inglés: PLANT se queda en español para quien la importe; plantE(E) da las del idioma de la persona. */
 type EF = (es: string, en: string) => string;
@@ -52,6 +54,7 @@ const PLANT_EN: typeof PLANT = {
   hide: ["Contains personal data", "Offensive or discriminatory", "Not a customer: no transaction", "Spam or advertising", "Threat or harassment"],
   keep: ["Doesn't break the neighborhood rules", "It's an opinion about the service", "The report has no evidence"],
   foto: ["Not from this business", "Inappropriate content", "Shows personal data", "It's advertising or spam"],
+  video: ["It doesn’t show your business or your work.", "It has music by other artists.", "It looks bad: blurry, dark or sideways.", "It has content that isn’t allowed on To'Latino.", "It has phone numbers, prices or links written on it."],
 };
 export const plantE = (E: EF): typeof PLANT => (E("", "x") === "x" ? PLANT_EN : PLANT);
 
@@ -279,6 +282,20 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
         { l: E("Vencida", "Expired"), icon: "clock", onClick: () => setConf({ titulo: E("¿Qué dice el registro?", "What does the registry say?"), hacer: (m) => decidirLicencia(k.id, "expired", m) }) },
         { l: E("No aparece", "Not found"), v: "danger", icon: "close", onClick: () => setConf({ titulo: E("¿Qué buscaste y dónde?", "What did you search and where?"), peligro: true, hacer: (m) => decidirLicencia(k.id, "not_found", m) }) },
       ];
+    }
+    if (k.queue === "medios" && "video" in k && n) {
+      // C-001 · Video de presentación: se mira entero (con controles) antes de decidir.
+      extra = k.video ? (
+        <div style={{ position: "relative", height: 300, borderRadius: 18, overflow: "hidden", background: "var(--tl-ink)" }}>
+          <video src={k.video.src} poster={k.video.poster} controls playsInline preload="metadata" data-video-caso style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
+          <span style={{ position: "absolute", left: 10, top: 10, padding: "4px 8px", borderRadius: 7, background: "rgba(11,14,18,.75)", color: "var(--tl-white)", font: "800 9.5px 'JetBrains Mono',monospace", letterSpacing: ".1em" }}>{`VIDEO · ${Math.round(k.video.segundos)} S`}</span>
+        </div>) : null;
+      cuerpoB.push({ type: "note", tone: "info", t: E("Revisa que sea del mismo negocio, que se vea su trabajo o su local y que no tenga música de otros artistas. Mientras decides, su tarjeta y su página siguen con la foto de portada.", "Check it is from the same business, shows their work or place and has no music by other artists. While you decide, their card and page keep the cover photo.") });
+      if (k.video && !k.video.pro) cuerpoB.push({ type: "note", tone: "warn", t: E("El negocio ya no es Pro: aunque lo apruebes, el video no sale hasta que vuelva a Pro.", "The business is no longer Pro: even if you approve it, the video won’t show until it is Pro again.") });
+      acts = k.video?.status === "revision" ? [
+        { l: E("Aprobar video", "Approve video"), v: "action", icon: "check", onClick: () => run(() => decidirVideo(k.id, "aprobar", ""), () => ir({ caso: null })) },
+        { l: E("No aprobar", "Do not approve"), v: "danger", icon: "close", onClick: () => setConf({ titulo: E("¿Por qué no se aprueba?", "Why is it not approved?"), plantillas: P.video, peligro: true, hacer: (m) => decidirVideo(k.id, "rechazar", m) }) },
+      ] : [];
     }
     if (k.queue === "medios" && "foto" in k && n) {
       extra = k.foto ? (

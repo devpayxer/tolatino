@@ -1,6 +1,7 @@
 /* Contenido de la tarjeta de negocio en una lista (prototipo cardItem): línea de datos, estado del horario, chips,
    botón principal. Funciones puras: las usa el servidor para armar la tarjeta; la pantalla solo la pinta. */
 import type { Lang } from "./idioma";
+import type { Historia } from "./hoy-comun";
 
 type Rango = [string, string];
 type Dia = { weekday: number; open: boolean; ranges: Rango[] };
@@ -119,4 +120,6 @@ export type Tarjeta = {
   id: string; plan: "pro" | "free"; name: string; verified: boolean; meta: string; rating: string; reviews: number; reviewsNote?: string;
   status: string; open: boolean; photo: string | null; chips: { variant: string; label: string }[]; offer: string | null;
   cta: string; ctaIcon: string; accion: Accion; saved: boolean; phone: string | null; lat: number | null; lng: number | null;
+  // C-001 · Pro: el video aprobado (se mueve solo el de la tarjeta del centro) y su historia de Hoy (el anillo del logo; sin historia, sin anillo).
+  video?: { src: string; poster: string } | null; historia?: Historia | null;
 };

@@ -252,6 +252,7 @@ export async function decidirMedios(id: string, accion: "mantener" | "quitar", m
     const q = await abrir(c, s, id);
     if (typeof q === "string") return q;
     if (q.queue !== "medios") return "Ese caso no es de esta cola.";
+    if (q.subject_kind === "business_video") return "Este caso es un video: apruébalo o no lo apruebes.";
     if (accion === "quitar") {
       const n = (await c.query<{ n: number }>(`select count(*)::int as n from media where owner_kind = 'business' and owner_id = $1 and status = 'visible'`, [q.business_id])).rows[0]!.n;
       if (n <= 1) return "Es la única foto visible: para quitarla, pide al dueño que suba otra.";
@@ -271,6 +272,41 @@ export async function decidirMedios(id: string, accion: "mantener" | "quitar", m
   const nf = negocioFoto ? (await db().query<{ n: string }>(`select name as n from businesses where id = $1`, [negocioFoto]).catch(() => ({ rows: [] }))).rows[0]?.n ?? "" : "";
   for (const u of [...new Set(reportaron)]) await avisar(u, accion === "quitar" ? "foto_rep_quitada" : "foto_rep_queda", { negocio: nf }, { href: negocioFoto ? `/n/${negocioFoto}` : undefined, ref: ["media", id] }).catch(() => undefined);
   return { ok: true, mensaje: accion === "quitar" ? "Quitada. El dueño ve el motivo en su panel." : "Listo. Quedó en la auditoría." };
+}
+
+/* C-001 · Video de presentación (cola «Medios», subject_kind business_video): aprobar (sale en la tarjeta y la portada; el aprobado anterior
+   queda reemplazado) o no aprobar con motivo (el dueño lo ve en su panel y le llega un aviso). El aprobado de antes sigue mientras se revisa. */
+export async function decidirVideo(id: string, accion: "aprobar" | "rechazar", motivo: string): Promise<ResAdm> {
+  const s = await quien();
+  if (!s) return no("Tu rol solo puede ver esta cola.");
+  const m = accion === "aprobar" ? "Aprobado" : motivoOk(motivo);
+  if (accion === "rechazar" && m.length < 3) return no("Escribe el motivo.");
+  let negocio: string | null = null;
+  const r = await tx(async (c) => {
+    const q = await abrir(c, s, id);
+    if (typeof q === "string") return q;
+    if (q.queue !== "medios" || q.subject_kind !== "business_video") return "Ese caso no es un video.";
+    const v = (await c.query<{ business_id: string; status: string }>(`select business_id, status from business_videos where id = $1::bigint for update`, [q.subject_id])).rows[0];
+    if (!v || v.status !== "revision") return "Ese video ya no está en revisión (el negocio lo cambió o lo quitó).";
+    if (accion === "aprobar") {
+      await c.query(`update business_videos set status = 'reemplazado', ended_at = now() where business_id = $1 and status = 'aprobado'`, [v.business_id]);
+      await c.query(`update business_videos set status = 'aprobado', reviewed_by = $2, reviewed_at = now() where id = $1::bigint`, [q.subject_id, s.id]);
+    } else {
+      await c.query(`update business_videos set status = 'rechazado', reject_reason = $3, reviewed_by = $2, reviewed_at = now(), ended_at = now() where id = $1::bigint`, [q.subject_id, s.id, m.slice(0, 300)]);
+    }
+    await cerrar(c, q, s, accion, m);
+    await auditar(c, { actor: s.id, action: accion === "aprobar" ? "negocio.video.aprobar" : "negocio.video.rechazar", targetKind: "business", targetId: v.business_id, city: q.city_id,
+      before: { video: q.subject_id, estado: "revision" }, after: { video: q.subject_id, estado: accion === "aprobar" ? "aprobado" : "rechazado", motivo: accion === "aprobar" ? null : m } });
+    negocio = v.business_id;
+    return "ok";
+  });
+  if (r !== "ok") return no(r);
+  listo();
+  if (negocio) {
+    const nombre = (await db().query<{ n: string }>(`select name as n from businesses where id = $1`, [negocio]).catch(() => ({ rows: [] }))).rows[0]?.n ?? "";
+    await avisarNegocio(negocio, accion === "aprobar" ? "biz_video_ok" : "biz_video_no", { negocio: nombre, motivo: m }, { href: `/panel/${negocio}/pagina/fotos`, ref: ["business_video", id] }).catch(() => undefined);
+  }
+  return { ok: true, mensaje: accion === "aprobar" ? "Video aprobado. Ya sale en su tarjeta y en su página." : "No aprobado. El dueño ve el motivo en su panel." };
 }
 
 /* Recomendaciones: ya existe (con cuál) o descartar con motivo. «Crear semilla» llega con Reclamar negocio. */

@@ -7,13 +7,15 @@ import { useState, type ComponentType } from "react";
 import type { Accion, Tarjeta } from "@/lib/tarjeta";
 import { guardarNegocio, registrarToque } from "./acciones";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { VideoTarjeta, VisorHoy } from "./VideoNegocio";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { BusinessCard } = UI as unknown as Record<"BusinessCard", ComponentType<any>>;
 
-export function TarjetaNegocio({ b, origen, textos }: { b: Tarjeta; origen: string; textos: { hoy: string; llamar: string } }) {
+export function TarjetaNegocio({ b, origen, textos, es = true }: { b: Tarjeta; origen: string; textos: { hoy: string; llamar: string }; es?: boolean }) {
   const router = useRouter();
   const [guardado, setGuardado] = useState(b.saved);
+  const [anillo, setAnillo] = useState(false);
   const hacer = (a: Accion) => () => {
     if (a === "ficha") return router.push(`/n/${b.id}`);
     if (a === "llamar" && b.phone) {
@@ -34,12 +36,19 @@ export function TarjetaNegocio({ b, origen, textos }: { b: Tarjeta; origen: stri
     setGuardado(antes);
     if ("entrar" in r && r.entrar) router.push(`/entrar?volver=${encodeURIComponent(location.pathname + location.search)}`);
   };
+  // C-001 · Pro: el video aprobado en la foto (solo se mueve el del centro) y el anillo del logo si el negocio tiene algo de hoy.
+  const h = b.historia && b.historia.avisos.length ? b.historia : null;
   return (
+    <>
     <BusinessCard
       plan={b.plan} name={b.name} verified={b.verified} meta={b.meta} rating={b.rating} reviews={b.reviews} reviewsNote={b.reviewsNote}
       status={b.status} open={b.open} photos={b.photo ? [b.photo] : []} chips={b.chips} offer={b.offer ?? undefined} offerTag={textos.hoy}
       cta={b.cta} ctaIcon={b.ctaIcon} contactLabel={textos.llamar} saved={guardado}
       onOpen={hacer("ficha")} onCta={hacer(b.accion)} onSave={guardar} onContact={hacer("llamar")}
+      media={b.video ? <VideoTarjeta src={b.video.src} poster={b.video.poster} nombre={b.name} es={es} /> : null}
+      ring={h ? h.logo ?? b.photo ?? "" : undefined} onRing={() => setAnillo(true)} ringLabel={`${es ? "Hoy en el barrio" : "Today nearby"} · ${b.name}`}
     />
+    {anillo && h ? <VisorHoy h={h} es={es} onClose={() => setAnillo(false)} /> : null}
+    </>
   );
 }
