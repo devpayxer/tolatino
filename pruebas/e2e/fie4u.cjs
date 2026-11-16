@@ -33,6 +33,7 @@ const dia = (ymd) => { const d = new Date(ymd + 'T12:00:00Z'); return `${DS[d.ge
   ok(await espera(m.getByText('¿ESTÁ LIBRE TU FECHA?')) && await espera(m.getByText('La fecha no es tuya hasta que te la confirmen.').first()), 'Resumen: ¿ESTÁ LIBRE TU FECHA? y la línea fija');
   ok(await espera(m.getByText(/Próxima fecha libre: /)), 'sin fecha: próxima fecha libre (no el sábado ocupado)');
   ok(!(await m.getByText(`Próxima fecha libre: ${dia(sab)}`).count()), 'la próxima libre no es el sábado ocupado');
+  await m.getByRole('tab', { name: 'Antes de ir' }).click(); // C-006: en el teléfono, las preguntas viven en su pestaña
   ok(await espera(m.getByText('¿Está libre mi fecha?')) && await espera(m.getByText('¿Y si cancelo?')), 'FAQ del calendario y de la cancelación');
   await m.screenshot({ path: OUT + 'u1-resumen-m.png', fullPage: true });
 

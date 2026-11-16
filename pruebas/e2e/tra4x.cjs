@@ -19,6 +19,7 @@ const espera = async (l) => { for (let i = 0; i < 40; i++) { if (await vis(l)) r
   await m.goto(B + `/n/van-express-nyc`);
   ok(await espera(m.getByText('¿CUÁNTO ES EN TOTAL?')) && await espera(m.getByText('El precio del viaje es cerrado antes de salir.').first()), 'Resumen: ¿CUÁNTO ES EN TOTAL? con la línea fija');
   ok(await espera(m.getByText(/Autoridad interestatal \(MC\).*verificada por To’Latino/)), 'Resumen: la licencia verificada');
+  await m.getByRole('tab', { name: 'Antes de ir' }).click(); // C-006: en el teléfono, las preguntas viven en su pestaña
   ok(await espera(m.getByText('¿El precio puede cambiar?')) && await espera(m.getByText('¿Cuántas maletas puedo llevar?')), 'FAQ de Transporte (precio cerrado, maletas)');
   await m.screenshot({ path: OUT + 'x1-resumen-m.png', fullPage: true });
   await m.goto(B + `/n/van-express-nyc?tab=svc`);
@@ -36,7 +37,7 @@ const espera = async (l) => { for (let i = 0; i < 40; i++) { if (await vis(l)) r
   ok(await espera(m.getByText(/POR CAJA O ENVÍO/)), 'caja: POR CAJA O ENVÍO');
   await clic(m.getByText(/Caja grande/).first()); ok(await espera(m.getByRole('button', { name: 'Enviar una caja' })), 'hoja de la caja: «Enviar una caja»');
   await clic(m.getByRole('button', { name: 'Cerrar' }));
-  await m.goto(B + `/n/envios-quisqueya-cargo`); ok(await espera(m.getByText('¿Cuánto tarda en llegar?')), 'FAQ de la caja: cuánto tarda');
+  await m.goto(B + `/n/envios-quisqueya-cargo?tab=faq`); ok(await espera(m.getByText('¿Cuánto tarda en llegar?')), 'FAQ de la caja: cuánto tarda');
 
   // ── 3. Mudanza: precio cerrado con fotos ──
   await m.goto(B + `/n/mudanzas-el-primo?tab=svc`);

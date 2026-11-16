@@ -38,6 +38,7 @@ import { PieWeb } from "../../_legal/PieWeb";
 import { ubicacion } from "@/lib/ubicacion";
 import { Ficha } from "./Ficha";
 import { FichaNueva } from "./FichaNueva";
+import { anchoInicial } from "@/lib/ancho";
 import { CFG_FICHA } from "@/lib/ficha-nueva";
 import { BASE_URL } from "@/lib/correo";
 import { auditar, staff } from "@/lib/admin";
@@ -227,7 +228,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     {f.pro && CFG_FICHA[f.cat] ? (
       <FichaNueva f={{ ...f, guardado: fav.has(f.id) }} svc={svc} menu={menu} rsv={rsv} ofi={ofi} salud={salud} prof={prof} merc={merc} fiesta={fiesta} trans={trans}
         noche={noche} insc={insc} fe={fe} inm={inm} dl={dl} tienda={tienda} resenas={res} novedades={nov && nov.posts.length ? nov : null} jobs={jobs} eventos={evts}
-        sesion={!!u} es={lang === "es"} tabInicial={sp.tab} rsvInicial={rsvInicial}
+        sesion={!!u} es={lang === "es"} tabInicial={sp.tab} rsvInicial={rsvInicial} desk0={(await anchoInicial()) >= 1024}
         t={{ ...t, photosAll: f.nFotos === 1 ? t.photosOne : t.photosN.replace("{n}", String(f.nFotos)) }} />
     ) : (
     <Ficha

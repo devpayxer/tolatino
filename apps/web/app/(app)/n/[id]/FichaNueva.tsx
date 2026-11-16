@@ -49,17 +49,17 @@ import type { ArticuloRenta } from "@/lib/rentas";
 import type { ArticuloVenta } from "@/lib/apartados";
 import { MenuCapas, MenuDesk, MenuMovil, MenuResumen, PedidoTarjeta, useMenu } from "./MenuCliente";
 import { RsvBarra, RsvRiel, RsvTab, useRsv, RsvRapida } from "./Reservar";
-import { HojaCasa, HojaVehiculo, OfBarra, OfHoja, OfRiel, OfTab, useOficio } from "./Oficios";
-import { SaBarra, SaHoja, SaRiel, SaSeguro, SaTab, useSalud } from "./Salud";
-import { PrBarra, PrHoja, PrRiel, PrTab, usePro } from "./Pro";
-import { FiBarra, FiFecha, FiHoja, FiRiel, FiTab, useFiesta } from "./Fiesta";
-import { ViBarra, ViHoja, ViRiel, ViTab, useViaje } from "./Viaje";
-import { NoBarra, NoHoja, NoRiel, NoTab, useNoche } from "./Noche";
-import { InBarra, InHoja, InRiel, InTab, useInsc } from "./Insc";
-import { FeBarra, FeContacto, FeHoja, FeRiel, FeTab, useFe } from "./Fe";
-import { InmBarra, InmHoja, InmRiel, InmTab, useInm } from "./Inmueble";
-import { DlBarra, DlHoja, DlRiel, DlTab, useDealer } from "./Dealer";
-import { MeBarra, MeHoja, MeRiel, MeTab, useMerc } from "./Mercado";
+import { HojaCasa, HojaVehiculo, OfBarra, OfHoja, OfRiel, OfTab, useOficio, OfResumen } from "./Oficios";
+import { SaBarra, SaHoja, SaRiel, SaSeguro, SaTab, useSalud, SaResumen } from "./Salud";
+import { PrBarra, PrHoja, PrRiel, PrTab, usePro, PrResumen } from "./Pro";
+import { FiBarra, FiFecha, FiHoja, FiRiel, FiTab, useFiesta, FiResumen } from "./Fiesta";
+import { ViBarra, ViHoja, ViRiel, ViTab, useViaje, ViResumen } from "./Viaje";
+import { NoBarra, NoHoja, NoRiel, NoTab, useNoche, NoResumen } from "./Noche";
+import { InBarra, InHoja, InRiel, InTab, useInsc, InResumen } from "./Insc";
+import { FeBarra, FeContacto, FeHoja, FeRiel, FeTab, useFe, FeResumen } from "./Fe";
+import { InmBarra, InmHoja, InmRiel, InmTab, useInm, InmResumen } from "./Inmueble";
+import { DlBarra, DlHoja, DlRiel, DlTab, useDealer, DlResumen } from "./Dealer";
+import { MeBarra, MeHoja, MeRiel, MeTab, useMerc, MeResumen } from "./Mercado";
 import { TiendaTab } from "./Tienda";
 import { HojaEntrar } from "../../HojaEntrar";
 
@@ -79,11 +79,11 @@ type Grupo = { label: string; name: string; items: Fila[] };
 type Persona = { id: string; name: string; short: string; role: string; spec: string; foto: string | null; owner: boolean; silla: number | null };
 
 type TiendaP = Pick<ComponentProps<typeof TiendaTab>, "L" | "V" | "mia" | "horas" | "plan">;
-export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl, tienda, resenas, novedades, jobs, eventos = [], sesion, es, tabInicial, rsvInicial }: {
+export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl, tienda, resenas, novedades, jobs, eventos = [], sesion, es, tabInicial, rsvInicial, desk0 = false }: {
   f: F; t: Textos; svc: CitasPublica | null; menu?: MenuPublico | null; rsv?: RsvPublica | null; ofi?: OficiosPublico | null; salud?: SaludPublico | null; prof?: ProPublico | null;
   merc?: MercPublico | null; fiesta?: FiestaPublico | null; trans?: TransPublico | null; noche?: NochePublica | null; insc?: InscPublica | null; fe?: FePublica | null;
   inm?: InmPublica | null; dl?: AutosPublica | null; tienda?: (TiendaP & { L: ArticuloRenta[]; V: ArticuloVenta[] }) | null;
-  resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; eventos?: TarjetaEvt[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string };
+  resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; eventos?: TarjetaEvt[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string }; desk0?: boolean;
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const L = (x: [string, string]) => (es ? x[0] : x[1]);
@@ -140,28 +140,30 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
 
   // ── C-006 · Lo que vende de las demás categorías: su pestaña, su barra, su hoja y su columna de siempre ──
   type ItemV = { id: string; name: string; meta?: string; price?: string; k?: string };
-  type Vende = { tab: (desk: boolean) => ReactNode; riel: ReactNode; barra: ReactNode; capas: ReactNode; top: (Fila & { k?: string })[]; n: number; pick: (id: string, k?: string) => void;
+  type Vende = { tab: (desk: boolean) => ReactNode; resumen?: (desk: boolean) => ReactNode; riel: ReactNode; barra: ReactNode; capas: ReactNode; top: (Fila & { k?: string })[]; n: number; pick: (id: string, k?: string) => void;
     hoy: { title: string; cols: { k: string; v: string }[] } | null };
   const deSecs = (secs: { title: string; items: ItemV[] }[]) => ({
     top: secs.slice(0, 3).map((g) => g.items[0]).filter(Boolean).map((x) => ({ id: x!.id, name: x!.name, meta: x!.meta ?? "", price: x!.price ?? "", k: x!.k })),
     n: secs.reduce((a, g) => a + g.items.length, 0) });
-  const deRiel = (r: { k: string; v: string }[] | undefined | null) => (r && r.length ? { title: r[0]!.v, cols: r.slice(1, 4).filter((x) => x.v && x.v !== "—") } : null);
-  const deTd = (td: { k: string; v: string }[] | undefined | null, title: string) => (td && td.length ? { title, cols: td.slice(0, 3) } : null);
+  // Cada columna de la tarjeta de hoy, una sola vez (la clave es su nombre).
+  const unicas = (c: { k: string; v: string }[]) => c.filter((x, i) => x.v && x.v !== "—" && c.findIndex((y) => y.k === x.k) === i);
+  const deRiel = (r: { k: string; v: string }[] | undefined | null) => (r && r.length ? { title: r[0]!.v, cols: unicas(r.slice(1)).filter((x) => x.k !== r[0]!.k).slice(0, 3) } : null);
+  const deTd = (td: { k: string; v: string }[] | undefined | null, title: string) => (td && td.length ? { title, cols: unicas(td).slice(0, 3) } : null);
   const vende: Vende | null = useMemo(() => {
     const X = (v: { secs: { title: string; items: ItemV[] }[] }, o: Omit<Vende, "top" | "n">): Vende => ({ ...deSecs(v.secs), ...o });
-    if (ov) return X(ov, { tab: (d) => <OfTab v={ov} desk={d} />, riel: <OfRiel v={ov} onCta={irCat} />, barra: <OfBarra v={ov} onCta={irCat} />,
+    if (ov) return X(ov, { resumen: (d) => <OfResumen v={ov} desk={d} onAll={irCat} />, tab: (d) => <OfTab v={ov} desk={d} />, riel: <OfRiel v={ov} onCta={irCat} />, barra: <OfBarra v={ov} onCta={irCat} />,
       capas: <><OfHoja v={ov} /><HojaVehiculo v={ov} /><HojaCasa v={ov} /></>, pick: (id) => ov.abrir(id), hoy: deRiel(ov.riel) });
-    if (sa) return X(sa, { tab: (d) => <SaTab v={sa} desk={d} />, riel: <SaRiel v={sa} onCta={irCat} />, barra: <SaBarra v={sa} onCta={irCat} />,
+    if (sa) return X(sa, { resumen: (d) => <SaResumen v={sa} desk={d} onAll={irCat} />, tab: (d) => <SaTab v={sa} desk={d} />, riel: <SaRiel v={sa} onCta={irCat} />, barra: <SaBarra v={sa} onCta={irCat} />,
       capas: <><SaHoja v={sa} />{sa.segHoja ? <SaSeguro v={sa} /> : null}</>, pick: (id) => sa.abrir(id), hoy: deRiel(sa.riel) });
-    if (pr) return X(pr, { tab: (d) => <PrTab v={pr} desk={d} />, riel: <PrRiel v={pr} onCta={irCat} />, barra: <PrBarra v={pr} onCta={irCat} />, capas: <PrHoja v={pr} />, pick: (id) => pr.abrir(id), hoy: deRiel(pr.riel) });
-    if (fi) return X(fi, { tab: (d) => <FiTab v={fi} desk={d} />, riel: <FiRiel v={fi} onCta={irCat} />, barra: <FiBarra v={fi} onCta={irCat} />, capas: <><FiHoja v={fi} /><FiFecha v={fi} /></>, pick: (id) => fi.abrir(id), hoy: deRiel(fi.riel) });
-    if (vi) return X(vi, { tab: (d) => <ViTab v={vi} desk={d} />, riel: <ViRiel v={vi} onCta={irCat} />, barra: <ViBarra v={vi} onCta={irCat} />, capas: <ViHoja v={vi} />, pick: (id) => vi.abrir(id), hoy: deRiel(vi.riel) });
-    if (no) return X(no, { tab: (d) => <NoTab v={no} desk={d} />, riel: <NoRiel v={no} onCta={irCat} />, barra: <NoBarra v={no} onCta={irCat} />, capas: <NoHoja v={no} />, pick: (id, k) => no.abrir(id, k ?? ""), hoy: deTd(no.td, no.linea || f.subsLinea) });
-    if (ins) return X(ins, { tab: (d) => <InTab v={ins} desk={d} />, riel: <InRiel v={ins} />, barra: <InBarra v={ins} />, capas: <InHoja v={ins} />, pick: (id) => ins.abrir(id), hoy: deTd(ins.td, ins.linea || f.subsLinea) });
-    if (fv) return X(fv, { tab: (d) => <FeTab v={fv} desk={d} />, riel: <FeRiel v={fv} />, barra: <FeBarra v={fv} />, capas: <><FeHoja v={fv} /><FeContacto v={fv} /></>, pick: (id) => fv.abrir(id), hoy: deTd(fv.td, f.hoy.sub || fv.linea) });
-    if (iv) return X(iv, { tab: (d) => <InmTab v={iv} desk={d} />, riel: <InmRiel v={iv} />, barra: <InmBarra v={iv} />, capas: <InmHoja v={iv} />, pick: (id) => iv.abrir(id), hoy: deTd(iv.td, f.hoy.sub || iv.linea) });
-    if (dv) return X(dv, { tab: (d) => <DlTab v={dv} desk={d} />, riel: <DlRiel v={dv} />, barra: <DlBarra v={dv} />, capas: <DlHoja v={dv} />, pick: (id) => dv.abrir(id), hoy: deTd(dv.td, f.hoy.sub || dv.linea) });
-    if (me) return { tab: (d) => <MeTab v={me} desk={d} />, riel: <MeRiel v={me} onCta={irCat} />, barra: <MeBarra v={me} onCta={irCat} />, capas: <MeHoja v={me} />,
+    if (pr) return X(pr, { resumen: (d) => <PrResumen v={pr} desk={d} onAll={irCat} />, tab: (d) => <PrTab v={pr} desk={d} />, riel: <PrRiel v={pr} onCta={irCat} />, barra: <PrBarra v={pr} onCta={irCat} />, capas: <PrHoja v={pr} />, pick: (id) => pr.abrir(id), hoy: deRiel(pr.riel) });
+    if (fi) return X(fi, { resumen: (d) => <FiResumen v={fi} desk={d} onAll={irCat} />, tab: (d) => <FiTab v={fi} desk={d} />, riel: <FiRiel v={fi} onCta={irCat} />, barra: <FiBarra v={fi} onCta={irCat} />, capas: <><FiHoja v={fi} /><FiFecha v={fi} /></>, pick: (id) => fi.abrir(id), hoy: deRiel(fi.riel) });
+    if (vi) return X(vi, { resumen: (d) => <ViResumen v={vi} desk={d} onAll={irCat} />, tab: (d) => <ViTab v={vi} desk={d} />, riel: <ViRiel v={vi} onCta={irCat} />, barra: <ViBarra v={vi} onCta={irCat} />, capas: <ViHoja v={vi} />, pick: (id) => vi.abrir(id), hoy: deRiel(vi.riel) });
+    if (no) return X(no, { resumen: (d) => <NoResumen v={no} desk={d} onAll={irCat} />, tab: (d) => <NoTab v={no} desk={d} />, riel: <NoRiel v={no} onCta={irCat} />, barra: <NoBarra v={no} onCta={irCat} />, capas: <NoHoja v={no} />, pick: (id, k) => no.abrir(id, k ?? ""), hoy: deTd(no.td, no.linea || f.subsLinea) });
+    if (ins) return X(ins, { resumen: (d) => <InResumen v={ins} desk={d} onAll={irCat} />, tab: (d) => <InTab v={ins} desk={d} />, riel: <InRiel v={ins} />, barra: <InBarra v={ins} />, capas: <InHoja v={ins} />, pick: (id) => ins.abrir(id), hoy: deTd(ins.td, ins.linea || f.subsLinea) });
+    if (fv) return X(fv, { resumen: (d) => <FeResumen v={fv} desk={d} onAll={irCat} />, tab: (d) => <FeTab v={fv} desk={d} />, riel: <FeRiel v={fv} />, barra: <FeBarra v={fv} />, capas: <><FeHoja v={fv} /><FeContacto v={fv} /></>, pick: (id) => fv.abrir(id), hoy: deTd(fv.td, f.hoy.sub || fv.linea) });
+    if (iv) return X(iv, { resumen: (d) => <InmResumen v={iv} desk={d} onAll={irCat} />, tab: (d) => <InmTab v={iv} desk={d} />, riel: <InmRiel v={iv} />, barra: <InmBarra v={iv} />, capas: <InmHoja v={iv} />, pick: (id) => iv.abrir(id), hoy: deTd(iv.td, f.hoy.sub || iv.linea) });
+    if (dv) return X(dv, { resumen: (d) => <DlResumen v={dv} desk={d} onAll={irCat} />, tab: (d) => <DlTab v={dv} desk={d} />, riel: <DlRiel v={dv} />, barra: <DlBarra v={dv} />, capas: <DlHoja v={dv} />, pick: (id) => dv.abrir(id), hoy: deTd(dv.td, f.hoy.sub || dv.linea) });
+    if (me) return { resumen: (d) => <MeResumen v={me} desk={d} onAll={irCat} />, tab: (d) => <MeTab v={me} desk={d} />, riel: <MeRiel v={me} onCta={irCat} />, barra: <MeBarra v={me} onCta={irCat} />, capas: <MeHoja v={me} />,
       top: me.top.slice(0, 3).map((x) => ({ id: x.id, name: me.nm(x.name), meta: me.precio(x).s, price: me.precio(x).l })), n: me.secs.reduce((a, g) => a + g.items.length, 0), pick: (id) => me.abrir(id), hoy: deRiel(me.riel) };
     if (mn) return { tab: (d) => (d ? <MenuDesk mn={mn} unaColumna={false} /> : <MenuMovil mn={mn} />), riel: <PedidoTarjeta mn={mn} />,
       barra: !mn.has ? (
@@ -195,7 +197,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
     ...(f.faqs.length || dep ? [{ id: "faq", label: E2("Antes de ir", "Before you go"), icon: "help" }] : []),
     ...(f.relacionados.length ? [{ id: "rel", label: E2("Relacionados", "Related"), icon: "store" }] : []),
   ];
-  const ini = ({ svc: "cat", menu: "cat", reviews: "rev" } as Record<string, string>)[tabInicial ?? ""] ?? tabInicial ?? "res";
+  const ini = ({ svc: "cat", menu: "cat", reviews: "rev", ...(f.cat === "NEG-TIENDA" ? { shop: "cat" } : {}) } as Record<string, string>)[tabInicial ?? ""] ?? tabInicial ?? "res";
   const [tab, setTabS] = useState(tabs.some((x) => x.id === ini) ? ini : "res");
   const tabsRef = useRef<HTMLDivElement>(null);
   const setTab = (id: string) => {
@@ -362,6 +364,10 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   const gruposF = grupos.map((g, i) => ({ ...g, k: `g${i}` })).filter((g) => catF === "all" || catF === g.k);
   const fotoGente = (p: Persona, h: number) => p.foto ? <div style={{ height: h, background: `center/cover url(${p.foto})` }} /> : <Placeholder height={h} />;
 
+  // Una sola copia de la página: el servidor manda la del aparato que estima (lib/ancho: el último ancho de este navegador o el tipo de
+  // aparato) y, ya en el aparato, se corrige con el ancho real. Así las piezas con estado propio (la tienda, el carrito, la hoja) no existen dos veces.
+  const [modo, setModo] = useState<"m" | "d">(desk0 ? "d" : "m");
+  useEffect(() => { const mq = window.matchMedia("(min-width: 1024px)"); const f = () => setModo(mq.matches ? "d" : "m"); f(); mq.addEventListener("change", f); return () => mq.removeEventListener("change", f); }, []);
   // ── Computadora: secciones, pestañas que llevan a cada una y la tarjeta pegada a la derecha ──
   const [activa, setActiva] = useState("res");
   const [pegada, setPegada] = useState(false);
@@ -394,6 +400,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   return (
     <div data-pantalla="APP-NEG-LISTING" data-ficha="nueva" className="bg-white">
       {/* ═════════ Teléfono ═════════ */}
+      {modo === "m" ? (
       <div className="pb-[116px] lg:hidden" data-screen-label="App · Ficha">
         <div className="relative h-[330px]">
           <button type="button" aria-label={t.photosAll} onClick={verFotos} className="absolute inset-0 block">{f.hero ? <span className="block size-full bg-photo-bg-2" style={{ background: `center/cover url(${f.hero})` }} /> : <Placeholder height="100%" />}</button>
@@ -437,7 +444,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
               {ley}
               {!sv && mn ? <MenuResumen mn={mn} desk={false} onAll={() => setTab("cat")} /> : null}
               {rv ? <RsvRapida v={rv} onMas={(p, i, h) => { if (p) { rv.setP(p); if (i != null) rv.setI(i); if (h != null) rv.setSel(h); } setTab("rsv"); }} /> : null}
-              {popular.length ? (
+              {vende?.resumen ? vende.resumen(false) : popular.length ? (
                 <div className="flex flex-col gap-2.5">
                   <SectionHeader title={E2("Lo más pedido", "Most booked")} action={nCat > popular.length && vende?.n !== 1 ? `${E2("Ver", "See")} ${nCat}` : undefined} onAction={() => setTab("cat")} />
                   {popular.map((x) => filaSvc(x))}
@@ -510,9 +517,10 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
           </div>
         ) : null}
         {bk && sv ? <HojaCita v={sv} bk={bk} setBk={setBk} cfg={cfg} es={es} /> : null}
-      </div>
+      </div>) : null}
 
       {/* ═════════ Computadora ═════════ */}
+      {modo === "d" ? (
       <div className="mx-auto hidden max-w-[1240px] px-8 pb-14 lg:block" data-screen-label="APP-NEG-LISTING · desktop">
         <button type="button" onClick={() => router.back()} className="inline-flex items-center gap-1.5 pt-[18px] text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} />{E2("Volver", "Back")}</button>
         <div className="flex flex-wrap items-center gap-2 pb-4 pt-2.5 font-mono text-[10.5px] font-bold tracking-[0.12em] text-ink/60">
@@ -543,7 +551,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
         </div>
         <div className="grid grid-cols-[minmax(0,1fr)_372px] items-start gap-12 pt-8">
           <div className="flex min-w-0 flex-col gap-16">
-            {seccion("res", null, <div className="flex flex-col gap-4">{miCita}{dueno(true)}<div className="grid"><TodayCard desktop eyebrow={hoy.eyebrow} title={hoy.title} cols={hoy.cols} /></div>{oferta}{rv ? <RsvRapida v={rv} onMas={(p, i, h) => { if (p) { rv.setP(p); if (i != null) rv.setI(i); if (h != null) rv.setSel(h); } ir("rsv"); }} /> : null}{ley}{esTuyo}</div>)}
+            {seccion("res", null, <div className="flex flex-col gap-4">{miCita}{dueno(true)}<div className="grid"><TodayCard desktop eyebrow={hoy.eyebrow} title={hoy.title} cols={hoy.cols} /></div>{oferta}{rv ? <RsvRapida v={rv} onMas={(p, i, h) => { if (p) { rv.setP(p); if (i != null) rv.setI(i); if (h != null) rv.setSel(h); } ir("rsv"); }} /> : null}{ley}{vende?.resumen ? vende.resumen(true) : null}{esTuyo}</div>)}
             {!sv && vende ? seccion("cat", L(cfg.title), <div>{vende.tab(true)}</div>) : null}
             {sv && nItems ? seccion("cat", L(cfg.title), (
               <div data-screen-label="Ficha · servicios · desktop" className="flex flex-col gap-[18px]">
@@ -592,7 +600,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
             ) : null}
           </aside>
         </div>
-      </div>
+      </div>) : null}
 
       {sv && <SvcHoja v={sv} />}
       {!sv && vende ? vende.capas : null}

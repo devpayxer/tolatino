@@ -49,7 +49,7 @@ const O = (n, col) => sql(`select ${col} from operations o where o.number = '${n
   await clic(hoja.getByText('2', { exact: true })); ok(!!(await vis(hoja.getByText(/pagas \$48 en la caja/))), 'hoja: 2 → $48');
   await clic(hoja.getByRole('button', { name: 'Apartar', exact: true })); await hoja.waitFor({ state: 'detached' });
   ok(!!(await vis(m.getByText('$207 en la caja'))) && !!(await vis(m.getByText(/TU APARTADO · 3 ARTÍCULOS/))), 'barra: Tu apartado · 3 artículos · $207 en la caja');
-  await tienda(); ok(!!(await vis(m.getByText('$207 en la caja'))), 'el carrito sigue al volver a la ficha');
+  await tienda(); ok(await m.getByText('$207 en la caja').first().waitFor({ timeout: 8000 }).then(() => true, () => false), 'el carrito sigue al volver a la ficha'); // C-006: la ficha llega antes de hidratar
 
   // ── 2. Mandar (3 pasos): hoy $0, unidades reservadas ──
   const A1 = await mandar();

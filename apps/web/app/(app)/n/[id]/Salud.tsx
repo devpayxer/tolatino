@@ -57,6 +57,8 @@ export function useSalud(sp: SaludPublico | null, es: boolean) {
     { k: E2("SEGUROS", "INSURANCE"), v: insL.slice(0, 2).join(" · ") || "—" },
     tg("medesp") ? { k: E2("IDIOMA", "LANGUAGE"), v: E2("El médico habla español", "Doctor speaks Spanish") } : { k: E2("SIN SEGURO", "UNINSURED"), v: sp.h.sin ? usd(sp.h.cash) : "—" }];
   if (!(soloSinCita || sp.espera)) riel[0] = { k: E2("SIN SEGURO", "UNINSURED"), v: sp.h.sin ? usd(sp.h.cash) : "—" };
+  // Cada dato una sola vez: si «SIN SEGURO» pasó al primer lugar, no se repite al final.
+  for (let j = riel.length - 1; j > 0; j--) if (riel.findIndex((x) => x.k === riel[j]!.k) < j) riel.splice(j, 1);
   const desde = seg && cp?.ok && !cp.sinSeguro ? E2("Con tu seguro", "With your insurance") : sp.h.sin ? `${E2("Sin seguro ", "Uninsured ")}${usd(sp.h.cash)}` : E2("Servicios", "Services");
   const llamar = () => { if (sp.negocio.telefono) location.href = `tel:${sp.negocio.telefono}`; };
   const llegar = () => abrirComoLlegar({ dir: sp.negocio.direccion ?? sp.negocio.nombre });
