@@ -90,8 +90,10 @@ const limpiar = () => {
     await opc.first().click();
     ok(await espera(async () => (await p.locator('[data-pieza="mapa-pin"]').count()) > 0), 'al elegirla sale el mapa con el pin («la puerta está aquí»)');
     ok((await p.locator('[data-pieza="direccion"] input[inputmode="numeric"]').inputValue()) === '18201', 'el código postal se llena solo (18201)');
-    const mapa = p.locator('[data-pieza="mapa-pin"] [role="application"]'), bb = await mapa.boundingBox();
+    // Anchos: el arrastre es con coordenadas de la ventana; en un teléfono bajo (SE, 667) el mapa queda abajo y el ratón no lo tocaba.
+    const mapa = p.locator('[data-pieza="mapa-pin"] [role="application"]'); await mapa.scrollIntoViewIfNeeded(); const bb = await mapa.boundingBox();
     await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.mouse.down(); await p.mouse.move(bb.x + bb.width / 2 + 25, bb.y + bb.height / 2 + 20, { steps: 6 }); await p.mouse.up();
+    await espera(async () => /\d/.test((await p.locator('[data-pieza="mapa-pin"]').getAttribute('data-pin')) ?? '')); // el mapa termina de moverse después
     const pin = await p.locator('[data-pieza="mapa-pin"]').getAttribute('data-pin');
     ok(/^-?\d+\.\d{6},-?\d+\.\d{6}$/.test(pin ?? '') && (await p.locator('[data-pieza="mapa-pin"]').getAttribute('data-lejos')) === '0', `el pin se movió (${pin}) y queda cerca de la dirección`);
     await shot(p, 'pin-390');
@@ -107,9 +109,9 @@ const limpiar = () => {
     await p.getByRole('combobox').fill(''); await p.getByRole('combobox').pressSequentially('450 N Wyo', { delay: 30 });
     await espera(async () => (await opc.count()) > 0); await opc.first().click();
     await p.locator('[data-pieza="mapa-pin"] [role="application"]').waitFor();
-    const m2 = await p.locator('[data-pieza="mapa-pin"] [role="application"]').boundingBox();
+    await p.locator('[data-pieza="mapa-pin"] [role="application"]').scrollIntoViewIfNeeded(); const m2 = await p.locator('[data-pieza="mapa-pin"] [role="application"]').boundingBox();
     for (let i = 0; i < 4; i++) { await p.mouse.move(m2.x + m2.width / 2, m2.y + m2.height / 2); await p.mouse.down(); await p.mouse.move(m2.x + 10, m2.y + 10, { steps: 4 }); await p.mouse.up(); }
-    ok((await p.locator('[data-pieza="mapa-pin"]').getAttribute('data-lejos')) === '1', 'muy lejos: el mapa avisa antes de guardar');
+    ok(await espera(async () => (await p.locator('[data-pieza="mapa-pin"]').getAttribute('data-lejos')) === '1'), 'muy lejos: el mapa avisa antes de guardar');
     await p.locator('[data-screen-label="Mi cuenta · barra"]').getByText('Guardar dirección').click();
     ok(await espera(async () => /El pin quedó muy lejos de esa dirección/.test(await p.locator('body').innerText())), 'muy lejos: el servidor no lo acepta («El pin quedó muy lejos de esa dirección»)');
     ok(sql(`select street from user_addresses where id = '${id1}'`) !== '450 N Wyoming St', 'y la dirección no cambió');
@@ -142,7 +144,7 @@ const limpiar = () => {
     await entrarComo(pa, ADM);
     await pa.goto(B + `/admin/negocios/${BIZ}?tab=ficha`); await pa.locator('[data-pieza="punto-admin"]').waitFor();
     await pa.getByRole('button', { name: 'Corregir el punto' }).click();
-    const ma = await pa.locator('[data-pieza="punto-admin"] [role="application"]').boundingBox();
+    await pa.locator('[data-pieza="punto-admin"] [role="application"]').scrollIntoViewIfNeeded(); const ma = await pa.locator('[data-pieza="punto-admin"] [role="application"]').boundingBox();
     await pa.mouse.move(ma.x + ma.width / 2, ma.y + ma.height / 2); await pa.mouse.down(); await pa.mouse.move(ma.x + ma.width / 2 - 30, ma.y + ma.height / 2 + 15, { steps: 5 }); await pa.mouse.up();
     await pa.locator('[data-pieza="punto-admin"] textarea').fill('La entrada da a N Wyoming St · dir9m');
     await pa.getByRole('button', { name: 'Guardar punto' }).click();
