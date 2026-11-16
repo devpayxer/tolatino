@@ -13,7 +13,7 @@
      Horario · Antes de ir · Relacionados. Un dato que falta se omite (nunca «undefined» ni «null»). */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps, type ComponentType, type ReactNode } from "react";
 import type { ficha } from "@/lib/ficha";
 import type { CitasPublica, HorasCita } from "@/lib/citas";
 import type { ResumenResenas } from "@/lib/resenas";
@@ -31,6 +31,37 @@ import { NovTab } from "./Novedades";
 import { JobsTab } from "./Jobs";
 import { EventosTab } from "./Eventos";
 import { CFG_FICHA, type Cfg } from "@/lib/ficha-nueva";
+import { primerNombre } from "@/lib/nombre";
+import type { MenuPublico } from "@/lib/pedir";
+import type { RsvPublica } from "@/lib/reservas";
+import type { OficiosPublico } from "@/lib/oficios-publico";
+import type { SaludPublico } from "@/lib/salud-publico";
+import type { ProPublico } from "@/lib/pro-publico";
+import type { MercPublico } from "@/lib/merc-publico";
+import type { FiestaPublico } from "@/lib/fiestas-publico";
+import type { TransPublico } from "@/lib/trans-publico";
+import type { NochePublica } from "@/lib/noche-publico";
+import type { InscPublica } from "@/lib/inscripciones-publico";
+import type { FePublica } from "@/lib/fe-publico";
+import type { InmPublica } from "@/lib/inmuebles-publico";
+import type { AutosPublica } from "@/lib/autos-publico";
+import type { ArticuloRenta } from "@/lib/rentas";
+import type { ArticuloVenta } from "@/lib/apartados";
+import { MenuCapas, MenuDesk, MenuMovil, MenuResumen, PedidoTarjeta, useMenu } from "./MenuCliente";
+import { RsvBarra, RsvRiel, RsvTab, useRsv } from "./Reservar";
+import { HojaCasa, HojaVehiculo, OfBarra, OfHoja, OfRiel, OfTab, useOficio } from "./Oficios";
+import { SaBarra, SaHoja, SaRiel, SaSeguro, SaTab, useSalud } from "./Salud";
+import { PrBarra, PrHoja, PrRiel, PrTab, usePro } from "./Pro";
+import { FiBarra, FiFecha, FiHoja, FiRiel, FiTab, useFiesta } from "./Fiesta";
+import { ViBarra, ViHoja, ViRiel, ViTab, useViaje } from "./Viaje";
+import { NoBarra, NoHoja, NoRiel, NoTab, useNoche } from "./Noche";
+import { InBarra, InHoja, InRiel, InTab, useInsc } from "./Insc";
+import { FeBarra, FeContacto, FeHoja, FeRiel, FeTab, useFe } from "./Fe";
+import { InmBarra, InmHoja, InmRiel, InmTab, useInm } from "./Inmueble";
+import { DlBarra, DlHoja, DlRiel, DlTab, useDealer } from "./Dealer";
+import { MeBarra, MeHoja, MeRiel, MeTab, useMerc } from "./Mercado";
+import { TiendaTab } from "./Tienda";
+import { HojaEntrar } from "../../HojaEntrar";
 
 type N = "Icon" | "Button" | "IconButton" | "Tabs" | "DesktopTabs" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard" | "SectionHeader" | "ServiceRow"
   | "Placeholder" | "ReviewCard" | "StaffPicker" | "DateStrip" | "TimeSlots" | "StepHeader" | "TotalBar" | "DepositNote" | "DepositOutcomes" | "Eyebrow"
@@ -47,15 +78,41 @@ type Fila = { id: string; name: string; meta: string; price: string };
 type Grupo = { label: string; name: string; items: Fila[] };
 type Persona = { id: string; name: string; short: string; role: string; spec: string; foto: string | null; owner: boolean; silla: number | null };
 
-export function FichaNueva({ f, t, svc, resenas, novedades, jobs, eventos = [], sesion, es, tabInicial }: {
-  f: F; t: Textos; svc: CitasPublica | null; resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; eventos?: TarjetaEvt[];
-  sesion: boolean; es: boolean; tabInicial?: string;
+type TiendaP = Pick<ComponentProps<typeof TiendaTab>, "L" | "V" | "mia" | "horas" | "plan">;
+export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl, tienda, resenas, novedades, jobs, eventos = [], sesion, es, tabInicial }: {
+  f: F; t: Textos; svc: CitasPublica | null; menu?: MenuPublico | null; rsv?: RsvPublica | null; ofi?: OficiosPublico | null; salud?: SaludPublico | null; prof?: ProPublico | null;
+  merc?: MercPublico | null; fiesta?: FiestaPublico | null; trans?: TransPublico | null; noche?: NochePublica | null; insc?: InscPublica | null; fe?: FePublica | null;
+  inm?: InmPublica | null; dl?: AutosPublica | null; tienda?: (TiendaP & { L: ArticuloRenta[]; V: ArticuloVenta[] }) | null;
+  resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; eventos?: TarjetaEvt[]; sesion: boolean; es: boolean; tabInicial?: string;
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const L = (x: [string, string]) => (es ? x[0] : x[1]);
   const router = useRouter();
+  let f = f0;
   const cfg = CFG_FICHA[f.cat]!;
   const sv = useSvc(svc, es);
+  // C-006 · Las demás categorías: sus mismas piezas (pestaña, hoja, barra y columna) dentro de la ficha nueva; la lógica no cambia.
+  const [entrar, setEntrar] = useState(false);
+  const pagar = () => { if (sesion) router.push(`/n/${f.id}/pagar`); else setEntrar(true); };
+  const mn = useMenu(menu && !menu.vacio ? menu : null, es, { onPay: pagar });
+  const rv = useRsv(rsv ?? null, es, sesion, null, {});
+  const ov = useOficio(ofi ?? null, es, sesion);
+  const sa = useSalud(salud ?? null, es);
+  const pr = usePro(prof ?? null, es);
+  const fi = useFiesta(fiesta ?? null, es, true);
+  const vi = useViaje(trans ?? null, es, true);
+  const accFn = { llamar: () => llamarR.current(), escribir: () => escribirR.current(), llegar: () => llegarR.current() };
+  const no = useNoche(noche ?? null, es, true, { ...accFn, reservar: (sx, pax) => router.push(`/n/${f.id}/noche?s=${sx}&p=${pax}`), ir: (href) => router.push(href) });
+  const ins = useInsc(insc ?? null, es, true, accFn);
+  const acc4i = { ...accFn, irTab: () => irCat(), pedir: (href: string) => router.push(href) };
+  const fv = useFe(fe ?? null, es, true, acc4i);
+  const iv = useInm(inm ?? null, es, true, acc4i);
+  const dv = useDealer(dl ?? null, es, true, acc4i);
+  const me = useMerc(merc ?? null, es);
+  // DJ y promotor no tienen local (neg-noche-kind.js post): «Por fecha» en vez de «Cerrado · Abre a las…», como en la ficha de siempre.
+  if (no && no.np.porFecha && no.np.kind !== "salon") f = { ...f, abierto: true, estadoCorto: E2("Por fecha", "By date"), estadoResto: E2("· no hay local", "· no venue") };
+  const llamarR = useRef<() => void>(() => undefined), escribirR = useRef<() => void>(() => undefined), llegarR = useRef<() => void>(() => undefined);
+  const irCat = () => (typeof window !== "undefined" && window.innerWidth >= 1024 ? ir("cat") : setTab("cat"));
   const rs = useResenas(resenas, f.id, sesion, es);
   const [guardado, setGuardado] = useState(f.guardado);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -72,6 +129,7 @@ export function FichaNueva({ f, t, svc, resenas, novedades, jobs, eventos = [], 
       // Lo que daba «Por barbero»: si confirma al instante o en cuánto responde, y su próxima hora.
       spec: [sv.cp.can ? aprL(p, es) : null, nx ? `${E2("PRÓXIMA HORA", "NEXT OPENING")} · ${sv.nxL(nx)}`.toUpperCase() : null].filter(Boolean).join(" · ") };
   }) : [];
+  if (!sv) for (const p of f.equipo) gente.push({ id: p.id, name: p.name, short: primerNombre(p.name), role: p.role, spec: "", foto: p.foto, owner: p.owner, silla: null });
   const staffBook = !!sv && sv.cp.can && (sv.silla || (sv.cp.pol.pick && gente.length > 1));
   const [bk, setBk] = useState<Bk | null>(null);
   const abrirReserva = (o: Partial<Bk> = {}) => { if (!sv || !sv.cp.can) return; setBk({ ...nuevaBk(sv), ...o, step: 1 }); };
@@ -80,20 +138,62 @@ export function FichaNueva({ f, t, svc, resenas, novedades, jobs, eventos = [], 
   const [pulso, setPulso] = useState(false);
   const elegirDesk = (o: Partial<Bk>) => { setDsk((d) => ({ ...d, ...o, h: null })); setPulso(true); setTimeout(() => setPulso(false), 900); };
 
+  // ── C-006 · Lo que vende de las demás categorías: su pestaña, su barra, su hoja y su columna de siempre ──
+  type ItemV = { id: string; name: string; meta?: string; price?: string; k?: string };
+  type Vende = { tab: (desk: boolean) => ReactNode; riel: ReactNode; barra: ReactNode; capas: ReactNode; top: (Fila & { k?: string })[]; n: number; pick: (id: string, k?: string) => void;
+    hoy: { title: string; cols: { k: string; v: string }[] } | null };
+  const deSecs = (secs: { title: string; items: ItemV[] }[]) => ({
+    top: secs.slice(0, 3).map((g) => g.items[0]).filter(Boolean).map((x) => ({ id: x!.id, name: x!.name, meta: x!.meta ?? "", price: x!.price ?? "", k: x!.k })),
+    n: secs.reduce((a, g) => a + g.items.length, 0) });
+  const deRiel = (r: { k: string; v: string }[] | undefined | null) => (r && r.length ? { title: r[0]!.v, cols: r.slice(1, 4).filter((x) => x.v && x.v !== "—") } : null);
+  const deTd = (td: { k: string; v: string }[] | undefined | null, title: string) => (td && td.length ? { title, cols: td.slice(0, 3) } : null);
+  const vende: Vende | null = useMemo(() => {
+    const X = (v: { secs: { title: string; items: ItemV[] }[] }, o: Omit<Vende, "top" | "n">): Vende => ({ ...deSecs(v.secs), ...o });
+    if (ov) return X(ov, { tab: (d) => <OfTab v={ov} desk={d} />, riel: <OfRiel v={ov} onCta={irCat} />, barra: <OfBarra v={ov} onCta={irCat} />,
+      capas: <><OfHoja v={ov} /><HojaVehiculo v={ov} /><HojaCasa v={ov} /></>, pick: (id) => ov.abrir(id), hoy: deRiel(ov.riel) });
+    if (sa) return X(sa, { tab: (d) => <SaTab v={sa} desk={d} />, riel: <SaRiel v={sa} onCta={irCat} />, barra: <SaBarra v={sa} onCta={irCat} />,
+      capas: <><SaHoja v={sa} />{sa.segHoja ? <SaSeguro v={sa} /> : null}</>, pick: (id) => sa.abrir(id), hoy: deRiel(sa.riel) });
+    if (pr) return X(pr, { tab: (d) => <PrTab v={pr} desk={d} />, riel: <PrRiel v={pr} onCta={irCat} />, barra: <PrBarra v={pr} onCta={irCat} />, capas: <PrHoja v={pr} />, pick: (id) => pr.abrir(id), hoy: deRiel(pr.riel) });
+    if (fi) return X(fi, { tab: (d) => <FiTab v={fi} desk={d} />, riel: <FiRiel v={fi} onCta={irCat} />, barra: <FiBarra v={fi} onCta={irCat} />, capas: <><FiHoja v={fi} /><FiFecha v={fi} /></>, pick: (id) => fi.abrir(id), hoy: deRiel(fi.riel) });
+    if (vi) return X(vi, { tab: (d) => <ViTab v={vi} desk={d} />, riel: <ViRiel v={vi} onCta={irCat} />, barra: <ViBarra v={vi} onCta={irCat} />, capas: <ViHoja v={vi} />, pick: (id) => vi.abrir(id), hoy: deRiel(vi.riel) });
+    if (no) return X(no, { tab: (d) => <NoTab v={no} desk={d} />, riel: <NoRiel v={no} onCta={irCat} />, barra: <NoBarra v={no} onCta={irCat} />, capas: <NoHoja v={no} />, pick: (id, k) => no.abrir(id, k ?? ""), hoy: deTd(no.td, no.linea || f.subsLinea) });
+    if (ins) return X(ins, { tab: (d) => <InTab v={ins} desk={d} />, riel: <InRiel v={ins} />, barra: <InBarra v={ins} />, capas: <InHoja v={ins} />, pick: (id) => ins.abrir(id), hoy: deTd(ins.td, ins.linea || f.subsLinea) });
+    if (fv) return X(fv, { tab: (d) => <FeTab v={fv} desk={d} />, riel: <FeRiel v={fv} />, barra: <FeBarra v={fv} />, capas: <><FeHoja v={fv} /><FeContacto v={fv} /></>, pick: (id) => fv.abrir(id), hoy: deTd(fv.td, f.hoy.sub || fv.linea) });
+    if (iv) return X(iv, { tab: (d) => <InmTab v={iv} desk={d} />, riel: <InmRiel v={iv} />, barra: <InmBarra v={iv} />, capas: <InmHoja v={iv} />, pick: (id) => iv.abrir(id), hoy: deTd(iv.td, f.hoy.sub || iv.linea) });
+    if (dv) return X(dv, { tab: (d) => <DlTab v={dv} desk={d} />, riel: <DlRiel v={dv} />, barra: <DlBarra v={dv} />, capas: <DlHoja v={dv} />, pick: (id) => dv.abrir(id), hoy: deTd(dv.td, f.hoy.sub || dv.linea) });
+    if (me) return { tab: (d) => <MeTab v={me} desk={d} />, riel: <MeRiel v={me} onCta={irCat} />, barra: <MeBarra v={me} onCta={irCat} />, capas: <MeHoja v={me} />,
+      top: me.top.slice(0, 3).map((x) => ({ id: x.id, name: me.nm(x.name), meta: me.precio(x).s, price: me.precio(x).l })), n: me.secs.reduce((a, g) => a + g.items.length, 0), pick: (id) => me.abrir(id), hoy: deRiel(me.riel) };
+    if (mn) return { tab: (d) => (d ? <MenuDesk mn={mn} unaColumna={false} /> : <MenuMovil mn={mn} />), riel: <PedidoTarjeta mn={mn} />,
+      barra: !mn.has ? (
+        <div data-screen-label="Ficha · barra de pedido" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-ink/[.08] bg-paper/95 px-5 pb-[calc(22px+env(safe-area-inset-bottom))] pt-3 backdrop-blur-[14px] lg:hidden">
+          <div className="min-w-0 flex-1"><div className="font-display text-[17px] font-extrabold leading-[1.1] tracking-[-0.03em]">{E2("Desde", "From")} ${(mn.m.desde / 100).toFixed(2)}</div><div className="mt-1 truncate font-mono text-[9px] font-bold tracking-[0.08em] text-open-text">{mn.etaCaps}</div></div>
+          <Button variant="primary" size="lg" onClick={() => setTab("cat")}>{E2("Ordenar", "Order")}</Button>
+        </div>) : null,
+      capas: <><MenuCapas mn={mn} nombre={f.nombre} />{entrar ? <HojaEntrar es={es} destino={`/n/${f.id}/pagar`} onClose={() => setEntrar(false)} /> : null}</>,
+      top: [], n: 1, pick: () => setTab("cat"), hoy: null };
+    if (tienda && f.cat === "NEG-TIENDA" && (tienda.L.length || tienda.V.length)) return { tab: () => <TiendaTab L={tienda.L} V={tienda.V} mia={tienda.mia} auto={false} tienda horas={tienda.horas} plan={tienda.plan ?? null} negocio={f.id} es={es} />,
+      riel: null, barra: null, capas: null, top: [], n: tienda.L.length + tienda.V.length, pick: () => setTab("cat"), hoy: null };
+    return null;
+  }, [ov, sa, pr, fi, vi, no, ins, fv, iv, dv, me, mn, tienda, entrar, es]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Pestañas (solo con contenido) ──
   const sinLocal = !f.direccion && !f.zona;
   const dep = sv ? Math.max(0, ...sv.cp.gente.map((p) => p.dep)) : 0;
+  // El nombre de cada pestaña va como palabra («Menú», «Servicios»): así lo lee el lector de pantalla; las mayúsculas del diseño las pone el estilo.
+  const tc = (x: string) => x.charAt(0) + x.slice(1).toLowerCase();
   const tabs = [
-    { id: "res", label: E2("RESUMEN", "OVERVIEW"), icon: "home" },
-    ...(nItems ? [{ id: "cat", label: L(cfg.tab), icon: cfg.icon }] : []),
-    ...(gente.length ? [{ id: "staff", label: L(cfg.staffTab), icon: "users" }] : []),
-    { id: "rev", label: E2("RESEÑAS", "REVIEWS"), icon: "star" },
-    ...(novedades?.posts.length ? [{ id: "nov", label: E2("NOVEDADES", "UPDATES"), icon: "news" }] : []),
-    ...(eventos.length ? [{ id: "evt", label: E2("EVENTOS", "EVENTS"), icon: "ticket" }] : []),
-    ...(jobs.length ? [{ id: "jobs", label: "JOBS", icon: "brief" }] : []),
-    ...(sinLocal ? [] : [{ id: "hor", label: E2("HORARIO", "HOURS"), icon: "clock" }]),
-    ...(f.faqs.length || dep ? [{ id: "faq", label: E2("ANTES DE IR", "BEFORE YOU GO"), icon: "help" }] : []),
-    ...(f.relacionados.length ? [{ id: "rel", label: E2("RELACIONADOS", "RELATED"), icon: "store" }] : []),
+    { id: "res", label: E2("Resumen", "Overview"), icon: "home" },
+    ...((sv ? nItems : vende?.n) ? [{ id: "cat", label: tc(L(cfg.tab)), icon: cfg.icon }] : []),
+    ...(gente.length ? [{ id: "staff", label: tc(L(cfg.staffTab)), icon: "users" }] : []),
+    { id: "rev", label: E2("Reseñas", "Reviews"), icon: "star" },
+    ...(novedades?.posts.length ? [{ id: "nov", label: E2("Novedades", "Updates"), icon: "news" }] : []),
+    ...(tienda && f.cat !== "NEG-TIENDA" && (tienda.L.length || tienda.V.length) ? [{ id: "shop", label: f.cat === "NEG-TRANS" ? E2("Renta", "Rent") : E2("Tienda", "Shop"), icon: "bag" }] : []),
+    ...(rv ? [{ id: "rsv", label: E2("Reservar", "Reserve"), icon: "calendar" }] : []),
+    ...(eventos.length ? [{ id: "evt", label: E2("Eventos", "Events"), icon: "ticket" }] : []),
+    ...(jobs.length ? [{ id: "jobs", label: "Jobs", icon: "brief" }] : []),
+    ...(sinLocal ? [] : [{ id: "hor", label: E2("Horario", "Hours"), icon: "clock" }]),
+    ...(f.faqs.length || dep ? [{ id: "faq", label: E2("Antes de ir", "Before you go"), icon: "help" }] : []),
+    ...(f.relacionados.length ? [{ id: "rel", label: E2("Relacionados", "Related"), icon: "store" }] : []),
   ];
   const ini = ({ svc: "cat", menu: "cat", reviews: "rev" } as Record<string, string>)[tabInicial ?? ""] ?? tabInicial ?? "res";
   const [tab, setTabS] = useState(tabs.some((x) => x.id === ini) ? ini : "res");
@@ -130,7 +230,7 @@ export function FichaNueva({ f, t, svc, resenas, novedades, jobs, eventos = [], 
 
   // ── La tarjeta de hoy: lo que importa sin repetir el estado ni la barra (Belleza: cómo confirma, el depósito, el pago) ──
   const hoy = useMemo(() => {
-    if (!sv) return { eyebrow: f.hoy.eyebrow, title: f.subsLinea || L(cfg.title), cols: f.hoy.cols };
+    if (!sv) return { eyebrow: f.hoy.eyebrow, title: vende?.hoy?.title || f.hoy.sub || f.subsLinea || L(cfg.title), cols: vende?.hoy?.cols ?? f.hoy.cols };
     const cp = sv.cp, todosAuto = cp.gente.length > 0 && cp.gente.every((p) => p.auto), resp = Math.min(...cp.gente.map((p) => p.resp).concat(cp.pol.resp));
     const title = !cp.can ? (cp.off === "apagado" ? E2("Sin cita: llegas y esperas turno", "Walk-in: come in and wait your turn") : E2("Pide tu hora por teléfono", "Call for your time"))
       : todosAuto ? E2("Confirman al instante", "Instant confirmation") : E2(`Responden en ~${resp >= 60 ? `${Math.round(resp / 60)} h` : `${resp} min`}`, `Reply in ~${resp >= 60 ? `${Math.round(resp / 60)} h` : `${resp} min`}`);
@@ -156,12 +256,15 @@ export function FichaNueva({ f, t, svc, resenas, novedades, jobs, eventos = [], 
     cta: L(cfg.cta), go: () => abrirReserva(),
   } : llamar ? { title: hoy.title, sub: (f.telefono ?? "").toUpperCase(), cta: E2("Llamar", "Call"), go: llamar } : null;
 
-  const popular = grupos.slice(0, 3).map((g) => g.items[0]!).filter(Boolean);
+  llamarR.current = llamar ?? (() => undefined); escribirR.current = escribir ?? (() => undefined); llegarR.current = llegar ?? (() => undefined);
+
+  const popular: (Fila & { k?: string })[] = sv ? grupos.slice(0, 3).map((g) => g.items[0]!).filter(Boolean) : vende?.top ?? [];
+  const nCat = sv ? nItems : vende?.n ?? 0;
   const verRes = () => setTab("rev");
-  const pick = (id: string) => abrirReserva({ svc: id });
+  const pick = (id: string, k?: string) => (sv ? abrirReserva({ svc: id }) : vende?.pick(id, k));
 
   /* ── Bloques que comparten teléfono y computadora ── */
-  const filaSvc = (x: Fila, on = false) => <ServiceRow key={x.id} name={x.name} meta={x.meta} price={x.price} selected={on} onClick={() => pick(x.id)} />;
+  const filaSvc = (x: Fila & { k?: string }, on = false) => <ServiceRow key={x.id} name={x.name} meta={x.meta} price={x.price} selected={on} onClick={() => pick(x.id, x.k)} />;
   const oferta = f.oferta ? (
     <button type="button" onClick={() => setTab(novedades?.posts.length ? "nov" : nItems ? "cat" : "res")} className="flex w-full items-center gap-3 rounded-[17px] bg-action/[.07] px-4 py-3.5 text-left">
       <Icon name="bolt" size={17} color="var(--tl-action)" /><span className="min-w-0 flex-1 text-[13.5px] font-bold leading-[1.45] text-action-hover">{f.oferta}</span><Icon name="chevronRight" size={16} color="var(--tl-action)" />
@@ -176,6 +279,23 @@ export function FichaNueva({ f, t, svc, resenas, novedades, jobs, eventos = [], 
     </button>
   ) : null;
   const hechos = rs ? aspectos(rs).slice(0, 3) : [];
+  // Lo que la ficha de siempre ya tenía y no se pierde: «¿Puede hacerlo por ley?» (Profesionales) y «¿Es tu negocio?» (sin dueño en To'Latino).
+  const ley = f.ley ? (
+    <button type="button" data-screen-label="Resumen · puede hacerlo por ley" disabled={!f.ley.enlace} onClick={() => router.push(`/n/${f.id}/licencia`)} className="flex w-full items-center gap-3 rounded-[17px] border border-line bg-white px-3.5 py-[13px] text-left">
+      <span className="grid size-[42px] flex-none place-items-center rounded-xl bg-ink"><Icon name={f.ley.enlace ? "verified" : "ban"} size={20} color="var(--tl-white)" /></span>
+      <span className="min-w-0 flex-1"><span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{f.ley.enlace ? t.leyK : t.leyNoK}</span>
+        <span className="mt-1 block text-[14px] font-bold leading-[1.3]">{f.ley.titulo}</span>{f.ley.texto ? <span className="mt-0.5 block text-[12px] font-medium leading-[1.45] text-ink/60">{f.ley.texto}</span> : null}</span>
+      {f.ley.enlace ? <span className="flex-none text-[12.5px] font-bold text-action">{t.leyCta}</span> : null}
+    </button>
+  ) : null;
+  const esTuyo = !f.mensajes ? (
+    <button type="button" data-es-tuyo={f.id} onClick={() => router.push(`/recuperar/${f.id}`)} className="flex w-full items-center gap-3 rounded-[17px] border border-ink/[.08] bg-paper px-3.5 py-[13px] text-left">
+      <span className="grid size-[42px] flex-none place-items-center rounded-xl bg-action/10"><Icon name="store" size={19} color="var(--tl-action)" /></span>
+      <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{E2("¿Es tu negocio?", "Is this your business?")}</span>
+        <span className="mt-1 block text-[12px] font-medium leading-[1.45] text-ink/60">{E2("Reclámalo gratis: confirmas que es tuyo y lo manejas desde tu panel.", "Claim it for free: confirm it is yours and run it from your dashboard.")}</span></span>
+      <Icon name="chevronRight" size={16} color="rgba(11,14,18,.35)" />
+    </button>
+  ) : null;
   const resumenResenas = (desk: boolean) => !rs ? null : rs.r.n < 5 ? <ResResumen v={rs} desk={desk} onAll={verRes} /> : (
     <div className="flex flex-col gap-2.5" data-screen-label="Resumen · reseñas">
       <SectionHeader title={E2("Reseñas", "Reviews")} action={E2(`Ver las ${rs.r.n}`, `See all ${rs.r.n}`)} onAction={verRes} />
@@ -302,7 +422,7 @@ export function FichaNueva({ f, t, svc, resenas, novedades, jobs, eventos = [], 
             </div>
           ) : null}
         </div>
-        <div ref={tabsRef} className="sticky z-20 bg-white" style={{ top: CAB_MOVIL }}><Tabs items={tabs} active={tab} onChange={setTab} /></div>
+        <div ref={tabsRef} className="sticky z-20 bg-white [&_[role=tab]]:uppercase" style={{ top: CAB_MOVIL }}><Tabs items={tabs} active={tab} onChange={setTab} /></div>
         <div className="min-h-[640px]">
           {tab === "res" && (
             <div className="flex flex-col gap-6 px-5 pt-5" data-screen-label="Ficha · resumen">
@@ -312,9 +432,11 @@ export function FichaNueva({ f, t, svc, resenas, novedades, jobs, eventos = [], 
                 {oferta}
               </div>
               {dueno(false)}
+              {ley}
+              {!sv && mn ? <MenuResumen mn={mn} desk={false} onAll={() => setTab("cat")} /> : null}
               {popular.length ? (
                 <div className="flex flex-col gap-2.5">
-                  <SectionHeader title={E2("Lo más pedido", "Most booked")} action={nItems > popular.length ? `${E2("Ver", "See")} ${nItems}` : undefined} onAction={() => setTab("cat")} />
+                  <SectionHeader title={E2("Lo más pedido", "Most booked")} action={nCat > popular.length && vende?.n !== 1 ? `${E2("Ver", "See")} ${nCat}` : undefined} onAction={() => setTab("cat")} />
                   {popular.map((x) => filaSvc(x))}
                 </div>
               ) : null}
@@ -332,9 +454,11 @@ export function FichaNueva({ f, t, svc, resenas, novedades, jobs, eventos = [], 
                 </div>
               ) : null}
               {resumenResenas(false)}
+              {esTuyo}
             </div>
           )}
-          {tab === "cat" && (
+          {tab === "cat" && !sv && vende ? <div className="pb-6">{vende.tab(false)}</div> : null}
+          {tab === "cat" && sv && (
             <div className="flex flex-col gap-3.5 pt-4" data-screen-label="Ficha · servicios">
               {miCita ? <div className="px-5">{miCita}</div> : null}
               <div className="hs flex gap-2 overflow-x-auto px-5">{chips.map((c) => <Chip key={c.id} variant={catF === c.id ? "selected" : "filter"} onClick={() => setCatF(c.id)}>{c.label}</Chip>)}</div>
@@ -366,13 +490,17 @@ export function FichaNueva({ f, t, svc, resenas, novedades, jobs, eventos = [], 
           )}
           {tab === "rev" && rs && <div className="pb-6"><ResTab v={rs} desk={false} onMenu={() => setTab("cat")} /></div>}
           {tab === "nov" && novedades && <div className="pb-6"><NovTab v={novedades} logo={f.logo ?? null} sesion={sesion} es={es} onHoras={() => setTab("hor")} onItem={() => setTab("cat")} /></div>}
+          {tab === "shop" && tienda ? <div className="pb-6"><TiendaTab L={tienda.L} V={tienda.V} mia={tienda.mia} auto={f.cat === "NEG-AUTO"} horas={tienda.horas} plan={tienda.plan ?? null} negocio={f.id} es={es} /></div> : null}
+          {tab === "rsv" && rv ? <div className="pb-6"><RsvTab v={rv} desk={false} /></div> : null}
           {tab === "evt" && <EventosTab eventos={eventos} es={es} />}
           {tab === "jobs" && <div className="pb-6"><JobsTab jobs={jobs} negocio={f.id} sesion={sesion} es={es} /></div>}
           {tab === "hor" && <div className="flex flex-col gap-4 px-5 pt-[18px]" data-screen-label="Ficha · horario">{horario}</div>}
           {tab === "faq" && <div className="flex flex-col gap-4 px-5 pt-[18px]" data-screen-label="Ficha · antes de ir">{antes}</div>}
           {tab === "rel" && <div className="flex flex-col gap-2.5 px-5 pt-[18px]" data-screen-label="Ficha · relacionados">{relacionados}</div>}
         </div>
-        {barra && !bk && !sv?.hoja ? (
+        {!sv && vende && tab !== "cat" && tab !== "shop" && tab !== "rsv" ? vende.barra : null}
+        {tab === "rsv" && rv ? <RsvBarra v={rv} /> : null}
+        {sv && barra && !bk && !sv.hoja ? (
           <div data-screen-label="Ficha · barra" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-ink/[.08] bg-paper/95 px-5 pb-[calc(22px+env(safe-area-inset-bottom))] pt-3 backdrop-blur-[14px]">
             <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-[1.1] tracking-[-0.03em]">{barra.title}</div><div className="mt-1 truncate font-mono text-[9px] font-bold tracking-[0.08em] text-open-text">{barra.sub}</div></div>
             <Button variant="primary" size="lg" onClick={barra.go}>{barra.cta}</Button>
@@ -405,15 +533,16 @@ export function FichaNueva({ f, t, svc, resenas, novedades, jobs, eventos = [], 
             {llamar ? <IconButton icon="phone" size={50} label={E2("Llamar", "Call")} onClick={llamar} /> : null}
           </div>
         </div>
-        <div ref={tiraRef} className="sticky z-20" style={{ top: CAB_DESK }}>
+        <div ref={tiraRef} className="sticky z-20 [&_[role=tab]]:uppercase" style={{ top: CAB_DESK }}>
           <DesktopTabs items={tabs} active={activa} onChange={ir} aside={pegada ? { label: `${f.estadoCorto} · ${resto}`.toUpperCase().slice(0, 40), dot: stDot } : null} />
           {flechas.l ? <div className="pointer-events-none absolute inset-y-0 left-0 flex w-[76px] items-center bg-[linear-gradient(90deg,#fff_55%,rgba(255,255,255,0))]"><span className="pointer-events-auto"><IconButton icon="chevronLeft" size={34} label={E2("Anteriores", "Previous")} onClick={() => tira()?.scrollBy({ left: -320, behavior: "smooth" })} /></span></div> : null}
           {flechas.r ? <div className="pointer-events-none absolute inset-y-0 right-[420px] flex w-[76px] items-center justify-end bg-[linear-gradient(270deg,#fff_55%,rgba(255,255,255,0))]"><span className="pointer-events-auto"><IconButton icon="chevronRight" size={34} label={E2("Más", "More")} onClick={() => tira()?.scrollBy({ left: 320, behavior: "smooth" })} /></span></div> : null}
         </div>
         <div className="grid grid-cols-[minmax(0,1fr)_372px] items-start gap-12 pt-8">
           <div className="flex min-w-0 flex-col gap-16">
-            {seccion("res", null, <div className="flex flex-col gap-4">{miCita}{dueno(true)}<div className="grid"><TodayCard desktop eyebrow={hoy.eyebrow} title={hoy.title} cols={hoy.cols} /></div>{oferta}</div>)}
-            {nItems ? seccion("cat", L(cfg.title), (
+            {seccion("res", null, <div className="flex flex-col gap-4">{miCita}{dueno(true)}<div className="grid"><TodayCard desktop eyebrow={hoy.eyebrow} title={hoy.title} cols={hoy.cols} /></div>{oferta}{ley}{esTuyo}</div>)}
+            {!sv && vende ? seccion("cat", L(cfg.title), <div>{vende.tab(true)}</div>) : null}
+            {sv && nItems ? seccion("cat", L(cfg.title), (
               <div data-screen-label="Ficha · servicios · desktop" className="flex flex-col gap-[18px]">
                 <div className="hs flex gap-2 overflow-x-auto">{chips.map((c) => <Chip key={c.id} variant={catF === c.id ? "selected" : "filter"} onClick={() => setCatF(c.id)}>{c.label}</Chip>)}</div>
                 {gruposF.map((g) => (
@@ -442,6 +571,8 @@ export function FichaNueva({ f, t, svc, resenas, novedades, jobs, eventos = [], 
             )) : null}
             {rs ? seccion("rev", E2("Reseñas", "Reviews"), <ResTab v={rs} desk onMenu={() => ir("cat")} />, <button type="button" onClick={rs.escribir} className="text-[13.5px] font-bold text-action">{rs.r.tengo ? E2("Ver tu reseña", "See your review") : E2("Escribir reseña", "Write a review")}</button>) : null}
             {novedades?.posts.length ? seccion("nov", E2("Novedades", "Updates"), <div className="max-w-[680px]"><NovTab v={novedades} logo={f.logo ?? null} sesion={sesion} es={es} onHoras={() => ir("hor")} onItem={() => ir("cat")} /></div>) : null}
+            {tienda && f.cat !== "NEG-TIENDA" && (tienda.L.length || tienda.V.length) ? seccion("shop", E2("Tienda", "Shop"), <TiendaTab L={tienda.L} V={tienda.V} mia={tienda.mia} auto={f.cat === "NEG-AUTO"} horas={tienda.horas} plan={tienda.plan ?? null} negocio={f.id} es={es} />) : null}
+            {rv ? seccion("rsv", E2("Reservar mesa", "Reserve a table"), <div className="max-w-[620px]"><RsvTab v={rv} desk /></div>) : null}
             {eventos.length ? seccion("evt", E2("Eventos", "Events"), <EventosTab eventos={eventos} es={es} />) : null}
             {jobs.length ? seccion("jobs", "Jobs", <div className="max-w-[680px]"><JobsTab jobs={jobs} negocio={f.id} sesion={sesion} es={es} /></div>) : null}
             {!sinLocal ? seccion("hor", E2("Horario y cómo llegar", "Hours and directions"), <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-4">{horario}</div>) : null}
@@ -449,7 +580,7 @@ export function FichaNueva({ f, t, svc, resenas, novedades, jobs, eventos = [], 
             {f.relacionados.length ? seccion("rel", E2("Relacionados", "Related"), <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5">{relacionados}</div>) : null}
           </div>
           <aside className="sticky min-w-0 self-start" style={{ top: CAB_DESK + 78 }}>
-            {sv ? <TarjetaCita v={sv} cfg={cfg} es={es} dsk={dsk} setDsk={setDsk} pulso={pulso} staffBook={staffBook} grupos={grupos} onVer={() => ir("cat")} /> : null}
+            {sv ? <TarjetaCita v={sv} cfg={cfg} es={es} dsk={dsk} setDsk={setDsk} pulso={pulso} staffBook={staffBook} grupos={grupos} onVer={() => ir("cat")} /> : vende?.riel ?? (rv ? <RsvRiel v={rv} /> : null)}
             {escribir || llegar ? (
               <div className="mt-3 flex gap-2">
                 {escribir ? <div className="grid flex-1"><Button variant="secondary" size="md" icon="chat" block onClick={escribir}>{E2("Escribir", "Message")}</Button></div> : null}
@@ -461,6 +592,7 @@ export function FichaNueva({ f, t, svc, resenas, novedades, jobs, eventos = [], 
       </div>
 
       {sv && <SvcHoja v={sv} />}
+      {!sv && vende ? vende.capas : null}
       {rs && <ResCapas v={rs as CtlResenas} />}
       {aviso ? <div role="status" className="fixed bottom-[112px] left-1/2 z-[90] -translate-x-1/2 whitespace-nowrap rounded-full bg-ink px-4 py-[11px] text-[12.5px] font-bold text-white shadow-[var(--shadow-float)] lg:bottom-7">{aviso}</div> : null}
     </div>

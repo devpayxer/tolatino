@@ -182,6 +182,8 @@ export async function ficha(id: string, lang: Lang, p?: Punto, o?: { equipo?: bo
     direccionMeta: `${b.mi ?? "—"} MI · ${b.ciudad.toUpperCase()}, ${b.estado}`,
     faqs: faqs.rows, relacionados: enlaces,
     quien: pro ? quienDetras(gente.rows, b.about?.[lang] || b.about?.es || null, b.founded, b.ciudad, b.verified, lang) : null,
+    // C-006 · El equipo de la ficha nueva (Pro): quien aceptó salir en la página, el dueño primero (lo mismo que «Quién está detrás»).
+    equipo: pro ? gente.rows.map((x, i) => ({ id: `m${i}`, name: x.name, role: x.role?.[lang] || x.role?.es || (x.kind === "owner" ? L("Dueño", "Owner") : ""), foto: x.photo, owner: x.kind === "owner" })) : [],
     amen: pro ? amen.rows.map((a) => ({ icon: a.icon ?? "check", l: a.l })) : [],
     amenK: enCasa ? L("CÓMO TRABAJA", "HOW THEY WORK") : L("EN EL LOCAL", "AT THE PLACE"),
     ley: pro && b.cat === "NEG-PRO" ? tarjetaLey(lic, Array.isArray(b.attrs.cant) ? (b.attrs.cant as string[])[es ? 0 : 1] ?? null : null, lang) : null,

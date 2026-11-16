@@ -9760,6 +9760,12 @@ const guardianes = {
     const b = readFileSync(B, "utf8");
     if (!/d >= 0 && d <= 13 && Number\.isInteger\(m\) && m >= 0 && m < 1440/.test(b)) falla(G, B, 0, "Booking valida el día (0–13) y la hora (0–1439) que llegan de la ficha");
     if (!/find\(\(y\) => y\.m === inicial\.h && y\.free\)/.test(readFileSync(K, "utf8"))) falla(G, K, 0, "Booking solo se queda con la hora de la ficha si sigue libre");
+    // C-006 · Cada categoría de la tabla usa sus piezas de siempre (pestaña, hoja, barra): sin su adaptador, su pestaña saldría vacía.
+    const PIEZAS = { "NEG-BELL": "SvcHoja", "NEG-FOOD": "MenuCapas", "NEG-AUTO": "OfHoja", "NEG-HOGAR": "OfHoja", "NEG-SALUD": "SaHoja", "NEG-NOCHE": "NoHoja", "NEG-MERC": "MeHoja",
+      "NEG-FIESTA": "FiHoja", "NEG-PRO": "PrHoja", "NEG-TIENDA": "TiendaTab", "NEG-TRANS": "ViHoja", "NEG-EDU": "InHoja", "NEG-NINOS": "InHoja", "NEG-DEPORTE": "InHoja",
+      "NEG-FE": "FeHoja", "NEG-INMUEBLE": "InmHoja", "NEG-DEALER": "DlHoja" };
+    const tabla = readFileSync("apps/web/lib/ficha-nueva.ts", "utf8");
+    for (const m of tabla.matchAll(/^\s+"(NEG-[A-Z]+)": \{/gm)) { const pz = PIEZAS[m[1]]; if (!pz || !new RegExp(`<${pz}\\b`).test(fn)) falla(G, F, 0, `${m[1]} está en la tabla de la ficha nueva sin sus piezas de siempre (${pz ?? "¿cuáles?"})`); }
   },
 
   telefonoAlAzarRespetaFijos() {

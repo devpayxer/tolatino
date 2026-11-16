@@ -12,6 +12,8 @@ const casos = [
   ['fichaNuevaSoloPro', F, 'void horasDeCita(v.cp.negocio.id,', 'void Promise.resolve(v.cp.negocio.id,'],
   ['fichaNuevaSoloPro', B, 'd >= 0 && d <= 13 && Number.isInteger(m) && m >= 0 && m < 1440', 'd >= 0 && Number.isInteger(m)'],
   ['fichaNuevaSoloPro', K, 'find((y) => y.m === inicial.h && y.free)', 'find((y) => y.m === inicial.h)'],
+  // C-006: una categoría en la tabla sin sus piezas de siempre (la hoja de Salud).
+  ['fichaNuevaSoloPro', F, '<SaHoja v={sa} />', '<span />'],
 ];
 const crear = [];
 let bien = 0, total = 0;

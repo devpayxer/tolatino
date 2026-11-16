@@ -30,13 +30,13 @@ const HORA = /^\d{1,2}:\d{2} (AM|PM)$/;
     const hoy = await m.locator('[data-screen-label="Ficha · resumen"]').innerText();
     ok(!hoy.includes(`${ab} hasta`) && !/Abre (mañana|a las)/.test(hoy), 'la tarjeta de hoy no repite el estado');
     const tabs = await m.getByRole('tab').allInnerTexts();
-    ok(tabs.map((x) => x.trim()).join('|').startsWith('RESUMEN|SERVICIOS|EQUIPO|RESEÑAS'), `pestañas en orden: ${tabs.map((x) => x.trim()).join(' · ')}`);
+    ok(tabs.map((x) => x.trim().toUpperCase()).join('|').startsWith('RESUMEN|SERVICIOS|EQUIPO|RESEÑAS'), `pestañas en orden: ${tabs.map((x) => x.trim()).join(' · ')}`);
     ok(!/undefined|null|NaN/.test(await texto(m)), 'sin «undefined», «null» ni «NaN»');
     await m.screenshot({ path: OUT + 'fic005-resumen-390.png', fullPage: false });
-    await m.getByRole('tab', { name: /EQUIPO/ }).click();
+    await m.getByRole('tab', { name: /Equipo/ }).click();
     const eq = m.locator('[data-screen-label="Ficha · equipo"]'); await eq.waitFor();
     ok(await eq.getByRole('button', { name: 'Ver su página' }).count() >= 1, 'Equipo: cada silla con «Ver su página»');
-    await m.getByRole('tab', { name: /HORARIO/ }).click(); await m.locator('[data-screen-label="Ficha · horario"]').waitFor();
+    await m.getByRole('tab', { name: /Horario/ }).click(); await m.locator('[data-screen-label="Ficha · horario"]').waitFor();
     ok(!!(await m.locator('[data-screen-label="Ficha · horario"]').getByText(/Cómo llegar/).count()), 'Horario con «Cómo llegar»');
     ok(await m.evaluate(() => document.documentElement.scrollWidth - window.innerWidth) <= 0, 'teléfono sin scroll de lado');
 

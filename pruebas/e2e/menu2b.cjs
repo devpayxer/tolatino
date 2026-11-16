@@ -114,7 +114,8 @@ const MARISOL = "(select id from users where phone='+15705550122')";
   // ── Escritorio ──
   const d = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); watch(d, 'desk');
   await entrar(d, '5705550122');
-  await d.goto(B + N); await d.locator('[data-screen-label="Resumen desktop · menú"]').waitFor();
+  // C-006 · Ficha nueva (Pro): en la computadora es una sola página; el menú es su sección, sin un resumen aparte.
+  await d.goto(B + N); await d.locator('#sec-cat [data-screen-label="Ficha · menú · desktop"]').waitFor();
   await shot(d, 'b13-resumen-d.png');
   await d.goto(B + N + '?tab=menu'); await d.locator('[data-screen-label="Ficha · menú · desktop"]').waitFor();
   await shot(d, 'b14-menu-d.png');

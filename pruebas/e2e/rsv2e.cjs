@@ -22,14 +22,14 @@ const op = (n, c = "status") => sql(`select ${c} from operations where number='$
 
   // 0 · Sin sesión: la pestaña se ve y «Continuar» lleva a Entra con lo elegido
   await m.goto(B + '/n/' + BIZ);
-  const tabR = await vis(m.getByText('Reservaciones', { exact: true })); ok(!!tabR, 'pestaña Reservaciones en la ficha Pro');
+  const tabR = await vis(m.getByRole('tab', { name: 'Reservar' })); ok(!!tabR, 'pestaña Reservar en la ficha Pro (C-006)');
   const quick = await vis(m.locator('[data-screen-label="Ficha · reservar mesa"]'));
   await quick.scrollIntoViewIfNeeded(); ok(await quick.isVisible(), 'Resumen: tarjeta «Reservar mesa»');
   await quick.getByText('2', { exact: true }).click(); await quick.getByText(/^\d{1,2}:\d{2} (AM|PM)$/).first().waitFor();
   const qSlots = await quick.locator('span').filter({ hasText: /^\d{1,2}:\d{2} (AM|PM)$/ }).count();
   ok(qSlots > 0 && qSlots <= 4, `tarjeta rápida: ${qSlots} horas con mesa para 2`);
   await shot(m, 'r1-resumen-rapida.png');
-  await (await vis(m.getByText('Reservaciones', { exact: true }))).click();
+  await (await vis(m.getByRole('tab', { name: 'Reservar' }))).click();
   const tab = m.locator('[data-screen-label="Ficha · reservaciones"]').first();
   await tab.getByText('¿Cuántos son?').waitFor(); ok(true, 'pestaña pide primero cuántos son');
   await shot(m, 'r2-tab-cuantos.png');
