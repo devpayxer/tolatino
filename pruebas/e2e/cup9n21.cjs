@@ -19,8 +19,8 @@ const uid = (tel) => sql(`select id from users where phone = '+1${tel}'`);
 
 (async () => {
   const volver = abiertoTodoElDia(BIZ);
-  // Precondición propia: un plato que se pide a cualquier hora (el Almuerzo de la semilla solo de 11 a 4: almuerzoATodaHora), sin agotar y para recoger.
-  const item = sql(`select i.id || '|' || i.price_cents || '|' || i.tax_pct from items i join item_sections s on s.id = i.section_id and s.removed_at is null and s.visible where i.business_id = '${BIZ}' and i.module = 'menu' and i.removed_at is null and i.status = 'live' and i.sell and not i.sold_out and 'pick' = any(i.channels) and i.avail <> 'own' and not (i.avail = 'cat' and s.avail = 'own') and i.price_cents between 500 and 3000 order by i.id limit 1`).split('|');
+  // Precondición propia: un plato que se pide a cualquier hora (el Almuerzo de la semilla solo de 11 a 4: almuerzoATodaHora), sin agotar, para recoger y sin opciones que elegir (el carrito de la prueba no lleva elecciones).
+  const item = sql(`select i.id || '|' || i.price_cents || '|' || i.tax_pct from items i join item_sections s on s.id = i.section_id and s.removed_at is null and s.visible where i.business_id = '${BIZ}' and i.module = 'menu' and i.removed_at is null and i.status = 'live' and i.sell and not i.sold_out and 'pick' = any(i.channels) and i.avail <> 'own' and not (i.avail = 'cat' and s.avail = 'own') and coalesce(array_length(i.group_ids, 1), 0) = 0 and i.price_cents between 500 and 3000 order by i.id limit 1`).split('|');
   const [IT, PRECIO] = [item[0], Number(item[1])];
   const MIN = Math.ceil((PRECIO * 2) / 100) * 100 - 100; // dos platos llegan al mínimo, uno no
   ok(PRECIO < MIN && PRECIO * 2 >= MIN && MIN >= 400, `precondición: el plato ${IT} cuesta ${money(PRECIO)}; mínimo ${money(MIN)} (uno no llega, dos sí)`);
