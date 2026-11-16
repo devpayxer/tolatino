@@ -59,6 +59,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   else if (r.length === 1 && r[0] === "eventos") ruta = { sec: "evt", sub: null, det: null };
   else if (r.length === 1 && r[0] === "cobros") ruta = { sec: "pay", sub: null, det: null };
   else if (r.length === 2 && r[0] === "cobros" && r[1] === "plan") ruta = { sec: "pay", sub: "plan", det: null };
+  else if (r.length === 2 && r[0] === "cobros" && r[1] === "patrocinio") ruta = { sec: "pay", sub: "patrocinio", det: null };   // C-002
   else if (r.length === 2 && r[0] === "vendes" && (r[1] === "menu" || r[1] === "pedidos" || r[1] === "reservaciones" || r[1] === "jobs" || r[1] === "servicios" || r[1] === "citas" || r[1] === "sillas" || r[1] === "herramienta" || r[1] === "productos" || r[1] === "inscripciones" || r[1] === "propiedades" || r[1] === "inventario" || r[1] === "visitas")) ruta = { sec: "mod", sub: r[1], det: null };
   else notFound();
   if (typeof sp.det === "string" && DET.test(sp.det)) ruta.det = sp.det;
@@ -141,8 +142,12 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // Cobros (solo el dueño): al volver de Stripe se lee el estado real de la cuenta.
   if (ruta.sec === "pay" && sp.vuelta) await actualizarCuenta(d.id).catch(() => undefined);
   // 6e · Cobros también muestra los pagos de eventos por fecha (la liquidación del martes).
-  const cob = ruta.sec === "pay" && ruta.sub !== "plan" ? { ...(await cobrosPanel(d.id)), eventos: await (await import("@/lib/evt-liquidacion")).liquidacionesPanel(d.id, null) } : undefined;
+  const cob = ruta.sec === "pay" && !ruta.sub ? { ...(await cobrosPanel(d.id)), eventos: await (await import("@/lib/evt-liquidacion")).liquidacionesPanel(d.id, null) } : undefined;
   // Tu plan (Cobros y plan): el estado del plan, los recibos y las tarjetas guardadas del dueño.
+  // C-002 · Patrocinio (Cobros y plan › Patrocinio): lo vivo, lo reservado, los recibos, los puestos de hoy y la vista previa; y su fila en Tu página.
+  const pat = ruta.sec === "pay" && ruta.sub === "patrocinio" ? (await (await import("@/lib/patrocinio")).patPanel(d.id, acc.yo.id, lang)) ?? undefined : undefined;
+  const cobraPanel = acc.partes.includes("all") || acc.partes.includes("pay");
+  const patRes = cobraPanel && ((ruta.sec === "pag" && !ruta.sub) || ruta.sec === "pay") ? await (await import("@/lib/patrocinio")).patResumen(d.id) : null;
   const plan = ruta.sec === "pay" && ruta.sub === "plan" ? await (async () => {
     const S = await import("@/lib/suscripcion"), { pasarela } = await import("@/lib/pagos/pasarela"), { misTarjetas } = await import("@/lib/cobros");
     return { plan: await S.planDe(d.id), recibos: await S.recibosPro(d.id), modo: pasarela.modo(), pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: await misTarjetas(acc.yo.id) };
@@ -319,5 +324,5 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const cpaAuto = ruta.sec === "cpa" && RA ? await RA.ajustesAuto(d.id, acc.partes).catch(() => null) : undefined;
   // 9e · La hoja «Aceptar los términos nuevos» también en Hoy del panel (la pantalla de inicio de la app Negocios), sin un detalle abierto.
   const faltan = ruta.sec === "hoy" && !ruta.det ? await faltaAceptar(u.id).catch(() => []) : [];
-  return <>{faltan.length ? <HojaTerminos es={lang === "es"} faltan={faltan} /> : null}<Panel cpa={cpa} cpaAuto={cpaAuto} d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} compraPro={await (await import("@/lib/tiendas/reglas")).compraDigitalAqui()} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} evp={evp} arts={arts} /></>;
+  return <>{faltan.length ? <HojaTerminos es={lang === "es"} faltan={faltan} /> : null}<Panel cpa={cpa} cpaAuto={cpaAuto} d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} compraPro={await (await import("@/lib/tiendas/reglas")).compraDigitalAqui()} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} pat={pat} patRes={patRes} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} evp={evp} arts={arts} /></>;
 }

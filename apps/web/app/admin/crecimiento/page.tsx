@@ -8,10 +8,10 @@ import { db } from "@/lib/db";
 import { idioma } from "@/lib/idioma";
 import { Crecimiento, type DatosCrec, type Pest } from "../Crecimiento";
 
-/* 9h · Super Admin › Crecimiento (ADM-MKT; prototipo secMkt: Semilla · Promotores · Campañas · Destacados · Enlaces y QR, más la Lista de espera de la landing).
+/* 9h · Super Admin › Crecimiento (ADM-MKT; prototipo secMkt: Semilla · Promotores · Campañas · Destacados · Patrocinios (C-002) · Enlaces y QR, más la Lista de espera de la landing).
    ver = mkt:ver; cambiar = mkt:editar; aprobar campañas y la fecha de la landing = mkt:aprobar (lo revisa cada acción en el servidor). ?t=<pestaña>&c=<ciudad>
    (vacío = todas las de quien mira) &desde=<cursor>. Solo se carga la pestaña abierta. */
-const PESTANAS: Pest[] = ["seed", "promo", "camp", "feat", "links", "lista"];
+const PESTANAS: Pest[] = ["seed", "promo", "camp", "feat", "pat", "links", "lista"];
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const s = await requerir("mkt", "ver");
   const [sp, l] = await Promise.all([searchParams, idioma()]);
@@ -28,6 +28,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     camp: t === "camp" ? await campanasAdmin(s, c, desde) : null,
     feat: t === "feat" ? await destacadosAdmin(s, cf) : null,
     links: t === "links" ? await enlacesAdmin(s, c, desde) : null,
+    // C-002 · Patrocinios: lo vivo primero (o lo terminado, o todo), por ciudad, con cursor; puestos y precios de Configuración › Crecimiento.
+    pat: t === "pat" ? { ...(await (await import("@/lib/patrocinio")).patrociniosAdmin(s.cities, c, l, desde, sp.e === "terminados" || sp.e === "todos" ? sp.e : "vivos")), e: sp.e === "terminados" || sp.e === "todos" ? sp.e : "vivos",
+      precios: await (await import("@/lib/patrocinio")).preciosNegocio() } : null,
     lista: t === "lista" ? await listaEspera(s, c, desde) : null,
     ver: sp.ver ?? null,
   };

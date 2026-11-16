@@ -12,12 +12,13 @@ import { CANAL, CANALES, ITEMS_SEGMENTO, MODO, TIPO_CAMPANA, TIPO_ENLACE, TIPOS_
 import type { DestacadoAdm } from "@/lib/crecimiento/destacados";
 import type { EnlaceAdm } from "@/lib/crecimiento/enlaces";
 import type { PromotorAdm } from "@/lib/crecimiento/promotores";
-import { campanaAprobar, campanaContar, campanaCrear, campanaRetirar, codigoRetirar, destacadoBuscar, destacadoFijar, destacadoRetirar, enlaceCrear, enlaceEscaneos, enlaceRetirar, landingFecha, promotorNombrar } from "./acciones-crecimiento";
+import type { PatAdm } from "@/lib/patrocinio";
+import { campanaAprobar, campanaContar, campanaCrear, campanaRetirar, codigoRetirar, destacadoBuscar, destacadoFijar, destacadoRetirar, enlaceCrear, patrocinioTerminar, enlaceEscaneos, enlaceRetirar, landingFecha, promotorNombrar } from "./acciones-crecimiento";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { cuandoL, par, selectorIdioma, type L } from "./TextosComun";
 
-export type Pest = "seed" | "promo" | "camp" | "feat" | "links" | "lista";
+export type Pest = "seed" | "promo" | "camp" | "feat" | "pat" | "links" | "lista";
 type Kpi = { negocios: number; semana: number; espera: number; apartados: number; promotores: number; fijados: number; escaneos: number };
 export type DatosCrec = {
   t: Pest; ciudad: string | null; ciudadForm: string; ciudades: { id: string; name: string; status: string }[]; kpi: Kpi;
@@ -27,6 +28,7 @@ export type DatosCrec = {
   camp: { filas: CampanaAdm[]; mas: string | null } | null;
   feat: { lista: DestacadoAdm[]; hoy: { id: string; nombre: string; abierto: boolean }[]; tope: number; dias: number; fijados: number } | null;
   links: { filas: EnlaceAdm[]; mas: string | null } | null;
+  pat: { filas: PatAdm[]; mas: string | null; activos: number; reservados: number; e: "vivos" | "terminados" | "todos"; precios: { week: number; month: number; puestos: number; diasAdelante: number } } | null;
   lista: { porCiudad: { city: string; nombre: string; status: string; n: number; neg: number; fv: number }[]; porModo: { modo: Modo | null; n: number }[]; porZip: { zip: string; n: number }[];
     fuera: { pedida: string; n: number }[]; filas: EntradaLista[]; mas: string | null; fecha: { visible: boolean; fecha: string | null } } | null;
 };
@@ -64,7 +66,7 @@ export function Crecimiento({ d, l }: { d: DatosCrec; l: L }) {
       { k: E("PROMOTORES", "PROMOTERS"), v: String(k.promotores), s: E("con código vivo", "with a live code"), onClick: () => ir({ t: "promo", desde: null }) },
       { k: E("ESCANEOS · 30 D", "SCANS · 30 D"), v: String(k.escaneos), s: E(`${k.fijados} destacados fijados`, `${k.fijados} featured pinned`), onClick: () => ir({ t: "links", desde: null }) },
     ] },
-    { type: "tabs", items: ([["seed", E("Semilla", "Seed")], ["promo", E("Promotores", "Promoters")], ["camp", E("Campañas", "Campaigns")], ["feat", E("Destacados", "Featured")], ["links", E("Enlaces y QR", "Links & QR")], ["lista", E("Lista de espera", "Waitlist")]] as [Pest, string][])
+    { type: "tabs", items: ([["seed", E("Semilla", "Seed")], ["promo", E("Promotores", "Promoters")], ["camp", E("Campañas", "Campaigns")], ["feat", E("Destacados", "Featured")], ["pat", E("Patrocinios", "Sponsorships")], ["links", E("Enlaces y QR", "Links & QR")], ["lista", E("Lista de espera", "Waitlist")]] as [Pest, string][])
       .map(([key, lbl]) => ({ l: lbl, on: d.t === key, onClick: () => ir({ t: key, desde: null, ver: null }) })) },
     selectorIdioma(l, router),
     { type: "chips", k: E("CIUDAD", "CITY"), items: [...(d.t === "feat" ? [] : [{ l: E("Todas", "All"), v: d.ciudad ? "filter" : "selected", onClick: () => ir({ c: null, desde: null }) }]),
@@ -75,6 +77,7 @@ export function Crecimiento({ d, l }: { d: DatosCrec; l: L }) {
   if (d.t === "promo" && d.promo) cuerpo = <Promotores d={d} E={E} setConf={setConf} nombreCiudad={nombreCiudad} />;
   if (d.t === "camp" && d.camp) cuerpo = <Campanas d={d} E={E} cuando={cuando} setConf={setConf} ir={ir} nombreCiudad={nombreCiudad} l={l} />;
   if (d.t === "feat" && d.feat) cuerpo = <Destacados d={d} E={E} cuando={cuando} setConf={setConf} />;
+  if (d.t === "pat" && d.pat) cuerpo = <Patrocinios d={d} E={E} setConf={setConf} ir={ir} l={l} />;
   if (d.t === "links" && d.links) cuerpo = <Enlaces d={d} E={E} cuando={cuando} setConf={setConf} ir={ir} setToast={setToast} nombreCiudad={nombreCiudad} l={l} />;
   if (d.t === "lista" && d.lista) cuerpo = <Lista d={d} E={E} cuando={cuando} setConf={setConf} ir={ir} l={l} />;
   return (
@@ -204,6 +207,36 @@ function Destacados({ d, E, cuando, setConf }: { d: DatosCrec; E: EFn; cuando: (
       { type: "search" as const, val: q, ph: E("Nombre del negocio", "Business name"), onChange: setQ, onClear: () => setQ("") },
       ...(res.length ? [{ type: "rows" as const, items: res.map((b) => ({ key: b.id, icon: "store", t: b.nombre, s: b.pro ? "Pro" : "Free", acts: [{ l: E("Fijar", "Pin"), v: "action", onClick: () => accion(b.id, b.nombre, "fijar") }, { l: E("Quitar", "Remove"), v: "secondary", onClick: () => accion(b.id, b.nombre, "quitar") }] })) }] : []),
     ] : []),
+  ]} />;
+}
+
+/* C-002 · Patrocinios (Super Admin › Crecimiento › Patrocinios; prototipo secMkt «pat»): lo comprado desde Panel › Cobros y plan › Patrocinio, con su
+   estado, lo pagado y sus cifras; «Terminar» con motivo (ReasonConfirm, auditoría, aviso al negocio). Puestos y precios: Configuración › Crecimiento. */
+function Patrocinios({ d, E, setConf, ir, l }: { d: DatosCrec; E: EFn; setConf: SetConf; ir: (q: Record<string, string | null>) => void; l: L }) {
+  const X = d.pat!, $ = (c: number) => `$${(c / 100).toFixed(2)}`;
+  const dia = (iso: string) => new Intl.DateTimeFormat(l === "es" ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "short" }).format(new Date(iso)).split(".").join("");
+  const EST: Record<string, [string, string, string]> = { activo: ["ACTIVO", "ACTIVE", "signal"], reservado: ["RESERVADO", "BOOKED", "action"], terminado: ["TERMINADO", "ENDED", "neutral"], cancelado: ["CANCELADO", "CANCELED", "neutral"] };
+  const FIN: Record<string, [string, string]> = { vencio: ["venció", "expired"], dueno: ["lo terminó el negocio", "ended by the business"], admin: ["lo terminó To’Latino", "ended by To’Latino"], sin_negocio: ["el negocio ya no está publicado", "the business is no longer live"] };
+  const fila = (x: PatAdm): Fila => {
+    const vivo = x.estado === "activo" || x.estado === "reservado", e = EST[x.estado] ?? EST.terminado!, fin = x.finKind ? FIN[x.finKind] : null;
+    return { key: x.id, icon: "star", t: x.nombre, dim: !vivo,
+      s: `${x.donde} · ${dia(x.desde)} – ${dia(x.hasta)} · ${$(x.pagado || x.precio)}${x.renovar ? ` · ${E("renueva solo", "auto-renews")}` : ""}${!vivo && fin ? ` · ${E(fin[0], fin[1])}${x.finMotivo ? `: ${x.finMotivo}` : ""}` : ""}`,
+      m: `${x.vistas} ${E("VISTAS", "VIEWS")} · ${x.entraron} ${E("ENTRARON", "VISITS")} · ${x.pedidos} ${E("PEDIDOS", "ORDERS")}`,
+      tag: E(e[0], e[1]), tone: e[2],
+      acts: d.puede.editar && vivo ? [{ l: E("Terminar", "End"), v: "danger", icon: "close", onClick: () => setConf({ titulo: E(`Terminar el patrocinio de ${x.nombre}`, `End the ${x.nombre} sponsorship`), cta: E("Terminar", "End"), peligro: true,
+        sub: E("Deja de salir en Patrocinados al momento y se le avisa al negocio con el motivo. Lo pagado no se devuelve aquí (si toca, Soporte lo devuelve). Queda en la auditoría.", "It stops showing in Sponsored right away and the business is told the reason. What was paid is not refunded here (if needed, Support refunds it). It goes in the audit trail."),
+        plantillas: [E("La foto o el video no cumplen las reglas.", "The photo or video breaks the rules."), E("El negocio pidió terminarlo.", "The business asked to end it."), E("Queja abierta de los vecinos.", "Open complaint from neighbors.")],
+        hacer: (m) => patrocinioTerminar(x.id, m) }) }] : undefined };
+  };
+  const filtros: [("vivos" | "terminados" | "todos"), string][] = [["vivos", E("Activos y reservados", "Active and booked")], ["terminados", E("Terminados", "Ended")], ["todos", E("Todos", "All")]];
+  return <PanelBloques bloques={[
+    { type: "kv", cols: 3, items: [{ k: E("PUESTOS", "SLOTS"), v: E(`${X.precios.puestos} por categoría y ciudad`, `${X.precios.puestos} per category and city`) }, { k: E("ACTIVOS", "ACTIVE"), v: `${X.activos}${X.reservados ? E(` · ${X.reservados} reservados`, ` · ${X.reservados} booked`) : ""}` },
+      { k: E("PRECIO", "PRICE"), v: E(`${$(X.precios.week)} semana · ${$(X.precios.month)} mes`, `${$(X.precios.week)} week · ${$(X.precios.month)} month`) }] },
+    { type: "chips", k: E("ESTADO", "STATUS"), items: filtros.map(([k, t]) => ({ l: t, v: X.e === k ? "selected" : "filter", onClick: () => ir({ e: k === "vivos" ? null : k, desde: null }) })) },
+    X.filas.length ? { type: "rows", k: `${E("NEGOCIOS", "BUSINESSES")} · ${X.filas.length}${X.mas ? "+" : ""}`, items: X.filas.map(fila) }
+      : { type: "empty", icon: "star", t: E("Sin patrocinios aquí", "No sponsorships here"), s: E("Los negocios los compran desde su panel (Cobros y plan › Patrocinio).", "Businesses buy them from their dashboard (Payouts and plan › Sponsorship).") },
+    ...(X.mas ? [{ type: "acts" as const, items: [{ l: E("Ver más", "See more"), v: "secondary", onClick: () => ir({ desde: X.mas, e: X.e === "vivos" ? null : X.e }) }] }] : []),
+    { type: "note", tone: "info", icon: "info", t: E("Los puestos y los precios se cambian en Sistema › Configuración › Crecimiento. Lo ya pagado no cambia.", "Slots and prices are changed in System › Settings › Growth. What was already paid does not change.") },
   ]} />;
 }
 
