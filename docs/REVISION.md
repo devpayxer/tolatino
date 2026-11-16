@@ -5047,6 +5047,8 @@ Agua y Hielo Cristal (mercado), Andrea Events (fiestas), Van Express NYC (transp
 - La barra de abajo (teléfono) y la tarjeta de la derecha (computadora) hacen lo mismo que antes: pedir, apartar, rentar, reservar mesa, inscribirse, pedir visita.
 **Decidido por mí (reversible):** «Tienda» (o «Renta» en transporte) y «Reservar» son pestañas aparte cuando el negocio tiene esas cosas; en computadora,
 la tarjeta de la derecha cambia a «Reservar mesa» cuando estás en esa parte o ya elegiste una hora.
+**También (lo que cazó la regresión):** la pestaña dice lo que es cada negocio dentro de su categoría (una despensa: «Ayuda»; una funeraria: «Servicios»;
+préstamos: «Préstamos»). Un DJ o un promotor sin local dice «Por contrato» y no muestra «Cómo llegar». Mirar en Despensa Manos Unidas y DJ Rafy Mejía.
 
 ## C-007 — La ficha nueva para todos los Pro, con interruptor (16 nov)
 **Dónde:** Super Admin › Sistema › Configuración › **Negocios** › «Ficha nueva para los negocios Pro».

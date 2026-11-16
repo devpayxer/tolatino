@@ -1414,11 +1414,15 @@ const guardianes = {
     for (const f of codigo) {
       if (!/^apps\/web\/app\/.*\.tsx$/.test(f) || f.startsWith("apps/web/app/_ancho/")) continue;
       const s = readFileSync(f, "utf8");
-      const m = /useState\((?:390|1280|1024)\)[\s\S]{0,240}?setW\(window\.innerWidth\)/.exec(s) ?? /useState\(false\)[\s\S]{0,200}?matchMedia\("\(min-width: \d+px\)"\)/.exec(s);
+      const m = /useState\((?:390|1280|1024)\)[\s\S]{0,240}?setW\(window\.innerWidth\)/.exec(s) ?? /useState(?:<[^>]*>)?\([^)]{0,40}\)[\s\S]{0,200}?matchMedia\("\(min-width: \d+px\)"\)/.exec(s);
       if (m) falla(G, f, s.slice(0, m.index).split("\n").length, "ancho que arranca en un número fijo y después mide (salto al cargar): usa useAncho() de app/_ancho/Ancho.tsx");
     }
     for (const L of ["apps/web/app/(app)/layout.tsx", "apps/web/app/panel/layout.tsx", "apps/web/app/admin/layout.tsx"])
       if (existsSync(L) && !/<AnchoInicial w=\{/.test(readFileSync(L, "utf8"))) falla(G, L, 0, "el layout no da el ancho estimado (<AnchoInicial w={await anchoInicial()}>): sus pantallas saltan al cargar");
+    // C-006 · Sin cookie todavía (la primera página fue /entrar), el servidor adivinaba por el User-Agent y un navegador de escritorio angosto pintaba la
+    // computadora (oculta) hasta medir. Chrome manda su ancho de ventana si se lo pedimos (Accept-CH) y anchoInicial lo usa primero.
+    if (!/key: "Accept-CH", value: "[^"]*Sec-CH-Viewport-Width/.test(readFileSync("apps/web/next.config.ts", "utf8"))) falla(G, "apps/web/next.config.ts", 0, "no pide el ancho de la ventana al navegador (Accept-CH: Sec-CH-Viewport-Width): el primer pintado adivina por el User-Agent");
+    if (!/sec-ch-viewport-width/.test(readFileSync("apps/web/lib/ancho.ts", "utf8"))) falla(G, "apps/web/lib/ancho.ts", 0, "anchoInicial no lee el ancho que manda el navegador (sec-ch-viewport-width)");
   },
 
   /* 9n-19 · impuestoSoloNuevo: un impuesto nunca se cambia: se programa una regla NUEVA desde una fecha (Planes › Impuestos, L471). Lo ya cotizado y
@@ -9774,9 +9778,12 @@ const guardianes = {
       "NEG-FIESTA": "FiResumen", "NEG-PRO": "PrResumen", "NEG-TRANS": "ViResumen", "NEG-EDU": "InResumen", "NEG-NINOS": "InResumen", "NEG-DEPORTE": "InResumen",
       "NEG-FE": "FeResumen", "NEG-INMUEBLE": "InmResumen", "NEG-DEALER": "DlResumen" };
     for (const [cat, pz] of Object.entries(RESUMEN)) if (!new RegExp(`<${pz}\\b`).test(fn)) falla(G, F, 0, `${cat}: el Resumen de la ficha nueva perdió lo suyo (${pz})`);
+    // El nombre de la pestaña según el tipo (despensa «Ayuda», funeraria «Servicios», préstamos «Préstamos»): la tabla de la categoría es solo el respaldo.
+    if (!/label: tc\(vende\?\.tabL \?\? L\(cfg\.tab\)\)/.test(fn) || !/tabL: v\.tabL/.test(fn))
+      falla(G, F, 0, "la pestaña de la ficha nueva usa el nombre fijo de la categoría: cada tipo trae el suyo (vende.tabL: «Ayuda» en una despensa, no «Misas»)");
     // Una sola copia de la página por aparato: con las dos, la tienda, el carrito y las hojas existen dos veces (dos estados, dos barras).
-    if (!/\{modo === "m" \? \(/.test(fn) || !/\{modo === "d" \? \(/.test(fn) || !/anchoInicial\(\)/.test(readFileSync("apps/web/app/(app)/n/[id]/page.tsx", "utf8")))
-      falla(G, F, 0, "la ficha nueva pinta teléfono y computadora a la vez: cada árbol va con {modo === \"m\"|\"d\" ? (…) : null} y el servidor elige con anchoInicial()");
+    if (!/\{modo === "m" \? \(/.test(fn) || !/\{modo === "d" \? \(/.test(fn) || !/useAncho\(\)/.test(fn))
+      falla(G, F, 0, "la ficha nueva pinta teléfono y computadora a la vez: cada árbol va con {modo === \"m\"|\"d\" ? (…) : null} y el ancho sale de useAncho() (estimación del servidor + cookie tl_ancho)");
     // C-008 · menú «C» (con foto y +) en Comida, Mercado y Tienda de la ficha nueva; «Lo más pedido» sale de lo pedido de verdad (populares), nunca de
     // «los primeros N» de la lista.
     if (!/<MenuMovil mn=\{mn\} card \/>/.test(fn) || !/<MeMenu v=\{me\}/.test(fn) || !/<TiendaTab [^>]*\bc pop=\{tienda\.pop/.test(fn))

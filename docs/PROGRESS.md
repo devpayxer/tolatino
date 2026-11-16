@@ -2442,3 +2442,8 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **C-008 · Menú con fotos y botón + (Comida, Mercado, Tienda)** — `MenuMovil card`, `MeMenu`/`MeOrderBar` (Mercado), `TiendaTab c pop`; «Lo más pedido»
   real con `ventasSqlDe("market_order"|"hold")` + `populares` (merc-publico, `tiendaPopulares`). Guardián `fichaNuevaSoloPro` (alrevesC005 11/11);
   e2e `fic008` (10 ✓ local); merc4o, apt4q, lay4r, env4q, res4s al menú «C». Pendiente: precio anterior tachado (LAUNCH).
+- **C-006 → C-008 · lo que cazó la regresión completa (CI 43820574424, 179/186)** — la pestaña lleva el nombre de cada tipo (`vende.tabL`: despensa
+  «Ayuda», no «Misas»); DJ y promotor sin local: «Por contrato» y sin «Cómo llegar»; la ficha nueva usa `useAncho()` (guarda la cookie `tl_ancho`: sin
+  ella el panel que se abría después pintaba primero la computadora); el navegador manda su ancho (`Accept-CH: Sec-CH-Viewport-Width`, `lib/ancho.ts`
+  lo lee primero). Guardianes `anchoSinSalto` y `fichaNuevaSoloPro` ampliados (alrevesC005 14/14). Pruebas: nin4b/inm4ib/autos4ic esperan la fila
+  del panel, cup9n21 espera el cupón visible, dir9m abre Horario en el Pixel, rev1 acepta la sección de reseñas de la computadora.

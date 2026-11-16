@@ -52,6 +52,9 @@ const nextConfig: NextConfig = {
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         { key: "Permissions-Policy", value: "camera=(self), geolocation=(self), microphone=(), publickey-credentials-create=(self), publickey-credentials-get=(self)" },
         { key: "Content-Security-Policy", value: CSP },
+        // C-006 · El navegador manda su ancho de ventana desde la segunda petición (Chrome/Edge/Android): el primer pintado elige teléfono o computadora
+        // con el ancho de verdad aunque todavía no haya cookie tl_ancho (lib/ancho.ts). Solo una medida de pantalla.
+        { key: "Accept-CH", value: "Sec-CH-Viewport-Width, Viewport-Width" },
       ],
     },
   ],

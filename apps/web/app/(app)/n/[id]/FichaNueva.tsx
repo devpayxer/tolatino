@@ -23,6 +23,7 @@ import type { TarjetaEvt } from "@/lib/evt-publico";
 import { compartir as compartirNativo } from "@/lib/nativo/compartir";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { MiniMapa } from "@/app/_dir/MiniMapa";
+import { useAncho } from "@/app/_ancho/Ancho";
 import { guardarNegocio, registrarToque } from "../../acciones";
 import { horasDeCita } from "./acciones-cita";
 import { aprL, citaUrl, dinero, diaS, durL, horaL, precio, SvcHoja, useSvc, type Svc } from "./Servicios";
@@ -79,11 +80,11 @@ type Grupo = { label: string; name: string; items: Fila[] };
 type Persona = { id: string; name: string; short: string; role: string; spec: string; foto: string | null; owner: boolean; silla: number | null };
 
 type TiendaP = Pick<ComponentProps<typeof TiendaTab>, "L" | "V" | "mia" | "horas" | "plan">;
-export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl, tienda, resenas, novedades, jobs, eventos = [], sesion, es, tabInicial, rsvInicial, desk0 = false }: {
+export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl, tienda, resenas, novedades, jobs, eventos = [], sesion, es, tabInicial, rsvInicial }: {
   f: F; t: Textos; svc: CitasPublica | null; menu?: MenuPublico | null; rsv?: RsvPublica | null; ofi?: OficiosPublico | null; salud?: SaludPublico | null; prof?: ProPublico | null;
   merc?: MercPublico | null; fiesta?: FiestaPublico | null; trans?: TransPublico | null; noche?: NochePublica | null; insc?: InscPublica | null; fe?: FePublica | null;
   inm?: InmPublica | null; dl?: AutosPublica | null; tienda?: (TiendaP & { L: ArticuloRenta[]; V: ArticuloVenta[]; pop?: string[] }) | null;
-  resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; eventos?: TarjetaEvt[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string }; desk0?: boolean;
+  resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; eventos?: TarjetaEvt[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string };
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const L = (x: [string, string]) => (es ? x[0] : x[1]);
@@ -110,7 +111,10 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   const dv = useDealer(dl ?? null, es, true, acc4i);
   const me = useMerc(merc ?? null, es);
   // DJ y promotor no tienen local (neg-noche-kind.js post): «Por fecha» en vez de «Cerrado · Abre a las…», como en la ficha de siempre.
-  if (no && no.np.porFecha && no.np.kind !== "salon") f = { ...f, abierto: true, estadoCorto: E2("Por fecha", "By date"), estadoResto: E2("· no hay local", "· no venue") };
+  const porContrato = !!no && no.np.porFecha && no.np.kind !== "salon";
+  if (porContrato) f = { ...f, abierto: true, estadoCorto: E2("Por fecha", "By date"), estadoResto: E2("· no hay local", "· no venue"),
+    hoy: { eyebrow: E2("CÓMO TRABAJA", "HOW THEY WORK"), title: no!.np.kind === "promo" ? E2("Según la noche", "Depends on the night") : E2("Por contrato", "By contract"), dot: "var(--tl-action)",
+      sub: E2("Toca en discotecas y fiestas; no hay local. Pide tu fecha y te mandan el precio por escrito.", "Plays clubs and parties; no venue. Ask for your date and get the price in writing."), cols: [] } };
   const llamarR = useRef<() => void>(() => undefined), escribirR = useRef<() => void>(() => undefined), llegarR = useRef<() => void>(() => undefined);
   const irCat = () => (typeof window !== "undefined" && window.innerWidth >= 1024 ? ir("cat") : setTab("cat"));
   const rs = useResenas(resenas, f.id, sesion, es);
@@ -140,7 +144,8 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
 
   // ── C-006 · Lo que vende de las demás categorías: su pestaña, su barra, su hoja y su columna de siempre ──
   type ItemV = { id: string; name: string; meta?: string; price?: string; k?: string };
-  type Vende = { tab: (desk: boolean) => ReactNode; resumen?: (desk: boolean) => ReactNode; riel: ReactNode; barra: ReactNode; capas: ReactNode; top: (Fila & { k?: string })[]; n: number; pick: (id: string, k?: string) => void;
+  // tabL: el nombre de la pestaña según el tipo (despensa «Ayuda», funeraria «Servicios», préstamos «Préstamos»…), como en la ficha de siempre.
+  type Vende = { tabL?: string; tab: (desk: boolean) => ReactNode; resumen?: (desk: boolean) => ReactNode; riel: ReactNode; barra: ReactNode; capas: ReactNode; top: (Fila & { k?: string })[]; n: number; pick: (id: string, k?: string) => void;
     hoy: { title: string; cols: { k: string; v: string }[] } | null };
   const deSecs = (secs: { title: string; items: ItemV[] }[]) => ({
     top: secs.slice(0, 3).map((g) => g.items[0]).filter(Boolean).map((x) => ({ id: x!.id, name: x!.name, meta: x!.meta ?? "", price: x!.price ?? "", k: x!.k })),
@@ -152,7 +157,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   const deRiel = (r: { k: string; v: string }[] | undefined | null) => (r && r.length ? { title: titulo(r[0]!), cols: unicas(r.slice(1)).filter((x) => x.k !== r[0]!.k).slice(0, 3) } : null);
   const deTd = (td: { k: string; v: string }[] | undefined | null, title: string) => (td && td.length ? { title, cols: unicas(td).slice(0, 3) } : null);
   const vende: Vende | null = useMemo(() => {
-    const X = (v: { secs: { title: string; items: ItemV[] }[] }, o: Omit<Vende, "top" | "n">): Vende => ({ ...deSecs(v.secs), ...o });
+    const X = (v: { secs: { title: string; items: ItemV[] }[]; tabL?: string }, o: Omit<Vende, "top" | "n">): Vende => ({ ...deSecs(v.secs), tabL: v.tabL, ...o });
     if (ov) return X(ov, { resumen: (d) => <OfResumen v={ov} desk={d} onAll={irCat} />, tab: (d) => <OfTab v={ov} desk={d} />, riel: <OfRiel v={ov} onCta={irCat} />, barra: <OfBarra v={ov} onCta={irCat} />,
       capas: <><OfHoja v={ov} /><HojaVehiculo v={ov} /><HojaCasa v={ov} /></>, pick: (id) => ov.abrir(id), hoy: deRiel(ov.riel) });
     if (sa) return X(sa, { resumen: (d) => <SaResumen v={sa} desk={d} onAll={irCat} />, tab: (d) => <SaTab v={sa} desk={d} />, riel: <SaRiel v={sa} onCta={irCat} />, barra: <SaBarra v={sa} onCta={irCat} />,
@@ -187,7 +192,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   const tc = (x: string) => x.charAt(0) + x.slice(1).toLowerCase();
   const tabs = [
     { id: "res", label: E2("Resumen", "Overview"), icon: "home" },
-    ...((sv ? nItems : vende?.n) ? [{ id: "cat", label: tc(L(cfg.tab)), icon: cfg.icon }] : []),
+    ...((sv ? nItems : vende?.n) ? [{ id: "cat", label: tc(vende?.tabL ?? L(cfg.tab)), icon: cfg.icon }] : []),
     ...(gente.length ? [{ id: "staff", label: tc(L(cfg.staffTab)), icon: "users" }] : []),
     { id: "rev", label: E2("Reseñas", "Reviews"), icon: "star" },
     ...(novedades?.posts.length ? [{ id: "nov", label: E2("Novedades", "Updates"), icon: "news" }] : []),
@@ -213,7 +218,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   const avisar = (m: string) => { setAviso(m); setTimeout(() => setAviso(null), 2200); };
   const llamar = f.telefono ? () => { void registrarToque(f.id, "call", "ficha"); location.href = `tel:${f.telefono}`; } : null;
   const escribir = f.mensajes ? () => { void registrarToque(f.id, "message", "ficha"); router.push(`/cuenta/mensajes/${f.id}`); } : null;
-  const llegar = f.direccion && f.lat != null && f.lng != null ? () => { void registrarToque(f.id, "directions", "ficha"); abrirComoLlegar({ lat: f.lat!, lng: f.lng! }); } : null;
+  const llegar = !porContrato && f.direccion && f.lat != null && f.lng != null ? () => { void registrarToque(f.id, "directions", "ficha"); abrirComoLlegar({ lat: f.lat!, lng: f.lng! }); } : null;
   const compartir = async () => { void registrarToque(f.id, "share", "ficha"); if ((await compartirNativo({ titulo: f.nombre, url: location.href })) === "copiado") avisar(E2("Enlace copiado", "Link copied")); };
   const guardar = async () => {
     const antes = guardado; setGuardado(!antes);
@@ -234,6 +239,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
 
   // ── La tarjeta de hoy: lo que importa sin repetir el estado ni la barra (Belleza: cómo confirma, el depósito, el pago) ──
   const hoy = useMemo(() => {
+    if (porContrato) return { eyebrow: f.hoy.eyebrow, title: f.hoy.title, cols: [] as { k: string; v: string }[] };
     if (!sv) return { eyebrow: f.hoy.eyebrow, title: vende?.hoy?.title || f.hoy.sub || f.subsLinea || L(cfg.title), cols: vende?.hoy?.cols ?? f.hoy.cols };
     const cp = sv.cp, todosAuto = cp.gente.length > 0 && cp.gente.every((p) => p.auto), resp = Math.min(...cp.gente.map((p) => p.resp).concat(cp.pol.resp));
     const title = !cp.can ? (cp.off === "apagado" ? E2("Sin cita: llegas y esperas turno", "Walk-in: come in and wait your turn") : E2("Pide tu hora por teléfono", "Call for your time"))
@@ -368,8 +374,8 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
 
   // Una sola copia de la página: el servidor manda la del aparato que estima (lib/ancho: el último ancho de este navegador o el tipo de
   // aparato) y, ya en el aparato, se corrige con el ancho real. Así las piezas con estado propio (la tienda, el carrito, la hoja) no existen dos veces.
-  const [modo, setModo] = useState<"m" | "d">(desk0 ? "d" : "m");
-  useEffect(() => { const mq = window.matchMedia("(min-width: 1024px)"); const f = () => setModo(mq.matches ? "d" : "m"); f(); mq.addEventListener("change", f); return () => mq.removeEventListener("change", f); }, []);
+  /* Un solo árbol por aparato: el ancho sale de useAncho() (la estimación del servidor, después la medida; guarda la cookie tl_ancho). */
+  const modo: "m" | "d" = useAncho() >= 1024 ? "d" : "m";
   // ── Computadora: secciones, pestañas que llevan a cada una y la tarjeta pegada a la derecha ──
   const [activa, setActiva] = useState("res");
   const [pegada, setPegada] = useState(false);
@@ -555,7 +561,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
         <div className="grid grid-cols-[minmax(0,1fr)_372px] items-start gap-12 pt-8">
           <div className="flex min-w-0 flex-col gap-16">
             {seccion("res", null, <div className="flex flex-col gap-4">{miCita}{dueno(true)}<div className="grid"><TodayCard desktop eyebrow={hoy.eyebrow} title={hoy.title} cols={hoy.cols} /></div>{oferta}{rv ? <RsvRapida v={rv} onMas={(p, i, h) => { if (p) { rv.setP(p); if (i != null) rv.setI(i); if (h != null) rv.setSel(h); } ir("rsv"); }} /> : null}{ley}{vende?.resumen ? vende.resumen(true) : null}{esTuyo}</div>)}
-            {!sv && vende ? seccion("cat", L(cfg.title), <div>{vende.tab(true)}</div>) : null}
+            {!sv && vende ? seccion("cat", vende.tabL ?? L(cfg.title), <div>{vende.tab(true)}</div>) : null}
             {sv && nItems ? seccion("cat", L(cfg.title), (
               <div data-screen-label="Ficha · servicios · desktop" className="flex flex-col gap-[18px]">
                 <div className="hs flex gap-2 overflow-x-auto">{chips.map((c) => <Chip key={c.id} variant={catF === c.id ? "selected" : "filter"} onClick={() => setCatF(c.id)}>{c.label}</Chip>)}</div>

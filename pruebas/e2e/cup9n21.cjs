@@ -36,7 +36,7 @@ const uid = (tel) => sql(`select id from users where phone = '+1${tel}'`);
     const cm = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }), m = await cm.newPage(); abiertas.push(cm);
     await entrarComo(m, MARI);
     await m.goto(B + `/n/${BIZ}?tab=nov`);
-    ok(await espera(async () => (await m.locator(`[data-cupon="oculto"]`).count()) > 0), 'la novedad cupón sale con el código oculto');
+    ok(await espera(async () => m.locator(`[data-cupon="oculto"]`).first().isVisible()), 'la novedad cupón sale con el código oculto'); // visible: el primer pintado puede ser el de otro ancho
     ok(!(await texto(m)).includes(CODE) && (await texto(m)).includes('SOLO PARA SEGUIDORES'), '«SOLO PARA SEGUIDORES» y el código no está en la página');
     await m.screenshot({ path: OUT + 'c9n21-oculto-390.png', fullPage: false });
     await m.locator('[data-cupon="oculto"]').getByRole('button', { name: 'Seguir para verlo' }).click();

@@ -11,6 +11,7 @@ const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
 const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
+const visEspera = async (l, ms = 12000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const x = await vis(l); if (x) return x; await new Promise((r) => setTimeout(r, 250)); } return null; }; // el panel pinta primero con el ancho estimado y después mide
 const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l + ' · la página dice: ' + (await l.page().locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300)); };
 const ve = (l) => l.first().waitFor({ timeout: 8000 }).then(() => true).catch(() => false);
 const barrer = () => execSync(`curl -s -X POST -H 'x-barrido-token: ${ENT.TOK}' ${B}/api/interno/barrido`).toString();
@@ -62,7 +63,7 @@ const CARGOS = `update dealer_settings s set doc_fee_cents = x.f, derived_on = n
   const p = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage(); mira(p);
   await entrar(p, TEL);
   await p.goto(`${B}/panel/${NEG}/vendes`);
-  ok(!!(await vis(p.getByText('Inventario', { exact: true }))) && !!(await vis(p.getByText('Inventario del lote', { exact: true }))), 'Lo que vendes › «Inventario» y «Inventario del lote» (Juan Polanco)');
+  ok(!!(await visEspera(p.getByText('Inventario', { exact: true }))) && !!(await vis(p.getByText('Inventario del lote', { exact: true }))), 'Lo que vendes › «Inventario» y «Inventario del lote» (Juan Polanco)');
   ok(!(await vis(p.getByText('Citas', { exact: true }))), 'Venta de Autos no muestra citas con depósito (la prueba de manejo llega en 4ie)');
   await clic(p.getByText('Inventario', { exact: true })); await p.getByText('El precio en la puerta: con impuestos, placas y cargos del dealer, antes de firmar.').first().waitFor();
   ok(await ve(p.getByText('EN LA PUERTA $13,163')), 'la lista dice «EN LA PUERTA $13,163» (Civic, del servidor)');

@@ -19,6 +19,9 @@ const casos = [
   // C-006: el Resumen del mercado sin lo suyo (la balanza, cómo se cobra por peso) y la página pintada dos veces (teléfono y computadora a la vez).
   ['fichaNuevaSoloPro', F, 'resumen: (d) => <MeResumen v={me} desk={d} onAll={irCat} />, ', ''],
   ['fichaNuevaSoloPro', F, '{modo === "d" ? (', '{true ? ('],
+  ['fichaNuevaSoloPro', F, '[{ id: "cat", label: tc(vende?.tabL ?? L(cfg.tab)), icon: cfg.icon }]', '[{ id: "cat", label: tc(L(cfg.tab)), icon: cfg.icon }]'],
+  ['anchoSinSalto', F, 'const modo: "m" | "d" = useAncho() >= 1024 ? "d" : "m";', 'const [modo, setModo] = useState<"m" | "d">("m"); useEffect(() => { const mq = window.matchMedia("(min-width: 1024px)"); setModo(mq.matches ? "d" : "m"); }, []);'],
+  ['anchoSinSalto', 'apps/web/next.config.ts', '{ key: "Accept-CH", value: "Sec-CH-Viewport-Width, Viewport-Width" },', ''],
   // C-008: el mercado vuelve a la lista de siempre, y «Lo más pedido» sale de los primeros de la lista en vez de lo pedido de verdad.
   ['fichaNuevaSoloPro', F, 'tab: (d) => <MeMenu v={me} desk={d} />', 'tab: (d) => <MeResumen v={me} desk={d} />'],
   ['fichaNuevaSoloPro', 'apps/web/app/(app)/n/[id]/Mercado.tsx', '{v.pop.map((p) => <MenuTile', '{v.top.map((p) => <MenuTile'],

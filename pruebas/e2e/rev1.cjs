@@ -24,7 +24,7 @@ const op = (n, c) => sql(`select ${c} from operations where number='${n}'`);
   const d = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); watch(d, 'desk');
   await entrar(d, '5705550122');
   await d.goto(B + `/n/${BIZ}?tab=rev`); await d.waitForTimeout(1500); await shot(d, 'g5-tab-d.png', true);
-  await d.goto(B + `/n/${BIZ}`); await d.waitForTimeout(800); const e2 = await vis(d.locator('[data-screen-label="Resumen desktop · reseñas"], [data-screen-label="Resumen · reseñas"]')); await e2.scrollIntoViewIfNeeded(); await e2.screenshot({ path: OUT + 'g6-resumen-d.png' });
+  await d.goto(B + `/n/${BIZ}`); const e2 = d.locator('[data-screen-label="Resumen desktop · reseñas"], [data-screen-label="Resumen · reseñas"], [data-screen-label="Ficha · reseñas · desktop"]').locator('visible=true').first(); /* C-006: en la computadora de la ficha nueva las reseñas son su sección */ await e2.waitFor(); await e2.scrollIntoViewIfNeeded(); await e2.screenshot({ path: OUT + 'g6-resumen-d.png' });
   await d.goto(B + `/n/${BIZ}/resena`); await d.waitForTimeout(800); await shot(d, 'g7-escribir-d.png', true);
   // 9b-1 · Lo que antes solo se imprimía ahora se comprueba (una prueba sin ✓ ya no cuenta como verde, pruebas/correr.mjs).
   { const T = await d.locator('body').innerText(); ok(T.includes('Escribir reseña') && T.includes('TU CALIFICACIÓN'), 'escribir una reseña abre (escritorio): «Escribir reseña» y «TU CALIFICACIÓN»'); }

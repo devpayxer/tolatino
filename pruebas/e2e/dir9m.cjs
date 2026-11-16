@@ -165,7 +165,7 @@ const limpiar = () => {
     await shot(p, 'ficha-minimapa-390');
     const cand = await b.newContext({ ...devices['Pixel 7'] }); abiertas.push(cand);
     const pan = await cand.newPage(); mirar(pan, 'android');
-    await pan.goto(B + `/n/${BIZ}`); await pan.locator('[data-pieza="mini-mapa"]').first().waitFor();
+    await pan.goto(B + `/n/${BIZ}?tab=hor`); await pan.locator('[data-pieza="mini-mapa"]').first().waitFor();
     await atrapar(pan); await pan.locator('[data-pieza="mini-mapa"]').first().click();
     const l2 = await pan.evaluate(() => window.__llegar);
     ok(l2.length === 1 && /^geo:-?\d/.test(l2[0]), `en Android abre la app de mapas que elija (${l2[0]})`);
