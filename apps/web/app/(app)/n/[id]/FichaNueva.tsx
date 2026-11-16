@@ -48,7 +48,7 @@ import type { AutosPublica } from "@/lib/autos-publico";
 import type { ArticuloRenta } from "@/lib/rentas";
 import type { ArticuloVenta } from "@/lib/apartados";
 import { MenuCapas, MenuDesk, MenuMovil, MenuResumen, PedidoTarjeta, useMenu } from "./MenuCliente";
-import { RsvBarra, RsvRiel, RsvTab, useRsv } from "./Reservar";
+import { RsvBarra, RsvRiel, RsvTab, useRsv, RsvRapida } from "./Reservar";
 import { HojaCasa, HojaVehiculo, OfBarra, OfHoja, OfRiel, OfTab, useOficio } from "./Oficios";
 import { SaBarra, SaHoja, SaRiel, SaSeguro, SaTab, useSalud } from "./Salud";
 import { PrBarra, PrHoja, PrRiel, PrTab, usePro } from "./Pro";
@@ -79,11 +79,11 @@ type Grupo = { label: string; name: string; items: Fila[] };
 type Persona = { id: string; name: string; short: string; role: string; spec: string; foto: string | null; owner: boolean; silla: number | null };
 
 type TiendaP = Pick<ComponentProps<typeof TiendaTab>, "L" | "V" | "mia" | "horas" | "plan">;
-export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl, tienda, resenas, novedades, jobs, eventos = [], sesion, es, tabInicial }: {
+export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl, tienda, resenas, novedades, jobs, eventos = [], sesion, es, tabInicial, rsvInicial }: {
   f: F; t: Textos; svc: CitasPublica | null; menu?: MenuPublico | null; rsv?: RsvPublica | null; ofi?: OficiosPublico | null; salud?: SaludPublico | null; prof?: ProPublico | null;
   merc?: MercPublico | null; fiesta?: FiestaPublico | null; trans?: TransPublico | null; noche?: NochePublica | null; insc?: InscPublica | null; fe?: FePublica | null;
   inm?: InmPublica | null; dl?: AutosPublica | null; tienda?: (TiendaP & { L: ArticuloRenta[]; V: ArticuloVenta[] }) | null;
-  resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; eventos?: TarjetaEvt[]; sesion: boolean; es: boolean; tabInicial?: string;
+  resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; eventos?: TarjetaEvt[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string };
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const L = (x: [string, string]) => (es ? x[0] : x[1]);
@@ -95,7 +95,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   const [entrar, setEntrar] = useState(false);
   const pagar = () => { if (sesion) router.push(`/n/${f.id}/pagar`); else setEntrar(true); };
   const mn = useMenu(menu && !menu.vacio ? menu : null, es, { onPay: pagar });
-  const rv = useRsv(rsv ?? null, es, sesion, null, {});
+  const rv = useRsv(rsv ?? null, es, sesion, rsvInicial?.editar ?? null, rsvInicial ?? {});
   const ov = useOficio(ofi ?? null, es, sesion);
   const sa = useSalud(salud ?? null, es);
   const pr = usePro(prof ?? null, es);
@@ -377,6 +377,8 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
     const tb = tiraRef.current; setPegada(!!tb && tb.getBoundingClientRect().top <= CAB_DESK + 1);
     const st = tira(); if (st) setFlechas({ l: st.scrollLeft > 4, r: st.scrollLeft + st.clientWidth < st.scrollWidth - 4 });
   }, [tabs.map((x) => x.id).join()]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Llegas con ?tab=… en la computadora: la página baja hasta esa sección.
+  useEffect(() => { if (window.innerWidth >= 1024 && ini !== "res" && document.getElementById(`sec-${ini}`)) requestAnimationFrame(() => ir(ini)); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     mirar(); window.addEventListener("scroll", mirar, { passive: true }); window.addEventListener("resize", mirar);
     const st = tira(); st?.addEventListener("scroll", mirar, { passive: true });
@@ -434,6 +436,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
               {dueno(false)}
               {ley}
               {!sv && mn ? <MenuResumen mn={mn} desk={false} onAll={() => setTab("cat")} /> : null}
+              {rv ? <RsvRapida v={rv} onMas={(p, i, h) => { if (p) { rv.setP(p); if (i != null) rv.setI(i); if (h != null) rv.setSel(h); } setTab("rsv"); }} /> : null}
               {popular.length ? (
                 <div className="flex flex-col gap-2.5">
                   <SectionHeader title={E2("Lo más pedido", "Most booked")} action={nCat > popular.length && vende?.n !== 1 ? `${E2("Ver", "See")} ${nCat}` : undefined} onAction={() => setTab("cat")} />
@@ -540,7 +543,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
         </div>
         <div className="grid grid-cols-[minmax(0,1fr)_372px] items-start gap-12 pt-8">
           <div className="flex min-w-0 flex-col gap-16">
-            {seccion("res", null, <div className="flex flex-col gap-4">{miCita}{dueno(true)}<div className="grid"><TodayCard desktop eyebrow={hoy.eyebrow} title={hoy.title} cols={hoy.cols} /></div>{oferta}{ley}{esTuyo}</div>)}
+            {seccion("res", null, <div className="flex flex-col gap-4">{miCita}{dueno(true)}<div className="grid"><TodayCard desktop eyebrow={hoy.eyebrow} title={hoy.title} cols={hoy.cols} /></div>{oferta}{rv ? <RsvRapida v={rv} onMas={(p, i, h) => { if (p) { rv.setP(p); if (i != null) rv.setI(i); if (h != null) rv.setSel(h); } ir("rsv"); }} /> : null}{ley}{esTuyo}</div>)}
             {!sv && vende ? seccion("cat", L(cfg.title), <div>{vende.tab(true)}</div>) : null}
             {sv && nItems ? seccion("cat", L(cfg.title), (
               <div data-screen-label="Ficha · servicios · desktop" className="flex flex-col gap-[18px]">
@@ -580,7 +583,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
             {f.relacionados.length ? seccion("rel", E2("Relacionados", "Related"), <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5">{relacionados}</div>) : null}
           </div>
           <aside className="sticky min-w-0 self-start" style={{ top: CAB_DESK + 78 }}>
-            {sv ? <TarjetaCita v={sv} cfg={cfg} es={es} dsk={dsk} setDsk={setDsk} pulso={pulso} staffBook={staffBook} grupos={grupos} onVer={() => ir("cat")} /> : vende?.riel ?? (rv ? <RsvRiel v={rv} /> : null)}
+            {sv ? <TarjetaCita v={sv} cfg={cfg} es={es} dsk={dsk} setDsk={setDsk} pulso={pulso} staffBook={staffBook} grupos={grupos} onVer={() => ir("cat")} /> : rv && (activa === "rsv" || rv.sel != null || !vende?.riel) ? <RsvRiel v={rv} /> : vende?.riel ?? null}
             {escribir || llegar ? (
               <div className="mt-3 flex gap-2">
                 {escribir ? <div className="grid flex-1"><Button variant="secondary" size="md" icon="chat" block onClick={escribir}>{E2("Escribir", "Message")}</Button></div> : null}

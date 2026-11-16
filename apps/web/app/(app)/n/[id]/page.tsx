@@ -227,7 +227,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     {f.pro && CFG_FICHA[f.cat] ? (
       <FichaNueva f={{ ...f, guardado: fav.has(f.id) }} svc={svc} menu={menu} rsv={rsv} ofi={ofi} salud={salud} prof={prof} merc={merc} fiesta={fiesta} trans={trans}
         noche={noche} insc={insc} fe={fe} inm={inm} dl={dl} tienda={tienda} resenas={res} novedades={nov && nov.posts.length ? nov : null} jobs={jobs} eventos={evts}
-        sesion={!!u} es={lang === "es"} tabInicial={sp.tab}
+        sesion={!!u} es={lang === "es"} tabInicial={sp.tab} rsvInicial={rsvInicial}
         t={{ ...t, photosAll: f.nFotos === 1 ? t.photosOne : t.photosN.replace("{n}", String(f.nFotos)) }} />
     ) : (
     <Ficha
