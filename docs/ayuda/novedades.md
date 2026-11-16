@@ -16,6 +16,8 @@ Audiencia: vecino. Tema: explorar._
   - **Encuesta:** de 2 a 4 opciones; al votar se ven los porcentajes y «ya votaste». Un voto por persona.
   - **Novedad:** texto, fotos y, si el negocio quiere, un botón (un plato, el menú, llamar, un enlace https o **uno de sus eventos**:
     el botón dice **Ver evento** y abre la ficha del evento; en Hoy en el barrio sale como «EVENTO · VER EVENTO»).
+  - **El anillo:** mientras hay una publicación de las últimas 24 h, el logo del negocio lleva un anillo morado en su tarjeta y en su
+    página; tocarlo abre sus publicaciones de hoy (ver «Video de presentación y anillo de Hoy»).
   - Votos + y − (uno por persona), comentarios (300 letras) con «Útil», la **respuesta del negocio** (NEGOCIO) y «MÁS
     VOTADO»; guardar (ofertas) y compartir.
 - **En el panel (dueño):** las publicaciones con EN VIVO, PROGRAMADA, TERMINADA, FIJADA u OCULTA POR TO'LATINO, sus vistas
@@ -82,6 +84,9 @@ sigues al negocio (si no, la novedad dice «Solo para seguidores» y puedes segu
   - **Detail:** figures, the comments with **Reply** (280 characters; it shows as «Business reply»), «How it looks», Pin, Edit, End now or Cancel scheduling and
     Remove.
   - Posting the first one turns Updates on on your page; if you turn it off, they stay saved.
+
+- **The ring:** while there is a post from the last 24 h, the business logo has a purple ring on its card and its page; tapping it
+  opens today's posts (see «Intro video and Today ring»).
 
 ### What happens in each case
 | Case | What happens |

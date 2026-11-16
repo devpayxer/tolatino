@@ -5091,3 +5091,18 @@ cuando la persona entra por https, igual que la sesión.
 El tachado sale solo de una oferta en vivo y siempre es el precio real del plato en el menú. Mercado y Tienda no tienen ofertas todavía, así
 que ahí no hay tachado.
 
+## C-001 — Video de presentación y anillo de Hoy (16 nov)
+**Dónde:** con un negocio Pro (Sabor Dominicano): Panel › Tu página › Fotos › «Subir video»; Super Admin › Colas › Medios; después
+Negocios › Comida (la tarjeta) y la página del negocio. Teléfono y computadora.
+**Qué mirar:** el video se mueve sin sonido en la tarjeta (solo el del centro de la pantalla) y arriba de la página; «SIN SONIDO · TOCA» le
+pone sonido; con una novedad de hoy, el logo lleva el anillo morado y abre «Hoy en el barrio» de ese negocio.
+**Decidido por mí (reversible):**
+- La ficha nueva (Pro) no tiene logo en la portada, así que ahí no hay anillo: el anillo sale en la tarjeta y en la ficha de siempre.
+- El visor tiene un solo botón: «Ver la página». La portada del video sale sola (segundo 1); «Elegir portada» queda para después.
+- Motivos propios para no aprobar un video (música de otros artistas, no se ve el negocio, se ve mal, contenido no permitido, teléfonos o
+  precios escritos encima).
+- Mientras un video nuevo está en revisión, el aprobado sigue en la página. Al aprobar o no, el negocio recibe un aviso.
+- «Reducir movimiento» del teléfono se trata igual que «Ahorro de datos»: el video se queda quieto con un botón para verlo.
+- En la ficha nueva (teléfono), «SIN SONIDO · TOCA» va abajo a la izquierda (arriba están atrás, compartir y guardar).
+- Los videos se guardan en nuestro almacén propio (como las fotos), no en un servicio externo; el procesado es nuestro (ffmpeg).
+- Tope de 30 s (editable en Configuración › Negocios, de 10 a 60) y 10 subidas por negocio al día.

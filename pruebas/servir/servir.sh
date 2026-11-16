@@ -76,6 +76,8 @@ fi
 [ -n "${TRADUCTOR_URL:-}" ] && VARS+=(TRADUCTOR_URL="$TRADUCTOR_URL")
 # 5d: la moderación de imágenes propia (la levanta com5d en :8790 con el venv de recursos.sh; sin ella, las fotos esperan revisión manual).
 VARS+=(MODERACION_IMG_URL="${MODERACION_IMG_URL:-http://127.0.0.1:8790}")
+# C-001: el servicio de video propio (services/video, ffmpeg; lo levanta vid001 en :8791; sin él, subir un video dice «no disponible»).
+VARS+=(VIDEO_URL="${VIDEO_URL:-http://127.0.0.1:8791}")
 
 fuser -k 3100/tcp >/dev/null 2>&1 || true; sleep 1
 (set -a; . "$SEC"; set +a; unset TRADUCTOR_URL; env "${VARS[@]}" nohup node .next/standalone/apps/web/server.js > "$SALIDA/server.log" 2>&1 &)

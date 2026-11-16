@@ -2474,3 +2474,15 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   · Pruebas: app8e reintenta el 429 del token (la página manda con el mismo; escritorio 1024); free2b espera el aviso; wal8g en el iPad, una
     insignia; la precarga dice en qué quedó la página si «load» no sale en 30 s (silla3d, app8a, evt6b-6c) y va otra vez.
   · din9n4 y dir2f pasaron en la corrida 2; dir9m y app8e llevan su diagnóstico/arreglo a esta.
+- **C-001 · Video de presentación del negocio + anillo de Hoy (Pro)** — canvas `tolatino-master+` («Video del negocio · variantes»). Migración
+  0172 (`business_videos` con estados revision/aprobado/rechazado/quitado/reemplazado, uno en revisión y uno aprobado por negocio; cola
+  «Medios» con `business_video`; `video_max_s` 10–60, de fábrica 30; plantillas `biz_video_ok`/`biz_video_no`). **Servicio propio
+  `services/video`** (Python + ffmpeg, :8791, en el compose del sandbox y de producción): recorta, 720p, H.264+AAC, sin metadatos, portada del
+  segundo 1; el original nunca se guarda. `POST /api/negocio/video` (Pro, mismo origen, acceso «page», 120 MB, 10 al día; nginx abre solo esa
+  ruta). Panel › Tu página › Fotos: «VIDEO DE PRESENTACIÓN · PRO» (Free con candado → planes), subir con progreso, en revisión, aprobado
+  (Cambiar / Quitar), no aprobado con motivo, «HOY EN EL BARRIO · TU ANILLO» e Instagram «Pronto». Super Admin › Colas › Medios: ver el video,
+  «Aprobar video» / «No aprobar» con motivos propios, aviso al negocio, auditoría. Público: `BusinessCard` (parche en portar-sistema) con el video
+  (solo se mueve el del centro; ahorro de datos / reducir movimiento = quieto), el anillo y `VisorHoy`; portada de video en la ficha (nueva y
+  de siempre); la ficha de siempre lleva el anillo en el logo. `videosVivos` y `historiasDeNegocios`: una consulta por lista. Guardián
+  `videoSoloAprobado` (alrevesC001 5/5); e2e `vid001` (CI instala ffmpeg; servir.sh pasa VIDEO_URL); ayuda `video-del-negocio.md` y
+  `novedades.md`. Visto en el navegador local (390 y 1360): tarjeta con video, ring, visor y portada.
