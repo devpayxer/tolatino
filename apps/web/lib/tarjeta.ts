@@ -99,12 +99,15 @@ export function chipsTarjeta(cat: string, pro: boolean, tags: string[], attrs: R
 
 /* «MOFONGO · COMIDA CRIOLLA · 0.4 MI» (Pro: dos subcategorías; Free: una). Hogar y a domicilio: el radio que cubre. */
 export function metaTarjeta(cat: string, pro: boolean, subs: string[], mi: number | null, radius: number | null, fromHome: boolean, lang: Lang) {
-  const es = lang === "es";
   const que = (pro ? subs.slice(0, 2) : subs.slice(0, 1)).join(" · ");
-  const donde = cat === "NEG-HOGAR" && radius ? `${es ? "HASTA " : "UP TO "}${radius} MI`
+  return [que.toUpperCase(), dondeTarjeta(cat, mi, radius, fromHome, lang)].filter(Boolean).join(" · ");
+}
+/* Dónde queda (o hasta dónde llega): «0.4 MI», «HASTA 10 MI». C-002: es el dato del medio de la línea única de la tarjeta de la categoría. */
+export function dondeTarjeta(cat: string, mi: number | null, radius: number | null, fromHome: boolean, lang: Lang) {
+  const es = lang === "es";
+  return cat === "NEG-HOGAR" && radius ? `${es ? "HASTA " : "UP TO "}${radius} MI`
     : fromHome && radius ? `${es ? "A DOMICILIO · HASTA " : "AT HOME · UP TO "}${radius} MI`
     : mi != null ? `${mi} MI` : "";
-  return [que.toUpperCase(), donde].filter(Boolean).join(" · ");
 }
 
 /* Reseñas: con 5 o más, estrellas; con menos, «3 reseñas» o «Nuevo · en To'Latino» (prototipo cardItem). */
@@ -117,7 +120,7 @@ export function resenas(rating: number | null, n: number, lang: Lang) {
 
 /* Lo que la pantalla recibe por tarjeta (todo listo para pintar con BusinessCard). */
 export type Tarjeta = {
-  id: string; plan: "pro" | "free"; name: string; verified: boolean; meta: string; rating: string; reviews: number; reviewsNote?: string;
+  id: string; plan: "pro" | "free"; name: string; verified: boolean; meta: string; donde?: string; rating: string; reviews: number; reviewsNote?: string;
   status: string; open: boolean; photo: string | null; chips: { variant: string; label: string }[]; offer: string | null;
   cta: string; ctaIcon: string; accion: Accion; saved: boolean; phone: string | null; lat: number | null; lng: number | null;
   // C-001 · Pro: el video aprobado (se mueve solo el de la tarjeta del centro) y su historia de Hoy (el anillo del logo; sin historia, sin anillo).

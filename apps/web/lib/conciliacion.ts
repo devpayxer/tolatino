@@ -45,7 +45,9 @@ async function libro(desde: Date, hasta: Date, ids: { pi: string[]; re: string[]
                                  to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at
                             from payments where stripe_payment_intent is not null and ((created_at >= $1::timestamptz and created_at < $2::timestamptz) or stripe_payment_intent = any($3::text[]))`, [a, b, ids.pi]),
     db().query<{ pi: string; status: string; biz: string | null; city: string | null }>(`select pi, status, business_id as biz, city_id as city from payment_actions where pi = any($1::text[]) or (created_at >= $2::timestamptz and created_at < $3::timestamptz)`, [ids.pi, a, b]),
-    db().query<{ pi: string; amount: number; biz: string }>(`select note->>'pi' as pi, amount_cents as amount, business_id as biz from subscription_events where kind = 'charged' and note ? 'pi' and (note->>'pi' = any($1::text[]) or (at >= $2::timestamptz and at < $3::timestamptz))`, [ids.pi, a, b]),
+    // Cobros directos a To'Latino: el plan Pro y (C-002) los patrocinios (sponsorship_payments, solo inserción).
+    db().query<{ pi: string; amount: number; biz: string }>(`select note->>'pi' as pi, amount_cents as amount, business_id as biz from subscription_events where kind = 'charged' and note ? 'pi' and (note->>'pi' = any($1::text[]) or (at >= $2::timestamptz and at < $3::timestamptz))
+      union all select pi, amount_cents as amount, business_id as biz from sponsorship_payments where pi = any($1::text[]) or (created_at >= $2::timestamptz and created_at < $3::timestamptz)`, [ids.pi, a, b]),
     db().query<{ id: string; amount: number; biz: string | null; city: string | null; at: string }>(
       `select r.stripe_refund_id as id, r.amount_cents as amount, p.business_id as biz, p.city_id as city, to_char(coalesce(r.done_at, r.created_at) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at
          from refunds r join payments p on p.id = r.payment_id where r.status = 'done' and r.stripe_refund_id is not null

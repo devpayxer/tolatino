@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import { cambiarIdioma } from "./acciones";
 import { CiudadSelector } from "./CiudadSelector";
+import { ProveedorBuscador, type BuscadorPagina } from "./BuscadorPagina";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { SiteHeader, BottomNav } = UI as unknown as Record<"SiteHeader" | "BottomNav", ComponentType<any>>;
@@ -23,7 +24,12 @@ function useDesk() {
 const RUTAS: Record<string, string> = { home: "/", neg: "/negocios", com: "/comunidad", evt: "/eventos", me: "/cuenta" };
 const ICONOS = ["home", "store", "users", "ticket", "wallet"]; // prototipo navIcons
 
-export function AppShell({ lang, t, yo, ciudad, children, landing = false }: { lang: "es" | "en"; t: TextosShell; yo: { iniciales: string; avisos?: number } | null; ciudad: CiudadShell; children: ReactNode; landing?: boolean }) {
+export function AppShell(p: { lang: "es" | "en"; t: TextosShell; yo: { iniciales: string; avisos?: number } | null; ciudad: CiudadShell; children: ReactNode; landing?: boolean }) {
+  // C-002 · Una página puede poner su propio buscador en el header (la categoría: «Buscar en Comida y Bebidas»).
+  return <ProveedorBuscador>{(bp) => <Marco {...p} bp={bp} />}</ProveedorBuscador>;
+}
+
+function Marco({ lang, t, yo, ciudad, children, landing = false, bp }: { lang: "es" | "en"; t: TextosShell; yo: { iniciales: string; avisos?: number } | null; ciudad: CiudadShell; children: ReactNode; landing?: boolean; bp: BuscadorPagina }) {
   const desk = useDesk();
   const router = useRouter();
   const ruta = usePathname();
@@ -52,6 +58,8 @@ export function AppShell({ lang, t, yo, ciudad, children, landing = false }: { l
   // Buscar en el teléfono es pantalla completa: sin encabezado ni barra inferior (prototipo showMHeader / showNav).
   const pantallaCompleta = !desk && (ruta.startsWith("/buscar") || /^\/n\/[^/]+\/licencia/.test(ruta)); // Licencia: su propia barra (showMHeader false)
   // Pantallas de detalle (prototipo showMBrand): encabezado compacto y sin barra inferior en el teléfono.
+  // C-002 · En el teléfono, la página de categoría lleva su buscador sobre la portada: el header va sin buscador (sigue la barra de abajo).
+  const sinBuscador = !desk && ruta.startsWith("/c/");
   const compacto = !desk && /^\/(mapa|n\/|pedido\/|reserva\/|cita\/|pre\/|plan\/|renta\/|apartado\/|mercado\/|fiesta\/|viaje\/|noche\/|insc\/|vis\/|privado\/|solicitud\/|emergencia|cuenta\/|comunidad\/|recomendar|publica|recuperar|eventos\/|soporte|compa\/)/.test(ruta);
   const ir = (id: string) => router.push(id === "me" && !yo ? "/entrar" : RUTAS[id] ?? "/");
   // 9h · Con el interruptor growth.landing (producción en acceso anticipado, 9t), «/» es la landing: trae su propio encabezado y su pie.
@@ -62,21 +70,21 @@ export function AppShell({ lang, t, yo, ciudad, children, landing = false }: { l
         onClickCapture={(e) => { let el = e.target as HTMLElement | null; while (el && !(el.tagName === "SPAN" && el.style.padding === "7px 11px")) el = el.parentElement; clic.current = el ? el.getBoundingClientRect() : null; }}>
         <SiteHeader
           variant={desk ? "desktop" : "mobile"}
-          compact={compacto}
+          compact={compacto || sinBuscador}
           city={ciudad.nombre}
           cityShort={ciudad.corto}
           radius={desk ? ciudad.radio : ciudad.radioMovil}
           lang={lang.toUpperCase()}
           member={!!yo}
           initials={yo?.iniciales}
-          searchPlaceholder={desk ? t.searchDesk : t.searchIn}
+          searchPlaceholder={desk ? bp?.ph ?? t.searchDesk : t.searchIn}
           loginLabel={t.login}
           publishLabel={t.publish}
           tabs={t.tabs.map((label, i) => ({ id: ["home", "neg", "com", "evt"][i], label }))}
           activeTab={activo}
           onTab={ir}
           onHome={() => router.push("/")}
-          onSearch={() => router.push("/buscar")}
+          onSearch={() => router.push(bp?.href ?? "/buscar")}
           onCity={abrir}
           onLang={() => pasar(async () => { await cambiarIdioma(lang === "es" ? "en" : "es"); router.refresh(); })}
           onLogin={() => router.push("/entrar")}

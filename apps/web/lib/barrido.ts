@@ -160,6 +160,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // llegaron a sus pedidos o citas califican.
         ["campanas", async () => (await import("./crecimiento/campanas")).campanasProgramadas()],
         ["promotores", async () => (await import("./crecimiento/promotores")).calificarReferidos()],
+        // C-002 · Patrocinados: empiezan los reservados, vencen los que terminaron (renovando los que lo piden: cobra y, si no puede, termina y avisa),
+        // se avisa a quien pidió «Avísame» cuando hay puesto y se ponen al día los pedidos que llegaron por el patrocinio.
+        ["patrocinios", async () => (await import("./patrocinio")).barrerPatrocinios()],
         // 9k · Dinero real listo: la conciliación de ayer a su hora (una vez) y su vigilante, las verificaciones del banco (3-D Secure) que vencieron, los
         // pagos al banco del martes (simulador; con Stripe paga Stripe), las alertas que Stripe nunca hace y el proceso del plan Pro cada hora aunque
         // nadie abra el panel (L377: el día 30 llega igual).

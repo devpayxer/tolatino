@@ -14,6 +14,8 @@ import { PantallaPronto } from "../../PantallaPronto";
 import { Categoria, type Vista } from "./Categoria";
 import { after } from "next/server";
 import { contexto, evento } from "@/lib/eventos";
+import { contarVistas, vitrinaCategoria } from "@/lib/patrocinio";
+import type { Tarjeta } from "@/lib/tarjeta";
 
 export const dynamic = "force-dynamic";
 
@@ -50,11 +52,19 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const orden: Orden = (ORDENES as readonly string[]).includes(sp.orden ?? "") ? (sp.orden as Orden) : "rel";
   const pagina = Math.max(0, (parseInt(String(sp.p ?? "1"), 10) || 1) - 1);
 
-  const [res, cf] = await Promise.all([
+  const [res, cf, vit] = await Promise.all([
     resultados({ punto: loc, cat: c.id, sub: sub ? reglas.get(sub)! : null, filtros: elegidos, orden, pagina }),
     cifras(loc, c.id, P.stats_tag),
+    // C-002 · Patrocinados: los activos de esta categoría y ciudad que cumplen el país, el antojo y los filtros elegidos (rotan; el servidor decide).
+    vitrinaCategoria(loc, c.id, sub ? reglas.get(sub)! : null, elegidos),
   ]);
-  const tarjetas = await armarTarjetas(CIUDAD, res.items, lang, u?.id ?? null);
+  const [tarjetas0, spon0] = await Promise.all([armarTarjetas(CIUDAD, res.items, lang, u?.id ?? null), armarTarjetas(CIUDAD, vit, lang, u?.id ?? null)]);
+  // C-002 · La oferta sale solo si hay algo de hoy: la oferta en vivo de Novedades (la de «Hoy en el barrio»), nunca un texto fijo.
+  const deHoy = (b: Tarjeta): Tarjeta => ({ ...b, offer: b.historia?.avisos.find((a) => a.t === "of")?.texto ?? null });
+  const tarjetas = tarjetas0.map(deHoy);
+  const patrocinados = spon0.map((t, i) => ({ sid: vit[i]!.sid, t: deHoy(t) }));
+  // Vistas: una por persona (o dispositivo) y día por patrocinio, después de responder; los robots no cuentan.
+  if (patrocinados.length && !ctx.robot) after(() => contarVistas("negocio", patrocinados.map((x) => x.sid), u?.id ?? null, u ? null : ctx.dev));
   // Semillas (negocios no reclamados que recomendó un vecino): al final de «También en {ciudad}», solo en la primera
   // página, sin filtros y con todas las subcategorías (Prototipo seedRows).
   const semillas = pagina === 0 && !elegidos.length && !sub ? (await db().query<{ id: string; name: string; address: string | null; phone: string | null }>(
@@ -80,7 +90,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const n = res.total;
   const vista: Vista = {
     slug, cat: c.id, ciudad: CIUDAD, lang,
-    titulo: L(P.title), hero: foto(P.hero, 650), buscador: L(P.search_ph),
+    titulo: L(P.title), hero: foto(P.hero, 650), buscador: L(P.search_ph), radio: t.radioCorto.replace("{n}", String(loc.rad)),
+    buscarEn: lang === "es" ? `Buscar en ${L(P.title)}` : `Search ${L(P.title)}`,
     cifrasCorta: `${cf.total} ${t.statsBiz} · ${cf.abiertos} ${t.statsOpen}`,
     cifrasLarga: `${cf.total} ${t.statsBiz} · ${cf.abiertos} ${t.statsOpen} · ${cf.con} ${L(P.stats_label)} · ${lugar}`,
     banda: P.band && P.band.sub_key ? { titulo: L(P.band.title), sub: L(P.band.sub), cta: L(P.band.cta), key: P.band.sub_key } : null,
@@ -105,7 +116,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       sinReclamar: t.seedUnclaimed, esTuyo: t.seedYours, reclamalo: t.seedClaim,
       cerrar: lang === "es" ? "Cerrar" : "Close", freeTitulo: t.freeTitle.replace("{c}", nombreCiudad), freeSub: t.freeSub, ddPh: t.ddPh, ddNone: t.ddNone,
     },
-    tarjetas, semillas,
+    tarjetas, semillas, patrocinados, sponTitulo: t.spon,
   };
   return <Categoria v={vista} />;
 }

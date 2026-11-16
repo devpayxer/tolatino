@@ -1,11 +1,17 @@
 "use client";
 /* APP-NEG-CAT (prototipo «APP-NEG-CAT · móvil» y «· desktop»). Composición con el sistema de diseño; el estado vive en
-   la URL (?sub, ?f, ?orden, ?p) y el servidor decide los resultados. */
+   la URL (?sub, ?f, ?orden, ?p) y el servidor decide los resultados.
+   C-002 (canvas tolatino-master+, «Página de categoría (variantes)», sección D, aprobada por Henry el 10 nov): portada baja (150 / 210), UN buscador
+   dentro de la categoría (teléfono: sobre la portada y el header sin buscador; computadora: el del header busca dentro de la categoría), el radio
+   en la portada (teléfono), UNA fila de pestañas (cada fila de exploración + Antojos; se ve una a la vez), la vitrina «Patrocinados», filtros y la
+   lista. La tarjeta Pro: una línea de datos y un botón; la oferta solo si hay algo de hoy. */
 import * as UI from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import { avisame, registrarToqueSemilla } from "../../acciones";
 import { TarjetaNegocio } from "../../TarjetaNegocio";
+import { usarBuscadorPagina } from "../../BuscadorPagina";
+import { Patrocinados, type Patrocinada } from "./Patrocinados";
 import type { Tarjeta } from "@/lib/tarjeta";
 
 type N = "Chip" | "Button" | "IconButton" | "Icon" | "InfoCard" | "Eyebrow" | "SearchSelect" | "BusinessCard";
@@ -15,7 +21,7 @@ const { Chip, Button, IconButton, Icon, InfoCard, Eyebrow, SearchSelect, Busines
 type Tile = { key: string; label: string; photo: string | null; flag: string | null };
 export type Vista = {
   slug: string; cat: string; ciudad: string; lang: "es" | "en";
-  titulo: string; hero: string | null; buscador: string; cifrasCorta: string; cifrasLarga: string;
+  titulo: string; hero: string | null; buscador: string; buscarEn: string; radio: string; cifrasCorta: string; cifrasLarga: string;
   banda: { titulo: string; sub: string; cta: string; key: string } | null;
   filas: { key: string; titulo: string; tipo: "photo" | "chip"; items: Tile[]; mas: Tile[]; masLabel: string | null }[];
   antojo: string; capitulos: { key: string; titulo: string; items: Tile[] }[];
@@ -23,6 +29,7 @@ export type Vista = {
   grupos: { key: string; title: string; options: { key: string; label: string }[] }[];
   sub: string | null; filtros: string[]; orden: string; pagina: number; paginas: number; total: number;
   textos: Record<string, string>; tarjetas: Tarjeta[]; semillas: { id: string; name: string; address: string | null; phone: string | null }[];
+  patrocinados: Patrocinada[]; sponTitulo: string;
 };
 
 const fondo = (url: string | null) => (url ? { backgroundImage: `url(${url})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
@@ -35,6 +42,13 @@ export function Categoria({ v }: { v: Vista }) {
   const [masAbierta, setMasAbierta] = useState<string | null>(null);
   const [avisado, setAvisado] = useState(false);
   const T = v.textos;
+  // Pestañas: cada fila de exploración (Por país, Tipo de lugar…) y Antojos al final; se ve una a la vez. Abre la que tiene lo elegido.
+  const pestanas = [...v.filas.map((r) => ({ k: r.key, l: r.titulo })), ...(v.capitulos.length ? [{ k: "__antojos", l: v.antojo }] : [])];
+  const conSub = v.sub ? (v.filas.find((r) => [...r.items, ...r.mas].some((x) => x.key === v.sub))?.key ?? (v.capitulos.some((g) => g.items.some((x) => x.key === v.sub)) ? "__antojos" : null)) : null;
+  const [pest, setPest] = useState<string>(conSub ?? pestanas[0]?.k ?? "");
+  const buscarHref = `/buscar?cat=${v.slug}`;
+  usarBuscadorPagina(v.buscarEn, buscarHref);
+  const elegirCiudad = () => { const q = new URLSearchParams(location.search); q.set("ciudad", ""); router.replace(`${ruta}?${q}`, { scroll: false }); };
 
   // Cambiar la URL = pedir al servidor la lista nueva. Cualquier cambio de criterio vuelve a la página 1.
   const ir = (c: { sub?: string | null; filtros?: string[]; orden?: string; p?: number }, scroll = false) => {
@@ -52,7 +66,7 @@ export function Categoria({ v }: { v: Vista }) {
   const ciclarOrden = () => ir({ orden: ordenes[(ordenes.indexOf(v.orden) + 1) % ordenes.length] });
   const limpiar = () => ir({ sub: null, filtros: [], orden: "rel" });
   const entrar = () => router.push(`/entrar?volver=${encodeURIComponent(location.pathname + location.search)}`);
-  const buscar = () => router.push(`/buscar?cat=${v.slug}`);
+  const buscar = () => router.push(buscarHref);
 
   const pedirAviso = async () => {
     const r = await avisame(v.ciudad, v.cat, v.sub ?? "", v.filtros);
@@ -62,39 +76,37 @@ export function Categoria({ v }: { v: Vista }) {
 
   const pros = v.tarjetas.filter((b) => b.plan === "pro"), frees = v.tarjetas.filter((b) => b.plan === "free");
   const tarjeta = (b: Tarjeta) => (
-    <div key={b.id} className="grid"><TarjetaNegocio es={v.lang === "es"} b={b} origen="categoria" textos={{ hoy: T.hoy ?? "", llamar: T.llamar ?? "" }} /></div>
+    <div key={b.id} className="grid"><TarjetaNegocio es={v.lang === "es"} una b={b} origen="categoria" textos={{ hoy: T.hoy ?? "", llamar: T.llamar ?? "" }} /></div>
   );
 
   return (
     <div data-pantalla="APP-NEG-CAT" className={`mx-auto w-full max-w-[1440px] pb-[150px] lg:pb-10 ${pendiente ? "opacity-70 transition-opacity" : ""}`}>
-      {/* ── Portada ── */}
-      <div className="relative h-[236px] bg-photo-bg-2 lg:h-[300px]" style={fondo(v.hero)}>
+      {/* ── Portada baja: 150 en el teléfono (con volver y el radio), 210 en la computadora ── */}
+      <div className="relative h-[150px] bg-photo-bg-2 lg:h-[210px]" style={fondo(v.hero)}>
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,14,18,.3)_0%,rgba(11,14,18,.8)_100%)]" />
         <button type="button" aria-label={T.volver} onClick={() => router.push("/negocios")}
           className="absolute left-4 top-3.5 grid size-[38px] place-items-center rounded-[13px] bg-white/95 lg:hidden">
           <Icon name="chevronLeft" size={18} strokeWidth={2} />
         </button>
-        <div className="absolute inset-x-5 bottom-[18px] flex flex-col gap-2.5 text-white lg:inset-x-[30px] lg:bottom-[30px] lg:gap-3.5">
+        <button type="button" onClick={elegirCiudad} data-radio-portada=""
+          className="absolute right-4 top-[17px] flex h-[30px] items-center rounded-[9px] bg-white/95 px-[9px] font-mono text-[10px] font-bold text-action lg:hidden">{v.radio}</button>
+        <div className="absolute inset-x-5 bottom-[38px] flex flex-col gap-2.5 text-white lg:inset-x-[30px] lg:bottom-[30px] lg:gap-3.5">
           <button type="button" onClick={() => router.push("/negocios")} className="hidden items-center gap-1.5 self-start text-[13px] font-bold lg:flex">
             <Icon name="chevronLeft" size={16} color="var(--tl-white)" strokeWidth={2} />{T.volver}
           </button>
-          <h1 className="font-display text-[32px] font-extrabold leading-none tracking-[-0.045em] lg:text-[52px] lg:tracking-[-0.05em]">{v.titulo}</h1>
+          <h1 className="font-display text-[28px] font-extrabold leading-none tracking-[-0.045em] lg:text-[44px] lg:tracking-[-0.05em]">{v.titulo}</h1>
           <div className="font-mono text-[10.5px] font-bold tracking-[0.08em] lg:hidden">{v.cifrasCorta}</div>
           <div className="hidden font-mono text-[12px] font-bold tracking-[0.08em] lg:block">{v.cifrasLarga}</div>
-          <button type="button" onClick={buscar} className="flex items-center gap-2.5 rounded-[14px] bg-white px-3.5 py-[11px] text-left lg:hidden">
-            <Icon name="search" size={17} color="rgba(11,14,18,.6)" />
-            <span className="text-[14px] font-medium text-ink/60">{v.buscador}</span>
-          </button>
-          <div className="mt-1.5 hidden max-w-[640px] items-center gap-2.5 rounded-2xl bg-white py-1.5 pl-4 pr-1.5 lg:flex">
-            <Icon name="search" size={18} color="rgba(11,14,18,.6)" />
-            <button type="button" onClick={buscar} className="flex-1 cursor-text text-left text-[14.5px] font-medium text-ink/60">{v.buscador}</button>
-            <Button size="md" onClick={buscar}>{T.buscar}</Button>
-          </div>
         </div>
       </div>
 
-      {/* ── Mosaicos, banda y «Qué se te antoja» ── */}
+      {/* ── Buscador (teléfono, montado sobre la portada), banda, pestañas y la fila elegida ── */}
       <div className="flex flex-col gap-[18px] border-line bg-white py-4 lg:gap-[22px] lg:border-b lg:px-[30px] lg:pb-5 lg:pt-[22px]">
+        <button type="button" onClick={buscar} data-buscador-categoria=""
+          className="relative z-[2] mx-5 -mt-10 flex h-12 items-center gap-2.5 rounded-2xl border border-ink/10 bg-white px-3.5 text-left shadow-[0_12px_26px_-18px_rgba(11,14,18,.5)] lg:hidden">
+          <Icon name="search" size={17} color="rgba(11,14,18,.6)" />
+          <span className="truncate text-[14px] font-medium text-ink/60">{v.buscador}</span>
+        </button>
         {v.banda && (
           <div data-screen-label="Categoría · emergencia" className="mx-5 flex flex-col gap-3 rounded-2xl border border-line-strong bg-white p-3.5 lg:mx-0 lg:flex-row lg:flex-wrap lg:items-center lg:rounded-[14px] lg:px-4">
             <div className="flex flex-1 gap-2.5 lg:min-w-[260px] lg:items-center">
@@ -108,17 +120,30 @@ export function Categoria({ v }: { v: Vista }) {
           </div>
         )}
 
-        {v.filas.map((rw) => (
-          <div key={rw.key} className="flex flex-col gap-3 lg:gap-3.5">
-            <div className="flex items-baseline justify-between gap-3 px-5 lg:px-0">
-              <div className="font-display text-[15px] font-extrabold tracking-[-0.03em] lg:text-[17px]">{rw.titulo}</div>
-              {rw.masLabel && (
-                <button type="button" onClick={() => setMasAbierta(masAbierta === rw.key ? null : rw.key)}
-                  className="flex flex-none items-center gap-1 text-[13px] font-bold text-action">
-                  {rw.masLabel}<Icon name={masAbierta === rw.key ? "close" : "chevronDown"} size={14} color="var(--tl-action)" />
-                </button>
-              )}
-            </div>
+        {pestanas.length > 1 && (
+          <div role="tablist" data-screen-label="Categoría · pestañas (C-002)" className="hs mx-5 flex gap-[18px] overflow-x-auto border-b border-line font-mono text-[12px] font-extrabold tracking-[0.06em] lg:mx-0 lg:gap-[26px] lg:text-[12.5px]">
+            {pestanas.map((x) => (
+              <button key={x.k} type="button" role="tab" aria-selected={pest === x.k} onClick={() => { setPest(x.k); setMasAbierta(null); }}
+                className={`flex-none whitespace-nowrap border-b-[2.5px] pb-[9px] lg:pb-[11px] ${pest === x.k ? "border-ink text-ink" : "border-transparent text-ink/60"}`}>
+                {x.l.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {v.filas.filter((rw) => pestanas.length <= 1 || pest === rw.key).map((rw) => (
+          <div key={rw.key} role={pestanas.length > 1 ? "tabpanel" : undefined} aria-label={rw.titulo} className="flex flex-col gap-3 lg:gap-3.5">
+            {pestanas.length <= 1 || rw.masLabel ? (
+              <div className={`flex items-baseline gap-3 px-5 lg:px-0 ${pestanas.length <= 1 ? "justify-between" : "justify-end"}`}>
+                {pestanas.length <= 1 ? <div className="font-display text-[15px] font-extrabold tracking-[-0.03em] lg:text-[17px]">{rw.titulo}</div> : null}
+                {rw.masLabel && (
+                  <button type="button" onClick={() => setMasAbierta(masAbierta === rw.key ? null : rw.key)}
+                    className="flex flex-none items-center gap-1 text-[13px] font-bold text-action">
+                    {rw.masLabel}<Icon name={masAbierta === rw.key ? "close" : "chevronDown"} size={14} color="var(--tl-action)" />
+                  </button>
+                )}
+              </div>
+            ) : null}
             {rw.tipo === "photo" ? (
               <Carrusel arriba={24}>
                 {rw.items.map((c) => (
@@ -152,29 +177,34 @@ export function Categoria({ v }: { v: Vista }) {
           </div>
         ))}
 
-        <div className="flex flex-col gap-3 lg:gap-3.5">
-          <div className="px-5 font-display text-[15px] font-extrabold tracking-[-0.03em] lg:px-0 lg:text-[17px]">{v.antojo}</div>
-          <Carrusel arriba={45}>
-            {v.capitulos.map((g, i) => {
-              const ultimo = i === v.capitulos.length - 1;
-              return (
-                <div key={g.key} className={`flex flex-none flex-col gap-[9px] lg:gap-2.5 ${ultimo ? "" : "mr-[18px] border-r border-line pr-[18px]"}`}>
-                  <div className="sticky left-0 self-start whitespace-nowrap font-mono text-[10px] font-extrabold tracking-[0.1em] text-ink/60 lg:text-[10.5px]">{g.titulo}</div>
-                  <div className="flex gap-2.5 lg:gap-3.5">
-                    {g.items.map((c) => (
-                      <button key={c.key} type="button" onClick={() => elegirSub(c.key)} className="flex w-[84px] flex-none snap-start flex-col gap-[7px] text-left lg:w-[112px] lg:gap-2">
-                        <span className="block h-[62px] rounded-[13px] bg-photo-bg outline-offset-2 lg:h-20 lg:rounded-[14px]"
-                          style={{ ...fondo(c.photo), outline: v.sub === c.key ? "2px solid var(--tl-ink)" : "none" }} />
-                        <span className={`line-clamp-2 text-[11.5px] leading-[1.2] lg:text-[12.5px] ${v.sub === c.key ? "font-extrabold" : "font-bold"}`}>{c.label}</span>
-                      </button>
-                    ))}
+        {v.capitulos.length > 0 && (pestanas.length <= 1 || pest === "__antojos") && (
+          <div role={pestanas.length > 1 ? "tabpanel" : undefined} aria-label={v.antojo} className="flex flex-col gap-3 lg:gap-3.5">
+            {pestanas.length <= 1 ? <div className="px-5 font-display text-[15px] font-extrabold tracking-[-0.03em] lg:px-0 lg:text-[17px]">{v.antojo}</div> : null}
+            <Carrusel arriba={45}>
+              {v.capitulos.map((g, i) => {
+                const ultimo = i === v.capitulos.length - 1;
+                return (
+                  <div key={g.key} className={`flex flex-none flex-col gap-[9px] lg:gap-2.5 ${ultimo ? "" : "mr-[18px] border-r border-line pr-[18px]"}`}>
+                    <div className="sticky left-0 self-start whitespace-nowrap font-mono text-[10px] font-extrabold tracking-[0.1em] text-ink/60 lg:text-[10.5px]">{g.titulo}</div>
+                    <div className="flex gap-2.5 lg:gap-3.5">
+                      {g.items.map((c) => (
+                        <button key={c.key} type="button" onClick={() => elegirSub(c.key)} className="flex w-[84px] flex-none snap-start flex-col gap-[7px] text-left lg:w-[112px] lg:gap-2">
+                          <span className="block h-[62px] rounded-[13px] bg-photo-bg outline-offset-2 lg:h-20 lg:rounded-[14px]"
+                            style={{ ...fondo(c.photo), outline: v.sub === c.key ? "2px solid var(--tl-ink)" : "none" }} />
+                          <span className={`line-clamp-2 text-[11.5px] leading-[1.2] lg:text-[12.5px] ${v.sub === c.key ? "font-extrabold" : "font-bold"}`}>{c.label}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </Carrusel>
-        </div>
+                );
+              })}
+            </Carrusel>
+          </div>
+        )}
       </div>
+
+      {/* ── Patrocinados (C-002): debajo de «Por país»; sin patrocinios vivos, no sale ── */}
+      <Patrocinados items={v.patrocinados} titulo={v.sponTitulo} es={v.lang === "es"} />
 
       {/* ── Barra de filtros ── */}
       <div className="hs flex gap-2 overflow-x-auto border-y border-line bg-white px-5 py-3 lg:hidden">

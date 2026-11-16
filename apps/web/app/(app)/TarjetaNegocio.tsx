@@ -12,7 +12,8 @@ import { VideoTarjeta, VisorHoy } from "./VideoNegocio";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { BusinessCard } = UI as unknown as Record<"BusinessCard", ComponentType<any>>;
 
-export function TarjetaNegocio({ b, origen, textos, es = true }: { b: Tarjeta; origen: string; textos: { hoy: string; llamar: string }; es?: boolean }) {
+/* C-002 · `una`: la tarjeta Pro de la página de categoría (una línea de datos y un botón; BusinessCard oneLine). */
+export function TarjetaNegocio({ b, origen, textos, es = true, una = false }: { b: Tarjeta; origen: string; textos: { hoy: string; llamar: string }; es?: boolean; una?: boolean }) {
   const router = useRouter();
   const [guardado, setGuardado] = useState(b.saved);
   const [anillo, setAnillo] = useState(false);
@@ -41,11 +42,12 @@ export function TarjetaNegocio({ b, origen, textos, es = true }: { b: Tarjeta; o
   return (
     <>
     <BusinessCard
-      plan={b.plan} name={b.name} verified={b.verified} meta={b.meta} rating={b.rating} reviews={b.reviews} reviewsNote={b.reviewsNote}
+      plan={b.plan} name={b.name} verified={b.verified} meta={una && b.plan === "pro" ? (b.donde ?? "").toLowerCase() : b.meta} rating={b.rating} reviews={b.reviews} reviewsNote={b.reviewsNote}
       status={b.status} open={b.open} photos={b.photo ? [b.photo] : []} chips={b.chips} offer={b.offer ?? undefined} offerTag={textos.hoy}
       cta={b.cta} ctaIcon={b.ctaIcon} contactLabel={textos.llamar} saved={guardado}
       onOpen={hacer("ficha")} onCta={hacer(b.accion)} onSave={guardar} onContact={hacer("llamar")}
       media={b.video ? <VideoTarjeta src={b.video.src} poster={b.video.poster} nombre={b.name} es={es} /> : null}
+      oneLine={una || undefined}
       ring={h ? h.logo ?? b.photo ?? "" : undefined} onRing={() => setAnillo(true)} ringLabel={`${es ? "Hoy en el barrio" : "Today nearby"} · ${b.name}`}
     />
     {anillo && h ? <VisorHoy h={h} es={es} onClose={() => setAnillo(false)} /> : null}
