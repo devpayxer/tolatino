@@ -42,6 +42,7 @@ const ve = async (l) => { for (let i = 0; i < 24; i++) { if (await vis(l)) retur
   await m.goto(`${B}/n/guarderia-mis-angelitos`); await m.waitForLoadState('networkidle');
   ok(await ve(m.getByText('¿TIENE LICENCIA?')) && await ve(m.getByText('Sí: licencia del estado de PA (DHS)')), 'Niños: «¿TIENE LICENCIA?» Sí, del DHS');
   ok(await ve(m.getByText('¿HAY CUPO?')) && await ve(m.getByText(/^Quedan \d+ cupos$/)), 'Niños: ¿hay cupo?');
+  await m.getByRole('tab', { name: 'Antes de ir' }).click(); // C-006: las preguntas viven en «Antes de ir»
   ok(await ve(m.getByText('¿Qué datos de mi niño guarda To’Latino?')), 'Niños: la FAQ de los datos del niño');
   await m.screenshot({ path: OUT + 'e4d-ninos-m.png', fullPage: true });
   // Terapias (sin licencia del DHS): ¿desde qué edad? y la evaluación.

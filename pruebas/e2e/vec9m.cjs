@@ -122,7 +122,7 @@ const desk = (b, extra = {}) => b.newContext({ viewport: { width: 1360, height: 
     ok(/¿Es tu negocio\?/.test(await texto(pc)), 'la ficha de un negocio sin dueño trae «¿Es tu negocio?»');
     await pc.locator('[data-es-tuyo]').click(); await pc.waitForURL(/\/recuperar\/panaderia-la-espiga/);
     ok(true, 'y lleva a reclamarlo (/recuperar)');
-    await pc.goto(B + `/n/${BIZ}`); await pc.locator('[data-pieza="mini-mapa"]').first().waitFor();
+    await pc.goto(B + `/n/${BIZ}?tab=hor`); await pc.locator('[data-pieza="mini-mapa"]').first().waitFor(); /* C-006: el mapa vive en Horario */
     ok((await pc.locator('[data-es-tuyo]').count()) === 0, 'un negocio con dueño no lo trae');
 
     // ── 4 · La ficha: alergias, temas, retiros; Buscar casa y carro ──

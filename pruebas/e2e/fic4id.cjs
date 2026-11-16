@@ -69,6 +69,7 @@ const DIA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     await m.goto(`${B}/n/cuartos-dona-mary`); await m.waitForLoadState('networkidle');
     let h = await m.content();
     ok(calles.every((c) => !h.includes(c)), `Cuarto: «${calles[0]}» NO está en el HTML de la ficha`);
+    await m.goto(`${B}/n/cuartos-dona-mary?tab=hor`); // C-006: la zona y su nota viven en Horario
     ok(await ve(m.getByText('LA DIRECCIÓN TE LLEGA AL ACEPTAR LA VISITA')), 'Cuarto: «LA DIRECCIÓN TE LLEGA AL ACEPTAR LA VISITA»');
     await m.screenshot({ path: OUT + 'f4id-cuarto-m.png', fullPage: true });
     await m.goto(`${B}/n/cuartos-dona-mary?tab=svc`); await m.waitForLoadState('networkidle');

@@ -420,6 +420,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
         </div>
         <div className="flex flex-col gap-2.5 px-5 pb-[18px] pt-5">
           <div className="flex gap-1.5"><Chip variant="pro" style={CHIP_SM}>PRO</Chip>{f.verificado ? <Chip variant="verified" style={CHIP_SM}>{E2("Sello To'Latino", "To'Latino seal")}</Chip> : null}</div>
+          {f.subsLinea ? <div className="font-mono text-[10px] font-bold tracking-[0.12em] text-ink/60">{f.subsLinea.toUpperCase()}</div> : null}
           <h1 className="text-balance font-display text-[29px] font-extrabold leading-[1.05] tracking-[-0.045em]">{f.nombre}</h1>
           <div className="font-mono text-[10.5px] font-bold tracking-[0.07em] text-ink/60">{metaL.map((x, i) => <span key={i}>{i ? " · " : ""}{x.startsWith("★") ? <><span className="text-[var(--tl-pro)]">★</span>{x.slice(1)}</> : x}</span>)}</div>
           <div className="flex flex-wrap items-center gap-2 text-[13px] font-semibold text-ink/70" data-estado={abierto ? "abierto" : "cerrado"}>
@@ -526,7 +527,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
       <div className="mx-auto hidden max-w-[1240px] px-8 pb-14 lg:block" data-screen-label="APP-NEG-LISTING · desktop">
         <button type="button" onClick={() => router.back()} className="inline-flex items-center gap-1.5 pt-[18px] text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} />{E2("Volver", "Back")}</button>
         <div className="flex flex-wrap items-center gap-2 pb-4 pt-2.5 font-mono text-[10.5px] font-bold tracking-[0.12em] text-ink/60">
-          {[f.subsLinea.split(" · ")[0]?.toUpperCase(), `${f.ciudad}, PA`].filter(Boolean).map((x, i) => <span key={i}>{i ? "· " : ""}{x}</span>)}
+          {[f.subsLinea.toUpperCase(), `${f.ciudad}, PA`].filter(Boolean).map((x, i) => <span key={i}>{i ? "· " : ""}{x}</span>)}
         </div>
         <div className="relative grid h-[448px] grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] grid-rows-2 gap-2 overflow-hidden rounded-[22px]">
           <button type="button" aria-label={t.photosAll} onClick={verFotos} className="row-span-2 min-w-0">{f.hero ? <span className="block size-full" style={{ background: `center/cover url(${f.hero})` }} /> : <Placeholder height="100%" />}</button>

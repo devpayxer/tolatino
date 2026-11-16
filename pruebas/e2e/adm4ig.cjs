@@ -159,7 +159,7 @@ const enFila = (p, titulo, boton) => p.getByText(titulo, { exact: true }).first(
   await fe.goto(`${B}/panel/${DES}/vendes/herramienta`); await fe.getByText('La ayuda de hoy', { exact: true }).first().waitFor();
   await clic(fe.getByRole('switch', { name: 'Se acabó por hoy' }));
   ok(await espera(() => sql(`select category_attrs->'tarjeta'->'eta'->>'es' from businesses where id = '${DES}'`) === 'Se acabó por hoy'), 'Iglesias: el toque guarda y deriva la tarjeta');
-  await pub.goto(`${B}/n/${DES}`); ok(await contiene(pub, 'Se acabó por hoy') && await contiene(pub, 'Resumen Ayuda Reseñas'), 'Iglesias → ficha: «Se acabó por hoy» (con su pestaña «Ayuda»)');
+  await pub.goto(`${B}/n/${DES}`); ok(await contiene(pub, 'Se acabó por hoy') && await espera(async () => /Resumen Ayuda Reseñas/i.test(await texto(pub))), 'Iglesias → ficha: «Se acabó por hoy» (con su pestaña «Ayuda»)');
   await pub.goto(`${B}/c/iglesias?f=despensa`); ok(await contiene(pub, 'Despensa Manos Unidas') && await contiene(pub, 'Se acabó por hoy'), 'Iglesias → tarjeta de la categoría');
   await pub.goto(`${B}/buscar?q=${encodeURIComponent('despensa manos unidas')}`); ok(await contiene(pub, 'Despensa Manos Unidas') && await contiene(pub, 'Se acabó por hoy'), 'Iglesias → Buscar');
   await ad.goto(`${B}/admin/negocios/${DES}?tab=vende`); ok(await ve(ad.getByText(/Se acabó por hoy · /).first()), 'Iglesias → Super Admin 360 lo ve (solo lectura)');

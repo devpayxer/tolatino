@@ -158,7 +158,7 @@ const limpiar = () => {
     // ── 5 · Cómo llegar ──
     console.log('5 · «Cómo llegar» abre la app de mapas del teléfono (o la web en una computadora)');
     const atrapar = (pg) => pg.evaluate(() => { window.__llegar = []; document.addEventListener('click', (e) => { const a = e.target; if (a && a.dataset && a.dataset.comoLlegar) { window.__llegar.push(a.href); e.preventDefault(); } }, true); });
-    await p.goto(B + `/n/${BIZ}`); await p.locator('[data-pieza="mini-mapa"]').first().waitFor();
+    await p.goto(B + `/n/${BIZ}?tab=hor`); await p.locator('[data-pieza="mini-mapa"]').first().waitFor(); /* C-006: en la ficha nueva el mapa vive en Horario */
     await atrapar(p); await p.locator('[data-pieza="mini-mapa"]').first().click();
     const l1 = await p.evaluate(() => window.__llegar);
     ok(l1.length === 1 && /^maps:\/\/\?daddr=-?\d/.test(l1[0]), `en el iPhone abre Mapas (${l1[0]})`);

@@ -23,6 +23,7 @@ const barrer = () => execSync(`curl -s -X POST -H 'x-barrido-token: ${ENT.TOK}' 
   ok(!!(await vis(p.getByText('Verificada por To’Latino (PLCB)').first())), 'licencia de licor verificada');
   await p.screenshot({ path: OUT + 'n4b-resumen-m.png', fullPage: true });
   // FAQ desde «Esta noche».
+  await p.getByRole('tab', { name: 'Antes de ir' }).click(); await p.getByText('¿Cuánto es el cover?').first().waitFor(); // C-006: las preguntas viven en «Antes de ir»
   ok(!!(await vis(p.getByText('¿Cuánto es el cover?').first())) && !!(await vis(p.getByText('¿Y si en la puerta me cobran más?').first())), 'FAQ de Noche');
   // Pestaña «Esta noche» (o el día que abre).
   const tabN = await vis(p.getByRole('tab', { name: /Esta noche|Mañana|^El / }).or(p.getByRole('button', { name: /^(Esta noche|Mañana \w+|El \w+)$/ })).first());

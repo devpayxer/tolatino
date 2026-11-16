@@ -168,7 +168,8 @@ export async function ficha(id: string, lang: Lang, p?: Punto, o?: { equipo?: bo
     s1: n >= 5 ? (b.rating?.toFixed(1) ?? "") : n > 0 ? String(n) : L("Nuevo", "New"), s1Estrella: n >= 5,
     s1Sub: n >= 5 ? `${n} ${L("RESEÑAS", "REVIEWS")}` : n > 0 ? L("RESEÑAS", "REVIEWS") : "EN TO'LATINO",
     metaD: `${n >= 5 ? `★ ${b.rating?.toFixed(1)} (${n} ${L("RESEÑAS", "REVIEWS")})` : n > 0 ? `${n} ${L("RESEÑAS", "REVIEWS")}` : L("NUEVO EN TO'LATINO", "NEW ON TO'LATINO")} · ${b.mi ?? "—"} MI · ${b.ciudad.toUpperCase()}`,
-    estado: st.text, estadoCorto: b.open ? L("Abierto", "Open") : L("Cerrado", "Closed"), estadoNota: nota.toUpperCase(), estadoResto: nota ? `· ${nota}` : "",
+    estado: st.text, // C-006 · el estado junto al nombre dice el porqué cuando no es el horario de siempre (cierre temporal o día especial).
+    estadoCorto: b.cerrado_temp ? L("Cerrado temporalmente", "Temporarily closed") : b.cerrado_hoy ? L("Cerrado hoy", "Closed today") : b.open ? L("Abierto", "Open") : L("Cerrado", "Closed"), estadoNota: nota.toUpperCase(), estadoResto: nota ? `· ${nota}` : "",
     dist: b.mi != null ? `${b.mi} mi` : "—", ciudad: b.ciudad.toUpperCase(),
     oferta: pro ? tj.offer?.[lang] ?? null : null,
     sobre: b.about?.[lang] || b.about?.es || null, desde: b.founded ? L(`EN ${b.ciudad.toUpperCase()} DESDE ${b.founded}`, `IN ${b.ciudad.toUpperCase()} SINCE ${b.founded}`) : null,
