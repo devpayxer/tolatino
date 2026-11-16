@@ -240,6 +240,10 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
 
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", background: "var(--tl-paper)" }}>
+      {/* Anchos (16 nov): con la hoja o la ventana del detalle abierta (teléfono, o escritorio de 1024 a 1199), el fondo queda inerte: ni el teclado,
+          ni el lector de pantalla, ni un toque llegan a los botones de atrás (antes «Confirmar» de la lista competía con el del detalle). display:
+          contents no cambia la página. */}
+      <div inert={modalOpen} aria-hidden={modalOpen || undefined} style={{ display: "contents" }}>
       <style>{"@keyframes d2Fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}@keyframes d2Up{from{transform:translateY(64px);opacity:0}to{transform:none;opacity:1}}.d2hs::-webkit-scrollbar{display:none}"}</style>
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = Array.from(e.target.files ?? []); if (f.length) fileCb.current?.(f); }} />
       {!desk ? (
@@ -340,6 +344,7 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
             </div>); })}
         </div>
       ) : null}
+      </div>
       {modalOpen ? (
         <div onClick={() => (ui.sheet === "biz" ? setUi({ sheet: null }) : closeDet())} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(11,14,18,.45)", display: "flex", alignItems: desk ? "flex-start" : "flex-end", justifyContent: "center", paddingTop: desk ? 70 : 0, boxSizing: "border-box", animation: "d2Fade .2s ease-out" }}>
           <div role="dialog" aria-modal="true" aria-label={ui.sheet === "biz" ? E2("Tus negocios", "Your businesses") : E2("Detalle", "Details")} onClick={(e) => e.stopPropagation()} className="d2hs" style={{ width: "100%", maxWidth: desk ? 560 : "100%", maxHeight: "88%", overflowY: "auto", background: "var(--tl-white)", borderRadius: desk ? 22 : "26px 26px 0 0", padding: "16px 20px 24px", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 14, animation: "d2Up .25s ease-out" }}>

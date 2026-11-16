@@ -76,7 +76,8 @@ const op = (n, c) => sql(`select ${c} from operations where number='${n}'`);
   await shot(d, 'd4-panel-encamino.png');
   await m.reload(); ok(!!(await vis(m.getByText('En camino'))), 'el cliente ve «En camino»');
   await d.reload(); await d.getByText(`Pedido #${n1} · Delivery`).first().waitFor(); ok(await d.getByText('EN CAMINO', { exact: true }).first().isVisible(), 'Hoy: el delivery en camino sigue en la agenda');
-  await d.getByText(`Pedido #${n1} · Delivery`).first().click();
+  // Anchos: tras recargar, ?det= sigue abierto; entre 1024 y 1199 es una ventana sobre la lista (no se toca lo de atrás): si ya es este pedido, no se vuelve a abrir.
+  if (!(await d.locator('[data-screen-label="Panel v2 · detalle"]').getByText(`#${n1}`).count())) await d.getByText(`Pedido #${n1} · Delivery`).first().click();
   await d.getByText('Entregado', { exact: true }).last().click(); await d.getByText('Anotado · Entregado.').waitFor();
   ok(await espera(() => op(n1, "status||'|'||stage"), 'done|delivered') === 'done|delivered', 'Entregado → done/delivered');
   // Fuera de la zona: la predeterminada a ~12 mi

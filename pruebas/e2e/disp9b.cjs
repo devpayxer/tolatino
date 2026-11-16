@@ -13,7 +13,8 @@ const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from
   const mira = (p, que) => { p.on('pageerror', (e) => err.push(`${que} pageerror ${e.message}`)); p.on('console', (x) => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_|maplibre|tiles|net::|Failed to fetch/i.test(x.text())) err.push(`${que} console ${x.text()}`); }); };
   const casos = [];
   if (!DISP || DISP.tipo !== 'escritorio') casos.push(['teléfono', { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, userAgent: require('playwright').devices['iPhone 13'].userAgent }, DISP ? DISP.desc.viewport.width : 390]);
-  if (!DISP || DISP.tipo !== 'telefono') casos.push(['escritorio', { viewport: { width: 1360, height: 900 } }, DISP && DISP.tipo === 'escritorio' ? DISP.desc.viewport.width : DISP ? DISP.desc.viewport.width : 1360]);
+  // Anchos: en la tableta el escritorio va en horizontal (el lado largo del dispositivo; dispositivo-precarga.cjs), el teléfono en vertical.
+  if (!DISP || DISP.tipo !== 'telefono') casos.push(['escritorio', { viewport: { width: 1360, height: 900 } }, !DISP ? 1360 : DISP.tipo === 'tableta' ? Math.max(DISP.desc.viewport.width, DISP.desc.viewport.height) : DISP.desc.viewport.width]);
   console.log(`dispositivo: ${DISP ? DISP.nombre + ' (' + DISP.motor + ')' : 'por defecto (390 y 1360)'}`);
   for (const [que, opts, ancho] of casos) {
     console.log(`\n${que} · ${ancho} px`);

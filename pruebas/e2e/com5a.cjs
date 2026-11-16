@@ -180,7 +180,8 @@ const A = '5705550299', BB = '5705550288', Y = '5705550433', ADM = '5705550199';
   // ── 10 · Filtros: chips, distancia y orden; «Ver más» con cursor ──
   await a.goto(B + '/comunidad'); await clic(a.getByRole('button', { name: 'Preguntas', exact: true }));
   await a.waitForURL(/k=pregunta/);
-  ok(await contiene(a, 'mecánico honesto') && !(await texto(a)).includes('El pan de agua sale caliente'), 'chip Preguntas: solo preguntas');
+  // La dirección cambia al instante y la lista llega después (en Safari, más tarde): se espera a que estén las dos cosas, no una y la foto vieja.
+  ok(await espera(async () => { const t = await texto(a); return t.includes('mecánico honesto') && !t.includes('El pan de agua sale caliente'); }), 'chip Preguntas: solo preguntas');
   await clic(a.getByRole('button', { name: 'Filtros' })); await clic(a.getByRole('button', { name: 'A 5 millas de mí' }));
   await a.waitForURL(/d=5/); ok(await contiene(a, ' mi') && await contiene(a, 'A 5 MI DE TI'), 'distancia 5 mi: se mide contra el barrio y se redondea');
   await clic(a.getByRole('button', { name: 'Filtros' })); await clic(a.getByRole('button', { name: 'Lo más reciente primero' }));

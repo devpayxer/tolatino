@@ -48,7 +48,10 @@ const MARISOL = "(select id from users where phone='+15705550122')";
   // Escritorio
   const d = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); watch(d, 'desk');
   await entrar(d, '5705550122'); await d.goto(B + '/cuenta/direcciones');
-  ok(!!(await vis(d.getByText('ZONA DE ENTREGA'))) && !!(await vis(d.locator('[data-screen-label="Mi cuenta · navegación"]'))), 'escritorio: navegación y tarjeta de zona');
+  await d.getByText('ZONA DE ENTREGA').first().waitFor({ timeout: 15000 }).catch(() => {}); // vis() mira en el instante; en Safari la tarjeta llega un poco después
+  const vZona = !!(await vis(d.getByText('ZONA DE ENTREGA'))), vNav = !!(await vis(d.locator('[data-screen-label="Mi cuenta · navegación"]')));
+  if (!vZona || !vNav) console.log('  · escritorio visto:', JSON.stringify(await d.evaluate(() => ({ w: innerWidth, nav: !!document.querySelector('[data-screen-label="Mi cuenta · navegación"]'), zona: document.body.innerText.includes('ZONA DE ENTREGA'), ua: navigator.userAgent.slice(0, 60) }))));
+  ok(vZona && vNav, 'escritorio: navegación y tarjeta de zona');
   await shot(d, 'u4-dirs-d.png');
   await d.getByText('Agregar', { exact: true }).first().click(); await d.waitForURL(/nueva$/); await shot(d, 'u5-dir-nueva-d.png');
   // Otra persona no ve ni edita las de Marisol

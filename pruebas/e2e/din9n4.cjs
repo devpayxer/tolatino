@@ -131,6 +131,8 @@ const parte = (k) => !SOLO.length || SOLO.includes(k);
       await clic(ht.getByRole('button', { name: 'Mano de obra +' }));
       await foto(ht.getByText('Tomar o subir foto'));
       await ht.getByText('1/1', { exact: true }).first().waitFor({ timeout: 20000 });
+      // Anchos (diagnóstico): si el botón sigue apagado, qué ve la persona (en Safari del iPad no se activaba).
+      if (await ht.getByRole('button', { name: 'Mandar al cliente' }).first().getAttribute('aria-disabled') === 'true') { await h.waitForTimeout(3000); console.log('  · detalle:', (await ht.innerText()).replace(/\s+/g, ' ').slice(0, 700)); }
       await clic(ht.getByRole('button', { name: 'Mandar al cliente' }));
       ok(await espera(det, 'confirmed|est') === 'confirmed|est', 'el precio completo, mandado al cliente');
       const pagos = () => sql(`select count(*) from payments p join operations o on o.id = p.operation_id where o.number = '${C}'`);

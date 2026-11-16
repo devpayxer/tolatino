@@ -1463,6 +1463,7 @@ const guardianes = {
     const max = Number(/const MAX = (\d+) \* 1024;/.exec(r)?.[1] ?? 0);
     if (!max || max > 4 || /req\.(json|text|formData|arrayBuffer)\(\)/.test(r) || !/if \(n > MAX\) \{ await r\.cancel\(\)/.test(r)) falla(G, R, 0, "la puerta corta el cuerpo (≤ 4 KB) antes de leerlo entero");
     if (!/if \(!mio\) return nada\(403\);/.test(r)) falla(G, R, 0, "la puerta solo acepta páginas nuestras (origen)");
+    if (/nada\(429\)|status: 429/.test(r)) falla(G, R, 0, "pasado el tope, la puerta responde 204 (un sendBeacon no lee la respuesta; un 429 es un error en la consola de Safari)");
     const f = cuerpoFn(l, "recibirVital"), it = f.indexOf("dentroDelTope("), ib = f.search(/db\(\)|tx\(/);
     if (it < 0 || ib < 0 || it > ib) falla(G, L, 0, "recibirVital pasa el tope ANTES de tocar la base");
     if (/insert into (?!web_vitals_dia)/.test(f)) falla(G, L, 0, "recibirVital solo escribe web_vitals_dia");
@@ -7198,6 +7199,36 @@ const guardianes = {
       if (m) falla(G, `pruebas/e2e/${f}`, s.slice(0, m.index).split("\n").length, "«sin scroll de lado» contra un número fijo: mide scrollWidth - window.innerWidth (el dispositivo cambia el ancho)");
     }
   },
+  /* Anchos · Una ruta que lleva a otra página no arma la dirección con req.url ni req.nextUrl.origin: en el servidor independiente de Next dicen el
+     host de ESTE proceso (http://0.0.0.0:3100), no el del navegador. /i/[code] (invitar a un vecino), correo/baja, datos/archivo, pases/apple y
+     app/aviso mandaban ahí a la persona (Safari ni lo abre; detrás de nginx era una dirección interna). Todas usan irA (lib/ir-a.ts: Location
+     relativa, solo rutas propias); solo el middleware, que no es una ruta, arma la absoluta con las cabeceras reenviadas. Al revés (alrevesAnchos). */
+  redireccionRelativa() {
+    const G = "redireccionRelativa", L = "apps/web/lib/ir-a.ts";
+    if (!existsSync(L)) return falla(G, L, 0, "falta lib/ir-a.ts");
+    const l = sinComent(L);
+    if (!/r\.headers\.set\("location", ruta\)/.test(l) || !/if \(!\/\^\\\/\(\?!\[\/\\\\\]\)\/\.test\(ruta\)\) throw/.test(l)) falla(G, L, 0, "irA pone la dirección relativa y solo acepta rutas propias («/…», nunca «//otro.sitio»)");
+    for (const f of codigo) {
+      if (!/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(f) || f === L) continue;
+      const t = readFileSync(f, "utf8");
+      t.split("\n").forEach((x, i) => {
+        if (/\b(?:NextResponse|Response)\.redirect\(/.test(x)) falla(G, f, i + 1, "redirección con dirección absoluta: usa irA (lib/ir-a.ts); req.url y req.nextUrl.origin son el host del servidor, no el del navegador");
+      });
+    }
+    const m = existsSync("apps/web/middleware.ts") ? readFileSync("apps/web/middleware.ts", "utf8") : "";
+    if (/NextResponse\.redirect\(/.test(m) && !/x-forwarded-host/.test(m)) falla(G, "apps/web/middleware.ts", 0, "el middleware arma la dirección con las cabeceras reenviadas, no con req.url");
+  },
+  /* Anchos · Con la hoja o la ventana del detalle abierta (teléfono, o escritorio de 1024 a 1199) el fondo del panel queda inerte: ni teclado, ni
+     lector de pantalla, ni toque llegan a lo de atrás (antes «Confirmar» de la lista competía con el del detalle: pro4l, ayu4if, sal4j2 a 1024).
+     Al revés (alrevesAnchos). */
+  panelFondoInerte() {
+    const G = "panelFondoInerte", F = "apps/web/app/panel/Panel.tsx";
+    if (!existsSync(F)) return falla(G, F, 0, "falta Panel.tsx");
+    const t = sinComent(F);
+    if (!/<div inert=\{modalOpen\} aria-hidden=\{modalOpen \|\| undefined\} style=\{\{ display: "contents" \}\}>/.test(t)) falla(G, F, 0, "el fondo del panel tiene que quedar inerte (inert + aria-hidden) mientras la hoja o la ventana del detalle está abierta");
+    const i = t.indexOf("<div inert={modalOpen}"), j = t.indexOf("{modalOpen ? (");
+    if (i < 0 || j < 0 || j < i || !/<\/div>\s*$/.test(t.slice(i, j).trimEnd())) falla(G, F, 0, "la ventana del detalle va FUERA del fondo inerte (después de cerrarlo)");
+  },
   /* 9b-1 · Los bloques del panel (PanelBloques) no llevan la posición como llave: con key={i}, un bloque que aparece arriba después (las
      plantillas del estimado) desmontaba los campos de abajo mientras se escribía y se perdía lo escrito y el foco (est4d). La llave es el tipo
      y cuántos del mismo tipo van antes (llavesDeBloques). Al revés (alreves9b1): volver a key={i}. */
@@ -8098,8 +8129,9 @@ const guardianes = {
     const q = existsSync(Q) ? sinComent(Q) : "";
     if (!q) falla(G, Q, 0, "falta /q/[code]");
     else {
-      const red = [...q.matchAll(/NextResponse\.redirect\(([^;]*)\)/g)].map((x) => x[1]);
-      if (!red.length || red.some((x) => !/^new URL\(r\.destino, /.test(x))) falla(G, Q, 0, "/q/[code] solo redirige a r.destino (lo que devuelve escanear), nunca a otra cosa");
+      // Anchos: la dirección va relativa con irA (lib/ir-a.ts, guardián redireccionRelativa); sigue siendo solo r.destino.
+      const red = [...q.matchAll(/(?:NextResponse\.redirect|\birA)\(([^;]*)\)/g)].map((x) => x[1]);
+      if (!red.length || red.some((x) => !/^r\.destino, /.test(x))) falla(G, Q, 0, "/q/[code] solo redirige a r.destino (lo que devuelve escanear), nunca a otra cosa");
       if (/searchParams\.get\(|nextUrl\.searchParams/.test(q)) falla(G, Q, 0, "/q/[code] no lee parámetros de la petición para decidir a dónde ir");
     }
     for (const f of codigo) {

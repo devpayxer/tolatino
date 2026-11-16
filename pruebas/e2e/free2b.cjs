@@ -19,7 +19,8 @@ const restaurar = () => { sql(`update business_hours set ranges='[["11:00","21:0
   const cart = (id, ch = {}) => m.evaluate(([id, ch]) => { localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: [{ id, ch, q: 1, nt: '', k: {} }] } })); }, [id, ch]); /* 9b-1 · Pickup a propósito: sin elegir, sale el primer modo del negocio (Delivery si otra prueba lo encendió) */
   // Free: el plato 9 (Tostones) no está entre los 5 primeros → el servidor no lo acepta aunque venga en el carrito
   await m.goto(B + N); await cart('9'); await m.goto(B + N + '/pagar');
-  ok(await m.getByText('Tu pedido está vacío').isVisible(), 'Free: un plato fuera de los 5 se cae del carrito');
+  // El carrito se arma en el cliente (localStorage + lo que acepta el servidor): se espera, no se mira en el instante (Safari llega después).
+  ok(await m.getByText('Tu pedido está vacío').waitFor({ timeout: 15000 }).then(() => true, () => false), 'Free: un plato fuera de los 5 se cae del carrito');
   // Plato 7 (Chicharrón de cerdo, De la casa, sin opciones) — entre los 5 primeros
   const cinco = sql(`select string_agg(i.id::text, ',' order by s.sort, s.id, i.sort, i.id) from items i join item_sections s on s.id=i.section_id where i.business_id='${BIZ}' and i.removed_at is null and i.status='live' and s.visible and s.removed_at is null`).split(',').slice(0, 5);
   console.log('  los 5 de Free:', cinco.join(','));

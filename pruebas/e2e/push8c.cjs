@@ -340,12 +340,12 @@ const PUENTE = (token) => `if (window === window.top) {
     const malo = sql(`insert into notifications (user_id, city_id, tpl, title, body, href, sms_status) values (${U(MARI)}, 'hzl', 'push_prueba', 'x', 'x', '//malo.example/robar', 'no') returning id`);
     const pm = await ctx(390, IOS, { k: 'abuso' }); await entrar(pm, MARI);
     const r1 = await pm.request.get(B + `/app/aviso/${malo}?v=push`, { maxRedirects: 0 });
-    ok(r1.status() === 303 && new URL(r1.headers().location).pathname === '/avisos' && new URL(r1.headers().location).host === 'localhost:3100', 'un aviso con un enlace a otro sitio abre la campana, nunca el otro sitio');
+    ok(r1.status() === 303 && /^\/(?![/\\])/.test(r1.headers().location) && new URL(r1.headers().location, B).pathname === '/avisos', 'un aviso con un enlace a otro sitio abre la campana, nunca el otro sitio');
     const ajeno = aviso(DUENO, 'biz_req', n6).split('|')[0];
     const r2 = await pm.request.get(B + `/app/aviso/${ajeno}?v=push`, { maxRedirects: 0 });
-    ok(new URL(r2.headers().location).pathname === '/avisos' && sql(`select opened_at is null from notifications where id = ${ajeno}`) === 't', 'el aviso de otra persona no abre nada ni se marca');
+    ok(new URL(r2.headers().location, B).pathname === '/avisos' && sql(`select opened_at is null from notifications where id = ${ajeno}`) === 't', 'el aviso de otra persona no abre nada ni se marca');
     const r3 = await (await br.newContext()).request.get(B + `/app/aviso/${NID1}?v=push`, { maxRedirects: 0 });
-    ok(new URL(r3.headers().location).pathname === '/entrar', 'sin sesión → a entrar (y de vuelta)');
+    ok(new URL(r3.headers().location, B).pathname === '/entrar', 'sin sesión → a entrar (y de vuelta)');
     const pe = await ctx(1360, undefined, { shim: true, k: 'ssrf' }); await pe.addInitScript(() => { window.__endpoint = 'https://malo.example/wp/1'; });
     await entrar(pe, MARI); await pe.goto(B + '/cuenta/avisos'); await pe.locator('[role="switch"][aria-label="Avisos en este teléfono"]').click();
     await pe.getByText('No se pudo encender. Prueba de nuevo.').first().waitFor();

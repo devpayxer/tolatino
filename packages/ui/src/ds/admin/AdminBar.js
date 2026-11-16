@@ -196,7 +196,8 @@ function AdminBar({
       padding: 3,
       borderRadius: 10,
       background: 'rgba(11,14,18,.06)',
-      flex: 'none'
+      flex: desk ? 'none' : '0 1 auto',
+      minWidth: 0
     }
   }, cities.map((o, i) => /*#__PURE__*/React.createElement("span", {
     key: i,
@@ -208,11 +209,17 @@ function AdminBar({
       borderRadius: 8,
       background: o.on ? INK : 'transparent',
       color: o.on ? 'var(--tl-white)' : INK,
-      display: 'grid',
+      display: desk ? 'grid' : 'block',
       placeItems: 'center',
       font: '700 11px Manrope,sans-serif',
+      lineHeight: desk ? undefined : segH + 'px',
+      textAlign: 'center',
       cursor: 'pointer',
-      whiteSpace: 'nowrap'
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      minWidth: 0,
+      flex: desk || i < cities.length - 1 ? 'none' : '0 1 auto'
     }
   }, o.label))) : null, !desk ? /*#__PURE__*/React.createElement("span", {
     onClick: onSearch,

@@ -19,16 +19,19 @@ if (id) {
   const hechos = new WeakSet();
   let deStock = new Set();
   const agenteDeStock = (ua) => deStock.has(ua);
-  const adaptar = (o = {}) => {
+  // forzado: el motor es Chromium porque la prueba lo necesita (no el del dispositivo): se pone el ancho, la escala y el toque, pero no el
+  // agente de Safari (un Chromium que dice ser un iPad mentiría en la etiqueta del aviso, en Wallet…).
+  const adaptar = (o = {}, forzado = false) => {
     const w = o.viewport?.width ?? (o.userAgent ? 390 : 1280), esTel = w < 600, d = disp.desc;
     if (disp.tipo === 'telefono' && !esTel) return o;
     if (disp.tipo === 'escritorio' && esTel) return o;
     if (disp.tipo === 'escritorio') return { ...o, viewport: { width: d.viewport.width, height: o.viewport?.height ?? d.viewport.height } };
     const vp = disp.tipo === 'tableta' && !esTel ? { width: Math.max(d.viewport.width, d.viewport.height), height: Math.min(d.viewport.width, d.viewport.height) } : d.viewport;
-    const propio = o.userAgent && !agenteDeStock(o.userAgent);
+    const propio = (o.userAgent && !agenteDeStock(o.userAgent)) || (forzado && !o.userAgent);
     return { ...o, viewport: vp, userAgent: propio ? o.userAgent : d.userAgent, deviceScaleFactor: d.deviceScaleFactor, isMobile: propio ? (o.isMobile ?? d.isMobile) : d.isMobile, hasTouch: d.hasTouch };
   };
-  const RUIDO = /^(?:TypeError: )?Load failed$|due to access control checks\.?$/;
+  // Lo mismo cuando la página que se va tenía en vuelo el RSC de un enlace (Next lo dice así y cae a navegación normal).
+  const RUIDO = /^(?:TypeError: )?Load failed$|due to access control checks\.?$|^Failed to fetch RSC payload for \S+ Falling back to browser navigation\. (?:TypeError: )?Load failed$/;
   const filtrar = (page) => {
     if (disp.motor !== 'webkit' || page.__tlFiltro) return page;
     page.__tlFiltro = true;
@@ -39,8 +42,21 @@ if (id) {
     // WebKit no saca capturas de más de 32767 px de alto (una página larga a 375 de ancho): la captura es para mirar, no es la prueba; va la de la pantalla.
     // Tras una acción, la app a veces navega sola (vuelve a la cola); si la prueba hace goto en ese instante, WebKit lo corta («interrupted by another
     // navigation») donde Chromium deja ganar al goto. La prueba quiere ir a SU dirección: se espera a que la otra termine y se va otra vez (una vez).
+    // A veces el goto de WebKit se queda sin empezar (ni respuesta ni cambio de dirección: silla3d, tras tocar una insignia que no hace nada) y
+    // vence a los 30 s; Chromium nunca. Si la página sigue donde estaba, se vuelve a ir una vez y se dice en la salida. Si sí llegó y lo que
+    // falta es la carga, es un error de verdad y se queda.
     const ir = page.goto.bind(page);
-    page.goto = async (u, o) => { try { return await ir(u, o); } catch (e) { if (!/interrupted by another navigation/.test(e.message)) throw e; await page.waitForLoadState('load').catch(() => {}); return ir(u, o); } };
+    page.goto = async (u, o) => {
+      const antes = page.url();
+      try { return await ir(u, o); } catch (e) {
+        if (/interrupted by another navigation/.test(e.message)) { await page.waitForLoadState('load').catch(() => {}); return ir(u, o); }
+        if (e.name === 'TimeoutError' && page.url() === antes && antes !== u) { console.log(`  · webkit: la navegación a ${u} no empezó en 30 s; otra vez`); return ir(u, o); }
+        throw e;
+      }
+    };
+    // WebKit móvil (el iPad) no tiene rueda del ratón: se desplaza la página, que es lo que hace el dedo.
+    const rueda = page.mouse.wheel.bind(page.mouse);
+    page.mouse.wheel = async (dx, dy) => { try { return await rueda(dx, dy); } catch (e) { if (!/not supported in mobile WebKit/.test(e.message)) throw e; await page.evaluate(([x, y]) => window.scrollBy(x, y), [dx, dy]); } };
     const shot = page.screenshot.bind(page);
     page.screenshot = async (o = {}) => { try { return await shot(o); } catch (e) { if (o.fullPage && /larger than 32767/.test(e.message)) return shot({ ...o, fullPage: false }); throw e; } };
     const on = page.on.bind(page);
@@ -52,6 +68,8 @@ if (id) {
     return page;
   };
   const SOLO_CHROMIUM = /^--(?:host-resolver-rules|use-fake-device-for-media-stream|use-fake-ui-for-media-stream|use-file-for-fake-video-capture)/;
+  // Una prueba que abre una sesión CDP (el autenticador virtual de las llaves, llave8d) solo corre en Chromium: WebKit no tiene CDP.
+  const usaCDP = (() => { try { return /\bnewCDPSession\(/.test(require('fs').readFileSync(process.argv[1], 'utf8')); } catch { return false; } })();
   Module._load = function (request, ...r) {
     const pw = orig.call(this, request, ...r);
     if (request !== 'playwright' && request !== 'playwright-core') return pw;
@@ -61,7 +79,7 @@ if (id) {
     for (const nombre of ['chromium', 'webkit']) {
       const original = pw[nombre].launch.bind(pw[nombre]);
       pw[nombre].launch = async (opts = {}) => {
-        const necesitaChromium = (opts.args ?? []).some((a) => SOLO_CHROMIUM.test(a));
+        const necesitaChromium = usaCDP || (opts.args ?? []).some((a) => SOLO_CHROMIUM.test(a));
         const motor = necesitaChromium ? 'chromium' : disp.motor;
         // Los argumentos de Chromium (cámara falsa, resolución de nombres) no existen en WebKit.
         const o = motor === 'webkit' ? { ...opts, args: undefined, channel: undefined } : opts;
@@ -69,7 +87,7 @@ if (id) {
         const b = await original(o);
         const nc = b.newContext.bind(b);
         b.newContext = async (c) => {
-          const ctx = await nc(adaptar(c));
+          const ctx = await nc(adaptar(c, motor !== disp.motor));
           const np = ctx.newPage.bind(ctx);
           ctx.newPage = async () => filtrar(await np());
           ctx.on('page', filtrar);

@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { yo } from "@/lib/cuenta";
 import { db } from "@/lib/db";
+import { irA } from "@/lib/ir-a";
 
 /* 8c · Tocar un push (fase8-apps.md §3.3 «Abrir»): el push solo lleva «/app/aviso/{id}» (nunca la ruta con datos, ni el texto si es privado).
    Aquí, CON la sesión de la dueña del aviso: se marca abierto (opened_at, opened_via 'push') y leído, y se va a la pantalla del aviso. Sin
@@ -12,8 +12,7 @@ const seguro = (h: string | null | undefined) => (h && /^\/(?![/\\])[^\s\\]{0,40
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params, u = new URL(req.url), via = u.searchParams.get("v") === "push" ? "push" : null;
-  const base = `${(req.headers.get("x-forwarded-proto") ?? "").split(",")[0]?.trim() === "https" ? "https" : u.protocol.replace(":", "")}://${req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? u.host}`;
-  const ir = (r: string) => { const x = NextResponse.redirect(new URL(r, base), 303); x.headers.set("cache-control", "no-store"); return x; };
+  const ir = (r: string) => irA(r, 303, { "cache-control": "no-store" });
   if (!/^\d{1,18}$/.test(id)) return ir("/avisos");
   const yoU = await yo().catch(() => null);
   if (!yoU) return ir(`/entrar?volver=${encodeURIComponent(`/app/aviso/${id}${via ? "?v=push" : ""}`)}`);

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ipCliente, mismoOrigen, yo } from "@/lib/cuenta";
 import { bajarExportacion } from "@/lib/datos/exportar";
+import { irA } from "@/lib/ir-a";
 
 /* 9d · Bajar el archivo de «Descargar mis datos» o de «Exportar los datos del negocio». UN uso, durante 24 h, solo quien lo pidió.
    - GET (la vista previa de un enlace, un buscador, alguien que lo pega en un chat) NUNCA lo gasta: lleva a la pantalla donde está «Bajar»
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const negocio = req.nextUrl.searchParams.get("negocio");
   const destino = negocio && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(negocio) ? `/panel/${negocio}/exportar` : "/cuenta/ajustes/privacidad/datos";
   void id;
-  return NextResponse.redirect(new URL(destino, req.nextUrl.origin), { status: 303, headers: { "cache-control": "no-store" } });
+  return irA(destino, 303, { "cache-control": "no-store" });
 }
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

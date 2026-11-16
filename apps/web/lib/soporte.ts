@@ -55,7 +55,7 @@ export function prometido(due: string, tz: string, es: boolean): string {
 /* El dispositivo y la versión (contexto automático para el equipo). Solo un resumen, nunca la cadena entera. */
 async function dispositivo(): Promise<{ device: string; version: string }> {
   const h = await headers(), ua = h.get("user-agent") ?? "";
-  const so = /iPhone|iPad/.test(ua) ? "iPhone" : /Android/.test(ua) ? "Android" : /Windows/.test(ua) ? "Windows" : /Mac OS X/.test(ua) ? "Mac" : /Linux/.test(ua) ? "Linux" : "Otro";
+  const so = /iPad/.test(ua) ? "iPad" : /iPhone/.test(ua) ? "iPhone" : /Android/.test(ua) ? "Android" : /Windows/.test(ua) ? "Windows" : /Mac OS X/.test(ua) ? "Mac" : /Linux/.test(ua) ? "Linux" : "Otro";
   const nav = /Edg\//.test(ua) ? "Edge" : /CriOS|Chrome\//.test(ua) ? "Chrome" : /FxiOS|Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "Navegador";
   // 8a · La app y su versión salen del rótulo TLApp del user-agent (WKWebView no puede poner una cabecera propia en cada petición); solo
   // informativo para el equipo, nunca decide nada.

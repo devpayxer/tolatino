@@ -441,6 +441,18 @@ for (const src of archivos) {
     if (t === antes || !t.includes("matrix: matrix") || !t.includes("  matrix,\n  qrSize,") || /seed/.test(t)) throw new Error("parche TicketQR: el origen cambió, revisar");
   }
 
+  // AdminBar (anchos, 16 nov): en el teléfono la barra es logo + ADMIN + ciudades + buscar + campana + yo, todo fijo. A 375 (iPhone SE) se
+  // salía 9 px y con una ciudad larga («Wilkes-Barre») también a 390. En el teléfono el selector de ciudad cede: la última opción se
+  // encoge y corta su nombre con «…»; en escritorio todo queda igual.
+  if (rel === "admin/AdminBar.js") {
+    const antes = t;
+    t = t.replace("      background: 'rgba(11,14,18,.06)',\n      flex: 'none'\n    }\n  }, cities.map(", "      background: 'rgba(11,14,18,.06)',\n      flex: desk ? 'none' : '0 1 auto',\n      minWidth: 0\n    }\n  }, cities.map(");
+    t = t.replace("      display: 'grid',\n      placeItems: 'center',\n      font: '700 11px Manrope,sans-serif',\n      cursor: 'pointer',\n      whiteSpace: 'nowrap'\n    }\n  }, o.label)",
+      "      display: desk ? 'grid' : 'block',\n      placeItems: 'center',\n      font: '700 11px Manrope,sans-serif',\n      lineHeight: desk ? undefined : segH + 'px',\n      textAlign: 'center',\n      cursor: 'pointer',\n      whiteSpace: 'nowrap',\n      overflow: 'hidden',\n      textOverflow: 'ellipsis',\n      minWidth: 0,\n      flex: desk || i < cities.length - 1 ? 'none' : '0 1 auto'\n    }\n  }, o.label)");
+    if ((t.match(/flex: desk \? 'none' : '0 1 auto'/g) || []).length !== 1 || !t.includes("textOverflow: 'ellipsis',\n      minWidth: 0,\n      flex: desk || i <")) throw new Error("parche AdminBar (ciudades en el teléfono): el origen cambió, revisar");
+    if (t === antes) throw new Error("parche AdminBar: sin cambios");
+  }
+
   // 9c: clics mudos → botones accesibles (tabla A11Y arriba).
   t = accesibilizar(t, rel);
   t = parchesAccesibilidad(t, rel);

@@ -15,7 +15,7 @@ const casos = [
   ['enlaceSoloPropio', C, '&& !t.startsWith("//")', ''],
   ['enlaceSoloPropio', E, 'if (!rutaPropia(target)) return mal(', 'if (false) return mal('],
   ['enlaceSoloPropio', E, 'if (!l || !l.vivo || !rutaPropia(l.target)) return { destino: "/"', 'if (!l || !l.vivo) return { destino: "/"'],
-  ['enlaceSoloPropio', Q, 'NextResponse.redirect(new URL(r.destino, ', 'NextResponse.redirect(new URL(req.nextUrl.searchParams.get("a") ?? r.destino, '],
+  ['enlaceSoloPropio', Q, 'irA(r.destino, 302)', 'irA(req.nextUrl.searchParams.get("a") ?? r.destino, 302)'],
   ['enlaceSoloPropio', K, 'if (href && !rutaPropia(href)) return mal(', 'if (false) return mal('],
   // escaneosSinPersonas: el escaneo guarda la IP o el dispositivo, deja de ser de solo inserción, el derivado se puede escribir, el escaneo guarda más
   ['escaneosSinPersonas', M, "  ua_class  text not null check (ua_class in ('telefono', 'escritorio', 'otro'))\n);", "  ua_class  text not null check (ua_class in ('telefono', 'escritorio', 'otro')),\n  ip        inet\n);"],

@@ -106,7 +106,7 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
     await a.goto(B + '/admin/negocios');
     const total0 = sql(`select count(*) from businesses where status <> 'merged'`);
     ok(await contiene(a, `${Number(total0)} en tus ciudades`), `sin ciudad elegida, Negocios cuenta todas (${total0})`);
-    await clic(a.getByText('Allentown', { exact: true }).first()); /* el del selector de ciudad (va primero) */
+    await clic(a.locator('div.sticky.top-0').getByText('Allentown', { exact: true })); /* el del selector de ciudad, en la barra de arriba (no una fila con esa ciudad) */
     ok(await contiene(a, `${sql(`select count(*) from businesses where status <> 'merged' and city_id = 'alw'`)} en tus ciudades`), 'elegir Allentown filtra Negocios a esa ciudad');
     await a.goto(B + '/admin/usuarios'); await clic(a.getByText('Reading', { exact: true }).first()); /* el del selector de ciudad (va primero) */
     ok(await contiene(a, `${sql(`select count(*) from users where home_city_id = 'rdg'`)} vecinos con cuenta`) || await contiene(a, `${sql(`select count(*) from users where home_city_id = 'rdg'`)} vecino con cuenta`), 'elegir Reading filtra Usuarios (otra sección, la misma elección)');

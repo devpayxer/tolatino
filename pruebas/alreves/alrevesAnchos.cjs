@@ -1,5 +1,7 @@
 // Prueba al revés del bloque de anchos. anchoContraLaVentana: una prueba que mide «sin scroll de lado» contra 390 (no contra la ventana)
 // (o un «ancho > w + 1» contra el ancho pedido) tiene que caer: con --dispositivo el contexto no es el que pidió la prueba.
+// redireccionRelativa: /i/[code] con req.url, correo/baja con req.nextUrl.origin, irA sin el freno de «solo rutas propias».
+// panelFondoInerte: el fondo sin inert, o la ventana del detalle metida dentro del fondo inerte.
 // Se inyecta el defecto, el guardián debe fallar con SU mensaje; se restaura.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
@@ -7,6 +9,11 @@ const R = ENT.RAIZ;
 const casos = [
   ['anchoContraLaVentana', 'pruebas/e2e/din2o.cjs', 'document.documentElement.scrollWidth - window.innerWidth); ok(w <= 0', 'document.documentElement.scrollWidth); ok(w <= 390'],
   ['anchoContraLaVentana', 'pruebas/e2e/vec9m.cjs', 'if (ancho > 1) malas.push', 'if (ancho > w + 1) malas.push'],
+  ['redireccionRelativa', 'apps/web/app/i/[code]/route.ts', 'const r = irA("/entrar?volver=%2F", 307);', 'const r = NextResponse.redirect(new URL("/entrar?volver=%2F", req.url));'],
+  ['redireccionRelativa', 'apps/web/app/api/correo/baja/route.ts', 'return irA("/cuenta/avisos");', 'return NextResponse.redirect(new URL("/cuenta/avisos", req.nextUrl.origin), 303);'],
+  ['redireccionRelativa', 'apps/web/lib/ir-a.ts', '  if (!/^\\/(?![/\\\\])/.test(ruta)) throw new Error(`irA: solo rutas de To\'Latino («${ruta.slice(0, 40)}»)`);\n', ''],
+  ['panelFondoInerte', 'apps/web/app/panel/Panel.tsx', '<div inert={modalOpen} aria-hidden={modalOpen || undefined} style={{ display: "contents" }}>', '<div style={{ display: "contents" }}>'],
+  ['panelFondoInerte', 'apps/web/app/panel/Panel.tsx', '      ) : null}\n      </div>\n      {modalOpen ? (', '      ) : null}\n      {modalOpen ? ('],
 ];
 const crear = [];
 let bien = 0, total = 0;

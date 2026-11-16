@@ -3,7 +3,9 @@ import { recibirVital } from "@/lib/vitales";
 
 /* 9j-2 · Web Vitals de teléfonos reales (L1629). Sin sesión, como /api/errores: el cuerpo se corta a 2 KB ANTES de leerlo entero, solo desde una
    página nuestra (mismo host o el origen local de una cáscara), y lib/vitales.ts pone el tope y guarda solo cifras (sin persona ni URL).
-   La respuesta no dice nada (204); un 429 si se pasó del tope. La conexión solo sirve para el tope (su huella, en lib/topes.ts). */
+   La respuesta no dice nada (204), tampoco si se pasó del tope: es un sendBeacon que nadie lee, y un 429 solo hace que Safari escriba
+   «Failed to load resource» en la consola de quien navega rápido o comparte conexión (la red del celular). Lo descartado se cuenta en
+   lib/vitales.ts (vitales_descartados). La conexión solo sirve para el tope (su huella, en lib/topes.ts). */
 export const dynamic = "force-dynamic";
 const MAX = 2 * 1024;
 const LOCAL = new Set(["capacitor://localhost", "https://localhost", "http://localhost"]);
@@ -36,6 +38,5 @@ export async function POST(req: NextRequest) {
   try { cuerpo = JSON.parse(t); } catch { return nada(400); }
   const ip = req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
   const r = await recibirVital({ ip: ip && /^[0-9a-fA-F:.]{2,45}$/.test(ip) ? ip : null, cuerpo }).catch(() => ({ ok: false as const, por: "invalido" as const }));
-  if (!r.ok && r.por === "limite") return nada(429);
-  return nada(r.ok || r.por === "apagado" ? 204 : 400);
+  return nada(r.ok || r.por === "apagado" || r.por === "limite" ? 204 : 400);
 }
