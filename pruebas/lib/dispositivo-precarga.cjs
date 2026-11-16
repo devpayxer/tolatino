@@ -27,7 +27,8 @@ if (id) {
     if (disp.tipo === 'escritorio' && esTel) return o;
     if (disp.tipo === 'escritorio') return { ...o, viewport: { width: d.viewport.width, height: o.viewport?.height ?? d.viewport.height } };
     const vp = disp.tipo === 'tableta' && !esTel ? { width: Math.max(d.viewport.width, d.viewport.height), height: Math.min(d.viewport.width, d.viewport.height) } : d.viewport;
-    const propio = (o.userAgent && !agenteDeStock(o.userAgent)) || (forzado && !o.userAgent);
+    // Un descriptor de Android (Pixel) en una prueba es a propósito (dir9m: «en Android abre geo:»): el «teléfono cualquiera» es el iPhone.
+    const propio = (o.userAgent && (!agenteDeStock(o.userAgent) || /Android/.test(o.userAgent))) || (forzado && !o.userAgent);
     return { ...o, viewport: vp, userAgent: propio ? o.userAgent : d.userAgent, deviceScaleFactor: d.deviceScaleFactor, isMobile: propio ? (o.isMobile ?? d.isMobile) : d.isMobile, hasTouch: d.hasTouch };
   };
   // Lo mismo cuando la página que se va tenía en vuelo el RSC de un enlace (Next lo dice así y cae a navegación normal).
@@ -55,7 +56,11 @@ if (id) {
         // (estado del documento, imágenes sin terminar, qué recursos siguen abiertos) y se va otra vez UNA vez. Si vuelve a pasar, es un error.
         if (e.name === 'TimeoutError') {
           const est = await page.evaluate(() => ({ rs: document.readyState, img: [...document.images].filter((i) => !i.complete).map((i) => i.currentSrc || i.src).slice(0, 4),
-            sinFin: performance.getEntriesByType('resource').filter((r) => !r.responseEnd).map((r) => r.name).slice(0, 4) })).catch((x) => ({ error: String(x.message).slice(0, 120) }));
+            // Lo que la página pidió y todavía no terminó (las entradas de performance solo aparecen al terminar): fondos CSS, scripts y hojas.
+            sinFin: (() => { const hechos = new Set(performance.getEntriesByType('resource').map((r) => r.name));
+              const pedidos = [...document.querySelectorAll('*')].flatMap((el) => [...getComputedStyle(el).backgroundImage.matchAll(/url\("?([^")]+)"?\)/g)].map((m) => new URL(m[1], location.href).href))
+                .concat([...document.scripts].map((x) => x.src), [...document.querySelectorAll('link[rel=stylesheet],link[rel=preload]')].map((x) => x.href)).filter((u) => u && !u.startsWith('data:'));
+              return [...new Set(pedidos)].filter((u) => !hechos.has(u)).slice(0, 6); })(), iframes: document.querySelectorAll('iframe').length })).catch((x) => ({ error: String(x.message).slice(0, 120) }));
           console.log(`  · webkit: «load» de ${u} no salió en 30 s (en ${page.url()}): ${JSON.stringify(est)}; otra vez`);
           return ir(u, o);
         }

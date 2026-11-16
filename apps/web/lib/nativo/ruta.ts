@@ -28,6 +28,15 @@ const MAX_COLA = 600;
 const dist = (a: P, b: P) => { const r = (g: number) => (g * Math.PI) / 180, d1 = r(b.lat - a.lat), d2 = r(b.lng - a.lng);
   const h = Math.sin(d1 / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(d2 / 2) ** 2; return 12742017.6 * Math.asin(Math.min(1, Math.sqrt(h))); };
 
+/* Anchos (16 nov) · La hora de una lectura del GPS en la web. Safari (WebKit) la da en MICROsegundos (1794858617795000) donde Chrome da
+   milisegundos: el servidor la tomaba por imposible y rechazaba TODAS las posiciones del repartidor en el iPhone. Se acepta la del navegador
+   solo si cae a ±10 min de ahora (en ms o, si viene en µs, dividida entre 1000); si no, la hora del teléfono al recibirla. Guardián horaDePosicion. */
+export function horaPosicion(ts: number, ahora = Date.now()): number {
+  if (!Number.isFinite(ts) || ts <= 0) return ahora;
+  for (const t of [ts, Math.round(ts / 1000)]) if (Math.abs(t - ahora) <= 600_000) return t;
+  return ahora;
+}
+
 async function subirWeb(): Promise<void> {
   const w = web;
   if (!w || !w.cola.length || sinRed()) return;
@@ -52,7 +61,7 @@ function empezarWeb(t: TokenRuta): "ok" | "sin_gps" {
   pararWeb();
   const w = { tok: t, mira: 0, cola: [] as P[], ultima: null as number | null, envio: setInterval(() => void subirWeb(), Math.max(5, t.cadaS) * 1000), ult: null as P | null };
   w.mira = navigator.geolocation.watchPosition((g) => {
-    const p: P = { t: g.timestamp || Date.now(), lat: g.coords.latitude, lng: g.coords.longitude, acc: Number.isFinite(g.coords.accuracy) ? Math.min(500, g.coords.accuracy) : null,
+    const p: P = { t: horaPosicion(g.timestamp), lat: g.coords.latitude, lng: g.coords.longitude, acc: Number.isFinite(g.coords.accuracy) ? Math.min(500, g.coords.accuracy) : null,
       vel: g.coords.speed != null && Number.isFinite(g.coords.speed) ? g.coords.speed : null, rumbo: g.coords.heading != null && Number.isFinite(g.coords.heading) ? g.coords.heading % 360 : null };
     // Cada ubic_cada_s o si se movió ubic_min_m (lo mismo que el nativo).
     if (w.ult && p.t - w.ult.t < w.tok.cadaS * 1000 && dist(w.ult, p) < w.tok.minM) return;

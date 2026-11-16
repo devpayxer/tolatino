@@ -24,7 +24,7 @@ const espera = async (f, v) => { for (let i = 0; i < 40; i++) { if (f() === v) r
   await shot(d, 'e1-entrega-d.png', true);
   await d.getByText('Guardar', { exact: true }).last().click(); await d.getByText('Guardado · el cliente ya lo ve así.').waitFor();
   ok(ds("delivery||'|'||zone_mi||'|'||fee_cents||'|'||free_over_cents||'|'||min_order_cents") === 'true|5|400|4000|1500', 'guardar: delivery 5 mi, $4, gratis desde $40, mínimo $15');
-  ok(await d.getByText(/Falta cómo te pagan en delivery/).isVisible(), 'avisa que falta el pago en delivery');
+  ok(await d.getByText(/Falta cómo te pagan en delivery/).first().waitFor({ timeout: 15000 }).then(() => true, () => false), 'avisa que falta el pago en delivery');
   // Pedidos en línea: efectivo al entregar y propina
   await d.goto(B + P + '/vendes/pedidos'); await d.getByText('Efectivo al entregar').waitFor();
   await sw(d, 'Efectivo al entregar').click();

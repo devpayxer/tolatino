@@ -1,5 +1,6 @@
 // Prueba al revés del bloque de anchos. anchoContraLaVentana: una prueba que mide «sin scroll de lado» contra 390 (no contra la ventana)
 // (o un «ancho > w + 1» contra el ancho pedido) tiene que caer: con --dispositivo el contexto no es el que pidió la prueba.
+// horaDePosicion: la posición del GPS con la hora del navegador a secas (Safari: microsegundos).
 // funcionConEsquema: biz_norm_name y ayuda_tsv llaman a sus funciones sin «public.» (el autovacuum las evalúa con search_path vacío).
 // cookieSegura: la ciudad del Super Admin con NODE_ENV, la ciudad que miras y la invitación sin la marca.
 // redireccionRelativa: /i/[code] con req.url, correo/baja con req.nextUrl.origin, irA sin el freno de «solo rutas propias».
@@ -13,6 +14,7 @@ const casos = [
   ['anchoContraLaVentana', 'pruebas/e2e/vec9m.cjs', 'if (ancho > 1) malas.push', 'if (ancho > w + 1) malas.push'],
   ['redireccionRelativa', 'apps/web/app/i/[code]/route.ts', 'const r = irA("/entrar?volver=%2F", 307);', 'const r = NextResponse.redirect(new URL("/entrar?volver=%2F", req.url));'],
   ['redireccionRelativa', 'apps/web/app/api/correo/baja/route.ts', 'return irA("/cuenta/avisos");', 'return NextResponse.redirect(new URL("/cuenta/avisos", req.nextUrl.origin), 303);'],
+  ['horaDePosicion', 'apps/web/lib/nativo/ruta.ts', 'const p: P = { t: horaPosicion(g.timestamp), lat:', 'const p: P = { t: g.timestamp || Date.now(), lat:'],
   ['funcionConEsquema', 'packages/db/migrations/0171_funciones_con_esquema.sql', 'lower(public.tl_unaccent(coalesce(t, \'\')))', 'lower(tl_unaccent(coalesce(t, \'\')))'],
   ['funcionConEsquema', 'packages/db/migrations/0171_funciones_con_esquema.sql', "'english'::regconfig else 'spanish'::regconfig end, public.ayuda_sin_acentos(body)), 'C')", "'english'::regconfig else 'spanish'::regconfig end, ayuda_sin_acentos(body)), 'C')"],
   ['cookieSegura', 'apps/web/app/admin/acciones.ts', 'secure: await cookieSegura(), maxAge: 60 * 60 * 24 * 30', 'secure: process.env.NODE_ENV === "production", maxAge: 60 * 60 * 24 * 30'],

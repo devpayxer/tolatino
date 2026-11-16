@@ -7218,6 +7218,21 @@ const guardianes = {
     const m = existsSync("apps/web/middleware.ts") ? readFileSync("apps/web/middleware.ts", "utf8") : "";
     if (/NextResponse\.redirect\(/.test(m) && !/x-forwarded-host/.test(m)) falla(G, "apps/web/middleware.ts", 0, "el middleware arma la dirección con las cabeceras reenviadas, no con req.url");
   },
+  /* Anchos · La hora de una lectura del GPS del navegador pasa por horaPosicion (lib/nativo/ruta.ts): Safari la da en microsegundos y el
+     servidor rechazaba todas las posiciones del repartidor en el iPhone (app8e en el SE y el iPad). Ninguna otra lectura usa .timestamp de
+     una posición a secas. Al revés (alrevesAnchos). */
+  horaDePosicion() {
+    const G = "horaDePosicion", F = "apps/web/lib/nativo/ruta.ts";
+    if (!existsSync(F)) return falla(G, F, 0, "falta lib/nativo/ruta.ts");
+    const t = sinComent(F);
+    if (!/export function horaPosicion\(ts: number[^)]*\)[\s\S]{0,200}600_000/.test(t)) falla(G, F, 0, "horaPosicion acepta la hora del navegador solo a ±10 min de ahora (ms o µs)");
+    for (const f of codigo) {
+      if (!/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((x, i) => {
+        if (/\b(?:g|pos|position|p)\.timestamp\b/.test(x) && !/horaPosicion\(\s*(?:g|pos|position|p)\.timestamp\s*\)/.test(x)) falla(G, f, i + 1, "la hora de una posición del GPS va por horaPosicion() (Safari la da en microsegundos)");
+      });
+    }
+  },
   /* Anchos · Las funciones que la base evalúa SOLA llaman a las demás con su esquema («public.»). Un índice por expresión y una columna generada se
      evalúan también en el autovacuum y en pg_restore, que corren con search_path vacío: biz_norm_name llamaba a tl_unaccent a secas y el análisis de
      businesses fallaba cada minuto en el sandbox (0171). Se siguen las llamadas en cadena desde cada índice y cada columna generada, con la ÚLTIMA
