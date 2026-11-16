@@ -5,6 +5,7 @@
 // inglés. Escritorio 1360 y teléfono 390. Precondiciones propias: la ayuda indexada, cuentas del equipo con teléfonos 555; lo que deja una corrida
 // anterior se deshace al empezar (nada se borra: las ediciones se cierran).
 const ENT = require('../lib/entorno.cjs');
+const { sinDesborde } = require('../lib/desborde.cjs');
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const { entrarComo, equipo } = require('../lib/negocio-nuevo.cjs');
 const B = ENT.B, OUT = ENT.OUT;
@@ -112,7 +113,7 @@ const limpiar = () => {
     await ca.addCookies([{ name: 'tl_lang', value: 'es', url: B }]);
     const ct = await ctxTel(b), pt = await ct.newPage(); abiertas.push(ct); await entrarComo(pt, ADM);
     await pt.goto(B + '/admin/textos?ed=' + S); await espera(async () => (await texto(pt)).includes('Preguntas frecuentes'));
-    ok(await pt.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'el editor en el teléfono, sin desborde (390)');
+    ok(await sinDesborde(pt, 'editor'), 'el editor en el teléfono, sin desborde (390)');
     await pt.screenshot({ path: OUT + 'e9f5-editor-390.png', fullPage: true });
     console.log(`\n${n} ✓ · ayu9f5`);
   } finally {

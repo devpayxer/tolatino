@@ -126,6 +126,6 @@ const limpiar = () => { try { sql(`update chat_threads set blocked_at = null, bl
   await d.goto(B + `/cuenta/mensajes/${BIZ}`); await d.getByText('Mensaje oculto por To’Latino.').first().waitFor(); await d.screenshot({ path: OUT + 'p5-chat-d.png', fullPage: true });
   const pm = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true })).newPage(); globalThis.__p.push(pm); await entrar(pm, '5705550133');
   await pm.goto(B + `/panel/${BIZ}/mensajes`); await pm.getByText('Respuesta automática fuera de horario').first().waitFor(); await pm.screenshot({ path: OUT + 'p6-panel-m.png', fullPage: true });
-  for (const x of [m, pm]) { const w = await x.evaluate(() => document.documentElement.scrollWidth); ok(w <= 390, 'teléfono sin scroll horizontal (' + w + ')'); }
+  for (const x of [m, pm]) { const w = await x.evaluate(() => document.documentElement.scrollWidth - window.innerWidth); ok(w <= 0, 'teléfono sin scroll horizontal (' + w + ')'); }
   ok(err.length === 0, 'sin errores: ' + err.join(' | ')); limpiar(); await b.close(); console.log('OK');
 })().catch(async e => { console.error(e); try { for (const p of globalThis.__p || []) { await p.screenshot({ path: OUT + 'fail-' + Math.random().toString(36).slice(2, 6) + '.png' }); console.log('url', p.url()); } } catch {} limpiar(); process.exit(1); });

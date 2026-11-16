@@ -8,6 +8,7 @@
 // propio responde → se ve; caído → revisión manual; regla apagada dice por qué · 14 reportar un comentario (escritorio) · capturas c5d-*.
 // Crea sus datos ([c5d]) y deja todo como estaba.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { sinDesborde } = require('../lib/desborde.cjs');
 const { chromium } = require('playwright'); const { execSync, spawn } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', S = ENT.S;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -26,7 +27,7 @@ const TAG = '[c5d]';
 const A = '5705550299', HB = '5705550288', ADM = '5705550199', ADM2 = '5705550188';
 const R = ['5705550601', '5705550602', '5705550603', '5705550604', '5705550605', '5705550606'], SP = ['5705550611', '5705550612', '5705550613', '5705550614', '5705550615'];
 const M = '5705550622', V = '5705550633', W = ['5705550641', '5705550642', '5705550643'];
-const sinScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+const sinScroll = (p) => sinDesborde(p, p.url());
 const dlg = (p) => p.getByRole('dialog');
 const IMG = ENT.rec('fotos') + '/portada.jpg';
 let svc = null;

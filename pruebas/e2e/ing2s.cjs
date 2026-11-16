@@ -21,6 +21,6 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
   ok(sql(`select count(*) from audit_entries where action = 'plan.ingresos_exportar' and at > now() - interval '1 minute'`) !== '0', 'exportar queda en la auditoría');
   const m = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true })).newPage(); globalThis.__p.push(m);
   await entrar(m, '5705550199'); await m.goto(B + '/admin/planes?tab=ing'); await m.getByText('COMISIONES · 8 SEMANAS').first().waitFor();
-  const w = await m.evaluate(() => document.documentElement.scrollWidth); ok(w <= 390, 'móvil sin scroll horizontal (' + w + ')'); await m.screenshot({ path: OUT + 's2-ingresos-m.png', fullPage: true });
+  const w = await m.evaluate(() => document.documentElement.scrollWidth - window.innerWidth); ok(w <= 0, 'móvil sin scroll horizontal (' + w + ')'); await m.screenshot({ path: OUT + 's2-ingresos-m.png', fullPage: true });
   ok(err.length === 0, 'sin errores: ' + err.join(' | ')); await b.close(); console.log('OK');
 })().catch(async e => { console.error(e); try { for (const p of globalThis.__p || []) await p.screenshot({ path: OUT + 'fail-ing.png' }); } catch {} process.exit(1); });

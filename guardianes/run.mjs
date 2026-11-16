@@ -7186,6 +7186,18 @@ const guardianes = {
       }
     }
   },
+  /* Anchos · «Sin scroll de lado» se mide contra la ventana, no contra un número: con --dispositivo (iPhone SE 375, iPad 834) el contexto no es el
+     de 390 que pidió la prueba, y «scrollWidth <= 390» fallaba en el iPad sin desborde (o pasaba en el SE con 15 px de más). Al revés (alrevesAnchos). */
+  anchoContraLaVentana() {
+    const G = "anchoContraLaVentana";
+    if (!existsSync("pruebas/e2e")) return;
+    for (const f of readdirSync("pruebas/e2e")) {
+      if (!/\.cjs$/.test(f)) continue;
+      const s = readFileSync(`pruebas/e2e/${f}`, "utf8");
+      const m = /documentElement\.scrollWidth\);[^\n]{0,80}?(?:<=|>)\s*(?:\d{3,4}|w \+ 1)\b/.exec(s) ?? /\b\w+ (?:<=|>) (?:\d{3,4}|w \+ 1)\)[^\n]{0,60}scroll de lado/.exec(s);
+      if (m) falla(G, `pruebas/e2e/${f}`, s.slice(0, m.index).split("\n").length, "«sin scroll de lado» contra un número fijo: mide scrollWidth - window.innerWidth (el dispositivo cambia el ancho)");
+    }
+  },
   /* 9b-1 · Los bloques del panel (PanelBloques) no llevan la posición como llave: con key={i}, un bloque que aparece arriba después (las
      plantillas del estimado) desmontaba los campos de abajo mientras se escribía y se perdía lo escrito y el foco (est4d). La llave es el tipo
      y cuántos del mismo tipo van antes (llavesDeBloques). Al revés (alreves9b1): volver a key={i}. */

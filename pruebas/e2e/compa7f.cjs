@@ -349,7 +349,7 @@ const FIJA = 'Gracias por escribir a Sabor Dominicano. Ahora estamos cerrados; t
   await pD.goto(B + `/panel/${NEG}/compa`); await pD.getByText('RESPUESTAS AUTOMÁTICAS').waitFor(); await pD.waitForTimeout(400); await pD.screenshot({ path: OUT + 'e7f-panel-auto-1360.png', fullPage: true });
   await pD.goto(B + `/panel/${NEG}/mensajes?det=msg:${TH()}`); await pD.getByText('Sugerir respuesta con El Compa').waitFor(); await pD.getByText('Sugerir respuesta con El Compa').click();
   await pD.getByText('Revísalo antes de enviar. Sale con tu nombre.').first().waitFor(); await pD.waitForTimeout(400); await pD.screenshot({ path: OUT + 'e7f-panel-sugerir-1360.png', fullPage: true });
-  for (const p of [pm, pd]) { const w = await p.evaluate(() => document.documentElement.scrollWidth); ok(w <= 390, `teléfono sin scroll horizontal (${w})`); }
+  for (const p of [pm, pd]) { const w = await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth); ok(w <= 0, `teléfono sin scroll horizontal (${w})`); }
 
   console.log('12 · CUÁNDO (9n-7): «Si no contestas en 10 min» espera con el negocio ABIERTO (si el negocio contesta, nada; si no, El Compa) y «Siempre, al instante»');
   try {

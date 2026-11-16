@@ -344,7 +344,10 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
         <div onClick={() => (ui.sheet === "biz" ? setUi({ sheet: null }) : closeDet())} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(11,14,18,.45)", display: "flex", alignItems: desk ? "flex-start" : "flex-end", justifyContent: "center", paddingTop: desk ? 70 : 0, boxSizing: "border-box", animation: "d2Fade .2s ease-out" }}>
           <div role="dialog" aria-modal="true" aria-label={ui.sheet === "biz" ? E2("Tus negocios", "Your businesses") : E2("Detalle", "Details")} onClick={(e) => e.stopPropagation()} className="d2hs" style={{ width: "100%", maxWidth: desk ? 560 : "100%", maxHeight: "88%", overflowY: "auto", background: "var(--tl-white)", borderRadius: desk ? 22 : "26px 26px 0 0", padding: "16px 20px 24px", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 14, animation: "d2Up .25s ease-out" }}>
             <div style={{ display: "flex", justifyContent: "flex-end" }}><Cerrar onClick={() => (ui.sheet === "biz" ? setUi({ sheet: null }) : closeDet())} /></div>
-            <PanelBloques bloques={ui.sheet === "biz" ? bizBlocks : detBlocks} h1={22} />
+            {/* El detalle es la misma pieza en cualquier ancho: columna a la derecha desde 1200, ventana encima entre 1024 y 1199 (mismo nombre). */}
+            {ui.sheet === "biz" ? <PanelBloques bloques={bizBlocks} h1={22} /> : (
+              <aside data-screen-label="Panel v2 · detalle" style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 14 }}><PanelBloques bloques={detBlocks} h1={22} /></aside>
+            )}
           </div>
         </div>
       ) : null}

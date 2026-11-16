@@ -6,6 +6,7 @@
 // Analítica › El Compa y Soporte sin personas; Usuarios 360° › El Compa; Soporte con el plazo de 30 días; la PURGA con el reloj (12 meses → solo
 // cifras; cuenta borrada → a los 30 días) y la base que no deja reescribir. 390 y 1360.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { sinDesborde } = require('../lib/desborde.cjs');
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs');
 const S = ENT.S, OUT = S + '/cap/', B = 'http://localhost:3100', TOK = ENT.TOK;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -83,7 +84,7 @@ const boton = (p, t) => p.locator('button, [role=button]').filter({ hasText: t i
   await pa.screenshot({ path: OUT + 'e7i-resumen-1360.png', fullPage: true });
   const pa3 = await como(ADM, 390);
   await pa3.goto(B + '/admin/compa'); await pa3.getByText('LO QUE EL COMPA NO SUPO · PARA EL CENTRO DE AYUDA').waitFor(); await pa3.waitForTimeout(300);
-  ok(await pa3.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), '390: sin scroll horizontal');
+  ok(await sinDesborde(pa3, '/admin/compa'), '390: sin scroll horizontal');
   await pa3.screenshot({ path: OUT + 'e7i-resumen-390.png', fullPage: true });
 
   console.log('3 · «Anotado» y «Corregido en {artículo}» (Admin); Solo lectura ve cifras sin la pregunta y su acción repetida no cambia nada');
@@ -188,7 +189,7 @@ const boton = (p, t) => p.locator('button, [role=button]').filter({ hasText: t i
   ok(T.includes('Las pantallas de Soporte y El Compa dicen: «El equipo atiende lunes a viernes, de 9 AM a 6 PM»'), 'Soporte: la línea del horario como la leen las pantallas');
   await pa.screenshot({ path: OUT + 'e7i-config-1360.png', fullPage: true });
   await pa3.goto(B + '/admin/sistema/configuracion'); await pa3.getByText('MODELO DE CADA PAPEL').waitFor(); await pa3.waitForTimeout(300);
-  ok(await pa3.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'Configuración 390: sin scroll horizontal');
+  ok(await sinDesborde(pa3, 'configuración'), 'Configuración 390: sin scroll horizontal');
   await pa3.screenshot({ path: OUT + 'e7i-config-390.png', fullPage: true });
   // La retención con límites y auditoría.
   await pa.getByText('Se guardan las conversaciones', { exact: true }).first().click();

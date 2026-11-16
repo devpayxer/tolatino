@@ -87,6 +87,6 @@ const restaurar = () => { try {
   const m = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true })).newPage(); globalThis.__p.push(m); m.on('pageerror', e => err.push(e.message));
   await entrar(m, '5705550166'); await m.goto(B + `/panel/${BIZ}/vendes/servicios`); await m.getByText('CORTES').first().waitFor(); await m.screenshot({ path: OUT + 'a5-servicios-m.png', fullPage: true });
   await m.goto(B + `/panel/${BIZ}/vendes/servicios?det=svc:` + sql(`select ${SV('Fade')}`)); await m.getByText('TIEMPO ENTRE CITAS').first().waitFor(); await m.screenshot({ path: OUT + 'a6-editor-m.png', fullPage: true });
-  const w = await m.evaluate(() => document.documentElement.scrollWidth); ok(w <= 390, 'teléfono sin scroll horizontal (' + w + ')');
+  const w = await m.evaluate(() => document.documentElement.scrollWidth - window.innerWidth); ok(w <= 0, 'teléfono sin scroll horizontal (' + w + ')');
   ok(err.length === 0, 'sin errores: ' + err.join(' | ')); restaurar(); await b.close(); console.log('OK');
 })().catch(async e => { console.error(e); try { for (const p of globalThis.__p || []) { await p.screenshot({ path: OUT + 'fail-' + Math.random().toString(36).slice(2, 6) + '.png' }); console.log('url', p.url()); } } catch {} restaurar(); process.exit(1); });

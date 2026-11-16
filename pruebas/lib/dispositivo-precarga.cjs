@@ -1,6 +1,15 @@
 // 9b-2 · Precarga (NODE_OPTIONS=--require …) que pone el dispositivo de PRUEBAS_DISPOSITIVO en TODA prueba de punta a punta sin tocar sus 650
 // «newContext»: envuelve chromium.launch (y webkit.launch) de require('playwright'), abre el motor del dispositivo y adapta cada contexto
 // (viewport, agente, escala, táctil) según el tipo (ver dispositivos.cjs). Sin la variable no hace nada.
+// Anchos (después de la primera corrida en rojo, CI 43785123795):
+// - La tableta se usa como se usa de verdad: los contextos de teléfono en vertical (834) y los de escritorio en horizontal (1194), no todo a 834.
+// - El agente que una prueba pone A PROPÓSITO (Android, la cáscara de la app, un robot) se respeta: solo se cambia el de los descriptores de
+//   Playwright (iPhone/iPad/Pixel…), que es el «teléfono cualquiera» de la prueba.
+// - Lo que solo existe en Chromium (cámara falsa, resolución de nombres propia) abre Chromium con el viewport del dispositivo: WebKit no tiene
+//   esas banderas y la prueba no probaría nada.
+// - WebKit cancela las cargas de la página que se va al navegar y lo dice («Load failed», «… due to access control checks»); Chromium las
+//   cancela callado. Solo ESE ruido, y solo en los 3 s después de que la página empieza a navegar, no llega a los oyentes de la prueba.
+//   Cualquier otro error (o el mismo lejos de una navegación) llega igual.
 const Module = require('module');
 const id = process.env.PRUEBAS_DISPOSITIVO;
 if (id) {
@@ -8,27 +17,64 @@ if (id) {
   if (!disp) { console.error(`PRUEBAS_DISPOSITIVO=${id} no existe`); process.exit(2); }
   const orig = Module._load;
   const hechos = new WeakSet();
+  let deStock = new Set();
+  const agenteDeStock = (ua) => deStock.has(ua);
   const adaptar = (o = {}) => {
     const w = o.viewport?.width ?? (o.userAgent ? 390 : 1280), esTel = w < 600, d = disp.desc;
     if (disp.tipo === 'telefono' && !esTel) return o;
     if (disp.tipo === 'escritorio' && esTel) return o;
     if (disp.tipo === 'escritorio') return { ...o, viewport: { width: d.viewport.width, height: o.viewport?.height ?? d.viewport.height } };
-    return { ...o, viewport: d.viewport, userAgent: d.userAgent, deviceScaleFactor: d.deviceScaleFactor, isMobile: d.isMobile, hasTouch: d.hasTouch };
+    const vp = disp.tipo === 'tableta' && !esTel ? { width: Math.max(d.viewport.width, d.viewport.height), height: Math.min(d.viewport.width, d.viewport.height) } : d.viewport;
+    const propio = o.userAgent && !agenteDeStock(o.userAgent);
+    return { ...o, viewport: vp, userAgent: propio ? o.userAgent : d.userAgent, deviceScaleFactor: d.deviceScaleFactor, isMobile: propio ? (o.isMobile ?? d.isMobile) : d.isMobile, hasTouch: d.hasTouch };
   };
+  const RUIDO = /^(?:TypeError: )?Load failed$|due to access control checks\.?$/;
+  const filtrar = (page) => {
+    if (disp.motor !== 'webkit' || page.__tlFiltro) return page;
+    page.__tlFiltro = true;
+    let nav = 0;
+    page.on('request', (r) => { if (r.isNavigationRequest() && r.frame() === page.mainFrame()) nav = Date.now(); });
+    page.on('framenavigated', (f) => { if (f === page.mainFrame()) nav = Date.now(); });
+    const ruido = (txt) => RUIDO.test(String(txt).trim()) && Date.now() - nav < 3000;
+    // WebKit no saca capturas de más de 32767 px de alto (una página larga a 375 de ancho): la captura es para mirar, no es la prueba; va la de la pantalla.
+    // Tras una acción, la app a veces navega sola (vuelve a la cola); si la prueba hace goto en ese instante, WebKit lo corta («interrupted by another
+    // navigation») donde Chromium deja ganar al goto. La prueba quiere ir a SU dirección: se espera a que la otra termine y se va otra vez (una vez).
+    const ir = page.goto.bind(page);
+    page.goto = async (u, o) => { try { return await ir(u, o); } catch (e) { if (!/interrupted by another navigation/.test(e.message)) throw e; await page.waitForLoadState('load').catch(() => {}); return ir(u, o); } };
+    const shot = page.screenshot.bind(page);
+    page.screenshot = async (o = {}) => { try { return await shot(o); } catch (e) { if (o.fullPage && /larger than 32767/.test(e.message)) return shot({ ...o, fullPage: false }); throw e; } };
+    const on = page.on.bind(page);
+    page.on = page.addListener = (ev, fn) => {
+      if (ev === 'pageerror') return on(ev, (e) => { if (!ruido(e?.message ?? e)) fn(e); });
+      if (ev === 'console') return on(ev, (m) => { if (!(m.type() === 'error' && ruido(m.text()))) fn(m); });
+      return on(ev, fn);
+    };
+    return page;
+  };
+  const SOLO_CHROMIUM = /^--(?:host-resolver-rules|use-fake-device-for-media-stream|use-fake-ui-for-media-stream|use-file-for-fake-video-capture)/;
   Module._load = function (request, ...r) {
     const pw = orig.call(this, request, ...r);
     if (request !== 'playwright' && request !== 'playwright-core') return pw;
     if (hechos.has(pw)) return pw;
     hechos.add(pw);
-    const motor = pw[disp.motor];
+    deStock = new Set(Object.values(pw.devices).map((x) => x.userAgent));
     for (const nombre of ['chromium', 'webkit']) {
       const original = pw[nombre].launch.bind(pw[nombre]);
       pw[nombre].launch = async (opts = {}) => {
+        const necesitaChromium = (opts.args ?? []).some((a) => SOLO_CHROMIUM.test(a));
+        const motor = necesitaChromium ? 'chromium' : disp.motor;
         // Los argumentos de Chromium (cámara falsa, resolución de nombres) no existen en WebKit.
-        const o = disp.motor === 'webkit' ? { ...opts, args: undefined, channel: undefined } : opts;
-        const b = await (nombre === disp.motor ? original(o) : motor.launch(o));
+        const o = motor === 'webkit' ? { ...opts, args: undefined, channel: undefined } : opts;
+        if (nombre !== motor) return pw[motor].launch(o); // ya envuelto: adapta sus contextos una sola vez
+        const b = await original(o);
         const nc = b.newContext.bind(b);
-        b.newContext = (c) => nc(adaptar(c));
+        b.newContext = async (c) => {
+          const ctx = await nc(adaptar(c));
+          const np = ctx.newPage.bind(ctx);
+          ctx.newPage = async () => filtrar(await np());
+          ctx.on('page', filtrar);
+          return ctx;
+        };
         b.newPage = async (c) => (await b.newContext(c)).newPage();
         return b;
       };

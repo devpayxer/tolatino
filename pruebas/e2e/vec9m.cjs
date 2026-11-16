@@ -275,9 +275,9 @@ const desk = (b, extra = {}) => b.newContext({ viewport: { width: 1360, height: 
         await px.goto(B + u); await px.waitForLoadState('networkidle').catch(() => {});
         const want = lang === 'es' ? es : en;
         const tx = (await px.innerText('body')) + ' ' + (await px.evaluate(() => [...document.querySelectorAll('[placeholder]')].map((x) => x.getAttribute('placeholder')).join(' ')));
-        const ancho = await px.evaluate(() => document.documentElement.scrollWidth);
+        const ancho = await px.evaluate(() => document.documentElement.scrollWidth - window.innerWidth); /* contra la ventana: con --dispositivo el ancho no es el pedido */
         if (!tx.includes(want)) malas.push(`${u}: falta «${want}»`);
-        if (ancho > w + 1) malas.push(`${u}: scroll de lado (${ancho})`);
+        if (ancho > 1) malas.push(`${u}: scroll de lado (+${ancho})`);
       }
       await px.goto(B + `/n/${BIZ}?tab=rev`); await shot(px, `temas-${w}-${lang}`, false);
       ok(!malas.length, `${w} · ${lang.toUpperCase()}: las ${PIEZAS.length} piezas con su texto y sin scroll de lado${malas.length ? ' → ' + malas.join(' | ') : ''}`);

@@ -58,7 +58,7 @@ const restaurar = () => { try { sql(`update stripe_accounts set payouts_paused =
   // móvil
   const m = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true })).newPage(); globalThis.__p.push(m);
   await entrar(m, '5705550199'); await m.goto(B + `/admin/negocios/${BIZ}?tab=din`); await m.getByText('COBRADO · 90 D').first().waitFor();
-  const w = await m.evaluate(() => document.documentElement.scrollWidth); ok(w <= 390, 'móvil sin scroll horizontal (' + w + ')');
+  const w = await m.evaluate(() => document.documentElement.scrollWidth - window.innerWidth); ok(w <= 0, 'móvil sin scroll horizontal (' + w + ')');
   await m.screenshot({ path: OUT + 'o3-dinero-m.png', fullPage: true });
   ok(err.length === 0, 'sin errores: ' + err.join(' | ')); restaurar(); await b.close(); console.log('OK');
 })().catch(async e => { console.error(e); try { for (const p of globalThis.__p || []) { await p.screenshot({ path: OUT + 'fail-' + Math.random().toString(36).slice(2, 6) + '.png' }); console.log('url', p.url()); } } catch {} restaurar(); process.exit(1); });

@@ -14,6 +14,7 @@
 // 10 Usuarios 360° › Actividad, Negocios 360° › Eventos, Analítica › Eventos (contra SQL, sin personas), Notificaciones › Solo Eventos.
 // 11 Sin permiso: un vecino no abre el catálogo. Deja todo como estaba (eventos de prueba cancelados, configuración y avisos de fábrica).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { sinDesborde } = require('../lib/desborde.cjs');
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const { requiere } = require('../lib/requiere.cjs');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -272,7 +273,7 @@ const KEYS = ['evt_recordatorio_hora', 'evt_senal_ordenes_n'];
     const am = await nueva(390, 844, true); await entrar(am, ADM);
     for (const [u, f] of [['/admin/sistema/configuracion', 'e6j-config-m'], ['/admin/eventos/catalogo', 'e6j-catalogo-m'], [`/admin/eventos/${E.id}`, 'e6j-ficha-cupos-m'], ['/admin/analitica?tab=evt', 'e6j-analitica-m'], ['/admin/confianza?tab=fraud', 'e6j-confianza-m']]) {
       await am.goto(B + u); await am.waitForLoadState('networkidle');
-      const anchoOk = await am.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+      const anchoOk = await sinDesborde(am, u);
       ok(anchoOk, `${u} a 390 sin scroll horizontal`); await am.screenshot({ path: OUT + f + '.png', fullPage: true });
     }
     const vc = await nueva(1360, 900); await entrar(vc, C2);
