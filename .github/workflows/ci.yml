@@ -51,8 +51,10 @@ on:
 permissions:
   contents: read
 
+# Un push nuevo a una rama cancela la corrida vieja de esa rama (main nunca). Las corridas a mano (workflow_dispatch: «solo estas pruebas»,
+# anchos) llevan su propio grupo: dos dirigidas seguidas ya no se cancelan entre sí (16 nov: una en cola canceló la combinada).
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.ref }}${{ github.event_name == 'workflow_dispatch' && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
