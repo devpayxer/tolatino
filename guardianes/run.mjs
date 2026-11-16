@@ -9720,6 +9720,48 @@ const guardianes = {
     }
   },
 
+  /* C-005 · Un archivo del servidor (sin "use client") que importa un VALOR de un módulo de cliente recibe una referencia de cliente, no el
+     valor: CFG_FICHA[f.cat] salía vacío en la página y la ficha nueva nunca aparecía (sin error). Del cliente, el servidor solo puede
+     importar componentes (Mayúscula inicial) y tipos; las tablas y funciones compartidas van en lib/. Al revés (alrevesC005): importar
+     la tabla desde FichaNueva → falla. */
+  valorDeCliente() {
+    const G = "valorDeCliente";
+    const esCliente = (t) => /^\s*(\/\*[\s\S]*?\*\/\s*)?["']use client["']/.test(t);
+    const res = (from, spec) => {
+      const base = spec.startsWith("@/") ? `apps/web/${spec.slice(2)}` : spec.startsWith(".") ? join(dirname(from), spec) : null;
+      if (!base) return null;
+      for (const e of ["", ".tsx", ".ts", "/index.tsx", "/index.ts"]) if (existsSync(base + e) && statSync(base + e).isFile()) return base + e;
+      return null;
+    };
+    for (const f of archivos.filter((x) => /^apps\/web\/.+\.(tsx|ts)$/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      if (esCliente(t)) continue;
+      for (const m of t.matchAll(/^import\s+(?!type\b)\{([^}]+)\}\s+from\s+["']([^"']+)["']/gm)) {
+        const tgt = res(f, m[2]);
+        if (!tgt || !esCliente(readFileSync(tgt, "utf8"))) continue;
+        for (const x of m[1].split(",").map((y) => y.trim()).filter((y) => y && !y.startsWith("type "))) {
+          const nm = x.split(/\s+as\s+/)[0];
+          if (!/^[A-Z][a-z0-9]/.test(nm)) falla(G, f, t.slice(0, m.index).split("\n").length, `importa «${nm}» (un valor) de un módulo de cliente (${tgt}): en el servidor llega una referencia, no el valor; muévelo a lib/`);
+        }
+      }
+    }
+  },
+
+  /* C-005 → C-008 · La ficha nueva cambia cómo se ve, no las reglas: solo Pro (la Free sigue con Ficha.tsx), las horas las decide el
+     servidor (horasDeCita) y Booking solo acepta un día (0–13) y una hora (minutos del día) con forma; si la hora ya no está libre, la
+     quita. Al revés (alrevesC005): sin «f.pro &&», con horas inventadas en el cliente o sin validar i/h → falla. */
+  fichaNuevaSoloPro() {
+    const G = "fichaNuevaSoloPro", P = "apps/web/app/(app)/n/[id]/page.tsx", F = "apps/web/app/(app)/n/[id]/FichaNueva.tsx", B = "apps/web/app/(app)/n/[id]/cita/page.tsx", K = "apps/web/app/(app)/n/[id]/cita/Booking.tsx";
+    if (!existsSync(F)) return;
+    if (!/\{f\.pro && CFG_FICHA\[f\.cat\] \? \(\s*<FichaNueva/.test(readFileSync(P, "utf8"))) falla(G, P, 0, "la ficha nueva solo para Pro con su categoría lista ({f.pro && CFG_FICHA[f.cat] ? <FichaNueva …)");
+    const fn = sinComent(F);
+    if (!/void horasDeCita\(v\.cp\.negocio\.id,/.test(fn)) falla(G, F, 0, "las horas de la hoja salen del servidor (horasDeCita)");
+    if (/\bBASE\s*=\s*\[|taken:\s*[^!]*hash\(/.test(fn)) falla(G, F, 0, "la ficha no inventa horas en el cliente (eso era del prototipo)");
+    const b = readFileSync(B, "utf8");
+    if (!/d >= 0 && d <= 13 && Number\.isInteger\(m\) && m >= 0 && m < 1440/.test(b)) falla(G, B, 0, "Booking valida el día (0–13) y la hora (0–1439) que llegan de la ficha");
+    if (!/find\(\(y\) => y\.m === inicial\.h && y\.free\)/.test(readFileSync(K, "utf8"))) falla(G, K, 0, "Booking solo se queda con la hora de la ficha si sigue libre");
+  },
+
   telefonoAlAzarRespetaFijos() {
     const G = "telefonoAlAzarRespetaFijos";
     for (const f of archivos.filter((x) => /^pruebas\/(e2e|lib|alreves)\/[^/]+\.(cjs|mjs)$/.test(x))) {

@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Booking · To'Latino" };
 
 /* APP-NEG-BOOKING (prototipo bookVals): Día y hora → Detalles → Revisa y envía. Llega desde la hoja del servicio con lo
    elegido en la dirección (?s=servicio&o=opciones&a=extras&con=persona). Ver las horas no pide cuenta; enviar sí. */
-export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ s?: string; o?: string; a?: string; con?: string; cambiar?: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ s?: string; o?: string; a?: string; con?: string; cambiar?: string; i?: string; h?: string }> }) {
   const [{ id }, sp, lang, u] = await Promise.all([params, searchParams, idioma(), yo()]);
   const cp = await citasPublica(id, u?.id ?? null);
   if (!cp) notFound();
@@ -33,8 +33,15 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const modo = pasarela.modo();
   const pago = u && modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: await misTarjetas(u.id) } : modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: [] } : null;
   return (
-    <Booking cp={cp} svcId={s.id} inicial={{ opts, adds, con }} es={lang === "es"} pago={pago}
+    <Booking cp={cp} svcId={s.id} inicial={{ opts, adds, con, ...(cambiar ? {} : diaHora(sp.i, sp.h)) }} es={lang === "es"} pago={pago}
       yo={u?.first_name ? { nombre: [u.first_name, u.last_name].filter(Boolean).join(" "), tel: u.phone } : null}
       cambiar={cambiar ? { numero: cambiar.numero, st: cambiar.st as "pend" | "ok", dep: cambiar.dep, i: cambiar.i, m: cambiar.m } : null} />
   );
+}
+
+/* C-005 · La ficha nueva manda el día (0 = hoy … 13) y la hora (minutos desde medianoche) que la persona eligió; aquí solo se leen
+   si tienen forma de día y hora. Si la hora ya no está libre, Booking la quita y se elige otra (el servidor decide al enviar). */
+function diaHora(i?: string, h?: string): { i?: number; h?: number } {
+  const d = /^\d{1,2}$/.test(i ?? "") ? Number(i) : NaN, m = /^\d{1,4}$/.test(h ?? "") ? Number(h) : NaN;
+  return Number.isInteger(d) && d >= 0 && d <= 13 && Number.isInteger(m) && m >= 0 && m < 1440 ? { i: d, h: m } : {};
 }

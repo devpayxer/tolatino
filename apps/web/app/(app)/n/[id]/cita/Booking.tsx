@@ -36,7 +36,7 @@ const anillo = (on: boolean) => (on ? "border-[6px] border-ink" : "border-[1.5px
 
 type Pago = { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null;
 export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
-  cp: CitasPublica; svcId: string; inicial: { opts: Record<string, number>; adds: string[]; con: string }; es: boolean; pago: Pago; yo: { nombre: string; tel: string | null } | null;
+  cp: CitasPublica; svcId: string; inicial: { opts: Record<string, number>; adds: string[]; con: string; i?: number; h?: number }; es: boolean; pago: Pago; yo: { nombre: string; tel: string | null } | null; // C-005 · i/h: día y hora ya elegidos en la ficha nueva
   cambiar?: { numero: string; st: "pend" | "ok"; dep: number; i: number; m: number } | null; // «Cambiar» desde Tu cita: el depósito pasa a la nueva hora
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
@@ -46,8 +46,8 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
   const silla = cp.model === "chair", w = { uno: nm(cp.w.uno), silla: nm(cp.w.silla) };
   const [paso, setPaso] = useState(0);
   const [con, setCon] = useState(inicial.con);
-  const [i, setI] = useState(0);
-  const [h, setH] = useState<number | null>(null);
+  const [i, setI] = useState(inicial.i ?? 0);
+  const [h, setH] = useState<number | null>(inicial.h ?? null);
   const [asig, setAsig] = useState<string | null>(null); // con «Cualquiera»: quién queda a esa hora
   const [H, setHoras] = useState<HorasCita | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -68,7 +68,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
   const [alerta, setAlerta] = useState(false);
   const clave = useRef<string>("");
   const V = useVerificacion(es, pago?.modo, pago?.pk);
-  const abierto = useRef(false);
+  const abierto = useRef(false), llego = useRef(false);
   const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => { clave.current = uuid(); }, []);
   useEffect(() => { let vivo = true; void proximasHoras(cp.negocio.id, s.dur).then((x) => { if (vivo) setProx(x); }); return () => { vivo = false; }; }, [cp.negocio.id, s.dur]);
@@ -78,7 +78,9 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
     void horasDeCita(cp.negocio.id, q, cambiar?.numero).then((x) => {
       if (!vivo) return;
       // Como el prototipo (start: i = próxima hora libre): la primera vez abre en el primer día con horas libres.
-      if (!abierto.current) { abierto.current = true; const d = x?.dias.find((z) => !z.off); if (x && d && d.i !== q.i && !x.grupos.some((g) => g.sl.some((z) => z.free))) { setI(d.i); return; } }
+      if (!abierto.current) { abierto.current = true; const d = x?.dias.find((z) => !z.off); if (inicial.h == null && x && d && d.i !== q.i && !x.grupos.some((g) => g.sl.some((z) => z.free))) { setI(d.i); return; } }
+      // C-005 · La hora elegida en la ficha: si sigue libre, se queda (y con «Cualquiera», quién atiende) y se abre en «Detalles»; si no, se elige otra aquí.
+      if (inicial.h != null && !llego.current) { llego.current = true; const z = x?.grupos.flatMap((g) => g.sl).find((y) => y.m === inicial.h && y.free); if (z) { setAsig(z.who ?? null); setPaso(1); } else setH(null); }
       setHoras(x); setCargando(false);
     });
     return () => { vivo = false; };

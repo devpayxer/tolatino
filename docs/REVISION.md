@@ -5024,3 +5024,14 @@ sale de la base. Si prefieres que una edición quede como **borrador** hasta que
 
 **Decisiones tomadas (reversibles):** el cupón solo vale en pedidos en línea de comida (no en citas ni boletos), una vez por persona, y el descuento lo pone
 el negocio (la comisión se cobra sobre lo que paga el cliente). Si quieres que también valga en otras ventas o que To'Latino ponga parte, se amplía.
+
+## C-005 — Ficha nueva del negocio: Belleza Pro (16 nov)
+**Dónde:** cualquier barbería o salón **Pro**, por ejemplo Barbería El Primo (`/n/barberia-el-primo`), en el teléfono y en la computadora.
+**Qué mirar:**
+- Arriba: «Abierto/Cerrado» una sola vez junto al nombre; Llamar · Escribir · Cómo llegar. La tarjeta de hoy no repite el horario.
+- Pestañas en este orden (solo las que tienen algo): Resumen · Servicios · Equipo · Reseñas · Novedades · Eventos · Jobs · Horario · Antes de ir ·
+  Relacionados. En el teléfono la pestaña se queda arriba al bajar; en la computadora es una sola página y la tarjeta de Booking se queda a la derecha.
+- **Booking** (barra de abajo): 1 servicio y con quién → 2 día y hora → sigue en la pantalla Booking de siempre (tus datos, revisa y envía, depósito).
+  Si el servicio tiene extras, primero los extras (la hoja de siempre).
+**Decidido por mí (reversible):** el paso 3 «Revisa y envía» es la pantalla Booking que ya cobra el depósito (no se duplicó el cobro dentro de la
+ficha). La página de cada silla (`/n/…/silla/N`) y los negocios Free siguen con la ficha de antes. Si quieres el paso 3 dentro de la misma hoja, se cambia.

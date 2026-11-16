@@ -2426,3 +2426,6 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   (`psql -At` también imprime «INSERT 0 1»: el id del cupón salía roto) y alreves7g (ancla vieja). La misma clase estaba en push8c y dir9m (este anotaba
   códigos postales ya existentes como nuevos y los borraba al final). Guardián `returningConPsqlCallado` + caso al revés en alreves9n21 (10/10).
   Corrida dirigida nueva: 43773487639.
+- **C-005 · Ficha nueva del negocio (Belleza Pro)** — canvas `tolatino-master+` (`project/entrega/cambios.md`, paquete C-005 → C-008). `FichaNueva.tsx` +
+  `lib/ficha-nueva.ts` (tabla por categoría); Booking acepta `?i=&h=` (validados) y abre en Detalles si la hora sigue libre. Guardianes `fichaNuevaSoloPro`
+  y `valorDeCliente` (alrevesC005 5/5); e2e `fic005` (21 ✓ local); `cit3b`/`silla3d` a la ficha nueva; ayuda `pagina-del-negocio-pro.md`. Sigue C-006.

@@ -221,7 +221,7 @@ function Verif({ v }: { v: CtlResenas }) {
     </div>
   );
 }
-function aspectos(v: CtlResenas) {
+export function aspectos(v: CtlResenas) {
   const { r, es } = v, a = r.asp, dlv = r.negocio.dlv, E2 = (x: string, y: string) => (es ? x : y);
   const z = r.aspSP;
   if (z) {

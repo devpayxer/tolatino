@@ -1,0 +1,634 @@
+"use client";
+/* C-005 · Ficha nueva del negocio (canvas tolatino-master+ «To'Latino Barbería El Rey (móvil / desktop)», «To'Latino Fichas (app)» y
+   «(desktop app)»; lógica: _tmp/c008/fichas_logic.js y ficha3.js). Solo negocios Pro: la ficha Free no cambia (Ficha.tsx).
+   Cambia cómo se ve, no las reglas: la reserva usa las mismas acciones del servidor (horasDeCita) y termina en Booking (/cita),
+   que vuelve a revisar todo y cobra el depósito; las reseñas, Novedades, Jobs y Eventos usan sus piezas de siempre.
+   Reglas de la ficha (cambios.md · paquete C-005 → C-008):
+   · «Abierto · cierra a las N» una sola vez, junto al nombre; la tarjeta de hoy y la barra de abajo no lo repiten.
+   · Sin textos que expliquen lo obvio. Mismos textos en teléfono y computadora; todo con el sistema de diseño.
+   · Teléfono: cada pestaña cambia el contenido, la pestaña activa siempre se ve y abajo hay una barra con una sola acción.
+   · Computadora: una sola página con secciones; las pestañas se quedan pegadas arriba (con flechas si no caben) y llevan a cada
+     sección; la tarjeta de reservar se queda pegada a la derecha.
+   · Pestañas en este orden y solo si hay contenido: Resumen · lo que vende · equipo · Reseñas · Novedades · Eventos · Jobs ·
+     Horario · Antes de ir · Relacionados. Un dato que falta se omite (nunca «undefined» ni «null»). */
+import * as UI from "@tolatino/ui";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
+import type { ficha } from "@/lib/ficha";
+import type { CitasPublica, HorasCita } from "@/lib/citas";
+import type { ResumenResenas } from "@/lib/resenas";
+import type { NovedadesFicha } from "@/lib/novedades";
+import type { VacanteFicha } from "@/lib/jobs";
+import type { TarjetaEvt } from "@/lib/evt-publico";
+import { compartir as compartirNativo } from "@/lib/nativo/compartir";
+import { abrirComoLlegar } from "@/lib/como-llegar";
+import { MiniMapa } from "@/app/_dir/MiniMapa";
+import { guardarNegocio, registrarToque } from "../../acciones";
+import { horasDeCita } from "./acciones-cita";
+import { aprL, citaUrl, dinero, diaS, durL, horaL, precio, SvcHoja, useSvc, type Svc } from "./Servicios";
+import { aspectos, ResCapas, ResResumen, ResTab, useResenas, type CtlResenas } from "./Resenas";
+import { NovTab } from "./Novedades";
+import { JobsTab } from "./Jobs";
+import { EventosTab } from "./Eventos";
+import { CFG_FICHA, type Cfg } from "@/lib/ficha-nueva";
+
+type N = "Icon" | "Button" | "IconButton" | "Tabs" | "DesktopTabs" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard" | "SectionHeader" | "ServiceRow"
+  | "Placeholder" | "ReviewCard" | "StaffPicker" | "DateStrip" | "TimeSlots" | "StepHeader" | "TotalBar" | "DepositNote" | "DepositOutcomes" | "Eyebrow"
+  | "BusinessRow" | "OptionGroup";
+const { Icon, Button, IconButton, Tabs, DesktopTabs, TodayCard, HoursPro, Tag, Chip, OwnerCard, SectionHeader, ServiceRow, Placeholder, ReviewCard, StaffPicker,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  DateStrip, TimeSlots, StepHeader, TotalBar, DepositNote, DepositOutcomes, Eyebrow, BusinessRow, OptionGroup } = UI as unknown as Record<N, ComponentType<any>>;
+
+type F = NonNullable<Awaited<ReturnType<typeof ficha>>> & { guardado: boolean };
+type Textos = Record<string, string>;
+
+/* ── Lo que la ficha necesita de cada categoría ── */
+type Fila = { id: string; name: string; meta: string; price: string };
+type Grupo = { label: string; name: string; items: Fila[] };
+type Persona = { id: string; name: string; short: string; role: string; spec: string; foto: string | null; owner: boolean; silla: number | null };
+
+export function FichaNueva({ f, t, svc, resenas, novedades, jobs, eventos = [], sesion, es, tabInicial }: {
+  f: F; t: Textos; svc: CitasPublica | null; resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; eventos?: TarjetaEvt[];
+  sesion: boolean; es: boolean; tabInicial?: string;
+}) {
+  const E2 = (a: string, b: string) => (es ? a : b);
+  const L = (x: [string, string]) => (es ? x[0] : x[1]);
+  const router = useRouter();
+  const cfg = CFG_FICHA[f.cat]!;
+  const sv = useSvc(svc, es);
+  const rs = useResenas(resenas, f.id, sesion, es);
+  const [guardado, setGuardado] = useState(f.guardado);
+  const [aviso, setAviso] = useState<string | null>(null);
+  const [faq, setFaq] = useState<number>(0);
+  const [catF, setCatF] = useState("all");
+
+  // ── Lo que vende, el equipo y la reserva (Belleza: citas) ──
+  const grupos: Grupo[] = sv ? sv.secs.map((s) => ({ label: s.title, name: s.title.charAt(0) + s.title.slice(1).toLowerCase(), items: s.items.map((x) => ({ id: x.id, name: x.name, meta: x.meta, price: x.price })) })) : [];
+  const nItems = grupos.reduce((a, g) => a + g.items.length, 0);
+  const gente: Persona[] = sv ? sv.cp.gente.map((p) => {
+    const nx = sv.prx(p.id);
+    return { id: p.id, name: p.nombre, short: p.corto, foto: p.foto, owner: p.kind === "owner", silla: p.silla,
+      role: p.kind === "owner" ? E2("Dueño", "Owner") : p.silla ? `${sv.w.uno.charAt(0).toUpperCase()}${sv.w.uno.slice(1)} · ${sv.w.silla} ${p.silla}` : `${sv.w.uno.charAt(0).toUpperCase()}${sv.w.uno.slice(1)}`,
+      // Lo que daba «Por barbero»: si confirma al instante o en cuánto responde, y su próxima hora.
+      spec: [sv.cp.can ? aprL(p, es) : null, nx ? `${E2("PRÓXIMA HORA", "NEXT OPENING")} · ${sv.nxL(nx)}`.toUpperCase() : null].filter(Boolean).join(" · ") };
+  }) : [];
+  const staffBook = !!sv && sv.cp.can && (sv.silla || (sv.cp.pol.pick && gente.length > 1));
+  const [bk, setBk] = useState<Bk | null>(null);
+  const abrirReserva = (o: Partial<Bk> = {}) => { if (!sv || !sv.cp.can) return; setBk({ ...nuevaBk(sv), ...o, step: 1 }); };
+  // Computadora: la tarjeta de la derecha guarda su propia elección; elegir a alguien del equipo la ilumina un momento.
+  const [dsk, setDsk] = useState<Bk>(() => (sv ? nuevaBk(sv) : { who: "any", svc: null, opts: {}, i: 0, h: null, step: 1 }));
+  const [pulso, setPulso] = useState(false);
+  const elegirDesk = (o: Partial<Bk>) => { setDsk((d) => ({ ...d, ...o, h: null })); setPulso(true); setTimeout(() => setPulso(false), 900); };
+
+  // ── Pestañas (solo con contenido) ──
+  const sinLocal = !f.direccion && !f.zona;
+  const dep = sv ? Math.max(0, ...sv.cp.gente.map((p) => p.dep)) : 0;
+  const tabs = [
+    { id: "res", label: E2("RESUMEN", "OVERVIEW"), icon: "home" },
+    ...(nItems ? [{ id: "cat", label: L(cfg.tab), icon: cfg.icon }] : []),
+    ...(gente.length ? [{ id: "staff", label: L(cfg.staffTab), icon: "users" }] : []),
+    { id: "rev", label: E2("RESEÑAS", "REVIEWS"), icon: "star" },
+    ...(novedades?.posts.length ? [{ id: "nov", label: E2("NOVEDADES", "UPDATES"), icon: "news" }] : []),
+    ...(eventos.length ? [{ id: "evt", label: E2("EVENTOS", "EVENTS"), icon: "ticket" }] : []),
+    ...(jobs.length ? [{ id: "jobs", label: "JOBS", icon: "brief" }] : []),
+    ...(sinLocal ? [] : [{ id: "hor", label: E2("HORARIO", "HOURS"), icon: "clock" }]),
+    ...(f.faqs.length || dep ? [{ id: "faq", label: E2("ANTES DE IR", "BEFORE YOU GO"), icon: "help" }] : []),
+    ...(f.relacionados.length ? [{ id: "rel", label: E2("RELACIONADOS", "RELATED"), icon: "store" }] : []),
+  ];
+  const ini = ({ svc: "cat", menu: "cat", reviews: "rev" } as Record<string, string>)[tabInicial ?? ""] ?? tabInicial ?? "res";
+  const [tab, setTabS] = useState(tabs.some((x) => x.id === ini) ? ini : "res");
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const setTab = (id: string) => {
+    setTabS(id);
+    // La pestaña activa siempre se ve: si ya bajaste más allá de las pestañas, la página sube hasta ellas.
+    const el = tabsRef.current;
+    if (el) { const top = el.getBoundingClientRect().top + window.scrollY - CAB_MOVIL; if (window.scrollY > top) window.scrollTo({ top }); }
+  };
+
+  // ── Acciones del encabezado ──
+  const avisar = (m: string) => { setAviso(m); setTimeout(() => setAviso(null), 2200); };
+  const llamar = f.telefono ? () => { void registrarToque(f.id, "call", "ficha"); location.href = `tel:${f.telefono}`; } : null;
+  const escribir = f.mensajes ? () => { void registrarToque(f.id, "message", "ficha"); router.push(`/cuenta/mensajes/${f.id}`); } : null;
+  const llegar = f.direccion && f.lat != null && f.lng != null ? () => { void registrarToque(f.id, "directions", "ficha"); abrirComoLlegar({ lat: f.lat!, lng: f.lng! }); } : null;
+  const compartir = async () => { void registrarToque(f.id, "share", "ficha"); if ((await compartirNativo({ titulo: f.nombre, url: location.href })) === "copiado") avisar(E2("Enlace copiado", "Link copied")); };
+  const guardar = async () => {
+    const antes = guardado; setGuardado(!antes);
+    const r = await guardarNegocio(f.id);
+    if (r.ok) { setGuardado(!!r.on); avisar(r.on ? E2("Guardado en tus negocios", "Saved to your places") : E2("Quitado de guardados", "Removed from saved")); return; }
+    setGuardado(antes);
+    if ("entrar" in r && r.entrar) router.push(`/entrar?volver=${encodeURIComponent(location.pathname)}`);
+  };
+  const verFotos = () => router.push(`/n/${f.id}/fotos`);
+
+  // ── Encabezado (una sola vez el estado) ──
+  const abierto = f.abierto, stFg = abierto ? "var(--tl-open-text)" : "var(--tl-danger)", stDot = abierto ? "var(--tl-open)" : "var(--tl-danger)";
+  const resto = f.estadoResto.replace(/^·\s*/, ""), restoC = resto ? resto.charAt(0).toUpperCase() + resto.slice(1) : "";
+  const calle = (f.direccion ?? f.zona ?? "").split(",")[0]!.toUpperCase();
+  const n = resenas?.n ?? 0, avg = resenas?.avg ?? null;
+  const metaL = [n >= 5 && avg != null ? `★ ${avg.toFixed(1)} · ${n} ${E2("RESEÑAS", "REVIEWS")}` : n > 0 ? `${n} ${n === 1 ? E2("RESEÑA", "REVIEW") : E2("RESEÑAS", "REVIEWS")}` : E2("NUEVO EN TO'LATINO", "NEW ON TO'LATINO"),
+    f.dist !== "—" ? f.dist.toUpperCase() : null, calle || null].filter(Boolean) as string[];
+
+  // ── La tarjeta de hoy: lo que importa sin repetir el estado ni la barra (Belleza: cómo confirma, el depósito, el pago) ──
+  const hoy = useMemo(() => {
+    if (!sv) return { eyebrow: f.hoy.eyebrow, title: f.subsLinea || L(cfg.title), cols: f.hoy.cols };
+    const cp = sv.cp, todosAuto = cp.gente.length > 0 && cp.gente.every((p) => p.auto), resp = Math.min(...cp.gente.map((p) => p.resp).concat(cp.pol.resp));
+    const title = !cp.can ? (cp.off === "apagado" ? E2("Sin cita: llegas y esperas turno", "Walk-in: come in and wait your turn") : E2("Pide tu hora por teléfono", "Call for your time"))
+      : todosAuto ? E2("Confirman al instante", "Instant confirmation") : E2(`Responden en ~${resp >= 60 ? `${Math.round(resp / 60)} h` : `${resp} min`}`, `Reply in ~${resp >= 60 ? `${Math.round(resp / 60)} h` : `${resp} min`}`);
+    const deps = [...new Set(cp.gente.map((p) => p.dep))];
+    const cols = [
+      ...(cp.can ? [{ k: E2("DEPÓSITO", "DEPOSIT"), v: deps.length === 1 ? (deps[0] ? dinero(deps[0]) : E2("No pide", "None")) : `${E2("Hasta ", "Up to ")}${dinero(Math.max(...deps))}` }] : []),
+      ...(gente.length ? [{ k: L(cfg.staffTab), v: `${gente.length} ${gente.length === 1 ? sv.w.uno : sv.w.varios}` }] : []),
+      { k: E2("PAGO", "PAYMENT"), v: E2("En el local", "In store") },
+    ].slice(0, 3);
+    return { eyebrow: f.hoy.eyebrow, title, cols };
+  }, [sv, f, es]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── La barra de abajo (una sola acción) y la tarjeta de la derecha ──
+  const primera = useMemo(() => {
+    if (!sv) return null;
+    let mejor: { i: number; m: number; who: string } | null = null;
+    for (const p of sv.cp.gente) { const x = sv.prx(p.id); if (x && (!mejor || x.i < mejor.i || (x.i === mejor.i && x.m < mejor.m))) mejor = { ...x, who: p.corto }; }
+    return mejor;
+  }, [sv]);
+  const barra = sv && sv.cp.can ? {
+    title: sv.desde ? `${E2("Desde", "From")} ${dinero(sv.desde)}` : L(cfg.title),
+    sub: primera ? `${E2("PRÓXIMA HORA", "NEXT OPENING")} · ${sv.nxL(primera)}${sv.silla || gente.length > 1 ? ` ${E2("CON", "WITH")} ${primera.who}` : ""}`.toUpperCase() : E2("PRÓXIMA HORA · MAÑANA", "NEXT OPENING · TOMORROW"),
+    cta: L(cfg.cta), go: () => abrirReserva(),
+  } : llamar ? { title: hoy.title, sub: (f.telefono ?? "").toUpperCase(), cta: E2("Llamar", "Call"), go: llamar } : null;
+
+  const popular = grupos.slice(0, 3).map((g) => g.items[0]!).filter(Boolean);
+  const verRes = () => setTab("rev");
+  const pick = (id: string) => abrirReserva({ svc: id });
+
+  /* ── Bloques que comparten teléfono y computadora ── */
+  const filaSvc = (x: Fila, on = false) => <ServiceRow key={x.id} name={x.name} meta={x.meta} price={x.price} selected={on} onClick={() => pick(x.id)} />;
+  const oferta = f.oferta ? (
+    <button type="button" onClick={() => setTab(novedades?.posts.length ? "nov" : nItems ? "cat" : "res")} className="flex w-full items-center gap-3 rounded-[17px] bg-action/[.07] px-4 py-3.5 text-left">
+      <Icon name="bolt" size={17} color="var(--tl-action)" /><span className="min-w-0 flex-1 text-[13.5px] font-bold leading-[1.45] text-action-hover">{f.oferta}</span><Icon name="chevronRight" size={16} color="var(--tl-action)" />
+    </button>
+  ) : null;
+  const dueno = (desk: boolean) => f.quien ? <div className="grid"><OwnerCard {...f.quien} desktop={desk} teamCta={gente.length ? `${E2("Ver", "See")} ${L(cfg.staffTitle).toLowerCase()}` : ""} onTeam={gente.length ? () => (desk ? ir("staff") : setTab("staff")) : undefined} /></div> : null;
+  const miCita = sv?.mia ? (
+    <button type="button" onClick={sv.mia.onClick} data-screen-label="Ficha · tu cita" className="flex w-full items-center gap-3 rounded-[17px] border border-line bg-white px-4 py-3.5 text-left">
+      <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{sv.mia.k}</span><Tag tone={sv.mia.tone}>{sv.mia.tag}</Tag></div>
+        <div className="mt-1.5 text-[14px] font-bold leading-[1.35]">{sv.mia.t}</div><div className="mt-0.5 text-[12px] font-medium text-ink/60">{sv.mia.s}</div></div>
+      <Icon name="chevronRight" size={16} color="rgba(11,14,18,.6)" />
+    </button>
+  ) : null;
+  const hechos = rs ? aspectos(rs).slice(0, 3) : [];
+  const resumenResenas = (desk: boolean) => !rs ? null : rs.r.n < 5 ? <ResResumen v={rs} desk={desk} onAll={verRes} /> : (
+    <div className="flex flex-col gap-2.5" data-screen-label="Resumen · reseñas">
+      <SectionHeader title={E2("Reseñas", "Reviews")} action={E2(`Ver las ${rs.r.n}`, `See all ${rs.r.n}`)} onAction={verRes} />
+      <div className="flex items-center gap-3.5 rounded-[17px] bg-paper px-4 py-3.5">
+        <div className="font-display text-[40px] font-extrabold leading-none tracking-[-0.05em]">{rs.r.avg?.toFixed(1)}</div>
+        <div className="flex min-w-0 flex-1 flex-col gap-[5px]">
+          {hechos.length ? hechos.map((a) => (
+            <div key={a.k} className="flex items-center gap-[7px] text-[12px] font-bold text-open-text"><Icon name={a.ic} size={13} color="var(--tl-open-text)" /><span className="min-w-0 flex-1 truncate">{a.k.charAt(0) + a.k.slice(1).toLowerCase()}</span><span className="font-mono text-[11.5px] font-extrabold text-ink">{a.v}</span></div>
+          )) : <div className="font-mono text-[10px] font-bold tracking-[0.08em] text-ink/60">{rs.r.n} {E2("RESEÑAS", "REVIEWS")}{rs.r.ver ? ` · ${rs.r.ver} ${E2("VERIFICADAS", "VERIFIED")}` : ""}</div>}
+        </div>
+      </div>
+      {rs.r.destacadas.slice(0, 2).map((c) => <div key={c.id} className="grid"><ReviewCard {...rs.card(c, { summary: true })} /></div>)}
+    </div>
+  );
+  const horario = sinLocal ? null : (
+    <>
+      <div className="grid"><HoursPro data={f.horario.data} dateLabel={f.horario.dateLabel} status={f.horario.status} statusColor={stFg} nextLabel={f.horario.nextLabel} weekOpen
+        nowLabel={t.now} changesLabel={t.changes} weekLabel={t.week} /></div>
+      <div className="overflow-hidden rounded-[17px] border border-line bg-white">
+        {f.lat != null && f.lng != null ? <MiniMapa centro={[f.lat, f.lng]} zona={!f.direccion} z={f.direccion ? 16 : 14} etiqueta={(f.direccion ? t.map : t.mapZone)?.toUpperCase() ?? ""} al={llegar ?? undefined} />
+          : <Placeholder tone="mint" height={150} />}
+        <div className="flex flex-col gap-3 px-4 pb-4 pt-3.5">
+          <div><div className="font-display text-[16px] font-extrabold leading-[1.25] tracking-[-0.025em]">{f.direccion ?? f.zona}</div><div className="mt-[3px] text-[12.5px] font-medium leading-[1.5] text-ink/60">{f.direccionMeta}</div></div>
+          {llegar ? <div className="grid"><Button variant="secondary" size="md" icon="pin" block onClick={llegar}>{E2("Cómo llegar", "Directions")}</Button></div> : null}
+          {f.amen.length > 0 && (
+            <div className="border-t border-ink/[.07] pt-3">
+              <div className="mb-[9px] font-mono text-[10px] font-bold tracking-[0.16em] text-ink/60">{f.amenK}</div>
+              <div className="flex flex-wrap gap-1.5">{f.amen.map((a) => <Chip key={a.l} variant="feature"><Icon name={a.icon} size={13} />{a.l}</Chip>)}</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+  const depRows = sv && dep ? [
+    { label: E2("Llegas a tu cita", "You show up"), value: E2("Se descuenta", "Taken off the total"), color: "var(--tl-open-text)" },
+    { label: E2(`El negocio rechaza o no responde en ${sv.cp.pol.exp} h`, `The business declines or does not reply in ${sv.cp.pol.exp} h`), value: E2("Se libera", "Released"), color: "var(--tl-open-text)" },
+    { label: E2(`Cancelas con ${sv.cp.pol.cxh} h o más`, `You cancel ${sv.cp.pol.cxh} h or more ahead`), value: E2("Se libera", "Released"), color: "var(--tl-open-text)" },
+    { label: E2(`Cancelas con menos de ${sv.cp.pol.cxh} h o no llegas`, `You cancel under ${sv.cp.pol.cxh} h or do not show`), value: `${E2("Se cobra", "Charged")} ${dinero(dep)}`, color: "var(--tl-danger)" },
+  ] : [];
+  const antes = (
+    <>
+      {depRows.length ? <div className="grid"><DepositOutcomes title={E2(`Tu depósito de ${dinero(dep)}`, `Your ${dinero(dep)} deposit`)} rows={depRows}
+        foot={E2("Se retiene en tu tarjeta; no se cobra hasta que pase algo de esta lista.", "Held on your card; nothing is charged until something on this list happens.")} /></div> : null}
+      {f.faqs.length ? (
+        <div className="overflow-hidden rounded-[17px] border border-line bg-white">
+          {f.faqs.map((q, i) => (
+            <div key={i} className={i ? "border-t border-ink/[.07]" : ""}>
+              <button type="button" aria-expanded={faq === i} onClick={() => setFaq(faq === i ? -1 : i)} className="flex min-h-11 w-full items-center gap-3 p-[15px] text-left">
+                <span className="flex-1 text-[13.5px] font-bold leading-[1.4]">{q.q}</span>
+                <span className="grid transition-transform" style={{ transform: faq === i ? "rotate(180deg)" : "none" }}><Icon name="chevronDown" size={16} color="rgba(11,14,18,.6)" /></span>
+              </button>
+              {faq === i ? <div className="text-pretty px-[15px] pb-[15px] text-[13px] leading-[1.62] text-ink/70">{q.a}</div> : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </>
+  );
+  const relacionados = f.relacionados.map((r) => (
+    <div key={r.id} className="grid"><BusinessRow name={r.nombre} meta={r.meta} verified={r.verificado} slot={E2("Ver", "See")} image={r.foto ? `url(${r.foto})` : undefined} onClick={() => router.push(`/n/${r.id}`)} /></div>
+  ));
+  const chips = [{ id: "all", label: E2("Todos", "All") }, ...grupos.map((g, i) => ({ id: `g${i}`, label: g.name }))];
+  const gruposF = grupos.map((g, i) => ({ ...g, k: `g${i}` })).filter((g) => catF === "all" || catF === g.k);
+  const fotoGente = (p: Persona, h: number) => p.foto ? <div style={{ height: h, background: `center/cover url(${p.foto})` }} /> : <Placeholder height={h} />;
+
+  // ── Computadora: secciones, pestañas que llevan a cada una y la tarjeta pegada a la derecha ──
+  const [activa, setActiva] = useState("res");
+  const [pegada, setPegada] = useState(false);
+  const [flechas, setFlechas] = useState({ l: false, r: false });
+  const tiraRef = useRef<HTMLDivElement>(null);
+  const tira = () => tiraRef.current ? ([...tiraRef.current.querySelectorAll("div")].find((x) => getComputedStyle(x).overflowX === "auto") ?? null) : null;
+  const ir = (id: string) => { const el = document.getElementById(`sec-${id}`); setActiva(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - CAB_DESK - 64, behavior: "smooth" }); };
+  const mirar = useCallback(() => {
+    if (window.innerWidth < 1024) return;
+    let a = "res";
+    for (const x of tabs) { const el = document.getElementById(`sec-${x.id}`); if (el && el.getBoundingClientRect().top < CAB_DESK + 120) a = x.id; }
+    setActiva(a);
+    const tb = tiraRef.current; setPegada(!!tb && tb.getBoundingClientRect().top <= CAB_DESK + 1);
+    const st = tira(); if (st) setFlechas({ l: st.scrollLeft > 4, r: st.scrollLeft + st.clientWidth < st.scrollWidth - 4 });
+  }, [tabs.map((x) => x.id).join()]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    mirar(); window.addEventListener("scroll", mirar, { passive: true }); window.addEventListener("resize", mirar);
+    const st = tira(); st?.addEventListener("scroll", mirar, { passive: true });
+    return () => { window.removeEventListener("scroll", mirar); window.removeEventListener("resize", mirar); st?.removeEventListener("scroll", mirar); };
+  }, [mirar]);
+  const seccion = (id: string, titulo: ReactNode, cuerpo: ReactNode, extra?: ReactNode) => (
+    <section id={`sec-${id}`} className="flex scroll-mt-[200px] flex-col gap-[18px]">
+      {titulo ? <div className="flex items-baseline justify-between gap-4"><h2 className="font-display text-[26px] font-extrabold leading-[1.1] tracking-[-0.035em]">{titulo}</h2>{extra}</div> : null}
+      {cuerpo}
+    </section>
+  );
+
+  return (
+    <div data-pantalla="APP-NEG-LISTING" data-ficha="nueva" className="bg-white">
+      {/* ═════════ Teléfono ═════════ */}
+      <div className="pb-[116px] lg:hidden" data-screen-label="App · Ficha">
+        <div className="relative h-[330px]">
+          <button type="button" aria-label={t.photosAll} onClick={verFotos} className="absolute inset-0 block">{f.hero ? <span className="block size-full bg-photo-bg-2" style={{ background: `center/cover url(${f.hero})` }} /> : <Placeholder height="100%" />}</button>
+          <div className="absolute inset-x-5 top-4 flex gap-2">
+            <IconButton icon="chevronLeft" size={40} label={t.back} onClick={() => router.back()} />
+            <div className="flex-1" />
+            <IconButton icon="share" size={40} label={t.share} onClick={compartir} />
+            <IconButton icon="heart" size={40} label={guardado ? t.saved : t.save} active={guardado} onClick={guardar} />
+          </div>
+          {f.nFotos > 0 ? (
+            <button type="button" onClick={verFotos} className="absolute bottom-4 right-5 flex items-center gap-1.5 rounded-[10px] bg-white px-2.5 py-[7px] font-mono text-[10.5px] font-bold tracking-[0.08em]">
+              <Icon name="image" size={14} />{f.nFotos} {E2("FOTOS", "PHOTOS")}
+            </button>
+          ) : null}
+        </div>
+        <div className="flex flex-col gap-2.5 px-5 pb-[18px] pt-5">
+          <div className="flex gap-1.5"><Chip variant="pro" style={CHIP_SM}>PRO</Chip>{f.verificado ? <Chip variant="verified" style={CHIP_SM}>{E2("Sello To'Latino", "To'Latino seal")}</Chip> : null}</div>
+          <h1 className="text-balance font-display text-[29px] font-extrabold leading-[1.05] tracking-[-0.045em]">{f.nombre}</h1>
+          <div className="font-mono text-[10.5px] font-bold tracking-[0.07em] text-ink/60">{metaL.map((x, i) => <span key={i}>{i ? " · " : ""}{x.startsWith("★") ? <><span className="text-[var(--tl-pro)]">★</span>{x.slice(1)}</> : x}</span>)}</div>
+          <div className="flex flex-wrap items-center gap-2 text-[13px] font-semibold text-ink/70" data-estado={abierto ? "abierto" : "cerrado"}>
+            <span className="size-2 flex-none rounded-full" style={{ background: stDot }} /><span className="font-extrabold" style={{ color: stFg }}>{f.estadoCorto}</span>{restoC ? <span>{restoC}</span> : null}
+          </div>
+          {[llamar, escribir, llegar].some(Boolean) ? (
+            <div className="mt-1.5 grid gap-2" style={{ gridTemplateColumns: `repeat(${[llamar, escribir, llegar].filter(Boolean).length},minmax(0,1fr))` }}>
+              {llamar ? <div className="grid"><Button variant="secondary" size="sm" icon="phone" block onClick={llamar}>{E2("Llamar", "Call")}</Button></div> : null}
+              {escribir ? <div className="grid"><Button variant="secondary" size="sm" icon="chat" block onClick={escribir}>{E2("Escribir", "Message")}</Button></div> : null}
+              {llegar ? <div className="grid"><Button variant="secondary" size="sm" icon="pin" block onClick={llegar}>{E2("Cómo llegar", "Directions")}</Button></div> : null}
+            </div>
+          ) : null}
+        </div>
+        <div ref={tabsRef} className="sticky z-20 bg-white" style={{ top: CAB_MOVIL }}><Tabs items={tabs} active={tab} onChange={setTab} /></div>
+        <div className="min-h-[640px]">
+          {tab === "res" && (
+            <div className="flex flex-col gap-6 px-5 pt-5" data-screen-label="Ficha · resumen">
+              <div className="flex flex-col gap-3">
+                {miCita}
+                <div className="grid"><TodayCard eyebrow={hoy.eyebrow} title={hoy.title} cols={hoy.cols} /></div>
+                {oferta}
+              </div>
+              {dueno(false)}
+              {popular.length ? (
+                <div className="flex flex-col gap-2.5">
+                  <SectionHeader title={E2("Lo más pedido", "Most booked")} action={nItems > popular.length ? `${E2("Ver", "See")} ${nItems}` : undefined} onAction={() => setTab("cat")} />
+                  {popular.map((x) => filaSvc(x))}
+                </div>
+              ) : null}
+              {gente.length ? (
+                <div className="flex flex-col gap-2.5">
+                  <SectionHeader title={L(cfg.staffTitle)} action={E2("Ver todos", "See all")} onAction={() => setTab("staff")} />
+                  <div className="hs -mx-5 flex gap-2.5 overflow-x-auto px-5">
+                    {gente.map((p) => (
+                      <button key={p.id} type="button" onClick={() => (staffBook ? abrirReserva({ who: p.id }) : setTab("staff"))} className="w-[136px] flex-none overflow-hidden rounded-[17px] border border-ink/[.08] bg-white text-left">
+                        {fotoGente(p, 120)}
+                        <div className="px-[11px] pb-3 pt-2.5"><div className="font-display text-[14.5px] font-extrabold leading-[1.2] tracking-[-0.02em]">{p.short}</div><div className="mt-1 truncate text-[11.5px] font-semibold leading-[1.35] text-ink/60">{p.role}</div></div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {resumenResenas(false)}
+            </div>
+          )}
+          {tab === "cat" && (
+            <div className="flex flex-col gap-3.5 pt-4" data-screen-label="Ficha · servicios">
+              {miCita ? <div className="px-5">{miCita}</div> : null}
+              <div className="hs flex gap-2 overflow-x-auto px-5">{chips.map((c) => <Chip key={c.id} variant={catF === c.id ? "selected" : "filter"} onClick={() => setCatF(c.id)}>{c.label}</Chip>)}</div>
+              {gruposF.map((g) => (
+                <div key={g.k} className="flex flex-col gap-2 px-5">
+                  <div className="pt-1.5 font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{g.label}</div>
+                  {g.items.map((x) => filaSvc(x))}
+                </div>
+              ))}
+            </div>
+          )}
+          {tab === "staff" && (
+            <div className="flex flex-col gap-3 px-5 pt-[18px]" data-screen-label="Ficha · equipo">
+              {gente.map((p) => (
+                <div key={p.id} className="grid grid-cols-[84px_minmax(0,1fr)] gap-[13px] rounded-[17px] border border-ink/[.08] bg-white p-3">
+                  <div className="overflow-hidden rounded-[13px]">{fotoGente(p, 96)}</div>
+                  <div className="flex min-w-0 flex-col gap-1.5">
+                    <div className="flex items-center gap-[7px]"><span className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.025em]">{p.name}</span>{p.owner ? <Tag tone="ink">{E2("DUEÑO", "OWNER")}</Tag> : null}</div>
+                    <div className="text-[12.5px] font-medium leading-[1.45] text-ink/60">{p.role}</div>
+                    {p.spec ? <div className="font-mono text-[9.5px] font-bold tracking-[0.06em] text-ink/60">{p.spec}</div> : null}
+                    {staffBook || p.silla != null ? <div className="mt-0.5 flex justify-end gap-2">
+                      {p.silla != null && sv ? <Button variant="secondary" size="sm" onClick={() => sv.verSilla(p.silla!)}>{E2("Ver su página", "See profile")}</Button> : null}
+                      {staffBook ? <Button variant="soft" size="sm" onClick={() => abrirReserva({ who: p.id })}>{L(cfg.cta)}</Button> : null}
+                    </div> : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {tab === "rev" && rs && <div className="pb-6"><ResTab v={rs} desk={false} onMenu={() => setTab("cat")} /></div>}
+          {tab === "nov" && novedades && <div className="pb-6"><NovTab v={novedades} logo={f.logo ?? null} sesion={sesion} es={es} onHoras={() => setTab("hor")} onItem={() => setTab("cat")} /></div>}
+          {tab === "evt" && <EventosTab eventos={eventos} es={es} />}
+          {tab === "jobs" && <div className="pb-6"><JobsTab jobs={jobs} negocio={f.id} sesion={sesion} es={es} /></div>}
+          {tab === "hor" && <div className="flex flex-col gap-4 px-5 pt-[18px]" data-screen-label="Ficha · horario">{horario}</div>}
+          {tab === "faq" && <div className="flex flex-col gap-4 px-5 pt-[18px]" data-screen-label="Ficha · antes de ir">{antes}</div>}
+          {tab === "rel" && <div className="flex flex-col gap-2.5 px-5 pt-[18px]" data-screen-label="Ficha · relacionados">{relacionados}</div>}
+        </div>
+        {barra && !bk && !sv?.hoja ? (
+          <div data-screen-label="Ficha · barra" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-ink/[.08] bg-paper/95 px-5 pb-[calc(22px+env(safe-area-inset-bottom))] pt-3 backdrop-blur-[14px]">
+            <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-[1.1] tracking-[-0.03em]">{barra.title}</div><div className="mt-1 truncate font-mono text-[9px] font-bold tracking-[0.08em] text-open-text">{barra.sub}</div></div>
+            <Button variant="primary" size="lg" onClick={barra.go}>{barra.cta}</Button>
+          </div>
+        ) : null}
+        {bk && sv ? <HojaCita v={sv} bk={bk} setBk={setBk} cfg={cfg} es={es} /> : null}
+      </div>
+
+      {/* ═════════ Computadora ═════════ */}
+      <div className="mx-auto hidden max-w-[1240px] px-8 pb-14 lg:block" data-screen-label="APP-NEG-LISTING · desktop">
+        <button type="button" onClick={() => router.back()} className="inline-flex items-center gap-1.5 pt-[18px] text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} />{E2("Volver", "Back")}</button>
+        <div className="flex flex-wrap items-center gap-2 pb-4 pt-2.5 font-mono text-[10.5px] font-bold tracking-[0.12em] text-ink/60">
+          {[f.subsLinea.split(" · ")[0]?.toUpperCase(), `${f.ciudad}, PA`].filter(Boolean).map((x, i) => <span key={i}>{i ? "· " : ""}{x}</span>)}
+        </div>
+        <div className="relative grid h-[448px] grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] grid-rows-2 gap-2 overflow-hidden rounded-[22px]">
+          <button type="button" aria-label={t.photosAll} onClick={verFotos} className="row-span-2 min-w-0">{f.hero ? <span className="block size-full" style={{ background: `center/cover url(${f.hero})` }} /> : <Placeholder height="100%" />}</button>
+          {[1, 2, 3, 4].map((k) => <button key={k} type="button" aria-label={t.photosAll} onClick={verFotos} className="min-w-0">{f.fotos[k] ? <span className="block size-full" style={{ background: `center/cover url(${f.fotos[k]})` }} /> : <Placeholder height="100%" />}</button>)}
+          {f.nFotos > 0 ? <button type="button" onClick={verFotos} className="absolute bottom-4 right-4 flex items-center gap-2 rounded-[13px] bg-white px-3.5 py-2.5 text-[13px] font-bold shadow-[var(--shadow-float)]"><Icon name="image" size={16} />{E2(`Ver las ${f.nFotos} fotos`, `See all ${f.nFotos} photos`)}</button> : null}
+        </div>
+        <div className="flex flex-wrap items-end justify-between gap-6 pb-[22px] pt-[26px]">
+          <div className="min-w-0 flex-[1_1_420px]">
+            <div className="mb-3.5 flex flex-wrap gap-2"><Chip variant="pro">PRO</Chip>{f.verificado ? <Chip variant="verified">{E2("Sello To'Latino", "To'Latino seal")}</Chip> : null}</div>
+            <h1 className="text-balance font-display text-[clamp(32px,4.2vw,48px)] font-extrabold leading-[1.02] tracking-[-0.045em]">{f.nombre}</h1>
+            <div className="mt-3 flex flex-wrap gap-2 font-mono text-[11.5px] font-bold tracking-[0.08em] text-ink/60">{metaL.map((x, i) => <span key={i}>{i ? "· " : ""}{x.startsWith("★") ? <><span className="text-[var(--tl-pro)]">★</span>{x.slice(1)}</> : x}</span>)}</div>
+            <div className="mt-3 flex flex-wrap items-center gap-2.5 text-[14px] font-semibold text-ink/70"><span className="size-[9px] flex-none rounded-full" style={{ background: stDot }} /><span className="font-extrabold" style={{ color: stFg }}>{f.estadoCorto}</span>{restoC ? <span>{restoC}</span> : null}</div>
+          </div>
+          <div className="flex flex-none gap-2">
+            <IconButton icon="heart" size={50} label={guardado ? t.saved : t.save} active={guardado} onClick={guardar} />
+            <IconButton icon="share" size={50} label={t.share} onClick={compartir} />
+            {llamar ? <IconButton icon="phone" size={50} label={E2("Llamar", "Call")} onClick={llamar} /> : null}
+          </div>
+        </div>
+        <div ref={tiraRef} className="sticky z-20" style={{ top: CAB_DESK }}>
+          <DesktopTabs items={tabs} active={activa} onChange={ir} aside={pegada ? { label: `${f.estadoCorto} · ${resto}`.toUpperCase().slice(0, 40), dot: stDot } : null} />
+          {flechas.l ? <div className="pointer-events-none absolute inset-y-0 left-0 flex w-[76px] items-center bg-[linear-gradient(90deg,#fff_55%,rgba(255,255,255,0))]"><span className="pointer-events-auto"><IconButton icon="chevronLeft" size={34} label={E2("Anteriores", "Previous")} onClick={() => tira()?.scrollBy({ left: -320, behavior: "smooth" })} /></span></div> : null}
+          {flechas.r ? <div className="pointer-events-none absolute inset-y-0 right-[420px] flex w-[76px] items-center justify-end bg-[linear-gradient(270deg,#fff_55%,rgba(255,255,255,0))]"><span className="pointer-events-auto"><IconButton icon="chevronRight" size={34} label={E2("Más", "More")} onClick={() => tira()?.scrollBy({ left: 320, behavior: "smooth" })} /></span></div> : null}
+        </div>
+        <div className="grid grid-cols-[minmax(0,1fr)_372px] items-start gap-12 pt-8">
+          <div className="flex min-w-0 flex-col gap-16">
+            {seccion("res", null, <div className="flex flex-col gap-4">{miCita}{dueno(true)}<div className="grid"><TodayCard desktop eyebrow={hoy.eyebrow} title={hoy.title} cols={hoy.cols} /></div>{oferta}</div>)}
+            {nItems ? seccion("cat", L(cfg.title), (
+              <div data-screen-label="Ficha · servicios · desktop" className="flex flex-col gap-[18px]">
+                <div className="hs flex gap-2 overflow-x-auto">{chips.map((c) => <Chip key={c.id} variant={catF === c.id ? "selected" : "filter"} onClick={() => setCatF(c.id)}>{c.label}</Chip>)}</div>
+                {gruposF.map((g) => (
+                  <div key={g.k} className="flex flex-col gap-2.5">
+                    <div className="pt-1.5 font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{g.label}</div>
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-2.5">{g.items.map((x) => <div key={x.id} className="flex min-w-0 flex-col">{filaSvc(x, bk?.svc === x.id)}</div>)}</div>
+                  </div>
+                ))}
+              </div>
+            )) : null}
+            {gente.length ? seccion("staff", L(cfg.staffTitle), (
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3.5">
+                {gente.map((p) => (
+                  <div key={p.id} className="flex flex-col overflow-hidden rounded-[20px] border bg-white" style={{ border: dsk.who === p.id ? "1.5px solid var(--tl-ink)" : "1px solid rgba(11,14,18,.08)" }}>
+                    <div className="relative">{fotoGente(p, 180)}{p.owner ? <span className="absolute left-3 top-3"><Tag tone="ink">{E2("DUEÑO", "OWNER")}</Tag></span> : null}</div>
+                    <div className="flex flex-1 flex-col gap-2 p-4">
+                      <div className="font-display text-[18px] font-extrabold leading-[1.15] tracking-[-0.03em]">{p.name}</div>
+                      <div className="text-[13px] font-medium leading-[1.45] text-ink/60">{p.role}</div>
+                      {p.spec ? <div className="font-mono text-[10px] font-bold tracking-[0.08em] text-ink/60">{p.spec}</div> : null}
+                      {p.silla != null && sv ? <><div className="flex-1" /><div className="grid"><Button variant="secondary" size="md" icon="store" block onClick={() => sv.verSilla(p.silla!)}>{E2("Ver su página", "See profile")}</Button></div></> : null}
+                      {staffBook ? <><div className="flex-1" /><div className="grid"><Button variant={dsk.who === p.id ? "primary" : "soft"} size="md" block onClick={() => elegirDesk({ who: p.id })}>{dsk.who === p.id ? E2("Elegido", "Selected") : `${L(cfg.cta)} ${E2("con", "with")} ${p.short}`}</Button></div></> : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )) : null}
+            {rs ? seccion("rev", E2("Reseñas", "Reviews"), <ResTab v={rs} desk onMenu={() => ir("cat")} />, <button type="button" onClick={rs.escribir} className="text-[13.5px] font-bold text-action">{rs.r.tengo ? E2("Ver tu reseña", "See your review") : E2("Escribir reseña", "Write a review")}</button>) : null}
+            {novedades?.posts.length ? seccion("nov", E2("Novedades", "Updates"), <div className="max-w-[680px]"><NovTab v={novedades} logo={f.logo ?? null} sesion={sesion} es={es} onHoras={() => ir("hor")} onItem={() => ir("cat")} /></div>) : null}
+            {eventos.length ? seccion("evt", E2("Eventos", "Events"), <EventosTab eventos={eventos} es={es} />) : null}
+            {jobs.length ? seccion("jobs", "Jobs", <div className="max-w-[680px]"><JobsTab jobs={jobs} negocio={f.id} sesion={sesion} es={es} /></div>) : null}
+            {!sinLocal ? seccion("hor", E2("Horario y cómo llegar", "Hours and directions"), <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-4">{horario}</div>) : null}
+            {f.faqs.length || dep ? seccion("faq", E2("Antes de ir", "Before you go"), <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-4">{antes}</div>) : null}
+            {f.relacionados.length ? seccion("rel", E2("Relacionados", "Related"), <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5">{relacionados}</div>) : null}
+          </div>
+          <aside className="sticky min-w-0 self-start" style={{ top: CAB_DESK + 78 }}>
+            {sv ? <TarjetaCita v={sv} cfg={cfg} es={es} dsk={dsk} setDsk={setDsk} pulso={pulso} staffBook={staffBook} grupos={grupos} onVer={() => ir("cat")} /> : null}
+            {escribir || llegar ? (
+              <div className="mt-3 flex gap-2">
+                {escribir ? <div className="grid flex-1"><Button variant="secondary" size="md" icon="chat" block onClick={escribir}>{E2("Escribir", "Message")}</Button></div> : null}
+                {llegar ? <div className="grid flex-1"><Button variant="secondary" size="md" icon="pin" block onClick={llegar}>{E2("Cómo llegar", "Directions")}</Button></div> : null}
+              </div>
+            ) : null}
+          </aside>
+        </div>
+      </div>
+
+      {sv && <SvcHoja v={sv} />}
+      {rs && <ResCapas v={rs as CtlResenas} />}
+      {aviso ? <div role="status" className="fixed bottom-[112px] left-1/2 z-[90] -translate-x-1/2 whitespace-nowrap rounded-full bg-ink px-4 py-[11px] text-[12.5px] font-bold text-white shadow-[var(--shadow-float)] lg:bottom-7">{aviso}</div> : null}
+    </div>
+  );
+
+}
+
+/* Alturas de la cabecera de la app (AppShell): las pestañas se pegan justo debajo. */
+const CAB_MOVIL = 57, CAB_DESK = 121;
+const CHIP_SM = { padding: "5px 10px", fontSize: 11.5 };
+
+/* ── La reserva (Belleza): 1 servicio y con quién → 2 día y hora → Booking (/cita) para Detalles y Revisa y envía ── */
+type Bk = { who: string | null; svc: string | null; opts: Record<string, number>; i: number; h: number | null; step: 1 | 2 };
+const nuevaBk = (v: Svc): Bk => ({ who: v.silla ? null : "any", svc: null, opts: {}, i: 0, h: null, step: 1 });
+
+/* Las horas del día elegido las decide el servidor (horasDeCita, la misma acción de Booking). */
+function useHoras(v: Svc, b: Pick<Bk, "who" | "svc" | "opts" | "i">, on: boolean) {
+  const [H, setH] = useState<HorasCita | null>(null);
+  const [cargando, setCargando] = useState(false);
+  const s = b.svc ? v.cp.servicios.find((x) => x.id === b.svc) ?? null : null;
+  const listo = !!s && s.opts.every((_, gi) => b.opts[String(gi)] != null) && (!v.silla || !!b.who);
+  const key = JSON.stringify([b.svc, b.opts, b.who, b.i]);
+  useEffect(() => {
+    if (!on || !listo || !s) { setH(null); return; }
+    let vivo = true; setCargando(true);
+    void horasDeCita(v.cp.negocio.id, { svc: s.id, opts: b.opts, adds: [], con: b.who ?? "any", i: b.i }).then((x) => { if (vivo) { setH(x); setCargando(false); } });
+    return () => { vivo = false; };
+  }, [key, on, listo]); // eslint-disable-line react-hooks/exhaustive-deps
+  return { H, cargando, s, listo };
+}
+
+function Elegir({ v, b, up, cfg, es, staffBook, corto }: { v: Svc; b: Bk; up: (o: Partial<Bk>) => void; cfg: Cfg; es: boolean; staffBook: boolean; corto?: boolean }) {
+  const E2 = (a: string, c: string) => (es ? a : c), L = (x: [string, string]) => (es ? x[0] : x[1]);
+  const cp = v.cp;
+  const [catF, setCatF] = useState("all");
+  const own = b.who && b.who !== "any" ? b.who : null;
+  const lista = cp.servicios.filter((s) => !own || s.hacen.some((h) => h.id === own));
+  const people = staffBook ? cp.gente.filter((p) => !b.svc || cp.servicios.find((s) => s.id === b.svc)?.hacen.some((h) => h.id === p.id)).map((p) => {
+    const nx = v.prx(p.id); return { id: p.id, name: p.corto, image: p.foto ?? undefined, next: nx ? (nx.i === 0 ? `${E2("LIBRE ", "OPEN ")}${horaL(nx.m)}` : diaS(cp.hoy, nx.i, es)).toUpperCase() : E2("SIN HORAS", "NO TIMES"), soon: nx?.i === 0 };
+  }) : [];
+  const secs = [...cp.secciones.map((sc) => ({ id: sc.id, name: es ? sc.name.es : sc.name.en || sc.name.es })), { id: "_", name: E2("Otros", "Other") }]
+    .filter((sc) => lista.some((s) => (sc.id === "_" ? !cp.secciones.some((x) => x.id === s.sec) : s.sec === sc.id)));
+  // En la tarjeta de la computadora, lo más pedido (el primero de cada sección) y lo elegido; la lista completa está en la sección.
+  const top = secs.slice(0, 3).map((sc) => lista.find((s) => (sc.id === "_" ? !cp.secciones.some((x) => x.id === s.sec) : s.sec === sc.id))).filter(Boolean) as typeof lista;
+  const ver = corto ? [...(b.svc && !top.some((x) => x.id === b.svc) ? lista.filter((x) => x.id === b.svc) : []), ...top].slice(0, 3)
+    : lista.filter((s) => catF === "all" || (catF === "_" ? !cp.secciones.some((x) => x.id === s.sec) : s.sec === catF));
+  const s = b.svc ? cp.servicios.find((x) => x.id === b.svc) ?? null : null;
+  const nm = (x: { es: string; en: string }) => (es ? x.es : x.en || x.es);
+  return (
+    <>
+      {people.length ? <><Eyebrow>{L(cfg.label)}</Eyebrow><div className="grid"><StaffPicker people={people} selected={b.who ?? ""} onSelect={(id: string) => up({ who: id, h: null })} anyoneLabel={v.silla ? "" : E2("Cualquiera", "Anyone")} /></div></> : null}
+      <Eyebrow style={{ marginTop: 8 }}>{L(cfg.tab)}</Eyebrow>
+      {secs.length > 1 && !corto ? <div className="hs -mx-5 flex gap-2 overflow-x-auto px-5 lg:mx-0 lg:px-0">{[{ id: "all", name: E2("Todos", "All") }, ...secs].map((c) => <Chip key={c.id} variant={catF === c.id ? "selected" : "filter"} onClick={() => setCatF(c.id)}>{c.name}</Chip>)}</div> : null}
+      {ver.map((x) => {
+        const P = precio(x, cp.extras, { opts: {}, adds: [] }, own);
+        return <div key={x.id} className="grid"><ServiceRow name={nm(x.name)} meta={durL(x.dur).toUpperCase()} price={`${x.opts.some((g) => g.o.some((o) => o.p > 0)) || x.desde ? E2("Desde ", "From ") : ""}${dinero(P.cents)}`} selected={b.svc === x.id} onClick={() => up({ svc: x.id, opts: {}, h: null })} /></div>;
+      })}
+      {s ? s.opts.map((g, gi) => (
+        <div key={gi} className="mt-2 grid"><OptionGroup title={nm(g.t)} meta={E2("ELIGE 1", "CHOOSE 1")} required done={b.opts[String(gi)] != null} reqLabel={E2("OBLIGATORIO", "REQUIRED")} doneLabel={E2("LISTO", "DONE")}
+          options={g.o.map((o, oi) => ({ label: nm(o.n), price: o.p ? `+${dinero(o.p)}` : "", selected: b.opts[String(gi)] === oi }))} onToggle={(oi: number) => up({ opts: { ...b.opts, [String(gi)]: oi }, h: null })} /></div>
+      )) : null}
+    </>
+  );
+}
+
+function DiaHora({ v, b, up, H, cargando, es }: { v: Svc; b: Bk; up: (o: Partial<Bk>) => void; H: HorasCita | null; cargando: boolean; es: boolean }) {
+  const E2 = (a: string, c: string) => (es ? a : c);
+  const DOW = es ? ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"] : ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+  const days = (H?.dias ?? []).map((d) => ({ id: `d${d.i}`, dow: d.i === 0 ? E2("HOY", "TODAY") : DOW[d.dow], num: d.num, off: d.off }));
+  const slots = (H?.grupos ?? []).flatMap((g) => g.sl).map((x) => ({ t: x.l, taken: !x.free }));
+  const sel = b.h != null ? H?.grupos.flatMap((g) => g.sl).find((x) => x.m === b.h)?.l ?? null : null;
+  return (
+    <>
+      <Eyebrow>{E2("DÍA", "DAY")}</Eyebrow>
+      <div className="grid"><DateStrip days={days} selected={`d${b.i}`} onSelect={(id: string) => up({ i: Number(id.slice(1)), h: null })} /></div>
+      <Eyebrow style={{ marginTop: 8 }}>{E2("HORA", "TIME")}</Eyebrow>
+      {cargando && !H ? <div className="py-6 text-center text-[13px] font-semibold text-ink/60">{E2("Buscando horas…", "Finding times…")}</div>
+        : slots.length && slots.some((x) => !x.taken) ? <div className="grid"><TimeSlots slots={slots} selected={sel} onSelect={(l: string) => { const x = H?.grupos.flatMap((g) => g.sl).find((z) => z.l === l && z.free); if (x) up({ h: x.m }); }} /></div>
+          : <div className="rounded-[15px] bg-paper px-4 py-3.5 text-[13px] font-semibold leading-[1.5] text-ink/60">{E2("No quedan horas este día. Elige otro.", "No times left this day. Pick another.")}</div>}
+      {void v}
+    </>
+  );
+}
+
+/* Teléfono: la hoja de 3 pasos. Los pasos 1 y 2 aquí; «Continuar» lleva a Booking con lo elegido (Detalles y Revisa y envía). Si el
+   servicio tiene extras, la hoja de siempre (SvcHoja) los ofrece y sigue igual que antes. */
+function HojaCita({ v, bk, setBk, cfg, es }: { v: Svc; bk: Bk; setBk: (b: Bk | null) => void; cfg: Cfg; es: boolean }) {
+  const E2 = (a: string, c: string) => (es ? a : c), L = (x: [string, string]) => (es ? x[0] : x[1]);
+  const router = useRouter();
+  const up = (o: Partial<Bk>) => setBk({ ...bk, ...o });
+  const staffBook = v.silla || (v.cp.pol.pick && v.cp.gente.length > 1);
+  const { H, cargando, s, listo } = useHoras(v, bk, bk.step === 2);
+  const own = bk.who && bk.who !== "any" ? bk.who : null;
+  const P = s ? precio(s, v.cp.extras, { opts: bk.opts, adds: [] }, own) : null;
+  const falta1 = !s ? E2("Elige un servicio", "Choose a service") : v.silla && !bk.who ? E2("Elige con quién", "Choose who") : !listo ? E2("Elige las opciones", "Choose the options") : "";
+  const conExtras = v.cp.extras.length > 0;
+  const seguir = () => {
+    if (bk.step === 1) {
+      if (falta1 || !s) return;
+      // Con extras: la hoja de siempre (opciones, extras y con quién) y de ahí a Booking.
+      if (conExtras) { setBk(null); v.setHoja({ svc: s.id, opts: bk.opts, adds: [], con: v.silla ? bk.who : bk.who ?? "any" }); return; }
+      return up({ step: 2 });
+    }
+    if (!s || bk.h == null) return;
+    router.push(`${citaUrl(v.cp.negocio.id, { svc: s.id, opts: bk.opts, adds: [], con: v.silla ? bk.who : bk.who ?? "any" })}&i=${bk.i}&h=${bk.h}`);
+  };
+  const cta = bk.step === 1 ? (falta1 || E2("Continuar", "Continue")) : bk.h == null ? E2("Elige una hora", "Choose a time") : E2("Continuar", "Continue");
+  return (
+    <div data-screen-label="App · Booking" className="fixed inset-0 z-[60] lg:hidden">
+      <button type="button" aria-label={E2("Cerrar", "Close")} onClick={() => setBk(null)} className="absolute inset-0 bg-ink/45" />
+      <div role="dialog" aria-modal="true" aria-label={bk.step === 1 ? L(cfg.s1) : L(cfg.s2)} className="absolute inset-x-0 bottom-0 top-[58px] flex flex-col overflow-hidden rounded-t-[26px] bg-paper">
+        <StepHeader title={bk.step === 1 ? L(cfg.s1) : L(cfg.s2)} step={bk.step} total={3} backLabel={E2("Volver", "Back")} onBack={() => (bk.step > 1 ? up({ step: 1 }) : setBk(null))} />
+        <div className="hs min-h-0 flex-1 overflow-y-auto px-5 pb-5 pt-[18px]"><div className="flex flex-col gap-3">
+          {bk.step === 1 ? <Elegir v={v} b={bk} up={up} cfg={cfg} es={es} staffBook={staffBook} /> : <DiaHora v={v} b={bk} up={up} H={H} cargando={cargando} es={es} />}
+          {bk.step === 2 && P ? <div className="mt-1 grid"><DepositNote>{depositoTexto(v, own, es)}</DepositNote></div> : null}
+        </div></div>
+        <TotalBar label="TOTAL" total={P ? dinero(P.cents) : "—"} cta={cta} onCta={seguir} />
+        <div className="h-[calc(10px+env(safe-area-inset-bottom))] bg-white" />
+      </div>
+    </div>
+  );
+}
+
+const depositoTexto = (v: Svc, own: string | null, es: boolean) => {
+  const p = own ? v.cp.gente.find((x) => x.id === own) : null, dep = p?.dep ?? Math.max(0, ...v.cp.gente.map((x) => x.dep));
+  const E2 = (a: string, c: string) => (es ? a : c);
+  return dep ? E2(`Todavía no es una cita: el negocio acepta en unos ${v.cp.pol.resp} min. Si rechaza o no responde en ${v.cp.pol.exp} h, el depósito de ${dinero(dep)} se libera.`, `Not a booking yet: the business accepts in about ${v.cp.pol.resp} min. If it declines or does not reply in ${v.cp.pol.exp} h, the ${dinero(dep)} deposit is released.`)
+    : E2(`Todavía no es una cita: el negocio la confirma en unos ${v.cp.pol.resp} min.`, `Not a booking yet: the business confirms in about ${v.cp.pol.resp} min.`);
+};
+
+/* Computadora: la tarjeta pegada a la derecha (con quién, servicio, día y hora) y «Continuar» a Booking. */
+function TarjetaCita({ v, cfg, es, dsk, setDsk, pulso, staffBook, grupos, onVer }: { v: Svc; cfg: Cfg; es: boolean; dsk: Bk; setDsk: (f: (b: Bk) => Bk) => void; pulso: boolean; staffBook: boolean; grupos: Grupo[]; onVer: () => void }) {
+  const E2 = (a: string, c: string) => (es ? a : c), L = (x: [string, string]) => (es ? x[0] : x[1]);
+  const router = useRouter();
+  const up = (o: Partial<Bk>) => setDsk((d) => ({ ...d, ...o }));
+  const { H, cargando, s, listo } = useHoras(v, dsk, true);
+  const own = dsk.who && dsk.who !== "any" ? dsk.who : null;
+  const P = s ? precio(s, v.cp.extras, { opts: dsk.opts, adds: [] }, own) : null;
+  const nItems = grupos.reduce((a, g) => a + g.items.length, 0);
+  if (!v.cp.can) return (
+    <div className="rounded-[22px] border border-ink/[.08] bg-white p-5 shadow-[var(--shadow-float)]">
+      <div className="font-display text-[22px] font-extrabold leading-[1.1] tracking-[-0.035em]">{L(cfg.cta)}</div>
+      <div className="mt-2 text-[13px] font-medium leading-[1.55] text-ink/60">{v.nota}</div>
+    </div>
+  );
+  const falta = !s ? E2("Elige un servicio", "Choose a service") : v.silla && !dsk.who ? E2("Elige con quién", "Choose who") : !listo ? E2("Elige las opciones", "Choose the options") : dsk.h == null ? E2("Elige una hora", "Choose a time") : "";
+  const conExtras = v.cp.extras.length > 0;
+  const enviar = () => {
+    if (!s) return;
+    if (conExtras && listo) return v.setHoja({ svc: s.id, opts: dsk.opts, adds: [], con: v.silla ? dsk.who : dsk.who ?? "any" });
+    if (falta) return;
+    router.push(`${citaUrl(v.cp.negocio.id, { svc: s.id, opts: dsk.opts, adds: [], con: v.silla ? dsk.who : dsk.who ?? "any" })}&i=${dsk.i}&h=${dsk.h}`);
+  };
+  return (
+    <div data-screen-label="Ficha · Booking · columna" className="max-h-[calc(100vh-220px)] overflow-y-auto rounded-[22px] bg-white transition-shadow"
+      style={{ border: pulso ? "1.5px solid var(--tl-action)" : "1px solid rgba(11,14,18,.08)", boxShadow: pulso ? "0 0 0 6px rgba(75,55,245,.12), var(--shadow-float)" : "var(--shadow-float)" }}>
+      <div className="px-5 pt-5"><div className="font-display text-[22px] font-extrabold leading-[1.1] tracking-[-0.035em]">{L(cfg.cta)}</div>{v.desde ? <div className="mt-[5px] text-[13px] font-semibold text-ink/60">{E2("Desde", "From")} {dinero(v.desde)}</div> : null}</div>
+      <div className="flex flex-col gap-2.5 px-5 pt-[18px]">
+        <Elegir v={v} b={dsk} up={up} cfg={cfg} es={es} staffBook={staffBook} corto />
+        {nItems > 3 ? <button type="button" onClick={onVer} className="self-start text-[12.5px] font-bold text-action">{E2("Ver", "See")} {nItems}</button> : null}
+      </div>
+      {s && listo && !conExtras ? <div className="flex flex-col gap-2.5 px-5 pt-[18px]"><DiaHora v={v} b={dsk} up={up} H={H} cargando={cargando} es={es} /><div className="grid"><DepositNote>{depositoTexto(v, own, es)}</DepositNote></div></div> : null}
+      <div className="sticky bottom-0 mt-[18px] flex flex-col gap-3 border-t border-ink/[.08] bg-white px-5 pb-5 pt-4">
+        <div className="flex items-end justify-between gap-3"><div><div className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">TOTAL</div><div className="mt-1 font-display text-[24px] font-extrabold leading-none tracking-[-0.03em]">{P ? dinero(P.cents) : "—"}</div></div>
+          {dsk.h != null && H ? <div className="text-right text-[12.5px] font-bold text-ink/70">{diaS(v.cp.hoy, dsk.i, es)} · {horaL(dsk.h)}</div> : null}</div>
+        <div className="grid"><Button variant="primary" size="lg" block disabled={!!falta && !(conExtras && s && listo)} onClick={enviar}>{conExtras && s && listo ? E2("Elegir extras, día y hora", "Choose extras, day and time") : E2("Continuar", "Continue")}</Button></div>
+        {falta && !(conExtras && s && listo) ? <div className="-mt-1 text-center text-[12px] font-semibold text-ink/60">{falta}</div> : null}
+      </div>
+    </div>
+  );
+}

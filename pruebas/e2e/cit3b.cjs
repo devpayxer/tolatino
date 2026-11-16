@@ -37,21 +37,22 @@ const limpiar = () => {
   const b = await chromium.launch(); const err = [];
   const ctxM = await b.newContext({ ...devices['iPhone 13'] }); const m = await ctxM.newPage();
   m.on('pageerror', e => err.push(e.message)); m.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); });
-  // 1. Visitante: pestaña Servicios
+  // 1. Visitante: pestaña Servicios (C-005 · ficha nueva de Belleza Pro: lista de servicios; quién confirma al instante y su silla, en Equipo)
   await m.goto(B + `/n/${BIZ}?tab=svc`); const tab = m.locator('[data-screen-label="Ficha · servicios"]'); await tab.waitFor();
-  ok(!!(await vis(tab.getByText('Por servicio'))), 'pestaña Servicios con Por servicio / Por barbero');
+  ok(await m.locator('[data-ficha="nueva"]').count() === 1, 'Belleza Pro abre la ficha nueva');
   ok(!!(await vis(tab.getByText(/\$22–\$28/))), 'Fade: rango de precio de las sillas ($22–$28)');
   ok(!!(await vis(tab.getByText(/4 BARBEROS/).first())), 'meta: 4 barberos');
-  ok(!!(await vis(tab.getByText(/Cada barbero renta su silla/))), 'nota: cada barbero pone su precio');
   await m.screenshot({ path: OUT + 'b1-servicios-m.png', fullPage: true });
-  await tab.getByText('Por barbero').click(); await tab.getByText('CONFIRMA AL INSTANTE').first().waitFor();
-  ok(await tab.getByText('SILLA 2').count() === 1 && !!(await vis(tab.getByText(/RESPONDE EN ~15 MIN/).first())), 'por barbero: silla, confirma al instante / responde en ~15 min');
+  await m.goto(B + `/n/${BIZ}?tab=staff`); const eq = m.locator('[data-screen-label="Ficha · equipo"]'); await eq.getByText('CONFIRMA AL INSTANTE', { exact: false }).first().waitFor();
+  ok(await eq.getByText(/Silla 2/).count() === 1 && !!(await vis(eq.getByText(/RESPONDE EN ~15 MIN/).first())), 'equipo: silla, confirma al instante / responde en ~15 min');
   await m.screenshot({ path: OUT + 'b2-barberos-m.png', fullPage: true });
-  // 2. Marisol: hoja del Fade
+  // 2. Marisol: la hoja nueva (servicio y con quién) y, con extras, la hoja de siempre del Fade
   await entrar(m, '5705550122');
   await m.goto(B + `/n/${BIZ}?tab=svc`); await tab.waitFor(); await clic(tab.getByText('Fade', { exact: true }));
+  const nueva = m.locator('[data-screen-label="App · Booking"]'); await nueva.getByText('Servicio y con quién').waitFor();
+  ok(!!(await vis(nueva.getByRole('button', { name: 'Elige con quién' }))), 'sin elegir con quién: «Elige con quién»');
+  await nueva.getByRole('radio', { name: 'Luis' }).click(); await nueva.getByRole('button', { name: 'Continuar' }).click();
   const hoja = m.locator('[data-screen-label="Servicio · opciones"]'); await hoja.getByText('¿Con quién?').waitFor();
-  ok(await hoja.getByRole('button', { name: 'Elige con quién' }).isDisabled(), 'sin elegir con quién no sigue');
   await hoja.getByRole('button', { name: /Luis Batista/ }).click();
   ok(!!(await vis(hoja.getByText(/Depósito de \$10: se retiene al enviar, se cobra cuando confirman/))), 'Luis: depósito de $10 al enviar');
   ok(!!(await vis(hoja.getByText('$28').first())), 'precio exacto de Luis: $28');
@@ -105,7 +106,8 @@ const limpiar = () => {
   // 5. Kelvin confirma al instante (silla rentada: sin depósito hasta que tenga su cuenta)
   await m.goto(B + `/n/${BIZ}?tab=svc`); await tab.waitFor();
   ok(!!(await vis(tab.locator('[data-screen-label]').getByText('TU CITA').first())) || !!(await vis(m.getByText('TU CITA').first())), 'la ficha muestra TU CITA');
-  await clic(tab.getByText('Corte clásico', { exact: true })); await hoja.getByText('¿Con quién?').waitFor(); await hoja.getByRole('button', { name: /Kelvin Rosario/ }).click();
+  await clic(tab.getByText('Corte clásico', { exact: true })); await nueva.getByRole('radio', { name: 'Kelvin' }).click(); await nueva.getByRole('button', { name: 'Continuar' }).click();
+  await hoja.getByText('¿Con quién?').waitFor(); await hoja.getByRole('button', { name: /Kelvin Rosario/ }).click();
   ok(!(await vis(hoja.getByText(/Depósito de/))), 'Kelvin sin cuenta de cobro propia: no pide depósito');
   await hoja.getByRole('button', { name: 'Elegir día y hora' }).click(); await m.waitForURL(/\/cita\?/);
   await bk.getByText('DÍA', { exact: true }).waitFor(); await bk.getByRole('radio', { name: /^(LUN|MAR|MIÉ|JUE|VIE|SÁB|DOM) / }).nth(1).click(); await m.waitForTimeout(300); await m.waitForFunction(() => !document.querySelector('[aria-busy="true"]'));

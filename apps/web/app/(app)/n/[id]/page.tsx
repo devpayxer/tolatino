@@ -37,6 +37,8 @@ import { textosT } from "@/lib/cms";
 import { PieWeb } from "../../_legal/PieWeb";
 import { ubicacion } from "@/lib/ubicacion";
 import { Ficha } from "./Ficha";
+import { FichaNueva } from "./FichaNueva";
+import { CFG_FICHA } from "@/lib/ficha-nueva";
 import { BASE_URL } from "@/lib/correo";
 import { auditar, staff } from "@/lib/admin";
 import { tx } from "@/lib/db";
@@ -221,6 +223,12 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     <>
     {vistaEquipo ? null : <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, "\\u003c") }} />}
     {vistaEquipo ? <AvisoEquipo es={lang === "es"} estado={f.situacion} /> : null}
+    {/* C-005 · Ficha nueva (cambios.md · paquete C-005 → C-008): solo Pro y solo las categorías que ya tienen su versión nueva. Free sigue con la de siempre. */}
+    {f.pro && CFG_FICHA[f.cat] ? (
+      <FichaNueva f={{ ...f, guardado: fav.has(f.id) }} svc={svc} resenas={res} novedades={nov && nov.posts.length ? nov : null} jobs={jobs} eventos={evts}
+        sesion={!!u} es={lang === "es"} tabInicial={sp.tab}
+        t={{ ...t, photosAll: f.nFotos === 1 ? t.photosOne : t.photosN.replace("{n}", String(f.nFotos)) }} />
+    ) : (
     <Ficha
       f={{ ...f, guardado: fav.has(f.id) }}
       menu={menu}
@@ -253,6 +261,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
         relSub: t.relSub.replace("{n}", f.nombre),
       }}
     />
+    )}
     <PieWeb />
     </>
   );

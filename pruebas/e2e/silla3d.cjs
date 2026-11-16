@@ -75,7 +75,7 @@ const limpiar = () => {
   await m.goto(B + `/n/${BIZ}/silla/2?tab=rev`); await clic(m.getByText('VERIFICADA · CON KELVIN')); ok(true, 'reseña con la cita: «VERIFICADA · CON KELVIN»');
   await m.goto(B + `/n/${BIZ}/silla/3`); await m.locator('[data-screen-label="Ficha · servicios"]').waitFor(); ok(!(await vis(m.getByText('Kelvin me dejó el fade perfecto'))), 'la página de Andy no muestra reseñas de Kelvin');
   // 6. Por barbero › Ver su página
-  await m.goto(B + `/n/${BIZ}?tab=svc`); await tab.waitFor(); await tab.getByText('Por barbero').click(); await clic(tab.getByRole('button', { name: 'Ver su página' }).nth(1)); await m.waitForURL(/\/silla\/2$/); ok(true, 'Por barbero › Ver su página');
+  await m.goto(B + `/n/${BIZ}?tab=staff`); await clic(m.locator('[data-screen-label="Ficha · equipo"]').getByRole('button', { name: 'Ver su página' }).nth(1)); await m.waitForURL(/\/silla\/2$/); ok(true, 'Equipo › Ver su página (ficha nueva)');
   // 7. Escritorio
   await d.goto(B + `/n/${BIZ}/silla/2`); await d.locator('[data-screen-label="Ficha · servicios · desktop"]').waitFor(); await d.screenshot({ path: OUT + 'd4-silla-d.png', fullPage: true });
   const ancho = await m.evaluate(() => document.documentElement.scrollWidth - window.innerWidth); ok(ancho <= 0, 'teléfono sin scroll de lado');
