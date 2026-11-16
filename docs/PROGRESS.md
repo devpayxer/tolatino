@@ -2429,3 +2429,6 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **C-005 · Ficha nueva del negocio (Belleza Pro)** — canvas `tolatino-master+` (`project/entrega/cambios.md`, paquete C-005 → C-008). `FichaNueva.tsx` +
   `lib/ficha-nueva.ts` (tabla por categoría); Booking acepta `?i=&h=` (validados) y abre en Detalles si la hora sigue libre. Guardianes `fichaNuevaSoloPro`
   y `valorDeCliente` (alrevesC005 5/5); e2e `fic005` (21 ✓ local); `cit3b`/`silla3d` a la ficha nueva; ayuda `pagina-del-negocio-pro.md`. Sigue C-006.
+- **Primera corrida de `anchos` (CI 43785123795, e066763): en rojo.** Regresión 180/182 (msg2p tiempo, cit3e), iPhone SE 136/182 (casi todo «Load failed» /
+  «access control checks»: errores de WebKit con el emulador de iPhone; hay que revisar cómo corre la punta a punta en ese ancho), iPad 81/182 y escritorio
+  1024 142/182. No se cierran las líneas «9 dispositivos» de LAUNCH; queda como bloque propio después del paquete C-005 → C-008.
