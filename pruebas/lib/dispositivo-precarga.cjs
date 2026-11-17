@@ -71,11 +71,28 @@ if (id) {
         throw e;
       }
     };
+    // waitForURL espera «load» (lo de arriba): si ya se llegó a la dirección y lo único que falta es esa «load» que WebKit no da, la prueba
+    // sigue (ayu4z en el iPad: /viaje/V-…/ayuda). Si no se llegó a la dirección, el error se queda.
+    const aUrl = page.waitForURL.bind(page);
+    page.waitForURL = async (url, o = {}) => {
+      try { return await aUrl(url, o); } catch (e) {
+        if (e.name !== 'TimeoutError' || (o.waitUntil && o.waitUntil !== 'load')) throw e;
+        const llego = await aUrl(url, { waitUntil: 'commit', timeout: 1000 }).then(() => true, () => false);
+        const rs = await page.evaluate(() => document.readyState).catch(() => 'loading');
+        if (!llego || rs === 'loading') throw e;
+        console.log(`  · webkit: «load» de ${page.url()} no salió (waitForURL); la página ya está (${rs}): sigue`);
+      }
+    };
     // WebKit móvil (el iPad) no tiene rueda del ratón: se desplaza la página, que es lo que hace el dedo.
     const rueda = page.mouse.wheel.bind(page.mouse);
     page.mouse.wheel = async (dx, dy) => { try { return await rueda(dx, dy); } catch (e) { if (!/not supported in mobile WebKit/.test(e.message)) throw e; await page.evaluate(([x, y]) => window.scrollBy(x, y), [dx, dy]); } };
     const shot = page.screenshot.bind(page);
-    page.screenshot = async (o = {}) => { try { return await shot(o); } catch (e) { if (o.fullPage && /larger than 32767/.test(e.message)) return shot({ ...o, fullPage: false }); throw e; } };
+    // WebKit espera las fuentes antes de la captura y, en una página cuyo «load» nunca sale (el polyfills «nomodule», ver arriba), se queda ahí
+    // 30 s (noc4d, silla3d en el SE y el iPad). La captura es un registro, no lo que la prueba comprueba: se anota y la prueba sigue.
+    page.screenshot = async (o = {}) => { try { return await shot(o); } catch (e) {
+      if (o.fullPage && /larger than 32767/.test(e.message)) return shot({ ...o, fullPage: false });
+      if (e.name === 'TimeoutError' && /waiting for fonts/.test(e.message)) { console.log(`  · webkit: captura sin hacer (las fuentes no terminan en ${page.url()}): sigue`); return Buffer.alloc(0); }
+      throw e; } };
     const on = page.on.bind(page);
     page.on = page.addListener = (ev, fn) => {
       if (ev === 'pageerror') return on(ev, (e) => { if (!ruido(e?.message ?? e)) fn(e); });

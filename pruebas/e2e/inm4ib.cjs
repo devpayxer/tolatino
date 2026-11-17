@@ -116,7 +116,11 @@ const cuota = (precio, pct) => { const pr = precio * (1 - pct / 100), r = 0.0675
   ok(await espera(() => /sinssn/.test(fv()) && /itin/.test(fv())), 'ITIN otra vez → sinssn e itin');
   await clic(p.getByRole('switch', { name: 'Aceptas mascotas' }));
   ok(await espera(() => !/mascotas/.test(fv())), 'sin mascotas → sale el filtro mascotas');
-  await clic(p.getByRole('switch', { name: 'Aceptas mascotas' })); ok(await espera(() => /mascotas/.test(fv())), 'mascotas otra vez');
+  // El segundo toque espera a que el interruptor muestre el primero (aria-checked) y se pueda tocar: en Safari (iPhone SE) el toque llegaba
+  // mientras el guardado anterior seguía en curso y se perdía.
+  const mascotas = p.getByRole('switch', { name: 'Aceptas mascotas' });
+  ok(await espera(async () => { const x = await vis(mascotas); return !!x && (await x.getAttribute('aria-checked')) === 'false' && await x.isEnabled(); }), 'el interruptor ya dice «sin mascotas»');
+  await clic(mascotas); ok(await espera(() => /mascotas/.test(fv())), 'mascotas otra vez');
   const casa = '3 cuartos · casa · 90 W Diamond Ave', idc = pid(casa);
   const n0 = (await p.getByRole('button', { name: 'Renta al mes +' }).count());
   const ix = Number(sql(`select count(*) from property_listings pl join items i on i.id = pl.item_id where pl.business_id = '${NEG}' and pl.rent_cents is not null and pl.status in ('available','pending') and i.removed_at is null and i.status = 'live' and (i.sort, i.id) < (select sort, id from items where id = ${idc})`));

@@ -24,6 +24,8 @@ const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql(`delete from
 let n = 0; const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); n++; console.log('  ✓', m); };
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 const vis = async (l) => { const k = await l.count(); for (let i = 0; i < k; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
+// En el teléfono el panel tiene la copia de computadora escondida: se escribe en el campo VISIBLE (con .first() caía en la escondida en el SE).
+const llenar = async (l, v) => { for (let i = 0; i < 40; i++) { const x = await vis(l); if (x) return x.fill(v); await dormir(250); } throw new Error('no visible: ' + l); };
 const clic = async (l) => { for (let i = 0; i < 40; i++) { const x = await vis(l); if (x) return x.click(); await dormir(250); } throw new Error('no visible: ' + l); };
 const espera = async (f, v, veces = 60) => { for (let i = 0; i < veces; i++) { if (f() === v) return v; await dormir(250); } return f(); };
 const texto = async (p, re, veces = 40) => { for (let i = 0; i < veces; i++) { if (await p.getByText(re).first().isVisible().catch(() => false)) return true; await dormir(250); } return false; };
@@ -56,9 +58,9 @@ const lang = async (p, l) => { await p.context().addCookies([{ name: 'tl_lang', 
     const dCtx = await b.newContext(D), d = await dCtx.newPage(); watch(d, 'dueño'); await entrar(d, DUENO);
     await d.goto(B + P + '/pagina/equipo?det=stf:new');
     await d.getByPlaceholder('Ej. Yahaira Cruz').first().waitFor();
-    await d.getByPlaceholder('Ej. Yahaira Cruz').first().fill(`Ines Equipo${ID}`);
-    await d.getByPlaceholder('(570) 555-0123').first().fill(INV);
-    await d.getByPlaceholder('Ej. Cocina, Delivery, Caja').first().fill('Caja y mostrador');
+    await llenar(d.getByPlaceholder('Ej. Yahaira Cruz'), `Ines Equipo${ID}`);
+    await llenar(d.getByPlaceholder('(570) 555-0123'), INV);
+    await llenar(d.getByPlaceholder('Ej. Cocina, Delivery, Caja'), 'Caja y mostrador');
     await d.screenshot({ path: OUT + 'pan9n2-1-invitar-1360.png' });
     await clic(d.getByRole('button', { name: /Mandar invitación/ }));
     ok(await espera(() => sql(`select status from business_members where business_id = '${BIZ}' and phone = '+1${INV}'`), 'invited') === 'invited', 'el dueño invita desde Tu página › Equipo');
@@ -81,7 +83,7 @@ const lang = async (p, l) => { await p.context().addCookies([{ name: 'tl_lang', 
     await i.goto(B + '/e/' + COD);
     ok(await texto(i, /te invitó a Sabor Dominicano/) && await texto(i, /Entras como Caja y mostrador/), 'la invitada ve «te invitó a Sabor Dominicano · Entras como Caja y mostrador»');
     await sinScroll(i, '/e/código 390');
-    await i.getByPlaceholder(/Cuenta cómo empezaste/).first().fill('Llevo cinco años en la caja. Me gusta atender con calma.');
+    await llenar(i.getByPlaceholder(/Cuenta cómo empezaste/), 'Llevo cinco años en la caja. Me gusta atender con calma.');
     await clic(i.getByText('English', { exact: true }));
     await i.screenshot({ path: OUT + 'pan9n2-1-aceptar-390.png', fullPage: true });
     await clic(i.getByRole('button', { name: /Aceptar y entrar al equipo/ }));
@@ -184,7 +186,7 @@ const lang = async (p, l) => { await p.context().addCookies([{ name: 'tl_lang', 
     // ── 5 · Reseña: «quiere arreglarlo» y editar la respuesta ──
     const RV = sql(`insert into reviews (business_id, city_id, user_id, src, stars, body) values ('${BIZ}', 'hzl', '${CU}', 'vis', 2, 'Tardaron mucho en entregar y el arroz llegó frío, pero el sabor estaba bien.') returning id`);
     await d.goto(B + P + `/pagina/resenas?det=rev:${RV}`);
-    await d.getByPlaceholder('Escribe como le hablarías en persona.').first().fill('Celia, queremos arreglarlo: en tu próximo pedido te reponemos el arroz sin costo.');
+    await llenar(d.getByPlaceholder('Escribe como le hablarías en persona.'), 'Celia, queremos arreglarlo: en tu próximo pedido te reponemos el arroz sin costo.');
     await clic(d.locator('div', { hasText: /^Quiero arreglarlo/ }).getByRole('switch').first());
     await d.screenshot({ path: OUT + 'pan9n2-5-arreglarlo-1360.png' });
     await clic(d.getByRole('button', { name: 'Publicar respuesta' }));
@@ -201,7 +203,7 @@ const lang = async (p, l) => { await p.context().addCookies([{ name: 'tl_lang', 
     for (let k = 1; k <= 3; k++) {
       await d.goto(B + P + `/pagina/resenas?det=rev:${RV}`);
       const campo = d.getByText('EDITAR TU RESPUESTA').first(); await campo.waitFor();
-      await d.locator('textarea').first().fill(`Celia, queremos arreglarlo (versión ${k + 1}): te reponemos el arroz sin costo en tu próximo pedido.`);
+      await llenar(d.locator('textarea'), `Celia, queremos arreglarlo (versión ${k + 1}): te reponemos el arroz sin costo en tu próximo pedido.`);
       await clic(d.getByRole('button', { name: 'Guardar cambios' }));
       ok(await espera(() => sql(`select reply_edits::text from reviews where id = ${RV}`), String(k)) === String(k), `editar la respuesta (${k} de 3)`);
     }
@@ -218,7 +220,7 @@ const lang = async (p, l) => { await p.context().addCookies([{ name: 'tl_lang', 
     const CP = sql(`insert into coupons (business_id, city_id, kind, title, cost_coins, monthly_stock, valid_days, status) values ('${BIZ}', 'hzl', 'coins', '{"es":"Pan 9n2 ${ID}","en":"Bread 9n2 ${ID}"}', 80, 10, 30, 'live') returning id`);
     await d.goto(B + P + '/hoy');
     ok(await texto(d, /VALIDAR UN CÓDIGO/), 'Hoy: aparece «Validar un código» (el cupón se valida desde Hoy)');
-    await d.getByPlaceholder('TL-CQ-7K4M').first().fill('TLCQZZZZ9');
+    await llenar(d.getByPlaceholder('TL-CQ-7K4M'), 'TLCQZZZZ9');
     await clic(d.getByRole('button', { name: 'Validar', exact: true }));
     ok(await texto(d, /No encontramos ese código en tus cupones/), 'Hoy: un código que no es de este negocio se rechaza con su mensaje');
     await d.screenshot({ path: OUT + 'pan9n2-6-cupon-hoy-1360.png' });
@@ -314,7 +316,7 @@ const lang = async (p, l) => { await p.context().addCookies([{ name: 'tl_lang', 
     ok(await texto(d, /^1\/4$/), 'una foto de la galería entra a la novedad (1/4)');
     await d.screenshot({ path: OUT + 'pan9n2-9-galeria-1360.png' });
     await clic(d.getByText('Novedad', { exact: true }).first());
-    await d.getByPlaceholder('Ej. Estrenamos terraza').first().fill(`Buscamos ayudante ${ID}`);
+    await llenar(d.getByPlaceholder('Ej. Estrenamos terraza'), `Buscamos ayudante ${ID}`);
     await clic(d.getByText('Vacante', { exact: true }).first());
     await clic(d.getByText('Ayudante de cocina').first());
     ok(await texto(d, /El botón dice «Ver vacante»/), 'el botón «Ver vacante» (la novedad lleva a una vacante abierta)');

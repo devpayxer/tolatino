@@ -309,7 +309,9 @@ async function y4m(png, archivo) {
   ok((await llamadas(pi, 'TLPantalla', 'fijar')).length === 0, 'iPhone: la ayuda de Acceso guiado (una app no se fija sola)');
   await pi.screenshot({ path: OUT + 'e8-puerta-acceso-guiado-m.png', fullPage: true });
   const pd = await pagina('puerta escritorio', 1360); await entrar(pd, DUENO); await pd.goto(B + `/puerta/s/${SES}?t=mas`); await clic(pd.getByText('Fijar la Puerta en esta pantalla', { exact: true }));
-  await pd.getByText('EN ANDROID · FIJAR APPS').first().waitFor(); await pd.screenshot({ path: OUT + 'e8-puerta-fijar-d.png' }); ok(true, 'en un navegador: cómo hacerlo con el teléfono');
+  // En un navegador sin puente, la ayuda es la del sistema del aparato: Android en una computadora; Acceso guiado si el navegador es de iOS (la corrida del iPad).
+  const ios = /iPhone|iPad|iPod|Macintosh.*Mobile/.test(await pd.evaluate(() => navigator.userAgent));
+  await pd.getByText(ios ? 'EN IPHONE · ACCESO GUIADO' : 'EN ANDROID · FIJAR APPS').first().waitFor(); await pd.screenshot({ path: OUT + 'e8-puerta-fijar-d.png' }); ok(true, `en un navegador: cómo hacerlo con el teléfono (${ios ? 'iOS' : 'Android'})`);
   sql(`update door_sessions set ended_at = now(), ended_by = 'self' where id = ${SES}`);
 
   // ── Restaurar ──
