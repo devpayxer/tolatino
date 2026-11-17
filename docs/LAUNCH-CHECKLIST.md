@@ -1821,11 +1821,21 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       apartado lee `price_cents` sin oferta). Cuando haya ofertas de productos, el tachado sale igual que en Comida. Hoy no se muestra (no se inventa).
 - [ ] **→ 9n** · **Ficha Free nueva (C-007):** el canvas dice que la versión Free no está decidida; los Free siguen con la ficha de siempre.
 ## C-002 — Página de categoría + Patrocinados (17 nov)
-- [ ] **→ 9n** · **Patrocinio: devolver lo que no se usó.** Hoy «Terminar antes» y «Cancelar reserva» no devuelven nada (lo dice la pantalla) y el Super
+- [x] **→ 9n** · **Patrocinio: devolver lo que no se usó.** Hoy «Terminar antes» y «Cancelar reserva» no devuelven nada (lo dice la pantalla) y el Super
       Admin termina sin devolver (Soporte lo hace a mano). Si Henry prefiere devolver la parte no usada (o toda la reserva que no empezó), va por
-      `pasarela.devolver` con su fila en el libro (sponsorship_payments solo inserción: una fila de devolución) y la conciliación la lee.
-- [ ] **→ 9n** · **Patrocinio con 3-D Secure:** si el banco pide confirmar al comprar, hoy se suelta el intento y se pide otra tarjeta. Falta la hoja del
-      banco (useVerificacion, como «Volver a Pro») y, en la renovación sola, el enlace para confirmar (hoy termina y avisa).
+      `pasarela.devolver` con su fila en el libro (sponsorship_payments solo inserción: una fila de devolución) y la conciliación la lee. — **✓ (17 nov):**
+      **0175**: la base decide cuánto al terminar (`patrocinio_devolucion`: reserva que no empezó = todo; terminar antes de tiempo = días enteros sin
+      usar en proporción) y lo escribe una vez en el patrocinio; `devolverPatrocinio` va por `pasarela.devolver` (llave `pat-dev-…`, una por patrocinio)
+      y deja UNA fila 'devolucion' en el libro (índice único, nunca más que lo cobrado, solo inserción), la auditoría y el aviso ES/EN; el barrido la
+      reintenta (`devolverPendientes`); la conciliación lee las devoluciones. «Cancelar reserva» devuelve todo; Super Admin › Terminar con «Devolver lo
+      que no se usó · $X» (marcado de entrada) o «No devolver»; «Terminar antes» de uno activo sigue sin devolver (REVISION). Guardián
+      `patrocinioDelServidor` ampliado (alrevesC002 41/41); pat002 86 ✓.
+- [x] **→ 9n** · **Patrocinio con 3-D Secure:** si el banco pide confirmar al comprar, hoy se suelta el intento y se pide otra tarjeta. Falta la hoja del
+      banco (useVerificacion, como «Volver a Pro») y, en la renovación sola, el enlace para confirmar (hoy termina y avisa). — **✓ (17 nov):** la compra
+      en sesión se retiene con la verificación a nombre de quien paga; el panel abre la hoja del banco (`c.ver` = useVerificacion) y vuelve a mandar lo
+      mismo con la misma clave; se captura al guardar el patrocinio (si algo falla, se suelta). La renovación sola termina y su aviso lleva al panel
+      para comprar otro y confirmarlo ahí (no hay página «confirmar para renovar»: al confirmar habría que volver a revisar el puesto; REVISION).
+      pat002 §6 (3184: «No fui yo» no cobra; confirmar = un cobro).
 - [x] **→ 9n** · **Patrocinio de eventos (C-003):** — **✓ C-003 (17 nov):** 0174 (`event_sponsorships`), Panel › Eventos › Patrocinar, la vitrina de Eventos y el grupo Eventos del Super Admin. Antes: la tabla del libro (`sponsorship_payments.kind`), las cifras y `entroPatrocinado` ya aceptan «evento»;
       falta 0174 (`event_sponsorships`) y sus pantallas.
 - [ ] **→ 9n** · **Comida sin «Tipo de lugar»:** el diseño D dibuja la pestaña «TIPO DE LUGAR»; las pestañas salen de las filas del Catálogo y Comida solo
@@ -1839,16 +1849,30 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [x] **Privacidad (falsa alarma, revisado 17 nov):** en local, fic4id vio «857 N Laurel St» en el HTML de cuartos-dona-mary. Viene de la
       información de depuración que React solo manda con `next dev` (`env`, `stack`, `owner` con los datos internos del componente); el build
       de producción no la manda y fic4id pasa en CI (regresión completa). La ficha ya devuelve `direccion: null` cuando el negocio trabaja desde casa.
-- [ ] **→ 9n** · **Vistas del patrocinio sin el equipo del negocio:** «entraron» ya no cuenta al dueño ni a su equipo; las vistas sí (la fila se cuenta
-      al mostrarse, sin mirar quién es miembro, para no sumar una consulta por página). Si molesta, se excluye en `patrocinio_vistas`.
+- [x] **→ 9n** · **Vistas del patrocinio sin el equipo del negocio:** «entraron» ya no cuenta al dueño ni a su equipo; las vistas sí (la fila se cuenta
+      al mostrarse, sin mirar quién es miembro, para no sumar una consulta por página). Si molesta, se excluye en `patrocinio_vistas`. — **✓ (17 nov):**
+      `patrocinio_vistas` (0175) descuenta al dueño y su equipo con un solo `not exists` sobre business_members en la misma consulta de la tanda (sin
+      N+1; el guardián lo vigila). pat002 y pat003: el dueño mira su vitrina y no suma.
 ## C-003 — Página de Eventos por días + Patrocinados de eventos (17 nov)
 - [ ] **→ 9n** · **Caritas de quién va en la tarjeta del evento:** el diseño las dibuja; hoy la tarjeta dice «N VAN». Mostrar caras de quien hizo
       RSVP o compró es un dato personal: falta decidir el permiso (por ejemplo, solo amigos o quien activó «mostrar que voy»).
-- [ ] **→ 9n** · **Patrocinio de evento: devolver lo que no se usó** si el evento se cancela (hoy termina solo, avisa y no devuelve; Soporte a mano).
-      Igual que C-002: `pasarela.devolver` con su fila en `sponsorship_payments`.
-- [ ] **→ 9n** · **Patrocinio de evento con 3-D Secure:** misma pieza pendiente que C-002 (hoy pide otra tarjeta).
-- [ ] **→ 9n** · **Evento oculto / módulo apagado con patrocinio vivo:** no sale en la vitrina pero el patrocinio sigue corriendo; decidir si se pausa
-      y se alarga, o se termina solo.
+- [x] **→ 9n** · **Patrocinio de evento: devolver lo que no se usó** si el evento se cancela (hoy termina solo, avisa y no devuelve; Soporte a mano).
+      Igual que C-002: `pasarela.devolver` con su fila en `sponsorship_payments`. — **✓ (17 nov):** el barrido termina el de un evento cancelado con
+      'sin_usar' (la pausa no cuenta como usada) y devuelve por la misma caja que C-002; el aviso de evento cancelado ya no manda a Soporte.
+      Reserva cancelada y Super Admin › Terminar, como en C-002. pat003 §6–8.
+- [x] **→ 9n** · **Patrocinio de evento con 3-D Secure:** misma pieza pendiente que C-002 (hoy pide otra tarjeta). — **✓ (17 nov):** la misma hoja del
+      banco en Eventos › Patrocinar. pat003 §9.
+- [x] **→ 9n** · **Evento oculto / módulo apagado con patrocinio vivo:** no sale en la vitrina pero el patrocinio sigue corriendo; decidir si se pausa
+      y se alarga, o se termina solo. — **✓ (17 nov):** se pausa (decisión AB: lo reversible; REVISION). 0175: `paused_at`/`paused_secs`/
+      `extended_secs`; el barrido pausa lo de un evento sin fecha visible que sigue por venir, no lo vence, y al volver lo sigue alargado lo que duró
+      la pausa si cabe (puestos con candado, siguiente patrocinio del evento, fin del evento; la base lo revisa al mover el fin); lo que no cupo se
+      devuelve al terminar. La vitrina, las vistas y «entraron» no cuentan lo pausado; EN PAUSA en el panel y en el Super Admin; avisos ES/EN.
+      Guardián `patrocinioEventoDelServidor` ampliado (alrevesC003 41/41); pat003 §8 (pat003 entera 101 ✓ en local).
+- [ ] **→ 9b** · **0175 (devoluciones, 3-D Secure, pausa) en la corrida completa:** en local (Chromium, `next dev`) pasaron pat002 (86 ✓), pat003
+      (101 ✓), alrevesC002 (41/41), alrevesC003 (41/41), tipos y guardianes. Falta la confirmación completa del CI (Safari/iPad, 9 dispositivos,
+      `pruebas/visual`: la hoja del banco del patrocinio y EN PAUSA son pantallas nuevas sin captura aprobada) y la prueba de contrato contra
+      Stripe de verdad (`/v1/refunds` con `payment_intent` de un cobro de la plataforma, y la retención con 3-D Secure + captura) en el sandbox con llave.
+      (17 nov)
 - [ ] **→ 9b** · **C-003 en la corrida completa:** en local (Chromium, `next dev`) pasaron pat003 (66 ✓), pat002 (55 ✓), alrevesC003 (28/28) y
       alrevesC002 (20/20). evt6b-6c y evt6f se pasaron al calendario: sus partes de /eventos pasaron (evt6b-6c 68 ✓, evt6f 43 ✓), pero ninguna de las
       dos llegó al final en local por cosas de fuera de C-003: publicar desde el editor pide subir el cartel (sin almacén de medios local, 503),

@@ -2518,3 +2518,12 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   del panel: arreglado en sinComent (alreves9m 36/36). **aa33f76 en `main` y `pruebas`.** Anchos (misma corrida): escritorio 1024 sin rojos
   propios; iPhone SE 5 y iPad 6 de Safari (silla3d, app8a, dir9m ya conocidos; nuevos inm4ib, noc4d, pan9n2 en el SE y ayu4z, tra4y, app8e en el
   iPad) → bloque «Anchos (4)» antes de producción (LAUNCH 9b).
+- **C-002 / C-003 · Patrocinios: devoluciones, 3-D Secure, pausa y vistas sin el equipo (17 nov)** — migración **0175**: la base decide cuánto se
+  devuelve al terminar (`patrocinio_devolucion`) y lo escribe una vez; UNA fila 'devolucion' por patrocinio en el libro (solo inserción, nunca más
+  que lo cobrado); pausa del patrocinio de un evento (`paused_at`/`paused_secs`/`extended_secs`, el fin solo se alarga lo pausado y repasa los
+  puestos); `patrocinio_vistas` sin el dueño ni su equipo y sin lo pausado. `lib/patrocinio.ts`: compra en sesión retenida con la hoja del banco
+  y capturada al guardar, `devolverPatrocinio` (pasarela.devolver, llave por patrocinio, auditoría, aviso) y `devolverPendientes` en el barrido;
+  `lib/patrocinio-evento.ts`: evento cancelado devuelve, oculto o con Eventos apagado se pausa y al volver sigue alargado. Panel (hoja del banco,
+  «Cancelar reserva» devuelve todo, recibos con devoluciones, EN PAUSA) y Super Admin (Terminar con «Devolver lo que no se usó · $X»). La
+  conciliación lee las devoluciones. Guardianes ampliados (alrevesC002 41/41, alrevesC003 41/41); pat002 86 ✓ y pat003 101 ✓ en local (Chromium, `next dev`); ayuda
+  `patrocinados.md` y `admin-crecimiento.md`; decisiones en REVISION («Patrocinios: devoluciones, 3-D Secure y pausa»).
