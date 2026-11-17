@@ -71,7 +71,7 @@ export function sqlGrupoDeMatricula(ops) {
   for (let k = 0; k < rows.length; k += 600) out.push(`insert into _og values\n${rows.slice(k, k + 600).join(",\n")};`);
   out.push(`update operations op set details = op.details || jsonb_build_object('group_id', g.id::text, 'item_id', i.id::text) from _og x, users u, items i, class_groups g
  where u.phone = x.ph and op.user_id = u.id and op.client_key = x.ck::uuid and i.business_id = x.b and i.name->>'es' = x.item and i.module = 'svc' and i.removed_at is null
-   and g.business_id = x.b and g.item_id = i.id and g.starts_on = x.starts and g.purpose = 'insc' and not (op.details ? 'group_id');`);
+   and g.business_id = x.b and g.item_id = i.id and g.starts_on = x.starts and g.purpose = 'insc' and coalesce(op.details->>'group_id', '') = '';`);
   return out;
 }
 
