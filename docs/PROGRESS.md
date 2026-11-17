@@ -2557,3 +2557,10 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   generadores deterministas `scripts/semilla/demos/grupo-{a,b,c,d}.mjs` (node sin red); `deploy.sh` genera el SQL (~140 MB, fuera del repo) y lo
   aplica con `migrar.sh --semilla-pruebas` desde `infra/pruebas/demos/`. Comprobado en una base nueva: 17 archivos sin errores en 3 min 22 s
   (100 048 operaciones, 29 017 reseñas en total). El CI no los carga. Detalle y enlaces en REVISION «Negocios demo».
+- **17 nov · 8b6eaf9 en `main` y `pruebas`** — corrida completa (CI 44081105072) y sus arreglos:
+  · **Accesibilidad de la ficha nueva (9c):** grises de texto con corchetes (`text-ink/[.42]`, 47 archivos) a ink 60 %, fila de plato agotado
+    (parche en portar-sistema: solo la foto apagada), botones de 24 px (guardián `objetivoTactil`), controles anidados en las filas de 10 fichas
+    (guardián `sinInteractivoAnidado`); alreves9c 39/39. Capturas aprobadas renovadas (54) y los 9 aparatos en verde (capturas, axe, velocidad).
+  · **Pruebas:** regresión 189/190 → evt6g (carrera con la auditoría) arreglada y en verde; 7 pruebas que dependían del orden o de repetirse
+    con su precondición propia (guardianes `silencioPropio`, `cupoPropio`); Safari: en WebKit cada fill espera al campo conectado a React.
+  · **Abiertos:** merc9n y dir9m en Safari (a mano en iPhone/iPad, REVISION); auditoría en la misma transacción (LAUNCH → 9n).
