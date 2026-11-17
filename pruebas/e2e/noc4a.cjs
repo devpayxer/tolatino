@@ -3,6 +3,7 @@
 // el Super Admin 360 (solo lectura + historial + tipo del local).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
+const { abiertoTodoElDia } = require('../lib/negocio-nuevo.cjs');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', NEG = 'la-terraza-night';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
@@ -105,12 +106,16 @@ const espera = async (f, ms = 8000) => { const t = Date.now(); while (Date.now()
   await p.goto(`${B}/panel/${NEG}/vendes/herramienta`); ok(!!(await p.getByText('To’Latino ajustó el tipo de tu negocio. Si no es correcto, escríbenos.').first().waitFor({ timeout: 5000 }).then(() => true).catch(() => false)), 'el dueño ve el ajuste');
   sql(`update noche_settings set kind_override = null where business_id = '${NEG}'`);
 
-  // Buscar › Noche: la tarjeta con el cover de esta noche.
+  // Buscar › Noche: la tarjeta con el cover de esta noche. Precondición propia (C-002: la tarjeta Pro solo dice lo de HOY): el local abre esta
+  // noche, sea el día que sea (la semilla no abre los lunes y la línea pasaba a «Mañana: …»). Se devuelve su horario al terminar.
+  const volverHorario = abiertoTodoElDia(NEG);
   barrer();
   await p.goto(`${B}/c/noche`); await p.waitForLoadState('networkidle');
   // 9b-1 · La categoría va por páginas (3 en una base nueva): se busca la tarjeta del local página por página (antes: solo la primera).
-  for (let i = 0; i < 6 && !(await vis(p.getByText(/cover \$15 · 18\+/).first())); i++) { const sig = await vis(p.getByText('Siguiente', { exact: true })); if (!sig) break; await sig.click(); await p.waitForLoadState('networkidle'); await p.waitForTimeout(400); }
-  ok(!!(await vis(p.getByText(/cover \$15 · 18\+/).first())), 'la tarjeta de la categoría dice el cover de esta noche');
+  for (let i = 0; i < 6 && !(await vis(p.getByText(/cover \$15 · 18\+/).first())); i++) { const sig = await vis(p.getByText('Siguiente', { exact: true })); if (!sig || (await sig.getAttribute('aria-disabled')) === 'true') break; await sig.click(); await p.waitForLoadState('networkidle'); await p.waitForTimeout(400); }
+  const vista = !!(await vis(p.getByText(/cover \$15 · 18\+/).first()));
+  volverHorario(); barrer();
+  ok(vista, 'la tarjeta de la categoría dice el cover de esta noche');
   await p.screenshot({ path: OUT + 'n4a-categoria-m.png' });
   ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ') : ''));
   await b.close(); console.log('OK noc4a');

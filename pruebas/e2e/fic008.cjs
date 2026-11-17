@@ -6,6 +6,7 @@
 // y los carritos del navegador vacíos (cada contexto empieza limpio).
 const ENT = require('../lib/entorno.cjs');
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
+const { abiertoTodoElDia } = require('../lib/negocio-nuevo.cjs');
 const B = ENT.B, OUT = ENT.OUT;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -qAt -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 let n = 0; const ok = (x, m) => { if (!x) throw new Error('ASSERT ' + m); n++; console.log('  ✓', m); };
@@ -19,6 +20,8 @@ const COMIDA = 'sabor-dominicano', TIENDA = 'boutique-yaritza';
     order by b.id limit 1`);
   ok(!!MERC && sql(`select s.plan from business_stats_cache s where s.business_id = '${TIENDA}'`) === 'pro', `precondición: mercado Pro con pedidos (${MERC}) y ${TIENDA} Pro`);
   ok(sql(`select count(*) from items where business_id = '${TIENDA}' and module = 'shop' and name->>'es' = 'Cartera' and status = 'live' and removed_at is null and (stock_mode = 'none' or stock_left > 0)`) === '1', 'precondición: la Cartera a la venta');
+  // Precondición propia: Sabor Dominicano abierto mientras corre (la semilla cierra a las 9 PM y, cerrado, el menú no lleva «+»). Vuelve a su horario al terminar.
+  const volver = abiertoTodoElDia(COMIDA);
   const b = await chromium.launch(); const abiertas = [];
   try {
     const cm = await b.newContext({ ...devices['iPhone 13'] }), cd = await b.newContext({ viewport: { width: 1360, height: 900 } }); abiertas.push(cm, cd);
@@ -89,6 +92,7 @@ const COMIDA = 'sabor-dominicano', TIENDA = 'boutique-yaritza';
     ok(err.length === 0, `sin errores en la página${err.length ? ': ' + err.join(' | ') : ''}`);
     console.log(`\n${n} ✓ · fic008`);
   } finally {
+    try { volver(); } catch (e) { console.error('horario', e.message); }
     for (const c of abiertas) await c.close().catch(() => {});
     await b.close();
   }
