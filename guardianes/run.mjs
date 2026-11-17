@@ -7779,6 +7779,28 @@ const guardianes = {
     }
   },
 
+  /* 9b-3 · Lo que la prueba comprueba de un ajuste de la persona lo pone ella: compa7h comprobaba que una respuesta tardía de noche NO sale
+     («silencio») dando por hecho que las horas de silencio de Marisol estaban encendidas; barajada, beta8f (que las apaga) corría antes y salía.
+     Una prueba que espera «silencio» pone notif_prefs.quiet de fábrica (le quita «quiet») o en true. Al revés: alreves9b3. */
+  silencioPropio() {
+    const G = "silencioPropio";
+    for (const f of readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs")).map((y) => `pruebas/e2e/${y}`)) {
+      const t = readFileSync(f, "utf8"), m = /===\s*'silencio'/.exec(t);
+      if (m && !/notif_prefs[^`]*- 'quiet'|\{"quiet": ?true\}/.test(t)) falla(G, f, t.slice(0, m.index).split("\n").length, "espera «silencio» (horas de silencio) sin poner notif_prefs.quiet de fábrica: otra prueba (beta8f, push8c, avisos2j…) pudo apagarlo para la misma persona");
+    }
+  },
+
+  /* 9b-3 · Los cupos que la prueba da por ocupados los fija entera: edu4a ponía seats_outside = 3 y esperaba que el total no bajara de 3, dando por
+     hecho seats_booked = 0; barajada, otra prueba (ayu4if, ins4e) dejaba inscritos en ese grupo y el total quedaba en 3 + los inscritos. Una prueba
+     que fija seats_outside a un número en class_groups también fija seats_booked = 0 (los tres: total, fuera y reservados). Al revés: alreves9b3. */
+  cupoPropio() {
+    const G = "cupoPropio";
+    for (const f of readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs")).map((y) => `pruebas/e2e/${y}`)) {
+      const t = readFileSync(f, "utf8"), m = /update class_groups set[^`]*\bseats_outside = \d/.exec(t);
+      if (m && !/update class_groups set[^`]*\bseats_booked = 0/.test(t)) falla(G, f, t.slice(0, m.index).split("\n").length, "fija seats_outside a un número sin fijar seats_booked = 0: otra prueba pudo dejar inscritos en el grupo y el total ya no es el que la prueba espera");
+    }
+  },
+
   /* 9b-3 · Un artículo que la prueba deja «disponible» también queda con su cuenta: leg9e quitaba sold_out del flan, que cuenta por día (6); otras
      pruebas lo compraban y, barajadas o dos veces seguidas, el pedido no salía («no está disponible ahora»). Un «update items set sold_out = false»
      de una prueba pone en la misma orden la cuenta (stock_left y stock_day: a su número y null, o la que la prueba necesita). Al revés: alreves9b3. */

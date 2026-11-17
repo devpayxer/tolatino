@@ -39,6 +39,10 @@ const casos = [
   ['fotoSinReloj', 'pruebas/lib/sin-reloj.cjs', ".replace(HORA, 'HORA')", ''],
   // precondicionPropia: pre4e vuelve a crear su casa solo si Marisol no tiene ninguna
   ['precondicionPropia', 'pruebas/e2e/pre4e.cjs', 'not exists (select 1 from user_homes h where h.user_id = ${MARISOL} and h.address_id = user_addresses.id and h.removed_at is null)', 'not exists (select 1 from user_homes where user_id = ${MARISOL} and removed_at is null)'],
+  // silencioPropio: compa7h deja de poner las horas de silencio de Marisol de fábrica y espera «silencio» igual
+  ['silencioPropio', 'pruebas/e2e/compa7h.cjs', "const silencioDeFabrica = () => sql(`update users set notif_prefs = coalesce(notif_prefs, '{}'::jsonb) - 'quiet' where id = '${MU}'`);", "const silencioDeFabrica = () => {};"],
+  // cupoPropio: edu4a vuelve a fijar los cupos sin fijar los reservados (da por hecho que nadie se inscribió en el grupo)
+  ['cupoPropio', 'pruebas/e2e/edu4a.cjs', "set seats_booked = 0, seats_outside = 0, seats_total = 4 where business_id", "set seats_outside = 0, seats_total = seats_outside + seats_booked + 4 where business_id"],
   // salidaComoLaPagina: tra4w vuelve a elegir la próxima salida sin mirar si el servicio sigue vivo
   ['salidaComoLaPagina', 'pruebas/e2e/tra4w.cjs', "and i.removed_at is null and i.svc_kind = 'asiento'", "and i.svc_kind = 'asiento'"],
   // pruebasIndependientes: el corredor deja de cerrar las ventanas de un minuto entre pruebas, o deja de cerrar la espera entre códigos

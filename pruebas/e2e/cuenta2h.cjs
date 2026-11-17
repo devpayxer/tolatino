@@ -15,7 +15,7 @@ const U = `'${UID}'::uuid`;
 const limpiar = (ciudad = 'hzl') => {
   sql(`update users set phone = '+15705550122' where phone = '+15705558123'`);
   sql(`update users set nick = null, email = null, email_verified = false, notif_prefs = '{}', delete_at = null, delete_reason = null, lang = 'es', home_city_id = '${ciudad}', home_city_changed_at = ${ciudad === 'hzl' ? 'null' : "now() - interval '40 days'"} where id = ${U}`);
-  sql(`delete from favorites where user_id = ${U}`); sql(`delete from job_applications where user_id = ${U}`);
+  sql(`delete from favorites where user_id = ${U}`); sql(`delete from job_applications where user_id = ${U}`); sql(`delete from follows where follower_user_id = ${U}`); // Guardados cuenta lo guardado Y lo que sigue: una prueba anterior pudo dejarle negocios seguidos
 };
 (async () => {
   limpiar('alw');

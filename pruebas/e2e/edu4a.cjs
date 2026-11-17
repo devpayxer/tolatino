@@ -25,7 +25,7 @@ const AUD = () => Number(sql(`select count(*) from audit_entries where target_id
   sql(`update items set removed_at = now() where business_id = '${NEG}' and module = 'svc' and name->>'es' like 'Prueba %' and removed_at is null`);
   sql(`update class_groups set status = 'cancelled', cancel_reason = 'prueba' where business_id = '${NEG}' and label->>'es' like 'Prueba%' and status = 'open'`);
   sql(`update class_groups set status = 'open', cancel_reason = null where business_id = '${NEG}' and label->>'es' not like 'Prueba%' and status = 'cancelled'`);
-  sql(`update class_groups set seats_total = seats_outside + seats_booked + 4 where business_id = '${NEG}' and label->>'es' = 'Lun y Mié 7 PM'`);
+  sql(`update class_groups set seats_booked = 0, seats_outside = 0, seats_total = 4 where business_id = '${NEG}' and label->>'es' = 'Lun y Mié 7 PM'`); // precondición propia: sin cupos ocupados que otra prueba (ayu4if, ins4e…) dejó
   sql(`update class_groups set seats_total = 9 where item_id = ${IT('Preparación para ciudadanía')}`);
   JSON.parse(barrer());
   ok(sql(`select coalesce(last_error, 'ok') from system_jobs where name = 'barrido.edu' and last_run_at > now() - interval '1 minute'`) === 'ok', 'la tarea «edu» corre en el barrido central');
@@ -50,7 +50,10 @@ const AUD = () => Number(sql(`select count(*) from audit_entries where target_id
   await clic(p.getByRole('switch', { name: 'Presencial' }));
   ok(await ve(p.getByText('Deja al menos una forma de dar clases.')), '«Deja al menos una forma de dar clases.»');
   ok(sql(`select how_presencial from insc_settings where business_id = '${NEG}'`) === 't', 'presencial sigue prendido');
-  await clic(p.getByRole('switch', { name: 'En línea' }));
+  // El interruptor vuelve a lo que dice el servidor (apagado) antes de tocarlo: si no, el toque manda el estado viejo (apagar de nuevo).
+  const swL = p.getByRole('switch', { name: 'En línea' });
+  for (let i = 0; i < 24 && (await swL.first().getAttribute('aria-checked')) !== 'false'; i++) await new Promise((r) => setTimeout(r, 250));
+  await clic(swL);
   ok(await espera(() => /linea/.test(fv())), 'prender «En línea» otra vez');
 
   // Precio del curso por mes +$5 → la tarjeta lo dice al momento.
@@ -80,7 +83,9 @@ const AUD = () => Number(sql(`select count(*) from audit_entries where target_id
   // El total nunca baja de lo ocupado: con 3 inscritos fuera y 0 libres, el total queda en 3.
   sql(`update class_groups set seats_outside = 3, seats_total = 7 where id = ${gL}`);
   await p.reload(); await p.getByText('GRUPOS ABIERTOS', { exact: true }).first().waitFor();
-  for (let i = 0; i < 4; i++) { await clic(p.getByRole('button', { name: /^Cupos · Lun y Mié 7 PM .+ −$/ })); await espera(() => Number(sql(`select seats_total from class_groups where id = ${gL}`)) === 7 - i - 1, 3000); }
+  for (let i = 0; i < 4; i++) { await clic(p.getByRole('button', { name: /^Cupos · Lun y Mié 7 PM .+ −$/ })); await espera(() => Number(sql(`select seats_total from class_groups where id = ${gL}`)) === 7 - i - 1, 3000);
+    // la pantalla vuelve a leer el cupo antes del toque siguiente: si no, el toque parte del número viejo y no baja (con el servidor rápido pasaba)
+    await p.reload(); await p.getByText('GRUPOS ABIERTOS', { exact: true }).first().waitFor(); }
   ok(await espera(() => sql(`select seats_total || ':' || seats_outside from class_groups where id = ${gL}`) === '3:3'), 'con 3 inscritos fuera y 0 libres el total queda en 3 (nunca baja de lo ocupado)');
   ok(await ve(p.getByText('Lleno · no sale en tu página')), '«Lleno · no sale en tu página»');
   sql(`update class_groups set seats_outside = 0, seats_total = 4 where id = ${gL}`);

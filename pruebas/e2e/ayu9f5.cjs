@@ -42,7 +42,9 @@ const limpiar = () => {
     ok(await espera(async () => (await texto(pa)).includes('Editar')), 'la lista de la ayuda ofrece «Editar»');
     await pa.goto(B + '/admin/textos?ed=' + S);
     ok(await espera(async () => (await texto(pa)).includes('TEXTOS Y PÁGINAS · AYUDA · EDITAR') && (await texto(pa)).includes('Preguntas frecuentes')), 'el editor abre con sus secciones en español');
-    ok((await texto(pa)).includes('Sin ediciones: es el texto del repo.'), 'sin ediciones: es el texto del repo');
+    // Segunda vuelta sobre la misma base: las ediciones deshechas de la primera siguen en el historial (nada se borra), pero ninguna sección queda editada.
+    const hist = +sql(`select count(*) from help_edits where slug = '${S}'`), tx0 = await texto(pa);
+    ok(hist === 0 ? tx0.includes('Sin ediciones: es el texto del repo.') : (!/\bEDITADA\b/.test(tx0) && sql(`select count(*) from help_edits where slug = '${S}' and status = 'viva'`) === '0'), 'sin ediciones vivas: es el texto del repo');
     await pa.screenshot({ path: OUT + 'e9f5-editor-1360.png', fullPage: true });
     const E0 = +sql(`select count(*) from help_edits where slug = '${S}'`), A0 = +sql(`select count(*) from audit_entries where action = 'ayuda.editar' and target_id = '${S}'`);
     const filas = pa.locator('button, [role=button]').filter({ hasText: /^Editar$/ });

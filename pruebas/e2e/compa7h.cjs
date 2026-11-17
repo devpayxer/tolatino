@@ -300,6 +300,9 @@ const HOY = `extract(dow from now() at time zone 'America/New_York')::int`;
   // (minutos después) encontró a Tokio ya a las 7 AM: la respuesta tardía salió. Con estas 10 zonas siempre hay una en cada ventana.
   const noche = zonas.find((z) => hora(z) >= 23 || hora(z) < 6), dia = zonas.find((z) => hora(z) >= 9 && hora(z) < 20);
   ok(!!noche && !!dia, `una zona de noche (${noche}) y una de día (${dia})`);
+  // Precondición propia: las horas de silencio de la persona valen (de fábrica: encendidas). Otras pruebas (beta8f, push8c, avisos2j…) las apagan para MARI.
+  const silencioDeFabrica = () => sql(`update users set notif_prefs = coalesce(notif_prefs, '{}'::jsonb) - 'quiet' where id = '${MU}'`);
+  silencioDeFabrica();
   const ciu0 = sql(`select home_city_id from users where id = '${MU}'`), tz0 = sql(`select timezone from cities where id = 'rdg'`);
   sql(`update users set home_city_id = 'rdg' where id = '${MU}'`); sql(`update cities set timezone = '${noche}' where id = 'rdg'`);
   cfg('compa_canal_respuesta_min', 0); await dormir(16000);
@@ -387,6 +390,7 @@ const HOY = `extract(dow from now() at time zone 'America/New_York')::int`;
   const bz2 = smsCuerpo(MARI, '¿cómo reservo una mesa?'); ok(await telnyx(bz2) === 200, 'otra entrada'); await hecha(bz2);
   const idBz2 = entrada(bz2).split('|')[0];
   sql(`set session_replication_role = replica; update compa_inbound set estado = 'recibido', result = null, processed_at = null, conversation_id = null, attempts = 0, received_at = now() - interval '10 minutes' where id = ${idBz2}; delete from compa_outbound where inbound_id = ${idBz2}`);
+  silencioDeFabrica(); // precondición propia
   sql(`update users set home_city_id = 'rdg' where id = '${MU}'`); sql(`update cities set timezone = '${noche}' where id = 'rdg'`);
   await fetch(B + '/api/interno/barrido', { method: 'POST', headers: { 'x-barrido-token': TOK } });
   ok(sql(`select estado || '|' || result from compa_inbound where id = ${idBz2}`) === 'hecho|respuesta', 'el barrido retomó la entrada colgada');
