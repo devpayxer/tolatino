@@ -5278,8 +5278,8 @@ novedades y seguidores. **Solo el sandbox** (el CI y producción no los cargan);
   - NEG-TRANS: http://2.31.196.167/n/camino-largo-viajes-hzl
 - **Decidí:** las «5 principales» = las 5 primeras de cada categoría en el orden del catálogo (no hay marca de «principal» ni popularidad todavía).
   Si prefieres otras, dime cuáles y se cambian.
-- **Ojo · ciudades:** solo Hazleton está abierta (`on`); Allentown, Wilkes-Barre, Scranton y Reading están «próximamente»/«beta», así que sus 680
-  demos no salen en las listas (sí abren directo por su página). Si quieres verlos en las listas, ábrelas en Super Admin › Ciudades del sandbox.
+- **Ciudades (17 nov):** por tu pedido, en el sandbox ya están abiertas las 5 (Allentown, Wilkes-Barre, Scranton y Reading quedan «directo» en el
+  libro de estados, con su motivo; `infra/pruebas/demos/00-ciudades-abiertas.sql`, solo el sandbox). Elige la ciudad arriba y verás sus demos.
 - **Fotos:** son las mismas de Pexels que ya usa la semilla (se repiten); no hay fotos propias ni videos en los demos.
 - **No llenado en esta pasada:** planes recurrentes y cotizaciones de Hogar/Auto, acuerdo escrito de Fiestas, historial de cajas/mudanzas de
   Transporte, reservas de mesa de Comida y catering, plan de pagos de Educación. Los negocios y lo que venden sí están completos.
