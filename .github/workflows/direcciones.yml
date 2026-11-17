@@ -43,7 +43,11 @@ jobs:
             r=$(q "select round(u.lat::numeric,5)||'|'||round(u.lng::numeric,5)||'|'||u.calidad||'|'||u.nombre||'|'||round(st_distance(st_point(u.lng,u.lat)::geography, c.center::geography)::numeric) from dir_ubicar('$calle', '$cp') u, cities c where c.id = '$ciudad'")
             echo "$calle $cp → ${r:-NO ENCONTRADA}"
             d=$(echo "$r" | cut -d'|' -f5); k=$(echo "$r" | cut -d'|' -f3)
-            if [ "$k" = "numero" ] && [ "${d:-99999}" -lt 8000 ]; then ok=$((ok+1)); fi
+            if [ "$k" = "numero" ] && [ "${d:-99999}" -lt 8000 ]; then ok=$((ok+1)); else
+              # Sin su número: los tramos de nombres parecidos en ese código postal (para ver si es un hueco del Censo o de la búsqueda).
+              n=$(echo "$calle" | grep -oE '^[0-9]+'); resto=$(echo "$calle" | sed -E 's/^[0-9]+ +//')
+              q "select norm || ' · ' || coalesce(l_from::text,'-') || '-' || coalesce(l_to::text,'-') || ' / ' || coalesce(r_from::text,'-') || '-' || coalesce(r_to::text,'-') || ' · ' || coalesce(zip_l,'-') || '/' || coalesce(zip_r,'-') || ' · sim ' || round(similarity(norm, (select calle from dir_partes('$calle')))::numeric, 2) from geo_streets where (zip_l = '$cp' or zip_r = '$cp') and similarity(norm, (select calle from dir_partes('$calle'))) >= 0.4 order by least(abs($n - coalesce(l_from, -99999)), abs($n - coalesce(r_from, -99999))) limit 12" | sed 's/^/    · /'
+            fi
           done <<'LISTA'
           40 N Church St|18201|hzl
           412 N Wyoming St|18201|hzl
