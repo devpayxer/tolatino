@@ -71,12 +71,14 @@ export async function simularBanco(userId: string, pi: string, aprobar: boolean)
 }
 
 /* Barrido: lo que nadie verificó a tiempo, y lo verificado que el flujo nunca registró (la persona se fue después de verificar), se suelta en
-   Stripe y vence. Una renovación verificada ya se cobró (su período se completó al verificar): no se toca. */
+   Stripe y vence. Una renovación verificada ya se cobró (su período se completó al verificar): no se toca. C-002/C-003 · Tampoco la de un patrocinio
+   que ya está en su libro (sponsorship_payments: se capturó al guardarlo); la de uno que nunca se guardó se suelta como cualquier otra. */
 export async function vencerVerificaciones(): Promise<number> {
   const L = (await db().query<{ pi: string; kind: string }>(
     `select a.pi, a.kind from payment_actions a
       where a.expires_at < now() and (a.status = 'pendiente' or (a.status = 'verificada' and a.kind = 'en_sesion'
             and not exists (select 1 from payments p where p.stripe_payment_intent = a.pi)
+            and not exists (select 1 from sponsorship_payments s where s.pi = a.pi)
             and not exists (select 1 from payment_actions b where b.base_idem = a.base_idem and b.created_at > a.created_at)))
       order by a.expires_at limit 200`)).rows;
   let n = 0;

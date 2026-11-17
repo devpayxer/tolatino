@@ -7,6 +7,7 @@
 import { mismoOrigen } from "@/lib/cuenta";
 import { accesoPanel, type Acceso } from "@/lib/panel";
 import { avisameLibre, comprarPatrocinio, consultarPuestos, renovarSolo, terminarPorDueno, type ResPat } from "@/lib/patrocinio";
+import type { Verificar } from "@/lib/pagos/pasarela";
 import type { Res } from "./acciones";
 
 const no = (es: string, en: string): Res => ({ ok: false, mensaje: { es, en } });
@@ -17,11 +18,14 @@ async function entrar(id: unknown): Promise<Acceso | null> {
   return typeof id === "string" ? accesoPanel(id, "pay") : null;
 }
 const enLaWeb = async () => (await import("@/lib/tiendas/reglas")).compraDigitalAqui();
-const sal = (r: ResPat): Res & { id?: string; estado?: string; sinPuestos?: boolean } => (r.ok ? { ok: true, id: r.id, estado: r.estado } : { ok: false, mensaje: r.msg, sinPuestos: r.sinPuestos });
+/* 3-D Secure: `verificar` abre la hoja del banco en el panel (useVerificacion) y la pantalla vuelve a mandar lo mismo con la misma clave.
+   `devuelto`: lo que volvió a la tarjeta al cancelar una reserva (lo decidió la base). */
+type Sal = Res & { id?: string; estado?: string; sinPuestos?: boolean; verificar?: Verificar; devuelto?: number };
+const sal = (r: ResPat): Sal => (r.ok ? { ok: true, id: r.id, estado: r.estado, devuelto: r.devuelto } : { ok: false, mensaje: r.msg, sinPuestos: r.sinPuestos, ...(r.verificar ? { verificar: r.verificar } : {}) });
 const S = (x: unknown, n: number) => String(x ?? "").slice(0, n);
 
 /* Pagar (o reservar). La pantalla manda qué duración, desde cuándo, qué tarjeta, si renueva solo y una clave por intento (un solo cobro por clave). */
-export async function patComprar(id: string, x: { dur?: unknown; desde?: unknown; pm?: unknown; renovar?: unknown; clave?: unknown; renovarDe?: unknown }): Promise<Res & { id?: string; estado?: string; sinPuestos?: boolean }> {
+export async function patComprar(id: string, x: { dur?: unknown; desde?: unknown; pm?: unknown; renovar?: unknown; clave?: unknown; renovarDe?: unknown }): Promise<Sal> {
   const a = await entrar(id);
   if (!a) return SIN_ACCESO;
   if (!(await enLaWeb())) return EN_APP;

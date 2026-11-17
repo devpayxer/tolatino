@@ -4,13 +4,16 @@
    termina) → 2 Revisar y pagar (evento, dónde, fechas, total, tarjeta guardada, renovar APAGADO de entrada; «hasta el evento» no se renueva) →
    3 Activo (hasta cuándo, vistas / entraron / boletos, lo pagado, renovar, terminar antes). Sin puestos: cuándo se libera uno, reservar desde
    ese día (si es antes del evento) y «Avísame». «Hasta el evento» solo sale si el evento todavía no llega. El servidor decide precio, fechas y
-   puestos (lib/patrocinio-evento.ts); aquí solo se elige y se muestra. Dentro de las apps de las tiendas solo se ve el estado, como Pro. */
+   puestos (lib/patrocinio-evento.ts); aquí solo se elige y se muestra. Dentro de las apps de las tiendas solo se ve el estado, como Pro.
+   0175 · 3-D Secure al pagar: la hoja del banco (c.ver) y lo mismo otra vez con la misma clave. EN PAUSA: el evento no se ve (oculto, en revisión o
+   con Eventos apagado) y el patrocinio espera; al volver, se alarga lo que duró la pausa. «Cancelar reserva» y un evento cancelado devuelven. */
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { ConsultaE, DurE, FilaPatE, PatEvtPanel } from "@/lib/patrocinio-evento";
 import { TarjetaPatEvt } from "../(app)/eventos/PatrocinadosEventos";
 import { pevAvisame, pevComprar, pevPuestos, pevRenovarSolo, pevTerminar } from "./acciones-patrocinio-evento";
 import { Hasta, Puestos, dia, diaDe, rango } from "./Patrocinio";
 import type { Ctx } from "./Panel";
+import type { Res } from "./acciones";
 import { uuid } from "@/lib/uuid";
 
 const $ = (c: number) => `$${(c / 100).toFixed(2)}`;
@@ -28,10 +31,12 @@ export function patEvtBloques(c: Ctx, eventoId: string, x: PatEvtPanel | null | 
   const cadaL = (k: DurE) => (k === "week" ? E2("Renovar cada semana", "Renew every week") : E2("Renovar cada mes", "Renew every month"));
   const kpis = (v: FilaPatE): Bloque => ({ type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [{ k: E2("VISTAS", "VIEWS"), v: v.vistas.toLocaleString("en-US") }, { k: E2("ENTRARON", "VISITS"), v: v.entraron.toLocaleString("en-US") }, { k: boletosL, v: v.boletos.toLocaleString("en-US") }] });
   const out: Bloque[] = [];
-  const recibos = (): Bloque => ({ type: "rows", k: E2("RECIBOS", "RECEIPTS"), items: x.recibos.length ? x.recibos.map((r, i): Fila => ({ key: String(i), icon: "card", t: `${E2("Patrocinio", "Sponsorship")} · ${$(r.monto)}`, s: `${dia(diaDe(r.at, tz), es)} · ${r.tarjeta}${r.razon === "renovacion" ? E2(" · renovación", " · renewal") : ""}`, chev: false, compact: true }))
+  const recibos = (): Bloque => ({ type: "rows", k: E2("RECIBOS", "RECEIPTS"), items: x.recibos.length ? x.recibos.map((r, i): Fila => (r.razon === "devolucion"
+      ? { key: String(i), icon: "card", t: `${E2("Devolución", "Refund")} · ${$(r.monto)}`, s: `${dia(diaDe(r.at, tz), es)} · ${r.tarjeta} · ${E2(`${r.dias ?? 0} ${r.dias === 1 ? "día" : "días"} sin usar`, `${r.dias ?? 0} unused ${r.dias === 1 ? "day" : "days"}`)}`, chev: false, compact: true }
+      : { key: String(i), icon: "card", t: `${E2("Patrocinio", "Sponsorship")} · ${$(r.monto)}`, s: `${dia(diaDe(r.at, tz), es)} · ${r.tarjeta}${r.razon === "renovacion" ? E2(" · renovación", " · renewal") : ""}`, chev: false, compact: true }))
     : [{ icon: "card", t: E2("Todavía no hay recibos.", "No receipts yet."), chev: false, compact: true }] });
   const pasados = (): Bloque | null => x.pasados.length ? { type: "rows", k: E2("ANTES", "BEFORE"), items: x.pasados.slice(0, 5).map((p): Fila => ({ key: p.id, icon: "star", t: `${rango(diaDe(p.desde, tz), diaDe(p.hasta, tz), es)} · ${$(p.precio)}`,
-    s: `${p.vistas} ${p.vistas === 1 ? E2("vista", "view") : E2("vistas", "views")} · ${p.entraron} ${p.entraron === 1 ? E2("entró", "visit") : E2("entraron", "visits")} · ${p.boletos} ${boletosL.toLowerCase()}${p.finKind === "admin" && p.finMotivo ? ` · ${E2("terminado por To’Latino", "ended by To’Latino")}: ${p.finMotivo}` : p.finKind === "evento_cancelado" ? E2(" · el evento se canceló", " · the event was cancelled") : ""}`,
+    s: `${p.vistas} ${p.vistas === 1 ? E2("vista", "view") : E2("vistas", "views")} · ${p.entraron} ${p.entraron === 1 ? E2("entró", "visit") : E2("entraron", "visits")} · ${p.boletos} ${boletosL.toLowerCase()}${p.finKind === "admin" && p.finMotivo ? ` · ${E2("terminado por To’Latino", "ended by To’Latino")}: ${p.finMotivo}` : p.finKind === "evento_cancelado" ? E2(" · el evento se canceló", " · the event was cancelled") : ""}${p.devuelto ? ` · ${E2("devuelto", "refunded")} ${$(p.devuelto)}` : ""}`,
     tag: p.estado === "cancelado" ? E2("CANCELADO", "CANCELED") : E2("TERMINADO", "ENDED"), tone: "neutral", chev: false, dim: true, compact: true })) } : null;
 
   /* ── Dentro de las apps: solo el estado (sin precio ni compra) ── */
@@ -48,7 +53,11 @@ export function patEvtBloques(c: Ctx, eventoId: string, x: PatEvtPanel | null | 
   if ((vivo || sig) && !ui.pePaso) {
     const v = (vivo ?? sig)!, act = v.estado === "activo", hastaEv = v.dur === "until_event", hasta = dia(hastaEv && Ev.dia ? Ev.dia : diaDe(v.hasta, tz), es), desde = dia(diaDe(v.desde, tz), es);
     out.push(head(E2("Patrocinio", "Sponsorship")));
-    out.push({ type: "rows", items: [{ icon: "star", t: act ? E2("Tu evento sale en Patrocinados", "Your event shows in Sponsored") : E2(`Reservado desde el ${desde}`, `Booked from ${desde}`), s: donde, tag: act ? E2("ACTIVO", "ACTIVE") : E2("RESERVADO", "BOOKED"), tone: act ? "signal" : "action", chev: false }] });
+    const pz = act && v.pausado;
+    out.push({ type: "rows", items: [{ icon: "star", t: pz ? E2("En pausa: tu evento no se ve", "Paused: your event is not showing") : act ? E2("Tu evento sale en Patrocinados", "Your event shows in Sponsored") : E2(`Reservado desde el ${desde}`, `Booked from ${desde}`), s: donde,
+      tag: pz ? E2("EN PAUSA", "PAUSED") : act ? E2("ACTIVO", "ACTIVE") : E2("RESERVADO", "BOOKED"), tone: pz ? "neutral" : act ? "signal" : "action", chev: false }] });
+    if (pz) out.push({ type: "note", tone: "warn", icon: "clock", t: E2(`Tu evento no se ve en Eventos (oculto, en revisión o con Eventos apagado), así que el patrocinio está en pausa${v.pausaDias ? ` (${v.pausaDias} ${v.pausaDias === 1 ? "día" : "días"} hasta ahora)` : ""}. Cuando vuelva a verse, sigue y se alarga lo que duró la pausa.`,
+      `Your event is not showing on Events (hidden, under review or with Events turned off), so the sponsorship is paused${v.pausaDias ? ` (${v.pausaDias} ${v.pausaDias === 1 ? "day" : "days"} so far)` : ""}. When it shows again, it continues and is extended by however long the pause lasted.`) });
     out.push({ type: "pieza", el: <Hasta t={act ? E2(`Hasta el ${hasta}`, `Until ${hasta}`) : E2(`Empieza el ${desde}`, `Starts ${desde}`)} m={`${act ? E2(`DÍA ${v.dia} DE ${v.dias}`, `DAY ${v.dia} OF ${v.dias}`) : E2(`${v.dias} DÍAS · HASTA EL ${hasta.toUpperCase()}`, `${v.dias} DAYS · UNTIL ${hasta.toUpperCase()}`)}${hastaEv ? E2(" · HASTA EL EVENTO", " · UNTIL THE EVENT") : ""}`} pct={act ? (v.dia / v.dias) * 100 : 0} /> });
     out.push(kpis(v));
     out.push({ type: "rows", items: [
@@ -57,12 +66,13 @@ export function patEvtBloques(c: Ctx, eventoId: string, x: PatEvtPanel | null | 
         : { icon: "clock", t: cadaL(v.dur), s: v.renovar ? E2(`${$c(v.dur === "month" ? P.month : P.week)} el ${hasta}, si hay puesto y el evento sigue por venir`, `${$c(v.dur === "month" ? P.month : P.week)} on ${hasta}, if there is a slot and the event is still ahead`) : E2("Apagada", "Off"),
           tgOn: v.renovar, onTg: () => c.run(() => pevRenovarSolo(d.id, eventoId, v.id, !v.renovar), v.renovar ? E2("Renovación apagada.", "Renewal off.") : E2("Se renueva solo si hay puesto.", "It renews if there is a slot.")) },
     ] });
-    out.push({ type: "note", tone: "info", icon: "info", t: E2("Si el evento se cancela o ya pasó, el patrocinio termina solo ese día.", "If the event is cancelled or already over, the sponsorship ends by itself that day.") });
+    out.push({ type: "note", tone: "info", icon: "info", t: E2("Si el evento se cancela, el patrocinio termina solo y te devolvemos los días que no se usaron. Si el evento ya pasó, termina ese día.", "If the event is cancelled, the sponsorship ends by itself and we refund the unused days. If the event is over, it ends that day.") });
     if (sig && vivo) out.push({ type: "note", tone: "info", icon: "calendar", t: E2(`Ya tienes el siguiente: desde el ${dia(diaDe(sig.desde, tz), es)} hasta el ${dia(diaDe(sig.hasta, tz), es)}.`, `You already have the next one: from ${dia(diaDe(sig.desde, tz), es)} to ${dia(diaDe(sig.hasta, tz), es)}.`) });
     if (ui.peRecibo) out.push(recibos());
     if (ui.peTerminar === v.id) {
-      out.push({ type: "note", tone: "danger", icon: "warning", t: act ? E2("Tu evento deja de salir en Patrocinados ahora mismo. Lo pagado no se devuelve.", "Your event stops showing in Sponsored right now. What you paid is not refunded.") : E2("Se cancela la reserva. Lo pagado no se devuelve.", "The booking is canceled. What you paid is not refunded.") });
-      out.push({ type: "acts", items: [{ l: act ? E2("Sí, terminar", "Yes, end it") : E2("Sí, cancelar", "Yes, cancel"), v: "danger", off: c.pending, onClick: () => c.run(() => pevTerminar(d.id, eventoId, v.id), E2("Patrocinio terminado.", "Sponsorship ended."), () => setUi({ peTerminar: null })) },
+      out.push({ type: "note", tone: "danger", icon: "warning", t: act ? E2("Tu evento deja de salir en Patrocinados ahora mismo. Lo pagado no se devuelve.", "Your event stops showing in Sponsored right now. What you paid is not refunded.") : E2(`Se cancela la reserva y te devolvemos los ${$(v.precio)} completos a tu tarjeta.`, `The booking is canceled and we refund the full ${$(v.precio)} to your card.`) });
+      out.push({ type: "acts", items: [{ l: act ? E2("Sí, terminar", "Yes, end it") : E2("Sí, cancelar", "Yes, cancel"), v: "danger", off: c.pending, onClick: () => c.run(() => pevTerminar(d.id, eventoId, v.id),
+        (r: { devuelto?: number }) => r?.devuelto ? E2(`Reserva cancelada. Te devolvemos ${$(r.devuelto)} a tu tarjeta.`, `Booking canceled. We are refunding ${$(r.devuelto)} to your card.`) : E2("Patrocinio terminado.", "Sponsorship ended."), () => setUi({ peTerminar: null })) },
         { l: E2("No", "No"), v: "secondary", onClick: () => setUi({ peTerminar: null }) }] });
     } else {
       const otra = !(sig && vivo) && !hastaEv && !!Ev.dia && diaDe(v.hasta, tz) <= Ev.dia, kk: DurE = v.dur === "month" ? "month" : "week";
@@ -142,9 +152,12 @@ export function patEvtBloques(c: Ctx, eventoId: string, x: PatEvtPanel | null | 
     : { icon: "card", t: E2("Agrega una tarjeta", "Add a card"), s: E2("Se guarda para cobrar el patrocinio.", "It is saved to charge the sponsorship."), onClick: () => setUi({ peHoja: true }) }] });
   if (dur === "until_event") out.push({ type: "note", tone: "info", icon: "info", t: E2("«Hasta el evento» no se renueva: termina cuando termina tu evento.", "«Until the event» does not renew: it ends when your event ends.") });
   else out.push({ type: "rows", items: [{ t: cadaL(dur), s: ui.peRen ? E2(`${$c(precioDe(dur))} el ${q ? dia(q.hasta, es) : "—"}, si hay puesto`, `${$c(precioDe(dur))} on ${q ? dia(q.hasta, es) : "—"}, if there is a slot`) : E2("Apagada", "Off"), tgOn: !!ui.peRen, onTg: () => setUi({ peRen: !ui.peRen }) }] });
-  out.push({ type: "acts", items: [{ l: E2(`Pagar ${$(total)}`, `Pay ${$(total)}`), v: "action", off: !pm || !q || c.pending || (q.libres === 0 && !renDe), onClick: () => c.run(
-    () => pevComprar(d.id, eventoId, { dur, desde: desdeSel, pm, renovar: dur !== "until_event" && !!ui.peRen, clave: ui.peClave, renovarDe: renDe }),
-    (r: { estado?: string }) => r?.estado === "reservado" ? E2("Listo. Tu puesto quedó reservado.", "Done. Your slot is booked.") : E2("Listo. Tu evento ya sale en Patrocinados.", "Done. Your event now shows in Sponsored."),
-    () => setUi({ pePaso: 0, peDesde: "hoy", peLib: null, peRenDe: null, peClave: null })) }] });
+  // 3-D Secure: si el banco pide confirmar, la hoja del banco (c.ver) y, al confirmar, lo MISMO otra vez con la MISMA clave (un solo cobro).
+  const compra = { dur, desde: desdeSel, pm, renovar: dur !== "until_event" && !!ui.peRen, clave: ui.peClave, renovarDe: renDe };
+  const pagar = (): void => c.run(
+    async () => { const r = await pevComprar(d.id, eventoId, compra); if (!r.ok && c.ver(r, pagar)) return { ok: true, verificando: true } as Res; return r; },
+    (r: { estado?: string; verificando?: boolean }) => r?.verificando ? undefined : r?.estado === "reservado" ? E2("Listo. Tu puesto quedó reservado.", "Done. Your slot is booked.") : E2("Listo. Tu evento ya sale en Patrocinados.", "Done. Your event now shows in Sponsored."),
+    (r: { verificando?: boolean }) => { if (!r?.verificando) setUi({ pePaso: 0, peDesde: "hoy", peLib: null, peRenDe: null, peClave: null }); });
+  out.push({ type: "acts", items: [{ l: E2(`Pagar ${$(total)}`, `Pay ${$(total)}`), v: "action", off: !pm || !q || c.pending || (q.libres === 0 && !renDe), onClick: pagar }] });
   return out;
 }

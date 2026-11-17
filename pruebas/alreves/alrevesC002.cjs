@@ -1,11 +1,16 @@
 // Prueba al revés de C-002 (Patrocinados). patrocinioDelServidor: la vitrina muestra lo que no está activo, lo de otra categoría, más que los
 // puestos o ignora los filtros; el precio sale de la pantalla; comprar sin «Cobros», desde la app o sin mismo origen; otra pieza escribe el libro
 // o las cifras; una etiqueta por tarjeta; la base deja pasar de los puestos. Se inyecta el defecto, el guardián debe fallar con SU mensaje; se restaura.
+// 0175 (17 nov): la compra sin la hoja del banco (3-D Secure) o capturando otro monto; devolver dos veces, más de lo cobrado, sin la fila del libro
+// o sin auditoría; el monto de la devolución de la pantalla o escrito a mano; la reserva cancelada sin devolver; el barrido sin reintentar; la base
+// sin «una devolución por patrocinio», sin tope, sin libro solo de inserción o dejando cambiar lo decidido; la conciliación sin las devoluciones;
+// las vistas del dueño y su equipo, o una consulta por patrocinio.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
 const L = 'apps/web/lib/patrocinio.ts', A = 'apps/web/app/panel/acciones-patrocinio.ts', PG = 'apps/web/app/(app)/c/[slug]/page.tsx',
-  T = 'apps/web/app/(app)/c/[slug]/Patrocinados.tsx', M = 'packages/db/migrations/0173_patrocinios.sql';
+  T = 'apps/web/app/(app)/c/[slug]/Patrocinados.tsx', M = 'packages/db/migrations/0173_patrocinios.sql', M5 = 'packages/db/migrations/0175_patrocinio_devoluciones.sql',
+  CZ = 'apps/web/lib/conciliacion.ts';
 const G = 'patrocinioDelServidor';
 const casos = [
   // La vitrina: lo reservado (o lo vencido) sale; otra categoría; sin tope de puestos; sin los filtros.
@@ -31,6 +36,32 @@ const casos = [
   [M, 'or new.ends_at <> old.ends_at or new.duration <> old.duration or new.price_cents <> old.price_cents', 'or new.ends_at <> old.ends_at or new.duration <> old.duration'],
   [M, 'create trigger sponsorship_payments_no_cambia before update or delete on sponsorship_payments', 'create trigger sponsorship_payments_no_cambia before delete on sponsorship_payments'],
   [M, 'create trigger sponsorship_stats_no_editable before insert or update or delete on sponsorship_stats', 'create trigger sponsorship_stats_no_editable before delete on sponsorship_stats'],
+  // 0175 · 3-D Secure al comprar: sin la hoja del banco, sin la verificación a nombre de quien paga, sin cobrar en sesión, sin capturar o con otro monto.
+  [L, '  if (x.enSesion) {', '  if (false) {'],
+  [L, ', usuario: { id: x.payer, negocio: x.negocio, ciudad: x.ciudad } });', ' });'],
+  [L, 'meta: { business_id: negocio, category_id: n.category_id }, enSesion: true };', 'meta: { business_id: negocio, category_id: n.category_id } };'],
+  [L, '      await capturarCobro(p, centavos);\n', ''],
+  [L, 'pasarela.capturarPlataforma(p.pi, centavos)', 'pasarela.capturarPlataforma(p.pi, 1500)'],
+  // Devolver: dos veces (otra llave), más de lo cobrado, sin la fila del libro (o repitiéndola), sin auditoría.
+  [L, 'idem = `pat-dev-${kind}-${id}`;', 'idem = `pat-dev-${kind}-${id}-${Date.now()}`;'],
+  [L, 'const cents = Math.min(s.cents, s.cobrado), idem', 'const cents = s.cents + 100, idem'],
+  [L, "'devolucion', $11, $12::bigint, $13, $14) on conflict do nothing", "'devolucion', $11, $12::bigint, $13, $14)"],
+  [L, "await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after, reason) values ('system'", "await c.query(`select ('system'"],
+  // El monto: de la pantalla, o escrito a mano en vez de la base; la reserva cancelada no devuelve; el barrido no reintenta.
+  [L, 'motivo: string, devolver: boolean): Promise<ResPat>', 'motivo: string, devolver: number): Promise<ResPat>'],
+  [L, 'from patrocinio_devolucion(${modo}, ${t}price_cents', 'from patrocinio_devolucion(${modo}, 1700'],
+  [L, `"case when status = 'reservado' then 'todo' else 'nada' end", "'reserva_cancelada'", false)`, `"'nada'", "'reserva_cancelada'", false)`],
+  [L, '  await devolverPendientes("negocio");\n', ''],
+  // La base: devuelve todo siempre; sin «una por patrocinio»; sin tope; quita el libro solo de inserción; deja cambiar lo decidido.
+  [M5, "when 'sin_usar' then case when t <= a then total", "when 'sin_usar' then case when true then total"],
+  [M5, "create unique index if not exists sponsorship_payments_una_devolucion on sponsorship_payments (kind, ref_id) where reason = 'devolucion'", "create index if not exists sponsorship_payments_una_devolucion on sponsorship_payments (kind, ref_id)"],
+  [M5, "  if new.amount_cents > c.amount_cents then raise exception 'patrocinio_devolucion: nunca más que lo cobrado'; end if;\n", ''],
+  [M5, '\ncommit;\n', '\ndrop trigger if exists sponsorship_payments_no_cambia on sponsorship_payments;\ncommit;\n'],
+  [M5, "raise exception 'patrocinio_devolucion: lo que se devuelve se decide una vez y no cambia'", "raise notice 'cambia'"],
+  // La conciliación sin las devoluciones; las vistas del equipo; una consulta por patrocinio.
+  [CZ, "from sponsorship_payments s where s.reason = 'devolucion'", "from sponsorship_payments s where false"],
+  [M5, "where quien is null or not exists (select 1 from business_members m where m.business_id = v.business_id and m.user_id = quien and m.status = 'active')", 'where true'],
+  [L, 'await db().query(`select patrocinio_vistas($1, $2::bigint[], $3::uuid, $4::uuid)`, [kind, L, quien, dev])', 'for (const x of L) await db().query(`select patrocinio_vistas($1, $2::bigint[], $3::uuid, $4::uuid)`, [kind, [x], quien, dev])'],
 ];
 const crear = [
   // Otra pieza que escribe el libro o las cifras por su cuenta.

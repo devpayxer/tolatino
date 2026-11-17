@@ -131,6 +131,9 @@ export type Ctx = {
   /* 8i · ¿Se puede comprar Pro aquí? En la web sí; dentro de las apps de las tiendas, no (Apple 3.1.3(f), Pagos de Google; guardián
      sinCompraDigitalEnApp): ningún botón ni enlace para comprarlo, solo el estado del plan. Lo decide el servidor (lib/tiendas/reglas.ts). */
   compraPro: boolean;
+  /* C-002 / C-003 · 3-D Secure al comprar un patrocinio: si el servidor contestó `verificar`, abre la hoja del banco y, al confirmar, `luego` vuelve
+     a mandar lo mismo con la misma clave (como «Volver a Pro»). true = había que verificar (no se muestra el error de siempre). */
+  ver: (r: unknown, luego: () => void) => boolean;
   ahora: number; // 9b-1 · el «ahora» de los tiempos relativos (lib/ahora.tsx)
   ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; pat?: PatData; patRes?: { hasta: string; estado: string } | null; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData; arts?: ArtPanel[]; nav: (href: string) => void; cpa?: CpaPanel | null; cpaAuto?: AutoPanel | null;
 };
@@ -142,6 +145,9 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
   const [pending, start] = useTransition();
   // 9n-4 · «Volver a Pro» con 3-D Secure: la hoja del banco se abre aquí, en Tu plan (como en el checkout).
   const V = useVerificacion(es, plan?.modo === "apagado" ? null : plan?.modo, plan?.pk);
+  // C-002 / C-003 · La misma hoja del banco al comprar un patrocinio (Cobros y plan › Patrocinio, o Eventos › el evento › Patrocinar).
+  const patPago = pat ?? evt?.pat ?? null;
+  const VP = useVerificacion(es, patPago && patPago.modo !== "apagado" ? patPago.modo : null, patPago?.pk);
   const w = useAncho(), desk = w >= 1024;
   const [forms, setForms] = useState<Record<string, any>>({});
   const [ui, setUiS] = useState<Record<string, any>>({ dayOpen: -1, gSel: -1, sheet: null, allTasks: false });
@@ -183,7 +189,7 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
   // 8c · «Avisos del panel en este teléfono» (Más › Tus apps).
   const tel = useEsteTelefono(es, toast);
-  const ctx: Ctx = { ahora, d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, compraPro, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, pat, patRes, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp, arts, nav, cpa, cpaAuto, tel };
+  const ctx: Ctx = { ahora, d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, compraPro, ver: VP.pide, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, pat, patRes, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp, arts, nav, cpa, cpaAuto, tel };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -365,6 +371,7 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
       {ui.puertaCam && evt?.puerta && evt.puerta.miSesion === ui.puertaCam ? <PuertaCamaraPanel sesion={ui.puertaCam as string} es={es} reentrada={!!evt.puerta.reglas.reentrada} libre={(evt.det?.pending ? evt.det.vivo : evt.det?.d)?.entrada === "free"} onCerrar={() => setUi({ puertaCam: null })} /> : null}
       {toastT ? <div role="status" style={{ position: "fixed", left: "50%", bottom: desk ? 28 : 100, transform: "translateX(-50%)", zIndex: 90, maxWidth: 360, width: "calc(100% - 40px)", boxSizing: "border-box", padding: "12px 16px", borderRadius: 14, background: "var(--tl-ink)", color: "var(--tl-white)", font: "700 13px/1.4 Manrope,sans-serif", textAlign: "center", animation: "d2Up .2s ease-out" }}>{toastT}</div> : null}
       {V.hoja}
+      {VP.hoja}
       {/* C-002 · La tarjeta del patrocinio (elegir o agregar): la misma hoja de pago; solo en la web (como Pro). */}
       {ui.patHoja && pat && pat.modo !== "apagado" && compraPro ? (
         <MetodoPago es={es} tarjetas={pat.tarjetas} sel={(ui.patPm as string | null) ?? pat.tarjetas.find((t) => t.def)?.pm ?? null} declinada={null} modo={pat.modo} pk={pat.pk} guardarSiempre

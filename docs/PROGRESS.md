@@ -2527,3 +2527,12 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
     conexión no lo traía ningún aviso). `RefrescoVivo` ahora se pone al día en cada «listo»; guardián `mensajesEnVivo` + 2 al revés (alreves9m 38/38).
   · Pruebas: autos4ic tocaba el segundo «+» / interruptor antes de que se pintara el primero (helper `alternar`); evt6a escribía antes de hidratar
     (vuelve a escribir hasta que sale la barra); app8a leía «Sin señal» y el almacén antes de hidratar (espera la condición, no un tiempo).
+- **C-002 / C-003 · Patrocinios: devoluciones, 3-D Secure, pausa y vistas sin el equipo (17 nov)** — migración **0175**: la base decide cuánto se
+  devuelve al terminar (`patrocinio_devolucion`) y lo escribe una vez; UNA fila 'devolucion' por patrocinio en el libro (solo inserción, nunca más
+  que lo cobrado); pausa del patrocinio de un evento (`paused_at`/`paused_secs`/`extended_secs`, el fin solo se alarga lo pausado y repasa los
+  puestos); `patrocinio_vistas` sin el dueño ni su equipo y sin lo pausado. `lib/patrocinio.ts`: compra en sesión retenida con la hoja del banco
+  y capturada al guardar, `devolverPatrocinio` (pasarela.devolver, llave por patrocinio, auditoría, aviso) y `devolverPendientes` en el barrido;
+  `lib/patrocinio-evento.ts`: evento cancelado devuelve, oculto o con Eventos apagado se pausa y al volver sigue alargado. Panel (hoja del banco,
+  «Cancelar reserva» devuelve todo, recibos con devoluciones, EN PAUSA) y Super Admin (Terminar con «Devolver lo que no se usó · $X»). La
+  conciliación lee las devoluciones. Guardianes ampliados (alrevesC002 41/41, alrevesC003 41/41); pat002 86 ✓ y pat003 101 ✓ en local (Chromium, `next dev`); ayuda
+  `patrocinados.md` y `admin-crecimiento.md`; decisiones en REVISION («Patrocinios: devoluciones, 3-D Secure y pausa»).

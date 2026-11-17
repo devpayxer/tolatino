@@ -4,12 +4,15 @@
    muestra, total, tarjeta guardada, renovar solo APAGADO de entrada) → 3 Activo (hasta cuándo, vistas / entraron / pedidos, recibo, terminar antes,
    renovar). Sin puestos: cuándo se libera uno, reservar desde esa fecha y «Avísame si se libera antes». Cualquier negocio (Free o Pro).
    El servidor decide precio, fechas y puestos (lib/patrocinio.ts); aquí solo se elige y se muestra. Dentro de las apps de las tiendas solo se ve el
-   estado (sin precio, sin comprar, sin encender la renovación), como Pro. */
+   estado (sin precio, sin comprar, sin encender la renovación), como Pro.
+   0175 · Si el banco pide 3-D Secure al pagar, se abre la hoja del banco (c.ver, como «Volver a Pro») y, al confirmar, se vuelve a mandar lo mismo
+   con la misma clave. «Cancelar reserva» devuelve todo (lo dice antes de confirmar); los recibos muestran las devoluciones. */
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { Consulta, FilaPat, PatPanel } from "@/lib/patrocinio";
 import { TarjetaAlta } from "../(app)/c/[slug]/Patrocinados";
 import { patAvisame, patComprar, patPuestos, patRenovarSolo, patTerminar } from "./acciones-patrocinio";
 import type { Ctx } from "./Panel";
+import type { Res } from "./acciones";
 import { uuid } from "@/lib/uuid";
 
 export type PatData = PatPanel;
@@ -62,7 +65,9 @@ export function patBloques(c: Ctx, x: PatData | undefined): Bloque[] {
   const cadaL = (k: "week" | "month") => (k === "week" ? E2("Renovar cada semana", "Renew every week") : E2("Renovar cada mes", "Renew every month"));
   const out: Bloque[] = [];
   const previa = (): Bloque | null => (x.previa ? { type: "pieza", el: <div style={{ display: "flex", justifyContent: "center" }}><TarjetaAlta b={x.previa} es={es} chica /></div> } : null);
-  const recibos = (): Bloque => ({ type: "rows", k: E2("RECIBOS", "RECEIPTS"), items: x.recibos.length ? x.recibos.map((r, i): Fila => ({ key: String(i), icon: "card", t: `${E2("Patrocinio", "Sponsorship")} · ${$(r.monto)}`, s: `${dia(diaDe(r.at, tz), es)} · ${r.tarjeta}${r.razon === "renovacion" ? E2(" · renovación", " · renewal") : ""}`, chev: false, compact: true }))
+  const recibos = (): Bloque => ({ type: "rows", k: E2("RECIBOS", "RECEIPTS"), items: x.recibos.length ? x.recibos.map((r, i): Fila => (r.razon === "devolucion"
+      ? { key: String(i), icon: "card", t: `${E2("Devolución", "Refund")} · ${$(r.monto)}`, s: `${dia(diaDe(r.at, tz), es)} · ${r.tarjeta} · ${E2(`${r.dias ?? 0} ${r.dias === 1 ? "día" : "días"} sin usar`, `${r.dias ?? 0} unused ${r.dias === 1 ? "day" : "days"}`)}`, chev: false, compact: true }
+      : { key: String(i), icon: "card", t: `${E2("Patrocinio", "Sponsorship")} · ${$(r.monto)}`, s: `${dia(diaDe(r.at, tz), es)} · ${r.tarjeta}${r.razon === "renovacion" ? E2(" · renovación", " · renewal") : ""}`, chev: false, compact: true }))
     : [{ icon: "card", t: E2("Todavía no hay recibos.", "No receipts yet."), chev: false, compact: true }] });
 
   /* ── Dentro de las apps: solo el estado (sin precio ni compra) ── */
@@ -92,8 +97,9 @@ export function patBloques(c: Ctx, x: PatData | undefined): Bloque[] {
     if (sig && vivo) out.push({ type: "note", tone: "info", icon: "calendar", t: E2(`Ya tienes el siguiente: desde el ${dia(diaDe(sig.desde, tz), es)} hasta el ${dia(diaDe(sig.hasta, tz), es)}.`, `You already have the next one: from ${dia(diaDe(sig.desde, tz), es)} to ${dia(diaDe(sig.hasta, tz), es)}.`) });
     if (ui.patRecibo) out.push(recibos());
     if (ui.patTerminar === v.id) {
-      out.push({ type: "note", tone: "danger", icon: "warning", t: act ? E2("Dejas de salir en Patrocinados ahora mismo. Lo pagado no se devuelve.", "You stop showing in Sponsored right now. What you paid is not refunded.") : E2("Se cancela la reserva. Lo pagado no se devuelve.", "The booking is canceled. What you paid is not refunded.") });
-      out.push({ type: "acts", items: [{ l: act ? E2("Sí, terminar", "Yes, end it") : E2("Sí, cancelar", "Yes, cancel"), v: "danger", off: c.pending, onClick: () => c.run(() => patTerminar(d.id, v.id), E2("Patrocinio terminado.", "Sponsorship ended."), () => setUi({ patTerminar: null })) },
+      out.push({ type: "note", tone: "danger", icon: "warning", t: act ? E2("Dejas de salir en Patrocinados ahora mismo. Lo pagado no se devuelve.", "You stop showing in Sponsored right now. What you paid is not refunded.") : E2(`Se cancela la reserva y te devolvemos los ${$(v.precio)} completos a tu tarjeta.`, `The booking is canceled and we refund the full ${$(v.precio)} to your card.`) });
+      out.push({ type: "acts", items: [{ l: act ? E2("Sí, terminar", "Yes, end it") : E2("Sí, cancelar", "Yes, cancel"), v: "danger", off: c.pending, onClick: () => c.run(() => patTerminar(d.id, v.id),
+        (r: { devuelto?: number }) => r?.devuelto ? E2(`Reserva cancelada. Te devolvemos ${$(r.devuelto)} a tu tarjeta.`, `Booking canceled. We are refunding ${$(r.devuelto)} to your card.`) : E2("Patrocinio terminado.", "Sponsorship ended."), () => setUi({ patTerminar: null })) },
         { l: E2("No", "No"), v: "secondary", onClick: () => setUi({ patTerminar: null }) }] });
     } else {
       const otra = !(sig && vivo), kk = v.dur === "month" ? "month" : "week";
@@ -152,7 +158,7 @@ export function patBloques(c: Ctx, x: PatData | undefined): Bloque[] {
       ] });
     }
     if (x.pasados.length) out.push({ type: "rows", k: E2("ANTES", "BEFORE"), items: x.pasados.slice(0, 5).map((p: FilaPat): Fila => ({ key: p.id, icon: "star", t: `${rango(diaDe(p.desde, tz), diaDe(p.hasta, tz), es)} · ${$(p.precio)}`,
-      s: `${p.vistas} ${p.vistas === 1 ? E2("vista", "view") : E2("vistas", "views")} · ${p.entraron} ${p.entraron === 1 ? E2("entró", "visit") : E2("entraron", "visits")} · ${p.pedidos} ${p.pedidos === 1 ? E2("pedido", "order") : E2("pedidos", "orders")}${p.finKind === "admin" && p.finMotivo ? ` · ${E2("terminado por To’Latino", "ended by To’Latino")}: ${p.finMotivo}` : ""}`,
+      s: `${p.vistas} ${p.vistas === 1 ? E2("vista", "view") : E2("vistas", "views")} · ${p.entraron} ${p.entraron === 1 ? E2("entró", "visit") : E2("entraron", "visits")} · ${p.pedidos} ${p.pedidos === 1 ? E2("pedido", "order") : E2("pedidos", "orders")}${p.finKind === "admin" && p.finMotivo ? ` · ${E2("terminado por To’Latino", "ended by To’Latino")}: ${p.finMotivo}` : ""}${p.devuelto ? ` · ${E2("devuelto", "refunded")} ${$(p.devuelto)}` : ""}`,
       tag: p.estado === "cancelado" ? E2("CANCELADO", "CANCELED") : E2("TERMINADO", "ENDED"), tone: "neutral", chev: false, dim: true, compact: true })) });
     return out;
   }
@@ -171,10 +177,13 @@ export function patBloques(c: Ctx, x: PatData | undefined): Bloque[] {
   out.push({ type: "rows", items: [tj ? { icon: "card", t: `${tj.marca.charAt(0).toUpperCase()}${tj.marca.slice(1)} ·· ${tj.ultimos4}`, s: E2(`Vence ${tj.vence}`, `Expires ${tj.vence}`), acts: [{ l: E2("Cambiar", "Change"), v: "secondary", onClick: () => setUi({ patHoja: true }) }] }
     : { icon: "card", t: E2("Agrega una tarjeta", "Add a card"), s: E2("Se guarda para cobrar el patrocinio.", "It is saved to charge the sponsorship."), onClick: () => setUi({ patHoja: true }) }] });
   out.push({ type: "rows", items: [{ t: cadaL(dur), s: ui.patRen ? E2(`${$c(precio(dur))} el ${q ? dia(q.hasta, es) : "—"}, si hay puesto`, `${$c(precio(dur))} on ${q ? dia(q.hasta, es) : "—"}, if there is a slot`) : E2("Apagada", "Off"), tgOn: !!ui.patRen, onTg: () => setUi({ patRen: !ui.patRen }) }] });
-  out.push({ type: "acts", items: [{ l: E2(`Pagar ${$(precio(dur))}`, `Pay ${$(precio(dur))}`), v: "action", off: !pm || c.pending || (!!q && q.libres === 0 && !renDe), onClick: () => c.run(
-    () => patComprar(d.id, { dur, desde: renDe ? diaDe(x.vivo?.hasta ?? x.siguiente?.hasta ?? new Date().toISOString(), tz) : desdeSel, pm, renovar: !!ui.patRen, clave: ui.patClave, renovarDe: renDe }),
-    (r: { estado?: string }) => r?.estado === "reservado" ? E2("Listo. Tu puesto quedó reservado.", "Done. Your slot is booked.") : E2("Listo. Ya sales en Patrocinados.", "Done. You now show in Sponsored."),
-    () => setUi({ patPaso: 0, patDesde: "hoy", patLib: null, patRenDe: null, patClave: null })) }] });
+  // 3-D Secure: si el banco pide confirmar, la hoja del banco (c.ver) y, al confirmar, lo MISMO otra vez con la MISMA clave (un solo cobro).
+  const compra = { dur, desde: renDe ? diaDe(x.vivo?.hasta ?? x.siguiente?.hasta ?? new Date().toISOString(), tz) : desdeSel, pm, renovar: !!ui.patRen, clave: ui.patClave, renovarDe: renDe };
+  const pagar = (): void => c.run(
+    async () => { const r = await patComprar(d.id, compra); if (!r.ok && c.ver(r, pagar)) return { ok: true, verificando: true } as Res; return r; },
+    (r: { estado?: string; verificando?: boolean }) => r?.verificando ? undefined : r?.estado === "reservado" ? E2("Listo. Tu puesto quedó reservado.", "Done. Your slot is booked.") : E2("Listo. Ya sales en Patrocinados.", "Done. You now show in Sponsored."),
+    (r: { verificando?: boolean }) => { if (!r?.verificando) setUi({ patPaso: 0, patDesde: "hoy", patLib: null, patRenDe: null, patClave: null }); });
+  out.push({ type: "acts", items: [{ l: E2(`Pagar ${$(precio(dur))}`, `Pay ${$(precio(dur))}`), v: "action", off: !pm || c.pending || (!!q && q.libres === 0 && !renDe), onClick: pagar }] });
   return out;
 }
 

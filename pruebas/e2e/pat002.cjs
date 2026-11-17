@@ -4,6 +4,9 @@
 // (Free, con dueña nueva) en Belleza con los 6 puestos ocupados: «Sin puestos», «Avísame», reserva desde el día que se libera uno. La base no deja un séptimo y
 // la vitrina nunca pasa de patrocinio_puestos. El Super Admin termina el de Sabor con motivo (auditoría, aviso). El barrido: empieza lo
 // reservado, vence, renueva (cobra) o termina si la tarjeta no pasa, y avisa a quien esperaba un puesto.
+// 0175 (17 nov): el dueño no suma vistas a su propio patrocinio; «Cancelar reserva» devuelve todo (una devolución en el libro, por la pasarela,
+// auditada y avisada; la base no deja otra ni cambiarla); «Terminar» del Super Admin devuelve lo que no se usó (encendido de entrada); 3-D Secure al
+// comprar: la hoja del banco, «No fui yo» no cobra, confirmar compra una sola vez; la renovación sola que pide verificar termina y avisa.
 // Precondiciones propias: lo vivo de Comida y Belleza en Hazleton queda terminado (estados, nada se borra); la tarjeta 4242 del dueño; los
 // precios y puestos de fábrica (se restauran al final); un vecino nuevo (teléfono libre) para las cifras.
 const ENT = require('../lib/entorno.cjs');
@@ -88,6 +91,12 @@ let OP = null;
     await pw.reload();
     ok(await espera(async () => sql(`select views from sponsorship_stats where kind = 'negocio' and ref_id = ${SID}`) === '2'), 'otro visitante (sin cuenta, su dispositivo): 2 vistas');
     await pw.screenshot({ path: OUT + 'pat002-categoria-1360.png' });
+    // 0175 · El dueño (y su equipo) mira su categoría: su patrocinio sale, pero no suma una vista.
+    await pd.goto(B + '/c/comida');
+    ok(await espera(async () => (await pd.locator(`[data-patrocinada="${SID}"]`).count()) > 0), 'el dueño ve su patrocinio en la vitrina');
+    await pd.waitForTimeout(2500);
+    ok(sql(`select views from sponsorship_stats where kind = 'negocio' and ref_id = ${SID}`) === '2', 'el dueño no suma una vista a su propio patrocinio (ni su equipo)');
+    await pd.goto(B + `/panel/${BIZ}/cobros/patrocinio`);
     await pv.goto(B + '/c/comida?sub=Dominicana');
     ok(await espera(async () => (await pv.locator(`[data-patrocinada="${SID}"]`).count()) > 0), 'país «Dominicana»: sale');
     await pv.goto(B + '/c/comida?sub=Mexicana');
@@ -151,6 +160,27 @@ let OP = null;
     const free = sql(`select string_agg(s.id::text, ',') from sponsorships s join business_stats_cache c on c.business_id = s.business_id where s.category_id = 'NEG-BELL' and s.status = 'activo' and c.plan = 'free'`);
     ok(!!free, 'un negocio Free también patrocina (la base)');
 
+    console.log('3b · «Cancelar reserva» (no empezó): se devuelve todo, una sola vez');
+    const RB = sql(`select id from sponsorships where business_id = '${bar.id}' and status = 'reservado'`);
+    await pf.reload();
+    await pf.getByRole('button', { name: 'Cancelar reserva' }).click();
+    ok(await espera(async () => (await texto(pf)).includes('te devolvemos los $15.00 completos a tu tarjeta')), 'antes de confirmar: «Se cancela la reserva y te devolvemos los $15.00 completos»');
+    await pf.screenshot({ path: OUT + 'pat002-cancelar-reserva-390.png', fullPage: true });
+    await pf.getByRole('button', { name: 'Sí, cancelar' }).click();
+    ok(await espera(async () => sql(`select status || '|' || end_kind || '|' || refund_cents || '|' || refund_motive from sponsorships where id = ${RB}`) === 'cancelado|dueno|1500|reserva_cancelada'), 'queda CANCELADO y la base decide devolver todo ($15.00)');
+    ok(await espera(async () => sql(`select amount_cents || '|' || refund_days || '|' || (refund_id like 're_sim_%') from sponsorship_payments where kind = 'negocio' and ref_id = ${RB} and reason = 'devolucion'`) === '1500|7|true'), 'el libro: una devolución de $15.00 (7 de 7 días) hecha por la pasarela');
+    ok(sql(`select refunded_cents from sim_intents where id = (select pi from sponsorship_payments where kind = 'negocio' and ref_id = ${RB} and reason = 'compra')`) === '1500', 'la pasarela (simulador) devolvió $15.00 de ese mismo cobro');
+    ok(sql(`select count(*) from audit_entries where action = 'patrocinio.devolver' and after->>'patrocinio' = '${RB}'`) === '1', 'la devolución queda en la auditoría');
+    ok(await espera(async () => sql(`select count(*) from notifications where tpl = 'biz_patrocinio_devuelto' and user_id = '${UB}' and created_at > now() - interval '2 minutes'`) !== '0'), 'aviso a la dueña: «Te devolvimos lo que no se usó»');
+    ok(await espera(async () => (await texto(pf)).includes('devuelto $15.00')), 'el panel (ANTES) dice «devuelto $15.00»');
+    let otra = ''; try { sql(`insert into sponsorship_payments (kind, ref_id, business_id, city_id, payer_user_id, amount_cents, pi, idem_key, reason, refund_id, refund_of, refund_days, refund_motive)
+      select kind, ref_id, business_id, city_id, payer_user_id, 100, pi, idem_key || '-2', 'devolucion', refund_id || '-2', refund_of, 1, refund_motive from sponsorship_payments where kind = 'negocio' and ref_id = ${RB} and reason = 'devolucion'`); } catch (e) { otra = String(e.stderr ?? e.message); }
+    ok(/sponsorship_payments_una_devolucion/.test(otra), 'una segunda devolución del mismo patrocinio: la base no la deja');
+    let cambia = ''; try { sql(`update sponsorship_payments set amount_cents = 1 where kind = 'negocio' and ref_id = ${RB} and reason = 'devolucion'`); } catch (e) { cambia = String(e.stderr ?? e.message); }
+    ok(/solo de inserción/.test(cambia), 'el libro es solo de inserción: la devolución no se cambia');
+    let decide = ''; try { sql(`update sponsorships set refund_cents = 1 where id = ${RB}`); } catch (e) { decide = String(e.stderr ?? e.message); }
+    ok(/se decide una vez/.test(decide), 'lo que se devuelve se decide una vez: la base no deja cambiarlo');
+
     console.log('4 · Super Admin › Crecimiento › Patrocinios: «Terminar» con motivo');
     const ad = await nueva(1360, 900, ADMIN);
     await ad.goto(B + '/admin/crecimiento?t=pat');
@@ -159,8 +189,14 @@ let OP = null;
     const fila = ad.locator('div').filter({ hasText: /^Sabor Dominicano/ }).filter({ has: ad.getByRole('button', { name: 'Terminar' }) }).last();
     await fila.getByRole('button', { name: 'Terminar' }).click();
     await ad.getByText('El negocio pidió terminarlo.', { exact: true }).first().click();
+    ok(await espera(async () => /Devolver lo que no se usó · \$\d+\.\d\d/.test(await texto(ad)) && (await texto(ad)).includes('No devolver')), '«Devolver lo que no se usó · $…» (lo calcula la base) o «No devolver»');
+    await ad.screenshot({ path: OUT + 'pat002-admin-terminar-1360.png', fullPage: true });
     await ad.getByRole('button', { name: 'Terminar' }).last().click();
     ok(await espera(async () => sql(`select status || '|' || end_kind || '|' || end_reason from sponsorships where id = ${SID}`) === 'terminado|admin|El negocio pidió terminarlo.'), 'queda TERMINADO por To’Latino, con su motivo');
+    const DV = sql(`select coalesce(refund_cents, 0) || '|' || coalesce(refund_days, 0) from sponsorships where id = ${SID}`).split('|').map(Number);
+    ok(DV[0] > 0 && DV[0] < 1700 && DV[0] === Math.floor(1700 * DV[1] / 7), `«Devolver» encendido de entrada: la base decide ${DV[1]} de 7 días ($${(DV[0] / 100).toFixed(2)}), en proporción`);
+    ok(await espera(async () => sql(`select amount_cents || '|' || refund_motive from sponsorship_payments where kind = 'negocio' and ref_id = ${SID} and reason = 'devolucion'`) === `${DV[0]}|admin`), 'el libro: la devolución de esa parte (una fila)');
+    ok(await espera(async () => sql(`select count(*) from notifications where tpl = 'biz_patrocinio_devuelto' and user_id = '${D0}' and created_at > now() - interval '2 minutes'`) !== '0'), 'aviso al dueño: «Te devolvimos lo que no se usó»');
     ok(sql(`select count(*) from audit_entries where action = 'mkt.patrocinio.terminar' and reason = 'El negocio pidió terminarlo.' and after->>'patrocinio' = '${SID}'`) === '1', 'en la auditoría con el motivo');
     ok(sql(`select count(*) from notifications where tpl = 'biz_patrocinio_admin' and user_id = '${D0}' and created_at > now() - interval '2 minutes'`) !== '0', 'el dueño recibe el aviso con el motivo');
     await pv.goto(B + '/c/comida'); await pv.waitForTimeout(800);
@@ -186,11 +222,47 @@ let OP = null;
     // Los avisos van a los dueños: Sabor Dominicano tiene dueño (los de la semilla de los otros casos no).
     for (const tpl of ['biz_patrocinio_renovado', 'biz_patrocinio_libre'])
       ok(sql(`select count(*) from notifications where tpl = '${tpl}' and user_id = '${D0}' and created_at > now() - interval '3 minutes'`) !== '0', `aviso al dueño «${tpl}»`);
+    ok(sql(`select count(*) from sponsorship_payments where reason = 'devolucion' and kind = 'negocio' and ref_id in (${RB}, ${SID})`) === '2', 'el barrido no devuelve otra vez lo ya devuelto');
+
+    console.log('6 · 3-D Secure al comprar: la hoja del banco; «No fui yo» no cobra; confirmar compra una sola vez');
+    terminarVivos('NEG-FOOD');
+    const P3 = tarjeta(DUENO, '3184');
+    await pd.goto(B + `/panel/${BIZ}/cobros/patrocinio`);
+    ok(await espera(async () => (await texto(pd)).includes('puestos libres')), 'Elegir');
+    await pd.getByRole('button', { name: /^Continuar · \$15$/ }).click();
+    ok(await espera(async () => /Visa ·· 3184/i.test(await texto(pd))), 'Revisar y pagar con una tarjeta que pide 3-D Secure');
+    const t3 = sql(`select now()`);
+    await pd.getByRole('button', { name: 'Pagar $15.00' }).click();
+    const hoja = pd.locator('[data-screen-label="Verificación del banco · desktop"] [data-pantalla="PAGO-3DS"]');
+    ok(await espera(async () => await hoja.isVisible() && (await hoja.innerText()).includes('3-D SECURE · $15.00')), 'se abre «Tu banco pide confirmar» (3-D SECURE · $15.00)');
+    const nada = () => sql(`select count(*) from sponsorships where business_id = '${BIZ}' and status in ('activo', 'reservado')`) === '0' && sql(`select count(*) from sponsorship_payments where business_id = '${BIZ}' and created_at > '${t3}'`) === '0';
+    ok(nada() && sql(`select count(*) from payment_actions where user_id = '${D0}' and amount_cents = 1500 and status = 'pendiente' and created_at > '${t3}'`) === '1', 'todavía no se guardó ni se cobró nada; la verificación queda a nombre del dueño');
+    await pd.screenshot({ path: OUT + 'pat002-3ds-1360.png', fullPage: true });
+    await hoja.getByRole('button', { name: 'No fui yo' }).click();
+    ok(await espera(async () => (await hoja.innerText()).includes('no confirmó el pago')), '«No fui yo»: «Tu banco no confirmó el pago»; no se cobró nada');
+    await hoja.getByRole('button', { name: 'Cerrar' }).click();
+    ok(nada(), 'nada guardado ni cobrado');
+    await pd.getByRole('button', { name: 'Pagar $15.00' }).click();
+    ok(await espera(async () => await hoja.isVisible()), 'otra vez «Pagar»: la hoja otra vez (otro intento con la misma clave)');
+    await hoja.getByRole('button', { name: 'Confirmar con mi banco' }).click();
+    ok(await espera(async () => sql(`select count(*) from sponsorships where business_id = '${BIZ}' and status = 'activo'`) === '1', 30000), 'confirmado: queda ACTIVO');
+    const S3 = sql(`select id from sponsorships where business_id = '${BIZ}' and status = 'activo'`);
+    ok(sql(`select count(*) || '|' || min(amount_cents) || '|' || min(reason) from sponsorship_payments where kind = 'negocio' and ref_id = ${S3}`) === '1|1500|compra', 'un solo cobro en el libro ($15.00)');
+    ok(sql(`select status || '|' || captured_cents from sim_intents where id = (select pi from sponsorship_payments where kind = 'negocio' and ref_id = ${S3})`) === 'succeeded|1500', 'la pasarela lo capturó una vez, verificado');
+    ok(sql(`select status from payment_actions where pi = (select pi from sponsorship_payments where kind = 'negocio' and ref_id = ${S3})`) === 'verificada', 'su verificación quedó «verificada»');
+    ok(await espera(async () => (await texto(pd)).includes('Ya sales en Patrocinados')), 'el panel: «Ya sales en Patrocinados»');
+    await pd.screenshot({ path: OUT + 'pat002-3ds-activo-1360.png', fullPage: true });
+    // La renovación sola (fuera de sesión) con una tarjeta que pide verificar: termina con el motivo y el aviso lleva al panel (comprar otro y confirmarlo ahí).
+    const R5 = ins(BIZ, 'activo', "now() - interval '8 days'", "now() - interval '1 day'", true, P3);
+    await barrer();
+    ok(sql(`select status || '|' || renew_note from sponsorships where id = ${R5}`).startsWith('terminado|tu banco pide confirmar cada cobro') && sql(`select count(*) from sponsorships where renewed_from = ${R5}`) === '0', 'la renovación sola que pide verificar: termina, sin cobrar, con el motivo');
+    ok(sql(`select href from notifications where tpl = 'biz_patrocinio_no_renovo' and user_id = '${D0}' and created_at > now() - interval '3 minutes' order by id desc limit 1`) === `/panel/${BIZ}/cobros/patrocinio`, 'su aviso lleva al panel para comprar otro y confirmarlo ahí');
     ok(!err.length, 'sin errores en las páginas: ' + (err.join(' · ') || 'ninguno'));
     console.log(`\npat002 · ${n} comprobaciones en verde`);
   } finally {
     if (OP) sql(`update operations set status = 'cancelled' where number = '${OP}' and status = 'pending'`);   // el pedido de la prueba no queda pendiente en el panel
     terminarVivos('NEG-FOOD'); terminarVivos('NEG-BELL');
+    tarjeta(DUENO);   // la 4242 vuelve a ser la tarjeta de siempre del dueño
     for (const k of CFG) { const v = cfgAntes[k]; if (v) sql(`update platform_config set value = '${v}'::jsonb where key = '${k}'`); else sql(`delete from platform_config where key = '${k}'`); }
     for (const c of abiertas) await c.close().catch(() => {});
     await b.close();
