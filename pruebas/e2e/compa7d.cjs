@@ -226,7 +226,9 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
 
   console.log('8 · El formulario abierto desde la hoja: help_requests.origin = compa');
   // 9b-1 · Un pedido terminado de Marisol sin ayuda (que no sea el de la familia): si la base no tiene otro, se hace uno (como ayuda2i).
-  let ORD = sql(`select number from operations where user_id = '${MU}' and kind = 'order' and status = 'done' and not exists (select 1 from help_requests h where h.operation_id = operations.id) and number <> '${fam.find((f) => f.kind === 'order').num}' and ready_at is not null and respond_by is not null and exists (select 1 from operation_lines l where l.operation_id = operations.id) order by id desc limit 1`);
+  // Precondición propia: su PROPIO pedido terminado de Sabor Dominicano (antes tomaba el último de Marisol, que en otro orden podía ser de otro
+  // negocio o ciudad y la hoja de El Compa no salía: TimeoutError en la corrida barajada).
+  let ORD = '';
   if (!ORD) { const k = require('crypto').randomUUID();
     ORD = sql(`insert into operations (number, kind, city_id, business_id, user_id, status, stage, mode, pay_mode, subtotal_cents, tax_cents, total_cents, sent_at, respond_by, ready_at, done_at, client_key, is_test)
       values (nextval('operations_order_seq')::text, 'order', 'hzl', 'sabor-dominicano', '${MU}', 'done', 'picked_up', 'pickup', 'local', 650, 39, 689, now() - interval '3 hours', now() - interval '170 minutes', now() - interval '150 minutes', now() - interval '2 hours', '${k}', true) returning number`).split('\n')[0];
