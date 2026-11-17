@@ -2518,3 +2518,12 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   del panel: arreglado en sinComent (alreves9m 36/36). **aa33f76 en `main` y `pruebas`.** Anchos (misma corrida): escritorio 1024 sin rojos
   propios; iPhone SE 5 y iPad 6 de Safari (silla3d, app8a, dir9m ya conocidos; nuevos inm4ib, noc4d, pan9n2 en el SE y ayu4z, tra4y, app8e en el
   iPad) → bloque «Anchos (4)» antes de producción (LAUNCH 9b).
+- **Anchos (4) · 17 nov** — CI 44028911097 (3aa2102): regresión completa en verde → **3aa2102 en `main` y `pruebas`** (sandbox sano en
+  3aa2102). Lo de Safari arreglado en las pruebas (inm4ib, pan9n2, app8e, silla3d, noc4d, ayu4z, tra4y; envolturas WebKit para «load» y las
+  fuentes en `dispositivo-precarga.cjs`). Queda **dir9m en el iPad (WebKit)**: el mapa no se arrastra y con flechas el pin no llega al guardar;
+  en Chromium a ancho de iPad todo pasa → mirar a mano en un iPad (REVISION «Pin en el iPad», LAUNCH).
+- **Anchos (5) · 17 nov** — rojos nuevos de la misma corrida: escritorio 1024 autos4ic; iPhone SE evt6a, app8a, vec9m.
+  · **vec9m era real:** el panel no ponía al día la lista de Mensajes al conectarse en vivo la primera vez (lo que llegaba entre el pintado y la
+    conexión no lo traía ningún aviso). `RefrescoVivo` ahora se pone al día en cada «listo»; guardián `mensajesEnVivo` + 2 al revés (alreves9m 38/38).
+  · Pruebas: autos4ic tocaba el segundo «+» / interruptor antes de que se pintara el primero (helper `alternar`); evt6a escribía antes de hidratar
+    (vuelve a escribir hasta que sale la barra); app8a leía «Sin señal» y el almacén antes de hidratar (espera la condición, no un tiempo).
