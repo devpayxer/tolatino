@@ -5284,6 +5284,32 @@ novedades y seguidores. **Solo el sandbox** (el CI y producción no los cargan);
 - **No llenado en esta pasada:** planes recurrentes y cotizaciones de Hogar/Auto, acuerdo escrito de Fiestas, historial de cajas/mudanzas de
   Transporte, reservas de mesa de Comida y catering, plan de pagos de Educación. Los negocios y lo que venden sí están completos.
 
+## Demos ronda 2 (17 nov) — 10 negocios en CADA subcategoría + más de 380 eventos
+Lo que pediste: «de cada subcategoría 10 negocios full», los negocios que ya había llenados igual, y más de 200 eventos variados con el calendario
+lleno. Lo hicieron 21 agentes (Sonnet) en paralelo; yo los junté, los probé juntos en una base nueva y miré las páginas. **Solo el sandbox.**
+- **Negocios:** ≈ 6.700 nuevos (todas las subcategorías de las 17 categorías, 10 cada una, 2 por ciudad), Pro, con ficha completa, lo que venden
+  completo (menú, servicios, productos, vehículos, propiedades, salidas, grupos…), 40–120 operaciones de historia, 15–40 reseñas verificadas
+  (las de 3★ o menos siempre con respuesta del dueño), novedades y seguidores.
+- **Los que ya existían (446 de la semilla, Hazleton):** ahora con historia, reseñas, novedades, seguidores, fotos, equipo y preguntas.
+- **Eventos (≈ 385):** 190 con boletos (preventa, general, VIP, mesas con depósito, agotados con lista de espera, cancelados con devolución,
+  pospuestos, entradas escaneadas en fechas pasadas) y 195 gratis o con RSVP. Semanales (todos los días de la semana en cada ciudad), cada 2
+  semanas, mensuales, de varios días (Posadas, feria navideña, festivales) y de un solo día. Cada ciudad tiene eventos **todos los días** de los
+  próximos 120; muévete en el calendario de Eventos.
+- **Qué mirar** (elige la ciudad arriba): Eventos en cada ciudad; un negocio de cada categoría, por ejemplo
+  http://2.31.196.167/n/after-hours-amanecer-latino-nx (Noche, Allentown), http://2.31.196.167/n/alergias-familiar-dr-lantigua-wilkes-barre-r2s
+  (Salud, Wilkes-Barre), http://2.31.196.167/n/alianza-marine-scranton-d21 (Autos, botes, Scranton),
+  http://2.31.196.167/n/360-fiesta-video-alw-r2f (Fiestas, Allentown), http://2.31.196.167/n/accidentes-y-lesiones-familia-rivera-reading-p09
+  (Profesionales, Reading).
+- **Tarda en aparecer:** cargar todo en el sandbox lleva más de una hora; va aparte del despliegue (la app no espera) y se ve llenándose.
+- **Decidí (dime si no):**
+  - Subcategorías de servicio dentro de Tiendas (sastrería, tintorería, lavandería, relojes, estética canina, trofeos) salen como lista de
+    precios con apartado; no tienen citas propias. Si las quieres con citas, es un bloque aparte.
+  - Niñeras y nanas no reciben pedidos por la app (así lo dice la app): tienen catálogo, reseñas y seguidores, sin historia de pedidos.
+  - Promotor, DJ y salón privado (Noche) venden servicios «desde», sin «Esta noche».
+  - En Venta de Autos, la visita de botes y RV todavía dice «prueba de manejo».
+- **Fotos:** solo las de Pexels que ya teníamos; en subcategorías con pocas fotos se repiten o son de la categoría (p. ej. una cocina comercial
+  con foto de casa). No hay fotos de niños ni de personas identificables en Niños e Iglesias.
+
 ## Ubicación del repartidor en el iPhone (17 nov) — mirar a mano
 En un iPhone (Safari), con la cuenta de un repartidor del sandbox: acepta un **envío del mercado**, pon el código de recogida y toca «Recogí, voy en
 camino». Camina o muévete unos metros: en el pedido del cliente debe verse el mapa en vivo moviéndose. En las pruebas de Safari del CI el

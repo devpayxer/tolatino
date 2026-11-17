@@ -2557,6 +2557,14 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   generadores deterministas `scripts/semilla/demos/grupo-{a,b,c,d}.mjs` (node sin red); `deploy.sh` genera el SQL (~140 MB, fuera del repo) y lo
   aplica con `migrar.sh --semilla-pruebas` desde `infra/pruebas/demos/`. Comprobado en una base nueva: 17 archivos sin errores en 3 min 22 s
   (100 048 operaciones, 29 017 reseñas en total). El CI no los carga. Detalle y enlaces en REVISION «Negocios demo».
+- **17 nov · Demos ronda 2 (pedido del fundador: 10 por CADA subcategoría + 200+ eventos):** 21 agentes Sonnet en worktrees, uno por
+  categoría + 2 para la semilla existente + 2 de eventos; generadores `scripts/semilla/demos/r2-*.mjs` (solo leen los de la ronda 1).
+  Integración en una base nueva (copia de tl_demos): ≈ 6.700 negocios nuevos (todas las subcategorías ≥ 10), 446 de la semilla llenados,
+  ≈ 385 eventos (190 con boletos: 6.399 órdenes / 16.071 boletos; 195 gratis/RSVP), calendario con eventos todos los días ×120 en las 5
+  ciudades; segunda aplicación sin cambios. Choques de id entre agentes: 2 (Comida↔Mercado), renombrados. Arreglos de paso: matrículas de la
+  ronda 1 ligadas a su grupo (`d/grupos.mjs`), cupos recalculados (`zz-cupos-demo.sql`), y `deploy.sh` carga los demos APARTE
+  (`systemd-run tolatino-demos`) porque la carga completa supera el tope de 1 h del servicio. Páginas mirada en el navegador (15 fichas, Eventos
+  ×5). Iglesias (NEG-FE 06–43) quedó fuera de la primera tanda (tope de 20 agentes): en curso. Detalle en REVISION «Demos ronda 2».
 - **17 nov · 8b6eaf9 en `main` y `pruebas`** — corrida completa (CI 44081105072) y sus arreglos:
   · **Accesibilidad de la ficha nueva (9c):** grises de texto con corchetes (`text-ink/[.42]`, 47 archivos) a ink 60 %, fila de plato agotado
     (parche en portar-sistema: solo la foto apagada), botones de 24 px (guardián `objetivoTactil`), controles anidados en las filas de 10 fichas
