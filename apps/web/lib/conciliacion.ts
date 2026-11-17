@@ -45,13 +45,20 @@ async function libro(desde: Date, hasta: Date, ids: { pi: string[]; re: string[]
                                  to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at
                             from payments where stripe_payment_intent is not null and ((created_at >= $1::timestamptz and created_at < $2::timestamptz) or stripe_payment_intent = any($3::text[]))`, [a, b, ids.pi]),
     db().query<{ pi: string; status: string; biz: string | null; city: string | null }>(`select pi, status, business_id as biz, city_id as city from payment_actions where pi = any($1::text[]) or (created_at >= $2::timestamptz and created_at < $3::timestamptz)`, [ids.pi, a, b]),
-    // Cobros directos a To'Latino: el plan Pro y (C-002) los patrocinios (sponsorship_payments, solo inserción).
-    db().query<{ pi: string; amount: number; biz: string }>(`select note->>'pi' as pi, amount_cents as amount, business_id as biz from subscription_events where kind = 'charged' and note ? 'pi' and (note->>'pi' = any($1::text[]) or (at >= $2::timestamptz and at < $3::timestamptz))
-      union all select pi, amount_cents as amount, business_id as biz from sponsorship_payments where pi = any($1::text[]) or (created_at >= $2::timestamptz and created_at < $3::timestamptz)`, [ids.pi, a, b]),
+    // Cobros directos a To'Latino: el plan Pro y (C-002) los patrocinios (sponsorship_payments, solo inserción). De un patrocinio, también lo devuelto
+    // de ese mismo cobro (0175: su fila 'devolucion'); de Pro, null (no se mira).
+    db().query<{ pi: string; amount: number; biz: string; devuelto: number | null }>(`select note->>'pi' as pi, amount_cents as amount, business_id as biz, null::int as devuelto from subscription_events where kind = 'charged' and note ? 'pi' and (note->>'pi' = any($1::text[]) or (at >= $2::timestamptz and at < $3::timestamptz))
+      union all select c.pi, c.amount_cents as amount, c.business_id as biz,
+                       coalesce((select sum(r.amount_cents) from sponsorship_payments r where r.reason = 'devolucion' and r.pi = c.pi), 0)::int as devuelto
+                  from sponsorship_payments c where c.reason <> 'devolucion' and (c.pi = any($1::text[]) or (c.created_at >= $2::timestamptz and c.created_at < $3::timestamptz))`, [ids.pi, a, b]),
+    // Devoluciones: las de los cobros con fila en payments (refunds) y (0175) las de los patrocinios (su fila 'devolucion' en el libro).
     db().query<{ id: string; amount: number; biz: string | null; city: string | null; at: string }>(
       `select r.stripe_refund_id as id, r.amount_cents as amount, p.business_id as biz, p.city_id as city, to_char(coalesce(r.done_at, r.created_at) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at
          from refunds r join payments p on p.id = r.payment_id where r.status = 'done' and r.stripe_refund_id is not null
-          and ((coalesce(r.done_at, r.created_at) >= $1::timestamptz and coalesce(r.done_at, r.created_at) < $2::timestamptz) or r.stripe_refund_id = any($3::text[]))`, [a, b, ids.re]),
+          and ((coalesce(r.done_at, r.created_at) >= $1::timestamptz and coalesce(r.done_at, r.created_at) < $2::timestamptz) or r.stripe_refund_id = any($3::text[]))
+       union all
+       select s.refund_id as id, s.amount_cents as amount, s.business_id as biz, s.city_id as city, to_char(s.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at
+         from sponsorship_payments s where s.reason = 'devolucion' and ((s.created_at >= $1::timestamptz and s.created_at < $2::timestamptz) or s.refund_id = any($3::text[]))`, [a, b, ids.re]),
     db().query<{ id: string; amount: number; biz: string; city: string; at: string }>(
       `select transfer_id as id, net_cents as amount, business_id as biz, city_id as city, to_char(paid_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at from event_settlements
         where transfer_id is not null and ((paid_at >= $1::timestamptz and paid_at < $2::timestamptz) or transfer_id = any($3::text[]))`, [a, b, ids.tr]),
@@ -84,7 +91,8 @@ export function comparar(st: LadoStripe, L: Awaited<ReturnType<typeof libro>>, e
       else if (i.estado === "succeeded" && (i.capturado !== p.amount || i.devuelto !== p.refunded)) dif({ kind: "payment_intent", problem: "monto", stripeId: i.id, ledgerRef: `payment:${p.id}`, negocio: p.biz, ciudad: p.city, stripeCents: i.capturado - i.devuelto, ledgerCents: p.amount - p.refunded, stripeStatus: i.estado, ledgerStatus: p.status });
       continue;
     }
-    if (pro) { if (i.estado !== "succeeded" || i.capturado !== pro.amount) dif({ kind: "payment_intent", problem: i.estado !== "succeeded" ? "estado" : "monto", stripeId: i.id, ledgerRef: `pro:${pro.biz}`, negocio: pro.biz, ciudad: null, stripeCents: i.capturado, ledgerCents: pro.amount, stripeStatus: i.estado, ledgerStatus: "charged" }); continue; }
+    // Pro y patrocinios: cobrado entero; de un patrocinio, además, lo devuelto en Stripe = lo devuelto en el libro (0175).
+    if (pro) { if (i.estado !== "succeeded" || i.capturado !== pro.amount || (pro.devuelto != null && i.devuelto !== pro.devuelto)) dif({ kind: "payment_intent", problem: i.estado !== "succeeded" ? "estado" : "monto", stripeId: i.id, ledgerRef: `pro:${pro.biz}`, negocio: pro.biz, ciudad: null, stripeCents: i.capturado - (pro.devuelto != null ? i.devuelto : 0), ledgerCents: pro.amount - (pro.devuelto ?? 0), stripeStatus: i.estado, ledgerStatus: "charged" }); continue; }
     // Una verificación del banco viva (o ya vencida y soltada) no es un cobro del libro todavía.
     if (a && ((a.status === "pendiente" && i.estado === "requires_action") || (a.status === "verificada" && i.estado === "requires_capture") || i.estado === "canceled" || i.estado === "requires_payment_method")) continue;
     if (i.estado === "requires_capture") { dif({ kind: "hold_orphan", problem: "falta_en_libro", stripeId: i.id, ledgerRef: null, negocio: a?.biz ?? null, ciudad: a?.city ?? null, stripeCents: i.monto, ledgerCents: null, stripeStatus: i.estado, ledgerStatus: null }); continue; }
@@ -178,7 +186,7 @@ export async function conciliarDia(dia: string, quien: { por: "barrido" } | { po
     // Dinero que se movió ese día según cada lado: lo capturado (neto de devoluciones) de los PaymentIntents del día.
     sC = hoy.intents.filter((x) => x.estado === "succeeded").reduce((s, x) => s + x.capturado - x.devuelto, 0);
     lC = L.P.filter((x) => enDia(x.at) && ["captured", "partially_refunded", "refunded"].includes(x.status)).reduce((s, x) => s + x.amount - x.refunded, 0)
-      + L.PRO.filter((x) => hoy.intents.some((i) => i.id === x.pi)).reduce((s, x) => s + x.amount, 0);
+      + L.PRO.filter((x) => hoy.intents.some((i) => i.id === x.pi)).reduce((s, x) => s + x.amount - (x.devuelto ?? 0), 0);
   } catch (e) {
     error = String((e as Error)?.message ?? e).slice(0, 300) || "error";
     diffs = [];

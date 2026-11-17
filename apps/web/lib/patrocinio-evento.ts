@@ -3,7 +3,7 @@ import type { PoolClient } from "pg";
 import { valores } from "./config";
 import { db, tx } from "./db";
 import { pasarela } from "./pagos/pasarela";
-import { CLAVE, anotarPago, cobrar, errorDePuestos, fechasPeriodo, money, tarjetaDe, type Bi, type Cobro, type PatAdm, type ResPat } from "./patrocinio";
+import { CLAVE, DEVOLUCION, anotarPago, capturarCobro, cobrar, devolverPatrocinio, devolverPendientes, errorDePuestos, fechasPeriodo, money, soltarRetenido, tarjetaDe, type Bi, type Cobro, type PatAdm, type Recibo, type ResPat } from "./patrocinio";
 import type { TarjetaEvt } from "./evt-publico";
 
 /* C-003 · Patrocinados de la página de Eventos (canvas tolatino-master+, entrega/cambios.md C-003; migración 0174). Usa la misma caja que el
@@ -16,7 +16,11 @@ import type { TarjetaEvt } from "./evt-publico";
      tarjeta y una clave por intento; nunca un monto (guardián patrocinioEventoDelServidor).
    - Un cobro por clave (idem = evento + clave del intento), dentro de la transacción del candado de la ciudad. El libro es sponsorship_payments
      (kind 'evento'); la conciliación diaria ya lo lee.
-   - Un evento cancelado o que ya pasó termina su patrocinio solo (el barrido); la vitrina tampoco lo muestra (pide la fecha listable).
+   - Un evento cancelado o que ya pasó termina su patrocinio solo (el barrido); la vitrina tampoco lo muestra (pide la fecha listable). Cancelado:
+     se devuelven los días enteros que no se usaron (0175, 'sin_usar').
+   - Evento oculto, en revisión o con Eventos apagado en su negocio (ninguna fecha listable, pero sigue por venir): el patrocinio se PAUSA (no sale
+     ni cuenta vistas; guarda su puesto). Cuando vuelve a verse, sigue y se alarga lo que duró la pausa, si cabe (los puestos de la ciudad, el
+     siguiente patrocinio del mismo evento y el fin del evento mandan); lo que no cupo se devuelve al terminar ('pausa').
    - En las apps de las tiendas no se compra (como Pro): la compra es en la web (compraDigitalAqui, en las acciones). */
 
 export type DurE = "week" | "month" | "until_event";
@@ -131,6 +135,7 @@ export async function comprarPatrocinioEvento(negocio: string, evento: string, q
   if (ya) return { ok: true, id: ya.id };
   const empiezaHoy = desde === "hoy" || (!!renovarDe && Date.parse(f.a) <= Date.now());
   const renovar = x.dur !== "until_event" && !!x.renovar;
+  let retenido: string | null = null;
   try {
     const r = await tx(async (c): Promise<ResPat & { aviso?: { hasta: string } }> => {
       await c.query(`select pg_advisory_xact_lock(hashtextextended($1, 0))`, [`patevt:${e.ciudad}`]);
@@ -138,13 +143,16 @@ export async function comprarPatrocinioEvento(negocio: string, evento: string, q
       if (cruza) return no("Este evento ya tiene un patrocinio en esas fechas.", "This event already has a sponsorship on those dates.");
       const vivos = (await c.query<{ n: number }>(`select patrocinio_evt_a_la_vez($1, $2::timestamptz, $3::timestamptz, null) as n`, [e.ciudad, f.a, f.b])).rows[0]!.n;
       if (vivos >= P.puestos) return { ok: false, sinPuestos: true, msg: { es: "Ya no quedan puestos en esas fechas. No se cobró nada.", en: "There are no slots left on those dates. Nothing was charged." } };
-      const cobro: Cobro = { kind: "evento", negocio, ciudad: e.ciudad, payer: quien, pm: card.pm, centavos, idem, razon: renovarDe ? "renovacion" : "compra", meta: { business_id: negocio, event_id: evento, duration: x.dur } };
+      const cobro: Cobro = { kind: "evento", negocio, ciudad: e.ciudad, payer: quien, pm: card.pm, centavos, idem, razon: renovarDe ? "renovacion" : "compra", meta: { business_id: negocio, event_id: evento, duration: x.dur }, enSesion: true };
       const p = await cobrar(cobro);
-      if (!p.ok) return { ok: false, msg: p.msg };
+      // 3-D Secure: la hoja del banco (verificar) y la pantalla vuelve a mandar lo mismo con la misma clave; no se guardó nada.
+      if (!p.ok) return { ok: false, msg: p.msg, ...(p.verificar ? { verificar: p.verificar } : {}) };
+      if (p.retenido) retenido = p.pi;
       const id = (await c.query<{ id: string }>(
         `insert into event_sponsorships (event_id, business_id, city_id, starts_at, ends_at, duration, status, price_cents, payer_user_id, card_pm, auto_renew, renewed_from)
          values ($1::bigint, $2, $3, $4::timestamptz, $5::timestamptz, $6, $7, $8, $9, $10, $11, $12::bigint) returning id::text`,
         [evento, negocio, e.ciudad, f.a, f.b, x.dur, empiezaHoy ? "activo" : "reservado", centavos, quien, card.pm, renovar, renovarDe])).rows[0]!.id;
+      await capturarCobro(p, centavos);
       await anotarPago(c, { ...cobro, ref: id, pi: p.pi, marca: p.marca, l4: p.l4 });
       await c.query(`update sponsorship_waits set status = 'compro' where kind = 'evento' and business_id = $1 and status = 'espera'`, [negocio]);
       await auditarEvento(c, quien, evento, e.ciudad, renovarDe ? "patrocinio_evento.renovar" : "patrocinio_evento.comprar",
@@ -154,6 +162,8 @@ export async function comprarPatrocinioEvento(negocio: string, evento: string, q
     if (r.ok && r.estado === "activo" && r.aviso) await avisoEvt(evento, "biz_patevt_activo", { hasta: r.aviso.hasta, monto: money(centavos) }).catch(() => undefined);
     return r;
   } catch (er) {
+    const sc = await soltarRetenido(retenido, er);
+    if (sc) return sc;
     const d = errorDePuestos(er);
     if (d) return String((er as Error)?.message ?? "").includes("patrocinio_cruza") ? no("Este evento ya tiene un patrocinio en esas fechas.", "This event already has a sponsorship on those dates.") : d;
     if (String((er as Error)?.message ?? "").includes("patrocinio_evt_evento")) return no("Tu evento tiene que estar publicado y por venir para patrocinarlo. No se cobró nada.", "Your event has to be live and upcoming to sponsor it. Nothing was charged.");
@@ -161,9 +171,9 @@ export async function comprarPatrocinioEvento(negocio: string, evento: string, q
   }
 }
 
-export async function auditarEvento(c: PoolClient | null, actor: string, evento: string, ciudad: string, action: string, after: unknown, reason: string | null = null, kind: "user" | "staff" = "user") {
+export async function auditarEvento(c: PoolClient | null, actor: string, evento: string, ciudad: string, action: string, after: unknown, reason: string | null = null, kind: "user" | "staff" | "system" = "user") {
   await (c ?? db()).query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after, reason) values ($1, $2, $3, 'event', $4, $5, null, $6::jsonb, $7)`,
-    [kind, actor, action, evento, ciudad, JSON.stringify(after ?? null), reason]);
+    [kind, kind === "system" ? null : actor, action, evento, ciudad, JSON.stringify(after ?? null), reason]);
 }
 
 /* «Avísame si se libera un puesto» (Eventos de la ciudad). */
@@ -184,24 +194,30 @@ export async function renovarSoloEvento(negocio: string, evento: string, quien: 
   return { ok: true };
 }
 
-/* «Terminar antes» (el organizador): deja de salir ya. Lo pagado no se devuelve (lo dice la pantalla antes de confirmar). */
+/* «Terminar antes» (el organizador): deja de salir ya; lo pagado no se devuelve (lo dice la pantalla antes de confirmar). «Cancelar reserva» (no
+   empezó): se devuelve todo (lo decide la base, 'todo'). */
 export async function terminarPorDuenoEvento(negocio: string, evento: string, quien: string, id: string): Promise<ResPat> {
   if (!ID.test(String(id)) || !ID.test(String(evento))) return no("Ese patrocinio no existe.", "That sponsorship does not exist.");
-  const r = await db().query<{ city_id: string; status: string }>(
-    `update event_sponsorships set status = case when status = 'reservado' then 'cancelado' else 'terminado' end, end_kind = 'dueno', ended_at = now(), ended_by = $4, auto_renew = false
-      where id = $1::bigint and event_id = $2::bigint and business_id = $3 and status in ('activo', 'reservado') returning city_id, status`, [id, evento, negocio, quien]);
+  const r = await db().query<{ city_id: string; status: string; refund_cents: number | null }>(
+    `update event_sponsorships set status = case when status = 'reservado' then 'cancelado' else 'terminado' end, end_kind = 'dueno', ended_at = now(), ended_by = $4, auto_renew = false,
+            ${DEVOLUCION("case when status = 'reservado' then 'todo' else 'nada' end", "'reserva_cancelada'", true)}
+      where id = $1::bigint and event_id = $2::bigint and business_id = $3 and status in ('activo', 'reservado') returning city_id, status, refund_cents`, [id, evento, negocio, quien]);
   if (!r.rowCount) return no("Ese patrocinio ya terminó.", "That sponsorship already ended.");
-  await auditarEvento(null, quien, evento, r.rows[0]!.city_id, "patrocinio_evento.terminar", { patrocinio: id, estado: r.rows[0]!.status });
-  return { ok: true };
+  const x = r.rows[0]!;
+  await auditarEvento(null, quien, evento, x.city_id, "patrocinio_evento.terminar", { patrocinio: id, estado: x.status, devolver: x.refund_cents ? money(x.refund_cents) : null });
+  if (x.refund_cents) await devolverPatrocinio("evento", id);
+  return { ok: true, devuelto: x.refund_cents ?? 0 };
 }
 
 /* ── El panel (Eventos › el evento › Patrocinar) ── */
 export type FilaPatE = { id: string; estado: "reservado" | "activo" | "terminado" | "cancelado"; dur: DurE; desde: string; hasta: string; precio: number; renovar: boolean; tarjeta: string | null;
-  fin: string | null; finKind: string | null; finMotivo: string | null; vistas: number; entraron: number; boletos: number; dias: number; dia: number };
+  fin: string | null; finKind: string | null; finMotivo: string | null; vistas: number; entraron: number; boletos: number; dias: number; dia: number;
+  /* 0175 · En pausa (el evento no se ve), los días de pausa (cerrados y la abierta) y lo devuelto. */
+  pausado: boolean; pausaDias: number; devuelto: number };
 export type PatEvtPanel = {
   evento: { id: string; slug: string; titulo: Bi; ciudad: string; ciudadN: string; tz: string; dia: string | null; vivo: boolean; entry: string };
   precios: PrecioEvt; libres: { week: ConsultaE; month: ConsultaE; until_event: ConsultaE }; hoy: string; previa: TarjetaEvt | null;
-  vivo: FilaPatE | null; siguiente: FilaPatE | null; pasados: FilaPatE[]; recibos: { at: string; monto: number; tarjeta: string; razon: string }[];
+  vivo: FilaPatE | null; siguiente: FilaPatE | null; pasados: FilaPatE[]; recibos: Recibo[];
   espera: boolean; tarjetas: { pm: string; marca: string; ultimos4: string; vence: string; def: boolean }[]; modo: "stripe" | "simulador" | "apagado"; pk: string | null;
 };
 const FILA = `s.id::text, s.status as estado, s.duration as dur, to_char(s.starts_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as desde,
@@ -209,7 +225,9 @@ const FILA = `s.id::text, s.status as estado, s.duration as dur, to_char(s.start
   (select upper(pm.brand) || ' ·· ' || pm.last4 from payment_methods pm where pm.stripe_pm_id = s.card_pm) as tarjeta,
   to_char(s.ended_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as fin, s.end_kind as "finKind", s.end_reason as "finMotivo",
   coalesce(st.views, 0)::int as vistas, coalesce(st.entries, 0)::int as entraron, coalesce(st.orders, 0)::int as boletos,
-  greatest(1, ceil(extract(epoch from s.ends_at - s.starts_at) / 86400))::int as dias, least(greatest(1, ceil(extract(epoch from now() - s.starts_at) / 86400))::int, greatest(1, ceil(extract(epoch from s.ends_at - s.starts_at) / 86400))::int) as dia`;
+  greatest(1, ceil(extract(epoch from s.ends_at - s.starts_at) / 86400))::int as dias, least(greatest(1, ceil(extract(epoch from now() - s.starts_at) / 86400))::int, greatest(1, ceil(extract(epoch from s.ends_at - s.starts_at) / 86400))::int) as dia,
+  s.paused_at is not null as pausado, floor((s.paused_secs + coalesce(extract(epoch from now() - s.paused_at), 0)) / 86400)::int as "pausaDias",
+  coalesce((select r.amount_cents from sponsorship_payments r where r.kind = 'evento' and r.ref_id = s.id and r.reason = 'devolucion'), 0)::int as devuelto`;
 
 export async function patEvtPanel(negocio: string, evento: string, userId: string, lang: "es" | "en"): Promise<PatEvtPanel | null> {
   const e = await eventoPat(null, evento, negocio);
@@ -220,8 +238,8 @@ export async function patEvtPanel(negocio: string, evento: string, userId: strin
     vivoE ? consultarPuestosEvento(negocio, evento, "month", "hoy") : Promise.resolve(null),
     vivoE ? consultarPuestosEvento(negocio, evento, "until_event", "hoy") : Promise.resolve(null),
     db().query<FilaPatE>(`select ${FILA} from event_sponsorships s left join sponsorship_stats st on st.kind = 'evento' and st.ref_id = s.id where s.event_id = $1::bigint and s.business_id = $2 order by s.starts_at desc, s.id desc limit 20`, [evento, negocio]),
-    db().query<{ at: string; monto: number; tarjeta: string; razon: string }>(
-      `select to_char(p.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, p.amount_cents as monto, coalesce(upper(p.card_brand) || ' ·· ' || p.card_last4, '—') as tarjeta, p.reason as razon
+    db().query<Recibo>(
+      `select to_char(p.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, p.amount_cents as monto, coalesce(upper(p.card_brand) || ' ·· ' || p.card_last4, '—') as tarjeta, p.reason as razon, p.refund_days as dias
          from sponsorship_payments p join event_sponsorships s on s.id = p.ref_id where p.kind = 'evento' and s.event_id = $1::bigint and p.business_id = $2 order by p.created_at desc limit 24`, [evento, negocio]),
     db().query(`select 1 from sponsorship_waits where kind = 'evento' and business_id = $1 and status = 'espera'`, [negocio]),
     (await import("./cobros")).misTarjetas(userId),
@@ -244,29 +262,32 @@ export async function patEvtVivo(negocio: string, evento: string): Promise<boole
 }
 
 /* ── Avisos al organizador ── */
-async function avisoEvt(evento: string, tpl: string, v: { hasta?: string; monto?: string; tarjeta?: string; motivo?: string }) {
+export async function avisoEvt(evento: string, tpl: string, v: { hasta?: string; monto?: string; tarjeta?: string; motivo?: string; n?: string; total?: string }) {
   const x = (await db().query<{ negocio: string; titulo: string; ciudad: string; tz: string }>(
     `select e.business_id as negocio, e.title->>'es' as titulo, ci.name as ciudad, ci.timezone as tz from events e join cities ci on ci.id = e.city_id where e.id = $1::bigint`, [evento])).rows[0];
   if (!x) return;
   const hasta = v.hasta ? new Intl.DateTimeFormat("es-US", { timeZone: x.tz, day: "numeric", month: "short" }).format(new Date(v.hasta)).replace(/\./g, "") : "";
-  await (await import("./avisos")).avisarNegocio(x.negocio, tpl, { evento: x.titulo, ciudad: x.ciudad, hasta, monto: v.monto ?? "", tarjeta: v.tarjeta ?? "", motivo: v.motivo ?? "" },
+  await (await import("./avisos")).avisarNegocio(x.negocio, tpl, { evento: x.titulo, ciudad: x.ciudad, hasta, monto: v.monto ?? "", tarjeta: v.tarjeta ?? "", motivo: v.motivo ?? "", n: v.n ?? "", total: v.total ?? "" },
     { href: `/panel/${x.negocio}/eventos?det=evt:pat:${evento}` });
 }
 
 /* ── El barrido (cada minuto, lib/barrido.ts) ── */
-/* Termina el patrocinio de un evento cancelado o que ya pasó (sin fechas programadas por delante), empieza los reservados que ya tocan, vence los que
-   terminaron (renovando los de 1 semana o 1 mes que lo piden, si el evento sigue por venir, cobra y hay puesto), avisa a quien pidió «Avísame» y
-   pone al día los boletos que llegaron por el patrocinio. */
-export async function barrerPatrociniosEventos(): Promise<{ terminaron: number; empezaron: number; vencieron: number; renovados: number }> {
-  let terminaron = 0, empezaron = 0, vencieron = 0, renovados = 0;
-  // Evento cancelado: su patrocinio termina (y lo reservado se cancela).
+/* Termina el patrocinio de un evento cancelado (devolviendo los días que no se usaron) o que ya pasó (sin fechas programadas por delante), empieza
+   los reservados que ya tocan, pausa lo de un evento que no se ve (oculto, en revisión o con Eventos apagado) y lo sigue cuando vuelve a verse
+   (alargándolo lo que duró la pausa, si cabe), vence los que terminaron (renovando los de 1 semana o 1 mes que lo piden, si el evento sigue por
+   venir, cobra y hay puesto), avisa a quien pidió «Avísame», hace las devoluciones pendientes y pone al día los boletos que llegaron por el patrocinio. */
+export async function barrerPatrociniosEventos(): Promise<{ terminaron: number; empezaron: number; vencieron: number; renovados: number; pausados: number; siguieron: number }> {
+  let terminaron = 0, empezaron = 0, vencieron = 0, renovados = 0, pausados = 0, siguieron = 0;
+  // Evento cancelado: su patrocinio termina (y lo reservado se cancela) y se devuelven los días enteros que no se usaron (una reserva: todo).
   const cx = await db().query<{ evento: string }>(
-    `update event_sponsorships s set status = case when s.status = 'reservado' then 'cancelado' else 'terminado' end, end_kind = 'evento_cancelado', ended_at = now(), auto_renew = false
+    `update event_sponsorships s set status = case when s.status = 'reservado' then 'cancelado' else 'terminado' end, end_kind = 'evento_cancelado', ended_at = now(), auto_renew = false,
+            ${DEVOLUCION("'sin_usar'", "'evento_cancelado'", true, "s.")}
        from events e where e.id = s.event_id and s.status in ('activo', 'reservado') and e.status = 'cancelled' returning s.event_id::text as evento`);
   for (const x of cx.rows) { terminaron++; await avisoEvt(x.evento, "biz_patevt_cancelado", {}).catch(() => undefined); }
-  // Evento que ya pasó (ninguna fecha programada que no haya terminado): termina.
+  // Evento que ya pasó (ninguna fecha programada que no haya terminado): termina. Lo que estuvo en pausa y no se pudo alargar se devuelve.
   const pa = await db().query<{ evento: string }>(
-    `update event_sponsorships s set status = case when s.status = 'reservado' then 'cancelado' else 'terminado' end, end_kind = 'evento_paso', ended_at = now(), auto_renew = false
+    `update event_sponsorships s set status = case when s.status = 'reservado' then 'cancelado' else 'terminado' end, end_kind = 'evento_paso', ended_at = now(), auto_renew = false,
+            ${DEVOLUCION("'pausa'", "'pausa'", true, "s.")}
       where s.status in ('activo', 'reservado') and not exists (select 1 from event_dates d where d.event_id = s.event_id and d.status = 'scheduled' and d.ends_at > now())
       returning s.event_id::text as evento`);
   for (const x of pa.rows) { terminaron++; await avisoEvt(x.evento, "biz_patevt_termino", {}).catch(() => undefined); }
@@ -274,8 +295,29 @@ export async function barrerPatrociniosEventos(): Promise<{ terminaron: number; 
     `update event_sponsorships set status = 'activo' where status = 'reservado' and starts_at <= now() and ends_at > now()
      returning event_id::text as evento, to_char(ends_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as hasta, price_cents as precio`);
   for (const x of emp.rows) { empezaron++; await avisoEvt(x.evento, "biz_patevt_activo", { hasta: x.hasta, monto: money(x.precio) }).catch(() => undefined); }
+  // Pausa: el evento sigue por venir y no está cancelado, pero ninguna fecha se ve (oculto, en revisión, sin aprobar o con Eventos apagado en su
+  // negocio). No sale en la vitrina ni cuenta vistas; guarda su puesto.
+  const pz = await db().query<{ evento: string }>(
+    `update event_sponsorships s set paused_at = now()
+      where s.status = 'activo' and s.paused_at is null
+        and exists (select 1 from events e where e.id = s.event_id and e.status <> 'cancelled')
+        and exists (select 1 from event_dates d where d.event_id = s.event_id and d.status = 'scheduled' and d.ends_at > now())
+        and not exists (select 1 from event_dates d where d.event_id = s.event_id and d.listable and d.ends_at > now())
+      returning s.event_id::text as evento`);
+  for (const x of pz.rows) { pausados++; await avisoEvt(x.evento, "biz_patevt_pausa", {}).catch(() => undefined); }
+  // Vuelve a verse: sigue, alargado lo que duró la pausa (si cabe).
+  const RS = (await db().query<{ id: string }>(
+    `select s.id::text from event_sponsorships s where s.status = 'activo' and s.paused_at is not null
+        and exists (select 1 from event_dates d where d.event_id = s.event_id and d.listable and d.ends_at > now()) order by s.paused_at limit 200`)).rows;
+  for (const { id } of RS) {
+    const r = await reanudarUno(id).catch((e) => { console.error("[patrocinio-evento] seguir", id, e instanceof Error ? e.message : e); return null; });
+    if (!r) continue;
+    siguieron++;
+    await avisoEvt(r.evento, "biz_patevt_sigue", { hasta: r.hasta }).catch(() => undefined);
+  }
   await db().query(`update event_sponsorships set status = 'terminado', end_kind = 'vencio', ended_at = now(), auto_renew = false where status = 'reservado' and ends_at <= now()`);
-  const L = (await db().query<{ id: string }>(`select id::text from event_sponsorships where status = 'activo' and ends_at <= now() order by ends_at limit 200`)).rows;
+  // Lo que está en pausa no vence: espera a que el evento vuelva (y se alargue) o a que pase (y se devuelva lo que no se usó).
+  const L = (await db().query<{ id: string }>(`select id::text from event_sponsorships where status = 'activo' and paused_at is null and ends_at <= now() order by ends_at limit 200`)).rows;
   for (const { id } of L) {
     const r = await vencerUnoEvt(id).catch((e) => { console.error("[patrocinio-evento] vencer", id, e instanceof Error ? e.message : e); return null; });
     if (!r) continue;
@@ -292,8 +334,38 @@ export async function barrerPatrociniosEventos(): Promise<{ terminaron: number; 
     const ci = (await db().query<{ n: string }>(`select name as n from cities where id = $1`, [w.ciudad])).rows[0]?.n ?? "";
     await (await import("./avisos")).avisarNegocio(w.negocio, "biz_patevt_libre", { ciudad: ci }, { href: `/panel/${w.negocio}/eventos` }).catch(() => undefined);
   }
+  // Lo que se decidió devolver (evento cancelado, pausa que no cupo) y todavía no está en el libro: a la pasarela, con su llave.
+  await devolverPendientes("evento");
   await db().query(`select patrocinio_evt_cifras_al_dia()`);
-  return { terminaron, empezaron, vencieron, renovados };
+  return { terminaron, empezaron, vencieron, renovados, pausados, siguieron };
+}
+
+/* Sigue un patrocinio en pausa cuyo evento volvió a verse: la pausa se cierra y el fin se alarga lo que falta devolver de las pausas, pero nunca
+   más allá del fin del evento, del siguiente patrocinio del mismo evento ni del primer momento en que ya no queda puesto en la ciudad (la base lo
+   vuelve a revisar con el candado al mover el fin). Lo que no cupo queda para devolverse al terminar ('pausa'). */
+async function reanudarUno(id: string): Promise<{ evento: string; hasta: string } | null> {
+  return tx(async (c) => {
+    const s = (await c.query<{ evento: string; ciudad: string; pausa: number; ext: number }>(
+      `select s.event_id::text as evento, s.city_id as ciudad, s.paused_secs + greatest(0, floor(extract(epoch from now() - s.paused_at)))::int as pausa, s.extended_secs as ext
+         from event_sponsorships s where s.id = $1::bigint and s.status = 'activo' and s.paused_at is not null for update`, [id])).rows[0];
+    if (!s) return null;
+    await c.query(`select pg_advisory_xact_lock(hashtextextended($1, 0))`, [`patevt:${s.ciudad}`]);
+    const al = (await c.query<{ n: number }>(
+      `with x as (select s.ends_at as b, s.ends_at + make_interval(secs => $2::int) as meta, s.event_id, s.city_id from event_sponsorships s where s.id = $1::bigint),
+            t as (select x.b, least(x.meta,
+                    greatest(x.b, coalesce((select max(d.ends_at) from event_dates d where d.event_id = x.event_id and d.status = 'scheduled'), x.b)),
+                    coalesce((select min(o.starts_at) from event_sponsorships o where o.event_id = x.event_id and o.id <> $1::bigint and o.status in ('reservado', 'activo') and o.starts_at >= x.b), x.meta),
+                    case when patrocinio_evt_a_la_vez(x.city_id, x.b, x.b + interval '1 second', $1::bigint) >= cfg_int('patrocinio_evt_puestos') then x.b else x.meta end,
+                    coalesce((select min(o.starts_at) from event_sponsorships o where o.city_id = x.city_id and o.id <> $1::bigint and o.status in ('reservado', 'activo')
+                                and o.starts_at > x.b and o.starts_at < x.meta
+                                and patrocinio_evt_a_la_vez(x.city_id, o.starts_at, o.starts_at + interval '1 second', $1::bigint) >= cfg_int('patrocinio_evt_puestos')), x.meta)) as fin from x)
+       select greatest(0, floor(extract(epoch from t.fin - t.b)))::int as n from t`, [id, Math.max(0, s.pausa - s.ext)])).rows[0]!.n;
+    const u = (await c.query<{ hasta: string }>(
+      `update event_sponsorships set paused_secs = $2::int, paused_at = null, extended_secs = extended_secs + $3::int, ends_at = ends_at + make_interval(secs => $3::int)
+        where id = $1::bigint returning to_char(ends_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as hasta`, [id, s.pausa, al])).rows[0]!;
+    await auditarEvento(c, "system", s.evento, s.ciudad, "patrocinio_evento.sigue", { patrocinio: id, pausa_dias: Math.floor(s.pausa / 86400), alargado_s: al, hasta: u.hasta }, null, "system");
+    return { evento: s.evento, hasta: u.hasta };
+  });
 }
 
 /* Un patrocinio de evento que llegó a su fin: con «renovar» encendido (1 semana o 1 mes), si el evento sigue por venir, se cobra el siguiente período
@@ -305,7 +377,8 @@ async function vencerUnoEvt(id: string): Promise<VencidoE | null> {
       `select s.id::text, s.event_id::text, s.business_id, s.city_id, s.duration, s.auto_renew, s.card_pm, s.payer_user_id, ((s.ends_at at time zone ci.timezone)::date)::text as fin
          from event_sponsorships s join cities ci on ci.id = s.city_id where s.id = $1::bigint and s.status = 'activo' and s.ends_at <= now() for update of s`, [id])).rows[0];
     if (!s) return null;
-    const terminar = async (motivo: Bi | null) => { await c.query(`update event_sponsorships set status = 'terminado', end_kind = 'vencio', ended_at = now(), renew_note = $2 where id = $1::bigint`, [id, motivo?.es ?? null]); };
+    // Lo que estuvo en pausa y no se pudo alargar se devuelve al terminar ('pausa'; devolverPendientes al final del barrido).
+    const terminar = async (motivo: Bi | null) => { await c.query(`update event_sponsorships set status = 'terminado', end_kind = 'vencio', ended_at = now(), renew_note = $2, ${DEVOLUCION("'pausa'", "'pausa'", true)} where id = $1::bigint`, [id, motivo?.es ?? null]); };
     const e = await eventoPat(c, s.event_id, s.business_id);
     if (!s.auto_renew || !s.card_pm || s.duration === "until_event" || !e) { await terminar(null); return { r: "termino", evento: s.event_id, tpl: "biz_patevt_termino", v: {} }; }
     await c.query(`select pg_advisory_xact_lock(hashtextextended($1, 0))`, [`patevt:${s.city_id}`]);
@@ -321,7 +394,7 @@ async function vencerUnoEvt(id: string): Promise<VencidoE | null> {
       const cobro: Cobro = { kind: "evento", negocio: s.business_id, ciudad: s.city_id, payer: s.payer_user_id, pm: tarjeta.pm, centavos, idem, razon: "renovacion", meta: { business_id: s.business_id, event_id: s.event_id, duration: s.duration } };
       const p = await cobrar(cobro);
       if (p.ok) {
-        await c.query(`update event_sponsorships set status = 'terminado', end_kind = 'vencio', ended_at = now() where id = $1::bigint`, [id]);
+        await c.query(`update event_sponsorships set status = 'terminado', end_kind = 'vencio', ended_at = now(), ${DEVOLUCION("'pausa'", "'pausa'", true)} where id = $1::bigint`, [id]);
         const nid = (await c.query<{ id: string }>(
           `insert into event_sponsorships (event_id, business_id, city_id, starts_at, ends_at, duration, status, price_cents, payer_user_id, card_pm, auto_renew, renewed_from)
            values ($1::bigint, $2, $3, $4::timestamptz, $5::timestamptz, $6, 'activo', $7, $8, $9, true, $10::bigint) returning id::text`,
@@ -349,19 +422,23 @@ export async function patrociniosEventosAdmin(ciudades: string[], ciudad: string
     `select s.id::text, 'evento' as kind, s.business_id as negocio, b.name as nombre, coalesce(nullif(e.title->>$3, ''), e.title->>'es') as evento,
             ${lang === "en" ? "'Events · '" : "'Eventos · '"} || ci.name as donde, s.city_id as ciudad, s.status as estado,
             to_char(s.starts_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as desde, to_char(s.ends_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as hasta,
-            s.price_cents as precio, coalesce(pg.n, 0)::int as pagado, s.auto_renew as renovar, s.end_kind as "finKind", s.end_reason as "finMotivo",
-            coalesce(st.views, 0)::int as vistas, coalesce(st.entries, 0)::int as entraron, coalesce(st.orders, 0)::int as pedidos
+            s.price_cents as precio, coalesce(pg.n, 0)::int as pagado, coalesce(pg.dev, 0)::int as devuelto, s.auto_renew as renovar, s.end_kind as "finKind", s.end_reason as "finMotivo",
+            coalesce(st.views, 0)::int as vistas, coalesce(st.entries, 0)::int as entraron, coalesce(st.orders, 0)::int as pedidos,
+            case when s.status in ('activo', 'reservado') then (select d.cents from patrocinio_devolucion('sin_usar', s.price_cents, s.starts_at, s.ends_at, s.extended_secs, s.paused_secs, s.paused_at, now()) d) else 0 end as "aDevolver",
+            s.paused_at is not null as pausado
        from event_sponsorships s join events e on e.id = s.event_id join businesses b on b.id = s.business_id join cities ci on ci.id = s.city_id
        left join sponsorship_stats st on st.kind = 'evento' and st.ref_id = s.id
-       left join lateral (select sum(p.amount_cents) as n from sponsorship_payments p where p.kind = 'evento' and p.ref_id = s.id) pg on true
+       left join lateral (select sum(p.amount_cents) filter (where p.reason <> 'devolucion') as n, sum(p.amount_cents) filter (where p.reason = 'devolucion') as dev
+                            from sponsorship_payments p where p.kind = 'evento' and p.ref_id = s.id) pg on true
       where ${w} ${est} ${cur ? `and s.id < $4::bigint` : ""}
       order by s.id desc limit 41`, cur ? [...v, cur] : v);
   const filas = r.rows.slice(0, 40);
   const k = (await db().query<{ a: number; r: number }>(`select count(*) filter (where s.status = 'activo')::int as a, count(*) filter (where s.status = 'reservado')::int as r from event_sponsorships s where s.status in ('activo', 'reservado') and ${w}`, [ciudades, ciudad])).rows[0]!;
   return { filas, mas: r.rows.length > 40 ? filas.at(-1)!.id : null, activos: k.a, reservados: k.r };
 }
-/* Terminar (Super Admin, mkt:editar): con motivo, auditado y avisado al organizador. Lo pagado no se devuelve aquí (si toca, Soporte lo devuelve). */
-export async function terminarPorAdminEvento(staffId: string, ciudades: string[], id: string, motivo: string): Promise<ResPat> {
+/* Terminar (Super Admin, mkt:editar): con motivo, auditado y avisado al organizador. Con «Devolver lo que no se usó» (encendido de entrada), la
+   base decide cuánto ('sin_usar', sin contar la pausa como usada) y va a la pasarela. La pantalla solo dice sí o no: nunca un monto. */
+export async function terminarPorAdminEvento(staffId: string, ciudades: string[], id: string, motivo: string, devolver: boolean): Promise<ResPat> {
   const m = String(motivo ?? "").replace(/\s+/g, " ").trim().slice(0, 300);
   if (!ID.test(String(id))) return no("Ese patrocinio no existe.", "That sponsorship does not exist.");
   if (m.length < 3) return no("Escribe el motivo.", "Write the reason.");
@@ -370,10 +447,18 @@ export async function terminarPorAdminEvento(staffId: string, ciudades: string[]
     if (!s) return no("Ese patrocinio no existe.", "That sponsorship does not exist.");
     if (ciudades.length && !ciudades.includes(s.ciudad)) return no("Esa ciudad no es tuya.", "That city is not yours.");
     if (s.estado !== "activo" && s.estado !== "reservado") return no("Ya terminó.", "It is already over.");
-    await c.query(`update event_sponsorships set status = case when status = 'reservado' then 'cancelado' else 'terminado' end, end_kind = 'admin', end_reason = $2, ended_at = now(), ended_by = $3, auto_renew = false where id = $1::bigint`, [id, m, staffId]);
-    await auditarEvento(c, staffId, s.evento, s.ciudad, "mkt.patrocinio_evento.terminar", { patrocinio: id, antes: s.estado, despues: s.estado === "reservado" ? "cancelado" : "terminado" }, m, "staff");
-    return { ok: true, evento: s.evento } as ResPat & { evento: string };
+    const d = (await c.query<{ cents: number | null }>(
+      `update event_sponsorships set status = case when status = 'reservado' then 'cancelado' else 'terminado' end, end_kind = 'admin', end_reason = $2, ended_at = now(), ended_by = $3, auto_renew = false,
+              ${DEVOLUCION("case when $4::boolean then 'sin_usar' else 'nada' end", "'admin'", true)}
+        where id = $1::bigint returning refund_cents as cents`, [id, m, staffId, devolver === true])).rows[0]!;
+    await auditarEvento(c, staffId, s.evento, s.ciudad, "mkt.patrocinio_evento.terminar", { patrocinio: id, antes: s.estado, despues: s.estado === "reservado" ? "cancelado" : "terminado", devolver: d.cents ? money(d.cents) : null }, m, "staff");
+    return { ok: true, evento: s.evento, devolver: d.cents ?? 0 } as ResPat & { evento: string; devolver: number };
   });
-  if (r.ok && "evento" in r) await avisoEvt(String(r.evento), "biz_patevt_admin", { motivo: m }).catch(() => undefined);
-  return r.ok ? { ok: true, msg: { es: "Patrocinio terminado. Quedó en la auditoría.", en: "Sponsorship ended. It is in the audit log." } } : r;
+  if (!r.ok || !("evento" in r)) return r;
+  await avisoEvt(String(r.evento), "biz_patevt_admin", { motivo: m }).catch(() => undefined);
+  const quiere = (r as { devolver?: number }).devolver ?? 0, dev = quiere ? await devolverPatrocinio("evento", id) : 0;
+  return { ok: true, devuelto: dev, msg: quiere
+    ? (dev ? { es: `Patrocinio terminado. Se devolvieron ${money(dev)} a su tarjeta. Quedó en la auditoría.`, en: `Sponsorship ended. ${money(dev)} was refunded to the card. It is in the audit log.` }
+      : { es: "Patrocinio terminado. La devolución sigue pendiente: el barrido la reintenta. Quedó en la auditoría.", en: "Sponsorship ended. The refund is still pending: the sweep retries it. It is in the audit log." })
+    : { es: "Patrocinio terminado sin devolver. Quedó en la auditoría.", en: "Sponsorship ended with no refund. It is in the audit log." } };
 }

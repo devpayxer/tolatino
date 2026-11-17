@@ -176,7 +176,7 @@ export async function diasConEventos(p: Punto, hasta: string): Promise<string[]>
 export async function patrocinadosEventos(p: Punto, viewer: string | null, es: boolean): Promise<(TarjetaEvt & { sid: string })[]> {
   const centro = centroSQL(p), R = radioSQL(p), D = await diasCiudad(p.ciudad);
   const r = await db().query<FilaT & { sid: string }>(
-    `with sp as (select id, event_id from event_sponsorships where city_id = $2 and status = 'activo' and starts_at <= now() and ends_at > now()),
+    `with sp as (select id, event_id from event_sponsorships where city_id = $2 and status = 'activo' and starts_at <= now() and ends_at > now() and paused_at is null),
           x as (select ${COLS_T(centro)}, sp.id::text as sid, (row_number() over (order by sp.id) - 1)::int as rk, count(*) over ()::int as nn
                   ${DESDE_T} join sp on sp.event_id = d.event_id
                  where ${VIVO} and d.city_id = $2 and e.status <> 'cancelled' and ${EN_RADIO(centro, R)} and ${PRIMERA()})
