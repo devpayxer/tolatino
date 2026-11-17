@@ -2544,3 +2544,12 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   lo real se cobra una vez al «Entregado» del repartidor; sin repartidores, el camino de antes. Panel › Entrega en el mercado. Guardián
   `mercadoConRepartidor` (alrevesMercRep 21/21); e2e `merc9n` 57 ✓ y merc4p 20, rep2l 17, neg9n 51, din9n4 (D, G) 44, app8e 68 en local
   (`next build` + `next start`). LAUNCH marcado; REVISION «Envío del mercado con el repartidor».
+- **17 nov · 71b99db en `main` y `pruebas`** (sandbox sano, 177 migraciones):
+  · **0176 Direcciones:** desde 0143, «435 Hamilton St, 18101» salía «calle» a 2 km (el Censo la llama «W Hamilton St»). Sin punto cardinal escrito
+    valen N/S/E/W si su número cae en el tramo; con él nunca se cambia. Guardián `calleSinPuntoCardinal` (alreves9m 41/41). El workflow
+    «Direcciones» volvió a verde (5/6 con su número; 412 N Wyoming St es un hueco del Censo: «calle», honesto) y la segunda carga dice «al día».
+  · **0177 Mercado con el Repartidor** (LAUNCH L494): oferta → código de recogida → ruta en vivo → código del cliente → «Entregado» con prueba,
+    cobro del peso real una sola vez al entregar; el mercado no cierra solo un pedido que lleva un repartidor. Guardián `mercadoConRepartidor`
+    (alrevesMercRep 21/21), e2e merc9n 57 ✓; CI dirigido 15/15 + al revés 68/68. Decisiones en REVISION «Envío del mercado con el repartidor».
+  · app8a y app8e con su precondición propia (boleto y dirección «Casa»).
+  · Corrida completa (regresión ×2 + barajada, tres anchos, 9 dispositivos, capturas, axe, velocidad): CI 44081105072, en curso.
