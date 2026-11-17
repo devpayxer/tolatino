@@ -55,3 +55,12 @@ export function precio(b, base) {
 
 export const bi = (s) => { const [es, en] = s.split(" | "); return { es: es.trim(), en: (en ?? es).trim() }; };
 export { sinTildes };
+
+/* Rol en femenino cuando la persona es mujer (solo la parte en español, antes de « | »). */
+export function rolGenero(rol, fem) {
+  if (!fem) return rol;
+  const [es, en] = rol.split(" | ");
+  const F = es.replace(/\bBarbero\b/g, "Barbera").replace(/\bdueño\b/g, "dueña").replace(/\bAbogado\b/g, "Abogada").replace(/\bEntrenador\b/g, "Entrenadora").replace(/\bNotario\b/g, "Notaria").replace(/\bMédico\b/g, "Médica")
+    .replace(/\bTraductor\b/g, "Traductora").replace(/\bGestor\b/g, "Gestora").replace(/\bInstructor\b/g, "Instructora").replace(/\btitular\b/g, "titular").replace(/\basociado\b/g, "asociada").replace(/\bGinecólogo\b/g, "Ginecóloga").replace(/\bPediatra\b/g, "Pediatra");
+  return en ? `${F} | ${en}` : F;
+}

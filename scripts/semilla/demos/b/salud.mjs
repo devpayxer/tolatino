@@ -2,7 +2,7 @@
    de bajo costo, pediatría, ginecología y obstetricia. 10 negocios cada una. Sin datos médicos en el texto público (guardián privacidadSalud):
    las reseñas y los avisos hablan del trato, el tiempo y el precio; nunca de un diagnóstico. */
 import { usd, HOY } from "./comun.mjs";
-import { crear, poner, horario, persona, precio, bi, reiniciarIds } from "./negocio.mjs";
+import { crear, poner, horario, persona, precio, bi, reiniciarIds, rolGenero } from "./negocio.mjs";
 import { citasHistoria } from "./citas.mjs";
 import { resenas, novedades, seguidores } from "./historia.mjs";
 
@@ -184,16 +184,16 @@ export function construir(si, k, ord) {
   b.members = []; b.lic = [];
   const evitar = [b.owner.fn];
   const fem = cfg.tipo === "gineco";
-  const mk = (kind, nombreP, rol, licKind, since, owner) => {
-    const m = { kind, name: nombreP, role: bi(rol), langs: r.chance(0.5) ? ["es", "en"] : ["es"], spec: [], since, auto: r.chance(0.4), resp: [15, 30, 60][r.int(0, 2)], dep: 0, bio: bi(`${rol.split(" | ")[0]} con ${r.int(4, 22)} años de experiencia. Atiende en español. | ${rol.split(" | ")[1]} with ${r.int(4, 22)} years of experience. Sees patients in Spanish.`) };
+  const mk = (kind, nombreP, rol, licKind, since, owner, fm) => {
+    const m = { kind, name: nombreP, role: bi(rolGenero(rol, fm)), langs: r.chance(0.5) ? ["es", "en"] : ["es"], spec: [], since, auto: r.chance(0.4), resp: [15, 30, 60][r.int(0, 2)], dep: 0, bio: bi(`${rol.split(" | ")[0]} con ${r.int(4, 22)} años de experiencia. Atiende en español. | ${rol.split(" | ")[1]} with ${r.int(4, 22)} years of experience. Sees patients in Spanish.`) };
     if (owner) m.name = nombreP;
     b.members.push(m); b.lic.push({ kind: licKind, m: b.members.length - 1 });
   };
-  mk("owner", `${b.owner.fn} ${b.owner.ln}`, ROLES[0][0], ROLES[0][1], b.founded, true);
+  mk("owner", `${b.owner.fn} ${b.owner.ln}`, ROLES[0][0], ROLES[0][1], b.founded, true, b.owner.f);
   for (let j = 1; j < n + 1 && j < ROLES.length + 1; j++) {
     const [rol, lk] = ROLES[j % ROLES.length];
-    const p = persona(r, fem ? true : r.chance(0.5), evitar); evitar.push(p.fn);
-    mk("staff", p.nombre, rol, lk, r.int(b.founded, 2024), false);
+    const fm = fem ? true : r.chance(0.5), p = persona(r, fm, evitar); evitar.push(p.fn);
+    mk("staff", p.nombre, rol, lk, r.int(b.founded, 2024), false, fm);
   }
   b.members.forEach((m, i) => { m.takes = b.lic[i].kind !== "rn" && b.lic[i].kind !== "lcsw"; });
   if (!b.members.some((m) => m.takes)) b.members[0].takes = true;

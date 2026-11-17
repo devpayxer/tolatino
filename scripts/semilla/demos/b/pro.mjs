@@ -2,7 +2,7 @@
    trámites de consulado y pasaporte, abogado general, derecho familiar. Todas son «legales» en la app (licencias, «lo que no hago» y EL TOTAL POR ESCRITO).
    Nada se cobra en la app (pay_mode local): el honorario se paga a la oficina y lo del gobierno lo paga el cliente. Sin números de caso en ningún texto. */
 import { usd, sumaDias, diaN, HOY } from "./comun.mjs";
-import { crear, poner, horario, persona, precio, bi, reiniciarIds } from "./negocio.mjs";
+import { crear, poner, horario, persona, precio, bi, reiniciarIds, rolGenero } from "./negocio.mjs";
 import { citasHistoria } from "./citas.mjs";
 import { resenas, novedades, seguidores, ts } from "./historia.mjs";
 
@@ -158,10 +158,10 @@ export function construir(si, k, ord) {
   const rolDe = { inmigracion: ["Abogado de inmigración · titular | Immigration attorney · principal", "Abogado de inmigración | Immigration attorney", "Asistente legal | Legal assistant"], documentos: ["Representante acreditada (DOJ) | DOJ-accredited representative", "Notario público | Notary public", "Asistente de documentos | Document assistant"],
     consulado: ["Notaria pública · dueña | Notary public · owner", "Traductora certificada | Certified translator", "Gestor de trámites | Procedures agent"], general: ["Abogado · titular | Attorney · principal", "Abogado asociado | Associate attorney", "Asistente legal | Legal assistant"], familiar: ["Abogada de familia · titular | Family law attorney · principal", "Abogada asociada | Associate attorney", "Asistente legal | Legal assistant"] }[cfg.tipo];
   const nM = r.int(2, 3), evitar = [b.owner.fn];
-  b.members.push({ kind: "owner", name: `${b.owner.fn} ${b.owner.ln}`, role: bi(rolDe[0]), langs: ["es", "en"], spec: [], since: b.founded, auto: r.chance(0.5), resp: [15, 30, 60][r.int(0, 2)], dep: 0, bio: bi(`Atiende en español e inglés desde hace ${anos} años. | Serves clients in Spanish and English for ${anos} years.`) });
+  b.members.push({ kind: "owner", name: `${b.owner.fn} ${b.owner.ln}`, role: bi(rolGenero(rolDe[0], b.owner.f)), langs: ["es", "en"], spec: [], since: b.founded, auto: r.chance(0.5), resp: [15, 30, 60][r.int(0, 2)], dep: 0, bio: bi(`Atiende en español e inglés desde hace ${anos} años. | Serves clients in Spanish and English for ${anos} years.`) });
   for (let j = 1; j < nM; j++) {
-    const p = persona(r, r.chance(0.5), evitar); evitar.push(p.fn);
-    b.members.push({ kind: "staff", name: p.nombre, role: bi(rolDe[j]), langs: r.chance(0.5) ? ["es", "en"] : ["es"], spec: [], since: r.int(b.founded, 2024), auto: r.chance(0.4), resp: [15, 30, 60][r.int(0, 2)], dep: 0, bio: bi(`${rolDe[j].split(" | ")[0]}. Habla español. | ${rolDe[j].split(" | ")[1]}. Speaks Spanish.`) });
+    const fm = r.chance(0.5), p = persona(r, fm, evitar); evitar.push(p.fn);
+    b.members.push({ kind: "staff", name: p.nombre, role: bi(rolGenero(rolDe[j], fm)), langs: r.chance(0.5) ? ["es", "en"] : ["es"], spec: [], since: r.int(b.founded, 2024), auto: r.chance(0.4), resp: [15, 30, 60][r.int(0, 2)], dep: 0, bio: bi(`${rolDe[j].split(" | ")[0]}. Habla español. | ${rolDe[j].split(" | ")[1]}. Speaks Spanish.`) });
   }
   b.members.forEach((m, i) => { m.takes = i < 2; });
   for (const [kind, m] of cfg.lic) if (m < b.members.length) b.lic.push({ kind, m });

@@ -1,7 +1,7 @@
 /* NEG-BELL · 5 subcategorías principales (las 5 primeras del catálogo por `sort`): barbería, barbero a domicilio, cortes para niños,
    barba y arreglo masculino, salón de belleza. 10 negocios cada una. */
 import { rngDe, usd, redondeo, desdeDia, sumaDias, diaN, HOY } from "./comun.mjs";
-import { crear, poner, horario, persona, precio, bi, reiniciarIds } from "./negocio.mjs";
+import { crear, poner, horario, persona, precio, bi, reiniciarIds, rolGenero } from "./negocio.mjs";
 import { citasHistoria } from "./citas.mjs";
 import { resenas, novedades, seguidores } from "./historia.mjs";
 
@@ -278,14 +278,14 @@ export function construir(si, k, ord) {
     return dias.map((h) => (h ? [Math.max(8, h[0] / 60 + (kind === "renter" ? r.int(0, 2) : 0)), Math.min(21, h[1] / 60 - (kind === "renter" ? r.int(0, 2) : 0))] : null));
   };
   const nsm = (kind, esp) => ({ langs: b.langs.length > 1 || r.chance(0.3) ? ["es", "en"] : ["es"], spec: r.shuffle(ESP[cfg.tipo]).slice(0, 2).map(bi), since: r.int(b.founded, 2024), esp });
-  b.members.push({ kind: "owner", name: `${b.owner.fn} ${b.owner.ln}`, nick: null, role: bi(roleOwner), seat: cfg.modelo === "chair" ? 1 : null, auto: r.chance(0.5), resp: [15, 30, 60][r.int(0, 2)], dep: 0, ...nsm("owner"), since: b.founded, bio: bi(`${cfg.tipo === "salon" ? "Estilista" : "Barbero"} desde hace ${anos} años. Atiende con cita para no apurarte. | ${cfg.tipo === "salon" ? "Stylist" : "Barber"} for ${anos} years. Books by appointment so you are never rushed.`) });
+  b.members.push({ kind: "owner", name: `${b.owner.fn} ${b.owner.ln}`, nick: null, role: bi(rolGenero(roleOwner, b.owner.f)), seat: cfg.modelo === "chair" ? 1 : null, auto: r.chance(0.5), resp: [15, 30, 60][r.int(0, 2)], dep: 0, ...nsm("owner"), since: b.founded, bio: bi(`${cfg.tipo === "salon" ? "Estilista" : "Barbero"} desde hace ${anos} años. Atiende con cita para no apurarte. | ${cfg.tipo === "salon" ? "Stylist" : "Barber"} for ${anos} years. Books by appointment so you are never rushed.`) });
   for (let j = 1; j < nSill; j++) {
     const fem = cfg.tipo === "salon" || cfg.tipo === "ninos" ? r.chance(0.85) : false;
     const p = persona(r, fem, evitar); evitar.push(p.fn);
     const kind = cfg.modelo === "chair" ? (r.chance(0.6) ? "renter" : "staff") : (cfg.tipo === "salon" && r.chance(0.4) ? "staff" : "staff");
     const role = STAFF_ROLE[cfg.tipo][kind] ?? STAFF_ROLE[cfg.tipo].staff;
     const wk = r.chance(0.55) ? wkDe(kind) : null;
-    b.members.push({ kind, name: p.nombre, role: bi(role), seat: cfg.modelo === "chair" ? j + 1 : null, auto: r.chance(0.4), resp: [15, 30, 60][r.int(0, 2)], dep: 0, ...nsm(kind), wk, bio: bi(`${cfg.tipo === "salon" ? "Estilista" : "Barbero"} con ${r.int(3, 18)} años de oficio. | ${cfg.tipo === "salon" ? "Stylist" : "Barber"} with ${r.int(3, 18)} years of experience.`) });
+    b.members.push({ kind, name: p.nombre, role: bi(rolGenero(role, fem)), seat: cfg.modelo === "chair" ? j + 1 : null, auto: r.chance(0.4), resp: [15, 30, 60][r.int(0, 2)], dep: 0, ...nsm(kind), wk, bio: bi(`${cfg.tipo === "salon" ? "Estilista" : "Barbero"} con ${r.int(3, 18)} años de oficio. | ${cfg.tipo === "salon" ? "Stylist" : "Barber"} with ${r.int(3, 18)} years of experience.`) });
   }
   // servicios y quién los hace
   const sv = elegirServicios(r, cfg);

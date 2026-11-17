@@ -2,7 +2,7 @@
    zumba y baile fitness. Lo que vende: membresías, pases de un día, horas con entrenador y retos/cursos de temporada, con sus grupos y cupos.
    Historia: inscripciones (kind enrollment, números I-…) de ~10 años; las membresías vivas siguen activas, las demás terminaron o se dieron de baja. */
 import { usd, HOY, diaN, desdeDia, sumaDias, dow, diaPesado, hhmm } from "./comun.mjs";
-import { crear, poner, horario, persona, precio, bi, reiniciarIds } from "./negocio.mjs";
+import { crear, poner, horario, persona, precio, bi, reiniciarIds, rolGenero } from "./negocio.mjs";
 import { habituales, resenas, novedades, seguidores, ts } from "./historia.mjs";
 
 const CAT = "NEG-DEPORTE";
@@ -136,8 +136,8 @@ export function construir(si, k, ord) {
   // equipo: entrenadores
   b.members = [];
   const evitar = [b.owner.fn], nM = cfg.tipo === "entrenador" ? 1 : r.int(2, 4);
-  b.members.push({ kind: "owner", name: `${b.owner.fn} ${b.owner.ln}`, role: bi(cfg.tipo === "zumba" ? "Instructora · dueña | Instructor · owner" : cfg.tipo === "entrenador" ? "Entrenador personal | Personal trainer" : "Entrenador · dueño | Trainer · owner"), langs: b.langs, since: b.founded, auto: false, resp: 30, dep: 0, spec: [], bio: bi(`Entrena a la comunidad desde ${b.founded}. | Has trained the community since ${b.founded}.`) });
-  for (let j = 1; j < nM; j++) { const p = persona(r, cfg.tipo === "zumba" ? true : r.chance(0.45), evitar); evitar.push(p.fn); b.members.push({ kind: "staff", name: p.nombre, role: bi(cfg.tipo === "zumba" ? "Instructora | Instructor" : "Entrenador | Trainer"), langs: ["es", "en"], since: r.int(b.founded, 2024), auto: false, resp: 30, dep: 0, spec: [], bio: bi(`Certificado, con ${r.int(3, 15)} años de experiencia. | Certified, with ${r.int(3, 15)} years of experience.`) }); }
+  b.members.push({ kind: "owner", name: `${b.owner.fn} ${b.owner.ln}`, role: bi(rolGenero(cfg.tipo === "zumba" ? "Instructor · dueño | Instructor · owner" : cfg.tipo === "entrenador" ? "Entrenador personal | Personal trainer" : "Entrenador · dueño | Trainer · owner", b.owner.f)), langs: b.langs, since: b.founded, auto: false, resp: 30, dep: 0, spec: [], bio: bi(`Entrena a la comunidad desde ${b.founded}. | Has trained the community since ${b.founded}.`) });
+  for (let j = 1; j < nM; j++) { const fm = cfg.tipo === "zumba" ? true : r.chance(0.45), p = persona(r, fm, evitar); evitar.push(p.fn); b.members.push({ kind: "staff", name: p.nombre, role: bi(rolGenero(cfg.tipo === "zumba" ? "Instructor | Instructor" : "Entrenador | Trainer", fm)), langs: ["es", "en"], since: r.int(b.founded, 2024), auto: false, resp: 30, dep: 0, spec: [], bio: bi(`Certificado, con ${r.int(3, 15)} años de experiencia. | Certified, with ${r.int(3, 15)} years of experience.`) }); }
   b.members.forEach((m) => { m.takes = false; });
   // servicios
   const elegidos = cfg.items.filter((x) => x.core || r.chance(0.5));
