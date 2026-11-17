@@ -3,7 +3,7 @@
 _Pantallas: **Super Admin › Crecimiento** (`/admin/crecimiento`) con sus pestañas **Semilla**, **Promotores**, **Campañas**, **Destacados**, **Patrocinios**, **Enlaces y QR** y
 **Lista de espera**, y el PDF para imprimir de cada enlace (`/admin/crecimiento/volante/{código}`). Ver: Crecimiento · ver. Crear y retirar enlaces,
 campañas, destacados y promotores: Crecimiento · editar. Aprobar una campaña grande y mostrar la fecha en la landing: Crecimiento · aprobar. Las cifras son
-de las ciudades de quien mira. Terminar un patrocinio: Crecimiento · editar. Escritorio y teléfono. Versión: 16 nov 2026. Audiencia: equipo. Tema: equipo._
+de las ciudades de quien mira. Terminar un patrocinio: Crecimiento · editar. Escritorio y teléfono. Versión: 17 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Arriba**: negocios (y los de esta semana), la lista de espera (y los negocios apartados), los promotores con código vivo, los escaneos de los
@@ -22,9 +22,12 @@ de las ciudades de quien mira. Terminar un patrocinio: Crecimiento · editar. Es
 - **Patrocinios**: dos grupos. **Negocios**: lo que los negocios compran desde su panel (Cobros y plan › Patrocinio) para salir en la fila
   «Patrocinados» de la página de su categoría. **Eventos**: lo que los organizadores compran desde Panel › Eventos › el evento › Patrocinar para
   salir arriba de la página de Eventos de su ciudad (1 semana, 1 mes o hasta el evento; el de un evento cancelado o que ya pasó termina solo; las
-  cifras son vistas, entraron y boletos). Cada uno con su estado (activo, reservado, terminado, cancelado), las fechas, lo pagado, si se renueva solo y sus cifras (vistas,
-  entraron, pedidos). Filtro por estado y por ciudad. **«Terminar»** con motivo: deja de salir al momento, el negocio recibe el aviso con el motivo
-  y queda en la auditoría. Lo pagado no se devuelve desde aquí (si toca, Soporte lo devuelve). Los puestos por categoría y ciudad y los precios de
+  cifras son vistas, entraron y boletos; el de un evento oculto, en revisión o con Eventos apagado sale **EN PAUSA** y al volver se alarga lo que
+  duró la pausa). Cada uno con su estado (activo, reservado, terminado, cancelado, EN PAUSA), las fechas, lo pagado, **lo devuelto**, si se renueva
+  solo y sus cifras (vistas, entraron, pedidos). Filtro por estado y por ciudad. **«Terminar»** con motivo: deja de salir al momento, el negocio
+  recibe el aviso con el motivo y queda en la auditoría. **«Devolver lo que no se usó · $X»** viene marcado (o «No devolver»): la base calcula los
+  días enteros sin usar (una reserva que no empezó, todo) y la devolución va a su tarjeta por la pasarela, una sola vez, con su fila en el libro y
+  en la auditoría; si Stripe no responde, el barrido la reintenta. Los puestos por categoría y ciudad y los precios de
   1 semana y 1 mes se cambian en Sistema › Configuración › Crecimiento; lo ya pagado no cambia.
 - **Enlaces y QR**: un enlace corto `tolatino.com/q/{código}` con su QR para la calle, un volante, una iglesia, un negocio, redes o prensa. Lleva siempre a
   una página de To'Latino (la landing, Publica tu negocio, el Inicio, Eventos u otra ruta), deja la ciudad del enlace puesta y cuenta cada escaneo
@@ -83,9 +86,12 @@ de las ciudades de quien mira. Terminar un patrocinio: Crecimiento · editar. Es
 - **Sponsorships**: two groups. **Businesses**: what businesses buy from their dashboard (Payouts and plan › Sponsorship) to show in the «Sponsored»
   row of their category page. **Events**: what organizers buy from Dashboard › Events › the event › Sponsor to show at the top of their city's
   Events page (1 week, 1 month or until the event; one for a cancelled or finished event ends on its own; the numbers are views, visits and
-  tickets). Each one with its status (active, booked, ended, canceled), the dates, what was paid, whether it auto-renews and its numbers (views, visits,
-  orders). Filter by status and by city. **«End»** with a reason: it stops showing right away, the business gets the notice with the reason and
-  it goes in the audit trail. What was paid is not refunded from here (if needed, Support refunds it). Slots per category and city and the 1-week and
+  tickets; one for an event that is hidden, under review or with Events turned off shows **PAUSED** and, when it is back, is extended by however
+  long the pause lasted). Each one with its status (active, booked, ended, canceled, PAUSED), the dates, what was paid, **what was refunded**,
+  whether it auto-renews and its numbers (views, visits, orders). Filter by status and by city. **«End»** with a reason: it stops showing right
+  away, the business gets the notice with the reason and it goes in the audit trail. **«Refund the unused part · $X»** comes checked (or «Do not
+  refund»): the database calculates the whole unused days (a booking that has not started, all of it) and the refund goes to their card through
+  the payment gateway, only once, with its row in the ledger and in the audit trail; if Stripe does not answer, the sweep retries it. Slots per category and city and the 1-week and
   1-month prices are changed in System › Settings › Growth; what was already paid does not change.
 - **Links & QR**: a short link `tolatino.com/q/{code}` with its QR for the street, a flyer, a church, a business, social media or press. It always goes to a
   To'Latino page (the landing, List your business, the Home, Events or another path), sets the link's city and counts each scan **without storing who**.

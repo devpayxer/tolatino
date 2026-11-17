@@ -5134,11 +5134,13 @@ pone sonido; con una novedad de hoy, el logo lleva el anillo morado y abre «Hoy
 - **Vistas:** una por persona (o teléfono sin cuenta) y por día; los robots no cuentan. **Entraron:** igual, y el dueño y su equipo no cuentan.
   **Pedidos:** pedidos, citas o reservas de quien antes tocó la tarjeta, durante el patrocinio (los cuenta el barrido).
 - **Terminar antes o cancelar una reserva no devuelve lo pagado** (lo dice la pantalla antes de confirmar). El Super Admin tampoco devuelve
-  desde Patrocinios (si toca, Soporte). Lo anoté en LAUNCH por si prefieres devolver la parte que no se usó.
+  desde Patrocinios (si toca, Soporte). Lo anoté en LAUNCH por si prefieres devolver la parte que no se usó. **→ Cambió el 17 nov (0175): la
+  reserva cancelada y el «Terminar» del Super Admin devuelven; ver «Patrocinios: devoluciones, 3-D Secure y pausa».**
 - **Comprar lo hace quien maneja los cobros** (el dueño o «Cobros» en el equipo), como el plan Pro. **En la app To'Latino Negocios no se
   compra** (misma regla que Pro): se ve el estado y las cifras.
 - **Renovar solo, apagado de entrada.** Encendido: al terminar cobra el precio de ese día; si la tarjeta no pasa o ya no hay puesto, termina y
-  avisa. Si el banco pide confirmar (3-D Secure) al comprar, pide otra tarjeta (la hoja del banco para el patrocinio queda en LAUNCH).
+  avisa. Si el banco pide confirmar (3-D Secure) al comprar, pide otra tarjeta (la hoja del banco para el patrocinio queda en LAUNCH). **→ Hecho
+  el 17 nov (0175): la hoja del banco.**
 - **Bajar los puestos en Configuración no quita a nadie:** deja de vender hasta que queden menos, y la fila muestra solo ese número (rotando).
 - **Comida no tiene la pestaña «Tipo de lugar»** del dibujo: las pestañas salen de las filas que tiene cada categoría en el Catálogo (Comida
   tiene «Por país» y los antojos). Si la quieres, se agrega en el Catálogo.
@@ -5178,7 +5180,8 @@ pone sonido; con una novedad de hoy, el logo lleva el anillo morado y abre «Hoy
 - **1 semana o 1 mes que duran más que el evento** se pueden comprar (avisa «Si el evento pasa antes, el patrocinio termina ese día»); el
   barrido lo termina cuando el evento ya no tiene fechas por delante. **Lo pagado no se devuelve** (igual que terminar antes).
 - **Un evento oculto por To'Latino, en revisión o con Eventos apagado** deja de salir en la vitrina, pero su patrocinio no termina solo
-  (puede volver); si toca, el Super Admin lo termina con motivo. Solo «cancelado» o «ya pasó» lo terminan solos.
+  (puede volver); si toca, el Super Admin lo termina con motivo. Solo «cancelado» o «ya pasó» lo terminan solos. **→ Cambió el 17 nov (0175): se
+  pausa y se alarga al volver; cancelado devuelve lo no usado.**
 - **«Boletos»** = boletos pagados y RSVP de quien antes tocó el cartel patrocinado, durante el patrocinio (lo pone al día el barrido).
 - En la ficha del evento del panel agregué **Ver página** y **Copiar enlace** (el diseño los pone junto a Patrocinar).
 
@@ -5187,3 +5190,39 @@ pone sonido; con una novedad de hoy, el logo lleva el anillo morado y abre «Hoy
 «Guardar dirección».
 **Qué mirar:** debe salir «El pin quedó muy lejos de esa dirección» y no guardarse. Si se guarda sin decir nada, avísame: es la pantalla.
 Las pruebas automáticas no pueden arrastrar el mapa en el Safari del iPad, por eso esto se mira a mano.
+
+## Patrocinios: devoluciones, 3-D Secure y pausa (C-002 / C-003, 17 nov · 0175)
+**Dónde:** en el sandbox, con el dueño de Sabor Dominicano: Panel › Cobros y plan › **Patrocinio**; con el dueño de La Terraza: Panel › Eventos ›
+un evento › **Patrocinar**; Super Admin › Crecimiento › **Patrocinios**. Tarjetas de prueba: 4242 (pasa) y **4000 0027 6000 3184** (el banco
+siempre pide confirmar).
+**Qué mirar:**
+- **3-D Secure al pagar:** con la tarjeta 3184, «Pagar» abre «Tu banco pide confirmar» (en el sandbox, el banco de prueba con «Confirmar con mi
+  banco» y «No fui yo»). Confirmar: queda activo, un solo cobro. «No fui yo» o cerrar: no se cobra nada; «Pagar» otra vez vuelve a preguntar.
+- **Cancelar una reserva:** antes de confirmar dice «te devolvemos los $15.00 completos»; después, en ANTES, «devuelto $15.00» y el aviso «Te
+  devolvimos lo que no se usó».
+- **Super Admin › Terminar:** además del motivo, «Devolver lo que no se usó · $X» (marcado) o «No devolver». La fila muestra lo devuelto.
+- **Evento oculto:** oculta un evento con patrocinio vivo (o apaga Eventos en el negocio): sale **EN PAUSA** en el panel y en el Super Admin, y
+  deja de salir en la vitrina. Al volver a mostrarlo (el barrido, al minuto), sigue y su fin se corre lo que duró la pausa.
+**Decidido por mí (reversible):**
+- **Cancelar una reserva que no empezó devuelve todo** (dueño o Super Admin). Si prefieres quedarte una parte, se cambia en una línea.
+- **«Terminar antes» de uno activo (el dueño) sigue sin devolver**, como dice la pantalla desde C-002 y como el diseño (no dibuja devolución). Si
+  prefieres devolver los días que faltan también aquí, se cambia en una línea (la base ya sabe calcularlo).
+- **Super Admin › Terminar devuelve lo que no se usó, encendido de entrada.** Se puede apagar en cada caso («No devolver»). Si prefieres que
+  venga apagado, se cambia.
+- **Cómo se calcula:** los **días enteros** que faltaban, en proporción a los días comprados (una semana: 1/7 por día; el día que ya empezó
+  cuenta como usado; se redondea hacia abajo al centavo). Una reserva que no empezó: el precio entero. Lo calcula la base, nunca la pantalla.
+  Si prefieres por hora o redondear a favor del negocio, se cambia.
+- **Evento cancelado: devuelve los días que no se usaron** (antes terminaba sin devolver). **Evento que ya pasó** (1 semana o 1 mes que duraba
+  más que el evento): sigue sin devolver, como avisa la pantalla al comprar.
+- **Evento oculto, en revisión o con Eventos apagado: el patrocinio se pausa** (no sale, no cuenta vistas, guarda su puesto) y **al volver se
+  alarga lo que duró la pausa**, si cabe (los puestos de la ciudad, el siguiente patrocinio del mismo evento y el fin del evento mandan). Lo que
+  no se pudo alargar se devuelve al terminar. Si prefieres que se termine solo con devolución, se cambia en el barrido.
+- **Tu página deja de estar publicada** (negocio): el patrocinio termina como antes, **sin devolver** (puede ser por una sanción). Si prefieres
+  devolver la parte que no se usó, se cambia en una línea.
+- **Una devolución por patrocinio**, por la pasarela (Stripe; en el sandbox el simulador), con su fila en el libro y en la auditoría; si Stripe
+  no responde, el barrido la reintenta cada minuto con la misma llave (nunca devuelve dos veces). La conciliación diaria la compara con Stripe.
+- **3-D Secure:** al comprar se **retiene** y se cobra al guardar el patrocinio (si algo falla, se suelta: nunca queda cobrado sin patrocinio).
+  **La renovación sola** no puede abrir la ventana del banco (no estás en la app): si el banco pide confirmar, termina y el aviso «Tu patrocinio
+  no se renovó» lleva a tu panel para comprar otro y confirmarlo ahí. No hice la página «confirma para renovar» (como la de Pro) porque al
+  confirmar habría que volver a revisar el puesto; si la quieres, se agrega.
+- **Vistas sin el equipo:** el dueño y su equipo ya no suman vistas (ni «entraron»); se descuenta en la base, en la misma consulta.
