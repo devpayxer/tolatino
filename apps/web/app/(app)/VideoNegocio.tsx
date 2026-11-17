@@ -41,8 +41,9 @@ function elegir() {
     if (d < dist) { dist = d; mejor = v; }
   }
   for (const v of vivos) {
-    if (v === mejor) { if (v.paused) void v.play().catch(() => undefined); }
-    else if (!v.paused && !v.dataset.tocado) v.pause();
+    // data-centro: el elegido (las pruebas lo leen; el navegador de pruebas no reproduce H.264, así que «paused» no dice cuál es).
+    if (v === mejor) { v.dataset.centro = "1"; if (v.paused) void v.play().catch(() => undefined); }
+    else { delete v.dataset.centro; if (!v.paused && !v.dataset.tocado) v.pause(); }
   }
 }
 const pedir = () => { if (!marco) marco = requestAnimationFrame(elegir); };
