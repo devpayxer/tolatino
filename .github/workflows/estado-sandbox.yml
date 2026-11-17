@@ -3,6 +3,11 @@
 name: Estado del sandbox
 on:
   workflow_dispatch:
+    inputs:
+      rutas:
+        description: "Rutas extra para mirar (separadas por espacio): código, tiempo y el título de la página"
+        type: string
+        default: ""
   schedule:
     - cron: '17 */6 * * *'
 permissions:
@@ -16,6 +21,15 @@ jobs:
         run: |
           for p in / /api/salud /negocios /admin /estado/; do
             curl -s -o /dev/null -m 30 -w "$p %{http_code} %{time_total}s\n" "http://2.31.196.167$p" || echo "$p sin respuesta"
+          done
+      - name: Rutas pedidas
+        if: inputs.rutas != ''
+        env: { RUTAS: "${{ inputs.rutas }}" }
+        run: |
+          for p in $RUTAS; do
+            case "$p" in /*) ;; *) echo "$p: ruta inválida"; continue ;; esac
+            h=$(curl -s -m 60 -w '\n%{http_code} %{time_total}s' "http://2.31.196.167$p")
+            echo "$p $(echo "$h" | tail -1) · $(echo "$h" | grep -o '<title>[^<]*' | head -1 | sed 's/<title>//')"
           done
       - name: Página de estado
         run: curl -s -m 30 http://2.31.196.167/estado/ | sed -e 's/<[^>]*>//g' | grep -v '^\s*$' | tail -40
