@@ -218,22 +218,27 @@ function Destacados({ d, E, cuando, setConf }: { d: DatosCrec; E: EFn; cuando: (
 function Patrocinios({ d, E, setConf, ir, l }: { d: DatosCrec; E: EFn; setConf: SetConf; ir: (q: Record<string, string | null>) => void; l: L }) {
   const X = d.pat!, $ = (c: number) => `$${(c / 100).toFixed(2)}`;
   const dia = (iso: string) => new Intl.DateTimeFormat(l === "es" ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "short" }).format(new Date(iso)).split(".").join("");
-  const EST: Record<string, [string, string, string]> = { activo: ["ACTIVO", "ACTIVE", "signal"], reservado: ["RESERVADO", "BOOKED", "action"], terminado: ["TERMINADO", "ENDED", "neutral"], cancelado: ["CANCELADO", "CANCELED", "neutral"] };
+  const EST: Record<string, [string, string, string]> = { activo: ["ACTIVO", "ACTIVE", "signal"], reservado: ["RESERVADO", "BOOKED", "action"], terminado: ["TERMINADO", "ENDED", "neutral"], cancelado: ["CANCELADO", "CANCELED", "neutral"],
+    pausa: ["EN PAUSA", "PAUSED", "neutral"] };
   const FIN: Record<string, [string, string]> = { vencio: ["venció", "expired"], dueno: ["lo terminó el negocio", "ended by the business"], admin: ["lo terminó To’Latino", "ended by To’Latino"], sin_negocio: ["el negocio ya no está publicado", "the business is no longer live"],
     evento_cancelado: ["el evento se canceló", "the event was cancelled"], evento_paso: ["el evento ya pasó", "the event is over"] };
   const fila = (x: PatAdm): Fila => {
-    const vivo = x.estado === "activo" || x.estado === "reservado", e = EST[x.estado] ?? EST.terminado!, fin = x.finKind ? FIN[x.finKind] : null, ev = x.kind === "evento";
+    const vivo = x.estado === "activo" || x.estado === "reservado", e = (x.pausado ? EST.pausa : EST[x.estado]) ?? EST.terminado!, fin = x.finKind ? FIN[x.finKind] : null, ev = x.kind === "evento";
     const nombre = ev ? (x.evento ?? x.nombre) : x.nombre;
     return { key: `${x.kind}${x.id}`, icon: ev ? "ticket" : "star", t: nombre, dim: !vivo,
-      s: `${ev ? `${x.nombre} · ` : ""}${x.donde} · ${dia(x.desde)} – ${dia(x.hasta)} · ${$(x.pagado || x.precio)}${x.renovar ? ` · ${E("renueva solo", "auto-renews")}` : ""}${!vivo && fin ? ` · ${E(fin[0], fin[1])}${x.finMotivo ? `: ${x.finMotivo}` : ""}` : ""}`,
+      s: `${ev ? `${x.nombre} · ` : ""}${x.donde} · ${dia(x.desde)} – ${dia(x.hasta)} · ${$(x.pagado || x.precio)}${x.devuelto ? ` · ${E("devuelto", "refunded")} ${$(x.devuelto)}` : ""}${x.renovar ? ` · ${E("renueva solo", "auto-renews")}` : ""}${x.pausado ? ` · ${E("el evento no se ve: en pausa, se alarga al volver", "the event is not showing: paused, extended when it is back")}` : ""}${!vivo && fin ? ` · ${E(fin[0], fin[1])}${x.finMotivo ? `: ${x.finMotivo}` : ""}` : ""}`,
       m: `${x.vistas} ${E("VISTAS", "VIEWS")} · ${x.entraron} ${E("ENTRARON", "VISITS")} · ${x.pedidos} ${ev ? E("BOLETOS", "TICKETS") : E("PEDIDOS", "ORDERS")}`,
       tag: E(e[0], e[1]), tone: e[2],
       acts: d.puede.editar && vivo ? [{ l: E("Terminar", "End"), v: "danger", icon: "close", onClick: () => setConf({ titulo: ev ? E(`Terminar el patrocinio del evento ${nombre}`, `End the sponsorship of the event ${nombre}`) : E(`Terminar el patrocinio de ${nombre}`, `End the ${nombre} sponsorship`), cta: E("Terminar", "End"), peligro: true,
-        sub: ev ? E("Deja de salir en Patrocinados al momento y se le avisa al organizador con el motivo. Lo pagado no se devuelve aquí (si toca, Soporte lo devuelve). Queda en la auditoría.", "It stops showing in Sponsored right away and the organizer is told the reason. What was paid is not refunded here (if needed, Support refunds it). It goes in the audit trail.")
-          : E("Deja de salir en Patrocinados al momento y se le avisa al negocio con el motivo. Lo pagado no se devuelve aquí (si toca, Soporte lo devuelve). Queda en la auditoría.", "It stops showing in Sponsored right away and the business is told the reason. What was paid is not refunded here (if needed, Support refunds it). It goes in the audit trail."),
+        sub: ev ? E("Deja de salir en Patrocinados al momento y se le avisa al organizador con el motivo. Con «Devolver», lo que no se usó (los días enteros que faltan; una reserva que no empezó, todo) vuelve a su tarjeta. Queda en la auditoría.", "It stops showing in Sponsored right away and the organizer is told the reason. With «Refund», the unused part (the whole days left; a booking that has not started, all of it) goes back to their card. It goes in the audit trail.")
+          : E("Deja de salir en Patrocinados al momento y se le avisa al negocio con el motivo. Con «Devolver», lo que no se usó (los días enteros que faltan; una reserva que no empezó, todo) vuelve a su tarjeta. Queda en la auditoría.", "It stops showing in Sponsored right away and the business is told the reason. With «Refund», the unused part (the whole days left; a booking that has not started, all of it) goes back to their card. It goes in the audit trail."),
+        // Lo que se devolvería ahora lo calcula la base (aDevolver); al confirmar, la base lo vuelve a calcular: la pantalla solo dice sí o no.
+        elegir: { label: E("LO PAGADO", "WHAT WAS PAID"), ini: "si", items: [
+          { k: "si", l: x.aDevolver ? E(`Devolver lo que no se usó · ${$(x.aDevolver)}`, `Refund the unused part · ${$(x.aDevolver)}`) : E("Devolver lo que no se usó · hoy no queda un día entero", "Refund the unused part · no whole day left today") },
+          { k: "no", l: E("No devolver", "Do not refund") }] },
         plantillas: ev ? [E("El flyer no cumple las reglas.", "The flyer breaks the rules."), E("El organizador pidió terminarlo.", "The organizer asked to end it."), E("Queja abierta de los vecinos.", "Open complaint from neighbors.")]
           : [E("La foto o el video no cumplen las reglas.", "The photo or video breaks the rules."), E("El negocio pidió terminarlo.", "The business asked to end it."), E("Queja abierta de los vecinos.", "Open complaint from neighbors.")],
-        hacer: (m) => (ev ? patrocinioEventoTerminar(x.id, m) : patrocinioTerminar(x.id, m)) }) }] : undefined };
+        hacer: (m, el) => (ev ? patrocinioEventoTerminar(x.id, m, el !== "no") : patrocinioTerminar(x.id, m, el !== "no")) }) }] : undefined };
   };
   const filtros: [("vivos" | "terminados" | "todos"), string][] = [["vivos", E("Activos y reservados", "Active and booked")], ["terminados", E("Terminados", "Ended")], ["todos", E("Todos", "All")]];
   const e = X.e === "vivos" ? null : X.e, V = X.ev;

@@ -65,12 +65,13 @@ const CAMBIO_NEG: Record<string, string> = { mergeBiz: "Fusionar negocios", chan
 const CAMBIO_NEG_EN: Record<string, string> = { mergeBiz: "Merge businesses", changeCategory: "Category change", transferOwner: "Transfer owner" };
 const AYUDA_DE_EN: Record<string, string> = { appointment: "Help with an appointment", hold: "Help with a purchase", market_order: "Help with a market order", party: "Help with a party", trip: "Help with a trip", night: "Help with a night out", enrollment: "Help with an enrollment", visit: "Help with a visit", order: "Help with an order", tickets: "Help with a ticket order" };
 const MOTIVO_RESENA_EN: Record<string, string> = { fake: "Fake review", off: "Offensive", pii: "Personal data", spam: "Spam or advertising", coi: "Written by the owner or a competitor", otro: "Other reason", negocio: "The business asked for a review" };
-export type Confirmar = { titulo: string; sub?: string; plantillas?: string[]; peligro?: boolean; cta?: string; ini?: string; elegir?: { label: string; items: { k: string; l: string }[] }; valor?: { k: string; ini: string; area?: boolean; max: number }; hacer: (motivo: string, elegido: string | null, valor: string) => Promise<ResAdm> };
+export type Confirmar = { titulo: string; sub?: string; plantillas?: string[]; peligro?: boolean; cta?: string; ini?: string; elegir?: { label: string; items: { k: string; l: string }[]; ini?: string }; valor?: { k: string; ini: string; area?: boolean; max: number }; hacer: (motivo: string, elegido: string | null, valor: string) => Promise<ResAdm> };
 
 /* Confirmación con motivo (patrón 2ao): ReasonConfirm, con elección y, si hace falta, el campo del valor nuevo. */
 export function ConfirmarMotivo({ c, onBack, onDone, desk }: { c: Confirmar; onBack: () => void; onDone: (r: ResAdm) => void; desk: boolean }) {
   const E = useE();
-  const [motivo, setMotivo] = useState(c.ini ?? ""), [elegido, setElegido] = useState<string | null>(null), [valor, setValor] = useState(c.valor?.ini ?? "");
+  // C-002 · `elegir.ini`: una elección que ya viene marcada (p. ej. «Devolver lo que no se usó», encendido de entrada); se puede cambiar.
+  const [motivo, setMotivo] = useState(c.ini ?? ""), [elegido, setElegido] = useState<string | null>(c.elegir?.ini ?? null), [valor, setValor] = useState(c.valor?.ini ?? "");
   const [pend, start] = useTransition(), [err, setErr] = useState<string | null>(null);
   const falta = !motivo.trim() || (!!c.elegir && !elegido) || (!!c.valor && !valor.trim() && c.valor.k !== "QUIÉNES SOMOS");
   return (
