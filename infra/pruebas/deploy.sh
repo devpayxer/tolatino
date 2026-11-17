@@ -88,8 +88,13 @@ SEMILLA_DIR="$REPO/infra/pruebas/semilla" bash "$REPO/packages/db/migrar.sh" --s
 # 3c-demos) Los negocios DEMO del fundador (17 nov: 850, 10 en las 5 subcategorías principales de cada categoría, en las 5 ciudades, con
 #     historia de años): SOLO el sandbox. El CI no los carga (sus pruebas cuentan sobre la semilla de siempre) y producción nunca (candado de
 #     migrar.sh). Cada archivo marca is_demo y es idempotente (llaves fijas; se vuelve a aplicar si cambia).
-if [ -d "$REPO/infra/pruebas/demos" ]; then
-  SEMILLA_DIR="$REPO/infra/pruebas/demos" bash "$REPO/packages/db/migrar.sh" --semilla-pruebas "${COMPOSE[@]}" || echo "[deploy] demos: falló (la app sigue con lo de antes)"
+#     El SQL (≈ 120 MB) NO va en el repo: lo generan aquí los generadores deterministas de scripts/semilla/demos/ (node de la imagen base,
+#     sin red), así que sale igual cada vez y migrar.sh solo vuelve a aplicar el archivo que cambió.
+if [ -d "$REPO/scripts/semilla/demos" ]; then
+  docker run --rm --network none -v "$REPO":/repo -w /repo node:22-alpine \
+    sh -c 'for g in scripts/semilla/demos/grupo-*.mjs; do node "$g" || exit 1; done' \
+    && SEMILLA_DIR="$REPO/infra/pruebas/demos" bash "$REPO/packages/db/migrar.sh" --semilla-pruebas "${COMPOSE[@]}" \
+    || echo "[deploy] demos: falló (la app sigue con lo de antes)"
 fi
 
 # 3c-bis/ter/quater) Lo que sale del repo (infra/comun/lib.sh · indexar_docs): el Centro de ayuda (7a: docs/ayuda/ → help_articles), las páginas

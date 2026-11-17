@@ -15,3 +15,6 @@ playwright-report/
 capturas/
 *.tsbuildinfo
 .carga/
+
+# Negocios demo: el SQL lo genera el sandbox al desplegar (scripts/semilla/demos/), no va en el repo.
+infra/pruebas/demos/*.sql

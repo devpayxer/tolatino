@@ -5,5 +5,6 @@
 
 - **Solo el sandbox:** `infra/pruebas/deploy.sh` aplica esta carpeta después de la semilla de siempre. El CI no la carga (sus pruebas cuentan sobre
   la semilla de siempre) y producción nunca (`migrar.sh --semilla-pruebas` tiene su candado).
+- El SQL no va en el repo (`.gitignore`): `deploy.sh` corre los generadores (node sin red) y aplica lo generado. Para verlo aquí: `node scripts/semilla/demos/grupo-X.mjs`.
 - Cada negocio lleva `is_demo = true`; cada archivo es idempotente (llaves fijas, `on conflict`) y se vuelve a aplicar si cambia.
 - Teléfonos ficticios: dueños 570-555-9xxx, clientes 570-555-8xxx (rangos por grupo de categorías, ver cada generador).
