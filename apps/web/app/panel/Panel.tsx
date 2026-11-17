@@ -30,7 +30,7 @@ import { hoyMercado, mercadoDetalle, type MercPanel } from "./MercadoPanel";
 import { fiestaDetalle, hoyFiestas, type FiesPanel } from "./FiestasReservas";
 import { evpAjustes, evpDetalle, hoyEvp, type EvpData } from "./EventoPrivado";
 import { hoyViajes, salidaDetalle, viajeDetalle, type ViajesP } from "./ViajesPanel";
-import { entregaBloques } from "./Entrega";
+import { entregaBloques, entregaMercado } from "./Entrega";
 import { cobrosBloques } from "./Cobros";
 import { planBloques, type PlanPanel } from "./Plan";
 import { MetodoPago } from "../(app)/pago/MetodoPago";
@@ -222,7 +222,7 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
   // Cobros y plan (DASH-COBROS): solo el dueño (toca dinero). Comida: cobros con tarjeta y plan; el resto: su plan.
   const cobra = d.kind === "owner" || d.partes.includes("all") || d.partes.includes("pay");
   // Entrega (Panel v2 · hasDlv): con Pedidos en línea encendido y permiso de Entrega.
-  const entrega = d.cat === "NEG-FOOD" && d.mods.includes("pedidos") && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("dlv"));
+  const entrega = (d.cat === "NEG-FOOD" || d.cat === "NEG-MERC") && d.mods.includes("pedidos") && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("dlv")); // 9n · el mercado también: sus repartidores
   // Mensajes (2p): el dueño o quien tenga Mensajes en el equipo.
   const msgs = d.kind === "owner" || d.partes.includes("all") || d.partes.includes("msg");
   // Eventos (DASH-EVENTOS, 6a): el dueño o quien tenga la parte «evt» del equipo. 6b: solo donde el módulo aplica (su categoría admite
@@ -365,6 +365,8 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
       ) : null}
       {ruta.det?.startsWith("door:") && evt?.puerta?.fecha ? <PuertaVivo negocio={d.id} fecha={evt.puerta.fecha} /> : null}
       {ruta.det?.startsWith("ped:") && /^\d{1,12}$/.test(ruta.det.slice(4)) ? <RutaVivoPanel negocio={d.id} numero={ruta.det.slice(4)} setUi={setUi} /> : null}
+      {/* 9n · El envío del mercado con el repartidor: el mismo mapa en vivo. */}
+      {ruta.det?.startsWith("merc:") && /^M-\d{1,10}$/.test(ruta.det.slice(5)) && mped?.det?.reparto?.rep ? <RutaVivoPanel negocio={d.id} numero={ruta.det.slice(5)} setUi={setUi} /> : null}
       {/* 9m · Mensajes en vivo: la lista y la conversación abierta se ponen al día cuando llega un mensaje (SSE propio, sin preguntar cada N s). */}
       {ruta.sec === "msg" || ruta.det?.startsWith("msg:") ? <RefrescoVivo negocio={d.id} k="chat" /> : null}
       {ui.cupScan ? <EscanearCupon negocio={d.id} es={es} onCerrar={() => setUi({ cupScan: false })} onValidado={() => router.refresh()} /> : null}
@@ -410,7 +412,7 @@ function secciones(c: Ctx): Sec {
   if (c.ruta.sec === "hoy") return { blocks: hoy(c), ed: null };
   if (c.ruta.sec === "msg") return mensajesBloques(c);
   if (c.ruta.sec === "cli") return { blocks: c.citas?.lista ? clientesCitas(c) : c.rsv?.lista ? clientesMesas(c) : clientesBloques(c), ed: null };
-  if (c.ruta.sec === "dlv") return entregaBloques(c);
+  if (c.ruta.sec === "dlv") return c.d.cat === "NEG-MERC" ? entregaMercado(c) : entregaBloques(c);
   if (c.ruta.sec === "pay") {
     // C-002 · Patrocinio: tercera pestaña de Cobros y plan (también se entra desde Tu página).
     const E2 = c.E2, tabs: Bloque = { type: "tabs", items: [{ l: E2("Tu plan", "Your plan"), on: c.ruta.sub === "plan", onClick: () => c.go("pay", "plan") }, { l: E2("Cobros con tarjeta", "Card payouts"), on: !c.ruta.sub, onClick: () => c.go("pay") }, { l: E2("Patrocinio", "Sponsorship"), on: c.ruta.sub === "patrocinio", onClick: () => c.go("pay", "patrocinio") }] };
@@ -881,7 +883,7 @@ function licencias(c: Ctx): Sec {
 function masBloques(c: Ctx): Bloque[] {
   const { E2, d } = c;
   const vende = d.kind === "owner" || d.partes.includes("all") || d.partes.includes("cat");
-  const entrega = d.cat === "NEG-FOOD" && d.mods.includes("pedidos") && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("dlv"));
+  const entrega = (d.cat === "NEG-FOOD" || d.cat === "NEG-MERC") && d.mods.includes("pedidos") && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("dlv")); // 9n · el mercado también: sus repartidores
   return [
     { type: "head", t: E2("Más", "More") },
     { type: "rows", items: [

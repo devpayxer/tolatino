@@ -18,6 +18,7 @@ import { compartirRuta, dejarDeCompartir, estadoRuta, type EstadoRuta, type Toke
 import { mantenerEncendida } from "@/lib/nativo/pantalla";
 import { vibrar } from "@/lib/nativo/haptica";
 import { horaCorta } from "@/lib/mapa-ruta";
+import { numVisible } from "@/lib/reparto-comun";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -141,7 +142,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
   const activas = entregas.filter((x) => x.status === "confirmed"), hechas = entregas.filter((x) => x.status === "done");
   if (cola.length) B.push({ type: "note", tone: "warn", icon: "wifi", t: E2(`Sin señal: ${cola.length} ${cola.length === 1 ? "paso espera" : "pasos esperan"} enviarse. Se envían solos al volver la señal.`, `No signal: ${cola.length} ${cola.length === 1 ? "step is" : "steps are"} waiting. They send on their own when signal returns.`) });
   const TAG: Record<string, [string, string]> = { accepted: [E2("POR RECOGER", "TO PICK UP"), "neutral"], preparing: [E2("EN COCINA", "COOKING"), "neutral"], ready: [E2("LISTO PARA RECOGER", "READY"), "action"], on_the_way: [E2("EN CAMINO", "ON THE WAY"), "action"], delivered: [E2("ENTREGADO", "DELIVERED"), "signal"] };
-  const fila = (x: EntregaRep): Fila => ({ key: x.numero, icon: x.status === "done" ? "check" : "truck", t: `#${x.numero} · ${x.calle ?? E2("Sin dirección", "No address")}`,
+  const fila = (x: EntregaRep): Fila => ({ key: x.numero, icon: x.status === "done" ? "check" : "truck", t: `${numVisible(x.numero)} · ${x.calle ?? E2("Sin dirección", "No address")}`,
     s: `${x.negocio.nombre} · ${x.cliente}${x.efectivo != null ? ` · ${E2("cobrar", "collect")} ${money(x.efectivo)}` : x.pagado ? E2(" · pagado", " · paid") : ""}`,
     tag: (TAG[x.status === "done" ? "delivered" : x.stage] ?? TAG.accepted!)[0], tone: (TAG[x.status === "done" ? "delivered" : x.stage] ?? TAG.accepted!)[1], chev: true, onClick: () => ir(`?p=${x.numero}`),
     bd: x.status === "confirmed" ? "1.5px solid var(--tl-ink)" : undefined });
@@ -189,10 +190,12 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
   } else if (det) {
     // DLV-PEDIDOS · detalle con el paso que sigue (botón grande).
     const x = det, cash = x.efectivo != null, vivo = x.status === "confirmed";
-    B.push({ type: "head", eye: `${x.negocio.nombre.toUpperCase()} · ${E2("PEDIDO", "ORDER")} #${x.numero}`, t: x.calle ?? E2("Entrega", "Delivery"), s: [x.apto, x.zip, x.mi != null ? `${x.mi} mi` : null].filter(Boolean).join(" · "), onBack: () => ir(t === "inicio" ? "" : `?t=${t}`) });
+    B.push({ type: "head", eye: `${x.negocio.nombre.toUpperCase()} · ${x.mercado ? E2("PEDIDO DEL MERCADO", "MARKET ORDER") : E2("PEDIDO", "ORDER")} ${numVisible(x.numero)}`, t: x.calle ?? E2("Entrega", "Delivery"), s: [x.apto, x.zip, x.mi != null ? `${x.mi} mi` : null].filter(Boolean).join(" · "), onBack: () => ir(t === "inicio" ? "" : `?t=${t}`) });
     B.push({ type: "kv", items: [{ k: E2("CLIENTE", "CUSTOMER"), v: x.cliente }, { k: E2("LLEGA", "ARRIVES"), v: x.llega ?? x.listo ?? "—" },
       { k: E2("COBRO", "PAYMENT"), v: cash ? E2(`Cobrar ${money(x.efectivo!)} en efectivo`, `Collect ${money(x.efectivo!)} cash`) : x.pagado ? E2("Pagado con tarjeta", "Paid by card") : E2("Pagado", "Paid") },
       { k: E2("PROPINA", "TIP"), v: x.propina ? money(x.propina) : "—" }] });
+    // 9n · El envío del mercado: ya está pesado y pagado con tarjeta (no se cobra nada al entregar) y siempre lleva prueba.
+    if (x.mercado && vivo) B.push({ type: "note", tone: "info", icon: "bag", t: E2("Pedido del mercado: ya está pesado y pagado con tarjeta, no cobras nada. Al entregar, toma la foto o escribe el código que te dice el cliente: es obligatorio.", "Market order: it is already weighed and paid by card, you collect nothing. On delivery, take the photo or type the code the customer tells you: it is required.") });
     // 9n · Sin el teléfono del cliente (§6 #20): «Escribir» le manda un mensaje dentro de la app; para hablar, se llama al negocio.
     if (vivo) B.push({ type: "rows", items: [
       { icon: "pin", t: x.calle ?? "—", s: [x.apto, x.zip].filter(Boolean).join(" · ") || undefined, chev: false, compact: true,
@@ -211,7 +214,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
         { l: E2("Cancelar", "Cancel"), v: "secondary", onClick: () => setEscr(null) }] });
       B.push({ type: "note", tone: "ink", icon: "shield", t: E2("Por seguridad no ves el teléfono del cliente. Si no contesta, llama al negocio o repórtalo.", "For safety you do not see the customer’s phone. If they do not answer, call the business or report it.") });
     }
-    B.push({ type: "rows", k: E2("LO QUE LLEVAS", "WHAT YOU CARRY"), items: x.lineas.map((l, i): Fila => ({ key: String(i), icon: "bag", ibg: "var(--tl-paper)", ifg: "rgba(11,14,18,.6)", t: `${l.q} × ${es ? l.name.es : l.name.en || l.name.es}`, compact: true, chev: false })) });
+    B.push({ type: "rows", k: E2("LO QUE LLEVAS", "WHAT YOU CARRY"), items: x.lineas.map((l, i): Fila => ({ key: String(i), icon: "bag", ibg: "var(--tl-paper)", ifg: "rgba(11,14,18,.6)", t: `${x.mercado && l.lb != null ? `${l.lb} lb` : `${l.q} ×`} ${es ? l.name.es : l.name.en || l.name.es}`, compact: true, chev: false })) });
     const st = x.stage, en = st === "on_the_way", empezo = x.empezo || rutas.some((r) => r.numero === x.numero);
     B.push({ type: "timeline", k: E2("PASOS", "STEPS"), items: [
       { t: E2("Voy por el pedido", "Heading to pick up"), s: empezo || en || x.status === "done" ? E2("HECHO", "DONE") : E2("AHORA", "NOW"), now: !empezo && !en && vivo },
@@ -231,7 +234,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
     // 9n · Prueba de entrega: la foto (en la puerta, siempre) o el código que te dice el cliente. Si el negocio la pide, «Entregado» la exige.
     const puerta = x.entrega?.drop === "puerta", prueba = fotoId ? { foto: fotoId } : codCli.length === 4 ? { codigo: codCli } : undefined, faltaPrueba = x.pidePrueba && !prueba;
     if (vivo && en && x.llegue) {
-      B.push({ type: "group", k: x.pidePrueba ? E2("PRUEBA DE ENTREGA · LA PIDE EL NEGOCIO", "PROOF OF DELIVERY · THE BUSINESS ASKS FOR IT") : E2("PRUEBA DE ENTREGA · OPCIONAL", "PROOF OF DELIVERY · OPTIONAL") });
+      B.push({ type: "group", k: x.mercado ? E2("PRUEBA DE ENTREGA · OBLIGATORIA EN EL MERCADO", "PROOF OF DELIVERY · REQUIRED FOR MARKET ORDERS") : x.pidePrueba ? E2("PRUEBA DE ENTREGA · LA PIDE EL NEGOCIO", "PROOF OF DELIVERY · THE BUSINESS ASKS FOR IT") : E2("PRUEBA DE ENTREGA · OPCIONAL", "PROOF OF DELIVERY · OPTIONAL") });
       B.push({ type: "rows", items: [{ icon: "image", t: fotoId ? E2("Foto de la entrega lista", "Delivery photo ready") : E2("Tomar la foto de la entrega", "Take the delivery photo"),
         s: puerta ? E2("Lo dejas en la puerta: toma la foto del pedido en la puerta. Solo la ven el cliente, el negocio y To’Latino.", "You leave it at the door: photograph the order at the door. Only the customer, the business and To’Latino see it.")
           : E2("Solo la ven el cliente, el negocio y To’Latino.", "Only the customer, the business and To’Latino see it."),
@@ -268,9 +271,10 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
     // 9n · DLV-OFERTA: las ofertas del negocio con su cuenta regresiva. «Aceptar» empieza la entrega (el negocio y el cliente te ven desde aquí).
     for (const o of ofertas) {
       const q = quedan(o);
-      B.push({ type: "note", tone: q <= 10 ? "warn" : "info", icon: "clock", t: E2(`${o.negocio.nombre} te ofrece un pedido · quedan ${q} s`, `${o.negocio.nombre} offers you an order · ${q} s left`) });
+      B.push({ type: "note", tone: q <= 10 ? "warn" : "info", icon: "clock", t: o.mercado ? E2(`${o.negocio.nombre} te ofrece un pedido del mercado · quedan ${q} s`, `${o.negocio.nombre} offers you a market order · ${q} s left`) : E2(`${o.negocio.nombre} te ofrece un pedido · quedan ${q} s`, `${o.negocio.nombre} offers you an order · ${q} s left`) });
       B.push({ type: "kv", items: [{ k: E2("RECOGES EN", "PICK UP AT"), v: o.negocio.direccion ?? o.negocio.nombre }, { k: E2("LLEVAS A", "DELIVER TO"), v: `${o.calle ?? "—"}${o.mi != null ? ` · ${o.mi} mi` : ""}` },
-        { k: E2("PAGO", "PAYMENT"), v: o.efectivo != null ? E2(`Cobrar ${money(o.efectivo)} en efectivo`, `Collect ${money(o.efectivo)} cash`) : E2("Pagado", "Paid") }, { k: E2("PROPINA", "TIP"), v: o.propina ? money(o.propina) : "—" }] });
+        { k: E2("PAGO", "PAYMENT"), v: o.efectivo != null ? E2(`Cobrar ${money(o.efectivo)} en efectivo`, `Collect ${money(o.efectivo)} cash`) : E2("Pagado", "Paid") }, { k: E2("PROPINA", "TIP"), v: o.propina ? money(o.propina) : "—" },
+        { k: E2("LLEVAS", "YOU CARRY"), v: `${o.items} ${o.items === 1 ? E2("artículo", "item") : E2("artículos", "items")}` }] });
       B.push({ type: "acts", items: [{ l: E2("Aceptar", "Accept"), v: "primary", icon: "check", off: pend || q === 0, onClick: () => start(async () => {
         setErr("");
         const r = await repOfertaAceptar(o.id).catch(() => null);

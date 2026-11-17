@@ -4,6 +4,7 @@ import sharp from "sharp";
 import { mismoOrigen, yo } from "@/lib/cuenta";
 import { db } from "@/lib/db";
 import { guardarObjeto, mediosListos } from "@/lib/medios";
+import { NUM_REPARTO, repartoSql } from "@/lib/reparto-comun";
 
 /* 9n · La foto de la entrega (prueba de entrega; fase9 §6 #21). PRIVADA: se guarda bajo «privado/e/» (nginx nunca la sirve), dueña la entrega
    (media.owner_kind 'delivery', owner_id = la operación). Solo la sube el repartidor ASIGNADO a un delivery ACTIVO (?numero=…); se endereza, se
@@ -19,10 +20,10 @@ export async function POST(req: NextRequest) {
   if (!me) return err(401, "Entra para subir la foto.", "Sign in to upload the photo.");
   if (!mediosListos()) return err(503, "Las fotos no están disponibles en este momento.", "Photos are not available right now.");
   const numero = String(req.nextUrl.searchParams.get("numero") ?? "");
-  if (!/^\d{1,12}$/.test(numero)) return err(400, "Ese pedido no existe.", "That order does not exist.");
+  if (!NUM_REPARTO.test(numero)) return err(400, "Ese pedido no existe.", "That order does not exist.");
   const o = (await db().query<{ id: string }>(
     `select o.id::text from operations o join delivery_drivers d on d.id = o.driver_id
-      where o.number = $1 and d.user_id = $2 and d.status = 'active' and o.kind = 'order' and coalesce(o.mode, 'pickup') = 'delivery' and o.status = 'confirmed'`, [numero, me.id])).rows[0];
+      where o.number = $1 and d.user_id = $2 and d.status = 'active' and ${repartoSql("o")} and o.status = 'confirmed'`, [numero, me.id])).rows[0];
   if (!o) return err(404, "Este pedido ya no es tuyo.", "This order is no longer yours.");
   if (Number(req.headers.get("content-length") ?? 0) > MAX + 4096) return err(413, "La foto pesa demasiado (máximo 12 MB).", "The photo is too large (12 MB max).");
   const n = (await db().query<{ n: number }>(`select count(*)::int as n from media where uploaded_by = $1 and owner_kind = 'delivery' and created_at > now() - interval '1 hour'`, [me.id])).rows[0]?.n ?? 0;

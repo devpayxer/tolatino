@@ -1,7 +1,7 @@
 # Prueba de entrega, código de recogida y ofertas · Proof of delivery, pickup code and offers
 
 _Pantallas: To'Latino Repartidor (`/repartidor`, Inicio y el detalle del pedido), Panel › Entrega y el detalle del pedido, tu pedido
-(`/pedido/{número}`). Teléfono y escritorio. Versión: 14 nov 2026. Audiencia: negocio. Tema: panel._
+(`/pedido/{número}`). Teléfono y escritorio. Versión: 17 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **Ofertas con cuenta regresiva:** el negocio ofrece un delivery a **un** repartidor o a **todos los que están en línea**. El repartidor ve la
@@ -39,6 +39,11 @@ _Pantallas: To'Latino Repartidor (`/repartidor`, Inicio y el detalle del pedido)
 **¿La foto lleva mi ubicación?** No. Se le quitan los datos de la cámara antes de guardarla.
 
 **¿Por qué no puedo llamar al cliente?** Por seguridad nadie le da su número a un repartidor. Escríbele en la app o llama al negocio.
+
+## En el mercado
+En un envío del mercado la prueba es **siempre obligatoria**, pida o no prueba el mercado: es el momento en que se cobra lo real. La base no
+deja cerrar el pedido sin la prueba **del repartidor que lo llevó** (foto o código del cliente); el mercado no lo marca «Entregado» mientras el
+repartidor lo tiene (si no puede terminarlo, el mercado se lo quita y lo termina él).
 
 ## English
 
@@ -78,3 +83,8 @@ _Pantallas: To'Latino Repartidor (`/repartidor`, Inicio y el detalle del pedido)
 **Does the photo carry my location?** No. Camera data is removed before saving it.
 
 **Why can't I call the customer?** For safety nobody gives their number to a driver. Write in the app or call the business.
+
+### For markets
+On a market delivery proof is **always required**, whether or not the market asks for it: it is the moment the real total is charged. The
+database does not let the order close without proof **from the driver who carried it** (photo or customer code); the market does not mark it
+"Delivered" while the driver has it (if the driver cannot finish, the market removes them and finishes it).

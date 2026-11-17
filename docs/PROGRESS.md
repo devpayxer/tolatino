@@ -2539,3 +2539,8 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **17 nov · b8d3700 en `main` y `pruebas`** (sandbox sano, 175 migraciones): Anchos (5) en verde en los tres anchos (app8a con su propio boleto)
   y el bloque de patrocinios (0175: devoluciones, 3-D Secure, pausa del evento oculto, vistas sin el equipo) con CI dirigido 10/10 + al revés 67/67.
   Siguiente: lo de 9n que no espera al fundador (LAUNCH «→ 9n»).
+- **9n · Envío del mercado con el repartidor (17 nov)** — migración **0177** (códigos, ruta en vivo y prueba del repartidor también para
+  `market_order`); el envío del mercado listo sale por el mismo Repartidor (oferta, asignar, «Ofrecer solo», código de recogida, mapa, prueba) y
+  lo real se cobra una vez al «Entregado» del repartidor; sin repartidores, el camino de antes. Panel › Entrega en el mercado. Guardián
+  `mercadoConRepartidor` (alrevesMercRep 21/21); e2e `merc9n` 57 ✓ y merc4p 20, rep2l 17, neg9n 51, din9n4 (D, G) 44, app8e 68 en local
+  (`next build` + `next start`). LAUNCH marcado; REVISION «Envío del mercado con el repartidor».

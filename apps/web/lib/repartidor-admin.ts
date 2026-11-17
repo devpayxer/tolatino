@@ -1,6 +1,7 @@
 import "server-only";
 import { auditar, type Staff } from "./admin";
 import { db, tx } from "./db";
+import { KIND_REPARTO } from "./reparto-comun";
 
 /* 9n · Super Admin › Repartidores (ADM-DLV; apps-delivery-checkin.md §1.5): la lista de las personas que reparten para un negocio (por
    persona, no por equipo: una puede repartir para varios), su 360° (equipos, entregas, pruebas, incidencias, sanciones), las incidencias
@@ -42,7 +43,7 @@ export async function listaRepartidores(s: Staff, f: FiltroDlv): Promise<{ filas
         group by d.user_id)
      select u.id::text, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), '(sin nombre)') as nombre, u.phone as tel,
             coalesce(p.equipos, '{}') as equipos, ci.name as ciudad, coalesce(p.en_linea, false) as "enLinea",
-            (select count(*)::int from operations o join delivery_drivers d on d.id = o.driver_id where d.user_id = u.id and o.kind = 'order' and o.status = 'done' and o.done_at > now() - interval '30 days') as "entregas30",
+            (select count(*)::int from operations o join delivery_drivers d on d.id = o.driver_id where d.user_id = u.id and o.kind in ${KIND_REPARTO} and o.status = 'done' and o.done_at > now() - interval '30 days') as "entregas30",
             (select count(*)::int from operation_events e join operations o on o.id = e.operation_id join delivery_drivers d on d.id = o.driver_id
               where d.user_id = u.id and e.kind = 'driver_issue' and e.actor_id = u.id::text and e.at > now() - interval '30 days') as "problemas30",
             (select count(*)::int from delivery_incidents i where i.driver_user = u.id and i.status = 'open') as incid,
@@ -104,8 +105,8 @@ export async function rep360(s: Staff, uid: string): Promise<Rep360 | null> {
     db().query<Rep360["equipos"][number]>(`select d.id::text, b.name as negocio, b.id as "negocioId", d.status as estado, d.vehicle as vehiculo, d.online and d.status = 'active' as "enLinea",
         to_char(d.accepted_at at time zone 'UTC', 'YYYY-MM-DD') as desde, d.removed_reason as motivo from delivery_drivers d join businesses b on b.id = d.business_id where d.user_id = $1 order by d.status = 'active' desc, d.accepted_at desc`, [uid]),
     db().query<Rep360["kpi"]>(`select
-        (select count(*)::int from operations o join delivery_drivers d on d.id = o.driver_id where d.user_id = $1 and o.kind = 'order' and o.status = 'done' and o.done_at > now() - interval '30 days') as "entregas30",
-        (select count(*)::int from operations o join delivery_drivers d on d.id = o.driver_id where d.user_id = $1 and o.kind = 'order' and o.status = 'confirmed') as "enCurso",
+        (select count(*)::int from operations o join delivery_drivers d on d.id = o.driver_id where d.user_id = $1 and o.kind in ${KIND_REPARTO} and o.status = 'done' and o.done_at > now() - interval '30 days') as "entregas30",
+        (select count(*)::int from operations o join delivery_drivers d on d.id = o.driver_id where d.user_id = $1 and o.kind in ${KIND_REPARTO} and o.status = 'confirmed') as "enCurso",
         (select count(*)::int from operation_events e where e.kind = 'driver_issue' and e.actor_id = $1::text and e.at > now() - interval '30 days') as "problemas30",
         (select count(distinct p.operation_id)::int from delivery_proofs p join delivery_drivers d on d.id = p.driver_id where d.user_id = $1 and p.at > now() - interval '30 days') as "conPrueba30",
         (select count(*)::int from delivery_offers f join delivery_drivers d on d.business_id = f.business_id and d.user_id = $1 where f.created_at > now() - interval '30 days' and f.created_at >= coalesce(d.accepted_at, d.created_at) and (f.driver_id is null or f.driver_id = d.id)) as "ofertas30",
@@ -114,7 +115,7 @@ export async function rep360(s: Staff, uid: string): Promise<Rep360 | null> {
         to_char(coalesce(o.done_at, o.confirmed_at) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at,
         (select string_agg(p.kind, ',' order by p.kind) from delivery_proofs p where p.operation_id = o.id) as prueba,
         (select p.media_id::text from delivery_proofs p where p.operation_id = o.id and p.kind = 'foto') as foto, o.cash_collected_cents as efectivo
-        from operations o join delivery_drivers d on d.id = o.driver_id join businesses b on b.id = o.business_id where d.user_id = $1 and o.kind = 'order' order by o.id desc limit 20`, [uid]),
+        from operations o join delivery_drivers d on d.id = o.driver_id join businesses b on b.id = o.business_id where d.user_id = $1 and o.kind in ${KIND_REPARTO} order by o.id desc limit 20`, [uid]),
     db().query<Incidencia>(`${INC_SQL} where i.driver_user = $1 order by i.created_at desc limit 50`, [uid]),
     db().query<Rep360["sanciones"][number]>(`select s.id::text, s.kind, to_char(s.until at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as until, s.reason, to_char(s.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at,
         nullif(trim(coalesce(p.first_name, '') || ' ' || left(coalesce(p.last_name, ''), 1)), '') as por, to_char(s.lifted_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as lifted, s.lift_reason as "liftReason",
@@ -150,7 +151,8 @@ export async function abrirIncidencia(s: Staff, uid: string, numero: string, not
   const m = motivoOk(nota);
   if (!UUIDRE.test(uid)) return { ok: false, mensaje: "Ese repartidor no existe." };
   if (m.length < 3) return { ok: false, mensaje: "Escribe qué pasó." };
-  const n0 = String(numero ?? "").replace(/\D/g, "").slice(0, 12), n = /^0*$/.test(n0) ? "" : n0; // «0» = sin pedido
+  // 9n · También el envío del mercado (M-6101): el número del mercado va tal cual; el de comida, solo los dígitos.
+  const crudo = String(numero ?? "").trim().toUpperCase(), n0 = /^M-\d{1,10}$/.test(crudo) ? crudo : crudo.replace(/\D/g, "").slice(0, 12), n = /^0*$/.test(n0) ? "" : n0; // «0» = sin pedido
   const o = n ? (await db().query<{ id: string; did: string; biz: string; city: string }>(
     `select o.id::text, d.id::text as did, o.business_id as biz, o.city_id as city from operations o join delivery_drivers d on d.id = o.driver_id where o.number = $1 and d.user_id = $2`, [n, uid])).rows[0] : null;
   if (n && !o) return { ok: false, mensaje: "Ese pedido no lo llevó esta persona." };
@@ -190,7 +192,7 @@ export async function sancionar(s: Staff, uid: string, kind: string, dias: numbe
       if (kind === "baneo") {
         // Baneo: sale de todos sus equipos; lo que tenía asignado y no entregó vuelve a «sin repartidor» y el negocio lo sabe.
         quitados = (await c.query<{ biz: string; numero: string }>(
-          `update operations o set driver_id = null, updated_at = now() from delivery_drivers d where d.id = o.driver_id and d.user_id = $1 and o.kind = 'order' and o.status = 'confirmed' and coalesce(o.stage, '') <> 'delivered'
+          `update operations o set driver_id = null, updated_at = now() from delivery_drivers d where d.id = o.driver_id and d.user_id = $1 and o.kind in ${KIND_REPARTO} and o.status = 'confirmed' and coalesce(o.stage, '') <> 'delivered'
            returning o.business_id as biz, o.number as numero`, [uid])).rows;
         await c.query(`update trip_runs r set driver_id = null, updated_at = now() from delivery_drivers d where d.id = r.driver_id and d.user_id = $1 and r.status = 'scheduled'`, [uid]);
         await c.query(`update delivery_drivers set status = 'removed', removed_at = now(), removed_reason = 'To''Latino', online = false, invite_code = null where user_id = $1 and status <> 'removed'`, [uid]);

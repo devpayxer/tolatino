@@ -3,7 +3,7 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const fs = require('fs'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
-const M = 'packages/db/migrations/0128_ruta_en_vivo.sql', L = 'apps/web/lib/ruta.ts', RP = 'apps/web/lib/repartidor.ts', PO = 'apps/web/app/api/ruta/posicion/route.ts',
+const M = 'packages/db/migrations/0128_ruta_en_vivo.sql', M9 = 'packages/db/migrations/0177_mercado_repartidor.sql', /* 9n · la ruta_activa vigente (también el mercado) */ L = 'apps/web/lib/ruta.ts', RP = 'apps/web/lib/repartidor.ts', PO = 'apps/web/app/api/ruta/posicion/route.ts',
   VI = 'apps/web/app/api/ruta/vivo/route.ts', NR = 'apps/web/lib/nativo/ruta.ts', TX = 'apps/web/app/admin/acciones-tx.ts', BA = 'apps/web/lib/barrido.ts',
   JS = 'apps/mobile/plugins/tl-ruta/android/com/tolatino/plugins/TLRutaServicio.java', JP = 'apps/mobile/plugins/tl-ruta/android/com/tolatino/plugins/TLRutaPlugin.java',
   SW = 'apps/mobile/plugins/tl-ruta/ios/TLRutaPlugin.swift', FI = 'apps/web/app/(app)/n/[id]/Ficha.tsx', ES = 'apps/web/app/(puerta)/puerta/Escanear.tsx',
@@ -13,25 +13,25 @@ const M = 'packages/db/migrations/0128_ruta_en_vivo.sql', L = 'apps/web/lib/ruta
   PR = 'apps/mobile/ios/Targets/ToLatinoRepartidor/Info.plist', SC = 'apps/mobile/plugins/tl-pantalla/ios-sin-camara/TLPantallaPlugin+SinLinterna.swift', PS = 'apps/mobile/plugins/tl-pantalla/ios/TLPantallaPlugin.swift';
 const casos = [
   // ubicacionSoloEntregaActiva
-  ['ubicacionSoloEntregaActiva', M, "and d.user_id = rider and d.status = 'active' and d.id = t.driver_id)", "and d.status = 'active')"],
-  ['ubicacionSoloEntregaActiva', M, "and o.city_id = ciudad and d.user_id", "and d.user_id"],
+  ['ubicacionSoloEntregaActiva', M9, "and d.user_id = rider and d.status = 'active' and d.id = t.driver_id)", "and d.status = 'active')"],
+  ['ubicacionSoloEntregaActiva', M9, "and o.city_id = ciudad and d.user_id", "and d.user_id"],
   ['ubicacionSoloEntregaActiva', M, "  if not ruta_activa(new.operation_id, new.rider_user_id, new.city_id) then raise exception 'ruta: la entrega no está activa para este repartidor en esta ciudad'; end if;\n", ''],
   ['ubicacionSoloEntregaActiva', M, "  if tg_op = 'UPDATE' then raise exception 'delivery_positions es solo de inserción'; end if;\n", ''],
   ['ubicacionSoloEntregaActiva', M, "    if (m - coalesce(t.last_accuracy_m, 0) - coalesce(new.accuracy_m, 0)) / greatest(seg, 1) > cfg_int('ubic_vel_max_mps') then", "    if false then"],
   ['ubicacionSoloEntregaActiva', L, '  const activa = !!(await db().query<{ ok: boolean }>(`select ruta_activa($1::bigint, $2::uuid, $3) as ok`, [t.op, t.rider, t.city])).rows[0]?.ok && (await encendida(undefined, t.rider));', '  const activa = await encendida(undefined, t.rider);'],
   ['ubicacionSoloEntregaActiva', L, '      if (m / seg > vmax) continue; // velocidad imposible\n', ''],
   ['ubicacionSoloEntregaActiva', L, 'where t.token_hash = $1 and t.sharing_until is null`, [huella(token)]', 'where t.token_hash = $1`, [huella(token)]'],
-  ['ubicacionSoloEntregaActiva', RP, '      return { ok: true, aviso: { tpl: "ord_here", numero } } as const;', '      return { ok: true, aviso: { tpl: "ord_here", numero }, ruta: await empezarRuta(c, o.id, userId, "recogi") } as const;'],
+  ['ubicacionSoloEntregaActiva', RP, '      return { ok: true, aviso: { tpl: o.merc ? "merc_here" : "ord_here", numero } } as const;', '      return { ok: true, aviso: { tpl: o.merc ? "merc_here" : "ord_here", numero }, ruta: await empezarRuta(c, o.id, userId, "recogi") } as const;'],
   ['ubicacionSoloEntregaActiva', PO, '  const token = /^Bearer ([A-Za-z0-9_-]{43})$/.exec(req.headers.get("authorization") ?? "")?.[1];', '  const token = req.cookies.get("tl_ruta")?.value;'],
   ['ubicacionSoloEntregaActiva', NR, 'if (r.status === 401 || r.status === 410 || j.activa === false) { pararWeb(); return; }', 'if (r.status === 401) { pararWeb(); return; }'],
   ['ubicacionSoloEntregaActiva', JS, 'if (st == 401 || st == 410 || !activa) {', 'if (st == 401) {'],
   ['ubicacionSoloEntregaActiva', SW, 'if h.statusCode == 401 || h.statusCode == 410 || !activa { self.limpiar(); return }', 'if h.statusCode == 401 { self.limpiar(); return }'],
   ['ubicacionSoloEntregaActiva', SW, 'self.gestor.requestWhenInUseAuthorization() // nunca «Siempre»', 'self.gestor.requestAlwaysAuthorization()'],
   // rutaSoloDeLosTres
-  ['rutaSoloDeLosTres', L, "kind = 'order' and user_id = $2 and coalesce(mode, 'pickup') = 'delivery'`, [numero, userId]", "kind = 'order' and coalesce(mode, 'pickup') = 'delivery' and $2::uuid is not null`, [numero, userId]"],
+  ['rutaSoloDeLosTres', L, "kind in ${KIND_REPARTO} and user_id = $2 and coalesce(mode, 'pickup') = 'delivery'`, [numero, userId]", "kind in ${KIND_REPARTO} and coalesce(mode, 'pickup') = 'delivery' and $2::uuid is not null`, [numero, userId]"],
   ['rutaSoloDeLosTres', L, '  if (desdeCliente && !t.cliente) return null; // el cliente no ve nada antes de «Recogí»\n', ''],
   ['rutaSoloDeLosTres', L, '  return vista(o.id, false, true);', '  return vista(o.id, true, true);'],
-  ['rutaSoloDeLosTres', L, "and kind = 'order' and business_id = $2 and coalesce", "and kind = 'order' and $2::text is not null and coalesce"],
+  ['rutaSoloDeLosTres', L, "and kind in ${KIND_REPARTO} and business_id = $2 and coalesce", "and kind in ${KIND_REPARTO} and $2::text is not null and coalesce"],
   ['rutaSoloDeLosTres', L, '  if (m.length < 10) return { ok: false, msg: "Escribe el motivo (al menos 10 letras): ver la ruta de una persona queda en la auditoría." };\n', ''],
   ['rutaSoloDeLosTres', VI, '? async () => ((await accesoPanel(negocio, "ord")) ? rutaNegocio(negocio, pedido) : null)', '? async () => rutaNegocio(negocio, pedido)'],
   ['rutaSoloDeLosTres', VI, 'const NO = () => new Response("", { status: 404, headers: { "cache-control": "no-store" } });', 'const NO = () => new Response("", { status: 403, headers: { "cache-control": "no-store" } });'],

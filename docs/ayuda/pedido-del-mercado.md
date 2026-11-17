@@ -1,6 +1,6 @@
 # Pedido del mercado · Market order
 
-_Pantallas: la página de un mercado › Productos › «Tu pedido» (`/n/{negocio}/mercado`) y tu pedido (`/mercado/{M-…}`). Versión: 14 nov 2026.
+_Pantallas: la página de un mercado › Productos › «Tu pedido» (`/n/{negocio}/mercado`) y tu pedido (`/mercado/{M-…}`). Versión: 17 nov 2026.
 Audiencia: vecino. Tema: pedidos._
 
 ## Cómo funciona
@@ -40,6 +40,27 @@ hasta que el cliente diga que está bien; si dice que no, corta menos y manda el
 - **¿Qué pasa si no contesto?** A los 10 minutos te llega un recordatorio. Si no contestas, se cobra lo real al recoger o entregar,
   nunca más de lo retenido.
 - **¿Y la comisión?** To'Latino cobra su comisión al mercado sobre lo vendido; a ti nunca se te suma nada.
+
+## Envío con el repartidor del mercado
+Si el mercado tiene repartidores en la app To'Latino Repartidor, tu envío lo lleva uno de ellos, igual que un pedido de comida:
+- Cuando el mercado termina de pesar (y diste tu OK si hacía falta), lo marca **Está listo** y se lo da a un repartidor. Tu pedido dice
+  **Listo · sale pronto** y luego **«Ramiro te lo lleva»**.
+- Desde que el repartidor lo recoge, ves **el mapa en vivo** y te llega **«Tu pedido va en camino»**; cuando llega, **«Tu repartidor llegó»**.
+- **Tu código para recibir** (4 números) sale en tu pedido: dáselo al repartidor solo cuando tengas tu pedido en la mano. Si lo deja en tu
+  puerta, toma una foto; la ves en tu pedido («Ver la foto de la entrega»).
+- **Se cobra lo real cuando el repartidor marca «Entregado»** (si no tocaste antes «Está bien, cobrar»), nunca más de lo retenido, y se libera
+  el resto. Si ya lo aprobaste, no se cobra otra vez.
+- El repartidor **nunca ve tu teléfono**: te escribe dentro de la app.
+- Si el mercado no tiene repartidores en la app, o el repartidor no puede terminar, lo lleva el mercado como siempre («Va en camino» →
+  «Entregado») y se cobra igual al entregar.
+
+**¿Me pueden cobrar dos veces?** No: se cobra una sola vez, cuando apruebas o al «Entregado», lo que pase primero.
+**¿Por qué me piden un código?** Es la prueba de que te llegó: así, si algo pasa, queda claro quién lo recibió.
+
+Para el mercado: con repartidores en la app (Panel › Entrega › Tus repartidores), después de pesar sale **Está listo · para el repartidor**;
+en el pedido: **Ofrecer a los que están en línea** (cuenta regresiva), **Asignar** a uno, o **Va en camino · lo llevo yo**. Con el código de
+recogida encendido, le dices el código al repartidor al darle el pedido (o tocas **Ya se lo di**). Desde que el repartidor lo tiene, ves su
+estado y el mapa; **«Entregado» es suyo** (con la prueba) y ahí se cobra lo real. Si no puede terminarlo, **Quitar** y lo terminas tú.
 
 ## English
 
@@ -82,3 +103,24 @@ if they say no, cut less and send the weight again → **It's ready / On the way
 - **What happens if I don't answer?** At 10 minutes you get a reminder. If you don't answer, the real amount is charged at pickup or delivery,
   never more than what was held.
 - **What about the fee?** To'Latino charges its fee to the market on what was sold; nothing is ever added to you.
+
+### Delivery with the market's driver
+If the market has drivers in the To'Latino Driver app, one of them brings your delivery, just like a food order:
+- When the market finishes weighing (and you gave your OK if needed), it marks it **Ready** and gives it to a driver. Your order says **Ready ·
+  leaving soon** and then **"Ramiro is bringing it"**.
+- From the moment the driver picks it up, you see **the live map** and get **"Your order is on the way"**; when they arrive, **"Your driver is here"**.
+- **Your code to receive** (4 digits) shows in your order: give it to the driver only once your order is in your hands. If they leave it at your
+  door, they take a photo; you see it in your order ("See the delivery photo").
+- **The real total is charged when the driver marks "Delivered"** (if you did not tap "Looks good, charge" before), never more than the hold, and
+  the rest is released. If you already approved it, nothing is charged again.
+- The driver **never sees your phone**: they write to you inside the app.
+- If the market has no drivers in the app, or the driver cannot finish, the market delivers it as always ("On the way" → "Delivered") and it is
+  charged the same way at delivery.
+
+**Can I be charged twice?** No: it is charged once, when you approve or at "Delivered", whichever comes first.
+**Why do they ask me for a code?** It is the proof it reached you: if something happens, it is clear who received it.
+
+For the market: with drivers in the app (Dashboard › Delivery › Your drivers), after weighing you get **Ready · for the driver**; on the order:
+**Offer to online drivers** (countdown), **Assign** to one, or **On the way · I take it**. With the pickup code on, you tell the driver the code
+when you hand over the order (or tap **Already handed over**). Once the driver has it, you see their status and the map; **"Delivered" is theirs**
+(with proof) and that is when the real total is charged. If they cannot finish, **Remove** them and finish it yourself.

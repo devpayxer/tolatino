@@ -1,7 +1,7 @@
 # Panel: Entrega · Dashboard: Delivery
 
 _Pantallas: `/panel/{negocio}/entrega` (Entrega; en el teléfono, desde **Más**). Teléfono y escritorio. Comida y Bebidas con Pedidos en línea.
-Versión: 14 nov 2026. Audiencia: negocio. Tema: panel._
+Versión: 17 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **Cómo entregas:** Delivery (lo llevas a la casa) y Pickup (lo recogen en tu local). Al menos una encendida.
@@ -56,6 +56,12 @@ repartidor, si ya lo tiene). Apagado de fábrica; queda en la auditoría.
 
 **¿Le llega al repartidor el teléfono del cliente?** No: la oferta es la de siempre (calle, millas y total).
 
+## Entrega en el mercado
+Los mercados también tienen **Panel › Entrega**: **Tus repartidores** (invitar con código, quitar, quién está en línea), el **código de
+recogida** y **Ofrecer solo**. La zona, el costo y las franjas del envío se cambian en Tu herramienta. En el mercado la **prueba de entrega es
+siempre obligatoria** (ahí se cobra lo real) y «Ofrecer solo» sale cuando marcas **Está listo** un envío, cerca de la franja que eligió el
+cliente. Con una app externa, el mercado marca «Va en camino» y «Entregado» como antes.
+
 ## English
 
 ### What it does
@@ -109,3 +115,9 @@ and at that time you get the reminder «The order is for …» (also the driver,
 | Nobody takes it | One notice, and it stops being offered automatically for that order. |
 
 **Does the driver get the customer's phone number?** No: the offer is the usual one (street, miles and total).
+
+### Delivery for markets
+Markets also have **Dashboard › Delivery**: **Your drivers** (invite with a code, remove, who is online), the **pickup code** and **Offer
+automatically**. Delivery area, fee and time slots are changed in Your tool. For markets **proof of delivery is always required** (that is when
+the real total is charged) and "Offer automatically" goes out when you mark a delivery **Ready**, close to the slot the client chose. With an
+external app, the market marks "On the way" and "Delivered" as before.

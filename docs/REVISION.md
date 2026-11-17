@@ -5226,3 +5226,30 @@ siempre pide confirmar).
   no se renovó» lleva a tu panel para comprar otro y confirmarlo ahí. No hice la página «confirma para renovar» (como la de Pro) porque al
   confirmar habría que volver a revisar el puesto; si la quieres, se agrega.
 - **Vistas sin el equipo:** el dueño y su equipo ya no suman vistas (ni «entraron»); se descuenta en la base, en la misma consulta.
+
+## Envío del mercado con el repartidor (9n, 17 nov · 0177)
+**Dónde:** en el sandbox, con el dueño de Supermercado La Cosecha (0288): Panel › **Entrega** (nuevo en el mercado: Tus repartidores, código de
+recogida, Ofrecer solo) y Panel › Hoy › un pedido del mercado con envío; el repartidor en `/repartidor` (teléfono); el cliente en `/mercado/M-…`.
+**Qué mirar:**
+- Invita un repartidor desde Entrega; que entre con el código y se ponga en línea. Pide un envío con tarjeta, acéptalo, pésalo y mándalo: sale
+  **«Está listo · para el repartidor»**. Luego **Ofrecer a los que están en línea** (o **Asignar**): el repartidor ve «te ofrece un pedido del
+  mercado», a dónde, cuántos artículos y «Pagado» (nunca el teléfono del cliente).
+- Con el repartidor: el panel ya no tiene «Va en camino» ni «Entregado»; muestra su estado («Va por el pedido», «Va en camino», «Llegó»), el
+  código de recogida, el mapa en vivo y **Quitar**. El cliente ve «Ramiro te lo lleva», el mapa desde «Recogí» y su código para recibir.
+- «Entregado» del repartidor (foto o código del cliente): se cobra lo real una sola vez y se libera el resto; si el cliente ya había tocado «Está
+  bien, cobrar», no se cobra otra vez.
+- Sin repartidores en la app, el mercado sigue como antes («Va en camino» → «Entregado»). Con repartidores, **«Va en camino · lo llevo yo»**.
+**Decidido por mí (reversible):**
+- **El envío sale con el repartidor cuando el mercado lo marca «Está listo»** (después de pesar y del OK por más si hacía falta), no al aceptarlo
+  como la comida: antes no hay nada que recoger. Ofrecer y asignar antes de «listo» no se puede.
+- **«Repartidor propio» = repartidores del mercado en la app** (Entrega › Tus repartidores, como la comida con «Mi equipo»). Si el mercado no tiene
+  ninguno activo, o eligió app externa, el camino de antes queda igual. Con repartidores, el mercado puede igual llevarlo él («lo llevo yo»).
+- **En el mercado la prueba de entrega es siempre obligatoria** (foto o código del cliente), pida o no prueba el mercado: en ese momento se cobra
+  lo real y es la evidencia si el cliente reclama. La base lo exige y solo vale la prueba DEL repartidor que lo lleva.
+- **El mercado no puede marcar «Entregado» mientras el repartidor lo tiene** (en la comida el negocio sí puede, con su prueba «negocio»). Si el
+  repartidor no puede terminar (sin batería, accidente), el mercado le **quita** el pedido (también en camino) y lo termina él como antes.
+- **«Ofrecer solo» en el mercado** sale al marcar «Está listo», pero no antes de rep_programado_min (30 min) del inicio de la franja que eligió el
+  cliente: si lo pesaron temprano, no llega horas antes.
+- El cliente no recibe aviso al «Está listo» (le llega «va en camino» al «Recogí», «Tu repartidor llegó» y «Tu pedido llegó», plantillas nuevas
+  `merc_here` y `merc_entregado` con el número M-… sin «#»). Si prefieres un aviso «listo, sale pronto», se agrega.
+- No hay recibo por correo del pedido del mercado al entregar (no lo había antes tampoco); queda el aviso «Se cobraron …».
