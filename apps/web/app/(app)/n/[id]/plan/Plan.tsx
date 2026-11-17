@@ -15,7 +15,7 @@ import { uuid } from "@/lib/uuid";
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const dinero = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
 const DC = { es: ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
@@ -94,7 +94,7 @@ export function Plan({ op, svcId, o, es, yo, pago }: { op: OficiosPublico; svcId
         )}
         <div className={`flex flex-col gap-4 p-4 ${caja}`}>
           <div>
-            <div className="flex justify-between gap-2.5"><span className={K}>{E2("QUÉ QUIERES QUE REVISEN · OPCIONAL", "WHAT TO CHECK · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length} / 300</span></div>
+            <div className="flex justify-between gap-2.5"><span className={K}>{E2("QUÉ QUIERES QUE REVISEN · OPCIONAL", "WHAT TO CHECK · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{nota.length} / 300</span></div>
             <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 300))} rows={2} aria-label={E2("Qué quieres que revisen", "What to check")} placeholder={E2("Ej.: revisar el grifo del baño y la puerta del patio…", "E.g. check the bathroom faucet and the patio door…")}
               className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
           </div>

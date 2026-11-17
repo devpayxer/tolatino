@@ -131,12 +131,12 @@ export function ViajeEstado({ x, es, pago }: { x: ViajeVista; es: boolean; pago:
           </div>)}
         {steps.length > 0 && <div className="grid"><OrderTracker steps={steps} /></div>}
         <div data-screen-label="Viaje · tu viaje" className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">
-          <div className="border-b border-ink/[.07] px-[15px] py-3"><span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("TU VIAJE", "YOUR TRIP")}</span></div>
-          <div className="px-[15px] py-0.5">{rows.map(([k, v], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v}</span></div>)}</div>
+          <div className="border-b border-ink/[.07] px-[15px] py-3"><span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{E2("TU VIAJE", "YOUR TRIP")}</span></div>
+          <div className="px-[15px] py-0.5">{rows.map(([k, v], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v}</span></div>)}</div>
         </div>
         {cotK && x.fotos.length > 0 && <div data-screen-label="Mudanza · fotos" className="flex flex-wrap gap-2.5 rounded-[18px] border border-ink/[.07] bg-white p-4">{x.fotos.map((u) => <span key={u} className="h-[64px] w-[64px] rounded-[12px] bg-photo-bg" style={{ backgroundImage: `url("${u}")`, backgroundSize: "cover", backgroundPosition: "center" }} />)}</div>}
         <div data-screen-label="Viaje · tu dinero" className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">
-          <div className="border-b border-ink/[.07] px-[15px] py-3"><span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("TU DINERO", "YOUR MONEY")}</span></div>
+          <div className="border-b border-ink/[.07] px-[15px] py-3"><span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{E2("TU DINERO", "YOUR MONEY")}</span></div>
           <div className="px-[15px] py-0.5">
             <div className="flex justify-between gap-3 py-[11px]"><span className="text-[12.5px] font-semibold">{E2("Precio cerrado", "Fixed price")}{x.pago.l4 ? <span className="ml-1.5 font-mono text-[9.5px] text-ink/60">{`${(x.pago.marca ?? "").toUpperCase()} ·· ${x.pago.l4}`}</span> : null}</span><span className="text-[12.5px] font-bold">{`${dinero(x.tot)} · ${estDinero}`}</span></div>
             {(cotK ? !!P?.inc : x.inc.length > 0) && <div className="border-t border-ink/[.06] py-[11px] text-[12px] font-medium leading-[1.5] text-ink/65">{E2("Incluye: ", "Includes: ")}{cotK ? P!.inc : x.inc.map((z) => nm(z)).join(" · ")}. {E2("Nada se agrega al llegar.", "Nothing is added on arrival.")}</div>}

@@ -18,7 +18,7 @@ import { uuid } from "@/lib/uuid";
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "PaymentSummary";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, StepHeader, PaymentSummary } = UI as unknown as Record<N, ComponentType<any>>;
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const campo = "box-border w-full rounded-[13px] border border-ink/[.12] bg-white px-[13px] py-[11px] text-[14px] font-medium outline-none";
 const bi = (t: Bi, es: boolean) => (es ? t.es : t.en || t.es);
@@ -139,7 +139,7 @@ export function Visita({ b, es, yo }: { b: BookingVis; es: boolean; yo: boolean 
   const resumen = (
     <div className={`overflow-hidden ${caja}`}>
       <div className="border-b border-ink/[.07] px-[15px] py-3.5"><div className={K}>{E2("RESUMEN", "SUMMARY")}</div><div className="mt-[5px] font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{b.negocio.nombre}</div></div>
-      <div className="px-[15px] py-0.5">{filas.map(([k, v2], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v2}</span></div>)}</div>
+      <div className="px-[15px] py-0.5">{filas.map(([k, v2], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v2}</span></div>)}</div>
     </div>
   );
   const pay = {
@@ -178,7 +178,7 @@ export function Visita({ b, es, yo }: { b: BookingVis; es: boolean; yo: boolean 
         </div>}
       </div>}
       <div>
-        <div className="flex justify-between gap-2.5"><span className={K}>{E2("NOTA · OPCIONAL", "NOTE · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length}/200</span></div>
+        <div className="flex justify-between gap-2.5"><span className={K}>{E2("NOTA · OPCIONAL", "NOTE · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{nota.length}/200</span></div>
         <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 200))} rows={2} aria-label={E2("Nota", "Note")} placeholder={E2(`Algo que deba saber ${nm(QUIEN[b.rubro])}…`, `Anything ${nm(QUIEN[b.rubro])} should know…`)}
           className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
         <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/60">{nm(AVISO_NOTA)} {E2(`Solo la ve ${b.negocio.nombre}.`, `Only ${b.negocio.nombre} sees it.`)}</div>

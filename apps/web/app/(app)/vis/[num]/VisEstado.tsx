@@ -80,7 +80,7 @@ export function VisEstado({ x, es }: { x: VisVista; es: boolean }) {
       `SUMMARY:${nm(Q.t)} · ${B}`, `LOCATION:${(llamada ? "" : donde).replace(/[,;]/g, " ")}`, `DESCRIPTION:${nm(Q.t)} ${x.numero}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], { type: "text/calendar" })); a.download = `${x.numero}.ics`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   };
-  const caja = "overflow-hidden rounded-[18px] border border-ink/[.07] bg-white", Kh = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+  const caja = "overflow-hidden rounded-[18px] border border-ink/[.07] bg-white", Kh = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
   return (
     <div data-screen-label="APP-NEG-VISITA-ESTADO" className="min-h-[100dvh] bg-paper pb-10">
       <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:top-0">
@@ -112,7 +112,7 @@ export function VisEstado({ x, es }: { x: VisVista; es: boolean }) {
           </div>)}
         <div data-screen-label="Visita · lo que pediste" className={caja}>
           <div className="border-b border-ink/[.07] px-[15px] py-3"><span className={Kh}>{`${E2("TU ", "YOUR ")}${nm(Q.t).toUpperCase()}`}</span></div>
-          <div className="px-[15px] py-0.5">{rows.map(([k, v], n) => <div key={`${k}${n}`} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v}</span></div>)}</div>
+          <div className="px-[15px] py-0.5">{rows.map(([k, v], n) => <div key={`${k}${n}`} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v}</span></div>)}</div>
           {x.que === "visita" && !conf && x.estado !== "done" && <div className="border-t border-ink/[.07] px-[15px] py-3 text-[11.5px] font-medium leading-[1.5] text-ink/60">{E2("La dirección exacta te llega cuando confirman la visita.", "The exact address arrives once the visit is confirmed.")}</div>}
         </div>
         <div data-screen-label="Visita · tu dinero" className={caja}>

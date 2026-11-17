@@ -17,7 +17,7 @@ const { Icon, Button, Chip, Tag } = UI as unknown as Record<N, ComponentType<any
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 // «a la 1:00 PM» / «a las 7:30 PM»
 const aLas = (m: number) => `${hora(m).startsWith("1:") ? "a la" : "a las"} ${hora(m)}`;
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-[15px]";
 const AREA = { salon: ["Salón", "Dining room"], terraza: ["Terraza", "Patio"], barra: ["Barra", "Bar"] } as Record<string, [string, string]>;
 const OCC: Record<string, [string, string]> = { cumple: ["Cumpleaños", "Birthday"], aniv: ["Aniversario", "Anniversary"], cita: ["Cita", "Date night"], neg: ["Negocios", "Business"], cele: ["Celebración", "Celebration"] };
@@ -168,7 +168,7 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
             {j < pasos.length - 1 && <span className={`min-h-[22px] w-0.5 flex-1 ${s.k === "d" ? "bg-open" : "bg-ink/10"}`} />}
           </div>
           <div className="flex min-w-0 flex-1 justify-between gap-2.5 pb-3.5">
-            <span className={`text-[13.5px] leading-[1.2] ${s.k === "c" ? "font-extrabold" : "font-bold"} ${s.k ? "text-ink" : "text-ink/[.42]"}`}>{s.l}</span>
+            <span className={`text-[13.5px] leading-[1.2] ${s.k === "c" ? "font-extrabold" : "font-bold"} ${s.k ? "text-ink" : "text-ink/60"}`}>{s.l}</span>
             <span className="flex-none font-mono text-[11px] font-bold text-ink/60">{s.tm}</span>
           </div>
         </div>

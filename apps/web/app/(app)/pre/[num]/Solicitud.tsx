@@ -108,7 +108,7 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
         {em && stE === "used" && s.cita && <div className="grid"><Button block icon="truck" onClick={() => router.push(`/cita/${s.cita}`)}>{E2("Ver en camino", "See it on the way")}</Button></div>}
         {em && (stE === "sent" || stE === "exp") && (
           <div data-screen-label="Emergencia · a quién" className="rounded-[18px] border border-ink/[.07] bg-white p-4">
-            <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{stE === "exp" ? E2("LLAMA DIRECTO", "CALL DIRECTLY") : E2("SE LO MANDAMOS A", "SENT TO")}</div>
+            <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{stE === "exp" ? E2("LLAMA DIRECTO", "CALL DIRECTLY") : E2("SE LO MANDAMOS A", "SENT TO")}</div>
             <div className="mt-2.5 flex flex-col gap-2">{s.destinos.map((x) => <a key={x.negocio.id} href={x.negocio.telefono ? `tel:${x.negocio.telefono}` : `/n/${x.negocio.id}`} className="flex items-center gap-3 rounded-[14px] border border-ink/[.08] px-3 py-2.5">
               <span className="h-10 w-10 flex-none rounded-xl bg-photo-bg" style={fondo(x.negocio.foto)} />
               <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{x.negocio.nombre}</span>
@@ -118,7 +118,7 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
         )}
         {pq && (
           <div data-screen-label="Presupuestos · comparar" className="rounded-[18px] border border-ink/[.07] bg-white p-4">
-            <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{stQ === "used" ? E2("PRESUPUESTOS", "ESTIMATES") : E2("COMPARA · TOCA UNO PARA RESERVAR SU VISITA", "COMPARE · TAP ONE TO BOOK ITS VISIT")}</div>
+            <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{stQ === "used" ? E2("PRESUPUESTOS", "ESTIMATES") : E2("COMPARA · TOCA UNO PARA RESERVAR SU VISITA", "COMPARE · TAP ONE TO BOOK ITS VISIT")}</div>
             <div className="mt-2.5 flex flex-col gap-2">{s.destinos.map((x) => { const r = x.reply ?? {}, puede = (x.st === "rng" || x.st === "see") && stQ !== "used" && stQ !== "cx", vis = r.visita ?? x.precio ?? 0;
               const meta = x.st === "sent" ? E2("ESPERANDO RESPUESTA", "WAITING FOR REPLY") : x.st === "no" ? E2("NO HACE ESTE TRABAJO", "DOES NOT DO THIS JOB") : x.st === "expired" ? E2("NO RESPONDIÓ", "DID NOT REPLY") : x.st === "closed" ? E2("CERRADO", "CLOSED")
                 : `${r.lo ? `${dinero(r.lo)}–${dinero(r.hi ?? r.lo)}` : ""}${x.st === "see" ? E2(" · HAY QUE VERLO", " · NEEDS A VISIT") : ""}${E2(" · VISITA ", " · VISIT ")}${vis ? dinero(vis) : E2("GRATIS", "FREE")}${r.dias ? ` · ${r.dias}` : ""}${x.st === "used" ? E2(" · ELEGIDO", " · CHOSEN") : ""}`;
@@ -145,15 +145,15 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
         )}
         <div className="grid"><OrderTracker steps={steps} /></div>
         <div className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">
-          <div className="border-b border-ink/[.07] px-[15px] py-3 font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("LO QUE MANDASTE", "WHAT YOU SENT")}</div>
+          <div className="border-b border-ink/[.07] px-[15px] py-3 font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{E2("LO QUE MANDASTE", "WHAT YOU SENT")}</div>
           <div className="px-[15px] py-0.5">
-            {filas.map(([k, v], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-pretty text-right text-[13px] font-semibold leading-[1.45]">{v}</span></div>)}
+            {filas.map(([k, v], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-pretty text-right text-[13px] font-semibold leading-[1.45]">{v}</span></div>)}
             {s.fotos.length > 0 && <div className="flex flex-wrap gap-2 border-t border-ink/[.06] py-[11px]">{s.fotos.map((u) => <span key={u} className="h-14 w-14 rounded-xl bg-photo-bg" style={fondo(u)} />)}</div>}
           </div>
         </div>
         {!pq && !em && s.otros.length > 0 && (
           <div className="rounded-[18px] border border-ink/[.07] bg-white p-4">
-            <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("LO HACEN EN TU CIUDAD", "BUSINESSES IN YOUR CITY THAT DO IT")}</div>
+            <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{E2("LO HACEN EN TU CIUDAD", "BUSINESSES IN YOUR CITY THAT DO IT")}</div>
             <div className="mt-2.5 flex flex-col gap-2">{s.otros.map((o) => <button key={o.id} type="button" onClick={() => router.push(`/n/${o.id}?tab=svc`)} className="flex items-center gap-3 rounded-[14px] border border-ink/[.08] px-3 py-2.5 text-left">
               <span className="h-10 w-10 flex-none rounded-xl bg-photo-bg" style={fondo(o.foto)} /><span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{o.nombre}</span><span className="mt-0.5 block truncate font-mono text-[9.5px] font-semibold text-ink/60">{o.meta.toUpperCase()}</span></span>
               <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" /></button>)}</div>

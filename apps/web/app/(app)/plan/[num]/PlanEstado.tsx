@@ -67,7 +67,7 @@ export function PlanEstado({ p, es, pago }: { p: PlanVista; es: boolean; pago: {
         <div className="grid"><OrderTracker steps={steps} /></div>
         {p.proximas.length > 0 && (
           <div className="rounded-[18px] border border-ink/[.07] bg-white p-4">
-            <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("PRÓXIMAS VISITAS", "UPCOMING VISITS")}</div>
+            <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{E2("PRÓXIMAS VISITAS", "UPCOMING VISITS")}</div>
             <div className="mt-2.5 flex flex-col gap-2">{p.proximas.map((v, i) => (
               <button key={v.fecha} type="button" disabled={!v.cita} onClick={() => v.cita && router.push(`/cita/${v.cita}`)} className="flex items-center gap-3 rounded-[14px] border border-ink/[.08] px-3 py-2.5 text-left">
                 <span className="h-10 w-10 flex-none rounded-xl bg-photo-bg" style={fondo(p.negocio.foto)} />
@@ -90,10 +90,10 @@ export function PlanEstado({ p, es, pago }: { p: PlanVista; es: boolean; pago: {
             </div></div>
         </div>
         <div className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">
-          <div className="border-b border-ink/[.07] px-[15px] py-3 font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("TU PLAN", "YOUR PLAN")}</div>
+          <div className="border-b border-ink/[.07] px-[15px] py-3 font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{E2("TU PLAN", "YOUR PLAN")}</div>
           <div className="px-[15px] py-0.5">
             {([[E2("CASA", "HOME"), p.casa ?? "—"], [E2("DÍA", "DAY"), `${dia} · ${win}`], ...(p.nota ? [[E2("QUÉ REVISAR", "WHAT TO CHECK"), `«${p.nota}»`]] : []), ...(p.acceso ? [[E2("CÓMO ENTRAR", "ACCESS"), p.acceso]] : [])] as [string, string][]).map(([k, v], n) => (
-              <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-pretty text-right text-[13px] font-semibold leading-[1.45]">{v}</span></div>))}
+              <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-pretty text-right text-[13px] font-semibold leading-[1.45]">{v}</span></div>))}
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2">{acts.map(([icon, l, on]) => <div key={l} className="grid"><Button variant="secondary" size="md" icon={icon} disabled={ocupado} onClick={on}>{l}</Button></div>)}

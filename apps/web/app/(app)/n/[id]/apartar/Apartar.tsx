@@ -18,7 +18,7 @@ type N = "Icon" | "Button" | "StepHeader" | "DateStrip" | "TimeSlots" | "Payment
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, StepHeader, DateStrip, TimeSlots, PaymentSummary } = UI as unknown as Record<N, ComponentType<any>>;
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const dinero = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
 const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
 const hL = (m: number) => { const h = Math.floor(m / 60) % 24, mm = m % 60; return `${h % 12 || 12}${mm ? `:${String(mm).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`; };
@@ -121,7 +121,7 @@ export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApa
   const notaB = (
     <div className={`flex flex-col gap-4 p-4 ${caja}`}>
       <div>
-        <div className="flex justify-between gap-2.5"><span className="font-display text-[16px] font-extrabold tracking-[-0.03em]">{E2("Nota para la tienda", "Note for the store")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length} / 200</span></div>
+        <div className="flex justify-between gap-2.5"><span className="font-display text-[16px] font-extrabold tracking-[-0.03em]">{E2("Nota para la tienda", "Note for the store")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{nota.length} / 200</span></div>
         <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 200))} rows={2} aria-label={E2("Nota para la tienda", "Note for the store")} placeholder={E2("Ej.: es para regalo…", "E.g. it is a gift…")} className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
       </div>
       <div className="flex items-center gap-3">
@@ -145,7 +145,7 @@ export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApa
   const resumen = (
     <div className={`overflow-hidden ${caja}`}>
       <div className="border-b border-ink/[.07] px-[15px] py-3.5"><div className={K}>{E2("RESUMEN", "SUMMARY")}</div><div className="mt-[5px] font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{E2("Tu apartado", "Your hold")}</div><div className="mt-1 font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{o.negocio.nombre.toUpperCase()}</div></div>
-      <div className="px-[15px] py-0.5">{filas.map(([k, v2], z) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${z ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v2}</span></div>)}</div>
+      <div className="px-[15px] py-0.5">{filas.map(([k, v2], z) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${z ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v2}</span></div>)}</div>
     </div>
   );
   const pay = { screenLabel: "Apartado · pago", priceLabel: E2("PRECIO", "PRICE"), lines: L.map((l) => ({ label: `${nm(l.a.n)} · ${talla(l)}× ${l.qty}`, value: dinero(l.a.precio * l.qty) })).concat(envio ? [{ label: E2("Envío", "Shipping"), value: fee ? dinero(fee) : E2("Gratis", "Free") }] : []), totalLabel: envio || conPlan ? E2("Total", "Total") : E2("En la caja", "At the register"), total: dinero(tot), howLabel: E2("CÓMO SE PAGA", "HOW YOU PAY"), bar: null,

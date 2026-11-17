@@ -14,7 +14,7 @@ import { uuid } from "@/lib/uuid";
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const LIGHTS: [string, string, string][] = [["ce", "Check engine", "Check engine"], ["bat", "Batería", "Battery"], ["temp", "Temperatura", "Temperature"], ["abs", "Frenos o ABS", "Brakes or ABS"], ["oil", "Aceite", "Oil"], ["tpms", "Presión de gomas", "Tire pressure"]];
 const AREAS: [string, string, string][] = [["cocina", "Cocina", "Kitchen"], ["bano", "Baño", "Bathroom"], ["sotano", "Sótano", "Basement"], ["cuarto", "Cuarto", "Bedroom"], ["sala", "Sala", "Living room"], ["afuera", "Afuera", "Outside"], ["toda", "Toda la casa", "Whole house"]];
@@ -85,7 +85,7 @@ export function PreEstimado({ op, svcId, es, yo }: { op: OficiosPublico; svcId: 
             <div className="mt-2 flex flex-wrap gap-2">{AREAS.map(([k, l1, l2]) => <Chip key={k} variant={area === k ? "selected" : "filter"} onClick={() => setArea(area === k ? null : k)}>{es ? l1 : l2}</Chip>)}</div></div>
         )}
         <div>
-          <div className="flex justify-between gap-2.5"><span className={K}>{E2("CUÉNTANOS", "TELL US")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length} / 400</span></div>
+          <div className="flex justify-between gap-2.5"><span className={K}>{E2("CUÉNTANOS", "TELL US")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{nota.length} / 400</span></div>
           <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 400))} rows={3} aria-label={auto ? E2("Qué le pasa", "What is wrong") : E2("Qué pasa", "What is going on")}
             placeholder={auto ? E2("Ej.: chilla al frenar desde hace una semana, más en la mañana…", "E.g. squeals when braking for a week, worse in the morning…") : E2("Ej.: gotea debajo del fregadero desde ayer…", "E.g. leaking under the sink since yesterday…")}
             className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
@@ -102,7 +102,7 @@ export function PreEstimado({ op, svcId, es, yo }: { op: OficiosPublico; svcId: 
         )}
       </div>
       <div className={`flex flex-col gap-3 p-4 ${caja}`}>
-        <div className="flex items-baseline justify-between gap-2.5"><span className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{E2("Fotos", "Photos")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{fotos.length} / 6</span></div>
+        <div className="flex items-baseline justify-between gap-2.5"><span className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{E2("Fotos", "Photos")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{fotos.length} / 6</span></div>
         <div className="text-[12px] font-medium leading-[1.5] text-ink/60">{auto ? E2("La pieza, la luz del tablero o donde suena.", "The part, the dash light or where the noise is.") : E2("Lo que se ve: la fuga, el equipo, la pared o la medida.", "What you can see: the leak, the equipment, the wall or the size.")}</div>
         <div className="flex flex-wrap gap-2.5">
           {fotos.map((f) => <span key={f.id} className="relative h-[76px] w-[76px] rounded-[13px] bg-photo-bg" style={{ backgroundImage: `url(${f.url})`, backgroundSize: "cover" }}><button type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="absolute -right-1.5 -top-1.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-ink"><Icon name="close" size={10} color="var(--tl-white)" strokeWidth={2.6} /></button></span>)}

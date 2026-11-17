@@ -25,8 +25,9 @@ function noEsTextoTw(antes) {
   const pre = /([\w:-]+)-$/.exec(antes.slice(0, a));
   return !!pre && !/(^|:)text$/.test(pre[1]);
 }
-/* Tailwind: text-ink/40…55 (con o sin variante: lg:, hover:, placeholder:) → text-ink/60. */
-const TW = /(^|[\s"'`:])text-ink\/(40|45|50|55)(?![\d])/g;
+/* Tailwind: text-ink/40…55 y su forma con corchetes text-ink/[.34]…[.59] (también [0.42]) (con o sin variante: lg:, hover:, placeholder:) → text-ink/60.
+   La forma con corchetes se escapaba (17 nov, axe color-contrast en la ficha: text-ink/[.42] = 2,8:1). Solo texto: bg-ink/[.42], border-ink/[.08]… no casan. */
+const TW = /(^|[\s"'`:])text-ink\/(?:(40|45|50|55)(?![\d])|\[0?\.([45]|3[4-9]|4\d|5\d)\d?\])/g;
 export function contrasteLinea(l) {
   return l.replace(BAJO, (m, _a, i) => (NO_TEXTO.test(propiedad(l.slice(0, i))) || noEsTextoTw(l.slice(0, i)) ? m : GRIS_AA)).replace(TW, "$1text-ink/60");
 }

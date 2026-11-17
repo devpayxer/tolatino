@@ -16,7 +16,7 @@ import { uuid } from "@/lib/uuid";
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const dinero = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
 const AREAS: [string, string, string][] = [["cocina", "Cocina", "Kitchen"], ["bano", "Baño", "Bathroom"], ["sotano", "Sótano", "Basement"], ["techo", "Techo", "Roof"], ["afuera", "Afuera", "Outside"], ["toda", "Toda la casa", "Whole house"]];
@@ -78,7 +78,7 @@ export function Presupuestos({ op, svcId, cands, es, yo, plazoH }: { op: Oficios
         <div><div className={K}>{E2("¿DÓNDE?", "WHERE?")}</div>
           <div className="mt-2 flex flex-wrap gap-2">{AREAS.map(([k, l1, l2]) => <Chip key={k} variant={areas.includes(k) ? "selected" : "filter"} onClick={() => setAreas(areas.includes(k) ? areas.filter((z) => z !== k) : [...areas, k])}>{es ? l1 : l2}</Chip>)}</div></div>
         <div>
-          <div className="flex justify-between gap-2.5"><span className={K}>{E2("CUÉNTALES", "TELL THEM")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length} / 500</span></div>
+          <div className="flex justify-between gap-2.5"><span className={K}>{E2("CUÉNTALES", "TELL THEM")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{nota.length} / 500</span></div>
           <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 500))} rows={3} aria-label={E2("Qué quieres hacer", "What you want done")}
             placeholder={E2("Ej.: cambiar la bañera por ducha, loza nueva en piso y pared…", "E.g. replace the tub with a shower, new floor and wall tile…")}
             className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
@@ -88,7 +88,7 @@ export function Presupuestos({ op, svcId, cands, es, yo, plazoH }: { op: Oficios
             className="mt-2 box-border h-11 w-full rounded-[13px] border border-ink/[.12] px-[13px] text-[13px] font-medium outline-none" /></div>
       </div>
       <div className={`flex flex-col gap-3 p-4 ${caja}`}>
-        <div className="flex items-baseline justify-between gap-2.5"><span className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{E2("Fotos", "Photos")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{fotos.length} / 6</span></div>
+        <div className="flex items-baseline justify-between gap-2.5"><span className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{E2("Fotos", "Photos")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{fotos.length} / 6</span></div>
         <div className="text-[12px] font-medium leading-[1.5] text-ink/60">{E2("De todo el espacio y de cerca donde está el problema.", "Of the whole space and close up where the problem is.")}</div>
         <div className="flex flex-wrap gap-2.5">
           {fotos.map((f) => <span key={f.id} className="relative h-[76px] w-[76px] rounded-[13px] bg-photo-bg" style={{ backgroundImage: `url(${f.url})`, backgroundSize: "cover" }}><button type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="absolute -right-1.5 -top-1.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-ink"><Icon name="close" size={10} color="var(--tl-white)" strokeWidth={2.6} /></button></span>)}

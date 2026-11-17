@@ -15,7 +15,7 @@ type N = "Icon" | "Button" | "Chip" | "Tag" | "ReviewCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, Tag, ReviewCard } = UI as unknown as Record<N, ComponentType<any>>;
 
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-[15px]";
 import { PII, PRIVADO } from "@/lib/resenas-filtro";
 type Foto = { id: string; url: string };
@@ -303,7 +303,7 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
   );
   const importa = grupos.length > 0 && (
     <div data-screen-label="Reseña · lo que importa" className={caja}>
-      <div className="flex justify-between gap-2.5"><span className={K}>{rub === "fe" ? E2("LO QUE IMPORTA EN UNA IGLESIA", "WHAT MATTERS IN A CHURCH") : rub === "inm" ? E2("LO QUE IMPORTA EN BIENES RAÍCES", "WHAT MATTERS IN REAL ESTATE") : rub === "dealer" ? E2("LO QUE IMPORTA AL COMPRAR UN CARRO", "WHAT MATTERS WHEN BUYING A CAR") : rub === "edu" ? E2("LO QUE IMPORTA EN UN CURSO", "WHAT MATTERS IN A COURSE") : rub === "ninos" ? E2("LO QUE IMPORTA CON LOS NIÑOS", "WHAT MATTERS WITH KIDS") : rub === "dep" ? E2("LO QUE IMPORTA EN DEPORTE", "WHAT MATTERS IN SPORTS") : rub === "noche" ? E2("LO QUE IMPORTA DE NOCHE", "WHAT MATTERS AT NIGHT") : rub === "fiesta" ? E2("LO QUE IMPORTA EN UNA FIESTA", "WHAT MATTERS AT A PARTY") : rub === "trans" ? E2("LO QUE IMPORTA EN UN VIAJE", "WHAT MATTERS ON A TRIP") : rub === "merc" ? E2("LO QUE IMPORTA EN UN MERCADO", "WHAT MATTERS AT A MARKET") : rub === "tienda" ? E2("LO QUE IMPORTA EN UNA TIENDA", "WHAT MATTERS AT A STORE") : rub === "hogar" ? E2("LO QUE IMPORTA EN EL HOGAR", "WHAT MATTERS AT HOME") : rub === "salud" ? E2("LO QUE IMPORTA EN SALUD", "WHAT MATTERS IN HEALTH") : rub === "pro" ? E2("LO QUE IMPORTA EN UN TRÁMITE", "WHAT MATTERS IN A CASE") : rub === "auto" ? E2("LO QUE IMPORTA EN AUTOS", "WHAT MATTERS WITH CARS") : E2("LO QUE IMPORTA EN LA COMIDA", "WHAT MATTERS IN FOOD")}</span><span className="font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/[.42]">{E2("OPCIONAL", "OPTIONAL")}</span></div>
+      <div className="flex justify-between gap-2.5"><span className={K}>{rub === "fe" ? E2("LO QUE IMPORTA EN UNA IGLESIA", "WHAT MATTERS IN A CHURCH") : rub === "inm" ? E2("LO QUE IMPORTA EN BIENES RAÍCES", "WHAT MATTERS IN REAL ESTATE") : rub === "dealer" ? E2("LO QUE IMPORTA AL COMPRAR UN CARRO", "WHAT MATTERS WHEN BUYING A CAR") : rub === "edu" ? E2("LO QUE IMPORTA EN UN CURSO", "WHAT MATTERS IN A COURSE") : rub === "ninos" ? E2("LO QUE IMPORTA CON LOS NIÑOS", "WHAT MATTERS WITH KIDS") : rub === "dep" ? E2("LO QUE IMPORTA EN DEPORTE", "WHAT MATTERS IN SPORTS") : rub === "noche" ? E2("LO QUE IMPORTA DE NOCHE", "WHAT MATTERS AT NIGHT") : rub === "fiesta" ? E2("LO QUE IMPORTA EN UNA FIESTA", "WHAT MATTERS AT A PARTY") : rub === "trans" ? E2("LO QUE IMPORTA EN UN VIAJE", "WHAT MATTERS ON A TRIP") : rub === "merc" ? E2("LO QUE IMPORTA EN UN MERCADO", "WHAT MATTERS AT A MARKET") : rub === "tienda" ? E2("LO QUE IMPORTA EN UNA TIENDA", "WHAT MATTERS AT A STORE") : rub === "hogar" ? E2("LO QUE IMPORTA EN EL HOGAR", "WHAT MATTERS AT HOME") : rub === "salud" ? E2("LO QUE IMPORTA EN SALUD", "WHAT MATTERS IN HEALTH") : rub === "pro" ? E2("LO QUE IMPORTA EN UN TRÁMITE", "WHAT MATTERS IN A CASE") : rub === "auto" ? E2("LO QUE IMPORTA EN AUTOS", "WHAT MATTERS WITH CARS") : E2("LO QUE IMPORTA EN LA COMIDA", "WHAT MATTERS IN FOOD")}</span><span className="font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/60">{E2("OPCIONAL", "OPTIONAL")}</span></div>
       <div className="mt-0.5 flex flex-col">
         {grupos.map((g) => (
           <div key={g.key} className="border-b border-ink/[.06] py-[13px]">
@@ -327,7 +327,7 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
   );
   const recs = b.food && d.pool.length > 0 && (
     <div className={caja}>
-      <div className="flex justify-between gap-2.5"><span className={K}>{E2("¿QUÉ RECOMIENDAS?", "WHAT DO YOU RECOMMEND?")}</span><span className="font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/[.42]">{E2("OPCIONAL", "OPTIONAL")}</span></div>
+      <div className="flex justify-between gap-2.5"><span className={K}>{E2("¿QUÉ RECOMIENDAS?", "WHAT DO YOU RECOMMEND?")}</span><span className="font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/60">{E2("OPCIONAL", "OPTIONAL")}</span></div>
       <div className="mt-[5px] text-[12px] font-medium leading-[1.45] text-ink/60">{E2('Sale en tu reseña y en "Los más recomendados".', 'Shows in your review and in "Most recommended".')}</div>
       <div className="mt-[11px] flex flex-wrap gap-[7px]">
         {d.pool.map((p) => { const on = recSel.includes(p.id); return <Chip key={p.id} variant={on ? "selected" : "filter"} onClick={() => setRec(on ? recSel.filter((z) => z !== p.id) : [...recSel, p.id])}>{es ? p.name.es : p.name.en || p.name.es}</Chip>; })}
@@ -352,7 +352,7 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
   );
   const fotosB = (
     <div className={caja}>
-      <div className="flex justify-between gap-2.5"><span className={K}>{E2("FOTOS · OPCIONAL", "PHOTOS · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{fotos.length} / 6</span></div>
+      <div className="flex justify-between gap-2.5"><span className={K}>{E2("FOTOS · OPCIONAL", "PHOTOS · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{fotos.length} / 6</span></div>
       <div className="mt-[11px] flex flex-wrap gap-2">
         {fotos.map((p) => (
           <div key={p.id} className="relative size-[76px] rounded-xl bg-photo-bg" style={{ backgroundImage: `url(${p.url})`, backgroundSize: "cover", backgroundPosition: "center" }}>

@@ -110,7 +110,7 @@ export function Orden({ o, es, cambio = null }: { o: OrdenVista; es: boolean; ca
   const boletos = (d: boolean) => (cancelada ? null : (
     <div data-screen-label="Orden · boletos">
       <div className={`flex items-baseline justify-between gap-2 ${d ? "" : "px-4"}`}>
-        <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{ev.pasado ? E2("TUS BOLETOS", "YOUR TICKETS") : E2("MUÉSTRALO EN LA PUERTA · SUBE EL BRILLO", "SHOW IT AT THE DOOR · TURN UP THE BRIGHTNESS")}</span>
+        <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{ev.pasado ? E2("TUS BOLETOS", "YOUR TICKETS") : E2("MUÉSTRALO EN LA PUERTA · SUBE EL BRILLO", "SHOW IT AT THE DOOR · TURN UP THE BRIGHTNESS")}</span>
         <span className="font-mono text-[10px] font-bold tracking-[0.1em] text-ink/60">{`${vivos}/${o.boletos.filter((b) => !b.envio).length}`}</span>
       </div>
       <div className={d ? "mt-3 grid grid-cols-2 gap-4" : "hs mt-3 flex gap-3 overflow-x-auto px-4 pb-1"}>
@@ -119,7 +119,7 @@ export function Orden({ o, es, cambio = null }: { o: OrdenVista; es: boolean; ca
       <div className={`mt-2.5 text-[11.5px] font-medium leading-[1.5] text-ink/60 ${d ? "" : "px-4"}`}>{E2("Tu QR es la entrada; no hace falta imprimir. Si no hay señal, el código funciona igual. Toca un boleto para verlo grande.", "Your QR is your entry; no need to print. Without signal, the code still works. Tap a ticket to see it big.")}</div>
       {enviando.length > 0 && (
         <div data-screen-label="Orden · enviados" className={`mt-3 flex flex-col gap-2 ${d ? "" : "px-4"}`}>
-          <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("ENVIADOS · ESPERANDO QUE LOS RECIBAN", "SENT · WAITING TO BE RECEIVED")}</div>
+          <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{E2("ENVIADOS · ESPERANDO QUE LOS RECIBAN", "SENT · WAITING TO BE RECEIVED")}</div>
           {enviando.map((b) => (
             <div key={b.code} data-enviado={b.code} className={`flex items-center gap-3 px-3.5 py-3 ${caja}`}>
               <span className="grid size-9 flex-none place-items-center rounded-[11px] bg-pro/[.16]"><Icon name="share" size={16} color="var(--tl-pro-ink)" /></span>

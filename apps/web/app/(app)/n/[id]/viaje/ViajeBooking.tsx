@@ -20,7 +20,7 @@ import { uuid } from "@/lib/uuid";
 type N = "Icon" | "Button" | "StepHeader" | "DateStrip" | "TimeSlots" | "PaymentSummary" | "DepositOutcomes" | "QtyStepper";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, StepHeader, DateStrip, TimeSlots, PaymentSummary, DepositOutcomes, QtyStepper } = UI as unknown as Record<N, ComponentType<any>>;
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const dinero = (c: number) => { const d = c / 100; return `$${d % 1 ? d.toFixed(2) : Math.round(d).toLocaleString("en-US")}`; };
 const horaL = (m: number) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).padStart(2, "0")} ${m < 720 ? "AM" : "PM"}`;
@@ -84,7 +84,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
     if (r.ok && r.id && r.url) setFotos((L) => [...L, { id: r.id!, url: r.url! }]); else setError(r.mensaje ? (es ? r.mensaje.es : r.mensaje.en) : E2("No se pudo subir la foto.", "Could not upload the photo."));
   };
   const campo = (k: keyof typeof dest, l: string, ph: string, max: number, tipo = "text") => (
-    <label className="flex flex-col gap-1.5"><span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/[.42]">{l}</span>
+    <label className="flex flex-col gap-1.5"><span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{l}</span>
       <input type={tipo} value={dest[k]} maxLength={max} placeholder={ph} aria-label={l} onChange={(e) => setDest({ ...dest, [k]: e.target.value.slice(0, max) })} className="box-border w-full rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13.5px] font-medium outline-none" /></label>);
   const dowN = new Date(`${dia.ymd}T12:00:00Z`).getUTCDay(), diaL = `${(es ? DL.es : DL.en)[dowN]} ${Number(dia.ymd.slice(8))}`;
   const cuando = sel ? `${cap(diaL)} · ${horaL(sel.m)}` : "—";
@@ -119,7 +119,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
         {esCaja && fila(E2("Cajas", "Boxes"), `${dinero(s.cents)} ${E2("cada una · hasta 4", "each · up to 4")}`, boxes, () => setBoxes(Math.max(1, boxes - 1)), () => setBoxes(Math.min(4, boxes + 1)))}
         {cot && (
           <div className="flex flex-col gap-2.5">
-            <div className="flex items-baseline justify-between gap-2.5"><span className={K}>{E2("FOTOS", "PHOTOS")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{fotos.length} / 6</span></div>
+            <div className="flex items-baseline justify-between gap-2.5"><span className={K}>{E2("FOTOS", "PHOTOS")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{fotos.length} / 6</span></div>
             <div className="text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Cuartos, muebles grandes y escaleras. Con fotos el precio es cerrado.", "Rooms, large furniture and stairs. With photos the price is fixed.")}</div>
             <div className="flex flex-wrap gap-2.5">
               {fotos.map((f) => <span key={f.id} className="relative h-[76px] w-[76px] rounded-[13px] bg-photo-bg" style={{ backgroundImage: `url(${f.url})`, backgroundSize: "cover" }}><button type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="absolute -right-1.5 -top-1.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-ink"><Icon name="close" size={10} color="var(--tl-white)" strokeWidth={2.6} /></button></span>)}
@@ -156,7 +156,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
             <input value={drop} maxLength={200} onChange={(e) => setDrop(e.target.value.slice(0, 200))} aria-label={E2("A dónde va", "Where it is going")} placeholder={E2("Ej.: 120 Alter St, Hazleton · 2.º piso", "E.g. 120 Alter St, Hazleton · 2nd floor")} className="box-border w-full rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13.5px] font-medium outline-none" /></label>)}
       </>)}
       <div>
-        <div className="flex justify-between gap-2.5"><span className={K}>{E2("NOTA · OPCIONAL", "NOTE · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length}/200</span></div>
+        <div className="flex justify-between gap-2.5"><span className={K}>{E2("NOTA · OPCIONAL", "NOTE · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{nota.length}/200</span></div>
         <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 200))} rows={2} aria-label={E2("Nota", "Note")} placeholder={E2("Ej.: llevo un coche de bebé", "E.g. I'm bringing a stroller")} className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
       </div>
       {lineaNota}
@@ -183,7 +183,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
   const resumen = (
     <div className={`overflow-hidden ${caja}`}>
       <div className="border-b border-ink/[.07] px-[15px] py-3.5"><div className={K}>{E2("TU VIAJE", "YOUR TRIP")}</div><div className="mt-[5px] font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{b.negocio.nombre}</div></div>
-      <div className="px-[15px] py-0.5">{filas.map(([k, v2], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v2}</span></div>)}</div>
+      <div className="px-[15px] py-0.5">{filas.map(([k, v2], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v2}</span></div>)}</div>
     </div>
   );
   const lines = asiento ? [{ label: `${E2("Adultos", "Adults")} · ${adults} × ${dinero(s.cents)}`, value: dinero(adults * s.cents) }, ...(kids ? [{ label: `${E2("Niños", "Children")} · ${kids} × ${dinero(child)}`, value: dinero(kids * child) }] : []), ...(bagsX ? [{ label: `${E2("Maletas extra", "Extra bags")} · ${bagsX} × ${dinero(b.aj.extra ?? 0)}`, value: dinero(bagsX * (b.aj.extra ?? 0)) }] : [])]

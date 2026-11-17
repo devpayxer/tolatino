@@ -15,7 +15,7 @@ type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const dinero = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
 const DIAS = [1, 2, 3, 7] as const;
 const costo = (p: number, d: number) => (d >= 7 ? p * 5 : p * d);

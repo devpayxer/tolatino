@@ -582,7 +582,7 @@ function Pregunta({ mn }: { mn: Mn }) {
   );
   const otra = a.kind === "again" ? (
     <div className="hs flex flex-col gap-2.5 overflow-y-auto px-5 pb-[22px] pt-[18px]">
-      <div className="font-mono text-[10px] font-bold tracking-[0.18em] text-ink/[.42]">{a.sameK}</div>
+      <div className="font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60">{a.sameK}</div>
       {a.rows.map((x, k) => "onAdd" in x && (
         <button key={k} type="button" onClick={x.onAdd} className="flex items-center gap-3 rounded-[15px] border-[1.5px] border-ink py-[13px] pl-[15px] pr-3 text-left">
           <div className="min-w-0 flex-1">

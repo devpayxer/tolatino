@@ -34,7 +34,7 @@ export function LadoLegal({ en, actual, titulo, mas }: { en: boolean; actual: st
     <>
       {mas.length ? (
         <div className="rounded-[18px] border border-ink/[.07] bg-white px-4 py-1.5" data-screen-label="Página · más en">
-          <div className="pb-1 pt-2.5 text-ink/[.42]" style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em" }}>{`${E2("MÁS EN ", "MORE IN ")}${titulo.toUpperCase()}`}</div>
+          <div className="pb-1 pt-2.5 text-ink/60" style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em" }}>{`${E2("MÁS EN ", "MORE IN ")}${titulo.toUpperCase()}`}</div>
           {mas.map((x) => (
             <div key={x.k} role="link" tabIndex={0} aria-current={x.k === actual ? "page" : undefined} onClick={() => ir(x.k)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ir(x.k); } }}
               className={`flex cursor-pointer items-center justify-between gap-2.5 border-t border-ink/[.06] py-3 text-[13.5px] font-bold ${x.k === actual ? "text-action" : "text-ink"}`}>

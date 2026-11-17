@@ -1353,13 +1353,37 @@ const guardianes = {
       const enDs = f.startsWith("packages/ui/src/ds/");
       readFileSync(f, "utf8").split("\n").forEach((l, i) => {
         if (contrasteLinea(l) !== l)
-          falla(G, f, i + 1, `texto gris por debajo de AA (ink al 40–55 %): usa ${GRIS_AA} o text-ink/60 (node scripts/contraste-aa.mjs lo arregla${enDs ? "; en el sistema portado, node scripts/portar-sistema.mjs" : ""})`);
+          falla(G, f, i + 1, `texto gris por debajo de AA (ink al 34–59 %, también text-ink/[.42]): usa ${GRIS_AA} o text-ink/60 (node scripts/contraste-aa.mjs lo arregla${enDs ? "; en el sistema portado, node scripts/portar-sistema.mjs" : ""})`);
       });
+    }
+    // 17 nov · Atenuar con opacity una pieza que lleva texto lo deja bajo AA (la fila «no disponible» del menú: opacity .45 → 1,9–3,1:1). Se atenúa
+    // la foto y el texto va en el gris AA; el parche está en scripts/portar-sistema.mjs (MenuItemRow).
+    for (const f of ["packages/ui/src/ds/menu/MenuItemRow.js"]) {
+      if (!existsSync(f)) continue;
+      if (/opacity: off \? \.45 : 1,\n\s+cursor: off/.test(readFileSync(f, "utf8")))
+        falla(G, f, 0, "la fila «no disponible» del menú atenúa TODO con opacity (texto a 1,9–3,1:1): atenúa solo la foto y deja el texto en el gris AA (parche MenuItemRow de scripts/portar-sistema.mjs)");
     }
     const tk = existsSync("packages/ui/src/tokens.css") ? readFileSync("packages/ui/src/tokens.css", "utf8") : "";
     for (const k of ["--tl-text-muted", "--tl-text-faint", "--tl-text-3"]) {
       const m = new RegExp(`${k}:\\s*rgba\\(11,14,18,\\.(\\d+)\\)`).exec(tk);
       if (!m || parseFloat(`0.${m[1]}`) < 0.6) falla(G, "packages/ui/src/tokens.css", 0, `${k} tiene que ser ink al 60 % o más (contraste AA)`);
+    }
+  },
+
+  /* 17 nov · objetivoTactil: un botón o enlace de menos de 24 px de alto no se toca bien (WCAG 2.5.8; axe «target-size», serio). Las filas del filtro
+     de estrellas de las reseñas eran un botón de ancho completo con py-[3px] (22 px). Regla estática: un <button>/<a> en apps/web con relleno vertical
+     de 0–3 px (py-[0–3px], py-0.5, py-px) y sin min-h-6 (o mayor) / h-6+ en su clase falla. Al revés: alreves9c. */
+  objetivoTactil() {
+    const G = "objetivoTactil";
+    for (const f of codigo) {
+      if (!/^apps\/web\/app\/.*\.tsx$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        for (const m of l.matchAll(/<(button|a)\b(?:[^>]|=>)*?className=(?:"([^"]*)"|\{`([^`]*)`\})/g)) {
+          const c = m[2] ?? m[3] ?? "";
+          if (/(^|\s)py-(\[[0-3]px\]|0\.5|px|0)(\s|$)/.test(c) && !/(^|\s)(min-h-(6|7|8|9|10|11|12)|h-(6|7|8|9|10|11|12)|min-h-\[(2[4-9]|[3-9]\d)px\])(\s|$)/.test(c))
+            falla(G, f, i + 1, "botón/enlace con relleno vertical de 0–3 px y sin min-h-6: mide menos de 24 px (WCAG 2.5.8). Agrega min-h-6 o más relleno");
+        }
+      });
     }
   },
 

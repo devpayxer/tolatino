@@ -14,7 +14,7 @@ import { MapaVivo } from "@/app/_ruta/MapaVivo";
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, OrderTracker } = UI as unknown as Record<N, ComponentType<any>>;
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-line bg-white";
 const ETAPAS = ["sent", "accepted", "preparing", "ready", "picked_up"];
 // Delivery (prototipo ordVals · dl): enviado → preparando → en camino → entregado.

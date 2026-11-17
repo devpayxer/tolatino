@@ -80,12 +80,12 @@ export function FiestaEstado({ x, es }: { x: FiestaVista; es: boolean }) {
           </div>)}
         {steps.length > 0 && <div className="grid"><OrderTracker steps={steps} /></div>}
         <div data-screen-label="Fiesta · tu fiesta" className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">
-          <div className="border-b border-ink/[.07] px-[15px] py-3"><span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{vis ? E2("TU VISITA", "YOUR TOUR") : E2("TU FIESTA", "YOUR PARTY")}</span></div>
-          <div className="px-[15px] py-0.5">{rows.map(([k, v], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v}</span></div>)}</div>
+          <div className="border-b border-ink/[.07] px-[15px] py-3"><span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{vis ? E2("TU VISITA", "YOUR TOUR") : E2("TU FIESTA", "YOUR PARTY")}</span></div>
+          <div className="px-[15px] py-0.5">{rows.map(([k, v], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v}</span></div>)}</div>
         </div>
         {!vis && (
           <div data-screen-label="Fiesta · tu dinero" className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">
-            <div className="border-b border-ink/[.07] px-[15px] py-3"><span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("TU DINERO", "YOUR MONEY")}</span></div>
+            <div className="border-b border-ink/[.07] px-[15px] py-3"><span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{E2("TU DINERO", "YOUR MONEY")}</span></div>
             <div className="px-[15px] py-0.5">
               <div className="flex justify-between gap-3 py-[11px]"><span className="text-[12.5px] font-semibold">{E2("Depósito", "Deposit")}{x.pago.l4 ? <span className="ml-1.5 font-mono text-[9.5px] text-ink/60">{`${(x.pago.marca ?? "").toUpperCase()} ·· ${x.pago.l4}`}</span> : null}</span><span className="text-[12.5px] font-bold">{dep ? `${dinero(dep)}${depEstado ? ` · ${depEstado}` : ""}` : E2("No pidió", "None")}</span></div>
               <div className="flex justify-between gap-3 border-t border-ink/[.06] py-[11px]"><span className="text-[12.5px] font-semibold">{E2("Resto, el día del evento", "Rest, on the event day")}</span><span className="text-[12.5px] font-bold">{["declined", "expired", "cancelled"].includes(x.status) ? E2("No se cobra", "Not charged") : cotiza ? E2("Según el acuerdo", "Per the agreement") : `${dinero(resto)} · ${E2("a ", "to ")}${B}`}</span></div>
@@ -101,7 +101,7 @@ export function FiestaEstado({ x, es }: { x: FiestaVista; es: boolean }) {
           </div>)}
         {["declined", "expired"].includes(x.status) && x.libres.length > 0 && (
           <div data-screen-label="Fiesta · fechas libres" className="flex flex-col gap-2 rounded-[18px] border border-ink/[.07] bg-white p-4">
-            <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{`${E2("FECHAS LIBRES EN ", "FREE DATES AT ")}${B}`.toUpperCase()}</div>
+            <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{`${E2("FECHAS LIBRES EN ", "FREE DATES AT ")}${B}`.toUpperCase()}</div>
             {x.libres.map((d) => (
               <div key={d} className="flex items-center justify-between gap-3 border-t border-ink/[.06] pt-2 first:border-0 first:pt-0">
                 <span className="text-[13.5px] font-bold">{cap(diaFiesta(d, es))}</span>

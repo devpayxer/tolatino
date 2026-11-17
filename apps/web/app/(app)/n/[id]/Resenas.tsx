@@ -13,7 +13,7 @@ type N = "Icon" | "Button" | "Chip" | "ReviewCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, ReviewCard, Tag } = UI as unknown as Record<N | "Tag", ComponentType<any>>;
 
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const BIEN = "var(--tl-open-text)", MAL = "var(--tl-danger)", NEUTRO = "var(--tl-text-3)";
 
 /* «AHORA», «AYER», «HACE 3 DÍAS», «HACE 2 SEMANAS», «HACE 1 MES»… (revWhen). */
@@ -316,7 +316,7 @@ function Pocas({ v }: { v: CtlResenas }) {
       <span className="flex-none font-display text-[34px] font-extrabold leading-none tracking-[-0.05em]">{r.n}</span>
       <div className="min-w-0">
         <div className="text-[13.5px] font-bold leading-[1.3]">{r.n}{es ? " reseñas en To'Latino" : " reviews on To'Latino"}</div>
-        <div className="mt-[3px] text-[12px] font-medium leading-[1.45] text-ink/[.58]">{es ? "Con menos de 5 reseñas no mostramos promedio." : "With fewer than 5 reviews we show no average."}</div>
+        <div className="mt-[3px] text-[12px] font-medium leading-[1.45] text-ink/60">{es ? "Con menos de 5 reseñas no mostramos promedio." : "With fewer than 5 reviews we show no average."}</div>
       </div>
     </div>
   ) : (
@@ -440,7 +440,7 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
   const barras = rich && (
     <div className={desk ? "" : "min-w-0 flex-1"}>
       {r.bars.map(([n, p]) => (
-        <button key={n} type="button" onClick={() => cambiar({ star: q.star === n ? 0 : n })} className="flex w-full items-center gap-2 py-[3px]">
+        <button key={n} type="button" onClick={() => cambiar({ star: q.star === n ? 0 : n })} className="flex min-h-6 w-full items-center gap-2 py-[3px]">
           <span className="w-2 font-mono text-[10px] font-bold" style={{ color: q.star === n ? "var(--tl-action)" : "rgba(11,14,18,.6)" }}>{n}</span>
           <span className="h-1.5 flex-1 overflow-hidden rounded-[9px] bg-ink/[.08]"><span className="block h-full" style={{ width: `${p}%`, background: q.star === n ? "var(--tl-action)" : "var(--tl-ink)" }} /></span>
           <span className="w-[30px] text-right font-mono text-[9.5px] font-semibold text-ink/60">{p}%</span>
@@ -517,7 +517,7 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
         {FL.map(([k, l]) => <Chip key={k} variant={q.f === k ? "selected" : "filter"} onClick={() => cambiar({ f: k })}>{l}</Chip>)}
       </div>
       <div className="flex flex-wrap items-center gap-3.5">
-        <span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/[.42]">{E2("ORDENAR", "SORT")}</span>
+        <span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("ORDENAR", "SORT")}</span>
         {SO.map(([k, l]) => (
           <button key={k} type="button" onClick={() => cambiar({ sort: k })} className="border-b-2 pb-[3px] text-[12.5px] font-bold" style={{ color: q.sort === k ? "var(--tl-ink)" : "rgba(11,14,18,.6)", borderColor: q.sort === k ? "var(--tl-ink)" : "transparent" }}>{l}</button>
         ))}

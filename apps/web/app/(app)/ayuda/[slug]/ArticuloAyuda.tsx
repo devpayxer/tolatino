@@ -37,7 +37,7 @@ export function ArticuloAyuda({ es, ver, a, tema, mismos, vis, conSesion }: { es
   </div>;
   const mas: ReactNode = mismos.length ? (
     <div className="rounded-[18px] border border-ink/[.07] bg-white px-4 py-1.5">
-      <div className="pb-1 pt-2.5 text-ink/[.42]" style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em" }}>{`${E2("MÁS EN ", "MORE IN ")}${(tema ? L(tema.label) : "").toUpperCase()}`}</div>
+      <div className="pb-1 pt-2.5 text-ink/60" style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em" }}>{`${E2("MÁS EN ", "MORE IN ")}${(tema ? L(tema.label) : "").toUpperCase()}`}</div>
       {mismos.map((x) => (
         <div key={x.slug} role="link" tabIndex={0} onClick={() => router.push(`/ayuda/${x.slug}`)} onKeyDown={(e) => { if (e.key === "Enter") router.push(`/ayuda/${x.slug}`); }}
           className="flex cursor-pointer items-center justify-between gap-2.5 border-t border-ink/[.06] py-3 text-[13.5px] font-bold text-ink">

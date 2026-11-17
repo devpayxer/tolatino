@@ -19,7 +19,7 @@ import { uuid } from "@/lib/uuid";
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots" | "PaymentSummary" | "DepositOutcomes";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, StepHeader, DateStrip, TimeSlots, PaymentSummary, DepositOutcomes } = UI as unknown as Record<N, ComponentType<any>>;
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const dinero = (c: number) => { const d = c / 100; return `$${d % 1 ? d.toFixed(2) : Math.round(d).toLocaleString("en-US")}`; };
 const horaL = (m: number) => { const h = Math.floor(m / 60) % 24, mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
@@ -138,7 +138,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
           <div className="mt-2 flex flex-wrap gap-2">{AREAS.map(([k, l1, l2]) => <Chip key={k} variant={area === k ? "selected" : "filter"} onClick={() => setArea(area === k ? null : k)}>{es ? l1 : l2}</Chip>)}</div></div>
       )}
       <div>
-        <div className="flex justify-between gap-2.5"><span className={K}>{auto ? E2("¿QUÉ LE PASA? · OPCIONAL", "WHAT IS WRONG? · OPTIONAL") : E2("¿QUÉ PASA? · OPCIONAL", "WHAT IS HAPPENING? · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length}/400</span></div>
+        <div className="flex justify-between gap-2.5"><span className={K}>{auto ? E2("¿QUÉ LE PASA? · OPCIONAL", "WHAT IS WRONG? · OPTIONAL") : E2("¿QUÉ PASA? · OPCIONAL", "WHAT IS HAPPENING? · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{nota.length}/400</span></div>
         <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 400))} rows={3} aria-label={auto ? E2("Qué le pasa", "What is wrong") : E2("Qué pasa", "What is happening")}
           placeholder={auto ? E2("Ej.: chilla al frenar y el timón tiembla", "E.g. squeals when braking and the wheel shakes") : E2("Ej.: gotea debajo del fregadero desde ayer", "E.g. leaking under the sink since yesterday")}
           className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
@@ -187,7 +187,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
   const resumen = (
     <div className={`overflow-hidden ${caja}`}>
       <div className="border-b border-ink/[.07] px-[15px] py-3.5"><div className={K}>{auto ? E2("TU CITA", "YOUR BOOKING") : E2("TU VISITA", "YOUR VISIT")}</div><div className="mt-[5px] font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{op.negocio.nombre}</div></div>
-      <div className="px-[15px] py-0.5">{filas.map(([k, v2], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v2}</span></div>)}</div>
+      <div className="px-[15px] py-0.5">{filas.map(([k, v2], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v2}</span></div>)}</div>
     </div>
   );
   const rest = Math.max(0, total - dep);

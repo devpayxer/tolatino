@@ -1,4 +1,4 @@
-// Prueba al revés de los guardianes de 9c. contrasteTexto (texto gris por debajo de AA): el gris de una pestaña del sistema portado vuelve al 42 %,
+// Prueba al revés de los guardianes de 9c (17 nov: + text-ink/[.42] con corchetes, la fila apagada del menú con opacity y objetivoTactil: botón de < 24 px). contrasteTexto (texto gris por debajo de AA): el gris de una pestaña del sistema portado vuelve al 42 %,
 // una etiqueta del Super Admin vuelve al 50 %, una clase text-ink/45 en Mi cuenta, un text-[rgba(…,.5)] nuevo y el token --tl-text-muted al 50 %.
 // hojaAccesible: una hoja sin aria-modal, otra sin nombre, el layout sin <FocoHojas />, el gestor sin Escape y una capa nueva que se cierra al
 // tocarla sin hoja con role="dialog". tuberiaNoSeSalta: el trabajo nocturno «anchos» sin sus tres anchos o fuera de «tuberia». iconoExiste: «undo» y «download» otra vez. anchoSinSalto: un ancho que arranca en 390 y mide, y el panel sin <AnchoInicial>. impuestoSoloNuevo: la firma de Autos con max(id), la acción sin permiso y un update de tax_rules. vitalesSinPersonas: la URL en el cuerpo, la puerta sin origen, el 429 otra vez, la base antes del tope, una columna ip y el layout sin <Vitales />.
@@ -12,6 +12,10 @@ const casos = [
   ['contrasteTexto', 'apps/web/app/admin/Colas.tsx', 'letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{E("CASO", "CASE")}', 'letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>{E("CASO", "CASE")}'],
   ['contrasteTexto', 'apps/web/app/(app)/cuenta/boletos/[codigo]/Boleto.tsx', 'tracking-[0.16em] text-ink/60">{cuando}', 'tracking-[0.16em] text-ink/45">{cuando}'],
   ['contrasteTexto', 'packages/ui/src/tokens.css', '--tl-text-muted: rgba(11,14,18,.6);', '--tl-text-muted: rgba(11,14,18,.5);'],
+  ['contrasteTexto', 'apps/web/app/(app)/n/[id]/Resenas.tsx', 'tracking-[0.2em] text-ink/60";', 'tracking-[0.2em] text-ink/[.42]";'],
+  ['contrasteTexto', 'apps/web/app/(app)/n/[id]/Resenas.tsx', 'tracking-[0.14em] text-ink/60">{E2("ORDENAR"', 'tracking-[0.14em] text-ink/[0.45]">{E2("ORDENAR"'],
+  ['contrasteTexto', 'packages/ui/src/ds/menu/MenuItemRow.js', "      color: off ? 'rgba(11,14,18,.6)' : undefined,\n      cursor: off", "      opacity: off ? .45 : 1,\n      cursor: off"],
+  ['objetivoTactil', 'apps/web/app/(app)/n/[id]/Resenas.tsx', 'className="flex min-h-6 w-full items-center gap-2 py-[3px]"', 'className="flex w-full items-center gap-2 py-[3px]"'],
   ['hojaAccesible', 'apps/web/app/(app)/cuenta/Marco.tsx', '<div role="dialog" aria-modal="true" aria-label={h.title}', '<div role="dialog" aria-label={h.title}'],
   ['hojaAccesible', 'apps/web/app/(app)/cuenta/Marco.tsx', '<div role="dialog" aria-modal="true" aria-label={h.title}', '<div role="dialog" aria-modal="true"'],
   ['hojaAccesible', 'apps/web/app/layout.tsx', '<FocoHojas />', ''],
@@ -33,11 +37,14 @@ const casos = [
   ['tuberiaNoSeSalta', '.github/workflows/ci.yml', 'needs: [verificar, seguridad, regresion, dispositivos, confirmacion, anchos]', 'needs: [verificar, seguridad, regresion, dispositivos, confirmacion]'],
 ];
 const crear = [
+  ['objetivoTactil', 'apps/web/app/admin/TactilAlReves.tsx', 'export const T = () => <button type="button" className="flex w-full py-0.5">x</button>;\n'],
   ['contrasteTexto', 'apps/web/app/admin/ContrasteAlReves.tsx', 'export const X = () => <span className="text-[rgba(11,14,18,.5)]">gris</span>;\n'],
   ['impuestoSoloNuevo', 'apps/web/lib/impuesto-al-reves.ts', 'export const x = "update tax_rules set parts_bp = 0";\n'],
   ['hojaAccesible', 'apps/web/app/admin/CapaAlReves.tsx', 'export const C = ({ c }: { c: () => void }) => <div onClick={c} className="fixed inset-0 bg-ink/50"><div>hoja</div></div>;\n'],
 ];
 const derecho = [
+  ['objetivoTactil', 'apps/web/app/admin/TactilAlDerecho.tsx', 'export const U = () => <button type="button" className="flex min-h-6 w-full py-[3px]">x</button>;\n'],
+  ['contrasteTexto', 'apps/web/app/admin/BracketAlDerecho.tsx', 'export const V = () => <div className="bg-ink/[.42] border-ink/[.45] shadow-ink/[.5]" />;\n'],
   ['contrasteTexto', 'apps/web/app/admin/ContrasteAlDerecho.tsx', 'export const Y = () => <div className="shadow-[0_8px_20px_rgba(11,14,18,.5)]" style={{ boxShadow: "0 2px 6px rgba(11,14,18,.45)", border: "1px solid rgba(11,14,18,.4)" }} />;\n'],
 ];
 let bien = 0, total = 0;

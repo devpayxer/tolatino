@@ -15,7 +15,7 @@ import { ReportarContenido } from "../../ReportarContenido";
 type N = "Icon" | "Button" | "Chip" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, Tag } = UI as unknown as Record<N, ComponentType<any>>;
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-[15px]";
 
 export function Vacante({ v, negocio, sesion, es }: { v: VacanteDet; negocio: string; sesion: boolean; es: boolean }) {

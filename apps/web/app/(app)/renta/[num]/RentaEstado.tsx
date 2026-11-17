@@ -98,9 +98,9 @@ export function RentaEstado({ r, es, pago }: { r: RentaVista; es: boolean; pago:
         <div className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">
           <div className="flex items-center gap-3 border-b border-ink/[.07] px-[15px] py-3">
             {r.foto && <span className="h-11 w-11 flex-none rounded-xl bg-photo-bg" style={{ backgroundImage: `url(${r.foto})`, backgroundSize: "cover", backgroundPosition: "center" }} />}
-            <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("TU RENTA", "YOUR RENTAL")}</span></div>
+            <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{E2("TU RENTA", "YOUR RENTAL")}</span></div>
           <div className="px-[15px] py-0.5">{rows.map(([k, v], n) => (
-            <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-pretty text-right text-[13px] font-semibold leading-[1.45]">{v}</span></div>))}</div>
+            <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-pretty text-right text-[13px] font-semibold leading-[1.45]">{v}</span></div>))}</div>
         </div>
         {(r.st === "held" || r.st === "out") && r.dep > 0 && <div className="flex items-start gap-2 rounded-[14px] bg-white px-3.5 py-3"><span className="grid flex-none pt-0.5"><Icon name="shield" size={14} color="var(--tl-open-text)" /></span><span className="text-pretty text-[12px] font-semibold leading-[1.45] text-ink/70">{E2("Si llega dañada, te enseñan el daño con foto antes de descontar del depósito.", "If damaged, they show you with a photo before deducting from the deposit.")}</span></div>}
         {acts.length > 0 && <div className="grid grid-cols-2 gap-2">{acts.map(([icon, l, on]) => <div key={l} className="grid"><Button variant="secondary" size="md" icon={icon} disabled={ocupado} onClick={on}>{l}</Button></div>)}

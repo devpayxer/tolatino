@@ -21,7 +21,7 @@ const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 const hm2m = (v: string) => { const [h = 0, m = 0] = v.split(":").map(Number); return h * 60 + m; };
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-[15px]";
 const AT = [["timbre", "Toca el timbre", "Ring the bell"], ["noTimbre", "No toques el timbre", "Don't ring the bell"], ["llamar", "Llámame al llegar", "Call me on arrival"], ["texto", "Escríbeme al llegar", "Text me on arrival"]] as const;
 const LB: Record<string, [string, string]> = { casa: ["Casa", "Home"], trabajo: ["Trabajo", "Work"], otra: ["Otra", "Other"] };
@@ -277,7 +277,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
                 </div>
                 <div className="mt-3.5 font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("AL LLEGAR", "ON ARRIVAL")}</div>
                 <div className="mt-2 flex flex-wrap gap-[7px]">{AT.map(([k, a, b]) => <Chip key={k} variant={at.includes(k) ? "selected" : "filter"} onClick={() => togAt(k)}>{es ? a : b}</Chip>)}</div>
-                <div className="mt-3.5 flex items-baseline justify-between gap-2.5"><span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("INSTRUCCIONES PARA EL REPARTIDOR", "NOTES FOR THE DRIVER")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length}/200</span></div>
+                <div className="mt-3.5 flex items-baseline justify-between gap-2.5"><span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("INSTRUCCIONES PARA EL REPARTIDOR", "NOTES FOR THE DRIVER")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{nota.length}/200</span></div>
                 <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 200))} placeholder={E2("Portón, piso, dónde estacionar…", "Gate, floor, where to park…")} aria-label={E2("Instrucciones para el repartidor", "Notes for the driver")} rows={2}
                   className="mt-2 w-full resize-none rounded-[13px] border border-ink/[.12] bg-white px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] text-ink outline-none" />
                 {/* La foto al dejarlo y la espera de 5 min las hace la app Repartidor (aún sin diseño): no se promete aquí hasta que exista. */}

@@ -17,7 +17,7 @@ import { evtPagar, evtSoltar } from "../../acciones-boletos";
 type N = "Icon" | "Button" | "StepHeader" | "PaymentSummary";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, StepHeader, PaymentSummary } = UI as unknown as Record<N, ComponentType<any>>;
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 
 export function Pagar({ p, es, pago }: { p: PantallaPago; es: boolean; pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } }) {

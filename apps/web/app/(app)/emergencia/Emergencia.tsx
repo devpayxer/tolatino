@@ -14,7 +14,7 @@ import { uuid } from "@/lib/uuid";
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const dinero = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
 export type OpcionEm = { ek: string; t: { es: string; en: string }; n: number; lo: number; hi: number };
@@ -81,7 +81,7 @@ export function Emergencia({ opciones, casa: casa0, es, yo, desde, ek0, linea911
           <div><div className={K}>{E2("ELIGE UNO", "PICK ONE")}</div>
             <div className="mt-2 flex flex-wrap gap-2">{opciones.map((x) => <Chip key={x.ek} variant={ek === x.ek ? "selected" : "filter"} onClick={() => setEk(ek === x.ek ? null : x.ek)}>{es ? x.t.es : x.t.en}</Chip>)}</div></div>
           <div>
-            <div className="flex justify-between gap-2.5"><span className={K}>{E2("CUÉNTALES · OPCIONAL", "TELL THEM · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length} / 300</span></div>
+            <div className="flex justify-between gap-2.5"><span className={K}>{E2("CUÉNTALES · OPCIONAL", "TELL THEM · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{nota.length} / 300</span></div>
             <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 300))} rows={2} aria-label={E2("Qué pasa", "What is going on")} placeholder={E2("Ej.: se reventó un tubo en el sótano, ya cerré la llave principal…", "E.g. a pipe burst in the basement, I already shut the main valve…")}
               className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
           </div>
@@ -90,7 +90,7 @@ export function Emergencia({ opciones, casa: casa0, es, yo, desde, ek0, linea911
               className="mt-2 box-border h-11 w-full rounded-[13px] border border-ink/[.12] px-[13px] text-[13px] font-medium outline-none" /></div>
         </div>
         <div className={`flex flex-col gap-3 p-4 ${caja}`}>
-          <div className="flex items-baseline justify-between gap-2.5"><span className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{E2("Fotos · opcional", "Photos · optional")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{fotos.length} / 3</span></div>
+          <div className="flex items-baseline justify-between gap-2.5"><span className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{E2("Fotos · opcional", "Photos · optional")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{fotos.length} / 3</span></div>
           <div className="text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Si puedes, una foto ayuda a que traigan lo que hace falta.", "If you can, a photo helps them bring what is needed.")}</div>
           <div className="flex flex-wrap gap-2.5">
             {fotos.map((f) => <span key={f.id} className="relative h-[76px] w-[76px] rounded-[13px] bg-photo-bg" style={{ backgroundImage: `url(${f.url})`, backgroundSize: "cover" }}><button type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="absolute -right-1.5 -top-1.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-ink"><Icon name="close" size={10} color="var(--tl-white)" strokeWidth={2.6} /></button></span>)}

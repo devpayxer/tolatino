@@ -17,7 +17,7 @@ import { uuid } from "@/lib/uuid";
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots" | "PaymentSummary" | "DepositOutcomes" | "QtyStepper";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, StepHeader, DateStrip, TimeSlots, PaymentSummary, DepositOutcomes, QtyStepper } = UI as unknown as Record<N, ComponentType<any>>;
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const dinero = (c: number) => { const d = c / 100; return `$${d % 1 ? d.toFixed(2) : Math.round(d).toLocaleString("en-US")}`; };
 const horaL = (m: number) => { const h = Math.floor(m / 60) % 24, mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
@@ -120,7 +120,7 @@ export function BookingFiestaV({ b, es, pago, yo, inicial }: {
         {s.k === "unid" && s.per ? <div className="text-[12px] font-medium leading-[1.45] text-ink/60">{E2(`Para ${g} invitados: ${qtyR} × ${s.u ? nm(s.u) : "unidad"} (1 cada ${s.per}).`, `For ${g} guests: ${qtyR} × ${s.u ? nm(s.u) : "unit"} (1 per ${s.per}).`)}</div> : null}
       </>)}
       <div>
-        <div className="flex justify-between gap-2.5"><span className={K}>{vis ? E2("NOTA · OPCIONAL", "NOTE · OPTIONAL") : E2("CUÉNTALES · OPCIONAL", "TELL THEM · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length}/300</span></div>
+        <div className="flex justify-between gap-2.5"><span className={K}>{vis ? E2("NOTA · OPCIONAL", "NOTE · OPTIONAL") : E2("CUÉNTALES · OPCIONAL", "TELL THEM · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{nota.length}/300</span></div>
         <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 300))} rows={3} aria-label={E2("Nota", "Note")} placeholder={vis ? E2("Ej.: vamos a ser 3 personas", "E.g. there will be 3 of us") : E2("Ej.: quince de Ashley, colores rosa y dorado…", "E.g. Ashley’s quince, pink and gold…")}
           className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
       </div>
@@ -174,7 +174,7 @@ export function BookingFiestaV({ b, es, pago, yo, inicial }: {
   const resumen = (
     <div className={`overflow-hidden ${caja}`}>
       <div className="border-b border-ink/[.07] px-[15px] py-3.5"><div className={K}>{E2("RESUMEN", "SUMMARY")}</div><div className="mt-[5px] font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{b.negocio.nombre}</div></div>
-      <div className="px-[15px] py-0.5">{filas.map(([k, v2], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v2}</span></div>)}</div>
+      <div className="px-[15px] py-0.5">{filas.map(([k, v2], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v2}</span></div>)}</div>
     </div>
   );
   const como: [string, string, number | null][] = vis ? [[E2("Hoy", "Today"), E2("La visita es gratis y no aparta la fecha.", "The tour is free and does not hold the date."), 0]]

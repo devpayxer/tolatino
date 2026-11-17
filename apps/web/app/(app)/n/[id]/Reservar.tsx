@@ -103,7 +103,7 @@ function Mia({ v }: { v: Rsv }) {
   return (
     <button type="button" onClick={m.onClick} className="flex w-full items-center gap-3 rounded-[18px] border-[1.5px] border-ink bg-white px-4 py-3.5 text-left">
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2"><span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{v.E2("TU RESERVACIÓN", "YOUR RESERVATION")}</span><Tag tone={m.tone}>{m.tag}</Tag></div>
+        <div className="flex flex-wrap items-center gap-2"><span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{v.E2("TU RESERVACIÓN", "YOUR RESERVATION")}</span><Tag tone={m.tone}>{m.tag}</Tag></div>
         <div className="mt-2 text-[13.5px] font-bold leading-[1.3]">{m.t}</div>
         <div className="mt-[3px] text-[11.5px] font-medium leading-[1.45] text-ink/60">{m.s}</div>
       </div>

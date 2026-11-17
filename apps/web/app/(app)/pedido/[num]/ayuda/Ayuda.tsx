@@ -13,7 +13,7 @@ import { ayudaPedir } from "../acciones";
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-[15px]";
 const POR_PLATO = new Set<Motivo>(["falta", "equivocado", "frio", "danado"]);
 
@@ -92,7 +92,7 @@ export function Ayuda({ p, puede, delivery, lineas, plazoH, es }: { p: PedidoVis
         </div>
       </div>)}
     <div className={caja}>
-      <div className="flex justify-between gap-2.5"><span className={K}>{k === "otro" ? E2("¿QUÉ PASÓ?", "WHAT HAPPENED?") : E2("CUÉNTANOS UN POCO MÁS (OPCIONAL)", "TELL US A LITTLE MORE (OPTIONAL)")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{txt.length}/300</span></div>
+      <div className="flex justify-between gap-2.5"><span className={K}>{k === "otro" ? E2("¿QUÉ PASÓ?", "WHAT HAPPENED?") : E2("CUÉNTANOS UN POCO MÁS (OPCIONAL)", "TELL US A LITTLE MORE (OPTIONAL)")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{txt.length}/300</span></div>
       <textarea value={txt} onChange={(e) => setTxt(e.target.value.slice(0, 300))} rows={3} aria-label={E2("Detalle", "Details")} placeholder={E2("Qué pasó y qué te gustaría que hicieran.", "What happened and what you would like them to do.")}
         className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] text-ink outline-none" />
     </div>

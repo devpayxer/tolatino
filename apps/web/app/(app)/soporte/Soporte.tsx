@@ -316,7 +316,7 @@ function Caso({ es, desk, caso, negocio, toHome, ago, toNew, hor }: {
                 {m.foto ? <a href={m.foto} target="_blank" rel="noopener noreferrer" className="block h-[140px] w-[180px] max-w-full rounded-[10px] bg-photo-bg bg-cover bg-center" style={{ backgroundImage: `url("${m.foto}")` }} aria-label={E2("Foto", "Photo")} /> : null}
                 {m.oculto ? <span className="italic opacity-70">{E2("Mensaje oculto por el equipo.", "Message hidden by the team.")}</span> : m.body ? <span className="whitespace-pre-wrap">{m.body}</span> : null}
               </div>
-              <span className="text-ink/[.42]" style={{ font: `600 8.5px ${MONO}`, letterSpacing: ".06em" }}>{ago(m.at)}</span>
+              <span className="text-ink/60" style={{ font: `600 8.5px ${MONO}`, letterSpacing: ".06em" }}>{ago(m.at)}</span>
             </div>
           );
         })}

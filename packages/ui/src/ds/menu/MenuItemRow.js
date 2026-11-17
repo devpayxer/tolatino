@@ -45,7 +45,7 @@ function MenuItemRow({
       border: card ? '1px solid rgba(11,14,18,.08)' : 'none',
       borderBottom: card ? '1px solid rgba(11,14,18,.08)' : '1px solid rgba(11,14,18,.07)',
       boxShadow: card ? ring : 'none',
-      opacity: off ? .45 : 1,
+      color: off ? 'rgba(11,14,18,.6)' : undefined,
       cursor: off ? 'default' : 'pointer',
       background: 'var(--tl-white)'
     }
@@ -104,6 +104,7 @@ function MenuItemRow({
       flex: 'none',
       background: image ? 'center/cover url(' + image + ')' : PH,
       backgroundColor: 'var(--tl-photo-bg)',
+      opacity: off ? .45 : 1,
       boxShadow: card ? 'none' : ring
     }
   }, off ? null : /*#__PURE__*/React.createElement(AddPill, {

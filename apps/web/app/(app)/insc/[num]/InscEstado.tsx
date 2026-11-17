@@ -72,7 +72,7 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
     : !empezo ? E2(`Todavía no empieza: te devolvemos ${usdI(x.mat)}.`, `It has not started yet: we refund ${usdI(x.mat)}.`)
     : E2(`Ya empezó: la ${matL.toLowerCase()} de ${usdI(x.mat)} no se devuelve.`, `It already started: the ${usdI(x.mat)} ${matL.toLowerCase()} is not refunded.`);
   const llegar = () => { if (x.negocio.direccion) abrirComoLlegar({ dir: `${x.negocio.direccion}, ${B}` }); };
-  const caja = "overflow-hidden rounded-[18px] border border-ink/[.07] bg-white", Kh = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+  const caja = "overflow-hidden rounded-[18px] border border-ink/[.07] bg-white", Kh = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
   return (
     <div data-screen-label="APP-NEG-EDU-ESTADO" className="min-h-[100dvh] bg-paper pb-10">
       <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:top-0">
@@ -99,7 +99,7 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
         {steps.length > 0 && <div className="grid"><OrderTracker steps={steps} /></div>}
         <div data-screen-label="Inscripción · tu inscripción" className={caja}>
           <div className="border-b border-ink/[.07] px-[15px] py-3"><span className={Kh}>{E2("TU INSCRIPCIÓN", "YOUR ENROLLMENT")}</span></div>
-          <div className="px-[15px] py-0.5">{rows.map(([k, v], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v}</span></div>)}</div>
+          <div className="px-[15px] py-0.5">{rows.map(([k, v], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v}</span></div>)}</div>
         </div>
         <div data-screen-label="Inscripción · tu dinero" className={caja}>
           <div className="border-b border-ink/[.07] px-[15px] py-3"><span className={Kh}>{E2("TU DINERO", "YOUR MONEY")}</span></div>

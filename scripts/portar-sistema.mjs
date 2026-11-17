@@ -467,6 +467,17 @@ for (const src of archivos) {
     if (t === antes) throw new Error("parche AdminBar: sin cambios");
   }
 
+  // MenuItemRow «no disponible hoy» (17 nov, axe color-contrast): atenuaba TODA la fila con opacity .45 y el nombre, el precio y las etiquetas
+  // quedaban a 1,9–3,1:1. Ahora se atenúa solo la foto; el texto va en el gris AA (ink al 60 %) y las etiquetas conservan su tono. Se ve apagada igual.
+  if (rel === "menu/MenuItemRow.js") {
+    const antes = t;
+    t = t.replace("      opacity: off ? .45 : 1,\n      cursor: off ? 'default' : 'pointer',\n      background: '#fff'\n",
+      "      color: off ? 'rgba(11,14,18,.6)' : undefined,\n      cursor: off ? 'default' : 'pointer',\n      background: '#fff'\n");
+    t = t.replace("      backgroundColor: '#E4E1DA',\n      boxShadow: card ? 'none' : ring\n",
+      "      backgroundColor: '#E4E1DA',\n      opacity: off ? .45 : 1,\n      boxShadow: card ? 'none' : ring\n");
+    if (t === antes || t.includes("opacity: off ? .45 : 1,\n      cursor") || (t.match(/opacity: off \? \.45 : 1/g) || []).length !== 1) throw new Error("parche MenuItemRow (no disponible, contraste): el origen cambió, revisar");
+  }
+
   // 9c: clics mudos → botones accesibles (tabla A11Y arriba).
   t = accesibilizar(t, rel);
   t = parchesAccesibilidad(t, rel);

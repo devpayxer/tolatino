@@ -12,7 +12,7 @@ import { propsTarjeta } from "../../Resenas";
 type N = "Icon" | "Button" | "ReviewCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, ReviewCard } = UI as unknown as Record<N, ComponentType<any>>;
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 
 export function Tuya({ m, es, nombre, flash }: { m: MiResena; es: boolean; nombre: string; flash: 0 | 1 | 2 }) {
   const router = useRouter();

@@ -15,7 +15,7 @@ import { diasTxt } from "@/lib/plazo-txt";
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, StepHeader, DateStrip, TimeSlots } = UI as unknown as Record<N, ComponentType<any>>;
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const horaL = (m: number) => { const h = Math.floor(m / 60) % 24, mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
@@ -78,7 +78,7 @@ export function Tramite({ pp, svcId, con0, notaDias, es, yo }: { pp: ProPublico;
         <div className="mt-2 flex flex-wrap gap-2">{SIT.map(([k, a, b]) => <Chip key={k} variant={sit === k ? "selected" : "filter"} onClick={() => setSit(sit === k ? null : k)}>{es ? a : b}</Chip>)}</div>
         {sit === "fecha" && <div className="mt-2 rounded-[12px] bg-pro/[.14] px-3 py-2.5 text-[12px] font-semibold leading-[1.5] text-pro-ink">{E2("Escribe la fecha límite en la nota. Si es en menos de 3 días, llama también a la oficina.", "Write the deadline in the note. If it is within 3 days, also call the office.")}</div>}</div>}
       <div>
-        <div className="flex justify-between gap-2.5"><span className={K}>{E2("NOTA PARA LA OFICINA · OPCIONAL", "NOTE FOR THE OFFICE · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{nota.length}/300</span></div>
+        <div className="flex justify-between gap-2.5"><span className={K}>{E2("NOTA PARA LA OFICINA · OPCIONAL", "NOTE FOR THE OFFICE · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{nota.length}/300</span></div>
         <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 300))} rows={3} aria-label={E2("Nota para la oficina", "Note for the office")} placeholder={E2("Ej.: es para renovar; vence en noviembre", "E.g. it is a renewal; it expires in November")} className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] outline-none" />
         <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/60">{E2(`Solo lo ve la oficina; nunca sale en reseñas. No escribas números de caso, A-number ni documentos. Se borra ${diasTxt(notaDias, true)} después.`, `Only the office sees it; never in reviews. Do not write case numbers, A-numbers or documents. Deleted ${diasTxt(notaDias, false)} later.`)}</div>
       </div>
@@ -112,7 +112,7 @@ export function Tramite({ pp, svcId, con0, notaDias, es, yo }: { pp: ProPublico;
   const resumen = (
     <div className={`overflow-hidden ${caja}`}>
       <div className="border-b border-ink/[.07] px-[15px] py-3.5"><div className={K}>{E2("TU CONSULTA", "YOUR CONSULTATION")}</div><div className="mt-[5px] font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{pp.negocio.nombre}</div></div>
-      <div className="px-[15px] py-0.5">{filas.map(([k, v2], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v2}</span></div>)}</div>
+      <div className="px-[15px] py-0.5">{filas.map(([k, v2], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v2}</span></div>)}</div>
     </div>
   );
   const pago = (

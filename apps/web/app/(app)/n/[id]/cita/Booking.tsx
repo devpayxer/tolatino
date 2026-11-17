@@ -19,7 +19,7 @@ type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots" |
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, StepHeader, DateStrip, TimeSlots, StaffPicker, PaymentSummary, DepositOutcomes } = UI as unknown as Record<N, ComponentType<any>>;
 
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
 const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
@@ -316,7 +316,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
       <div className="px-[15px] py-0.5">
         {filas.map(([k, v2], n) => (
           <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}>
-            <span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v2}</span>
+            <span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v2}</span>
           </div>
         ))}
       </div>

@@ -12,7 +12,7 @@ import { vacConfirmar, vacRetirar } from "../../n/[id]/acciones-jobs";
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 
 export function Solicitud({ a, es, enviada }: { a: MiSolicitud; es: boolean; enviada: boolean }) {
   const router = useRouter();

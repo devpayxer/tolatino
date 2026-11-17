@@ -12,7 +12,7 @@ type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-[15px]";
 const AREA = { salon: ["Salón", "Dining room"], terraza: ["Terraza", "Patio"], barra: ["Barra", "Bar"] } as Record<string, [string, string]>;
 const OCC = [["cumple", "Cumpleaños", "Birthday"], ["aniv", "Aniversario", "Anniversary"], ["cita", "Cita", "Date night"], ["neg", "Negocios", "Business"], ["cele", "Celebración", "Celebration"]] as const;
@@ -136,7 +136,7 @@ export function Detalles({ h, es }: { h: RsvHold; es: boolean }) {
   const necesitan = chips(E2("¿NECESITAN ALGO? · OPCIONAL", "ANYTHING YOU NEED? · OPTIONAL"), NEED, (v) => needs.includes(v), (v) => setNeeds(needs.includes(v) ? needs.filter((y) => y !== v) : [...needs, v]));
   const notaCaja = (
     <div className={caja}>
-      <div className="flex items-baseline justify-between gap-2.5"><span className={K}>{E2("NOTA PARA EL RESTAURANTE · OPCIONAL", "NOTE FOR THE RESTAURANT · OPTIONAL")}</span><span className="flex-none font-mono text-[9.5px] font-semibold text-ink/[.42]">{note.length}/200</span></div>
+      <div className="flex items-baseline justify-between gap-2.5"><span className={K}>{E2("NOTA PARA EL RESTAURANTE · OPCIONAL", "NOTE FOR THE RESTAURANT · OPTIONAL")}</span><span className="flex-none font-mono text-[9.5px] font-semibold text-ink/60">{note.length}/200</span></div>
       <textarea value={note} onChange={(e) => setNote(e.target.value.slice(0, 200))} rows={3} aria-label={E2("Nota para el restaurante", "Note for the restaurant")}
         placeholder={needs.includes("alergia") ? E2("Cuéntales las alergias: ej. mariscos, maní…", "Tell them the allergies: e.g. shellfish, peanuts…") : E2("Ej.: vamos con una persona mayor, preferimos cerca de la entrada", "E.g. coming with an older person, we prefer near the entrance")}
         className="mt-2.5 w-full resize-none rounded-[13px] border border-ink/[.12] bg-white px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] text-ink outline-none" />

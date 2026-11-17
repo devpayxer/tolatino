@@ -92,7 +92,7 @@ export function CentroAyuda({ es, q, t, temas, lista, hallados, conSesion, equip
         </div>
         <div className="sticky top-5 hidden flex-col gap-3.5 lg:flex">
           <div className="rounded-[18px] border border-ink/[.07] bg-white px-4 py-1.5">
-            <div className="pb-1 pt-2.5 text-ink/[.42]" style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em" }}>{E2("TEMAS", "TOPICS")}</div>
+            <div className="pb-1 pt-2.5 text-ink/60" style={{ font: `700 10px ${MONO}`, letterSpacing: ".16em" }}>{E2("TEMAS", "TOPICS")}</div>
             {temas.map((x) => (
               <div key={x.key} role="link" tabIndex={0} onClick={() => router.push(`/ayuda?t=${x.key}`)} onKeyDown={(e) => { if (e.key === "Enter") router.push(`/ayuda?t=${x.key}`); }}
                 className={`flex cursor-pointer items-center justify-between gap-2.5 border-t border-ink/[.06] py-3 text-[13.5px] font-bold ${t === x.key ? "text-action" : "text-ink"}`}>

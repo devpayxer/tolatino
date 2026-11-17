@@ -12,7 +12,7 @@ import { vacAplicar } from "../../../acciones-jobs";
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
-const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
+const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-[15px]";
 const campo = "flex h-12 items-center rounded-[13px] border border-ink/[.12] bg-white px-3.5";
 const inp = "min-w-0 flex-1 border-none bg-transparent text-[14px] font-semibold text-ink outline-none";
@@ -56,7 +56,7 @@ export function Aplicar({ v, negocio, nombre, tel, es }: { v: VacanteDet; negoci
       <div role="radiogroup" aria-label={E2("Experiencia", "Experience")} className="mt-[11px] flex flex-wrap gap-[7px]">
         {([0, 1, 3, 4] as const).map((k) => <Chip key={k} variant={exp === k ? "selected" : "filter"} role="radio" aria-checked={exp === k} onClick={() => setExp(k)}>{EX[k]}</Chip>)}
       </div>
-      <div className="mt-3.5 flex justify-between gap-2.5"><span className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{E2("CUÉNTALES (OPCIONAL)", "TELL THEM (OPTIONAL)")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/[.42]">{note.length}/200</span></div>
+      <div className="mt-3.5 flex justify-between gap-2.5"><span className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{E2("CUÉNTALES (OPCIONAL)", "TELL THEM (OPTIONAL)")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{note.length}/200</span></div>
       <textarea value={note} onChange={(e) => setNote(e.target.value.slice(0, 200))} rows={3} aria-label={E2("Cuéntales (opcional)", "Tell them (optional)")} placeholder={E2("Dónde has trabajado, qué sabes hacer…", "Where you have worked, what you can do…")}
         className="mt-2 box-border w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13px] font-medium leading-[1.5] text-ink outline-none" />
     </div>
