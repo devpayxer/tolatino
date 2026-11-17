@@ -409,8 +409,19 @@ const PUENTE = `if (window === window.top) {
   console.log('9 · El almacén por el puente (la app): Mis boletos guarda la copia de la llave de la sesión y otra cuenta vacía lo guardado');
   const pbo = await pagina('bol-app', 390, IOS + rot('cliente', 'ios', 7), { puente: true });
   await entrar(pbo, MARI);
-  const cod8 = sql(`select t.code from tickets t join users u on u.id = t.holder_user_id where u.phone = '+1${MARI}' order by t.id desc limit 1`);
-  ok(/^\S+$/.test(cod8), `Mari tiene un boleto (${cod8 || 'ninguno'})`);
+  // Precondición propia: un boleto de Mari en un evento de esta corrida (no depender de que otra prueba le haya dejado uno).
+  const A8 = `[a8a ${Date.now().toString(36)}]`, MARID = sql(`select id from users where phone = '+1${MARI}'`), ADMID8 = sql(`select id from users where phone = '+1${ADM}'`);
+  const EV8 = sql(`insert into events (slug, city_id, business_id, format, title, start_date, start_min, end_min, entry, status, submitted_at, approved_at, approved_by, doors_before_min, created_by, min_age, tickets_cfg, kind, span_days)
+    values ('', 'hzl', '${NEG}', 'noche', '{"es":"Boleto de la app ${A8}","en":"App ticket ${A8}"}', (now() at time zone 'America/New_York')::date + 1, 1260, 1380, 'tickets', 'live', now(), now(), '${ADMID8}', 0, '${ADMID8}', 0,
+            '[{"id":"gen","n":{"es":"General","en":"General admission"},"s":{"es":"","en":""},"p":1500,"cap":30,"off":false}]'::jsonb, 'single', 1) returning id`).split('\n')[0];
+  sql(`select evt_sincronizar_fechas(${EV8})`);
+  const F8 = sql(`select id from event_dates where event_id = ${EV8} and status = 'scheduled' order by starts_at limit 1`), TT8 = sql(`select id from ticket_types where event_id = ${EV8} and cfg_key = 'gen'`);
+  const OP8 = sql(`insert into operations (number, kind, city_id, business_id, user_id, status, details, subtotal_cents, total_cents, pay_mode, confirmed_at, client_key, is_test, pay_status)
+    select 'B-' || nextval('ticket_order_seq'), 'tickets', e.city_id, e.business_id, '${MARID}', 'confirmed', jsonb_build_object('event_id', e.id::text, 'event_date_id', '${F8}'), 1500, 1500, 'app', now(), gen_random_uuid(), true, 'captured' from events e where e.id = ${EV8} returning id`).split('\n')[0];
+  sql(`update ticket_stock set sold_n = sold_n + 1 where ticket_type_id = ${TT8} and event_date_id = ${F8}`);
+  const T8 = sql(`insert into tickets (event_date_id, event_id, city_id, ticket_type_id, operation_id, holder_user_id, holder_name, admits, kind, price_cents, fee_cents) values (${F8}, ${EV8}, 'hzl', ${TT8}, ${OP8}, '${MARID}', null, 1, 'paid', 1500, 175) returning id`).split('\n')[0];
+  const cod8 = sql(`select code from tickets where id = ${T8}`);
+  ok(/^\S+$/.test(cod8), `Mari tiene un boleto de esta corrida (${cod8 || 'ninguno'})`);
   await pbo.goto(B + `/cuenta/boletos/${cod8}`); await pbo.waitForLoadState('networkidle');
   // La copia se lee al hidratar (en un equipo cargado puede tardar): se espera a la llamada, no un tiempo fijo.
   const leerPuente = () => pbo.evaluate(() => (window.__puente ?? []).filter((x) => x.p === 'TLLocal').map((x) => ({ m: x.m, d: `${x.o.ns}/${x.o.tienda}`, v: x.o.valor ?? null })));
@@ -426,6 +437,9 @@ const PUENTE = `if (window === window.top) {
   await pbw.goto(B + `/cuenta/boletos/${cod8}`); await pbw.waitForLoadState('networkidle'); await pbw.waitForTimeout(1500);
   ok(await pbw.evaluate(() => new Promise((ok) => { const r = indexedDB.open('tl-boletos'); r.onsuccess = () => { const d = r.result; ok(d.version === 2 && d.objectStoreNames.contains('b') && d.objectStoreNames.contains('meta')); d.close(); }; r.onerror = () => ok(false); })), 'en la web: IndexedDB «tl-boletos» v2 (b + meta)');
 
+  // Lo de esta corrida se cierra (nada se borra): el boleto anulado y el evento cancelado.
+  sql(`update tickets set status = 'void', void_reason = 'prueba' where id = ${T8} and status in ('valid', 'used')`);
+  sql(`update events set status = 'cancelled', cancelled_at = now(), cancelled_by = 'admin', cancel_reason = 'prueba' where id = ${EV8} and status <> 'cancelled'`);
   await br.close();
   if (errs.length) console.log('Errores de página:', errs.slice(0, 10));
   ok(errs.filter((e) => !/Failed to fetch|Load failed|NetworkError|ResizeObserver/.test(e)).length === 0, `sin errores de página (${errs.length})`);
