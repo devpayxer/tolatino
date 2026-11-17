@@ -7279,6 +7279,60 @@ const guardianes = {
     if (!/create trigger sponsorship_stats_no_editable before insert or update or delete on sponsorship_stats/.test(m) || !/derivado_no_editable/.test(ultimaFn("patrocinio_cifras_no_editables"))) falla(G, M, 0, "las cifras del patrocinio son derivadas: solo las escribe la base");
     if (!/create trigger sponsorship_payments_no_cambia before update or delete on sponsorship_payments/.test(m)) falla(G, M, 0, "el libro de los patrocinios es solo de inserción");
   },
+  /* C-003 · Patrocinados de Eventos: la vitrina de la cartelera solo muestra patrocinios de eventos ACTIVOS y pagados de ESA ciudad, vivos en este
+     momento, de eventos publicados (listable) que no están cancelados, y nunca más que patrocinio_evt_puestos; el precio sale SIEMPRE de
+     Configuración (patrocinio_evt_semana_cents / patrocinio_evt_mes_cents; «hasta el evento» = la semana × semanas), nunca de la pantalla; solo
+     lib/patrocinio-evento.ts escribe event_sponsorships; comprar pide «Cobros» y «Eventos» en el panel, mismo origen, y no se compra dentro de las
+     apps de las tiendas; un evento cancelado o que ya pasó termina su patrocinio (el barrido) y «hasta el evento» no se renueva; la base no deja
+     pasar de los puestos a la vez (con candado por ciudad), ni patrocinar un evento sin fecha publicada por delante. Al revés (alrevesC003). */
+  patrocinioEventoDelServidor() {
+    const G = "patrocinioEventoDelServidor", L = "apps/web/lib/patrocinio-evento.ts", EP = "apps/web/lib/evt-publico.ts", A = "apps/web/app/panel/acciones-patrocinio-evento.ts",
+      PG = "apps/web/app/(app)/eventos/page.tsx", T = "apps/web/app/(app)/eventos/PatrocinadosEventos.tsx", BR = "apps/web/lib/barrido.ts", M = "packages/db/migrations/0174_patrocinio_eventos.sql";
+    for (const f of [L, EP, A, PG, T, BR, M]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de Patrocinados de Eventos (C-003)");
+    // La vitrina: activos, pagados, de esta ciudad, vivos ahora; eventos publicados y no cancelados; nunca más que los puestos.
+    const ep = sinComent(EP), vit = cuerpoFn(ep, "patrocinadosEventos");
+    if (!/from event_sponsorships where city_id = \$2 and status = 'activo' and starts_at <= now\(\) and ends_at > now\(\)/.test(vit)) falla(G, EP, 0, "la vitrina de Eventos: solo patrocinios activos de esta ciudad, vivos ahora (status 'activo', starts_at <= now() < ends_at)");
+    if (!/where \$\{VIVO\} and d\.city_id = \$2 and e\.status <> 'cancelled'/.test(vit)) falla(G, EP, 0, "la vitrina de Eventos: solo eventos publicados (VIVO = listable) de la ciudad y no cancelados");
+    if (!/limit \$\{cfgPuestosEvt\}/.test(vit) || !/const cfgPuestosEvt = "\(select cfg_int\('patrocinio_evt_puestos'\)\)";/.test(ep)) falla(G, EP, 0, "la vitrina de Eventos nunca muestra más que patrocinio_evt_puestos (limit cfg_int)");
+    // El precio: de Configuración, nunca de la pantalla.
+    const l = sinComent(L), pr = cuerpoFn(l, "preciosEvento");
+    if (!/valores\("patrocinio_evt_semana_cents", "patrocinio_evt_mes_cents", "patrocinio_evt_puestos", "patrocinio_dias_adelante"\)/.test(pr) || !/return \{ week: v\.patrocinio_evt_semana_cents, month: v\.patrocinio_evt_mes_cents, puestos: v\.patrocinio_evt_puestos,/.test(pr)) falla(G, L, 0, "los precios y los puestos de Eventos salen de Configuración (valores patrocinio_evt_*)");
+    const per = cuerpoFn(l, "periodo");
+    if (!/precio: P\.week \* semanas, semanas/.test(per) || !/precio: dur === "week" \? P\.week : P\.month,/.test(per) || !/const semanas = Math\.max\(1, Math\.ceil\(diasEntre\(sd, e\.dia\) \/ 7\)\);/.test(per)) falla(G, L, 0, "el precio del período: la semana o el mes de Configuración; «hasta el evento» = la semana por cada semana o fracción hasta el día del evento");
+    if (!/if \(!e\.dia \|\| !e\.fin \|\| e\.dia <= sd\) return null;/.test(per)) falla(G, L, 0, "«hasta el evento» solo si el evento todavía no llega");
+    const compra = cuerpoFn(l, "comprarPatrocinioEvento");
+    if (!/const centavos = f\.precio, idem = `pat-evento-\$\{evento\}-\$\{x\.clave\}`;/.test(compra)) falla(G, L, 0, "comprar cobra el precio del período que calcula el servidor (un cobro por clave)");
+    if (!/const renovar = x\.dur !== "until_event" && !!x\.renovar;/.test(compra)) falla(G, L, 0, "«hasta el evento» no se renueva");
+    const ven = cuerpoFn(l, "vencerUnoEvt");
+    if (!/const centavos = s\.duration === "week" \? P\.week : P\.month,/.test(ven) || !/s\.duration === "until_event"/.test(ven)) falla(G, L, 0, "renovar sola cobra el precio de hoy de Configuración y nunca renueva «hasta el evento»");
+    const tipo = /export type CompraEvtIn = \{([^}]*)\}/.exec(l)?.[1] ?? "";
+    if (!tipo || /\b(centavos|cents|precio|price|monto|amount|total)\b/i.test(tipo)) falla(G, L, 0, "CompraEvtIn (lo que manda la pantalla) no lleva un monto");
+    // El barrido: un evento cancelado o que ya pasó termina su patrocinio.
+    const bar = cuerpoFn(l, "barrerPatrociniosEventos");
+    if (!/end_kind = 'evento_cancelado'[\s\S]*e\.status = 'cancelled'/.test(bar) || !/end_kind = 'evento_paso'[\s\S]*not exists \(select 1 from event_dates d where d\.event_id = s\.event_id and d\.status = 'scheduled' and d\.ends_at > now\(\)\)/.test(bar)) falla(G, L, 0, "el barrido termina el patrocinio de un evento cancelado o que ya pasó");
+    if (!/\["patrociniosEventos", async \(\) => \(await import\("\.\/patrocinio-evento"\)\)\.barrerPatrociniosEventos\(\)\]/.test(sinComent(BR))) falla(G, BR, 0, "el barrido central corre barrerPatrociniosEventos");
+    // Comprar: Cobros y Eventos en el panel, mismo origen, no en la app.
+    const a = sinComent(A);
+    if (/\b(centavos|cents|precio|price|monto|amount|total)\b/i.test(cuerpoFn(a, "pevComprar").split("\n")[0] ?? "")) falla(G, A, 0, "pevComprar no recibe un monto de la pantalla");
+    for (const fn of ["pevComprar", "pevPuestos", "pevAvisame", "pevRenovarSolo", "pevTerminar"]) if (!/const a = await entrar\(id, evento\);/.test(cuerpoFn(a, fn))) falla(G, A, 0, `${fn}: pasa por entrar() (mismo origen, Cobros y Eventos del panel)`);
+    if (!/const a = await accesoPanel\(id, "pay"\);/.test(a) || !/a\.partes\.includes\("all"\) \|\| a\.partes\.includes\("evt"\)/.test(a) || !/if \(!\(await mismoOrigen\(\)\)\) return null;/.test(a)) falla(G, A, 0, "el patrocinio de un evento lo compra solo quien tiene Cobros y Eventos en el panel, desde el mismo origen");
+    if (!/if \(!\(await enLaWeb\(\)\)\) return EN_APP;/.test(cuerpoFn(a, "pevComprar")) || !/if \(on === true && !\(await enLaWeb\(\)\)\) return EN_APP;/.test(cuerpoFn(a, "pevRenovarSolo"))) falla(G, A, 0, "dentro de las apps de las tiendas no se compra ni se enciende la renovación (compraDigitalAqui)");
+    // Solo lib/patrocinio-evento.ts escribe event_sponsorships.
+    for (const f of codigo) {
+      if (!/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(f) || f === L) continue;
+      readFileSync(f, "utf8").split("\n").forEach((x, i) => { if (/\b(insert into|update|delete from)\s+event_sponsorships\b/i.test(x)) falla(G, f, i + 1, "escribe patrocinios de eventos por su cuenta: solo lib/patrocinio-evento.ts"); });
+    }
+    // La cartelera saca Patrocinados de la vitrina del servidor y cuenta las vistas como evento; en el teléfono dice PATROCINADO (no hay título).
+    const pg = sinComent(PG);
+    if (!/patrocinadosEventos\(loc, u\?\.id \?\? null, es\)/.test(pg) || !/contarVistas\("evento", spon\.map\(\(x\) => x\.sid\)/.test(pg)) falla(G, PG, 0, "la cartelera saca Patrocinados de patrocinadosEventos y cuenta sus vistas (kind 'evento')");
+    if (!/es \? "PATROCINADO" : "SPONSORED"/.test(sinComent(T))) falla(G, T, 0, "el Patrocinado del teléfono lleva la palabra PATROCINADO (no hay título de sección que lo diga)");
+    // La base.
+    const reg = ultimaFn("patrocinio_evt_reglas"), m = readFileSync(M, "utf8");
+    if (!/pg_advisory_xact_lock\(hashtextextended\('patevt:' \|\| new\.city_id, 0\)\)/.test(reg) || !/>= public\.cfg_int\('patrocinio_evt_puestos'\) then\s+raise exception 'patrocinio_sin_puestos/.test(reg)) falla(G, M, 0, "la base no deja pasar de patrocinio_evt_puestos a la vez en una ciudad (con candado)");
+    if (!/d\.listable and d\.ends_at > now\(\)/.test(reg) || !/e\.status <> 'cancelled'/.test(reg)) falla(G, M, 0, "la base no deja patrocinar un evento cancelado o sin fecha publicada por delante");
+    if (!/raise exception 'event_sponsorships: un patrocinio no se borra \(estados\)'/.test(reg) || !/new\.price_cents <> old\.price_cents/.test(reg) || !/new\.event_id <> old\.event_id/.test(reg)) falla(G, M, 0, "un patrocinio de evento no se borra y lo pagado (evento, precio, fechas) no cambia");
+    if (!/check \(duration <> 'until_event' or not auto_renew\)/.test(m)) falla(G, M, 0, "«hasta el evento» no se renueva (la base)");
+  },
   /* C-008 · El precio de antes (tachado) nunca es un número escrito a mano: es el precio de siempre del menú (items.price_cents) cuando una
      oferta en vivo de Novedades lo baja (lib/pedir.ts), y solo eso llega a las tarjetas (was). Sin un «precio anterior» que el negocio invente
      (descuento falso). Al revés (alrevesC008). */
