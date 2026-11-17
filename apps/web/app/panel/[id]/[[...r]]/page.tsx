@@ -153,7 +153,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     return { plan: await S.planDe(d.id), recibos: await S.recibosPro(d.id), modo: pasarela.modo(), pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: await misTarjetas(acc.yo.id) };
   })() : undefined;
   // Repartidores: Entrega (Tus repartidores, cuadre) y el detalle de un pedido de delivery (despacho).
-  const reps = food && (ruta.sec === "dlv" || ruta.det?.startsWith("ped:")) ? await repartidoresDe(d.id) : undefined;
+  // 9n · El mercado también: Entrega (sus repartidores) y el detalle de un envío del mercado (ofrecer, asignar).
+  const reps = (food && (ruta.sec === "dlv" || ruta.det?.startsWith("ped:"))) || (d.cat === "NEG-MERC" && (ruta.sec === "dlv" || ruta.det?.startsWith("merc:"))) ? await repartidoresDe(d.id) : undefined;
   // Mensajes (2p): la lista, la conversación (marca leído) y «Mensajes sin responder» en Hoy. Piden acceso a Mensajes.
   const vMsg = acc.partes.includes("all") || acc.partes.includes("msg");
   // 7f · Respuestas automáticas de El Compa: Panel › El Compa (sus ajustes solo para quien lleva Mensajes: lo decide ajustesAuto) y Mensajes
@@ -182,13 +183,15 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // Mercados (4p): los pedidos de hoy, el detalle (pesar, no hay, mandar) y los productos para proponer un sustituto.
   const mercOk = d.cat === "NEG-MERC" && (acc.partes.includes("all") || acc.partes.includes("ord"));
   if (ruta.det?.startsWith("merc:") && !mercOk) ruta.det = null;
-  const mped = mercOk ? await (async () => {
+  const mercDlv = d.cat === "NEG-MERC" && ruta.sec === "dlv"; // 9n · Entrega del mercado (la sección ya pidió la parte «dlv»)
+  const mped = mercOk || mercDlv ? await (async () => {
     const M = await import("@/lib/mercado");
-    if (ruta.sec === "hoy") await (await import("@/lib/cobros")).repararPagos(d.id).catch(() => undefined);
+    if (ruta.sec === "hoy" && mercOk) await (await import("@/lib/cobros")).repararPagos(d.id).catch(() => undefined);
     return {
-      hoy: ruta.sec === "hoy" ? await M.mercadoHoy(d.id) : undefined,
-      det: ruta.det?.startsWith("merc:") ? await M.vistaMercado(ruta.det.slice(5), { negocio: d.id }) : undefined,
-      prods: ruta.det?.startsWith("merc:") ? (await M.opcionesMercado(d.id, null))?.prods.filter((p) => p.puede).map((p) => ({ id: p.id, name: p.name, cents: p.cents, k: p.k })) : undefined,
+      hoy: ruta.sec === "hoy" && mercOk ? await M.mercadoHoy(d.id) : undefined,
+      det: ruta.det?.startsWith("merc:") && mercOk ? await M.vistaMercado(ruta.det.slice(5), { negocio: d.id }) : undefined,
+      prods: ruta.det?.startsWith("merc:") && mercOk ? (await M.opcionesMercado(d.id, null))?.prods.filter((p) => p.puede).map((p) => ({ id: p.id, name: p.name, cents: p.cents, k: p.k })) : undefined,
+      aj: mercDlv ? await ajustesPedidos(d.id) : undefined,
     };
   })() : undefined;
   // Fiestas (4v): las solicitudes de fecha que esperan respuesta, las próximas y el detalle. Responder pide «Hoy y pedidos».

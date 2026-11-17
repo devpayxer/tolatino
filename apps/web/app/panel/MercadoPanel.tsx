@@ -3,17 +3,23 @@
    Hoy: los que esperan que aceptes (10 min) y los de hoy. El detalle: aceptar / no puedo; por cada línea por libra el PESO REAL
    y la FOTO DE LA BALANZA (obligatoria); «No hay» → quitarlo o proponer otro producto (el cliente acepta en 10 min); «Mandar al
    cliente» (el total real nunca pasa lo retenido sin su OK: 9n-4 «Pedir OK por $X más»); listo / en camino; lo recogió / entregado (se cobra lo
-   real si no lo aprobó). 9n-4: el sustituto también puede ser por libra (se pesa con su foto). */
+   real si no lo aprobó). 9n-4: el sustituto también puede ser por libra (se pesa con su foto).
+   9n · Envío con el repartidor: con repartidores en la app, «Está listo · para el repartidor» y el despacho de Comida (ofrecer con cuenta regresiva,
+   asignar, el código de recogida, el mapa en vivo y la prueba). Desde que el repartidor lo tiene, aquí se ve SU estado: «Va en camino» y
+   «Entregado» son suyos (y ahí se cobra lo real). Sin repartidor, el mercado lo lleva como antes. */
 import { ayudaCita } from "./Citas";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { FilaMerc, MercadoVista } from "@/lib/mercado";
+import type { AjustesPed } from "@/lib/pedidos";
 import { subirFoto } from "@/lib/subir-foto";
 import { mercNoHay, mercPaso, mercPesar } from "./acciones-mercado";
+import { repAsignar, repOfertaCancelar, repOfrecer, repRecogido } from "./acciones-repartidores";
+import { rutaBloque, type RutaUi } from "./RutaPanel";
 import type { Ctx, Editor } from "./Panel";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 type Bi = { es: string; en: string };
-export type MercPanel = { hoy?: FilaMerc[]; det?: MercadoVista | null; prods?: { id: string; name: Bi; cents: number; k: string }[] };
+export type MercPanel = { hoy?: FilaMerc[]; det?: MercadoVista | null; prods?: { id: string; name: Bi; cents: number; k: string }[]; aj?: AjustesPed };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 
 export function hoyMercado(c: Ctx): Bloque[] {
@@ -21,10 +27,50 @@ export function hoyMercado(c: Ctx): Bloque[] {
   if (!L.length) return [];
   const pend = L.filter((x) => x.st === "pending").length;
   const tag = (x: FilaMerc) => x.st === "pending" ? E2("ACEPTA EN 10 MIN", "ACCEPT IN 10 MIN") : x.st === "done" ? E2("ENTREGADO", "DONE")
-    : x.detalle === "preparando" ? E2("POR PESAR", "TO WEIGH") : x.detalle === "pesado" ? E2("ESPERA AL CLIENTE", "AWAITING CLIENT") : x.detalle === "listo" ? E2("LISTO", "READY") : E2("EN CAMINO", "ON THE WAY");
+    : x.detalle === "preparando" ? E2("POR PESAR", "TO WEIGH") : x.detalle === "pesado" ? E2("ESPERA AL CLIENTE", "AWAITING CLIENT")
+    : x.detalle === "listo" ? (x.modo === "delivery" ? (x.rep ? E2("REPARTIDOR ASIGNADO", "DRIVER ASSIGNED") : E2("LISTO · POR SALIR", "READY · TO GO OUT")) : E2("LISTO", "READY"))
+    : x.rep ? E2("EN CAMINO · REPARTIDOR", "ON THE WAY · DRIVER") : E2("EN CAMINO", "ON THE WAY");
   return [{ type: "rows", k: `${E2("PEDIDOS DEL MERCADO", "MARKET ORDERS")}${pend ? ` · ${pend} ${E2("POR ACEPTAR", "TO ACCEPT")}` : ""}`, items: L.map((x): Fila => ({
     key: x.numero, icon: x.modo === "delivery" ? "truck" : "bag", t: `${x.who} · ${x.n} ${x.n === 1 ? E2("artículo", "item") : E2("artículos", "items")} · ${E2("estimado ", "estimate ")}${money(x.est)}`,
-    s: `${x.numero} · ${x.modo === "delivery" ? E2("envío", "delivery") : "pickup"} · ${x.cuando}`, tag: tag(x), tone: x.st === "pending" ? "action" : x.detalle === "preparando" ? "ink" : "signal", chev: true, onClick: () => c.det(`merc:${x.numero}`) })) }];
+    s: `${x.numero} · ${x.modo === "delivery" ? E2("envío", "delivery") : "pickup"} · ${x.cuando}${x.rep ? ` · ${x.rep}` : ""}`, tag: tag(x), tone: x.st === "pending" ? "action" : x.detalle === "preparando" ? "ink" : "signal", chev: true, onClick: () => c.det(`merc:${x.numero}`) })) }];
+}
+
+/* 9n · El envío y el repartidor (los mismos bloques del despacho de Comida, Pedidos.tsx): quién lo lleva y en qué va, la oferta con su cuenta
+   regresiva, a quién asignarlo, el código de recogida, el mapa en vivo y la prueba de la entrega. El panel nunca ve el código del cliente. */
+function repartoMerc(c: Ctx, x: MercadoVista): (Bloque | null)[] {
+  const { E2, es } = c, k = x.reparto, D = x.detalle, out: (Bloque | null)[] = [];
+  if (x.modo !== "delivery" || !k) return out;
+  const vivo = x.st === "confirmed";
+  if (vivo && k.rep) {
+    out.push(rutaBloque(c.ui.ruta as RutaUi | undefined, x.numero, es, k.rep.nombre));
+    const st = D === "camino" ? (k.llego ? E2("Llegó con el pedido", "Arrived with the order") : E2("Va en camino", "On the way")) : k.empezo ? E2("Va por el pedido", "Heading to pick it up") : E2("Asignado · lo ve en su app", "Assigned · they see it in their app");
+    out.push({ type: "rows", k: E2("REPARTIDOR", "DRIVER"), items: [{ icon: "truck", t: k.rep.nombre, s: st, tag: D === "camino" ? E2("EN CAMINO", "ON THE WAY") : null, tone: "signal", chev: false, compact: true,
+      acts: [{ l: E2("Quitar", "Remove"), v: "secondary", off: c.pending, onClick: () => { if (window.confirm(E2(`¿Quitarle el pedido a ${k.rep!.nombre}? Lo ofreces a otro o lo terminas tú.`, `Remove the order from ${k.rep!.nombre}? You offer it to someone else or finish it yourself.`))) c.run(() => repAsignar(c.d.id, x.numero, null), E2("Quitado. Ofrécelo a otro o llévalo tú.", "Removed. Offer it to someone else or take it yourself.")); } }] }] });
+    if (k.recogida && !k.recogido && D === "listo") out.push({ type: "rows", k: E2("CÓDIGO DE RECOGIDA", "PICKUP CODE"), items: [{ icon: "lock", t: k.recogida, s: E2("Díselo al repartidor cuando le des el pedido. El cliente no lo ve.", "Tell it to the driver when you hand over the order. The customer does not see it."), chev: false, compact: true,
+      acts: [{ l: E2("Ya se lo di", "Already handed over"), v: "secondary", off: c.pending, onClick: () => c.run(() => repRecogido(c.d.id, x.numero), E2("Listo: puede marcar «Recogí».", "Done: they can mark “Picked up”.")) }] }] });
+    out.push({ type: "note", tone: "info", icon: "check", t: x.aprobado ? E2(`Lo entrega ${k.rep.nombre} con prueba (foto o el código del cliente). El cliente ya aprobó el cobro.`, `${k.rep.nombre} delivers it with proof (photo or the customer's code). The client already approved the charge.`)
+      : E2(`Lo entrega ${k.rep.nombre} con prueba (foto o el código del cliente). Al marcar «Entregado» se cobra lo real (${money(Math.min(x.t.real, x.t.ret))}) y se libera el resto.`, `${k.rep.nombre} delivers it with proof (photo or the customer's code). When they mark “Delivered”, the real total (${money(Math.min(x.t.real, x.t.ret))}) is charged and the rest released.`) });
+  } else if (vivo && D === "listo") {
+    if (k.oferta) out.push({ type: "note", tone: "info", icon: "clock", t: E2(`Ofrecido ${k.oferta.a ? `a ${k.oferta.a}` : "a tus repartidores en línea"} · vence en ${k.oferta.seg} s${k.oferta.rechazos ? ` · ${k.oferta.rechazos} lo rechazaron` : ""}. El primero que acepta va por él.`,
+      `Offered ${k.oferta.a ? `to ${k.oferta.a}` : "to your online drivers"} · expires in ${k.oferta.seg} s${k.oferta.rechazos ? ` · ${k.oferta.rechazos} declined` : ""}. The first to accept heads there.`),
+      cta: E2("Cancelar oferta", "Cancel offer"), onCta: () => c.run(() => repOfertaCancelar(c.d.id, x.numero), E2("Oferta cancelada.", "Offer cancelled.")) });
+    else {
+      const R = (c.reps ?? []).filter((r) => r.estado === "active").sort((p, q) => Number(q.enLinea) - Number(p.enLinea));
+      if (R.some((r) => r.enLinea)) out.push({ type: "acts", items: [{ l: E2("Ofrecer a los que están en línea", "Offer to online drivers"), v: "primary", icon: "clock", off: c.pending, onClick: () => c.run(() => repOfrecer(c.d.id, x.numero, null), E2("Ofrecido. Te avisamos cuando alguien lo acepte.", "Offered. We will tell you when someone accepts.")) }] });
+      if (R.length) out.push({ type: "rows", k: E2("¿QUIÉN LO LLEVA?", "WHO TAKES IT?"), items: R.map((r) => ({ key: r.id, icon: "truck", t: r.nombre, s: `${r.enLinea ? E2("en línea", "online") : E2("fuera de línea", "offline")}${r.hoy.activos ? ` · ${r.hoy.activos} ${E2("en curso", "active")}` : ""}`, tag: r.enLinea ? E2("EN LÍNEA", "ONLINE") : null, tone: "signal", chev: false, compact: true,
+        acts: [{ l: E2("Asignar", "Assign"), v: "primary", off: c.pending, onClick: () => c.run(() => repAsignar(c.d.id, x.numero, r.id), E2(`Asignado a ${r.nombre}. Ya le llegó el aviso.`, `Assigned to ${r.nombre}. They got the notice.`)) },
+          ...(r.enLinea ? [{ l: E2("Ofrecer", "Offer"), v: "secondary", off: c.pending, onClick: () => c.run(() => repOfrecer(c.d.id, x.numero, r.id), E2(`Ofrecido a ${r.nombre}.`, `Offered to ${r.nombre}.`)) }] : [])] })) });
+      else out.push({ type: "note", tone: "info", icon: "truck", t: E2("Sin repartidores activos: invítalos en Entrega, o llévalo tú.", "No active drivers: invite them in Delivery, or take it yourself."), cta: E2("Entrega", "Delivery"), onCta: () => c.go("dlv") });
+    }
+    out.push({ type: "acts", items: [{ l: E2("Va en camino · lo llevo yo", "On the way · I take it"), v: "secondary", icon: "truck", off: c.pending, onClick: () => c.run(() => mercPaso(c.d.id, x.numero, "camino"), E2("Listo: el cliente sabe que va en camino.", "Done: the client knows it is on the way.")) }] });
+  }
+  // La prueba de la entrega (foto privada o el código del cliente) y los mensajes del repartidor al cliente.
+  if (k.prueba.length) {
+    const PR: Record<string, [string, string]> = { foto: ["foto", "photo"], codigo: ["código del cliente", "customer code"], negocio: ["marcado por tu equipo", "marked by your team"] };
+    out.push({ type: "rows", k: E2("PRUEBA DE ENTREGA", "PROOF OF DELIVERY"), items: [{ icon: "image", t: k.prueba.map((p) => (PR[p] ?? [p, p])[es ? 0 : 1]).join(" · "), s: E2("Queda como evidencia si el cliente reclama.", "It is kept as evidence if the customer complains."), chev: false, compact: true,
+      acts: k.foto ? [{ l: E2("Ver foto", "See photo"), v: "secondary", icon: "image", onClick: () => window.open(`/api/entrega/foto/${k.foto}`, "_blank", "noopener") }] : undefined }] });
+  }
+  return out;
 }
 
 export function mercadoDetalle(c: Ctx): Sec {
@@ -76,8 +122,13 @@ export function mercadoDetalle(c: Ctx): Sec {
     if (pedirMas) out.push({ type: "acts", items: [{ l: `${E2("Pedir OK por ", "Ask OK for ")}${money(t.mas)}${E2(" más", " more")}`, v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => mercPaso(c.d.id, x.numero, "mas"), E2("Mandado: el cliente ve el peso y te dice si está bien pagar más.", "Sent: the client sees the weight and tells you if paying more is OK.")) }] });
     else if (D === "preparando" || (D === "pesado" && x.noMas && t.mas === 0)) out.push({ type: "acts", items: [{ l: E2("Mandar al cliente", "Send to the client"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => mercPaso(c.d.id, x.numero, "mandar"), E2("Mandado: el cliente ve el peso y las fotos.", "Sent: the client sees the weight and photos.")) }] });
   }
-  if (x.st === "confirmed" && D === "pesado" && (x.local || (t.mas === 0 && !x.noMas))) out.push({ type: "acts", items: [{ l: x.modo === "delivery" ? E2("Va en camino", "On the way") : E2("Está listo", "It’s ready"), v: "primary", icon: x.modo === "delivery" ? "truck" : "bag", off: c.pending, onClick: () => c.run(() => mercPaso(c.d.id, x.numero, "listo"), E2("Listo: el cliente lo sabe.", "Done: the client knows.")) }] });
-  if (x.st === "confirmed" && (D === "listo" || D === "camino")) out.push({ type: "acts", items: [{ l: x.modo === "delivery" ? E2("Entregado", "Delivered") : E2("Lo recogió", "Picked up"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => mercPaso(c.d.id, x.numero, "entregado"), x.local ? E2("Listo.", "Done.") : E2("Listo: se cobró lo real y se liberó el resto.", "Done: the real total was charged and the rest released.")) }] });
+  // 9n · Con repartidores en la app, el envío queda «listo para el repartidor»; sin ellos, «Va en camino» como antes.
+  const conRep = x.modo === "delivery" && !!x.reparto?.conRepartidores;
+  if (x.st === "confirmed" && D === "pesado" && (x.local || (t.mas === 0 && !x.noMas))) out.push({ type: "acts", items: [{ l: x.modo === "delivery" ? (conRep ? E2("Está listo · para el repartidor", "Ready · for the driver") : E2("Va en camino", "On the way")) : E2("Está listo", "It’s ready"), v: "primary", icon: x.modo === "delivery" ? "truck" : "bag", off: c.pending,
+    onClick: () => c.run(() => mercPaso(c.d.id, x.numero, "listo"), conRep ? E2("Listo: ya se puede ofrecer a tus repartidores.", "Done: it can now be offered to your drivers.") : E2("Listo: el cliente lo sabe.", "Done: the client knows.")) }] });
+  out.push(...repartoMerc(c, x));
+  const propio = x.modo !== "delivery" || (D === "camino" && !x.reparto?.rep);
+  if (x.st === "confirmed" && (D === "listo" || D === "camino") && propio) out.push({ type: "acts", items: [{ l: x.modo === "delivery" ? E2("Entregado", "Delivered") : E2("Lo recogió", "Picked up"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => mercPaso(c.d.id, x.numero, "entregado"), x.local ? E2("Listo.", "Done.") : E2("Listo: se cobró lo real y se liberó el resto.", "Done: the real total was charged and the rest released.")) }] });
   if (t.cobrado) out.push({ type: "note", tone: "ok", icon: "check", t: E2(`Cobrado ${money(t.cobrado)}${t.liberado ? ` · liberado ${money(t.liberado)}` : ""}.`, `Charged ${money(t.cobrado)}${t.liberado ? ` · released ${money(t.liberado)}` : ""}.`) });
   out.push(...ayudaCita(c, x.numero, E2("el cliente", "the client")));
   out.push({ type: "rows", k: E2("LÍNEA DE TIEMPO", "TIMELINE"), items: x.eventos.filter((e) => e.t.es).map((e, i): Fila => ({ key: `e${i}`, icon: "clock", t: nm(e.t), s: new Date(e.at).toLocaleTimeString(es ? "es-US" : "en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" }), compact: true, chev: false })) });

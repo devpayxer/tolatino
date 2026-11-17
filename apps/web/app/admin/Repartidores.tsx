@@ -10,6 +10,7 @@ import { dlvResolver } from "./acciones-repartidores";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import type { ResAdm } from "./acciones-colas";
 import { useE } from "./idioma-admin";
+import { numVisible } from "@/lib/reparto-comun";
 
 export const KIND_INC: Record<string, [string, string]> = { accidente: ["ACCIDENTE", "ACCIDENT"], codigo: ["CÓDIGO", "CODE"], reclamo: ["RECLAMO", "CLAIM"], otro: ["INCIDENCIA", "INCIDENT"] };
 const SANC: Record<string, [string, string]> = { suspension: ["SUSPENDIDO", "SUSPENDED"], baneo: ["BANEADO", "BANNED"] };
@@ -49,7 +50,7 @@ export function Repartidores({ tab, f, lista, incid, todas, puede }: {
   if (tab === "incid" && incid) {
     B.push({ type: "chips", items: [{ l: E("Abiertas", "Open"), v: !todas ? "selected" : "filter", onClick: () => router.push(`${path}?tab=incid`) }, { l: E("Todas", "All"), v: todas ? "selected" : "filter", onClick: () => router.push(`${path}?tab=incid&todas=1`) }] });
     B.push(incid.length ? { type: "rows", cols: desk ? "repeat(2,minmax(0,1fr))" : "1fr", items: incid.map((i): Fila => ({ key: i.id, icon: i.kind === "accidente" ? "warning" : "truck",
-      t: `${i.rep}${i.numero ? ` · #${i.numero}` : ""}${i.negocio ? ` · ${i.negocio}` : ""}`, s: [en ? i.nota.en || i.nota.es : i.nota.es, cuandoDlv(i.at, en), i.status === "resolved" ? E(`Resuelta${i.quien ? ` por ${i.quien}` : ""}: ${i.resolucion ?? ""}`, `Resolved${i.quien ? ` by ${i.quien}` : ""}: ${i.resolucion ?? ""}`) : null].filter(Boolean).join(" · "),
+      t: `${i.rep}${i.numero ? ` · ${numVisible(i.numero)}` : ""}${i.negocio ? ` · ${i.negocio}` : ""}`, s: [en ? i.nota.en || i.nota.es : i.nota.es, cuandoDlv(i.at, en), i.status === "resolved" ? E(`Resuelta${i.quien ? ` por ${i.quien}` : ""}: ${i.resolucion ?? ""}`, `Resolved${i.quien ? ` by ${i.quien}` : ""}: ${i.resolucion ?? ""}`) : null].filter(Boolean).join(" · "),
       tag: i.status === "open" ? KIND_INC[i.kind]?.[li] ?? E("INCIDENCIA", "INCIDENT") : E("RESUELTA", "RESOLVED"), tone: i.status === "open" ? (i.kind === "accidente" ? "danger" : "action") : "neutral", chev: true,
       onClick: () => router.push(`/admin/repartidores/${i.repId}`),
       acts: i.status === "open" && puede.editar ? [{ l: E("Resolver", "Resolve"), v: "secondary", icon: "check", onClick: () => setConf({ titulo: E("¿Cómo se resolvió?", "How was it resolved?"), cta: E("Resolver", "Resolve"),

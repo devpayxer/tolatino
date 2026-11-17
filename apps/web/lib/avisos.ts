@@ -155,12 +155,14 @@ export async function avisarPedido(numero: string, tpl: "ord_ok" | "ord_no" | "o
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id where o.number = $1 and o.kind = 'order'`, [numero]).catch(() => ({ rows: [] }))).rows[0];
   if (o) await avisar(o.uid, tpl, { negocio: o.negocio, num: numero, hora: o.hora }, { href: `/pedido/${numero}`, ref: ["order", numero] });
 }
-/* 9l · «Tu pedido llegó» (L272): solo un pedido con entrega (stage delivered), una vez. Lo llaman el negocio (Hoy) y el repartidor al entregar. */
+/* 9l · «Tu pedido llegó» (L272): solo un pedido con entrega (stage delivered), una vez. Lo llaman el negocio (Hoy) y el repartidor al entregar.
+   9n · También el envío del mercado que entrega el repartidor (merc_entregado, con su número M-… y su pantalla). */
 export async function avisarEntregado(opId: string) {
-  const o = (await db().query<{ uid: string; negocio: string; num: string }>(
-    `select o.user_id::text as uid, b.name as negocio, o.number as num from operations o join businesses b on b.id = o.business_id where o.id = $1::bigint and o.kind = 'order' and o.stage = 'delivered'`, [opId]).catch(() => ({ rows: [] }))).rows[0];
+  const o = (await db().query<{ uid: string; negocio: string; num: string; merc: boolean }>(
+    `select o.user_id::text as uid, b.name as negocio, o.number as num, o.kind = 'market_order' as merc from operations o join businesses b on b.id = o.business_id
+      where o.id = $1::bigint and o.kind in ('order', 'market_order') and o.stage = 'delivered'`, [opId]).catch(() => ({ rows: [] }))).rows[0];
   if (!o || !(await db().query(`insert into notif_once (key) values ($1) on conflict do nothing`, [`ord_entregado:${opId}`]).catch(() => ({ rowCount: 0 }))).rowCount) return;
-  await avisar(o.uid, "ord_entregado", { negocio: o.negocio, num: o.num }, { href: `/pedido/${o.num}`, ref: ["order", o.num] });
+  await avisar(o.uid, o.merc ? "merc_entregado" : "ord_entregado", { negocio: o.negocio, num: o.num }, { href: o.merc ? `/mercado/${o.num}` : `/pedido/${o.num}`, ref: ["order", o.num] });
 }
 export async function avisarMesa(numero: string, tpl: "rsv_ok" | "rsv_alt" | "rsv_no" | "rsv_chg_ok" | "rsv_chg_no" | "rsv_hoy", alt?: string) {
   const o = (await db().query<{ uid: string; negocio: string; dia: string; hora: string; sms: boolean }>(

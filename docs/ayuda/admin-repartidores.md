@@ -1,7 +1,7 @@
 # Super Admin: Repartidores · Super Admin: Drivers
 
 _Pantallas: ADM-DLV (`/admin/repartidores`, `/admin/repartidores/{persona}`), Colas › «Incidencias de entrega». Teléfono y escritorio. Para el
-equipo de To'Latino. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
+equipo de To'Latino. Versión: 17 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **La lista:** cada persona que reparte para un negocio (por persona: una puede repartir para varios), con sus equipos, ciudad, entregas y
@@ -34,6 +34,10 @@ equipo de To'Latino. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
 **¿Vemos el código del cliente?** No. Nadie del equipo lo necesita: la prueba dice si se usó.
 
 **¿Esto es para repartidores de To'Latino?** Hoy, solo los repartidores de cada negocio. Los de To'Latino llegan después de abrir.
+
+## Pedidos del mercado
+Las entregas de los **envíos del mercado** (M-…) salen igual en Repartidores (lista, 360° «Últimas entregas», incidencias) y en
+**Transacciones** (pestaña Mercado: el repartidor que lo lleva o llevó y **Ver recorrido**, con motivo que queda en la auditoría).
 
 ## English
 
@@ -68,3 +72,7 @@ equipo de To'Latino. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
 **Do we see the customer's code?** No. Nobody on the team needs it: the proof says whether it was used.
 
 **Is this for To'Latino drivers?** Today, only each business's drivers. To'Latino drivers come after opening.
+
+### Market orders
+Deliveries of **market orders** (M-…) show the same way in Drivers (list, 360° "Latest deliveries", incidents) and in **Transactions** (Market
+tab: the driver who carries or carried it and **See route**, with a reason that goes into the audit log).

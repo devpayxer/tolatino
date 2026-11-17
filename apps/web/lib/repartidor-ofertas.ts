@@ -2,6 +2,7 @@ import "server-only";
 import type { PoolClient } from "pg";
 import { valor } from "./config";
 import { db, tx } from "./db";
+import { detPanel, KIND_REPARTO, listoParaRepartoSql, NUM_REPARTO } from "./reparto-comun";
 import { empezar as empezarRuta, type RutaToken } from "./ruta";
 
 /* 9n · La oferta con cuenta regresiva a los repartidores del negocio (fase9 §6 #21; apps-delivery-checkin.md §1.3 DLV-OFERTA) y lo que el
@@ -11,7 +12,9 @@ import { empezar as empezarRuta, type RutaToken } from "./ruta";
    - «Aceptar» es el paso que inicia la ruta: en la misma transacción el pedido pasa a ese repartidor, la oferta se cierra y la ruta en vivo
      empieza (lib/ruta.ts). El primero que acepta se la lleva (la fila de la oferta se bloquea); los demás ven «Ya la tomó otro».
    - Rechazar queda anotado (solo inserción). Si todos los que la vieron la rechazan, o vence, el negocio recibe el aviso.
-   - Un repartidor suspendido o baneado no ve ni acepta ofertas (repartidor_sancionado). */
+   - Un repartidor suspendido o baneado no ve ni acepta ofertas (repartidor_sancionado).
+   - 9n · El envío del mercado se ofrece igual, cuando el mercado lo marcó «Está listo» (listoParaRepartoSql); el repartidor ve el mercado, la calle,
+     cuántos artículos y que ya está pagado con tarjeta (el mercado no cobra efectivo al entregar). */
 type Bi = { es: string; en: string };
 export type ResO = { ok: true; ruta?: RutaToken | null } | { ok: false; msg: Bi };
 const no = (es: string, en: string): ResO => ({ ok: false, msg: { es, en } });
@@ -20,15 +23,16 @@ const ID = /^\d{1,18}$/;
 /* ── Panel: ofrecer ── */
 /* 9n-4 · actorId null = la asignación automática (lib/repartidor-auto.ts): la oferta queda sin created_by y el evento es del sistema. */
 export async function ofrecer(negocio: string, numero: string, actorId: string | null, driverId: string | null): Promise<ResO & { avisos?: { uid: string; vars: Record<string, string> }[] }> {
-  if (!/^\d{1,12}$/.test(numero) || (driverId !== null && !ID.test(driverId))) return no("Ese pedido no existe.", "That order does not exist.");
+  if (!NUM_REPARTO.test(numero) || (driverId !== null && !ID.test(driverId))) return no("Ese pedido no existe.", "That order does not exist.");
   const seg = await valor("oferta_seg");
   return tx(async (c) => {
-    const o = (await c.query<{ id: string; status: string; mode: string; stage: string | null; driver: string | null; who: string; city: string; calle: string | null; negocio: string }>(
+    const o = (await c.query<{ id: string; status: string; mode: string; stage: string | null; driver: string | null; who: string; city: string; calle: string | null; negocio: string; listo: boolean }>(
       `select o.id::text, o.status, coalesce(o.mode, 'pickup') as mode, o.stage, o.driver_id::text as driver, coalesce(d.who, 'team') as who, o.city_id as city,
-              o.details->'to'->>'street' as calle, b.name as negocio
+              o.details->'to'->>'street' as calle, b.name as negocio, ${listoParaRepartoSql("o")} as listo
          from operations o join businesses b on b.id = o.business_id left join delivery_settings d on d.business_id = o.business_id
-        where o.business_id = $1 and o.number = $2 and o.kind = 'order' for update of o`, [negocio, numero])).rows[0];
+        where o.business_id = $1 and o.number = $2 and o.kind in ${KIND_REPARTO} for update of o`, [negocio, numero])).rows[0];
     if (!o || o.mode !== "delivery" || o.status !== "confirmed" || o.stage === "delivered") return no("Solo se ofrece un delivery aceptado que no se ha entregado.", "Only an accepted, undelivered delivery can be offered.");
+    if (!o.listo) return no("El pedido del mercado se ofrece cuando está listo: pesado y con el OK del cliente si hacía falta.", "A market order is offered once it is ready: weighed and with the customer's OK if needed.");
     if (o.who === "external") return no("Este negocio entrega con una app externa.", "This business delivers with an external app.");
     if (o.driver) return no("Ese pedido ya tiene repartidor.", "That order already has a driver.");
     if ((await c.query(`select 1 from delivery_offers where operation_id = $1::bigint and status = 'open' and expires_at > now()`, [o.id])).rowCount) return no("Ya hay una oferta abierta para ese pedido.", "There is already an open offer for that order.");
@@ -60,22 +64,23 @@ export async function cancelarOferta(negocio: string, numero: string): Promise<R
 
 /* ── El repartidor: sus ofertas abiertas ── */
 export type OfertaRep = { id: string; numero: string; negocio: { nombre: string; direccion: string | null }; calle: string | null; mi: number | null; seg: number;
-  total: number; propina: number; efectivo: number | null; items: number; paraTi: boolean };
+  total: number; propina: number; efectivo: number | null; items: number; paraTi: boolean; mercado: boolean };
 export async function misOfertas(userId: string): Promise<OfertaRep[]> {
   if (!(await db().query(`select 1 from delivery_drivers where user_id = $1 and status = 'active' limit 1`, [userId])).rowCount) return [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const r = await db().query<{ id: string; numero: string; bname: string; baddr: string | null; det: Record<string, any>; seg: number; total: number; tip: number; pay: string; items: number; para: boolean }>(
+  const r = await db().query<{ id: string; numero: string; bname: string; baddr: string | null; det: Record<string, any>; seg: number; total: number; tip: number; pay: string; items: number; para: boolean; merc: boolean }>(
     `select f.id::text, o.number as numero, b.name as bname, b.address as baddr, o.details as det, ceil(extract(epoch from f.expires_at - now()))::int as seg,
-            o.total_cents as total, o.tip_cents as tip, o.pay_mode as pay, (select coalesce(sum(l.qty), 0)::int from operation_lines l where l.operation_id = o.id) as items,
+            o.total_cents as total, o.tip_cents as tip, o.pay_mode as pay, o.kind = 'market_order' as merc,
+            (select coalesce(sum(l.qty), 0)::int from operation_lines l where l.operation_id = o.id and (o.kind = 'order' or l.status = 'ok')) as items,
             f.driver_id is not null as para
        from delivery_offers f join delivery_drivers d on d.business_id = f.business_id and d.user_id = $1 and d.status = 'active'
        join operations o on o.id = f.operation_id join businesses b on b.id = f.business_id
-      where f.status = 'open' and f.expires_at > now() and o.driver_id is null and repartidor_sancionado($1::uuid) is null
+      where f.status = 'open' and f.expires_at > now() and o.driver_id is null and repartidor_sancionado($1::uuid) is null and ${listoParaRepartoSql("o")}
         and (f.driver_id = d.id or (f.driver_id is null and d.online))
         and not exists (select 1 from delivery_offer_replies x where x.offer_id = f.id and x.driver_id = d.id)
       order by f.expires_at limit 10`, [userId]);
   return r.rows.map((x) => ({ id: x.id, numero: x.numero, negocio: { nombre: x.bname, direccion: x.baddr }, calle: x.det?.to?.street ?? null, mi: x.det?.to?.mi ?? null, seg: Math.max(0, x.seg),
-    total: x.total, propina: x.tip, efectivo: x.pay === "entrega" ? x.total : null, items: x.items, paraTi: x.para }));
+    total: x.total, propina: x.tip, efectivo: x.pay === "entrega" ? x.total : null, items: x.items, paraTi: x.para, mercado: x.merc }));
 }
 
 async function cerrarSiNadie(c: PoolClient, ofertaId: string): Promise<{ negocio: string; numero: string } | null> {
@@ -105,9 +110,9 @@ export async function aceptarOferta(userId: string, ofertaId: string): Promise<R
     if (d.sancion) return no("Tu cuenta de repartidor está suspendida.", "Your driver account is suspended.");
     if (f.driver ? f.driver !== d.id : !d.online) return no("Esa oferta no es para ti.", "That offer is not for you.");
     if ((await c.query(`select 1 from delivery_offer_replies where offer_id = $1::bigint and driver_id = $2::bigint`, [f.id, d.id])).rowCount) return no("Ya la rechazaste.", "You already declined it.");
-    const o = (await c.query<{ numero: string; driver: string | null; status: string; stage: string | null }>(
-      `select number as numero, driver_id::text as driver, status, stage from operations where id = $1::bigint for update`, [f.op])).rows[0];
-    if (!o || o.status !== "confirmed" || o.stage === "delivered") { await c.query(`update delivery_offers set status = 'cancelled' where id = $1::bigint`, [f.id]); return no("Ese pedido ya no está activo.", "That order is no longer active."); }
+    const o = (await c.query<{ numero: string; driver: string | null; status: string; stage: string | null; listo: boolean }>(
+      `select number as numero, driver_id::text as driver, status, stage, ${listoParaRepartoSql("operations")} as listo from operations where id = $1::bigint for update`, [f.op])).rows[0];
+    if (!o || o.status !== "confirmed" || o.stage === "delivered" || !o.listo) { await c.query(`update delivery_offers set status = 'cancelled' where id = $1::bigint`, [f.id]); return no("Ese pedido ya no está activo.", "That order is no longer active."); }
     if (o.driver) { await c.query(`update delivery_offers set status = 'cancelled' where id = $1::bigint`, [f.id]); return no("Ya la tomó otro repartidor.", "Another driver already took it."); }
     await c.query(`update delivery_offers set status = 'accepted', accepted_driver = $2::bigint where id = $1::bigint`, [f.id, d.id]);
     await c.query(`update operations set driver_id = $2::bigint, updated_at = now() where id = $1::bigint`, [f.op, d.id]);
@@ -136,7 +141,7 @@ export async function vencerOfertas(): Promise<number> {
     `update delivery_offers f set status = 'expired' from operations o where o.id = f.operation_id and f.status = 'open' and f.expires_at <= now()
       returning f.business_id as negocio, o.number as numero`);
   const { avisarNegocio } = await import("./avisos");
-  for (const x of r.rows) await avisarNegocio(x.negocio, "biz_oferta_vencio", { num: x.numero }, { href: `/panel/${x.negocio}/hoy?det=ped:${x.numero}`, ref: ["order", x.numero] }).catch(() => undefined);
+  for (const x of r.rows) await avisarNegocio(x.negocio, "biz_oferta_vencio", { num: x.numero }, { href: `/panel/${x.negocio}/hoy?det=${detPanel(x.numero)}`, ref: ["order", x.numero] }).catch(() => undefined);
   return r.rowCount ?? 0;
 }
 
@@ -155,14 +160,14 @@ export const textoLimpio = (t: string) => {
   return s;
 };
 export async function escribirCliente(userId: string, numero: string, kind: string, texto: string): Promise<ResO & { aviso?: { uid: string; vars: Record<string, string> } }> {
-  if (!/^\d{1,12}$/.test(numero) || !(kind in FRASES || kind === "texto")) return no("Elige qué decirle.", "Choose what to say.");
+  if (!NUM_REPARTO.test(numero) || !(kind in FRASES || kind === "texto")) return no("Elige qué decirle.", "Choose what to say.");
   const body = kind === "texto" ? textoLimpio(texto) : null;
   if (kind === "texto" && !body) return no("Escribe un mensaje corto, sin números de teléfono ni enlaces.", "Write a short message, without phone numbers or links.");
   const max = await valor("rep_mensajes_max");
   return tx(async (c) => {
     const o = (await c.query<{ id: string; city: string; did: string; nombre: string; uid: string }>(
       `select o.id::text, o.city_id as city, d.id::text as did, d.display_name as nombre, o.user_id::text as uid from operations o join delivery_drivers d on d.id = o.driver_id
-        where o.number = $2 and d.user_id = $1 and d.status = 'active' and o.kind = 'order' and o.status = 'confirmed' for update of o`, [userId, numero])).rows[0];
+        where o.number = $2 and d.user_id = $1 and d.status = 'active' and o.kind in ${KIND_REPARTO} and o.status = 'confirmed' for update of o`, [userId, numero])).rows[0];
     if (!o) return no("Este pedido ya no es tuyo.", "This order is no longer yours.");
     const n = (await c.query<{ n: number }>(`select count(*)::int as n from delivery_messages where operation_id = $1::bigint`, [o.id])).rows[0]!.n;
     if (n >= max) return no("Ya le escribiste varias veces. Si no responde, avísale al negocio.", "You already wrote several times. If they do not answer, tell the business.");

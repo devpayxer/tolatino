@@ -4,13 +4,16 @@
    3 lb · pesó 2.84 lb» y la FOTO DE LA BALANZA, el dinero (estimado · peso real · retenido · se cobra · se libera), «Está bien,
    cobrar», la línea de tiempo (OrderTracker) y cancelar mientras no lo acepten. El servidor decide; aquí solo se muestra.
    9n-4 · «Pide tu OK por $X más» (el peso real pasa lo retenido): «Está bien, cobrar» retiene esos $X en la misma tarjeta (con la hoja del banco si
-   pide 3-D Secure) o «No, que corten»; el sustituto por libra dice su precio por libra. */
+   pide 3-D Secure) o «No, que corten»; el sustituto por libra dice su precio por libra.
+   9n · Con el repartidor del mercado: quién lo lleva, el mapa en vivo desde «Recogí» (MapaVivo, como un pedido de comida), tu código para recibir,
+   lo que te escribió y la foto de la entrega. Lo real se cobra cuando el repartidor marca «Entregado». */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
 import type { MercadoVista } from "@/lib/mercado";
 import { mercAprobar, mercCancelar, mercNoMas, mercSustituto } from "./acciones";
 import { useVerificacion } from "../../pago/Verificacion";
+import { MapaVivo } from "@/app/_ruta/MapaVivo";
 import type { ModoTarjeta } from "../../pago/MetodoPago";
 
 type N = "Icon" | "Button" | "OrderTracker";
@@ -20,13 +23,13 @@ const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-4";
 
-export function MercadoEstado({ v, es, pago = null }: { v: MercadoVista; es: boolean; pago?: { modo: ModoTarjeta; pk: string | null } | null }) {
+export function MercadoEstado({ v, es, pago = null, ruta = false }: { v: MercadoVista; es: boolean; pago?: { modo: ModoTarjeta; pk: string | null } | null; ruta?: boolean }) {
   const E2 = (a: string, b: string) => (es ? a : b), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const router = useRouter();
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null), [flash, setFlash] = useState<string | null>(null), [foto, setFoto] = useState<string | null>(null);
   // Lo que cambia por el mercado (acepta, pesa, propone) se ve sin recargar: se vuelve a leer cada 15 s mientras sigue vivo.
   useEffect(() => { if (!["pending", "confirmed"].includes(v.st)) return; const t = setInterval(() => router.refresh(), 15000); return () => clearInterval(t); }, [v.st, router]);
-  const t = v.t, del = v.modo === "delivery", D = v.detalle;
+  const t = v.t, del = v.modo === "delivery", D = v.detalle, R = v.reparto, rep = R?.rep?.nombre ?? null;
   const V = useVerificacion(es, pago?.modo, pago?.pk);
   // «Está bien, cobrar» (con el OK por más si lo piden). Si el banco pide confirmar, la hoja y otra vez lo mismo (la misma llave).
   const aprobar = async () => {
@@ -48,7 +51,8 @@ export function MercadoEstado({ v, es, pago = null }: { v: MercadoVista; es: boo
     v.st === "pending" ? ["clock", "var(--tl-action)", E2("PEDIDO ENVIADO", "ORDER SENT"), E2(`Esperando a ${v.negocio.nombre}`, `Waiting for ${v.negocio.nombre}`), v.local ? E2("Pagas en el mercado al recoger. Si no aceptan en 10 min, se cancela.", "You pay at the market at pickup. If they do not accept within 10 min, it is cancelled.") : E2(`Se retuvieron ${money(t.ret)}. Si no aceptan en 10 min, se libera.`, `${money(t.ret)} was held. If they do not accept within 10 min, it is released.`)]
       : v.st === "confirmed" && D === "preparando" ? ["bag", "var(--tl-action)", E2("PREPARANDO", "PREPARING"), E2("Están armando tu pedido", "Your order is being prepared"), E2("Te mandan la foto de la balanza de lo que va por peso.", "They send the scale photo for by-weight items.")]
       : v.st === "confirmed" && D === "pesado" && !v.aprobado ? ["scale", "var(--tl-pro-ink)", E2("ASÍ LO PESARON", "HERE IS THE WEIGHT"), `${E2("Total real: ", "Real total: ")}${money(t.real)}`, v.local ? E2("Lo pagas en el mercado al recoger.", "You pay it at the market at pickup.") : E2("Revísalo. Se cobra cuando digas que está bien.", "Check it. It is charged when you say it is OK.")]
-      : v.st === "confirmed" && D === "camino" ? ["truck", "var(--tl-open-text)", E2("EN CAMINO", "ON THE WAY"), E2("Tu pedido va en camino", "Your order is on the way"), v.win ? E2(`Llega antes de las ${v.win}.`, `Arrives before ${v.win}.`) : ""]
+      : v.st === "confirmed" && D === "camino" ? ["truck", "var(--tl-open-text)", E2("EN CAMINO", "ON THE WAY"), rep ? (R?.llego ? E2(`${rep} llegó con tu pedido`, `${rep} is here with your order`) : E2(`${rep} te lo lleva`, `${rep} is bringing it`)) : E2("Tu pedido va en camino", "Your order is on the way"), v.win ? E2(`Llega antes de las ${v.win}.`, `Arrives before ${v.win}.`) : ""]
+      : v.st === "confirmed" && D === "listo" && del ? ["truck", "var(--tl-open-text)", E2("LISTO · SALE PRONTO", "READY · LEAVING SOON"), rep ? E2(`${rep} va por tu pedido`, `${rep} is picking up your order`) : E2("Tu pedido está listo para salir", "Your order is ready to go out"), v.win ? E2(`Llega antes de las ${v.win}.`, `Arrives before ${v.win}.`) : ""]
       : v.st === "confirmed" && D === "listo" ? ["check", "var(--tl-open-text)", E2("LISTO PARA RECOGER", "READY FOR PICKUP"), E2(`En el mostrador de ${v.negocio.nombre}`, `At the ${v.negocio.nombre} counter`), v.negocio.dir]
       : v.st === "confirmed" ? ["check", "var(--tl-open-text)", E2("COBRADO", "CHARGED"), `${E2("Pagaste ", "You paid ")}${money(t.cobrado)}`, E2("Te avisan cuando esté listo.", "They let you know when it is ready.")]
       : v.st === "done" ? ["check", "var(--tl-open-text)", del ? E2("ENTREGADO", "DELIVERED") : E2("RECOGIDO", "PICKED UP"), v.local ? `${E2("Total ", "Total ")}${money(t.real)}` : `${E2("Pagaste ", "You paid ")}${money(t.cobrado)}`, !v.local && t.liberado ? E2(`Se liberaron ${money(t.liberado)} · 3–5 días hábiles.`, `${money(t.liberado)} released · 3–5 business days.`) : ""]
@@ -60,6 +64,21 @@ export function MercadoEstado({ v, es, pago = null }: { v: MercadoVista; es: boo
     { label: del ? E2("En camino", "On the way") : E2("Listo", "Ready"), state: D === "listo" || D === "camino" ? "current" : v.st === "done" ? "done" : "next" },
     { label: del ? E2("Entregado", "Delivered") : E2("Recogido", "Picked up"), state: v.st === "done" ? "done" : "next" }];
   const vivo = !["declined", "expired", "cancelled"].includes(v.st);
+  // 9n · El repartidor del mercado: tu código para recibir (solo tú lo ves), lo que te escribió y la foto de la entrega.
+  const reparto = del && R && (R.codigo || R.mensajes.length > 0 || R.foto) && (
+    <div data-screen-label="Pedido del mercado · repartidor" className={caja}>
+      <div className={K}>{rep ? `${E2("TE LO LLEVA", "DELIVERED BY")} ${rep.toUpperCase()}` : E2("ENTREGA", "DELIVERY")}</div>
+      {R.codigo && <div data-codigo-cliente className="mt-3 rounded-[14px] bg-paper px-3.5 py-3">
+        <div className={K}>{E2("TU CÓDIGO PARA RECIBIR", "YOUR CODE TO RECEIVE")}</div>
+        <div className="mt-1.5 font-mono text-[24px] font-bold tracking-[0.3em]">{R.codigo}</div>
+        <div className="mt-1 text-[12px] font-medium leading-[1.45] text-ink/60">{E2("Dáselo al repartidor solo cuando tengas tu pedido en la mano.", "Give it to the driver only once your order is in your hands.")}</div>
+      </div>}
+      {R.mensajes.length > 0 && <div className="mt-3 flex flex-col gap-1.5">
+        <div className={K}>{E2("TU REPARTIDOR TE ESCRIBIÓ", "YOUR DRIVER WROTE")}</div>
+        {R.mensajes.map((m, i) => <div key={i} className="text-[12.5px] font-semibold leading-[1.45]">{rep ? `${rep}: ` : ""}{nm(m.t)}</div>)}
+      </div>}
+      {R.foto && <div className="mt-3 flex"><Button variant="secondary" size="md" icon="image" onClick={() => window.open(`/api/entrega/foto/${R.foto}`, "_blank", "noopener")}>{E2("Ver la foto de la entrega", "See the delivery photo")}</Button></div>}
+    </div>);
   const pesado = v.st === "done" || (v.st === "confirmed" && D !== "preparando");
   const head = (
     <div data-screen-label="Pedido del mercado · estado" className="flex items-start gap-3.5 rounded-[20px] border border-ink/[.08] bg-white p-[18px]">
@@ -130,7 +149,10 @@ export function MercadoEstado({ v, es, pago = null }: { v: MercadoVista; es: boo
           <div className="flex min-w-0 flex-col gap-3">
             {error && <div role="alert" className="rounded-[14px] bg-danger/[.08] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{error}</div>}
             {flash && <div role="status" className="rounded-[14px] bg-signal/[.16] px-3.5 py-3 text-[12.5px] font-bold text-open-text">{flash}</div>}
-            {head}{props}{mas}{noMas}{lineas}<div className="lg:hidden">{dinero}</div><div className="lg:hidden">{acts}</div>
+            {head}
+            {/* 9n · El repartidor en el mapa, desde «Recogí» hasta que entrega (el servidor decide si se ve). */}
+            {ruta && del && v.st === "confirmed" ? <MapaVivo pedido={v.numero} es={es} repartidor={rep} /> : null}
+            {reparto}{props}{mas}{noMas}{lineas}<div className="lg:hidden">{dinero}</div><div className="lg:hidden">{acts}</div>
           </div>
           <div className="flex flex-col gap-3 lg:sticky lg:top-6"><div className="grid"><OrderTracker steps={pasos} /></div><div className="hidden lg:block">{dinero}</div><div className="hidden lg:block">{acts}</div></div>
         </div>

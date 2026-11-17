@@ -19,6 +19,11 @@ import { base, dirEntrega, topeFree } from "./pedir";
    - «Está bien, cobrar»: se captura lo real y se libera el resto. Si el cliente no toca nada, a los 10 min le llega un recordatorio (una vez) y,
      si sigue sin tocar, se cobra lo real al recoger / entregar (nunca más de lo retenido).
    - 9n-4: el sustituto puede venderse por libra (se pesa con su foto como cualquier línea por peso).
+   - 9n · Envío con el repartidor (LAUNCH «Envío del mercado con repartidor propio»): si el mercado tiene repartidores en la app (Entrega › Tus
+     repartidores, sin app externa), «Está listo» deja el envío listo para el repartidor (status_detail 'listo') y se ofrece o se asigna como un
+     pedido de comida (lib/repartidor-ofertas.ts). Desde que el repartidor lo tiene, el mercado ya no marca «Va en camino» ni «Entregado»: los
+     pasos son del repartidor (lib/repartidor.ts) y lo real se cobra a SU «Entregado», con prueba (la base la exige: operations_prueba). Sin
+     repartidores en la app, o si el mercado se lo quita, lo lleva el mercado como antes («Va en camino» → «Entregado»).
    - Todo idempotente; candado por negocio; cada paso queda en operation_events. */
 type Bi = { es: string; en: string };
 type Q = PoolClient | ReturnType<typeof db>;
@@ -295,6 +300,14 @@ export type MercadoVista = {
   lineas: LineaVista[]; props: PropVista[]; t: Totales; local: boolean; sub: string; nota: string | null; aprobado: boolean; vence: string | null; eventos: { k: string; at: string; t: Bi }[];
   // 9n-4 · El mercado pidió tu OK por $X más (el peso real pasa lo retenido) y si dijiste que no («que corten»).
   okMas: number | null; noMas: boolean;
+  // 9n · El envío con el repartidor (solo con envío). El cliente ve SU código para recibir; el panel, el de recogida, la oferta y la prueba. Nunca
+  // los dos a la vez (lo decide quién pide la vista).
+  reparto: RepartoMerc | null;
+};
+export type RepartoMerc = {
+  rep: { id: string; nombre: string } | null; empezo: boolean; llego: boolean; prueba: string[]; foto: string | null; mensajes: { t: Bi; at: string }[];
+  codigo: string | null; recogida: string | null; recogido: boolean; pideRec: boolean; oferta: { seg: number; a: string | null; rechazos: number } | null;
+  conRepartidores: boolean;
 };
 const ISO = (x: string) => `to_char((${x}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
 export async function vistaMercado(numero: string, filtro: { userId?: string; negocio?: string }): Promise<MercadoVista | null> {
@@ -315,17 +328,42 @@ export async function vistaMercado(numero: string, filtro: { userId?: string; ne
        from change_proposals cp where cp.operation_id = $1::bigint and cp.kind = 'items' and cp.status = 'open' order by cp.id`, [o.id])).rows;
   const tt = await totales(db(), o.id);
   const E = (await db().query<{ k: string; at: string; t: Bi }>(`select kind as k, ${ISO("at")} as at, coalesce(note, '{"es":"","en":""}'::jsonb) as t from operation_events where operation_id = $1::bigint order by id`, [o.id])).rows;
+  const reparto = o.mode === "delivery" ? await repartoDe(o.id, numero, o.bid, o.status, filtro) : null;
   return {
     numero, st: o.status, detalle: o.detail, modo: o.mode, cuando: o.cuando, win: (o.det.window_end as string) ?? null, negocio: { id: o.bid, nombre: o.bname, dir: o.addr ?? "", tel: o.tel },
     lineas: L.map(({ ops0, ...x }) => ({ ...x, ops: (ops0 ?? []).map((z) => z.o?.es ?? "").filter(Boolean) })), props: P, t: tt, local: o.pay !== "app", sub: String(o.det.sub ?? "call"),
     nota: o.nota, aprobado: !!o.det.approved_at || !!o.det.settled_at, vence: o.status === "pending" ? o.resp : null, eventos: E,
-    okMas: o.det.ok_mas != null && !o.det.ok_mas_no && tt.mas > 0 ? tt.mas : null, noMas: !!o.det.ok_mas_no,
+    okMas: o.det.ok_mas != null && !o.det.ok_mas_no && tt.mas > 0 ? tt.mas : null, noMas: !!o.det.ok_mas_no, reparto,
+  };
+}
+/* 9n · El repartidor del envío. El código del cliente solo al cliente (y mientras está en curso y con repartidor); el de recogida, la oferta y si
+   hay repartidores en la app, solo al panel. */
+async function repartoDe(opId: string, numero: string, negocio: string, status: string, filtro: { userId?: string; negocio?: string }): Promise<RepartoMerc> {
+  const panel = !!filtro.negocio && !filtro.userId;
+  const k = (await db().query<{ rid: string | null; rnombre: string | null; empezo: boolean; llego: boolean; prueba: string[] | null; foto: string | null; cliente: string | null; recogida: string | null;
+    recogido: boolean; pide_rec: boolean; con: boolean }>(
+    `select o.driver_id::text as rid, d.display_name as rnombre,
+            exists (select 1 from operation_events e where e.operation_id = o.id and e.kind = 'driver_started') as empezo,
+            exists (select 1 from operation_events e where e.operation_id = o.id and e.kind = 'driver_arrived') as llego,
+            (select array_agg(p.kind order by p.kind) from delivery_proofs p where p.operation_id = o.id) as prueba,
+            (select p.media_id::text from delivery_proofs p where p.operation_id = o.id and p.kind = 'foto') as foto,
+            dc.cliente, dc.recogida, dc.recogido_at is not null as recogido, coalesce(s.pickup_code, false) as pide_rec,
+            coalesce(s.who, 'team') <> 'external' and exists (select 1 from delivery_drivers x where x.business_id = o.business_id and x.status = 'active' and x.user_id is not null) as con
+       from operations o left join delivery_drivers d on d.id = o.driver_id left join delivery_codes dc on dc.operation_id = o.id left join delivery_settings s on s.business_id = o.business_id
+      where o.id = $1::bigint`, [opId])).rows[0]!;
+  const vivo = status === "confirmed";
+  const msgs = await (await import("./repartidor-ofertas")).mensajesDelPedido(opId);
+  const of = panel && vivo && !k.rid ? await (await import("./repartidor-ofertas")).ofertaDe(negocio, numero) : null;
+  return {
+    rep: k.rid && k.rnombre ? { id: k.rid, nombre: panel ? k.rnombre : (k.rnombre.split(" ")[0] ?? k.rnombre) } : null, empezo: k.empezo, llego: k.llego, prueba: k.prueba ?? [], foto: k.foto,
+    mensajes: panel ? [] : msgs, codigo: !panel && vivo && k.rid ? k.cliente : null, recogida: panel && vivo && k.pide_rec && k.rid ? k.recogida : null, recogido: k.recogido, pideRec: k.pide_rec,
+    oferta: of ? { seg: of.seg, a: of.a, rechazos: of.rechazos } : null, conRepartidores: panel ? k.con : false,
   };
 }
 
 async function opDe(c: Q, numero: string, filtro: { userId?: string; negocio?: string }, lock = false) {
-  return (await c.query<{ id: string; status: string; detail: string | null; mode: string; bid: string; uid: string; pay: string; det: Record<string, unknown> }>(
-    `select id::text, status, status_detail as detail, mode, business_id as bid, user_id::text as uid, pay_mode as pay, details as det from operations
+  return (await c.query<{ id: string; status: string; detail: string | null; mode: string; bid: string; uid: string; pay: string; det: Record<string, unknown>; driver: string | null }>(
+    `select id::text, status, status_detail as detail, mode, business_id as bid, user_id::text as uid, pay_mode as pay, details as det, driver_id::text as driver from operations
       where number = $1 and kind = 'market_order' and ($2::uuid is null or user_id = $2::uuid) and ($3::text is null or business_id = $3)${lock ? " for update" : ""}`,
     [numero, filtro.userId ?? null, filtro.negocio ?? null])).rows[0] ?? null;
 }
@@ -431,20 +469,22 @@ export async function cancelarMercado(userId: string, numero: string): Promise<R
 }
 
 /* ── Negocio ── */
-export type FilaMerc = { numero: string; who: string; modo: string; cuando: string; n: number; st: string; detalle: string | null; est: number; vence: string | null };
+export type FilaMerc = { numero: string; who: string; modo: string; cuando: string; n: number; st: string; detalle: string | null; est: number; vence: string | null; rep: string | null };
 export async function mercadoHoy(negocio: string): Promise<FilaMerc[]> {
   await vencerMercado({ negocio });
   return (await db().query<FilaMerc>(
     `select o.number as numero, coalesce(u.first_name, 'Cliente') as who, o.mode as modo, to_char(o.scheduled_at at time zone ci.timezone, 'HH12:MI AM') as cuando,
             (select count(*)::int from operation_lines l where l.operation_id = o.id and l.sub_of is null) as n, o.status as st, o.status_detail as detalle,
-            coalesce((o.details->>'est_cents')::int, o.total_cents) as est, case when o.status = 'pending' then ${ISO("o.respond_by")} end as vence
+            coalesce((o.details->>'est_cents')::int, o.total_cents) as est, case when o.status = 'pending' then ${ISO("o.respond_by")} end as vence,
+            (select d.display_name from delivery_drivers d where d.id = o.driver_id) as rep
        from operations o join users u on u.id = o.user_id join cities ci on ci.id = o.city_id
       where o.business_id = $1 and o.kind = 'market_order' and (o.status in ('pending', 'confirmed') or (o.status = 'done' and o.done_at > now() - interval '12 hours'))
       order by o.status = 'pending' desc, o.scheduled_at limit 30`, [negocio])).rows;
 }
 
-/* 9n-4 · «mas» = mandar el peso pidiendo el OK del cliente por lo que pasa de lo retenido («Pedir OK por $X más»). */
-export type PasoMerc = "aceptar" | "rechazar" | "mandar" | "mas" | "listo" | "entregado";
+/* 9n-4 · «mas» = mandar el peso pidiendo el OK del cliente por lo que pasa de lo retenido («Pedir OK por $X más»).
+   9n · «camino» = el envío listo para el repartidor lo lleva el mercado mismo (sin repartidor asignado). */
+export type PasoMerc = "aceptar" | "rechazar" | "mandar" | "mas" | "listo" | "camino" | "entregado";
 export async function pasoMercado(negocio: string, numero: string, paso: PasoMerc, actorId: string): Promise<ResM> {
   if (!NUM.test(numero)) return no("Ese pedido no existe.", "That order does not exist.");
   await vencerMercado({ negocio });
@@ -490,13 +530,32 @@ export async function pasoMercado(negocio: string, numero: string, paso: PasoMer
       // 9n-4 · Sin el OK por lo que pasa de lo retenido, no sale: o corta menos y manda el peso otra vez, o espera el OK.
       if (o.det.ok_mas_no) return no("Dijo que no a pagar más: corta menos y manda el peso otra vez.", "They said no to paying more: cut less and send the weight again.");
       if (o.pay === "app") { const t = await totales(c, o.id); if (t.mas > 0) return no(`Falta el OK del cliente por ${money(t.mas)} más (o corta menos y manda el peso otra vez).`, `The customer's OK for ${money(t.mas)} more is missing (or cut less and send the weight again).`); }
-      const d = o.mode === "delivery" ? "camino" : "listo";
+      // 9n · Con repartidores en la app (y sin app externa), el envío queda listo para el repartidor: se ofrece o se asigna (y con «Ofrecer solo», sale
+      // solo). Sin repartidores, lo lleva el mercado como antes.
+      const rep = o.mode === "delivery" && !!(await c.query(
+        `select 1 from delivery_drivers x left join delivery_settings s on s.business_id = x.business_id
+          where x.business_id = $1 and x.status = 'active' and x.user_id is not null and coalesce(s.who, 'team') <> 'external' limit 1`, [negocio])).rowCount;
+      const d = o.mode === "delivery" && !rep ? "camino" : "listo";
       await c.query(`update operations set status_detail = $2, stage = $3, ready_at = now(), updated_at = now() where id = $1::bigint`, [o.id, d, d === "camino" ? "on_the_way" : "ready"]);
-      await ev(c, o.id, d === "camino" ? "on_the_way" : "ready", "member", actorId, d === "camino" ? { es: "Va en camino", en: "On the way" } : { es: "Listo para recoger", en: "Ready for pickup" });
-      despues = () => avisar(numero, d === "camino" ? "merc_camino" : "merc_listo", {});
+      await ev(c, o.id, d === "camino" ? "on_the_way" : "ready", "member", actorId, d === "camino" ? { es: "Va en camino", en: "On the way" } : rep ? { es: "Listo · sale con el repartidor", en: "Ready · goes out with the driver" } : { es: "Listo para recoger", en: "Ready for pickup" });
+      despues = rep ? async () => { await (await import("./repartidor-auto")).asignarSolos({ negocio, numero }).catch(() => 0); } : () => avisar(numero, d === "camino" ? "merc_camino" : "merc_listo", {});
+      return { ok: true };
+    }
+    // 9n · El envío listo para el repartidor lo lleva el mercado mismo (nadie lo tomó, o prefiere llevarlo): «Va en camino», como antes.
+    if (paso === "camino") {
+      if (o.mode !== "delivery" || o.detail !== "listo") return cambio;
+      if (o.driver) return no("Ya lo tiene un repartidor: quítaselo primero si lo vas a llevar tú.", "A driver already has it: remove them first if you will take it yourself.");
+      await c.query(`update delivery_offers set status = 'cancelled' where operation_id = $1::bigint and status = 'open'`, [o.id]);
+      await c.query(`update operations set status_detail = 'camino', stage = 'on_the_way', updated_at = now() where id = $1::bigint`, [o.id]);
+      await ev(c, o.id, "on_the_way", "member", actorId, { es: "Va en camino · lo lleva el mercado", en: "On the way · the market delivers it" });
+      despues = () => avisar(numero, "merc_camino", {});
       return { ok: true };
     }
     if (o.detail !== "listo" && o.detail !== "camino") return no("Primero márcalo listo.", "Mark it ready first.");
+    // 9n · Lo lleva el repartidor: «Entregado» es suyo (con la prueba) y ahí se cobra lo real. El mercado no lo cierra mientras lo tiene (guardián
+    // mercadoConRepartidor; la base tampoco lo deja sin la prueba del repartidor: operations_prueba).
+    if (o.mode === "delivery" && o.driver) return no("Lo lleva el repartidor: él marca «Entregado» con la prueba. Si no puede terminarlo, quítale el pedido y márcalo tú.", "The driver has it: they mark it “Delivered” with proof. If they cannot finish it, remove them from the order and mark it yourself.");
+    if (o.mode === "delivery" && o.detail === "listo") return no("Primero «Va en camino» (o dáselo a un repartidor).", "First “On the way” (or give it to a driver).");
     await c.query(`update operations set status = 'done', status_detail = 'done', stage = $2, done_at = now(), updated_at = now() where id = $1::bigint`, [o.id, o.mode === "delivery" ? "delivered" : "picked_up"]);
     await ev(c, o.id, o.mode === "delivery" ? "delivered" : "picked_up", "member", actorId, o.mode === "delivery" ? { es: "Entregado", en: "Delivered" } : { es: "Lo recogió", en: "Picked up" });
     // Si el cliente no tocó «Está bien», se cobra lo real al recoger o entregar (nunca más de lo retenido).

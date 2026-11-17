@@ -4,6 +4,7 @@ import type { PoolClient } from "pg";
 import { auditar, type Staff } from "./admin";
 import { valores } from "./config";
 import { db, tx } from "./db";
+import { KIND_REPARTO, NUM_REPARTO } from "./reparto-comun";
 
 /* 8e · La ruta en vivo del repartidor (fase8-apps.md §4 8e, §6 #14). La ubicación es privada: el servidor decide todo y la base lo vuelve a
    imponer (0128: ruta_activa, delivery_positions_antes). ÚNICO archivo que escribe o lee delivery_positions y delivery_tracks (guardianes
@@ -47,7 +48,7 @@ export async function empezar(c: PoolClient, opId: string, userId: string, paso:
   const o = (await c.query<{ id: string; numero: string; city: string; biz: string; negocio: string; did: string; stage: string | null }>(
     `select o.id::text, o.number as numero, o.city_id as city, o.business_id as biz, b.name as negocio, d.id::text as did, o.stage
        from operations o join delivery_drivers d on d.id = o.driver_id join businesses b on b.id = o.business_id
-      where o.id = $1::bigint and d.user_id = $2 and d.status = 'active' and o.kind = 'order' and coalesce(o.mode, 'pickup') = 'delivery'
+      where o.id = $1::bigint and d.user_id = $2 and d.status = 'active' and o.kind in ${KIND_REPARTO} and coalesce(o.mode, 'pickup') = 'delivery'
         and o.status = 'confirmed' and coalesce(o.stage, '') <> 'delivered'`, [opId, userId])).rows[0];
   if (!o) return null;
   const token = randomBytes(32).toString("base64url");
@@ -63,11 +64,11 @@ export async function empezar(c: PoolClient, opId: string, userId: string, paso:
 
 /* La app se abrió otra vez con la entrega en curso: token nuevo solo si la ruta sigue abierta para ESTE repartidor (nunca abre una). */
 export async function reanudar(userId: string, numero: string): Promise<RutaToken | null> {
-  if (!/^\d{1,12}$/.test(numero)) return null;
+  if (!NUM_REPARTO.test(numero)) return null;
   return tx(async (c) => {
     const t = (await c.query<{ id: string; op: string; city: string }>(
       `select t.id::text, t.operation_id::text as op, t.city_id as city from delivery_tracks t join operations o on o.id = t.operation_id
-        where o.number = $1 and o.kind = 'order' and t.rider_user_id = $2 and t.sharing_until is null for update of t`, [numero, userId])).rows[0];
+        where o.number = $1 and o.kind in ${KIND_REPARTO} and t.rider_user_id = $2 and t.sharing_until is null for update of t`, [numero, userId])).rows[0];
     if (!t || !(await encendida(c, userId))) return null;
     if (!(await c.query<{ ok: boolean }>(`select ruta_activa($1::bigint, $2::uuid, $3) as ok`, [t.op, userId, t.city])).rows[0]?.ok) return null;
     const token = randomBytes(32).toString("base64url");
@@ -166,8 +167,8 @@ async function vista(op: string, conRastro: boolean, desdeCliente: boolean): Pro
 
 /* El cliente de ESE pedido: solo la última posición, desde «Recogí» (ubic_cliente_desde = 1). null = no la ve (el SSE contesta 404). */
 export async function rutaCliente(userId: string, numero: string): Promise<Vista | null> {
-  if (!/^\d{1,12}$/.test(numero) || (await valores("ubic_cliente_desde")).ubic_cliente_desde !== 1) return null;
-  const o = (await db().query<{ id: string }>(`select id::text from operations where number = $1 and kind = 'order' and user_id = $2 and coalesce(mode, 'pickup') = 'delivery'`, [numero, userId])).rows[0];
+  if (!NUM_REPARTO.test(numero) || (await valores("ubic_cliente_desde")).ubic_cliente_desde !== 1) return null;
+  const o = (await db().query<{ id: string }>(`select id::text from operations where number = $1 and kind in ${KIND_REPARTO} and user_id = $2 and coalesce(mode, 'pickup') = 'delivery'`, [numero, userId])).rows[0];
   if (!o || !(await encendida(undefined, await repartidorDe(o.id)))) return null;
   return vista(o.id, false, true);
 }
@@ -179,15 +180,15 @@ export async function clienteVeRuta(userId: string, numero: string): Promise<boo
 
 /* El negocio de ESE pedido (la acción o el SSE ya revisaron accesoPanel con «ord»): la posición y el rastro desde que empezó. */
 export async function rutaNegocio(negocioId: string, numero: string): Promise<Vista | null> {
-  if (!/^\d{1,12}$/.test(numero)) return null;
-  const o = (await db().query<{ id: string }>(`select id::text from operations where number = $1 and kind = 'order' and business_id = $2 and coalesce(mode, 'pickup') = 'delivery'`, [numero, negocioId])).rows[0];
+  if (!NUM_REPARTO.test(numero)) return null;
+  const o = (await db().query<{ id: string }>(`select id::text from operations where number = $1 and kind in ${KIND_REPARTO} and business_id = $2 and coalesce(mode, 'pickup') = 'delivery'`, [numero, negocioId])).rows[0];
   if (!o || !(await encendida(undefined, await repartidorDe(o.id)))) return null;
   return vista(o.id, true, false);
 }
 /* El id de la operación para escuchar sus cambios (SSE), solo después de revisar quién mira. */
 export async function idEntrega(numero: string): Promise<string | null> {
-  if (!/^\d{1,12}$/.test(numero)) return null;
-  return (await db().query<{ id: string }>(`select id::text from operations where number = $1 and kind = 'order'`, [numero])).rows[0]?.id ?? null;
+  if (!NUM_REPARTO.test(numero)) return null;
+  return (await db().query<{ id: string }>(`select id::text from operations where number = $1 and kind in ${KIND_REPARTO}`, [numero])).rows[0]?.id ?? null;
 }
 
 /* El Super Admin: el recorrido completo de una entrega (todas sus rutas) mientras no se purgue. Pide permiso tx:ver, que el pedido sea de sus
@@ -196,14 +197,14 @@ export type RutaAdmin = { numero: string; negocio: string; ciudad: string; rutas
   puntos: { lat: number; lng: number; at: string; acc: number | null; src: string }[]; destino: [number, number] | null };
 export async function rutaAdmin(s: Staff, numero: string, motivo: string): Promise<{ ok: true; r: RutaAdmin } | { ok: false; msg: string }> {
   if (!s.puede("tx", "ver")) return { ok: false, msg: "Tu rol no ve transacciones." };
-  if (!/^\d{1,12}$/.test(String(numero ?? ""))) return { ok: false, msg: "Ese pedido no existe." };
+  if (!NUM_REPARTO.test(String(numero ?? ""))) return { ok: false, msg: "Ese pedido no existe." };
   const m = String(motivo ?? "").replace(/[\u0000-\u001F\u007F]/g, " ").trim().slice(0, 300);
   if (m.length < 10) return { ok: false, msg: "Escribe el motivo (al menos 10 letras): ver la ruta de una persona queda en la auditoría." };
   return tx(async (c) => {
     const o = (await c.query<{ id: string; city: string; negocio: string; dlat: number | null; dlng: number | null }>(
       `select o.id::text, o.city_id as city, b.name as negocio, st_y(a.geo::geometry) as dlat, st_x(a.geo::geometry) as dlng
          from operations o join businesses b on b.id = o.business_id left join user_addresses a on a.id::text = o.details->'to'->>'addressId' and a.user_id = o.user_id
-        where o.number = $1 and o.kind = 'order' and (cardinality($2::text[]) = 0 or o.city_id = any($2::text[]))`, [numero, s.cities])).rows[0];
+        where o.number = $1 and o.kind in ${KIND_REPARTO} and (cardinality($2::text[]) = 0 or o.city_id = any($2::text[]))`, [numero, s.cities])).rows[0];
     if (!o) return { ok: false, msg: "Ese pedido no existe o no es de tus ciudades." } as const;
     const R = (await c.query<{ desde: string; hasta: string | null; fin: string | null; paso: string; distancia: number; n: number; rech: number; purgada: boolean }>(
       `select ${ISO("sharing_from")} as desde, ${ISO("sharing_until")} as hasta, ended_reason as fin, started_step as paso, distance_m as distancia, positions_n as n, rejected_n as rech, purged_at is not null as purgada
@@ -220,9 +221,9 @@ export async function rutaAdmin(s: Staff, numero: string, motivo: string): Promi
 
 /* ¿Qué pedidos de esta lista tienen ruta? (Transacciones muestra «Ver recorrido» solo ahí; nada de la ruta sale sin motivo). */
 export async function conRuta(numeros: string[]): Promise<Set<string>> {
-  const L = numeros.filter((n) => /^\d{1,12}$/.test(n)).slice(0, 200);
+  const L = numeros.filter((n) => NUM_REPARTO.test(n)).slice(0, 200);
   if (!L.length) return new Set();
-  const r = await db().query<{ n: string }>(`select distinct o.number as n from delivery_tracks t join operations o on o.id = t.operation_id where o.number = any($1::text[]) and o.kind = 'order'`, [L]);
+  const r = await db().query<{ n: string }>(`select distinct o.number as n from delivery_tracks t join operations o on o.id = t.operation_id where o.number = any($1::text[]) and o.kind in ${KIND_REPARTO}`, [L]);
   return new Set(r.rows.map((x) => x.n));
 }
 

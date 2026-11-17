@@ -6456,7 +6456,7 @@ const guardianes = {
     const G = "ubicacionSoloEntregaActiva", M = "packages/db/migrations/0128_ruta_en_vivo.sql", L = "apps/web/lib/ruta.ts", RT = "apps/web/app/api/ruta/posicion/route.ts";
     if (!existsSync(M)) return falla(G, M, 0, "falta la migración de la ruta");
     const m = readFileSync(M, "utf8");
-    const act = /create or replace function ruta_activa\([\s\S]*?\$\$([\s\S]*?)\$\$/.exec(m)?.[1] ?? "";
+    const act = ultimaFn("ruta_activa"); // 9n · la última (0177 la amplía al envío del mercado)
     for (const [re, que] of [[/t\.sharing_until is null/, "la ruta abierta"], [/t\.rider_user_id = rider/, "de ese repartidor"], [/o\.status = 'confirmed'/, "la entrega sin terminar"], [/coalesce\(o\.stage, ''\) <> 'delivered'/, "no entregada"],
       [/o\.city_id = ciudad/, "de esa ciudad"], [/t\.city_id = ciudad/, "la ruta de esa ciudad"], [/d\.user_id = rider and d\.status = 'active'/, "el repartidor activo de esa entrega"], [/d\.id = t\.driver_id/, "el mismo repartidor que la empezó"]])
       if (!re.test(act)) falla(G, M, 0, `ruta_activa revisa ${que}`);
@@ -9366,8 +9366,8 @@ const guardianes = {
     const G = "entregaConPrueba", M = "packages/db/migrations/0144_negocio.sql", R = "apps/web/lib/repartidor.ts", P = "apps/web/lib/pedidos.ts";
     if (!existsSync(M)) return falla(G, M, 0, "falta la migración de la prueba de entrega");
     const m = readFileSync(M, "utf8");
-    const tr = /create or replace function operations_prueba\(\)[\s\S]*?\$\$([\s\S]*?)\$\$/.exec(m)?.[1] ?? "";
-    if (!/new\.driver_id is not null/.test(tr) || !/s\.proof/.test(tr) || !/not exists \(select 1 from delivery_proofs p where p\.operation_id = new\.id\)/.test(tr) || !/raise exception/.test(tr)) falla(G, M, 0, "la base no exige la prueba al cerrar un delivery con repartidor de un negocio que la pide (operations_prueba)");
+    const tr = ultimaFn("operations_prueba"); // 9n · la última (0177 añade el envío del mercado)
+    if (!/new\.driver_id is not null/.test(tr) || !/s\.proof/.test(tr) || !/not exists \(select 1 from delivery_proofs p where p\.operation_id = new\.id\)/.test(tr) || !/raise exception 'entrega sin prueba'/.test(tr)) falla(G, M, 0, "la base no exige la prueba al cerrar un delivery con repartidor de un negocio que la pide (operations_prueba)");
     if (!/create trigger operations_prueba before update of status on operations/.test(m)) falla(G, M, 0, "falta el trigger operations_prueba");
     if (!/create trigger delivery_proofs_no_cambia before update or delete on delivery_proofs/.test(m)) falla(G, M, 0, "delivery_proofs es solo de inserción");
     if (!/check \(\(kind = 'foto'\) = \(media_id is not null\)\)/.test(m)) falla(G, M, 0, "una prueba «foto» lleva su foto y solo ella");
@@ -9397,6 +9397,58 @@ const guardianes = {
     }
     const o = "apps/web/lib/repartidor-ofertas.ts";
     if (existsSync(o) && !/\(s\.match\(\/\\d\/g\) \?\? \[\]\)\.length >= 7 \|\|/.test(readFileSync(o, "utf8"))) falla(G, o, 0, "el mensaje libre del repartidor no deja pasar un número de teléfono");
+  },
+
+  /* 9n · mercadoConRepartidor (LAUNCH «Envío del mercado con repartidor propio en /repartidor»): el envío del mercado va por el MISMO Repartidor que
+     la comida y lo real se cobra una sola vez, al «Entregado» del repartidor, con su prueba.
+     - Ninguna pieza del Repartidor (lib/repartidor*.ts, lib/ruta.ts, app/repartidor/**, app/api/ruta/**, app/api/repartidor/**) vuelve a mirar solo
+       la comida: el número y el tipo salen de lib/reparto-comun.ts (NUM_REPARTO, KIND_REPARTO); un «kind = 'order'» suelto o /^\d{1,12}$/ falla
+       (solo quedan «(o.kind = 'order' or …)» y el recordatorio de los programados de comida).
+     - Se ofrece y se asigna solo cuando el mercado lo marcó «Está listo»; «Recogí» también; la prueba es obligatoria en el mercado.
+     - Al «Entregado» del repartidor: liquidarMercado (lo real, idempotente), nunca cobrarOperacion; liquidarMercado no se llama desde otro archivo.
+     - El mercado no marca «Va en camino» ni «Entregado» mientras el repartidor lo tiene (lib/mercado.ts y el panel), y la base no deja cerrar un envío
+       del mercado con repartidor sin la prueba DE ESE repartidor (la última operations_prueba); los códigos y la ruta valen para los dos tipos. */
+  mercadoConRepartidor() {
+    const G = "mercadoConRepartidor", C = "apps/web/lib/reparto-comun.ts", R = "apps/web/lib/repartidor.ts", O = "apps/web/lib/repartidor-ofertas.ts", M = "apps/web/lib/mercado.ts", P = "apps/web/app/panel/MercadoPanel.tsx";
+    if (!existsSync(C)) return falla(G, C, 0, "falta lib/reparto-comun.ts (el número y el tipo de lo que lleva el Repartidor)");
+    const c = sinComent(C);
+    if (!/export const NUM_REPARTO = \/\^\(\?:\\d\{1,12\}\|M-\\d\{1,10\}\)\$\/;/.test(c)) falla(G, C, 0, "NUM_REPARTO acepta el pedido de comida y el del mercado (M-…)");
+    if (!/export const KIND_REPARTO = `\('order', 'market_order'\)`;/.test(c)) falla(G, C, 0, "KIND_REPARTO lleva 'order' y 'market_order'");
+    if (!/export const listoParaRepartoSql = \(a = "o"\) => `\(\$\{a\}\.kind = 'order' or \$\{a\}\.status_detail = 'listo'\)`;/.test(c)) falla(G, C, 0, "el envío del mercado sale con el repartidor solo cuando está «listo»");
+    const piezas = codigo.filter((f) => /^apps\/web\/(lib\/(repartidor[a-z-]*|ruta)\.ts|app\/repartidor\/.*\.tsx?|app\/api\/(ruta|repartidor)\/.*\.ts)$/.test(f) && f !== "apps/web/lib/repartidor-admin.ts");
+    for (const f of piezas) {
+      const t = sinComent(f);
+      if (/\/\^\\d\{1,12\}\$\//.test(t)) falla(G, f, 0, "un número de pedido solo de comida (/^\\d{1,12}$/): usa NUM_REPARTO (el mercado es M-…)");
+      for (const m of t.matchAll(/kind = 'order'/g)) {
+        const antes = t.slice(Math.max(0, m.index - 3), m.index), linea = t.slice(t.lastIndexOf("\n", m.index) + 1, t.indexOf("\n", m.index));
+        if (!/\(o\.$/.test(antes) && !/o\.scheduled_at is not null/.test(linea)) falla(G, f, 0, "una consulta del Repartidor solo con la comida (kind = 'order'): usa KIND_REPARTO / repartoSql");
+      }
+    }
+    if (!existsSync(R) || !existsSync(O) || !existsSync(M)) return falla(G, R, 0, "faltan las piezas del Repartidor o del mercado");
+    const r = sinComent(R), ps = cuerpoFn(r, "pasoRepartidor");
+    if (!/\(coalesce\(ds\.proof, false\) or o\.kind = 'market_order'\) as pide_prueba/.test(ps) || !/if \(o\.pide_prueba && !probada\) return no\(/.test(ps)) falla(G, R, 0, "el envío del mercado siempre lleva prueba al «Entregado»");
+    if (!/if \(o\.merc && o\.detail !== "listo"\) return no\(/.test(ps)) falla(G, R, 0, "«Recogí» de un envío del mercado solo cuando el mercado lo marcó listo");
+    if (!/if \(merc && "op" in r && r\.op\) await \(await import\("\.\/mercado"\)\)\.liquidarMercado\(r\.op as string\)/.test(ps) || !/else if \(r\.ok && "op" in r && r\.op\) await cobrarOperacion\(/.test(ps)) falla(G, R, 0, "al «Entregado» del repartidor el mercado se liquida (lo real) y nunca con cobrarOperacion (captura todo)");
+    if (!/if \(driverId !== null && o\.kind === "market_order" && o\.detail !== "listo"\) return no\(/.test(cuerpoFn(r, "asignarRepartidor"))) falla(G, R, 0, "el envío del mercado se asigna solo cuando está listo");
+    const of = sinComent(O);
+    if (!/if \(!o\.listo\) return no\(/.test(cuerpoFn(of, "ofrecer")) || !/!o\.listo\) \{/.test(cuerpoFn(of, "aceptarOferta"))) falla(G, O, 0, "el envío del mercado se ofrece (y se acepta) solo cuando está listo");
+    const m = sinComent(M), pm = cuerpoFn(m, "pasoMercado");
+    if (!/if \(o\.mode === "delivery" && o\.driver\) return no\(/.test(pm)) falla(G, M, 0, "el mercado no marca «Entregado» mientras el repartidor lo tiene (lo marca él, con prueba, y ahí se cobra)");
+    if (!/if \(paso === "camino"\) \{[\s\S]{0,200}if \(o\.driver\) return no\(/.test(pm)) falla(G, M, 0, "el mercado no marca «Va en camino» un envío que ya tiene repartidor");
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === M || f === R) continue;
+      if (/\bliquidarMercado\(/.test(sinComent(f))) falla(G, f, 0, "lo real del mercado se cobra solo en lib/mercado.ts (aprobar, entregado propio, reparar) y al «Entregado» del repartidor");
+    }
+    if (existsSync(P) && !/const propio = x\.modo !== "delivery" \|\| \(D === "camino" && !x\.reparto\?\.rep\);/.test(sinComent(P))) falla(G, P, 0, "el panel del mercado no muestra «Entregado» propio mientras el repartidor lo tiene");
+    const pr = ultimaFn("operations_prueba");
+    if (!/new\.kind = 'market_order' and coalesce\(new\.mode, 'pickup'\) = 'delivery' and new\.driver_id is not null and new\.status = 'done'/.test(pr) || !/p\.kind in \('foto', 'codigo'\) and p\.driver_id = new\.driver_id/.test(pr))
+      falla(G, "packages/db/migrations", 0, "la base no deja cerrar un envío del mercado con repartidor sin la prueba de ESE repartidor (operations_prueba)");
+    if (!/o\.kind in \('order', 'market_order'\)/.test(ultimaFn("ruta_activa"))) falla(G, "packages/db/migrations", 0, "la ruta en vivo vale para el envío del mercado (ruta_activa)");
+    if (!/new\.kind in \('order', 'market_order'\)/.test(ultimaFn("operations_codigos"))) falla(G, "packages/db/migrations", 0, "el envío del mercado recibe sus códigos al aceptarse (operations_codigos)");
+    const mig = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");
+    const trg = (n) => { const all = [...mig.matchAll(new RegExp(`create trigger ${n} [^;]*;`, "g"))]; return all.length ? all[all.length - 1][0] : ""; };
+    if (!/when \(new\.kind in \('order', 'market_order'\)/.test(trg("operations_ruta"))) falla(G, "packages/db/migrations", 0, "la ruta del envío del mercado se cierra sola al entregar o cambiar de repartidor (trigger operations_ruta)");
+    if (!/when \(new\.kind in \('order', 'market_order'\)/.test(trg("operations_codigos"))) falla(G, "packages/db/migrations", 0, "el trigger de los códigos corre también con el envío del mercado");
   },
 
   /* 9n · diaEspecialActivo: los días especiales (feriados, vacaciones, días propios, temporada) no se borran: «Quitar» deja status 'removed'. Toda

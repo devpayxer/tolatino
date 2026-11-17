@@ -4,6 +4,7 @@ import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
 import { vistaMercado } from "@/lib/mercado";
 import { pasarela } from "@/lib/pagos/pasarela";
+import { clienteVeRuta } from "@/lib/ruta";
 import { MercadoEstado } from "./MercadoEstado";
 
 export const dynamic = "force-dynamic";
@@ -17,5 +18,7 @@ export default async function Page({ params }: { params: Promise<{ num: string }
   if (!v) notFound();
   // 9n-4 · La hoja del banco (3-D Secure) del OK por más necesita el modo de la pasarela y la llave pública.
   const modo = pasarela.modo();
-  return <MercadoEstado v={v} es={lang === "es"} pago={!v.local && modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null } : null} />;
+  // 9n · El mapa en vivo del repartidor del mercado: solo el cliente de ESTE pedido, desde «Recogí» (el SSE lo vuelve a revisar en cada cambio).
+  const ruta = v.modo === "delivery" && v.st === "confirmed" && !!v.reparto?.rep ? await clienteVeRuta(u.id, num) : false;
+  return <MercadoEstado v={v} es={lang === "es"} ruta={ruta} pago={!v.local && modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null } : null} />;
 }

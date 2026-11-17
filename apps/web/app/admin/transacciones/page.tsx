@@ -10,6 +10,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const sp = await searchParams, f = leerFiltrosTx(sp);
   const r = await listaTx(s, f);
   // 8e · Qué entregas de esta página tienen ruta (solo el número; el recorrido sale con motivo, verRutaTx).
-  const rutas = [...(await conRuta(r.filas.filter((x) => x.k === "order" && x.mode === "delivery").map((x) => x.num)))];
+  const rutas = [...(await conRuta(r.filas.filter((x) => (x.k === "order" || x.k === "market_order") && x.mode === "delivery").map((x) => x.num)))]; // 9n · y el envío del mercado
   return <Transacciones d={r} f={f} rutas={rutas} porPagina={POR_PAGINA_TX} exportar={s.puede("tx", "exportar")} devolver={s.puede("tx", "aprobar")} sim={pasarela.modo() === "simulador"} />;
 }

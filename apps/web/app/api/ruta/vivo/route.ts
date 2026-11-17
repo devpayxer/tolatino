@@ -1,6 +1,7 @@
 import { yo } from "@/lib/cuenta";
 import { accesoPanel } from "@/lib/panel";
 import { idEntrega, rutaCliente, rutaNegocio } from "@/lib/ruta";
+import { NUM_REPARTO } from "@/lib/reparto-comun";
 import { escucharRuta } from "@/lib/ruta-vivo";
 
 /* 8e · GET /api/ruta/vivo — el mapa en vivo de UNA entrega (SSE), como /api/puerta/vivo. Lo dispara el NOTIFY 'ruta' (cada posición nueva y al
@@ -17,7 +18,7 @@ export async function GET(req: Request) {
   const u = await yo();
   if (!u) return NO();
   const q = new URL(req.url).searchParams, pedido = q.get("pedido") ?? "", negocio = q.get("negocio");
-  if (!/^\d{1,12}$/.test(pedido)) return NO();
+  if (!NUM_REPARTO.test(pedido)) return NO(); // 9n · el pedido de comida (1051) o el envío del mercado (M-6101)
   const ver = negocio
     ? async () => ((await accesoPanel(negocio, "ord")) ? rutaNegocio(negocio, pedido) : null)
     : async () => rutaCliente(u.id, pedido);

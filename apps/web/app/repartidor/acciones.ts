@@ -3,6 +3,7 @@ import { mismoOrigen, yo } from "@/lib/cuenta";
 import { choferAbordo, choferPaso } from "@/lib/chofer";
 import { aceptarInvitacion, enLinea, pasoRepartidor, problemaRepartidor, salirEquipo, type PasoRep } from "@/lib/repartidor";
 import { aceptarOferta, escribirCliente, rechazarOferta } from "@/lib/repartidor-ofertas";
+import { detPanel, hrefCliente, KIND_REPARTO } from "@/lib/reparto-comun";
 import { reanudar, type RutaToken } from "@/lib/ruta";
 
 /* App To'Latino Repartidor: cada acción la hace el repartidor con su cuenta, sobre lo que el negocio le asignó. */
@@ -27,13 +28,14 @@ export async function repPaso(numero: string, paso: PasoRep, efectivo?: number, 
   if (!["empezar", "recogi", "llegue", "entregado"].includes(paso)) return { ok: false, msg: { es: "Ese paso no existe.", en: "That step does not exist." } };
   const pr = prueba && typeof prueba === "object" ? { codigo: typeof prueba.codigo === "string" ? prueba.codigo : undefined, foto: typeof prueba.foto === "string" ? prueba.foto : undefined } : {};
   const r = await pasoRepartidor(u.id, String(numero ?? ""), paso, efectivo, pr);
+  // 9n · El envío del mercado avisa con los suyos (merc_camino, merc_here) y lleva a /mercado/M-…; el de comida, como siempre.
   if (r.ok && "aviso" in r && r.aviso) {
     const { avisarPedido, avisar } = await import("@/lib/avisos");
     if (r.aviso.tpl === "ord_way") await avisarPedido(r.aviso.numero, "ord_way");
     else {
       const { db } = await import("@/lib/db");
-      const o = (await db().query<{ uid: string; negocio: string }>(`select o.user_id::text as uid, b.name as negocio from operations o join businesses b on b.id = o.business_id where o.number = $1 and o.kind = 'order'`, [r.aviso.numero])).rows[0];
-      if (o) await avisar(o.uid, "ord_here", { negocio: o.negocio, num: r.aviso.numero }, { href: `/pedido/${r.aviso.numero}`, ref: ["order", r.aviso.numero] });
+      const o = (await db().query<{ uid: string; negocio: string }>(`select o.user_id::text as uid, b.name as negocio from operations o join businesses b on b.id = o.business_id where o.number = $1 and o.kind in ${KIND_REPARTO}`, [r.aviso.numero])).rows[0];
+      if (o) await avisar(o.uid, r.aviso.tpl, { negocio: o.negocio, num: r.aviso.numero }, { href: hrefCliente(r.aviso.numero), ref: ["order", r.aviso.numero] });
     }
   }
   // 8e · El paso que inicia la entrega trae el token de la ruta para el teléfono (solo a este repartidor, solo de esta entrega).
@@ -49,7 +51,7 @@ export async function repProblema(numero: string, motivo: string, nota: string):
   const u = await quien();
   if (!u) return NO;
   const r = await problemaRepartidor(u.id, String(numero ?? ""), String(motivo ?? ""), String(nota ?? ""));
-  if (r.ok && r.aviso) await (await import("@/lib/avisos")).avisarNegocio(r.aviso.negocio, "biz_dlv_issue", r.aviso.vars, { href: `/panel/${r.aviso.negocio}/hoy?det=ped:${numero}`, ref: ["order", String(numero)] });
+  if (r.ok && r.aviso) await (await import("@/lib/avisos")).avisarNegocio(r.aviso.negocio, "biz_dlv_issue", r.aviso.vars, { href: `/panel/${r.aviso.negocio}/hoy?det=${detPanel(String(numero))}`, ref: ["order", String(numero)] });
   return r.ok ? { ok: true } : r;
 }
 /* 9n · La oferta con cuenta regresiva: «Aceptar» inicia la entrega (trae el token de la ruta, como «Voy por el pedido»). */
@@ -57,14 +59,14 @@ export async function repOfertaAceptar(id: string): Promise<R> {
   const u = await quien();
   if (!u) return NO;
   const r = await aceptarOferta(u.id, String(id ?? ""));
-  if (r.ok && "aviso" in r && r.aviso) await (await import("@/lib/avisos")).avisarNegocio(r.aviso.negocio, "biz_oferta_ok", r.aviso.vars, { href: `/panel/${r.aviso.negocio}/hoy?det=ped:${r.aviso.vars.num}`, ref: ["order", String(r.aviso.vars.num)] }).catch(() => undefined);
+  if (r.ok && "aviso" in r && r.aviso) await (await import("@/lib/avisos")).avisarNegocio(r.aviso.negocio, "biz_oferta_ok", r.aviso.vars, { href: `/panel/${r.aviso.negocio}/hoy?det=${detPanel(String(r.aviso.vars.num))}`, ref: ["order", String(r.aviso.vars.num)] }).catch(() => undefined);
   return r.ok ? { ok: true, ruta: r.ruta ?? null } : r;
 }
 export async function repOfertaRechazar(id: string, motivo: string): Promise<R> {
   const u = await quien();
   if (!u) return NO;
   const r = await rechazarOferta(u.id, String(id ?? ""), String(motivo ?? ""));
-  if (r.ok && "vencio" in r && r.vencio) await (await import("@/lib/avisos")).avisarNegocio(r.vencio.negocio, "biz_oferta_vencio", { num: r.vencio.numero }, { href: `/panel/${r.vencio.negocio}/hoy?det=ped:${r.vencio.numero}`, ref: ["order", r.vencio.numero] }).catch(() => undefined);
+  if (r.ok && "vencio" in r && r.vencio) await (await import("@/lib/avisos")).avisarNegocio(r.vencio.negocio, "biz_oferta_vencio", { num: r.vencio.numero }, { href: `/panel/${r.vencio.negocio}/hoy?det=${detPanel(r.vencio.numero)}`, ref: ["order", r.vencio.numero] }).catch(() => undefined);
   return r.ok ? { ok: true } : r;
 }
 /* 9n · Escribirle al cliente dentro de la app (§6 #20): una frase fija o un texto corto; el repartidor nunca recibe su teléfono. */
@@ -72,7 +74,7 @@ export async function repEscribir(numero: string, kind: string, texto: string): 
   const u = await quien();
   if (!u) return NO;
   const r = await escribirCliente(u.id, String(numero ?? ""), String(kind ?? ""), String(texto ?? ""));
-  if (r.ok && "aviso" in r && r.aviso) await (await import("@/lib/avisos")).avisar(r.aviso.uid, "ord_rep_msg", r.aviso.vars, { href: `/pedido/${numero}`, ref: ["order", String(numero)] }).catch(() => undefined);
+  if (r.ok && "aviso" in r && r.aviso) await (await import("@/lib/avisos")).avisar(r.aviso.uid, "ord_rep_msg", r.aviso.vars, { href: hrefCliente(String(numero)), ref: ["order", String(numero)] }).catch(() => undefined);
   return r.ok ? { ok: true } : r;
 }
 export async function repSalir(id: string): Promise<R> {

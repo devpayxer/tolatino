@@ -5,12 +5,12 @@
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
-const M = 'packages/db/migrations/0144_negocio.sql', RP = 'apps/web/lib/repartidor.ts', RO = 'apps/web/lib/repartidor-ofertas.ts', PD = 'apps/web/lib/pedidos.ts',
+const M = 'packages/db/migrations/0144_negocio.sql', M9 = 'packages/db/migrations/0177_mercado_repartidor.sql', /* 9n · la operations_prueba vigente */ RP = 'apps/web/lib/repartidor.ts', RO = 'apps/web/lib/repartidor-ofertas.ts', PD = 'apps/web/lib/pedidos.ts',
   RT = 'apps/web/app/repartidor/Repartidor.tsx', CI = 'apps/web/lib/citas.ts', CO = 'apps/web/lib/colas.ts', AC = 'apps/web/lib/admin-colas.ts', CU = 'apps/web/app/admin/Colas.tsx',
   DI = 'apps/web/lib/disputas.ts', CF = 'apps/web/lib/config.ts';
 const casos = [
   // entregaConPrueba: la base deja cerrar un delivery sin prueba
-  ['entregaConPrueba', M, "    raise exception 'entrega sin prueba' using errcode = 'P0001', hint = 'sin_prueba';\n", ''],
+  ['entregaConPrueba', M9, "    raise exception 'entrega sin prueba' using errcode = 'P0001', hint = 'sin_prueba';\n", ''],
   // … el trigger ya no se crea
   ['entregaConPrueba', M, 'create trigger operations_prueba before update of status on operations', 'create trigger operations_prueba_x after insert on operations'],
   // … la prueba se puede editar

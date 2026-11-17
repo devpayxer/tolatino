@@ -1,6 +1,7 @@
 import "server-only";
 import { valor } from "./config";
 import { db } from "./db";
+import { detPanel, KIND_REPARTO } from "./reparto-comun";
 import { ofrecer } from "./repartidor-ofertas";
 
 /* 9n-4 · Repartidor: la asignación automática y los pedidos programados con recordatorio (LAUNCH L1787; fase9 §6 #21; la oferta con cuenta
@@ -12,12 +13,15 @@ import { ofrecer } from "./repartidor-ofertas";
    - Programados: el pedido programado se ofrece cuando le faltan rep_programado_min para estar listo (no al aceptarlo); a esa hora le llega al
      negocio el recordatorio «Sale a las …» y, si ya tiene repartidor, también a él. Una vez por pedido (details.rec_prog es el candado).
    - Nunca toca un negocio que entrega con una app externa ni un pedido que ya tiene repartidor; nunca le da al repartidor el teléfono del cliente
-     (la oferta es la de 9n: calle, millas y el total). */
-export async function asignarSolos(): Promise<number> {
+     (la oferta es la de 9n: calle, millas y el total).
+   - 9n · El envío del mercado entra igual, cuando el mercado lo marcó «Está listo» (status_detail 'listo') y su franja empieza dentro de
+     rep_programado_min (si lo pesaron temprano, sale cuando toca, no horas antes de la franja que eligió el cliente). */
+/* `solo`: un pedido (el mercado acaba de marcarlo «Está listo»): la misma regla, sin esperar al barrido, y sin el recordatorio de los programados. */
+export async function asignarSolos(solo: { negocio: string; numero: string } | null = null): Promise<number> {
   const [intentos, antes] = await Promise.all([valor("rep_auto_intentos"), valor("rep_programado_min")]);
   const { avisar, avisarNegocio } = await import("./avisos");
   // 1 · El recordatorio de los programados (al negocio y, si ya lo tiene, al repartidor).
-  const P = (await db().query<{ numero: string; biz: string; hora: string; drv: string | null; negocio: string }>(
+  const P = solo ? [] : (await db().query<{ numero: string; biz: string; hora: string; drv: string | null; negocio: string }>(
     `update operations o set details = o.details || jsonb_build_object('rec_prog', now()), updated_at = now()
        from cities ci, businesses b
       where ci.id = o.city_id and b.id = o.business_id and o.kind = 'order' and coalesce(o.mode, 'pickup') = 'delivery' and o.status = 'confirmed' and o.scheduled_at is not null
@@ -32,11 +36,13 @@ export async function asignarSolos(): Promise<number> {
   const L = (await db().query<{ numero: string; biz: string; n: number }>(
     `select o.number as numero, o.business_id as biz, (select count(*)::int from delivery_offers f where f.operation_id = o.id and f.created_by is null) as n
        from operations o join delivery_settings d on d.business_id = o.business_id
-      where d.auto_offer and coalesce(d.who, 'team') <> 'external' and o.kind = 'order' and coalesce(o.mode, 'pickup') = 'delivery' and o.status = 'confirmed'
+      where d.auto_offer and coalesce(d.who, 'team') <> 'external' and o.kind in ${KIND_REPARTO} and coalesce(o.mode, 'pickup') = 'delivery' and o.status = 'confirmed'
         and o.driver_id is null and coalesce(o.stage, '') <> 'delivered' and not (o.details ? 'rep_nadie')
-        and (o.scheduled_at is null or o.ready_at <= now() + make_interval(mins => $1::int))
+        and (o.kind = 'order' and (o.scheduled_at is null or o.ready_at <= now() + make_interval(mins => $1::int))
+             or o.kind = 'market_order' and o.status_detail = 'listo' and o.scheduled_at <= now() + make_interval(mins => $1::int))
         and not exists (select 1 from delivery_offers f where f.operation_id = o.id and f.status = 'open' and f.expires_at > now())
-      order by o.ready_at limit 50`, [antes])).rows;
+        and ($2::text is null or (o.business_id = $2 and o.number = $3))
+      order by o.ready_at limit 50`, [antes, solo?.negocio ?? null, solo?.numero ?? null])).rows;
   let n = 0;
   for (const x of L) {
     if (x.n >= intentos) { await nadie(x.biz, x.numero, avisarNegocio); continue; }
@@ -50,6 +56,6 @@ export async function asignarSolos(): Promise<number> {
 
 /* Nadie lo tomó (o nadie estaba en línea): un solo aviso al negocio y la asignación automática para con ese pedido. */
 async function nadie(biz: string, numero: string, avisarNegocio: (typeof import("./avisos"))["avisarNegocio"]) {
-  const u = await db().query(`update operations set details = details || jsonb_build_object('rep_nadie', now()), updated_at = now() where business_id = $1 and number = $2 and kind = 'order' and not (details ? 'rep_nadie')`, [biz, numero]);
-  if (u.rowCount) await avisarNegocio(biz, "biz_reparto_nadie", { num: numero }, { href: `/panel/${biz}/hoy?det=ped:${numero}`, ref: ["order", numero] }).catch(() => undefined);
+  const u = await db().query(`update operations set details = details || jsonb_build_object('rep_nadie', now()), updated_at = now() where business_id = $1 and number = $2 and kind in ${KIND_REPARTO} and not (details ? 'rep_nadie')`, [biz, numero]);
+  if (u.rowCount) await avisarNegocio(biz, "biz_reparto_nadie", { num: numero }, { href: `/panel/${biz}/hoy?det=${detPanel(numero)}`, ref: ["order", numero] }).catch(() => undefined);
 }

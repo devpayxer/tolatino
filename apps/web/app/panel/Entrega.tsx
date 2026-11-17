@@ -2,8 +2,11 @@
 /* Entrega (Panel v2 · dlvBlocks, revisión 25 oct): cómo entregas (Delivery, Pickup), cómo se recoge, zona y costo,
    tiempo y horario, quién entrega (mi equipo o una app externa) y «Así lo ve el cliente». Con «Mi equipo»: Tus repartidores
    (invitar con código, quitar), quién está en línea y el cuadre de efectivo de hoy (plan apps-delivery-checkin §1.5; sin
-   diseño propio: compuesto, ver REVISION). El despacho (asignar) vive en el detalle de cada pedido. */
+   diseño propio: compuesto, ver REVISION). El despacho (asignar) vive en el detalle de cada pedido.
+   9n · El mercado (NEG-MERC) también tiene Entrega: solo Tus repartidores y lo que pide al recoger y al entregar (la zona, el costo y las franjas se
+   ponen en Tu herramienta). Los mismos bloques (repartidoresBloques); en el mercado la prueba de entrega es siempre obligatoria. */
 import type { PanelBloqueT as Bloque } from "@tolatino/ui";
+import type { AjustesPed } from "@/lib/pedidos";
 import { entregaAjustes, type EntregaIn } from "./acciones-pedidos";
 import { repInvitar, repAuto, repPruebas, repQuitar } from "./acciones-repartidores";
 import type { Ctx, Editor } from "./Panel";
@@ -59,6 +62,31 @@ export function entregaBloques(c: Ctx): Sec {
   ];
   if (VW.length) out.push({ type: "rows", k: E2("ASÍ LO VE EL CLIENTE", "HOW THE CLIENT SEES IT"), items: VW.map(([icon, t]) => ({ icon, t, compact: true, chev: false })) });
   // Tus repartidores (con «Mi equipo»): la app To'Latino Repartidor en su teléfono.
+  out.push(...repartidoresBloques(c, a, false));
+  // El pago en delivery vive en Pedidos en línea: si falta, se dice aquí.
+  if (v.delivery && a.delivery && !a.cashD && !a.card) out.push({ type: "note", tone: "warn", t: E2("Falta cómo te pagan en delivery: enciende «Efectivo al entregar» en Pedidos en línea.", "Missing how they pay on delivery: turn on “Cash on delivery” in Online orders."), cta: E2("Pedidos en línea", "Online orders"), onCta: () => c.go("mod", "pedidos") });
+  if (none && F.dirty) out.push({ type: "note", tone: "warn", t: E2("Para guardar falta: una forma de entrega.", "To save, add: a delivery method.") });
+  const ed: Editor = { F, l: E2("Guardar", "Save"), valid: !none, apply: (x: EntregaIn) => entregaAjustes(d.id, x), toast: E2("Guardado · el cliente ya lo ve así.", "Saved · clients see it like this now.") };
+  return { blocks: out, ed };
+}
+
+/* 9n · Entrega del mercado: Tus repartidores (invitar, quitar, en línea) y lo que pides al recoger y al entregar. Con una app externa, o con el envío
+   apagado, lo dice y lleva a donde se cambia. */
+export function entregaMercado(c: Ctx): Sec {
+  const { E2 } = c, a = c.mped?.aj;
+  const out: (Bloque | null)[] = [{ type: "head", t: E2("Entrega", "Delivery"), s: E2("Tus repartidores llevan los envíos del mercado con la app To’Latino Repartidor. La zona, el costo y las franjas se cambian en Tu herramienta.", "Your drivers deliver the market orders with the To’Latino Driver app. Area, fee and time slots are changed in Your tool.") }];
+  if (!a) return { blocks: out, ed: null };
+  if (a.dlvAdm) out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`To’Latino pausó tu envío: en tu página solo sale pickup. Motivo: ${a.dlvAdm}`, `To’Latino paused your delivery: your page only offers pickup. Reason: ${a.dlvAdm}`) });
+  if (!a.delivery) out.push({ type: "note", tone: "info", icon: "truck", t: E2("El envío está apagado: tus clientes solo piden pickup. Lo enciendes en Tu herramienta.", "Delivery is off: your clients only order pickup. Turn it on in Your tool."), cta: E2("Tu herramienta", "Your tool"), onCta: () => c.go("mod") });
+  else if (a.who === "external") out.push({ type: "note", tone: "info", icon: "truck", t: E2("Entregas con una app externa: tú marcas «Va en camino» y «Entregado» en cada pedido.", "You deliver with an external app: you mark “On the way” and “Delivered” on each order.") });
+  out.push(...repartidoresBloques(c, a, true));
+  return { blocks: out, ed: null };
+}
+
+/* Tus repartidores (con «Mi equipo» y el delivery encendido): invitar, quitar, quién está en línea, lo que pides al recoger y al entregar y el
+   efectivo de hoy. `mercado`: en el mercado la prueba de entrega no se apaga (ahí se cobra lo real) y «Ofrecer solo» sale al marcar «Está listo». */
+function repartidoresBloques(c: Ctx, a: AjustesPed, mercado: boolean): Bloque[] {
+  const { E2, es, d } = c, out: Bloque[] = [];
   if (a.delivery && a.who === "team" && c.reps) {
     const R = c.reps, inv = c.ui.repInv as { n: string; t: string } | undefined, cod = c.ui.repCod as string | undefined;
     const VH: Record<string, [string, string]> = { pie: ["a pie", "on foot"], bici: ["bici", "bike"], moto: ["moto", "motorbike"], auto: ["auto", "car"], camioneta: ["camioneta", "van"] };
@@ -80,19 +108,17 @@ export function entregaBloques(c: Ctx): Sec {
     out.push({ type: "rows", k: E2("AL RECOGER Y AL ENTREGAR", "AT PICKUP AND DELIVERY"), items: [
       { icon: "lock", t: E2("Código de recogida", "Pickup code"), s: E2("Cada pedido trae un código de 4 números en su detalle: se lo dices al repartidor cuando le das el pedido.", "Each order has a 4-digit code in its detail: tell it to the driver when you hand over the order."),
         tgOn: a.pickupCode, onTg: () => c.run(() => repPruebas(d.id, a.proof, !a.pickupCode), a.pickupCode ? E2("Ya no se pide el código de recogida.", "Pickup code no longer required.") : E2("Listo: el repartidor escribe el código al recoger.", "Done: the driver types the code at pickup.")), chev: false },
-      { icon: "image", t: E2("Prueba de entrega", "Proof of delivery"), s: E2("El repartidor toma una foto de la entrega o escribe el código que le dice el cliente. Sin prueba no se marca «Entregado».", "The driver takes a delivery photo or types the code the customer gives them. Without proof it cannot be marked “Delivered”."),
+      mercado ? { icon: "image", t: E2("Prueba de entrega", "Proof of delivery"), s: E2("En el mercado es siempre obligatoria: el repartidor toma la foto o escribe el código que le dice el cliente, y ahí se cobra lo real.", "For the market it is always required: the driver takes the photo or types the code the customer gives them, and that is when the real total is charged."), tag: E2("SIEMPRE", "ALWAYS"), tone: "signal", chev: false }
+        : { icon: "image", t: E2("Prueba de entrega", "Proof of delivery"), s: E2("El repartidor toma una foto de la entrega o escribe el código que le dice el cliente. Sin prueba no se marca «Entregado».", "The driver takes a delivery photo or types the code the customer gives them. Without proof it cannot be marked “Delivered”."),
         tgOn: a.proof, onTg: () => c.run(() => repPruebas(d.id, !a.proof, a.pickupCode), a.proof ? E2("Ya no se pide prueba de entrega.", "Proof of delivery no longer required.") : E2("Listo: cada entrega lleva foto o código.", "Done: every delivery has a photo or a code.")), chev: false },
       // 9n-4 · La asignación automática: la misma oferta con cuenta regresiva, sin que nadie la mande (y los programados, antes de su hora).
-      { icon: "truck", t: E2("Ofrecer solo a los repartidores", "Offer to drivers automatically"), s: E2("Cuando aceptas un delivery, se ofrece solo a los que están en línea; el primero que acepta se lo lleva. Los programados, antes de su hora. Si nadie lo toma, te avisamos.", "When you accept a delivery, it is offered to the drivers who are online; the first to accept takes it. Scheduled ones, before their time. If nobody takes it, we tell you."),
+      { icon: "truck", t: E2("Ofrecer solo a los repartidores", "Offer to drivers automatically"), s: mercado ? E2("Cuando marcas «Está listo» un envío, se ofrece solo a los que están en línea; el primero que acepta se lo lleva. Si lo pesaste temprano, sale cerca de la franja que eligió el cliente. Si nadie lo toma, te avisamos.", "When you mark a delivery “Ready”, it is offered to the drivers who are online; the first to accept takes it. If you weighed it early, it goes out near the slot the client chose. If nobody takes it, we tell you.")
+          : E2("Cuando aceptas un delivery, se ofrece solo a los que están en línea; el primero que acepta se lo lleva. Los programados, antes de su hora. Si nadie lo toma, te avisamos.", "When you accept a delivery, it is offered to the drivers who are online; the first to accept takes it. Scheduled ones, before their time. If nobody takes it, we tell you."),
         tgOn: a.autoOffer, onTg: () => c.run(() => repAuto(d.id, !a.autoOffer), a.autoOffer ? E2("Listo: ya no se ofrece solo.", "Done: no longer offered automatically.") : E2("Listo: los deliveries se ofrecen solos.", "Done: deliveries are offered automatically.")), chev: false },
     ] });
     const cuadre = R.filter((x) => x.hoy.efectivo > 0);
 
     if (cuadre.length) out.push({ type: "rows", k: E2("EFECTIVO DE HOY · LO ENTREGAN AL CERRAR", "TODAY'S CASH · THEY HAND IT IN AT CLOSING"), items: cuadre.map((x) => ({ key: `c${x.id}`, icon: "dollar", t: x.nombre, s: `${x.hoy.entregas} ${x.hoy.entregas === 1 ? E2("entrega", "delivery") : E2("entregas", "deliveries")}`, r: mn(x.hoy.efectivo), chev: false, compact: true })) });
   }
-  // El pago en delivery vive en Pedidos en línea: si falta, se dice aquí.
-  if (v.delivery && a.delivery && !a.cashD && !a.card) out.push({ type: "note", tone: "warn", t: E2("Falta cómo te pagan en delivery: enciende «Efectivo al entregar» en Pedidos en línea.", "Missing how they pay on delivery: turn on “Cash on delivery” in Online orders."), cta: E2("Pedidos en línea", "Online orders"), onCta: () => c.go("mod", "pedidos") });
-  if (none && F.dirty) out.push({ type: "note", tone: "warn", t: E2("Para guardar falta: una forma de entrega.", "To save, add: a delivery method.") });
-  const ed: Editor = { F, l: E2("Guardar", "Save"), valid: !none, apply: (x: EntregaIn) => entregaAjustes(d.id, x), toast: E2("Guardado · el cliente ya lo ve así.", "Saved · clients see it like this now.") };
-  return { blocks: out, ed };
+  return out;
 }

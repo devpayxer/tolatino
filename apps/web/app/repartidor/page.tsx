@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
 import { misSalidas } from "@/lib/chofer";
+import { NUM_REPARTO } from "@/lib/reparto-comun";
 import { misEntregas, misEquipos, misGanancias, sancionVigente } from "@/lib/repartidor";
 import { misOfertas } from "@/lib/repartidor-ofertas";
 import { misRutas } from "@/lib/ruta";
@@ -17,7 +18,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
   const [u, lang, sp] = await Promise.all([yo(), idioma(), searchParams]);
   if (!u?.first_name) redirect(`/entrar?volver=${encodeURIComponent("/repartidor")}`);
   const t = ["inicio", "pedidos", "ganancias", "perfil"].includes(sp.t ?? "") ? (sp.t as "inicio" | "pedidos" | "ganancias" | "perfil") : "inicio";
-  const p = typeof sp.p === "string" && /^\d{1,12}$/.test(sp.p) ? sp.p : null;
+  const p = typeof sp.p === "string" && NUM_REPARTO.test(sp.p) ? sp.p : null; // 9n · también el envío del mercado (M-6101)
   // 8e · Las entregas con la ruta abierta (la banda «Compartiendo tu ubicación» y el teléfono que vuelve a compartir si la app se cerró).
   // 9n · Las ofertas abiertas (con los segundos que quedan, del servidor) y si tiene una sanción vigente.
   const [equipos, entregas, salidas, rutas, ofertas, sancion] = await Promise.all([misEquipos(u.id), misEntregas(u.id), misSalidas(u.id), misRutas(u.id), misOfertas(u.id), sancionVigente(u.id)]);

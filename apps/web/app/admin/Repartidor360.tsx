@@ -11,6 +11,7 @@ import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { KIND_INC, cuandoDlv as cuandoEs } from "./Repartidores";
 import { useE } from "./idioma-admin";
+import { numVisible } from "@/lib/reparto-comun";
 
 const VEH: Record<string, [string, string]> = { pie: ["a pie", "on foot"], bici: ["bici", "bike"], moto: ["moto", "motorcycle"], auto: ["auto", "car"], camioneta: ["camioneta", "van"] };
 const SK: Record<string, [string, string]> = { aviso: ["AVISO", "WARNING"], suspension: ["SUSPENSIÓN", "SUSPENSION"], baneo: ["BANEO", "BAN"] };
@@ -59,7 +60,7 @@ export function Repartidor360({ r, puede }: { r: Rep360; puede: { editar: boolea
     s: [e.vehiculo ? VEH[e.vehiculo]?.[li] ?? e.vehiculo : null, e.desde ? E(`desde ${e.desde}`, `since ${e.desde}`) : null, e.estado === "removed" ? E(`salió${e.motivo ? `: ${e.motivo}` : ""}`, `left${e.motivo ? `: ${e.motivo}` : ""}`) : null].filter(Boolean).join(" · "),
     tag: e.estado === "removed" ? E("FUERA", "REMOVED") : e.enLinea ? E("EN LÍNEA", "ONLINE") : null, tone: e.estado === "removed" ? "neutral" : "signal", chev: true, onClick: () => router.push(`/admin/negocios/${e.negocioId}`) })) });
   B.push({ type: "rows", k: E(`INCIDENCIAS · ${abiertas.length} ${abiertas.length === 1 ? "ABIERTA" : "ABIERTAS"}`, `INCIDENTS · ${abiertas.length} OPEN`), items: r.incid.length ? r.incid.map((i): Fila => ({ key: i.id, icon: i.kind === "accidente" ? "warning" : "truck",
-    t: `${KIND_INC[i.kind]?.[li] ?? E("INCIDENCIA", "INCIDENT")}${i.numero ? ` · #${i.numero}` : ""}${i.negocio ? ` · ${i.negocio}` : ""}`, s: [en ? i.nota.en || i.nota.es : i.nota.es, cuandoDlv(i.at), i.status === "resolved" ? E(`Resuelta${i.quien ? ` por ${i.quien}` : ""}: ${i.resolucion ?? ""}`, `Resolved${i.quien ? ` by ${i.quien}` : ""}: ${i.resolucion ?? ""}`) : null].filter(Boolean).join(" · "),
+    t: `${KIND_INC[i.kind]?.[li] ?? E("INCIDENCIA", "INCIDENT")}${i.numero ? ` · ${numVisible(i.numero)}` : ""}${i.negocio ? ` · ${i.negocio}` : ""}`, s: [en ? i.nota.en || i.nota.es : i.nota.es, cuandoDlv(i.at), i.status === "resolved" ? E(`Resuelta${i.quien ? ` por ${i.quien}` : ""}: ${i.resolucion ?? ""}`, `Resolved${i.quien ? ` by ${i.quien}` : ""}: ${i.resolucion ?? ""}`) : null].filter(Boolean).join(" · "),
     tag: i.status === "open" ? E("ABIERTA", "OPEN") : E("RESUELTA", "RESOLVED"), tone: i.status === "open" ? "action" : "neutral", chev: false,
     acts: [...(i.foto ? [{ l: E("Ver foto", "See photo"), v: "secondary", icon: "image", onClick: () => window.open(`/api/entrega/foto/${i.foto}`, "_blank", "noopener") }] : []),
       ...(i.status === "open" && puede.editar ? [{ l: E("Resolver", "Resolve"), v: "secondary", icon: "check", onClick: () => setConf({ titulo: E("¿Cómo se resolvió?", "How was it resolved?"), cta: E("Resolver", "Resolve"), sub: E("Queda en la auditoría.", "It stays in the audit log."),
@@ -71,7 +72,7 @@ export function Repartidor360({ r, puede }: { r: Rep360; puede: { editar: boolea
     acts: x.vigente && puede.sancionar && (x.kind !== "baneo" || puede.banear) ? [{ l: E("Levantar", "Lift"), v: "secondary", onClick: () => setConf({ titulo: E("Levantar la sanción", "Lift the sanction"), cta: E("Levantar", "Lift"), sub: E("Le llega el aviso y queda en la auditoría.", "They get notified and it stays in the audit log."),
       plantillas: [E("Se aclaró con el negocio", "Cleared up with the business"), E("Cumplió el tiempo acordado", "Served the agreed time"), E("Fue un error", "It was a mistake")], hacer: (m) => dlvLevantar(x.id, m) }) }] : undefined }))
     : [{ icon: "check", t: E("Sin sanciones", "No sanctions"), chev: false, compact: true }] });
-  B.push({ type: "rows", k: E("ÚLTIMAS ENTREGAS", "LATEST DELIVERIES"), cols: desk ? "repeat(2,minmax(0,1fr))" : "1fr", items: r.entregas.length ? r.entregas.map((e): Fila => ({ key: e.numero, icon: "bag", t: `#${e.numero} · ${e.negocio}`,
+  B.push({ type: "rows", k: E("ÚLTIMAS ENTREGAS", "LATEST DELIVERIES"), cols: desk ? "repeat(2,minmax(0,1fr))" : "1fr", items: r.entregas.length ? r.entregas.map((e): Fila => ({ key: e.numero, icon: "bag", t: `${numVisible(e.numero)} · ${e.negocio}`,
     s: [cuandoDlv(e.at), e.prueba ? E("prueba: ", "proof: ") + e.prueba.split(",").map((p) => PR[p]?.[li] ?? p).join(" · ") : e.estado === "Entregado" ? E("sin prueba", "no proof") : null, e.efectivo ? E(`efectivo ${money(e.efectivo)}`, `cash ${money(e.efectivo)}`) : null].filter(Boolean).join(" · "),
     tag: en ? EST[e.estado] ?? e.estado.toUpperCase() : e.estado.toUpperCase(), tone: e.estado === "Entregado" ? "signal" : "neutral", chev: false,
     acts: e.foto ? [{ l: E("Ver foto", "See photo"), v: "secondary", icon: "image", onClick: () => window.open(`/api/entrega/foto/${e.foto}`, "_blank", "noopener") }] : undefined }))

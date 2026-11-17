@@ -1,7 +1,7 @@
 # To'Latino Repartidor · Driver app
 
 _Pantallas: `/repartidor` (Inicio · Pedidos · Ganancias · Perfil y el detalle de cada entrega), Panel › Entrega › Tus repartidores y el cuadre de
-efectivo, y el detalle del pedido en el panel («¿Quién lo lleva?»). Repartidores del propio negocio. Versión: 14 nov 2026. Audiencia: vecino. Tema: pedidos._
+efectivo, y el detalle del pedido en el panel («¿Quién lo lleva?»). Repartidores del propio negocio. Versión: 17 nov 2026. Audiencia: vecino. Tema: pedidos._
 
 ## Qué hace
 - **El negocio** (Entrega, con «Mi equipo») toca **Invitar repartidor**: nombre y teléfono → To'Latino crea un **código de
@@ -41,6 +41,16 @@ línea): la aceptas antes de que venza o la rechazas. Un pedido **programado** t
 tuyo, te llega el recordatorio «El pedido es para las …».
 
 **¿Por qué me llegan ofertas sin que el negocio me escriba?** Porque el negocio encendió «Ofrecer solo». Si no estás en línea, no te llegan.
+
+## Pedidos del mercado
+También llevas los **envíos del mercado** (pedidos M-…) si repartes para un mercado:
+- Te llegan como oferta o asignados **cuando el mercado ya lo pesó y lo marcó listo**. La oferta dice «te ofrece un pedido del mercado», a dónde
+  va y cuántos artículos llevas. **Ya está pagado con tarjeta: no cobras nada.**
+- Lo que llevas sale con su peso real («2.82 lb Pierna de cerdo»).
+- Los pasos son los mismos (Voy por el pedido · Recogí · Llegué · Entregado) y el código de recogida si el mercado lo pide.
+- **La prueba es obligatoria**: la foto de la entrega o el código que te dice el cliente. Al tocar «Entregado», el mercado cobra lo real.
+
+**¿Por qué no puedo tocar «Recogí» todavía?** El mercado todavía no lo marca listo: espera a que te lo den.
 
 ## English
 
@@ -82,3 +92,13 @@ get the reminder "The order is for …".
 
 **Why do I get offers without the business writing to me?** Because the business turned on "Offer automatically." If you are not online, they
 do not reach you.
+
+### Market orders
+You also carry **market deliveries** (M-… orders) if you deliver for a market:
+- They reach you as an offer or assigned **once the market has weighed it and marked it ready**. The offer says "offers you a market order", where
+  it goes and how many items you carry. **It is already paid by card: you collect nothing.**
+- What you carry shows its real weight ("2.82 lb Pork leg").
+- The steps are the same (Heading to pick up · Picked up · I'm here · Delivered) and the pickup code if the market asks for it.
+- **Proof is required**: the delivery photo or the code the customer tells you. When you tap "Delivered", the market charges the real total.
+
+**Why can't I tap "Picked up" yet?** The market has not marked it ready yet: wait until they hand it to you.
