@@ -60,7 +60,10 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   ]);
   const [tarjetas0, spon0] = await Promise.all([armarTarjetas(CIUDAD, res.items, lang, u?.id ?? null), armarTarjetas(CIUDAD, vit, lang, u?.id ?? null)]);
   // C-002 · La oferta sale solo si hay algo de hoy: la oferta en vivo de Novedades (la de «Hoy en el barrio»), nunca un texto fijo.
-  const deHoy = (b: Tarjeta): Tarjeta => ({ ...b, offer: b.historia?.avisos.find((a) => a.t === "of")?.texto ?? null });
+  // Si no hay oferta, la línea del negocio que es de HOY («Hoy: cover $15 · 18+», «Se acabó por hoy · …») va en ese mismo lugar; la de siempre
+  // («Culto: domingo 10 AM») no: la tarjeta tiene una sola línea de datos.
+  const lineaHoy = (b: Tarjeta) => { const c = b.chips.find((x) => x.variant === "slot")?.label ?? "", m = /^(Hoy|Tonight):\s*/.exec(c); return m ? c.slice(m[0].length) : /^(Se acabó por hoy|Out for today)\b/.test(c) ? c : null; };
+  const deHoy = (b: Tarjeta): Tarjeta => ({ ...b, offer: b.historia?.avisos.find((a) => a.t === "of")?.texto ?? (b.plan === "pro" ? lineaHoy(b) : null) });
   const tarjetas = tarjetas0.map(deHoy);
   const patrocinados = spon0.map((t, i) => ({ sid: vit[i]!.sid, t: deHoy(t) }));
   // Vistas: una por persona (o dispositivo) y día por patrocinio, después de responder; los robots no cuentan.

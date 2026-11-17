@@ -44,7 +44,8 @@ export function Categoria({ v }: { v: Vista }) {
   const T = v.textos;
   // Pestañas: cada fila de exploración (Por país, Tipo de lugar…) y Antojos al final; se ve una a la vez. Abre la que tiene lo elegido.
   const pestanas = [...v.filas.map((r) => ({ k: r.key, l: r.titulo })), ...(v.capitulos.length ? [{ k: "__antojos", l: v.antojo }] : [])];
-  const conSub = v.sub ? (v.filas.find((r) => [...r.items, ...r.mas].some((x) => x.key === v.sub))?.key ?? (v.capitulos.some((g) => g.items.some((x) => x.key === v.sub)) ? "__antojos" : null)) : null;
+  const conSub = v.sub ? (v.filas.find((r) => [...r.items, ...r.mas].some((x) => x.key === v.sub))?.key ?? (v.capitulos.some((g) => g.items.some((x) => x.key === v.sub)) ? "__antojos" : null))
+    : v.filas.find((r) => r.items.some((x) => x.key === "tufecha"))?.key ?? null;   // Fiestas con «Tu fecha»: abre en «¿Está libre tu fecha?»
   const [pest, setPest] = useState<string>(conSub ?? pestanas[0]?.k ?? "");
   const buscarHref = `/buscar?cat=${v.slug}`;
   usarBuscadorPagina(v.buscarEn, buscarHref);

@@ -22,7 +22,9 @@ const dia = (d: string, es: boolean) => { const [, m, x] = d.split("-").map(Numb
 /* El día de un instante en la zona de la ciudad. */
 const diaDe = (iso: string, tz: string) => new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
 const rango = (a: string, b: string, es: boolean) => { const [, ma] = a.split("-"), [, mb] = b.split("-"); return ma === mb ? (es ? `${a.slice(8).replace(/^0/, "")} – ${dia(b, es)}` : `${dia(a, es)} – ${b.slice(8).replace(/^0/, "")}`) : `${dia(a, es)} – ${dia(b, es)}`; };
-const clave = () => uuid();   // la clave del intento (un cobro por clave): también sin https (lib/uuid.ts)
+const clave = () => uuid();
+/* AAAA-MM-DD + 7 días o + 1 mes (lo mismo que hace el servidor con la fecha; aquí solo para el rótulo). */
+const sumar = (d: string, k: "week" | "month") => { const [y, m, x] = d.split("-").map(Number); const t = k === "week" ? new Date(Date.UTC(y!, m! - 1, x! + 7)) : new Date(Date.UTC(y!, m!, Math.min(x!, new Date(Date.UTC(y!, m! + 1, 0)).getUTCDate()))); return t.toISOString().slice(0, 10); };   // la clave del intento (un cobro por clave): también sin https (lib/uuid.ts)
 
 /* Los puestos en puntos (6 de 6): llenos en tinta, libres en gris. */
 function Puestos({ t, libres, total }: { t: string; libres: number; total: number }) {
@@ -110,9 +112,15 @@ export function patBloques(c: Ctx, x: PatData | undefined): Bloque[] {
   const desdeSel: string = typeof ui.patDesde === "string" ? ui.patDesde : "hoy";
   const consulta: Consulta = desdeSel === "hoy" ? x.libres[dur] : (ui.patLib && ui.patLib.k === `${dur}:${desdeSel}` ? (ui.patLib.c as Consulta) : null);
   // Al elegir otra fecha o la otra duración, el servidor dice cuántos puestos quedan esas fechas.
-  const consultar = (du: "week" | "month", de: string) => { if (de === "hoy") return; void patPuestos(d.id, du, de).then((r) => setUi({ patLib: { k: `${du}:${de}`, c: r } })); };
-  const fechasDe = (k: "week" | "month") => { const q = desdeSel === "hoy" ? x.libres[k] : ui.patLib?.k === `${k}:${desdeSel}` ? (ui.patLib.c as Consulta) : null; return q ? rango(q.desde, q.hasta, es) : desdeSel !== "hoy" ? dia(desdeSel, es) : "—"; };
+  const consultar = (du: "week" | "month", de: string) => {
+    if (de === "hoy") return;
+    // Las dos duraciones de esa fecha (las dos filas dicen sus fechas); la elegida es la que manda en los puestos.
+    void Promise.all([patPuestos(d.id, "week", de), patPuestos(d.id, "month", de)]).then(([w, m]) => setUi({ patLib: { k: `${du}:${de}`, c: du === "week" ? w : m }, patLibs: { [`week:${de}`]: w, [`month:${de}`]: m } }));
+  };
+  const fechasDe = (k: "week" | "month") => { const q = desdeSel === "hoy" ? x.libres[k] : ((ui.patLibs?.[`${k}:${desdeSel}`] as Consulta | undefined) ?? null); return q ? rango(q.desde, q.hasta, es) : desdeSel !== "hoy" ? dia(desdeSel, es) : "—"; };
   const sinPuestos = !!consulta && consulta.libres === 0;
+  // Sin puestos: las fechas que se muestran son las de la reserva (desde el día que se libera uno).
+  const desdeLibre = (k: "week" | "month") => { const q = x.libres[k]; return sinPuestos && desdeSel === "hoy" && q?.libre ? rango(q.libre, sumar(q.libre, k), es) : null; };
 
   if (!ui.patPaso || ui.patPaso === 1) {
     out.push(head(E2("Patrocinio", "Sponsorship")));
@@ -128,8 +136,8 @@ export function patBloques(c: Ctx, x: PatData | undefined): Bloque[] {
         <div style={{ font: "800 22px/1.2 Sora,sans-serif", letterSpacing: "-.03em" }}>{libre ? E2(`Se libera uno el ${dia(libre, es)}`, `One opens on ${dia(libre, es)}`) : E2("Por ahora no hay puestos libres", "There are no open slots for now")}</div>
       </div> });
     }
-    out.push({ type: "rows", k: E2("DURACIÓN", "DURATION"), items: (["week", "month"] as const).map((k): Fila => ({ key: k, sel: { on: dur === k, onClick: () => { setUi({ patDur: k }); consultar(k, desdeSel); } },
-      t: durL(k), s: fechasDe(k), r: $c(precio(k)), bd: dur === k ? "1.5px solid var(--tl-ink)" : undefined, onClick: () => { setUi({ patDur: k }); consultar(k, desdeSel); }, chev: false })) });
+    out.push({ type: "rows", k: E2("DURACIÓN", "DURATION"), items: (["week", "month"] as const).map((k): Fila => ({ key: k, sel: { on: dur === k, onClick: () => { setUi({ patDur: k, ...(desdeSel !== "hoy" && ui.patLibs?.[`${k}:${desdeSel}`] !== undefined ? { patLib: { k: `${k}:${desdeSel}`, c: ui.patLibs[`${k}:${desdeSel}`] } } : {}) }); if (ui.patLibs?.[`${k}:${desdeSel}`] === undefined) consultar(k, desdeSel); } },
+      t: durL(k), s: desdeLibre(k) ?? fechasDe(k), r: $c(precio(k)), bd: dur === k ? "1.5px solid var(--tl-ink)" : undefined, onClick: () => { setUi({ patDur: k, ...(desdeSel !== "hoy" && ui.patLibs?.[`${k}:${desdeSel}`] !== undefined ? { patLib: { k: `${k}:${desdeSel}`, c: ui.patLibs[`${k}:${desdeSel}`] } } : {}) }); if (ui.patLibs?.[`${k}:${desdeSel}`] === undefined) consultar(k, desdeSel); }, chev: false })) });
     out.push({ type: "chips", k: E2("EMPIEZA", "STARTS"), items: [
       { l: E2("Hoy", "Today"), v: desdeSel === "hoy" ? "selected" : "filter", onClick: () => setUi({ patDesde: "hoy", patCal: false }) },
       { l: desdeSel !== "hoy" ? dia(desdeSel, es) : E2("Otra fecha", "Another date"), v: desdeSel !== "hoy" ? "selected" : "filter", onClick: () => setUi({ patCal: !ui.patCal }) },
@@ -144,7 +152,7 @@ export function patBloques(c: Ctx, x: PatData | undefined): Bloque[] {
       ] });
     }
     if (x.pasados.length) out.push({ type: "rows", k: E2("ANTES", "BEFORE"), items: x.pasados.slice(0, 5).map((p: FilaPat): Fila => ({ key: p.id, icon: "star", t: `${rango(diaDe(p.desde, tz), diaDe(p.hasta, tz), es)} · ${$(p.precio)}`,
-      s: `${p.vistas} ${E2("vistas", "views")} · ${p.entraron} ${E2("entraron", "visits")} · ${p.pedidos} ${E2("pedidos", "orders")}${p.finKind === "admin" && p.finMotivo ? ` · ${E2("terminado por To’Latino", "ended by To’Latino")}: ${p.finMotivo}` : ""}`,
+      s: `${p.vistas} ${p.vistas === 1 ? E2("vista", "view") : E2("vistas", "views")} · ${p.entraron} ${p.entraron === 1 ? E2("entró", "visit") : E2("entraron", "visits")} · ${p.pedidos} ${p.pedidos === 1 ? E2("pedido", "order") : E2("pedidos", "orders")}${p.finKind === "admin" && p.finMotivo ? ` · ${E2("terminado por To’Latino", "ended by To’Latino")}: ${p.finMotivo}` : ""}`,
       tag: p.estado === "cancelado" ? E2("CANCELADO", "CANCELED") : E2("TERMINADO", "ENDED"), tone: "neutral", chev: false, dim: true, compact: true })) });
     return out;
   }
