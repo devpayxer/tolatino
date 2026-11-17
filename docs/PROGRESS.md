@@ -2564,7 +2564,7 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   ciudades; segunda aplicación sin cambios. Choques de id entre agentes: 2 (Comida↔Mercado), renombrados. Arreglos de paso: matrículas de la
   ronda 1 ligadas a su grupo (`d/grupos.mjs`), cupos recalculados (`zz-cupos-demo.sql`), y `deploy.sh` carga los demos APARTE
   (`systemd-run tolatino-demos`) porque la carga completa supera el tope de 1 h del servicio. Páginas mirada en el navegador (15 fichas, Eventos
-  ×5). Iglesias (NEG-FE 06–43) quedó fuera de la primera tanda (tope de 20 agentes) y entró después: 380 más; las 17 categorías con ≥ 10 en cada subcategoría. Detalle en REVISION «Demos ronda 2».
+  ×5). Iglesias (NEG-FE 06–43) quedó fuera de la primera tanda (tope de 20 agentes) y entró después: 380 más; las 17 categorías con ≥ 10 en cada subcategoría. **En el sandbox (a8ef238):** carga aparte de 16:56 a 18:32 EST (Profesionales y Salud 24 min cada uno), negocios y eventos comprobados con «Estado del sandbox» (`/estado/demos.txt`). Detalle en REVISION «Demos ronda 2».
 - **17 nov · 8b6eaf9 en `main` y `pruebas`** — corrida completa (CI 44081105072) y sus arreglos:
   · **Accesibilidad de la ficha nueva (9c):** grises de texto con corchetes (`text-ink/[.42]`, 47 archivos) a ink 60 %, fila de plato agotado
     (parche en portar-sistema: solo la foto apagada), botones de 24 px (guardián `objetivoTactil`), controles anidados en las filas de 10 fichas

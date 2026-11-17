@@ -5300,7 +5300,7 @@ lleno. Lo hicieron 21 agentes (Sonnet) en paralelo; yo los junté, los probé ju
   (Salud, Wilkes-Barre), http://2.31.196.167/n/alianza-marine-scranton-d21 (Autos, botes, Scranton),
   http://2.31.196.167/n/360-fiesta-video-alw-r2f (Fiestas, Allentown), http://2.31.196.167/n/accidentes-y-lesiones-familia-rivera-reading-p09
   (Profesionales, Reading).
-- **Tarda en aparecer:** cargar todo en el sandbox lleva más de una hora; va aparte del despliegue (la app no espera) y se ve llenándose.
+- **Ya está todo en el sandbox** (17 nov, 6:32 PM): la carga tardó 1 h 36 min (va aparte del despliegue; su avance en http://2.31.196.167/estado/demos.txt).
 - **Decidí (dime si no):**
   - Subcategorías de servicio dentro de Tiendas (sastrería, tintorería, lavandería, relojes, estética canina, trofeos) salen como lista de
     precios con apartado; no tienen citas propias. Si las quieres con citas, es un bloque aparte.
