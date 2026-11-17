@@ -30,9 +30,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     links: t === "links" ? await enlacesAdmin(s, c, desde) : null,
     // C-002 · Patrocinios: lo vivo primero (o lo terminado, o todo), por ciudad, con cursor; puestos y precios de Configuración › Crecimiento.
     pat: t === "pat" ? { ...(await (await import("@/lib/patrocinio")).patrociniosAdmin(s.cities, c, l, desde, sp.e === "terminados" || sp.e === "todos" ? sp.e : "vivos")), e: sp.e === "terminados" || sp.e === "todos" ? sp.e : "vivos",
-      precios: await (await import("@/lib/patrocinio")).preciosNegocio() } : null,
+      precios: await (await import("@/lib/patrocinio")).preciosNegocio(),
+      // C-003 · El grupo Eventos: los patrocinios de eventos (Eventos › el evento › Patrocinar), con su propio cursor (?desdeE=).
+      ev: await (await import("@/lib/patrocinio-evento")).patrociniosEventosAdmin(s.cities, c, l, sp.desdeE ?? null, sp.e === "terminados" || sp.e === "todos" ? sp.e : "vivos"),
+      preciosEvt: await (await import("@/lib/patrocinio-evento")).preciosEvento() } : null,
     lista: t === "lista" ? await listaEspera(s, c, desde) : null,
     ver: sp.ver ?? null,
   };
-  return <Crecimiento key={`${t}${c}${desde}`} d={d} l={l} />;
+  return <Crecimiento key={`${t}${c}${desde}${sp.desdeE ?? ""}`} d={d} l={l} />;
 }

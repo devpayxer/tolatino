@@ -13,7 +13,7 @@ import type { DestacadoAdm } from "@/lib/crecimiento/destacados";
 import type { EnlaceAdm } from "@/lib/crecimiento/enlaces";
 import type { PromotorAdm } from "@/lib/crecimiento/promotores";
 import type { PatAdm } from "@/lib/patrocinio";
-import { campanaAprobar, campanaContar, campanaCrear, campanaRetirar, codigoRetirar, destacadoBuscar, destacadoFijar, destacadoRetirar, enlaceCrear, patrocinioTerminar, enlaceEscaneos, enlaceRetirar, landingFecha, promotorNombrar } from "./acciones-crecimiento";
+import { campanaAprobar, campanaContar, campanaCrear, campanaRetirar, codigoRetirar, destacadoBuscar, destacadoFijar, destacadoRetirar, enlaceCrear, patrocinioTerminar, patrocinioEventoTerminar, enlaceEscaneos, enlaceRetirar, landingFecha, promotorNombrar } from "./acciones-crecimiento";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { cuandoL, par, selectorIdioma, type L } from "./TextosComun";
@@ -28,7 +28,9 @@ export type DatosCrec = {
   camp: { filas: CampanaAdm[]; mas: string | null } | null;
   feat: { lista: DestacadoAdm[]; hoy: { id: string; nombre: string; abierto: boolean }[]; tope: number; dias: number; fijados: number } | null;
   links: { filas: EnlaceAdm[]; mas: string | null } | null;
-  pat: { filas: PatAdm[]; mas: string | null; activos: number; reservados: number; e: "vivos" | "terminados" | "todos"; precios: { week: number; month: number; puestos: number; diasAdelante: number } } | null;
+  pat: { filas: PatAdm[]; mas: string | null; activos: number; reservados: number; e: "vivos" | "terminados" | "todos"; precios: { week: number; month: number; puestos: number; diasAdelante: number };
+    /* C-003 · El grupo Eventos (patrocinios de eventos) con su cursor y sus precios. */
+    ev: { filas: PatAdm[]; mas: string | null; activos: number; reservados: number }; preciosEvt: { week: number; month: number; puestos: number; diasAdelante: number } } | null;
   lista: { porCiudad: { city: string; nombre: string; status: string; n: number; neg: number; fv: number }[]; porModo: { modo: Modo | null; n: number }[]; porZip: { zip: string; n: number }[];
     fuera: { pedida: string; n: number }[]; filas: EntradaLista[]; mas: string | null; fecha: { visible: boolean; fecha: string | null } } | null;
 };
@@ -210,33 +212,43 @@ function Destacados({ d, E, cuando, setConf }: { d: DatosCrec; E: EFn; cuando: (
   ]} />;
 }
 
-/* C-002 · Patrocinios (Super Admin › Crecimiento › Patrocinios; prototipo secMkt «pat»): lo comprado desde Panel › Cobros y plan › Patrocinio, con su
-   estado, lo pagado y sus cifras; «Terminar» con motivo (ReasonConfirm, auditoría, aviso al negocio). Puestos y precios: Configuración › Crecimiento. */
+/* C-002 / C-003 · Patrocinios (Super Admin › Crecimiento › Patrocinios; prototipo secMkt «pat»): dos grupos, NEGOCIOS (Panel › Cobros y plan ›
+   Patrocinio) y EVENTOS (Panel › Eventos › el evento › Patrocinar), cada fila con su estado, lo pagado y sus cifras; «Terminar» con motivo
+   (ReasonConfirm, auditoría, aviso al negocio). Cada grupo con su cursor. Puestos y precios: Configuración › Crecimiento. */
 function Patrocinios({ d, E, setConf, ir, l }: { d: DatosCrec; E: EFn; setConf: SetConf; ir: (q: Record<string, string | null>) => void; l: L }) {
   const X = d.pat!, $ = (c: number) => `$${(c / 100).toFixed(2)}`;
   const dia = (iso: string) => new Intl.DateTimeFormat(l === "es" ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "short" }).format(new Date(iso)).split(".").join("");
   const EST: Record<string, [string, string, string]> = { activo: ["ACTIVO", "ACTIVE", "signal"], reservado: ["RESERVADO", "BOOKED", "action"], terminado: ["TERMINADO", "ENDED", "neutral"], cancelado: ["CANCELADO", "CANCELED", "neutral"] };
-  const FIN: Record<string, [string, string]> = { vencio: ["venció", "expired"], dueno: ["lo terminó el negocio", "ended by the business"], admin: ["lo terminó To’Latino", "ended by To’Latino"], sin_negocio: ["el negocio ya no está publicado", "the business is no longer live"] };
+  const FIN: Record<string, [string, string]> = { vencio: ["venció", "expired"], dueno: ["lo terminó el negocio", "ended by the business"], admin: ["lo terminó To’Latino", "ended by To’Latino"], sin_negocio: ["el negocio ya no está publicado", "the business is no longer live"],
+    evento_cancelado: ["el evento se canceló", "the event was cancelled"], evento_paso: ["el evento ya pasó", "the event is over"] };
   const fila = (x: PatAdm): Fila => {
-    const vivo = x.estado === "activo" || x.estado === "reservado", e = EST[x.estado] ?? EST.terminado!, fin = x.finKind ? FIN[x.finKind] : null;
-    return { key: x.id, icon: "star", t: x.nombre, dim: !vivo,
-      s: `${x.donde} · ${dia(x.desde)} – ${dia(x.hasta)} · ${$(x.pagado || x.precio)}${x.renovar ? ` · ${E("renueva solo", "auto-renews")}` : ""}${!vivo && fin ? ` · ${E(fin[0], fin[1])}${x.finMotivo ? `: ${x.finMotivo}` : ""}` : ""}`,
-      m: `${x.vistas} ${E("VISTAS", "VIEWS")} · ${x.entraron} ${E("ENTRARON", "VISITS")} · ${x.pedidos} ${E("PEDIDOS", "ORDERS")}`,
+    const vivo = x.estado === "activo" || x.estado === "reservado", e = EST[x.estado] ?? EST.terminado!, fin = x.finKind ? FIN[x.finKind] : null, ev = x.kind === "evento";
+    const nombre = ev ? (x.evento ?? x.nombre) : x.nombre;
+    return { key: `${x.kind}${x.id}`, icon: ev ? "ticket" : "star", t: nombre, dim: !vivo,
+      s: `${ev ? `${x.nombre} · ` : ""}${x.donde} · ${dia(x.desde)} – ${dia(x.hasta)} · ${$(x.pagado || x.precio)}${x.renovar ? ` · ${E("renueva solo", "auto-renews")}` : ""}${!vivo && fin ? ` · ${E(fin[0], fin[1])}${x.finMotivo ? `: ${x.finMotivo}` : ""}` : ""}`,
+      m: `${x.vistas} ${E("VISTAS", "VIEWS")} · ${x.entraron} ${E("ENTRARON", "VISITS")} · ${x.pedidos} ${ev ? E("BOLETOS", "TICKETS") : E("PEDIDOS", "ORDERS")}`,
       tag: E(e[0], e[1]), tone: e[2],
-      acts: d.puede.editar && vivo ? [{ l: E("Terminar", "End"), v: "danger", icon: "close", onClick: () => setConf({ titulo: E(`Terminar el patrocinio de ${x.nombre}`, `End the ${x.nombre} sponsorship`), cta: E("Terminar", "End"), peligro: true,
-        sub: E("Deja de salir en Patrocinados al momento y se le avisa al negocio con el motivo. Lo pagado no se devuelve aquí (si toca, Soporte lo devuelve). Queda en la auditoría.", "It stops showing in Sponsored right away and the business is told the reason. What was paid is not refunded here (if needed, Support refunds it). It goes in the audit trail."),
-        plantillas: [E("La foto o el video no cumplen las reglas.", "The photo or video breaks the rules."), E("El negocio pidió terminarlo.", "The business asked to end it."), E("Queja abierta de los vecinos.", "Open complaint from neighbors.")],
-        hacer: (m) => patrocinioTerminar(x.id, m) }) }] : undefined };
+      acts: d.puede.editar && vivo ? [{ l: E("Terminar", "End"), v: "danger", icon: "close", onClick: () => setConf({ titulo: ev ? E(`Terminar el patrocinio del evento ${nombre}`, `End the sponsorship of the event ${nombre}`) : E(`Terminar el patrocinio de ${nombre}`, `End the ${nombre} sponsorship`), cta: E("Terminar", "End"), peligro: true,
+        sub: ev ? E("Deja de salir en Patrocinados al momento y se le avisa al organizador con el motivo. Lo pagado no se devuelve aquí (si toca, Soporte lo devuelve). Queda en la auditoría.", "It stops showing in Sponsored right away and the organizer is told the reason. What was paid is not refunded here (if needed, Support refunds it). It goes in the audit trail.")
+          : E("Deja de salir en Patrocinados al momento y se le avisa al negocio con el motivo. Lo pagado no se devuelve aquí (si toca, Soporte lo devuelve). Queda en la auditoría.", "It stops showing in Sponsored right away and the business is told the reason. What was paid is not refunded here (if needed, Support refunds it). It goes in the audit trail."),
+        plantillas: ev ? [E("El flyer no cumple las reglas.", "The flyer breaks the rules."), E("El organizador pidió terminarlo.", "The organizer asked to end it."), E("Queja abierta de los vecinos.", "Open complaint from neighbors.")]
+          : [E("La foto o el video no cumplen las reglas.", "The photo or video breaks the rules."), E("El negocio pidió terminarlo.", "The business asked to end it."), E("Queja abierta de los vecinos.", "Open complaint from neighbors.")],
+        hacer: (m) => (ev ? patrocinioEventoTerminar(x.id, m) : patrocinioTerminar(x.id, m)) }) }] : undefined };
   };
   const filtros: [("vivos" | "terminados" | "todos"), string][] = [["vivos", E("Activos y reservados", "Active and booked")], ["terminados", E("Terminados", "Ended")], ["todos", E("Todos", "All")]];
+  const e = X.e === "vivos" ? null : X.e, V = X.ev;
   return <PanelBloques bloques={[
-    { type: "kv", cols: 3, items: [{ k: E("PUESTOS", "SLOTS"), v: E(`${X.precios.puestos} por categoría y ciudad`, `${X.precios.puestos} per category and city`) }, { k: E("ACTIVOS", "ACTIVE"), v: `${X.activos}${X.reservados ? E(` · ${X.reservados} reservados`, ` · ${X.reservados} booked`) : ""}` },
+    { type: "kv", cols: 3, items: [{ k: E("PUESTOS", "SLOTS"), v: E(`${X.precios.puestos} por categoría · ${X.preciosEvt.puestos} en Eventos`, `${X.precios.puestos} per category · ${X.preciosEvt.puestos} in Events`) },
+      { k: E("ACTIVOS", "ACTIVE"), v: `${X.activos + V.activos}${X.reservados + V.reservados ? E(` · ${X.reservados + V.reservados} reservados`, ` · ${X.reservados + V.reservados} booked`) : ""}` },
       { k: E("PRECIO", "PRICE"), v: E(`${$(X.precios.week)} semana · ${$(X.precios.month)} mes`, `${$(X.precios.week)} week · ${$(X.precios.month)} month`) }] },
-    { type: "chips", k: E("ESTADO", "STATUS"), items: filtros.map(([k, t]) => ({ l: t, v: X.e === k ? "selected" : "filter", onClick: () => ir({ e: k === "vivos" ? null : k, desde: null }) })) },
+    { type: "chips", k: E("ESTADO", "STATUS"), items: filtros.map(([k, t]) => ({ l: t, v: X.e === k ? "selected" : "filter", onClick: () => ir({ e: k === "vivos" ? null : k, desde: null, desdeE: null }) })) },
     X.filas.length ? { type: "rows", k: `${E("NEGOCIOS", "BUSINESSES")} · ${X.filas.length}${X.mas ? "+" : ""}`, items: X.filas.map(fila) }
-      : { type: "empty", icon: "star", t: E("Sin patrocinios aquí", "No sponsorships here"), s: E("Los negocios los compran desde su panel (Cobros y plan › Patrocinio).", "Businesses buy them from their dashboard (Payouts and plan › Sponsorship).") },
-    ...(X.mas ? [{ type: "acts" as const, items: [{ l: E("Ver más", "See more"), v: "secondary", onClick: () => ir({ desde: X.mas, e: X.e === "vivos" ? null : X.e }) }] }] : []),
-    { type: "note", tone: "info", icon: "info", t: E("Los puestos y los precios se cambian en Sistema › Configuración › Crecimiento. Lo ya pagado no cambia.", "Slots and prices are changed in System › Settings › Growth. What was already paid does not change.") },
+      : { type: "empty", icon: "star", t: E("Ningún negocio aquí", "No business here"), s: E("Los negocios los compran desde su panel (Cobros y plan › Patrocinio).", "Businesses buy them from their dashboard (Payouts and plan › Sponsorship).") },
+    ...(X.mas ? [{ type: "acts" as const, items: [{ l: E("Ver más negocios", "See more businesses"), v: "secondary", onClick: () => ir({ desde: X.mas, e }) }] }] : []),
+    V.filas.length ? { type: "rows", k: `${E("EVENTOS", "EVENTS")} · ${V.filas.length}${V.mas ? "+" : ""}`, items: V.filas.map(fila) }
+      : { type: "empty", icon: "ticket", t: E("Ningún evento aquí", "No event here"), s: E("Los organizadores los compran desde su panel (Eventos › el evento › Patrocinar).", "Organizers buy them from their dashboard (Events › the event › Sponsor).") },
+    ...(V.mas ? [{ type: "acts" as const, items: [{ l: E("Ver más eventos", "See more events"), v: "secondary", onClick: () => ir({ desdeE: V.mas, e }) }] }] : []),
+    { type: "note", tone: "info", icon: "info", t: E(`Eventos: ${$(X.preciosEvt.week)} la semana (también por cada semana hasta el evento) y ${$(X.preciosEvt.month)} el mes. Los puestos y los precios se cambian en Sistema › Configuración › Crecimiento. Lo ya pagado no cambia.`, `Events: ${$(X.preciosEvt.week)} a week (also per week until the event) and ${$(X.preciosEvt.month)} a month. Slots and prices are changed in System › Settings › Growth. What was already paid does not change.`) },
   ]} />;
 }
 

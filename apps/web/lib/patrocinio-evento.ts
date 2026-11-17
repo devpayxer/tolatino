@@ -56,11 +56,10 @@ async function periodo(c: PoolClient | null, e: EvtPat, dur: DurE, desde: "hoy" 
   if (dur === "until_event") {
     const sd = desde === "hoy" ? e.hoy : desde;
     if (!e.dia || !e.fin || e.dia <= sd) return null;
-    const r = (await q<{ a: string; hasta: string }>(
-      `select ${ISO(`case when $2::text = 'hoy' then now() else ($2::date::timestamp at time zone $1) end`)} as a, (($3::timestamptz) at time zone $1)::date::text as hasta`,
-      [e.tz, desde === "hoy" ? "hoy" : desde, e.fin])).rows[0]!;
+    const r = (await q<{ a: string }>(`select ${ISO(`case when $2::text = 'hoy' then now() else ($2::date::timestamp at time zone $1) end`)} as a`, [e.tz, desde === "hoy" ? "hoy" : desde])).rows[0]!;
     const semanas = Math.max(1, Math.ceil(diasEntre(sd, e.dia) / 7));
-    return { a: r.a, b: e.fin, dia: sd, hasta: r.hasta, precio: P.week * semanas, semanas };
+    // Termina cuando termina el evento (b); se muestra el día del evento (una noche que pasa de la medianoche sigue siendo «hasta el evento»).
+    return { a: r.a, b: e.fin, dia: sd, hasta: e.dia, precio: P.week * semanas, semanas };
   }
   const f = await fechasPeriodo(c, e.ciudad, desde, dur);
   if (!f) return null;

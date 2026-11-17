@@ -18,16 +18,16 @@ const MES_L: [string, string][] = [["Enero", "January"], ["Febrero", "February"]
 const $ = (c: number) => `$${(c / 100).toFixed(2)}`;
 const $c = (c: number) => (c % 100 ? $(c) : `$${c / 100}`);
 /* «17 nov» / «Nov 17» de un día AAAA-MM-DD. */
-const dia = (d: string, es: boolean) => { const [, m, x] = d.split("-").map(Number); return es ? `${x} ${MES[m! - 1]![0]}` : `${MES[m! - 1]![1]} ${x}`; };
+export const dia = (d: string, es: boolean) => { const [, m, x] = d.split("-").map(Number); return es ? `${x} ${MES[m! - 1]![0]}` : `${MES[m! - 1]![1]} ${x}`; };
 /* El día de un instante en la zona de la ciudad. */
-const diaDe = (iso: string, tz: string) => new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
-const rango = (a: string, b: string, es: boolean) => { const [, ma] = a.split("-"), [, mb] = b.split("-"); return ma === mb ? (es ? `${a.slice(8).replace(/^0/, "")} – ${dia(b, es)}` : `${dia(a, es)} – ${b.slice(8).replace(/^0/, "")}`) : `${dia(a, es)} – ${dia(b, es)}`; };
+export const diaDe = (iso: string, tz: string) => new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
+export const rango = (a: string, b: string, es: boolean) => { const [, ma] = a.split("-"), [, mb] = b.split("-"); return ma === mb ? (es ? `${a.slice(8).replace(/^0/, "")} – ${dia(b, es)}` : `${dia(a, es)} – ${b.slice(8).replace(/^0/, "")}`) : `${dia(a, es)} – ${dia(b, es)}`; };
 const clave = () => uuid();
 /* AAAA-MM-DD + 7 días o + 1 mes (lo mismo que hace el servidor con la fecha; aquí solo para el rótulo). */
 const sumar = (d: string, k: "week" | "month") => { const [y, m, x] = d.split("-").map(Number); const t = k === "week" ? new Date(Date.UTC(y!, m! - 1, x! + 7)) : new Date(Date.UTC(y!, m!, Math.min(x!, new Date(Date.UTC(y!, m! + 1, 0)).getUTCDate()))); return t.toISOString().slice(0, 10); };   // la clave del intento (un cobro por clave): también sin https (lib/uuid.ts)
 
 /* Los puestos en puntos (6 de 6): llenos en tinta, libres en gris. */
-function Puestos({ t, libres, total }: { t: string; libres: number; total: number }) {
+export function Puestos({ t, libres, total }: { t: string; libres: number; total: number }) {
   return (
     <div data-puestos={`${libres}/${total}`} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "12px 14px", borderRadius: 14, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)" }}>
       <span style={{ font: "700 13.5px Manrope,sans-serif" }}>{t}</span>
@@ -36,7 +36,7 @@ function Puestos({ t, libres, total }: { t: string; libres: number; total: numbe
 }
 
 /* «Hasta el 17 de nov · DÍA 3 DE 7» con su barra. */
-function Hasta({ t, m, pct }: { t: string; m: string; pct: number }) {
+export function Hasta({ t, m, pct }: { t: string; m: string; pct: number }) {
   return (
     <div style={{ padding: 16, borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 12 }}>
       <div><div style={{ font: "800 22px/1.15 Sora,sans-serif", letterSpacing: "-.03em" }}>{t}</div><div style={{ marginTop: 6, font: "600 10.5px 'JetBrains Mono',monospace", letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{m}</div></div>

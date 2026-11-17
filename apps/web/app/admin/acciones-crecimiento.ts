@@ -87,3 +87,13 @@ export async function patrocinioTerminar(id: string, motivo: string): Promise<Re
   const r = await terminarPorAdmin(s.id, s.cities, S(id, 18), S(motivo));
   return r.ok ? { ok: true, mensaje: r.msg?.[l] } : { ok: false, mensaje: r.msg[l] };
 }
+
+/* C-003 · Terminar el patrocinio de un evento (mkt:editar), con motivo: queda en la auditoría y se avisa al organizador. Lo pagado no se devuelve aquí. */
+export async function patrocinioEventoTerminar(id: string, motivo: string): Promise<ResAdm> {
+  const s = await staff(); if (!s) return sin();
+  const l = await idioma();
+  if (!s.puede("mkt", "editar")) return { ok: false, mensaje: l === "en" ? "You can’t change Growth." : "No puedes cambiar Crecimiento." };
+  const { terminarPorAdminEvento } = await import("@/lib/patrocinio-evento");
+  const r = await terminarPorAdminEvento(s.id, s.cities, S(id, 18), S(motivo));
+  return r.ok ? { ok: true, mensaje: r.msg?.[l] } : { ok: false, mensaje: r.msg[l] };
+}

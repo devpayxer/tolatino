@@ -40,7 +40,7 @@ import { HojaTerminos } from "../../../(app)/HojaTerminos";
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
 const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic", "resenas", "nov", "cup", "dir"]);   // 9m · «dir»: Dirección y mapa
-const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|cup:(new|edit:\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|noche:N-\d{1,10}|insc:I-\d{1,10}|vis:D-\d{1,10}|grp:(new|list):\d{1,18}|fe:hor:new|inm:(new|\d{1,18})|auto:(new|\d{1,18})|sol:[PQE]-\d{1,10}|renta:T-\d{1,10}|art:(new|\d{1,18})|apt:A-\d{1,10}|merc:M-\d{1,10}|fiesta:F-\d{1,10}|evp:(aj|EP-\d{1,10})|viaje:V-\d{1,10}|salida:\d{1,18}|evt:(new(:[a-z]{2,12})?|edit:\d{1,18}|\d{1,18}(@\d{1,18})?)|door:\d{1,18}@\d{1,18})$/;
+const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|cup:(new|edit:\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|noche:N-\d{1,10}|insc:I-\d{1,10}|vis:D-\d{1,10}|grp:(new|list):\d{1,18}|fe:hor:new|inm:(new|\d{1,18})|auto:(new|\d{1,18})|sol:[PQE]-\d{1,10}|renta:T-\d{1,10}|art:(new|\d{1,18})|apt:A-\d{1,10}|merc:M-\d{1,10}|fiesta:F-\d{1,10}|evp:(aj|EP-\d{1,10})|viaje:V-\d{1,10}|salida:\d{1,18}|evt:(new(:[a-z]{2,12})?|(edit|pat):\d{1,18}|\d{1,18}(@\d{1,18})?)|door:\d{1,18}@\d{1,18})$/;
 const FILTROS = new Set(["all", "pend", "cur", "done", "no"]);
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string; vuelta?: string }> }) {
@@ -274,7 +274,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     const E = await import("@/lib/evt"), { valores } = await import("@/lib/config");
     // 6f · evt:{evento}@{fecha} = la FECHA QUE ESTÁS VIENDO de una serie (todo lo de la ficha es de esa fecha).
     // 6g · door:{evento}@{fecha} = el modo puerta del panel y el Monitor de esa fecha.
-    const [eid = "", fver = null] = ruta.det?.startsWith("evt:") ? ruta.det.slice(4).replace(/^edit:/, "").split("@") : ruta.det?.startsWith("door:") ? ruta.det.slice(5).split("@") : [""];
+    const [eid = "", fver = null] = ruta.det?.startsWith("evt:") ? ruta.det.slice(4).replace(/^(edit|pat):/, "").split("@") : ruta.det?.startsWith("door:") ? ruta.det.slice(5).split("@") : [""];
     const [lista0, formatos, generos, org, cfg, fee, b, mod, quien] = await Promise.all([
       E.eventosDelNegocio(d.id), E.formatosDe(d.cat, d.id), E.generos(), E.organizadorDe(d.id), valores("evt_revision_h", "evt_fotos_max", "evt_dias_adelante", "evt_fechas_max", "evt_dias_seguidos_max", "evt_pago_dia"),
       db().query<{ bp: number; fixed: number }>(`select rate_bp as bp, fixed_cents as fixed from fee_rules where kind = 'bol' and effective_from <= now() order by effective_from desc, id desc limit 1`),
@@ -301,7 +301,11 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     const chart = det6 && fv6 ? await (await import("@/lib/evt-series")).ventasPorDia(d.id, det6.kind === "span" ? det6.fechas.filter((x) => x.st === "scheduled").at(-1)?.id ?? fv6 : fv6) : null;
     // 6g · La puerta: porteros, reglas, la sesión del modo puerta de esta persona y el Monitor de la fecha (la del modo puerta o la que se ve).
     const puerta = det6 ? await (await import("@/lib/puerta-equipo")).puertaPanel(d.id, eid, ruta.det?.startsWith("door:") && fver ? fver : fv6, acc.yo.id, lang === "es") : null;
-    return { puerta, cambios, liq, lista, masPasados: lista0.mas, formatos, generos, org, det: det6, fver: fv6, chart, cfg: { revisionH: cfg.evt_revision_h, fotosMax: cfg.evt_fotos_max, diasAdelante: cfg.evt_dias_adelante, fechasMax: cfg.evt_fechas_max, diasMax: cfg.evt_dias_seguidos_max, pagoDia: cfg.evt_pago_dia },
+    // C-003 · Patrocinar el evento (evt:pat:{evento}): solo quien maneja los cobros (además de Eventos); y en la ficha, si ya tiene uno vivo.
+    const PE = await import("@/lib/patrocinio-evento"), cobra = acc.partes.includes("all") || acc.partes.includes("pay");
+    const pat = ruta.det?.startsWith("evt:pat:") && /^\d+$/.test(eid) && cobra ? await PE.patEvtPanel(d.id, eid, acc.yo.id, lang) : null;
+    const patVivo = det6 && cobra ? await PE.patEvtVivo(d.id, eid) : false;
+    return { pat, patVivo, cobra, puerta, cambios, liq, lista, masPasados: lista0.mas, formatos, generos, org, det: det6, fver: fv6, chart, cfg: { revisionH: cfg.evt_revision_h, fotosMax: cfg.evt_fotos_max, diasAdelante: cfg.evt_dias_adelante, fechasMax: cfg.evt_fechas_max, diasMax: cfg.evt_dias_seguidos_max, pagoDia: cfg.evt_pago_dia },
       fee: fee.rows[0] ?? null, hoy: d.hoy.fecha, dir: b.rows[0]?.dir ?? null, mod: mod.rows[0] ?? { aplica: false, on: false, pausa: null }, quien, ventas, codigos, vendidos, despues, espera };
   })() : undefined;
   // 6i · Evento privado (restaurantes): las solicitudes en Hoy y su detalle piden «Hoy y pedidos»; los ajustes (Reservaciones › Evento privado),

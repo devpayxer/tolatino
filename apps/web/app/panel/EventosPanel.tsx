@@ -29,6 +29,8 @@ import { chipsFechas, crearPorDia, duracionBloques, fechaVista, horarioBloques, 
 import { evtAvisarLista, evtBoletosOrden, evtCodigoCambiar, evtCodigoCrear, evtCortesia, evtDevolver, evtEnviar, evtGuardar, evtModulo, evtPasadosMas, evtQuitarCortesia, evtReenviar, evtRepetir, evtTraducir } from "./acciones-eventos";
 import type { Ctx, Editor, Form, Sec } from "./Panel";
 import { uuid } from "@/lib/uuid";
+import type { PatEvtPanel } from "@/lib/patrocinio-evento";
+import { patEvtBloques } from "./PatrocinioEvento";
 
 export type EvtData = {
   lista: FilaPanelEvt[]; masPasados?: boolean; formatos: FormatoEvt[]; generos: { key: string; label: Bi }[]; org: { verificado: boolean; bloqueado: string | null };
@@ -45,6 +47,8 @@ export type EvtData = {
   fver: string | null; chart: { dias: string[]; n: number[] } | null;
   /* 6g · La puerta: porteros, reglas, la sesión del modo puerta de esta persona y el Monitor de la fecha. */
   puerta: PuertaPanel | null;
+  /* C-003 · Patrocinar el evento abierto (evt:pat:{id}; solo con Cobros), si ya tiene un patrocinio vivo y si quien mira maneja los cobros. */
+  pat?: PatEvtPanel | null; patVivo?: boolean; cobra?: boolean;
 };
 type FormEvt = BorradorEvt & { enviar: boolean };
 const MES_L: Bi[] = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map((es, i) => ({ es, en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][i]! }));
@@ -112,6 +116,7 @@ export function evtDetalle(c: Ctx): Sec {
   const H = (o: { eye?: string; t: string; s?: string }): Bloque => ({ type: "head", ...o, onBack: () => c.closeDet() });
   if (!c.d.pro) return { blocks: [H({ t: E2("Eventos es parte de Pro", "Events is part of Pro") })], ed: null };
   if (id === "new" || id.startsWith("new:")) return editor(c, null, id.slice(4) || null);
+  if (id.startsWith("pat:")) return { blocks: patEvtBloques(c, id.slice(4), X.pat), ed: null };
   if (id.startsWith("edit:")) {
     if (!X.det || X.det.id !== id.slice(5)) return { blocks: [H({ t: E2("Ya no está", "No longer here") })], ed: null };
     return editor(c, X.det, null);
@@ -129,6 +134,7 @@ function ficha(c: Ctx, e: EvtPanel): Sec {
   const repetir = () => c.run(() => evtRepetir(c.d.id, e.id), E2("Copia lista como borrador, 7 días después. Revísala y envíala.", "Copy ready as a draft, 7 days later. Check it and send it."), (r) => r.id && c.det(`evt:edit:${r.id}`));
   // 6f · Serie: FECHA QUE ESTÁS VIENDO (todo lo de abajo es de esa fecha); varios días: el rango y N DÍAS.
   const fx = e.kind === "series" ? fechaVista(c, e) : null;
+  const publico = (e.st === "live" || e.st === "paused") && !e.hidden;
   out.push({ type: "evhd", onBack: () => c.closeDet(), eye: `${bi(F.label, es).toUpperCase()}${e.kind === "series" ? ` · ${repL(v.dia, v.rep, es).toUpperCase()}` : e.kind === "span" ? ` · ${v.span}${E2(" DÍAS", " DAYS")}` : ""}${e.version > 1 ? E2(` · VERSIÓN ${e.version}`, ` · VERSION ${e.version}`) : ""}`, tag, tone,
     img: v.fotos[0] ? `url("${v.fotos[0].url}")` : undefined, t: bi(v.ti, es) || E2("Sin nombre", "Untitled"), when: fx ? `${diaCorto(fx.dia, es)} · ${hora(fx.h0)} – ${hora(fx.h1)}` : cuando(c, v), where: donde(c, v), ...chipsFechas(c, e),
     progT: tix && X.ventas ? E2(`${X.ventas.kpi.vendidos} de ${X.ventas.kpi.capacidad} ${F.f.cntL.es} vendidos`, `${X.ventas.kpi.vendidos} of ${X.ventas.kpi.capacidad} ${F.f.cntL.en} sold`) : tix ? E2(`${v.boletos.reduce((a, b) => a + b.cap, 0)} ${F.f.cntL.es} configurados`, `${v.boletos.reduce((a, b) => a + b.cap, 0)} ${F.f.cntL.en} set up`) : v.entrada === "rsvp" ? (v.cupo ? E2(`Cupo de ${v.cupo} personas`, `${v.cupo} spots`) : E2("RSVP sin límite", "RSVP with no limit")) : E2("Entrada libre, sin lista", "Free entry, no list"),
@@ -138,7 +144,11 @@ function ficha(c: Ctx, e: EvtPanel): Sec {
       { k: E2("EDAD", "AGE"), v: v.edad ? `${v.edad}+` : E2("Todas", "All"), s: v.edad ? E2("el portero pide ID", "ID checked at the door") : E2("familias", "families") },
       { k: E2("FOTOS", "PHOTOS"), v: String(v.fotos.length), s: E2(`de ${X.cfg.fotosMax}`, `of ${X.cfg.fotosMax}`) }],
     mainL: enviable ? (X.org.verificado ? E2("Publicar", "Publish") : E2("Enviar a revisión", "Send for review")) : undefined, onMain: enviar,
-    tools: [...(editable ? [{ l: E2("Editar", "Edit"), icon: "edit", onClick: () => c.det(`evt:edit:${e.id}`) }] : []), { l: E2("Repetir otro día", "Repeat another day"), icon: "calendar", onClick: repetir },
+    // C-003 · Ver página y Copiar enlace (publicado), Editar, Repetir y Patrocinar (publicado y por venir; solo quien maneja los cobros).
+    tools: [...(publico ? [{ l: E2("Ver página", "View page"), icon: "search", onClick: () => c.nav(`/eventos/${e.slug}`) },
+        { l: E2("Copiar enlace", "Copy link"), icon: "share", onClick: () => { void navigator.clipboard?.writeText(`${location.origin}/eventos/${e.slug}`).catch(() => undefined); c.toast(E2("Enlace copiado.", "Link copied.")); } }] : []),
+      ...(editable ? [{ l: E2("Editar", "Edit"), icon: "edit", onClick: () => c.det(`evt:edit:${e.id}`) }] : []), { l: E2("Repetir otro día", "Repeat another day"), icon: "calendar", onClick: repetir },
+      ...(publico && X.cobra && (X.patVivo || e.fechas.some((f) => f.st === "scheduled" && !f.pasada)) ? [{ l: X.patVivo ? E2("Patrocinio", "Sponsorship") : E2("Patrocinar", "Sponsor"), icon: "star", onClick: () => { c.setUi({ pePaso: 0, peDesde: "hoy" }); c.det(`evt:pat:${e.id}`); } }] : []),
       ...(e.puedeApelar ? [{ l: E2("Apelar", "Appeal"), icon: "scale", onClick: () => c.nav(RUTA_APELAR(e.id)) }] : [])] });
   // Lo que pasó con la revisión (triángulo: lo que decidió To'Latino se ve aquí con su motivo).
   if (e.hidden) out.push({ type: "note", tone: "danger", icon: "ban", t: E2(`OCULTO POR TO’LATINO · No sale en Eventos ni en tu página. Motivo: ${e.hidden}`, `HIDDEN BY TO’LATINO · It does not show in Events or on your page. Reason: ${e.hidden}`),

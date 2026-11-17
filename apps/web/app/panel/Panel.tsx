@@ -371,6 +371,12 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
           nota={E2("PATROCINIO · SE COBRA AL PAGAR", "SPONSORSHIP · CHARGED WHEN YOU PAY")} onClose={() => setUi({ patHoja: false })}
           onUsar={(t) => { setUi({ patHoja: false, patPm: t.pm }); router.refresh(); }} />
       ) : null}
+      {/* C-003 · La tarjeta del patrocinio de un evento (Eventos › el evento › Patrocinar): la misma hoja de pago; solo en la web. */}
+      {ui.peHoja && evt?.pat && evt.pat.modo !== "apagado" && compraPro ? (
+        <MetodoPago es={es} tarjetas={evt.pat.tarjetas} sel={(ui.pePm as string | null) ?? evt.pat.tarjetas.find((t) => t.def)?.pm ?? null} declinada={null} modo={evt.pat.modo} pk={evt.pat.pk} guardarSiempre
+          nota={E2("PATROCINIO DEL EVENTO · SE COBRA AL PAGAR", "EVENT SPONSORSHIP · CHARGED WHEN YOU PAY")} onClose={() => setUi({ peHoja: false })}
+          onUsar={(t) => { setUi({ peHoja: false, pePm: t.pm }); router.refresh(); }} />
+      ) : null}
       {ui.planHoja && plan && plan.modo !== "apagado" && compraPro ? (
         <MetodoPago es={es} tarjetas={plan.tarjetas} sel={plan.plan.tarjeta?.pm ?? null} declinada={null} modo={plan.modo} pk={plan.pk} guardarSiempre
           nota={plan.plan.st === "trial" ? E2(`PRO · ${(ui.planHoja as { ciclo: string }).ciclo === "year" ? "ANUAL" : "MENSUAL"} · HOY NO SE COBRA`, `PRO · ${(ui.planHoja as { ciclo: string }).ciclo === "year" ? "YEARLY" : "MONTHLY"} · NOTHING CHARGED TODAY`) : E2("PRO · SE COBRA HOY", "PRO · CHARGED TODAY")}
