@@ -1854,3 +1854,6 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       dos llegó al final en local por cosas de fuera de C-003: publicar desde el editor pide subir el cartel (sin almacén de medios local, 503),
       y el servidor de desarrollo se reinició por memoria o tardó más de 30 s en compilar /admin/eventos/{id}. Van enteras en la corrida completa
       con Safari/iPad y los 9 dispositivos; `pruebas/visual` no tiene capturas aprobadas de Eventos.
+- [ ] **→ 9b** · **Anchos (4), después de C-001 → C-003 (CI 43996571745):** escritorio 1024 sin rojos propios; Safari falla en iPhone SE
+      (silla3d, app8a, inm4ib, noc4d, pan9n2) y en iPad (silla3d, app8a, app8e, ayu4z, tra4y, dir9m). silla3d, app8a y dir9m ya venían de antes;
+      los demás son nuevos en esta corrida y hay que ver uno por uno si son de la prueba (esperas de Safari) o de la pantalla.

@@ -2511,3 +2511,10 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   Patrocinios con los grupos Negocios y Eventos (cursor propio, Terminar con motivo). Mapa de datos al día. Guardián
   `patrocinioEventoDelServidor` (alrevesC003 28/28); e2e `pat003`; evt6b-6c y evt6f al calendario; ayuda `patrocinados.md`,
   `eventos-buscar-y-ver.md`, `panel-eventos-crear.md`, `admin-crecimiento.md`.
+- **C-001 → C-003 · cierre (17 nov)** — regresión completa CI 43996571745: 186/189; los 3 rojos eran de las pruebas (fic008 y noc4a dependían
+  de la hora y el día: la semilla cierra Sabor Dominicano a las 9 PM y la discoteca no abre los lunes; ayu7a no contaba los artículos nuevos del
+  panel) → precondiciones propias (`abiertoTodoElDia` + recalcular la tarjeta de Noche) y en verde en CI (44009533905, 44010352059). Antes, la
+  corrida dirigida cazó que `accept="image/*"` abría un «comentario» para los guardianes (sinComent) y mensajesEnVivo dejaba de ver 66 líneas
+  del panel: arreglado en sinComent (alreves9m 36/36). **aa33f76 en `main` y `pruebas`.** Anchos (misma corrida): escritorio 1024 sin rojos
+  propios; iPhone SE 5 y iPad 6 de Safari (silla3d, app8a, dir9m ya conocidos; nuevos inm4ib, noc4d, pan9n2 en el SE y ayu4z, tra4y, app8e en el
+  iPad) → bloque «Anchos (4)» antes de producción (LAUNCH 9b).
