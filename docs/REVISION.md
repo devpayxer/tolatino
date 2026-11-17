@@ -5253,3 +5253,33 @@ recogida, Ofrecer solo) y Panel › Hoy › un pedido del mercado con envío; el
 - El cliente no recibe aviso al «Está listo» (le llega «va en camino» al «Recogí», «Tu repartidor llegó» y «Tu pedido llegó», plantillas nuevas
   `merc_here` y `merc_entregado` con el número M-… sin «#»). Si prefieres un aviso «listo, sale pronto», se agrega.
 - No hay recibo por correo del pedido del mercado al entregar (no lo había antes tampoco); queda el aviso «Se cobraron …».
+
+## Negocios demo (17 nov) — para ver cambios reales en la visualización
+850 negocios Pro con la ficha nueva: 10 en cada una de las 5 primeras subcategorías (orden del catálogo) de las 17 categorías, 2 por ciudad en
+las 5 ciudades, con historia desde 2016 (pedidos, citas, reservas, inscripciones, visitas), 20–80 reseñas verificadas con respuestas del dueño,
+novedades y seguidores. **Solo el sandbox** (el CI y producción no los cargan); marcados `is_demo`. Los genera `scripts/semilla/demos/` al desplegar.
+- **Qué mirar:** un negocio por categoría en Hazleton:
+  - NEG-AUTO: http://2.31.196.167/n/aceite-express-hazleton
+  - NEG-BELL: http://2.31.196.167/n/barberia-don-chepe-hazleton
+  - NEG-DEALER: http://2.31.196.167/n/autos-garantizados-hazleton
+  - NEG-DEPORTE: http://2.31.196.167/n/cardio-barrio-clases-hazleton
+  - NEG-EDU: http://2.31.196.167/n/academia-luz-del-idioma-hzl
+  - NEG-FE: http://2.31.196.167/n/capilla-san-martin-de-porres-hzl
+  - NEG-FIESTA: http://2.31.196.167/n/eventos-casa-grande-hzl
+  - NEG-FOOD: http://2.31.196.167/n/almuerzos-de-la-semana-paisa
+  - NEG-HOGAR: http://2.31.196.167/n/calentadores-don-chico
+  - NEG-INMUEBLE: http://2.31.196.167/n/bienes-raices-hazleton-hogar
+  - NEG-MERC: http://2.31.196.167/n/abarrotes-dona-maruca
+  - NEG-NINOS: http://2.31.196.167/n/casita-del-cuidado-lucero-hzl
+  - NEG-NOCHE: http://2.31.196.167/n/bar-casa-quisqueya
+  - NEG-PRO: http://2.31.196.167/n/abogado-carlos-medina-hazleton
+  - NEG-SALUD: http://2.31.196.167/n/atencion-inmediata-santa-clara-hazleton
+  - NEG-TIENDA: http://2.31.196.167/n/boutique-marisol
+  - NEG-TRANS: http://2.31.196.167/n/camino-largo-viajes-hzl
+- **Decidí:** las «5 principales» = las 5 primeras de cada categoría en el orden del catálogo (no hay marca de «principal» ni popularidad todavía).
+  Si prefieres otras, dime cuáles y se cambian.
+- **Ojo · ciudades:** solo Hazleton está abierta (`on`); Allentown, Wilkes-Barre, Scranton y Reading están «próximamente»/«beta», así que sus 680
+  demos no salen en las listas (sí abren directo por su página). Si quieres verlos en las listas, ábrelas en Super Admin › Ciudades del sandbox.
+- **Fotos:** son las mismas de Pexels que ya usa la semilla (se repiten); no hay fotos propias ni videos en los demos.
+- **No llenado en esta pasada:** planes recurrentes y cotizaciones de Hogar/Auto, acuerdo escrito de Fiestas, historial de cajas/mudanzas de
+  Transporte, reservas de mesa de Comida y catering, plan de pagos de Educación. Los negocios y lo que venden sí están completos.

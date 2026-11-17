@@ -2553,3 +2553,7 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
     (alrevesMercRep 21/21), e2e merc9n 57 ✓; CI dirigido 15/15 + al revés 68/68. Decisiones en REVISION «Envío del mercado con el repartidor».
   · app8a y app8e con su precondición propia (boleto y dirección «Casa»).
   · Corrida completa (regresión ×2 + barajada, tres anchos, 9 dispositivos, capturas, axe, velocidad): CI 44081105072, en curso.
+- **17 nov · Negocios demo (pedido del fundador):** 850 (17 categorías × 5 subcategorías × 10, 170 por ciudad), Pro, historia desde 2016;
+  generadores deterministas `scripts/semilla/demos/grupo-{a,b,c,d}.mjs` (node sin red); `deploy.sh` genera el SQL (~140 MB, fuera del repo) y lo
+  aplica con `migrar.sh --semilla-pruebas` desde `infra/pruebas/demos/`. Comprobado en una base nueva: 17 archivos sin errores en 3 min 22 s
+  (100 048 operaciones, 29 017 reseñas en total). El CI no los carga. Detalle y enlaces en REVISION «Negocios demo».
