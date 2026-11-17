@@ -85,6 +85,12 @@ bash "$REPO/packages/db/migrar.sh" "${COMPOSE[@]}"
 
 # 3c) Semilla del SANDBOX (decisión I: datos de ejemplo solo en pruebas). Se vuelve a aplicar si cambia.
 SEMILLA_DIR="$REPO/infra/pruebas/semilla" bash "$REPO/packages/db/migrar.sh" --semilla-pruebas "${COMPOSE[@]}"
+# 3c-demos) Los negocios DEMO del fundador (17 nov: 850, 10 en las 5 subcategorías principales de cada categoría, en las 5 ciudades, con
+#     historia de años): SOLO el sandbox. El CI no los carga (sus pruebas cuentan sobre la semilla de siempre) y producción nunca (candado de
+#     migrar.sh). Cada archivo marca is_demo y es idempotente (llaves fijas; se vuelve a aplicar si cambia).
+if [ -d "$REPO/infra/pruebas/demos" ]; then
+  SEMILLA_DIR="$REPO/infra/pruebas/demos" bash "$REPO/packages/db/migrar.sh" --semilla-pruebas "${COMPOSE[@]}" || echo "[deploy] demos: falló (la app sigue con lo de antes)"
+fi
 
 # 3c-bis/ter/quater) Lo que sale del repo (infra/comun/lib.sh · indexar_docs): el Centro de ayuda (7a: docs/ayuda/ → help_articles), las páginas
 #     legales (9e: docs/legal/ → legal_pages; un archivo que cambió es una versión NUEVA en borrador, publicar es del Super Admin) y las cadenas de la
