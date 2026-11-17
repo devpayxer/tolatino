@@ -111,14 +111,14 @@ export function patEvtBloques(c: Ctx, eventoId: string, x: PatEvtPanel | null | 
       const q = x.libres[k];
       return { key: k, sel: { on: dur === k, onClick: () => setUi({ peDur: k }) }, t: durL(k), s: q ? `${rango(q.desde, q.hasta, es)}${semanasL(q)}` : "—", r: $c(precioDe(k)), bd: dur === k ? "1.5px solid var(--tl-ink)" : undefined, onClick: () => setUi({ peDur: k }), chev: false };
     }) });
-    if (consulta) out.push({ type: "kv", cols: 2, items: [{ k: E2("EMPIEZA", "STARTS"), v: E2(`Hoy · ${dia(consulta.desde, es)}`, `Today · ${dia(consulta.desde, es)}`) },
+    if (consulta && !sinPuestos) out.push({ type: "kv", cols: 2, items: [{ k: E2("EMPIEZA", "STARTS"), v: E2(`Hoy · ${dia(consulta.desde, es)}`, `Today · ${dia(consulta.desde, es)}`) },
       { k: E2("TERMINA", "ENDS"), v: `${dia(consulta.hasta, es)}${dur === "until_event" ? E2(" · día del evento", " · event day") : ""}` }] });
     if (dur !== "until_event" && consulta && Ev.dia && consulta.hasta > Ev.dia) out.push({ type: "note", tone: "info", icon: "info", t: E2("Si el evento pasa antes, el patrocinio termina ese día.", "If the event happens sooner, the sponsorship ends that day.") });
     if (!sinPuestos) out.push({ type: "acts", items: [{ l: E2(`Continuar · ${$c(precioDe(dur))}`, `Continue · ${$c(precioDe(dur))}`), v: "primary", off: !consulta, onClick: () => setUi({ pePaso: 2, peClave: uuid(), peRen: false, peRenDe: null }) }] });
     else {
       const q = x.libres[dur]!, libre = q.libre, puede = !!libre && libre <= q.max;
       out.push({ type: "acts", items: [
-        ...(puede ? [{ l: E2(`Reservar desde el ${libre!.slice(8).replace(/^0/, "")}`, `Book from the ${libre!.slice(8).replace(/^0/, "")}`), v: "primary",
+        ...(puede ? [{ l: E2(`Reservar desde el ${libre!.slice(8).replace(/^0/, "")}${dur !== "until_event" ? ` · ${$c(precioDe(dur))}` : ""}`, `Book from the ${libre!.slice(8).replace(/^0/, "")}${dur !== "until_event" ? ` · ${$c(precioDe(dur))}` : ""}`), v: "primary",
           onClick: () => { setUi({ peDesde: libre, pePaso: 2, peClave: uuid(), peRen: false, peRenDe: null }); void pevPuestos(d.id, eventoId, dur, libre!).then((r) => setUi({ peLib: { k: `${dur}:${libre}`, c: r } })); } }] : []),
         ...(x.espera ? [] : [{ l: E2("Avísame si se libera un puesto", "Notify me if a slot opens"), v: "ghost", icon: "bell", off: c.pending, onClick: () => c.run(() => pevAvisame(d.id, eventoId), E2("Listo: te avisamos cuando se libere un puesto.", "Done: we will let you know when a slot opens.")) }]),
       ] });

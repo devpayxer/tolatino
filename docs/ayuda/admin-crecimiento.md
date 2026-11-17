@@ -19,8 +19,10 @@ de las ciudades de quien mira. Terminar un patrocinio: Crecimiento · editar. Es
   dueños) por un **canal** (en la app, push, SMS o correo), en español y en inglés, ahora o a una hora. Antes de programarla ves a cuántas personas llega.
 - **Destacados**: la vitrina de Negocios › Destacados rota sola cada día entre los Pro abiertos con foto. Aquí **fijas** uno arriba o lo **quitas** de la
   rotación por unos días, con motivo; ves la vitrina de hoy tal como la ve el vecino.
-- **Patrocinios**: lo que los negocios compran desde su panel (Cobros y plan › Patrocinio) para salir en la fila «Patrocinados» de la página de
-  su categoría. Cada uno con su estado (activo, reservado, terminado, cancelado), las fechas, lo pagado, si se renueva solo y sus cifras (vistas,
+- **Patrocinios**: dos grupos. **Negocios**: lo que los negocios compran desde su panel (Cobros y plan › Patrocinio) para salir en la fila
+  «Patrocinados» de la página de su categoría. **Eventos**: lo que los organizadores compran desde Panel › Eventos › el evento › Patrocinar para
+  salir arriba de la página de Eventos de su ciudad (1 semana, 1 mes o hasta el evento; el de un evento cancelado o que ya pasó termina solo; las
+  cifras son vistas, entraron y boletos). Cada uno con su estado (activo, reservado, terminado, cancelado), las fechas, lo pagado, si se renueva solo y sus cifras (vistas,
   entraron, pedidos). Filtro por estado y por ciudad. **«Terminar»** con motivo: deja de salir al momento, el negocio recibe el aviso con el motivo
   y queda en la auditoría. Lo pagado no se devuelve desde aquí (si toca, Soporte lo devuelve). Los puestos por categoría y ciudad y los precios de
   1 semana y 1 mes se cambian en Sistema › Configuración › Crecimiento; lo ya pagado no cambia.
@@ -78,8 +80,10 @@ de las ciudades de quien mira. Terminar un patrocinio: Crecimiento · editar. Es
   **channel** (in the app, push, SMS or email), in Spanish and English, now or at a set time. Before scheduling you see how many people it reaches.
 - **Featured**: the Businesses › Featured showcase rotates on its own every day among open Pro businesses with a photo. Here you **pin** one at the top or
   **remove** one from the rotation for a few days, with a reason; you see today's showcase as neighbors see it.
-- **Sponsorships**: what businesses buy from their dashboard (Payouts and plan › Sponsorship) to show in the «Sponsored» row of their category page.
-  Each one with its status (active, booked, ended, canceled), the dates, what was paid, whether it auto-renews and its numbers (views, visits,
+- **Sponsorships**: two groups. **Businesses**: what businesses buy from their dashboard (Payouts and plan › Sponsorship) to show in the «Sponsored»
+  row of their category page. **Events**: what organizers buy from Dashboard › Events › the event › Sponsor to show at the top of their city's
+  Events page (1 week, 1 month or until the event; one for a cancelled or finished event ends on its own; the numbers are views, visits and
+  tickets). Each one with its status (active, booked, ended, canceled), the dates, what was paid, whether it auto-renews and its numbers (views, visits,
   orders). Filter by status and by city. **«End»** with a reason: it stops showing right away, the business gets the notice with the reason and
   it goes in the audit trail. What was paid is not refunded from here (if needed, Support refunds it). Slots per category and city and the 1-week and
   1-month prices are changed in System › Settings › Growth; what was already paid does not change.

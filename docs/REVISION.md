@@ -5143,3 +5143,41 @@ pone sonido; con una novedad de hoy, el logo lleva el anillo morado y abre «Hoy
 - **Comida no tiene la pestaña «Tipo de lugar»** del dibujo: las pestañas salen de las filas que tiene cada categoría en el Catálogo (Comida
   tiene «Por país» y los antojos). Si la quieres, se agrega en el Catálogo.
 - **Fiestas con «Tu fecha»:** la página abre en la pestaña «¿Está libre tu fecha?».
+
+## C-003 — Página de Eventos por días + Patrocinados de eventos (17 nov)
+**Dónde:** en el sandbox, **Eventos** (teléfono y computadora); con el dueño de La Terraza: Panel › Eventos › abre un evento publicado ›
+**Patrocinar**; Super Admin › Crecimiento › **Patrocinios** (grupo Eventos) y Sistema › Configuración › Crecimiento.
+**Qué mirar:**
+- **La cartelera (diseño D):** arriba, el Patrocinado grande que se desliza con la palabra PATROCINADO (en la computadora, la fila
+  «Patrocinados»). Debajo, el calendario con **HOY** en el centro: los días pasados atenuados y sin toque, un punto en los días con
+  eventos; se desliza hacia adelante. Toca un día: cambia el título («Esta noche», «Mañana», «Sábado 21»), el número de eventos, las
+  historias (anillo morado sólido) y la lista. Ya no están la franja «El precio que ves…», «Ver como historias», la fila Todos · Hoy · Este
+  finde · Próximos ni el panel oscuro de la computadora.
+- **Historias:** las de hoy abren «Esta noche» en esa historia; las de otro día abren la página del evento.
+- **Un evento de varios días** sale en cada uno de sus días.
+- **Patrocinar:** compra 1 semana con la tarjeta de prueba (sandbox: simulador) → el evento sale arriba de Eventos. Prueba «Hasta el
+  evento» en un evento a 10 días: cobra 2 semanas y no se renueva. Con un evento de hoy, «Hasta el evento» no sale.
+- **Cancela el evento** (Panel › el evento › Cancelar evento): deja de salir en la vitrina al momento y en un minuto el patrocinio termina
+  con aviso «El patrocinio terminó con el evento».
+- **Super Admin › Patrocinios:** dos grupos, Negocios y Eventos; «Terminar» pide el motivo y le avisa al organizador.
+**Decidido por mí (reversible):**
+- **Precios de ejemplo de fábrica: $15 la semana y $45 el mes, 6 puestos por ciudad** (claves propias de Eventos en Configuración ›
+  Crecimiento). «Hasta el evento» = $15 por semana o fracción hasta el día del evento. Tú pones los reales.
+- **Sin patrocinios vivos, arriba no sale nada** (el calendario queda arriba). El «destacado» de antes se quitó: poner un evento que no pagó
+  bajo «PATROCINADO» sería falso.
+- **La vitrina es la misma en cualquier día del calendario** y no cambia con los tipos (Gratis, Con boleto, géneros): es la vitrina de
+  Eventos de la ciudad. Respeta el radio, como la de las categorías.
+- **El título de hoy es «Esta noche»** aunque haya eventos de día (como el diseño). El número es de eventos (una serie cuenta una vez ese día).
+- **El calendario** va de 3 días antes (teléfono; 5 en la computadora) hasta 2 días después del último día con eventos (entre 10 y 45 días).
+  Se puede abrir un día más lejos por la dirección (hasta 120 días).
+- **La tarjeta del evento quedó como estaba** (fecha, corazón, etiqueta, título, lugar, precio y «N VAN»). Las «caritas de quién va» del
+  dibujo no se pusieron: mostrar las caras de quien hizo RSVP es un dato personal que nadie aceptó compartir. Si las quieres, hay que decidir
+  con qué permiso (anotado en LAUNCH).
+- **Comprar lo hace quien maneja los cobros Y los eventos** (el dueño tiene todo). En la app To'Latino Negocios solo se ve el estado.
+- **Empieza hoy** (como el diseño); «otra fecha» solo sale sin puestos (reservar desde el día que se libera uno, si es antes del evento).
+- **1 semana o 1 mes que duran más que el evento** se pueden comprar (avisa «Si el evento pasa antes, el patrocinio termina ese día»); el
+  barrido lo termina cuando el evento ya no tiene fechas por delante. **Lo pagado no se devuelve** (igual que terminar antes).
+- **Un evento oculto por To'Latino, en revisión o con Eventos apagado** deja de salir en la vitrina, pero su patrocinio no termina solo
+  (puede volver); si toca, el Super Admin lo termina con motivo. Solo «cancelado» o «ya pasó» lo terminan solos.
+- **«Boletos»** = boletos pagados y RSVP de quien antes tocó el cartel patrocinado, durante el patrocinio (lo pone al día el barrido).
+- En la ficha del evento del panel agregué **Ver página** y **Copiar enlace** (el diseño los pone junto a Patrocinar).

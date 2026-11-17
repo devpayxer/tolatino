@@ -2497,3 +2497,17 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   con motivo). Barrido `patrocinios` (empieza, vence, renueva o termina, avisa a quien espera, pedidos al día); la conciliación diaria lee
   `sponsorship_payments`. Mapa de datos al día. Guardián `patrocinioDelServidor` (alrevesC002 20/20); e2e `pat002`; ayuda
   `patrocinados.md`, `negocios-explorar.md` y `admin-crecimiento.md` al día.
+- **C-003 · Página de Eventos por días (D) + Patrocinados de eventos** — canvas `tolatino-master+` («Eventos (variantes)», sección D, y el
+  prototipo APP-EVT-BUSQ / Panel v2 evPat / Super Admin secMkt «pat»). `APP-EVT-BUSQ`: Patrocinado grande que se desliza (PATROCINADO; en la
+  computadora la fila «Patrocinados», `PatrocinadosEventos.tsx`), calendario con HOY en el centro (zona de la ciudad; pasados atenuados y sin
+  toque; punto con eventos, `diasConEventos`), el día por la dirección (`?dia=`, el servidor decide) con su número, sus historias (anillo
+  morado sólido; hoy → «Esta noche», otro día → el evento), una fila de tipos y la lista del día (`eventosCiudad` con el día, 20 por página con
+  cursor; un evento de varios días sale en cada día). Fuera: la franja del precio, «Ver como historias», la fila de fechas, el destacado y el
+  panel oscuro. Migración 0174 (`event_sponsorships` con estados, candado por ciudad y reglas en la base; el libro, las entradas, las vistas,
+  las cifras y «Avísame» de 0173 aceptan `evento`; `patrocinio_evt_cifras_al_dia` = boletos y RSVP; 3 claves en Configuración › Crecimiento;
+  7 plantillas de aviso). `lib/patrocinio-evento.ts` (1 semana / 1 mes / hasta el evento, reservar sin puestos, renovar solo, terminar,
+  barrido: evento cancelado o que pasó termina solo). Panel › Eventos › el evento › **Patrocinar** (+ Ver página y Copiar enlace;
+  `PatrocinioEvento.tsx`, `acciones-patrocinio-evento.ts`: Cobros y Eventos, mismo origen, no en la app). Super Admin › Crecimiento ›
+  Patrocinios con los grupos Negocios y Eventos (cursor propio, Terminar con motivo). Mapa de datos al día. Guardián
+  `patrocinioEventoDelServidor` (alrevesC003 28/28); e2e `pat003`; evt6b-6c y evt6f al calendario; ayuda `patrocinados.md`,
+  `eventos-buscar-y-ver.md`, `panel-eventos-crear.md`, `admin-crecimiento.md`.

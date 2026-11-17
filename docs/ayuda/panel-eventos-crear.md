@@ -2,7 +2,7 @@
 
 _Pantallas: **Panel › Eventos** (`/panel/{negocio}/eventos`; ficha `?det=evt:{id}`, editor «Crear» / «Editar»). Teléfono y escritorio. Plan **Pro**
 (en Free se ve el candado «Ver Pro»; la prueba de 30 días no pide tarjeta). Lo maneja el dueño o quien tenga la parte «Eventos» del equipo. En el
-teléfono está en «Más»; en el escritorio, en el menú. Versión: 9 nov 2026. Audiencia: negocio. Tema: panel._
+teléfono está en «Más»; en el escritorio, en el menú. Versión: 17 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **Duración:** en CUÁNDO eliges **Un día**, **Varios días seguidos** o **Se repite** (cada semana, cada 2 semanas o cada mes). Ver «Panel › Eventos: series y eventos de varios días».
@@ -21,6 +21,8 @@ teléfono está en «Más»; en el escritorio, en el menú. Versión: 9 nov 2026
   al instante.
 - **«Para guardar falta:»** dice exactamente qué falta (el nombre, el cartel, el lugar y la dirección, precio y cantidad de cada boleto…).
 - **Repetir otro día:** copia el evento como borrador 7 días después (las fotos también). Revísalo y envíalo.
+- **Ver página** y **Copiar enlace** (evento publicado): abre la página pública del evento o copia su enlace para compartirlo.
+- **Patrocinar** (evento publicado que todavía no termina; quien maneja los cobros): sal arriba de todo en la página de Eventos de tu ciudad por 1 semana, 1 mes o hasta el evento. Ver `patrocinados.md`.
 - **Boletos, mesas y extras se venden en la app** cuando el evento sale publicado. El precio que pones es el que paga el
   cliente (cargos incluidos); la comisión de To'Latino por boleto sale de lo tuyo. En la puerta no se venden boletos.
 
@@ -70,6 +72,8 @@ teléfono está en «Más»; en el escritorio, en el menú. Versión: 9 nov 2026
   stays a **draft** (only you see it). If you are a **verified organizer**, the switch says «Publish on save» and it goes live instantly.
 - **«To save, add:»** says exactly what is missing (the name, the poster, the place and address, the price and quantity of each ticket…).
 - **Repeat another day:** copies the event as a draft 7 days later (photos too). Review it and send it.
+- **View page** and **Copy link** (live event): opens the public event page or copies its link to share.
+- **Sponsor** (live event that has not ended; whoever manages payments): show at the very top of your city's Events page for 1 week, 1 month or until the event. See `patrocinados.md`.
 - **Tickets, tables and extras are sold in the app** once the event is live. The price you set is what the customer pays (charges included);
   To'Latino's fee per ticket comes out of yours. Tickets are not sold at the door.
 

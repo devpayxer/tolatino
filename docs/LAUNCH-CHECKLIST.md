@@ -1826,7 +1826,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `pasarela.devolver` con su fila en el libro (sponsorship_payments solo inserción: una fila de devolución) y la conciliación la lee.
 - [ ] **→ 9n** · **Patrocinio con 3-D Secure:** si el banco pide confirmar al comprar, hoy se suelta el intento y se pide otra tarjeta. Falta la hoja del
       banco (useVerificacion, como «Volver a Pro») y, en la renovación sola, el enlace para confirmar (hoy termina y avisa).
-- [ ] **→ 9n** · **Patrocinio de eventos (C-003):** la tabla del libro (`sponsorship_payments.kind`), las cifras y `entroPatrocinado` ya aceptan «evento»;
+- [x] **→ 9n** · **Patrocinio de eventos (C-003):** — **✓ C-003 (17 nov):** 0174 (`event_sponsorships`), Panel › Eventos › Patrocinar, la vitrina de Eventos y el grupo Eventos del Super Admin. Antes: la tabla del libro (`sponsorship_payments.kind`), las cifras y `entroPatrocinado` ya aceptan «evento»;
       falta 0174 (`event_sponsorships`) y sus pantallas.
 - [ ] **→ 9n** · **Comida sin «Tipo de lugar»:** el diseño D dibuja la pestaña «TIPO DE LUGAR»; las pestañas salen de las filas del Catálogo y Comida solo
       tiene «Por país» y los antojos. Agregar la fila en Super Admin › Catálogo (contenido; no es código) si Henry la quiere.
@@ -1841,3 +1841,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       de producción no la manda y fic4id pasa en CI (regresión completa). La ficha ya devuelve `direccion: null` cuando el negocio trabaja desde casa.
 - [ ] **→ 9n** · **Vistas del patrocinio sin el equipo del negocio:** «entraron» ya no cuenta al dueño ni a su equipo; las vistas sí (la fila se cuenta
       al mostrarse, sin mirar quién es miembro, para no sumar una consulta por página). Si molesta, se excluye en `patrocinio_vistas`.
+## C-003 — Página de Eventos por días + Patrocinados de eventos (17 nov)
+- [ ] **→ 9n** · **Caritas de quién va en la tarjeta del evento:** el diseño las dibuja; hoy la tarjeta dice «N VAN». Mostrar caras de quien hizo
+      RSVP o compró es un dato personal: falta decidir el permiso (por ejemplo, solo amigos o quien activó «mostrar que voy»).
+- [ ] **→ 9n** · **Patrocinio de evento: devolver lo que no se usó** si el evento se cancela (hoy termina solo, avisa y no devuelve; Soporte a mano).
+      Igual que C-002: `pasarela.devolver` con su fila en `sponsorship_payments`.
+- [ ] **→ 9n** · **Patrocinio de evento con 3-D Secure:** misma pieza pendiente que C-002 (hoy pide otra tarjeta).
+- [ ] **→ 9n** · **Evento oculto / módulo apagado con patrocinio vivo:** no sale en la vitrina pero el patrocinio sigue corriendo; decidir si se pausa
+      y se alarga, o se termina solo.
+- [ ] **→ 9b** · **C-003 en la corrida completa:** las capturas aprobadas de `pruebas/visual` de Eventos cambian (diseño D); Safari/iPad y los 9
+      dispositivos van en la corrida completa al terminar C-003.

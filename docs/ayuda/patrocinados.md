@@ -2,7 +2,8 @@
 
 _Pantallas: la página de cada categoría (`/c/{categoría}`, la fila **Patrocinados** debajo de las pestañas); Panel › Cobros y plan ›
 **Patrocinio** (`/panel/{negocio}/cobros/patrocinio`; también desde Tu página); Super Admin › Crecimiento › **Patrocinios** y Sistema ›
-Configuración › Crecimiento. Teléfono y escritorio. Free y Pro. Versión: 16 nov 2026. Audiencia: negocio. Tema: panel._
+Configuración › Crecimiento. Eventos: la página de Eventos (`/eventos`, arriba de todo) y Panel › Eventos › el evento › **Patrocinar**
+(`/panel/{negocio}/eventos?det=evt:pat:{evento}`). Teléfono y escritorio. Free y Pro. Versión: 17 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **Patrocinados** es una fila de tarjetas altas en la página de una categoría (por ejemplo Comida y Bebidas), debajo de las pestañas
@@ -55,13 +56,43 @@ Configuración › Crecimiento. Teléfono y escritorio. Free y Pro. Versión: 16
   patrocinada. Se pone al día unos minutos después.
 - **¿Puedo patrocinar en otra categoría u otra ciudad?** No: sales en tu categoría y tu ciudad.
 
+## Patrocinados de Eventos
+- La página de **Eventos** tiene su propio **Patrocinados**, arriba de todo. En el teléfono es un cartel grande que se desliza (uno por
+  puesto, con la palabra **PATROCINADO**, porque ahí no hay un título que lo diga); en la computadora es una fila de tarjetas altas con
+  el título **Patrocinados**. Sale igual en cualquier día que elija el vecino en el calendario.
+- **6 puestos por ciudad** (el equipo puede cambiar el número); si hay más eventos que puestos, **rotan cada hora**.
+- **Cualquiera que publica un evento puede patrocinarlo** (Free o Pro), si el evento está publicado y todavía no termina.
+- **Comprar:** Panel › Eventos › abre el evento publicado › **Patrocinar** (junto a Ver página, Copiar enlace, Editar y Repetir). Los
+  mismos tres pasos: **Elegir** (cómo se verá el flyer, puestos libres, la duración, empieza hoy y cuándo termina) → **Revisar y pagar**
+  (evento, dónde, fechas, total, tarjeta; **Renovar solo** apagado) → **Activo** (hasta cuándo, **vistas**, **entraron** y **boletos**,
+  lo pagado, renovar, terminar antes).
+- **Duraciones:** **1 semana**, **1 mes** o **Hasta el evento**. «Hasta el evento» solo sale si el evento es después de hoy: cobra el precio
+  de la semana por **cada semana o fracción** hasta el día del evento (por ejemplo, un evento en 10 días son 2 semanas), termina cuando
+  termina el evento y **no se renueva**.
+- **Boletos** cuenta los boletos pagados (y los RSVP, si el evento es gratis) de quien antes tocó el cartel patrocinado, durante el
+  patrocinio.
+- Comprar lo hace quien maneja los cobros **y** los eventos del negocio (el dueño tiene todo). En la app To'Latino Negocios solo se ve el
+  estado.
+
+### Qué pasa en cada caso (Eventos)
+| Caso | Qué pasa |
+|---|---|
+| El evento se cancela | Deja de salir al momento y el patrocinio termina solo. Te llega «El patrocinio terminó con el evento». |
+| El evento ya pasó (1 semana o 1 mes que dura más que el evento) | El patrocinio termina solo cuando el evento termina. |
+| El evento ya llegó (es hoy) | «Hasta el evento» no sale; 1 semana o 1 mes sí. |
+| Sin puestos | Ves cuándo se libera uno, puedes **reservar desde ese día** (si es antes del evento) o tocar **Avísame si se libera un puesto**. |
+| Ya tiene un patrocinio en esas fechas | No deja comprar otro que se cruce para ese evento. |
+| Renovar solo (1 semana o 1 mes) | Al terminar se cobra el mismo plazo, si hay puesto y el evento sigue por venir. |
+| To'Latino lo termina | Te llega el aviso con el motivo. |
+| Terminar antes | Dejas de salir al momento. **Lo pagado no se devuelve.** |
+
 ## Para El Compa
 <!-- solo-equipo -->
 - Nunca prometas un precio distinto del que dice el panel; el precio sale de Configuración y el panel lo muestra antes de pagar.
 - Si alguien pide que le devuelvan lo pagado al terminar antes o cancelar una reserva: la regla es que no se devuelve solo; pásalo a
   Soporte si hay algo raro (cobro doble, un error de To'Latino).
-- En el Super Admin: Crecimiento › Patrocinios (lista, filtros por estado, **Terminar** con motivo). Puestos y precios: Sistema ›
-  Configuración › Crecimiento.
+- En el Super Admin: Crecimiento › Patrocinios, con dos grupos, **Negocios** y **Eventos** (lista, filtros por estado, **Terminar** con
+  motivo). Puestos y precios (los de Eventos aparte): Sistema › Configuración › Crecimiento.
 
 ## English
 
@@ -118,9 +149,39 @@ Configuración › Crecimiento. Teléfono y escritorio. Free y Pro. Versión: 16
   sponsored card before. It updates a few minutes later.
 - **Can I sponsor in another category or another city?** No: you show in your category and your city.
 
+### Sponsored events
+- The **Events** page has its own **Sponsored** section, at the very top. On the phone it is a large poster that slides (one per slot,
+  with the word **SPONSORED**, because there is no section title there); on a computer it is a row of tall cards titled **Sponsored**.
+  It shows the same on any day the neighbor picks in the calendar.
+- **6 slots per city** (the team can change the number); if there are more events than slots, they **rotate every hour**.
+- **Anyone who publishes an event can sponsor it** (Free or Pro), if the event is live and has not ended.
+- **Buying:** Dashboard › Events › open the live event › **Sponsor** (next to View page, Copy link, Edit and Repeat). The same three
+  steps: **Choose** (how the flyer will look, open slots, the length, starts today and when it ends) → **Review and pay** (event, where,
+  dates, total, card; **Auto-renew** off) → **Active** (until when, **views**, **visits** and **tickets**, what you paid, renew, end early).
+- **Lengths:** **1 week**, **1 month** or **Until the event**. «Until the event» only shows if the event has not happened yet: it charges the
+  weekly price for **each week or part of a week** until the event day (for example, an event in 10 days is 2 weeks), ends when the event
+  ends and **does not renew**.
+- **Tickets** counts the paid tickets (and RSVPs, if the event is free) from people who tapped the sponsored poster before, during the
+  sponsorship.
+- Buying is done by whoever manages the business payments **and** events (the owner has everything). In the To'Latino Business app you
+  only see the status.
+
+#### What happens in each case (Events)
+| Case | What happens |
+|---|---|
+| The event is cancelled | It stops showing right away and the sponsorship ends on its own. You get «The sponsorship ended with the event». |
+| The event is over (1 week or 1 month that lasts longer than the event) | The sponsorship ends on its own when the event ends. |
+| The event is today | «Until the event» does not show; 1 week or 1 month do. |
+| No slots | You see when one opens, you can **book from that day** (if it is before the event) or tap **Notify me if a slot opens**. |
+| It already has a sponsorship on those dates | It does not let you buy another overlapping one for that event. |
+| Auto-renew (1 week or 1 month) | When it ends, the same length is charged, if there is a slot and the event is still ahead. |
+| To'Latino ends it | You get the notice with the reason. |
+| End early | You stop showing right away. **What you paid is not refunded.** |
+
 ### For El Compa
 <!-- solo-equipo -->
 - Never promise a price different from what the dashboard says; the price comes from Settings and the dashboard shows it before paying.
 - If someone asks for a refund after ending early or canceling a booking: the rule is that it is not refunded on its own; pass it to
   Support if something is off (a double charge, a To'Latino error).
-- In Super Admin: Growth › Sponsorships (list, filters by status, **End** with a reason). Slots and prices: System › Settings › Growth.
+- In Super Admin: Growth › Sponsorships, with two groups, **Businesses** and **Events** (list, filters by status, **End** with a reason).
+  Slots and prices (Events has its own): System › Settings › Growth.

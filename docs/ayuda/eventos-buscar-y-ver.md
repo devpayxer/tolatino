@@ -1,17 +1,21 @@
 # Eventos: buscar y ver un evento · Events: browse and view an event
 
 _Pantallas: **Eventos** (`/eventos`), **Esta noche** (`/eventos/esta-noche`) y **la ficha del evento** (`/eventos/{evento}`). Teléfono y escritorio.
-Para cualquier vecino, con o sin cuenta (guardar y RSVP piden entrar). Versión: 10 nov 2026. Audiencia: vecino. Tema: eventos._
+Para cualquier vecino, con o sin cuenta (guardar y RSVP piden entrar). Versión: 17 nov 2026. Audiencia: vecino. Tema: eventos._
 
 ## Qué hace
 - **Series y varios días:** un evento que se repite sale **una vez** en la lista (su próxima fecha) con «CADA JUEVES · +N FECHAS»; en su página eliges la fecha (FECHAS · …: «Cada fecha tiene sus boletos.»). Un evento de varios días dice «VIE 20 NOV – DOM 22 NOV · 3 DÍAS» y DÍAS Y HORARIO; cada boleto dice para qué día vale.
 - **Eventos** muestra los eventos de la ciudad que estás viendo, dentro de tu radio (el mismo que eliges en Ciudad para Negocios y Buscar):
-  - **Mis boletos y RSVP**: si tienes RSVP a eventos que vienen, te lleva a Mi cuenta › Guardados › Eventos.
-  - **Esta noche**: lo de hoy como historias (toca una o «Ver como historias»).
-  - **El destacado**: la próxima fiesta o show con cartel (si no hay, el próximo evento con cartel).
-  - La línea fija: **«El precio que ves es el que pagas: cargos incluidos.»**
-  - **Chips de fecha** (Todos · Hoy · Este finde · Próximos) y **de tipo** (Todo · Gratis · Con boleto · géneros · Comunidad).
-  - **«N eventos en {ciudad}»** y las secciones **Esta noche · Esta semana · Este fin de semana · Más adelante** (con un filtro: «Resultados»).
+  - **Mis boletos y RSVP**: si tienes boletos o RSVP a eventos que vienen, te lleva a Mi cuenta.
+  - **Patrocinados**: arriba de todo, los eventos que sus organizadores patrocinan. En el teléfono, un cartel grande que se desliza con
+    la palabra PATROCINADO; en la computadora, una fila «Patrocinados». Ver `patrocinados.md`.
+  - **El calendario**: los días con **HOY** en el centro. Los días que ya pasaron se ven atenuados y no se tocan; un punto marca los
+    días que tienen eventos. Desliza para ver los días que vienen. Toca un día y cambian el título, las historias y la lista.
+  - **El día**: «Esta noche» (hoy), «Mañana» o el día («Sábado 26») con **cuántos eventos** hay ese día.
+  - **Las historias del día** (anillos): las de hoy abren **Esta noche** (historias a pantalla completa); las de otro día abren la página
+    del evento.
+  - **Una fila de tipos**: Todo · Gratis · Con boleto · los géneros · Comunidad.
+  - **Los eventos de ese día**. Un evento de varios días sale en cada día que dura.
   - Cada tarjeta: el cartel, la fecha en una caja, el corazón (guardar) y una etiqueta: **VAS** (tienes RSVP), **ESTA NOCHE** u **HOY**,
     **QUEDAN N** (cupo de 20 o menos), **CUPO LLENO** o **GRATIS**. Abajo: nombre, día, hora y lugar, y el precio («Gratis» o «Desde $X»).
   - Salen **20 a la vez**; **Ver más** trae los siguientes.
@@ -28,8 +32,9 @@ Para cualquier vecino, con o sin cuenta (guardar y RSVP piden entrar). Versión:
 | Caso | Qué pasa |
 |---|---|
 | No hay eventos en tu ciudad | «Publica el primer evento» para los negocios. |
-| El filtro no encuentra nada | «Nada con esos filtros · Prueba otra fecha u otro tipo de plan». |
-| Hoy no hay eventos | No sale «Esta noche»; la pantalla de historias dice «Hoy no hay eventos en {ciudad}». |
+| El tipo no encuentra nada ese día | «Nada con esos filtros · Prueba otro día u otro tipo de plan». |
+| El día no tiene eventos | «Nada publicado para ese día»; elige otro día (los que tienen eventos llevan un punto). |
+| Hoy no hay eventos | No salen historias; la pantalla de historias dice «Hoy no hay eventos en {ciudad}». |
 | El evento tiene boletos | Se ven los tipos, precios (cargos incluidos) y mesas; la barra dice «Desde $X» y su botón abre la compra. Agotado, venta pausada o cerrada lo dice el botón. |
 | Entrada libre (sin lista) | No hace falta RSVP: llegas y entras. El botón es **Invita**. |
 | El organizador lo pausó | «RSVP en pausa» o «Venta pausada». |
@@ -40,6 +45,7 @@ Para cualquier vecino, con o sin cuenta (guardar y RSVP piden entrar). Versión:
 
 ## Preguntas frecuentes
 - **¿El precio es el final?** Sí: el precio que ves es el que pagas, cargos incluidos.
+- **¿Cómo veo lo del fin de semana?** Toca el sábado o el domingo en el calendario.
 - **¿Por qué no veo un evento que me pasaron?** Puede estar fuera de tu radio (cámbialo en Ciudad), en revisión o ya no publicado.
 - **¿Puedo comprar boletos?** Sí, en la app con tarjeta (ver `comprar-boletos.md`). En la puerta no se venden boletos en To'Latino.
 - **¿Me avisan de un evento que guardé?** Sí: el día antes te llega «Un evento que guardaste es mañana».
@@ -51,12 +57,15 @@ Para cualquier vecino, con o sin cuenta (guardar y RSVP piden entrar). Versión:
   (DATES · …: «Each date has its own tickets.»). A multi-day event says «FRI NOV 20 – SUN NOV 22 · 3 DAYS» and DAYS AND SCHEDULE; each ticket says which day it is
   valid for.
 - **Events** shows the events of the city you are viewing, within your radius (the same one you choose in City for Businesses and Search):
-  - **My tickets and RSVPs**: if you have an RSVP to upcoming events, it takes you to My account › Saved › Events.
-  - **Tonight**: today's events as stories (tap one or «VIEW AS STORIES»).
-  - **The featured one**: the next party or show with a poster (if there is none, the next event with a poster).
-  - The fixed line: **«THE PRICE YOU SEE IS WHAT YOU PAY: FEES INCLUDED.»**
-  - **Date chips** (All · Today · This weekend · Upcoming) and **type chips** (All · Free · With ticket · genres · Community).
-  - **«N events in {city}»** and the sections **Tonight · This week · This weekend · Later** (with a filter: «Results»).
+  - **My tickets and RSVPs**: if you have tickets or RSVPs to upcoming events, it takes you to My account.
+  - **Sponsored**: at the very top, the events their organizers sponsor. On the phone, a large poster that slides with the word
+    SPONSORED; on a computer, a «Sponsored» row. See `patrocinados.md`.
+  - **The calendar**: the days with **TODAY** in the center. Past days look faded and cannot be tapped; a dot marks the days that have
+    events. Swipe to see the days ahead. Tap a day and the title, the stories and the list change.
+  - **The day**: «Tonight» (today), «Tomorrow» or the day («Saturday 26») with **how many events** there are that day.
+  - **The day's stories** (rings): today's open **Tonight** (full-screen stories); another day's open the event page.
+  - **One row of types**: All · Free · Ticketed · the genres · Community.
+  - **That day's events**. A multi-day event shows on every day it lasts.
   - Each card: the poster, the date in a box, the heart (save) and a label: **YOU'RE GOING** (you have an RSVP), **TONIGHT** or **TODAY**, **N LEFT**
     (capacity of 20 or fewer), **FULL** or **FREE**. Below: name, day, time and place, and the price («Free» or «From $X»).
   - **20 at a time** show; **See more** brings the next ones.
@@ -73,8 +82,9 @@ Para cualquier vecino, con o sin cuenta (guardar y RSVP piden entrar). Versión:
 | Case | What happens |
 |---|---|
 | There are no events in your city | «Publish the first event» for businesses. |
-| The filter finds nothing | «Nothing with those filters · Try another date or another type of plan». |
-| There are no events today | «Tonight» does not show; the stories screen says «There are no events today in {city}». |
+| The type finds nothing that day | «Nothing with those filters · Try another day or another kind of plan». |
+| The day has no events | «Nothing listed for that day»; pick another day (days with events have a dot). |
+| There are no events today | No stories show; the stories screen says «There are no events today in {city}». |
 | The event has tickets | You see the types, prices (fees included) and tables; the bar says «From $X» and its button opens the purchase. Sold out, sales paused or closed is shown on the button. |
 | Free entry (no list) | No RSVP needed: you arrive and get in. The button is **Invite**. |
 | The organizer paused it | «RSVP paused» or «Sales paused». |
@@ -85,6 +95,7 @@ Para cualquier vecino, con o sin cuenta (guardar y RSVP piden entrar). Versión:
 
 ### FAQ
 - **Is the price final?** Yes: the price you see is the price you pay, fees included.
+- **How do I see the weekend?** Tap Saturday or Sunday in the calendar.
 - **Why don't I see an event someone sent me?** It may be outside your radius (change it in City), in review or no longer published.
 - **Can I buy tickets?** Yes, in the app with a card (see `comprar-boletos.md`). Tickets are not sold at the door at To'Latino.
 - **Will I be notified about an event I saved?** Yes: the day before, you get «An event you saved is tomorrow».
