@@ -40,9 +40,8 @@ export const Nota = ({ ic, t }: { ic: string; t: string }) => (
   <div className="flex items-start gap-[11px] rounded-2xl bg-action/[.07] px-3.5 py-[13px]"><span className="grid flex-none pt-px"><Icon name={ic} size={17} color="var(--tl-action)" /></span><span className="flex-1 text-pretty text-[12.5px] font-semibold leading-[1.5]">{t}</span></div>
 );
 export function Fila({ it, can, abrir, tarjeta, desc }: { it: Item; can: boolean; abrir: (id: string, e?: MouseEvent) => void; tarjeta?: boolean; desc?: boolean }) {
-  return (
-    <div role={can && it.btn ? "button" : undefined} tabIndex={can && it.btn ? 0 : undefined} onClick={(e) => (can && it.btn ? abrir(it.id, e) : undefined)} onKeyDown={(e) => { if (can && it.btn && e.key === "Enter") abrir(it.id); }}
-      className={`${tarjeta ? "flex items-center gap-[13px] rounded-[18px] border border-ink/[.08] bg-white p-3.5" : "flex items-center gap-[13px] border-b border-ink/[.07] py-3.5"} ${can && it.btn ? "cursor-pointer" : ""}`}>
+  const cuerpo = (
+    <>
       <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(it.foto)} />
       <div className="min-w-0 flex-1">
         <div className="text-[14.5px] font-bold leading-[1.3]">{it.name}</div>
@@ -51,6 +50,17 @@ export function Fila({ it, can, abrir, tarjeta, desc }: { it: Item; can: boolean
         {it.aviso && <div className="mt-1.5 flex items-start gap-1.5 text-pretty text-[12px] font-semibold leading-[1.45] text-pro-ink"><span className="grid flex-none pt-px"><Icon name="warning" size={13} color="var(--tl-pro-ink)" /></span>{it.aviso}</div>}
         <div className="mt-1.5 font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{it.price}</div>
       </div>
+    </>
+  );
+  return (
+    <div className={tarjeta ? "flex items-center gap-[13px] rounded-[18px] border border-ink/[.08] bg-white p-3.5" : "flex items-center gap-[13px] border-b border-ink/[.07] py-3.5"}>
+      {can && it.btn ? (
+        <button type="button" onClick={(e) => abrir(it.id, e)} className="flex min-w-0 flex-1 cursor-pointer items-center gap-[13px] text-left">
+          {cuerpo}
+        </button>
+      ) : (
+        <div className="flex min-w-0 flex-1 items-center gap-[13px]">{cuerpo}</div>
+      )}
       {can && it.btn && <Button variant="soft" size="md" onClick={(e: MouseEvent) => abrir(it.id, e)}>{it.btn}</Button>}
     </div>
   );

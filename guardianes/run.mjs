@@ -1387,6 +1387,40 @@ const guardianes = {
     }
   },
 
+  /* 9c · sinInteractivoAnidado: un control dentro de otro control (axe «nested-interactive», serio; WCAG 4.1.2). Antes, las filas de las fichas
+     (Mercado, Servicios, Salud, Pro, Oficios, Noche, Fiestas, Viaje, Inscripciones) eran un <div role="button" tabIndex onClick onKeyDown> que
+     CONTENÍA el <Button> «Agregar», «Cómo llegar» o «Reservar»: un lector de pantalla no llega al botón de adentro. Ahora la fila es un <div>
+     inerte con un <button type="button"> para abrir (foto + texto) y la acción hermana, no anidada. Se vigila: en apps/web, todo elemento con
+     role="button" (o role={cond ? "button" : …}), o un <div> sin role con tabIndex y onClick, cuyo contenido tenga <Button, <button, <a, <input,
+     <select, <textarea u otro role="button". Revisión estática: se lee la etiqueta de apertura (con llaves balanceadas) y se recorre hasta su
+     cierre equilibrado. Al revés: alreves9c. */
+  sinInteractivoAnidado() {
+    const G = "sinInteractivoAnidado";
+    const ROL = /\brole=(?:["']button["']|\{[^}]*["']button["'])/;
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx$/.test(f)) continue;
+      const s = sinComent(f);
+      for (const m of s.matchAll(/<(div|li|article|section|span|tr|td|p)\b/g)) {
+        let i = m.index + m[0].length, llaves = 0, q = null;
+        for (; i < s.length; i++) {
+          const c = s[i];
+          if (q) { if (c === q && s[i - 1] !== "\\") q = null; continue; }
+          if (llaves > 0 && (c === '"' || c === "'" || c === "`")) { q = c; continue; }
+          if (c === "{") llaves++; else if (c === "}") llaves--; else if (c === ">" && llaves === 0) break;
+        }
+        const tag = s.slice(m.index, i + 1);
+        const boton = ROL.test(tag) || (!/\brole=/.test(tag) && /\btabIndex=/.test(tag) && /\bonClick=/.test(tag));
+        if (!boton || /\/>$/.test(tag)) continue;
+        let prof = 1, fin = s.length;
+        const rt = new RegExp(`<(/?)${m[1]}\\b[^>]*?(/?)>`, "g"); rt.lastIndex = i + 1;
+        for (let mm; (mm = rt.exec(s));) { if (mm[2] === "/") continue; prof += mm[1] ? -1 : 1; if (prof === 0) { fin = mm.index; break; } }
+        const dentro = s.slice(i + 1, fin);
+        if (/<(?:Button|button|a)[\s>]|<(?:input|select|textarea)\b/.test(dentro) || new RegExp(ROL.source).test(dentro))
+          falla(G, f, s.slice(0, m.index).split("\n").length, 'control dentro de un control (role="button" o div con tabIndex+onClick que contiene un <Button>/<button>/<a>): axe nested-interactive. La fila es un <div> y su zona principal un <button type="button"> HERMANO de la acción');
+      }
+    }
+  },
+
   /* 9c · hojaAccesible: una hoja (diálogo) se usa con el teclado (WCAG 2.1.2 y 2.4.3). Antes, ≈ 40 hojas no atrapaban el foco, no cerraban con
      Escape ni devolvían el foco, y 8 no tenían nombre. Ahora lo hace un solo gestor (app/FocoHojas.tsx, montado en el layout raíz) para toda
      hoja con role="dialog" aria-modal="true"; aquí se vigila que: cada role="dialog" tenga aria-modal="true" y nombre (aria-label o
