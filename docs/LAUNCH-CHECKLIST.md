@@ -1889,3 +1889,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       manda UNA lectura (de hace 31 s, después de empezar la ruta) que la base rechaza (`rejected_n = 1`) y después el emulador no da más lecturas
       aunque la prueba mueve el GPS cada 2 s; en Chromium pasa y en app8e (repartidor de comida) Safari sí sube posiciones. Diagnóstico en la salida
       de merc9n («· la página … · envíos … · pista»). Se mira a mano en un iPhone de verdad (REVISION «Ubicación del repartidor en el iPhone»).
+- [ ] **→ 9n** · **Auditoría en la misma transacción que el cambio (acciones del panel):** `app/panel/acciones-puerta.ts` (y otras acciones del panel)
+      guardan el cambio y DESPUÉS escriben la auditoría en otra consulta: si la segunda falla, el cambio queda sin su renglón. evt6g lo cazó como
+      carrera (17 nov). Revisar la clase (acciones del panel que tocan permisos, dinero o reglas) y pasar la auditoría a la misma transacción, con
+      su guardián.

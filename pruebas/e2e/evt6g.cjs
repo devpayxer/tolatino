@@ -379,7 +379,8 @@ function videoQR(t, file) {
     ok(await contiene(pn, 'REGLAS DE PUERTA') && await contiene(pn, 'Pedir ID · 21+'), 'el panel muestra REGLAS DE PUERTA con «Pedir ID · 21+»');
     await clic(pn.getByRole('switch', { name: 'Pedir ID · 21+' }));
     ok(await espera(async () => sql(`select id_required from events where id = ${EV1}`) === 't'), 'el dueño enciende «Pedir ID» (sin pasar por revisión) y queda en la auditoría');
-    ok(sql(`select count(*) from audit_entries where action = 'puerta.reglas' and target_id = '${NEG}' and at > now() - interval '2 minutes'`) !== '0', 'auditoría del panel: puerta.reglas');
+    // La auditoría se escribe justo después del cambio (otra consulta): se espera a que llegue, no se mira en el mismo instante.
+    ok(await espera(async () => sql(`select count(*) from audit_entries where action = 'puerta.reglas' and target_id = '${NEG}' and at > now() - interval '2 minutes'`) !== '0'), 'auditoría del panel: puerta.reglas');
     const T13 = boleto(EV1, F1, C1), pq = await escanear(a1, { sesion: SA, tipo: 'qr', qr: qrDe(T13), id: uuid(), at: Date.now(), previo: true });
     ok(pq.pregunta && pq.pregunta.pideId && pq.pregunta.edad === 21 && sql(`select count(*) from ticket_entries where ticket_id = ${T13}`) === '0', 'con «Pedir ID», un boleto de 1 persona también pregunta «PIDE ID · 21+» antes de marcar');
     const pc = await escanear(a1, { sesion: SA, tipo: 'qr', qr: qrDe(T13), id: pq.pregunta.id, at: Date.now() });
