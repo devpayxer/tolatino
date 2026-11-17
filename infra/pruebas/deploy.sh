@@ -92,7 +92,7 @@ SEMILLA_DIR="$REPO/infra/pruebas/semilla" bash "$REPO/packages/db/migrar.sh" --s
 #     sin red), así que sale igual cada vez y migrar.sh solo vuelve a aplicar el archivo que cambió.
 if [ -d "$REPO/scripts/semilla/demos" ]; then
   docker run --rm --network none -v "$REPO":/repo -w /repo node:22-alpine \
-    sh -c 'for g in scripts/semilla/demos/grupo-*.mjs; do node "$g" || exit 1; done' \
+    sh -c 'for g in scripts/semilla/demos/grupo-*.mjs scripts/semilla/demos/r2-*.mjs; do [ -f "$g" ] || continue; node "$g" || exit 1; done' \
     && SEMILLA_DIR="$REPO/infra/pruebas/demos" bash "$REPO/packages/db/migrar.sh" --semilla-pruebas "${COMPOSE[@]}" \
     || echo "[deploy] demos: falló (la app sigue con lo de antes)"
 fi
