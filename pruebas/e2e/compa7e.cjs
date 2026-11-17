@@ -240,6 +240,9 @@ const DUENO_L = 'Eso lo ve el dueño del negocio: tu parte del panel no lo inclu
   // la ciudad, el negocio o el tope las apagan; esta prueba es del asistente del panel: esa fila (y su nota) se comparan aparte en compa7f.
   const sinFila7f = (t) => t.replace(/ ?(Encendido · fuera de tu horario|Encendido, pero El Compa no está contestando ahora: sale tu respuesta de siempre\.|Apagado\. Contesta horario, menú y cómo pedir con los datos de tu página\.|Lo apagó To’Latino\. Escríbele a Soporte\.)( ENCENDIDO)?/g, '').replace(/ ?Cuando El Compa está encendido, contesta él y no sale la respuesta fija\./g, '');
   const foto = async (p) => { const r = {}; for (const x of PAGS) { await p.goto(B + `/panel/${NEG}${x}`); await p.waitForLoadState('networkidle'); r[x] = sinFila7f(norm(await p.innerText('main'))); } return r; };
+  // Precondición propia: ningún pedido ni reservación PENDIENTE del negocio que otra prueba dejó con su plazo corriendo: al vencer entre la foto de
+  // antes y la de después, la insignia de la pestaña «Pedidos» / «Reservaciones» desaparece sin que El Compa tenga que ver (confirmación barajada del CI).
+  sql(`update operations set status = 'cancelled', cancelled_by = 'system', cancelled_at = now(), updated_at = now() where business_id = '${NEG}' and kind in ('order', 'table') and status in ('pending', 'change_proposed')`);
   const ref = await foto(pd);
   const modos = [
     ['nivel «Panel del negocio» en pausa', () => flag('compa.use.owner', false), () => flag('compa.use.owner', true)],

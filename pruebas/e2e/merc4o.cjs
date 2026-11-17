@@ -31,7 +31,9 @@ const verV = async (l) => { for (let i = 0; i < 60; i++) { if (await vis(l)) ret
   await clic(m.getByRole('button', { name: 'Agregar al pedido' }));
   await verV(m.getByText(/TU PEDIDO · 1 ARTÍCULO/)); ok(!!(await vis(m.getByText('Estimado $7.47').first())), 'Tu pedido: 1 artículo · estimado $7.47');
   const ron = await vis(m.getByText('Ron añejo', { exact: true }));
-  if (ron) { await ron.click(); await verV(m.getByText(/21\+ con ID: se compra en la tienda/)); ok(true, '21+: solo en la tienda, sin agregar'); await clic(m.getByRole('button', { name: 'Cerrar' })); }
+  // «Ron añejo» lo crea prod4n (21+, solo en la tienda) y queda en la base: la fila de un artículo que no se pide por la app va atenuada y SIN toque (MenuItemRow off),
+  // así que no abre hoja: lo que se ve es su etiqueta y que no tiene «Agregar». Antes se tocaba y se esperaba la hoja: en la segunda vuelta (Ron ya existe) fallaba.
+  if (ron) { ok(!!(await vis(m.getByText('21+ · SOLO EN LA TIENDA').first())), '21+: la fila dice «solo en la tienda»'); ok(!(await ron.locator('xpath=ancestor::*[@role="button"][1]//*[text()="Agregar"]').count()), '21+: sin agregar'); }
   // Otro mercado: se reemplaza.
   await m.goto(B + `/n/${M2}?tab=svc`); const primero = m.getByRole('button', { name: 'Agregar' }).first();
   await clic(primero); await verV(m.getByText(/Tienes un pedido en otro mercado; si agregas aquí, se reemplaza/)); ok(true, 'otro mercado: «si agregas aquí, se reemplaza»');
