@@ -3573,7 +3573,9 @@ const guardianes = {
     if (!/if \(!cap\.ok\) \{\s*\n\s*await anularPorCobro\(op, pi,/.test(b)) falla(G, L, 0, "pagarBoletos: si la captura falla, se anulan los boletos y se libera");
     if (!/if \(!convertido\) \{[\s\S]*?if \(pi\) await pasarela\.liberar\(pi\)/.test(b)) falla(G, L, 0, "pagarBoletos: si algo falla antes de convertir, se libera la autorización");
     if (!/update tickets set status = 'void'/.test(cuerpoFn(sinComent(L), "anularPorCobro")) || !/pasarela\.liberar\(pi\)/.test(cuerpoFn(sinComent(L), "anularPorCobro"))) falla(G, L, 0, "anularPorCobro: anula los boletos y libera la tarjeta");
-    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && x !== L && x !== "apps/web/lib/pagos/pasarela.ts" && /capturarPlataforma\(|retenerPlataforma\(/.test(sinComent(x))) falla(G, x, 0, "solo lib/boletos.ts cobra boletos");
+    // C-002 (0175) · lib/patrocinio.ts también retiene y captura en la plataforma: su propio cobro directo a To'Latino en sesión, con 3-D Secure
+    // (no son boletos; patrocinioDelServidor vigila que capture exactamente el precio del servidor y que suelte lo retenido si algo falla).
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && x !== L && x !== "apps/web/lib/pagos/pasarela.ts" && x !== "apps/web/lib/patrocinio.ts" && /capturarPlataforma\(|retenerPlataforma\(/.test(sinComent(x))) falla(G, x, 0, "solo lib/boletos.ts cobra boletos");
     if (!/'tickets'\) limit 20/.test(readFileSync("apps/web/lib/cobros.ts", "utf8"))) falla(G, "apps/web/lib/cobros.ts", 0, "repararPagos no toca boletos (los repara repararBoletos, que captura sin comisión de destino)");
   },
 
@@ -7280,6 +7282,39 @@ const guardianes = {
     if (!/raise exception 'sponsorships: un patrocinio no se borra \(estados\)'/.test(reg) || !/new\.price_cents <> old\.price_cents/.test(reg)) falla(G, M, 0, "un patrocinio no se borra y lo pagado (precio, fechas, negocio) no cambia");
     if (!/create trigger sponsorship_stats_no_editable before insert or update or delete on sponsorship_stats/.test(m) || !/derivado_no_editable/.test(ultimaFn("patrocinio_cifras_no_editables"))) falla(G, M, 0, "las cifras del patrocinio son derivadas: solo las escribe la base");
     if (!/create trigger sponsorship_payments_no_cambia before update or delete on sponsorship_payments/.test(m)) falla(G, M, 0, "el libro de los patrocinios es solo de inserción");
+    // 0175 · 3-D Secure al comprar, devolver lo que no se usó (lo decide la base, una por patrocinio, en el libro y auditada) y vistas sin el equipo.
+    const M5 = "packages/db/migrations/0175_patrocinio_devoluciones.sql";
+    if (!existsSync(M5)) return falla(G, M5, 0, "falta 0175 (devoluciones, 3-D Secure y pausa de los patrocinios)");
+    const m5 = readFileSync(M5, "utf8");
+    for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql") && y > "0173")) {
+      const t = readFileSync(`packages/db/migrations/${x}`, "utf8");
+      if (/drop trigger[^;]*sponsorship_payments_no_cambia/.test(t) && !/create trigger sponsorship_payments_no_cambia before update or delete on sponsorship_payments/.test(t)) falla(G, `packages/db/migrations/${x}`, 0, "el libro de los patrocinios sigue siendo solo de inserción (nadie quita su trigger)");
+    }
+    const co = cuerpoFn(l, "cobrar");
+    if (!/if \(x\.enSesion\) \{/.test(co) || !/pasarela\.retenerPlataforma\(\{ centavos: x\.centavos,[^\n]*usuario: \{ id: x\.payer/.test(co) || !/bancoPide\(r\)/.test(co)) falla(G, L, 0, "comprar en sesión con 3-D Secure: se retiene con la verificación a nombre de quien paga y se abre la hoja del banco (bancoPide → verificar), no se pide otra tarjeta");
+    if (!/meta: \{ business_id: negocio, category_id: n\.category_id \}, enSesion: true \}/.test(compra) || !/verificar: p\.verificar/.test(compra)) falla(G, L, 0, "comprarPatrocinio cobra en sesión (enSesion) y devuelve `verificar` a la pantalla");
+    if (!/await capturarCobro\(p, centavos\);\s*\n\s*await anotarPago\(/.test(compra) || !/soltarRetenido\(retenido, e\)/.test(compra)) falla(G, L, 0, "comprarPatrocinio captura el precio del servidor después de guardar el patrocinio y antes del libro; si algo falla, suelta lo retenido");
+    if (!/pasarela\.capturarPlataforma\(p\.pi, centavos\)/.test(cuerpoFn(l, "capturarCobro"))) falla(G, L, 0, "capturarCobro captura exactamente el precio del servidor");
+    const dv = cuerpoFn(l, "devolverPatrocinio");
+    if (!/pasarela\.devolver\(s\.pi, cents, idem, \{ plataforma: true \}\)/.test(dv) || !/idem = `pat-dev-\$\{kind\}-\$\{id\}`/.test(dv) || !/Math\.min\(s\.cents, s\.cobrado\)/.test(dv)) falla(G, L, 0, "devolverPatrocinio: por la pasarela, una llave por patrocinio (pat-dev-…), nunca más que lo cobrado");
+    if (!/'devolucion', \$11, \$12::bigint, \$13, \$14\) on conflict do nothing/.test(dv) || !/insert into audit_entries/.test(dv)) falla(G, L, 0, "devolverPatrocinio: una fila 'devolucion' en el libro (sin repetir) y su auditoría");
+    if (!/from patrocinio_devolucion\(\$\{modo\}, \$\{t\}price_cents, \$\{t\}starts_at, \$\{t\}ends_at,/.test(l)) falla(G, L, 0, "lo que se devuelve lo calcula la base (patrocinio_devolucion) con el precio y las fechas pagados, nunca la pantalla");
+    if (!/DEVOLUCION\("case when status = 'reservado' then 'todo' else 'nada' end", "'reserva_cancelada'", false\)/.test(cuerpoFn(l, "terminarPorDueno"))) falla(G, L, 0, "cancelar una reserva (el dueño) devuelve todo; terminar antes uno activo, nada (lo dice la pantalla)");
+    const ta = cuerpoFn(l, "terminarPorAdmin");
+    if (!/motivo: string, devolver: boolean\): Promise<ResPat>/.test(ta) || !/DEVOLUCION\("case when \$4::boolean then 'sin_usar' else 'nada' end", "'admin'", false\)/.test(ta)) falla(G, L, 0, "«Terminar» del Super Admin: solo sí o no a devolver; cuánto lo decide la base ('sin_usar')");
+    if (!/await devolverPendientes\("negocio"\);/.test(cuerpoFn(l, "barrerPatrocinios"))) falla(G, L, 0, "el barrido reintenta las devoluciones que la pasarela no hizo");
+    const fnD = ultimaFn("patrocinio_devolucion");
+    if (!/when 'todo' then total/.test(fnD) || !/when 'sin_usar' then case when t <= a then total/.test(fnD) || !/when d\.dias >= d\.total then precio else floor\(precio::numeric \* d\.dias \/ d\.total\)/.test(fnD)) falla(G, M5, 0, "patrocinio_devolucion: una reserva que no empezó, todo; si no, los días enteros sin usar en proporción, nunca más que el precio");
+    if (!/create unique index if not exists sponsorship_payments_una_devolucion on sponsorship_payments \(kind, ref_id\) where reason = 'devolucion'/.test(m5)) falla(G, M5, 0, "una sola devolución por patrocinio en el libro");
+    if (!/nunca más que lo cobrado/.test(ultimaFn("patrocinio_devolucion_del_libro")) || !/create trigger sponsorship_payments_devolucion before insert on sponsorship_payments/.test(m5)) falla(G, M5, 0, "una devolución es del cobro de ese patrocinio y nunca de más que lo cobrado (la base)");
+    if (!/lo que se devuelve se decide una vez/.test(ultimaFn("patrocinio_devolucion_una_vez")) || !/create trigger sponsorships_devolucion before update on sponsorships/.test(m5)) falla(G, M5, 0, "lo que se devuelve se decide una vez al terminar y no cambia");
+    const cz = sinComent("apps/web/lib/conciliacion.ts");
+    if (!/from sponsorship_payments s where s\.reason = 'devolucion'/.test(cz) || !/from sponsorship_payments c where c\.reason <> 'devolucion'/.test(cz)) falla(G, "apps/web/lib/conciliacion.ts", 0, "la conciliación diaria lee las devoluciones de los patrocinios (y no las cuenta como cobros)");
+    // Vistas: nunca del dueño ni de su equipo, en una sola consulta por tanda (en la base).
+    const vi = ultimaFn("patrocinio_vistas");
+    if (!/not exists \(select 1 from business_members m where m\.business_id = v\.business_id and m\.user_id = quien and m\.status = 'active'\)/.test(vi)) falla(G, M5, 0, "las vistas del patrocinio no cuentan al dueño ni a su equipo (patrocinio_vistas)");
+    const cv = cuerpoFn(l, "contarVistas");
+    if ((cv.match(/db\(\)\.query/g) ?? []).length !== 1 || !/select patrocinio_vistas\(\$1, \$2::bigint\[\], \$3::uuid, \$4::uuid\)/.test(cv) || /\bfor \(|\.map\(/.test(cv)) falla(G, L, 0, "contarVistas: una sola consulta por tanda (sin N+1)");
   },
   /* C-003 · Patrocinados de Eventos: la vitrina de la cartelera solo muestra patrocinios de eventos ACTIVOS y pagados de ESA ciudad, vivos en este
      momento, de eventos publicados (listable) que no están cancelados, y nunca más que patrocinio_evt_puestos; el precio sale SIEMPRE de
@@ -7334,6 +7369,22 @@ const guardianes = {
     if (!/d\.listable and d\.ends_at > now\(\)/.test(reg) || !/e\.status <> 'cancelled'/.test(reg)) falla(G, M, 0, "la base no deja patrocinar un evento cancelado o sin fecha publicada por delante");
     if (!/raise exception 'event_sponsorships: un patrocinio no se borra \(estados\)'/.test(reg) || !/new\.price_cents <> old\.price_cents/.test(reg) || !/new\.event_id <> old\.event_id/.test(reg)) falla(G, M, 0, "un patrocinio de evento no se borra y lo pagado (evento, precio, fechas) no cambia");
     if (!/check \(duration <> 'until_event' or not auto_renew\)/.test(m)) falla(G, M, 0, "«hasta el evento» no se renueva (la base)");
+    // 0175 · Pausa (evento oculto, en revisión o con Eventos apagado), devoluciones del evento y 3-D Secure al comprar.
+    const M5 = "packages/db/migrations/0175_patrocinio_devoluciones.sql";
+    if (!existsSync(M5)) return falla(G, M5, 0, "falta 0175 (devoluciones y pausa de los patrocinios)");
+    if (!/from event_sponsorships where city_id = \$2 and status = 'activo' and starts_at <= now\(\) and ends_at > now\(\) and paused_at is null\)/.test(vit)) falla(G, EP, 0, "la vitrina de Eventos no muestra un patrocinio en pausa");
+    if (!/if new\.status in \('reservado', 'activo'\) then\s+perform pg_advisory_xact_lock\(hashtextextended\('patevt:' \|\| new\.city_id, 0\)\)/.test(reg)) falla(G, M5, 0, "la base revisa los puestos con el candado de la ciudad al insertar");
+    if (!/new\.ends_at <> old\.ends_at \+ make_interval\(secs => new\.extended_secs - old\.extended_secs\)/.test(reg) || !/new\.extended_secs > new\.paused_secs/.test(reg)
+        || !/patrocinio_evt_a_la_vez\(new\.city_id, old\.ends_at, new\.ends_at, new\.id\) >= public\.cfg_int\('patrocinio_evt_puestos'\)/.test(reg)) falla(G, M5, 0, "el fin pagado solo se alarga lo que estuvo en pausa, y alargar pasa otra vez por los puestos (la base)");
+    if (!/s\.status = 'activo' and s\.paused_at is null/.test(ultimaFn("patrocinio_entro")) || !/s\.status = 'activo' and s\.paused_at is null\)/.test(ultimaFn("patrocinio_vistas"))) falla(G, M5, 0, "lo que está en pausa no cuenta vistas ni «entraron»");
+    if (!/DEVOLUCION\("'sin_usar'", "'evento_cancelado'", true, "s\."\)[\s\S]*e\.status = 'cancelled'/.test(bar)) falla(G, L, 0, "un evento cancelado devuelve los días que no se usaron (la base, 'sin_usar')");
+    if (!/update event_sponsorships s set paused_at = now\(\)[\s\S]*not exists \(select 1 from event_dates d where d\.event_id = s\.event_id and d\.listable and d\.ends_at > now\(\)\)/.test(bar)) falla(G, L, 0, "el barrido pausa el patrocinio de un evento que no se ve (oculto, en revisión o con Eventos apagado)");
+    if (!/await reanudarUno\(id\)/.test(bar) || !/where status = 'activo' and paused_at is null and ends_at <= now\(\)/.test(bar) || !/await devolverPendientes\("evento"\);/.test(bar)) falla(G, L, 0, "el barrido sigue lo que vuelve a verse (alargado), no vence lo que está en pausa y reintenta las devoluciones");
+    const tae = cuerpoFn(l, "terminarPorAdminEvento"), tde = cuerpoFn(l, "terminarPorDuenoEvento");
+    if (!/motivo: string, devolver: boolean\): Promise<ResPat>/.test(tae) || !/DEVOLUCION\("case when \$4::boolean then 'sin_usar' else 'nada' end", "'admin'", true\)/.test(tae) || !/DEVOLUCION\("case when status = 'reservado' then 'todo' else 'nada' end", "'reserva_cancelada'", true\)/.test(tde)) falla(G, L, 0, "terminar (Super Admin: devolver sí o no; el dueño: una reserva, todo): cuánto lo decide la base");
+    if (!/enSesion: true \}/.test(compra) || !/verificar: p\.verificar/.test(compra) || !/await capturarCobro\(p, centavos\);\s*\n\s*await anotarPago\(/.test(compra) || !/soltarRetenido\(retenido, er\)/.test(compra)) falla(G, L, 0, "comprar el patrocinio de un evento: en sesión con 3-D Secure (verificar), captura el precio del servidor antes del libro y suelta lo retenido si algo falla");
+    const ac = sinComent("apps/web/app/admin/acciones-crecimiento.ts");
+    if (!/terminarPorAdminEvento\(s\.id, s\.cities, S\(id, 18\), S\(motivo\), devolver === true\)/.test(ac) || !/terminarPorAdmin\(s\.id, s\.cities, S\(id, 18\), S\(motivo\), devolver === true\)/.test(ac)) falla(G, "apps/web/app/admin/acciones-crecimiento.ts", 0, "«Terminar» del Super Admin manda solo sí o no a devolver, nunca un monto");
   },
   /* C-008 · El precio de antes (tachado) nunca es un número escrito a mano: es el precio de siempre del menú (items.price_cents) cuando una
      oferta en vivo de Novedades lo baja (lib/pedir.ts), y solo eso llega a las tarjetas (was). Sin un «precio anterior» que el negocio invente
