@@ -35,7 +35,9 @@ const falla = (g, f, linea, msg) => fallos.push(`[${g}] ${f}${linea ? ":" + line
 const avisos = [];
 
 /* Texto de un archivo sin comentarios (los guardianes de la Comunidad miran código, no prosa) y el cuerpo de una función de primer nivel. */
-const sinComent = (f) => readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, (x) => x.replace(/[^\n]/g, " ")).replace(/(^|[^:])\/\/.*$/gm, "$1");
+/* C-001 · Un «/*» pegado a una comilla es un texto (accept="image/*", "video/*"), no un comentario: sin esto el «comentario» se tragaba
+   66 líneas del panel hasta el siguiente «*\/» y mensajesEnVivo dejaba de ver el código que vigila (lo cazó alreves9m en CI). */
+const sinComent = (f) => readFileSync(f, "utf8").replace(/\/\*(?=["'`])/g, "/_").replace(/\/\*[\s\S]*?\*\//g, (x) => x.replace(/[^\n]/g, " ")).replace(/(^|[^:])\/\/.*$/gm, "$1");
 /* La última definición de una función de la base en las migraciones (una migración nueva puede reemplazarla). */
 const ultimaFn = (nombre) => { let b = ""; for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) { const t = readFileSync(`packages/db/migrations/${x}`, "utf8"); const re = new RegExp(`create or replace function ${nombre}\\([\\s\\S]*?\\$\\$([\\s\\S]*?)\\$\\$`, "g"); for (const m of t.matchAll(re)) b = m[1]; } return b; };
 /* Las filas del catálogo config_keys en todas las migraciones que lo amplían (0105 Comunidad, 0106 Eventos…). */
