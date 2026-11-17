@@ -132,7 +132,9 @@ const limpiar = () => {
     }
     ok(await espera(async () => (await p.locator('[data-pieza="mapa-pin"]').getAttribute('data-lejos')) === '1'), 'muy lejos: el mapa avisa antes de guardar');
     await p.locator('[data-screen-label="Mi cuenta · barra"]').getByText('Guardar dirección').click();
-    ok(await espera(async () => /El pin quedó muy lejos de esa dirección/.test(await p.locator('body').innerText())), 'muy lejos: el servidor no lo acepta («El pin quedó muy lejos de esa dirección»)');
+    const rechazo = await espera(async () => /El pin quedó muy lejos de esa dirección/.test(await p.locator('body').innerText()));
+    if (!rechazo) console.log(`  · diagnóstico: url=${p.url()} base=${sql(`select street || ' ' || coalesce(round(st_y(geo::geometry)::numeric, 5) || ',' || round(st_x(geo::geometry)::numeric, 5), '-') from user_addresses where id = '${id1}'`)} pantalla=«${(await p.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 600)}»`);
+    ok(rechazo, 'muy lejos: el servidor no lo acepta («El pin quedó muy lejos de esa dirección»)');
     ok(sql(`select street from user_addresses where id = '${id1}'`) !== '450 N Wyoming St', 'y la dirección no cambió');
 
     // ── 3 · Usar mi ubicación ──
