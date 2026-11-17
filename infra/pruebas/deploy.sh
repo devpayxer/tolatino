@@ -90,11 +90,16 @@ SEMILLA_DIR="$REPO/infra/pruebas/semilla" bash "$REPO/packages/db/migrar.sh" --s
 #     migrar.sh). Cada archivo marca is_demo y es idempotente (llaves fijas; se vuelve a aplicar si cambia).
 #     El SQL (≈ 120 MB) NO va en el repo: lo generan aquí los generadores deterministas de scripts/semilla/demos/ (node de la imagen base,
 #     sin red), así que sale igual cada vez y migrar.sh solo vuelve a aplicar el archivo que cambió.
-if [ -d "$REPO/scripts/semilla/demos" ]; then
-  docker run --rm --network none -v "$REPO":/repo -w /repo node:22-alpine \
-    sh -c 'for g in scripts/semilla/demos/grupo-*.mjs scripts/semilla/demos/r2-*.mjs; do [ -f "$g" ] || continue; node "$g" || exit 1; done' \
-    && SEMILLA_DIR="$REPO/infra/pruebas/demos" bash "$REPO/packages/db/migrar.sh" --semilla-pruebas "${COMPOSE[@]}" \
-    || echo "[deploy] demos: falló (la app sigue con lo de antes)"
+#     Ronda 2 (17 nov): ≈ 7.000 negocios y ≈ 400 eventos más; cargar todo tarda bastante más que el tope del servicio (TimeoutStartSec=3600),
+#     así que va APARTE (systemd-run, como el mapa): el despliegue de la app nunca espera por los demos. Cada archivo queda anotado al
+#     terminar (schema_seeds), así que si se corta, la próxima vuelta sigue con los que faltan.
+if [ -d "$REPO/scripts/semilla/demos" ] && ! systemctl is-active --quiet tolatino-demos; then
+  log "demos: se generan y se cargan aparte (tolatino-demos)"
+  # shellcheck disable=SC2048  # (como siempre: las partes del compose no llevan espacios)
+  systemd-run --unit tolatino-demos --collect bash -c "docker run --rm --network none -v '$REPO':/repo -w /repo node:22-alpine \
+    sh -c 'for g in scripts/semilla/demos/grupo-*.mjs scripts/semilla/demos/r2-*.mjs; do [ -f \"\$g\" ] || continue; node \"\$g\" || exit 1; done' \
+    && SEMILLA_DIR='$REPO/infra/pruebas/demos' bash '$REPO/packages/db/migrar.sh' --semilla-pruebas ${COMPOSE[*]}" \
+    || echo "[deploy] demos: no se pudo lanzar (la app sigue con lo de antes)"
 fi
 
 # 3c-bis/ter/quater) Lo que sale del repo (infra/comun/lib.sh · indexar_docs): el Centro de ayuda (7a: docs/ayuda/ → help_articles), las páginas
