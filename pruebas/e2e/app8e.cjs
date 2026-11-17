@@ -110,6 +110,9 @@ async function y4m(png, archivo) {
   };
 
   // ═══ 1 · La ruta por la web (Juan en el navegador, con la ubicación del teléfono emulada) ═══
+  // Precondición propia: Marisol con su dirección «Casa» por defecto (dir2f quita las suyas; corriendo sola o después de ella no tenía ninguna).
+  if (sql(`select count(*) from user_addresses where user_id = (select id from users where phone = '+1${MARI}') and removed_at is null and is_default`) === '0')
+    sql(`insert into user_addresses (user_id, label, street, apt, zip, city_id, is_default, geo, geo_quality) select id, 'casa', '118 E Broad St', '', '18201', 'hzl', true, st_geogfromtext('POINT(-75.9746 40.9584)'), 'numero' from users where phone = '+1${MARI}'`);
   const m = await pagina('cliente', 390), d = await pagina('negocio', 1360), j = await pagina('repartidor', 390, { geo: punto(0) }), h = await pagina('otro vecino', 390);
   await entrar(m, MARI); await entrar(d, DUENO); await entrar(j, JUAN); await entrar(h, HECTOR);
   const n1 = await pedir(m); ok(op(n1, "mode||'|'||pay_mode") === 'delivery|entrega', `pedido #${n1} a domicilio`);
