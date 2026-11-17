@@ -8,6 +8,14 @@ on:
         description: "Rutas extra para mirar (separadas por espacio): código, tiempo y el título de la página"
         type: string
         default: ""
+      cookie:
+        description: "Cookie para las rutas pedidas (p. ej. tl_loc=rdg para mirar como si estuvieras en Reading)"
+        type: string
+        default: ""
+      texto:
+        description: "Texto a buscar en cada ruta pedida (dice si aparece)"
+        type: string
+        default: ""
   schedule:
     - cron: '17 */6 * * *'
 permissions:
@@ -24,12 +32,13 @@ jobs:
           done
       - name: Rutas pedidas
         if: inputs.rutas != ''
-        env: { RUTAS: "${{ inputs.rutas }}" }
+        env: { RUTAS: "${{ inputs.rutas }}", GALLETA: "${{ inputs.cookie }}", TEXTO: "${{ inputs.texto }}" }
         run: |
           for p in $RUTAS; do
             case "$p" in /*) ;; *) echo "$p: ruta inválida"; continue ;; esac
-            h=$(curl -s -m 60 -w '\n%{http_code} %{time_total}s' "http://2.31.196.167$p")
-            echo "$p $(echo "$h" | tail -1) · $(echo "$h" | grep -o '<title>[^<]*' | head -1 | sed 's/<title>//')"
+            h=$(curl -s -m 60 ${GALLETA:+-b "$GALLETA"} -w '\n%{http_code} %{time_total}s' "http://2.31.196.167$p")
+            t=""; if [ -n "$TEXTO" ]; then if printf '%s' "$h" | grep -qF -- "$TEXTO"; then t=" · «$TEXTO»: sí"; else t=" · «$TEXTO»: no"; fi; fi
+            echo "$p $(echo "$h" | tail -1) · $(echo "$h" | grep -o '<title>[^<]*' | head -1 | sed 's/<title>//')$t"
           done
       - name: Página de estado
         run: curl -s -m 30 http://2.31.196.167/estado/ | sed -e 's/<[^>]*>//g' | grep -v '^\s*$' | tail -40
