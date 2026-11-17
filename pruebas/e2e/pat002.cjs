@@ -142,8 +142,14 @@ let OP = null;
     await pf.screenshot({ path: OUT + 'pat002-sinpuestos-390.png', fullPage: true });
     await pf.getByRole('button', { name: 'Avísame si se libera antes' }).click();
     ok(await espera(async () => sql(`select count(*) from sponsorship_waits where business_id = '${bar.id}' and status = 'espera'`) === '1'), '«Avísame» queda anotado');
-    await pf.getByRole('button', { name: new RegExp(`^Reservar desde el ${libre} · \\$15$`) }).click();
-    ok(await espera(async () => (await texto(pf)).includes('Revisar y pagar')), 'Revisar y pagar la reserva');
+    // Tras «Avísame» la página se vuelve a pedir al servidor; en Safari el toque puede caer en el botón de antes (se reemplaza): se toca otra
+    // vez si la hoja no abrió (hasta 3).
+    let abrio = false;
+    for (let i = 0; i < 3 && !abrio; i++) {
+      await pf.getByRole('button', { name: new RegExp(`^Reservar desde el ${libre} · \\$15$`) }).click();
+      abrio = await espera(async () => (await texto(pf)).includes('Revisar y pagar'), 8000);
+    }
+    ok(abrio, 'Revisar y pagar la reserva');
     await pf.getByRole('button', { name: 'Pagar $15.00' }).click();
     ok(await espera(async () => sql(`select count(*) from sponsorships where business_id = '${bar.id}' and status = 'reservado'`) === '1'), 'Free: queda RESERVADO');
     ok(sql(`select (starts_at = ${DIA(3)}) || '|' || (ends_at = ${DIA(10)}) from sponsorships where business_id = '${bar.id}' and status = 'reservado'`) === 'true|true', 'desde el día que se libera, 7 días');

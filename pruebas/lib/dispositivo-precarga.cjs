@@ -86,6 +86,18 @@ if (id) {
     // WebKit móvil (el iPad) no tiene rueda del ratón: se desplaza la página, que es lo que hace el dedo.
     const rueda = page.mouse.wheel.bind(page.mouse);
     page.mouse.wheel = async (dx, dy) => { try { return await rueda(dx, dy); } catch (e) { if (!/not supported in mobile WebKit/.test(e.message)) throw e; await page.evaluate(([x, y]) => window.scrollBy(x, y), [dx, dy]); } };
+    // Escribir antes de hidratar (evt6a, cre9h, apl9n7 en el SE y el iPad): WebKit da la página por cargada antes de que React conecte el campo;
+    // el valor queda pintado pero el estado de React vacío (el botón sigue apagado). Antes de cada fill en WebKit se espera a que ESE campo tenga
+    // sus props de React (máx. 10 s). Se parcha una vez el prototipo del Locator; solo actúa en las páginas de WebKit.
+    const LP = Object.getPrototypeOf(page.locator('body'));
+    if (!LP.__tlFill) {
+      const fill = LP.fill;
+      LP.fill = async function (v, o) {
+        if (this.page().__tlFiltro) await this.evaluate((el) => new Promise((r) => { const t0 = Date.now(); const k = () => (Object.keys(el).some((x) => x.startsWith('__reactProps')) || Date.now() - t0 > 10000 ? r() : setTimeout(k, 100)); k(); }), null, { timeout: 15000 }).catch(() => {});
+        return fill.call(this, v, o);
+      };
+      LP.__tlFill = true;
+    }
     const shot = page.screenshot.bind(page);
     // WebKit espera las fuentes antes de la captura y, en una página cuyo «load» nunca sale (el polyfills «nomodule», ver arriba), se queda ahí
     // 30 s (noc4d, silla3d en el SE y el iPad). La captura es un registro, no lo que la prueba comprueba: se anota y la prueba sigue.

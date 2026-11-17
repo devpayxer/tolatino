@@ -158,7 +158,11 @@ const money = (c) => `$${(c / 100).toFixed(2)}`;
     // El GPS de Playwright conserva la hora de la lectura de cuando se abrió el contexto (anterior al inicio de la entrega: la base la descarta);
     // el repartidor «se mueve» unos metros cada 2 s, como en la calle.
     const posiciones = () => Number(sql(`select count(*) from delivery_positions where operation_id = ${OA}`));
+    // Como app8e: primero la banda «Compartiendo tu ubicación» (Safari arranca el GPS de la página más tarde), después se mueve.
+    await r.locator('[data-banda="ubicacion"]').first().waitFor({ timeout: 20000 }).catch(() => console.log('  · sin la banda de ubicación todavía'));
     for (let i = 0; i < 25 && !posiciones(); i++) { await r.context().setGeolocation({ latitude: 40.9562 + i * 0.0002, longitude: -75.9741 }); await dormir(2000); }
+    if (!posiciones()) console.log('  · la página:', JSON.stringify(await r.evaluate(() => new Promise((ok) => navigator.geolocation.getCurrentPosition((g) => ok({ t: g.timestamp, ahora: Date.now(), lat: g.coords.latitude }), (e) => ok({ error: e.code, msg: e.message }), { timeout: 5000 })))),
+      '· banda:', await r.locator('[data-banda="ubicacion"]').count(), '· url:', r.url());
     ok((posiciones() > 0).toString() === 'true', 'el teléfono del repartidor comparte su ubicación (la base acepta las posiciones del envío del mercado)');
     await c.goto(B + `/mercado/${NA}`); await verV(c.getByText(/Ramiro te lo lleva/));
     await verV(c.locator('[data-pantalla="APP-PEDIDO-MAPA"]'), 80); ok(true, 'el cliente ve «Ramiro te lo lleva» y el mapa en vivo');
