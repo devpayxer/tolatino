@@ -295,7 +295,7 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
   ok(lecturaDenegada, 'compa_reads es de solo inserción (la base rechaza cambiarla)');
 
   console.log('12 · Escritorio 1360 y el límite de mensajes');
-  const p13 = await como(MARISOL, 1360);
+  const p13 = await como(fc.tel, 1360); // la dueña de la cita (en una base nueva no siempre es Marisol)
   await p13.goto(B + AYUDA.appointment(fc.num)); await p13.locator(HOJA).waitFor(); await p13.waitForTimeout(700); await p13.screenshot({ path: OUT + 'e7d-hoja-1360.png' });
   await p13.goto(B + '/soporte/compa'); await p13.getByText('Una cita o reservación').waitFor(); await p13.waitForTimeout(700); await p13.screenshot({ path: OUT + 'e7d-2at-1360.png' });
   await p13.goto(B + '/soporte'); await p13.getByText('El Compa te ayuda al instante').waitFor(); await p13.waitForTimeout(700); await p13.screenshot({ path: OUT + 'e7d-soporte-1360.png' });
