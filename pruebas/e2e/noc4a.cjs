@@ -108,13 +108,14 @@ const espera = async (f, ms = 8000) => { const t = Date.now(); while (Date.now()
 
   // Buscar › Noche: la tarjeta con el cover de esta noche. Precondición propia (C-002: la tarjeta Pro solo dice lo de HOY): el local abre esta
   // noche, sea el día que sea (la semilla no abre los lunes y la línea pasaba a «Mañana: …»). Se devuelve su horario al terminar.
-  const volverHorario = abiertoTodoElDia(NEG);
-  barrer();
+  // El barrido de Noche solo recalcula la tarjeta cuando cambia la noche: con el horario nuevo se le pide de nuevo (derived_night = null).
+  const volverHorario = abiertoTodoElDia(NEG), recalcular = () => { sql(`update noche_settings set derived_night = null where business_id = '${NEG}'`); barrer(); };
+  recalcular();
   await p.goto(`${B}/c/noche`); await p.waitForLoadState('networkidle');
   // 9b-1 · La categoría va por páginas (3 en una base nueva): se busca la tarjeta del local página por página (antes: solo la primera).
   for (let i = 0; i < 6 && !(await vis(p.getByText(/cover \$15 · 18\+/).first())); i++) { const sig = await vis(p.getByText('Siguiente', { exact: true })); if (!sig || (await sig.getAttribute('aria-disabled')) === 'true') break; await sig.click(); await p.waitForLoadState('networkidle'); await p.waitForTimeout(400); }
   const vista = !!(await vis(p.getByText(/cover \$15 · 18\+/).first()));
-  volverHorario(); barrer();
+  volverHorario(); recalcular();
   ok(vista, 'la tarjeta de la categoría dice el cover de esta noche');
   await p.screenshot({ path: OUT + 'n4a-categoria-m.png' });
   ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ') : ''));
