@@ -7236,6 +7236,49 @@ const guardianes = {
       readFileSync(f, "utf8").split("\n").forEach((x, n) => { if (/\bbusiness_videos\b/.test(x)) falla(G, f, n + 1, "lee business_videos por su cuenta: lo público va por videosVivos (solo aprobados y Pro)"); });
     }
   },
+  /* C-002 · Patrocinados: la vitrina de la página de categoría solo muestra patrocinios ACTIVOS, pagados, de ESA categoría y ESA ciudad, vivos en
+     este momento y nunca más que patrocinio_puestos; el precio sale SIEMPRE de Configuración (patrocinio_semana_cents / patrocinio_mes_cents), nunca
+     de la pantalla; solo lib/patrocinio.ts escribe los patrocinios, su libro y sus cifras (derivadas); comprar pide «Cobros» en el panel y no se
+     compra dentro de las apps de las tiendas; el título «Patrocinados» es el único aviso (sin etiqueta por tarjeta). Al revés (alrevesC002). */
+  patrocinioDelServidor() {
+    const G = "patrocinioDelServidor", L = "apps/web/lib/patrocinio.ts", A = "apps/web/app/panel/acciones-patrocinio.ts", PG = "apps/web/app/(app)/c/[slug]/page.tsx",
+      T = "apps/web/app/(app)/c/[slug]/Patrocinados.tsx", M = "packages/db/migrations/0173_patrocinios.sql";
+    for (const f of [L, A, PG, T, M]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de Patrocinados (C-002)");
+    const l = sinComent(L), vit = cuerpoFn(l, "vitrinaCategoria");
+    if (!/from sponsorships where city_id = \$1 and category_id = \$2 and status = 'activo' and starts_at <= now\(\) and ends_at > now\(\)/.test(vit)) falla(G, L, 0, "la vitrina: solo patrocinios activos de esta ciudad y esta categoría, vivos ahora (status 'activo', starts_at <= now() < ends_at)");
+    if (!/b\.category_id = \$2/.test(vit) || !/\$\{DESDE\}/.test(vit)) falla(G, L, 0, "la vitrina: el negocio sigue siendo de esta categoría y está publicado en la ciudad (DESDE)");
+    if (!/limit \$\{cfgPuestos\}/.test(vit) || !/const cfgPuestos = "\(select cfg_int\('patrocinio_puestos'\)\)";/.test(l)) falla(G, L, 0, "la vitrina nunca muestra más que patrocinio_puestos (limit cfg_int)");
+    if (!/condiciones\(\{ sub, filtros \}, params\)/.test(vit)) falla(G, L, 0, "la vitrina respeta el país, el antojo y los filtros elegidos (condiciones)");
+    // El precio: de Configuración, nunca de la pantalla.
+    const pr = cuerpoFn(l, "preciosNegocio");
+    if (!/valores\("patrocinio_semana_cents", "patrocinio_mes_cents", "patrocinio_puestos", "patrocinio_dias_adelante"\)/.test(pr) || !/return \{ week: v\.patrocinio_semana_cents, month: v\.patrocinio_mes_cents, puestos: v\.patrocinio_puestos,/.test(pr)) falla(G, L, 0, "los precios y los puestos salen de Configuración (valores patrocinio_*)");
+    const compra = cuerpoFn(l, "comprarPatrocinio");
+    if (!/const centavos = x\.dur === "week" \? P\.week : P\.month,/.test(compra)) falla(G, L, 0, "comprar cobra el precio de Configuración (P.week / P.month), nunca otro");
+    if (!/const centavos = s\.duration === "week" \? P\.week : P\.month,/.test(cuerpoFn(l, "vencerUno"))) falla(G, L, 0, "renovar sola cobra el precio de hoy de Configuración");
+    const tipo = /export type CompraIn = \{([^}]*)\}/.exec(l)?.[1] ?? "";
+    if (!tipo || /\b(centavos|cents|precio|price|monto|amount|total)\b/i.test(tipo)) falla(G, L, 0, "CompraIn (lo que manda la pantalla) no lleva un monto");
+    const a = sinComent(A);
+    if (/\b(centavos|cents|precio|price|monto|amount|total)\b/i.test(cuerpoFn(a, "patComprar").split("\n")[0] ?? "")) falla(G, A, 0, "patComprar no recibe un monto de la pantalla");
+    for (const fn of ["patComprar", "patPuestos", "patAvisame", "patRenovarSolo", "patTerminar"]) if (!/const a = await entrar\(id\);/.test(cuerpoFn(a, fn))) falla(G, A, 0, `${fn}: pasa por entrar() (mismo origen y Cobros del panel)`);
+    if (!/return typeof id === "string" \? accesoPanel\(id, "pay"\) : null;/.test(a) || !/if \(!\(await mismoOrigen\(\)\)\) return null;/.test(a)) falla(G, A, 0, "el patrocinio lo compra solo quien tiene Cobros en el panel (accesoPanel 'pay'), desde el mismo origen");
+    if (!/if \(!\(await enLaWeb\(\)\)\) return EN_APP;/.test(cuerpoFn(a, "patComprar")) || !/if \(on === true && !\(await enLaWeb\(\)\)\) return EN_APP;/.test(cuerpoFn(a, "patRenovarSolo"))) falla(G, A, 0, "dentro de las apps de las tiendas no se compra ni se enciende la renovación (compraDigitalAqui)");
+    // Solo lib/patrocinio.ts escribe los patrocinios, el libro y las cifras.
+    for (const f of codigo) {
+      if (!/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(f) || f === L) continue;
+      readFileSync(f, "utf8").split("\n").forEach((x, i) => { if (/\b(insert into|update|delete from)\s+sponsorship(s|_payments|_stats|_entries|_views)\b/i.test(x)) falla(G, f, i + 1, "escribe patrocinios, su libro o sus cifras por su cuenta: solo lib/patrocinio.ts"); });
+    }
+    // La página de categoría saca Patrocinados de la vitrina del servidor, y la tarjeta no lleva una etiqueta propia.
+    const pg = sinComent(PG);
+    if (!/vitrinaCategoria\(loc, c\.id, sub \? reglas\.get\(sub\)! : null, elegidos\)/.test(pg)) falla(G, PG, 0, "Patrocinados sale de vitrinaCategoria con el país, el antojo y los filtros elegidos");
+    const tj = sinComent(T);
+    if (/["'>](PATROCINADO|Patrocinado|Anuncio|ANUNCIO|Sponsored ad|AD)["'<]/.test(tj) || /pagan? por salir/i.test(tj)) falla(G, T, 0, "el título «Patrocinados» es el único aviso: sin etiqueta en cada tarjeta ni texto que explique");
+    // La base: nunca más que los puestos a la vez (con candado), lo pagado no cambia y las cifras son derivadas.
+    const m = readFileSync(M, "utf8"), reg = ultimaFn("patrocinio_reglas");
+    if (!/pg_advisory_xact_lock\(hashtextextended\('pat:' \|\| new\.city_id \|\| ':' \|\| new\.category_id, 0\)\)/.test(reg) || !/>= public\.cfg_int\('patrocinio_puestos'\) then\s+raise exception 'patrocinio_sin_puestos/.test(reg)) falla(G, M, 0, "la base no deja pasar de patrocinio_puestos a la vez en una categoría y ciudad (con candado)");
+    if (!/raise exception 'sponsorships: un patrocinio no se borra \(estados\)'/.test(reg) || !/new\.price_cents <> old\.price_cents/.test(reg)) falla(G, M, 0, "un patrocinio no se borra y lo pagado (precio, fechas, negocio) no cambia");
+    if (!/create trigger sponsorship_stats_no_editable before insert or update or delete on sponsorship_stats/.test(m) || !/derivado_no_editable/.test(ultimaFn("patrocinio_cifras_no_editables"))) falla(G, M, 0, "las cifras del patrocinio son derivadas: solo las escribe la base");
+    if (!/create trigger sponsorship_payments_no_cambia before update or delete on sponsorship_payments/.test(m)) falla(G, M, 0, "el libro de los patrocinios es solo de inserción");
+  },
   /* C-008 · El precio de antes (tachado) nunca es un número escrito a mano: es el precio de siempre del menú (items.price_cents) cuando una
      oferta en vivo de Novedades lo baja (lib/pedir.ts), y solo eso llega a las tarjetas (was). Sin un «precio anterior» que el negocio invente
      (descuento falso). Al revés (alrevesC008). */

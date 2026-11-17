@@ -102,7 +102,10 @@ async function entrarComo(p, tel, { nombre = 'Vecino', apellido = 'Prueba' } = {
    La de 4242 de Marisol es la misma que ya usaban cit3c, silla3d y vi4b. Devuelve el stripe_pm_id. */
 const SUFIJO = { '4242': 'c13c3c00', '0002': '7725ac2e' };
 function tarjeta(tel, l4 = '4242', { predeterminada = true } = {}) {
-  const u = `(select id from users where phone = '+1${tel}')`, pm = `pm_sim_visa_${l4}_${SUFIJO[l4] ?? '0b9b1000'}`;
+  const u = `(select id from users where phone = '+1${tel}')`;
+  // C-002 · El id de la tarjeta es único en toda la base: si el de siempre ya es de OTRA persona, esta lleva el suyo (los 8 hex salen de su teléfono).
+  let pm = `pm_sim_visa_${l4}_${SUFIJO[l4] ?? '0b9b1000'}`;
+  if (sql(`select count(*) from payment_methods where stripe_pm_id = '${pm}' and user_id is distinct from ${u}`) !== '0') pm = `pm_sim_visa_${l4}_${require('crypto').createHash('md5').update(tel + l4).digest('hex').slice(0, 8)}`;
   sql(`insert into payment_methods (user_id, stripe_pm_id, brand, last4, exp, is_default, simulated) select ${u}, '${pm}', 'visa', '${l4}', '12/30', false, true
        where not exists (select 1 from payment_methods where user_id = ${u} and stripe_pm_id = '${pm}')`);
   sql(`update payment_methods set status = 'active' where user_id = ${u} and stripe_pm_id = '${pm}'`);
