@@ -5181,3 +5181,9 @@ pone sonido; con una novedad de hoy, el logo lleva el anillo morado y abre «Hoy
   (puede volver); si toca, el Super Admin lo termina con motivo. Solo «cancelado» o «ya pasó» lo terminan solos.
 - **«Boletos»** = boletos pagados y RSVP de quien antes tocó el cartel patrocinado, durante el patrocinio (lo pone al día el barrido).
 - En la ficha del evento del panel agregué **Ver página** y **Copiar enlace** (el diseño los pone junto a Patrocinar).
+
+## Pin en el iPad (17 nov)
+**Dónde:** en un iPad, Mi cuenta › Direcciones › una dirección › elegir otra calle en la lista, mover el mapa con el dedo lejos (más de una cuadra) y
+«Guardar dirección».
+**Qué mirar:** debe salir «El pin quedó muy lejos de esa dirección» y no guardarse. Si se guarda sin decir nada, avísame: es la pantalla.
+Las pruebas automáticas no pueden arrastrar el mapa en el Safari del iPad, por eso esto se mira a mano.

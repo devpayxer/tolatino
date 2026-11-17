@@ -1857,3 +1857,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9b** · **Anchos (4), después de C-001 → C-003 (CI 43996571745):** escritorio 1024 sin rojos propios; Safari falla en iPhone SE
       (silla3d, app8a, inm4ib, noc4d, pan9n2) y en iPad (silla3d, app8a, app8e, ayu4z, tra4y, dir9m). silla3d, app8a y dir9m ya venían de antes;
       los demás son nuevos en esta corrida y hay que ver uno por uno si son de la prueba (esperas de Safari) o de la pantalla.
+- [ ] **→ 9b** · **dir9m en el iPad (WebKit), Anchos (4):** el ratón de las pruebas no arrastra el mapa del pin en el iPad (sí en el SE y en
+      Chromium a tamaño iPad: ahí pasa todo, «muy lejos» incluido) y, moviéndolo con las flechas, el pin se ve movido pero al guardar llega sin
+      pin (el servidor guarda el punto de la dirección). Mirarlo en un iPad real (REVISION · «Pin en el iPad»): si pasa con el dedo, es la
+      prueba; si no, es la pantalla. La prueba ya usa el mapa VISIBLE (había dos copias) y dice dónde quedó.
