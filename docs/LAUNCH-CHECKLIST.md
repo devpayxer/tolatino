@@ -1820,3 +1820,18 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9n** · **Tachado en Mercado y Tienda:** sus productos no tienen ofertas (Novedades solo enlaza platos de Comida y el cobro de mercado y
       apartado lee `price_cents` sin oferta). Cuando haya ofertas de productos, el tachado sale igual que en Comida. Hoy no se muestra (no se inventa).
 - [ ] **→ 9n** · **Ficha Free nueva (C-007):** el canvas dice que la versión Free no está decidida; los Free siguen con la ficha de siempre.
+## C-002 — Página de categoría + Patrocinados (17 nov)
+- [ ] **→ 9n** · **Patrocinio: devolver lo que no se usó.** Hoy «Terminar antes» y «Cancelar reserva» no devuelven nada (lo dice la pantalla) y el Super
+      Admin termina sin devolver (Soporte lo hace a mano). Si Henry prefiere devolver la parte no usada (o toda la reserva que no empezó), va por
+      `pasarela.devolver` con su fila en el libro (sponsorship_payments solo inserción: una fila de devolución) y la conciliación la lee.
+- [ ] **→ 9n** · **Patrocinio con 3-D Secure:** si el banco pide confirmar al comprar, hoy se suelta el intento y se pide otra tarjeta. Falta la hoja del
+      banco (useVerificacion, como «Volver a Pro») y, en la renovación sola, el enlace para confirmar (hoy termina y avisa).
+- [ ] **→ 9n** · **Patrocinio de eventos (C-003):** la tabla del libro (`sponsorship_payments.kind`), las cifras y `entroPatrocinado` ya aceptan «evento»;
+      falta 0174 (`event_sponsorships`) y sus pantallas.
+- [ ] **→ 9n** · **Comida sin «Tipo de lugar»:** el diseño D dibuja la pestaña «TIPO DE LUGAR»; las pestañas salen de las filas del Catálogo y Comida solo
+      tiene «Por país» y los antojos. Agregar la fila en Super Admin › Catálogo (contenido; no es código) si Henry la quiere.
+- [ ] **→ 9b** · **C-002 en la corrida completa:** pat002 y las pruebas de la página de categoría (cat1m, noc4a, fie4u, adm4ig, rec1j, mapa, an1n, fic4id,
+      vid001, com5c) corrieron en local con Chromium; Safari/iPad y la matriz de 9 dispositivos van en la corrida completa al terminar C-003. Las
+      capturas aprobadas de `pruebas/visual` de la página de categoría cambian (diseño D).
+- [ ] **→ 9n** · **Vistas del patrocinio sin el equipo del negocio:** «entraron» ya no cuenta al dueño ni a su equipo; las vistas sí (la fila se cuenta
+      al mostrarse, sin mirar quién es miembro, para no sumar una consulta por página). Si molesta, se excluye en `patrocinio_vistas`.

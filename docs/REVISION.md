@@ -5106,3 +5106,40 @@ pone sonido; con una novedad de hoy, el logo lleva el anillo morado y abre «Hoy
 - En la ficha nueva (teléfono), «SIN SONIDO · TOCA» va abajo a la izquierda (arriba están atrás, compartir y guardar).
 - Los videos se guardan en nuestro almacén propio (como las fotos), no en un servicio externo; el procesado es nuestro (ffmpeg).
 - Tope de 30 s (editable en Configuración › Negocios, de 10 a 60) y 10 subidas por negocio al día.
+
+## C-002 — Página de categoría más limpia + Patrocinados (17 nov)
+**Dónde:** en el sandbox, Negocios › Comida y Bebidas (teléfono y computadora); con el dueño de Sabor Dominicano: Panel › Cobros y plan ›
+**Patrocinio** (también desde Tu página); Super Admin › Crecimiento › **Patrocinios** y Sistema › Configuración › Crecimiento.
+**Qué mirar:**
+- **La página de categoría (diseño D):** portada baja; en el teléfono un solo buscador sobre la portada (arriba ya no sale «Buscar en
+  Hazleton») y el radio («5 MI») en la esquina; en la computadora el buscador de arriba dice «Buscar en Comida y Bebidas» y busca ahí. Una
+  fila de pestañas (en Comida: «Por país» y «Qué se te antoja»): se ve una a la vez. Se ven negocios sin bajar.
+- **La tarjeta Pro:** foto (o video) de 150, el nombre, UNA línea (estrellas · distancia · abierto) y UN botón. La caja «HOY» solo sale si hay
+  algo de hoy.
+- **Patrocinados:** compra 1 semana con la tarjeta de prueba (sandbox: simulador) → la fila sale debajo de las pestañas con la tarjeta alta
+  (con el video si lo tiene). Elige «Mexicana» o un filtro que el negocio no tenga: la fila no lo muestra. El negocio sigue en la lista.
+- **Panel › Patrocinio:** Elegir (vista previa, puestos libres, 1 semana / 1 mes, hoy u otra fecha) → Revisar y pagar → Activo (vistas,
+  entraron, pedidos, recibo, renovar, terminar antes). Con los 6 puestos ocupados: «Se libera uno el …», reservar desde ese día y «Avísame».
+- **Super Admin › Crecimiento › Patrocinios:** la lista con su estado y sus cifras; «Terminar» pide el motivo y le avisa al negocio.
+**Decidido por mí (reversible):**
+- **Precios de ejemplo de fábrica: $15 la semana y $45 el mes, 6 puestos, reservar hasta 60 días adelante.** Todo se cambia en Configuración ›
+  Crecimiento (con límites); lo ya pagado no cambia. Tú pones los reales.
+- **La tarjeta Pro de la categoría no lleva el corazón** (el diseño D tiene un solo botón): se guarda desde la página del negocio. Tampoco
+  lleva los chips (entrega, idiomas, licencia…): esos datos siguen en la página del negocio. Si quieres el corazón de vuelta, es un cambio
+  de una línea.
+- **«HOY» en la tarjeta:** la oferta de hoy de Novedades; si no hay, la línea del negocio que es de hoy («Hoy: cover $15 · 18+», «Se acabó
+  por hoy»). Las ofertas fijas de la semilla («Pollo entero $19 los martes») ya no salen en la tarjeta de la categoría.
+- **El dato del medio de la línea es la distancia** (como el diseño, «0.3 mi»); el tipo de comida sigue en el filtro y en la página.
+- **Rotación cada hora**, la misma para todos en esa hora (el servidor la decide): cada negocio sale primero el mismo tiempo.
+- **Vistas:** una por persona (o teléfono sin cuenta) y por día; los robots no cuentan. **Entraron:** igual, y el dueño y su equipo no cuentan.
+  **Pedidos:** pedidos, citas o reservas de quien antes tocó la tarjeta, durante el patrocinio (los cuenta el barrido).
+- **Terminar antes o cancelar una reserva no devuelve lo pagado** (lo dice la pantalla antes de confirmar). El Super Admin tampoco devuelve
+  desde Patrocinios (si toca, Soporte). Lo anoté en LAUNCH por si prefieres devolver la parte que no se usó.
+- **Comprar lo hace quien maneja los cobros** (el dueño o «Cobros» en el equipo), como el plan Pro. **En la app To'Latino Negocios no se
+  compra** (misma regla que Pro): se ve el estado y las cifras.
+- **Renovar solo, apagado de entrada.** Encendido: al terminar cobra el precio de ese día; si la tarjeta no pasa o ya no hay puesto, termina y
+  avisa. Si el banco pide confirmar (3-D Secure) al comprar, pide otra tarjeta (la hoja del banco para el patrocinio queda en LAUNCH).
+- **Bajar los puestos en Configuración no quita a nadie:** deja de vender hasta que queden menos, y la fila muestra solo ese número (rotando).
+- **Comida no tiene la pestaña «Tipo de lugar»** del dibujo: las pestañas salen de las filas que tiene cada categoría en el Catálogo (Comida
+  tiene «Por país» y los antojos). Si la quieres, se agrega en el Catálogo.
+- **Fiestas con «Tu fecha»:** la página abre en la pestaña «¿Está libre tu fecha?».

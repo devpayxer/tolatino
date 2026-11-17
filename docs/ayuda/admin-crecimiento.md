@@ -1,9 +1,9 @@
 # Super Admin: Crecimiento · Super Admin: Growth
 
-_Pantallas: **Super Admin › Crecimiento** (`/admin/crecimiento`) con sus pestañas **Semilla**, **Promotores**, **Campañas**, **Destacados**, **Enlaces y QR** y
+_Pantallas: **Super Admin › Crecimiento** (`/admin/crecimiento`) con sus pestañas **Semilla**, **Promotores**, **Campañas**, **Destacados**, **Patrocinios**, **Enlaces y QR** y
 **Lista de espera**, y el PDF para imprimir de cada enlace (`/admin/crecimiento/volante/{código}`). Ver: Crecimiento · ver. Crear y retirar enlaces,
 campañas, destacados y promotores: Crecimiento · editar. Aprobar una campaña grande y mostrar la fecha en la landing: Crecimiento · aprobar. Las cifras son
-de las ciudades de quien mira. Escritorio y teléfono. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
+de las ciudades de quien mira. Terminar un patrocinio: Crecimiento · editar. Escritorio y teléfono. Versión: 16 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Arriba**: negocios (y los de esta semana), la lista de espera (y los negocios apartados), los promotores con código vivo, los escaneos de los
@@ -19,6 +19,11 @@ de las ciudades de quien mira. Escritorio y teléfono. Versión: 14 nov 2026. Au
   dueños) por un **canal** (en la app, push, SMS o correo), en español y en inglés, ahora o a una hora. Antes de programarla ves a cuántas personas llega.
 - **Destacados**: la vitrina de Negocios › Destacados rota sola cada día entre los Pro abiertos con foto. Aquí **fijas** uno arriba o lo **quitas** de la
   rotación por unos días, con motivo; ves la vitrina de hoy tal como la ve el vecino.
+- **Patrocinios**: lo que los negocios compran desde su panel (Cobros y plan › Patrocinio) para salir en la fila «Patrocinados» de la página de
+  su categoría. Cada uno con su estado (activo, reservado, terminado, cancelado), las fechas, lo pagado, si se renueva solo y sus cifras (vistas,
+  entraron, pedidos). Filtro por estado y por ciudad. **«Terminar»** con motivo: deja de salir al momento, el negocio recibe el aviso con el motivo
+  y queda en la auditoría. Lo pagado no se devuelve desde aquí (si toca, Soporte lo devuelve). Los puestos por categoría y ciudad y los precios de
+  1 semana y 1 mes se cambian en Sistema › Configuración › Crecimiento; lo ya pagado no cambia.
 - **Enlaces y QR**: un enlace corto `tolatino.com/q/{código}` con su QR para la calle, un volante, una iglesia, un negocio, redes o prensa. Lleva siempre a
   una página de To'Latino (la landing, Publica tu negocio, el Inicio, Eventos u otra ruta), deja la ciudad del enlace puesta y cuenta cada escaneo
   **sin guardar quién**. **«PDF carta»** y **«PDF media carta»** bajan el volante o el cartel para imprimir (el nombre, la frase de la landing, el QR y la
@@ -73,6 +78,11 @@ de las ciudades de quien mira. Escritorio y teléfono. Versión: 14 nov 2026. Au
   **channel** (in the app, push, SMS or email), in Spanish and English, now or at a set time. Before scheduling you see how many people it reaches.
 - **Featured**: the Businesses › Featured showcase rotates on its own every day among open Pro businesses with a photo. Here you **pin** one at the top or
   **remove** one from the rotation for a few days, with a reason; you see today's showcase as neighbors see it.
+- **Sponsorships**: what businesses buy from their dashboard (Payouts and plan › Sponsorship) to show in the «Sponsored» row of their category page.
+  Each one with its status (active, booked, ended, canceled), the dates, what was paid, whether it auto-renews and its numbers (views, visits,
+  orders). Filter by status and by city. **«End»** with a reason: it stops showing right away, the business gets the notice with the reason and
+  it goes in the audit trail. What was paid is not refunded from here (if needed, Support refunds it). Slots per category and city and the 1-week and
+  1-month prices are changed in System › Settings › Growth; what was already paid does not change.
 - **Links & QR**: a short link `tolatino.com/q/{code}` with its QR for the street, a flyer, a church, a business, social media or press. It always goes to a
   To'Latino page (the landing, List your business, the Home, Events or another path), sets the link's city and counts each scan **without storing who**.
   **"PDF letter"** and **"PDF half letter"** download the flyer or poster to print (the name, the landing line, the QR and the short address).

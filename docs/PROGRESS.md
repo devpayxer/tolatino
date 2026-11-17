@@ -2486,3 +2486,14 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   de siempre); la ficha de siempre lleva el anillo en el logo. `videosVivos` y `historiasDeNegocios`: una consulta por lista. Guardián
   `videoSoloAprobado` (alrevesC001 5/5); e2e `vid001` (CI instala ffmpeg; servir.sh pasa VIDEO_URL); ayuda `video-del-negocio.md` y
   `novedades.md`. Visto en el navegador local (390 y 1360): tarjeta con video, ring, visor y portada.
+- **C-002 · Página de categoría D + Patrocinados** — canvas `tolatino-master+` («Página de categoría (variantes)», sección D y «Cómo compra el
+  negocio su patrocinio»). `APP-NEG-CAT`: portada 150/210, un solo buscador (teléfono: sobre la portada y el header sin buscador; computadora:
+  el del header busca dentro de la categoría, `BuscadorPagina`), radio en la portada, una fila de pestañas (filas + Antojos), vitrina
+  «Patrocinados», tarjeta Pro `oneLine` (parche en portar-sistema: foto 150, una línea, un botón; «HOY» solo con algo de hoy). Migración 0173
+  (`sponsorships` con estados y candado por categoría y ciudad, `sponsorship_payments` solo inserción, `sponsorship_stats` derivadas,
+  `sponsorship_entries`/`sponsorship_views` una por persona o dispositivo y día, `sponsorship_waits`, 4 claves en Configuración › Crecimiento,
+  6 plantillas de aviso, fila de la guía de El Compa). Panel › Cobros y plan › Patrocinio (elegir, revisar y pagar por el simulador, activo,
+  sin puestos + reservar + Avísame; en la app solo el estado). Super Admin › Crecimiento › Patrocinios (filtro por estado, cursor, Terminar
+  con motivo). Barrido `patrocinios` (empieza, vence, renueva o termina, avisa a quien espera, pedidos al día); la conciliación diaria lee
+  `sponsorship_payments`. Mapa de datos al día. Guardián `patrocinioDelServidor` (alrevesC002 20/20); e2e `pat002`; ayuda
+  `patrocinados.md`, `negocios-explorar.md` y `admin-crecimiento.md` al día.
