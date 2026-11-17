@@ -114,14 +114,15 @@ const limpiar = () => {
     const lejos = () => p.locator('[data-pieza="mapa-pin"]').getAttribute('data-lejos');
     // Diagnóstico (iPad): cada arrastre dice dónde quedó el pin; la caja del mapa se mide otra vez en cada vuelta (el iPad la mueve al desplazar).
     const pinAhora = () => p.locator('[data-pieza="mapa-pin"]').getAttribute('data-pin').catch(() => null);
-    const pin0 = await pinAhora();
+    let pin1 = null; // el pin tras el primer arrastre: si tres más no lo mueven, el ratón no llega al mapa
     for (let i = 0; i < 20 && (await lejos()) !== '1'; i++) {
       const c = (await p.locator('[data-pieza="mapa-pin"] [role="application"]').boundingBox()) ?? m2;
       await p.mouse.move(c.x + c.width / 2, c.y + c.height / 2); await p.mouse.down(); await p.mouse.move(c.x + 10, c.y + 10, { steps: 6 }); await p.mouse.up(); await p.waitForTimeout(350);
       if (i % 4 === 3) console.log(`  · arrastre ${i + 1}: lejos=${await lejos()} pin=${await pinAhora()} caja=${Math.round(c.width)}x${Math.round(c.height)}`);
       // iPad (WebKit con toque): el ratón no llega al mapa y el pin no se mueve nada. Se usa el otro camino del mismo mapa: las flechas del teclado
       // (cada una lo mueve 8 px; es la vía accesible). Si con ellas tampoco llega, el error se queda.
-      if (i === 3 && (await pinAhora()) === pin0) {
+      if (i === 0) pin1 = await pinAhora();
+      if (i === 3 && (await pinAhora()) === pin1) {
         await p.locator('[data-pieza="mapa-pin"] [role="application"]').focus();
         for (let k = 0; k < 160 && (await lejos()) !== '1'; k++) await p.keyboard.press('ArrowLeft');
         console.log(`  · con las flechas: lejos=${await lejos()} pin=${await pinAhora()}`);
