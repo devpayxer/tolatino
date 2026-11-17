@@ -7,13 +7,14 @@ import { useRef } from "react";
 import { useMensajesVivo, type AvisoVivo } from "@/lib/vivo-cliente";
 
 export function RefrescoVivo({ negocio = null, k = null }: { negocio?: string | null; k?: AvisoVivo["k"] | null }) {
-  const router = useRouter(), t = useRef<ReturnType<typeof setTimeout> | null>(null), primera = useRef(true);
+  const router = useRouter(), t = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pedir = () => { if (t.current) return; t.current = setTimeout(() => { t.current = null; router.refresh(); }, 400); };
   useMensajesVivo({
     negocio,
     on: (x) => { if ((!k || x.k === k) && (!negocio || x.para === "negocio")) pedir(); },
-    // Al volver de un corte, una vez (la primera conexión no: la lista recién llegó del servidor).
-    listo: () => { if (primera.current) { primera.current = false; return; } pedir(); },
+    // Al conectarse, una vez, también la primera: lo que llegó entre que el servidor pintó la lista y que se abrió la conexión no lo
+    // trae ningún aviso (vec9m en el iPhone SE lo cazó: el panel no veía el mensaje). Y al volver de un corte, igual.
+    listo: () => pedir(),
   });
   return null;
 }

@@ -36,6 +36,8 @@ const casos = [
   ['mensajesEnVivo', CH, '  useMensajesVivo({ apagado: !hilo,', '  useEffect(() => { const t = window.setInterval(() => traer.current(), 4000); return () => window.clearInterval(t); }, []);\n  useMensajesVivo({ apagado: !hilo,'],
   ['mensajesEnVivo', DM, '  useMensajesVivo({ apagado: !c, on:', '  void ({ apagado: !c, on:'],
   ['mensajesEnVivo', LM, '<RefrescoVivo k="chat" />', ''],
+  ['mensajesEnVivo', 'apps/web/app/_vivo/RefrescoVivo.tsx', '    listo: () => pedir(),', '    listo: () => { if (primera.current) { primera.current = false; return; } pedir(); },'],
+  ['mensajesEnVivo', CH, 'listo: () => traer.current()', 'listo: () => undefined'],
   ['mensajesEnVivo', PN, '<RefrescoVivo negocio={d.id} k="chat" />', '<RefrescoVivo k="chat" />'],
   ['mensajesEnVivo', VC, '        espera = Math.min(espera * 2, 30000);', '        espera = 5000;'],
   ['mensajesEnVivo', PN, '  const ed = (D?.ed ?? (desk || !ruta.det ? S.ed : null)) ?? null;', '  useEffect(() => { if (ruta.sec !== "msg") return; const t = window.setInterval(() => router.refresh(), 5000); return () => window.clearInterval(t); }, [ruta.sec, router]);\n  const ed = (D?.ed ?? (desk || !ruta.det ? S.ed : null)) ?? null;'],

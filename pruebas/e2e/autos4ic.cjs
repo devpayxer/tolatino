@@ -18,6 +18,14 @@ const barrer = () => execSync(`curl -s -X POST -H 'x-barrido-token: ${ENT.TOK}' 
 const tj = (n = NEG) => JSON.parse(sql(`select coalesce(category_attrs->'tarjeta', '{}') from businesses where id = '${n}'`));
 const fv = (n = NEG) => sql(`select filter_values from businesses where id = '${n}'`);
 const espera = async (f, ms = 9000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await f()) return true; await new Promise((r) => setTimeout(r, 250)); } return false; };
+// Un interruptor que guarda en el servidor: se toca y se espera a que la pantalla lo muestre cambiado, para que el toque siguiente parta de lo
+// que se ve (el segundo toque se calcula con el estado pintado: tocarlo antes de que se pinte manda el mismo valor otra vez).
+const alternar = async (p, name) => {
+  const l = p.getByRole('switch', { name }); const x0 = await visEspera(l); if (!x0) throw new Error('no visible: ' + name);
+  const antes = await x0.getAttribute('aria-checked'); await x0.click();
+  const t = Date.now(); while (Date.now() - t < 9000) { const x = await vis(l); if (x && (await x.getAttribute('aria-checked')) !== antes) return; await new Promise((r) => setTimeout(r, 200)); }
+  throw new Error(`«${name}» no cambió en la pantalla (sigue ${antes})`);
+};
 const llenar = async (p, label, v) => { const x = await vis(p.getByLabel(label, { exact: true })); if (!x) throw new Error('sin campo ' + label); await x.fill(v); };
 const guardar = (p) => clic(p.getByRole('button', { name: /^(Agregar|Guardar)$/ }).last());
 const car = (trim) => sql(`select v.vin || ':' || v.price_cents || ':' || v.otd_cents || ':' || v.doc_fee_cents || ':' || coalesce(v.est_payment_cents, 0) || ':' || v.title || ':' || v.street_legal || ':' || v.status from vehicle_listings v join items i on i.id = v.item_id where v.trim_level = '${trim}' and i.removed_at is null and v.business_id = '${NEG}' order by i.id desc limit 1`);
@@ -120,6 +128,7 @@ const CARGOS = `update dealer_settings s set doc_fee_cents = x.f, derived_on = n
   // Cargo del dealer: +$50 → todos los carros; +$50 más pasaría del tope ($477) → no.
   await clic(p.getByRole('button', { name: 'Cargo del dealer +' }));
   ok(await espera(() => sql(`select doc_fee_cents from dealer_settings where business_id = '${NEG}'`) === '44900' && totalesBien()), 'cargo del dealer $449 → el total en la puerta de TODOS los carros recalculado en la misma transacción');
+  ok(await visEspera(p.getByText('$449', { exact: true })), 'la pantalla ya dice $449 (el segundo + se calcula con lo que se ve)');
   await clic(p.getByRole('button', { name: 'Cargo del dealer +' }));
   ok(await ve(p.getByText('El cargo del dealer no puede pasar del tope de PA ($477).')) && sql(`select doc_fee_cents from dealer_settings where business_id = '${NEG}'`) === '44900', 'cargo sobre el tope de PA → no se guarda');
   let mal2 = false; try { sql(`update dealer_settings set doc_fee_cents = 50000 where business_id = '${NEG}'`); } catch { mal2 = true; }
@@ -127,16 +136,16 @@ const CARGOS = `update dealer_settings s set doc_fee_cents = x.f, derived_on = n
   await clic(p.getByRole('button', { name: 'Cargo del dealer −' }));
   ok(await espera(() => sql(`select doc_fee_cents from dealer_settings where business_id = '${NEG}'`) === '39900' && totalesBien()), 'cargo otra vez $399');
   // ITIN, trade-in, prueba en casa.
-  await clic(p.getByRole('switch', { name: 'Financias con ITIN' }));
+  await alternar(p, 'Financias con ITIN');
   ok(await espera(() => !/\bitin\b/.test(fv()) && !/enganche/.test(fv()) && tj().fee?.es === 'Garantía de 3 meses en motor y transmisión'), `sin ITIN → salen itin y enganche, la tarjeta dice la garantía: ${fv()} | ${tj().fee?.es}`);
-  await clic(p.getByRole('switch', { name: 'Financias con ITIN' }));
+  await alternar(p, 'Financias con ITIN');
   ok(await espera(() => /\bitin\b/.test(fv()) && /enganche/.test(fv())), 'ITIN otra vez');
-  await clic(p.getByRole('switch', { name: 'Aceptas carros a cambio' }));
+  await alternar(p, 'Aceptas carros a cambio');
   ok(await espera(() => !/tradein/.test(fv())), 'sin trade-in → sale el filtro');
-  await clic(p.getByRole('switch', { name: 'Aceptas carros a cambio' })); ok(await espera(() => /tradein/.test(fv())), 'trade-in otra vez');
-  await clic(p.getByRole('switch', { name: 'Prueba de manejo en casa' }));
+  await alternar(p, 'Aceptas carros a cambio'); ok(await espera(() => /tradein/.test(fv())), 'trade-in otra vez');
+  await alternar(p, 'Prueba de manejo en casa');
   ok(await espera(() => /\bcasa\b/.test(fv())), 'prueba de manejo en casa → filtro casa');
-  await clic(p.getByRole('switch', { name: 'Prueba de manejo en casa' })); ok(await espera(() => !/\bcasa\b/.test(fv())), 'y se apaga');
+  await alternar(p, 'Prueba de manejo en casa'); ok(await espera(() => !/\bcasa\b/.test(fv())), 'y se apaga');
   // Garantía 6 meses → cada carro con la del dealer (lo de la Buyers Guide).
   await clic(p.getByRole('button', { name: '6 meses', exact: true }));
   ok(await espera(() => sql(`select count(*) from vehicle_listings where business_id = '${NEG}' and status <> 'sold' and warranty = 'dealer' and warranty_months <> 6`) === '0' && /garantia/.test(fv())), 'garantía 6 meses → todos los carros con garantía del dealer de 6 meses');

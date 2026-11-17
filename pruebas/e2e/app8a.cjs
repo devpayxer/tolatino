@@ -361,6 +361,9 @@ const PUENTE = `if (window === window.top) {
   for (const [app, isla, boton1] of [['checkin', '/puerta/sin-conexion', 'Escanear sin señal'], ['cliente', '/cuenta/boletos/sin-conexion', 'Ver mis boletos'], ['delivery', '/repartidor/sin-conexion', 'Ver mis entregas'], ['negocio', null, null]]) {
     const ps = await pagina('ss-' + app, 390, IOS + rot(app, 'ios', 7), { puente: true });
     await ps.goto(B + '/app/sin-senal'); await ps.getByText('Sin señal', { exact: true }).first().waitFor();
+    // La página decide de qué app es al hidratar (el puente dice cuál): se espera a que lo diga, no al primer pintado.
+    const quiere = (t) => (boton1 ? t.includes(boton1) : t.includes('Revisa tu señal o el wifi')) && t.includes('Probar otra vez');
+    for (let i = 0; i < 40 && !quiere(await texto(ps)); i++) await ps.waitForTimeout(250);
     const ts = await texto(ps);
     ok(boton1 ? ts.includes(boton1) && ts.includes('Probar otra vez') : ts.includes('Revisa tu señal o el wifi') && ts.includes('Probar otra vez'), `«Sin señal» de ${app}: ${boton1 ? `«${boton1}» y «Probar otra vez»` : '«Probar otra vez»'}`);
     if (app === 'checkin') await ps.screenshot({ path: OUT + 'a8a-sin-senal-puerta-390.png' });
@@ -407,9 +410,13 @@ const PUENTE = `if (window === window.top) {
   const pbo = await pagina('bol-app', 390, IOS + rot('cliente', 'ios', 7), { puente: true });
   await entrar(pbo, MARI);
   const cod8 = sql(`select t.code from tickets t join users u on u.id = t.holder_user_id where u.phone = '+1${MARI}' order by t.id desc limit 1`);
-  await pbo.goto(B + `/cuenta/boletos/${cod8}`); await pbo.waitForLoadState('networkidle'); await pbo.waitForTimeout(1500);
-  const llamadas = await pbo.evaluate(() => window.__puente.filter((x) => x.p === 'TLLocal').map((x) => ({ m: x.m, d: `${x.o.ns}/${x.o.tienda}`, v: x.o.valor ?? null })));
-  ok(llamadas.some((x) => x.m === 'leer' && x.d === 'tl-boletos/meta'), `en la app, Mis boletos lee la copia de su llave de sesión del almacén nativo (${[...new Set(llamadas.map((x) => x.m + ':' + x.d))].join(', ')})`);
+  ok(/^\S+$/.test(cod8), `Mari tiene un boleto (${cod8 || 'ninguno'})`);
+  await pbo.goto(B + `/cuenta/boletos/${cod8}`); await pbo.waitForLoadState('networkidle');
+  // La copia se lee al hidratar (en un equipo cargado puede tardar): se espera a la llamada, no un tiempo fijo.
+  const leerPuente = () => pbo.evaluate(() => (window.__puente ?? []).filter((x) => x.p === 'TLLocal').map((x) => ({ m: x.m, d: `${x.o.ns}/${x.o.tienda}`, v: x.o.valor ?? null })));
+  await espera(async () => (await leerPuente()).some((x) => x.m === 'leer' && x.d === 'tl-boletos/meta'), 10000);
+  const llamadas = await leerPuente();
+  ok(llamadas.some((x) => x.m === 'leer' && x.d === 'tl-boletos/meta'), `en la app, Mis boletos lee la copia de su llave de sesión del almacén nativo (${[...new Set(llamadas.map((x) => x.m + ':' + x.d))].join(', ')} · ${ruta(pbo)})`);
   const bk = await pbo.evaluate(() => /(?:^|;\s*)tl_bk=([A-Za-z0-9_-]{40,60})/.exec(document.cookie)?.[1] ?? null);
   ok(!!bk && llamadas.some((x) => x.m === 'poner' && x.d === 'tl-boletos/meta' && JSON.parse(x.v).v === bk), 'y guarda en el llavero del teléfono la MISMA llave de la sesión (la cookie tl_bk), para la isla sin señal');
   ok(llamadas.some((x) => x.m === 'todos' && x.d === 'tl-boletos/b'), 'y revisa lo guardado (lo de otra cuenta o vencido se borra)');

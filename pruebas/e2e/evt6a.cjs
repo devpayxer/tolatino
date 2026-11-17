@@ -90,7 +90,13 @@ const TERRAZA = '5705550366', SABOR = '5705550133', PADRE = '5705550422', ADM = 
 
     // ── 3 · El negocio lo corrige y lo reenvía ──
     await tm.goto(B + `/panel/la-terraza-night/eventos?det=evt:edit:${EV}`);
-    await (await vis(tm.getByLabel('DESCRIPCIÓN · OPCIONAL', { exact: true }))).fill('21+ con ID. Bachata y merengue toda la noche.');
+    // La barra de guardar sale cuando el formulario queda «sucio»; si se escribió antes de que la página estuviera lista
+    // (Safari en el iPhone SE), se vuelve a escribir.
+    for (let i = 0; i < 4 && !(await vis(tm.getByRole('button', { name: 'Enviar a revisión', exact: true }))); i++) {
+      const d = await vis(tm.getByLabel('DESCRIPCIÓN · OPCIONAL', { exact: true }));
+      if (d) { await d.fill(''); await d.fill('21+ con ID. Bachata y merengue toda la noche.'); }
+      await new Promise((r) => setTimeout(r, 1500));
+    }
     await clic(tm.getByRole('button', { name: 'Enviar a revisión', exact: true }));
     ok(await espera(() => sql(`select status from events where id = ${EV}`) === 'review'), 'reenviado: en revisión otra vez');
     ok(sql(`select string_agg(decision, ',' order by id) from event_review_log where event_id = ${EV}`) === 'submitted,changes,resubmitted', 'el libro: enviado, cambios, reenviado');

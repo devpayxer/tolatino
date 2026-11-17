@@ -9258,6 +9258,11 @@ const guardianes = {
     for (const f of ["apps/web/app/panel/MensajesPanel.tsx", "apps/web/lib/vivo-cliente.ts", "apps/web/app/_vivo/RefrescoVivo.tsx"]) if (existsSync(f) && /setInterval\(/.test(sinComent(f))) falla(G, f, 0, "un intervalo fijo en Mensajes");
     // El panel preguntaba cada 5 s con la sección Mensajes abierta (router.refresh en un setInterval): ningún intervalo que refresque Mensajes.
     if (/ruta\.sec !== "msg"[\s\S]{0,200}setInterval\(|setInterval\([^)]*router\.refresh/.test(sinComent("apps/web/app/panel/Panel.tsx"))) falla(G, "apps/web/app/panel/Panel.tsx", 0, "el panel refresca Mensajes con un intervalo fijo: es en vivo (RefrescoVivo)");
+    // Al conectarse, cada pantalla se pone al día UNA vez, también la primera vez: lo que llega entre que el servidor pinta y que se abre la
+    // conexión no lo trae ningún aviso (vec9m en el iPhone SE: el panel no veía el mensaje nuevo).
+    const RF = "apps/web/app/_vivo/RefrescoVivo.tsx";
+    if (existsSync(RF) && !/listo: \(\) => pedir\(\)/.test(sinComent(RF))) falla(G, RF, 0, "al conectarse (también la primera vez) la lista se pone al día: lo que llegó antes de abrir la conexión se perdería");
+    for (const f of ["apps/web/app/(app)/cuenta/mensajes/[negocio]/Chat.tsx", "apps/web/app/(app)/comunidad/mensajes/[id]/Chat.tsx"]) if (existsSync(f) && !/listo: \(\) => traer\.current\(\)/.test(sinComent(f))) falla(G, f, 0, "al conectarse la conversación trae lo que se perdió");
     const vc = existsSync("apps/web/lib/vivo-cliente.ts") ? sinComent("apps/web/lib/vivo-cliente.ts") : "";
     if (!/new EventSource\(`\/api\/vivo/.test(vc) || !/espera = Math\.min\(espera \* 2, 30000\)/.test(vc)) falla(G, "apps/web/lib/vivo-cliente.ts", 0, "EventSource a /api/vivo con espera creciente al reconectar");
     const R = "apps/web/app/api/vivo/route.ts", r = existsSync(R) ? sinComent(R) : "";
