@@ -124,6 +124,8 @@ const limpiar = () => {
       if (i === 3 && (await lejos()) !== '1') {
         await p.locator('[data-pieza="mapa-pin"] [role="application"]').focus();
         for (let k = 0; k < 160 && (await lejos()) !== '1'; k++) await p.keyboard.press('ArrowLeft');
+        // Justo en el borde (≈250 m) la pantalla y el servidor pueden medir distinto por un metro: se deja claramente lejos, como el arrastre.
+        for (let k = 0; k < 20; k++) await p.keyboard.press('ArrowLeft');
         console.log(`  · con las flechas: lejos=${await lejos()} pin=${await pinAhora()}`);
         break;
       }
