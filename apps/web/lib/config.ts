@@ -83,6 +83,8 @@ export type ClaveConfig =
   | "fundadores_vecinos" | "fundadores_negocios" | "promotor_operaciones" | "promotor_recompensa_cents" | "promotor_dias_prueba"
   // C-002 · Patrocinados de la página de categoría: puestos, precios y cuánto adelante se reserva (0173; Configuración › Crecimiento)
   | "patrocinio_puestos" | "patrocinio_semana_cents" | "patrocinio_mes_cents" | "patrocinio_dias_adelante"
+  // C-003 · Patrocinados de la página de Eventos: puestos por ciudad y precios (0174; Configuración › Crecimiento)
+  | "patrocinio_evt_puestos" | "patrocinio_evt_semana_cents" | "patrocinio_evt_mes_cents"
   // 9k · Dinero: pagos al banco (martes), la conciliación diaria, las alertas, 3-D Secure y la señal de la tarjeta (0141; Configuración › Dinero)
   | "pagos_banco_dia" | "conciliacion_hora" | "dinero_alerta_intentos" | "disputa_alerta_dias" | "verificacion_min" | "tarjeta_cuentas_senal"
   // 9l · Avisos y canales: reintentos del SMS, el tope global de remitentes, STOP, Soporte por WhatsApp, pedido tarde y las retenciones de SMS y correo (0142)

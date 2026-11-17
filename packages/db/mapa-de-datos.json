@@ -221,6 +221,7 @@
     "sponsorship_payments": { "reglas": [{ "col": "payer_user_id", "accion": "seudonimizar", "porque": "dinero", "fusion": "no" }] },
     "sponsorship_entries": { "reglas": [{ "col": "user_id", "accion": "borrar", "fusion": "no" }] },
     "sponsorship_waits": { "reglas": [{ "col": "user_id", "accion": "borrar", "fusion": "mover" }] },
+    "event_sponsorships": { "reglas": [{ "col": "payer_user_id", "accion": "seudonimizar", "porque": "dinero", "fusion": "no" }, { "col": "ended_by", "accion": "guardar", "porque": "auditoria", "fusion": "no" }] },
     "ranks": { "equipo": ["updated_by"] },
     "refunds": { "equipo": ["actor_id", "manual_by"] },
     "recon_runs": { "equipo": ["actor_id"] },

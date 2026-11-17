@@ -1,5 +1,5 @@
 // 6b · El módulo Eventos del cliente, de punta a punta, en teléfono 390 y escritorio 1360:
-// /eventos (Esta noche como historias, destacado, chips de fecha y tipo, secciones, 20 por página con cursor y «Ver más»), /eventos/esta-noche
+// /eventos (C-003: el calendario de días, el día con su número, sus historias, la fila de tipos, 20 por página con cursor y «Ver más»), /eventos/esta-noche
 // (RSVP desde la historia), la ficha oscura (fiesta) y clara (comida) con su JSON-LD, guardar (corazón, con entrar y volver) → Mi cuenta ›
 // Guardados › Eventos, RSVP con personas, «Ya no voy», «Cupo lleno», 3 personas a la vez por los últimos lugares (una entra) en la
 // pantalla y 10 a la vez en la base (no pasa del cupo), lo oculto / en revisión / de organizador bloqueado / con el módulo apagado o
@@ -66,7 +66,8 @@ const PARR = 'parroquia-santa-maria', CASA = 'taquiza-don-chuy';
   const PUERTAS = evento(PARR, 'comunidad', 'Charla en la puerta', 0, 600, 675, 'rsvp', { cap: 20, pmax: 2, doors: 30 }); mover(PUERTAS, 25, 75, 30);
   const R = evento('sabor-dominicano', 'comida', 'Sancocho de prueba', 1, 780, 960, 'rsvp', { cap: 5, pmax: 6 });
   const BASE = evento(PARR, 'comunidad', 'Cupo de cuatro', 4, 600, 660, 'rsvp', { cap: 4, pmax: 2 });
-  const FERIAS = Array.from({ length: 14 }, (_, i) => evento(PARR, 'comunidad', `Feria ${String(i + 1).padStart(2, '0')}`, 3 + i, 600, 720, 'free'));
+  // C-003 · La cartelera va por días: 22 ferias el MISMO día (pasado mañana + 1) para probar el cursor dentro de un día.
+  const FERIAS = Array.from({ length: 22 }, (_, i) => evento(PARR, 'comunidad', `Feria ${String(i + 1).padStart(2, '0')}`, 3, 600 + i, 720 + i, 'free'));
   const OCULTO = evento(PARR, 'comunidad', 'Oculto por To Latino', 2, 600, 700, 'free');
   sql(`update events set hidden_at = now(), hidden_by = '${ADMID}', hidden_reason = 'prueba ${TAG}' where id = ${OCULTO}`);
   const REVISION = evento(PARR, 'comunidad', 'Esperando revision', 2, 600, 700, 'free', { st: 'review' });
@@ -84,28 +85,41 @@ const PARR = 'parroquia-santa-maria', CASA = 'taquiza-don-chuy';
   try {
     // ── 1 · /eventos (anónimo, teléfono y escritorio) ──
     const am = await nueva(390, 844), ad = await nueva(1360, 900);
+    // C-003 · La cartelera por días (calendario): hoy es «Esta noche» con sus historias; cada día trae SU lista y su número.
+    const HOY = sql(`select (now() at time zone 'America/New_York')::date::text`), D = (n) => sql(`select ((now() at time zone 'America/New_York')::date + ${n})::text`);
+    const diaDe = (id) => sql(`select local_date::text from event_dates where event_id = ${id} and ends_at > now() and status = 'scheduled' order by starts_at limit 1`);
+    const enDia = (d) => (d === HOY ? '/eventos' : `/eventos?dia=${d}`);
+    const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_dates d where d.listable and d.city_id = 'hzl' and d.starts_at > now() - interval '18 hours' and d.ends_at > now() and d.local_date = '${d}'
+      and (d.geom is null or st_dwithin(d.geom, (select center from cities where id = 'hzl'), 5 * 1609.34))`));
     await am.goto(B + '/eventos');
-    ok(await contiene(am, 'Esta noche') && await contiene(am, 'VER COMO HISTORIAS'), 'Esta noche como historias (lo de hoy en la ciudad)');
-    ok(await contiene(am, 'EL PRECIO QUE VES ES EL QUE PAGAS: CARGOS INCLUIDOS.'), 'la línea fija del módulo');
-    const total = Number(sql(`select count(*) from event_dates d where d.listable and d.city_id = 'hzl' and d.starts_at > now() - interval '18 hours' and d.ends_at > now() and (d.geom is null or st_dwithin(d.geom, (select center from cities where id = 'hzl'), 5 * 1609.34))
-      -- 6f · una serie (o varios días) cuenta UNA vez: su primera fecha viva
-      and not exists (select 1 from event_dates p where p.event_id = d.event_id and p.listable and p.starts_at > now() - interval '18 hours' and p.ends_at > now() and (p.starts_at, p.id) < (d.starts_at, d.id))`));
-    ok(total > 20 && await contiene(am, `${total} EVENTOS EN HAZLETON`), `«${total} EVENTOS EN HAZLETON» (lo que la base marca listable en el radio)`);
-    const txt0 = await texto(am);
-    for (const [t, q] of [['Oculto por To Latino', 'oculto por To’Latino'], ['Esperando revision', 'en revisión'], ['Show de organizador bloqueado', 'de un organizador bloqueado (después de bloquear)']]) if (q.startsWith('oculto') || q.startsWith('en revisión')) ok(!txt0.includes(t), `lo ${q} no sale en la lista`);
-    ok((await am.locator('[data-evento]').count()) >= 20 && await contiene(am, 'Ver más'), 'la primera página trae 20 y «Ver más»');
+    ok(await espera(async () => (await am.locator('[data-screen-label="APP-EVT-BUSQ · móvil"] [data-titulo-dia]').innerText()) === 'Esta noche'), 'hoy: «Esta noche»');
+    ok(Number(await am.locator('[data-screen-label="APP-EVT-BUSQ · móvil"] [data-historias]').getAttribute('data-historias')) >= 2, 'las historias de hoy (anillos)');
+    const t0 = await texto(am);
+    ok(!t0.includes('VER COMO HISTORIAS') && !t0.includes('EL PRECIO QUE VES ES EL QUE PAGAS') && !t0.includes('ESTE FINDE'), 'sin «Ver como historias», sin la franja del precio y sin la fila de fechas');
+    const tHoy = totalDe(HOY);
+    ok(await contiene(am, `${tHoy} ${tHoy === 1 ? 'EVENTO' : 'EVENTOS'}`) && t0.includes('Rosario en la plaza'), `«${tHoy} EVENTOS» de hoy y la lista de hoy`);
+    ok(!t0.includes('Feria 01') && !t0.includes('Taller en casa'), 'hoy no trae lo de otros días');
+    // El día de las ferias: 20 y «Ver más» (cursor dentro del día).
+    const DF = D(3), total = totalDe(DF);
+    await am.goto(B + enDia(DF));
+    ok(total > 20 && await contiene(am, `${total} EVENTOS`), `el día de las ferias: «${total} EVENTOS» (lo que la base marca listable ese día en el radio)`);
+    ok((await am.locator('[data-screen-label="APP-EVT-BUSQ · móvil"] [data-evento]').count()) === 20 && await contiene(am, 'Ver más'), 'la primera página trae 20 y «Ver más»');
     await clic(am.getByRole('button', { name: 'Ver más' }));
     ok(await espera(async () => (await am.locator('[data-screen-label="APP-EVT-BUSQ · móvil"] [data-evento]').count()) === total), `«Ver más» trae el resto con el cursor: ${total} tarjetas, ninguna repetida`);
     ok(!(await vis(am.getByRole('button', { name: 'Ver más' }))), 'sin más páginas, sin «Ver más»');
     await am.screenshot({ path: OUT + 'e6b-busq-m.png', fullPage: true });
+    // Pasado mañana: lo oculto y lo que está en revisión no salen; lo de quien trabaja desde casa sí.
+    await am.goto(B + enDia(D(2)));
+    const t2 = await texto(am);
+    ok(t2.includes('Taller en casa') && !t2.includes('Oculto por To Latino') && !t2.includes('Esperando revision'), 'lo oculto por To’Latino y lo que está en revisión no salen en la lista de su día');
     await ad.goto(B + '/eventos'); await ad.waitForTimeout(600); await ad.screenshot({ path: OUT + 'e6b-busq-d.png', fullPage: true });
-    ok(await contiene(ad, 'Rosario en la plaza'), 'escritorio: la columna de Esta noche');
-    // Filtros
-    await am.goto(B + '/eventos?t=boleto'); ok(await contiene(am, 'Jueves de Bachata') && !(await texto(am)).includes('Feria 01'), 'Con boleto: solo con boletos');
-    await am.goto(B + '/eventos?t=bachata'); ok(await contiene(am, 'Jueves de Bachata') && !(await texto(am)).includes('Comedia dominicana'), 'género Bachata');
-    await am.goto(B + '/eventos?d=hoy'); ok(await contiene(am, 'Rosario en la plaza') && !(await texto(am)).includes('Feria 01'), 'Hoy: solo lo de hoy');
+    ok(await contiene(ad, 'Rosario en la plaza'), 'escritorio: la lista de hoy');
+    // Filtros (en el día del Jueves de Bachata)
+    const DJ = diaDe(EJ);
+    await am.goto(B + enDia(DJ) + (DJ === HOY ? '?' : '&') + 't=boleto'); ok(await contiene(am, 'Jueves de Bachata') && !(await texto(am)).includes('Karaoke latino'), 'Con boleto: solo con boletos');
+    await am.goto(B + enDia(DJ) + (DJ === HOY ? '?' : '&') + 't=bachata'); ok(await contiene(am, 'Jueves de Bachata') && !(await texto(am)).includes('Comedia dominicana'), 'género Bachata');
     // (copia 6c) la semilla 0035 deja la «Comedia dominicana» (con boletos) HOY desde el 10 nov: el vacío se prueba con un tipo que hoy no tiene nada.
-    await am.goto(B + '/eventos?d=hoy&t=salsa'); ok(await contiene(am, 'Nada con esos filtros'), 'vacío: «Nada con esos filtros»');
+    await am.goto(B + '/eventos?t=salsa'); ok(await contiene(am, 'Nada con esos filtros'), 'vacío: «Nada con esos filtros»');
 
     // ── 2 · Esta noche (historias) y RSVP desde la historia ──
     const c1 = await nueva(390, 844); await entrar(c1, C1);
@@ -176,8 +190,8 @@ const PARR = 'parroquia-santa-maria', CASA = 'taquiza-don-chuy';
     // ── 6 · Lo oculto, en revisión, de un organizador bloqueado y con el módulo apagado o pausado nunca sale ──
     sql(`insert into event_organizers (business_id, city_id, blocked_at, blocked_by, blocked_reason) values ('el-palacio-show', 'hzl', now(), '${ADMID}', 'prueba ${TAG}') on conflict (business_id) do update set blocked_at = now(), blocked_by = excluded.blocked_by, blocked_reason = excluded.blocked_reason, verified_at = null`);
     ok(sql(`select bool_or(listable)::text from event_dates where event_id in (${EP}, ${PALACIO})`) === 'false', 'organizador bloqueado: la base quita listable de todas sus fechas');
-    await am.goto(B + '/eventos');
-    const tx = await texto(am);
+    let tx = '';
+    for (const d of [HOY, D(2)]) { await am.goto(B + enDia(d)); tx += await texto(am); }
     ok(!tx.includes('Oculto por To Latino') && !tx.includes('Esperando revision') && !tx.includes('Show de organizador bloqueado') && !tx.includes('Comedia dominicana'), 'lista: nada oculto, en revisión ni de un organizador bloqueado');
     for (const [id, q] of [[OCULTO, 'oculto'], [REVISION, 'en revisión'], [PALACIO, 'organizador bloqueado']]) { const r = await am.goto(B + `/eventos/${slug(id)}`); ok(r.status() === 404, `la ficha de un evento ${q} no existe (404)`); }
     await am.goto(B + '/buscar?q=revision'); ok(!(await texto(am)).includes('Esperando revision'), 'Buscar no encuentra lo que está en revisión');
@@ -191,7 +205,7 @@ const PARR = 'parroquia-santa-maria', CASA = 'taquiza-don-chuy';
     await clic(tp.getByRole('switch', { name: 'Eventos en To’Latino' }));
     ok(await espera(() => sql(`select bool_or(listable)::text from event_dates where event_id in (${EJ}, ${EK})`) === 'false'), 'apagado: sus fechas dejan de ser listables');
     await tp.screenshot({ path: OUT + 'e6b-panel-modulo-m.png', fullPage: true });
-    await am.goto(B + '/eventos'); ok(!(await texto(am)).includes('Jueves de Bachata'), '… y no salen en Eventos');
+    await am.goto(B + enDia(DJ)); ok(!(await texto(am)).includes('Jueves de Bachata'), '… y no salen en Eventos');
     ok((await am.goto(B + `/eventos/${slug(EJ)}`)).status() === 404, '… ni su ficha');
     await tp.reload(); await clic(tp.getByRole('switch', { name: 'Eventos en To’Latino' }));
     ok(await espera(() => sql(`select listable::text from event_dates where event_id = ${EJ}`) === 'true'), 'encendido otra vez: vuelven a salir');

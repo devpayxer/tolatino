@@ -17,7 +17,10 @@ import { ventaFicha, type VentaFicha } from "./boletos";
    - 6c · La venta de boletos y mesas la decide lib/boletos.ts (ventaFicha): abierta, pausada, cerrada, agotada o no disponible. Lo inventado del prototipo (caras, «van», vistas) no se copia: «van» es
      going_n de la base. */
 export const POR_PAGINA_EVT = 20;
-export type FiltroFecha = "todos" | "hoy" | "finde" | "prox";
+/* C-003 · La cartelera va por días: el calendario elige UN día (AAAA-MM-DD, en la zona de la ciudad) y la lista, las historias y el número son
+   de ese día. Un evento de varios días tiene una fecha por día (event_dates), así que sale en cada día que dura. */
+export type FiltroDia = { dia: string; t: string };
+export const DIA_ISO = /^\d{4}-\d{2}-\d{2}$/;
 export type Grupo = "hoy" | "semana" | "finde" | "despues";
 export type TagEvt = { t: string; k: "vas" | "hoy" | "gratis" | "quedan" };
 export type TarjetaEvt = {
@@ -40,6 +43,8 @@ async function diasCiudad(ciudad: string): Promise<Dias> {
   const dom = sumarDias(hoy, (7 - dow) % 7), vie = dow === 0 || dow >= 5 ? hoy : sumarDias(dom, -2);
   return { hoy, vie, dom };
 }
+/* Hoy en la ciudad (AAAA-MM-DD, zona de la ciudad). */
+export async function hoyDeCiudad(ciudad: string) { return (await diasCiudad(ciudad)).hoy; }
 const grupo = (d: string, D: Dias): Grupo => (d === D.hoy ? "hoy" : d >= D.vie && d <= D.dom ? "finde" : d < D.vie ? "semana" : "despues");
 
 /* Las columnas de una tarjeta (una fila por fecha). `$1` = quien mira (o null). */
@@ -95,18 +100,17 @@ function filtroTipo(t: string, generos: string[], v: unknown[]) {
   if (generos.includes(t)) { v.push(t); return `e.genres @> array[$${v.length}::text]`; }
   return null;
 }
-function filtroFecha(d: FiltroFecha, D: Dias, v: unknown[]) {
-  if (d === "hoy") { v.push(D.hoy); return `d.local_date = $${v.length}::date`; }
-  if (d === "finde") { v.push(D.vie, D.dom); return `d.local_date between $${v.length - 1}::date and $${v.length}::date`; }
-  if (d === "prox") { v.push(D.dom); return `d.local_date > $${v.length}::date`; }
-  return null;
+/* C-003 · El día del calendario (un día de hoy en adelante; si no, hoy). */
+function filtroDia(dia: string, D: Dias, v: unknown[]) {
+  v.push(DIA_ISO.test(dia) && dia >= D.hoy ? dia : D.hoy);
+  return `d.local_date = $${v.length}::date`;
 }
 
-/* La lista del módulo (APP-EVT-BUSQ): una página de 20 con cursor. */
-export async function eventosCiudad(p: Punto, f: { d: FiltroFecha; t: string }, cursor: string | null, viewer: string | null, es: boolean): Promise<{ items: TarjetaEvt[]; mas: string | null; total: number }> {
+/* La lista del módulo (APP-EVT-BUSQ): los eventos del día elegido, una página de 20 con cursor. */
+export async function eventosCiudad(p: Punto, f: FiltroDia, cursor: string | null, viewer: string | null, es: boolean): Promise<{ items: TarjetaEvt[]; mas: string | null; total: number }> {
   const centro = centroSQL(p), R = radioSQL(p), [D, G] = await Promise.all([diasCiudad(p.ciudad), generosFiltro()]);
   const v: unknown[] = [viewer, p.ciudad], w = [VIVO, `d.city_id = $2`, EN_RADIO(centro, R)];
-  const ff = filtroFecha(f.d, D, v), ft = filtroTipo(f.t, G.map((g) => g.key), v);
+  const ff = filtroDia(f.dia, D, v), ft = filtroTipo(f.t, G.map((g) => g.key), v);
   if (ff) w.push(ff);
   if (ft) w.push(ft);
   // 9b-3 · Las fechas de la página se eligen por VENTANAS de 400 en orden (starts_at, id), quedándose con la primera viva de cada evento, hasta
@@ -141,12 +145,14 @@ export async function eventosCiudad(p: Punto, f: { d: FiltroFecha; t: string }, 
   return { items: filas.map((x) => tarjeta(x, es, D)), mas: L.rows.length > POR_PAGINA_EVT ? filas.at(-1)!.cur : null, total: T?.rows[0]?.n ?? 0 };
 }
 
-/* «Esta noche» (historias y la pantalla APP-EVT-NOCHE): lo de hoy en la ciudad, en el radio. */
+/* «Esta noche» (historias y la pantalla APP-EVT-NOCHE): lo de hoy en la ciudad, en el radio. C-003: también las historias de otro día del
+   calendario (`dia`; las de otro día abren la página del evento). */
 export type HistoriaEvt = TarjetaEvt & { hora: string; lugar: string; precioT: string; ctaRsvp: boolean };
-export async function estaNoche(p: Punto, viewer: string | null, es: boolean, n = 12): Promise<HistoriaEvt[]> {
+export async function estaNoche(p: Punto, viewer: string | null, es: boolean, n = 12, dia: string | null = null): Promise<HistoriaEvt[]> {
   const centro = centroSQL(p), R = radioSQL(p), D = await diasCiudad(p.ciudad), E2 = (a: string, b: string) => (es ? a : b);
+  const el = dia && DIA_ISO.test(dia) && dia >= D.hoy ? dia : D.hoy;
   const r = await db().query<FilaT>(`select ${COLS_T(centro)} ${DESDE_T} where ${VIVO} and d.city_id = $2 and d.local_date = $3::date and ${EN_RADIO(centro, R)} and ${PRIMERA("p.local_date = $3::date")}
-                                     order by d.starts_at, d.id limit ${Math.max(1, Math.min(24, n))}`, [viewer, p.ciudad, D.hoy]);
+                                     order by d.starts_at, d.id limit ${Math.max(1, Math.min(24, n))}`, [viewer, p.ciudad, el]);
   return r.rows.map((x) => {
     const t = tarjeta(x, es, D);
     return { ...t, hora: `${E2("HOY", "TONIGHT")} · ${hora(x.h0)} – ${hora(x.h1)}${x.edad ? ` · ${x.edad}+` : ""}`, lugar: `${x.venue}${x.mi != null ? ` · ${x.mi} MI` : ""}`,
@@ -154,6 +160,30 @@ export async function estaNoche(p: Punto, viewer: string | null, es: boolean, n 
       ctaRsvp: x.entry === "rsvp" };
   });
 }
+
+/* C-003 · El calendario de la cartelera: los días (de hoy a `hasta`) que tienen algún evento vivo en el radio (el punto del día). Una consulta
+   sobre el índice (city_id, starts_at, id) where listable. */
+export async function diasConEventos(p: Punto, hasta: string): Promise<string[]> {
+  const centro = centroSQL(p), R = radioSQL(p), D = await diasCiudad(p.ciudad);
+  if (!DIA_ISO.test(hasta)) return [];
+  return (await db().query<{ dia: string }>(`select distinct d.local_date::text as dia from event_dates d where ${VIVO} and d.city_id = $1 and d.local_date between $2::date and $3::date and ${EN_RADIO(centro, R)} order by 1`,
+    [p.ciudad, D.hoy, hasta])).rows.map((x) => x.dia);
+}
+
+/* C-003 · Patrocinados de Eventos (la vitrina de arriba de la cartelera): los patrocinios ACTIVOS y pagados de ESTA ciudad, vivos en este momento,
+   de eventos publicados (listable, no cancelados) que todavía no terminan, en el radio; su próxima fecha (una tarjeta por evento). Rotan cada hora
+   (nadie sale siempre primero) y nunca más que patrocinio_evt_puestos. Una consulta. */
+export async function patrocinadosEventos(p: Punto, viewer: string | null, es: boolean): Promise<(TarjetaEvt & { sid: string })[]> {
+  const centro = centroSQL(p), R = radioSQL(p), D = await diasCiudad(p.ciudad);
+  const r = await db().query<FilaT & { sid: string }>(
+    `with sp as (select id, event_id from event_sponsorships where city_id = $2 and status = 'activo' and starts_at <= now() and ends_at > now()),
+          x as (select ${COLS_T(centro)}, sp.id::text as sid, (row_number() over (order by sp.id) - 1)::int as rk, count(*) over ()::int as nn
+                  ${DESDE_T} join sp on sp.event_id = d.event_id
+                 where ${VIVO} and d.city_id = $2 and e.status <> 'cancelled' and ${EN_RADIO(centro, R)} and ${PRIMERA()})
+     select * from x order by mod(rk + (extract(epoch from now()) / 3600)::bigint, greatest(nn, 1)) limit ${cfgPuestosEvt}`, [viewer, p.ciudad]);
+  return r.rows.map((x) => ({ ...tarjeta(x, es, D), sid: x.sid }));
+}
+const cfgPuestosEvt = "(select cfg_int('patrocinio_evt_puestos'))";
 
 /* El destacado (EventPromo): la próxima fiesta o show con cartel en el radio; si no hay, el próximo evento con cartel. */
 export async function destacado(p: Punto, viewer: string | null, es: boolean): Promise<TarjetaEvt | null> {
@@ -175,6 +205,14 @@ export async function eventosSemana(p: Punto, viewer: string | null, es: boolean
   const r = await db().query<FilaT>(`select ${COLS_T(centro)} ${DESDE_T} where ${VIVO} and d.city_id = $2 and d.local_date <= $3::date and ${EN_RADIO(centro, R)} and ${PRIMERA()}
                                      order by d.starts_at, d.id limit ${Math.max(1, Math.min(12, n))}`, [viewer, p.ciudad, sumarDias(D.hoy, 6)]);
   return r.rows.map((x) => tarjeta(x, es, D));
+}
+
+/* C-003 · La tarjeta de UN evento tal como sale en Patrocinados (la vista previa del panel): su próxima fecha viva. */
+export async function tarjetaDeEvento(eventoId: string, es: boolean): Promise<TarjetaEvt | null> {
+  if (!/^\d{1,18}$/.test(eventoId)) return null;
+  const r = await db().query<FilaT & { city: string }>(`select ${COLS_T(null)}, d.city_id as city ${DESDE_T} where ${VIVO} and e.id = $2::bigint and ${PRIMERA()} order by d.starts_at, d.id limit 1`, [null, eventoId]);
+  if (!r.rows[0]) return null;
+  return tarjeta(r.rows[0], es, await diasCiudad(r.rows[0].city));
 }
 
 /* Ficha del negocio › Eventos (solo réplica, MEM 1360): sus fechas vivas. */

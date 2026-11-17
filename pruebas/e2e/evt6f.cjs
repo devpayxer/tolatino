@@ -153,9 +153,11 @@ const diaCorto = (iso) => { const [, m, d] = iso.split('-').map(Number); return 
     ok(sql(`select string_agg(event_date_id || ':' || sold_n, ',' order by event_date_id) from ticket_stock where ticket_type_id = ${TG} and sold_n > 0`) === [[F1, 1], [F2, 2], [F3, 1]].sort((a, b) => a[0] - b[0]).map((x) => x.join(':')).join(','), 'lo vendido se cuenta en su fecha (2 en la segunda, 1 en la tercera y 1 en la primera)');
 
     // ── 5 · La página pública: la lista muestra la serie UNA vez con la próxima fecha y «+N FECHAS»; la ficha, FECHAS ──
-    await p1.goto(B + '/eventos');
-    ok(await espera(async () => (await p1.locator(`[data-evento="${SW}"]`).count()) >= 1), 'la serie sale en /eventos');
-    ok(await p1.locator(`[data-screen-label="APP-EVT-BUSQ · móvil"] [data-evento="${SW}"]`).count() === 1, '… una sola vez (su próxima fecha), no una tarjeta por fecha');
+    // C-003 · La cartelera va por días: la serie sale en el día de su próxima fecha (?dia=), una sola vez.
+    const DSW = sql(`select local_date::text from event_dates where id = ${F1}`);
+    await p1.goto(B + `/eventos?dia=${DSW}`);
+    ok(await espera(async () => (await p1.locator(`[data-evento="${SW}"]`).count()) >= 1), 'la serie sale en /eventos (el día de su próxima fecha)');
+    ok(await p1.locator(`[data-screen-label="APP-EVT-BUSQ · móvil"] [data-evento="${SW}"]`).count() === 1, '… una sola vez (esa fecha), no una tarjeta por fecha');
     ok(await contiene(p1, '+5 FECHAS'), 'la tarjeta dice «… · +5 FECHAS»');
     await p1.screenshot({ path: OUT + 'e6f-lista-m.png', fullPage: false });
     await p1.goto(B + `/eventos/${SWSLUG}?fecha=${F2}`);
@@ -164,7 +166,7 @@ const diaCorto = (iso) => { const [, m, d] = iso.split('-').map(Number); return 
     await p1.screenshot({ path: OUT + 'e6f-ficha-serie-m.png', fullPage: true });
     const cd = await ctx(1360, 900), pd = await cd.newPage(); await entrar(pd, C1);
     await pd.goto(B + `/eventos/${SWSLUG}?fecha=${F2}`); await contiene(pd, 'FECHAS · CADA'); await pd.screenshot({ path: OUT + 'e6f-ficha-serie-d.png', fullPage: true });
-    await pd.goto(B + '/eventos'); await espera(async () => (await pd.locator(`[data-evento="${SW}"]`).count()) >= 1); await pd.screenshot({ path: OUT + 'e6f-lista-d.png', fullPage: false });
+    await pd.goto(B + `/eventos?dia=${DSW}`); await espera(async () => (await pd.locator(`[data-evento="${SW}"]`).count()) >= 1); await pd.screenshot({ path: OUT + 'e6f-lista-d.png', fullPage: false });
     ok(await pd.locator(`[data-evento="${SW}"]`).count() >= 1, 'escritorio: la serie en la lista');
 
     // ── 6 · Panel: FECHA QUE ESTÁS VIENDO, FECHAS (Saltar sin gente; con ventas no), QUIÉN SE PRESENTA, VENDIDOS POR DÍA ──

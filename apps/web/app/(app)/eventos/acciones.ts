@@ -5,21 +5,21 @@ import { after } from "next/server";
 import { db } from "@/lib/db";
 import { mismoOrigen, yo } from "@/lib/cuenta";
 import { contexto, evento } from "@/lib/eventos";
-import { eventosCiudad, type FiltroFecha, type TarjetaEvt } from "@/lib/evt-publico";
+import { DIA_ISO, eventosCiudad, type TarjetaEvt } from "@/lib/evt-publico";
 import { quitarRsvp, rsvp } from "@/lib/rsvp";
 import { idioma } from "@/lib/idioma";
 import { ubicacion } from "@/lib/ubicacion";
 import type { Bi } from "@/lib/evt-comun";
 
 const ID = /^\d{1,18}$/;
-const FECHAS: FiltroFecha[] = ["todos", "hoy", "finde", "prox"];
 export type ResEvt = { ok: true; on?: boolean; party?: number; quedan?: number | null } | { ok: false; entrar?: true; msg?: Bi; lleno?: boolean };
 
+// C-003: la página siguiente del día elegido en el calendario (el servidor vuelve a validar el día).
 // solo lectura
-export async function eventosMas(d: string, t: string, cursor: string): Promise<{ items: TarjetaEvt[]; mas: string | null }> {
+export async function eventosMas(dia: string, t: string, cursor: string): Promise<{ items: TarjetaEvt[]; mas: string | null }> {
   const [u, lang] = await Promise.all([yo(), idioma()]);
   const loc = await ubicacion(u);
-  const f = { d: FECHAS.find((x) => x === d) ?? "todos", t: /^[a-z]{2,20}$/.test(String(t ?? "")) ? String(t) : "todo" };
+  const f = { dia: DIA_ISO.test(String(dia ?? "")) ? String(dia) : "", t: /^[a-z]{2,20}$/.test(String(t ?? "")) ? String(t) : "todo" };
   const r = await eventosCiudad(loc, f, String(cursor ?? "").slice(0, 60), u?.id ?? null, lang === "es");
   return { items: r.items, mas: r.mas };
 }
