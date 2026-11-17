@@ -225,13 +225,13 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
   await pg.waitForURL(/\/cuenta\/ajustes$/, { timeout: 15000 }); ok(true, 'Mi cuenta › Cambiar mi teléfono → «Te abro Mi cuenta…» y abre Ajustes');
 
   console.log('8 · El formulario abierto desde la hoja: help_requests.origin = compa');
-  // 9b-1 · Un pedido terminado de Marisol sin ayuda (que no sea el de la familia): si la base no tiene otro, se hace uno (como ayuda2i).
+  // 9b-1 · Un pedido terminado sin ayuda de quien abre la hoja (pr = la dueña de la cita, DU): se hace uno propio.
   // Precondición propia: su PROPIO pedido terminado de Sabor Dominicano (antes tomaba el último de Marisol, que en otro orden podía ser de otro
   // negocio o ciudad y la hoja de El Compa no salía: TimeoutError en la corrida barajada).
   let ORD = '';
   if (!ORD) { const k = require('crypto').randomUUID();
     ORD = sql(`insert into operations (number, kind, city_id, business_id, user_id, status, stage, mode, pay_mode, subtotal_cents, tax_cents, total_cents, sent_at, respond_by, ready_at, done_at, client_key, is_test)
-      values (nextval('operations_order_seq')::text, 'order', 'hzl', 'sabor-dominicano', '${MU}', 'done', 'picked_up', 'pickup', 'local', 650, 39, 689, now() - interval '3 hours', now() - interval '170 minutes', now() - interval '150 minutes', now() - interval '2 hours', '${k}', true) returning number`).split('\n')[0];
+      values (nextval('operations_order_seq')::text, 'order', 'hzl', 'sabor-dominicano', '${DU}', 'done', 'picked_up', 'pickup', 'local', 650, 39, 689, now() - interval '3 hours', now() - interval '170 minutes', now() - interval '150 minutes', now() - interval '2 hours', '${k}', true) returning number`).split('\n')[0];
     sql(`insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct) select o.id, x.id, x.name, 1, x.price_cents, x.price_cents, 6 from operations o, items x where o.client_key = '${k}' and x.business_id = 'sabor-dominicano' and x.removed_at is null and x.status = 'live' order by x.id limit 1`);
     sql(`insert into operation_events (operation_id, kind, actor, actor_id) select id, 'sent', 'user', user_id from operations where client_key = '${k}'`); }
   sql(`update operations set done_at = now() - interval '2 hours' where number = '${ORD}'`);
