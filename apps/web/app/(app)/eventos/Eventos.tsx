@@ -63,12 +63,12 @@ export function Eventos({ es, ciudad, estado, dia, hoy, fin, conEventos, titulo,
     const desde = sumar(hoy, desk ? -5 : -3), out: string[] = [];
     for (let d = desde; d <= fin; d = sumar(d, 1)) out.push(d);
     return (
-      <div ref={desk ? calRefD : calRef} data-screen-label={desk ? "Eventos · calendario · desktop (C-003)" : "Eventos · calendario (C-003)"} data-calendario="" role="list" aria-label={E2("Días", "Days")}
+      <div ref={desk ? calRefD : calRef} data-screen-label={desk ? "Eventos · calendario · desktop (C-003)" : "Eventos · calendario (C-003)"} data-calendario="" role="group" aria-label={E2("Días", "Days")}
         className={desk ? "hs mx-auto mt-[26px] flex max-w-[806px] gap-2 overflow-x-auto" : "hs flex gap-1.5 overflow-x-auto border-b border-ink/[.07] bg-white px-5 py-3"}>
         {out.map((d) => {
           const on = d === dia, pasado = d < hoy, hay = !pasado && conEventos.includes(d), w = d === hoy ? E2("HOY", "TODAY") : es ? WD[dow(d)]![0] : WD[dow(d)]![1];
           return (
-            <button key={d} type="button" role="listitem" data-dia={d} {...(on ? { "data-dia-on": "" } : {})} disabled={pasado} aria-pressed={on} aria-label={`${w} ${Number(d.slice(8))}${hay ? E2(" · con eventos", " · with events") : ""}`}
+            <button key={d} type="button" data-dia={d} {...(on ? { "data-dia-on": "" } : {})} disabled={pasado} aria-pressed={on} aria-label={`${w} ${Number(d.slice(8))}${hay ? E2(" · con eventos", " · with events") : ""}`}
               onClick={pasado ? undefined : () => ir(d, t)}
               className={`box-border flex h-16 flex-none flex-col items-center justify-center gap-[3px] rounded-[14px] ${desk ? "w-[66px]" : "w-[45px]"} ${pasado ? "cursor-default" : "cursor-pointer"}`}
               style={{ background: on ? "var(--tl-ink)" : "var(--tl-paper)", color: on ? "var(--tl-white)" : "var(--tl-ink)", border: on ? "1px solid var(--tl-ink)" : d === hoy ? "1.5px solid var(--tl-ink)" : "1px solid rgba(11,14,18,.08)", opacity: pasado ? 0.4 : 1 }}>

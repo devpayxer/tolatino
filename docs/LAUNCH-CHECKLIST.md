@@ -1849,5 +1849,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9n** · **Patrocinio de evento con 3-D Secure:** misma pieza pendiente que C-002 (hoy pide otra tarjeta).
 - [ ] **→ 9n** · **Evento oculto / módulo apagado con patrocinio vivo:** no sale en la vitrina pero el patrocinio sigue corriendo; decidir si se pausa
       y se alarga, o se termina solo.
-- [ ] **→ 9b** · **C-003 en la corrida completa:** las capturas aprobadas de `pruebas/visual` de Eventos cambian (diseño D); Safari/iPad y los 9
-      dispositivos van en la corrida completa al terminar C-003.
+- [ ] **→ 9b** · **C-003 en la corrida completa:** en local (Chromium, `next dev`) pasaron pat003 (66 ✓), pat002 (55 ✓), alrevesC003 (28/28) y
+      alrevesC002 (20/20). evt6b-6c y evt6f se pasaron al calendario: sus partes de /eventos pasaron (evt6b-6c 68 ✓, evt6f 43 ✓), pero ninguna de las
+      dos llegó al final en local por cosas de fuera de C-003: publicar desde el editor pide subir el cartel (sin almacén de medios local, 503),
+      y el servidor de desarrollo se reinició por memoria o tardó más de 30 s en compilar /admin/eventos/{id}. Van enteras en la corrida completa
+      con Safari/iPad y los 9 dispositivos; `pruebas/visual` no tiene capturas aprobadas de Eventos.
