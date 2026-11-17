@@ -2536,3 +2536,6 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   «Cancelar reserva» devuelve todo, recibos con devoluciones, EN PAUSA) y Super Admin (Terminar con «Devolver lo que no se usó · $X»). La
   conciliación lee las devoluciones. Guardianes ampliados (alrevesC002 41/41, alrevesC003 41/41); pat002 86 ✓ y pat003 101 ✓ en local (Chromium, `next dev`); ayuda
   `patrocinados.md` y `admin-crecimiento.md`; decisiones en REVISION («Patrocinios: devoluciones, 3-D Secure y pausa»).
+- **17 nov · b8d3700 en `main` y `pruebas`** (sandbox sano, 175 migraciones): Anchos (5) en verde en los tres anchos (app8a con su propio boleto)
+  y el bloque de patrocinios (0175: devoluciones, 3-D Secure, pausa del evento oculto, vistas sin el equipo) con CI dirigido 10/10 + al revés 67/67.
+  Siguiente: lo de 9n que no espera al fundador (LAUNCH «→ 9n»).

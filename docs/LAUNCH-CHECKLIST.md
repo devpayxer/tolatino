@@ -1878,7 +1878,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       dos llegó al final en local por cosas de fuera de C-003: publicar desde el editor pide subir el cartel (sin almacén de medios local, 503),
       y el servidor de desarrollo se reinició por memoria o tardó más de 30 s en compilar /admin/eventos/{id}. Van enteras en la corrida completa
       con Safari/iPad y los 9 dispositivos; `pruebas/visual` no tiene capturas aprobadas de Eventos.
-- [ ] **→ 9b** · **Anchos (4), después de C-001 → C-003 (CI 43996571745):** escritorio 1024 sin rojos propios; Safari falla en iPhone SE
+- [x] **→ 9b** · **Anchos (4), después de C-001 → C-003 (CI 43996571745):** — **✓ (17 nov):** arreglados en las pruebas (esperas de Safari, copias escondidas del iPad, UA de iOS) y en vivo (vec9m: el panel se pone al día al conectarse); CI 44028911097 + 44045893242 + 44051353861 en verde en los tres anchos. Solo queda dir9m en el iPad (línea de abajo). escritorio 1024 sin rojos propios; Safari falla en iPhone SE
       (silla3d, app8a, inm4ib, noc4d, pan9n2) y en iPad (silla3d, app8a, app8e, ayu4z, tra4y, dir9m). silla3d, app8a y dir9m ya venían de antes;
       los demás son nuevos en esta corrida y hay que ver uno por uno si son de la prueba (esperas de Safari) o de la pantalla.
 - [ ] **→ 9b** · **dir9m en el iPad (WebKit), Anchos (4):** el ratón de las pruebas no arrastra el mapa del pin en el iPad (sí en el SE y en
