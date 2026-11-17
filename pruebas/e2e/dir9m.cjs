@@ -88,14 +88,14 @@ const limpiar = () => {
     // ── 2 · Elegir, mover el pin y guardar ──
     console.log('2 · Elegir la sugerencia, mover el pin y guardar el punto');
     await opc.first().click();
-    ok(await espera(async () => (await p.locator('[data-pieza="mapa-pin"]').count()) > 0), 'al elegirla sale el mapa con el pin («la puerta está aquí»)');
+    ok(await espera(async () => (await p.locator('[data-pieza="mapa-pin"]:visible').count()) > 0), 'al elegirla sale el mapa con el pin («la puerta está aquí»)');
     ok((await p.locator('[data-pieza="direccion"] input[inputmode="numeric"]').inputValue()) === '18201', 'el código postal se llena solo (18201)');
     // Anchos: el arrastre es con coordenadas de la ventana; en un teléfono bajo (SE, 667) el mapa queda abajo y el ratón no lo tocaba.
-    const mapa = p.locator('[data-pieza="mapa-pin"] [role="application"]'); await mapa.scrollIntoViewIfNeeded(); const bb = await mapa.boundingBox();
+    const mapa = p.locator('[data-pieza="mapa-pin"]:visible [role="application"]'); await mapa.scrollIntoViewIfNeeded(); const bb = await mapa.boundingBox();
     await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.mouse.down(); await p.mouse.move(bb.x + bb.width / 2 + 25, bb.y + bb.height / 2 + 20, { steps: 6 }); await p.mouse.up();
-    await espera(async () => /\d/.test((await p.locator('[data-pieza="mapa-pin"]').getAttribute('data-pin')) ?? '')); // el mapa termina de moverse después
-    const pin = await p.locator('[data-pieza="mapa-pin"]').getAttribute('data-pin');
-    ok(/^-?\d+\.\d{6},-?\d+\.\d{6}$/.test(pin ?? '') && (await p.locator('[data-pieza="mapa-pin"]').getAttribute('data-lejos')) === '0', `el pin se movió (${pin}) y queda cerca de la dirección`);
+    await espera(async () => /\d/.test((await p.locator('[data-pieza="mapa-pin"]:visible').getAttribute('data-pin')) ?? '')); // el mapa termina de moverse después
+    const pin = await p.locator('[data-pieza="mapa-pin"]:visible').getAttribute('data-pin');
+    ok(/^-?\d+\.\d{6},-?\d+\.\d{6}$/.test(pin ?? '') && (await p.locator('[data-pieza="mapa-pin"]:visible').getAttribute('data-lejos')) === '0', `el pin se movió (${pin}) y queda cerca de la dirección`);
     await shot(p, 'pin-390');
     await p.locator('[data-screen-label="Mi cuenta · barra"]').getByText('Guardar dirección').click();
     await p.waitForURL(/\/cuenta\/direcciones\?dir=/);
@@ -108,21 +108,21 @@ const limpiar = () => {
     await p.goto(B + `/cuenta/direcciones/${id1}`); await p.locator('[data-pieza="direccion"]').waitFor();
     await p.getByRole('combobox').fill(''); await p.getByRole('combobox').pressSequentially('450 N Wyo', { delay: 30 });
     await espera(async () => (await opc.count()) > 0); await opc.first().click();
-    await p.locator('[data-pieza="mapa-pin"] [role="application"]').waitFor();
-    await p.locator('[data-pieza="mapa-pin"] [role="application"]').scrollIntoViewIfNeeded(); const m2 = await p.locator('[data-pieza="mapa-pin"] [role="application"]').boundingBox();
+    await p.locator('[data-pieza="mapa-pin"]:visible [role="application"]').waitFor();
+    await p.locator('[data-pieza="mapa-pin"]:visible [role="application"]').scrollIntoViewIfNeeded(); const m2 = await p.locator('[data-pieza="mapa-pin"]:visible [role="application"]').boundingBox();
     // Se arrastra hasta que el mapa diga «muy lejos» (tope 12): cuánto lleva cada arrastre depende del ancho y del zoom de cada aparato (iPad: más).
-    const lejos = () => p.locator('[data-pieza="mapa-pin"]').getAttribute('data-lejos');
+    const lejos = () => p.locator('[data-pieza="mapa-pin"]:visible').getAttribute('data-lejos');
     // Diagnóstico (iPad): cada arrastre dice dónde quedó el pin; la caja del mapa se mide otra vez en cada vuelta (el iPad la mueve al desplazar).
-    const pinAhora = () => p.locator('[data-pieza="mapa-pin"]').getAttribute('data-pin').catch(() => null);
+    const pinAhora = () => p.locator('[data-pieza="mapa-pin"]:visible').getAttribute('data-pin').catch(() => null);
     for (let i = 0; i < 20 && (await lejos()) !== '1'; i++) {
-      const c = (await p.locator('[data-pieza="mapa-pin"] [role="application"]').boundingBox()) ?? m2;
+      const c = (await p.locator('[data-pieza="mapa-pin"]:visible [role="application"]').boundingBox()) ?? m2;
       await p.mouse.move(c.x + c.width / 2, c.y + c.height / 2); await p.mouse.down(); await p.mouse.move(c.x + 10, c.y + 10, { steps: 6 }); await p.mouse.up(); await p.waitForTimeout(350);
       if (i % 4 === 3) console.log(`  · arrastre ${i + 1}: lejos=${await lejos()} pin=${await pinAhora()} caja=${Math.round(c.width)}x${Math.round(c.height)}`);
       // iPad (WebKit con toque): el ratón no llega al mapa y el pin no se mueve nada (el pin que se ve es el de la dirección).
       // Tras 4 arrastres sin «muy lejos» Se usa el otro camino del mismo mapa: las flechas del teclado
       // (cada una lo mueve 8 px; es la vía accesible). Si con ellas tampoco llega, el error se queda.
       if (i === 3 && (await lejos()) !== '1') {
-        await p.locator('[data-pieza="mapa-pin"] [role="application"]').focus();
+        await p.locator('[data-pieza="mapa-pin"]:visible [role="application"]').focus();
         for (let k = 0; k < 160 && (await lejos()) !== '1'; k++) await p.keyboard.press('ArrowLeft');
         // Justo en el borde (≈250 m) la pantalla y el servidor pueden medir distinto por un metro: se deja claramente lejos, como el arrastre.
         for (let k = 0; k < 20; k++) await p.keyboard.press('ArrowLeft');
@@ -130,7 +130,7 @@ const limpiar = () => {
         break;
       }
     }
-    ok(await espera(async () => (await p.locator('[data-pieza="mapa-pin"]').getAttribute('data-lejos')) === '1'), 'muy lejos: el mapa avisa antes de guardar');
+    ok(await espera(async () => (await p.locator('[data-pieza="mapa-pin"]:visible').getAttribute('data-lejos')) === '1'), 'muy lejos: el mapa avisa antes de guardar');
     await p.locator('[data-screen-label="Mi cuenta · barra"]').getByText('Guardar dirección').click();
     const rechazo = await espera(async () => /El pin quedó muy lejos de esa dirección/.test(await p.locator('body').innerText()));
     if (!rechazo) console.log(`  · diagnóstico: url=${p.url()} base=${sql(`select street || ' ' || coalesce(round(st_y(geo::geometry)::numeric, 5) || ',' || round(st_x(geo::geometry)::numeric, 5), '-') from user_addresses where id = '${id1}'`)} pantalla=«${(await p.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 600)}»`);
@@ -142,7 +142,7 @@ const limpiar = () => {
     await p.goto(B + '/cuenta/direcciones/nueva'); await p.locator('[data-pieza="direccion"]').waitFor();
     await p.locator('[data-accion="mi-ubicacion"]').click();
     ok(await espera(async () => /^\d+ N Wyoming St$/.test(await p.getByRole('combobox').inputValue())), `el GPS → la dirección más cercana (${await p.getByRole('combobox').inputValue()})`);
-    ok((await p.locator('[data-pieza="direccion"] input[inputmode="numeric"]').inputValue()) === '18201' && (await p.locator('[data-pieza="mapa-pin"]').count()) === 1, 'con su código postal y el pin donde está el teléfono');
+    ok((await p.locator('[data-pieza="direccion"] input[inputmode="numeric"]').inputValue()) === '18201' && (await p.locator('[data-pieza="mapa-pin"]:visible').count()) === 1, 'con su código postal y el pin donde está el teléfono');
     await shot(p, 'gps-390');
 
     // ── 4 · El panel y el Super Admin ──
