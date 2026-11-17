@@ -41,6 +41,10 @@ if [ "$REINTENTAR" = 1 ] || [ "$LOCAL" != "$REMOTE" ] || [ ! -f "$STATE/last-dep
 fi
 
 # Página de estado del servidor (/estado/)
+# La carga de los demos va aparte (tolatino-demos, la lanza deploy.sh): su avance a la vista en /estado/demos.txt (cada minuto, sin SSH).
+{ echo "== $(date -Is) tolatino-demos: $(systemctl is-active tolatino-demos 2>/dev/null || true)"
+  journalctl -u tolatino-demos --no-pager -n 40 -o short-iso 2>/dev/null | sed -E 's/(password|PASSWORD)=[^ ]*/\1=***/g'; } \
+  > /var/www/estado/demos.txt 2>&1 || true
 RES=$(cat "$STATE/last-result" 2>/dev/null || echo -)
 { echo "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>To'Latino · pruebas</title>"
   echo "<body style='font-family:system-ui;padding:24px;max-width:640px;margin:auto'><h1>To'Latino · servidor de pruebas</h1>"

@@ -46,3 +46,5 @@ jobs:
         run: curl -s -m 30 http://2.31.196.167/api/salud | head -c 2000; echo
       - name: Diagnóstico del último despliegue
         run: curl -s -m 30 http://2.31.196.167/estado/diag.txt | head -120
+      - name: Carga de los demos (tolatino-demos)
+        run: curl -s -m 30 http://2.31.196.167/estado/demos.txt | tail -45
