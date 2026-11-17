@@ -1,0 +1,55 @@
+// Ronda 2 · NEG-EDU: textos por familia (acad, tutor, tech, trade, arte): reseñas, preguntas, equipo y novedades. ES/EN, sin emoji.
+import { bi } from "../d/comun.mjs";
+
+const COMUN = {
+  pos: { es: ["La maestra explica con paciencia y el grupo es pequeño, así que sí se aprende.", "Empecé sin saber nada y en pocas semanas ya notaba la diferencia.", "Los horarios de la noche me sirvieron mucho porque trabajo de día.", "Me dieron el material y un plan de pagos, y el total fue el que me dijeron desde el principio.", "El ambiente es muy amable; nadie se burla cuando uno se equivoca.", "Se nota que el maestro conoce el tema y lo explica con ejemplos de la vida real.", "Se pudo hablar con la escuela por mensaje y siempre contestaron rápido."],
+    en: ["The teacher explains with patience and the group is small, so you really learn.", "I started knowing nothing and within a few weeks I could see the difference.", "The evening hours helped a lot because I work during the day.", "They gave me the material and a payment plan, and the total was what they told me from the start.", "The atmosphere is very friendly; nobody laughs when you make a mistake.", "You can tell the instructor knows the subject and explains with real-life examples.", "I could message the school and they always answered quickly."] },
+  mid: { es: ["El curso está bien, pero el grupo era más grande de lo esperado.", "Buen maestro; el horario cambió una vez sin mucho aviso.", "Aprendí, aunque hubiera querido más práctica."], en: ["The course is good, but the group was larger than expected.", "Good teacher; the schedule changed once without much notice.", "I learned, although I would have liked more practice."] },
+  neg: { es: ["Cambiaron el horario y no pude seguir; la devolución tardó.", "El grupo se llenó y el maestro no alcanzaba a atender a todos.", "Esperaba más material de lo que recibí."], en: ["They changed the schedule and I could not continue; the refund took a while.", "The group filled up and the instructor could not attend to everyone.", "I expected more material than what I received."] },
+  cierre: { es: ["Los recomiendo.", "Gracias por la paciencia.", "Voy a tomar el siguiente curso."], en: ["I recommend them.", "Thank you for the patience.", "I will take the next course."] },
+  cierreNeg: { es: ["Ojalá lo mejoren.", "", ""], en: ["I hope they improve this.", "", ""] },
+};
+const ESPECIFICO = {
+  acad: { es: ["Los exámenes de práctica me dieron confianza antes del día importante.", "Me explicaron los pasos con calma y con ejemplos de mi caso."], en: ["The practice tests gave me confidence before the big day.", "They explained the steps calmly with examples close to my case."] },
+  tutor: { es: ["Mi hijo ya no le tiene miedo a la materia y sube sus notas.", "El tutor se adapta al ritmo del estudiante y avisa cómo va."], en: ["My son is no longer afraid of the subject and his grades are going up.", "The tutor adapts to the student's pace and reports on progress."] },
+  tech: { es: ["Hicimos prácticas en la computadora desde la primera clase.", "Lo que aprendí lo uso ya en mi trabajo."], en: ["We practiced on the computer from the first class.", "I already use what I learned at work."] },
+  trade: { es: ["Hay mucha práctica con herramientas y el instructor corrige con respeto.", "Me aclararon qué incluye el curso y qué se paga aparte, sin sorpresas."], en: ["There is a lot of hands-on practice and the instructor corrects with respect.", "They made clear what the course includes and what is paid separately, with no surprises."] },
+  arte: { es: ["Las clases son relajadas y salgo con algo hecho cada semana.", "El maestro anima a todos, sin importar el nivel."], en: ["The classes are relaxed and I leave with something made every week.", "The teacher encourages everyone, whatever the level."] },
+};
+
+const FAQ_BASE = [
+  { q: bi("¿Cómo me inscribo?", "How do I enroll?"), a: bi("Elige el grupo, paga la matrícula en la app y el resto en la escuela. El lugar es tuyo cuando la escuela lo confirma.", "Pick the group, pay the enrollment fee in the app and the rest at the school. The seat is yours once the school confirms it.") },
+  { q: bi("¿Hay plan de pagos?", "Is there a payment plan?"), a: bi("En los cursos largos puedes pagar el resto en 3 partes. Lo ves antes de confirmar.", "On longer courses you can pay the rest in 3 installments. You see it before confirming.") },
+  { q: bi("¿Qué pasa si falto o el grupo se cancela?", "What if I miss class or the group is canceled?"), a: bi("Si la escuela cancela el grupo, se devuelve la matrícula completa. Si faltas, te damos el material de esa clase.", "If the school cancels the group, the enrollment fee is refunded in full. If you miss class, we give you that class's material.") },
+  { q: bi("¿Hay clases de noche o fin de semana?", "Are there evening or weekend classes?"), a: bi("Sí, hay grupos entre semana de noche y los sábados en la mañana. Cada curso muestra su horario.", "Yes, there are weekday evening groups and Saturday mornings. Each course shows its schedule.") },
+  { q: bi("¿Puedo ir con un familiar?", "Can I come with a family member?"), a: bi("Claro. Cada persona se inscribe por separado, y a veces hay descuento para dos.", "Of course. Each person enrolls separately, and sometimes there is a two-person discount.") },
+];
+const FAQ_FAM = {
+  acad: { q: bi("¿Dan certificado?", "Do you give a certificate?"), a: bi("Damos una constancia de asistencia. No es un título oficial del estado.", "We give a certificate of attendance. It is not an official state degree.") },
+  tutor: { q: bi("¿Cómo sé cómo va mi hijo o hija?", "How do I know how my child is doing?"), a: bi("Al final de cada sesión el tutor te cuenta qué se trabajó y qué sigue.", "At the end of each session the tutor tells you what was covered and what is next.") },
+  tech: { q: bi("¿Necesito mi propia computadora?", "Do I need my own computer?"), a: bi("No. Hay equipos en el salón; si traes tu laptop, puedes usarla.", "No. There are computers in the room; if you bring your laptop you can use it.") },
+  trade: { q: bi("¿Esto me da una licencia?", "Does this give me a license?"), a: bi("No. Te preparamos para lo que pide el estado, pero la licencia o el examen oficial los otorga otra entidad. Confirma los requisitos antes de inscribirte.", "No. We prepare you for what the state asks, but the license or official exam is issued by another body. Confirm the requirements before enrolling.") },
+  arte: { q: bi("¿Necesito experiencia o materiales?", "Do I need experience or materials?"), a: bi("No necesitas experiencia. Te decimos qué traer en la primera clase, y los materiales básicos están incluidos cuando se indica.", "No experience needed. We tell you what to bring in the first class, and basic materials are included where indicated.") },
+};
+const TEAM = {
+  acad: [{ role: bi("Maestra principal", "Lead teacher"), bio: bi("Enseña los grupos de la noche.", "Teaches the evening groups."), spec: [bi("Adultos", "Adults")] }, { role: bi("Maestro", "Teacher"), bio: bi("Enseña los grupos de los sábados.", "Teaches the Saturday groups."), spec: [] }, { role: bi("Coordinadora de inscripciones", "Enrollment coordinator"), bio: bi("Te ayuda a escoger el grupo y el pago.", "Helps you choose the group and payment."), spec: [] }, { role: bi("Tutor de apoyo", "Support tutor"), bio: bi("Repasa contigo lo que no entendiste.", "Reviews with you what you did not understand."), spec: [] }],
+  tutor: [{ role: bi("Tutora principal", "Lead tutor"), bio: bi("Trabaja con cada estudiante a su ritmo.", "Works with each student at their own pace."), spec: [bi("Primaria y secundaria", "Elementary and middle school")] }, { role: bi("Tutor", "Tutor"), bio: bi("Atiende las tardes y los sábados.", "Covers afternoons and Saturdays."), spec: [] }, { role: bi("Coordinadora de inscripciones", "Enrollment coordinator"), bio: bi("Arma el horario con la familia.", "Builds the schedule with the family."), spec: [] }],
+  tech: [{ role: bi("Instructor principal", "Lead instructor"), bio: bi("Da los grupos de la noche con práctica en equipo.", "Teaches the evening groups with hands-on practice."), spec: [] }, { role: bi("Instructora", "Instructor"), bio: bi("Da los talleres de los sábados.", "Teaches the Saturday workshops."), spec: [] }, { role: bi("Coordinador de inscripciones", "Enrollment coordinator"), bio: bi("Te ayuda a escoger el curso.", "Helps you choose the course."), spec: [] }],
+  trade: [{ role: bi("Instructor principal", "Lead instructor"), bio: bi("Años de experiencia en el oficio y en el salón.", "Years of experience in the trade and in the classroom."), spec: [] }, { role: bi("Instructora de práctica", "Hands-on instructor"), bio: bi("Supervisa la práctica en el taller.", "Supervises practice in the shop."), spec: [] }, { role: bi("Coordinadora de inscripciones", "Enrollment coordinator"), bio: bi("Te explica el plan de pagos y los requisitos.", "Explains the payment plan and requirements."), spec: [] }, { role: bi("Asistente de taller", "Shop assistant"), bio: bi("Prepara el material y el equipo.", "Prepares material and equipment."), spec: [] }],
+  arte: [{ role: bi("Maestra principal", "Lead teacher"), bio: bi("Da los grupos de la noche.", "Teaches the evening groups."), spec: [] }, { role: bi("Maestro invitado", "Guest teacher"), bio: bi("Enseña los talleres de los sábados.", "Teaches the Saturday workshops."), spec: [] }, { role: bi("Coordinadora de inscripciones", "Enrollment coordinator"), bio: bi("Te ayuda a escoger el grupo.", "Helps you choose the group."), spec: [] }],
+};
+const POSTS = [
+  { kind: "novedad", title: "Nuevo grupo abierto", body: "Hay lugar en el grupo que empieza pronto. Inscríbete desde la ficha." },
+  { kind: "novedad", title: "Ya tenemos plan de pagos", body: "En los cursos largos, paga la matrícula en la app y el resto en tres partes." },
+  { kind: "encuesta", title: "¿En qué horario prefieres estudiar?", body: "Queremos abrir más grupos.", poll: ["Noche entre semana", "Sábado en la mañana", "Tarde entre semana", "En línea"] },
+  { kind: "oferta", slot: "curso", off: 0.1, title: "Descuento si vienes con un familiar", body: "Inscríbete con tu esposo, esposa o un familiar adulto y ahorra en el curso." },
+  { kind: "novedad", title: "Material nuevo para este semestre", body: "Estrenamos libros y ejercicios para practicar en casa." },
+  { kind: "novedad", title: "Gracias a nuestros graduados", body: "Otro grupo terminó su curso. Gracias por la confianza." },
+  { kind: "novedad", title: "Cerramos por feriado", body: "No habrá clases ese día; se reponen la semana siguiente." },
+  { kind: "novedad", title: "Clase de prueba sin costo", body: "Si no sabes si el curso es para ti, pregunta por la clase de prueba." },
+];
+
+export function textos(fam) {
+  const pos = { es: [...COMUN.pos.es, ...ESPECIFICO[fam].es], en: [...COMUN.pos.en, ...ESPECIFICO[fam].en] };
+  return { pos, mid: COMUN.mid, neg: COMUN.neg, cierre: COMUN.cierre, cierreNeg: COMUN.cierreNeg, faqs: [...FAQ_BASE, FAQ_FAM[fam]], team: TEAM[fam], posts: POSTS };
+}
