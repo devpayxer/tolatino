@@ -124,14 +124,15 @@ export type Of = NonNullable<ReturnType<typeof useOficio>>;
 function Fila({ v, it, tarjeta }: { v: Of; it: Of["top"][number]; tarjeta?: boolean }) {
   const cta = !v.op.can || it.k === "grua" ? v.E2("Llamar", "Call") : it.walk ? v.E2("Ver", "See") : "Booking";
   return (
-    <div role="button" tabIndex={0} onClick={(e) => v.abrir(it.id, e)} onKeyDown={(e) => { if (e.key === "Enter") v.abrir(it.id); }}
-      className={tarjeta ? "flex cursor-pointer items-center gap-[13px] rounded-[18px] border border-ink/[.08] bg-white p-3.5" : "flex cursor-pointer items-center gap-[13px] border-b border-ink/[.07] py-3.5"}>
-      <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(it.foto)} />
-      <div className="min-w-0 flex-1">
-        <div className="text-[14.5px] font-bold leading-[1.3]">{it.name}</div>
-        <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{it.meta}</div>
-        <div className="mt-1.5 font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{it.price}</div>
-      </div>
+    <div className={tarjeta ? "flex items-center gap-[13px] rounded-[18px] border border-ink/[.08] bg-white p-3.5" : "flex items-center gap-[13px] border-b border-ink/[.07] py-3.5"}>
+      <button type="button" onClick={(e) => v.abrir(it.id, e)} className="flex min-w-0 flex-1 cursor-pointer items-center gap-[13px] text-left">
+        <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(it.foto)} />
+        <div className="min-w-0 flex-1">
+          <div className="text-[14.5px] font-bold leading-[1.3]">{it.name}</div>
+          <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{it.meta}</div>
+          <div className="mt-1.5 font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{it.price}</div>
+        </div>
+      </button>
       <Button variant="soft" size="md" onClick={(e: MouseEvent) => v.abrir(it.id, e)}>{cta}</Button>
     </div>
   );

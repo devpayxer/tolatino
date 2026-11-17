@@ -74,14 +74,15 @@ export type Me = NonNullable<ReturnType<typeof useMerc>>;
 function Fila({ v, p, tarjeta }: { v: Me; p: ProdMerc; tarjeta?: boolean }) {
   const P = v.precio(p), puede = v.pod(p);
   return (
-    <div role="button" tabIndex={0} onClick={(e) => v.abrir(p.id, e)} onKeyDown={(e) => { if (e.key === "Enter") v.abrir(p.id); }}
-      className={`${tarjeta ? "flex cursor-pointer items-center gap-[13px] rounded-[18px] border border-ink/[.08] bg-white p-3.5" : "flex cursor-pointer items-center gap-[13px] border-b border-ink/[.07] py-3.5"}${p.ago ? " opacity-60" : ""}`}>
-      <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(p.foto)} />
-      <div className="min-w-0 flex-1">
-        <div className="text-[14.5px] font-bold leading-[1.3]">{v.nm(p.name)}</div>
-        {v.meta(p) && <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{v.meta(p)}</div>}
-        <div className="mt-1.5 font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</div>
-      </div>
+    <div className={`${tarjeta ? "flex items-center gap-[13px] rounded-[18px] border border-ink/[.08] bg-white p-3.5" : "flex items-center gap-[13px] border-b border-ink/[.07] py-3.5"}${p.ago ? " opacity-60" : ""}`}>
+      <button type="button" onClick={(e) => v.abrir(p.id, e)} className="flex min-w-0 flex-1 cursor-pointer items-center gap-[13px] text-left">
+        <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(p.foto)} />
+        <div className="min-w-0 flex-1">
+          <div className="text-[14.5px] font-bold leading-[1.3]">{v.nm(p.name)}</div>
+          {v.meta(p) && <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{v.meta(p)}</div>}
+          <div className="mt-1.5 font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</div>
+        </div>
+      </button>
       {puede ? <Button variant="soft" size="md" onClick={(e: MouseEvent) => v.abrir(p.id, e)}>{v.E2("Agregar", "Add")}</Button>
         : !p.ago && <Button variant="soft" size="md" icon="pin" onClick={(e: MouseEvent) => { stop(e); v.llegar(); }}>{v.E2("Cómo llegar", "Directions")}</Button>}
     </div>

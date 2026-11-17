@@ -2,6 +2,7 @@
 // una etiqueta del Super Admin vuelve al 50 %, una clase text-ink/45 en Mi cuenta, un text-[rgba(…,.5)] nuevo y el token --tl-text-muted al 50 %.
 // hojaAccesible: una hoja sin aria-modal, otra sin nombre, el layout sin <FocoHojas />, el gestor sin Escape y una capa nueva que se cierra al
 // tocarla sin hoja con role="dialog". tuberiaNoSeSalta: el trabajo nocturno «anchos» sin sus tres anchos o fuera de «tuberia». iconoExiste: «undo» y «download» otra vez. anchoSinSalto: un ancho que arranca en 390 y mide, y el panel sin <AnchoInicial>. impuestoSoloNuevo: la firma de Autos con max(id), la acción sin permiso y un update de tax_rules. vitalesSinPersonas: la URL en el cuerpo, la puerta sin origen, el 429 otra vez, la base antes del tope, una columna ip y el layout sin <Vitales />.
+// sinInteractivoAnidado: la fila de la ficha (Mercado, Pro) y la foto de PasosFH otra vez como role="button" que contiene su botón, y un archivo nuevo con un role="button" que contiene un <a>; al derecho, un button hermano de un <a> y un diálogo con botón no son un control anidado.
 // Se inyecta el defecto, el guardián debe fallar con SU mensaje ([contrasteTexto]); se restaura. «crear»: se crea el archivo, se corre y se borra.
 // También al derecho: una sombra o un borde con ink al 50 % no es texto (el guardián no debe saltar).
 const ENT = require('../lib/entorno.cjs');
@@ -30,14 +31,19 @@ const casos = [
   ['impuestoSoloNuevo', 'apps/web/lib/autos.ts', "and effective_from <= now() order by city_id, effective_from desc, id desc) v) as tax", "order by city_id, effective_from desc, id desc) v) as tax, (select max(id) from tax_rules) as x"],
   ['impuestoSoloNuevo', 'apps/web/app/admin/acciones-planes.ts', '  if (!s || !s.puede("plan", "aprobar")) return { ok: false, mensaje: "Tu rol no cambia impuestos." };', '  if (!s) return { ok: false, mensaje: "Tu rol no cambia impuestos." };'],
   ['iconoExiste', 'apps/web/app/admin/IntegracionesWallet.tsx', 'icon: "folder"', 'icon: "download"'],
+  ['sinInteractivoAnidado', 'apps/web/app/(app)/n/[id]/Mercado.tsx', '    <div className={`${tarjeta ? "flex items-center gap-[13px] rounded-[18px]', '    <div role="button" tabIndex={0} onClick={(e) => v.abrir(p.id, e)} className={`${tarjeta ? "flex items-center gap-[13px] rounded-[18px]'],
+  ['sinInteractivoAnidado', 'apps/web/app/(app)/n/[id]/Pro.tsx', '    <div className={tarjeta ? "flex items-center gap-[13px] rounded-[18px]', '    <div role="button" tabIndex={0} onClick={(e) => v.abrir(it.id, e)} className={tarjeta ? "flex items-center gap-[13px] rounded-[18px]'],
+  ['sinInteractivoAnidado', 'apps/web/app/(app)/publica/PasosFH.tsx', '<div key={id} style={{ position: "relative", aspectRatio: "1",', '<div key={id} role="button" tabIndex={0} onClick={() => portada(id)} style={{ position: "relative", aspectRatio: "1",'],
   ['tuberiaNoSeSalta', '.github/workflows/ci.yml', 'needs: [verificar, seguridad, regresion, dispositivos, confirmacion, anchos]', 'needs: [verificar, seguridad, regresion, dispositivos, confirmacion]'],
 ];
 const crear = [
+  ['sinInteractivoAnidado', 'apps/web/app/(app)/n/[id]/FilaAnidadaAlReves.tsx', 'export const F = ({ a }: { a: () => void }) => <div role="button" tabIndex={0} onClick={a} className="flex"><span>fila</span><a href="/x">Cómo llegar</a></div>;\n'],
   ['contrasteTexto', 'apps/web/app/admin/ContrasteAlReves.tsx', 'export const X = () => <span className="text-[rgba(11,14,18,.5)]">gris</span>;\n'],
   ['impuestoSoloNuevo', 'apps/web/lib/impuesto-al-reves.ts', 'export const x = "update tax_rules set parts_bp = 0";\n'],
   ['hojaAccesible', 'apps/web/app/admin/CapaAlReves.tsx', 'export const C = ({ c }: { c: () => void }) => <div onClick={c} className="fixed inset-0 bg-ink/50"><div>hoja</div></div>;\n'],
 ];
 const derecho = [
+  ['sinInteractivoAnidado', 'apps/web/app/(app)/n/[id]/FilaHermanaAlDerecho.tsx', 'export const F = ({ a }: { a: () => void }) => <div className="flex"><button type="button" onClick={a}>fila</button><a href="/x">Cómo llegar</a><div role="dialog" tabIndex={-1} onClick={a}><button type="button">x</button></div></div>;\n'],
   ['contrasteTexto', 'apps/web/app/admin/ContrasteAlDerecho.tsx', 'export const Y = () => <div className="shadow-[0_8px_20px_rgba(11,14,18,.5)]" style={{ boxShadow: "0 2px 6px rgba(11,14,18,.45)", border: "1px solid rgba(11,14,18,.4)" }} />;\n'],
 ];
 let bien = 0, total = 0;
