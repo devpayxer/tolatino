@@ -9269,6 +9269,18 @@ const guardianes = {
      y que la respuesta vieja se cancele, y la MEDIDA a escala nacional con su presupuesto de 100 ms (scripts/carga/direcciones-1m.mjs, en la
      carga) y la de la tubería (pruebas/infra/direcciones.test.sh). Al revés (alreves9m): quitar el índice por prefijo, el límite del CTE, el tope de
      tiempo, la espera de la pantalla, o subir el presupuesto. */
+  /* 17 nov · calleSinPuntoCardinal (CI Direcciones: «435 Hamilton St, 18101» salía «calle» a 2 km porque el Censo la llama «W Hamilton St»).
+     Si la persona no escribió el punto cardinal, la misma calle CON uno vale cuando su número cae en el tramo; si lo escribió, nunca se cambia
+     (N Wyoming no pasa a S Wyoming), y la calle sin ese número es solo la que escribió. Al revés (alreves9m): quitar las variantes, armarlas aunque
+     haya punto cardinal, o dejar que la «calle» sin número caiga en una variante. */
+  calleSinPuntoCardinal() {
+    const G = "calleSinPuntoCardinal", fn = ultimaFn("dir_resolver");
+    if (!fn) return falla(G, "packages/db/migrations", 0, "falta dir_resolver");
+    if (!/if pa\.calle !~ '\^\(n\|s\|e\|w\|ne\|nw\|se\|sw\)\\s' and pa\.calle !~ '\\s\(n\|s\|e\|w\|ne\|nw\|se\|sw\)\$' then/.test(fn))
+      falla(G, "dir_resolver", 0, "las variantes con punto cardinal solo cuando la persona no escribió uno");
+    if (!/'w ' \|\| pa\.calle/.test(fn) || !/t\.norm = any\(v\)/.test(fn) || !/p\.norm = any\(v\)/.test(fn)) falla(G, "dir_resolver", 0, "la casa y el tramo se buscan también en la calle con punto cardinal");
+    if (!/where c\.lado is not null or c\.norm = s/.test(fn)) falla(G, "dir_resolver", 0, "sin tramo con el número, la «calle» es solo la que escribió (no una variante)");
+  },
   autocompletarRapido() {
     const G = "autocompletarRapido";
     const mig = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");

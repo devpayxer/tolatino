@@ -25,6 +25,10 @@ const casos = [
   ['autocompletarRapido', M, "create index if not exists geo_names_trgm_idx on geo_names using gin (norm gin_trgm_ops);", ''],
   ['autocompletarRapido', M, '             limit 4000)\n          select * from m order by m.geom <-> pt limit cuantos * 3', '             )\n          select * from m order by m.geom <-> pt limit cuantos * 3'],
   ['autocompletarRapido', M, 'cuantos := greatest(1, least(coalesce(cuantos, 6), 10));', 'cuantos := coalesce(cuantos, 6);'],
+  // calleSinPuntoCardinal: sin variantes, variantes aunque haya punto cardinal, la calle sin número en una variante
+  ['calleSinPuntoCardinal', 'packages/db/migrations/0176_direccion_punto_cardinal.sql', "'w ' || pa.calle,", ''],
+  ['calleSinPuntoCardinal', 'packages/db/migrations/0176_direccion_punto_cardinal.sql', "if pa.calle !~ '^(n|s|e|w|ne|nw|se|sw)\\s' and pa.calle !~ '\\s(n|s|e|w|ne|nw|se|sw)$' then", 'if true then'],
+  ['calleSinPuntoCardinal', 'packages/db/migrations/0176_direccion_punto_cardinal.sql', 'where c.lado is not null or c.norm = s', 'where true'],
   ['autocompletarRapido', D, 'export const TOPE_MS = 250;', 'export const TOPE_MS = 5000;'],
   ['autocompletarRapido', DC, '    }, 140);\n  };\n  const elegir', '    }, 0);\n  };\n  const elegir'],
   ['autocompletarRapido', DC, '      ctl.current?.abort(); const c = new AbortController();', '      const c = new AbortController();'],

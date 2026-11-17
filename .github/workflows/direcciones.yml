@@ -58,6 +58,9 @@ jobs:
           LISTA
           echo "ubicadas con su número: $ok de 6"
           test "$ok" -ge 5
+          # 0176 · sin punto cardinal vale la calle con uno (el Censo dice «W Hamilton St»); con él, nunca se cambia (N Wyoming no pasa a S Wyoming).
+          test "$(q "select calidad || '|' || nombre from dir_ubicar('435 Hamilton St', '18101')")" = "numero|W Hamilton St"
+          test -z "$(q "select 1 from dir_ubicar('412 N Wyoming St', '18201') where nombre !~* '^N '")"
           # Mal escrita y con «Street» completo
           q "select calidad, nombre from dir_ubicar('412 North Wyomin Street', '18201')"
           test -n "$(q "select 1 from dir_ubicar('412 North Wyomin Street', '18201')")"
