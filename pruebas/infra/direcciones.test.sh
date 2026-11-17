@@ -36,11 +36,11 @@ ok "los .csv de cada condado se borran al cargar (en la carpeta solo quedan los 
 
 echo "otra vez (al día):"
 n0=$(q "select count(*) from geo_streets"); correr
-ok "no baja ni carga nada (todo hace menos de 90 días)" '! grep -qE "\] (lugares \(|puntos \()" "$T/log" && ! grep -qE "\] tramos:" "$T/log" && [ "$(q "select count(*) from geo_streets")" = "$n0" ]'
+ok "no baja ni carga nada (todo hace menos de 90 días)" '! grep -qE "\] (lugares \(|puntos \()" "$T/log" && ! grep -qE "\] tramos: [0-9]" "$T/log" && [ "$(grep -c "tramos: al día" "$T/log")" = 4 ] && grep -q "zips: al día" "$T/log" && [ "$(q "select count(*) from geo_streets")" = "$n0" ]'
 
 echo "reanudable:"
 q "delete from geo_loads where state = 'TX' and kind = 'tramos'" >/dev/null; correr
-ok "solo rehace lo que faltaba (los tramos de TX), el resto sigue al día" 'grep -q "\[direcciones TX\] tramos: 14" "$T/log" && ! grep -q "\[direcciones PA\] tramos:" "$T/log" && ! grep -q "\[direcciones CA\] tramos:" "$T/log"'
+ok "solo rehace lo que faltaba (los tramos de TX), el resto sigue al día" 'grep -q "\[direcciones TX\] tramos: 14" "$T/log" && grep -q "\[direcciones PA\] tramos: al día" "$T/log" && ! grep -q "\[direcciones PA\] tramos: [0-9]" "$T/log" && ! grep -q "\[direcciones CA\] tramos: [0-9]" "$T/log"'
 
 echo "autocompletar e inversa:"
 s() { q "select linea || ' · ' || sub || ' · ' || calidad from dir_sugerir('$1', 40.9584, -75.9746, 'PA') limit 1"; }

@@ -56,7 +56,8 @@ ogr() {
 }
 # psql no reemplaza las variables (-v) en -c: lo que las usa va por la entrada (nunca SQL armado con los valores).
 sqlv() { local s="$1"; shift; printf '%s\n' "$s" | psql "$@"; }
-al_dia() { [ "${FORZAR:-0}" = 1 ] && return 1; [ "$(sqlv "select count(*) from geo_loads where state = :'st' and kind = :'k' and status = 'ok' and at > now() - (:'d' || ' days')::interval" -v st="$1" -v k="$2" -v d="$DIAS")" != 0 ]; }
+# Al día: lo dice en el registro (la segunda corrida del CI lo busca: «tramos: al día»), para que se vea que no se volvió a bajar nada.
+al_dia() { [ "${FORZAR:-0}" = 1 ] && return 1; [ "$(sqlv "select count(*) from geo_loads where state = :'st' and kind = :'k' and status = 'ok' and at > now() - (:'d' || ' days')::interval" -v st="$1" -v k="$2" -v d="$DIAS")" != 0 ] || return 1; log "$2: al día (cargado hace menos de $DIAS días)"; }
 anotar() { sqlv "insert into geo_loads (source, counties, rows, state, kind, status, seconds, detail) values (:'src', '{}', :'n', :'st', :'k', 'ok', :'s', nullif(:'det', ''))" -v st="$1" -v k="$2" -v n="$3" -v s="$4" -v det="$5" -v src="$6"; }
 
 # ── Un estado (lo corre la parte de abajo, en paralelo) ──
