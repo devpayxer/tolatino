@@ -1830,8 +1830,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       falta 0174 (`event_sponsorships`) y sus pantallas.
 - [ ] **→ 9n** · **Comida sin «Tipo de lugar»:** el diseño D dibuja la pestaña «TIPO DE LUGAR»; las pestañas salen de las filas del Catálogo y Comida solo
       tiene «Por país» y los antojos. Agregar la fila en Super Admin › Catálogo (contenido; no es código) si Henry la quiere.
-- [ ] **→ 9b** · **C-002 en la corrida completa:** pat002 y las pruebas de la página de categoría (cat1m, noc4a, fie4u, adm4ig, rec1j, mapa, an1n, fic4id,
-      vid001, com5c) corrieron en local con Chromium; Safari/iPad y la matriz de 9 dispositivos van en la corrida completa al terminar C-003. Las
-      capturas aprobadas de `pruebas/visual` de la página de categoría cambian (diseño D).
+- [ ] **→ 9b** · **C-002 en la corrida completa:** en local (Chromium) pasaron pat002 (55 ✓), cat1m, fie4u, mapa y an1n. No llegan a la página de
+      categoría en local, por cosas de antes de C-002: noc4a (la fila «anoche» depende de la hora del día: falla en su paso 1), adm4ig (la base local no
+      deriva «sinssn» de rentas-hazleton-latino en su punto de partida), rec1j y vid001 (subir fotos o video: sin almacén de medios local, 503), fic4id
+      (ver la línea de abajo) y com5c (Comunidad › «CONVERSACIÓN», paso 5; su parte de /c/comida pasó). Lo de la categoría que esas pruebas miran
+      se comprobó a mano: «Se acabó por hoy» y el cover de esta noche salen en la caja HOY. Safari/iPad, la matriz de 9 dispositivos y estas
+      pruebas van en la corrida completa al terminar C-003. Las capturas aprobadas de `pruebas/visual` de la página de categoría cambian (diseño D).
+- [ ] **→ 9n** · **Privacidad, de antes de C-002 (lo cazó fic4id en local):** la ficha de un negocio que trabaja desde casa (cuartos-dona-mary) lleva
+      su dirección exacta («857 N Laurel St») en los datos de la página (`address` en el JSON de `lib/ficha.ts`), aunque la pantalla muestre la zona.
 - [ ] **→ 9n** · **Vistas del patrocinio sin el equipo del negocio:** «entraron» ya no cuenta al dueño ni a su equipo; las vistas sí (la fila se cuenta
       al mostrarse, sin mirar quién es miembro, para no sumar una consulta por página). Si molesta, se excluye en `patrocinio_vistas`.
