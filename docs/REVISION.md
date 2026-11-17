@@ -5283,3 +5283,13 @@ novedades y seguidores. **Solo el sandbox** (el CI y producción no los cargan);
 - **Fotos:** son las mismas de Pexels que ya usa la semilla (se repiten); no hay fotos propias ni videos en los demos.
 - **No llenado en esta pasada:** planes recurrentes y cotizaciones de Hogar/Auto, acuerdo escrito de Fiestas, historial de cajas/mudanzas de
   Transporte, reservas de mesa de Comida y catering, plan de pagos de Educación. Los negocios y lo que venden sí están completos.
+
+## Ubicación del repartidor en el iPhone (17 nov) — mirar a mano
+En un iPhone (Safari), con la cuenta de un repartidor del sandbox: acepta un **envío del mercado**, pon el código de recogida y toca «Recogí, voy en
+camino». Camina o muévete unos metros: en el pedido del cliente debe verse el mapa en vivo moviéndose. En las pruebas de Safari del CI el
+emulador no manda posiciones nuevas; en Chromium y en el repartidor de comida sí funciona. Si en tu iPhone no se mueve, me avisas y lo arreglo.
+
+## Capturas nuevas (17 nov) — mirar
+Las 54 capturas aprobadas (Inicio, Buscar, la ficha, Mi cuenta, el Hoy del panel y el del Super Admin, en los 9 aparatos) se renovaron: la ficha
+es la nueva (C-005 → C-008) y ahora con contraste AA (los grises de texto más oscuros, el plato agotado con solo la foto apagada) y los botones de
+las estrellas de 24 px. Están en `pruebas/visual/<pantalla>/<aparato>.png`. Si algo no te gusta, me dices qué y se cambia.

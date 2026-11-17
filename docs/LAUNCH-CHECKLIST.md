@@ -1885,3 +1885,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       Chromium a tamaño iPad: ahí pasa todo, «muy lejos» incluido) y, moviéndolo con las flechas, el pin se ve movido pero al guardar llega sin
       pin (el servidor guarda el punto de la dirección). Mirarlo en un iPad real (REVISION · «Pin en el iPad»): si pasa con el dedo, es la
       prueba; si no, es la pantalla. La prueba ya usa el mapa VISIBLE (había dos copias) y dice dónde quedó.
+- [ ] **→ 9b** · **merc9n en Safari (SE e iPad), Anchos (6):** la ubicación del repartidor en el envío del mercado. En el WebKit de las pruebas la página
+      manda UNA lectura (de hace 31 s, después de empezar la ruta) que la base rechaza (`rejected_n = 1`) y después el emulador no da más lecturas
+      aunque la prueba mueve el GPS cada 2 s; en Chromium pasa y en app8e (repartidor de comida) Safari sí sube posiciones. Diagnóstico en la salida
+      de merc9n («· la página … · envíos … · pista»). Se mira a mano en un iPhone de verdad (REVISION «Ubicación del repartidor en el iPhone»).
