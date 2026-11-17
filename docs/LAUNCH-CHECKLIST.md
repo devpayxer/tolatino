@@ -1836,7 +1836,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       (ver la línea de abajo) y com5c (Comunidad › «CONVERSACIÓN», paso 5; su parte de /c/comida pasó). Lo de la categoría que esas pruebas miran
       se comprobó a mano: «Se acabó por hoy» y el cover de esta noche salen en la caja HOY. Safari/iPad, la matriz de 9 dispositivos y estas
       pruebas van en la corrida completa al terminar C-003. Las capturas aprobadas de `pruebas/visual` de la página de categoría cambian (diseño D).
-- [ ] **→ 9n** · **Privacidad, de antes de C-002 (lo cazó fic4id en local):** la ficha de un negocio que trabaja desde casa (cuartos-dona-mary) lleva
-      su dirección exacta («857 N Laurel St») en los datos de la página (`address` en el JSON de `lib/ficha.ts`), aunque la pantalla muestre la zona.
+- [x] **Privacidad (falsa alarma, revisado 17 nov):** en local, fic4id vio «857 N Laurel St» en el HTML de cuartos-dona-mary. Viene de la
+      información de depuración que React solo manda con `next dev` (`env`, `stack`, `owner` con los datos internos del componente); el build
+      de producción no la manda y fic4id pasa en CI (regresión completa). La ficha ya devuelve `direccion: null` cuando el negocio trabaja desde casa.
 - [ ] **→ 9n** · **Vistas del patrocinio sin el equipo del negocio:** «entraron» ya no cuenta al dueño ni a su equipo; las vistas sí (la fila se cuenta
       al mostrarse, sin mirar quién es miembro, para no sumar una consulta por página). Si molesta, se excluye en `patrocinio_vistas`.
