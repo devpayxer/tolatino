@@ -5,6 +5,8 @@ const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino 
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
 const shot = async (p, n, full = false) => { await p.waitForTimeout(450); await p.screenshot({ path: OUT + n, fullPage: full }); };
+// Pickup fijo con el carrito vacío (modoPropio): en teléfono y en escritorio.
+const pickupFijo = async (p) => { await p.evaluate(() => { localStorage.removeItem('tl-carrito-v1'); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); }); await p.reload(); };
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
 const fila = (p, nombre) => p.locator('[data-msec^="m-"]:not([data-msec="m-pop"]) div.grid').filter({ has: p.getByText(nombre, { exact: true }) }).last();
 const MARISOL = "(select id from users where phone='+15705550122')";
@@ -27,7 +29,7 @@ const MARISOL = "(select id from users where phone='+15705550122')";
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); watch(m, 'movil');
   await entrar(m, '5705550122');
   // 9b-3 · Pickup fijo: si otra prueba dejó a Sabor Dominicano con delivery a esta hora, el pago abría en Delivery (modoPropio).
-  await m.goto(B + N); await m.evaluate(() => { localStorage.removeItem('tl-carrito-v1'); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); }); await m.reload();
+  await m.goto(B + N); await pickupFijo(m);
   await m.locator('[data-screen-label="Resumen · menú"]').waitFor();
   ok(await m.locator('[data-screen-label="Ficha · barra de pedido"]').isVisible(), 'barra «Desde» en la ficha');
   await shot(m, 'b1-resumen-m.png', true);
@@ -116,7 +118,7 @@ const MARISOL = "(select id from users where phone='+15705550122')";
   await entrar(d, '5705550122');
   // C-006 · Ficha nueva (Pro): en la computadora es una sola página; el menú es su sección, sin un resumen aparte.
   // Pickup fijo también en el escritorio (barajada, 18 nov): si otra prueba dejó delivery con mínimo, «Ir a pagar» decía «Mínimo · faltan» (modoPropio).
-  await d.goto(B + N); await d.evaluate(() => { localStorage.removeItem('tl-carrito-v1'); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); }); await d.reload();
+  await d.goto(B + N); await pickupFijo(d);
   await d.locator('#sec-cat [data-screen-label="Ficha · menú · desktop"]').waitFor();
   await shot(d, 'b13-resumen-d.png');
   await d.goto(B + N + '?tab=menu'); await d.locator('[data-screen-label="Ficha · menú · desktop"]').waitFor();
