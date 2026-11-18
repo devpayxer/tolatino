@@ -5,7 +5,7 @@ import { puntoFinal, sugerir } from "@/lib/direcciones";
 import { dispositivo, mismoOrigen, yo } from "@/lib/cuenta";
 import { anotarReferido, codigoPermitido, codigoVivo } from "@/lib/crecimiento/promotores";
 import { ubicacion } from "@/lib/ubicacion";
-import { daysOf, derive, descEs, items as itemsDe, needZone, ok as okPaso, opOf, own as ownDe, SEQ, zoneOf, type Borrador } from "./logica";
+import { daysOf, derive, descEs, items as itemsDe, needZone, ok as okPaso, opOf, own as ownDe, plantillaHoras, SEQ, zoneOf, type Borrador, type PlantillaCat } from "./logica";
 import { evento } from "@/lib/eventos";
 import { ACEPTABLES, aceptarEn, contextoAceptar } from "@/lib/legal";
 
@@ -126,8 +126,14 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
     subs: (Array.isArray(dIn.subs) ? dIn.subs : []).slice(0, 3).map((s) => corto(s, 80)),
     cust: (Array.isArray(dIn.cust) ? dIn.cust : []).slice(0, 60).map((c) => ({ n: corto(c?.n, 60), p: Math.max(0, Math.min(1e6, Number(c?.p) || 0)), u: "fijo", dur: 0 })).filter((c) => c.n.length >= 2),
     join: typeof dIn.join === "string" && /^[a-z0-9-]{2,80}$/.test(dIn.join) ? dIn.join : null } as Borrador;
-  for (const p of SEQ) if (!okPaso(p, d)) return no("Falta algo en este paso.", "Something is missing in this step.", p);
+  // 9n · La categoría tiene que estar activa en la ciudad de quien publica (Super Admin › Catálogo › activa por ciudad) y, si no tocó su
+  // horario, empieza con la plantilla del Catálogo (la misma que vio en la pantalla).
   const loc = await ubicacion(me);
+  const kc = d.cat ? (await db().query<{ ok: boolean; h: PlantillaCat["horario"] }>(
+    `select status = 'on' and not ($2 = any(off_cities)) as ok, onb->'horario' as h from categories where id = $1`, [d.cat, loc.ciudad])).rows[0] : null;
+  if (d.cat && !kc?.ok) return no("Esa categoría no está disponible en tu ciudad. Elige otra.", "That category isn’t available in your city. Pick another one.", "B1");
+  if (!Array.isArray(d.days) && d.cat && d.cat !== "NEG-FE") d.days = plantillaHoras(kc?.h) ?? null;
+  for (const p of SEQ) if (!okPaso(p, d)) return no("Falta algo en este paso.", "Something is missing in this step.", p);
   const op = opOf(d), dv = derive(d), o = ownDe(d), its = itemsDe(d);
   // Fotos: tienen que ser de esta persona, subidas por ella y visibles.
   const fotos = [d.cover, ...(d.gallery || [])].filter((x): x is string => typeof x === "string" && /^[0-9a-f-]{36}$/.test(x)).slice(0, 13);

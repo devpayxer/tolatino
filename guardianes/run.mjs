@@ -10398,6 +10398,129 @@ const guardianes = {
     }
   },
 
+  /* 9n · Catálogo completo (LAUNCH L214, 18 nov): mover, fusionar y renombrar subcategorías; categoría y módulo activos por ciudad; plantilla
+     de horario y ejemplos de Publica por categoría; límites Free/Pro editables. Cinco clases de defecto, cada una con su guardián y su al revés
+     (pruebas/alreves/alrevesCat9n.cjs). */
+
+  /* (1) Una subcategoría conserva su código y nada se borra: mover no cambia el id (los negocios, los sinónimos, los mosaicos y el código la
+     nombran por id); el número nuevo de «Agregar» sale de TODOS los códigos de la categoría (uno movido no se repite); fusionar deja A en
+     'merged' con su puntero y su registro para «Separar»; ninguna acción del Catálogo borra filas. Toda edición de una subcategoría o de una
+     categoría por ciudad dice antes a cuántos negocios afecta («Afecta a …» en su confirmación). */
+  catalogoCompleto() {
+    const G = "catalogoCompleto", AC = "apps/web/app/admin/acciones-catalogo.ts", UI = "apps/web/app/admin/Catalogo.tsx", MIG = "packages/db/migrations/0179_catalogo_completo.sql";
+    if (!existsSync(AC) || !existsSync(MIG)) return;
+    const a = sinComent(AC);
+    for (const x of a.matchAll(/update subcategories set ((?:(?!\bwhere\b)[^`])*)/g)) if (/(^|[\s,])id\s*=/.test(x[1])) falla(G, AC, 0, "una acción cambia el código (id) de una subcategoría: mover solo cambia category_id");
+    if (/\bdelete from\b/i.test(a)) falla(G, AC, 0, "una acción del Catálogo borra filas: nada se borra (estados)");
+    const ag = cuerpoFn(a, "subAgregar");
+    if (!/from subcategories where id like \$1 \|\| '-%'/.test(ag)) falla(G, AC, 0, "subAgregar numera solo con las subcategorías que siguen en la categoría: una movida conserva su código y el siguiente lo repetiría");
+    const mv = cuerpoFn(a, "subMover");
+    if (!/update subcategories set category_id = \$2/.test(mv)) falla(G, AC, 0, "subMover debe mover cambiando solo category_id");
+    const m = readFileSync(MIG, "utf8"), fu = /create or replace function catalogo_fusionar\([\s\S]*?\$\$([\s\S]*?)\$\$/.exec(m)?.[1] ?? "";
+    if (!/set status = 'merged', merged_into = b/.test(fu) || !/insert into subcategory_merges/.test(fu)) falla(G, MIG, 0, "fusionar deja la subcategoría en 'merged' con su puntero y anota la fusión (para «Separar»)");
+    if (/\bdelete from\b/i.test(m)) falla(G, MIG, 0, "la migración del Catálogo borra filas: nada se borra");
+    if (!/check \(\(status = 'merged'\) = \(merged_into is not null\)/.test(m)) falla(G, MIG, 0, "la base debe exigir que una fusionada tenga su puntero (subcategories_fusion_ok)");
+    if (!existsSync(UI)) return;
+    const u = sinComent(UI);
+    for (const f of ["subNombre", "subMover", "subFusionar"]) {
+      const i = u.search(new RegExp(`hacer: \\([^)]*\\) => ${f}\\(`));
+      if (i < 0) { falla(G, UI, 0, `la pantalla no llama a ${f}`); continue; }
+      const ini = u.lastIndexOf("setConf({", i);
+      if (ini < 0 || !/Afecta a/.test(u.slice(ini, i))) falla(G, UI, u.slice(0, i).split("\n").length, `la confirmación de ${f} no dice a cuántos negocios afecta («Afecta a …»)`);
+    }
+    const fc = /const filaCiudad = [\s\S]*?\n  \}\);/.exec(u)?.[0] ?? "";
+    if (!/Afecta a \$\{cuenta\}/.test(fc)) falla(G, UI, 0, "apagar una categoría o un módulo en una ciudad no dice a cuántos negocios afecta");
+    for (const f of ["catCiudad", "modCiudad"]) if (!new RegExp(`filaCiudad\\([\\s\\S]{0,900}?${f}\\(`).test(u)) falla(G, UI, 0, `${f} no pasa por filaCiudad (la confirmación con su impacto)`);
+  },
+
+  /* (2) Una categoría apagada en una ciudad no se ofrece ahí: la página de la categoría responde «no existe», sus negocios no salen en las listas
+     (DESDE, los conteos de Negocios y el mapa), Buscar no la sugiere, las listas de categorías de la ciudad no la traen y Publica no la ofrece ni la
+     publica (el servidor lo revisa antes de los pasos). */
+  categoriaPorCiudad() {
+    const G = "categoriaPorCiudad", C = "apps/web/lib/categoria.ts";
+    if (!existsSync(C)) return;
+    const c = sinComent(C);
+    const desde = /export const DESDE = `[^`]*`/.exec(c)?.[0] ?? "";
+    if (!/\$\{CAT_EN_CIUDAD\("b"\)\}/.test(desde)) falla(G, C, 0, "DESDE (categoría, destacados, nuevos, Buscar, patrocinados) no quita las categorías apagadas en la ciudad");
+    if (!/\$\{b\}\.city_id = any\(k\.off_cities\)/.test(/export const CAT_EN_CIUDAD = [^\n]*/.exec(c)?.[0] ?? "")) falla(G, C, 0, "CAT_EN_CIUDAD debe mirar categories.off_cities de la ciudad del negocio");
+    if (!/\$\{CAT_EN_CIUDAD\("b"\)\}/.test(cuerpoFn(c, "conteos"))) falla(G, C, 0, "los conteos de Negocios cuentan negocios de una categoría apagada en la ciudad");
+    const MP = "apps/web/lib/mapa.ts";
+    if (existsSync(MP)) { const t = sinComent(MP), n = (t.match(/from businesses b/g) ?? []).length, k = (t.match(/\$\{CAT_EN_CIUDAD\("b"\)\}/g) ?? []).length; if (k < n) falla(G, MP, 0, "el mapa muestra negocios de una categoría apagada en la ciudad"); }
+    const D = "apps/web/lib/directorio.ts";
+    if (existsSync(D) && !/not \(\$2 = any\(off_cities\)\)/.test(cuerpoFn(sinComent(D), "categorias"))) falla(G, D, 0, "categorias() no quita las apagadas en la ciudad");
+    for (const f of codigo.filter((x) => /^apps\/web\/app\/.*\.tsx?$/.test(x) && !/^apps\/web\/app\/admin\//.test(x))) {
+      sinComent(f).split("\n").forEach((l, i) => { for (const m of l.matchAll(/\bcategorias\(lang(?:, ([^)]*))?\)/g)) if (!m[1] || (m[1].trim() === "null" && !/recomendar\/page\.tsx$/.test(f))) falla(G, f, i + 1, "categorias() sin la ciudad: ofrece categorías apagadas en ella"); });
+    }
+    const B = "apps/web/lib/buscar.ts";
+    if (existsSync(B) && !/join categories c on c\.id = s\.category_id and not \(\$1 = any\(c\.off_cities\)\)/.test(sinComent(B))) falla(G, B, 0, "Buscar sugiere subcategorías de una categoría apagada en la ciudad");
+    const P = "apps/web/app/(app)/c/[slug]/page.tsx";
+    if (existsSync(P)) { const t = sinComent(P), i = t.search(/if \(!\(await categoriaActivaEn\(c\.id, loc\.ciudad\)\)\) notFound\(\);/), j = t.search(/resultados\(\{/); if (i < 0 || j < 0 || i > j) falla(G, P, 0, "la página de la categoría no revisa que esté activa en la ciudad antes de listar"); }
+    const A = "apps/web/app/(app)/publica/acciones.ts";
+    if (existsSync(A)) { const b = cuerpoFn(sinComent(A), "publicar"), i = b.search(/not \(\$2 = any\(off_cities\)\) as ok/), j = b.search(/for \(const p of SEQ\)/), k = b.search(/if \(d\.cat && !kc\?\.ok\) return no\(/); if (i < 0 || k < 0 || j < 0 || k > j) falla(G, A, 0, "publicar no rechaza una categoría apagada en la ciudad antes de pasar los pasos"); }
+    const PB = "apps/web/app/(app)/publica/PasosBC.tsx";
+    if (existsSync(PB)) { const t = sinComent(PB); if (!/TILES\.filter\(\(t\) => !off\.includes\(t\[0\]\)\)/.test(t) || !/X\.CATS as string\[\]\[\]\)\.filter\(\(k\) => !off\.includes/.test(t) || !/!off\.includes\(r\.cat\)/.test(t)) falla(G, PB, 0, "Publica ofrece (mosaicos, «Todas» o la búsqueda) una categoría apagada en la ciudad"); }
+  },
+
+  /* (3) Un módulo apagado en una ciudad usa la pausa que ya respetan la ficha, los pedidos y las citas (modules_off) con la marca {"ciudad": true}:
+     todos los negocios de la ciudad la reciben, también los que llegan después (trigger); encenderlo quita solo esa marca; Negocios 360° no la
+     levanta para uno solo; y solo se ofrece para los módulos que tienen esa pausa (no Cotizaciones ni Staff). */
+  moduloPorCiudad() {
+    const G = "moduloPorCiudad", MIG = "packages/db/migrations/0179_catalogo_completo.sql", L = "apps/web/lib/admin-catalogo.ts", N = "apps/web/app/admin/acciones-negocios.ts";
+    if (!existsSync(MIG)) return;
+    const m = readFileSync(MIG, "utf8");
+    if (!/create trigger businesses_modulos_ciudad before insert or update of city_id on businesses/.test(m)) falla(G, MIG, 0, "un negocio nuevo (o que se muda) de una ciudad con el módulo apagado no recibe la pausa (trigger businesses_modulos_ciudad)");
+    const f = ultimaFn("catalogo_modulo_ciudad");
+    if (!/modules_off - modulo where city_id = ciudad and modules_off->modulo->>'ciudad' = 'true'/.test(f)) falla(G, MIG, 0, "encender un módulo en la ciudad quita también la pausa propia de un negocio (solo se quita la marcada {\"ciudad\": true})");
+    if (!/'ciudad', true\)\)\s*\n?\s*where city_id = ciudad and not \(modules_off \? modulo\)/.test(f)) falla(G, MIG, 0, "apagar un módulo en la ciudad pisa la pausa propia de un negocio o no la marca como de la ciudad");
+    if (existsSync(L)) { const t = /export const MODULOS_POR_CIUDAD = \[([^\]]*)\]/.exec(sinComent(L))?.[1] ?? ""; if (!t) falla(G, L, 0, "falta MODULOS_POR_CIUDAD"); else if (/"(cot|staff)"/.test(t)) falla(G, L, 0, "Cotizaciones y Staff no tienen la pausa de To’Latino: apagarlos por ciudad no apagaría nada"); }
+    if (existsSync(N) && !/if \(!pausar && cur\[modulo\]\?\.ciudad === true\) return/.test(cuerpoFn(sinComent(N), "moduloPausar"))) falla(G, N, 0, "Negocios 360° reanuda para un solo negocio un módulo apagado en toda su ciudad");
+  },
+
+  /* (4) Publica tu negocio lee del Catálogo la plantilla de horario y los ejemplos de cada categoría (no la copia del diseño), en la pantalla y
+     al publicar (quien no tocó su horario publica con la plantilla que vio). */
+  plantillasDePublica() {
+    const G = "plantillasDePublica", D = "apps/web/app/(app)/publica/";
+    if (!existsSync(D + "logica.ts")) return;
+    const lg = sinComent(D + "logica.ts");
+    if (!/export const daysOf = \(d: Borrador\): Dia\[\] => d\.days \|\| \(d\.cat \? horasDe\(/.test(lg)) falla(G, D + "logica.ts", 0, "daysOf no empieza con la plantilla del Catálogo (horasDe)");
+    for (const f of ["PasosBC.tsx", "PasosDE.tsx", "PasosFH.tsx", "Publica.tsx", "vista.ts", "acciones.ts"]) {
+      if (!existsSync(D + f)) continue;
+      sinComent(D + f).split("\n").forEach((l, i) => { if (/\bFl\.hours\(/.test(l)) falla(G, D + f, i + 1, "lee el horario del diseño (Fl.hours): usa horasDe (la plantilla del Catálogo)"); });
+    }
+    if (!/placeholder=\{phDe\(d\.cat, "ph_nombre"/.test(sinComent(D + "PasosBC.tsx"))) falla(G, D + "PasosBC.tsx", 0, "el ejemplo del nombre no sale del Catálogo (phDe ph_nombre)");
+    if (!/placeholder=\{phDe\(d\.cat, "ph_item"/.test(sinComent(D + "PasosDE.tsx"))) falla(G, D + "PasosDE.tsx", 0, "el ejemplo del ítem propio no sale del Catálogo (phDe ph_item)");
+    if (!/plantillasVivas\(v\.catalogo\)/.test(sinComent(D + "Publica.tsx"))) falla(G, D + "Publica.tsx", 0, "Publica no carga las plantillas del Catálogo antes de pintar los pasos");
+    const b = cuerpoFn(sinComent(D + "acciones.ts"), "publicar"), i = b.search(/if \(!Array\.isArray\(d\.days\) && d\.cat && d\.cat !== "NEG-FE"\) d\.days = plantillaHoras\(kc\?\.h\)/), j = b.search(/const D = daysOf\(d\);/);
+    if (i < 0 || j < 0 || i > j) falla(G, D + "acciones.ts", 0, "al publicar, quien no tocó su horario no recibe la plantilla del Catálogo");
+  },
+
+  /* (5) Límites Free/Pro: viven en Configuración (free_items, free_fotos, pro_fotos, free_equipo y free_ops_cap) y se leen con lib/config.ts; no
+     queda una constante en lib/plan.ts ni la copia del diseño (TLOnbNeg.FREE_*), ni un número escrito en un texto del panel o de Publica. La
+     ficha y los pedidos cortan con el valor de la base. */
+  limitesDelPlan() {
+    const G = "limitesDelPlan", PL = "apps/web/lib/plan.ts", L = "apps/web/lib/admin-catalogo.ts";
+    if (!existsSync(PL)) return;
+    sinComent(PL).split("\n").forEach((l, i) => { if (/export const \w*(FREE|PRO)\w*\s*=\s*\d/.test(l) && !/PRECIO_PRO/.test(l)) falla(G, PL, i + 1, "un límite del plan escrito en el código: léelo de Configuración (lib/config.ts)"); });
+    for (const f of codigo.filter((x) => /^apps\/web\/(app|lib)\/.*\.tsx?$/.test(x) && x !== "apps/web/lib/onb/datos.ts")) {
+      const t = sinComent(f);
+      t.split("\n").forEach((l, i) => {
+        if (/\b(X|TLOnbNeg)\.FREE_(ITEMS|PHOTOS|LIMIT)\b|\b(ITEMS|FOTOS|EQUIPO)_(FREE|PRO)\b/.test(l)) falla(G, f, i + 1, "un límite del plan copiado (del diseño o de lib/plan.ts): léelo de Configuración");
+        if (/^apps\/web\/app\/(panel|\(app\)\/publica)\//.test(f) && /se ven \d+ |Free muestra \d|FREE MUESTRA \d|FREE: \d+ AL MES|Free shows \d|FREE SHOWS \d|\b\d+ show on the page/.test(l)) falla(G, f, i + 1, "un texto dice un límite del plan con el número escrito: usa el valor de Configuración");
+      });
+    }
+    const PE = "apps/web/lib/pedir.ts";
+    if (existsSync(PE)) { const t = sinComent(PE); if (!/\$\{cfgSql\("free_items"\)\}/.test(t) || !/\.slice\(0, F\.itemsFree\)/.test(t)) falla(G, PE, 0, "el menú de un Free no corta con el límite de Configuración (free_items)"); }
+    const FI = "apps/web/lib/ficha.ts";
+    if (existsSync(FI)) { const n = (sinComent(FI).match(/limit \$\{b\.plan === "pro" \? cfgSql\("pro_fotos"\) : cfgSql\("free_fotos"\)\}/g) ?? []).length; if (n < 2) falla(G, FI, 0, "la ficha y la galería no cortan las fotos con los límites de Configuración (free_fotos, pro_fotos)"); }
+    if (existsSync(L)) {
+      const ks = [...(/export const LIMITES_PLAN = \[([\s\S]*?)\] as const/.exec(sinComent(L))?.[1] ?? "").matchAll(/key: "([a-z_]+)"/g)].map((x) => x[1]), cat = catalogoConfig().map((x) => x.k);
+      for (const k of ["free_items", "free_fotos", "pro_fotos", "free_equipo", "free_ops_cap"]) if (!ks.includes(k)) falla(G, L, 0, `el Catálogo no ofrece el límite «${k}»`);
+      for (const k of ks) if (!cat.includes(k)) falla(G, L, 0, `«${k}» no está en config_keys`);
+    }
+    const AC = "apps/web/app/admin/acciones-catalogo.ts";
+    if (existsSync(AC)) { const b = cuerpoFn(sinComent(AC), "limiteCambiar"), i = b.search(/s\.role !== "admin"/), j = b.search(/cambiarConfig\(/); if (i < 0 || j < 0 || i > j) falla(G, AC, 0, "solo un Admin cambia un límite del plan (revisar el rol antes de cambiarConfig)"); }
+  },
+
   telefonoAlAzarRespetaFijos() {
     const G = "telefonoAlAzarRespetaFijos";
     for (const f of archivos.filter((x) => /^pruebas\/(e2e|lib|alreves)\/[^/]+\.(cjs|mjs)$/.test(x))) {

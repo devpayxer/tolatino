@@ -7,7 +7,7 @@ import { reducir } from "@/lib/subir-foto";
 import * as UI from "@tolatino/ui";
 import { useRef, useState, type ComponentType } from "react";
 import { probarPromo } from "./acciones";
-import { derive, items, opOf, own, X, type Borrador } from "./logica";
+import { derive, items, limites, opOf, own, X, type Borrador } from "./logica";
 import { K } from "./PasosBC";
 
 import { tec } from "@/lib/tec";
@@ -32,7 +32,7 @@ function proRows(d: Borrador, es: boolean) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b), c = d.cat ? X.CFG[d.cat] : null;
   const iwP: [string, string] | null = ({ "NEG-NOCHE": ["opciones", "options"], "NEG-FIESTA": ["paquetes y artículos", "packages and items"] } as Record<string, [string, string]>)[d.cat ?? ""] || (c && c.items);
   const iw = iwP ? E2(iwP[0], iwP[1]) : E2("servicios", "services"), n = items(d).length, ph = [d.cover].concat(d.gallery || []).filter(Boolean).length;
-  const FI = X.FREE_ITEMS || 5, FP = X.FREE_PHOTOS || 3, dv = derive(d), o = own(d), k = d.cat ? X.cat(d.cat) : null, out: { icon: string; t: string; f: string }[] = [];
+  const LIM = limites(), FI = LIM.items, FP = LIM.fotos, dv = derive(d), o = own(d), k = d.cat ? X.cat(d.cat) : null, out: { icon: string; t: string; f: string }[] = [];
   out.push(n > FI ? { icon: "grid", t: E2(`Tus ${n} ${iw} en tu página`, `Your ${n} ${iw} on your page`), f: E2(`FREE MUESTRA ${FI}`, `FREE SHOWS ${FI}`) } : { icon: "grid", t: E2(`Tus ${iw}, con su propia pestaña`, `Your ${iw}, with their own tab`), f: E2("FREE: UNA SOLA PÁGINA", "FREE: ONE PAGE") });
   out.push({ icon: "image", t: ph > FP ? E2(`Tus ${ph} fotos`, `Your ${ph} photos`) : E2("Todas las fotos que subas", "Every photo you upload"), f: E2(`FREE MUESTRA ${FP}`, `FREE SHOWS ${FP}`) });
   if (d.cat === "NEG-BELL" && o.team && o.team !== "solo" && opOf(d) !== "rento") out.push({ icon: "users", t: E2(`Tus ${o.seats || 4} sillas, cada una con su agenda`, `Your ${o.seats || 4} chairs, each with its own schedule`), f: E2("FREE: SIN TU EQUIPO", "FREE: NO TEAM") });
@@ -40,7 +40,7 @@ function proRows(d: Borrador, es: boolean) {
   out.push({ icon: "search", t: E2(`Sales primero en ${k ? k[1] : ""}`, `You show first in ${k ? k[2] : ""}`), f: E2("FREE: DESPUÉS DE LOS PRO", "FREE: AFTER PRO") });
   Object.keys(dv.mods || {}).filter((m) => ["rsv", "cot", "renta"].includes(m) && !X.freeOk(d.cat, m)).slice(0, 1).forEach((m) => { const L = (c && c.lbl && c.lbl[m]) || X.MOD[m]; out.push({ icon: X.MOD[m][2], t: E2(L[0], L[1]), f: E2("SOLO PRO", "PRO ONLY") }); });
   const mods = (dv.mods || {}) as Record<string, unknown>, opn = mods.citas ? E2("Citas", "Bookings") : mods.pedidos ? E2("Pedidos", "Orders") : null;
-  if (opn) out.push({ icon: "calendar", t: E2(`${opn} en línea, sin tope`, `Online ${opn.toLowerCase()}, no cap`), f: E2("FREE: 10 AL MES", "FREE: 10 A MONTH") });
+  if (opn) out.push({ icon: "calendar", t: E2(`${opn} en línea, sin tope`, `Online ${opn.toLowerCase()}, no cap`), f: E2(`FREE: ${LIM.ops} AL MES`, `FREE: ${LIM.ops} A MONTH`) });
   out.push({ icon: "chat", t: E2("Respondes tus reseñas", "You reply to reviews"), f: E2("FREE: NO", "FREE: NO") });
   return out.slice(0, 6);
 }

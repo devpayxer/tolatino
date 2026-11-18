@@ -8,7 +8,6 @@ import type { MenuPanel, MGrp, MItem, MSec, Av } from "@/lib/menu";
 import { POPULAR_MIN } from "@/lib/menu-ventas";
 import { panelTraducir } from "./acciones-traducir";
 import { subirFoto } from "@/lib/subir-foto";
-import { ITEMS_FREE } from "@/lib/plan";
 import { categoriaGuardar, categoriaMover, categoriaQuitar, categoriaVisible, grupoDuplicar, grupoGuardar, grupoOpcion, grupoQuitar, menuAjustes, platoAgotar, platoCuenta, platoDuplicar, platoGuardar, platoMover, platosLote, type PlatoIn, type ShopIn } from "./acciones-menu";
 import { pedLine } from "./Pedidos";
 import { rsvLine } from "./Reservas";
@@ -82,7 +81,7 @@ export function vendesBloques(c: Ctx): (Bloque | null)[] {
   return [
     { type: "head", t: E2("Lo que vendes", "What you sell"), s: E2("Cada módulo sale en tu página solo cuando tiene algo. Tú decides qué se pide en línea y qué es solo catálogo.", "Each module shows on your page only when it has something. You decide what is ordered online and what is catalog only.") },
     { type: "kpis", cols: c.desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
-      { k: E2("EN TU PÁGINA", "ON YOUR PAGE"), v: String(d.pro ? nAll : Math.min(nAll, ITEMS_FREE)), s: !d.pro && nAll > ITEMS_FREE ? E2(`de ${nAll} · Free muestra ${ITEMS_FREE}`, `of ${nAll} · Free shows ${ITEMS_FREE}`) : E2("platos", "items"), onClick: () => c.go("mod", "menu") },
+      { k: E2("EN TU PÁGINA", "ON YOUR PAGE"), v: String(d.pro ? nAll : Math.min(nAll, d.itemsFree)), s: !d.pro && nAll > d.itemsFree ? E2(`de ${nAll} · Free muestra ${d.itemsFree}`, `of ${nAll} · Free shows ${d.itemsFree}`) : E2("platos", "items"), onClick: () => c.go("mod", "menu") },
       { k: E2("SE PIDEN EN LÍNEA", "ORDERED ONLINE"), v: String(nOn) }, { k: E2("SOLO CATÁLOGO", "CATALOG ONLY"), v: String(nAll - nOn) },
       { k: E2("AGOTADOS HOY", "SOLD OUT TODAY"), v: String(nAgo), fg: nAgo ? "var(--tl-danger)" : undefined },
     ] },
@@ -170,7 +169,7 @@ function itemsV(c: Ctx, M: MenuPanel): (Bloque | null)[] {
   }
   if (!M.sections.length) out.push({ type: "empty", icon: "restaurant", t: E2("Tu menú está vacío", "Your menu is empty"), s: E2("Crea una categoría (ej. Almuerzo) y agrega tu primer plato.", "Create a category (e.g. Lunch) and add your first item."), cta: E2("Nueva categoría", "New category"), onCta: () => c.det("mcat:new") });
   else if (!any) out.push({ type: "empty", icon: "search", t: E2("Nada con esa búsqueda", "Nothing matches"), s: "", cta: E2("Ver todo", "Show all"), onCta: () => c.setUi({ mq: "", mf: "all" }) });
-  if (!d.pro) out.push({ type: "note", tone: "warn", t: E2(`Con Free se ven ${ITEMS_FREE} platos en tu página y hasta ${d.tope} pedidos en línea al mes.`, `On Free, ${ITEMS_FREE} items show on your page and up to ${d.tope} online orders a month.`) });
+  if (!d.pro) out.push({ type: "note", tone: "warn", t: E2(`Con Free se ven ${d.itemsFree} platos en tu página y hasta ${d.tope} pedidos en línea al mes.`, `On Free, ${d.itemsFree} items show on your page and up to ${d.tope} online orders a month.`) });
   return out;
 }
 

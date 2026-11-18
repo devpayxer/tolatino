@@ -25,7 +25,7 @@ export default async function Page() {
   if (loc.c.status !== "on") return <PantallaPronto loc={loc} lang={lang} userId={u?.id ?? null} />;
   const CIUDAD = loc.ciudad, ciudad = loc.c;
   const [cats, n, dest, nue, lineas, hoy, recs] = await Promise.all([
-    categorias(lang), conteos(loc), destacados(loc, 6), nuevos(loc, 6),
+    categorias(lang, loc.ciudad), conteos(loc), destacados(loc, 6), nuevos(loc, 6),
     db().query<{ id: string; l: string | null }>("select id, page->'subs_line'->>$1 as l from categories", [lang]).then((r) => new Map(r.rows.map((x) => [x.id, x.l]))),
     hoyEnElBarrio(ciudad.id, null, null, loc, 10), recomendadosPorVecinos(ciudad.id, u?.id ?? null, 4),
   ]);

@@ -296,6 +296,7 @@
     "queue_roles": { "equipo": [ "updated_by" ] },
     "staff_holidays": { "equipo": [ "created_by", "removed_by" ] },
     "business_notif_prefs": { "reglas": [ { "col": "updated_by", "accion": "guardar", "porque": "negocio", "fusion": "no" } ] },
-    "special_hours": { "reglas": [ { "col": "created_by", "accion": "guardar", "porque": "negocio", "fusion": "no" } ] }
+    "special_hours": { "reglas": [ { "col": "created_by", "accion": "guardar", "porque": "negocio", "fusion": "no" } ] },
+    "subcategory_merges": { "equipo": ["created_by", "undone_by"] }
   }
 }

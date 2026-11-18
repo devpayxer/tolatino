@@ -52,6 +52,19 @@ export function catalogoVivo(c: SubsVivas) {
     S[k] = [...base, ...vivas.filter((x) => !base.some((y) => nS(y[0]!) === nS(x[0]))).map((x) => [x[0], x[1]])];
   }
 }
+/* 9n · Lo que el Catálogo del Super Admin decide para Publica (page.tsx lo lee de la base; al publicar, el servidor lo vuelve a leer): la
+   plantilla de horario y los ejemplos (placeholders) de cada categoría, y los límites del plan (Configuración). Son iguales en todas las
+   ciudades; las categorías apagadas en la ciudad viajan aparte (prop catsOff), porque cambian con la ciudad de quien publica. */
+export type PlantillaCat = { horario?: { on: boolean; a: number; b: number }[] | null; ph_nombre?: { es: string; en: string }; ph_item?: { es: string; en: string } };
+export type CatalogoPublica = { plantillas: Record<string, PlantillaCat>; limites: { items: number; fotos: number; ops: number } };
+let VIVO: CatalogoPublica = { plantillas: {}, limites: { items: 0, fotos: 0, ops: 0 } };
+export function plantillasVivas(c: CatalogoPublica) { VIVO = c; }
+export const limites = () => VIVO.limites;
+export const phDe = (cat: string | null, k: "ph_nombre" | "ph_item", es: boolean, def: [string, string]) => { const v = cat ? VIVO.plantillas[cat]?.[k] : null; return v ? (es ? v.es : v.en || v.es) : es ? def[0] : def[1]; };
+/* La plantilla de horario de la categoría (Iglesias no lleva: sale de sus cultos). Sin plantilla en la base, la del diseño. */
+export const plantillaHoras = (h: PlantillaCat["horario"]): Dia[] | null =>
+  Array.isArray(h) && h.length === 7 ? h.map((x) => ({ on: !!x.on, a: Number(x.a), b: Number(x.b), two: false, a2: 17, b2: 21 })) : null;
+export const horasDe = (cat: string, own: Record<string, unknown>): Dia[] => (cat !== "NEG-FE" && plantillaHoras(VIVO.plantillas[cat]?.horario)) || Fl.hours(cat, own);
 export const subL = (cat: string | null, sub: string, es: boolean) => { const s = cat ? Fl.subsOf(cat).find((x: string[]) => x[2] === sub) : null; return s ? (es ? s[0] : s[1]) : sub; };
 export function opOf(d: Borrador): string {
   const f = F(d); if (!f) return d.op || "local";
@@ -63,7 +76,7 @@ export function opOf(d: Borrador): string {
 }
 export const needZone = (op: string) => op === "casa" || op === "ambos";
 export function zoneOf(d: Borrador) { const f = F(d); if (f && f.zoneFrom) { const z = Number(own(d)[f.zoneFrom]); if (z) return z; } return Number(d.zone) || 10; }
-export const daysOf = (d: Borrador): Dia[] => d.days || (d.cat ? Fl.hours(d.cat, d.own) : [0, 1, 2, 3, 4, 5, 6].map((i) => ({ on: i < 5, a: 9, b: 18, two: false, a2: 17, b2: 21 })));
+export const daysOf = (d: Borrador): Dia[] => d.days || (d.cat ? horasDe(d.cat, d.own) : [0, 1, 2, 3, 4, 5, 6].map((i) => ({ on: i < 5, a: 9, b: 18, two: false, a2: 17, b2: 21 })));
 export function fmt(h: number) { const H = ((h % 24) + 24) % 24, hh = Math.floor(H), m = Math.round((H - hh) * 60); return `${hh % 12 || 12}${m ? ":" + String(m).padStart(2, "0") : ""} ${hh < 12 ? "AM" : "PM"}`; }
 
 export function status(d: Borrador, es: boolean, days = daysOf(d), t = ahora()) {

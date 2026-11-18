@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "./db";
-import { conFoto, condiciones, CTE, FOTO, type Regla } from "./categoria";
+import { CAT_EN_CIUDAD, conFoto, condiciones, CTE, FOTO, type Regla } from "./categoria";
 import type { Lang } from "./idioma";
 import { DENTRO, PUNTO_PUBLICO } from "./punto";
 import type { Ubicacion } from "./ubicacion";
@@ -51,7 +51,7 @@ export async function negociosMapa(loc: Ubicacion, o: { cat: string | null; sub:
             count(*) filter (where b.geo is not null and st_dwithin(b.geo, c.center, c.default_radius * 1609.34)) over () as adentro,
             count(*) filter (where b.geo is null) over () as sinpin
        from businesses b join business_stats_cache s on s.business_id = b.id, c, t
-      where b.city_id = $1 and b.status = 'active'
+      where b.city_id = $1 and b.status = 'active' and ${CAT_EN_CIUDAD("b")}
         and ${caja ? `b.geo is not null and st_intersects(b.geo::geometry, ${caja})` : `(${DENTRO("c.default_radius")} or st_dwithin(b.geo, c.center, c.default_radius * 2.6 * 1609.34))`}
         ${w.length ? "and " + w.join(" and ") : ""}${extra}
       order by b.geo is null, ${caja ? `b.geo::geometry <-> st_centroid(${caja})` : "st_distance(b.geo, c.center)"}, b.id
@@ -70,7 +70,7 @@ export async function puntosInicio(loc: Ubicacion, n = 40): Promise<{ lat: numbe
     `${CTE(loc)}
      select ${PUNTO_PUBLICO("b")}, s.plan = 'pro' as pro
        from businesses b join business_stats_cache s on s.business_id = b.id, c, t
-      where b.city_id = $1 and b.status = 'active' and b.geo is not null and st_dwithin(b.geo, c.center, c.default_radius * 1609.34)
+      where b.city_id = $1 and b.status = 'active' and ${CAT_EN_CIUDAD("b")} and b.geo is not null and st_dwithin(b.geo, c.center, c.default_radius * 1609.34)
       order by b.geo <-> c.center limit ${Math.max(1, Math.min(80, n))}`, [loc.ciudad]);
   return r.rows.filter((x) => x.lat != null && x.lng != null).map((x) => ({ lat: Number(x.lat), lng: Number(x.lng), pro: x.pro }));
 }

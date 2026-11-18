@@ -26,6 +26,13 @@ export type Orden = (typeof ORDENES)[number];
 export const POR_PAGINA = 10;
 const PAGINA_MAX = 100; // tope de páginas: nadie navega más allá; protege la base de offsets enormes.
 
+/* 9n · Categoría activa por ciudad (categories.off_cities, Super Admin › Catálogo): una categoría apagada en una ciudad no se ofrece ahí. Toda
+   lista pública de negocios lleva esta condición (DESDE la trae; guardián categoriaPorCiudad). */
+export const CAT_EN_CIUDAD = (b: string) => `not exists (select 1 from categories k where k.id = ${b}.category_id and ${b}.city_id = any(k.off_cities))`;
+export async function categoriaActivaEn(cat: string, ciudad: string) {
+  return (await db().query<{ ok: boolean }>(`select status = 'on' and not ($2 = any(off_cities)) as ok from categories where id = $1`, [cat, ciudad])).rows[0]?.ok === true;
+}
+
 export async function categoriaPorSlug(slug: string) {
   const r = await db().query<{ id: string; es: string; page: Pagina; page_admin: Partial<Pagina> }>(
     `select id, short->>'es' as es, page, page_admin from categories where status = 'on' order by sort`);
@@ -111,7 +118,7 @@ export const COLUMNAS = `b.id, b.category_id as cat, b.name, s.plan = 'pro' as p
                    coalesce(s.rating_avg, 0) * ln(s.review_count + 2) as score,
                    extract(day from t.t)::int as dia`;
 export const DESDE = `from businesses b join business_stats_cache s on s.business_id = b.id, c, t
-             where b.city_id = $1 and b.status = 'active'
+             where b.city_id = $1 and b.status = 'active' and ${CAT_EN_CIUDAD("b")}
                and ${DENTRO("c.default_radius")}`;
 export const FOTO = (x: string) =>
   `(select m.url from media m where m.owner_kind = 'business' and m.owner_id = ${x}.id and m.status = 'visible' order by m.sort limit 1) as photo`;
@@ -200,7 +207,7 @@ export async function nuevos(p: Punto, n: number): Promise<Resultado[]> {
 export async function conteos(p: Punto): Promise<Map<string, number>> {
   const r = await db().query<{ cat: string; n: number }>(
     `${CTE(p)} select b.category_id as cat, count(*)::int as n from businesses b, c
-      where b.city_id = $1 and b.status = 'active' and ${DENTRO("c.default_radius")} group by b.category_id`, [p.ciudad]);
+      where b.city_id = $1 and b.status = 'active' and ${CAT_EN_CIUDAD("b")} and ${DENTRO("c.default_radius")} group by b.category_id`, [p.ciudad]);
   return new Map(r.rows.map((x) => [x.cat, x.n]));
 }
 

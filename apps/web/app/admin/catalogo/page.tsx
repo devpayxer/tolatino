@@ -1,10 +1,9 @@
 import { notFound } from "next/navigation";
 import { requerir } from "@/lib/admin";
-import { categoriaAdmin, categoriasAdmin, filtrosAdmin, frasesViviendaJusta, cargoDealer, historial, modulosAdmin, segurosAdmin, SIN_POR_PAGINA, sinOferta, sinonimos } from "@/lib/admin-catalogo";
-import { valor } from "@/lib/config";
+import { categoriaAdmin, categoriasAdmin, filtrosAdmin, frasesViviendaJusta, cargoDealer, historial, historialModulos, limitesPlan, moduloAdmin, modulosAdmin, segurosAdmin, SIN_POR_PAGINA, sinOferta, sinonimos } from "@/lib/admin-catalogo";
 import { Catalogo, type DatosCatalogo } from "../Catalogo";
 
-/* ADM-CAT · Catálogo. ?tab= cats | syn | nosup | filt | mod | seg | vj | dealer · ?c= detalle de una categoría · ?f= sus filtros. */
+/* ADM-CAT · Catálogo. ?tab= cats | syn | nosup | filt | mod | seg | vj | dealer · ?c= detalle de una categoría · ?f= sus filtros · ?m= un módulo. */
 const TABS = new Set(["cats", "syn", "nosup", "filt", "mod", "seg", "vj", "dealer"]);
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const s = await requerir("cat", "ver");
@@ -20,6 +19,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     if (!filt) notFound();
     return <Catalogo d={{ tab: "filt", puede, filt }} />;
   }
+  // 9n · Un módulo: activo por ciudad y sus límites del plan.
+  if (sp.m) {
+    const [mod, limites] = await Promise.all([moduloAdmin(sp.m), limitesPlan()]);
+    if (!mod) notFound();
+    return <Catalogo d={{ tab: "mod", puede, mod, limites: { filas: limites.filter((l) => l.mods.includes(mod.key)), admin: s.role === "admin" && puede } }} />;
+  }
   const tab = TABS.has(sp.tab ?? "") ? sp.tab! : "cats";
   const d: DatosCatalogo = { tab, puede };
   if (tab === "cats" || tab === "filt") d.cats = await categoriasAdmin();
@@ -29,7 +34,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     d.sin = { ...r, q, pag, porPagina: SIN_POR_PAGINA, historial: h };
   }
   if (tab === "nosup") d.nosup = await sinOferta(s);
-  if (tab === "mod") { d.mods = await modulosAdmin(); d.topeFree = await valor("free_ops_cap"); }
+  // 9n · Módulos y Free/Pro: los límites del plan se leen de Configuración (lib/config.ts) y un Admin los cambia aquí.
+  if (tab === "mod") {
+    const [mods, limites, h] = await Promise.all([modulosAdmin(), limitesPlan(), historialModulos()]);
+    d.mods = mods; d.limites = { filas: limites, admin: s.role === "admin" && puede }; d.histMod = h;
+  }
   // Vivienda justa (4ib): la lista la ve quien ve el Catálogo; solo un Admin la cambia.
   if (tab === "vj") d.vj = { ...(await frasesViviendaJusta()), admin: s.role === "admin" };
   // Cargo del dealer (4ic): el tope de PA lo ve quien ve el Catálogo; solo un Admin lo cambia.

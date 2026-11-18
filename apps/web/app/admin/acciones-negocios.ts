@@ -354,8 +354,10 @@ export async function moduloPausar(id: string, modulo: "menu" | "pedidos" | "del
   // 6b · Eventos: pausado, ninguno de sus eventos sale al público (la base vuelve a calcular `listable`); el panel dice el motivo.
   const nombre = modulo === "eventos" ? "Eventos" : modulo === "svc" ? "Servicios" : modulo === "citas" ? "Citas" : modulo === "menu" ? "Menú" : modulo === "jobs" ? "Jobs" : modulo === "nov" ? "Novedades" : modulo === "rsv" ? "Reservaciones" : modulo === "delivery" ? "Delivery" : "Pedidos en línea";
   return hacer(id, "retirar", motivo, async (c, s, b, m) => {
-    const cur = (await c.query<{ off: Record<string, unknown> }>(`select modules_off as off from businesses where id = $1`, [b.id])).rows[0]?.off ?? {};
+    const cur = (await c.query<{ off: Record<string, { ciudad?: boolean } | undefined> }>(`select modules_off as off from businesses where id = $1`, [b.id])).rows[0]?.off ?? {};
     if (!!cur[modulo] === pausar) return pausar ? "Ya está pausado." : "No está pausado.";
+    // 9n · La pausa de toda la ciudad (Catálogo › Módulos › activo por ciudad) se quita allí, para todos sus negocios a la vez.
+    if (!pausar && cur[modulo]?.ciudad === true) return "Está apagado en toda su ciudad: se enciende en Catálogo › Módulos.";
     await c.query(pausar ? `update businesses set modules_off = modules_off || jsonb_build_object($2::text, jsonb_build_object('reason', $3::text, 'at', now(), 'by', $4::text)), updated_at = now() where id = $1`
       : `update businesses set modules_off = modules_off - $2::text, updated_at = now() where id = $1`, pausar ? [b.id, modulo, m, s.id] : [b.id, modulo]);
     await auditar(c, { actor: s.id, action: pausar ? "negocio.modulo.pausar" : "negocio.modulo.reanudar", targetKind: "business", targetId: b.id, city: b.city_id, before: { modulo: nombre, estado: pausar ? "activo" : "pausado" }, after: { estado: pausar ? "pausado" : "activo" }, reason: m });

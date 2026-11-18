@@ -3,7 +3,7 @@
    Tal cual el diseño; las reglas vienen del prototipo (lib/onb/datos.ts). */
 import * as UI from "@tolatino/ui";
 import type { ComponentType, CSSProperties } from "react";
-import { cap, F, Fl, opOf, own, TILES, X, ZERO, money, type Borrador } from "./logica";
+import { cap, F, Fl, opOf, own, phDe, TILES, X, ZERO, money, type Borrador } from "./logica";
 
 import { tec } from "@/lib/tec";
 import { dosIdiomas } from "@/lib/dos-idiomas";
@@ -15,12 +15,13 @@ export const K: CSSProperties = { font: `700 10px ${MONO}`, letterSpacing: ".14e
 export type UiB = { q: string; allCats: boolean; moreSubs: boolean; dupOk: boolean };
 type Up = (p: Partial<Borrador> | ((d: Borrador) => Partial<Borrador>)) => void;
 
-export function PasoB1({ d, up, ui, setUi, es, desk, dup, onClaim, toast }: {
+export function PasoB1({ d, up, ui, setUi, es, desk, dup, onClaim, toast, off }: {
   d: Borrador; up: Up; ui: UiB; setUi: (p: Partial<UiB>) => void; es: boolean; desk: boolean;
+  off: string[]; // 9n · las categorías apagadas en la ciudad (Super Admin › Catálogo): no se ofrecen (el servidor tampoco las publica)
   dup: { id: string; name: string } | null; onClaim: () => void; toast: (t: string) => void;
 }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b), q = ui.q || "", kc = d.cat ? X.cat(d.cat) : null;
-  const res: { cat: string; sub: string; en: string }[] = q.trim().length >= 2 ? X.search(q).filter((r: { sub?: string }) => r.sub && r.sub.length < 60 && !/\*\*/.test(r.sub)) : [];
+  const res: { cat: string; sub: string; en: string }[] = q.trim().length >= 2 ? X.search(q).filter((r: { cat: string; sub?: string }) => r.sub && r.sub.length < 60 && !/\*\*/.test(r.sub) && !off.includes(r.cat)) : [];
   const setCat = (c: string) => { if (c !== d.cat) up({ cat: c, subs: [], own: {}, sel: {}, cust: [], op: null, days: null, tpl: null, cita: false, join: null, joinName: "", via: "list" }); setUi({ allCats: false, moreSubs: false, q: "" }); };
   const togSub = (sub: string) => { const S = d.subs || []; if (S.includes(sub)) return up({ subs: S.filter((x) => x !== sub), sel: {} }); if (S.length >= 3) return toast(E2("Hasta 3. Quita una para cambiarla.", "Up to 3. Remove one to change it.")); up({ subs: S.concat([sub]), sel: {} }); };
   const inT = TILES.some((t) => t[0] === d.cat);
@@ -51,12 +52,12 @@ export function PasoB1({ d, up, ui, setUi, es, desk, dup, onClaim, toast }: {
       ) : null}
       {q.trim().length >= 2 && !res.length ? <div style={{ font: "500 13px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2("No lo encontramos. Elige tu categoría abajo y busca lo que haces en «Otra».", "We could not find it. Pick your category below and look under “Other”.")}</div> : null}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 9 }}>
-        {TILES.map((t) => tile(t[0], es ? t[1] : t[2], t[3], () => setCat(t[0]), d.cat === t[0]))}
+        {TILES.filter((t) => !off.includes(t[0])).map((t) => tile(t[0], es ? t[1] : t[2], t[3], () => setCat(t[0]), d.cat === t[0]))}
         {tile(null, ui.allCats ? E2("Menos", "Less") : E2("Todas", "All"), "grid", () => setUi({ allCats: !ui.allCats }), false, !inT && !!d.cat)}
       </div>
       {ui.allCats ? (
         <div style={{ display: "grid", gridTemplateColumns: desk ? "repeat(2,minmax(0,1fr))" : "minmax(0,1fr)", gap: 6 }}>
-          {(X.CATS as string[][]).map((k) => { const on = d.cat === k[0]; return (
+          {(X.CATS as string[][]).filter((k) => !off.includes(k[0]!)).map((k) => { const on = d.cat === k[0]; return (
             <div key={k[0]} role="button" onClick={() => setCat(k[0]!)} {...tec(() => setCat(k[0]!))} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 13, background: on ? "var(--tl-ink)" : "var(--tl-white)", color: on ? "var(--tl-white)" : "var(--tl-ink)", border: `1px solid ${on ? "var(--tl-ink)" : "rgba(11,14,18,.1)"}`, cursor: "pointer", minWidth: 0 }}>
               <Icon name={k[3]} size={17} color={on ? "var(--tl-white)" : "var(--tl-ink)"} /><span style={{ minWidth: 0, font: "700 13px/1.3 Manrope,sans-serif" }}>{es ? k[1] : k[2]}</span>
             </div>); })}
@@ -77,7 +78,7 @@ export function PasoB1({ d, up, ui, setUi, es, desk, dup, onClaim, toast }: {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
             <span style={K}>{E2("EL NOMBRE DE TU NEGOCIO", "YOUR BUSINESS NAME")}</span>
-            <input value={d.name || ""} onChange={(e) => { up({ name: e.target.value.slice(0, 48) }); if (ui.dupOk) setUi({ dupOk: false }); }} placeholder={E2("Ej.: Barbería Don Fello", "E.g. Barbería Don Fello")} autoComplete="organization" aria-label={E2("Nombre del negocio", "Business name")} style={{ height: 52, boxSizing: "border-box", borderRadius: 14, border: `1.5px solid ${(d.name || "").trim().length >= 2 ? "var(--tl-ink)" : "rgba(11,14,18,.14)"}`, background: "var(--tl-white)", padding: "0 14px", outline: "none", font: "700 16px Manrope,sans-serif", color: "var(--tl-ink)", width: "100%" }} />
+            <input value={d.name || ""} onChange={(e) => { up({ name: e.target.value.slice(0, 48) }); if (ui.dupOk) setUi({ dupOk: false }); }} placeholder={phDe(d.cat, "ph_nombre", es, ["Ej.: Barbería Don Fello", "E.g. Barbería Don Fello"])} autoComplete="organization" aria-label={E2("Nombre del negocio", "Business name")} style={{ height: 52, boxSizing: "border-box", borderRadius: 14, border: `1.5px solid ${(d.name || "").trim().length >= 2 ? "var(--tl-ink)" : "rgba(11,14,18,.14)"}`, background: "var(--tl-white)", padding: "0 14px", outline: "none", font: "700 16px Manrope,sans-serif", color: "var(--tl-ink)", width: "100%" }} />
             <span style={{ font: "500 12.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2("Así sale en la búsqueda y en tu página.", "This is how it shows in search and on your page.")}</span>
           </div>
           {dup && !ui.dupOk ? (

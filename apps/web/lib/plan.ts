@@ -4,8 +4,7 @@
    Configuración (free_ops_cap, 10 de fábrica; 9n-6): se lee con valor()/cfgSql() de lib/config.ts, nunca una copia aquí. */
 export const PRECIO_PRO = 14.99;
 export const PRUEBA_DIAS = 30;
-export const FOTOS_FREE = 3; // PLAN: «Free = una página, 5 ítems, 3 fotos»
-export const ITEMS_FREE = 5;
-export const FOTOS_PRO = 60; // tope de lectura de la galería Pro
-export const EQUIPO_FREE = 1; // con Free sale 1 persona (el dueño)
+// 9n · Los límites Free/Pro (ítems y fotos que se ven con Free, fotos de un Pro, personas del equipo con Free) son valores de Configuración
+// (free_items, free_fotos, pro_fotos, free_equipo; 0179) que un Admin cambia en Catálogo › Módulos y Free/Pro: se leen con valor()/cfgSql()
+// de lib/config.ts, nunca una copia aquí (guardián limitesDelPlan).
 export const dinero = (n: number) => `$${n.toFixed(2)}`;

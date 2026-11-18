@@ -1,6 +1,6 @@
 /* «Tu página en vivo» (pieza BusinessPreview): se arma con lo que la persona llena. Llevado de pvOf() del diseño; la
    ciudad, el día de hoy y la fecha de «en To'Latino desde» son los reales. Pura. */
-import { ahora, cap, DAYS, daysOf, derive, F, fmt, items, metaOf, money, needZone, opOf, priceL, status, subL, X, zoneOf, type Borrador } from "./logica";
+import { ahora, cap, DAYS, daysOf, derive, F, fmt, items, limites, metaOf, money, needZone, opOf, priceL, status, subL, X, zoneOf, type Borrador } from "./logica";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 
 const MESES = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
@@ -41,7 +41,7 @@ export function vista(d: Borrador, es: boolean, o: { ciudad: string; usuario: { 
     trust: [{ icon: "phone", label: E2("Teléfono verificado", "Verified phone"), tone: "ok" }].concat(lic ? [{ icon: "shield", label: E2("Licencias en revisión", "Licenses in review"), tone: "wait" }] : []).concat([{ icon: "calendar", label: E2(`En To'Latino desde ${mes[0]} ${hoy.getFullYear()}`, `On To'Latino since ${mes[1]} ${hoy.getFullYear()}`), tone: "info" }]),
     tc: { eyebrow: `${E2("HOY · ", "TODAY · ")}${diaN} ${hoy.getDate()} ${(es ? mes[0] : mes[1])!.toUpperCase()}`, title: stt.s, dot: stt.dot, sub: how, cols: [{ k: E2("HOY", "TODAY"), v: tdy.on ? fmt(tdy.a) + " – " + fmt(tdy.b) : E2("Cerrado", "Closed") }, { k: E2("PAGO", "PAYMENT"), v: E2("En el local", "In person") }, { k: E2("IDIOMA", "LANGUAGE"), v: E2("Español", "Spanish") }] },
     hours, sched: [], amen, hasAmen: amen.length > 0, addr, addrMeta, isZone: needZone(op), zoneD: Math.min(128, 36 + zone * 3) + "px", staff: [],
-    photos: [d.cover].concat(d.gallery || []).filter(Boolean).map((p) => `url("${o.foto(p as string, 300)}")`), freePhotos: X.FREE_PHOTOS || 3, line: "", hasLine: false, sealPend: false,
-    lbl: { blockPro: E2("EN RESULTADOS · DESTACADOS", "IN RESULTS · FEATURED"), blockFree: E2(`EN RESULTADOS · TAMBIÉN EN ${CIU}`, `IN RESULTS · ALSO IN ${CIU}`), call: E2("Llamar", "Call"), coverHere: E2("TU PORTADA VA AQUÍ", "YOUR COVER GOES HERE"), photos: E2("Fotos", "Photos"), hours: E2("Horario", "Hours"), map: op === "casa" ? E2("Zona de servicio", "Service area") : E2("Cómo llegar", "Directions"), about: E2("Quiénes somos", "About us"), team: E2("Equipo", "Team"), holi: E2("FERIADO", "HOLIDAY"), freeCap: E2("FREE MUESTRA 5 · TIENES ", "FREE SHOWS 5 · YOU HAVE ") + lista.length, sealPend: E2("SELLO EN REVISIÓN", "BADGE IN REVIEW") },
+    photos: [d.cover].concat(d.gallery || []).filter(Boolean).map((p) => `url("${o.foto(p as string, 300)}")`), freePhotos: limites().fotos, line: "", hasLine: false, sealPend: false,
+    lbl: { blockPro: E2("EN RESULTADOS · DESTACADOS", "IN RESULTS · FEATURED"), blockFree: E2(`EN RESULTADOS · TAMBIÉN EN ${CIU}`, `IN RESULTS · ALSO IN ${CIU}`), call: E2("Llamar", "Call"), coverHere: E2("TU PORTADA VA AQUÍ", "YOUR COVER GOES HERE"), photos: E2("Fotos", "Photos"), hours: E2("Horario", "Hours"), map: op === "casa" ? E2("Zona de servicio", "Service area") : E2("Cómo llegar", "Directions"), about: E2("Quiénes somos", "About us"), team: E2("Equipo", "Team"), holi: E2("FERIADO", "HOLIDAY"), freeCap: E2(`FREE MUESTRA ${limites().items} · TIENES `, `FREE SHOWS ${limites().items} · YOU HAVE `) + lista.length, sealPend: E2("SELLO EN REVISIÓN", "BADGE IN REVIEW") },
   };
 }

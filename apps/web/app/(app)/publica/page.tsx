@@ -4,7 +4,8 @@ import { db } from "@/lib/db";
 import { ENTORNO } from "@/lib/entorno";
 import { idioma } from "@/lib/idioma";
 import { ubicacion } from "@/lib/ubicacion";
-import type { Borrador } from "./logica";
+import type { Borrador, CatalogoPublica, PlantillaCat } from "./logica";
+import { valores } from "@/lib/config";
 import { Publica } from "./Publica";
 
 export const dynamic = "force-dynamic";
@@ -25,11 +26,18 @@ export default async function Page() {
   const subs: Record<string, [string, string][]> = {};
   for (const x of (await db().query<{ cat: string; es: string; en: string }>(
     `select category_id as cat, name->>'es' as es, coalesce(nullif(name->>'en', ''), name->>'es') as en from subcategorias_vivas order by category_id, sort`)).rows) (subs[x.cat] ??= []).push([x.es, x.en]);
+  // 9n · Lo que el Catálogo decide para Publica: las categorías apagadas en esta ciudad, la plantilla de horario y los ejemplos de cada
+  // categoría, y los límites del plan (Configuración).
+  const [cats, lim] = await Promise.all([
+    db().query<{ id: string; onb: PlantillaCat; off: boolean }>(`select id, onb, (status <> 'on' or $1 = any(off_cities)) as off from categories`, [loc.ciudad]),
+    valores("free_items", "free_fotos", "free_ops_cap"),
+  ]);
+  const catalogo: CatalogoPublica = { plantillas: Object.fromEntries(cats.rows.map((x) => [x.id, x.onb ?? {}])), limites: { items: lim.free_items, fotos: lim.free_fotos, ops: lim.free_ops_cap } };
   const nombre = u ? { nombre: [u.first_name, u.last_name?.[0] ? `${u.last_name[0]}.` : ""].filter(Boolean).join(" ") || u.nick || "", primero: u.first_name ?? "" } : null;
   const mes = (s: string | null) => (s && lang === "es" ? s.replace(/Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/, (m) => ({ Jan: "ene", Feb: "feb", Mar: "mar", Apr: "abr", May: "may", Jun: "jun", Jul: "jul", Aug: "ago", Sep: "sep", Oct: "oct", Nov: "nov", Dec: "dic" })[m]!) : s ?? "");
   return (
     <Publica v={{
-      lang, subs, ciudad: loc.c.name, ciudadId: loc.ciudad, usuario: nombre, prueba: ENTORNO !== "produccion",
+      lang, subs, catsOff: cats.rows.filter((x) => x.off).map((x) => x.id), catalogo, ciudad: loc.c.name, ciudadId: loc.ciudad, usuario: nombre, prueba: ENTORNO !== "produccion",
       inicial: r && !r.business_id ? { paso: r.step, d: r.answers } : null,
       publicado: r?.business_id ? { id: r.business_id, nombre: r.name ?? "", minutos: r.minutos ?? 0, hasta: mes(r.hasta), items: r.items, fotos: r.fotos } : null,
     }} />

@@ -5368,3 +5368,31 @@ Textos y páginas › Cadenas**, sin haber reescrito ni uno. Nada se ve distinto
   después (sin cambios).
 - Quien escribe código: después de tocar un `E2("…", "…")` corre `node scripts/cms/extraer.mjs` (el guardián `cadenaConLlave` lo pide); un `E2` nuevo se define
   con `dosIdiomas` (o corre `node scripts/cms/e2-al-cms.mjs`, que lo convierte; se puede correr las veces que sea).
+
+## Catálogo completo (18 nov · 0179) — mirar
+En el sandbox, Super Admin › **Catálogo** › una categoría (p. ej. Comida): cada subcategoría tiene **Editar**, **Mover**, **Fusionar** y **Quitar**;
+abajo, **ACTIVA POR CIUDAD** (un interruptor por ciudad) y **PUBLICA TU NEGOCIO** (la plantilla de horario y los dos ejemplos). En **Módulos y
+Free/Pro**, cada módulo abre su detalle con su interruptor por ciudad, y abajo están los **LÍMITES FREE Y PRO** con «Cambiar». Cada cambio dice antes a
+cuántos negocios afecta y pide motivo. **Decidí (dime si no):**
+- **Mover no cambia el código** de la subcategoría (`NEG-FOOD-10` sigue siéndolo aunque viva en Mercados): los negocios, los sinónimos, los mosaicos
+  de la página de la categoría y algunas reglas del código la nombran por su código; cambiarlo rompería esas referencias y no se puede deshacer
+  limpio. «Agregar» en la categoría de antes nunca repite ese código. El código de una movida sale en gris en su fila.
+- **Mover deja a cada negocio en su categoría**: un taller de Auto con la etiqueta movida a Hogar sigue siendo de Auto (cambiar de categoría a un
+  negocio es un cambio grande que pide el dueño; ya existe ese flujo).
+- **Fusionar solo dentro de la misma categoría** (para juntar dos de categorías distintas: mover y después fusionar). Al fusionar A en B: los negocios
+  con A pasan a B (quien tenía las dos se queda con B), los sinónimos que llevaban a A llevan a B, y el **nombre de A queda como sinónimo de B** para
+  que quien lo busque encuentre lo que ahora es B. Todo se anota y **«Separar» lo deshace** (A vuelve a esos negocios, los sinónimos como estaban).
+- **Categoría apagada en una ciudad:** su página responde «no existe» (404) en esa ciudad — **no hay diseño** de «esta categoría todavía no está en
+  tu ciudad»; si lo quieres, hay que diseñarlo. Sus negocios no salen en Negocios, Buscar, el mapa ni los destacados, pero **su ficha se conserva**
+  (se entra por su enlace). En «Recomendar» un vecino sí puede elegirla (es pedir que llegue).
+- **Módulo apagado en una ciudad** = la misma pausa que pone Negocios 360° a un negocio, para todos los de esa ciudad (y los nuevos). El dueño ve el
+  motivo en su panel. **Cotizaciones y Staff** no tienen esa pausa en su página: no se ofrecen por ciudad todavía (LAUNCH).
+- **Plantilla de horario y ejemplos:** la semilla son exactamente los que ya se veían (el ejemplo del nombre es «Ej.: Barbería Don Fello» en todas
+  las categorías, el del ítem «Nombre»): nada cambia hasta que los edites. Iglesias no lleva plantilla (su horario sale de los cultos).
+- **Límites Free/Pro** viven en Configuración (los mismos valores en Sistema › Configuración › Negocios) y **solo un Admin** los cambia (como toda la
+  Configuración). Son: ítems con Free (5), pedidos o citas en línea al mes con Free (10), fotos con Free (3), fotos con Pro (60), personas del equipo con
+  Free (1). **Un solo número de ítems** para Menú, Servicios y Tienda (el módulo principal de cada negocio). **Ojo:** hoy solo el **Menú** corta los
+  ítems de un Free en su página; en Servicios y Tienda la página de un Free todavía los muestra todos (era así antes; LAUNCH). La matriz «qué ve Free
+  y qué ve Pro» sigue de solo lectura (los sí/no por campo); sus cifras ya salen de los límites.
+- Un borrador de «Publica tu negocio» a medias que eligió una subcategoría que después se **renombró** la pierde al publicar (se guarda por nombre):
+  la persona la vuelve a elegir. Raro; si molesta, se guarda por código.

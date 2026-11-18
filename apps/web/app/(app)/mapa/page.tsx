@@ -20,7 +20,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   const loc = await ubicacion(u);
   if (loc.c.status !== "on") return <PantallaPronto loc={loc} lang={lang} userId={u?.id ?? null} />;
   const es = lang === "es";
-  const cats = await categorias(lang);
+  const cats = await categorias(lang, loc.ciudad); // 9n · sin las apagadas en la ciudad
   const c = typeof sp.cat === "string" ? await categoriaPorSlug(sp.cat) : null;
   const ctx = !!c && sp.ctx === "1";
   // Del contexto de la categoría: mosaico y filtros, validados contra lo que la categoría ofrece.

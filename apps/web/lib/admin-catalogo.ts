@@ -1,6 +1,6 @@
 import "server-only";
 import type { Staff } from "./admin";
-import { cfgSql } from "./config";
+import { catalogoConfig, cfgSql } from "./config";
 import { db } from "./db";
 import { slugCat } from "./directorio";
 
@@ -21,17 +21,24 @@ export async function categoriasAdmin() {
        from categories c order by negocios desc, c.sort`)).rows;
 }
 
+export type Bi = { es: string; en: string };
+export type DiaPlantilla = { on: boolean; a: number; b: number };
+export type OnbCategoria = { horario?: DiaPlantilla[] | null; ph_nombre?: Bi; ph_item?: Bi };
+
 export async function categoriaAdmin(id: string) {
   if (!/^NEG-[A-Z]+$/.test(id)) return null;
-  const c = (await db().query<{ id: string; es: string; en: string; icon: string; op_kind: string | null; line: { es: string; en: string } | null; title: string | null; capitulos: number }>(
+  const c = (await db().query<{ id: string; es: string; en: string; icon: string; op_kind: string | null; line: { es: string; en: string } | null; title: string | null; capitulos: number; onb: OnbCategoria; off: string[] }>(
     `select id, name->>'es' as es, name->>'en' as en, icon, op_kind, fixed_line as line, page->'title'->>'es' as title,
-            coalesce(jsonb_array_length(page->'chapters'), 0) as capitulos from categories where id = $1`, [id])).rows[0];
+            coalesce(jsonb_array_length(page->'chapters'), 0) as capitulos, onb, off_cities as off from categories where id = $1`, [id])).rows[0];
   if (!c) return null;
-  const [subs, negocios, rapidos, hist] = await Promise.all([
-    db().query<{ id: string; es: string; en: string; status: string; n: number; equipo: boolean; reason: string | null }>(
+  const [subs, negocios, rapidos, hist, ciudades, otras] = await Promise.all([
+    // 9n · Las fusionadas salen con el nombre de la que las recibió (Separar las devuelve).
+    db().query<{ id: string; es: string; en: string; status: string; n: number; equipo: boolean; reason: string | null; into_id: string | null; into_es: string | null }>(
       `select s.id, s.name->>'es' as es, s.name->>'en' as en, s.status, s.created_by is not null as equipo, s.status_reason as reason,
-              (select count(*)::int from businesses b where b.subcategory_ids @> array[s.id] and b.status = 'active') as n
-         from subcategories s where s.category_id = $1 order by s.sort, s.id`, [id]),
+              s.merged_into as into_id, d.name->>'es' as into_es,
+              case when s.status = 'merged' then coalesce((select cardinality(m.business_ids) from subcategory_merges m where m.from_id = s.id and m.undone_at is null), 0)
+                   else (select count(*)::int from businesses b where b.subcategory_ids @> array[s.id] and b.status = 'active') end as n
+         from subcategories s left join subcategories d on d.id = s.merged_into where s.category_id = $1 order by s.sort, s.id`, [id]),
     db().query<{ id: string; name: string; plan: string; verified: boolean; cover: string | null }>(
       `select b.id, b.name, coalesce(st.plan, 'free') as plan, coalesce(st.verified, false) as verified,
               (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1) as cover
@@ -39,8 +46,14 @@ export async function categoriaAdmin(id: string) {
         order by (st.plan = 'pro') desc nulls last, st.review_count desc nulls last, b.name limit 4`, [id]),
     db().query<{ label: string }>(`select label->>'es' as label from filter_options where category_id = $1 and quick and active order by sort`, [id]),
     historial(["category", "subcategory"], id),
+    // 9n · Activa por ciudad: cada ciudad con cuántos negocios activos de la categoría tiene (lo que afecta apagarla).
+    db().query<{ id: string; name: string; status: string; negocios: number }>(
+      `select ci.id, ci.name, ci.status, (select count(*)::int from businesses b where b.category_id = $1 and b.city_id = ci.id and b.status = 'active') as negocios
+         from cities ci order by ci.sort, ci.id`, [id]),
+    db().query<{ id: string; es: string; en: string }>(`select id, name->>'es' as es, name->>'en' as en from categories where id <> $1 order by sort`, [id]),
   ]);
-  return { ...c, subs: subs.rows, negocios: negocios.rows, rapidos: rapidos.rows.map((x) => x.label), historial: hist };
+  return { ...c, subs: subs.rows, negocios: negocios.rows, rapidos: rapidos.rows.map((x) => x.label), historial: hist,
+    ciudades: ciudades.rows.map((x) => ({ ...x, on: !c.off.includes(x.id) })), otras: otras.rows };
 }
 
 /* Historial de lo que el equipo cambió en el catálogo (auditoría, solo inserción). `clave` acota a una categoría. */
@@ -48,7 +61,8 @@ export async function historial(kinds: string[], clave: string | null) {
   return (await db().query<{ action: string; target_id: string; before: unknown; after: unknown; reason: string | null; at: string; quien: string | null }>(
     `select e.action, e.target_id, e.before, e.after, e.reason, e.at, ${NOMBRE("a")} as quien
        from audit_entries e left join users a on a.id::text = e.actor_id
-      where e.target_kind = any($1::text[]) and ($2::text is null or e.target_id = $2 or e.target_id like $2 || '-%' or e.meta->>'categoria' = $2)
+      where e.target_kind = any($1::text[]) and ($2::text is null or e.target_id = $2 or e.target_id like $2 || '-%' or e.meta->>'categoria' = $2
+             or (e.target_kind = 'subcategory' and e.target_id in (select id from subcategories where category_id = $2)))
       order by e.at desc limit 20`, [kinds, clave])).rows;
 }
 
@@ -95,12 +109,54 @@ export async function filtrosAdmin(id: string) {
   return { id, es: c.es, slug: slugCat(c.short), opciones: r.rows, historial: hist };
 }
 
+/* 9n · Los módulos que se apagan por ciudad: los que la ficha, los pedidos y las citas ya pausan con businesses.modules_off (la misma pausa
+   que el equipo pone a un negocio en Negocios 360°). Cotizaciones y Staff todavía no tienen esa pausa: no se ofrecen aquí. */
+export const MODULOS_POR_CIUDAD = ["menu", "pedidos", "rsv", "svc", "citas", "shop", "renta", "eventos", "nov", "jobs"] as const;
+
 export async function modulosAdmin() {
-  const [m, c] = await Promise.all([
-    db().query<{ key: string; es: string }>(`select key, name->>'es' as es from module_types order by key`),
+  const [m, c, ci] = await Promise.all([
+    db().query<{ key: string; es: string; en: string; off: string[] }>(`select key, name->>'es' as es, coalesce(name->>'en', name->>'es') as en, off_cities as off from module_types order by key`),
     db().query<{ id: string; short: string; mods: string[] }>(`select id, short->>'es' as short, array(select jsonb_array_elements_text(allowed_modules)) as mods from categories where status = 'on' order by sort`),
+    db().query<{ id: string; name: string }>(`select id, name from cities order by sort, id`),
   ]);
-  return m.rows.map((x) => ({ ...x, cats: c.rows.filter((k) => k.mods.includes(x.key)).map((k) => k.short) }));
+  return m.rows.map((x) => ({ ...x, cats: c.rows.filter((k) => k.mods.includes(x.key)).map((k) => k.short), apagado: ci.rows.filter((k) => x.off.includes(k.id)).map((k) => k.name) }));
+}
+
+/* 9n · Un módulo: en qué ciudades está encendido (con cuántos negocios lo tienen encendido en cada una) y su historial. */
+export async function moduloAdmin(key: string) {
+  if (!/^[a-z]{2,12}$/.test(key)) return null;
+  const m = (await db().query<{ key: string; es: string; en: string; off: string[] }>(`select key, name->>'es' as es, name->>'en' as en, off_cities as off from module_types where key = $1`, [key])).rows[0];
+  if (!m) return null;
+  const [ciudades, cats, hist] = await Promise.all([
+    db().query<{ id: string; name: string; status: string; negocios: number }>(
+      `select ci.id, ci.name, ci.status, (select count(*)::int from businesses b where b.city_id = ci.id and b.status = 'active' and $1 = any(b.modules_on)) as negocios
+         from cities ci order by ci.sort, ci.id`, [key]),
+    db().query<{ short: string }>(`select short->>'es' as short from categories where status = 'on' and allowed_modules ? $1 order by sort`, [key]),
+    historial(["module_type"], key),
+  ]);
+  return { ...m, cats: cats.rows.map((x) => x.short), ciudades: ciudades.rows.map((x) => ({ ...x, on: !m.off.includes(x.id) })), porCiudad: (MODULOS_POR_CIUDAD as readonly string[]).includes(key), historial: hist };
+}
+
+/* 9n · Límites del plan (config_keys de la sección «negocios» y el techo de Free): se leen con lib/config.ts; un Admin los cambia aquí o en
+   Configuración (cambiarConfig: límites, auditoría antes → después). `mods` dice a qué módulos toca cada uno. */
+export const LIMITES_PLAN = [
+  { key: "free_items", mods: ["menu", "svc", "shop"] }, { key: "free_ops_cap", mods: ["pedidos", "citas"] },
+  { key: "free_fotos", mods: [] }, { key: "pro_fotos", mods: [] }, { key: "free_equipo", mods: ["staff"] },
+] as const;
+/* Lo que el equipo cambió en los módulos (por ciudad) y en los límites del plan. */
+export async function historialModulos() {
+  return (await db().query<{ action: string; target_id: string; before: unknown; after: unknown; reason: string | null; at: string; quien: string | null }>(
+    `select e.action, e.target_id, e.before, e.after, e.reason, e.at, ${NOMBRE("a")} as quien
+       from audit_entries e left join users a on a.id::text = e.actor_id
+      where e.target_kind = 'module_type' or (e.target_kind = 'platform_config' and e.target_id = any($1::text[]))
+      order by e.at desc limit 20`, [LIMITES_PLAN.map((l) => l.key)])).rows;
+}
+export async function limitesPlan() {
+  const todas = await catalogoConfig();
+  return LIMITES_PLAN.map((l) => {
+    const f = todas.find((x) => x.key === l.key)!;
+    return { key: l.key, mods: [...l.mods] as string[], label: f.label, help: f.help, unidad: f.unidad, min: f.min, max: f.max, def: f.def, v: f.v, at: f.at, quien: f.quien };
+  });
 }
 
 /* Catálogo › Seguros (4h-3): el catálogo de Pensilvania con cuántos consultorios lo aceptan y cuántas personas lo

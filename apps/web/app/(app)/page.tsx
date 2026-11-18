@@ -30,7 +30,7 @@ export default async function Page() {
   // 9f · El Inicio de la ciudad lee el CMS: el aviso y los bloques encendidos (city_home_config), los anuncios vivos y las cadenas (cms_strings, con el
   // código de respaldo). Un bloque apagado ni se consulta. Sin nada editado, sale exactamente como antes.
   const cfg = await homeConfig(loc.c.id), on = (k: string) => cfg.bloques.find((b) => b.key === k)?.on !== false;
-  const [cats, abierto, hoy, oficial, semana, faltan, anuncios, h, t] = await Promise.all([categorias(lang), on("abierto") ? abiertoAhora(loc, lang, 4) : Promise.resolve([]),
+  const [cats, abierto, hoy, oficial, semana, faltan, anuncios, h, t] = await Promise.all([categorias(lang, loc.ciudad), on("abierto") ? abiertoAhora(loc, lang, 4) : Promise.resolve([]),
     on("hoy") ? hoyEnElBarrio(loc.c.id, null, null, loc, 10) : Promise.resolve({ historias: [] }), on("comunidad") ? oficialDeLaSemana(loc.c.id) : Promise.resolve(null),
     on("semana") ? eventosSemana(loc, u?.id ?? null, lang === "es", 6) : Promise.resolve([]), u?.first_name ? faltaAceptar(u.id).catch(() => []) : Promise.resolve([]),
     anunciosVivos(loc.c.id, !!u?.first_name, lang), pantalla("APP-HOME", lang), textosT(lang)]);
