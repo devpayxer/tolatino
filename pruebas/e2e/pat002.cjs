@@ -200,7 +200,8 @@ let OP = null;
     await ad.getByRole('button', { name: 'Terminar' }).last().click();
     ok(await espera(async () => sql(`select status || '|' || end_kind || '|' || end_reason from sponsorships where id = ${SID}`) === 'terminado|admin|El negocio pidió terminarlo.'), 'queda TERMINADO por To’Latino, con su motivo');
     const DV = sql(`select coalesce(refund_cents, 0) || '|' || coalesce(refund_days, 0) from sponsorships where id = ${SID}`).split('|').map(Number);
-    ok(DV[0] > 0 && DV[0] < 1700 && DV[0] === Math.floor(1700 * DV[1] / 7), `«Devolver» encendido de entrada: la base decide ${DV[1]} de 7 días ($${(DV[0] / 100).toFixed(2)}), en proporción`);
+    // De madrugada (antes de que empiece su primer día) no se usó ninguno: devolver los 7 de 7 es lo justo (18 nov).
+    ok(DV[0] > 0 && DV[0] <= 1700 && DV[1] >= 1 && DV[1] <= 7 && DV[0] === Math.floor(1700 * DV[1] / 7), `«Devolver» encendido de entrada: la base decide ${DV[1]} de 7 días ($${(DV[0] / 100).toFixed(2)}), en proporción`);
     ok(await espera(async () => sql(`select amount_cents || '|' || refund_motive from sponsorship_payments where kind = 'negocio' and ref_id = ${SID} and reason = 'devolucion'`) === `${DV[0]}|admin`), 'el libro: la devolución de esa parte (una fila)');
     ok(await espera(async () => sql(`select count(*) from notifications where tpl = 'biz_patrocinio_devuelto' and user_id = '${D0}' and created_at > now() - interval '2 minutes'`) !== '0'), 'aviso al dueño: «Te devolvimos lo que no se usó»');
     ok(sql(`select count(*) from audit_entries where action = 'mkt.patrocinio.terminar' and reason = 'El negocio pidió terminarlo.' and after->>'patrocinio' = '${SID}'`) === '1', 'en la auditoría con el motivo');

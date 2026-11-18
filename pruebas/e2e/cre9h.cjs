@@ -32,7 +32,12 @@ const motivo = async (p, t = 'Prueba cre9h') => { await p.locator('textarea').la
 const toast = (p, re) => p.getByRole('status').filter({ hasText: re }).first().waitFor({ timeout: 10000 });
 const espera = async (f, ms = 15000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await f()) return true; await new Promise((r) => setTimeout(r, 400)); } return false; };
 // Un huso donde AHORA es de día (9–18 h) o de noche (1–5 h): la prueba no depende de la hora a la que corre.
-const huso = (dia) => sql(`select tz from (values ('America/New_York'), ('Europe/Madrid'), ('Asia/Tokyo'), ('Pacific/Honolulu'), ('Asia/Kolkata'), ('America/Los_Angeles'), ('Australia/Sydney'), ('Asia/Dubai')) v(tz)
+// Un huso por cada hora del día (18 nov): con 8 había horas UTC sin ninguno «de noche» (1–5 h) y la corrida de madrugada fallaba.
+const HUSOS = ['Pacific/Honolulu', 'America/Anchorage', 'America/Los_Angeles', 'America/Denver', 'America/Chicago', 'America/New_York', 'America/Halifax',
+  'America/Sao_Paulo', 'Atlantic/South_Georgia', 'Atlantic/Azores', 'Europe/London', 'Europe/Madrid', 'Europe/Athens', 'Europe/Moscow', 'Asia/Dubai',
+  'Asia/Karachi', 'Asia/Dhaka', 'Asia/Bangkok', 'Asia/Shanghai', 'Asia/Tokyo', 'Australia/Brisbane', 'Pacific/Noumea', 'Pacific/Fiji', 'Pacific/Tongatapu']
+  .map((z) => `('${z}')`).join(', ');
+const huso = (dia) => sql(`select tz from (values ${HUSOS}) v(tz)
   where extract(hour from now() at time zone tz) ${dia ? 'between 9 and 18' : 'between 1 and 5'} order by tz limit 1`);
 
 // La landing: código postal + teléfono → el código del modo pruebas → anotarse.

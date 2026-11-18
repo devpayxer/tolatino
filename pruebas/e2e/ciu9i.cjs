@@ -146,7 +146,7 @@ const vePronto = async (p) => { await p.goto(B + '/'); await p.locator('[data-sc
     ok(await espera(() => pasos() === 6), 'paso 6 confirmado con «Abrir igual»');
     ok(sql(`select (evidence->>'abrirIgual') || '|' || (evidence->'regla'->>'cumple') || '|' || (evidence->'launch'->>'leida') || '|' || (evidence->'launch'->>'sandbox') from city_launch_steps where launch_id = ${L} and step = 6`) === 'true|false|true|true',
       'su evidencia: la regla no se cumplía, se decidió abrir igual y la LAUNCH del build se leyó (en el sandbox sus líneas avisan y no frenan)');
-    await pa.reload(); await pa.locator('[data-ciudad="rdg"]').waitFor();
+    await pa.reload(); await pa.locator('[data-ciudad="rdg"]').waitFor().catch(async (e) => { console.log('  · diagnóstico:', pa.url(), JSON.stringify((await pa.locator('body').innerText().catch(() => '')).slice(0, 600))); throw e; });
     t = await texto(pa);
     ok(/PASO 7 · AVISAR A LA LISTA DE ESPERA/.test(t) && /PERSONAS QUE RECIBEN EL AVISO/.test(t) && /SIN CUENTA \(NO SE LES ESCRIBE\)/.test(t), 'paso 7: cuántos reciben el aviso y quién no (sin cuenta)');
     await shot(pa, 'paso7-1360');

@@ -89,8 +89,11 @@ let SEMILLA = null;
     ok(met[0] === base[0] && met[1] === base[1] && met[2] === base[2] && met[3] === dev[0], `el derivado cuadra con los cobros: bruto ${usd(base[0])}, comisión ${usd(base[1])}, ${base[2]} operaciones, devuelto ${usd(dev[0])}`);
     // La semilla 0055: un pedido por día (1,500 + (i mod 7) × 250), una visita cada 3 días ($95, salvo «no llegó» cada 9) y una mesa cada 5 ($20): en 30 días.
     if (sql(`select count(*) from operations where details->>'semilla' = 'ana9g'`) !== '0') {
+      // El «hoy» de la semilla es el del día en que se cargó (al empezar el CI): si la corrida cruzó la medianoche de Nueva York, el «hoy» de ahora
+      // corre la ventana un día y le falta un pedido (18 nov, de madrugada). Se toma de la semilla: su pedido más reciente es de «hoy − 1».
+      const SEM30 = `((select max((o.sent_at at time zone 'America/New_York')::date) from operations o where o.details->>'semilla' = 'ana9g' and o.kind = 'order') + 1 - 29)`;
       let esperado = 0; for (let i = 1; i <= 29; i++) { esperado += 1500 + (i % 7) * 250; if (i % 3 === 0 && i % 9 !== 0) esperado += 9500; if (i % 5 === 0) esperado += 2000; }
-      const sem = Number(sql(`select coalesce(sum(p.amount_cents), 0) from payments p join operations o on o.id = p.operation_id where o.details->>'semilla' = 'ana9g' and (p.captured_at at time zone 'America/New_York')::date >= ${D30}`));
+      const sem = Number(sql(`select coalesce(sum(p.amount_cents), 0) from payments p join operations o on o.id = p.operation_id where o.details->>'semilla' = 'ana9g' and (p.captured_at at time zone 'America/New_York')::date >= ${SEM30}`));
       ok(sem === esperado, `las operaciones de la semilla en 30 días: ${usd(sem)} = la fórmula de la semilla (${usd(esperado)})`);
     } else ok(true, 'sin la semilla 0055 en esta base: solo se compara con los cobros');
     await pd.goto(B + '/admin/analitica?tab=dinero'); await pd.getByText('VENDIDO EN LÍNEA').first().waitFor();
