@@ -82,7 +82,8 @@ const caso = (vid) => sql(`select id from queue_items where queue = 'medios' and
     await pv.screenshot({ path: OUT + 'c001-tarjeta-390.png' });
     const anillo = pv.locator('[data-anillo]').first();
     ok(await anillo.count() > 0, 'el logo lleva el anillo (hay novedad de hoy)');
-    await anillo.click();
+    // La barra fija de arriba tapa el logo si se desplaza justo al borde (anchos, 18 nov): se centra antes de tocarlo.
+    await anillo.first().evaluate((e) => e.scrollIntoView({ block: 'center' })); await anillo.click();
     ok(await espera(async () => (await pv.locator('[data-visor-hoy]').count()) > 0 && (await texto(pv)).includes('Hoy hay sancocho de la casa')), 'el anillo abre «Hoy en el barrio» con la novedad de hoy');
     ok((await texto(pv)).includes('Ver la página'), 'con «Ver la página»');
     await pv.screenshot({ path: OUT + 'c001-visor-390.png' });
