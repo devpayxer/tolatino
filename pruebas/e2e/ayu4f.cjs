@@ -32,7 +32,9 @@ async function inscribir(p, neg, svc, o = {}) {
   await clic(p.getByRole('button', { name: 'Enviar solicitud' })); await p.waitForURL(/\/insc\/I-\d+/, { timeout: 15000 });
   return p.url().match(/I-\d+/)[0];
 }
-async function confirmar(p, neg, num) { await p.goto(`${B}/panel/${neg}/hoy?det=insc:${num}`); await clic(p.getByRole('button', { name: 'Confirmar', exact: true })); await espera(() => sql(`select status from operations where number = '${num}'`), 'confirmed'); }
+// En el iPad la lista y la hoja del detalle tienen «Confirmar» visibles a la vez y la hoja tapa la de la lista: se toca la de la hoja (la última). Anchos, 18 nov.
+const ultimaVisible = async (l) => { for (let i = 0; i < 24; i++) { const n = await l.count(); for (let k = n - 1; k >= 0; k--) if (await l.nth(k).isVisible()) return l.nth(k); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l); };
+async function confirmar(p, neg, num) { await p.goto(`${B}/panel/${neg}/hoy?det=insc:${num}`); await (await ultimaVisible(p.getByRole('button', { name: 'Confirmar', exact: true }))).click(); await espera(() => sql(`select status from operations where number = '${num}'`), 'confirmed'); }
 (async () => {
   require('../lib/negocio-nuevo.cjs').sinTopeDeAyuda('5705550122'); // 9b-1 · el tope de 5 ayudas al día de Marisol (ver lib)
   sql(`update operations set status = 'cancelled', cancelled_by = 'system' where kind = 'enrollment' and status in ('pending', 'change_proposed', 'confirmed') and business_id in ('${EDU}', '${NIN}', '${GYM}')`);

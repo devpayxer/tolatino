@@ -27,7 +27,7 @@ const caso = (vid) => sql(`select id from queue_items where queue = 'medios' and
   const t0 = Date.now(); while (!salud() && Date.now() - t0 < 20000) await new Promise((r) => setTimeout(r, 500));
   ok(salud(), 'el servicio de video propio responde (/salud)');
   const V1 = video(35, 'vid001-a.mp4'), V2 = video(6, 'vid001-b.mp4');
-  sql(`update business_videos set status = 'quitado', ended_at = now() where business_id = '${BIZ}' and status in ('aprobado', 'revision')`);
+  sql(`update business_videos set status = 'quitado', ended_at = now() where business_id = '${BIZ}' and status in ('aprobado', 'revision', 'rechazado')`); // también el «No aprobado» de una vuelta anterior (dos veces seguidas, 18 nov)
   sql(`update queue_items set status = 'decided', decision = 'quitado', decided_at = now() where queue = 'medios' and subject_kind = 'business_video' and business_id = '${BIZ}' and status = 'open'`);
   sql(`update business_stats_cache set plan = 'pro' where business_id = '${BIZ}'`);
   const D0 = sql(`select id from users where phone = '+1${DUENO}'`);

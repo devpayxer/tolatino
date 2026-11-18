@@ -336,6 +336,10 @@ const FIJA = 'Gracias por escribir a Sabor Dominicano. Ahora estamos cerrados; t
     const f = await foto();
     ok(f.db === ref.db, `${nom}: lo que recibe el cliente, idéntico (${f.db.replace(/¦/g, ' · ').slice(0, 90)}…)`);
     ok(f.cliente === ref.cliente, `${nom}: el chat del cliente, texto a texto igual`);
+    if (f.lista !== ref.lista || f.det !== ref.det) { // diagnóstico: dónde se separan (dos veces seguidas, 18 nov)
+      const dif = (a, b) => { let i = 0; while (i < a.length && a[i] === b[i]) i++; return `en ${i}: «${a.slice(Math.max(0, i - 40), i + 80)}» ≠ «${b.slice(Math.max(0, i - 40), i + 80)}»`; };
+      console.log('  · diagnóstico', nom, f.lista !== ref.lista ? 'lista ' + dif(ref.lista, f.lista) : '', f.det !== ref.det ? 'det ' + dif(ref.det, f.det) : '');
+    }
     ok(f.lista === ref.lista && f.det === ref.det, `${nom}: Mensajes del negocio (lista y conversación) igual`);
     encender(); await dormir(500);
   }
