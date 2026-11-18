@@ -4974,6 +4974,7 @@ ese día (si no abre, 6 h); un día cerrado se salta.
 **Pendiente de tu decisión:** el prototipo trae «Panel del dueño» (que el equipo de To'Latino abra el panel de un negocio) y «Ver como cliente» de un
 negocio oculto. Los dos dejan ver lo que el negocio o el público no ven; lo seguro es un modo **solo lectura** del equipo, con aviso en pantalla y
 cada apertura en la auditoría. ¿Lo hacemos así?
+_(Hecho así por defecto (AB): «Ver como cliente» en 9n-20 y «Panel del dueño» en 9n-23, más abajo.)_
 
 ## Fase 9 · 9n-14 a 9n-16 (15 nov)
 **Qué mirar:**
@@ -5425,3 +5426,28 @@ la misma pausa para **un solo negocio** (Equipo › Módulo › Staff; Lo que ve
   pedido sigue» / «reservar contigo sigue igual».
 - **Una pausa de la ciudad llega a todos los negocios de ella**, también a los que no tienen el módulo (un restaurante recibe `cot`): no pasa nada porque
   ninguna de sus pantallas lo lee; el panel solo avisa a los tipos de negocio donde Cotizaciones existe.
+
+## Fase 9 · 9n-23 — Panel del dueño, solo lectura (18 nov)
+**Qué mirar (escritorio para el Super Admin, teléfono para ver el aviso):**
+- Como Ana (Super Admin, 570-555-0199): Negocios › Sabor Dominicano › 360 › **Panel del dueño** (junto a «Ver como cliente»): se abre otra pestaña con el
+  panel del negocio tal como lo ve Pedro y, fijo arriba, **VISTA DEL EQUIPO · SOLO LECTURA** (en inglés, TEAM VIEW · READ ONLY). Recorre Tu página, Hoy,
+  Clientes, Mensajes, Lo que vendes y Más: todo se ve.
+- En **Quiénes somos** escribe algo: «Guardar» queda apagado. En **Hoy** toca «Cerrar por hoy»: sale «Solo lectura: no se guardó nada · No tienes acceso a
+  esta parte del panel.» y la página del negocio sigue abierta.
+- Abre una conversación sin leer en **Mensajes** y después entra como Pedro (570-555-0133): la sigue viendo **sin leer**.
+- Vuelve al 360°: el historial dice «Ana abrió en solo lectura el panel de Sabor Dominicano» (una línea por sección; la misma sección, una vez cada 10
+  minutos).
+- Como Marisol (570-555-0122) abre el mismo enlace (`/panel/sabor-dominicano?equipo=1`): «Sin acceso».
+
+**Decisión tomada por defecto (AB, reversible):** el equipo **ve, nunca cambia**. Para cambiar algo en nombre del negocio sigue el 360° (queda en el
+historial y el dueño lo ve). Detalles:
+- Entra quien es del equipo, con su segundo factor y permiso de **ver Negocios**, solo en los negocios de las ciudades de su rol (como el 360°).
+- **Todo** lo que se intente guardar lo rechaza el servidor: las acciones del panel siguen pidiendo ser del negocio. «Guardar» se apaga; los demás botones
+  se pueden tocar y dicen que no se guardó.
+- Mirar **no deja huella**: no marca leída una conversación ni vista una solicitud de empleo o un pre-estimado, y no cobra ni libera retenciones al mirar
+  (lo hace el sistema solo, cada minuto). Las tarjetas y los términos son los del dueño: no salen.
+- **Lo privado no sale:** lo que el dueño ve cifrado (nota y motivo de una cita de salud o de un trámite, datos de un niño inscrito, la nota de consejería,
+  la dirección de la casa en una prueba de manejo, el destinatario de un envío) no se muestra, igual que en el resto del Super Admin. Nombres y teléfonos
+  de clientes salen como en Transacciones.
+- El Compa del panel no sale en esta vista (es la conversación del dueño) y no se abre nada «en vivo» (se ve lo de la carga de la página).
+- Si prefieres que el equipo pueda **cambiar** desde el panel (con su nombre en el historial), o que solo un Admin lo abra, se cambia sin perder nada.

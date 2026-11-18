@@ -1,6 +1,7 @@
 import "server-only";
 import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { tapar } from "./compa/tapar";
+import { soloLectura } from "./vista-equipo";
 
 /* Mensajes cliente ↔ negocio (bloque 2p; modelo ChatThread · Message; Mi cuenta USR-MENSAJES / USR-CHAT-NEG; Panel v2 sec
    «msg»). Reglas, todas en el servidor:
@@ -202,7 +203,8 @@ export async function conversacionNegocio(negocio: string, threadId: string): Pr
       `select m.user_id::text as id, coalesce(nullif(trim(coalesce(u.first_name, '')), ''), m.display_name, 'Equipo') as nombre from business_members m join users u on u.id = m.user_id
         where m.business_id = $1 and m.status = 'active' and m.user_id is not null and (m.kind = 'owner' or 'all' = any(m.panel_access) or 'msg' = any(m.panel_access)) order by (m.kind = 'owner') desc, m.id`, [negocio]),
   ]);
-  if (t.unread) await db().query(`update chat_threads set biz_unread = 0, biz_read_at = now() where id = $1`, [t.id]);
+  // 9n-23 · En la vista del equipo (solo lectura) abrir la conversación no la marca leída: sigue «sin leer» para el dueño.
+  if (t.unread && !soloLectura()) await db().query(`update chat_threads set biz_unread = 0, biz_read_at = now() where id = $1`, [t.id]);
   return { id: t.id, quien: t.quien, ctx: t.ctx, msjs: M.rows.reverse(), lleva: t.lleva, llevaId: t.llevaId, bloqueado: t.bloqueado, telCompartido: t.tel, equipo: E.rows };
 }
 export async function nuevosNegocio(negocio: string, threadId: string, desde: string): Promise<Msj[]> {

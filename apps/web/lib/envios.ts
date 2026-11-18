@@ -1,6 +1,7 @@
 import "server-only";
 import { contexto } from "./citas";
 import { descifrar } from "./cifrado";
+import { soloLectura } from "./vista-equipo";
 import { cobrarOperacion, comision, registrarRetencion } from "./cobros";
 import { db, tx } from "./db";
 import { pasarela } from "./pagos/pasarela";
@@ -44,7 +45,7 @@ async function avisar(numero: string, quien: "cliente" | "negocio", tpl: string,
 /* ── Lo privado: el destinatario (descifrado) y las fotos de la mudanza. Solo para el cliente dueño y su negocio. ── */
 export async function destinatarioDe(opId: string): Promise<Destino | null> {
   const r = (await db().query<{ e: Buffer | null }>(`select note_enc as e from op_private where operation_id = $1::bigint and reason = 'destinatario'`, [opId])).rows[0];
-  const t = descifrar(r?.e ?? null);
+  const t = soloLectura() ? null : descifrar(r?.e ?? null); // 9n-23 · el destinatario cifrado no se abre en la vista del equipo
   try { return t ? (JSON.parse(t) as Destino) : null; } catch { return null; }
 }
 export async function fotosDe(opId: string): Promise<string[]> {

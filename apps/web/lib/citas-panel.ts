@@ -3,6 +3,7 @@ import { estadoEstimado, type EstadoEstimado } from "./estimados";
 import { db } from "./db";
 import { vencerCitas } from "./citas-flujo";
 import { descifrar } from "./cifrado";
+import { soloLectura } from "./vista-equipo";
 import { valor } from "./config";
 
 /* Citas en el panel del negocio (Panel v2 · reqRow/detBlocks k='cita', Hoy y Clientes). El servidor decide el estado:
@@ -112,7 +113,9 @@ export async function citaPanel(negocio: string, numero: string): Promise<CitaPa
       const z = r.det as { modo?: string; precio?: Bi; honorario?: number; gov?: number; hrs?: string | null; k?: string };
       const p = (await db().query<{ reason: string | null; note_enc: Buffer | null; paso: string | null }>(`select p.reason, p.note_enc, o.status_detail as paso from op_private p join operations o on o.id = p.operation_id where p.operation_id = $1::bigint`, [r.id])).rows[0];
       const { totalDe } = await import("./total-escrito");
-      return { modo: z.modo ?? "oficina", sit: p?.reason ?? null, nota: descifrar(p?.note_enc), precio: z.precio ?? { es: "", en: "" }, paso: p?.paso ?? null,
+      // 9n-23 · En la vista del equipo (solo lectura) la situación y la nota privadas no salen (el Super Admin nunca las muestra).
+      const priv = !soloLectura();
+      return { modo: z.modo ?? "oficina", sit: priv ? p?.reason ?? null : null, nota: priv ? descifrar(p?.note_enc) : null, precio: z.precio ?? { es: "", en: "" }, paso: p?.paso ?? null,
         honorario: z.k === "fijo" || z.k === "hora" || z.k === "cotiza" ? Number(z.honorario ?? 0) : 0, gov: Number(z.gov ?? 0), hrs: z.hrs ?? null, total: await totalDe(r.id),
         totalDias: await valor("sp_total_escrito_dias") }; // 9n-5 · cuánto vale el total que se manda (Configuración)
     })() : null,
@@ -120,7 +123,7 @@ export async function citaPanel(negocio: string, numero: string): Promise<CitaPa
       const z = r.det as { seguro?: { kind?: string; acepta?: boolean; last4?: string | null; nombre?: Bi }; para?: string; tele?: boolean; precio?: Bi };
       const p = (await db().query<{ reason: string | null; note_enc: Buffer | null; interp: boolean }>(`select reason, note_enc, interp from op_private where operation_id = $1::bigint`, [r.id])).rows[0];
       return { seguro: z.seguro?.nombre ?? { es: "", en: "" }, acepta: !!z.seguro?.acepta, ninguno: z.seguro?.kind === "none", last4: z.seguro?.last4 ?? null, para: z.para ?? "yo",
-        motivo: p?.reason ?? null, nota: descifrar(p?.note_enc), interp: !!p?.interp, tele: !!z.tele, precio: z.precio ?? { es: "", en: "" },
+        motivo: !soloLectura() ? p?.reason ?? null : null, nota: !soloLectura() ? descifrar(p?.note_enc) : null, interp: !!p?.interp, tele: !!z.tele, precio: z.precio ?? { es: "", en: "" },
         segH: await valor("sp_seguro_guardar_h") }; // 9n-5 · cuánto se guarda la hora con «No aceptamos su seguro» (Configuración)
     })() : null,
     of: d.veh || d.casa ? { veh: d.veh?.t ?? null, mi: d.veh?.mi ?? null, casa: d.casa?.dir ?? null, inq: d.casa?.tenure === "inq", w: d.w ?? null, win: d.win ?? null, luces: d.luces ?? [], area: d.area ?? null, acceso: d.acceso ?? null, accesoNota: d.accesoNota ?? null, piezas: !!d.piezas } : null,

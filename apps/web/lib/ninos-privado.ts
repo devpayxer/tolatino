@@ -3,6 +3,7 @@ import { cfgSql } from "./config";
 import type { PoolClient } from "pg";
 import { cifrar, descifrar } from "./cifrado";
 import { db } from "./db";
+import { soloLectura } from "./vista-equipo";
 
 /* Los datos de un niño en una inscripción (Fase 4 · 4eb · fase4-edu-ninos-deporte.md §3, Preguntas #6). ÚNICO lugar que los toca
    (guardián ninosNotaCifrada): op_private con motivo 'nino' y todo cifrado (AES-256-GCM, lib/cifrado.ts).
@@ -53,7 +54,8 @@ export async function leerNino(operacion: string, quien: { usuario: string } | {
   const r = (await db().query<{ enc: Buffer | null }>(
     `select p.note_enc as enc from op_private p join operations o on o.id = p.operation_id where p.operation_id = $1::bigint and p.reason = 'nino' and ${por}`,
     [operacion, "usuario" in quien ? quien.usuario : "negocio" in quien ? quien.negocio : quien.cola])).rows[0];
-  const t = r ? descifrar(r.enc) : null;
+  // 9n-23 · En la vista del equipo (solo lectura) no se abre: el Super Admin no muestra los datos del niño (solo desde un caso abierto de Cuidado).
+  const t = r && !soloLectura() ? descifrar(r.enc) : null;
   if (!t) return null;
   try { return JSON.parse(t) as DatosNino; } catch { return null; }
 }
@@ -68,7 +70,7 @@ export async function guardarNotaFe(c: PoolClient, operacion: string, nota: stri
 export async function leerNotaFe(operacion: string, negocio: string): Promise<string | null> {
   const r = (await db().query<{ enc: Buffer | null }>(
     `select p.note_enc as enc from op_private p join operations o on o.id = p.operation_id where p.operation_id = $1::bigint and p.reason = 'fe' and o.business_id = $2 and o.kind = 'enrollment'`, [operacion, negocio])).rows[0];
-  return r ? descifrar(r.enc) : null;
+  return r && !soloLectura() ? descifrar(r.enc) : null; // 9n-23 · la nota de consejería no se abre en la vista del equipo
 }
 
 /* El barrido: a los 30 días de que la inscripción terminó, se canceló, venció o no se dio, los datos del niño se borran. */

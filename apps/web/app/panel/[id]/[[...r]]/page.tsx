@@ -16,7 +16,9 @@ import { ayudaCitaPanel, ayudasCitasNegocio } from "@/lib/ayuda-cita";
 import { pedidosPendientes } from "@/lib/pedidos";
 import { ayudaPanel, ayudasNegocio } from "@/lib/ayuda";
 import type { RsvPanel } from "../../Reservas";
-import { accesoPanel, datosPanel } from "@/lib/panel";
+import { accesoPanel, accesoPanelSoloLectura, datosPanel } from "@/lib/panel";
+import { marcarSoloLectura } from "@/lib/vista-equipo";
+import { auditar } from "@/lib/admin";
 import { resenaPanel, resenasPanel, resenasSinResponder, type FiltroPanel } from "@/lib/resenas";
 import type { ResPanel } from "../../ResenasPanel";
 import { eventosNovedad, itemsNovedad, novedadPanel, novedadesPanel, vacantesNovedad } from "@/lib/novedades";
@@ -24,7 +26,7 @@ import type { NovData } from "../../NovedadesPanel";
 import type { CupData } from "../../CuponesPanel";
 import { cuponesNegocio } from "@/lib/cupones";
 import { horarioVac, solicitudesNuevas, vacantePanel, vacantesPanel, verSolicitud } from "@/lib/jobs";
-import { db } from "@/lib/db";
+import { db, tx } from "@/lib/db";
 import { actualizarCuenta, cobrosPanel } from "@/lib/cobros";
 import { repartidoresDe } from "@/lib/repartidor";
 import type { JobsData } from "../../JobsPanel";
@@ -38,12 +40,15 @@ import { articulosRentaPanel } from "@/lib/rentas";
 import { HojaTerminos } from "../../../(app)/HojaTerminos";
 
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
-   Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
+   Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra.
+   9n-23 · ?equipo=1 = «Panel del dueño» desde el Super Admin (Negocio 360°): alguien del equipo con neg:ver lo ve en SOLO LECTURA (accesoPanelSoloLectura,
+   solo aquí), con el aviso arriba y cada sección que abre en la auditoría. Las acciones siguen con accesoPanel: lo que se intente guardar, el
+   servidor lo rechaza. Nada de lo que se lee aquí marca, cobra ni abre lo privado (lib/vista-equipo.ts). */
 const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic", "resenas", "nov", "cup", "dir"]);   // 9m · «dir»: Dirección y mapa
 const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|cup:(new|edit:\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|noche:N-\d{1,10}|insc:I-\d{1,10}|vis:D-\d{1,10}|grp:(new|list):\d{1,18}|fe:hor:new|inm:(new|\d{1,18})|auto:(new|\d{1,18})|sol:[PQE]-\d{1,10}|renta:T-\d{1,10}|art:(new|\d{1,18})|apt:A-\d{1,10}|merc:M-\d{1,10}|fiesta:F-\d{1,10}|evp:(aj|EP-\d{1,10})|viaje:V-\d{1,10}|salida:\d{1,18}|evt:(new(:[a-z]{2,12})?|(edit|pat):\d{1,18}|\d{1,18}(@\d{1,18})?)|door:\d{1,18}@\d{1,18})$/;
 const FILTROS = new Set(["all", "pend", "cur", "done", "no"]);
 
-export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string; vuelta?: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string; vuelta?: string; equipo?: string }> }) {
   const [{ id, r = [] }, sp, lang, u] = await Promise.all([params, searchParams, idioma(), yo()]);
   if (!u?.first_name) redirect(`/entrar?volver=${encodeURIComponent(`/panel/${id}${r.length ? `/${r.join("/")}` : ""}`)}`);
   let ruta: Ruta;
@@ -63,7 +68,10 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   else if (r.length === 2 && r[0] === "vendes" && (r[1] === "menu" || r[1] === "pedidos" || r[1] === "reservaciones" || r[1] === "jobs" || r[1] === "servicios" || r[1] === "citas" || r[1] === "sillas" || r[1] === "herramienta" || r[1] === "productos" || r[1] === "inscripciones" || r[1] === "propiedades" || r[1] === "inventario" || r[1] === "visitas")) ruta = { sec: "mod", sub: r[1], det: null };
   else notFound();
   if (typeof sp.det === "string" && DET.test(sp.det)) ruta.det = sp.det;
-  const acc = await accesoPanel(id, ruta.sec === "hoy" || ruta.sec === "cli" ? "ord" : ruta.sec === "msg" ? "msg" : ruta.sec === "mod" ? "cat" : ruta.sec === "dlv" ? "dlv" : ruta.sec === "pay" ? "pay" : ruta.sec === "evt" ? "evt" : ruta.sec === "mas" || ruta.sec === "cpa" ? undefined : "page");
+  const dueno = await accesoPanel(id, ruta.sec === "hoy" || ruta.sec === "cli" ? "ord" : ruta.sec === "msg" ? "msg" : ruta.sec === "mod" ? "cat" : ruta.sec === "dlv" ? "dlv" : ruta.sec === "pay" ? "pay" : ruta.sec === "evt" ? "evt" : ruta.sec === "mas" || ruta.sec === "cpa" ? undefined : "page");
+  // 9n-23 · «Panel del dueño»: solo si no es del negocio, viene con ?equipo=1 y es del equipo con neg:ver (dentro de las ciudades de su rol).
+  const equipo = !dueno && sp.equipo === "1" ? await accesoPanelSoloLectura(id) : null;
+  const acc = dueno ?? equipo;
   if (!acc) {
     const es = lang === "es";
     return (
@@ -73,6 +81,18 @@ export default async function Page({ params, searchParams }: { params: Promise<{
         <p className="text-[13.5px] text-text-2">{es ? "Pídele acceso al dueño del negocio." : "Ask the business owner for access."}</p>
       </main>
     );
+  }
+  if (equipo) {
+    // Desde aquí, esta petición es de solo lectura: lo que se lee no marca, no cobra y no abre lo cifrado (lib/vista-equipo.ts).
+    marcarSoloLectura();
+    // Cada sección que abre queda en la auditoría (la ve el 360° del negocio). La misma sección por la misma persona, una vez cada 10 minutos (volver
+    // a pintarla tras un intento rechazado no llena el historial).
+    const sec = `${ruta.sec}${ruta.sub ? `/${ruta.sub}` : ""}`, det = ruta.det ?? "", neg = equipo.negocio;
+    await tx(async (c) => {
+      const ya = (await c.query(`select 1 from audit_entries where target_kind = 'business' and target_id = $1 and at > now() - interval '10 minutes' and action = 'negocio.ver_panel'
+                                    and actor_id = $2 and after->>'seccion' = $3 and coalesce(after->>'detalle', '') = $4 limit 1`, [neg.id, equipo.yo.id, sec, det])).rowCount;
+      if (!ya) await auditar(c, { actor: equipo.yo.id, action: "negocio.ver_panel", targetKind: "business", targetId: neg.id, city: neg.city_id, after: { seccion: sec, detalle: det || null, estado: neg.status }, reason: "Panel del dueño (solo lectura)" });
+    });
   }
   const d = await datosPanel(acc, lang);
   if (!d) notFound();
@@ -129,7 +149,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   let jobId: string | null = vd?.startsWith("vac:") ? vd.slice(4).replace(/^(edit|dup):/, "") : null, appId: string | null = null;
   if (vd?.startsWith("vap:")) {
     appId = vd.slice(4);
-    await verSolicitud(d.id, appId);
+    if (!acc.soloVer) await verSolicitud(d.id, appId); // 9n-23 · el equipo mirando no la marca «vista»
     jobId = (await db().query<{ j: string }>(`select job_id::text as j from job_applications where id = $1::bigint and business_id = $2`, [appId, d.id])).rows[0]?.j ?? null;
   }
   const jobs: JobsData = {
@@ -140,7 +160,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   };
   if (ruta.det && /^va[cp]:/.test(ruta.det) && !cat) ruta.det = null;
   // Cobros (solo el dueño): al volver de Stripe se lee el estado real de la cuenta.
-  if (ruta.sec === "pay" && sp.vuelta) await actualizarCuenta(d.id).catch(() => undefined);
+  if (ruta.sec === "pay" && sp.vuelta && !acc.soloVer) await actualizarCuenta(d.id).catch(() => undefined);
   // 6e · Cobros también muestra los pagos de eventos por fecha (la liquidación del martes).
   const cob = ruta.sec === "pay" && !ruta.sub ? { ...(await cobrosPanel(d.id)), eventos: await (await import("@/lib/evt-liquidacion")).liquidacionesPanel(d.id, null) } : undefined;
   // Tu plan (Cobros y plan): el estado del plan, los recibos y las tarjetas guardadas del dueño.
@@ -150,7 +170,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const patRes = cobraPanel && ((ruta.sec === "pag" && !ruta.sub) || ruta.sec === "pay") ? await (await import("@/lib/patrocinio")).patResumen(d.id) : null;
   const plan = ruta.sec === "pay" && ruta.sub === "plan" ? await (async () => {
     const S = await import("@/lib/suscripcion"), { pasarela } = await import("@/lib/pagos/pasarela"), { misTarjetas } = await import("@/lib/cobros");
-    return { plan: await S.planDe(d.id), recibos: await S.recibosPro(d.id), modo: pasarela.modo(), pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: await misTarjetas(acc.yo.id) };
+    return { plan: await S.planDe(d.id), recibos: await S.recibosPro(d.id), modo: pasarela.modo(), pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: acc.soloVer ? [] : await misTarjetas(acc.yo.id) }; // 9n-23 · las tarjetas son del dueño: no se muestran las de quien mira
   })() : undefined;
   // Repartidores: Entrega (Tus repartidores, cuadre) y el detalle de un pedido de delivery (despacho).
   // 9n · El mercado también: Entrega (sus repartidores) y el detalle de un envío del mercado (ofrecer, asignar).
@@ -330,6 +350,6 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const cpa = ruta.sec === "cpa" ? await (await import("@/lib/compa/asistente-panel")).asistentePanel(acc.yo.id, d.id, lang).catch(() => null) : undefined;
   const cpaAuto = ruta.sec === "cpa" && RA ? await RA.ajustesAuto(d.id, acc.partes).catch(() => null) : undefined;
   // 9e · La hoja «Aceptar los términos nuevos» también en Hoy del panel (la pantalla de inicio de la app Negocios), sin un detalle abierto.
-  const faltan = ruta.sec === "hoy" && !ruta.det ? await faltaAceptar(u.id).catch(() => []) : [];
+  const faltan = ruta.sec === "hoy" && !ruta.det && !acc.soloVer ? await faltaAceptar(u.id).catch(() => []) : []; // 9n-23 · la hoja de términos es del dueño
   return <>{faltan.length ? <HojaTerminos es={lang === "es"} faltan={faltan} /> : null}<Panel cpa={cpa} cpaAuto={cpaAuto} d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} compraPro={await (await import("@/lib/tiendas/reglas")).compraDigitalAqui()} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} pat={pat} patRes={patRes} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} evp={evp} arts={arts} /></>;
 }

@@ -4,6 +4,7 @@ import { cfgSql, valor, valores } from "./config";
 import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { PAUSA_COT } from "./modulo-pausa";
 import { horasTxt } from "./plazo-txt";
+import { soloLectura } from "./vista-equipo";
 
 /* Solicitudes de servicio (Fase 4 · bloque 4e). Un solo motor para tres cosas del diseño:
    - pre: pre-estimado con fotos (neg-auto-pre.js / neg-hogar-pre.js): un negocio responde con un RANGO (rng), «hay que
@@ -260,7 +261,8 @@ export async function solicitudPanel(negocio: string, numero: string): Promise<S
        from request_targets t join service_requests r on r.id = t.request_id join users u on u.id = r.user_id join cities ci on ci.id = r.city_id
       where t.business_id = $1 and r.number = $2 and r.mode in ('pre', 'pq')`, [negocio, numero])).rows[0];
   if (!r) return null;
-  await db().query(`update request_targets set seen_at = coalesce(seen_at, now()) where business_id = $1 and request_id = $2::bigint`, [negocio, r.id]);
+  // 9n-23 · En la vista del equipo (solo lectura) mirarla no la marca vista por el negocio.
+  if (!soloLectura()) await db().query(`update request_targets set seen_at = coalesce(seen_at, now()) where business_id = $1 and request_id = $2::bigint`, [negocio, r.id]);
   const f = r.form as Record<string, never>;
   const fotos = (await db().query<{ url: string }>(`select url from media where owner_kind = 'request' and owner_id = $1 and status = 'visible' order by sort`, [r.id])).rows.map((x) => x.url);
   const { id: _i, form: _f, tz, vence, ...rest } = r;

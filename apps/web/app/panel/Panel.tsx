@@ -77,6 +77,7 @@ import { useAhora } from "@/lib/ahora";
 
 import { tec } from "@/lib/tec";
 import { DireccionPanel } from "./DireccionPanel";
+import { AvisoSoloLectura } from "./AvisoSoloLectura";
 import { RefrescoVivo } from "@/app/_vivo/RefrescoVivo";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 const Icon = UI.Icon as ComponentType<any>;
@@ -159,27 +160,32 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
   const tt = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useCallback((t: string) => { if (tt.current) clearTimeout(tt.current); setToastT(t); tt.current = setTimeout(() => setToastT(null), 2600); }, []);
   const base = `/panel/${d.id}`;
+  // 9n-23 · Vista del equipo (solo lectura, d.soloVer lo decide el servidor): toda navegación dentro de este panel lleva ?equipo=1 (sin eso, la página
+  // pide ser del negocio y dice «Sin acceso»). ?det= y cerrar el detalle ya conservan los parámetros de la dirección.
+  const soloVer = d.soloVer;
+  const conEq = useCallback((h: string) => (soloVer && (h === base || h.startsWith(`${base}/`) || h.startsWith(`${base}?`)) && !/[?&]equipo=1(&|$)/.test(h) ? `${h}${h.includes("?") ? "&" : "?"}equipo=1` : h), [soloVer, base]);
   const url = (sec: Ruta["sec"], sub?: string | null) => (sec === "hoy" ? `${base}/hoy` : sec === "cli" ? `${base}/clientes` : sec === "msg" ? `${base}/mensajes` : sec === "dlv" ? `${base}/entrega` : sec === "pay" ? `${base}/cobros${sub ? `/${sub}` : ""}` : sec === "mas" ? `${base}/mas` : sec === "cpa" ? `${base}/compa` : sec === "evt" ? `${base}/eventos` : sec === "mod" ? `${base}/vendes${sub ? `/${sub}` : ""}` : sub ? `${base}/pagina/${sub}` : base);
   const go = useCallback((sec: Ruta["sec"], sub?: string | null) => {
     setForms({}); setUi({ dayOpen: -1, gSel: -1, sheet: null });
-    router.push(url(sec, sub ?? null));
+    router.push(conEq(url(sec, sub ?? null)));
     if (!desk) window.scrollTo({ top: 0 });
-  }, [router, desk]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [router, desk, conEq]); // eslint-disable-line react-hooks/exhaustive-deps
   const det = useCallback((id: string) => { const q = new URLSearchParams(sp.toString()); q.set("det", id); router.push(`${path}?${q}`, { scroll: !desk }); }, [router, path, sp, desk]);
-  const nav = useCallback((href: string) => router.push(href, { scroll: false }), [router]);
+  const nav = useCallback((href: string) => router.push(conEq(href), { scroll: false }), [router, conEq]);
   const closeDet = useCallback(() => { setForms((f) => Object.fromEntries(Object.entries(f).filter(([k]) => !k.startsWith("det:")))); const q = new URLSearchParams(sp.toString()); q.delete("det"); router.push(q.size ? `${path}?${q}` : path, { scroll: false }); }, [router, path, sp]);
   const run = useCallback((f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => {
     start(async () => {
       const r = await f().catch(() => ({ ok: false as const, mensaje: { es: "No se pudo guardar. Revisa tu conexión.", en: "Couldn’t save. Check your connection." } }));
       // Si no se pudo (p. ej. «ya la tomó otro negocio», «esta cita ya cambió»), la pantalla se pone al día igual:
       // lo escrito no se pierde (vive en el cliente) y lo que cambió en el servidor se ve.
-      if (!r.ok) { toast(r.mensaje[lang]); router.refresh(); return; }
+      // 9n-23 · En la vista del equipo todo cambio lo rechaza el servidor (las acciones piden ser del negocio): se dice así, con su mensaje.
+      if (!r.ok) { toast(soloVer ? `${dosIdiomas(lang === "es", "Solo lectura: no se guardó nada", "Read only: nothing was saved")} · ${r.mensaje[lang]}` : r.mensaje[lang]); router.refresh(); return; }
       const t = typeof ok === "function" ? ok(r) : ok;
       if (t) toast(t);
       after?.(r);
       router.refresh();
     });
-  }, [lang, router, toast]);
+  }, [lang, router, toast, soloVer]);
   const form = useCallback(<T,>(key: string, b: T): Form<T> => {
     const cur = (forms[key] as T | undefined) ?? b;
     return { key, d: cur, dirty: forms[key] !== undefined && JSON.stringify(cur) !== JSON.stringify(b), set: (p) => setForms((z) => ({ ...z, [key]: { ...((z[key] as T | undefined) ?? b), ...p } })) };
@@ -188,6 +194,8 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
   const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void, accept = "image/*") => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.accept = accept; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
+  const [avisoH, setAvisoH] = useState(0);
+  const avisoRef = useCallback((el: HTMLDivElement | null) => { if (!el || typeof ResizeObserver === "undefined") return; const ro = new ResizeObserver(() => setAvisoH(el.offsetHeight)); ro.observe(el); }, []);
   // 8c · «Avisos del panel en este teléfono» (Más › Tus apps).
   const tel = useEsteTelefono(es, toast);
   const ctx: Ctx = { ahora, d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, compraPro, ver: VP.pide, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, pat, patRes, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp, arts, nav, cpa, cpaAuto, tel };
@@ -200,10 +208,10 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
   const ed = (D?.ed ?? (desk || !ruta.det ? S.ed : null)) ?? null;
   const commit = (e: Editor | null) => { if (!e) return; const k = e.F.key; run(() => e.apply(e.F.d), e.toast ?? E2("Guardado · ya se ve en tu página", "Saved · it shows on your page now"), () => { setForms((z) => { const n = { ...z }; delete n[k]; return n; }); e.onDone?.(); }); };
   const discard = (e: Editor | null) => { if (!e) return; const k = e.F.key; setForms((z) => { const n = { ...z }; delete n[k]; return n; }); if (!desk && ruta.det) closeDet(); };
-  const edActs = (e: Editor | null): Bloque | null => e && desk ? { type: "acts", pt: "6px", items: ([{ l: e.l, v: "primary", icon: "check", off: !(e.F.dirty || e.always) || !e.valid || pending, onClick: () => commit(e) }] as Accion[]).concat(e.F.dirty ? [{ l: E2("Descartar", "Discard"), v: "secondary", icon: null, off: false, onClick: () => discard(e) }] : []) } : null;
+  const edActs = (e: Editor | null): Bloque | null => e && desk ? { type: "acts", pt: "6px", items: ([{ l: e.l, v: "primary", icon: "check", off: soloVer || !(e.F.dirty || e.always) || !e.valid || pending, onClick: () => commit(e) }] as Accion[]).concat(e.F.dirty ? [{ l: E2("Descartar", "Discard"), v: "secondary", icon: null, off: false, onClick: () => discard(e) }] : []) } : null;
   const mainBlocks: (Bloque | null)[] = !desk && ruta.det && D ? [...D.blocks, edActs(D.ed), ...(D.tail ?? [])] : [...S.blocks, edActs(S.ed), ...(S.tail ?? [])];
   const detBlocks: (Bloque | null)[] = D ? [...D.blocks, edActs(D.ed), ...(D.tail ?? [])] : [];
-  const showSave = !desk && !!ed && (ed.F.dirty || !!ed.always);
+  const showSave = !desk && !!ed && (ed.F.dirty || !!ed.always) && !soloVer; // 9n-23 · sin barra de «Guardar» en la vista del equipo
   const modalOpen = ui.sheet === "biz" || (desk && w < 1200 && hasDet && !!D);
 
   const st = d.st, stFg = st.open ? "var(--tl-open-text)" : "var(--tl-danger)", stDot = st.open ? "var(--tl-open)" : "var(--tl-danger)";
@@ -254,8 +262,10 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
       <div inert={modalOpen} aria-hidden={modalOpen || undefined} style={{ display: "contents" }}>
       <style>{"@keyframes d2Fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}@keyframes d2Up{from{transform:translateY(64px);opacity:0}to{transform:none;opacity:1}}.d2hs::-webkit-scrollbar{display:none}"}</style>
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = Array.from(e.target.files ?? []); if (f.length) fileCb.current?.(f); }} />
+      {/* 9n-23 · Vista del equipo: el aviso queda fijo arriba al bajar (la cabecera del teléfono deja de ser fija para no taparlo). */}
+      {soloVer ? <div ref={avisoRef} style={{ position: "sticky", top: 0, zIndex: 45, background: "var(--tl-paper)", padding: desk ? "12px 32px 0" : "8px 12px 0", boxSizing: "border-box" }}><div style={{ maxWidth: desk ? 1376 : "none", margin: "0 auto" }}><AvisoSoloLectura es={es} negocio={d.name} /></div></div> : null}
       {!desk ? (
-        <div style={{ position: "sticky", top: 0, zIndex: 30, background: "var(--tl-white)", borderBottom: "1px solid rgba(11,14,18,.07)", padding: "10px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ position: soloVer ? "relative" : "sticky", top: 0, zIndex: 30, background: "var(--tl-white)", borderBottom: "1px solid rgba(11,14,18,.07)", padding: "10px 16px", display: "flex", alignItems: "center", gap: 10 }}>
           <div role="button" onClick={() => setUi({ sheet: "biz" })} {...tec(() => setUi({ sheet: "biz" }))} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
             {avatar(38)}
             <span style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
@@ -268,7 +278,7 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
       ) : null}
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: desk ? (detCol ? "264px minmax(0,1fr) 420px" : "264px minmax(0,1fr)") : "minmax(0,1fr)", gap: desk ? 28 : 0, maxWidth: desk ? 1440 : "none", width: "100%", margin: "0 auto", padding: desk ? "28px 32px 64px" : "16px 16px 24px", alignItems: "start", boxSizing: "border-box" }}>
         {desk ? (
-          <aside data-screen-label="Panel v2 · menú (2t)" style={{ minWidth: 0, position: "sticky", top: 28 }}>
+          <aside data-screen-label="Panel v2 · menú (2t)" style={{ minWidth: 0, position: "sticky", top: 28 + avisoH }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ padding: 12, borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 10 }}>
                 <div role="button" onClick={() => setUi({ sheet: "biz" })} {...tec(() => setUi({ sheet: "biz" }))} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
@@ -330,7 +340,7 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
           <PanelBloques bloques={mainBlocks} h1={h1} />
         </main>
         {detCol ? (
-          <aside data-screen-label="Panel v2 · detalle" style={{ minWidth: 0, position: "sticky", top: 28 }}>
+          <aside data-screen-label="Panel v2 · detalle" style={{ minWidth: 0, position: "sticky", top: 28 + avisoH }}>
             <div style={{ padding: 18, borderRadius: 22, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 14, animation: "d2Fade .2s ease-out" }}>
               <div style={{ display: "flex", justifyContent: "flex-end" }}><Cerrar onClick={closeDet} /></div>
               <PanelBloques bloques={detBlocks} h1={22} />
@@ -364,12 +374,13 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
           </div>
         </div>
       ) : null}
-      {ruta.det?.startsWith("door:") && evt?.puerta?.fecha ? <PuertaVivo negocio={d.id} fecha={evt.puerta.fecha} /> : null}
-      {ruta.det?.startsWith("ped:") && /^\d{1,12}$/.test(ruta.det.slice(4)) ? <RutaVivoPanel negocio={d.id} numero={ruta.det.slice(4)} setUi={setUi} /> : null}
+      {/* 9n-23 · En la vista del equipo no se abre nada en vivo: esas rutas piden ser del negocio (se ve lo de la carga de la página). */}
+      {!soloVer && ruta.det?.startsWith("door:") && evt?.puerta?.fecha ? <PuertaVivo negocio={d.id} fecha={evt.puerta.fecha} /> : null}
+      {!soloVer && ruta.det?.startsWith("ped:") && /^\d{1,12}$/.test(ruta.det.slice(4)) ? <RutaVivoPanel negocio={d.id} numero={ruta.det.slice(4)} setUi={setUi} /> : null}
       {/* 9n · El envío del mercado con el repartidor: el mismo mapa en vivo. */}
-      {ruta.det?.startsWith("merc:") && /^M-\d{1,10}$/.test(ruta.det.slice(5)) && mped?.det?.reparto?.rep ? <RutaVivoPanel negocio={d.id} numero={ruta.det.slice(5)} setUi={setUi} /> : null}
+      {!soloVer && ruta.det?.startsWith("merc:") && /^M-\d{1,10}$/.test(ruta.det.slice(5)) && mped?.det?.reparto?.rep ? <RutaVivoPanel negocio={d.id} numero={ruta.det.slice(5)} setUi={setUi} /> : null}
       {/* 9m · Mensajes en vivo: la lista y la conversación abierta se ponen al día cuando llega un mensaje (SSE propio, sin preguntar cada N s). */}
-      {ruta.sec === "msg" || ruta.det?.startsWith("msg:") ? <RefrescoVivo negocio={d.id} k="chat" /> : null}
+      {!soloVer && (ruta.sec === "msg" || ruta.det?.startsWith("msg:")) ? <RefrescoVivo negocio={d.id} k="chat" /> : null}
       {ui.cupScan ? <EscanearCupon negocio={d.id} es={es} onCerrar={() => setUi({ cupScan: false })} onValidado={() => router.refresh()} /> : null}
       {ui.puertaCam && evt?.puerta && evt.puerta.miSesion === ui.puertaCam ? <PuertaCamaraPanel sesion={ui.puertaCam as string} es={es} reentrada={!!evt.puerta.reglas.reentrada} libre={(evt.det?.pending ? evt.det.vivo : evt.det?.d)?.entrada === "free"} onCerrar={() => setUi({ puertaCam: null })} /> : null}
       {toastT ? <div role="status" style={{ position: "fixed", left: "50%", bottom: desk ? 28 : 100, transform: "translateX(-50%)", zIndex: 90, maxWidth: 360, width: "calc(100% - 40px)", boxSizing: "border-box", padding: "12px 16px", borderRadius: 14, background: "var(--tl-ink)", color: "var(--tl-white)", font: "700 13px/1.4 Manrope,sans-serif", textAlign: "center", animation: "d2Up .2s ease-out" }}>{toastT}</div> : null}
@@ -453,7 +464,7 @@ function secciones(c: Ctx): Sec {
       act: p.k === "equipo" ? { l: E2("Invitar", "Invite"), icon: "plus", onClick: () => c.det("stf:new") } : p.k === "nov" && c.d.pro ? { l: E2("Publicar", "Post"), icon: "plus", onClick: () => c.det("nov:new") } : p.k === "cup" && c.d.pro ? { l: E2("Crear", "Create"), icon: "plus", onClick: () => c.det("cup:new") } : undefined },
     { type: "tabs", items: partesDe(c.d).map((z) => ({ l: E2(...z.l), on: z.k === p.k, onClick: () => c.go("pag", z.k) })) },
   ];
-  const r = p.k === "dir" ? { blocks: [{ type: "pieza", el: <DireccionPanel negocio={c.d.id} es={c.es} desk={c.desk} /> } as Bloque], ed: null } : p.k === "hor" ? horario(c) : p.k === "fotos" ? { blocks: fotos(c), ed: null } : p.k === "about" ? about(c) : p.k === "ver" ? { blocks: verificacion(c), ed: null } : p.k === "lic" ? licencias(c) : p.k === "resenas" ? resenasBloques(c) : p.k === "nov" ? novBloques(c) : p.k === "cup" ? cupBloques(c) : { blocks: equipoBloques(c), ed: null };
+  const r = p.k === "dir" ? { blocks: [{ type: "pieza", el: <DireccionPanel negocio={c.d.id} es={c.es} desk={c.desk} inicial={c.d.dirEquipo} /> } as Bloque], ed: null } : p.k === "hor" ? horario(c) : p.k === "fotos" ? { blocks: fotos(c), ed: null } : p.k === "about" ? about(c) : p.k === "ver" ? { blocks: verificacion(c), ed: null } : p.k === "lic" ? licencias(c) : p.k === "resenas" ? resenasBloques(c) : p.k === "nov" ? novBloques(c) : p.k === "cup" ? cupBloques(c) : { blocks: equipoBloques(c), ed: null };
   return { blocks: [...head, ...r.blocks], ed: r.ed };
 }
 
@@ -920,7 +931,7 @@ function masBloques(c: Ctx): Bloque[] {
       onTg: () => c.run(() => avisoNegocio(d.id, k, !on), on ? E2("Apagado. Lo sigues viendo en tu panel.", "Off. You still see it in your dashboard.") : E2("Encendido.", "On.")) }; }) }] : []),
     { type: "rows", k: E2("TAMBIÉN", "ALSO"), items: [{ icon: "search", t: E2("Ver mi página como cliente", "View my page as a client"), onClick: () => window.open(`/n/${d.id}`, "_blank", "noopener") },
       // 9d · Exportar los datos del negocio (solo el dueño): lo que el panel ya muestra, en un ZIP que se baja una vez en 24 horas.
-      ...(d.kind === "owner" ? [{ icon: "folder", t: E2("Exportar los datos del negocio", "Export business data"), s: E2("Lo que tu panel muestra, en un archivo. Lo bajas aquí durante 24 horas.", "What your dashboard shows, in one file. Download it here for 24 hours."), onClick: () => c.nav(`/panel/${d.id}/exportar`) }] : []),
+      ...(d.kind === "owner" && !d.soloVer ? [{ icon: "folder", t: E2("Exportar los datos del negocio", "Export business data"), s: E2("Lo que tu panel muestra, en un archivo. Lo bajas aquí durante 24 horas.", "What your dashboard shows, in one file. Download it here for 24 hours."), onClick: () => c.nav(`/panel/${d.id}/exportar`) }] : []),
       // 8i · Mi cuenta en las cuatro apps (Apple 5.1.1(v), Google Play): idioma, teléfono, privacidad y Borrar mi cuenta (guardián borrarCuentaEnCadaApp).
       { icon: "shield", t: E2("Mi cuenta y ajustes", "My account and settings"), s: E2("Tu teléfono, idioma, privacidad y borrar tu cuenta.", "Your phone, language, privacy and deleting your account."), onClick: () => c.nav("/cuenta/ajustes") },
       { icon: "help", t: E2("Ayuda", "Help"), s: E2("Cómo funciona cada parte de tu panel, en español y en inglés.", "How each part of your dashboard works, in Spanish and English."), onClick: () => window.location.assign("/ayuda?t=panel") },

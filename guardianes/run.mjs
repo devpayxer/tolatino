@@ -4490,6 +4490,70 @@ const guardianes = {
     if (!/if \(!vistaEquipo\) \{\s*after\(\(\) => registrarVista/.test(t)) falla(G, P, 0, "la vista del equipo no cuenta como vista del negocio");
   },
 
+  /* 9n-23 · «Panel del dueño»: el equipo con neg:ver ve el panel de un negocio en SOLO LECTURA. (1) accesoPanelSoloLectura (lib/panel.ts) pide staff() con
+     neg:ver, las ciudades del rol, nunca un fusionado, y marca soloVer; accesoPanel (el de las acciones) no sabe nada del equipo. (2) Solo la página
+     del panel lo llama (con ?equipo=1 y solo si no es del negocio): ninguna acción, ruta ni otra pantalla, así que todo cambio lo rechaza el servidor.
+     (3) La página marca la petición como solo lectura (marcarSoloLectura, solo ahí) y audita cada sección (negocio.ver_panel) en una transacción; no
+     marca vista una solicitud, no lee Stripe, no muestra tarjetas ni términos de quien mira; datosPanel no corre procesar. (4) Leer no deja huella:
+     conversacionNegocio y solicitudPanel no marcan leído/visto, repararPagos y repararEstimados no cobran, y lo cifrado de op_private no se abre.
+     (5) La pantalla: el aviso fijo, «Guardar» apagado, Exportar fuera; el 360° ofrece «Panel del dueño» y dice la entrada en su historial.
+     Al revés (alreves9n23). */
+  panelEquipoSoloLectura() {
+    const G = "panelEquipoSoloLectura", L = "apps/web/lib/panel.ts", P = "apps/web/app/panel/[id]/[[...r]]/page.tsx", PN = "apps/web/app/panel/Panel.tsx",
+      VE = "apps/web/lib/vista-equipo.ts", N = "apps/web/app/admin/N360.tsx";
+    for (const f of [L, P, PN, VE, N]) if (!existsSync(f)) return falla(G, f, 0, "falta un archivo de la vista del equipo");
+    const l = sinComent(L), eq = cuerpoFn(l, "accesoPanelSoloLectura"), ap = cuerpoFn(l, "accesoPanel");
+    if (!eq) return falla(G, L, 0, "falta accesoPanelSoloLectura");
+    if (!/const s = await \(await import\("\.\/admin"\)\)\.staff\(\);\s*if \(!s\?\.puede\("neg", "ver"\)\) return null;/.test(eq)) falla(G, L, 0, "accesoPanelSoloLectura pide la sesión del equipo (dos pasos) con neg:ver");
+    if (!/b\.status <> 'merged' and \(cardinality\(\$2::text\[\]\) = 0 or b\.city_id = any\(\$2::text\[\]\)\)/.test(eq) || !/s\.ciudadesRol\]/.test(eq)) falla(G, L, 0, "accesoPanelSoloLectura: solo las ciudades del rol y nunca un fusionado");
+    if (!/return \{ yo: s, negocio, kind: "owner", partes: \["all"\], soloVer: true \};/.test(eq)) falla(G, L, 0, "accesoPanelSoloLectura marca soloVer");
+    if (/staff\(|soloVer|SoloLectura|equipo|staff_members/i.test(ap)) falla(G, L, 0, "accesoPanel (el de las acciones) no deja entrar al equipo: es solo para miembros del negocio");
+    if (!/if \(!acc\.soloVer\) await \(await import\("\.\/suscripcion"\)\)\.procesar\(id\)/.test(cuerpoFn(l, "datosPanel"))) falla(G, L, 0, "datosPanel no corre procesar (cobros de la suscripción) en la vista del equipo");
+    // (2) solo la página lo llama; marcarSoloLectura, solo la página
+    for (const f of codigo.filter((x) => /^apps\/web\/.*\.tsx?$/.test(x) && x !== L && x !== P)) {
+      const u = sinComent(f);
+      if (/\baccesoPanelSoloLectura\b/.test(u)) falla(G, f, 0, "solo la página del panel usa accesoPanelSoloLectura: una acción o ruta con él dejaría escribir al equipo");
+      if (f !== VE && /\bmarcarSoloLectura\b/.test(u)) falla(G, f, 0, "solo la página del panel marca la petición como solo lectura");
+    }
+    const p = sinComent(P);
+    if (!/const equipo = !dueno && sp\.equipo === "1" \? await accesoPanelSoloLectura\(id\) : null;\s*const acc = dueno \?\? equipo;/.test(p)) falla(G, P, 0, "la vista del equipo: solo con ?equipo=1 y solo si no es del negocio");
+    if ((p.match(/\baccesoPanelSoloLectura\(/g) ?? []).length !== 1) falla(G, P, 0, "accesoPanelSoloLectura se llama una sola vez, en la entrada de la página");
+    const bl = /if \(equipo\) \{([\s\S]*?)\n  \}\n  const d = await datosPanel\(acc, lang\);/.exec(p)?.[1] ?? "";
+    if (!/^\s*marcarSoloLectura\(\);/.test(bl)) falla(G, P, 0, "la página marca la petición como solo lectura antes de leer nada (lo primero del bloque del equipo, antes de datosPanel)");
+    if (!/await tx\(async \(c\) => \{[\s\S]*?if \(!ya\) await auditar\(c, \{ actor: equipo\.yo\.id, action: "negocio\.ver_panel", targetKind: "business", targetId: neg\.id/.test(bl)) falla(G, P, 0, "cada sección que abre el equipo va a la auditoría (negocio.ver_panel), en una transacción");
+    for (const [re, m] of [
+      [/if \(!acc\.soloVer\) await verSolicitud\(/, "abrir una solicitud de empleo no la marca vista en la vista del equipo"],
+      [/sp\.vuelta && !acc\.soloVer\) await actualizarCuenta\(/, "la vista del equipo no lee la cuenta de Stripe"],
+      [/tarjetas: acc\.soloVer \? \[\] : await misTarjetas\(acc\.yo\.id\)/, "las tarjetas de quien mira no salen en la vista del equipo"],
+      [/!ruta\.det && !acc\.soloVer \? await faltaAceptar\(u\.id\)/, "la hoja de términos (del dueño) no sale en la vista del equipo"],
+    ]) if (!re.test(p)) falla(G, P, 0, m);
+    if (/await verSolicitud\(/.test(p.replace(/if \(!acc\.soloVer\) await verSolicitud\(/, ""))) falla(G, P, 0, "verSolicitud sin la guarda de la vista del equipo");
+    // (4) leer no deja huella
+    for (const [f, fn, re, m] of [
+      ["apps/web/lib/mensajes.ts", "conversacionNegocio", /if \(t\.unread && !soloLectura\(\)\) await db\(\)\.query\(`update chat_threads set biz_unread = 0/, "abrir una conversación en la vista del equipo no la marca leída"],
+      ["apps/web/lib/solicitudes.ts", "solicitudPanel", /if \(!soloLectura\(\)\) await db\(\)\.query\(`update request_targets set seen_at/, "mirar un pre-estimado en la vista del equipo no lo marca visto"],
+      ["apps/web/lib/cobros.ts", "repararPagos", /^\s*\nexport async function repararPagos\([^)]*\) \{\s*if \(soloLectura\(\)\) return;/, "repararPagos no cobra ni libera desde la vista del equipo"],
+      ["apps/web/lib/estimados.ts", "repararEstimados", /^\s*\nexport async function repararEstimados\([^)]*\): Promise<void> \{\s*if \(soloLectura\(\)\) return;/, "repararEstimados no cobra ni libera desde la vista del equipo"],
+      ["apps/web/lib/ninos-privado.ts", "leerNino", /const t = r && !soloLectura\(\) \? descifrar\(r\.enc\) : null;/, "los datos del niño no se abren en la vista del equipo"],
+      ["apps/web/lib/ninos-privado.ts", "leerNotaFe", /return r && !soloLectura\(\) \? descifrar\(r\.enc\) : null;/, "la nota de consejería no se abre en la vista del equipo"],
+      ["apps/web/lib/envios.ts", "destinatarioDe", /const t = soloLectura\(\) \? null : descifrar\(/, "el destinatario cifrado no se abre en la vista del equipo"],
+      ["apps/web/lib/visitas-inm.ts", "visDetalle", /const t = r && !soloLectura\(\) \? descifrar\(r\.enc\) : null;/, "la dirección de la casa no se abre en la vista del equipo"],
+    ]) { if (!existsSync(f)) { falla(G, f, 0, "falta"); continue; } if (!re.test(cuerpoFn(sinComent(f), fn))) falla(G, f, 0, m); }
+    const cp = cuerpoFn(sinComent("apps/web/lib/citas-panel.ts"), "citaPanel");
+    if ((cp.match(/descifrar\(/g) ?? []).length !== (cp.match(/\? descifrar\(p\?\.note_enc\) : null/g) ?? []).length || !/sit: priv \? p\?\.reason \?\? null : null/.test(cp) || !/motivo: !soloLectura\(\) \? p\?\.reason \?\? null : null/.test(cp)) falla("panelEquipoSoloLectura", "apps/web/lib/citas-panel.ts", 0, "la nota y el motivo privados de una cita de salud o de un trámite no salen en la vista del equipo");
+    // (5) la pantalla y el 360°
+    const pn = sinComent(PN);
+    if (!/\{soloVer \? <div ref=\{avisoRef\}[^\n]*<AvisoSoloLectura /.test(pn)) falla(G, PN, 0, "la vista del equipo lleva el aviso fijo «VISTA DEL EQUIPO · SOLO LECTURA»");
+    if (!/off: soloVer \|\| !\(e\.F\.dirty/.test(pn) || !/const showSave = [^\n]*&& !soloVer;/.test(pn)) falla(G, PN, 0, "«Guardar» apagado en la vista del equipo");
+    if (!/const soloVer = d\.soloVer;/.test(pn)) falla(G, PN, 0, "la vista del equipo la decide el servidor (d.soloVer)");
+    if (!/router\.push\(conEq\(url\(/.test(pn) || !/router\.push\(conEq\(href\)/.test(pn)) falla(G, PN, 0, "navegar dentro del panel conserva ?equipo=1 en la vista del equipo");
+    const av = existsSync("apps/web/app/panel/AvisoSoloLectura.tsx") ? sinComent("apps/web/app/panel/AvisoSoloLectura.tsx") : "";
+    if (!/E2\("VISTA DEL EQUIPO · SOLO LECTURA", "TEAM VIEW · READ ONLY"\)/.test(av) || !/<InfoCard /.test(av)) falla(G, "apps/web/app/panel/AvisoSoloLectura.tsx", 0, "el aviso es la InfoCard del sistema con «VISTA DEL EQUIPO · SOLO LECTURA» (ES/EN)");
+    const n = sinComent(N);
+    if (!/E\("Panel del dueño", "Owner’s dashboard"\), icon: "[a-z]+", onClick: \(\) => window\.open\(`\/panel\/\$\{n\.id\}\?equipo=1`/.test(n)) falla(G, N, 0, "el 360° ofrece «Panel del dueño» (/panel/{id}?equipo=1)");
+    if (!/"negocio\.ver_panel": "[^"]+"/.test(n.slice(n.indexOf("const VERBO:"), n.indexOf("const VERBO_EN:"))) || !/"negocio\.ver_panel": "[^"]+"/.test(n.slice(n.indexOf("const VERBO_EN:")))) falla(G, N, 0, "el historial del 360° dice «abrió en solo lectura el panel» (ES/EN)");
+  },
+
   /* 9f-5 · La ayuda editada en el Super Admin (0168): el repo sigue siendo la fuente y lo del equipo no sale. (1) El despliegue compara contra el sha
      del ARCHIVO (repo_sha256): mientras no cambie, no pisa lo editado; si cambia, manda el repo y cierra las ediciones vivas. (2) help_edits es solo
      de inserción (trigger). (3) editarSeccionAyuda pasa la misma revisión que un archivo (revisarTextoAyuda: sin lenguaje interno, encabezados ni
@@ -5156,7 +5220,7 @@ const guardianes = {
     for (const [k, f] of filas) if (f.ruta !== (k === "pagina" ? "" : k)) falla(G, M, 0, `la fila «${k}» lleva a «${f.ruta}» (el código ES la ruta)`);
     const r = sinComent(R);
     // La parte que pide cada sección (la expresión de accesoPanel de la página).
-    const exp = /const acc = await accesoPanel\(id, ([^;]+)\);/.exec(r)?.[1] ?? "";
+    const exp = /const (?:acc|dueno) = await accesoPanel\(id, ([^;]+)\);/.exec(r)?.[1] ?? "";
     if (!exp) return falla(G, R, 0, "no encuentro la llamada a accesoPanel de la página del panel");
     const parteDe = (sec) => { for (const y of exp.matchAll(/((?:ruta\.sec === "[a-z]+"(?: \|\| )?)+) \? (undefined|"[a-z]+")/g)) if ([...y[1].matchAll(/"([a-z]+)"/g)].some((z) => z[1] === sec)) return y[2] === "undefined" ? null : y[2].slice(1, -1); return /: "([a-z]+)"$/.exec(exp)?.[1] ?? "?"; };
     const rutas = [];
