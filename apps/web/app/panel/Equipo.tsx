@@ -32,6 +32,8 @@ export function equipoBloques(c: Ctx): (Bloque | null)[] {
   const dow = d.hoy.dow, t = ahoraDec(d.hoy.hm);
   const work = shown.filter((m) => hoyPersona(semanaDe(c, m), dow, t, c.es).k < 2).length, pc = shown.length ? Math.round((work / shown.length) * 100) : 0;
   const nA = ok.filter((m) => m.hidden !== null).length;
+  // 9n · Staff en pausa de To’Latino (Negocios 360° o el Catálogo por ciudad): la página no presenta al equipo; reservar no cambia.
+  if (d.pausas.staff != null) out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`To’Latino pausó Staff: tu página no muestra a tu equipo (la pestaña y el riel); reservar contigo sigue igual. Motivo: ${d.pausas.staff}`, `To’Latino paused Staff: your page does not show your team (the tab and rail); booking stays the same. Reason: ${d.pausas.staff}`) });
   if (nA) out.push({ type: "note", tone: "danger", icon: "ban", t: nA === 1 ? E2("A 1 persona la quitó To’Latino de tu página. Sigue en tu equipo.", "To’Latino removed 1 person from your page. They stay on your team.") : E2(`A ${nA} personas las quitó To’Latino de tu página. Siguen en tu equipo.`, `To’Latino removed ${nA} people from your page. They stay on your team.`) });
   out.push({
     type: "rvsum", icon: "users", t: shown.length === 1 ? E2("1 persona en tu página", "1 person on your page") : E2(`${shown.length} personas en tu página`, `${shown.length} people on your page`),

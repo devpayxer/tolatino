@@ -7,6 +7,7 @@ import { db, tx } from "./db";
 import { valor } from "./config";
 import { destinatarioDe, fotosDe, precioDe, type Precio } from "./envios";
 import { pasarela } from "./pagos/pasarela";
+import { PAUSA_COT } from "./modulo-pausa";
 import { bancoPide } from "./pagos/verificacion";
 import { kindTrans, salidasDe } from "./transporte";
 import { LIC_TRANS, type Bi, type SvcTrans } from "./transporte-comun";
@@ -90,7 +91,7 @@ export async function bookingViaje(negocio: string, svcId: string, userId: strin
             coalesce(a.geo is null or bz.geo is null or bz.service_radius_mi is null or st_dwithin(a.geo, bz.geo, bz.service_radius_mi * 1609.344), true) as "enZona"
        from user_addresses a, businesses bz where bz.id = $2 and a.user_id = $1 and a.removed_at is null order by a.is_default desc, a.created_at limit 10`, [userId, negocio])).rows : [];
   return { negocio: { id: x.id, nombre: x.name, foto: x.foto, ciudad: b.ciudad, direccion: x.address }, svc: s, hoy: x.hoy, dias, aj: await ajustes(c, negocio), enApp: !!x.cuenta,
-    booking: x.plan === "pro" && x.mods.includes("citas") && !x.off.citas && !x.off.svc && await licOk(c, negocio), zone: b.zone, dirs };
+    booking: x.plan === "pro" && x.mods.includes("citas") && !x.off.citas && !x.off.svc && !(s.k === "cotiza" && x.off.cot) && await licOk(c, negocio), zone: b.zone, dirs };
 }
 
 /* Mover asientos (siempre con el candado de la salida). */
@@ -138,6 +139,8 @@ export async function reservarViaje(userId: string, negocio: string, f: ViajeIn,
     const x = await contexto(c, negocio, ["NEG-TRANS"]), s = x ? await servicio(c, negocio, String(f.svc)) : null;
     if (!x || !s) { await c.query("rollback"); return no("Ese servicio no se reserva en línea.", "That service is not booked online."); }
     if (x.plan !== "pro" || !x.mods.includes("citas") || x.off.citas || x.off.svc) { await c.query("rollback"); return no(`${x.name} no toma reservas en línea por ahora: llama al negocio.`, `${x.name} is not taking online bookings right now: call the business.`); }
+    // 9n · «Pedir precio» (mudanza) es de Cotizaciones: en pausa el servidor no la recibe (modules_off.cot).
+    if (s.k === "cotiza" && x.off.cot) { await c.query("rollback"); return no(PAUSA_COT.es, PAUSA_COT.en); }
     if (!(await licOk(c, negocio))) { await c.query("rollback"); return no(`La licencia de ${x.name} está en revisión: por ahora se reserva llamando.`, `${x.name}'s license is under review: book by phone for now.`); }
     // Caja: destinatario completo y «Lo que no se puede mandar» aceptado. Mudanza: fotos (1–6, del propio cliente) y el destino.
     const dest = s.k === "caja" ? destinoValido(f.dest) : null;

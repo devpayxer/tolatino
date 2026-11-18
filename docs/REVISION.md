@@ -5386,7 +5386,7 @@ cuántos negocios afecta y pide motivo. **Decidí (dime si no):**
   tu ciudad»; si lo quieres, hay que diseñarlo. Sus negocios no salen en Negocios, Buscar, el mapa ni los destacados, pero **su ficha se conserva**
   (se entra por su enlace). En «Recomendar» un vecino sí puede elegirla (es pedir que llegue).
 - **Módulo apagado en una ciudad** = la misma pausa que pone Negocios 360° a un negocio, para todos los de esa ciudad (y los nuevos). El dueño ve el
-  motivo en su panel. **Cotizaciones y Staff** no tienen esa pausa en su página: no se ofrecen por ciudad todavía (LAUNCH).
+  motivo en su panel. **Cotizaciones y Staff** no la tenían; ya sí (ver «Cotizaciones y Staff por ciudad», más abajo).
 - **Plantilla de horario y ejemplos:** la semilla son exactamente los que ya se veían (el ejemplo del nombre es «Ej.: Barbería Don Fello» en todas
   las categorías, el del ítem «Nombre»): nada cambia hasta que los edites. Iglesias no lleva plantilla (su horario sale de los cultos).
 - **Límites Free/Pro** viven en Configuración (los mismos valores en Sistema › Configuración › Negocios) y **solo un Admin** los cambia (como toda la
@@ -5396,3 +5396,32 @@ cuántos negocios afecta y pide motivo. **Decidí (dime si no):**
   y qué ve Pro» sigue de solo lectura (los sí/no por campo); sus cifras ya salen de los límites.
 - Un borrador de «Publica tu negocio» a medias que eligió una subcategoría que después se **renombró** la pierde al publicar (se guarda por nombre):
   la persona la vuelve a elegir. Raro; si molesta, se guarda por código.
+
+## Cotizaciones y Staff por ciudad (18 nov) — mirar
+En el sandbox, Super Admin › Catálogo › **Módulos y Free/Pro** › **Cotizaciones** (y **Staff**): ahora tienen su interruptor por ciudad como los demás (ya no
+dice «todavía no se apaga por ciudad»). Con Cotizaciones apagado en Hazleton, la hoja de un servicio de un taller o de un plomero no ofrece «Pedir
+pre-estimado» ni «Pedir a hasta 3»; con Staff apagado, la ficha de una barbería no muestra la pestaña «Equipo» ni el riel de personas. En Negocios 360° hay
+la misma pausa para **un solo negocio** (Equipo › Módulo › Staff; Lo que vende › Cotizaciones en Auto, Hogar, Transporte y Fiestas). **Decidí (dime si no):**
+- **La clave de Cotizaciones es `cot`** (la de `module_types`; «quote» es solo el tipo de precio de un ítem de Publica). Staff es `staff`.
+- **Qué es «Cotizaciones» para el vecino:** lo que pide para saber el precio ANTES de reservar: el pre-estimado con fotos (Auto y Hogar), «Pedir a hasta 3»
+  (Hogar), «Pedir precio» de una mudanza (Transporte) y el servicio que se cotiza con total por escrito (Fiestas). **No lo apaga:** la emergencia 24/7 (es
+  pedir ayuda, no precio), el total por escrito que manda una oficina Pro después de una consulta ya reservada (lo manda el negocio; sigue su camino), la
+  «cotización» de Bienes Raíces (se llama por teléfono, no hay flujo) ni la propuesta de un evento privado de Noche (cuelga de Mesas y lista, `rsv`).
+  Si quieres que alguno de esos también dependa de Cotizaciones, es una línea por flujo y un lector más en el guardián.
+- **Lo ya pedido sigue:** apagar Cotizaciones solo cierra la puerta a pedidos NUEVOS (mismo criterio que Citas y Pedidos: «lo ya pedido sigue»). El
+  servidor lo decide (la pantalla vieja abierta recibe «Este negocio no recibe solicitudes de precio en línea por ahora: llama al negocio.»); en «Pedir a
+  hasta 3» el negocio pausado ni sale entre los candidatos.
+- **Un servicio con precio no cambia** con Cotizaciones apagado (se reserva igual): solo salen las entradas de «pedir precio». En una mudanza o en un
+  servicio de Fiestas «que se cotiza», que no tiene otro camino, el botón pasa a «Ver» y la hoja dice «Llama para reservar».
+- **Staff apagado oculta la PRESENTACIÓN del equipo** (pestaña, riel, «Ver equipo» en la tarjeta del dueño, tarjetas de escritorio y «Quién está detrás» con
+  su equipo; es el mismo efecto que «Quitar de la página» a todos) pero **NO rompe reservar**: elegir con quién (y la silla de una barbería, que es
+  obligatoria) sigue siendo parte de Citas y de su política «elegir con quién»; las personas que aparecen al reservar salen igual. Así apagar Staff nunca
+  deja a nadie sin poder pedir su cita. Si prefieres que Staff apagado también quite el selector de persona al reservar, hay que cuidar la silla de
+  Belleza (hoy sin «Cualquiera»): lo dejé fuera a propósito.
+- **«Afecta a N negocios» de Cotizaciones y Staff:** ningún negocio trae `cot` ni `staff` en `modules_on` (no se encienden uno por uno), así que el conteo de
+  la confirmación son los negocios activos de la ciudad cuya categoría permite el módulo (p. ej. 199 y 447 en Hazleton en la semilla). La pausa se escribe a
+  todos los de la ciudad.
+- **El dueño ve el motivo:** una nota roja en su panel (Equipo para Staff; Servicios de Auto, Hogar, Transporte y Fiestas para Cotizaciones), con «lo ya
+  pedido sigue» / «reservar contigo sigue igual».
+- **Una pausa de la ciudad llega a todos los negocios de ella**, también a los que no tienen el módulo (un restaurante recibe `cot`): no pasa nada porque
+  ninguna de sus pantallas lo lee; el panel solo avisa a los tipos de negocio donde Cotizaciones existe.

@@ -1,4 +1,4 @@
-// Prueba al revés de los guardianes del Catálogo completo (LAUNCH L214, 18 nov): catalogoCompleto (el código de una subcategoría no cambia, nada se
+// Prueba al revés de los guardianes del Catálogo completo (LAUNCH L214, 18 nov; moduloPorCiudad con Cotizaciones y Staff: LAUNCH «Cotizaciones y Staff por ciudad», 18 nov): catalogoCompleto (el código de una subcategoría no cambia, nada se
 // borra, la fusión deja su puntero, cada edición dice a cuántos negocios afecta), categoriaPorCiudad (una categoría apagada en la ciudad no se ofrece
 // en la categoría, Negocios, el mapa, Buscar ni Publica), moduloPorCiudad (la pausa de la ciudad usa modules_off con su marca, la reciben los
 // negocios nuevos, encender no quita la pausa propia), plantillasDePublica (Publica lee la plantilla de horario y los ejemplos del Catálogo, también
@@ -37,7 +37,22 @@ const casos = [
   // ── moduloPorCiudad ──
   ['moduloPorCiudad', MIG, 'create trigger businesses_modulos_ciudad before insert or update of city_id on businesses', 'create trigger businesses_modulos_ciudad before update of city_id on businesses'],
   ['moduloPorCiudad', MIG, "modules_off - modulo where city_id = ciudad and modules_off->modulo->>'ciudad' = 'true'", 'modules_off - modulo where city_id = ciudad'],
-  ['moduloPorCiudad', LC, 'export const MODULOS_POR_CIUDAD = ["menu", ', 'export const MODULOS_POR_CIUDAD = ["cot", "menu", '],
+  // una clave sin lector entra a MODULOS_POR_CIUDAD (apagarla no apagaría nada)
+  ['moduloPorCiudad', LC, 'export const MODULOS_POR_CIUDAD = ["menu", ', 'export const MODULOS_POR_CIUDAD = ["cupones", "menu", '],
+  // 18 nov · Cotizaciones y Staff: salen de la lista, o pierden su lector en el servidor y en la página
+  ['moduloPorCiudad', LC, '"citas", "cot", "shop"', '"citas", "shop"'],
+  ['moduloPorCiudad', LC, '"renta", "staff", "eventos"', '"renta", "eventos"'],
+  ['moduloPorCiudad', W + 'lib/solicitudes.ts', '    if (s.pausa) return no(PAUSA_COT.es, PAUSA_COT.en);\n', ''],
+  ['moduloPorCiudad', W + 'lib/solicitudes.ts', "and not (coalesce(b.modules_off, '{}'::jsonb) ? 'cot') and (b.id = $1", 'and (b.id = $1'],
+  ['moduloPorCiudad', W + 'lib/viajes.ts', 'if (s.k === "cotiza" && x.off.cot) { await c.query("rollback"); return no(PAUSA_COT.es, PAUSA_COT.en); }', ''],
+  ['moduloPorCiudad', W + 'lib/fiestas-reservas.ts', 'if (s.k === "cotiza" && x.off.cot) { await c.query("rollback"); return no(PAUSA_COT.es, PAUSA_COT.en); }', ''],
+  ['moduloPorCiudad', W + 'lib/oficios-publico.ts', 'cotOff: enPausa(off, "cot"),', 'cotOff: false,'],
+  ['moduloPorCiudad', W + 'app/(app)/n/[id]/preestimado/page.tsx', '!op.can || op.cotOff ||', '!op.can ||'],
+  ['moduloPorCiudad', W + 'app/(app)/n/[id]/Oficios.tsx', 's.k === "pres" && op.can && !op.cotOff', 's.k === "pres" && op.can'],
+  ['moduloPorCiudad', W + 'app/(app)/n/[id]/Viaje.tsx', 'const enApp = tp.booking && !(cot && tp.cotOff);', 'const enApp = tp.booking;'],
+  ['moduloPorCiudad', W + 'lib/ficha.ts', "and (x.staff_hidden or coalesce(x.modules_off, '{}'::jsonb) ? 'staff'))", 'and x.staff_hidden)'],
+  ['moduloPorCiudad', W + 'app/(app)/n/[id]/FichaNueva.tsx', 'const verEquipo = f.equipoOff ? [] : gente;', 'const verEquipo = gente;'],
+  ['moduloPorCiudad', NE, '"eventos", "cot", "staff"].includes(modulo)', '"eventos"].includes(modulo)'],
   ['moduloPorCiudad', NE, '    if (!pausar && cur[modulo]?.ciudad === true) return', '    if (false) return'],
   // ── plantillasDePublica ──
   ['plantillasDePublica', PU + 'logica.ts', 'export const daysOf = (d: Borrador): Dia[] => d.days || (d.cat ? horasDe(d.cat, d.own)', 'export const daysOf = (d: Borrador): Dia[] => d.days || (d.cat ? Fl.hours(d.cat, d.own)'],

@@ -152,11 +152,11 @@ export function FiHoja({ v }: { v: Fi }) {
   // 4v: «Pedir la fecha» abre el Booking de Fiestas con el servicio y Tu fecha.
   const go = () => {
     if (otra) { v.cerrar(); v.setFechaHoja(true); return; }
-    if (!fp.booking) return v.llamar();
+    if (!fp.booking || (s.k === "cotiza" && fp.cotOff)) return v.llamar();
     const q = new URLSearchParams({ s: s.id }); if (fecha && !visita) q.set("d", fecha.day);
     v.router.push(`/n/${fp.negocio.id}/fiesta?${q.toString()}`);
   };
-  const cta = visita ? E2("Pedir visita", "Request tour") : otra ? E2("Ver otra fecha", "Pick another date") : !fp.booking ? E2("Llama para tu fecha", "Call about your date") : E2("Pedir la fecha", "Request the date");
+  const cta = visita ? E2("Pedir visita", "Request tour") : otra ? E2("Ver otra fecha", "Pick another date") : (!fp.booking || (s.k === "cotiza" && fp.cotOff)) ? E2("Llama para tu fecha", "Call about your date") : E2("Pedir la fecha", "Request the date");
   return (
     <div data-screen-label="Servicio · Fiestas" className="fixed inset-0 z-[60]">
       <div onClick={v.cerrar} className="absolute inset-0 bg-ink/50" />
@@ -183,7 +183,7 @@ export function FiHoja({ v }: { v: Fi }) {
         </div>
         <div className="flex flex-none items-center gap-3.5 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
           <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{P.s || E2("PRECIO", "PRICE")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</div></div>
-          <div className="flex min-w-0 flex-1"><Button block icon={otra ? "dateFree" : !fp.booking && !visita ? "phone" : "calendar"} onClick={go}>{cta}</Button></div>
+          <div className="flex min-w-0 flex-1"><Button block icon={otra ? "dateFree" : (!fp.booking || (s.k === "cotiza" && fp.cotOff)) && !visita ? "phone" : "calendar"} onClick={go}>{cta}</Button></div>
         </div>
       </div>
     </div>
