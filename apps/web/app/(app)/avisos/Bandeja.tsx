@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import type { misAvisos } from "@/lib/avisos";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../cuenta/Marco";
 import { useAhora } from "@/lib/ahora";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type D = Awaited<ReturnType<typeof misAvisos>>;
 const IC: Record<string, string> = { ord_ok: "bag", ord_no: "bag", ord_ready: "bag", ord_way: "truck", rsv_ok: "calendar", rsv_alt: "calendar", rsv_no: "calendar", job_reply: "brief", help_reply: "help", help_done: "help", mod_hide: "shield", biz_req: "store", biz_help: "help", biz_job: "brief" };
 export function Bandeja({ d, es, yo, pagina }: { d: D; es: boolean; yo: Yo; pagina: boolean }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const hace = (iso: string) => { const m = (ahora - new Date(iso).getTime()) / 60_000; return m < 1 ? E2("AHORA", "NOW") : m < 60 ? E2(`HACE ${Math.floor(m)} MIN`, `${Math.floor(m)} MIN AGO`) : m < 1440 ? E2(`HACE ${Math.floor(m / 60)} H`, `${Math.floor(m / 60)} H AGO`) : E2(`HACE ${Math.floor(m / 1440)} D`, `${Math.floor(m / 1440)} D AGO`); };
   const B: Bloque[] = [];

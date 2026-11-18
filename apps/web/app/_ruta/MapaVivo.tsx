@@ -8,6 +8,7 @@ import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
 import { haceCuanto, horaCorta, mapaRuta } from "@/lib/mapa-ruta";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { RadiusMap } = UI as unknown as Record<"RadiusMap", ComponentType<any>>;
@@ -40,7 +41,7 @@ export function useAhora(cada = 20000): number {
 }
 
 export function MapaVivo({ pedido, es, repartidor }: { pedido: string; es: boolean; repartidor: string | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), { v, fin } = useRutaVivo(pedido), ahora = useAhora();
   useEffect(() => { if (fin) router.refresh(); }, [fin, router]);
   if (!v || fin) return null;

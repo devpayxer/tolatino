@@ -13,6 +13,7 @@ import { matrizTexto } from "@/lib/qr/matriz";
 import { LINEA_MONEDAS, NOTA_CANJE, REGLAS_MONEDAS, SIN_VALOR, type CuponVecino, type MiCanje, type MisMonedas, type Movimiento } from "@/lib/monedas-comun";
 import { monCanjear, monCupones, monMisCupones, monMovimientos } from "../acciones";
 import { LINE, MONO, Marco, useAncho, useComUi, type YoCom } from "../Marco";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Tag" | "QrCode";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,7 +23,7 @@ const K = { font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,
 const dia = (iso: string, es: boolean) => new Date(iso).toLocaleDateString(es ? "es-US" : "en-US", { day: "numeric", month: "long", timeZone: "America/New_York" });
 
 export function Monedas({ es, yo, d }: { es: boolean; yo: YoCom; d: MisMonedas }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024;
   const [saldo, setSaldo] = useState(d.saldo);
   const [cups, setCups] = useState<{ filas: CuponVecino[]; mas: string | null }>({ filas: d.cupones, mas: d.masCupones });

@@ -12,12 +12,13 @@ import { dmLista } from "../acciones";
 import { Avatar, LINE, MONO, Marco, useAncho, useComUi, type YoCom } from "../Marco";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 
 export function Mensajes({ es, yo, ciudad, d }: { es: boolean; yo: YoCom; ciudad: string; d: { items: Conv[]; mas: string | null } }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024;
   const [items, setItems] = useState(d.items), [mas, setMas] = useState(d.mas), [busy, setBusy] = useState(false);
   // 9m · Llega un mensaje (en vivo): la página trae su lista otra vez y aquí se toma la nueva primera página (lo de «Ver más» se queda).

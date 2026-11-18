@@ -9,9 +9,10 @@ import { useEffect, useRef, useState } from "react";
 import type { HistoriaEvt } from "@/lib/evt-publico";
 import { evtCompartir, evtRsvp } from "../acciones";
 import { Icon, MONO, useGuardar, useToast } from "../comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export function EstaNoche({ es, ciudad, slides, inicio }: { es: boolean; ciudad: string; slides: HistoriaEvt[]; inicio: number }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), path = usePathname(), { toast, el } = useToast();
   const g = useGuardar(Object.fromEntries(slides.map((x) => [x.id, x.saved])), toast, es);
   const [i, setI] = useState(inicio), [vas, setVas] = useState<Record<string, boolean>>(Object.fromEntries(slides.map((x) => [x.fecha, x.going])));

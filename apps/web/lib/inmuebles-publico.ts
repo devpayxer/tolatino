@@ -6,6 +6,7 @@ import {
   type Deal, type EstadoProp, type KindInm, type KindProp, type Laundry, type Util,
 } from "./inmuebles-comun";
 import type { SelloPub } from "./fe-publico";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 /* La ficha de Bienes Raíces (Fase 4 · 4id · fase4-iglesias-inmuebles-autos.md §1c, §3, §4id; neg-inm-kind.js faq L38–53, metaOf L84–88,
    btnOf L90, tabL L91, post L94–142). Ver una propiedad es gratis; «Para mudarte» y la cuota ESTIMADA los calculó el servidor al guardar
@@ -94,7 +95,7 @@ const libreDe = (p: InmPublica) => p.libre ?? minBy(renta(p).filter((x) => x.dis
 /* Preguntas por tipo (faq L38–53) con los datos de verdad; la de Tu página gana (lo mezcla la página). Los papeles se llevan en persona:
    aquí solo se dice QUÉ piden. */
 export function faqInm(p: InmPublica, es: boolean): { q: string; a: string }[] {
-  const E2 = (a: string, b: string) => (es ? a : b), R = renta(p), V = venta(p), r0 = minBy(R.filter((x) => x.moveIn != null), (x) => x.moveIn!), v0 = minBy(V, (x) => x.price ?? 0);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), R = renta(p), V = venta(p), r0 = minBy(R.filter((x) => x.moveIn != null), (x) => x.moveIn!), v0 = minBy(V, (x) => x.price ?? 0);
   const PAP = { q: E2("¿Qué papeles piden?", "What papers do they ask for?"), a: sinSeguro(p) ? E2("No piden seguro social: aceptan ITIN, pasaporte o carta del trabajo. Cada anuncio dice qué más piden; los papeles se llevan en persona.", "No SSN: they accept ITIN, passport or a work letter. Each listing says what else they need; papers are brought in person.")
     : E2("Seguro social o ITIN. Cada anuncio dice qué papeles piden; se llevan en persona, nunca por la app.", "SSN or ITIN. Each listing says which papers they need; they are brought in person, never through the app.") };
   const lib = libreDe(p), ls = R.find((x) => x.lease?.es)?.lease ?? null, contrato = ls ? (es ? ls.es : ls.en || ls.es) : "";
@@ -132,7 +133,7 @@ export function faqInm(p: InmPublica, es: boolean): { q: string; a: string }[] {
 
 /* La tarjeta de Hoy por tipo (post L108–117): columnas con datos reales y la frase de cómo se pide + la línea fija. */
 export function hoyInm(p: InmPublica, es: boolean, hoy: string) {
-  const E2 = (a: string, b: string) => (es ? a : b), k = p.kind, R = renta(p), V = venta(p), b = (t: Bi) => (es ? t.es : t.en);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), k = p.kind, R = renta(p), V = venta(p), b = (t: Bi) => (es ? t.es : t.en);
   const rMin = minBy(R.filter((x) => x.moveIn != null), (x) => x.moveIn!), vMin = minBy(V, (x) => x.price ?? 0), sMin = minBy(p.servicios.filter((x) => x.cents > 0), (x) => x.cents);
   const lib = libreDe(p), idi = p.esp ? E2("Español", "Spanish") : E2("Inglés", "English");
   const nmls = p.nmls ? `NMLS ${p.nmls}` : E2("Pregunta", "Ask");

@@ -8,6 +8,7 @@ import { usePermiso } from "@/app/_cascara/HojaPermiso";
 import { esApp, plataforma } from "@/lib/nativo/puente";
 import { linternaNativa, mantenerEncendida } from "@/lib/nativo/pantalla";
 import { abrirAjustes } from "@/lib/nativo/permisos";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type Det = { detect: (v: HTMLVideoElement) => Promise<{ rawValue?: string }[]> };
 
 export function Escaner({ activo, onCodigo, linterna, es, onLinterna }: { activo: boolean; onCodigo: (t: string) => void; linterna: boolean; es: boolean; onLinterna?: (puede: boolean) => void }) {
@@ -71,7 +72,7 @@ export function Escaner({ activo, onCodigo, linterna, es, onLinterna }: { activo
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     void t.applyConstraints({ advanced: [{ torch: linterna } as any] }).catch(() => undefined);
   }, [linterna, estado]);
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [app, setApp] = useState(false);
   useEffect(() => setApp(esApp()), []);
   return (

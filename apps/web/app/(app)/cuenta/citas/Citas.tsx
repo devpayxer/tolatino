@@ -6,15 +6,16 @@ import { useRouter } from "next/navigation";
 import type { EstMesa, MiOtro, MisReservas } from "@/lib/mi-cuenta";
 import { Marco, useCuentaUi, type Bloque, type Fila, type Yo } from "../Marco";
 import { cajaFecha, diaRel, horaDe } from "../fechas";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export const tagMesa = (st: EstMesa, es: boolean): [string, string] => {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   return ({ pend: [E2("PENDIENTE", "PENDING"), "neutral"], alt: [E2("TE PROPONEN UN CAMBIO", "THEY PROPOSE A CHANGE"), "action"], ok: [E2("CONFIRMADA", "CONFIRMED"), "signal"], in: [E2("EN CURSO", "IN PROGRESS"), "action"],
     done: [E2("TERMINADA", "DONE"), "ink"], nos: [E2("NO LLEGASTE", "NO-SHOW"), "danger"], no: [E2("NO PUDO", "COULD NOT"), "danger"], exp: [E2("SIN RESPUESTA", "NO REPLY"), "neutral"], cx: [E2("CANCELADA", "CANCELED"), "neutral"] } as Record<EstMesa, [string, string]>)[st];
 };
 
 export function Citas({ d, f, es, yo, pagina, otros = [] }: { d: MisReservas; f: "up" | "past"; es: boolean; yo: Yo; pagina: boolean; otros?: MiOtro[] }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const ir = (q: string) => router.push("/cuenta/citas" + q);
   const B: Bloque[] = [{ type: "chips", items: [{ l: `${E2("Próximas", "Upcoming")} · ${d.n.up}`, on: f === "up", onClick: () => ir("") }, { l: `${E2("Pasadas", "Past")} · ${d.n.past}`, on: f === "past", onClick: () => ir("?f=past") }] }];

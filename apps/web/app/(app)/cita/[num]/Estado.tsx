@@ -10,6 +10,7 @@ import type { CitaVista } from "@/lib/citas";
 import { horasTxt } from "@/lib/plazo-txt";
 import { EstimadoCliente, type PagoEst } from "./EstimadoCliente";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,7 +25,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
 
 export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: string; es: boolean; cambio?: boolean; pago?: PagoEst }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [hoja, setHoja] = useState<"cx" | "late" | null>(null);

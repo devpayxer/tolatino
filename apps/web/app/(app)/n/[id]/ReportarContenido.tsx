@@ -5,13 +5,14 @@ import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type ComponentType } from "react";
 import { contenidoReportar } from "./acciones-reportar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Chip, Button, Icon } = UI as unknown as Record<"Chip" | "Button" | "Icon", ComponentType<any>>;
 const MOT: [string, string, string][] = [["spam", "Spam o publicidad engañosa", "Spam or misleading ads"], ["falso", "Es falso o engañoso", "False or misleading"], ["off", "Ofensivo o discrimina", "Offensive or discriminatory"], ["otro", "Otra cosa", "Something else"]];
 
 export function ReportarContenido({ kind, id, es, conSesion, volver }: { kind: "post" | "job"; id: string; es: boolean; conSesion: boolean; volver: string }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), [pend, start] = useTransition();
   const [abierto, setAbierto] = useState(false), [m, setM] = useState<string | null>(null), [nota, setNota] = useState(""), [res, setRes] = useState<{ ok: boolean; t: string } | null>(null);
   const abrir = () => { if (!conSesion) { router.push(`/entrar?volver=${encodeURIComponent(volver)}`); return; } setAbierto((x) => !x); setRes(null); };

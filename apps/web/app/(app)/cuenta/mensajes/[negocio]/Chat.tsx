@@ -13,12 +13,13 @@ import { cuando, sistema } from "../Mensajes";
 import { mensajeEnviar, mensajeReportar, mensajesNuevos } from "../acciones";
 import { useAhora } from "@/lib/ahora";
 import { useMensajesVivo } from "@/lib/vivo-cliente";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // Un teléfono son 10 dígitos (con +1 delante o no); una tarjeta (13–19) no es un teléfono: el servidor la tapa como Soporte (9m).
 const TEL = /(?<!\d[\s.\-()]*)(?:\+?1[\s.\-()]*)?(?:\d[\s.\-()]*){9}\d(?![\s.\-()]*\d)/;
 export function Chat({ c, op, es, yo }: { c: Conversacion; op: string | null; es: boolean; yo: Yo }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const [msjs, setMsjs] = useState<Msj[]>(c.msjs), [v, setV] = useState(""), [pend, start] = useTransition();
   const [hilo, setHilo] = useState(c.id), [rep, setRep] = useState(false), [escribe, setEscribe] = useState(c.compaEscribe);

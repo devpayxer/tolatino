@@ -11,6 +11,7 @@ import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../p
 import { HojaCasa, casaMeta, compatCasa, useOficio } from "../Oficios";
 import { empezarElPlan } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,7 +26,7 @@ const hL = (m: number) => { const h = Math.floor(m / 60) % 24; return `${h % 12 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function Plan({ op, svcId, o, es, yo, pago }: { op: OficiosPublico; svcId: string; o: OpcionesPlan; es: boolean; yo: boolean; pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter();
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter();
   const v = useOficio(op, es, yo)!;
   const s = op.servicios.find((x) => x.id === svcId)!, nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [dow, setDow] = useState(o.dias[0]?.dow ?? null), [fi, setFi] = useState(0), [nota, setNota] = useState(""), [acceso, setAcceso] = useState("");

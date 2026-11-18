@@ -13,6 +13,7 @@ import { SaSeguro, useSalud } from "../Salud";
 import { horasDeConsulta, pedirConsulta } from "./acciones";
 import { uuid } from "@/lib/uuid";
 import { diasTxt } from "@/lib/plazo-txt";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,7 +28,7 @@ const PARA = [["yo", "Para mí", "For me"], ["hijo", "Para mi hijo o hija", "For
 const WHY = [["nuevo", "Algo nuevo", "Something new"], ["seguimiento", "Seguimiento", "Follow-up"], ["receta", "Receta o resultados", "Prescription or results"], ["papeles", "Papeles (trabajo, escuela)", "Forms (work, school)"], ["chequeo", "Chequeo", "Checkup"]] as const;
 
 export function Consulta({ sa, svcId, con0, seg0, notaDias, es, yo }: { sa: SaludPublico; svcId: string; con0: string; seg0: string | null; notaDias: number; es: boolean; yo: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const v = useSalud(sa, es)!;
   const s = sa.servicios.find((x) => x.id === svcId)!, nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es), tele = s.k === "tele";

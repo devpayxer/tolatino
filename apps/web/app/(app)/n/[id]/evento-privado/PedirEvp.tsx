@@ -10,6 +10,7 @@ import { AREAS_EVP, OCASIONES, PRESUPUESTOS, dinero, horaL, lbl } from "@/lib/ev
 import type { PaginaEvp } from "@/lib/evento-privado";
 import { pedirEvpAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots" | "IconButton" | "AddOnRow" | "DepositNote" | "BusinessRow";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,7 +24,7 @@ const diaCorto = (ymd: string, es: boolean) => { const d = new Date(`${ymd}T12:0
 const TURNOS: [string, string, number[]][] = [["ALMUERZO", "LUNCH", [660, 690, 720, 750, 780, 810, 840]], ["CENA", "DINNER", [1050, 1080, 1110, 1140, 1170, 1200, 1230]]];
 
 export function PedirEvp({ x, es, p0 }: { x: PaginaEvp; es: boolean; p0: number }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter(), a = x.aj;
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), a = x.aj;
   const areas = [...a.areas, ...(a.wholeCents != null ? ["todo"] : [])];
   const [paso, setPaso] = useState(1), [occ, setOcc] = useState(""), [p, setP] = useState(Math.min(a.capacity, Math.max(a.minParty, p0 || a.minParty)));
   const [area, setArea] = useState(areas[0] ?? "salon"), [dia, setDia] = useState(x.desde), [h, setH] = useState<number | null>(null), [dur, setDur] = useState(3);

@@ -11,6 +11,7 @@ import { derive, items, opOf, own, X, type Borrador } from "./logica";
 import { K } from "./PasosBC";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button" | "Chip" | "Tag" | "BusinessPreview";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, Tag, BusinessPreview } = UI as unknown as Record<N, ComponentType<any>>;
@@ -28,7 +29,7 @@ export function fechasPrueba(len: number, es: boolean) {
 
 /* Lo que trae Pro con SU negocio (proRows del diseño). */
 function proRows(d: Borrador, es: boolean) {
-  const E2 = (a: string, b: string) => (es ? a : b), c = d.cat ? X.CFG[d.cat] : null;
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), c = d.cat ? X.CFG[d.cat] : null;
   const iwP: [string, string] | null = ({ "NEG-NOCHE": ["opciones", "options"], "NEG-FIESTA": ["paquetes y artículos", "packages and items"] } as Record<string, [string, string]>)[d.cat ?? ""] || (c && c.items);
   const iw = iwP ? E2(iwP[0], iwP[1]) : E2("servicios", "services"), n = items(d).length, ph = [d.cover].concat(d.gallery || []).filter(Boolean).length;
   const FI = X.FREE_ITEMS || 5, FP = X.FREE_PHOTOS || 3, dv = derive(d), o = own(d), k = d.cat ? X.cat(d.cat) : null, out: { icon: string; t: string; f: string }[] = [];
@@ -47,7 +48,7 @@ function proRows(d: Borrador, es: boolean) {
 export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast }: {
   d: Borrador; up: Up; es: boolean; desk: boolean; dw: number; pv: unknown; fechas: { fin: string; aviso: string }; len: number; toast: (t: string) => void;
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const cam = useRef<HTMLInputElement>(null), rollo = useRef<HTMLInputElement>(null);
   const [subiendo, setSubiendo] = useState(0), [full, setFull] = useState(false);
   const [promo, setPromo] = useState<{ open: boolean; v: string; err: boolean }>({ open: false, v: "", err: false });
@@ -140,7 +141,7 @@ export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast }: {
 
 /* Fuerza del perfil (strength del diseño) con lo que el negocio ya tiene recién publicado. */
 function fuerza(d: Borrador, p: Publicado, es: boolean) {
-  const E2 = (a: string, b: string) => (es ? a : b), c = d.cat ? X.CFG[d.cat] : null, iw = c ? E2(c.items[0], c.items[1]) : E2("servicios", "services");
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), c = d.cat ? X.CFG[d.cat] : null, iw = c ? E2(c.items[0], c.items[1]) : E2("servicios", "services");
   const T: [boolean, number, string, string, string][] = [
     [p.items >= 3, 12, E2(`Agrega 3 o más ${iw}`, `Add 3 or more ${iw}`), E2("Con 3 o más, la gente compara y se decide.", "With 3 or more, people compare and decide."), "grid"],
     [p.fotos >= 5, 10, E2("Sube 5 fotos de tu trabajo", "Upload 5 photos of your work"), "", "image"],
@@ -161,7 +162,7 @@ function fuerza(d: Borrador, p: Publicado, es: boolean) {
 }
 
 export function PasoH1({ p, d, es, pv, toast }: { p: Publicado; d: Borrador; es: boolean; pv: unknown; toast: (t: string) => void }) {
-  const E2 = (a: string, b: string) => (es ? a : b), S = fuerza(d, p, es);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), S = fuerza(d, p, es);
   const ver = () => { window.location.href = `/n/${p.id}`; };
   const compartir = async () => {
     const url = `${window.location.origin}/n/${p.id}`;

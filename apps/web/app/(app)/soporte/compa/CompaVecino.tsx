@@ -13,6 +13,7 @@ import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 
 import type { Hoja, OpHoja, Razon } from "@/lib/compa/hoja";
 import type { TurnoOk } from "@/lib/compa/conversacion";
 import { compaConfirmar, compaDescartar, compaPaso, compaTurno } from "./acciones-compa";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const C = UI as unknown as Record<"CompaFrame" | "CompaSysLine" | "CompaUserMsg" | "CompaMsg" | "CompaTyping" | "CompaSlot" | "CompaActionCard" | "CompaHandoffCard" | "CompaChips" | "RequestCard" | "HelpReasonList" | "OptionCard" | "Button", ComponentType<any>>;
@@ -32,7 +33,7 @@ function useAncho() {
 export function CompaVecino({ modo, es, nombre, hoja, ops, hor, conSesion }: {
   modo: "sheet" | "page"; es: boolean; nombre: string | null; hoja?: Hoja | null; ops?: OpHoja[]; hor: string; conSesion: boolean;
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b), L = (x: Bi) => (es ? x.es : x.en);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), L = (x: Bi) => (es ? x.es : x.en);
   const router = useRouter(), w = useAncho(), desk = w >= 1024, sheet = modo === "sheet";
   const op0 = hoja?.op ?? null, sup = sheet ? "help_sheet" : "support_page";
   const hola = nombre ? E2(`Hola, ${nombre}.`, `Hi, ${nombre}.`) : E2("Hola.", "Hi.");

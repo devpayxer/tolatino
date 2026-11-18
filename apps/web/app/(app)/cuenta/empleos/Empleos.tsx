@@ -8,10 +8,11 @@ import { bi } from "@/lib/jobs-txt";
 import { TAG_APP } from "../../n/[id]/Jobs";
 import { Marco, useCuentaUi, type Bloque, type Fila, type Yo } from "../Marco";
 import { diaCorto, horaDe } from "../fechas";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 const ABIERTA = new Set(["sent", "seen", "contact", "interview"]);
 export function Empleos({ d, es, yo }: { d: MisSolicitudes; es: boolean; yo: Yo }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const fila = (a: MisSolicitudes[number]): Fila => {
     const tg = TAG_APP(es, a.ivOk)[a.st] ?? ["", "neutral"];

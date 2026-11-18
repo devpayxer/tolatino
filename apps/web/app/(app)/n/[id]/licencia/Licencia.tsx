@@ -7,6 +7,7 @@ import * as UI from "@tolatino/ui";
 import Link from "next/link";
 import { useEffect, useState, type ComponentType } from "react";
 import type { LicFila } from "@/lib/licencias";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Icon = UI.Icon as ComponentType<any>;
@@ -15,7 +16,7 @@ const MES = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["m
 const fecha = (iso: string | null, es: boolean) => { if (!iso) return "—"; const d = new Date(iso.length <= 10 ? `${iso}T12:00:00` : iso); return es ? `${d.getDate()} ${MES[d.getMonth()]![0]} ${d.getFullYear()}` : `${MES[d.getMonth()]![1]} ${d.getDate()}, ${d.getFullYear()}`; };
 
 export function Licencia({ l, lang }: { l: { id: string; nombre: string; cant: string | null; licencias: LicFila[] }; lang: "es" | "en" }) {
-  const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b);
+  const es = lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const desk = useAnchoComun() >= 1024; // 9c · sin salto al cargar
   const lay = desk ? { max: "760px", pad: "28px 32px 70px", h1: 32 } : { max: "100%", pad: "16px 16px 0", h1: 26 };
   const bizK = l.nombre.toUpperCase(), L = (x: { es: string; en: string } | null) => (x ? x[lang] || x.es : "");

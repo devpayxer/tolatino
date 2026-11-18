@@ -11,6 +11,7 @@ import { Avatar, MONO } from "./Marco";
 import type { Tr } from "../Traducir";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "PostCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, PostCard } = UI as unknown as Record<N, ComponentType<any>>;
@@ -26,7 +27,7 @@ const dias = (iso: string, es: boolean) => {
 export function Tarjeta({ p, es, full, tr, onOpen, onMenu, onVote, onPoll, onSave, onShare, onBiz, onAuthor }: {
   p: Pub; es: boolean; full?: boolean; tr?: Tr; onOpen?: Fn; onMenu?: Fn; onVote: (v: 1 | -1) => void; onPoll: (i: number) => void; onSave: Fn; onShare: Fn; onBiz: (id: string) => void; onAuthor?: Fn;
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [ix, setIx] = useState(0);
   const a = p.autor, rk = a.oficial ? { label: E2("Cuenta oficial", "Official account"), shield: null } : a.rango >= 4 ? { label: es ? rango(a.rango).es : rango(a.rango).en, shield: a.rango >= 9 ? "gold" : "gray" } : null;
   const lugar = (es ? p.lugar.es : p.lugar.en) + (p.mi != null ? ` · ${p.mi} mi` : "");

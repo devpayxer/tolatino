@@ -9,6 +9,7 @@ import { useState, type ComponentType } from "react";
 import { diaFiesta, EVT, LINEA_FIESTA } from "@/lib/fiestas-comun";
 import type { FiestaVista } from "@/lib/fiestas-reservas";
 import { fiestaAccion } from "./acciones";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,7 +20,7 @@ const hora = (t: number | undefined) => (t ? new Date(t).toLocaleTimeString("en-
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function FiestaEstado({ x, es }: { x: FiestaVista; es: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es), linea = nm(LINEA_FIESTA);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es), linea = nm(LINEA_FIESTA);
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null), [flash, setFlash] = useState<string | null>(null), [confirmar, setConfirmar] = useState(false);
   const hacer = async (que: "cancelar" | "aceptar" | "nogracias", ok: string) => {
     if (ocupado) return; setOcupado(true); setError(null);

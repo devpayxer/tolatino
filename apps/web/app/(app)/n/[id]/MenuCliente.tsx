@@ -7,6 +7,7 @@ import { flechas } from "@/lib/tec";
 import * as UI from "@tolatino/ui";
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties } from "react";
 import type { MenuPublico, PItem } from "@/lib/pedir";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Tag" | "Chip" | "MenuItemRow" | "MenuTile" | "OptionGroup" | "QtyStepper" | "CartLine" | "OrderBar";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -50,7 +51,7 @@ export function guardarModo(negocio: string, modo: Modo) {
 export const modoDe = (m: MenuPublico, guardado: Modo | null): Modo => (guardado && m.estado.modes.includes(guardado) ? guardado : m.estado.modes[0] ?? "pickup");
 /* Envío, mínimo, zona y platos de un solo modo (menuVals: fee, blk, blkS, freeNote): para el carrito, la tarjeta y el pago. */
 export function entrega(m: MenuPublico, lines: Linea[], modo: Modo, es: boolean) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const C = calc(m, lines), D = m.estado.dlv, dl = modo === "delivery" && !!D;
   const fee = dl && C.sub > 0 ? (D!.free && C.sub >= D!.free ? 0 : D!.fee) : 0;
   const bad = lines.map((l) => m.items[l.id]).find((it) => it && (dl ? !it.dlv : !it.pick));
@@ -96,7 +97,7 @@ type Ask = { kind: "again" | "which"; id: string; desk: boolean } | null;
 
 /* El controlador del menú (menuVals): lo usan la pestaña, el Resumen, la barra y el carrito. */
 export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () => void }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const biz = m?.negocio.id ?? "";
   const [cart, setCartS] = useState<Linea[]>([]);
   const [listo, setListo] = useState(false);
@@ -503,7 +504,7 @@ export function MenuResumen({ mn, desk, onAll }: { mn: Mn; desk: boolean; onAll?
 function Plato({ mn }: { mn: Mn }) {
   const sh = mn.sh;
   if (!sh) return null;
-  const E2 = (a: string, b: string) => (mn.es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(mn.es, a, b);
   const cuerpo = (
     <>
       <div className="relative bg-photo-bg" style={{ height: sh.desk ? 230 : 210, ...foto(sh.img) }}>

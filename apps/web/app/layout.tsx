@@ -3,7 +3,9 @@ import "./globals.css";
 import { Arranque } from "./_cascara/Arranque";
 import { FocoHojas } from "./FocoHojas";
 import { Vitales } from "./_vitales/Vitales";
+import { EdicionesE2 } from "./_cms/EdicionesE2";
 import { AhoraProvider } from "@/lib/ahora";
+import { edicionesE2 } from "@/lib/cms";
 import { BASE_URL } from "@/lib/correo";
 import { ENTORNO } from "@/lib/entorno";
 
@@ -32,7 +34,10 @@ export const viewport: Viewport = {
   themeColor: "#F7F6F3", // GUARDIAN-OK: = --tl-paper; el navegador exige un literal aquí
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // 9f-3 · Lo editado en el Super Admin de los textos de las pantallas (E2): pocas filas, de la copia de 15 s del proceso (lib/cms.ts). Se espera aquí,
+  // antes de pintar, y viaja al navegador con EdicionesE2: el servidor y la hidratación ven el mismo texto.
+  const ed = await edicionesE2();
   return (
     <html lang="es-US">
       <head>
@@ -40,7 +45,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       {/* 8a · Dentro de una de las cuatro cáscaras: splash, botón «atrás» y registro técnico (en la web no hace nada). */}
       {/* 9b-1 · El «ahora» de los tiempos relativos («hace 5 min»): el mismo en el servidor y en la hidratación (lib/ahora.tsx). */}
-      <body><AhoraProvider t={Date.now()}>{children}<Arranque /><FocoHojas /><Vitales /></AhoraProvider></body>
+      {/* 9f-3 · Lo editado de los textos de las pantallas, antes que cualquier componente de cliente (app/_cms/EdicionesE2.tsx). */}
+      <body><EdicionesE2 v={ed.v} l={ed.l}><AhoraProvider t={Date.now()}>{children}<Arranque /><FocoHojas /><Vitales /></AhoraProvider></EdicionesE2></body>
     </html>
   );
 }

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { PedidoVista } from "@/lib/pedir";
 import { cancelarPedido } from "../acciones";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,7 +16,7 @@ const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-[15px]";
 
 export function Cancelar({ p, es }: { p: PedidoVista; es: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [motivo, setMotivo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

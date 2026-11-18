@@ -3,10 +3,11 @@
    ./bajar (el navegador baja el archivo) y ESO gasta el enlace; abrir esta página no. Se muestra la huella sha256 del archivo. */
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import type { EnlaceApk } from "@/lib/beta";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Bi = { es: string; en: string };
 export function BajarApk({ es, ficha, e, error }: { es: boolean; ficha: string; e: EnlaceApk & { nombre: Bi }; error: string | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b), nombre = es ? e.nombre.es : e.nombre.en;
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), nombre = es ? e.nombre.es : e.nombre.en;
   const vence = new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "America/New_York", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(e.vence)).replace(/\./g, "");
   const bajar = () => { const f = document.createElement("form"); f.method = "post"; f.action = `/beta/apk/${ficha}/bajar`; document.body.appendChild(f); f.submit(); };
   const msg = error === "410" ? E2("Este enlace ya se usó o venció. Pide otro al equipo de To'Latino.", "This link was already used or expired. Ask the To'Latino team for another.")

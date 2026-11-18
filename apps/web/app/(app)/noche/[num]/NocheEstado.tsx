@@ -10,6 +10,7 @@ import { diaNoche, hNoche, LINEA_NOCHE, usdN } from "@/lib/noche-comun";
 import type { NocheVista } from "@/lib/noche-reservas";
 import { nocheAccion } from "./acciones";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,7 +19,7 @@ const hora = (t: string | undefined) => (t ? new Date(t).toLocaleTimeString("en-
 const OCC: Record<string, [string, string]> = { bailar: ["A bailar", "Dancing"], cumple: ["Cumpleaños", "Birthday"], despedida: ["Despedida", "Farewell"], celebra: ["Celebración", "Celebration"] };
 
 export function NocheEstado({ x, es }: { x: NocheVista; es: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null), [flash, setFlash] = useState<string | null>(null), [confirmar, setConfirmar] = useState(false);
   const hacer = async (que: "cancelar" | "aceptar" | "nogracias", ok: string) => {
     if (ocupado) return; setOcupado(true); setError(null);

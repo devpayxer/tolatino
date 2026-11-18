@@ -20,6 +20,7 @@ import { useVecinoAcciones } from "../../vecinoAcciones";
 import type { Tr } from "../../../Traducir";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button" | "TopAnswer" | "CommentCard" | "ReplyThread" | "AlsoRecommended";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, TopAnswer, CommentCard, ReplyThread, AlsoRecommended } = UI as unknown as Record<N, ComponentType<any>>;
@@ -32,7 +33,7 @@ const fondo = (u: string | null) => (u ? `url("${u}")` : undefined);
 const primero = (n: string) => n.split(/\s+/)[0] ?? n;
 
 export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: YoCom; pub: Pub; h0: H; orden: OrdenHilo; ui: ComUi; D: boolean; tr: Tr }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [h, setH] = useState(h0), [extra, setExtra] = useState<Cm[]>([]), [mas, setMas] = useState(h0.mas);
   const [resp, setResp] = useState<Record<string, Resp>>({});
@@ -304,7 +305,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
 
 /* Buscar un negocio de la ciudad para recomendarlo en el comentario (la hoja «Recomienda un negocio»). */
 function BuscaNegocio({ es, onPick }: { es: boolean; onPick: (b: NegocioCm & { metaT: string }) => void }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [q, setQ] = useState(""), [L, setL] = useState<{ id: string; nombre: string; meta: Bi; foto: string | null; verificado: boolean }[]>([]), [listo, setListo] = useState(false);
   useEffect(() => {
     const t = q.trim();

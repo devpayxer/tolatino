@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ComponentType } from "react";
 import type { Grupo, RsvPublica } from "@/lib/reservas";
 import { horasMesa, rapidoMesa, retenerMesa } from "./acciones-reserva";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "Tag" | "DateStrip" | "TimeSlots";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,7 +25,7 @@ export function diaL(ymd: string, i: number, es: boolean, largo = false) {
 }
 
 export function useRsv(r: RsvPublica | null, es: boolean, sesion: boolean, editar: string | null, inicial?: { p?: number; i?: number; h?: number }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [p, setP] = useState<number | null>(inicial?.p ?? null);
   const [i, setI] = useState(inicial?.i ?? 0);

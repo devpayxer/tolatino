@@ -9,13 +9,14 @@ import type { Recibir as R } from "@/lib/boletos-despues";
 import { diaCorto, hora } from "@/lib/evt-comun";
 import { bolRecibir } from "../../acciones-despues";
 import { fechaHora } from "../../Despues";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "TicketQR";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, TicketQR } = UI as unknown as Record<N, ComponentType<any>>;
 
 export function Recibir({ x, token, es }: { x: R; token: string; es: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState("");
   const ev = x.evento, cuando = `${diaCorto(ev.dia, es).toUpperCase()} · ${hora(ev.h0)}`, comp = x.kind === "comp";

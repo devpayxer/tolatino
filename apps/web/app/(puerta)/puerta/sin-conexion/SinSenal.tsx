@@ -13,6 +13,7 @@ import * as L from "./local";
 import { usePuertaLocal } from "./usePuertaLocal";
 import { enIsla, irAlServidor } from "@/lib/nativo/puente";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Guardada = { s: string; titulo: string; puerta: string; negocio: string; n: number; lista: string; tz: string; reentrada: boolean; libre: boolean };
 
@@ -33,7 +34,7 @@ export function SinSenal() {
       setSel(out.find((x) => x.s === q)?.s ?? (out.length === 1 ? out[0]!.s : null));
     })();
   }, []);
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const g = G?.find((x) => x.s === sel) ?? null;
   if (g) return <PuertaGuardada g={g} es={es} onOtra={G && G.length > 1 ? () => setSel(null) : undefined} onCerrada={() => { setG((x) => (x ?? []).filter((y) => y.s !== g.s)); setSel(null); setCerro(true); }} />;
   return (
@@ -50,7 +51,7 @@ export function SinSenal() {
 }
 
 function PuertaGuardada({ g, es, onOtra, onCerrada }: { g: Guardada; es: boolean; onOtra?: () => void; onCerrada: () => void }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const sc = usePuertaLocal(g.s, es, { puerta: g.puerta, onCerrada });
   const [t, setT] = useState<"escanear" | "buscar">(g.libre ? "buscar" : "escanear"), [q, setQ] = useState(""), [res, setRes] = useState<Awaited<ReturnType<typeof sc.buscar>> | null>(null);
   const [man, setMan] = useState<{ id: string; nombre: string; quedan: number; motivo: string } | null>(null), [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null), [ahora, setAhora] = useState(() => Date.now());

@@ -6,6 +6,7 @@ import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { FilaAyuda, Hallado, Tema } from "@/lib/compa/ayuda-indice";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Button = UI.Button as ComponentType<any>, Chip = UI.Chip as ComponentType<any>, Icon = UI.Icon as ComponentType<any>;
@@ -15,7 +16,7 @@ type Bi = { es: string; en: string };
 export function CentroAyuda({ es, q, t, temas, lista, hallados, conSesion, equipo }: {
   es: boolean; q: string; t: string | null; temas: Tema[]; lista: FilaAyuda[]; hallados: Hallado[] | null; conSesion: boolean; equipo: boolean;
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b), L = (x: Bi) => (es ? x.es : x.en || x.es);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), L = (x: Bi) => (es ? x.es : x.en || x.es);
   const router = useRouter(), [v, setV] = useState(q);
   const buscar = (x: string) => { const s = x.trim(); router.push(s ? `/ayuda?q=${encodeURIComponent(s)}` : "/ayuda"); };
   const tema = (k: string) => temas.find((x) => x.key === k);

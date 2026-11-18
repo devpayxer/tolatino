@@ -17,6 +17,7 @@ import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "..
 import { useVerificacion } from "../../../pago/Verificacion";
 import { esperaAccion, inscribirmeAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "PaymentSummary" | "DepositOutcomes";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,7 +27,7 @@ const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const campo = "box-border w-full rounded-[13px] border border-ink/[.12] bg-white px-[13px] py-[11px] text-[14px] font-medium outline-none";
 
 export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingInsc; es: boolean; pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null; yo: boolean; grupo0: string | null; banda0: string | null }) {
-  const E2 = (a: string, z: string) => (es ? a : z);
+  const E2 = (a: string, z: string) => dosIdiomas(es, a, z);
   const router = useRouter();
   const s = b.svc, nm = (x: { es: string; en: string } | null | undefined) => (x ? (es ? x.es : x.en || x.es) : ""), V = VOC[b.rubro];
   const usaBanda = b.bandas.length > 0;

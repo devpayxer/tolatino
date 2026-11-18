@@ -12,6 +12,7 @@ import { useVerificacion } from "../../../pago/Verificacion";
 import { guardarCarritoMerc, leerCarritoMerc, type CarritoMerc } from "../Mercado";
 import { enviarMercado } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,7 +23,7 @@ const caja = "rounded-[18px] border border-ink/[.07] bg-white p-4";
 const T17 = "font-display text-[17px] font-extrabold leading-[1.2] tracking-[-0.03em]";
 
 export function PedidoMercado({ o, es, yo, pago }: { o: OpcionesMerc; es: boolean; yo: boolean; pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const router = useRouter();
   const [cart, setCart] = useState<CarritoMerc | null>(null), [listo, setListo] = useState(false);
   useEffect(() => { const c = leerCarritoMerc(); setCart(c && c.biz === o.negocio.id ? c : null); setListo(true); }, [o.negocio.id]);

@@ -11,6 +11,7 @@ import {
 } from "@/lib/autos-comun";
 import type { AutosPublica, CarroPub, SvcAutoPub } from "@/lib/autos-publico";
 import { Barra, Caja, Datos, Hoja, Lista, Nota, Renglon, Resumen, Riel, Top, stop, type Cta, type Item, type Td, type TopT } from "./Kit4i";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Acc = { llamar: () => void; escribir: () => void; llegar: () => void; irTab: () => void; pedir: (href: string) => void };
 const bi = (t: Bi, es: boolean) => (es ? t.es : t.en || t.es);
@@ -20,7 +21,7 @@ const formulaPuerta = (p: Pick<AutosPublica, "taxBp">, es: boolean) =>
   es ? `Precio + ${p.taxBp != null ? pctBp(p.taxBp) : "impuesto"} + placas + cargo` : `Price + ${p.taxBp != null ? pctBp(p.taxBp).replace(" %", "%") : "tax"} + tags + fee`;
 
 export function useDealer(ap: AutosPublica | null, es: boolean, pro: boolean, acc: Acc) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [hoja, setHoja] = useState<string | null>(null);
   // 9m · Desde «Buscar por propiedad o por carro» (L559): ?item= abre esa hoja al llegar (si se ve en esta página).
   useEffect(() => { try { const id = new URLSearchParams(window.location.search).get("item"); if (id && /^\d{1,18}$/.test(id) && pro) setHoja(id); } catch { /* sin dirección: nada */ } }, [pro]);

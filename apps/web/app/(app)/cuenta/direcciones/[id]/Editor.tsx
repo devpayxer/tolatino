@@ -9,9 +9,10 @@ import type { Direccion } from "@/lib/direcciones";
 import { DireccionCampo, type ValorDir } from "@/app/_dir/DireccionCampo";
 import { borrarDir, guardarDir } from "../../acciones";
 import { Marco, useAnchoCuenta, useCuentaUi, type Bloque, type Yo } from "../../Marco";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export function Editor({ es, yo, cur, primera, zona, volver, centro }: { es: boolean; yo: Yo; cur: Direccion | null; primera: boolean; zona: { name: string; zips: string[]; ciudadDe: Record<string, string> } | null; volver: string | null; centro: [number, number] | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi(), [ocupado, start] = useTransition(), desk = useAnchoCuenta() >= 1024;
   const [f, setF] = useState({ lab: cur?.label ?? "casa", st: cur?.street ?? "", apt: cur?.apt ?? "", zip: cur?.zip ?? "", ins: cur?.instructions ?? "", def: cur ? cur.isDefault : primera, t: false });
   const [err, setErr] = useState<{ campo?: string; msg: string } | null>(null);

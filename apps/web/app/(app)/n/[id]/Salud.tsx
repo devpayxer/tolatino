@@ -11,6 +11,7 @@ import { compat, nombreSeguro, precioSalud, type SeguroRef } from "@/lib/salud-c
 import type { SaludPublico, SvcPub } from "@/lib/salud-publico";
 import { seguroGuardar, seguroUsar } from "../../cuenta/seguros/acciones";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,7 +26,7 @@ const LANG: Record<string, [string, string]> = { es: ["Español", "Spanish"], en
 type Seg = SeguroRef & { id: string; last4: string | null; para: string; cuenta: boolean };
 
 export function useSalud(sp: SaludPublico | null, es: boolean) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [hoja, setHoja] = useState<string | null>(null);
   const [segHoja, setSegHoja] = useState(false);

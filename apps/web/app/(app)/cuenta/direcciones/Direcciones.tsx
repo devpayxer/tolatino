@@ -5,6 +5,7 @@ import { useTransition } from "react";
 import type { Direccion } from "@/lib/direcciones";
 import { dirPredeterminada } from "../acciones";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export const LB = { casa: [["Casa", "Home"], "home"], trabajo: [["Trabajo", "Work"], "brief"], otra: [["Otra", "Other"], "pin"] } as const;
 // 9m · Todo EE. UU.: el lugar y el estado de la dirección (del Censo) cuando no es de una de nuestras ciudades.
@@ -12,7 +13,7 @@ export const lineaDir = (a: Pick<Direccion, "street" | "apt" | "zip" | "ciudad">
   `${a.street}${a.apt ? `, ${a.apt}` : ""} · ${a.ciudad ? `${a.ciudad.nombre} ` : a.lugar ? `${a.lugar}, ${a.estado ?? ""} ` : ""}${a.zip}`.toUpperCase();
 
 export function Direcciones({ es, yo, dirs, zona, volver }: { es: boolean; yo: Yo; dirs: Direccion[]; zona: { name: string; zips: string[]; ciudadDe: Record<string, string> } | null; volver: string | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi(), [, start] = useTransition();
   const v = volver ? `?volver=${encodeURIComponent(volver)}` : "";
   const nueva = () => router.push(`/cuenta/direcciones/nueva${v}`);

@@ -10,6 +10,7 @@ import type { RsvVista } from "@/lib/reservas";
 import { diaL } from "../../n/[id]/Reservar";
 import { reservaAccion } from "./acciones";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,7 +27,7 @@ const WHY = [["planes", "Cambié de planes", "Plans changed"], ["otro", "Encontr
 const tel = (p: string) => { const d = p.replace(/\D/g, "").slice(-10); return d.length === 10 ? `+1 (${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : p; };
 
 export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[]; telefono: string; es: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const L = (x: [string, string] | undefined, d = "") => (x ? (es ? x[0] : x[1]) : d);
   const router = useRouter();
   const [flash, setFlash] = useState("");

@@ -43,6 +43,7 @@ import { BASE_URL } from "@/lib/correo";
 import { auditar, staff } from "@/lib/admin";
 import { tx } from "@/lib/db";
 import { AvisoEquipo } from "./AvisoEquipo";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export const dynamic = "force-dynamic";
 
@@ -121,7 +122,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // 4id · La tarjeta de Hoy, la FAQ, el rótulo de las reseñas y la variante sin local de las tres (neg-fe-kind / neg-inm-kind /
   // neg-dealer-kind post). El servidor decide: columnas con datos reales; la FAQ de Tu página gana a la automática.
   if (fe || inm || dl) {
-    const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b), hoyTxt = f.semana.find((w) => w.hoy)?.v ?? "";
+    const es = lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b), hoyTxt = f.semana.find((w) => w.hoy)?.v ?? "";
     const h = fe ? hoyFe(fe, es, hoyTxt) : inm ? hoyInm(inm, es, hoyTxt) : hoyAutos(dl!, es, hoyTxt);
     f.hoy = { ...f.hoy, sub: h.sub, cols: h.cols };
     if (fe) fe.td = h.cols; else if (inm) inm.td = h.cols; else if (dl) dl.td = h.cols;
@@ -146,7 +147,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // FAQ de Educación, Niños y Deporte (neg-edu-kind faq, neg-ninos-kind faq L26–39, neg-deporte-kind faq L35–54): salen de los servicios
   // y de Tu herramienta; si el negocio escribió la misma pregunta en Tu página, gana la suya.
   if (insc && f.pro) {
-    const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b), ni = insc.ninos, dp = insc.dep;
+    const es = lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b), ni = insc.ninos, dp = insc.dep;
     const purga = insc.rubro === "ninos" ? await valor("ninos_purga_dias") : 0; // 9n-5 · el plazo de Configuración, no el número escrito
     const auto = insc.rubro === "edu" ? [
       { q: E2("¿El precio incluye todo?", "Does the price include everything?"), a: E2("El precio del curso es el total: libros y examen incluidos o dichos aparte, antes de inscribirte.", "The course price is the total: books and exam included or listed separately, before you enroll.") },
@@ -171,7 +172,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // FAQ de Fiestas (neg-fiesta-kind.js faq): la de la fecha y la del depósito salen del calendario y del panel; si el negocio
   // escribió la misma pregunta en Tu página, gana la suya.
   if (fiesta && f.pro) {
-    const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b), usd = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
+    const es = lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b), usd = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
     const libres = fiesta.cal.libres.map((d) => diaFiesta(d, es)).join(", ");
     const auto = [
       { q: E2("¿Está libre mi fecha?", "Is my date free?"), a: `${E2("Agrega tu fecha arriba y te lo decimos.", "Add your date above and we tell you.")}${libres ? E2(` Próximas libres: ${libres}.`, ` Next free: ${libres}.`) : ""}` },
@@ -184,7 +185,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   }
   // FAQ de Transporte (neg-trans-kind.js faq): el precio cerrado, la cancelación y lo que dice su herramienta; gana la de Tu página.
   if (trans && f.pro) {
-    const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b), h = trans.h;
+    const es = lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b), h = trans.h;
     const auto = [
       { q: E2("¿El precio puede cambiar?", "Can the price change?"), a: E2("No. El precio es cerrado antes de salir: lo que pagas al reservar es todo.", "No. The price is fixed before leaving: what you pay when booking is everything.") },
       { q: E2("¿Y si cancelo?", "What if I cancel?"), a: E2("Gratis hasta 24 horas antes. Después, se cobra la mitad. Si el negocio no sale, te devolvemos todo.", "Free up to 24 hours before. After that, half is charged. If the business does not run, you get everything back.") },
@@ -198,7 +199,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // FAQ de Noche (neg-noche-kind.js faq L22–47): el cover, la identificación, la lista, la fila, «¿y si me cobran más?» y el mínimo;
   // sale de «Esta noche» y de los servicios. Si el negocio escribió la misma pregunta en Tu página, gana la suya.
   if (noche && f.pro && !noche.porFecha) {
-    const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b), e = noche.noche, lista = noche.servicios.find((s) => s.k === "lista");
+    const es = lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b), e = noche.noche, lista = noche.servicios.find((s) => s.k === "lista");
     const auto = [
       { q: E2("¿Cuánto es el cover?", "How much is the cover?"), a: e ? `${coverTexto(e, es)}. ${LINEA_NOCHE[es ? "es" : "en"]}` : E2("Aún no lo publica en To’Latino: pregúntalo en la puerta.", "Not posted on To’Latino yet: ask at the door.") },
       { q: E2("¿Qué identificación piden?", "What ID do they ask for?"), a: E2(`Licencia, pasaporte o ID del estado vigente. Edad: ${e?.edad ?? 21}+. Sin identificación no entras, aunque estés en la lista.`, `A valid license, passport or state ID. Age: ${e?.edad ?? 21}+. No ID, no entry, even if you are on the list.`) },

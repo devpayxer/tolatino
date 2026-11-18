@@ -18,6 +18,7 @@ import { Icon, MONO, useGuardar, useToast } from "../comun";
 
 import { tec } from "@/lib/tec";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const EventCard = UI.EventCard as ComponentType<any>;
 
@@ -31,7 +32,7 @@ function tema(dark: boolean) {
 }
 
 export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b), L = (x: { es: string; en: string }) => (es ? x.es : x.en || x.es);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), L = (x: { es: string; en: string }) => (es ? x.es : x.en || x.es);
   const router = useRouter(), path = usePathname(), [pend, start] = useTransition(), { toast, el } = useToast();
   const th = tema(f.dark), w = th.w;
   const g = useGuardar({ [f.id]: f.mio.saved }, toast, es), saved = !!g.on[f.id];

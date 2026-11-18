@@ -9,6 +9,7 @@ import { BASE_URL } from "@/lib/correo/index";
 import { ubicacion } from "@/lib/ubicacion";
 import { FichaEvento } from "./FichaEvento";
 import { diaCorto as diaCortoSrv, hora as horaSrv } from "@/lib/evt-comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export const dynamic = "force-dynamic";
 
@@ -57,7 +58,7 @@ export default async function Page({ params, searchParams }: P) {
 /* 6e · Ficha de un evento cancelado (lsVals: «Evento cancelado» · «Si compraste, te devolvemos todo en 3–5 días hábiles. No tienes que hacer
    nada.»). Hueco compuesto con las piezas de la ficha y de la orden (cartel, título, aviso de estado). Sin datos de nadie; no se indexa. */
 function EventoCancelado({ x, es }: { x: { title: string; org: string; dia: string; h0: number; motivo: string; tix: boolean; img: string | null }; es: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   return (
     <div data-pantalla="APP-EVT-LISTING" data-screen-label="Ficha del evento · cancelado" className="min-h-[100dvh] bg-paper">
       <div className="mx-auto max-w-[720px] px-4 pb-12 pt-5 lg:px-[30px] lg:pt-8">

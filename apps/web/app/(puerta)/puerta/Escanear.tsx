@@ -13,6 +13,7 @@ import { QUE_HACER, RESULTADO, type Pregunta, type ResEscaneo, type VistaEscaneo
 import type { PuertaLocal } from "./sin-conexion/usePuertaLocal";
 import { uuid } from "@/lib/uuid";
 import { vibrar } from "@/lib/nativo/haptica";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Bi = { es: string; en: string };
 const TONO = { ok: ["var(--tl-signal)", "var(--tl-ink)"], warn: ["var(--tl-pro)", "var(--tl-ink)"], bad: ["var(--tl-danger)", "var(--tl-white)"] } as const;
@@ -46,7 +47,7 @@ export async function mandarOLocal(cuerpo: Record<string, unknown>, local?: Puer
 export function Escanear({ sesion, es, reentrada, libre, onCambio, onCerrada, onBuscar, local }: {
   sesion: string; es: boolean; reentrada: boolean; libre: boolean; onCambio?: () => void; onCerrada?: () => void; onBuscar?: () => void; local?: PuertaLocal | null;
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [v, setV] = useState<VistaEscaneo | null>(null), [preg, setPreg] = useState<{ p: Pregunta; qr: string; n: number } | null>(null);
   const [dir, setDir] = useState<"in" | "out">("in"), [luz, setLuz] = useState(false), [hayLuz, setHayLuz] = useState(false);
   const [err, setErr] = useState<{ msg: Bi; cuerpo?: Record<string, unknown> } | null>(null), [enviando, setEnviando] = useState(false), [cuenta, setCuenta] = useState<number | null>(null);

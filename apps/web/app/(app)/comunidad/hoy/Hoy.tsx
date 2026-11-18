@@ -9,19 +9,21 @@ import { useState, type ComponentType } from "react";
 import { HOY_CATS, type PaginaHoy } from "@/lib/hoy-comun";
 import { LINEA_FIJA } from "@/lib/comunidad-filtro";
 import type { Tarjeta } from "@/lib/tarjeta";
-import { T as TX } from "@/lib/textos";
+/* 9f-3 · Los textos de la tarjeta de negocio llegan de la página (textosT: con lo editado en el Super Admin); ya no se lee T directo. */
+export type TextosTarjeta = { hoy: string; llamar: string };
 import { TarjetaHoy } from "../../HoyCarrusel";
 import { TarjetaNegocio } from "../../TarjetaNegocio";
 import { MONO, Marco, PestanasModulo, useAncho, useComUi, type YoCom } from "../Marco";
 import { hoyMas } from "./acciones";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button" | "Chip" | "SectionHeader";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, SectionHeader } = UI as unknown as Record<N, ComponentType<any>>;
 
-function Cuerpo({ es, ciudad, cat, d, nuevos, ancho }: { es: boolean; ciudad: string; cat: string; d: PaginaHoy; nuevos: Tarjeta[]; ancho: number }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+function Cuerpo({ es, ciudad, cat, d, nuevos, ancho, tx }: { es: boolean; ciudad: string; cat: string; d: PaginaHoy; nuevos: Tarjeta[]; ancho: number; tx: TextosTarjeta }) {
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), D = ancho >= 1024;
   const [h, setH] = useState(d.historias), [mas, setMas] = useState(d.mas), [cargando, setCargando] = useState(false);
   const [antes, setAntes] = useState(d);
@@ -54,7 +56,7 @@ function Cuerpo({ es, ciudad, cat, d, nuevos, ancho }: { es: boolean; ciudad: st
             <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <SectionHeader title={E2("Nuevos en el barrio", "New in the neighborhood")} />
               <div style={{ display: "grid", gridTemplateColumns: D ? "repeat(auto-fill,minmax(300px,1fr))" : "minmax(0,1fr)", gap: 12 }}>
-                {nuevos.map((b) => <div key={b.id} style={{ display: "grid" }}><TarjetaNegocio es={es} b={b} origen="hoy" textos={{ hoy: TX[es ? "es" : "en"].todayTag, llamar: TX[es ? "es" : "en"].call }} /></div>)}
+                {nuevos.map((b) => <div key={b.id} style={{ display: "grid" }}><TarjetaNegocio es={es} b={b} origen="hoy" textos={tx} /></div>)}
               </div>
             </section>
           )}
@@ -72,19 +74,19 @@ function Cuerpo({ es, ciudad, cat, d, nuevos, ancho }: { es: boolean; ciudad: st
 }
 
 /* Dentro de la Comunidad (con cuenta y bienvenida hecha): el marco del módulo, la pestaña activa y el riel con tu rango y las reglas. */
-export function HoyVecino({ es, yo, ciudad, cat, d, nuevos }: { es: boolean; yo: YoCom; ciudad: string; cat: string; d: PaginaHoy; nuevos: Tarjeta[] }) {
+export function HoyVecino({ es, yo, ciudad, cat, d, nuevos, tx }: { es: boolean; yo: YoCom; ciudad: string; cat: string; d: PaginaHoy; nuevos: Tarjeta[]; tx: TextosTarjeta }) {
   const ui = useComUi(yo), w = useAncho();
   return (
     <Marco es={es} yo={yo} ui={ui} code="APP-COM-HOY" titulo={es ? "Hoy en el barrio" : "Today nearby"} sub={es ? "LO QUE TRAEN HOY LOS NEGOCIOS · SE BORRA A LAS 24 H" : "WHAT BUSINESSES HAVE TODAY · GONE IN 24 H"}>
-      <Cuerpo es={es} ciudad={ciudad} cat={cat} d={d} nuevos={nuevos} ancho={w} />
+      <Cuerpo es={es} ciudad={ciudad} cat={cat} d={d} nuevos={nuevos} ancho={w} tx={tx} />
       <div style={{ height: w >= 1024 ? 0 : 110 }} />
     </Marco>
   );
 }
 
 /* Sin cuenta (o sin la bienvenida): lo mismo, con el encabezado del módulo y la invitación a la conversación (nada de vecinos). */
-export function HoyPublico({ es, ciudad, estado, cat, d, nuevos, conSesion }: { es: boolean; ciudad: string; estado: string; cat: string; d: PaginaHoy; nuevos: Tarjeta[]; conSesion: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+export function HoyPublico({ es, ciudad, estado, cat, d, nuevos, conSesion, tx }: { es: boolean; ciudad: string; estado: string; cat: string; d: PaginaHoy; nuevos: Tarjeta[]; conSesion: boolean; tx: TextosTarjeta }) {
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), w = useAncho(), D = w >= 1024;
   const entrar = () => router.push(conSesion ? "/comunidad" : `/entrar?volver=${encodeURIComponent("/comunidad")}`);
   const invita = (
@@ -112,7 +114,7 @@ export function HoyPublico({ es, ciudad, estado, cat, d, nuevos, conSesion }: { 
               <div style={{ marginTop: 8, font: `600 10.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{E2(`LO QUE TRAEN HOY LOS NEGOCIOS DE ${ciudad.toUpperCase()} · SE BORRA A LAS 24 H`, `WHAT ${ciudad.toUpperCase()} BUSINESSES HAVE TODAY · GONE IN 24 H`)}</div>
             </div>
           )}
-          <Cuerpo es={es} ciudad={ciudad} cat={cat} d={d} nuevos={nuevos} ancho={w} />
+          <Cuerpo es={es} ciudad={ciudad} cat={cat} d={d} nuevos={nuevos} ancho={w} tx={tx} />
         </div>
         <div style={{ padding: D ? 0 : "0 16px", position: D ? "sticky" : undefined, top: D ? 90 : undefined }}>{invita}</div>
       </div>

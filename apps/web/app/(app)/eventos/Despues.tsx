@@ -11,6 +11,7 @@ import type { PrevioCancelar } from "@/lib/boletos-despues";
 import { diaCorto, dinero, hora } from "@/lib/evt-comun";
 import { bolCancelar, bolNombre, bolPrevioCancelar, bolReenviarme, bolTransferir } from "./acciones-despues";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "HelpReasonList" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,7 +45,7 @@ export function Hoja({ titulo, label, onClose, children, es, fondo = "bg-white" 
 export function HojaTransferir({ es, boletos, horas, hasta, tz, onClose, onDone }: {
   es: boolean; boletos: { code: string; tipo: string }[]; horas: number; hasta: string; tz: string; onClose: () => void; onDone: (msg: string) => void;
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [code, setCode] = useState(boletos[0]?.code ?? ""), [tel, setTel] = useState(""), [error, setError] = useState(""), [ocupado, setOcupado] = useState(false);
   const enviar = async () => {
     if (ocupado) return;
@@ -74,7 +75,7 @@ export function HojaTransferir({ es, boletos, horas, hasta, tz, onClose, onDone 
 
 /* Cancelar mis boletos: lo que se devuelve (precio − cargo de servicio) y hasta cuándo, según el servidor; confirmar = el servidor lo vuelve a calcular. */
 export function HojaCancelar({ es, numero, tz, onClose, onDone }: { es: boolean; numero: string; tz: string; onClose: () => void; onDone: (msg: string) => void }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [p, setP] = useState<PrevioCancelar | null | "cargando">("cargando"), [sel, setSel] = useState<string[]>([]), [error, setError] = useState(""), [ocupado, setOcupado] = useState(false);
   const clave = useRef(nuevaClave());
@@ -131,7 +132,7 @@ export function HojaCancelar({ es, numero, tz, onClose, onDone }: { es: boolean;
 export function HojaAyuda({ es, numero, horas, puedeCancelar, devuelto, onClose, onCancelar, onNombre, toast }: {
   es: boolean; numero: string; horas: number; puedeCancelar: boolean; devuelto: boolean; onClose: () => void; onCancelar: () => void; onNombre: (() => void) | null; toast: (t: string) => void;
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const items = [
     { icon: "ticket", label: E2("No veo mis boletos", "I can’t see my tickets"), sub: E2("Te los mandamos a tu cuenta", "We send them to your account"),
@@ -149,7 +150,7 @@ export function HojaAyuda({ es, numero, horas, puedeCancelar, devuelto, onClose,
 
 /* Cambiar el nombre en un boleto (no va en el QR). */
 export function HojaNombre({ es, horas, boletos, onClose, onDone }: { es: boolean; horas: number; boletos: { code: string; tipo: string; nombre: string | null }[]; onClose: () => void; onDone: (msg: string) => void }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [code, setCode] = useState(boletos[0]?.code ?? ""), [n, setN] = useState(boletos[0]?.nombre ?? ""), [error, setError] = useState(""), [ocupado, setOcupado] = useState(false);
   const guardar = async () => {
     setOcupado(true); setError("");

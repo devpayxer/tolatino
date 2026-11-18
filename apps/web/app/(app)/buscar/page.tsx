@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
+import { textosT } from "@/lib/cms";
 import { categorias } from "@/lib/directorio";
 import { nombresSub } from "@/lib/categoria";
 import { armarTarjetas } from "@/lib/tarjetas";
@@ -39,7 +40,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   const loc = await ubicacion(u);
   if (loc.c.status !== "on") return <PantallaPronto loc={loc} lang={lang} userId={u?.id ?? null} />;
   const CIUDAD = loc.ciudad;
-  const cats = await categorias(lang);
+  const [cats, TX] = await Promise.all([categorias(lang), textosT(lang)]);
   const nomCiudad = loc.c.name;
   const q = String(sp.q ?? "").slice(0, 120).trim();
   const catSel = cats.find((c) => c.slug === sp.cat) ?? null;
@@ -52,7 +53,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   const ef = (["all", "d0", "wk", "free"] as const).find((x) => x === sp.ef) ?? "all";
   const base: Omit<VistaBuscar, "res"> = {
     lang, q, cat: catSel ? { slug: catSel.slug, label: catSel.label, name: catSel.name } : null, ciudad: nomCiudad,
-    explorar: null, conSesion: !!u,
+    explorar: null, conSesion: !!u, tarjeta: { hoy: TX.todayTag, llamar: TX.call }, t: TX.buscar,
     // 9m · Buscar con la voz (L95): lo que la persona contestó al aviso o eligió en Privacidad.
     voz: u ? ((await (await import("@/lib/db")).db().query<{ v: boolean | null }>(`select voice_search as v from users where id = $1`, [u.id])).rows[0]?.v ?? null) : null,
   };

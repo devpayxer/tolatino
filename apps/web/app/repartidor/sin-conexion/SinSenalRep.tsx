@@ -9,6 +9,7 @@ import { irAlServidor } from "@/lib/nativo/puente";
 import { useSenal } from "@/lib/nativo/senal";
 import { leerCola, leerTurno, type Cola, type Turno } from "./local";
 import { urlComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const PASO: Record<string, [string, string]> = { recogi: ["Recogí", "Picked up"], llegue: ["Llegué", "Arrived"], entregado: ["Entregado", "Delivered"] };
@@ -21,7 +22,7 @@ export function SinSenalRep() {
   // «Hay señal» solo si NUESTRO servidor responde (no basta con que el teléfono diga que tiene red: lib/nativo/senal.ts).
   const linea = useSenal() === true;
   const es = t?.es ?? !/^en/i.test(typeof navigator === "undefined" ? "es" : navigator.language ?? "es");
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const hora = (ms: number) => new Date(ms).toLocaleTimeString(es ? "es-US" : "en-US", { hour: "numeric", minute: "2-digit" });
   const B: Bloque[] = [{ type: "head", eye: E2("TO’LATINO REPARTIDOR · SIN CONEXIÓN", "TO’LATINO DRIVER · OFFLINE"), t: E2("Tus entregas en este teléfono", "Your deliveries on this phone"),
     s: t ? E2(`Guardadas a las ${hora(t.at)}. Los pasos se marcan con señal; lo que marcaste sin señal se envía solo.`, `Saved at ${hora(t.at)}. Steps are marked with signal; what you marked offline sends on its own.`) : undefined }];

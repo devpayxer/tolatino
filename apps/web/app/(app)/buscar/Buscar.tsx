@@ -7,7 +7,6 @@ import * as UI from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import type { Tarjeta } from "@/lib/tarjeta";
-import { T as TX } from "@/lib/textos";
 import { avisameBusqueda } from "../acciones";
 import { LINEA_FIJA } from "@/lib/comunidad-filtro";
 import { vacantesAvisame, vecinosMas, vozGuardar } from "./acciones";
@@ -15,6 +14,8 @@ import type { FilaVecino } from "./vecinos";
 import { TarjetaNegocio } from "../TarjetaNegocio";
 import type { TarjetaEvt } from "@/lib/evt-publico";
 import { dinero } from "@/lib/evt-comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
+import type { T } from "@/lib/textos";
 
 type N = "Icon" | "Button" | "Chip" | "Tag" | "Tabs" | "SearchResultRow" | "UnderstoodBar" | "NotYetCard" | "EventCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,6 +23,10 @@ const { Icon, Button, Chip, Tag, Tabs, SearchResultRow, UnderstoodBar, NotYetCar
 
 export type VistaBuscar = {
   lang: "es" | "en"; q: string; cat: { slug: string; label: string; name: string } | null; ciudad: string; conSesion: boolean;
+  /* 9f-3 · Los textos de la tarjeta de negocio del diccionario, con lo editado en el Super Admin (textosT en la página: ya no lee T directo). */
+  tarjeta: { hoy: string; llamar: string };
+  /* 9f-3 · Los textos de Buscar (WEB-BUSCAR) con lo editado, de la página: los de T[lang].buscar. */
+  t: (typeof T)["es"]["buscar"];
   /* 9m · Buscar con la voz (L95): null = nunca se le preguntó (sale el aviso); false = lo apagó en Privacidad (no hay micrófono). */
   voz?: boolean | null;
   explorar: null | {
@@ -51,7 +56,7 @@ const guardar = (l: string[]) => { try { localStorage.setItem(RECIENTES, JSON.st
 export function Buscar({ v }: { v: VistaBuscar }) {
   const router = useRouter();
   const ruta = usePathname();
-  const t = TX[v.lang].buscar;
+  const t = v.t;
   const f = (s: string, x: Record<string, string | number>) => Object.entries(x).reduce((a, [k, val]) => a.replaceAll(`{${k}}`, String(val)), s);
   const [q, setQ] = useState(v.q);
   const [foco, setFoco] = useState(false);
@@ -134,7 +139,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
   const conteoGo = sug?.total ? `${sug.total} ${sug.total === 1 ? t.negocio : t.negocios}` : t.irMeta;
   const secciones = sug ? [...new Set(sug.filas.map((x) => x.seccion))] : [];
 
-  const es = v.lang === "es", E2 = (a: string, b: string) => (es ? a : b);
+  const es = v.lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const preguntar = () => router.push(`/comunidad/nuevo?k=pregunta${v.q ? `&q=${encodeURIComponent(v.q)}` : ""}`);
   const fichaVecino = (x: FilaVecino, lineas: number) => (
     <button key={x.id} type="button" onClick={() => router.push(`/comunidad/p/${x.id}`)} className="flex flex-col gap-2.5 rounded-[18px] border border-ink/[.07] bg-white p-3.5 text-left">
@@ -370,7 +375,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
               <div className="flex flex-col gap-3 px-5 pb-12 pt-4 lg:px-0">
                 <span className="font-mono text-[10.5px] font-bold tracking-[0.08em] text-ink/60">{f(t.conteo, { n: R.total })}{R.paginas > 1 ? ` · ${f(t.pagina, { p: R.pagina + 1, n: R.paginas })}` : ""}</span>
                 <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))] lg:gap-4">
-                  {R.tarjetas.map((b) => <div key={b.id} className="grid"><TarjetaNegocio es={v.lang === "es"} b={b} origen="buscar" textos={{ hoy: TX[v.lang].todayTag, llamar: TX[v.lang].call }} /></div>)}
+                  {R.tarjetas.map((b) => <div key={b.id} className="grid"><TarjetaNegocio es={v.lang === "es"} b={b} origen="buscar" textos={v.tarjeta} /></div>)}
                 </div>
                 {R.paginas > 1 && (
                   <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
@@ -399,7 +404,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                     <span className="font-display text-[18px] font-extrabold tracking-[-0.03em]">{t.biz}</span>
                     {R.total > 4 && <button type="button" onClick={() => ir({ tab: "biz" })} className="whitespace-nowrap text-[12.5px] font-bold text-action">{f(t.verN, { n: R.total })}</button>}
                   </div>
-                  {R.tarjetas[0]?.plan === "pro" && <div className="grid"><TarjetaNegocio es={v.lang === "es"} b={R.tarjetas[0]} origen="buscar" textos={{ hoy: TX[v.lang].todayTag, llamar: TX[v.lang].call }} /></div>}
+                  {R.tarjetas[0]?.plan === "pro" && <div className="grid"><TarjetaNegocio es={v.lang === "es"} b={R.tarjetas[0]} origen="buscar" textos={v.tarjeta} /></div>}
                   {R.filas.slice(R.tarjetas[0]?.plan === "pro" ? 1 : 0, R.tarjetas[0]?.plan === "pro" ? 5 : 4).map((x) => (
                     <div key={x.id} className="grid">
                       <SearchResultRow size="row" parts={x.parts} pro={x.pro} image={x.image} meta={x.meta} status={x.status} statusColor={x.statusColor} onClick={() => router.push(`/n/${x.id}`)} />

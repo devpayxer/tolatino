@@ -6,9 +6,10 @@ import { useState } from "react";
 import type { CobroSilla } from "@/lib/sillas";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../../Marco";
 import { conectarCobro } from "./acciones";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export function Silla({ s, vuelta, es, yo }: { s: CobroSilla; vuelta: boolean; es: boolean; yo: Yo }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
   const dep = s.dep ? `$${(s.dep / 100).toFixed(2)}` : null;

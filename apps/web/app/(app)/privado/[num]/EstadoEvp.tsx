@@ -14,6 +14,7 @@ import { useVerificacion } from "../../pago/Verificacion";
 import { aceptarEvpAccion, cambioEvpAccion, evpClienteAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "OrderTracker" | "Tag" | "BusinessRow" | "IconButton";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,7 +26,7 @@ const hora = (t: number | undefined) => (t ? new Date(t).toLocaleTimeString("en-
 type Q = NonNullable<EvpVista["quote"]>;
 
 export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter(), B = x.negocio.nombre;
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), B = x.negocio.nombre;
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null), [flash, setFlash] = useState<string | null>(null);
   const [cx, setCx] = useState(false), [cambio, setCambio] = useState(false), [rechazo, setRechazo] = useState(false);
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas.find((t) => t.def) ?? pago?.tarjetas[0] ?? null), [hoja, setHoja] = useState(false);

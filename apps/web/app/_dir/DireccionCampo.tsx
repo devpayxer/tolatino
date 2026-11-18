@@ -8,6 +8,7 @@ import * as UI from "@tolatino/ui";
 import { useEffect, useId, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
 import type { LL } from "@/lib/mapa-geo";
 import { MapaPin } from "./MapaPin";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon } = UI as unknown as Record<"Icon", ComponentType<any>>;
@@ -19,7 +20,7 @@ export function DireccionCampo({ es, v, onV, err, errZip, centro, conMapa = true
   es: boolean; v: ValorDir; onV: (v: ValorDir) => void; err?: string; errZip?: string; centro?: LL | null; conMapa?: boolean; desk?: boolean; etiqueta?: string; ph?: string;
   entre?: ReactNode; marco?: string; sinZip?: boolean;
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const id = useId(), [abierta, setAbierta] = useState(false), [items, setItems] = useState<Sug[]>([]), [act, setAct] = useState(-1);
   const [buscando, setBuscando] = useState(false), [gps, setGps] = useState<"" | "buscando" | "nada" | "negado">("");
   const ctl = useRef<AbortController | null>(null), t = useRef<number | undefined>(undefined), ultima = useRef("");

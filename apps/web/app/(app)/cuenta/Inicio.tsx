@@ -11,6 +11,7 @@ import { diaRel, horaDe } from "./fechas";
 import { Marco, useCuentaUi, type Bloque, type Fila, type Yo } from "./Marco";
 import { tagPed } from "./pedidos/Pedidos";
 import { olvidarSinConexion } from "@/lib/boletos-sin-conexion";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
 
@@ -19,7 +20,7 @@ export function Inicio({ es, yo, r, dirs, ciudad, nick, nombre, negocio, sancion
   sanciones: { kind: string; reason: string; hasta: string | null }[]; borrar: string | null; com: { rango: number; nombre: { es: string; en: string }; monedas: number } | null;
   soporte: { abiertos: number; horario: string; compa?: boolean };
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi(), ir = (h: string) => router.push(h);
   const dia = (d: string) => new Date(d).toLocaleDateString(es ? "es-US" : "en-US", { day: "numeric", month: "long", timeZone: "America/New_York" });
   const salir = async () => { await olvidarSinConexion(); await fetch("/api/cuenta/salir", { method: "POST" }); router.replace("/entrar"); };

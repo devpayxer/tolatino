@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
 import { rutaLegal } from "@/lib/legal-rutas";
 import { aceptarTerminos } from "./acciones-legal";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button } = UI as unknown as Record<"Icon" | "Button", ComponentType<any>>;
@@ -16,7 +17,7 @@ type Bi = { es: string; en: string };
 export type FaltaHoja = { key: string; jurisdiction: string; version: number; title: Bi; summary: Bi };
 
 export function HojaTerminos({ es, faltan }: { es: boolean; faltan: FaltaHoja[] }) {
-  const router = useRouter(), E2 = (a: string, b: string) => (es ? a : b), L = (x: Bi) => (es ? x.es : x.en);
+  const router = useRouter(), E2 = (a: string, b: string) => dosIdiomas(es, a, b), L = (x: Bi) => (es ? x.es : x.en);
   const [abierta, setAbierta] = useState(true), [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null);
   useEffect(() => { setAbierta(true); }, [faltan]);
   if (!abierta || !faltan.length) return null;

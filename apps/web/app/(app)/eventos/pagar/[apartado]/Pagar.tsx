@@ -13,6 +13,7 @@ import { diaCorto, dinero, hora } from "@/lib/evt-comun";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
 import { useVerificacion } from "../../../pago/Verificacion";
 import { evtPagar, evtSoltar } from "../../acciones-boletos";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "StepHeader" | "PaymentSummary";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,7 +22,7 @@ const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 
 export function Pagar({ p, es, pago }: { p: PantallaPago; es: boolean; pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [seg, setSeg] = useState(p.estado === "held" ? p.segundos : 0);
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago.tarjetas), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago.tarjetas.find((t) => t.def) ?? pago.tarjetas[0] ?? null);

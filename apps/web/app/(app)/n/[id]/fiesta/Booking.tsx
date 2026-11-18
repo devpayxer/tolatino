@@ -13,6 +13,7 @@ import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "..
 import { useVerificacion } from "../../../pago/Verificacion";
 import { pedirFechaAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots" | "PaymentSummary" | "DepositOutcomes" | "QtyStepper";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,7 +29,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export function BookingFiestaV({ b, es, pago, yo, inicial }: {
   b: BookingFiesta; es: boolean; pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null; yo: boolean; inicial: { dia: string | null; e: string; g: number | null };
 }) {
-  const E2 = (a: string, z: string) => (es ? a : z);
+  const E2 = (a: string, z: string) => dosIdiomas(es, a, z);
   const router = useRouter();
   const s = b.svc, vis = s.k === "visita", nm = (x: { es: string; en: string }) => (es ? x.es : x.en || x.es), linea = nm(LINEA_FIESTA);
   const libre = (d: string) => vis || !b.ocupadas.includes(d);

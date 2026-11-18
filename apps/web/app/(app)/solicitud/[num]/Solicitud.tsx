@@ -8,6 +8,7 @@ import { useEffect, useState, type ComponentType } from "react";
 import type { MiSolicitud } from "@/lib/jobs";
 import { bi, DCORTO, EXP_L, pagoL, tipoL } from "@/lib/jobs-txt";
 import { vacConfirmar, vacRetirar } from "../../n/[id]/acciones-jobs";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,7 +17,7 @@ const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 
 export function Solicitud({ a, es, enviada }: { a: MiSolicitud; es: boolean; enviada: boolean }) {
   const router = useRouter();
-  const E2 = (x: string, y: string) => (es ? x : y);
+  const E2 = (x: string, y: string) => dosIdiomas(es, x, y);
   const [flash, setFlash] = useState(enviada && a.status === "sent" ? E2("Solicitud enviada", "Application sent") : "");
   const [busy, setBusy] = useState(false), [error, setError] = useState(""), [seguro, setSeguro] = useState(false);
   const st = a.status, abierta = st === "sent" || st === "seen" || st === "contact" || st === "interview", title = bi(a.title, es);

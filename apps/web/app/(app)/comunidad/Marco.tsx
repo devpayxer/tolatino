@@ -15,6 +15,7 @@ import { fijarRangos, rango } from "@/lib/comunidad-comun";
 import { nombreMes } from "@/lib/puntos-comun";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button" | "Chip" | "Tabs";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Tabs } = UI as unknown as Record<N, ComponentType<any>>;
@@ -64,7 +65,7 @@ export function Avatar({ foto, ini, size = 40, oficial }: { foto: string | null;
 export function Marco({ es, yo, ui, titulo, sub, back, children, aside, code }: {
   es: boolean; yo: YoCom; ui: ComUi; titulo: string; sub: string; back?: string; children: ReactNode; aside?: ReactNode | false; code: string;
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const W = useAncho(), D = W >= 1024, c3 = W >= 1200, c1 = W < 960;
   const rk = rango(yo.rango);

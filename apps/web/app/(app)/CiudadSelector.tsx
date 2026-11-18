@@ -10,6 +10,7 @@ import { usePermiso } from "@/app/_cascara/HojaPermiso";
 import { abrirSelector, dondeEstoy, elegirUbicacion, lugares, medirBorrador, pedirCiudad, quitarPedido, type DatosSelector } from "./ciudad/acciones";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button" | "Chip" | "Tag" | "RadiusMap";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, Tag, RadiusMap } = UI as unknown as Record<N, ComponentType<any>>;
@@ -28,7 +29,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
   lang: "es" | "en"; modo: "sheet" | "pop"; ancla?: { left: number; top: number } | null; pedir?: boolean;
   onClose: () => void; onAplicada: (abierta: boolean) => void;
 }) {
-  const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b);
+  const es = lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   // 8a · En la app To'Latino, la hoja previa antes de que el sistema pida la ubicación (en la web, el navegador pregunta solo).
   const { hoja, conPermiso } = usePermiso(es);
   const [d, setD] = useState<DatosSelector | null>(null);

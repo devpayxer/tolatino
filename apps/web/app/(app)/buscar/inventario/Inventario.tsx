@@ -6,6 +6,7 @@ import * as UI from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type ComponentType, type CSSProperties } from "react";
 import type { FilaInv, FiltroCarro, FiltroCasa } from "@/lib/inventario-buscar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Chip" | "Button" | "BusinessRow" | "Icon";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,7 +17,7 @@ const usd = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
 export function Inventario({ lang, ciudad, t, casa, carro, r }: {
   lang: "es" | "en"; ciudad: string; t: "casa" | "carro"; casa: FiltroCasa | null; carro: FiltroCarro | null; r: { filas: FilaInv[]; mas: string | null; total: number };
 }) {
-  const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b);
+  const es = lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ruta = usePathname(), sp = useSearchParams();
   const [marca, setMarca] = useState(carro?.marca ?? ""), [max, setMax] = useState(String((casa ?? carro)?.max ?? ""));
   const ir = (c: Record<string, string | number | null>) => {

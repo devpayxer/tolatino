@@ -5,10 +5,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { avisosDispositivos } from "./acciones-avisos";
 import { activarAvisos, desactivarAvisos, estadoAvisos, prepararAvisos, type EstadoAvisos } from "@/lib/nativo/avisos";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export type EsteTelefono = { est: EstadoAvisos | null; aqui: boolean; ocupado: boolean; tg: () => void };
 export function useEsteTelefono(es: boolean, aviso: (m: string) => void, alCambiar?: () => void, esteInicial?: boolean): EsteTelefono {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [est, setEst] = useState<EstadoAvisos | null>(null), [este, setEste] = useState<boolean>(!!esteInicial), [ocupado, setOcupado] = useState(false);
   const leer = useCallback(async () => {
     setEst(await estadoAvisos());

@@ -1,3 +1,4 @@
+import { dosIdiomas } from "@/lib/dos-idiomas";
 /* 6a · Eventos: lo común al cliente y al servidor (fase6-eventos.md §4 6a; prototipo TLEvP en dash2-evt.js y evEdit / evMiss del
    Panel v2). El formato (noche · comida · clase · fe · comunidad) vive en la base (event_formats) y llega aquí como FormatoEvt: el
    editor muestra solo sus campos y sus palabras, y el servidor valida con las mismas reglas (faltaEvt) antes de guardar. Nada de
@@ -159,7 +160,7 @@ export function valeL(dy: number | null | undefined, dia: string, span: number, 
 
 /* Estado para el negocio (evTag): la etiqueta y su tono. */
 export function etiquetaEvt(e: { status: EstadoEvt; hidden: boolean; pending: "review" | "changes" | "rejected" | null; hoy: boolean }, es: boolean): [string, string] {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   if (e.hidden) return [E2("OCULTO POR TO’LATINO", "HIDDEN BY TO’LATINO"), "danger"];
   if (e.status === "cancelled") return [E2("CANCELADO", "CANCELLED"), "danger"];
   if (e.status === "rejected") return [E2("NO APROBADO", "NOT APPROVED"), "danger"];

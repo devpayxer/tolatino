@@ -52,6 +52,7 @@ import { abrirComoLlegar } from "@/lib/como-llegar";
 import { MiniMapa } from "@/app/_dir/MiniMapa";
 import { HojaEntrar } from "../../HojaEntrar";
 import { VideoPortada, VisorHoy } from "../../VideoNegocio";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button" | "IconButton" | "Tabs" | "DesktopTabs" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, IconButton, Tabs, DesktopTabs, TodayCard, HoursPro, Tag, Chip, OwnerCard } = UI as unknown as Record<N, ComponentType<any>>;
@@ -100,7 +101,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
   // DJ y promotor no tienen local (neg-noche-kind.js post): en vez de «Cerrado · Abre a las…», «Por contrato» / «Según la noche».
   const porContrato = !!no && no.np.porFecha && no.np.kind !== "salon";
   if (porContrato) {
-    const E2 = (a: string, b: string) => (es ? a : b);
+    const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
     f = { ...f, estadoCorto: E2("Por fecha", "By date"), estadoNota: E2("TOCA EN DISCOTECAS Y FIESTAS · NO HAY LOCAL", "PLAYS CLUBS AND PARTIES · NO VENUE"), estadoResto: E2("· no hay local", "· no venue"),
       hoy: { eyebrow: E2("CÓMO TRABAJA", "HOW THEY WORK"), title: no!.np.kind === "promo" ? E2("Según la noche", "Depends on the night") : E2("Por contrato", "By contract"), dot: "var(--tl-action)",
         sub: E2("Toca en discotecas y fiestas; no hay local. Pide tu fecha y te mandan el precio por escrito.", "Plays clubs and parties; no venue. Ask for your date and get the price in writing."), cols: [] } };

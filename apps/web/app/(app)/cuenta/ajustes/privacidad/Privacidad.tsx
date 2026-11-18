@@ -12,6 +12,7 @@ import { llaveQuitar, sesionCerrar } from "../../acciones-perfil";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../../Marco";
 import { DEF_APPS } from "@/lib/app-nativa-comun";
 import { vozGuardar } from "../../../buscar/acciones";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type S = Awaited<ReturnType<typeof sesionesDe>>;
 type K = Awaited<ReturnType<typeof misLlaves>>;
@@ -30,7 +31,7 @@ const disp = (ua: string | null, es: boolean) => {
 };
 export function Privacidad({ s, es, yo, llaves = [], agregar = false, voz = null }: { s: S; es: boolean; yo: Yo; llaves?: K; agregar?: boolean; voz?: boolean | null }) {
   const [vozOn, setVozOn] = useState<boolean>(voz === true);
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   /* 8d · Llaves de acceso: la lista (dispositivo y última vez) y «Quitar»; «Agregar» solo si aquí se ofrecen y este dispositivo guarda llaves. */
   const [puede, setPuede] = useState(false), [ocupado, setOcupado] = useState(false);

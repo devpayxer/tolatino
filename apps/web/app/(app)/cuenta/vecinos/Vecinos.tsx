@@ -8,6 +8,7 @@ import { fijarRangos, rango } from "@/lib/comunidad-comun";
 import type { Persona, PersonaB } from "@/lib/vecinos";
 import { vecBloquear, vecDeshacer, vecSeguir, vecSilenciar } from "../../comunidad/acciones";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type L = "siguiendo" | "seguidores" | "bloqueados";
 type Item = (Persona | PersonaB) & { hecho?: boolean };
@@ -16,7 +17,7 @@ const primero = (n: string) => n.split(/\s+/)[0] ?? n;
 
 export function Vecinos({ es, yo, l, d, menor, pagina, rangos }: { es: boolean; yo: Yo; l: L; d: { items: Item[]; mas: string | null } | null; menor: boolean; pagina: boolean; rangos?: { es: string; en: string }[] }) {
   fijarRangos(rangos); // 5f: los nombres vigentes de los rangos (el equipo los puede renombrar)
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const [items, setItems] = useState<Item[]>(d?.items ?? []);
   const poner = (id: string, f: (x: Item) => Item) => setItems((L) => L.map((x) => (x.id === id ? f(x) : x)));

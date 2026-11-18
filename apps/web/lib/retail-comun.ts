@@ -1,3 +1,4 @@
+import { dosIdiomas } from "@/lib/dos-idiomas";
 /* Tu herramienta de Mercados («Balanza y pedidos») y Tiendas («Tallas y apartados"). Tipos y textos que comparten el
    servidor, el panel y el Super Admin (sin acceso a la base). Plan: docs/diseno/plan/fase4-mercados-tiendas.md §6. */
 type Bi = { es: string; en: string };
@@ -18,7 +19,7 @@ export type HerrRetail = HerrMerc | HerrTienda;
 const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
 /* La línea de Lo que vendes y del 360 del Super Admin (dash2-cat.js summary). */
 export function resumenRetail(h: HerrRetail, es: boolean): string {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   if (h.rubro === "merc") {
     const a = h.prods.filter((p) => p.ago).length;
     return [h.pk ? "Pickup" : "", h.env ? `${E2("envío ", "delivery ")}${h.fee ? usd(h.fee) : E2("gratis", "free")}${h.min ? `${E2(" · mínimo ", " · min ")}${usd(h.min)}` : ""}` : "", h.ebt ? "EBT" : "", h.cash ? E2("efectivo", "cash") : ""]

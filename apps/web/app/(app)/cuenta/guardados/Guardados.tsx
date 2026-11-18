@@ -10,11 +10,12 @@ import { guardarNegocio } from "../../acciones";
 import { vacGuardar } from "../../n/[id]/acciones-jobs";
 import { novGuardar, seguir } from "../../n/[id]/acciones-novedades";
 import { evtGuardar, evtQuitarRsvp } from "../../eventos/acciones";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type MisEventos = { vas: { fid: string; href: string; t: string; s: string; party: number; foto: string | null }[]; guardados: { eid: string; href: string; t: string; s: string; foto: string | null }[] };
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
 
 export function Guardados({ d, ev, f, es, yo }: { d: MisGuardados; ev: MisEventos; f: "biz" | "vac" | "nov" | "evt"; es: boolean; yo: Yo }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const [ed, setEd] = useState(false), [busy, setBusy] = useState(false);
   const quitar = async (f2: () => Promise<{ ok: boolean }>, msg: string) => {

@@ -7,6 +7,7 @@ import { useState, type ComponentType } from "react";
 import type { VacanteFicha } from "@/lib/jobs";
 import { bi, diasL, haceL, horarioL, idiomasL, pagoL, tipoL } from "@/lib/jobs-txt";
 import { vacGuardar } from "./acciones-jobs";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Chip" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,7 +20,7 @@ export const TAG_APP = (es: boolean, ivOk = false): Record<string, [string, stri
 
 export function JobsTab({ jobs, negocio, sesion, es }: { jobs: VacanteFicha[]; negocio: string; sesion: boolean; es: boolean }) {
   const router = useRouter();
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [saved, setSaved] = useState<Record<string, boolean>>(Object.fromEntries(jobs.map((j) => [j.id, j.saved])));
   const guardar = async (id: string) => {
     if (!sesion) return router.push(`/entrar?volver=${encodeURIComponent(`/n/${negocio}?tab=jobs`)}`);

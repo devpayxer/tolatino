@@ -5,6 +5,7 @@
 import { useRouter } from "next/navigation";
 import { vecBloquear, vecDeshacer, vecSilenciar } from "./acciones";
 import type { ComUi, FilaHoja } from "./Marco";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Bi = { es: string; en: string };
 type R = { ok: boolean; msg?: Bi; entrar?: boolean };
@@ -12,7 +13,7 @@ const primero = (n: string) => n.split(/\s+/)[0] ?? n;
 
 export function useVecinoAcciones(es: boolean, ui: ComUi) {
   const router = useRouter();
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const red: R = { ok: false, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not do it. Check your connection." } };
   const fallo = (r: R) => { if (r.entrar) { router.push(`/entrar?volver=${encodeURIComponent(location.pathname)}`); return; } if (r.msg) ui.setAviso({ t: es ? r.msg.es : r.msg.en }); };
   const deshacer = (id: string, kind: "block" | "mute", alDeshacer?: () => void) => async () => {

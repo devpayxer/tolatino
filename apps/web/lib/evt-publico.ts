@@ -5,6 +5,7 @@ import { db } from "./db";
 import { bi, dinero, diaCorto, hora, mesCorto, repL, spanL, sumarDias, type Bi, type Boleto, type Entrada, type FormatoEvt, type FormatoKey, type HorarioDia, type Mesa, type Repite } from "./evt-comun";
 import { centroSQL, DIRECCION_EVENTO, PUNTO_EVENTO, radioSQL, type Punto } from "./punto";
 import { ventaFicha, type VentaFicha } from "./boletos";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 /* 6b · El módulo Eventos del cliente (fase6-eventos.md §4 6b; prototipo «To'Latino Eventos» bqVals / nvVals / lsVals). El servidor decide:
    - Solo sale lo que la base marca `listable` (evento publicado y aprobado, sin ocultar, fecha programada, negocio con el módulo Eventos
@@ -77,7 +78,7 @@ const enP = (f: string | null) => (f ? f.replace(/\bd\.local_date\b/g, "p.local_
 const EN_RADIO = (centro: string, rad: string) => `(d.geom is null or st_dwithin(d.geom, ${centro}, ${rad} * 1609.34))`;
 
 function tarjeta(x: FilaT, es: boolean, D: Dias): TarjetaEvt {
-  const E2 = (a: string, b: string) => (es ? a : b), free = x.entry !== "tickets", g = grupo(x.ldate, D);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), free = x.entry !== "tickets", g = grupo(x.ldate, D);
   const tag: TagEvt | null = x.going ? { t: E2("VAS", "GOING"), k: "vas" } : g === "hoy" ? { t: x.fmt === "noche" ? E2("ESTA NOCHE", "TONIGHT") : E2("HOY", "TODAY"), k: "hoy" }
     : x.quedan != null && x.quedan <= 20 ? { t: x.quedan === 0 ? E2("CUPO LLENO", "FULL") : E2(`QUEDAN ${x.quedan}`, `${x.quedan} LEFT`), k: "quedan" } : free ? { t: E2("GRATIS", "FREE"), k: "gratis" } : null;
   const cuando = x.kind === "span" ? `${spanL(x.inicio, x.span, es).toUpperCase()} · ${x.span} ${E2("DÍAS", "DAYS")}` : `${g === "hoy" ? E2("HOY", "TODAY") : diaCorto(x.ldate, es).toUpperCase()} · ${hora(x.h0)}`;
@@ -149,7 +150,7 @@ export async function eventosCiudad(p: Punto, f: FiltroDia, cursor: string | nul
    calendario (`dia`; las de otro día abren la página del evento). */
 export type HistoriaEvt = TarjetaEvt & { hora: string; lugar: string; precioT: string; ctaRsvp: boolean };
 export async function estaNoche(p: Punto, viewer: string | null, es: boolean, n = 12, dia: string | null = null): Promise<HistoriaEvt[]> {
-  const centro = centroSQL(p), R = radioSQL(p), D = await diasCiudad(p.ciudad), E2 = (a: string, b: string) => (es ? a : b);
+  const centro = centroSQL(p), R = radioSQL(p), D = await diasCiudad(p.ciudad), E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const el = dia && DIA_ISO.test(dia) && dia >= D.hoy ? dia : D.hoy;
   const r = await db().query<FilaT>(`select ${COLS_T(centro)} ${DESDE_T} where ${VIVO} and d.city_id = $2 and d.local_date = $3::date and ${EN_RADIO(centro, R)} and ${PRIMERA("p.local_date = $3::date")}
                                      order by d.starts_at, d.id limit ${Math.max(1, Math.min(24, n))}`, [viewer, p.ciudad, el]);
@@ -306,7 +307,7 @@ export async function fichaEvento(slug: string, fecha: string | null, viewer: st
       where e.id = $1::bigint and d.listable and ($2::bigint is null or d.id = $2::bigint)
       order by (d.ends_at > now()) desc, d.starts_at limit 1`, [eid, fid, viewer, guarda])).rows[0];
   if (!r || r.slug !== slug) return null;
-  const E2 = (a: string, b: string) => (es ? a : b), nm = (x: Bi | null | undefined) => (x ? bi(x, es) : "");
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), nm = (x: Bi | null | undefined) => (x ? bi(x, es) : "");
   const [L, G, Fe, gen, rel] = await Promise.all([
     db().query<{ h: number; who: string; role: Bi; dy: number }>(`select at_min as h, who, role, day_index as dy from event_lineup where event_id = $1::bigint and removed_at is null order by day_index, sort, at_min`, [eid]),
     db().query<{ url: string }>(`select url from media where owner_kind = 'event' and owner_id = $1 and status = 'visible' order by sort, created_at limit 12`, [eid]),

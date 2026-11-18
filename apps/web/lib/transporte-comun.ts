@@ -1,3 +1,4 @@
+import { dosIdiomas } from "@/lib/dos-idiomas";
 /* Tu herramienta de Transporte (4w · fase4-fiestas-transporte.md §4w y §5 · dash2-cat.js TOOLS['NEG-TRANS'], tT L158, state L194,
    summary L324–325): tipos y textos que comparten el servidor, el panel y el Super Admin (sin acceso a la base). */
 export type KindTrans = "van" | "air" | "caja" | "mud" | "med" | "emp" | "taxi" | "courier" | "cdl" | "grua" | "renta" | "escolar";
@@ -13,7 +14,7 @@ export const tituloTrans = (k: KindTrans, es: boolean) => (k === "van" ? (es ? "
 const SALE: Record<string, [string, string]> = { sab: ["el sábado", "on Saturday"], mie: ["el miércoles", "on Wednesday"], "15d": ["cada 15 días", "every 2 weeks"] };
 /* La línea de Lo que vendes y del 360 del Super Admin (summary L324–325). */
 export function resumenTrans(h: HerrTrans, es: boolean): string {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   if (h.kind === "van" || h.tieneAsiento) {
     const vivas = h.salidas.filter((s) => !s.cancelada), quedan = vivas.reduce((n, s) => n + s.quedan, 0);
     const H = h.cuando === "hoy";
@@ -33,14 +34,14 @@ export type SvcTrans = { id: string; sec: string | null; name: Bi; desc: Bi; cen
 const m$ = (c: number) => (c % 100 ? `$${(c / 100).toFixed(2)}` : `$${(c / 100).toLocaleString("en-US")}`);
 const hT = (m: number) => `${Math.floor(m / 60) % 12 || 12}${m % 60 ? `:${String(m % 60).padStart(2, "0")}` : ""} ${m < 720 ? "AM" : "PM"}`;
 export function precioTrans(s: SvcTrans, es: boolean): { l: string; s: string } {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   if (s.k === "asiento") return { l: m$(s.cents), s: `${E2("POR PERSONA", "PER PERSON")}${s.child ? E2(` · NIÑO ${m$(s.child)}`, ` · CHILD ${m$(s.child)}`) : ""}` };
   if (s.k === "caja") return { l: m$(s.cents), s: E2("POR CAJA O ENVÍO", "PER BOX OR DELIVERY") };
   if (s.k === "cotiza") return { l: `${E2("Desde ", "From ")}${m$(s.cents)}`, s: E2("CERRADO CON FOTOS", "FIXED FROM PHOTOS") };
   return { l: m$(s.cents), s: s.pax ? E2(`HASTA ${s.pax} ${s.pax === 1 ? "PERSONA" : "PERSONAS"}`, `UP TO ${s.pax} ${s.pax === 1 ? "PERSON" : "PEOPLE"}`) : "" };
 }
 export function metaTrans(s: SvcTrans, es: boolean): string {
-  const E2 = (a: string, b: string) => (es ? a : b), a: string[] = [];
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), a: string[] = [];
   if (s.k === "asiento") {
     if (s.sal.length) a.push(`${E2("SALE ", "DEPARTS ")}${s.sal.map((h) => hT(h * 60)).join(" · ")}`);
     if (s.prox) a.push(s.prox.quedan ? `${s.prox.hoy ? E2("HOY ", "TODAY ") : E2("MAÑANA ", "TOMORROW ")}${hT(s.prox.m)} · ${E2(`QUEDAN ${s.prox.quedan}`, `${s.prox.quedan} LEFT`)}` : E2("LLENO", "FULL"));

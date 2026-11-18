@@ -10,6 +10,7 @@ import type { LineaEst } from "@/lib/estimados";
 import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../pago/MetodoPago";
 import { useVerificacion } from "../../pago/Verificacion";
 import { citaAccion, estimadoDecidir, extraDecidir } from "./acciones";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,7 +19,7 @@ const dinero = (c: number) => (c % 100 === 0 ? `$${c / 100}` : `$${(c / 100).toF
 export type PagoEst = { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null;
 
 export function EstimadoCliente({ c, es, pago, aviso }: { c: CitaVista; es: boolean; pago: PagoEst; aviso: (t: string) => void }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter();
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter();
   const nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const e = c.est!, est = e.estimado, d = e.dinero, auto = c.rubro === "auto", paso = c.paso ?? "", who = c.negocio.nombre;
   const abierto = paso === "est" && est?.st === "sent";

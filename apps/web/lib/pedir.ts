@@ -9,6 +9,7 @@ import { ITEMS_FREE } from "./plan";
 import { vencer } from "./pedidos";
 import { cobrarOperacion, registrarRetencion, retenerPedido, tarjetaDe } from "./cobros";
 import { cuponDe, impuestoConDescuento } from "./cupon-seguidores";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 /* El menú que ve el cliente (pestaña Menú de la ficha, Resumen · menú y checkout) y las reglas del pedido de Comida
    con pago en el local (Fase 2 · bloque 2b). El servidor decide todo: qué se ve, qué se puede pedir, a qué precio,
@@ -111,7 +112,7 @@ const mitad = (m: number) => Math.ceil(m / 30) * 30;
 
 /* Estado de los pedidos en línea ahora (prototipo menuVals: later, shut, canOrd, closedT/closedS). */
 function calcEstado(b: Base, R: [number, number][], usados: number, cap: number, es: boolean): PEstado {
-  const E2 = (x: string, y: string) => (es ? x : y), now = hm2m(b.hm), pro = b.plan === "pro";
+  const E2 = (x: string, y: string) => dosIdiomas(es, x, y), now = hm2m(b.hm), pro = b.plan === "pro";
   const free = !pro, freeLeft = pro ? null : Math.max(0, cap - usados), planOk = pro || (freeLeft ?? 0) > 0;
   const actual = b.open ? R.find(([a, z]) => a <= now && now < z) : undefined;
   const sig = !b.open && !b.cerrado ? R.find(([a]) => a > now) : undefined;

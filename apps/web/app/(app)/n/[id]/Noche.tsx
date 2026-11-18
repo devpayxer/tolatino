@@ -8,6 +8,7 @@ import * as UI from "@tolatino/ui";
 import { useState, type ComponentType, type MouseEvent } from "react";
 import { coverTexto, diaNoche, filaCorta, filaCuando, filaEtiqueta, hNoche, LINEA_NOCHE, precioNoche, usdN } from "@/lib/noche-comun";
 import type { NochePublica, SvcNoche } from "@/lib/noche-publico";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,7 +19,7 @@ const DOW = { es: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"], en: ["Sun
 
 type Acc = { llegar: () => void; escribir: () => void; llamar: () => void; reservar: (svc: string, pax: number) => void; ir: (href: string) => void };
 export function useNoche(np: NochePublica | null, es: boolean, pro: boolean, acc: Acc) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [hoja, setHoja] = useState<string | null>(null);
   const [pax, setPax] = useState(2);
   if (!np) return null;

@@ -6,6 +6,7 @@
 import * as UI from "@tolatino/ui";
 import { useEffect, useRef, useState, type ComponentType, type KeyboardEvent, type PointerEvent as PE } from "react";
 import { millas, proyectar, teselas, type LL } from "@/lib/mapa-geo";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { RadiusMap } = UI as unknown as Record<"RadiusMap", ComponentType<any>>;
@@ -16,7 +17,7 @@ export const metrosEntre = (a: LL, b: LL) => Math.round(millas(a, b) * 1609.34);
 export function MapaPin({ origen, pin, onPin, es, maxM = 250, desk = false, etiqueta }: {
   origen: LL; pin: LL | null; onPin: (p: LL | null) => void; es: boolean; maxM?: number; desk?: boolean; etiqueta?: string;
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const centro = pin ?? origen;
   const g = useRef<{ x: number; y: number; c: [number, number] } | null>(null);
   const [mov, setMov] = useState(false);

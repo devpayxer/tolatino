@@ -10,6 +10,7 @@ import { herramientaNoche, NOCHE_SQL } from "./noche";
 import { diaNoche, hNoche, usdN, type Bi } from "./noche-comun";
 import { pasarela } from "./pagos/pasarela";
 import { bancoPide } from "./pagos/verificacion";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 /* La lista de la noche y la mesa / VIP (Fase 4 · 4nc · fase4-noche.md §3 y §4nc · neg-noche-flow.js).
    - Una lista o una mesa es una operación `night` (N-7101…). La noche es la fecha de la tarde en que abre (corte 6 AM).
@@ -222,7 +223,7 @@ async function avisarNeg(numero: string, tpl: string, extra: Record<string, stri
 }
 /* Lo que se paga en la puerta, como se copió al enviar (para el aviso y la pantalla). */
 export function puertaTexto(det: Record<string, unknown>, es: boolean): string {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   if (det.k === "lista") {
     const p = Number(det.door_cents ?? 0), u = det.list_until == null ? null : Number(det.list_until);
     return `${p ? E2(`${usdN(p)} por persona`, `${usdN(p)} per person`) : E2("Gratis", "Free")}${u != null ? E2(` antes de las ${hNoche(u)}`, ` before ${hNoche(u)}`) : ""}`;

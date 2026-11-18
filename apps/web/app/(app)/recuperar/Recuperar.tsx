@@ -11,6 +11,7 @@ import { reducir } from "@/lib/subir-foto";
 import { enviarReclamo, pedirCodigo } from "./acciones";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, IconButton, BusinessRow, Chip, Button, Tag, OrderTracker } = UI as unknown as Record<"Icon" | "IconButton" | "BusinessRow" | "Chip" | "Button" | "Tag" | "OrderTracker", ComponentType<any>>;
 const MONO = "'JetBrains Mono',monospace";
@@ -22,7 +23,7 @@ const ROL_L: Record<string, [string, string]> = { dueno: ["Dueño", "Owner"], so
 export function Recuperar({ r, cands, ciudad, lang, conSesion, origen, id }: {
   r: R | null; cands: { id: string; name: string; address: string | null; cover: string | null }[]; ciudad: string; lang: "es" | "en"; conSesion: boolean; origen: string; id: string;
 }) {
-  const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b), router = useRouter();
+  const es = lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter();
   const desk = useAnchoComun() >= 1024; // 9c · sin salto al cargar
   const KEY = `tl-recuperar-${id}`;
   type Form = { rol: string; metodo: "codigo" | "documento"; docKind: string; nota: string };

@@ -5,9 +5,10 @@ import { compartir as compartirNativo } from "@/lib/nativo/compartir";
 import { useEffect, useState } from "react";
 import type { Invitado } from "@/lib/invitar";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export function Invitar({ es, yo, nombre, ciudad, code, invitados }: { es: boolean; yo: Yo; nombre: string | null; ciudad: string; code: string | null; invitados: Invitado[] }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const ui = useCuentaUi();
   const [url, setUrl] = useState("");
   useEffect(() => setUrl(`${location.origin}/${code ? `i/${code.toLowerCase()}` : ""}`), [code]);

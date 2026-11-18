@@ -7,6 +7,7 @@
 import * as UI from "@tolatino/ui";
 import { useState, type ComponentType } from "react";
 import { agregarLlave } from "@/lib/nativo/llave";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button } = UI as unknown as Record<"Icon" | "Button", ComponentType<any>>;
@@ -22,7 +23,7 @@ export function metodoLlave(es: boolean): { con: string; corto: string } {
 }
 
 export function HojaLlave({ es, seguir }: { es: boolean; seguir: () => void }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const m = metodoLlave(es);
   const [estado, setEstado] = useState<"pregunta" | "ocupado" | "listo" | "error">("pregunta");
   const [error, setError] = useState<string | null>(null);

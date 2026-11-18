@@ -78,6 +78,7 @@ import { useAhora } from "@/lib/ahora";
 import { tec } from "@/lib/tec";
 import { DireccionPanel } from "./DireccionPanel";
 import { RefrescoVivo } from "@/app/_vivo/RefrescoVivo";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 const Icon = UI.Icon as ComponentType<any>;
 const Button = UI.Button as ComponentType<any>;
 const MONO = "'JetBrains Mono',monospace";
@@ -140,7 +141,7 @@ export type Ctx = {
 
 function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, pat, patRes, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp, arts }: { cpa?: CpaPanel | null; cpaAuto?: AutoPanel | null; d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; compraPro: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; pat?: PatData; patRes?: { hasta: string; estado: string } | null; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData; arts?: ArtPanel[] }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
-  const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
+  const es = lang === "es", E2 = useCallback((a: string, b: string) => dosIdiomas(es, a, b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
   // 9n-4 · «Volver a Pro» con 3-D Secure: la hoja del banco se abre aquí, en Tu plan (como en el checkout).

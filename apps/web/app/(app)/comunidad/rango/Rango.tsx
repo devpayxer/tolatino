@@ -10,6 +10,7 @@ import type { ComponentType } from "react";
 import { hace, rango } from "@/lib/comunidad-comun";
 import { CUANDO_PATIO, LINEA_PUNTOS, REGLAS_PUNTOS, type MiRango } from "@/lib/puntos-comun";
 import { LINE, MONO, Marco, useAncho, useComUi, type YoCom } from "../Marco";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,7 +19,7 @@ const CARD = { borderRadius: 18, background: "var(--tl-white)", border: "1px sol
 const K = { font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.6)" } as const;
 
 export function Rango({ es, yo, d }: { es: boolean; yo: YoCom; d: MiRango }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024;
   const rk = rango(d.n), sig = d.siguiente, R = d.rangos;
   const nx = sig ? R.find((x) => x.n === sig.n) ?? null : null;

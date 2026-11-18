@@ -6,6 +6,7 @@ import {
   type FreqFe, type HelpFe, type HorarioFe, type KindFe, type RepFe,
 } from "./fe-comun";
 import type { Bi } from "./inscripciones-comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 /* La ficha de Iglesias y Religión (Fase 4 · 4id · fase4-iglesias-inmuebles-autos.md §1c, §3, §4id; neg-fe-kind.js faq L44–62, metaOf
    L98–102, btnOf L104, tabL L105, post L108–159). Todo sale de worship_times, fe_settings (lib/fe.ts herramientaFe) y los servicios; el
@@ -94,7 +95,7 @@ const tipoQue = (k: KindFe, es: boolean) => (k === "misa" ? (es ? "PRÓXIMA MISA
 
 /* Preguntas por tipo (faq L44–62), con los datos de verdad; la de Tu página gana (lo mezcla la página). */
 export function faqFe(p: FePublica, es: boolean): { q: string; a: string }[] {
-  const E2 = (a: string, b: string) => (es ? a : b), cul = horariosTexto(p, es), ay = ayudaFe(p, es), idi = idiomaFe(p, es);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), cul = horariosTexto(p, es), ay = ayudaFe(p, es), idi = idiomaFe(p, es);
   const MEM = { q: E2("¿Tengo que ser miembro?", "Do I have to be a member?"), a: E2("No. Llegas cuando quieras; nadie te pide nada en la puerta.", "No. Come whenever you like; nobody asks you for anything at the door.") };
   const HLP = { q: E2("¿Ayudan si lo necesito?", "Do you help if I need it?"), a: ay ? E2(`Sí, gratis: ${ay.toLowerCase()}. Nadie pregunta tu estatus.`, `Yes, free: ${ay.toLowerCase()}. Nobody asks about your status.`) : E2("Pregunta en la oficina; la ayuda es gratis y nadie pregunta tu estatus.", "Ask at the office; help is free and nobody asks about your status.") };
   const KIDS = { q: E2("¿Hay algo para los niños?", "Is there something for kids?"), a: p.help.includes("ninos") ? E2("Sí, escuela bíblica durante el servicio.", "Yes, Bible school during the service.") : p.help.includes("jovenes") ? E2("Hay grupo de jóvenes; los niños se quedan con sus papás.", "There is a youth group; kids stay with their parents.") : E2("Los niños se quedan con sus papás.", "Kids stay with their parents.") };
@@ -141,7 +142,7 @@ export function faqFe(p: FePublica, es: boolean): { q: string; a: string }[] {
 /* La tarjeta de Hoy por tipo (post L122–129): columnas con datos reales y la frase de cómo se llega + la línea fija. `hoy` = el horario
    de hoy que ya calculó la ficha («9 AM – 5 PM» o «Cerrado»). */
 export function hoyFe(p: FePublica, es: boolean, hoy: string) {
-  const E2 = (a: string, b: string) => (es ? a : b), k = p.kind, idi = idiomaFe(p, es), nx = proximoTexto(p.proximo, es), b = (t: Bi) => (es ? t.es : t.en);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), k = p.kind, idi = idiomaFe(p, es), nx = proximoTexto(p.proximo, es), b = (t: Bi) => (es ? t.es : t.en);
   const cols: { k: string; v: string }[] = k === "fun" ? [{ k: E2("ATIENDE", "ANSWERS"), v: p.h24 ? E2("24 horas", "24 hours") : hoy }, { k: E2("PRECIO", "PRICE"), v: E2("Total por escrito", "Written total") },
       p.repatria ? { k: E2("REPATRIACIÓN", "REPATRIATION"), v: E2(`RD en ${p.rep} días`, `DR in ${p.rep} days`) } : { k: E2("PLAN DE PAGOS", "PAYMENT PLAN"), v: p.plan ? E2("Hasta 12 pagos", "Up to 12 payments") : "No" }]
     : k === "ayuda" ? [{ k: E2("HOY", "TODAY"), v: p.agotado ? E2("Se acabó por hoy", "Out for today") : hoy }, { k: E2("PAPELES", "PAPERS"), v: p.sinid ? E2("No piden", "Not asked") : E2("Una ID de cualquier país", "Any country ID") }, { k: E2("COSTO", "COST"), v: E2("Gratis", "Free") }]

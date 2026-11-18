@@ -12,13 +12,14 @@ import { tablaMas } from "../acciones";
 import { Avatar, LINE, MONO, Marco, useAncho, useComUi, type YoCom } from "../Marco";
 
 import { tec, flechas } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Button" | "Chip" | "Icon";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Button, Chip, Icon } = UI as unknown as Record<N, ComponentType<any>>;
 const fecha = (iso: string, es: boolean) => new Date(`${iso}T12:00:00Z`).toLocaleDateString(es ? "es-US" : "en-US", { day: "numeric", month: "long", timeZone: "UTC" });
 
 export function TablaBarrio({ es, yo, ciudad, d }: { es: boolean; yo: YoCom; ciudad: string; d: Tabla | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), path = usePathname(), ui = useComUi(yo), D = useAncho() >= 1024;
   const [mas, setMas] = useState<{ filas: FilaTabla[]; cur: string | null; key: string }>({ filas: [], cur: null, key: "" });
   const [busy, setBusy] = useState(false);

@@ -11,6 +11,7 @@ import { contratoTexto, LINEA_DEP, usdD } from "@/lib/deporte-comun";
 import { fechaCorta, horaInsc, LINEA_EDU, planTexto, usdI, type Bi } from "@/lib/inscripciones-comun";
 import type { CursoPub, InscPublica } from "@/lib/inscripciones-publico";
 import { edadTexto, LINEA_NINOS } from "@/lib/ninos-comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,7 +21,7 @@ const stop = (e?: MouseEvent) => e?.stopPropagation();
 
 type Acc = { llamar: () => void; escribir: () => void; llegar: () => void };
 export function useInsc(ip: InscPublica | null, es: boolean, pro: boolean, acc: Acc) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [hoja, setHoja] = useState<string | null>(null);
   if (!ip) return null;
   const nm = (b: Bi | null | undefined) => (b ? (es ? b.es : b.en || b.es) : "");

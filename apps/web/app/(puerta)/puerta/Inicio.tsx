@@ -11,10 +11,11 @@ import { puertaAbrir, puertaAceptar, puertaSalirEquipo } from "./acciones";
 import { useAvisos } from "@/app/_cascara/HojaPermiso";
 import { Cabeza, Hoja } from "./Marco";
 import { limpiarSesiones, registrarSW } from "./sin-conexion/usePuertaLocal";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Bi = { es: string; en: string };
 export function Inicio({ es, nombre, tel, puertas, abiertas, equipos, ventanaH }: { es: boolean; nombre: string; tel: string; puertas: PuertaAsignada[]; abiertas: SesionAbierta[]; equipos: { id: string; negocio: string }[]; ventanaH: number }) {
-  const E2 = (a: string, b: string) => (es ? a : b), bi = (x: Bi) => (es ? x.es : x.en || x.es);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), bi = (x: Bi) => (es ? x.es : x.en || x.es);
   const router = useRouter(), [pend, start] = useTransition();
   const [cod, setCod] = useState(""), [sel, setSel] = useState<PuertaAsignada | null>(null), [pn, setPn] = useState(""), [err, setErr] = useState(""), [toast, setToast] = useState("");
   // 8c · Al aceptar una puerta: la hoja previa de los avisos («Hoy escaneas en la puerta»), una vez por teléfono.

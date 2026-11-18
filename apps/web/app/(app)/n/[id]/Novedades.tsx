@@ -13,6 +13,7 @@ import { novComentar, novEncuesta, novGuardar, novLikeComentario, novVista, novV
 import { registrarToque } from "../../acciones";
 import { LineaTr, useTraducir } from "../../Traducir";
 import { ReportarContenido } from "./ReportarContenido";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "Tag" | "PostCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,7 +30,7 @@ const T = (es: boolean): Record<Post["kind"], [string, string, string]> => ({
 
 export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesFicha; logo: string | null; sesion: boolean; es: boolean; onItem: (id: string) => void; onHoras: () => void }) {
   const router = useRouter(), tr = useTraducir(es);
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [f, setF] = useState("all");
   const [open, setOpen] = useState<string | null>(null);
   const [draft, setDraft] = useState("");

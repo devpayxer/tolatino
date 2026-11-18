@@ -1,11 +1,12 @@
 "use client";
 import { PanelBloques, type PanelBloqueT as Bloque, type PanelFila as Fila } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 /* 9n-2 · To'Latino Negocios sin un negocio (L1466): ni a Publica tu negocio (fuera del alcance de esta app; la cáscara la abre fuera) ni a una pantalla en blanco.
    Compuesta con el sistema (head, note, rows). Siempre llega a Mi cuenta › Ajustes › Borrar mi cuenta. */
 export function SinNegocio({ es, nombre, tel }: { es: boolean; nombre: string; tel: string }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter();
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter();
   const tl = tel.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3");
   const filasCuenta: Fila[] = [{ icon: "shield", t: E2("Mi cuenta y ajustes", "My account and settings"), s: E2("Idioma, privacidad y borrar tu cuenta.", "Language, privacy and deleting your account."), onClick: () => router.push("/cuenta/ajustes") }];
   const B: Bloque[] = [

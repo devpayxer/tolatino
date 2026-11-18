@@ -10,6 +10,7 @@ import { HojaCasa, useOficio } from "../n/[id]/Oficios";
 import { subirFoto } from "@/lib/subir-foto";
 import { pedirEmergencia } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,7 +21,7 @@ const dinero = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
 export type OpcionEm = { ek: string; t: { es: string; en: string }; n: number; lo: number; hi: number };
 
 export function Emergencia({ opciones, casa: casa0, es, yo, desde, ek0, linea911, op }: { opciones: OpcionEm[]; casa: Casa | null; es: boolean; yo: boolean; desde: string | null; ek0: string | null; linea911: { es: string; en: string }; op: OficiosPublico | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter();
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter();
   // Tu casa: con la hoja «Tu casa» del negocio de donde vienes (la misma de la ficha); al guardarla se recalculan los que llegan.
   const v = useOficio(op, es, yo), casa = v ? v.casa : casa0;
   const casaId = casa?.id ?? null, primera = useRef(casaId);

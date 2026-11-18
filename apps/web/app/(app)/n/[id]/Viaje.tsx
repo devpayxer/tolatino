@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState, type ComponentType, type MouseEvent } from "react";
 import { LINEA_TRANS, metaTrans, precioTrans, type SvcTrans } from "@/lib/transporte-comun";
 import type { TransPublico } from "@/lib/trans-publico";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,7 +19,7 @@ const usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { maximumFracti
 const SALE: Record<string, [string, string]> = { sab: ["Sábado", "Saturday"], mie: ["Miércoles", "Wednesday"], "15d": ["Cada 15 días", "Every 2 weeks"] };
 
 export function useViaje(tp: TransPublico | null, es: boolean, pro: boolean) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [hoja, setHoja] = useState<string | null>(null);
   if (!tp) return null;

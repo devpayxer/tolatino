@@ -14,6 +14,7 @@ import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "..
 import { useVerificacion } from "../../../pago/Verificacion";
 import { uuid } from "@/lib/uuid";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,7 +29,7 @@ const LB: Record<string, [string, string]> = { casa: ["Casa", "Home"], trabajo: 
 
 export type PagoCheckout = { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null;
 export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boolean; pago: PagoCheckout; acepta?: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const biz = m.negocio.id, est = m.estado, D = est.dlv, dir = m.dir;
   const [cart, setCart] = useState<Linea[] | null>(null);

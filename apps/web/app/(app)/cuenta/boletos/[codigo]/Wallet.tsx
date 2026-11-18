@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { abrirFuera } from "@/lib/nativo/externo";
 import { esApp } from "@/lib/nativo/puente";
 import { walletAppleEnlace, walletGoogle } from "../acciones-wallet";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Disp = { apple: boolean; google: boolean };
 // Los colores de la insignia OFICIAL (negro con borde gris, reglas de Apple y Google): la excepción al sistema de diseño (§6 #15).
@@ -32,7 +33,7 @@ function Insignia({ marca, es, onClick, href, ocupado }: { marca: "apple" | "goo
 }
 
 export function WalletBotones({ code, es, d, avisar }: { code: string; es: boolean; d: Disp; avisar: (m: string) => void }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [quien, setQuien] = useState<"todo" | "ios" | "android">("todo"), [app, setApp] = useState(false), [ocupado, setOcupado] = useState<"apple" | "google" | null>(null);
   useEffect(() => {
     const ua = navigator.userAgent;

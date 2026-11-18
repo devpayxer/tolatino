@@ -16,6 +16,7 @@ import { Cartel, Icon, MONO, useGuardar, useToast } from "./comun";
 import { PatrocinadosEventos, type PatEvt } from "./PatrocinadosEventos";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Button = UI.Button as ComponentType<any>;
 
@@ -28,7 +29,7 @@ const sumar = (d: string, n: number) => { const [y, m, x] = d.split("-").map(Num
 const dow = (d: string) => { const [y, m, x] = d.split("-").map(Number); return new Date(Date.UTC(y!, m! - 1, x!)).getUTCDay(); };
 
 export function Eventos({ es, ciudad, estado, dia, hoy, fin, conEventos, titulo, t, generos, lista, historias, spon, mios, bol = 0 }: Props) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), { toast, el } = useToast();
   const [items, setItems] = useState(lista.items), [mas, setMas] = useState(lista.mas), [cargando, setCargando] = useState(false);
   const [antes, setAntes] = useState(lista);

@@ -15,6 +15,7 @@ import { comEditar, comNegocios, comPublicar } from "../acciones";
 import { Avatar, LINE, MONO, Marco, Reglas, useAncho, useComUi, type YoCom } from "../Marco";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
@@ -26,7 +27,7 @@ const K = (s: string) => ({ font: `700 10px ${MONO}`, letterSpacing: ".2em", col
 export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar, diasEnc }: {
   es: boolean; yo: YoCom; ciudad: string; abierta: boolean; silenciado: { hasta: string | null; motivo: string | null } | null; k: Tipo; texto: string; editar: Editar | null; diasEnc: number[];
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024;
   const ed = editar && !("noEsta" in editar) ? editar : null;
   const [kind, setKind] = useState<Tipo>(ed?.kind ?? k);

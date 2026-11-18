@@ -11,6 +11,7 @@ import type { ArticuloVenta } from "@/lib/apartados";
 import type { ArticuloRenta } from "@/lib/rentas";
 import { cuotas, type ReglaPlan } from "@/lib/layaway-comun";
 import { PrecioAntes } from "./PrecioAntes";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Button" | "Tag" | "Chip" | "Icon" | "OptionGroup" | "DepositNote" | "ReservationCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,7 +30,7 @@ export const lineaValida = (V: ArticuloVenta[], l: { item: string; v?: string })
    más apartado en 30 días), cada artículo en su tarjeta con foto y +, y en el teléfono la barra negra «Ver lo que apartas». El + aparta directo lo que
    no tiene talla ni va en plan; lo demás abre la hoja de siempre. «Ver lo que apartas» lleva al apartado de siempre (pagas al recoger). */
 export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas, plan = null, c = false, pop = [] }: { L: ArticuloRenta[]; V: ArticuloVenta[]; negocio: string; es: boolean; mia: Mia; auto: boolean; tienda?: boolean; horas: number; plan?: ReglaPlan | null; c?: boolean; pop?: string[] }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [carro, setCarro] = useState<Carrito>([]), [hoja, setHoja] = useState<ArticuloVenta | null>(null), [qi, setQi] = useState(0), [ti, setTi] = useState<number | null>(null);
   const gomas = V.some((x) => x.size), [fSize, setFSize] = useState<"mine" | "all">(mia.goma && gomas ? "mine" : "all"), [fCond, setFCond] = useState<"all" | "n" | "u">("all");
   useEffect(() => { setCarro(leerCarrito(negocio).filter((l) => lineaValida(V, l))); }, [negocio, V]);

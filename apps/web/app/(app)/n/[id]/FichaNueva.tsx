@@ -64,6 +64,7 @@ import { MeBarra, MeHoja, MeRiel, useMerc, MeResumen, MeMenu, MeOrderBar } from 
 import { TiendaTab } from "./Tienda";
 import { HojaEntrar } from "../../HojaEntrar";
 import { VideoPortada } from "../../VideoNegocio";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "IconButton" | "Tabs" | "DesktopTabs" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard" | "SectionHeader" | "ServiceRow"
   | "Placeholder" | "ReviewCard" | "StaffPicker" | "DateStrip" | "TimeSlots" | "StepHeader" | "TotalBar" | "DepositNote" | "DepositOutcomes" | "Eyebrow"
@@ -87,7 +88,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   inm?: InmPublica | null; dl?: AutosPublica | null; tienda?: (TiendaP & { L: ArticuloRenta[]; V: ArticuloVenta[]; pop?: string[] }) | null;
   resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; eventos?: TarjetaEvt[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string };
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const L = (x: [string, string]) => (es ? x[0] : x[1]);
   const router = useRouter();
   let f = f0;
@@ -650,7 +651,7 @@ function useHoras(v: Svc, b: Pick<Bk, "who" | "svc" | "opts" | "i">, on: boolean
 }
 
 function Elegir({ v, b, up, cfg, es, staffBook, corto }: { v: Svc; b: Bk; up: (o: Partial<Bk>) => void; cfg: Cfg; es: boolean; staffBook: boolean; corto?: boolean }) {
-  const E2 = (a: string, c: string) => (es ? a : c), L = (x: [string, string]) => (es ? x[0] : x[1]);
+  const E2 = (a: string, c: string) => dosIdiomas(es, a, c), L = (x: [string, string]) => (es ? x[0] : x[1]);
   const cp = v.cp;
   const [catF, setCatF] = useState("all");
   const own = b.who && b.who !== "any" ? b.who : null;
@@ -684,7 +685,7 @@ function Elegir({ v, b, up, cfg, es, staffBook, corto }: { v: Svc; b: Bk; up: (o
 }
 
 function DiaHora({ v, b, up, H, cargando, es }: { v: Svc; b: Bk; up: (o: Partial<Bk>) => void; H: HorasCita | null; cargando: boolean; es: boolean }) {
-  const E2 = (a: string, c: string) => (es ? a : c);
+  const E2 = (a: string, c: string) => dosIdiomas(es, a, c);
   const DOW = es ? ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"] : ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
   const days = (H?.dias ?? []).map((d) => ({ id: `d${d.i}`, dow: d.i === 0 ? E2("HOY", "TODAY") : DOW[d.dow], num: d.num, off: d.off }));
   const slots = (H?.grupos ?? []).flatMap((g) => g.sl).map((x) => ({ t: x.l, taken: !x.free }));
@@ -705,7 +706,7 @@ function DiaHora({ v, b, up, H, cargando, es }: { v: Svc; b: Bk; up: (o: Partial
 /* Teléfono: la hoja de 3 pasos. Los pasos 1 y 2 aquí; «Continuar» lleva a Booking con lo elegido (Detalles y Revisa y envía). Si el
    servicio tiene extras, la hoja de siempre (SvcHoja) los ofrece y sigue igual que antes. */
 function HojaCita({ v, bk, setBk, cfg, es }: { v: Svc; bk: Bk; setBk: (b: Bk | null) => void; cfg: Cfg; es: boolean }) {
-  const E2 = (a: string, c: string) => (es ? a : c), L = (x: [string, string]) => (es ? x[0] : x[1]);
+  const E2 = (a: string, c: string) => dosIdiomas(es, a, c), L = (x: [string, string]) => (es ? x[0] : x[1]);
   const router = useRouter();
   const up = (o: Partial<Bk>) => setBk({ ...bk, ...o });
   const staffBook = v.silla || (v.cp.pol.pick && v.cp.gente.length > 1);
@@ -743,14 +744,14 @@ function HojaCita({ v, bk, setBk, cfg, es }: { v: Svc; bk: Bk; setBk: (b: Bk | n
 
 const depositoTexto = (v: Svc, own: string | null, es: boolean) => {
   const p = own ? v.cp.gente.find((x) => x.id === own) : null, dep = p?.dep ?? Math.max(0, ...v.cp.gente.map((x) => x.dep));
-  const E2 = (a: string, c: string) => (es ? a : c);
+  const E2 = (a: string, c: string) => dosIdiomas(es, a, c);
   return dep ? E2(`Todavía no es una cita: el negocio acepta en unos ${v.cp.pol.resp} min. Si rechaza o no responde en ${v.cp.pol.exp} h, el depósito de ${dinero(dep)} se libera.`, `Not a booking yet: the business accepts in about ${v.cp.pol.resp} min. If it declines or does not reply in ${v.cp.pol.exp} h, the ${dinero(dep)} deposit is released.`)
     : E2(`Todavía no es una cita: el negocio la confirma en unos ${v.cp.pol.resp} min.`, `Not a booking yet: the business confirms in about ${v.cp.pol.resp} min.`);
 };
 
 /* Computadora: la tarjeta pegada a la derecha (con quién, servicio, día y hora) y «Continuar» a Booking. */
 function TarjetaCita({ v, cfg, es, dsk, setDsk, pulso, staffBook, grupos, onVer }: { v: Svc; cfg: Cfg; es: boolean; dsk: Bk; setDsk: (f: (b: Bk) => Bk) => void; pulso: boolean; staffBook: boolean; grupos: Grupo[]; onVer: () => void }) {
-  const E2 = (a: string, c: string) => (es ? a : c), L = (x: [string, string]) => (es ? x[0] : x[1]);
+  const E2 = (a: string, c: string) => dosIdiomas(es, a, c), L = (x: [string, string]) => (es ? x[0] : x[1]);
   const router = useRouter();
   const up = (o: Partial<Bk>) => setDsk((d) => ({ ...d, ...o }));
   const { H, cargando, s, listo } = useHoras(v, dsk, true);
