@@ -1,6 +1,6 @@
 import "server-only";
 import { valores } from "./config";
-import { db, tx } from "./db";
+import { db, tx, type AlGuardar } from "./db";
 import { diaCorto, hora, type Bi } from "./evt-comun";
 
 /* 6d · Lista de espera de una fecha con boletos (fase6-eventos.md §4 6d; prototipo lsVals «lista de espera con oferta de 30 min»).
@@ -20,7 +20,7 @@ export async function hayFila(fecha: string): Promise<boolean> {
 }
 
 /* Ofrecer lo libre a la fila, en orden. Devuelve cuántas ofertas hizo. */
-export async function ofrecer(fecha: string): Promise<number> {
+export async function ofrecer(fecha: string, alGuardar?: AlGuardar<number>): Promise<number> {
   if (!ID.test(String(fecha))) return 0;
   if (!(await hayFila(fecha))) return 0;
   const { filaVenta, estadoDe, entradasDe } = await import("./boletos");
@@ -51,6 +51,7 @@ export async function ofrecer(fecha: string): Promise<number> {
       await c.query(`update waitlist set status = 'offered', hold_id = $2::uuid, offered_at = now(), offer_expires_at = $3::timestamptz where id = $1::bigint and status = 'waiting'`, [w.id, h.id, h.vence]);
       out.push({ wid: w.id, uid: w.uid, hold: h.id, title: v.title, dia: v.ldate, h0: v.h0 });
     }
+    if (out.length) await alGuardar?.(c, out.length);
     return out;
   });
   if (hechas.length) {
@@ -150,11 +151,11 @@ export async function esperaPanel(negocio: string, eventoId: string, fechaVer: s
   return { fecha: d.fid, esperan: vivos.length, personas: vivos.reduce((s, x) => s + x.party, 0), ofertas: F.rows.filter((x) => x.estado === "offered").length,
     compraron: F.rows.filter((x) => x.estado === "converted").length, libres: L.rows[0]!.n, filas: F.rows };
 }
-export async function avisarLista(negocio: string, eventoId: string): Promise<Res<{ n: number }>> {
+export async function avisarLista(negocio: string, eventoId: string, alGuardar?: AlGuardar<number>): Promise<Res<{ n: number }>> {
   const p = await esperaPanel(negocio, eventoId);
   if (!p?.fecha) return falla("Ese evento no existe.", "That event does not exist.");
   if (!p.esperan) return falla("Nadie está esperando.", "Nobody is waiting.");
   if (!p.libres) return falla("No hay lugar libre: sube la cantidad en el editor o devuelve un boleto.", "No free spot: raise the quantity in the editor or refund a ticket.");
-  const n = await ofrecer(p.fecha);
+  const n = await ofrecer(p.fecha, alGuardar);
   return n ? { ok: true, n } : falla("Lo que se liberó no alcanza para los grupos que esperan.", "What opened up is not enough for the groups waiting.");
 }

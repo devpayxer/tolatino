@@ -2,7 +2,7 @@ import "server-only";
 import type { PoolClient } from "pg";
 import { avisarNegocio } from "./avisos";
 import { valores } from "./config";
-import { db, tx } from "./db";
+import { db, txAuditada, type AlGuardar } from "./db";
 import {
   EXTRA_KINDS, IMPORTA, LIM, cambiosQueImportan, esAlcohol, faltaEvt, fechasSerie, sumarDias,
   type Bi, type BorradorEvt, type Boleto, type Entrada, type EstadoEvt, type Extra, type FormatoEvt, type FormatoKey, type HorarioDia, type Linea, type Mesa, type Repite,
@@ -195,7 +195,7 @@ async function contexto(negocio: string, fmt: unknown, nuevo = true) {
 
 export type Envio = "borrador" | "guardado" | "revision" | "publicado" | "cambio_revision" | "cambio_publicado";
 /* Guardar desde el panel o desde Publica tu evento. `enviar`: mandarlo a revisión (o publicar si el organizador está verificado). */
-export async function guardarEvento(a: { userId: string; negocio: string }, id: string | null, raw: unknown, o: { enviar: boolean; origen?: "panel" | "publica" }): Promise<Res<{ id: string; envio: Envio }>> {
+export async function guardarEvento(a: { userId: string; negocio: string }, id: string | null, raw: unknown, o: { enviar: boolean; origen?: "panel" | "publica" }, alGuardar?: AlGuardar<{ id: string; envio: Envio }>): Promise<Res<{ id: string; envio: Envio }>> {
   if (id !== null && !ID.test(id)) return no("Ese evento no existe.", "That event does not exist.");
   const x = await contexto(a.negocio, (raw as { fmt?: unknown })?.fmt, id === null);
   if (!x) return no("Ese negocio no existe.", "That business does not exist.");
@@ -205,7 +205,7 @@ export async function guardarEvento(a: { userId: string; negocio: string }, id: 
   const d = n.d, F = x.F;
   const org = await organizadorDe(a.negocio);
   let r: Res<{ id: string; envio: Envio; aviso?: string }>;
-  try { r = await tx(async (c): Promise<Res<{ id: string; envio: Envio; aviso?: string }>> => {
+  try { r = await txAuditada(alGuardar, async (c): Promise<Res<{ id: string; envio: Envio; aviso?: string }>> => {
     let e = id ? await filaEvento(c, id, a.negocio, true) : null;
     if (id && !e) return no("Ese evento no existe.", "That event does not exist.");
     const vivo = !!e && (e.status === "live" || e.status === "paused");
@@ -314,12 +314,12 @@ function errorDeLaBase(err: unknown): { ok: false; msg: Bi } | null {
 }
 
 /* Enviar lo guardado (desde la ficha del panel: «Enviar a revisión»). */
-export async function enviarEvento(a: { userId: string; negocio: string }, id: string): Promise<Res<{ envio: Envio }>> {
+export async function enviarEvento(a: { userId: string; negocio: string }, id: string, alGuardar?: AlGuardar<{ id: string; envio: Envio }>): Promise<Res<{ envio: Envio }>> {
   if (!ID.test(id)) return no("Ese evento no existe.", "That event does not exist.");
   const e = await filaEvento(db(), id, a.negocio);
   if (!e) return no("Ese evento no existe.", "That event does not exist.");
   if (e.status !== "draft" && e.status !== "changes") return no("Este evento ya se envió.", "This event was already sent.");
-  return guardarEvento(a, id, aBorrador(e, await lineasYFotos(db(), id)), { enviar: true });
+  return guardarEvento(a, id, aBorrador(e, await lineasYFotos(db(), id)), { enviar: true }, alGuardar);
 }
 
 /* Revisión o, para un organizador verificado, publicado al instante (aprobado por el sistema: approved_by null). */
@@ -357,7 +357,7 @@ async function avisoEnvio(negocio: string, id: string, envio: Envio, horas: numb
 }
 
 /* «Repetir otro día» (evDup): una copia como borrador, 7 días después (o desde mañana si ya pasó). Sin ventas, sin revisión. */
-export async function repetirEvento(a: { userId: string; negocio: string }, id: string): Promise<Res<{ id: string }>> {
+export async function repetirEvento(a: { userId: string; negocio: string }, id: string, alGuardar?: AlGuardar<{ id: string }>): Promise<Res<{ id: string }>> {
   if (!ID.test(id)) return no("Ese evento no existe.", "That event does not exist.");
   const e = await filaEvento(db(), id, a.negocio);
   if (!e) return no("Ese evento no existe.", "That event does not exist.");
@@ -366,7 +366,7 @@ export async function repetirEvento(a: { userId: string; negocio: string }, id: 
   const d = conPendiente(aBorrador(e, await lineasYFotos(db(), id)), e.pending);
   const dia = [sumarDias(d.dia, 7), sumarDias(x.b.hoy, 1)].sort().pop()!;
   const copia: BorradorEvt = { ...d, dia, fotos: [], boletos: d.boletos.map((b) => ({ ...b, off: false })), rep: { ...d.rep, skip: [] } };
-  const r = await guardarEvento(a, null, copia, { enviar: false });
+  const r = await guardarEvento(a, null, copia, { enviar: false }, alGuardar);
   if (!r.ok) return r;
   // Las fotos se copian (filas nuevas de media con la misma imagen): la copia no le quita fotos al original.
   await db().query(`insert into media (owner_kind, owner_id, url, w, h, status, sort, uploaded_by)

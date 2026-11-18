@@ -1,6 +1,6 @@
 "use server";
 import { mismoOrigen } from "@/lib/cuenta";
-import { db, tx } from "@/lib/db";
+import { tx } from "@/lib/db";
 import { accesoPanel } from "@/lib/panel";
 import { rentaNegocio, type QueNegocio } from "@/lib/rentas";
 import type { Res } from "./acciones";
@@ -15,11 +15,11 @@ export async function rentaAccionPanel(id: string, numero: string, a: QueNegocio
   const x = typeof id === "string" ? await accesoPanel(id, "ord") : null;
   if (!x) return SIN;
   if (!a || !QUE.has(String(a.que))) return { ok: false, mensaje: { es: "Esa acción no existe.", en: "That action does not exist." } };
-  const r = await rentaNegocio(x.negocio.id, String(numero ?? ""), a, x.yo.id);
-  if (!r.ok) return { ok: false, mensaje: r.msg };
-  await db().query(
+  // 9n · La auditoría entra en la misma transacción que el paso de la renta (guardián auditoriaEnLaTransaccion).
+  const r = await rentaNegocio(x.negocio.id, String(numero ?? ""), a, x.yo.id, (c) => c.query(
     `insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, $2, 'business', $3, $4, null, $5::jsonb)`,
-    [x.yo.id, `renta.${a.que}`, x.negocio.id, x.negocio.city_id, JSON.stringify({ renta: numero, ...(a.que === "dano" ? { dano_cents: a.cents, nota: a.nota } : {}) })]);
+    [x.yo.id, `renta.${a.que}`, x.negocio.id, x.negocio.city_id, JSON.stringify({ renta: numero, ...(a.que === "dano" ? { dano_cents: a.cents, nota: a.nota } : {}) })]));
+  if (!r.ok) return { ok: false, mensaje: r.msg };
   return { ok: true };
 }
 

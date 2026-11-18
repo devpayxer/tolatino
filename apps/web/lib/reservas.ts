@@ -1,7 +1,7 @@
 import "server-only";
 import { diasEspeciales, horasDelDia, type DiasEsp } from "./dias-especiales";
 import type { PoolClient } from "pg";
-import { db, tx } from "./db";
+import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { foto } from "./directorio";
 import type { Lang } from "./idioma";
 
@@ -495,10 +495,10 @@ export async function rsvCliente(userId: string, numero: string, que: "cancelar"
 
 /* ── El restaurante (panel): confirmar, proponer otra hora, no hay mesa, llegaron, no llegaron, se fueron ── */
 export type PasoMesa = "confirmar" | "otra" | "nohay" | "llegaron" | "nollegaron" | "sefueron";
-export async function rsvPaso(negocio: string, numero: string, paso: PasoMesa, actorId: string): Promise<ResR> {
+export async function rsvPaso(negocio: string, numero: string, paso: PasoMesa, actorId: string, alGuardar?: AlGuardar): Promise<ResR> {
   if (!/^R-\d{1,10}$/.test(numero)) return no("Esa reservación no existe.", "That reservation does not exist.");
   await vencerMesas({ negocio, numero });
-  return tx(async (c) => {
+  return txAuditada(alGuardar, async (c) => {
     await c.query(`select pg_advisory_xact_lock(hashtext('mesa:' || $1))`, [negocio]);
     const o = (await c.query<{ id: string; status: string; detail: string | null; ymd: string; hm: string; party: number; area: string }>(
       `select o.id::text, o.status, o.status_detail as detail, (o.scheduled_at at time zone ci.timezone)::date::text as ymd, to_char(o.scheduled_at at time zone ci.timezone, 'HH24:MI') as hm,
@@ -539,10 +539,10 @@ export async function rsvPaso(negocio: string, numero: string, paso: PasoMesa, a
 }
 
 /* ── El restaurante responde al cambio que pidió el cliente: aceptarlo (si la mesa sigue libre) o «no se puede» ── */
-export async function rsvCambio(negocio: string, numero: string, que: "aceptar" | "rechazar", actorId: string): Promise<ResR> {
+export async function rsvCambio(negocio: string, numero: string, que: "aceptar" | "rechazar", actorId: string, alGuardar?: AlGuardar): Promise<ResR> {
   if (!/^R-\d{1,10}$/.test(numero)) return no("Esa reservación no existe.", "That reservation does not exist.");
   await vencerMesas({ negocio, numero });
-  return tx(async (c) => {
+  return txAuditada(alGuardar, async (c) => {
     await c.query(`select pg_advisory_xact_lock(hashtext('mesa:' || $1))`, [negocio]);
     const o = (await c.query<{ id: string; status: string; detail: string | null }>(
       `select o.id::text, o.status, o.status_detail as detail from operations o where o.business_id = $1 and o.number = $2 and o.kind = 'table' for update`, [negocio, numero])).rows[0];

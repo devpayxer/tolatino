@@ -53,7 +53,7 @@ const casos = [
   // compaSinRutaCritica (7f): Mensajes y el panel solo preguntan con .catch; el turno, después
   ['compaSinRutaCritica', PG, 'await RA.estadoAutoMensajes(d.id).catch(() => null)', 'await RA.estadoAutoMensajes(d.id)'],
   ['compaSinRutaCritica', CA, '  if (r.ok && r.compa && r.id) { const hilo = r.id; after(() => import("@/lib/compa/respuesta-auto").then((m) => m.contestarAuto(hilo)).catch(() => undefined)); }', '  if (r.ok && r.compa && r.id) await (await import("@/lib/compa/respuesta-auto")).contestarAuto(r.id).catch(() => undefined);'],
-  ['compaSinRutaCritica', MS, 'import { db, tx } from "./db";', 'import { db, tx } from "./db";\nimport { turnoAuto } from "./compa/conversacion"; void turnoAuto;'],
+  ['compaSinRutaCritica', MS, 'import { db, tx, txAuditada, type AlGuardar } from "./db";', 'import { db, tx, txAuditada, type AlGuardar } from "./db";\nimport { turnoAuto } from "./compa/conversacion"; void turnoAuto;'],
   // ordenSinTexto
   ['ordenSinTexto', C, 'x.compa from (select * from chat_messages where thread_id = $1 and hidden_at is null order by id desc limit 10) x order by x.id`', 'x.compa from (select * from chat_messages where thread_id = $1 and hidden_at is null order by id desc limit 10) x order by id`'],
   ['ordenSinTexto', MS, 'order by o.id desc limit 1`', 'order by id desc limit 1`'],

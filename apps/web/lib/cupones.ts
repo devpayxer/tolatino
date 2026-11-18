@@ -3,7 +3,7 @@ import { valor } from "./config";
 import { avisar, avisarNegocio } from "./avisos";
 import { corto, enComunidad } from "./comunidad";
 import { revisarTexto } from "./comunidad-filtro";
-import { db, tx } from "./db";
+import { db, tx, txAuditada, type AlGuardar } from "./db";
 import type { CuponNegocio, CuponVecino, CuponesPanel, MiCanje } from "./monedas-comun";
 
 /* Cupones de negocios por monedas (fase5-comunidad.md §4 5g; valor Opus/high). El cupón es un descuento que el negocio decide dar en su
@@ -89,12 +89,16 @@ export const normalizarCodigo = (s: string) => {
   return /^[2-9A-HJ-NP-Z]{4,6}$/.test(k) ? `TL-CQ-${k}` : null;
 };
 /* Validar en el local (quien valida = la persona del equipo del negocio que tiene el panel abierto). Resultado claro en cada caso. */
-export async function validar(negocio: string, codigo: string, staffId: string):
+export async function validar(negocio: string, codigo: string, staffId: string, alGuardar?: AlGuardar<string>):
   Promise<{ ok: true; titulo: Bi; vecino: string; codigo: string } | { ok: false; msg: Bi }> {
   const cod = normalizarCodigo(codigo);
   if (!cod) return no("Escribe el código como sale en el teléfono del vecino: TL-CQ- y 4 letras o números.", "Type the code as shown on the neighbor's phone: TL-CQ- and 4 letters or numbers.");
-  const r = await tx(async (c) => (await c.query<{ res: "ok" | "usado" | "vencido" | "no"; persona: string | null; cupon: string | null; usado: string | null }>(
-    `select res, persona::text, cupon::text, ${ISO("usado")} as usado from cup_validar($1, $2, $3::uuid)`, [negocio, cod, staffId])).rows[0]!);
+  const r = await tx(async (c) => {
+    const r = (await c.query<{ res: "ok" | "usado" | "vencido" | "no"; persona: string | null; cupon: string | null; usado: string | null }>(
+      `select res, persona::text, cupon::text, ${ISO("usado")} as usado from cup_validar($1, $2, $3::uuid)`, [negocio, cod, staffId])).rows[0]!;
+    if (r.res === "ok") await alGuardar?.(c, cod);
+    return r;
+  });
   if (r.res === "no") return no("No encontramos ese código en tus cupones. Revisa que sea de este negocio.", "We couldn't find that code in your coupons. Check that it is for this business.");
   const d = (await db().query<{ title: Bi; bname: string; f: string | null; l: string | null; tz: string }>(
     `select c.title, b.name as bname, u.first_name as f, u.last_name as l, ci.timezone as tz from coupons c join businesses b on b.id = c.business_id join cities ci on ci.id = c.city_id, users u
@@ -151,7 +155,7 @@ export type CuponIn = { id?: string | null; es: string; en?: string; condEs?: st
 const limpio = (s: unknown, n: number) => String(s ?? "").replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim().slice(0, n);
 /* Crear o editar. Nuevo = «Por aprobar» (To'Latino fija el costo). Ya aprobado: solo el cupo del mes y los días de validez (la oferta no
    cambia debajo de quien ya la canjeó; para otra oferta, se termina y se crea otro). El negocio nunca pone el costo. */
-export async function guardarCupon(negocio: string, p: CuponIn, userId: string): Promise<{ ok: true; id: string } | { ok: false; msg: Bi }> {
+export async function guardarCupon(negocio: string, p: CuponIn, userId: string, alGuardar?: AlGuardar<{ ok: true; id: string }>): Promise<{ ok: true; id: string } | { ok: false; msg: Bi }> {
   const es = limpio(p.es, 60), en = limpio(p.en, 60), ce = limpio(p.condEs, 200), cn = limpio(p.condEn, 200);
   const cupo = Number(p.cupo), dias = Number(p.dias);
   if (!Number.isInteger(cupo) || cupo < 1 || cupo > 500) return no("Cuántos al mes: de 1 a 500.", "How many a month: 1 to 500.");
@@ -159,7 +163,7 @@ export async function guardarCupon(negocio: string, p: CuponIn, userId: string):
   const id = p.id && /^\d{1,18}$/.test(String(p.id)) ? String(p.id) : null;
   if (!id && es.length < 3) return no("Escribe qué das: «Café con leche gratis».", "Say what you give: “Free café con leche”.");
   for (const t of [es, en, ce, cn]) if (t && revisarTexto(t)) return no("Sin teléfonos, correos ni direcciones en el cupón: salen en tu página.", "No phones, emails or addresses in the coupon: they show on your page.");
-  return tx(async (c) => {
+  return txAuditada(alGuardar, async (c) => {
     const b = (await c.query<{ city_id: string; pro: boolean; status: string }>(
       `select b.city_id, coalesce(s.plan, 'free') = 'pro' as pro, b.status from businesses b left join business_stats_cache s on s.business_id = b.id where b.id = $1 for update of b`, [negocio])).rows[0];
     if (!b || b.status !== "active") return no("Tu negocio no está activo.", "Your business is not active.");
@@ -185,9 +189,9 @@ export async function guardarCupon(negocio: string, p: CuponIn, userId: string):
 export type PasoCupon = "pausar" | "reanudar" | "terminar";
 /* Pausar (sale de la Comunidad al instante; los códigos ya canjeados siguen valiendo), reanudar (solo si lo pausó el negocio: si lo pausó
    To'Latino, lo reanuda To'Latino) y terminar (no vuelve). */
-export async function pasoCupon(negocio: string, id: string, paso: PasoCupon): Promise<{ ok: true } | { ok: false; msg: Bi }> {
+export async function pasoCupon(negocio: string, id: string, paso: PasoCupon, alGuardar?: AlGuardar): Promise<{ ok: true } | { ok: false; msg: Bi }> {
   if (!/^\d{1,18}$/.test(String(id))) return no("Ese cupón no existe.", "That coupon does not exist.");
-  return tx(async (c) => {
+  return txAuditada(alGuardar, async (c) => {
     const x = (await c.query<{ status: string; pb: string | null; pro: boolean }>(
       `select c.status, c.paused_by as pb, coalesce(s.plan, 'free') = 'pro' as pro from coupons c left join business_stats_cache s on s.business_id = c.business_id where c.id = $1::bigint and c.business_id = $2 for update of c`, [id, negocio])).rows[0];
     if (!x) return no("Ese cupón no existe.", "That coupon does not exist.");

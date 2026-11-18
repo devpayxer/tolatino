@@ -1,7 +1,8 @@
 "use server";
 import { headers } from "next/headers";
 import { mismoOrigen } from "@/lib/cuenta";
-import { db } from "@/lib/db";
+import type { PoolClient } from "pg";
+import { db, tx } from "@/lib/db";
 import { actualizarCuenta } from "@/lib/cobros";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { accesoPanel, type Acceso } from "@/lib/panel";
@@ -16,8 +17,9 @@ async function entrar(id: unknown): Promise<Acceso | null> {
   if (!(await mismoOrigen())) return null;
   return typeof id === "string" ? accesoPanel(id, "pay") : null;
 }
-async function auditar(a: Acceso, action: string, after: unknown) {
-  await db().query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, $2, 'business', $3, $4, null, $5::jsonb)`,
+/* 9n · La auditoría va con el cliente de la transacción del cambio: entran juntos o ninguno (guardián auditoriaEnLaTransaccion). */
+async function auditar(c: PoolClient, a: Acceso, action: string, after: unknown) {
+  await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, $2, 'business', $3, $4, null, $5::jsonb)`,
     [a.yo.id, action, a.negocio.id, a.negocio.city_id, JSON.stringify(after ?? null)]);
 }
 async function origen() { const h = await headers(); return `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`; }
@@ -31,8 +33,11 @@ export async function cobrosConectar(id: string): Promise<Res & { url?: string }
     let acct = (await db().query<{ a: string }>(`select stripe_account_id as a from stripe_accounts where business_id = $1`, [a.negocio.id])).rows[0]?.a ?? null;
     if (!acct) {
       acct = await pasarela.cuentaCrear(a.negocio.id, a.negocio.name);
-      await db().query(`insert into stripe_accounts (business_id, stripe_account_id, simulated) values ($1, $2, $3) on conflict (business_id) do nothing`, [a.negocio.id, acct, acct.startsWith("acct_sim_")]);
-      await auditar(a, "cobros.conectar", { cuenta: "creada" });
+      const cuenta = acct;
+      await tx(async (c) => {
+        await c.query(`insert into stripe_accounts (business_id, stripe_account_id, simulated) values ($1, $2, $3) on conflict (business_id) do nothing`, [a.negocio.id, cuenta, cuenta.startsWith("acct_sim_")]);
+        await auditar(c, a, "cobros.conectar", { cuenta: "creada" });
+      });
     }
     const base = pasarela.modo() === "stripe" ? await origen() : "";
     const url = await pasarela.cuentaEnlace(acct, `${base}/panel/${a.negocio.id}/cobros?vuelta=1`, `${base}/panel/${a.negocio.id}/cobros?otra=1`);
@@ -59,7 +64,7 @@ export async function cobrosStripe(id: string): Promise<Res & { url?: string }> 
   if (acct.a.startsWith("acct_sim_")) return no("En el sandbox la cuenta es simulada: no hay panel de Stripe.", "In the sandbox the account is simulated: there is no Stripe dashboard.");
   try {
     const url = acct.on ? await pasarela.cuentaPanel(acct.a) : await pasarela.cuentaEnlace(acct.a, `${await origen()}/panel/${a.negocio.id}/cobros?vuelta=1`, `${await origen()}/panel/${a.negocio.id}/cobros?otra=1`);
-    await auditar(a, "cobros.abrir_stripe", null);
+    await tx((c) => auditar(c, a, "cobros.abrir_stripe", null)); // sin cambio en la base: la apertura misma es lo auditado
     return url ? { ok: true, url } : no("No se pudo abrir Stripe.", "Could not open Stripe.");
   } catch { return no("Stripe no respondió. Prueba de nuevo en un momento.", "Stripe did not respond. Try again in a moment."); }
 }
@@ -71,19 +76,18 @@ export async function planSeguir(id: string, pm: string, ciclo: "month" | "year"
   // 8i · Pro no se compra dentro de las apps de las tiendas (lo decide el servidor; guardián sinCompraDigitalEnApp).
   if (!(await (await import("@/lib/tiendas/reglas")).compraDigitalAqui())) return no("Esto no está disponible en la app.", "This is not available in the app.");
   const { seguirConPro } = await import("@/lib/suscripcion");
-  const r = await seguirConPro(a.negocio.id, a.yo.id, String(pm ?? ""), ciclo === "year" ? "year" : "month");
+  const r = await seguirConPro(a.negocio.id, a.yo.id, String(pm ?? ""), ciclo === "year" ? "year" : "month",
+    (c, cobrado) => auditar(c, a, "plan.seguir_pro", { ciclo: ciclo === "year" ? "anual" : "mensual", cobrado }));
   // 9n-4 · Si el banco pide confirmar, la pantalla abre la hoja (verificar) y no se cobra otra vez al confirmar.
   if (!r.ok) return { ok: false, mensaje: r.msg, ...("verificar" in r && r.verificar ? { verificar: r.verificar } : {}) };
-  await auditar(a, "plan.seguir_pro", { ciclo: ciclo === "year" ? "anual" : "mensual", cobrado: !!("cobrado" in r && r.cobrado) });
   return { ok: true, cobrado: "cobrado" in r ? r.cobrado : undefined };
 }
 export async function planFree(id: string): Promise<Res> {
   const a = await entrar(id);
   if (!a) return SIN_ACCESO;
   const { pasarAFree } = await import("@/lib/suscripcion");
-  const r = await pasarAFree(a.negocio.id, a.yo.id);
+  const r = await pasarAFree(a.negocio.id, a.yo.id, (c) => auditar(c, a, "plan.pasar_a_free", null));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "plan.pasar_a_free", null);
   return { ok: true };
 }
 export async function planDeshacer(id: string): Promise<Res> {
@@ -92,8 +96,7 @@ export async function planDeshacer(id: string): Promise<Res> {
   // 8i · Pro no se compra dentro de las apps de las tiendas (lo decide el servidor; guardián sinCompraDigitalEnApp).
   if (!(await (await import("@/lib/tiendas/reglas")).compraDigitalAqui())) return no("Esto no está disponible en la app.", "This is not available in the app.");
   const { deshacerFree } = await import("@/lib/suscripcion");
-  const r = await deshacerFree(a.negocio.id, a.yo.id);
+  const r = await deshacerFree(a.negocio.id, a.yo.id, (c) => auditar(c, a, "plan.deshacer", null));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "plan.deshacer", null);
   return { ok: true };
 }

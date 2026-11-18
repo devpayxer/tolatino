@@ -2,7 +2,7 @@ import "server-only";
 import { cfgSql, valor } from "./config";
 import { horasTxt } from "./plazo-txt";
 import { COLA_AYUDA_SQL } from "./colas";
-import { db, tx } from "./db";
+import { db, tx, txAuditada, type AlGuardar } from "./db";
 
 /* Ayuda con el pedido (diseño Mi cuenta · hoja help; Super Admin secSop). La persona abre una solicitud sobre un pedido
    terminado (hasta 7 días); el negocio responde en las horas de Configuración (ayuda_negocio_h); si no responde, o si la persona pide que To'Latino la revise,
@@ -95,14 +95,16 @@ export async function ayudasNegocio(negocio: string) {
 export async function ayudaPanel(negocio: string, numero: string) {
   return (await db().query<Ayuda>(`select ${COLS} from help_requests h join operations o on o.id = h.operation_id where o.number = $1 and h.business_id = $2`, [numero, negocio])).rows[0] ?? null;
 }
-export async function responderAyuda(negocio: string, numero: string, texto: string, actorId: string): Promise<ResA> {
+export async function responderAyuda(negocio: string, numero: string, texto: string, actorId: string, alGuardar?: AlGuardar): Promise<ResA> {
   const t = String(texto ?? "").trim();
   if (t.length < 5) return no("Escribe tu respuesta.", "Write your reply.");
   if (t.length > 500) return no("Máximo 500 letras.", "Up to 500 characters.");
-  const r = await db().query(
-    `update help_requests h set status = 'answered', reply = $3, reply_at = now(), reply_by = $4, updated_at = now() from operations o
-      where o.id = h.operation_id and o.number = $1 and h.business_id = $2 and h.status = 'open'`, [numero, negocio, t, actorId]);
-  return r.rowCount ? { ok: true } : no("Esta solicitud ya cambió (pasó a To'Latino o ya respondiste).", "This request already changed (it went to To'Latino or you already replied).");
+  return txAuditada(alGuardar, async (c): Promise<ResA> => {
+    const r = await c.query(
+      `update help_requests h set status = 'answered', reply = $3, reply_at = now(), reply_by = $4, updated_at = now() from operations o
+        where o.id = h.operation_id and o.number = $1 and h.business_id = $2 and h.status = 'open'`, [numero, negocio, t, actorId]);
+    return r.rowCount ? { ok: true } : no("Esta solicitud ya cambió (pasó a To'Latino o ya respondiste).", "This request already changed (it went to To'Latino or you already replied).");
+  });
 }
 
 /* ── 9n-4 · Reponer sin costo (LAUNCH L339): la solicitud que pide «Que me lo repongan» se contesta con un pedido NUEVO de $0 (pay_mode 'none')
@@ -152,9 +154,9 @@ export async function reponerEn(c: import("pg").PoolClient, x: { numero: string;
   return { ok: true, nuevo: num, hid: h.hid, biz: h.biz, city: h.city };
 }
 /* El negocio responde «Te lo reponemos» (Panel › el pedido › Ayuda). */
-export async function reponerPedido(negocio: string, numero: string, texto: string, actorId: string): Promise<ResA & { nuevo?: string }> {
+export async function reponerPedido(negocio: string, numero: string, texto: string, actorId: string, alGuardar?: AlGuardar<{ nuevo: string }>): Promise<ResA & { nuevo?: string }> {
   if (!/^\d{1,12}$/.test(numero)) return no("Ese pedido no existe.", "That order does not exist.");
-  return tx(async (c) => { const r = await reponerEn(c, { numero, negocio, texto, actorId, por: "business" }); return r.ok ? { ok: true as const, numero, nuevo: r.nuevo } : r; });
+  return txAuditada(alGuardar, async (c) => { const r = await reponerEn(c, { numero, negocio, texto, actorId, por: "business" }); return r.ok ? { ok: true as const, numero, nuevo: r.nuevo } : r; });
 }
 /* El aviso al cliente con el enlace al pedido nuevo. */
 export async function avisarRepuesto(numeroNuevo: string) {

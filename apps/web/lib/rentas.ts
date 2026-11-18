@@ -1,7 +1,7 @@
 import "server-only";
 import { diasEspeciales, rangosDia } from "./dias-especiales";
 import type { PoolClient } from "pg";
-import { db, tx } from "./db";
+import { db, tx, type AlGuardar } from "./db";
 import { comision } from "./cobros";
 import { pasarela } from "./pagos/pasarela";
 
@@ -307,7 +307,7 @@ export async function rentaCliente(userId: string, numero: string, que: QueClien
 /* ── Lo que hace el negocio ── */
 export type QueNegocio = { que: "recogio"; lic?: boolean; odo?: number } | { que: "devolvio"; odo?: number } | { que: "cancelar" } | { que: "dano"; cents: number; foto: string; nota: string; odo?: number };
 const odoOk = (v: unknown) => { const n = Math.round(Number(v)); return Number.isFinite(n) && n >= 0 && n <= 2_000_000 ? n : null; };
-export async function rentaNegocio(negocio: string, numero: string, a: QueNegocio, actorId: string): Promise<Res<{ aviso?: Bi }>> {
+export async function rentaNegocio(negocio: string, numero: string, a: QueNegocio, actorId: string, alGuardar?: AlGuardar): Promise<Res<{ aviso?: Bi }>> {
   if (!NUM.test(String(numero))) return no("Esa renta no existe.", "That rental does not exist.");
   const x = (await db().query<Fila>(`${SEL} where o.number = $1 and r.business_id = $2`, [numero, negocio])).rows[0];
   if (!x) return no("Esa renta no existe.", "That rental does not exist.");
@@ -319,6 +319,7 @@ export async function rentaNegocio(negocio: string, numero: string, a: QueNegoci
       await c.query(`update items set stock_left = stock_left + 1, updated_at = now() where id = $1::bigint and stock_mode = 'qty'`, [x.itemId]);
       await c.query(`update operations set status = 'cancelled', cancelled_at = now(), cancelled_by = 'business', updated_at = now() where id = $1::bigint`, [x.op]);
       await ev(c, x.op, "cancelled", "business", actorId, { es: "El negocio canceló el apartado", en: "The business cancelled the hold" });
+      await alGuardar?.(c);
       return true;
     });
     if (!ok) return no("Ya no está apartada.", "It is no longer on hold.");
@@ -359,6 +360,7 @@ export async function rentaNegocio(negocio: string, numero: string, a: QueNegoci
         [x.op, x.uid, negocio, x.city, await seqDe(c, x.op, "security"), dep.pi, x.dep, dep.marca, dep.ultimos4, dep.pi.startsWith("pi_sim_"), x.pm]);
       await c.query(`update operations set stage = 'picked_up', pay_status = $2, updated_at = now() where id = $1::bigint`, [x.op, dep?.ok ? "held" : "captured"]);
       await ev(c, x.op, "payment_captured", "business", actorId, { es: `La recogió: renta ${money(x.rent)}${x.dep ? ` · depósito ${money(x.dep)} retenido` : ""}`, en: `Picked up: rent ${money(x.rent)}${x.dep ? ` · ${money(x.dep)} deposit held` : ""}` });
+      await alGuardar?.(c);
       return true;
     });
     if (!ok) { if (dep?.ok) await pasarela.liberar(dep.pi); return no("Ya no está apartada.", "It is no longer on hold."); }
@@ -387,6 +389,7 @@ export async function rentaNegocio(negocio: string, numero: string, a: QueNegoci
       await c.query(`update items set stock_left = stock_left + 1, updated_at = now() where id = $1::bigint and stock_mode = 'qty'`, [x.itemId]);
       await c.query(`update operations set status = 'done', done_at = now(), updated_at = now() where id = $1::bigint`, [x.op]);
       await ev(c, x.op, "returned", "business", actorId, { es: `La devolvió${tarde ? ` ${tarde} ${tarde === 1 ? "día" : "días"} tarde` : ""}${dano ? ` · daño de ${money(dano.cents)} enseñado con foto` : ""}`, en: `Returned${tarde ? ` ${tarde} ${tarde === 1 ? "day" : "days"} late` : ""}${dano ? ` · ${money(dano.cents)} damage shown with a photo` : ""}` });
+      await alGuardar?.(c);
       return true;
     });
     if (!ok) return no("Ya volvió.", "It is already back.");

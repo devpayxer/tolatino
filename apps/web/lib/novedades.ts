@@ -1,6 +1,6 @@
 import "server-only";
 import type { PoolClient } from "pg";
-import { db, tx } from "./db";
+import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { detectarIdioma } from "./traductor";
 import { quedanEnHoy } from "./hoy";
 
@@ -249,7 +249,7 @@ export type NovIn = {
   /* 9n-21 · Cupón para seguidores: código (4 a 12 letras o números), descuento y compra mínima en dólares, cuántos usos en total. */
   cupon?: { code?: string; off?: number; min?: number; uses?: number } | null;
 };
-export async function guardarNovedad(negocio: string, p: NovIn, actorId: string): Promise<{ ok: true; id: string } | { ok: false; msg: Bi }> {
+export async function guardarNovedad(negocio: string, p: NovIn, actorId: string, alGuardar?: AlGuardar<{ ok: true; id: string }>): Promise<{ ok: true; id: string } | { ok: false; msg: Bi }> {
   const kind = TIPOS.includes(p.kind as Tipo) ? (p.kind as Tipo) : null;
   if (!kind) return { ok: false, msg: { es: "Elige qué publicas.", en: "Pick what you post." } };
   const title = String(p.title ?? "").trim().slice(0, 60), body = String(p.body ?? "").trim().slice(0, 280);
@@ -286,7 +286,7 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string)
   const rep = rp ? { dias: [...new Set((Array.isArray(rp.dias) ? rp.dias : []).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort(), m: Number(rp.m), dur: String(rp.dur), hasta: String(rp.hasta) } : null;
   if (rep && (!rep.dias.length || !Number.isInteger(rep.m) || rep.m < 0 || rep.m > 1439 || !REP_DUR.includes(rep.dur) || !(rep.hasta in REP_HASTA)))
     return { ok: false, msg: { es: "Elige al menos un día.", en: "Pick at least one day." } };
-  return tx(async (c) => {
+  return txAuditada(alGuardar, async (c) => {
     const b = (await c.query<{ city_id: string; tz: string; pro: boolean }>(
       `select b.city_id, ci.timezone as tz, coalesce(s.plan, 'free') = 'pro' as pro from businesses b join cities ci on ci.id = b.city_id left join business_stats_cache s on s.business_id = b.id where b.id = $1 for update of b`, [negocio])).rows[0];
     if (!b) return { ok: false as const, msg: { es: "Ese negocio no existe.", en: "That business does not exist." } };
@@ -392,9 +392,9 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string)
 
 /* Acciones de una fila: detener, publicar ya, publicar de nuevo (24 h), fijar (una a la vez), quitar. */
 export type PasoNov = "detener" | "ya" | "otravez" | "fijar" | "desfijar" | "quitar";
-export async function pasoNovedad(negocio: string, id: string, paso: PasoNov): Promise<Res> {
+export async function pasoNovedad(negocio: string, id: string, paso: PasoNov, alGuardar?: AlGuardar): Promise<Res> {
   if (!/^\d{1,18}$/.test(id)) return no("Esa publicación no existe.", "That post does not exist.");
-  return tx(async (c) => {
+  return txAuditada(alGuardar, async (c) => {
     const p = (await c.query<{ st: string }>(`select ${ESTADO_SQL} as st from business_posts p where p.business_id = $1 and p.id = $2::bigint and p.status <> 'removed' for update`, [negocio, id])).rows[0];
     if (!p) return no("Esa publicación ya no está.", "That post is gone.");
     if (p.st === "adm" && paso !== "quitar") return no("To'Latino ocultó esta publicación.", "To'Latino hid this post.");
@@ -414,20 +414,25 @@ export async function pasoNovedad(negocio: string, id: string, paso: PasoNov): P
   });
 }
 /* El dueño responde un comentario (280 letras); sale como «Respuesta del negocio». */
-export async function responderComentario(negocio: string, comentario: string, texto: string, actorId: string): Promise<Res> {
+export async function responderComentario(negocio: string, comentario: string, texto: string, actorId: string, alGuardar?: AlGuardar): Promise<Res> {
   const t = String(texto ?? "").trim();
   if (!t) return no("Escribe tu respuesta.", "Write your reply.");
   if (t.length > 280) return no("Máximo 280 letras.", "280 characters max.");
   if (!/^\d{1,18}$/.test(comentario)) return no("Ese comentario no existe.", "That comment does not exist.");
-  const r = await db().query(
-    `update post_comments c set reply = $3, reply_at = now(), reply_by = $4 from business_posts p
-      where c.id = $2::bigint and p.id = c.post_id and p.business_id = $1 and c.status = 'visible'`, [negocio, comentario, t, actorId]);
-  return r.rowCount ? { ok: true } : no("Ese comentario ya no está.", "That comment is gone.");
+  return txAuditada(alGuardar, async (c): Promise<Res> => {
+    const r = await c.query(
+      `update post_comments c set reply = $3, reply_at = now(), reply_by = $4 from business_posts p
+        where c.id = $2::bigint and p.id = c.post_id and p.business_id = $1 and c.status = 'visible'`, [negocio, comentario, t, actorId]);
+    return r.rowCount ? { ok: true } : no("Ese comentario ya no está.", "That comment is gone.");
+  });
 }
 /* Encender / apagar Novedades en la página (las publicaciones se quedan guardadas). */
-export async function moduloNovedades(negocio: string, on: boolean): Promise<Res> {
-  await db().query(on ? `update businesses set modules_on = array(select distinct x from unnest(modules_on || array['nov']) x) where id = $1`
-    : `update businesses set modules_on = array_remove(modules_on, 'nov') where id = $1`, [negocio]);
+export async function moduloNovedades(negocio: string, on: boolean, alGuardar?: AlGuardar): Promise<Res> {
+  await tx(async (c) => {
+    await c.query(on ? `update businesses set modules_on = array(select distinct x from unnest(modules_on || array['nov']) x) where id = $1`
+      : `update businesses set modules_on = array_remove(modules_on, 'nov') where id = $1`, [negocio]);
+    await alGuardar?.(c);
+  });
   return { ok: true };
 }
 
@@ -442,9 +447,9 @@ export async function itemsNovedad(negocio: string) {
    (las ofertas, por «Ofertas», con tope de UNA al día por persona: lo que dice Mi cuenta › Avisos). Lo decide el servidor: una sola vez por novedad (la fila se marca
    en la misma escritura), solo si ya salió y no la ocultó To'Latino, hasta 2 novedades avisadas por negocio cada 24 horas, y a un máximo de 2000 seguidores por vez. */
 export const MAX_AVISOS_DIA = 2, MAX_SEGUIDORES_AVISO = 2000;
-export async function avisarSeguidores(negocio: string, id: string, actorId: string): Promise<{ ok: true; n: number } | { ok: false; msg: Bi }> {
+export async function avisarSeguidores(negocio: string, id: string, actorId: string, alGuardar?: AlGuardar<{ L: string[] }>): Promise<{ ok: true; n: number } | { ok: false; msg: Bi }> {
   if (!/^\d{1,18}$/.test(id)) return { ok: false, msg: { es: "Esa publicación no existe.", en: "That post does not exist." } };
-  const r = await tx(async (c) => {
+  const r = await txAuditada(alGuardar, async (c) => {
     const p = (await c.query<{ kind: string; title: string; name: string; lista: boolean; ya: boolean; hoy: number }>(
       `select p.kind, p.title, b.name, (p.status = 'live' and p.hidden_at is null and p.publish_at <= now() and (p.ends_at is null or p.ends_at > now())) as lista, p.followers_notified_at is not null as ya,
               (select count(*)::int from business_posts q where q.business_id = p.business_id and q.followers_notified_at > now() - interval '24 hours') as hoy

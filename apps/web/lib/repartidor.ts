@@ -3,7 +3,7 @@ import { randomInt } from "node:crypto";
 import type { PoolClient } from "pg";
 import { cobrarOperacion } from "./cobros";
 import { cfgSql, valor } from "./config";
-import { db, tx } from "./db";
+import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { KIND_REPARTO, NUM_REPARTO, repartoSql } from "./reparto-comun";
 import { empezar as empezarRuta, type RutaToken } from "./ruta";
 
@@ -38,7 +38,7 @@ export async function repartidoresDe(negocio: string): Promise<RepPanel[]> {
     hoy: { entregas: x.entregas, efectivo: x.efectivo, activos: x.activos } }));
 }
 
-export async function invitarRepartidor(negocio: string, actorId: string, nombre: string, tel: string): Promise<{ ok: true; codigo: string } | { ok: false; msg: Bi }> {
+export async function invitarRepartidor(negocio: string, actorId: string, nombre: string, tel: string, alGuardar?: AlGuardar): Promise<{ ok: true; codigo: string } | { ok: false; msg: Bi }> {
   const n = String(nombre ?? "").replace(/\s+/g, " ").trim().slice(0, 40);
   if (n.length < 2) return { ok: false, msg: { es: "Escribe su nombre.", en: "Write their name." } };
   const hoy = (await db().query<{ n: number }>(`select count(*)::int as n from delivery_drivers where business_id = $1 and created_at > now() - interval '1 day'`, [negocio])).rows[0]!.n;
@@ -46,7 +46,11 @@ export async function invitarRepartidor(negocio: string, actorId: string, nombre
   for (let i = 0; i < 5; i++) {
     const codigo = Array.from({ length: 6 }, () => ALFA[randomInt(ALFA.length)]).join("");
     try {
-      await db().query(`insert into delivery_drivers (business_id, display_name, phone, invite_code, invite_expires_at, invited_by) values ($1, $2, $3, $4, now() + interval '7 days', $5)`, [negocio, n, tel, codigo, actorId]);
+      // Cada intento es su propia transacción (un código repetido la deshace entera) y la auditoría de quien invita va dentro.
+      await tx(async (c) => {
+        await c.query(`insert into delivery_drivers (business_id, display_name, phone, invite_code, invite_expires_at, invited_by) values ($1, $2, $3, $4, now() + interval '7 days', $5)`, [negocio, n, tel, codigo, actorId]);
+        await alGuardar?.(c);
+      });
       return { ok: true, codigo };
     } catch (e) {
       const c = e as { code?: string; constraint?: string };
@@ -57,9 +61,9 @@ export async function invitarRepartidor(negocio: string, actorId: string, nombre
   return { ok: false, msg: { es: "No se pudo crear el código. Prueba de nuevo.", en: "Could not create the code. Try again." } };
 }
 
-export async function quitarRepartidor(negocio: string, id: string, motivo: string): Promise<ResR> {
+export async function quitarRepartidor(negocio: string, id: string, motivo: string, alGuardar?: AlGuardar): Promise<ResR> {
   if (!/^\d{1,18}$/.test(id)) return no("Ese repartidor no existe.", "That driver does not exist.");
-  return tx(async (c) => {
+  return txAuditada(alGuardar, async (c) => {
     const d = (await c.query<{ id: string }>(`update delivery_drivers set status = 'removed', removed_at = now(), removed_reason = $3, online = false, invite_code = null where id = $1::bigint and business_id = $2 and status <> 'removed' returning id::text`, [id, negocio, String(motivo ?? "").slice(0, 200) || null])).rows[0];
     if (!d) return no("Ese repartidor ya no está.", "That driver is no longer there.");
     // Lo que tenía asignado y no entregó vuelve a «sin repartidor» para que el negocio lo asigne a otro.
@@ -73,9 +77,9 @@ export async function quitarRepartidor(negocio: string, id: string, motivo: stri
 /* Despacho: asignar (o quitar) el repartidor de un pedido de delivery con tu equipo. 9n: también el envío del mercado, que se asigna cuando el
    mercado lo marcó «Está listo» (pesado y con el OK del cliente si hacía falta); quitarlo se puede hasta que se entrega (si el repartidor no puede
    terminarlo, el mercado lo termina él mismo). */
-export async function asignarRepartidor(negocio: string, numero: string, driverId: string | null, actorId: string): Promise<ResR & { aviso?: { uid: string; vars: Record<string, string> } }> {
+export async function asignarRepartidor(negocio: string, numero: string, driverId: string | null, actorId: string, alGuardar?: AlGuardar): Promise<ResR & { aviso?: { uid: string; vars: Record<string, string> } }> {
   if (!NUM_REPARTO.test(numero) || (driverId !== null && !/^\d{1,18}$/.test(driverId))) return no("Ese pedido no existe.", "That order does not exist.");
-  return tx(async (c) => {
+  return txAuditada(alGuardar, async (c) => {
     const o = (await c.query<{ id: string; status: string; mode: string; who: string; stage: string | null; calle: string | null; negocio: string; kind: string; detail: string | null }>(
       `select o.id::text, o.status, coalesce(o.mode, 'pickup') as mode, coalesce(d.who, 'team') as who, o.stage, o.details->'to'->>'street' as calle, b.name as negocio,
               o.kind, o.status_detail as detail

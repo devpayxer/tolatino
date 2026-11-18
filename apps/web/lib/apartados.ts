@@ -2,7 +2,7 @@ import "server-only";
 import { diasEspeciales, rangosDia } from "./dias-especiales";
 import type { PoolClient } from "pg";
 import { cfgSql } from "./config";
-import { db, tx } from "./db";
+import { db, tx, type AlGuardar } from "./db";
 import { populares, ventasSqlDe, type Ventas30 } from "./menu-ventas";
 
 /* Apartar productos (Fase 4 · bloque 4f-3). Diseño: TLApartar.hold → el apartado de Tiendas (neg-tienda-flow.js:
@@ -358,15 +358,21 @@ export async function apartadoCliente(userId: string, numero: string, a: QueClie
 }
 
 export type QueNegocioApt = { que: "tengo" | "no" | "recogio" | "entregado" | "pagoTienda" | "cancelarPlan" } | { que: "falta"; linea: string } | { que: "talla"; linea: string; variante: string } | { que: "enviado"; track?: string | null };
-export async function apartadoNegocio(negocio: string, numero: string, a: QueNegocioApt, actorId: string): Promise<Res> {
+/* 9n · alGuardar: la auditoría de la acción del panel, escrita en la misma transacción que el cambio de cada paso. */
+export async function apartadoNegocio(negocio: string, numero: string, a: QueNegocioApt, actorId: string, alGuardar?: AlGuardar): Promise<Res> {
   const x = NUM.test(String(numero)) ? await leer("o.number = $1 and o.business_id = $2", [numero, negocio]) : null;
   if (!x) return no("Ese apartado no existe.", "That hold does not exist.");
   const tz = (await db().query<{ tz: string }>(`select ci.timezone as tz from businesses b join cities ci on ci.id = b.city_id where b.id = $1`, [negocio])).rows[0]!.tz;
   const av = await import("./avisos"), href = { href: `/apartado/${numero}`, ref: ["apartado", numero] as [string, string], sinSms: !x.sms };
   if (a?.que === "tengo") {
-    const u = await db().query(`update operations set status = 'confirmed', stage = 'accepted', confirmed_at = now(), answered_at = now(), updated_at = now() where id = $1::bigint and status = 'pending'`, [x.op]);
+    const u = await tx(async (c) => {
+      const u = await c.query(`update operations set status = 'confirmed', stage = 'accepted', confirmed_at = now(), answered_at = now(), updated_at = now() where id = $1::bigint and status = 'pending'`, [x.op]);
+      if (!u.rowCount) return u;
+      await ev(c, x.op, "accepted", "business", actorId, x.ship ? { es: "La tienda lo tiene: lo prepara para enviar", en: "The store has it: preparing to ship" } : { es: "La tienda lo tiene: se lo guarda", en: "The store has it: held" });
+      await alGuardar?.(c);
+      return u;
+    });
     if (!u.rowCount) return no("Este apartado ya se respondió.", "This hold was already answered.");
-    await ev(db(), x.op, "accepted", "business", actorId, x.ship ? { es: "La tienda lo tiene: lo prepara para enviar", en: "The store has it: preparing to ship" } : { es: "La tienda lo tiene: se lo guarda", en: "The store has it: held" });
     if (x.plan) await (await import("./layaway")).activarPlan(x.op);  // cobra el abono y empieza el calendario (avisa lay_abono)
     else if (x.ship) await av.avisar(x.uid, "apt_prepara", { negocio: x.bname, dias: x.dias }, href);
     else await av.avisar(x.uid, "apt_ok", { negocio: x.bname, hasta: hastaL(x.hasta, tz), monto: money(x.tot) }, href);
@@ -381,6 +387,7 @@ export async function apartadoNegocio(negocio: string, numero: string, a: QueNeg
       await c.query(`update item_variants v set stock_left = 0, updated_at = now() from operation_lines l where l.operation_id = $1::bigint and l.variant_id = v.id`, [x.op]);
       await (await import("./layaway")).cerrarPlanPendiente(c, x.op, "declined");
       await ev(c, x.op, "declined", "business", actorId, { es: "La tienda no lo tiene", en: "The store does not have it" });
+      await alGuardar?.(c);
       return true;
     });
     if (!ok) return no("Este apartado ya se respondió.", "This hold was already answered.");
@@ -389,8 +396,8 @@ export async function apartadoNegocio(negocio: string, numero: string, a: QueNeg
     return { ok: true };
   }
   if ((a?.que === "falta" || a?.que === "talla") && x.plan) return no("Un plan no se cambia: si no lo tienes, usa «No lo tengo» (se libera el abono).", "A layaway cannot change: if you do not have it, use “Not in stock” (the down payment is released).");
-  if (a?.que === "pagoTienda") { const r = await (await import("./layaway")).pagoEnTienda(negocio, numero, actorId); return r.ok ? { ok: true } : r; }
-  if (a?.que === "cancelarPlan") { const r = await (await import("./layaway")).cancelarPlan({ numero, negocio }, "business", actorId); return r.ok ? { ok: true } : r; }
+  if (a?.que === "pagoTienda") { const r = await (await import("./layaway")).pagoEnTienda(negocio, numero, actorId, alGuardar); return r.ok ? { ok: true } : r; }
+  if (a?.que === "cancelarPlan") { const r = await (await import("./layaway")).cancelarPlan({ numero, negocio }, "business", actorId, alGuardar); return r.ok ? { ok: true } : r; }
   if (a?.que === "falta") {
     const ln = x.lineas.find((l) => l.id === String(a.linea) && l.st === "ok");
     if (!ln) return no("Elige qué falta.", "Pick what is missing.");
@@ -402,6 +409,7 @@ export async function apartadoNegocio(negocio: string, numero: string, a: QueNeg
       if (ln.talla) await c.query(`update item_variants v set stock_left = 0, updated_at = now() from operation_lines l where l.id = $1::bigint and l.variant_id = v.id`, [ln.id]);
       else await c.query(`update items set stock_left = 0, updated_at = now() where id = $1::bigint and stock_mode = 'qty'`, [ln.item]);
       await ev(c, x.op, "change_proposed", "business", actorId, { es: `Falta «${ln.n.es}»`, en: `Missing “${ln.n.en || ln.n.es}”` });
+      await alGuardar?.(c);
       return true;
     });
     if (!ok) return no("Este apartado ya se respondió.", "This hold was already answered.");
@@ -424,6 +432,7 @@ export async function apartadoNegocio(negocio: string, numero: string, a: QueNeg
       await c.query(`insert into change_proposals (operation_id, kind, proposed, side, respond_by, created_by, line_id) values ($1::bigint, 'items', $2::jsonb, 'customer', now() + interval '24 hours', $3, $4::bigint)`, [x.op, JSON.stringify({ variant: a.variante, label: v.label }), actorId, ln.id]);
       await ev(c, x.op, "change_proposed", "business", actorId, { es: `Falta «${ln.n.es}» talla ${ln.talla}: ofrecen la ${v.label}`, en: `Missing “${ln.n.en || ln.n.es}” size ${ln.talla}: offering ${v.label}` });
       otra = v.label;
+      await alGuardar?.(c);
       return { ok: true };
     });
     if (!ok.ok) return ok;
@@ -434,25 +443,40 @@ export async function apartadoNegocio(negocio: string, numero: string, a: QueNeg
     // Lo envió: se cobra lo que de verdad va (lo apartado que sigue + el envío; nunca más de lo retenido).
     const t = String((a as { track?: string | null }).track ?? "").trim().slice(0, 300);
     if (t) { let okU = false; try { const z = new URL(t); okU = z.protocol === "https:" && !!z.hostname; } catch { okU = false; } if (!okU) return no("Pega el enlace completo del seguimiento (empieza con https://).", "Paste the full tracking link (starts with https://)."); }
-    const u = await db().query(`update operations set stage = 'on_the_way', details = details || jsonb_build_object('shipped_at', now(), 'tracking', nullif($2, '')), updated_at = now() where id = $1::bigint and status = 'confirmed' and mode = 'delivery' and stage <> 'on_the_way'`, [x.op, t]);
+    const u = await tx(async (c) => {
+      const u = await c.query(`update operations set stage = 'on_the_way', details = details || jsonb_build_object('shipped_at', now(), 'tracking', nullif($2, '')), updated_at = now() where id = $1::bigint and status = 'confirmed' and mode = 'delivery' and stage <> 'on_the_way'`, [x.op, t]);
+      if (!u.rowCount) return u;
+      await ev(c, x.op, "on_the_way", "business", actorId, { es: t ? "Lo envió · con enlace de seguimiento" : "Lo envió", en: t ? "Shipped · with tracking link" : "Shipped" });
+      await alGuardar?.(c);
+      return u;
+    });
     if (!u.rowCount) return no("Este pedido no está listo para enviar.", "This order is not ready to ship.");
-    await ev(db(), x.op, "on_the_way", "business", actorId, { es: t ? "Lo envió · con enlace de seguimiento" : "Lo envió", en: t ? "Shipped · with tracking link" : "Shipped" });
     const r = await cobrarApartado(x.op);
     await av.avisar(x.uid, "apt_enviado", { negocio: x.bname, monto: money(r.cobrado) }, href);
     return { ok: true };
   }
   if (a?.que === "entregado") {
-    const u = await db().query(`update operations set status = 'done', stage = 'delivered', done_at = now(), updated_at = now() where id = $1::bigint and status = 'confirmed' and mode = 'delivery' and stage = 'on_the_way'`, [x.op]);
+    const u = await tx(async (c) => {
+      const u = await c.query(`update operations set status = 'done', stage = 'delivered', done_at = now(), updated_at = now() where id = $1::bigint and status = 'confirmed' and mode = 'delivery' and stage = 'on_the_way'`, [x.op]);
+      if (!u.rowCount) return u;
+      await ev(c, x.op, "delivered", "business", actorId, { es: "Entregado", en: "Delivered" });
+      await alGuardar?.(c);
+      return u;
+    });
     if (!u.rowCount) return no("Primero márcalo como enviado.", "Mark it as shipped first.");
-    await ev(db(), x.op, "delivered", "business", actorId, { es: "Entregado", en: "Delivered" });
     await av.avisar(x.uid, "apt_entregado", { negocio: x.bname }, href);
     return { ok: true };
   }
   if (a?.que === "recogio" && x.plan && x.plan.st !== "paid") return no(`Le falta pagar ${money(x.plan.falta)} del plan: se entrega al terminar de pagar.`, `${money(x.plan.falta)} of the plan is still due: it is handed over when fully paid.`);
   if (a?.que === "recogio") {
-    const u = await db().query(`update operations set status = 'done', stage = 'picked_up', done_at = now(), updated_at = now() where id = $1::bigint and status = 'confirmed' and mode = 'pickup'`, [x.op]);
+    const u = await tx(async (c) => {
+      const u = await c.query(`update operations set status = 'done', stage = 'picked_up', done_at = now(), updated_at = now() where id = $1::bigint and status = 'confirmed' and mode = 'pickup'`, [x.op]);
+      if (!u.rowCount) return u;
+      await ev(c, x.op, "picked_up", "business", actorId, { es: `Lo recogió · pagó ${money(x.tot)} en la caja`, en: `Picked up · paid ${money(x.tot)} at the register` });
+      await alGuardar?.(c);
+      return u;
+    });
     if (!u.rowCount) return no("Este apartado no está guardado.", "This hold is not being kept.");
-    await ev(db(), x.op, "picked_up", "business", actorId, { es: `Lo recogió · pagó ${money(x.tot)} en la caja`, en: `Picked up · paid ${money(x.tot)} at the register` });
     return { ok: true };
   }
   return no("Eso no se puede.", "That cannot be done.");

@@ -1889,7 +1889,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       manda UNA lectura (de hace 31 s, después de empezar la ruta) que la base rechaza (`rejected_n = 1`) y después el emulador no da más lecturas
       aunque la prueba mueve el GPS cada 2 s; en Chromium pasa y en app8e (repartidor de comida) Safari sí sube posiciones. Diagnóstico en la salida
       de merc9n («· la página … · envíos … · pista»). Se mira a mano en un iPhone de verdad (REVISION «Ubicación del repartidor en el iPhone»).
-- [ ] **→ 9n** · **Auditoría en la misma transacción que el cambio (acciones del panel):** `app/panel/acciones-puerta.ts` (y otras acciones del panel)
+- [x] **→ 9n** · **Auditoría en la misma transacción que el cambio (acciones del panel):** `app/panel/acciones-puerta.ts` (y otras acciones del panel)
       guardan el cambio y DESPUÉS escriben la auditoría en otra consulta: si la segunda falla, el cambio queda sin su renglón. evt6g lo cazó como
       carrera (17 nov). Revisar la clase (acciones del panel que tocan permisos, dinero o reglas) y pasar la auditoría a la misma transacción, con
-      su guardián.
+      su guardián. **Hecho (18 nov):** los 19 acciones-*.ts del panel con auditoría suelta (104 acciones) dejan su renglón con el cliente de la
+      transacción del cambio: tx() en la acción, `enTx`/cliente para lib simple (puerta) y `alGuardar`/`txAuditada` (lib/db.ts) cuando lib cobra,
+      devuelve o avisa fuera de la base; también lib (pedir reseña, patrocinios con `null`, barrido de colas) y el simulador de Cobros. Guardián
+      `auditoriaEnLaTransaccion` (alreves9n22 10/10). Payloads iguales salvo `eventos.cancelar`/`eventos.fecha.cancelar`: `por_devolver` en vez de
+      `devueltas`/`pendientes` (las devoluciones corren después en lotes; su avance está en `event_cancellations`).

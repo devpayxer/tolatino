@@ -1,7 +1,7 @@
 import "server-only";
 import { cfgSql, valor } from "./config";
 import { horasTxt } from "./plazo-txt";
-import { db, tx } from "./db";
+import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { cobrarOperacion, devolverPago, liberarOperacion } from "./cobros";
 import { cobrarLiquidacion, conEstimado, planLiquidar } from "./estimados";
 import { contexto, fecha, gente, hm2m, horaL, huecos, ocupadas, DIAS, type Q } from "./citas";
@@ -169,11 +169,11 @@ async function recordatorios() {
 export type PasoCita = "confirmar" | "otra" | "nopuedo" | "llego" | "nollego" | "terminada" | "noseguro"
   // Auto y Hogar (Fase 4 · 4c): recibido · en camino · llegué · empezar · listo · entregado · no había nadie.
   | "recibido" | "camino" | "llegue" | "empezar" | "listo" | "entregado" | "nadie";
-export async function citaPaso(negocio: string, numero: string, paso: PasoCita, actorId: string): Promise<ResC> {
+export async function citaPaso(negocio: string, numero: string, paso: PasoCita, actorId: string, alGuardar?: AlGuardar): Promise<ResC> {
   if (!NUM.test(numero)) return no("Esa cita no existe.", "That booking does not exist.");
   await vencerCitas({ negocio, numero });
   let despues: (() => Promise<void>) | null = null;
-  const r = await tx(async (c): Promise<ResC> => {
+  const r = await txAuditada(alGuardar, async (c): Promise<ResC> => {
     await c.query(`select pg_advisory_xact_lock(hashtext('cita:' || $1))`, [negocio]);
     const o = await leer(c, "o.business_id = $1 and o.number = $2", [negocio, numero], true);
     if (!o) return no("Esa cita no existe.", "That booking does not exist.");
@@ -269,10 +269,10 @@ export async function citaPaso(negocio: string, numero: string, paso: PasoCita, 
 }
 
 /* El negocio responde al cambio que pidió el cliente (cita confirmada). */
-export async function citaCambio(negocio: string, numero: string, que: "aceptar" | "rechazar", actorId: string): Promise<ResC> {
+export async function citaCambio(negocio: string, numero: string, que: "aceptar" | "rechazar", actorId: string, alGuardar?: AlGuardar): Promise<ResC> {
   if (!NUM.test(numero)) return no("Esa cita no existe.", "That booking does not exist.");
   await vencerCitas({ negocio, numero });
-  const r = await tx(async (c): Promise<ResC> => {
+  const r = await txAuditada(alGuardar, async (c): Promise<ResC> => {
     await c.query(`select pg_advisory_xact_lock(hashtext('cita:' || $1))`, [negocio]);
     const o = await leer(c, "o.business_id = $1 and o.number = $2", [negocio, numero], true);
     if (!o || o.status !== "confirmed") return no("Esta cita ya cambió. Actualiza la pantalla.", "This booking already changed. Refresh the screen.");

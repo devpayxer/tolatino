@@ -1,7 +1,7 @@
 import "server-only";
 import { diasEspeciales, rangosDia } from "./dias-especiales";
 import type { Pool, PoolClient } from "pg";
-import { db, tx } from "./db";
+import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { PROHIBIDO } from "./jobs-txt";
 export { PROHIBIDO };
 
@@ -180,7 +180,7 @@ export type VacIn = {
   id?: string | null; t0: string; t1?: string; kind: string; lo: number; hi?: number | null; tips: boolean; days: number[]; start: number; end: number; openings: number;
   les: string; len: string; d0?: string; d1?: string; req: [string, string][]; ben: [string, string][]; pub: boolean;
 };
-export async function guardarVacante(negocio: string, p: VacIn, actorId: string): Promise<Res<{ id: string }>> {
+export async function guardarVacante(negocio: string, p: VacIn, actorId: string, alGuardar?: AlGuardar<{ ok: true; id: string }>): Promise<Res<{ id: string }>> {
   const t0 = String(p.t0 ?? "").trim().slice(0, 50), t1 = String(p.t1 ?? "").trim().slice(0, 50) || t0;
   if (t0.length < 3) return no("Escribe el puesto.", "Write the position.");
   const kind = ["ft", "pt", "fds"].includes(p.kind) ? p.kind : "ft";
@@ -198,7 +198,7 @@ export async function guardarVacante(negocio: string, p: VacIn, actorId: string)
   const d0 = String(p.d0 ?? "").trim().slice(0, 300), d1 = String(p.d1 ?? "").trim().slice(0, 300);
   const todo = [t0, t1, d0, d1, ...req.flat(), ...ben.flat()].join(" "), hit = todo.match(PROHIBIDO)?.[0];
   if (hit) return no(`Quita «${hit}»: To’Latino no deja pedir CV, papeles, estatus, SSN ni pago para aplicar.`, `Remove “${hit}”: To’Latino does not allow asking for a resume, papers, status, SSN or a fee to apply.`);
-  return tx(async (c) => {
+  return txAuditada(alGuardar, async (c) => {
     const b = (await c.query<{ city_id: string; pro: boolean }>(`select b.city_id, coalesce(s.plan, 'free') = 'pro' as pro from businesses b left join business_stats_cache s on s.business_id = b.id where b.id = $1 for update of b`, [negocio])).rows[0];
     if (!b) return no("Ese negocio no existe.", "That business does not exist.");
     if (!b.pro) return no("Jobs es de Pro.", "Jobs is a Pro feature.");
@@ -228,13 +228,13 @@ export async function guardarVacante(negocio: string, p: VacIn, actorId: string)
 }
 
 export type PasoVac = "pausar" | "publicar" | "cubrir" | "quitar";
-export async function pasoVacante(negocio: string, id: string, paso: PasoVac): Promise<Res> {
+export async function pasoVacante(negocio: string, id: string, paso: PasoVac, alGuardar?: AlGuardar): Promise<Res> {
   if (!/^\d{1,18}$/.test(id)) return no("Esa vacante no existe.", "That job does not exist.");
   const Q: Record<PasoVac, [string[], string]> = {
     pausar: [["live"], `status = 'paused'`], publicar: [["draft", "paused", "filled"], `status = 'live', published_at = coalesce(published_at, now())`],
     cubrir: [["live", "paused"], `status = 'filled'`], quitar: [["draft", "live", "paused", "filled"], `status = 'removed'`],
   };
-  return tx(async (c) => {
+  return txAuditada(alGuardar, async (c) => {
     const j = (await c.query<{ status: string; hidden: boolean }>(`select status, hidden_at is not null as hidden from job_postings where id = $1::bigint and business_id = $2 for update`, [id, negocio])).rows[0];
     if (!j) return no("Esa vacante ya no está.", "That job is gone.");
     if (j.hidden && paso !== "quitar") return no("To’Latino ocultó esta vacante.", "To’Latino hid this job.");
@@ -274,9 +274,9 @@ export async function horarioVac(negocio: string) {
 }
 
 /* El negocio responde una solicitud: le va a llamar, entrevista (un día que abre, a una hora) o no seleccionado. */
-export async function responderSolicitud(negocio: string, appId: string, paso: "contact" | "interview" | "not_selected", iv?: { d: number; h: number } | null): Promise<Res> {
+export async function responderSolicitud(negocio: string, appId: string, paso: "contact" | "interview" | "not_selected", iv?: { d: number; h: number } | null, alGuardar?: AlGuardar): Promise<Res> {
   if (!/^\d{1,18}$/.test(appId)) return no("Esa solicitud no existe.", "That application does not exist.");
-  return tx(async (c) => {
+  return txAuditada(alGuardar, async (c) => {
     const a = (await c.query<{ status: EstApp; tz: string }>(
       `select a.status, ci.timezone as tz from job_applications a join cities ci on ci.id = a.city_id where a.id = $1::bigint and a.business_id = $2 for update of a`, [appId, negocio])).rows[0];
     if (!a) return no("Esa solicitud ya no está.", "That application is gone.");
@@ -296,9 +296,12 @@ export async function responderSolicitud(negocio: string, appId: string, paso: "
     return { ok: true } as const;
   });
 }
-export async function moduloJobs(negocio: string, on: boolean) {
-  await db().query(on ? `update businesses set modules_on = array(select distinct x from unnest(modules_on || array['jobs']) x) where id = $1`
-    : `update businesses set modules_on = array_remove(modules_on, 'jobs') where id = $1`, [negocio]);
+export async function moduloJobs(negocio: string, on: boolean, alGuardar?: AlGuardar) {
+  await tx(async (c) => {
+    await c.query(on ? `update businesses set modules_on = array(select distinct x from unnest(modules_on || array['jobs']) x) where id = $1`
+      : `update businesses set modules_on = array_remove(modules_on, 'jobs') where id = $1`, [negocio]);
+    await alGuardar?.(c);
+  });
 }
 
 /* Avisos de Jobs: la respuesta del negocio a la persona, y el puesto para el aviso al negocio. */

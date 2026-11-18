@@ -3,6 +3,7 @@ import { hoyEn } from "@/lib/fecha-local";
 import { claveAmenidad } from "@/lib/amenidades";
 import { recalcularFiltrosSP } from "@/lib/salud-pro";
 import { LIC_LEGAL, NO_HAGO } from "@/lib/no-hago";
+import type { PoolClient } from "pg";
 import { mismoOrigen } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
 import { accesoPanel, type Acceso } from "@/lib/panel";
@@ -21,23 +22,26 @@ async function entrar(id: unknown, parte = "page"): Promise<Acceso | null> {
   if (!(await mismoOrigen())) return null;
   return typeof id === "string" ? accesoPanel(id, parte) : null;
 }
-async function auditar(a: Acceso, action: string, before: unknown, after: unknown) {
-  await db().query(
+/* 9n · La auditoría va con el cliente de la transacción del cambio: entran juntos o ninguno (guardián auditoriaEnLaTransaccion). */
+async function auditar(c: PoolClient, a: Acceso, action: string, before: unknown, after: unknown) {
+  await c.query(
     `insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, $2, 'business', $3, $4, $5::jsonb, $6::jsonb)`,
     [a.yo.id, action, a.negocio.id, a.negocio.city_id, JSON.stringify(before ?? null), JSON.stringify(after ?? null)]);
 }
 const esPro = async (id: string) => ((await db().query<{ plan: string }>(`select plan from business_stats_cache where business_id = $1`, [id])).rows[0]?.plan ?? "free") === "pro";
-const recontarFotos = (id: string) =>
-  db().query(`update business_stats_cache set photo_count = (select count(*) from media where owner_kind = 'business' and owner_id = $1 and status = 'visible'), updated_at = now() where business_id = $1`, [id]);
+const recontarFotos = (c: PoolClient, id: string) =>
+  c.query(`update business_stats_cache set photo_count = (select count(*) from media where owner_kind = 'business' and owner_id = $1 and status = 'visible'), updated_at = now() where business_id = $1`, [id]);
 
 /* ── Hoy · «Cerrar por hoy» / «Abrir de nuevo» ── */
 export async function cerrarPorHoy(id: string, cerrar: boolean): Promise<Res> {
   const a = await entrar(id, "ord");
   if (!a) return SIN_ACCESO;
-  await db().query(
-    `update businesses b set closed_on = case when $2 then (now() at time zone c.timezone)::date else null end, updated_at = now()
-       from cities c where c.id = b.city_id and b.id = $1`, [a.negocio.id, !!cerrar]);
-  await auditar(a, cerrar ? "panel.cerrar_hoy" : "panel.abrir_hoy", null, null);
+  await tx(async (c) => {
+    await c.query(
+      `update businesses b set closed_on = case when $2 then (now() at time zone c.timezone)::date else null end, updated_at = now()
+         from cities c where c.id = b.city_id and b.id = $1`, [a.negocio.id, !!cerrar]);
+    await auditar(c, a, cerrar ? "panel.cerrar_hoy" : "panel.abrir_hoy", null, null);
+  });
   return { ok: true };
 }
 
@@ -49,10 +53,10 @@ export async function videoQuitar(id: string): Promise<Res> {
   const n = await tx(async (c) => {
     const L = (await c.query<{ id: string }>(`update business_videos set status = 'quitado', ended_at = now() where business_id = $1 and status in ('aprobado', 'revision') returning id::text`, [a.negocio.id])).rows;
     for (const v of L) await c.query(`update queue_items set status = 'decided', decision = 'quitado', reason = 'El negocio quitó su video.', decided_at = now() where queue = 'medios' and subject_kind = 'business_video' and subject_id = $1 and status = 'open'`, [v.id]);
+    if (L.length) await auditar(c, a, "negocio.video.quitar", { videos: L.length }, null);
     return L.length;
   });
   if (!n) return no("No tienes un video puesto.", "You don’t have a video up.");
-  await auditar(a, "negocio.video.quitar", { videos: n }, null);
   return { ok: true };
 }
 
@@ -72,11 +76,11 @@ export async function fotosAgregar(id: string, ids: string[], portada = false): 
       await c.query(`update media set owner_kind = 'business', owner_id = $1, sort = $2 where id = $3::uuid and owner_kind = 'user' and owner_id = $4 and status = 'visible'`,
         [a.negocio.id, portada ? i : n + i, lista[i], a.yo.id]);
     }
+    await recontarFotos(c, a.negocio.id);
+    await auditar(c, a, portada ? "panel.portada" : "panel.fotos_agregar", null, { media: lista });
     return "ok" as const;
   });
   if (r === "tope") return no("Tu galería llegó a 60 fotos. Quita alguna para subir más.", "Your gallery reached 60 photos. Remove some to add more.");
-  await recontarFotos(a.negocio.id);
-  await auditar(a, portada ? "panel.portada" : "panel.fotos_agregar", null, { media: lista });
   return { ok: true };
 }
 
@@ -84,11 +88,14 @@ export async function fotosOrden(id: string, orden: string[]): Promise<Res> {
   const a = await entrar(id);
   if (!a) return SIN_ACCESO;
   if (!Array.isArray(orden) || orden.length > 60 || !orden.every((x) => typeof x === "string" && UUID.test(x))) return no("Ese orden no es válido.", "That order is not valid.");
-  const r = await db().query(
-    `update media m set sort = o.i - 1 from unnest($2::uuid[]) with ordinality o(id, i)
-      where m.id = o.id and m.owner_kind = 'business' and m.owner_id = $1 and m.status = 'visible'`, [a.negocio.id, orden]);
+  const r = await tx(async (c) => {
+    const r = await c.query(
+      `update media m set sort = o.i - 1 from unnest($2::uuid[]) with ordinality o(id, i)
+        where m.id = o.id and m.owner_kind = 'business' and m.owner_id = $1 and m.status = 'visible'`, [a.negocio.id, orden]);
+    if (r.rowCount) await auditar(c, a, "panel.fotos_orden", null, { orden });
+    return r;
+  });
   if (!r.rowCount) return no("No se encontraron esas fotos.", "Those photos were not found.");
-  await auditar(a, "panel.fotos_orden", null, { orden });
   return { ok: true };
 }
 
@@ -98,12 +105,17 @@ export async function fotoQuitar(id: string, mediaId: string): Promise<Res> {
   if (typeof mediaId !== "string" || !UUID.test(mediaId)) return no("Esa foto no existe.", "That photo doesn’t exist.");
   const n = (await db().query<{ n: number }>(`select count(*)::int as n from media where owner_kind = 'business' and owner_id = $1 and status = 'visible'`, [a.negocio.id])).rows[0]!.n;
   if (n <= 1) return no("Tu página necesita al menos una foto: sube otra antes de quitar esta.", "Your page needs at least one photo: upload another before removing this one.");
-  const r = await db().query(
-    `update media set status = 'removed', removed_reason = 'owner', removed_by = $3 where id = $2::uuid and owner_kind = 'business' and owner_id = $1 and status = 'visible'`,
-    [a.negocio.id, mediaId, a.yo.id]);
+  const r = await tx(async (c) => {
+    const r = await c.query(
+      `update media set status = 'removed', removed_reason = 'owner', removed_by = $3 where id = $2::uuid and owner_kind = 'business' and owner_id = $1 and status = 'visible'`,
+      [a.negocio.id, mediaId, a.yo.id]);
+    if (r.rowCount) {
+      await recontarFotos(c, a.negocio.id);
+      await auditar(c, a, "panel.foto_quitar", { media: mediaId }, null);
+    }
+    return r;
+  });
   if (!r.rowCount) return no("Esa foto no existe.", "That photo doesn’t exist.");
-  await recontarFotos(a.negocio.id);
-  await auditar(a, "panel.foto_quitar", { media: mediaId }, null);
   return { ok: true };
 }
 
@@ -114,16 +126,16 @@ export async function logoPoner(id: string, mediaId: string | null): Promise<Res
   const antes = (await db().query<{ logo_url: string | null }>(`select logo_url from businesses where id = $1`, [a.negocio.id])).rows[0]?.logo_url ?? null;
   const ok = await tx(async (c) => {
     await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $2 where owner_kind = 'logo' and owner_id = $1 and status = 'visible'`, [a.negocio.id, a.yo.id]);
-    if (mediaId === null) { await c.query(`update businesses set logo_url = null, updated_at = now() where id = $1`, [a.negocio.id]); return true; }
+    if (mediaId === null) { await c.query(`update businesses set logo_url = null, updated_at = now() where id = $1`, [a.negocio.id]); await auditar(c, a, "panel.logo_quitar", { logo: antes }, { media: mediaId }); return true; }
     const m = (await c.query<{ url: string }>(
       `update media set owner_kind = 'logo', owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and owner_id = $3 and status = 'visible' returning url`,
       [a.negocio.id, mediaId, a.yo.id])).rows[0];
     if (!m) return false;
     await c.query(`update businesses set logo_url = $2, updated_at = now() where id = $1`, [a.negocio.id, m.url]);
+    await auditar(c, a, "panel.logo", { logo: antes }, { media: mediaId });
     return true;
   });
   if (!ok) return no("Esa foto no existe.", "That photo doesn’t exist.");
-  await auditar(a, mediaId ? "panel.logo" : "panel.logo_quitar", { logo: antes }, { media: mediaId });
   return { ok: true };
 }
 
@@ -145,8 +157,8 @@ export async function horarioGuardar(id: string, dias: DiaPanel[]): Promise<Res>
         [a.negocio.id, f.weekday, f.open, JSON.stringify(f.ranges)]);
     }
     await c.query(`update businesses set updated_at = now() where id = $1`, [a.negocio.id]);
+    await auditar(c, a, "panel.horario", antes, filas);
   });
-  await auditar(a, "panel.horario", antes, filas);
   return { ok: true };
 }
 
@@ -158,9 +170,11 @@ export async function avisoNegocio(id: string, pref: string, on: boolean): Promi
   if (!a) return SIN_ACCESO;
   if (a.kind !== "owner" && !a.partes.includes("all")) return no("Solo el dueño cambia los avisos del negocio.", "Only the owner changes the business notifications.");
   if (!(GRUPOS_AVISO as readonly string[]).includes(String(pref))) return no("Ese aviso no existe.", "That notification does not exist.");
-  await db().query(`insert into business_notif_prefs (business_id, pref, off, updated_by) values ($1, $2, $3, $4) on conflict (business_id, pref) do update set off = excluded.off, updated_by = excluded.updated_by, updated_at = now()`,
-    [a.negocio.id, pref, !on, a.yo.id]);
-  await auditar(a, "panel.avisos", null, { aviso: pref, encendido: !!on });
+  await tx(async (c) => {
+    await c.query(`insert into business_notif_prefs (business_id, pref, off, updated_by) values ($1, $2, $3, $4) on conflict (business_id, pref) do update set off = excluded.off, updated_by = excluded.updated_by, updated_at = now()`,
+      [a.negocio.id, pref, !on, a.yo.id]);
+    await auditar(c, a, "panel.avisos", null, { aviso: pref, encendido: !!on });
+  });
   return { ok: true };
 }
 
@@ -177,13 +191,15 @@ export async function feriadoMarcar(id: string, key: string, dia: string, cierra
   if (!a) return SIN_ACCESO;
   const f = (await db().query<{ name: { es: string; en: string } }>(`select name from holiday_catalog where key = $1 and day = $2::date`, [String(key ?? ""), FECHA.test(String(dia)) ? dia : "1900-01-01"])).rows[0];
   if (!f) return no("Ese feriado no está en el calendario.", "That holiday is not on the calendar.");
-  if (cierra) {
-    await db().query(`insert into special_hours (business_id, kind, date_from, date_to, closed, label, holiday_key, created_by) values ($1, 'holiday', $2::date, $2::date, true, $3::jsonb, $4, $5)
-                      on conflict (business_id, holiday_key, date_from) where status = 'active' and holiday_key is not null do nothing`, [a.negocio.id, dia, JSON.stringify(f.name), key, a.yo.id]);
-  } else {
-    await db().query(`update special_hours set status = 'removed', removed_at = now() where business_id = $1 and holiday_key = $2 and date_from = $3::date and status = 'active'`, [a.negocio.id, key, dia]);
-  }
-  await auditar(a, "panel.feriado", null, { feriado: f.name.es, día: dia, cierra: !!cierra });
+  await tx(async (c) => {
+    if (cierra) {
+      await c.query(`insert into special_hours (business_id, kind, date_from, date_to, closed, label, holiday_key, created_by) values ($1, 'holiday', $2::date, $2::date, true, $3::jsonb, $4, $5)
+                     on conflict (business_id, holiday_key, date_from) where status = 'active' and holiday_key is not null do nothing`, [a.negocio.id, dia, JSON.stringify(f.name), key, a.yo.id]);
+    } else {
+      await c.query(`update special_hours set status = 'removed', removed_at = now() where business_id = $1 and holiday_key = $2 and date_from = $3::date and status = 'active'`, [a.negocio.id, key, dia]);
+    }
+    await auditar(c, a, "panel.feriado", null, { feriado: f.name.es, día: dia, cierra: !!cierra });
+  });
   return { ok: true };
 }
 export async function especialAgregar(id: string, x: { kind: string; desde: string; hasta: string; cerrado: boolean; a?: string; b?: string; nombre?: string }): Promise<Res> {
@@ -209,18 +225,23 @@ export async function especialAgregar(id: string, x: { kind: string; desde: stri
   if (kind === "season" && (await db().query(`select 1 from special_hours where business_id = $1 and status = 'active' and kind = 'season'`, [a.negocio.id])).rowCount)
     return no("Ya tienes una temporada: quítala para poner otra.", "You already have a season: remove it to set another.");
   const label = nombre ? { es: nombre, en: nombre } : null;
-  await db().query(`insert into special_hours (business_id, kind, date_from, date_to, closed, ranges, label, created_by) values ($1, $2, $3::date, $4::date, $5, $6::jsonb, $7::jsonb, $8)`,
-    [a.negocio.id, kind, d1, d2, cerrado, JSON.stringify(ranges), label ? JSON.stringify(label) : null, a.yo.id]);
-  await auditar(a, "panel.dia_especial", null, { tipo: kind === "vacation" ? "vacaciones" : kind === "season" ? "temporada" : "día propio", desde: d1, hasta: d2, cerrado, horas: ranges.map((r) => r.join("–")).join(", ") || null });
+  await tx(async (c) => {
+    await c.query(`insert into special_hours (business_id, kind, date_from, date_to, closed, ranges, label, created_by) values ($1, $2, $3::date, $4::date, $5, $6::jsonb, $7::jsonb, $8)`,
+      [a.negocio.id, kind, d1, d2, cerrado, JSON.stringify(ranges), label ? JSON.stringify(label) : null, a.yo.id]);
+    await auditar(c, a, "panel.dia_especial", null, { tipo: kind === "vacation" ? "vacaciones" : kind === "season" ? "temporada" : "día propio", desde: d1, hasta: d2, cerrado, horas: ranges.map((r) => r.join("–")).join(", ") || null });
+  });
   return { ok: true };
 }
 export async function especialQuitar(id: string, eid: string): Promise<Res> {
   const a = await entrar(id);
   if (!a) return SIN_ACCESO;
   if (!/^\d{1,18}$/.test(String(eid))) return no("Ese día ya no está.", "That day is no longer there.");
-  const r = (await db().query<{ desde: string; hasta: string }>(`update special_hours set status = 'removed', removed_at = now() where id = $1::bigint and business_id = $2 and status = 'active' returning date_from::text as desde, date_to::text as hasta`, [eid, a.negocio.id])).rows[0];
+  const r = await tx(async (c) => {
+    const r = (await c.query<{ desde: string; hasta: string }>(`update special_hours set status = 'removed', removed_at = now() where id = $1::bigint and business_id = $2 and status = 'active' returning date_from::text as desde, date_to::text as hasta`, [eid, a.negocio.id])).rows[0];
+    if (r) await auditar(c, a, "panel.dia_especial_quitar", { desde: r.desde, hasta: r.hasta }, null);
+    return r;
+  });
   if (!r) return no("Ese día ya no está.", "That day is no longer there.");
-  await auditar(a, "panel.dia_especial_quitar", { desde: r.desde, hasta: r.hasta }, null);
   return { ok: true };
 }
 
@@ -238,8 +259,10 @@ export async function aboutGuardar(id: string, x: { es: string; en: string; amen
   const antes = (await db().query(`select about, amenities from businesses where id = $1`, [a.negocio.id])).rows[0];
   const about = es || en ? { es, en } : null;
   // Si To'Latino lo había editado, gana lo último: lo del dueño (se quita la marca «EDITADO POR TO'LATINO»).
-  await db().query(`update businesses set about = $2::jsonb, amenities = $3, admin_edits = admin_edits - 'about', updated_at = now() where id = $1`, [a.negocio.id, about ? JSON.stringify(about) : null, amen]);
-  await auditar(a, "panel.about", antes, { about, amenities: amen });
+  await tx(async (c) => {
+    await c.query(`update businesses set about = $2::jsonb, amenities = $3, admin_edits = admin_edits - 'about', updated_at = now() where id = $1`, [a.negocio.id, about ? JSON.stringify(about) : null, amen]);
+    await auditar(c, a, "panel.about", antes, { about, amenities: amen });
+  });
   return { ok: true };
 }
 
@@ -260,12 +283,12 @@ export async function selloPedir(id: string): Promise<Res> {
       const v = (await c.query<{ id: string }>(`insert into verification_requests (business_id, status) values ($1, 'review') returning id::text`, [a.negocio.id])).rows[0]!;
       await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id) values ('sello', 'verification_request', $1, $2, $3)`, [v.id, a.negocio.id, a.negocio.city_id]);
     }
+    await auditar(c, a, "panel.sello_pedir", null, null);
     return null;
   });
   if (r === "ya") return no("Ya tienes el sello.", "You already have the badge.");
   if (r === "revision") return no("Tu solicitud ya está en revisión.", "Your request is already in review.");
   if (r === "muchas") return no("Ya pediste el sello varias veces hoy. Prueba mañana.", "You requested the badge several times today. Try tomorrow.");
-  await auditar(a, "panel.sello_pedir", null, null);
   return { ok: true };
 }
 export async function selloCancelar(id: string): Promise<Res> {
@@ -274,8 +297,8 @@ export async function selloCancelar(id: string): Promise<Res> {
   await tx(async (c) => {
     const v = (await c.query<{ id: string }>(`update verification_requests set status = 'canceled' where business_id = $1 and status in ('review', 'info') returning id::text`, [a.negocio.id])).rows;
     for (const x of v) await c.query(`update queue_items set status = 'decided', decision = 'canceled', reason = 'El dueño canceló la solicitud', decided_at = now() where queue = 'sello' and subject_id = $1 and status = 'open'`, [x.id]);
+    await auditar(c, a, "panel.sello_cancelar", null, null);
   });
-  await auditar(a, "panel.sello_cancelar", null, null);
   return { ok: true };
 }
 
@@ -302,12 +325,12 @@ export async function licenciaAgregar(id: string, kind: string, miembro?: string
        on conflict do nothing returning id::text`, [a.negocio.id, a.negocio.city_id, kind, a.negocio.category_id, mid, num])).rows[0];
     if (!ins) return "ya";
     await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id) values ('lic', 'license', $1, $2, $3)`, [ins.id, a.negocio.id, a.negocio.city_id]);
+    await auditar(c, a, "panel.licencia_agregar", null, mid ? { kind, persona: mid } : { kind });
     return null;
   });
   if (r === "ya") return mid ? no("Esa persona ya tiene esa licencia.", "That person already has that license.") : no("Ya tienes esa licencia.", "You already have that license.");
   if (r === "persona") return no("Esa persona ya no está en tu equipo.", "That person is no longer on your team.");
   if (r === "muchas") return no("Agregaste muchas licencias hoy. Prueba mañana.", "You added many licenses today. Try tomorrow.");
-  await auditar(a, "panel.licencia_agregar", null, mid ? { kind, persona: mid } : { kind });
   return { ok: true };
 }
 export async function licenciaNumero(id: string, licId: string, numero: string): Promise<Res> {
@@ -319,16 +342,16 @@ export async function licenciaNumero(id: string, licId: string, numero: string):
   const r = await tx(async (c) => {
     const l = (await c.query<{ id: string; number: string | null }>(`select id::text, number from licenses where id = $1::bigint and business_id = $2 and status <> 'withdrawn' for update`, [licId, a.negocio.id])).rows[0];
     if (!l) return "no";
-    if (l.number === n) return null;
+    if (l.number === n) { await auditar(c, a, "panel.licencia_numero", null, { licencia: licId }); return null; }
     // Un número nuevo se vuelve a revisar: sale «en revisión» hasta que el equipo lo confirme en el registro.
     await c.query(`update licenses set number = $2, status = 'review', updated_at = now() where id = $1::bigint`, [licId, n]);
     await c.query(`select licencias_refrescar($1)`, [a.negocio.id]); await (await import("@/lib/ninos")).recalcularFiltrosNinos(c, a.negocio.id); // Niños: la tarjeta sigue a la licencia del DHS (4eb)
     await recalcularFiltrosSP(c, a.negocio.id); // «El médico habla español» sale de las licencias verificadas del equipo
     await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id) values ('lic', 'license', $1, $2, $3) on conflict do nothing`, [l.id, a.negocio.id, a.negocio.city_id]);
+    await auditar(c, a, "panel.licencia_numero", null, { licencia: licId });
     return null;
   });
   if (r) return no("Esa licencia no existe.", "That license doesn’t exist.");
-  await auditar(a, "panel.licencia_numero", null, { licencia: licId });
   return { ok: true };
 }
 export async function licenciaQuitar(id: string, licId: string): Promise<Res> {
@@ -345,11 +368,11 @@ export async function licenciaQuitar(id: string, licId: string): Promise<Res> {
     await c.query(`update queue_items set status = 'decided', decision = 'withdrawn', reason = 'El dueño la quitó', decided_at = now() where queue = 'lic' and subject_id = $1 and status = 'open'`, [String(licId)]);
     await c.query(`select licencias_refrescar($1)`, [a.negocio.id]); await (await import("@/lib/ninos")).recalcularFiltrosNinos(c, a.negocio.id); // Niños: la tarjeta sigue a la licencia del DHS (4eb)
     await recalcularFiltrosSP(c, a.negocio.id); // «El médico habla español» sale de las licencias verificadas del equipo
+    await auditar(c, a, "panel.licencia_quitar", { licencia: licId }, null);
     return null;
   });
   if (r === "una") return no("Tu página necesita al menos una licencia aquí.", "Your page needs at least one license here.");
   if (r) return no("Esa licencia no existe.", "That license doesn’t exist.");
-  await auditar(a, "panel.licencia_quitar", { licencia: licId }, null);
   return { ok: true };
 }
 export async function noHago(id: string, i: number): Promise<Res> {
@@ -360,7 +383,9 @@ export async function noHago(id: string, i: number): Promise<Res> {
   const legal = (await db().query(`select 1 from licenses where business_id = $1 and status <> 'withdrawn' and kind = any($2::text[]) limit 1`, [a.negocio.id, LIC_LEGAL])).rowCount;
   if (!legal) return no("Esto es para negocios con licencia legal.", "This is for businesses with a legal license.");
   const antes = (await db().query(`select category_attrs->'cant' as cant from businesses where id = $1`, [a.negocio.id])).rows[0]?.cant ?? null;
-  await db().query(`update businesses set category_attrs = jsonb_set(category_attrs, '{cant}', $2::jsonb), updated_at = now() where id = $1`, [a.negocio.id, JSON.stringify(x)]);
-  await auditar(a, "panel.no_hace", antes, x);
+  await tx(async (c) => {
+    await c.query(`update businesses set category_attrs = jsonb_set(category_attrs, '{cant}', $2::jsonb), updated_at = now() where id = $1`, [a.negocio.id, JSON.stringify(x)]);
+    await auditar(c, a, "panel.no_hace", antes, x);
+  });
   return { ok: true };
 }

@@ -3,7 +3,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 import { cfgSql, valores } from "./config";
 import { normalizarTelefono } from "./cuenta";
-import { db, tx } from "./db";
+import { db, tx, type AlGuardar } from "./db";
 import { bi, diaCorto, dinero, hora, type Bi } from "./evt-comun";
 import { pasarela } from "./pagos/pasarela";
 import { pasesPronto } from "./pases/pronto";
@@ -446,7 +446,7 @@ export async function cancelarBoletos(userId: string, numero: string, codesRaw: 
 }
 
 /* ── «Devolver» desde el panel (el organizador): total o por boleto, 100 %; nunca un boleto usado. ── */
-export async function devolverDesdePanel(negocio: string, actorId: string, numero: string, codesRaw: unknown, clave: string): Promise<Res<{ monto: number }>> {
+export async function devolverDesdePanel(negocio: string, actorId: string, numero: string, codesRaw: unknown, clave: string, alGuardar?: AlGuardar<{ monto: number }>): Promise<Res<{ monto: number }>> {
   if (!NUM_B.test(String(numero))) return falla("Esa orden no existe.", "That order does not exist.");
   if (!UUID.test(String(clave))) return falla("Prueba de nuevo.", "Try again.");
   const codes = [...new Set((Array.isArray(codesRaw) ? codesRaw : []).map((x) => String(x).toUpperCase()).filter((x) => CODIGO_BOL.test(x)))].slice(0, 40);
@@ -472,6 +472,8 @@ export async function devolverDesdePanel(negocio: string, actorId: string, numer
       await c.query(`update ticket_transfers set status = 'cancelled', ended_at = now() where ticket_id = any($1::bigint[]) and status = 'pending'`, [sel.map((b) => b.id)]);
       const k = await calcular(c, o.id, o.fee, sel, "business");
       const rf = await anotarDevolucion(c, { op: o.id, pid: o.pid, city: o.city, k, por: "business", actor: actorId, idem, motivo: "Devuelto por el organizador", logKind: "devuelto", byKind: "business" });
+      // La devolución queda anotada aquí (Stripe la ejecuta después): la auditoría de quien devolvió entra con ella.
+      await alGuardar?.(c, { monto: k.total });
       return { rf, fid: o.fid, title: o.title, n: sel.length, total: k.total, uid: o.uid, org: o.org, holders: [...new Set(sel.map((b) => b.holder).filter((h): h is string => !!h && h !== o.uid))] };
     });
   } catch (e) {
@@ -490,7 +492,7 @@ export async function devolverDesdePanel(negocio: string, actorId: string, numer
 }
 
 /* ── Cortesías (Panel › Dar cortesía, evCompDet): nombre, teléfono opcional, cuántas (1–10); el tipo de boleto del que salen. ── */
-export async function darCortesia(negocio: string, actorId: string, eventoId: string, x: { nombre?: unknown; tel?: unknown; q?: unknown; tipo?: unknown }): Promise<Res<{ numero: string; sms: boolean }>> {
+export async function darCortesia(negocio: string, actorId: string, eventoId: string, x: { nombre?: unknown; tel?: unknown; q?: unknown; tipo?: unknown }, alGuardar?: AlGuardar<{ numero: string; sms: boolean }>): Promise<Res<{ numero: string; sms: boolean }>> {
   if (!ID.test(String(eventoId))) return falla("Ese evento no existe.", "That event does not exist.");
   const nombre = limpiarNombre(x?.nombre);
   if (nombre.length < 2) return falla("Escribe a nombre de quién va.", "Write who it is for.");
@@ -541,6 +543,7 @@ export async function darCortesia(negocio: string, actorId: string, eventoId: st
            select 'comp', $1::bigint, $2::bigint, $3::bigint, $4, $5, $6, $7, $8, $9, d.ends_at from event_dates d where d.id = $3::bigint returning id::text`,
           [T[0]!.id, op, d.fid, d.city, actorId, enc, huella(tel), tel.slice(-2), sha(token)])).rows[0]!.id;
       }
+      await alGuardar?.(c, { numero, sms: !!tel });
       return { numero, city: d.city, title: d.title, dia: d.dia, h0: d.h0, org: d.org, xid };
     });
   } catch (e) { return atrapa(e); }
@@ -553,7 +556,7 @@ export async function darCortesia(negocio: string, actorId: string, eventoId: st
 }
 
 /* Quitar una cortesía (antes de usarla): sus boletos se anulan y el lugar vuelve (la base lo suelta). */
-export async function quitarCortesia(negocio: string, actorId: string, numero: string): Promise<Res> {
+export async function quitarCortesia(negocio: string, actorId: string, numero: string, alGuardar?: AlGuardar): Promise<Res> {
   if (!NUM_B.test(String(numero))) return falla("Esa cortesía no existe.", "That comp does not exist.");
   try {
     await tx(async (c) => {
@@ -563,6 +566,7 @@ export async function quitarCortesia(negocio: string, actorId: string, numero: s
       if (!L.length) throw no("Esa cortesía ya se usó o ya se quitó.", "That comp was already used or removed.");
       await c.query(`update ticket_transfers set status = 'cancelled', ended_at = now() where operation_id = $1::bigint and status = 'pending'`, [o.id]);
       await c.query(`insert into ticket_log (ticket_id, operation_id, city_id, kind, by_user, by_kind, reason) select id, operation_id, city_id, 'anulado', $2, 'business', 'Cortesía quitada' from tickets where id = any($1::bigint[])`, [L.map((x) => x.id), actorId]);
+      await alGuardar?.(c);
     });
     pasesPronto();
     return { ok: true };

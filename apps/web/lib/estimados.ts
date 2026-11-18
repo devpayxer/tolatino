@@ -1,6 +1,6 @@
 import "server-only";
 import type { PoolClient } from "pg";
-import { db, tx } from "./db";
+import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { comision } from "./cobros";
 import { pasarela } from "./pagos/pasarela";
 import { bancoPide } from "./pagos/verificacion";
@@ -193,12 +193,12 @@ async function avisarN(numero: string, tpl: string, v: Record<string, string>) {
 }
 
 /* ── El negocio manda el estimado (o una versión nueva mientras el cliente no responde) ── */
-export async function mandarEstimado(negocio: string, numero: string, actorId: string, L: unknown): Promise<Res> {
+export async function mandarEstimado(negocio: string, numero: string, actorId: string, L: unknown, alGuardar?: AlGuardar): Promise<Res> {
   if (!NUM.test(numero)) return no("Esa cita no existe.", "That booking does not exist.");
   const lin = limpiar(L, false);
   if (!Array.isArray(lin)) return { ok: false, msg: lin };
   let tpl = "";
-  const r = await tx(async (c): Promise<Res> => {
+  const r = await txAuditada(alGuardar, async (c): Promise<Res> => {
     const o = await abrir(c, negocio, numero, null);
     if (!o) return no("Esa cita no existe.", "That booking does not exist.");
     if (o.status !== "confirmed" || !["in", "est"].includes(o.detail ?? "")) return YA;
@@ -260,12 +260,12 @@ export async function decidirEstimado(userId: string, numero: string, ids: unkno
 }
 
 /* ── «Algo más»: el negocio para y pregunta (foto + precio). Una a la vez. ── */
-export async function pedirExtra(negocio: string, numero: string, actorId: string, linea: unknown): Promise<Res> {
+export async function pedirExtra(negocio: string, numero: string, actorId: string, linea: unknown, alGuardar?: AlGuardar): Promise<Res> {
   if (!NUM.test(numero)) return no("Esa cita no existe.", "That booking does not exist.");
   const lin = limpiar([linea], true);
   if (!Array.isArray(lin)) return { ok: false, msg: lin };
   let que = "";
-  const r = await tx(async (c): Promise<Res> => {
+  const r = await txAuditada(alGuardar, async (c): Promise<Res> => {
     const o = await abrir(c, negocio, numero, null);
     if (!o) return no("Esa cita no existe.", "That booking does not exist.");
     if (o.status !== "confirmed" || o.detail !== "work") return no("«Algo más» se pide mientras trabajas.", "“Something else” is asked while working.");
@@ -320,11 +320,11 @@ export async function decidirExtra(userId: string, numero: string, si: boolean, 
 }
 
 /* ── Lo final: una línea aprobada puede bajar (nunca subir) antes de entregar ── */
-export async function ajustarFinal(negocio: string, numero: string, actorId: string, finales: unknown): Promise<Res> {
+export async function ajustarFinal(negocio: string, numero: string, actorId: string, finales: unknown, alGuardar?: AlGuardar): Promise<Res> {
   if (!NUM.test(numero) || !finales || typeof finales !== "object") return no("Esa cita no existe.", "That booking does not exist.");
   const F = Object.entries(finales as Record<string, unknown>).filter(([k]) => /^\d{1,18}$/.test(k)).map(([k, v]) => [k, Math.round(Number(v))] as const);
   if (!F.length || F.some(([, v]) => !(v >= 0))) return no("Revisa los montos.", "Check the amounts.");
-  return tx(async (c): Promise<Res> => {
+  return txAuditada(alGuardar, async (c): Promise<Res> => {
     const o = await abrir(c, negocio, numero, null);
     if (!o) return no("Esa cita no existe.", "That booking does not exist.");
     if (o.status !== "confirmed" || !["work", "ready"].includes(o.detail ?? "")) return YA;

@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { valor } from "./config";
-import { db, tx } from "./db";
+import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { detPanel, KIND_REPARTO, listoParaRepartoSql, NUM_REPARTO } from "./reparto-comun";
 import { empezar as empezarRuta, type RutaToken } from "./ruta";
 
@@ -22,10 +22,10 @@ const ID = /^\d{1,18}$/;
 
 /* ── Panel: ofrecer ── */
 /* 9n-4 · actorId null = la asignación automática (lib/repartidor-auto.ts): la oferta queda sin created_by y el evento es del sistema. */
-export async function ofrecer(negocio: string, numero: string, actorId: string | null, driverId: string | null): Promise<ResO & { avisos?: { uid: string; vars: Record<string, string> }[] }> {
+export async function ofrecer(negocio: string, numero: string, actorId: string | null, driverId: string | null, alGuardar?: AlGuardar): Promise<ResO & { avisos?: { uid: string; vars: Record<string, string> }[] }> {
   if (!NUM_REPARTO.test(numero) || (driverId !== null && !ID.test(driverId))) return no("Ese pedido no existe.", "That order does not exist.");
   const seg = await valor("oferta_seg");
-  return tx(async (c) => {
+  return txAuditada(alGuardar, async (c) => {
     const o = (await c.query<{ id: string; status: string; mode: string; stage: string | null; driver: string | null; who: string; city: string; calle: string | null; negocio: string; listo: boolean }>(
       `select o.id::text, o.status, coalesce(o.mode, 'pickup') as mode, o.stage, o.driver_id::text as driver, coalesce(d.who, 'team') as who, o.city_id as city,
               o.details->'to'->>'street' as calle, b.name as negocio, ${listoParaRepartoSql("o")} as listo
@@ -57,9 +57,11 @@ export async function ofertaDe(negocio: string, numero: string): Promise<{ id: s
        from delivery_offers f join operations o on o.id = f.operation_id left join delivery_drivers d on d.id = f.driver_id
       where o.business_id = $1 and o.number = $2 and f.status = 'open' and f.expires_at > now()`, [negocio, numero])).rows[0] ?? null;
 }
-export async function cancelarOferta(negocio: string, numero: string): Promise<ResO> {
-  const r = await db().query(`update delivery_offers f set status = 'cancelled' from operations o where o.id = f.operation_id and o.business_id = $1 and o.number = $2 and f.status = 'open'`, [negocio, String(numero ?? "")]);
-  return r.rowCount ? { ok: true } : no("Esa oferta ya no está abierta.", "That offer is no longer open.");
+export async function cancelarOferta(negocio: string, numero: string, alGuardar?: AlGuardar): Promise<ResO> {
+  return txAuditada(alGuardar, async (c): Promise<ResO> => {
+    const r = await c.query(`update delivery_offers f set status = 'cancelled' from operations o where o.id = f.operation_id and o.business_id = $1 and o.number = $2 and f.status = 'open'`, [negocio, String(numero ?? "")]);
+    return r.rowCount ? { ok: true } : no("Esa oferta ya no está abierta.", "That offer is no longer open.");
+  });
 }
 
 /* ── El repartidor: sus ofertas abiertas ── */

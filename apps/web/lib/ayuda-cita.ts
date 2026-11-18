@@ -2,7 +2,7 @@ import "server-only";
 import { cfgSql, valor } from "./config";
 import { horasTxt } from "./plazo-txt";
 import { COLA_AYUDA_SQL } from "./colas";
-import { db, tx } from "./db";
+import { db, tx, type AlGuardar } from "./db";
 import { devolverOperacion } from "./cobros";
 import { escalarVencidas } from "./ayuda";
 import { esEstafa, pausarPorAyuda } from "./ayuda-estafa";
@@ -310,7 +310,7 @@ export async function ayudaCitaPanel(negocio: string, numero: string): Promise<A
 /* Responder: ok (acepta lo que pide; si pide que le devuelvan y pagó el depósito en la app, se devuelve ya),
    alt (propone un monto; se devuelve cuando la persona acepta) o no (no puede; la persona puede pedir revisión).
    Devolver dinero pide el permiso de Cobros (`pagar`). */
-export async function responderAyudaCita(negocio: string, numero: string, x: { decision: string; texto: string; monto?: string | null; clave: string }, actorId: string, pagar: boolean): Promise<ResC> {
+export async function responderAyudaCita(negocio: string, numero: string, x: { decision: string; texto: string; monto?: string | null; clave: string }, actorId: string, pagar: boolean, alGuardar?: AlGuardar): Promise<ResC> {
   if (!NUM.test(numero)) return no("Esa cita no existe.", "That booking does not exist.");
   const dec = String(x?.decision ?? "");
   if (!["ok", "alt", "no"].includes(dec)) return no("Elige tu respuesta.", "Pick your answer.");
@@ -341,17 +341,25 @@ export async function responderAyudaCita(negocio: string, numero: string, x: { d
   } else if (dec === "ok" && h.wants === "devolver") offer = pedido ?? h.amount ?? null;
   // Primero se marca respondida (nadie más responde a la vez); luego, si toca, la devolución (idempotente por clave).
   const fuera = sinDinero && dec === "ok" && h.wants === "devolver" ? "pending" : null;
-  const u = await db().query(
-    `update help_requests set status = 'answered', decision = $3, offer_cents = $4, reply = $5, reply_at = now(), reply_by = $6, outside_refund = $7, updated_at = now()
-      where id = $1::bigint and business_id = $2 and status = 'open'`, [h.id, negocio, dec, offer, t, actorId, fuera]);
+  const devuelve = devolver > 0 && !!p;
+  const u = await tx(async (c) => {
+    const u = await c.query(
+      `update help_requests set status = 'answered', decision = $3, offer_cents = $4, reply = $5, reply_at = now(), reply_by = $6, outside_refund = $7, updated_at = now()
+        where id = $1::bigint and business_id = $2 and status = 'open'`, [h.id, negocio, dec, offer, t, actorId, fuera]);
+    if (u.rowCount && !devuelve) await alGuardar?.(c);
+    return u;
+  });
   if (!u.rowCount) return no("Esta solicitud ya cambió (pasó a To'Latino o ya respondiste).", "This request already changed (it went to To'Latino or you already replied).");
-  if (devolver > 0 && p) {
+  if (devuelve) {
     const d = await devolverOperacion({ opId: h.op, centavos: devolver, kinds: KINDS_AYUDA, por: "business", actorId, motivo: `Ayuda con la cita: ${t.slice(0, 200)}`, idem: `ayb-${x.clave}` });
     if (!d.ok) {
       await db().query(`update help_requests set status = 'open', decision = null, offer_cents = null, reply = null, reply_at = null, reply_by = null, updated_at = now() where id = $1::bigint and status = 'answered'`, [h.id]);
       return { ok: false, msg: d.msg };
     }
-    await db().query(`update help_requests set refunded_cents = refunded_cents + $2 where id = $1::bigint`, [h.id, devolver]);
+    await tx(async (c) => {
+      await c.query(`update help_requests set refunded_cents = refunded_cents + $2 where id = $1::bigint`, [h.id, devolver]);
+      await alGuardar?.(c);
+    });
   }
   await avisarAyudaCita(numero, "help_reply");
   if (fuera) return { ok: true, mensaje: { es: "Respondida. Devuélvele lo cobrado directamente (no pasó por la app); cuando lo tenga, lo confirma.", en: "Replied. Refund the charge directly (it did not go through the app); once they have it, they confirm." } };

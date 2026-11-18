@@ -1,6 +1,6 @@
 import "server-only";
 import { cfgSql } from "./config";
-import { db } from "./db";
+import { db, tx } from "./db";
 import { borrarObjeto, mediosListos } from "./medios";
 
 /* 9n · Lo que corre en el barrido para la entrega y las colas.
@@ -23,11 +23,14 @@ export async function purgarFotosEntrega(): Promise<number> {
   return n;
 }
 export async function soltarTomados(): Promise<number> {
-  const r = await db().query<{ id: string; quien: string; city: string | null; queue: string }>(
-    `update queue_items q set assigned_to = null, assigned_at = null from (select id, assigned_to from queue_items where status = 'open' and assigned_to is not null and assigned_at < now() - make_interval(mins => ${cfgSql("cola_tomado_min")}) for update skip locked) v
-      where q.id = v.id returning q.id::text, v.assigned_to::text as quien, q.city_id as city, q.queue`);
-  for (const x of r.rows)
-    await db().query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after, reason) values ('system', null, 'cola.tomado_vencio', 'queue_item', $1, $2, $3::jsonb, null, $4)`,
-      [x.id, x.city, JSON.stringify({ tomado: x.quien, cola: x.queue }), "Nadie lo decidió en el tiempo de Configuración › Colas"]);
-  return r.rowCount ?? 0;
+  // 9n · Soltar y su auditoría, en la misma transacción (guardián auditoriaEnLaTransaccion).
+  return tx(async (c) => {
+    const r = await c.query<{ id: string; quien: string; city: string | null; queue: string }>(
+      `update queue_items q set assigned_to = null, assigned_at = null from (select id, assigned_to from queue_items where status = 'open' and assigned_to is not null and assigned_at < now() - make_interval(mins => ${cfgSql("cola_tomado_min")}) for update skip locked) v
+        where q.id = v.id returning q.id::text, v.assigned_to::text as quien, q.city_id as city, q.queue`);
+    for (const x of r.rows)
+      await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after, reason) values ('system', null, 'cola.tomado_vencio', 'queue_item', $1, $2, $3::jsonb, null, $4)`,
+        [x.id, x.city, JSON.stringify({ tomado: x.quien, cola: x.queue }), "Nadie lo decidió en el tiempo de Configuración › Colas"]);
+    return r.rowCount ?? 0;
+  });
 }

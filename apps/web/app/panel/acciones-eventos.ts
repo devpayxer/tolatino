@@ -1,6 +1,7 @@
 "use server";
 import { mismoOrigen } from "@/lib/cuenta";
-import { db } from "@/lib/db";
+import type { PoolClient } from "pg";
+import { db, tx } from "@/lib/db";
 import { enviarEvento, guardarEvento, repetirEvento, type Envio } from "@/lib/evt";
 import { accesoPanel, type Acceso } from "@/lib/panel";
 import { SinTraductor, traducirTexto } from "@/lib/traductor";
@@ -19,8 +20,9 @@ async function entrar(id: unknown): Promise<Acceso | null> {
 async function esPro(negocio: string) {
   return (await db().query<{ pro: boolean }>(`select coalesce(s.plan, 'free') = 'pro' as pro from businesses b left join business_stats_cache s on s.business_id = b.id where b.id = $1`, [negocio])).rows[0]?.pro ?? false;
 }
-async function auditar(a: Acceso, action: string, after: unknown) {
-  await db().query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, $2, 'business', $3, $4, null, $5::jsonb)`,
+/* 9n · La auditoría va con el cliente de la transacción del cambio: entran juntos o ninguno (guardián auditoriaEnLaTransaccion). */
+async function auditar(c: PoolClient, a: Acceso, action: string, after: unknown) {
+  await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, $2, 'business', $3, $4, null, $5::jsonb)`,
     [a.yo.id, action, a.negocio.id, a.negocio.city_id, JSON.stringify(after ?? null)]);
 }
 
@@ -28,9 +30,9 @@ export async function evtGuardar(negocio: string, id: string | null, d: unknown,
   const a = await entrar(negocio);
   if (!a) return SIN_ACCESO;
   if (!(await esPro(a.negocio.id))) return no("Eventos es parte de Pro. Empieza la prueba de 30 días en Cobros y plan.", "Events is part of Pro. Start the 30-day trial in Payouts and plan.");
-  const r = await guardarEvento({ userId: a.yo.id, negocio: a.negocio.id }, id === null ? null : String(id), d, { enviar: !!enviar, origen: "panel" });
+  const r = await guardarEvento({ userId: a.yo.id, negocio: a.negocio.id }, id === null ? null : String(id), d, { enviar: !!enviar, origen: "panel" },
+    (c, g) => auditar(c, a, id ? "evento.editar" : "evento.crear", { evento: g.id, envio: g.envio }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, id ? "evento.editar" : "evento.crear", { evento: r.id, envio: r.envio });
   return { ok: true, id: r.id, envio: r.envio };
 }
 
@@ -38,9 +40,8 @@ export async function evtEnviar(negocio: string, id: string): Promise<Res & { en
   const a = await entrar(negocio);
   if (!a) return SIN_ACCESO;
   if (!(await esPro(a.negocio.id))) return no("Eventos es parte de Pro.", "Events is part of Pro.");
-  const r = await enviarEvento({ userId: a.yo.id, negocio: a.negocio.id }, String(id));
+  const r = await enviarEvento({ userId: a.yo.id, negocio: a.negocio.id }, String(id), (c, g) => auditar(c, a, "evento.enviar", { evento: String(id), envio: g.envio }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "evento.enviar", { evento: String(id), envio: r.envio });
   return { ok: true, envio: r.envio };
 }
 
@@ -48,9 +49,8 @@ export async function evtRepetir(negocio: string, id: string): Promise<Res & { i
   const a = await entrar(negocio);
   if (!a) return SIN_ACCESO;
   if (!(await esPro(a.negocio.id))) return no("Eventos es parte de Pro.", "Events is part of Pro.");
-  const r = await repetirEvento({ userId: a.yo.id, negocio: a.negocio.id }, String(id));
+  const r = await repetirEvento({ userId: a.yo.id, negocio: a.negocio.id }, String(id), (c, g) => auditar(c, a, "evento.repetir", { de: String(id), evento: g.id }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "evento.repetir", { de: String(id), evento: r.id });
   return { ok: true, id: r.id };
 }
 
@@ -82,10 +82,12 @@ export async function evtPasadosMas(negocio: string, antes: string): Promise<Res
 export async function evtModulo(negocio: string, on: boolean): Promise<Res> {
   const a = await entrar(negocio);
   if (!a) return SIN_ACCESO;
-  const r = await db().query(
-    `update businesses set modules_on = case when $2 then array(select distinct x from unnest(modules_on || array['eventos']) x) else array_remove(modules_on, 'eventos') end, updated_at = now()
-      where id = $1 and (('eventos' = any(modules_on)) <> $2)`, [a.negocio.id, !!on]);
-  if (r.rowCount) await auditar(a, on ? "eventos.encender" : "eventos.apagar", { modulo: "Eventos", estado: on ? "Encendido" : "Apagado" });
+  await tx(async (c) => {
+    const r = await c.query(
+      `update businesses set modules_on = case when $2 then array(select distinct x from unnest(modules_on || array['eventos']) x) else array_remove(modules_on, 'eventos') end, updated_at = now()
+        where id = $1 and (('eventos' = any(modules_on)) <> $2)`, [a.negocio.id, !!on]);
+    if (r.rowCount) await auditar(c, a, on ? "eventos.encender" : "eventos.apagar", { modulo: "Eventos", estado: on ? "Encendido" : "Apagado" });
+  });
   return { ok: true };
 }
 
@@ -95,17 +97,16 @@ export async function evtCodigoCrear(negocio: string, eventoId: string, x: { cod
   const a = await entrar(negocio);
   if (!a) return SIN_ACCESO;
   if (!(await esPro(a.negocio.id))) return no("Eventos es parte de Pro.", "Events is part of Pro.");
-  const r = await (await import("@/lib/codigos-evt")).crearCodigo(a.negocio.id, a.yo.id, String(eventoId), x ?? {});
+  const r = await (await import("@/lib/codigos-evt")).crearCodigo(a.negocio.id, a.yo.id, String(eventoId), x ?? {},
+    (c) => auditar(c, a, "eventos.codigo.crear", { codigo: String(x?.code ?? "").toUpperCase().slice(0, 16), usos: Number(x?.usos) || 0 }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "eventos.codigo.crear", { codigo: String(x?.code ?? "").toUpperCase().slice(0, 16), usos: Number(x?.usos) || 0 });
   return { ok: true };
 }
 export async function evtCodigoCambiar(negocio: string, id: string, on: boolean): Promise<Res> {
   const a = await entrar(negocio);
   if (!a) return SIN_ACCESO;
-  const r = await (await import("@/lib/codigos-evt")).cambiarCodigo(a.negocio.id, String(id), !!on);
+  const r = await (await import("@/lib/codigos-evt")).cambiarCodigo(a.negocio.id, String(id), !!on, (c) => auditar(c, a, on ? "eventos.codigo.encender" : "eventos.codigo.apagar", { codigo: String(id), estado: on ? "Encendido" : "Apagado" }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, on ? "eventos.codigo.encender" : "eventos.codigo.apagar", { codigo: String(id), estado: on ? "Encendido" : "Apagado" });
   return { ok: true };
 }
 /* «Reenviar boletos» a quien compró (un aviso en su cuenta; el negocio nunca ve su teléfono ni su correo). */
@@ -123,17 +124,16 @@ export async function evtCortesia(negocio: string, eventoId: string, x: { nombre
   const a = await entrar(negocio);
   if (!a) return SIN_ACCESO;
   if (!(await esPro(a.negocio.id))) return no("Eventos es parte de Pro.", "Events is part of Pro.");
-  const r = await (await import("@/lib/boletos-despues")).darCortesia(a.negocio.id, a.yo.id, String(eventoId), x ?? {});
+  const r = await (await import("@/lib/boletos-despues")).darCortesia(a.negocio.id, a.yo.id, String(eventoId), x ?? {},
+    (c, g) => auditar(c, a, "eventos.cortesia.dar", { evento: String(eventoId), orden: g.numero, entradas: Math.floor(Number(x?.q)) || 0, sms: g.sms ? "Sí" : "No" }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "eventos.cortesia.dar", { evento: String(eventoId), orden: r.numero, entradas: Math.floor(Number(x?.q)) || 0, sms: r.sms ? "Sí" : "No" });
   return { ok: true, numero: r.numero };
 }
 export async function evtQuitarCortesia(negocio: string, numero: string): Promise<Res> {
   const a = await entrar(negocio);
   if (!a) return SIN_ACCESO;
-  const r = await (await import("@/lib/boletos-despues")).quitarCortesia(a.negocio.id, a.yo.id, String(numero));
+  const r = await (await import("@/lib/boletos-despues")).quitarCortesia(a.negocio.id, a.yo.id, String(numero), (c) => auditar(c, a, "eventos.cortesia.quitar", { orden: String(numero) }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "eventos.cortesia.quitar", { orden: String(numero) });
   return { ok: true };
 }
 export async function evtBoletosOrden(negocio: string, numero: string) {
@@ -146,17 +146,16 @@ export async function evtDevolver(negocio: string, numero: string, codes: string
   if (!a) return SIN_ACCESO;
   // Devolver dinero pide la parte de Cobros (el dueño siempre), como devolver un pedido.
   if (!(await accesoPanel(a.negocio.id, "pay"))) return no("Solo quien maneja Cobros puede devolver dinero.", "Only someone who manages Payouts can refund money.");
-  const r = await (await import("@/lib/boletos-despues")).devolverDesdePanel(a.negocio.id, a.yo.id, String(numero), Array.isArray(codes) ? codes : [], String(clave));
+  const r = await (await import("@/lib/boletos-despues")).devolverDesdePanel(a.negocio.id, a.yo.id, String(numero), Array.isArray(codes) ? codes : [], String(clave),
+    (c, g) => auditar(c, a, "eventos.devolver", { orden: String(numero), boletos: (Array.isArray(codes) ? codes : []).length, monto: (g.monto / 100).toFixed(2) }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "eventos.devolver", { orden: String(numero), boletos: (Array.isArray(codes) ? codes : []).length, monto: (r.monto / 100).toFixed(2) });
   return { ok: true, monto: r.monto };
 }
 export async function evtAvisarLista(negocio: string, eventoId: string): Promise<Res & { n?: number }> {
   const a = await entrar(negocio);
   if (!a) return SIN_ACCESO;
-  const r = await (await import("@/lib/espera")).avisarLista(a.negocio.id, String(eventoId));
+  const r = await (await import("@/lib/espera")).avisarLista(a.negocio.id, String(eventoId), (c, n) => auditar(c, a, "eventos.espera.avisar", { evento: String(eventoId), ofertas: n }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "eventos.espera.avisar", { evento: String(eventoId), ofertas: r.n });
   return { ok: true, n: r.n };
 }
 
@@ -167,17 +166,15 @@ const yoNegocio = (a: Acceso) => ({ tipo: "business" as const, negocio: a.negoci
 export async function evtPausar(negocio: string, eventoId: string, pausar: boolean): Promise<Res> {
   const a = await entrar(negocio);
   if (!a) return SIN_ACCESO;
-  const r = await (await import("@/lib/evt-cambios")).pausarVenta(yoNegocio(a), String(eventoId), !!pausar);
+  const r = await (await import("@/lib/evt-cambios")).pausarVenta(yoNegocio(a), String(eventoId), !!pausar, (c) => auditar(c, a, pausar ? "eventos.venta.pausar" : "eventos.venta.reanudar", { evento: String(eventoId), venta: pausar ? "Pausada" : "Vendiendo" }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, pausar ? "eventos.venta.pausar" : "eventos.venta.reanudar", { evento: String(eventoId), venta: pausar ? "Pausada" : "Vendiendo" });
   return { ok: true };
 }
 export async function evtMover(negocio: string, fechaId: string, x: { dia: string; h0: number; h1: number }): Promise<Res & { avisados?: number }> {
   const a = await entrar(negocio);
   if (!a) return SIN_ACCESO;
-  const r = await (await import("@/lib/evt-cambios")).moverFecha(yoNegocio(a), String(fechaId), x ?? { dia: "", h0: -1, h1: -1 });
+  const r = await (await import("@/lib/evt-cambios")).moverFecha(yoNegocio(a), String(fechaId), x ?? { dia: "", h0: -1, h1: -1 }, (c, g) => auditar(c, a, "eventos.fecha.mover", { fecha: String(fechaId), dia: String(x?.dia ?? ""), avisados: g.avisados }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "eventos.fecha.mover", { fecha: String(fechaId), dia: String(x?.dia ?? ""), avisados: r.avisados });
   return { ok: true, avisados: r.avisados };
 }
 export async function evtCancelar(negocio: string, eventoId: string, alcance: "date" | "event", fechaId: string | null, motivo: string, nota: string): Promise<Res & { devueltas?: number; pendientes?: number }> {
@@ -188,17 +185,17 @@ export async function evtCancelar(negocio: string, eventoId: string, alcance: "d
   const M = ["clima", "artista", "local", "planes"] as const;
   const m = M.find((x) => x === motivo);
   if (!m) return no("Elige el motivo.", "Pick the reason.");
-  const r = await (await import("@/lib/evt-cambios")).cancelarEvento(yoNegocio(a), String(eventoId), alcance === "date" ? "date" : "event", fechaId ? String(fechaId) : null, m, String(nota ?? ""));
+  // 9n · La auditoría entra con la cancelación; las devoluciones corren después en lotes y su avance queda en la cancelación misma.
+  const r = await (await import("@/lib/evt-cambios")).cancelarEvento(yoNegocio(a), String(eventoId), alcance === "date" ? "date" : "event", fechaId ? String(fechaId) : null, m, String(nota ?? ""),
+    (c, g) => auditar(c, a, alcance === "date" ? "eventos.fecha.cancelar" : "eventos.cancelar", { evento: String(eventoId), fecha: fechaId, motivo: m, por_devolver: g.porDevolver }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, alcance === "date" ? "eventos.fecha.cancelar" : "eventos.cancelar", { evento: String(eventoId), fecha: fechaId, motivo: m, devueltas: r.devueltas, pendientes: r.pendientes });
   return { ok: true, devueltas: r.devueltas, pendientes: r.pendientes };
 }
 export async function evtAvisar(negocio: string, eventoId: string, texto: string): Promise<Res & { n?: number }> {
   const a = await entrar(negocio);
   if (!a) return SIN_ACCESO;
-  const r = await (await import("@/lib/evt-cambios")).avisarAsistentes(a.negocio.id, a.yo.id, String(eventoId), texto);
+  const r = await (await import("@/lib/evt-cambios")).avisarAsistentes(a.negocio.id, a.yo.id, String(eventoId), texto, (c, g) => auditar(c, a, "eventos.aviso", { evento: String(eventoId), personas: g.n }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "eventos.aviso", { evento: String(eventoId), personas: r.n });
   return { ok: true, n: r.n };
 }
 
@@ -207,16 +204,14 @@ export async function evtAvisar(negocio: string, eventoId: string, texto: string
 export async function evtSaltar(negocio: string, eventoId: string, fechaId: string, saltar: boolean): Promise<Res> {
   const a = await entrar(negocio);
   if (!a) return SIN_ACCESO;
-  const r = await (await import("@/lib/evt-series")).saltarFecha(a.negocio.id, a.yo.id, String(eventoId), String(fechaId), !!saltar);
+  const r = await (await import("@/lib/evt-series")).saltarFecha(a.negocio.id, a.yo.id, String(eventoId), String(fechaId), !!saltar, (c) => auditar(c, a, saltar ? "eventos.fecha.saltar" : "eventos.fecha.volver", { evento: String(eventoId), fecha: String(fechaId) }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, saltar ? "eventos.fecha.saltar" : "eventos.fecha.volver", { evento: String(eventoId), fecha: String(fechaId) });
   return { ok: true };
 }
 export async function evtArtista(negocio: string, fechaId: string, quien: string | null): Promise<Res & { avisados?: number }> {
   const a = await entrar(negocio);
   if (!a) return SIN_ACCESO;
-  const r = await (await import("@/lib/evt-series")).artistaDeFecha(a.negocio.id, a.yo.id, String(fechaId), quien == null ? null : String(quien));
+  const r = await (await import("@/lib/evt-series")).artistaDeFecha(a.negocio.id, a.yo.id, String(fechaId), quien == null ? null : String(quien), (c, g) => auditar(c, a, "eventos.fecha.artista", { fecha: String(fechaId), artista: quien ?? "el de siempre", avisados: g.avisados }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "eventos.fecha.artista", { fecha: String(fechaId), artista: quien ?? "el de siempre", avisados: r.avisados });
   return { ok: true, avisados: r.avisados };
 }

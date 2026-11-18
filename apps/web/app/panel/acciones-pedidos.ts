@@ -2,6 +2,7 @@
 import { avisarAyuda } from "@/lib/ayuda";
 import { avisarPedido } from "@/lib/avisos";
 import { mismoOrigen } from "@/lib/cuenta";
+import type { PoolClient } from "pg";
 import { db, tx } from "@/lib/db";
 import { accesoPanel, type Acceso } from "@/lib/panel";
 import { cambiarPaso, guardarSeguimiento, type Paso } from "@/lib/pedidos";
@@ -21,8 +22,9 @@ async function entrar(id: unknown, parte: string): Promise<Acceso | null> {
   if (!(await mismoOrigen())) return null;
   return typeof id === "string" ? accesoPanel(id, parte) : null;
 }
-async function auditar(a: Acceso, action: string, before: unknown, after: unknown) {
-  await db().query(
+/* 9n · La auditoría va con el cliente de la transacción del cambio: entran juntos o ninguno (guardián auditoriaEnLaTransaccion). */
+async function auditar(c: PoolClient, a: Acceso, action: string, before: unknown, after: unknown) {
+  await c.query(
     `insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, $2, 'business', $3, $4, $5::jsonb, $6::jsonb)`,
     [a.yo.id, action, a.negocio.id, a.negocio.city_id, JSON.stringify(before ?? null), JSON.stringify(after ?? null)]);
 }
@@ -32,9 +34,8 @@ export async function pedidoPaso(id: string, numero: string, paso: Paso): Promis
   const a = await entrar(id, "ord");
   if (!a) return SIN_ACCESO;
   if (!PASOS.has(paso)) return no("Esa acción no existe.", "That action does not exist.");
-  const r = await cambiarPaso(a.negocio.id, String(numero ?? ""), paso, a.yo.id);
+  const r = await cambiarPaso(a.negocio.id, String(numero ?? ""), paso, a.yo.id, (c) => auditar(c, a, ACCION[paso], { pedido: `#${numero}` }, { pedido: `#${numero}`, paso: PASO_L[paso] }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, ACCION[paso], { pedido: `#${numero}` }, { pedido: `#${numero}`, paso: PASO_L[paso] });
   const AV = { aceptar: "ord_ok", rechazar: "ord_no", listo: "ord_ready", encamino: "ord_way" } as const;
   if (paso in AV) await avisarPedido(String(numero), AV[paso as keyof typeof AV]);
   return { ok: true };
@@ -52,9 +53,8 @@ export async function pedidoPedirResena(id: string, numero: string): Promise<Res
 export async function pedidoSeguimiento(id: string, numero: string, url: string): Promise<Res> {
   const a = await entrar(id, "ord");
   if (!a) return SIN_ACCESO;
-  const r = await guardarSeguimiento(a.negocio.id, String(numero ?? ""), String(url ?? ""), a.yo.id);
+  const r = await guardarSeguimiento(a.negocio.id, String(numero ?? ""), String(url ?? ""), a.yo.id, (c) => auditar(c, a, "pedido.seguimiento", { pedido: `#${numero}` }, { pedido: `#${numero}`, enlace: String(url).slice(0, 300) }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "pedido.seguimiento", { pedido: `#${numero}` }, { pedido: `#${numero}`, enlace: String(url).slice(0, 300) });
   return { ok: true };
 }
 
@@ -62,10 +62,12 @@ export async function pedidoSeguimiento(id: string, numero: string, url: string)
 export async function pedidosModulo(id: string, on: boolean): Promise<Res> {
   const a = await entrar(id, "cat");
   if (!a) return SIN_ACCESO;
-  await db().query(
-    `update businesses set modules_on = case when $2 then array(select distinct x from unnest(modules_on || array['pedidos']) x) else array_remove(modules_on, 'pedidos') end, updated_at = now() where id = $1`,
-    [a.negocio.id, !!on]);
-  await auditar(a, on ? "pedidos.encender" : "pedidos.apagar", null, { modulo: "Pedidos en línea", estado: on ? "Encendido" : "Apagado" });
+  await tx(async (c) => {
+    await c.query(
+      `update businesses set modules_on = case when $2 then array(select distinct x from unnest(modules_on || array['pedidos']) x) else array_remove(modules_on, 'pedidos') end, updated_at = now() where id = $1`,
+      [a.negocio.id, !!on]);
+    await auditar(c, a, on ? "pedidos.encender" : "pedidos.apagar", null, { modulo: "Pedidos en línea", estado: on ? "Encendido" : "Apagado" });
+  });
   return { ok: true };
 }
 
@@ -85,19 +87,18 @@ export async function pedidosAjustes(id: string, p: { prep: number; sched: boole
   const card = !!p.card && e.cargos;
   if (e.pickup && !p.cashP && !card) return no("Para guardar falta: cómo te pagan en pickup.", "To save, add: how they pay for pickup.");
   if (e.delivery && !cashD && !card) return no("Para guardar falta: cómo te pagan en delivery.", "To save, add: how they pay for delivery.");
-  const antes = await tx(async (c) => {
-    const x = (await c.query<{ prep: number; sched: boolean; auto: boolean; cash: boolean; cashd: boolean; tip: boolean; card: boolean }>(
+  const si = (v: boolean | undefined) => (v === undefined ? null : v ? "Sí" : "No");
+  await tx(async (c) => {
+    const antes = (await c.query<{ prep: number; sched: boolean; auto: boolean; cash: boolean; cashd: boolean; tip: boolean; card: boolean }>(
       `select prep_min as prep, scheduled_orders as sched, auto_accept as auto, pay_cash_pickup as cash, pay_cash_delivery as cashd, ask_tip as tip, pay_card as card from delivery_settings where business_id = $1`, [a.negocio.id])).rows[0] ?? null;
     await c.query(
       `insert into delivery_settings (business_id, prep_min, scheduled_orders, auto_accept, pay_cash_pickup, pay_cash_delivery, ask_tip, pay_card) values ($1, $2, $3, $4, $5, $6, $7, $8)
        on conflict (business_id) do update set prep_min = $2, scheduled_orders = $3, auto_accept = $4, pay_cash_pickup = $5, pay_cash_delivery = $6, ask_tip = $7, pay_card = $8, updated_at = now()`,
       [a.negocio.id, prep, !!p.sched, !!p.auto, !!p.cashP, cashD, p.tip !== false, card]);
-    return x;
+    await auditar(c, a, "pedidos.ajustes",
+      antes ? { preparacion: `${antes.prep} min`, programados: si(antes.sched), aceptar_al_instante: si(antes.auto), efectivo_al_recoger: si(antes.cash), efectivo_al_entregar: si(antes.cashd), propina: si(antes.tip), tarjeta: si(antes.card) } : null,
+      { preparacion: `${prep} min`, programados: si(!!p.sched), aceptar_al_instante: si(!!p.auto), efectivo_al_recoger: si(!!p.cashP), efectivo_al_entregar: si(cashD), propina: si(p.tip !== false), tarjeta: si(card) });
   });
-  const si = (v: boolean | undefined) => (v === undefined ? null : v ? "Sí" : "No");
-  await auditar(a, "pedidos.ajustes",
-    antes ? { preparacion: `${antes.prep} min`, programados: si(antes.sched), aceptar_al_instante: si(antes.auto), efectivo_al_recoger: si(antes.cash), efectivo_al_entregar: si(antes.cashd), propina: si(antes.tip), tarjeta: si(antes.card) } : null,
-    { preparacion: `${prep} min`, programados: si(!!p.sched), aceptar_al_instante: si(!!p.auto), efectivo_al_recoger: si(!!p.cashP), efectivo_al_entregar: si(cashD), propina: si(p.tip !== false), tarjeta: si(card) });
   return { ok: true };
 }
 
@@ -114,8 +115,11 @@ export async function entregaAjustes(id: string, p: EntregaIn): Promise<Res> {
   const ext = p.who === "external" && ["doordash", "uber_eats", "other"].includes(String(p.ext)) ? String(p.ext) : null;
   if (p.who === "external" && !ext) return no("Elige cuál app externa lleva tus pedidos.", "Pick which external app delivers your orders.");
   const nota = String(p.pkNote ?? "").replace(/\s+/g, " ").trim().slice(0, 120);
-  const antes = await tx(async (c) => {
-    const x = (await c.query<Record<string, unknown>>(
+  const usd = (c: unknown) => (Number(c) ? `$${(Number(c) / 100).toFixed(0)}` : "—");
+  const L = (x: Record<string, unknown> | null) => x && { pickup: x.pickup ? "Sí" : "No", delivery: x.delivery ? "Sí" : "No", zona: `${x.zone_mi} mi`, envio: usd(x.fee_cents), gratis_desde: usd(x.free_over_cents),
+    minimo: usd(x.min_order_cents), camino: `${x.travel_min} min`, quien: x.who === "external" ? `App externa (${x.external_app})` : "Mi equipo", nota: x.nota ?? "" };
+  await tx(async (c) => {
+    const antes = (await c.query<Record<string, unknown>>(
       `select pickup, delivery, zone_mi, fee_cents, free_over_cents, min_order_cents, travel_min, last_delivery_min, who, external_app, pickup_note->>'es' as nota from delivery_settings where business_id = $1`, [a.negocio.id])).rows[0] ?? null;
     await c.query(
       `insert into delivery_settings (business_id, pickup, delivery, pickup_note, zone_mi, fee_cents, free_over_cents, min_order_cents, travel_min, last_delivery_min, who, external_app)
@@ -124,12 +128,8 @@ export async function entregaAjustes(id: string, p: EntregaIn): Promise<Res> {
          travel_min = $9, last_delivery_min = $10, who = $11, external_app = $12,
          pay_cash_delivery = case when $11 = 'external' then false else delivery_settings.pay_cash_delivery end, updated_at = now()`,
       [a.negocio.id, !!p.pickup, !!p.delivery, nota ? JSON.stringify({ es: nota, en: nota }) : null, Number(p.zone), Number(p.fee), Number(p.free), Number(p.min), Number(p.travel), Number(p.dEnd), p.who, ext]);
-    return x;
+    await auditar(c, a, "entrega.ajustes", L(antes), L({ pickup: p.pickup, delivery: p.delivery, zone_mi: p.zone, fee_cents: p.fee, free_over_cents: p.free, min_order_cents: p.min, travel_min: p.travel, who: p.who, external_app: ext, nota }));
   });
-  const usd = (c: unknown) => (Number(c) ? `$${(Number(c) / 100).toFixed(0)}` : "—");
-  const L = (x: Record<string, unknown> | null) => x && { pickup: x.pickup ? "Sí" : "No", delivery: x.delivery ? "Sí" : "No", zona: `${x.zone_mi} mi`, envio: usd(x.fee_cents), gratis_desde: usd(x.free_over_cents),
-    minimo: usd(x.min_order_cents), camino: `${x.travel_min} min`, quien: x.who === "external" ? `App externa (${x.external_app})` : "Mi equipo", nota: x.nota ?? "" };
-  await auditar(a, "entrega.ajustes", L(antes), L({ pickup: p.pickup, delivery: p.delivery, zone_mi: p.zone, fee_cents: p.fee, free_over_cents: p.free, min_order_cents: p.min, travel_min: p.travel, who: p.who, external_app: ext, nota }));
   return { ok: true };
 }
 
@@ -137,9 +137,8 @@ export async function entregaAjustes(id: string, p: EntregaIn): Promise<Res> {
 export async function ayudaResponder(id: string, numero: string, texto: string): Promise<Res> {
   const a = await entrar(id, "ord");
   if (!a) return SIN_ACCESO;
-  const r = await responderAyuda(a.negocio.id, String(numero ?? ""), String(texto ?? ""), a.yo.id);
+  const r = await responderAyuda(a.negocio.id, String(numero ?? ""), String(texto ?? ""), a.yo.id, (c) => auditar(c, a, "pedido.ayuda.responder", { pedido: String(numero) }, { respuesta: String(texto).trim().slice(0, 120) }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "pedido.ayuda.responder", { pedido: String(numero) }, { respuesta: String(texto).trim().slice(0, 120) });
   await avisarAyuda(String(numero), "help_reply");
   return { ok: true };
 }
@@ -149,9 +148,8 @@ export async function ayudaReponer(id: string, numero: string, texto: string): P
   const a = await entrar(id, "ord");
   if (!a) return SIN_ACCESO;
   const { reponerPedido, avisarRepuesto } = await import("@/lib/ayuda");
-  const r = await reponerPedido(a.negocio.id, String(numero ?? ""), String(texto ?? ""), a.yo.id);
+  const r = await reponerPedido(a.negocio.id, String(numero ?? ""), String(texto ?? ""), a.yo.id, (c, x) => auditar(c, a, "pedido.ayuda.reponer", { pedido: String(numero), nuevo: `#${x.nuevo}` }, { respuesta: String(texto).trim().slice(0, 120) }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "pedido.ayuda.reponer", { pedido: String(numero), nuevo: `#${r.nuevo}` }, { respuesta: String(texto).trim().slice(0, 120) });
   await avisarAyuda(String(numero), "help_reply");
   if (r.nuevo) await avisarRepuesto(r.nuevo).catch(() => undefined);
   return { ok: true, nuevo: r.nuevo };
@@ -169,8 +167,9 @@ export async function pedidoDevolver(id: string, numero: string, centavos: numbe
     `select p.id::text from payments p join operations o on o.id = p.operation_id where o.business_id = $1 and o.number = $2 and o.kind = 'order' and p.kind = 'full'`, [a.negocio.id, String(numero)])).rows[0];
   if (!p) return no("Este pedido no se pagó con tarjeta.", "This order was not paid by card.");
   const { devolverPago } = await import("@/lib/cobros");
-  const r = await devolverPago({ paymentId: p.id, centavos: Math.round(Number(centavos)), por: "business", actorId: a.yo.id, motivo: m, idem: `neg-${clave}` });
+  // La devolución va a Stripe; lo devuelto y esta auditoría entran juntos en la transacción que lo anota.
+  const r = await devolverPago({ paymentId: p.id, centavos: Math.round(Number(centavos)), por: "business", actorId: a.yo.id, motivo: m, idem: `neg-${clave}` },
+    (c) => auditar(c, a, "pedido.devolver", { pedido: `#${numero}` }, { pedido: `#${numero}`, monto: `$${(Math.round(Number(centavos)) / 100).toFixed(2)}`, motivo: m.slice(0, 120) }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "pedido.devolver", { pedido: `#${numero}` }, { pedido: `#${numero}`, monto: `$${(Math.round(Number(centavos)) / 100).toFixed(2)}`, motivo: m.slice(0, 120) });
   return { ok: true };
 }

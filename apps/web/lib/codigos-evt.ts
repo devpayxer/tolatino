@@ -1,6 +1,6 @@
 import "server-only";
 import { valor } from "./config";
-import { db } from "./db";
+import { db, txAuditada, type AlGuardar } from "./db";
 import type { Bi } from "./evt-comun";
 
 /* 6c · Códigos de descuento del organizador (evCodeDet: porcentaje o monto fijo, usos; «El descuento sale de lo tuyo»).
@@ -32,7 +32,7 @@ export async function codigosDelEvento(negocio: string, eventoId: string): Promi
     `select id::text, code, kind, value, uses_max as usos, used_n as usados, held_n as apartados, status = 'on' as on
        from discount_codes where business_id = $1 and event_id = $2::bigint order by created_at desc limit 50`, [negocio, eventoId])).rows;
 }
-export async function crearCodigo(negocio: string, userId: string, eventoId: string, x: { code: unknown; kind: unknown; value: unknown; usos: unknown }): Promise<{ ok: true } | { ok: false; msg: Bi }> {
+export async function crearCodigo(negocio: string, userId: string, eventoId: string, x: { code: unknown; kind: unknown; value: unknown; usos: unknown }, alGuardar?: AlGuardar): Promise<{ ok: true } | { ok: false; msg: Bi }> {
   const code = normalizarCodigo(x.code), kind = x.kind === "amount" ? "amount" : "pct", value = Math.floor(Number(x.value)), usos = Math.floor(Number(x.usos));
   if (!RE_CODIGO.test(code)) return no("El código lleva de 3 a 16 letras o números.", "The code has 3 to 16 letters or numbers.");
   if (kind === "pct" && !(value >= 5 && value <= 90)) return no("El porcentaje va de 5 % a 90 %.", "The percentage goes from 5% to 90%.");
@@ -41,13 +41,17 @@ export async function crearCodigo(negocio: string, userId: string, eventoId: str
   const e = (await db().query<{ city: string; entry: string }>(`select city_id as city, entry from events where id = $1::bigint and business_id = $2 and status not in ('cancelled', 'rejected', 'done')`, [eventoId, negocio])).rows[0];
   if (!e) return no("Ese evento no existe.", "That event does not exist.");
   if (e.entry !== "tickets") return no("Los códigos son para eventos con boletos.", "Codes are for ticketed events.");
-  const r = await db().query(`insert into discount_codes (event_id, city_id, business_id, code, kind, value, uses_max, created_by) values ($1::bigint, $2, $3, $4, $5, $6, $7, $8) on conflict (event_id, code) do nothing`,
-    [eventoId, e.city, negocio, code, kind, value, usos, userId]);
-  if (!r.rowCount) return no("Ya tienes ese código en este evento.", "You already have that code for this event.");
-  return { ok: true };
+  return txAuditada(alGuardar, async (c): Promise<{ ok: true } | { ok: false; msg: Bi }> => {
+    const r = await c.query(`insert into discount_codes (event_id, city_id, business_id, code, kind, value, uses_max, created_by) values ($1::bigint, $2, $3, $4, $5, $6, $7, $8) on conflict (event_id, code) do nothing`,
+      [eventoId, e.city, negocio, code, kind, value, usos, userId]);
+    if (!r.rowCount) return no("Ya tienes ese código en este evento.", "You already have that code for this event.");
+    return { ok: true };
+  });
 }
-export async function cambiarCodigo(negocio: string, id: string, on: boolean): Promise<{ ok: true } | { ok: false; msg: Bi }> {
+export async function cambiarCodigo(negocio: string, id: string, on: boolean, alGuardar?: AlGuardar): Promise<{ ok: true } | { ok: false; msg: Bi }> {
   if (!/^\d{1,18}$/.test(id)) return no("Ese código no existe.", "That code does not exist.");
-  const r = await db().query(`update discount_codes set status = $3 where id = $1::bigint and business_id = $2`, [id, negocio, on ? "on" : "off"]);
-  return r.rowCount ? { ok: true } : no("Ese código no existe.", "That code does not exist.");
+  return txAuditada(alGuardar, async (c): Promise<{ ok: true } | { ok: false; msg: Bi }> => {
+    const r = await c.query(`update discount_codes set status = $3 where id = $1::bigint and business_id = $2`, [id, negocio, on ? "on" : "off"]);
+    return r.rowCount ? { ok: true } : no("Ese código no existe.", "That code does not exist.");
+  });
 }

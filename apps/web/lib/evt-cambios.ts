@@ -3,7 +3,7 @@ import { pasesPronto } from "./pases/pronto";
 import type { PoolClient } from "pg";
 import { anotarDevolucionTotal, ejecutarDevolucion } from "./boletos-despues";
 import { cfgSql, valores } from "./config";
-import { db, tx } from "./db";
+import { db, tx, type AlGuardar } from "./db";
 import { bi, diaCorto, dinero, hora, type Bi } from "./evt-comun";
 
 /* 6e · Cambios del evento (fase6-eventos.md §3 «Devoluciones», §4 6e, §6 #7, #21, #24). El servidor decide TODO:
@@ -42,7 +42,7 @@ const limpiar = (x: unknown, n: number) => String(x ?? "").replace(/[\u0000-\u00
 async function base() { return (await import("./correo")).BASE_URL(); }
 
 /* ── Pausar / reanudar la venta ── */
-export async function pausarVenta(q: Quien, eventoId: string, pausar: boolean): Promise<Res> {
+export async function pausarVenta(q: Quien, eventoId: string, pausar: boolean, alGuardar?: AlGuardar): Promise<Res> {
   if (!ID.test(String(eventoId))) return falla("Ese evento no existe.", "That event does not exist.");
   try {
     await tx(async (c) => {
@@ -50,13 +50,14 @@ export async function pausarVenta(q: Quien, eventoId: string, pausar: boolean): 
         `select e.id::text, e.status as st, e.city_id as city, e.sales_frozen_reason as frozen from events e where e.id = $1::bigint and ${DUENO(q)} for update`, [eventoId, arg(q)])).rows[0];
       if (!e) throw no("Ese evento no existe.", "That event does not exist.");
       if (!["live", "paused"].includes(e.st)) throw no("Solo se pausa un evento publicado.", "Only a live event can be paused.");
-      if (pausar === (e.st === "paused")) return;
+      if (pausar === (e.st === "paused")) { await alGuardar?.(c); return; }
       if (!pausar && e.frozen) throw no(`To'Latino congeló la venta: ${e.frozen}. Escríbenos desde tu panel › Más › Ayuda y Soporte.`, `To'Latino froze sales: ${e.frozen}. Write to us from your dashboard › More › Help and Support.`);
       // Reanudar solo vuelve a vender un evento que ya estaba publicado y aprobado (pausado); nunca publica algo sin revisión.
       if (pausar) await c.query(`update events set status = 'paused' where id = $1::bigint and status = 'live'`, [eventoId]);
       else await c.query(`update events set status = 'live' where id = $1::bigint and status = 'paused' and approved_at is not null`, [eventoId]);
       await c.query(`insert into event_changes (event_id, city_id, kind, before, after, by_user, by_kind) values ($1::bigint, $2, $3, $4::jsonb, $5::jsonb, $6, $7)`,
         [eventoId, e.city, pausar ? "paused" : "resumed", JSON.stringify({ venta: e.st }), JSON.stringify({ venta: pausar ? "paused" : "live" }), q.userId, byKind(q)]);
+      await alGuardar?.(c);
     });
     pasesPronto();
     if (!pausar) { const F = (await db().query<{ id: string }>(`select id::text from event_dates where event_id = $1::bigint and status = 'scheduled' and ends_at > now()`, [eventoId])).rows; for (const f of F) await (await import("./espera")).ofrecer(f.id).catch(() => 0); }
@@ -89,7 +90,7 @@ export async function congelarVenta(q: Extract<Quien, { tipo: "admin" }>, evento
 }
 
 /* ── Cambiar la fecha o la hora (una fecha que no empezó) ── */
-export async function moverFecha(q: Quien, fechaId: string, x: { dia: unknown; h0: unknown; h1: unknown }): Promise<Res<{ cambio: string; avisados: number }>> {
+export async function moverFecha(q: Quien, fechaId: string, x: { dia: unknown; h0: unknown; h1: unknown }, alGuardar?: AlGuardar<{ avisados: number }>): Promise<Res<{ cambio: string; avisados: number }>> {
   if (!ID.test(String(fechaId))) return falla("Esa fecha no existe.", "That date does not exist.");
   const dia = String(x?.dia ?? ""), h0 = Math.floor(Number(x?.h0)), h1 = Math.floor(Number(x?.h1));
   if (!DIA.test(dia) || !Number.isFinite(h0) || !Number.isFinite(h1) || h0 < 0 || h0 > 1439 || h1 <= h0 || h1 > h0 + 720) return falla("Revisa el día y las horas (termina después de empezar, hasta 12 h).", "Check the day and times (it ends after it starts, up to 12 h).");
@@ -123,6 +124,8 @@ export async function moverFecha(q: Quien, fechaId: string, x: { dia: unknown; h
       const kind = dia === d.ldate ? "time_changed" : "moved";
       const ch = (await c.query<{ id: string }>(`insert into event_changes (event_id, event_date_id, city_id, kind, before, after, by_user, by_kind) values ($1::bigint, $2::bigint, $3, $4, $5::jsonb, $6::jsonb, $7, $8) returning id::text`,
         [d.eid, fechaId, d.city, kind, JSON.stringify({ dia: d.ldate, h0: d.s0, h1: d.s1 }), JSON.stringify({ dia, h0, h1 }), q.userId, byKind(q)])).rows[0]!.id;
+      // 9n · La auditoría entra con el cambio; «avisados» son los que van a esa fecha (a quienes avisarCambio les escribe justo después).
+      if (alGuardar) await alGuardar(c, { avisados: (await quienesVan(c, [fechaId])).length });
       return { cambio: ch, eid: d.eid, kind, title: d.title, antes: `${diaCorto(d.ldate, true)} · ${hora(d.s0)}`, ahora: `${diaCorto(dia, true)} · ${hora(h0)}` };
     });
   } catch (e) {
@@ -207,7 +210,7 @@ export async function elegirCambio(userId: string, numero: string, eleccion: "ke
 }
 
 /* ── Cancelar una fecha o todo el evento ── */
-export async function cancelarEvento(q: Quien, eventoId: string, alcance: "date" | "event", fechaId: string | null, motivo: MotivoCx | "admin", nota: string): Promise<Res<{ cx: string; devueltas: number; pendientes: number }>> {
+export async function cancelarEvento(q: Quien, eventoId: string, alcance: "date" | "event", fechaId: string | null, motivo: MotivoCx | "admin", nota: string, alGuardar?: AlGuardar<{ porDevolver: number }>): Promise<Res<{ cx: string; devueltas: number; pendientes: number }>> {
   if (!ID.test(String(eventoId)) || (fechaId !== null && !ID.test(String(fechaId)))) return falla("Ese evento no existe.", "That event does not exist.");
   if (!(motivo in MOTIVOS_CX) || (motivo === "admin") !== (q.tipo === "admin")) return falla("Elige el motivo.", "Pick the reason.");
   const n = limpiar(nota, 500);
@@ -241,6 +244,11 @@ export async function cancelarEvento(q: Quien, eventoId: string, alcance: "date"
       const comps = (await c.query<{ id: string }>(`update tickets set status = 'void', void_reason = 'Evento cancelado' where event_date_id = any($1::bigint[]) and kind = 'comp' and status in ('valid', 'used') returning id::text`, [fechas])).rows.map((x) => x.id);
       if (comps.length) await c.query(`insert into ticket_log (ticket_id, operation_id, city_id, kind, by_user, by_kind, reason) select id, operation_id, city_id, 'anulado', $2, $3, 'Evento cancelado' from tickets where id = any($1::bigint[])`,
         [comps, q.userId, q.tipo === "business" ? "business" : "staff"]);
+      // 9n · La auditoría entra con la cancelación. Las devoluciones van después en lotes (procesarCancelacion) y su avance queda en
+      // event_cancellations (orders_n, refunded_cents): aquí, cuántas órdenes pagadas quedan por devolver al cancelar.
+      if (alGuardar) await alGuardar(c, { porDevolver: (await c.query<{ n: number }>(
+        `select count(*)::int as n from operations o where o.kind = 'tickets' and o.status = 'confirmed' and (o.details->>'event_date_id')::bigint = any($1::bigint[])
+            and exists (select 1 from tickets t where t.operation_id = o.id and t.kind = 'paid' and t.status in ('valid', 'used'))`, [fechas])).rows[0]!.n });
       return id;
     });
   } catch (e) {
@@ -359,7 +367,7 @@ export async function barrerCancelaciones(): Promise<number> {
 }
 
 /* ── AVISOS A LOS QUE VAN (push y en la app; nunca SMS) ── */
-export async function avisarAsistentes(negocio: string, userId: string, eventoId: string, textoRaw: unknown): Promise<Res<{ n: number }>> {
+export async function avisarAsistentes(negocio: string, userId: string, eventoId: string, textoRaw: unknown, alGuardar?: AlGuardar<{ n: number }>): Promise<Res<{ n: number }>> {
   if (!ID.test(String(eventoId))) return falla("Ese evento no existe.", "That event does not exist.");
   const texto = limpiar(textoRaw, 160);
   if (texto.length < 5) return falla("Escribe el aviso (5 a 160 letras).", "Write the notice (5 to 160 characters).");
@@ -381,6 +389,7 @@ export async function avisarAsistentes(negocio: string, userId: string, eventoId
       if (!L.length) throw no("Todavía no va nadie.", "Nobody is going yet.");
       const id = (await c.query<{ id: string }>(`insert into event_notices (event_id, event_date_id, city_id, text, by_user, sent_n) select event_id, id, city_id, $2, $3, $4 from event_dates where id = $1::bigint returning id::text`,
         [e.fid, texto, userId, L.length])).rows[0]!.id;
+      await alGuardar?.(c, { n: L.length });
       return { id, L, t: e.t, org: e.org, slug: e.slug, fid: e.fid };
     });
   } catch (e) {

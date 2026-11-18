@@ -2572,3 +2572,12 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   · **Pruebas:** regresión 189/190 → evt6g (carrera con la auditoría) arreglada y en verde; 7 pruebas que dependían del orden o de repetirse
     con su precondición propia (guardianes `silencioPropio`, `cupoPropio`); Safari: en WebKit cada fill espera al campo conectado a React.
   · **Abiertos:** merc9n y dir9m en Safari (a mano en iPhone/iPad, REVISION); auditoría en la misma transacción (LAUNCH → 9n).
+- **18 nov · 9n · Auditoría en la misma transacción que el cambio** (LAUNCH «→ 9n», lo que evt6g cazó como carrera el 17 nov): 104 acciones
+  del panel en 19 `acciones-*.ts` guardaban el cambio y después escribían `audit_entries` con otro `db().query`; ahora el renglón va con el
+  cliente de la transacción del cambio. Patrón (lib/db.ts): `tx()` en la acción cuando el SQL es suyo; `enTx(cx, …)` para lib simple (puerta);
+  `alGuardar` / `txAuditada` cuando lib cobra, devuelve o avisa fuera de la base (la auditoría entra en la transacción que anota el cambio,
+  Stripe y los avisos siguen después). También lib y api de la misma clase: pedir reseña, patrocinios con `auditar*(null, …)`, el barrido que
+  suelta casos tomados y el simulador de Cobros. Payloads iguales salvo cancelar un evento o una fecha: `por_devolver` en vez de
+  `devueltas`/`pendientes` (las devoluciones corren después en lotes; su avance está en `event_cancellations`). Guardián
+  `auditoriaEnLaTransaccion` (alreves9n22 10/10; anclas de alreves5g y alreves7f al día). tsc + guardianes en verde; e2e no corrió en local
+  (sin Docker ni Playwright aquí): va al CI dirigido.

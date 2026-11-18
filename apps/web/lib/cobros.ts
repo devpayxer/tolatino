@@ -1,6 +1,6 @@
 import "server-only";
 import type { PoolClient } from "pg";
-import { db, tx } from "./db";
+import { db, tx, type AlGuardar } from "./db";
 import { pasarela, type Retencion } from "./pagos/pasarela";
 
 /* Cobros con tarjeta de un pedido (Payment). Reglas (Super Admin › Planes › Comisiones, dash2-pay.js):
@@ -121,7 +121,7 @@ export async function repararPagos(negocio: string) {
 
 /* Devolver dinero de un cobro (total o parcial). Lo hace el negocio (desde su pedido) o To'Latino (Soporte o
    Transacciones). Idempotente por `idem`. La comisión baja en proporción. */
-export async function devolverPago(x: { paymentId: string; centavos: number; por: "business" | "admin" | "policy"; actorId: string | null; motivo: string; idem: string }): Promise<{ ok: true } | { ok: false; msg: { es: string; en: string } }> {
+export async function devolverPago(x: { paymentId: string; centavos: number; por: "business" | "admin" | "policy"; actorId: string | null; motivo: string; idem: string }, alGuardar?: AlGuardar): Promise<{ ok: true } | { ok: false; msg: { es: string; en: string } }> {
   const p = (await db().query<{ id: string; pi: string; amount: number; refunded: number; status: string; uid: string; num: string; brand: string | null; l4: string | null; op: string; kind: string; plataforma: boolean }>(
     `select p.id::text, p.stripe_payment_intent as pi, p.amount_cents as amount, p.refunded_cents + coalesce((select sum(r.amount_cents) from refunds r where r.payment_id = p.id and r.status = 'pending'), 0)::int as refunded,
             p.status, p.user_id::text as uid, o.number as num, o.kind, p.card_brand as brand, p.card_last4 as l4, p.operation_id::text as op, p.transfer_group is not null as plataforma
@@ -144,6 +144,7 @@ export async function devolverPago(x: { paymentId: string; centavos: number; por
         where id = $1 returning status`, [p.id, n])).rows[0]!;
     await c.query(`update operations set pay_status = $2 where id = $1::bigint`, [p.op, u.status]);
     await evento(c, p.op, "refunded", { es: `Devolución de ${money(n)}`, en: `Refund of ${money(n)}` });
+    await alGuardar?.(c);
   });
   const tarjeta = p.brand && p.l4 ? `${({ visa: "Visa", mastercard: "Mastercard", mc: "Mastercard", amex: "Amex", discover: "Discover", disc: "Discover" } as Record<string, string>)[p.brand] ?? p.brand} ·· ${p.l4}` : "tarjeta";
   const R = refDe(p.kind, p.num);

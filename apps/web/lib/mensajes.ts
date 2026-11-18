@@ -1,5 +1,5 @@
 import "server-only";
-import { db, tx } from "./db";
+import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { tapar } from "./compa/tapar";
 
 /* Mensajes cliente ↔ negocio (bloque 2p; modelo ChatThread · Message; Mi cuenta USR-MENSAJES / USR-CHAT-NEG; Panel v2 sec
@@ -258,14 +258,18 @@ export async function asignarHilo(negocio: string, threadId: string, a: string |
   const r = await db().query(`update chat_threads set assigned_user_id = $3 where id = $1 and business_id = $2`, [Number(threadId) || 0, negocio, a]);
   return r.rowCount ? { ok: true } : no("No encontramos esa conversación.", "We could not find that conversation.");
 }
-export async function bloquearHilo(negocio: string, userId: string, threadId: string, bloquear: boolean): Promise<ResM> {
-  const r = await db().query(`update chat_threads set blocked_at = case when $3 then now() else null end, blocked_by = case when $3 then $4::uuid else null end where id = $1 and business_id = $2`,
-    [Number(threadId) || 0, negocio, !!bloquear, userId]);
-  return r.rowCount ? { ok: true } : no("No encontramos esa conversación.", "We could not find that conversation.");
+export async function bloquearHilo(negocio: string, userId: string, threadId: string, bloquear: boolean, alGuardar?: AlGuardar): Promise<ResM> {
+  return txAuditada(alGuardar, async (c): Promise<ResM> => {
+    const r = await c.query(`update chat_threads set blocked_at = case when $3 then now() else null end, blocked_by = case when $3 then $4::uuid else null end where id = $1 and business_id = $2`,
+      [Number(threadId) || 0, negocio, !!bloquear, userId]);
+    return r.rowCount ? { ok: true } : no("No encontramos esa conversación.", "We could not find that conversation.");
+  });
 }
-export async function autoRespuesta(negocio: string, on: boolean): Promise<ResM> {
-  await db().query(`update businesses set chat_auto_reply = $2, updated_at = now() where id = $1`, [negocio, !!on]);
-  return { ok: true };
+export async function autoRespuesta(negocio: string, on: boolean, alGuardar?: AlGuardar): Promise<ResM> {
+  return txAuditada(alGuardar, async (c): Promise<ResM> => {
+    await c.query(`update businesses set chat_auto_reply = $2, updated_at = now() where id = $1`, [negocio, !!on]);
+    return { ok: true };
+  });
 }
 
 /* Reportar una conversación (vecino o negocio). Una vez por persona; el equipo de To'Latino la puede leer solo así. */

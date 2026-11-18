@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { cfgSql, valor, valores } from "./config";
-import { db, tx } from "./db";
+import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { horasTxt } from "./plazo-txt";
 
 /* Solicitudes de servicio (Fase 4 · bloque 4e). Un solo motor para tres cosas del diseño:
@@ -129,7 +129,7 @@ export async function vencerSolicitudes(f: { userId?: string; negocio?: string }
 
 /* ── El negocio responde (pre y presupuesto) ── */
 export type RespIn = { que: string; lo?: number; hi?: number; inc?: string[]; chg?: string[]; nota?: string; visita?: number | null; dias?: string | null };
-export async function responderSolicitud(negocio: string, numero: string, actorId: string, f: RespIn): Promise<Res> {
+export async function responderSolicitud(negocio: string, numero: string, actorId: string, f: RespIn, alGuardar?: AlGuardar): Promise<Res> {
   if (!NUM.test(numero)) return no("Esa solicitud no existe.", "That request does not exist.");
   await vencerSolicitudes({ negocio });
   const que = ["rng", "see", "no"].includes(String(f?.que)) ? (f.que as "rng" | "see" | "no") : null;
@@ -143,7 +143,7 @@ export async function responderSolicitud(negocio: string, numero: string, actorI
   const visita = f.visita == null || f.visita === ("" as never) ? null : Math.round(Number(f.visita));
   if (visita != null && !(visita >= 0 && visita <= 100000)) return no("Revisa el costo de la visita.", "Check the visit fee.");
   let aviso: { uid: string; mode: string; negocio: string } | null = null;
-  const r = await tx(async (c): Promise<Res> => {
+  const r = await txAuditada(alGuardar, async (c): Promise<Res> => {
     const t = (await c.query<{ tid: string; rid: string; st: string; rst: string; mode: string; uid: string; negocio: string }>(
       `select t.id::text as tid, r.id::text as rid, t.status as st, r.status as rst, r.mode, r.user_id::text as uid, b.name as negocio
          from request_targets t join service_requests r on r.id = t.request_id join businesses b on b.id = t.business_id
@@ -430,11 +430,11 @@ export async function pedirEm(userId: string, f: EmIn): Promise<Res<{ numero: st
 }
 
 /* El negocio acepta: gana el primero. Se crea la visita (confirmada, «va en camino») con la salida como precio. */
-export async function aceptarEm(negocio: string, numero: string, actorId: string, entorno: string): Promise<Res<{ cita: string }>> {
+export async function aceptarEm(negocio: string, numero: string, actorId: string, entorno: string, alGuardar?: AlGuardar<{ ok: true; cita: string }>): Promise<Res<{ cita: string }>> {
   if (!/^E-\d{1,10}$/.test(numero)) return no("Esa emergencia no existe.", "That emergency does not exist.");
   await vencerEmergencias();
   let aviso: { uid: string; negocio: string; eta: number; otros: string[] } | null = null;
-  const r = await tx(async (c): Promise<Res<{ cita: string }>> => {
+  const r = await txAuditada(alGuardar, async (c): Promise<Res<{ cita: string }>> => {
     const t = (await c.query<{ rid: string; tid: string; item: string; st: string }>(
       `select r.id::text as rid, t.id::text as tid, t.item_id::text as item, t.status as st from request_targets t join service_requests r on r.id = t.request_id where t.business_id = $1 and r.number = $2 and r.mode = 'em'`, [negocio, numero])).rows[0];
     if (!t) return no("Esa emergencia no existe.", "That emergency does not exist.");

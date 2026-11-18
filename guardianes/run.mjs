@@ -10241,6 +10241,51 @@ const guardianes = {
     if (/v\.top\.map\(\(p\) => <MenuTile/.test(me)) falla(G, "apps/web/app/(app)/n/[id]/Mercado.tsx", 0, "el carrusel «Lo más pedido» no usa los primeros productos de la lista (v.top): usa v.pop");
   },
 
+  /* 9n · auditoriaEnLaTransaccion (LAUNCH-CHECKLIST «Auditoría en la misma transacción que el cambio», 18 nov; evt6g lo cazó el 17 nov como
+     carrera): las acciones del panel guardaban el cambio y DESPUÉS escribían su renglón de audit_entries con otro db().query; si la segunda
+     fallaba, el cambio quedaba sin auditoría. La regla, sobre apps/web (app y lib):
+     (1) En app/panel nada escribe audit_entries por db(): ni directo, ni con una constante del SQL, ni con «(c ?? db())», ni con
+         auditarNegocio/auditarEvento(null, …). La auditoría va con el cliente de la transacción del cambio: tx(), txAuditada o el alGuardar
+         que la acción le pasa a la función de lib (lib/db.ts).
+     (2) Una función de primer nivel que escribe audit_entries (por cualquier cliente; en app/panel también la que llama a auditar(c, …) o
+         le pasa la auditoría a lib) no cambia nada por db(): el cambio va en la transacción de su renglón. Una vista auditada sin cambio
+         («ver la dirección», «ver la ficha del niño») sí escribe sola su renglón. Lo que una función de lib anota por db() cuando falla un
+         cobro (intentos, «la tarjeta falló») con la auditoría en auditar(c, …)/alGuardar no es el cambio auditado y no cuenta.
+     Al revés: pruebas/alreves/alreves9n22.cjs (los defectos inyectados en el panel y en lib, dos archivos nuevos y una vista al derecho). */
+  auditoriaEnLaTransaccion() {
+    const G = "auditoriaEnLaTransaccion";
+    const AUD = /insert into audit_entries/;
+    for (const f of codigo) {
+      if (!/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      if (!/audit_entries|auditar(?:Negocio|Evento)?\(|alGuardar/.test(t)) continue;
+      const linea = (i) => t.slice(0, i).split("\n").length;
+      // Las constantes con el SQL de la auditoría (const auditoria = `insert into audit_entries …`).
+      const consts = [...t.matchAll(/\bconst (\w+) = `[^`]*insert into audit_entries/g)].map((m) => m[1]);
+      // Dónde se escribe audit_entries por la conexión suelta (posiciones dentro del texto s).
+      const porDb = (s) => {
+        const hits = [];
+        for (const m of s.matchAll(/(?:\bdb\(\)|\?\? ?db\(\)\))\.query(?:<[^>]*>)?\(\s*(`[^`]*`|\w+)/g))
+          if (m[1].startsWith("`") ? AUD.test(m[1]) : consts.includes(m[1])) hits.push(m.index);
+        return hits;
+      };
+      const panel = /^apps\/web\/app\/panel\//.test(f);
+      // Los ayudantes que aceptan «c o null» (auditarNegocio, auditarEvento) se llaman con el cliente de la transacción del cambio, nunca con null.
+      for (const m of t.matchAll(/\bauditar(?:Negocio|Evento)\(\s*null\b/g)) falla(G, f, linea(m.index), "auditarNegocio/auditarEvento(null, …) escribe la auditoría aparte: pásale el cliente de la transacción del cambio");
+      if (panel) for (const i of porDb(t)) falla(G, f, linea(i), "la acción del panel escribe audit_entries por db(), fuera de la transacción del cambio: usa el cliente de tx() (o el alGuardar de la función de lib)");
+      // (2) Por función de primer nivel: un cambio por db() y una auditoría en la misma función.
+      const cortes = [...t.matchAll(/^(?:export )?(?:async )?function \w+|^(?:export )?const \w+ = /gm)].map((m) => m.index);
+      cortes.push(t.length);
+      for (let k = 0; k + 1 < cortes.length; k++) {
+        const b = t.slice(cortes[k], cortes[k + 1]);
+        const audita = porDb(b).length > 0 || AUD.test(b) || (panel && /\bauditar(?:Negocio|Evento)?\(\s*c\w*\s*,/.test(b));
+        if (!audita) continue;
+        const w = /\bdb\(\)\.query(?:<[^>]*>)?\(\s*`\s*(insert into (?!audit_entries\b)\w+|update \w+|delete from \w+)/.exec(b);
+        if (w && !(panel && porDb(b).length)) falla(G, f, linea(cortes[k] + w.index), `cambia por db() (${w[1].slice(0, 40)}) fuera de la transacción donde va su auditoría: el cambio y su renglón de audit_entries van juntos`);
+      }
+    }
+  },
+
   telefonoAlAzarRespetaFijos() {
     const G = "telefonoAlAzarRespetaFijos";
     for (const f of archivos.filter((x) => /^pruebas\/(e2e|lib|alreves)\/[^/]+\.(cjs|mjs)$/.test(x))) {

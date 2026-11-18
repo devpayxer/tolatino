@@ -1,5 +1,6 @@
 "use server";
 import { randomBytes } from "node:crypto";
+import type { PoolClient } from "pg";
 import { mismoOrigen, normalizarTelefono } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
 import { accesoPanel, type Acceso } from "@/lib/panel";
@@ -22,8 +23,9 @@ async function entrar(id: unknown): Promise<Acceso | null> {
   if (!(await mismoOrigen())) return null;
   return typeof id === "string" ? accesoPanel(id, "page") : null;
 }
-async function auditar(a: Acceso, action: string, mid: string, after: unknown) {
-  await db().query(
+/* 9n · La auditoría va con el cliente de la transacción del cambio: entran juntos o ninguno (guardián auditoriaEnLaTransaccion). */
+async function auditar(c: PoolClient, a: Acceso, action: string, mid: string, after: unknown) {
+  await c.query(
     `insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, after, meta) values ('user', $1, $2, 'business', $3, $4, $5::jsonb, $6::jsonb)`,
     [a.yo.id, action, a.negocio.id, a.negocio.city_id, JSON.stringify(after ?? null), JSON.stringify({ member: mid })]);
 }
@@ -57,12 +59,14 @@ export async function equipoInvitar(id: string, x: { kind: string; name: string;
   if (hoy >= 20) return no("Mandaste muchas invitaciones hoy. Prueba mañana.", "You sent many invites today. Try tomorrow.");
   const code = randomBytes(6).toString("base64url");
   try {
-    const r = await db().query<{ id: string }>(
-      `insert into business_members (business_id, kind, display_name, role, phone, status, show_on_page, same_as_business_hours, invite_code, invited_by, invited_at, invite_expires_at, invite_sends, sort)
-       values ($1, $2, $3, $4::jsonb, $5, 'invited', true, true, $6, $7, now(), now() + interval '7 days', 1,
-               (select coalesce(max(sort), 0) + 1 from business_members where business_id = $1)) returning id`,
-      [a.negocio.id, kind, name, JSON.stringify({ es: role, en: "" }), tel, code, a.yo.id]);
-    await auditar(a, "panel.equipo_invitar", r.rows[0]!.id, { name, kind });
+    await tx(async (c) => {
+      const r = await c.query<{ id: string }>(
+        `insert into business_members (business_id, kind, display_name, role, phone, status, show_on_page, same_as_business_hours, invite_code, invited_by, invited_at, invite_expires_at, invite_sends, sort)
+         values ($1, $2, $3, $4::jsonb, $5, 'invited', true, true, $6, $7, now(), now() + interval '7 days', 1,
+                 (select coalesce(max(sort), 0) + 1 from business_members where business_id = $1)) returning id`,
+        [a.negocio.id, kind, name, JSON.stringify({ es: role, en: "" }), tel, code, a.yo.id]);
+      await auditar(c, a, "panel.equipo_invitar", r.rows[0]!.id, { name, kind });
+    });
   } catch (e) {
     if ((e as { code?: string }).code === "23505") return no("Ese teléfono ya está en tu equipo.", "That phone is already on your team.");
     throw e;
@@ -77,8 +81,10 @@ export async function equipoReenviar(id: string, mid: string): Promise<ResEq> {
   if (!m || m.status !== "invited") return no("Esa invitación ya no está.", "That invite is gone.");
   if (m.invite_sends >= 5) return no("Ya le mandamos varias veces el SMS. Llámale para que lo busque.", "We already texted several times. Call them to find it.");
   const code = randomBytes(6).toString("base64url");
-  await db().query(`update business_members set invite_code = $2, invited_at = now(), invite_expires_at = now() + interval '7 days', invite_sends = invite_sends + 1, updated_at = now() where id = $1`, [m.id, code]);
-  await auditar(a, "panel.equipo_reenviar", m.id, null);
+  await tx(async (c) => {
+    await c.query(`update business_members set invite_code = $2, invited_at = now(), invite_expires_at = now() + interval '7 days', invite_sends = invite_sends + 1, updated_at = now() where id = $1`, [m.id, code]);
+    await auditar(c, a, "panel.equipo_reenviar", m.id, null);
+  });
   const pr = (await db().query<{ tel: string | null; rol: string | null }>(`select phone as tel, role->>'es' as rol from business_members where id = $1`, [m.id])).rows[0];
   return { ok: true, sms: await enviarInvitacion(a, pr?.tel ?? null, code, pr?.rol ?? "") };
 }
@@ -88,8 +94,10 @@ export async function equipoCancelar(id: string, mid: string): Promise<ResEq> {
   if (!a) return SIN_ACCESO;
   const m = await persona(a, mid);
   if (!m || m.status !== "invited") return no("Esa invitación ya no está.", "That invite is gone.");
-  await db().query(`update business_members set status = 'removed', removed_reason = 'canceled', removed_at = now(), invite_code = null, updated_at = now() where id = $1`, [m.id]);
-  await auditar(a, "panel.equipo_cancelar", m.id, null);
+  await tx(async (c) => {
+    await c.query(`update business_members set status = 'removed', removed_reason = 'canceled', removed_at = now(), invite_code = null, updated_at = now() where id = $1`, [m.id]);
+    await auditar(c, a, "panel.equipo_cancelar", m.id, null);
+  });
   return { ok: true };
 }
 
@@ -98,9 +106,11 @@ export async function equipoResponder(id: string, mid: string, aceptar: boolean)
   if (!a) return SIN_ACCESO;
   const m = await persona(a, mid);
   if (!m || m.status !== "requested") return no("Esa solicitud ya no está.", "That request is gone.");
-  if (aceptar) await db().query(`update business_members set status = 'active', show_on_page = true, same_as_business_hours = true, accepted_at = now(), updated_at = now() where id = $1`, [m.id]);
-  else await db().query(`update business_members set status = 'removed', removed_reason = 'declined', removed_at = now(), updated_at = now() where id = $1`, [m.id]);
-  await auditar(a, aceptar ? "panel.equipo_aceptar" : "panel.equipo_no_aceptar", m.id, null);
+  await tx(async (c) => {
+    if (aceptar) await c.query(`update business_members set status = 'active', show_on_page = true, same_as_business_hours = true, accepted_at = now(), updated_at = now() where id = $1`, [m.id]);
+    else await c.query(`update business_members set status = 'removed', removed_reason = 'declined', removed_at = now(), updated_at = now() where id = $1`, [m.id]);
+    await auditar(c, a, aceptar ? "panel.equipo_aceptar" : "panel.equipo_no_aceptar", m.id, null);
+  });
   // 9n-2 · Quien pidió unirse se entera de la respuesta (L1741).
   await (await import("@/lib/equipo-invitacion")).avisarPersonaEquipo(m.id, aceptar ? "equipo_unirse_ok" : "equipo_unirse_no");
   return { ok: true };
@@ -111,8 +121,10 @@ export async function equipoMostrar(id: string, mid: string, show: boolean): Pro
   if (!a) return SIN_ACCESO;
   const m = await persona(a, mid);
   if (!m || m.status !== "active" || m.kind === "owner") return no("Esa persona ya no está en tu equipo.", "That person is no longer on your team.");
-  await db().query(`update business_members set show_on_page = $2, updated_at = now() where id = $1`, [m.id, !!show]);
-  await auditar(a, show ? "panel.equipo_mostrar" : "panel.equipo_ocultar", m.id, null);
+  await tx(async (c) => {
+    await c.query(`update business_members set show_on_page = $2, updated_at = now() where id = $1`, [m.id, !!show]);
+    await auditar(c, a, show ? "panel.equipo_mostrar" : "panel.equipo_ocultar", m.id, null);
+  });
   return { ok: true };
 }
 
@@ -128,8 +140,8 @@ export async function equipoQuitar(id: string, mid: string): Promise<ResEq> {
     await c.query(`update queue_items set status = 'decided', decision = 'withdrawn', reason = 'La persona salió del equipo', decided_at = now() where queue = 'lic' and status = 'open' and subject_id in (select id::text from licenses where member_id = $1)`, [m.id]);
     await c.query(`select licencias_refrescar($1)`, [a.negocio.id]); await (await import("@/lib/ninos")).recalcularFiltrosNinos(c, a.negocio.id); // Niños: la tarjeta sigue a la licencia del DHS (4eb)
     await recalcularFiltrosSP(c, a.negocio.id);
+    await auditar(c, a, "panel.equipo_quitar", m.id, null);
   });
-  await auditar(a, "panel.equipo_quitar", m.id, null);
   // 9n-2 · La persona quitada se entera (si ya tiene cuenta): L1741.
   await (await import("@/lib/equipo-invitacion")).avisarPersonaEquipo(m.id, "equipo_quitado");
   return { ok: true };
@@ -172,7 +184,7 @@ export async function equipoGuardar(id: string, mid: string, x: {
         [m.id, bio.es || bio.en ? JSON.stringify(bio) : null, langs.length ? langs : ["es"], photo]);
     }
     await recalcularFiltrosSP(c, a.negocio.id); // sus idiomas cuentan para «El médico habla español»
+    await auditar(c, a, "panel.equipo_guardar", m.id, { role, y, sp, same });
   });
-  await auditar(a, "panel.equipo_guardar", m.id, { role, y, sp, same });
   return { ok: true };
 }

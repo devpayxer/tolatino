@@ -1,6 +1,6 @@
 import "server-only";
 import type { Pool, PoolClient } from "pg";
-import { db, tx } from "./db";
+import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { valor } from "./config";
 import { detectarIdioma, idiomaTexto } from "./traductor";
 import { hora } from "./pedir";
@@ -722,13 +722,13 @@ export type ResenaPanelDet = NonNullable<Awaited<ReturnType<typeof resenaPanel>>
    reseña; no es obligatorio) y se puede EDITAR hasta ${MAX_EDITS_RESP} veces y dentro de ${DIAS_EDITAR_RESP} días. Lo anterior no se borra: queda en review_reply_history (solo inserción) y la
    respuesta se ve «editada». Una respuesta que cambia de sentido a los 7 días no se deja. */
 export const MAX_EDITS_RESP = 3, DIAS_EDITAR_RESP = 7;
-export async function editarRespuesta(negocio: string, id: string, texto: string, oferta: boolean, actorId: string): Promise<Res> {
+export async function editarRespuesta(negocio: string, id: string, texto: string, oferta: boolean, actorId: string, alGuardar?: AlGuardar): Promise<Res> {
   const t = String(texto ?? "").trim();
   if (t.length < 5) return no("Escribe al menos 5 letras.", "Write at least 5 characters.");
   if (t.length > 300) return no("Máximo 300 letras.", "300 characters max.");
   if (!/^\d{1,18}$/.test(id)) return no("Esa reseña no existe.", "That review does not exist.");
   const det = await detectarIdioma(t);
-  return tx(async (c) => {
+  return txAuditada(alGuardar, async (c) => {
     const r = (await c.query<{ reply: string; offer: boolean; edits: number; ok: boolean }>(
       `select reply, reply_offer as offer, reply_edits as edits, (reply_at > now() - interval '${DIAS_EDITAR_RESP} days') as ok from reviews where business_id = $1 and id = $2::bigint and status = 'visible' and reply is not null for update`, [negocio, id])).rows[0];
     if (!r) return no("Esa reseña no tiene respuesta o ya no está.", "That review has no reply or is gone.");
@@ -741,7 +741,7 @@ export async function editarRespuesta(negocio: string, id: string, texto: string
   });
 }
 
-export async function responderResena(negocio: string, id: string, texto: string, actorId: string, oferta = false): Promise<Res> {
+export async function responderResena(negocio: string, id: string, texto: string, actorId: string, oferta = false, alGuardar?: AlGuardar): Promise<Res> {
   const t = String(texto ?? "").trim();
   if (t.length < 5) return no("Escribe al menos 5 letras.", "Write at least 5 characters.");
   if (t.length > 300) return no("Máximo 300 letras.", "300 characters max.");
@@ -749,16 +749,18 @@ export async function responderResena(negocio: string, id: string, texto: string
   const pro = (await db().query<{ pro: boolean }>(`select coalesce(plan, 'free') = 'pro' as pro from business_stats_cache where business_id = $1`, [negocio])).rows[0]?.pro;
   if (!pro) return no("Responder reseñas es de Pro.", "Replying to reviews is a Pro feature.");
   const det = await detectarIdioma(t); // 5h: si no se sabe, el idioma de la app de quien responde
-  const r = await db().query<{ id: string }>(
-    `update reviews set reply = $3, reply_at = now(), reply_by = $4, reply_offer = $6, reply_lang = coalesce($5, (select case when u.lang = 'en' then 'en' else 'es' end from users u where u.id = $4), 'es')
-      where business_id = $1 and id = $2::bigint and status = 'visible' and reply is null returning id::text`, [negocio, id, t, actorId, det, !!oferta]);
-  return r.rows[0] ? { ok: true, id } : no("Esta reseña ya tiene respuesta o ya no está.", "This review already has a reply or is gone.");
+  return txAuditada(alGuardar, async (c): Promise<Res> => {
+    const r = await c.query<{ id: string }>(
+      `update reviews set reply = $3, reply_at = now(), reply_by = $4, reply_offer = $6, reply_lang = coalesce($5, (select case when u.lang = 'en' then 'en' else 'es' end from users u where u.id = $4), 'es')
+        where business_id = $1 and id = $2::bigint and status = 'visible' and reply is null returning id::text`, [negocio, id, t, actorId, det, !!oferta]);
+    return r.rows[0] ? { ok: true, id } : no("Esta reseña ya tiene respuesta o ya no está.", "This review already has a reply or is gone.");
+  });
 }
 
 /* «Pedir revisión a To'Latino»: la reseña sigue visible; entra a la cola Reportes de contenido (48 h). */
-export async function pedirRevision(negocio: string, id: string, actorId: string): Promise<Res> {
+export async function pedirRevision(negocio: string, id: string, actorId: string, alGuardar?: AlGuardar): Promise<Res> {
   if (!/^\d{1,18}$/.test(id)) return no("Esa reseña no existe.", "That review does not exist.");
-  return tx(async (c) => {
+  return txAuditada(alGuardar, async (c) => {
     const r = (await c.query<{ city_id: string; estado: string | null }>(`select city_id, review_state as estado from reviews where business_id = $1 and id = $2::bigint and status = 'visible' for update`, [negocio, id])).rows[0];
     if (!r) return no("Esa reseña ya no está.", "That review is gone.");
     if (r.estado) return no("Ya pediste revisarla.", "You already asked for a review.");

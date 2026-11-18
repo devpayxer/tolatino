@@ -1,7 +1,7 @@
 import "server-only";
 import { cfgSql } from "./config";
 import type { PoolClient } from "pg";
-import { db, tx } from "./db";
+import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { usd } from "./pro-comun";
 
 /* «El total, por escrito» (Fase 4 · 4l-2 · fase4-salud-pro.md §4l). La consulta de un profesional (C-…, rubro 'pro'):
@@ -36,10 +36,10 @@ const ev = (c: PoolClient, op: string, kind: string, actor: "user" | "member" | 
 const limpio = (v: unknown, n: number) => (typeof v === "string" ? v.replace(/[\u0000-\u001F\u007F]/g, "").replace(/\s+/g, " ").trim().slice(0, n) : "");
 
 /* El negocio: pasó la consulta · mandar el total (versión nueva) · terminó el trámite. */
-export async function pasoPro(negocio: string, numero: string, paso: "consulta" | "terminado", actorId: string): Promise<Res> {
+export async function pasoPro(negocio: string, numero: string, paso: "consulta" | "terminado", actorId: string, alGuardar?: AlGuardar): Promise<Res> {
   if (!NUM.test(numero)) return no("Esa consulta no existe.", "That consultation does not exist.");
   let despues: (() => Promise<void>) | null = null;
-  const r = await tx(async (c): Promise<Res> => {
+  const r = await txAuditada(alGuardar, async (c): Promise<Res> => {
     const o = await leerPro(c, "o.business_id = $1 and o.number = $2", [negocio, numero]);
     if (!o) return no("Esa consulta no existe.", "That consultation does not exist.");
     if (paso === "consulta") {
@@ -59,7 +59,7 @@ export async function pasoPro(negocio: string, numero: string, paso: "consulta" 
 }
 
 export type TotalIn = { fee: number; gov: number; hours?: string | null; extras?: { es: string; en?: string; cents: number }[]; note?: string };
-export async function mandarTotal(negocio: string, numero: string, f: TotalIn, actorId: string): Promise<Res> {
+export async function mandarTotal(negocio: string, numero: string, f: TotalIn, actorId: string, alGuardar?: AlGuardar): Promise<Res> {
   if (!NUM.test(numero)) return no("Esa consulta no existe.", "That consultation does not exist.");
   const fee = Math.round(Number(f?.fee)), gov = Math.round(Number(f?.gov ?? 0));
   if (!(fee >= 0 && fee <= 10_000_000 && fee % 100 === 0)) return no("El honorario va en dólares enteros.", "The fee goes in whole dollars.");
@@ -76,7 +76,7 @@ export async function mandarTotal(negocio: string, numero: string, f: TotalIn, a
   }
   const nota = limpio(f?.note, 200);
   let despues: (() => Promise<void>) | null = null;
-  const r = await tx(async (c): Promise<Res> => {
+  const r = await txAuditada(alGuardar, async (c): Promise<Res> => {
     const o = await leerPro(c, "o.business_id = $1 and o.number = $2", [negocio, numero]);
     if (!o) return no("Esa consulta no existe.", "That consultation does not exist.");
     if (o.status !== "confirmed" || !["consulted", "quote"].includes(o.detail ?? "")) return no("El total se manda después de la consulta.", "The total is sent after the consultation.");

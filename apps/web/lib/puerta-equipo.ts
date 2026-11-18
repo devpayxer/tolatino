@@ -1,6 +1,7 @@
 import "server-only";
 import { randomInt } from "node:crypto";
-import { db, tx } from "./db";
+import type { PoolClient } from "pg";
+import { db, enTx, tx } from "./db";
 import { cifrar, huella } from "./cifrado";
 import { cfgSql } from "./config";
 import { diaCorto, hora } from "./evt-comun";
@@ -31,25 +32,30 @@ export async function porterosDe(negocio: string): Promise<PorteroPanel[]> {
 }
 
 /* Invitar: nombre + teléfono + alcance (todos los eventos o este). Tope de invitaciones al día y de porteros (la base, Configuración). */
-export async function invitarPortero(negocio: string, actorId: string, nombre: string, tel: string, eventoId: string | null): Promise<{ ok: true; codigo: string; id: string } | { ok: false; msg: Bi }> {
+export async function invitarPortero(negocio: string, actorId: string, nombre: string, tel: string, eventoId: string | null, cx?: PoolClient): Promise<{ ok: true; codigo: string; id: string } | { ok: false; msg: Bi }> {
   const n = String(nombre ?? "").replace(/\s+/g, " ").trim().slice(0, 40);
   if (n.length < 2) return no("Escribe su nombre.", "Write their name.");
   if (!/^\+1\d{10}$/.test(tel)) return no("Escribe su teléfono de 10 números.", "Write their 10-digit phone.");
   if (eventoId !== null && !ID.test(eventoId)) return no("Ese evento no existe.", "That event does not exist.");
   // El tope de Configuración se lee en la base al decidir (sin caché).
-  const t = (await db().query<{ n: number; max: number }>(`select count(*)::int as n, ${cfgSql("puerta_invitar_dia_max")} as max from door_staff where business_id = $1 and created_at > now() - interval '1 day'`, [negocio])).rows[0]!;
+  const q = cx ?? db();
+  const t = (await q.query<{ n: number; max: number }>(`select count(*)::int as n, ${cfgSql("puerta_invitar_dia_max")} as max from door_staff where business_id = $1 and created_at > now() - interval '1 day'`, [negocio])).rows[0]!;
   if (t.n >= t.max) return no("Invitaste a muchos porteros hoy. Prueba mañana.", "You invited many door staff today. Try tomorrow.");
-  if (eventoId && !(await db().query(`select 1 from events where id = $1::bigint and business_id = $2`, [eventoId, negocio])).rowCount) return no("Ese evento no es de tu negocio.", "That event is not yours.");
+  if (eventoId && !(await q.query(`select 1 from events where id = $1::bigint and business_id = $2`, [eventoId, negocio])).rowCount) return no("Ese evento no es de tu negocio.", "That event is not yours.");
   for (let i = 0; i < 5; i++) {
     const codigo = Array.from({ length: 6 }, () => ALFA[randomInt(ALFA.length)]).join("");
+    // Dentro de la transacción de quien llama, un código repetido no la tumba: se vuelve al punto de guardado y se prueba otro.
+    if (cx) await cx.query("savepoint portero_codigo");
     try {
-      const r = (await db().query<{ id: string }>(
+      const r = (await q.query<{ id: string }>(
         `insert into door_staff (business_id, city_id, display_name, phone_enc, phone_hash, phone_last4, invite_code, invite_expires_at, scope, event_ids, invited_by)
          select $1, b.city_id, $2, $3, $4, $5, $6, now() + interval '7 days', $7, $8::bigint[], $9 from businesses b where b.id = $1 returning id::text`,
         [negocio, n, cifrar(tel), huella(tel), tel.slice(-4), codigo, eventoId ? "events" : "all", eventoId ? [eventoId] : [], actorId])).rows[0];
+      if (cx) await cx.query("release savepoint portero_codigo");
       if (!r) return no("Ese negocio no existe.", "That business does not exist.");
       return { ok: true, codigo, id: r.id };
     } catch (e) {
+      if (cx) await cx.query("rollback to savepoint portero_codigo");
       const c = e as { code?: string; constraint?: string; message?: string };
       if (c.code === "23505" && c.constraint === "door_staff_tel_idx") return no("Ese teléfono ya está en tus porteros.", "That phone is already one of your door staff.");
       if (/puerta_porteros_max/.test(String(c.message))) return no("Llegaste al máximo de porteros. Quita a uno para invitar a otro.", "You reached the door staff limit. Remove one to invite another.");
@@ -67,17 +73,17 @@ export async function avisarInvitacion(negocio: string, id: string, tel: string,
 }
 
 /* Quitar con motivo: no vuelve; la base cierra sus sesiones abiertas en el acto (door_staff_despues). */
-export async function quitarPortero(negocio: string, id: string, motivo: string, actorId: string): Promise<R> {
+export async function quitarPortero(negocio: string, id: string, motivo: string, actorId: string, cx?: PoolClient): Promise<R> {
   if (!ID.test(String(id ?? ""))) return no("Ese portero no existe.", "That door staffer does not exist.");
   const m = String(motivo ?? "").replace(/\s+/g, " ").trim().slice(0, 200);
   if (m.length < 3) return no("Escribe por qué lo quitas.", "Write why you are removing them.");
-  const r = await db().query(`update door_staff set status = 'removed', removed_at = now(), removed_by = $3, removed_reason = $4, invite_code = null where id = $1::bigint and business_id = $2 and status <> 'removed'`, [id, negocio, actorId, m]);
+  const r = await (cx ?? db()).query(`update door_staff set status = 'removed', removed_at = now(), removed_by = $3, removed_reason = $4, invite_code = null where id = $1::bigint and business_id = $2 and status <> 'removed'`, [id, negocio, actorId, m]);
   return r.rowCount ? { ok: true } : no("Ese portero ya no está.", "That door staffer is no longer there.");
 }
 /* Ponerlo también en este evento (o en todos). Al portero activo le llega «Tienes una puerta». */
-export async function asignarPortero(negocio: string, id: string, eventoId: string | null): Promise<R & { aviso?: { uid: string; vars: Record<string, string>; href: string } }> {
+export async function asignarPortero(negocio: string, id: string, eventoId: string | null, cx?: PoolClient): Promise<R & { aviso?: { uid: string; vars: Record<string, string>; href: string } }> {
   if (!ID.test(String(id ?? "")) || (eventoId !== null && !ID.test(eventoId))) return no("Ese portero no existe.", "That door staffer does not exist.");
-  return tx(async (c) => {
+  return enTx(cx, async (c) => {
     const f = (await c.query<{ scope: string; ids: string[]; uid: string | null; st: string }>(`select scope, event_ids::text[] as ids, user_id::text as uid, status as st from door_staff where id = $1::bigint and business_id = $2 and status <> 'removed' for update`, [id, negocio])).rows[0];
     if (!f) return no("Ese portero ya no está.", "That door staffer is no longer there.");
     if (eventoId === null) await c.query(`update door_staff set scope = 'all', event_ids = '{}' where id = $1::bigint`, [id]);
@@ -91,13 +97,14 @@ export async function asignarPortero(negocio: string, id: string, eventoId: stri
   });
 }
 /* Solo este evento (quitarlo de un portero de «solo algunos»). */
-export async function desasignarPortero(negocio: string, id: string, eventoId: string): Promise<R> {
+export async function desasignarPortero(negocio: string, id: string, eventoId: string, cx?: PoolClient): Promise<R> {
+  const q = cx ?? db();
   if (!ID.test(String(id ?? "")) || !ID.test(String(eventoId ?? ""))) return no("Ese portero no existe.", "That door staffer does not exist.");
-  const f = (await db().query<{ scope: string; n: number }>(`select scope, cardinality(event_ids) as n from door_staff where id = $1::bigint and business_id = $2 and status <> 'removed'`, [id, negocio])).rows[0];
+  const f = (await q.query<{ scope: string; n: number }>(`select scope, cardinality(event_ids) as n from door_staff where id = $1::bigint and business_id = $2 and status <> 'removed' for update`, [id, negocio])).rows[0];
   if (!f) return no("Ese portero ya no está.", "That door staffer is no longer there.");
   if (f.scope === "all") return no("Este portero escanea en todos tus eventos. Para quitarlo de uno, quítalo y vuelve a invitarlo solo para los que quieras.", "This staffer scans all your events. To remove them from one, remove and re-invite them for the ones you want.");
   if (f.n <= 1) return no("Es su único evento: quítalo de tus porteros.", "It is their only event: remove them from your door staff.");
-  await db().query(`update door_staff set event_ids = array_remove(event_ids, $3::bigint) where id = $1::bigint and business_id = $2`, [id, negocio, eventoId]);
+  await q.query(`update door_staff set event_ids = array_remove(event_ids, $3::bigint) where id = $1::bigint and business_id = $2`, [id, negocio, eventoId]);
   return { ok: true };
 }
 
@@ -133,13 +140,13 @@ export async function salirPortero(userId: string, id: string): Promise<R> {
 /* ── REGLAS DE PUERTA (reentrada, pedir ID, hora de cerrar la puerta, aforo por puerta). No pasan por revisión: no cambian lo que se
    vendió ni el día (ver «cambio que importa», 6a); quedan en la auditoría del panel. ── */
 export type ReglasIn = { reentrada: boolean; pideId: boolean; cierre: number | null; caps: Record<string, number> };
-export async function reglasPuerta(negocio: string, eventoId: string, r: ReglasIn): Promise<R & { antes?: unknown }> {
+export async function reglasPuerta(negocio: string, eventoId: string, r: ReglasIn, cx?: PoolClient): Promise<R & { antes?: unknown }> {
   if (!ID.test(String(eventoId ?? ""))) return no("Ese evento no existe.", "That event does not exist.");
   const cierre = r.cierre == null ? null : Math.floor(Number(r.cierre));
   if (cierre !== null && !(cierre >= 0 && cierre <= 720)) return no("La hora de cerrar la puerta es hasta 12 h después de empezar.", "The door closing time is up to 12 h after the start.");
   const caps: Record<string, number> = {};
   for (const [k, v] of Object.entries(r.caps ?? {}).slice(0, 6)) { const n = String(k).replace(/\s+/g, " ").trim().slice(0, 30), x = Math.floor(Number(v)); if (n && x >= 1 && x <= 20000) caps[n] = x; }
-  const a = (await db().query<{ antes: unknown }>(
+  const a = (await (cx ?? db()).query<{ antes: unknown }>(
     `update events e set reentry = $3, id_required = $4, door_close_after_min = $5, door_caps = $6::jsonb
        from (select reentry, id_required, door_close_after_min, door_caps from events where id = $1::bigint) x
       where e.id = $1::bigint and e.business_id = $2 and e.status not in ('cancelled', 'rejected', 'done')
@@ -171,23 +178,23 @@ export async function puertaPanel(negocio: string, eventoId: string, fecha: stri
     reglas: { reentrada: e.reentrada, pideId: e.pideId, cierre: e.cierre, caps: e.caps ?? {} }, fecha: f, abrible: !!ab.rows[0]?.ok, r, equipo: eq, incidencias: inc, ultimos: ult, miSesion: s.rows[0]?.id ?? null, tz: e.tz, ventanaH };
 }
 /* Cerrar la sesión de un portero desde el panel (se le corta en la próxima acción). */
-export async function cerrarSesionPanel(negocio: string, sesion: string): Promise<R> {
+export async function cerrarSesionPanel(negocio: string, sesion: string, cx?: PoolClient): Promise<R> {
   if (!ID.test(String(sesion ?? ""))) return no("Esa puerta no existe.", "That door does not exist.");
-  const r = await db().query(`update door_sessions set ended_at = now(), ended_by = 'business' where id = $1::bigint and business_id = $2 and ended_at is null`, [sesion, negocio]);
+  const r = await (cx ?? db()).query(`update door_sessions set ended_at = now(), ended_by = 'business' where id = $1::bigint and business_id = $2 and ended_at is null`, [sesion, negocio]);
   return r.rowCount ? { ok: true } : no("Esa puerta ya está cerrada.", "That door is already closed.");
 }
 /* 6h · «Revocar este teléfono»: la sesión queda revocada (abierta o ya cerrada por el portero, el panel o el barrido): su paquete ya no se
    da ni se pone al día, el teléfono lo borra en la próxima señal y lo que tenga sin subir YA NO ENTRA (a diferencia de «Cerrar su puerta»,
    que deja subir lo escaneado sin señal antes del cierre). Para un teléfono perdido o en manos de quien no debe. */
-export async function revocarTelefono(negocio: string, sesion: string): Promise<R> {
+export async function revocarTelefono(negocio: string, sesion: string, cx?: PoolClient): Promise<R> {
   if (!ID.test(String(sesion ?? ""))) return no("Esa puerta no existe.", "That door does not exist.");
-  const r = await db().query(`update door_sessions set ended_at = coalesce(ended_at, now()), ended_by = 'revoked'
+  const r = await (cx ?? db()).query(`update door_sessions set ended_at = coalesce(ended_at, now()), ended_by = 'revoked'
                                where id = $1::bigint and business_id = $2 and (ended_by is null or ended_by in ('self', 'business', 'system'))`, [sesion, negocio]);
   return r.rowCount ? { ok: true } : no("Ese teléfono ya estaba revocado o el portero ya no está.", "That phone was already revoked or the door staffer is gone.");
 }
-export async function cerrarIncidencia(negocio: string, id: string, nota: string, actorId: string): Promise<R> {
+export async function cerrarIncidencia(negocio: string, id: string, nota: string, actorId: string, cx?: PoolClient): Promise<R> {
   if (!ID.test(String(id ?? ""))) return no("Esa incidencia no existe.", "That incident does not exist.");
-  const r = await db().query(`update door_incidents set status = 'closed', closed_at = now(), closed_by = $3, closed_note = nullif($4, '') where id = $1::bigint and business_id = $2 and status = 'open'`,
+  const r = await (cx ?? db()).query(`update door_incidents set status = 'closed', closed_at = now(), closed_by = $3, closed_note = nullif($4, '') where id = $1::bigint and business_id = $2 and status = 'open'`,
     [id, negocio, actorId, String(nota ?? "").trim().slice(0, 300)]);
   return r.rowCount ? { ok: true } : no("Esa incidencia ya se cerró.", "That incident is already closed.");
 }

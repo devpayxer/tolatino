@@ -3,6 +3,7 @@
    teléfono de la página, quién lo lleva (Pro), bloquear y la respuesta automática fuera de horario. Bloquear y la
    respuesta automática quedan en la auditoría del negocio. */
 import { mismoOrigen } from "@/lib/cuenta";
+import type { PoolClient } from "pg";
 import { db } from "@/lib/db";
 import { asignarHilo, autoRespuesta, bloquearHilo, compartirTelefono, enviarNegocio, nuevosNegocio, reportarChat, type Msj, type ResM } from "@/lib/mensajes";
 import { accesoPanel, type Acceso } from "@/lib/panel";
@@ -15,8 +16,9 @@ async function entrar(id: unknown): Promise<Acceso | null> {
   return typeof id === "string" ? accesoPanel(id, "msg") : null;
 }
 const res = (r: ResM): Res => (r.ok ? { ok: true } : { ok: false, mensaje: r.msg });
-async function auditar(a: Acceso, action: string, after: unknown) {
-  await db().query(
+/* 9n · La auditoría va con el cliente de la transacción del cambio: entran juntos o ninguno (guardián auditoriaEnLaTransaccion). */
+async function auditar(c: PoolClient, a: Acceso, action: string, after: unknown) {
+  await c.query(
     `insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, $2, 'business', $3, $4, null, $5::jsonb)`,
     [a.yo.id, action, a.negocio.id, a.negocio.city_id, JSON.stringify(after ?? null)]);
 }
@@ -46,15 +48,13 @@ export async function mensajeAsignar(id: string, hilo: string, quien: string | n
 export async function mensajeBloquear(id: string, hilo: string, bloquear: boolean): Promise<Res> {
   const a = await entrar(id);
   if (!a) return SIN_ACCESO;
-  const r = await bloquearHilo(a.negocio.id, a.yo.id, String(hilo ?? ""), !!bloquear);
-  if (r.ok) await auditar(a, bloquear ? "mensajes.bloquear" : "mensajes.desbloquear", { hilo: String(hilo) });
+  const r = await bloquearHilo(a.negocio.id, a.yo.id, String(hilo ?? ""), !!bloquear, (c) => auditar(c, a, bloquear ? "mensajes.bloquear" : "mensajes.desbloquear", { hilo: String(hilo) }));
   return res(r);
 }
 export async function mensajeAuto(id: string, on: boolean): Promise<Res> {
   const a = await entrar(id);
   if (!a) return SIN_ACCESO;
-  const r = await autoRespuesta(a.negocio.id, !!on);
-  if (r.ok) await auditar(a, "mensajes.auto", { on: !!on });
+  const r = await autoRespuesta(a.negocio.id, !!on, (c) => auditar(c, a, "mensajes.auto", { on: !!on }));
   return res(r);
 }
 export async function mensajeReportarNeg(id: string, hilo: string, motivo: string): Promise<Res> {

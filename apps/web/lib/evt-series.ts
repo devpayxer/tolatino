@@ -1,5 +1,5 @@
 import "server-only";
-import { db, tx } from "./db";
+import { db, tx, type AlGuardar } from "./db";
 import { bi, diaCorto, hora, type Bi, type Linea } from "./evt-comun";
 
 /* 6f · Series y eventos de varios días (fase6-eventos.md §4 6f; Panel v2 evView: FECHAS con Saltar / Volver a ponerla, QUIÉN SE PRESENTA ·
@@ -16,7 +16,7 @@ const no = (es: string, en: string): { ok: false; msg: Bi } => ({ ok: false, msg
 const ID = /^\d{1,18}$/;
 class NoS extends Error { constructor(public r: { ok: false; msg: Bi }) { super(r.msg.es); } }
 
-export async function saltarFecha(negocio: string, userId: string, eventoId: string, fechaId: string, saltar: boolean): Promise<Res> {
+export async function saltarFecha(negocio: string, userId: string, eventoId: string, fechaId: string, saltar: boolean, alGuardar?: AlGuardar): Promise<Res> {
   if (!ID.test(String(eventoId)) || !ID.test(String(fechaId))) return no("Esa fecha no existe.", "That date does not exist.");
   try {
     await tx(async (c) => {
@@ -44,6 +44,7 @@ export async function saltarFecha(negocio: string, userId: string, eventoId: str
       await c.query(`select evt_sincronizar_fechas($1::bigint)`, [eventoId]);
       const st = (await c.query<{ st: string }>(`select status as st from event_dates where id = $1::bigint`, [fechaId])).rows[0]?.st;
       if (st !== (saltar ? "skipped" : "scheduled")) throw new NoS(no("No se pudo: esa fecha ya no está en la serie.", "It could not be done: that date is no longer in the series."));
+      await alGuardar?.(c);
     });
     return { ok: true };
   } catch (e) {
@@ -53,11 +54,11 @@ export async function saltarFecha(negocio: string, userId: string, eventoId: str
 }
 
 /* «Cambiar artista solo esta fecha» (o volver al de siempre): el programa de esa fecha y el aviso a los que van. */
-export async function artistaDeFecha(negocio: string, userId: string, fechaId: string, quienRaw: string | null): Promise<Res<{ avisados: number }>> {
+export async function artistaDeFecha(negocio: string, userId: string, fechaId: string, quienRaw: string | null, alGuardar?: AlGuardar<{ avisados: number }>): Promise<Res<{ avisados: number }>> {
   if (!ID.test(String(fechaId))) return no("Esa fecha no existe.", "That date does not exist.");
   const quien = quienRaw == null ? null : String(quienRaw).replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim().slice(0, 60);
   if (quien !== null && quien.length < 2) return no("Escribe quién se presenta.", "Write who performs.");
-  let r: { eid: string; t: Bi; slug: string; dia: string; h0: number; city: string } | null = null;
+  let r: { eid: string; t: Bi; slug: string; dia: string; h0: number; city: string; L: string[] } | null = null;
   try {
     r = await tx(async (c) => {
       const d = (await c.query<{ eid: string; t: Bi; slug: string; dia: string; h0: number; city: string; st: string; est: string; empezo: boolean; kind: string }>(
@@ -72,7 +73,12 @@ export async function artistaDeFecha(negocio: string, userId: string, fechaId: s
       await c.query(`update event_dates set lineup_override = $2::jsonb where id = $1::bigint`, [fechaId, nuevo ? JSON.stringify(nuevo) : null]);
       await c.query(`insert into event_changes (event_id, event_date_id, city_id, kind, before, after, by_user, by_kind) values ($1::bigint, $2::bigint, $3, 'lineup_changed', $4::jsonb, $5::jsonb, $6, 'business')`,
         [d.eid, fechaId, d.city, JSON.stringify({ quien: L[0]!.who }), JSON.stringify({ quien: quien ?? L[0]!.who }), userId]);
-      return { eid: d.eid, t: d.t, slug: d.slug, dia: d.dia, h0: d.h0, city: d.city };
+      // Avisar a los que van a ESA fecha (boletos vivos y RSVP): la lista sale aquí, para que la auditoría diga cuántos.
+      const A = quien === null ? [] : (await c.query<{ u: string }>(
+        `select distinct u::text from (select holder_user_id as u from tickets where event_date_id = $1::bigint and status in ('valid', 'used') and holder_user_id is not null
+                                       union select user_id from rsvps where event_date_id = $1::bigint and status = 'going') x`, [fechaId])).rows.map((x) => x.u);
+      await alGuardar?.(c, { avisados: A.length });
+      return { eid: d.eid, t: d.t, slug: d.slug, dia: d.dia, h0: d.h0, city: d.city, L: A };
     });
   } catch (e) {
     if (e instanceof NoS) return e.r;
@@ -80,9 +86,7 @@ export async function artistaDeFecha(negocio: string, userId: string, fechaId: s
   }
   if (!r || quien === null) return { ok: true, avisados: 0 };
   // Avisar a los que van a ESA fecha (boletos vivos y RSVP): push y en la app, nunca SMS.
-  const L = (await db().query<{ u: string }>(
-    `select distinct u::text from (select holder_user_id as u from tickets where event_date_id = $1::bigint and status in ('valid', 'used') and holder_user_id is not null
-                                   union select user_id from rsvps where event_date_id = $1::bigint and status = 'going') x`, [fechaId])).rows.map((x) => x.u);
+  const L = r.L;
   if (L.length) await (await import("./avisos")).avisarMuchos(L, "evt_artista",
     { es: { evento: r.t.es, cuando: `${diaCorto(r.dia, true)} · ${hora(r.h0)}`, quien }, en: { evento: bi(r.t, false), cuando: `${diaCorto(r.dia, false)} · ${hora(r.h0)}`, quien } },
     { href: `/eventos/${r.slug}?fecha=${fechaId}`, ref: ["evt_artista", `${fechaId}:${Date.now()}`] });

@@ -1,5 +1,5 @@
 import "server-only";
-import { db } from "./db";
+import { db, tx } from "./db";
 
 /* 9n-2 · «Pedir reseña» en un pedido entregado (L248): el negocio le pregunta al cliente «¿Cómo estuvo?» por la campana y, si no abrió la app, por SMS.
    Reglas (las decide el servidor): solo un pedido ENTREGADO de ESTE negocio; dentro de los 14 días; UNA vez por pedido (pedirlo otra vez no manda otro
@@ -37,9 +37,13 @@ export async function pedirResena(negocio: string, numero: string, actorId: stri
     `select o.id::text, o.user_id::text as uid, o.city_id as city, b.name as negocio from operations o join businesses b on b.id = o.business_id where o.business_id = $1 and o.number = $2 and o.kind = 'order'`, [negocio, numero])).rows[0];
   if (!o) return no("Ese pedido no existe.", "That order does not exist.");
   // El índice único por pedido es el candado: dos toques a la vez mandan UN solo aviso.
-  const ins = await db().query(`insert into review_requests (operation_id, business_id, city_id, user_id, requested_by) values ($1::bigint, $2, $3, $4::uuid, $5::uuid) on conflict (operation_id) do nothing`, [o.id, negocio, o.city, o.uid, actorId]);
+  // 9n · La solicitud y su auditoría, en la misma transacción (guardián auditoriaEnLaTransaccion).
+  const ins = await tx(async (c) => {
+    const ins = await c.query(`insert into review_requests (operation_id, business_id, city_id, user_id, requested_by) values ($1::bigint, $2, $3, $4::uuid, $5::uuid) on conflict (operation_id) do nothing`, [o.id, negocio, o.city, o.uid, actorId]);
+    if (ins.rowCount) await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, after) values ('user', $1, 'pedido.pedir_resena', 'business', $2, $3, $4::jsonb)`, [actorId, negocio, o.city, JSON.stringify({ pedido: `#${numero}` })]);
+    return ins;
+  });
   if (!ins.rowCount) return no("Ya se la pediste.", "You already asked.");
-  await db().query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, after) values ('user', $1, 'pedido.pedir_resena', 'business', $2, $3, $4::jsonb)`, [actorId, negocio, o.city, JSON.stringify({ pedido: `#${numero}` })]);
   const { avisar } = await import("./avisos");
   await avisar(o.uid, "resena_pedir", { negocio: o.negocio, num: numero }, { href: `/pedido/${numero}`, ref: ["order", numero] });
   return { ok: true };

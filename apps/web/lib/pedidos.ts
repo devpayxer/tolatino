@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { cobrarOperacion, liberarOperacion, pagoDe, repararPagos, type PagoVista } from "./cobros";
-import { db, tx } from "./db";
+import { db, tx, txAuditada, type AlGuardar } from "./db";
 import type { Lang } from "./idioma";
 import { hora } from "./pedir";
 
@@ -221,10 +221,10 @@ const DESDE: Record<Paso, { status: string[]; stage?: (string | null)[]; mode?: 
   entregado: { status: ["confirmed"] },
 };
 export type ResPaso = { ok: true } | { ok: false; msg: Bi };
-export async function cambiarPaso(negocio: string, numero: string, paso: Paso, actorId: string): Promise<ResPaso> {
+export async function cambiarPaso(negocio: string, numero: string, paso: Paso, actorId: string, alGuardar?: AlGuardar): Promise<ResPaso> {
   if (!/^\d{1,12}$/.test(numero) || !DESDE[paso]) return { ok: false, msg: { es: "Ese pedido no existe.", en: "That order does not exist." } };
   await vencer({ negocio, numero });
-  return tx(async (c) => {
+  return txAuditada(alGuardar, async (c) => {
     const o = (await c.query<{ id: string; status: string; stage: string | null; vivo: boolean; mode: string }>(
       `select id::text, status, stage, (status <> 'pending' or respond_by > now()) as vivo, coalesce(mode, 'pickup') as mode from operations where business_id = $1 and number = $2 and kind = 'order' for update`, [negocio, numero])).rows[0];
     if (!o) return { ok: false, msg: { es: "Ese pedido no existe.", en: "That order does not exist." } };
@@ -265,12 +265,12 @@ export async function cambiarPaso(negocio: string, numero: string, paso: Paso, a
 }
 
 /* Con una app externa (DoorDash, Uber Eats…): el enlace de seguimiento que pega el negocio; el cliente lo ve en su pedido. */
-export async function guardarSeguimiento(negocio: string, numero: string, url: string, actorId: string): Promise<ResPaso> {
+export async function guardarSeguimiento(negocio: string, numero: string, url: string, actorId: string, alGuardar?: AlGuardar): Promise<ResPaso> {
   const u = String(url ?? "").trim().slice(0, 300);
   let ok = false;
   try { const x = new URL(u); ok = x.protocol === "https:" && !!x.hostname; } catch { ok = false; }
   if (!ok) return { ok: false, msg: { es: "Pega el enlace completo (empieza con https://).", en: "Paste the full link (starts with https://)." } };
-  return tx(async (c) => {
+  return txAuditada(alGuardar, async (c) => {
     const o = (await c.query<{ id: string }>(
       `select id::text from operations where business_id = $1 and number = $2 and kind = 'order' and mode = 'delivery' and status = 'confirmed' for update`, [negocio, numero])).rows[0];
     if (!o) return { ok: false, msg: { es: "Este pedido ya cambió. Actualiza la pantalla.", en: "This order already changed. Refresh the screen." } };

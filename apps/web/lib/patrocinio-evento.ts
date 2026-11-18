@@ -187,10 +187,14 @@ export async function avisameLibreEvento(negocio: string, evento: string, quien:
 /* Renovación sola (1 semana o 1 mes; «hasta el evento» no se renueva). La tarjeta es la del pago. */
 export async function renovarSoloEvento(negocio: string, evento: string, quien: string, id: string, on: boolean): Promise<ResPat> {
   if (!ID.test(String(id)) || !ID.test(String(evento))) return no("Ese patrocinio no existe.", "That sponsorship does not exist.");
-  const r = await db().query<{ city_id: string }>(`update event_sponsorships set auto_renew = $4 where id = $1::bigint and event_id = $2::bigint and business_id = $3 and status in ('activo', 'reservado')
-    and card_pm is not null and duration <> 'until_event' returning city_id`, [id, evento, negocio, !!on]);
+  // 9n · El cambio y su auditoría, en la misma transacción (guardián auditoriaEnLaTransaccion).
+  const r = await tx(async (c) => {
+    const r = await c.query<{ city_id: string }>(`update event_sponsorships set auto_renew = $4 where id = $1::bigint and event_id = $2::bigint and business_id = $3 and status in ('activo', 'reservado')
+      and card_pm is not null and duration <> 'until_event' returning city_id`, [id, evento, negocio, !!on]);
+    if (r.rowCount) await auditarEvento(c, quien, evento, r.rows[0]!.city_id, on ? "patrocinio_evento.renovar_solo_on" : "patrocinio_evento.renovar_solo_off", { patrocinio: id });
+    return r;
+  });
   if (!r.rowCount) return no("Ese patrocinio ya terminó.", "That sponsorship already ended.");
-  await auditarEvento(null, quien, evento, r.rows[0]!.city_id, on ? "patrocinio_evento.renovar_solo_on" : "patrocinio_evento.renovar_solo_off", { patrocinio: id });
   return { ok: true };
 }
 
@@ -198,13 +202,17 @@ export async function renovarSoloEvento(negocio: string, evento: string, quien: 
    empezó): se devuelve todo (lo decide la base, 'todo'). */
 export async function terminarPorDuenoEvento(negocio: string, evento: string, quien: string, id: string): Promise<ResPat> {
   if (!ID.test(String(id)) || !ID.test(String(evento))) return no("Ese patrocinio no existe.", "That sponsorship does not exist.");
-  const r = await db().query<{ city_id: string; status: string; refund_cents: number | null }>(
+  const r = await tx(async (c) => {
+    const r = await c.query<{ city_id: string; status: string; refund_cents: number | null }>(
     `update event_sponsorships set status = case when status = 'reservado' then 'cancelado' else 'terminado' end, end_kind = 'dueno', ended_at = now(), ended_by = $4, auto_renew = false,
             ${DEVOLUCION("case when status = 'reservado' then 'todo' else 'nada' end", "'reserva_cancelada'", true)}
       where id = $1::bigint and event_id = $2::bigint and business_id = $3 and status in ('activo', 'reservado') returning city_id, status, refund_cents`, [id, evento, negocio, quien]);
+    const x = r.rows[0];
+    if (x) await auditarEvento(c, quien, evento, x.city_id, "patrocinio_evento.terminar", { patrocinio: id, estado: x.status, devolver: x.refund_cents ? money(x.refund_cents) : null });
+    return r;
+  });
   if (!r.rowCount) return no("Ese patrocinio ya terminó.", "That sponsorship already ended.");
   const x = r.rows[0]!;
-  await auditarEvento(null, quien, evento, x.city_id, "patrocinio_evento.terminar", { patrocinio: id, estado: x.status, devolver: x.refund_cents ? money(x.refund_cents) : null });
   if (x.refund_cents) await devolverPatrocinio("evento", id);
   return { ok: true, devuelto: x.refund_cents ?? 0 };
 }

@@ -1,6 +1,6 @@
 import "server-only";
 import type { PoolClient } from "pg";
-import { db, tx } from "./db";
+import { db, tx, type AlGuardar } from "./db";
 
 /* Layaway: plan de pagos de Tiendas (Fase 4 · bloque 4r). Diseño: neg-tienda-flow.js (abono del plan) y plan §4r.
    - Solo artículos «en plan» (shop_kind 'plan') de una Tienda con plan en Tu herramienta y cobro con tarjeta. Se recoge en la
@@ -178,7 +178,7 @@ async function avisarPago(opId: string, monto: number, listo: boolean) {
 }
 
 /* ── La tienda: «Pagó en la tienda» (el pago que sigue; sin comisión) ── */
-export async function pagoEnTienda(negocio: string, numero: string, actorId: string): Promise<Res> {
+export async function pagoEnTienda(negocio: string, numero: string, actorId: string, alGuardar?: AlGuardar): Promise<Res> {
   const x = NUM.test(String(numero)) ? await opDe("o.number = $1 and o.business_id = $2", [numero, negocio]) : null;
   if (!x) return no("Ese plan no existe.", "That plan does not exist.");
   let monto = 0;
@@ -191,7 +191,9 @@ export async function pagoEnTienda(negocio: string, numero: string, actorId: str
     await c.query(`update layaway_payments set status = 'waived', paid_at = now(), paid_where = 'store' where plan_id = $1::bigint and seq = $2`, [x.plan, s.seq]);
     await ev(c, x.op, "lay_paid", "business", actorId, { es: `Pagó ${money(s.monto)} del plan en la tienda (pago ${s.seq})`, en: `Paid ${money(s.monto)} of the plan at the store (payment ${s.seq})` });
     monto = s.monto;
-    return { ok: true, ...(await recalcular(c, x.plan)) };
+    const listo = await recalcular(c, x.plan);
+    await alGuardar?.(c);
+    return { ok: true, ...listo };
   });
   if (!r.ok) return r;
   await avisarPago(x.op, monto, r.listo);
@@ -199,7 +201,7 @@ export async function pagoEnTienda(negocio: string, numero: string, actorId: str
 }
 
 /* ── Cancelar el plan: lo abonado menos el cargo; lo de la app vuelve por la tarjeta; la unidad vuelve al estante ── */
-export async function cancelarPlan(f: { numero: string; userId?: string; negocio?: string }, por: "user" | "business" | "admin", actorId: string | null): Promise<Res<{ devuelto: number; tienda: number }>> {
+export async function cancelarPlan(f: { numero: string; userId?: string; negocio?: string }, por: "user" | "business" | "admin", actorId: string | null, alGuardar?: AlGuardar): Promise<Res<{ devuelto: number; tienda: number }>> {
   if (!NUM.test(String(f.numero))) return no("Ese plan no existe.", "That plan does not exist.");
   const x = f.userId ? await opDe("o.number = $1 and o.user_id = $2", [f.numero, f.userId]) : f.negocio ? await opDe("o.number = $1 and o.business_id = $2", [f.numero, f.negocio]) : await opDe("o.number = $1", [f.numero]);
   if (!x) return no("Ese plan no existe.", "That plan does not exist.");
@@ -219,6 +221,7 @@ export async function cancelarPlan(f: { numero: string; userId?: string; negocio
       await c.query(`update items i set stock_left = i.stock_left + l.qty, updated_at = now() from operation_lines l where l.operation_id = $1::bigint and l.item_id = i.id and l.status = 'ok' and l.variant_id is null and i.stock_mode = 'qty'`, [x.op]);
     }
     await ev(c, x.op, "lay_cancelled", por === "user" ? "user" : por === "business" ? "business" : "system", actorId, { es: `Plan cancelado · cargo ${money(v.siCancela.cargo)} · se devuelven ${money(v.siCancela.app)} por la tarjeta${v.siCancela.tienda ? ` y ${money(v.siCancela.tienda)} en la tienda` : ""}`, en: `Plan cancelled · fee ${money(v.siCancela.cargo)} · ${money(v.siCancela.app)} back to the card${v.siCancela.tienda ? ` and ${money(v.siCancela.tienda)} at the store` : ""}` });
+    await alGuardar?.(c);
     return { ok: true, cargo: v.siCancela.cargo };
   });
   if (!r.ok) return r;

@@ -1,6 +1,6 @@
 "use server";
 import { mismoOrigen } from "@/lib/cuenta";
-import { db } from "@/lib/db";
+import type { PoolClient } from "pg";
 import { accesoPanel, type Acceso } from "@/lib/panel";
 import { editarRespuesta, pedirRevision, responderResena } from "@/lib/resenas";
 import type { Res } from "./acciones";
@@ -14,8 +14,9 @@ async function entrar(id: unknown): Promise<Acceso | null> {
   if (!(await mismoOrigen())) return null;
   return typeof id === "string" ? accesoPanel(id, "page") : null;
 }
-async function auditar(a: Acceso, action: string, after: unknown) {
-  await db().query(
+/* 9n · La auditoría va con el cliente de la transacción del cambio: entran juntos o ninguno (guardián auditoriaEnLaTransaccion). */
+async function auditar(c: PoolClient, a: Acceso, action: string, after: unknown) {
+  await c.query(
     `insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, $2, 'business', $3, $4, null, $5::jsonb)`,
     [a.yo.id, action, a.negocio.id, a.negocio.city_id, JSON.stringify(after ?? null)]);
 }
@@ -23,9 +24,9 @@ async function auditar(a: Acceso, action: string, after: unknown) {
 export async function resenaResponder(id: string, resena: string, texto: string, oferta = false): Promise<Res> {
   const a = await entrar(id);
   if (!a) return SIN_ACCESO;
-  const r = await responderResena(a.negocio.id, String(resena ?? ""), String(texto ?? ""), a.yo.id, oferta === true);
+  const r = await responderResena(a.negocio.id, String(resena ?? ""), String(texto ?? ""), a.yo.id, oferta === true,
+    (c) => auditar(c, a, "resena.responder", { resena: String(resena), respuesta: String(texto).trim().slice(0, 300), propuesta: oferta === true }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "resena.responder", { resena: String(resena), respuesta: String(texto).trim().slice(0, 300), propuesta: oferta === true });
   return { ok: true };
 }
 
@@ -33,17 +34,16 @@ export async function resenaResponder(id: string, resena: string, texto: string,
 export async function resenaEditarRespuesta(id: string, resena: string, texto: string, oferta = false): Promise<Res> {
   const a = await entrar(id);
   if (!a) return SIN_ACCESO;
-  const r = await editarRespuesta(a.negocio.id, String(resena ?? ""), String(texto ?? ""), oferta === true, a.yo.id);
+  const r = await editarRespuesta(a.negocio.id, String(resena ?? ""), String(texto ?? ""), oferta === true, a.yo.id,
+    (c) => auditar(c, a, "resena.editar_respuesta", { resena: String(resena), respuesta: String(texto).trim().slice(0, 300), propuesta: oferta === true }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "resena.editar_respuesta", { resena: String(resena), respuesta: String(texto).trim().slice(0, 300), propuesta: oferta === true });
   return { ok: true };
 }
 
 export async function resenaRevision(id: string, resena: string): Promise<Res> {
   const a = await entrar(id);
   if (!a) return SIN_ACCESO;
-  const r = await pedirRevision(a.negocio.id, String(resena ?? ""), a.yo.id);
+  const r = await pedirRevision(a.negocio.id, String(resena ?? ""), a.yo.id, (c) => auditar(c, a, "resena.pedir_revision", { resena: String(resena) }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  await auditar(a, "resena.pedir_revision", { resena: String(resena) });
   return { ok: true };
 }

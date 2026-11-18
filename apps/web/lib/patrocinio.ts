@@ -293,9 +293,13 @@ export async function avisameLibre(negocio: string, quien: string): Promise<ResP
 /* Renovación sola (encendida o apagada) del patrocinio vivo. La tarjeta es la del pago. */
 export async function renovarSolo(negocio: string, quien: string, id: string, on: boolean): Promise<ResPat> {
   if (!/^\d{1,18}$/.test(String(id))) return no("Ese patrocinio no existe.", "That sponsorship does not exist.");
-  const r = await db().query(`update sponsorships set auto_renew = $3 where id = $1::bigint and business_id = $2 and status in ('activo', 'reservado') and card_pm is not null returning city_id`, [id, negocio, !!on]);
+  // 9n · El cambio y su auditoría, en la misma transacción (guardián auditoriaEnLaTransaccion).
+  const r = await tx(async (c) => {
+    const r = await c.query<{ city_id: string }>(`update sponsorships set auto_renew = $3 where id = $1::bigint and business_id = $2 and status in ('activo', 'reservado') and card_pm is not null returning city_id`, [id, negocio, !!on]);
+    if (r.rowCount) await auditarNegocio(c, quien, negocio, r.rows[0]!.city_id, on ? "patrocinio.renovar_solo_on" : "patrocinio.renovar_solo_off", { patrocinio: id });
+    return r;
+  });
   if (!r.rowCount) return no("Ese patrocinio ya terminó.", "That sponsorship already ended.");
-  await auditarNegocio(null, quien, negocio, (r.rows[0] as { city_id: string }).city_id, on ? "patrocinio.renovar_solo_on" : "patrocinio.renovar_solo_off", { patrocinio: id });
   return { ok: true };
 }
 
@@ -303,13 +307,17 @@ export async function renovarSolo(negocio: string, quien: string, id: string, on
    empezó): se devuelve todo (lo decide la base, 'todo'). */
 export async function terminarPorDueno(negocio: string, quien: string, id: string): Promise<ResPat> {
   if (!/^\d{1,18}$/.test(String(id))) return no("Ese patrocinio no existe.", "That sponsorship does not exist.");
-  const r = await db().query<{ city_id: string; status: string; refund_cents: number | null }>(
+  const r = await tx(async (c) => {
+    const r = await c.query<{ city_id: string; status: string; refund_cents: number | null }>(
     `update sponsorships set status = case when status = 'reservado' then 'cancelado' else 'terminado' end, end_kind = 'dueno', ended_at = now(), ended_by = $3, auto_renew = false,
             ${DEVOLUCION("case when status = 'reservado' then 'todo' else 'nada' end", "'reserva_cancelada'", false)}
       where id = $1::bigint and business_id = $2 and status in ('activo', 'reservado') returning city_id, status, refund_cents`, [id, negocio, quien]);
+    const x = r.rows[0];
+    if (x) await auditarNegocio(c, quien, negocio, x.city_id, "patrocinio.terminar", { patrocinio: id, estado: x.status, devolver: x.refund_cents ? money(x.refund_cents) : null });
+    return r;
+  });
   if (!r.rowCount) return no("Ese patrocinio ya terminó.", "That sponsorship already ended.");
   const x = r.rows[0]!;
-  await auditarNegocio(null, quien, negocio, x.city_id, "patrocinio.terminar", { patrocinio: id, estado: x.status, devolver: x.refund_cents ? money(x.refund_cents) : null });
   if (x.refund_cents) await devolverPatrocinio("negocio", id);
   return { ok: true, devuelto: x.refund_cents ?? 0 };
 }
