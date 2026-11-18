@@ -2573,7 +2573,7 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
     Pruebas que fallaban solo barajadas o en el iPad, arregladas: pre4e (espera el reenvío en la base), ayu4f (toca el «Confirmar» que recibe el toque;
     iPad en verde, CI 44335846619), menu2b (pickup fijo también sin sesión), ciu9i (espera «Avísame» y dice qué ve). El extractor de cadenas y los
     guardianes listan los archivos sin repetidos (en un merge con conflicto `git ls-files` repetía cada archivo por etapa).
-  · **Cotizaciones y Staff por ciudad** (en la rama; CI dirigido 44375486236 en curso): ver su entrada.
+  · **Cotizaciones y Staff por ciudad** en `main` y `pruebas` (0a5f02f): CI dirigido 44375486236 en verde (12 pruebas, tres anchos, al revés). Ver su entrada.
   · **9n · Catálogo completo** (LAUNCH L214, migración **0179**): Super Admin › Catálogo edita, mueve (el código no cambia), fusiona (los negocios y
     los sinónimos pasan; el nombre viejo queda como sinónimo; «Separar» lo deshace) y quita subcategorías; categoría y módulo **activos por
     ciudad** (la categoría apagada no sale en Negocios, su página, Buscar, el mapa ni Publica; el módulo usa la pausa de Negocios 360° para toda la
