@@ -92,7 +92,9 @@ const limpiar = () => { sql(`update service_requests set status = 'cancelled' wh
   await m.goto(B + `/pre/${P2}`); await m.getByText('SIN RESPUESTA').first().waitFor(); ok(true, 'pasaron 24 h: SIN RESPUESTA');
   ok(sql(`select count(*) from notifications where tpl = 'preest_exp' and ref_id = '${P2}'`) === '1', 'aviso: sin respuesta');
   await clic(m.getByRole('button', { name: 'Mandarlo otra vez' })); await m.getByText('ENVIADO').first().waitFor();
-  ok(sql(`select r.status || '|' || t.status || '|' || (r.respond_by > now() + interval '23 hours') from service_requests r join request_targets t on t.request_id = r.id where r.number = '${P2}'`) === 'sent|sent|true', 'mandado otra vez: 24 h nuevas');
+  const reenv = () => sql(`select r.status || '|' || t.status || '|' || (r.respond_by > now() + interval '23 hours') from service_requests r join request_targets t on t.request_id = r.id where r.number = '${P2}'`);
+  for (let i = 0; i < 60 && reenv() !== 'sent|sent|true'; i++) await new Promise((r) => setTimeout(r, 250)); // «ENVIADO» puede salir antes de guardarse (barajada, 18 nov)
+  ok(reenv() === 'sent|sent|true', 'mandado otra vez: 24 h nuevas');
   await clic(m.getByRole('button', { name: 'Ya no lo necesito' })); await m.getByText('CANCELADO').first().waitFor(); ok(true, 'ya no lo necesito → cancelado');
   // ── Hogar: «No lo hacemos» ──
   await m.goto(B + `/n/${H}/preestimado?s=${sql(`select id from items where business_id = 'plomeria-rodriguez' and name->>'es' = 'Visita y diagnóstico' and removed_at is null order by id limit 1`)}`); await m.getByText('Tu casa').first().waitFor();
