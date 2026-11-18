@@ -102,7 +102,9 @@ export type ClaveConfig =
   | "cola_sla_sop" | "cola_sla_renta" | "cola_sla_mesa" | "cola_sla_noid" | "cola_sla_cuidado" | "cola_sla_salir" | "cola_sla_grupo" | "cola_sla_plantones" | "cola_sla_estafa"
   | "cola_sla_vivienda" | "cola_sla_repusr" | "cola_sla_apel" | "cola_sla_evtcx" | "cola_sla_evtpago" | "cola_sla_rec" | "cola_sla_entrega"
   // 9n-6 · Hogar y Auto: pre-estimado, presupuesto, emergencia y apartado (0150; Configuración › Hogar y Auto) y el techo de Free (Configuración › Dinero)
-  | "sol_pre_h" | "sol_pq_h" | "sol_em_min" | "apartado_h" | "free_ops_cap";
+  | "sol_pre_h" | "sol_pq_h" | "sol_em_min" | "apartado_h" | "free_ops_cap"
+  // 9n · Límites del plan Free/Pro por módulo (0179; Catálogo › Módulos y Free/Pro y Configuración › Negocios)
+  | "free_items" | "free_fotos" | "pro_fotos" | "free_equipo";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

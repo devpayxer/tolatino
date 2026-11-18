@@ -39,7 +39,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   const loc = await ubicacion(u);
   if (loc.c.status !== "on") return <PantallaPronto loc={loc} lang={lang} userId={u?.id ?? null} />;
   const CIUDAD = loc.ciudad;
-  const cats = await categorias(lang);
+  const cats = await categorias(lang, loc.ciudad); // 9n · sin las apagadas en la ciudad
   const nomCiudad = loc.c.name;
   const q = String(sp.q ?? "").slice(0, 120).trim();
   const catSel = cats.find((c) => c.slug === sp.cat) ?? null;

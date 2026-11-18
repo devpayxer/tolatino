@@ -6,7 +6,7 @@ import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition, type ComponentType, type ReactNode } from "react";
-import { filtroActivo, filtrosTodos, fraseActiva, fraseAgregar, seguroVisible, sinActivo, sinAgregar, subAgregar, subEstado, topeCargoDealer } from "./acciones-catalogo";
+import { catCiudad, catEjemplo, catHorario, filtroActivo, filtrosTodos, fraseActiva, fraseAgregar, limiteCambiar, modCiudad, seguroVisible, sinActivo, sinAgregar, subAgregar, subEstado, subFusionar, subMover, subNombre, subSeparar, topeCargoDealer } from "./acciones-catalogo";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { useAhora } from "@/lib/ahora";
@@ -16,29 +16,42 @@ import { tec } from "@/lib/tec";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"DenseTable" | "AdminNote" | "AdminList" | "AuditLog" | "HBars" | "PermMatrix" | "Pager" | "Icon", ComponentType<any>>;
 type Hist = { action: string; target_id: string; before: unknown; after: unknown; reason: string | null; at: string; quien: string | null }[];
+type Bi = { es: string; en: string };
+type DiaP = { on: boolean; a: number; b: number };
+type Ciudad = { id: string; name: string; status: string; negocios: number; on: boolean };
+type Limite = { key: string; mods: string[]; label: Bi; help: Bi | null; unidad: Bi; min: number; max: number; def: number; v: number };
 export type DatosCatalogo = {
   tab: string; puede: boolean;
   cats?: { id: string; es: string; icon: string; op_kind: string | null; line: string | null; subs: number; off: number; negocios: number; pro: number; filtros: number; filtros_off: number }[];
   cat?: { id: string; es: string; en: string; icon: string; op_kind: string | null; line: { es: string; en: string } | null; title: string | null; capitulos: number;
-    subs: { id: string; es: string; en: string; status: string; n: number; equipo: boolean; reason: string | null }[];
-    negocios: { id: string; name: string; plan: string; verified: boolean; cover: string | null }[]; rapidos: string[]; historial: Hist };
+    subs: { id: string; es: string; en: string; status: string; n: number; equipo: boolean; reason: string | null; into_id: string | null; into_es: string | null }[];
+    negocios: { id: string; name: string; plan: string; verified: boolean; cover: string | null }[]; rapidos: string[]; historial: Hist;
+    // 9n · activa por ciudad, «Publica tu negocio» (plantilla de horario y ejemplos) y las categorías a donde se puede mover una subcategoría
+    ciudades: Ciudad[]; onb: { horario?: DiaP[] | null; ph_nombre?: Bi; ph_item?: Bi }; otras: { id: string; es: string; en: string }[] };
   sin?: { filas: { term: string; lang: string; destinos: string[]; on: boolean; todo_on: boolean; equipo: boolean }[]; total: number; q: string; pag: number; porPagina: number; historial: Hist };
   nosup?: { q: string; cat: string | null; n: number }[];
   filt?: { id: string; es: string; slug: string; opciones: { id: string; group_key: string; grupo: string; key: string; es: string; quick: boolean; active: boolean; negocios: number }[]; historial: Hist };
-  mods?: { key: string; es: string; cats: string[] }[];
+  mods?: { key: string; es: string; en: string; cats: string[]; apagado: string[] }[];
+  mod?: { key: string; es: string; en: string; cats: string[]; ciudades: Ciudad[]; porCiudad: boolean; historial: Hist };
+  limites?: { filas: Limite[]; admin: boolean }; histMod?: Hist;
   seg?: { filas: { key: string; kind: "pub" | "priv"; es: string; en: string; hidden: boolean; planes: number; consultorios: number; personas: number }[]; historial: Hist };
-  topeFree?: number;
   dealer?: { tope: number; nota: string | null; dealers: number; enTope: number; carros: number; historial: Hist; admin: boolean };
   vj?: { filas: { id: string; phrase: string; lang: "es" | "en"; active: boolean; base: boolean; quien: string | null }[]; frenadas: number; historial: Hist; admin: boolean };
 };
 type EF = (es: string, en: string) => string;
 const TX = (E: EF): Record<string, string> => ({ order: E("Pedido", "Order"), booking: E("Cita / solicitud", "Appointment / request"), ticket: E("Boletos", "Tickets"), none: E("Sin transacción", "No transaction") });
-/* Lo que ve Free y lo que ve Pro (diseño, Módulos y Free/Pro). */
-const FP: [string, string, boolean, boolean][] = [["Página con pestañas", "Page with tabs", false, true], ["Hasta 5 ítems / carta completa", "Up to 5 items / full menu", true, true], ["Pedidos y citas en línea", "Online orders and appointments", true, true], ["Techo mensual en línea", "Monthly online cap", true, false],
+/* Lo que ve Free y lo que ve Pro (diseño, Módulos y Free/Pro). Las cifras salen de los límites del plan (Configuración). */
+const FP = (items: number): [string, string, boolean, boolean][] => [["Página con pestañas", "Page with tabs", false, true], [`Hasta ${items} ítems / carta completa`, `Up to ${items} items / full menu`, true, true], ["Pedidos y citas en línea", "Online orders and appointments", true, true], ["Techo mensual en línea", "Monthly online cap", true, false],
   ["Novedades y Hoy en el barrio", "Updates and Today in the neighborhood", false, true], ["Staff, Relacionados, Jobs", "Staff, Related, Jobs", false, true], ["Responder reseñas", "Reply to reviews", false, true], ["Destacado en la categoría", "Featured in the category", false, true], ["Insights", "Insights", false, true]];
 const VERBO = (E: EF): Record<string, string> => ({
   "catalogo.sub.agregar": E("agregó la subcategoría", "added the subcategory"), "catalogo.sub.quitar": E("quitó la subcategoría", "removed the subcategory"), "catalogo.sub.restaurar": E("restauró la subcategoría", "restored the subcategory"),
   "catalogo.sinonimo.agregar": E("agregó un sinónimo", "added a synonym"), "catalogo.sinonimo.apagar": E("apagó un sinónimo", "turned off a synonym"), "catalogo.sinonimo.encender": E("encendió un sinónimo", "turned on a synonym"),
+  "catalogo.sub.nombre": E("cambió el nombre de la subcategoría", "renamed the subcategory"), "catalogo.sub.mover": E("movió la subcategoría", "moved the subcategory"),
+  "catalogo.sub.fusionar": E("fusionó la subcategoría", "merged the subcategory"), "catalogo.sub.separar": E("separó la subcategoría", "split the subcategory"),
+  "catalogo.cat.ciudad_apagar": E("apagó la categoría en una ciudad", "turned off the category in a city"), "catalogo.cat.ciudad_encender": E("encendió la categoría en una ciudad", "turned on the category in a city"),
+  "catalogo.modulo.ciudad_apagar": E("apagó el módulo en una ciudad", "turned off the module in a city"), "catalogo.modulo.ciudad_encender": E("encendió el módulo en una ciudad", "turned on the module in a city"),
+  "catalogo.cat.horario": E("cambió la plantilla de horario", "changed the hours template"), "catalogo.cat.ejemplo": E("cambió un ejemplo de Publica tu negocio", "changed a List your business example"),
+  "config.cambiar": E("cambió un límite del plan", "changed a plan limit"),
   "catalogo.filtro.apagar": E("apagó un filtro", "turned off a filter"), "catalogo.filtro.encender": E("encendió un filtro", "turned on a filter"), "autos.cargo.tope": E("cambió el tope del cargo del dealer", "changed the dealer fee cap"),
 });
 const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Record<string, unknown>).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : String(x ?? "—"));
@@ -52,8 +65,27 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
   const [conf, setConf] = useState<Confirmar | null>(null);
   const [pend, start] = useTransition();
   const [q, setQ] = useState(d.sin?.q ?? "");
+  // 9n · La plantilla de horario que se está editando (null = la guardada) y el día abierto.
+  const [hor, setHor] = useState<DiaP[] | null>(null), [diaAb, setDiaAb] = useState(-1);
   const ir = (p: Record<string, string | null>) => { const u = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v) u.set(k, v); else u.delete(k); } router.push(`${path}${u.size ? `?${u}` : ""}`, { scroll: false }); };
-  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); router.refresh(); };
+  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); setHor(null); setDiaAb(-1); router.refresh(); };
+  const sinPermiso = () => setToast(E("Tu rol no edita el catálogo.", "Your role can’t edit the catalog."));
+  const nNeg = (n: number) => `${n} ${n === 1 ? E("negocio", "business") : E("negocios", "businesses")}`;
+  // 9n · Una ciudad con su interruptor (categoría o módulo activos por ciudad): apagar dice a cuántos negocios afecta y pide motivo.
+  const filaCiudad = (x: Ciudad, que: Bi, cuenta: string, efecto: Bi, hacerlo: (encender: boolean, m: string) => Promise<ResAdm>) => ({
+    key: x.id, icon: "pin", t: x.name, s: `${x.on ? E("Activa", "On") : E("Apagada", "Off")} · ${cuenta}${x.status !== "on" ? E(" · la ciudad no abre todavía", " · city not open yet") : ""}`,
+    tag: x.on ? null : E("APAGADA", "OFF"), tone: "danger", dim: !x.on, tgOn: x.on,
+    onTg: !d.puede ? sinPermiso : x.on
+      ? () => setConf({ titulo: E(`Apagar ${que.es} en ${x.name}`, `Turn off ${que.en} in ${x.name}`), sub: E(`Afecta a ${cuenta} en ${x.name}: ${efecto.es}`, `Affects ${cuenta} in ${x.name}: ${efecto.en}`), peligro: x.negocios > 0, cta: E("Apagar", "Turn off"), hacer: (m) => hacerlo(false, m) })
+      : () => setConf({ titulo: E(`¿Por qué vuelve ${que.es} en ${x.name}?`, `Why is ${que.en} coming back in ${x.name}?`), cta: E("Encender", "Turn on"), hacer: (m) => hacerlo(true, m) }),
+  });
+  // 9n · Un límite del plan (Configuración): solo un Admin lo cambia, con motivo; la auditoría guarda antes → después.
+  const filaLimite = (l: Limite, admin: boolean) => ({
+    key: l.key, icon: "star", t: en ? l.label.en : l.label.es, s: `${l.help ? (en ? l.help.en : l.help.es) : ""}${l.v !== l.def ? E(` De fábrica: ${l.def}.`, ` Default: ${l.def}.`) : ""}`,
+    m: `${l.v.toLocaleString("en-US")} ${en ? l.unidad.en : l.unidad.es}`.toUpperCase(),
+    acts: admin ? [{ l: E("Cambiar", "Change"), icon: "edit", onClick: () => setConf({ titulo: en ? l.label.en : l.label.es, sub: E(`Entre ${l.min} y ${l.max}. De fábrica: ${l.def}. Aplica al momento en todas las ciudades.`, `Between ${l.min} and ${l.max}. Default: ${l.def}. Applies right away in every city.`), cta: E("Guardar", "Save"),
+      valor: { k: E("VALOR NUEVO", "NEW VALUE"), ini: String(l.v), max: 4 }, hacer: (m, _e, v) => limiteCambiar(l.key, v, m) }) }] : undefined,
+  });
   const run = (f: () => Promise<ResAdm>) => start(async () => { const r = await f(); if (r.ok) hecho(r); else setToast(r.mensaje); });
   const historial = (h: Hist): ReactNode => h.length
     ? <A.AuditLog rows={h.slice(0, 8).map((x) => ({ who: x.quien ?? E("Equipo", "Team"), initials: (x.quien ?? "E").slice(0, 1), action: verbo[x.action] ?? x.action, before: val(x.before), after: val(x.after), why: x.reason ?? undefined, when: hace(x.at, ahora, E) }))} />
@@ -61,14 +93,35 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
 
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
-      <PanelBloques bloques={[{ type: "head", eye: E("CATÁLOGO", "CATALOG"), t: (en ? d.cat?.en || d.cat?.es : d.cat?.es) ?? d.filt?.es ?? E("Catálogo", "Catalog"), onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <PanelBloques bloques={[{ type: "head", eye: E("CATÁLOGO", "CATALOG"), t: (en ? d.cat?.en || d.cat?.es : d.cat?.es) ?? d.filt?.es ?? (en ? d.mod?.en : d.mod?.es) ?? E("Catálogo", "Catalog"), onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
       <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={hecho} />
       <Toast t={toast} desk={desk} />
     </div>);
 
   /* Detalle de una categoría. */
   if (d.cat) {
-    const c = d.cat, cN = en ? c.en || c.es : c.es, vivas = c.subs.filter((s) => s.status === "on"), quitadas = c.subs.filter((s) => s.status !== "on");
+    const c = d.cat, cN = en ? c.en || c.es : c.es, vivas = c.subs.filter((s) => s.status === "on"), quitadas = c.subs.filter((s) => s.status === "off"), fusionadas = c.subs.filter((s) => s.status === "merged");
+    const sN = (s: { es: string; en: string }) => (en ? s.en || s.es : s.es);
+    // 9n · Editar, mover y fusionar: cada una dice a cuántos negocios afecta y pide motivo (la auditoría lo guarda en la misma transacción).
+    const accionesSub = (s: (typeof vivas)[number]) => [
+      { l: E("Editar", "Edit"), icon: "edit", onClick: () => setConf({ titulo: E(`Nombre de «${s.es}»`, `Name of “${sN(s)}”`), sub: E(`Afecta a ${s.n} ${s.n === 1 ? "negocio" : "negocios"}: la etiqueta cambia de nombre en su página, en Buscar y en Publica tu negocio. Español y, después de «/», inglés.`, `Affects ${nNeg(s.n)}: the tag gets the new name on their page, in Search and in List your business. Spanish and, after “/”, English.`),
+        cta: E("Guardar", "Save"), valor: { k: E("NOMBRE · ES / EN", "NAME · ES / EN"), ini: `${s.es} / ${s.en || s.es}`, max: 130 }, hacer: (m, _e, v) => subNombre(s.id, v, m) }) },
+      { l: E("Mover", "Move"), icon: "right", onClick: () => setConf({ titulo: E(`Mover «${s.es}»`, `Move “${sN(s)}”`), sub: E(`Afecta a ${s.n} ${s.n === 1 ? "negocio" : "negocios"}: conservan la etiqueta y su categoría; la subcategoría sale en la que elijas. Su código (${s.id}) no cambia.`, `Affects ${nNeg(s.n)}: they keep the tag and their category; the subcategory shows in the one you pick. Its code (${s.id}) doesn’t change.`),
+        cta: E("Mover", "Move"), elegir: { label: E("CATEGORÍA NUEVA", "NEW CATEGORY"), items: c.otras.map((k) => ({ k: k.id, l: en ? k.en || k.es : k.es })) }, hacer: (m, e) => subMover(s.id, e ?? "", m) }) },
+      { l: E("Fusionar", "Merge"), icon: "filter", onClick: () => setConf({ titulo: E(`Fusionar «${s.es}» en otra`, `Merge “${sN(s)}” into another`), sub: E(`Afecta a ${s.n} ${s.n === 1 ? "negocio" : "negocios"}: pasan a la que elijas, sus sinónimos también y «${s.es}» queda como sinónimo. Nada se borra: «Separar» lo devuelve.`, `Affects ${nNeg(s.n)}: they move to the one you pick, its synonyms too, and “${sN(s)}” stays as a synonym. Nothing is deleted: “Split” brings it back.`),
+        peligro: s.n > 0, cta: E("Fusionar", "Merge"), elegir: { label: E("FUSIONAR EN", "MERGE INTO"), items: vivas.filter((x) => x.id !== s.id).map((x) => ({ k: x.id, l: sN(x) })) }, hacer: (m, e) => subFusionar(s.id, e ?? "", m) }) },
+      { l: E("Quitar", "Remove"), icon: "trash", onClick: () => setConf({ titulo: E(`¿Quitar «${s.es}»?`, `Remove “${s.en || s.es}”?`), sub: s.n ? E(`Afecta a ${s.n} ${s.n === 1 ? "negocio" : "negocios"}: pierden la etiqueta, no la ficha.`, `Affects ${s.n} ${s.n === 1 ? "business" : "businesses"}: they lose the tag, not the listing.`) : E("Nadie la usa hoy.", "No one uses it today."), peligro: s.n > 0, cta: E("Quitar", "Remove"), hacer: (m) => subEstado(s.id, false, m) }) },
+    ];
+    // 9n · Plantilla de horario de Publica tu negocio (Iglesias no lleva: sale de sus cultos). Se edita aquí y se guarda con motivo.
+    const DS: [string, string][] = [["Lunes", "Monday"], ["Martes", "Tuesday"], ["Miércoles", "Wednesday"], ["Jueves", "Thursday"], ["Viernes", "Friday"], ["Sábado", "Saturday"], ["Domingo", "Sunday"]];
+    const hora = (h: number) => { const HH = ((h % 24) + 24) % 24, hh = Math.floor(HH), mm = Math.round((HH - hh) * 60); return `${hh % 12 || 12}${mm ? ":" + String(mm).padStart(2, "0") : ""} ${hh < 12 ? "AM" : "PM"}`; };
+    const guardado = c.onb.horario ?? null, H = hor ?? guardado, cambiado = !!hor;
+    const setDia = (i: number, p: Partial<DiaP>) => { if (!d.puede) return sinPermiso(); setHor((H ?? []).map((x, j) => (j === i ? { ...x, ...p } : x))); };
+    const ph = (k: "ph_nombre" | "ph_item", t: Bi, sub: Bi) => {
+      const v = c.onb[k];
+      return { key: k, icon: "edit", t: E(t.es, t.en), s: v ? `${v.es} · ${v.en}` : "—", acts: d.puede ? [{ l: E("Cambiar", "Change"), icon: "edit", onClick: () => setConf({ titulo: E(t.es, t.en), sub: E(sub.es, sub.en), cta: E("Guardar", "Save"),
+        valor: { k: E("EJEMPLO · ES / EN", "EXAMPLE · ES / EN"), ini: v ? `${v.es} / ${v.en}` : "", max: 110 }, hacer: (m, _e, val) => catEjemplo(c.id, k, val, m) }) }] : undefined };
+    };
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 1120 }}>
         <span role="link" onClick={() => ir({ c: null })} {...tec(() => ir({ c: null }))} style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><A.Icon name="chevronLeft" size={15} color="var(--tl-action)" />{E("Catálogo", "Catalog")}</span>
@@ -82,14 +135,38 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
           { type: "group", k: `${E("SUBCATEGORÍAS", "SUBCATEGORIES")} · ${vivas.length}` },
         ].filter(Boolean) as Bloque[]} />
         <PanelBloques bloques={[{ type: "rows", cols: desk ? "repeat(auto-fill,minmax(340px,1fr))" : undefined, items: vivas.map((s) => ({
-          key: s.id, icon: "grid", t: en ? s.en || s.es : s.es, s: `${s.n} ${s.n === 1 ? E("negocio", "business") : E("negocios", "businesses")}${s.en !== s.es ? ` · ${en ? s.es : s.en}` : ""}${s.equipo ? E(" · agregada por el equipo", " · added by the team") : ""}`,
+          key: s.id, icon: "grid", t: sN(s), s: `${s.n} ${s.n === 1 ? E("negocio", "business") : E("negocios", "businesses")}${s.en !== s.es ? ` · ${en ? s.es : s.en}` : ""}${s.equipo ? E(" · agregada por el equipo", " · added by the team") : ""}${s.id.startsWith(`${c.id}-`) ? "" : ` · ${s.id}`}`,
           m: s.n === 0 ? E("SIN OFERTA", "NO LISTINGS") : undefined, mFg: "var(--tl-pro-ink)",
-          acts: d.puede ? [{ l: E("Quitar", "Remove"), icon: "trash", onClick: () => setConf({ titulo: E(`¿Quitar «${s.es}»?`, `Remove “${s.en || s.es}”?`), sub: s.n ? E(`Afecta a ${s.n} ${s.n === 1 ? "negocio" : "negocios"}: pierden la etiqueta, no la ficha.`, `Affects ${s.n} ${s.n === 1 ? "business" : "businesses"}: they lose the tag, not the listing.`) : E("Nadie la usa hoy.", "No one uses it today."), peligro: s.n > 0, cta: E("Quitar", "Remove"), hacer: (m) => subEstado(s.id, false, m) }) }] : undefined,
+          acts: d.puede ? accionesSub(s) : undefined,
         })) }]} />
         {quitadas.length ? <PanelBloques bloques={[{ type: "group", k: `${E("QUITADAS", "REMOVED")} · ${quitadas.length}` }, { type: "rows", items: quitadas.map((s) => ({
-          key: s.id, icon: "ban", t: en ? s.en || s.es : s.es, s: `${s.reason ?? E("Quitada", "Removed")} · ${s.n} ${s.n === 1 ? E("negocio la tiene", "business has it") : E("negocios la tienen", "businesses have it")}`, dim: true,
+          key: s.id, icon: "ban", t: sN(s), s: `${s.reason ?? E("Quitada", "Removed")} · ${s.n} ${s.n === 1 ? E("negocio la tiene", "business has it") : E("negocios la tienen", "businesses have it")}`, dim: true,
           acts: d.puede ? [{ l: E("Restaurar", "Restore"), v: "action", icon: "check", onClick: () => setConf({ titulo: E(`¿Por qué vuelve «${s.es}»?`, `Why is “${s.en || s.es}” coming back?`), cta: E("Restaurar", "Restore"), hacer: (m) => subEstado(s.id, true, m) }) }] : undefined,
         })) }]} /> : null}
+        {fusionadas.length ? <PanelBloques bloques={[{ type: "group", k: `${E("FUSIONADAS", "MERGED")} · ${fusionadas.length}` }, { type: "rows", items: fusionadas.map((s) => ({
+          key: s.id, icon: "filter", t: sN(s), s: `${E("Fusionada en", "Merged into")} «${s.into_es ?? "—"}» · ${s.n} ${s.n === 1 ? E("negocio pasó", "business moved") : E("negocios pasaron", "businesses moved")}${s.reason ? ` · ${s.reason}` : ""}`, dim: true,
+          acts: d.puede ? [{ l: E("Separar", "Split"), v: "action", icon: "check", onClick: () => setConf({ titulo: E(`¿Separar «${s.es}»?`, `Split “${sN(s)}”?`), sub: E(`Vuelve a los ${s.n} ${s.n === 1 ? "negocio" : "negocios"} que la tenían y sus sinónimos vuelven como estaban.`, `It goes back to the ${nNeg(s.n)} that had it and its synonyms go back as they were.`), cta: E("Separar", "Split"), hacer: (m) => subSeparar(s.id, m) }) }] : undefined,
+        })) }]} /> : null}
+        <PanelBloques bloques={[{ type: "group", k: E("ACTIVA POR CIUDAD", "ON BY CITY") }, { type: "rows", cols: desk ? "repeat(auto-fill,minmax(340px,1fr))" : undefined, items: c.ciudades.map((x) =>
+          filaCiudad(x, { es: c.es, en: cN }, nNeg(x.negocios), { es: "dejan de salir en la página de la categoría, en Negocios y en Buscar, y nadie publica uno nuevo de esta categoría ahí. Sus fichas se conservan.", en: "they stop showing on the category page, in Businesses and in Search, and no one can list a new one of this category there. Their listings are kept." },
+            (encender, m) => catCiudad(c.id, x.id, encender, m))) }]} />
+        <PanelBloques bloques={[{ type: "group", k: E("PUBLICA TU NEGOCIO", "LIST YOUR BUSINESS") }]} />
+        {H ? <>
+          <PanelBloques bloques={[{ type: "note", tone: "info", icon: "clock", t: E("Plantilla de horario: con esto empieza quien publica un negocio de esta categoría (lo cambia en su paso «¿Cuándo abres?»). Los que ya publicaron no cambian.", "Hours template: someone listing a business in this category starts with these hours (they can change them in “When are you open?”). Businesses already listed don’t change.") },
+            { type: "hours", todayL: E("HOY", "TODAY"), openK: E("ABRE", "OPENS"), closeK: E("CIERRA", "CLOSES"), copyL: E("Copiar a los días abiertos", "Copy to open days"),
+              items: H.map((x, i) => ({ d: E(...DS[i]!), on: x.on, onTg: () => setDia(i, { on: !x.on }), h: x.on ? `${hora(x.a)} – ${hora(x.b)}` : E("Cerrado", "Closed"), hFg: x.on ? "var(--tl-ink)" : "rgba(11,14,18,.6)",
+                open: diaAb === i && x.on, onOpen: () => { if (x.on) setDiaAb(diaAb === i ? -1 : i); }, aL: hora(x.a), bL: hora(x.b),
+                aM: () => setDia(i, { a: Math.max(0, x.a - 0.5) }), aP: () => setDia(i, { a: Math.min(x.b - 1, x.a + 0.5) }),
+                bM: () => setDia(i, { b: Math.max(x.a + 1, x.b - 0.5) }), bP: () => setDia(i, { b: Math.min(x.a + 20, 30, x.b + 0.5) }),
+                onCopy: () => { if (!d.puede) return sinPermiso(); setHor(H.map((y) => (y.on ? { ...y, a: x.a, b: x.b } : y))); } })) },
+            ...(cambiado && d.puede ? [{ type: "acts", items: [
+              { l: E("Guardar la plantilla", "Save the template"), v: "action", icon: "check", off: pend, onClick: () => setConf({ titulo: E(`Plantilla de horario de ${c.es}`, `Hours template for ${cN}`), sub: E("Quien publique un negocio de esta categoría desde ahora empieza con este horario. Los negocios que ya publicaron no cambian.", "Anyone listing a business in this category from now on starts with these hours. Businesses already listed don’t change."), cta: E("Guardar", "Save"), hacer: (m) => catHorario(c.id, H, m) }) },
+              { l: E("Deshacer", "Undo"), icon: "close", onClick: () => { setHor(null); setDiaAb(-1); } }] } as Bloque] : [])]} />
+        </> : <PanelBloques bloques={[{ type: "note", tone: "ink", icon: "clock", t: E("Esta categoría no lleva plantilla de horario: el horario sale de los cultos que el negocio elige.", "This category has no hours template: the hours come from the services the business picks.") }]} />}
+        <PanelBloques bloques={[{ type: "rows", items: [
+          ph("ph_nombre", { es: "Ejemplo del nombre del negocio", en: "Business name example" }, { es: "Sale dentro del campo del nombre cuando alguien elige esta categoría. Español y, después de «/», inglés.", en: "Shows inside the name field when someone picks this category. Spanish and, after “/”, English." }),
+          ph("ph_item", { es: "Ejemplo de un ítem propio", en: "Own item example" }, { es: "Sale dentro del campo «Nombre» al agregar un ítem que no está en la lista. Español y, después de «/», inglés.", en: "Shows inside the “Name” field when adding an item that isn’t on the list. Spanish and, after “/”, English." }),
+        ] }]} />
         {c.negocios.length ? <>
           <PanelBloques bloques={[{ type: "group", k: E("NEGOCIOS", "BUSINESSES"), link: E("Ver todos", "See all"), onLink: () => router.push(`/admin/negocios?cat=${c.id}`) }]} />
           <A.AdminList rows={c.negocios.map((b) => ({ image: b.cover ?? undefined, initials: b.cover ? undefined : b.name.slice(0, 1), title: b.name, sub: `${b.plan === "pro" ? "Pro" : "Free"}${b.verified ? E(" · Verificado", " · Verified") : ""}`, chevron: true, onClick: () => router.push(`/admin/negocios/${b.id}`) }))} />
@@ -115,6 +192,26 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
         <PanelBloques bloques={[{ type: "acts", items: [...(off && d.puede ? [{ l: E("Encender todos", "Turn all on"), icon: "check", off: pend, onClick: () => run(() => filtrosTodos(f.id)) }] : []), { l: E("Ver la página de la categoría", "View the category page"), icon: "search", onClick: () => window.open(`/c/${f.slug}`, "_blank") }] }]} />
         <PanelBloques bloques={[{ type: "group", k: E("HISTORIAL RECIENTE", "RECENT HISTORY") }]} />
         {historial(f.historial)}
+        <Toast t={toast} desk={desk} />
+      </div>);
+  }
+
+  /* 9n · Un módulo: activo por ciudad (la misma pausa de Negocios 360°, para todos sus negocios de esa ciudad) y sus límites del plan. */
+  if (d.mod) {
+    const m = d.mod, mN = en ? m.en || m.es : m.es;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 1120 }}>
+        <span role="link" onClick={() => router.push(`${path}?tab=mod`, { scroll: false })} {...tec(() => router.push(`${path}?tab=mod`, { scroll: false }))} style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><A.Icon name="chevronLeft" size={15} color="var(--tl-action)" />{E("Módulos y Free/Pro", "Modules and Free/Pro")}</span>
+        <PanelBloques bloques={[{ type: "head", eye: E("MÓDULO", "MODULE"), t: mN, s: m.cats.join(" · ") || E("Ninguna categoría", "No category"), h1: desk ? 26 : 22 },
+          { type: "group", k: E("ACTIVO POR CIUDAD", "ON BY CITY") },
+          m.porCiudad
+            ? { type: "rows", cols: desk ? "repeat(auto-fill,minmax(340px,1fr))" : undefined, items: m.ciudades.map((x) => filaCiudad(x, { es: m.es, en: mN }, nNeg(x.negocios),
+              { es: "los negocios de la ciudad lo tienen en pausa (dejan de ofrecerlo en su página y ven el motivo en su panel), y los que publiquen después también.", en: "the city’s businesses have it paused (they stop offering it on their page and see the reason in their panel), and so will new ones." },
+              (encender, mo) => modCiudad(m.key, x.id, encender, mo))) }
+            : { type: "note", tone: "ink", icon: "info", t: E("Este módulo todavía no se apaga por ciudad: su página no tiene la pausa de To’Latino.", "This module can’t be turned off by city yet: its page doesn’t have the To’Latino pause.") },
+          ...(d.limites?.filas.length ? [{ type: "group", k: E("LÍMITES FREE Y PRO", "FREE AND PRO LIMITS") } as Bloque, { type: "rows", items: d.limites.filas.map((l) => filaLimite(l, d.limites!.admin)) } as Bloque] : []),
+          { type: "group", k: E("HISTORIAL RECIENTE", "RECENT HISTORY") }]} />
+        {historial(m.historial)}
         <Toast t={toast} desk={desk} />
       </div>);
   }
@@ -213,14 +310,23 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
         {historial(v.historial)}
       </>);
   } else if (d.tab === "mod" && d.mods) {
+    // 9n · Cada módulo abre su detalle (activo por ciudad); la matriz dice qué ve Free y qué ve Pro con las cifras de los límites del plan,
+    // que un Admin cambia aquí mismo (son valores de Configuración: lib/config.ts).
+    const lim = d.limites?.filas ?? [], items = lim.find((l) => l.key === "free_items")?.v ?? 0;
     cuerpo = (
       <>
-        <PanelBloques bloques={[{ type: "rows", cols: desk ? "repeat(auto-fill,minmax(320px,1fr))" : undefined, items: d.mods.map((m) => ({ key: m.key, icon: "grid", t: m.es, s: `${m.cats.join(" · ") || E("Ninguna categoría", "No category")}` })) },
+        <PanelBloques bloques={[{ type: "rows", cols: desk ? "repeat(auto-fill,minmax(320px,1fr))" : undefined, items: d.mods.map((m) => ({ key: m.key, icon: "grid", t: en ? m.en || m.es : m.es,
+          s: `${m.cats.join(" · ") || E("Ninguna categoría", "No category")}${m.apagado.length ? E(` · Apagado en ${m.apagado.join(", ")}`, ` · Off in ${m.apagado.join(", ")}`) : ""}`,
+          tag: m.apagado.length ? E("POR CIUDAD", "BY CITY") : null, tone: "danger", chev: true, onClick: () => ir({ m: m.key, tab: null }) })) },
           { type: "group", k: E("QUÉ VE FREE Y QUÉ VE PRO", "WHAT FREE SEES AND WHAT PRO SEES") }]} />
         <div style={{ overflowX: "auto", borderRadius: 18, border: "1px solid rgba(11,14,18,.08)", background: "var(--tl-white)" }}>
-          <A.PermMatrix columns="minmax(0,2.4fr) minmax(0,1fr) minmax(0,1fr)" head={["FREE", "PRO"]} rows={FP.map(([l, lEn, f, p]) => ({ label: E(l, lEn), cells: [{ on: f }, { on: p }] }))} />
+          <A.PermMatrix columns="minmax(0,2.4fr) minmax(0,1fr) minmax(0,1fr)" head={["FREE", "PRO"]} rows={FP(items).map(([l, lEn, f, p]) => ({ label: E(l, lEn), cells: [{ on: f }, { on: p }] }))} />
         </div>
-        <PanelBloques bloques={[{ type: "note", tone: "info", t: E(`Techo Free: ${d.topeFree ?? "—"} pedidos o citas en línea al mes (Sistema › Configuración); después, Llamar.`, `Free cap: ${d.topeFree ?? "—"} online orders or appointments a month (System › Settings); then, Call.`) }]} />
+        <PanelBloques bloques={[{ type: "group", k: E("LÍMITES FREE Y PRO", "FREE AND PRO LIMITS") },
+          { type: "note", tone: "info", icon: "star", t: E("Los leen la página del negocio, los pedidos y las citas, el panel y Publica tu negocio al momento. Solo un Admin los cambia; cada cambio queda en la auditoría con su motivo.", "The business page, orders and appointments, the panel and List your business read them right away. Only an Admin changes them; every change stays in the audit log with its reason.") },
+          { type: "rows", cols: desk ? "repeat(2,minmax(0,1fr))" : undefined, items: lim.map((l) => filaLimite(l, !!d.limites?.admin)) },
+          { type: "group", k: E("HISTORIAL RECIENTE", "RECENT HISTORY") }]} />
+        {historial(d.histMod ?? [])}
       </>);
   }
   return (

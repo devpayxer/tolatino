@@ -7,7 +7,7 @@ import * as UI from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { empezarDeNuevo, guardarBorrador, leerBorrador, negocioIgual, publicar, publicarOtro } from "./acciones";
-import { cap, catalogoVivo, D0, dig, F, Fl, fmtPh, items, ok, opOf, own, SEQ, subL, X, zoneOf, type Borrador, type Paso, type SubsVivas } from "./logica";
+import { cap, catalogoVivo, plantillasVivas, D0, dig, F, Fl, fmtPh, items, ok, opOf, own, SEQ, subL, X, zoneOf, type Borrador, type CatalogoPublica, type Paso, type SubsVivas } from "./logica";
 import { K, PasoB1, PasoC1, type UiB } from "./PasosBC";
 import { PasoD1, PasoE1 } from "./PasosDE";
 import { fechasPrueba, foto, PasoF1, PasoH1, type Publicado } from "./PasosFH";
@@ -22,6 +22,7 @@ const KF = "@keyframes oFade{from{opacity:0;transform:translateY(8px)}to{opacity
 
 export type VistaPublica = {
   lang: "es" | "en"; ciudad: string; ciudadId: string; subs: SubsVivas;
+  catsOff: string[]; catalogo: CatalogoPublica; // 9n · Catálogo: categorías apagadas en la ciudad; plantillas, ejemplos y límites del plan
   usuario: { nombre: string; primero: string } | null;
   inicial: { paso: string; d: Partial<Borrador> } | null; publicado: Publicado | null; prueba: boolean;
 };
@@ -38,11 +39,13 @@ const leerLocal = (): Partial<Borrador> | null => { try { return JSON.parse(loca
 
 export function Publica({ v }: { v: VistaPublica }) {
   catalogoVivo(v.subs); // 9n · las subcategorías vivas del Catálogo (antes de que los pasos lean la lista)
+  plantillasVivas(v.catalogo); // 9n · plantilla de horario, ejemplos y límites del plan del Catálogo
   const es = v.lang === "es", E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), ruta = usePathname(), sp = useSearchParams();
   const dw = useAncho(), desk = dw >= 1024;
   const [usuario, setUsuario] = useState(v.usuario);
-  const [d, setD] = useState<Borrador>(() => ({ ...D0(), ...(v.inicial?.d ?? {}) }));
+  // 9n · Un borrador de una categoría que se apagó en esta ciudad vuelve a elegir categoría (el servidor tampoco la publicaría).
+  const [d, setD] = useState<Borrador>(() => { const x = { ...D0(), ...(v.inicial?.d ?? {}) }; return x.cat && v.catsOff.includes(x.cat) ? { ...x, cat: null, subs: [] } : x; });
   const [publicado, setPublicado] = useState<Publicado | null>(v.publicado);
   const [ui, setUiState] = useState<UiB & { ph: string; cd: string; codeSent: boolean; sendN: number; back: boolean; bkName: string; needName: boolean; fn: string; ln: string; askNew: boolean; err: string | null; busy: boolean; prueba: string | null }>(
     { q: "", allCats: false, moreSubs: false, dupOk: false, ph: "", cd: "", codeSent: false, sendN: 0, back: false, bkName: "", needName: false, fn: "", ln: "", askNew: false, err: null, busy: false, prueba: null });
@@ -326,7 +329,7 @@ export function Publica({ v }: { v: VistaPublica }) {
               ) : null}
             </div>
           ) : null}
-          {st === "B1" ? <PasoB1 d={d} up={up} ui={ui} setUi={setUi} es={es} desk={desk} dup={dup} toast={toast} onClaim={() => { if (dup) router.push(`/recuperar/${dup.id}?volver=publica`); }} /> : null}
+          {st === "B1" ? <PasoB1 d={d} up={up} ui={ui} setUi={setUi} es={es} desk={desk} dup={dup} toast={toast} off={v.catsOff} onClaim={() => { if (dup) router.push(`/recuperar/${dup.id}?volver=publica`); }} /> : null}
           {st === "C1" ? <PasoC1 d={d} up={up} es={es} /> : null}
           {st === "D1" ? <PasoD1 d={d} up={up} es={es} /> : null}
           {st === "E1" ? <PasoE1 d={d} up={up} es={es} ciudad={v.ciudad} irA={go} /> : null}

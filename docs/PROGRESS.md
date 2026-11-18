@@ -2568,6 +2568,15 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   · **Pruebas que dependían de la hora** (la corrida de hito de madrugada): cre9h un huso por hora, ana9g el día de su semilla, pat002/pat003
     devuelven 7 de 7 si no se usó ningún día; ciu9i dice qué ve si no carga. 6/6 en verde de madrugada (CI 44251270054).
   · Corrida completa de hito otra vez: CI 44257931432.
+  · **9n · Catálogo completo** (LAUNCH L214, migración **0179**): Super Admin › Catálogo edita, mueve (el código no cambia), fusiona (los negocios y
+    los sinónimos pasan; el nombre viejo queda como sinónimo; «Separar» lo deshace) y quita subcategorías; categoría y módulo **activos por
+    ciudad** (la categoría apagada no sale en Negocios, su página, Buscar, el mapa ni Publica; el módulo usa la pausa de Negocios 360° para toda la
+    ciudad, con trigger para los nuevos); **plantilla de horario y ejemplos** de Publica por categoría (sembrados con lo que se veía); **límites
+    Free/Pro** en Configuración (free_items, free_fotos, pro_fotos, free_equipo + free_ops_cap), editables por un Admin y leídos por la ficha, el menú,
+    el panel y Publica. Cada edición dice a cuántos negocios afecta y se audita en la misma transacción. Guardianes catalogoCompleto,
+    categoriaPorCiudad, moduloPorCiudad, plantillasDePublica, limitesDelPlan (alrevesCat9n 29/29); e2e **cat9n 51 ✓** y cat1m, mapa, ciudad, fie4u en
+    local (Postgres 16 + `next build` + `next start`, Chromium). Ayuda `admin-catalogo.md`; decisiones en REVISION «Catálogo completo»; pendientes
+    nuevos en LAUNCH (Free en Servicios/Tienda, Cotizaciones y Staff por ciudad, estado sin diseño de la categoría apagada).
 - **17 nov · Demos ronda 2 (pedido del fundador: 10 por CADA subcategoría + 200+ eventos):** 21 agentes Sonnet en worktrees, uno por
   categoría + 2 para la semilla existente + 2 de eventos; generadores `scripts/semilla/demos/r2-*.mjs` (solo leen los de la ronda 1).
   Integración en una base nueva (copia de tl_demos): ≈ 6.700 negocios nuevos (todas las subcategorías ≥ 10), 446 de la semilla llenados,

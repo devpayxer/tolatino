@@ -1,11 +1,11 @@
 import { diasEspeciales, horasDelDia } from "./dias-especiales";
 import { VENTAS_SQL, populares, type Ventas30 } from "./menu-ventas";
 import "server-only";
+import { cfgSql } from "./config";
 import type { QueryResult, QueryResultRow } from "pg";
 import { db } from "./db";
 import type { Lang } from "./idioma";
 import { AGOTADO_SQL, QUEDAN_SQL, type Av } from "./menu";
-import { ITEMS_FREE } from "./plan";
 import { vencer } from "./pedidos";
 import { cobrarOperacion, registrarRetencion, retenerPedido, tarjetaDe } from "./cobros";
 import { cuponDe, impuestoConDescuento } from "./cupon-seguidores";
@@ -192,7 +192,9 @@ async function filas(c: Q, negocio: string, tz: string, lock = false, userId: st
   // 9n-2 · Populares = lo fijado y, después, lo más pedido en 30 días (lib/menu-ventas.ts). Al cobrar (lock) no se calcula: no cambia el pedido.
   const ventas: Ventas30 = {};
   if (!lock) for (const r of (await c.query<{ id: string; pedidos: number; uds: number; cents: number }>(VENTAS_SQL, [negocio])).rows) ventas[r.id] = { pedidos: r.pedidos, uds: r.uds, cents: r.cents };
-  return { s: s.rows, i: i.rows, g: g.rows, tz, ventas };
+  // 9n · Cuántos platos ve y pide un Free: el límite del plan (Configuración · free_items), leído con el mismo cliente.
+  const itemsFree = (await c.query<{ n: number }>(`select ${cfgSql("free_items")} as n`)).rows[0]!.n;
+  return { s: s.rows, i: i.rows, g: g.rows, tz, ventas, itemsFree };
 }
 
 /* Arma el menú público. `ref` = minuto de referencia para los horarios propios (ahora, o la hora en que abre). */
@@ -223,9 +225,9 @@ function armar(b: Base, F: Awaited<ReturnType<typeof filas>>, est: PEstado, es: 
     sec.items.push(i.id);
   }
   let secs = secsAll.filter((s) => s.items.length);
-  // Free: se ven 5 platos en la página (los primeros del menú, en su orden).
+  // Free: se ven los primeros platos del menú, en su orden (9n · cuántos: el límite del plan free_items de Configuración, que llega en F).
   if (b.plan !== "pro") {
-    const cinco = new Set(secs.flatMap((s) => s.items).slice(0, ITEMS_FREE));
+    const cinco = new Set(secs.flatMap((s) => s.items).slice(0, F.itemsFree));
     secs = secs.map((s) => ({ ...s, items: s.items.filter((id) => cinco.has(id)) })).filter((s) => s.items.length);
     for (const k of Object.keys(items)) if (!cinco.has(k)) delete items[k];
   }

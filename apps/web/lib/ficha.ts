@@ -1,10 +1,10 @@
 import "server-only";
+import { cfgSql } from "./config";
 import { centroSQL, PUNTO_PUBLICO, type Punto } from "./punto";
 import { db } from "./db";
 import { foto } from "./directorio";
 import type { Lang } from "./idioma";
 import { estado, hora12 } from "./tarjeta";
-import { FOTOS_FREE, FOTOS_PRO } from "./plan";
 import { licenciasDe, tarjetaLey } from "./licencias";
 import { videosVivos, type VideoVivo } from "./video-negocio";
 import { historiasDeNegocios } from "./hoy";
@@ -18,7 +18,8 @@ type Rango = [string, string];
 type Dia = { weekday: number; open: boolean; ranges: Rango[] };
 
 export const ID_NEGOCIO = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-/* PLAN §2: un Free muestra 3 fotos; un Pro, las que suba (tope de lectura 60). Las cifras viven en lib/plan.ts. */
+/* PLAN §2: un Free muestra las primeras fotos; un Pro, las que suba hasta su tope de lectura. 9n · Las cifras son límites del plan de
+   Configuración (free_fotos, pro_fotos; Super Admin › Catálogo › Módulos y Free/Pro): las decide la base (cfg_int) en cada lectura. */
 
 /* Galería (APP-NEG-GALERIA): las fotos visibles del negocio con su id (para reportarlas) y cuáles ya reportó la persona. */
 export async function galeria(id: string, userId: string | null) {
@@ -27,8 +28,8 @@ export async function galeria(id: string, userId: string | null) {
     `select b.name, s.plan from businesses b join business_stats_cache s on s.business_id = b.id where b.id = $1 and b.status = 'active'`, [id])).rows[0];
   if (!b) return null;
   const fotos = (await db().query<{ id: string; url: string }>(
-    `select id, url from media where owner_kind = 'business' and owner_id = $1 and status = 'visible' order by sort limit $2`,
-    [id, b.plan === "pro" ? FOTOS_PRO : FOTOS_FREE])).rows;
+    `select id, url from media where owner_kind = 'business' and owner_id = $1 and status = 'visible' order by sort limit ${b.plan === "pro" ? cfgSql("pro_fotos") : cfgSql("free_fotos")}`,
+    [id])).rows;
   const rep = userId && fotos.length
     ? new Set((await db().query<{ id: string }>(`select media_id as id from photo_reports where reporter_user_id = $1 and media_id = any($2::uuid[])`, [userId, fotos.map((f) => f.id)])).rows.map((r) => r.id))
     : new Set<string>();
@@ -76,7 +77,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto, o?: { equipo?: bo
   if (!b) return null;
 
   const [fotos, horas, subs, faqs, enlaces, gente, amen, lic, vids, hist] = await Promise.all([
-    db().query<{ url: string }>(`select url from media where owner_kind = 'business' and owner_id = $1 and status = 'visible' order by sort limit $2`, [id, b.plan === "pro" ? FOTOS_PRO : FOTOS_FREE]),
+    db().query<{ url: string }>(`select url from media where owner_kind = 'business' and owner_id = $1 and status = 'visible' order by sort limit ${b.plan === "pro" ? cfgSql("pro_fotos") : cfgSql("free_fotos")}`, [id]),
     db().query<Dia>(`select weekday, open, ranges from business_hours where business_id = $1 and module = '' order by weekday`, [id]),
     db().query<{ n: string }>(`select name->>$2 as n from subcategorias_vivas where id = any($1::text[]) order by array_position($1::text[], id)`, [b.subs, lang]),
     db().query<{ q: string; a: string }>(`select question->>$2 as q, answer->>$2 as a from faqs where business_id = $1 order by sort`, [id, lang]),

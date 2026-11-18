@@ -7,7 +7,7 @@ import { idioma } from "@/lib/idioma";
 import { textosT } from "@/lib/cms";
 import { foto } from "@/lib/directorio";
 import { diaFiesta } from "@/lib/fiestas-comun";
-import { categoriaPorSlug, cifras, filtros, mosaicos, ORDENES, resultados, type Orden } from "@/lib/categoria";
+import { categoriaActivaEn, categoriaPorSlug, cifras, filtros, mosaicos, ORDENES, resultados, type Orden } from "@/lib/categoria";
 import { armarTarjetas } from "@/lib/tarjetas";
 import { ubicacion } from "@/lib/ubicacion";
 import { PantallaPronto } from "../../PantallaPronto";
@@ -34,6 +34,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (!c) notFound();
   const loc = await ubicacion(u);
   if (loc.c.status !== "on") return <PantallaPronto loc={loc} lang={lang} userId={u?.id ?? null} />;
+  // 9n · Una categoría apagada en esta ciudad (Super Admin › Catálogo › activa por ciudad) no se ofrece aquí: el servidor responde «no existe».
+  if (!(await categoriaActivaEn(c.id, loc.ciudad))) notFound();
   const CIUDAD = loc.ciudad, ciudad = loc.c;
   const ctx = await contexto();
   after(() => evento("ver_categoria", { ref: c.id, ciudad: loc.c.id, userId: u?.id ?? null, props: { filtros: String(sp.f ?? "").slice(0, 80) || null, sub: typeof sp.sub === "string" ? sp.sub.slice(0, 40) : null } }, ctx));

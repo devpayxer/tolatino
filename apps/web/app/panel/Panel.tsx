@@ -13,7 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type 
 import { traducirBorradas } from "@/lib/textos-cuenta";
 import type { DatosPanel } from "@/lib/panel";
 import { aBase, fmtHora, type DiaPanel } from "@/lib/panel-reglas";
-import { FOTOS_FREE, ITEMS_FREE, PRECIO_PRO, dinero } from "@/lib/plan";
+import { PRECIO_PRO, dinero } from "@/lib/plan";
 import { subirFoto } from "@/lib/subir-foto";
 import { estado } from "@/lib/tarjeta";
 import { aboutGuardar, avisoNegocio, cerrarPorHoy, especialAgregar, especialQuitar, feriadoMarcar, fotoQuitar, fotosAgregar, fotosOrden, horarioGuardar, licenciaAgregar, licenciaNumero, licenciaQuitar, logoPoner, noHago, selloCancelar, selloPedir, videoQuitar, type Res } from "./acciones";
@@ -565,7 +565,7 @@ function pagina(c: Ctx): (Bloque | null)[] {
   const cols2 = c.desk && c.w >= 1100 && !c.detCol ? "repeat(2,minmax(0,1fr))" : undefined;
   const grp = (k: string, keys: string[]): Bloque => ({ type: "rows", k, cols: cols2, items: keys.map((p) => { const P = PARTS.find((x) => x.k === p)!; return { icon: P.icon, t: E2(...P.l), s: resumen(c, p), onClick: () => c.go("pag", p) }; }) });
   out.push(grp(E2("LO QUE VEN LOS CLIENTES", "WHAT CLIENTS SEE"), ["hor", "fotos", "about"]), grp(E2("CONTENIDO", "CONTENT"), ["nov", "resenas", "equipo"]), grp(E2("CONFIANZA Y NÚMEROS", "TRUST AND NUMBERS"), d.lic ? ["lic", "ver"] : ["ver"]));
-  if (!d.pro && !d.trialUsed) out.push({ type: "note", tone: "warn", icon: "star", t: E2(`Con Free tu página es una sola, sin pestañas, y se ven ${FOTOS_FREE} fotos y ${ITEMS_FREE} ${d.itemsW[0]}. Nada se borra.`, `On Free your page is a single page, no tabs, showing ${FOTOS_FREE} photos and ${ITEMS_FREE} ${d.itemsW[1]}. Nothing is deleted.`) });
+  if (!d.pro && !d.trialUsed) out.push({ type: "note", tone: "warn", icon: "star", t: E2(`Con Free tu página es una sola, sin pestañas, y se ven ${d.fotosFree} fotos y ${d.itemsFree} ${d.itemsW[0]}. Nada se borra.`, `On Free your page is a single page, no tabs, showing ${d.fotosFree} photos and ${d.itemsFree} ${d.itemsW[1]}. Nothing is deleted.`) });
   return out;
 }
 
@@ -630,7 +630,7 @@ function fotos(c: Ctx): (Bloque | null)[] {
     c.run(() => fotosOrden(d.id, n.map((z) => z.id)), b === 0 ? E2("Listo. Ya se ve en tu página.", "Done. It shows on your page now.") : undefined, () => c.setUi({ orden: null }));
   };
   if (d.adm.fotos.length) out.push({ type: "note", tone: "warn", icon: "image", t: E2(`To'Latino quitó ${d.adm.fotos.length === 1 ? "1 foto" : `${d.adm.fotos.length} fotos`} de tu página: ${[...new Set(d.adm.fotos.filter(Boolean))].join(" · ")}. Si crees que es un error, escríbenos.`, `To'Latino removed ${d.adm.fotos.length === 1 ? "1 photo" : `${d.adm.fotos.length} photos`} from your page: ${[...new Set(d.adm.fotos.filter(Boolean))].join(" · ")}. If you think it is a mistake, write to us.`), cta: E2("Escribir a Soporte", "Write to Support"), onCta: () => window.location.assign(`/soporte?negocio=${encodeURIComponent(d.id)}&nuevo=1&tema=cuenta`) });
-  if (!d.pro && g.length > FOTOS_FREE) out.push({ type: "note", tone: "warn", icon: "image", t: E2(`Con Free tu página muestra las primeras ${FOTOS_FREE} fotos de tu galería. Las otras ${g.length - FOTOS_FREE} quedan guardadas y salen con Pro.`, `On Free your page shows the first ${FOTOS_FREE} photos of your gallery. The other ${g.length - FOTOS_FREE} stay saved and show with Pro.`) });
+  if (!d.pro && g.length > d.fotosFree) out.push({ type: "note", tone: "warn", icon: "image", t: E2(`Con Free tu página muestra las primeras ${d.fotosFree} fotos de tu galería. Las otras ${g.length - d.fotosFree} quedan guardadas y salen con Pro.`, `On Free your page shows the first ${d.fotosFree} photos of your gallery. The other ${g.length - d.fotosFree} stay saved and show with Pro.`) });
   out.push({ type: "rows", k: E2("PORTADA Y LOGO", "COVER AND LOGO"), cols: c.desk && c.w >= 1100 && !c.detCol ? "repeat(2,minmax(0,1fr))" : undefined, items: [
     { img: g[0] ? `url("${g[0].url}")` : undefined, imgIni: g[0] ? undefined : " ", imgW: "56px", t: E2("Portada", "Cover"), s: E2("Lo primero que ven. Es la primera foto de tu galería.", "The first thing people see. It is the first photo of your gallery."), acts: [{ l: E2("Elegir otra", "Choose another"), icon: "image", off: c.pending, onClick: () => subir(false, "cover") }] },
     { img: d.logo ? `url("${d.logo}")` : undefined, imgIni: d.logo ? undefined : d.name.slice(0, 1), imgW: "56px", t: "Logo", s: d.logo ? E2("Se ve junto al nombre.", "Shows next to the name.") : E2("Sin logo: se usa tu inicial.", "No logo: your initial is used."),
@@ -638,8 +638,8 @@ function fotos(c: Ctx): (Bloque | null)[] {
   ] });
   out.push(...videoBloques(c));
   out.push({
-    type: "photos", k: E2("GALERÍA · TOCA UNA PARA MOVERLA", "GALLERY · TAP ONE TO MOVE IT"), count: `${g.length}${E2(" FOTOS", " PHOTOS")}${!d.pro && g.length > FOTOS_FREE ? E2(` · FREE MUESTRA ${FOTOS_FREE}`, ` · FREE SHOWS ${FOTOS_FREE}`) : ""}`, cols: c.desk ? 4 : 3,
-    items: g.map((p, i) => ({ key: p.id, bg: `url("${p.url}")`, tag: i === 0 ? E2("PORTADA", "COVER") : !d.pro && i >= FOTOS_FREE ? E2("NO SE VE", "HIDDEN") : "", on: sel === i, onClick: () => c.setUi({ gSel: sel === i ? -1 : i }) })),
+    type: "photos", k: E2("GALERÍA · TOCA UNA PARA MOVERLA", "GALLERY · TAP ONE TO MOVE IT"), count: `${g.length}${E2(" FOTOS", " PHOTOS")}${!d.pro && g.length > d.fotosFree ? E2(` · FREE MUESTRA ${d.fotosFree}`, ` · FREE SHOWS ${d.fotosFree}`) : ""}`, cols: c.desk ? 4 : 3,
+    items: g.map((p, i) => ({ key: p.id, bg: `url("${p.url}")`, tag: i === 0 ? E2("PORTADA", "COVER") : !d.pro && i >= d.fotosFree ? E2("NO SE VE", "HIDDEN") : "", on: sel === i, onClick: () => c.setUi({ gSel: sel === i ? -1 : i }) })),
     onAdd: () => subir(true, "gallery"), addL: E2("Agregar fotos", "Add photos"),
     selActs: sel >= 0 && sel < g.length ? [
       { l: E2("Antes", "Earlier"), icon: "chevronLeft", off: sel === 0 || c.pending, onClick: () => mv(sel, sel - 1) },

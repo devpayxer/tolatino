@@ -1,11 +1,10 @@
 import "server-only";
-import { valor } from "./config";
+import { valor, valores } from "./config";
 import { db } from "./db";
 import { yo, type Yo } from "./cuenta";
 import type { Lang } from "./idioma";
 import { TLOnbNeg } from "./onb/datos";
 import { aPanel, fuerza, prueba, seDuerme, type DiaPanel } from "./panel-reglas";
-import { EQUIPO_FREE, ITEMS_FREE } from "./plan";
 import { topeFreeDe } from "./pedir";
 import { estado } from "./tarjeta";
 import { licenciasDe, licenciasEquipo } from "./licencias";
@@ -145,6 +144,8 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
   const onb = !!b.attrs?.onb && Date.now() - Date.parse(b.created) < 45 * D;
   const ahoraHora = b.hora;
   const tope = pro ? { cap: await valor("free_ops_cap"), usados: 0 } : await topeFreeDe(id);
+  // 9n · Los límites del plan (Configuración; Super Admin › Catálogo › Módulos y Free/Pro): los textos del panel dicen las cifras de verdad.
+  const lim = await valores("free_items", "free_fotos", "free_equipo");
   // Novedades (2g): cuántas en vivo y programadas, para «Tu página › Novedades».
   const nv = (await db().query<{ vivas: number; prog: number }>(
     `select count(*) filter (where p.status = 'live' and p.hidden_at is null and p.publish_at <= now() and (p.ends_at is null or p.ends_at > now()))::int as vivas,
@@ -177,10 +178,11 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     ver: { phone: telefonoBonito(b.phone), phoneOk: !!b.phone && b.phone === b.owner_phone, email: b.email_ok ? b.email : null, sello: b.verified ? "ok" : (b.sello as string | null) ?? "none", selloNote: b.sello_note },
     ph: fotos.rows[0]?.url ?? null, logo: b.logo,
     kpis: { views7: k.v7, contacts7: k.c7, viewsToday: k.vhoy, viewsTrial: k.vprueba, contactsTrial: k.cprueba },
-    fuerza: f, duerme: seDuerme({ galeria: fotos.rows.length, equipo: okEquipo.length, items, itemsW, itemsFree: ITEMS_FREE }, es),
+    fuerza: f, duerme: seDuerme({ galeria: fotos.rows.length, equipo: okEquipo.length, items, itemsW, itemsFree: lim.free_items, fotosFree: lim.free_fotos }, es),
+    itemsFree: lim.free_items, fotosFree: lim.free_fotos,
     video: await videoPanel(b.id), // C-001 · Video de presentación (Pro)
     fotos: fotos.rows, horas: dias, about: b.about, amen: b.amen, amenAll: amen.rows.map((a) => ({ key: a.key, l: a.label[lang] })),
-    owner: b.owner, equipo, equipoFree: EQUIPO_FREE, tope: tope.cap, usadosMes: tope.usados,
+    owner: b.owner, equipo, equipoFree: lim.free_equipo, tope: tope.cap, usadosMes: tope.usados,
     hoy: { fecha: b.hoy, tz: b.tz, dow: b.dow, hm: b.hm, saludo: ahoraHora < 12 ? (es ? "Buenos días" : "Good morning") : ahoraHora < 19 ? (es ? "Buenas tardes" : "Good afternoon") : es ? "Buenas noches" : "Good evening" },
     // Tus licencias (Trámites y profesionales): las del negocio con su estado y las del catálogo que puede agregar.
     lic: b.cat === "NEG-PRO" || b.cat === "NEG-FE" || b.cat === "NEG-INMUEBLE" || b.cat === "NEG-DEALER" ? { filas: lic, catalogo: licCat.rows.map((k) => ({ key: k.key, l: k.title[lang] })), cant: Array.isArray(b.attrs?.cant) ? (b.attrs.cant as string[])[es ? 0 : 1] ?? null : null } : null,

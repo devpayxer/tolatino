@@ -12,9 +12,11 @@ const ORDEN_ABIERTO = ["NEG-FOOD", "NEG-BELL", "NEG-MERC", "NEG-SALUD", "NEG-AUT
 export type Cat = { id: string; label: string; name: string; icon: string; slug: string };
 /* URL legible y en español de cada categoría (/c/comida). Sale del nombre corto ES del diseño. */
 export const slugCat = (cortoEs: string) => cortoEs.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-export async function categorias(lang: Lang): Promise<Cat[]> {
+/* 9n · `ciudad`: sin las categorías apagadas en esa ciudad (Super Admin › Catálogo › activa por ciudad); null = todas las encendidas. */
+export async function categorias(lang: Lang, ciudad: string | null): Promise<Cat[]> {
   const r = await db().query<{ id: string; short: string; name: string; icon: string; es: string }>(
-    `select id, short->>$1 as short, name->>$1 as name, icon, short->>'es' as es from categories where status = 'on' order by sort`, [lang]);
+    `select id, short->>$1 as short, name->>$1 as name, icon, short->>'es' as es from categories
+      where status = 'on' and ($2::text is null or not ($2 = any(off_cities))) order by sort`, [lang, ciudad]);
   return r.rows.map((c) => ({ id: c.id, label: c.short, name: c.name, icon: c.icon, slug: slugCat(c.es) }));
 }
 

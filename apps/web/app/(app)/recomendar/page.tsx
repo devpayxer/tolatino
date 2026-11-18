@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Recomienda un negocio · To'Latino" 
    (desde la página de categoría); ?q = lo que buscaba en Buscar («Buscabas: …»). */
 export default async function Page({ searchParams }: { searchParams: Promise<{ ciudad?: string; cat?: string; q?: string }> }) {
   const [sp, lang, u] = await Promise.all([searchParams, idioma(), yo()]);
-  const [loc, cs, cats] = await Promise.all([ubicacion(u), ciudades(), categorias(lang)]);
+  const [loc, cs, cats] = await Promise.all([ubicacion(u), ciudades(), categorias(lang, null)]); // 9n · recomendar es pedir: vale también una categoría que la ciudad todavía no ofrece
   const c = cs.find((x) => x.id === sp.ciudad) ?? loc.c;
   const cat = cats.find((x) => x.id === sp.cat || x.slug === sp.cat)?.id ?? null;
   const q = typeof sp.q === "string" ? sp.q.replace(/\s+/g, " ").trim().slice(0, 80) : "";

@@ -5,7 +5,7 @@
 import * as UI from "@tolatino/ui";
 import { useEffect, useState, type ComponentType, type CSSProperties } from "react";
 import { anfitriones } from "./acciones";
-import { ahora, DAYS, daysOf, F, fmt, Fl, metaOf, money, needZone, opOf, own, rows, status, stepOf, X, zoneOf, type Borrador, type Dia } from "./logica";
+import { ahora, DAYS, daysOf, F, fmt, Fl, horasDe, metaOf, money, needZone, opOf, own, phDe, rows, status, stepOf, X, zoneOf, type Borrador, type Dia } from "./logica";
 import { K } from "./PasosBC";
 
 import { tec } from "@/lib/tec";
@@ -70,7 +70,7 @@ export function PasoD1({ d, up, es }: { d: Borrador; up: Up; es: boolean }) {
       {add.open ? (
         <div style={{ padding: 14, borderRadius: 16, background: "var(--tl-paper)", display: "flex", flexDirection: "column", gap: 10 }}>
           <span style={K}>{E2("LO QUE NO ESTÁ EN LA LISTA", "NOT ON THE LIST")}</span>
-          <input value={add.n} onChange={(e) => setAdd({ ...add, n: e.target.value.slice(0, 60) })} placeholder={E2("Nombre", "Name")} aria-label={E2("Nombre", "Name")} style={{ height: 46, boxSizing: "border-box", borderRadius: 13, border: "1.5px solid rgba(11,14,18,.14)", background: "var(--tl-white)", padding: "0 13px", outline: "none", font: "600 15px Manrope,sans-serif", color: "var(--tl-ink)", width: "100%" }} />
+          <input value={add.n} onChange={(e) => setAdd({ ...add, n: e.target.value.slice(0, 60) })} placeholder={phDe(d.cat, "ph_item", es, ["Nombre", "Name"])} aria-label={E2("Nombre", "Name")} style={{ height: 46, boxSizing: "border-box", borderRadius: 13, border: "1.5px solid rgba(11,14,18,.14)", background: "var(--tl-white)", padding: "0 13px", outline: "none", font: "600 15px Manrope,sans-serif", color: "var(--tl-ink)", width: "100%" }} />
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <div style={{ flex: 1, minWidth: 0, height: 46, boxSizing: "border-box", borderRadius: 13, border: "1.5px solid rgba(11,14,18,.14)", background: "var(--tl-white)", display: "flex", alignItems: "center", gap: 4, padding: "0 13px" }}>
               <span style={{ font: "800 15px Sora,sans-serif" }}>$</span>
@@ -103,7 +103,7 @@ export function PasoE1({ d, up, es, ciudad, irA }: { d: Borrador; up: Up; es: bo
   if (needZone(op) && f.zoneFrom && !sum) sum = { ic: "pin", t: E2("Vas hasta ", "You go up to ") + zone + E2(" millas", " miles"), s: Fl.TOWNS[zone] ? E2(Fl.TOWNS[zone][0], Fl.TOWNS[zone][1]) + "." : "" };
   const hasAddr = op !== "casa" && !(rento && d.join), aq = (d.addr || "").trim();
   const days = daysOf(d), t = ahora(), stt = status(d, es, days, t);
-  const D0: Dia[] = Fl.hours(d.cat, d.own), base = D0.find((x) => x.on) || { a: 9, b: 18 };
+  const D0: Dia[] = horasDe(d.cat ?? "", d.own), base = D0.find((x) => x.on) || { a: 9, b: 18 }; // 9n · la plantilla del Catálogo
   const TPL: [string, string, (i: number) => boolean][] = [["lv", E2("Lun a vie", "Mon–Fri"), (i) => i < 5], ["ls", E2("Lun a sáb", "Mon–Sat"), (i) => i < 6], ["todos", E2("Todos los días", "Every day"), () => true], ["fds", E2("Fines de semana", "Weekends"), (i) => i >= 5], ["cita", E2("Por cita", "By appointment"), (i) => i < 6]];
   const setDay = (i: number, p: Partial<Dia>) => up((z) => { const D = daysOf(z).map((x) => ({ ...x })); Object.assign(D[i]!, p); return { days: D, tpl: null }; });
   const sp = c && c.sp ? E2(c.sp[0], c.sp[1]) : E2("espacio", "space");

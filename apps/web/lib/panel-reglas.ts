@@ -1,6 +1,5 @@
 /* Reglas puras del panel del negocio (Panel v2): fuerza del perfil, fases de la prueba Pro y conversión del horario.
    Sin base ni red: las usa el servidor para calcular y las pruebas para comprobar. */
-import { FOTOS_FREE } from "./plan";
 
 type Bi = [string, string];
 
@@ -46,10 +45,10 @@ export function prueba(until: string | null | undefined, dias: number | null | u
 }
 
 /* Lo que se duerme el día 30 (TLTrial.inv … short), con los números reales del negocio. */
-export function seDuerme(x: { galeria: number; equipo: number; items: number; itemsW: Bi; itemsFree: number }, es: boolean) {
+export function seDuerme(x: { galeria: number; equipo: number; items: number; itemsW: Bi; itemsFree: number; fotosFree: number }, es: boolean) {
   const sh: string[] = [];
   if (x.items > x.itemsFree) { const n = x.items - x.itemsFree; sh.push(es ? `${n} de tus ${x.items} ${x.itemsW[0]}` : `${n} of your ${x.items} ${x.itemsW[1]}`); }
-  if (x.galeria > FOTOS_FREE) sh.push(es ? `${x.galeria - FOTOS_FREE} fotos` : `${x.galeria - FOTOS_FREE} photos`);
+  if (x.galeria > x.fotosFree) sh.push(es ? `${x.galeria - x.fotosFree} fotos` : `${x.galeria - x.fotosFree} photos`);
   if (x.equipo > 0) sh.push(es ? "tu equipo" : "your team");
   if (!sh.length) sh.push(es ? "tus pestañas y novedades" : "your tabs and updates");
   return nombres(sh, es);

@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import type { PoolClient } from "pg";
 import { auditar, staff, type Staff } from "@/lib/admin";
 import { tx } from "@/lib/db";
+import { LIMITES_PLAN, MODULOS_POR_CIUDAD, type DiaPlantilla } from "@/lib/admin-catalogo";
 import { recalcularFiltrosSP } from "@/lib/salud-pro";
 import type { ResAdm } from "./acciones-colas";
 
@@ -39,8 +40,11 @@ export async function subAgregar(cat: string, nombres: string, motivo: string): 
     if (!k) return "Esa categoría no existe.";
     const ya = (await c.query(`select 1 from subcategories where category_id = $1 and (lower(unaccent(name->>'es')) = lower(unaccent($2)) or lower(unaccent(name->>'en')) = lower(unaccent($3)))`, [cat, es, en ?? es])).rowCount;
     if (ya) return "Ya existe una subcategoría con ese nombre en esta categoría.";
+    // 9n · El número sigue al más alto de los códigos de esta categoría, estén donde estén: una subcategoría movida conserva su código
+    // (NEG-FOOD-10 en Mercados) y el siguiente de Comida nunca lo repite.
     const sig = (await c.query<{ n: number; sort: number }>(
-      `select coalesce(max(substring(id from '-(\\d+)$')::int), 0) + 1 as n, coalesce(max(sort), 0) + 1 as sort from subcategories where category_id = $1`, [cat])).rows[0]!;
+      `select coalesce((select max(substring(id from '-(\\d+)$')::int) from subcategories where id like $1 || '-%'), 0) + 1 as n,
+              coalesce((select max(sort) from subcategories where category_id = $1), 0) + 1 as sort`, [cat])).rows[0]!;
     const id = `${cat}-${String(sig.n).padStart(2, "0")}`;
     await c.query(`insert into subcategories (id, category_id, sort, name, created_by) values ($1, $2, $3, $4::jsonb, $5)`, [id, cat, sig.sort, JSON.stringify({ es, en: en || es }), s.id]);
     await auditar(c, { actor: s.id, action: "catalogo.sub.agregar", targetKind: "subcategory", targetId: id, before: { subcategoria: "—" }, after: { subcategoria: es }, reason: m });
@@ -56,6 +60,7 @@ export async function subEstado(id: string, encender: boolean, motivo: string): 
   return hacer(async (c, s) => {
     const x = (await c.query<{ status: string; es: string }>(`select status, name->>'es' as es from subcategories where id = $1 for update`, [id])).rows[0];
     if (!x) return "Esa subcategoría no existe.";
+    if (x.status === "merged") return "Está fusionada: usa «Separar».";
     if ((x.status === "on") === encender) return encender ? "Ya está en la página." : "Ya está quitada.";
     await c.query(`update subcategories set status = $2, status_reason = $3, status_at = now(), updated_at = now() where id = $1`, [id, encender ? "on" : "off", encender ? null : m]);
     const n = (await c.query<{ n: number }>(`select catalogo_refrescar_docs($1) as n`, [id])).rows[0]!.n;
@@ -63,6 +68,204 @@ export async function subEstado(id: string, encender: boolean, motivo: string): 
       before: { subcategoria: x.es, estado: encender ? "quitada" : "en la página" }, after: { estado: encender ? "en la página" : "quitada", negocios: `${n} ${n === 1 ? "negocio" : "negocios"}` }, reason: m });
     return null;
   }, encender ? "Restaurada." : "Quitada. Los negocios conservan su ficha.");
+}
+
+/* ── 9n · Catálogo completo (LAUNCH L214) ── Toda edición dice a cuántos negocios afecta (la pantalla lo muestra antes de confirmar y la
+   auditoría lo guarda), pide motivo y escribe su renglón de audit_entries con el cliente de la misma transacción. */
+const negociosTxt = (n: number) => `${n} ${n === 1 ? "negocio" : "negocios"}`;
+/* «Nombre en español / Name in English» (el inglés es opcional: si falta, se usa el español). */
+function dosNombres(t: unknown, max = 60): { es: string; en: string } | string {
+  const [es, en, ...resto] = limpio(t, 2 * max + 10).split("/").map((x) => x.trim());
+  if (resto.length) return "Escribe el nombre en español y, después de una sola «/», en inglés.";
+  if (!es || es.length < 2 || es.length > max) return `Escribe el nombre en español (2 a ${max} letras).`;
+  if (en !== undefined && (en.length < 2 || en.length > max)) return `El nombre en inglés va después de «/» (2 a ${max} letras).`;
+  return { es, en: en || es };
+}
+
+/* Cambiar el nombre (ES/EN) de una subcategoría: el mismo código; la página, la ficha, Buscar y Publica tu negocio la llaman distinto al
+   momento (los documentos de búsqueda de sus negocios se recalculan en la misma transacción). */
+export async function subNombre(id: string, nombres: string, motivo: string): Promise<ResAdm> {
+  if (typeof id !== "string" || !SUB.test(id)) return no("Esa subcategoría no existe.");
+  const n2 = dosNombres(nombres), m = limpio(motivo);
+  if (typeof n2 === "string") return no(n2);
+  if (!m) return no("Escribe el motivo.");
+  return hacer(async (c, s) => {
+    const x = (await c.query<{ cat: string; es: string; en: string; status: string }>(`select category_id as cat, name->>'es' as es, coalesce(name->>'en', name->>'es') as en, status from subcategories where id = $1 for update`, [id])).rows[0];
+    if (!x) return "Esa subcategoría no existe.";
+    if (x.status === "merged") return "Está fusionada: sepárala antes de cambiarle el nombre.";
+    if (x.es === n2.es && x.en === n2.en) return "Ya tiene ese nombre.";
+    const ya = (await c.query(`select 1 from subcategories where category_id = $1 and id <> $2 and status <> 'merged' and (lower(unaccent(name->>'es')) = lower(unaccent($3)) or lower(unaccent(name->>'en')) = lower(unaccent($4)))`, [x.cat, id, n2.es, n2.en])).rowCount;
+    if (ya) return "Ya existe una subcategoría con ese nombre en esta categoría.";
+    await c.query(`update subcategories set name = $2::jsonb, updated_at = now() where id = $1`, [id, JSON.stringify(n2)]);
+    const n = (await c.query<{ n: number }>(`select catalogo_refrescar_docs($1) as n`, [id])).rows[0]!.n;
+    await auditar(c, { actor: s.id, action: "catalogo.sub.nombre", targetKind: "subcategory", targetId: id,
+      before: { subcategoria: `${x.es} / ${x.en}` }, after: { subcategoria: `${n2.es} / ${n2.en}`, negocios: negociosTxt(n) }, reason: m });
+    return null;
+  }, "Nombre cambiado. Buscar lo usa en menos de un minuto.");
+}
+
+/* Mover una subcategoría a otra categoría. El código NO cambia (los negocios, los sinónimos y la página la nombran por código): solo su
+   categoría. Los negocios que la tienen conservan la etiqueta y su propia categoría; la subcategoría sale en la nueva (al final). */
+export async function subMover(id: string, cat: string, motivo: string): Promise<ResAdm> {
+  if (typeof id !== "string" || !SUB.test(id)) return no("Esa subcategoría no existe.");
+  if (typeof cat !== "string" || !CAT.test(cat)) return no("Esa categoría no existe.");
+  const m = limpio(motivo);
+  if (!m) return no("Escribe el motivo.");
+  return hacer(async (c, s) => {
+    const x = (await c.query<{ cat: string; es: string; en: string; status: string; desde: string }>(
+      `select s.category_id as cat, s.name->>'es' as es, coalesce(s.name->>'en', s.name->>'es') as en, s.status, k.name->>'es' as desde
+         from subcategories s join categories k on k.id = s.category_id where s.id = $1 for update of s`, [id])).rows[0];
+    if (!x) return "Esa subcategoría no existe.";
+    if (x.status === "merged") return "Está fusionada: sepárala antes de moverla.";
+    if (x.cat === cat) return "Ya está en esa categoría.";
+    const d = (await c.query<{ es: string }>(`select name->>'es' as es from categories where id = $1 for update`, [cat])).rows[0];
+    if (!d) return "Esa categoría no existe.";
+    const ya = (await c.query(`select 1 from subcategories where category_id = $1 and status <> 'merged' and (lower(unaccent(name->>'es')) = lower(unaccent($2)) or lower(unaccent(name->>'en')) = lower(unaccent($3)))`, [cat, x.es, x.en])).rowCount;
+    if (ya) return `${d.es} ya tiene una subcategoría con ese nombre: fusiónalas en vez de moverla.`;
+    await c.query(`update subcategories set category_id = $2, sort = (select coalesce(max(sort), 0) + 1 from subcategories where category_id = $2), updated_at = now() where id = $1`, [id, cat]);
+    const n = (await c.query<{ n: number }>(`select count(*)::int as n from businesses where subcategory_ids @> array[$1] and status = 'active'`, [id])).rows[0]!.n;
+    await auditar(c, { actor: s.id, action: "catalogo.sub.mover", targetKind: "subcategory", targetId: id,
+      before: { subcategoria: x.es, categoria: x.desde }, after: { categoria: d.es, negocios: negociosTxt(n) }, reason: m });
+    return null;
+  }, "Movida. Sale en su categoría nueva; los negocios conservan la etiqueta.");
+}
+
+/* Fusionar A en B (de la misma categoría): los negocios con A pasan a B, los sinónimos de A llevan a B y el nombre de A queda como sinónimo
+   de B. A queda «fusionada» (nada se borra) y «Separar» lo devuelve todo (catalogo_fusionar / catalogo_separar, 0179). */
+export async function subFusionar(id: string, destino: string, motivo: string): Promise<ResAdm> {
+  if (typeof id !== "string" || !SUB.test(id) || typeof destino !== "string" || !SUB.test(destino)) return no("Esa subcategoría no existe.");
+  if (id === destino) return no("Elige otra subcategoría.");
+  const m = limpio(motivo);
+  if (!m) return no("Escribe el motivo.");
+  return hacer(async (c, s) => {
+    const r = (await c.query<{ id: string; cat: string; es: string; status: string }>(
+      `select id, category_id as cat, name->>'es' as es, status from subcategories where id = any($1::text[]) order by id for update`, [[id, destino]])).rows;
+    const a = r.find((x) => x.id === id), b = r.find((x) => x.id === destino);
+    if (!a || !b) return "Esa subcategoría no existe.";
+    if (a.status === "merged") return "Ya está fusionada.";
+    if (b.status !== "on") return `«${b.es}» no está en la página: restáurala antes de fusionar.`;
+    if (a.cat !== b.cat) return "Solo se fusiona con una de su misma categoría (muévela antes).";
+    const fid = (await c.query<{ id: string }>(`select catalogo_fusionar($1, $2, $3::uuid, $4)::text as id`, [id, destino, s.id, m])).rows[0]!.id;
+    const f = (await c.query<{ n: number; syn: number }>(`select cardinality(business_ids) as n, cardinality(syn_new) as syn from subcategory_merges where id = $1::bigint`, [fid])).rows[0]!;
+    await auditar(c, { actor: s.id, action: "catalogo.sub.fusionar", targetKind: "subcategory", targetId: id,
+      before: { subcategoria: a.es, negocios: negociosTxt(f.n) }, after: { fusionada_en: b.es, sinonimos: `${f.syn} nuevos` }, reason: m });
+    return null;
+  }, "Fusionada. Sus negocios ya salen en la otra; «Separar» la devuelve.");
+}
+
+/* Separar: deshace la fusión viva de A (A vuelve a sus negocios; los sinónimos vuelven como estaban). */
+export async function subSeparar(id: string, motivo: string): Promise<ResAdm> {
+  if (typeof id !== "string" || !SUB.test(id)) return no("Esa subcategoría no existe.");
+  const m = limpio(motivo);
+  if (!m) return no("Escribe el motivo.");
+  return hacer(async (c, s) => {
+    const x = (await c.query<{ es: string; into_es: string | null; viva: boolean }>(
+      `select s.name->>'es' as es, d.name->>'es' as into_es, exists (select 1 from subcategory_merges m where m.from_id = s.id and m.undone_at is null) as viva
+         from subcategories s left join subcategories d on d.id = s.merged_into where s.id = $1 for update of s`, [id])).rows[0];
+    if (!x) return "Esa subcategoría no existe.";
+    if (!x.viva) return "No está fusionada.";
+    const n = (await c.query<{ n: number }>(`select catalogo_separar($1, $2::uuid, $3) as n`, [id, s.id, m])).rows[0]!.n;
+    await auditar(c, { actor: s.id, action: "catalogo.sub.separar", targetKind: "subcategory", targetId: id,
+      before: { subcategoria: x.es, estado: `fusionada en ${x.into_es ?? "otra"}` }, after: { estado: "en la página", negocios: negociosTxt(n) }, reason: m });
+    return null;
+  }, "Separada. Vuelve a sus negocios.");
+}
+
+/* Categoría activa por ciudad: apagada, no se ofrece en esa ciudad (página de la categoría, Negocios, Buscar y Publica tu negocio); las fichas
+   de sus negocios se conservan y vuelven a salir al encenderla. */
+export async function catCiudad(cat: string, ciudad: string, encender: boolean, motivo: string): Promise<ResAdm> {
+  if (typeof cat !== "string" || !CAT.test(cat)) return no("Esa categoría no existe.");
+  if (typeof ciudad !== "string" || !/^[a-z]{2,6}$/.test(ciudad)) return no("Esa ciudad no existe.");
+  const m = limpio(motivo);
+  if (!m) return no("Escribe el motivo.");
+  return hacer(async (c, s) => {
+    const k = (await c.query<{ es: string; off: string[] }>(`select name->>'es' as es, off_cities as off from categories where id = $1 for update`, [cat])).rows[0];
+    const ci = (await c.query<{ name: string }>(`select name from cities where id = $1`, [ciudad])).rows[0];
+    if (!k) return "Esa categoría no existe.";
+    if (!ci) return "Esa ciudad no existe.";
+    if (!k.off.includes(ciudad) === encender) return encender ? "Ya está activa en esa ciudad." : "Ya está apagada en esa ciudad.";
+    await c.query(`update categories set off_cities = case when $3 then array_remove(off_cities, $2) else array(select distinct x from unnest(off_cities || array[$2]) x order by 1) end, updated_at = now() where id = $1`, [cat, ciudad, encender]);
+    const n = (await c.query<{ n: number }>(`select count(*)::int as n from businesses where category_id = $1 and city_id = $2 and status = 'active'`, [cat, ciudad])).rows[0]!.n;
+    await auditar(c, { actor: s.id, action: encender ? "catalogo.cat.ciudad_encender" : "catalogo.cat.ciudad_apagar", targetKind: "category", targetId: cat, city: ciudad,
+      before: { categoria: k.es, ciudad: ci.name, estado: encender ? "apagada" : "activa" }, after: { estado: encender ? "activa" : "apagada", negocios: negociosTxt(n) }, reason: m });
+    return null;
+  }, encender ? "Activa otra vez en esa ciudad." : "Apagada en esa ciudad. Las fichas de sus negocios se conservan.");
+}
+
+/* Módulo activo por ciudad: apagado, sus negocios de esa ciudad lo tienen en pausa (la misma pausa de Negocios 360°, con su marca de ciudad)
+   y los que lleguen después también; encenderlo quita solo esa pausa. */
+export async function modCiudad(key: string, ciudad: string, encender: boolean, motivo: string): Promise<ResAdm> {
+  if (typeof key !== "string" || !(MODULOS_POR_CIUDAD as readonly string[]).includes(key)) return no("Ese módulo no se apaga por ciudad.");
+  if (typeof ciudad !== "string" || !/^[a-z]{2,6}$/.test(ciudad)) return no("Esa ciudad no existe.");
+  const m = limpio(motivo);
+  if (!m) return no("Escribe el motivo.");
+  return hacer(async (c, s) => {
+    const k = (await c.query<{ es: string; off: string[] }>(`select name->>'es' as es, off_cities as off from module_types where key = $1 for update`, [key])).rows[0];
+    const ci = (await c.query<{ name: string }>(`select name from cities where id = $1`, [ciudad])).rows[0];
+    if (!k) return "Ese módulo no existe.";
+    if (!ci) return "Esa ciudad no existe.";
+    if (!k.off.includes(ciudad) === encender) return encender ? "Ya está encendido en esa ciudad." : "Ya está apagado en esa ciudad.";
+    const n = (await c.query<{ n: number }>(`select catalogo_modulo_ciudad($1, $2, $3, $4, $5) as n`, [key, ciudad, !encender, m, s.id])).rows[0]!.n;
+    await auditar(c, { actor: s.id, action: encender ? "catalogo.modulo.ciudad_encender" : "catalogo.modulo.ciudad_apagar", targetKind: "module_type", targetId: key, city: ciudad,
+      before: { modulo: k.es, ciudad: ci.name, estado: encender ? "apagado" : "encendido" }, after: { estado: encender ? "encendido" : "apagado", negocios: negociosTxt(n) }, reason: m });
+    return null;
+  }, encender ? "Encendido otra vez en esa ciudad." : "Apagado en esa ciudad. Los negocios ven el motivo en su panel.");
+}
+
+/* Plantilla de horario de «Publica tu negocio» (lunes primero; media hora; > 24 = pasa de medianoche). Los negocios que ya publicaron no
+   cambian: es el horario con el que empieza quien publica. */
+const DIAS_CORTOS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+const hora = (h: number) => { const H = ((h % 24) + 24) % 24, hh = Math.floor(H), mm = Math.round((H - hh) * 60); return `${hh % 12 || 12}${mm ? ":" + String(mm).padStart(2, "0") : ""} ${hh < 12 ? "AM" : "PM"}`; };
+const resumenHorario = (d: DiaPlantilla[]) => d.map((x, i) => `${DIAS_CORTOS[i]} ${x.on ? `${hora(x.a)}–${hora(x.b)}` : "cerrado"}`).join(" · ");
+export async function catHorario(cat: string, dias: DiaPlantilla[], motivo: string): Promise<ResAdm> {
+  if (typeof cat !== "string" || !CAT.test(cat)) return no("Esa categoría no existe.");
+  if (cat === "NEG-FE") return no("Iglesias no lleva plantilla: su horario sale de los cultos que elige.");
+  const media = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && Math.round(v * 2) === v * 2;
+  if (!Array.isArray(dias) || dias.length !== 7 || !dias.every((x) => x && typeof x.on === "boolean" && media(x.a) && media(x.b) && x.a >= 0 && x.a < 24 && x.b >= x.a + 1 && x.b <= Math.min(x.a + 20, 30)))
+    return no("El horario no es válido: cada día abre antes de cerrar (media hora, hasta 20 horas seguidas).");
+  if (!dias.some((x) => x.on)) return no("Deja al menos un día abierto.");
+  const d = dias.map((x) => ({ on: x.on, a: x.a, b: x.b }));
+  const m = limpio(motivo);
+  if (!m) return no("Escribe el motivo.");
+  return hacer(async (c, s) => {
+    const k = (await c.query<{ es: string; h: DiaPlantilla[] | null }>(`select name->>'es' as es, onb->'horario' as h from categories where id = $1 for update`, [cat])).rows[0];
+    if (!k) return "Esa categoría no existe.";
+    if (k.h && JSON.stringify(k.h.map((x) => ({ on: x.on, a: x.a, b: x.b }))) === JSON.stringify(d)) return "Ya tiene ese horario.";
+    await c.query(`update categories set onb = jsonb_set(onb, '{horario}', $2::jsonb), updated_at = now() where id = $1`, [cat, JSON.stringify(d)]);
+    await auditar(c, { actor: s.id, action: "catalogo.cat.horario", targetKind: "category", targetId: cat,
+      before: { categoria: k.es, horario: k.h ? resumenHorario(k.h) : "—" }, after: { horario: resumenHorario(d) }, reason: m });
+    return null;
+  }, "Plantilla guardada. Quien publique desde ahora empieza con este horario.");
+}
+
+/* Ejemplos (placeholders) de «Publica tu negocio»: el del nombre del negocio y el del nombre de un ítem propio. «español / inglés». */
+export async function catEjemplo(cat: string, campo: string, texto: string, motivo: string): Promise<ResAdm> {
+  if (typeof cat !== "string" || !CAT.test(cat)) return no("Esa categoría no existe.");
+  if (campo !== "ph_nombre" && campo !== "ph_item") return no("Ese ejemplo no existe.");
+  const t = dosNombres(texto, 48), m = limpio(motivo);
+  if (typeof t === "string") return no(t.replace("el nombre", "el ejemplo"));
+  if (!m) return no("Escribe el motivo.");
+  return hacer(async (c, s) => {
+    const k = (await c.query<{ es: string; v: { es: string; en: string } | null }>(`select name->>'es' as es, onb->$2 as v from categories where id = $1 for update`, [cat, campo])).rows[0];
+    if (!k) return "Esa categoría no existe.";
+    if (k.v && k.v.es === t.es && k.v.en === t.en) return "Ya tiene ese ejemplo.";
+    await c.query(`update categories set onb = jsonb_set(onb, array[$2], $3::jsonb), updated_at = now() where id = $1`, [cat, campo, JSON.stringify(t)]);
+    await auditar(c, { actor: s.id, action: "catalogo.cat.ejemplo", targetKind: "category", targetId: cat,
+      before: { categoria: k.es, ejemplo: `${campo === "ph_nombre" ? "Nombre del negocio" : "Ítem propio"}: ${k.v ? `${k.v.es} / ${k.v.en}` : "—"}` }, after: { ejemplo: `${t.es} / ${t.en}` }, reason: m });
+    return null;
+  }, "Ejemplo guardado. Sale en Publica tu negocio desde ahora.");
+}
+
+/* Límites Free/Pro por módulo: son valores de Configuración (lib/config.ts, cambiarConfig: límites, auditoría antes → después en la misma
+   transacción). Solo un Admin, como en Configuración. Los leen la ficha, los pedidos, el panel y Publica tu negocio. */
+export async function limiteCambiar(key: string, valorTxt: string, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || s.role !== "admin" || !s.puede("cat", "editar")) return no("Solo un Admin cambia los límites del plan.");
+  if (!LIMITES_PLAN.some((l) => l.key === key)) return no("Ese límite no existe.");
+  const r = await cambiarConfig(s.id, key, String(valorTxt ?? ""), limpio(motivo, 300), { desde: "/admin/catalogo?tab=mod" });
+  if (!r.ok) return no(r.msg);
+  listo();
+  return { ok: true, mensaje: `Guardado: ${r.v}. Aplica desde ahora en todas las ciudades.` };
 }
 
 /* Sinónimo nuevo: «palabra → sinónimo1, sinónimo2». Sin acentos, en minúsculas. */

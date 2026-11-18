@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   if (loc.c.status !== "on") return NextResponse.json({ filas: [], intenciones: [], total: 0 });
   const CIUDAD = loc.ciudad;
   const es = lang === "es", L = (a: string, b: string) => (es ? a : b);
-  const cats = await categorias(lang);
+  const cats = await categorias(lang, CIUDAD); // 9n · sin las apagadas en la ciudad
   const cat = cats.find((c) => c.slug === catParam)?.id ?? null;
   if (!q.trim()) return NextResponse.json({ filas: [], intenciones: [], total: 0 });
   const E = await entender(q, true);
