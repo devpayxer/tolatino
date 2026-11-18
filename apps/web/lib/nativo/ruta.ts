@@ -59,14 +59,24 @@ function empezarWeb(t: TokenRuta): "ok" | "sin_gps" {
   if (typeof navigator === "undefined" || !navigator.geolocation || (typeof window !== "undefined" && !window.isSecureContext)) return "sin_gps";
   if (web?.tok.numero === t.numero) { web.tok = t; return "ok"; }
   pararWeb();
-  const w = { tok: t, mira: 0, cola: [] as P[], ultima: null as number | null, envio: setInterval(() => void subirWeb(), Math.max(5, t.cadaS) * 1000), ult: null as P | null };
-  w.mira = navigator.geolocation.watchPosition((g) => {
+  const tomar = (g: GeolocationPosition) => {
     const p: P = { t: horaPosicion(g.timestamp), lat: g.coords.latitude, lng: g.coords.longitude, acc: Number.isFinite(g.coords.accuracy) ? Math.min(500, g.coords.accuracy) : null,
       vel: g.coords.speed != null && Number.isFinite(g.coords.speed) ? g.coords.speed : null, rumbo: g.coords.heading != null && Number.isFinite(g.coords.heading) ? g.coords.heading % 360 : null };
     // Cada ubic_cada_s o si se movió ubic_min_m (lo mismo que el nativo).
     if (w.ult && p.t - w.ult.t < w.tok.cadaS * 1000 && dist(w.ult, p) < w.tok.minM) return;
     w.ult = p; w.cola.push(p); if (w.cola.length > MAX_COLA) w.cola.splice(0, w.cola.length - MAX_COLA);
-  }, () => undefined, { enableHighAccuracy: true, maximumAge: 5000, timeout: 30000 });
+  };
+  /* Anchos (18 nov) · Safari a veces da UNA lectura (vieja, de cuando abrió la página: el servidor la descarta por anterior a la entrega) y
+     watchPosition no vuelve a avisar mientras el teléfono no se mueva lo bastante. Si en dos intervalos no llegó una lectura nueva, se pide
+     una fresca (maximumAge 0): el repartidor sigue en el mapa del cliente aunque el navegador se duerma el GPS. */
+  const cada = Math.max(5, t.cadaS) * 1000;
+  const w = { tok: t, mira: 0, cola: [] as P[], ultima: null as number | null, ult: null as P | null, envio: setInterval(() => {
+    if (!w.ult || Date.now() - w.ult.t > 2 * cada) {
+      try { navigator.geolocation.getCurrentPosition(tomar, () => undefined, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }); } catch { /* sin GPS ahora */ }
+    }
+    void subirWeb();
+  }, cada) };
+  w.mira = navigator.geolocation.watchPosition(tomar, () => undefined, { enableHighAccuracy: true, maximumAge: 5000, timeout: 30000 });
   web = w;
   void subirWeb();
   return "ok";

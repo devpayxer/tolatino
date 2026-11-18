@@ -335,7 +335,10 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
     // Sin cuenta: el SMS va a phone_messages cifrado (nunca el número en claro).
     await pn.fill('input[placeholder="Ej. DJ Cri Cri + 1"]', 'Invitada sin cuenta'); await pn.fill('input[placeholder="10 dígitos"]', SIN_CUENTA); await clic(btn(pn, 'Dar cortesía'));
     ok(await contiene(pn, 'Cortesía lista'), 'cortesía a un teléfono sin cuenta');
-    ok(sql(`select sms_status || '|' || (body like '%/eventos/recibir/%') || '|' || (body like '%${SIN_CUENTA}%') from phone_messages where tpl = 'bol_cortesia' order by id desc limit 1`) === `${smsEsperado('bol_cortesia')}|true|false`, 'el SMS a un teléfono sin cuenta queda en phone_messages (modo pruebas) con el enlace; el número solo cifrado');
+    // El SMS sale después de guardar la cortesía (fuera de la transacción): se espera, no se lee una sola vez (iPad: carrera, 18 nov).
+    const smsCort = () => sql(`select sms_status || '|' || (body like '%/eventos/recibir/%') || '|' || (body like '%${SIN_CUENTA}%') from phone_messages where tpl = 'bol_cortesia' and created_at > now() - interval '2 minutes' order by id desc limit 1`);
+    await espera(() => smsCort() === `${smsEsperado('bol_cortesia')}|true|false`);
+    ok(smsCort() === `${smsEsperado('bol_cortesia')}|true|false`, 'el SMS a un teléfono sin cuenta queda en phone_messages (modo pruebas) con el enlace; el número solo cifrado');
     // Sin teléfono + el tope de Configuración.
     sql(`insert into platform_config (key, value, updated_by) values ('evt_cortesias_max', '3', '${ADMID}') on conflict (key) do update set value = excluded.value`);
     await pn.fill('input[placeholder="Ej. DJ Cri Cri + 1"]', 'Tercera'); await pn.fill('input[placeholder="10 dígitos"]', ''); await clic(btn(pn, 'Dar cortesía'));
