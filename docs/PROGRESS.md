@@ -2557,6 +2557,17 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   generadores deterministas `scripts/semilla/demos/grupo-{a,b,c,d}.mjs` (node sin red); `deploy.sh` genera el SQL (~140 MB, fuera del repo) y lo
   aplica con `migrar.sh --semilla-pruebas` desde `infra/pruebas/demos/`. Comprobado en una base nueva: 17 archivos sin errores en 3 min 22 s
   (100 048 operaciones, 29 017 reseñas en total). El CI no los carga. Detalle y enlaces en REVISION «Negocios demo».
+- **18 nov · Grupo A (lo que no espera al fundador):**
+  · **9n · Auditoría en la misma transacción** (ed2669e): 104 acciones del panel en 19 archivos + 7 puntos de lib (patrocinios, reseñas,
+    repartidor, simulador) escriben `audit_entries` con el MISMO cliente que el cambio (`tx`, `enTx`, `txAuditada`/`AlGuardar` en `lib/db.ts`;
+    cobros y avisos siguen después del commit). Guardián `auditoriaEnLaTransaccion` (alreves9n22 10/10); regresión completa en verde.
+    `eventos.cancelar` audita `por_devolver` (las devoluciones van por partes y su avance queda en `event_cancellations`).
+  · **Safari en los anchos extremos:** el repartidor en la web pide una lectura fresca si el GPS se calla dos intervalos (merc9n verde en SE e
+    iPad); evt6d espera el SMS de la cortesía. Escritorio 1024 190/190, SE 189/190 → todo; en el iPad queda dir9m (a mano, REVISION).
+  · **PITR de verdad en el CI** (8/8): Postgres 16 del repositorio oficial PGDG + pgBackRest; en el CI ya no se salta en silencio.
+  · **Pruebas que dependían de la hora** (la corrida de hito de madrugada): cre9h un huso por hora, ana9g el día de su semilla, pat002/pat003
+    devuelven 7 de 7 si no se usó ningún día; ciu9i dice qué ve si no carga. 6/6 en verde de madrugada (CI 44251270054).
+  · Corrida completa de hito otra vez: CI 44257931432.
 - **17 nov · Demos ronda 2 (pedido del fundador: 10 por CADA subcategoría + 200+ eventos):** 21 agentes Sonnet en worktrees, uno por
   categoría + 2 para la semilla existente + 2 de eventos; generadores `scripts/semilla/demos/r2-*.mjs` (solo leen los de la ronda 1).
   Integración en una base nueva (copia de tl_demos): ≈ 6.700 negocios nuevos (todas las subcategorías ≥ 10), 446 de la semilla llenados,
