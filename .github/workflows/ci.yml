@@ -98,7 +98,10 @@ jobs:
           # El PITR se saltaba (18 nov): sin «apt-get update» no siempre llegaba pgbackrest y la imagen no trae el servidor de Postgres 16. Se instala
           # SIN crear la base de siempre (createcluster.conf): la prueba arma la suya en otro puerto y no choca con la base del CI.
           sudo mkdir -p /etc/postgresql-common && echo "create_main_cluster = false" | sudo tee /etc/postgresql-common/createcluster.conf >/dev/null
-          sudo apt-get update -q >/dev/null && sudo apt-get install -y -q age shellcheck pgbackrest postgresql-16 >/dev/null
+          # La imagen del CI es un Ubuntu nuevo sin postgresql-16 en sus listas: se agrega el repositorio oficial de PostgreSQL (PGDG), que trae el 16
+          # (el de producción, infra/produccion/base) y su pgbackrest.
+          sudo apt-get update -q >/dev/null && sudo apt-get install -y -q postgresql-common >/dev/null && sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y >/dev/null
+          sudo apt-get install -y -q age shellcheck pgbackrest postgresql-16 >/dev/null
           echo "pgbackrest: $(command -v pgbackrest || echo falta) · Postgres 16: $(test -x /usr/lib/postgresql/16/bin/initdb && echo sí || echo falta)"
           sudo -E env "PATH=$PATH" CI=true bash pruebas/infra/correr.sh
       - name: Imagen de la base de producción se construye (Postgres + PostGIS + pgBackRest)
