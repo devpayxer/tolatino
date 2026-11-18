@@ -6033,6 +6033,7 @@
   {"id":"NEG-PANEL-AUTOS.e2-f22620c95736","es":"Tasa (APR) del ejemplo","en":"Example rate (APR)","max_len":40,"locked":false,"n":1,"donde":["app/panel/Autos.tsx"]},
   {"id":"NEG-PANEL-AUTOS.e2-fbf5e01000b9","es":"Tu página dice «No va por la calle».","en":"Your page says “Not street legal”.","max_len":60,"locked":false,"n":1,"donde":["app/panel/Autos.tsx"]},
   {"id":"NEG-PANEL-AUTOS.e2-ff123b0d9a36","es":"Cuántas pruebas caben a la misma hora.","en":"How many test drives fit at the same time.","max_len":70,"locked":false,"n":1,"donde":["app/panel/Autos.tsx"]},
+  {"id":"NEG-PANEL-AVISO-SOLO-LECTURA.e2-2c56cdabede6","es":"VISTA DEL EQUIPO · SOLO LECTURA","en":"TEAM VIEW · READ ONLY","max_len":31,"locked":true,"n":1,"donde":["app/panel/AvisoSoloLectura.tsx"]},
   {"id":"NEG-PANEL-CITAS.e2-01c45ab20672","es":"Aún no hay citas","en":"No bookings yet","max_len":40,"locked":false,"n":1,"donde":["app/panel/Citas.tsx"]},
   {"id":"NEG-PANEL-CITAS.e2-027c410cd197","es":"Mandar el total por escrito","en":"Send the written total","max_len":50,"locked":false,"n":1,"donde":["app/panel/Citas.tsx"]},
   {"id":"NEG-PANEL-CITAS.e2-037e6a5a04a8","es":"TARJETA RECHAZADA","en":"CARD DECLINED","max_len":40,"locked":false,"n":1,"donde":["app/panel/Citas.tsx"]},

@@ -3,6 +3,7 @@ import { cfgSql } from "./config";
 import type { Pool, PoolClient } from "pg";
 import { cifrar, descifrar } from "./cifrado";
 import { db, tx } from "./db";
+import { soloLectura } from "./vista-equipo";
 import { kindAutosDe, lineaAutos, type Bhph, type Pago, type Puerta, type Titulo } from "./autos-comun";
 import { kindInmDe, lineaInm, soloZona, type KindProp } from "./inmuebles-comun";
 import { usdI } from "./inscripciones-comun";
@@ -624,7 +625,7 @@ export async function visDetalle(negocio: string, numero: string, actorId: strin
   if (o.det.at_home && confirmada) {
     const r = (await db().query<{ enc: Buffer | null }>(
       `select p.note_enc as enc from op_private p join operations o on o.id = p.operation_id where p.operation_id = $1::bigint and p.reason = 'casa' and o.business_id = $2 and o.kind = 'visit' and o.status in ('confirmed', 'done')`, [o.id, negocio])).rows[0];
-    const t = r ? descifrar(r.enc) : null;
+    const t = r && !soloLectura() ? descifrar(r.enc) : null; // 9n-23 · la dirección de la casa no se abre en la vista del equipo
     if (t) {
       try { casa = JSON.parse(t) as { calle: string; zip: string }; } catch { casa = null; }
       await db().query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, 'vis.ver_direccion', 'operation', $2, $3, null, null)`, [actorId, o.num, o.city]);

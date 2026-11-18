@@ -110,6 +110,24 @@ En el 360°, **Ver como cliente** también sale cuando el negocio está oculto, 
 cliente, con el aviso **VISTA DEL EQUIPO** y su estado arriba. Solo la ve quien es del equipo y puede ver Negocios; para cualquier otra persona esa
 página no existe. Cada apertura queda en la auditoría y no cuenta como vista del negocio. No se hacen pedidos ni reservas desde ahí.
 
+## Panel del dueño (solo lectura)
+En el 360°, junto a **Ver como cliente**, está **Panel del dueño**: abre en otra pestaña el panel del negocio tal como lo ve su dueño (Tu página, Hoy,
+Clientes, Mensajes, Lo que vendes, Cobros y plan, Más), con el aviso fijo **VISTA DEL EQUIPO · SOLO LECTURA** arriba. Sirve para entender lo que el dueño
+cuenta por Soporte sin pedirle capturas.
+- **Quién lo abre:** quien es del equipo, entró con su segundo factor y puede ver Negocios, y solo negocios de las ciudades de su rol. Un vecino, un dueño
+  de otro negocio o alguien del equipo sin permiso de Negocios ven «Sin acceso». El dueño (o su equipo) que abre el mismo enlace ve su panel de siempre.
+- **Nada se guarda desde ahí:** «Guardar» queda apagado; cualquier otro botón que cambie algo (cerrar por hoy, contestar, subir una foto…) lo rechaza el
+  servidor y la pantalla dice «Solo lectura: no se guardó nada». Para cambiar algo en nombre del negocio se usa el 360° (Ficha, Lo que vende, Equipo),
+  que queda en el historial y el dueño lo ve.
+- **Mirar no deja huella:** abrir una conversación no la marca leída para el dueño, abrir una solicitud de empleo o un pre-estimado no los marca vistos, y
+  no se cobra ni se libera nada al mirar (eso lo hace el sistema solo, cada minuto). Las tarjetas guardadas y los términos que se muestran son los del
+  dueño, no los de quien mira (las tarjetas no salen).
+- **Lo privado no sale:** lo que el dueño ve cifrado (la nota y el motivo de una cita de salud o de un trámite, los datos de un niño inscrito, la nota de
+  consejería de una iglesia, la dirección de la casa en una prueba de manejo, el destinatario de un envío) no se muestra aquí, igual que en el resto del
+  Super Admin. Nombres y teléfonos de clientes salen como en Transacciones.
+- **Auditoría:** cada sección que abres queda en la auditoría con la sección y la hora (la misma sección, una vez cada 10 minutos), y el historial del
+  360° dice «abrió en solo lectura el panel de…».
+
 ## Operación (360°)
 La pestaña **Operación** del Negocio 360° dice cómo trabaja el negocio con lo que le piden: en 90 días, cuántas operaciones tuvo, cuánto
 acepta de lo que le piden, en cuántos minutos responde (promedio) y cuántas se cancelaron o no se dieron; en 30 días, sus vistas, los
@@ -225,6 +243,25 @@ In the 360° › **Team**, each team member with dashboard access has **Remove a
 In the 360°, **View as customer** also shows when the business is hidden, suspended, a draft or closed: it opens its page the way a customer would see
 it, with the **TEAM VIEW** notice and its status on top. Only team members who can view Businesses see it; for anyone else that page does not exist.
 Each opening is logged in the audit trail and does not count as a view of the business. Do not place orders or bookings from there.
+
+### Owner's dashboard (read only)
+In the 360°, next to **View as customer**, there is **Owner's dashboard**: it opens the business's dashboard in another tab exactly as its owner sees it
+(Your page, Today, Clients, Messages, What you sell, Payouts and plan, More), with the fixed **TEAM VIEW · READ ONLY** notice on top. Use it to understand
+what the owner reports through Support without asking for screenshots.
+- **Who can open it:** team members who signed in with their second factor and can view Businesses, and only for businesses in their role's cities. A
+  neighbor, the owner of another business or a team member without Businesses permission sees "No access". The owner (or their staff) opening the same
+  link sees their usual dashboard.
+- **Nothing is saved from there:** "Save" is turned off; any other button that changes something (close for today, reply, upload a photo…) is rejected
+  by the server and the screen says "Read only: nothing was saved". To change something on behalf of the business, use the 360° (Page, What it sells,
+  Team), which stays in the history and the owner sees it.
+- **Looking leaves no trace:** opening a conversation does not mark it read for the owner, opening a job application or a pre-estimate does not mark
+  them seen, and nothing is charged or released by looking (the system does that on its own, every minute). Saved cards and terms shown belong to the
+  owner, not to whoever is looking (cards are not shown).
+- **Private details stay private:** what the owner sees encrypted (the note and reason of a health or legal appointment, an enrolled child's details, a
+  church counseling note, the home address for a test drive, a package recipient) is not shown here, just like in the rest of the Super Admin. Client
+  names and phones show as they do in Transactions.
+- **Audit trail:** every section you open is logged with the section and time (the same section, once every 10 minutes), and the 360° history says
+  "opened read-only the dashboard of…".
 
 ### Operations (360°)
 The **Operations** tab of the Business 360° shows how the business handles what people ask for: in 90 days, how many operations it had, how much

@@ -2,6 +2,7 @@ import "server-only";
 import type { PoolClient } from "pg";
 import { db, tx, type AlGuardar } from "./db";
 import { pasarela, type Retencion } from "./pagos/pasarela";
+import { soloLectura } from "./vista-equipo";
 
 /* Cobros con tarjeta de un pedido (Payment). Reglas (Super Admin › Planes › Comisiones, dash2-pay.js):
    - Se RETIENE el total al enviar; se COBRA cuando el negocio acepta (o al instante si acepta solo); se LIBERA completo si
@@ -104,6 +105,7 @@ export async function liberarOperacion(opId: string) {
    retenido de uno aceptado → cobrar. Una solicitud con otra hora propuesta (change_proposed) sigue VIVA: su retención no se
    toca (4v: se liberaba el depósito mientras el cliente decidía; guardián reparaVivas). Barato: índice por negocio y solo los retenidos. */
 export async function repararPagos(negocio: string) {
+  if (soloLectura()) return; // 9n-23 · la vista del equipo (solo lectura) no cobra ni libera nada al mirar: lo hace el barrido de cada minuto
   const L = (await db().query<{ op: string; st: string }>(
     `select p.operation_id::text as op, o.status as st from payments p join operations o on o.id = p.operation_id
       where p.business_id = $1 and p.status = 'held' and o.status not in ('pending', 'change_proposed') and o.kind not in ('market_order', 'hold', 'tickets') limit 20`, [negocio])).rows;

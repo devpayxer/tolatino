@@ -12,7 +12,7 @@ import { videoPanel } from "@/lib/video-negocio";
 
 /* Panel del negocio: quién entra. El servidor decide en cada lectura y cada cambio: la persona tiene que ser miembro
    activo del negocio (dueño, o equipo con acceso a esa parte del panel). Nunca se confía en lo que diga la pantalla. */
-export type Acceso = { yo: Yo; negocio: { id: string; name: string; city_id: string; category_id: string; status: string }; kind: "owner" | "staff" | "renter"; partes: string[] };
+export type Acceso = { yo: Yo; negocio: { id: string; name: string; city_id: string; category_id: string; status: string }; kind: "owner" | "staff" | "renter"; partes: string[]; soloVer?: true };
 
 export async function accesoPanel(negocioId: string, parte?: string): Promise<Acceso | null> {
   if (typeof negocioId !== "string" || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(negocioId) || negocioId.length > 80) return null;
@@ -29,6 +29,22 @@ export async function accesoPanel(negocioId: string, parte?: string): Promise<Ac
   const { kind, panel_access: _p, ...negocio } = r;
   void _p;
   return { yo: me, negocio, kind, partes };
+}
+
+/* 9n-23 · «Panel del dueño» (Super Admin › Negocio 360°): alguien del equipo con neg:ver (y el segundo factor: staff()) abre el panel de un negocio
+   en SOLO LECTURA, dentro de las ciudades de su rol (como el 360°). Devuelve el acceso del dueño (todas las partes, para que cada sección se dibuje)
+   con la marca soloVer. Lo llama SOLO la página del panel (app/panel/[id]/[[...r]]/page.tsx) con ?equipo=1, y la página lo audita. Ninguna acción
+   ni ruta lo usa: todas siguen con accesoPanel (miembro activo del negocio), así que cualquier cambio que se intente desde esta vista lo rechaza
+   el servidor. Guardián panelEquipoSoloLectura. */
+export async function accesoPanelSoloLectura(negocioId: string): Promise<(Acceso & { soloVer: true }) | null> {
+  if (typeof negocioId !== "string" || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(negocioId) || negocioId.length > 80) return null;
+  const s = await (await import("./admin")).staff();
+  if (!s?.puede("neg", "ver")) return null;
+  const negocio = (await db().query<Acceso["negocio"]>(
+    `select b.id, b.name, b.city_id, b.category_id, b.status from businesses b
+      where b.id = $1 and b.status <> 'merged' and (cardinality($2::text[]) = 0 or b.city_id = any($2::text[]))`, [negocioId, s.ciudadesRol])).rows[0];
+  if (!negocio) return null;
+  return { yo: s, negocio, kind: "owner", partes: ["all"], soloVer: true };
 }
 
 /* Los negocios de la persona (para entrar al panel y elegir cuál). */
@@ -60,7 +76,8 @@ export type Persona = {
 export async function datosPanel(acc: Acceso, lang: Lang) {
   const id = acc.negocio.id, es = lang === "es";
   // La prueba Pro y el plan viven en subscriptions (lib/suscripcion.ts): lo vencido se procesa antes de mostrar.
-  await (await import("./suscripcion")).procesar(id).catch(() => undefined);
+  // 9n-23 · En la vista del equipo (solo lectura) no: procesar puede cobrar la tarjeta del dueño; lo hace el barrido de cada minuto.
+  if (!acc.soloVer) await (await import("./suscripcion")).procesar(id).catch(() => undefined);
   const b = (await db().query<{
     id: string; name: string; cat: string; city: string; ciudad: string; ciudad_on: boolean; status: string; plan: string; verified: boolean; review_count: number;
     attrs: Record<string, any>; logo: string | null; about: Bi | null; amen: string[]; op: string; from_home: boolean; mods: string[]; evt_aplica: boolean; pausa_cot: string | null; pausa_staff: string | null;
@@ -111,7 +128,8 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
               (select count(*)::int from contact_taps where business_id = $1 and at >= $3::timestamptz) as cprueba`, [id, b.hoy, desde, (await db().query<{ e: boolean }>(`select coalesce((select enabled from feature_flags where key = 'panel.vistas_unicas'), false) as e`)).rows[0]?.e === true]),
     db().query<{ n: number }>(`select count(*)::int as n from faqs where business_id = $1`, [id]),
     db().query<{ key: string; icon: string; label: Bi }>(`select key, icon, label from amenities where categories = '{}' or $1 = any(categories) order by (categories = '{}'), sort`, [b.cat]),
-    misNegocios(acc.yo.id),
+    // 9n-23 · En la vista del equipo, «Tus negocios» es solo este (los de la persona del equipo no tienen nada que hacer aquí).
+    acc.soloVer ? Promise.resolve([]) : misNegocios(acc.yo.id),
     b.cat === "NEG-PRO" || b.cat === "NEG-FE" || b.cat === "NEG-INMUEBLE" || b.cat === "NEG-DEALER" ? licenciasDe(id) : Promise.resolve([]),
     db().query<{ key: string; title: Bi }>(`select key, title from license_kinds where category_id = $1 order by sort`, [b.cat]),
   ]);
@@ -139,7 +157,8 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     items, itemsW, galeria: fotos.rows.length, about: !!b.about?.es, logo: !!b.logo, sello: b.verified, correo: b.email_ok, faqs: faqs.rows[0]?.n ?? 0,
     resenasSinResponder: rs.crit, equipo: okEquipo.length, aDomicilio: b.op === "casa", diasAbiertos: dias.filter((d) => d.on).length, amenidades: b.amen.length, pro,
   });
-  // Derivado cacheado (lo leen las listas del Super Admin): se guarda solo si cambió.
+  // Derivado cacheado (lo leen las listas del Super Admin): se guarda solo si cambió. 9n-23 · También en la vista del equipo: es un derivado (nunca
+  // editable) que queda igual a como lo calcula la base; mirar no cambia nada del negocio.
   await db().query(`update business_stats_cache set profile_strength = $2, updated_at = now() where business_id = $1 and profile_strength <> $2`, [id, f.sc]);
   const k = cifras.rows[0] ?? { v7: 0, vhoy: 0, vprueba: 0, c7: 0, cprueba: 0 };
   const onb = !!b.attrs?.onb && Date.now() - Date.parse(b.created) < 45 * D;
@@ -172,6 +191,9 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     anuncios, especiales: esp, feriados: fer, avisosOff: avOff,
     resenas: rs, novedades: nv, cupones: cu,
     id, name: b.name, cat: b.cat, city: b.city, ciudad: b.ciudad, ciudadAbierta: b.ciudad_on, kind: acc.kind, partes: acc.partes, pro, verified: b.verified,
+    // 9n-23 · Vista del equipo (solo lectura): el aviso arriba, «Guardar» apagado y la dirección leída aquí (la pantalla de Dirección y mapa la pide
+    // con una acción que exige ser miembro del negocio).
+    soloVer: !!acc.soloVer, dirEquipo: acc.soloVer ? await (await import("./direccion-negocio")).direccionNegocio(id) : null,
     trial: tr && tr.on ? tr : null, trialUsed: b.sub_used, onb, sells, mods: b.mods, evtAplica: b.evt_aplica,
     // 9n · Cotizaciones y Staff en pausa de To’Latino (el motivo que ve el dueño; null = no están en pausa; el motivo siempre se escribe).
     pausas: { cot: b.pausa_cot, staff: b.pausa_staff }, op: b.op, itemsW, items,
@@ -191,7 +213,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     lic: b.cat === "NEG-PRO" || b.cat === "NEG-FE" || b.cat === "NEG-INMUEBLE" || b.cat === "NEG-DEALER" ? { filas: lic, catalogo: licCat.rows.map((k) => ({ key: k.key, l: k.title[lang] })), cant: Array.isArray(b.attrs?.cant) ? (b.attrs.cant as string[])[es ? 0 : 1] ?? null : null } : null,
     // Licencias de cada persona del equipo (Doctores y Profesionales, 4h-3): solo quien la tiene verificada atiende citas.
     licEq: b.cat === "NEG-SALUD" || b.cat === "NEG-PRO" ? { filas: licEq, catalogo: licCat.rows.map((k) => ({ key: k.key, l: k.title[lang] })) } : null,
-    negocios: negocios.map((n) => ({ id: n.id, name: n.name, plan: n.plan, foto: n.foto, trial: prueba(n.until, n.days) })),
+    negocios: acc.soloVer ? [{ id: b.id, name: b.name, plan: b.plan, foto: fotos.rows[0]?.url ?? null, trial: tr }] : negocios.map((n) => ({ id: n.id, name: n.name, plan: n.plan, foto: n.foto, trial: prueba(n.until, n.days) })),
     // 7b · Más › Ayuda y Soporte: el horario del equipo (Configuración) y los casos abiertos del negocio.
     sop: await (async () => {
       const [{ horario }, { horarioCorto }] = await Promise.all([import("./soporte"), import("./soporte-comun")]);

@@ -3,26 +3,21 @@
    El servidor decide el punto (la casa, el tramo o la calle de ese código postal; el pin solo cerca de eso, lib/direcciones.ts puntoFinal), guarda la
    dirección y el punto, y lo anota en la auditoría. Lo que el Super Admin corrigió (geo_fixed_*) queda en el historial; gana lo más reciente. */
 import { mismoOrigen } from "@/lib/cuenta";
-import { db, tx } from "@/lib/db";
+import { tx } from "@/lib/db";
 import { PIN_MAX_M, puntoFinal } from "@/lib/direcciones";
 import { accesoPanel } from "@/lib/panel";
+import { direccionNegocio, type DirNegocio } from "@/lib/direccion-negocio";
 
 type Bi = { es: string; en: string };
-export type DirNegocio = { calle: string; zip: string; lat: number | null; lng: number | null; casa: boolean; fijadoPorEquipo: string | null; centro: [number, number] };
+export type { DirNegocio };
 export type ResDirNeg = { ok: true } | { ok: false; mensaje: Bi };
 const no = (es: string, en: string): ResDirNeg => ({ ok: false, mensaje: { es, en } });
 
+/* La lectura vive en lib/direccion-negocio.ts (9n-23: la vista del equipo la lee sin esta acción, que exige ser miembro del negocio). */
 export async function direccionLeer(negocio: string): Promise<DirNegocio | null> {
   const acc = await accesoPanel(negocio, "page");
   if (!acc) return null;
-  const r = (await db().query<{ address: string | null; lat: number | null; lng: number | null; casa: boolean; fijado: string | null; clat: number; clng: number }>(
-    `select b.address, st_y(b.geo::geometry) as lat, st_x(b.geo::geometry) as lng, b.works_from_home as casa,
-            to_char(b.geo_fixed_at at time zone c.timezone, 'MM/DD/YYYY') as fijado, st_y(c.center::geometry) as clat, st_x(c.center::geometry) as clng
-       from businesses b join cities c on c.id = b.city_id where b.id = $1`, [negocio])).rows[0];
-  if (!r) return null;
-  // La dirección se guarda como «calle, código postal» o solo la calle (las de antes): se separa el código postal si lo trae al final.
-  const m = /^(.*?)(?:,\s*|\s+)(\d{5})$/.exec(r.address ?? "");
-  return { calle: m ? m[1]!.trim() : r.address ?? "", zip: m ? m[2]! : "", lat: r.lat, lng: r.lng, casa: r.casa, fijadoPorEquipo: r.fijado, centro: [r.clat, r.clng] };
+  return direccionNegocio(negocio);
 }
 
 export async function direccionGuardar(negocio: string, x: { calle?: string; zip?: string; pin?: [number, number] | null }): Promise<ResDirNeg> {

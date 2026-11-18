@@ -2635,3 +2635,16 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   lista» (aquí no corre el almacén de fotos: Garage); panel, menu2b, com5e, evt6a, an1n, lay4r, pro4l, sal4i y rep2l no corrieron aquí (apuntan a :3100
   fijo o piden los recursos de pruebas/servir/recursos.sh). Una corrida de cms9f3 de seis vio un #418 de React (diferencia de HTML, no de texto) en
   1360 · es; no se repitió en las otras cinco ni en 96 cargas de sonda con y sin ediciones: queda para el CI de 9 dispositivos. Ayuda: `admin-textos-y-paginas`.
+- **18 nov · 9n-23 · «Panel del dueño», solo lectura del equipo** (LAUNCH L147 «Acciones del 360°» → ✓, la línea queda completa; REVISION «9n-23 — Panel
+  del dueño», decisión por defecto AB): el 360° abre `/panel/{id}?equipo=1`. `accesoPanelSoloLectura` (lib/panel.ts: staff() con neg:ver, ciudades del
+  rol, nunca un fusionado; acceso de dueño con `soloVer`) lo llama SOLO la página del panel, si no es del negocio y trae el `?equipo=1`; las 44
+  acciones y las rutas siguen con `accesoPanel` (miembro activo), así que todo cambio lo rechaza el servidor («Solo lectura: no se guardó nada · …»).
+  Cada sección va a `audit_entries` (`negocio.ver_panel`, en `tx`, una vez cada 10 min por sección; verbo en el historial del 360°, también para
+  `negocio.ver_como_cliente`). `lib/vista-equipo.ts` marca la petición (cache de React, solo la página): mirar no marca leído (conversacionNegocio) ni
+  visto (solicitudPanel, verSolicitud), no cobra (repararPagos, repararEstimados, procesar), no lee Stripe ni muestra tarjetas o términos de quien mira,
+  y no abre lo cifrado de op_private (niño, nota de consejería, nota/motivo de salud y trámites, casa de la prueba de manejo, destinatario); los
+  vencimientos por hora (vencer*/barrer*) se dejan: son los del barrido de cada minuto. Pantalla: InfoCard «VISTA DEL EQUIPO · SOLO LECTURA» fija
+  (AvisoSoloLectura), «Guardar» apagado, ?equipo=1 conservado al navegar, sin SSE en vivo, sin Exportar; Dirección y mapa lee del servidor
+  (lib/direccion-negocio.ts). Guardián `panelEquipoSoloLectura` (alreves9n23 27/27; `guiaDelPanelCompleta` acepta `const dueno = await accesoPanel`);
+  e2e `neg9n23` escrita (390/1360, ES/EN, rechazo con la base igual, sin marcar leído, vecino y equipo sin neg:ver «Sin acceso», el dueño igual): no
+  corrió aquí (sin Docker), va al CI dirigido. tsc + guardianes en verde. Ayuda `admin-negocios` (ES/EN).

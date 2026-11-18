@@ -12,20 +12,21 @@ import { dosIdiomas } from "@/lib/dos-idiomas";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Button } = UI as unknown as Record<"Button", ComponentType<any>>;
 
-export function DireccionPanel({ negocio, es, desk }: { negocio: string; es: boolean; desk: boolean }) {
+export function DireccionPanel({ negocio, es, desk, inicial = null }: { negocio: string; es: boolean; desk: boolean; inicial?: DirNegocio | null }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), [pend, start] = useTransition();
   const [d, setD] = useState<DirNegocio | null>(null), [v, setV] = useState<ValorDir | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
   useEffect(() => {
     let vivo = true;
-    void direccionLeer(negocio).then((x) => {
+    // 9n-23 · En la vista del equipo (solo lectura) la dirección ya viene del servidor: la acción de leer exige ser miembro del negocio.
+    void (inicial ? Promise.resolve(inicial) : direccionLeer(negocio)).then((x) => {
       if (!vivo || !x) return;
       setD(x);
       setV({ calle: x.calle, zip: x.zip, lugar: null, estado: null, origen: x.lat != null && x.lng != null ? [x.lat, x.lng] : null, pin: null, calidad: null });
     });
     return () => { vivo = false; };
-  }, [negocio]);
+  }, [negocio, inicial]);
   if (!d || !v) return <div style={{ minHeight: 180 }} aria-busy="true" />;
   const guardar = () => start(async () => {
     setMsg(null);

@@ -4,6 +4,7 @@ import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { comision } from "./cobros";
 import { pasarela } from "./pagos/pasarela";
 import { bancoPide } from "./pagos/verificacion";
+import { soloLectura } from "./vista-equipo";
 
 /* Estimado / precio completo línea por línea y «algo más» (Fase 4 · bloque 4d). Diseño: neg-auto-flow.js y
    neg-hogar-flow.js (citaVals › est, xtra, ready, done; totals). Plan: docs/diseno/plan/fase4-hogar-auto.md §3 y §4d.
@@ -417,6 +418,7 @@ export async function renovarRetenciones(negocio: string): Promise<void> {
 
 /* Reintenta lo que quedó a medias: liquidaciones cuyo cobro falló y retenciones de citas que ya no siguen. */
 export async function repararEstimados(negocio: string): Promise<void> {
+  if (soloLectura()) return; // 9n-23 · la vista del equipo (solo lectura) no cobra ni libera nada al mirar: lo hace el barrido de cada minuto
   const L = (await db().query<{ op: string; st: string; t: number | null }>(
     `select distinct p.operation_id::text as op, o.status as st, p.capture_target_cents as t from payments p join operations o on o.id = p.operation_id
       where p.business_id = $1 and p.status = 'held' and p.kind in ('estimate', 'extra') and (p.capture_target_cents is not null or o.status in ('cancelled', 'declined', 'expired')) limit 20`, [negocio])).rows;
