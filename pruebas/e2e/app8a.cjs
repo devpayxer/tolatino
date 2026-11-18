@@ -42,6 +42,9 @@ const PUENTE = `if (window === window.top) {
   // Preparar: las cuatro apps abiertas, sin mínimos ni avisos; lo que dejó una corrida anterior de esta prueba se quita (solo esta base).
   sql(`update feature_flags set enabled = true where key like 'app.cascara.%'`);
   sql(`delete from platform_config where key like 'app_min_build_%' or key like 'app_aviso_build_%'`);
+  // Si la prueba se cae a la mitad, no deja una app en pausa ni un build mínimo puesto: las pruebas que siguen en la misma corrida (app8e, fich8i,
+  // pan9n2) abrían «Esta app está en pausa» o «Actualiza la app» por lo que dejó esta.
+  process.on('exit', () => { try { sql(`update feature_flags set enabled = true where key like 'app.cascara.%'`); sql(`delete from platform_config where key like 'app_min_build_%' or key like 'app_aviso_build_%'`); } catch { /* sin base */ } });
   sql(`set session_replication_role = replica; delete from store_secret_reads; delete from store_secrets`);
   const br = await chromium.launch(), errs = [], csp = [];
   const ctx = async (w, ua) => br.newContext({ viewport: { width: w, height: w > 500 ? 900 : 844 }, deviceScaleFactor: w > 500 ? 1 : 2, userAgent: ua, locale: 'es-US' });
@@ -166,6 +169,8 @@ const PUENTE = `if (window === window.top) {
   await pa.getByText('Mantenimiento', { exact: true }).first().click();
   await boton(pa, 'Pausar').last().click();
   await pa.getByText(/en pausa/).first().waitFor();
+  // El texto puede salir antes de que el servidor termine de guardar: se espera a la base (hasta 15 s).
+  for (let k = 0; k < 60 && sql(`select enabled from feature_flags where key = 'app.cascara.negocio'`) !== 'f'; k++) await new Promise((r) => setTimeout(r, 250));
   ok(sql(`select enabled from feature_flags where key = 'app.cascara.negocio'`) === 'f', 'Negocios en pausa (interruptor app.cascara.negocio)');
   ok(sql(`select count(*) from audit_entries where action = 'app.pausar' and target_id = 'app.cascara.negocio'`) !== '0', 'la pausa queda en la auditoría');
   await pa.screenshot({ path: OUT + 'a8a-sistema-apps-1360.png', fullPage: true });

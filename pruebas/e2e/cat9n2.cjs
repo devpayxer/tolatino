@@ -128,7 +128,11 @@ let K = ''; const audit = (accion, objetivo) => sql(`select count(*) from audit_
     ok((await v.getByRole('tab').allInnerTexts().catch(() => [])).concat(await v.locator('[role=tablist] *').allInnerTexts().catch(() => [])).join(' ').match(/Barberos|Equipo|Staff/i) !== null, 'antes: la ficha (390) tiene la pestaña del equipo'); await shot(v, 'staff-ficha-antes-m.png');
     const f1d = await fichaTxt(vd); const eqD = (p) => p.getByText('Equipo', { exact: true }).count(); ok(await eqD(vd) > 0 && f1d.includes(NOM), 'antes: la ficha (1360) tiene la pestaña «Equipo» y presenta al equipo'); await shot(vd, 'staff-ficha-antes-d.png');
     await apagarCiudad(a, 'staff', 'Staff', true, '1');
-    const f2 = await fichaTxt(v); ok(!f2.includes(NOM) && !/Ver todos/.test(f2), `la ficha (390) ya no presenta al equipo (sin el riel, sin «${NOM}»)`);
+    // El nombre puede salir en otra parte de la ficha (una reseña de otra prueba lo menciona): lo que se mira es el riel del equipo y sus tarjetas.
+    const f2 = await fichaTxt(v); const riel2 = await v.locator('[data-pieza="riel-equipo"]').count();
+    if (riel2) console.log(`  · el riel sigue: ${(await v.locator('[data-pieza="riel-equipo"]').first().innerText()).slice(0, 200).replace(/\s+/g, ' ')}`);
+    if (!riel2 && f2.includes(NOM)) console.log(`  · «${NOM}» sale en otra parte: …${f2.slice(Math.max(0, f2.indexOf(NOM) - 80), f2.indexOf(NOM) + 60).replace(/\s+/g, ' ')}…`);
+    ok(riel2 === 0 && (await v.locator('[data-screen-label="Ficha · equipo"]').count()) === 0, `la ficha (390) ya no presenta al equipo (sin el riel, sin «${NOM}»)`);
     ok((await v.getByRole('tab').allInnerTexts().catch(() => [])).concat(await v.locator('[role=tablist] *').allInnerTexts().catch(() => [])).join(' ').match(/Barberos|Equipo|Staff/i) === null, 'la ficha (390) ya no tiene la pestaña del equipo');
     await shot(v, 'staff-ficha-m.png');
     const f2d = await fichaTxt(vd); ok(await eqD(vd) === 0, 'la ficha (1360) ya no tiene la pestaña «Equipo» ni la sección (la tarjeta de la cita conserva el selector de persona)'); await shot(vd, 'staff-ficha-d.png');

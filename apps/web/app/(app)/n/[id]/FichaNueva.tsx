@@ -466,7 +466,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
                 </div>
               ) : null}
               {verEquipo.length ? (
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-2.5" data-pieza="riel-equipo">
                   <SectionHeader title={L(cfg.staffTitle)} action={E2("Ver todos", "See all")} onAction={() => setTab("staff")} />
                   <div className="hs -mx-5 flex gap-2.5 overflow-x-auto px-5">
                     {verEquipo.map((p) => (
