@@ -201,7 +201,9 @@ const limpiar = () => {
     await pd.goto(B + `/n/${BIZ}`); await pd.locator('[data-pieza="mini-mapa"]').first().waitFor();
     await atrapar(pd); await pd.locator('[data-pieza="mini-mapa"]').first().click();
     const l3 = await pd.evaluate(() => window.__llegar);
-    ok(l3.length === 1 && /^https:\/\/www\.google\.com\/maps\/dir\//.test(l3[0]), 'en una computadora, las indicaciones en la web (un enlace, no una llamada)');
+    // En la corrida del iPad cada contexto ES un iPad (dispositivo-precarga): ahí lo correcto es la app de mapas (maps://), no la web.
+    if (ENT.DISPOSITIVO === 'ipad') ok(l3.length === 1 && /^maps:\/\//.test(l3[0]), `en el iPad, la app de mapas (${l3[0]})`);
+    else ok(l3.length === 1 && /^https:\/\/www\.google\.com\/maps\/dir\//.test(l3[0]), `en una computadora, las indicaciones en la web (un enlace, no una llamada) (${l3[0]})`);
     await shot(pd, 'ficha-minimapa-1360');
 
     // ── 6 · Escritorio y EN ──
