@@ -7,12 +7,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition, type ComponentType } from "react";
 import { DireccionCampo, type ValorDir } from "@/app/_dir/DireccionCampo";
 import { direccionGuardar, direccionLeer, type DirNegocio } from "./acciones-direccion";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Button } = UI as unknown as Record<"Button", ComponentType<any>>;
 
 export function DireccionPanel({ negocio, es, desk }: { negocio: string; es: boolean; desk: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), [pend, start] = useTransition();
   const [d, setD] = useState<DirNegocio | null>(null), [v, setV] = useState<ValorDir | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);

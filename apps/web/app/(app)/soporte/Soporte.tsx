@@ -14,6 +14,7 @@ import { subirFotoPrivada } from "@/lib/subir-foto";
 import { useAhora } from "@/lib/ahora";
 import { casoAbrir, casoCalificar, casoEscribir, casoResuelto } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const C = UI as unknown as Record<"Button" | "IconButton" | "Icon" | "Tag" | "RequestCard" | "Chip", ComponentType<any>>;
@@ -32,7 +33,7 @@ export function Soporte({ es, conSesion, negocio, temas, casos, ops, revs, horar
   revs: { hnum: string; num: string; t: Bi; href: string }[]; horario: { dias: number; desde: number; hasta: number };
   caso: CasoVecino | null; casoPedido: string | null; pre: { tema: Tema | null; op: string | null; otro: string | null } | null; compa?: boolean;
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b), L = (x: Bi) => (es ? x.es : x.en);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), L = (x: Bi) => (es ? x.es : x.en);
   const router = useRouter(), path = usePathname();
   const w = useAncho(), desk = w >= 1024, two = w >= 960;
   const v: "home" | "new" | "case" = pre ? "new" : casoPedido ? "case" : "home";
@@ -157,7 +158,7 @@ function Nuevo({ es, desk, conSesion, negocio, temas, ops, pre, toHome, onCreado
   es: boolean; desk: boolean; conSesion: boolean; negocio: { id: string; name: string } | null; temas: Tema[]; ops: OpSop[];
   pre: { tema: Tema | null; op: string | null; otro: string | null }; toHome: () => void; onCreado: (n: string) => void;
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b), L = (x: Bi) => (es ? x.es : x.en);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), L = (x: Bi) => (es ? x.es : x.en);
   const router = useRouter();
   const [tema, setTema] = useState<Tema | "">(pre.tema ?? ""), [op, setOp] = useState(pre.op ?? ""), [msg, setMsg] = useState(""), [err, setErr] = useState("");
   const [foto, setFoto] = useState<{ id: string; url: string } | null>(null), [subiendo, setSubiendo] = useState(false), [clave] = useState(nuevaClave);
@@ -240,7 +241,7 @@ function Caso({ es, desk, caso, negocio, toHome, ago, toNew, hor }: {
   es: boolean; desk: boolean; caso: CasoVecino; negocio: { id: string; name: string } | null; toHome: () => void; ago: (iso: string) => string;
   toNew: (o: { tema?: string | null; op?: string | null; otro?: string | null }) => void; hor: string;
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b), L = (x: Bi) => (es ? x.es : x.en);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), L = (x: Bi) => (es ? x.es : x.en);
   const router = useRouter();
   const [txt, setTxt] = useState(""), [foto, setFoto] = useState<{ id: string; url: string } | null>(null), [subiendo, setSubiendo] = useState(false);
   const [err, setErr] = useState(""), [aviso, setAviso] = useState(""), [pend, start] = useTransition(), file = useRef<HTMLInputElement>(null);

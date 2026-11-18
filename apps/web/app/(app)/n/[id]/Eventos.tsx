@@ -6,12 +6,13 @@ import { useRouter } from "next/navigation";
 import type { ComponentType } from "react";
 import { dinero } from "@/lib/evt-comun";
 import type { TarjetaEvt } from "@/lib/evt-publico";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const EventCard = UI.EventCard as ComponentType<any>;
 
 export function EventosTab({ eventos, es }: { eventos: TarjetaEvt[]; es: boolean }) {
-  const router = useRouter(), E2 = (a: string, b: string) => (es ? a : b);
+  const router = useRouter(), E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const meta = (x: TarjetaEvt) => `${x.cuando} · ${x.free ? E2("GRATIS", "FREE") : x.desde != null ? `${E2("DESDE ", "FROM ")}${dinero(x.desde)}` : E2("CON BOLETOS", "TICKETED")}`;
   return (
     <div data-screen-label="Ficha · eventos" className="flex flex-col gap-3 px-5 pb-6 pt-[18px] lg:max-w-[980px] lg:px-0 lg:pt-6">

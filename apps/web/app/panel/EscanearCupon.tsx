@@ -9,13 +9,14 @@ import { useState } from "react";
 import { Escaner } from "@/app/(puerta)/puerta/Escaner";
 import { vibrar } from "@/lib/nativo/haptica";
 import { cupValidar } from "./acciones-cupones";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Bi = { es: string; en: string };
 type Res = { ok: true; titulo: Bi; vecino: string; codigo: string } | { ok: false; t: string };
 const btn = { height: 56, borderRadius: 16, font: "800 16px Manrope,sans-serif" } as const;
 
 export function EscanearCupon({ negocio, es, onCerrar, onValidado }: { negocio: string; es: boolean; onCerrar: () => void; onValidado: () => void }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [res, setRes] = useState<Res | null>(null), [enviando, setEnviando] = useState(false), [luz, setLuz] = useState(false), [hayLuz, setHayLuz] = useState(false);
   const leido = async (texto: string) => {
     const cod = /\bTL-?CQ-?[A-Z0-9]{4,8}\b/i.exec(texto.trim())?.[0]?.toUpperCase() ?? null;

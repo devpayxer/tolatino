@@ -16,13 +16,14 @@ import { useToast } from "../../../eventos/comun";
 import { bolDeshacer } from "../../../eventos/acciones-despues";
 import { fechaHora, HojaNombre, HojaTransferir } from "../../../eventos/Despues";
 import { WalletBotones } from "./Wallet";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "TicketQR" | "QrCode";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, TicketQR, QrCode } = UI as unknown as Record<N, ComponentType<any>>;
 
 export function Boleto({ x, es, wallet = { apple: false, google: false }, walletNo = false }: { x: { b: BoletoVista; numero: string; evento: OrdenVista["evento"]; mia: boolean; ventanas: Ventanas }; es: boolean; wallet?: { apple: boolean; google: boolean }; walletNo?: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [grande, setGrande] = useState(false);
   // 6d · Transferir este boleto, deshacer mientras nadie lo reciba y cambiar el nombre (hasta inicio − bol_transferir_h).

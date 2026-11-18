@@ -1,5 +1,6 @@
 import "server-only";
 import { auditar, type Staff } from "./admin";
+import { alCambiarConfig } from "./cambios-config";
 import { BLOQUES, normalizarBloques, type BloqueHome } from "./cms-home";
 import { db, tx } from "./db";
 import { olvidarCadenas } from "./cms";
@@ -19,39 +20,83 @@ const marcas = (t: string) => [...new Set([...t.matchAll(/\{([a-zA-Z0-9_]+)\}/g)
 const ID = /^[A-Z0-9]+(-[A-Z0-9]+)*\.[A-Za-z0-9_.-]+$/;
 
 // ─── Cadenas ───
+/* 9f-3 · Las cadenas de las pantallas (cada E2("…", "…") de apps/web; scripts/cms/extraer.mjs → cms-cadenas-e2.json) se listan con las del diccionario:
+   su llave termina en .e2-<huella>. Un par es UNA cadena en todos los lugares donde aparece: cada fila lleva cuántas llamadas y en qué archivos (lugares),
+   para que quien edita sepa cuánto cambia. Una fila de E2 que ya no está en el código (el código cambió ese texto: es otra cadena) no se lista ni cuenta;
+   queda en la base, sin borrar. */
+type CatE2 = { cadenas: { id: string; n: number; donde: string[] }[] };
+const AUTO = /\.e2-[0-9a-f]{12}$/;
+/* El catálogo (2 MB) se carga aparte y solo cuando se abre Cadenas: las demás pantallas del admin que usan este archivo no lo cargan. */
+let lugaresE2: Promise<Map<string, { n: number; donde: string[] }>> | null = null;
+function lugares(): Promise<Map<string, { n: number; donde: string[] }>> {
+  lugaresE2 ??= import("./cms-cadenas-e2.json").then((m) => new Map(((m.default ?? m) as unknown as CatE2).cadenas.map((c) => [c.id, { n: c.n, donde: c.donde }])));
+  return lugaresE2;
+}
+let huerfanas: { at: number; ids: string[] } | null = null, escuchaHuerfanas = false;
+async function sinCodigo(): Promise<string[]> {
+  // Copia de 60 s que el aviso de la base olvida al momento (un despliegue que indexa cadenas nuevas avisa por cms_strings_avisa).
+  if (!escuchaHuerfanas) { escuchaHuerfanas = true; alCambiarConfig(() => { huerfanas = null; }); }
+  if (huerfanas && Date.now() - huerfanas.at < 60_000) return huerfanas.ids;
+  const L = await lugares(), r = await db().query<{ id: string }>(`select id from cms_strings where id ~ '\\.e2-[0-9a-f]{12}$'`);
+  huerfanas = { at: Date.now(), ids: r.rows.map((x) => x.id).filter((id) => !L.has(id)) };
+  return huerfanas.ids;
+}
 export type CadenaAdm = {
   id: string; screen: string; es: string; en: string; code_es: string; code_en: string; status: "borrador" | "vivo"; en_state: "pendiente" | "traducido" | "revisado";
   max_len: number; locked: boolean; edited: boolean; version: number; updated_at: string; quien: string | null;
+  lugares: { n: number; donde: string[] } | null;
 };
 export type DatosCadenas = {
-  kpi: { total: number; pendientes: number; traducidas: number; revisadas: number; editadas: number; fijas: number };
-  pantallas: { screen: string; n: number }[]; filas: CadenaAdm[]; siguiente: string | null;
+  kpi: { total: number; pendientes: number; traducidas: number; revisadas: number; editadas: number; fijas: number; e2: number };
+  /* Las pantallas un nivel más abajo de la elegida (APP → APP-FICHA, APP-CUENTA…), con cuántas cadenas; arriba = la de un nivel más arriba. */
+  pantallas: { screen: string; n: number }[]; arriba: string | null; filas: CadenaAdm[]; siguiente: string | null;
 };
 export const ESTADOS_CADENA = ["pendiente", "traducido", "revisado", "editadas", "fijas"] as const;
+/* Las pantallas hijas de un prefijo (null = las áreas: APP, NEG, WEB…): el siguiente tramo del nombre. */
+function hijas(todas: { screen: string; n: number }[], pre: string | null): { screen: string; n: number }[] {
+  const m = new Map<string, number>(), nivel = pre ? pre.split("-").length + 1 : 1;
+  for (const p of todas) {
+    if (pre && p.screen !== pre && !p.screen.startsWith(pre + "-")) continue;
+    const k = p.screen.split("-").slice(0, nivel).join("-");
+    m.set(k, (m.get(k) ?? 0) + p.n);
+  }
+  return [...m].map(([screen, n]) => ({ screen, n })).sort((a, b) => (a.screen < b.screen ? -1 : 1));
+}
 export async function cadenasAdmin(p: { q?: string; pantalla?: string | null; estado?: string | null; despues?: string | null }): Promise<DatosCadenas> {
-  const q = limpio(p.q, 80), pant = p.pantalla && /^[A-Z0-9-]{3,40}$/.test(p.pantalla) ? p.pantalla : null;
+  const q = limpio(p.q, 80), pant = p.pantalla && /^[A-Z0-9-]{2,40}$/.test(p.pantalla) ? p.pantalla : null;
   const est = (ESTADOS_CADENA as readonly string[]).includes(p.estado ?? "") ? p.estado! : null;
   const despues = p.despues && ID.test(p.despues) ? p.despues : null;
+  const fuera = await sinCodigo();
   const [k, pa, f] = await Promise.all([
-    db().query<{ total: string; pendientes: string; traducidas: string; revisadas: string; editadas: string; fijas: string }>(
+    db().query<{ total: string; pendientes: string; traducidas: string; revisadas: string; editadas: string; fijas: string; e2: string }>(
       `select count(*) as total, count(*) filter (where en_state = 'pendiente') as pendientes, count(*) filter (where en_state = 'traducido') as traducidas,
-              count(*) filter (where en_state = 'revisado') as revisadas, count(*) filter (where edited) as editadas, count(*) filter (where locked) as fijas from cms_strings`),
-    db().query<{ screen: string; n: string }>(`select screen, count(*) as n from cms_strings group by screen order by screen`),
+              count(*) filter (where en_state = 'revisado') as revisadas, count(*) filter (where edited) as editadas, count(*) filter (where locked) as fijas,
+              count(*) filter (where id ~ '\\.e2-[0-9a-f]{12}$') as e2
+         from cms_strings where id <> all($1::text[])`, [fuera]),
+    db().query<{ screen: string; n: string }>(`select screen, count(*) as n from cms_strings where id <> all($1::text[]) group by screen order by screen`, [fuera]),
     db().query<CadenaAdm & { code_text: Par; text: Par }>(
       `select s.id, s.screen, s.text, s.code_text, s.status, s.en_state, s.max_len, s.locked, s.edited, s.version, s.updated_at, nullif(trim(concat(u.first_name, ' ', u.last_name)), '') as quien
          from cms_strings s left join users u on u.id = s.updated_by
-        where ($1::text is null or s.screen = $1) and ($4::text is null or s.id > $4)
+        where ($1::text is null or s.screen = $1 or s.screen like $1 || '-%') and ($4::text is null or s.id > $4) and s.id <> all($5::text[])
           and ($2::text is null or case $2 when 'editadas' then s.edited when 'fijas' then s.locked else s.en_state = $2 end)
-          and ($3::text = '' or s.id ilike '%' || $3 || '%' or s.text->>'es' ilike '%' || $3 || '%' or s.text->>'en' ilike '%' || $3 || '%')
-        order by s.id limit 51`, [pant, est, q.replace(/[%_\\]/g, "\\$&"), despues]),
+          and ($3::text = '' or s.id ilike '%' || $3 || '%' or s.text->>'es' ilike '%' || $3 || '%' or s.text->>'en' ilike '%' || $3 || '%'
+               or s.code_text->>'es' ilike '%' || $3 || '%' or s.code_text->>'en' ilike '%' || $3 || '%')
+        order by s.id limit 51`, [pant, est, q.replace(/[%_\\]/g, "\\$&"), despues, fuera]),
   ]);
-  const kk = k.rows[0]!;
+  const kk = k.rows[0]!, L = await lugares();
   const filas = f.rows.slice(0, 50).map((x) => ({ id: x.id, screen: x.screen, es: x.text.es, en: x.text.en, code_es: x.code_text.es, code_en: x.code_text.en, status: x.status,
-    en_state: x.en_state, max_len: x.max_len, locked: x.locked, edited: x.edited, version: x.version, updated_at: x.updated_at, quien: x.quien }));
+    en_state: x.en_state, max_len: x.max_len, locked: x.locked, edited: x.edited, version: x.version, updated_at: x.updated_at, quien: x.quien,
+    lugares: AUTO.test(x.id) ? L.get(x.id) ?? null : null }));
+  const todas = pa.rows.map((x) => ({ screen: x.screen, n: Number(x.n) }));
+  const arriba = pant && pant.includes("-") ? pant.split("-").slice(0, -1).join("-") : null;
   return {
-    kpi: { total: Number(kk.total), pendientes: Number(kk.pendientes), traducidas: Number(kk.traducidas), revisadas: Number(kk.revisadas), editadas: Number(kk.editadas), fijas: Number(kk.fijas) },
-    pantallas: pa.rows.map((x) => ({ screen: x.screen, n: Number(x.n) })), filas, siguiente: f.rows.length > 50 ? f.rows[49]!.id : null,
+    kpi: { total: Number(kk.total), pendientes: Number(kk.pendientes), traducidas: Number(kk.traducidas), revisadas: Number(kk.revisadas), editadas: Number(kk.editadas), fijas: Number(kk.fijas), e2: Number(kk.e2) },
+    pantallas: hijas(todas, pant), arriba, filas, siguiente: f.rows.length > 50 ? f.rows[49]!.id : null,
   };
+}
+/* Dónde aparece una cadena de E2 (para el historial). */
+export async function lugaresCadena(id: string): Promise<{ n: number; donde: string[] } | null> {
+  return AUTO.test(id) ? (await lugares()).get(id) ?? null : null;
 }
 export type VersionCadena = { version: number; es: string; en: string; status: string; reason: string; at: string; quien: string | null };
 export async function versionesCadena(id: string): Promise<VersionCadena[]> {

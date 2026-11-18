@@ -7,12 +7,13 @@ import { useState, useTransition } from "react";
 import type { OpcionesSeguro, Seguro } from "@/lib/mis-seguros";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
 import { seguroGuardar, seguroQuitar, seguroUsar } from "./acciones";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 const TIPOS = [["medicaid", "Medicaid", "Medicaid"], ["medicare", "Medicare", "Medicare"], ["chip", "CHIP (niños)", "CHIP (kids)"], ["priv", "Seguro del trabajo o privado", "Employer or private"], ["none", "No tengo seguro", "No insurance"]] as const;
 const PARA = [["yo", "Para mí", "For me"], ["hijo", "Para mi hijo o hija", "For my child"], ["otro", "Para otra persona", "For someone else"]] as const;
 
 export function Seguros({ es, yo, seguros, op }: { es: boolean; yo: Yo; seguros: Seguro[]; op: OpcionesSeguro }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi(), [ocupado, start] = useTransition();
   const [form, setForm] = useState(seguros.length === 0);
   const [f, setF] = useState({ kind: "", plan: "", num: "", para: "yo" });

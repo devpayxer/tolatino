@@ -8,6 +8,7 @@ import { useState, type ComponentType } from "react";
 import type { VacanteDet } from "@/lib/jobs";
 import { bi, DCORTO, diasL, EXP_L, horarioL, pagoL } from "@/lib/jobs-txt";
 import { vacAplicar } from "../../../acciones-jobs";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,7 +21,7 @@ const telL = (p: string) => { const d = p.replace(/\D/g, "").slice(-10); return 
 
 export function Aplicar({ v, negocio, nombre, tel, es }: { v: VacanteDet; negocio: string; nombre: string; tel: string; es: boolean }) {
   const router = useRouter();
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [name, setName] = useState(nombre), [phone, setPhone] = useState(telL(tel)), [exp, setExp] = useState<number | null>(null), [note, setNote] = useState("");
   const [days, setDays] = useState<number[]>([]), [langs, setLangs] = useState<string[]>(["es"]), [reqs, setReqs] = useState<boolean[]>(v.req.map(() => false));
   const [enviando, setEnviando] = useState(false), [error, setError] = useState("");

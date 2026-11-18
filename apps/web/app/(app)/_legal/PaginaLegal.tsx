@@ -6,6 +6,7 @@ import { paginaPara, titulosLegales, type ClaveLegal, type VersionLegal } from "
 import { ubicacion } from "@/lib/ubicacion";
 import { Md } from "../ayuda/md";
 import { CambiarIdioma, LadoLegal, PieLegal } from "./PieLegal";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 /* 9e · Una página legal pública (/terminos, /privacidad, /cookies, /reglas, /verificamos, /votos, /seguridad, /ia, /dmca, /vivienda-justa,
    /accesibilidad): plantilla «To'Latino Página» (APP-WEB, docs/diseno/pantallas/To'Latino Página.dc.html) — rótulo del grupo, título, resumen,
@@ -62,14 +63,14 @@ function Cuerpo({ md, es }: { md: string; es: boolean }) {
 
 const fecha = (iso: string, en: boolean) => new Intl.DateTimeFormat(en ? "en-US" : "es-US", { timeZone: "America/New_York", day: "numeric", month: "short", year: "numeric" }).format(new Date(iso)).replace(/\./g, "").toUpperCase();
 function linea(v: VersionLegal, en: boolean): string {
-  const E2 = (a: string, b: string) => (en ? b : a);
+  const E2 = (a: string, b: string) => dosIdiomas(!en, a, b);
   if (v.status === "publicado" && v.effective_at) return `${E2("VERSIÓN ", "VERSION ")}${v.version}${E2(" · VIGENTE DESDE ", " · EFFECTIVE ")}${fecha(v.effective_at, en)}`;
   return `${v.status === "revisado" ? E2("REVISADA · SIN PUBLICAR", "REVIEWED · NOT PUBLISHED") : E2("BORRADOR", "DRAFT")} · ${E2("VERSIÓN ", "VERSION ")}${v.version} · ${E2("TEXTO DEL ", "TEXT OF ")}${v.text_date.toUpperCase()}`;
 }
 
 export async function PaginaLegal({ clave, searchParams, children }: { clave: ClaveLegal; searchParams: Sp; children?: ReactNode }) {
   const { ver, p, titulos, ciudad } = await leer(clave, searchParams);
-  const en = ver === "en", E2 = (a: string, b: string) => (en ? b : a), L = (x: Bi) => (en ? x.en : x.es);
+  const en = ver === "en", E2 = (a: string, b: string) => dosIdiomas(!en, a, b), L = (x: Bi) => (en ? x.en : x.es);
   const g = GRUPO[clave], grupo = L(NOMBRE_GRUPO[g]!);
   const mas = titulos.filter((t) => GRUPO[t.key] === g);
   const v = p?.general;

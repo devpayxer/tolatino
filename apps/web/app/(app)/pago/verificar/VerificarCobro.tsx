@@ -6,11 +6,12 @@ import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { ModoTarjeta } from "../MetodoPago";
 import { Verificacion, type VerificarT } from "../Verificacion";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Button } = UI as unknown as Record<"Button", ComponentType<any>>;
 export function VerificarCobro({ es, v, estado, negocio, modo, pk }: { es: boolean; v: VerificarT; estado: string; negocio: string | null; modo: ModoTarjeta; pk: string | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [abierta, setAbierta] = useState(estado === "pendiente"), [listo, setListo] = useState(estado === "verificada");
   const plan = negocio ? `/panel/${negocio}/cobros/plan` : "/cuenta";

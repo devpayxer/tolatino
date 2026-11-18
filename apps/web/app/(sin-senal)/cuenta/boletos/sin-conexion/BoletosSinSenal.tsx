@@ -7,6 +7,7 @@ import * as UI from "@tolatino/ui";
 import { useEffect, useState, type ComponentType } from "react";
 import { idiomaGuardado, leerBoletos, matrizDe, type BoletoGuardado } from "@/lib/boletos-sin-conexion";
 import { irAlServidor } from "@/lib/nativo/puente";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "TicketQR" | "QrCode";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,7 +19,7 @@ export function BoletosSinSenal() {
     setEs(idiomaGuardado());
     void leerBoletos().then((x) => { setL(x); const c = new URLSearchParams(location.search).get("c"); setSel(x.find((b) => b.code === c)?.code ?? (x.length === 1 ? x[0]!.code : null)); });
   }, []);
-  const E2 = (a: string, b: string) => (es ? a : b), b = L?.find((x) => x.code === sel) ?? null;
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), b = L?.find((x) => x.code === sel) ?? null;
   useBrilloQr(!!b); // 8e · el QR del boleto con el brillo al máximo (se devuelve al salir)
   return (
     <div data-pantalla="USR-BOLETO-SIN-SENAL" className="min-h-[100dvh] bg-paper">

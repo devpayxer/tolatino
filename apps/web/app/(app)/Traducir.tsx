@@ -10,6 +10,7 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { NO_DISPONIBLE, type KindTr } from "@/lib/traduccion-comun";
 import { verTraduccion } from "./acciones-traducir";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Est = { st: "cargando" } | { st: "listo"; texto: string; de: "es" | "en"; ver: boolean } | { st: "error"; msg: string; otra: boolean };
 export type TrProp = { label: ReactNode };
@@ -20,7 +21,7 @@ const TENUE: CSSProperties = { fontWeight: 600, color: "rgba(11,14,18,.6)" };
 
 export function useTraducir(es: boolean): Tr {
   const [m, setM] = useState<Record<string, Est>>({});
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const pon = (k: string, e: Est) => setM((x) => ({ ...x, [k]: e }));
   const pedir = async (k: string, kind: KindTr, id: string) => {
     pon(k, { st: "cargando" });

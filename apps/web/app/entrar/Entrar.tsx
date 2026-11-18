@@ -12,6 +12,7 @@ import { entrarConLlave, llaveDisponible } from "@/lib/nativo/llave";
 import { bvDatos, bvPaso } from "./acciones";
 import { HojaLlave } from "./HojaLlave";
 import { MAX_APELACION, MIN_APELACION } from "@/lib/moderacion-comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { OnbTopBar, OnbActionBar, Icon, Tag, Chip, Button } = UI as unknown as Record<"OnbTopBar" | "OnbActionBar" | "Icon" | "Tag" | "Chip" | "Button", ComponentType<any>>;
@@ -48,7 +49,7 @@ async function enviar(url: string, cuerpo: unknown) {
 export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv, llaves = false }: { inicial: { paso: 1 | 2 | 3 | 7; telefono?: string }; destino?: string; lang0?: L; bv?: DatosBienvenida; llaves?: boolean }) {
   const router = useRouter();
   const [lang, setLang] = useState<L>(lang0);
-  const E2 = (es: string, en: string) => (lang === "es" ? es : en);
+  const E2 = (es: string, en: string) => dosIdiomas(lang === "es", es, en);
   const [paso, setPaso] = useState<Paso>(inicial.paso);
   const [desde3] = useState(inicial.paso === 3);
   const [d, setD] = useState<DatosBienvenida | null>(bv ?? null);

@@ -11,6 +11,7 @@ import { bi, diasL, haceL, horarioL, idiomasL, pagoL, tipoL } from "@/lib/jobs-t
 import { vacGuardar } from "../../acciones-jobs";
 import { TAG_APP } from "../../Jobs";
 import { ReportarContenido } from "../../ReportarContenido";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,7 +21,7 @@ const caja = "rounded-[18px] border border-ink/[.07] bg-white p-[15px]";
 
 export function Vacante({ v, negocio, sesion, es }: { v: VacanteDet; negocio: string; sesion: boolean; es: boolean }) {
   const router = useRouter();
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [sv, setSv] = useState(v.saved);
   const title = bi(v.title, es), app = v.app, vivo = !!app && app.status !== "withdrawn", tg = app ? TAG_APP(es, app.ivOk)[app.status] : null;
   const volver = () => router.push(`/n/${negocio}?tab=jobs`);

@@ -5,13 +5,14 @@ import { useState, useTransition } from "react";
 import type { InvitacionVista } from "@/lib/equipo-invitacion";
 import { subirFoto } from "@/lib/subir-foto";
 import { equipoAceptarCodigo } from "./acciones";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 const LANG: Record<string, string> = { es: "Español", en: "English", pt: "Português" };
 
 /* 9n-2 · Aceptar la invitación al equipo (L101): «te invitó a su equipo» + tu foto, tus palabras y tus idiomas (lo mismo que el dueño pone de sí en
    Tu página › Equipo). Compuesta con PanelBloques: head, note, photos, field, chips, acts. Sin invitación válida, el motivo y a dónde ir. */
 export function AceptarEquipo({ es, codigo, tel, nombre, v, error }: { es: boolean; codigo: string; tel: string; nombre: string; v: InvitacionVista | null; error: { es: string; en: string } | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), [pend, start] = useTransition();
   const [foto, setFoto] = useState<{ id: string; url: string } | null>(null), [bio, setBio] = useState(""), [langs, setLangs] = useState<string[]>([es ? "es" : "en"]);
   const [err, setErr] = useState(""), [hecho, setHecho] = useState<{ id: string; nombre: string } | null>(null), [subiendo, setSubiendo] = useState(false);

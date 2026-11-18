@@ -1,3 +1,4 @@
+import { dosIdiomas } from "@/lib/dos-idiomas";
 /* ¿Aceptan tu seguro y cuánto pagas? (neg-salud-listing.js compat / priceFor · plan fase4-salud-pro.md §4i). Sin acceso a la
    base: la usa el servidor (ficha, tarjeta de Buscar, Booking) y el cliente para un seguro «solo esta visita» de quien no
    entró. Nunca bloquea: si no lo aceptan, dice el precio sin seguro. To'Latino no da consejo médico. */
@@ -20,7 +21,7 @@ const usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { maximumFracti
 export type Compat = { ok: boolean; sinSeguro: boolean; t: string };
 export function compat(c: Clinica, x: SeguroRef | null, cat: CatSeguro[], es: boolean): Compat | null {
   if (!x) return null;
-  const E2 = (a: string, b: string) => (es ? a : b), esc = c.escala ? E2(" · o según tus ingresos", " · or income-based") : "";
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), esc = c.escala ? E2(" · o según tus ingresos", " · or income-based") : "";
   const cash = c.sin ? usd(c.cash) : null;
   if (x.kind === "none") return { ok: true, sinSeguro: true, t: (cash ? E2(`Sin seguro: consulta ${cash}`, `No insurance: visit ${cash}`) : E2("Sin seguro: pregunta el precio", "No insurance: ask the price")) + esc };
   const n = nombreSeguro(x, cat, es);
@@ -30,7 +31,7 @@ export function compat(c: Clinica, x: SeguroRef | null, cat: CatSeguro[], es: bo
 
 /* El precio de un servicio con el seguro de la persona (o sin él). */
 export function precioSalud(it: SvcSalud, c: Clinica, x: SeguroRef | null, es: boolean): { l: string; s: string } {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   if (it.k === "walk" && !it.cents) return { l: E2("Gratis", "Free"), s: "" };
   const acc = !!x && aceptan(c, x), pub = !!x && (x.kind === "medicaid" || x.kind === "chip");
   if (acc) return it.k === "free" || pub ? { l: "$0", s: E2("CON TU SEGURO", "WITH YOUR INSURANCE") } : { l: E2("Copago", "Copay"), s: E2("SEGÚN TU PLAN", "PER YOUR PLAN") };

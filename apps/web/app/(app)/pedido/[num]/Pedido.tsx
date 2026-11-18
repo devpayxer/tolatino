@@ -10,6 +10,7 @@ import { AyudaEstado } from "./AyudaEstado";
 import { guardarCarrito } from "../../n/[id]/MenuCliente";
 import { lineasDelPedido } from "./acciones";
 import { MapaVivo } from "@/app/_ruta/MapaVivo";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,7 +22,7 @@ const ETAPAS = ["sent", "accepted", "preparing", "ready", "picked_up"];
 const ETAPAS_D = ["sent", "preparing", "on_the_way", "delivered"];
 
 export function Pedido({ p, es, ayuda, ruta = false }: { p: PedidoVista; es: boolean; ayuda: { a: Ayuda | null; puede: boolean } | null; ruta?: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const pendiente = (p.status === "pending" && !p.sinRespuesta) || p.status === "confirmed"; // en curso: se actualiza sola
   useEffect(() => { window.scrollTo(0, 0); }, []);

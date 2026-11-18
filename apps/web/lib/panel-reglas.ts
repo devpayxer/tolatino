@@ -1,6 +1,7 @@
 /* Reglas puras del panel del negocio (Panel v2): fuerza del perfil, fases de la prueba Pro y conversión del horario.
    Sin base ni red: las usa el servidor para calcular y las pruebas para comprobar. */
 import { FOTOS_FREE } from "./plan";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Bi = [string, string];
 
@@ -91,7 +92,7 @@ export function semanaNegocio(dias: DiaPanel[]): Semana {
 }
 /* Hoy, como lo ve el cliente (TLStf.today): k 0 = en turno, 1 = entra hoy, 2 = no trabaja hoy. */
 export function hoyPersona(wk: Semana | null, dow: number, ahora: number, es: boolean): { k: number; l: string } {
-  const E2 = (a: string, b: string) => (es ? a : b), DL = es ? ["el domingo", "el lunes", "el martes", "el miércoles", "el jueves", "el viernes", "el sábado"] : ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), DL = es ? ["el domingo", "el lunes", "el martes", "el miércoles", "el jueves", "el viernes", "el sábado"] : ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const t = (wk ?? [])[dow];
   if (t && ahora >= t[0] && ahora < t[1]) return { k: 0, l: E2("En turno · hasta ", "On shift · until ") + fmtHora(t[1]) };
   if (t && ahora < t[0]) return { k: 1, l: E2("Hoy entra a las ", "Starts today at ") + fmtHora(t[0]) };

@@ -1,3 +1,4 @@
+import { dosIdiomas } from "@/lib/dos-idiomas";
 /* 6g · Lo que la pantalla de la puerta, el modo puerta del panel y el Super Admin comparten (tipos y textos; sin servidor).
    La puerta SOLO escanea (D1): ninguna de estas formas trae montos, teléfonos ni correos (guardián porteroSoloSuEvento). */
 export type Bi = { es: string; en: string };
@@ -109,7 +110,7 @@ export function nombreCorto(nombre: string | null | undefined, apellido?: string
 /* 6h · Cómo se lee una incidencia en la puerta, el panel y el Super Admin (las automáticas con las dos puertas y horas). */
 export type IncidenciaVista = { kind: string; nota: string; code: string | null; quien: string; puerta: string | null; auto?: boolean; aPuerta?: string | null; aHora?: string | null; gPuerta?: string | null; gHora?: string | null; res?: Resultado | null };
 export function textoIncidencia(x: IncidenciaVista, es: boolean): { t: string; s: string; icon: string } {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   if (x.auto && (x.kind === "duplicado" || x.kind === "sin_valor")) {
     const A = INCIDENCIAS_AUTO[x.kind];
     const linea = x.kind === "duplicado"
@@ -122,7 +123,7 @@ export function textoIncidencia(x: IncidenciaVista, es: boolean): { t: string; s
 }
 /* Un escaneo en «últimos en la puerta»: el resultado vigente, y si fue sin conexión o quedó repetido. */
 export function lineaUltimo(x: { res: Resultado; k: number; dir: string; puerta: string; offline?: boolean; repetido?: boolean; desviado?: boolean }, es: boolean): string {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const r = x.repetido ? E2("REPETIDO", "REPEATED") : es ? RESULTADO[x.res].t.es : RESULTADO[x.res].t.en;
   return `${r}${x.k > 1 ? ` · ${x.k}` : ""}${x.dir === "out" ? E2(" · salida", " · exit") : ""} · ${x.puerta}${x.offline ? E2(" · sin conexión", " · offline") : ""}${x.desviado ? E2(" · reloj desviado", " · clock off") : ""}`;
 }

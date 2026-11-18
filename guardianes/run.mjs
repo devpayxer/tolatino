@@ -16,13 +16,15 @@ import { filas as filasMapa, leer as leerMapa, problemas as problemasMapa, semil
 import { paginasLegales } from "../scripts/legal/indexar.mjs";
 import { BORRADOR as BORRADOR_LEGAL, CLAVES as CLAVES_LEGALES } from "../scripts/legal/forma.mjs";
 // 9f · Las cadenas de la interfaz: el guardián usa el MISMO extractor que genera apps/web/lib/cms-cadenas.json.
-import { cadenasDelCodigo, comoJson as cmsComoJson, SALIDA as CMS_SALIDA } from "../scripts/cms/extraer.mjs";
+import { cadenasDelCodigo, comoJson as cmsComoJson, comoJsonE2 as cmsComoJsonE2, SALIDA as CMS_SALIDA, SALIDA_E2 as CMS_SALIDA_E2 } from "../scripts/cms/extraer.mjs";
+// 9f-3 · Las definiciones de E2 de las pantallas: el guardián las revisa con el MISMO código que el codemod que las convierte.
+import { revisar as revisarE2, MODULO as E2_MODULO } from "../scripts/cms/e2-al-cms.mjs";
 import { contrasteLinea, GRIS_AA } from "../scripts/contraste-aa.mjs";
 
 const solo = process.argv.includes("--solo") ? process.argv[process.argv.indexOf("--solo") + 1] : null;
 // 9f · Lo que el extractor saca del código (si el código no se deja leer, el guardián lo dice).
-let CMS = { errores: [], cadenas: [] };
-if (!solo || /^(cadenaConLlave|lineaFijaBloqueada|cmsConLimite|cuentaBorradaBilingue|idioma)$/.test(solo)) { try { CMS = await cadenasDelCodigo(); } catch (e) { CMS = { errores: [`el extractor de cadenas falló: ${e.message}`], cadenas: [] }; } }
+let CMS = { errores: [], cadenas: [], e2: [] };
+if (!solo || /^(cadenaConLlave|lineaFijaBloqueada|cmsConLimite|cuentaBorradaBilingue|idioma|e2PorElCms)$/.test(solo)) { try { CMS = await cadenasDelCodigo(); } catch (e) { CMS = { errores: [`el extractor de cadenas falló: ${e.message}`], cadenas: [], e2: [] }; } }
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 // Incluye los archivos nuevos que todavía no están en git (5 nov, 1l: corrían limpios en local y la CI los cazó).
@@ -8163,14 +8165,16 @@ const guardianes = {
      apps/web/lib/cms-cadenas.json es exactamente lo que el extractor saca del código (sin errores: los dos idiomas, llaves con la forma, sin repetidas);
      (2) toda llave que el código pide con cadena("…") o pantalla("…") existe en el catálogo; (3) las pantallas ya migradas (el Inicio de la ciudad) no
      llevan ni un E2("…","…") escrito a mano; (4) las páginas del servidor leen el diccionario general por textosT (lib/cms.ts), nunca T directo, salvo
-     los componentes de cliente que aún lo importan (lista cerrada, LAUNCH «→ 9f»); (5) el Inicio lee el CMS (homeConfig, anunciosVivos, pantalla).
-     Trinquete (aviso hasta TOLATINO_FASE=9): cuántos E2("…","…") escritos a mano quedan en apps/web; no puede subir de lo que se registró aquí.
-     Al revés: alreves9f. */
+     ninguno (9f-3: Buscar y Hoy ya reciben sus textos de la página; solo lib/cms.ts lo lee); (5) el Inicio lee el CMS (homeConfig, anunciosVivos, pantalla).
+     9f-3 · Trinquete cerrado (LAUNCH 9f-3): todas las pantallas leen el CMS por su E2. Antes se contaban los E2("…","…") escritos a mano (16 129);
+     ahora cuenta las definiciones de E2 que NO pasan por dosIdiomas (lib/dos-idiomas.ts) y tiene que ser 0; y el catálogo de E2
+     (apps/web/lib/cms-cadenas-e2.json) es exactamente el que sale del código. Al revés: alreves9f, alreves9f3. */
   cadenaConLlave() {
     const G = "cadenaConLlave";
     for (const e of CMS.errores) falla(G, "apps/web/lib/textos*.ts", 0, e);
     if (!CMS.errores.length) {
       if (!existsSync(CMS_SALIDA) || readFileSync(CMS_SALIDA, "utf8") !== cmsComoJson(CMS.cadenas)) falla(G, "apps/web/lib/cms-cadenas.json", 0, "el catálogo de cadenas no es el que sale del código: corre «node scripts/cms/extraer.mjs»");
+      if (!existsSync(CMS_SALIDA_E2) || readFileSync(CMS_SALIDA_E2, "utf8") !== cmsComoJsonE2(CMS.e2)) falla(G, "apps/web/lib/cms-cadenas-e2.json", 0, "el catálogo de los E2 de las pantallas no es el que sale del código: corre «node scripts/cms/extraer.mjs»");
     }
     const llaves = new Set(CMS.cadenas.map((c) => c.id));
     for (const f of codigo) {
@@ -8193,19 +8197,20 @@ const guardianes = {
       for (const x of ["homeConfig(", "anunciosVivos(", "pantalla(\"APP-HOME\"", "textosT("]) if (!t.includes(x)) falla(G, PG, 0, `el Inicio de la ciudad lee el CMS: falta ${x.replace("(", "")}`);
     }
     // Las páginas del servidor no leen T directo (el diccionario con lo editado es textosT). Los componentes de cliente de la lista siguen con T.
-    const T_EN_CLIENTE = new Set(["apps/web/app/(app)/buscar/Buscar.tsx", "apps/web/app/(app)/comunidad/hoy/Hoy.tsx", "apps/web/lib/cms.ts"]);
+    const T_EN_CLIENTE = new Set(["apps/web/lib/cms.ts"]); // 9f-3: Buscar y Hoy ya reciben sus textos de la página (textosT)
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f) || T_EN_CLIENTE.has(f)) continue;
       if (/import \{ T(?: as \w+)? \} from "@\/lib\/textos"/.test(sinComent(f))) falla(G, f, 0, "lee el diccionario T directo: usa textosT(lang) de lib/cms.ts (así ve lo que el Super Admin editó)");
     }
-    // Trinquete.
-    const TOPE_E2 = 16129;
-    let hechos = 0;
-    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f)) hechos += (sinComent(f).match(E2LIT) ?? []).length;
-    if (hechos > TOPE_E2) {
-      const msg = `${hechos} textos escritos a mano con E2("…","…") en apps/web (tope registrado ${TOPE_E2}): los nuevos van al diccionario con su llave`;
-      if (process.env.TOLATINO_FASE === "9") falla(G, "apps/web", 0, msg); else avisos.push(`[${G}] ${msg} (solo aviso hasta TOLATINO_FASE=9)`);
+    // Trinquete (9f-3): ninguna definición de E2 fuera de dosIdiomas. El tope es 0 y rompe el build (ya no es aviso).
+    let sinCms = 0;
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === E2_MODULO) continue;
+      const t = readFileSync(f, "utf8");
+      if (!/\bE2\b/.test(t)) continue;
+      for (const s of revisarE2(t).sin) { sinCms++; falla(G, f, s.linea, `una definición de E2 que no pasa por dosIdiomas (${s.razon}): sus textos no se pueden editar desde el Super Admin. Corre «node scripts/cms/e2-al-cms.mjs»`); }
     }
+    if (sinCms) avisos.push(`[${G}] ${sinCms} definición(es) de E2 sin pasar por el CMS (tope 0)`);
   },
 
   /* 9f · lineaFijaBloqueada (fase9-apertura.md §1c y §4 9f): las líneas fijas no se editan desde el Super Admin: 911 («Si es una emergencia, llama al 911»),
@@ -8241,6 +8246,14 @@ const guardianes = {
     if (!sal || !/911/.test(sal.es) || !sal.locked) falla(G, "packages/db/seeds/lineas.sql", 0, "la línea fija de Salud (911) tiene que estar en el catálogo, con candado");
     if (!pro || !/nadie te garantiza un resultado/i.test(pro.es) || !pro.locked) falla(G, "packages/db/seeds/lineas.sql", 0, "«Nadie te garantiza un resultado» tiene que estar en el catálogo, con candado");
     for (const c of CMS.cadenas) if (/^NEG-CATEGORIA\./.test(c.id) && !c.locked) falla(G, "scripts/cms/extraer.mjs", 0, `${c.id}: la línea fija de una categoría lleva candado`);
+    // 9f-3 · Los textos de las pantallas (E2) que dicen el 911, «nadie te garantiza un resultado», que El Compa es una IA, o que contienen una línea fija,
+    // también llevan candado (el extractor se lo pone; aquí se comprueba sobre el catálogo que sale).
+    const fijas = CMS.cadenas.filter((c) => c.locked).map((c) => c.es.replace(/\s+/g, " ").trim()).filter((x) => x.length >= 8);
+    for (const c of CMS.e2 ?? []) {
+      const t = `${c.es}\n${c.en}`;
+      if (!c.locked && (/\b911\b/.test(t) || /nadie te garantiza un resultado|EL COMPA · IA|El Compa es una IA/i.test(t) || fijas.some((x) => c.es.includes(x))))
+        falla(G, c.donde?.[0] ? `apps/web/${c.donde[0]}` : "apps/web/lib/cms-cadenas-e2.json", 0, `${c.id}: «${c.es.slice(0, 60)}» es (o contiene) una línea fija: lleva candado`);
+    }
   },
 
   /* 9f · cmsConLimite (fase9-apertura.md §4 9f): cada cadena editable tiene un largo máximo que cabe en su lugar. (1) En el catálogo, max_len ≥ el largo de
@@ -8248,10 +8261,11 @@ const guardianes = {
      cms_vacia, check de max_len) y exige autor y motivo (cms_sin_autor); (3) la app lo revisa antes (editarCadena compara con max_len y con las marcas). Al revés: alreves9f. */
   cmsConLimite() {
     const G = "cmsConLimite", M = "packages/db/migrations/0136_cms.sql", AD = "apps/web/lib/cms-admin.ts";
-    for (const c of CMS.cadenas) {
+    for (const c of [...CMS.cadenas, ...(CMS.e2 ?? [])]) {
       const mayor = Math.max(c.es.length, c.en.length);
-      if (!(c.max_len >= mayor)) falla(G, "apps/web/lib/cms-cadenas.json", 0, `${c.id}: el texto del código (${mayor}) pasa de su largo máximo (${c.max_len})`);
-      if (!c.locked && (c.max_len > 600 || c.max_len > Math.max(40, mayor * 3))) falla(G, "apps/web/lib/cms-cadenas.json", 0, `${c.id}: un largo máximo de ${c.max_len} no cabe en su lugar (el texto mide ${mayor})`);
+      const cat = c.donde ? "apps/web/lib/cms-cadenas-e2.json" : "apps/web/lib/cms-cadenas.json";
+      if (!(c.max_len >= mayor)) falla(G, cat, 0, `${c.id}: el texto del código (${mayor}) pasa de su largo máximo (${c.max_len})`);
+      if (!c.locked && (c.max_len > 600 || c.max_len > Math.max(40, mayor * 3))) falla(G, cat, 0, `${c.id}: un largo máximo de ${c.max_len} no cabe en su lugar (el texto mide ${mayor})`);
     }
     if (!existsSync(M)) return falla(G, M, 0, "falta la migración del CMS");
     const m = readFileSync(M, "utf8");
@@ -8264,6 +8278,66 @@ const guardianes = {
     if (!/E\.length > v\.max_len \|\| N\.length > v\.max_len/.test(t)) falla(G, AD, 0, "editarCadena revisa el largo máximo antes de guardar");
     if (!/if \(marcas\(E\) !== marcas\(v\.code_text\.es\)/.test(t)) falla(G, AD, 0, "editarCadena revisa las marcas {…}");
     if (!/tl\.cms_por/.test(t) || !/tl\.cms_motivo/.test(t)) falla(G, AD, 0, "un cambio de texto lleva autor y motivo");
+  },
+
+  /* 9f-3 · e2PorElCms (LAUNCH «9f-3 · Más cadenas por el CMS»; REVISION «Todas las pantallas por el CMS (18 nov)»): todas las pantallas leen lo editado
+     en el Super Admin por su E2, sin parpadeo y sin que nada cambie hasta que alguien edita. (1) lib/dos-idiomas.ts: sin imports (lo usan servidor,
+     navegador y borde), sin ediciones devuelve `es ? a : b` sin buscar nada, busca el par exacto del código, y nadie más toca su mapa (globalThis);
+     (2) lib/cms.ts › edicionesE2 lee SOLO lo editado y vivo de las cadenas de E2 (.e2-<huella>), lo pone con ponerEdicionesE2, se vacía si la base no
+     responde (el texto del código) y se refresca con el aviso de la base; (3) el layout raíz lo espera antes de pintar y envuelve TODO con EdicionesE2,
+     que lo pone en el navegador durante el render (no en un efecto: llegaría tarde al primer pintado y a la hidratación); (4) instrumentation.ts lo carga
+     al arrancar; (5) el Super Admin dice en cuántos lugares aparece cada cadena de E2 y lo avisa antes de guardar; (6) ningún E2 se define sin
+     dosIdiomas (lo mismo que el trinquete de cadenaConLlave, con el código del codemod). Al revés: alreves9f3. */
+  e2PorElCms() {
+    const G = "e2PorElCms", MOD = "apps/web/lib/dos-idiomas.ts", CMSF = "apps/web/lib/cms.ts", LAY = "apps/web/app/layout.tsx", PROV = "apps/web/app/_cms/EdicionesE2.tsx",
+      INS = "apps/web/instrumentation.ts", AD = "apps/web/lib/cms-admin.ts", TC = "apps/web/app/admin/TextosCadenas.tsx";
+    for (const f of [MOD, CMSF, LAY, PROV, INS, AD, TC]) if (!existsSync(f)) return falla(G, f, 0, "falta (las pantallas por el CMS)");
+    // (1) La fábrica.
+    const m = sinComent(MOD);
+    if (/^\s*import\b/m.test(m) || /\brequire\(/.test(m)) falla(G, MOD, 0, "lib/dos-idiomas.ts no importa nada: lo usan el servidor, el navegador y el borde");
+    const fn = (m.match(/export function dosIdiomas\(es: unknown, a: string, b: string\): string \{[\s\S]*?\n\}/) ?? [""])[0];
+    if (!fn) falla(G, MOD, 0, "falta dosIdiomas(es, a, b)");
+    else {
+      if (!/if \(c === undefined \|\| c\.m\.size === 0\) return es \? a : b;/.test(fn)) falla(G, MOD, 0, "sin ediciones, dosIdiomas devuelve `es ? a : b` sin buscar nada (nada cambia hasta que alguien edita)");
+      if (!/c\.m\.get\(a\)\?\.get\(b\)/.test(fn) || !/return x === undefined \? \(es \? a : b\) : es \? x\[0\] : x\[1\];/.test(fn)) falla(G, MOD, 0, "dosIdiomas busca el par exacto del código y, si no está editado, devuelve el del código");
+    }
+    for (const f of codigo) {
+      if (f === MOD || f === "guardianes/run.mjs" || !/^apps\/web\/.*\.(tsx?|jsx?)$/.test(f)) continue;
+      if (/__tlEdicionesE2/.test(sinComent(f))) falla(G, f, 0, "el mapa de lo editado (globalThis.__tlEdicionesE2) solo lo toca lib/dos-idiomas.ts (ponerEdicionesE2)");
+    }
+    // (2) El servidor: solo lo editado y vivo, con el aviso de la base.
+    const c = sinComent(CMSF), ed = (c.match(/export async function edicionesE2\(\)[\s\S]*?\n\}/) ?? [""])[0];
+    if (!ed) falla(G, CMSF, 0, "falta edicionesE2() en lib/cms.ts");
+    else {
+      if (!/from cms_strings where edited and status = 'vivo' and id ~ '\\\\\.e2-\[0-9a-f\]\{12\}\$'/.test(ed)) falla(G, CMSF, 0, "edicionesE2 lee SOLO lo editado y vivo de las cadenas de E2 (nada de lo que no se editó viaja al navegador)");
+      if (!/ponerEdicionesE2\(v, l\)/.test(ed)) falla(G, CMSF, 0, "edicionesE2 pone lo leído en dosIdiomas (ponerEdicionesE2)");
+      if (!/catch \{\s*l = \[\];/.test(ed)) falla(G, CMSF, 0, "si la base no responde, edicionesE2 deja el texto del código (lista vacía)");
+      if (!/NEXT_PHASE === "phase-production-build"\) return \{ v: "", l: \[\] \}/.test(ed)) falla(G, CMSF, 0, "edicionesE2 no va a la base durante el build");
+    }
+    if (!/alCambiarConfig\(\(\) => \{ cache = null; e2 = null; void edicionesE2\(\); \}\)/.test(c)) falla(G, CMSF, 0, "el aviso de la base (NOTIFY) vuelve a leer lo editado de las pantallas al momento");
+    // (3) El layout raíz y EdicionesE2.
+    const l = sinComent(LAY);
+    if (!/export default async function RootLayout[\s\S]*?const ed = await edicionesE2\(\);/.test(l)) falla(G, LAY, 0, "el layout raíz espera lo editado (edicionesE2) antes de pintar");
+    if (!/<body><EdicionesE2 v=\{ed\.v\} l=\{ed\.l\}>[\s\S]*\{children\}[\s\S]*<\/EdicionesE2><\/body>/.test(l)) falla(G, LAY, 0, "EdicionesE2 envuelve todo lo de <body> (los componentes de cliente lo ven al hidratar)");
+    const p = sinComent(PROV);
+    if (!/^\s*"use client";/.test(readFileSync(PROV, "utf8"))) falla(G, PROV, 0, "EdicionesE2 es un componente de cliente");
+    if (/\buse(Layout)?Effect\b/.test(p) || !/export function EdicionesE2[\s\S]*?if \(typeof window !== "undefined"\) ponerEdicionesE2\(v, l\);\s*return <>\{children\}<\/>;/.test(p)) falla(G, PROV, 0, "EdicionesE2 pone lo editado DURANTE el render, antes de sus hijos (un efecto llega tarde: parpadeo y diferencias al hidratar)");
+    // (4) Al arrancar.
+    if (!/export async function register\(\)[\s\S]*?if \(process\.env\.NEXT_RUNTIME === "nodejs" && [\s\S]*?await import\("\.\/lib\/cms"\)[\s\S]*?edicionesE2\(\)/.test(sinComent(INS))) falla(G, INS, 0, "instrumentation.ts carga lo editado al arrancar (register → edicionesE2)");
+    // (5) El Super Admin dice dónde aparece cada cadena de E2.
+    const a = sinComent(AD), tc = sinComent(TC);
+    if (!/import\("\.\/cms-cadenas-e2\.json"\)/.test(a) || !/lugares: AUTO\.test\(x\.id\) \? L\.get\(x\.id\) \?\? null : null/.test(a)) falla(G, AD, 0, "Cadenas lista cada cadena de E2 con sus lugares (cms-cadenas-e2.json)");
+    if (!/s\.id <> all\(\$5::text\[\]\)/.test(a)) falla(G, AD, 0, "una cadena de E2 que ya no está en el código no se lista (queda en la base, sin borrar)");
+    if (!/x\.lugares && x\.lugares\.n > 1 \? E\(` Cambia en los \$\{x\.lugares\.n\} lugares donde aparece/.test(tc)) falla(G, TC, 0, "editar una cadena que aparece en varios lugares lo avisa antes de guardar");
+    // (6) Las definiciones (el mismo código que el codemod).
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === MOD) continue;
+      const t = readFileSync(f, "utf8");
+      if (/\bdosIdiomas\(/.test(sinComent(f)) && !/import \{[^}]*\bdosIdiomas\b[^}]*\} from "@\/lib\/dos-idiomas";/.test(t)) falla(G, f, 0, "usa dosIdiomas sin importarlo de @/lib/dos-idiomas");
+      if (!/\bE2\b/.test(t)) continue;
+      for (const s of revisarE2(t).sin) falla(G, f, s.linea, `E2 sin dosIdiomas (${s.razon}): corre «node scripts/cms/e2-al-cms.mjs»`);
+    }
+    if (!CMS.e2?.length) falla(G, "apps/web/lib/cms-cadenas-e2.json", 0, "el catálogo de los E2 de las pantallas está vacío");
   },
 
   /* 9f · cmsSoloInsercion (regla 12: auditoría solo inserción, nada se borra): cms_string_versions es de solo inserción (trigger) y la escribe la propia base
@@ -8334,6 +8408,7 @@ const guardianes = {
     for (const e of paginasLegales().errores) if (/van los dos idiomas|secciones|mismos puntos|fecha y el estado/.test(e)) falla("idioma", "docs/legal", 0, e);
     // 9f · Toda cadena del catálogo del CMS trae los dos idiomas (y el inglés no se queda vacío ni como una marca de «pendiente»).
     for (const c of CMS.cadenas) if (!c.es?.trim() || !c.en?.trim() || /^(TODO|TBD|pendiente)$/i.test(c.en.trim())) falla("idioma", "apps/web/lib/cms-cadenas.json", 0, `${c.id}: falta uno de los dos idiomas`);
+    for (const c of CMS.e2 ?? []) if (!c.es?.trim() || !c.en?.trim() || /^(TODO|TBD)$/i.test(c.en.trim())) falla("idioma", c.donde?.[0] ? `apps/web/${c.donde[0]}` : "apps/web/lib/cms-cadenas-e2.json", 0, `${c.id}: E2 con uno de los dos idiomas vacío`);
   },
 
   /* 9j · equipoConDosPasos (fase9-apertura.md §4 9j; T#30; LAUNCH L35, L1319): ninguna acción del Super Admin sin el segundo factor de ESA sesión.

@@ -8,6 +8,7 @@ import { useEffect, useState, type ComponentType, type CSSProperties } from "rea
 import { enviarRecomendacion } from "./acciones";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button" | "Chip" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, OrderTracker } = UI as unknown as Record<N, ComponentType<any>>;
@@ -38,7 +39,7 @@ function Interruptor({ on }: { on: boolean }) {
 }
 
 export function Recomendar({ v }: { v: VistaRec }) {
-  const es = v.lang === "es", E2 = (a: string, b: string) => (es ? a : b);
+  const es = v.lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ruta = usePathname(), sp = useSearchParams();
   const dw = useAncho(), D = dw >= 1024;
   const [f, setF] = useState<F>(F0);

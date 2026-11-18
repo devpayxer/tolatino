@@ -5,6 +5,7 @@ import { catHoy } from "@/lib/hoy-comun";
 import { nuevos } from "@/lib/categoria";
 import { armarTarjetas } from "@/lib/tarjetas";
 import { idioma } from "@/lib/idioma";
+import { textosT } from "@/lib/cms";
 import { ubicacion } from "@/lib/ubicacion";
 import { conCuenta } from "../sesion";
 import { HoyPublico, HoyVecino } from "./Hoy";
@@ -19,10 +20,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ c
   const [u, sp, lang] = await Promise.all([yo(), searchParams, idioma()]);
   const loc = await ubicacion(u), C = catHoy(sp.c), es = lang === "es";
   const d = await hoyEnElBarrio(loc.c.id, C.cat, null, loc);
-  const vacio = d.historias.length ? [] : await armarTarjetas(loc.ciudad, await nuevos(loc, 6), lang, u?.id ?? null);
+  const [vacio, TX] = await Promise.all([d.historias.length ? Promise.resolve([]) : (async () => armarTarjetas(loc.ciudad, await nuevos(loc, 6), lang, u?.id ?? null))(), textosT(lang)]);
+  const tx = { hoy: TX.todayTag, llamar: TX.call };
   if (u?.first_name && (await enComunidad(u.id)).ok) {
     const s = await conCuenta("/comunidad/hoy");
-    return <HoyVecino es={s.es} yo={s.me} ciudad={loc.c.name} cat={C.k} d={d} nuevos={vacio} />;
+    return <HoyVecino es={s.es} yo={s.me} ciudad={loc.c.name} cat={C.k} d={d} nuevos={vacio} tx={tx} />;
   }
-  return <HoyPublico es={es} ciudad={loc.c.name} estado={loc.c.state} cat={C.k} d={d} nuevos={vacio} conSesion={!!u} />;
+  return <HoyPublico es={es} ciudad={loc.c.name} estado={loc.c.state} cat={C.k} d={d} nuevos={vacio} conSesion={!!u} tx={tx} />;
 }

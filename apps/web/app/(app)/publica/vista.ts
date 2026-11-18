@@ -1,11 +1,12 @@
 /* «Tu página en vivo» (pieza BusinessPreview): se arma con lo que la persona llena. Llevado de pvOf() del diseño; la
    ciudad, el día de hoy y la fecha de «en To'Latino desde» son los reales. Pura. */
 import { ahora, cap, DAYS, daysOf, derive, F, fmt, items, metaOf, money, needZone, opOf, priceL, status, subL, X, zoneOf, type Borrador } from "./logica";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 const MESES = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
 
 export function vista(d: Borrador, es: boolean, o: { ciudad: string; usuario: { nombre: string; primero: string } | null; foto: (id: string, h: number) => string }) {
-  const E2 = (a: string, b: string) => (es ? a : b), CIU = o.ciudad.toUpperCase();
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), CIU = o.ciudad.toUpperCase();
   const k = d.cat ? X.cat(d.cat) : null, c = d.cat ? X.CFG[d.cat] : null, f = F(d);
   const name = (d.name || "").trim(), nameOr = name || E2("Tu negocio", "Your business");
   const ini = nameOr.split(/\s+/).filter((w) => /[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(w[0] || "")).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "TL";

@@ -10,6 +10,7 @@ import { subirFoto } from "@/lib/subir-foto";
 import { HojaCasa, HojaVehiculo, casaMeta, compatCasa, compatVeh, useOficio, vehMeta, vehName } from "../Oficios";
 import { pedirPreEstimado } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,7 +21,7 @@ const LIGHTS: [string, string, string][] = [["ce", "Check engine", "Check engine
 const AREAS: [string, string, string][] = [["cocina", "Cocina", "Kitchen"], ["bano", "Baño", "Bathroom"], ["sotano", "Sótano", "Basement"], ["cuarto", "Cuarto", "Bedroom"], ["sala", "Sala", "Living room"], ["afuera", "Afuera", "Outside"], ["toda", "Toda la casa", "Whole house"]];
 
 export function PreEstimado({ op, svcId, es, yo }: { op: OficiosPublico; svcId: string; es: boolean; yo: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter();
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter();
   const v = useOficio(op, es, yo)!;
   const s = op.servicios.find((x) => x.id === svcId)!, auto = op.rubro === "auto", nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [luces, setLuces] = useState<string[]>([]), [area, setArea] = useState<string | null>(null), [nota, setNota] = useState(""), [code, setCode] = useState("");

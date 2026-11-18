@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
 import type { SolicitudVista } from "@/lib/solicitudes";
 import { solicitudAccion } from "./acciones";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,7 +21,7 @@ const LIGHTS: Record<string, [string, string]> = { ce: ["Check engine", "Check e
 const AREAS: Record<string, [string, string]> = { techo: ["Techo", "Roof"], cocina: ["Cocina", "Kitchen"], bano: ["Baño", "Bathroom"], sotano: ["Sótano", "Basement"], cuarto: ["Cuarto", "Bedroom"], sala: ["Sala", "Living room"], afuera: ["Afuera", "Outside"], toda: ["Toda la casa", "Whole house"] };
 
 export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null);
   const d = s.destinos[0]!, auto = s.rubro === "auto", who = d.negocio.quien ? primerNombre(d.negocio.quien) : d.negocio.nombre;
   const st = s.st === "cancelled" ? "cx" : s.st === "used" ? "used" : s.st === "expired" ? "exp" : d.st === "sent" ? "sent" : d.st === "used" ? "used" : d.st;

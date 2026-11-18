@@ -1,7 +1,9 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { alCambiarConfig } from "./cambios-config";
 import { db } from "./db";
 import cat from "./cms-cadenas.json";
+import { ponerEdicionesE2, type EdicionE2 } from "./dos-idiomas";
 import type { Lang } from "./idioma";
 import { T } from "./textos";
 
@@ -20,7 +22,7 @@ const TTL_MS = 15_000;
 let cache: { at: number; m: Map<string, Par> } | null = null, escucha = false;
 
 async function editadas(): Promise<Map<string, Par>> {
-  if (!escucha) { escucha = true; alCambiarConfig(() => { cache = null; }); }
+  escuchar();
   if (cache && Date.now() - cache.at < TTL_MS) return cache.m;
   try {
     const r = await db().query<{ id: string; text: Par }>(`select id, text from cms_strings where edited and status = 'vivo'`);
@@ -31,8 +33,40 @@ async function editadas(): Promise<Map<string, Par>> {
   }
   return cache.m;
 }
-/* Para las pruebas y el Super Admin: olvidar la copia ya. */
-export function olvidarCadenas() { cache = null; }
+/* Para las pruebas y el Super Admin: olvidar la copia ya (y volver a leer lo editado de las pantallas, ver edicionesE2). */
+export function olvidarCadenas() { cache = null; e2 = null; void edicionesE2(); }
+/* Un aviso de la base (NOTIFY en tl_config: cms_strings_avisa) olvida las dos copias en este proceso; lo de las pantallas se vuelve a leer al momento. */
+function escuchar() {
+  if (escucha) return;
+  escucha = true;
+  alCambiarConfig(() => { cache = null; e2 = null; void edicionesE2(); });
+}
+
+/* 9f-3 · Lo editado de las pantallas (cada E2("…", "…"); lib/dos-idiomas.ts). Solo las filas de E2 (.e2-<huella>) editadas y vivas: par del código → par
+   editado. Se pone en globalThis (ponerEdicionesE2) para que dosIdiomas lo vea sin esperar; el layout raíz lo espera antes de pintar y se lo pasa al
+   navegador (EdicionesE2). Al arrancar lo carga instrumentation.ts; se refresca a los 15 s y al momento con el aviso de la base. Si la base no responde:
+   el texto del código (un mapa vacío), como cadena(). Nunca durante el build (las páginas estáticas salen con el texto del código). */
+let e2: { at: number; v: string; l: EdicionE2[] } | null = null, e2Leyendo: Promise<{ v: string; l: EdicionE2[] }> | null = null;
+export async function edicionesE2(): Promise<{ v: string; l: EdicionE2[] }> {
+  if (process.env.NEXT_PHASE === "phase-production-build") return { v: "", l: [] };
+  escuchar();
+  if (e2 && Date.now() - e2.at < TTL_MS) return e2;
+  e2Leyendo ??= (async () => {
+    let l: EdicionE2[], at = Date.now();
+    try {
+      const r = await db().query<{ code_text: Par; text: Par }>(
+        `select code_text, text from cms_strings where edited and status = 'vivo' and id ~ '\\.e2-[0-9a-f]{12}$' order by id`);
+      l = r.rows.map((x) => [x.code_text.es, x.code_text.en, x.text.es || x.code_text.es, x.text.en || x.code_text.en] as const);
+    } catch {
+      l = []; at = Date.now() - TTL_MS + 2_000; // se vuelve a intentar pronto
+    }
+    const v = l.length ? createHash("sha1").update(JSON.stringify(l)).digest("hex").slice(0, 16) : "";
+    ponerEdicionesE2(v, l);
+    e2 = { at, v, l };
+    return e2;
+  })().finally(() => { e2Leyendo = null; });
+  return e2Leyendo;
+}
 
 export async function cadena(id: string, lang: Lang): Promise<string> {
   const e = (await editadas()).get(id);

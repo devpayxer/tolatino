@@ -7,6 +7,7 @@ import {
 } from "./autos-comun";
 import type { SelloPub } from "./fe-publico";
 import { retirosDe, type Retiro } from "./retiros";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 /* La ficha de Venta de Autos (Fase 4 · 4id · fase4-iglesias-inmuebles-autos.md §1c, §3 «Precio en la puerta», §4id; neg-dealer-kind.js
    faq L39–63, metaOf L101–104, btnOf L106, tabL L107, post L110–160).
@@ -95,7 +96,7 @@ const pct = (p: AutosPublica, es: boolean) => (p.taxBp != null ? (es ? pctBp(p.t
 
 /* Preguntas por tipo (faq L39–63) con los datos de verdad; la de Tu página gana (lo mezcla la página). */
 export function faqAutos(p: AutosPublica, es: boolean): { q: string; a: string }[] {
-  const E2 = (a: string, b: string) => (es ? a : b), c0 = minBy(p.carros, (x) => x.puerta.price), nm = (x: CarroPub) => (es ? x.name.es : x.name.en || x.name.es);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), c0 = minBy(p.carros, (x) => x.puerta.price), nm = (x: CarroPub) => (es ? x.name.es : x.name.en || x.name.es);
   const TOT = { q: E2("¿Cuánto pago en total?", "How much do I pay in total?"), a: c0 ? E2(`El precio + ${pct(p, true)} de impuesto + placas y título ${usd(c0.puerta.tags)} + el cargo del dealer ${usd(c0.puerta.fee)}. Por ejemplo, el ${nm(c0)}: ${usd(c0.puerta.price)} → ${usd(c0.puerta.otd)} en la puerta.`, `Price + ${pct(p, false)} tax + ${usd(c0.puerta.tags)} tags and title + ${usd(c0.puerta.fee)} dealer fee. For example, the ${nm(c0)}: ${usd(c0.puerta.price)} → ${usd(c0.puerta.otd)} out the door.`)
     : E2("El precio + impuesto + placas + el cargo del dealer, antes de firmar.", "Price + tax + tags + dealer fee, before you sign.") };
   const ITIN = { q: E2("¿Puedo comprar con ITIN?", "Can I buy with ITIN?"), a: p.itin ? E2("Sí. La tasa, los meses y el enganche te los dan por escrito antes de firmar; nadie garantiza la aprobación.", "Yes. Rate, term and down payment are put in writing before you sign; no one guarantees approval.") : E2("No financian con ITIN; puedes pagar al contado o traer tu préstamo.", "No ITIN financing; you can pay cash or bring your own loan.") };
@@ -134,7 +135,7 @@ export function faqAutos(p: AutosPublica, es: boolean): { q: string; a: string }
 
 /* La tarjeta de Hoy por tipo (post L124–135). Nunca un enganche o un pago sueltos (Regulation Z): el plan completo va en la frase. */
 export function hoyAutos(p: AutosPublica, es: boolean, hoy: string) {
-  const E2 = (a: string, b: string) => (es ? a : b), k = p.kind, b = (t: Bi) => (es ? t.es : t.en);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), k = p.kind, b = (t: Bi) => (es ? t.es : t.en);
   const c0 = minBy(p.carros, (x) => x.puerta.otd), sMin = minBy(p.servicios.filter((x) => x.cents > 0), (x) => x.cents), idi = p.esp ? E2("Español", "Spanish") : E2("Inglés", "English");
   const DOOR = c0 ? { k: E2("EN LA PUERTA", "OUT THE DOOR"), v: `${E2("Desde", "From")} ${usd(c0.puerta.otd)}` } : { k: E2("PRECIO", "PRICE"), v: E2("Pregunta", "Ask") };
   const ITC = { k: E2("CON ITIN", "WITH ITIN"), v: p.itin ? E2("Sí · tasa y meses por escrito", "Yes · rate and term in writing") : "No" };

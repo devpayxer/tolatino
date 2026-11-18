@@ -9,6 +9,7 @@ import type { Pronto } from "@/lib/ciudad";
 import { teselas, vista } from "@/lib/mapa-geo";
 import { elegirUbicacion, esperarCiudad } from "./ciudad/acciones";
 import { KF_CIUDAD } from "./CiudadSelector";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { CitySoon } = UI as unknown as Record<"CitySoon", ComponentType<any>>;
@@ -20,7 +21,7 @@ function useAncho() {
 }
 
 export function CiudadPronto({ p, lang, miCiudad }: { p: Pronto; lang: "es" | "en"; miCiudad: string }) {
-  const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b);
+  const es = lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ruta = usePathname();
   const dw = useAncho(), desk = dw >= 1024, two = desk && dw >= 960;
   const [on, setOn] = useState(p.yaEspero), [espera, setEspera] = useState(p.espera);

@@ -15,6 +15,7 @@ import { useVerificacion } from "../../../pago/Verificacion";
 import { HojaCasa, HojaVehiculo, casaMeta, compatCasa, compatVeh, depositoVer, useOficio, vehMeta, vehName } from "../Oficios";
 import { horasDeVisita, pedirVisita } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots" | "PaymentSummary" | "DepositOutcomes";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,7 +35,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
   op: OficiosPublico; svcId: string; inicial: { opts: Record<string, number>; adds: number[]; w: string | null; z: number | null }; es: boolean;
   pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null; yo: boolean; pre?: { num: string; lo: number; hi: number; nota: string; mode: string } | null; warr?: string | null;
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const v = useOficio(op, es, yo)!;
   const s = op.servicios.find((x) => x.id === svcId)!, a = s.a ?? {}, auto = op.rubro === "auto", nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);

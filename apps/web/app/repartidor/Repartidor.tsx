@@ -20,6 +20,7 @@ import { vibrar } from "@/lib/nativo/haptica";
 import { horaCorta } from "@/lib/mapa-ruta";
 import { numVisible } from "@/lib/reparto-comun";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { BottomNav } = UI as unknown as Record<"BottomNav", ComponentType<any>>;
@@ -41,7 +42,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
   es: boolean; t: Tab; p: string | null; nombre: string; tel: string; equipos: MiRep[]; entregas: EntregaRep[]; ganancias: Gan[]; salidas: SalidaC[]; s: string | null; rutas?: RutaAbierta[];
   ofertas?: OfertaRep[]; sancion?: "suspension" | "baneo" | null;
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), [pend, start] = useTransition();
   const [toast, setToast] = useState(""), [err, setErr] = useState("");
   const [cod, setCod] = useState(""), [veh, setVeh] = useState("moto");

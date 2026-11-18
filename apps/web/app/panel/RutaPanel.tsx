@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import type { PanelBloqueT as Bloque } from "@tolatino/ui";
 import { haceCuanto, horaCorta, mapaRuta } from "@/lib/mapa-ruta";
 import { useAhora, useRutaVivo, type VistaRuta } from "@/app/_ruta/MapaVivo";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export type RutaUi = { n: string; v: VistaRuta | null; at: number };
 
@@ -18,7 +19,7 @@ export function RutaVivoPanel({ negocio, numero, setUi }: { negocio: string; num
 
 export function rutaBloque(r: RutaUi | undefined, numero: string, es: boolean, repartidor: string | null): Bloque | null {
   if (!r || r.n !== numero || !r.v) return null;
-  const E2 = (a: string, b: string) => (es ? a : b), v = r.v, quien = repartidor ?? E2("El repartidor", "The driver");
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), v = r.v, quien = repartidor ?? E2("El repartidor", "The driver");
   if (!v.pos) return { type: "mapa", k: E2("REPARTIDOR · EN VIVO", "DRIVER · LIVE"), tiles: [], dots: [], place: E2("ESPERANDO LA PRIMERA POSICIÓN", "WAITING FOR THE FIRST POSITION"),
     towns: E2(`${quien} empezó la entrega. El mapa aparece con su primera posición.`, `${quien} started the delivery. The map shows up with their first position.`) };
   const m = mapaRuta([v.pos.lat, v.pos.lng], { rastro: v.rastro ?? [], destino: v.destino ?? null, zoom: 15 });

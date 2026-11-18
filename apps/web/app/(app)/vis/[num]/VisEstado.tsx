@@ -13,6 +13,7 @@ import { LICENCIA, QUE, cuandoVis, diaVis, horaVis, soloLlamada, type Bi } from 
 import type { VisVista } from "@/lib/visitas-inm";
 import { visAccion } from "./acciones";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,7 +30,7 @@ function pie(es: boolean) {
 }
 
 export function VisEstado({ x, es }: { x: VisVista; es: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter(), nm = (b: Bi | null | undefined) => (b ? (es ? b.es : b.en || b.es) : "");
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), nm = (b: Bi | null | undefined) => (b ? (es ? b.es : b.en || b.es) : "");
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null), [flash, setFlash] = useState<string | null>(null);
   const hacer = async (que: "cancelar" | "aceptar" | "nogracias", ok: string) => {
     if (ocupado) return; setOcupado(true); setError(null);

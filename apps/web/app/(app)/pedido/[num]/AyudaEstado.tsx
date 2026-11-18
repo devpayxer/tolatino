@@ -8,6 +8,7 @@ import { useState, type ComponentType } from "react";
 import type { Ayuda } from "@/lib/ayuda";
 import { horasTxt } from "@/lib/plazo-txt";
 import { ayudaRevision } from "./acciones";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,7 +16,7 @@ const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 const MOT: Record<string, [string, string]> = { falta: ["Falta algo", "Something is missing"], equivocado: ["Llegó algo equivocado", "Wrong item"], frio: ["Llegó frío o mal preparado", "Cold or poorly made"], danado: ["Llegó dañado o derramado", "Damaged or spilled"], tarde: ["Llegó tarde", "Arrived late"], nollego: ["No me llegó", "It never arrived"], pago: ["Problema con el pago", "Payment issue"], otro: ["Otro problema", "Something else"] };
 
 export function AyudaEstado({ numero, negocio, a, puede, es }: { numero: string; negocio: string; a: Ayuda | null; puede: boolean; es: boolean }) {
-  const E2 = (x: string, y: string) => (es ? x : y);
+  const E2 = (x: string, y: string) => dosIdiomas(es, x, y);
   const router = useRouter();
   const [busy, setBusy] = useState(false), [err, setErr] = useState("");
   if (!a) return puede ? <div className="flex"><Button variant="secondary" icon="help" block onClick={() => router.push(`/pedido/${numero}/ayuda`)}>{E2("Ayuda con el pedido", "Help with this order")}</Button></div> : null;

@@ -1,5 +1,5 @@
 import { requerir } from "@/lib/admin";
-import { cadenasAdmin, versionesCadena } from "@/lib/cms-admin";
+import { cadenasAdmin, lugaresCadena, versionesCadena } from "@/lib/cms-admin";
 import { idioma } from "@/lib/idioma";
 import { TextosCadenas } from "../../TextosCadenas";
 
@@ -10,7 +10,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const s = await requerir("cms", "ver");
   const [sp, l] = await Promise.all([searchParams, idioma()]);
   const h = sp.h && ID.test(sp.h) ? sp.h : null;
-  const [d, v] = await Promise.all([cadenasAdmin({ q: sp.q ?? "", pantalla: sp.pantalla ?? null, estado: sp.estado ?? null, despues: sp.desde ?? null }), h ? versionesCadena(h) : Promise.resolve(null)]);
-  return <TextosCadenas d={d} l={l} q={(sp.q ?? "").slice(0, 80)} pantalla={sp.pantalla ?? null} estado={sp.estado ?? null} desde={sp.desde ?? null} historia={h && v ? { id: h, v } : null}
+  const [d, v, lug] = await Promise.all([cadenasAdmin({ q: sp.q ?? "", pantalla: sp.pantalla ?? null, estado: sp.estado ?? null, despues: sp.desde ?? null }), h ? versionesCadena(h) : Promise.resolve(null), h ? lugaresCadena(h) : Promise.resolve(null)]);
+  return <TextosCadenas d={d} l={l} q={(sp.q ?? "").slice(0, 80)} pantalla={sp.pantalla ?? null} estado={sp.estado ?? null} desde={sp.desde ?? null} historia={h && v ? { id: h, v, lugares: lug } : null}
     editar={s.puede("cms", "editar")} aprobar={s.puede("cms", "aprobar")} />;
 }

@@ -5,6 +5,7 @@
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { AuthSheet } = UI as unknown as Record<"AuthSheet", ComponentType<any>>;
@@ -12,7 +13,7 @@ type R = { ok: boolean; mensaje?: { es: string; en: string }; codigoPrueba?: str
 const enviar = async (url: string, cuerpo: unknown): Promise<R> => (await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(cuerpo) })).json();
 
 export function HojaEntrar({ es, destino, titulo, sub, onClose }: { es: boolean; destino: string; titulo?: string; sub?: string; onClose: () => void }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [paso, setPaso] = useState<"phone" | "code">("phone"), [tel, setTel] = useState(""), [cod, setCod] = useState("");
   const [error, setError] = useState<string | null>(null), [prueba, setPrueba] = useState<string | null>(null), [desk, setDesk] = useState(false), [ocupado, setOcupado] = useState(false);

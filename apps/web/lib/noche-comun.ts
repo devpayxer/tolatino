@@ -1,3 +1,4 @@
+import { dosIdiomas } from "@/lib/dos-idiomas";
 /* Noche · «Esta noche» (4na · fase4-noche.md §2, §4na y §5 · dash2-cat.js blocksC L387–396, summary L322, apply L283–286):
    tipos y textos que comparten el servidor, el panel, la ficha y el Super Admin (sin acceso a la base).
    Las horas de la noche van en minutos desde las 12 PM (540 = 9 PM, 660 = 11 PM, 780 = 1 AM): la noche pasa de las 24. */
@@ -40,7 +41,7 @@ export const usdN = (c: number) => `$${(c / 100).toLocaleString("en-US", { maxim
 
 /* La línea de la tarjeta del buscador (eta, L39–40): «Hoy: cover $10 · $15 después de las 11 PM · 21+» / «Mañana: sin cover · 21+». */
 export function etaNoche(e: EstaNoche, es: boolean): string {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const cuando = e.cuando === "hoy" ? E2("Hoy", "Tonight") : e.cuando === "manana" ? E2("Mañana", "Tomorrow") : E2(`El ${diaNoche(e.dow, true)}`, diaNoche(e.dow, false));
   const cv = e.cover ? E2(`cover ${usdN(e.cover)}`, `${usdN(e.cover)} cover`) : E2("sin cover", "no cover");
   const af = e.after ? E2(` · ${usdN(e.after.cents)} después de las ${hNoche(e.after.min)}`, ` · ${usdN(e.after.cents)} after ${hNoche(e.after.min)}`) : "";
@@ -50,7 +51,7 @@ export function etaNoche(e: EstaNoche, es: boolean): string {
    ~15 min» o «Fila el sáb a las …». Sin fila publicada, nada. */
 export function filaTexto(f: FilaNoche | null, es: boolean): string | null {
   if (!f) return null;
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   if (f.viva) return f.min ? E2(`Fila ahora: ~${f.min} min`, `Line now: ~${f.min} min`) : E2("Sin fila ahora", "No line now");
   const cuando = f.hoy ? E2(`a las ${hNoche(f.hora)}`, `at ${hNoche(f.hora)}`) : f.anoche ? E2(`anoche a las ${hNoche(f.hora)}`, `last night at ${hNoche(f.hora)}`)
     : E2(`el ${dia3Noche(f.dow, true)} a las ${hNoche(f.hora)}`, `on ${dia3Noche(f.dow, false)} at ${hNoche(f.hora)}`);
@@ -58,7 +59,7 @@ export function filaTexto(f: FilaNoche | null, es: boolean): string | null {
 }
 /* La línea de Lo que vendes y del 360 del Super Admin (summary L322): «Cover $10 · 21+ · lista hasta las 11 PM · fila 15 min · vie $15». */
 export function resumenNoche(h: HerrNoche, es: boolean): string {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   if (h.porFecha) return E2("Trabajas por fecha: sin cover ni fila.", "You work by date: no cover or line.");
   const dist = Object.entries(h.byDow).filter(([, v]) => v !== h.cover).map(([d, v]) => `${dia3Noche(Number(d), es)} ${v ? usdN(v) : E2("gratis", "free")}`);
   return [h.cover ? `${E2("Cover", "Cover")} ${usdN(h.cover)}` : E2("Sin cover", "No cover"), `${h.edad}+`,
@@ -72,7 +73,7 @@ export const tituloNoche = (es: boolean) => (es ? "Esta noche" : "Tonight");
 
 /* Una línea del historial de lo publicado (Super Admin y Ayuda): «Cover $15» · «Fila 20 min» · «Lista hasta las 11 PM»… */
 export function postTexto(field: string, v: unknown, es: boolean): string {
-  const E2 = (a: string, b: string) => (es ? a : b), o = (v ?? {}) as Record<string, unknown>;
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), o = (v ?? {}) as Record<string, unknown>;
   if (field === "cover") return `${E2("Cover", "Cover")} ${Number(o.cents) ? usdN(Number(o.cents)) : E2("gratis", "free")}`;
   if (field === "after") return v == null ? E2("Igual toda la noche", "Same all night") : E2(`${usdN(Number(o.cents))} después de las ${hNoche(Number(o.min))}`, `${usdN(Number(o.cents))} after ${hNoche(Number(o.min))}`);
   if (field === "by_dow") return o.igual ? E2("Igual todas las noches", "Same every night") : `${E2("El", "On")} ${diaNoche(Number(o.d), es)}: ${o.cents == null ? E2("igual que esta noche", "same as tonight") : Number(o.cents) ? usdN(Number(o.cents)) : E2("gratis", "free")}`;
@@ -89,7 +90,7 @@ export const KINDS_LOCAL: [KindNoche, string][] = [["club", "Discoteca"], ["sals
 /* ── Ficha de Noche (4nb · neg-noche.js line L77–78, neg-noche-listing.js priceFor L108–113) ── */
 export const LINEA_NOCHE: Bi = { es: "El cover que ves es el que pagas en la puerta.", en: "The cover you see is the one you pay at the door." };
 export function precioNoche(s: { k: string; cents: number; until: number | null; pax: number | null; hr: boolean; evDesde?: number | null; evDia?: string | null }, es: boolean): { l: string; s: string } {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   if (s.k === "lista") return { l: s.cents ? usdN(s.cents) : E2("Gratis", "Free"), s: s.until != null ? E2(`CON LA LISTA HASTA LAS ${hNoche(s.until)}`, `ON THE LIST UNTIL ${hNoche(s.until)}`) : "" };
   if (s.k === "cover") return { l: s.cents ? usdN(s.cents) : E2("Sin cover", "No cover"), s: s.cents ? E2("EN LA PUERTA", "AT THE DOOR") : "" };
   if (s.k === "mesa") return { l: s.hr ? `${usdN(s.cents)}${E2("/hora", "/hr")}` : s.cents ? `${E2("Mínimo ", "Minimum ")}${usdN(s.cents)}` : E2("Sin mínimo", "No minimum"), s: s.pax ? E2(`HASTA ${s.pax} PERSONAS`, `UP TO ${s.pax} PEOPLE`) : "" };
@@ -107,7 +108,7 @@ export const coverTexto = (e: EstaNoche, es: boolean) => (e.cover ? `${usdN(e.co
 /* La fila en la ficha: «~15 min» / «Sin fila», cuándo la puso (solo «Ahora» si es viva) y la etiqueta del riel. */
 export const filaCorta = (f: FilaNoche, es: boolean) => (f.min ? `~${f.min} min` : es ? "Sin fila" : "No line");
 export function filaCuando(f: FilaNoche, es: boolean): string {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   if (f.viva) return E2(`Ahora · lo puso el local a las ${hNoche(f.hora)}.`, `Now · posted by the venue at ${hNoche(f.hora)}.`);
   const c = f.hoy ? E2(`Hoy a las ${hNoche(f.hora)}`, `Today at ${hNoche(f.hora)}`) : f.anoche ? E2(`Anoche a las ${hNoche(f.hora)}`, `Last night at ${hNoche(f.hora)}`)
     : E2(`El ${dia3Noche(f.dow, true)} a las ${hNoche(f.hora)}`, `On ${dia3Noche(f.dow, false)} at ${hNoche(f.hora)}`);

@@ -12,6 +12,7 @@ import { subirFoto } from "@/lib/subir-foto";
 import { bi, diaCorto, hora, sumarDias, type Bi, type FormatoEvt } from "@/lib/evt-comun";
 import { publicarEvento } from "./acciones";
 import { hoyEn } from "@/lib/fecha-local";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "OrderTracker" | "EventCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,7 +49,7 @@ function Opcion({ on, t, s, img, onClick }: { on: boolean; t: string; s: string;
 }
 
 export function Publicar({ v }: { v: VistaPub }) {
-  const es = v.lang === "es", E2 = (a: string, b: string) => (es ? a : b);
+  const es = v.lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ruta = usePathname(), dw = useAncho(), D = dw >= 1024;
   const [f, setF] = useState<F>(F0), [tried, setTried] = useState(false), [enviando, setEnviando] = useState(false), [error, setError] = useState<string | null>(null), [subiendo, setSubiendo] = useState(false);
   const [sent, setSent] = useState<null | { id: string; org: string; f: F; at: string; publicado: boolean }>(null);

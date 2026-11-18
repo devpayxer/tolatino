@@ -21,13 +21,14 @@ import { sinRed } from "@/lib/nativo/senal";
 import { uuid } from "@/lib/uuid";
 import { esApp, plataforma } from "@/lib/nativo/puente";
 import { fijarPantalla, pantallaFijada, soltarPantalla } from "@/lib/nativo/pantalla";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Bi = { es: string; en: string };
 type Tab = "escanear" | "buscar" | "lista" | "aforo" | "mas" | "mesas" | "incid" | "equipo" | "cierre" | "noche";
 type Ctx = Omit<CtxPuerta, "userId">;
 
 export function PuertaCerrada({ es, sesion }: { es: boolean; sesion?: string }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter();
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter();
   // 6h · Sin acceso a esta puerta: lo que quedó sin subir se intenta subir y nada de ella queda en el teléfono.
   useEffect(() => { if (sesion) void soltarSesion(sesion); }, [sesion]);
   return (
@@ -43,7 +44,7 @@ export function Puerta({ es, t, f, ctx, r0, lista, aforo, mesas, incid, equipo, 
   lista?: { filas: FilaPuerta[]; siguiente: string | null }; aforo?: Awaited<ReturnType<typeof Aforo>>; mesas?: Awaited<ReturnType<typeof Mesas>>; incid?: Awaited<ReturnType<typeof Incid>>;
   equipo?: Awaited<ReturnType<typeof Equipo>>; cierre?: Awaited<ReturnType<typeof Cierre>>; noche?: FilaListaPuerta[]; ultimos?: Awaited<ReturnType<typeof Ultimos>>;
 }) {
-  const E2 = useCallback((a: string, b: string) => (es ? a : b), [es]), bi = (x: Bi) => (es ? x.es : x.en || x.es);
+  const E2 = useCallback((a: string, b: string) => dosIdiomas(es, a, b), [es]), bi = (x: Bi) => (es ? x.es : x.en || x.es);
   const router = useRouter(), [pend, start] = useTransition();
   const [r, setR] = useState(r0), [toast, setToast] = useState(""), [err, setErr] = useState("");
   const [q, setQ] = useState(""), [res, setRes] = useState<FilaPuerta[] | null>(null), [manual, setManual] = useState<{ x: FilaPuerta; motivo: string; n: number } | null>(null);

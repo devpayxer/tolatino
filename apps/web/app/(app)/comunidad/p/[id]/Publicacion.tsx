@@ -17,12 +17,13 @@ import { Hilo } from "./Hilo";
 import { Linea988 } from "../../Linea988";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 
 export function Publicacion({ es, yo, ciudad, d, h, orden, nueva, editada, crisis = false }: { es: boolean; yo: YoCom; ciudad: string; d: P | null; h: H | null; orden: OrdenHilo; nueva: boolean; editada: boolean; crisis?: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024, tr = useTraducir(es);
   const [pub, setPub] = useState<Pub | null>(d?.pub ?? null);
   const [borrada, setBorrada] = useState(false);

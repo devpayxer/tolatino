@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import type { EstadoEnlace } from "@/lib/compa/enlace";
 import { enlaceUsar } from "./acciones";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const C = UI as unknown as Record<"CompaFrame" | "CompaSysLine" | "CompaMsg" | "CompaSlot" | "CompaActionCard" | "RequestCard" | "Button", ComponentType<any>>;
@@ -19,7 +20,7 @@ type Linea = { k: "sys" | "note"; t: string };
 const hora = (iso: string, _es: boolean) => new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" }).format(new Date(iso));
 
 export function EnlaceCompa({ es, token, nombre, e }: { es: boolean; token: string; nombre: string | null; e: EstadoEnlace }) {
-  const E2 = (a: string, b: string) => (es ? a : b), L = (x: Bi) => (es ? x.es : x.en);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), L = (x: Bi) => (es ? x.es : x.en);
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [hecho, setHecho] = useState<Linea[]>([]), [busy, setBusy] = useState(false), [vivo, setVivo] = useState(e.k === "ok");
   const ok = e.k === "ok" ? e : null, canal = ok ? (ok.canal === "whatsapp" ? "WhatsApp" : "SMS") : null;

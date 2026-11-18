@@ -2,9 +2,10 @@
 /* Resultado de confirmar el correo (2q): listo (te llegan tus recibos) o el enlace no sirve (pide otro en Perfil). */
 import { useRouter } from "next/navigation";
 import { Marco, useCuentaUi, type Yo } from "../Marco";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export function Correo({ ok, email, msg, es, yo }: { ok: boolean; email: string | null; msg: { es: string; en: string } | null; es: boolean; yo: Yo }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   return <Marco es={es} code="USR-PERFIL" back="/cuenta/perfil" t={E2("Correo", "Email")} s={ok ? E2("CONFIRMADO", "CONFIRMED") : E2("SIN CONFIRMAR", "NOT CONFIRMED")} yo={yo} ui={ui}
     blocks={[ok

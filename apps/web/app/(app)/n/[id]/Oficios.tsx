@@ -10,6 +10,7 @@ import type { Casa, OficioPub, OficiosPublico, Vehiculo } from "@/lib/oficios-pu
 import { detalleL, precioL } from "@/lib/oficios-texto";
 import { casaElegir, casaGuardar, vehiculoElegir, vehiculoGuardar } from "./acciones-oficio";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "OptionGroup" | "AddOnRow" | "DepositNote" | "ReservationCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,7 +49,7 @@ export const casaMeta = (c: Casa, es: boolean) => [lab(TIPO, c.kind, es), c.beds
 /* ¿Trabajan con tu vehículo o llegan a tu casa? (diseño compat; el servidor lo vuelve a revisar al enviar). */
 export function compatVeh(op: OficiosPublico, v: Vehiculo | null, es: boolean) {
   if (!v) return null;
-  const E2 = (a: string, b: string) => (es ? a : b), cls = v.size === "v" ? "s" : v.size;
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), cls = v.size === "v" ? "s" : v.size;
   if (op.compat.veh && !op.compat.veh.includes(cls)) return { ok: false, t: E2(`Aquí no trabajan con ${(SZ[v.size]?.[0] ?? "").toLowerCase()}s`, `They do not work on ${(SZ[v.size]?.[1] ?? "").toLowerCase()}s here`) };
   if (v.make === "otra") return { ok: true, t: E2("Marca no listada: te confirman al aceptar la cita", "Unlisted make: confirmed when they accept") };
   if (op.compat.mk && !op.compat.mk.includes(v.make)) return { ok: false, t: E2(`Este taller no trabaja con ${mkName(v.make, true)}`, `This shop does not work on ${mkName(v.make, false)}`) };
@@ -56,7 +57,7 @@ export function compatVeh(op: OficiosPublico, v: Vehiculo | null, es: boolean) {
 }
 export function compatCasa(op: OficiosPublico, c: Casa | null, es: boolean) {
   if (!c) return null;
-  const E2 = (a: string, b: string) => (es ? a : b), d = c.millas, z = op.tool.zone ?? 20;
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), d = c.millas, z = op.tool.zone ?? 20;
   if (!c.enZona) return { ok: false, warn: false, t: E2(`Tu casa queda a ${d ?? "—"} mi: llegan hasta ${z} mi`, `Your home is ${d ?? "—"} mi away: they go up to ${z} mi`) };
   if (c.tenure === "inq" && op.compat.tenure && !op.compat.tenure.includes("inq")) return { ok: false, warn: false, t: E2("Solo trabajan con dueños de casa", "They only work with homeowners") };
   if (c.tenure === "inq") return { ok: true, warn: true, t: E2(`Llega a tu casa${d != null ? ` (${d} mi)` : ""}. Necesitas el permiso de tu landlord`, `They reach you${d != null ? ` (${d} mi)` : ""}. You need your landlord’s permission`) };
@@ -74,7 +75,7 @@ export function depositoVer(op: OficiosPublico, s: OficioPub, precio: number) {
 
 type Hoja = { svc: string; opts: Record<string, number>; adds: number[]; sz: number | null; wm: string | null };
 export function useOficio(op: OficiosPublico | null, es: boolean, sesion: boolean) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [hoja, setHoja] = useState<Hoja | null>(null);
   const [vehs, setVehs] = useState<Vehiculo[]>(op?.vehiculos ?? []);

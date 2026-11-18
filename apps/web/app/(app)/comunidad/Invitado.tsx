@@ -9,13 +9,14 @@ import { LINEA_FIJA } from "@/lib/comunidad-filtro";
 import { hace, TIPO } from "@/lib/comunidad-comun";
 import type { ResumenInvitado } from "@/lib/comunidad";
 import { MONO, useAncho } from "./Marco";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 
 export function Invitado({ es, ciudad, d }: { es: boolean; ciudad: string; d: ResumenInvitado }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), D = useAncho() >= 1024;
   const entrar = () => router.push(`/entrar?volver=${encodeURIComponent("/comunidad")}`);
   const k = E2(`COMUNIDAD · ${ciudad.toUpperCase()}`, `COMMUNITY · ${ciudad.toUpperCase()}`), t = E2("La conversación del barrio", "The neighborhood conversation");

@@ -6,12 +6,13 @@ import { quitarTarjeta } from "../../pago/acciones";
 import { marcaL } from "../../pago/MetodoPago";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
 import type { Movimiento } from "@/lib/movimientos";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type T = { pm: string; marca: string; ultimos4: string; vence: string; def: boolean };
 const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
 const dia = (iso: string, es: boolean) => new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "short", year: "numeric" }).format(new Date(iso)).replace(".", "");
 export function Pagos({ es, yo, tarjetas, mov = { items: [], mas: null }, pagina = false }: { es: boolean; yo: Yo; tarjetas: T[]; mov?: { items: Movimiento[]; mas: string | null }; pagina?: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const quitar = (t: T) => ui.setHoja({
     title: E2(`¿Quitar ${marcaL(t.marca)} ·· ${t.ultimos4}?`, `Remove ${marcaL(t.marca)} ·· ${t.ultimos4}?`),

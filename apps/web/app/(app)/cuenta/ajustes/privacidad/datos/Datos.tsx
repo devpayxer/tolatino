@@ -9,9 +9,10 @@ import type { Exportacion } from "@/lib/datos/exportar";
 import { archivoCodigo, archivoPedir } from "../../../acciones-perfil";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../../../Marco";
 import { bajarArchivo, filasArchivo, puedePedir } from "./comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export function Datos({ es, yo, tel, archivos, pruebas, dias }: { es: boolean; yo: Yo; tel: string; archivos: Exportacion[]; pruebas: boolean; dias: number }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const [paso, setPaso] = useState<"ver" | "codigo">("ver"), [code, setCode] = useState(""), [err, setErr] = useState(""), [busy, setBusy] = useState(false), [prueba, setPrueba] = useState<string | null>(null);
   const t = E2("Descargar mis datos", "Download my data");

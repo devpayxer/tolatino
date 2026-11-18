@@ -18,6 +18,7 @@ import { useTraducir } from "../../../Traducir";
 import { useVecinoAcciones } from "../../vecinoAcciones";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button" | "IconButton" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, IconButton, Tag } = UI as unknown as Record<N, ComponentType<any>>;
@@ -27,7 +28,7 @@ const CARD = { borderRadius: 20, background: "var(--tl-white)", border: "1px sol
 const primero = (n: string) => n.split(/\s+/)[0] ?? n;
 
 export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCom; ciudad: string; v: V | null; bloqueado: { id: string; nombre: string } | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024, tr = useTraducir(es);
   const vec = useVecinoAcciones(es, ui);
   const [sigo, setSigo] = useState(v?.yoSigo ?? false), [pubs, setPubs] = useState<Pub[]>(v?.pubs ?? []), [mas, setMas] = useState(v?.mas ?? null), [busy, setBusy] = useState(false);
@@ -160,7 +161,7 @@ export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCo
 
 /* Mi perfil: editar lo mío y mis listas (Mi cuenta › Siguiendo · Seguidores · Bloqueados y silenciados) y Mensajes. */
 function MisEnlaces({ es, v, ui, margen }: { es: boolean; v: V; ui: ComUi; margen: string | number }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const filas: [string, string, string, () => void][] = [
     ["shield", es ? rango(v.rango).es : rango(v.rango).en, E2(`${v.puntos.toLocaleString("en-US")} PUNTOS · TU RANGO Y LA TABLA`, `${v.puntos.toLocaleString("en-US")} POINTS · YOUR RANK AND THE BOARD`), () => router.push("/comunidad/rango")],
@@ -184,7 +185,7 @@ function MisEnlaces({ es, v, ui, margen }: { es: boolean; v: V; ui: ComUi; marge
 }
 
 function Editar({ es, v, ui }: { es: boolean; v: V; ui: ComUi }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [bio, setBio] = useState(v.bio ?? ""), [apodo, setApodo] = useState(v.apodo ?? ""), [desde, setDesde] = useState(v.desde ? String(v.desde) : ""), [ocultar, setOcultar] = useState(v.ocultar);
   const [err, setErr] = useState<string | null>(null), [busy, setBusy] = useState(false);

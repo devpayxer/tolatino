@@ -6,6 +6,7 @@ import type { ComponentType, CSSProperties } from "react";
 import { cap, F, Fl, opOf, own, TILES, X, ZERO, money, type Borrador } from "./logica";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button" | "Chip" | "SearchSelect" | "OptionCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, SearchSelect, OptionCard } = UI as unknown as Record<N, ComponentType<any>>;
@@ -18,7 +19,7 @@ export function PasoB1({ d, up, ui, setUi, es, desk, dup, onClaim, toast }: {
   d: Borrador; up: Up; ui: UiB; setUi: (p: Partial<UiB>) => void; es: boolean; desk: boolean;
   dup: { id: string; name: string } | null; onClaim: () => void; toast: (t: string) => void;
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b), q = ui.q || "", kc = d.cat ? X.cat(d.cat) : null;
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), q = ui.q || "", kc = d.cat ? X.cat(d.cat) : null;
   const res: { cat: string; sub: string; en: string }[] = q.trim().length >= 2 ? X.search(q).filter((r: { sub?: string }) => r.sub && r.sub.length < 60 && !/\*\*/.test(r.sub)) : [];
   const setCat = (c: string) => { if (c !== d.cat) up({ cat: c, subs: [], own: {}, sel: {}, cust: [], op: null, days: null, tpl: null, cita: false, join: null, joinName: "", via: "list" }); setUi({ allCats: false, moreSubs: false, q: "" }); };
   const togSub = (sub: string) => { const S = d.subs || []; if (S.includes(sub)) return up({ subs: S.filter((x) => x !== sub), sel: {} }); if (S.length >= 3) return toast(E2("Hasta 3. Quita una para cambiarla.", "Up to 3. Remove one to change it.")); up({ subs: S.concat([sub]), sel: {} }); };
@@ -95,7 +96,7 @@ export function PasoB1({ d, up, ui, setUi, es, desk, dup, onClaim, toast }: {
 }
 
 export function PasoC1({ d, up, es }: { d: Borrador; up: Up; es: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b), f = F(d), o = own(d), op = opOf(d);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), f = F(d), o = own(d), op = opOf(d);
   if (!f) return null;
   const setOwn = (k: string, v: unknown) => up((z) => ({ own: { ...z.own, [k]: v } }));
   const lk = f.own.link, rento = op === "rento";

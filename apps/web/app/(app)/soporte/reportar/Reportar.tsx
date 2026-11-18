@@ -15,10 +15,11 @@ import { capturaGuardada, registro } from "@/lib/nativo/reporte";
 import { subirFotoPrivada } from "@/lib/subir-foto";
 import { uuid } from "@/lib/uuid";
 import { reportar } from "./acciones";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Bi = { es: string; en: string };
 export function Reportar({ es, conSesion, negocio, agitado, horario }: { es: boolean; conSesion: boolean; negocio: { id: string; name: string } | null; agitado: boolean; horario: Bi }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [txt, setTxt] = useState(""), [cap, setCap] = useState<{ blob: Blob; url: string; origen: "agitar" | "archivo" } | null>(null), [grande, setGrande] = useState(false);
   const [lineas, setLineas] = useState<string[] | null>(null), [err, setErr] = useState(""), [hecho, setHecho] = useState<string | null>(null), [clave] = useState(() => uuid());

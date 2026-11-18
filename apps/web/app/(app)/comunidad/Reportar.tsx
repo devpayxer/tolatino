@@ -7,6 +7,7 @@ import * as UI from "@tolatino/ui";
 import { useState, type ComponentType } from "react";
 import { MAX_NOTA, REP } from "@/lib/moderacion-comun";
 import { LINE, type ComUi } from "./Marco";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,7 +36,7 @@ export function abrirReporte(ui: ComUi, es: boolean, r: Reporte) {
 }
 
 function Paso({ es, paso, motivo0, nota0, r, ir, cerrar }: { es: boolean; paso: 1 | 2 | 3; motivo0: string | null; nota0: string; r: Reporte; ir: (p: 1 | 2 | 3, m: string | null, n: string) => void; cerrar: () => void }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [m, setM] = useState<string | null>(motivo0), [nota, setNota] = useState(nota0), [busy, setBusy] = useState(false), [err, setErr] = useState<string | null>(null);
   const M = r.motivos ?? REP;
   if (paso === 1) return (

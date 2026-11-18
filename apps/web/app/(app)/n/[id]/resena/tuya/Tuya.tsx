@@ -8,6 +8,7 @@ import { useState, type ComponentType } from "react";
 import type { MiResena } from "@/lib/resenas";
 import { quitarMiResena } from "../../acciones-resena";
 import { propsTarjeta } from "../../Resenas";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "ReviewCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,7 +17,7 @@ const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 
 export function Tuya({ m, es, nombre, flash }: { m: MiResena; es: boolean; nombre: string; flash: 0 | 1 | 2 }) {
   const router = useRouter();
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const b = m.negocio, c = m.card;
   const [borrar, setBorrar] = useState(false);
   const [ocupado, setOcupado] = useState(false);

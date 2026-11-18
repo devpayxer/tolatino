@@ -19,12 +19,13 @@ import { avisoGuardar } from "../acciones-perfil";
 import type { Alerta } from "@/lib/alertas";
 import { alertaQuitar } from "./acciones-alertas";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 const hora12 = (h: number) => `${h % 12 || 12} ${h < 12 ? "AM" : "PM"}`;
 type P = Awaited<ReturnType<typeof avisosDe>>;
 const fecha = (iso: string, es: boolean) => new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "short", year: "numeric" }).format(new Date(iso)).replace(/\./g, "").toUpperCase();
 export function Avisos({ p, es, yo, horaResumen, horaRecordatorio, horarioEquipo = null, disp = [], alertas = [] }: { alertas?: Alerta[]; p: P; es: boolean; yo: Yo; horaResumen: number; horaRecordatorio: number; horarioEquipo?: string | null; disp?: Dispositivo[] }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const ui = useCuentaUi(), router = useRouter();
   const [v, setV] = useState(p);
   // 8c · «En este teléfono» (useEsteTelefono: el permiso del sistema o del navegador y si ESTA sesión tiene un token vivo).

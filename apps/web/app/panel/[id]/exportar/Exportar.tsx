@@ -8,9 +8,10 @@ import { useState } from "react";
 import type { Exportacion } from "@/lib/datos/exportar";
 import { archivoCodigo, archivoPedir } from "@/app/(app)/cuenta/acciones-perfil";
 import { bajarArchivo, filasArchivo, puedePedir } from "@/app/(app)/cuenta/ajustes/privacidad/datos/comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export function Exportar({ es, negocio, dueno, tel, archivos, dias, pruebas }: { es: boolean; negocio: { id: string; name: string }; dueno: boolean; tel: string; archivos: Exportacion[]; dias: number; pruebas: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [paso, setPaso] = useState<"ver" | "codigo">("ver"), [code, setCode] = useState(""), [msg, setMsg] = useState<string | null>(null), [busy, setBusy] = useState(false), [prueba, setPrueba] = useState<string | null>(null);
   const atras = () => router.push(`/panel/${negocio.id}/mas`);

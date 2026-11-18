@@ -10,6 +10,7 @@ import { apartadoAccion, pagarPlan } from "./acciones";
 import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../pago/MetodoPago";
 import { useVerificacion } from "../../pago/Verificacion";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,7 +21,7 @@ const DIA = { es: ["domingo", "lunes", "martes", "miércoles", "jueves", "vierne
 const MO = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
 
 export function ApartadoEstado({ x, es, pago = null }: { x: ApartadoVista; es: boolean; pago?: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null), [flash, setFlash] = useState<string | null>(null), [confirmar, setConfirmar] = useState(false);
   const hacer = async (que: "cancelar" | "quitar" | "otraTalla", ok: string) => {
     if (ocupado) return; setOcupado(true); setError(null);

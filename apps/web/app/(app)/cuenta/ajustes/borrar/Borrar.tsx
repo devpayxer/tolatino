@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { borrarCancelar, borrarCodigo, borrarConfirmar } from "../../acciones-perfil";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../../Marco";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export function Borrar({ d, tel, es, yo, pruebas }: { d: { d: string | null; admin: boolean }; tel: string; es: boolean; yo: Yo; pruebas: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const [step, setStep] = useState(1), [why, setWhy] = useState(""), [code, setCode] = useState(""), [err, setErr] = useState(""), [busy, setBusy] = useState(false), [prueba, setPrueba] = useState<string | null>(null);
   const dia = (iso: string) => new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "long" }).format(new Date(iso));

@@ -9,9 +9,10 @@ import type { AvisoMod, MisAvisos } from "@/lib/apelaciones";
 import { APELABLE, MAX_APELACION, MIN_APELACION } from "@/lib/moderacion-comun";
 import { apelarAccion } from "./acciones";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export function Moderacion({ es, yo, uno, buscado, lista }: { es: boolean; yo: Yo; uno: AvisoMod | null; buscado: boolean; lista: MisAvisos | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const [txt, setTxt] = useState(""), [err, setErr] = useState<string | null>(null), [busy, setBusy] = useState(false);
   const dia = (d: string) => new Date(d).toLocaleDateString(es ? "es-US" : "en-US", { day: "numeric", month: "long", timeZone: "America/New_York" });

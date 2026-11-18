@@ -15,6 +15,7 @@ import { mercAprobar, mercCancelar, mercNoMas, mercSustituto } from "./acciones"
 import { useVerificacion } from "../../pago/Verificacion";
 import { MapaVivo } from "@/app/_ruta/MapaVivo";
 import type { ModoTarjeta } from "../../pago/MetodoPago";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,7 +25,7 @@ const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-4";
 
 export function MercadoEstado({ v, es, pago = null, ruta = false }: { v: MercadoVista; es: boolean; pago?: { modo: ModoTarjeta; pk: string | null } | null; ruta?: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const router = useRouter();
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null), [flash, setFlash] = useState<string | null>(null), [foto, setFoto] = useState<string | null>(null);
   // Lo que cambia por el mercado (acepta, pesa, propone) se ve sin recargar: se vuelve a leer cada 15 s mientras sigue vivo.

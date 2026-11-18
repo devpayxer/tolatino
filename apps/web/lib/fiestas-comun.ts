@@ -1,3 +1,4 @@
+import { dosIdiomas } from "@/lib/dos-idiomas";
 /* Tu herramienta de Fiestas («Calendario y depósito»): tipos y textos que comparten el servidor, el panel y el Super Admin
    (sin acceso a la base). Plan: docs/diseno/plan/fase4-fiestas-transporte.md §4t y §5. */
 export type DiaFiesta = { day: string; manual: boolean; reservas: { num: string }[]; ocupada: boolean };
@@ -9,7 +10,7 @@ export type HerrFiesta = {
 const usd = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
 /* La línea de Lo que vendes y del 360 del Super Admin (dash2-cat.js summary L323). */
 export function resumenFiesta(h: HerrFiesta, es: boolean): string {
-  const E2 = (a: string, b: string) => (es ? a : b), n = h.dias.filter((d) => d.ocupada).length;
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), n = h.dias.filter((d) => d.ocupada).length;
   return [`${n} ${n === 1 ? E2("fecha ocupada", "date booked") : E2("fechas ocupadas", "dates booked")}`, h.dep ? `${E2("depósito ", "deposit ")}${usd(h.dep)}` : E2("sin depósito", "no deposit"),
     h.guests ? `${E2("hasta ", "up to ")}${h.guests} ${E2("invitados", "guests")}` : "", h.zone ? `${E2("va hasta ", "travels up to ")}${h.zone} mi` : ""].filter(Boolean).join(" · ");
 }
@@ -51,7 +52,7 @@ export type CalFiesta = { hoy: string; hasta: string; ocupadas: string[]; libres
 export type Dispo = { ok: boolean; none: boolean; t: string; short: string; lejos?: boolean };
 /* «Libre el sáb 26 sep · caben tus 150» · «Ocupada el sáb 26 sep · libre 3 oct y 10 oct» · «Caben hasta 120 · tú esperas 150». */
 export function dispoFiesta(c: CalFiesta, fe: TuFecha | null, es: boolean, cap?: number | null): Dispo {
-  const E2 = (a: string, b: string) => (es ? a : b), max = cap ?? c.guests;
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), max = cap ?? c.guests;
   if (!fe) { const nx = c.libres[0]; return { ok: true, none: true, t: nx ? `${E2("Próxima fecha libre: ", "Next free date: ")}${diaFiesta(nx, es)}` : E2("Pregunta por fechas", "Ask for dates"), short: nx ? diaFiesta(nx, es) : "—" }; }
   if (fe.day < c.hoy) return { ok: false, none: false, t: E2("Esa fecha ya pasó. Cambia tu fecha.", "That date has passed. Change your date."), short: E2("Ya pasó", "Past") };
   if (fe.day > c.hasta) return { ok: false, none: false, lejos: true, t: E2(`No aparta tan lejos en la app: llama para el ${diaFiesta(fe.day, es)}.`, `Does not book that far ahead in the app: call about ${diaFiesta(fe.day, es)}.`), short: E2("Llama", "Call") };
@@ -66,7 +67,7 @@ export function dispoFiesta(c: CalFiesta, fe: TuFecha | null, es: boolean, cap?:
 export type SvcFiesta = { id: string; sec: string | null; name: Bi; desc: Bi; cents: number; k: string; h: number | null; cap: number | null; mont: boolean; inc: Bi[]; u: Bi | null; per: number | null; min: number | null; foto: string | null };
 const m$ = (c: number) => (c % 100 ? `$${(c / 100).toFixed(2)}` : `$${(c / 100).toLocaleString("en-US")}`);
 export function precioFiesta(s: SvcFiesta, es: boolean): { l: string; s: string } {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   if (s.k === "visita") return { l: E2("Gratis", "Free"), s: "" };
   if (s.k === "hora") return { l: `${m$(s.cents)}${E2("/hora", "/hr")}`, s: s.min ? `${E2("MÍNIMO ", "MIN ")}${s.min} H` : "" };
   if (s.k === "unid") return { l: `${m$(s.cents)}${E2(" por ", " per ")}${s.u ? (es ? s.u.es : s.u.en || s.u.es) : E2("unidad", "unit")}`, s: s.min ? `${E2("MÍNIMO ", "MIN ")}${s.min}` : "" };
@@ -74,7 +75,7 @@ export function precioFiesta(s: SvcFiesta, es: boolean): { l: string; s: string 
   return { l: m$(s.cents), s: s.k === "pack" ? E2("PAQUETE", "PACKAGE") : "" };
 }
 export function metaFiesta(s: SvcFiesta, es: boolean): string {
-  const E2 = (a: string, b: string) => (es ? a : b), a: string[] = [];
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), a: string[] = [];
   if (s.k === "pack" && s.h) a.push(s.h === 1 ? E2("1 HORA", "1 HOUR") : E2(`${s.h} HORAS`, `${s.h} HOURS`));
   if (s.k === "visita") a.push(E2("VISITA · 30 MIN", "TOUR · 30 MIN"));
   if (s.cap) a.push(E2(`HASTA ${s.cap} INVITADOS`, `UP TO ${s.cap} GUESTS`));

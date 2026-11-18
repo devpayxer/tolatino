@@ -2600,3 +2600,23 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   Contenido como cualquier novedad (sin cambio). Guardián `ofertaProductoDelServidor` (alrevesOfe9n 15/15; alreves5e/5h/8e/9c/9n/9n2/9n20/9n4/
   C005/MercRep en verde); e2e `ofe9n` 34 ✓ y fic008 17 ✓ en local (base local Postgres 16 con migraciones + semilla, `next build`, Chromium);
   tsc + build + guardianes en verde. Ayuda: novedades, ficha-mercado, apartar-productos.
+- **18 nov · 9f-3 · Todas las pantallas por el CMS** (LAUNCH «9f-3 · Más cadenas por el CMS»; REVISION «Todas las pantallas por el CMS (18 nov)»): cada
+  `E2` local pasa por la fábrica compartida `dosIdiomas(es, a, b)` (`apps/web/lib/dos-idiomas.ts`, sin imports: sin ediciones es `es ? a : b`; con
+  ediciones busca el par exacto del código). Codemod idempotente `scripts/cms/e2-al-cms.mjs` (262 definiciones convertidas en 198 archivos, 9 pasan el
+  de otro `c.E2`, 0 sin convertir; `--verificar`; volver a correrlo tras unir ramas no cambia nada). El extractor lee cada `E2("…", "…")` fijo con el
+  árbol de TypeScript → `apps/web/lib/cms-cadenas-e2.json` (9 948 pares de 15 147 llamadas, una línea por cadena, 2,0 MB; llave
+  `<PANTALLA>.e2-<12 de la huella>`, la pantalla se queda; `donde` y `n` por cadena; 44 con candado: 911, «nadie te garantiza», El Compa IA, líneas
+  fijas y lo que un guardián exige); `scripts/cms/huella.mjs` compartido; el indexador manda las 10 294 en tandas (1,8 s la primera vez, 0,24 s sin
+  cambios). Servidor: `edicionesE2()` en `lib/cms.ts` (solo lo editado y vivo de las `.e2-`, copia de 15 s, NOTIFY la vuelve a leer al momento,
+  `instrumentation.ts` la carga al arrancar); el layout raíz la espera y la pasa a `app/_cms/EdicionesE2.tsx`, que la pone en el navegador durante
+  el render (sin parpadeo ni diferencias al hidratar). Super Admin › Cadenas: las de E2 con sus lugares («en N lugares», aviso al editar, archivos en
+  el historial), pantallas por niveles, búsqueda también por el texto del código, huérfanas fuera de la lista. Buscar.tsx y Hoy.tsx ya no leen `T`
+  (textosT en su página). Guardianes: `cadenaConLlave` (trinquete: 0 definiciones de E2 sin `dosIdiomas`, rompe el build; catálogo de E2 al día),
+  nuevo `e2PorElCms`, `lineaFijaBloqueada`/`cmsConLimite`/`idioma` también sobre las de E2; `erroresDelServidor` sigue cazando (instrumentation.ts
+  con una sola condición por función). Al revés: alreves9f3 37/37 (y alreves9f 30/30, alreves9b1 13/13, alreves9j 32/32, alreves8a 55/55, alreves9c
+  39/39, alreves9h 53/53). e2e en local (Postgres 16 tl_cms9f3, `next build` standalone en :3180, Chromium): **cms9f3** 48 ✓ (servidor y cliente,
+  390/1360, ES/EN, sin JavaScript, base caída, volver al código, candado, huérfanas), cms9f 94 ✓, fic005 21 ✓, fic006 111 ✓, fic007 22 ✓, fic008 17 ✓,
+  pan9n2 90 ✓, ofe9n 34 ✓, adm9n3 112 ✓, vec9m 50 ✓, usr9n9 14 ✓, apl9n7 30 ✓, rsvp9a 13 ✓, disp9b 57 ✓. neg9n se cortó en «Foto de la entrega
+  lista» (aquí no corre el almacén de fotos: Garage); panel, menu2b, com5e, evt6a, an1n, lay4r, pro4l, sal4i y rep2l no corrieron aquí (apuntan a :3100
+  fijo o piden los recursos de pruebas/servir/recursos.sh). Una corrida de cms9f3 de seis vio un #418 de React (diferencia de HTML, no de texto) en
+  1360 · es; no se repitió en las otras cinco ni en 96 cargas de sonda con y sin ediciones: queda para el CI de 9 dispositivos. Ayuda: `admin-textos-y-paginas`.

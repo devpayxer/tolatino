@@ -4,13 +4,14 @@
    prototipo). El aviso grande pasados puerta_offline_aviso_min sin señal es un bloque «note» del sistema (avisoSinSenal). */
 import { Icon, Tag, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import type { EstadoLocal } from "./usePuertaLocal";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export function horaLista(iso: string | null, tz: string): string {
   if (!iso) return "";
   try { return new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(iso)); } catch { return ""; }
 }
 export function EstadoPuerta({ x, es }: { x: EstadoLocal; es: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b), lista = horaLista(x.lista, x.tz);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), lista = horaLista(x.lista, x.tz);
   const [tono, t] = x.preparando && !x.listo ? (["neutral", E2("PREPARANDO", "PREPARING")] as const) : x.enLinea ? (["signal", E2("EN LÍNEA", "ONLINE")] as const) : (["danger", E2("SIN CONEXIÓN", "OFFLINE")] as const);
   const partes = [
     x.preparando && !x.listo ? E2(`Preparando la puerta${x.n ? ` · ${x.n} boletos` : "…"}`, `Preparing the door${x.n ? ` · ${x.n} tickets` : "…"}`) : null,
@@ -27,7 +28,7 @@ export function EstadoPuerta({ x, es }: { x: EstadoLocal; es: boolean }) {
 }
 /* El aviso grande: pasados puerta_offline_aviso_min sin señal (o un paquete que no se pudo bajar). */
 export function avisoSinSenal(x: EstadoLocal, es: boolean, ahora: number): Bloque[] {
-  const E2 = (a: string, b: string) => (es ? a : b), out: Bloque[] = [];
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), out: Bloque[] = [];
   if (x.error) out.push({ type: "note", tone: "warn", icon: "warning", t: es ? x.error.es : x.error.en });
   if (!x.enLinea && !x.listo && !x.preparando) out.push({ type: "note", tone: "danger", icon: "wifi", t: E2("Sin señal y sin la lista de esta puerta: escanea cuando vuelva la señal.", "No signal and no list for this door: scan when the signal is back.") });
   if (!x.enLinea && x.listo && x.desde && ahora - x.desde >= x.avisoMin * 60000) {

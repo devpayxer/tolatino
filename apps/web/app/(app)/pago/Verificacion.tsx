@@ -8,6 +8,7 @@ import * as UI from "@tolatino/ui";
 import { useState, type ComponentType } from "react";
 import { bancoSimulado, verificarPago } from "./acciones";
 import { cargarStripe, type ModoTarjeta } from "./MetodoPago";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,7 +19,7 @@ const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const K = "font-mono text-[10px] font-bold tracking-[0.16em] text-ink/60";
 
 export function Verificacion({ es, v, modo, pk, onListo, onCerrar }: { es: boolean; v: VerificarT; modo: ModoTarjeta; pk: string | null; onListo: () => void; onCerrar: () => void }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState("");
   const despues = async (r: { ok: true; listo: boolean } | { ok: false; msg: { es: string; en: string } }) => {
     if (!r.ok) { setError(es ? r.msg.es : r.msg.en); return; }

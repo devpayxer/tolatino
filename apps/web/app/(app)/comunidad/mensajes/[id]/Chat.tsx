@@ -18,6 +18,7 @@ import { useMensajesVivo } from "@/lib/vivo-cliente";
 import { LINEA988 } from "@/lib/moderacion-comun";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button" | "IconButton";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, IconButton } = UI as unknown as Record<N, ComponentType<any>>;
@@ -25,7 +26,7 @@ type Bi = { es: string; en: string };
 const primero = (n: string) => n.split(/\s+/)[0] ?? n;
 
 export function Chat({ es, yo, ciudad, c }: { es: boolean; yo: YoCom; ciudad: string; c: Conversacion | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024;
   const vec = useVecinoAcciones(es, ui);
   const [msjs, setMsjs] = useState<MsjV[]>(c?.msjs ?? []), [mas, setMas] = useState(c?.mas ?? null);

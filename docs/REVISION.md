@@ -5329,3 +5329,42 @@ y el pedido sale a ese precio. **Decidí (dime si no):**
   cobra ese precio en su caja (no se puede pedir por la app).
 - Un apartado o pedido ya enviado **conserva su precio** aunque la oferta termine (el plan de layaway también se calcula con el precio de la oferta).
 - El sustituto que propone el mercado sale al precio de oferta del cliente si ese producto tiene una.
+
+## Todas las pantallas por el CMS (18 nov) — mirar
+Lo que el LAUNCH llamaba «9f-3 · Más cadenas por el CMS»: los ~16 000 textos escritos en las pantallas (`E2("…", "…")`) ahora se editan en **Super Admin ›
+Textos y páginas › Cadenas**, sin haber reescrito ni uno. Nada se ve distinto hasta que alguien edita.
+
+**Qué mirar (sandbox, escritorio y teléfono):**
+1. Super Admin › Textos y páginas › **Cadenas**: arriba dice «N editadas · M fijas · **9 948 de las pantallas**». La fila **PANTALLA** ahora va por niveles:
+   APP (vecino), NEG (panel del negocio), PUERTA, REP (repartidor), LIB (textos compartidos), WEB, FIJAS…; al tocar una salen las de adentro
+   (APP › APP-EVENTOS › …) y «← APP» vuelve.
+2. Busca **«Publica tu evento»**: la fila dice **«en 4 lugares»**. **Editar** avisa antes de guardar: «Cambia en los 4 lugares donde aparece: eventos/Eventos,
+   eventos/publicar/Publicar». Cambia el texto (ES y EN), guarda y abre **/eventos** sin sesión: el botón ya dice lo nuevo, en el teléfono y en la computadora,
+   y con el botón ES/EN en inglés. **Historial** lista los archivos (LUGARES · 4 EN 2 ARCHIVOS).
+3. Lo mismo con **«Los datos que usamos y para qué»** (sale en /privacidad, que arma el servidor).
+4. **Volver al código** en las dos: vuelve el texto de siempre.
+5. Busca algo con el **911** o «Nadie te garantiza un resultado» en las pantallas: sale como **LÍNEA FIJA**, sin Editar.
+
+**Decidí (dime si no):**
+- **Un mismo texto es una sola cadena en todos sus lugares** (como gettext): editar «Guardar / Save» lo cambia en todas las pantallas que lo dicen. Por eso la
+  fila dice en cuántos lugares está y editar lo avisa con los archivos. Si algún día hace falta que un lugar diga otra cosa, se le da su propio texto en el código.
+- **Solo se editan los textos fijos.** Un texto que se arma con un dato (`E2(\`Hola ${nombre}\`, …)`, unos 2 000) sigue saliendo del código.
+- **Llave** `<PANTALLA>.e2-<12 de la huella del par>`: la pantalla sale del archivo donde más se usa la primera vez que aparece y **se queda** (que el texto se
+  use en otra pantalla no cambia su llave ni pierde lo editado). Si el código cambia el texto, es otra cadena: la edición vieja queda en la base y en el
+  historial (nada se borra) y ya no se lista.
+- **Candado automático** a los textos de las pantallas que dicen el 911, «Nadie te garantiza un resultado», que El Compa es una IA, que contienen una línea
+  fija (por ejemplo «Nada se hace ni se cobra sin tu OK») o que un guardián exige palabra por palabra («Hablar con una persona», «Enviar», «EL COMPA · IA»…):
+  44 en total. Solo cambian con el código.
+- **Al navegador viaja solo lo editado** (unos 100 bytes por texto editado), con la página, antes de pintar: sin parpadeo y sin errores al hidratar
+  (comprobado con JavaScript apagado: el primer HTML ya trae lo editado).
+- Si la base no responde, sale el texto del código (como las demás cadenas).
+- **Las islas sin señal** (/app/sin-senal, /cuenta/boletos/sin-conexion, /puerta/sin-conexion, /repartidor/sin-conexion) y /sistema se arman en el build:
+  salen con el texto del código hasta el siguiente despliegue.
+- **Buscar y Hoy en el barrio** ya no leen el diccionario directo: su página les pasa los textos con lo editado (antes el LAUNCH los dejaba fuera).
+- Velocidad: sin ediciones, cada texto cuesta lo mismo que antes (~10 ns más por llamada); con ediciones, ~25 ns por llamada (unos 50 µs en una pantalla de
+  2 000 textos). Medido en local (build de producción, mediana de 15): el tiempo hasta el primer byte de /, /eventos, /privacidad, /buscar, la ficha y Hoy
+  no cambia con 0 o con 50 textos editados (dentro del ruido: 60/23/25/215/55/15 ms); cada página pesa ~5 KB más con 50 editados (~100 bytes por texto).
+  El catálogo de las pantallas (2,0 MB) solo lo carga el servidor al abrir Cadenas (nunca el navegador); el despliegue indexa las 10 294 cadenas en 1,8 s la primera vez y 0,24 s
+  después (sin cambios).
+- Quien escribe código: después de tocar un `E2("…", "…")` corre `node scripts/cms/extraer.mjs` (el guardián `cadenaConLlave` lo pide); un `E2` nuevo se define
+  con `dosIdiomas` (o corre `node scripts/cms/e2-al-cms.mjs`, que lo convierte; se puede correr las veces que sea).

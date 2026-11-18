@@ -10,6 +10,7 @@ import { useEffect, useRef, useState, type ComponentType, type CSSProperties, ty
 import { olvidarSinConexion } from "@/lib/boletos-sin-conexion";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button" | "Chip" | "Tag" | "NeighborCard" | "CompleteAccount" | "WeekAgenda" | "BusinessRow";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, Tag, NeighborCard, CompleteAccount, WeekAgenda, BusinessRow } = UI as unknown as Record<N, ComponentType<any>>;
@@ -82,7 +83,7 @@ export function Marco({ es, code, t, s, back, act, blocks, rcards = [], bar, yo,
   es: boolean; code: string; t: string; s: string; back?: string | null; act?: { l: string; ic: string; on: Fn }; blocks: (Bloque | null | false)[]; rcards?: Tarjeta[];
   bar?: [string, string, Fn, boolean?][]; yo: Yo; ui: ReturnType<typeof useCuentaUi>; home?: boolean;
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const W = useAnchoCuenta(), D = W >= 1024, M = !D, c3 = W >= 1200, c1 = W < 960;
   const activo = code;

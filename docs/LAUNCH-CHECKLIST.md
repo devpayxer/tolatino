@@ -1599,10 +1599,16 @@ en el momento. Se marca solo cuando está hecho de verdad.
       hace lo mismo, sin la semilla 0053: allí la base es producción y nada se publica sin el abogado. (9e, 14 nov)
 
 ## Fase 9 · 9f — Textos y páginas completo: cadenas, rótulos, Home por ciudad, anuncios (14 nov)
-- [ ] **→ 9f** · **9f-3 · Más cadenas por el CMS:** hoy salen por el CMS el diccionario general `T` (Inicio, ficha, galería, categorías, Negocios y el menú), el texto del Inicio
+- [x] **→ 9f** · **9f-3 · Más cadenas por el CMS:** hoy salen por el CMS el diccionario general `T` (Inicio, ficha, galería, categorías, Negocios y el menú), el texto del Inicio
       (`lib/textos-home.ts`), las líneas fijas y el nombre de la cuenta borrada: 214 cadenas. Quedan ~16 000 `E2("…","…")` escritos a mano en `apps/web` (el trinquete
       `cadenaConLlave` los cuenta: tope 16129, solo aviso hasta TOLATINO_FASE=9; cada pantalla migrada se anota en su lista `MIGRADAS` y ahí no puede quedar ninguno) y los
-      componentes de cliente `Buscar.tsx` y `Hoy.tsx` leen `T` directo. Migrarlas pantalla por pantalla (cada una con su captura). (9f, 14 nov)
+      componentes de cliente `Buscar.tsx` y `Hoy.tsx` leen `T` directo. Migrarlas pantalla por pantalla (cada una con su captura). (9f, 14 nov) — **✓ 9f-3 (18 nov):** todas las pantallas leen el CMS sin reescribir sus textos. Cada E2 local pasa por
+      `dosIdiomas` (lib/dos-idiomas.ts; el codemod scripts/cms/e2-al-cms.mjs convirtió las 262 definiciones de 198 archivos, 0 sin convertir; 9 pasan el de otro) y
+      cada par fijo E2("…", "…") es una cadena del catálogo `apps/web/lib/cms-cadenas-e2.json` (9 948 pares de 15 147 llamadas, llave `<PANTALLA>.e2-<huella>`, 44
+      con candado) que el despliegue indexa con las demás (10 294 filas). El servidor carga solo lo editado (edicionesE2) y el layout raíz lo pasa al navegador
+      (EdicionesE2): sin parpadeo ni diferencias al hidratar. Buscar.tsx y Hoy.tsx ya no leen `T` (textosT en su página). El trinquete de `cadenaConLlave` ahora
+      cuenta definiciones de E2 sin `dosIdiomas`: tope 0, rompe el build; guardián nuevo `e2PorElCms`. alreves9f3 37/37, cms9f3 48 ✓, cms9f 94 ✓. Lo que no se
+      edita: los E2 con `${…}` (siguen saliendo del código) y las islas estáticas sin señal (salen con el texto del código hasta el siguiente build).
 - [x] **→ 9f** · **9f-4 · El resto del Super Admin en inglés:** el mecanismo está y Textos y páginas ya sale completo; faltan los demás módulos (Colas, Usuarios, Negocios,
       Transacciones, Soporte, El Compa, Contenido, Eventos y boletos, Planes, Notificaciones, Confianza, Analítica, Sistema…) y las piezas compartidas
       (`ConfirmarMotivo`/`ReasonConfirm`, `Toast`, `Shell`: su «Confirmar», «Volver», «Guardando…» y el menú siguen en español). Las líneas de 5i, 6a, 6b, 6c, 6j y 7g de arriba se cierran

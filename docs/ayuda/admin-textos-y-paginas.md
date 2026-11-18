@@ -3,7 +3,7 @@
 _Pantallas: **Super Admin › Textos y páginas** (`/admin/textos`) con sus cinco pestañas: **Ayuda**, **Páginas**, **Cadenas** (`/admin/textos/cadenas`), **Rótulos**
 (`/admin/textos/rotulos`) y **Home por ciudad** (`/admin/textos/home`, con **Anuncios**). Ver: Textos y páginas · ver. Editar cadenas, rótulos, el Inicio y los
 anuncios: Textos y páginas · editar. Marcar el inglés revisado, publicar páginas legales y encender el pie de la web: Textos y páginas · aprobar. Escritorio y
-teléfono. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
+teléfono. Versión: 18 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Cadenas:** cada texto de la interfaz tiene una llave (`ÁREA-MÓDULO-PANTALLA.clave`, por ejemplo `APP-HOME.comunidad`). El código es la fuente; el despliegue
@@ -16,6 +16,17 @@ teléfono. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
   - **Historial:** cada versión con quién la hizo y por qué (la base lo escribe sola; no se puede cambiar).
   - **Líneas fijas** (el 911 de Salud, «Nadie te garantiza un resultado», la de cada categoría y las frases fijas del plan: exportar mis datos, borrar mi cuenta,
     mantenimiento, la doble verificación del equipo, la landing): llevan **candado**. No se editan desde aquí ni por la base; solo cambian con el código.
+  - **Los textos de todas las pantallas** (desde el 18 nov): además de las cadenas con llave, Cadenas trae **cada texto escrito en las pantallas** (unos diez mil:
+    la ficha, el panel del negocio, Mi cuenta, la Comunidad, Eventos, la Puerta, el Repartidor…). Su llave termina en `.e2-` y un código (por ejemplo
+    `NEG-PANEL-MENU.e2-3fa9c01b2d4e`); la parte de adelante dice la pantalla donde más se usa. **Un mismo texto es una sola cadena en todos los lugares donde
+    aparece**: «Guardar / Save» se edita una vez y cambia en todas las pantallas que lo dicen. Cada fila dice **en cuántos lugares** está; al editar uno que está
+    en varios, la pantalla lo avisa con los archivos antes de guardar; el **Historial** lista todos los lugares.
+  - Solo se editan los textos **fijos**. Un texto que se arma con un dato (un nombre, una cantidad, una fecha) sigue saliendo del código.
+  - También llevan candado los textos de las pantallas que dicen el 911, «Nadie te garantiza un resultado», que El Compa es una IA, que contienen una línea
+    fija, o que una revisión automática exige palabra por palabra (por ejemplo «Hablar con una persona»).
+  - **Pantalla:** se recorre por niveles: **APP** (lo del vecino), **NEG** (el panel del negocio), **PUERTA**, **REP** (el repartidor), **LIB** (textos que
+    comparten varias pantallas), **WEB**, **FIJAS**… Al elegir una aparecen las de adentro (APP › APP-FICHA › APP-FICHA-MERCADO); **← arriba** vuelve.
+  - La búsqueda encuentra un texto por lo que dice ahora **o** por lo que dice el código.
 - **Rótulos:** el nombre y el nombre corto de cada categoría, en los dos idiomas. El nombre corto en español es la dirección de la categoría (`/c/…`): no se
   cambia. La línea fija de cada categoría se ve con su candado.
 - **Home por ciudad:** por ciudad, el **aviso** del Inicio (ES/EN), los **bloques** (categorías, Hoy en el barrio, Abierto ahora, Esta semana, Comunidad,
@@ -36,6 +47,7 @@ teléfono. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Cómo se usa
 1. **Corregir un texto:** Cadenas › busca la llave o el texto › **Editar** › escribe los dos idiomas › el motivo › **Guardar el texto**. Míralo en la web.
+   Si la fila dice «en N lugares», el cambio sale en todos: revisa la lista antes de guardar.
 2. **Deshacer:** **Volver al código** (o **Dejar en borrador** si lo quieres guardar para después).
 3. **Un aviso para una ciudad:** Home por ciudad › elige la ciudad › escribe el aviso o crea un anuncio con sus fechas › **Guardar**.
 4. **Apagar un bloque o cambiar su orden:** Home por ciudad › el interruptor del bloque o **Subir / Bajar** › **Guardar el Inicio de la ciudad**.
@@ -46,6 +58,9 @@ teléfono. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
 | Quitas o inventas una marca `{n}` | No se guarda: «conserva las marcas». La base también lo rechaza. |
 | Te pasas del largo máximo | No se guarda (la pantalla ni deja escribir más). |
 | Una línea fija | Sin botón de editar; la base rechaza el cambio. |
+| Editas un texto de las pantallas que está en varios lugares | Cambia en todos a la vez (teléfono y computadora, español e inglés); la pantalla avisa en cuántos antes de guardar. |
+| El código cambia un texto de las pantallas que editaste | Es otro texto: sale el nuevo del código y tu edición deja de verse (queda en la base y en el historial, sin borrarse; ya no se lista). |
+| Un texto que se arma con un dato (un nombre, una fecha) | No está en Cadenas: sigue saliendo del código. |
 | Un despliegue trae un texto nuevo en el código | Lo que no editaste se actualiza; lo que editaste se respeta, salvo que ya no quepa o pierda una marca: entonces vuelve al código. |
 | Un anuncio vence o lo retiras | Deja de salir solo; queda en la lista. |
 | Un anuncio «solo vecinos» | Sale únicamente con sesión iniciada. |
@@ -53,8 +68,10 @@ teléfono. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
 | Tu rol no tiene Textos y páginas | No entra a ninguna pestaña. |
 
 ## Preguntas frecuentes
-- **¿Por qué un texto se ve igual si lo edité?** Puede estar en borrador, o ser un texto que todavía no sale por el CMS (hoy salen el Inicio, la ficha del negocio, la galería,
-  las categorías, Negocios y el menú de la web; el resto de la interfaz se mueve poco a poco). La lista de Cadenas es la de los que sí.
+- **¿Por qué un texto se ve igual si lo edité?** Puede estar en borrador, o ser un texto que se arma con un dato (no se edita). Desde el 18 nov **todas las
+  pantallas** leen lo editado: la lista de Cadenas es la de lo que se puede editar. Las páginas que funcionan sin señal (las islas guardadas en el teléfono)
+  salen con el texto del código hasta el siguiente despliegue.
+- **¿Por qué «Guardar» cambió en otra pantalla?** Porque es el mismo texto: una cadena de las pantallas es una sola en todos sus lugares (la fila dice cuántos).
 - **¿Se pierde una edición al desplegar?** No, salvo que ya no quepa en su lugar o pierda una marca.
 - **¿Quién puede ver el historial?** Todo el equipo con Textos y páginas · ver.
 
@@ -70,6 +87,17 @@ teléfono. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
   - **History:** every version with who made it and why (the database writes it on its own; it cannot be changed).
   - **Fixed lines** (the 911 line for Health, “No one can guarantee you a result”, each category's line and the plan's fixed sentences: export my data, delete my
     account, maintenance, team two-step sign-in, the landing): they carry a **lock**. They are not edited here or in the database; they only change with the code.
+  - **The text of every screen** (since Nov 18): besides the keyed strings, Strings brings **every text written in the screens** (about ten thousand: the
+    listing, the business dashboard, My account, Community, Events, the Door, the Courier…). Their key ends in `.e2-` and a code (for example
+    `NEG-PANEL-MENU.e2-3fa9c01b2d4e`); the front part says the screen where it is used most. **The same text is a single string in every place it appears**:
+    “Guardar / Save” is edited once and changes on every screen that says it. Each row says **in how many places** it is; when you edit one that is in several,
+    the screen warns you with the files before saving; the **History** lists every place.
+  - Only **fixed** texts can be edited. A text built with a piece of data (a name, an amount, a date) keeps coming from the code.
+  - Screen texts that mention 911, “No one can guarantee you a result”, that El Compa is an AI, that contain a fixed line, or that an automatic check requires
+    word for word (for example “Talk to a person”) are locked too.
+  - **Screen:** browse by levels: **APP** (neighbors), **NEG** (business dashboard), **PUERTA** (the Door), **REP** (courier), **LIB** (text shared by several
+    screens), **WEB**, **FIJAS**… Choosing one shows the ones inside it (APP › APP-FICHA › APP-FICHA-MERCADO); **← up** goes back.
+  - Search finds a text by what it says now **or** by what the code says.
 - **Labels:** each category's name and short name, in both languages. The short Spanish name is the category address (`/c/…`): it does not change. Each category's
   fixed line shows with its lock.
 - **City Home:** per city, the Home **notice** (ES/EN), the **blocks** (categories, Today nearby, Open now, This week, Community, Publish your business) on or off
@@ -91,6 +119,7 @@ teléfono. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ### How to use it
 1. **Fix a text:** Strings › search the key or the text › **Edit** › write both languages › the reason › **Save the text**. Look at it on the web.
+   If the row says “in N places”, the change shows in all of them: check the list before saving.
 2. **Undo:** **Restore code text** (or **Keep as draft** if you want to keep it for later).
 3. **A notice for a city:** City Home › choose the city › write the notice or create an announcement with its dates › **Save**.
 4. **Turn a block off or change its order:** City Home › the block's switch or **Up / Down** › **Save the city Home**.
@@ -101,6 +130,9 @@ teléfono. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
 | You remove or invent a `{n}` mark | It is not saved: “keep the marks”. The database rejects it too. |
 | You go over the maximum length | It is not saved (the screen does not even let you type more). |
 | A fixed line | No edit button; the database rejects the change. |
+| You edit a screen text that is in several places | It changes in all of them at once (phone and computer, Spanish and English); the screen says how many before saving. |
+| The code changes a screen text you edited | It is a different text: the new code text shows and your edit stops showing (it stays in the database and the history, never deleted; it is no longer listed). |
+| A text built with a piece of data (a name, a date) | It is not in Strings: it keeps coming from the code. |
 | A deploy brings new text in the code | What you did not edit updates; what you edited is kept, unless it no longer fits or loses a mark: then it goes back to the code. |
 | An announcement expires or you retire it | It stops showing on its own; it stays in the list. |
 | A “neighbors only” announcement | It only shows when signed in. |
@@ -108,7 +140,8 @@ teléfono. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
 | Your role does not have Copy and pages | It cannot open any tab. |
 
 ### FAQ
-- **Why does a text look the same after I edited it?** It may be a draft, or a text that does not go through the CMS yet (today Home, the business listing, the gallery,
-  categories, Businesses and the web menu do; the rest of the interface moves over little by little). The Strings list shows the ones that do.
+- **Why does a text look the same after I edited it?** It may be a draft, or a text built with a piece of data (not editable). Since Nov 18 **every screen**
+  reads the edits: the Strings list is what can be edited. Pages that work offline (the islands saved on the phone) show the code's text until the next deploy.
+- **Why did “Save” change on another screen?** Because it is the same text: a screen string is one string in all its places (the row says how many).
 - **Is an edit lost on deploy?** No, unless it no longer fits its spot or loses a mark.
 - **Who can see the history?** Everyone on the team with Copy and pages · view.

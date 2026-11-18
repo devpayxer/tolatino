@@ -10,6 +10,7 @@ import { K } from "./PasosBC";
 
 import { tec } from "@/lib/tec";
 import { DireccionCampo } from "@/app/_dir/DireccionCampo";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button" | "Chip" | "OptionCard" | "SelectBox" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, OptionCard, SelectBox, Tag } = UI as unknown as Record<N, ComponentType<any>>;
@@ -18,7 +19,7 @@ type Up = (p: Partial<Borrador> | ((d: Borrador) => Partial<Borrador>)) => void;
 const precio = (v: string) => { const t = String(v).replace(/[^\d.]/g, "").slice(0, 9); return t === "" ? 0 : t.endsWith(".") ? t : +t; };
 
 export function PasoD1({ d, up, es }: { d: Borrador; up: Up; es: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [add, setAdd] = useState<{ open: boolean; n: string; p: string }>({ open: false, n: "", p: "" });
   const R = rows(d), on = R.filter((r) => r.on).length + (d.cust || []).length;
   const setRow = (key: string, patch: Record<string, unknown>) => up((z) => ({ sel: { ...z.sel, [key]: { ...(z.sel || {})[key], ...patch } } }));
@@ -87,7 +88,7 @@ export function PasoD1({ d, up, es }: { d: Borrador; up: Up; es: boolean }) {
 }
 
 export function PasoE1({ d, up, es, ciudad, irA }: { d: Borrador; up: Up; es: boolean; ciudad: string; irA: (p: "C1") => void }) {
-  const E2 = (a: string, b: string) => (es ? a : b), f = F(d), o = own(d), op = opOf(d), zone = zoneOf(d), c = d.cat ? X.CFG[d.cat] : null;
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), f = F(d), o = own(d), op = opOf(d), zone = zoneOf(d), c = d.cat ? X.CFG[d.cat] : null;
   const [hostQ, setHostQ] = useState(""), [hosts, setHosts] = useState<{ id: string; name: string; addr: string; foto: string | null }[]>([]);
   const [abierto, setAbierto] = useState(-1);
   const rento = op === "rento";

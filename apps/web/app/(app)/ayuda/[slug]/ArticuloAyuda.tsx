@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import type { ComponentType, ReactNode } from "react";
 import type { Articulo, FilaAyuda, Seccion, Tema } from "@/lib/compa/ayuda-indice";
 import { Md, type Visibles } from "../md";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Button = UI.Button as ComponentType<any>, Icon = UI.Icon as ComponentType<any>;
@@ -16,7 +17,7 @@ type Bi = { es: string; en: string };
 const MES_EN: Record<string, string> = { ene: "Jan", feb: "Feb", mar: "Mar", abr: "Apr", may: "May", jun: "Jun", jul: "Jul", ago: "Aug", sep: "Sep", oct: "Oct", nov: "Nov", dic: "Dec" };
 
 export function ArticuloAyuda({ es, ver, a, tema, mismos, vis, conSesion }: { es: boolean; ver: "es" | "en"; a: Articulo; tema: Tema | null; mismos: FilaAyuda[]; vis: Visibles; conSesion: boolean }) {
-  const E2 = (x: string, y: string) => (es ? x : y), L = (x: Bi) => (es ? x.es : x.en || x.es);
+  const E2 = (x: string, y: string) => dosIdiomas(es, x, y), L = (x: Bi) => (es ? x.es : x.en || x.es);
   const router = useRouter();
   const enIngles = ver === "en", V = (x: string, y: string) => (enIngles ? y : x);
   const secs = a.secciones[ver].length ? a.secciones[ver] : a.secciones[ver === "en" ? "es" : "en"];

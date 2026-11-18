@@ -10,9 +10,10 @@ import { estadoBoleto } from "../../eventos/orden/[num]/Orden";
 import { boletosParaGuardar } from "./acciones-wallet";
 import { useEffect } from "react";
 import { sinRed } from "@/lib/nativo/senal";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export function MisBoletos({ d, f, es, yo }: { d: MB; f: "proximos" | "pasados"; es: boolean; yo: Yo }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   useEffect(() => { registrarSWBoletos(); recordarIdioma(es); }, [es]);   // 6h · los boletos que abras con señal se ven sin señal
   // 9m · Y TODOS los próximos, sin abrirlos uno por uno (L896): con señal, cada QR vivo se guarda cifrado en el teléfono (como al abrirlo).

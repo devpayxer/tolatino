@@ -10,6 +10,7 @@ import { useEffect, useState, type ComponentType, type MouseEvent } from "react"
 import type { MercPublico, ProdMerc } from "@/lib/merc-publico";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { PrecioAntes } from "./PrecioAntes";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,7 +31,7 @@ export function leerCarritoMerc(): CarritoMerc | null {
 export function guardarCarritoMerc(c: CarritoMerc | null) { try { if (c && c.lines.length) localStorage.setItem(CLAVE, JSON.stringify(c)); else localStorage.removeItem(CLAVE); } catch { /* sin almacenamiento: vive en la pantalla */ } }
 
 export function useMerc(mp: MercPublico | null, es: boolean) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [hoja, setHoja] = useState<string | null>(null);
   const [cart, setCart] = useState<CarritoMerc | null>(null);

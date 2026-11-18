@@ -10,6 +10,7 @@ import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../p
 import { apartarLaRenta } from "./acciones";
 import { uuid } from "@/lib/uuid";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,7 +26,7 @@ const hL = (h: string) => { const [a, b] = h.split(":").map(Number); const H = (
 const addD = (f: string, n: number) => { const d = new Date(`${f}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 
 export function Rentar({ o, es, yo, pago }: { o: OpcionesRenta; es: boolean; yo: boolean; pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [dias, setDias] = useState<number>(1), [pick, setPick] = useState(o.dias[0]?.f ?? null);
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas.find((t) => t.def) ?? pago?.tarjetas[0] ?? null);
   const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);

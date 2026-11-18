@@ -11,6 +11,7 @@ import { registrarToque } from "../acciones";
 
 import { tec } from "@/lib/tec";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button" | "Chip" | "BusinessRow";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, BusinessRow } = UI as unknown as Record<N, ComponentType<any>>;
@@ -34,7 +35,7 @@ function useAncho() {
 }
 
 export function Mapa({ v }: { v: VistaMapa }) {
-  const es = v.lang === "es", E2 = (a: string, b: string) => (es ? a : b);
+  const es = v.lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ruta = usePathname(), sp = useSearchParams();
   const dw = useAncho(), desk = dw >= 1024, wide = desk && dw >= 960;
   const [sel, setSel] = useState<string | null>(null), [hov, setHov] = useState<string | null>(null);

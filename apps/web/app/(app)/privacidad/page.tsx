@@ -3,6 +3,7 @@ import { privacidadDelMapa } from "@/lib/datos/mapa";
 import { metadatos, PaginaLegal } from "../_legal/PaginaLegal";
 import INV from "../../../../mobile/inventario-datos.json";
 import APPS from "../../../../mobile/apps.json";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export const dynamic = "force-dynamic";
 export const generateMetadata = metadatos("privacidad");
@@ -20,7 +21,7 @@ const MONO = "'JetBrains Mono',monospace";
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ l?: string }> }) {
   const [sp, lang, M] = await Promise.all([searchParams, idioma(), privacidadDelMapa()]);
-  const v = sp.l === "en" || sp.l === "es" ? sp.l : lang, es = v === "es", E2 = (a: string, b: string) => (es ? a : b), L = (x: Bi) => (es ? x.es : x.en);
+  const v = sp.l === "en" || sp.l === "es" ? sp.l : lang, es = v === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b), L = (x: Bi) => (es ? x.es : x.en);
   const tarjeta = "rounded-[18px] border border-ink/[.07] bg-white p-[18px] flex flex-col gap-2.5";
   const h2 = "m-0 font-display text-[17px] font-extrabold leading-[1.25] tracking-[-0.02em]";
   const p = "m-0 text-[14px] leading-[1.55] text-ink/75";

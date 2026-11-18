@@ -14,6 +14,7 @@ import { AVISO_NOTA, LICENCIA, QUE, QUIEN, TENGO_LICENCIA, diaVis, horaVis, solo
 import type { BookingVis } from "@/lib/visitas-inm";
 import { pedirVisitaAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "PaymentSummary";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,7 +34,7 @@ function pie(es: boolean) {
 }
 
 export function Visita({ b, es, yo }: { b: BookingVis; es: boolean; yo: boolean }) {
-  const E2 = (a: string, z: string) => (es ? a : z), nm = (x: Bi | null | undefined) => (x ? (es ? x.es : x.en || x.es) : "");
+  const E2 = (a: string, z: string) => dosIdiomas(es, a, z), nm = (x: Bi | null | undefined) => (x ? (es ? x.es : x.en || x.es) : "");
   const router = useRouter();
   const it = b.item, Q = QUE[it.que], cp = it.copia, llamada = soloLlamada(it.que), prueba = it.que === "prueba";
   const dias = useMemo(() => [...new Set(b.horas.map((h) => h.dia))], [b.horas]);

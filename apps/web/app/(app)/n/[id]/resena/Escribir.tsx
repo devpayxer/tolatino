@@ -10,6 +10,7 @@ import type { ParaEscribir, Respuestas, Tarjeta } from "@/lib/resenas";
 import { subirFoto } from "@/lib/subir-foto";
 import { publicarResena } from "../acciones-resena";
 import { propsTarjeta } from "../Resenas";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "Tag" | "ReviewCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,7 +23,7 @@ type Foto = { id: string; url: string };
 
 export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: boolean; nombre: string; estrellas: number }) {
   const router = useRouter();
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const m = d.mia, b = d.negocio, editar = !!m;
   const [src, setSrc] = useState<"op" | "vis">(m ? (m.src === "vis" ? "vis" : "op") : d.op ? "op" : "vis");
   const [stars, setStars] = useState(m?.stars ?? estrellas);

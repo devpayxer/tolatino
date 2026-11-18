@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ComponentType, type MouseEvent } from "react";
 import type { CitasPublica, PersonaPub, ServicioPub } from "@/lib/citas";
 import { proximasHoras } from "./acciones-cita";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Tag" | "OptionGroup" | "AddOnRow" | "StaffPicker" | "DepositNote" | "ReservationCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,7 +48,7 @@ export function citaUrl(negocio: string, h: Hoja) {
 }
 
 export function useSvc(cp: CitasPublica | null, es: boolean, sillaFija: string | null = null) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [modo, setModo] = useState<"svc" | "pro">("svc");
   const [fijo, setFijo] = useState<string | null>(sillaFija); // en la página de una silla, siempre esa persona // «Por barbero › Booking»: los servicios de esa persona, con sus precios

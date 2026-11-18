@@ -8,6 +8,7 @@ import { useEffect, useState, type ComponentType } from "react";
 import type { ResumenResenas, Tarjeta } from "@/lib/resenas";
 import { masResenas, reportarRes, utilResena } from "./acciones-resena";
 import { LineaTr, useTraducir, type Tr } from "../../Traducir";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "ReviewCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,7 +34,7 @@ const SRC: Record<Tarjeta["src"], [string, string, string]> = {
 
 /* Lo que dice la tarjeta de los datos (revCard · Comida): cómo llegó, a tiempo / N min tarde, cuánto esperó, precio. */
 function hechos(c: Tarjeta, es: boolean) {
-  const E2 = (a: string, b: string) => (es ? a : b), dl = c.src === "dl", ord = c.src === "dl" || c.src === "pk", f: { icon: string; label: string; color: string }[] = [];
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), dl = c.src === "dl", ord = c.src === "dl" || c.src === "pk", f: { icon: string; label: string; color: string }[] = [];
   // Hogar y Auto (4g): el dato de la visita (franja, lo cotizado contra lo cobrado, algo extra con su OK) y lo que contestó.
   const A = c.answers, F = c.facts;
   // Noche (4nd · L87–91): cover el publicado / cobraron más, fila como decía / más larga, reglas, seguro, música, trato en la puerta.
@@ -133,7 +134,7 @@ function hechos(c: Tarjeta, es: boolean) {
 /* Tarjeta → props de ReviewCard (e1 · rev). summary = forma corta del Resumen; preview = sin pie (estado, vista previa). */
 export function propsTarjeta(c: Tarjeta, o: { es: boolean; negocio: string; summary?: boolean; preview?: boolean; helpOn?: boolean; help?: number; reported?: boolean;
   onHelp?: () => void; onRep?: () => void; onEdit?: () => void; onPhoto?: (i: number) => void; padding?: number; bodySize?: number; tr?: Tr }) {
-  const E2 = (a: string, b: string) => (o.es ? a : b), S = !!o.summary, foot = !o.preview && !S;
+  const E2 = (a: string, b: string) => dosIdiomas(o.es, a, b), S = !!o.summary, foot = !o.preview && !S;
   // 5h · «Ver traducción» bajo la reseña y bajo la respuesta del negocio si están en el otro idioma (nunca en la propia ni en la vista previa).
   const tb = o.tr && !o.preview ? o.tr("review", c.id, c.lang, c.body, c.mine) : { body: c.body, translate: undefined };
   const tp = c.reply && o.tr && !o.preview ? o.tr("review_reply", c.id, c.reply.lang, c.reply.text) : null;
@@ -222,7 +223,7 @@ function Verif({ v }: { v: CtlResenas }) {
   );
 }
 export function aspectos(v: CtlResenas) {
-  const { r, es } = v, a = r.asp, dlv = r.negocio.dlv, E2 = (x: string, y: string) => (es ? x : y);
+  const { r, es } = v, a = r.asp, dlv = r.negocio.dlv, E2 = (x: string, y: string) => dosIdiomas(es, x, y);
   const z = r.aspSP;
   if (z) {
     const P = (k: string) => z.v[k] ?? null;
@@ -410,7 +411,7 @@ export function ResResumen({ v, desk, onAll }: { v: CtlResenas; desk: boolean; o
 /* Pestaña Reseñas (Pro): cifras y barras (tocar una barra filtra), verificadas, lo que importa, tu pedido de hoy, los más
    recomendados, filtros, orden, tarjetas de 6 en 6 y cómo funcionan. */
 export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMenu: () => void }) {
-  const { r, es } = v, E2 = (a: string, b: string) => (es ? a : b);
+  const { r, es } = v, E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [q, setQ] = useState<{ f: string; star: number; sort: string }>({ f: "all", star: 0, sort: "rec" });
   const [lista, setLista] = useState<{ cards: Tarjeta[]; n: number; cursor: string | null } | null>(null);
   const [cargando, setCargando] = useState(false);
@@ -583,7 +584,7 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
 
 /* Capas: la hoja «Reportar reseña» y el visor de fotos. En escritorio la hoja va al centro. */
 export function ResCapas({ v }: { v: CtlResenas }) {
-  const { rep, setRep, pv, setPv, es } = v, E2 = (a: string, b: string) => (es ? a : b);
+  const { rep, setRep, pv, setPv, es } = v, E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const WHY: [string, string][] = [["fake", E2("No fue cliente o es falsa", "Not a real customer, or fake")], ["off", E2("Ofensiva o discriminatoria", "Offensive or discriminatory")],
     ["pii", E2("Tiene datos personales", "Contains personal data")], ["spam", E2("Spam o publicidad", "Spam or advertising")],
     ["coi", E2("La escribió el dueño o la competencia", "Written by the owner or a competitor")], ["otro", E2("Otra cosa", "Something else")]];

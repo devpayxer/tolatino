@@ -11,6 +11,7 @@ import { diaFiesta, dispoFiesta, EVT, findes, GUESTS, LINEA_FIESTA, metaFiesta, 
 import type { FiestaPublico } from "@/lib/fiestas-publico";
 import { tuFechaGuardar } from "./acciones-fiesta";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,7 +25,7 @@ const leerLocal = (): TuFecha | null => { try { const x = JSON.parse(localStorag
 const guardarLocal = (f: TuFecha) => { try { localStorage.setItem(LLAVE, JSON.stringify(f)); } catch { /* sin almacenamiento: solo esta vista */ } };
 
 export function useFiesta(fp: FiestaPublico | null, es: boolean, pro: boolean) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [hoja, setHoja] = useState<string | null>(null);
   const [fechaHoja, setFechaHoja] = useState(false);

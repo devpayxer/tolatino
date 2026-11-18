@@ -7,6 +7,7 @@ import type { Hilo } from "@/lib/mensajes";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
 import { diaCorto, horaDe } from "../fechas";
 import { useAhora } from "@/lib/ahora";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 const TZ = "America/New_York";
 /* Los avisos del sistema se guardan en los dos idiomas («es · en»): se muestra el de la pantalla. */
@@ -21,7 +22,7 @@ export function cuando(iso: string, es: boolean, ahora: number) {
 
 export function Mensajes({ d, es, yo, pagina }: { d: { hilos: Hilo[]; mas: string | null }; es: boolean; yo: Yo; pagina: boolean }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const T = d.hilos, nuevos = T.filter((t) => t.unread).length;
   const B: Bloque[] = [

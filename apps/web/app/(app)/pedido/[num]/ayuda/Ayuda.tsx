@@ -9,6 +9,7 @@ import type { ItemAyuda, Motivo, Quiere } from "@/lib/ayuda";
 import type { PedidoVista } from "@/lib/pedir";
 import { horasTxt } from "@/lib/plazo-txt";
 import { ayudaPedir } from "../acciones";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,7 +19,7 @@ const caja = "rounded-[18px] border border-ink/[.07] bg-white p-[15px]";
 const POR_PLATO = new Set<Motivo>(["falta", "equivocado", "frio", "danado"]);
 
 export function Ayuda({ p, puede, delivery, lineas, plazoH, es }: { p: PedidoVista; puede: boolean; delivery: boolean; lineas: ItemAyuda[]; plazoH: number; es: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [k, setK] = useState<Motivo | null>(null), [sel, setSel] = useState<Record<string, number>>({}), [quiere, setQuiere] = useState<Quiere>("avisar");
   const [txt, setTxt] = useState(""), [paso, setPaso] = useState(0), [error, setError] = useState(""), [enviando, setEnviando] = useState(false);

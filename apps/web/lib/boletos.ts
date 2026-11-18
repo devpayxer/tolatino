@@ -9,6 +9,7 @@ import { db, tx } from "./db";
 import { ENTORNO } from "./entorno";
 import { bi, diaCorto, dinero, sumarDias, valeL, type Bi } from "./evt-comun";
 import { pasarela } from "./pagos/pasarela";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 /* 6c · Boletos, mesas, extras y códigos: apartar, comprar en nuestra hoja, el boleto y Mis boletos (fase6-eventos.md §3 y §4 6c).
    El servidor decide TODO: precio, existencias, apartado, código, comisión y quién ve qué. El teléfono manda ids y cantidades
@@ -72,7 +73,7 @@ export function estadoDe(v: FilaVenta): EstadoVenta | null {
   return "abierta";
 }
 export function textoVenta(e: EstadoVenta, hasta: string, es: boolean): string {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   return e === "pausada" ? E2("El organizador pausó la venta por ahora. Los que compraron entran igual.", "The organizer paused sales for now. Those who bought still get in.")
     : e === "cerrada" ? E2(`La venta en línea cerró (${hasta}). En la puerta no se venden boletos.`, `Online sales closed (${hasta}). No tickets are sold at the door.`)
     : e === "pasado" ? E2("Este evento ya terminó.", "This event has ended.")

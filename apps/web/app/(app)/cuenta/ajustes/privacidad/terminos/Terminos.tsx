@@ -3,9 +3,10 @@
    Mi cuenta —nota, filas y vacío—). Cada término con su versión y su fecha; solo lo que quedó anotado. */
 import type { Aceptado } from "@/lib/datos/terminos";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../../../Marco";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export function Terminos({ es, yo, L }: { es: boolean; yo: Yo; L: Aceptado[] }) {
-  const E2 = (a: string, b: string) => (es ? a : b), ui = useCuentaUi();
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), ui = useCuentaUi();
   const dia = (iso: string) => new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "short", year: "numeric" }).format(new Date(iso)).replace(/\./g, "");
   const B: Bloque[] = [
     { type: "note", tone: "info", ic: "shield", s: E2("Aquí ves cada término que aceptaste en To'Latino, con su versión y su fecha. Solo sale lo que quedó anotado.", "Here you see each term you accepted on To'Latino, with its version and date. Only what was recorded shows up.") },

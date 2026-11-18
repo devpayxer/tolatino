@@ -7,6 +7,7 @@ import { useEffect, useState, type ComponentType } from "react";
 import type { RsvHold } from "@/lib/reservas";
 import { diaL } from "../Reservar";
 import { enviarMesa } from "../acciones-reserva";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,7 +30,7 @@ function Caja({ on, onClick, children }: { on: boolean; onClick: () => void; chi
 }
 
 export function Detalles({ h, es }: { h: RsvHold; es: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [fin] = useState(() => Date.now() + h.segundos * 1000);
   const [ahora, setAhora] = useState(() => Date.now());

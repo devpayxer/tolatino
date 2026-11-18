@@ -1,13 +1,14 @@
 /* 9d · Lo común de «Descargar mis datos» (Mi cuenta) y «Exportar los datos del negocio» (Panel › Más): las filas del archivo con su estado, si se
    puede pedir otro y bajar con POST (un uso; el GET de una vista previa nunca lo gasta: /api/datos/archivo/[id]). */
 import type { Exportacion } from "@/lib/datos/exportar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 const dia = (iso: string, es: boolean) => new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
 const peso = (b: number | null) => (b == null ? "" : b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`);
 
 export type FilaArchivo = { id: string; icon: string; t: string; s: string; tag: [string, string]; bajar: boolean };
 export function filasArchivo(L: Exportacion[], es: boolean): FilaArchivo[] {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   return L.map((x) => {
     const pedido = `${E2("PEDIDO ", "REQUESTED ")}${dia(x.pedido, es).toUpperCase()}`;
     switch (x.estado) {

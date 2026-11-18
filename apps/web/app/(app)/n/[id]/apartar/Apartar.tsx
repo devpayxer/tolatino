@@ -13,6 +13,7 @@ import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../p
 import { useVerificacion } from "../../../pago/Verificacion";
 import { cuotas, terminos } from "@/lib/layaway-comun";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "StepHeader" | "DateStrip" | "TimeSlots" | "PaymentSummary";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,7 +25,7 @@ const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN
 const hL = (m: number) => { const h = Math.floor(m / 60) % 24, mm = m % 60; return `${h % 12 || 12}${mm ? `:${String(mm).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`; };
 
 export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApartar; es: boolean; yo: boolean; pago?: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null; dir?: { id: string; label: string; street: string } | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [carro, setCarro] = useState<Carrito | null>(null), [paso, setPaso] = useState(0), [nota, setNota] = useState(""), [sms, setSms] = useState(true);
   const [i, setI] = useState(() => Math.max(0, o.dias.findIndex((d) => d.horas.length))), [h, setH] = useState<number | null>(null);
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null);

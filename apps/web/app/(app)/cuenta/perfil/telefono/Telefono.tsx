@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { telCambiar, telCodigo } from "../../acciones-perfil";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../../Marco";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 const fmt = (d: string) => (d.length < 4 ? d : d.length < 7 ? `(${d.slice(0, 3)}) ${d.slice(3)}` : `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6, 10)}`);
 export function Telefono({ actual, es, yo, pruebas }: { actual: string; es: boolean; yo: Yo; pruebas: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const [step, setStep] = useState(1), [ph, setPh] = useState(""), [code, setCode] = useState(""), [err, setErr] = useState(""), [busy, setBusy] = useState(false), [prueba, setPrueba] = useState<string | null>(null);
   const cur = actual.replace(/\D/g, "").slice(-10);

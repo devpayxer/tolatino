@@ -2,6 +2,7 @@
    Pura: la usan la pantalla y el servidor al publicar. Las reglas de cada categoría vienen de lib/onb/datos.ts (prototipo).
    Lo que el prototipo fijaba (hoy = jueves 12:30) aquí es la hora real de la ciudad. */
 import { TLOnbFlow as Fl, TLOnbNeg as X } from "@/lib/onb/datos";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export const SEQ = ["B1", "C1", "D1", "E1", "F1"] as const;
 export type Paso = "A1" | (typeof SEQ)[number] | "H1";
@@ -66,7 +67,7 @@ export const daysOf = (d: Borrador): Dia[] => d.days || (d.cat ? Fl.hours(d.cat,
 export function fmt(h: number) { const H = ((h % 24) + 24) % 24, hh = Math.floor(H), m = Math.round((H - hh) * 60); return `${hh % 12 || 12}${m ? ":" + String(m).padStart(2, "0") : ""} ${hh < 12 ? "AM" : "PM"}`; }
 
 export function status(d: Borrador, es: boolean, days = daysOf(d), t = ahora()) {
-  const E2 = (a: string, b: string) => (es ? a : b), TODAY = t.hoy, NOW = t.hora;
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), TODAY = t.hoy, NOW = t.hora;
   if (!days.some((x) => x.on)) return { k: "none", l: E2("Horario", "Hours"), n: E2("POR DEFINIR", "NOT SET"), s: E2("Horario por definir", "Hours not set"), c: "rgba(11,14,18,.6)", dot: "rgba(11,14,18,.25)" };
   if (d.cita) return { k: "cita", l: E2("Por cita", "By appt."), n: E2("SOLO CITA", "APPOINTMENT ONLY"), s: E2("Solo con cita", "By appointment only"), c: "var(--tl-ink)", dot: "var(--tl-action)" };
   const x = days[TODAY]!, y = days[(TODAY + 6) % 7]!;
@@ -87,12 +88,12 @@ export function rows(d: Borrador): Fila[] {
 export const items = (d: Borrador): Fila[] => rows(d).filter((r) => r.on).concat((d.cust || []).map((c, i) => ({ key: "c:" + i, n: [c.n, c.n] as [string, string], u: c.u || "fijo", dur: Number(c.dur) || 0, p: Number(c.p) || 0, lo: 0, hi: 0, on: true, cust: 1 as const })));
 export const money = (p: number | string) => { const n = Number(p) || 0; return "$" + (n % 1 ? n.toFixed(2) : n.toLocaleString("en-US")); };
 export function priceL(it: Fila, es: boolean) {
-  const E2 = (a: string, b: string) => (es ? a : b), p = money(it.p);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), p = money(it.p);
   return ({ gratis: E2("Gratis", "Free"), desde: E2("Desde ", "From ") + p, lb: p + "/lb", hora: p + E2("/hora", "/hr"), visita: E2("Visita ", "Visit ") + p, mes: p + E2("/mes", "/mo"), semana: p + E2("/semana", "/wk"), dia: p + E2("/día", "/day"), clase: p + E2("/clase", "/class"), asiento: p + E2("/asiento", "/seat"), don: E2("Donativo ", "Donation ") + p } as Record<string, string>)[it.u] || p;
 }
 export const durL = (m: number) => { if (!m) return ""; if (m < 60) return m + " MIN"; const h = Math.floor(m / 60), r = m % 60; return h + " H" + (r ? " " + r : ""); };
 export function uL(u: string, es: boolean) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   return ({ desde: E2("DESDE", "FROM"), lb: E2("POR LIBRA", "PER POUND"), hora: E2("POR HORA", "PER HOUR"), visita: E2("POR VISITA", "PER VISIT"), mes: E2("AL MES", "MONTHLY"), semana: E2("POR SEMANA", "WEEKLY"), dia: E2("POR DÍA", "PER DAY"), clase: E2("POR CLASE", "PER CLASS"), asiento: E2("POR ASIENTO", "PER SEAT"), viaje: E2("POR VIAJE", "PER TRIP"), curso: E2("EL CURSO", "PER COURSE"), venta: E2("PRECIO", "PRICE"), don: E2("DONATIVO", "DONATION") } as Record<string, string>)[u] || "";
 }
 export function metaOf(it: Fila, typ: boolean, es: boolean) {

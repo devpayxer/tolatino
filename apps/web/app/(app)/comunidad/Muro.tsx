@@ -19,6 +19,7 @@ import { useVecinoAcciones } from "./vecinoAcciones";
 import { useTraducir } from "../Traducir";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
@@ -31,7 +32,7 @@ const horaCorta = (iso: string, es: boolean) => new Date(iso).toLocaleTimeString
 export function useAccionesPub(es: boolean, ui: ComUi, poner: (id: string, f: (p: Pub) => Pub | null) => void, alBorrar?: (p: Pub) => void, alDeshacer?: (p: Pub) => void, alQuitarAutor?: (autor: string) => void, alReportar?: (p: Pub) => void) {
   const router = useRouter();
   const vec = useVecinoAcciones(es, ui);
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [busy, setBusy] = useState(false);
   const fallo = (r: R) => { if (r.entrar) { router.push(`/entrar?volver=${encodeURIComponent(location.pathname)}`); return; } if (r.msg) ui.setAviso({ t: es ? r.msg.es : r.msg.en }); };
   const red = { ok: false, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not do it. Check your connection." } };
@@ -83,7 +84,7 @@ export function useAccionesPub(es: boolean, ui: ComUi, poner: (id: string, f: (p
 }
 
 export function Muro({ es, yo, ciudad, abierta, filtros, inicial, hoy = [] }: { es: boolean; yo: YoCom; ciudad: string; abierta: boolean; filtros: Filtros; inicial: { pubs: Pub[]; mas: string | null }; hoy?: Historia[] }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ruta = usePathname();
   const ui = useComUi(yo), tr = useTraducir(es);
   const [pubs, setPubs] = useState(inicial.pubs), [mas, setMas] = useState(inicial.mas), [cargando, setCargando] = useState(false);

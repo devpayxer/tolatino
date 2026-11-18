@@ -13,6 +13,7 @@ import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "..
 import { useVerificacion } from "../../../pago/Verificacion";
 import { reservarNocheAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots" | "PaymentSummary" | "DepositOutcomes";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,7 +24,7 @@ const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN
 const OCC: [string, string, string][] = [["bailar", "A bailar", "Dancing"], ["cumple", "Cumpleaños", "Birthday"], ["despedida", "Despedida", "Farewell"], ["celebra", "Celebración", "Celebration"]];
 
 export function ReservarNoche({ b, es, pago, yo, pax0 }: { b: BookingNoche; es: boolean; pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null; yo: boolean; pax0: number }) {
-  const E2 = (a: string, z: string) => (es ? a : z);
+  const E2 = (a: string, z: string) => dosIdiomas(es, a, z);
   const router = useRouter();
   const s = b.svc, lista = s.k === "lista", nm = (x: { es: string; en: string }) => (es ? x.es : x.en || x.es), linea = nm(LINEA_NOCHE);
   const maxP = Math.min(s.pax, lista ? 20 : 50, 10);

@@ -16,6 +16,7 @@ import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "..
 import { useVerificacion } from "../../../pago/Verificacion";
 import { reservarViajeAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "StepHeader" | "DateStrip" | "TimeSlots" | "PaymentSummary" | "DepositOutcomes" | "QtyStepper";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,7 +30,7 @@ const DL = { es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean; pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null; yo: boolean }) {
-  const E2 = (a: string, z: string) => (es ? a : z);
+  const E2 = (a: string, z: string) => dosIdiomas(es, a, z);
   const router = useRouter();
   const s = b.svc, asiento = s.k === "asiento", esCaja = s.k === "caja", cot = s.k === "cotiza", nm = (x: { es: string; en: string }) => (es ? x.es : x.en || x.es), linea = nm(LINEA_TRANS);
   const i0 = Math.max(0, b.dias.findIndex((d) => d.salidas.some((z) => z.libre)));

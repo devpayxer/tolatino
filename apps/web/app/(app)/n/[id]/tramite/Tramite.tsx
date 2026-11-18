@@ -11,6 +11,7 @@ import type { ProPublico } from "@/lib/pro-publico";
 import { horasDeTramite, pedirTramite } from "./acciones";
 import { uuid } from "@/lib/uuid";
 import { diasTxt } from "@/lib/plazo-txt";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,7 +26,7 @@ const MODO = [["oficina", "En la oficina", "At the office"], ["video", "Por vide
 const SIT = [["primera", "Primera vez", "First time"], ["caso", "Ya tengo un caso", "I already have a case"], ["carta", "Me llegó una carta", "I got a letter"], ["fecha", "Tengo fecha límite", "I have a deadline"]] as const;
 
 export function Tramite({ pp, svcId, con0, notaDias, es, yo }: { pp: ProPublico; svcId: string; con0: string; notaDias: number; es: boolean; yo: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const s = pp.servicios.find((x) => x.id === svcId)!, nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es), legal = pp.h.legal;
   const [modo, setModo] = useState<string>(s.rem ? "" : "oficina"), [sit, setSit] = useState<string | null>(null), [nota, setNota] = useState("");

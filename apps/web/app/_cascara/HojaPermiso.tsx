@@ -12,6 +12,7 @@ import { activarAvisos, estadoAvisos, prepararAvisos, refrescarAvisos } from "@/
 import { esApp } from "@/lib/nativo/puente";
 import { abrirAjustes, estadoPermiso, hojaVista, marcarHoja, type Permiso } from "@/lib/nativo/permisos";
 import { anotarPermiso } from "./acciones";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,7 +24,7 @@ const ICONO: Record<Permiso, string> = { camara: "image", ubicacion: "pin", avis
 
 type Hoja = { p: Permiso; negado: boolean; seguir: () => void; no: () => void };
 export function HojaPermiso({ h, es, onCerrar }: { h: Hoja; es: boolean; onCerrar: () => void }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const app = (typeof navigator === "undefined" ? null : leerRotulo(navigator.userAgent))?.app ?? "cliente";
   const t = TEXTOS[h.p]?.[app] ?? TEXTOS[h.p]?.cliente;
   const frase = t ? (es ? t.es : t.en) : "";

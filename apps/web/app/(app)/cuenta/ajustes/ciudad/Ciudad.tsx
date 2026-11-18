@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import type { ciudadDe } from "@/lib/perfil";
 import { ciudadCambiar } from "../../acciones-perfil";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../../Marco";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type C = Awaited<ReturnType<typeof ciudadDe>>;
 export function Ciudad({ c, es, yo }: { c: C; es: boolean; yo: Yo }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const fecha = (iso: string | null) => (iso ? new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "long", year: "numeric" }).format(new Date(iso)) : "—");
   const yo1 = c.abiertas.find((x) => x.id === c.id);

@@ -7,6 +7,7 @@
 import * as UI from "@tolatino/ui";
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import { guardarTarjeta, type TarjetaG } from "./acciones";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,7 +45,7 @@ export function MetodoPago({ es, tarjetas, sel, declinada, nota, modo, pk, onUsa
   es: boolean; tarjetas: Tarjeta[]; sel: string | null; declinada: string | null; nota: string; modo: ModoTarjeta; pk: string | null;
   onUsar: (t: Tarjeta, nueva?: Tarjeta) => void; onClose: () => void; guardarSiempre?: boolean; // Pro: la tarjeta queda guardada para cobrar cada mes
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [paso, setPaso] = useState<"list" | "add">(tarjetas.length ? "list" : "add");
   const [elegida, setElegida] = useState(sel ?? tarjetas[0]?.pm ?? null);
   const [f, setF] = useState({ n: "", e: "", c: "", z: "", nm: "", save: true });

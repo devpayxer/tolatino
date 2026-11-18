@@ -7,6 +7,7 @@ import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
 import { rutaLegal } from "@/lib/legal-rutas";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Button, Icon, SiteFooter } = UI as unknown as Record<"Button" | "Icon" | "SiteFooter", ComponentType<any>>;
@@ -28,7 +29,7 @@ export function CambiarIdioma({ clave, en }: { clave: string; en: boolean }) {
 }
 
 export function LadoLegal({ en, actual, titulo, mas }: { en: boolean; actual: string; titulo: string; mas: { k: string; t: string }[] }) {
-  const router = useRouter(), E2 = (a: string, b: string) => (en ? b : a);
+  const router = useRouter(), E2 = (a: string, b: string) => dosIdiomas(!en, a, b);
   const ir = (k: string) => router.push(rutaLegal(k, en));
   return (
     <>
@@ -50,7 +51,7 @@ export function LadoLegal({ en, actual, titulo, mas }: { en: boolean; actual: st
 }
 
 export function PieLegal({ en, paginas, ciudad }: { en: boolean; paginas: Pag[]; ciudad: string }) {
-  const router = useRouter(), desk = useDesk(), E2 = (a: string, b: string) => (en ? b : a);
+  const router = useRouter(), desk = useDesk(), E2 = (a: string, b: string) => dosIdiomas(!en, a, b);
   const ir = (r: string) => router.push(r);
   const de = (g: Pag["g"]) => paginas.filter((p) => p.g === g).map((p) => ({ label: p.t, onClick: () => ir(rutaLegal(p.k, en)) }));
   const sections = [

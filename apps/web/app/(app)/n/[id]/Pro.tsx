@@ -9,6 +9,7 @@ import { useState, type ComponentType, type MouseEvent } from "react";
 import { precioPro, usd } from "@/lib/pro-comun";
 import type { ProPublico, SvcPro } from "@/lib/pro-publico";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,7 +20,7 @@ const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
 const LANG: Record<string, [string, string]> = { es: ["Español", "Spanish"], en: ["English", "English"], pt: ["Português", "Portuguese"], ht: ["Kreyòl", "Haitian Creole"] };
 
 export function usePro(pp: ProPublico | null, es: boolean) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [hoja, setHoja] = useState<string | null>(null);
   if (!pp) return null;
   const nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es), h = pp.h, legal = h.legal;

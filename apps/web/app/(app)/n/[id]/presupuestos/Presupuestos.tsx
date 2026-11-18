@@ -12,6 +12,7 @@ import { subirFoto } from "@/lib/subir-foto";
 import { HojaCasa, casaMeta, compatCasa, useOficio } from "../Oficios";
 import { pedirPresupuestos } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,7 +23,7 @@ const dinero = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
 const AREAS: [string, string, string][] = [["cocina", "Cocina", "Kitchen"], ["bano", "Baño", "Bathroom"], ["sotano", "Sótano", "Basement"], ["techo", "Techo", "Roof"], ["afuera", "Afuera", "Outside"], ["toda", "Toda la casa", "Whole house"]];
 
 export function Presupuestos({ op, svcId, cands, es, yo, plazoH }: { op: OficiosPublico; svcId: string; cands: CandPq[]; es: boolean; yo: boolean; plazoH: number }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter();
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter();
   const v = useOficio(op, es, yo)!;
   const s = op.servicios.find((x) => x.id === svcId)!, nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [areas, setAreas] = useState<string[]>([]), [nota, setNota] = useState(""), [medidas, setMedidas] = useState("");

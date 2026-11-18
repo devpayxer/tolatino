@@ -14,6 +14,7 @@ import { useVerificacion } from "../../../pago/Verificacion";
 import { avisameEstado, avisameHora, horasDeCita, pedirCita, proximasHoras } from "../acciones-cita";
 import { aprC, aprL, diaS, dinero, durL, horaL, precio } from "../Servicios";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots" | "StaffPicker" | "PaymentSummary" | "DepositOutcomes";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -39,7 +40,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
   cp: CitasPublica; svcId: string; inicial: { opts: Record<string, number>; adds: string[]; con: string; i?: number; h?: number }; es: boolean; pago: Pago; yo: { nombre: string; tel: string | null } | null; // C-005 · i/h: día y hora ya elegidos en la ficha nueva
   cambiar?: { numero: string; st: "pend" | "ok"; dep: number; i: number; m: number } | null; // «Cambiar» desde Tu cita: el depósito pasa a la nueva hora
 }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const s = cp.servicios.find((x) => x.id === svcId)!;

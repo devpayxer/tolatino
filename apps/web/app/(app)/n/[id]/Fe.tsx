@@ -11,11 +11,12 @@ import { fechaCorta, usdI, type Bi } from "@/lib/inscripciones-comun";
 import { REGLAS_FUN, cortoFe } from "@/lib/fe-comun";
 import type { FePublica, SvcFePub } from "@/lib/fe-publico";
 import { Barra, Button, Caja, Hoja, Icon, Lista, Nota, Renglon, Resumen, Riel, Top, stop, type Cta, type Item, type TopT } from "./Kit4i";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Acc = { llamar: () => void; escribir: () => void; llegar: () => void; irTab: () => void; pedir: (href: string) => void };
 const lst = (L: string[]) => L.join(" · ");
 export function useFe(fp: FePublica | null, es: boolean, pro: boolean, acc: Acc) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [hoja, setHoja] = useState<string | null>(null);
   const [contacto, setContacto] = useState(false);
   if (!fp) return null;

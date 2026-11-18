@@ -12,6 +12,7 @@ import { DONATIVO, LINEA_FE } from "@/lib/fe-comun";
 import type { InscVista } from "@/lib/inscripciones";
 import { inscAccion } from "./acciones";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,7 +20,7 @@ const { Icon, Button, OrderTracker } = UI as unknown as Record<N, ComponentType<
 const fechaHora = (t: string, es: boolean) => new Date(t).toLocaleString(es ? "es-US" : "en-US", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
 
 export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b), router = useRouter(), nm = (b: { es: string; en: string } | null) => (b ? (es ? b.es : b.en || b.es) : "");
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), nm = (b: { es: string; en: string } | null) => (b ? (es ? b.es : b.en || b.es) : "");
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null), [flash, setFlash] = useState<string | null>(null), [confirmar, setConfirmar] = useState(false);
   const hacer = async (que: "cancelar" | "aceptar" | "nogracias", ok: string) => {
     if (ocupado) return; setOcupado(true); setError(null);

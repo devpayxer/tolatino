@@ -14,6 +14,7 @@ import { fechasPrueba, foto, PasoF1, PasoH1, type Publicado } from "./PasosFH";
 import { vista } from "./vista";
 
 import { tec } from "@/lib/tec";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button" | "Tag" | "OnbTopBar" | "OnbPhases" | "OnbProgress" | "OnbActionBar" | "BusinessPreview";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Tag, OnbTopBar, OnbPhases, OnbProgress, OnbActionBar, BusinessPreview } = UI as unknown as Record<N, ComponentType<any>>;
@@ -38,7 +39,7 @@ const leerLocal = (): Partial<Borrador> | null => { try { return JSON.parse(loca
 
 export function Publica({ v }: { v: VistaPublica }) {
   catalogoVivo(v.subs); // 9n · las subcategorías vivas del Catálogo (antes de que los pasos lean la lista)
-  const es = v.lang === "es", E2 = (a: string, b: string) => (es ? a : b);
+  const es = v.lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ruta = usePathname(), sp = useSearchParams();
   const dw = useAncho(), desk = dw >= 1024;
   const [usuario, setUsuario] = useState(v.usuario);

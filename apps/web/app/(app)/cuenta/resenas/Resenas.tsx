@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 import type { MisResenas } from "@/lib/mi-cuenta";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
 import { diaCorto } from "../fechas";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export function Resenas({ d, f, es, yo }: { d: MisResenas; f: "hechas" | "pend"; es: boolean; yo: Yo }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const R = d.escritas, P = d.porEscribir;
   const B: Bloque[] = [{ type: "chips", items: [{ l: `${E2("Escritas", "Written")} · ${R.length}`, on: f === "hechas", onClick: () => router.push("/cuenta/resenas") }, { l: `${E2("Por escribir", "To write")} · ${P.length}`, on: f === "pend", onClick: () => router.push("/cuenta/resenas?f=pend") }] }];

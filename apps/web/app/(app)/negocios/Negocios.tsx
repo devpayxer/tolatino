@@ -10,6 +10,7 @@ import { TarjetaNegocio } from "../TarjetaNegocio";
 import { HoyCarrusel } from "../HoyCarrusel";
 import type { Historia } from "@/lib/hoy-comun";
 import type { Recomendado } from "@/lib/comunidad-portada";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Chip" | "Icon" | "SectionHeader" | "IconButton" | "InfoCard" | "Button" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,7 +23,7 @@ export function Negocios({ titulo, sub, intenciones, cats, destacados, nuevos, t
   cats: (Cat & { n: number; linea: string })[]; destacados: Tarjeta[]; nuevos: Tarjeta[]; t: Textos; es: boolean; hoy: Historia[]; recs: Recomendado[];
 }) {
   const router = useRouter();
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const recomendados = recs.length === 0 ? null : (
     <div data-screen-label="APP-NEG-HOME · Recomendados por vecinos" className="grid">
       <InfoCard label={E2("RECOMENDADOS POR VECINOS", "RECOMMENDED BY NEIGHBORS")} padding="16px 16px 8px">

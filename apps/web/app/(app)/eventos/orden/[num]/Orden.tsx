@@ -13,6 +13,7 @@ import { bolDeshacer, bolElegirCambio } from "../../acciones-despues";
 import type { CambioOrden } from "@/lib/evt-cambios";
 import { fechaHora, HojaAyuda, HojaCancelar, HojaNombre, HojaTransferir } from "../../Despues";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "TicketQR" | "OrderTracker" | "ReceiptCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,7 +21,7 @@ const { Icon, Button, TicketQR, OrderTracker, ReceiptCard } = UI as unknown as R
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 
 export function estadoBoleto(b: Pick<BoletoVista, "estado" | "envio"> & Partial<Pick<BoletoVista, "entro" | "sigue">>, es: boolean): [string, string, string] {
-  const E2 = (a: string, z: string) => (es ? a : z);
+  const E2 = (a: string, z: string) => dosIdiomas(es, a, z);
   // La etiqueta va sobre la cabecera oscura del boleto (TicketQR): colores con contraste sobre tinta.
   // 6d · Enviado (transferencia pendiente: el QR anterior quedó anulado y no hay otro hasta que lo reciban o lo deshagas) y transferido.
   return b.envio ? [E2(`ENVIADO · ${b.envio.a}`, `SENT · ${b.envio.a}`), "rgba(255,176,32,.2)", "var(--tl-pro)"]
@@ -44,7 +45,7 @@ export function TarjetaBoleto({ b, es, cuando, ancho, onClick }: { b: BoletoVist
 }
 
 export function Orden({ o, es, cambio = null }: { o: OrdenVista; es: boolean; cambio?: CambioOrden | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [recibo, setRecibo] = useState(false);
   // 6d · Las hojas de después de comprar y su aviso.

@@ -8,12 +8,13 @@ import { subirFoto } from "@/lib/subir-foto";
 import type { perfilDe } from "@/lib/perfil";
 import { perfilFoto, perfilGuardar, perfilVerificar } from "../acciones-perfil";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type P = NonNullable<Awaited<ReturnType<typeof perfilDe>>>;
 const tel = (p: string) => p.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, "+1 ($1) $2-$3");
 
 export function Perfil({ p, es, yo }: { p: P; es: boolean; yo: Yo }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi(), file = useRef<HTMLInputElement>(null);
   const base = { first: p.first ?? "", last: p.last ?? "", nick: p.nick ?? "", email: p.email ?? "" };
   const [f, setF] = useState(base), [err, setErr] = useState<Record<string, string>>({}), [busy, setBusy] = useState(false);

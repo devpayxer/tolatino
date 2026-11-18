@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { idiomaCuenta } from "../acciones-perfil";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
 import { olvidarSinConexion } from "@/lib/boletos-sin-conexion";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export function Ajustes({ es, yo, ciudad, negocio }: { es: boolean; yo: Yo; ciudad: string | null; negocio: { id: string; name: string } | null }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi(), ir = (h: string) => router.push(h);
   const lang = async (l: "es" | "en") => { const r = await idiomaCuenta(l).catch(() => null); if (r?.ok) router.refresh(); };
   const salir = async () => { await olvidarSinConexion(); await fetch("/api/cuenta/salir", { method: "POST" }); router.replace("/entrar"); };

@@ -11,6 +11,7 @@ import type { CitaVista } from "@/lib/citas";
 import { subirFoto, subirFotoPrivada } from "@/lib/subir-foto";
 import { ayudaCitaPedir, ayudaCitaResponder } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type N = "Icon" | "Button" | "Chip" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,7 +30,7 @@ export type CabezaAyuda = Pick<CitaVista, "numero" | "con" | "model" | "svc" | "
   // 4if · Visitas y pruebas (D-…): la copia del total que la persona vio al pedir y qué pidió (visita · prueba · cita…).
   copia?: { k: { es: string; en: string }; cents: number } | null; que?: string };
 export function AyudaCita({ c, v, es }: { c: CabezaAyuda; v: CitaAyudaVista; es: boolean }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   // Auto (CFG.ahelp) y Hogar (neg-hogar-rev.js): sus motivos, lo que se pide y sus textos; Belleza sigue igual (bhelp).
   // Doctores (neg-salud-rev.js RSN) y Profesionales (neg-pro-rev.js RSN): nada se cobra en la app; fotos privadas.
