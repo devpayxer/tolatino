@@ -63,7 +63,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
   await (await import("./suscripcion")).procesar(id).catch(() => undefined);
   const b = (await db().query<{
     id: string; name: string; cat: string; city: string; ciudad: string; ciudad_on: boolean; status: string; plan: string; verified: boolean; review_count: number;
-    attrs: Record<string, any>; logo: string | null; about: Bi | null; amen: string[]; op: string; from_home: boolean; mods: string[]; evt_aplica: boolean;
+    attrs: Record<string, any>; logo: string | null; about: Bi | null; amen: string[]; op: string; from_home: boolean; mods: string[]; evt_aplica: boolean; pausa_cot: string | null; pausa_staff: string | null;
     email_ok: boolean; owner: string | null; tz: string; dow: number; hm: string; hoy: string; hora: number; open: boolean; closed_today: boolean; created: string;
     status_reason: string | null; temp_until: string | null; temp_reason: string | null; admin_edits: Record<string, unknown>; phone: string | null; owner_phone: string | null;
     email: string | null; sello: string | null; sello_note: string | null; reclamo_aviso: string | null; sub_until: string | null; sub_days: number | null; sub_used: boolean;
@@ -71,6 +71,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     `select b.id, b.name, b.category_id as cat, b.city_id as city, c.name as ciudad, ciudad_abierta_para(c.id, b.owner_user_id) as ciudad_on, b.status, coalesce(s.plan, 'free') as plan,
             coalesce(s.verified, false) as verified, coalesce(s.review_count, 0) as review_count, b.category_attrs as attrs, b.logo_url as logo,
             b.about, b.amenities as amen, b.operation as op, b.works_from_home as from_home, b.modules_on as mods,
+            b.modules_off->'cot'->>'reason' as pausa_cot, b.modules_off->'staff'->>'reason' as pausa_staff,
             coalesce((select cc.allowed_modules ? 'eventos' from categories cc where cc.id = b.category_id), false) as evt_aplica,
             coalesce(u.email_verified, false) as email_ok, u.first_name as owner, c.timezone as tz,
             extract(dow from now() at time zone c.timezone)::int as dow, to_char(now() at time zone c.timezone, 'HH24:MI') as hm,
@@ -171,7 +172,9 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     anuncios, especiales: esp, feriados: fer, avisosOff: avOff,
     resenas: rs, novedades: nv, cupones: cu,
     id, name: b.name, cat: b.cat, city: b.city, ciudad: b.ciudad, ciudadAbierta: b.ciudad_on, kind: acc.kind, partes: acc.partes, pro, verified: b.verified,
-    trial: tr && tr.on ? tr : null, trialUsed: b.sub_used, onb, sells, mods: b.mods, evtAplica: b.evt_aplica, op: b.op, itemsW, items,
+    trial: tr && tr.on ? tr : null, trialUsed: b.sub_used, onb, sells, mods: b.mods, evtAplica: b.evt_aplica,
+    // 9n · Cotizaciones y Staff en pausa de To’Latino (el motivo que ve el dueño; null = no están en pausa; el motivo siempre se escribe).
+    pausas: { cot: b.pausa_cot, staff: b.pausa_staff }, op: b.op, itemsW, items,
     st: { open: st.open, text: st.text, closedToday: b.closed_today },
     // Lo que hizo To'Latino (triángulo): el dueño siempre ve qué pasó y por qué.
     adm: { status: b.status, reason: b.status_reason, tempUntil: b.temp_until, tempReason: b.temp_reason, nombre: !!b.admin_edits?.name, about: !!b.admin_edits?.about, fotos: quitadas.map((x) => x.note ?? ""), reclamo: acc.kind === "owner" && b.reclamo_aviso ? b.reclamo_aviso : null },

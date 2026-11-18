@@ -37,7 +37,13 @@ _Pantallas: ADM-CAT (`/admin/catalogo`), teléfono y escritorio. Para el equipo 
   - **Cada módulo, activo por ciudad:** toca un módulo y apágalo en una ciudad. Todos sus negocios de esa ciudad lo tienen
     en pausa (la misma pausa que el equipo pone a un negocio en Negocios 360°: deja de ofrecerse en su página y el dueño ve
     el motivo en su panel), y los que publiquen después también. Al encenderlo se quita solo esa pausa: la que el equipo le
-    puso a un negocio por su cuenta se queda. Cotizaciones y Staff todavía no se apagan por ciudad.
+    puso a un negocio por su cuenta se queda. Se apagan por ciudad los 12 módulos, **Cotizaciones y Staff incluidos**:
+    - **Cotizaciones apagado:** su página deja de ofrecer lo que el vecino pide para saber el precio (pre-estimado con fotos y «Pedir a hasta 3» en Auto y
+      Hogar, «Pedir precio» de una mudanza en Transporte, el total por escrito en Fiestas) y el servidor no recibe pedidos nuevos («Este negocio no recibe
+      solicitudes de precio en línea por ahora: llama al negocio.»). Lo ya pedido sigue su camino. Reservar un servicio con precio no cambia.
+    - **Staff apagado:** su página deja de presentar al equipo (la pestaña, el riel de personas, «Ver equipo» y «Quién está detrás»). **Reservar un servicio
+      no cambia**: elegir con quién sigue siendo de Citas (la política «elegir con quién» del negocio) y la hora sale igual.
+    - Negocios 360° también pausa **Cotizaciones** (en Lo que vende, de Auto, Hogar, Transporte y Fiestas) y **Staff** (en Equipo) para **un solo negocio**.
   - **Límites Free y Pro:** ítems que se ven y se piden con Free (Menú, Servicios, Tienda), pedidos o citas en línea al mes
     con Free, fotos de la galería con Free y con Pro, y personas del equipo con Free. **Solo un Admin** los cambia (con
     motivo); son los mismos valores de Sistema › Configuración › Negocios. La página del negocio, los pedidos, el panel y
@@ -54,6 +60,8 @@ _Pantallas: ADM-CAT (`/admin/catalogo`), teléfono y escritorio. Para el equipo 
 | Editar, mover o quitar una fusionada | Primero «Separar». |
 | Agregar después de mover una | El código nuevo nunca repite el de la que se movió. |
 | Apagar una categoría en una ciudad | Sus negocios conservan la ficha (se puede entrar por su enlace); no salen en listas ni en Buscar. Un borrador de «Publica tu negocio» de esa categoría vuelve a elegir categoría. |
+| Cotizaciones apagado y alguien con la pantalla vieja abierta manda un pedido | El servidor lo rechaza con «Este negocio no recibe solicitudes de precio en línea por ahora: llama al negocio.»; en «Pedir a hasta 3» el negocio ya no sale entre los que se pueden elegir. |
+| Staff apagado y la persona quiere reservar | Reserva igual: elige día y hora (y con quién, si el negocio lo deja elegir); solo la página deja de presentar al equipo. El dueño ve el motivo en su panel (Equipo). |
 | Reanudar en Negocios 360° un módulo apagado en toda la ciudad | No se puede para un solo negocio: «se enciende en Catálogo › Módulos». |
 | Un negocio se muda a una ciudad con un módulo apagado | Recibe la pausa de esa ciudad; la de su ciudad anterior se le quita. |
 | Un límite fuera de su rango | «Entre X y Y.» (cada límite tiene su mínimo y su máximo). |
@@ -105,7 +113,13 @@ cada negocio cambia el suyo en su panel.
 - **Modules and Free/Pro:** which module each category can use and what Free sees and what Pro sees.
   - **Each module, on by city:** tap a module and turn it off in a city. All of that city's businesses have it paused (the same pause the team sets on a
     business in Business 360°: it stops being offered on its page and the owner sees the reason in their panel), and so will anyone who lists later. Turning
-    it back on removes only that pause: a pause the team set on a business on its own stays. Quotes and Staff can't be turned off by city yet.
+    it back on removes only that pause: a pause the team set on a business on its own stays. All 12 modules can be turned off by city, **Quotes and Staff included**:
+    - **Quotes off:** its page stops offering what the neighbor asks for to learn the price (photo pre-estimate and «Ask up to 3» in Auto and Home, «Get a price» for
+      a move in Transport, the written total in Parties) and the server takes no new requests («This business is not taking price requests online right now:
+      call the business.»). What was already requested continues. Booking a priced service does not change.
+    - **Staff off:** its page stops presenting the team (the tab, the people rail, «See team» and «Who is behind it»). **Booking a service does not change**:
+      choosing who with stays part of Bookings (the business's «choose who with» policy) and the time comes out the same.
+    - Business 360° also pauses **Quotes** (under What it sells, for Auto, Home, Transport and Parties) and **Staff** (under Team) for **a single business**.
   - **Free and Pro limits:** items shown and ordered on Free (Menu, Services, Shop), online orders or bookings a month on Free, gallery photos on Free and
     on Pro, and team members on Free. **Only an Admin** changes them (with a reason); they are the same values as System › Settings › Businesses. The
     business page, orders, the panel and «List your business» use them right away.
@@ -121,6 +135,8 @@ cada negocio cambia el suyo en su panel.
 | Editing, moving or removing a merged one | «Split» first. |
 | Adding after moving one | The new code never repeats the moved one's code. |
 | Turning a category off in a city | Its businesses keep their page (reachable by its link); they do not show in lists or in Search. A «List your business» draft of that category goes back to choosing a category. |
+| Quotes off and someone with the old screen open sends a request | The server rejects it with «This business is not taking price requests online right now: call the business.»; in «Ask up to 3» the business no longer shows among those you can pick. |
+| Staff off and the person wants to book | They book as usual: choose day and time (and who with, if the business lets you choose); only the page stops presenting the team. The owner sees the reason in their panel (Team). |
 | Resuming in Business 360° a module that is off in the whole city | Not possible for a single business: «turn it on in Catalog › Modules». |
 | A business moves to a city with a module off | It gets that city's pause; its previous city's pause is removed. |
 | A limit out of range | «Between X and Y.» (each limit has its minimum and maximum). |

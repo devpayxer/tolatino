@@ -24,7 +24,7 @@ export function useViaje(tp: TransPublico | null, es: boolean, pro: boolean) {
   const [hoja, setHoja] = useState<string | null>(null);
   if (!tp) return null;
   const nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es), linea = nm(LINEA_TRANS), h = tp.h;
-  const btn = (s: SvcTrans) => (s.k === "caja" ? E2("Enviar", "Send") : s.k === "cotiza" ? E2("Pedir precio", "Get a price") : E2("Reservar", "Book"));
+  const btn = (s: SvcTrans) => (s.k === "caja" ? E2("Enviar", "Send") : s.k === "cotiza" ? (tp.cotOff ? E2("Ver", "See") : E2("Pedir precio", "Get a price")) : E2("Reservar", "Book"));
   const item = (s: SvcTrans) => { const P = precioTrans(s, es); return { id: s.id, name: nm(s.name), foto: s.foto, price: P.l, meta: [P.s, metaTrans(s, es)].filter(Boolean).join(" · "), btn: btn(s) }; };
   const secs = [...tp.secciones.map((sc) => ({ title: nm(sc.name).toUpperCase(), items: tp.servicios.filter((s) => s.sec === sc.id).map(item) })),
     { title: E2("OTROS", "OTHER"), items: tp.servicios.filter((s) => !tp.secciones.some((sc) => sc.id === s.sec)).map(item) }].filter((x) => x.items.length);
@@ -99,9 +99,9 @@ export function ViHoja({ v }: { v: Vi }) {
   const P = precioTrans(s, es), meta = metaTrans(s, es), cot = s.k === "cotiza";
   const pago = cot ? E2("Mandas fotos y te dan el precio cerrado. No se cobra nada hasta que lo aceptes.", "Send photos and get a fixed price. Nothing is charged until you accept it.")
     : E2("Se retiene en tu tarjeta al reservar y se cobra cuando confirman. Si no sale o no confirman, se libera completo.", "Held on your card when you book and charged once they confirm. If it does not run or they do not confirm, it is fully released.");
-  const enApp = tp.booking;
+  const enApp = tp.booking && !(cot && tp.cotOff);
   const go = () => { if (!enApp) return v.llamar(); v.router.push(`/n/${tp.negocio.id}/viaje?s=${s.id}`); };
-  const cta = !tp.booking ? E2("Llama para reservar", "Call to book") : s.k === "caja" ? E2("Enviar una caja", "Send a box") : cot ? E2("Pedir precio cerrado", "Get a fixed price") : E2("Reservar", "Book");
+  const cta = !enApp ? E2("Llama para reservar", "Call to book") : s.k === "caja" ? E2("Enviar una caja", "Send a box") : cot ? E2("Pedir precio cerrado", "Get a fixed price") : E2("Reservar", "Book");
   const ruta = [s.from ? nm(s.from) : "", s.to ? nm(s.to) : ""].filter(Boolean).join(" → ");
   return (
     <div data-screen-label="Servicio · Transporte" className="fixed inset-0 z-[60]">

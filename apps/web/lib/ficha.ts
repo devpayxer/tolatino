@@ -55,7 +55,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto, o?: { equipo?: bo
     subs: string[]; tags: string[]; attrs: Record<string, unknown>; about: Bi | null; founded: number | null; phone: string | null;
     address: string | null; radius: number | null; from_home: boolean; lat: number | null; lng: number | null; mi: number | null;
     open: boolean; ciudad: string; estado: string; dow: number; hm: string; dia: number; mes: number; logo: string | null; cerrado_hoy: boolean; cerrado_temp: boolean; chat: boolean;
-    st: string;
+    st: string; staff_off: boolean;
   }>(
     `select b.id, b.category_id as cat, b.city_id as city, b.name, s.plan, s.verified, s.rating_avg::float as rating, s.review_count as reviews,
             b.subcategory_ids as subs, b.filter_values as tags, b.category_attrs as attrs, b.about, b.founded_year as founded, b.phone,
@@ -68,7 +68,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto, o?: { equipo?: bo
             extract(dow from now() at time zone c.timezone)::int as dow, to_char(now() at time zone c.timezone, 'HH24:MI') as hm,
             extract(day from now() at time zone c.timezone)::int as dia, extract(month from now() at time zone c.timezone)::int as mes,
             b.logo_url as logo, coalesce(b.closed_on = (now() at time zone c.timezone)::date, false) as cerrado_hoy, coalesce(b.temp_closed_until > now(), false) as cerrado_temp,
-            b.status as st
+            b.status as st, coalesce(b.modules_off, '{}'::jsonb) ? 'staff' as staff_off
        from businesses b join business_stats_cache s on s.business_id = b.id join cities c on c.id = b.city_id
       where b.id = $1 and (b.status = 'active' or ($2::boolean and b.status <> 'merged'))`,
     [id, o?.equipo === true],
@@ -86,7 +86,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto, o?: { equipo?: bo
     db().query<{ kind: string; name: string; nick: string | null; role: Bi | null; photo: string | null; bio: Bi | null }>(
       `select kind, display_name as name, nickname as nick, role, photo_url as photo, bio from business_members
         where business_id = $1 and status = 'active' and show_on_page and hidden_by_admin is null
-          and not exists (select 1 from businesses x where x.id = $1 and x.staff_hidden)
+          and not exists (select 1 from businesses x where x.id = $1 and (x.staff_hidden or coalesce(x.modules_off, '{}'::jsonb) ? 'staff'))
         order by (kind = 'owner') desc, sort, id limit 8`, [id]),
     // En el local (Quiénes somos · EN TU NEGOCIO): claves del catálogo.
     db().query<{ icon: string | null; l: string }>(
@@ -192,6 +192,8 @@ export async function ficha(id: string, lang: Lang, p?: Punto, o?: { equipo?: bo
     faqs: faqs.rows, relacionados: enlaces,
     quien: pro ? quienDetras(gente.rows, b.about?.[lang] || b.about?.es || null, b.founded, b.ciudad, b.verified, lang) : null,
     // C-006 · El equipo de la ficha nueva (Pro): quien aceptó salir en la página, el dueño primero (lo mismo que «Quién está detrás»).
+    // 9n · Staff en pausa (modules_off.staff, Negocios 360° o el Catálogo por ciudad): la página no presenta al equipo (pestaña, riel, «Ver equipo», tarjetas y «Quién está detrás»); reservar no cambia.
+    equipoOff: b.staff_off,
     equipo: pro ? gente.rows.map((x, i) => ({ id: `m${i}`, name: x.name, role: x.role?.[lang] || x.role?.es || (x.kind === "owner" ? L("Dueño", "Owner") : ""), foto: x.photo, owner: x.kind === "owner" })) : [],
     amen: pro ? amen.rows.map((a) => ({ icon: a.icon ?? "check", l: a.l })) : [],
     amenK: enCasa ? L("CÓMO TRABAJA", "HOW THEY WORK") : L("EN EL LOCAL", "AT THE PLACE"),

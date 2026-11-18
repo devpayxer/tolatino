@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "./db";
+import { enPausa } from "./modulo-pausa";
 import { diasOcupados } from "./fiestas";
 import { findes, sumarDias, tuFechaValida, type Bi, type CalFiesta, type SvcFiesta, type TuFecha } from "./fiestas-comun";
 
@@ -11,7 +12,7 @@ export type FiestaPublico = {
   negocio: { id: string; nombre: string; direccion: string | null; telefono: string | null; foto: string | null; ciudad: string };
   secciones: { id: string; name: Bi }[]; servicios: SvcFiesta[];
   cal: CalFiesta; dep: number; zone: number | null; cancel: number; tags: string[];
-  sinLocal: boolean; soloTienda: boolean; booking: boolean; esp: boolean;
+  sinLocal: boolean; soloTienda: boolean; booking: boolean; cotOff: boolean; esp: boolean;
   fecha: TuFecha | null; sesion: boolean;
 };
 
@@ -47,7 +48,7 @@ export async function fiestaPublico(negocio: string, userId: string | null): Pro
     negocio: { id: b.id, nombre: b.name, direccion: b.casa ? null : b.address, telefono: b.phone, foto: b.foto, ciudad: b.ciudad },
     secciones: S.rows.filter((x) => usados.has(x.id)), servicios: I.rows,
     cal: { hoy: b.hoy, hasta, ocupadas, libres, guests: s?.guests ?? null }, dep: s?.dep ?? 0, zone: b.zone, cancel: s?.cancel ?? 30, tags,
-    sinLocal: b.casa, soloTienda, booking: (b.mods ?? []).includes("citas") && !(b.off ?? {}).citas, esp: tags.includes("esp") || (b.langs ?? []).includes("es"),
+    sinLocal: b.casa, soloTienda, booking: (b.mods ?? []).includes("citas") && !(b.off ?? {}).citas, cotOff: enPausa(b.off, "cot"), esp: tags.includes("esp") || (b.langs ?? []).includes("es"),
     fecha: fila ? { e: fila.e, day: fila.day, g: fila.g, w: fila.w } : null, sesion: !!userId,
   };
 }

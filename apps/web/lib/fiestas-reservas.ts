@@ -5,6 +5,7 @@ import { cobrarOperacion, comision, devolverPago, liberarOperacion, registrarRet
 import { db, tx } from "./db";
 import { diasOcupados, recalcularFiltrosFiesta } from "./fiestas";
 import { diaFiesta, EVT, sumarDias, type Bi, type SvcFiesta } from "./fiestas-comun";
+import { PAUSA_COT } from "./modulo-pausa";
 import { pasarela } from "./pagos/pasarela";
 import { bancoPide } from "./pagos/verificacion";
 
@@ -90,7 +91,7 @@ export async function bookingFiesta(negocio: string, svcId: string, userId: stri
   return {
     negocio: { id: x.id, nombre: x.name, foto: x.foto, ciudad: b.ciudad, direccion: x.address, telefono: x.phone },
     svc: s, dur: calcularFiesta(s, null, {}).dur, aj, depositoEnApp: !!x.cuenta, hoy: x.hoy, hasta, ocupadas: D.filter((d) => d.ocupada).map((d) => d.day), tomadas: tom,
-    zone: b.zone, va, salones: S.rows, dirs: A.rows, booking: x.mods.includes("citas") && !x.off.citas && !x.off.svc,
+    zone: b.zone, va, salones: S.rows, dirs: A.rows, booking: x.mods.includes("citas") && !x.off.citas && !x.off.svc && !(s.k === "cotiza" && x.off.cot),
   };
 }
 
@@ -117,6 +118,8 @@ export async function pedirFecha(userId: string, negocio: string, f: FiestaIn, e
     const s = x ? await servicio(c, negocio, String(f.svc)) : null;
     if (!x || !s) { await c.query("rollback"); return no("Ese servicio no se pide en línea.", "That service is not requested online."); }
     if (!x.mods.includes("citas") || x.off.citas || x.off.svc) { await c.query("rollback"); return no(`${x.name} no toma fechas en línea por ahora: llama al negocio.`, `${x.name} is not taking dates online right now: call the business.`); }
+    // 9n · «Total por escrito» (servicio que se cotiza) es de Cotizaciones: en pausa el servidor no la recibe (modules_off.cot).
+    if (s.k === "cotiza" && x.off.cot) { await c.query("rollback"); return no(PAUSA_COT.es, PAUSA_COT.en); }
     if (x.plan !== "pro") {
       const r = (await c.query<{ cap: number; usados: number }>(`select cfg_int('free_ops_cap') as cap, (select count(*)::int from operations where business_id = $1 and kind <> 'table' and free_quota_month = $2) as usados`, [x.id, x.mes])).rows[0];
       if (r && r.usados >= r.cap) { await c.query("rollback"); return no(`${x.name} no recibe más solicitudes en línea este mes. Llama para tu fecha.`, `${x.name} takes no more online requests this month. Call about your date.`); }

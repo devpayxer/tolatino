@@ -16,6 +16,6 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const op = await oficiosPublico(id, u?.id ?? null);
   if (!op) notFound();
   const s = op.servicios.find((x) => x.id === sp.s);
-  if (!op.can || !s || !PRE_K[op.rubro]!.includes(s.k)) redirect(`/n/${id}?tab=svc`);
+  if (!op.can || op.cotOff || !s || !PRE_K[op.rubro]!.includes(s.k)) redirect(`/n/${id}?tab=svc`);
   return <PreEstimado op={op} svcId={s.id} es={lang === "es"} yo={!!u} />;
 }

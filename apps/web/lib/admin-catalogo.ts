@@ -109,9 +109,10 @@ export async function filtrosAdmin(id: string) {
   return { id, es: c.es, slug: slugCat(c.short), opciones: r.rows, historial: hist };
 }
 
-/* 9n · Los módulos que se apagan por ciudad: los que la ficha, los pedidos y las citas ya pausan con businesses.modules_off (la misma pausa
-   que el equipo pone a un negocio en Negocios 360°). Cotizaciones y Staff todavía no tienen esa pausa: no se ofrecen aquí. */
-export const MODULOS_POR_CIUDAD = ["menu", "pedidos", "rsv", "svc", "citas", "shop", "renta", "eventos", "nov", "jobs"] as const;
+/* 9n · Los módulos que se apagan por ciudad: los que la página pública y el servidor ya pausan con businesses.modules_off (la misma pausa que el equipo pone
+   a un negocio en Negocios 360°). Son los 12 módulos del catálogo: Cotizaciones (cot) y Staff (staff) se sumaron el 18 nov (lib/modulo-pausa.ts dice qué apaga
+   cada uno). El guardián moduloPorCiudad exige que cada clave de esta lista tenga su lector en la página y que no entre una que no lo tenga. */
+export const MODULOS_POR_CIUDAD = ["menu", "pedidos", "rsv", "svc", "citas", "cot", "shop", "renta", "staff", "eventos", "nov", "jobs"] as const;
 
 export async function modulosAdmin() {
   const [m, c, ci] = await Promise.all([
@@ -122,14 +123,16 @@ export async function modulosAdmin() {
   return m.rows.map((x) => ({ ...x, cats: c.rows.filter((k) => k.mods.includes(x.key)).map((k) => k.short), apagado: ci.rows.filter((k) => x.off.includes(k.id)).map((k) => k.name) }));
 }
 
-/* 9n · Un módulo: en qué ciudades está encendido (con cuántos negocios lo tienen encendido en cada una) y su historial. */
+/* 9n · Un módulo: en qué ciudades está encendido (con cuántos negocios lo tienen encendido en cada una) y su historial. Cotizaciones y Staff no se
+   «encienden» negocio por negocio (ningún negocio los trae en modules_on): cuentan los negocios activos de las categorías que los permiten. */
 export async function moduloAdmin(key: string) {
   if (!/^[a-z]{2,12}$/.test(key)) return null;
   const m = (await db().query<{ key: string; es: string; en: string; off: string[] }>(`select key, name->>'es' as es, name->>'en' as en, off_cities as off from module_types where key = $1`, [key])).rows[0];
   if (!m) return null;
   const [ciudades, cats, hist] = await Promise.all([
     db().query<{ id: string; name: string; status: string; negocios: number }>(
-      `select ci.id, ci.name, ci.status, (select count(*)::int from businesses b where b.city_id = ci.id and b.status = 'active' and $1 = any(b.modules_on)) as negocios
+      `select ci.id, ci.name, ci.status, (select count(*)::int from businesses b where b.city_id = ci.id and b.status = 'active'
+                   and ($1 = any(b.modules_on) or ($1 in ('cot', 'staff') and exists (select 1 from categories k where k.id = b.category_id and k.allowed_modules ? $1)))) as negocios
          from cities ci order by ci.sort, ci.id`, [key]),
     db().query<{ short: string }>(`select short->>'es' as short from categories where status = 'on' and allowed_modules ? $1 order by sort`, [key]),
     historial(["module_type"], key),

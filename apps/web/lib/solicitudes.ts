@@ -2,6 +2,7 @@ import "server-only";
 import type { PoolClient } from "pg";
 import { cfgSql, valor, valores } from "./config";
 import { db, tx, txAuditada, type AlGuardar } from "./db";
+import { PAUSA_COT } from "./modulo-pausa";
 import { horasTxt } from "./plazo-txt";
 
 /* Solicitudes de servicio (Fase 4 · bloque 4e). Un solo motor para tres cosas del diseño:
@@ -75,10 +76,12 @@ export async function pedirPre(userId: string, f: PreIn): Promise<Res<{ numero: 
   const r = await tx(async (c): Promise<Res<{ numero: string }>> => {
     const ya = (await c.query<{ number: string }>(`select number from service_requests where user_id = $1 and form->>'clave' = $2`, [userId, f.clave])).rows[0];
     if (ya) return { ok: true, numero: ya.number };
-    const s = (await c.query<{ id: string; k: string; name: Bi; cat: string; city: string; bstatus: string }>(
-      `select i.id::text, coalesce(i.svc_kind, 'fijo') as k, i.name, b.category_id as cat, b.city_id as city, b.status as bstatus from items i join businesses b on b.id = i.business_id
+    const s = (await c.query<{ id: string; k: string; name: Bi; cat: string; city: string; bstatus: string; pausa: boolean }>(
+      `select i.id::text, coalesce(i.svc_kind, 'fijo') as k, i.name, b.category_id as cat, b.city_id as city, b.status as bstatus, coalesce(b.modules_off, '{}'::jsonb) ? 'cot' as pausa from items i join businesses b on b.id = i.business_id
         where i.id = $1::bigint and i.business_id = $2 and i.module = 'svc' and i.removed_at is null and i.sell and i.status = 'live'`, [f.svc, f.negocio])).rows[0];
     if (!s || s.bstatus !== "active") return no("Ese servicio ya no está.", "That service is no longer available.");
+    // 9n · Cotizaciones en pausa (Negocios 360° o el Catálogo por ciudad): el servidor no recibe la solicitud aunque la pantalla vieja siga abierta.
+    if (s.pausa) return no(PAUSA_COT.es, PAUSA_COT.en);
     const rubro = s.cat === "NEG-AUTO" ? "auto" : s.cat === "NEG-HOGAR" ? "hogar" : null;
     if (!rubro || !PRE_K[rubro]!.includes(s.k)) return no("Ese servicio tiene precio: resérvalo directo.", "That service has a price: book it directly.");
     if (rubro === "auto" ? !luces.length && nota.length < 10 : nota.length < 10) return no("Cuéntanos qué pasa (al menos 10 letras).", "Tell us what is going on (at least 10 characters).");
@@ -312,7 +315,7 @@ export async function candidatosPq(userId: string | null, negocio: string, svc: 
        from o, businesses b left join business_stats_cache st on st.business_id = b.id
        join lateral (select i.id, i.price_cents, i.svc_attrs from items i where i.business_id = b.id and i.module = 'svc' and i.svc_kind = 'pres' and i.removed_at is null and i.sell and i.status = 'live'
                       order by (i.id = $2::bigint) desc, i.sort, i.id limit 1) p on true
-      where b.category_id = 'NEG-HOGAR' and b.status = 'active' and b.city_id = o.city_id and (b.id = $1 or (coalesce(st.plan, 'free') = 'pro' and b.subcategory_ids && o.subs))
+      where b.category_id = 'NEG-HOGAR' and b.status = 'active' and b.city_id = o.city_id and not (coalesce(b.modules_off, '{}'::jsonb) ? 'cot') and (b.id = $1 or (coalesce(st.plan, 'free') = 'pro' and b.subcategory_ids && o.subs))
       order by (b.id = $1) desc, ok desc, b.name limit 12`, [negocio, svc, userId])).rows;
 }
 
@@ -329,6 +332,7 @@ export async function pedirPq(userId: string, f: PqIn): Promise<Res<{ numero: st
   if (!sel.length) return no("Elige al menos un negocio.", "Pick at least one business.");
   if (sel.length > 3) return no("Hasta 3 negocios.", "Up to 3 businesses.");
   const areas = (Array.isArray(f.areas) ? f.areas : []).map(String).filter((x) => AREAS_PQ.includes(x)).slice(0, 6);
+  if ((await db().query(`select 1 from businesses where id = $1 and coalesce(modules_off, '{}'::jsonb) ? 'cot'`, [f.negocio])).rowCount) return no(PAUSA_COT.es, PAUSA_COT.en);
   const C = await candidatosPq(userId, f.negocio, f.svc);
   const elegidos = sel.map((id) => C.find((x) => x.id === id));
   if (elegidos.some((x) => !x)) return no("Uno de esos negocios ya no recibe presupuestos.", "One of those businesses no longer takes estimate requests.");
@@ -339,6 +343,8 @@ export async function pedirPq(userId: string, f: PqIn): Promise<Res<{ numero: st
     if (ya) return { ok: true, numero: ya.number };
     const s = (await c.query<{ id: string; name: Bi; city: string }>(`select i.id::text, i.name, b.city_id as city from items i join businesses b on b.id = i.business_id where i.id = $1::bigint and i.business_id = $2`, [f.svc, f.negocio])).rows[0];
     if (!s) return no("Ese servicio ya no está.", "That service is no longer available.");
+    // 9n · Cotizaciones: ninguno de los elegidos la tiene en pausa (puede haberse pausado entre elegir y enviar).
+    if ((await c.query(`select 1 from businesses where id = any($1::text[]) and coalesce(modules_off, '{}'::jsonb) ? 'cot'`, [elegidos.map((x) => x!.id)])).rowCount) return no("Uno de esos negocios ya no recibe presupuestos.", "One of those businesses no longer takes estimate requests.");
     const casa = (await c.query<{ id: string; dir: string; tenure: string }>(
       `select h.id::text, concat_ws(', ', a.street || coalesce(' ' || nullif(a.apt, ''), ''), a.zip) as dir, h.tenure from user_homes h join user_addresses a on a.id = h.address_id
         where h.user_id = $1 and h.removed_at is null and a.removed_at is null order by h.is_default desc, h.created_at desc limit 1`, [userId])).rows[0];

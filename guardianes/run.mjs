@@ -10463,7 +10463,8 @@ const guardianes = {
 
   /* (3) Un módulo apagado en una ciudad usa la pausa que ya respetan la ficha, los pedidos y las citas (modules_off) con la marca {"ciudad": true}:
      todos los negocios de la ciudad la reciben, también los que llegan después (trigger); encenderlo quita solo esa marca; Negocios 360° no la
-     levanta para uno solo; y solo se ofrece para los módulos que tienen esa pausa (no Cotizaciones ni Staff). */
+     levanta para uno solo; y solo se ofrece para los módulos que tienen esa pausa: cada clave de MODULOS_POR_CIUDAD (los 12, con Cotizaciones y Staff desde el 18 nov) tiene su lector
+     en la página y el servidor (LECTORES), y moduloPausar acepta cot y staff para un solo negocio. */
   moduloPorCiudad() {
     const G = "moduloPorCiudad", MIG = "packages/db/migrations/0179_catalogo_completo.sql", L = "apps/web/lib/admin-catalogo.ts", N = "apps/web/app/admin/acciones-negocios.ts";
     if (!existsSync(MIG)) return;
@@ -10472,7 +10473,50 @@ const guardianes = {
     const f = ultimaFn("catalogo_modulo_ciudad");
     if (!/modules_off - modulo where city_id = ciudad and modules_off->modulo->>'ciudad' = 'true'/.test(f)) falla(G, MIG, 0, "encender un módulo en la ciudad quita también la pausa propia de un negocio (solo se quita la marcada {\"ciudad\": true})");
     if (!/'ciudad', true\)\)\s*\n?\s*where city_id = ciudad and not \(modules_off \? modulo\)/.test(f)) falla(G, MIG, 0, "apagar un módulo en la ciudad pisa la pausa propia de un negocio o no la marca como de la ciudad");
-    if (existsSync(L)) { const t = /export const MODULOS_POR_CIUDAD = \[([^\]]*)\]/.exec(sinComent(L))?.[1] ?? ""; if (!t) falla(G, L, 0, "falta MODULOS_POR_CIUDAD"); else if (/"(cot|staff)"/.test(t)) falla(G, L, 0, "Cotizaciones y Staff no tienen la pausa de To’Latino: apagarlos por ciudad no apagaría nada"); }
+    if (existsSync(L)) {
+      const t = /export const MODULOS_POR_CIUDAD = \[([^\]]*)\]/.exec(sinComent(L))?.[1] ?? "";
+      if (!t) falla(G, L, 0, "falta MODULOS_POR_CIUDAD");
+      else {
+        /* Cada clave que el Catálogo deja apagar por ciudad tiene que tener su LECTOR: el código de la página o del servidor que mira modules_off[<clave>].
+           Una clave sin lector apaga «nada» (la pausa se escribe y nadie la lee). Cotizaciones (cot) y Staff (staff) se sumaron el 18 nov. */
+        const R = (f, re) => [f, re], W = "apps/web/", LIB = W + "lib/", AP = W + "app/(app)/n/[id]/";
+        const LECTORES = {
+          menu: [R(LIB + "menu.ts", /off\.menu/), R(LIB + "pedir.ts", /off\.menu/)],
+          pedidos: [R(LIB + "pedir.ts", /off\.pedidos/), R(LIB + "pedidos.ts", /modules_off->'pedidos'/)],
+          rsv: [R(LIB + "reservas.ts", /off\.rsv/)],
+          svc: [R(LIB + "servicios.ts", /off\.svc/), R(LIB + "oficios.ts", /off\.svc/)],
+          citas: [R(LIB + "citas.ts", /off\.citas/), R(LIB + "servicios.ts", /off\.citas/)],
+          cot: [R(LIB + "solicitudes.ts", /coalesce\(b\.modules_off, '\{\}'::jsonb\) \? 'cot' as pausa/), R(LIB + "solicitudes.ts", /if \(s\.pausa\) return no\(PAUSA_COT\.es, PAUSA_COT\.en\)/),
+            R(LIB + "solicitudes.ts", /not \(coalesce\(b\.modules_off, '\{\}'::jsonb\) \? 'cot'\) and \(b\.id = \$1/), R(LIB + "solicitudes.ts", /id = any\(\$1::text\[\]\) and coalesce\(modules_off, '\{\}'::jsonb\) \? 'cot'/),
+            R(LIB + "viajes.ts", /if \(s\.k === "cotiza" && x\.off\.cot\) \{ await c\.query\("rollback"\); return no\(PAUSA_COT/), R(LIB + "viajes.ts", /!\(s\.k === "cotiza" && x\.off\.cot\)/),
+            R(LIB + "fiestas-reservas.ts", /if \(s\.k === "cotiza" && x\.off\.cot\) \{ await c\.query\("rollback"\); return no\(PAUSA_COT/), R(LIB + "fiestas-reservas.ts", /!\(s\.k === "cotiza" && x\.off\.cot\)/),
+            R(LIB + "oficios-publico.ts", /cotOff: enPausa\(off, "cot"\)/), R(LIB + "trans-publico.ts", /cotOff: enPausa\(b\.off, "cot"\)/), R(LIB + "fiestas-publico.ts", /cotOff: enPausa\(b\.off, "cot"\)/),
+            R(AP + "preestimado/page.tsx", /!op\.can \|\| op\.cotOff/), R(AP + "presupuestos/page.tsx", /!op\.can \|\| op\.cotOff/),
+            R(AP + "Oficios.tsx", /s\.k === "pres" && op\.can && !op\.cotOff/), R(AP + "Oficios.tsx", /\.includes\(s\.k\) && op\.can && !op\.cotOff/),
+            R(AP + "Viaje.tsx", /tp\.booking && !\(cot && tp\.cotOff\)/), R(AP + "Fiesta.tsx", /s\.k === "cotiza" && fp\.cotOff/)],
+          shop: [R(LIB + "apartados.ts", /modules_off \? 'shop'/)],
+          renta: [R(LIB + "rentas.ts", /modules_off \? 'renta'/)],
+          staff: [R(LIB + "ficha.ts", /x\.staff_hidden or coalesce\(x\.modules_off, '\{\}'::jsonb\) \? 'staff'/), R(LIB + "ficha.ts", /equipoOff: b\.staff_off/),
+            R(AP + "FichaNueva.tsx", /const verEquipo = f\.equipoOff \? \[\] : gente/), R(AP + "FichaNueva.tsx", /\.\.\.\(verEquipo\.length \? \[\{ id: "staff"/), R(AP + "FichaNueva.tsx", /tab === "staff" && verEquipo\.length > 0/)],
+          eventos: [R("packages/db/migrations/0107_eventos_publico.sql", /not \(coalesce\(b\.modules_off, '\{\}'::jsonb\) \? 'eventos'/)],
+          nov: [R(LIB + "novedades.ts", /modules_off \? 'nov'/)],
+          jobs: [R(LIB + "jobs.ts", /modules_off->'jobs'/)],
+        };
+        const claves = [...t.matchAll(/"([a-z]+)"/g)].map((x) => x[1]);
+        for (const k of claves) {
+          if (!LECTORES[k]) { falla(G, L, 0, `«${k}» está en MODULOS_POR_CIUDAD y no tiene lector registrado: apagarlo por ciudad no apagaría nada (agrega su lector en la página y el servidor, y aquí)`); continue; }
+          for (const [f, re] of LECTORES[k]) {
+            if (!existsSync(f)) { falla(G, f, 0, `el lector de «${k}» no existe`); continue; }
+            const txt = f.endsWith(".sql") ? readFileSync(f, "utf8") : sinComent(f);
+            if (!re.test(txt)) falla(G, f, 0, `«${k}» se apaga por ciudad pero este archivo ya no mira su pausa (modules_off): ${re.source.slice(0, 90)}`);
+          }
+        }
+        for (const k of ["cot", "staff"]) if (!claves.includes(k)) falla(G, L, 0, `«${k}» salió de MODULOS_POR_CIUDAD: el Catálogo ya no lo apaga por ciudad`);
+        const NV = existsSync(N) ? sinComent(N) : "";
+        const MP = NV.slice(NV.indexOf("export async function moduloPausar"), NV.indexOf("export async function moduloPausar") + 900);
+        for (const k of ["cot", "staff"]) if (NV && !new RegExp(`"${k}"[^\\n]*\\]\\.includes\\(modulo\\)`).test(MP)) falla(G, N, 0, `Negocios 360° no puede pausar «${k}» a un solo negocio (moduloPausar no lo acepta)`);
+      }
+    }
     if (existsSync(N) && !/if \(!pausar && cur\[modulo\]\?\.ciudad === true\) return/.test(cuerpoFn(sinComent(N), "moduloPausar"))) falla(G, N, 0, "Negocios 360° reanuda para un solo negocio un módulo apagado en toda su ciudad");
   },
 

@@ -1,5 +1,6 @@
 import "server-only";
 import { db, tx } from "./db";
+import { enPausa } from "./modulo-pausa";
 import type { Attrs, Bi } from "./oficios";
 
 /* La ficha de un taller (Auto) o un servicio del hogar (Hogar) para el cliente (Fase 4 · 4b). Diseño: neg-auto-book.js
@@ -14,6 +15,8 @@ export type PolPub = { auto: boolean; resp: number; dep: number; cxh: number; ex
 export type OficiosPublico = {
   rubro: Rubro; negocio: { id: string; nombre: string; direccion: string | null; telefono: string | null; foto: string | null };
   secciones: { id: string; name: Bi }[]; servicios: OficioPub[]; pol: PolPub; can: boolean; off: "pausa" | "tope" | "apagado" | null;
+  /* 9n · Cotizaciones en pausa (modules_off.cot): sin «Pedir pre-estimado» ni «Pedir a hasta 3». */
+  cotOff: boolean;
   tool: { rate: number; warrM: number | null; warrMi: number | null; cut: number | null; h24: boolean; eta: number; zone: number | null };
   compat: { veh: string[] | null; mk: string[] | null; tenure: string[] | null };
   vehiculos: Vehiculo[]; casas: Casa[]; dirs: { id: string; t: string }[]; hoy: string;
@@ -47,7 +50,7 @@ export async function oficiosPublico(negocio: string, userId: string | null): Pr
   const tenure = rubro === "hogar" && (fv.includes("dueno") || fv.includes("land") || fv.includes("inq")) ? ["inq", "dueno", "land"].filter((x) => fv.includes(x)) : null;
   return {
     rubro, negocio: { id: b.id, nombre: b.name, direccion: b.address, telefono: b.phone, foto: b.foto }, secciones: S.rows, servicios: I.rows.map((s) => ({ ...s, opts: Array.isArray(s.opts) ? s.opts : [] })),
-    pol: P.rows[0] ?? { auto: false, resp: 30, dep: 0, cxh: 2, exp: 2, kinds: [], bigOver: null, big: null, min: null }, can: offC === null, off: offC,
+    pol: P.rows[0] ?? { auto: false, resp: 30, dep: 0, cxh: 2, exp: 2, kinds: [], bigOver: null, big: null, min: null }, can: offC === null, off: offC, cotOff: enPausa(off, "cot"),
     tool: { ...(T.rows[0] ?? { rate: 9500, warrM: null, warrMi: null, cut: null, h24: false, eta: 60 }), zone: b.zone },
     compat: { veh: Array.isArray(at.veh) ? (at.veh as string[]) : null, mk: Array.isArray(at.mk) ? (at.mk as string[]) : null, tenure },
     vehiculos: userId && rubro === "auto" ? await misVehiculos(userId) : [], casas: userId && rubro === "hogar" ? await misCasas(userId, negocio) : [],

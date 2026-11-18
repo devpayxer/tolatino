@@ -137,6 +137,8 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   }) : [];
   if (!sv) for (const p of f.equipo) gente.push({ id: p.id, name: p.name, short: primerNombre(p.name), role: p.role, spec: "", foto: p.foto, owner: p.owner, silla: null });
   const staffBook = !!sv && sv.cp.can && (sv.silla || (sv.cp.pol.pick && gente.length > 1));
+  // 9n · Staff en pausa (modules_off.staff): la página no presenta al equipo; quién se puede elegir al reservar sigue siendo de Citas (gente / staffBook no cambian).
+  const verEquipo = f.equipoOff ? [] : gente;
   const [bk, setBk] = useState<Bk | null>(null);
   const abrirReserva = (o: Partial<Bk> = {}) => { if (!sv || !sv.cp.can) return; setBk({ ...nuevaBk(sv), ...o, step: 1 }); };
   // Computadora: la tarjeta de la derecha guarda su propia elección; elegir a alguien del equipo la ilumina un momento.
@@ -195,7 +197,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   const tabs = [
     { id: "res", label: E2("Resumen", "Overview"), icon: "home" },
     ...((sv ? nItems : vende?.n) ? [{ id: "cat", label: tc(vende?.tabL ?? L(cfg.tab)), icon: cfg.icon }] : []),
-    ...(gente.length ? [{ id: "staff", label: tc(L(cfg.staffTab)), icon: "users" }] : []),
+    ...(verEquipo.length ? [{ id: "staff", label: tc(L(cfg.staffTab)), icon: "users" }] : []),
     { id: "rev", label: E2("Reseñas", "Reviews"), icon: "star" },
     ...(novedades?.posts.length ? [{ id: "nov", label: E2("Novedades", "Updates"), icon: "news" }] : []),
     ...(tienda && f.cat !== "NEG-TIENDA" && (tienda.L.length || tienda.V.length) ? [{ id: "shop", label: f.cat === "NEG-TRANS" ? E2("Renta", "Rent") : E2("Tienda", "Shop"), icon: "bag" }] : []),
@@ -249,7 +251,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
     const deps = [...new Set(cp.gente.map((p) => p.dep))];
     const cols = [
       ...(cp.can ? [{ k: E2("DEPÓSITO", "DEPOSIT"), v: deps.length === 1 ? (deps[0] ? dinero(deps[0]) : E2("No pide", "None")) : `${E2("Hasta ", "Up to ")}${dinero(Math.max(...deps))}` }] : []),
-      ...(gente.length ? [{ k: L(cfg.staffTab), v: `${gente.length} ${gente.length === 1 ? sv.w.uno : sv.w.varios}` }] : []),
+      ...(verEquipo.length ? [{ k: L(cfg.staffTab), v: `${verEquipo.length} ${verEquipo.length === 1 ? sv.w.uno : sv.w.varios}` }] : []),
       { k: E2("PAGO", "PAYMENT"), v: E2("En el local", "In store") },
     ].slice(0, 3);
     return { eyebrow: f.hoy.eyebrow, title, cols };
@@ -282,7 +284,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
       <Icon name="bolt" size={17} color="var(--tl-action)" /><span className="min-w-0 flex-1 text-[13.5px] font-bold leading-[1.45] text-action-hover">{f.oferta}</span><Icon name="chevronRight" size={16} color="var(--tl-action)" />
     </button>
   ) : null;
-  const dueno = (desk: boolean) => f.quien ? <div className="grid"><OwnerCard {...f.quien} desktop={desk} teamCta={gente.length ? `${E2("Ver", "See")} ${L(cfg.staffTitle).toLowerCase()}` : ""} onTeam={gente.length ? () => (desk ? ir("staff") : setTab("staff")) : undefined} /></div> : null;
+  const dueno = (desk: boolean) => f.quien ? <div className="grid"><OwnerCard {...f.quien} desktop={desk} teamCta={verEquipo.length ? `${E2("Ver", "See")} ${L(cfg.staffTitle).toLowerCase()}` : ""} onTeam={verEquipo.length ? () => (desk ? ir("staff") : setTab("staff")) : undefined} /></div> : null;
   const miCita = sv?.mia ? (
     <button type="button" onClick={sv.mia.onClick} data-screen-label="Ficha · tu cita" className="flex w-full items-center gap-3 rounded-[17px] border border-line bg-white px-4 py-3.5 text-left">
       <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{sv.mia.k}</span><Tag tone={sv.mia.tone}>{sv.mia.tag}</Tag></div>
@@ -463,11 +465,11 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
                   {popular.map((x) => filaSvc(x))}
                 </div>
               ) : null}
-              {gente.length ? (
+              {verEquipo.length ? (
                 <div className="flex flex-col gap-2.5">
                   <SectionHeader title={L(cfg.staffTitle)} action={E2("Ver todos", "See all")} onAction={() => setTab("staff")} />
                   <div className="hs -mx-5 flex gap-2.5 overflow-x-auto px-5">
-                    {gente.map((p) => (
+                    {verEquipo.map((p) => (
                       <button key={p.id} type="button" onClick={() => (staffBook ? abrirReserva({ who: p.id }) : setTab("staff"))} className="w-[136px] flex-none overflow-hidden rounded-[17px] border border-ink/[.08] bg-white text-left">
                         {fotoGente(p, 120)}
                         <div className="px-[11px] pb-3 pt-2.5"><div className="font-display text-[14.5px] font-extrabold leading-[1.2] tracking-[-0.02em]">{p.short}</div><div className="mt-1 truncate text-[11.5px] font-semibold leading-[1.35] text-ink/60">{p.role}</div></div>
@@ -493,9 +495,9 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
               ))}
             </div>
           )}
-          {tab === "staff" && (
+          {tab === "staff" && verEquipo.length > 0 && (
             <div className="flex flex-col gap-3 px-5 pt-[18px]" data-screen-label="Ficha · equipo">
-              {gente.map((p) => (
+              {verEquipo.map((p) => (
                 <div key={p.id} className="grid grid-cols-[84px_minmax(0,1fr)] gap-[13px] rounded-[17px] border border-ink/[.08] bg-white p-3">
                   <div className="overflow-hidden rounded-[13px]">{fotoGente(p, 96)}</div>
                   <div className="flex min-w-0 flex-col gap-1.5">
@@ -579,9 +581,9 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
                 ))}
               </div>
             )) : null}
-            {gente.length ? seccion("staff", L(cfg.staffTitle), (
+            {verEquipo.length ? seccion("staff", L(cfg.staffTitle), (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3.5">
-                {gente.map((p) => (
+                {verEquipo.map((p) => (
                   <div key={p.id} className="flex flex-col overflow-hidden rounded-[20px] border bg-white" style={{ border: dsk.who === p.id ? "1.5px solid var(--tl-ink)" : "1px solid rgba(11,14,18,.08)" }}>
                     <div className="relative">{fotoGente(p, 180)}{p.owner ? <span className="absolute left-3 top-3"><Tag tone="ink">{E2("DUEÑO", "OWNER")}</Tag></span> : null}</div>
                     <div className="flex flex-1 flex-col gap-2 p-4">

@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "./db";
+import { enPausa } from "./modulo-pausa";
 import { herramientaTrans, kindTrans, salidasDe } from "./transporte";
 import { LIC_TRANS, type Bi, type HerrTrans, type KindTrans, type SvcTrans } from "./transporte-comun";
 
@@ -10,7 +11,7 @@ import { LIC_TRANS, type Bi, type HerrTrans, type KindTrans, type SvcTrans } fro
 export type TransPublico = {
   negocio: { id: string; nombre: string; direccion: string | null; telefono: string | null; foto: string | null; ciudad: string };
   secciones: { id: string; name: Bi }[]; servicios: SvcTrans[]; kind: KindTrans; h: Omit<HerrTrans, "salidas"> | null;
-  lic: { kind: string; titulo: Bi; numero: string | null }[]; licOk: boolean; licEnRevision: boolean; booking: boolean;
+  lic: { kind: string; titulo: Bi; numero: string | null }[]; licOk: boolean; licEnRevision: boolean; booking: boolean; cotOff: boolean;
   tags: string[]; zone: number | null; sinLocal: boolean; h24: boolean;
 };
 
@@ -58,7 +59,7 @@ export async function transPublico(negocio: string): Promise<TransPublico | null
     negocio: { id: b.id, nombre: b.name, direccion: b.casa ? null : b.address, telefono: b.phone, foto: b.foto, ciudad: b.ciudad },
     secciones: S.rows.filter((x) => usados.has(x.id)), servicios: I.rows.map((s) => ({ ...s, prox: prox[s.id] ?? null })), kind, h,
     lic: valid.map((x) => ({ kind: x.kind, titulo: x.titulo, numero: x.numero })), licOk, licEnRevision: !licOk && L.rows.some((x) => x.status === "review" && req.includes(x.kind)),
-    booking: b.pro && (b.mods ?? []).includes("citas") && !(b.off ?? {}).citas && licOk, tags, zone: b.zone,
+    booking: b.pro && (b.mods ?? []).includes("citas") && !(b.off ?? {}).citas && licOk, cotOff: enPausa(b.off, "cot"), tags, zone: b.zone,
     sinLocal: b.casa || !b.address || ["grua", "courier", "mud", "cdl"].includes(kind), h24: h24 || tags.includes("24h"),
   };
 }

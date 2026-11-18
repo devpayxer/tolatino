@@ -2577,6 +2577,12 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
     categoriaPorCiudad, moduloPorCiudad, plantillasDePublica, limitesDelPlan (alrevesCat9n 29/29); e2e **cat9n 51 ✓** y cat1m, mapa, ciudad, fie4u en
     local (Postgres 16 + `next build` + `next start`, Chromium). Ayuda `admin-catalogo.md`; decisiones en REVISION «Catálogo completo»; pendientes
     nuevos en LAUNCH (Free en Servicios/Tienda, Cotizaciones y Staff por ciudad, estado sin diseño de la categoría apagada).
+  · **9n · Cotizaciones y Staff por ciudad** (LAUNCH «→ 9n · Cotizaciones y Staff por ciudad», sin migración nueva): `cot` y `staff` leen la pausa
+    `modules_off` y entran a MODULOS_POR_CIUDAD (ya son los 12). Cotizaciones = pedir precio antes de reservar (pre-estimado y «hasta 3» de Auto/Hogar,
+    mudanza de Transporte, total por escrito de Fiestas): la página no lo ofrece y el servidor lo rechaza (`lib/modulo-pausa.ts`; `solicitudes.ts`,
+    `viajes.ts`, `fiestas-reservas.ts`); Staff = presentación del equipo en la ficha (`ficha.ts` equipoOff, FichaNueva), reservar NO cambia.
+    Negocios 360° (`moduloPausar`, N360) y el panel (nota con el motivo) también. Guardián moduloPorCiudad con LECTORES por clave (una clave sin lector
+    falla); alrevesCat9n con los defectos nuevos (42/42); e2e **cat9n2 48 ✓** (Hazleton a 390 y 1360, y de vuelta; cat9n sigue en 51 ✓), tipos, `next build` y guardianes limpios en local (Postgres 16, `next start`, Chromium). Ayuda `admin-catalogo.md`; decisiones en REVISION «Cotizaciones y Staff por ciudad».
 - **17 nov · Demos ronda 2 (pedido del fundador: 10 por CADA subcategoría + 200+ eventos):** 21 agentes Sonnet en worktrees, uno por
   categoría + 2 para la semilla existente + 2 de eventos; generadores `scripts/semilla/demos/r2-*.mjs` (solo leen los de la ronda 1).
   Integración en una base nueva (copia de tl_demos): ≈ 6.700 negocios nuevos (todas las subcategorías ≥ 10), 446 de la semilla llenados,
