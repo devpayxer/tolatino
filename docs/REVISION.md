@@ -5439,6 +5439,9 @@ la misma pausa para **un solo negocio** (Equipo › Módulo › Staff; Lo que ve
   minutos).
 - Como Marisol (570-555-0122) abre el mismo enlace (`/panel/sabor-dominicano?equipo=1`): «Sin acceso».
 
+- Caso raro, anotado: si alguien del equipo de To'Latino es **también** miembro de ese negocio (con acceso a algunas partes), en las partes
+  donde sí es miembro sus cambios se guardan como los de cualquier miembro; el aviso de solo lectura no lo distingue.
+
 **Decisión tomada por defecto (AB, reversible):** el equipo **ve, nunca cambia**. Para cambiar algo en nombre del negocio sigue el 360° (queda en el
 historial y el dueño lo ve). Detalles:
 - Entra quien es del equipo, con su segundo factor y permiso de **ver Negocios**, solo en los negocios de las ciudades de su rol (como el 360°).
