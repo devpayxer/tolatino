@@ -9455,6 +9455,26 @@ const guardianes = {
     if (!/BASE="\$\{DIRECCIONES_ESPEJO:-https:\/\/www2\.census\.gov\/geo\/tiger\}"/.test(gen) || /googleapis|mapbox|hereapi|nominatim\.openstreetmap|photon\.komoot/.test(gen)) falla(G, "infra/direcciones/generar.sh", 0, "la carga baja datos públicos del Censo (y las fuentes de fuentes-oa.txt): nunca un servicio de geocodificación");
   },
 
+  /* Anchos (18 nov) · arrastreSeSuelta: en el iPad un arrastre del mapa del pin se quedó «agarrado» (Safari perdió el soltar) y el siguiente
+     movimiento del puntero, camino a «Guardar», devolvió el pin a donde empezó ese arrastre: se guardó otro punto que el que se veía. Toda pieza que
+     arrastra con onPointerMove (los mapas) se suelta también al perder la captura (onLostPointerCapture), solo sigue al MISMO puntero (pointerId) y,
+     si es ratón, solo con el botón apretado (buttons === 0 suelta). Al revés (alrevesArrastre): sin onLostPointerCapture, sin mirar el pointerId,
+     sin mirar los botones. */
+  arrastreSeSuelta() {
+    const G = "arrastreSeSuelta";
+    let n = 0;
+    for (const f of archivos) {
+      if (!/^(apps\/web|packages\/ui)\//.test(f) || !/\.tsx$/.test(f) || /node_modules|\/\.next\//.test(f)) continue;
+      const t = sinComent(f);
+      if (!/onPointerMove=\{/.test(t)) continue;
+      n++;
+      if (!/onLostPointerCapture=\{/.test(t)) falla(G, f, 0, "arrastra con onPointerMove sin soltarse al perder la captura (onLostPointerCapture)");
+      if (!/e\.pointerId !== \w+\.id/.test(t)) falla(G, f, 0, "el arrastre sigue a cualquier puntero: solo al que lo empezó (pointerId)");
+      if (!/e\.pointerType === "mouse" && e\.buttons === 0/.test(t)) falla(G, f, 0, "con el ratón sin botón apretado el arrastre sigue: se suelta (buttons === 0)");
+    }
+    if (n < 2) falla(G, "apps/web/app/_dir/MapaPin.tsx", 0, "no encontré los mapas que se arrastran (MapaPin y Mapa)");
+  },
+
   /* 9m · autocompletarRapido (decisión AC: ≤ 100 ms mientras se escribe, a escala nacional). Lo que lo hace rápido no se puede perder sin que el build
      se entere: los índices por PREFIJO (text_pattern_ops) y de trigramas de geo_names, la búsqueda acotada (un CTE materializado con límite y el
      número de sugerencias recortado), el tope de tiempo de la consulta (statement_timeout ≤ 300 ms), la espera de la pantalla (≥ 100 ms sin teclas)

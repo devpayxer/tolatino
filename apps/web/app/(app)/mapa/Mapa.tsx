@@ -41,7 +41,7 @@ export function Mapa({ v }: { v: VistaMapa }) {
   const [sel, setSel] = useState<string | null>(null), [hov, setHov] = useState<string | null>(null);
   const [cen, setCen] = useState<LL | null>(null), [dz, setDz] = useState<number | null>(null), [n, setN] = useState(20);
   const [arrastrando, setArrastrando] = useState(false);
-  const drag = useRef<{ x: number; y: number; c: [number, number]; z: number; sc: number } | null>(null), movio = useRef(false);
+  const drag = useRef<{ x: number; y: number; c: [number, number]; z: number; sc: number; id: number } | null>(null), movio = useRef(false);
 
   // Cambia la lista (filtros nuevos del servidor): se cierra lo elegido y se vuelve a 20.
   useEffect(() => { setSel(null); setHov(null); setN(20); }, [v.pins]);
@@ -96,9 +96,11 @@ export function Mapa({ v }: { v: VistaMapa }) {
   const cambiarRadio = () => ir({ ciudad: "" });
 
   // ── Arrastrar ──
-  const abajo = (e: PE<HTMLDivElement>) => { movio.current = false; drag.current = { x: e.clientX, y: e.clientY, c: proyectar(centro, z), z, sc }; };
+  const abajo = (e: PE<HTMLDivElement>) => { movio.current = false; drag.current = { x: e.clientX, y: e.clientY, c: proyectar(centro, z), z, sc, id: e.pointerId }; };
+  // Un arrastre sin su «soltar» (Safari) no deja el mapa agarrado: el mismo puntero, con el botón apretado si es ratón (guardián arrastreSeSuelta).
   const mover = (e: PE<HTMLDivElement>) => {
-    const g = drag.current; if (!g) return;
+    const g = drag.current; if (!g || e.pointerId !== g.id) return;
+    if (e.pointerType === "mouse" && e.buttons === 0) { arriba(); return; }
     const dx = e.clientX - g.x, dy = e.clientY - g.y;
     if (!movio.current && Math.abs(dx) + Math.abs(dy) < 5) return;
     if (!movio.current) { movio.current = true; setArrastrando(true); try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* sin captura */ } }
@@ -138,7 +140,7 @@ export function Mapa({ v }: { v: VistaMapa }) {
 
       <div style={{ display: "grid", gridTemplateColumns: L.cols, gap: L.colGap, alignItems: "start" }}>
         <div style={{ order: L.mapOrder, minWidth: 0, position: L.mapPos as CSSProperties["position"], top: L.mapTop }}>
-          <div data-screen-label="Mapa · pines" onPointerDown={abajo} onPointerMove={mover} onPointerUp={arriba} onPointerCancel={arriba} onPointerLeave={arriba} onClick={clicMapa}
+          <div data-screen-label="Mapa · pines" onPointerDown={abajo} onPointerMove={mover} onPointerUp={arriba} onPointerCancel={arriba} onPointerLeave={arriba} onLostPointerCapture={arriba} onClick={clicMapa}
             style={{ position: "relative", height: H, borderRadius: L.mapR, overflow: "hidden", background: "var(--tl-photo-bg)", border: "1px solid rgba(11,14,18,.08)", touchAction: "none", cursor: arrastrando ? "grabbing" : "grab", userSelect: "none" }}>
             <div style={{ position: "absolute", left: "50%", top: "50%", width: 0, height: 0, transform: `scale(${sc})` }}>
               {tiles.map((t) => <span key={t.src} style={{ position: "absolute", left: t.left, top: t.top, width: 256, height: 256, display: "block", pointerEvents: "none", backgroundImage: `url(${t.src})`, backgroundSize: "256px 256px" }} />)}

@@ -19,7 +19,7 @@ export function MapaPin({ origen, pin, onPin, es, maxM = 250, desk = false, etiq
 }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const centro = pin ?? origen;
-  const g = useRef<{ x: number; y: number; c: [number, number] } | null>(null);
+  const g = useRef<{ x: number; y: number; c: [number, number]; id: number } | null>(null);
   const [mov, setMov] = useState(false);
   useEffect(() => { g.current = null; }, [origen[0], origen[1]]);
   const tiles = teselas(centro, Z, W, H, 1).map(({ src, left, top }) => ({ src, left: Math.round(left), top: Math.round(top) }));
@@ -27,9 +27,13 @@ export function MapaPin({ origen, pin, onPin, es, maxM = 250, desk = false, etiq
   const o = proyectar(origen, Z), c = proyectar(centro, Z);
   const dots = pin ? [{ x: Math.round(o[0] - c[0]), y: Math.round(o[1] - c[1]), color: "var(--tl-ink)" }] : [];
   const d = pin ? metrosEntre(origen, pin) : 0, lejos = d > maxM;
-  const abajo = (e: PE<HTMLDivElement>) => { g.current = { x: e.clientX, y: e.clientY, c: proyectar(centro, Z) }; try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* sin captura */ } };
+  const abajo = (e: PE<HTMLDivElement>) => { g.current = { x: e.clientX, y: e.clientY, c: proyectar(centro, Z), id: e.pointerId }; try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* sin captura */ } };
+  /* Anchos (18 nov) · Un arrastre sin su «soltar» (Safari pierde el pointerup o la captura) dejaba el mapa agarrado: el siguiente movimiento del
+     puntero, aunque fuera camino a «Guardar», devolvía el pin a donde empezó ese arrastre y se guardaba ese. Solo mueve el mismo puntero, con el
+     botón apretado si es ratón; perder la captura o usar las flechas suelta el mapa. Guardián arrastreSeSuelta. */
   const mover = (e: PE<HTMLDivElement>) => {
-    const s = g.current; if (!s) return;
+    const s = g.current; if (!s || e.pointerId !== s.id) return;
+    if (e.pointerType === "mouse" && e.buttons === 0) { arriba(); return; }
     const dx = e.clientX - s.x, dy = e.clientY - s.y;
     if (Math.abs(dx) + Math.abs(dy) < 3) return;
     setMov(true);
@@ -39,14 +43,14 @@ export function MapaPin({ origen, pin, onPin, es, maxM = 250, desk = false, etiq
   const flechas = (e: KeyboardEvent<HTMLDivElement>) => {
     const k = { ArrowLeft: [-8, 0], ArrowRight: [8, 0], ArrowUp: [0, -8], ArrowDown: [0, 8] }[e.key];
     if (!k) return;
-    e.preventDefault();
+    e.preventDefault(); g.current = null;
     const p = proyectar(centro, Z);
     onPin(desproyectar(p[0] + k[0]!, p[1] + k[1]!, Z));
   };
   return (
     <div data-pieza="mapa-pin" data-pin={pin ? `${pin[0].toFixed(6)},${pin[1].toFixed(6)}` : ""} data-lejos={lejos ? "1" : "0"}>
       <div role="application" aria-label={E2("Mapa: mueve el mapa con las flechas hasta que el pin quede en tu puerta", "Map: move it with the arrow keys until the pin is at your door")}
-        tabIndex={0} onKeyDown={flechas} onPointerDown={abajo} onPointerMove={mover} onPointerUp={arriba} onPointerCancel={arriba}
+        tabIndex={0} onKeyDown={flechas} onPointerDown={abajo} onPointerMove={mover} onPointerUp={arriba} onPointerCancel={arriba} onLostPointerCapture={arriba}
         style={{ touchAction: "none", cursor: mov ? "grabbing" : "grab", userSelect: "none", outlineOffset: 3 }}>
         <RadiusMap desk={desk} label={etiqueta ?? E2("LA PUERTA ESTÁ AQUÍ", "THE DOOR IS HERE")} radius={pin ? `${d} m` : undefined} tiles={tiles} dots={dots} circle={0}
           note={lejos ? E2(`Muy lejos de la dirección (${d} m). Acércalo a la puerta: hasta ${maxM} m.`, `Too far from the address (${d} m). Bring it to the door: up to ${maxM} m.`) : undefined}
