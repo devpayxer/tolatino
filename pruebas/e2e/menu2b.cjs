@@ -151,9 +151,14 @@ const MARISOL = "(select id from users where phone='+15705550122')";
 
   // Free: 5 platos en la página; con pedidos este mes se pide desde el Resumen; sin pedidos, lista y Llamar
   sql(`update business_stats_cache set plan='free' where business_id='${BIZ}'`);
+  // Precondición propia (barajada, 18 nov): otras pruebas le hacen pedidos este mes a sabor-dominicano y el tope de 10 se puede haber gastado;
+  // el tope queda en lo ya usado + 5 para que «con pedidos» sea cierto (se vuelve a 10 al final, y también si la prueba se cae).
+  const usadosMes = Number(sql(`select count(*) from operations o where o.business_id = '${BIZ}' and o.kind <> 'table' and o.sent_at >= date_trunc('month', now() at time zone 'America/New_York') at time zone 'America/New_York'`));
+  sql(`update platform_config set value='${usadosMes + 5}' where key='free_ops_cap'`);
   await m.goto(B + N); await m.locator('[data-screen-label="Resumen · menú"]').waitFor();
   ok(await m.getByRole('tab', { name: /Menú/ }).count() === 0, 'Free: sin pestaña Menú');
-  ok(/PICKUP · PAGAS EN EL LOCAL/.test(await m.locator('[data-screen-label="Ficha · barra de pedido"]').innerText()), 'Free con pedidos: barra pickup');
+  // Con delivery encendido (otra prueba lo puede dejar así) la barra dice «DELIVERY O PICKUP · PAGAS EN EFECTIVO»: las dos son «se pide en línea».
+  ok(/PICKUP · PAGAS EN (EL LOCAL|EFECTIVO)/.test(await m.locator('[data-screen-label="Ficha · barra de pedido"]').innerText()), 'Free con pedidos: barra pickup');
   await shot(m, 'b19-free-m.png', true);
   sql(`update platform_config set value='0' where key='free_ops_cap'`);
   await m.reload(); await m.locator('[data-screen-label="Resumen · menú"]').waitFor();

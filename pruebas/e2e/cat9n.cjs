@@ -157,7 +157,9 @@ let K = ''; const audit = (accion, objetivo) => sql(`select count(*) from audit_
     ok(await negociosTiene() && (await v.goto(B + '/c/' + DSLUG)).status() === 200, 'encendida otra vez: Negocios la ofrece y su página responde');
 
     console.log('3 · Módulo activo por ciudad: Novedades apagado en Hazleton');
-    const NOV = 'Mofongo de chicharrón a $10 hoy';
+    // Precondición propia (barajada, 18 nov): la novedad de la semilla la puede vencer u ocultar otra prueba; esta pone la suya, viva 3 días.
+    const NOV = `Cat9n novedad propia ${k}`;
+    sql(`insert into business_posts (business_id, city_id, kind, title, publish_at, ends_at) values ('sabor-dominicano', 'hzl', 'novedad', '${NOV}', now() - interval '2 minutes', now() + interval '3 days')`);
     // La novedad viaja en la página (en su pestaña de la ficha nueva): se mira el HTML servido, no solo lo que está a la vista.
     const fichaNov = async () => { await v.goto(B + '/n/sabor-dominicano'); await v.waitForLoadState('networkidle'); return (await v.content()).includes(NOV); };
     ok(await fichaNov(), 'antes: la ficha muestra su novedad');
