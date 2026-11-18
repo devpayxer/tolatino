@@ -2568,6 +2568,12 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   · **Pruebas que dependían de la hora** (la corrida de hito de madrugada): cre9h un huso por hora, ana9g el día de su semilla, pat002/pat003
     devuelven 7 de 7 si no se usó ningún día; ciu9i dice qué ve si no carga. 6/6 en verde de madrugada (CI 44251270054).
   · Corrida completa de hito otra vez: CI 44257931432.
+  · **cdab22d en `main` y `pruebas`** (Catálogo completo 0179 + 9f-3 todas las pantallas por el CMS, sus detalles en sus entradas): regresión completa
+    CI 44353056767 en verde en todas las fases, escritorio 1024 y iPhone SE (193/193); iPad 192/193 (solo dir9m, el pin en WebKit, a mano en REVISION).
+    Pruebas que fallaban solo barajadas o en el iPad, arregladas: pre4e (espera el reenvío en la base), ayu4f (toca el «Confirmar» que recibe el toque;
+    iPad en verde, CI 44335846619), menu2b (pickup fijo también sin sesión), ciu9i (espera «Avísame» y dice qué ve). El extractor de cadenas y los
+    guardianes listan los archivos sin repetidos (en un merge con conflicto `git ls-files` repetía cada archivo por etapa).
+  · **Cotizaciones y Staff por ciudad** (en la rama; CI dirigido 44375486236 en curso): ver su entrada.
   · **9n · Catálogo completo** (LAUNCH L214, migración **0179**): Super Admin › Catálogo edita, mueve (el código no cambia), fusiona (los negocios y
     los sinónimos pasan; el nombre viejo queda como sinónimo; «Separar» lo deshace) y quita subcategorías; categoría y módulo **activos por
     ciudad** (la categoría apagada no sale en Negocios, su página, Buscar, el mapa ni Publica; el módulo usa la pausa de Negocios 360° para toda la
