@@ -28,7 +28,7 @@ if (!solo || /^(cadenaConLlave|lineaFijaBloqueada|cmsConLimite|cuentaBorradaBili
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 // Incluye los archivos nuevos que todavía no están en git (5 nov, 1l: corrían limpios en local y la CI los cazó).
-const archivos = execSync("git ls-files --cached --others --exclude-standard", { encoding: "utf8" }).split("\n").filter((f) => f && existsSync(f));
+const archivos = [...new Set(execSync("git ls-files --cached --others --exclude-standard", { encoding: "utf8" }).split("\n"))].filter((f) => f && existsSync(f)); // sin repetidos: en un merge con conflicto ls-files repite el archivo por etapa
 // .github/ también: un flujo de CI podría apuntar la semilla o un secreto a producción (5 nov: no se revisaba).
 const codigo = archivos.filter((f) => /^(apps|packages|services|guardianes|infra|scripts|\.github)\//.test(f) && /\.(tsx?|jsx?|mjs|cjs|css|sh|ya?ml|json)$/.test(f));
 const fallos = [];
