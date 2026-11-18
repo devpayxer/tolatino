@@ -95,7 +95,9 @@ jobs:
         run: docker build -f infra/pruebas/Dockerfile -t tolatino/web:ci .
       - name: Producción como código sin servidor (azul/verde, sobre sellado, recuperación, PITR de verdad con pgBackRest, la traza del sandbox, compose)
         run: |
-          sudo apt-get install -y -q age shellcheck pgbackrest >/dev/null
+          # Sin «apt-get update» el índice de la imagen no siempre trae pgbackrest y el PITR se saltaba (18 nov). Postgres 16 ya viene en la imagen.
+          sudo apt-get update -q >/dev/null && sudo apt-get install -y -q age shellcheck pgbackrest >/dev/null
+          echo "pgbackrest: $(command -v pgbackrest || echo falta) · Postgres 16: $(test -x /usr/lib/postgresql/16/bin/initdb && echo sí || echo falta)"
           sudo -E env "PATH=$PATH" bash pruebas/infra/correr.sh
       - name: Imagen de la base de producción se construye (Postgres + PostGIS + pgBackRest)
         run: docker build -t tolatino/base:ci infra/produccion/base

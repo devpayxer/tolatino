@@ -36,6 +36,7 @@ if [ "$(id -u)" = 0 ] && [ "${INFRA_SIN_ROOT:-0}" != 1 ]; then
   seccion "el sandbox no cambia (traza)"; bash pruebas/infra/traza-sandbox.sh || mal=1
   seccion "producción solo avanza (tolatino-sync)"; bash pruebas/infra/sync.test.sh || mal=1
   if command -v pgbackrest >/dev/null && [ -x /usr/lib/postgresql/16/bin/initdb ]; then seccion "PITR de verdad"; bash pruebas/infra/pitr-local.sh || mal=1
+  elif [ "${CI:-}" = true ]; then echo; echo "✗ PITR: en el CI tiene que correr y falta pgbackrest o Postgres 16"; mal=1
   else echo; echo "· PITR: falta pgbackrest o Postgres 16 (no corrió)"; fi
 fi
 echo
