@@ -33,7 +33,8 @@ async function inscribir(p, neg, svc, o = {}) {
   return p.url().match(/I-\d+/)[0];
 }
 // En el iPad la lista y la hoja del detalle tienen «Confirmar» visibles a la vez y la hoja tapa la de la lista: se toca la de la hoja (la última). Anchos, 18 nov.
-const ultimaVisible = async (l) => { for (let i = 0; i < 24; i++) { const n = await l.count(); for (let k = n - 1; k >= 0; k--) if (await l.nth(k).isVisible()) return l.nth(k); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l); };
+// Se toca el que de verdad recibe el toque (prueba sin tocar, trial): en el iPad la hoja puede ir antes o después de la lista en el DOM (CI 44329015780).
+const ultimaVisible = async (l) => { for (let i = 0; i < 24; i++) { const n = await l.count(); for (let k = n - 1; k >= 0; k--) { const x = l.nth(k); if (!(await x.isVisible())) continue; if (await x.click({ trial: true, timeout: 1500 }).then(() => true, () => false)) return x; } await new Promise((r) => setTimeout(r, 250)); } throw new Error('ningún «Confirmar» recibe el toque: ' + l); };
 async function confirmar(p, neg, num) { await p.goto(`${B}/panel/${neg}/hoy?det=insc:${num}`); await (await ultimaVisible(p.getByRole('button', { name: 'Confirmar', exact: true }))).click(); await espera(() => sql(`select status from operations where number = '${num}'`), 'confirmed'); }
 (async () => {
   // Precondición propia (tarjetaPropia): la matrícula se retiene en la tarjeta de Marisol; en una base nueva no tiene ninguna (anchos, 18 nov).
