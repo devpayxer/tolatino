@@ -142,7 +142,7 @@ const MARISOL = "(select id from users where phone='+15705550122')";
 
   // Sin sesión: Ir a pagar abre la hoja «Entra para pedir» sobre la ficha (9m, AuthSheet bilingüe); el pedido se queda igual.
   const g = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); watch(g, 'anon');
-  await g.goto(B + N + '?tab=menu'); await g.locator('[data-screen-label="Ficha · menú"]').waitFor();
+  await g.goto(B + N + '?tab=menu'); await pickupFijo(g); await g.locator('[data-screen-label="Ficha · menú"]').waitFor(); // modoPropio: sin sesión también (barajada, 18 nov)
   await fila(g, 'Aguacate').getByRole('button', { name: 'Agregar' }).click();
   await g.locator('[data-screen-label="Ficha · barra del pedido"]').click();
   await g.locator('[data-screen-label="Menú · tu pedido"]').getByText(/^Ir a pagar/).click();

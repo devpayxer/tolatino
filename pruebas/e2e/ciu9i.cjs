@@ -105,7 +105,13 @@ const vePronto = async (p) => { await p.goto(B + '/'); await p.locator('[data-sc
     ok(await veAbierta(v1.p), 'la invitada (390) ve el Inicio de Reading, al momento de invitarla');
     await shot(v1.p, 'beta-invitada-390');
     ok(await vePronto(v2.p), 'la otra persona (390) ve «próximamente» en Reading');
-    await clic(v2.p.getByText(/Avísame cuando llegue a Reading/).first());
+    // Barajada (18 nov): la pantalla salió sin el botón una vez; se espera más y, si no aparece, se dice qué botones hay.
+    const avisame = v2.p.getByText(/Avísame cuando llegue a Reading/).first();
+    if (!(await avisame.waitFor({ timeout: 15000 }).then(() => true, () => false))) {
+      console.log('  diag: botones =', JSON.stringify(await v2.p.locator('button, [role="button"]').allInnerTexts()), '· url =', v2.p.url(), '· yaEspera =', sql(`select count(*) from city_waitlist where city_id = 'rdg' and user_id = '${uid(VEC2)}' and removed_at is null`));
+      await v2.p.reload(); await v2.p.locator('[data-screen-label="APP-CIUDAD-PRONTO"]').first().waitFor();
+    }
+    await clic(avisame);
     ok(await espera(() => sql(`select count(*) from city_waitlist where city_id = 'rdg' and user_id = '${uid(VEC2)}' and removed_at is null`) === '1'), 'y se anota en la lista de espera de Reading («Avísame»)');
     await shot(v2.p, 'beta-otra-390');
 
