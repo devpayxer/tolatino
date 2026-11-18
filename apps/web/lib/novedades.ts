@@ -22,7 +22,8 @@ const ESTADO_SQL = `case when p.hidden_at is not null then 'adm' when p.status =
 export type Comentario = { id: string; name: string; ini: string; h: number; body: string; lang: "es" | "en"; up: number; mine: boolean; reply: string | null; propio: boolean };
 export type Post = {
   id: string; kind: Tipo; title: string; body: string; fotos: string[]; h: number; pinned: boolean; ends: string | null;
-  link: Enlace; item: { id: string; name: Bi; ph: string | null; cents: number } | null; url: string | null;
+  /* 9n · k: un plato (Comida, se pide), un producto del mercado (se pide; `peso`: va por libra y su precio y su oferta son POR LIBRA) o de una tienda (se aparta). */
+  link: Enlace; item: { id: string; name: Bi; ph: string | null; cents: number; peso: boolean; k: "plato" | "merc" | "tienda" } | null; url: string | null;
   /* 6b · Una novedad con enlace a un evento: su próxima fecha en vivo (si no está en vivo, la novedad no sale: post_en_vivo). */
   evento: { href: string; t: Bi; dia: string } | null;
   /* 9n-2 · Una novedad con botón «Ver vacante»: la vacante abierta (si ya no está abierta, el botón no sale). */
@@ -38,8 +39,8 @@ export type Post = {
 
 /* Pestaña Novedades de la ficha. Las de «solo seguidores» solo las ve quien sigue. */
 export async function novedadesFicha(negocio: string, userId: string | null) {
-  const b = (await db().query<{ name: string; pro: boolean; on: boolean; tel: string | null; chat: boolean; fol: boolean; seguidores: number }>(
-    `select b.name, coalesce(s.plan, 'free') = 'pro' as pro, ('nov' = any(b.modules_on) and not (b.modules_off ? 'nov')) as on, b.phone as tel, exists (select 1 from business_members m where m.business_id = b.id and m.kind = 'owner' and m.status = 'active') as chat,
+  const b = (await db().query<{ name: string; cat: string; pro: boolean; on: boolean; tel: string | null; chat: boolean; fol: boolean; seguidores: number }>(
+    `select b.name, b.category_id as cat, coalesce(s.plan, 'free') = 'pro' as pro, ('nov' = any(b.modules_on) and not (b.modules_off ? 'nov')) as on, b.phone as tel, exists (select 1 from business_members m where m.business_id = b.id and m.kind = 'owner' and m.status = 'active') as chat,
             coalesce($2::uuid is not null and exists (select 1 from follows f where f.follower_user_id = $2::uuid and f.target_kind = 'business' and f.target_id = b.id), false) as fol,
             (select count(*)::int from follows f where f.target_kind = 'business' and f.target_id = b.id) as seguidores
        from businesses b left join business_stats_cache s on s.business_id = b.id where b.id = $1 and b.status = 'active'`, [negocio, userId])).rows[0];
@@ -47,7 +48,7 @@ export async function novedadesFicha(negocio: string, userId: string | null) {
   const r = await db().query<{
     id: string; kind: Tipo; title: string; body: string; fotos: string[]; h: number; pinned: boolean; ends: string | null; link_kind: Enlace; url: string | null;
     was: number | null; now: number | null; aviso: Post["aviso"]; poll: string[] | null; poll_n: number[]; poll_mine: number | null; closes_h: number | null;
-    score: number; my_vote: number; saved: boolean; item_id: string | null; item_name: Bi | null; item_ph: string | null; item_cents: number | null; ev: { href: string; t: Bi; dia: string } | null; vac: { href: string; t: Bi } | null; cup: Post["cupon"];
+    score: number; my_vote: number; saved: boolean; item_id: string | null; item_name: Bi | null; item_ph: string | null; item_cents: number | null; item_peso: boolean; item_shop: boolean; ev: { href: string; t: Bi; dia: string } | null; vac: { href: string; t: Bi } | null; cup: Post["cupon"];
   }>(
     `select p.id::text, p.kind, p.title, p.body, p.pinned, p.link_kind, p.url, p.price_was_cents as was, p.price_now_cents as now, p.aviso, p.poll,
             floor(extract(epoch from now() - p.publish_at) / 3600)::int as h, ${iso("p.ends_at")} as ends,
@@ -59,6 +60,7 @@ export async function novedadesFicha(negocio: string, userId: string | null) {
             coalesce((select v.v from post_votes v where v.post_id = p.id and v.user_id = $2::uuid), 0) as my_vote,
             coalesce($2::uuid is not null and exists (select 1 from post_saves s where s.post_id = p.id and s.user_id = $2::uuid), false) as saved,
             i.id::text as item_id, i.name as item_name, i.photos[1] as item_ph, coalesce(oferta_precio(i.id, $2::uuid), i.price_cents) as item_cents,
+            coalesce(i.module = 'shop' and i.shop_kind = 'peso', false) as item_peso, coalesce(i.module = 'shop', false) as item_shop,
             case when p.link_kind = 'event' then (select json_build_object('href', '/eventos/' || e.slug || '?fecha=' || d.id, 't', e.title, 'dia', d.local_date::text) from events e join event_dates d on d.event_id = e.id
                                                    where e.id = p.event_id and d.listable and d.ends_at > now() order by d.starts_at limit 1) end as ev,
             case when p.kind = 'cupon' then json_build_object('off', p.coupon_off_cents, 'min', p.coupon_min_cents,
@@ -79,7 +81,7 @@ export async function novedadesFicha(negocio: string, userId: string | null) {
        from post_comments c join users u on u.id = c.user_id where c.post_id = any($1::bigint[]) and c.status = 'visible' order by c.created_at limit 500`, [ids, userId])).rows : [];
   const posts: Post[] = r.rows.map((x) => ({
     id: x.id, kind: x.kind, title: x.title, body: x.body, fotos: x.fotos, h: Math.max(0, x.h), pinned: x.pinned, ends: x.ends, link: x.link_kind, url: x.url, was: x.was, now: x.now, aviso: x.aviso,
-    item: x.item_id && x.item_name ? { id: x.item_id, name: x.item_name, ph: x.item_ph, cents: x.item_cents ?? 0 } : null, evento: x.ev, vacante: x.vac, cupon: x.cup ?? null,
+    item: x.item_id && x.item_name ? { id: x.item_id, name: x.item_name, ph: x.item_ph, cents: x.item_cents ?? 0, peso: x.item_peso, k: x.item_shop ? (b.cat === "NEG-MERC" ? "merc" : "tienda") : "plato" } : null, evento: x.ev, vacante: x.vac, cupon: x.cup ?? null,
     poll: x.poll ? { opts: x.poll.map((l, i) => ({ l, n: x.poll_n[i] ?? 0 })), mine: x.poll_mine, total: x.poll_n.reduce((a, n) => a + n, 0), closesH: x.closes_h } : null,
     score: x.score, myVote: x.my_vote, saved: x.saved, hoy: enHoy.get(x.id) ?? null,
     cm: cms.filter((c) => c.post === x.id).map((c) => { const name = nombreCorto(c.first_name, c.last_name); return { id: c.id, name, ini: name.split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase(), h: Math.max(0, c.h), body: c.body, lang: c.lang, up: c.up, mine: c.mine, reply: c.reply, propio: c.propio }; }),
@@ -208,11 +210,11 @@ export type NovEdit = {
 };
 export async function novedadPanel(negocio: string, id: string) {
   if (!/^\d{1,18}$/.test(id)) return null;
-  const p = (await db().query<FilaNov & { link_kind: Enlace; item_id: string | null; url: string | null; was: number | null; now: number | null; aviso: NovEdit["aviso"]; poll: string[] | null; audience: "all" | "fol"; coupon_code: string | null; coupon_off_cents: number | null; coupon_min_cents: number | null; coupon_uses: number | null; coupon_usados: number; item_name: Bi | null; item_ph: string | null; item_cents: number | null; event_id: string | null; job_id: string | null; avisada: boolean }>(
+  const p = (await db().query<FilaNov & { link_kind: Enlace; item_id: string | null; url: string | null; was: number | null; now: number | null; aviso: NovEdit["aviso"]; poll: string[] | null; audience: "all" | "fol"; coupon_code: string | null; coupon_off_cents: number | null; coupon_min_cents: number | null; coupon_uses: number | null; coupon_usados: number; item_name: Bi | null; item_ph: string | null; item_cents: number | null; item_peso: boolean; event_id: string | null; job_id: string | null; avisada: boolean }>(
     `select ${FILA_NOV}, p.link_kind, p.item_id::text, p.url, p.price_was_cents as was, p.price_now_cents as now, p.aviso, p.poll, p.audience, p.event_id::text as event_id, p.job_id::text as job_id, p.followers_notified_at is not null as avisada,
             p.coupon_code, p.coupon_off_cents, p.coupon_min_cents, p.coupon_uses,
             (select count(*)::int from follower_coupon_uses u where u.post_id = p.id and u.status = 'usado') as coupon_usados,
-            i.name as item_name, i.photos[1] as item_ph, i.price_cents as item_cents
+            i.name as item_name, i.photos[1] as item_ph, i.price_cents as item_cents, coalesce(i.module = 'shop' and i.shop_kind = 'peso', false) as item_peso
        from business_posts p join cities ci on ci.id = p.city_id left join items i on i.id = p.item_id
       where p.business_id = $1 and p.id = $2::bigint and p.status <> 'removed'`, [negocio, id])).rows[0];
   if (!p) return null;
@@ -225,13 +227,16 @@ export async function novedadPanel(negocio: string, id: string) {
   ]);
   // 9n-2 · PEDIDOS que salieron de la novedad (L310): en una OFERTA, los pedidos entregados o en curso con ese plato al precio de la oferta mientras estuvo en vivo
   // (el precio de la oferta es el que se cobra: oferta_precio). Se calcula al leer; nada se guarda dos veces.
+  // 9n · También los pedidos del mercado y los apartados con ese producto a ese precio: lo vendido es lo que de verdad se cobra (final_cents: el peso real
+  // de lo que va por libra; lo que no hubo, $0). Lo que va por libra cuenta como una unidad por línea.
   const ped = p.kind === "oferta" && p.item_id && p.now ? (await db().query<{ n: number; uds: number; cents: number }>(
-    `select count(distinct o.id)::int as n, coalesce(sum(l.qty), 0)::int as uds, coalesce(sum(l.line_total_cents), 0)::int as cents
+    `select count(distinct o.id)::int as n, coalesce(sum(case when l.weight_est is not null then 1 else l.qty end), 0)::int as uds,
+            coalesce(sum(case when o.kind = 'order' then l.line_total_cents else l.final_cents end), 0)::int as cents
        from operation_lines l join operations o on o.id = l.operation_id join business_posts bp on bp.id = $1::bigint
-      where o.business_id = $2 and o.kind = 'order' and o.status in ('pending', 'confirmed', 'done') and l.item_id = bp.item_id and l.unit_price_cents = bp.price_now_cents
+      where o.business_id = $2 and o.kind in ('order', 'market_order', 'hold') and o.status in ('pending', 'change_proposed', 'confirmed', 'done') and l.item_id = bp.item_id and l.unit_price_cents = bp.price_now_cents
         and o.sent_at >= bp.publish_at and o.sent_at <= coalesce(bp.stopped_at, bp.ends_at, now())`, [id, negocio])).rows[0]! : null;
   return {
-    ...p, pedidos: ped, fotos: fotos.rows, item: p.item_id && p.item_name ? { id: p.item_id, name: p.item_name, ph: p.item_ph, cents: p.item_cents ?? 0 } : null,
+    ...p, pedidos: ped, fotos: fotos.rows, item: p.item_id && p.item_name ? { id: p.item_id, name: p.item_name, ph: p.item_ph, cents: p.item_cents ?? 0, peso: p.item_peso } : null,
     cms: cms.rows.map((c) => ({ id: c.id, name: nombreCorto(c.first_name, c.last_name), body: c.body, h: Math.max(0, c.h), up: c.up, reply: c.reply })),
   };
 }
@@ -293,7 +298,10 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string,
     if (!b.pro) return { ok: false as const, msg: { es: "Novedades es de Pro.", en: "Updates is a Pro feature." } };
     let item: { id: string; cents: number } | null = null;
     if (link === "item") {
-      item = /^\d{1,18}$/.test(String(p.item ?? "")) ? (await c.query<{ id: string; cents: number }>(`select id::text, price_cents as cents from items where id = $1::bigint and business_id = $2 and removed_at is null`, [p.item, negocio])).rows[0] ?? null : null;
+      // 9n · Un plato del menú (Comida) o un producto del catálogo (Mercado, Tienda); nunca un producto de 21+ (se compra en la tienda con ID; la base
+      // tampoco lo deja: business_posts_oferta_item, 0178).
+      item = /^\d{1,18}$/.test(String(p.item ?? "")) ? (await c.query<{ id: string; cents: number }>(
+        `select id::text, price_cents as cents from items where id = $1::bigint and business_id = $2 and removed_at is null and (module = 'menu' or (module = 'shop' and age_min = 0))`, [p.item, negocio])).rows[0] ?? null : null;
       if (!item) return { ok: false as const, msg: { es: "Elige qué está en oferta.", en: "Pick what is on sale." } };
     }
     // 6b · «Ver evento»: un evento de este negocio que no esté cancelado, no aprobado ni terminado.
@@ -436,11 +444,16 @@ export async function moduloNovedades(negocio: string, on: boolean, alGuardar?: 
   return { ok: true };
 }
 
-/* Lo que vende el negocio (para «Algo que vendes» y la oferta en el editor). */
+/* Lo que vende el negocio (para «Algo que vendes» y la oferta en el editor): los platos del menú (Comida) y, 9n, los productos del catálogo
+   (Mercado, Tienda). Lo de 21+ no entra (se compra en la tienda con ID). `sell`: se pide o se aparta en la app; `peso`: va por libra (su precio y
+   su oferta son por libra). */
+export type ItemNov = { id: string; name: string; cents: number; ph: string | null; sell: boolean; shop: boolean; peso: boolean };
 export async function itemsNovedad(negocio: string) {
-  return (await db().query<{ id: string; name: string; cents: number; ph: string | null; sell: boolean }>(
-    `select i.id::text, i.name->>'es' as name, i.price_cents as cents, i.photos[1] as ph, i.sell from items i
-      where i.business_id = $1 and i.module = 'menu' and i.removed_at is null and i.status = 'live' order by i.featured desc, i.sort, i.id limit 200`, [negocio])).rows;
+  return (await db().query<ItemNov>(
+    `select i.id::text, i.name->>'es' as name, i.price_cents as cents, i.photos[1] as ph, i.sell and not (i.module = 'shop' and i.in_store_only) as sell,
+            i.module = 'shop' as shop, coalesce(i.module = 'shop' and i.shop_kind = 'peso', false) as peso from items i
+      where i.business_id = $1 and (i.module = 'menu' or (i.module = 'shop' and i.age_min = 0)) and i.removed_at is null and i.status = 'live'
+      order by i.featured desc, i.module, i.sort, i.id limit 200`, [negocio])).rows;
 }
 
 /* 9n-2 · «Avisar a tus seguidores» (L297): la novedad EN VIVO le llega a quien guarda el negocio (su campana; sin SMS, sin push) por su aviso de «Lo que traen hoy»

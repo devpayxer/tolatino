@@ -59,14 +59,16 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
   const TT = T(es), kinds = [...new Set(v.posts.map((p) => p.kind))];
   const lista = v.posts.filter((p) => f === "all" || p.kind === f);
   const caja = "mt-3 rounded-2xl bg-paper p-[13px]";
+  // 9n · Un producto que va por libra: su precio y su oferta son por libra. Uno de una tienda se aparta (no se pide).
+  const lb = (p: Post) => (p.item?.peso ? "/lb" : "");
   const plato = (p: Post) => p.item && (
     <div className="flex items-center gap-3">
       <span className="size-14 flex-none rounded-[13px] bg-photo-bg" style={p.item.ph ? { backgroundImage: `url(${p.item.ph})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
       <div className="min-w-0 flex-1">
         <div className="font-display text-[15px] font-bold leading-[1.25] tracking-[-0.02em]">{es ? p.item.name.es : p.item.name.en || p.item.name.es}</div>
         <div className="mt-[5px] flex flex-wrap items-baseline gap-[7px]">
-          <span className="font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{money(p.kind === "oferta" && p.now ? p.now : p.item.cents)}</span>
-          {p.kind === "oferta" && p.was && <span className="text-[12.5px] font-medium text-ink/60 line-through">{money(p.was)}</span>}
+          <span className="font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{`${money(p.kind === "oferta" && p.now ? p.now : p.item.cents)}${lb(p)}`}</span>
+          {p.kind === "oferta" && p.was && <span className="text-[12.5px] font-medium text-ink/60 line-through">{`${money(p.was)}${lb(p)}`}</span>}
         </div>
       </div>
     </div>
@@ -76,11 +78,11 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
       <div className={caja}>
         {plato(p)}
         <div className="mt-[11px] text-[12.5px] font-medium leading-[1.4] text-ink/60">{hasta(p.ends)}</div>
-        <div className="mt-[11px] flex"><Button variant="primary" icon="bag" block onClick={() => onItem(p.item!.id)}>{`${E2("Pedir · ", "Order · ")}${money(p.now ?? p.item.cents)}`}</Button></div>
+        <div className="mt-[11px] flex"><Button variant="primary" icon="bag" block onClick={() => onItem(p.item!.id)}>{`${p.item.k === "tienda" ? E2("Apartar · ", "Hold · ") : E2("Pedir · ", "Order · ")}${money(p.now ?? p.item.cents)}${lb(p)}`}</Button></div>
       </div>
     );
     if (p.kind === "hoy" && p.link === "item" && p.item) return (
-      <div className={caja}>{plato(p)}<div className="mt-[11px] flex"><Button variant="secondary" icon="plus" block onClick={() => onItem(p.item!.id)}>{E2("Agregar al pedido", "Add to order")}</Button></div></div>
+      <div className={caja}>{plato(p)}<div className="mt-[11px] flex"><Button variant="secondary" icon="plus" block onClick={() => onItem(p.item!.id)}>{p.item.k === "tienda" ? E2("Apartar", "Hold") : E2("Agregar al pedido", "Add to order")}</Button></div></div>
     );
     if (p.kind === "aviso" && p.aviso) {
       const HL: Record<string, [string, string]> = { closed: ["Cerrado todo el día", "Closed all day"], late: ["Abrimos más tarde", "Opening later"], early: ["Cerramos más temprano", "Closing early"], ext: ["Horario extendido", "Extended hours"] };
@@ -137,7 +139,7 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
     // Novedad u «Hoy hay» con botón: algo que vende, el menú, llamar o un enlace web.
     if ((p.kind === "novedad" || p.kind === "hoy") && p.link !== "none") {
       let L: { t: string; s: string; ic: string; bg?: string; cta: string; on: () => void } | null = null;
-      if (p.link === "item" && p.item) L = { t: es ? p.item.name.es : p.item.name.en || p.item.name.es, s: money(p.item.cents), ic: p.item.ph ? "" : "bag", bg: p.item.ph ?? undefined, cta: E2("Ver", "See"), on: () => onItem(p.item!.id) };
+      if (p.link === "item" && p.item) L = { t: es ? p.item.name.es : p.item.name.en || p.item.name.es, s: `${money(p.item.cents)}${lb(p)}`, ic: p.item.ph ? "" : "bag", bg: p.item.ph ?? undefined, cta: E2("Ver", "See"), on: () => onItem(p.item!.id) };
       else if (p.link === "menu") L = { t: E2("Menú", "Menu"), s: "", ic: "restaurant", cta: E2("Ver", "See"), on: () => onItem("") };
       else if (p.link === "tel" && v.negocio.tel) L = { t: E2(`Llama a ${v.negocio.name}`, `Call ${v.negocio.name}`), s: "", ic: "phone", cta: E2("Llamar", "Call"), on: () => { location.href = `tel:${v.negocio.tel}`; } };
       // 9n-12 · «Escribir» (diseño Panel v2, lk 'msg'): abre Mensajes con el negocio (si recibe mensajes: tiene dueño).

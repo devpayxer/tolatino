@@ -24,6 +24,9 @@ import { base, dirEntrega, topeFree } from "./pedir";
      pedido de comida (lib/repartidor-ofertas.ts). Desde que el repartidor lo tiene, el mercado ya no marca «Va en camino» ni «Entregado»: los
      pasos son del repartidor (lib/repartidor.ts) y lo real se cobra a SU «Entregado», con prueba (la base la exige: operations_prueba). Sin
      repartidores en la app, o si el mercado se lo quita, lo lleva el mercado como antes («Va en camino» → «Entregado»).
+   - 9n · Ofertas de productos (Novedades): el precio de cada producto es oferta_precio() si hay una oferta en vivo para esa persona (lo mismo que ve en
+     la ficha: lib/merc-publico.ts); si no, el del catálogo. Lo que va por libra lleva su oferta por libra: la línea guarda ese precio y la base cobra
+     peso real × ese precio. El sustituto que propone el mercado también sale al precio de la oferta del cliente. Guardián ofertaProductoDelServidor.
    - Todo idempotente; candado por negocio; cada paso queda en operation_events. */
 type Bi = { es: string; en: string };
 type Q = PoolClient | ReturnType<typeof db>;
@@ -79,10 +82,10 @@ export async function opcionesMercado(negocio: string, userId: string | null): P
   if (!b || b.cat !== "NEG-MERC" || !(b.mods ?? []).includes("pedidos") || (b.off ?? {}).menu || (b.off ?? {}).pedidos) return null;
   const r = (await c.query<{ sub_default: OpcionesMerc["sub"]; slot_cap: number; ebt: boolean }>(`select sub_default, slot_cap, ebt from retail_settings where business_id = $1`, [negocio])).rows[0];
   const P = (await c.query<{ id: string; name: Bi; cents: number; k: string; tax: number; foto: string | null; puede: boolean; g: { name: Bi; options: { es: string; en: string; on: boolean }[] } | null }>(
-    `select i.id::text, i.name, i.price_cents as cents, coalesce(i.shop_kind, 'unid') as k, i.tax_pct::float as tax, i.photos[1] as foto,
+    `select i.id::text, i.name, coalesce(oferta_precio(i.id, $3::uuid), i.price_cents) as cents, coalesce(i.shop_kind, 'unid') as k, i.tax_pct::float as tax, i.photos[1] as foto,
             (i.sell and not i.in_store_only and i.age_min = 0 and i.status = 'live' and not ${AGOTADO_SQL("i", "$2")}) as puede,
             (select jsonb_build_object('name', g.name, 'options', g.options) from option_groups g where g.id = any(i.group_ids) and g.required and g.removed_at is null order by g.id limit 1) as g
-       from items i where i.business_id = $1 and i.module = 'shop' and i.removed_at is null order by i.sort, i.id limit 200`, [negocio, b.tz])).rows;
+       from items i where i.business_id = $1 and i.module = 'shop' and i.removed_at is null order by i.sort, i.id limit 200`, [negocio, b.tz, userId])).rows;
   const T = await tarjetaDe(negocio);
   const d = userId ? await dirEntrega(c, userId, negocio, b.zone_mi, null) : null;
   return {
@@ -135,10 +138,10 @@ export async function crearPedidoMercado(userId: string, p: MercIn, entorno: str
     // Productos: precio, impuesto y si se puede pedir los decide el servidor (lo que vino del teléfono solo dice cuál y cuánto).
     const ids = [...new Set(lineas.map((l) => String(l?.item ?? "")).filter((x) => ID.test(x)))];
     const I = (await c.query<{ id: string; name: Bi; cents: number; k: string; tax: number; puede: boolean; g: { name: Bi; options: { es: string; en: string; on: boolean }[] } | null; stk: string; left: number }>(
-      `select i.id::text, i.name, i.price_cents as cents, coalesce(i.shop_kind, 'unid') as k, i.tax_pct::float as tax, i.stock_mode as stk, i.stock_left as left,
+      `select i.id::text, i.name, coalesce(oferta_precio(i.id, $4::uuid), i.price_cents) as cents, coalesce(i.shop_kind, 'unid') as k, i.tax_pct::float as tax, i.stock_mode as stk, i.stock_left as left,
               (i.sell and not i.in_store_only and i.age_min = 0 and i.status = 'live' and not ${AGOTADO_SQL("i", "$3")}) as puede,
               (select jsonb_build_object('name', g.name, 'options', g.options) from option_groups g where g.id = any(i.group_ids) and g.required and g.removed_at is null order by g.id limit 1) as g
-         from items i where i.business_id = $1 and i.module = 'shop' and i.removed_at is null and i.id = any($2::bigint[]) for update of i`, [b.id, ids, b.tz])).rows;
+         from items i where i.business_id = $1 and i.module = 'shop' and i.removed_at is null and i.id = any($2::bigint[]) for update of i`, [b.id, ids, b.tz, userId])).rows;
     const L: { it: (typeof I)[number]; q: number; peso: boolean; tot: number; ops: { g: Bi; o: Bi }[] }[] = [];
     for (const l of lineas) {
       const it = I.find((x) => x.id === String(l?.item ?? ""));
@@ -598,7 +601,7 @@ export async function noHay(negocio: string, numero: string, linea: string, sust
     await c.query(`update operation_lines set status = 'out', weight_final = null, weigh_photo_id = null where id = $1::bigint`, [linea]);
     if (sustituto) {
       const s = (await c.query<{ name: Bi; cents: number; tax: number; k: string }>(
-        `select name, price_cents as cents, tax_pct::float as tax, coalesce(shop_kind, 'unid') as k from items where id = $1::bigint and business_id = $2 and module = 'shop' and removed_at is null and status = 'live' and sell and not in_store_only and age_min = 0`, [sustituto, negocio])).rows[0];
+        `select name, coalesce(oferta_precio(id, $3::uuid), price_cents) as cents, tax_pct::float as tax, coalesce(shop_kind, 'unid') as k from items where id = $1::bigint and business_id = $2 and module = 'shop' and removed_at is null and status = 'live' and sell and not in_store_only and age_min = 0`, [sustituto, negocio, o.uid])).rows[0];
       if (!s || sustituto === l.item) return no("Ese producto no se puede ofrecer.", "That product cannot be offered.");
       // 9n-4 · Por libra: se piden las mismas libras de la línea que no había (o 1 lb si era por unidad) y se pesa con su foto; el precio es por libra.
       const lb = s.k === "peso" ? (l.peso ? l.lb ?? 1 : 1) : null, porLb = lb != null ? "/lb" : "";

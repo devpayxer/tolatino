@@ -10,6 +10,7 @@ import { useEffect, useState, type ComponentType } from "react";
 import type { ArticuloVenta } from "@/lib/apartados";
 import type { ArticuloRenta } from "@/lib/rentas";
 import { cuotas, type ReglaPlan } from "@/lib/layaway-comun";
+import { PrecioAntes } from "./PrecioAntes";
 
 type N = "Button" | "Tag" | "Chip" | "Icon" | "OptionGroup" | "DepositNote" | "ReservationCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -50,7 +51,8 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas,
     : gomas ? E2(`Precio por goma instalada: montaje, balanceo, válvula y desecho de la vieja. Apartas en la app y pagas al recogerla; te la guardan ${H} horas.`, `Price per installed tire: mounting, balancing, valve and old tire disposal. Hold it in the app and pay at pickup; kept for ${H} hours.`)
       : auto ? E2(`Apartas en la app y pagas al recogerlo en el taller. Te lo guardan ${H} horas.`, `Hold it in the app and pay at pickup. Kept for ${H} hours.`)
         : E2(`Apartas en la app y pagas al recoger en el local. Te lo guardan ${H} horas. Lo que dice "instalado" incluye la visita.`, `Hold it in the app and pay at pickup. Kept for ${H} hours. "Installed" includes the visit.`);
-  const tarjeta = (x: { id: string; n: { es: string; en: string }; d: { es: string; en: string }; foto: string | null; quedan: number }, precio: string, tag: { t: string; tone: string } | null, onClick: () => void, renta: boolean, ya = 0) => {
+  // 9n · `antes`: el precio de siempre cuando una oferta en vivo de Novedades lo baja (x.was, del servidor); sale tachado al lado del de la oferta.
+  const tarjeta = (x: { id: string; n: { es: string; en: string }; d: { es: string; en: string }; foto: string | null; quedan: number }, precio: string, tag: { t: string; tone: string } | null, onClick: () => void, renta: boolean, ya = 0, antes: number | null = null) => {
     const pocos = x.quedan <= 3, agotado = x.quedan < 1;
     return (
       <div key={x.id} className="flex min-w-0 flex-col gap-2">
@@ -61,7 +63,7 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas,
           {nm(x.d) && <div className="mt-0.5 text-[11.5px] font-medium leading-[1.4] text-ink/60">{nm(x.d)}</div>}
         </div>
         <div className="flex items-baseline justify-between gap-2">
-          <span className="font-display text-[15px] font-extrabold leading-none tracking-[-0.02em]">{precio}</span>
+          <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1"><span className="font-display text-[15px] font-extrabold leading-none tracking-[-0.02em]">{precio}</span>{antes != null && <PrecioAntes t={dinero(antes)} es={es} tachado />}</span>
           <span className="text-right font-mono text-[9.5px] font-bold leading-[1.2] tracking-[0.08em]" style={{ color: pocos ? "var(--tl-pro-ink)" : "var(--tl-open-text)" }}>{agotado ? (renta ? E2("RENTADAS HOY", "ALL OUT") : E2("AGOTADO", "SOLD OUT")) : pocos ? `${E2("QUEDAN ", "ONLY ")}${x.quedan}${renta ? E2(" PARA RENTAR", " TO RENT") : ""}` : E2("EN EXISTENCIA", "IN STOCK")}</span>
         </div>
         {ya > 0 && <div className="font-mono text-[9.5px] font-bold tracking-[0.08em] text-action">{`${E2("APARTADO: ", "ON HOLD: ")}${ya}`}</div>}
@@ -97,14 +99,14 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas,
               <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.03em]">{E2("Lo más pedido", "Most ordered")}</div>
               <div className="hs -mx-5 mt-3 flex gap-2.5 overflow-x-auto px-5 pb-1.5 lg:mx-0 lg:px-0">
                 {pop.map((id) => V.find((x) => x.id === id)).filter((x): x is ArticuloVenta => !!x).map((x) => (
-                  <MenuTile key={x.id} lang={es ? "ES" : "EN"} name={nm(x.n)} price={dinero(x.precio)} image={x.foto ?? undefined} qty={enCarro(x)} off={x.quedan < 1} width={156} height={124}
+                  <MenuTile key={x.id} lang={es ? "ES" : "EN"} name={nm(x.n)} price={dinero(x.precio)} was={x.was != null ? <PrecioAntes t={dinero(x.was)} es={es} /> : null} image={x.foto ?? undefined} qty={enCarro(x)} off={x.quedan < 1} width={156} height={124}
                     onOpen={() => abrir(x)} onPlus={() => mas(x)} onMinus={() => menos(x)} onExpand={() => abrir(x)} />))}
               </div>
             </div>) : null}
           <div data-menu="c" className="flex flex-col gap-2.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">
             {ventas.map((x) => x.k === "plan" && !plan ? null : (
               <div key={x.id} className="grid min-w-0">
-                <MenuItemRow lang={es ? "ES" : "EN"} card name={nm(x.n)} desc={nm(x.d) || undefined} price={dinero(x.precio)} image={x.foto ?? undefined} qty={enCarro(x)} off={x.quedan < 1}
+                <MenuItemRow lang={es ? "ES" : "EN"} card name={nm(x.n)} desc={nm(x.d) || undefined} price={dinero(x.precio)} was={x.was != null ? <PrecioAntes t={dinero(x.was)} es={es} /> : null} image={x.foto ?? undefined} qty={enCarro(x)} off={x.quedan < 1}
                   tags={[x.quedan < 1 ? { label: E2("AGOTADO", "SOLD OUT"), tone: "neutral" } : x.quedan <= 3 ? { label: `${E2("QUEDAN ", "ONLY ")}${x.quedan}`, tone: "pro" } : null,
                     x.k === "plan" && plan ? { label: `${E2("ABONO", "DOWN")} ${plan.pct} % · ${plan.n} ${E2("PAGOS", "PAYMENTS")}`, tone: "signal" } : null,
                     x.cond ? { label: x.cond === "u" ? E2("USADA", "USED") : E2("NUEVA", "NEW"), tone: x.cond === "u" ? "neutral" : "signal" } : null,
@@ -116,7 +118,7 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas,
       ) : (
       <div className="grid grid-cols-2 gap-x-3 gap-y-4 lg:grid-cols-4 lg:gap-x-5">
         {L.map((x) => tarjeta({ ...x }, `${dinero(x.precio)}${E2("/día", "/day")}`, { t: E2("RENTA", "RENTAL"), tone: "signal" }, () => router.push(`/n/${negocio}/rentar?a=${x.id}`), true))}
-        {ventas.map((x) => x.k === "plan" && !plan ? null : tarjeta(x, dinero(x.precio), x.k === "plan" && plan ? { t: `${E2("ABONO", "DOWN")} ${plan.pct} % · ${plan.n} ${E2("PAGOS", "PAYMENTS")}`, tone: "signal" } : x.cond ? { t: x.cond === "u" ? E2("USADA", "USED") : E2("NUEVA", "NEW"), tone: x.cond === "u" ? "neutral" : "signal" } : null, () => abrir(x), false, enCarro(x)))}
+        {ventas.map((x) => x.k === "plan" && !plan ? null : tarjeta(x, dinero(x.precio), x.k === "plan" && plan ? { t: `${E2("ABONO", "DOWN")} ${plan.pct} % · ${plan.n} ${E2("PAGOS", "PAYMENTS")}`, tone: "signal" } : x.cond ? { t: x.cond === "u" ? E2("USADA", "USED") : E2("NUEVA", "NEW"), tone: x.cond === "u" ? "neutral" : "signal" } : null, () => abrir(x), false, enCarro(x), x.was))}
       </div>
       )}
       {c && nC > 0 ? (
@@ -149,7 +151,7 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas,
                 </div>
                 <div className="px-5 pb-6 pt-[18px]">
                   <div className="font-display text-[22px] font-extrabold leading-[1.15] tracking-[-0.035em]">{nm(hoja.n)}</div>
-                  <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{dinero(hoja.precio)}</span>
+                  <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{dinero(hoja.precio)}</span>{hoja.was != null && <PrecioAntes t={dinero(hoja.was)} es={es} tachado />}
                     <span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{hoja.quedan <= 3 ? `${E2("QUEDAN ", "ONLY ")}${hoja.quedan}` : E2("EN EXISTENCIA", "IN STOCK")}</span></div>
                   {nm(hoja.d) && <p className="mt-2.5 text-pretty text-[13px] leading-[1.6] text-ink/65">{nm(hoja.d)}</p>}
                   {hoja.tallas.length > 0 && <div className="mt-5 grid"><OptionGroup title={tit} meta={E2("ELIGE 1", "CHOOSE 1")} required done={!falta} reqLabel={E2("Elige: ", "Choose: ")} doneLabel={E2("Listo", "Done")}

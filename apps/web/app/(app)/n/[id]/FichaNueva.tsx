@@ -511,7 +511,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
             </div>
           )}
           {tab === "rev" && rs && <div className="pb-6"><ResTab v={rs} desk={false} onMenu={() => setTab("cat")} /></div>}
-          {tab === "nov" && novedades && <div className="pb-6"><NovTab v={novedades} logo={f.logo ?? null} sesion={sesion} es={es} onHoras={() => setTab("hor")} onItem={() => setTab("cat")} /></div>}
+          {tab === "nov" && novedades && <div className="pb-6"><NovTab v={novedades} logo={f.logo ?? null} sesion={sesion} es={es} onHoras={() => setTab("hor")} onItem={(id) => { setTab("cat"); if (id && me) setTimeout(() => me.abrir(id), 60); }} /></div>}
           {tab === "shop" && tienda ? <div className="pb-6"><TiendaTab L={tienda.L} V={tienda.V} mia={tienda.mia} auto={f.cat === "NEG-AUTO"} horas={tienda.horas} plan={tienda.plan ?? null} negocio={f.id} es={es} /></div> : null}
           {tab === "rsv" && rv ? <div className="pb-6"><RsvTab v={rv} desk={false} /></div> : null}
           {tab === "evt" && <EventosTab eventos={eventos} es={es} />}
@@ -595,7 +595,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
               </div>
             )) : null}
             {rs ? seccion("rev", E2("Reseñas", "Reviews"), <ResTab v={rs} desk onMenu={() => ir("cat")} />, <button type="button" onClick={rs.escribir} className="text-[13.5px] font-bold text-action">{rs.r.tengo ? E2("Ver tu reseña", "See your review") : E2("Escribir reseña", "Write a review")}</button>) : null}
-            {novedades?.posts.length ? seccion("nov", E2("Novedades", "Updates"), <div className="max-w-[680px]"><NovTab v={novedades} logo={f.logo ?? null} sesion={sesion} es={es} onHoras={() => ir("hor")} onItem={() => ir("cat")} /></div>) : null}
+            {novedades?.posts.length ? seccion("nov", E2("Novedades", "Updates"), <div className="max-w-[680px]"><NovTab v={novedades} logo={f.logo ?? null} sesion={sesion} es={es} onHoras={() => ir("hor")} onItem={(id) => { ir("cat"); if (id && me) setTimeout(() => me.abrir(id), 60); }} /></div>) : null}
             {tienda && f.cat !== "NEG-TIENDA" && (tienda.L.length || tienda.V.length) ? seccion("shop", E2("Tienda", "Shop"), <TiendaTab L={tienda.L} V={tienda.V} mia={tienda.mia} auto={f.cat === "NEG-AUTO"} horas={tienda.horas} plan={tienda.plan ?? null} negocio={f.id} es={es} />) : null}
             {rv ? seccion("rsv", E2("Reservar mesa", "Reserve a table"), <div className="max-w-[620px]"><RsvTab v={rv} desk /></div>) : null}
             {eventos.length ? seccion("evt", E2("Eventos", "Events"), <EventosTab eventos={eventos} es={es} />) : null}

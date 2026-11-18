@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Tu apartado · To'Latino" };
    revisar y enviar. Los días y horas salen del horario de la tienda (el servidor decide). Enviar pide cuenta. */
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, lang, u] = await Promise.all([params, idioma(), yo()]);
-  const o = await opcionesApartar(id);
+  const o = await opcionesApartar(id, u?.id ?? null);
   if (!o) redirect(`/n/${id}`);
   // Envío de la tienda (4q-2): la tarjeta y la dirección de la persona (solo si la tienda envía y cobra con tarjeta).
   const modo = pasarela.modo();

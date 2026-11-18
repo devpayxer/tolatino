@@ -524,7 +524,11 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
           </div>
         ) : tab === "nov" && novedades ? (
           <div className="pb-6 lg:max-w-[680px]"><NovTab v={novedades} logo={f.logo ?? null} sesion={sesion} es={es} onHoras={() => setTab("res")}
-            onItem={(id) => { if (!mn) return; setTab("menu"); if (id) setTimeout(() => mn.abrir(id, window.innerWidth >= 1024), 60); }} /></div>
+            onItem={(id) => {
+              // 9n · Una oferta de un producto lleva a su hoja en el mercado (o a la tienda); la de un plato, al menú como siempre.
+              if (me) { setTab("svc"); if (id) setTimeout(() => me.abrir(id), 60); return; }
+              if (tienda && (tienda.L.length || tienda.V.length)) { setTab("shop"); return; }
+              if (!mn) return; setTab("menu"); if (id) setTimeout(() => mn.abrir(id, window.innerWidth >= 1024), 60); }} /></div>
         ) : tab === "shop" && tienda && (tienda.L.length || tienda.V.length) ? (
           <div className="lg:max-w-[980px]"><TiendaTab L={tienda.L} V={tienda.V} mia={tienda.mia} auto={f.cat === "NEG-AUTO"} tienda={f.cat === "NEG-TIENDA"} horas={tienda.horas} plan={tienda.plan ?? null} negocio={f.id} es={es} /></div>
         ) : tab === "evt" && eventos.length && f.pro ? (

@@ -16,7 +16,10 @@ import { populares, ventasSqlDe, type Ventas30 } from "./menu-ventas";
      confirma, lo envía (con enlace de seguimiento si tiene) y al marcar «Enviado» se cobra lo que de verdad va (nunca más de
      lo retenido; lo demás se libera). Si no lo tiene, se cancela o no lo envía a tiempo, se libera todo.
    - Layaway (4r, lib/layaway.ts): lo que va «en plan» se aparta solo, con su acuerdo por escrito; se retiene el abono, se cobra
-     cuando la tienda confirma y el apartado queda guardado mientras paga (no vence); se recoge al terminar de pagar. */
+     cuando la tienda confirma y el apartado queda guardado mientras paga (no vence); se recoge al terminar de pagar.
+   - 9n · Ofertas de productos (Novedades): el precio de cada artículo es oferta_precio() si hay una oferta en vivo para esa persona; si no, el del
+     catálogo. La ficha lo muestra (con el de siempre tachado: `was`) y el apartado lo guarda en sus líneas: lo que ves es lo que pagas en la caja, y el
+     plan y el envío se calculan sobre ese total. Si la oferta termina después, el apartado ya enviado conserva su precio. Guardián ofertaProductoDelServidor. */
 type Bi = { es: string; en: string };
 type Res<T = object> = ({ ok: true } & T) | { ok: false; msg: Bi };
 const no = (es: string, en: string): { ok: false; msg: Bi } => ({ ok: false, msg: { es, en } });
@@ -32,7 +35,7 @@ export const MAX_LINEAS = 10, MAX_QTY = 3;
 
 /* ── Lo que se vende en la tienda (ficha › Tienda) ── */
 export type TallaVenta = { id: string; label: string; quedan: number };
-export type ArticuloVenta = { id: string; n: Bi; d: Bi; precio: number; foto: string | null; quedan: number; cond: "n" | "u" | null; size: string | null;
+export type ArticuloVenta = { id: string; n: Bi; d: Bi; precio: number; was: number | null; foto: string | null; quedan: number; cond: "n" | "u" | null; size: string | null;
   // Tiendas (4q): cómo se vende, sección y tallas con lo que queda («Talla» / «Número»).
   k: string | null; sec: string | null; tallas: TallaVenta[]; label: Bi | null };
 /* C-008 · «Lo más pedido» de la tienda: lo que el negocio fija y lo más apartado (y recogido) en 30 días; solo lo que sigue a la venta. */
@@ -45,15 +48,15 @@ export async function tiendaPopulares(negocio: string, V: ArticuloVenta[]): Prom
   const vende = (id: string) => V.some((x) => x.id === id && x.quedan > 0 && x.k !== "plan");
   return populares(ventas, F.rows.map((r) => r.id).filter(vende), vende);
 }
-export async function tiendaVenta(negocio: string): Promise<ArticuloVenta[]> {
-  return (await db().query<ArticuloVenta & { a: { cond?: string; size?: string } }>(
-    `select i.id::text, i.name as n, i.descr as d, i.price_cents as precio, i.photos[1] as foto, i.attrs as a, i.shop_kind as k, i.section_id::text as sec, i.size_label as label,
+export async function tiendaVenta(negocio: string, userId: string | null = null): Promise<ArticuloVenta[]> {
+  return (await db().query<ArticuloVenta & { base: number; a: { cond?: string; size?: string } }>(
+    `select i.id::text, i.name as n, i.descr as d, coalesce(oferta_precio(i.id, $2::uuid), i.price_cents) as precio, i.price_cents as base, i.photos[1] as foto, i.attrs as a, i.shop_kind as k, i.section_id::text as sec, i.size_label as label,
             coalesce((select jsonb_agg(jsonb_build_object('id', v.id::text, 'label', v.label, 'quedan', v.stock_left) order by v.sort, v.id) from item_variants v where v.item_id = i.id and v.removed_at is null), '[]'::jsonb) as tallas,
             case when exists (select 1 from item_variants v where v.item_id = i.id and v.removed_at is null) then (select coalesce(sum(v.stock_left), 0)::int from item_variants v where v.item_id = i.id and v.removed_at is null)
                  when i.stock_mode = 'qty' then greatest(i.stock_left, 0) else 99 end as quedan
        from items i join businesses b on b.id = i.business_id
       where i.business_id = $1 and i.module = 'shop' and i.removed_at is null and i.sell and not i.in_store_only and i.age_min = 0 and i.status = 'live' and b.status = 'active' and 'shop' = any(b.modules_on) and not (b.modules_off ? 'shop')
-      order by i.sort, i.id limit 120`, [negocio])).rows.map(({ a, ...x }) => ({ ...x, d: { es: x.d?.es ?? "", en: x.d?.en ?? "" }, cond: a?.cond === "n" || a?.cond === "u" ? a.cond : null, size: typeof a?.size === "string" ? a.size : null }));
+      order by i.sort, i.id limit 120`, [negocio, userId])).rows.map(({ a, base, ...x }) => ({ ...x, was: base > x.precio ? base : null, d: { es: x.d?.es ?? "", en: x.d?.en ?? "" }, cond: a?.cond === "n" || a?.cond === "u" ? a.cond : null, size: typeof a?.size === "string" ? a.size : null }));
 }
 
 /* ── Cuándo pasas: hoy, mañana y pasado; horas en que abre (desde una hora después de abrir; hoy, desde dentro de una hora) ── */
@@ -93,10 +96,10 @@ async function diasDe(negocio: string, city: string): Promise<DiaApartar[]> {
     return { f, k: (["hoy", "man", "pas"] as const)[i], horas };
   });
 }
-export async function opcionesApartar(negocio: string): Promise<OpcionesApartar | null> {
+export async function opcionesApartar(negocio: string, userId: string | null = null): Promise<OpcionesApartar | null> {
   const b = (await db().query<{ nombre: string; dir: string; city: string; foto: string | null }>(`select name as nombre, coalesce(address, '') as dir, city_id as city, logo_url as foto from businesses where id = $1 and status = 'active'`, [negocio])).rows[0];
   if (!b) return null;
-  const arts = await tiendaVenta(negocio);
+  const arts = await tiendaVenta(negocio, userId);
   if (!arts.length) return null;
   return { negocio: { id: negocio, nombre: b.nombre, dir: b.dir, foto: b.foto }, dias: await diasDe(negocio, b.city), arts, horas: await horasApartado(negocio), envio: await envioDe(negocio), plan: await (await import("./layaway")).reglaPlan(negocio) };
 }
@@ -115,7 +118,7 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string, ip:
   if (!L.length || L.length !== f.lineas.length || L.length > MAX_LINEAS || new Set(L.map((l) => `${l.item}:${l.v ?? ""}`)).size !== L.length) return no("Revisa los artículos de tu apartado.", "Check the items in your hold.");
   const nota = String(f.nota ?? "").replace(/\s+/g, " ").trim().slice(0, 200);
   if (/(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/.test(nota)) return no("Por seguridad, sin teléfonos en la nota.", "For safety, no phone numbers in the note.");
-  const o = await opcionesApartar(f.negocio);
+  const o = await opcionesApartar(f.negocio, userId);
   if (!o) return no("Esta tienda no aparta en la app ahora.", "This store is not taking holds in the app right now.");
   const dia = o.dias.find((d) => d.f === f.dia);
   if (!ship && (!dia || !dia.horas.includes(f.hora))) return no("Elige cuándo pasas de las horas que se ofrecen.", "Pick when you come from the offered times.");
@@ -133,8 +136,8 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string, ip:
       return no("Ya tienes 3 apartados abiertos en esta tienda.", "You already have 3 open holds at this store.");
     // Los artículos bloqueados en orden: dos personas a la vez por las últimas unidades → una se las lleva.
     const I = (await c.query<{ id: string; n: Bi; p: number; tax: number; mode: string; left: number; k: string | null }>(
-      `select id::text, name as n, price_cents as p, tax_pct::float as tax, stock_mode as mode, stock_left as left, shop_kind as k from items
-        where business_id = $1 and id = any($2::bigint[]) and module = 'shop' and removed_at is null and sell and not in_store_only and age_min = 0 and status = 'live' order by items.id for update`, [f.negocio, [...new Set(L.map((l) => l.item))]])).rows;
+      `select id::text, name as n, coalesce(oferta_precio(id, $3::uuid), price_cents) as p, tax_pct::float as tax, stock_mode as mode, stock_left as left, shop_kind as k from items
+        where business_id = $1 and id = any($2::bigint[]) and module = 'shop' and removed_at is null and sell and not in_store_only and age_min = 0 and status = 'live' order by items.id for update`, [f.negocio, [...new Set(L.map((l) => l.item))], userId])).rows;
     if (I.length !== new Set(L.map((l) => l.item)).size) return no("Algo de tu apartado ya no está en la tienda. Revísalo.", "Something in your hold is no longer in the store. Check it.");
     // Tallas: si el artículo tiene tallas, la talla es obligatoria y se reserva (una talla en 0 no se aparta).
     const V = (await c.query<{ id: string; item: string; label: string; left: number }>(

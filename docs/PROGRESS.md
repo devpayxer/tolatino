@@ -2592,3 +2592,11 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   `devueltas`/`pendientes` (las devoluciones corren después en lotes; su avance está en `event_cancellations`). Guardián
   `auditoriaEnLaTransaccion` (alreves9n22 10/10; anclas de alreves5g y alreves7f al día). tsc + guardianes en verde; e2e no corrió en local
   (sin Docker ni Playwright aquí): va al CI dirigido.
+- **18 nov · 9n · Ofertas de productos en Mercado y Tienda** (LAUNCH «Tachado en Mercado y Tienda»): migración **0178** (`oferta_precio()` solo
+  para un artículo del negocio de la oferta y nunca un producto de 21+; disparador `business_posts_oferta_item`). Panel › Novedades › Oferta elige
+  un producto del catálogo como un plato (por libra, la oferta es por libra; lo de 21+ no sale); la ficha del mercado y la Tienda (nueva y de
+  siempre) muestran el precio de la oferta con el de siempre tachado (`PrecioAntes`, «Antes»); el pedido del mercado, su sustituto y el apartado
+  (y su plan) cobran `oferta_precio()`; «Pedidos desde la oferta» cuenta también pedidos del mercado y apartados. Super Admin: la oculta desde
+  Contenido como cualquier novedad (sin cambio). Guardián `ofertaProductoDelServidor` (alrevesOfe9n 15/15; alreves5e/5h/8e/9c/9n/9n2/9n20/9n4/
+  C005/MercRep en verde); e2e `ofe9n` 34 ✓ y fic008 17 ✓ en local (base local Postgres 16 con migraciones + semilla, `next build`, Chromium);
+  tsc + build + guardianes en verde. Ayuda: novedades, ficha-mercado, apartar-productos.

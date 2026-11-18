@@ -5319,3 +5319,13 @@ emulador no manda posiciones nuevas; en Chromium y en el repartidor de comida s�
 Las 54 capturas aprobadas (Inicio, Buscar, la ficha, Mi cuenta, el Hoy del panel y el del Super Admin, en los 9 aparatos) se renovaron: la ficha
 es la nueva (C-005 → C-008) y ahora con contraste AA (los grises de texto más oscuros, el plato agotado con solo la foto apagada) y los botones de
 las estrellas de 24 px. Están en `pruebas/visual/<pantalla>/<aparato>.png`. Si algo no te gusta, me dices qué y se cambia.
+
+## Ofertas de productos en Mercado y Tienda (18 nov) — mirar
+En el sandbox, con la cuenta del dueño de un mercado (o de una tienda) Pro: Tu página › Novedades › Publicar › **Oferta**, busca un producto, pon el
+precio de la oferta y publica. En la página del mercado (o la Tienda) el producto sale con el precio de la oferta y el de siempre tachado; pide (o aparta)
+y el pedido sale a ese precio. **Decidí (dime si no):**
+- Lo que va **por libra** lleva su oferta **por libra** (precio normal y de oferta por lb; se cobra peso real × ese precio).
+- Lo de **21+** (licor, tabaco, vape) **no lleva oferta** (ni en el editor ni en la base). Lo «solo en la tienda» sí: sale en la página y el negocio
+  cobra ese precio en su caja (no se puede pedir por la app).
+- Un apartado o pedido ya enviado **conserva su precio** aunque la oferta termine (el plan de layaway también se calcula con el precio de la oferta).
+- El sustituto que propone el mercado sale al precio de oferta del cliente si ese producto tiene una.

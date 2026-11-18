@@ -98,13 +98,13 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     f.cat === "NEG-BELL" ? citasPublica(f.id, u?.id ?? null) : Promise.resolve(null),
     f.cat === "NEG-AUTO" || f.cat === "NEG-HOGAR" ? oficiosPublico(f.id, u?.id ?? null) : Promise.resolve(null),
     // Tiendas (4q): lo mismo que la Tienda de Auto y Hogar, con tallas y las horas que guarda la tienda (24/48/72).
-    f.cat === "NEG-AUTO" || f.cat === "NEG-HOGAR" || f.cat === "NEG-TIENDA" || f.cat === "NEG-TRANS" ? Promise.all([tiendaPublica(f.id), tiendaVenta(f.id), tiendaMia(u?.id ?? null, f.id), horasApartado(f.id), f.cat === "NEG-TIENDA" ? reglaPlan(f.id) : null]).then(async ([L, V, mia, horas, plan]) => ({ L, V, mia, horas, plan, pop: f.cat === "NEG-TIENDA" ? await tiendaPopulares(f.id, V) : [] })) : Promise.resolve(null),
+    f.cat === "NEG-AUTO" || f.cat === "NEG-HOGAR" || f.cat === "NEG-TIENDA" || f.cat === "NEG-TRANS" ? Promise.all([tiendaPublica(f.id), tiendaVenta(f.id, u?.id ?? null), tiendaMia(u?.id ?? null, f.id), horasApartado(f.id), f.cat === "NEG-TIENDA" ? reglaPlan(f.id) : null]).then(async ([L, V, mia, horas, plan]) => ({ L, V, mia, horas, plan, pop: f.cat === "NEG-TIENDA" ? await tiendaPopulares(f.id, V) : [] })) : Promise.resolve(null),
     // Doctores (4i): servicios con el precio según tu seguro, quién atiende y «Tu seguro».
     f.cat === "NEG-SALUD" ? saludPublico(f.id, u?.id ?? null) : Promise.resolve(null),
     // Profesionales (4k): el total (honorario + gobierno), la licencia y lo que no puede.
     f.cat === "NEG-PRO" ? proPublico(f.id) : Promise.resolve(null),
     // Mercados (4o): productos por libra, corte o punto, y si toma pedidos.
-    f.cat === "NEG-MERC" ? mercPublico(f.id) : Promise.resolve(null),
+    f.cat === "NEG-MERC" ? mercPublico(f.id, u?.id ?? null) : Promise.resolve(null),
     // Fiestas (4u): servicios con su forma de cobrar, el calendario real y «Tu fecha».
     f.cat === "NEG-FIESTA" ? fiestaPublico(f.id, u?.id ?? null) : Promise.resolve(null),
     // Transporte (4x): precio cerrado, la próxima salida con asientos y la licencia.

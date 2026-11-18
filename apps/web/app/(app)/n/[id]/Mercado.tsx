@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType, type MouseEvent } from "react";
 import type { MercPublico, ProdMerc } from "@/lib/merc-publico";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { PrecioAntes } from "./PrecioAntes";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,6 +43,8 @@ export function useMerc(mp: MercPublico | null, es: boolean) {
   const est = (p: ProdMerc, q: number) => p.cents * q;
   const tot = (mio?.lines ?? []).reduce((a, l) => { const p = mp.prods.find((x) => x.id === l.item); if (!p) return a; const v = est(p, l.q); return { est: a.est + v, lb: a.lb + (p.k === "peso" ? v : 0), n: a.n + 1 }; }, { est: 0, lb: 0, n: 0 });
   const enPedido = (id: string) => (mio?.lines ?? []).filter((l) => l.item === id).reduce((a, l) => a + l.q, 0);
+  // 9n · Con una oferta en vivo de Novedades, `cents` ya es el de la oferta (el que se cobra) y `was` el de siempre: sale tachado (por libra, si va por libra).
+  const antes = (p: ProdMerc) => (p.was != null ? `${money(p.was)}${p.k === "peso" ? "/lb" : ""}` : "");
   const precio = (p: ProdMerc) => ({ l: `${money(p.cents)}${p.k === "peso" ? "/lb" : ""}`, s: p.k === "peso" ? E2("SE COBRA LO QUE PESE", "YOU PAY WHAT IT WEIGHS") : p.k === "plato" ? E2("LISTO PARA LLEVAR", "READY TO GO") : "" });
   const meta = (p: ProdMerc) => { const n = enPedido(p.id); return [precio(p).s, p.ago ? E2("SE ACABÓ HOY", "SOLD OUT TODAY") : "", p.edad ? E2("21+ · SOLO EN LA TIENDA", "21+ · IN STORE ONLY") : p.tienda ? E2("SOLO EN LA TIENDA", "IN STORE ONLY") : "", n ? `${E2("EN TU PEDIDO: ", "IN YOUR ORDER: ")}${n}${p.k === "peso" ? " LB" : ""}` : ""].filter(Boolean).join(" · "); };
   const secs = [...mp.secciones.map((sc) => ({ title: nm(sc.name).toUpperCase(), items: mp.prods.filter((p) => p.sec === sc.id) })), { title: E2("OTROS", "OTHER"), items: mp.prods.filter((p) => !mp.secciones.some((sc) => sc.id === p.sec)) }].filter((x) => x.items.length);
@@ -64,7 +67,7 @@ export function useMerc(mp: MercPublico | null, es: boolean) {
   const verPedido = () => router.push(`/n/${mp.negocio.id}/mercado`);
   const llegar = () => abrirComoLlegar({ dir: mp.negocio.direccion ?? mp.negocio.nombre });
   const llamar = () => { if (mp.negocio.telefono) location.href = `tel:${mp.negocio.telefono}`; };
-  return { mp, es, E2, nm, h, ord, secs, notes, riel, precio, meta, pod, tot, mio, hoja, aviso, abrir: (id: string, e?: MouseEvent) => { stop(e); setHoja(id); }, cerrar: () => setHoja(null), agregar, quitar, verPedido, llegar, llamar, linea,
+  return { mp, es, E2, nm, h, ord, secs, notes, riel, precio, antes, meta, pod, tot, mio, hoja, aviso, abrir: (id: string, e?: MouseEvent) => { stop(e); setHoja(id); }, cerrar: () => setHoja(null), agregar, quitar, verPedido, llegar, llamar, linea,
     otroMercado: !!cart && cart.biz !== mp.negocio.id && cart.lines.length > 0, top: mp.prods.filter((p) => !p.ago).slice(0, 4),
     // C-008 · «Lo más pedido» de verdad: lo que el mercado fija y lo más pedido en 30 días (lib/merc-publico).
     pop: mp.pop.map((id) => mp.prods.find((p) => p.id === id)).filter((p): p is ProdMerc => !!p) };
@@ -80,7 +83,7 @@ function Fila({ v, p, tarjeta }: { v: Me; p: ProdMerc; tarjeta?: boolean }) {
         <div className="min-w-0 flex-1">
           <div className="text-[14.5px] font-bold leading-[1.3]">{v.nm(p.name)}</div>
           {v.meta(p) && <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{v.meta(p)}</div>}
-          <div className="mt-1.5 font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</div>
+          <div className="mt-1.5 flex flex-wrap items-baseline gap-2"><span className="font-display text-[16px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</span>{p.was != null && <PrecioAntes t={v.antes(p)} es={v.es} tachado />}</div>
         </div>
       </button>
       {puede ? <Button variant="soft" size="md" onClick={(e: MouseEvent) => v.abrir(p.id, e)}>{v.E2("Agregar", "Add")}</Button>
@@ -154,7 +157,7 @@ export function MeMenu({ v, desk }: { v: Me; desk: boolean }) {
         <div data-screen-label="Ficha · productos · lo más pedido">
           <div className={`font-display text-[18px] font-extrabold leading-none tracking-[-0.03em] ${desk ? "" : "px-5"}`}>{E2("Lo más pedido", "Most ordered")}</div>
           <div className={`hs mt-3 flex gap-2.5 overflow-x-auto pb-1.5 ${desk ? "" : "px-5"}`}>
-            {v.pop.map((p) => <MenuTile key={p.id} lang={lang} name={v.nm(p.name)} price={v.precio(p).l} image={p.foto ?? undefined} qty={enPedido(p.id)} off={!v.pod(p)} width={156} height={124}
+            {v.pop.map((p) => <MenuTile key={p.id} lang={lang} name={v.nm(p.name)} price={v.precio(p).l} was={p.was != null ? <PrecioAntes t={v.antes(p)} es={v.es} /> : null} image={p.foto ?? undefined} qty={enPedido(p.id)} off={!v.pod(p)} width={156} height={124}
               onOpen={() => v.abrir(p.id)} onPlus={() => mas(p)} onMinus={() => menos(p)} onExpand={() => v.abrir(p.id)} />)}
           </div>
         </div>) : null}
@@ -164,7 +167,7 @@ export function MeMenu({ v, desk }: { v: Me; desk: boolean }) {
           <div className={desk ? "mt-3 grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5" : "mt-1 flex flex-col"}>
             {sc.items.map((p) => (
               <div key={p.id} className={desk ? "grid min-w-0" : "mt-2.5 grid min-w-0"}>
-                <MenuItemRow lang={lang} card name={v.nm(p.name)} desc={v.nm(p.desc) || undefined} price={v.precio(p).l} tags={tags(p)} image={p.foto ?? undefined} qty={enPedido(p.id)} off={!v.pod(p)}
+                <MenuItemRow lang={lang} card name={v.nm(p.name)} desc={v.nm(p.desc) || undefined} price={v.precio(p).l} was={p.was != null ? <PrecioAntes t={v.antes(p)} es={v.es} /> : null} tags={tags(p)} image={p.foto ?? undefined} qty={enPedido(p.id)} off={!v.pod(p)}
                   onOpen={() => v.abrir(p.id)} onPlus={() => mas(p)} onMinus={() => menos(p)} onExpand={() => v.abrir(p.id)} />
               </div>))}
           </div>
@@ -213,7 +216,7 @@ export function MeHoja({ v }: { v: Me }) {
           <div className="flex flex-col gap-4 px-5 pb-6 pt-[18px]">
             <div>
               <div className="font-display text-[22px] font-extrabold leading-[1.15] tracking-[-0.035em]">{nm(p.name)}</div>
-              <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</span>{P.s && <span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{P.s}</span>}</div>
+              <div className="mt-[9px] flex flex-wrap items-center gap-2.5"><span className="font-display text-[17px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</span>{p.was != null && <PrecioAntes t={v.antes(p)} es={v.es} tachado />}{P.s && <span className="font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">{P.s}</span>}</div>
               {nm(p.desc) && <p className="mt-2.5 text-pretty text-[13px] leading-[1.6] text-ink/65">{nm(p.desc)}</p>}
             </div>
             {puede ? grupos.map((g) => (

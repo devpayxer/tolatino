@@ -7469,6 +7469,43 @@ const guardianes = {
       });
     }
   },
+  /* 9n · Ofertas de productos en Mercado y Tienda (LAUNCH «Tachado en Mercado y Tienda»): el precio de un producto que ve la ficha y el que cobra el
+     pedido del mercado o guarda el apartado es el MISMO: oferta_precio() de la oferta en vivo de Novedades para esa persona y, si no hay, el del
+     catálogo. Ninguna lectura de items.price_cents en lib/mercado.ts, lib/merc-publico.ts, lib/apartados.ts ni lib/layaway.ts sin pasar por
+     coalesce(oferta_precio(…), …price_cents) (salvo el «de siempre» que se lee aparte como `base` para el tachado). El tachado de la ficha (`was`) es
+     el de siempre solo cuando la oferta lo baja; la oferta enlaza un plato o un producto, nunca uno de 21+, y la base lo exige (0178). Al revés
+     (alrevesOfe9n). */
+  ofertaProductoDelServidor() {
+    const G = "ofertaProductoDelServidor", L = "apps/web/lib/";
+    const OFERTA = /coalesce\(oferta_precio\((?:i\.)?id, \$\d+::uuid\), (?:i\.)?$/;
+    for (const f of ["mercado.ts", "merc-publico.ts", "apartados.ts", "layaway.ts"].map((x) => L + x)) {
+      if (!existsSync(f)) { falla(G, f, 0, "falta la pieza que pone precio a un producto del mercado o de la tienda"); continue; }
+      const t = sinComent(f);
+      for (const m of t.matchAll(/(?<![a-z_])(?:[a-z]+\.)?price_cents\b/g)) {
+        const antes = t.slice(Math.max(0, m.index - 60), m.index), despues = t.slice(m.index + m[0].length, m.index + m[0].length + 9);
+        if (OFERTA.test(antes) || /^ as base\b/.test(despues)) continue;
+        falla(G, f, t.slice(0, m.index).split("\n").length, "el precio de un producto se lee con su oferta: coalesce(oferta_precio(i.id, $n::uuid), i.price_cents) (lo mismo en la ficha, el pedido del mercado y el apartado)");
+      }
+    }
+    const fn = [[L + "mercado.ts", ["opcionesMercado", "crearPedidoMercado", "noHay"]], [L + "merc-publico.ts", ["mercPublico"]], [L + "apartados.ts", ["tiendaVenta", "apartar"]]];
+    for (const [f, ns] of fn) {
+      if (!existsSync(f)) continue;
+      const t = sinComent(f);
+      for (const n of ns) if (!/oferta_precio\(/.test(cuerpoFn(t, n))) falla(G, f, 0, `${n} pone el precio con la oferta en vivo (oferta_precio): la ficha muestra lo que el pedido cobra`);
+    }
+    // El tachado: el de siempre (base) solo cuando la oferta lo baja; nunca un «antes» de otro lado.
+    if (existsSync(L + "merc-publico.ts") && !/was: base > x\.cents \? base : null/.test(sinComent(L + "merc-publico.ts"))) falla(G, L + "merc-publico.ts", 0, "el precio de antes del mercado es el del catálogo solo cuando la oferta lo baja (was: base > x.cents ? base : null)");
+    if (existsSync(L + "apartados.ts") && !/was: base > x\.precio \? base : null/.test(sinComent(L + "apartados.ts"))) falla(G, L + "apartados.ts", 0, "el precio de antes de la tienda es el del catálogo solo cuando la oferta lo baja (was: base > x.precio ? base : null)");
+    // La oferta enlaza un plato o un producto de su negocio, nunca uno de 21+ (el editor, el servidor y la base).
+    const N = L + "novedades.ts";
+    if (existsSync(N)) {
+      const t = sinComent(N);
+      if (!/and \(module = 'menu' or \(module = 'shop' and age_min = 0\)\)/.test(cuerpoFn(t, "guardarNovedad"))) falla(G, N, 0, "guardarNovedad: la oferta es de un plato (menu) o de un producto (shop) que no es de 21+");
+      if (!/and \(i\.module = 'menu' or \(i\.module = 'shop' and i\.age_min = 0\)\)/.test(cuerpoFn(t, "itemsNovedad"))) falla(G, N, 0, "itemsNovedad: el editor ofrece platos y productos, nunca uno de 21+");
+    }
+    const op = ultimaFn("oferta_precio");
+    if (!/i\.business_id = p\.business_id/.test(op) || !/not \(i\.module = 'shop' and i\.age_min > 0\)/.test(op)) falla(G, "packages/db/migrations", 0, "oferta_precio (la última definición): solo un artículo del negocio de la oferta y nunca un producto de 21+");
+  },
   /* Anchos · La hora de una lectura del GPS del navegador pasa por horaPosicion (lib/nativo/ruta.ts): Safari la da en microsegundos y el
      servidor rechazaba todas las posiciones del repartidor en el iPhone (app8e en el SE y el iPad). Ninguna otra lectura usa .timestamp de
      una posición a secas. Al revés (alrevesAnchos). */

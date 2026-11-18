@@ -1817,8 +1817,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       el precio de siempre del plato (`items.price_cents`) cuando una oferta en vivo de Novedades lo baja (`lib/pedir.ts` → `was`; MenuTile y
       MenuItemRow; «Antes» para el lector de pantalla). El negocio no escribe ningún «precio anterior» (descuento falso imposible: guardián
       `precioAntesReal`, alrevesC005 17/17; e2e fic008 1b). Panel y Super Admin: se gestiona desde la oferta en Novedades, como siempre.
-- [ ] **→ 9n** · **Tachado en Mercado y Tienda:** sus productos no tienen ofertas (Novedades solo enlaza platos de Comida y el cobro de mercado y
+- [x] **→ 9n** · **Tachado en Mercado y Tienda:** sus productos no tienen ofertas (Novedades solo enlaza platos de Comida y el cobro de mercado y
       apartado lee `price_cents` sin oferta). Cuando haya ofertas de productos, el tachado sale igual que en Comida. Hoy no se muestra (no se inventa).
+      — **✓ (18 nov):** Panel › Novedades › Oferta elige un producto del catálogo (por libra, la oferta es por libra; lo de 21+ no entra: editor,
+      servidor y base, **0178**); la ficha del mercado y la Tienda muestran el tachado como Comida y el pedido del mercado (y su sustituto) y el
+      apartado cobran `oferta_precio()`. Guardián `ofertaProductoDelServidor` (alrevesOfe9n 15/15); e2e `ofe9n`.
 - [ ] **→ 9n** · **Ficha Free nueva (C-007):** el canvas dice que la versión Free no está decidida; los Free siguen con la ficha de siempre.
 ## C-002 — Página de categoría + Patrocinados (17 nov)
 - [x] **→ 9n** · **Patrocinio: devolver lo que no se usó.** Hoy «Terminar antes» y «Cancelar reserva» no devuelven nada (lo dice la pantalla) y el Super

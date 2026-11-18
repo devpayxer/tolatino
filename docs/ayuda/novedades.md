@@ -1,7 +1,7 @@
 # Novedades · Business updates
 
 _Pantallas: pestaña **Novedades** de la página de un negocio Pro (`/n/{negocio}?tab=nov`) y Tu página › **Novedades** en el panel
-(`/panel/{negocio}/pagina/nov`, el detalle `?det=nov:{id}` y el editor `?det=nov:new`). Teléfono y escritorio. Solo Pro. Versión: 10 nov 2026.
+(`/panel/{negocio}/pagina/nov`, el detalle `?det=nov:{id}` y el editor `?det=nov:new`). Teléfono y escritorio. Solo Pro. Versión: 18 nov 2026.
 Audiencia: vecino. Tema: explorar._
 
 ## Qué hace
@@ -11,6 +11,10 @@ Audiencia: vecino. Tema: explorar._
     menú). **El precio de la oferta es el que se cobra** mientras la oferta está en vivo (en el menú, el carrito y el pedido).
     **En el menú del negocio**, ese plato también sale con el precio de la oferta y, al lado, **el precio de siempre tachado**
     (el lector de pantalla dice «Antes»). Nadie escribe ese número: es el precio del plato en el menú. Sin oferta en vivo no hay tachado.
+  - **Oferta de un mercado o una tienda:** lo mismo con un **producto** de su catálogo. En la página del mercado y en la Tienda el producto sale
+    con el precio de la oferta y el de siempre tachado; **Pedir · $X** (mercado) o **Apartar · $X** (tienda) lleva a sus productos. El pedido del
+    mercado y el apartado guardan el precio de la oferta (lo que pagas en la caja o lo que se cobra). Lo que va **por libra** lleva su oferta
+    **por libra** («$5.99/lb»): se cobra lo que pese, a ese precio. Un apartado o un pedido ya enviado conserva su precio aunque la oferta termine.
   - **Hoy hay:** el plato y **Agregar al pedido**.
   - **Aviso de horario:** qué día y qué pasa (cerrado, abre más tarde, cierra más temprano, horario extendido) y **Ver horario**.
   - **Encuesta:** de 2 a 4 opciones; al votar se ven los porcentajes y «ya votaste». Un voto por persona.
@@ -27,6 +31,11 @@ Audiencia: vecino. Tema: explorar._
     el botón, quién lo ve (todos o solo quienes te siguen), cuándo vence (hoy 3 PM, 24 h, esta semana, sin fecha) y cuándo
     sale (ahora o un día de esta semana a una hora). «Así se ve» con la tarjeta real.
   - **Oferta:** eliges el plato; el **precio normal es el de tu menú** (no se escribe) y la oferta tiene que ser menor.
+    **Mercados y Tiendas:** eliges un **producto** de tu catálogo (busca en tus productos); el precio normal es el de tu catálogo. En lo que va
+    por libra, el precio normal y el de la oferta son **por libra**. Lo de **21+** (licor, tabaco, vape) no lleva oferta: no sale en la lista.
+    Lo que es «solo en la tienda» puede llevarla: sale en tu página y lo cobras en la tienda a ese precio.
+  - **Pedidos desde la oferta:** en el detalle, cuántos pedidos (y apartados) salieron con ese plato o producto al precio de la oferta mientras
+    estuvo en vivo, las unidades y lo vendido (en el mercado, lo que de verdad se cobró por el peso).
   - **Detalle:** cifras, los comentarios con **Responder** (280 letras; sale como «Respuesta del negocio»), «Así se ve»,
     Fijar, Editar, Terminar ahora o Cancelar programación y Quitar.
   - Publicar la primera enciende Novedades en tu página; si lo apagas, se quedan guardadas.
@@ -38,6 +47,9 @@ Audiencia: vecino. Tema: explorar._
 | «Solo quienes te siguen» | Solo la ve quien sigue al negocio; en una oferta, solo a esa persona se le cobra el precio de oferta. |
 | Programada | No sale hasta su hora; el dueño la ve PROGRAMADA y puede «Publicar ya». |
 | Vence o la detienen | Sale de la página; la oferta deja de cobrarse y vuelve el precio del menú. |
+| Oferta de un producto que va por libra | El precio de la oferta es por libra: el pedido retiene el estimado a ese precio y se cobra el peso real × ese precio. |
+| La oferta termina con un apartado o un pedido del mercado ya enviado | Conserva el precio con que se envió. Lo nuevo sale al precio de siempre. |
+| Producto de 21+ | No lleva oferta: no sale en el editor y To'Latino no la guarda. |
 | Fijar otra | La anterior deja de estar fijada (una a la vez). |
 | To'Latino la oculta | Sale de la página; el dueño ve OCULTA POR TO'LATINO con el motivo. |
 | To'Latino pausa Novedades | Sin pestaña y sin precios de oferta; el dueño ve la pausa con el motivo. |
@@ -50,6 +62,9 @@ Audiencia: vecino. Tema: explorar._
 ## Preguntas frecuentes
 **¿El precio de la oferta es de verdad?** Sí: mientras la oferta está en vivo, el menú, el carrito y el pedido cobran ese
 precio. El «antes» es el precio del menú.
+
+**¿Puedo poner una oferta en un producto de mi mercado o de mi tienda?** Sí, igual que un plato: Novedades › Oferta › elige el producto. El pedido
+del mercado y el apartado guardan el precio de la oferta mientras está en vivo; si va por libra, el precio es por libra.
 
 **¿Mis seguidores reciben un aviso?** Sí, en la campana (sin SMS): «Hoy en un negocio que sigues» cuando tu novedad para todos
 sale en **Hoy en el barrio** (24 h, negocios Pro; la persona lo apaga en Mi cuenta › Avisos › «Lo que traen hoy»). Las publicaciones «solo
@@ -69,6 +84,10 @@ sigues al negocio (si no, la novedad dice «Solo para seguidores» y puedes segu
     is charged** while the deal is live (in the menu, the cart and the order).
     **On the business menu**, that dish also shows the deal price and, next to it, **the usual price struck through** (screen
     readers say «Was»). Nobody types that number: it is the dish's menu price. With no live deal there is no struck-through price.
+  - **Deal from a market or a store:** the same with a **product** from its catalog. On the market page and in the Shop the product shows the deal
+    price and the usual price struck through; **Order · $X** (market) or **Hold · $X** (store) takes you to its products. The market order and the hold
+    keep the deal price (what you pay at the register or what is charged). What goes **by the pound** has its deal **per pound** («$5.99/lb»): you pay
+    what it weighs at that price. A hold or an order already sent keeps its price even if the deal ends.
   - **Today we have:** the dish and **Add to order**.
   - **Hours notice:** which day and what happens (closed, opens later, closes earlier, extended hours) and **See hours**.
   - **Poll:** 2 to 4 options; when you vote you see the percentages and «you voted». One vote per person.
@@ -81,6 +100,11 @@ sigues al negocio (si no, la novedad dice «Solo para seguidores» y puedes segu
     (everyone or only those who follow you), when it ends (today 3 PM, 24 h, this week, no date) and when it goes out (now or a day this week at a time).
     «How it looks» with the real card.
   - **Deal:** you choose the dish; the **regular price is your menu's** (it is not typed) and the deal has to be lower.
+    **Markets and Stores:** you choose a **product** from your catalog (search your products); the regular price is your catalog's. For what goes by
+    the pound, the regular and the deal price are **per pound**. **21+** items (liquor, tobacco, vape) do not get deals: they are not on the list.
+    «In store only» items can: the deal shows on your page and you charge that price in store.
+  - **Orders from the deal:** in the detail, how many orders (and holds) went out with that dish or product at the deal price while it was live, the units
+    and what was sold (at the market, what was really charged for the weight).
   - **Detail:** figures, the comments with **Reply** (280 characters; it shows as «Business reply»), «How it looks», Pin, Edit, End now or Cancel scheduling and
     Remove.
   - Posting the first one turns Updates on on your page; if you turn it off, they stay saved.
@@ -95,6 +119,9 @@ sigues al negocio (si no, la novedad dice «Solo para seguidores» y puedes segu
 | «Only your followers» | Only whoever follows the business sees it; on a deal, only that person is charged the deal price. |
 | Scheduled | It does not show until its time; the owner sees it SCHEDULED and can «Post now». |
 | It expires or is stopped | It leaves the page; the deal stops being charged and the menu price returns. |
+| Deal on a product sold by the pound | The deal price is per pound: the order holds the estimate at that price and charges the real weight × that price. |
+| The deal ends with a hold or a market order already sent | It keeps the price it was sent with. New ones go at the usual price. |
+| 21+ product | It does not get a deal: it is not in the editor and To'Latino does not save it. |
 | Pin another | The previous one stops being pinned (one at a time). |
 | To'Latino hides it | It leaves the page; the owner sees HIDDEN BY TO'LATINO with the reason. |
 | To'Latino pauses Updates | No tab and no deal prices; the owner sees the pause with the reason. |
@@ -106,6 +133,9 @@ sigues al negocio (si no, la novedad dice «Solo para seguidores» y puedes segu
 
 ### FAQ
 **Is the deal price real?** Yes: while the deal is live, the menu, the cart and the order charge that price. The «before» is the menu price.
+
+**Can I put a deal on a product from my market or my store?** Yes, like a dish: Updates › Deal › pick the product. The market order and the hold keep the
+deal price while it is live; if it goes by the pound, the price is per pound.
 
 **Do my followers get a notice?** Yes, in the bell (no SMS): «Today at a business you follow» when your update for everyone shows in **Today nearby** (24 h, Pro
 businesses; the person turns it off in My account › Notices › «What’s in today»). Posts «for followers only» show on your page, not in Today. See

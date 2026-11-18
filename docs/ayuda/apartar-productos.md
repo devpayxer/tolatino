@@ -51,12 +51,15 @@ en la caja) o *Envío a tu casa* (llega en los días que dice la tienda, con el 
 | Con envío: la tienda no lo tiene, cancelas antes de que salga o no lo envía en 6 días | Se libera lo retenido en tu tarjeta. No se cobra nada. |
 | Con envío: tu banco pide una verificación extra | Por ahora no se puede con esa tarjeta: prueba otra o recógelo en la tienda. |
 | Ya tienes 3 apartados abiertos en esa tienda | No deja abrir otro hasta cerrar alguno. |
+| El artículo tiene una oferta en Novedades | En la Tienda sale con el precio de la oferta y el de siempre tachado; el apartado se guarda a ese precio y es el que pagas en la caja, aunque la oferta termine antes de que pases. |
 | Gomas | Filtra por la medida de tu carro (si la guardaste en Tu vehículo), todas las medidas, nuevas o usadas. El precio es por goma instalada. |
 
 **Los plazos de esta página** (las 48 horas que se guarda un apartado en los talleres y los negocios de hogar) son los de hoy: las Tiendas eligen sus horas en su herramienta; las de los talleres y el hogar las fija To'Latino en su Configuración, y la pantalla siempre dice las que valen en ese momento.
 
 ## FAQ
 - **¿Me cobran algo?** No. Pagas en la caja lo mismo que ves.
+- **¿Y si el artículo tiene una oferta?** La Tienda muestra el precio de la oferta con el de siempre tachado; tu apartado se guarda a ese precio y es lo
+  que pagas en la caja, aunque la oferta termine antes de que pases.
 - **¿Hasta cuándo me lo guardan?** Las horas que dice la tienda (24, 48 o 72) desde la hora que elegiste para pasar. Lo ves en
   la hoja del artículo y en «Revisa y envía».
 - **¿Y si no tienen mi talla?** Te ofrecen la de al lado al mismo precio; tú decides.
@@ -111,6 +114,7 @@ register) or *Ship to your home* (it arrives in the days the store says, with th
 | With shipping: the store does not have it, you cancel before it leaves, or it is not shipped within 6 days | The hold on your card is released. Nothing is charged. |
 | With shipping: your bank asks for extra verification | For now it cannot be done with that card: try another or pick it up in store. |
 | You already have 3 open holds at that store | It does not let you open another until you close one. |
+| The item has a deal in Updates | The Shop shows the deal price with the usual one struck through; the hold is saved at that price and that is what you pay at the register, even if the deal ends before you come. |
 | Tires | Filter by your car's size (if you saved it in Your vehicle), all sizes, new or used. The price is per tire installed. |
 
 **The time limits on this page** (the 48 hours a hold is kept at auto shops and home businesses) are today's: Stores pick their hours in their tool;
@@ -118,6 +122,8 @@ for auto shops and home businesses, To'Latino sets them in its Configuration, an
 
 ### FAQ
 - **Do they charge me anything?** No. You pay at the register the same price you see.
+- **What if the item has a deal?** The Shop shows the deal price with the usual one struck through; your hold is saved at the deal price and that is what you
+  pay at the register, even if the deal ends before you come.
 - **How long do they keep it for me?** The hours the store says (24, 48 or 72) from the time you chose to come by. You see it on the item's sheet
   and in "Review and send".
 - **What if they do not have my size?** They offer you the next one at the same price; you decide.

@@ -12,6 +12,8 @@ vecino. Tema: explorar._
 - **¿Lo pesan delante de ti?** — lo dice el mercado en su herramienta («Sí: la balanza está de frente al cliente» o «Pregunta en el
   mostrador»).
 - Lo de **21+** (licor, tabaco, vape) y lo que es **solo en la tienda** sale con su precio y «Cómo llegar»: no se pide en la app.
+- **Ofertas:** si el mercado tiene una oferta en vivo en Novedades, el producto sale con el precio de la oferta y el de siempre **tachado** (por
+  libra, si va por libra). Tu pedido se guarda a ese precio. Lo de 21+ nunca lleva oferta. Ver «Novedades».
 - Si el mercado no toma pedidos en To'Latino (o es Free), la página dice «Ve directo» y «Cómo llegar».
 
 ## FAQ
@@ -30,6 +32,8 @@ vecino. Tema: explorar._
 - **Your order** holds what you add and the estimate. **One market at a time:** if you add from another, it replaces the first.
 - **Do they weigh it in front of you?** — the market says so in its tool («Yes: the scale faces the customer» or «Ask at the counter»).
 - Anything **21+** (liquor, tobacco, vape) and anything **in-store only** shows with its price and «Directions»: it is not ordered in the app.
+- **Deals:** if the market has a live deal in Updates, the product shows the deal price and the usual price **struck through** (per pound, if it goes by
+  the pound). Your order is saved at that price. 21+ items never get deals. See «Updates».
 - If the market does not take orders on To'Latino (or is Free), the page says «Walk in» and «Directions».
 
 ### FAQ

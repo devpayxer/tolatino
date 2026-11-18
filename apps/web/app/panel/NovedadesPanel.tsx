@@ -3,12 +3,12 @@
    sus cifras llegan del servidor; el estado (en vivo, programada, terminada, oculta) se deriva de sus fechas. */
 import { ctaPro } from "./pro-cta";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
-import type { NovPanel, NovPanelDet, Tipo } from "@/lib/novedades";
+import type { ItemNov, NovPanel, NovPanelDet, Tipo } from "@/lib/novedades";
 import { subirFoto } from "@/lib/subir-foto";
 import { novAvisar, novGuardar, novModulo, novPaso, novResponder } from "./acciones-novedades";
 import type { Ctx, Editor } from "./Panel";
 
-export type NovData = { lista?: NovPanel; det?: NovPanelDet | null; items?: { id: string; name: string; cents: number; ph: string | null; sell: boolean }[]; eventos?: { id: string; t: { es: string; en: string }; dia: string; vivo: boolean }[]; vacantes?: { id: string; t: { es: string; en: string } }[] };
+export type NovData = { lista?: NovPanel; det?: NovPanelDet | null; items?: ItemNov[]; eventos?: { id: string; t: { es: string; en: string }; dia: string; vivo: boolean }[]; vacantes?: { id: string; t: { es: string; en: string } }[] };
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
 const NOVT = (c: Ctx): [Tipo, string, string][] => [
@@ -104,7 +104,7 @@ export function novDetalle(c: Ctx): Sec {
         { l: E2("Cancelar", "Cancel"), v: "ghost", onClick: () => c.setUi({ nRpK: null, nRpT: "" }) }] });
   }
   out.push({ type: "nprev", k: E2("ASÍ SE VE", "HOW IT LOOKS"), name: d.name, logo: d.logo ?? undefined, tags: [{ label: T[1].toUpperCase(), tone: n.kind === "oferta" ? "ink" : n.kind === "hoy" ? "signal" : n.kind === "aviso" ? "danger" : n.kind === "encuesta" ? "action" : "neutral" }],
-    body: n.body ? `${n.title}. ${n.body}` : n.title, photos: n.fotos.map((f) => f.url), foot: n.kind === "oferta" && n.item && n.now ? `${n.item.name.es} · ${money(n.now)} (${E2("antes", "was")} ${money(n.was ?? n.item.cents)})` : undefined });
+    body: n.body ? `${n.title}. ${n.body}` : n.title, photos: n.fotos.map((f) => f.url), foot: n.kind === "oferta" && n.item && n.now ? `${n.item.name.es} · ${money(n.now)}${n.item.peso ? "/lb" : ""} (${E2("antes", "was")} ${money(n.was ?? n.item.cents)}${n.item.peso ? "/lb" : ""})` : undefined });
   if (n.st === "live" || n.st === "prog") out.push({ type: "rows", items: [{ icon: "pin", t: E2("Fijada arriba en tu página", "Pinned at the top of your page"), s: E2("Solo una a la vez.", "Only one at a time."), tgOn: n.pinned, onTg: () => c.run(() => novPaso(d.id, n.id, n.pinned ? "desfijar" : "fijar")) }] });
   out.push({ type: "acts", items: [
     ...(n.st !== "adm" ? [{ l: E2("Editar", "Edit"), icon: "edit", onClick: () => c.det(`nov:edit:${n.id}`) }] : []),
@@ -174,6 +174,8 @@ function editor(c: Ctx, id: string): Sec {
     out.push({ type: "note", tone: "warn", icon: "clock", t: E2("El aviso no cambia tu horario. Para que ese día salga cerrado, márcalo en Horario · Feriados.", "The notice does not change your hours. To show that day as closed, set it in Hours · Holidays."), cta: E2("Ir a Horario", "Go to Hours"), onCta: () => c.go("pag", "hor") });
   }
   const lkOn = ty === "oferta" || ty === "hoy" || ty === "novedad", lk = ty === "oferta" ? "item" : x.link, it = items.find((i) => i.id === x.item);
+  // 9n · Mercado y Tienda: lo que vende son productos de su catálogo (no platos); lo que va por libra lleva su precio y su oferta por libra.
+  const prod = items.length > 0 && items.every((i) => i.shop), lbIt = it?.peso ? "/lb" : "";
   if (lkOn) {
     const LO: [string, string][] = [...(ty !== "oferta" ? [["none", E2("Sin botón", "No button")] as [string, string]] : []), ...(items.length ? [["item", E2("Algo que vendes", "Something you sell")] as [string, string]] : []),
       ...(ty !== "oferta" ? [["menu", E2("Menú", "Menu")], ["tel", E2("Llamar", "Call")], ["msg", E2("Escribir", "Message")], ["web", E2("Enlace web", "Web link")]] as [string, string][] : []),
@@ -183,12 +185,13 @@ function editor(c: Ctx, id: string): Sec {
     if (ty !== "oferta") out.push({ type: "chips", items: LO.map(([v, l]) => ({ l, v: lk === v ? "selected" : "filter", onClick: () => F.set({ link: v }) })) });
     if (lk === "item") {
       const q = ((c.ui.nQ as string | undefined) ?? "").trim().toLowerCase(), L = items.filter((i) => !q || i.name.toLowerCase().includes(q)), sh = L.slice(0, c.ui.nAll ? 60 : 6);
-      if (items.length > 6) out.push({ type: "field", k: E2("BUSCAR", "SEARCH"), val: (c.ui.nQ as string | undefined) ?? "", ph: E2("Busca en tus platos", "Search your dishes"), onChange: (v) => c.setUi({ nQ: v, nAll: false }) });
-      out.push(sh.length ? { type: "rows", k: `${L.length} ${E2("PLATOS", "DISHES")}`, link: L.length > sh.length ? E2(`Ver los ${L.length}`, `See all ${L.length}`) : undefined, onLink: () => c.setUi({ nAll: true }),
-        items: sh.map((i) => ({ img: i.ph ? `url("${i.ph}")` : "", imgIni: i.ph ? "" : i.name.slice(0, 1), imgW: "44px", t: i.name, s: `${money(i.cents)}${i.sell ? "" : E2(" · solo en el local", " · in store only")}`, compact: true, chev: false, onClick: () => F.set({ item: i.id }), sel: { on: x.item === i.id, onClick: () => F.set({ item: i.id }) } })) }
+      if (items.length > 6) out.push({ type: "field", k: E2("BUSCAR", "SEARCH"), val: (c.ui.nQ as string | undefined) ?? "", ph: prod ? E2("Busca en tus productos", "Search your products") : E2("Busca en tus platos", "Search your dishes"), onChange: (v) => c.setUi({ nQ: v, nAll: false }) });
+      out.push(sh.length ? { type: "rows", k: `${L.length} ${prod ? E2("PRODUCTOS", "PRODUCTS") : E2("PLATOS", "DISHES")}`, link: L.length > sh.length ? E2(`Ver los ${L.length}`, `See all ${L.length}`) : undefined, onLink: () => c.setUi({ nAll: true }),
+        items: sh.map((i) => ({ img: i.ph ? `url("${i.ph}")` : "", imgIni: i.ph ? "" : i.name.slice(0, 1), imgW: "44px", t: i.name, s: `${money(i.cents)}${i.peso ? "/lb" : ""}${i.sell ? "" : i.shop ? E2(" · solo en la tienda", " · in store only") : E2(" · solo en el local", " · in store only")}`, compact: true, chev: false, onClick: () => F.set({ item: i.id }), sel: { on: x.item === i.id, onClick: () => F.set({ item: i.id }) } })) }
         : { type: "empty", icon: "search", t: E2(`Nada con «${q}»`, `Nothing for “${q}”`), s: E2("Prueba con otra palabra.", "Try another word.") });
-      if (it && !it.sell) out.push({ type: "note", tone: "warn", t: E2("Este no se pide en línea. El botón abre tu menú.", "This one is not ordered online. The button opens your menu.") });
-      if (!it) out.push({ type: "note", tone: "warn", t: ty === "oferta" ? E2("Elige qué está en oferta.", "Pick what is on sale.") : E2("Elige el plato del botón.", "Pick the dish for the button.") });
+      if (it && !it.sell) out.push({ type: "note", tone: "warn", t: it.shop ? E2("Este no se pide ni se aparta en la app: la oferta sale en tu página y lo cobras en la tienda a ese precio.", "This one is not ordered or held in the app: the deal shows on your page and you charge that price in store.")
+        : E2("Este no se pide en línea. El botón abre tu menú.", "This one is not ordered online. The button opens your menu.") });
+      if (!it) out.push({ type: "note", tone: "warn", t: ty === "oferta" ? E2("Elige qué está en oferta.", "Pick what is on sale.") : prod ? E2("Elige el producto del botón.", "Pick the product for the button.") : E2("Elige el plato del botón.", "Pick the dish for the button.") });
     }
     if (lk === "web") out.push({ type: "field", k: E2("ENLACE", "LINK"), val: x.url, max: 200, ph: "https://", help: E2("Solo https.", "https only."), onChange: (v) => F.set({ url: v.trim().slice(0, 200) }) });
     if (lk === "tel") out.push({ type: "note", tone: "info", icon: "phone", t: E2("El botón llama al teléfono de tu página.", "The button calls the phone on your page.") });
@@ -227,9 +230,11 @@ function editor(c: Ctx, id: string): Sec {
   if (ty === "oferta") {
     out.push({ type: "group", k: E2("EL PRECIO", "THE PRICE") },
       // El precio normal es el de tu menú (no se escribe): así el «antes» siempre es verdad.
-      { type: "field", k: E2("PRECIO NORMAL", "REGULAR PRICE"), val: it ? (it.cents / 100).toFixed(2) : "", pre: "$", lock: true, help: E2("Es el de tu menú. Para cambiarlo, edita el plato.", "It is your menu price. To change it, edit the dish."), onChange: () => undefined },
-      { type: "field", k: E2("PRECIO DE LA OFERTA", "DEAL PRICE"), val: x.now, pre: "$", im: "decimal", max: 6, onChange: (v) => F.set({ now: v.replace(/[^\d.]/g, "").slice(0, 6) }) });
-    if (nw > 0 && bf > 0) out.push(nw < bf ? { type: "note", tone: "ok", icon: "dollar", t: E2(`Ahorran ${money(bf - nw)} · ${Math.round((1 - nw / bf) * 100)} % menos.`, `They save ${money(bf - nw)} · ${Math.round((1 - nw / bf) * 100)}% off.`) }
+      { type: "field", k: `${E2("PRECIO NORMAL", "REGULAR PRICE")}${it?.peso ? E2(" · POR LIBRA", " · PER POUND") : ""}`, val: it ? (it.cents / 100).toFixed(2) : "", pre: "$", lock: true,
+        help: it?.shop ? E2("Es el de tu catálogo. Para cambiarlo, edita el producto.", "It is your catalog price. To change it, edit the product.") : E2("Es el de tu menú. Para cambiarlo, edita el plato.", "It is your menu price. To change it, edit the dish."), onChange: () => undefined },
+      { type: "field", k: `${E2("PRECIO DE LA OFERTA", "DEAL PRICE")}${it?.peso ? E2(" · POR LIBRA", " · PER POUND") : ""}`, val: x.now, pre: "$", im: "decimal", max: 6, onChange: (v) => F.set({ now: v.replace(/[^\d.]/g, "").slice(0, 6) }) });
+    if (it?.peso) out.push({ type: "note", tone: "info", icon: "scale", t: E2("Va por libra: el pedido se cobra lo que pese, a este precio por libra, mientras la oferta esté en vivo.", "Sold by the pound: the order is charged what it weighs, at this price per pound, while the deal is live.") });
+    if (nw > 0 && bf > 0) out.push(nw < bf ? { type: "note", tone: "ok", icon: "dollar", t: E2(`Ahorran ${money(bf - nw)}${lbIt} · ${Math.round((1 - nw / bf) * 100)} % menos.`, `They save ${money(bf - nw)}${lbIt} · ${Math.round((1 - nw / bf) * 100)}% off.`) }
       : { type: "note", tone: "danger", t: E2("El precio de la oferta tiene que ser menor que el normal.", "The deal price must be lower than the regular one.") });
   }
   out.push({ type: "group", k: E2("QUIÉN LO VE Y CUÁNDO", "WHO SEES IT AND WHEN") },
@@ -267,7 +272,7 @@ function editor(c: Ctx, id: string): Sec {
       { type: "step", t: E2("A qué hora", "At what time"), v: horaL(x.sM), onM: () => F.set({ sM: Math.max(0, x.sM - 30) }), onP: () => F.set({ sM: Math.min(1410, x.sM + 30) }) });
   }
   out.push({ type: "nprev", k: E2("ASÍ SE VE", "HOW IT LOOKS"), name: d.name, logo: d.logo ?? undefined, tags: [{ label: T[1].toUpperCase(), tone: ty === "oferta" ? "ink" : ty === "hoy" ? "signal" : ty === "aviso" ? "danger" : ty === "encuesta" ? "action" : ty === "cupon" ? "pro" : "neutral" }],
-    body: x.title ? (x.body ? `${x.title}. ${x.body}` : x.title) : E2("Tu título sale aquí.", "Your title shows here."), photos: x.fotos.map((f) => f.url), foot: ty === "oferta" && it && nw > 0 ? `${it.name} · ${money(nw)}` : ty === "cupon" && cupOk ? `${x.cCode} · −${money(cOff)} ${E2("desde", "from")} ${money(cMin)}` : undefined });
+    body: x.title ? (x.body ? `${x.title}. ${x.body}` : x.title) : E2("Tu título sale aquí.", "Your title shows here."), photos: x.fotos.map((f) => f.url), foot: ty === "oferta" && it && nw > 0 ? `${it.name} · ${money(nw)}${lbIt}` : ty === "cupon" && cupOk ? `${x.cCode} · −${money(cOff)} ${E2("desde", "from")} ${money(cMin)}` : undefined });
   const poll = [x.o1, x.o2, x.o3, x.o4].map((o) => o.trim()).filter(Boolean);
   const valid = x.title.trim().length >= 3 && (ty !== "cupon" || cupOk) && (ty !== "oferta" || (!!it && nw > 0 && nw < bf)) && (ty !== "encuesta" || poll.length >= 2) && (ty !== "aviso" || !!x.day.trim()) && (lk !== "item" || ty === "aviso" || ty === "encuesta" || !!x.item) && (lk !== "job" || !!x.job) && (lk !== "web" || /^https:\/\//.test(x.url)) && (lk !== "event" || !!x.evento);
   return { blocks: out, ed: {
