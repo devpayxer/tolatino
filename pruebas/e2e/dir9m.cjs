@@ -131,8 +131,14 @@ const limpiar = () => {
       }
     }
     ok(await espera(async () => (await p.locator('[data-pieza="mapa-pin"]:visible').getAttribute('data-lejos')) === '1'), 'muy lejos: el mapa avisa antes de guardar');
+    // Diagnóstico (iPad, 18 nov): qué pin manda la pantalla al guardar (el cuerpo de la acción del servidor) y qué dice el mapa justo antes.
+    const enviados = []; const oir = (r) => { const b = r.postData() || ''; if (r.method() === 'POST' && /450 N Wyoming/.test(b)) enviados.push(b.slice(0, 400)); };
+    p.on('request', oir);
+    const pinAntes = await pinAhora();
     await p.locator('[data-screen-label="Mi cuenta · barra"]').getByText('Guardar dirección').click();
     const rechazo = await espera(async () => /El pin quedó muy lejos de esa dirección/.test(await p.locator('body').innerText()));
+    p.off('request', oir);
+    if (!rechazo) console.log(`  · enviado: pin en el mapa antes=${pinAntes} · cuerpo=${JSON.stringify(enviados)}`);
     if (!rechazo) console.log(`  · diagnóstico: url=${p.url()} base=${sql(`select street || ' ' || coalesce(round(st_y(geo::geometry)::numeric, 5) || ',' || round(st_x(geo::geometry)::numeric, 5), '-') from user_addresses where id = '${id1}'`)} pantalla=«${(await p.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 600)}»`);
     ok(rechazo, 'muy lejos: el servidor no lo acepta («El pin quedó muy lejos de esa dirección»)');
     ok(sql(`select street from user_addresses where id = '${id1}'`) !== '450 N Wyoming St', 'y la dirección no cambió');
