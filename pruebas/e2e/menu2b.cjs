@@ -115,7 +115,9 @@ const MARISOL = "(select id from users where phone='+15705550122')";
   const d = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); watch(d, 'desk');
   await entrar(d, '5705550122');
   // C-006 · Ficha nueva (Pro): en la computadora es una sola página; el menú es su sección, sin un resumen aparte.
-  await d.goto(B + N); await d.locator('#sec-cat [data-screen-label="Ficha · menú · desktop"]').waitFor();
+  // Pickup fijo también en el escritorio (barajada, 18 nov): si otra prueba dejó delivery con mínimo, «Ir a pagar» decía «Mínimo · faltan» (modoPropio).
+  await d.goto(B + N); await d.evaluate(() => { localStorage.removeItem('tl-carrito-v1'); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); }); await d.reload();
+  await d.locator('#sec-cat [data-screen-label="Ficha · menú · desktop"]').waitFor();
   await shot(d, 'b13-resumen-d.png');
   await d.goto(B + N + '?tab=menu'); await d.locator('[data-screen-label="Ficha · menú · desktop"]').waitFor();
   await shot(d, 'b14-menu-d.png');

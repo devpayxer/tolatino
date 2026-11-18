@@ -31,7 +31,9 @@ const porPantalla = async (p, tel, es = true) => {
   await clic(p.getByRole('button', { name: es ? 'Enviarme el código' : 'Text me the code' }));
   const cod = await espera(() => sql(`select count(*) from otp_codes where phone = '+1${tel}'`), '1');
   ok(cod === '1', 'pidió el código');
-  const c = await p.evaluate(() => document.body.innerText.match(/\b\d{6}\b/)?.[0] ?? '');
+  // El código del modo pruebas sale en la pantalla un momento después de guardarse: se espera a verlo (barajada, 18 nov: se leía vacío).
+  let c = ''; for (let i = 0; i < 40 && !c; i++) { c = await p.evaluate(() => document.body.innerText.match(/\b\d{6}\b/)?.[0] ?? ''); if (!c) await dormir(250); }
+  ok(/^\d{6}$/.test(c), 'el código del modo pruebas está en la pantalla');
   await p.getByPlaceholder('······').fill(c);
   await clic(p.getByRole('button', { name: es ? 'Verificar' : 'Verify' }));
 };
