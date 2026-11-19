@@ -5,7 +5,7 @@
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
-const ME = 'apps/web/lib/mesa-espera.ts', RS = 'apps/web/lib/reservas.ts', MIG = 'packages/db/migrations/0180_mesa_espera_9t.sql', BA = 'apps/web/lib/barrido.ts';
+const ME = 'apps/web/lib/mesa-espera.ts', RS = 'apps/web/lib/reservas.ts', MIG = 'packages/db/migrations/0181_mesa_espera_9t.sql', BA = 'apps/web/lib/barrido.ts';
 const UB = 'apps/web/lib/ubicacion.ts', DI = 'apps/web/lib/direcciones.ts', AC = 'apps/web/app/(app)/ciudad/acciones.ts', PG = 'apps/web/app/(app)/reserva/[num]/page.tsx';
 const E = 'esperaMesaUnaVez', O = 'otrosConMesaDeLaCiudad', D = 'medirDesdeTuDireccion';
 const casos = [

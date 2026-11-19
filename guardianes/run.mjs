@@ -10656,9 +10656,9 @@ const guardianes = {
      el barrido reclama cada entrada en la misma escritura (waiting → offered «and status = 'waiting'»), la retención va a nombre de la dueña de la
      entrada (w.user_id), el aviso sale una vez (notif_once «rsv_libre:») y a w.uid, DESPUÉS de cerrar la transacción, y en las horas de silencio de la
      persona no se le ofrece. (3) rsvEnviar marca tomada solo la entrada de quien envía. (4) El barrido lo corre; la plantilla rsv_libre va por push y su
-     SMS solo de respaldo (sin_push). Al revés: alreves9t. */
+     SMS solo de respaldo (sin_push). Al revés: alreves9t2. */
   esperaMesaUnaVez() {
-    const G = "esperaMesaUnaVez", M = "packages/db/migrations/0180_mesa_espera_9t.sql", L = "apps/web/lib/mesa-espera.ts", R = "apps/web/lib/reservas.ts";
+    const G = "esperaMesaUnaVez", M = "packages/db/migrations/0181_mesa_espera_9t.sql", L = "apps/web/lib/mesa-espera.ts", R = "apps/web/lib/reservas.ts";
     if (!existsSync(M) || !existsSync(L)) return falla(G, L, 0, "falta la lista de espera de mesas (0180 y lib/mesa-espera.ts)");
     const m = readFileSync(M, "utf8");
     if (!/create unique index if not exists reservation_waitlist_viva on reservation_waitlist \(user_id, business_id, starts_at, party_size\) where status in \('waiting', 'offered'\);/.test(m))
@@ -10688,7 +10688,7 @@ const guardianes = {
 
   /* 9t · otrosConMesaDeLaCiudad («Otros restaurantes con mesa» en la pantalla «no pudo»): nunca un negocio cerrado, en pausa, de otra ciudad, sin Pro o sin
      Reservaciones, ni el mismo que no pudo; la disponibilidad sale del MISMO motor (areaLibre) y sin N+1 (los candidatos con tope y sus lecturas juntas: nada
-     de await dentro de la vuelta por candidato). La lista lleva tope. Al revés: alreves9t. */
+     de await dentro de la vuelta por candidato). La lista lleva tope. Al revés: alreves9t2. */
   otrosConMesaDeLaCiudad() {
     const G = "otrosConMesaDeLaCiudad", R = "apps/web/lib/reservas.ts";
     if (!existsSync(R)) return falla(G, R, 0, "falta lib/reservas.ts");
@@ -10717,7 +10717,7 @@ const guardianes = {
   /* 9t · medirDesdeTuDireccion (Mi cuenta › Direcciones → «Desde dónde medimos» › Casa / Trabajo, LAUNCH «Mi ciudad — lo que queda de 1f-2»): el punto de
      una dirección NUNCA viene de la cookie ni de la pantalla y nunca sale hacia ella: el selector recibe «dir:<id>», la etiqueta y la calle; el servidor
      resuelve el punto con las direcciones de QUIEN mira (sin sesión, o con una dirección ajena o quitada, cae en el centro); la cookie guarda el punto
-     solo de «tu ubicación». Al revés: alreves9t. */
+     solo de «tu ubicación». Al revés: alreves9t2. */
   medirDesdeTuDireccion() {
     const G = "medirDesdeTuDireccion", U = "apps/web/lib/ubicacion.ts", D = "apps/web/lib/direcciones.ts", A = "apps/web/app/(app)/ciudad/acciones.ts";
     if (!existsSync(U) || !existsSync(D) || !existsSync(A)) return falla(G, U, 0, "falta la ubicación, las direcciones o las acciones del selector");

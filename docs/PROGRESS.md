@@ -2665,7 +2665,7 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   liberó una mesa · Tomar la mesa / No, gracias»; la solicitud con la mesa guardada cuenta sus minutos (RsvHold.min). Mi cuenta › Avisos › Tus alertas
   lista las mesas en espera con «Quitar»; Super Admin › Transacciones muestra el estado de la lista. Mi ciudad: «Desde dónde medimos» con Casa / Trabajo
   (`puntosGuardados`, «dir:<id>»; el punto lo pone el servidor y nunca viaja a la pantalla ni a la cookie), «Entra para medir desde tu casa o tu trabajo» y
-  «Qué es Mi ciudad» → ayuda ciudades-que-abren. Guardianes `esperaMesaUnaVez`, `otrosConMesaDeLaCiudad`, `medirDesdeTuDireccion` (alreves9t 31/31).
+  «Qué es Mi ciudad» → ayuda ciudades-que-abren. Guardianes `esperaMesaUnaVez`, `otrosConMesaDeLaCiudad`, `medirDesdeTuDireccion` (alreves9t2 31/31).
   e2e en local (copia de la base local Postgres 16 con 0180, `next build` standalone en :3197, Chromium; sin Docker: el `sql()` de la prueba se pasó a
   psql local en una copia fuera del repo): **rsv9t** 37 ✓ y **ciu9t** 29 ✓ (390/1360, ES/EN). tsc + build + guardianes en verde; CMS verificado. Ayuda:
   `reservar-mesa`, `ciudad` (ES/EN).
