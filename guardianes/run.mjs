@@ -3375,7 +3375,7 @@ const guardianes = {
         if (iD >= 0 && iT >= 0 && iD > iT) falla(G, x, 0, `«${p.slice(0, p.indexOf("(")).replace(/^(export )?(async )?function /, "")}» llama al traductor dentro de una transacción`);
       }
     }
-    for (const [f, fns] of [["apps/web/lib/comunidad.ts", ["publicar", "editar"]], ["apps/web/lib/comunidad-hilo.ts", ["comentar"]], ["apps/web/lib/resenas.ts", ["guardarResena", "responderResena"]], ["apps/web/lib/novedades.ts", ["comentarPost"]], ["apps/web/lib/mensajes.ts", ["enviarCliente", "enviarNegocio"]]]) {
+    for (const [f, fns] of [["apps/web/lib/comunidad.ts", ["publicar", "editar"]], ["apps/web/lib/comunidad-hilo.ts", ["comentar"]], ["apps/web/lib/resenas.ts", ["guardarResena", "responderResena"]], ["apps/web/lib/novedades.ts", ["comentarPost"]], ["apps/web/lib/mensajes.ts", ["enviarCliente", "enviarNegocio"]], ["apps/web/lib/mensajes-vecinos.ts", ["enviar"]]]) {
       if (!existsSync(f)) continue;
       const t = sinComent(f);
       for (const fn of fns) if (!/detectarIdioma\(/.test(cuerpoFn(t, fn))) falla(G, f, 0, `«${fn}» guarda texto sin detectar su idioma (detectarIdioma)`);
@@ -9751,8 +9751,12 @@ const guardianes = {
     const t = sinComent(P), m = sinComent(M);
     if (!/\["fotosSinEnviar", async \(\) => \(await import\("\.\/mensajes-purga"\)\)\.purgarFotosSinEnviar\(\)\]/.test(sinComent(BR))) falla(G, BR, 0, "el barrido no corre purgarFotosSinEnviar");
     const vence = /owner_id = 'pendiente'[^`]*created_at > now\(\) - interval '(\d+) hours'/.exec(m)?.[1];
+    // 9t (19 nov) · Y las de Mensajes entre vecinos: la misma purga (owner_kind 'dm') y tomarFoto de lib/mensajes-vecinos.ts con las mismas horas.
+    const venceDm = /owner_kind = 'dm' and owner_id = 'pendiente'[^`]*created_at > now\(\) - interval '(\d+) hours'/.exec(sinComent("apps/web/lib/mensajes-vecinos.ts"))?.[1];
+    if (!/where owner_kind in \('chat', 'dm'\) and owner_id = 'pendiente'/.test(t)) falla(G, P, 0, "la purga cubre las fotos de los dos Mensajes (owner_kind 'chat' y 'dm')");
     const purga = /owner_id = 'pendiente'[^`]*created_at < now\(\) - interval '(\d+) hours'/.exec(t)?.[1];
     if (!vence || !purga || vence !== purga) falla(G, P, 0, `la purga y tomarFoto usan las mismas horas (se manda hasta ${vence ?? "?"} h; se purga después de ${purga ?? "?"} h)`);
+    if (!venceDm || venceDm !== purga) falla(G, "apps/web/lib/mensajes-vecinos.ts", 0, `la purga y tomarFoto (entre vecinos) usan las mismas horas (se manda hasta ${venceDm ?? "?"} h; se purga después de ${purga ?? "?"} h)`);
     if (!/where id = \$1::uuid and owner_id = 'pendiente' and purged_at is null/.test(t)) falla(G, P, 0, "solo se marca si sigue 'pendiente' (nunca una foto ya enviada)");
     if (/delete from media/i.test(t)) falla(G, P, 0, "nada se borra de la base: la fila queda con purged_at");
     if (!/set purged_at = now\(\)/.test(t)) falla(G, P, 0, "la fila purgada lleva purged_at");
@@ -9923,7 +9927,9 @@ const guardianes = {
     const v = sinComent(VE);
     if (!/x\.owner_kind = 'chat' and x\.private and x\.purged_at is null and x\.status in \('visible', 'review'\) and x\.url like 'privado\/m\/%'/.test(v)) falla(G, VE, 0, "ver solo fotos privadas del chat («privado/m/», sin purgar)");
     if (!/const lista = m\.status === "visible" && !!m\.msg && !m\.oculto;/.test(v) || !/lista && m\.vecino === me\.id/.test(v) || !/lista && m\.biz\) ok = !!\(await accesoPanel\(m\.biz, "msg"\)\)/.test(v)) falla(G, VE, 0, "las partes la ven solo revisada y con el mensaje sin ocultar (el negocio con accesoPanel «msg»)");
-    if (!/colas\.includes\(/.test(v) || !/auditar\(c, \{ actor: s\.id, action: "mensajes\.foto\.ver"/.test(v) || !/s\.cities\.length/.test(v)) falla(G, VE, 0, "el equipo la ve solo con caso abierto en su cola y ciudad, y queda en la auditoría");
+    // 19 nov · Solo en GET (la rama del chat con negocios): la de vecinos (fotoDeVecinos) tiene las suyas y no puede tapar que falten aquí.
+    const vg = cuerpoFn(v, "GET");
+    if (!/colas\.includes\(/.test(vg) || !/auditar\(c, \{ actor: s\.id, action: "mensajes\.foto\.ver"/.test(vg) || !/s\.cities\.length/.test(vg)) falla(G, VE, 0, "el equipo la ve solo con caso abierto en su cola y ciudad, y queda en la auditoría");
     if (!/"cache-control": "private, no-store"/.test(v) || /\/medios\//.test(v)) falla(G, VE, 0, "la foto de un mensaje nunca se cachea ni se sirve pública");
     const m = sinComent(ME);
     if (!/owner_id = 'pendiente' and uploaded_by = \$2 and private[\s\S]{0,160}for update/.test(cuerpoFn(m, "tomarFoto"))) falla(G, ME, 0, "tomarFoto: solo la foto que subió esa persona, sin usar, bloqueada en la transacción");
@@ -9937,6 +9943,66 @@ const guardianes = {
     if (existsSync(TR) && !/chat_message: `[\s\S]*?\(t\.user_id = \$1::uuid or exists \(select 1 from business_members bm[\s\S]*?'msg' = any\(bm\.panel_access\)/.test(sinComent(TR))) falla(G, TR, 0, "«Ver traducción» de un mensaje solo para las partes de la conversación");
     for (const [f, re] of [["apps/web/app/(app)/cuenta/mensajes/[negocio]/Chat.tsx", /tr\("chat_message", m\.id, m\.lang, m\.t, false\)/], ["apps/web/app/panel/MensajesPanel.tsx", /tr\("chat_message", m\.id, m\.lang, m\.t, false\)/]])
       if (existsSync(f) && !re.test(sinComent(f))) falla(G, f, 0, "esta conversación ofrece «Ver traducción» (lo del otro lado, en su idioma)");
+  },
+
+  /* 9t (19 nov) · fotoDmPrivada (LAUNCH «Mensajes · lo que quedó de 9t» (2): fotos y «Ver traducción» en Mensajes ENTRE VECINOS). La misma clase que
+     fotoMensajePrivada (una foto entre dos personas que se vuelve pública, que se ve antes de revisarla, que la ve quien no es parte o que el equipo
+     mira sin dejar rastro), más la de la Comunidad: con un bloqueo de por medio la conversación no existe para ninguno de los dos, y los mensajes
+     entre vecinos solo los leen lib/mensajes-vecinos.ts y lib/admin-dm.ts (dmSoloConReporte). Reglas:
+     - Subir (la misma ruta, «para=dm»): owner_kind 'dm', solo con la Comunidad completa; el tope por hora cuenta las dos clases de fotos.
+     - Ver (fotoDeVecinos): solo fotos privadas 'dm' bajo «privado/m/» sin purgar; quien la subió; la otra persona solo con la foto 'visible' y por
+       fotoDmVecino (mensaje sin ocultar, conversación abierta, sinBloqueo); el equipo solo con caso abierto en su cola y ciudad (la foto en «medios»
+       o la conversación reportada: dmFotoConReporte con CON_REPORTE), SIEMPRE auditado.
+     - lib/mensajes-vecinos.ts: la foto se toma (solo la que subió esa persona, 'dm', sin usar, bloqueada) DESPUÉS de otraPersona() y se ata en la
+       transacción del envío; en revisión abre su caso («medios»); la pantalla recibe la dirección solo si puede verla.
+     - La base: media_dm_privada, una foto en un solo mensaje, un mensaje no cambia su foto ni su idioma, la foto es de quien escribe; y body ''
+       vale con hidden_at (la purga de la cuenta lo deja así: antes chocaba con dm_messages_body_check).
+     - «Ver traducción» (dm_message): solo las dos personas, abierta y sin bloqueo (FUENTE_TR_DM), con cuenta y la Comunidad; la pantalla lo ofrece.
+     - Super Admin › Colas: la foto 'dm' en «medios» tiene su rama propia ANTES de la de la Comunidad (si no, la dirección privada cruda llegaría como
+       foto de la Comunidad); la purga de la cuenta borra sus traducciones. Prueba: dm9t. Al revés (alreves9tdm). */
+  fotoDmPrivada() {
+    const G = "fotoDmPrivada", UP = "apps/web/app/api/mensajes/foto/route.ts", VE = "apps/web/app/api/mensajes/foto/[id]/route.ts", MV = "apps/web/lib/mensajes-vecinos.ts",
+      AD = "apps/web/lib/admin-dm.ts", TR = "apps/web/lib/traduccion.ts", CH = "apps/web/app/(app)/comunidad/mensajes/[id]/Chat.tsx", AC = "apps/web/lib/admin-colas.ts", PU = "apps/web/lib/datos/purgar.ts";
+    for (const f of [UP, VE, MV, AD, TR, CH]) if (!existsSync(f)) return falla(G, f, 0, "falta el archivo");
+    const u = sinComent(UP);
+    if (!/kind = fd\?\.get\("para"\) === "dm" \? "dm" : "chat"/.test(u) || !/if \(kind === "dm" && !\(await enComunidad\(me\.id\)\)\.ok\) return err\(403/.test(u)) falla(G, UP, 0, "subir para Mensajes entre vecinos: owner_kind 'dm' y solo con la Comunidad completa");
+    if (!/owner_kind in \('chat', 'dm'\) and created_at > now\(\) - interval '1 hour'/.test(u)) falla(G, UP, 0, "el tope por hora cuenta las fotos de los dos Mensajes");
+    const v = sinComent(VE), fv = cuerpoFn(v, "fotoDeVecinos");
+    if (!/x\.owner_kind = 'dm' and x\.private and x\.purged_at is null and x\.status in \('visible', 'review'\) and x\.url like 'privado\/m\/%'/.test(fv)) falla(G, VE, 0, "ver solo fotos privadas 'dm' («privado/m/», sin purgar)");
+    if (!/let ok = me\.id === d\.subio;/.test(fv) || !/if \(!ok && d\.status === "visible"\) ok = await fotoDmVecino\(me\.id, id\);/.test(fv)) falla(G, VE, 0, "la otra persona la ve solo revisada y por fotoDmVecino (bloqueos, abierta, sin ocultar)");
+    if (!/colas\.includes\("medios"\) && enCiudad\(med\.city\)/.test(fv) || !/colas\.includes\("chat"\) && enCiudad\(rep\.city\)/.test(fv) || !/await dmFotoConReporte\(id\)/.test(fv) || !/auditar\(c, \{ actor: s\.id, action: "mensajes\.foto\.ver"/.test(fv))
+      falla(G, VE, 0, "el equipo la ve solo con caso abierto en su cola y ciudad (medios o conversación reportada) y queda en la auditoría");
+    if (!/"cache-control": "private, no-store"/.test(cuerpoFn(v, "servir"))) falla(G, VE, 0, "la foto nunca se cachea");
+    const mv = sinComent(MV);
+    if (!/owner_kind = 'dm' and owner_id = 'pendiente' and uploaded_by = \$2 and private[\s\S]{0,160}for update/.test(cuerpoFn(mv, "tomarFoto"))) falla(G, MV, 0, "tomarFoto: solo la foto 'dm' que subió esa persona, sin usar, bloqueada en la transacción");
+    if (!/if \(fo\.status !== "review"\) return;[\s\S]{0,80}await marcar\(c, \{ kind: "media"/.test(cuerpoFn(mv, "ponerFoto"))) falla(G, MV, 0, "ponerFoto: la foto en revisión abre su caso (cola «medios»)");
+    if (!/const ve = est === "ok" \|\| fsub === viewer;/.test(cuerpoFn(mv, "conFoto"))) falla(G, MV, 0, "conFoto: la dirección privada solo a quien la puede ver (en revisión, solo quien la subió)");
+    const en = cuerpoFn(mv, "enviar"), iO = en.search(/await otraPersona\(/), iF = en.search(/await tomarFoto\(c, fid, viewer\)/);
+    if (iF < 0 || iO < 0 || iF < iO || !/await ponerFoto\(c, fo, m\.id, viewer/.test(en)) falla(G, MV, 0, "enviar: la foto se toma después de otraPersona() (bloqueos) y se ata en la transacción del envío");
+    const fd = cuerpoFn(mv, "fotoDmVecino");
+    if (!/m\.hidden_at is null and x\.status = 'visible'/.test(fd) || !/t\.closed_at is null/.test(fd) || !/\(t\.a_user_id = \$1::uuid or t\.b_user_id = \$1::uuid\)/.test(fd) || !/\$\{sinBloqueo\(/.test(fd)) falla(G, MV, 0, "fotoDmVecino: solo las dos personas, revisada, sin ocultar, abierta y sin bloqueo");
+    const ft = /export const FUENTE_TR_DM = `([^`]*)`/.exec(mv)?.[1] ?? "";
+    if (!/m\.hidden_at is null and m\.lang is not null/.test(ft) || !/t\.closed_at is null/.test(ft) || !/\(t\.a_user_id = \$1::uuid or t\.b_user_id = \$1::uuid\)/.test(ft) || !/\$\{sinBloqueo\(/.test(ft)) falla(G, MV, 0, "FUENTE_TR_DM: «Ver traducción» solo para las dos personas, abierta y sin bloqueo");
+    if (!/\$\{CON_REPORTE\("m\.thread_id"\)\}/.test(cuerpoFn(sinComent(AD), "dmFotoConReporte"))) falla(G, AD, 0, "dmFotoConReporte: la foto de una conversación solo con el caso y el reporte abiertos");
+    const t = sinComent(TR);
+    if (!/dm_message: FUENTE_TR_DM,/.test(t) || !/const DE_LA_COMUNIDAD = \(k: KindTr\) => [^;]*k === "dm_message"/.test(t)) falla(G, TR, 0, "«Ver traducción» de un mensaje entre vecinos: FUENTE_TR_DM, con cuenta y la Comunidad");
+    const ch = sinComent(CH);
+    if (!/tr\("dm_message", m\.id, m\.lang, m\.t, m\.mio\)/.test(ch)) falla(G, CH, 0, "la conversación entre vecinos ofrece «Ver traducción» (lo de la otra persona, en su idioma)");
+    if (!/subirFotoMensaje\(f, "dm"\)/.test(ch)) falla(G, CH, 0, "la foto de Mensajes entre vecinos se sube con para=dm (si no, sería una foto del chat con negocios)");
+    const ac = sinComent(AC), iDm = ac.search(/x\.owner_kind = 'dm'`/), iCom = ac.search(/if \(q\.queue === "medios" && !q\.business_id\)/);
+    if (iDm < 0 || iCom < 0 || iDm > iCom) falla(G, AC, 0, "la foto 'dm' en «medios» tiene su rama ANTES de la de la Comunidad (si no, la dirección privada cruda sale como foto de la Comunidad)");
+    if (!/t\.target_kind = 'dm_message' and t\.target_id in \(\$\{MENSAJES_DE\("\$1::uuid"\)\}\)/.test(sinComent(PU))) falla(G, PU, 0, "la purga de la cuenta borra las traducciones de sus mensajes entre vecinos");
+    if (!/t\.target_kind = 'dm_message' and t\.target_id in \(select x\.id from dm_messages x where x\.sender_user_id = cuenta\)/.test(ultimaFn("datos_purga_pendiente"))) falla(G, "packages/db/migrations", 0, "datos_purga_pendiente cuenta las traducciones de los mensajes entre vecinos");
+    const mig = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");
+    if (!/add constraint media_dm_privada check \(owner_kind <> 'dm' or \(private and \(url like 'privado\/m\/%'/.test(mig)) falla(G, "packages/db/migrations", 0, "la base: una foto 'dm' es privada y vive bajo privado/m/ (media_dm_privada)");
+    if (!/create unique index if not exists dm_messages_media_uidx on dm_messages \(media_id\) where media_id is not null;/.test(mig)) falla(G, "packages/db/migrations", 0, "una foto va en un solo mensaje (dm_messages_media_uidx)");
+    const an = ultimaFn("dm_messages_antes");
+    if (!/if \(new\.media_id, new\.lang\) is distinct from \(old\.media_id, old\.lang\) then raise exception/.test(an)) falla(G, "packages/db/migrations", 0, "dm_messages_antes: un mensaje no cambia su foto ni su idioma");
+    if (!/x\.owner_kind = 'dm' and x\.private\s+and x\.uploaded_by = new\.sender_user_id/.test(an)) falla(G, "packages/db/migrations", 0, "dm_messages_antes: la foto es una foto 'dm' privada que subió quien escribe");
+    if (!/com_bloqueados\(new\.sender_user_id, otro\) then raise exception/.test(an)) falla(G, "packages/db/migrations", 0, "dm_messages_antes: con un bloqueo no se escribe (tampoco una foto)");
+    const bc = [...mig.matchAll(/add constraint dm_messages_body_check\s+check \(([^;]*)\);/g)].pop()?.[1] ?? "";
+    if (!/body = '' and \(hidden_at is not null or media_id is not null\)/.test(bc)) falla(G, "packages/db/migrations", 0, "dm_messages_body_check: body '' vale con la foto o con hidden_at (la purga de la cuenta lo vacía así)");
+    if (!existsSync("pruebas/e2e/dm9t.cjs") || !/── F1 · La foto simulada[\s\S]*── F2 · Con el almacén de fotos/.test(readFileSync("pruebas/e2e/dm9t.cjs", "utf8"))) falla(G, "pruebas/e2e/dm9t.cjs", 0, "falta la prueba de punta a punta dm9t (con su parte de fotos)");
   },
 
   /* 9m · mensajesTapados (L1063): Mensajes tapa tarjetas y seguro social como Soporte: lib/mensajes.ts pasa todo texto por tapar() ANTES de guardarlo

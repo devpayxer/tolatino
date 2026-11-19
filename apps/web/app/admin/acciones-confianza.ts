@@ -122,7 +122,8 @@ export async function decidirRepUsr(id: string, accion: "sin_accion" | "sanciona
 
 /* ── Foto de la Comunidad (cola medios, sin negocio): está bien (se ve) o quitar con motivo (aviso y apelación) ──
    9t · También la foto de un mensaje (owner_kind 'chat'): está bien → la otra parte la ve (la base avisa en vivo: media_chat_vivo); quitar → en la
-   conversación sale «Foto quitada por To’Latino» y quien la mandó recibe el motivo (mod_hide, como un mensaje oculto). */
+   conversación sale «Foto quitada por To’Latino» y quien la mandó recibe el motivo (mod_hide, como un mensaje oculto).
+   9t (19 nov) · Y la de un mensaje entre vecinos (owner_kind 'dm'): lo mismo (media_dm_vivo avisa en vivo a las dos pantallas). */
 export async function decidirFotoCom(id: string, accion: "mantener" | "quitar", motivo: string): Promise<ResAdm> {
   const s = await quien();
   if (!s) return no("Tu rol solo puede ver esta cola.");
@@ -132,8 +133,8 @@ export async function decidirFotoCom(id: string, accion: "mantener" | "quitar", 
     const q = await abrir(c, s, id, "medios");
     if (typeof q === "string") return q;
     const f = (await c.query<{ autor: string | null; status: string; owner: string }>(`select uploaded_by::text as autor, status, owner_kind as owner from media where id::text = $1 for update`, [q.subject_id])).rows[0];
-    if (!f || (f.owner !== "com_post" && f.owner !== "chat")) return "Esa foto no es de la Comunidad ni de Mensajes.";
-    const chat = f.owner === "chat";
+    if (!f || (f.owner !== "com_post" && f.owner !== "chat" && f.owner !== "dm")) return "Esa foto no es de la Comunidad ni de Mensajes.";
+    const chat = f.owner === "chat" || f.owner === "dm";
     if (accion === "quitar") await c.query(`update media set status = 'removed', removed_reason = 'admin', removed_note = $2, removed_by = $3, removed_at = now() where id::text = $1 and status in ('visible', 'review')`, [q.subject_id, m, s.id]);
     else await c.query(`update media set status = 'visible' where id::text = $1 and status = 'review'`, [q.subject_id]);
     await cerrar(c, q, s, accion, m);

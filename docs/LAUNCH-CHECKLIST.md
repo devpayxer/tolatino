@@ -408,8 +408,18 @@ en el momento. Se marca solo cuando está hecho de verdad.
 
 - [x] **→ 9t** · **Mensajes (2p):** tiempo real con WebSocket/SSE en vez de preguntar cada 4–5 s; fotos en el chat; «El Compa contesta
   por ti» y «Sugerir respuesta» (Fase 4); mensajes vecino ↔ vecino (Comunidad); traducción ES↔EN sugerida; aviso push. — _9m (14 nov): Hecho en 9m: en vivo con SSE propio (`/api/vivo`, LISTEN/NOTIFY; sin preguntar cada 4–5 s, guardián `mensajesEnVivo`); El Compa y vecino ↔ vecino ya estaban. Quedan: fotos en el chat y la traducción ES↔EN sugerida._ — _9t (19 nov): fotos en el chat (vecino en Mi cuenta y negocio en el panel; PRIVADAS bajo «privado/m/», sin metadatos, topes en el servidor, revisadas por el modelo propio al subirlas: bien → se ven; marcadas o sin servicio → «Foto en revisión» y caso en Colas › Medios; las ven solo las dos partes y el equipo con caso abierto, auditado; Mensajes reportados las muestra) y «Ver traducción» ES↔EN en la conversación (el traductor propio de 5h, misma caché y tope, solo para las partes; el Super Admin ve el original). Migración 0185, guardián `fotoMensajePrivada` (+ `traductorFueraDeTx`, `mensajesTapados`), alreves9tmsg 27/27, e2e msg9t escrita (sin correr aquí: sin Docker). El aviso push ya sale por 8c (avisar → push). Lo que queda va abajo («Mensajes · lo que quedó de 9t»)._
-- [ ] **→ 9u** · **Mensajes · lo que quedó de 9t:** (1) correr **msg9t** en el CI (no corrió en la sesión que la escribió: sin Docker ni base); (2) fotos y
-  «Ver traducción» en los mensajes **entre vecinos** (Comunidad › Mensajes, `dm_messages`): mismo camino (privado/m/, `fotoMensajePrivada`), no se hizo;
+- [ ] **→ 9u** · **Mensajes · lo que quedó de 9t:** (1) correr **msg9t** en el CI (no corrió en la sesión que la escribió: sin Docker ni base); (2) ~~fotos y
+  «Ver traducción» en los mensajes **entre vecinos** (Comunidad › Mensajes, `dm_messages`): mismo camino (privado/m/, `fotoMensajePrivada`), no se hizo~~
+  **✓ 19 nov:** migración **0187** (media `'dm'` privada bajo privado/m/ — `media_dm_privada` —, `dm_messages.media_id`/`lang`, un mensaje no cambia su
+  foto ni su idioma, la foto es de quien escribe, «Foto · Photo» como último texto, aviso en vivo al decidir la foto, `ugc_translations` `'dm_message'`;
+  de paso arregla `dm_messages_body_check`, que hacía fallar la purga de una cuenta con mensajes entre vecinos); la misma ruta de subida con `para=dm`
+  (solo con la Comunidad completa; el tope por hora cuenta las dos), `lib/mensajes-vecinos.ts` (tomarFoto/ponerFoto en la transacción del envío, después
+  de los bloqueos; idioma antes de la transacción; `fotoDmVecino`; `FUENTE_TR_DM`), ver la foto: las dos personas sin bloqueo y el equipo solo con caso
+  abierto (medios o reporte: `admin-dm.ts dmFotoConReporte`), auditado; Colas › Medios «Foto de Mensajes entre vecinos» y Mensajes reportados con la foto;
+  la purga de 24 h (`lib/mensajes-purga.ts`) y la de la cuenta (traducciones) también las cubren. Pantalla `comunidad/mensajes/[id]/Chat.tsx` (foto,
+  «Quitar foto», «Foto en revisión», «Foto quitada», «Ver traducción»). Guardián **fotoDmPrivada** (+ fotosSinEnviarSePurgan y traductorFueraDeTx
+  ampliados), alreves9tdm 29/29, e2e **dm9t** (local: §1, §2 y F1 verdes; **F2 —subida real, metadatos, 413/415/403, purga de 24 h— solo corre con el
+  almacén de fotos: falta correrla en el CI**). Ayuda: `docs/ayuda/comunidad-vecinos-seguir-bloquear-y-mensajes.md`;
   (3) ~~el barrido que purga las fotos subidas y **nunca enviadas** (`media.owner_kind = 'chat'`, `owner_id = 'pendiente'`, más de 24 h: hoy quedan
   privadas y sin dueño visible, solo para quien las subió)~~ **✓ 19 nov:** `lib/mensajes-purga.ts` en el barrido (fotosSinEnviar), mismas 24 h que tomarFoto, fila con purged_at; msg9t §5b, guardián fotosSinEnviarSePurgan, alreves9tpurga 6/6; (4) la foto que el equipo **aprueba** llega en vivo al panel (RefrescoVivo) y a Mi cuenta
   (vuelve a traer desde la foto en revisión), pero la notificación al otro lado no se repite: si no tiene la conversación abierta, la ve al abrirla.

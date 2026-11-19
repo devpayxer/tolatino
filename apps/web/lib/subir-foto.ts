@@ -27,8 +27,9 @@ export async function subirFoto(file: File): Promise<Subida> {
 }
 /* 9t · La foto de un mensaje (Mensajes cliente ↔ negocio; privada, la revisa el modelo propio al subirla): /api/mensajes/foto devuelve el id que
    se manda con el mensaje y la dirección privada para verla antes de enviarla. revision = el modelo la marcó o no respondió (la otra parte la ve
-   cuando una persona de To'Latino la revise). */
-export async function subirFotoMensaje(file: File): Promise<Subida & { revision?: boolean }> {
+   cuando una persona de To'Latino la revise). para "dm" = Mensajes entre vecinos (Comunidad): la misma ruta, la guarda como foto de esa conversación. */
+export async function subirFotoMensaje(file: File, para: "chat" | "dm" = "chat"): Promise<Subida & { revision?: boolean }> {
   const fd = new FormData(); fd.append("foto", await reducir(file), "foto.jpg");
+  if (para === "dm") fd.append("para", "dm");
   return ((await fetch("/api/mensajes/foto", { method: "POST", body: fd }).then((x) => x.json()).catch(() => null)) as (Subida & { revision?: boolean }) | null) ?? { ok: false };
 }

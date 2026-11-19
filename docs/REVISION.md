@@ -5692,3 +5692,26 @@ un mensaje del otro lado que está en otro idioma sale «Ver traducción» (lo m
 - **Ficha Pro:** «Llamar · Escribir · Cómo llegar» se acomoda; en teléfonos angostos (Galaxy, SE, Pixel) «Cómo llegar» baja a su propia fila a lo
   ancho (antes se salía del margen). Mirar: la ficha de Sabor Dominicano en un Android angosto.
 - Hoy del panel, inicio y admin: solo cambian textos que dependen de la hora («Hasta 9 AM / 1 PM»); nada de diseño. Corrida 44510550687 (aprobar=si).
+## Fase 9 · 9t — Mensajes entre vecinos: fotos y «Ver traducción» (19 nov) — mirar
+**Qué cambió:** en Comunidad › Mensajes › una conversación hay un botón de foto al lado de donde escribes (el mismo del chat con un negocio). La foto
+sale dentro de la burbuja; bajo lo que escribe la otra persona en el otro idioma sale «Ver traducción». En la lista, un mensaje que es solo la foto
+dice «Foto». El aviso de la caja de Mensajes dice ahora «Texto y fotos, sin teléfonos ni datos».
+
+**Qué mirar (teléfono):**
+- Mandar una foto con texto y otra sola a un vecino que te sigue. Con el servicio de imágenes caído (o si la marca), tú la ves con «EN REVISIÓN» y
+  la otra persona ve «Foto en revisión» hasta que Colas › Medios la apruebe; al aprobarla aparece sola en su pantalla abierta.
+- En Colas › Medios, el caso «Foto de Mensajes entre vecinos»: solo la foto y quién la mandó (ni el texto ni la otra persona).
+- En una conversación entre vecinos reportada, los mensajes con foto la muestran.
+- «Ver traducción» con un vecino que escribe en inglés (y tú con la app en inglés para lo que escribe en español).
+
+**Decisiones tomadas por defecto (AB, reversibles):**
+- **Las mismas reglas que el chat con negocios** (una foto por mensaje, 12 MB, se revisa al subir, en revisión la ve solo quien la mandó, el equipo
+  solo con caso abierto y auditado, sin apelación al quitarla: llega el motivo). **El tope de 30 fotos por hora es uno solo** para los dos chats.
+- **Solo quien completó la bienvenida de la Comunidad sube fotos para vecinos** (como escribir).
+- **Con un bloqueo, las fotos y las traducciones de esa conversación desaparecen para los dos** (la conversación no existe); quien la subió la sigue
+  viendo por su dirección (es suya). Deshacer el bloqueo las devuelve.
+- **El caso de Medios de una foto entre vecinos no dice con quién hablaba ni el texto** (en el chat con negocios sí dice el negocio): leer algo de
+  una conversación entre vecinos sigue pidiendo un reporte abierto.
+- **El aviso al vecino y la lista dicen «Foto · Photo» / «Foto»** cuando el mensaje es solo la foto (igual que el chat con negocios).
+- **Arreglo que no se pidió:** la purga de una cuenta borrada fallaba si la persona tenía mensajes entre vecinos (la base no dejaba el texto vacío);
+  ahora deja vacío el texto con su marca de oculto. Mirar en la próxima purga real que pase sin error.

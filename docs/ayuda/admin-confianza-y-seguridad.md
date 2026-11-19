@@ -20,6 +20,10 @@ un Admin. Versión: 7 nov 2026. Audiencia: equipo. Tema: equipo._
   de la conversación no se lee desde aquí. «Está bien» → la otra persona la ve (en vivo si tiene la conversación abierta); «Quitar foto» → en la
   conversación sale «Foto quitada por To'Latino» y quien la mandó recibe el motivo. En **Mensajes reportados** cada mensaje con foto muestra la
   foto (y «FOTO EN REVISIÓN» si todavía espera).
+- **Colas › Medios marcados · Foto de Mensajes entre vecinos** (19 nov): lo mismo para la foto de un mensaje entre dos vecinos (Comunidad ›
+  Mensajes). Ves solo la foto y quién la mandó: ni el texto ni la otra persona (los mensajes entre vecinos solo se leen con un reporte abierto,
+  en **Mensajes entre vecinos** reportados, donde cada mensaje con foto también la muestra). Verla queda en la auditoría («mensajes.foto.ver»);
+  «Está bien» / «Quitar foto» como arriba.
 - **Colas › Apelaciones:** quién apela, qué, el motivo que recibió, lo que escribió, lo apelado y su historial. **Levantar** (vuelve el
   contenido o termina la sanción; los casos abiertos de ese contenido se cierran) o **Mantener** (final). **Si tú lo ocultaste o sancionaste,
   ves un candado y no la puedes decidir** (la base tampoco lo permite).
@@ -92,6 +96,10 @@ case** sends it to Queues › User reports.
   conversation text is not readable from here. «It's fine» → the other person sees it (live if they have the conversation open); «Remove photo» →
   the conversation shows «Photo removed by To'Latino» and the sender gets the reason. In **Reported messages** each message with a photo shows
   it (and «PHOTO IN REVIEW» if it is still waiting).
+- **Queues › Flagged media · Neighbor messages photo** (Nov 19): the same for the photo in a message between two neighbors (Community ›
+  Messages). You only see the photo and who sent it: not the text or the other person (messages between neighbors are only readable with an open
+  report, in reported **Messages between neighbors**, where each message with a photo also shows it). Viewing it is logged («mensajes.foto.ver»);
+  «It's fine» / «Remove photo» as above.
 - **Queues › Appeals:** who is appealing, what, the reason they were given, what they wrote, what is being appealed and their history.
   **Lift** (the content comes back or the sanction ends; open cases on that content are closed) or **Uphold** (final). **If you hid or
   sanctioned it, you see a lock and cannot decide it** (the database does not allow it either).

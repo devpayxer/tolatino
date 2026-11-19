@@ -48,6 +48,7 @@ export function tituloComunidad(k: Caso, E: EF = ES): string | null {
   if (k.queue === "apel" && "apel" in k) return k.apel ? E(`Apelación ${k.apel.numero} · ${APELABLE[k.apel.k].es}`, `Appeal ${k.apel.numero} · ${APELABLE[k.apel.k].en}`) : E("Apelación", "Appeal");
   if (k.queue === "medios" && "fotoCom" in k) return E("Foto de la Comunidad", "Community photo");
   if (k.queue === "medios" && "fotoChat" in k) return E(`Foto de Mensajes · ${k.fotoChat.negocioN ?? ""}`, `Messages photo · ${k.fotoChat.negocioN ?? ""}`);
+  if (k.queue === "medios" && "fotoDm" in k) return E("Foto de Mensajes entre vecinos", "Neighbor messages photo");
   return null;
 }
 
@@ -114,6 +115,20 @@ export function cuerpoComunidad(k: Caso, x: Ctx): { bloques: Bloque[]; acts: Acc
     B.push({ type: "photos", k: f.status === "review" ? E("NO SE VE HASTA QUE DECIDAS", "HIDDEN UNTIL YOU DECIDE") : E("VISIBLE", "VISIBLE"), cols: 2, items: [{ bg: `url(${f.url})`, key: "f", onClick: () => x.abrir(f.url) }] });
     for (const m of f.marcas) B.push({ type: "note", tone: "warn", icon: "image", t: `${REGLA[m.regla] ?? m.regla} · ${m.detalle}` });
     B.push({ type: "note", tone: "info", icon: "lock", t: E("Es una foto privada entre dos personas: la ves solo por este caso y cada vez queda en la auditoría. El texto de la conversación no se lee desde aquí.", "It's a private photo between two people: you see it only through this case and every view is logged. The conversation text isn't readable from here.") });
+    B.push({ type: "note", tone: "info", t: E("El modelo propio (NudeNet) solo mide desnudez. Violencia, texto promocional y fotos de otras personas los decides tú.", "Our own model (NudeNet) only checks for nudity. You decide on violence, promotional text and photos of other people.") });
+    return { bloques: B, acts: [
+      { l: E("Está bien", "It's fine"), v: "action", icon: "check", onClick: () => x.run(() => decidirFotoCom(k.id, "mantener", ""), x.fuera) },
+      { l: E("Quitar foto", "Remove photo"), v: "danger", icon: "trash", onClick: () => x.setConf({ titulo: E("¿Por qué se quita?", "Why is it removed?"), sub: E("Quien la mandó recibe el motivo. En la conversación sale «Foto quitada por To’Latino».", "The sender gets the reason. The conversation shows “Photo removed by To’Latino”."), peligro: true, plantillas: P.foto, hacer: (m) => decidirFotoCom(k.id, "quitar", m) }) },
+    ] };
+  }
+  // 9t (19 nov) · La foto de un mensaje entre vecinos (privada): la ves porque este caso está abierto (queda en la auditoría). Ni el texto ni la otra
+  // persona se leen desde aquí (los mensajes entre vecinos solo con un reporte abierto). La otra persona no la ve hasta decidir.
+  if (k.queue === "medios" && "fotoDm" in k) {
+    const f = k.fotoDm;
+    B.push({ type: "kv", cols: 2, items: [{ k: E("QUIÉN LA MANDÓ", "SENT BY"), v: f.de }, { k: E("DÓNDE", "WHERE"), v: E("Mensajes entre vecinos", "Neighbor messages") }] });
+    B.push({ type: "photos", k: f.status === "review" ? E("NO SE VE HASTA QUE DECIDAS", "HIDDEN UNTIL YOU DECIDE") : E("VISIBLE", "VISIBLE"), cols: 2, items: [{ bg: `url(${f.url})`, key: "f", onClick: () => x.abrir(f.url) }] });
+    for (const m of f.marcas) B.push({ type: "note", tone: "warn", icon: "image", t: `${REGLA[m.regla] ?? m.regla} · ${m.detalle}` });
+    B.push({ type: "note", tone: "info", icon: "lock", t: E("Es una foto privada entre dos vecinos: la ves solo por este caso y cada vez queda en la auditoría. La conversación no se lee desde aquí.", "It's a private photo between two neighbors: you see it only through this case and every view is logged. The conversation isn't readable from here.") });
     B.push({ type: "note", tone: "info", t: E("El modelo propio (NudeNet) solo mide desnudez. Violencia, texto promocional y fotos de otras personas los decides tú.", "Our own model (NudeNet) only checks for nudity. You decide on violence, promotional text and photos of other people.") });
     return { bloques: B, acts: [
       { l: E("Está bien", "It's fine"), v: "action", icon: "check", onClick: () => x.run(() => decidirFotoCom(k.id, "mantener", ""), x.fuera) },

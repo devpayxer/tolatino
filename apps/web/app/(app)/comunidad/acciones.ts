@@ -127,11 +127,12 @@ export async function vecLista(l: string, cursor: string) {
 }
 
 /* ── 5c · Mensajes entre vecinos ── */
-export async function dmEnviar(otro: string, t: string) {
+export async function dmEnviar(otro: string, t: string, foto: string | null = null) {
   const q = await quien();
   if (q.e) return q.e;
   const loc = await ubicacion(q.u);
-  return enviar(q.u.id, uid(otro), texto(t, 1001), loc.c.id);
+  // 9t · foto: el id que devolvió /api/mensajes/foto (para=dm); lib/mensajes-vecinos.ts mira que sea de esta persona, sin usar y de las últimas 24 h.
+  return enviar(q.u.id, uid(otro), texto(t, 1001), loc.c.id, foto ? texto(foto, 40) : null);
 }
 export async function dmNuevos(otro: string, desde: string) {
   const q = await quien();

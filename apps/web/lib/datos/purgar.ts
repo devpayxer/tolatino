@@ -2,6 +2,7 @@ import "server-only";
 import type { PoolClient } from "pg";
 import { db, tx } from "../db";
 import { ident, mapa, type FilaMapa } from "./mapa";
+import { MENSAJES_DE } from "../mensajes-vecinos";
 
 /* 9d · El borrado definitivo a los 30 días (D5; fase9-apertura.md §3.7, §1c «Borrar mi cuenta»; L188, L315, L680, L1126, L1320).
    «Si borras tu cuenta tienes 30 días para arrepentirte; después se borra todo. Los cobros quedan en Stripe como pide la ley.» A los 30 días pasa
@@ -121,7 +122,8 @@ export async function purgarCuenta(cuenta: string): Promise<ResPurga> {
            or (t.target_kind = 'com_comment' and t.target_id in (select x.id from com_comments x where x.author_user_id = $1::uuid))
            or (t.target_kind in ('review', 'review_reply') and t.target_id in (select r.id from reviews r where r.user_id = $1::uuid))
            or (t.target_kind = 'post_comment' and t.target_id in (select x.id from post_comments x where x.user_id = $1::uuid))
-           or (t.target_kind = 'chat_message' and t.target_id in (select x.id from chat_messages x where x.sender_user_id = $1::uuid))`, [cuenta]); /* 9t · Mensajes */
+           or (t.target_kind = 'chat_message' and t.target_id in (select x.id from chat_messages x where x.sender_user_id = $1::uuid))
+           or (t.target_kind = 'dm_message' and t.target_id in (${MENSAJES_DE("$1::uuid")}))`, [cuenta]); /* 9t · Mensajes (cliente ↔ negocio y entre vecinos) */
     items.push({ tabla: "ugc_translations", columna: "target_id", accion: "borrar", filas: tr.rowCount ?? 0 });
     // Las fotos de sus publicaciones y de su perfil (las que subió van por el mapa).
     const fx = await c.query(

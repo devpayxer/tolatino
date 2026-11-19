@@ -151,13 +151,15 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "medios" && x.mkind === "com_post" ? { title: "Foto de la Comunidad", sub: x.cflag ? x.cflag.split("|").slice(1).join("|") : "Espera revisión" }
       // 9t · La foto de un mensaje (cliente ↔ negocio) que el modelo marcó o no pudo revisar: la otra parte no la ve hasta decidir.
       : x.queue === "medios" && x.mkind === "chat" ? { title: `Foto de Mensajes${b ? ` · ${b}` : ""}`, sub: x.cflag ? x.cflag.split("|").slice(1).join("|") : "Espera revisión" }
+      // 9t · La foto de un mensaje entre vecinos (Comunidad › Mensajes) que el modelo marcó o no pudo revisar.
+      : x.queue === "medios" && x.mkind === "dm" ? { title: "Foto de Mensajes entre vecinos", sub: x.cflag ? x.cflag.split("|").slice(1).join("|") : "Espera revisión" }
       : x.queue === "rep" ? { title: `Reseña reportada · ${b}`, sub: `${x.rpbiz ? "El negocio pidió revisarla" : MOTIVO_RESENA[x.rpreason ?? "otro"] ?? "Otro motivo"}${x.rpn > 1 ? ` · ${x.rpn} reportes` : ""}` }
       : x.queue === "medios" && x.subject_kind === "business_video" ? { title: `Video de presentación · ${b}`, sub: `Subió su video de presentación${x.vseg ? ` (${Math.round(x.vseg)} s)` : ""}.` }
       : x.queue === "medios" ? { title: `Foto marcada · ${b}`, sub: `${MOTIVO_FOTO[x.mreason ?? "otro"] ?? "Otro motivo"}${x.mnote ? ` · «${x.mnote}»` : ""}${x.nrep > 1 ? ` · ${x.nrep} reportes` : ""}` }
       : { title: x.rname ?? "", sub: `Recomendado por un vecino${x.rcat ? ` · ${x.rcat}` : ""}` };
     return {
       id: x.id, queue: x.queue, ...t, priority: x.priority,
-      who: x.subject_kind === "dm_thread" || x.subject_kind === "com_post" || x.subject_kind === "com_comment" || x.subject_kind === "appeal" || (x.queue === "medios" && x.mkind === "com_post") ? { name: "Comunidad", initials: "C" }
+      who: x.subject_kind === "dm_thread" || x.subject_kind === "com_post" || x.subject_kind === "com_comment" || x.subject_kind === "appeal" || (x.queue === "medios" && (x.mkind === "com_post" || x.mkind === "dm")) ? { name: "Comunidad", initials: "C" }
         : x.queue === "medios" && x.mkind === "chat" && !b ? { name: "Mensajes", initials: "M" }
         : x.subject_kind === "user" ? { name: x.uname ?? "Vecino", initials: (x.uname ?? "V").slice(0, 1) } : x.queue === "rec" ? { name: x.rname ?? "", initials: (x.rname ?? "?").slice(0, 1) } : x.subject_kind === "sensitive_change" ? { name: x.sname ?? "", initials: (x.sname ?? "?").slice(0, 1) } : { name: b, image: x.cover ?? undefined, initials: b.slice(0, 1) },
       assignee: x.assignee, mine: x.assigned_to === s.id, esp: e, ...(x.queue === "ticket" && x.tk ? { tk: x.tk.split("|")[0] } : {}),
@@ -273,6 +275,15 @@ export async function caso(s: Staff, id: string) {
     if (fc) {
       const marcas = (await db().query<{ regla: string; detalle: string; at: string }>(`select rule_key as regla, detail as detalle, created_at as at from mod_flags where target_kind = 'media' and target_id = $1 order by id desc limit 5`, [q.subject_id])).rows;
       return { ...base, negocio, fotoChat: { url: `/api/mensajes/foto/${q.subject_id}`, status: fc.status, de: fc.de, negocioN: fc.negocio, vecino: fc.vecino, texto: fc.texto, marcas } };
+    }
+    // 9t (19 nov) · La foto de un mensaje entre vecinos: solo la foto y quién la mandó (el nombre de la otra persona y el texto no se leen desde aquí:
+    // los mensajes entre vecinos solo se leen con un reporte abierto, lib/admin-dm.ts).
+    const fd = (await db().query<{ status: string; de: string }>(
+      `select x.status, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as de
+         from media x join users u on u.id = x.uploaded_by where x.id::text = $1 and x.owner_kind = 'dm'`, [q.subject_id])).rows[0];
+    if (fd) {
+      const marcas = (await db().query<{ regla: string; detalle: string; at: string }>(`select rule_key as regla, detail as detalle, created_at as at from mod_flags where target_kind = 'media' and target_id = $1 order by id desc limit 5`, [q.subject_id])).rows;
+      return { ...base, negocio: null, fotoDm: { url: `/api/mensajes/foto/${q.subject_id}`, status: fd.status, de: fd.de, marcas } };
     }
   }
   if (q.queue === "medios" && !q.business_id) {
