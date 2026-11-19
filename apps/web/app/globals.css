@@ -109,3 +109,10 @@
    tamaño de la raíz: se agranda TODO el marco de la app un 12 % (zoom, como el del navegador). El ancho útil de un teléfono de 390 queda en
    ~348 px, dentro de lo que el diseño ya aguanta (teléfonos de 360); al revés y e2e let9t vigilan que no haya scroll de lado. */
 [data-letra="grande"] { zoom: 1.12; }
+/* 19 nov · En un teléfono de 320 (iPhone SE de primera generación) con letra grande el ancho útil queda en ~286 px y el nombre «To’Latino» del
+   encabezado (23 px) no cabe en su lugar: se salía de su caja y tapaba el botón del idioma (se veía «·S» en vez de «ES» y tocar ahí abría Inicio;
+   lo cazó a11y9c al medir el área de toque a 320 con letra grande). Ahí, y solo ahí, el nombre baja a 17 px (19 px a la vista con el zoom).
+   A 375 o más, y sin letra grande, nada cambia. Guardián: toqueDe44. */
+@media (max-width: 359px) {
+  [data-letra="grande"] [aria-label="To’Latino"] > span { font-size: 17px !important; }
+}

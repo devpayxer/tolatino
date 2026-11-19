@@ -5629,32 +5629,36 @@ historial y el dueño lo ve). Detalles:
   botón toma lo que dice y lo que sobra se reparte: a 390 se ven los tres en una fila, casi iguales (100 · 105 · 129 px). Con «Letra más grande»
   en un teléfono chico (o a 320), «Cómo llegar» baja a una segunda fila de ancho completo.
 - **Qué mirar:** la ficha de Sabor Dominicano en tu teléfono, con letra normal y con Mi cuenta › Ajustes › Letra más grande.
-## Fase 9 · 9t — Objetivos táctiles de 44 px (19 nov) — mirar
+## Fase 9 · 9t — Objetivos táctiles de 44 px (19 nov, rehecho) — mirar
 
-> **Revertido el 19 nov** (no está en el sandbox): el área ampliada de un control tapaba al vecino de otro contenedor y varios toques
-> dejaban de llegar. Se rehace; cuando vuelva, esta sección se actualiza.
-**Qué cambió:** nada de lo que se ve. Los íconos de 30–36 px, los chips y las filas compactas del sistema ahora reciben el toque en **44 × 44 px**
-con un área invisible alrededor (packages/ui/src/toque.css). La prueba compara la página con y sin esas áreas pixel a pixel (con el anillo del foco
-puesto) y no cambia ni un pixel junto a los controles.
+> **El primer intento se revirtió el 19 nov:** agrandaba con estilos un área invisible alrededor de cada control y el área de uno tapaba al
+> control de al lado cuando estaba en otro contenedor (el logo «To’Latino» encima de «Ver las 3 fotos»): varios toques dejaban de llegar. Se rehízo
+> de otra forma, la de abajo.
+
+**Qué cambió:** nada de lo que se ve (no se agregó ningún estilo). Con el **dedo**, un toque que cae en **nada tocable** junto a un control chico
+(íconos de 30–36 px, chips, filas compactas) es de ese control, hasta completar **44 × 44 px**. El área se decide en el momento del toque con lo que
+de verdad hay debajo del dedo (packages/ui/src/toque.ts), así que **un toque en la caja de un botón, un enlace o un campo es siempre de ese
+botón, enlace o campo**, esté donde esté. Entre dos controles cercanos, cada uno se queda con su mitad del hueco; si lo de debajo ya hace algo (la
+fila de un plato, que abre su hoja; el mapa; la galería; el fondo de una hoja) no se toca.
 
 **Qué mirar (teléfono):**
-- En la ficha de un negocio, el menú: tocar el «+» de un plato, los chips de filtro y los íconos (guardar, compartir) **un poco por fuera** de su
-  borde: responden. Tocar entre dos chips o dos íconos pegados: responde el que está más cerca (cada uno se queda con su mitad del hueco).
-- La reserva (cuántos, día, hora), los boletos («−» / «+») y el encabezado (idioma, campana, cuenta): igual.
-- Que nada se vea distinto (tamaños, colores, sombras, el contorno del foco con el teclado).
+- En la ficha de un negocio: tocar **un poco por fuera** del borde de los chips de filtro, las pestañas y los íconos (guardar, compartir): responden.
+  Tocar entre dos chips pegados: responde el más cercano. Tocar el nombre de un plato: abre su hoja (no agrega el plato).
+- La reserva (cuántos, día, hora) y los boletos («−» / «+»), igual. Con **letra más grande** y en un teléfono chico (SE), igual.
+- Que nada se vea distinto y que tocar el texto de al lado de un enlace dentro de un párrafo no lo abra.
 
 **Decisiones tomadas por defecto (AB, reversibles):**
-- **El área también existe en la computadora** (no solo en pantallas táctiles): es la misma regla en todos lados y con el ratón un borde un poco
-  más grande no molesta; si se prefiere solo en táctil, es una línea en toque.css (`@media (pointer: coarse)`).
-- **Lo que se dejó SIN área (pide tu OK visual, con el contraste):** volver «posicionado» un control cambia en qué orden se pinta, y en dos casos eso
-  movía pixeles: (1) **los botones con sombra** (el Button «Confirmar» morado, la hora elegida del Booking, la fila oscura del pedido, el buscador, los
-  radios del mapa, la ficha del dominó): su sombra pasaría por encima del texto de al lado (casi invisible: hasta 9 niveles de 255); (2) **el «− / +»
-  del plato**: el suavizado de su esquina redondeada. Siguen del tamaño de siempre para tocar. Si apruebas ese cambio mínimo, se les quita la marca
-  y se aprueban capturas nuevas, en el mismo bloque que el **contraste AA (4,5 : 1)**, que no se tocó aquí.
-- **Vecinos pegados:** la regla es «cada uno, hasta la mitad del hueco»; el primero y el último de una fila crecen enteros hacia afuera. Los del medio
-  de una fila que se envuelve se quedan con la mitad del hueco también del lado donde no tienen a nadie (el tope es del grupo): un poco menos de 44.
-- **Carruseles con scroll sin relleno** (las pestañas, los módulos): el área no puede salirse del carrusel (agrandaría lo que se desplaza), así que
-  ahí queda recortada.
+- **Solo con el dedo o el lápiz.** Con el ratón (computadora, iPad con trackpad) el área no crece: el ratón es preciso y un doble clic sobre un
+  texto lo selecciona (con el área, el primer clic tocaría el botón de al lado). Si se quiere también con el ratón, es una línea en toque.ts.
+- **Los controles con sombra y el «− / +» del plato también tienen área** (antes se dejaban fuera porque los estilos cambiaban pixeles; ahora no
+  hay estilos).
+- **Lo que no se amplía:** un enlace dentro de un párrafo (WCAG lo exceptúa), un control apagado, un toque sobre algo que ya hace algo, y un toque
+  en otra capa (el encabezado fijo o una hoja no le dan su toque a lo de abajo).
+- **El clic de Chrome que llega después del toque ampliado se descarta** (si la hoja que se abrió quedó bajo el dedo, no se toca nada en ella).
+- **Lo que cazó la medida y se arregló:** en un teléfono de 320 (iPhone SE de primera generación) con **letra más grande**, el nombre «To’Latino» del
+  encabezado no cabía y tapaba el botón del idioma («·S»; tocarlo abría Inicio). Ahí, y solo ahí, el nombre baja a 17 px. Mirar ese encabezado en
+  un teléfono chico con letra grande.
+- **Probado con Chrome (Android).** En un **iPhone real** (Safari y la app) falta mirarlo: tocar un poco por fuera de un chip o de una pestaña.
 
 ## Fase 9 · 9t — Mensajes: fotos en el chat y «Ver traducción» (19 nov) — mirar
 **Qué cambió:** en la conversación con un negocio (Mi cuenta › Mensajes) hay un botón de foto al lado de donde escribes (el mismo del chat de

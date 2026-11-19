@@ -2842,3 +2842,30 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   restricciones rechazan lo que deben; el aviso en vivo sale). e2e **msg9t** escrita (fotos, revisión, aprobar y quitar, topes, regla apagada,
   traducción con el stub, Super Admin ve el original) — **no corrió aquí** (sin Docker ni base): la corre el CI. Ayuda: mensajes.md y
   admin-confianza-y-seguridad.md (ES/EN).
+- **19 nov · 9t · Objetivos táctiles de 44 px, REHECHO (el área se decide al tocar)** (LAUNCH «Objetivos táctiles de 44 px» → ✓; REVISION «9t —
+  Objetivos táctiles de 44 px», rehecho). El primer intento (4bb49b4, revertido en 3b82b7d) agrandaba con estilos un `::after` por control: el área
+  de uno pisaba la caja de un control de OTRO contenedor (los topes por grupo solo sabían de los hermanos) y volver posicionado cada control
+  cambiaba pixeles. Ahora **`packages/ui/src/toque.ts`** (exportado como `@tolatino/ui/toque`, montado una vez en el layout raíz con
+  `apps/web/app/AreaDeToque.tsx`, como FocoHojas) decide cada toque con lo que el navegador tiene bajo el dedo (como el TouchDelegate de
+  Android): solo dedo o lápiz (`pointerType`), un toque que no se movió; lo de debajo no es ni está dentro de nada ACCIONABLE (controles,
+  enlaces, campos, etiquetas, lienzos, videos, `data-toque="no"`) ni tiene acción propia (cursor de mano, manejadores de React entre él y el
+  control: la fila del plato, el mapa, la galería, el fondo de una hoja); de lo accionable a menos de 22 px que SE VE, el más cercano (empate =
+  nadie) es un control, el dedo está en su área de 44 × 44 y es de la misma capa (hoja, encabezado fijo). Se decide en `pointerdown` (sin los
+  eventos de ratón de compatibilidad), se activa con `click()` en `pointerup` y el clic de Chrome de ese mismo toque se descarta (por tiempo, no
+  por lugar: Chrome corrige el punto del toque hacia lo tocable). Sin estilos ni elementos: la página es la misma pixel a pixel por construcción.
+  **Medida** (`pruebas/lib/toque.cjs`, reescrita): bajando la página de a una vista, cada caja de control y de campo (5 × 5 puntos) es de él —ni
+  un hit-test nativo fuera de su propia caja (lo revertido) ni el área se lo da a otro—; el anillo del área de 44 de cada control chico, punto
+  por punto, es suyo o de un vecino / otra capa / lo de debajo con acción propia (si no, CORTO); un toque REAL (`touchscreen.tap`) junto a un
+  control le llega a él solo y uno en la caja de otro, a ese otro; y la página con el área y en pausa, igual pixel a pixel. **a11y9c** la usa en
+  la ficha, «Tu pedido», la reserva, los boletos y publica, y en una sección nueva a 320 y 375 con y sin letra grande (`users.big_text`). **Lo que
+  cazó:** a 320 con letra grande el nombre «To’Latino» del encabezado se salía de su caja y tapaba el botón del idioma (un toque ahí abría Inicio)
+  → `globals.css`: ahí, y solo ahí, el nombre baja a 17 px. Guardián **`toqueDe44`** (las reglas de `destinoToque` y su orden, ACCIONABLE /
+  CONTROL, 44, solo dedo, descartar el clic, no pinta nada, montado y exportado, ningún .css con `data-toque` / `--tl-toque`, el arreglo de
+  320, a11y9c mide); **`alreves9ttoque2` 29/29** (22 del guardián + crear un .css con el área; y en el navegador, con toque.ts sin tipos en una
+  página de prueba: limpia sale limpia; la versión con `::after` → «To’Latino» pisa «Ver las 3 fotos» de otro contenedor; sin «propio» y con la
+  distancia mal → pisa; sin área / área de 36 → cortos; sin descartar el clic → el toque cuenta dos veces). **Corrido en local** (base copiada
+  `tl_toque`, el build de este árbol servido en una red aparte para no tocar el :3100 de la otra sesión): a11y9c 151 ✓ (sin el tramo de fotos de
+  publica: no hay Garage aquí), menu2b 22 ✓, rsv2e 30 ✓, apt4f 28 ✓, apt4q 24 ✓, fic4id 39 ✓, avisos2j 14 ✓, fic005 22 ✓, bus9t 85 ✓ (la
+  primera vez rojo por un apartado que apt4f/apt4q dejaron confirmado en la misma base; cancelado, verde); guardianes ✓; tsc ✓ (apps/web y
+  packages/ui). **No corrió:** WebKit (no hay en esta máquina) ni un iPhone real; el tramo de fotos de a11y9c. Con el ratón no se amplía (decisión
+  por defecto en REVISION).
