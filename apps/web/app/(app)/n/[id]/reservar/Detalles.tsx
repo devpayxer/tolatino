@@ -109,7 +109,7 @@ export function Detalles({ h, es }: { h: RsvHold; es: boolean }) {
         <div className="mt-[5px] text-[13.5px] font-bold leading-[1.35]">{diaL(h.ymd, h.dia, es, true)} · {hora(h.h)}</div>
         <div className="mt-0.5 text-[12px] font-medium leading-[1.45] text-ink/60">{P(h.p)} · {areaL}</div>
       </div>
-      <button type="button" onClick={volver} className="flex-none text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
+      <button type="button" onClick={volver} className="inline-flex min-h-11 flex-none items-center text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
     </div>
   );
   const nombreCaja = (

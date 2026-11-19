@@ -321,7 +321,7 @@ export function Modos({ modes }: { modes: { k: string; l: string; icon: string; 
     <div role="tablist" onKeyDown={flechas} className="flex gap-1.5 rounded-[14px] bg-ink/5 p-1">
       {modes.map((x) => (
         <button key={x.k} type="button" role="tab" aria-selected={x.on} onClick={x.onClick}
-          className={`flex h-[38px] flex-1 items-center justify-center gap-[7px] rounded-[11px] text-[12.5px] font-bold ${x.on ? "bg-white text-ink shadow-[0_1px_4px_rgba(11,14,18,.1)]" : "bg-transparent text-ink/60"}`}>
+          className={`flex h-11 flex-1 items-center justify-center gap-[7px] rounded-[11px] text-[12.5px] font-bold ${x.on ? "bg-white text-ink shadow-[0_1px_4px_rgba(11,14,18,.1)]" : "bg-transparent text-ink/60"}`}>
           <Icon name={x.icon} size={15} />{x.l}
         </button>
       ))}
@@ -487,7 +487,7 @@ export function MenuResumen({ mn, desk, onAll }: { mn: Mn; desk: boolean; onAll?
     <div data-screen-label={desk ? "Resumen desktop · menú" : "Resumen · menú"}>
       <div className="flex items-baseline justify-between gap-3 lg:items-end lg:gap-5">
         <span className="font-display text-[18px] font-extrabold leading-[1.1] tracking-[-0.03em] lg:text-[24px] lg:tracking-[-0.035em]">{mn.E2("Menú", "Menu")}</span>
-        {onAll && <button type="button" onClick={onAll} className="flex-none text-[12.5px] font-bold text-action lg:text-[13.5px]">{mn.E2("Ver el menú", "See the menu")}{desk ? " →" : ""}</button>}
+        {onAll && <button type="button" onClick={onAll} className="inline-flex min-h-11 flex-none items-center text-[12.5px] font-bold text-action lg:text-[13.5px]">{mn.E2("Ver el menú", "See the menu")}{desk ? " →" : ""}</button>}
       </div>
       <div className={desk ? "mt-4 grid grid-cols-[repeat(auto-fill,minmax(188px,1fr))] gap-4" : "mt-3 grid grid-cols-2 gap-x-3 gap-y-4"}>
         {mn.tiles.map((it) => (
@@ -511,7 +511,7 @@ function Plato({ mn }: { mn: Mn }) {
     <>
       <div className="relative bg-photo-bg" style={{ height: sh.desk ? 230 : 210, ...foto(sh.img) }}>
         {!sh.desk && <div className="absolute left-1/2 top-2.5 -ml-[19px] h-1 w-[38px] rounded-[9px] bg-white/85" />}
-        <button type="button" aria-label={mn.lbl.close} onClick={sh.onClose} className="absolute right-3.5 top-3.5 grid size-9 place-items-center rounded-xl bg-white/95"><Icon name="close" size={15} strokeWidth={2.4} /></button>
+        <button type="button" aria-label={mn.lbl.close} onClick={sh.onClose} className="absolute right-3.5 top-3.5 grid size-11 place-items-center rounded-xl bg-white/95"><Icon name="close" size={15} strokeWidth={2.4} /></button>
       </div>
       <div className={sh.desk ? "px-6 pb-6 pt-5" : "px-5 pb-6 pt-[18px]"}>
         <div className={`font-display font-extrabold leading-[1.15] tracking-[-0.035em] ${sh.desk ? "text-[24px]" : "text-[22px]"}`}>{sh.name}</div>
@@ -580,7 +580,7 @@ function Pregunta({ mn }: { mn: Mn }) {
         <div className="font-display text-[18px] font-extrabold leading-[1.15] tracking-[-0.025em]">{a.title}</div>
         <div className="mt-[5px] font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/60">{a.meta}</div>
       </div>
-      <button type="button" aria-label={mn.lbl.close} onClick={mn.closeAsk} className="grid size-9 flex-none place-items-center rounded-xl bg-ink/5"><Icon name="close" size={15} strokeWidth={2.2} /></button>
+      <button type="button" aria-label={mn.lbl.close} onClick={mn.closeAsk} className="grid size-11 flex-none place-items-center rounded-xl bg-ink/5"><Icon name="close" size={15} strokeWidth={2.2} /></button>
     </div>
   );
   const otra = a.kind === "again" ? (
@@ -655,7 +655,7 @@ function Carrito({ mn, nombre }: { mn: Mn; nombre: string }) {
             <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.03em]">{mn.lbl.order}</div>
             <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{nombre} · {mn.countCaps}</div>
           </div>
-          <button type="button" aria-label={mn.lbl.close} onClick={mn.closeCart} className="grid size-9 flex-none place-items-center rounded-xl bg-ink/5"><Icon name="close" size={15} strokeWidth={2.4} /></button>
+          <button type="button" aria-label={mn.lbl.close} onClick={mn.closeCart} className="grid size-11 flex-none place-items-center rounded-xl bg-ink/5"><Icon name="close" size={15} strokeWidth={2.4} /></button>
         </div>
         <div className="hs flex flex-1 flex-col gap-2.5 overflow-y-auto px-4 pb-[18px] pt-3.5">
           {mn.canOrd && <Modo mn={mn} card />}

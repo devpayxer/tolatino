@@ -103,12 +103,12 @@ export function MetodoPago({ es, tarjetas, sel, declinada, nota, modo, pk, onUsa
   const cuerpo = (
     <div className="flex flex-col gap-3.5">
       <div className="flex items-start gap-3">
-        {paso === "add" && tarjetas.length > 0 && <button type="button" aria-label={E2("Volver", "Back")} onClick={() => setPaso("list")} className="grid size-9 flex-none place-items-center rounded-[11px] bg-ink/5"><Icon name="chevronLeft" size={16} /></button>}
+        {paso === "add" && tarjetas.length > 0 && <button type="button" aria-label={E2("Volver", "Back")} onClick={() => setPaso("list")} className="grid size-11 flex-none place-items-center rounded-[11px] bg-ink/5"><Icon name="chevronLeft" size={16} /></button>}
         <div className="min-w-0 flex-1">
           <div className="font-display text-[19px] font-extrabold leading-[1.2] tracking-[-0.03em]">{paso === "add" ? E2("Agregar tarjeta", "Add a card") : E2("Método de pago", "Payment method")}</div>
           {nota && <div className="mt-1 font-mono text-[10px] font-bold tracking-[0.12em] text-ink/60">{nota}</div>}
         </div>
-        <button type="button" aria-label={E2("Cerrar", "Close")} onClick={onClose} className="grid size-9 flex-none place-items-center rounded-[11px] bg-ink/5"><Icon name="close" size={15} /></button>
+        <button type="button" aria-label={E2("Cerrar", "Close")} onClick={onClose} className="grid size-11 flex-none place-items-center rounded-[11px] bg-ink/5"><Icon name="close" size={15} /></button>
       </div>
       {paso === "list" ? (
         <>

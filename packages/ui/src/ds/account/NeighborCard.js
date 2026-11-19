@@ -221,6 +221,8 @@ function CompleteAccount({
       gap: 10,
       alignItems: 'center',
       padding: '10px 0',
+      minHeight: 44,
+      boxSizing: 'border-box',
       borderTop: i ? '1px solid rgba(11,14,18,.07)' : 'none',
       cursor: !x.done && x.onClick ? 'pointer' : 'default'
     }

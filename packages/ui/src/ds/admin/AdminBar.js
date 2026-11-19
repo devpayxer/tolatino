@@ -102,16 +102,18 @@ function AdminBar({
   searchLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Search" : "Buscar"
 }) {
   const logo = desk ? 30 : 28,
-    segH = desk ? 28 : 26,
-    btn = desk ? 38 : 36;
+    segH = 44,
+    btn = 44;
   return /*#__PURE__*/React.createElement("div", {
     style: {
       background: 'var(--tl-white)',
       borderBottom: '1px solid rgba(11,14,18,.07)',
       padding: desk ? '10px 24px' : '10px 14px',
       display: 'flex',
+      flexWrap: desk ? undefined : 'wrap',
       alignItems: 'center',
-      gap: 10
+      gap: 10,
+      rowGap: 8
     }
   }, /*#__PURE__*/React.createElement("div", {
     onClick: onHome,
@@ -120,6 +122,7 @@ function AdminBar({
       display: 'flex',
       alignItems: 'center',
       gap: 8,
+      minHeight: 44,
       cursor: onHome ? 'pointer' : 'default',
       flex: 'none'
     }
@@ -192,11 +195,12 @@ function AdminBar({
   }, shortcut)) : null), cities.length ? /*#__PURE__*/React.createElement("span", {
     style: {
       display: 'flex',
-      gap: 3,
-      padding: 3,
+      gap: 2,
+      padding: 0,
       borderRadius: 10,
       background: 'rgba(11,14,18,.06)',
-      flex: desk ? 'none' : '0 1 auto',
+      flex: desk ? 'none' : '1 0 100%',
+      order: desk ? undefined : 1,
       minWidth: 0
     }
   }, cities.map((o, i) => /*#__PURE__*/React.createElement("span", {
@@ -206,7 +210,7 @@ function AdminBar({
     style: {
       height: segH,
       padding: '0 10px',
-      borderRadius: 8,
+      borderRadius: 10,
       background: o.on ? INK : 'transparent',
       color: o.on ? 'var(--tl-white)' : INK,
       display: desk ? 'grid' : 'block',
@@ -219,14 +223,14 @@ function AdminBar({
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       minWidth: 0,
-      flex: desk || i < cities.length - 1 ? 'none' : '0 1 auto'
+      flex: desk ? 'none' : '1 1 0'
     }
   }, o.label))) : null, !desk ? /*#__PURE__*/React.createElement("span", {
     onClick: onSearch,
     ...__ds_scope.__btn(onSearch, searchLabel, undefined),
     style: {
-      width: 36,
-      height: 36,
+      width: 44,
+      height: 44,
       borderRadius: 11,
       background: 'rgba(11,14,18,.05)',
       display: 'grid',
@@ -278,9 +282,9 @@ function AdminBar({
       display: 'flex',
       alignItems: 'center',
       gap: 8,
-      padding: 3,
-      paddingRight: desk ? 10 : 3,
-      borderRadius: 12,
+      padding: 6,
+      paddingRight: desk ? 10 : 6,
+      borderRadius: 13,
       border: '1px solid rgba(11,14,18,.1)',
       cursor: onMe ? 'pointer' : 'default',
       flex: 'none'
@@ -625,6 +629,7 @@ function AdminRow({
       display: 'flex',
       alignItems: 'center',
       gap: 12,
+      minHeight: onClick ? 44 : undefined,
       cursor: onClick ? 'pointer' : 'default'
     }
   }, box ? /*#__PURE__*/React.createElement("span", {

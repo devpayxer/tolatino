@@ -57,6 +57,8 @@ function Tabs({
         letterSpacing: '-.02em',
         color: fg,
         borderBottom: '2.5px solid ' + (on ? 'var(--tl-action)' : 'transparent'),
+        minHeight: 44,
+        boxSizing: 'border-box',
         cursor: 'pointer',
         whiteSpace: 'nowrap'
       } : {
@@ -69,6 +71,9 @@ function Tabs({
         letterSpacing: '.06em',
         color: fg,
         borderBottom: '2.5px solid ' + (on ? 'var(--tl-ink)' : 'transparent'),
+        minHeight: 44,
+        minWidth: 44,
+        boxSizing: 'border-box',
         cursor: 'pointer',
         whiteSpace: 'nowrap'
       }

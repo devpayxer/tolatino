@@ -100,7 +100,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
         <span className="h-[54px] w-[54px] flex-none rounded-[15px] bg-photo-bg" style={s.foto ? { backgroundImage: `url(${s.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
         <div className="min-w-0 flex-1"><div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nm(s.name)}</div>
           <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{(esCaja ? `${dinero(s.cents)} ${E2("POR CAJA", "PER BOX")}` : cot ? `${E2("DESDE ", "FROM ")}${dinero(s.cents)} · ${E2("PRECIO CERRADO CON FOTOS", "FIXED PRICE FROM PHOTOS")}` : asiento ? `${dinero(s.cents)} ${E2("POR PERSONA", "PER PERSON")}${s.child ? E2(` · NIÑO ${dinero(s.child)}`, ` · CHILD ${dinero(s.child)}`) : ""}` : `${dinero(s.cents)}${s.pax ? E2(` · HASTA ${s.pax} PERSONAS`, ` · UP TO ${s.pax} PEOPLE`) : ""}`).toUpperCase()}</div></div>
-        <button type="button" onClick={volver} className="flex-none text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
+        <button type="button" onClick={volver} className="inline-flex min-h-11 flex-none items-center text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
       </div>
       {!cot && <div className={K}>{esCaja ? E2("¿CUÁNTAS CAJAS?", "HOW MANY BOXES?") : E2("¿CUÁNTOS VIAJAN?", "HOW MANY ARE TRAVELING?")}</div>}
       {asiento ? (<>

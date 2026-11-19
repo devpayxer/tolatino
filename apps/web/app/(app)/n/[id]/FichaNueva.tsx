@@ -433,7 +433,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
             <IconButton icon="heart" size={40} label={guardado ? t.saved : t.save} active={guardado} onClick={guardar} />
           </div>
           {f.nFotos > 0 ? (
-            <button type="button" onClick={verFotos} className="absolute bottom-4 right-5 flex items-center gap-1.5 rounded-[10px] bg-white px-2.5 py-[7px] font-mono text-[10.5px] font-bold tracking-[0.08em]">
+            <button type="button" onClick={verFotos} className="absolute bottom-4 right-5 flex min-h-11 items-center gap-1.5 rounded-[10px] bg-white px-2.5 py-[7px] font-mono text-[10.5px] font-bold tracking-[0.08em]">
               <Icon name="image" size={14} />{f.nFotos} {E2("FOTOS", "PHOTOS")}
             </button>
           ) : null}

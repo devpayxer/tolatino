@@ -109,3 +109,8 @@
    tamaño de la raíz: se agranda TODO el marco de la app un 12 % (zoom, como el del navegador). El ancho útil de un teléfono de 390 queda en
    ~348 px, dentro de lo que el diseño ya aguanta (teléfonos de 360); al revés y e2e let9t vigilan que no haya scroll de lado. */
 [data-letra="grande"] { zoom: 1.12; }
+
+/* 9t (19 nov) · Objetivos táctiles de 44 px: con idioma, campana y cuenta a 44, el logo del encabezado del teléfono (un contenedor: el nombre
+   se ajusta de 15 a 23 px a lo que queda, packages/ui SiteHeader) ya no tiene sitio para el nombre «To’Latino» a 320 sin sesión o con letra
+   grande: ahí queda solo el logo (su nombre accesible sigue siendo «To’Latino»). Antes el nombre se dibujaba encima de «ES». */
+@container (max-width: 102px) { [data-marca] { display: none; } }

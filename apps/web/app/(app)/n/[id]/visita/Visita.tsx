@@ -111,7 +111,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
         {(ol.length > 0 || al.length > 0) && <div className="mt-[3px] text-[12px] font-medium leading-[1.4] text-ink/60">{[...ol.map((x) => nm(x.o!.n)), ...al.map((x) => nm(x.n))].join(" · ")}</div>}
         <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${warr ? E2("Garantía · sin cargo", "Warranty · no charge") : precioL}${dep ? ` · ${E2("DEPÓSITO ", "DEPOSIT ")}${dinero(dep)}` : ""}`.toUpperCase()}</div>
       </div>
-      <button type="button" onClick={volver} className="flex-none text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
+      <button type="button" onClick={volver} className="inline-flex min-h-11 flex-none items-center text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
     </div>
   );
   const rangoPre = pre ? `${dinero(pre.lo)}–${dinero(pre.hi)}` : "";

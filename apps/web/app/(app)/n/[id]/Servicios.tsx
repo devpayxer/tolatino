@@ -176,7 +176,7 @@ export function SvcTab({ v, desk }: { v: Svc; desk: boolean }) {
           {([["svc", E2("Por servicio", "By service"), "scissors"], ["pro", E2(`Por ${v.w.uno}`, `By ${v.w.uno}`), "users"]] as const).map(([k, l, ic]) => {
             const on = v.modo === k;
             return (
-              <button key={k} type="button" onClick={() => v.setModo(k)} className={`flex h-[38px] flex-1 items-center justify-center gap-[7px] rounded-[11px] text-[12.5px] font-bold ${on ? "bg-white text-ink shadow-[0_1px_3px_rgba(11,14,18,.12)]" : "text-ink/60"}`}>
+              <button key={k} type="button" onClick={() => v.setModo(k)} className={`flex h-11 flex-1 items-center justify-center gap-[7px] rounded-[11px] text-[12.5px] font-bold ${on ? "bg-white text-ink shadow-[0_1px_3px_rgba(11,14,18,.12)]" : "text-ink/60"}`}>
                 <Icon name={ic} size={15} />{l}
               </button>
             );
@@ -187,7 +187,7 @@ export function SvcTab({ v, desk }: { v: Svc; desk: boolean }) {
         <div key={t} className="flex items-start gap-[11px] rounded-2xl bg-action/[.07] px-3.5 py-[13px]">
           <span className="grid flex-none pt-px"><Icon name={ic} size={17} color="var(--tl-action)" /></span>
           <span className="flex-1 text-pretty text-[12.5px] font-medium leading-[1.55] text-ink/75">{t}</span>
-          {ic === "users" && v.fijo && !v.sillaFija && <button type="button" onClick={v.quitarFijo} className="flex-none text-[12px] font-bold text-action">{E2("Ver todos", "See all")}</button>}
+          {ic === "users" && v.fijo && !v.sillaFija && <button type="button" onClick={v.quitarFijo} className="inline-flex min-h-11 flex-none items-center text-[12px] font-bold text-action">{E2("Ver todos", "See all")}</button>}
         </div>
       ))}
       {v.modo === "svc" ? (

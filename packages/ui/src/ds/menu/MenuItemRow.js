@@ -59,7 +59,13 @@ function MenuItemRow({
       font: (card ? '700 14.5px/1.3' : '700 15px/1.3') + ' Manrope,sans-serif'
     }
   }, /*#__PURE__*/React.createElement("span", {
-    ...__ds_scope.__btn(off ? undefined : onOpen)
+    ...__ds_scope.__btn(off ? undefined : onOpen),
+    'data-toque': 'nombre',
+    style: {
+      display: 'block',
+      padding: '13px 0',
+      margin: '-13px 0'
+    }
   }, name)), desc ? /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 4,
@@ -148,25 +154,45 @@ function AddPill({
     position: 'absolute',
     right: -6,
     bottom: -6,
-    height: x ? 36 : 31,
-    width: x ? 90 : 31,
+    height: 44,
+    width: x ? 88 : 44,
+    borderRadius: 12,
+    background: x ? 'var(--tl-ink)' : 'transparent',
+    boxShadow: x ? 'inset 0 0 0 2.5px var(--tl-white)' : 'none'
+  } : {
+    position: 'absolute',
+    right: 8,
+    bottom: 8,
+    height: 44,
+    width: x ? 88 : 44,
+    borderRadius: 11,
+    background: x ? 'var(--tl-white)' : 'transparent',
+    boxShadow: x ? '0 6px 14px -6px rgba(11,14,18,.5)' : 'none'
+  };
+  const vis = dark ? {
+    width: 31,
+    height: 31,
     boxSizing: 'border-box',
     borderRadius: 12,
     background: 'var(--tl-ink)',
     border: '2.5px solid var(--tl-white)'
   } : {
-    position: 'absolute',
-    right: 8,
-    bottom: 8,
+    width: 32,
     height: 34,
-    width: x ? 94 : 32,
     borderRadius: 11,
     background: 'var(--tl-white)',
     boxShadow: '0 6px 14px -6px rgba(11,14,18,.5)'
   };
+  const mas = /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "plus",
+    size: dark ? 14 : 16,
+    color: fg,
+    strokeWidth: 2.4
+  });
   return /*#__PURE__*/React.createElement("div", {
     onClick: st,
     role: 'presentation',
+    'data-toque': 'agregar',
     style: {
       ...box,
       overflow: 'hidden',
@@ -174,7 +200,7 @@ function AddPill({
       justifyContent: 'flex-end',
       alignItems: 'center',
       color: fg,
-      transition: 'width .2s ease, height .2s ease'
+      transition: 'width .2s ease'
     }
   }, /*#__PURE__*/React.createElement("span", {
     onClick: left,
@@ -183,7 +209,7 @@ function AddPill({
     "aria-label": qty === 1 ? removeLabel : decLabel,
     "aria-hidden": !x,
     style: {
-      width: 32,
+      width: 44,
       height: '100%',
       flex: 'none',
       display: 'grid',
@@ -198,9 +224,11 @@ function AddPill({
   })), /*#__PURE__*/React.createElement("span", {
     "aria-hidden": !x,
     style: {
-      width: 24,
-      flex: 'none',
-      textAlign: 'center',
+      position: 'absolute',
+      inset: 0,
+      display: x ? 'grid' : 'none',
+      placeItems: 'center',
+      pointerEvents: 'none',
       font: '800 13.5px/1 Sora,sans-serif'
     }
   }, qty), /*#__PURE__*/React.createElement("span", {
@@ -209,20 +237,21 @@ function AddPill({
     role: "button",
     "aria-label": qty === 0 || x ? addLabel : qtyLabel + ': ' + qty,
     style: {
-      width: dark ? 26 : 34,
+      width: 44,
       height: '100%',
       flex: 'none',
       display: 'grid',
-      placeItems: 'center',
+      placeItems: x ? 'center' : 'end',
       cursor: 'pointer',
       font: '800 12.5px/1 Sora,sans-serif'
     }
-  }, qty === 0 || x ? /*#__PURE__*/React.createElement(__ds_scope.Icon, {
-    name: "plus",
-    size: dark ? 14 : 16,
-    color: fg,
-    strokeWidth: 2.4
-  }) : qty));
+  }, x ? mas : /*#__PURE__*/React.createElement("span", {
+    style: {
+      ...vis,
+      display: 'grid',
+      placeItems: 'center'
+    }
+  }, qty === 0 ? mas : qty)));
 }
 /* Tarjeta de "Populares": foto 148×112 con + blanco, nombre y precio. */
 function MenuTile({
@@ -277,7 +306,13 @@ function MenuTile({
       font: '700 13px/1.3 Manrope,sans-serif'
     }
   }, /*#__PURE__*/React.createElement("span", {
-    ...__ds_scope.__btn(onOpen)
+    ...__ds_scope.__btn(onOpen),
+    'data-toque': 'nombre',
+    style: {
+      display: 'block',
+      padding: '14px 0',
+      margin: '-14px 0'
+    }
   }, name)), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 4,
@@ -415,11 +450,11 @@ function QtyStepper({
   decLabel = typeof lang !== 'undefined' && lang === 'EN' ? "One less" : "Uno menos"
 }) {
   const md = size === 'md',
-    h = md ? 50 : 30,
-    w = md ? 34 : 30;
+    h = md ? 50 : 46,
+    w = 44;
   const btn = {
     width: w,
-    height: h - (md ? 6 : 2),
+    height: 44,
     display: 'grid',
     placeItems: 'center',
     cursor: 'pointer',
@@ -579,15 +614,18 @@ function CartLine({
     onClick: onEdit,
     ...__ds_scope.__btn(onEdit, undefined, undefined),
     style: {
-      display: 'inline-block',
-      marginTop: 4,
+      display: 'inline-flex',
+      alignItems: 'center',
+      minHeight: 44,
+      minWidth: 44,
+      marginTop: 0,
       font: '700 12px Manrope,sans-serif',
       color: 'var(--tl-action)',
       cursor: 'pointer'
     }
   }, editLabel) : null, /*#__PURE__*/React.createElement("div", {
     style: {
-      marginTop: 8
+      marginTop: onEdit ? 0 : 8
     }
   }, /*#__PURE__*/React.createElement(QtyStepper, {
     size: "sm",

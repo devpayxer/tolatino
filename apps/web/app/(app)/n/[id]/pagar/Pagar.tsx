@@ -226,7 +226,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
                     <div className="text-[13.5px] font-bold">{dir ? dirT : E2("Agrega tu dirección", "Add your address")}</div>
                     <div className="mt-0.5 text-[11.5px] font-medium text-ink/60">{dir ? [dir.apt, dropL].filter(Boolean).join(" · ") : E2("A dónde te lo llevan", "Where to deliver")}</div>
                   </div>
-                  <button type="button" onClick={() => router.push(dir ? `/cuenta/direcciones?volver=${aqui}` : `/cuenta/direcciones/nueva?volver=${aqui}`)} className="flex-none text-[12px] font-bold text-action">{dir ? E2("Cambiar", "Change") : E2("Agregar", "Add")}</button>
+                  <button type="button" onClick={() => router.push(dir ? `/cuenta/direcciones?volver=${aqui}` : `/cuenta/direcciones/nueva?volver=${aqui}`)} className="inline-flex min-h-11 flex-none items-center text-[12px] font-bold text-action">{dir ? E2("Cambiar", "Change") : E2("Agregar", "Add")}</button>
                 </div>
               ) : (
                 <div className="mt-[11px] flex items-center gap-[11px]">
@@ -236,7 +236,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
                     <div className="mt-0.5 text-[11.5px] font-medium text-ink/60">{m.negocio.pickupNote || E2("Di tu número de pedido.", "Give your order number.")}</div>
                   </div>
                   {m.negocio.lat != null && m.negocio.lng != null && (
-                    <button type="button" onClick={() => abrirComoLlegar({ lat: m.negocio.lat, lng: m.negocio.lng })} className="flex-none text-[12px] font-bold text-action">{E2("Cómo llegar", "Directions")}</button>
+                    <button type="button" onClick={() => abrirComoLlegar({ lat: m.negocio.lat, lng: m.negocio.lng })} className="inline-flex min-h-11 flex-none items-center text-[12px] font-bold text-action">{E2("Cómo llegar", "Directions")}</button>
                   )}
                 </div>
               )}

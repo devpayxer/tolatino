@@ -206,7 +206,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
     <div>
       <div className="flex items-baseline justify-between gap-3 px-5 lg:px-0">
         <span className={h2}>{t.photos}</span>
-        <button type="button" onClick={() => verFotos()} className="flex-none text-[12.5px] font-bold text-action lg:text-[13.5px]">{t.photosAll}</button>
+        <button type="button" onClick={() => verFotos()} className="inline-flex min-h-11 flex-none items-center text-[12.5px] font-bold text-action lg:text-[13.5px]">{t.photosAll}</button>
       </div>
       <div className="hs mt-3 flex gap-[9px] overflow-x-auto px-5 lg:px-0">
         {f.fotos.slice(0, 12).map((u, i) => (

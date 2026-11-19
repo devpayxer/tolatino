@@ -88,7 +88,7 @@ export function Visita({ b, es, yo }: { b: BookingVis; es: boolean; yo: boolean 
         <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nm(it.name)}</div>
         <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{[nm(it.sub), `${totalK} ${totalL}`].filter(Boolean).join(" · ").toUpperCase()}</div>
       </div>
-      <button type="button" onClick={volver} className="flex-none text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
+      <button type="button" onClick={volver} className="inline-flex min-h-11 flex-none items-center text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
     </div>
   );
   const opcion = (k: string, sel: boolean, ok: boolean, titulo: string, der: string, on: () => void) => (

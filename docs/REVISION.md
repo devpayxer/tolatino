@@ -5629,3 +5629,29 @@ historial y el dueño lo ve). Detalles:
   botón toma lo que dice y lo que sobra se reparte: a 390 se ven los tres en una fila, casi iguales (100 · 105 · 129 px). Con «Letra más grande»
   en un teléfono chico (o a 320), «Cómo llegar» baja a una segunda fila de ancho completo.
 - **Qué mirar:** la ficha de Sabor Dominicano en tu teléfono, con letra normal y con Mi cuenta › Ajustes › Letra más grande.
+
+## Fase 9 · 9t — Objetivos táctiles de 44 px, de verdad (19 nov) — mirar
+Decisión del fundador (19 nov): agrandar DE VERDAD solo lo que lo necesita. Cada botón, chip, pestaña o fila que se toca mide ahora 44 × 44 o
+más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es lo que se toca (los dos intentos anteriores se revirtieron).
+- **Qué cambió a la vista (todas las capturas de estas pantallas se vuelven a aprobar):**
+  - **Encabezado del teléfono (todas las pantallas):** «ES», la campana y tu cuenta pasan de 40 a 44 (el idioma es ahora un cuadro como la
+    campana); el buscador mide casi lo mismo. A 320 el nombre «To’Latino» se achica para caber y, sin sesión o con letra grande, queda solo el logo.
+  - **Botones** medianos y chicos (Llamar · Escribir · Cómo llegar, Ordenar, Ver más, Entrar…) pasan de 40/34 a 44 de alto; el corazón y los
+    botones de solo ícono, de 40 a 44.
+  - **Chips de filtros** (Negocios, Buscar, el menú, Comunidad, Eventos, «cuántos son» de la reserva) de 35–37 a 44 de alto; los de un número
+    («1», «2»…) son cuadros de 44.
+  - **Pestañas** de la ficha (42 → 44) y de Comunidad (39 → 44); Pickup / Delivery del menú de 38 a 44.
+  - **«Ver todo» / «Ver el menú» / «Más horarios» / «Ver los N»**: el texto no cambia, pero su fila es un poco más alta (44).
+  - **Menú (Sabor Dominicano):** el + del plato se ve IGUAL (su caja de 44 queda sobre la foto); al abrirlo, «− n +» mide 44 de alto (antes
+    36) y el número va en el medio. El nombre del plato se toca en 44 de alto sin que la fila se mueva. En «Tu pedido», − y + de 44 y
+    «Editar» un poco más alto (cada línea crece unos 20 px). Las X de cerrar de las hojas: 36 → 44.
+  - **Comunidad:** votar (la pastilla mide 44 de alto y el mismo ancho, con el número en medio), comentar, guardar y compartir a 44; el «⋯» de
+    44 dentro de su fila (la hora se corre un poco a la izquierda). En un teléfono chico, guardar y compartir bajan a otra línea.
+  - **Inicio:** las categorías a 320 (o con letra grande) van en menos columnas (3 o 2) para que «Mercados» y «Doctores» quepan; en «Abierto
+    ahora», con poco ancho la etiqueta («Pickup 25 min») baja a otra línea.
+  - **Super Admin en el teléfono:** buscar, campana y tu cuenta a 44; «Todas · Ciudad…» va en su propia fila, a lo ancho.
+  - **Mi cuenta:** las filas de «Completa tu cuenta» a 44.
+- **Qué mirar:** en tu teléfono, Inicio, Negocios, Buscar «pollo», la ficha de Sabor Dominicano (Resumen y Menú: agrega un plato y ábrelo con
+  el número), una barbería, Comunidad, Eventos y Mi cuenta; luego lo mismo con Mi cuenta › Ajustes › Letra más grande. Que todo se toque bien al
+  primer intento y que nada se tape.
+- **Lo que no cambió:** el escritorio (con ratón) se ve igual salvo por las piezas compartidas (botones, chips, pestañas).

@@ -145,7 +145,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
     <div data-screen-label="APP-BUSCAR · lo que dicen los vecinos" className="flex flex-col gap-2.5">
       <div className="flex items-baseline justify-between gap-2.5">
         <span className="font-display text-[18px] font-extrabold tracking-[-0.03em]">{E2("Lo que dicen los vecinos", "What neighbors say")}</span>
-        {R.vecinos.total > vecL.length && <button type="button" onClick={() => ir({ tab: "vec", p: null })} className="whitespace-nowrap text-[12.5px] font-bold text-action">{E2(`Ver ${R.vecinos.total >= 100 ? "100+" : R.vecinos.total}`, `See ${R.vecinos.total >= 100 ? "100+" : R.vecinos.total}`)}</button>}
+        {R.vecinos.total > vecL.length && <button type="button" onClick={() => ir({ tab: "vec", p: null })} className="inline-flex min-h-11 items-center whitespace-nowrap text-[12.5px] font-bold text-action">{E2(`Ver ${R.vecinos.total >= 100 ? "100+" : R.vecinos.total}`, `See ${R.vecinos.total >= 100 ? "100+" : R.vecinos.total}`)}</button>}
       </div>
       <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">{vecL.map((x) => fichaVecino(x, 3))}</div>
       {lineaFija}
@@ -160,7 +160,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
     <div data-screen-label="APP-BUSCAR · eventos" className="flex flex-col gap-2.5">
       <div className="flex items-baseline justify-between gap-2.5">
         <span className="font-display text-[18px] font-extrabold tracking-[-0.03em] lg:text-[20px]">{E2("Eventos", "Events")}</span>
-        {EV.total > 4 && <button type="button" onClick={() => ir({ tab: "evt", p: null })} className="whitespace-nowrap text-[12.5px] font-bold text-action">{E2(`Ver los ${EV.total >= 100 ? "100+" : EV.total}`, `See all ${EV.total >= 100 ? "100+" : EV.total}`)}</button>}
+        {EV.total > 4 && <button type="button" onClick={() => ir({ tab: "evt", p: null })} className="inline-flex min-h-11 items-center whitespace-nowrap text-[12.5px] font-bold text-action">{E2(`Ver los ${EV.total >= 100 ? "100+" : EV.total}`, `See all ${EV.total >= 100 ? "100+" : EV.total}`)}</button>}
       </div>
       <div className="hs -mx-5 flex gap-3 overflow-x-auto px-5 lg:hidden">{EV.items.slice(0, 4).map((x) => evCard(x, 212))}</div>
       <div className="hidden gap-3.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">{EV.items.slice(0, 4).map((x) => evCard(x, "100%"))}</div>
@@ -184,7 +184,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
     <div data-screen-label="APP-BUSCAR · platos y servicios" className="flex flex-col gap-2.5">
       <div className="flex items-baseline justify-between gap-2.5">
         <span className="font-display text-[18px] font-extrabold tracking-[-0.03em] lg:text-[20px]">{E2("Platos y servicios", "Dishes & services")}</span>
-        {PL.total > 4 && <button type="button" onClick={() => ir({ tab: "itm", p: null })} className="whitespace-nowrap text-[12.5px] font-bold text-action">{E2(`Ver los ${PL.total}`, `See all ${PL.total}`)}</button>}
+        {PL.total > 4 && <button type="button" onClick={() => ir({ tab: "itm", p: null })} className="inline-flex min-h-11 items-center whitespace-nowrap text-[12.5px] font-bold text-action">{E2(`Ver los ${PL.total}`, `See all ${PL.total}`)}</button>}
       </div>
       <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">{PL.items.slice(0, 4).map(filaPlato)}</div>
     </div>
@@ -221,16 +221,16 @@ export function Buscar({ v }: { v: VistaBuscar }) {
 
   /* ── Piezas ── */
   const caja = (desk: boolean) => (
-    <div className={`flex min-w-0 flex-1 items-center gap-[9px] rounded-[14px] border-[1.5px] pl-[13px] pr-1.5 ${desk ? "h-[52px]" : "h-[46px]"} ${foco ? "border-ink bg-white" : "border-transparent bg-paper"}`}>
+    <div className={`flex min-w-0 flex-1 items-center gap-[9px] rounded-[14px] border-[1.5px] pl-[13px] pr-0.5 ${desk ? "h-[52px]" : "h-[48px]"} ${foco ? "border-ink bg-white" : "border-transparent bg-paper"}`}>
       <Icon name="search" size={18} color="rgba(11,14,18,.6)" />
       <input ref={inRef} value={q} onChange={(e) => setQ(e.target.value.slice(0, 120))} onFocus={() => setFoco(true)} onBlur={() => setTimeout(() => setFoco(false), 150)}
         onKeyDown={(e) => { if (e.key === "Enter") buscar(q); if (e.key === "Escape") { setQ(v.q); inRef.current?.blur(); } }}
         placeholder={placeholder} enterKeyHint="search" autoComplete="off" aria-label={t.search}
         className="h-full min-w-0 flex-1 border-none bg-transparent p-0 text-[15px] font-semibold text-ink outline-none placeholder:text-ink/60" />
       {q ? (
-        <button type="button" aria-label={t.clear} onClick={() => { setQ(""); inRef.current?.focus(); }} className="grid size-[30px] flex-none place-items-center rounded-full bg-ink/[.07]"><Icon name="close" size={13} strokeWidth={2.2} /></button>
+        <button type="button" aria-label={t.clear} onClick={() => { setQ(""); inRef.current?.focus(); }} className="grid size-11 flex-none place-items-center"><span className="grid size-[30px] place-items-center rounded-full bg-ink/[.07]"><Icon name="close" size={13} strokeWidth={2.2} /></span></button>
       ) : (
-        mic ? <button type="button" aria-label={E2("Buscar con la voz", "Search by voice")} onClick={hablar} className="grid size-[34px] flex-none place-items-center rounded-[10px]"><Icon name="mic" size={19} color="var(--tl-action)" /></button> : null
+        mic ? <button type="button" aria-label={E2("Buscar con la voz", "Search by voice")} onClick={hablar} className="grid size-11 flex-none place-items-center rounded-[10px]"><Icon name="mic" size={19} color="var(--tl-action)" /></button> : null
       )}
     </div>
   );
@@ -268,7 +268,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
       {/* ── Caja de búsqueda (teléfono) ── */}
       <div className="sticky top-0 z-[15] border-b border-ink/[.07] bg-white lg:static lg:border-none lg:bg-transparent">
         <div className="flex items-center gap-1 py-2.5 pl-2 pr-4 lg:mx-auto lg:max-w-[880px] lg:px-[30px] lg:pt-6">
-          <button type="button" aria-label="Volver" onClick={() => router.back()} className="grid h-11 w-10 flex-none place-items-center lg:hidden"><Icon name="chevronLeft" size={22} strokeWidth={2} /></button>
+          <button type="button" aria-label="Volver" onClick={() => router.back()} className="grid size-11 flex-none place-items-center lg:hidden"><Icon name="chevronLeft" size={22} strokeWidth={2} /></button>
           {caja(false)}
         </div>
         {v.cat && (
@@ -317,7 +317,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                 {R.total > 0 && (
                   <div className="hs -mx-5 flex gap-1.5 overflow-x-auto px-5 lg:mx-0 lg:flex-wrap lg:px-0">
                     <div className="relative flex-none">
-                      <button type="button" onClick={() => setOrdenAbierto(!ordenAbierto)} className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-ink/[.12] px-3 py-[7px] text-[12.5px] font-bold">
+                      <button type="button" onClick={() => setOrdenAbierto(!ordenAbierto)} className="flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-full border border-ink/[.12] px-3 py-[7px] text-[12.5px] font-bold">
                         <Icon name="filter" size={14} />{t.sorts[R.orden as "rel"]}<Icon name="chevronDown" size={13} strokeWidth={2} />
                       </button>
                     </div>
@@ -416,7 +416,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                 {R.total > 0 && <div className="flex flex-col gap-2.5">
                   <div className="flex items-baseline justify-between gap-2.5">
                     <span className="font-display text-[18px] font-extrabold tracking-[-0.03em]">{t.biz}</span>
-                    {R.total > 4 && <button type="button" onClick={() => ir({ tab: "biz" })} className="whitespace-nowrap text-[12.5px] font-bold text-action">{f(t.verN, { n: R.total })}</button>}
+                    {R.total > 4 && <button type="button" onClick={() => ir({ tab: "biz" })} className="inline-flex min-h-11 items-center whitespace-nowrap text-[12.5px] font-bold text-action">{f(t.verN, { n: R.total })}</button>}
                   </div>
                   {R.tarjetas[0]?.plan === "pro" && <div className="grid grid-cols-[minmax(0,1fr)]"><TarjetaNegocio es={v.lang === "es"} b={R.tarjetas[0]} origen="buscar" textos={v.tarjeta} /></div>}
                   {R.filas.slice(R.tarjetas[0]?.plan === "pro" ? 1 : 0, R.tarjetas[0]?.plan === "pro" ? 5 : 4).map((x) => (

@@ -129,7 +129,14 @@ function BusinessCard({
       color: 'var(--tl-ink)'
     }
   }, /*#__PURE__*/React.createElement("span", {
-    ...__ds_scope.__btn(onOpen)
+    ...__ds_scope.__btn(onOpen),
+    'data-toque': 'nombre',
+    style: {
+      display: 'inline-block',
+      minWidth: 44,
+      padding: '13px 0',
+      margin: '-13px 0'
+    }
   }, name)), meta ? /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 4,
@@ -223,7 +230,14 @@ function BusinessCard({
       letterSpacing: '-.03em'
     }
   }, /*#__PURE__*/React.createElement("span", {
-    ...__ds_scope.__btn(onOpen)
+    ...__ds_scope.__btn(onOpen),
+    'data-toque': 'nombre',
+    style: {
+      display: 'inline-block',
+      minWidth: 44,
+      padding: '12px 0',
+      margin: '-12px 0'
+    }
   }, name)), verified ? /*#__PURE__*/React.createElement(Check, null) : null), meta && !oneLine ? /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 6,

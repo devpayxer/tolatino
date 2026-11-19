@@ -68,7 +68,7 @@ export function Boletos({ p, es, yo, ini }: { p: PantallaBoletos; es: boolean; y
         <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{p.evento.title}</div>
         <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${cuando} · ${p.evento.venue}`.toUpperCase()}</div>
       </div>
-      <button type="button" onClick={volver} className="flex-none text-[12px] font-bold text-action">{E2("Ver evento", "See event")}</button>
+      <button type="button" onClick={volver} className="inline-flex min-h-11 flex-none items-center text-[12px] font-bold text-action">{E2("Ver evento", "See event")}</button>
     </div>
   );
   const linea = <div className="flex items-start gap-2.5 rounded-[14px] bg-action/[.07] px-3.5 py-3"><span className="grid flex-none pt-px"><Icon name="dollar" size={16} color="var(--tl-action)" /></span><span className="text-pretty text-[12.5px] font-bold leading-[1.45] text-action-hover">{E2("El precio que ves es el que pagas: cargos incluidos.", "The price you see is what you pay: fees included.")}</span></div>;

@@ -60,7 +60,7 @@ export function Inicio({ h, bloques, aviso = null, anuncios = [], semana = [], c
             </div>
           )}
           {/* Móvil: 7 categorías + Todas (17) en mosaico de 4 */}
-          {bloqueOn("categorias") && <div data-bloque="categorias-movil" className="grid grid-cols-4 gap-2.5 px-5 pt-[18px] lg:hidden" style={{ order: 0 }}>
+          {bloqueOn("categorias") && <div data-bloque="categorias-movil" className="grid grid-cols-[repeat(auto-fill,minmax(76px,1fr))] gap-2.5 px-5 pt-[18px] lg:hidden" style={{ order: 0 }}>
             {deCasa.map((c) => (
               <ModuleTile key={c.id} label={c.label} icon={c.icon} hue="var(--tl-open)" tint="rgba(0,168,143,.14)" onClick={irCat(c)} />
             ))}
@@ -79,7 +79,7 @@ export function Inicio({ h, bloques, aviso = null, anuncios = [], semana = [], c
               <SectionHeader title={t.openNow} dot="var(--tl-open)" action={t.seeAll} onAction={() => router.push("/abierto")} />
               <div className="flex flex-col gap-2.5 lg:grid lg:gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))" }}>
                 {abierto.map((o, i) => (
-                  <div key={o.id} className={i >= 3 ? "hidden lg:grid" : "grid"}>
+                  <div key={o.id} className={i >= 3 ? "hidden grid-cols-[minmax(0,1fr)] lg:grid" : "grid grid-cols-[minmax(0,1fr)]"}>
                     <BusinessRow name={o.name} meta={o.meta} verified={o.verified} slot={o.slot} image={o.image} onClick={() => router.push(`/n/${o.id}`)} />
                   </div>
                 ))}

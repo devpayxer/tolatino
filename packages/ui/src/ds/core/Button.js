@@ -52,13 +52,13 @@ const S = {
     font: '700 14.5px Manrope,sans-serif'
   },
   md: {
-    height: 40,
+    height: 44,
     padding: '0 16px',
     borderRadius: 13,
     font: '700 12.5px Manrope,sans-serif'
   },
   sm: {
-    height: 34,
+    height: 44,
     padding: '0 14px',
     borderRadius: 11,
     font: '700 11.5px Manrope,sans-serif'

@@ -21,8 +21,10 @@ const Logo = ({
     flex: 'none'
   }
 }), /*#__PURE__*/React.createElement("span", {
+  'data-marca': '',
   style: {
-    font: '800 ' + font + 'px/1 Sora,sans-serif',
+    whiteSpace: 'nowrap',
+    font: '800 ' + (typeof font === 'number' ? font + 'px' : font) + '/1 Sora,sans-serif',
     letterSpacing: '-.04em',
     color: 'var(--tl-ink)'
   }
@@ -53,8 +55,8 @@ function Bell({
     },
     style: {
       position: 'relative',
-      width: 40,
-      height: 40,
+      width: 44,
+      height: 44,
       borderRadius: 13,
       border: '1px solid rgba(11,14,18,.1)',
       display: 'grid',
@@ -68,8 +70,8 @@ function Bell({
   }), unread ? /*#__PURE__*/React.createElement("span", {
     style: {
       position: 'absolute',
-      top: 9,
-      right: 10,
+      top: 11,
+      right: 12,
       width: 7,
       height: 7,
       borderRadius: 99,
@@ -88,8 +90,8 @@ function Avatar({
     onClick: onClick,
     ...__ds_scope.__btn(onClick, avatarLabel, undefined),
     style: {
-      width: 40,
-      height: 40,
+      width: 44,
+      height: 44,
       borderRadius: 99,
       background: 'rgba(75,55,245,.12)',
       color: 'var(--tl-action)',
@@ -110,7 +112,12 @@ function Lang({
     ...__ds_scope.__btn(onClick, (lang === 'EN' ? 'Language: ' : 'Idioma: ') + lang, undefined),
     style: {
       padding: '8px 10px',
-      borderRadius: 11,
+      minWidth: 44,
+      minHeight: 44,
+      boxSizing: 'border-box',
+      display: 'grid',
+      placeItems: 'center',
+      borderRadius: 13,
       border: '1px solid rgba(11,14,18,.12)',
       font: '700 11px ' + mono,
       cursor: 'pointer',
@@ -177,6 +184,8 @@ function SiteHeader({
     style: {
       flex: 1,
       minWidth: 0,
+      minHeight: 44,
+      containerType: 'inline-size',
       display: 'flex',
       alignItems: 'center',
       gap: 9,
@@ -184,7 +193,7 @@ function SiteHeader({
     }
   }, /*#__PURE__*/React.createElement(Logo, {
     size: 28,
-    font: 23,
+    font: 'clamp(15px, calc((100cqi - 37px) / 4.4), 23px)',
     base: assetBase
   })), /*#__PURE__*/React.createElement(Lang, {
     lang: lang,
@@ -204,7 +213,7 @@ function SiteHeader({
       display: 'flex',
       alignItems: 'center',
       gap: 10,
-      padding: '12px 14px',
+      padding: '0 14px',
       borderRadius: 16,
       background: 'var(--tl-paper)',
       border: '1px solid rgba(11,14,18,.08)',
@@ -219,16 +228,32 @@ function SiteHeader({
       flex: 1,
       minWidth: 0,
       font: '500 14px Manrope,sans-serif',
+      lineHeight: '44px',
       color: 'rgba(11,14,18,.6)',
       whiteSpace: 'nowrap',
       overflow: 'hidden',
       textOverflow: 'ellipsis'
     }
   }, /*#__PURE__*/React.createElement("span", {
-    ...(onCity ? __ds_scope.__btn(onSearch) : {})
+    ...(onCity ? __ds_scope.__btn(onSearch) : {}),
+    style: {
+      display: 'block',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }
   }, searchPlaceholder || 'Buscar en ' + cityShort)), /*#__PURE__*/React.createElement("span", {
     onClick: stop(onCity),
     ...__ds_scope.__btn(stop(onCity), undefined, undefined),
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      alignSelf: 'stretch',
+      minHeight: 44,
+      minWidth: 44,
+      flex: 'none',
+      cursor: 'pointer'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -245,7 +270,7 @@ function SiteHeader({
     name: "pin",
     size: 13,
     color: "var(--tl-action)"
-  }), radius.toUpperCase())));
+  }), radius.toUpperCase()))));
   return /*#__PURE__*/React.createElement("div", {
     style: {
       background: 'var(--tl-white)',
