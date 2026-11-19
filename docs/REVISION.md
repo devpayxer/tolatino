@@ -5687,3 +5687,8 @@ un mensaje del otro lado que está en otro idioma sale «Ver traducción» (lo m
   las respuestas automáticas y los avisos del sistema tampoco (ya salen en el idioma de quien los recibe).
 - **El Compa no ve fotos:** un mensaje que es solo la foto le llega como «[foto]».
 - **No se hizo** en los mensajes entre vecinos (Comunidad): queda en LAUNCH «Mensajes · lo que quedó de 9t».
+
+## 19 nov — Capturas aprobadas de nuevo (ficha, Hoy del panel, inicio) — mirar
+- **Ficha Pro:** «Llamar · Escribir · Cómo llegar» se acomoda; en teléfonos angostos (Galaxy, SE, Pixel) «Cómo llegar» baja a su propia fila a lo
+  ancho (antes se salía del margen). Mirar: la ficha de Sabor Dominicano en un Android angosto.
+- Hoy del panel, inicio y admin: solo cambian textos que dependen de la hora («Hasta 9 AM / 1 PM»); nada de diseño. Corrida 44510550687 (aprobar=si).
