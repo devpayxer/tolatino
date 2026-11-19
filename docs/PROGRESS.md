@@ -2796,6 +2796,10 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   fic005, vec9m, al revés), 44460944263 (llave). En el camino: «Destacar» decía el tope viejo de la caché (bug, arreglado; también en negocios);
   evt9t, pat003 y alreves6f al día; serieUnaVezEnLista mira las dos lecturas de eventosCiudad. La app se sirve en local
   (`tl_loc` + `servir.sh basico` + docker falso que manda el SQL de las pruebas a la base local) para reproducir sin esperar a CI.
+- **19 nov · Área de toque de 44 px REVERTIDA otra vez (revert de 9f416b9):** en el CI, a11y9c (su propia prueba) falló en todos los anchos: un
+  toque junto a la pestaña «Jobs» (71×43, 1 px corta en el runner) no le llegaba, y a 320 con letra grande «Agregar» (29×31) quedaba sin área;
+  en local pasaba. Se queda el arreglo real que encontró (el nombre del encabezado a 320 con letra grande; guardián botonesQueCaben). Se rehace
+  con una prueba que reproduzca el runner (LAUNCH «Objetivos táctiles de 44 px» vuelve a [ ]).
 - **19 nov · La pantalla responde en el mismo toque (pedido del fundador: «el sitio se queda como enganchado»):** (1) **barra de navegación** fina
   arriba (`app/BarraNavegacion.tsx`, color de acción) que sale en el toque de un enlace y también de un botón con router.push (el aviso oficial
   de Next `instrumentation-client.ts` → «tl:navega»; la casi totalidad de la app navega con botones: 797 router.push) y avanza hasta que llega

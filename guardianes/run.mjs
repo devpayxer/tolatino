@@ -1396,61 +1396,6 @@ const guardianes = {
     }
   },
 
-  /* 9t · toqueDe44: cada control recibe el toque del dedo en 44 × 44 px SIN cambiar lo que se ve y SIN quitarle nunca un toque a otro control o a
-     un campo (packages/ui/src/toque.ts). El primer intento (un ::after invisible agrandado en cada control, 19 nov) se revirtió: el área de uno
-     tapaba la caja de un control de OTRO contenedor y los clics de seis pruebas caducaban; y volver position: relative cada control cambiaba
-     pixeles. Ahora el área se decide en el momento del toque con lo que el navegador tiene debajo del dedo. Vigila:
-     · toque.ts: lo que ya es de alguien (ACCIONABLE: controles, enlaces, campos, etiquetas, lienzos…) se queda con su toque («propio», antes de
-       nada); el ratón no se amplía; lo de debajo con acción propia (cursor de mano, manejadores de React) tampoco; gana el MÁS CERCANO de lo
-       accionable que se ve, con empate = nadie; solo dentro del área de 44 (lo que falta, repartido a los dos lados); la misma capa; y no pinta
-       nada (ni estilos, ni elementos, ni atributos);
-     · se monta en el layout raíz (AreaDeToque, una vez para el sitio y las cuatro apps) y el paquete lo exporta;
-     · nadie vuelve a la versión con estilos: ningún .css de apps/web o packages/ui con data-toque ni --tl-toque;
-     · a11y9c lo mide sobre lo servido (toque44 con pruebas/lib/toque.cjs, con toques reales, en las pantallas del teléfono, a 320 y 375 y con
-       letra grande). Al revés: alreves9ttoque2 (este guardián y, en el navegador, la clase «un área que pisa un control de otro contenedor»). */
-  toqueDe44() {
-    const G = "toqueDe44", T = "packages/ui/src/toque.ts", AT = "apps/web/app/AreaDeToque.tsx", LY = "apps/web/app/layout.tsx";
-    if (!existsSync(T)) { falla(G, T, 0, "falta el área de toque de 44 px (packages/ui/src/toque.ts)"); return; }
-    const t = sinComent(T);
-    const lista = (n) => { const m = new RegExp(`export const ${n} = \\[([\\s\\S]*?)\\]\\.join\\(","\\);`).exec(t); return m ? [...m[1].matchAll(/"([^"]+)"/g)].map((x) => x[1]) : []; };
-    const acc = lista("ACCIONABLE"), ctl = lista("CONTROL");
-    for (const s of ["a[href]", "button", "input", "select", "textarea", "label", "[role=button]", "[role=link]", "[role=tab]", "[role=radio]", "[role=checkbox]", "[role=switch]", "[role=option]", "[role=slider]", "[role=combobox]", "[role=textbox]", "canvas", "video", "iframe", "[data-toque=no]"])
-      if (!acc.includes(s)) falla(G, T, 0, `ACCIONABLE no incluye ${s}: un toque en su caja podría dársele a otro control`);
-    for (const s of ["a[href]", "button", "[role=button]", "[role=tab]", "[role=radio]", "[role=checkbox]"]) if (!ctl.includes(s)) falla(G, T, 0, `CONTROL no incluye ${s}: ese control no recibe el área de 44 px`);
-    for (const s of ctl) if (/^(input|select|textarea|label)$/.test(s)) falla(G, T, 0, `CONTROL no puede incluir ${s} (un campo se enfoca, no se cliquea)`);
-    const fn = (/export function destinoToque\([\s\S]*?\n\}/.exec(t) || [""])[0];
-    const orden = ["if (t.closest(ACCIONABLE)) return { el: null", 'if (getComputedStyle(t).cursor === "pointer") return { el: null', "cerca.sort((a, b) => a.d - b.d);",
-      "if (!seVeCerca(c.e, c.r, x, y)) continue;", "c.d - ganador.d < 0.5", "if (!g.matches(CONTROL) || apagado(g) || enTexto(g)) return { el: null",
-      "if (!dentroDe(areaDe(ganador.r), x, y)) return { el: null", "if (capaDe(t, cache) !== capaDe(g, cache)) return { el: null", "if (tieneAccion(a)) return { el: null"];
-    let pos = -1;
-    for (const o of orden) { const i = fn.indexOf(o); if (i < 0) falla(G, T, 0, `destinoToque perdió una regla (y en este orden): «${o}»`); else if (i < pos) falla(G, T, 0, `destinoToque: «${o}» va después de la regla anterior`); else pos = i; }
-    if (!/if \(d <= TOQUE_MIN \/ 2\) cerca\.push/.test(fn)) falla(G, T, 0, "destinoToque mira solo lo que está a menos de 22 px (TOQUE_MIN / 2)");
-    if (!/export const TOQUE_MIN = 44;/.test(t) || !/Math\.max\(0, \(TOQUE_MIN - r\.width\) \/ 2\)/.test(t) || !/Math\.max\(0, \(TOQUE_MIN - r\.height\) \/ 2\)/.test(t))
-      falla(G, T, 0, "el área es de 44 × 44: lo que le falta a la caja para 44, repartido a los dos lados");
-    if (!/if \(pausa \|\| e\.pointerType === "mouse" \|\| !e\.isPrimary\) return;/.test(t)) falla(G, T, 0, "solo el dedo o el lápiz se amplían (con el ratón, doble clic selecciona el texto de al lado)");
-    if (!/const d = destinoToque\(e\.clientX, e\.clientY\);/.test(t) || !/e\.preventDefault\(\);\s*\n\s*toque = \{/.test(t)) falla(G, T, 0, "el toque se decide al bajar el dedo (con lo que hay debajo) y sin los eventos de ratón de compatibilidad");
-    if (!/Math\.hypot\(e\.clientX - t\.x, e\.clientY - t\.y\) > MOVER/.test(t)) falla(G, T, 0, "un toque que se movió (arrastrar, desplazar) no es un toque");
-    if (!/e\.preventDefault\(\); e\.stopImmediatePropagation\(\);/.test(t)) falla(G, T, 0, "el clic del navegador que llega después del toque ampliado se descarta (si no, el toque cuenta dos veces o cae en la hoja que se abrió)");
-    for (const [re, que] of [[/\.style\b/, "estilos"], [/createElement|appendChild|insertAdjacent|innerHTML|\.append\(|\.prepend\(/, "elementos"], [/classList|setAttribute|removeAttribute|toggleAttribute/, "clases o atributos"], [/insertRule|CSSStyleSheet|adoptedStyleSheets/, "hojas de estilo"]])
-      if (re.test(t)) falla(G, T, 0, `el área de toque no pinta ni cambia nada que se vea: toque.ts toca ${que}`);
-    if (!/"\.\/toque": "\.\/src\/toque\.ts"/.test(readFileSync("packages/ui/package.json", "utf8"))) falla(G, "packages/ui/package.json", 0, "el paquete exporta ./toque");
-    if (!existsSync(AT) || !/useEffect\(\(\) => instalarToque\(\), \[\]\)/.test(sinComent(AT))) falla(G, AT, 0, "AreaDeToque instala el área de toque (useEffect(() => instalarToque(), []))");
-    if (!existsSync(LY) || !/<AreaDeToque \/>/.test(sinComent(LY))) falla(G, LY, 0, "el layout raíz monta <AreaDeToque /> (sin eso no hay área de toque en ninguna pantalla)");
-    // Nadie vuelve a la versión con estilos (un ::after agrandado tapa a los controles de otro contenedor).
-    for (const f of codigo) if (/^(apps\/web|packages\/ui)\/.*\.css$/.test(f) && /data-toque|--tl-toque/.test(readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, "")))
-      falla(G, f, 0, "un área de toque hecha con estilos (data-toque / --tl-toque): tapa a los controles de otro contenedor; el área es packages/ui/src/toque.ts");
-    // Lo que cazó la medida a 320 con letra grande (19 nov): el nombre del encabezado se salía de su caja y tapaba el botón del idioma.
-    if (!/@media \(max-width: 359px\) \{\s*\[data-letra="grande"\] \[aria-label="To’Latino"\] > span \{ font-size: 17px !important; \}/.test(readFileSync("apps/web/app/globals.css", "utf8")))
-      falla(G, "apps/web/app/globals.css", 0, "a 320 con letra grande el nombre «To’Latino» del encabezado baja a 17 px (si no, se sale de su caja y tapa el botón del idioma)");
-    const A = "pruebas/e2e/a11y9c.cjs";
-    if (existsSync(A)) {
-      const a = readFileSync(A, "utf8");
-      if (!/require\('\.\.\/lib\/toque\.cjs'\)/.test(a) || (a.match(/await toque44\([a-z], '[^']+', true/g) || []).length < 4 || !/await toque44\(q, `la ficha \(menú\) a \$\{w\}/.test(a)
-        || !/\[320, 568, false\], \[375, 667, false\], \[375, 667, true\], \[320, 568, true\]/.test(a) || !/tocarJunto\(p\)/.test(a) || !/ok\(t\.pisan\.length === 0/.test(a))
-        falla(G, A, 0, "a11y9c mide el área de toque en las pantallas del teléfono (toque44 con pruebas/lib/toque.cjs: nadie pisa a nadie, 44 × 44, un toque real, a 320 y 375 y con letra grande)");
-    }
-  },
-
   /* 9c · sinInteractivoAnidado: un control dentro de otro control (axe «nested-interactive», serio; WCAG 4.1.2). Antes, las filas de las fichas
      (Mercado, Servicios, Salud, Pro, Oficios, Noche, Fiestas, Viaje, Inscripciones) eran un <div role="button" tabIndex onClick onKeyDown> que
      CONTENÍA el <Button> «Agregar», «Cómo llegar» o «Reservar»: un lector de pantalla no llega al botón de adentro. Ahora la fila es un <div>
@@ -9739,6 +9684,9 @@ const guardianes = {
       if ((fila.match(/flex-\[1_1_auto\]/g) || []).length < 3) falla(G, F, 0, "cada botón de la fila toma lo que dice (flex-[1_1_auto])");
     }
     for (const e of ["pruebas/e2e/fic005.cjs", "pruebas/e2e/bus9t.cjs"]) if (!/botonesQueNoCaben\(/.test(readFileSync(e, "utf8"))) falla(G, e, 0, "la prueba no mira que los botones quepan en su caja (pruebas/lib/caben.cjs)");
+    // 19 nov · El nombre del encabezado a 320 con letra grande se salía de su caja y tapaba el botón del idioma.
+    if (!/@media \(max-width: 359px\) \{\s*\[data-letra="grande"\] \[aria-label="To’Latino"\] > span \{ font-size: 17px !important; \}/.test(readFileSync("apps/web/app/globals.css", "utf8")))
+      falla(G, "apps/web/app/globals.css", 0, "a 320 con letra grande el nombre «To’Latino» baja a 17 px (si no, tapa el botón del idioma)");
   },
 
   /* 9t (19 nov) · respondeAlToque: el fundador vio que el sitio «se queda como enganchado» al tocar un enlace (la página vieja quieta hasta

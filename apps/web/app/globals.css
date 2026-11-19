@@ -113,7 +113,7 @@
 /* 19 nov · En un teléfono de 320 (iPhone SE de primera generación) con letra grande el ancho útil queda en ~286 px y el nombre «To’Latino» del
    encabezado (23 px) no cabe en su lugar: se salía de su caja y tapaba el botón del idioma (se veía «·S» en vez de «ES» y tocar ahí abría Inicio;
    lo cazó a11y9c al medir el área de toque a 320 con letra grande). Ahí, y solo ahí, el nombre baja a 17 px (19 px a la vista con el zoom).
-   A 375 o más, y sin letra grande, nada cambia. Guardián: toqueDe44. */
+   A 375 o más, y sin letra grande, nada cambia. Guardián: botonesQueCaben. */
 @media (max-width: 359px) {
   [data-letra="grande"] [aria-label="To’Latino"] > span { font-size: 17px !important; }
 }

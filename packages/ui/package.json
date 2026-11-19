@@ -6,8 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./tokens.css": "./src/tokens.css",
-    "./esqueleto.css": "./src/esqueleto.css",
-    "./toque": "./src/toque.ts"
+    "./esqueleto.css": "./src/esqueleto.css"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

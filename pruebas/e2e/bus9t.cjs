@@ -85,7 +85,10 @@ const nombres = (r) => (r.filas || []).filter((x) => x.kind === 'item').map((x) 
     ok(tx1.includes('Corte clásico') && tx1.includes('Precio en la ficha'), 'pestaña Platos y servicios: «corte» trae los servicios de la barbería con «Precio en la ficha»');
     ok(/Todos \d+/.test(tx1) && tx1.includes('Precio más bajo'), 'la pestaña trae «Todos N», un chip por categoría y «Precio más bajo»');
     await shot(p, '390-pestana-es');
-    await p.locator('[data-plato]').first().click();
+    // Un servicio de ESTA barbería (otras pruebas publican barberías con el mismo «Corte clásico» en la misma base: la primera fila puede ser de otra).
+    const svcBarb = sql(`select id from items where business_id = '${BARB}' and module = 'svc' and removed_at is null and name->>'es' ilike '%corte%' order by id limit 1`);
+    ok(!!svcBarb, `precondición: ${BARB} tiene un servicio con «corte»`);
+    await p.locator(`[data-plato="${svcBarb}"]`).click();
     ok(await espera(async () => new URL(p.url()).pathname === `/n/${BARB}`), 'tocar un servicio abre la ficha del negocio');
     // ── 2 · Nunca lo que la ficha no muestra ──
     await p.goto(B + '/');

@@ -28,7 +28,7 @@ const casos = [
   ['vitalesSinPersonas', 'apps/web/app/api/vitales/route.ts', '  return nada(r.ok || r.por === "apagado" || r.por === "limite" ? 204 : 400);', '  if (!r.ok && r.por === "limite") return nada(429);\n  return nada(r.ok || r.por === "apagado" ? 204 : 400);'],
   ['vitalesSinPersonas', 'apps/web/lib/vitales.ts', '  const ok = await dentroDelTope("vitales_ip", e.ip ?? "?", 30) && await dentroDelTope("vitales", "todo", 20_000);', '  await db().query("select 1");\n  const ok = await dentroDelTope("vitales_ip", e.ip ?? "?", 30) && await dentroDelTope("vitales", "todo", 20_000);'],
   ['vitalesSinPersonas', 'packages/db/migrations/0167_web_vitals.sql', '  n int not null default 0 check (n >= 0),', '  ip text,\n  n int not null default 0 check (n >= 0),'],
-  ['vitalesSinPersonas', 'apps/web/app/layout.tsx', '<AreaDeToque /><Vitales />', '<AreaDeToque />'],
+  ['vitalesSinPersonas', 'apps/web/app/layout.tsx', '<FocoHojas /><Vitales />', '<FocoHojas />'],
   ['anchoSinSalto', 'apps/web/app/(app)/soporte/Soporte.tsx', '  return useAnchoComun(); // 9c · sin salto al cargar: app/_ancho/Ancho.tsx', '  const [w, setW] = useState(390);\n  useEffect(() => { const f = () => setW(window.innerWidth); f(); }, []);\n  return w;'],
   ['anchoSinSalto', 'apps/web/app/panel/layout.tsx', '<AnchoInicial w={w}>', '<>'],
   ['anchoSinSalto', 'apps/web/app/(app)/_legal/PieLegal.tsx', '  const d = useAnchoComun() >= 1024; // 9c · sin salto al cargar', '  const [d, setD] = useState(false);\n  useEffect(() => { const m = window.matchMedia("(min-width: 1024px)"); const f = () => setD(m.matches); f(); }, []);'],

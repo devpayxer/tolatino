@@ -10,6 +10,7 @@ const casos = [
   [G, F, '<div className="grid flex-[1_1_auto]"><Button variant="secondary" size="sm" icon="pin"', '<div className="grid flex-1"><Button variant="secondary" size="sm" icon="pin"'],
   [G, F, 'data-pieza="acciones-ficha"', 'data-x="acciones"'],
   [G, 'pruebas/e2e/fic005.cjs', 'const noCaben = await botonesQueNoCaben(m);', 'const noCaben = [];'],
+  [G, 'apps/web/app/globals.css', '[data-letra="grande"] [aria-label="To’Latino"] > span { font-size: 17px !important; }', ''],
   [G, 'pruebas/e2e/bus9t.cjs', 'const noCaben = await botonesQueNoCaben(w);', 'const noCaben = [];'],
 ];
 let bien = 0, total = 0;
