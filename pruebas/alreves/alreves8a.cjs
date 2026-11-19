@@ -39,7 +39,7 @@ const casos = [
   // appNoAutoriza
   ['appNoAutoriza', PN, 'import "server-only";', 'import "server-only";\nimport { deLaApp } from "./app-nativa";\nexport async function esDueno() { return (await deLaApp())?.app === "negocio"; }'],
   ['appNoAutoriza', SO, '  const a = leerRotulo(ua), APP', '  const tl = h.get("x-tl-app");\n  const a = leerRotulo(tl ?? ua), APP'],
-  ['appNoAutoriza', CU, "returning u.id, u.phone, u.first_name, u.last_name, u.nick, u.lang, cuenta_estado(u.status, u.status_until) as estado, u.status_until as hasta`,\n    [huellaToken(t), ap.version", "returning u.id, u.phone, u.first_name, u.last_name, u.nick, u.lang, cuenta_estado(u.status, u.status_until) as estado, u.status_until as hasta, s.app`,\n    [huellaToken(t), ap.version"],
+  ['appNoAutoriza', CU, "returning u.id, u.phone, u.first_name, u.last_name, u.nick, u.lang, cuenta_estado(u.status, u.status_until) as estado, u.status_until as hasta, u.big_text as letra`,\n    [huellaToken(t), ap.version", "returning u.id, u.phone, u.first_name, u.last_name, u.nick, u.lang, cuenta_estado(u.status, u.status_until) as estado, u.status_until as hasta, u.big_text as letra, s.app`,\n    [huellaToken(t), ap.version"],
   ['appNoAutoriza', MW, '  r.headers.set("cache-control", "no-store");', '  r.headers.set("cache-control", "no-store");\n  r.cookies.set("tl_app", app.app);'],
   // permisoConTexto
   ['permisoConTexto', J, '"checkin": { "es": "To\'Latino Puerta usa la cámara para leer el QR de los boletos en la puerta. No guarda fotos ni video.", "en": "To\'Latino Puerta uses the camera to read ticket QR codes at the door. It does not save photos or video." }', '"checkin": { "es": "Cámara.", "en": "Camera." }'],

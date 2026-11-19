@@ -240,9 +240,10 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - uses: ./.github/actions/entorno-pruebas
-      # alreves9o arma sobres de verdad (age-keygen) para el caso del sobre que no es para su servidor.
+      # alreves9o arma sobres de verdad (age-keygen) para el caso del sobre que no es para su servidor. También cuando una dirigida
+      # (solo=…) nombra pruebas al revés: corren en este carril (19 nov: alreves9o falló sin age en «todas las fases»).
       - name: age para las pruebas al revés de 9o
-        if: ${{ matrix.nombre == 'al revés' }}
+        if: ${{ matrix.nombre == 'al revés' || contains(inputs.solo, 'alreves') }}
         run: sudo apt-get install -y -q age >/dev/null
       - name: Regresión de ${{ matrix.nombre }} en base nueva
         run: node pruebas/correr.mjs ${{ (inputs.solo != '' && matrix.nombre != 'al revés') && inputs.solo || matrix.args }}
@@ -351,6 +352,9 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - uses: ./.github/actions/entorno-pruebas
+      - name: age (una dirigida que nombra pruebas al revés las corre también aquí)
+        if: ${{ contains(inputs.solo, 'alreves') }}
+        run: sudo apt-get install -y -q age >/dev/null
       - name: Toda la punta a punta en ${{ matrix.id }}, en base nueva
         run: node pruebas/correr.mjs ${{ inputs.solo != '' && inputs.solo || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }} --dispositivo ${{ matrix.id }}
       - name: Lo que dejó cada prueba

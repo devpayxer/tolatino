@@ -21,7 +21,7 @@ let n = 0; const ok = (x, m) => { if (!x) throw new Error('ASSERT ' + m); n++; c
 const shot = (p, nom, full = true) => p.screenshot({ path: OUT + `b9t-${nom}.png`, fullPage: full });
 const espera = async (f, ms = 15000, cada = 100) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await f()) return true; await new Promise((r) => setTimeout(r, cada)); } return false; };
 const texto = async (p) => (await p.innerText('body')).replace(/\s+/g, ' ');
-const BIZ = 'sabor-dominicano', BARB = 'barberia-el-primo', MARISOL = '5705550122', APT = 'A-9501';
+const BIZ = 'sabor-dominicano', BARB = 'barberia-el-primo', MARISOL = '5705550122';
 const tel390 = (b, extra = {}) => b.newContext({ ...devices['iPhone 13'], viewport: { width: 390, height: 844 }, ...extra });
 const desk = (b, extra = {}) => b.newContext({ viewport: { width: 1360, height: 900 }, ...extra });
 const api = (p, q, extra = '') => p.evaluate(async (u) => (await fetch(u)).json(), `/api/buscar?q=${encodeURIComponent(q)}${extra}`);
@@ -33,12 +33,18 @@ const nombres = (r) => (r.filas || []).filter((x) => x.kind === 'item').map((x) 
   const off0 = sql(`select modules_off::text from businesses where id = '${BIZ}'`);
   const mof = sql(`select id from items where business_id = '${BIZ}' and module = 'menu' and name->>'es' = 'Mofongo de chicharrón'`);
   const tos = sql(`select section_id from items where business_id = '${BIZ}' and module = 'menu' and name->>'es' = 'Tostones'`);
-  const apt0 = sql(`select status || '|' || coalesce(ready_at::text, '') || '|' || coalesce(status_detail, '') from operations where number = '${APT}'`);
+  // 19 nov · El apartado es SUYO (antes leía el A-9501, que solo existe si otra prueba de apartados corrió antes: en una base nueva no estaba).
+  const kA = require('crypto').randomUUID();
+  const APT = sql(`insert into operations (number, kind, city_id, business_id, user_id, status, stage, mode, scheduled_at, ready_at, respond_by, details, subtotal_cents, total_cents, pay_mode, client_key, is_test)
+    select 'A-' || nextval('hold_seq'), 'hold', b.city_id, b.id, u.id, 'pending', 'sent', 'pickup', now(), now() + interval '1 day', now() + interval '1 hour', '{"como":"tienda","hold_hours":48,"sms":true}'::jsonb, 2500, 2500, 'local', '${kA}', true
+      from businesses b, users u where b.id = 'boutique-yaritza' and u.phone = '+1${MARISOL}' returning number`).split('\n')[0];
+  if (APT) sql(`insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct) select o.id, x.id, x.name, 1, x.price_cents, x.price_cents, 6 from operations o, (select id, name, price_cents from items where business_id = 'boutique-yaritza' order by id limit 1) x where o.client_key = '${kA}'`);
+  const apt0 = APT ? 'cancelled||' : '';
   const fade = sql(`select id from items where business_id = '${BARB}' and module = 'svc' and name->>'es' = 'Fade'`);
   const ss0 = sql(`select coalesce(string_agg(member_id::text, ','), '') from staff_services where item_id = ${fade}`);
   const M1 = sql(`select id from business_members where business_id = '${BARB}' and status = 'active' and show_on_page and hidden_by_admin is null and takes_bookings order by id limit 1`);
   const tb0 = M1 ? 'true' : 'false';
-  ok(plan0 === 'pro' && mof && tos && apt0 && fade && M1, 'precondiciones: Sabor Dominicano Pro con su menú, la barbería con «Fade» y alguien que recibe citas, y el apartado A-9501');
+  ok(plan0 === 'pro' && mof && tos && apt0 && fade && M1, `precondiciones: Sabor Dominicano Pro con su menú, la barbería con «Fade» y alguien que recibe citas, y su apartado (${JSON.stringify({ plan0, mof: !!mof, tos: !!tos, apt: APT, fade: !!fade, M1: !!M1 })})`);
   const V1 = telLibre();
   const b = await chromium.launch(), err = [], abiertas = [];
   const mirar = (p, k) => { p.on('pageerror', (e) => err.push(`${k}: ${e.message}`)); };
