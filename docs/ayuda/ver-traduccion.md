@@ -1,16 +1,18 @@
 # Ver traducción · See translation
 
 _Pantallas: **la publicación y el muro de la Comunidad** (`/comunidad`, `/comunidad/p/{id}`, el perfil de un vecino), **los comentarios y respuestas
-del hilo**, **las reseñas de la ficha** (`/n/{id}?tab=rev`) con **la respuesta del negocio**, y **los comentarios de Novedades** (`/n/{id}?tab=nov`).
+del hilo**, **las reseñas de la ficha** (`/n/{id}?tab=rev`) con **la respuesta del negocio**, **los comentarios de Novedades** (`/n/{id}?tab=nov`) y **los mensajes** (con un negocio: Mi cuenta › Mensajes y Panel › Mensajes;
+entre vecinos: Comunidad › Mensajes).
 Teléfono y escritorio. En la Comunidad, con cuenta; las reseñas y Novedades, también sin cuenta. Super Admin › Contenido › Auto-moderación muestra si
-el traductor responde y el tope. Versión: 7 nov 2026. Audiencia: vecino. Tema: cuenta._
+el traductor responde y el tope. Versión: 19 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 - Debajo de un texto escrito **en el otro idioma** que el de tu app (inglés si tienes la app en español, español si la tienes en inglés)
   sale **«Ver traducción»**. Tócalo: dice **«Traduciendo…»** y el texto cambia a la traducción, con **«Ver original · Traducción
   automática del inglés»** (o «del español»). **«Ver original»** vuelve a lo que escribió la persona.
 - Sale en: publicaciones, comentarios y respuestas de la Comunidad; reseñas; la respuesta del negocio a una reseña; comentarios de
-  Novedades. **Nunca en lo tuyo** y nunca en un texto que ya está en tu idioma.
+  Novedades; **mensajes con un negocio y mensajes entre vecinos** (solo las dos personas de la conversación pueden traducirlos). **Nunca en lo
+  tuyo** y nunca en un texto que ya está en tu idioma.
 - **Quién traduce:** un traductor **propio** de To'Latino, que corre en nuestro servidor (LibreTranslate con modelos abiertos de español
   ↔ inglés). **El texto nunca sale de nuestros servidores** ni va a Google, DeepL u otra empresa.
 - **Cómo sabe el idioma:** al publicar, el mismo traductor mira en qué idioma está el texto. Si no lo puede saber (texto muy corto o el
@@ -32,7 +34,9 @@ el traductor responde y el tope. Versión: 7 nov 2026. Audiencia: vecino. Tema: 
 
 ## Preguntas frecuentes
 - **¿La persona sabe que traduje lo suyo?** No.
-- **¿Puedo traducir mis mensajes privados?** Todavía no: los mensajes entre vecinos no se traducen.
+- **¿Puedo traducir mis mensajes?** Sí: en los mensajes con un negocio y entre vecinos sale «Ver traducción» debajo de lo que te escriben en
+  el otro idioma. Solo tú y la otra persona pueden pedir esa traducción; nadie más la ve. Los mensajes de antes del 19 de noviembre de 2026
+  no traen el botón (no tienen el idioma guardado).
 - **¿Se traduce a otros idiomas?** Por ahora solo español ↔ inglés.
 - **¿El equipo de To'Latino ve la traducción?** No: el Super Admin ve siempre el original, para decidir sobre lo que la persona escribió.
 
@@ -42,6 +46,8 @@ el traductor responde y el tope. Versión: 7 nov 2026. Audiencia: vecino. Tema: 
 - El traductor es propio; el texto no sale de To'Latino. Es automático: lo que vale es el original.
 - «La traducción no está disponible ahora.» = el traductor no respondió; lo demás sigue igual; «Reintentar» o más tarde.
 - Límite: 60 por hora por persona. Nunca prometas una traducción exacta.
+- Mensajes (con negocios y entre vecinos): sí se traducen desde el 19 nov 2026; los anteriores no traen el botón. Solo las dos personas de la
+  conversación pueden pedir la traducción.
 
 ## English
 
@@ -49,8 +55,9 @@ el traductor responde y el tope. Versión: 7 nov 2026. Audiencia: vecino. Tema: 
 - Under text written **in the other language** from your app's (English if your app is in Spanish, Spanish if it is in English) you see
   **«See translation»**. Tap it: it says **«Translating…»** and the text changes to the translation, with **«See original · Machine
   translation from Spanish»** (or «from English»). **«See original»** goes back to what the person wrote.
-- It shows on: Community posts, comments and replies; reviews; the business reply to a review; Updates comments. **Never on your own
-  text** and never on text already in your language.
+- It shows on: Community posts, comments and replies; reviews; the business reply to a review; Updates comments; **messages with a
+  business and messages between neighbors** (only the two people in the conversation can translate them). **Never on your own text** and
+  never on text already in your language.
 - **Who translates:** To'Latino's **own** translator, running on our server (LibreTranslate with open Spanish ↔ English models). **The
   text never leaves our servers** and never goes to Google, DeepL or any other company.
 - **How it knows the language:** when something is posted, the same translator checks its language. If it can't tell (very short text
@@ -72,7 +79,9 @@ el traductor responde y el tope. Versión: 7 nov 2026. Audiencia: vecino. Tema: 
 
 ### FAQ
 - **Does the person know I translated their text?** No.
-- **Can I translate my private messages?** Not yet: messages between neighbors aren't translated.
+- **Can I translate my messages?** Yes: in messages with a business and between neighbors, «See translation» shows under what they write
+  to you in the other language. Only you and the other person can ask for that translation; nobody else sees it. Messages from before
+  November 19, 2026 don't have the button (their language wasn't saved).
 - **Other languages?** For now only Spanish ↔ English.
 - **Does the To'Latino team see the translation?** No: the Super Admin always sees the original, to decide on what the person wrote.
 
