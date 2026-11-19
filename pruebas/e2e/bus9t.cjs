@@ -204,7 +204,11 @@ const nombres = (r) => (r.filas || []).filter((x) => x.kind === 'item').map((x) 
       await w.goto(B + u); await w.waitForLoadState('networkidle').catch(() => {});
       if (!(await w.locator('[data-letra="grande"]').count())) malas.push(`${u}: sin la letra`);
       const ancho = await w.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-      if (ancho > 1) malas.push(`${u}: scroll de lado (+${ancho})`);
+      // 19 nov · En el iPhone SE (375) la ficha se salía 11 px: el mensaje dice qué piezas pasan del borde (las más hondas primero).
+      const quien = ancho > 1 ? await w.evaluate(() => { const W = window.innerWidth, out = [];
+        for (const el of document.querySelectorAll('body *')) { const r = el.getBoundingClientRect(); if (r.width && r.right > W + 1 && ![...el.children].some((c) => c.getBoundingClientRect().right > W + 1)) out.push(`${el.tagName.toLowerCase()}${el.getAttribute('data-screen-label') ? '[' + el.getAttribute('data-screen-label') + ']' : ''}.${String(el.className).slice(0, 60)} «${(el.textContent || '').trim().slice(0, 30)}» →${Math.round(r.right - W)}`); if (out.length > 4) break; }
+        return out.join(' ; '); }) : '';
+      if (ancho > 1) malas.push(`${u}: scroll de lado (+${ancho}) ${quien}`);
     }
     ok(!malas.length, `con letra grande, a 390: la letra desde el servidor y sin scroll de lado en 6 pantallas${malas.length ? ' → ' + malas.join(' | ') : ''}`);
     await w.goto(B + '/buscar?q=mofongo'); await shot(w, '390-letra-buscar');
