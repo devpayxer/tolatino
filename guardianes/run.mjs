@@ -9686,6 +9686,28 @@ const guardianes = {
     for (const e of ["pruebas/e2e/fic005.cjs", "pruebas/e2e/bus9t.cjs"]) if (!/botonesQueNoCaben\(/.test(readFileSync(e, "utf8"))) falla(G, e, 0, "la prueba no mira que los botones quepan en su caja (pruebas/lib/caben.cjs)");
   },
 
+  /* 9t (19 nov) · exportarSinCorte: «Descargar mis datos» y «Exportar los datos del negocio» cortaban cada archivo en 20 000 filas (limit fijo):
+     una cuenta grande recibía su archivo incompleto sin saberlo. Ahora cada archivo sale entero, en partes de PARTE filas (nombre-1.csv, -2…),
+     leído con un cursor (declare … cursor / fetch forward) y comprimido parte por parte (zipPorPartes); el LEEME dice cuántas filas y partes.
+     Prueba: exp9t (45 001 avisos → 3 partes, todas las filas, ninguna repetida, dentro de su presupuesto). Al revés (alreves9texp): el limit
+     otra vez, leer sin cursor, partes sin número, el LEEME sin las partes, o la prueba sin mirar las partes. */
+  exportarSinCorte() {
+    const G = "exportarSinCorte", X = "apps/web/lib/datos/exportar.ts", P = "pruebas/e2e/exp9t.cjs";
+    const x = sinComent(X);
+    for (const fn of ["datosDeCuenta", "datosDeNegocio"]) if (/\blimit\b/i.test(cuerpoFn(x, fn))) falla(G, X, 0, `${fn}: un archivo de exportación no se corta con limit (sale entero, en partes)`);
+    if (/MAX_FILAS/.test(x)) falla(G, X, 0, "volvió MAX_FILAS: el archivo no se corta");
+    const pp = (() => { const i = x.indexOf("async function* porPartes("); return i < 0 ? "" : x.slice(i, x.indexOf("\n}", i) + 2); })();
+    if (!/declare \$\{cur\} no scroll cursor for \$\{q\.sql\}/.test(pp) || !/fetch forward \$\{tam\} from \$\{cur\}/.test(pp)) falla(G, X, 0, "se lee con un cursor de PARTE en PARTE (declare … cursor / fetch forward)");
+    const az = cuerpoFn(x, "armarZip");
+    if (!/porPartes\(/.test(az) || !/zipPorPartes\(\)/.test(az)) falla(G, X, 0, "armarZip lee por partes y comprime cada parte al llegar (porPartes + zipPorPartes)");
+    if (!/`\$\{q\.nombre\}-\$\{s\.partes\}\.csv`/.test(az) || !/`\$\{q\.nombre\}-1\.csv`/.test(az)) falla(G, X, 0, "cada parte lleva su número (nombre-1.csv, nombre-2.csv…)");
+    if (!/v\.partes > 1/.test(cuerpoFn(x, "LEEME") || x.slice(x.indexOf("const LEEME"), x.indexOf("const LEEME") + 3000))) falla(G, X, 0, "el LEEME dice en cuántas partes va cada archivo");
+    if (!/const PARTE = 20_000/.test(x)) falla(G, X, 0, "PARTE = 20 000 filas por parte");
+    if (!existsSync(P)) return falla(G, P, 0, "falta la prueba exp9t");
+    const t = readFileSync(P, "utf8");
+    if (!/avisos-\$\{i\}\.json/.test(t) || !/ids\.size === N/.test(t)) falla(G, P, 0, "exp9t mira cada parte y que salgan todas las filas sin repetir");
+  },
+
   /* 9t (19 nov) · topeAyudaDeConfig: el tope de «Ayuda con …» por persona en 24 h era un 5 fijo en dos lugares (lib/ayuda.ts y lib/ayuda-cita.ts)
      y nada lo probaba (LAUNCH). Ahora sale de Configuración (ayuda_tope_dia, 0182, sección Soporte, entre 1 y 50) y se lee con cfgSql en la
      MISMA consulta que cuenta (lo decide la base, sin caché vieja). En la cita, un reporte de seguridad (directo) nunca se frena. Al revés

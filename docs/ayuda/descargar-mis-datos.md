@@ -8,6 +8,8 @@ _Pantallas: **Mi cuenta › Ajustes › Privacidad y seguridad › Descargar mis
   comentarios, tus mensajes, tus direcciones, lo que guardaste y lo demás que hiciste en To'Latino.
 - Es un **ZIP**. Adentro, cada parte va dos veces: en **.json** (completo) y en **.csv** (se abre en Excel o Google Sheets), y un **LEEME.txt** en
   español y en inglés que explica qué es cada archivo.
+- **Un archivo grande va en partes:** si algo tiene más de 20 000 filas (por ejemplo, muchos avisos), viene completo en varias partes
+  numeradas (avisos-1.csv, avisos-2.csv…), en orden. El LEEME dice cuántas filas y en cuántas partes va cada cosa. No se corta nada.
 - **Lo de otras personas no viene**: ni sus nombres, ni sus teléfonos, ni sus mensajes. Tampoco claves, códigos ni la ubicación exacta.
 - **Términos que aceptaste**: cada término que aceptaste en To'Latino (las reglas de la Comunidad, los términos de un plan, la propuesta de un
   evento privado…), con su versión y su fecha. Solo sale lo que quedó anotado.
@@ -52,6 +54,8 @@ _Pantallas: **Mi cuenta › Ajustes › Privacidad y seguridad › Descargar mis
   posts and comments, your messages, your addresses, what you saved and the rest of what you did on To'Latino.
 - It is a **ZIP**. Inside, each part comes twice: as **.json** (complete) and as **.csv** (opens in Excel or Google Sheets), plus a **LEEME.txt** in
   Spanish and English that explains each file.
+- **A large file comes in parts:** if something has more than 20,000 rows (for example, many notices), it comes complete in several
+  numbered parts (avisos-1.csv, avisos-2.csv…), in order. The LEEME says how many rows and in how many parts. Nothing is cut.
 - **Other people's data is not included**: not their names, phones or messages. No passwords, codes or exact location either.
 - **Terms you accepted**: each term you accepted on To'Latino (Community rules, a plan's terms, a private event proposal…), with its version and
   date. Only what was recorded shows up.

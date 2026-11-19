@@ -1598,8 +1598,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       confirmaciones de cada llave. Guardián `confirmarConLlave` (y `retoUnUso`, `llaveDeSuCuenta`, `passkeyNoSaltaBloqueo`, `clonSoloConFirma` miran la firma
       compartida); alreves9tllave 30/30, alreves8d 41/41. e2e `llave9t` (ver PROGRESS 19 nov). Ayuda: descargar-mis-datos, borrar-mi-cuenta,
       panel-exportar-los-datos, entrar-con-face-id, admin-usuarios._
-- [ ] **→ 9t** · **Un archivo con más de 20 000 filas en una parte** se corta en 20 000 (el LEEME dice cuántas trae cada parte); con la carga de 1M, medir el
-      tiempo de armarlo para la cuenta más grande y, si hace falta, partirlo. (9d, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._
+- [x] **→ 9t** · **Un archivo con más de 20 000 filas en una parte** se corta en 20 000 (el LEEME dice cuántas trae cada parte); con la carga de 1M, medir el
+      tiempo de armarlo para la cuenta más grande y, si hace falta, partirlo. (9d, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._ — **✓ 9t (19 nov):** ya no se corta: cada archivo sale entero en partes de 20 000 (`avisos-1.csv`, `-2`…; lo que cabe en una se llama igual), leído con un cursor de la base dentro de una transacción de solo lectura y comprimido parte por parte (`zipPorPartes`): en memoria, una parte cruda a la vez. Medido en local: 45 004 avisos → 3 partes en 1,9 s y 191 MB (todo el proceso). Freno: 100 partes (2 000 000 filas) por archivo; si se pasa, el LEEME dice cuántas quedaron fuera. `data_exports.sections` guarda las partes y `_ms`. Prueba `exp9t` (presupuesto 30 s), guardián `exportarSinCorte`, al revés `alreves9texp` (9/9).
 
 ## Fase 9 · 9e — legales por estado, aceptar términos y la web legal (14 nov)
 - [ ] **→ 9s** · **El texto final de las 14 páginas de docs/legal/** (11 generales + 3 adendas de PA) lo revisa el abogado (Paquete 9-2): hoy son BORRADOR de

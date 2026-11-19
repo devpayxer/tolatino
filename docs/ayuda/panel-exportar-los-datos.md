@@ -9,6 +9,8 @@ Versión: 19 nov 2026. Audiencia: negocio. Tema: panel._
 - De tus clientes viene **lo mismo que ves hoy en el panel**: su nombre con la inicial del apellido y lo que hicieron contigo. **Nunca** su
   teléfono, su correo ni su dirección.
 - Es un **ZIP** con cada parte en **.json** y en **.csv** (Excel o Google Sheets) y un **LEEME.txt** en español y en inglés.
+- **Un archivo grande va en partes:** si algo tiene más de 20 000 filas (por ejemplo, muchas operaciones), viene completo en varias partes
+  numeradas (operaciones-1.csv, operaciones-2.csv…), en orden. El LEEME dice cuántas filas y en cuántas partes va cada cosa. No se corta nada.
 
 ## Cómo se usa
 1. En tu panel, toca **Más › Exportar los datos del negocio**. Solo el **dueño** lo ve y lo pide.
@@ -41,6 +43,8 @@ Versión: 19 nov 2026. Audiencia: negocio. Tema: panel._
 - About your clients you get **the same you see today in the dashboard**: their first name with their last initial and what they did with you.
   **Never** their phone, email or address.
 - It is a **ZIP** with each part in **.json** and **.csv** (Excel or Google Sheets) and a **LEEME.txt** in Spanish and English.
+- **A large file comes in parts:** if something has more than 20,000 rows (for example, many operations), it comes complete in several
+  numbered parts (operaciones-1.csv, operaciones-2.csv…), in order. The LEEME says how many rows and in how many parts. Nothing is cut.
 
 ### How to use it
 1. In your dashboard, tap **More › Export business data**. Only the **owner** sees it and requests it.

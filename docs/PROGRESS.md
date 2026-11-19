@@ -2796,6 +2796,11 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   fic005, vec9m, al revés), 44460944263 (llave). En el camino: «Destacar» decía el tope viejo de la caché (bug, arreglado; también en negocios);
   evt9t, pat003 y alreves6f al día; serieUnaVezEnLista mira las dos lecturas de eventosCiudad. La app se sirve en local
   (`tl_loc` + `servir.sh basico` + docker falso que manda el SQL de las pruebas a la base local) para reproducir sin esperar a CI.
+- **19 nov · 9t · Exportar sin corte:** «Descargar mis datos», «Exportar los datos del negocio» y Usuarios 360° › Exportar ya no cortan un archivo en
+  20 000 filas: `lib/datos/exportar.ts` arma las consultas (`datosDeCuenta`/`datosDeNegocio` devuelven SQL, sin limit), `porPartes` las lee con un
+  cursor (declare/fetch 20 000) y `armarZip` comprime cada parte al llegar (`lib/pases/zip.ts` `zipPorPartes`, `zip()` igual que antes); «Ver como»
+  usa `vistaPrevia` (cuenta + 3 filas). LEEME con filas y partes (ES/EN); `sections` con `_partes` y `_ms`. Local: 45 004 avisos → 3 partes, 1,9 s,
+  191 MB. `exp9t` (CI: necesita el almacén), guardián `exportarSinCorte`, `alreves9texp` 9/9; ayuda descargar-mis-datos y panel-exportar.
 - **19 nov · REVERTIDO el mismo día (commit «Revert» de 4bb49b4):** la confirmación completa 44485797353 salió roja en todos los anchos: el `::after` de un
   control tapa la caja del vecino que está en OTRO contenedor (el logo «To’Latino» de la cabecera, 28 → 44 px, pisa «Ver las 3 fotos» de la ficha) y
   los clics de menu2b, rsv2e, apt4f, apt4q, fic4id, avisos2j caducan; a11y9c (la propia prueba del bloque) también lo caza. Se rehace aparte

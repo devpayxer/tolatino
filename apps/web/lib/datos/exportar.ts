@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import type { PoolClient } from "pg";
 import { db, tx } from "../db";
 import { celda } from "../csv";
-import { zip } from "../pases/zip";
+import { zipPorPartes } from "../pases/zip";
 import { columnasDePersona, ident, mapa, NUNCA_SE_EXPORTA } from "./mapa";
 import type { PruebaLlave } from "../llaves/llaves";
 
@@ -22,8 +22,13 @@ import type { PruebaLlave } from "../llaves/llaves";
 type Bi = { es: string; en: string };
 export type ResExp = { ok: true; codigoPrueba?: string } | { ok: false; msg: Bi };
 const no = (es: string, en: string): ResExp => ({ ok: false, msg: { es, en } });
-const MAX_FILAS = 20_000;
+/* 9t · Sin corte: cada archivo sale entero, en partes de PARTE filas (operaciones.csv si cabe en una; operaciones-1.csv, -2… si no). Se lee con un
+   cursor de la base, de PARTE en PARTE, y cada parte se comprime al llegar: en memoria solo hay una parte cruda a la vez y lo ya comprimido.
+   TOPE_PARTES es solo un freno contra un archivo desbocado (2 000 000 de filas en un archivo: ninguna cuenta real llega); si se alcanza, el LEEME
+   lo dice con el número exacto que quedó fuera y el equipo lo ve en Usuarios 360° (sections). */
+const PARTE = 20_000, TOPE_PARTES = 100;
 type Fila = Record<string, unknown>;
+export type Consulta = { nombre: string; sql: string; args: unknown[]; fuera: Set<string> };
 
 /* Una fila legible: fechas en ISO, sin binarios, sin lo que nunca sale ni lo de otra persona. */
 function limpiar(f: Fila, fuera: Set<string>): Fila {
@@ -39,50 +44,78 @@ const aCsv = (filas: Fila[]) => {
   return [cab, ...filas.map((f) => cab.map((k) => f[k]))].map((l) => l.map(celda).join(",")).join("\r\n");
 };
 
-/* El archivo de una persona, por el mapa. Devuelve los archivos (nombre → filas). */
-export async function datosDeCuenta(cuenta: string, c?: PoolClient): Promise<Map<string, Fila[]>> {
-  const q = c ?? db();
+/* El archivo de una persona, por el mapa: las consultas (nombre → SQL). Solo sus filas; sin las columnas de otra persona. */
+export async function datosDeCuenta(cuenta: string, c?: PoolClient): Promise<Consulta[]> {
   const M = await mapa(c), refs = await columnasDePersona(c);
-  const out = new Map<string, Fila[]>();
+  const out: Consulta[] = [];
   for (const f of M) {
     if (!f.exporta || f.rol !== "persona") continue;
     // Solo sus filas: la columna de la persona es su id. De OTRA persona no sale nada (sus columnas se quitan).
     const fuera = new Set([...(refs.get(f.tabla) ?? [])].filter((x) => x !== f.columna));
     if (f.tabla === "users") fuera.add("merged_into");
-    const r = await q.query<Fila>(`select * from ${ident(f.tabla)} where ${ident(f.columna)} = $1::uuid limit ${MAX_FILAS}`, [cuenta]);
-    out.set(f.exporta, r.rows.map((x) => limpiar(x, fuera)));
+    out.push({ nombre: f.exporta, sql: `select * from ${ident(f.tabla)} where ${ident(f.columna)} = $1::uuid`, args: [cuenta], fuera });
   }
   // Sus sanciones (el equipo las pone con target = su cuenta): qué, por qué y hasta cuándo; nunca quién del equipo ni sus notas.
-  out.set("sanciones", (await q.query<Fila>(
-    `select kind as tipo, reason as motivo, starts_at as desde, ends_at as hasta, lifted_at as levantada from sanctions where target_kind = 'user' and target_id = $1::text order by starts_at limit ${MAX_FILAS}`, [cuenta])).rows.map((x) => limpiar(x, new Set())));
+  out.push({ nombre: "sanciones", sql: `select kind as tipo, reason as motivo, starts_at as desde, ends_at as hasta, lifted_at as levantada from sanctions where target_kind = 'user' and target_id = $1::text order by starts_at`, args: [cuenta], fuera: new Set() });
   return out;
 }
 
 /* El archivo de un negocio: lo que su panel ya muestra. Ningún teléfono, correo ni dirección de un cliente; el cliente con su nombre y la inicial. */
-export async function datosDeNegocio(negocio: string, c?: PoolClient): Promise<Map<string, Fila[]>> {
-  const q = c ?? db();
-  // nosemgrep: tolatino-sql-con-texto-interpolado — L() solo se llama con consultas fijas de datosDeNegocio()
-  const L = async (s: string) => (await q.query<Fila>(s, [negocio])).rows.map((x) => limpiar(x, new Set()));
+export function datosDeNegocio(negocio: string): Consulta[] {
+  const L = (nombre: string, sql: string): Consulta => ({ nombre, sql, args: [negocio], fuera: new Set() });
   const cliente = `nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(left(u.last_name, 1) || '.', '')), '')`;
-  return new Map<string, Fila[]>([
-    ["negocio", await L(`select id, name, category_id, subcategory_ids, city_id, status, operation, address, phone, whatsapp, email, instagram, facebook, languages, about, founded_year,
-                                amenities, payment_modes, modules_on, created_at from businesses where id = $1`)],
-    ["equipo", await L(`select display_name as nombre, kind as tipo, role as puesto, status as estado, languages as idiomas, since_year as desde, invited_at as invitado from business_members where business_id = $1 order by sort`)],
-    ["catalogo", await L(`select i.* from items i where i.business_id = $1 order by i.id limit ${MAX_FILAS}`)],
-    ["operaciones", await L(`select o.number as numero, o.kind as tipo, o.status as estado, o.mode as modo, o.sent_at as pedido, o.scheduled_at as para, o.done_at as terminado,
-                                    o.cancelled_at as cancelado, o.subtotal_cents, o.delivery_cents, o.tip_cents, o.tax_cents, o.discount_cents, o.total_cents, o.pay_mode as pago,
-                                    o.customer_note as nota_del_cliente, ${cliente} as cliente
-                               from operations o join users u on u.id = o.user_id where o.business_id = $1 order by o.kind, o.sent_at desc limit ${MAX_FILAS}`)],
-    ["cobros", await L(`select p.kind as tipo, p.method as forma, p.amount_cents, p.fee_cents, p.refunded_cents, p.status as estado, p.created_at as fecha, p.captured_at as cobrado,
-                               o.number as operacion from payments p left join operations o on o.id = p.operation_id where p.business_id = $1 order by p.created_at desc limit ${MAX_FILAS}`)],
-    ["clientes", await L(`select ${cliente} as cliente, o.kind as tipo, count(*)::int as operaciones, max(o.sent_at) as ultima, sum(o.total_cents)::int as total_cents
-                            from operations o join users u on u.id = o.user_id where o.business_id = $1 group by u.id, u.first_name, u.last_name, o.kind order by max(o.sent_at) desc limit ${MAX_FILAS}`)],
-    ["resenas", await L(`select r.stars as estrellas, case when r.status = 'visible' then r.body end as texto, r.reply as respuesta, r.created_at as fecha, r.status as estado, ${cliente} as cliente
-                           from reviews r join users u on u.id = r.user_id where r.business_id = $1 order by r.created_at desc limit ${MAX_FILAS}`)],
-  ]);
+  return [
+    L("negocio", `select id, name, category_id, subcategory_ids, city_id, status, operation, address, phone, whatsapp, email, instagram, facebook, languages, about, founded_year,
+                         amenities, payment_modes, modules_on, created_at from businesses where id = $1`),
+    L("equipo", `select display_name as nombre, kind as tipo, role as puesto, status as estado, languages as idiomas, since_year as desde, invited_at as invitado from business_members where business_id = $1 order by sort`),
+    L("catalogo", `select i.* from items i where i.business_id = $1 order by i.id`),
+    L("operaciones", `select o.number as numero, o.kind as tipo, o.status as estado, o.mode as modo, o.sent_at as pedido, o.scheduled_at as para, o.done_at as terminado,
+                             o.cancelled_at as cancelado, o.subtotal_cents, o.delivery_cents, o.tip_cents, o.tax_cents, o.discount_cents, o.total_cents, o.pay_mode as pago,
+                             o.customer_note as nota_del_cliente, ${cliente} as cliente
+                        from operations o join users u on u.id = o.user_id where o.business_id = $1 order by o.kind, o.sent_at desc, o.id`),
+    L("cobros", `select p.kind as tipo, p.method as forma, p.amount_cents, p.fee_cents, p.refunded_cents, p.status as estado, p.created_at as fecha, p.captured_at as cobrado,
+                        o.number as operacion from payments p left join operations o on o.id = p.operation_id where p.business_id = $1 order by p.created_at desc, p.id`),
+    L("clientes", `select ${cliente} as cliente, o.kind as tipo, count(*)::int as operaciones, max(o.sent_at) as ultima, sum(o.total_cents)::int as total_cents
+                     from operations o join users u on u.id = o.user_id where o.business_id = $1 group by u.id, u.first_name, u.last_name, o.kind order by max(o.sent_at) desc`),
+    L("resenas", `select r.stars as estrellas, case when r.status = 'visible' then r.body end as texto, r.reply as respuesta, r.created_at as fecha, r.status as estado, ${cliente} as cliente
+                    from reviews r join users u on u.id = r.user_id where r.business_id = $1 order by r.created_at desc, r.id`),
+  ];
 }
 
-const LEEME = (negocio: boolean, archivos: Map<string, Fila[]>) => [
+/* Leer una consulta de PARTE en PARTE con un cursor (dentro de la transacción de c). Cada tanda sale limpia. */
+async function* porPartes(c: PoolClient, q: Consulta, n: number, tam = PARTE): AsyncGenerator<Fila[]> {
+  const cur = `exp_${n}`;
+  // nosemgrep: tolatino-sql-con-texto-interpolado — q.sql sale solo de datosDeCuenta/datosDeNegocio (consultas fijas o identificadores del mapa con ident())
+  await c.query(`declare ${cur} no scroll cursor for ${q.sql}`, q.args);
+  try {
+    for (;;) {
+      // nosemgrep: tolatino-sql-con-texto-interpolado — cur = «exp_» + un número del propio bucle; tam = PARTE (número)
+      const r = await c.query<Fila>(`fetch forward ${tam} from ${cur}`);
+      if (r.rows.length) yield r.rows.map((x) => limpiar(x, q.fuera));
+      if (r.rows.length < tam) break;
+    }
+  } finally {
+    // nosemgrep: tolatino-sql-con-texto-interpolado — cur = «exp_» + un número del propio bucle
+    await c.query(`close ${cur}`);
+  }
+}
+
+/* Lo que el equipo ve con «Ver como»: las primeras filas de cada parte y cuántas hay (sin armar nada). */
+export async function vistaPrevia(consultas: Consulta[], c: PoolClient, filas = 3): Promise<{ k: string; n: number; filas: Fila[] }[]> {
+  const out: { k: string; n: number; filas: Fila[] }[] = [];
+  for (const q of consultas) {
+    // nosemgrep: tolatino-sql-con-texto-interpolado — q.sql sale solo de datosDeCuenta/datosDeNegocio
+    const n = Number((await c.query<{ n: string }>(`select count(*) as n from (${q.sql}) t`, q.args)).rows[0]?.n ?? 0);
+    // nosemgrep: tolatino-sql-con-texto-interpolado — q.sql sale solo de datosDeCuenta/datosDeNegocio
+    if (n) out.push({ k: q.nombre, n, filas: (await c.query<Fila>(`select * from (${q.sql}) t limit ${filas}`, q.args)).rows.map((x) => limpiar(x, q.fuera)) });
+  }
+  return out;
+}
+
+/* Cuántas filas trae cada archivo y en cuántas partes (lo que dice el LEEME y lo que se guarda en data_exports.sections). */
+export type Seccion = { filas: number; partes: number; fuera: number };
+
+const LEEME = (negocio: boolean, archivos: Map<string, Seccion>) => [
   negocio ? "To'Latino · Los datos de tu negocio / Your business data" : "To'Latino · Tus datos / Your data",
   "",
   negocio
@@ -95,18 +128,39 @@ const LEEME = (negocio: boolean, archivos: Map<string, Fila[]>) => [
   "ES · Las cantidades terminadas en _cents están en centavos de dólar. Las fechas están en UTC (ISO 8601).",
   "EN · Amounts ending in _cents are in US cents. Dates are in UTC (ISO 8601).",
   "",
-  ...[...archivos].map(([k, v]) => `${k}: ${v.length}`),
+  `ES · Cada parte trae hasta ${PARTE.toLocaleString("en-US")} filas: si un archivo tiene más, va en varias (operaciones-1.csv, operaciones-2.csv…), en orden.`,
+  `EN · Each part holds up to ${PARTE.toLocaleString("en-US")} rows: a file with more comes in several (operaciones-1.csv, operaciones-2.csv…), in order.`,
+  "",
+  ...[...archivos].map(([k, v]) => `${k}: ${v.filas}${v.partes > 1 ? ` (${v.partes} partes / parts)` : ""}${v.fuera ? ` · ${v.fuera} más no caben: pídelas a Soporte / ${v.fuera} more did not fit: ask Support` : ""}`),
   "",
 ].join("\r\n");
 
-/* El ZIP: LEEME + JSON + CSV de cada archivo. */
-export function armarZip(archivos: Map<string, Fila[]>, negocio: boolean): Buffer {
-  const A: [string, Buffer][] = [["LEEME.txt", Buffer.from(LEEME(negocio, archivos), "utf8")]];
-  for (const [k, v] of archivos) {
-    A.push([`${k}.json`, Buffer.from(JSON.stringify(v, null, 2), "utf8")]);
-    A.push([`${k}.csv`, Buffer.from(aCsv(v), "utf8")]);
-  }
-  return zip(A);
+/* El ZIP: JSON + CSV de cada parte de cada archivo, y el LEEME (con lo que de verdad salió). Todo por cursor, dentro de una transacción de solo lectura
+   (una foto fija de la base: las partes no se pisan aunque lleguen filas nuevas mientras se arma). */
+export async function armarZip(consultas: Consulta[], negocio: boolean, c?: PoolClient): Promise<{ zip: Buffer; secciones: Map<string, Seccion> }> {
+  const hacer = async (c: PoolClient) => {
+    const z = zipPorPartes(), secciones = new Map<string, Seccion>();
+    let i = 0;
+    for (const q of consultas) {
+      const s: Seccion = { filas: 0, partes: 0, fuera: 0 }, crudas: Fila[][] = [];
+      // La primera parte se guarda hasta saber si hay segunda (una sola parte se llama sin número: lo que bajaron siempre).
+      for await (const t of porPartes(c, q, i++)) {
+        if (s.partes >= TOPE_PARTES) { s.fuera += t.length; continue; }
+        s.partes++; s.filas += t.length;
+        if (s.partes === 1) { crudas.push(t); continue; }
+        if (s.partes === 2) { const p1 = crudas.pop()!; z.agregar(`${q.nombre}-1.json`, Buffer.from(JSON.stringify(p1, null, 2), "utf8")); z.agregar(`${q.nombre}-1.csv`, Buffer.from(aCsv(p1), "utf8")); }
+        z.agregar(`${q.nombre}-${s.partes}.json`, Buffer.from(JSON.stringify(t, null, 2), "utf8"));
+        z.agregar(`${q.nombre}-${s.partes}.csv`, Buffer.from(aCsv(t), "utf8"));
+      }
+      const p1 = crudas.pop() ?? [];
+      if (s.partes <= 1) { z.agregar(`${q.nombre}.json`, Buffer.from(JSON.stringify(p1, null, 2), "utf8")); z.agregar(`${q.nombre}.csv`, Buffer.from(aCsv(p1), "utf8")); }
+      secciones.set(q.nombre, s);
+    }
+    z.agregar("LEEME.txt", Buffer.from(LEEME(negocio, secciones), "utf8"));
+    return { zip: z.cerrar(), secciones };
+  };
+  if (c) return hacer(c);
+  return tx(async (t) => { await t.query("set transaction isolation level repeatable read, read only"); return hacer(t); });
 }
 
 /* ── Pedir el archivo (la persona o el dueño del negocio) ── */
@@ -169,13 +223,16 @@ export async function armarPendientes(max = 3): Promise<number> {
        returning id::text, user_id::text, business_id`)).rows[0];
     if (!e) break;
     try {
-      const archivos = e.business_id ? await datosDeNegocio(e.business_id) : await datosDeCuenta(e.user_id);
-      const z = armarZip(archivos, !!e.business_id), clave = `privado/exportes/${e.id}.zip`;
+      const t0 = Date.now();
+      const { zip: z, secciones } = await armarZip(e.business_id ? datosDeNegocio(e.business_id) : await datosDeCuenta(e.user_id), !!e.business_id);
+      const clave = `privado/exportes/${e.id}.zip`;
       await guardarObjeto(clave, z, "application/zip");
       await db().query(
         `update data_exports set status = 'listo', media_key = $2, sha256 = $3, bytes = $4::int, sections = $5::jsonb, ready_at = now(), expires_at = now() + make_interval(hours => cfg_int('export_vence_h'))
           where id = $1::uuid and status = 'armando'`,
-        [e.id, clave, createHash("sha256").update(z).digest("hex"), z.length, JSON.stringify(Object.fromEntries([...archivos].map(([k, v]) => [k, v.length])))]);
+        [e.id, clave, createHash("sha256").update(z).digest("hex"), z.length, JSON.stringify({ ...Object.fromEntries([...secciones].map(([k, v]) => [k, v.filas])),
+          ...([...secciones].some(([, v]) => v.partes > 1 || v.fuera) ? { _partes: Object.fromEntries([...secciones].filter(([, v]) => v.partes > 1 || v.fuera).map(([k, v]) => [k, v])) } : {}),
+          _ms: Date.now() - t0 })]);
       const { avisar } = await import("../avisos");
       if (e.business_id) {
         const nb = (await db().query<{ name: string }>(`select name from businesses where id = $1`, [e.business_id])).rows[0]?.name ?? "";

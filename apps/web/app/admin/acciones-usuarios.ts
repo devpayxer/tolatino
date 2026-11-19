@@ -209,9 +209,9 @@ export async function exportarDatos(id: string, motivo: string): Promise<ResAdm 
   let archivo = "";
   const r = await hacer(id, ["exportar"], motivo, async (c, s, u, m) => {
     const { armarZip, datosDeCuenta } = await import("@/lib/datos/exportar");
-    const datos = await datosDeCuenta(u.id, c);
-    archivo = armarZip(datos, false).toString("base64");
-    await auditar(c, { actor: s.id, action: "usuario.exportar", targetKind: "user", targetId: u.id, city: u.city_id, after: { archivo: `ZIP por el mapa de datos (${datos.size} partes)` }, reason: m });
+    const { zip: z, secciones } = await armarZip(await datosDeCuenta(u.id, c), false, c);
+    archivo = z.toString("base64");
+    await auditar(c, { actor: s.id, action: "usuario.exportar", targetKind: "user", targetId: u.id, city: u.city_id, after: { archivo: `ZIP por el mapa de datos (${secciones.size} partes)` }, reason: m });
     return null;
   }, "Datos exportados. Quedó en la auditoría.", { borrada: true });
   return r.ok ? { ...r, archivo } : r;
@@ -223,8 +223,8 @@ export async function verComo(id: string, motivo: string): Promise<ResAdm & { pa
   let partes: { k: string; n: number; filas: Record<string, unknown>[] }[] = [];
   const r = await hacer(id, ["ver"], motivo, async (c, s, u, m) => {
     await auditar(c, { actor: s.id, action: "usuario.ver_como", targetKind: "user", targetId: u.id, city: u.city_id, after: { vista: "solo lectura" }, reason: m });
-    const { datosDeCuenta } = await import("@/lib/datos/exportar");
-    partes = [...(await datosDeCuenta(u.id, c))].filter(([, v]) => v.length).map(([k, v]) => ({ k, n: v.length, filas: v.slice(0, 3) }));
+    const { datosDeCuenta, vistaPrevia } = await import("@/lib/datos/exportar");
+    partes = await vistaPrevia(await datosDeCuenta(u.id, c), c);
     return null;
   }, "Solo lectura. Quedó en la auditoría.", { borrada: true });
   return r.ok ? { ...r, partes } : r;
