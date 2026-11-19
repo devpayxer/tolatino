@@ -206,6 +206,7 @@ export async function editarRotulo(s: Staff, cat: string, es: string, en: string
     if (campo === "short" && E !== v.short.es) return mal("El nombre corto en español es la dirección de la categoría (/c/…): no se cambia aquí.", "The short Spanish name is the category address (/c/…): it is not changed here.");
     const antes = v[campo];
     if (E === antes.es && N === antes.en) return mal("No cambiaste nada.", "You did not change anything.");
+    // nosemgrep: tolatino-sql-con-texto-interpolado — campo se revisa arriba: solo «short» o «name»
     await c.query(`update categories set ${campo} = jsonb_build_object('es', $2::text, 'en', $3::text), updated_at = now() where id = $1`, [cat, E, N]);
     await auditar(c, { actor: s.id, action: "cms.rotulo", targetKind: "category", targetId: `${cat}.${campo}`, before: antes, after: { es: E, en: N }, reason: m });
     return null;

@@ -144,6 +144,7 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
   const sp = b.cat === "NEG-SALUD" ? "salud" : b.cat === "NEG-PRO" ? "pro" : b.cat === "NEG-MERC" ? "merc" : b.cat === "NEG-TIENDA" ? "tienda" : b.cat === "NEG-FIESTA" ? "fiesta" : b.cat === "NEG-TRANS" ? "trans" : b.cat === "NEG-NOCHE" ? "noche" : b.cat === "NEG-EDU" ? "edu" : b.cat === "NEG-NINOS" ? "ninos" : b.cat === "NEG-DEPORTE" ? "dep" : b.cat === "NEG-FE" ? "fe" : b.cat === "NEG-INMUEBLE" ? "inm" : b.cat === "NEG-DEALER" ? "dealer" : null;
   const [cifras, asp, top, mia, dest, op, aspSP] = await Promise.all([
     db().query<{ n: number; avg: number | null; s5: number; s4: number; s3: number; s2: number; s1: number; ver: number }>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — fm = DE_MIEMBRO(): solo un uuid que pasó /^[0-9a-f-]{36}$/ (no cabe una comilla)
       `select count(*)::int as n, round(avg(stars)::numeric, 1)::float as avg, count(*) filter (where stars = 5)::int as s5, count(*) filter (where stars = 4)::int as s4,
               count(*) filter (where stars = 3)::int as s3, count(*) filter (where stars = 2)::int as s2, count(*) filter (where stars = 1)::int as s1,
               count(*) filter (where src <> 'vis')::int as ver
@@ -164,6 +165,7 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
     userId ? db().query<FilaT & { visible: boolean }>(`select ${TARJETA_SQL}, r.status = 'visible' as visible from reviews r join users u on u.id = r.user_id cross join ${NEG_SQL} where r.business_id = $1 and r.user_id = $2::uuid and r.status <> 'removed' limit 1`, [negocio, userId]) : null,
     // Resumen: Pro = las 2 mejores (★4+, más útiles); Free = las 3 más recientes. La propia va primero.
     db().query<FilaT>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — fm = DE_MIEMBRO(): solo un uuid que pasó /^[0-9a-f-]{36}$/ (no cabe una comilla)
       `select ${TARJETA_SQL} from reviews r join users u on u.id = r.user_id cross join ${NEG_SQL}
         where r.business_id = $1 and r.status = 'visible'${fm} and ($2::uuid is null or r.user_id <> $2::uuid) and (not b.pro or r.stars >= 4)
         order by case when b.pro then r.helpful_count else 0 end desc, r.created_at desc limit 3`, [negocio, userId]),
@@ -175,6 +177,7 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
     // Lo que importa en Educación, Niños y Deporte (4ef): de inscripciones por To'Latino (src cita) del último año.
     // Lo que importa en Iglesias, Bienes Raíces y Autos (4if): solo de visitas, pruebas, citas y fechas por To'Latino (src cita) del último año.
     sp === "fe" || sp === "inm" || sp === "dealer" ? db().query<Record<string, number | null>>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — fm = DE_MIEMBRO(): solo un uuid que pasó /^[0-9a-f-]{36}$/ (no cabe una comilla)
       `select count(*)::int as n,
               ${PCT("gratis", "(answers->>'gratis')::int = 1", "answers ? 'gratis'")},
               ${PCT("espanol", "(answers->>'espanol')::int = 1", "answers ? 'espanol'")},
@@ -193,6 +196,7 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
               ${PCT("trato", "(answers->>'trato')::int = 1", "answers ? 'trato'")}
          from reviews where business_id = $1 and status = 'visible' and src = 'cita' and created_at > now() - interval '365 days'${fm}`, [negocio])
     : sp === "edu" || sp === "ninos" || sp === "dep" ? db().query<Record<string, number | null>>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — fm = DE_MIEMBRO(): solo un uuid que pasó /^[0-9a-f-]{36}$/ (no cabe una comilla)
       `select count(*)::int as n,
               ${PCT("totalOk", "(answers->>'totalOk')::int = 1", "answers ? 'totalOk'")},
               ${PCT("horarioOk", "(answers->>'horarioOk')::int = 1", "answers ? 'horarioOk'")},
@@ -208,6 +212,7 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
               ${PCT("trato", "(answers->>'trato')::int = 1", "answers ? 'trato'")}
          from reviews where business_id = $1 and status = 'visible' and src = 'cita' and created_at > now() - interval '365 days'${fm}`, [negocio])
     : sp === "noche" ? db().query<Record<string, number | null>>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — fm = DE_MIEMBRO(): solo un uuid que pasó /^[0-9a-f-]{36}$/ (no cabe una comilla)
       `select count(*)::int as n,
               ${PCT("coverOk", "(answers->>'coverOk')::int = 1", "answers ? 'coverOk'")},
               ${PCT("filaOk", "answers->>'filaOk' = 'a'", "answers ? 'filaOk'")},
@@ -217,6 +222,7 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
               ${PCT("trato", "(answers->>'trato')::int = 1", "answers ? 'trato'")}
          from reviews where business_id = $1 and status = 'visible' and src = 'cita' and created_at > now() - interval '90 days'${fm}`, [negocio])
     : sp === "fiesta" || sp === "trans" ? db().query<Record<string, number | null>>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — fm = DE_MIEMBRO(): solo un uuid que pasó /^[0-9a-f-]{36}$/ (no cabe una comilla)
       `select count(*)::int as n,
               ${PCT("fechaOk", "facts ? 'dia' or (answers->>'fechaOk')::int = 1", "facts ? 'dia' or answers ? 'fechaOk'")},
               ${PCT("llegaron", "answers->>'llegaron' = 'a'", "answers ? 'llegaron'")},
@@ -231,6 +237,7 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
               ${PCT("trato", "(answers->>'trato')::int = 1", "answers ? 'trato'")}
          from reviews where business_id = $1 and status = 'visible' and created_at > now() - interval '${sp === "trans" ? 90 : 365} days'${fm}`, [negocio])
     : sp === "merc" || sp === "tienda" ? db().query<Record<string, number | null>>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — fm = DE_MIEMBRO(): solo un uuid que pasó /^[0-9a-f-]{36}$/ (no cabe una comilla)
       `select count(*)::int as n,
               ${PCT("pesaron", "(facts->>'fotoPeso')::boolean or (answers->>'pesaron')::int = 1", "facts ? 'fotoPeso' or answers ? 'pesaron'")},
               ${PCT("peso", "(facts->>'fotoPeso')::boolean or (answers->>'peso')::int = 1", "facts ? 'fotoPeso' or answers ? 'peso'")},
@@ -245,6 +252,7 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
               ${PCT("trato", "(answers->>'trato')::int = 1", "answers ? 'trato'")}
          from reviews where business_id = $1 and status = 'visible' and created_at > now() - interval '365 days'${fm}`, [negocio])
     : sp ? db().query<Record<string, number | null>>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — fm = DE_MIEMBRO(): solo un uuid que pasó /^[0-9a-f-]{36}$/ (no cabe una comilla)
       `select count(*)::int as n,
               ${PCT("seg", "(facts->>'segOk')::boolean or answers->>'seguro' = 'si'", "(facts->>'seg')::boolean or answers->>'seguro' in ('si', 'no')")},
               ${PCT("lengua", "answers->>'lengua' in ('es', 'int')", "answers ? 'lengua'")},
@@ -307,9 +315,12 @@ export async function listaResenas(negocio: string, userId: string | null, q: { 
   }
   const [lista, cuenta, mia] = await Promise.all([
     db().query<FilaT & { k: number }>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — filtro y orden de mapas fijos, DE_MIEMBRO con uuid revisado; los valores van como $n
       `select ${TARJETA_SQL}, ${ORDEN_SQL[sort].key}::bigint as k from reviews r join users u on u.id = r.user_id cross join ${NEG_SQL}
         where ${wp.join(" and ")} order by ${ORDEN_SQL[sort].by} limit ${PAGINA + 1}`, pag),
+    // nosemgrep: tolatino-sql-con-texto-interpolado — filtro y orden de mapas fijos, DE_MIEMBRO con uuid revisado; los valores van como $n
     db().query<{ n: number }>(`select count(*)::int as n from reviews r cross join ${NEG_SQL} where ${base} and ($2::uuid is null or true)`, v),
+    // nosemgrep: tolatino-sql-con-texto-interpolado — filtro y orden de mapas fijos, DE_MIEMBRO con uuid revisado; los valores van como $n
     !cur && userId ? db().query<FilaT>(`select ${TARJETA_SQL} from reviews r join users u on u.id = r.user_id cross join ${NEG_SQL} where ${base} and r.user_id = $2::uuid limit 1`, v) : null,
   ]);
   const filas = lista.rows.slice(0, PAGINA), ult = filas[filas.length - 1];

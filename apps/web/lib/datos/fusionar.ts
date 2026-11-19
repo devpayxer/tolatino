@@ -34,6 +34,7 @@ export async function fusionar(c: PoolClient, o: { desde: string; hacia: string;
     const T = ident(f.tabla), K = ident(f.columna);
     const choque = (await unicos(c, f.tabla, f.columna)).map((resto) =>
       `not exists (select 1 from ${T} y where y.${K} = $2::uuid${resto.map((x) => ` and y.${ident(x)} is not distinct from x.${ident(x)}`).join("")})`);
+    // nosemgrep: tolatino-sql-con-texto-interpolado — tabla y columnas de data_map (solo la semilla) pasan por ident(); los valores van como $1/$2
     const r = await c.query(`update ${T} x set ${K} = $2::uuid where x.${K} = $1::uuid${choque.length ? ` and ${choque.join(" and ")}` : ""}`, [o.desde, o.hacia]);
     if (r.rowCount) tablas[`${f.tabla}.${f.columna}`] = r.rowCount;
   }

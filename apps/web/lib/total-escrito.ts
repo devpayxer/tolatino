@@ -27,6 +27,7 @@ export async function totalDe(opId: string, c?: PoolClient): Promise<TotalVista 
 type OpPro = { id: string; number: string; status: string; detail: string | null; biz: string; city: string; uid: string; det: Record<string, unknown>; negocio: string; cliente: string };
 async function leerPro(c: PoolClient, where: string, args: unknown[]) {
   return (await c.query<OpPro>(
+    // nosemgrep: tolatino-sql-con-texto-interpolado — leerPro() es privada y cada llamada pasa una condición fija con $1/$2
     `select o.id::text, o.number, o.status, o.status_detail as detail, o.business_id as biz, o.city_id as city, o.user_id::text as uid, o.details as det, b.name as negocio, coalesce(u.first_name, '') as cliente
        from operations o join businesses b on b.id = o.business_id join users u on u.id = o.user_id
       where o.kind = 'appointment' and o.details->>'rubro' = 'pro' and ${where} for update of o`, args)).rows[0] ?? null;

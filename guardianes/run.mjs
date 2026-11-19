@@ -7741,6 +7741,67 @@ const guardianes = {
     if (/severity: (INFO|WARNING)/.test(t)) falla(G, SG, 0, "las reglas propias son ERROR: un aviso no frena el CI");
   },
 
+  /* 9t · SQL armado con texto: la regla de Semgrep va por FLUJO DE DATOS (modo taint), no por nombres. Antes solo veía variables que se llamaran
+     texto/q/body…, y ninguna «await x.query<Tipo>(…)» era consulta para ella (Semgrep la lee distinto): la mitad del código quedaba fuera. Este
+     guardián fija lo que la hace ver: modo taint con fuentes, sumideros (las dos formas) y limpiadores; su prueba (semgrep/tolatino.ts, la corre
+     el CI con --test) con los casos que tiene que cazar; que lo que Semgrep no puede leer rompa el CI; que cada «nosemgrep» diga qué regla y por
+     qué; que los limpiadores con nombre (centroSQL, radioSQL, CTE, ident) existan una sola vez, donde se revisaron; y las dos formas de TS que
+     su lector no entiende (lo que no lee, no lo revisa). */
+  semgrepSqlPorFlujo() {
+    const G = "semgrepSqlPorFlujo", SG = "semgrep/tolatino.yml", PR = "semgrep/tolatino.ts", Y = ".github/workflows/ci.yml", ID = "tolatino-sql-con-texto-interpolado";
+    for (const f of [SG, PR, Y]) if (!existsSync(f)) return falla(G, f, 0, f === PR ? "falta la prueba de la regla SQL (semgrep --test semgrep/)" : "falta");
+    const t = readFileSync(SG, "utf8"), r = new RegExp(`\\n  - id: ${ID}\\n[\\s\\S]*?(?=\\n  - id: |$)`).exec(t)?.[0] ?? "";
+    if (!r) return falla(G, SG, 0, `falta la regla ${ID}`);
+    if (!/\n    mode: taint\n/.test(r)) falla(G, SG, 0, `${ID} tiene que ir en modo taint (flujo de datos), no por nombres`);
+    if (/metavariable-regex/.test(r)) falla(G, SG, 0, `${ID}: nada de listas de nombres (metavariable-regex): el flujo de datos decide`);
+    for (const [re, que] of [
+      [/pattern-sources:[\s\S]*pattern-inside: function \$F\(\.\.\., \$P, \.\.\.\) \{ \.\.\. \}[\s\S]*pattern-inside: \(\.\.\., \$P, \.\.\.\) => \{ \.\.\. \}[\s\S]*focus-metavariable: \$P/, "fuente: los parámetros de toda función (con nombre y flecha)"],
+      [/pattern-inside: "function \$F\(\.\.\., \{\.\.\., \$P, \.\.\.\}: \$T, \.\.\.\) \{ \.\.\. \}"/, "fuente: los parámetros desestructurados"],
+      [/- pattern: \$R\.json\(\)/, "fuente: el cuerpo de una ruta (req.json())"],
+      [/- pattern: cookies\(\)/, "fuente: cookies()"],
+      [/pattern-propagators:[\s\S]*pattern: \$A\.push\(\.\.\., \$X, \.\.\.\)/, "propagador: w.push(…) mancha el arreglo"],
+      [/pattern-sinks:[\s\S]*- pattern: \$DB\.query\(\$Q, \.\.\.\)[\s\S]*- pattern: await \$DB\.query<\$T>\(\$Q, \.\.\.\)[\s\S]*focus-metavariable: \$Q/, "sumidero: las DOS formas (x.query(…) y await x.query<T>(…)) y solo el texto ($Q)"],
+      [/pattern-sanitizers:/, "limpiadores"],
+    ]) if (!re.test(r)) falla(G, SG, 0, `${ID}: falta ${que}`);
+    // .length limpia solo el del arreglo armado aquí (const v = [...]); un objeto { length: "…" } de afuera no.
+    if ((r.match(/- pattern: [^\n]*\.length/g) ?? []).length !== 1 || !/pattern-inside: \|\n\s+\$X = \[\.\.\.\];\n\s+\.\.\.\n\s+- pattern: \$X\.length/.test(r)) falla(G, SG, 0, `${ID}: .length limpia solo con «$X = [...]» antes (el arreglo de parámetros de la función)`);
+    const LIMPIAN = { centroSQL: "apps/web/lib/punto.ts", radioSQL: "apps/web/lib/punto.ts", CTE: "apps/web/lib/categoria.ts", ident: "apps/web/lib/datos/mapa.ts" };
+    const nombrados = [...r.matchAll(/^\s+- pattern: ([A-Za-z_]\w*)\(\.\.\.\)$/gm)].map((m) => m[1]).filter((n) => !/^(Number|parseInt|parseFloat|BigInt|Boolean)$/.test(n));
+    for (const n of nombrados) if (!LIMPIAN[n]) falla(G, SG, 0, `${ID}: el limpiador ${n}(…) no está revisado (agrégalo a este guardián con el archivo donde vive, después de leerlo)`);
+    const fuentes = codigo.filter((f) => /^apps\/web\/.*\.tsx?$/.test(f));
+    for (const [n, donde] of Object.entries(LIMPIAN)) {
+      const defs = fuentes.filter((f) => new RegExp(`(export )?(const ${n}\\s*=|function ${n}\\s*\\()`).test(readFileSync(f, "utf8")));
+      if (defs.length !== 1 || defs[0] !== donde) falla(G, SG, 0, `el limpiador ${n}(…) tiene que definirse UNA vez y en ${donde} (hay: ${defs.join(", ") || "ninguna"}): otra función con ese nombre quedaría «limpia» sin revisar`);
+    }
+    // La prueba: lo que tiene que cazar (incluidas las formas que la regla vieja no veía) y lo que no.
+    const p = readFileSync(PR, "utf8"), si = (p.match(new RegExp(`// ruleid: ${ID}\\n`, "g")) ?? []).length, no = (p.match(new RegExp(`// ok: ${ID}\\n`, "g")) ?? []).length;
+    if (si < 12 || no < 6) falla(G, PR, 0, `la prueba trae ${si} casos que tiene que cazar y ${no} que no (mínimo 12 y 6)`);
+    for (const [re, que] of [[/ruleid: [\w-]+\n\s+return \(await c\.query<\{/, "await x.query<Tipo>(…)"], [/fd\.get\(/, "un FormData"], [/req\.json\(\)/, "el cuerpo de una ruta"],
+      [/ruleid: [\w-]+\n\s+return db\(\)\.query\(`[^`]*\$\{ids\.length\}/, "el .length de algo de afuera"], [/w\.push\(`[^`]*\$\{f\./, "w.push(…) + join"], [/cookies\(\)/, "cookies()"]])
+      if (!re.test(p)) falla(G, PR, 0, `la prueba no tiene el caso de ${que}`);
+    // El CI corre la prueba y cuenta lo que Semgrep no pudo leer como rojo.
+    const y = readFileSync(Y, "utf8");
+    if (!/semgrep" --test [^\n]*semgrep\//.test(y)) falla(G, Y, 0, "«seguridad» tiene que correr semgrep --test semgrep/ (la prueba de las reglas)");
+    if (!/--json-output="\$RUNNER_TEMP\/semgrep\.json"/.test(y) || !/\.errors \?\? \[\][^\n]*process\.exit\(1\)/.test(y)) falla(G, Y, 0, "«seguridad» tiene que fallar si Semgrep no pudo leer algo (errors del --json-output)");
+    // Cada «nosemgrep» dice qué regla y por qué (nunca el archivo entero ni a ciegas).
+    for (const f of codigo.filter((x) => /^(apps|packages|services|scripts)\/.*\.(tsx?|jsx?|mjs|cjs)$/.test(x))) {
+      const lineas = readFileSync(f, "utf8").split("\n");
+      lineas.forEach((l, i) => {
+        if (!/nosemgrep/.test(l)) return;
+        const m = /nosemgrep: ([\w-]+(?:, [\w-]+)*) — (.+)$/.exec(l);
+        if (!m || m[2].trim().length < 15) falla(G, f, i + 1, "«nosemgrep» va con la regla y el porqué: // nosemgrep: <regla> — <por qué es seguro>");
+      });
+    }
+    // Lo que el lector de Semgrep 1.185 no entiende (se salta ese pedazo del archivo sin avisar en el resumen): import("…").Tipo[] y /<!--/.
+    for (const f of fuentes) {
+      const lineas = readFileSync(f, "utf8").split("\n");
+      lineas.forEach((l, i) => {
+        if (/import\("[^"]+"\)\.\w+\[\]/.test(l)) falla(G, f, i + 1, "import(\"…\").Tipo[] no lo lee Semgrep (se salta el pedazo): Array<import(\"…\").Tipo>");
+        if (/\/<!--/.test(l)) falla(G, f, i + 1, "una expresión regular que empieza con <!-- no la lee Semgrep (se salta el pedazo): /<!-{2}/");
+      });
+    }
+  },
+
   tuberiaVelocidad() {
     const G = "tuberiaVelocidad", Y = ".github/workflows/ci.yml", PR = "pruebas/velocidad/presupuesto.json", PA = "pruebas/visual/pantallas.json";
     for (const f of [Y, PR, PA]) if (!existsSync(f)) return falla(G, f, 0, "falta");

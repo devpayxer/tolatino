@@ -128,6 +128,7 @@ export async function eventosCiudad(p: Punto, f: FiltroDia, cursor: string | nul
     const vv = [...v], ww = [`d.listable`, `d.city_id = $2`, `d.starts_at > now() - interval '18 hours'`];
     if (ca && cb) { vv.push(ca, cb); ww.push(`(d.starts_at, d.id) > ($${vv.length - 1}::timestamptz, $${vv.length}::bigint)`); }
     const r = await db().query<{ id: string; at: string; primera: boolean }>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — filtroDia/filtroTipo devuelven condiciones fijas con $n; centro y radio validados en lib/punto.ts
       `select d.id::text, to_char(d.starts_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as at, case when ${resto} then ${ES_PRIMERA(enP(ff))} else false end as primera
          from event_dates d join events e on e.id = d.event_id, (select $1::uuid as quien) q where ${ww.join(" and ")} order by d.starts_at, d.id limit ${K}`, vv);
     for (const x of r.rows) if (x.primera && ids.length <= POR_PAGINA_EVT) ids.push(x.id);
@@ -139,6 +140,7 @@ export async function eventosCiudad(p: Punto, f: FiltroDia, cursor: string | nul
     // Cuántos eventos (hasta 1000): uno por evento de la ciudad que tenga una fecha viva en el filtro (una búsqueda por evento en el índice
     // (event_id, starts_at) que para en la primera).
     cursor ? Promise.resolve(null) : db().query<{ n: number }>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — filtroDia/filtroTipo devuelven condiciones fijas con $n; centro y radio validados en lib/punto.ts
       `select count(*)::int as n from (select 1 from events e cross join lateral (select 1 from event_dates d where d.event_id = e.id and ${w.join(" and ")} limit 1) x
          where e.city_id = $2 limit 1000) y, (select $1::uuid as quien) q`, v),
   ]);
@@ -354,6 +356,7 @@ export async function fichaEvento(slug: string, fecha: string | null, viewer: st
 }
 async function relacionados(ciudad: string, eid: string, biz: string, fmt: string, viewer: string | null, centro: string | null, es: boolean) {
   const D = await diasCiudad(ciudad);
+  // nosemgrep: tolatino-sql-con-texto-interpolado — filtroDia/filtroTipo devuelven condiciones fijas con $n; centro y radio validados en lib/punto.ts
   const r = await db().query<FilaT>(`select distinct on (x.eid) * from (select ${COLS_T(centro)} ${DESDE_T} where ${VIVO} and d.city_id = $2 and e.id <> $3::bigint and (e.format = $4 or e.business_id = $5) and ${PRIMERA()}
                                      order by d.starts_at, d.id limit 30) x order by x.eid, x.cur limit 4`, [viewer, ciudad, eid, fmt, biz]);
   return r.rows.sort((a, b) => a.cur.localeCompare(b.cur)).map((x) => tarjeta(x, es, D));

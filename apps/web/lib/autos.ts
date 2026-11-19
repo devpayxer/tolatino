@@ -303,6 +303,7 @@ export async function guardarHerramientaAutos(c: PoolClient, negocio: string, p:
   await asegurarFila(c, negocio, actor);
   const h = (await herramientaAutos(negocio, c))!;
   if (!conInventario(h.kind)) return err("Lo tuyo va en Servicios: ahí pones cada servicio y su precio.", "Yours goes in Services: add each service and its price there.");
+  // nosemgrep: tolatino-sql-con-texto-interpolado — set() es de esta función y cada llamada pasa columnas fijas; los valores van como $2, $3
   const set = (sql: string, v: unknown[]) => c.query(`update dealer_settings set ${sql}, updated_by = $${v.length + 2}, updated_at = now() where business_id = $1`, [negocio, ...v, actor]);
   const carro = (id: unknown) => h.carros.find((x) => x.id === String(id) && x.adm == null);
   const bhph = h.kind === "bhph";

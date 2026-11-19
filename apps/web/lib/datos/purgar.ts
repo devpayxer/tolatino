@@ -44,6 +44,7 @@ export async function purgarVencidas(max = 5): Promise<ResPurga[]> {
    sigue (sin reclamar) con sus fotos. */
 async function fotosFuera(cuenta: string, donde: string | null): Promise<number> {
   const F = (await db().query<{ url: string }>(
+    // nosemgrep: tolatino-sql-con-texto-interpolado — fragmentos de data_map: solo los escribe la semilla, validados por scripts/datos/mapa.mjs y mapa(); nombres por ident()
     `select x.url from media x
       where x.purged_at is null and x.url not in ('borrada', 'privado/borrada') and x.url !~ '^https?://'
         and ((x.uploaded_by = $1::uuid and (${donde ?? "true"}))
@@ -67,7 +68,9 @@ async function paso(c: PoolClient, f: FilaMapa, cuenta: string, tel: string | nu
   let total = 0;
   for (;;) {
     const r = f.accion === "borrar"
+      // nosemgrep: tolatino-sql-con-texto-interpolado — fragmentos de data_map: solo los escribe la semilla, validados por scripts/datos/mapa.mjs y mapa(); nombres por ident()
       ? await c.query(`delete from ${T} where ctid in (select ctid from ${T} where ${K} = $1::${tipo} and (${donde}) limit $2::int)`, [valor, lote])
+      // nosemgrep: tolatino-sql-con-texto-interpolado — fragmentos de data_map: solo los escribe la semilla, validados por scripts/datos/mapa.mjs y mapa(); nombres por ident()
       : await c.query(`update ${T} set ${f.set_sql} where ctid in (select ctid from ${T} where ${K} = $1::${tipo} and (${donde}) and (${f.pendiente_sql ?? "true"}) limit $2::int)`, [valor, lote]);
     total += r.rowCount ?? 0;
     if ((r.rowCount ?? 0) < lote || !f.pendiente_sql && f.accion !== "borrar") break;

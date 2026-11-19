@@ -329,6 +329,7 @@ export async function comentarioOcultar(id: string, comentario: string, ocultar:
 
 /* Aviso al autor cuando To'Latino oculta lo que escribió (plantilla mod_hide), con el motivo. Nunca rompe la acción. */
 async function avisarOculto(tabla: "reviews" | "post_comments", fila: string, tipo: string, motivo: string, href: string) {
+  // nosemgrep: tolatino-sql-con-texto-interpolado — tabla es «reviews» o «post_comments»: función privada, las dos llamadas pasan el nombre fijo
   const u = (await db().query<{ uid: string }>(`select user_id::text as uid from ${tabla} where id = $1::bigint`, [fila]).catch(() => ({ rows: [] as { uid: string }[] }))).rows[0];
   if (u) await avisar(u.uid, "mod_hide", { tipo, motivo: String(motivo).trim().slice(0, 140) }, { href, ref: [tabla === "reviews" ? "review" : "comment", fila] });
 }

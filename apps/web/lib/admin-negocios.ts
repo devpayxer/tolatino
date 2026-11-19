@@ -95,6 +95,7 @@ export async function listaNegocios(s: Staff, f: FiltrosNeg) {
   const whereLista = wl.join(" and ");
   const [filas, total, cats, cab] = await Promise.all([
     db().query<{ sk: string; id: string; name: string; cat: string; cat_id: string; subs: string | null; plan: string; trial: boolean; verified: boolean; rating: number | null; reviews: number; perfil: number; estado: string; cover: string | null }>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — armarFiltros() solo pone condiciones fijas con $n; la llave sale de LLAVE_SQL (mapa fijo)
       `select ${llave} as sk, b.id, b.name, c.name->>'es' as cat, b.category_id as cat_id,
               (select string_agg(sc.name->>'es', ', ' order by array_position(b.subcategory_ids, sc.id)) from subcategories sc where sc.id = any(b.subcategory_ids[1:2])) as subs,
               coalesce(s.plan,'free') as plan, coalesce((b.category_attrs->'onb'->'trial'->>'until')::timestamptz > now(), false) as trial,
@@ -103,7 +104,9 @@ export async function listaNegocios(s: Staff, f: FiltrosNeg) {
               (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1) as cover
          from businesses b join categories c on c.id = b.category_id left join business_stats_cache s on s.business_id = b.id
         where ${whereLista} order by ${llave} limit ${POR_PAGINA + 1}`, pc),
+    // nosemgrep: tolatino-sql-con-texto-interpolado — armarFiltros() solo pone condiciones fijas con $n; la llave sale de LLAVE_SQL (mapa fijo)
     db().query<{ n: number }>(`select count(*)::int as n from businesses b left join business_stats_cache s on s.business_id = b.id where ${where}`, p),
+    // nosemgrep: tolatino-sql-con-texto-interpolado — armarFiltros() solo pone condiciones fijas con $n; la llave sale de LLAVE_SQL (mapa fijo)
     db().query<{ cat: string; n: number }>(`select b.category_id as cat, count(*)::int as n from businesses b left join business_stats_cache s on s.business_id = b.id where ${whereCat} group by 1`, pCat),
     db().query<{ n: number; pro: number; ver: number }>(
       `select count(*)::int as n, count(*) filter (where s.plan = 'pro')::int as pro, count(*) filter (where s.verified)::int as ver
@@ -120,6 +123,7 @@ const celda = (v: unknown) => { let t = v == null ? "" : String(v).replace(/\r?\
 export async function negociosCsv(s: Staff, f: FiltrosNeg): Promise<{ csv: string; n: number }> {
   const { w, p } = armarFiltros(s, f);
   const r = await db().query<{ id: string; name: string; ciudad: string; cat: string; plan: string; verified: boolean; rating: number | null; reviews: number; perfil: number; estado: string; pedidos30: number; stripe: boolean; licencia: boolean; creado: string }>(
+    // nosemgrep: tolatino-sql-con-texto-interpolado — armarFiltros() solo pone condiciones fijas con $n; la llave sale de LLAVE_SQL (mapa fijo)
     `select b.id, b.name, ci.name as ciudad, c.name->>'es' as cat, coalesce(s.plan, 'free') as plan, coalesce(s.verified, false) as verified, s.rating_avg::float as rating,
             coalesce(s.review_count, 0) as reviews, coalesce(s.profile_strength, 0) as perfil, ${ESTADO_SQL} as estado,
             (select count(*)::int from operations o where o.business_id = b.id and o.kind in ('order', 'market_order', 'hold', 'appointment', 'party', 'private_event', 'table', 'night', 'trip', 'enrollment', 'visit', 'tickets', 'rental', 'plan') and o.sent_at > now() - interval '30 days' and not o.is_test) as pedidos30,

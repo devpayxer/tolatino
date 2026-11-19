@@ -225,7 +225,7 @@ export function revisarTextoAyuda(t: string, equipo: boolean): Bi | null {
   if (t.length > 12000) return { es: "La sección es demasiado larga (máximo 12 000 letras).", en: "The section is too long (12,000 characters at most)." };
   if (/^#{1,6}\s/m.test(t)) return { es: "Sin encabezados (# …): cada sección ya tiene el suyo.", en: "No headings (# …): each section already has its own." };
   if (/<\/?[a-z][^>]*>/i.test(t)) return { es: "Sin HTML: solo texto, listas y **negritas**.", en: "No HTML: only text, lists and **bold**." };
-  if (/<!--/.test(t)) return { es: "Sin comentarios <!-- -->.", en: "No <!-- --> comments." };
+  if (/<!-{2}/.test(t)) return { es: "Sin comentarios <!-- -->.", en: "No <!-- --> comments." };
   if (!equipo) for (const [re, que] of FASE_INTERNA as [RegExp, string][]) if (re.test(t)) return { es: `Lenguaje interno para quien lee la ayuda: ${que}. Dilo como es hoy.`, en: `Internal language for readers: ${que}. Say it as it is today.` };
   return null;
 }

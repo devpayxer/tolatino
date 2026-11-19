@@ -57,7 +57,7 @@ export type DatosSalud = {
   despliegues: { id: string; commit: string; fin: string; result: "ok" | "vuelta_atras" | "fallo"; motivo: string | null; entorno: string }[] | null; entorno: string;
   maquinas: { nombre: string; cpu: number | null; memoria: number | null; disco: number | null }[] | null;
   // 9j-2 · Web Vitals de teléfonos reales (RUM): 7 días por familia de ruta y perfil.
-  vitales: import("../vitales").FilaVital[] | null;
+  vitales: Array<import("../vitales").FilaVital> | null;
 };
 
 /* 9o · Las máquinas de producción según Prometheus (la réplica, por la red privada): CPU, memoria y disco de cada una. 2 s como mucho; si no contesta,

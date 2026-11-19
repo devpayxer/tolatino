@@ -60,6 +60,7 @@ export async function datosDeCuenta(cuenta: string, c?: PoolClient): Promise<Map
 /* El archivo de un negocio: lo que su panel ya muestra. Ningún teléfono, correo ni dirección de un cliente; el cliente con su nombre y la inicial. */
 export async function datosDeNegocio(negocio: string, c?: PoolClient): Promise<Map<string, Fila[]>> {
   const q = c ?? db();
+  // nosemgrep: tolatino-sql-con-texto-interpolado — L() solo se llama con consultas fijas de datosDeNegocio()
   const L = async (s: string) => (await q.query<Fila>(s, [negocio])).rows.map((x) => limpiar(x, new Set()));
   const cliente = `nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(left(u.last_name, 1) || '.', '')), '')`;
   return new Map<string, Fila[]>([

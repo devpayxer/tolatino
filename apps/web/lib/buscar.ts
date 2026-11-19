@@ -122,7 +122,8 @@ export async function negocios(E: Entendido, o: Opciones): Promise<{ items: Hall
   const filtros = E.intenciones.filter((i) => FILTRO[i.k] && !(o.quitar ?? []).includes(i.k)).map((i) => FILTRO[i.k]!);
   const orden = o.orden ?? (E.intenciones.some((i) => i.k === "best") ? "best" : "rel");
   const ord = orden === "near" ? "mi asc nulls last" : orden === "best" ? "(case when reviews >= 5 then rating else 0 end) desc, reviews desc" : "score_q desc";
-  const limite = o.limite ?? POR_PAGINA, off = Math.max(0, Math.min(o.pagina ?? 0, 99)) * limite;
+  // 9t · Entran al texto de la consulta (limit/offset): siempre enteros acotados aquí, venga de donde venga la llamada.
+  const limite = Math.max(1, Math.min(50, Math.trunc(Number(o.limite ?? POR_PAGINA)) || POR_PAGINA)), off = Math.max(0, Math.min(Math.trunc(Number(o.pagina ?? 0)) || 0, 99)) * limite;
   const correr = async (y: boolean) => {
     const params: unknown[] = [o.punto.ciudad];
     const add = (v: unknown) => { params.push(v); return `$${params.length}`; };
@@ -134,6 +135,7 @@ export async function negocios(E: Entendido, o: Opciones): Promise<{ items: Hall
       ? `ts_rank('{0.15, 0.3, 0.7, 1.0}', b.search_doc, to_tsquery('simple', ${q}), 1) * 100 + (case when lower(unaccent(b.name)) like ${pre} then 3 else 0 end) + (case when negocio_abierto(b.id, t.t) then 0.5 else 0 end)`
       : `1 + (case when negocio_abierto(b.id, t.t) then 0.5 else 0 end)`;
     const r = await db().query<Hallado & { total: string; score_q: number }>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — filtros de FILTRO (mapa fijo), add() devuelve $n, orden por comparación, límite y página enteros acotados
       `${CTE(o.punto)}, base as (select ${COLUMNAS}, ${score} as score_q ${DESDE}${w.length ? " and " + w.join(" and ") : ""})
        select base.*, count(*) over () as total, ${FOTO("base")} from base
         order by pro desc, ${ord}, id limit ${limite} offset ${off}`, params);

@@ -52,6 +52,7 @@ function segmentoSql(seg: Segmento, base: number): { donde: string; params: unkn
 
 export async function contarSegmento(ciudad: string, seg: Segmento): Promise<number> {
   const q = segmentoSql(seg, 1);
+  // nosemgrep: tolatino-sql-con-texto-interpolado — segmentoSql() solo pone condiciones fijas; cada valor del segmento va como $n
   return (await db().query<{ n: number }>(`select count(*)::int as n from users u where ${q.donde}`, [ciudad, ...q.params])).rows[0]?.n ?? 0;
 }
 
@@ -84,6 +85,7 @@ export async function crearCampana(s: Staff, p: Nueva): Promise<Res<{ id?: strin
     if (ci.pasado) return mal("Esa hora ya pasó.", "That time has passed.");
     if (ci.lejos) return mal("Se programa hasta 90 días adelante.", "You can schedule up to 90 days ahead.");
     const q = segmentoSql(seg, 1);
+    // nosemgrep: tolatino-sql-con-texto-interpolado — segmentoSql() solo pone condiciones fijas; cada valor del segmento va como $n
     const n = (await c.query<{ n: number }>(`select count(*)::int as n from users u where ${q.donde}`, [p.ciudad, ...q.params])).rows[0]?.n ?? 0;
     const porAprobar = n > cfg.campana_aprobar_desde;
     const id = (await c.query<{ id: string }>(
@@ -143,6 +145,7 @@ export async function enviarLote(id: string): Promise<number> {
     if (!x || x.silencio) return null;
     const seg = segmentoDe(x.seg), q = segmentoSql(seg, 3);
     const L = (await c.query<{ id: string; lang: string; email: string | null; ok_mail: boolean; semana: number; sms_mes: number }>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — segmentoSql() solo pone condiciones fijas; cada valor del segmento va como $n
       `select u.id::text, coalesce(u.lang, 'es') as lang, u.email::text as email, coalesce(u.email_verified, false) as ok_mail,
               (select count(*)::int from campaign_sends s where s.user_id = u.id and s.result = 'enviado' and s.at > now() - interval '7 days') as semana,
               (select count(*)::int from campaign_sends s where s.user_id = u.id and s.result = 'enviado' and s.channel = 'sms' and s.at > now() - interval '30 days') as sms_mes

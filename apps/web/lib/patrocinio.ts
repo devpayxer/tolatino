@@ -329,6 +329,7 @@ export async function vitrinaCategoria(p: Punto, cat: string, sub: Regla | null,
   const params: unknown[] = [p.ciudad, cat];
   const extra = condiciones({ sub, filtros }, params);
   const r = await db().query<Resultado & { sid: string; rn?: number }>(
+    // nosemgrep: tolatino-sql-con-texto-interpolado — condiciones() solo pone $n; CTE validado
     `${CTE(p)},
           sp as (select id, business_id from sponsorships where city_id = $1 and category_id = $2 and status = 'activo' and starts_at <= now() and ends_at > now()),
           base as (select ${COLUMNAS}, (select sp.id from sp where sp.business_id = b.id order by sp.id limit 1) as sn ${DESDE} and b.category_id = $2 and b.id in (select business_id from sp)${extra}),

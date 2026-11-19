@@ -135,6 +135,7 @@ export async function guardarNoche(c: PoolClient, negocio: string, p: NocheIn, a
   if (p.nota !== undefined) { const t = txt(p.nota, 60); add("music_note", t ? JSON.stringify({ es: t, en: t }) : null); if (t) set[set.length - 1] += "::jsonb"; posts.push(["music", { nota: t || null }]); }
   if (p.vestimenta !== undefined) { const t = txt(p.vestimenta, 60); add("dress", t ? JSON.stringify({ es: t, en: t }) : null); if (t) set[set.length - 1] += "::jsonb"; posts.push(["dress", t || null]); }
   if (!set.length) return { ok: true };
+  // nosemgrep: tolatino-sql-con-texto-interpolado — set lo arma add() con columnas fijas de esta función; los valores van como $n
   await c.query(`update noche_settings set ${set.join(", ")}, updated_by = $2, updated_at = now() where business_id = $1`, v);
   // El historial de lo publicado esa noche (solo inserción; guardián coverConHistoria).
   for (const [f, val] of posts) await c.query(`insert into night_posts (business_id, city_id, night, field, value, by) values ($1, $2, $3::date, $4, $5::jsonb, $6)`, [negocio, b.city, b.noche, f, JSON.stringify(val), actor]);

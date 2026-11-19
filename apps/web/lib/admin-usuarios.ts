@@ -69,6 +69,7 @@ export async function listaUsuarios(s: Staff, f: FiltrosUsr) {
   const [filas, total, k] = await Promise.all([
     db().query<{ id: string; nombre: string | null; phone: string; photo: string | null; zona: string | null; ciudad: string | null; estado: string; dueno: boolean; staff: string | null; creado: string; visto: string | null;
       rango: number; pedidos: number; citas: number; reportes: number; promo: boolean; posts: number; resenas: number }>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — add() solo recibe condiciones fijas con $n; el orden sale de comparaciones; la página es un número
       `select u.id, ${NOMBRE} as nombre, u.phone, u.photo_url as photo, z.name->>'es' as zona, c.name as ciudad, ${ESTADO_USR} as estado, ${DUENO} as dueno,
               (select r.name->>'es' from staff_members m join staff_roles r on r.key = m.role where m.user_id = u.id and m.status = 'active') as staff,
               u.created_at as creado, u.last_seen_at as visto, coalesce(cp.rank_level, 1)::int as rango, coalesce(k.pedidos, 0) as pedidos, coalesce(k.citas, 0) as citas,
@@ -78,6 +79,7 @@ export async function listaUsuarios(s: Staff, f: FiltrosUsr) {
          left join user_stats_cache k on k.user_id = u.id left join community_profiles cp on cp.user_id = u.id
         where ${where} order by ${orden} limit ${POR_PAGINA} offset ${(f.pag - 1) * POR_PAGINA}`, p),
     // Sin filtros (solo las ciudades de quien mira), el total es el de arriba: no se cuenta dos veces el millón.
+    // nosemgrep: tolatino-sql-con-texto-interpolado — add() solo recibe condiciones fijas con $n; el orden sale de comparaciones; la página es un número
     sinFiltros ? Promise.resolve(null) : db().query<{ n: number }>(`select count(*)::int as n from users u where ${where}`, p),
     // 9b-3 · Las cifras de arriba sin mirar a cada persona: con 1 M de vecinos, «¿es dueño?» y el estado fila por fila tardaban 900 ms. Dueños =
     // los distintos dueños de negocios; con sanción = las cuentas que no están activas (índice parcial) más las advertidas, sin repetir.

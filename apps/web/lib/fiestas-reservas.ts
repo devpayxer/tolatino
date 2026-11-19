@@ -211,6 +211,7 @@ const SEL = `select o.id::text, o.number as num, o.business_id as biz, b.name as
                from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id join users u on u.id = o.user_id
                left join payments p on p.operation_id = o.id and p.kind = 'deposit'`;
 async function leer(c: PoolClient | ReturnType<typeof db>, where: string, args: unknown[], lock = false): Promise<Op | null> {
+  // nosemgrep: tolatino-sql-con-texto-interpolado — leer() es privada y cada llamada de este archivo pasa una condición fija con $1/$2
   return (await c.query<Op>(`${SEL} where o.kind = 'party' and ${where}${lock ? " for update of o" : ""}`, args)).rows[0] ?? null;
 }
 const hora = (m: number) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).padStart(2, "0")} ${m < 720 ? "AM" : "PM"}`;

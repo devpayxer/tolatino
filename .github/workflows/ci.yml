@@ -194,7 +194,11 @@ jobs:
       - name: Semgrep con las reglas de semgrep/ (SQL armado con texto, HTML crudo, procesos con texto, secretos)
         run: |
           python3 -m venv "$RUNNER_TEMP/sg" && "$RUNNER_TEMP/sg/bin/pip" install -q semgrep==1.185.0
-          "$RUNNER_TEMP/sg/bin/semgrep" scan --config semgrep/ --error --metrics=off --disable-version-check apps packages services scripts
+          # 9t · La prueba de las reglas (semgrep/tolatino.ts): lo que tienen que cazar sale y lo que no, no. Una regla que deja de ver algo falla aquí.
+          "$RUNNER_TEMP/sg/bin/semgrep" --test --metrics=off --disable-version-check semgrep/
+          "$RUNNER_TEMP/sg/bin/semgrep" scan --config semgrep/ --error --metrics=off --disable-version-check --json-output="$RUNNER_TEMP/semgrep.json" apps packages services scripts
+          # 9t · Lo que Semgrep no pudo leer (un tipo o una expresión que su lector no entiende) no lo revisó: cuenta como rojo, no como limpio.
+          node -e 'const e = require(process.argv[1]).errors ?? []; for (const x of e) console.error([].concat(x.type)[0], x.path ?? "", String(x.message ?? "").slice(0, 300)); if (e.length) { console.error(`Semgrep no pudo leer ${e.length} parte(s): lo que no lee no lo revisa.`); process.exit(1); }' "$RUNNER_TEMP/semgrep.json"
 
   web:
     name: web · build una vez para todos los grupos

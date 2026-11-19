@@ -23,6 +23,7 @@ const money = (c: number) => `$${(c / 100).toLocaleString("en-US", { maximumFrac
 type OpE = { id: string; num: string; biz: string; uid: string; status: string; detail: string | null; k: string; tot: number; pay: string | null; city: string };
 async function op(c: { query: ReturnType<typeof db>["query"] }, where: string, args: unknown[], lock = false): Promise<OpE | null> {
   return (await c.query<OpE>(
+    // nosemgrep: tolatino-sql-con-texto-interpolado — op() es privada y cada llamada pasa una condición fija con $1/$2
     `select o.id::text, o.number as num, o.business_id as biz, o.user_id::text as uid, o.status, o.status_detail as detail, o.details->>'k' as k, o.total_cents as tot, o.pay_status as pay, o.city_id as city
        from operations o where o.kind = 'trip' and ${where}${lock ? " for update" : ""}`, args)).rows[0] ?? null;
 }

@@ -117,6 +117,7 @@ export async function listaContenido(s: Staff, f: FiltrosCont) {
     }
   }
   const [L, cab, ciu] = await Promise.all([
+    // nosemgrep: tolatino-sql-con-texto-interpolado — trozos de PARTES/REPORTE (fijos por tipo, tipo de la lista TIPOS); los filtros entran por add() como $n
     trozos.length ? db().query<FilaCont>(`select y.k, y.id, y.biz, y.bname, y.who, y.uid, y.rango, y.inv, y.oficial, ci.name as ciudad, y.text, y.extra, y.up, y.dn, to_char(y.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, y.hidden, y.why, y.rep, y.pin, y.lock,
               (y.rep > 0)::int || '|' || to_char(y.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') || '|' || y.k || '|' || y.id as cur
          from (${trozos.join("\nunion all\n")}) y left join cities ci on ci.id = y.city_id order by (y.rep > 0)::int desc, y.at desc, y.k desc, y.id desc limit ${LIM}`, v) : Promise.resolve({ rows: [] as FilaCont[] }),

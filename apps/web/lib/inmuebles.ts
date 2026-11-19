@@ -300,6 +300,7 @@ export async function guardarHerramientaInm(c: PoolClient, negocio: string, p: I
   await c.query(`insert into inm_settings (business_id, city_id, itin, s8, pets, min_down_pct, prequal_days, soft_pull, buyer_no_commission, util, furnished, updated_by)
                  values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) on conflict (business_id) do nothing`,
     [negocio, b.city, h.itin, h.s8, h.pets, h.minDown, h.prequal, h.softPull, h.sinCom, h.util, h.mueble, actor]);
+  // nosemgrep: tolatino-sql-con-texto-interpolado — set() es de esta función y cada llamada pasa columnas fijas; los valores van como $2, $3
   const set = (sql: string, v: unknown[]) => c.query(`update inm_settings set ${sql}, updated_by = $${v.length + 2}, updated_at = now() where business_id = $1`, [negocio, ...v, actor]);
   const prop = (id: unknown) => h.props.find((x) => x.id === String(id) && !x.adm);
   const rentas = `business_id = $1 and rent_cents is not null and kind not in ('local', 'oficina', 'bodega', 'cocina', 'salon', 'almacen', 'parqueo')`;

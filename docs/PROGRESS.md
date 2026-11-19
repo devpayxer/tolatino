@@ -2654,3 +2654,25 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   (lib/direccion-negocio.ts). Guardián `panelEquipoSoloLectura` (alreves9n23 27/27; `guiaDelPanelCompleta` acepta `const dueno = await accesoPanel`);
   e2e `neg9n23` escrita (390/1360, ES/EN, rechazo con la base igual, sin marcar leído, vecino y equipo sin neg:ver «Sin acceso», el dueño igual): no
   corrió aquí (sin Docker), va al CI dirigido. tsc + guardianes en verde. Ayuda `admin-negocios` (ES/EN).
+- **19 nov · 9t · SQL armado con texto: auditoría y la regla de Semgrep por flujo de datos** (LAUNCH «Semgrep `tolatino-sql-con-texto-interpolado`
+  solo ve nombres de afuera» → ✓). **Ninguna inyección real.** `semgrep/tolatino.yml`: la regla pasa a **modo taint** — fuente = todo parámetro de
+  cualquier función (con nombre, flecha, desestructurado; Semgrep sin cuenta mira función por función, así que lo que una acción pasa a lib cuenta
+  como de afuera) más `cookies()`, `headers()`, `req.json()/text()/formData()`, `req.nextUrl`, `new URL(…).searchParams`; propagador `w.push(…)`;
+  sumidero = el texto de `.query(…)` en sus **dos** formas; limpiadores = Number/parseInt/Math.*/aritmética/comparaciones/typeof, `MAPA[x]`, el
+  `.length` solo del arreglo de parámetros armado ahí (`const v = [...]`; un `{ length: "…" }` de una acción no limpia) y `centroSQL`/`radioSQL`/`CTE`/
+  `ident` (revisados, una sola definición). Hallazgos: 72 en 46 archivos (de 802 consultas con `${…}` en el texto, de 5 721 `.query` en apps/web), cada
+  uno seguido hasta su origen y marcado `// nosemgrep: … — <porqué>`: ayudantes privados (`set`/`add`/`put`/`leer(where)`/`op`/`opDe`) cuyas llamadas
+  son todas literales (comprobado con un script por archivo), filtros que ya pasaron por `leerFiltros*`, mapas fijos, `DUENO(q)`, el uuid de
+  `DE_MIEMBRO` (regex sin comillas posibles) y los fragmentos de `data_map` (solo los escribe la semilla, validados). Además, a mano, las 337
+  plantillas de apps con algo que no es constante (lo que taint no ve: valores de la base, código de módulo): constantes, la zona horaria de la ciudad
+  como subconsulta, `data_map`. **La regla vieja estaba rota de dos formas que nadie veía:** no reconocía ninguna `await x.query<Tipo>(…)` como
+  consulta (2 544 de 5 721, el 44 %) y Semgrep se saltaba pedazos de 4 archivos que no sabe leer (`import("…").T[]` en acciones-colas
+  —decidirCambio—, acciones-eventos, sistema/salud y usePuertaLocal; `/<!--/` en compa/ayuda-indice) sin que el CI lo contara: ahora
+  `Array<import("…").T>` y `/<!-{2}/`, y el CI falla si `--json-output` trae `errors`. El CI corre también `semgrep --test semgrep/` con la prueba
+  `semgrep/tolatino.ts` (13 casos que tiene que cazar —parámetro, nombres que la vieja no miraba, desestructurado, flecha, `w.push`+`join`, por
+  variable, `await c.query<T>`, `query<T>` en Promise.all, FormData, req.json(), searchParams, cookies(), `.map`, `.length` de afuera— y 7 que no);
+  quitar el sumidero `await …<T>` la hace fallar («missed lines: [50]»). Endurecido sin ser bug: `buscar.ts` limit/offset siempre enteros acotados.
+  Guardián nuevo `semgrepSqlPorFlujo` (modo taint, fuentes, las dos formas del sumidero, `.length` acotado, limpiadores con nombre revisados y únicos,
+  la prueba con sus casos, el CI con --test y con los errores de lectura, cada `nosemgrep` con regla y porqué, sin las dos formas que Semgrep no lee);
+  alreves9t 14/14. Local: `semgrep --test semgrep/` ✓, `semgrep scan --config semgrep/ --error … apps packages services scripts` 0 hallazgos y 0
+  errores de lectura, tsc ✓, guardianes ✓.
