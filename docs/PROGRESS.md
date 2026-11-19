@@ -2944,3 +2944,6 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   Recomendados 0,5 s; el total 11,7 s en un runner lento: «contenido» y «categoría» también salieron ~1,5× más lentos sin tocarlos). Rangos y
   Recomendados siguen cada 10 min (tope 10 s); los activos por rango 7/30/90 pasan a cada hora con tope propio de 15 s (REVISION: decidido por mí,
   reversible). Ayuda de Analítica ES/EN al día. Guardián resumenComunidadUnaPasada ampliado, alreves9tresumen 7/7.
+- **19 nov · 9t · Barrido de la Comunidad dentro de sus topes** (carga 44581283913): vuelta de 10 min 2,1 s (de 10), activos cada hora 9,7 s (de 15). LAUNCH ✓.
+  La imagen nueva del runner (20261111.196.1) es ~1,5× más lenta en todo (generar la carga misma también): «contenido» y «categoría» se pasan
+  de su presupuesto en las tres últimas cargas sin cambios en su código (anotado en LAUNCH «Lo de una sola vuelta varía en el runner»).
