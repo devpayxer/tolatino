@@ -138,7 +138,10 @@ const desk = (b, extra = {}) => b.newContext({ viewport: { width: 1360, height: 
     process.on('exit', () => sql(`update items set avail = '${avPF}' where business_id = '${BIZ}' and name->>'es' = 'Pescado frito'`));
     await pd.goto(B + `/n/${BIZ}?tab=menu`); await pd.evaluate(() => { localStorage.removeItem('tl-carrito-v1'); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); }); await pd.reload();
     await (await hidratado(vis(pd, 'Pescado frito'))).click();
-    ok(await espera(async () => (await pd.locator('[data-bloque="lleva"]').count()) > 0), 'la hoja del plato trae «Lleva o es»');
+    const hayLleva = await espera(async () => (await pd.locator('[data-bloque="lleva"]').count()) > 0);
+    // 19 nov · Falló en los cuatro anchos (antes solo en la barajada): si falla, dice si la hoja abrió, qué etiquetas tiene el plato y la hora.
+    const diag = hayLleva ? '' : ` (etiquetas: ${sql(`select tags::text || ' · ' || avail || ' · ' || status from items where business_id = '${BIZ}' and name->>'es' = 'Pescado frito'`)}; hora NY: ${sql(`select to_char(now() at time zone 'America/New_York', 'HH24:MI')`)}; ventana: ${await pd.locator('[role="dialog"]').count()}; página: «${(await pd.innerText('body')).replace(/\s+/g, ' ').slice(0, 260)}»)`;
+    ok(hayLleva, 'la hoja del plato trae «Lleva o es»' + diag);
     ok(/PESCADO O MARISCOS/.test(await pd.locator('[data-bloque="lleva"]').innerText()), 'con lo que marcó el panel (pescado o mariscos)');
     await shot(pd, 'plato-lleva-1360', false);
     barrer();
