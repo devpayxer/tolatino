@@ -219,7 +219,7 @@ export function Desplegable({ lang, ancla, ciudad, lugar, ph, phTodo, cat, onClo
           <div key={s}>
             <div className="px-2.5 pb-1 pt-3.5 font-mono text-[10px] font-extrabold tracking-[0.14em] text-ink/60">{s}</div>
             {filas.map((x, i) => x.seccion !== s ? null : (
-              <div key={i} className="grid" data-fila={x.kind}>
+              <div key={i} className="grid grid-cols-[minmax(0,1fr)]" data-fila={x.kind}>
                 <SearchResultRow size="sug" parts={x.parts} image={x.image} icon={x.icon} meta={x.meta} right={x.right} rightColor={x.rightColor ?? undefined} active={hl === i + 1} onHover={() => setHl(i + 1)} onClick={() => ir(x.href)} />
               </div>
             ))}

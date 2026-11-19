@@ -254,7 +254,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
         <div key={s}>
           <div className="px-3 pb-1.5 pt-4 font-mono text-[10px] font-extrabold tracking-[0.14em] text-ink/60">{s}</div>
           {sug.filas.filter((x) => x.seccion === s).map((x, i) => (
-            <div key={i} className="grid" onMouseDown={(e) => e.preventDefault()}>
+            <div key={i} className="grid grid-cols-[minmax(0,1fr)]" onMouseDown={(e) => e.preventDefault()}>
               <SearchResultRow size="sug" parts={x.parts} image={x.image} icon={x.icon} meta={x.meta} right={x.right} rightColor={x.rightColor ?? undefined} onClick={() => router.push(x.href)} />
             </div>
           ))}
@@ -418,9 +418,9 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                     <span className="font-display text-[18px] font-extrabold tracking-[-0.03em]">{t.biz}</span>
                     {R.total > 4 && <button type="button" onClick={() => ir({ tab: "biz" })} className="whitespace-nowrap text-[12.5px] font-bold text-action">{f(t.verN, { n: R.total })}</button>}
                   </div>
-                  {R.tarjetas[0]?.plan === "pro" && <div className="grid"><TarjetaNegocio es={v.lang === "es"} b={R.tarjetas[0]} origen="buscar" textos={v.tarjeta} /></div>}
+                  {R.tarjetas[0]?.plan === "pro" && <div className="grid grid-cols-[minmax(0,1fr)]"><TarjetaNegocio es={v.lang === "es"} b={R.tarjetas[0]} origen="buscar" textos={v.tarjeta} /></div>}
                   {R.filas.slice(R.tarjetas[0]?.plan === "pro" ? 1 : 0, R.tarjetas[0]?.plan === "pro" ? 5 : 4).map((x) => (
-                    <div key={x.id} className="grid" data-negocio={x.id}>
+                    <div key={x.id} className="grid grid-cols-[minmax(0,1fr)]" data-negocio={x.id}>
                       <SearchResultRow size="row" parts={x.parts} pro={x.pro} image={x.image} meta={x.meta} status={x.status} statusColor={x.statusColor} why={x.why ?? undefined} onClick={() => router.push(`/n/${x.id}`)} />
                     </div>
                   ))}
