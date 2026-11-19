@@ -11014,6 +11014,60 @@ const guardianes = {
     else if (/\blat\b|\blng\b/.test(dl.replace(/millas\(\[d\.lat, d\.lng\], centroDe\(c\)\)/g, ""))) falla(G, A, 0, "abrirSelector: el punto de una dirección no viaja a la pantalla (solo «dir:<id>», la etiqueta y la calle)");
   },
 
+  /* 9t · destacarEventosDelServidor (LAUNCH «Destacar eventos»; 0183): Destacados de Eventos es editorial (Super Admin › Crecimiento › Destacados ›
+     EVENTOS), distinto de Patrocinado (C-003, lo pagado). La base: un evento de esa ciudad, no cancelado y con una fecha publicada por delante; uno vivo
+     por evento; nunca más que destacados_evt_por_ciudad a la vez (con candado por ciudad; lo cancelado, oculto o pasado no ocupa puesto); solo «fijar»;
+     nada se borra ni se edita. La vitrina pública: vivo AHORA, de esta ciudad, VIVO (listable) y no cancelado, una vez por evento, sin repetir lo que ya sale
+     en Patrocinados, con tope de Configuración; en la lista del día salen primero y ninguna página los repite. Solo lib/crecimiento/destacados.ts escribe
+     featured; fijar pide mkt:editar, la ciudad de quien fija, motivo, máx. 30 días y auditoría en la misma transacción (la ciudad sale del evento, nunca
+     de la pantalla). Espejo: el panel del organizador lo dice (lib/evt.ts → EventosPanel) y el Super Admin lo lista y lo controla (Crecimiento y la ficha
+     del evento). Al revés: alreves9tevt. */
+  destacarEventosDelServidor() {
+    const G = "destacarEventosDelServidor", M = "packages/db/migrations/0183_destacar_eventos.sql", L = "apps/web/lib/crecimiento/destacados.ts", EP = "apps/web/lib/evt-publico.ts",
+      PG = "apps/web/app/(app)/eventos/page.tsx", EV = "apps/web/app/(app)/eventos/Eventos.tsx", AC = "apps/web/app/admin/acciones-crecimiento.ts", CR = "apps/web/app/admin/Crecimiento.tsx",
+      EA = "apps/web/app/admin/EventosAdmin.tsx", LE = "apps/web/lib/evt.ts", PA = "apps/web/app/panel/EventosPanel.tsx";
+    for (const f of [M, L, EP, PG, EV, AC, CR, EA, LE, PA]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de Destacados de Eventos (9t)");
+    // La base.
+    const m = readFileSync(M, "utf8"), reg = ultimaFn("featured_reglas"), alv = ultimaFn("destacados_evt_a_la_vez");
+    if (!/placement = 'eventos' and event_id is not null and business_id is null and mode = 'fijar'/.test(m)) falla(G, M, 0, "featured 'eventos': lleva el evento (nunca un negocio) y solo «fijar»");
+    if (!/pg_advisory_xact_lock\(hashtextextended\('destacados_evt:' \|\| new\.city_id, 0\)\)/.test(reg) || !/destacados_evt_a_la_vez\(new\.city_id, new\.from_at, new\.to_at\) >= public\.cfg_int\('destacados_evt_por_ciudad'\) then raise exception 'destacados_evt_tope'/.test(reg)) falla(G, M, 0, "la base no deja pasar de destacados_evt_por_ciudad a la vez en una ciudad (con candado por ciudad)");
+    if (!/e\.city_id = new\.city_id and e\.status <> 'cancelled'\s+and exists \(select 1 from public\.event_dates d where d\.event_id = e\.id and d\.listable and d\.ends_at > greatest\(now\(\), new\.from_at\)\)/.test(reg)) falla(G, M, 0, "solo se fija un evento de esa ciudad, no cancelado y con una fecha publicada por delante");
+    if (!/f\.event_id = new\.event_id and f\.retired_at is null and f\.to_at > now\(\)\) then raise exception 'destacado: ese evento ya tiene uno vivo'/.test(reg)) falla(G, M, 0, "un evento no tiene dos destacados vivos");
+    if (!/raise exception 'un destacado no se borra/.test(reg) || !/new\.event_id is distinct from old\.event_id/.test(reg) || !/raise exception 'un destacado retirado no vuelve'/.test(reg)) falla(G, M, 0, "un destacado no se borra, no se edita y retirado no vuelve");
+    if (!/e\.status <> 'cancelled' and exists \(select 1 from public\.event_dates d where d\.event_id = e\.id and d\.listable and d\.ends_at > now\(\)\)/.test(alv)) falla(G, M, 0, "lo cancelado, oculto o pasado no ocupa puesto (destacados_evt_a_la_vez)");
+    // La vitrina y la lista del día.
+    const ep = sinComent(EP), vit = cuerpoFn(ep, "destacadosEventos"), ec = cuerpoFn(ep, "eventosCiudad");
+    if (!/f\.city_id = \$2 and f\.placement = 'eventos' and f\.retired_at is null and f\.from_at <= now\(\) and f\.to_at > now\(\)/.test(vit)) falla(G, EP, 0, "Destacados de Eventos: solo lo vivo AHORA de esta ciudad (sin retirar, desde ≤ ahora < hasta)");
+    if (!/where \$\{VIVO\} and d\.city_id = \$2 and e\.status <> 'cancelled'/.test(vit) || !/\$\{PRIMERA\(\)\}/.test(vit)) falla(G, EP, 0, "Destacados de Eventos: solo eventos publicados (VIVO = listable) y no cancelados, una vez por evento (PRIMERA)");
+    if (!/not exists \(select 1 from event_sponsorships s where s\.event_id = d\.event_id and s\.status = 'activo'/.test(vit)) falla(G, EP, 0, "Destacados de Eventos no repite lo que ya sale en Patrocinados (lo pagado va por su lado)");
+    if (!/limit \$\{cfgFijadosEvt\}/.test(vit) || !/const cfgFijadosEvt = "\(select cfg_int\('destacados_evt_por_ciudad'\)\)";/.test(ep)) falla(G, EP, 0, "Destacados de Eventos nunca muestra más que destacados_evt_por_ciudad (limit cfg_int)");
+    if (!/const FIJADO_VIVO = "f\.city_id = \$1 and f\.placement = 'eventos' and f\.retired_at is null and f\.from_at <= now\(\) and f\.to_at > now\(\)";/.test(ep)) falla(G, EP, 0, "FIJADO_VIVO: lo fijado vivo ahora de esta ciudad");
+    if (!/const arriba = !cursor && fx\.length \?/.test(ec) || !/x\.primera && !fijados\.has\(x\.ev\) && ids\.length <= POR_PAGINA_EVT/.test(ec)) falla(G, EP, 0, "eventosCiudad: lo destacado sale primero en la primera página y ninguna página lo repite");
+    if (!/destacadosEventos\(loc, u\?\.id \?\? null, es\)/.test(sinComent(PG))) falla(G, PG, 0, "la cartelera saca Destacados de destacadosEventos (el servidor)");
+    const ev = sinComent(EV);
+    if (!/<SectionHeader title=\{E2\(`Destacados en \$\{ciudad\}`, `Featured in \$\{ciudad\}`\)\} \/>/.test(ev) || !/<Cartel k=\{k\}/.test(cuerpoFn(ev, "Eventos"))) falla(G, EV, 0, "«Destacados en …» es la pieza de Negocios › Destacados (SectionHeader) con la tarjeta del evento de siempre (Cartel)");
+    // Solo lib/crecimiento/destacados.ts escribe featured.
+    for (const f of codigo) {
+      if (!/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(f) || f === L) continue;
+      readFileSync(f, "utf8").split("\n").forEach((x, i) => { if (/\b(insert into|update|delete from)\s+featured\b/i.test(x)) falla(G, f, i + 1, "escribe destacados por su cuenta: solo lib/crecimiento/destacados.ts"); });
+    }
+    // Fijar y retirar.
+    const l = sinComent(L), fj = cuerpoFn(l, "fijarDestacadoEvento"), rt = cuerpoFn(l, "retirarDestacado");
+    if (!/if \(!s\.puede\("mkt", "editar"\)\) return mal/.test(fj)) falla(G, L, 0, "fijar un evento pide mkt:editar");
+    if (!/if \(!enCiudad\(s, e\.city\)\) return mal/.test(fj)) falla(G, L, 0, "fijar: la ciudad es la del evento y tiene que ser de quien fija");
+    if (!/if \(motivo\.length < 3\) return mal/.test(fj)) falla(G, L, 0, "fijar pide el motivo");
+    if (!/if \(diasEntre\(d0, hasta\) \+ 1 > 30\) return mal/.test(fj) || !/least\(t\.a \+ interval '30 days',/.test(fj)) falla(G, L, 0, "un destacado de evento dura 30 días como máximo");
+    if (!/return await tx\(async \(c\) => \{/.test(fj) || !/await auditar\(c, \{ actor: s\.id, action: "mkt\.destacado_evt\.fijar", targetKind: "event"/.test(fj)) falla(G, L, 0, "fijar deja la auditoría en la misma transacción (mkt.destacado_evt.fijar)");
+    if (!/await auditar\(c, \{ actor: s\.id, action: "mkt\.destacado_evt\.retirar", targetKind: "event"/.test(rt) || !/if \(!enCiudad\(s, f\.city\)\) return mal/.test(rt)) falla(G, L, 0, "retirar un evento: de la ciudad de quien retira, con su auditoría (mkt.destacado_evt.retirar)");
+    if (!/export async function destacadoEvtFijar\(evento: string, desde: string, hasta: string, motivo: string\): Promise<ResAdm> \{/.test(sinComent(AC))) falla(G, AC, 0, "destacadoEvtFijar no recibe la ciudad de la pantalla (sale del evento)");
+    // Espejo: el Super Admin lo lista y controla; el panel del organizador lo dice.
+    const cr = sinComent(CR), dev = cuerpoFn(cr, "DestacadosEventos");
+    if (!/destacadoEvtFijar\(id, ref\.current\.desde, ref\.current\.hasta, m\)/.test(dev) || !/destacadoRetirar\(x\.id, m\)/.test(dev)) falla(G, CR, 0, "Crecimiento › Destacados › EVENTOS fija (desde, hasta, motivo) y retira");
+    if (!/\.\.\.destacadoAdm\(e, destacado, !!publico, !!puede\.destacar, setConf, E, en\)/.test(sinComent(EA))) falla(G, EA, 0, "la ficha del evento en el Super Admin dice si está destacado y lo controla");
+    if (!/from featured f where f\.event_id = \$1::bigint and f\.retired_at is null and f\.to_at > now\(\)/.test(cuerpoFn(sinComent(LE), "eventoPanel")) || !/destacado: fx\.rows\[0\] \?\? null/.test(cuerpoFn(sinComent(LE), "eventoPanel"))) falla(G, LE, 0, "eventoPanel lee si To'Latino destacó el evento (espejo)");
+    if (!/if \(e\.destacado\) \{/.test(cuerpoFn(sinComent(PA), "ficha")) || !/DESTACADO POR TO’LATINO · Sale arriba de Eventos/.test(cuerpoFn(sinComent(PA), "ficha"))) falla(G, PA, 0, "la ficha del evento en el panel del organizador dice que está destacado");
+  },
+
   telefonoAlAzarRespetaFijos() {
     const G = "telefonoAlAzarRespetaFijos";
     for (const f of archivos.filter((x) => /^pruebas\/(e2e|lib|alreves)\/[^/]+\.(cjs|mjs)$/.test(x))) {

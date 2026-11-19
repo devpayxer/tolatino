@@ -380,6 +380,8 @@ export type FilaPanelEvt = {
   cupo: number; cap: number; desde: number | null; foto: string | null; origen: "panel" | "publica"; nota: string | null; pasado: boolean;
   /* 6f · Serie o varios días: la próxima fecha (dia), cuántas quedan por delante, la regla y los días. */
   kind: "single" | "series" | "span"; rep: Repite | null; span: number; nf: number; inicio: string;
+  /* 9t · To'Latino lo fijó en Destacados de Eventos y sale ahora (featured 'eventos', 0183). */
+  destacado: boolean;
 };
 /* 9n-2 · Panel › Eventos con cursor (L972). Lo vivo y próximo (y los borradores) sale completo (hasta 200); lo PASADO o cancelado sale de a 20, lo más
    reciente primero, con «Ver más» (cursor = fecha de inicio + id, sin OFFSET). Un organizador con cientos de eventos ya no baja todos. */
@@ -393,7 +395,8 @@ const COLS_EVT = `e.id::text, e.title as t, e.format as fmt, e.status as st, e.h
             (select m.url from media m where m.owner_kind = 'event' and m.owner_id = e.id::text and m.status = 'visible' order by m.sort, m.created_at limit 1) as foto,
             e.origin as origen, coalesce(e.hidden_reason, case when e.status in ('changes', 'rejected') then e.review_note end, case when e.pending_status in ('changes', 'rejected') then e.pending_note end) as nota,
             e.start_date + (e.span_days - 1) < (now() at time zone c.timezone)::date
-              and not exists (select 1 from event_dates d where d.event_id = e.id and d.status = 'scheduled' and d.ends_at > now()) as pasado`;
+              and not exists (select 1 from event_dates d where d.event_id = e.id and d.status = 'scheduled' and d.ends_at > now()) as pasado,
+            exists (select 1 from featured f where f.event_id = e.id and f.retired_at is null and f.from_at <= now() and f.to_at > now()) as destacado`;
 const ES_PASADO = `(e.status <> 'draft' and ((e.status in ('cancelled', 'rejected', 'done')) or (e.start_date + (e.span_days - 1) < (now() at time zone c.timezone)::date
                 and not exists (select 1 from event_dates d where d.event_id = e.id and d.status = 'scheduled' and d.ends_at > now()))))`;
 export async function eventosDelNegocio(negocio: string): Promise<{ filas: FilaPanelEvt[]; mas: boolean }> {
@@ -419,23 +422,30 @@ export type EvtPanel = {
   kind: "single" | "series" | "span"; fechas: FechaPanel[];
   log: { decision: string; by: "business" | "staff" | "auto"; at: string; nota: string | null }[];
   apelacion: { numero: string; estado: string } | null; puedeApelar: boolean;
+  /* 9t · Espejo de Destacados de Eventos (Super Admin › Crecimiento › Destacados): si To'Latino lo fijó arriba de Eventos de la ciudad, desde y hasta
+     cuándo, y si sale ahora (no sale si empieza después o si el evento ya no se ve). Sin el motivo interno del equipo. */
+  destacado: { desde: string; hasta: string; sale: boolean; luego: boolean } | null;
 };
 export async function eventoPanel(negocio: string, id: string): Promise<EvtPanel | null> {
   if (!ID.test(id)) return null;
   const e = await filaEvento(db(), id, negocio);
   if (!e) return null;
-  const [x, log, ap, fechas] = await Promise.all([
+  const [x, log, ap, fechas, fx] = await Promise.all([
     lineasYFotos(db(), id),
     db().query<{ decision: string; by: "business" | "staff" | "auto"; at: string; nota: string | null }>(`select decision, by_kind as by, at, note as nota from event_review_log where event_id = $1::bigint order by at desc, id desc limit 20`, [id]),
     db().query<{ numero: string; estado: string }>(`select number as numero, status as estado from appeals where target_kind = 'event' and target_id = $1 order by created_at desc limit 1`, [id]),
     fechasDe(db(), id),
+    db().query<{ desde: string; hasta: string; sale: boolean; luego: boolean }>(
+      `select to_char(f.from_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as desde, to_char(f.to_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as hasta,
+              f.from_at <= now() and exists (select 1 from event_dates d where d.event_id = f.event_id and d.listable and d.ends_at > now()) as sale, f.from_at > now() as luego
+         from featured f where f.event_id = $1::bigint and f.retired_at is null and f.to_at > now() order by f.id desc limit 1`, [id]),
   ]);
   const vivo = aBorrador(e, x), d = conPendiente(vivo, e.pending);
   return {
     id: e.id, slug: e.slug, st: e.status, hidden: e.hidden_reason, nota: e.review_note, razon: e.review_reason_key, pending: e.pending_status, pendingNota: e.pending_note,
     cambios: e.pending ? cambiosQueImportan(vivo, d) : [], version: e.version, origen: e.origin, d, vivo, enviado: e.submitted_at, aprobado: e.approved_at, log: log.rows,
     apelacion: ap.rows[0] ?? null, puedeApelar: !ap.rows[0] && (!!e.hidden_at || e.status === "rejected"),
-    kind: e.kind, fechas,
+    kind: e.kind, fechas, destacado: fx.rows[0] ?? null,
   };
 }
 

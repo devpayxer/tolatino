@@ -5568,3 +5568,33 @@ historial y el dueño lo ve). Detalles:
   una quitada no sale). Elige Casa → **Ver N negocios** → el encabezado dice «Hazleton, PA · 5 mi · casa» y las distancias cuentan desde ahí.
 - «Otra» dirección sale como **Otra dirección** (el modelo no guarda un nombre propio como «Casa de mami» del prototipo).
 - **Lo que más buscan los vecinos** sigue oculto (no hay datos que lo llenen).
+
+## Fase 9 · 9t — Destacar eventos (19 nov · 0183) — mirar
+**Qué mirar (teléfono y escritorio, ES y EN):**
+- Super Admin (570-555-0199) › **Crecimiento › Destacados**: ahora con dos grupos, **NEGOCIOS** (como estaba) y **EVENTOS**. En EVENTOS: «Fijados a la vez:
+  N de 4», **HOY ARRIBA DE EVENTOS**, **EVENTOS FIJADOS** (VIVO · PROGRAMADO · NO SALE · TERMINÓ · RETIRADO, con «Retirar») y **FIJAR UN EVENTO**: DESDE,
+  HASTA, buscar por nombre, «Fijar» con motivo.
+- **Eventos** (`/eventos`): debajo de Patrocinados, **Destacados en Hazleton** (el título y una fila de carteles, como «Destacados en Hazleton» de
+  Negocios). Toca el día del evento fijado: sale primero en la lista de ese día.
+- Como el organizador (La Terraza, 570-555-0366) › **Panel › Eventos**: la fila dice «DESTACADO POR TO'LATINO» y la ficha, «Sale arriba de Eventos de tu
+  ciudad … hasta el …».
+- La ficha del evento en el Super Admin (Eventos › el evento): **Destacar en Eventos** (hasta …) o **DESTACADO EN EVENTOS** con «Retirar».
+- Configuración › Crecimiento: **Destacados de Eventos · fijados a la vez por ciudad** (1–12, 4 de fábrica).
+
+**Decisiones tomadas por defecto (AB, reversibles):**
+- **Dónde se ve:** una fila «Destacados en {ciudad}» entre Patrocinados y el calendario (la misma pieza de Negocios › Destacados: SectionHeader + la
+  tarjeta del evento de siempre) **y** primero en la lista de su día. El diseño D de C-003 no trae esa fila: es la pieza más cercana del sistema
+  (regla 7); si prefieres solo «primero en su día» (sin fila), se quita la fila y queda lo demás.
+- La tarjeta del evento destacado **no lleva una etiqueta nueva** («DESTACADO»): las etiquetas de la tarjeta siguen siendo VAS · HOY · GRATIS ·
+  QUEDAN N; el título de la fila es el aviso (como en Negocios).
+- **Destacado ≠ Patrocinado:** si un evento fijado también tiene un patrocinio activo, sale solo en Patrocinados (arriba) y no se repite en la fila de
+  Destacados; en la lista de su día sí sale primero. El tope de cada uno es aparte.
+- **Tope 4 por ciudad** (Configuración, 1–12); cuenta el **peor momento** del rango (un programado para la semana que viene no bloquea hoy si no se cruza).
+- **Fechas:** DESDE vacío o de hoy = ahora; HASTA es el último día que sale (hora de la ciudad); **máximo 30 días** (el límite de la tabla de 0138); si el
+  evento termina antes, se queda en su último día.
+- **Se cae solo** (sin barrido): lo cancelado, oculto, pausado o pasado deja de salir y deja de ocupar puesto; si se vuelve a ver antes del «hasta»,
+  vuelve a salir. En el Super Admin sale como **NO SALE**.
+- **Al organizador no se le manda aviso** (push/bandeja) cuando lo destacan: lo ve en su panel. Si quieres el aviso, se agrega su plantilla.
+- El motivo es interno (auditoría y Super Admin); el panel del organizador no lo muestra.
+- El radio del vecino manda (como Patrocinados y Negocios › Destacados): un evento fijado fuera de su radio no le sale en la fila.
+- En el teléfono la fila es de carteles de 160 px que se deslizan; en la computadora, una rejilla como la lista del día.

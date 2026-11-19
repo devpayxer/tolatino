@@ -1697,8 +1697,18 @@ en el momento. Se marca solo cuando está hecho de verdad.
       Inicio (por ciudad que viene) y el aviso «CIERRE DE CIUDAD POR APROBAR». La captura nueva de `admin-hoy` espera tu OK (REVISION 9i; LAUNCH «Fase 9 · 9i» → 9b).
 - [ ] **→ 9k** · **Pagar la recompensa del promotor a la Wallet:** el negocio traído califica solo (`promotor_operaciones` pedidos o citas hechos) y la recompensa queda anotada
       (`business_referrals.reward_cents`, «pendiente de pago»); pasar a «pagado» con el movimiento de Wallet llega con el dinero real (9k). (9h, 14 nov)
-- [ ] **→ 9t** · **Destacar eventos:** `featured` lleva solo negocios (Negocios › Destacados). Fijar un evento en Eventos de la ciudad (el modelo Featured también lo pide) va con lo de
-      Eventos del vecino. (9h, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._
+- [x] **→ 9t** · **Destacar eventos:** `featured` lleva solo negocios (Negocios › Destacados). Fijar un evento en Eventos de la ciudad (el modelo Featured también lo pide) va con lo de
+      Eventos del vecino. (9h, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._ — _9t (19 nov): 0183 — `featured`
+      lleva eventos (placement 'eventos', solo «fijar», desde/hasta del equipo, máx. 30 días; tope `destacados_evt_por_ciudad` 4 en Configuración › Crecimiento,
+      el peor momento del rango, con candado; lo cancelado/oculto/pasado no ocupa puesto ni sale). Super Admin › Crecimiento › Destacados › EVENTOS (lo de hoy,
+      fijados VIVO · PROGRAMADO · NO SALE · TERMINÓ · RETIRADO, «Retirar», «Fijar un evento») y la ficha del evento («Destacar en Eventos» / DESTACADO EN
+      EVENTOS), con motivo y auditoría `mkt.destacado_evt.*`. /eventos: «Destacados en {ciudad}» (SectionHeader + Cartel, la pieza de Negocios › Destacados) y
+      primero en la lista de su día; no repite lo que ya sale en Patrocinados (C-003). Panel › Eventos: DESTACADO POR TO'LATINO (lista y ficha). Guardián
+      `destacarEventosDelServidor`, alreves9tevt 27/27, e2e evt9t (escrita; sin Docker ni Playwright aquí no corrió: probado en local con `next dev` + copia
+      de la base, ver PROGRESS)._
+- [ ] **→ 9b** · **Destacar eventos (9t) en la corrida completa:** la e2e `evt9t` (Crecimiento › Destacados › EVENTOS, /eventos 390/1360, el panel del
+      organizador, el tope, ocultar, retirar y la ficha del Super Admin) está escrita y no corrió (sin Docker ni Playwright en esa máquina), y `next build` no
+      llegó a correr (disco lleno); tsc, guardianes, alreves9tevt y CMS sí. Correrlas en el CI dirigido y mirar las capturas `evt9t-*`. (9t, 19 nov)
 - [ ] **→ 9n** · **Segmento «Free con N ítems» y la insignia Fundadores en la página del negocio:** las campañas segmentan por rol, ciudad, inactivos, categoría y plan; contar ítems no se
       construyó. El número de negocio fundador queda en `early_access.founder_negocio_n` y la landing lo dice; la insignia en la ficha del negocio no se pintó. (9h, 14 nov) — _(9n-7, 15 nov): el segmento «ÍTEMS EN SU CATÁLOGO» (5/10/20/50+, solo dueños; cre9h lo cuenta contra la base) está hecho. Sigue abierto: la insignia Fundadores en la ficha del negocio (sin diseño de esa pieza: va a REVISION para el fundador, regla 7)._
 - [x] **Campañas por correo de verdad:** salen por la bandeja de correo (`email_outbox`, plantilla `campaign`, solo correos verificados, con el pie «para no recibir más: Mi cuenta ›

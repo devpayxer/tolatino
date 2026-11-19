@@ -19,6 +19,8 @@ import type { LiqPanel } from "@/lib/evt-liquidacion";
 import { diaSemana } from "@/lib/plazo-txt";
 import type { FechaPanel } from "@/lib/evt";
 import { evtCancelarAdmin, evtCongelar, evtCupo, evtExtenderVenta } from "./acciones-eventos";
+import { destacadoEvtFijar, destacadoRetirar } from "./acciones-crecimiento";
+import { sumarDias } from "@/lib/evt-comun";
 import type { CuposFecha, Sobreventa } from "@/lib/evt-admin";
 import { useE } from "./idioma-admin";
 
@@ -119,8 +121,8 @@ type RsvpAdm = { nombre: string; party: number; st: string; at: string; dia: str
 type VentasAdm = { kpi: { vendidos: number; bruto: number; comision: number; devuelto: number; ordenes: number; cortesias: number; transferidos: number; espera: number; cancelados: number }; ordenes: { num: string; quien: string; total: number; at: string; n: number; code: string; tz: string }[] };
 /* 6f · En la lista: «Cada jueves · 8 fechas» o «3 días». */
 const formaAdm = (e: FilaEvtAdm, E: EF, en: boolean) => (e.kind === "series" && e.rep ? ` · ${repL(e.dia, e.rep, !en)} · ${E(`${e.nf} por delante`, `${e.nf} ahead`)}` : e.kind === "span" ? ` · ${E(`${e.span} días`, `${e.span} days`)}` : "");
-export function EventoAdmin({ e, puede, rsvp = [], publico = null, ventas = null, cambios = null, liq = null, fechas = [], forma = null, cupos = null }: { fechas?: FechaPanel[]; forma?: { kind: string; l: string } | null; e: EvtAdm; puede: { aprobar: boolean; retirar: boolean; editar?: boolean; dinero?: boolean }; rsvp?: RsvpAdm[]; publico?: { href: string; van: number } | null; ventas?: VentasAdm | null;
-  cambios?: CambiosPanel | null; liq?: LiqPanel | null; cupos?: CuposFecha | null }) {
+export function EventoAdmin({ e, puede, rsvp = [], publico = null, ventas = null, cambios = null, liq = null, fechas = [], forma = null, cupos = null, destacado = null }: { fechas?: FechaPanel[]; forma?: { kind: string; l: string } | null; e: EvtAdm; puede: { aprobar: boolean; retirar: boolean; editar?: boolean; dinero?: boolean; destacar?: boolean }; rsvp?: RsvpAdm[]; publico?: { href: string; van: number } | null; ventas?: VentasAdm | null;
+  cambios?: CambiosPanel | null; liq?: LiqPanel | null; cupos?: CuposFecha | null; destacado?: DestAdm | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024, E = useE(), en = E("", "x") === "x", loc = en ? "en-US" : "es-US";
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); router.refresh(); };
@@ -156,9 +158,31 @@ export function EventoAdmin({ e, puede, rsvp = [], publico = null, ventas = null
         // 6j · Cupos y venta de UNA fecha: lo vendido de cada tipo, mesa y el aforo del día; «Ajustar cupo» y «Extender ventas».
         ...cuposAdm(e, cupos, fechas, puede, setConf, (f) => router.push(`/admin/eventos/${e.id}?fecha=${f}`), desk, E, en),
         ...cambiosAdm(e, cambios, liq, puede, setConf, E, en),
+        ...destacadoAdm(e, destacado, !!publico, !!puede.destacar, setConf, E, en),
         ...(acts.length ? [{ type: "acts", items: acts } as Bloque] : []), ...(org.length ? [{ type: "group", k: E("ORGANIZADOR", "ORGANIZER") } as Bloque, { type: "acts", items: org } as Bloque] : [])]} h1={desk ? 26 : 22} />
       <Toast t={toast} desk={desk} />
     </div>);
+}
+
+/* 9t · Destacados de Eventos en la ficha del evento (el espejo de Super Admin › Crecimiento › Destacados › EVENTOS): si está fijado arriba de Eventos (del…
+   al…, o programado) con «Retirar»; si sale al público y no lo está, «Destacar en Eventos» desde hoy hasta el día que se escriba (mkt:editar), con motivo y
+   auditoría. La lista, las fechas futuras y el tope de la ciudad: Crecimiento › Destacados. */
+type DestAdm = { fila: { id: string; desde: string; hasta: string; luego: boolean } | null; hoy: string; tz: string };
+function destacadoAdm(e: EvtAdm, X: DestAdm | null, publico: boolean, puede: boolean, setConf: (c: Confirmar) => void, E: EF, en: boolean): Bloque[] {
+  if (!X) return [];
+  const t = txt(e.t, en), dia = (iso: string) => new Date(iso).toLocaleString(en ? "en-US" : "es-US", { timeZone: X.tz, day: "numeric", month: "short" }), D = X.fila;
+  if (D) {
+    const ult = new Date(Date.parse(D.hasta) - 60_000).toISOString();
+    return [{ type: "note", tone: "ok", icon: "star", t: D.luego ? E(`DESTACADO EN EVENTOS · programado del ${dia(D.desde)} al ${dia(ult)}`, `FEATURED ON EVENTS · scheduled from ${dia(D.desde)} to ${dia(ult)}`) : E(`DESTACADO EN EVENTOS · arriba de Eventos de la ciudad hasta el ${dia(ult)}`, `FEATURED ON EVENTS · at the top of Events in the city until ${dia(ult)}`),
+      cta: puede ? E("Retirar", "Retire") : undefined, onCta: puede ? () => setConf({ titulo: E(`Retirar «${t}» de Destacados`, `Retire “${t}” from Featured`), cta: E("Retirar", "Retire"), peligro: true,
+        sub: E("Deja de salir en Destacados de Eventos al momento. Nada se borra.", "It stops showing in Featured events right away. Nothing is deleted."), plantillas: [E("Ya no hace falta.", "No longer needed."), E("Queja abierta de los vecinos.", "Open complaint from neighbors.")], hacer: (m) => destacadoRetirar(D.id, m) }) : undefined } as Bloque];
+  }
+  if (!publico || !puede) return [];
+  return [{ type: "acts", items: [{ l: E("Destacar en Eventos", "Feature on Events"), icon: "star", onClick: () => setConf({ titulo: E(`Destacar «${t}» en Eventos`, `Feature “${t}” on Events`), cta: E("Destacar", "Feature"),
+    sub: E("Sale arriba de Eventos de su ciudad y primero en la lista de su día, desde hoy hasta el día que escribas (máximo 30). Si el evento se cancela, se oculta o pasa, deja de salir solo. Para empezar otro día: Crecimiento › Destacados.", "It shows at the top of Events in its city and first in its day’s list, from today to the day you write (30 at most). If the event is cancelled, hidden or over, it stops showing on its own. To start another day: Growth › Featured."),
+    valor: { k: E("HASTA (AAAA-MM-DD, EL ÚLTIMO DÍA QUE SALE)", "UNTIL (YYYY-MM-DD, THE LAST DAY IT SHOWS)"), ini: sumarDias(X.hoy, 6), max: 10 },
+    plantillas: [E("Evento de la comunidad.", "Community event."), E("Fiesta patria de la ciudad.", "City heritage celebration."), E("Campaña de la ciudad.", "City campaign.")],
+    hacer: (m, _el, v) => destacadoEvtFijar(e.id, "", v.trim(), m) }) }] } as Bloque];
 }
 
 /* 6e · La ficha del evento en el Super Admin: lo que cambió y el dinero por fecha, y las dos acciones de To'Latino. */

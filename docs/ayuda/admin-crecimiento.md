@@ -3,7 +3,7 @@
 _Pantallas: **Super Admin › Crecimiento** (`/admin/crecimiento`) con sus pestañas **Semilla**, **Promotores**, **Campañas**, **Destacados**, **Patrocinios**, **Enlaces y QR** y
 **Lista de espera**, y el PDF para imprimir de cada enlace (`/admin/crecimiento/volante/{código}`). Ver: Crecimiento · ver. Crear y retirar enlaces,
 campañas, destacados y promotores: Crecimiento · editar. Aprobar una campaña grande y mostrar la fecha en la landing: Crecimiento · aprobar. Las cifras son
-de las ciudades de quien mira. Terminar un patrocinio: Crecimiento · editar. Escritorio y teléfono. Versión: 17 nov 2026. Audiencia: equipo. Tema: equipo._
+de las ciudades de quien mira. Terminar un patrocinio: Crecimiento · editar. Escritorio y teléfono. Versión: 19 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Arriba**: negocios (y los de esta semana), la lista de espera (y los negocios apartados), los promotores con código vivo, los escaneos de los
@@ -17,8 +17,14 @@ de las ciudades de quien mira. Terminar un patrocinio: Crecimiento · editar. Es
   Su propio negocio, o uno de su mismo teléfono, no cuenta (queda «rechazado»).
 - **Campañas**: un mensaje a un **segmento** (vecinos o dueños de negocios de una ciudad; sin entrar desde 30, 60 o 90 días; categoría, plan y cuántos ítems tiene a la venta —5, 10, 20 o 50 o más; p. ej. «Free con 10+ ítems»— para
   dueños) por un **canal** (en la app, push, SMS o correo), en español y en inglés, ahora o a una hora. Antes de programarla ves a cuántas personas llega.
-- **Destacados**: la vitrina de Negocios › Destacados rota sola cada día entre los Pro abiertos con foto. Aquí **fijas** uno arriba o lo **quitas** de la
-  rotación por unos días, con motivo; ves la vitrina de hoy tal como la ve el vecino.
+- **Destacados**: dos grupos. **Negocios**: la vitrina de Negocios › Destacados rota sola cada día entre los Pro abiertos con foto. Aquí **fijas** uno
+  arriba o lo **quitas** de la rotación por unos días, con motivo; ves la vitrina de hoy tal como la ve el vecino. **Eventos**: **fijas** un evento
+  publicado de la ciudad arriba de la página de Eventos («Destacados en {ciudad}»; también sale primero en la lista de su día) **desde** un día
+  (vacío o hoy = ahora) **hasta** el último día que sale (30 días como máximo; si el evento termina antes, hasta su último día), con motivo. Ves lo
+  que sale hoy y la lista de los fijados: **VIVO**, **PROGRAMADO** (empieza después), **NO SALE** (el evento se canceló, se ocultó o pasó: deja de
+  salir solo y no ocupa puesto), **TERMINÓ** o **RETIRADO**, con **«Retirar»**. Fijados a la vez por ciudad: lo de Configuración › Crecimiento
+  (4 de fábrica). Es **editorial y sin cobro**: no es Patrocinado (lo que paga el organizador). El organizador ve en su panel que su evento está
+  destacado. También se destaca desde la ficha del evento (Super Admin › Eventos › el evento › **Destacar en Eventos**, desde hoy).
 - **Patrocinios**: dos grupos. **Negocios**: lo que los negocios compran desde su panel (Cobros y plan › Patrocinio) para salir en la fila
   «Patrocinados» de la página de su categoría. **Eventos**: lo que los organizadores compran desde Panel › Eventos › el evento › Patrocinar para
   salir arriba de la página de Eventos de su ciudad (1 semana, 1 mes o hasta el evento; el de un evento cancelado o que ya pasó termina solo; las
@@ -42,7 +48,8 @@ de las ciudades de quien mira. Terminar un patrocinio: Crecimiento · editar. Es
    a imprimir.
 3. **Campaña**: escribe el nombre, elige el tipo, la ciudad, a quién, el canal, los dos títulos y los dos textos, el enlace (opcional) y la hora (vacío =
    ahora). «Programar la campaña» y el motivo.
-4. **Fijar o quitar un destacado**: busca el negocio por su nombre y toca «Fijar» o «Quitar», con el motivo.
+4. **Fijar o quitar un destacado**: busca el negocio por su nombre y toca «Fijar» o «Quitar», con el motivo. **Un evento**: en EVENTOS, escribe desde
+   y hasta (AAAA-MM-DD), busca el evento por su nombre, toca «Fijar» y escribe el motivo.
 5. **Nombrar promotor**: su teléfono (tiene que tener cuenta) y su ciudad.
 6. Todo se **retira** con motivo; nada se borra y todo queda en la auditoría.
 
@@ -56,6 +63,10 @@ de las ciudades de quien mira. Terminar un patrocinio: Crecimiento · editar. Es
 | Correo sin verificar | Queda «sin correo»; no le llega. |
 | Retiras una campaña que ya está saliendo | No sale más; lo que ya salió queda en el historial. |
 | Hay 6 destacados fijados en la ciudad | No deja fijar otro hasta que se retire uno (se cambia en Configuración › Crecimiento). |
+| Ya hay 4 eventos fijados en esas fechas | «Ya hay 4 eventos fijados en esas fechas»: retira uno o elige otras fechas. Cuenta el peor momento del rango. |
+| Un evento fijado se cancela, se oculta o pasa | Deja de salir solo (NO SALE) y libera su puesto; si vuelve a verse antes de que termine, vuelve a salir. |
+| El evento ya está fijado | No deja fijarlo otra vez: retira el que tiene. |
+| El evento ya sale en Patrocinados | No se repite en Destacados; sigue fijado y vuelve a salir ahí cuando termine el patrocinio. |
 | El destino de un enlace no es una página de To'Latino | No se crea. Nunca lleva a otra página. |
 | Retiras un enlace | El QR impreso ya no cuenta y lleva al Inicio. |
 | Un robot (la vista previa de WhatsApp, un buscador) abre el enlace | No cuenta como escaneo. |
@@ -81,8 +92,14 @@ de las ciudades de quien mira. Terminar un patrocinio: Crecimiento · editar. Es
   business, or one from the same phone, does not count (it is "rejected").
 - **Campaigns**: a message to a **segment** (neighbors or business owners in a city; inactive for 30, 60 or 90 days; category, plan and how many items they have for sale —5, 10, 20 or 50 or more; e.g. «Free with 10+ items»— for owners) on a
   **channel** (in the app, push, SMS or email), in Spanish and English, now or at a set time. Before scheduling you see how many people it reaches.
-- **Featured**: the Businesses › Featured showcase rotates on its own every day among open Pro businesses with a photo. Here you **pin** one at the top or
-  **remove** one from the rotation for a few days, with a reason; you see today's showcase as neighbors see it.
+- **Featured**: two groups. **Businesses**: the Businesses › Featured showcase rotates on its own every day among open Pro businesses with a photo. Here
+  you **pin** one at the top or **remove** one from the rotation for a few days, with a reason; you see today's showcase as neighbors see it. **Events**:
+  you **pin** a live event of the city at the top of the Events page («Featured in {city}»; it also shows first in its day's list) **from** a day
+  (empty or today = now) **until** the last day it shows (30 days at most; if the event ends earlier, until its last day), with a reason. You see what
+  shows today and the list of pinned events: **LIVE**, **SCHEDULED** (starts later), **NOT SHOWING** (the event was cancelled, hidden or is over: it
+  stops showing on its own and does not take a slot), **ENDED** or **RETIRED**, with **«Retire»**. Pinned at once per city: what is set in
+  Configuration › Growth (4 by default). It is **editorial and free**: it is not Sponsored (what the organizer pays for). The organizer sees on their
+  dashboard that their event is featured. You can also feature from the event page (Super Admin › Events › the event › **Feature on Events**, from today).
 - **Sponsorships**: two groups. **Businesses**: what businesses buy from their dashboard (Payouts and plan › Sponsorship) to show in the «Sponsored»
   row of their category page. **Events**: what organizers buy from Dashboard › Events › the event › Sponsor to show at the top of their city's
   Events page (1 week, 1 month or until the event; one for a cancelled or finished event ends on its own; the numbers are views, visits and
@@ -106,7 +123,8 @@ de las ciudades de quien mira. Terminar un patrocinio: Crecimiento · editar. Es
    it to print.
 3. **Campaign**: write the name, pick the type, the city, who, the channel, both titles and both texts, the link (optional) and the time (empty = now).
    "Schedule the campaign" and the reason.
-4. **Pin or remove a featured business**: search the business by name and tap "Pin" or "Remove", with the reason.
+4. **Pin or remove a featured business**: search the business by name and tap "Pin" or "Remove", with the reason. **An event**: in EVENTS, write from
+   and until (YYYY-MM-DD), search the event by name, tap «Pin» and write the reason.
 5. **Name a promoter**: their phone (they must have an account) and their city.
 6. Everything is **retired** with a reason; nothing is deleted and everything stays in the audit trail.
 
@@ -120,6 +138,10 @@ de las ciudades de quien mira. Terminar un patrocinio: Crecimiento · editar. Es
 | Unverified email | It shows "no email"; it does not reach them. |
 | You retire a campaign that is already going out | Nothing more goes out; what already went out stays in the history. |
 | There are 6 pinned in the city | It does not let you pin another until one is retired (changed in Configuration › Growth). |
+| There are already 4 events pinned on those dates | «There are already 4 events pinned on those dates»: retire one or pick other dates. The worst moment of the range counts. |
+| A pinned event is cancelled, hidden or over | It stops showing on its own (NOT SHOWING) and frees its slot; if it shows again before the end, it is back. |
+| The event is already pinned | It does not let you pin it again: retire the one it has. |
+| The event already shows in Sponsored | It is not repeated in Featured; it stays pinned and shows there again when the sponsorship ends. |
 | A link's destination is not a To'Latino page | It is not created. It never goes to another site. |
 | You retire a link | The printed QR stops counting and goes to the Home. |
 | A robot (the WhatsApp preview, a search engine) opens the link | It does not count as a scan. |

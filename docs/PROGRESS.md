@@ -2743,3 +2743,19 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   la prueba con sus casos, el CI con --test y con los errores de lectura, cada `nosemgrep` con regla y porqué, sin las dos formas que Semgrep no lee);
   alreves9t4 14/14. Local: `semgrep --test semgrep/` ✓, `semgrep scan --config semgrep/ --error … apps packages services scripts` 0 hallazgos y 0
   errores de lectura, tsc ✓, guardianes ✓.
+- **19 nov · 9t · Destacar eventos** (LAUNCH «Destacar eventos» → ✓). **0183**: `featured` (0138, solo negocios) lleva también eventos: `event_id`,
+  `placement` 'negocios' | 'eventos' (check: un evento nunca lleva negocio y solo «fijar»), `featured_reglas` reescrita con su rama de eventos (candado
+  por ciudad, evento de esa ciudad no cancelado con una fecha listable por delante de `from_at`, uno vivo por evento, `destacados_evt_a_la_vez` ≥
+  `destacados_evt_por_ciudad` → `destacados_evt_tope`; lo cancelado, oculto o pasado no cuenta) y la de negocios igual que antes; nada se borra ni se
+  edita. **Super Admin › Crecimiento › Destacados** pasa a dos grupos (NEGOCIOS como estaba, EVENTOS nuevo: lo que sale hoy, los fijados con estado y
+  «Retirar», «Fijar un evento» con DESDE / HASTA y buscar por nombre sobre `events.tsv`); `lib/crecimiento/destacados.ts` (fijarDestacadoEvento,
+  retirarDestacado para los dos, buscarEventoDestacar) con mkt:editar, ciudad de quien fija (la ciudad sale del evento, nunca de la pantalla), motivo,
+  máx. 30 días y auditoría en la misma transacción. La ficha del evento en el Super Admin: DESTACADO EN EVENTOS con «Retirar», o «Destacar en
+  Eventos» (desde hoy hasta …). **/eventos**: `destacadosEventos` (vivo ahora, VIVO, no cancelado, PRIMERA, en el radio, sin lo que ya está en
+  Patrocinados, tope de Configuración) → «Destacados en {ciudad}» entre Patrocinados y el calendario (SectionHeader + Cartel, como Negocios ›
+  Destacados) y `eventosCiudad` pone lo fijado primero en la primera página del día y lo salta en todas (cursor igual). **Panel › Eventos**:
+  DESTACADO POR TO'LATINO en la fila y en la ficha (sin el motivo interno). Guardián `destacarEventosDelServidor`, alreves9tevt 27/27. Local: tsc ✓,
+  guardianes ✓, CMS --verificar ✓; la migración aplicada sobre una copia de la base local (Postgres 16) y probada a mano (tope, programado, otra
+  ciudad, cancelado, ocultar libera el puesto, borrar/editar/retirado no vuelve); `next dev` contra esa copia: /eventos (hoy y otro día: fijado
+  primero), Crecimiento › Destacados, la ficha del Super Admin y Panel › Eventos renderizan con lo esperado (compilados por `next dev`). **e2e evt9t
+  escrita y sin correr** (aquí no hay Docker ni Playwright) y **`next build` no corrió** (la máquina se quedó sin disco a mitad: queda para el CI). Ayuda: `eventos-buscar-y-ver`, `panel-eventos-crear`, `admin-crecimiento` (ES/EN).

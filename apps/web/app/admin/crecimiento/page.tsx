@@ -26,7 +26,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     seed: t === "seed" ? await semilla(s, c) : null,
     promo: t === "promo" ? await promotoresAdmin(s, c) : null,
     camp: t === "camp" ? await campanasAdmin(s, c, desde) : null,
-    feat: t === "feat" ? await destacadosAdmin(s, cf) : null,
+    feat: t === "feat" ? await destacadosAdmin(s, cf, l === "es") : null,
     links: t === "links" ? await enlacesAdmin(s, c, desde) : null,
     // C-002 · Patrocinios: lo vivo primero (o lo terminado, o todo), por ciudad, con cursor; puestos y precios de Configuración › Crecimiento.
     pat: t === "pat" ? { ...(await (await import("@/lib/patrocinio")).patrociniosAdmin(s.cities, c, l, desde, sp.e === "terminados" || sp.e === "todos" ? sp.e : "vivos")), e: sp.e === "terminados" || sp.e === "todos" ? sp.e : "vivos",

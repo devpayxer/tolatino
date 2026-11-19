@@ -92,7 +92,7 @@ export function evtBloques(c: Ctx): Sec {
     const F = fmtDe(c, e.fmt), [tag, tone] = etiquetaEvt({ status: e.st, hidden: e.hidden, pending: e.pending, hoy: e.dia === X.hoy }, es), tix = e.entrada === "tickets";
     // 6f · Una serie: la próxima fecha y «CADA JUEVES · N FECHAS»; varios días: el rango.
     const forma = e.kind === "series" && e.rep ? ` · ${repL(e.inicio, e.rep, es).toUpperCase()}` : e.kind === "span" ? ` · ${e.span}${E2(" DÍAS", " DAYS")}` : "";
-    return { key: e.id, img: e.foto ? `url("${e.foto}")` : undefined, bm: mesCorto(e.dia, es), bd: String(Number(e.dia.slice(8))), m: `${bi(F.label, es).toUpperCase()}${forma}${e.origen === "publica" ? E2(" · DESDE PUBLICA TU EVENTO", " · FROM PUBLISH YOUR EVENT") : ""}`, tag, tone,
+    return { key: e.id, img: e.foto ? `url("${e.foto}")` : undefined, bm: mesCorto(e.dia, es), bd: String(Number(e.dia.slice(8))), m: `${bi(F.label, es).toUpperCase()}${forma}${e.origen === "publica" ? E2(" · DESDE PUBLICA TU EVENTO", " · FROM PUBLISH YOUR EVENT") : ""}${e.destacado ? E2(" · DESTACADO POR TO’LATINO", " · FEATURED BY TO’LATINO") : ""}`, tag, tone,
       t: bi(e.t, es) || E2("Sin nombre", "Untitled"), s: `${e.kind === "span" ? spanL(e.dia, e.span, es) : diaCorto(e.dia, es)} · ${hora(e.h0)}${e.kind === "series" && e.nf > 1 ? E2(` · ${e.nf} fechas por delante`, ` · ${e.nf} dates ahead`) : ""}${e.nota && (e.hidden || e.st === "changes" || e.st === "rejected" || e.pending === "changes" || e.pending === "rejected") ? ` · ${e.nota}` : ""}`,
       hasBar: tix && e.cap > 0, pct: `${Math.min(100, Math.round(((X.vendidos[e.id] ?? 0) * 100) / Math.max(1, e.cap)))}%`, barC: (X.vendidos[e.id] ?? 0) >= e.cap ? "var(--tl-danger)" : "var(--tl-signal)",
       l: tix ? E2(`${X.vendidos[e.id] ?? 0} de ${e.cap} ${F.f.cntL.es} vendidos`, `${X.vendidos[e.id] ?? 0} of ${e.cap} ${F.f.cntL.en} sold`) : e.entrada === "rsvp" ? (e.cupo ? E2(`Cupo de ${e.cupo}`, `${e.cupo} spots`) : E2("RSVP sin límite", "RSVP, no limit")) : E2("Sin lista", "No list"),
@@ -153,6 +153,16 @@ function ficha(c: Ctx, e: EvtPanel): Sec {
   // Lo que pasó con la revisión (triángulo: lo que decidió To'Latino se ve aquí con su motivo).
   if (e.hidden) out.push({ type: "note", tone: "danger", icon: "ban", t: E2(`OCULTO POR TO’LATINO · No sale en Eventos ni en tu página. Motivo: ${e.hidden}`, `HIDDEN BY TO’LATINO · It does not show in Events or on your page. Reason: ${e.hidden}`),
     cta: e.puedeApelar ? E2("Apelar", "Appeal") : undefined, onCta: () => c.nav(RUTA_APELAR(e.id)) });
+  // 9t · Espejo de Destacados de Eventos (Super Admin › Crecimiento › Destacados): To'Latino lo fijó arriba de Eventos de la ciudad, desde y hasta cuándo.
+  if (e.destacado) {
+    const fd = (iso: string) => new Date(iso).toLocaleString(es ? "es-US" : "en-US", { timeZone: c.d.hoy.tz, day: "numeric", month: "short" });
+    // «hasta» es el comienzo del día siguiente (hora de la ciudad): el último día que sale es el de un minuto antes.
+    const D0 = { ...e.destacado, hasta: new Date(Date.parse(e.destacado.hasta) - 60_000).toISOString() };
+    out.push({ type: "note", tone: D0.sale ? "ok" : "ink", icon: "star", t: D0.luego
+      ? E2(`DESTACADO POR TO’LATINO · Del ${fd(D0.desde)} al ${fd(D0.hasta)} sale arriba de Eventos de tu ciudad y primero en la lista de su día. No cuesta nada.`, `FEATURED BY TO’LATINO · From ${fd(D0.desde)} to ${fd(D0.hasta)} it shows at the top of Events in your city and first in its day’s list. It costs nothing.`)
+      : D0.sale ? E2(`DESTACADO POR TO’LATINO · Sale arriba de Eventos de tu ciudad y primero en la lista de su día hasta el ${fd(D0.hasta)}. No cuesta nada.`, `FEATURED BY TO’LATINO · It shows at the top of Events in your city and first in its day’s list until ${fd(D0.hasta)}. It costs nothing.`)
+      : E2("DESTACADO POR TO’LATINO · Ahora no sale: el evento no se ve en Eventos (oculto, pausado o sin fechas por delante).", "FEATURED BY TO’LATINO · Not showing now: the event is not visible in Events (hidden, paused or with no upcoming dates).") });
+  }
   if (e.st === "review") out.push({ type: "note", tone: "info", icon: "clock", t: E2(`EN REVISIÓN · To’Latino lo revisa en ${X.cfg.revisionH} h. Nada se publica antes; te avisamos.`, `UNDER REVIEW · To’Latino reviews it within ${X.cfg.revisionH} h. Nothing goes live before; we will let you know.`) });
   if (e.st === "changes") out.push({ type: "note", tone: "warn", icon: "edit", t: E2(`To’Latino pide un cambio: ${e.nota ?? ""}. Cámbialo y envíalo otra vez.`, `To’Latino asks for a change: ${e.nota ?? ""}. Change it and send it again.`), cta: E2("Editar", "Edit"), onCta: () => c.det(`evt:edit:${e.id}`) });
   if (e.st === "rejected") out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`No se publicó: ${e.nota ?? ""}.`, `It was not published: ${e.nota ?? ""}.`), cta: e.puedeApelar ? E2("Apelar", "Appeal") : undefined, onCta: () => c.nav(RUTA_APELAR(e.id)) });
