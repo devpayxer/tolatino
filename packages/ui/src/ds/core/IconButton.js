@@ -18,7 +18,7 @@ function IconButton({
   const r = size >= 50 ? 15 : size >= 42 ? 13 : 12;
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClick,
-    role: "button",
+    role: "button", 'data-toque': '',
     tabIndex: 0,
     "aria-label": label || LBL[icon] || icon,
     "aria-pressed": active === undefined ? undefined : !!active,

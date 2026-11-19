@@ -14,6 +14,7 @@ function ModuleSwitcher({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '3.5px',
       display: 'flex',
       gap: 7,
       overflowX: 'auto',

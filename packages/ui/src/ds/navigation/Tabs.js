@@ -31,6 +31,7 @@ function Tabs({
     role: "tablist",
     onKeyDown: __ds_scope.__flechas,
     style: {
+      '--tl-toque-x': (T ? 22 : 2) / 2 + 'px',
       display: 'flex',
       gap: T ? 22 : 2,
       overflowX: 'auto',
@@ -42,7 +43,7 @@ function Tabs({
       fg = T ? on ? 'var(--tl-ink)' : 'rgba(11,14,18,.6)' : on ? 'var(--tl-ink)' : 'rgba(11,14,18,.6)';
     return /*#__PURE__*/React.createElement("div", {
       key: t.id,
-      role: "tab",
+      role: "tab", 'data-toque': '',
       "aria-selected": on,
       onClick: () => onChange && onChange(t.id),
       ...__ds_scope.__key(() => onChange && onChange(t.id)),

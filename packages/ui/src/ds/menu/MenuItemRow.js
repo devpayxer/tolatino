@@ -179,7 +179,7 @@ function AddPill({
   }, /*#__PURE__*/React.createElement("span", {
     onClick: left,
     ...__ds_scope.__key(x ? left : undefined),
-    role: "button",
+    role: "button", 'data-toque': 'recorte',
     "aria-label": qty === 1 ? removeLabel : decLabel,
     "aria-hidden": !x,
     style: {
@@ -206,7 +206,7 @@ function AddPill({
   }, qty), /*#__PURE__*/React.createElement("span", {
     onClick: right,
     ...__ds_scope.__key(right),
-    role: "button",
+    role: "button", 'data-toque': 'recorte',
     "aria-label": qty === 0 || x ? addLabel : qtyLabel + ': ' + qty,
     style: {
       width: dark ? 26 : 34,
@@ -352,6 +352,8 @@ function OptionGroup({
     }
   }, meta) : null, /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '4px',
+      '--tl-toque-y': '4px',
       marginTop: 11,
       display: 'grid',
       gridTemplateColumns: 'repeat(' + columns + ',minmax(0,1fr))',
@@ -362,7 +364,7 @@ function OptionGroup({
     return /*#__PURE__*/React.createElement("div", {
       key: i,
       onClick: () => onToggle && onToggle(i),
-      role: multi ? 'checkbox' : 'radio', 'aria-checked': on, 'aria-disabled': o.disabled ? true : undefined, tabIndex: o.disabled ? -1 : 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); !o.disabled && onToggle && onToggle(i); } },
+      role: multi ? 'checkbox' : 'radio', 'data-toque': '', 'aria-checked': on, 'aria-disabled': o.disabled ? true : undefined, tabIndex: o.disabled ? -1 : 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); !o.disabled && onToggle && onToggle(i); } },
       style: {
         padding: on ? '11.5px 13.5px' : '12px 14px',
         borderRadius: 13,
@@ -474,7 +476,8 @@ function OrderBar({
       gap: 12,
       boxShadow: '0 14px 28px -14px rgba(11,14,18,.8)',
       cursor: onClick ? 'pointer' : 'default'
-    }
+    },
+    'data-toque': 'sombra'
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       width: 30,
@@ -579,6 +582,7 @@ function CartLine({
     onClick: onEdit,
     ...__ds_scope.__btn(onEdit, undefined, undefined),
     style: {
+      '--tl-toque-abajo': '4px',
       display: 'inline-block',
       marginTop: 4,
       font: '700 12px Manrope,sans-serif',
@@ -587,6 +591,7 @@ function CartLine({
     }
   }, editLabel) : null, /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-arriba': '4px',
       marginTop: 8
     }
   }, /*#__PURE__*/React.createElement(QtyStepper, {

@@ -6,11 +6,14 @@
 //   entrar al Super Admin y moverse por su menú.
 // «VoiceOver simulado»: el árbol de accesibilidad de Playwright (ariaSnapshot) trae el nombre y el rol de lo que importa (Agregar, Uno más,
 // Uno menos, un día, una hora, Notificaciones…) y ningún control con rol queda fuera del orden de tabulación.
-// Mide aparte, sin fallar, cuántos controles miden menos de 44 px (lo que va a LAUNCH-CHECKLIST: cambiarlos cambia las capturas aprobadas).
+// 9t · Objetivos táctiles de 44 px (pruebas/lib/toque.cjs, packages/ui/src/toque.css): en cada pantalla mide el área que DE VERDAD recibe el toque
+// (caja ∪ ::after invisible, recortada) de cada pieza del sistema y falla si en el teléfono una mide menos de 44 × 44 sin un vecino que lo explique,
+// si el área de una pisa la caja de otro control o de un campo, o si la página con las áreas no es la misma pixel a pixel que sin ellas.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process'); const crypto = require('crypto');
 const { telefonoLibre } = require('../lib/telefono-libre.cjs'); // un teléfono sin cuenta para publicar
 const { medios } = require('../lib/negocio-nuevo.cjs'); // el puerto de Garage de ESTA corrida (fotos del asistente)
+const { medirToque, toqueInvisible } = require('../lib/toque.cjs'); // 9t · el área de toque de 44 px, medida sobre lo servido
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', BIZ = 'sabor-dominicano', N = '/n/' + BIZ, FP = ENT.rec('fotos') + '/';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
@@ -85,9 +88,24 @@ async function recorrerConTab(p, pasos) {
   }
   return { distintos: vistos.size, sinContorno };
 }
-// Los controles que miden menos de 44 px de alto o de ancho (solo se informa).
-const chicos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=button],[role=link],[role=tab],[role=radio],[role=checkbox],[role=switch],button,a[href]')]
-  .filter((e) => e.getClientRects().length > 0 && !e.closest('[aria-hidden=true]')).filter((e) => { const r = e.getBoundingClientRect(); return r.width < 44 || r.height < 44; }).length);
+// 9t · El área de toque (44 × 44) de las piezas del sistema en esta pantalla. En el teléfono, un control corto sin razón (sin un vecino a menos
+// de 44 px que lo limite, sin un contenedor que lo recorte) falla; en el escritorio se informa. En los dos: ningún área pisa la caja de otro
+// control o de un campo (robarle el toque), y la página con las áreas y sin ellas es la misma pixel a pixel (junto a cada control, con el anillo
+// del foco puesto) y no cambia lo que se desplaza. Lo que se dejó sin área a propósito («sombra», «recorte») y lo recortado se informan.
+async function toque44(p, donde, telefono) {
+  const t = await medirToque(p);
+  ok(t.controles > 0, `${donde}: hay piezas del sistema con área de toque (data-toque): ${t.controles}`);
+  ok(t.pisan.length === 0, `${donde}: ningún área de toque pisa la caja de otro control o de un campo` + (t.pisan.length ? ': ' + t.pisan.slice(0, 6).join(' · ') : ''));
+  if (telefono) ok(t.cortos.length === 0, `${donde}: cada control del sistema recibe el toque en 44 × 44 px o lo limita un vecino (${t.vecinos.length}) o su contenedor (${t.recortados.length})` + (t.cortos.length ? ' · CORTOS: ' + t.cortos.slice(0, 8).join(' · ') : ''));
+  else if (t.cortos.length) console.log(`  (informe: ${donde}: ${t.cortos.length} controles con área de menos de 44 px: ${t.cortos.slice(0, 6).join(' · ')})`);
+  for (const [k, txt] of [['sinArea', 'sin área a propósito (cambiaría pixeles; pide el OK visual)'], ['recortados', 'recortados por su contenedor'], ['topeSinVecino', 'con el tope del grupo de un lado sin vecino']])
+    if (t[k].length) console.log(`  (informe: ${donde}: ${t[k].length} ${txt}: ${t[k].slice(0, 5).join(' · ')})`);
+  if (t.ajenos) console.log(`  (informe: ${donde}: ${t.ajenos} controles de la pantalla, fuera del sistema, miden menos de 44 px)`);
+  const v = await toqueInvisible(p, { nombre: donde.replace(/[^a-z0-9]+/gi, '-'), salida: OUT });
+  ok(v.estable, `${donde}: dos capturas seguidas con las áreas son iguales junto a los controles (si no, la página se mueve sola y no se puede comparar)`);
+  ok(v.igual, `${donde}: con las áreas de toque y sin ellas la página es la misma pixel a pixel junto a ${v.zonas} controles (anillo del foco incluido)` + (v.igual ? (v.fuera ? ` · ${v.fuera} pixeles de suavizado del navegador lejos de los controles, no cuentan` : '') : ` · ${v.distintos ?? '?'} pixeles distintos en ${JSON.stringify(v.zona)}${v.sinHerramientas ? ' (sin pngjs/pixelmatch: solo byte a byte)' : ''} — capturas en ${OUT}`));
+  ok(v.scroll.length === 0, `${donde}: las áreas no cambian lo que se desplaza (la página y cada carrusel)` + (v.scroll.length ? ': ' + v.scroll.slice(0, 4).join(' · ') : ''));
+}
 
 // WCAG 2.2 AA (2.5.8): objetivo mínimo de 24 × 24 px (44 es AAA). Se informan los que miden menos, con su nombre (no los enlaces dentro de un texto).
 const minimos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=button],[role=link],[role=tab],[role=radio],[role=checkbox],[role=switch],button,a[href]')]
@@ -122,6 +140,7 @@ const minimos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=but
     ok(rec.distintos >= 12, `Tab recorre la ficha: ${rec.distintos} elementos distintos en 30 pasos, sin quedarse atrapado`);
     ok(rec.sinContorno.length === 0, 'cada elemento con foco se ve (contorno): ' + (rec.sinContorno.slice(0, 6).join(' · ') || 'todos'));
     { const mi = await minimos(m); console.log(`  (informe AA 2.5.8: ${mi.length} controles de la ficha miden menos de 24 px${mi.length ? ': ' + mi.slice(0, 12).join(' · ') : ''})`); }
+    await toque44(m, 'la ficha (menú)', true);
     const mudos0 = await sinFoco(m); ok(mudos0.length === 0, 'la ficha: ningún control con rol queda fuera del orden de tabulación ' + mudos0.slice(0, 6).join(' · '));
     const cm0 = await clicMudo(m); if (cm0.length) console.log('  (aviso: la ficha: clics con mano sin teclado: ' + cm0.slice(0, 5).join(' · ') + ')'); else ok(true, 'la ficha: ningún clic de ratón sin teclado');
     let snap = await arbol(m);
@@ -155,6 +174,7 @@ const minimos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=but
       ok(!(await car.count()), 'Escape cierra «Tu pedido»');
       ok(await m.evaluate(() => !!document.activeElement?.closest('[data-screen-label="Ficha · barra del pedido"]')), 'al cerrar, el foco vuelve a la barra que la abrió');
       await act(m, bar); await car.waitFor(); }
+    await toque44(m, '«Tu pedido»', true);
     snap = await arbol(m); ok(/button "Uno (más|menos)"/.test(snap) || /button "Quitar"/.test(snap), 'árbol: el pedido tiene «Uno más» / «Uno menos» / «Quitar» con nombre');
     await act(m, car.getByText(/^Ir a pagar/));
     await m.waitForURL(/\/pagar$/); await m.locator('[data-pantalla="APP-NEG-CHECKOUT"]').waitFor();
@@ -182,6 +202,7 @@ const minimos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=but
     const barR = m.locator('[data-screen-label="Ficha · barra de pedido"]');
     ok(/1:00 PM/.test(await barR.innerText()), 'Enter / Espacio eligen cuántos, el día y la hora (la barra los muestra)');
     ok((await tab.locator('[role=radio][aria-checked=true]').count()) >= 2, 'los radios elegidos dicen aria-checked (día y hora)');
+    await toque44(m, 'la reserva (cuántos, día y hora)', true);
     await act(m, barR.getByText('Continuar'));
     await m.waitForURL(/\/reservar\?hold=/, { timeout: 20000 });
     const det = m.locator('[data-screen-label="APP-NEG-RESERVA · móvil"]'); await det.getByText('Te guardamos esta mesa').waitFor();
@@ -213,6 +234,7 @@ const minimos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=but
     ok(/button "Uno más"/.test(snap) && /button "Uno menos"/.test(snap), 'árbol: el QtyStepper de los boletos dice «Uno más» y «Uno menos» (antes eran div mudos)');
     await act(m, m.locator(`[data-tipo="${T_GEN}"]:visible >> text="+"`).first(), 'Space');
     ok(await m.locator(`[data-tipo="${T_GEN}"]:visible`).first().innerText().then((t) => /\b1\b/.test(t)), 'Espacio en «Uno más»: el boleto suma 1');
+    await toque44(m, 'los boletos', true);
     await act(m, m.locator('button, [role="button"]', { hasText: 'Continuar' }));
     await m.waitForURL(/\/eventos\/pagar\//, { timeout: 20000 });
     await m.locator('input[placeholder="A nombre de…"]').first().fill('Marisol P');
@@ -235,6 +257,7 @@ const minimos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=but
     await p.getByPlaceholder('Rafael').fill('Mario'); await p.getByPlaceholder('Núñez').fill('Peña');
     const seg = () => act(p, p.getByText('Seguir', { exact: true }).last());
     await seg(); await p.getByText('¿Qué tipo de negocio tienes?').waitFor({ timeout: 10000 });
+    await toque44(p, 'publica (tipo de negocio)', true);
     await act(p, p.getByText('Belleza', { exact: true }).first()); await p.locator('text=/¿QUÉ HACES/').waitFor({ timeout: 8000 });
     await act(p, p.locator('[data-screen-label="ONB-NEG-B1 · tu negocio"] span:has-text("Barbería")').first());
     await p.getByPlaceholder('Ej.: Barbería Don Fello').fill('Barbería ' + TEL.slice(-4)); await dormir(800);
@@ -281,7 +304,7 @@ const minimos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=but
     const cm2 = await clicMudo(a); if (cm2.length) console.log('  (aviso: el Super Admin: clics con mano sin teclado: ' + cm2.slice(0, 5).join(' · ') + ')'); else ok(true, 'el Super Admin: ningún clic de ratón sin teclado');
 
     // ═══ Informe (no falla) ═══
-    const ch = await chicos(a); console.log(`  (informe: ${ch} controles del Super Admin miden menos de 44 px; va a LAUNCH-CHECKLIST: cambiarlos cambia las capturas aprobadas)`);
+    await toque44(a, 'el Super Admin (escritorio)', false);
     { const mi = await minimos(a); console.log(`  (informe AA 2.5.8: ${mi.length} controles del Super Admin miden menos de 24 px${mi.length ? ': ' + mi.slice(0, 12).join(' · ') : ''})`); }
     console.log('  controles operados con el teclado (' + nombres.length + '): ' + [...new Set(nombres)].slice(0, 40).join(' · '));
     ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ').slice(0, 400) : ''));

@@ -166,6 +166,7 @@ function ReviewCard({
     t: translate
   }) : null, photos.length ? /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '4px',
       marginTop: S ? 10 : 12,
       display: 'flex',
       gap: 8,
@@ -233,6 +234,7 @@ function ReviewCard({
     }
   }, reply.text)) : null, helpful || edit || report ? /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '7px',
       marginTop: 12,
       paddingTop: 11,
       borderTop: '1px solid rgba(11,14,18,.06)',

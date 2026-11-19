@@ -2796,3 +2796,28 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   fic005, vec9m, al revés), 44460944263 (llave). En el camino: «Destacar» decía el tope viejo de la caché (bug, arreglado; también en negocios);
   evt9t, pat003 y alreves6f al día; serieUnaVezEnLista mira las dos lecturas de eventosCiudad. La app se sirve en local
   (`tl_loc` + `servir.sh basico` + docker falso que manda el SQL de las pruebas a la base local) para reproducir sin esperar a CI.
+- **19 nov · 9t · Objetivos táctiles de 44 px, sin cambiar lo que se ve** (LAUNCH «Objetivos táctiles de 44 px» → ✓; queda «Área de toque de las
+  piezas con sombra o recortadas», con el OK visual del contraste; REVISION «9t — Objetivos táctiles de 44 px»). **`packages/ui/src/toque.css`**
+  (importado por globals.css, exportado por el paquete): `[data-toque=""]` = position relative + `::after` invisible centrado con
+  max(−tope, min(0, 50 % − 22 px)) por lado → 44 × 44 de toque; `--tl-toque-x/-y` (@property inherits: false: el tope del grupo vale para sus hijos
+  directos; el primero y el último crecen enteros hacia afuera) y `--tl-toque-arriba/-abajo/-izq/-der` (se heredan: bordes de carrusel, costuras).
+  **Quién lo pone:** `scripts/portar-sistema.mjs` (scope.js `__btn`/`__key`, `toque`: cada `role:` de control y cada `<button>` en la misma línea;
+  `data-toque: 'sombra'` a los controles con sombra hacia fuera y al Button «action»; `'recorte'` al «− / +» del plato; CartLine con costura de 4 px;
+  `gruposToque`: el contenedor de dos o más controles —o una lista— con `gap` recibe la mitad del gap con la MISMA expresión, eje según flex/columna/
+  wrap/grid: 54 grupos); `Bloques.tsx` a mano (`data-toque=""` en 34 controles, `tope()`/`lados()` en 13 contenedores); `globals.css «9t · toque»`:
+  los `gap-*` de Tailwind de las pantallas (gap-0 … gap-10, fila → x, columna → y, wrap/grid → los dos). **Medido** (`pruebas/lib/toque.cjs`, lo usa
+  a11y9c en la ficha, «Tu pedido», la reserva, los boletos, publica y el Super Admin): el área real de cada pieza (caja ∪ ::after resuelto por el
+  navegador, recortada por overflow respetando el bloque contenedor) → cortos / vecinos / topeSinVecino / pisan (caja de otro control o de un
+  campo, o dos áreas que se cruzan) / sinArea / recortados; y `toqueInvisible`: captura completa con las áreas y sin ellas (se quita `data-toque` un
+  momento), con el anillo del foco del teclado puesto, pixelmatch 0,005 sin suavizado SOLO junto a los controles (32 px alrededor: fuera de ahí,
+  Chromium cambia el suavizado de un texto en otra capa —el «0» de VoteBar en /sistema— y no cuenta) + scrollWidth/scrollHeight del documento y de
+  cada carrusel. Falla en el teléfono: cortos, pisan, pixeles distintos, scroll; en el escritorio los cortos se informan. **Lo que cazó la comparación:**
+  la sombra del Button «action» pasaba por encima del texto de abajo (paint order de un elemento posicionado: 251 pixeles, hasta 9 niveles) → `sombra`;
+  la esquina redondeada del AddPill (hasta 68 niveles) → `recorte`; el suavizado de íconos/bordes en posiciones fraccionarias (1–8 niveles) no cuenta.
+  Guardián **`toqueDe44`** (toque.css sin nada que se dibuje, fórmula, topes, primero/último; scope.js; cada rol y `<button>` del sistema y de los
+  .tsx de packages/ui; razones conocidas; cada `gap-*` que usa apps/web con sus tres líneas; a11y9c mide) — **alreves9ttoque 25/25** (incluye
+  `sistemaSincronizado` sin el paso del script). Verificación local: `next dev` + Chrome 153 (Playwright de /opt/node-tools) sobre /sistema y un banco
+  temporal (borrado) con los 130 componentes y todos sus `on*`, a 390 (iPhone, táctil) y 1440: 0 cortos, 0 pisan, 0 pixeles distintos, 0 cambios
+  de scroll; al revés a mano del banco: con las sombras con área la comparación da 609 pixeles distintos, sin los topes 5 áreas que se cruzan; un
+  `touchscreen.tap` 2–6 px fuera de la caja dispara el clic del control. tsc ✓, guardianes ✓. **No corrió:** a11y9c (sin Docker ni base aquí) ni
+  WebKit (no hay en esta máquina): el CI lo confirma; los bloques del panel no se midieron en el navegador (sin datos). El contraste AA no se tocó.

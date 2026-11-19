@@ -5629,3 +5629,26 @@ historial y el dueño lo ve). Detalles:
   botón toma lo que dice y lo que sobra se reparte: a 390 se ven los tres en una fila, casi iguales (100 · 105 · 129 px). Con «Letra más grande»
   en un teléfono chico (o a 320), «Cómo llegar» baja a una segunda fila de ancho completo.
 - **Qué mirar:** la ficha de Sabor Dominicano en tu teléfono, con letra normal y con Mi cuenta › Ajustes › Letra más grande.
+## Fase 9 · 9t — Objetivos táctiles de 44 px (19 nov) — mirar
+**Qué cambió:** nada de lo que se ve. Los íconos de 30–36 px, los chips y las filas compactas del sistema ahora reciben el toque en **44 × 44 px**
+con un área invisible alrededor (packages/ui/src/toque.css). La prueba compara la página con y sin esas áreas pixel a pixel (con el anillo del foco
+puesto) y no cambia ni un pixel junto a los controles.
+
+**Qué mirar (teléfono):**
+- En la ficha de un negocio, el menú: tocar el «+» de un plato, los chips de filtro y los íconos (guardar, compartir) **un poco por fuera** de su
+  borde: responden. Tocar entre dos chips o dos íconos pegados: responde el que está más cerca (cada uno se queda con su mitad del hueco).
+- La reserva (cuántos, día, hora), los boletos («−» / «+») y el encabezado (idioma, campana, cuenta): igual.
+- Que nada se vea distinto (tamaños, colores, sombras, el contorno del foco con el teclado).
+
+**Decisiones tomadas por defecto (AB, reversibles):**
+- **El área también existe en la computadora** (no solo en pantallas táctiles): es la misma regla en todos lados y con el ratón un borde un poco
+  más grande no molesta; si se prefiere solo en táctil, es una línea en toque.css (`@media (pointer: coarse)`).
+- **Lo que se dejó SIN área (pide tu OK visual, con el contraste):** volver «posicionado» un control cambia en qué orden se pinta, y en dos casos eso
+  movía pixeles: (1) **los botones con sombra** (el Button «Confirmar» morado, la hora elegida del Booking, la fila oscura del pedido, el buscador, los
+  radios del mapa, la ficha del dominó): su sombra pasaría por encima del texto de al lado (casi invisible: hasta 9 niveles de 255); (2) **el «− / +»
+  del plato**: el suavizado de su esquina redondeada. Siguen del tamaño de siempre para tocar. Si apruebas ese cambio mínimo, se les quita la marca
+  y se aprueban capturas nuevas, en el mismo bloque que el **contraste AA (4,5 : 1)**, que no se tocó aquí.
+- **Vecinos pegados:** la regla es «cada uno, hasta la mitad del hueco»; el primero y el último de una fila crecen enteros hacia afuera. Los del medio
+  de una fila que se envuelve se quedan con la mitad del hueco también del lado donde no tienen a nadie (el tope es del grupo): un poco menos de 44.
+- **Carruseles con scroll sin relleno** (las pestañas, los módulos): el área no puede salirse del carrusel (agrandaría lo que se desplaza), así que
+  ahí queda recortada.

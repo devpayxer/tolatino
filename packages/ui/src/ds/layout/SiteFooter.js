@@ -115,6 +115,8 @@ function SiteFooter({
     }
   }), trust) : null, stores.length ? /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '4px',
+      '--tl-toque-y': '4px',
       display: 'flex',
       gap: 8,
       flexWrap: 'wrap'
@@ -164,6 +166,8 @@ function SiteFooter({
     }
   }, quick.length ? /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '9px',
+      '--tl-toque-y': '5px',
       display: 'flex',
       flexWrap: 'wrap',
       gap: '10px 18px',
@@ -257,6 +261,8 @@ function SiteFooter({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '9px',
+      '--tl-toque-y': '4px',
       display: 'flex',
       flexWrap: 'wrap',
       gap: '8px 18px',
@@ -278,6 +284,8 @@ function SiteFooter({
     }
   }, l.label))), /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '5px',
+      '--tl-toque-y': '5px',
       display: 'flex',
       flexWrap: 'wrap',
       gap: 10,

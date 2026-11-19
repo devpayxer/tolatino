@@ -56,6 +56,8 @@ function DeliveryPrefs({
     style: K
   }, title), /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '4px',
+      '--tl-toque-y': '4px',
       marginTop: 11,
       display: 'grid',
       gridTemplateColumns: 'repeat(2,minmax(0,1fr))',
@@ -122,6 +124,8 @@ function DeliveryPrefs({
     }
   }, arrivalLabel), /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '3.5px',
+      '--tl-toque-y': '3.5px',
       marginTop: 8,
       display: 'flex',
       flexWrap: 'wrap',
@@ -360,6 +364,7 @@ function ChangeProposal({
     }
   }, item.price)), /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-y': '4px',
       marginTop: 12,
       display: 'flex',
       flexDirection: 'column',

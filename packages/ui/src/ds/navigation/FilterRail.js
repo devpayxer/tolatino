@@ -15,6 +15,7 @@ function FilterRail({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '4px',
       padding: '12px 20px',
       display: 'flex',
       gap: 8,

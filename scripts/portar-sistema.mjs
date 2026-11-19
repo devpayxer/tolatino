@@ -8,6 +8,8 @@
       se registran como tokens puntuales --tl-ds-xxxxxx en packages/ui/src/tokens.css.
    3. Quita lo que es solo del prototipo: window.TLHoursPro (datos de demo con hora fija) y
       assets/icons/icons.js (duplicado de Icon).
+   4. 9t · El área de toque de 44 px (toque, gruposToque): marca cada control con `data-toque` y, en
+      cada grupo de controles con gap, pone la mitad del hueco (--tl-toque-x / -y). No cambia lo que se ve.
    Al final escribe packages/ui/src/ds/index.ts con los 132 nombres exportados. */
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
 import { join, relative, dirname } from "node:path";
@@ -119,6 +121,150 @@ export const GRIS_AA = "rgba(11,14,18,.6)";
 function contraste(t) {
   return t.split("\n").map((l) => l.replace(/rgba\(11,14,18,\.(34|4|42|45|5|55)\)/g, (m, a, i) =>
     /(boxShadow|border\w*|background\w*|outline|stroke|fill|textShadow)\s*:/.test(l.slice(0, i)) ? m : GRIS_AA)).join("\n");
+}
+
+/* 9t · Objetivos táctiles de 44 px: cada pieza interactiva del sistema lleva `data-toque` (packages/ui/src/toque.css le pone un área de toque
+   invisible de 44 × 44 px; no cambia lo que se ve). Los que salen de `__btn`/`__key` ya la traen (scope.js); aquí, los que declaran su rol a mano
+   (Button, IconButton, Chip, la campana, los radios del Booking, OptionGroup, el «⋯» de Thread, los votos de PostCard…) y los <button>.
+   Va en la MISMA línea del rol: el guardián toqueDe44 lo mira así. */
+export const ROL_CONTROL = /\brole: (?:multi \? 'checkbox' : 'radio'|(['"])(?:button|tab|radio|checkbox|switch|option)\1),/g;
+// Un control con sombra hacia fuera (boxShadow que no es «inset» ni 'none') lleva `data-toque: 'sombra'`: SIN área ampliada. Con position
+// relative se pintaría después del texto vecino y su sombra le pasaría por encima (un cambio de pixeles: lo cazó la comparación con y sin
+// áreas en el Button «action», 19 nov). Ampliarlos pide el OK visual (docs/REVISION.md). Va al final de las props: gana a lo que traiga __btn.
+const SOMBRA_FUERA = /\bboxShadow: (?!'inset|'none'[,\n])/;
+function propsDe(t, i) { // el objeto de props de un createElement que empieza en i («React.createElement(»): [inicio, fin] o null
+  let j = t.indexOf(", ", i), d = 0;
+  if (j < 0 || t[j + 2] !== "{") return null;
+  for (let k = j + 2; k < t.length; k++) {
+    const c = t[k];
+    if (c === "'" || c === '"' || c === "`") { const q = c; k++; while (k < t.length && t[k] !== q) { if (t[k] === "\\") k++; k++; } continue; }
+    if (c === "{") d++;
+    else if (c === "}" && --d === 0) return [j + 2, k];
+  }
+  return null;
+}
+function toque(t, rel) {
+  t = t.replace(ROL_CONTROL, (m) => `${m} 'data-toque': '',`);
+  t = t.replace(/React\.createElement\("button", \{\n/g, (m) => `${m}    'data-toque': '',\n`);
+  // El Button: la sombra viene con la variante (action).
+  if (rel === "core/Button.js") {
+    const antes = t;
+    t = t.replace(`role: "button", 'data-toque': '',`, `role: "button", 'data-toque': v.boxShadow ? 'sombra' : '',`);
+    if (t === antes) throw new Error("toque (Button con sombra): el origen cambió, revisar");
+  }
+  // El «− / +» del plato (AddPill): dentro de una caja redondeada con overflow hidden; con position relative cambia el suavizado de la
+  // esquina (19 nov) y el área quedaría recortada de todos modos.
+  if (rel === "menu/MenuItemRow.js") {
+    const antes = t;
+    t = t.replace(`...__ds_scope.__key(x ? left : undefined),\n    role: "button", 'data-toque': '',`, `...__ds_scope.__key(x ? left : undefined),\n    role: "button", 'data-toque': 'recorte',`);
+    t = t.replace(`...__ds_scope.__key(right),\n    role: "button", 'data-toque': '',`, `...__ds_scope.__key(right),\n    role: "button", 'data-toque': 'recorte',`);
+    if ((t.match(/'data-toque': 'recorte'/g) || []).length !== 2 || t === antes) throw new Error("toque (AddPill recortado): el origen cambió, revisar");
+    // CartLine: «Editar» (17 px de alto) y, 8 px debajo, el «− / +» (28): uno encima del otro, sin gap (con margen) → la mitad del margen
+    // (4 px) en el lado que se miran: abajo de «Editar» y arriba del «− / +» (--tl-toque-abajo / -arriba: los lados SÍ se heredan).
+    const a2 = t;
+    t = t.replace("    ...__ds_scope.__btn(onEdit, undefined, undefined),\n    style: {\n      display: 'inline-block',\n      marginTop: 4,",
+      "    ...__ds_scope.__btn(onEdit, undefined, undefined),\n    style: {\n      '--tl-toque-abajo': '4px',\n      display: 'inline-block',\n      marginTop: 4,");
+    t = t.replace("    style: {\n      marginTop: 8\n    }\n  }, /*#__PURE__*/React.createElement(QtyStepper, {\n    size: \"sm\",",
+      "    style: {\n      '--tl-toque-arriba': '4px',\n      marginTop: 8\n    }\n  }, /*#__PURE__*/React.createElement(QtyStepper, {\n    size: \"sm\",");
+    if (!t.includes("'--tl-toque-abajo': '4px',\n      display: 'inline-block'") || !t.includes("'--tl-toque-arriba': '4px',\n      marginTop: 8") || t === a2) throw new Error("toque (CartLine: Editar y el «− / +»): el origen cambió, revisar");
+  }
+  const sombras = [];
+  for (const m of t.matchAll(/React\.createElement\(/g)) {
+    const pr = propsDe(t, m.index);
+    if (!pr) continue;
+    const props = t.slice(pr[0], pr[1] + 1);
+    if (!/'data-toque': ''|"data-toque": ""|__ds_scope\.__(?:btn|key)\(|\.\.\.btn\(/.test(props) || /__ds_scope\.__btn\([^\n]*, (?:true|!!onCity|toggle != null|d)\)/.test(props)) continue;
+    const st = /\n(\s*)style: \{[\s\S]*$/.exec(props);
+    if (st && SOMBRA_FUERA.test(st[0])) sombras.push(pr[1]);
+  }
+  for (const fin of sombras.reverse()) {
+    const ind = /\n(\s*)\}$/.exec(t.slice(0, fin + 1))[1];
+    t = t.slice(0, fin).replace(/\s*$/, "") + `,\n${ind}  'data-toque': 'sombra'\n${ind}` + t.slice(fin);
+  }
+  return gruposToque(t);
+}
+
+/* 9t · Vecinos cerca: el contenedor de un GRUPO de controles (dos o más hijos directos que son controles, o una lista con .map) separados por
+   `gap` dice la mitad del hueco en --tl-toque-x / --tl-toque-y (toque.css: ningún lado del área crece más que eso, y esas dos variables
+   NO se heredan: valen para sus hijos directos y nada más). Así el área de uno se queda en su mitad del hueco y no le roba el toque al de
+   al lado. El eje sale del contenedor: flex en fila → x (y también, si se envuelve: flexWrap); en columna → y; grid, o una dirección que
+   depende de algo → los dos. El valor es la MISMA expresión del gap (`gap: 8` → '4px'; `gap: row ? 18 : 10` → `(row ? 18 : 10) / 2 +
+   'px'`). El primero y el último de los hijos crecen enteros hacia afuera (toque.css). En las pantallas, los gap-* de Tailwind hacen lo
+   mismo (globals.css). */
+export const CONTROL_DS = /^__ds_scope\.(Button|Chip|IconButton)$/;
+function cierre(t, i) { // t[i] === "(" → índice de su ")" (saltando textos)
+  let d = 0;
+  for (let k = i; k < t.length; k++) {
+    const c = t[k];
+    if (c === "'" || c === '"' || c === "`") { const q = c; k++; while (k < t.length && t[k] !== q) { if (t[k] === "\\") k++; k++; } continue; }
+    if (c === "(" || c === "[" || c === "{") d++;
+    else if ((c === ")" || c === "]" || c === "}") && --d === 0) return k;
+  }
+  return -1;
+}
+// Las claves de primer nivel de un objeto de estilo (texto entre llaves): { display: "'flex'", gap: "8", … }.
+function clavesDe(s) {
+  const out = {}; let d = 0, ini = 0;
+  const partes = [];
+  for (let k = 0; k < s.length; k++) {
+    const c = s[k];
+    if (c === "'" || c === '"' || c === "`") { const q = c; k++; while (k < s.length && s[k] !== q) { if (s[k] === "\\") k++; k++; } continue; }
+    if (c === "(" || c === "[" || c === "{") d++;
+    else if (c === ")" || c === "]" || c === "}") d--;
+    else if (c === "," && d === 0) { partes.push(s.slice(ini, k)); ini = k + 1; }
+  }
+  partes.push(s.slice(ini));
+  for (const p of partes) { const m = /^\s*([A-Za-z]+): ([\s\S]+?)\s*$/.exec(p); if (m) out[m[1]] = m[2]; }
+  return out;
+}
+const esControl = (tipo, props) => CONTROL_DS.test(tipo) || (/^"(div|span|button)"$/.test(tipo) && /'data-toque': ''|"data-toque": ""|__ds_scope\.__key\(|\.\.\.btn\(/.test(props))
+  || (/^"(div|span)"$/.test(tipo) && /__ds_scope\.__btn\(/.test(props) && !/__ds_scope\.__btn\([^\n]*, (?:true|!!onCity|toggle != null|d)\)/.test(props));
+function gruposToque(t) {
+  const cambios = [];
+  for (const m of t.matchAll(/React\.createElement\(/g)) {
+    const pr = propsDe(t, m.index);
+    if (!pr) continue;
+    const props = t.slice(pr[0] + 1, pr[1]);
+    const sm = /(?:^|\n)\s*style: \{/.exec(props);
+    if (!sm) continue;
+    const ab = pr[0] + 1 + sm.index + sm[0].length - 1, cb = cierre(t, ab);
+    const st = clavesDe(t.slice(ab + 1, cb));
+    if (!st.gap || /--tl-toque/.test(t.slice(ab, cb))) continue;
+    const flex = /^'(inline-)?flex'$/.test(st.display || ""), grid = /^'(inline-)?grid'$/.test(st.display || "");
+    if (!flex && !grid) continue;
+    // Los hijos directos: los createElement que no están dentro de otro createElement de los hijos.
+    const fin = cierre(t, m.index + "React.createElement".length);
+    const hijos = t.slice(pr[1] + 1, fin);
+    let n = 0, lista = false;
+    const pila = [];
+    for (let k = 0; k < hijos.length; k++) {
+      const c = hijos[k];
+      if (c === "'" || c === '"' || c === "`") { const q = c; k++; while (k < hijos.length && hijos[k] !== q) { if (hijos[k] === "\\") k++; k++; } continue; }
+      if (hijos.startsWith("React.createElement(", k)) {
+        if (!pila.includes("ce")) {
+          const tipo = hijos.slice(k + 20, hijos.indexOf(",", k + 20)).trim();
+          const hp = propsDe(hijos, k);
+          if (esControl(tipo, hp ? hijos.slice(hp[0], hp[1] + 1) : "")) { n++; if (pila.includes("map")) lista = true; }
+        }
+        pila.push("ce"); k += 19; continue;
+      }
+      if (c === "(") pila.push(/\.map$/.test(hijos.slice(Math.max(0, k - 4), k)) ? "map" : "p");
+      else if (c === ")") pila.pop();
+    }
+    if (n < 2 && !lista) continue;
+    const dir = st.flexDirection || "'row'", envuelve = /^'wrap'$/.test(st.flexWrap || "");
+    const x = grid || dir !== "'column'", y = grid || dir !== "'row'" || envuelve;
+    // gap: un número o una expresión (en px) · un texto «'8px 18px'» = fila y columna.
+    const txt = /^'(\d+(?:\.\d+)?)px(?: (\d+(?:\.\d+)?)px)?'$/.exec(st.gap);
+    if (/^'/.test(st.gap) && !txt) continue;
+    const gx = st.columnGap || (txt ? txt[2] || txt[1] : st.gap), gy = st.rowGap || (txt ? txt[1] : st.gap);
+    const v = (g) => /^\d+(\.\d+)?$/.test(g) ? `'${+g / 2}px'` : `(${g}) / 2 + 'px'`;
+    const ind = /\n(\s*)\S/.exec(t.slice(ab))?.[1] ?? "      ";
+    const nuevo = [x ? `'--tl-toque-x': ${v(gx)}` : null, y ? `'--tl-toque-y': ${v(gy)}` : null].filter(Boolean).map((l) => `\n${ind}${l},`).join("");
+    cambios.push([ab + 1, nuevo]);
+  }
+  for (const [i, s] of cambios.sort((a, b) => b[0] - a[0])) t = t.slice(0, i) + s + t.slice(i);
+  return t;
 }
 
 function accesibilizar(t, rel) {
@@ -497,6 +643,9 @@ for (const src of archivos) {
     if (t === antes) throw new Error("parche Tabs (flechas): el origen cambió, revisar");
   }
 
+  // 9t · El área de toque de 44 px (toque.css).
+  t = toque(t, rel);
+
   // Hex → token.
   t = t.replace(/#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/g, (m, h) => {
     const H = h.toUpperCase();
@@ -559,9 +708,10 @@ const tecla = (fn) => (e) => {
     fn(e);
   }
 };
+/* 9t · \`data-toque\`: el área de toque invisible de 44 × 44 px (packages/ui/src/toque.css). Todo lo que sale de aquí es un control. */
 __ds_scope.__btn = (fn, label, extra, dentro) =>
-  !fn ? {} : dentro ? { role: "presentation" } : { role: "button", tabIndex: 0, ...(label ? { "aria-label": label } : null), ...extra, onKeyDown: tecla(fn) };
-__ds_scope.__key = (fn) => (fn ? { tabIndex: 0, onKeyDown: tecla(fn) } : {});
+  !fn ? {} : dentro ? { role: "presentation" } : { role: "button", tabIndex: 0, "data-toque": "", ...(label ? { "aria-label": label } : null), ...extra, onKeyDown: tecla(fn) };
+__ds_scope.__key = (fn) => (fn ? { tabIndex: 0, "data-toque": "", onKeyDown: tecla(fn) } : {});
 /* 9c · Las flechas entre pestañas (WAI-ARIA tabs): ← → mueven el foco a la anterior / siguiente (en círculo), Inicio y Fin a la primera y la
    última; Enter o Espacio la eligen (activación manual: moverse no cambia de pestaña). Cada pestaña sigue en el orden de Tab. */
 __ds_scope.__flechas = (e) => {

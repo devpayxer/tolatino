@@ -106,6 +106,7 @@ function AdminBar({
     btn = desk ? 38 : 36;
   return /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '5px',
       background: 'var(--tl-white)',
       borderBottom: '1px solid rgba(11,14,18,.07)',
       padding: desk ? '10px 24px' : '10px 14px',
@@ -191,6 +192,7 @@ function AdminBar({
     }
   }, shortcut)) : null), cities.length ? /*#__PURE__*/React.createElement("span", {
     style: {
+      '--tl-toque-x': '1.5px',
       display: 'flex',
       gap: 3,
       padding: 3,
@@ -346,6 +348,7 @@ function AdminNav({
   }, takeNextLabel)) : null, groups.map((g, gi) => /*#__PURE__*/React.createElement("div", {
     key: gi,
     style: {
+      '--tl-toque-y': '0.5px',
       display: 'flex',
       flexDirection: 'column',
       gap: 1
@@ -705,7 +708,7 @@ function AdminRow({
     }
   }, right2) : null) : null, toggle != null ? /*#__PURE__*/React.createElement("span", {
     onClick: onToggle,
-    ...__ds_scope.__btn(onToggle, title, { role: 'switch', 'aria-checked': !!toggle }),
+    ...__ds_scope.__btn(onToggle, title, { role: 'switch', 'data-toque': '', 'aria-checked': !!toggle }),
     style: {
       width: 42,
       height: 24,
@@ -734,6 +737,8 @@ function AdminRow({
     color: "rgba(11,14,18,.35)"
   }) : null), actions && actions.length ? /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '3.5px',
+      '--tl-toque-y': '3.5px',
       display: 'flex',
       flexWrap: 'wrap',
       gap: 7
@@ -1107,6 +1112,8 @@ function PermMatrix({
   }, h))), rows.map((r, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     style: {
+      '--tl-toque-x': '3px',
+      '--tl-toque-y': '3px',
       display: 'grid',
       gridTemplateColumns: cols,
       gap: 6,
@@ -1125,7 +1132,7 @@ function PermMatrix({
     return /*#__PURE__*/React.createElement("span", {
       key: j,
       onClick: f || undefined,
-      ...__ds_scope.__btn(f || undefined, r.label, { role: 'checkbox', 'aria-checked': !!on }),
+      ...__ds_scope.__btn(f || undefined, r.label, { role: 'checkbox', 'data-toque': '', 'aria-checked': !!on }),
       style: {
         height: 26,
         borderRadius: 8,
@@ -1546,6 +1553,8 @@ function ReasonConfirm({
     }
   })), /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '4px',
+      '--tl-toque-y': '4px',
       display: 'flex',
       flexWrap: 'wrap',
       gap: 8,

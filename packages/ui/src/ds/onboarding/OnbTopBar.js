@@ -94,6 +94,7 @@ function OnbTopBar({
   };
   return /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '6px',
       position: 'sticky',
       top: 0,
       zIndex: 30,
@@ -143,6 +144,7 @@ function OnbPhases({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-y': '2px',
       display: 'flex',
       flexDirection: 'column',
       gap: 4
@@ -367,6 +369,7 @@ function OnbActionBar({
   }, go.label)))));
   return /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '6px',
       marginTop: 30,
       paddingTop: 20,
       borderTop: '1px solid rgba(11,14,18,.08)',
