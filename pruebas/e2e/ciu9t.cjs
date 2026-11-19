@@ -75,7 +75,9 @@ const abrir = async (p) => { await p.goto(B + '/?ciudad'); await p.getByText(/¿
     ok(/5 mi · casa/.test(await texto(pa)) || /5 MI/.test(await texto(pa)), 'el encabezado mide desde casa');
     const cad = await ctxDesk(b, { storageState: await ca.storageState() }), pad = await cad.newPage(); abiertas.push(cad); mirar(pad, 'ana-1360');
     await pad.goto(B + '/');
-    ok(/Hazleton, PA · 5 mi · casa/.test(await texto(pad)), '1360: «Hazleton, PA · 5 mi · casa»');
+    // 19 nov · Diagnóstico: en el ancho 1024 no salió; si vuelve a fallar, dice lo que mostraba el encabezado y la cookie de esa ventana.
+    const tPad = await texto(pad);
+    ok(/Hazleton, PA · 5 mi · casa/.test(tPad), `1360: «Hazleton, PA · 5 mi · casa»${/Hazleton, PA · 5 mi · casa/.test(tPad) ? '' : ` (encabezado: «${(tPad.match(/Hazleton[^·]{0,6}·[^·]{0,30}(·[^·]{0,20})?/) || [''])[0]}», cookie: ${await loc(cad)}, ancho: ${pad.viewportSize()?.width})`}`);
     void trabajo;
 
     // ── 3 · Solo la dueña ──
