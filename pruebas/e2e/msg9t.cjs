@@ -116,11 +116,14 @@ const limpiar = () => {
     await ad.goto(B + '/admin/colas?caso=' + Q1); ok(await contiene(ad, 'Foto de Mensajes'), 'Super Admin › Colas: «Foto de Mensajes»');
     ok(await espera(async () => Number(sql(`select count(*) from audit_entries where action = 'mensajes.foto.ver'`)) > a0), 'el equipo la ve y queda en la auditoría');
     await ad.screenshot({ path: OUT + 'm9t-3-admin-foto-d.png', fullPage: true });
+    const avP = () => Number(sql(`select count(*) from notifications where user_id = ${PEDRO} and tpl = 'biz_msg' and ref_kind = 'chat' and ref_id = ${TH}::text`));
+    const nP0 = avP();
     await clic(ad.getByRole('button', { name: 'Está bien' }));
     ok(await espera(() => sql(`select status from media where id = '${F1}'`) === 'visible'), 'aprobada: la foto queda visible');
     ok(sql(`select status from queue_items where id = ${Q1}`) === 'decided' && sql(`select count(*) from audit_entries where action = 'mensajes.foto.aprobar' and target_id = '${F1}'`) === '1', 'el caso se cierra y la decisión queda en la auditoría');
     ok(await espera(async () => (await p.locator('[data-msg-foto="si"]').count()) >= 1, 15000), 'el panel abierto la muestra en vivo, sin recargar');
     ok((await traerFoto(p, U1)).st === 200, 'ahora el negocio la puede ver');
+    ok(await espera(() => avP() === nP0 + 1) && /Foto/.test(sql(`select body from notifications where user_id = ${PEDRO} and tpl = 'biz_msg' order by id desc limit 1`)), 'aprobada: el negocio recibe el aviso de la foto (una vez)');
     ok((await traerFoto(otro, U1)).st === 404, 'y nadie más');
 
     // ── 3 · Topes del servidor ──

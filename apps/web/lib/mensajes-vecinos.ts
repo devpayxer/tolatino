@@ -268,3 +268,16 @@ export const FUENTE_TR_DM = `select m.body as texto, m.lang from dm_messages m j
 /* 9t · La purga de una cuenta (lib/datos/purgar.ts): los ids de lo que escribió en Mensajes entre vecinos, para borrar sus traducciones (L680;
    la caché es derivada). Solo ids, nunca el texto. p = la cuenta. */
 export const MENSAJES_DE = (p: string) => `select x.id from dm_messages x where x.sender_user_id = ${p}`;
+
+/* 9t · La foto de un mensaje entre vecinos que el equipo aprueba: la otra persona recibe el aviso de siempre (dm_message, «Foto · Photo»), una
+   vez. Nunca con la conversación cerrada o con un bloqueo, ni si quien recibe silenció a quien la mandó (igual que al enviar). */
+export async function avisarFotoDmAprobada(media: string): Promise<void> {
+  const x = (await db().query<{ tid: string; de: string; otro: string; f: string | null; l: string | null }>(
+    `select t.id::text as tid, m.sender_user_id::text as de, case when t.a_user_id = m.sender_user_id then t.b_user_id else t.a_user_id end::text as otro, u.first_name as f, u.last_name as l
+       from dm_messages m join dm_threads t on t.id = m.thread_id join users u on u.id = m.sender_user_id
+      where m.media_id = $1::uuid and t.closed_at is null`, [media])).rows[0];
+  if (!x) return;
+  const callado = (await db().query(`select 1 from user_blocks where removed_at is null and ((user_id = $1 and target_user_id = $2) or (user_id = $2 and target_user_id = $1))`, [x.otro, x.de])).rowCount;
+  if (callado) return;
+  await avisar(x.otro, "dm_message", { nombre: corto(x.f, x.l), texto: FOTO_TXT }, { href: `/comunidad/mensajes/${x.de}`, ref: ["dm_thread", x.tid], actor: x.de });
+}

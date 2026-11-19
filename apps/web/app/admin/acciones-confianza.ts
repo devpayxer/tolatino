@@ -123,7 +123,8 @@ export async function decidirRepUsr(id: string, accion: "sin_accion" | "sanciona
 /* ── Foto de la Comunidad (cola medios, sin negocio): está bien (se ve) o quitar con motivo (aviso y apelación) ──
    9t · También la foto de un mensaje (owner_kind 'chat'): está bien → la otra parte la ve (la base avisa en vivo: media_chat_vivo); quitar → en la
    conversación sale «Foto quitada por To’Latino» y quien la mandó recibe el motivo (mod_hide, como un mensaje oculto).
-   9t (19 nov) · Y la de un mensaje entre vecinos (owner_kind 'dm'): lo mismo (media_dm_vivo avisa en vivo a las dos pantallas). */
+   9t (19 nov) · Y la de un mensaje entre vecinos (owner_kind 'dm'): lo mismo (media_dm_vivo avisa en vivo a las dos pantallas).
+   9t · Aprobada: además, la otra parte recibe el aviso de la foto (avisarFotoAprobada / avisarFotoDmAprobada), una vez. */
 export async function decidirFotoCom(id: string, accion: "mantener" | "quitar", motivo: string): Promise<ResAdm> {
   const s = await quien();
   if (!s) return no("Tu rol solo puede ver esta cola.");
@@ -140,9 +141,12 @@ export async function decidirFotoCom(id: string, accion: "mantener" | "quitar", 
     await cerrar(c, q, s, accion, m);
     await auditar(c, { actor: s.id, action: chat ? (accion === "quitar" ? "mensajes.foto.quitar" : "mensajes.foto.aprobar") : accion === "quitar" ? "com.foto.quitar" : "com.foto.aprobar", targetKind: "media", targetId: q.subject_id, city: q.city_id, before: { foto: f.status === "review" ? "en revisión" : "visible" }, after: { foto: accion === "quitar" ? "quitada" : "visible" }, reason: m });
     // 9t · De Mensajes: el aviso con el motivo (mod_hide, como un mensaje oculto) a quien la mandó; la apelación es de la Comunidad (autor).
-    return { autor: chat ? null : f.autor, deChat: chat ? f.autor : null, tid: q.subject_id, chat };
+    return { autor: chat ? null : f.autor, deChat: chat ? f.autor : null, tid: q.subject_id, chat, owner: f.owner, aprobada: accion === "mantener" && f.status === "review" };
   });
   if (typeof r === "string") return no(r);
+  // 9t · Aprobada (estaba en revisión): la otra parte recibe el aviso de la foto, como si acabara de llegar (antes solo la veía al abrir la conversación).
+  if (r.aprobada && r.owner === "chat") await (await import("@/lib/mensajes")).avisarFotoAprobada(r.tid).catch(() => undefined);
+  if (r.aprobada && r.owner === "dm") await (await import("@/lib/mensajes-vecinos")).avisarFotoDmAprobada(r.tid).catch(() => undefined);
   if (accion === "quitar" && r.deChat) await (await import("@/lib/avisos")).avisar(r.deChat, "mod_hide", { tipo: "foto", motivo: m }).catch(() => undefined);
   if (accion === "quitar" && r.autor) await avisarOculto(r.autor, "media", r.tid, m);
   listo();

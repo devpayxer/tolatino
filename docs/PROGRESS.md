@@ -2923,3 +2923,15 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   (base) y **F1** (foto simulada: enviar, revisión, Colas, en vivo, quitar, reporte auditado, bloqueo, la de otro / la vieja) ✓; **F2 (subida real,
   metadatos, 413/415/403, purga de 24 h) no corrió**: no hay almacén de fotos local (503) — la corre el CI. Capturas a 390 miradas (d9t-1…10).
   Ayuda: comunidad-vecinos-seguir-bloquear-y-mensajes.md y admin-confianza-y-seguridad.md (ES/EN).
+- **19 nov · 9t · Confirmación 44546763705 (f24bc53): 203/205 en todos los carriles; los dos rojos eran precondiciones de la prueba.** msg9t daba
+  por hecho que el servicio de imágenes (:8790) estaba apagado y com5d lo deja encendido → msg9t lo apaga mientras dura y lo vuelve a encender;
+  nav9t buscaba Café Quisqueya en Inicio (depende de lo que dejan las pruebas anteriores) → parte de Buscar; en orden barajado fic005 caía porque
+  svc3a le deja una opción a «Fade» → fic005 lo deja sin opciones mientras corre y lo devuelve. Reproducido y verde en local (nav9t 17 ✓, fic005
+  22 ✓ con la opción puesta y roto sin el arreglo). Corrida dirigida 44571384488 (com5d → msg9t, svc3a → fic005, nav9t).
+- **19 nov · 9t · Tabla del Barrio con 1 M:** carga 44571463348 (7 M filas): Tabla p95 3.5 ms, tabla corta 1.7 ms (presupuesto 40; antes 86) con
+  0188 + 0189. LAUNCH 5f → ✓. Todo lo demás de la Comunidad dentro de su presupuesto (barrido 9.2 s de 10).
+- **19 nov · 9t · La foto de un mensaje que el equipo aprueba avisa a la otra parte** (LAUNCH «Mensajes · lo que quedó de 9t» (4) → ✓):
+  `decidirFotoCom` (solo lo que estaba en revisión) → `avisarFotoAprobada` (biz_msg / msg_user, nada con bloqueo) y `avisarFotoDmAprobada`
+  (dm_message; nada con la conversación cerrada, bloqueo o silencio), fuera de la transacción. Guardián **fotoAprobadaAvisa**, alreves9tfotoaviso
+  9/9; dm9t verde en local con la comprobación nueva; msg9t la lleva (corre en el CI: necesita el almacén). Ayuda ES/EN: mensajes.md y
+  comunidad-vecinos-seguir-bloquear-y-mensajes.md.

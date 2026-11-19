@@ -357,3 +357,20 @@ export async function reportarChat(userId: string, threadId: string, lado: "user
   });
   return { ok: true };
 }
+
+/* 9t · La foto que el equipo aprueba (estaba en revisión, cola «medios»): la otra parte recibe el aviso de siempre (biz_msg al equipo que lleva
+   Mensajes, msg_user al cliente) con «Foto · Photo», una vez (la decisión cierra el caso). Con la conversación bloqueada, nada. Fuera de la
+   transacción de la decisión (como todo aviso). LAUNCH «Mensajes · lo que quedó de 9t» (4). */
+export async function avisarFotoAprobada(media: string): Promise<void> {
+  const x = (await db().query<{ tid: string; de: string; user: string; biz: string; negocio: string; cliente: string; bloqueado: boolean }>(
+    `select t.id::text as tid, m.sender as de, t.user_id::text as user, t.business_id as biz, b.name as negocio, t.blocked_at is not null as bloqueado,
+            coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Un cliente') as cliente
+       from chat_messages m join chat_threads t on t.id = m.thread_id join businesses b on b.id = t.business_id join users u on u.id = t.user_id
+      where m.media_id = $1::uuid`, [media])).rows[0];
+  if (!x || x.bloqueado) return;
+  if (x.de === "user") await avisarEquipo(x.biz, { cliente: x.cliente, texto: FOTO_TXT }, x.tid);
+  else if (x.de === "business") {
+    const { avisar } = await import("./avisos");
+    await avisar(x.user, "msg_user", { negocio: x.negocio, texto: FOTO_TXT }, { href: `/cuenta/mensajes/${x.biz}`, ref: ["chat", x.tid] });
+  }
+}

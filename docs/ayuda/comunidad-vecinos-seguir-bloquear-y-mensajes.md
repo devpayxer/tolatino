@@ -36,7 +36,7 @@ nov 2026. Audiencia: vecino. Tema: comunidad._
   y se manda con tu mensaje (o sola, sin texto). Una foto por mensaje; hasta 12 MB y 30 fotos por hora (sumando las de los chats con
   negocios). Al subirla le quitamos los datos de la cámara (la ubicación no viaja) y la revisa el modelo propio de To'Latino. Si está
   bien, la otra persona la ve enseguida. Si el modelo la marca o no responde, sale **«Foto en revisión»**: tú la ves con «EN REVISIÓN»,
-  la otra persona no, hasta que alguien del equipo la revise (si la aprueba, aparece sola; si la quita, sale **«Foto quitada por
+  la otra persona no, hasta que alguien del equipo la revise (si la aprueba, aparece sola y a la otra persona le llega el aviso de la foto, una vez; si la quita, sale **«Foto quitada por
   To’Latino.»** y te llega el motivo). Las fotos son **privadas**: solo las ven ustedes dos. El equipo de To'Latino solo las ve cuando
   la foto está en revisión o alguien reportó la conversación, y cada vez queda anotado. Una foto que elegiste y no mandaste se borra
   del almacén a las 24 horas.
@@ -134,7 +134,7 @@ nov 2026. Audiencia: vecino. Tema: comunidad._
   message (or on its own, with no text). One photo per message; up to 12 MB and 30 photos an hour (counting the ones in chats with businesses). When it
   is uploaded we strip the camera data (the location does not travel) and To'Latino's own model checks it. If it is fine, the other person sees it right
   away. If the model flags it or does not answer, it shows **«Photo under review»**: you see it with «UNDER REVIEW», the other person does not, until
-  someone on the team reviews it (if approved, it appears on its own; if removed, it shows **«Photo removed by To’Latino.»** and you get the reason).
+  someone on the team reviews it (if approved, it appears on its own and the other person gets the photo notification, once; if removed, it shows **«Photo removed by To’Latino.»** and you get the reason).
   Photos are **private**: only the two of you see them. The To'Latino team only sees them when the photo is under review or someone reported the
   conversation, and every view is logged. A photo you picked and did not send is deleted from storage after 24 hours.
 - **«See translation»:** under what the other person writes in the other language (Spanish ↔ English) you get **«See translation»**. To'Latino's own

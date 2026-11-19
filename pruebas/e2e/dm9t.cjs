@@ -197,11 +197,14 @@ const limpiar = () => {
     ok(await contiene(ad, 'La conversación no se lee desde aquí.') && !(await texto(ad)).includes(CON_FOTO), 'el caso de la foto no muestra la conversación');
     ok(await espera(async () => Number(sql(`select count(*) from audit_entries where action = 'mensajes.foto.ver' and after->>'foto' = '${F1}' and after->>'por' = 'foto en revisión'`)) > a0), 'el equipo la ve y queda en la auditoría («foto en revisión»)');
     await ad.screenshot({ path: OUT + 'd9t-6-admin-foto-d.png', fullPage: true });
+    const avB = () => Number(sql(`select count(*) from notifications where user_id = '${RB}' and tpl = 'dm_message' and ref_kind = 'dm_thread' and actor_user_id = '${RA}'`));
+    const nB0 = avB();
     await clic(ad.getByRole('button', { name: 'Está bien' }));
     ok(await espera(() => sql(`select status from media where id = '${F1}'`) === 'visible'), 'aprobada: la foto queda visible');
     ok(sql(`select status from queue_items where id = ${Q1}`) === 'decided' && sql(`select count(*) from audit_entries where action = 'mensajes.foto.aprobar' and target_id = '${F1}'`) === '1', 'el caso se cierra y la decisión queda en la auditoría');
     ok(await espera(async () => (await bp.locator('[data-msg-foto="si"]').count()) >= 1, 15000), 'la pantalla abierta de B la muestra en vivo');
     ok((await traerFoto(bp, U1)).st !== 404, 'ahora B la puede ver');
+    ok(await espera(() => avB() === nB0 + 1) && /Foto/.test(sql(`select body from notifications where user_id = '${RB}' and tpl = 'dm_message' order by id desc limit 1`)), 'aprobada: B recibe el aviso de la foto (una vez)');
     ok((await traerFoto(x, U1)).st === 404, 'y nadie más');
     await bp.screenshot({ path: OUT + 'd9t-7-foto-otro-m.png', fullPage: false });
 

@@ -9759,6 +9759,34 @@ const guardianes = {
     if (!/5b · La foto que se sube y nunca se manda/.test(readFileSync("pruebas/e2e/msg9t.cjs", "utf8"))) falla(G, "pruebas/e2e/msg9t.cjs", 0, "msg9t no prueba la purga (§5b)");
   },
 
+  /* 9t (19 nov) · fotoAprobadaAvisa: la foto de un mensaje que esperaba revisión y el equipo aprueba solo se veía al abrir la conversación: la
+     otra parte no recibía aviso (LAUNCH «Mensajes · lo que quedó de 9t» (4)). Ahora, al aprobar (decidirFotoCom «mantener» de una foto en
+     revisión), la otra parte recibe el aviso de siempre con «Foto · Photo» (biz_msg al equipo del negocio, msg_user al cliente, dm_message entre
+     vecinos), una vez, y nunca con la conversación bloqueada o cerrada ni a quien silenció. Prueba: msg9t y dm9t («recibe el aviso de la foto»).
+     Al revés (alreves9tfotoaviso): sin las llamadas, aprobar cualquier cosa (no solo lo que estaba en revisión), sin mirar el bloqueo o el cierre,
+     o las pruebas sin mirarlo. */
+  fotoAprobadaAvisa() {
+    const G = "fotoAprobadaAvisa", A = "apps/web/app/admin/acciones-confianza.ts", M = "apps/web/lib/mensajes.ts", V = "apps/web/lib/mensajes-vecinos.ts";
+    const a = cuerpoFn(sinComent(A), "decidirFotoCom") ?? "";
+    if (!/aprobada: accion === "mantener" && f\.status === "review"/.test(a)) falla(G, A, 0, "solo se avisa de lo que estaba en revisión y se aprueba (aprobada: mantener y status review)");
+    if (!/if \(r\.aprobada && r\.owner === "chat"\) await \(await import\("@\/lib\/mensajes"\)\)\.avisarFotoAprobada\(r\.tid\)/.test(a)) falla(G, A, 0, "decidirFotoCom no avisa al aprobar la foto de Mensajes (avisarFotoAprobada)");
+    if (!/if \(r\.aprobada && r\.owner === "dm"\) await \(await import\("@\/lib\/mensajes-vecinos"\)\)\.avisarFotoDmAprobada\(r\.tid\)/.test(a)) falla(G, A, 0, "decidirFotoCom no avisa al aprobar la foto entre vecinos (avisarFotoDmAprobada)");
+    const m = cuerpoFn(sinComent(M), "avisarFotoAprobada") ?? "";
+    if (!m) falla(G, M, 0, "falta avisarFotoAprobada");
+    else {
+      if (!/if \(!x \|\| x\.bloqueado\) return;/.test(m)) falla(G, M, 0, "avisarFotoAprobada no mira el bloqueo de la conversación");
+      if (!/x\.de === "user"\) await avisarEquipo\(/.test(m) || !/avisar\(x\.user, "msg_user"/.test(m)) falla(G, M, 0, "avisarFotoAprobada avisa a la otra parte con el aviso de siempre (biz_msg / msg_user)");
+    }
+    const v = cuerpoFn(sinComent(V), "avisarFotoDmAprobada") ?? "";
+    if (!v) falla(G, V, 0, "falta avisarFotoDmAprobada");
+    else {
+      if (!/t\.closed_at is null/.test(v)) falla(G, V, 0, "avisarFotoDmAprobada no mira si la conversación está cerrada");
+      if (!/from user_blocks where removed_at is null/.test(v) || !/if \(callado\) return;/.test(v)) falla(G, V, 0, "avisarFotoDmAprobada no mira el silencio/bloqueo entre las dos personas");
+      if (!/avisar\(x\.otro, "dm_message"/.test(v)) falla(G, V, 0, "avisarFotoDmAprobada avisa a la otra persona con dm_message");
+    }
+    for (const t of ["pruebas/e2e/msg9t.cjs", "pruebas/e2e/dm9t.cjs"]) if (!/recibe el aviso de la foto \(una vez\)/.test(readFileSync(t, "utf8"))) falla(G, t, 0, "la prueba no mira el aviso al aprobar la foto");
+  },
+
   /* 9t (19 nov) · exportarSinCorte: «Descargar mis datos» y «Exportar los datos del negocio» cortaban cada archivo en 20 000 filas (limit fijo):
      una cuenta grande recibía su archivo incompleto sin saberlo. Ahora cada archivo sale entero, en partes de PARTE filas (nombre-1.csv, -2…),
      leído con un cursor (declare … cursor / fetch forward) y comprimido parte por parte (zipPorPartes); el LEEME dice cuántas filas y partes.
