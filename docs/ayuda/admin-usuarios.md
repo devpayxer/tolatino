@@ -1,7 +1,7 @@
 # Super Admin: Usuarios · Super Admin: Users
 
 _Pantallas: ADM-USR (`/admin/usuarios` y `/admin/usuarios/{id}`), teléfono y escritorio. Para el equipo de To'Latino (y El Compa como copiloto del
-equipo). Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
+equipo). Versión: 19 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Lista:** todas las cuentas de tus ciudades (Mi ciudad de la persona; una cuenta sin ciudad solo la ve quien
@@ -15,7 +15,7 @@ equipo). Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
     cuentas que entraron desde el mismo dispositivo, verificación del teléfono (restablecer), cambios de teléfono, y su
     ciudad con el historial y «Cambiar ciudad».
     **Llaves de acceso** (Face ID / huella): cada llave con su dispositivo y la app donde nació, cuándo se agregó, la última vez, cuántas
-    entradas y si está sincronizada; las quitadas dicen quién (la persona, el equipo o el sistema) y por qué. **Revocar** pide motivo, le avisa
+    entradas, cuántas veces confirmó pedir el archivo de sus datos o borrar la cuenta (en vez del código) y si está sincronizada; las quitadas dicen quién (la persona, el equipo o el sistema) y por qué. **Revocar** pide motivo, le avisa
     a la persona por texto y en la app, y queda en la auditoría. En Verificación salen los cambios de llaves.
     Cada dispositivo dice desde dónde entró: «Web» o la app, su versión y el sistema (por ejemplo «To'Latino Puerta 1.0.0 (12) · iOS 17.5»). Es solo informativo: la app nunca cambia lo que la persona puede hacer.
   - **Confianza:** su estado, cada sanción (vigente, terminó o levantada, con su motivo y quién) y las fotos que reportó.
@@ -125,7 +125,7 @@ Solo lectura ve las cifras. Si el texto ya se borró por la retención, la fila 
   - **Security:** devices and sessions (close one, close all, block or unblock a device), other accounts that signed in from the same device,
     phone verification (reset), phone changes, and their city with the history and «Change city».
     **Passkeys** (Face ID / fingerprint): each key with its device and the app where it was born, when it was added, the last time, how many
-    sign-ins and whether it is synced; removed ones say who (the person, the team or the system) and why. **Revoke** asks for a reason, notifies
+    sign-ins, how many times it confirmed requesting the data file or deleting the account (instead of the code) and whether it is synced; removed ones say who (the person, the team or the system) and why. **Revoke** asks for a reason, notifies
     the person by text and in the app, and is logged in the audit. In Verification, passkey changes show up.
     Each device says where it signed in from: «Web» or the app, its version and the system (for example «To'Latino Puerta 1.0.0 (12) · iOS 17.5»).
     It is informational only: the app never changes what the person can do.

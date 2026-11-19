@@ -1,23 +1,42 @@
 "use client";
 /* 9d · USR-DATOS · Mi cuenta › Ajustes › Privacidad › Descargar mis datos (hueco #4 de la Fase 9: no hay pantalla en el diseño; se compone con
    las piezas de Mi cuenta —nota, filas, formulario y acciones— como dice el plan). La línea fija de §1c arriba; tu archivo con su estado; pedirlo
-   con el código que te mandamos (como Borrar mi cuenta); «Bajar» lo baja UNA vez (POST: un enlace pegado en un chat no lo gasta). */
+   con el código que te mandamos (como Borrar mi cuenta) o, 9t, con tu llave de acceso (Face ID / huella) si la cuenta tiene una y este
+   dispositivo puede usarla; «Bajar» lo baja UNA vez (POST: un enlace pegado en un chat no lo gasta). */
 import { FIJAS } from "@/lib/textos-fijas";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Exportacion } from "@/lib/datos/exportar";
-import { archivoCodigo, archivoPedir } from "../../../acciones-perfil";
+import { firmarConLlave, llaveDisponible } from "@/lib/nativo/llave";
+import { metodoLlave } from "@/app/entrar/HojaLlave";
+import { archivoCodigo, archivoPedir, archivoPedirLlave, archivoRetoLlave } from "../../../acciones-perfil";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../../../Marco";
 import { bajarArchivo, filasArchivo, puedePedir } from "./comun";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 
-export function Datos({ es, yo, tel, archivos, pruebas, dias }: { es: boolean; yo: Yo; tel: string; archivos: Exportacion[]; pruebas: boolean; dias: number }) {
+export function Datos({ es, yo, tel, archivos, pruebas, dias, llave = false }: { es: boolean; yo: Yo; tel: string; archivos: Exportacion[]; pruebas: boolean; dias: number; llave?: boolean }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const [paso, setPaso] = useState<"ver" | "codigo">("ver"), [code, setCode] = useState(""), [err, setErr] = useState(""), [busy, setBusy] = useState(false), [prueba, setPrueba] = useState<string | null>(null);
   const t = E2("Descargar mis datos", "Download my data");
   const p = puedePedir(archivos, es);
   const telL = tel.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, "+1 ($1) $2-$3");
+  // 9t · La llave: el servidor dice si la cuenta tiene una y aquí se ofrecen (`llave`); el dispositivo, si puede usarla (`cap`).
+  const [cap, setCap] = useState(false);
+  useEffect(() => { if (llave) void llaveDisponible().then((x) => setCap(x.entrar)); }, [llave]);
+  const conLlave = llave && cap, m = metodoLlave(es);
+  const pedirConLlave = async () => {
+    if (busy) return;
+    setBusy(true);
+    const a = await archivoRetoLlave().catch(() => null);
+    if (!a?.ok) { setBusy(false); ui.toast(a && !a.ok ? (es ? a.msg.es : a.msg.en) : E2("No se pudo. Revisa tu conexión.", "Could not do it. Check your connection.")); return; }
+    const f = await firmarConLlave(a.opciones as Record<string, unknown>);
+    if (!f.ok) { setBusy(false); if (!f.cancelado) ui.toast(E2("No pudimos usar tu llave. Usa el código por texto.", "We couldn't use your passkey. Use the text code.")); return; }
+    const r = await archivoPedirLlave(f.respuesta, null).catch(() => null);
+    setBusy(false);
+    if (r?.ok) { ui.toast(E2("Listo. Te avisamos cuando tu archivo esté listo.", "Done. We will let you know when your file is ready.")); router.refresh(); return; }
+    ui.toast(r && !r.ok ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Revisa tu conexión.", "Could not do it. Check your connection."));
+  };
   const pedirCodigo = async () => {
     setBusy(true); const r = await archivoCodigo().catch(() => null); setBusy(false);
     if (r?.ok) { setPaso("codigo"); setCode(""); setErr(""); setPrueba(r.codigoPrueba ?? null); return; }
@@ -40,6 +59,9 @@ export function Datos({ es, yo, tel, archivos, pruebas, dias }: { es: boolean; y
     if (pruebas && prueba) B.push({ type: "note", tone: "warn", ic: "info", s: E2(`Sandbox: el código es ${prueba} (en producción llega por SMS).`, `Sandbox: the code is ${prueba} (in production it arrives by text).`) });
     B.push({ type: "form", fields: [{ k: E2("CÓDIGO QUE TE MANDAMOS POR SMS", "CODE WE TEXTED YOU"), v: code, onV: (v) => { setCode(v.replace(/\D/g, "").slice(0, 6)); setErr(""); }, ph: "482913", im: "numeric", max: 6, err, h: `${E2("Lo mandamos al ", "Sent to ")}${telL}` }] });
     B.push({ type: "acts", cols: "repeat(2,minmax(0,200px))", btns: [[E2("Pedir mi archivo", "Request my file"), "primary", "folder", () => void pedir(), !/^\d{6}$/.test(code) || busy], [E2("Mejor no", "Never mind"), "secondary", "close", () => setPaso("ver")]] });
+  } else if (p.puede && conLlave) {
+    B.push({ type: "acts", cols: "repeat(2,minmax(0,240px))", btns: [[E2(`Pedir con ${m.corto}`, `Request with ${m.corto}`), "primary", "key", () => void pedirConLlave(), busy], [E2("Mejor con un código", "Use a code instead"), "secondary", "chat", () => void pedirCodigo(), busy]] });
+    B.push({ type: "note", tone: "info", ic: "lock", s: E2(`Para pedirlo confirmas que eres tú: con ${m.con} o con un código que te mandamos por texto. Uno cada ${dias} ${dias === 1 ? "día" : "días"}.`, `To request it you confirm it's you: with ${m.con} or with a code we text you. One every ${dias} ${dias === 1 ? "day" : "days"}.`) });
   } else if (p.puede) {
     B.push({ type: "acts", cols: "minmax(0,280px)", btns: [[E2("Pedir mi archivo", "Request my file"), "primary", "folder", () => void pedirCodigo(), busy]] });
     B.push({ type: "note", tone: "info", ic: "lock", s: E2(`Para pedirlo te mandamos un código a tu teléfono, como al entrar. Uno cada ${dias} ${dias === 1 ? "día" : "días"}.`, `To request it we text a code to your phone, like when you sign in. One every ${dias} ${dias === 1 ? "day" : "days"}.`) });

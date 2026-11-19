@@ -30,6 +30,42 @@ export async function archivoPedir(codigo: string, negocio: string | null): Prom
   const n = typeof negocio === "string" && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(negocio) && negocio.length <= 80 ? negocio : null;
   return (await import("@/lib/datos/exportar")).pedirArchivo(u, String(codigo ?? ""), n);
 }
+/* 9t · Lo mismo con la llave de acceso en vez del código (lib/llaves/llaves.ts): el reto de ESE propósito (atado a esta cuenta y a este
+   dispositivo) y la firma, que se verifica y se gasta dentro del pedido o del borrado. El propósito lo fija cada acción, nunca el cliente.
+   Guardián confirmarConLlave. */
+type ResReto = { ok: true; opciones: unknown } | { ok: false; msg: { es: string; en: string } };
+const sinLlave = async (e: unknown): Promise<{ ok: false; msg: { es: string; en: string } }> => {
+  const L = await import("@/lib/llaves/llaves"), { ErrorCuenta } = await import("@/lib/cuenta");
+  if (!(e instanceof ErrorCuenta)) console.error("[llave confirmar]", e);
+  return { ok: false, msg: L.mensajeConfirmar(e instanceof ErrorCuenta ? e.codigo : "") };
+};
+export async function archivoRetoLlave(): Promise<ResReto> {
+  const u = await quien();
+  if (!u) return NO as ResReto;
+  try { return { ok: true, opciones: await (await import("@/lib/llaves/llaves")).retoConfirmar(u, "data_export") }; } catch (e) { return sinLlave(e); }
+}
+export async function archivoPedirLlave(respuesta: unknown, negocio: string | null): Promise<ResP> {
+  const u = await quien();
+  if (!u) return NO;
+  const n = typeof negocio === "string" && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(negocio) && negocio.length <= 80 ? negocio : null;
+  try {
+    const prueba = await (await import("@/lib/llaves/llaves")).confirmarConLlave(u, "data_export", respuesta);
+    return (await import("@/lib/datos/exportar")).pedirArchivo(u, prueba, n);
+  } catch (e) { return sinLlave(e); }
+}
+export async function borrarRetoLlave(): Promise<ResReto> {
+  const u = await quien();
+  if (!u) return NO as ResReto;
+  try { return { ok: true, opciones: await (await import("@/lib/llaves/llaves")).retoConfirmar(u, "account_delete") }; } catch (e) { return sinLlave(e); }
+}
+export async function borrarConLlave(respuesta: unknown, por: string): Promise<ResP> {
+  const u = await quien();
+  if (!u) return NO;
+  try {
+    const prueba = await (await import("@/lib/llaves/llaves")).confirmarConLlave(u, "account_delete", respuesta);
+    return borrarCuenta(u, prueba, String(por ?? ""));
+  } catch (e) { return sinLlave(e); }
+}
 /* 8d · Mi cuenta › Privacidad › Llaves de acceso: quitar una de MIS llaves (la consulta va por la cuenta de la sesión: la de otro no existe). */
 export async function llaveQuitar(id: string): Promise<ResP> { const u = await quien(); return u ? (await import("@/lib/llaves/llaves")).quitar(u, String(id ?? "")) : NO; }
 /* Idioma: la cookie de la interfaz y el de la cuenta (para lo que le mandemos después). */

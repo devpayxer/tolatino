@@ -1,6 +1,7 @@
 import "server-only";
 import { consumirCodigo, guardarPerfil, normalizarTelefono, pedirCodigo, ErrorCuenta, type Yo } from "./cuenta";
 import { db, tx } from "./db";
+import type { PruebaLlave } from "./llaves/llaves";
 
 /* Mi cuenta · Perfil, Teléfono, Avisos, Mi ciudad, Privacidad y Borrar (diseño profV, phoneV, notifV, cityV, privV, delV).
    Todo lo decide el servidor; cada cambio sensible queda en account_changes. */
@@ -153,16 +154,21 @@ const POR = new Set(["uso", "avisos", "priv", "ciudad", "otra"]);
 export async function codigoBorrar(u: Yo): Promise<ResP> {
   try { const r = await pedirCodigo(u.phone, "account_delete"); return { ok: true, codigoPrueba: r.codigoPrueba }; } catch (e) { return deError(e); }
 }
-export async function borrarCuenta(u: Yo, codigo: string, por: string): Promise<ResP> {
+/* 9t · Se confirma con el código por SMS (account_delete) o con la llave de acceso: una prueba de lib/llaves/llaves.ts confirmarConLlave
+   de ESTE propósito, que se gasta aquí dentro (usarConfirmacionEn; la del archivo no sirve). Guardián confirmarConLlave. */
+export async function borrarCuenta(u: Yo, codigo: string | PruebaLlave, por: string): Promise<ResP> {
   const r = await tx(async (c) => {
-    const v = await consumirCodigo(c, u.phone, "account_delete", String(codigo ?? ""));
+    const v = typeof codigo === "string" ? await consumirCodigo(c, u.phone, "account_delete", codigo)
+      : await (await import("./llaves/llaves")).usarConfirmacionEn(c, u, codigo, "account_delete");
     if (v !== "ok") return v;
     await c.query(`update users set delete_at = now() + interval '30 days', delete_reason = $2 where id = $1 and delete_at is null`, [u.id, POR.has(por) ? por : null]);
     await c.query(`insert into account_changes (user_id, kind, "from", "to", by) values ($1, 'delete', null, $2, 'user')`, [u.id, POR.has(por) ? por : null]);
     return "ok";
   });
   if (r === "ok") return { ok: true };
-  const m = ERR[r]!; return no(m[0], m[1], "code");
+  const m = ERR[r];
+  if (m) return no(m[0], m[1], "code");
+  const x = (await import("./llaves/llaves")).mensajeConfirmar(r); return no(x.es, x.en, "code");
 }
 export async function cancelarBorrado(userId: string): Promise<ResP> {
   const r = await db().query(`update users set delete_at = null, delete_reason = null where id = $1 and delete_at > now() and coalesce(delete_reason, '') <> 'admin' and status = 'active'`, [userId]);

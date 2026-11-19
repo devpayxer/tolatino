@@ -1,18 +1,26 @@
 "use client";
 /* USR-BORRAR (diseño «To'Latino Mi cuenta» · delV): 3 pasos. Por qué te vas (opcional; «muchos avisos» lleva a Avisos),
-   qué pasa con tu cuenta, y el código que te mandamos a tu teléfono. Queda programado a 30 días: entrar o «Cancelar el
-   borrado» lo quita. Si ya está programado, solo se ve la fecha y cancelar. */
+   qué pasa con tu cuenta, y el código que te mandamos a tu teléfono (9t: o tu llave de acceso —Face ID / huella— si la cuenta tiene una y
+   este dispositivo puede usarla; el código sigue ahí). Queda programado a 30 días: entrar o «Cancelar el borrado» lo quita. Si ya está
+   programado, solo se ve la fecha y cancelar. */
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { borrarCancelar, borrarCodigo, borrarConfirmar } from "../../acciones-perfil";
+import { useEffect, useState } from "react";
+import { firmarConLlave, llaveDisponible } from "@/lib/nativo/llave";
+import { metodoLlave } from "@/app/entrar/HojaLlave";
+import { borrarCancelar, borrarCodigo, borrarConfirmar, borrarConLlave, borrarRetoLlave } from "../../acciones-perfil";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../../Marco";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 
-export function Borrar({ d, tel, es, yo, pruebas }: { d: { d: string | null; admin: boolean }; tel: string; es: boolean; yo: Yo; pruebas: boolean }) {
+export function Borrar({ d, tel, es, yo, pruebas, llave = false }: { d: { d: string | null; admin: boolean }; tel: string; es: boolean; yo: Yo; pruebas: boolean; llave?: boolean }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const [step, setStep] = useState(1), [why, setWhy] = useState(""), [code, setCode] = useState(""), [err, setErr] = useState(""), [busy, setBusy] = useState(false), [prueba, setPrueba] = useState<string | null>(null);
   const dia = (iso: string) => new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "long" }).format(new Date(iso));
+  // 9t · La llave: el servidor dice si la cuenta tiene una y aquí se ofrecen (`llave`); el dispositivo, si puede usarla (`cap`). `enviado`: ya
+  // pidió el código (entonces se ve el campo, como siempre).
+  const [cap, setCap] = useState(false), [enviado, setEnviado] = useState(false);
+  useEffect(() => { if (llave) void llaveDisponible().then((x) => setCap(x.entrar)); }, [llave]);
+  const conLlave = llave && cap, m = metodoLlave(es);
   const t = E2("Borrar mi cuenta", "Delete my account"), telL = tel.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, "+1 ($1) $2-$3");
   if (d.d) {
     const B: Bloque[] = [{ type: "note", tone: "danger", ic: "clock", t: E2(`Tu cuenta se borra el ${dia(d.d)}`, `Your account will be deleted on ${dia(d.d)}`), s: d.admin ? E2("To'Latino programó el borrado. Si es un error, escríbele a Soporte.", "To'Latino scheduled the deletion. If it is a mistake, contact Support.") : E2("Hasta entonces puedes cancelarlo. Después no se puede recuperar.", "Until then you can cancel. After that it cannot be recovered.") }];
@@ -21,7 +29,7 @@ export function Borrar({ d, tel, es, yo, pruebas }: { d: { d: string | null; adm
   }
   const pedir = async () => {
     setBusy(true); const r = await borrarCodigo().catch(() => null); setBusy(false);
-    if (r?.ok) { setStep(3); setCode(""); setErr(""); setPrueba(r.codigoPrueba ?? null); return; }
+    if (r?.ok) { setStep(3); setEnviado(true); setCode(""); setErr(""); setPrueba(r.codigoPrueba ?? null); return; }
     ui.toast(r && !r.ok ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Revisa tu conexión.", "Could not do it. Check your connection."));
   };
   const confirmar = async () => {
@@ -30,8 +38,20 @@ export function Borrar({ d, tel, es, yo, pruebas }: { d: { d: string | null; adm
     if (r?.ok) { router.push("/cuenta"); router.refresh(); return; }
     setErr(r && !r.ok ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Revisa tu conexión.", "Could not do it. Check your connection.")); setCode("");
   };
+  const conFirma = async () => {
+    if (busy) return;
+    setBusy(true);
+    const a = await borrarRetoLlave().catch(() => null);
+    if (!a?.ok) { setBusy(false); ui.toast(a && !a.ok ? (es ? a.msg.es : a.msg.en) : E2("No se pudo. Revisa tu conexión.", "Could not do it. Check your connection.")); return; }
+    const f = await firmarConLlave(a.opciones as Record<string, unknown>);
+    if (!f.ok) { setBusy(false); if (!f.cancelado) ui.toast(E2("No pudimos usar tu llave. Usa el código por texto.", "We couldn't use your passkey. Use the text code.")); return; }
+    const r = await borrarConLlave(f.respuesta, why).catch(() => null);
+    setBusy(false);
+    if (r?.ok) { router.push("/cuenta"); router.refresh(); return; }
+    ui.toast(r && !r.ok ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Revisa tu conexión.", "Could not do it. Check your connection."));
+  };
   const paso = (n: number, l: string) => ({ ic: step > n ? "check" : String(n) === "1" ? "help" : n === 2 ? "info" : "lock", ibg: step > n ? "rgba(0,229,196,.16)" : step === n ? undefined : "rgba(11,14,18,.05)", ifg: step > n ? "var(--tl-open-text)" : step === n ? undefined : "rgba(11,14,18,.6)", t: l, s: `${E2("PASO", "STEP")} ${n} ${E2("DE", "OF")} 3` });
-  const B: Bloque[] = [{ type: "rows", rows: [paso(1, E2("Por qué te vas", "Why you are leaving")), paso(2, E2("Qué pasa con tu cuenta", "What happens to your account")), paso(3, E2("Confirma con un código", "Confirm with a code"))] }];
+  const B: Bloque[] = [{ type: "rows", rows: [paso(1, E2("Por qué te vas", "Why you are leaving")), paso(2, E2("Qué pasa con tu cuenta", "What happens to your account")), paso(3, conLlave ? E2("Confirma que eres tú", "Confirm it's you") : E2("Confirma con un código", "Confirm with a code"))] }];
   if (step === 1) {
     B.push({ type: "form", fields: [{ k: E2("¿POR QUÉ TE VAS?", "WHY ARE YOU LEAVING?"), v: why, onV: () => undefined, opt: E2("OPCIONAL", "OPTIONAL"),
       chips: ([["uso", E2("Ya no la uso", "I no longer use it")], ["avisos", E2("Muchos avisos", "Too many notifications")], ["priv", E2("Privacidad", "Privacy")], ["ciudad", E2("Me mudé", "I moved")], ["otra", E2("Otra razón", "Other reason")]] as [string, string][])
@@ -48,9 +68,14 @@ export function Borrar({ d, tel, es, yo, pruebas }: { d: { d: string | null; adm
       { ic: "folder", ibg: "rgba(11,14,18,.05)", ifg: "rgba(11,14,18,.6)", t: E2("Tus pedidos y reservaciones se borran de tu cuenta", "Your orders and bookings are deleted from your account") },
     ] });
     B.push({ type: "note", tone: "warn", ic: "clock", t: E2("Tienes 30 días para arrepentirte", "You have 30 days to change your mind"), s: E2("Si entras antes, se cancela el borrado.", "If you sign in before then, the deletion is canceled.") });
-    B.push({ type: "acts", cols: "repeat(2,minmax(0,200px))", btns: [[E2("Mandarme el código", "Text me the code"), "primary", "chat", () => void pedir(), busy], [E2("Atrás", "Back"), "secondary", "chevronLeft", () => setStep(1)]] });
+    B.push({ type: "acts", cols: "repeat(2,minmax(0,200px))", btns: conLlave ? [[E2("Seguir", "Continue"), "primary", "chevronRight", () => setStep(3)], [E2("Atrás", "Back"), "secondary", "chevronLeft", () => setStep(1)]]
+      : [[E2("Mandarme el código", "Text me the code"), "primary", "chat", () => void pedir(), busy], [E2("Atrás", "Back"), "secondary", "chevronLeft", () => setStep(1)]] });
   }
-  if (step === 3) {
+  if (step === 3 && conLlave && !enviado) {
+    B.push({ type: "note", tone: "info", ic: "lock", s: E2(`Confirma que eres tú con ${m.con} o con un código que te mandamos por texto.`, `Confirm it's you with ${m.con} or with a code we text you.`) });
+    B.push({ type: "acts", cols: "repeat(3,minmax(0,200px))", btns: [[E2(`Borrar con ${m.corto}`, `Delete with ${m.corto}`), "danger", "key", () => void conFirma(), busy],
+      [E2("Mejor con un código", "Use a code instead"), "secondary", "chat", () => void pedir(), busy], [E2("Mejor no", "Never mind"), "secondary", "close", () => router.push("/cuenta/ajustes")]] });
+  } else if (step === 3) {
     if (pruebas && prueba) B.push({ type: "note", tone: "warn", ic: "info", s: E2(`Sandbox: el código es ${prueba} (en producción llega por SMS).`, `Sandbox: the code is ${prueba} (in production it arrives by text).`) });
     B.push({ type: "form", fields: [{ k: E2("CÓDIGO QUE TE MANDAMOS POR SMS", "CODE WE TEXTED YOU"), v: code, onV: (v) => { setCode(v.replace(/\D/g, "").slice(0, 6)); setErr(""); }, ph: "482913", im: "numeric", max: 6, err, h: `${E2("Lo mandamos al ", "Sent to ")}${telL}` }] });
     B.push({ type: "acts", cols: "repeat(2,minmax(0,200px))", btns: [[E2("Borrar mi cuenta", "Delete my account"), "danger", "trash", () => void confirmar(), !/^\d{6}$/.test(code) || busy], [E2("Mejor no", "Never mind"), "secondary", "close", () => router.push("/cuenta/ajustes")]] });
