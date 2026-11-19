@@ -2674,5 +2674,5 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   quitar el sumidero `await …<T>` la hace fallar («missed lines: [50]»). Endurecido sin ser bug: `buscar.ts` limit/offset siempre enteros acotados.
   Guardián nuevo `semgrepSqlPorFlujo` (modo taint, fuentes, las dos formas del sumidero, `.length` acotado, limpiadores con nombre revisados y únicos,
   la prueba con sus casos, el CI con --test y con los errores de lectura, cada `nosemgrep` con regla y porqué, sin las dos formas que Semgrep no lee);
-  alreves9t 14/14. Local: `semgrep --test semgrep/` ✓, `semgrep scan --config semgrep/ --error … apps packages services scripts` 0 hallazgos y 0
+  alreves9t4 14/14. Local: `semgrep --test semgrep/` ✓, `semgrep scan --config semgrep/ --error … apps packages services scripts` 0 hallazgos y 0
   errores de lectura, tsc ✓, guardianes ✓.
