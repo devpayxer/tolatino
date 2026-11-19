@@ -246,7 +246,7 @@ export function Desplegable({ lang, ancla, ciudad, lugar, ph, phTodo, cat, onClo
             placeholder={alcance ? ph : phTodo}
             className="h-full min-w-0 flex-1 border-none bg-transparent p-0 text-[15px] font-semibold text-ink outline-none placeholder:text-ink/60" />
           {q && <button type="button" aria-label={E2("Borrar", "Clear")} onClick={() => { setQ(""); inRef.current?.focus(); }} className="grid size-[30px] flex-none place-items-center rounded-full bg-ink/[.07]"><Icon name="close" size={13} strokeWidth={2.2} /></button>}
-          {vz && V.mic && <button type="button" data-mic="1" aria-label={E2("Buscar con la voz", "Search by voice")} onClick={V.hablar} className="grid size-9 flex-none place-items-center rounded-[10px] bg-action/[.08]"><Icon name="mic" size={18} color="var(--tl-action)" /></button>}
+          {vz && V.mic && <button type="button" data-mic="1" aria-label={E2("Buscar con la voz", "Search by voice")} onClick={V.hablar} className="grid size-11 flex-none place-items-center rounded-[10px] bg-action/[.08]"><Icon name="mic" size={18} color="var(--tl-action)" /></button>}
           <button type="button" data-ciudad="1" aria-label={E2(`Ciudad que estás viendo: ${lugar}`, `City you are viewing: ${lugar}`)} onClick={(e) => onCiudad(e.currentTarget.getBoundingClientRect())}
             className="flex flex-none items-center gap-1.5 whitespace-nowrap rounded-[10px] bg-paper px-[11px] py-[7px] text-[12.5px] font-bold"><Icon name="pin" size={15} color="var(--tl-action)" />{lugar}</button>
         </div>

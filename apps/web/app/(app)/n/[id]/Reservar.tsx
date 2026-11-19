@@ -140,7 +140,7 @@ export function RsvTab({ v, desk }: { v: Rsv; desk: boolean }) {
         <div className="flex items-start gap-2.5 rounded-2xl bg-pro/[.12] px-3.5 py-[13px]">
           <span className="grid flex-none pt-px"><Icon name="edit" size={16} color="var(--tl-pro-ink)" /></span>
           <div className="min-w-0 flex-1"><div className="text-[13px] font-bold leading-[1.4] text-pro-ink">{v.editConf ? (es ? `Cambiando tu reservación de ${diaL(v.editConf.at, v.editConf.dia, es).toLowerCase()} · ${hora(v.editConf.h)}` : `Changing your reservation for ${diaL(v.editConf.at, v.editConf.dia, es)} · ${hora(v.editConf.h)}`) : E2("Cambiando tu solicitud", "Changing your request")}</div><div className="mt-[3px] text-pretty text-[12px] font-medium leading-[1.5] text-pro-ink">{v.editConf ? E2("Tu hora actual está marcada; elige la nueva. La actual sigue en pie hasta que confirmen el cambio.", "Pick the new time. The current one stands until they confirm the change.") : E2(`Tu hora actual está marcada; elige la nueva. ${r.negocio.nombre} todavía no ha respondido.`, `Pick the new time. ${r.negocio.nombre} hasn't replied yet.`)}</div></div>
-          <button type="button" onClick={v.onEditCancel} className="flex-none text-[12px] font-bold text-action">{E2("Cancelar cambio", "Cancel change")}</button>
+          <button type="button" onClick={v.onEditCancel} className="inline-flex min-h-11 flex-none items-center text-[12px] font-bold text-action">{E2("Cancelar cambio", "Cancel change")}</button>
         </div>
       )}
       {v.p != null && <div><div className={`font-display font-extrabold leading-none tracking-[-0.03em] ${desk ? "text-[22px]" : "text-[18px]"}`}>{E2("Reservar mesa", "Book a table")}</div><div className={`mt-[7px] text-pretty font-medium leading-[1.55] text-ink/60 ${desk ? "text-[13.5px]" : "text-[12.5px]"}`}>{v.sub}</div></div>}
@@ -225,7 +225,7 @@ export function RsvRapida({ v, onMas }: { v: Rsv; onMas: (p?: number, i?: number
     <div data-screen-label="Ficha · reservar mesa" className="rounded-[18px] border border-ink/[.07] bg-white p-[15px]">
       <div className="flex items-baseline justify-between gap-2.5">
         <span className="font-display text-[16px] font-extrabold leading-[1.1] tracking-[-0.02em]">{E2("Reservar mesa", "Book a table")}</span>
-        <button type="button" onClick={() => onMas()} className="flex-none text-[12px] font-bold text-action">{E2("Más horarios", "More times")}</button>
+        <button type="button" onClick={() => onMas()} className="inline-flex min-h-11 flex-none items-center text-[12px] font-bold text-action">{E2("Más horarios", "More times")}</button>
       </div>
       <div className="mt-[5px] font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/60">
         {v.qp ? (!q ? v.P(v.qp).toUpperCase() : q.horas.length && d ? `${diaL(d.ymd, q.i, es, true)} · ${v.P(v.qp)}`.toUpperCase() : `${E2("SIN MESAS PRONTO PARA ", "NO TABLES SOON FOR ")}${v.P(v.qp).toUpperCase()}`) : E2("¿CUÁNTOS SON?", "HOW MANY GUESTS?")}

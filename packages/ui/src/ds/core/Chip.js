@@ -74,7 +74,13 @@ function Chip({
       cursor: onClick ? 'pointer' : 'default',
       whiteSpace: 'nowrap',
       flex: 'none',
-      ...style
+      ...style,
+      ...(onClick ? {
+        minHeight: 44,
+        minWidth: 44,
+        justifyContent: 'center',
+        boxSizing: 'border-box'
+      } : null)
     }
   }, variant === 'verified' ? /*#__PURE__*/React.createElement("span", {
     style: {

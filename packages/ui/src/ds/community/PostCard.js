@@ -52,8 +52,8 @@ function VoteBar({
 }) {
   const on = voted != null ? !!voted : scoreColor !== 'var(--tl-ink)';
   const circ = {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     boxSizing: 'border-box',
     borderRadius: 999,
     border: '1px solid ' + LINE,
@@ -66,15 +66,17 @@ function VoteBar({
     style: {
       marginTop: 12,
       display: 'flex',
+      flexWrap: 'wrap',
       alignItems: 'center',
       gap: 8,
       ...style
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      height: 36,
+      position: 'relative',
+      height: 44,
       boxSizing: 'border-box',
-      padding: '0 3px',
+      padding: 0,
       borderRadius: 999,
       border: '1px solid ' + (on ? 'rgba(75,55,245,.35)' : LINE),
       background: on ? 'rgba(75,55,245,.06)' : 'var(--tl-white)',
@@ -86,8 +88,9 @@ function VoteBar({
     onClick: onUp,
     ...btn(onUp, labels.up),
     style: {
-      width: 32,
-      height: 34,
+      width: 44,
+      height: 44,
+      margin: '-1px 0',
       display: 'grid',
       placeItems: 'center',
       cursor: onUp ? 'pointer' : 'default'
@@ -98,8 +101,11 @@ function VoteBar({
     color: upColor
   })), /*#__PURE__*/React.createElement("span", {
     style: {
-      minWidth: 20,
-      textAlign: 'center',
+      position: 'absolute',
+      inset: 0,
+      display: 'grid',
+      placeItems: 'center',
+      pointerEvents: 'none',
       font: '800 13px Sora,sans-serif',
       color: scoreColor
     }
@@ -107,8 +113,9 @@ function VoteBar({
     onClick: onDown,
     ...btn(onDown, labels.down),
     style: {
-      width: 32,
-      height: 34,
+      width: 44,
+      height: 44,
+      margin: '-1px 0',
       display: 'grid',
       placeItems: 'center',
       cursor: onDown ? 'pointer' : 'default',
@@ -122,7 +129,8 @@ function VoteBar({
     onClick: onComments,
     ...btn(onComments, labels.comments),
     style: {
-      height: 36,
+      height: 44,
+      minWidth: 44,
       boxSizing: 'border-box',
       padding: '0 14px 0 12px',
       borderRadius: 999,
@@ -140,9 +148,11 @@ function VoteBar({
     color: "var(--tl-ink)"
   }), comments) : null, /*#__PURE__*/React.createElement("span", {
     style: {
-      flex: 1
+      display: 'flex',
+      gap: 8,
+      marginLeft: 'auto'
     }
-  }), onSave ? /*#__PURE__*/React.createElement("span", {
+  }, onSave ? /*#__PURE__*/React.createElement("span", {
     onClick: onSave,
     ...btn(onSave, labels.save),
     style: circ
@@ -159,7 +169,7 @@ function VoteBar({
     name: "share",
     size: 16,
     color: "var(--tl-ink)"
-  })) : null);
+  })) : null));
 }
 VoteBar.tlv = 27;
 
@@ -422,8 +432,11 @@ function PostCard({
   }, /*#__PURE__*/React.createElement("span", {
     onClick: onAuthor,
     ...__ds_scope.__btn(onAuthor, undefined, undefined),
+    'data-toque': onAuthor ? 'nombre' : undefined,
     style: {
       minWidth: 0,
+      padding: onAuthor ? '13px 0' : 0,
+      margin: onAuthor ? '-13px 0' : 0,
       font: nameFont + ' Sora,sans-serif',
       letterSpacing: '-.02em',
       whiteSpace: 'nowrap',
@@ -455,11 +468,11 @@ function PostCard({
     onClick: onMenu,
     ...btn(onMenu, menuLabel),
     style: {
-      width: 32,
-      height: 32,
-      margin: '-8px -9px -8px 0',
+      width: 44,
+      height: 44,
+      margin: '-14px 0',
       display: 'grid',
-      placeItems: 'center',
+      placeItems: 'center end',
       flex: 'none',
       cursor: 'pointer'
     }
@@ -505,6 +518,7 @@ function PostCard({
     ...__ds_scope.__btn(onOpen, undefined, undefined),
     style: {
       marginTop: bodyGap,
+      minHeight: onOpen ? 44 : undefined,
       font: bodyFont + ' Manrope,sans-serif',
       textWrap: 'pretty',
       cursor: onOpen ? 'pointer' : 'default'

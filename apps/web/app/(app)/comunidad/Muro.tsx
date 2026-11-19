@@ -139,7 +139,7 @@ export function Muro({ es, yo, ciudad, abierta, filtros, inicial, hoy = [] }: { 
           </div>
         </div>
         <div className="hs" style={{ padding: "12px 20px", display: "flex", gap: 7, overflowX: "auto", borderBottom: LINE }}>
-          <span role="button" aria-label={E2("Filtros", "Filters")} onClick={hojaFiltros} {...tec(hojaFiltros)} style={{ flex: "none", width: 34, height: 34, boxSizing: "border-box", borderRadius: 999, border: `1px solid ${filtOn ? "var(--tl-action)" : "rgba(11,14,18,.12)"}`, background: filtOn ? "rgba(75,55,245,.08)" : "var(--tl-white)", display: "grid", placeItems: "center", cursor: "pointer" }}>
+          <span role="button" aria-label={E2("Filtros", "Filters")} onClick={hojaFiltros} {...tec(hojaFiltros)} style={{ flex: "none", width: 44, height: 44, boxSizing: "border-box", borderRadius: 999, border: `1px solid ${filtOn ? "var(--tl-action)" : "rgba(11,14,18,.12)"}`, background: filtOn ? "rgba(75,55,245,.08)" : "var(--tl-white)", display: "grid", placeItems: "center", cursor: "pointer" }}>
             <Icon name="filter" size={15} color={filtOn ? "var(--tl-action)" : "var(--tl-ink)"} />
           </span>
           {chips.map(([k, l, f, on]) => <Chip key={k} variant={on ? "selected" : "filter"} onClick={() => ir(f)}>{l}</Chip>)}

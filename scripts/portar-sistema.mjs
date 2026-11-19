@@ -219,6 +219,244 @@ function parchesAccesibilidad(t, rel) {
   return t;
 }
 
+/* 9t (19 nov) · Objetivos táctiles de 44 px, DE VERDAD (decisión del fundador, 19 nov: «agrandar solo lo que lo necesita»). Dos intentos
+   anteriores se revirtieron: un ::after invisible fuera de la caja tapaba a vecinos de otros contenedores (menu2b, rsv2e, apt4f, apt4q,
+   fic4id, avisos2j) y un área «decidida al tocar» no pasó a11y9c en el CI. Aquí la CAJA de cada control mide ≥ 44 × 44:
+   - los botones de solo ícono (30–40 px) pasan a 44 × 44; donde el sistema dibuja un cuadrito sobre una foto (el + del plato), el dibujo
+     queda de su tamaño en la esquina de una caja de 44 que no sale de la foto;
+   - botones, chips, pestañas, segmentos y filas compactas suben a 44 de alto;
+   - los NOMBRES que son botón (plato, negocio, autor) crecen hacia arriba y hacia abajo con relleno y margen negativo DENTRO de su propia
+     fila o tarjeta, que al tocarla hace lo mismo: el diseño no se mueve y la caja no pisa a ningún otro control (a11y9c lo mide: «pisan»).
+   Lo mide y lo exige pruebas/e2e/a11y9c.cjs (pruebas/lib/tactil.cjs) a 390 y a 320 con letra grande; guardián objetivosTactiles. */
+const T44 = 44;
+const TACTIL = {
+  "core/Button.js": [
+    ["  md: {\n    height: 40,", `  md: {\n    height: ${T44},`],
+    ["  sm: {\n    height: 34,", `  sm: {\n    height: ${T44},`],
+  ],
+  "core/IconButton.js": [
+    ["  const r = size >= 50 ? 15 : size >= 42 ? 13 : 12;", `  const z = Math.max(size, ${T44}),\n    r = z >= 50 ? 15 : z >= 42 ? 13 : 12;`],
+    ["      width: size,\n      height: size,\n      borderRadius: r,", "      width: z,\n      height: z,\n      borderRadius: r,"],
+  ],
+  "core/Chip.js": [
+    ["      whiteSpace: 'nowrap',\n      flex: 'none',\n      ...style\n    }", `      whiteSpace: 'nowrap',\n      flex: 'none',\n      ...style,\n      ...(onClick ? {\n        minHeight: ${T44},\n        minWidth: ${T44},\n        justifyContent: 'center',\n        boxSizing: 'border-box'\n      } : null)\n    }`],
+  ],
+  "core/SectionHeader.js": [
+    ["    ...__ds_scope.__btn(onAction, undefined, undefined),\n    style: {\n      font: '700 12px Manrope,sans-serif',\n      color: 'var(--tl-action)',\n      cursor: 'pointer'\n    }",
+      `    ...__ds_scope.__btn(onAction, undefined, undefined),\n    style: {\n      display: 'inline-flex',\n      alignItems: 'center',\n      justifyContent: 'flex-end',\n      minHeight: ${T44},\n      minWidth: ${T44},\n      flex: 'none',\n      font: '700 12px Manrope,sans-serif',\n      color: 'var(--tl-action)',\n      cursor: 'pointer'\n    }`],
+  ],
+  "navigation/Tabs.js": [
+    ["        borderBottom: '2.5px solid ' + (on ? 'var(--tl-action)' : 'transparent'),\n        cursor: 'pointer',", `        borderBottom: '2.5px solid ' + (on ? 'var(--tl-action)' : 'transparent'),\n        minHeight: ${T44},\n        boxSizing: 'border-box',\n        cursor: 'pointer',`],
+    ["        borderBottom: '2.5px solid ' + (on ? 'var(--tl-ink)' : 'transparent'),\n        cursor: 'pointer',", `        borderBottom: '2.5px solid ' + (on ? 'var(--tl-ink)' : 'transparent'),\n        minHeight: ${T44},\n        minWidth: ${T44},\n        boxSizing: 'border-box',\n        cursor: 'pointer',`],
+  ],
+  "layout/SiteHeader.js": [
+    // Campana y avatar: 40 → 44 (el punto de «sin leer» sigue en su esquina).
+    ["      position: 'relative',\n      width: 40,\n      height: 40,\n      borderRadius: 13,", `      position: 'relative',\n      width: ${T44},\n      height: ${T44},\n      borderRadius: 13,`],
+    ["      top: 9,\n      right: 10,\n      width: 7,", "      top: 11,\n      right: 12,\n      width: 7,"],
+    ["    ...__ds_scope.__btn(onClick, avatarLabel, undefined),\n    style: {\n      width: 40,\n      height: 40,", `    ...__ds_scope.__btn(onClick, avatarLabel, undefined),\n    style: {\n      width: ${T44},\n      height: ${T44},`],
+    // Idioma: la pastilla «ES» pasa a 44 × 44.
+    ["      padding: '8px 10px',\n      borderRadius: 11,\n      border: '1px solid rgba(11,14,18,.12)',\n      font: '700 11px ' + mono,\n      cursor: 'pointer',\n      flex: 'none'",
+      `      padding: '8px 10px',\n      minWidth: ${T44},\n      minHeight: ${T44},\n      boxSizing: 'border-box',\n      display: 'grid',\n      placeItems: 'center',\n      borderRadius: 13,\n      border: '1px solid rgba(11,14,18,.12)',\n      font: '700 11px ' + mono,\n      cursor: 'pointer',\n      flex: 'none'`],
+    // El logo (Inicio) del teléfono: 44 de alto. Con idioma, campana y cuenta a 44, a 320 el nombre «To’Latino» (23 px) no cabía y se
+    // dibujaba encima de «ES» (14 px; 54 con letra grande): el nombre se ajusta a lo que queda (unidades del contenedor, de 15 a 23 px) y,
+    // si ni así cabe, solo queda el logo (apps/web/app/globals.css, [data-marca]); su nombre accesible sigue siendo «To’Latino».
+    ["      flex: 1,\n      minWidth: 0,\n      display: 'flex',\n      alignItems: 'center',\n      gap: 9,\n      cursor: 'pointer'\n    }", `      flex: 1,\n      minWidth: 0,\n      minHeight: ${T44},\n      containerType: 'inline-size',\n      display: 'flex',\n      alignItems: 'center',\n      gap: 9,\n      cursor: 'pointer'\n    }`],
+    ["  }, /*#__PURE__*/React.createElement(Logo, {\n    size: 28,\n    font: 23,\n", "  }, /*#__PURE__*/React.createElement(Logo, {\n    size: 28,\n    font: 'clamp(15px, calc((100cqi - 37px) / 4.4), 23px)',\n"],
+    ["}), /*#__PURE__*/React.createElement(\"span\", {\n  style: {\n    font: '800 ' + font + 'px/1 Sora,sans-serif',", "}), /*#__PURE__*/React.createElement(\"span\", {\n  'data-marca': '',\n  style: {\n    whiteSpace: 'nowrap',\n    font: '800 ' + (typeof font === 'number' ? font + 'px' : font) + '/1 Sora,sans-serif',"],
+    // El buscador del teléfono: el texto (el botón del teclado) toma los 44 de alto de la barra (antes 12 de relleno arriba y abajo).
+    ["      marginTop: 12,\n      display: 'flex',\n      alignItems: 'center',\n      gap: 10,\n      padding: '12px 14px',", "      marginTop: 12,\n      display: 'flex',\n      alignItems: 'center',\n      gap: 10,\n      padding: '0 14px',"],
+    ["      font: '500 14px Manrope,sans-serif',\n      color: 'rgba(11,14,18,.6)',\n      whiteSpace: 'nowrap',\n      overflow: 'hidden',\n      textOverflow: 'ellipsis'\n    }\n  }, /*#__PURE__*/React.createElement(\"span\", {\n    ...(onCity ? __ds_scope.__btn(onSearch) : {})\n  }, searchPlaceholder || 'Buscar en ' + cityShort)",
+      `      font: '500 14px Manrope,sans-serif',\n      lineHeight: '${T44}px',\n      color: 'rgba(11,14,18,.6)',\n      whiteSpace: 'nowrap',\n      overflow: 'hidden',\n      textOverflow: 'ellipsis'\n    }\n  }, /*#__PURE__*/React.createElement("span", {\n    ...(onCity ? __ds_scope.__btn(onSearch) : {}),\n    style: {\n      display: 'block',\n      overflow: 'hidden',\n      textOverflow: 'ellipsis'\n    }\n  }, searchPlaceholder || 'Buscar en ' + cityShort)`],
+    // La ciudad («5 MI»): caja de 44 de alto; la pastilla se dibuja igual dentro.
+    ["    onClick: stop(onCity),\n    ...__ds_scope.__btn(stop(onCity), undefined, undefined),\n    style: {\n      display: 'flex',\n      alignItems: 'center',\n      gap: 4,\n      padding: '6px 9px',",
+      `    onClick: stop(onCity),\n    ...__ds_scope.__btn(stop(onCity), undefined, undefined),\n    style: {\n      display: 'flex',\n      alignItems: 'center',\n      alignSelf: 'stretch',\n      minHeight: ${T44},\n      minWidth: ${T44},\n      flex: 'none',\n      cursor: 'pointer'\n    }\n  }, /*#__PURE__*/React.createElement("span", {\n    style: {\n      display: 'flex',\n      alignItems: 'center',\n      gap: 4,\n      padding: '6px 9px',`, 1, "radius.toUpperCase())));\n  return", "radius.toUpperCase()))));\n  return"],
+  ],
+  "menu/MenuItemRow.js": [
+    // El nombre del plato (fila y tarjeta): 13 px de relleno arriba y abajo con margen negativo igual — la fila no se mueve y la caja
+    // (≥ 44) queda dentro de la misma fila, que al tocarla abre el mismo plato.
+    ["  }, /*#__PURE__*/React.createElement(\"span\", {\n    ...__ds_scope.__btn(off ? undefined : onOpen)\n  }, name)), desc ?",
+      "  }, /*#__PURE__*/React.createElement(\"span\", {\n    ...__ds_scope.__btn(off ? undefined : onOpen),\n    'data-toque': 'nombre',\n    style: {\n      display: 'block',\n      padding: '13px 0',\n      margin: '-13px 0'\n    }\n  }, name)), desc ?"],
+    ["  }, /*#__PURE__*/React.createElement(\"span\", {\n    ...__ds_scope.__btn(onOpen)\n  }, name)), /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      marginTop: 4,",
+      "  }, /*#__PURE__*/React.createElement(\"span\", {\n    ...__ds_scope.__btn(onOpen),\n    'data-toque': 'nombre',\n    style: {\n      display: 'block',\n      padding: '14px 0',\n      margin: '-14px 0'\n    }\n  }, name)), /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      marginTop: 4,"],
+    // «Editar» de una línea del pedido (CartLine): 44 de alto (antes 17), y el − n + justo debajo.
+    ["    ...__ds_scope.__btn(onEdit, undefined, undefined),\n    style: {\n      display: 'inline-block',\n      marginTop: 4,\n      font: '700 12px Manrope,sans-serif',", `    ...__ds_scope.__btn(onEdit, undefined, undefined),\n    style: {\n      display: 'inline-flex',\n      alignItems: 'center',\n      minHeight: ${T44},\n      minWidth: ${T44},\n      marginTop: 0,\n      font: '700 12px Manrope,sans-serif',`],
+    ["  }, editLabel) : null, /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      marginTop: 8\n    }", "  }, editLabel) : null, /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      marginTop: onEdit ? 0 : 8\n    }"],
+    // QtyStepper: cada botón 44 × 44 (md: 50 de alto como antes; sm: 46).
+    ["    h = md ? 50 : 30,\n    w = md ? 34 : 30;", `    h = md ? 50 : ${T44 + 2},\n    w = ${T44};`],
+    ["    width: w,\n    height: h - (md ? 6 : 2),", `    width: w,\n    height: ${T44},`],
+  ],
+  "cards/BusinessCard.js": [
+    ["  }, /*#__PURE__*/React.createElement(\"span\", {\n    ...__ds_scope.__btn(onOpen)\n  }, name)), meta ?",
+      "  }, /*#__PURE__*/React.createElement(\"span\", {\n    ...__ds_scope.__btn(onOpen),\n    'data-toque': 'nombre',\n    style: {\n      display: 'inline-block',\n      minWidth: 44,\n      padding: '13px 0',\n      margin: '-13px 0'\n    }\n  }, name)), meta ?"],
+    ["  }, /*#__PURE__*/React.createElement(\"span\", {\n    ...__ds_scope.__btn(onOpen)\n  }, name)), verified ?",
+      "  }, /*#__PURE__*/React.createElement(\"span\", {\n    ...__ds_scope.__btn(onOpen),\n    'data-toque': 'nombre',\n    style: {\n      display: 'inline-block',\n      minWidth: 44,\n      padding: '12px 0',\n      margin: '-12px 0'\n    }\n  }, name)), verified ?"],
+  ],
+  "cards/BusinessRow.js": [
+    // «Abierto ahora» (Inicio) a 320 con letra grande: la fila medía 303 px en 275 (se salía; a11y9c lo cazó al medir allí). Ahora se encoge
+    // y, si no cabe, la etiqueta («Pickup 25 min») baja a otra línea; el texto no se aplasta por debajo de 130 px.
+    ["      display: 'flex',\n      gap: 12,\n      alignItems: 'center',\n      padding: 12,\n      borderRadius: 18,", "      display: 'flex',\n      flexWrap: 'wrap',\n      gap: 12,\n      rowGap: 10,\n      alignItems: 'center',\n      padding: 12,\n      borderRadius: 18,"],
+    ["  }), /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      flex: 1,\n      minWidth: 0\n    }", "  }), /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      flex: '1 1 130px',\n      minWidth: 0\n    }"],
+    ["  }, meta)), slot ? /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      padding: '9px 13px',", "  }, meta)), slot ? /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      flex: 'none',\n      padding: '9px 13px',"],
+  ],
+  "community/PostCard.js": [
+    ["  const circ = {\n    width: 36,\n    height: 36,", `  const circ = {\n    width: ${T44},\n    height: ${T44},`],
+    // La fila se envuelve cuando no cabe (a 320 con letra grande «Compartir» se salía ya antes): guardar y compartir van juntos a la derecha.
+    ["      marginTop: 12,\n      display: 'flex',\n      alignItems: 'center',\n      gap: 8,\n      ...style", "      marginTop: 12,\n      display: 'flex',\n      flexWrap: 'wrap',\n      alignItems: 'center',\n      gap: 8,\n      ...style"],
+    ["  }), comments) : null, /*#__PURE__*/React.createElement(\"span\", {\n    style: {\n      flex: 1\n    }\n  }), onSave ? ", "  }), comments) : null, /*#__PURE__*/React.createElement(\"span\", {\n    style: {\n      display: 'flex',\n      gap: 8,\n      marginLeft: 'auto'\n    }\n  }, onSave ? ", 1,
+      "  })) : null);\n}\nVoteBar.tlv = 27;", "  })) : null));\n}\nVoteBar.tlv = 27;"],
+    // Votar: la pastilla 44 de alto y del mismo ancho (90); ▲ y ▼ 44 × 44 (sobre el borde de 1 px) y el número encima, en el medio, sin toque.
+    ["  }, /*#__PURE__*/React.createElement(\"span\", {\n    style: {\n      height: 36,\n      boxSizing: 'border-box',\n      padding: '0 3px',", `  }, /*#__PURE__*/React.createElement("span", {\n    style: {\n      position: 'relative',\n      height: ${T44},\n      boxSizing: 'border-box',\n      padding: 0,`],
+    ["      width: 32,\n      height: 34,\n      display: 'grid',\n      placeItems: 'center',\n      cursor: onUp ? 'pointer' : 'default'", `      width: ${T44},\n      height: ${T44},\n      margin: '-1px 0',\n      display: 'grid',\n      placeItems: 'center',\n      cursor: onUp ? 'pointer' : 'default'`],
+    ["      width: 32,\n      height: 34,\n      display: 'grid',\n      placeItems: 'center',\n      cursor: onDown ? 'pointer' : 'default',", `      width: ${T44},\n      height: ${T44},\n      margin: '-1px 0',\n      display: 'grid',\n      placeItems: 'center',\n      cursor: onDown ? 'pointer' : 'default',`],
+    ["    style: {\n      minWidth: 20,\n      textAlign: 'center',\n      font: '800 13px Sora,sans-serif',", "    style: {\n      position: 'absolute',\n      inset: 0,\n      display: 'grid',\n      placeItems: 'center',\n      pointerEvents: 'none',\n      font: '800 13px Sora,sans-serif',"],
+    ["    style: {\n      height: 36,\n      boxSizing: 'border-box',\n      padding: '0 14px 0 12px',", `    style: {\n      height: ${T44},\n      minWidth: ${T44},\n      boxSizing: 'border-box',\n      padding: '0 14px 0 12px',`],
+    // El nombre del autor: crece arriba y abajo dentro de su encabezado (la fila no se mueve).
+    ["    ...__ds_scope.__btn(onAuthor, undefined, undefined),\n    style: {\n      minWidth: 0,", "    ...__ds_scope.__btn(onAuthor, undefined, undefined),\n    'data-toque': onAuthor ? 'nombre' : undefined,\n    style: {\n      minWidth: 0,\n      padding: onAuthor ? '13px 0' : 0,\n      margin: onAuthor ? '-13px 0' : 0,"],
+    // El texto de la publicación (abre el hilo): con una sola línea medía 23 de alto (en una tableta o un teléfono ancho); ahora 44 como mínimo.
+    ["    ...__ds_scope.__btn(onOpen, undefined, undefined),\n    style: {\n      marginTop: bodyGap,\n      font: bodyFont + ' Manrope,sans-serif',", `    ...__ds_scope.__btn(onOpen, undefined, undefined),\n    style: {\n      marginTop: bodyGap,\n      minHeight: onOpen ? ${T44} : undefined,\n      font: bodyFont + ' Manrope,sans-serif',`],
+    // «⋯»: 44 × 44 dentro de su fila (antes salía 9 px hacia la esquina con margen negativo: ya no se sale de su caja); el ícono, a la derecha.
+    ["      width: 32,\n      height: 32,\n      margin: '-8px -9px -8px 0',\n      display: 'grid',\n      placeItems: 'center',", `      width: ${T44},\n      height: ${T44},\n      margin: '-14px 0',\n      display: 'grid',\n      placeItems: 'center end',`],
+  ],
+  "account/NeighborCard.js": [
+    // «Completa tu cuenta»: cada fila con clic, 44 de alto.
+    ["      gap: 10,\n      alignItems: 'center',\n      padding: '10px 0',\n      borderTop: i ? '1px solid rgba(11,14,18,.07)' : 'none',", `      gap: 10,\n      alignItems: 'center',\n      padding: '10px 0',\n      minHeight: ${T44},\n      boxSizing: 'border-box',\n      borderTop: i ? '1px solid rgba(11,14,18,.07)' : 'none',`],
+  ],
+  "admin/AdminBar.js": [
+    ["    segH = desk ? 28 : 26,\n    btn = desk ? 38 : 36;", `    segH = ${T44},\n    btn = ${T44};`],
+    // En el teléfono, con todo a 44, la ciudad no cabía junto al logo y los tres botones (a 390 «Ciudad…» quedaba en 43 px y a 320 en 20):
+    // la barra se envuelve y la ciudad va en su propia fila, a lo ancho, con las opciones repartidas.
+    ["      padding: desk ? '10px 24px' : '10px 14px',\n      display: 'flex',\n      alignItems: 'center',\n      gap: 10\n    }", "      padding: desk ? '10px 24px' : '10px 14px',\n      display: 'flex',\n      flexWrap: desk ? undefined : 'wrap',\n      alignItems: 'center',\n      gap: 10,\n      rowGap: 8\n    }"],
+    ["      flex: desk ? 'none' : '0 1 auto',\n      minWidth: 0\n    }\n  }, cities.map(", "      flex: desk ? 'none' : '1 0 100%',\n      order: desk ? undefined : 1,\n      minWidth: 0\n    }\n  }, cities.map("],
+    ["      flex: desk || i < cities.length - 1 ? 'none' : '0 1 auto'\n", "      flex: desk ? 'none' : '1 1 0'\n"],
+    ["      display: 'flex',\n      alignItems: 'center',\n      gap: 8,\n      cursor: onHome ? 'pointer' : 'default',\n      flex: 'none'", `      display: 'flex',\n      alignItems: 'center',\n      gap: 8,\n      minHeight: ${T44},\n      cursor: onHome ? 'pointer' : 'default',\n      flex: 'none'`],
+    ["      display: 'flex',\n      gap: 3,\n      padding: 3,\n      borderRadius: 10,", "      display: 'flex',\n      gap: 2,\n      padding: 0,\n      borderRadius: 10,"],
+    ["      height: segH,\n      padding: '0 10px',\n      borderRadius: 8,", "      height: segH,\n      padding: '0 10px',\n      borderRadius: 10,"],
+    ["    ...__ds_scope.__btn(onSearch, searchLabel, undefined),\n    style: {\n      width: 36,\n      height: 36,", `    ...__ds_scope.__btn(onSearch, searchLabel, undefined),\n    style: {\n      width: ${T44},\n      height: ${T44},`],
+    ["      gap: 8,\n      padding: 3,\n      paddingRight: desk ? 10 : 3,\n      borderRadius: 12,", "      gap: 8,\n      padding: 6,\n      paddingRight: desk ? 10 : 6,\n      borderRadius: 13,"],
+    // Fila del admin en el teléfono (AdminRow) con clic: 44 de alto.
+    ["    ...__ds_scope.__btn(onClick, undefined, undefined, toggle != null),\n    style: {\n      display: 'flex',\n      alignItems: 'center',\n      gap: 12,\n      cursor: onClick ? 'pointer' : 'default'", `    ...__ds_scope.__btn(onClick, undefined, undefined, toggle != null),\n    style: {\n      display: 'flex',\n      alignItems: 'center',\n      gap: 12,\n      minHeight: onClick ? ${T44} : undefined,\n      cursor: onClick ? 'pointer' : 'default'`],
+  ],
+};
+// El + del plato (AddPill): cerrado, una caja de 44 × 44 que no sale de la foto más que antes (el cuadrito de siempre en su esquina de abajo
+// a la derecha); abierto, la pastilla «− n +» de 44 de alto con − y + de 44 × 44 (la cantidad, encima y sin toque, en el medio).
+const ADDPILL_NUEVO = `  const box = dark ? {
+    position: 'absolute',
+    right: -6,
+    bottom: -6,
+    height: ${T44},
+    width: x ? ${T44 * 2} : ${T44},
+    borderRadius: 12,
+    background: x ? 'var(--tl-ink)' : 'transparent',
+    boxShadow: x ? 'inset 0 0 0 2.5px var(--tl-white)' : 'none'
+  } : {
+    position: 'absolute',
+    right: 8,
+    bottom: 8,
+    height: ${T44},
+    width: x ? ${T44 * 2} : ${T44},
+    borderRadius: 11,
+    background: x ? 'var(--tl-white)' : 'transparent',
+    boxShadow: x ? '0 6px 14px -6px rgba(11,14,18,.5)' : 'none'
+  };
+  const vis = dark ? {
+    width: 31,
+    height: 31,
+    boxSizing: 'border-box',
+    borderRadius: 12,
+    background: 'var(--tl-ink)',
+    border: '2.5px solid var(--tl-white)'
+  } : {
+    width: 32,
+    height: 34,
+    borderRadius: 11,
+    background: 'var(--tl-white)',
+    boxShadow: '0 6px 14px -6px rgba(11,14,18,.5)'
+  };
+  const mas = /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "plus",
+    size: dark ? 14 : 16,
+    color: fg,
+    strokeWidth: 2.4
+  });
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: st,
+    role: 'presentation',
+    'data-toque': 'agregar',
+    style: {
+      ...box,
+      overflow: 'hidden',
+      display: 'flex',
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+      color: fg,
+      transition: 'width .2s ease'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    onClick: left,
+    ...__ds_scope.__key(x ? left : undefined),
+    role: "button",
+    "aria-label": qty === 1 ? removeLabel : decLabel,
+    "aria-hidden": !x,
+    style: {
+      width: ${T44},
+      height: '100%',
+      flex: 'none',
+      display: 'grid',
+      placeItems: 'center',
+      cursor: 'pointer'
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: qty === 1 ? 'trash' : 'minus',
+    size: 16,
+    color: qty === 1 && !dark ? 'var(--tl-danger)' : fg,
+    strokeWidth: 2
+  })), /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": !x,
+    style: {
+      position: 'absolute',
+      inset: 0,
+      display: x ? 'grid' : 'none',
+      placeItems: 'center',
+      pointerEvents: 'none',
+      font: '800 13.5px/1 Sora,sans-serif'
+    }
+  }, qty), /*#__PURE__*/React.createElement("span", {
+    onClick: right,
+    ...__ds_scope.__key(right),
+    role: "button",
+    "aria-label": qty === 0 || x ? addLabel : qtyLabel + ': ' + qty,
+    style: {
+      width: ${T44},
+      height: '100%',
+      flex: 'none',
+      display: 'grid',
+      placeItems: x ? 'center' : 'end',
+      cursor: 'pointer',
+      font: '800 12.5px/1 Sora,sans-serif'
+    }
+  }, x ? mas : /*#__PURE__*/React.createElement("span", {
+    style: {
+      ...vis,
+      display: 'grid',
+      placeItems: 'center'
+    }
+  }, qty === 0 ? mas : qty)));
+}
+`;
+function tactiles(t, rel) {
+  for (const [de, a, veces = 1, de2, a2] of TACTIL[rel] || []) {
+    const n = t.split(de).length - 1;
+    if (n !== veces) throw new Error(`9t táctil (${rel}): esperaba ${veces} vez/veces «${de.slice(0, 70)}» y hay ${n} (el origen cambió, revisar)`);
+    t = t.replaceAll(de, a);
+    if (de2) { if (!t.includes(de2)) throw new Error(`9t táctil (${rel}): no encuentro el cierre «${de2.slice(0, 50)}»`); t = t.replace(de2, a2); }
+  }
+  if (rel === "menu/MenuItemRow.js") {
+    const i = t.indexOf("  const box = dark ? {\n    position: 'absolute',\n    right: -6,"), j = t.indexOf("/* Tarjeta de \"Populares\"", i);
+    if (i < 0 || j < 0 || !t.slice(i, j).includes("  }) : qty));\n}\n")) throw new Error("9t táctil (AddPill): el origen cambió, revisar");
+    t = t.slice(0, i) + ADDPILL_NUEVO + t.slice(j);
+  }
+  return t;
+}
 const puntuales = new Map();
 const nombres = [];
 const grupos = {};
@@ -524,6 +762,7 @@ for (const src of archivos) {
     for (const x of ["  oneLine\n}) {", "height: oneLine ? 150 : 170", "meta && !oneLine ?", "'data-una-linea': ''", "chips.length && !oneLine ?", "oneLine ? null : /*#__PURE__*/React.createElement(__ds_scope.IconButton"])
       if (!t.includes(x)) throw new Error(`parche BusinessCard (C-002 una línea): el origen cambió, revisar (${x})`);
   }
+  t = tactiles(t, rel);
 
   const m = [...t.matchAll(/Object\.assign\(__ds_scope, \{([^}]*)\}\);/g)];
   for (const x of m) {

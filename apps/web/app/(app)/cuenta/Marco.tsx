@@ -150,7 +150,7 @@ export function Marco({ es, code, t, s, back, act, blocks, rcards = [], bar, yo,
                   {k.t && <div style={{ marginTop: k.k ? 8 : 0, font: "800 16px/1.2 Sora,sans-serif", letterSpacing: "-.02em", textWrap: "pretty" }}>{k.t}</div>}
                   {k.s && <div style={{ marginTop: 6, font: "500 12.5px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.6)", textWrap: "pretty" }}>{k.s}</div>}
                   {(k.rows ?? []).map((x, j) => (
-                    <div key={j} onClick={x.on} role="button" {...tec(x.on)} style={{ display: "flex", gap: 10, alignItems: "center", padding: "10px 0", borderTop: j || k.k || k.t ? LINE : "none", cursor: x.on ? "pointer" : "default" }}>
+                    <div key={j} onClick={x.on} role="button" {...tec(x.on)} style={{ display: "flex", gap: 10, alignItems: "center", minHeight: 44, boxSizing: "border-box", padding: "10px 0", borderTop: j || k.k || k.t ? LINE : "none", cursor: x.on ? "pointer" : "default" }}>
                       <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13px/1.35 Manrope,sans-serif", textWrap: "pretty" }}>{x.t}</div>{x.s && <div style={{ marginTop: 3, font: `600 9px/1.4 ${MONO}`, letterSpacing: ".05em", color: "rgba(11,14,18,.6)" }}>{x.s}</div>}</div>
                       {x.v != null && <span style={{ flex: "none", font: "800 13px Sora,sans-serif" }}>{x.v}</span>}
                     </div>))}

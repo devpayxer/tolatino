@@ -95,7 +95,7 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
             <div className="text-[12.5px] font-semibold leading-[1.3] text-ink/60">{sc1(p.aviso.day)}</div>
             <div className="mt-[3px] font-display text-[15px] font-bold leading-[1.25] tracking-[-0.02em]">{(es ? h[0] : h[1]) + (p.aviso.hrsT && p.aviso.hrs !== "closed" ? ` · ${p.aviso.hrsT}` : "")}</div>
           </div>
-          <button type="button" onClick={onHoras} className="flex-none text-[12px] font-bold text-action">{E2("Ver horario", "See hours")}</button>
+          <button type="button" onClick={onHoras} className="inline-flex min-h-11 flex-none items-center text-[12px] font-bold text-action">{E2("Ver horario", "See hours")}</button>
         </div>
       );
     }
@@ -112,8 +112,8 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
               {C.usado ? E2(" · YA LO USASTE", " · YOU USED IT") : C.quedan > 0 ? E2(` · quedan ${C.quedan}`, ` · ${C.quedan} left`) : E2(" · SE TERMINÓ", " · RAN OUT")}
             </div>
           </div>
-          {C.code ? (!C.usado && C.quedan > 0 ? <button type="button" onClick={() => onItem("")} className="flex-none text-[12px] font-bold text-action">{E2("Pedir", "Order")}</button> : null)
-            : <button type="button" disabled={busy} onClick={() => hacer(() => seguir(v.negocio.id), () => setFol(true))} className="flex-none text-[12px] font-bold text-action">{E2("Seguir para verlo", "Follow to see it")}</button>}
+          {C.code ? (!C.usado && C.quedan > 0 ? <button type="button" onClick={() => onItem("")} className="inline-flex min-h-11 flex-none items-center text-[12px] font-bold text-action">{E2("Pedir", "Order")}</button> : null)
+            : <button type="button" disabled={busy} onClick={() => hacer(() => seguir(v.negocio.id), () => setFol(true))} className="inline-flex min-h-11 flex-none items-center text-[12px] font-bold text-action">{E2("Seguir para verlo", "Follow to see it")}</button>}
         </div>
       );
     }

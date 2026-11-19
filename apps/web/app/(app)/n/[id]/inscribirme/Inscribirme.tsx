@@ -97,7 +97,7 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
         <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nm(s.name)}</div>
         <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{[precioL, curso && s.mat ? `${nm(V.mat)} ${usdI(s.mat)}` : "", s.sem ? E2(`${s.sem} semanas`, `${s.sem} weeks`) : ""].filter(Boolean).join(" · ").toUpperCase()}</div>
       </div>
-      <button type="button" onClick={volver} className="flex-none text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
+      <button type="button" onClick={volver} className="inline-flex min-h-11 flex-none items-center text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
     </div>
   );
   const PARA: Record<Para, string> = { yo: E2("Para mí", "For me"), hijo: E2("Para mi hijo o hija", "For my child"), otro: E2("Para otra persona", "For someone else") };

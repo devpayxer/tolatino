@@ -360,7 +360,7 @@ export function ResResumen({ v, desk, onAll }: { v: CtlResenas; desk: boolean; o
   const titulo = (
     <div className="flex items-baseline justify-between gap-3 lg:items-end lg:gap-5">
       <h2 className="font-display text-[18px] font-extrabold leading-[1.1] tracking-[-0.03em] lg:text-[24px] lg:tracking-[-0.035em]">{es ? "Lo que dicen los vecinos" : "What neighbors say"}</h2>
-      {onAll && r.n > 0 && <button type="button" onClick={onAll} className="flex-none text-[12.5px] font-bold text-action lg:text-[13.5px]">{es ? `Ver las ${r.n}` : `See all ${r.n}`}{desk ? " →" : ""}</button>}
+      {onAll && r.n > 0 && <button type="button" onClick={onAll} className="inline-flex min-h-11 flex-none items-center text-[12.5px] font-bold text-action lg:text-[13.5px]">{es ? `Ver las ${r.n}` : `See all ${r.n}`}{desk ? " →" : ""}</button>}
     </div>
   );
   const ricas = rich && (

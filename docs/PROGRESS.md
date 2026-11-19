@@ -2982,3 +2982,20 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   encendido). Lo guardado llega en la tanda de cada ficha (`mercPublico`, la tienda en page.tsx). Guardados: «$X/lb» en lo que va por libra; «Pedir»
   (menú, mercado que toma pedidos), «Ver» (mercado sin pedidos) o «Apartar» (tienda). Guardián `platosGuardadosSinBorrar` ampliado (una pieza del
   corazón, las tres hojas, las reglas por módulo), alreves9tplatos y plat9t §7 (La Cosecha «Pollo entero» por libra y Boutique Yaritza «Cartera»).
+- **19 nov · 9t · Objetivos táctiles de 44 px, de verdad** (LAUNCH «Objetivos táctiles de 44 px» → ✓; REVISION «9t — Objetivos táctiles de 44
+  px, de verdad», a mirar; decisión del fundador: agrandar lo que lo necesita). La CAJA de cada control mide ≥ 44 × 44; nada de áreas invisibles
+  (los dos intentos anteriores, `::after` y «decidida al tocar», se revirtieron). Sistema por la tabla `TACTIL` de `scripts/portar-sistema.mjs`
+  (sobre lo ya portado; `sistemaSincronizado` igual): Button md/sm, IconButton, Chip con clic, Tabs, «Ver todo» de SectionHeader, encabezado
+  (idioma, campana, avatar, logo, buscador y ciudad; el nombre «To’Latino» se ajusta con unidades del contenedor y, sin sitio, queda el logo:
+  `globals.css` `[data-marca]`), AddPill (cerrado: el cuadrito igual en una caja de 44 sobre la foto; abierto «− n +» de 44), QtyStepper, «Editar»
+  de CartLine, VoteBar (votar 44 × 44 con el número encima, fila que se envuelve), «⋯» y texto de la publicación, AdminBar en el teléfono (la
+  ciudad en su fila), AdminRow, Completa tu cuenta, BusinessRow (se encoge; la etiqueta baja). Los NOMBRES que son botón (plato, negocio,
+  autor) crecen a 44 con relleno y margen negativo dentro de su fila (el menú no se mueve; antes 18 px). Pantallas: Buscar, la ficha y sus
+  reservas (enlaces de acción `min-h-11`), Comunidad, Eventos, Mi cuenta, las X de cerrar (36 → 44), Inicio (categorías en columnas que caben).
+  Medido en local (`next build` standalone en :3156 contra `tl_loc`, Chromium) en 10 pantallas clave: controles < 44 a 390 de 401 → 0, a 320
+  con letra grande de 315 → 0 (y 0 a 320, 360, 375, 430 y 834); < 24 en la ficha de 17 → 0. Nuevo `pruebas/lib/tactil.cjs` (chicos con lista
+  de permitidos de 2 reglas con razón, pisan —ninguna caja le quita el toque a otro control—, desbordan); a11y9c lo EXIGE en las pantallas clave a
+  390 y 320 con letra grande, el Super Admin a 390 y 320, «Tu pedido» y el AA 24 de la ficha. Guardián `objetivosTactiles`, `alreves9ttactil`
+  17/17. Cazó además (y quedó arreglado): «To’Latino» encima de «ES» a 320 (ya pasaba con letra grande), «Abierto ahora» de Inicio 303 px en
+  275, «Compartir» de Comunidad fuera de su fila a 320 con letra grande, «Mercados»/«Doctores» fuera de su cuadro a 320. Pendiente (LAUNCH,
+  nueva línea): el escritorio (24 px AA) y las pantallas fuera de las clave.

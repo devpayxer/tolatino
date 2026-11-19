@@ -15,7 +15,8 @@ function IconButton({
   label,
   style
 }) {
-  const r = size >= 50 ? 15 : size >= 42 ? 13 : 12;
+  const z = Math.max(size, 44),
+    r = z >= 50 ? 15 : z >= 42 ? 13 : 12;
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClick,
     role: "button",
@@ -29,8 +30,8 @@ function IconButton({
       }
     },
     style: {
-      width: size,
-      height: size,
+      width: z,
+      height: z,
       borderRadius: r,
       background: active ? 'var(--tl-ink)' : 'var(--tl-white)',
       border: '1px solid ' + (active ? 'var(--tl-ink)' : 'rgba(11,14,18,.09)'),

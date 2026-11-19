@@ -52,7 +52,7 @@ export function Verificacion({ es, v, modo, pk, onListo, onCerrar }: { es: boole
           <div className="font-display text-[19px] font-extrabold leading-[1.2] tracking-[-0.03em]">{E2("Tu banco pide confirmar", "Your bank asks you to confirm")}</div>
           <div className="mt-1 font-mono text-[10px] font-bold tracking-[0.12em] text-ink/60">{`3-D SECURE · ${money(v.monto)}`}</div>
         </div>
-        <button type="button" aria-label={E2("Cerrar", "Close")} onClick={onCerrar} className="grid size-9 flex-none place-items-center rounded-[11px] bg-ink/5"><Icon name="close" size={15} /></button>
+        <button type="button" aria-label={E2("Cerrar", "Close")} onClick={onCerrar} className="grid size-11 flex-none place-items-center rounded-[11px] bg-ink/5"><Icon name="close" size={15} /></button>
       </div>
       <div className="text-pretty text-[13.5px] font-medium leading-[1.55] text-ink/70">
         {v.renovacion

@@ -9849,6 +9849,51 @@ const guardianes = {
     if (!/avisos-\$\{i\}\.json/.test(t) || !/ids\.size === N/.test(t)) falla(G, P, 0, "exp9t mira cada parte y que salgan todas las filas sin repetir");
   },
 
+  /* 9t (19 nov) · objetivosTactiles: objetivos táctiles de 44 px DE VERDAD (decisión del fundador: agrandar lo que lo necesita; la caja de cada
+     control mide ≥ 44 × 44). Dos intentos anteriores se revirtieron (un ::after invisible fuera de la caja que tapaba a vecinos; un área decidida
+     al tocar). Vigila: (1) a11y9c EXIGE el 44 en las pantallas clave a 390 y a 320 con letra grande —chicos, pisan, desbordan y botonesQueNoCaben
+     de pruebas/lib/tactil.cjs y caben.cjs— y el Super Admin en el teléfono; (2) la lista de PERMITIDOS es corta (≤ 3) y cada regla dice por
+     qué; (3) el sistema (scripts/portar-sistema.mjs, tabla TACTIL) deja Button md/sm, IconButton, Chip con clic, pestañas, campana, avatar e
+     idioma en 44, y el nombre del plato con su caja de 44 dentro de la fila; (4) no vuelve un área de toque invisible (toque.css, ::after con
+     [data-toque]). Al revés: alreves9ttactil. */
+  objetivosTactiles() {
+    const G = "objetivosTactiles", A = "pruebas/e2e/a11y9c.cjs", L = "pruebas/lib/tactil.cjs", P = "scripts/portar-sistema.mjs";
+    if (!existsSync(L)) return falla(G, L, 0, "falta la medida de los 44 px (chicos, pisan, desbordan)");
+    const a = sinComent(A), l = readFileSync(L, "utf8"), p = sinComent(P);
+    if (!/require\('\.\.\/lib\/tactil\.cjs'\)/.test(a)) falla(G, A, 0, "a11y9c no usa pruebas/lib/tactil.cjs");
+    const f = a.match(/async function tactil44\(p, donde\) \{([\s\S]*?)\n\}/);
+    if (!f) falla(G, A, 0, "falta tactil44 (la comprobación de 44 px de una pantalla)");
+    else {
+      const c = f[1];
+      if (!/TACTIL\.chicos\(p\)/.test(c) || !/ok\([^;]*t\.malos\.length === 0/.test(c)) falla(G, A, 0, "tactil44 no EXIGE que ningún control mida menos de 44 (ok con malos.length === 0)");
+      if (!/TACTIL\.pisan\(p\)/.test(c) || !/ok\(ps\.length === 0/.test(c)) falla(G, A, 0, "tactil44 no exige que ninguna caja le quite el toque a otro control (pisan)");
+      if (!/TACTIL\.desbordan\(p\)/.test(c) || !/botonesQueNoCaben\(p\)/.test(c) || !/ok\(fu\.length === 0/.test(c)) falla(G, A, 0, "tactil44 no exige que nada se salga de su caja (desbordan y botonesQueNoCaben)");
+    }
+    if (!/for \(const \[w, h, grande\] of \[\[390, 844, false\], \[320, 568, true\]\]\)/.test(a)) falla(G, A, 0, "las pantallas clave se miden a 390 y a 320 con letra grande");
+    if (!/for \(const ruta of CLAVE\)[\s\S]{0,400}tactil44\(q,/.test(a)) falla(G, A, 0, "cada pantalla clave pasa por tactil44");
+    const clave = (a.match(/const CLAVE = \[([^\]]*)\]/) || [])[1] || "";
+    for (const r of ["'/'", "'/negocios'", "'/n/sabor-dominicano?tab=menu'", "'/comunidad'", "'/eventos'", "'/cuenta'"]) if (!clave.includes(r)) falla(G, A, 0, `falta la pantalla clave ${r}`);
+    if (!/tactil44\(q, `\$\{w\} \/admin/.test(a)) falla(G, A, 0, "el Super Admin en el teléfono también se mide");
+    if (!/ok\(mi\.length === 0, `AA 2\.5\.8/.test(a)) falla(G, A, 0, "el mínimo AA de 24 px de la ficha (los nombres de los platos) se exige");
+    const per = l.match(/const PERMITIDOS = \[([\s\S]*?)\n\];/);
+    if (!per) falla(G, L, 0, "no encuentro la lista PERMITIDOS");
+    else {
+      const ent = [...per[1].matchAll(/\{ regla: '(\w+)', por: '([^']*)' \}/g)];
+      if (ent.length > 3) falla(G, L, 0, `la lista de lo que puede medir menos de 44 es larga (${ent.length}): agrandar, no permitir`);
+      if (ent.length !== (per[1].match(/\{/g) || []).length) falla(G, L, 0, "cada permitido es { regla, por } (y nada más)");
+      for (const [, r, por] of ent) { if (por.length < 40) falla(G, L, 0, `el permitido «${r}» no dice por qué (≥ 40 letras)`); if (!new RegExp(`\\b${r}: "`).test(l)) falla(G, L, 0, `la regla «${r}» no está en REGLAS`); }
+    }
+    if (!/const T44 = 44;/.test(p) || !/t = tactiles\(t, rel\);/.test(p)) falla(G, P, 0, "el sistema portado no pasa por la tabla TACTIL (T44 = 44, tactiles(t, rel))");
+    for (const [x, que] of [["\"core/Button.js\": [\n    [\"  md: {\\n    height: 40,\", `  md: {\\n    height: ${T44},`]", "Button md a 44"], ["`  sm: {\\n    height: ${T44},`", "Button sm a 44"],
+      ["Math.max(size, ${T44})", "IconButton a 44 como mínimo"], ["...(onClick ? {\\n        minHeight: ${T44},\\n        minWidth: ${T44},", "Chip con clic a 44"],
+      ["        minHeight: ${T44},\\n        boxSizing: 'border-box',\\n        cursor: 'pointer',", "pestañas a 44"], ["'data-toque': 'nombre'", "el nombre del plato / negocio / autor con su caja de 44"]])
+      if (!readFileSync(P, "utf8").includes(x)) falla(G, P, 0, `falta en la tabla TACTIL: ${que}`);
+    const m = readFileSync("packages/ui/src/ds/menu/MenuItemRow.js", "utf8");
+    if ((m.match(/'data-toque': 'nombre'/g) || []).length < 2 || !/padding: '13px 0',\n      margin: '-13px 0'/.test(m)) falla(G, "packages/ui/src/ds/menu/MenuItemRow.js", 0, "el nombre del plato no tiene su caja de 44 (relleno y margen negativo dentro de la fila)");
+    for (const c of ["apps/web/app/globals.css", "packages/ui/src/tokens.css"]) if (existsSync(c) && /\[data-toque[^\]]*\][^{]*::?after|toque\.css/.test(readFileSync(c, "utf8"))) falla(G, c, 0, "vuelve un área de toque invisible fuera de la caja (::after): se revirtió dos veces; la caja misma mide 44");
+    if (existsSync("packages/ui/src/toque.css") || existsSync("packages/ui/src/toque.ts")) falla(G, "packages/ui/src", 0, "vuelve el área de toque invisible (toque.css / toque.ts): se revirtió; la caja misma mide 44");
+  },
+
   /* 9t (19 nov) · topeAyudaDeConfig: el tope de «Ayuda con …» por persona en 24 h era un 5 fijo en dos lugares (lib/ayuda.ts y lib/ayuda-cita.ts)
      y nada lo probaba (LAUNCH). Ahora sale de Configuración (ayuda_tope_dia, 0182, sección Soporte, entre 1 y 50) y se lee con cfgSql en la
      MISMA consulta que cuenta (lo decide la base, sin caché vieja). En la cita, un reporte de seguridad (directo) nunca se frena. Al revés

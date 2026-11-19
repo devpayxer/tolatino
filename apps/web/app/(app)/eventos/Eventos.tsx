@@ -158,7 +158,7 @@ export function Eventos({ es, ciudad, estado, dia, hoy, fin, conEventos, titulo,
         {anillos(false)}
         <div className="sticky top-[57px] z-20 mt-4 border-y border-ink/[.06] bg-paper py-3">
           <div className="hs flex gap-[7px] overflow-x-auto px-5">
-            {tipos.map(([k, l]) => <button key={k} type="button" aria-pressed={t === k} onClick={() => ir(dia, k)} className="flex-none whitespace-nowrap rounded-full px-3 py-2 text-[12px] font-bold" style={chip(t === k)}>{l}</button>)}
+            {tipos.map(([k, l]) => <button key={k} type="button" aria-pressed={t === k} onClick={() => ir(dia, k)} className="flex-none whitespace-nowrap min-h-11 rounded-full px-3 py-2 text-[12px] font-bold" style={chip(t === k)}>{l}</button>)}
           </div>
         </div>
         {!items.length && !vacioModulo ? vacio(false) : null}

@@ -19,7 +19,9 @@ function BusinessRow({
     ...__ds_scope.__btn(onClick, undefined, undefined),
     style: {
       display: 'flex',
+      flexWrap: 'wrap',
       gap: 12,
+      rowGap: 10,
       alignItems: 'center',
       padding: 12,
       borderRadius: 18,
@@ -34,7 +36,7 @@ function BusinessRow({
     image: image
   }), /*#__PURE__*/React.createElement("div", {
     style: {
-      flex: 1,
+      flex: '1 1 130px',
       minWidth: 0
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -60,6 +62,7 @@ function BusinessRow({
     }
   }, meta)), slot ? /*#__PURE__*/React.createElement("div", {
     style: {
+      flex: 'none',
       padding: '9px 13px',
       borderRadius: 11,
       background: 'rgba(0,229,196,.16)',

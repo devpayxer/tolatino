@@ -46,6 +46,12 @@ function SectionHeader({
     onClick: onAction,
     ...__ds_scope.__btn(onAction, undefined, undefined),
     style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      minHeight: 44,
+      minWidth: 44,
+      flex: 'none',
       font: '700 12px Manrope,sans-serif',
       color: 'var(--tl-action)',
       cursor: 'pointer'

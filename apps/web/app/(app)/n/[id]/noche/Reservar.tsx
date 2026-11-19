@@ -76,7 +76,7 @@ export function ReservarNoche({ b, es, pago, yo, pax0 }: { b: BookingNoche; es: 
         <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nm(s.name)}</div>
         <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{[P.l, P.s, dep ? `${E2("DEPÓSITO ", "DEPOSIT ")}${usdN(dep)}` : ""].filter(Boolean).join(" · ").toUpperCase()}</div>
       </div>
-      <button type="button" onClick={volver} className="flex-none text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
+      <button type="button" onClick={volver} className="inline-flex min-h-11 flex-none items-center text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
     </div>
   );
   const bloqueNoche = (

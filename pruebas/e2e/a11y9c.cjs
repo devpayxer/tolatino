@@ -6,11 +6,14 @@
 //   entrar al Super Admin y moverse por su menú.
 // «VoiceOver simulado»: el árbol de accesibilidad de Playwright (ariaSnapshot) trae el nombre y el rol de lo que importa (Agregar, Uno más,
 // Uno menos, un día, una hora, Notificaciones…) y ningún control con rol queda fuera del orden de tabulación.
-// Mide aparte, sin fallar, cuántos controles miden menos de 44 px (lo que va a LAUNCH-CHECKLIST: cambiarlos cambia las capturas aprobadas).
+// 9t (19 nov) · Objetivos táctiles de 44 px, EXIGIDOS (pruebas/lib/tactil.cjs): en el teléfono (390, y 320 con letra grande) cada control de
+// las pantallas clave mide ≥ 44 × 44 salvo lo de PERMITIDOS (cada regla con su razón), ninguna caja le quita el toque a otro control (lo que
+// hizo revertir el primer intento), nada se sale de su caja y la página no se mueve de lado. En el escritorio (con el ratón) solo se informa.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process'); const crypto = require('crypto');
 const { telefonoLibre } = require('../lib/telefono-libre.cjs'); // un teléfono sin cuenta para publicar
 const { medios } = require('../lib/negocio-nuevo.cjs'); // el puerto de Garage de ESTA corrida (fotos del asistente)
+const TACTIL = require('../lib/tactil.cjs'); const { botonesQueNoCaben } = require('../lib/caben.cjs'); // 9t · 44 px, medido sobre lo servido
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', BIZ = 'sabor-dominicano', N = '/n/' + BIZ, FP = ENT.rec('fotos') + '/';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
@@ -95,11 +98,24 @@ const minimos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=but
   .filter((e) => { const r = e.getBoundingClientRect(); return r.width < 24 || r.height < 24; })
   .map((e) => { const r = e.getBoundingClientRect(); return `${(e.getAttribute('aria-label') || e.textContent || e.tagName).trim().slice(0, 24)} ${Math.round(r.width)}×${Math.round(r.height)}`; }));
 
+// 9t · Objetivos táctiles de 44 px en ESTA pantalla (teléfono): cada control ≥ 44 × 44 (salvo TACTIL.PERMITIDOS), ninguno le quita el toque a
+// otro, nada se sale de su caja (ni el texto de un control ni un botón de su contenedor) y la página no se mueve de lado.
+async function tactil44(p, donde) {
+  const t = await TACTIL.chicos(p);
+  ok(t.medidos > 0 && t.malos.length === 0, `${donde}: los ${t.medidos} controles miden 44 × 44 o más` + (Object.keys(t.permitidos).length ? ` (permitidos: ${JSON.stringify(t.permitidos)})` : '') + (t.malos.length ? ' · CHICOS: ' + t.malos.slice(0, 8).join(' · ') : ''));
+  const ps = await TACTIL.pisan(p); ok(ps.length === 0, `${donde}: ninguna caja le quita el toque a otro control` + (ps.length ? ': ' + ps.slice(0, 6).join(' · ') : ''));
+  const fu = [...await botonesQueNoCaben(p), ...await TACTIL.desbordan(p)]; ok(fu.length === 0, `${donde}: cada botón cabe en su caja y nada se sale de la suya` + (fu.length ? ': ' + fu.slice(0, 6).join(' · ') : ''));
+  const lado = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth); ok(lado <= 1, `${donde}: la página no se mueve de lado (${lado} px de más)`);
+}
+// Las pantallas clave del vecino (la ficha con el menú, una barbería, Comunidad, Eventos, Mi cuenta…).
+const CLAVE = ['/', '/negocios', '/buscar?q=pollo', '/n/sabor-dominicano', '/n/sabor-dominicano?tab=menu', '/n/barberia-el-primo', '/comunidad', '/eventos', '/cuenta'];
+
 (async () => {
   const br = await chromium.launch(); const err = [];
   const watch = (p, tag) => { p.on('pageerror', (e) => err.push(tag + ' ' + e.message)); p.on('console', (x) => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push(tag + ' console ' + x.text()); }); };
   const nuevo = async (ctxOpts) => { const c = await br.newContext(ctxOpts); await medios(c); const p = await c.newPage(); return p; };
   const restaurar = () => {
+    try { sql(`update users set big_text = false where phone = '+1${MARISOL}'`); } catch {}
     try { sql(`update business_hours set ranges='[["11:00","21:00"]]'::jsonb where business_id='${BIZ}' and module=''`); sql(`update delivery_settings set auto_accept=false, prep_min=20 where business_id='${BIZ}'`); } catch {}
     try { sql(`update events set status = 'cancelled', cancelled_at = now(), cancelled_by = 'admin', cancel_reason = 'prueba' where title->>'es' like '%${TAG}%' and status <> 'cancelled'`);
       sql(`update tickets set status = 'void', void_reason = 'prueba' where status = 'valid' and event_id in (select id from events where title->>'es' like '%${TAG}%')`);
@@ -121,7 +137,8 @@ const minimos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=but
     const rec = await recorrerConTab(m, 30);
     ok(rec.distintos >= 12, `Tab recorre la ficha: ${rec.distintos} elementos distintos en 30 pasos, sin quedarse atrapado`);
     ok(rec.sinContorno.length === 0, 'cada elemento con foco se ve (contorno): ' + (rec.sinContorno.slice(0, 6).join(' · ') || 'todos'));
-    { const mi = await minimos(m); console.log(`  (informe AA 2.5.8: ${mi.length} controles de la ficha miden menos de 24 px${mi.length ? ': ' + mi.slice(0, 12).join(' · ') : ''})`); }
+    { const mi = await minimos(m); ok(mi.length === 0, `AA 2.5.8: ningún control de la ficha mide menos de 24 px (los nombres de los platos eran de 18)${mi.length ? ': ' + mi.slice(0, 12).join(' · ') : ''}`); }
+    await tactil44(m, 'la ficha (menú), 390');
     const mudos0 = await sinFoco(m); ok(mudos0.length === 0, 'la ficha: ningún control con rol queda fuera del orden de tabulación ' + mudos0.slice(0, 6).join(' · '));
     const cm0 = await clicMudo(m); if (cm0.length) console.log('  (aviso: la ficha: clics con mano sin teclado: ' + cm0.slice(0, 5).join(' · ') + ')'); else ok(true, 'la ficha: ningún clic de ratón sin teclado');
     let snap = await arbol(m);
@@ -156,6 +173,7 @@ const minimos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=but
       ok(await m.evaluate(() => !!document.activeElement?.closest('[data-screen-label="Ficha · barra del pedido"]')), 'al cerrar, el foco vuelve a la barra que la abrió');
       await act(m, bar); await car.waitFor(); }
     snap = await arbol(m); ok(/button "Uno (más|menos)"/.test(snap) || /button "Quitar"/.test(snap), 'árbol: el pedido tiene «Uno más» / «Uno menos» / «Quitar» con nombre');
+    await tactil44(m, '«Tu pedido» (hoja abierta)');
     await act(m, car.getByText(/^Ir a pagar/));
     await m.waitForURL(/\/pagar$/); await m.locator('[data-pantalla="APP-NEG-CHECKOUT"]').waitFor();
     ok(true, 'Enter en «Ir a pagar»: llega al pago');
@@ -280,8 +298,26 @@ const minimos = (p) => p.evaluate(() => [...document.querySelectorAll('[role=but
     ok(true, 'Enter en «Negocios» del menú: la lista de negocios');
     const cm2 = await clicMudo(a); if (cm2.length) console.log('  (aviso: el Super Admin: clics con mano sin teclado: ' + cm2.slice(0, 5).join(' · ') + ')'); else ok(true, 'el Super Admin: ningún clic de ratón sin teclado');
 
-    // ═══ Informe (no falla) ═══
-    const ch = await chicos(a); console.log(`  (informe: ${ch} controles del Super Admin miden menos de 44 px; va a LAUNCH-CHECKLIST: cambiarlos cambia las capturas aprobadas)`);
+    // ═══ 6 · 9t · Objetivos táctiles de 44 px en las pantallas clave: a 390 y a 320 con letra grande (y el Super Admin a 390 y 320) ═══
+    for (const [w, h, grande] of [[390, 844, false], [320, 568, true]]) {
+      sql(`update users set big_text = ${grande} where phone = '+1${MARISOL}'`);
+      const q = await nuevo(w === 390 ? { ...devices['iPhone 13'] } : { viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }); watch(q, `tactil${w}`);
+      await entrar(q, MARISOL);
+      for (const ruta of CLAVE) {
+        await q.goto(B + ruta); await q.waitForLoadState('networkidle').catch(() => {}); await dormir(500);
+        if (grande) ok((await q.locator('[data-letra="grande"]').count()) > 0, `${w} ${ruta}: con letra grande`);
+        await tactil44(q, `${w}${grande ? ' (letra grande)' : ''} ${ruta}`);
+      }
+      sql(`update users set big_text = false where phone = '+1${MARISOL}'`); await q.context().close();
+    }
+    for (const w of [390, 320]) {
+      const q = await nuevo(w === 390 ? { ...devices['iPhone 13'] } : { viewport: { width: 320, height: 568 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }); watch(q, `tactilAdmin${w}`);
+      await entrar(q, ADM); await q.goto(B + '/admin'); await q.waitForLoadState('networkidle').catch(() => {}); await dormir(500);
+      await tactil44(q, `${w} /admin (Super Admin en el teléfono)`); await q.context().close();
+    }
+
+    // ═══ Informe (no falla): el Super Admin en el escritorio, con el ratón ═══
+    const ch = await chicos(a); console.log(`  (informe: en el escritorio (ratón), ${ch} controles del Super Admin miden menos de 44 px; en el teléfono se exige arriba)`);
     { const mi = await minimos(a); console.log(`  (informe AA 2.5.8: ${mi.length} controles del Super Admin miden menos de 24 px${mi.length ? ': ' + mi.slice(0, 12).join(' · ') : ''})`); }
     console.log('  controles operados con el teclado (' + nombres.length + '): ' + [...new Set(nombres)].slice(0, 40).join(' · '));
     ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ').slice(0, 400) : ''));

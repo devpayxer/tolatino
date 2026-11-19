@@ -78,7 +78,7 @@ export function Rentar({ o, es, yo, pago }: { o: OpcionesRenta; es: boolean; yo:
               <span className="mt-1 block text-[14.5px] font-bold leading-[1.3]">{o.negocio.nombre}</span>
               {o.negocio.dir && <span className="mt-[3px] block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{o.negocio.dir.replace(/, Hazleton,? PA.*$/i, "").toUpperCase()}</span>}
               <span className="mt-1.5 flex items-center gap-[5px] text-[11.5px] font-bold text-open-text"><Icon name="check" size={13} color="currentColor" />{E2("Te la guardan 48 horas", "Held for you 48 hours")}</span></span>
-            <button type="button" onClick={() => abrirComoLlegar({ dir: o.negocio.dir || o.negocio.nombre })} className="flex-none text-[12.5px] font-bold text-action">{E2("Cómo llegar", "Directions")}</button>
+            <button type="button" onClick={() => abrirComoLlegar({ dir: o.negocio.dir || o.negocio.nombre })} className="inline-flex min-h-11 flex-none items-center text-[12.5px] font-bold text-action">{E2("Cómo llegar", "Directions")}</button>
           </div>
         </div>
         <div className={`flex flex-col gap-3 p-4 ${caja}`}>
