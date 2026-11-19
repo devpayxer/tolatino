@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "./db";
 import { enPausa } from "./modulo-pausa";
+import { SERVICIO_VIVO } from "./visible-publico";
 import { diasOcupados } from "./fiestas";
 import { findes, sumarDias, tuFechaValida, type Bi, type CalFiesta, type SvcFiesta, type TuFecha } from "./fiestas-comun";
 
@@ -33,7 +34,7 @@ export async function fiestaPublico(negocio: string, userId: string | null): Pro
       `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.price_cents as cents, coalesce(i.svc_kind, 'fijo') as k,
               (i.svc_attrs->>'h')::int as h, (i.svc_attrs->>'cap')::int as cap, coalesce((i.svc_attrs->>'mont')::boolean, false) as mont,
               coalesce(i.svc_attrs->'inc', '[]'::jsonb) as inc, i.svc_attrs->'u' as u, (i.svc_attrs->>'per')::int as per, (i.svc_attrs->>'min')::int as min, i.photos[1] as foto
-         from items i where i.business_id = $1 and i.module = 'svc' and i.removed_at is null and i.sell and i.status = 'live' and not i.is_extra order by i.sort, i.id`, [negocio]),
+         from items i where i.business_id = $1 and ${SERVICIO_VIVO("i")} order by i.sort, i.id`, [negocio]),
     diasOcupados(negocio, b.hoy, hasta),
     userId ? db().query<{ e: string; day: string; g: number | null; w: string }>(`select coalesce(kind, '') as e, day::text as day, guests as g, coalesce(where_kind, '') as w from user_event_plans where user_id = $1`, [userId]) : Promise.resolve({ rows: [] }),
   ]);

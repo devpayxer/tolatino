@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ejemplos, entender, negocios, resaltar, sugerirCatalogo, tendencias, tsq } from "@/lib/buscar";
-import { platos } from "@/lib/buscar-platos";
+import { platos, porQue } from "@/lib/buscar-platos";
 import { categorias } from "@/lib/directorio";
 import { idioma } from "@/lib/idioma";
 import { yo } from "@/lib/cuenta";
@@ -10,7 +10,7 @@ import { textosT } from "@/lib/cms";
 import { buscarEventos, type TarjetaEvt } from "@/lib/evt-publico";
 import { armarTarjetas } from "@/lib/tarjetas";
 import type { Tarjeta } from "@/lib/tarjeta";
-import { filaPlato } from "@/app/(app)/buscar/platos";
+import { filaPlato, textoRazon } from "@/app/(app)/buscar/platos";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 
 /* Sugerencias mientras se escribe (APP-BUSCAR · sugerencias y el desplegable del encabezado en escritorio): solo lectura, no se registra.
@@ -31,7 +31,10 @@ export type SugBuscar = {
   filas: FilaSug[]; total: number; parcial?: boolean; intenciones: string[];
   conteos?: { biz: number; items: number; evts: number }; tarjetas?: Tarjeta[]; textos?: { hoy: string; llamar: string };
 };
-export type ExplorarBuscar = { ejemplos: { t: string; chips: { l: string; tone: string }[] }[]; tendencias: { q: string; cat: string | null }[]; cats: { slug: string; l: string; icon: string }[] };
+/* 9t-2 · `voz`: el micrófono del desplegable (lo que la persona contestó al aviso o eligió en Privacidad, users.voice_search; null = sale el
+   aviso; false = no hay micrófono) y sus textos del CMS (WEB-BUSCAR, los mismos de la página de Buscar). */
+export type VozBuscar = { on: boolean | null; sesion: boolean; t: string; sub: string; no: string; cancel: string };
+export type ExplorarBuscar = { ejemplos: { t: string; chips: { l: string; tone: string }[] }[]; tendencias: { q: string; cat: string | null }[]; cats: { slug: string; l: string; icon: string }[]; voz?: VozBuscar };
 const vacio: SugBuscar = { filas: [], intenciones: [], total: 0 };
 const H = { headers: { "Cache-Control": "no-store" } };
 
@@ -43,15 +46,18 @@ export async function GET(req: NextRequest) {
   const loc = await ubicacion(u);
   const es = lang === "es", L = (a: string, b: string) => dosIdiomas(es, a, b);
   if (req.nextUrl.searchParams.get("explorar") === "1") {
-    if (loc.c.status !== "on") return NextResponse.json({ ejemplos: [], tendencias: [], cats: [] } satisfies ExplorarBuscar, H);
-    const [cats, trend, exs] = await Promise.all([
+    const vozP = Promise.all([u ? db().query<{ v: boolean | null }>(`select voice_search as v from users where id = $1`, [u.id]).then((x) => x.rows[0]?.v ?? null) : null, textosT(lang)])
+      .then(([on, TX]): VozBuscar => ({ on, sesion: !!u, t: TX.buscar.voz, sub: TX.buscar.vozSub, no: TX.buscar.vozNo, cancel: TX.buscar.cancel }));
+    if (loc.c.status !== "on") return NextResponse.json({ ejemplos: [], tendencias: [], cats: [], voz: await vozP } satisfies ExplorarBuscar, H);
+    const [cats, trend, exs, voz] = await Promise.all([
       categorias(lang, loc.ciudad), tendencias(loc.ciudad, lang),
       Promise.all(ejemplos.map(async (x) => {
         const t = es ? x.es : x.en, E = await entender(t);
         return { t, chips: [...E.grupos.map((g) => ({ l: (resaltar(t, [{ w: g.w, a: [g.w] }])[1] || g.w).toUpperCase(), tone: "neutral" })), ...E.intenciones.map((i) => ({ l: (es ? i.label.es : i.label.en).toUpperCase(), tone: "signal" }))] };
       })),
+      vozP,
     ]);
-    return NextResponse.json({ ejemplos: exs, tendencias: trend.slice(0, 6), cats: cats.map((c) => ({ slug: c.slug, l: c.label, icon: c.icon })) } satisfies ExplorarBuscar, H);
+    return NextResponse.json({ ejemplos: exs, tendencias: trend.slice(0, 6), cats: cats.map((c) => ({ slug: c.slug, l: c.label, icon: c.icon })), voz } satisfies ExplorarBuscar, H);
   }
   if (loc.c.status !== "on" || !q.trim()) return NextResponse.json(vacio, H);
   const CIUDAD = loc.ciudad;
@@ -67,6 +73,8 @@ export async function GET(req: NextRequest) {
   const catSlug = (id: string) => cats.find((c) => c.id === id)?.slug ?? "";
   const filas: FilaSug[] = [];
   const subs = C.subs.slice(0, 3);
+  // 9t-2 · La razón de cada negocio (una consulta, a la par de la de las subcategorías).
+  const RZp = porQue(E, { punto: loc, ids: r.items.map((b) => b.id), userId: u?.id ?? null, vivo: true });
   // La vista previa de una subcategoría nombra sus negocios (Pro primero, luego los mejor calificados), en la ciudad que se ve.
   const nombres = drop && subs.length ? new Map((await db().query<{ sub: string; names: string[] }>(
     `select s.sub, coalesce((select array_agg(z.name) from (select b.name from businesses b join business_stats_cache st on st.business_id = b.id
@@ -79,7 +87,11 @@ export async function GET(req: NextRequest) {
   }
   for (const c of C.cats.slice(0, 1)) filas.push({ seccion: L("CATEGORÍAS", "CATEGORIES"), kind: "cat", parts: resaltar(es ? c.catEs : c.catEn, G), image: null, icon: c.icon, meta: L("CATEGORÍA", "CATEGORY"), right: null, rightColor: null, href: `/c/${catSlug(c.cat)}` });
   if (!C.subs.length) for (const s of C.vacias.slice(0, 1)) filas.push({ seccion: L("CATEGORÍAS", "CATEGORIES"), kind: "none", parts: resaltar(es ? s.es : s.en, G), image: null, icon: s.icon, meta: L(`AÚN NO HAY EN ${loc.c.name.toUpperCase()}`, `NONE IN ${loc.c.name.toUpperCase()} YET`), right: null, rightColor: null, href: `/buscar?q=${encodeURIComponent(q)}` });
-  r.items.forEach((b, i) => filas.push({ seccion: L("NEGOCIOS", "BUSINESSES"), kind: "biz", parts: resaltar(b.name, G), image: b.photo, icon: null, meta: `${b.mi != null ? `${b.mi} MI` : ""}`, right: b.open ? L("Abierto", "Open") : L("Cerrado", "Closed"), rightColor: b.open ? "var(--tl-open-text)" : "var(--tl-danger)", href: `/n/${b.id}`, pv: drop ? { k: "biz", i } : undefined }));
+  // 9t-2 · La razón del negocio que encajó por lo que vende va en su línea (prototipo sugVals: «TIENE MOFONGO DE CHICHARRÓN · 0.3 MI»).
+  const RZ = await RZp;
+  const razon = new Map(r.items.map((b) => [b.id, textoRazon(b.name, RZ.get(b.id), E, es, { sinPrecio: true, vivo: true })]));
+  const razonCard = new Map(r.items.map((b) => [b.id, textoRazon(b.name, RZ.get(b.id), E, es, { vivo: true })]));
+  r.items.forEach((b, i) => filas.push({ seccion: L("NEGOCIOS", "BUSINESSES"), kind: "biz", parts: resaltar(b.name, G), image: b.photo, icon: null, meta: [razon.get(b.id), b.mi != null ? `${b.mi} MI` : ""].filter(Boolean).join(" · ").toUpperCase(), right: b.open ? L("Abierto", "Open") : L("Cerrado", "Closed"), rightColor: b.open ? "var(--tl-open-text)" : "var(--tl-danger)", href: `/n/${b.id}`, pv: drop ? { k: "biz", i } : undefined }));
   for (const x of P.items) {
     const f = filaPlato(x, E, es);
     filas.push({ seccion: L("PLATOS Y SERVICIOS", "DISHES & SERVICES"), kind: "item", parts: f.parts, image: f.img, icon: f.img ? null : x.plato ? "restaurant" : "calendar", meta: `${f.bname}${f.dist ? ` · ${f.dist}` : ""}`.toUpperCase(), right: f.precio, rightColor: "var(--tl-ink)", href: f.href,
@@ -90,7 +102,9 @@ export async function GET(req: NextRequest) {
     conteos: { biz: r.total, items: P.total, evts: EV.total } };
   if (drop) {
     const [tarjetas, TX] = await Promise.all([armarTarjetas(CIUDAD, r.items, lang, u?.id ?? null), textosT(lang)]);
-    out.tarjetas = tarjetas; out.textos = { hoy: TX.todayTag, llamar: TX.call };
+    // La vista previa del negocio lleva la misma razón como primer chip (como la tarjeta de los resultados).
+    out.tarjetas = tarjetas.map((t) => { const w = razonCard.get(t.id); return w ? { ...t, chips: [{ variant: "verified", label: w }, ...t.chips].slice(0, 3) } : t; });
+    out.textos = { hoy: TX.todayTag, llamar: TX.call };
   }
   return NextResponse.json(out, H);
 }

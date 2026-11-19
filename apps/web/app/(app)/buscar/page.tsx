@@ -8,8 +8,8 @@ import { armarTarjetas } from "@/lib/tarjetas";
 import { dominante, ejemplos, entender, negocios, N, registrar, resaltar, sugerirCatalogo, tendencias, tsq, type Entendido } from "@/lib/buscar";
 import { buscarVecinos } from "@/lib/comunidad-portada";
 import { filaVecino } from "./vecinos";
-import { platos } from "@/lib/buscar-platos";
-import { filaPlato } from "./platos";
+import { platos, porQue } from "@/lib/buscar-platos";
+import { filaPlato, textoRazon } from "./platos";
 import { Buscar, type VistaBuscar } from "./Buscar";
 import DATOS from "@/lib/busqueda-datos.json";
 import { ubicacion } from "@/lib/ubicacion";
@@ -102,10 +102,15 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
     after(() => evento("buscar", { ciudad: CIUDAD, userId: u?.id ?? null, props: { resultados: r.total, cat: dom } }, ctx));
   }
 
-  const [tarjetas, nom] = await Promise.all([
+  const [tarjetas0, nom, RZ] = await Promise.all([
     armarTarjetas(CIUDAD, r.items, lang, u?.id ?? null),
     nombresSub([...new Set(r.items.flatMap((x) => x.subs.slice(0, 1)))], lang),
+    // 9t-2 · La razón de cada negocio que encajó por lo que vende («Tiene Mofongo de chicharrón · $12»): una consulta para toda la página.
+    porQue(E, { punto: loc, ids: r.items.map((x) => x.id), userId: u?.id ?? null }),
   ]);
+  const razon = new Map(r.items.map((b) => [b.id, textoRazon(b.name, RZ.get(b.id), E, es)]));
+  // En la tarjeta, la razón es el primer chip (prototipo card: variante «verified»), hasta 3 chips como siempre.
+  const tarjetas = tarjetas0.map((t) => { const w = razon.get(t.id); return w ? { ...t, chips: [{ variant: "verified", label: w }, ...t.chips].slice(0, 3) } : t; });
   const catDe = (id: string) => cats.find((c) => c.id === id);
   const s0 = C.subs[0], c0 = C.cats[0];
   const tileHref = (subNombre: string, catId: string) => `/buscar?q=${encodeURIComponent(subNombre)}&cat=${catDe(catId)?.slug ?? ""}`;
@@ -131,6 +136,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
     id: b.id, pro: b.pro, parts: resaltar(b.name, E.grupos), image: b.photo,
     meta: `${(nom.get(b.subs[0] ?? "") ?? "").toUpperCase()}${b.mi != null ? ` · ${b.mi} MI` : ""}`,
     status: b.open ? L("Abierto", "Open") : L("Cerrado", "Closed"), statusColor: b.open ? "var(--tl-open-text)" : "var(--tl-danger)",
+    why: (() => { const w = razon.get(b.id); return w ? resaltar(w, E.grupos) : null; })(),
   }));
 
   return (

@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     openGraph: { title: f.nombre, description: f.subsLinea, type: "website", url, ...(f.fotos[0] ? { images: [{ url: f.fotos[0] }] } : {}) } };
 }
 
-export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; p?: string; d?: string; h?: string; editar?: string; equipo?: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; p?: string; d?: string; h?: string; editar?: string; equipo?: string; plato?: string }> }) {
   const [{ id }, lang, u, sp] = await Promise.all([params, idioma(), yo(), searchParams]);
   const loc = await ubicacion(u);
   let f = await ficha(id, lang, loc);
@@ -217,6 +217,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const fichaNueva = f.pro && CFG_FICHA[f.cat] ? (await valor("ficha_nueva_pro")) === 1 : false;
   const rsvInicial = { p: num(sp.p), i: num(sp.d), h: num(sp.h), editar: sp.editar && /^R-\d{1,10}$/.test(sp.editar) ? sp.editar : undefined };
   const t = (await textosT(lang)).ficha;
+  // 9t-2 · Buscar abre un plato directo en su hoja (?plato=<id>): la ficha lo abre al hidratar si su menú lo tiene y se puede pedir.
+  const platoInicial = sp.plato && /^\d{1,19}$/.test(sp.plato) ? sp.plato : undefined;
   // 9h · schema.org/LocalBusiness: lo que dice la ficha (nombre, teléfono público, dirección si tiene local, el punto público y la portada), sin datos de nadie.
   const ld = { "@context": "https://schema.org", "@type": "LocalBusiness", name: f.nombre, url: `${BASE_URL()}/n/${encodeURIComponent(f.id)}`,
     ...(f.subsLinea ? { description: f.subsLinea } : {}), ...(f.telefono ? { telephone: f.telefono } : {}), ...(f.fotos[0] ? { image: f.fotos[0] } : {}),
@@ -230,7 +232,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     {f.pro && CFG_FICHA[f.cat] && fichaNueva ? (
       <FichaNueva f={{ ...f, guardado: fav.has(f.id) }} svc={svc} menu={menu} rsv={rsv} ofi={ofi} salud={salud} prof={prof} merc={merc} fiesta={fiesta} trans={trans}
         noche={noche} insc={insc} fe={fe} inm={inm} dl={dl} tienda={tienda} resenas={res} novedades={nov && nov.posts.length ? nov : null} jobs={jobs} eventos={evts}
-        sesion={!!u} es={lang === "es"} tabInicial={sp.tab} rsvInicial={rsvInicial}
+        sesion={!!u} es={lang === "es"} tabInicial={sp.tab} platoInicial={platoInicial} rsvInicial={rsvInicial}
         t={{ ...t, photosAll: f.nFotos === 1 ? t.photosOne : t.photosN.replace("{n}", String(f.nFotos)) }} />
     ) : (
     <Ficha
@@ -258,6 +260,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       sesion={!!u}
       es={lang === "es"}
       tabInicial={sp.tab}
+      platoInicial={platoInicial}
       t={{
         ...t,
         photosAll: f.nFotos === 1 ? t.photosOne : t.photosN.replace("{n}", String(f.nFotos)),

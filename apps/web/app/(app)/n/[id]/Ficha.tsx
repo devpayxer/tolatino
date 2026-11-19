@@ -7,7 +7,7 @@ import type { ArticuloVenta } from "@/lib/apartados";
 import { TiendaTab } from "./Tienda";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
-import { useState, type ComponentType } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import type { ficha } from "@/lib/ficha";
 import type { MenuPublico } from "@/lib/pedir";
 import type { RsvPublica } from "@/lib/reservas";
@@ -63,7 +63,7 @@ const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgro
 const h2 = "font-display text-[18px] font-extrabold leading-[1.1] tracking-[-0.03em] lg:text-[24px] lg:tracking-[-0.035em]";
 
 export type SillaFicha = { k: string; name: string; meta: string; logo: string | null; href: string; miembro: string };
-export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl, tienda, resenas, novedades, jobs, eventos = [], sesion, es, tabInicial, rsvInicial, silla }: { f: F; t: Textos; menu: MenuPublico | null; rsv: RsvPublica | null; svc: CitasPublica | null; ofi?: OficiosPublico | null; salud?: SaludPublico | null; prof?: ProPublico | null; merc?: MercPublico | null; fiesta?: FiestaPublico | null; trans?: TransPublico | null; noche?: NochePublica | null; insc?: InscPublica | null; fe?: FePublica | null; inm?: InmPublica | null; dl?: AutosPublica | null; tienda?: { L: ArticuloRenta[]; V: ArticuloVenta[]; mia: { abiertos: { numero: string; st: string; n: number; tot: number }[]; goma: { modelo: string; size: string } | null }; horas: number; plan?: import("@/lib/layaway-comun").ReglaPlan | null } | null; silla?: SillaFicha | null; resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; eventos?: TarjetaEvt[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string } }) {
+export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl, tienda, resenas, novedades, jobs, eventos = [], sesion, es, tabInicial, platoInicial, rsvInicial, silla }: { f: F; t: Textos; menu: MenuPublico | null; rsv: RsvPublica | null; svc: CitasPublica | null; ofi?: OficiosPublico | null; salud?: SaludPublico | null; prof?: ProPublico | null; merc?: MercPublico | null; fiesta?: FiestaPublico | null; trans?: TransPublico | null; noche?: NochePublica | null; insc?: InscPublica | null; fe?: FePublica | null; inm?: InmPublica | null; dl?: AutosPublica | null; tienda?: { L: ArticuloRenta[]; V: ArticuloVenta[]; mia: { abiertos: { numero: string; st: string; n: number; tot: number }[]; goma: { modelo: string; size: string } | null }; horas: number; plan?: import("@/lib/layaway-comun").ReglaPlan | null } | null; silla?: SillaFicha | null; resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; eventos?: TarjetaEvt[]; sesion: boolean; es: boolean; tabInicial?: string; platoInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string } }) {
   const router = useRouter();
   const [tab, setTabS] = useState(tabInicial === "menu" || (tabInicial === "svc" && (svc || ofi || salud || prof || merc || fiesta || trans || noche || insc || fe || inm || dl) && f.pro) || (tabInicial === "rsv" && rsv) || (tabInicial === "rev" && f.pro && resenas) || (tabInicial === "nov" && novedades) || (tabInicial === "jobs" && jobs.length) || (tabInicial === "evt" && eventos.length && f.pro) || (tabInicial === "shop" && tienda && (tienda.L.length || tienda.V.length) && f.pro) ? tabInicial : "res");
   // Sin sesión: «Entra» y vuelve al pago con el carrito igual (vive en el teléfono).
@@ -117,6 +117,20 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
     const el = document.querySelector('[data-screen-label="Resumen · servicios"]') ?? document.querySelector('[data-screen-label="Resumen desktop · servicios"]');
     if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90, behavior: "smooth" });
   };
+  // 9t-2 · Desde Buscar (?plato=<id>): el plato abre su hoja una vez, ya hidratada la ficha (Pro: sobre la pestaña Menú, que pone tabInicial).
+  // Si ahora no se puede pedir (agotado, fuera de horario, Free sin pedidos), la ficha queda en su menú: en Free, se baja hasta la lista.
+  const platoHecho = useRef(false);
+  useEffect(() => {
+    if (!platoInicial || !mn) return;
+    const id = setTimeout(() => {
+      if (platoHecho.current) return;
+      platoHecho.current = true;
+      if (mn.abrir(platoInicial, window.innerWidth >= 1024) || f.pro) return;
+      const el = [...document.querySelectorAll<HTMLElement>('[data-screen-label="Resumen · menú"], [data-screen-label="Resumen desktop · menú"]')].find((x) => x.offsetParent);
+      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90, behavior: "smooth" });
+    }, 60);
+    return () => clearTimeout(id);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [guardado, setGuardado] = useState(f.guardado);
   const [copiado, setCopiado] = useState(false);
   const [faq, setFaq] = useState<number | null>(null);

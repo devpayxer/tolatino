@@ -5,7 +5,7 @@ import { CTE, DESDE } from "./categoria";
 import { foto } from "./directorio";
 import { tsq, type Entendido } from "./buscar";
 import type { Punto } from "./punto";
-import { ALGUIEN_LO_HACE, PLATO_VIVO, SECCION_MENU_VISIBLE, SERVICIO_BELLEZA, SERVICIO_VIVO } from "./visible-publico";
+import { ALGUIEN_LO_HACE, CURSO_INSC, PLATO_VIVO, SECCION_MENU_VISIBLE, SERVICIO_BELLEZA, SERVICIO_NOCHE, SERVICIO_VIVO } from "./visible-publico";
 
 /* 9t · Buscar › «Platos y servicios» (diseño «To'Latino Buscar»: sección en Todo, pestaña con filtro por categoría y «Precio más bajo»,
    sugerencias mientras escribes y la vista previa del desplegable). En el servidor y con índice (items.search_doc, GIN, 0180).
@@ -14,10 +14,17 @@ import { ALGUIEN_LO_HACE, PLATO_VIVO, SECCION_MENU_VISIBLE, SERVICIO_BELLEZA, SE
    - Menú (Comida): el módulo Menú encendido y sin pausa de To'Latino; el plato vivo en una sección que se ve; un Free solo los primeros
      `free_items` platos en su orden (lib/pedir.ts armar(): el resto no sale en su página, tampoco aquí);
    - Servicios: Belleza (módulo de servicios o de citas encendido; alguien que recibe citas lo hace), Auto y Hogar (servicios encendidos y
-     sin pausa), Doctores y Profesionales (sin pausa). Las demás categorías venden con su propio módulo (fechas, viajes, cursos…): pendiente
-     en LAUNCH («Buscar · servicios de las demás categorías»).
+     sin pausa), Doctores y Profesionales (sin pausa);
+   - 9t-2 · las demás categorías que venden con servicios, cada una con la puerta de su ficha: Fiestas, Transporte e Iglesias (servicios sin
+     pausa; lib/fiestas-publico.ts, trans-publico.ts, fe-publico.ts), Noche (sin pausa, sus tipos, la Lista solo encendida y la noche especial
+     solo con su evento en vivo; lib/noche-publico.ts) y Educación, Niños y Deporte (sin pausa, solo cursos, programas o membresías;
+     lib/inscripciones-publico.ts). Propiedades, carros y productos de Mercados y Tiendas no entran (REVISION «9t-2»).
    El precio de un plato es el de su ficha (con la oferta en vivo para quien mira, oferta_precio()). El de un servicio depende de quién lo
-   hace, del seguro o del trabajo: la fila dice «Precio en la ficha» (el texto del prototipo), nunca un número que la ficha no diga. */
+   hace, del seguro, del trabajo, de la fecha o del grupo: la fila dice «Precio en la ficha» (el texto del prototipo), nunca un número que la
+   ficha no diga.
+   9t-2 · Un negocio también encaja por lo que vende (prototipo search-engine: «mofongo» encuentra a Sabor Dominicano por su plato): negocios()
+   suma NEGOCIOS_POR_PLATO (lo mismo de aquí: solo lo que su ficha muestra) y porQue() da la razón de la fila («Tiene Mofongo de chicharrón ·
+   $12»). */
 
 export type Plato = {
   id: string; biz: string; bname: string; cat: string; pro: boolean; plato: boolean;
@@ -35,8 +42,47 @@ const REGLA = `(
   or (n.cat = 'NEG-BELL' and n.mods && array['svc', 'citas'] and ${SERVICIO_BELLEZA("i")} and not i.is_extra and ${ALGUIEN_LO_HACE("i")})
   or (n.cat in ('NEG-AUTO', 'NEG-HOGAR') and 'svc' = any(n.mods) and ${OFF("svc")} and ${SERVICIO_VIVO("i")})
   or (n.cat in ('NEG-SALUD', 'NEG-PRO') and ${OFF("svc")} and ${SERVICIO_VIVO("i")})
+  or (n.cat in ('NEG-FIESTA', 'NEG-TRANS', 'NEG-FE') and ${OFF("svc")} and ${SERVICIO_VIVO("i")})
+  or (n.cat = 'NEG-NOCHE' and ${OFF("svc")} and ${SERVICIO_VIVO("i")} and ${SERVICIO_NOCHE("i")})
+  or (n.cat in ('NEG-EDU', 'NEG-NINOS', 'NEG-DEPORTE') and ${OFF("svc")} and ${SERVICIO_VIVO("i")} and ${CURSO_INSC("i")})
 )`;
-export const CATS_PLATOS = ["NEG-FOOD", "NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO"] as const;
+export const CATS_PLATOS = ["NEG-FOOD", "NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA", "NEG-TRANS", "NEG-NOCHE", "NEG-EDU", "NEG-NINOS", "NEG-DEPORTE", "NEG-FE"] as const;
+const CATS_SQL = `array[${CATS_PLATOS.map((c) => `'${c}'`).join(", ")}]::text[]`;
+
+/* 9t-2 · Para el negocio cuenta el NOMBRE de lo que vende (peso A del documento), no su descripción (prototipo search-engine: el negocio encaja
+   por it.fN; «viernes» no trae a una iglesia porque la descripción de «Jóvenes» dice «los viernes»). Cada término de la tsquery ya armada
+   (solo [a-z0-9], `:*` de prefijo) pasa a buscar solo en el peso A. */
+export const soloNombre = (q: string) => q.replace(/([a-z0-9]+)(:\*)?/g, (_m, w: string, p?: string) => `${w}:${p ? "*" : ""}A`);
+
+/* 9t-2 · Los negocios de la ciudad que se ve que tienen a la vista algo que encaja con `q` (el parámetro de la tsquery ya armada): con el
+   índice (items_search_gin) y la misma REGLA. negocios() (lib/buscar.ts) lo suma a su documento: un negocio encaja por su nombre, su
+   categoría… o por lo que vende. `$1` es la ciudad que se ve (la de negocios()). */
+export const NEGOCIOS_POR_PLATO = (q: string) =>
+  `select i.business_id as id from items i
+     join businesses nb on nb.id = i.business_id and nb.city_id = $1 and nb.status = 'active' and nb.category_id = any(${CATS_SQL})
+     join business_stats_cache nst on nst.business_id = nb.id
+     cross join lateral (select nb.category_id as cat, nst.plan = 'pro' as pro, nb.modules_on as mods, nb.modules_off as off) n
+     left join item_sections sec on sec.id = i.section_id
+    where i.search_doc @@ to_tsquery('simple', ${q}) and i.removed_at is null and i.module in ('menu', 'svc') and ${REGLA}`;
+
+/* 9t-2 · La razón de la fila de un negocio («Tiene Mofongo de chicharrón · $12»): para cada negocio de la lista (≤ 10, una sola consulta), lo
+   que más encaja de lo que su ficha muestra, con su precio de ficha (los servicios sin número: «Precio en la ficha» no se repite aquí). */
+export type Razon = { name: { es: string; en: string }; cents: number | null; unit: string };
+export async function porQue(E: Entendido, o: { punto: Punto; ids: string[]; userId?: string | null; vivo?: boolean }): Promise<Map<string, Razon>> {
+  if (!E.grupos.length || !o.ids.length) return new Map();
+  const r = await db().query<Razon & { biz: string }>(
+    `select distinct on (i.business_id) i.business_id as biz, i.name, i.unit,
+            case when i.module = 'menu' then coalesce(oferta_precio(i.id, $4::uuid), i.price_cents) end as cents
+       from items i
+       join businesses nb on nb.id = i.business_id and nb.city_id = $1 and nb.status = 'active' and nb.category_id = any(${CATS_SQL})
+       join business_stats_cache nst on nst.business_id = nb.id
+       cross join lateral (select nb.category_id as cat, nst.plan = 'pro' as pro, nb.modules_on as mods, nb.modules_off as off) n
+       left join item_sections sec on sec.id = i.section_id
+      where i.business_id = any($2::text[]) and i.search_doc @@ to_tsquery('simple', $3) and i.removed_at is null and i.module in ('menu', 'svc') and ${REGLA}
+      order by i.business_id, ts_rank('{0.1, 0.2, 0.4, 1.0}', i.search_doc, to_tsquery('simple', $3)) desc, i.module = 'menu' desc, i.sort, i.id`,
+    [o.punto.ciudad, o.ids.slice(0, 20), soloNombre(tsq(E.grupos, true, o.vivo)), o.userId ?? null]);
+  return new Map(r.rows.map(({ biz, ...x }) => [biz, x]));
+}
 
 export type OpcionesPlatos = { punto: Punto; cat?: string | null; filtro?: string | null; orden?: "rel" | "price"; limite?: number; vivo?: boolean; userId?: string | null };
 

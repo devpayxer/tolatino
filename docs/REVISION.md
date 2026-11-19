@@ -5497,6 +5497,43 @@ historial y el dueño lo ve). Detalles:
   directo en la hoja** al tocarlo (hoy abre la ficha en su Menú): pendientes en LAUNCH.
 - **«Lo que dicen los vecinos»** no cuenta en la vista previa del desplegable: la búsqueda en vivo no lee la Comunidad (guardián
   `buscarVecinosConSesion`); sale en la página de resultados con cuenta, como antes.
+## Fase 9 · 9t-2 — Buscar: servicios de las demás categorías, la razón de la fila, el plato en su hoja, la voz y la ciudad del desplegable (19 nov) — mirar
+**Qué mirar (teléfono 390 y computadora 1360, en español y en inglés):**
+- **Las demás categorías (teléfono):** busca «norteño» (Banda La Dinastía), «JFK» (Aeropuerto Seguro), «lista» (Casa Borinquen), «contabilidad»
+  (Academia de Negocios Latina), «invierno» (Campamento Pocono Kids), «natación» (Aqua Hazleton), «recuperación» (Comunidad Cristiana Nueva Vida):
+  cada uno sale en **Platos y servicios** con **Precio en la ficha**. «clase» en su pestaña trae los chips **Educación**, **Deporte**… En el 360°,
+  pausa Servicios de Aeropuerto Seguro: «JFK» deja de salir (y su ficha tampoco lo lista). Apaga la Lista de esta noche de Casa Borinquen: «lista»
+  no la trae. «Sábado: Banda La Dinastía» (La Cantina de Don Beto) no sale porque su evento no está publicado (tampoco en su ficha).
+- **La razón:** busca «mofongo»: entre los negocios sale Sabor Dominicano con el chip **Tiene Mofongo de chicharrón · $12**; busca «oración del viernes»: la fila
+  del Centro Islámico dice **Tiene Oración del viernes** bajo el nombre. Mientras escribes «norteño», la sugerencia del negocio dice
+  «TIENE NORTEÑO · 2 HORAS · … MI». Busca «sabor»: Sabor Dominicano sale sin razón (su nombre ya lo dice). En inglés: «Has …».
+- **El plato en su hoja:** en «mofongo», toca la fila del plato: abre la página de Sabor Dominicano con la hoja **Mofongo de chicharrón** ya abierta
+  (en la computadora, la ventana del plato). Si el restaurante está cerrado o no toma pedidos, se abre su Menú sin la hoja.
+- **El desplegable (computadora):** dentro del campo, a la derecha, el **micrófono** y el chip **Hazleton, PA · 5 mi**. El micrófono, la primera vez,
+  muestra el aviso dentro del panel (**Activar y hablar** / **Ahora no**); con la voz apagada en Mi cuenta › Ajustes › Privacidad no sale. El chip
+  cierra el panel y abre **Ciudad que estás viendo**.
+
+**Decisiones tomadas por defecto (AB, reversibles):**
+- **Un negocio encaja también por lo que vende** (prototipo `search-engine.js`: el plato cuenta para el negocio), con la misma regla de su ficha: si su
+  página no muestra el plato o el servicio, por ahí no entra. Cuenta el **nombre** de lo que vende, no su descripción (como el prototipo: «viernes»
+  no trae a una iglesia porque la descripción de «Jóvenes» dice «los viernes»; en la lista de Platos y servicios la descripción sí cuenta, como
+  antes). Cambia los totales y el orden de Negocios: quien encaja solo por lo que vende queda un
+  poco por debajo de quien encaja por su nombre (los Pro siguen primero). Si prefieres que los negocios salgan solo por su nombre y categoría, se
+  apaga quitando `NEGOCIOS_POR_PLATO` de `negocios()`.
+- **La razón sale solo cuando el nombre no explica el resultado** (en el prototipo el nombre gana). Una subcategoría que también encaja no la quita
+  (el prototipo la prefería a un plato parcial): es la diferencia más chica y se puede afinar. **Un servicio sale sin número** («Tiene Corte
+  clásico»): su precio depende de quién, del seguro o del trabajo, como en «Precio en la ficha». En la tarjeta del Pro va como primer chip (verde,
+  variante del prototipo), hasta tres chips como siempre; en las sugerencias, en su línea («TIENE …», sin precio, como el prototipo).
+- **Solo el plato abre su hoja** (prototipo: «plato → abre el plato en Menú; servicio → pestaña Servicios»). Un servicio abre la ficha como antes. Un
+  `?plato=` que no es de su menú, o un plato que ahora no se puede pedir, deja la ficha en su Menú (en Free, baja hasta la lista).
+- **Free y sus servicios:** la página Free de estas categorías (y de Belleza, Auto, Hogar, Doctores y Profesionales desde 9t) enseña en su Resumen los
+  primeros 4 o 5 servicios, pero la lista completa ya está en su página (la usan la hoja, la solicitud y la reserva). Buscar los encuentra todos (como
+  hizo 9t). Si quieres que un Free solo salga en Buscar con los que enseña su Resumen (como los platos con `free_items`), es una condición más en la
+  misma regla.
+- **El chip de la ciudad** dice lo mismo que el encabezado («Hazleton, PA · 5 mi · tú»); el prototipo decía «Hazleton, PA · 5 mi».
+- **Propiedades, carros y productos de Mercados y Tiendas no entran** (no son trivialmente iguales a su ficha: dirección y punto escondidos, total
+  en la puerta, libras, tallas, existencias; las casas y los carros ya tienen Buscar casa / Buscar carro). Queda en LAUNCH para tu decisión.
+
 ## Fase 9 · 9t — «No pudo»: Avísame si se libera y Otros restaurantes con mesa (19 nov · 0180) — mirar
 **Qué mirar (teléfono y escritorio, ES y EN):**
 - Como Marisol (570-555-0122), una solicitud de mesa en Sabor Dominicano que el restaurante contesta con **No hay mesa** (Panel › Hoy, como Pedro

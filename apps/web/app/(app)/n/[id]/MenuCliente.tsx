@@ -147,9 +147,11 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
     return c1;
   };
   const expand = (id: string, desk = false) => { setAbierto(id); if (desk) return; clearTimeout(to.current); to.current = setTimeout(() => setAbierto(null), 3500); };
-  const open = (id: string, desk = false) => {
-    const it = m.items[id]; if (!it || offOf(it) || !canOrd) return;
+  // 9t-2 · Dice si la abrió: desde Buscar (?plato=), un plato que no se puede pedir ahora deja la ficha en su menú.
+  const open = (id: string, desk = false): boolean => {
+    const it = m.items[id]; if (!it || offOf(it) || !canOrd) return false;
     setSel(id); setCh({}); setQty(1); setNote(""); setEdit(null); setCustom(false); setAsk(null); setCartOpen(false); setVista(desk ? "dlg" : "sheet");
+    return true;
   };
   const quick = (id: string, desk = false) => {
     const it = m.items[id]; if (!it || offOf(it) || !canOrd) return;

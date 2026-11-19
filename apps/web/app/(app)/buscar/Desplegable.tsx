@@ -4,7 +4,10 @@
    «Escribe como hablas», lo más buscado y las categorías. Escribiendo: las sugerencias (categorías, negocios, platos y servicios, eventos)
    y a la derecha la VISTA PREVIA de la fila que tiene el cursor o las flechas (la tarjeta del negocio, el plato con su precio, la
    subcategoría con sus negocios, el evento; en «Buscar …», cuántos hay de cada cosa). ↑ ↓ para moverse, Enter abre, Enter en «Buscar …»
-   lleva a la página de resultados. El servidor decide todo (/api/buscar?drop=1); esto solo pinta. */
+   lleva a la página de resultados. El servidor decide todo (/api/buscar?drop=1); esto solo pinta.
+   9t-2 · Dentro del campo, como el prototipo: el micrófono (la misma lógica que la página de Buscar, ./voz.ts: el aviso la primera vez, nada
+   si lo apagó en Privacidad; escuchando, el panel lo dice con «Cancelar») y el chip de la ciudad que estás viendo (abre «Ciudad que estás
+   viendo» bajo el chip). */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType } from "react";
@@ -13,10 +16,11 @@ import type { TarjetaEvt } from "@/lib/evt-publico";
 import { dinero } from "@/lib/evt-comun";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 import { TarjetaNegocio } from "../TarjetaNegocio";
+import { useVoz } from "./voz";
 
-type N = "Icon" | "Tag" | "SearchPanel" | "SearchResultRow" | "EventCard";
+type N = "Icon" | "Tag" | "Button" | "SearchPanel" | "SearchResultRow" | "EventCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { Icon, Tag, SearchPanel, SearchResultRow, EventCard } = UI as unknown as Record<N, ComponentType<any>>;
+const { Icon, Tag, Button, SearchPanel, SearchResultRow, EventCard } = UI as unknown as Record<N, ComponentType<any>>;
 
 const RECIENTES = "tl-buscar-recientes"; // los mismos de la página de Buscar
 const leer = (): string[] => { try { const x = JSON.parse(localStorage.getItem(RECIENTES) ?? "[]"); return Array.isArray(x) ? x.filter((s) => typeof s === "string").slice(0, 8) : []; } catch { return []; } };
@@ -24,7 +28,7 @@ const guardar = (l: string[]) => { try { localStorage.setItem(RECIENTES, JSON.st
 
 export type AnclaBuscar = { left: number; top: number; width: number };
 
-export function Desplegable({ lang, ancla, ciudad, ph, phTodo, cat, onClose }: { lang: "es" | "en"; ancla: AnclaBuscar | null; ciudad: string; ph: string; phTodo: string; cat: { slug: string; label: string } | null; onClose: () => void }) {
+export function Desplegable({ lang, ancla, ciudad, lugar, ph, phTodo, cat, onClose, onCiudad }: { lang: "es" | "en"; ancla: AnclaBuscar | null; ciudad: string; lugar: string; ph: string; phTodo: string; cat: { slug: string; label: string } | null; onClose: () => void; onCiudad: (r: DOMRect) => void }) {
   const es = lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
   const [q, setQ] = useState(""), [hl, setHl] = useState(-1);
@@ -48,6 +52,13 @@ export function Desplegable({ lang, ancla, ciudad, ph, phTodo, cat, onClose }: {
   }, [q, alcance]);
 
   const ir = (href: string) => { onClose(); router.push(href); };
+  // 9t-2 · La voz: lo que contestó al aviso (o eligió en Privacidad) llega con lo de explorar; hasta entonces, sin micrófono.
+  const vz = ex?.voz;
+  const V = useVoz({ lang, conSesion: !!vz?.sesion, inicial: vz?.on, onTexto: (x) => { setQ(x); buscar(x); } });
+  // Al cerrar el panel (Esc, fuera, otra página) se deja de escuchar: nada busca después.
+  const cancelarVoz = useRef(V.cancelar);
+  cancelarVoz.current = V.cancelar;
+  useEffect(() => () => cancelarVoz.current(), []);
   const buscar = (texto: string) => {
     const s = texto.trim();
     if (!s && !alcance) return;
@@ -119,6 +130,23 @@ export function Desplegable({ lang, ancla, ciudad, ph, phTodo, cat, onClose }: {
             <span className="text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Pulsa Enter para ver todo, o pasa el cursor por un resultado.", "Press Enter to see everything, or hover a result.")}</span>
           </div>
         )}
+    </div>
+  );
+
+  // 9t-2 · La voz dentro del panel (prototipo drop: voice.open): el aviso la primera vez, «escuchando» con su pulso, o que el navegador no puede.
+  const vozPanel = vz && (
+    <div data-voz={V.voz} className="flex flex-col items-center gap-3.5 px-6 py-[34px] text-center">
+      <span className="relative grid size-[92px] place-items-center">
+        {V.voz === "escuchando" && <span className="absolute inset-0 animate-ping rounded-full bg-action/20" />}
+        <span className="relative grid size-16 place-items-center rounded-full bg-action"><Icon name="mic" size={26} color="var(--tl-white)" /></span>
+      </span>
+      <span className="font-display text-[20px] font-extrabold tracking-[-0.03em]">{V.voz === "aviso" ? E2("Buscar con la voz", "Search by voice") : V.voz === "sin" ? vz.no : vz.t}</span>
+      {V.voz === "escuchando" && <span className="min-h-5 text-[13px] font-medium text-ink/60">{vz.sub}</span>}
+      {V.voz === "aviso" && <span data-aviso-voz="1" className="max-w-[460px] text-pretty text-[13px] font-medium leading-[1.5] text-ink/65">{E2("Tu voz la convierte en texto el reconocimiento de tu teléfono o de tu navegador (Apple o Google la procesan en sus servidores), no To'Latino. A To'Latino solo llega el texto que buscas. Lo apagas cuando quieras en Mi cuenta › Ajustes › Privacidad.", "Your phone's or browser's speech recognition turns your voice into text (Apple or Google process it on their servers), not To'Latino. To'Latino only gets the text you search. Turn it off anytime in My account › Settings › Privacy.")}</span>}
+      <div className="flex gap-2">
+        {V.voz === "aviso" && <Button variant="primary" size="md" icon="mic" onClick={V.aceptar}>{E2("Activar y hablar", "Turn on and speak")}</Button>}
+        <Button variant="secondary" size="md" onClick={() => { V.cancelar(); inRef.current?.focus(); }}>{V.voz === "aviso" ? E2("Ahora no", "Not now") : vz.cancel}</Button>
+      </div>
     </div>
   );
 
@@ -218,10 +246,13 @@ export function Desplegable({ lang, ancla, ciudad, ph, phTodo, cat, onClose }: {
             placeholder={alcance ? ph : phTodo}
             className="h-full min-w-0 flex-1 border-none bg-transparent p-0 text-[15px] font-semibold text-ink outline-none placeholder:text-ink/60" />
           {q && <button type="button" aria-label={E2("Borrar", "Clear")} onClick={() => { setQ(""); inRef.current?.focus(); }} className="grid size-[30px] flex-none place-items-center rounded-full bg-ink/[.07]"><Icon name="close" size={13} strokeWidth={2.2} /></button>}
+          {vz && V.mic && <button type="button" data-mic="1" aria-label={E2("Buscar con la voz", "Search by voice")} onClick={V.hablar} className="grid size-9 flex-none place-items-center rounded-[10px] bg-action/[.08]"><Icon name="mic" size={18} color="var(--tl-action)" /></button>}
+          <button type="button" data-ciudad="1" aria-label={E2(`Ciudad que estás viendo: ${lugar}`, `City you are viewing: ${lugar}`)} onClick={(e) => onCiudad(e.currentTarget.getBoundingClientRect())}
+            className="flex flex-none items-center gap-1.5 whitespace-nowrap rounded-[10px] bg-paper px-[11px] py-[7px] text-[12.5px] font-bold"><Icon name="pin" size={15} color="var(--tl-action)" />{lugar}</button>
         </div>
         <div className="absolute inset-x-0 top-[62px]">
           <SearchPanel width={780} hint={E2("↑ ↓ PARA MOVERTE · ENTER PARA ABRIR", "↑ ↓ TO MOVE · ENTER TO OPEN")} esc={E2("ESC PARA CERRAR", "ESC TO CLOSE")}>
-            {q.trim() && sugerencias ? sugerencias : explorar}
+            {V.voz !== "no" && vz ? vozPanel : q.trim() && sugerencias ? sugerencias : explorar}
           </SearchPanel>
         </div>
       </div>

@@ -10741,7 +10741,7 @@ const guardianes = {
      que la búsqueda deje ver un plato oculto por To'Latino, quitado, en una sección que no se ve, de un módulo pausado, de otra ciudad o
      fuera del límite de un Free (el dueño lo «tiene» pero su página no lo enseña). Por eso hay UNA definición (lib/visible-publico.ts) que leen
      las fichas y Buscar: las fichas no copian el filtro, Buscar usa todas las reglas y la puerta de cada ficha sigue donde Buscar la copió
-     (si una ficha cambia su puerta, este guardián avisa para revisar Buscar en el mismo cambio). Al revés: alreves9t. */
+     (si una ficha cambia su puerta, este guardián avisa para revisar Buscar en el mismo cambio). Al revés: alreves9t y alreves9tbus (9t-2). */
   buscarPlatosComoLaFicha() {
     const G = "buscarPlatosComoLaFicha", VP = "apps/web/lib/visible-publico.ts", BP = "apps/web/lib/buscar-platos.ts";
     if (!existsSync(VP) || !existsSync(BP)) return falla(G, BP, 0, "faltan lib/visible-publico.ts o lib/buscar-platos.ts");
@@ -10783,10 +10783,13 @@ const guardianes = {
       ['${SERVICIO_BELLEZA("i")}', "un servicio de Belleza que la ficha no lista sale en Buscar"], ['${ALGUIEN_LO_HACE("i")}', "un servicio de Belleza que nadie hace sale en Buscar"],
       ["n.mods && array['svc', 'citas']", "Belleza sin servicios ni citas sale en Buscar"], ['${SERVICIO_VIVO("i")}', "un servicio que la ficha no lista sale en Buscar"],
       ["'svc' = any(n.mods) and ${OFF(\"svc\")}", "Auto y Hogar con servicios apagados o pausados salen en Buscar"], ["n.cat in ('NEG-SALUD', 'NEG-PRO') and ${OFF(\"svc\")}", "Doctores o Profesionales pausados salen en Buscar"],
-      ["i.removed_at is null and i.module in ('menu', 'svc')", "Buscar mira lo quitado o lo que no es Menú ni Servicios"],
-      ["i.search_doc @@ to_tsquery('simple',", "Buscar no usa el índice (items.search_doc)"], ["coalesce(oferta_precio(i.id,", "el precio no es el de la ficha (oferta_precio)"],
     ];
     for (const [x, msg] of debe) if (!b.includes(x)) falla(G, BP, 0, msg);
+    // 9t-2 · Lo de la consulta de platos() se mira en platos() (NEGOCIOS_POR_PLATO y porQue repiten estas piezas: no la cubren).
+    const pl = cuerpoFn(b, "platos");
+    for (const [x, msg] of [["${DESDE}", "los negocios no son los de Buscar (DESDE)"], ["i.removed_at is null and i.module in ('menu', 'svc')", "Buscar mira lo quitado o lo que no es Menú ni Servicios"],
+      ["i.search_doc @@ to_tsquery('simple',", "Buscar no usa el índice (items.search_doc)"], ["coalesce(oferta_precio(i.id,", "el precio no es el de la ficha (oferta_precio)"], ["${REGLA}", "platos() sin la regla de la ficha"]])
+      if (!pl.includes(x)) falla(G, BP, 0, msg);
     const cats = /CATS_PLATOS = \[([^\]]*)\]/.exec(b)?.[1] ?? "";
     for (const c of cats.match(/NEG-[A-Z]+/g) ?? []) if (!new RegExp(`'${c}'`).test(b.slice(b.indexOf("const REGLA")))) falla(G, BP, 0, `${c} está en CATS_PLATOS sin su regla`);
     // El servidor decide: la página y las sugerencias llaman a platos() con la ubicación de la persona (nunca con una ciudad del navegador).
@@ -10794,7 +10797,106 @@ const guardianes = {
     // Un plato sale con su ficha: «Precio en la ficha» cuando el precio depende de quién, del seguro o del trabajo (nunca un número que la ficha no diga).
     const fp = "apps/web/app/(app)/buscar/platos.ts";
     if (existsSync(fp) && !/x\.cents == null \? E2\("Precio en la ficha", "Price on listing"\)/.test(readFileSync(fp, "utf8"))) falla(G, fp, 0, "un servicio sin precio de ficha tiene que decir «Precio en la ficha»");
+    // 9t-2 · Las demás categorías que venden con servicios (Fiestas, Transporte, Noche, Educación/Niños/Deporte, Iglesias): su regla vive aquí
+    // (CURSO_INSC, SERVICIO_NOCHE con la Lista encendida y la noche especial con su evento en vivo), su ficha la lee y su puerta (la pausa de
+    // Servicios) sigue donde Buscar la copió.
+    const defN = (k) => { const i = vp.indexOf(`export const ${k} = `); return i < 0 ? "" : vp.slice(i, vp.indexOf("`;", i) + 2); };
+    if (!defN("CURSO_INSC").includes("${i}.svc_kind in ('curso', 'mes', 'semana', 'clase', 'hora')")) falla(G, VP, 0, "CURSO_INSC sin los tipos de Educación, Niños y Deporte: la ficha y Buscar enseñarían otra cosa");
+    const sn = defN("SERVICIO_NOCHE");
+    for (const [p, msg] of [["${i}.svc_kind in ('cover', 'lista', 'mesa', 'vip', 'fecha', 'evento')", "sin los tipos de Noche"], ["ns.list_on", "la Lista sale aunque esa noche no haya lista"],
+      ["d.listable and d.ends_at > now()", "la noche especial sale sin su evento en vivo"], ["e.business_id = ${i}.business_id", "la noche especial con el evento de otro negocio"]])
+      if (!sn.includes(p)) falla(G, VP, 0, `SERVICIO_NOCHE ${msg}`);
+    const otras = [
+      ["apps/web/lib/fiestas-publico.ts", ['${SERVICIO_VIVO("i")}'], ['b.cat !== "NEG-FIESTA" || (b.off ?? {}).svc) return null;']],
+      ["apps/web/lib/trans-publico.ts", ['${SERVICIO_VIVO("i")}'], ['b.cat !== "NEG-TRANS" || (b.off ?? {}).svc) return null;']],
+      ["apps/web/lib/fe-publico.ts", ['${SERVICIO_VIVO("i")}'], ["(b.off ?? {}).svc ? Promise.resolve({ rows: [] as"]],
+      ["apps/web/lib/noche-publico.ts", ['${SERVICIO_VIVO("i")}', '${SERVICIO_NOCHE("i")}'], ["const I = (b.off ?? {}).svc ? { rows: [] as SvcNoche[] } :"]],
+      ["apps/web/lib/inscripciones-publico.ts", ['${SERVICIO_VIVO("i")}', '${CURSO_INSC("i")}'], ["const I = (b.off ?? {}).svc ? [] :"]],
+    ];
+    for (const [f, usa, puertas] of otras) {
+      if (!existsSync(f)) { falla(G, f, 0, "falta la ficha"); continue; }
+      const t = sinComent(f);
+      for (const u of usa) if (!t.includes(u)) falla(G, f, 0, `la ficha no lee ${u.slice(2, -1)} de lib/visible-publico.ts (la misma regla que Buscar)`);
+      for (const p of puertas) if (!t.includes(p)) falla(G, f, 0, `la puerta de la ficha cambió («${p.slice(0, 60)}»): revisa la regla de Buscar (lib/buscar-platos.ts REGLA) en el mismo cambio`);
+    }
+    for (const [x, msg] of [
+      ["(n.cat in ('NEG-FIESTA', 'NEG-TRANS', 'NEG-FE') and ${OFF(\"svc\")} and ${SERVICIO_VIVO(\"i\")})", "Fiestas, Transporte o Iglesias con Servicios pausados o con lo que la ficha no lista salen en Buscar"],
+      ["(n.cat = 'NEG-NOCHE' and ${OFF(\"svc\")} and ${SERVICIO_VIVO(\"i\")} and ${SERVICIO_NOCHE(\"i\")})", "Noche: la Lista apagada, la noche especial sin evento o Servicios pausados salen en Buscar"],
+      ["(n.cat in ('NEG-EDU', 'NEG-NINOS', 'NEG-DEPORTE') and ${OFF(\"svc\")} and ${SERVICIO_VIVO(\"i\")} and ${CURSO_INSC(\"i\")})", "Educación, Niños o Deporte: lo que no es curso, programa o membresía, o con Servicios pausados, sale en Buscar"],
+    ]) if (!b.includes(x)) falla(G, BP, 0, msg);
   },
+
+  /* 9t-2 · negocioPorLoQueVende: un negocio encaja en Buscar también por lo que vende («mofongo» → Sabor Dominicano) y su fila dice por qué («Tiene
+     Mofongo de chicharrón · $12»). Lo que se teme: que por esa puerta entre lo que la ficha NO muestra (un plato oculto, de un Menú pausado, de otra
+     ciudad, de un negocio inactivo, un Free fuera de sus platos), que la razón ponga un precio que la ficha no dice (un servicio, o el plato sin la
+     oferta en vivo) o que la ciudad salga del navegador. Por eso negocios() suma NEGOCIOS_POR_PLATO (la MISMA REGLA de Buscar › Platos y servicios,
+     con el índice) y porQue() lee con esa regla y el precio de la ficha; la página y las sugerencias lo piden con la ubicación del servidor. Al
+     revés: alreves9tbus. */
+  negocioPorLoQueVende() {
+    const G = "negocioPorLoQueVende", BP = "apps/web/lib/buscar-platos.ts", BU = "apps/web/lib/buscar.ts", FP = "apps/web/app/(app)/buscar/platos.ts";
+    if (!existsSync(BP) || !existsSync(BU)) return falla(G, BP, 0, "faltan lib/buscar-platos.ts o lib/buscar.ts");
+    const b = sinComent(BP), u = cuerpoFn(sinComent(BU), "negocios");
+    const npp = (() => { const i = b.indexOf("export const NEGOCIOS_POR_PLATO = "); return i < 0 ? "" : b.slice(i, b.indexOf("`;", i) + 2); })();
+    if (!npp) falla(G, BP, 0, "falta NEGOCIOS_POR_PLATO");
+    for (const [x, msg] of [["${REGLA}", "sin la regla de la ficha (entraría lo que la ficha no muestra)"], ["nb.city_id = $1 and nb.status = 'active'", "negocios de otra ciudad o inactivos"],
+      ["i.search_doc @@ to_tsquery('simple', ${q})", "sin el índice (items.search_doc)"], ["i.removed_at is null and i.module in ('menu', 'svc')", "mira lo quitado o fuera del índice parcial"]])
+      if (!npp.includes(x)) falla(G, BP, 0, `NEGOCIOS_POR_PLATO ${msg}`);
+    if (!/const qn = conTexto \? add\(soloNombre\(tsq\(E\.grupos, y, o\.vivo\)\)\) : null;/.test(u)) falla(G, BU, 0, "negocios(): por lo que vende cuenta el nombre de lo que vende (soloNombre), no su descripción");
+    if (!/pp as \(\$\{NEGOCIOS_POR_PLATO\(qn\)\}\)/.test(u) || !/\(b\.search_doc @@ to_tsquery\('simple', \$\{q\}\) or b\.id in \(select id from pp\)\)/.test(u)) falla(G, BU, 0, "negocios() no encaja por lo que vende con NEGOCIOS_POR_PLATO (o lo hace con otra regla)");
+    if (!/const params: unknown\[\] = \[o\.punto\.ciudad\];/.test(u)) falla(G, BU, 0, "negocios(): $1 no es la ciudad que se ve");
+    const pq = cuerpoFn(b, "porQue");
+    if (!pq) falla(G, BP, 0, "falta porQue");
+    for (const [x, msg] of [["${REGLA}", "la razón con algo que la ficha no muestra"], ["nb.city_id = $1 and nb.status = 'active'", "la razón de otra ciudad o de un negocio inactivo"],
+      ["case when i.module = 'menu' then coalesce(oferta_precio(i.id, $4::uuid), i.price_cents) end as cents", "el precio de la razón no es el de la ficha (oferta en vivo; un servicio sin número)"],
+      ["[o.punto.ciudad, o.ids.slice(0, 20),", "la razón no lee la ciudad que se ve (o lee una lista sin tope)"], ["soloNombre(tsq(E.grupos, true, o.vivo))", "la razón encaja por la descripción y no por el nombre de lo que vende"]])
+      if (!pq.includes(x)) falla(G, BP, 0, `porQue: ${msg}`);
+    for (const f of ["apps/web/app/(app)/buscar/page.tsx", "apps/web/app/api/buscar/route.ts"]) if (existsSync(f) && !/porQue\(E, \{ punto: loc, ids: r\.items\.map\(\((b|x)\) => \1\.id\)/.test(sinComent(f))) falla(G, f, 0, "porQue() sin la ubicación de la persona o con otros negocios que los de la lista");
+    const tr = existsSync(FP) ? cuerpoFn(sinComent(FP), "textoRazon") : "";
+    if (!/if \(!r \|\| E\.grupos\.every\(\(g\) => encaja\(g, nombreNegocio, o\.vivo\)\)\) return null;/.test(tr)) falla(G, FP, 0, "la razón sale aunque el nombre del negocio explica el resultado (el nombre gana, prototipo)");
+    if (!/!o\.sinPrecio && r\.cents \?/.test(tr)) falla(G, FP, 0, "la razón pone un precio que la ficha no dice");
+  },
+
+  /* 9t-2 · platoAbreSuHoja: tocar un plato en Buscar abre SU hoja en la ficha (prototipo: «plato de Sabor → abre el plato en Menú»), no la ficha a secas.
+     Lo que se teme: el enlace sin el plato, una ficha (la de siempre o la nueva) que no lo lee, abrirlo antes de hidratar (no pasa nada) o dos veces,
+     un id que no es de un plato en la URL, o abrir la hoja de un plato que hoy no se puede pedir (agotado, fuera de horario, Free sin pedidos). Al
+     revés: alreves9tbus. */
+  platoAbreSuHoja() {
+    const G = "platoAbreSuHoja", FP = "apps/web/app/(app)/buscar/platos.ts", PG = "apps/web/app/(app)/n/[id]/page.tsx", MC = "apps/web/app/(app)/n/[id]/MenuCliente.tsx";
+    const fp = existsSync(FP) ? sinComent(FP) : "";
+    if (!/if \(x\.plato\) return `\/n\/\$\{x\.biz\}\?\$\{x\.pro \? "tab=menu&" : ""\}plato=\$\{encodeURIComponent\(x\.id\)\}`;/.test(fp)) falla(G, FP, 0, "el enlace de un plato no lleva ?plato=<id> (y en Pro la pestaña Menú)");
+    if (!/href: hrefPlato\(x\)/.test(cuerpoFn(fp, "filaPlato"))) falla(G, FP, 0, "la fila del plato no usa hrefPlato");
+    const pg = existsSync(PG) ? sinComent(PG) : "";
+    if (!/const platoInicial = sp\.plato && \/\^\\d\{1,19\}\$\/\.test\(sp\.plato\) \? sp\.plato : undefined;/.test(pg)) falla(G, PG, 0, "la ficha toma ?plato= sin comprobar que es un id");
+    if ((pg.match(/platoInicial=\{platoInicial\}/g) ?? []).length < 2) falla(G, PG, 0, "la ficha de siempre y la nueva tienen que recibir el plato");
+    for (const f of ["apps/web/app/(app)/n/[id]/Ficha.tsx", "apps/web/app/(app)/n/[id]/FichaNueva.tsx"]) {
+      const t = existsSync(f) ? sinComent(f) : "";
+      if (!/if \(!platoInicial \|\| !mn\) return;/.test(t) || !/if \(platoHecho\.current\) return;\s*platoHecho\.current = true;/.test(t) || !/mn\.abrir\(platoInicial, window\.innerWidth >= 1024\)/.test(t))
+        falla(G, f, 0, "la ficha no abre la hoja del plato de ?plato= una sola vez, ya hidratada");
+    }
+    const mc = existsSync(MC) ? sinComent(MC) : "";
+    if (!/const open = \(id: string, desk = false\): boolean => \{\s*const it = m\.items\[id\]; if \(!it \|\| offOf\(it\) \|\| !canOrd\) return false;/.test(mc)) falla(G, MC, 0, "abrir un plato desde fuera del menú tiene que respetar agotado, horario y pedidos (y decir si lo abrió)");
+  },
+
+  /* 9t-2 · vozDelDesplegable: el micrófono del desplegable de escritorio es el MISMO de la página de Buscar (./voz.ts): el aviso la primera vez (lo procesan
+     Apple o Google, no To'Latino), con cuenta la respuesta en Mi cuenta (vozGuardar) y sin cuenta en ese navegador, sin micrófono si lo apagó en
+     Privacidad, y al cerrar el panel se deja de escuchar (nada busca después). El chip de la ciudad abre «Ciudad que estás viendo». Lo que se teme: una
+     segunda copia del reconocimiento sin el aviso, el micrófono aunque lo apagó, o una búsqueda que sale sola con el panel cerrado. Al revés: alreves9tbus. */
+  vozDelDesplegable() {
+    const G = "vozDelDesplegable", VZ = "apps/web/app/(app)/buscar/voz.ts", DP = "apps/web/app/(app)/buscar/Desplegable.tsx", AS = "apps/web/app/(app)/AppShell.tsx", API = "apps/web/app/api/buscar/route.ts";
+    const vz = existsSync(VZ) ? sinComent(VZ) : "";
+    if (!/if \(!ok\) \{ setVoz\("aviso"\); return; \}/.test(vz)) falla(G, VZ, 0, "la voz sin el aviso la primera vez");
+    if (!/if \(o\.conSesion\) void vozGuardar\(true\)/.test(vz)) falla(G, VZ, 0, "con cuenta, la respuesta al aviso no queda en Mi cuenta (users.voice_search)");
+    if (!/mic: vozOk !== false/.test(vz)) falla(G, VZ, 0, "el micrófono sale aunque lo apagó en Privacidad");
+    for (const f of archivos.filter((x) => /^apps\/web\/app\/.*\.tsx?$/.test(x) && x !== VZ)) if (/SpeechRecognition/.test(readFileSync(f, "utf8"))) falla(G, f, 0, "el reconocimiento de voz va en app/(app)/buscar/voz.ts (una sola lógica con su aviso)");
+    const dp = existsSync(DP) ? sinComent(DP) : "";
+    if (!/useVoz\(\{ lang, conSesion: !!vz\?\.sesion, inicial: vz\?\.on,/.test(dp) || !/\{vz && V\.mic && <button/.test(dp)) falla(G, DP, 0, "el micrófono del desplegable no usa la lógica de la página ni lo que la persona eligió");
+    if (!/data-aviso-voz="1"/.test(dp)) falla(G, DP, 0, "el desplegable no muestra el aviso de la voz");
+    if (!/useEffect\(\(\) => \(\) => cancelarVoz\.current\(\), \[\]\);/.test(dp)) falla(G, DP, 0, "al cerrar el desplegable no se deja de escuchar");
+    if (!/onClick=\{\(e\) => onCiudad\(e\.currentTarget\.getBoundingClientRect\(\)\)\}/.test(dp)) falla(G, DP, 0, "el chip de la ciudad no abre «Ciudad que estás viendo»");
+    if (!existsSync(AS) || !/onCiudad=\{\(r\) => \{ setDrop\(false\); setAncla\([^\n]*\); setSel\(\{ pedir: false \}\); \}\}/.test(sinComent(AS))) falla(G, AS, 0, "el chip de la ciudad del desplegable no abre el selector de la ciudad");
+    if (!existsSync(API) || !/select voice_search as v from users where id = \$1`, \[u\.id\]/.test(sinComent(API))) falla(G, API, 0, "el desplegable no sabe lo que la persona eligió para la voz (users.voice_search de la sesión)");
+  },
+
 
   /* 9t · letraGrandeDelServidor: «Letra más grande» (Mi cuenta › Ajustes) es de la persona y la decide el servidor: se guarda en users.big_text
      (con la sesión y el mismo origen), el marco de la app la lee de yo() y la pone en la primera pintura (sin parpadeo, en cualquier teléfono
