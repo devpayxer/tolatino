@@ -38,15 +38,22 @@ const FUENTE: Record<KindTr, string> = {
   post_comment: `select c.body as texto, c.lang from post_comments c join business_posts p on p.id = c.post_id
      where c.id = $2::bigint and c.status = 'visible' and post_en_vivo(p)
        and (p.audience = 'all' or exists (select 1 from follows f where f.follower_user_id = $1::uuid and f.target_kind = 'business' and f.target_id = p.business_id))`,
+  /* 9t · Un mensaje de Mensajes (cliente ↔ negocio): solo para una de las dos partes (el vecino de la conversación, o alguien del equipo del negocio
+     con la parte «Mensajes» del panel, como accesoPanel), visible, escrito por una persona y con su idioma guardado. El equipo de To'Latino no
+     traduce (ve siempre el original: guardián adminVeOriginal) y la vista de solo lectura del panel no es miembro del negocio. */
+  chat_message: `select m.body as texto, m.lang from chat_messages m join chat_threads t on t.id = m.thread_id
+     where m.id = $2::bigint and m.hidden_at is null and m.sender in ('user', 'business') and m.lang is not null and m.body <> ''
+       and (t.user_id = $1::uuid or exists (select 1 from business_members bm join businesses b on b.id = bm.business_id and b.status <> 'merged'
+         where bm.business_id = t.business_id and bm.user_id = $1::uuid and bm.status = 'active' and bm.panel_off_at is null
+           and (bm.kind = 'owner' or 'all' = any(bm.panel_access) or 'msg' = any(bm.panel_access))))`,
 };
 const DE_LA_COMUNIDAD = (k: KindTr) => k === "com_post" || k === "com_comment";
+const CON_CUENTA = (k: KindTr) => DE_LA_COMUNIDAD(k) || k === "chat_message"; // 9t · Mensajes también pide cuenta (y ser una de las partes: FUENTE)
 
 export async function traducir(kind: unknown, id: unknown, q: Quien, dst: LangTr): Promise<ResTr> {
   if (!esKindTr(kind) || typeof id !== "string" || !/^\d{1,18}$/.test(id)) return no("no_esta", NO_ESTA);
-  if (DE_LA_COMUNIDAD(kind)) {
-    if (!q.userId) return no("entrar", { es: "Entra para seguir.", en: "Sign in to continue." });
-    if (!(await enComunidad(q.userId)).ok) return no("no_esta", NO_ESTA);
-  }
+  if (CON_CUENTA(kind) && !q.userId) return no("entrar", { es: "Entra para seguir.", en: "Sign in to continue." });
+  if (DE_LA_COMUNIDAD(kind) && q.userId && !(await enComunidad(q.userId)).ok) return no("no_esta", NO_ESTA);
   const who = q.userId ? `u:${q.userId}` : q.dispositivo ? `d:${q.dispositivo}` : null;
   if (!who) return no("limite", { es: "Recarga la página para ver la traducción.", en: "Reload the page to see the translation." });
   const lim = (await db().query<{ ok: boolean; tope: number }>(`select trad_usar($1, ${TOPE}) as ok, ${TOPE} as tope`, [who])).rows[0]!;

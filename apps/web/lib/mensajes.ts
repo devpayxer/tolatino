@@ -1,7 +1,9 @@
 import "server-only";
+import type { PoolClient } from "pg";
 import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { tapar } from "./compa/tapar";
 import { soloLectura } from "./vista-equipo";
+import { detectarIdioma, idiomaTexto } from "./traductor";
 
 /* Mensajes cliente ↔ negocio (bloque 2p; modelo ChatThread · Message; Mi cuenta USR-MENSAJES / USR-CHAT-NEG; Panel v2 sec
    «msg»). Reglas, todas en el servidor:
@@ -14,9 +16,15 @@ import { soloLectura } from "./vista-equipo";
      respuesta fija; el hilo queda marcado (compa_pending_until) y El Compa contesta aparte, sin que nadie espere (lib/compa/respuesta-auto,
      after() y el barrido). Si El Compa está apagado en cualquier nivel, al tope o falla al decidir, todo es como antes (la fija).
    - Avisos: al negocio cuando llega el primer mensaje sin leer; al vecino cuando el negocio contesta y no tenía nada sin leer.
-   - Nada se borra: un mensaje se oculta con motivo (moderación) y sale como «Mensaje oculto por To’Latino». */
+   - Nada se borra: un mensaje se oculta con motivo (moderación) y sale como «Mensaje oculto por To’Latino».
+   - 9t · Fotos (una por mensaje; el mensaje puede ser solo la foto). La sube /api/mensajes/foto (privada, revisada por el modelo propio al
+     subirla); aquí se ata al mensaje (solo quien la subió, sin usar, de las últimas 24 h) y, si quedó en revisión, abre el caso en la cola
+     «medios». Quién la ve lo decide /api/mensajes/foto/{id}; aquí solo se dice su estado (ok, en revisión, quitada) y la dirección a quien la
+     puede ver. En revisión: quien la mandó la ve con «En revisión»; la otra parte ve «Foto en revisión» sin la foto.
+   - 9t · Idioma: se detecta al enviar (traductor propio, ANTES de la transacción; si no se sabe, el de la app de quien escribe) para «Ver
+     traducción» (lib/traduccion.ts, kind chat_message). */
 type Bi = { es: string; en: string };
-export type ResM = { ok: true; id?: string; compa?: boolean; tapado?: boolean } | { ok: false; msg: Bi };
+export type ResM = { ok: true; id?: string; compa?: boolean; tapado?: boolean; revision?: boolean } | { ok: false; msg: Bi };
 const no = (es: string, en: string): ResM => ({ ok: false, msg: { es, en } });
 export const MAX_TEXTO = 1000;
 const TEL = /(\d[\s.\-()]*){10}/;
@@ -26,14 +34,35 @@ const ISO = (c: string) => `to_char(${c} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:
 
 /* 9m · Mensajes tapa como Soporte (L1063): tarjetas, seguro social, códigos y contraseñas quedan «[tapado]» ANTES de guardar (y la base rechaza el que
    se salte esto: chat_messages_sin_secretos, 0143); quien escribe ve «No compartas eso aquí». Después, la regla de los teléfonos. */
-function limpiar(texto: unknown): { ok: true; t: string; tapado: boolean } | { ok: false; r: ResM } {
+function limpiar(texto: unknown, conFoto = false): { ok: true; t: string; tapado: boolean } | { ok: false; r: ResM } {
   const tp = tapar(String(texto ?? ""));
   const t = tp.texto.replace(/\r\n?/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
-  if (!t) return { ok: false, r: no("Escribe tu mensaje.", "Type your message.") };
+  if (!t && !conFoto) return { ok: false, r: no("Escribe tu mensaje.", "Type your message.") };
   if (t.length > MAX_TEXTO) return { ok: false, r: no(`Máximo ${MAX_TEXTO} letras.`, `${MAX_TEXTO} characters at most.`) };
   if (conTelefono(t)) return { ok: false, r: no("Por seguridad, sin teléfonos en los mensajes.", "For your safety, no phone numbers in messages.") };
   return { ok: true, t, tapado: tp.tapado };
 }
+
+/* 9t · La foto que se manda: el id de /api/mensajes/foto (un uuid) o nada. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const fotoId = (f: unknown): string | null => (typeof f === "string" && UUID.test(f) ? f : null);
+const FOTO_TXT = "Foto · Photo"; // lo que dicen la lista y el aviso cuando el mensaje es solo la foto (la lista lo muestra en su idioma)
+/* Ata la foto al mensaje, dentro de la transacción del envío. tomarFoto (ANTES de guardar el mensaje; la bloquea): solo la que subió esta persona,
+   sin usar, de las últimas 24 h y no quitada; si no, el envío no sale. ponerFoto (con el id del mensaje): la ata y, si el modelo la dejó en
+   revisión, la marca (cola «medios» del Super Admin, con la ciudad de la conversación): no se ve hasta que una persona decida. */
+type FotoTomada = { id: string; status: string; nota: string | null };
+async function tomarFoto(c: PoolClient, f: string, quien: string): Promise<FotoTomada | null> {
+  return (await c.query<FotoTomada>(
+    `select id::text, status, check_note as nota from media where id = $1::uuid and owner_kind = 'chat' and owner_id = 'pendiente' and uploaded_by = $2 and private
+        and purged_at is null and status in ('visible', 'review') and created_at > now() - interval '24 hours' for update`, [f, quien])).rows[0] ?? null;
+}
+async function ponerFoto(c: PoolClient, fo: FotoTomada, msgId: string, quien: string, ciudad: string | null): Promise<void> {
+  await c.query(`update media set owner_id = $2 where id = $1::uuid and owner_id = 'pendiente'`, [fo.id, msgId]);
+  if (fo.status !== "review") return;
+  const { marcar } = await import("./moderacion");
+  await marcar(c, { kind: "media", id: fo.id, regla: "img", autor: quien, ciudad, detalle: `Foto de Mensajes. ${fo.nota ?? "Espera revisión."}` });
+}
+const FOTO_NO = no("Esa foto ya no se puede mandar. Elígela otra vez.", "That photo can no longer be sent. Pick it again.");
 
 /* ── Vecino ── */
 export type Hilo = { id: string; negocio: string; nombre: string; foto: string | null; ctx: Bi | null; last: string | null; lastFrom: string; at: string; unread: number };
@@ -52,10 +81,27 @@ export async function sinLeerCliente(userId: string): Promise<number> {
   return (await db().query<{ n: number }>(`select coalesce(sum(user_unread), 0)::int as n from chat_threads where user_id = $1`, [userId])).rows[0]?.n ?? 0;
 }
 
-export type Msj = { id: string; de: "user" | "business" | "auto" | "system"; t: string; at: string; oculto: boolean; quien: string | null; compa: boolean };
+/* 9t · foto: la dirección privada (/api/mensajes/foto/{id}) si quien mira la puede ver; fotoEst: ok · revision (el modelo la marcó o no
+   respondió; solo quien la mandó la ve) · quitada (el equipo la quitó con motivo); lang: el idioma del texto («Ver traducción»; null = no se sabe). */
+export type Msj = { id: string; de: "user" | "business" | "auto" | "system"; t: string; at: string; oculto: boolean; quien: string | null; compa: boolean;
+  foto: string | null; fotoEst: "ok" | "revision" | "quitada" | null; lang: "es" | "en" | null };
+type FilaMsj = Omit<Msj, "foto" | "fotoEst"> & { fid: string | null; fst: string | null; fsub: string | null };
 const MSJS = (filtro: string) => `select m.id::text, m.sender as de, case when m.hidden_at is null then m.body else '' end as t, m.hidden_at is not null as oculto, ${ISO("m.created_at")} as at, m.compa,
-       case when m.sender = 'business' then (select coalesce(nullif(trim(coalesce(u.first_name, '')), ''), 'Equipo') from users u where u.id = m.sender_user_id) end as quien
-  from chat_messages m where m.thread_id = $1 ${filtro} order by m.id desc limit 120`;
+       case when m.sender = 'business' then (select coalesce(nullif(trim(coalesce(u.first_name, '')), ''), 'Equipo') from users u where u.id = m.sender_user_id) end as quien,
+       case when m.hidden_at is null then m.lang end as lang, case when m.hidden_at is null then m.media_id::text end as fid, x.status as fst, x.uploaded_by::text as fsub
+  from chat_messages m left join media x on x.id = m.media_id where m.thread_id = $1 ${filtro} order by m.id desc limit 120`;
+/* Lo que la pantalla recibe de cada foto (nunca quién la subió). La vista de solo lectura del equipo (9n-23) no ve las fotos: la dirección
+   privada no la dejaría pasar (no es miembro del negocio); sale «Foto» sin la foto. */
+function conFoto(L: FilaMsj[], yo: string | null): Msj[] {
+  const sv = soloLectura();
+  return L.map(({ fid, fst, fsub, ...m }) => {
+    if (!fid) return { ...m, foto: null, fotoEst: null };
+    if (fst === "removed") return { ...m, foto: null, fotoEst: "quitada" };
+    const est = fst === "review" ? "revision" as const : "ok" as const;
+    const ve = !sv && (est === "ok" || (!!yo && fsub === yo));
+    return { ...m, foto: ve ? `/api/mensajes/foto/${fid}` : null, fotoEst: est };
+  });
+}
 
 export type Conversacion = { id: string | null; negocio: { id: string; nombre: string; foto: string | null; cat: string; rating: number | null; abierto: boolean }; ctx: Bi | null; msjs: Msj[]; bloqueado: boolean; puede: boolean; motivo: Bi | null;
   compaEscribe: boolean };
@@ -74,7 +120,7 @@ export async function conversacionCliente(userId: string, negocio: string, opId?
        from chat_threads where user_id = $1 and business_id = $2`, [userId, b.id])).rows[0];
   let ctx = t?.ctx ?? null;
   if (opId) ctx = (await contextoDe(userId, b.id, opId))?.ctx ?? ctx;
-  const msjs = t ? (await db().query<Msj>(MSJS(""), [t.id])).rows.reverse() : [];
+  const msjs = t ? conFoto((await db().query<FilaMsj>(MSJS(""), [t.id])).rows.reverse(), userId) : [];
   if (t?.unread) await db().query(`update chat_threads set user_unread = 0, user_read_at = now() where id = $1`, [t.id]);
   const puede = b.activo && b.dueño && !t?.blocked;
   return {
@@ -88,7 +134,7 @@ export async function conversacionCliente(userId: string, negocio: string, opId?
 export async function nuevosCliente(userId: string, threadId: string, desde: string): Promise<Msj[]> {
   const t = (await db().query<{ id: string }>(`select id::text from chat_threads where id = $1 and user_id = $2`, [Number(threadId) || 0, userId])).rows[0];
   if (!t) return [];
-  const L = (await db().query<Msj>(MSJS("and m.id > $2"), [t.id, Number(desde) || 0])).rows.reverse();
+  const L = conFoto((await db().query<FilaMsj>(MSJS("and m.id > $2"), [t.id, Number(desde) || 0])).rows.reverse(), userId);
   if (L.length) await db().query(`update chat_threads set user_unread = 0, user_read_at = now() where id = $1`, [t.id]);
   return L;
 }
@@ -102,8 +148,9 @@ async function contextoDe(userId: string, negocio: string, num: string): Promise
 }
 
 /* El vecino escribe. */
-export async function enviarCliente(userId: string, negocio: string, texto: unknown, opId?: string | null): Promise<ResM> {
-  const L = limpiar(texto);
+export async function enviarCliente(userId: string, negocio: string, texto: unknown, opId?: string | null, foto?: unknown): Promise<ResM> {
+  const f = fotoId(foto);
+  const L = limpiar(texto, !!f);
   if (!L.ok) return L.r;
   const b = (await db().query<{ id: string; name: string; city: string; activo: boolean; auto: boolean; abierto: boolean; dueño: boolean }>(
     `select b.id, b.name, b.city_id as city, b.status = 'active' as activo, b.chat_auto_reply as auto, coalesce(negocio_abierto(b.id, now() at time zone ci.timezone), false) as abierto,
@@ -122,7 +169,11 @@ export async function enviarCliente(userId: string, negocio: string, texto: unkn
   // 9n-7 · Con «Si no contestas en N min» o «Siempre, al instante» El Compa también contesta con el negocio abierto: el servidor decide el CUÁNDO.
   const compa = await (await import("./compa/respuesta-auto")).compaCuando(b.id, previo.rows[0]?.id ?? null, userId).catch(() => null);
   const yo = (await db().query<{ nombre: string; lang: string }>(`select coalesce(nullif(trim(coalesce(first_name, '') || ' ' || left(coalesce(last_name, ''), 1)), ''), 'Un cliente') as nombre, coalesce(lang, 'es') as lang from users where id = $1`, [userId])).rows[0];
+  // 9t · El idioma del texto (para «Ver traducción»), ANTES de abrir la transacción: enviar nunca espera al traductor con la base tomada.
+  const lang = L.t ? idiomaTexto(await detectarIdioma(L.t), yo?.lang) : null;
   const r = await tx(async (c) => {
+    const fo = f ? await tomarFoto(c, f, userId) : null; // 9t · antes de crear la conversación: sin la foto, el envío no sale
+    if (f && !fo) return FOTO_NO;
     let t = (await c.query<{ id: string; blocked: boolean; biz_unread: number; auto_reciente: boolean }>(
       `select id::text, blocked_at is not null as blocked, biz_unread,
               exists (select 1 from chat_messages m where m.thread_id = chat_threads.id and m.sender = 'auto' and not m.compa and m.created_at > now() - interval '12 hours') as auto_reciente
@@ -136,23 +187,25 @@ export async function enviarCliente(userId: string, negocio: string, texto: unkn
         [userId, b.id, b.city, ctx?.op ?? null, JSON.stringify(ctx?.ctx ?? { es: "Consulta general", en: "General question" })])).rows[0]!;
     }
     if (t.blocked) return no("Este negocio no recibe mensajes tuyos.", "This business does not take messages from you.");
-    const m = (await c.query<{ id: string }>(`insert into chat_messages (thread_id, sender, sender_user_id, body) values ($1, 'user', $2, $3) returning id::text`, [t.id, userId, L.t])).rows[0]!;
+    const m = (await c.query<{ id: string }>(`insert into chat_messages (thread_id, sender, sender_user_id, body, media_id, lang) values ($1, 'user', $2, $3, $4::uuid, $5) returning id::text`,
+      [t.id, userId, L.t, fo?.id ?? null, lang])).rows[0]!;
+    if (fo) await ponerFoto(c, fo, m.id, userId, b.city);
     await c.query(`update chat_threads set last_at = now(), last_from = 'user', last_text = $2, biz_unread = biz_unread + 1,
-                          operation_id = coalesce($3, operation_id), context = coalesce($4::jsonb, context) where id = $1`, [t.id, corto(L.t), ctx?.op ?? null, ctx ? JSON.stringify(ctx.ctx) : null]);
+                          operation_id = coalesce($3, operation_id), context = coalesce($4::jsonb, context) where id = $1`, [t.id, corto(L.t || FOTO_TXT), ctx?.op ?? null, ctx ? JSON.stringify(ctx.ctx) : null]);
     let auto = false;
     // 7f · El Compa contesta aparte (sin que nadie espere): se marca el hilo y NO sale la fija. Si no, la respuesta fija de siempre.
     if (compa === "ahora") await c.query(`update chat_threads set compa_pending_until = coalesce(compa_pending_until, now()) where id = $1`, [t.id]);
     // 9n-7 · «Si no contestas en N min»: la espera empieza con el primer mensaje sin contestar (los que siguen no la alargan).
     else if (compa === "espera") await c.query(`update chat_threads set compa_wait_until = coalesce(compa_wait_until, now() + make_interval(mins => cfg_int('compa_auto_espera_min'))) where id = $1`, [t.id]);
     else if (b.auto && !b.abierto && !t.auto_reciente) { await ponerRespuestaFija(c, t.id, b.name, yo?.lang === "en" ? "en" : "es"); auto = true; }
-    return { ok: true as const, id: t.id, avisar: t.biz_unread === 0, auto, m: m.id };
+    return { ok: true as const, id: t.id, avisar: t.biz_unread === 0, auto, m: m.id, revision: fo?.status === "review" };
   });
   if (!r.ok) return r;
   if ("avisar" in r && r.avisar) {
     await db().query(`update chat_threads set biz_notified_at = now() where id = $1`, [r.id]);
-    await avisarEquipo(b.id, { cliente: yo?.nombre ?? "Un cliente", texto: corto(L.t).slice(0, 80) }, r.id!).catch(() => undefined);
+    await avisarEquipo(b.id, { cliente: yo?.nombre ?? "Un cliente", texto: corto(L.t || FOTO_TXT).slice(0, 80) }, r.id!).catch(() => undefined);
   }
-  return { ok: true, id: r.id, compa: compa === "ahora", tapado: L.tapado };   // 9n-7 · «espera» no corre el turno ya: lo hace el barrido al vencer
+  return { ok: true, id: r.id, compa: compa === "ahora", tapado: L.tapado, revision: "revision" in r && !!r.revision };   // 9n-7 · «espera» no corre el turno ya: lo hace el barrido al vencer
 }
 /* La respuesta fija fuera de horario (2p), tal cual: la usa enviarCliente y, si El Compa no pudo contestar al final (se apagó o llegó al tope
    entre el mensaje y su respuesta), lib/compa también, para que el cliente reciba exactamente lo de siempre. */
@@ -190,7 +243,7 @@ export async function hilosNegocio(negocio: string, filtro: "todas" | "sin" = "t
   return { hilos: L.rows.slice(0, 40).map(({ cur: _c, ...h }) => { void _c; return h; }), mas, sinLeer: k.rows[0]?.n ?? 0, auto: !!k.rows[0]?.auto };
 }
 export type ConvNeg = { id: string; quien: string; ctx: Bi | null; msjs: Msj[]; lleva: string | null; llevaId: string | null; bloqueado: boolean; telCompartido: boolean; equipo: { id: string; nombre: string }[] };
-export async function conversacionNegocio(negocio: string, threadId: string): Promise<ConvNeg | null> {
+export async function conversacionNegocio(negocio: string, threadId: string, yo?: string | null): Promise<ConvNeg | null> {
   const t = (await db().query<{ id: string; quien: string; ctx: Bi | null; unread: number; lleva: string | null; llevaId: string | null; bloqueado: boolean; tel: boolean }>(
     `select t.id::text, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Cliente') as quien, t.context as ctx, t.biz_unread as unread,
             t.assigned_user_id::text as "llevaId", (select coalesce(nullif(trim(coalesce(a.first_name, '')), ''), 'Equipo') from users a where a.id = t.assigned_user_id) as lleva,
@@ -198,44 +251,53 @@ export async function conversacionNegocio(negocio: string, threadId: string): Pr
        from chat_threads t join users u on u.id = t.user_id where t.id = $1 and t.business_id = $2`, [Number(threadId) || 0, negocio])).rows[0];
   if (!t) return null;
   const [M, E] = await Promise.all([
-    db().query<Msj>(MSJS(""), [t.id]),
+    db().query<FilaMsj>(MSJS(""), [t.id]),
     db().query<{ id: string; nombre: string }>(
       `select m.user_id::text as id, coalesce(nullif(trim(coalesce(u.first_name, '')), ''), m.display_name, 'Equipo') as nombre from business_members m join users u on u.id = m.user_id
         where m.business_id = $1 and m.status = 'active' and m.user_id is not null and (m.kind = 'owner' or 'all' = any(m.panel_access) or 'msg' = any(m.panel_access)) order by (m.kind = 'owner') desc, m.id`, [negocio]),
   ]);
   // 9n-23 · En la vista del equipo (solo lectura) abrir la conversación no la marca leída: sigue «sin leer» para el dueño.
   if (t.unread && !soloLectura()) await db().query(`update chat_threads set biz_unread = 0, biz_read_at = now() where id = $1`, [t.id]);
-  return { id: t.id, quien: t.quien, ctx: t.ctx, msjs: M.rows.reverse(), lleva: t.lleva, llevaId: t.llevaId, bloqueado: t.bloqueado, telCompartido: t.tel, equipo: E.rows };
+  return { id: t.id, quien: t.quien, ctx: t.ctx, msjs: conFoto(M.rows.reverse(), yo ?? null), lleva: t.lleva, llevaId: t.llevaId, bloqueado: t.bloqueado, telCompartido: t.tel, equipo: E.rows };
 }
-export async function nuevosNegocio(negocio: string, threadId: string, desde: string): Promise<Msj[]> {
+export async function nuevosNegocio(negocio: string, threadId: string, desde: string, yo?: string | null): Promise<Msj[]> {
   const t = (await db().query<{ id: string }>(`select id::text from chat_threads where id = $1 and business_id = $2`, [Number(threadId) || 0, negocio])).rows[0];
   if (!t) return [];
-  const L = (await db().query<Msj>(MSJS("and m.id > $2"), [t.id, Number(desde) || 0])).rows.reverse();
+  const L = conFoto((await db().query<FilaMsj>(MSJS("and m.id > $2"), [t.id, Number(desde) || 0])).rows.reverse(), yo ?? null);
   if (L.length) await db().query(`update chat_threads set biz_unread = 0, biz_read_at = now() where id = $1`, [t.id]);
   return L;
 }
 
 /* El negocio contesta (quien tenga Mensajes en el panel). */
-export async function enviarNegocio(negocio: string, nombreNegocio: string, userId: string, threadId: string, texto: unknown): Promise<ResM> {
+export async function enviarNegocio(negocio: string, nombreNegocio: string, userId: string, threadId: string, texto: unknown, foto?: unknown): Promise<ResM> {
   if (conTelefono(tapar(String(texto ?? "")).texto)) return no("Sin teléfonos en el texto: usa «Compartir mi teléfono».", "No phone numbers in the text: use “Share my phone”.");
-  const L = limpiar(texto);
+  const f = fotoId(foto);
+  const L = limpiar(texto, !!f);
   if (!L.ok) return L.r;
   const r10 = (await db().query<{ n: number }>(`select count(*)::int as n from chat_messages m join chat_threads t on t.id = m.thread_id where t.business_id = $1 and m.sender = 'business' and m.created_at > now() - interval '10 minutes'`, [negocio])).rows[0]?.n ?? 0;
   if (r10 >= 120) return no("Demasiados mensajes seguidos. Espera unos minutos.", "Too many messages in a row. Wait a few minutes.");
+  // 9t · El idioma del texto (para «Ver traducción»), ANTES de abrir la transacción; si no se sabe, el de la app de quien contesta.
+  const app = L.t ? (await db().query<{ lang: string | null }>(`select lang from users where id = $1`, [userId])).rows[0]?.lang : null;
+  const lang = L.t ? idiomaTexto(await detectarIdioma(L.t), app) : null;
   const r = await tx(async (c) => {
-    const t = (await c.query<{ id: string; user: string; unread: number }>(`select id::text, user_id::text as user, user_unread as unread from chat_threads where id = $1 and business_id = $2 for update`, [Number(threadId) || 0, negocio])).rows[0];
+    const t = (await c.query<{ id: string; user: string; unread: number; city: string | null }>(`select id::text, user_id::text as user, user_unread as unread, city_id as city from chat_threads where id = $1 and business_id = $2 for update`, [Number(threadId) || 0, negocio])).rows[0];
     if (!t) return null;
-    await c.query(`insert into chat_messages (thread_id, sender, sender_user_id, body) values ($1, 'business', $2, $3)`, [t.id, userId, L.t]);
+    const fo = f ? await tomarFoto(c, f, userId) : null;
+    if (f && !fo) return "foto" as const;
+    const m = (await c.query<{ id: string }>(`insert into chat_messages (thread_id, sender, sender_user_id, body, media_id, lang) values ($1, 'business', $2, $3, $4::uuid, $5) returning id::text`,
+      [t.id, userId, L.t, fo?.id ?? null, lang])).rows[0]!;
+    if (fo) await ponerFoto(c, fo, m.id, userId, t.city);
     await c.query(`update chat_threads set last_at = now(), last_from = 'business', last_text = $2, user_unread = user_unread + 1, biz_unread = 0, biz_read_at = now(),
-                          assigned_user_id = coalesce(assigned_user_id, $3) where id = $1`, [t.id, corto(L.t), userId]);
-    return t;
+                          assigned_user_id = coalesce(assigned_user_id, $3) where id = $1`, [t.id, corto(L.t || FOTO_TXT), userId]);
+    return { ...t, revision: fo?.status === "review" };
   });
+  if (r === "foto") return FOTO_NO;
   if (!r) return no("No encontramos esa conversación.", "We could not find that conversation.");
   if (r.unread === 0) {
     const { avisar } = await import("./avisos");
-    await avisar(r.user, "msg_user", { negocio: nombreNegocio, texto: corto(L.t).slice(0, 80) }, { href: `/cuenta/mensajes/${negocio}`, ref: ["chat", r.id] }).catch(() => undefined);
+    await avisar(r.user, "msg_user", { negocio: nombreNegocio, texto: corto(L.t || FOTO_TXT).slice(0, 80) }, { href: `/cuenta/mensajes/${negocio}`, ref: ["chat", r.id] }).catch(() => undefined);
   }
-  return { ok: true, id: r.id, tapado: L.tapado };
+  return { ok: true, id: r.id, tapado: L.tapado, revision: r.revision };
 }
 /* Compartir el teléfono de la página (mensaje del sistema; una vez). */
 export async function compartirTelefono(negocio: string, userId: string, threadId: string): Promise<ResM> {

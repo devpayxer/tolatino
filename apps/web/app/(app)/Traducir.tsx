@@ -19,10 +19,15 @@ export type Tr = (kind: KindTr, id: string, lang: string | null | undefined, bod
 const BOTON: CSSProperties = { font: "inherit", color: "inherit", background: "none", border: 0, padding: 0, margin: 0, cursor: "pointer" };
 const TENUE: CSSProperties = { fontWeight: 600, color: "rgba(11,14,18,.6)" };
 
+export type EstTr = Est;
 export function useTraducir(es: boolean): Tr {
   const [m, setM] = useState<Record<string, Est>>({});
+  return traducirCon(es, m, (k, e) => setM((x) => ({ ...x, [k]: e })));
+}
+/* 9t · Lo mismo sin hook, con el estado donde lo guarde la pantalla (el panel del negocio lo guarda en su `ui`: sus secciones no son
+   componentes y no pueden llamar a useTraducir). Mismas reglas, mismos textos, la misma acción. */
+export function traducirCon(es: boolean, m: Record<string, Est>, pon: (k: string, e: Est) => void): Tr {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
-  const pon = (k: string, e: Est) => setM((x) => ({ ...x, [k]: e }));
   const pedir = async (k: string, kind: KindTr, id: string) => {
     pon(k, { st: "cargando" });
     const r = await verTraduccion(kind, id).catch(() => null);

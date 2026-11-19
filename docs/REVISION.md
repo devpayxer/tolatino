@@ -5652,3 +5652,31 @@ puesto) y no cambia ni un pixel junto a los controles.
   de una fila que se envuelve se quedan con la mitad del hueco también del lado donde no tienen a nadie (el tope es del grupo): un poco menos de 44.
 - **Carruseles con scroll sin relleno** (las pestañas, los módulos): el área no puede salirse del carrusel (agrandaría lo que se desplaza), así que
   ahí queda recortada.
+
+## Fase 9 · 9t — Mensajes: fotos en el chat y «Ver traducción» (19 nov) — mirar
+**Qué cambió:** en la conversación con un negocio (Mi cuenta › Mensajes) hay un botón de foto al lado de donde escribes (el mismo del chat de
+Soporte); en el panel (Mensajes › una conversación) «Agregar una foto». La foto sale dentro de la burbuja (180 × 140; tocarla la abre aparte). Bajo
+un mensaje del otro lado que está en otro idioma sale «Ver traducción» (lo mismo que en la Comunidad).
+
+**Qué mirar (teléfono y computadora):**
+- Mandar una foto con texto y otra sola. Con el servicio de imágenes caído (o si la marca), tú la ves con «EN REVISIÓN» y el negocio ve «Foto en
+  revisión» hasta que Colas › Medios la apruebe; al aprobarla aparece sola en el panel abierto.
+- En Colas › Medios, el caso «Foto de Mensajes · {negocio}» (nota: «la ves solo por este caso y queda en la auditoría»); «Quitar foto» → en la
+  conversación «Foto quitada por To’Latino».
+- En una conversación reportada (Colas › Mensajes reportados), los mensajes con foto la muestran como miniatura.
+- «Ver traducción» con el negocio escribiendo en inglés (y al revés, en el panel).
+
+**Decisiones tomadas por defecto (AB, reversibles):**
+- **Una foto por mensaje**, hasta **12 MB**, **30 por hora** por persona, reducida a 1600 px en JPEG sin metadatos (como Soporte y la Comunidad).
+- **Se revisa al subir, no al enviar:** el modelo tiene hasta 3 s mientras la persona escribe; enviar no espera. Si el modelo está apagado (regla
+  `img` en Auto-moderación) la foto se ve al instante, igual que en la Comunidad.
+- **En revisión la ve quien la mandó** (con «EN REVISIÓN») y la otra parte ve «Foto en revisión» sin la foto; el texto del mensaje sí llega.
+- **El equipo ve la foto solo con caso abierto** (la foto en Medios o la conversación reportada) y en su ciudad; **cada vista queda en la
+  auditoría** («mensajes.foto.ver»). Desde el caso de Medios **no** se lee el resto de la conversación.
+- **Quitar una foto de Mensajes no abre apelación** (como ocultar un mensaje de Mensajes hoy): llega el motivo (mod_hide). Si quieres apelación
+  también aquí, es sumar «media» de chat a lib/apelaciones.ts.
+- **La vista de solo lectura del panel (Negocio 360° › Panel del dueño) no ve las fotos** de Mensajes: sale «Foto». Es privado entre las partes.
+- **«Ver traducción» solo para las dos partes** y solo en lo del otro lado; los mensajes de antes de 9t no traen el botón (no se sabe su idioma);
+  las respuestas automáticas y los avisos del sistema tampoco (ya salen en el idioma de quien los recibe).
+- **El Compa no ve fotos:** un mensaje que es solo la foto le llega como «[foto]».
+- **No se hizo** en los mensajes entre vecinos (Comunidad): queda en LAUNCH «Mensajes · lo que quedó de 9t».

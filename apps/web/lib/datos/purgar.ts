@@ -120,7 +120,8 @@ export async function purgarCuenta(cuenta: string): Promise<ResPurga> {
         where (t.target_kind = 'com_post' and t.target_id in (select p.id from com_posts p where p.author_user_id = $1::uuid))
            or (t.target_kind = 'com_comment' and t.target_id in (select x.id from com_comments x where x.author_user_id = $1::uuid))
            or (t.target_kind in ('review', 'review_reply') and t.target_id in (select r.id from reviews r where r.user_id = $1::uuid))
-           or (t.target_kind = 'post_comment' and t.target_id in (select x.id from post_comments x where x.user_id = $1::uuid))`, [cuenta]);
+           or (t.target_kind = 'post_comment' and t.target_id in (select x.id from post_comments x where x.user_id = $1::uuid))
+           or (t.target_kind = 'chat_message' and t.target_id in (select x.id from chat_messages x where x.sender_user_id = $1::uuid))`, [cuenta]); /* 9t · Mensajes */
     items.push({ tabla: "ugc_translations", columna: "target_id", accion: "borrar", filas: tr.rowCount ?? 0 });
     // Las fotos de sus publicaciones y de su perfil (las que subió van por el mapa).
     const fx = await c.query(

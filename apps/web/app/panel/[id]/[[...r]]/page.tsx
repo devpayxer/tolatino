@@ -183,7 +183,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (ruta.det?.startsWith("msg:") && !vMsg) ruta.det = null;
   const msj: MsjPanel = {
     lista: ruta.sec === "msg" && vMsg ? await hilosNegocio(d.id, "todas", typeof sp.antes === "string" ? sp.antes : null) : undefined,
-    det: ruta.det?.startsWith("msg:") ? await conversacionNegocio(d.id, ruta.det.slice(4)) : undefined,
+    det: ruta.det?.startsWith("msg:") ? await conversacionNegocio(d.id, ruta.det.slice(4), acc.yo.id) : undefined,
     hoy: ruta.sec === "hoy" && vMsg ? (await hilosNegocio(d.id, "sin")).hilos.slice(0, 5) : undefined,
     n: vMsg ? (await db().query<{ n: number }>(`select count(*)::int as n from chat_threads where business_id = $1 and biz_unread > 0`, [d.id])).rows[0]?.n ?? 0 : 0,
     compa: ruta.sec === "msg" && RA ? await RA.estadoAutoMensajes(d.id).catch(() => null) : null,

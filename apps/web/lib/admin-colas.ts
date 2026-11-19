@@ -149,6 +149,8 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "evtpago" ? { title: `Pago de evento retenido · ${b}`, sub: "Primer evento grande de un organizador nuevo · revisa antes de pagar" }
       : x.queue === "evt" ? { title: `Evento · ${(x.evt ?? "|").split("|").slice(1).join("|")}`, sub: `${b}${(x.evt ?? "").startsWith("cambio") ? " · cambio que importa · sigue en vivo la versión anterior" : " · nuevo · nada se publica antes"}` }
       : x.queue === "medios" && x.mkind === "com_post" ? { title: "Foto de la Comunidad", sub: x.cflag ? x.cflag.split("|").slice(1).join("|") : "Espera revisión" }
+      // 9t · La foto de un mensaje (cliente ↔ negocio) que el modelo marcó o no pudo revisar: la otra parte no la ve hasta decidir.
+      : x.queue === "medios" && x.mkind === "chat" ? { title: `Foto de Mensajes${b ? ` · ${b}` : ""}`, sub: x.cflag ? x.cflag.split("|").slice(1).join("|") : "Espera revisión" }
       : x.queue === "rep" ? { title: `Reseña reportada · ${b}`, sub: `${x.rpbiz ? "El negocio pidió revisarla" : MOTIVO_RESENA[x.rpreason ?? "otro"] ?? "Otro motivo"}${x.rpn > 1 ? ` · ${x.rpn} reportes` : ""}` }
       : x.queue === "medios" && x.subject_kind === "business_video" ? { title: `Video de presentación · ${b}`, sub: `Subió su video de presentación${x.vseg ? ` (${Math.round(x.vseg)} s)` : ""}.` }
       : x.queue === "medios" ? { title: `Foto marcada · ${b}`, sub: `${MOTIVO_FOTO[x.mreason ?? "otro"] ?? "Otro motivo"}${x.mnote ? ` · «${x.mnote}»` : ""}${x.nrep > 1 ? ` · ${x.nrep} reportes` : ""}` }
@@ -156,6 +158,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
     return {
       id: x.id, queue: x.queue, ...t, priority: x.priority,
       who: x.subject_kind === "dm_thread" || x.subject_kind === "com_post" || x.subject_kind === "com_comment" || x.subject_kind === "appeal" || (x.queue === "medios" && x.mkind === "com_post") ? { name: "Comunidad", initials: "C" }
+        : x.queue === "medios" && x.mkind === "chat" && !b ? { name: "Mensajes", initials: "M" }
         : x.subject_kind === "user" ? { name: x.uname ?? "Vecino", initials: (x.uname ?? "V").slice(0, 1) } : x.queue === "rec" ? { name: x.rname ?? "", initials: (x.rname ?? "?").slice(0, 1) } : x.subject_kind === "sensitive_change" ? { name: x.sname ?? "", initials: (x.sname ?? "?").slice(0, 1) } : { name: b, image: x.cover ?? undefined, initials: b.slice(0, 1) },
       assignee: x.assignee, mine: x.assigned_to === s.id, esp: e, ...(x.queue === "ticket" && x.tk ? { tk: x.tk.split("|")[0] } : {}),
     };
@@ -260,6 +263,18 @@ export async function caso(s: Staff, id: string) {
   }
   // 5d · Comunidad: la foto que el modelo marcó o no pudo revisar (no se ve hasta decidir), la publicación o el comentario reportado o
   // marcado, la persona reportada y la apelación (lo apelado solo con la apelación abierta; un mensaje de vecino, solo ese mensaje).
+  // 9t · La foto de un mensaje (privada): se ve por /api/mensajes/foto/{id}, que la deja pasar con este caso abierto y lo anota en la auditoría.
+  // Solo la foto y su conversación por nombre: el hilo no se lee desde aquí (eso es con un reporte, cola «chat»).
+  if (q.queue === "medios" && q.subject_kind === "media") {
+    const fc = (await db().query<{ status: string; de: string; negocio: string | null; vecino: string | null; texto: boolean }>(
+      `select x.status, m.sender as de, b.name as negocio, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as vecino, m.body <> '' as texto
+         from media x join chat_messages m on m.media_id = x.id join chat_threads t on t.id = m.thread_id join businesses b on b.id = t.business_id join users u on u.id = t.user_id
+        where x.id::text = $1 and x.owner_kind = 'chat'`, [q.subject_id])).rows[0];
+    if (fc) {
+      const marcas = (await db().query<{ regla: string; detalle: string; at: string }>(`select rule_key as regla, detail as detalle, created_at as at from mod_flags where target_kind = 'media' and target_id = $1 order by id desc limit 5`, [q.subject_id])).rows;
+      return { ...base, negocio, fotoChat: { url: `/api/mensajes/foto/${q.subject_id}`, status: fc.status, de: fc.de, negocioN: fc.negocio, vecino: fc.vecino, texto: fc.texto, marcas } };
+    }
+  }
   if (q.queue === "medios" && !q.business_id) {
     const f = (await db().query<{ url: string; status: string; post: string | null }>(`select m.url, m.status, case when m.owner_kind = 'com_post' then m.owner_id end as post from media m where m.id::text = $1`, [q.subject_id])).rows[0];
     const marcas = (await db().query<{ regla: string; detalle: string; at: string }>(`select rule_key as regla, detail as detalle, created_at as at from mod_flags where target_kind = 'media' and target_id = $1 order by id desc limit 5`, [q.subject_id])).rows;
@@ -382,10 +397,12 @@ export async function caso(s: Staff, id: string) {
       `select coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as vecino, u.id::text as vecino_id, t.context as ctx, t.blocked_at is not null as bloqueado,
               t.compa_off_reason as compa_off
          from chat_threads t join users u on u.id = t.user_id where t.id = $1::bigint`, [q.subject_id])).rows[0];
-    const msjs = q.status === "open" && t ? (await db().query<{ id: string; de: string; t: string; at: string; oculto: boolean; quien: string | null; compa: boolean }>(
+    // 9t · Con su foto: la dirección privada (/api/mensajes/foto/{id} la deja pasar con este caso y el reporte abiertos, y lo audita) y su estado.
+    const msjs = q.status === "open" && t ? (await db().query<{ id: string; de: string; t: string; at: string; oculto: boolean; quien: string | null; compa: boolean; foto: string | null; fst: string | null }>(
       `select m.id::text, m.sender as de, m.body as t, m.created_at as at, m.hidden_at is not null as oculto, m.compa,
-              (select coalesce(nullif(trim(coalesce(x.first_name, '')), ''), 'Equipo') from users x where x.id = m.sender_user_id and m.sender = 'business') as quien
-         from chat_messages m where m.thread_id = $1::bigint order by m.id desc limit 60`, [q.subject_id])).rows.reverse() : [];
+              (select coalesce(nullif(trim(coalesce(x.first_name, '')), ''), 'Equipo') from users x where x.id = m.sender_user_id and m.sender = 'business') as quien,
+              case when f.status in ('visible', 'review') and f.purged_at is null then '/api/mensajes/foto/' || f.id::text end as foto, f.status as fst
+         from chat_messages m left join media f on f.id = m.media_id where m.thread_id = $1::bigint order by m.id desc limit 60`, [q.subject_id])).rows.reverse() : [];
     const reps = (await db().query<{ reason: string; note: string | null; at: string; by_business: boolean; quien: string | null }>(
       `select cr.reason, cr.note, cr.created_at as at, cr.by_business, nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), '') as quien
          from content_reports cr join users u on u.id = cr.reporter_user_id where cr.target_kind = 'chat' and cr.target_id = $1 and cr.status = 'open' order by cr.created_at`, [q.subject_id])).rows;

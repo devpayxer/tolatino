@@ -47,6 +47,7 @@ export function tituloComunidad(k: Caso, E: EF = ES): string | null {
   if (k.queue === "repUsr" && "persona" in k) return E(`Vecino reportado · ${k.persona?.quien ?? ""}`, `Reported neighbor · ${k.persona?.quien ?? ""}`);
   if (k.queue === "apel" && "apel" in k) return k.apel ? E(`Apelación ${k.apel.numero} · ${APELABLE[k.apel.k].es}`, `Appeal ${k.apel.numero} · ${APELABLE[k.apel.k].en}`) : E("Apelación", "Appeal");
   if (k.queue === "medios" && "fotoCom" in k) return E("Foto de la Comunidad", "Community photo");
+  if (k.queue === "medios" && "fotoChat" in k) return E(`Foto de Mensajes · ${k.fotoChat.negocioN ?? ""}`, `Messages photo · ${k.fotoChat.negocioN ?? ""}`);
   return null;
 }
 
@@ -103,6 +104,20 @@ export function cuerpoComunidad(k: Caso, x: Ctx): { bloques: Bloque[]; acts: Acc
       ...(a.contenido.href ? [{ l: E("Ver dónde estaba", "See where it was"), icon: "search", onClick: () => x.abrir(a.contenido.href!) }] : []),
       { l: E("Levantar", "Lift"), v: "action", icon: "check", onClick: () => x.setConf({ titulo: E("¿Por qué se levanta?", "Why is it lifted?"), sub: a.k === "sanction" ? E("La sanción termina y la cuenta vuelve a la normalidad. La persona recibe el motivo.", "The sanction ends and the account goes back to normal. The person gets the reason.") : E("El contenido vuelve a verse y los casos abiertos se cierran. La persona recibe el motivo.", "The content is shown again and open cases are closed. The person gets the reason."), cta: E("Levantar", "Lift"), plantillas: P.levantar, hacer: (m) => decidirApel(k.id, "lifted", m) }) },
       { l: E("Mantener", "Uphold"), v: "danger", icon: "close", onClick: () => x.setConf({ titulo: E("¿Por qué se mantiene?", "Why is it upheld?"), sub: E("Esta revisión es final. La persona recibe el motivo.", "This review is final. The person gets the reason."), peligro: true, cta: E("Mantener", "Uphold"), plantillas: P.mantener, hacer: (m) => decidirApel(k.id, "upheld", m) }) },
+    ] };
+  }
+  // 9t · La foto de un mensaje (privada): la ves porque este caso está abierto (queda en la auditoría). La otra parte no la ve hasta decidir.
+  if (k.queue === "medios" && "fotoChat" in k) {
+    const f = k.fotoChat;
+    B.push({ type: "kv", cols: 2, items: [{ k: E("QUIÉN LA MANDÓ", "SENT BY"), v: f.de === "business" ? (f.negocioN ?? E("El negocio", "The business")) : f.vecino ?? E("El vecino", "The neighbor") },
+      { k: E("CONVERSACIÓN", "CONVERSATION"), v: `${f.vecino ?? ""} · ${f.negocioN ?? ""}` }] });
+    B.push({ type: "photos", k: f.status === "review" ? E("NO SE VE HASTA QUE DECIDAS", "HIDDEN UNTIL YOU DECIDE") : E("VISIBLE", "VISIBLE"), cols: 2, items: [{ bg: `url(${f.url})`, key: "f", onClick: () => x.abrir(f.url) }] });
+    for (const m of f.marcas) B.push({ type: "note", tone: "warn", icon: "image", t: `${REGLA[m.regla] ?? m.regla} · ${m.detalle}` });
+    B.push({ type: "note", tone: "info", icon: "lock", t: E("Es una foto privada entre dos personas: la ves solo por este caso y cada vez queda en la auditoría. El texto de la conversación no se lee desde aquí.", "It's a private photo between two people: you see it only through this case and every view is logged. The conversation text isn't readable from here.") });
+    B.push({ type: "note", tone: "info", t: E("El modelo propio (NudeNet) solo mide desnudez. Violencia, texto promocional y fotos de otras personas los decides tú.", "Our own model (NudeNet) only checks for nudity. You decide on violence, promotional text and photos of other people.") });
+    return { bloques: B, acts: [
+      { l: E("Está bien", "It's fine"), v: "action", icon: "check", onClick: () => x.run(() => decidirFotoCom(k.id, "mantener", ""), x.fuera) },
+      { l: E("Quitar foto", "Remove photo"), v: "danger", icon: "trash", onClick: () => x.setConf({ titulo: E("¿Por qué se quita?", "Why is it removed?"), sub: E("Quien la mandó recibe el motivo. En la conversación sale «Foto quitada por To’Latino».", "The sender gets the reason. The conversation shows “Photo removed by To’Latino”."), peligro: true, plantillas: P.foto, hacer: (m) => decidirFotoCom(k.id, "quitar", m) }) },
     ] };
   }
   if (k.queue === "medios" && "fotoCom" in k) {

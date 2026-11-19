@@ -62,7 +62,9 @@ export type Bloque =
      future = lo que falta (hueco). */
   | { type: "timeline"; k?: string; items: { t: string; s?: string; now?: boolean; future?: boolean }[] }
   /* Panel v2 · bl('thread'): la reseña (o el mensaje) a la izquierda y la respuesta del negocio a la derecha. */
-  | { type: "thread"; items: { t: string; mine?: boolean; m?: string; soft?: boolean }[] }
+  /* 9t · Mensajes: img = la foto del mensaje (180 × 140, se abre aparte, como la del chat de Soporte); imgL = lo que dice en su lugar si no se
+     puede ver («Foto en revisión»); tr = la línea «Ver traducción» (la misma de la Comunidad) bajo la burbuja. */
+  | { type: "thread"; items: { t: string; mine?: boolean; m?: string; soft?: boolean; img?: string | null; imgL?: string; imgAlt?: string; tr?: ReactNode; key?: string }[] }
   /* Panel v2 · novPrev: «Así se ve» una novedad, con la PostCard del sistema. */
   | { type: "nprev"; k?: string; name: string; logo?: string; tags: { label: string; tone: string }[]; body: string; photos: string[]; foot?: string }
   /* Plantilla del Panel v2 (isUtabs, isSearch, isBulk, isMprev): pestañas con ícono y cuenta, buscador con enlace,
@@ -125,8 +127,13 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
     case "thread": return (
       <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 14, borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)" }}>
         {b.items.map((m, i) => (
-          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: m.mine ? "flex-end" : "flex-start", gap: 3 }}>
-            <span style={{ maxWidth: "82%", padding: "10px 13px", borderRadius: m.mine ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: m.soft ? "rgba(75,55,245,.07)" : m.mine ? "var(--tl-ink)" : "var(--tl-paper)", color: m.soft ? "rgba(11,14,18,.62)" : m.mine ? "var(--tl-white)" : "var(--tl-ink)", font: "600 13px/1.45 Manrope,sans-serif", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{m.t}</span>
+          <div key={m.key ?? i} data-msg-foto={m.img || m.imgL ? (m.img ? "si" : "espera") : undefined} style={{ display: "flex", flexDirection: "column", alignItems: m.mine ? "flex-end" : "flex-start", gap: 3 }}>
+            <span style={{ maxWidth: "82%", padding: "10px 13px", borderRadius: m.mine ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: m.soft ? "rgba(75,55,245,.07)" : m.mine ? "var(--tl-ink)" : "var(--tl-paper)", color: m.soft ? "rgba(11,14,18,.62)" : m.mine ? "var(--tl-white)" : "var(--tl-ink)", font: "600 13px/1.45 Manrope,sans-serif", whiteSpace: "pre-wrap", overflowWrap: "anywhere", display: "flex", flexDirection: "column", gap: m.img || m.imgL ? 8 : 0 }}>
+              {m.img ? <a href={m.img} target="_blank" rel="noopener noreferrer" aria-label={m.imgAlt} data-toque="" style={{ display: "block", width: 180, height: 140, maxWidth: "100%", borderRadius: 10, background: `url("${m.img}") center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />
+                : m.imgL ? <span role="img" aria-label={m.imgL} style={{ width: 180, height: 140, maxWidth: "100%", borderRadius: 10, background: "var(--tl-photo-bg)", display: "grid", placeItems: "center", alignContent: "center", gap: 6, padding: 10, boxSizing: "border-box", textAlign: "center", color: "rgba(11,14,18,.6)", font: "600 12px/1.35 Manrope,sans-serif" }}><Icon name="image" size={20} color="rgba(11,14,18,.6)" />{m.imgL}</span> : null}
+              {m.t ? <span>{m.t}</span> : null}
+            </span>
+            {m.tr ?? null}
             {m.m ? <span style={{ font: "600 8.5px 'JetBrains Mono',monospace", letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{m.m}</span> : null}
           </div>
         ))}

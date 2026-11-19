@@ -23,15 +23,17 @@ async function auditar(c: PoolClient, a: Acceso, action: string, after: unknown)
     [a.yo.id, action, a.negocio.id, a.negocio.city_id, JSON.stringify(after ?? null)]);
 }
 
-export async function mensajeResponder(id: string, hilo: string, texto: string): Promise<Res> {
+// 9t · foto: el id que devolvió /api/mensajes/foto (la subió esta persona del equipo); el servidor la ata al mensaje o no sale nada.
+export async function mensajeResponder(id: string, hilo: string, texto: string, foto?: string | null): Promise<Res> {
   const a = await entrar(id);
   if (!a) return SIN_ACCESO;
-  return res(await enviarNegocio(a.negocio.id, a.negocio.name, a.yo.id, String(hilo ?? ""), texto));
+  const r = await enviarNegocio(a.negocio.id, a.negocio.name, a.yo.id, String(hilo ?? ""), texto, foto ?? null);
+  return r.ok ? { ok: true, revision: !!r.revision } as Res : res(r);
 }
 export async function mensajesNuevosNeg(id: string, hilo: string, desde: string): Promise<Msj[]> {
   const a = await entrar(id);
   if (!a) return [];
-  return nuevosNegocio(a.negocio.id, String(hilo ?? ""), String(desde ?? "0"));
+  return nuevosNegocio(a.negocio.id, String(hilo ?? ""), String(desde ?? "0"), a.yo.id);
 }
 export async function mensajeTelefono(id: string, hilo: string): Promise<Res> {
   const a = await entrar(id);

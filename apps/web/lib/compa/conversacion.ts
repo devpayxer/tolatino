@@ -722,8 +722,9 @@ async function comoAntes(t: HiloAuto, porque: string): Promise<string> {
 
 async function unaRespuestaAuto(t: HiloAuto): Promise<string> {
   // Lo que el cliente escribió y nadie contestó todavía (lo del negocio o una respuesta automática cierra la tanda).
-  const M = (await db().query<{ id: string; sender: string; body: string; compa: boolean }>(
-    `select x.id::text as id, x.sender, x.body, x.compa from (select * from chat_messages where thread_id = $1 and hidden_at is null order by id desc limit 10) x order by x.id`, [t.id])).rows;
+  // 9t · Un mensaje que es solo la foto llega como «[foto]»: El Compa no ve fotos (y un texto vacío no se le manda al modelo).
+  const M =(await db().query<{ id: string; sender: string; body: string; compa: boolean }>(
+    `select x.id::text as id, x.sender, case when x.body = '' and x.media_id is not null then '[foto]' else x.body end as body, x.compa from (select * from chat_messages where thread_id = $1 and hidden_at is null order by id desc limit 10) x order by x.id`, [t.id])).rows;
   const iUlt = M.map((m) => m.sender !== "user").lastIndexOf(true), pendientes = M.slice(iUlt + 1).filter((m) => m.sender === "user");
   if (!pendientes.length) { await db().query(`update chat_threads set compa_pending_until = null where id = $1`, [t.id]); return "nada"; }
   const hasta = pendientes[pendientes.length - 1]!.id;
@@ -924,7 +925,7 @@ export async function borradorNegocio(q: { userId: string }, x: { negocio: strin
   const d = await disponible({ uso: "owner", canal: "app", ciudad, negocio });
   if (!d.ok || (await alTope())) return { ok: false, msg: NO_DISP };
   const M = (await db().query<{ sender: string; body: string }>(
-    `select sender, body from (select * from chat_messages where thread_id = $1 and hidden_at is null and sender in ('user', 'business', 'auto') order by id desc limit 10) x order by id`, [b.hilo])).rows;
+    `select sender, case when body = '' and media_id is not null then '[foto]' else body end as body from (select * from chat_messages where thread_id = $1 and hidden_at is null and sender in ('user', 'business', 'auto') order by id desc limit 10) x order by id`, [b.hilo])).rows;
   // Lo que va al modelo termina en el último mensaje del cliente (es lo que se contesta).
   const iUser = M.map((m) => m.sender === "user").lastIndexOf(true), ult = iUser >= 0 ? M[iUser] : undefined;
   if (!ult) return { ok: false, msg: { es: "Todavía no hay un mensaje del cliente para contestar.", en: "There is no client message to answer yet." } };

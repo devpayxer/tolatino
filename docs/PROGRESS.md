@@ -2821,3 +2821,20 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   de scroll; al revés a mano del banco: con las sombras con área la comparación da 609 pixeles distintos, sin los topes 5 áreas que se cruzan; un
   `touchscreen.tap` 2–6 px fuera de la caja dispara el clic del control. tsc ✓, guardianes ✓. **No corrió:** a11y9c (sin Docker ni base aquí) ni
   WebKit (no hay en esta máquina): el CI lo confirma; los bloques del panel no se midieron en el navegador (sin datos). El contraste AA no se tocó.
+- **19 nov · 9t · Mensajes: fotos en el chat y «Ver traducción» ES↔EN** (LAUNCH «Mensajes (2p)» → ✓; lo que quedó en «Mensajes · lo que quedó de 9t»;
+  REVISION «9t — Mensajes: fotos en el chat y Ver traducción»). Migración **0185**: `media.owner_kind 'chat'` + `check_note` + `media_chat_privada`
+  (privada y bajo «privado/m/»), `chat_messages.media_id` (índice único: una foto, un mensaje) y `lang`, el cuerpo vacío permitido con foto, la foto
+  solo de personas, el aviso en vivo al decidir la foto (`media_chat_vivo`), `ugc_translations` + 'chat_message' y `datos_purga_pendiente` que la
+  cuenta (y `purgar.ts` que la borra; el mapa de datos purga las fotos 'chat'). **Subir** `/api/mensajes/foto` (mismo origen, sesión, 12 MB, 50 Mpx,
+  30/h, sharp sin metadatos, modelo propio al subir: visible o en revisión con su nota) y **ver** `/api/mensajes/foto/{id}` (quien la subió; las partes
+  solo revisada y con el mensaje sin ocultar; el equipo con caso abierto en su cola y ciudad, auditado; no-store). `lib/mensajes.ts`: `tomarFoto` /
+  `ponerFoto` en la transacción del envío (solo la propia, sin usar; en revisión → `marcar` → cola medios), `conFoto` (la dirección solo a quien la
+  puede ver), el idioma detectado ANTES de la transacción. Pantallas: Mi cuenta (composer de Soporte: IconButton «image», miniatura, «Quitar foto»;
+  la foto en la burbuja; «Foto en revisión» / «Foto quitada por To’Latino»; vuelve a traer desde la foto en revisión), panel (bloque de fotos
+  «Agregar una foto», el `thread` del sistema con `img`/`imgL`/`tr`), `traducirCon` (useTraducir sin hook para el panel), Super Admin (Colas › Medios
+  «Foto de Mensajes», «Está bien» / «Quitar foto» con auditoría; Mensajes reportados con la miniatura). El Compa recibe «[foto]». Guardián nuevo
+  `fotoMensajePrivada`; `traductorFueraDeTx` mira enviarCliente/enviarNegocio; `mensajesTapados` acepta `limpiar(texto, conFoto)`. **alreves9tmsg
+  27/27**; guardianes ✓; tsc ✓; extraer --verificar ✓; la migración aplicada dos veces sobre un Postgres 16 de prueba con el esquema mínimo (las 5
+  restricciones rechazan lo que deben; el aviso en vivo sale). e2e **msg9t** escrita (fotos, revisión, aprobar y quitar, topes, regla apagada,
+  traducción con el stub, Super Admin ve el original) — **no corrió aquí** (sin Docker ni base): la corre el CI. Ayuda: mensajes.md y
+  admin-confianza-y-seguridad.md (ES/EN).

@@ -1,13 +1,14 @@
 /* 5h · «Ver traducción» (D3): lo que comparten la pantalla y el servidor (sin base ni red). */
 type Bi = { es: string; en: string };
 
-export const KINDS_TR = ["com_post", "com_comment", "review", "review_reply", "post_comment"] as const;
+// 9t · chat_message: un mensaje de Mensajes (cliente ↔ negocio).
+export const KINDS_TR = ["com_post", "com_comment", "review", "review_reply", "post_comment", "chat_message"] as const;
 export type KindTr = (typeof KINDS_TR)[number];
 export type LangTr = "es" | "en";
 export const esKindTr = (k: unknown): k is KindTr => typeof k === "string" && (KINDS_TR as readonly string[]).includes(k);
 
 /* Lo que devuelve «Ver traducción». motivo: servicio (caído, lento o cortado) · limite (tope por persona) · no_esta (ya no se puede ver)
-   · mismo (ya está en tu idioma) · entrar (la Comunidad pide cuenta). */
+   · mismo (ya está en tu idioma) · entrar (la Comunidad y Mensajes piden cuenta). */
 export type MotivoTr = "servicio" | "limite" | "no_esta" | "mismo" | "entrar";
 export type ResTr = { ok: true; texto: string; de: LangTr; cache: boolean } | { ok: false; motivo: MotivoTr; msg: Bi };
 

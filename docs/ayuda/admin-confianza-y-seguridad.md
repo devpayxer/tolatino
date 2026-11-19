@@ -15,6 +15,11 @@ un Admin. Versión: 7 nov 2026. Audiencia: equipo. Tema: equipo._
   otras cuentas en ellos), los reportes, lo que marcaron rev5 y la red de cuentas, y su historial. **Sin acción** o **Sancionar**.
 - **Colas › Medios marcados (fotos de la Comunidad):** la foto que el modelo propio marcó o no pudo revisar. **No se ve** hasta que decides:
   «Está bien» la publica; «Quitar foto» avisa con el motivo y abre la apelación.
+- **Colas › Medios marcados · Foto de Mensajes:** la foto de un mensaje entre un vecino y un negocio que el modelo marcó o no pudo revisar.
+  Es privada: la ves solo por este caso (o por una conversación reportada) y cada vez queda en la auditoría («mensajes.foto.ver»); el texto
+  de la conversación no se lee desde aquí. «Está bien» → la otra persona la ve (en vivo si tiene la conversación abierta); «Quitar foto» → en la
+  conversación sale «Foto quitada por To'Latino» y quien la mandó recibe el motivo. En **Mensajes reportados** cada mensaje con foto muestra la
+  foto (y «FOTO EN REVISIÓN» si todavía espera).
 - **Colas › Apelaciones:** quién apela, qué, el motivo que recibió, lo que escribió, lo apelado y su historial. **Levantar** (vuelve el
   contenido o termina la sanción; los casos abiertos de ese contenido se cierran) o **Mantener** (final). **Si tú lo ocultaste o sancionaste,
   ves un candado y no la puedes decidir** (la base tampoco lo permite).
@@ -82,6 +87,11 @@ case** sends it to Queues › User reports.
   other accounts on them), the reports, what rev5 and the account network flagged, and their history. **No action** or **Sanction**.
 - **Queues › Flagged media (Community photos):** the photo that our own model flagged or could not check. It is **not shown** until you
   decide: «It's fine» publishes it; «Remove photo» notifies the person with the reason and opens the appeal.
+- **Queues › Flagged media · Messages photo:** the photo in a message between a neighbor and a business that the model flagged or could not
+  check. It is private: you see it only through this case (or a reported conversation) and every view is logged («mensajes.foto.ver»); the
+  conversation text is not readable from here. «It's fine» → the other person sees it (live if they have the conversation open); «Remove photo» →
+  the conversation shows «Photo removed by To'Latino» and the sender gets the reason. In **Reported messages** each message with a photo shows
+  it (and «PHOTO IN REVIEW» if it is still waiting).
 - **Queues › Appeals:** who is appealing, what, the reason they were given, what they wrote, what is being appealed and their history.
   **Lift** (the content comes back or the sanction ends; open cases on that content are closed) or **Uphold** (final). **If you hid or
   sanctioned it, you see a lock and cannot decide it** (the database does not allow it either).

@@ -120,7 +120,9 @@ export async function decidirRepUsr(id: string, accion: "sin_accion" | "sanciona
   return { ok: true, mensaje: accion === "sancionar" ? "Sanción aplicada. La persona ve el motivo y puede apelar." : "Sin acción. Quedó en la auditoría." };
 }
 
-/* ── Foto de la Comunidad (cola medios, sin negocio): está bien (se ve) o quitar con motivo (aviso y apelación) ── */
+/* ── Foto de la Comunidad (cola medios, sin negocio): está bien (se ve) o quitar con motivo (aviso y apelación) ──
+   9t · También la foto de un mensaje (owner_kind 'chat'): está bien → la otra parte la ve (la base avisa en vivo: media_chat_vivo); quitar → en la
+   conversación sale «Foto quitada por To’Latino» y quien la mandó recibe el motivo (mod_hide, como un mensaje oculto). */
 export async function decidirFotoCom(id: string, accion: "mantener" | "quitar", motivo: string): Promise<ResAdm> {
   const s = await quien();
   if (!s) return no("Tu rol solo puede ver esta cola.");
@@ -130,17 +132,20 @@ export async function decidirFotoCom(id: string, accion: "mantener" | "quitar", 
     const q = await abrir(c, s, id, "medios");
     if (typeof q === "string") return q;
     const f = (await c.query<{ autor: string | null; status: string; owner: string }>(`select uploaded_by::text as autor, status, owner_kind as owner from media where id::text = $1 for update`, [q.subject_id])).rows[0];
-    if (!f || f.owner !== "com_post") return "Esa foto no es de la Comunidad.";
+    if (!f || (f.owner !== "com_post" && f.owner !== "chat")) return "Esa foto no es de la Comunidad ni de Mensajes.";
+    const chat = f.owner === "chat";
     if (accion === "quitar") await c.query(`update media set status = 'removed', removed_reason = 'admin', removed_note = $2, removed_by = $3, removed_at = now() where id::text = $1 and status in ('visible', 'review')`, [q.subject_id, m, s.id]);
     else await c.query(`update media set status = 'visible' where id::text = $1 and status = 'review'`, [q.subject_id]);
     await cerrar(c, q, s, accion, m);
-    await auditar(c, { actor: s.id, action: accion === "quitar" ? "com.foto.quitar" : "com.foto.aprobar", targetKind: "media", targetId: q.subject_id, city: q.city_id, before: { foto: f.status === "review" ? "en revisión" : "visible" }, after: { foto: accion === "quitar" ? "quitada" : "visible" }, reason: m });
-    return { autor: f.autor, tid: q.subject_id };
+    await auditar(c, { actor: s.id, action: chat ? (accion === "quitar" ? "mensajes.foto.quitar" : "mensajes.foto.aprobar") : accion === "quitar" ? "com.foto.quitar" : "com.foto.aprobar", targetKind: "media", targetId: q.subject_id, city: q.city_id, before: { foto: f.status === "review" ? "en revisión" : "visible" }, after: { foto: accion === "quitar" ? "quitada" : "visible" }, reason: m });
+    // 9t · De Mensajes: el aviso con el motivo (mod_hide, como un mensaje oculto) a quien la mandó; la apelación es de la Comunidad (autor).
+    return { autor: chat ? null : f.autor, deChat: chat ? f.autor : null, tid: q.subject_id, chat };
   });
   if (typeof r === "string") return no(r);
+  if (accion === "quitar" && r.deChat) await (await import("@/lib/avisos")).avisar(r.deChat, "mod_hide", { tipo: "foto", motivo: m }).catch(() => undefined);
   if (accion === "quitar" && r.autor) await avisarOculto(r.autor, "media", r.tid, m);
   listo();
-  return { ok: true, mensaje: accion === "quitar" ? "Foto quitada. Su autor ve el motivo y puede apelar." : "Aprobada: ya se ve en la publicación." };
+  return { ok: true, mensaje: r.chat ? (accion === "quitar" ? "Foto quitada. Quien la mandó ve el motivo." : "Aprobada: ya se ve en la conversación.") : accion === "quitar" ? "Foto quitada. Su autor ve el motivo y puede apelar." : "Aprobada: ya se ve en la publicación." };
 }
 
 /* ── Apelación (cola apel): segunda revisión. Nunca quien ocultó o sancionó (la base también lo impide). ── */

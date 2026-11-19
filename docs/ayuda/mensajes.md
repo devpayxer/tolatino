@@ -2,7 +2,7 @@
 
 _Pantallas: Mi cuenta › **Mensajes** (`/cuenta/mensajes`) y la conversación (`/cuenta/mensajes/{negocio}`); botón **Mensaje** en la página del
 negocio, **Escribir al negocio** en tu pedido y tu reservación; Panel › **Mensajes** (`/panel/{negocio}/mensajes`) y «Mensajes sin responder» en Hoy;
-Super Admin › Colas › **Mensajes reportados**. Versión: 14 nov 2026. Audiencia: vecino. Tema: cuenta._
+Super Admin › Colas › **Mensajes reportados** y **Medios** (fotos en revisión). Versión: 19 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 - **Vecino:** le escribes a cualquier negocio que ya está en To'Latino (tiene dueño). Una conversación por negocio; si
@@ -49,7 +49,39 @@ Super Admin › Colas › **Mensajes reportados**. Versión: 14 nov 2026. Audien
   decimos «No compartas eso aquí. Nunca te lo pedimos.». Nadie de To'Latino ni del negocio lo ve. Los teléfonos no se pueden escribir: el negocio
   comparte el suyo con un botón.
 
+## Fotos en el chat
+- **Mandar una foto:** en la conversación toca el botón de la foto (al lado de donde escribes; en el panel, **Agregar una foto**). Sale la
+  miniatura con **Quitar foto** hasta que envías. Una foto por mensaje; puedes mandarla sola o con texto.
+- **Privada:** la foto solo la ven tú y el negocio (quien tenga Mensajes en su panel). No es pública, no sale en buscadores ni en la página del
+  negocio, y la dirección no le sirve a nadie más. Antes de guardarla le quitamos los datos de la cámara (como el lugar donde se tomó).
+- **Revisión:** toda foto pasa por nuestro revisor automático (propio, no de terceros). Si está bien, se ve al instante. Si el revisor la marca o
+  no responde, queda **en revisión**: tú la ves con **EN REVISIÓN** y la otra persona ve «Foto en revisión» hasta que alguien de To'Latino la
+  revise (solo esa foto, nunca el resto de la conversación; cada vez que la miran queda anotado). Si está bien, aparece sola; si no, sale
+  «Foto quitada por To'Latino» y a quien la mandó le llega el motivo.
+- **Límites:** hasta 12 MB por foto, solo imágenes, 30 fotos por hora. La foto se reduce (lado mayor 1600 px).
+
+| Caso | Qué pasa |
+|---|---|
+| Eliges algo que no es una foto | «Eso no parece una foto. Prueba con otra.» |
+| La foto pesa más de 12 MB | «La foto pesa demasiado (máximo 12 MB).» |
+| Mandas muchas fotos seguidas | «Mandaste muchas fotos seguidas. Prueba en un rato.» |
+| La foto queda en revisión | Te decimos «Tu foto se ve cuando To'Latino la revise.»; tu mensaje (si escribiste algo) sí llega. |
+| To'Latino oculta el mensaje | La foto se oculta con él. |
+| Las fotos no están disponibles (almacenamiento caído) | «Las fotos no están disponibles en este momento.»; el texto se puede mandar igual. |
+| Borras tu cuenta | Tus fotos se borran con ella (a los 30 días), como lo que escribiste. |
+
+## Ver traducción (español ↔ inglés)
+- Bajo un mensaje del otro lado que está en otro idioma sale **Ver traducción** (en el panel también). Al tocarlo: «Traduciendo…» y luego el
+  texto traducido con **Ver original · Traducción automática del inglés** (o del español). El original nunca cambia.
+- Traduce nuestro propio traductor: el texto **no sale** de los servidores de To'Latino ni va a ningún tercero. Lo ya traducido se guarda y la
+  segunda vez sale al instante. El mismo tope por hora de la Comunidad (60 traducciones por persona de fábrica; lo ajusta To'Latino).
+- Lo tuyo y lo que ya está en tu idioma no trae el botón. Los mensajes de antes del 19 nov no saben su idioma: no traen el botón.
+- Si el traductor no responde: «La traducción no está disponible ahora.» con **Reintentar**; la conversación sigue igual.
+- El equipo de To'Latino ve siempre el original.
+
 ## Preguntas frecuentes
+**¿Quién ve las fotos que mando?** Tú y el negocio. To'Latino solo si la foto queda en revisión o alguien reporta la conversación, y queda anotado.
+**¿La traducción la ve el negocio?** No: cada quien ve la traducción solo en su pantalla, cuando la pide.
 **¿El negocio ve mi teléfono?** No. Solo tu nombre y lo que escribes.
 **¿To'Latino lee mis mensajes?** No, salvo que tú o el negocio reporten la conversación.
 **¿Qué es «EL COMPA · IA»?** El asistente de IA de To'Latino contestando por el negocio mientras está cerrado. No es el dueño y nunca confirma ni
@@ -101,7 +133,39 @@ promete nada; la IA solo ve la página del negocio y esta conversación.
   tell you "Do not share that here. We never ask you for it." Nobody at To'Latino or at the business sees it. Phone numbers cannot be written:
   the business shares theirs with a button.
 
+### Photos in the chat
+- **Send a photo:** in the conversation tap the photo button (next to where you type; in the dashboard, **Add a photo**). The thumbnail shows with
+  **Remove photo** until you send. One photo per message; you can send it alone or with text.
+- **Private:** only you and the business (whoever has Messages in their dashboard) see the photo. It is not public, it does not show in search
+  engines or on the business page, and the link does not work for anyone else. Before saving it we remove the camera data (like where it was taken).
+- **Review:** every photo goes through our automatic reviewer (our own, not a third party). If it is fine, it shows right away. If the reviewer
+  flags it or does not answer, it goes **under review**: you see it with **UNDER REVIEW** and the other person sees "Photo under review" until
+  someone at To'Latino reviews it (only that photo, never the rest of the conversation; every view is logged). If it is fine, it shows by itself;
+  if not, "Photo removed by To'Latino" shows and the sender gets the reason.
+- **Limits:** up to 12 MB per photo, images only, 30 photos per hour. The photo is resized (longest side 1600 px).
+
+| Case | What happens |
+|---|---|
+| You pick something that is not a photo | "That doesn't look like a photo. Try another one." |
+| The photo is over 12 MB | "The photo is too large (12 MB max)." |
+| You send many photos in a row | "You sent too many photos in a row. Try again later." |
+| The photo goes under review | We tell you "Your photo shows once To'Latino reviews it."; your message (if you wrote something) does arrive. |
+| To'Latino hides the message | The photo is hidden with it. |
+| Photos are not available (storage down) | "Photos are not available right now."; you can still send text. |
+| You delete your account | Your photos are deleted with it (after 30 days), like what you wrote. |
+
+### See translation (Spanish ↔ English)
+- Under a message from the other side that is in another language, **See translation** shows (in the dashboard too). Tap it: "Translating…" and
+  then the translated text with **See original · Machine translation from English** (or Spanish). The original never changes.
+- Our own translator does it: the text **does not leave** To'Latino's servers and does not go to any third party. What is already translated is
+  saved and shows instantly the second time. The same hourly limit as Community (60 translations per person by default; To'Latino adjusts it).
+- Your own messages and those already in your language have no button. Messages from before Nov 19 do not know their language: no button.
+- If the translator does not answer: "Translation isn't available right now." with **Try again**; the conversation stays the same.
+- The To'Latino team always sees the original.
+
 ### FAQ
+**Who sees the photos I send?** You and the business. To'Latino only if the photo goes to review or someone reports the conversation, and it is logged.
+**Does the business see the translation?** No: each person sees the translation only on their own screen, when they ask for it.
 **Does the business see my phone?** No. Only your name and what you write.
 **Does To'Latino read my messages?** No, unless you or the business report the conversation.
 **What is "EL COMPA · AI"?** To'Latino's AI assistant answering for the business while it is closed. It is not the owner and it never confirms or

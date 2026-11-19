@@ -3408,7 +3408,7 @@ const guardianes = {
         if (iD >= 0 && iT >= 0 && iD > iT) falla(G, x, 0, `«${p.slice(0, p.indexOf("(")).replace(/^(export )?(async )?function /, "")}» llama al traductor dentro de una transacción`);
       }
     }
-    for (const [f, fns] of [["apps/web/lib/comunidad.ts", ["publicar", "editar"]], ["apps/web/lib/comunidad-hilo.ts", ["comentar"]], ["apps/web/lib/resenas.ts", ["guardarResena", "responderResena"]], ["apps/web/lib/novedades.ts", ["comentarPost"]]]) {
+    for (const [f, fns] of [["apps/web/lib/comunidad.ts", ["publicar", "editar"]], ["apps/web/lib/comunidad-hilo.ts", ["comentar"]], ["apps/web/lib/resenas.ts", ["guardarResena", "responderResena"]], ["apps/web/lib/novedades.ts", ["comentarPost"]], ["apps/web/lib/mensajes.ts", ["enviarCliente", "enviarNegocio"]]]) {
       if (!existsSync(f)) continue;
       const t = sinComent(f);
       for (const fn of fns) if (!/detectarIdioma\(/.test(cuerpoFn(t, fn))) falla(G, f, 0, `«${fn}» guarda texto sin detectar su idioma (detectarIdioma)`);
@@ -9892,12 +9892,52 @@ const guardianes = {
     if (!/create trigger chat_messages_vivo after insert or update of hidden_at on chat_messages/.test(mig) || !/create trigger dm_messages_vivo after insert or update of hidden_at on dm_messages/.test(mig)) falla(G, "packages/db/migrations", 0, "los disparadores del aviso en vivo (chat_messages y dm_messages)");
   },
 
+  /* 9t · fotoMensajePrivada (LAUNCH «Mensajes (2p)»: fotos en el chat). La clase: una foto entre dos personas que se vuelve pública, que se ve antes
+     de revisarla, que la ve quien no es parte o que el equipo mira sin dejar rastro. Reglas:
+     - Subir (app/api/mensajes/foto/route.ts): mismo origen y sesión; tope de tamaño y por hora en el servidor; sharp la vuelve a codificar (sin
+       metadatos); guarda SOLO bajo «privado/m/» (nunca /medios/ ni urlPublica); el modelo propio (reglasMod + revisarImagen) decide: 'visible' solo
+       si respondió «ok» (o la regla está apagada), si no 'review'.
+     - Ver (app/api/mensajes/foto/[id]/route.ts): solo fotos privadas «privado/m/» del chat; quien la subió; las partes (vecino o accesoPanel «msg»)
+       solo con la foto 'visible' y el mensaje sin ocultar; el equipo solo con caso abierto en su cola y ciudad, y SIEMPRE auditado; nunca se cachea.
+     - lib/mensajes.ts: la foto se ata en la transacción del envío (tomarFoto: solo la que subió esa persona, sin usar) y, en revisión, se marca
+       (cola «medios»); la pantalla recibe la dirección privada solo si puede verla (en revisión, solo quien la subió).
+     - La base: media_chat_privada (una foto del chat es privada y vive bajo privado/m/) y una foto va en un solo mensaje (índice único).
+     - «Ver traducción» en Mensajes solo para las partes (FUENTE chat_message) y lo ofrecen las dos pantallas; nunca el Super Admin (adminVeOriginal).
+     Al revés (alreves9tmsg). */
+  fotoMensajePrivada() {
+    const G = "fotoMensajePrivada", UP = "apps/web/app/api/mensajes/foto/route.ts", VE = "apps/web/app/api/mensajes/foto/[id]/route.ts", ME = "apps/web/lib/mensajes.ts";
+    if (!existsSync(UP) || !existsSync(VE)) { falla(G, existsSync(UP) ? VE : UP, 0, "falta la ruta de las fotos de Mensajes"); return; }
+    const u = sinComent(UP);
+    if (!/if \(!\(await mismoOrigen\(\)\)\) return err\(403/.test(u) || !/const me = await yo\(\);\n  if \(!me\) return err\(401/.test(u)) falla(G, UP, 0, "subir pide mismo origen y sesión");
+    if (!/f\.size > MAX_FOTO_MSJ/.test(u) || !/n >= FOTOS_MSJ_HORA/.test(u) || !/limitInputPixels: \d/.test(u)) falla(G, UP, 0, "topes del servidor: tamaño, píxeles y fotos por hora");
+    if (!/sharp\([^)]*\)[\s\S]{0,40}\.rotate\(\)[\s\S]{0,140}\.jpeg\(/.test(u) || /withMetadata|keepMetadata|keepExif/.test(u)) falla(G, UP, 0, "la foto se vuelve a codificar sin metadatos (sharp … .jpeg, sin withMetadata)");
+    if (!/clave = `privado\/m\/\$\{id\}\.jpg`/.test(u) || /urlPublica|\/medios\//.test(u)) falla(G, UP, 0, "la foto de un mensaje se guarda solo bajo «privado/m/» (nunca pública)");
+    if (!/revisarImagen\(img, /.test(u) || !/const estado = rv\.estado === "ok" \? "visible" : "review";/.test(u)) falla(G, UP, 0, "el modelo propio decide: 'visible' solo si respondió «ok»; si no, revisión");
+    const v = sinComent(VE);
+    if (!/x\.owner_kind = 'chat' and x\.private and x\.purged_at is null and x\.status in \('visible', 'review'\) and x\.url like 'privado\/m\/%'/.test(v)) falla(G, VE, 0, "ver solo fotos privadas del chat («privado/m/», sin purgar)");
+    if (!/const lista = m\.status === "visible" && !!m\.msg && !m\.oculto;/.test(v) || !/lista && m\.vecino === me\.id/.test(v) || !/lista && m\.biz\) ok = !!\(await accesoPanel\(m\.biz, "msg"\)\)/.test(v)) falla(G, VE, 0, "las partes la ven solo revisada y con el mensaje sin ocultar (el negocio con accesoPanel «msg»)");
+    if (!/colas\.includes\(/.test(v) || !/auditar\(c, \{ actor: s\.id, action: "mensajes\.foto\.ver"/.test(v) || !/s\.cities\.length/.test(v)) falla(G, VE, 0, "el equipo la ve solo con caso abierto en su cola y ciudad, y queda en la auditoría");
+    if (!/"cache-control": "private, no-store"/.test(v) || /\/medios\//.test(v)) falla(G, VE, 0, "la foto de un mensaje nunca se cachea ni se sirve pública");
+    const m = sinComent(ME);
+    if (!/owner_id = 'pendiente' and uploaded_by = \$2 and private[\s\S]{0,160}for update/.test(cuerpoFn(m, "tomarFoto"))) falla(G, ME, 0, "tomarFoto: solo la foto que subió esa persona, sin usar, bloqueada en la transacción");
+    if (!/if \(fo\.status !== "review"\) return;[\s\S]{0,120}marcar\(c, \{ kind: "media"/.test(cuerpoFn(m, "ponerFoto"))) falla(G, ME, 0, "ponerFoto: la foto en revisión abre su caso (cola «medios»)");
+    if (!/const ve = !sv && \(est === "ok" \|\| \(!!yo && fsub === yo\)\);/.test(m) || /\/medios\//.test(m)) falla(G, ME, 0, "conFoto: la dirección privada solo a quien la puede ver (en revisión, solo quien la subió)");
+    for (const fn of ["enviarCliente", "enviarNegocio"]) if (!/tomarFoto\(c, f, userId\)/.test(cuerpoFn(m, fn)) || !/ponerFoto\(c, fo, m\.id, userId/.test(cuerpoFn(m, fn))) falla(G, ME, 0, `${fn}: la foto se ata en la transacción del envío`);
+    const mig = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");
+    if (!/add constraint media_chat_privada check \(owner_kind <> 'chat' or \(private and \(url like 'privado\/m\/%'/.test(mig)) falla(G, "packages/db/migrations", 0, "la base: una foto del chat es privada y vive bajo privado/m/ (media_chat_privada)");
+    if (!/create unique index if not exists chat_messages_media_uidx on chat_messages \(media_id\) where media_id is not null;/.test(mig)) falla(G, "packages/db/migrations", 0, "una foto va en un solo mensaje (chat_messages_media_uidx)");
+    const TR = "apps/web/lib/traduccion.ts";
+    if (existsSync(TR) && !/chat_message: `[\s\S]*?\(t\.user_id = \$1::uuid or exists \(select 1 from business_members bm[\s\S]*?'msg' = any\(bm\.panel_access\)/.test(sinComent(TR))) falla(G, TR, 0, "«Ver traducción» de un mensaje solo para las partes de la conversación");
+    for (const [f, re] of [["apps/web/app/(app)/cuenta/mensajes/[negocio]/Chat.tsx", /tr\("chat_message", m\.id, m\.lang, m\.t, false\)/], ["apps/web/app/panel/MensajesPanel.tsx", /tr\("chat_message", m\.id, m\.lang, m\.t, false\)/]])
+      if (existsSync(f) && !re.test(sinComent(f))) falla(G, f, 0, "esta conversación ofrece «Ver traducción» (lo del otro lado, en su idioma)");
+  },
+
   /* 9m · mensajesTapados (L1063): Mensajes tapa tarjetas y seguro social como Soporte: lib/mensajes.ts pasa todo texto por tapar() ANTES de guardarlo
      (y antes de mirar si trae un teléfono: una tarjeta no es un teléfono) y la base rechaza el que se salte eso (chat_messages_sin_secretos).
      Al revés (alreves9m): quitar tapar() de limpiar() o el disparador. */
   mensajesTapados() {
     const G = "mensajesTapados", F = "apps/web/lib/mensajes.ts", t = sinComent(F);
-    if (!/import \{ tapar \} from "\.\/compa\/tapar";/.test(t) || !/function limpiar\(texto: unknown\)[\s\S]{0,140}?\{\n  const tp = tapar\(String\(texto \?\? ""\)\);/.test(t)) falla(G, F, 0, "limpiar() tapa con tapar() antes de guardar");
+    if (!/import \{ tapar \} from "\.\/compa\/tapar";/.test(t) || !/function limpiar\(texto: unknown(?:, conFoto = false)?\)[\s\S]{0,140}?\{\n  const tp = tapar\(String\(texto \?\? ""\)\);/.test(t)) falla(G, F, 0, "limpiar() tapa con tapar() antes de guardar");
     const b = ultimaFn("chat_messages_sin_secretos");
     if (!b || !/texto_con_secretos\(new\.body\)/.test(b)) falla(G, "packages/db/migrations", 0, "la base rechaza tarjetas y seguro social en chat_messages");
     const mig = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");

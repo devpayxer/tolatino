@@ -30,7 +30,7 @@ export function Mensajes({ d, es, yo, pagina }: { d: { hilos: Hilo[]; mas: strin
     T.length ? { type: "rows", rows: T.map((t) => ({
       key: t.id, ph: t.foto, ini: t.nombre.slice(0, 1), t: t.nombre, tag: t.unread ? [E2("NUEVO", "NEW"), "action"] as [string, string] : null,
       s: `${(t.ctx ? (es ? t.ctx.es : t.ctx.en) : E2("Consulta general", "General question")).toUpperCase()} · ${cuando(t.at, es, ahora)}`,
-      x: `${t.lastFrom === "user" ? E2("Tú: ", "You: ") : t.lastFrom === "auto" ? E2("Respuesta automática: ", "Auto-reply: ") : ""}${t.lastFrom === "system" ? sistema(t.last ?? "", es) : t.last ?? ""}`, chev: true,
+      x: `${t.lastFrom === "user" ? E2("Tú: ", "You: ") : t.lastFrom === "auto" ? E2("Respuesta automática: ", "Auto-reply: ") : ""}${t.lastFrom === "system" || t.last === "Foto · Photo" ? sistema(t.last ?? "", es) : t.last ?? ""}`, chev: true,
       on: () => router.push(`/cuenta/mensajes/${t.negocio}`),
     })) } : { type: "empty", ic: "chat", t: pagina ? E2("No hay más", "No more") : E2("Sin mensajes", "No messages"), s: E2("Cuando le escribas a un negocio, la conversación sale aquí.", "When you write to a business, the conversation shows here."), cta: pagina ? E2("Volver al principio", "Back to the top") : E2("Buscar negocios", "Find businesses"), onCta: () => router.push(pagina ? "/cuenta/mensajes" : "/negocios") },
     d.mas ? { type: "more", l: E2("Ver más antiguas", "See older"), on: () => router.push(`/cuenta/mensajes?antes=${encodeURIComponent(d.mas!)}`) } : null,
