@@ -5745,3 +5745,5 @@ dice «Foto». El aviso de la caja de Mensajes dice ahora «Texto y fotos, sin t
   Boutique Yaritza, «Cartera». En Guardados salen con «$1.29/lb» y **Pedir** (el mercado) y con su precio y **Apartar** (la tienda), que abren la hoja
   de ese producto. Oculta la Cartera en el Super Admin: «NO DISPONIBLE», sin «Apartar». La hoja de la tienda de Auto, Hogar y Transporte es la misma:
   también lleva el corazón.
+- **9t · Mercado: la barra del pedido ya no dice «aprox.» junto al total** (a 390 px el botón «Agregar al pedido» no cabía con el corazón nuevo):
+  el rótulo de arriba ya dice ESTIMADO, así que el aviso sigue a la vista. Si quieres el «aprox.» de vuelta, se acorta el botón en su lugar.
