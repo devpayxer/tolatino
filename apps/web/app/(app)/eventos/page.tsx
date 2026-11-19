@@ -3,7 +3,7 @@ import { after } from "next/server";
 import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
 import { contexto } from "@/lib/eventos";
-import { DIA_ISO, diasConEventos, estaNoche, eventosCiudad, generosFiltro, hoyDeCiudad, misRsvpN, patrocinadosEventos } from "@/lib/evt-publico";
+import { DIA_ISO, destacadosEventos, diasConEventos, estaNoche, eventosCiudad, generosFiltro, hoyDeCiudad, misRsvpN, patrocinadosEventos } from "@/lib/evt-publico";
 import { sumarDias } from "@/lib/evt-comun";
 import { misBoletosN } from "@/lib/boletos";
 import { contarVistas } from "@/lib/patrocinio";
@@ -31,9 +31,10 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ d
   // El día: de hoy en adelante (hasta 120 días); un día pasado o mal escrito es hoy.
   const dia = typeof sp.dia === "string" && DIA_ISO.test(sp.dia) && sp.dia >= hoy && sp.dia <= sumarDias(hoy, 120) ? sp.dia : hoy;
   const t = sp.t === "gratis" || sp.t === "boleto" || sp.t === "comunidad" || G.some((g) => g.key === sp.t) ? String(sp.t) : "todo";
-  const [lista, historias, spon, misRsvp, misBol, conEventos, ctx] = await Promise.all([
+  // 9t · Destacados de Eventos (lo que fijó el equipo, sin cobro): la fila «Destacados en …» y, en la lista del día, primero (lo decide el servidor).
+  const [lista, historias, spon, misRsvp, misBol, conEventos, ctx, dest] = await Promise.all([
     eventosCiudad(loc, { dia, t }, null, u?.id ?? null, es), estaNoche(loc, u?.id ?? null, es, 12, dia), patrocinadosEventos(loc, u?.id ?? null, es),
-    misRsvpN(u?.id ?? null), misBoletosN(u?.id ?? null), diasConEventos(loc, sumarDias(hoy, 45)), contexto(),
+    misRsvpN(u?.id ?? null), misBoletosN(u?.id ?? null), diasConEventos(loc, sumarDias(hoy, 45)), contexto(), destacadosEventos(loc, u?.id ?? null, es),
   ]);
   // Vistas de Patrocinados: una por persona (o dispositivo) y día por patrocinio, después de responder; los robots no cuentan.
   if (spon.length && !ctx.robot) after(() => contarVistas("evento", spon.map((x) => x.sid), u?.id ?? null, u ? null : ctx.dev));
@@ -43,5 +44,5 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ d
   const titulo = dia === hoy ? E("Esta noche", "Tonight") : dia === sumarDias(hoy, 1) ? E("Mañana", "Tomorrow")
     : `${es ? WL[dow]![0] : WL[dow]![1]} ${d}${dia.slice(0, 7) !== hoy.slice(0, 7) ? ` ${es ? MS[m! - 1]![0] : MS[m! - 1]![1]}` : ""}`;
   return <Eventos es={es} ciudad={loc.c.name} estado={loc.c.state} dia={dia} hoy={hoy} fin={sumarDias(hoy, fin)} conEventos={conEventos} titulo={titulo} t={t}
-    generos={G.map((g) => ({ k: g.key, l: es ? g.label.es : g.label.en || g.label.es }))} lista={lista} historias={historias} spon={spon} mios={misRsvp} bol={misBol} />;
+    generos={G.map((g) => ({ k: g.key, l: es ? g.label.es : g.label.en || g.label.es }))} lista={lista} historias={historias} spon={spon} dest={dest} mios={misRsvp} bol={misBol} />;
 }

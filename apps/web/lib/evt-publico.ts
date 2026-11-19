@@ -29,6 +29,8 @@ export type TarjetaEvt = {
   saved: boolean; going: boolean; g: Grupo; cuando: string; venue: string; mi: number | null; edad: number; free: boolean; fmt: FormatoKey; van: number; desde: number | null;
   /* 6f · Una serie sale UNA vez (su próxima fecha) con «CADA JUEVES · +7 FECHAS»; varios días, con su rango. */
   serie: string | null;
+  /* 9t · Lo fijó el equipo (Destacados de Eventos, featured 'eventos'): sale primero. */
+  destacado: boolean;
 };
 
 type FilaT = {
@@ -77,7 +79,7 @@ const ES_PRIMERA = (filtroP = "") => `d.id = (select p.id from event_dates p whe
 const enP = (f: string | null) => (f ? f.replace(/\bd\.local_date\b/g, "p.local_date") : "");
 const EN_RADIO = (centro: string, rad: string) => `(d.geom is null or st_dwithin(d.geom, ${centro}, ${rad} * 1609.34))`;
 
-function tarjeta(x: FilaT, es: boolean, D: Dias): TarjetaEvt {
+function tarjeta(x: FilaT, es: boolean, D: Dias, destacado = false): TarjetaEvt {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b), free = x.entry !== "tickets", g = grupo(x.ldate, D);
   const tag: TagEvt | null = x.going ? { t: E2("VAS", "GOING"), k: "vas" } : g === "hoy" ? { t: x.fmt === "noche" ? E2("ESTA NOCHE", "TONIGHT") : E2("HOY", "TODAY"), k: "hoy" }
     : x.quedan != null && x.quedan <= 20 ? { t: x.quedan === 0 ? E2("CUPO LLENO", "FULL") : E2(`QUEDAN ${x.quedan}`, `${x.quedan} LEFT`), k: "quedan" } : free ? { t: E2("GRATIS", "FREE"), k: "gratis" } : null;
@@ -86,7 +88,7 @@ function tarjeta(x: FilaT, es: boolean, D: Dias): TarjetaEvt {
   return {
     id: x.eid, fecha: x.fid, href: `/eventos/${x.slug}?fecha=${x.fid}`, img: x.img, bm: mesCorto(x.ldate, es), bd: Number(x.ldate.slice(8, 10)), title: bi(x.title, es),
     meta: `${x.venue} · ${hora(x.h0)}`.toUpperCase(), price: free ? E2("Gratis", "Free") : x.desde != null ? `${E2("Desde ", "From ")}${dinero(x.desde)}` : E2("Con boletos", "Ticketed"),
-    tag, dark: x.dark, saved: x.saved, going: x.going, g, cuando, venue: x.venue, mi: x.mi, edad: x.edad, free, fmt: x.fmt, van: x.van, desde: x.desde, serie,
+    tag, dark: x.dark, saved: x.saved, going: x.going, g, cuando, venue: x.venue, mi: x.mi, edad: x.edad, free, fmt: x.fmt, van: x.van, desde: x.desde, serie, destacado,
   };
 }
 
@@ -119,6 +121,16 @@ export async function eventosCiudad(p: Punto, f: FiltroDia, cursor: string | nul
   // con su evento y su negocio antes de quedarse con 21 (1,3 s con 1 M de fechas en la carga). Con el LIMIT de la ventana, Postgres recorre el
   // índice (city_id, starts_at, id) en orden y para.
   const K = 400, ids: string[] = [];
+  // 9t · Destacados de Eventos (featured 'eventos', 0183): los eventos que fijó el equipo salen PRIMERO en la primera página del día (su primera fecha de ese
+  // día, con los mismos filtros, en el orden en que se fijaron) y ninguna página los repite. Una consulta para saber cuáles y, en la primera página, otra
+  // para sus fechas; lo demás sigue igual (ventanas, cursor).
+  const fx = (await db().query<{ ev: string }>(`select f.event_id::text as ev from featured f where ${FIJADO_VIVO} order by f.id limit ${cfgFijadosEvt}`, [p.ciudad])).rows.map((x) => x.ev);
+  const fijados = new Set(fx);
+  const arriba = !cursor && fx.length ? (await db().query<{ id: string }>(
+    // nosemgrep: tolatino-sql-con-texto-interpolado — filtroDia/filtroTipo devuelven condiciones fijas con $n; centro y radio validados en lib/punto.ts
+    `select d.id::text from event_dates d join events e on e.id = d.event_id, (select $1::uuid as quien) q
+      where ${w.join(" and ")} and e.status <> 'cancelled' and d.event_id = any($${v.length + 1}::bigint[]) and ${ES_PRIMERA(enP(ff))}
+      order by array_position($${v.length + 1}::bigint[], d.event_id), d.starts_at, d.id`, [...v, fx])).rows.map((x) => x.id) : [];
   let ca: string | null = null, cb: string | null = null;
   if (cursor && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d{1,6})?Z\|\d{1,18}$/.test(cursor)) [ca, cb] = cursor.split("|") as [string, string];
   // En el WHERE va solo lo que es el índice (listable, ciudad, desde cuándo y el cursor): así el plan lo recorre en orden y para en la ventana.
@@ -127,16 +139,17 @@ export async function eventosCiudad(p: Punto, f: FiltroDia, cursor: string | nul
   for (let vuelta = 0; vuelta < 40 && ids.length <= POR_PAGINA_EVT; vuelta++) {
     const vv = [...v], ww = [`d.listable`, `d.city_id = $2`, `d.starts_at > now() - interval '18 hours'`];
     if (ca && cb) { vv.push(ca, cb); ww.push(`(d.starts_at, d.id) > ($${vv.length - 1}::timestamptz, $${vv.length}::bigint)`); }
-    const r = await db().query<{ id: string; at: string; primera: boolean }>(
+    const r = await db().query<{ id: string; ev: string; at: string; primera: boolean }>(
       // nosemgrep: tolatino-sql-con-texto-interpolado — filtroDia/filtroTipo devuelven condiciones fijas con $n; centro y radio validados en lib/punto.ts
-      `select d.id::text, to_char(d.starts_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as at, case when ${resto} then ${ES_PRIMERA(enP(ff))} else false end as primera
+      `select d.id::text, d.event_id::text as ev, to_char(d.starts_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as at, case when ${resto} then ${ES_PRIMERA(enP(ff))} else false end as primera
          from event_dates d join events e on e.id = d.event_id, (select $1::uuid as quien) q where ${ww.join(" and ")} order by d.starts_at, d.id limit ${K}`, vv);
-    for (const x of r.rows) if (x.primera && ids.length <= POR_PAGINA_EVT) ids.push(x.id);
+    for (const x of r.rows) if (x.primera && !fijados.has(x.ev) && ids.length <= POR_PAGINA_EVT) ids.push(x.id);
     if (r.rows.length < K) break;
     [ca, cb] = [r.rows.at(-1)!.at, r.rows.at(-1)!.id];
   }
+  const todos = [...arriba, ...ids];
   const [L, T] = await Promise.all([
-    ids.length ? db().query<FilaT>(`select ${COLS_T(centro)} ${DESDE_T} where d.id = any($2::bigint[]) order by d.starts_at, d.id`, [viewer, ids]) : Promise.resolve({ rows: [] as FilaT[] }),
+    todos.length ? db().query<FilaT>(`select ${COLS_T(centro)} ${DESDE_T} where d.id = any($2::bigint[]) order by d.starts_at, d.id`, [viewer, todos]) : Promise.resolve({ rows: [] as FilaT[] }),
     // Cuántos eventos (hasta 1000): uno por evento de la ciudad que tenga una fecha viva en el filtro (una búsqueda por evento en el índice
     // (event_id, starts_at) que para en la primera).
     cursor ? Promise.resolve(null) : db().query<{ n: number }>(
@@ -144,8 +157,9 @@ export async function eventosCiudad(p: Punto, f: FiltroDia, cursor: string | nul
       `select count(*)::int as n from (select 1 from events e cross join lateral (select 1 from event_dates d where d.event_id = e.id and ${w.join(" and ")} limit 1) x
          where e.city_id = $2 limit 1000) y, (select $1::uuid as quien) q`, v),
   ]);
-  const filas = L.rows.slice(0, POR_PAGINA_EVT);
-  return { items: filas.map((x) => tarjeta(x, es, D)), mas: L.rows.length > POR_PAGINA_EVT ? filas.at(-1)!.cur : null, total: T?.rows[0]?.n ?? 0 };
+  const pos = new Map(arriba.map((x, i) => [x, i]));
+  const primero = L.rows.filter((x) => pos.has(x.fid)).sort((a, b) => pos.get(a.fid)! - pos.get(b.fid)!), demas = L.rows.filter((x) => !pos.has(x.fid)), filas = demas.slice(0, POR_PAGINA_EVT);
+  return { items: [...primero.map((x) => tarjeta(x, es, D, true)), ...filas.map((x) => tarjeta(x, es, D))], mas: demas.length > POR_PAGINA_EVT ? filas.at(-1)!.cur : null, total: T?.rows[0]?.n ?? 0 };
 }
 
 /* «Esta noche» (historias y la pantalla APP-EVT-NOCHE): lo de hoy en la ciudad, en el radio. C-003: también las historias de otro día del
@@ -187,6 +201,23 @@ export async function patrocinadosEventos(p: Punto, viewer: string | null, es: b
   return r.rows.map((x) => ({ ...tarjeta(x, es, D), sid: x.sid }));
 }
 const cfgPuestosEvt = "(select cfg_int('patrocinio_evt_puestos'))";
+
+/* 9t · Destacados de Eventos (featured 'eventos', 0183; Super Admin › Crecimiento › Destacados): lo que fijó el equipo, editorial y sin cobro (Patrocinado
+   es lo pagado, arriba). Vivo AHORA (desde ≤ ahora < hasta, sin retirar) en ESTA ciudad, de eventos publicados (listable, no cancelados) que todavía no
+   terminan, en el radio; su próxima fecha (una tarjeta por evento), en el orden en que se fijaron, nunca más que destacados_evt_por_ciudad. Un evento que
+   ya sale en Patrocinados no se repite aquí. Lo que se canceló, se ocultó o ya pasó se cae solo (VIVO). Una consulta. */
+const FIJADO_VIVO = "f.city_id = $1 and f.placement = 'eventos' and f.retired_at is null and f.from_at <= now() and f.to_at > now()";
+const cfgFijadosEvt = "(select cfg_int('destacados_evt_por_ciudad'))";
+export async function destacadosEventos(p: Punto, viewer: string | null, es: boolean): Promise<TarjetaEvt[]> {
+  const centro = centroSQL(p), R = radioSQL(p), D = await diasCiudad(p.ciudad);
+  const r = await db().query<FilaT & { fijo: string }>(
+    `with fx as (select f.event_id, f.id from featured f where f.city_id = $2 and f.placement = 'eventos' and f.retired_at is null and f.from_at <= now() and f.to_at > now()),
+          x as (select ${COLS_T(centro)}, fx.id::text as fijo ${DESDE_T} join fx on fx.event_id = d.event_id
+                 where ${VIVO} and d.city_id = $2 and e.status <> 'cancelled' and ${EN_RADIO(centro, R)} and ${PRIMERA()}
+                   and not exists (select 1 from event_sponsorships s where s.event_id = d.event_id and s.status = 'activo' and s.starts_at <= now() and s.ends_at > now() and s.paused_at is null))
+     select * from x order by x.fijo::bigint limit ${cfgFijadosEvt}`, [viewer, p.ciudad]);
+  return r.rows.map((x) => tarjeta(x, es, D, true));
+}
 
 /* El destacado (EventPromo): la próxima fiesta o show con cartel en el radio; si no hay, el próximo evento con cartel. */
 export async function destacado(p: Punto, viewer: string | null, es: boolean): Promise<TarjetaEvt | null> {

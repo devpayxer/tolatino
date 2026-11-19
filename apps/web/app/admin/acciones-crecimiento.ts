@@ -4,7 +4,7 @@
 import { staff } from "@/lib/admin";
 import { aprobarCampana, contarSegmento, crearCampana, retirarCampana, segmentoDe } from "@/lib/crecimiento/campanas";
 import type { Res } from "@/lib/crecimiento/comun";
-import { buscarNegocio, fijarDestacado, retirarDestacado } from "@/lib/crecimiento/destacados";
+import { buscarEventoDestacar, buscarNegocio, fijarDestacado, fijarDestacadoEvento, retirarDestacado } from "@/lib/crecimiento/destacados";
 import { crearEnlace, escaneosDe, retirarEnlace } from "@/lib/crecimiento/enlaces";
 import { nombrarPromotor, retirarCodigo } from "@/lib/crecimiento/promotores";
 import { ponerFechaLanding } from "@/lib/crecimiento/admin";
@@ -62,6 +62,17 @@ export async function destacadoRetirar(id: string, motivo: string): Promise<ResA
 export async function destacadoBuscar(ciudad: string, q: string) {
   const s = await staff(); if (!s || !s.puede("mkt", "ver")) return [];
   return buscarNegocio(s, S(ciudad, 10), S(q, 40));
+}
+
+/* 9t · Destacados de Eventos: fijar un evento arriba de Eventos de su ciudad, con desde, hasta y motivo (retirar es destacadoRetirar, el mismo de los negocios). */
+export async function destacadoEvtFijar(evento: string, desde: string, hasta: string, motivo: string): Promise<ResAdm> {
+  const s = await staff(); if (!s) return sin();
+  return sal(await fijarDestacadoEvento(s, { evento: S(evento, 20), desde: S(desde, 10), hasta: S(hasta, 10), motivo: S(motivo) }));
+}
+// solo lectura
+export async function destacadoEvtBuscar(ciudad: string, q: string) {
+  const s = await staff(); if (!s || !s.puede("mkt", "ver")) return [];
+  return buscarEventoDestacar(s, S(ciudad, 10), S(q, 60));
 }
 
 export async function promotorNombrar(telefono: string, ciudad: string, motivo: string): Promise<ResAdm> {

@@ -6,7 +6,8 @@
    arriba) → los eventos de ese día en dos columnas → «¿Tu negocio tiene un evento?». Computadora: igual, con «Patrocinados» en una fila de
    tarjetas altas. Tocar un día cambia la dirección (?dia=): el servidor manda el título, las historias y la lista. Las historias de hoy abren
    «Esta noche» (APP-EVT-NOCHE); las de otro día, la página del evento. 20 por página: «Ver más» pide la siguiente con el cursor del servidor.
-   Lo que se ve lo decide el servidor (solo lo `listable`); la pantalla solo pinta. */
+   Lo que se ve lo decide el servidor (solo lo `listable`); la pantalla solo pinta. 9t: debajo de Patrocinados, «Destacados en {ciudad}» (lo que fijó
+   el equipo en Super Admin › Crecimiento › Destacados; editorial, sin cobro), con la pieza de Negocios › Destacados. */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType } from "react";
@@ -19,22 +20,26 @@ import { tec } from "@/lib/tec";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Button = UI.Button as ComponentType<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const SectionHeader = UI.SectionHeader as ComponentType<any>;
 
 type Props = {
   es: boolean; ciudad: string; estado: string; dia: string; hoy: string; fin: string; conEventos: string[]; titulo: string; t: string; generos: { k: string; l: string }[];
   lista: { items: TarjetaEvt[]; mas: string | null; total: number }; historias: HistoriaEvt[]; spon: PatEvt[]; mios: number; bol?: number;
+  /* 9t · Destacados de Eventos (lo que fijó el equipo; lib/evt-publico.ts · destacadosEventos). */
+  dest?: TarjetaEvt[];
 };
 const WD: [string, string][] = [["DOM", "SUN"], ["LUN", "MON"], ["MAR", "TUE"], ["MIÉ", "WED"], ["JUE", "THU"], ["VIE", "FRI"], ["SÁB", "SAT"]];
 const sumar = (d: string, n: number) => { const [y, m, x] = d.split("-").map(Number); return new Date(Date.UTC(y!, m! - 1, x! + n)).toISOString().slice(0, 10); };
 const dow = (d: string) => { const [y, m, x] = d.split("-").map(Number); return new Date(Date.UTC(y!, m! - 1, x!)).getUTCDay(); };
 
-export function Eventos({ es, ciudad, estado, dia, hoy, fin, conEventos, titulo, t, generos, lista, historias, spon, mios, bol = 0 }: Props) {
+export function Eventos({ es, ciudad, estado, dia, hoy, fin, conEventos, titulo, t, generos, lista, historias, spon, mios, bol = 0, dest = [] }: Props) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), { toast, el } = useToast();
   const [items, setItems] = useState(lista.items), [mas, setMas] = useState(lista.mas), [cargando, setCargando] = useState(false);
   const [antes, setAntes] = useState(lista);
   if (antes !== lista) { setAntes(lista); setItems(lista.items); setMas(lista.mas); }
-  const g = useGuardar(Object.fromEntries([...lista.items, ...historias, ...spon].map((x) => [x.id, x.saved])), toast, es);
+  const g = useGuardar(Object.fromEntries([...lista.items, ...historias, ...spon, ...dest].map((x) => [x.id, x.saved])), toast, es);
   const ir = (dd: string, tt: string) => { const q = new URLSearchParams(); if (dd !== hoy) q.set("dia", dd); if (tt !== "todo") q.set("t", tt); router.push(q.size ? `/eventos?${q}` : "/eventos", { scroll: false }); };
   const verMas = async () => {
     if (!mas || cargando) return; setCargando(true);
@@ -104,6 +109,22 @@ export function Eventos({ es, ciudad, estado, dia, hoy, fin, conEventos, titulo,
       {L.map((k) => <Cartel key={k.fecha} k={k} es={es} desk={desk} saved={!!g.on[k.id]} onLike={(ev) => g.toggle(k.id, ev)} />)}
     </div>
   );
+  /* 9t · «Destacados en {ciudad}»: la misma pieza que Negocios › Destacados (SectionHeader con el título y una fila de tarjetas), con la tarjeta del
+     evento de siempre (Cartel). Lo que sale lo decide el servidor (fijado por el equipo, vivo, publicado, en el radio); sin destacados no se pinta. */
+  const destacados = (desk: boolean) => dest.length ? (
+    <section data-screen-label={desk ? "Eventos · Destacados · desktop (9t)" : "Eventos · Destacados (9t)"} data-destacados-evt={dest.length} className={desk ? "mt-[26px] flex flex-col gap-3" : "mt-4 flex flex-col gap-3"}>
+      <div className={desk ? "grid" : "grid px-5"}><SectionHeader title={E2(`Destacados en ${ciudad}`, `Featured in ${ciudad}`)} /></div>
+      {desk ? (
+        <div className="grid gap-x-4 gap-y-[18px]" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(230px,1fr))" }}>
+          {dest.map((k) => <div key={k.fecha} data-destacado-evt={k.id} className="grid"><Cartel k={k} es={es} desk saved={!!g.on[k.id]} onLike={(ev) => g.toggle(k.id, ev)} /></div>)}
+        </div>
+      ) : (
+        <div className="hs flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1 scroll-px-5">
+          {dest.map((k) => <div key={k.fecha} data-destacado-evt={k.id} className="grid w-[160px] flex-none snap-start"><Cartel k={k} es={es} saved={!!g.on[k.id]} onLike={(ev) => g.toggle(k.id, ev)} /></div>)}
+        </div>
+      )}
+    </section>
+  ) : null;
   const vacio = (desk: boolean) => (
     <div data-screen-label="APP-EVT-BUSQ · sin resultados" className={`rounded-[18px] border border-ink/[.07] bg-white text-center ${desk ? "mt-4 p-[34px]" : "mx-5 mt-4 px-5 py-[26px]"}`}>
       <div className="font-display font-extrabold tracking-[-0.02em]" style={{ fontSize: desk ? 17 : 16 }}>{hayDia ? E2("Nada con esos filtros", "Nothing with those filters") : E2("Nada publicado para ese día", "Nothing listed for that day")}</div>
@@ -129,6 +150,7 @@ export function Eventos({ es, ciudad, estado, dia, hoy, fin, conEventos, titulo,
           </div>
         )}
         <PatrocinadosEventos items={spon} es={es} movil conMios={mios + bol > 0} />
+        {destacados(false)}
         {calendario(false)}
         <div className="mt-4 flex items-baseline justify-between gap-2.5 px-5">
           <h2 data-titulo-dia="" className="font-display text-[18px] font-extrabold leading-none tracking-[-0.03em]">{titulo}</h2>{cont("")}
@@ -152,6 +174,7 @@ export function Eventos({ es, ciudad, estado, dia, hoy, fin, conEventos, titulo,
       {/* ── Escritorio ── */}
       <div data-screen-label="APP-EVT-BUSQ · desktop" className="mx-auto hidden max-w-[1200px] px-9 pb-[70px] pt-7 lg:block">
         <PatrocinadosEventos items={spon} es={es} movil={false} />
+        {destacados(true)}
         {calendario(true)}
         <div className="mt-6 flex items-baseline gap-3.5">
           <h2 data-titulo-dia="" className="font-display text-[21px] font-extrabold leading-none tracking-[-0.03em]">{titulo}</h2>{cont("")}

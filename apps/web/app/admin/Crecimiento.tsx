@@ -9,11 +9,11 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { EntradaLista } from "@/lib/crecimiento/admin";
 import type { CampanaAdm } from "@/lib/crecimiento/campanas";
 import { CANAL, CANALES, ITEMS_SEGMENTO, MODO, TIPO_CAMPANA, TIPO_ENLACE, TIPOS_CAMPANA, TIPOS_ENLACE, type Canal, type Modo, type Segmento, type TipoCampana, type TipoEnlace } from "@/lib/crecimiento/comun";
-import type { DestacadoAdm } from "@/lib/crecimiento/destacados";
+import type { DestacadoAdm, DestacadoEvtAdm } from "@/lib/crecimiento/destacados";
 import type { EnlaceAdm } from "@/lib/crecimiento/enlaces";
 import type { PromotorAdm } from "@/lib/crecimiento/promotores";
 import type { PatAdm } from "@/lib/patrocinio";
-import { campanaAprobar, campanaContar, campanaCrear, campanaRetirar, codigoRetirar, destacadoBuscar, destacadoFijar, destacadoRetirar, enlaceCrear, patrocinioTerminar, patrocinioEventoTerminar, enlaceEscaneos, enlaceRetirar, landingFecha, promotorNombrar } from "./acciones-crecimiento";
+import { campanaAprobar, campanaContar, campanaCrear, campanaRetirar, codigoRetirar, destacadoBuscar, destacadoEvtBuscar, destacadoEvtFijar, destacadoFijar, destacadoRetirar, enlaceCrear, patrocinioTerminar, patrocinioEventoTerminar, enlaceEscaneos, enlaceRetirar, landingFecha, promotorNombrar } from "./acciones-crecimiento";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { cuandoL, par, selectorIdioma, type L } from "./TextosComun";
@@ -26,7 +26,9 @@ export type DatosCrec = {
   seed: { recs: { id: string; nombre: string; cat: string | null; donde: string | null; at: string }[]; seeds: { id: string; nombre: string; cat: string | null; estado: string; at: string }[]; sinOferta: { q: string; cat: string | null; n: number }[] } | null;
   promo: PromotorAdm[] | null;
   camp: { filas: CampanaAdm[]; mas: string | null } | null;
-  feat: { lista: DestacadoAdm[]; hoy: { id: string; nombre: string; abierto: boolean }[]; tope: number; dias: number; fijados: number } | null;
+  feat: { lista: DestacadoAdm[]; hoy: { id: string; nombre: string; abierto: boolean }[]; tope: number; dias: number; fijados: number;
+    /* 9t · Destacados de Eventos (featured 'eventos', 0183): los fijados de la ciudad, lo que sale hoy arriba de Eventos, el tope y las fechas de fábrica. */
+    ev: { lista: DestacadoEvtAdm[]; hoy: { id: string; titulo: string; cuando: string }[]; tope: number; fijados: number; hoyCiudad: string; hastaDef: string } } | null;
   links: { filas: EnlaceAdm[]; mas: string | null } | null;
   pat: { filas: PatAdm[]; mas: string | null; activos: number; reservados: number; e: "vivos" | "terminados" | "todos"; precios: { week: number; month: number; puestos: number; diasAdelante: number };
     /* C-003 · El grupo Eventos (patrocinios de eventos) con su cursor y sus precios. */
@@ -194,7 +196,8 @@ function Destacados({ d, E, cuando, setConf }: { d: DatosCrec; E: EFn; cuando: (
   const accion = (id: string, nombre: string, modo: "fijar" | "quitar") => setConf({ titulo: modo === "fijar" ? E(`Fijar ${nombre}`, `Pin ${nombre}`) : E(`Quitar ${nombre} de la rotación`, `Remove ${nombre} from rotation`), cta: modo === "fijar" ? E("Fijar", "Pin") : E("Quitar", "Remove"),
     sub: E(`Dura ${F.dias} días y vuelve solo a la rotación. Queda en la auditoría.`, `It lasts ${F.dias} days and returns to the rotation on its own. It goes in the audit trail.`), plantillas: modo === "fijar" ? [E("Negocio nuevo de la campaña.", "New business from the campaign."), E("Temporada.", "Season.")] : [E("Queja abierta.", "Open complaint."), E("Pidió no salir.", "Asked not to show.")],
     hacer: (m) => destacadoFijar(ciudad, id, modo, m) });
-  return <PanelBloques bloques={[
+  return <>{/* 9t · Dos grupos, como Patrocinios: NEGOCIOS (la vitrina de Negocios) y EVENTOS (arriba de Eventos de la ciudad). */}<PanelBloques bloques={[
+    { type: "group", k: E("NEGOCIOS", "BUSINESSES") },
     { type: "note", tone: "info", icon: "star", t: E(`Destacados = los Pro de la portada de Negocios. Rotación diaria automática; aquí fijas o quitas a mano por ${F.dias} días con motivo. Fijados a la vez: ${F.fijados} de ${F.tope}.`, `Featured = the Pro on the Businesses cover. Automatic daily rotation; here you pin or remove manually for ${F.dias} days with a reason. Pinned at once: ${F.fijados} of ${F.tope}.`) },
     { type: "rows", k: E("HOY EN LA VITRINA (LO QUE VE EL VECINO)", "TODAY IN THE SHOWCASE (WHAT NEIGHBORS SEE)"), items: F.hoy.length ? F.hoy.map((b, i) => ({ key: b.id, icon: "store", t: `${i + 1}. ${b.nombre}`, s: b.abierto ? E("abierto ahora", "open now") : E("cerrado ahora", "closed now"),
       tag: F.lista.some((x) => x.vivo && x.modo === "fijar" && x.negocio === b.id) ? E("FIJADO", "PINNED") : E("ROTACIÓN", "ROTATION"), tone: F.lista.some((x) => x.vivo && x.modo === "fijar" && x.negocio === b.id) ? "action" : "neutral",
@@ -208,6 +211,49 @@ function Destacados({ d, E, cuando, setConf }: { d: DatosCrec; E: EFn; cuando: (
       { type: "group" as const, k: E("FIJAR UN NEGOCIO", "PIN A BUSINESS") },
       { type: "search" as const, val: q, ph: E("Nombre del negocio", "Business name"), onChange: setQ, onClear: () => setQ("") },
       ...(res.length ? [{ type: "rows" as const, items: res.map((b) => ({ key: b.id, icon: "store", t: b.nombre, s: b.pro ? "Pro" : "Free", acts: [{ l: E("Fijar", "Pin"), v: "action", onClick: () => accion(b.id, b.nombre, "fijar") }, { l: E("Quitar", "Remove"), v: "secondary", onClick: () => accion(b.id, b.nombre, "quitar") }] })) }] : []),
+    ] : []),
+  ]} /><DestacadosEventos d={d} E={E} cuando={cuando} setConf={setConf} /></>;
+}
+
+/* 9t · Destacados de Eventos (LAUNCH «Destacar eventos»; modelo Featured; admin-dashboard ADM-MKT «negocios/eventos destacados en la ciudad por fecha»): lo
+   que el vecino ve hoy arriba de Eventos, los eventos fijados (vivo · programado · no sale · terminó · retirado) con «Retirar», y «Fijar un evento»: desde,
+   hasta y el evento (buscar por nombre), con motivo y auditoría. Editorial y sin cobro: Patrocinado (lo pagado) está en Patrocinios › EVENTOS. El tope a la
+   vez es de Configuración › Crecimiento; lo decide la base (lib/crecimiento/destacados.ts · fijarDestacadoEvento). */
+function DestacadosEventos({ d, E, cuando, setConf }: { d: DatosCrec; E: EFn; cuando: (iso: string | null) => string; setConf: SetConf }) {
+  const V = d.feat!.ev, ciudad = d.ciudadForm, nombreCiudad = d.ciudades.find((c) => c.id === ciudad)?.name ?? ciudad;
+  const [q, setQ] = useState(""), [res, setRes] = useState<{ id: string; titulo: { es: string; en: string }; org: string; dia: string; fijado: boolean }[]>([]);
+  const [desde, setDesde] = useState(V.hoyCiudad), [hasta, setHasta] = useState(V.hastaDef), ref = useRef({ desde, hasta }); ref.current = { desde, hasta };
+  useEffect(() => { let vivo = true; if (q.trim().length < 2) { setRes([]); return; } const x = setTimeout(() => { void destacadoEvtBuscar(ciudad, q).then((r) => { if (vivo) setRes(r); }); }, 250); return () => { vivo = false; clearTimeout(x); }; }, [q, ciudad]);
+  const tit = (t: { es: string; en: string }) => E(t.es || t.en, t.en || t.es);
+  const EST: Record<DestacadoEvtAdm["estado"], [string, string]> = { vivo: [E("VIVO", "LIVE"), "signal"], programado: [E("PROGRAMADO", "SCHEDULED"), "action"], no_sale: [E("NO SALE", "NOT SHOWING"), "neutral"],
+    termino: [E("TERMINÓ", "ENDED"), "neutral"], retirado: [E("RETIRADO", "RETIRED"), "neutral"] };
+  const fijar = (id: string, nombre: string) => setConf({ titulo: E(`Fijar ${nombre} en Eventos`, `Pin ${nombre} on Events`), cta: E("Fijar", "Pin"),
+    sub: E(`Sale arriba de Eventos de ${nombreCiudad} («Destacados en ${nombreCiudad}») y primero en la lista de su día, del ${ref.current.desde || V.hoyCiudad} al ${ref.current.hasta}. Si el evento se cancela, se oculta o pasa, deja de salir solo. Queda en la auditoría.`,
+      `It shows at the top of Events in ${nombreCiudad} («Featured in ${nombreCiudad}») and first in its day’s list, from ${ref.current.desde || V.hoyCiudad} to ${ref.current.hasta}. If the event is cancelled, hidden or over, it stops showing on its own. It goes in the audit trail.`),
+    plantillas: [E("Evento de la comunidad.", "Community event."), E("Fiesta patria de la ciudad.", "City heritage celebration."), E("Campaña de la ciudad.", "City campaign.")],
+    hacer: (m) => destacadoEvtFijar(id, ref.current.desde, ref.current.hasta, m) });
+  return <PanelBloques bloques={[
+    { type: "group", k: E("EVENTOS", "EVENTS") },
+    { type: "note", tone: "info", icon: "ticket", t: E(`Destacados de Eventos = los que fija el equipo arriba de Eventos de la ciudad (sin cobro). Patrocinado es lo que paga el organizador (Patrocinios › EVENTOS). Fijados a la vez: ${V.fijados} de ${V.tope}.`,
+      `Featured events = what the team pins at the top of Events in the city (no charge). Sponsored is what the organizer pays for (Sponsorships › EVENTS). Pinned at once: ${V.fijados} of ${V.tope}.`) },
+    { type: "rows", k: E("HOY ARRIBA DE EVENTOS (LO QUE VE EL VECINO)", "TODAY AT THE TOP OF EVENTS (WHAT NEIGHBORS SEE)"), items: V.hoy.length ? V.hoy.map((x, i) => ({ key: x.id, icon: "ticket", t: `${i + 1}. ${x.titulo}`, s: x.cuando, tag: E("FIJADO", "PINNED"), tone: "action" }))
+      : [{ t: E("Hoy no sale ningún evento fijado (o la ciudad todavía no abre).", "No pinned event shows today (or the city is not open yet)."), icon: "info" }] },
+    V.lista.length ? { type: "rows", k: E("EVENTOS FIJADOS", "PINNED EVENTS"), items: V.lista.map((x) => {
+      const [tg, tn] = EST[x.estado], abierto = x.estado === "vivo" || x.estado === "programado" || x.estado === "no_sale";
+      return { key: x.id, icon: x.estado === "no_sale" ? "ban" : "ticket", t: tit(x.titulo),
+        s: `${x.org} · ${E("del", "from")} ${cuando(x.desde)} ${E("al", "to")} ${cuando(x.hasta)} · ${x.motivo}${x.quien ? ` · ${x.quien}` : ""}${x.estado === "no_sale" ? ` · ${E("el evento ya no se ve (cancelado, oculto o pasado): no sale ni ocupa puesto", "the event no longer shows (cancelled, hidden or over): it does not show or take a slot")}` : ""}${x.razon ? ` · ${E("retirado", "retired")}: ${x.razon}` : ""}`,
+        tag: tg, tone: tn, dim: !abierto,
+        acts: d.puede.editar && abierto ? [{ l: E("Retirar", "Retire"), v: "secondary", onClick: () => setConf({ titulo: E(`Retirar: ${tit(x.titulo)}`, `Retire: ${tit(x.titulo)}`), cta: E("Retirar", "Retire"), peligro: true,
+          sub: E("Deja de salir en Destacados de Eventos al momento. Nada se borra.", "It stops showing in Featured events right away. Nothing is deleted."), plantillas: [E("Ya no hace falta.", "No longer needed."), E("Queja abierta de los vecinos.", "Open complaint from neighbors.")], hacer: (m) => destacadoRetirar(x.id, m) }) }] : undefined };
+    }) } : { type: "empty", icon: "ticket", t: E("Ningún evento fijado", "No pinned events"), s: E("Eventos sale por días, como siempre; aquí fijas uno arriba por unas fechas.", "Events shows by day, as always; here you pin one at the top for some dates.") },
+    ...(d.puede.editar ? [
+      { type: "group" as const, k: E("FIJAR UN EVENTO", "PIN AN EVENT") },
+      { type: "field" as const, k: E("DESDE (AAAA-MM-DD, HORA DE LA CIUDAD; HOY = AHORA)", "FROM (YYYY-MM-DD, CITY TIME; TODAY = NOW)"), val: desde, onChange: (v: string) => setDesde(v.trim()), ph: V.hoyCiudad, max: 10 },
+      { type: "field" as const, k: E("HASTA (EL ÚLTIMO DÍA QUE SALE; MÁXIMO 30 DÍAS)", "UNTIL (THE LAST DAY IT SHOWS; 30 DAYS AT MOST)"), val: hasta, onChange: (v: string) => setHasta(v.trim()), ph: V.hastaDef, max: 10 },
+      { type: "search" as const, val: q, ph: E("Nombre del evento", "Event name"), onChange: setQ, onClear: () => setQ("") },
+      ...(res.length ? [{ type: "rows" as const, items: res.map((x) => ({ key: x.id, icon: "ticket", t: tit(x.titulo), s: `${x.org} · ${E("próxima fecha", "next date")} ${x.dia}`,
+        ...(x.fijado ? { tag: E("YA FIJADO", "ALREADY PINNED"), tone: "neutral" } : {}),
+        acts: x.fijado ? undefined : [{ l: E("Fijar", "Pin"), v: "action", onClick: () => fijar(x.id, tit(x.titulo)) }] })) }] : []),
     ] : []),
   ]} />;
 }

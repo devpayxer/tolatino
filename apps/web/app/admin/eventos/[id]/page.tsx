@@ -26,6 +26,13 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const forma = e.kind === "series" ? { kind: "series", l: repL(e.d.dia, e.d.rep, true) } : e.kind === "span" ? { kind: "span", l: `${spanL(e.d.dia, e.d.span, true)} · ${e.d.span} días` } : null;
   // 6j · Cupos y venta de UNA fecha (la próxima, o ?fecha=): «Ajustar cupo» y «Extender ventas».
   const cupos = (e.d.entrada === "tickets" || e.d.entrada === "rsvp") ? await (await import("@/lib/evt-admin")).cuposFecha(s, e.id, fecha && /^\d{1,18}$/.test(fecha) ? fecha : null) : null;
+  // 9t · Destacados de Eventos (featured 'eventos'): si To'Latino lo tiene fijado arriba de Eventos (vivo o programado) y el día de hoy en su ciudad.
+  const [dest, hoyC] = await Promise.all([
+    db().query<{ id: string; desde: string; hasta: string; luego: boolean }>(
+      `select f.id::text, to_char(f.from_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as desde, to_char(f.to_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as hasta, f.from_at > now() as luego
+         from featured f where f.event_id = $1::bigint and f.retired_at is null and f.to_at > now() order by f.id desc limit 1`, [e.id]),
+    db().query<{ hoy: string; tz: string }>(`select to_char(now() at time zone c.timezone, 'YYYY-MM-DD') as hoy, c.timezone as tz from events x join cities c on c.id = x.city_id where x.id = $1::bigint`, [e.id]),
+  ]);
   return <EventoAdmin e={e} rsvp={rsvp} ventas={ventas} cambios={cambios} liq={liq} fechas={fechas} forma={forma} cupos={cupos} publico={pub.rows[0] ? { href: `/eventos/${e.slug}?fecha=${pub.rows[0].fid}`, van: pub.rows[0].van } : null}
-    puede={{ aprobar: s.puede("evt", "aprobar"), retirar: s.puede("evt", "retirar"), editar: s.puede("evt", "editar"), dinero: s.puede("tx", "ver") }} />;
+    destacado={hoyC.rows[0] ? { fila: dest.rows[0] ?? null, hoy: hoyC.rows[0].hoy, tz: hoyC.rows[0].tz } : null} puede={{ aprobar: s.puede("evt", "aprobar"), retirar: s.puede("evt", "retirar"), editar: s.puede("evt", "editar"), dinero: s.puede("tx", "ver"), destacar: s.puede("mkt", "editar") }} />;
 }

@@ -2,7 +2,7 @@
 
 _Pantallas: **Panel › Eventos** (`/panel/{negocio}/eventos`; ficha `?det=evt:{id}`, editor «Crear» / «Editar»). Teléfono y escritorio. Plan **Pro**
 (en Free se ve el candado «Ver Pro»; la prueba de 30 días no pide tarjeta). Lo maneja el dueño o quien tenga la parte «Eventos» del equipo. En el
-teléfono está en «Más»; en el escritorio, en el menú. Versión: 17 nov 2026. Audiencia: negocio. Tema: panel._
+teléfono está en «Más»; en el escritorio, en el menú. Versión: 19 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **Duración:** en CUÁNDO eliges **Un día**, **Varios días seguidos** o **Se repite** (cada semana, cada 2 semanas o cada mes). Ver «Panel › Eventos: series y eventos de varios días».
@@ -23,6 +23,9 @@ teléfono está en «Más»; en el escritorio, en el menú. Versión: 17 nov 202
 - **Repetir otro día:** copia el evento como borrador 7 días después (las fotos también). Revísalo y envíalo.
 - **Ver página** y **Copiar enlace** (evento publicado): abre la página pública del evento o copia su enlace para compartirlo.
 - **Patrocinar** (evento publicado que todavía no termina; quien maneja los cobros): sal arriba de todo en la página de Eventos de tu ciudad por 1 semana, 1 mes o hasta el evento. Ver `patrocinados.md`.
+- **DESTACADO POR TO'LATINO**: si To'Latino eligió tu evento para la ciudad, la ficha lo dice («Sale arriba de Eventos de tu ciudad y primero en la
+  lista de su día hasta el …», o «Del … al …» si empieza otro día) y la fila de la lista lleva «DESTACADO POR TO'LATINO». No cuesta nada ni se pide:
+  lo decide el equipo. Es distinto de Patrocinar (lo que pagas tú).
 - **Boletos, mesas y extras se venden en la app** cuando el evento sale publicado. El precio que pones es el que paga el
   cliente (cargos incluidos); la comisión de To'Latino por boleto sale de lo tuyo. En la puerta no se venden boletos.
 
@@ -45,6 +48,8 @@ teléfono está en «Más»; en el escritorio, en el menú. Versión: 17 nov 202
 | Un extra es alcohol, botellas o hookah | No se guarda: la app no vende alcohol. La mesa con consumo mínimo sí (el consumo se paga en el local). |
 | El día ya pasó o está muy lejos | «Ese día ya pasó» / «Se publica con hasta N días de anticipación». |
 | Tu negocio está en Free | Se ve el candado; Eventos es parte de Pro. |
+| To'Latino destacó tu evento | La ficha dice DESTACADO POR TO'LATINO con hasta cuándo. No cambia nada más (ni el precio ni la venta). |
+| Un evento destacado se oculta, se pausa o se queda sin fechas por delante | Deja de salir en Destacados solo; la ficha dice «Ahora no sale». Si vuelve a verse antes de que termine, vuelve a salir. |
 
 ## Preguntas frecuentes
 - **¿Cuánto tarda la revisión?** Hasta 24 h (lo fija To'Latino en Configuración).
@@ -74,6 +79,9 @@ teléfono está en «Más»; en el escritorio, en el menú. Versión: 17 nov 202
 - **Repeat another day:** copies the event as a draft 7 days later (photos too). Review it and send it.
 - **View page** and **Copy link** (live event): opens the public event page or copies its link to share.
 - **Sponsor** (live event that has not ended; whoever manages payments): show at the very top of your city's Events page for 1 week, 1 month or until the event. See `patrocinados.md`.
+- **FEATURED BY TO'LATINO**: if To'Latino picked your event for the city, the page says so («It shows at the top of Events in your city and first in
+  its day's list until …», or «From … to …» if it starts another day) and the list row shows «FEATURED BY TO'LATINO». It costs nothing and cannot be
+  requested: the team decides. It is different from Sponsor (what you pay for).
 - **Tickets, tables and extras are sold in the app** once the event is live. The price you set is what the customer pays (charges included);
   To'Latino's fee per ticket comes out of yours. Tickets are not sold at the door.
 
@@ -96,6 +104,8 @@ teléfono está en «Más»; en el escritorio, en el menú. Versión: 17 nov 202
 | An extra is alcohol, bottles or hookah | It isn't saved: the app doesn't sell alcohol. A table with a minimum spend is fine (the spend is paid at the venue). |
 | The day has already passed or is too far away | «That day has already passed» / «It is published up to N days ahead». |
 | Your business is on Free | The lock shows; Events is part of Pro. |
+| To'Latino featured your event | The page says FEATURED BY TO'LATINO with until when. Nothing else changes (not the price or the sales). |
+| A featured event is hidden, paused or has no upcoming dates | It stops showing in Featured on its own; the page says «Not showing now». If it shows again before the end, it is back. |
 
 ### FAQ
 - **How long does the review take?** Up to 24 h (To'Latino sets it in Settings).
