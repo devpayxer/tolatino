@@ -11,7 +11,7 @@ const CON_REPORTE = (t: string) => `exists (select 1 from queue_items q where q.
 
 export type DmReportado = {
   a: { id: string; nombre: string }; b: { id: string; nombre: string }; cerrada: boolean;
-  msjs: { id: string; de: string; quien: string; t: string; at: string; oculto: boolean }[];
+  msjs: { id: string; de: string; quien: string; t: string; at: string; oculto: boolean; foto: string | null; fst: string | null }[];
   reportes: { reason: string; note: string | null; at: string; quien: string | null }[];
 };
 /* La conversación reportada, solo con el caso y el reporte abiertos (si no, null y nada se lee). Los últimos 80 mensajes. */
@@ -23,9 +23,11 @@ export async function dmReportado(threadId: string): Promise<DmReportado | null>
        from dm_threads t join users ua on ua.id = t.a_user_id join users ub on ub.id = t.b_user_id where t.id = $1::bigint and ${CON_REPORTE("t.id")}`, [threadId])).rows[0];
   if (!t) return null;
   const [M, R] = await Promise.all([
-    db().query<{ id: string; de: string; t: string; at: string; oculto: boolean }>(
-      `select m.id::text, m.sender_user_id::text as de, m.body as t, m.created_at as at, m.hidden_at is not null as oculto
-         from dm_messages m where m.thread_id = $1::bigint and ${CON_REPORTE("m.thread_id")} order by m.id desc limit 80`, [threadId]),
+    // 9t · Con su foto: la dirección privada (/api/mensajes/foto/{id} la deja pasar con el caso y el reporte abiertos, y lo audita) y su estado.
+    db().query<{ id: string; de: string; t: string; at: string; oculto: boolean; foto: string | null; fst: string | null }>(
+      `select m.id::text, m.sender_user_id::text as de, m.body as t, m.created_at as at, m.hidden_at is not null as oculto,
+              case when f.status in ('visible', 'review') and f.purged_at is null then '/api/mensajes/foto/' || f.id::text end as foto, f.status as fst
+         from dm_messages m left join media f on f.id = m.media_id where m.thread_id = $1::bigint and ${CON_REPORTE("m.thread_id")} order by m.id desc limit 80`, [threadId]),
     db().query<{ reason: string; note: string | null; at: string; quien: string | null }>(
       `select cr.reason, cr.note, cr.created_at as at, nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), '') as quien
          from content_reports cr join users u on u.id = cr.reporter_user_id where cr.target_kind = 'dm' and cr.target_id = $1 and cr.status = 'open' order by cr.created_at`, [threadId]),
@@ -35,6 +37,14 @@ export async function dmReportado(threadId: string): Promise<DmReportado | null>
     a: { id: t.a, nombre: t.an }, b: { id: t.b, nombre: t.bn }, cerrada: t.cerrada,
     msjs: M.rows.reverse().map((m) => ({ ...m, quien: nombre(m.de) })), reportes: R.rows,
   };
+}
+
+/* 9t · La foto de un mensaje de una conversación reportada (app/api/mensajes/foto/{id}): de qué conversación y mensaje es, y su ciudad, solo con el
+   caso y el reporte abiertos (CON_REPORTE en la misma sentencia). Si no, null y la foto no se sirve al equipo por aquí. */
+export async function dmFotoConReporte(media: string): Promise<{ hilo: string; msg: string; city: string } | null> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(media)) return null;
+  return (await db().query<{ hilo: string; msg: string; city: string }>(
+    `select m.thread_id::text as hilo, m.id::text as msg, m.city_id as city from dm_messages m where m.media_id = $1::uuid and ${CON_REPORTE("m.thread_id")}`, [media])).rows[0] ?? null;
 }
 
 /* Ocultar un mensaje de la conversación reportada (dentro de la transacción de la decisión). Devuelve quién lo escribió. */

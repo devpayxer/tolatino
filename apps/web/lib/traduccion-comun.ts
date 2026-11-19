@@ -1,8 +1,8 @@
 /* 5h · «Ver traducción» (D3): lo que comparten la pantalla y el servidor (sin base ni red). */
 type Bi = { es: string; en: string };
 
-// 9t · chat_message: un mensaje de Mensajes (cliente ↔ negocio).
-export const KINDS_TR = ["com_post", "com_comment", "review", "review_reply", "post_comment", "chat_message"] as const;
+// 9t · chat_message: un mensaje de Mensajes (cliente ↔ negocio); dm_message: un mensaje entre vecinos (Comunidad › Mensajes).
+export const KINDS_TR = ["com_post", "com_comment", "review", "review_reply", "post_comment", "chat_message", "dm_message"] as const;
 export type KindTr = (typeof KINDS_TR)[number];
 export type LangTr = "es" | "en";
 export const esKindTr = (k: unknown): k is KindTr => typeof k === "string" && (KINDS_TR as readonly string[]).includes(k);

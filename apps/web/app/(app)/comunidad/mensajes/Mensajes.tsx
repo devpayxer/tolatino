@@ -37,7 +37,7 @@ export function Mensajes({ es, yo, ciudad, d }: { es: boolean; yo: YoCom; ciudad
       <div data-screen-label="APP-COM-MENSAJES · mensajes" style={{ padding: D ? 0 : "14px 16px", maxWidth: 720, display: "flex", flexDirection: "column", gap: 12 }}>
         <div role="note" style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(75,55,245,.07)", display: "flex", gap: 10, alignItems: "flex-start" }}>
           <span style={{ display: "grid", flex: "none", paddingTop: 1 }}><Icon name="info" size={15} color="var(--tl-action)" /></span>
-          <span style={{ font: "600 12.5px/1.45 Manrope,sans-serif", color: "var(--tl-action-ink)", textWrap: "pretty" }}>{E2("Puedes escribirle a quien te sigue. Solo texto: sin teléfonos ni datos. Los negocios te escriben desde tus pedidos y citas.", "You can message people who follow you. Text only: no phone numbers or personal details. Businesses reach you from your orders and bookings.")}</span>
+          <span style={{ font: "600 12.5px/1.45 Manrope,sans-serif", color: "var(--tl-action-ink)", textWrap: "pretty" }}>{E2("Puedes escribirle a quien te sigue. Texto y fotos, sin teléfonos ni datos. Los negocios te escriben desde tus pedidos y citas.", "You can message people who follow you. Text and photos, no phone numbers or personal details. Businesses reach you from your orders and bookings.")}</span>
         </div>
         <div style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", overflow: "hidden" }}>
           {items.map((x, i) => (
@@ -47,7 +47,7 @@ export function Mensajes({ es, yo, ciudad, d }: { es: boolean; yo: YoCom; ciudad
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}><span style={{ font: "700 13.5px Manrope,sans-serif" }}>{x.otro.nombre}</span><span style={{ font: `600 9px ${MONO}`, color: "rgba(11,14,18,.6)", flex: "none" }}>{hace(x.at, es).toUpperCase()}</span></div>
                 <div style={{ marginTop: 3, font: `${x.unread ? 700 : 500} 12.5px/1.4 Manrope,sans-serif`, color: "rgba(11,14,18,.65)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {(x.mio ? E2("Tú: ", "You: ") : "") + (x.oculto ? E2("Mensaje oculto por To'Latino", "Message hidden by To'Latino") : x.last)}
+                  {(x.mio ? E2("Tú: ", "You: ") : "") + (x.oculto ? E2("Mensaje oculto por To'Latino", "Message hidden by To'Latino") : x.last === "Foto · Photo" ? E2("Foto", "Photo") : x.last)}
                 </div>
               </div>
               {x.unread > 0 && <span aria-label={E2("Sin leer", "Unread")} style={{ width: 9, height: 9, borderRadius: 99, background: "var(--tl-action)", flex: "none" }} />}

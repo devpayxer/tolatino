@@ -5,6 +5,8 @@ import { yo } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
 import { leerObjeto } from "@/lib/medios";
 import { accesoPanel } from "@/lib/panel";
+import { dmFotoConReporte } from "@/lib/admin-dm";
+import { fotoDmVecino } from "@/lib/mensajes-vecinos";
 
 /* 9t · Ver la foto de un mensaje (privada, «privado/m/»). La ven:
    - quien la subió (también antes de enviarla y mientras está en revisión);
@@ -12,7 +14,13 @@ import { accesoPanel } from "@/lib/panel";
      del panel (accesoPanel; la vista de solo lectura del equipo NO es miembro: no la ve);
    - el equipo de To'Latino solo si tiene la cola y la ciudad, y hay un caso abierto: la conversación reportada (cola «chat», con un reporte
      abierto) o esta foto en la cola «medios» (el modelo la marcó o no respondió). Cada vez queda en la auditoría («mensajes.foto.ver»).
-   Nunca se cachea ni se lista. Lo demás: 404 (no se dice si existe). */
+   Nunca se cachea ni se lista. Lo demás: 404 (no se dice si existe).
+   9t (19 nov) · Una foto de Mensajes entre vecinos (owner_kind 'dm'; fotoDeVecinos abajo). La ven:
+   - quien la subió (también antes de enviarla y mientras está en revisión);
+   - la otra persona de la conversación solo con la foto revisada, el mensaje sin ocultar, la conversación abierta y sin bloqueo en ningún
+     sentido (lib/mensajes-vecinos.ts fotoDmVecino: con un bloqueo la conversación no existe para ninguno de los dos);
+   - el equipo de To'Latino solo con un caso abierto en su cola y ciudad: la conversación reportada (cola «chat», con el reporte abierto: lib/admin-dm.ts
+     dmFotoConReporte) o esta foto en «medios»; cada vez queda en la auditoría («mensajes.foto.ver»). */
 export const dynamic = "force-dynamic";
 const no = () => new NextResponse(null, { status: 404 });
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -23,7 +31,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
             t.id::text as hilo, t.user_id::text as vecino, t.business_id as biz, t.city_id as city
        from media x left join chat_messages cm on cm.media_id = x.id left join chat_threads t on t.id = cm.thread_id
       where x.id = $1::uuid and x.owner_kind = 'chat' and x.private and x.purged_at is null and x.status in ('visible', 'review') and x.url like 'privado/m/%'`, [id])).rows[0];
-  if (!m) return no();
+  if (!m) return fotoDeVecinos(id);
   const me = await yo();
   if (!me) return no();
   let ok = me.id === m.subio;
@@ -47,6 +55,40 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     }
   }
   if (!ok) return no();
-  const img = await leerObjeto(m.url);
+  return servir(m.url);
+}
+async function servir(url: string) {
+  const img = await leerObjeto(url);
   return new NextResponse(new Uint8Array(img), { headers: { "content-type": "image/jpeg", "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-disposition": "inline" } });
+}
+
+/* 9t · La foto de un mensaje entre vecinos. Ninguna consulta de aquí lee los mensajes: eso lo hacen mensajes-vecinos.ts (las dos personas) y
+   admin-dm.ts (el equipo, con el reporte abierto). */
+async function fotoDeVecinos(id: string) {
+  const d = (await db().query<{ url: string; subio: string | null; status: string }>(
+    `select x.url, x.uploaded_by::text as subio, x.status from media x
+      where x.id = $1::uuid and x.owner_kind = 'dm' and x.private and x.purged_at is null and x.status in ('visible', 'review') and x.url like 'privado/m/%'`, [id])).rows[0];
+  if (!d) return no();
+  const me = await yo();
+  if (!me) return no();
+  let ok = me.id === d.subio;
+  if (!ok && d.status === "visible") ok = await fotoDmVecino(me.id, id);
+  if (!ok) {
+    const s = await staff();
+    if (s) {
+      const colas = colasVisibles(s), enCiudad = (c: string | null) => !s.cities.length || (!!c && s.cities.includes(c));
+      // La foto en «medios» (el modelo la marcó o no respondió) o la conversación reportada con su reporte abierto.
+      const med = (await db().query<{ city: string | null }>(
+        `select q.city_id as city from queue_items q where q.status = 'open' and q.queue = 'medios' and q.subject_kind = 'media' and q.subject_id = $1 limit 1`, [id])).rows[0];
+      const rep = med && colas.includes("medios") && enCiudad(med.city) ? null : await dmFotoConReporte(id);
+      const caso = med && colas.includes("medios") && enCiudad(med.city) ? { por: "foto en revisión", city: med.city, msg: null as string | null }
+        : rep && colas.includes("chat") && enCiudad(rep.city) ? { por: "conversación reportada", city: rep.city, msg: rep.msg } : null;
+      if (caso) {
+        await tx((c) => auditar(c, { actor: s.id, action: "mensajes.foto.ver", targetKind: caso.msg ? "dm_message" : "media", targetId: caso.msg ?? id, city: caso.city, after: { foto: id, por: caso.por } }));
+        ok = true;
+      }
+    }
+  }
+  if (!ok) return no();
+  return servir(d.url);
 }

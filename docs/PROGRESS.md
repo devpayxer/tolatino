@@ -2850,3 +2850,24 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   restricciones rechazan lo que deben; el aviso en vivo sale). e2e **msg9t** escrita (fotos, revisión, aprobar y quitar, topes, regla apagada,
   traducción con el stub, Super Admin ve el original) — **no corrió aquí** (sin Docker ni base): la corre el CI. Ayuda: mensajes.md y
   admin-confianza-y-seguridad.md (ES/EN).
+- **19 nov · 9t · Mensajes ENTRE VECINOS: fotos y «Ver traducción» ES↔EN** (LAUNCH «Mensajes · lo que quedó de 9t» (2) → ✓; REVISION «9t — Mensajes
+  entre vecinos: fotos y Ver traducción»). Migración **0187**: `media.owner_kind 'dm'` + `media_dm_privada` (privada, «privado/m/»), índices del tope por
+  hora y de la purga de 24 h (`media_msj_subidas_idx`, `media_msj_pendientes_idx`), `dm_messages.media_id` (único) y `lang`; `dm_messages_antes` (un
+  mensaje no cambia su foto ni su idioma; la foto es una 'dm' privada de quien escribe; lo de 0134 igual), `dm_messages_despues` («Foto · Photo»),
+  `media_dm_vivo` (aviso en vivo al decidir la foto), `ugc_translations` + 'dm_message', `datos_purga_pendiente` la cuenta. **Bug de paso:**
+  `dm_messages_body_check` exigía 1–1000 letras siempre y la purga de una cuenta (body '' con hidden_at) chocaba: la purga de alguien con mensajes entre
+  vecinos fallaba; ahora body '' vale con hidden_at o con la foto (dm9t §2 lo prueba). Código: la misma subida con `para=dm` (solo con la Comunidad
+  completa; el tope de 30/h cuenta las dos clases), ver (`fotoDeVecinos`: quien la subió; la otra persona revisada por `fotoDmVecino` —abierta, sin
+  bloqueo, sin ocultar—; el equipo con caso de medios o conversación reportada —`admin-dm.ts dmFotoConReporte` con CON_REPORTE— en su cola y ciudad,
+  auditado), `lib/mensajes-vecinos.ts` (tomarFoto/ponerFoto después de otraPersona, idioma antes de la transacción, `conFoto`, `FUENTE_TR_DM`,
+  `MENSAJES_DE` para la purga: dmSoloConReporte sigue igual), `traduccion.ts` (dm_message: cuenta + Comunidad), Super Admin (Colas › Medios «Foto de
+  Mensajes entre vecinos» —solo la foto y quién la mandó, rama ANTES de la de la Comunidad—; Mensajes entre vecinos reportados con la foto; decidir
+  igual que la del chat), `mensajes-purga.ts` (chat y dm), mapa de datos (fotos 'dm'). Pantalla APP-COM-CHAT: IconButton «image», miniatura con
+  «Quitar foto», la foto en la burbuja, «Foto en revisión» / «EN REVISIÓN» / «Foto quitada por To’Latino.», «Ver traducción» (LineaTr); la lista dice
+  «Foto». Guardián nuevo **`fotoDmPrivada`**; `fotosSinEnviarSePurgan` y `traductorFueraDeTx` ampliados; `fotoMensajePrivada` mira la auditoría y las
+  colas dentro de GET (la rama de vecinos ya no puede tapar que falten en la del chat); alreves5c actualizado a los textos nuevos. **Corrido aquí**
+  (Postgres 16 local, copia de tl_loc → tl_dm9t, build del worktree servida en :3197, traductor de mentira): tsc ✓; guardianes ✓; **alreves9tdm
+  29/29**, alreves9tmsg 27/27, alreves9tpurga 6/6, alreves5c 29/29, alreves9m 41/41; **com5c ✓**; **dm9t** §1 (traducción, caché, X no traduce), §2
+  (base) y **F1** (foto simulada: enviar, revisión, Colas, en vivo, quitar, reporte auditado, bloqueo, la de otro / la vieja) ✓; **F2 (subida real,
+  metadatos, 413/415/403, purga de 24 h) no corrió**: no hay almacén de fotos local (503) — la corre el CI. Capturas a 390 miradas (d9t-1…10).
+  Ayuda: comunidad-vecinos-seguir-bloquear-y-mensajes.md y admin-confianza-y-seguridad.md (ES/EN).

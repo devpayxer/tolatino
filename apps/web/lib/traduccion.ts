@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { cfgSql } from "./config";
 import { db } from "./db";
 import { enComunidad, sinBloqueos } from "./comunidad";
+import { FUENTE_TR_DM } from "./mensajes-vecinos";
 import { MOTOR, SinTraductor, traducirTexto } from "./traductor";
 import { NO_DISPONIBLE, esKindTr, type KindTr, type LangTr, type ResTr } from "./traduccion-comun";
 
@@ -46,8 +47,12 @@ const FUENTE: Record<KindTr, string> = {
        and (t.user_id = $1::uuid or exists (select 1 from business_members bm join businesses b on b.id = bm.business_id and b.status <> 'merged'
          where bm.business_id = t.business_id and bm.user_id = $1::uuid and bm.status = 'active' and bm.panel_off_at is null
            and (bm.kind = 'owner' or 'all' = any(bm.panel_access) or 'msg' = any(bm.panel_access))))`,
+  /* 9t (19 nov) · Un mensaje entre vecinos (Comunidad › Mensajes): solo para una de las dos personas, la conversación abierta y sin bloqueo, el mensaje
+     visible y con su idioma guardado. La consulta vive en lib/mensajes-vecinos.ts (solo ese archivo y admin-dm.ts leen esos mensajes). */
+  dm_message: FUENTE_TR_DM,
 };
-const DE_LA_COMUNIDAD = (k: KindTr) => k === "com_post" || k === "com_comment";
+// 9t · Mensajes entre vecinos es de la Comunidad: pide cuenta y haber entrado a la Comunidad (como las publicaciones).
+const DE_LA_COMUNIDAD = (k: KindTr) => k === "com_post" || k === "com_comment" || k === "dm_message";
 const CON_CUENTA = (k: KindTr) => DE_LA_COMUNIDAD(k) || k === "chat_message"; // 9t · Mensajes también pide cuenta (y ser una de las partes: FUENTE)
 
 export async function traducir(kind: unknown, id: unknown, q: Quien, dst: LangTr): Promise<ResTr> {

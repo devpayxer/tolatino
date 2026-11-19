@@ -530,7 +530,10 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
         cuerpoB.push({ type: "note", tone: "info", icon: "lock", t: E("Ves esta conversación porque hay un reporte abierto. Al cerrar el caso deja de verse aquí.", "You can see this conversation because there's an open report. When the case closes, it's no longer visible here.") });
         cuerpoB.push({ type: "group", k: E(`CONVERSACIÓN · ${d.msjs.length} MENSAJES`, `CONVERSATION · ${d.msjs.length} MESSAGES`) });
         extra = <A.AdminList rows={d.msjs.map((m) => ({
-          icon: "users", title: m.oculto ? `${m.t}` : m.t, sub: `${m.quien} · ${E(`hace ${hace(m.at)}`, `${hace(m.at)} ago`)}`, tag: m.oculto ? E("OCULTO", "HIDDEN") : undefined, tone: m.oculto ? "danger" : undefined,
+          // 9t · La foto del mensaje (privada; verla queda en la auditoría). En revisión: la otra persona todavía no la ve.
+          icon: m.foto ? undefined : "users", title: m.t || (m.fst === "removed" ? E("Foto quitada", "Photo removed") : m.fst ? E("Foto", "Photo") : ""),
+          image: m.foto ?? undefined, onClick: m.foto ? () => window.open(m.foto!, "_blank", "noopener") : undefined,
+          sub: `${m.quien} · ${E(`hace ${hace(m.at)}`, `${hace(m.at)} ago`)}`, tag: m.oculto ? E("OCULTO", "HIDDEN") : m.fst === "review" ? E("FOTO EN REVISIÓN", "PHOTO IN REVIEW") : undefined, tone: m.oculto ? "danger" : m.fst === "review" ? "neutral" : undefined,
           actions: k.puedeDecidir && !m.oculto ? [{ label: E("Ocultar", "Hide"), variant: "secondary", onClick: () => setConf({ titulo: E("¿Por qué se oculta este mensaje?", "Why is this message hidden?"), sub: E("Quien lo escribió ve el motivo. La conversación sigue.", "Its author sees the reason. The conversation continues."), plantillas: P.hide, peligro: true, hacer: (x) => chatOcultarMensaje(k.id, m.id, x) }) }] : undefined,
         }))} />;
       }

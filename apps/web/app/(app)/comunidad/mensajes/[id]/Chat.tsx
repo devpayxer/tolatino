@@ -2,11 +2,18 @@
 /* APP-COM-CHAT (prototipo chatV): la persona arriba (rango · zona · «te sigue») que abre su perfil y el menú (ver perfil, silenciar,
    reportar conversación, bloquear); las burbujas (lo mío a la derecha en tinta, lo suyo a la izquierda en blanco; un mensaje oculto
    por To'Latino dice eso); «Ver anteriores» por cursor; la caja para escribir (fija abajo en el teléfono, en la columna en escritorio).
-   Solo texto: sin teléfonos ni datos (el servidor lo rechaza y aquí se dice por qué). Si no te sigue, se dice y no hay caja.
-   Con la pantalla abierta pregunta cada 5 s si llegó algo. */
+   Sin teléfonos ni datos (el servidor lo rechaza y aquí se dice por qué). Si no te sigue, se dice y no hay caja.
+   Lo nuevo llega en vivo (9m).
+   9t (19 nov) · Fotos y «Ver traducción», como el chat con un negocio (cuenta/mensajes/[negocio]/Chat.tsx): el IconButton «image» del composer sube
+   la foto PRIVADA (/api/mensajes/foto con para=dm; la revisa el modelo propio) y la miniatura queda con «Quitar foto» hasta enviar; se puede mandar
+   solo la foto. En la burbuja: la foto (180 × 140; se abre aparte), o «Foto en revisión» mientras To'Latino la revisa (quien la mandó la ve con
+   «EN REVISIÓN»), o «Foto quitada por To’Latino». «Ver traducción» ES↔EN bajo lo de la otra persona que no está en tu idioma (useTraducir:
+   traductor propio, caché y tope; el original se queda). */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType } from "react";
+import { subirFotoMensaje } from "@/lib/subir-foto";
+import { LineaTr, useTraducir } from "../../../Traducir";
 import { MAX_MENSAJE } from "@/lib/comunidad-filtro";
 import { hace, rango } from "@/lib/comunidad-comun";
 import type { Conversacion, MsjV } from "@/lib/mensajes-vecinos";
@@ -31,16 +38,26 @@ export function Chat({ es, yo, ciudad, c }: { es: boolean; yo: YoCom; ciudad: st
   const vec = useVecinoAcciones(es, ui);
   const [msjs, setMsjs] = useState<MsjV[]>(c?.msjs ?? []), [mas, setMas] = useState(c?.mas ?? null);
   const [t, setT] = useState(""), [err, setErr] = useState<string | null>(null), [busy, setBusy] = useState(false);
-  const fin = useRef<HTMLDivElement | null>(null);
+  const fin = useRef<HTMLDivElement | null>(null), file = useRef<HTMLInputElement>(null), tr = useTraducir(es);
+  const [foto, setFoto] = useState<{ id: string; url: string; revision: boolean } | null>(null), [subiendo, setSubiendo] = useState(false);
+  const subir = async (f: File) => {
+    if (!/^image\//.test(f.type)) return ui.setAviso({ t: E2("Eso no parece una foto. Prueba con otra.", "That doesn’t look like a photo. Try another one.") });
+    setSubiendo(true); setErr(null);
+    const r = await subirFotoMensaje(f, "dm").catch(() => ({ ok: false as const, mensaje: undefined, revision: false, id: undefined, url: undefined }));
+    setSubiendo(false);
+    if (r.ok && r.id && r.url) setFoto({ id: r.id, url: r.url, revision: !!r.revision });
+    else ui.setAviso({ t: r.mensaje ? (es ? r.mensaje.es : r.mensaje.en) : E2("No se pudo subir la foto.", "The photo could not be uploaded.") });
+  };
   useEffect(() => { setMsjs(c?.msjs ?? []); setMas(c?.mas ?? null); }, [c]);
   useEffect(() => { fin.current?.scrollIntoView({ block: "end" }); }, [msjs.length]);
   // 9m · Lo nuevo de la otra persona llega en vivo (SSE propio, /api/vivo): el aviso dice qué conversación y aquí se trae; al conectarse, una vez.
   const traer = useRef<() => void>(() => undefined);
   traer.current = () => {
     if (!c) return;
-    const ult = msjs.at(-1)?.id ?? "0";
+    // 9t · Si hay una foto en revisión, se trae desde ella (el aviso en vivo también llega cuando To'Latino la decide) y lo que cambió se reemplaza.
+    const rev = msjs.find((m) => m.fotoEst === "revision"), ult = rev ? String(Math.max(0, Number(rev.id) - 1)) : msjs.at(-1)?.id ?? "0";
     void dmNuevos(c.otro.id, ult).catch(() => null).then((r) => {
-      if (r && r.ok && "msjs" in r && r.msjs.length) setMsjs((L) => [...L, ...r.msjs.filter((m) => !L.some((x) => x.id === m.id))]);
+      if (r && r.ok && "msjs" in r && r.msjs.length) setMsjs((L) => [...L.map((y) => r.msjs.find((x) => x.id === y.id) ?? y), ...r.msjs.filter((m) => !L.some((x) => x.id === m.id))]);
       if (r && !r.ok) router.refresh();
     });
   };
@@ -61,16 +78,18 @@ export function Chat({ es, yo, ciudad, c }: { es: boolean; yo: YoCom; ciudad: st
   const meta = [es ? rk.es : rk.en, o.zona ? (es ? o.zona.es : o.zona.en) : null, o.meSigue ? E2("te sigue", "follows you") : null].filter(Boolean).join(" · ").toUpperCase();
   const enviar = async () => {
     const x = t.trim();
-    if (!x || busy) return;
+    if ((!x && !foto) || busy || subiendo) return;
     setBusy(true); setErr(null);
-    const r = await dmEnviar(o.id, x).catch(() => null);
+    const r = await dmEnviar(o.id, x, foto?.id ?? null).catch(() => null);
     setBusy(false);
     if (!r) return setErr(E2("No se pudo enviar. Revisa tu conexión.", "Could not send. Check your connection."));
     if (!r.ok) return setErr(r.msg ? (es ? r.msg.es : r.msg.en) : E2("No se pudo enviar.", "Could not send."));
     if ("msj" in r) setMsjs((L) => [...L, r.msj]);
     if ("crisis" in r && r.crisis) ui.setAviso({ t: es ? LINEA988.es : LINEA988.en, ms: 14000 });
-    setT("");
+    else if ("revision" in r && r.revision) ui.setAviso({ t: E2("Tu foto se ve cuando To’Latino la revise.", "Your photo shows once To’Latino reviews it.") });
+    setT(""); setFoto(null);
   };
+  const listo = !!t.trim() || !!foto;
   const anteriores = async () => {
     if (!mas || busy) return; setBusy(true);
     const r = await dmAnteriores(o.id, mas).catch(() => null); setBusy(false);
@@ -94,26 +113,45 @@ export function Chat({ es, yo, ciudad, c }: { es: boolean; yo: YoCom; ciudad: st
           <IconButton icon="chevronDown" size={34} label={E2("Opciones", "Options")} onClick={menu} />
         </div>
         {mas && <div style={{ display: "flex", justifyContent: "center" }}><Button variant="ghost" size="sm" disabled={busy} onClick={anteriores}>{E2("Ver anteriores", "See earlier")}</Button></div>}
-        {msjs.map((m) => (
-          <div key={m.id} data-screen-label="Chat · mensaje" style={{ display: "flex", flexDirection: "column", alignItems: m.mio ? "flex-end" : "flex-start", gap: 3 }}>
-            <div style={{ maxWidth: "78%", padding: "10px 13px", borderRadius: m.mio ? "18px 18px 6px 18px" : "18px 18px 18px 6px", background: m.oculto ? "rgba(11,14,18,.05)" : m.mio ? "var(--tl-ink)" : "var(--tl-white)",
-              color: m.oculto ? "rgba(11,14,18,.6)" : m.mio ? "var(--tl-white)" : "var(--tl-ink)", border: m.mio || m.oculto ? "none" : "1px solid rgba(11,14,18,.08)", font: `${m.oculto ? "600 13px" : "500 14px"}/1.45 Manrope,sans-serif`, textWrap: "pretty", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
-              {m.oculto ? E2("Mensaje oculto por To'Latino", "Message hidden by To'Latino") : m.t}
+        {msjs.map((m) => {
+          // 9t · «Ver traducción» solo en lo de la otra persona (lo tuyo no se traduce) y si el texto no está en tu idioma; el original se queda.
+          const x = m.oculto ? { body: m.t, translate: undefined } : tr("dm_message", m.id, m.lang, m.t, m.mio);
+          const quitada = m.fotoEst === "quitada" && !m.t, suave = m.oculto || quitada;
+          const fotoL = m.foto || !m.fotoEst || m.fotoEst === "quitada" || m.oculto ? null : m.fotoEst === "revision" ? E2("Foto en revisión", "Photo under review") : E2("Foto", "Photo");
+          return (
+            <div key={m.id} data-screen-label="Chat · mensaje" data-msg-foto={m.foto || fotoL ? (m.foto ? "si" : "espera") : undefined} style={{ display: "flex", flexDirection: "column", alignItems: m.mio ? "flex-end" : "flex-start", gap: 3 }}>
+              <div style={{ maxWidth: "78%", padding: "10px 13px", borderRadius: m.mio ? "18px 18px 6px 18px" : "18px 18px 18px 6px", background: suave ? "rgba(11,14,18,.05)" : m.mio ? "var(--tl-ink)" : "var(--tl-white)",
+                color: suave ? "rgba(11,14,18,.6)" : m.mio ? "var(--tl-white)" : "var(--tl-ink)", border: m.mio || suave ? "none" : "1px solid rgba(11,14,18,.08)", font: `${suave ? "600 13px" : "500 14px"}/1.45 Manrope,sans-serif`, textWrap: "pretty", whiteSpace: "pre-wrap", overflowWrap: "anywhere",
+                display: "flex", flexDirection: "column", gap: 8 }}>
+                {!m.oculto && m.foto ? <a href={m.foto} target="_blank" rel="noopener noreferrer" aria-label={E2("Foto", "Photo")} style={{ display: "block", width: 180, height: 140, maxWidth: "100%", borderRadius: 10, background: `url("${m.foto}") center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />
+                  : fotoL ? <span role="img" aria-label={fotoL} style={{ width: 180, height: 140, maxWidth: "100%", borderRadius: 10, background: "var(--tl-photo-bg)", display: "grid", placeItems: "center", gap: 6, alignContent: "center", textAlign: "center", padding: 10, boxSizing: "border-box", color: "rgba(11,14,18,.6)", font: "600 12px/1.35 Manrope,sans-serif" }}><Icon name="image" size={20} color="rgba(11,14,18,.6)" />{fotoL}</span> : null}
+                {m.oculto ? <span>{E2("Mensaje oculto por To'Latino", "Message hidden by To'Latino")}</span> : quitada ? <span>{E2("Foto quitada por To’Latino.", "Photo removed by To’Latino.")}</span> : x.body ? <span>{x.body}</span> : null}
+              </div>
+              {x.translate ? <LineaTr t={x.translate} mt={0} /> : null}
+              <span style={{ font: `600 8.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{m.fotoEst === "revision" && m.mio ? E2("EN REVISIÓN · ", "UNDER REVIEW · ") : ""}{hace(m.at, es).toUpperCase()}</span>
             </div>
-            <span style={{ font: `600 8.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)" }}>{hace(m.at, es).toUpperCase()}</span>
-          </div>
-        ))}
-        {!msjs.length && c.puede && <div style={{ textAlign: "center", font: "500 13px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2(`Escríbele a ${primero(o.nombre)}. Solo texto.`, `Write to ${primero(o.nombre)}. Text only.`)}</div>}
+          );
+        })}
+        {!msjs.length && c.puede && <div style={{ textAlign: "center", font: "500 13px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2(`Escríbele a ${primero(o.nombre)}. Texto o una foto, sin teléfonos ni datos.`, `Write to ${primero(o.nombre)}. Text or a photo, no phone numbers or personal details.`)}</div>}
         {!c.puede && c.motivo && <div role="note" style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(11,14,18,.05)", font: "600 12.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.62)", textAlign: "center" }}>{es ? c.motivo.es : c.motivo.en}</div>}
-        <div ref={fin} style={{ height: D ? 0 : c.puede ? 96 : 0 }} />
+        <div ref={fin} style={{ height: D ? 0 : c.puede ? (foto ? 156 : 96) : 0 }} />
         {c.puede && (
           <div data-screen-label="Chat · escribir" style={D ? { marginTop: 8, padding: 12, borderRadius: 16, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)" }
             : { position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 40, background: "rgba(247,246,243,.96)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderTop: LINE, padding: "10px 14px 26px" }}>
             {err && <div role="alert" style={{ marginBottom: 8, padding: "8px 12px", borderRadius: 12, background: "rgba(192,57,43,.08)", font: "600 12.5px/1.4 Manrope,sans-serif", color: "var(--tl-danger)" }}>{err}</div>}
+            {foto && (
+              <div data-chat-adjunto="" style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ width: 48, height: 48, borderRadius: 10, flex: "none", background: `url("${foto.url}") center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />
+                <span role="button" onClick={() => setFoto(null)} {...tec(() => setFoto(null))} style={{ font: "700 12.5px Manrope,sans-serif", color: "rgba(11,14,18,.6)", cursor: "pointer", flex: "none" }}>{E2("Quitar foto", "Remove photo")}</span>
+                {foto.revision && <span style={{ font: "500 11.5px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)", minWidth: 0 }}>{E2("To’Latino la revisa antes de que se vea.", "To’Latino reviews it before it shows.")}</span>}
+              </div>
+            )}
+            <input ref={file} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) void subir(f); e.target.value = ""; }} />
             <form onSubmit={(e) => { e.preventDefault(); void enviar(); }} style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-              <input value={t} onChange={(e) => { setT(e.target.value.slice(0, MAX_MENSAJE)); if (err) setErr(null); }} aria-label={E2("Tu mensaje", "Your message")} placeholder={E2("Escribe un mensaje…", "Write a message…")}
+              <IconButton icon="image" size={42} label={E2("Agregar una foto", "Add a photo")} onClick={() => { if (!subiendo) file.current?.click(); }} />
+              <input value={t} onChange={(e) => { setT(e.target.value.slice(0, MAX_MENSAJE)); if (err) setErr(null); }} aria-label={E2("Tu mensaje", "Your message")} placeholder={subiendo ? E2("Subiendo la foto…", "Uploading the photo…") : E2("Escribe un mensaje…", "Write a message…")}
                 style={{ flex: 1, minWidth: 0, height: 42, boxSizing: "border-box", padding: "0 13px", borderRadius: 13, border: "1px solid rgba(11,14,18,.12)", outline: "none", font: "500 14px Manrope,sans-serif", background: "var(--tl-white)", color: "var(--tl-ink)" }} />
-              <button type="submit" aria-label={E2("Enviar", "Send")} disabled={!t.trim() || busy} style={{ width: 42, height: 42, borderRadius: 13, border: 0, background: t.trim() ? "var(--tl-ink)" : "rgba(11,14,18,.22)", display: "grid", placeItems: "center", cursor: t.trim() ? "pointer" : "default", flex: "none" }}>
+              <button type="submit" aria-label={E2("Enviar", "Send")} disabled={!listo || busy || subiendo} style={{ width: 42, height: 42, borderRadius: 13, border: 0, background: listo ? "var(--tl-ink)" : "rgba(11,14,18,.22)", display: "grid", placeItems: "center", cursor: listo ? "pointer" : "default", flex: "none" }}>
                 <Icon name="right" size={18} strokeWidth={2} color="var(--tl-white)" />
               </button>
             </form>

@@ -21,9 +21,9 @@ const casos = [
   [G, M, "    update dm_threads set closed_at = now() where a_user_id = x and b_user_id = y and closed_at is null;", ""], // base: cerrar conversación
   ['consultaConBloqueos', V, "export async function sugeridos(viewer: string, ciudad: string, n = 4, es = true) {", "export async function sugeridos(viewer: string, ciudad: string, n = 4, es = true) {\n  await db().query(`select id from users where home_city_id = $1`, [ciudad]);\n}\nexport async function sugeridos2(viewer: string, ciudad: string, n = 4, es = true) {"],
   ['dmSoloConReporte', 'apps/web/lib/admin-usuarios.ts', 'import "server-only";', 'import "server-only";\nconst Q = `select body from dm_messages where thread_id = $1`;'],
-  ['dmSoloConReporte', AD, "         from dm_messages m where m.thread_id = $1::bigint and ${CON_REPORTE(\"m.thread_id\")} order by m.id desc limit 80`", "         from dm_messages m where m.thread_id = $1::bigint order by m.id desc limit 80`"],
+  ['dmSoloConReporte', AD, "         from dm_messages m left join media f on f.id = m.media_id where m.thread_id = $1::bigint and ${CON_REPORTE(\"m.thread_id\")} order by m.id desc limit 80`", "         from dm_messages m left join media f on f.id = m.media_id where m.thread_id = $1::bigint order by m.id desc limit 80`"], // 9t: con su foto
   ['dmSoloConReporte', AD, "and q.status = 'open')\n  and exists", "and q.status in ('open', 'decided'))\n  and exists"],
-  ['mensajesSinTelefonos', MV, "  const f = revisarMensaje(String(texto ?? \"\"));\n  if (f) return { ok: false, msg: f.msg, campo: f.campo };\n", ""],
+  ['mensajesSinTelefonos', MV, "  const f = fid && !body ? null : revisarMensaje(String(texto ?? \"\"));\n  if (f) return { ok: false, msg: f.msg, campo: f.campo };\n", ""], // 9t: con foto el texto puede ir vacío
   ['mensajesSinTelefonos', M, "alter table dm_messages add constraint dm_messages_body_datos check (com_sin_datos(body));", ""],
   ['mensajesSinTelefonos', V, "  const f = revisarPerfil({ bio: p.bio, apodo: p.apodo });\n  if (f) return { ok: false, msg: f.msg, campo: f.campo };\n", ""],
   ['mensajeSoloAQuienTeSigue', MV, "    if (!o.me_sigue && !t?.me_escribio) return { ok: false as const, msg: SOLO_SIGUE };\n", ""],
