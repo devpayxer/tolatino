@@ -6850,8 +6850,9 @@ const guardianes = {
     const t = sinComent(L), g = cuerpoFn(t, "gastarReto");
     if (!/update webauthn_challenges set used_at = now\(\)\s+where challenge_hash = \$1 and purpose = \$2 and used_at is null and expires_at > now\(\) and device = \$3::uuid and user_id is not distinct from \$4::uuid\s+returning id/.test(g) || !/rowCount \?\? 0\) === 1/.test(g))
       falla(G, L, 0, "gastarReto: una sola escritura atómica (sin usar, sin vencer, propósito, dispositivo y cuenta) que devuelve la fila");
-    for (const [fn2, ver] of [["registrar", "verifyRegistrationResponse"], ["entrar", "verificar\\("]]) {
-      const c = cuerpoFn(t, fn2), iG = c.search(/await gastarReto\(reto, "(registro|entrar)"/), iV = c.search(new RegExp(ver));
+    // 9t · confirmarConLlave (el archivo y el borrado con la llave) también: el reto de SU propósito, gastado antes de la firma (firmaDeLlave).
+    for (const [fn2, ver] of [["registrar", "verifyRegistrationResponse"], ["entrar", "firmaDeLlave\\("], ["confirmarConLlave", "firmaDeLlave\\("]]) {
+      const c = cuerpoFn(t, fn2), iG = c.search(/await gastarReto\(reto, ("registro"|"entrar"|proposito)/), iV = c.search(new RegExp(ver));
       if (iG < 0 || iV < 0 || iG > iV) falla(G, L, 0, `${fn2}: el reto se gasta ANTES de verificar la firma`);
       if (!/leerCliente\(resp\.response\.clientDataJSON, "webauthn\.(create|get)"\)/.test(c)) falla(G, L, 0, `${fn2}: el reto sale del clientDataJSON del tipo correcto (y sin crossOrigin)`);
     }
@@ -6869,7 +6870,11 @@ const guardianes = {
     if (!/credential_id\s+text not null unique check/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "una credencial es de una sola cuenta (unique)");
     const t = sinComent(L), e = cuerpoFn(t, "entrar");
     if (!/from passkeys where credential_id = \$1 and revoked_at is null`, \[resp\.id\]/.test(e)) falla(G, L, 0, "entrar: la llave viva se busca por su id");
-    if (!/Buffer\.from\(uh, "base64url"\)\.compare\(manejador\(k\.user_id\)\) !== 0/.test(e)) falla(G, L, 0, "entrar: el userHandle tiene que ser el de la dueña de la llave");
+    // La firma de una llave se verifica en UN lugar (firmaDeLlave: entrar y, 9t, confirmar); ahí el userHandle tiene que ser el de la dueña.
+    const fd = cuerpoFn(t, "firmaDeLlave");
+    if (!/Buffer\.from\(uh, "base64url"\)\.compare\(manejador\(k\.user_id\)\) !== 0/.test(fd)) falla(G, L, 0, "firmaDeLlave: el userHandle tiene que ser el de la dueña de la llave");
+    if (!/await firmaDeLlave\(r, k, resp, reto, ip, ua, no\)/.test(e)) falla(G, L, 0, "entrar: la firma la verifica firmaDeLlave");
+    if ((t.match(/\bverifyAuthenticationResponse\(/g) ?? []).length !== 1 || !/verifyAuthenticationResponse\(/.test(fd)) falla(G, L, 0, "un solo verificador de firmas de llaves (firmaDeLlave): ni un segundo verifyAuthenticationResponse");
     if (!/abrirSesionEn\(c, \{ dev, ip, ua, via: "llave", passkeyId: k\.id \}/.test(e) || !/returning id, first_name, cuenta_estado\(status, status_until\) as status, status_until as until, delete_at, false as nuevo`, \[k\.user_id\]\)/.test(e))
       falla(G, L, 0, "entrar: la sesión se abre para la cuenta de la llave (k.user_id), nunca otra");
     if (/allowCredentials/.test(cuerpoFn(t, "retoEntrar"))) falla(G, L, 0, "el reto de entrar no lista llaves de nadie");
@@ -6896,7 +6901,8 @@ const guardianes = {
     if (!/from blocked_devices where device = \$1::uuid and lifted_at is null`, \[k\.created_device\]/.test(e) || !/from sessions where id = \$1::uuid and blocked`, \[k\.created_session\]/.test(e))
       falla(G, L, 0, "entrar: el dispositivo y la sesión donde nació la llave, bloqueados → no entra");
     if (!/phone_verified_at is not null`, \[k\.user_id\]\)\)\.rowCount\) return \{ error: "verificar_sms" as const \}/.test(e)) falla(G, L, 0, "entrar: verificación del teléfono restablecida → con el código");
-    if (!/requireUserVerification: true/.test(e) || !/v\.authenticationInfo\.userVerified/.test(e)) falla(G, L, 0, "entrar: Face ID / huella / PIN siempre (verificación de la persona requerida)");
+    const fd = cuerpoFn(sinComent(L), "firmaDeLlave");
+    if (!/requireUserVerification: true/.test(fd) || !/v\.authenticationInfo\.userVerified/.test(fd)) falla(G, L, 0, "firmaDeLlave: Face ID / huella / PIN siempre (verificación de la persona requerida)");
     const r = cuerpoFn(sinComent("apps/web/app/admin/acciones-usuarios.ts"), "restablecerVerificacion");
     if (!/quitarTodasEn\(c, u\.id\)/.test(r)) falla(G, "apps/web/app/admin/acciones-usuarios.ts", 0, "restablecer la verificación quita también las llaves");
   },
@@ -6907,7 +6913,7 @@ const guardianes = {
   clonSoloConFirma() {
     const G = "clonSoloConFirma", L = "apps/web/lib/llaves/llaves.ts";
     if (!existsSync(L)) return falla(G, L, 0, "falta lib/llaves/llaves.ts");
-    const t = sinComent(L), e = cuerpoFn(t, "entrar");
+    const t = sinComent(L), e = cuerpoFn(t, "firmaDeLlave");
     if (!/const firmaBuena = await verificar\(0\)\.then\(\(x\) => x\.verified && x\.authenticationInfo\.userVerified\)\.catch\(\(\) => false\);\s+if \(firmaBuena\) \{ await quitarPorContador\(/.test(e))
       falla(G, L, 0, "una llave se quita por contador solo después de verificar su firma");
     if ((t.match(/quitarPorContador\(/g) ?? []).length !== 2) falla(G, L, 0, "quitarPorContador se llama en un solo lugar (después de la firma)");
@@ -6930,6 +6936,75 @@ const guardianes = {
     const L = sinComent("apps/web/lib/llaves/llaves.ts");
     for (const fn of ["retoRegistro", "registrar", "retoEntrar", "entrar"]) if (!/const r = await llavesAqui\(\);\s+if \(!r\) throw fallo\("llave_no_disponible"\)/.test(cuerpoFn(L, fn))) falla(G, "apps/web/lib/llaves/llaves.ts", 0, `${fn}: sin llavesAqui() no hay llaves`);
     for (const f of codigo.filter((x) => x.startsWith(R + "/") && x.endsWith("/route.ts"))) if (!/await cuerpo\(req\)/.test(sinComent(f))) falla(G, f, 0, "las rutas de las llaves piden mismo origen y cuerpo acotado (cuerpo())");
+  },
+
+  /* 9t · confirmarConLlave (LAUNCH «Pedir el archivo con la llave de acceso»): pedir el archivo (el tuyo o el de tu negocio) y borrar tu cuenta se
+     confirman con el código por SMS O con la llave de acceso. La llave confirma SOLO lo que se pidió: el reto es de ESE propósito (0184:
+     'data_export' / 'account_delete', siempre con cuenta), de esta cuenta y este dispositivo, un uso, corto, gastado ANTES de la firma; la firma
+     la verifica firmaDeLlave (la misma de entrar: verificación de la persona, contador, clon); la llave es una viva de ESTA cuenta; la prueba es
+     opaca (WeakMap privado), de un uso, y se gasta DENTRO de la transacción del pedido o del borrado con su propósito (la del archivo no borra);
+     ahí, con la llave bloqueada: contador quieto, dispositivo y origen sin bloqueo, cuenta activa y teléfono verificado; queda «confirmo» en el
+     libro. Tope de fallos por cuenta y por dirección. El propósito lo fija cada acción del servidor, nunca el cliente. El código sigue igual y la
+     pantalla ofrece la llave solo si la cuenta tiene una, aquí se ofrecen y el dispositivo puede. Al revés: alreves9tllave. */
+  confirmarConLlave() {
+    const G = "confirmarConLlave", M = "packages/db/migrations/0184_llave_confirmar.sql", L = "apps/web/lib/llaves/llaves.ts", X = "apps/web/lib/datos/exportar.ts",
+      P = "apps/web/lib/perfil.ts", A = "apps/web/app/(app)/cuenta/acciones-perfil.ts";
+    for (const f of [M, L, X, P, A]) if (!existsSync(f)) return falla(G, f, 0, "falta");
+    const m = readFileSync(M, "utf8").replace(/--[^\n]*/g, "");
+    if (!/add constraint webauthn_challenges_purpose_check\s+check \(purpose in \('registro', 'entrar', 'confirmar', 'data_export', 'account_delete'\)\)/.test(m)) falla(G, M, 0, "webauthn_challenges: un propósito por cosa que se confirma (data_export, account_delete)");
+    if (!/check \(purpose not in \('data_export', 'account_delete'\) or user_id is not null\)/.test(m)) falla(G, M, 0, "un reto de confirmar nace atado a una cuenta");
+    if (!/'confirmo', 'confirmar_fallo'\)\)/.test(m)) falla(G, M, 0, "passkey_log anota «confirmo» y «confirmar_fallo»");
+    const t = sinComent(L);
+    if (!/const FIRMADAS = new WeakMap<PruebaLlave, Firmada>\(\);/.test(t) || /export\s+(const|let|var)\s+FIRMADAS|export\s*\{[^}]*\bFIRMADAS\b/.test(t)) falla(G, L, 0, "la prueba de la llave es opaca: un WeakMap privado de lib/llaves/llaves.ts (nadie la fabrica)");
+    const rc = cuerpoFn(t, "retoConfirmar");
+    if (!/const r = await llavesAqui\(\);\s+if \(!r\) throw fallo\("llave_no_disponible"\);\s+if \(!CONFIRMACIONES\.includes\(proposito\)\)/.test(rc)) falla(G, L, 0, "retoConfirmar: sin llavesAqui() no hay reto, y solo de los propósitos de confirmar");
+    if (!/from passkeys where user_id = \$1 and revoked_at is null`, \[u\.id\]/.test(rc) || !/await nuevoReto\(proposito, u\.id\)/.test(rc) || !/userVerification: "required"/.test(rc) || !/allowCredentials: vivas\.map/.test(rc))
+      falla(G, L, 0, "retoConfirmar: el reto de ESE propósito atado a la cuenta, verificación requerida, solo sus llaves vivas");
+    const cc = cuerpoFn(t, "confirmarConLlave");
+    if (!/const r = await llavesAqui\(\);\s+if \(!r\) throw fallo\("llave_no_disponible"\);\s+if \(!CONFIRMACIONES\.includes\(proposito\)\)/.test(cc)) falla(G, L, 0, "confirmarConLlave: sin llavesAqui() no se confirma, y solo los propósitos de confirmar");
+    if (!/action = 'confirmar_fallo' and at > now\(\) - interval '1 hour' and \(user_id = \$1 or ip = \$2::inet\)`, \[u\.id, ip\]/.test(cc) || !/if \(n >= tope\) throw fallo\("demasiados"\)/.test(cc))
+      falla(G, L, 0, "confirmarConLlave: tope de fallos por hora, por cuenta y por dirección");
+    const iG = cc.search(/await gastarReto\(reto, proposito, u\.id\)/), iK = cc.search(/from passkeys where credential_id = \$1 and user_id = \$2 and revoked_at is null`, \[resp\.id, u\.id\]/), iF = cc.search(/await firmaDeLlave\(r, k, resp, reto, ip, ua, no\)/), iS = cc.search(/FIRMADAS\.set\(p,/);
+    if (iG < 0 || iK < 0 || iF < 0 || iS < 0 || !(iG < iK && iK < iF && iF < iS)) falla(G, L, 0, "confirmarConLlave: gastar el reto (propósito, cuenta, dispositivo) → una llave viva de ESTA cuenta → firmaDeLlave → la prueba, en ese orden");
+    if (!/leerCliente\(resp\.response\.clientDataJSON, "webauthn\.get"\)/.test(cc) || !/JSON\.stringify\(resp\)\.length > 24_000/.test(cc)) falla(G, L, 0, "confirmarConLlave: el reto sale del clientDataJSON de webauthn.get y el cuerpo es acotado");
+    const uc = cuerpoFn(t, "usarConfirmacionEn");
+    if (!/const f = FIRMADAS\.get\(p\);\s+FIRMADAS\.delete\(p\);/.test(uc) || !/if \(!f \|\| p\.proposito !== proposito \|\| p\.userId !== u\.id \|\| f\.k\.user_id !== u\.id\) return "llave_desconocida";/.test(uc))
+      falla(G, L, 0, "usarConfirmacionEn: la prueba se gasta (un uso) y es de esta cuenta y de ESTE propósito");
+    const iU = uc.search(/from passkeys where id = \$1 and user_id = \$2 and revoked_at is null for update/), iB = uc.search(/\[f\.dev\]/), iD = uc.search(/\[f\.k\.created_device\]/), iO = uc.search(/from sessions where id = \$1::uuid and blocked`, \[f\.k\.created_session\]/),
+      iE = uc.search(/cuenta_estado\(status, status_until\) in \('active', 'muted'\)/), iV = uc.search(/phone_verified_at is not null/), iC = uc.search(/update passkeys set sign_count = \$2, last_used_at = now\(\)/), iL = uc.search(/accion: "confirmo", detalle: proposito/);
+    if ([iU, iB, iD, iO, iE, iV, iC, iL].some((x) => x < 0) || !(iU < iB && iB < iD && iD < iO && iO < iE && iE < iV && iV < iC && iC < iL))
+      falla(G, L, 0, "usarConfirmacionEn: llave bloqueada y viva → este dispositivo, el de origen y la sesión de origen sin bloqueo → cuenta activa → teléfono verificado → contador → «confirmo», en ese orden");
+    if (!/x\.sign_count !== f\.k\.sign_count/.test(uc)) falla(G, L, 0, "usarConfirmacionEn: el contador no se movió mientras tanto");
+    if (!/if \(!\(await llavesAqui\(\)\)\) return false;/.test(cuerpoFn(t, "hayLlaveParaConfirmar"))) falla(G, L, 0, "hayLlaveParaConfirmar: solo donde se ofrecen llaves");
+    // Quién gasta la prueba y con qué propósito: el archivo con data_export (exportar.ts), el borrado con account_delete (perfil.ts); nadie más.
+    const pa = cuerpoFn(sinComent(X), "pedirArchivo"), bc = cuerpoFn(sinComent(P), "borrarCuenta");
+    const iX = pa.search(/usarConfirmacionEn\(c, u, codigo, "data_export"\)/), iXi = pa.search(/insert into data_exports/);
+    if (iX < 0 || iXi < 0 || iX > iXi || !/consumirCodigo\(c, u\.phone, "data_export", codigo\)/.test(pa) || !/return tx\(/.test(pa)) falla(G, X, 0, "pedirArchivo: el código (data_export) o la llave (data_export), dentro de la transacción y antes del pedido");
+    const iP = bc.search(/usarConfirmacionEn\(c, u, codigo, "account_delete"\)/), iPu = bc.search(/update users set delete_at = now\(\)/);
+    if (iP < 0 || iPu < 0 || iP > iPu || !/consumirCodigo\(c, u\.phone, "account_delete", codigo\)/.test(bc) || !/await tx\(/.test(bc)) falla(G, P, 0, "borrarCuenta: el código (account_delete) o la llave (account_delete), dentro de la transacción y antes del borrado");
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === L) continue;
+      const s = sinComent(f);
+      for (const x of s.matchAll(/usarConfirmacionEn\(c, u, codigo, "([a-z_]+)"\)/g)) if (!(f === X && x[1] === "data_export") && !(f === P && x[1] === "account_delete")) falla(G, f, 0, `usarConfirmacionEn con «${x[1]}» aquí: solo el archivo (data_export) y el borrado (account_delete)`);
+      if (/usarConfirmacionEn\(/.test(s) && f !== X && f !== P) falla(G, f, 0, "solo pedirArchivo y borrarCuenta gastan la prueba de la llave");
+      for (const x of s.matchAll(/\b(retoConfirmar|confirmarConLlave)\(u, ([^,)]+)/g)) if (!/^"(data_export|account_delete)"$/.test(x[2].trim()) || f !== A) falla(G, f, 0, `${x[1]}: el propósito lo fija una acción de Mi cuenta con un literal (${x[2].trim()}), nunca el cliente`);
+    }
+    const a = sinComent(A);
+    for (const [fn, re] of [["archivoRetoLlave", /retoConfirmar\(u, "data_export"\)/], ["archivoPedirLlave", /confirmarConLlave\(u, "data_export", respuesta\)[\s\S]*pedirArchivo\(u, prueba, n\)/],
+      ["borrarRetoLlave", /retoConfirmar\(u, "account_delete"\)/], ["borrarConLlave", /confirmarConLlave\(u, "account_delete", respuesta\)[\s\S]*borrarCuenta\(u, prueba, /]]) {
+      const c = cuerpoFn(a, fn);
+      if (!re.test(c) || !/const u = await quien\(\);\s+if \(!u\) return NO/.test(c)) falla(G, A, 0, `${fn}: con sesión y mismo origen (quien()), con su propósito fijo`);
+    }
+    // Las pantallas: la llave solo con la cuenta que tiene una (servidor) y el dispositivo que puede (cliente); el código sigue ahí.
+    for (const [f, pg, codigoFn] of [["apps/web/app/(app)/cuenta/ajustes/privacidad/datos/Datos.tsx", "apps/web/app/(app)/cuenta/ajustes/privacidad/datos/page.tsx", /archivoCodigo\(\)[\s\S]*archivoPedir\(code, null\)/],
+      ["apps/web/app/(app)/cuenta/ajustes/borrar/Borrar.tsx", "apps/web/app/(app)/cuenta/ajustes/borrar/page.tsx", /borrarCodigo\(\)[\s\S]*borrarConfirmar\(code, why\)/],
+      ["apps/web/app/panel/[id]/exportar/Exportar.tsx", "apps/web/app/panel/[id]/exportar/page.tsx", /archivoCodigo\(\)[\s\S]*archivoPedir\(code, negocio\.id\)/]]) {
+      if (!existsSync(f) || !existsSync(pg)) { falla(G, f, 0, "falta la pantalla"); continue; }
+      const s = sinComent(f);
+      if (!/const conLlave = llave && cap\b/.test(s) || !/setCap\(x\.entrar\)/.test(s)) falla(G, f, 0, "la llave se ofrece solo si la cuenta tiene una (llave) y este dispositivo puede (cap)");
+      if (!codigoFn.test(s)) falla(G, f, 0, "el camino del código por SMS sigue ahí");
+      if (!/hayLlaveParaConfirmar\(/.test(sinComent(pg))) falla(G, pg, 0, "la página pregunta al servidor si la cuenta tiene llave (hayLlaveParaConfirmar)");
+    }
   },
 
   /* 8i · Las fichas de las tiendas dentro de sus límites y sobrias (fase8-apps.md §4 8i): cada .md (apps/mobile/tiendas/{app}/{es,en}.md) cumple

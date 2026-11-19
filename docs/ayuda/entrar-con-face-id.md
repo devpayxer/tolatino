@@ -2,7 +2,7 @@
 
 _Pantallas: Entrar (`/entrar`, «Usar mi llave de acceso»), la hoja «Entra la próxima vez con Face ID / tu huella» después del código, y Mi cuenta ›
 Ajustes › Privacidad › **Llaves de acceso** (`/cuenta/ajustes/privacidad`). En la web y en las apps de To'Latino. Teléfono y escritorio.
-Versión: 11 nov 2026. Audiencia: vecino. Tema: cuenta._
+Versión: 19 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 - Entras a To'Latino **sin esperar el código por texto**: tu teléfono te reconoce con **Face ID**, **Touch ID**, **tu huella** o el código de tu
@@ -22,6 +22,8 @@ Versión: 11 nov 2026. Audiencia: vecino. Tema: cuenta._
 - **Ver y quitar:** Mi cuenta › Ajustes › Privacidad › Llaves de acceso muestra cada llave con su dispositivo y la última vez que la usaste.
   **Quitar** hace que ese dispositivo ya no entre con la llave.
 - Te mandamos un **aviso por texto** cada vez que se agrega una llave a tu cuenta. Si no fuiste tú, entra y quítala.
+- **Confirmar que eres tú:** para pedir el archivo con tus datos (o los de tu negocio) y para borrar tu cuenta, la llave sirve en vez del código
+  por texto: «Pedir con Face ID» o «Borrar con Face ID». Cada confirmación sirve para una sola cosa y una sola vez.
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
@@ -69,6 +71,8 @@ o el Administrador de contraseñas de Google), la misma llave te sirve en tus ot
 - **See and remove:** My account › Settings › Privacy › Passkeys lists each passkey with its device and when you last used it. **Remove** stops that
   device from signing in with it.
 - We **text you** every time a passkey is added to your account. If it wasn't you, sign in and remove it.
+- **Confirm it's you:** to request the file with your data (or your business's) and to delete your account, the passkey works instead of
+  the text code: "Request with Face ID" or "Delete with Face ID". Each confirmation works for one thing, once.
 
 ### What happens in each case
 | Case | What happens |

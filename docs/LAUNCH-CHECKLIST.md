@@ -1580,8 +1580,19 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **«Cuenta borrada» en inglés:** el nombre que queda en una cuenta purgada es un texto en la base («Cuenta borrada»); un panel en inglés también lo
       lee así. _Hecho en 9f (14 nov) para el panel de Pedidos: `nombreVisible()` (lib/textos-cuenta.ts, cadena `USR-CUENTA.borrada` con candado) → «Deleted account»; guardián
       `cuentaBorradaBilingue`; cms9f paso 10. Los demás paneles → 9n (abajo)._ (9d, 14 nov)
-- [ ] **→ 9t** · **Pedir el archivo con la llave de acceso** (el plan dice «con el código de entrada otra vez (o la llave)»): hoy solo con el código por SMS, como
-      Borrar mi cuenta. (9d, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._
+- [x] **→ 9t** · **Pedir el archivo con la llave de acceso** (el plan dice «con el código de entrada otra vez (o la llave)»): hoy solo con el código por SMS, como
+      Borrar mi cuenta. (9d, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._ — _9t (19 nov): hecho para
+      **Descargar mis datos**, **Exportar los datos del negocio** (el dueño) y **Borrar mi cuenta** (el mismo mecanismo aplica limpio): «Pedir con Face ID» /
+      «Borrar con Face ID» y «Mejor con un código» (el SMS sigue igual; sin llave, o donde no se ofrecen, o en un dispositivo que no puede, solo el código).
+      Migración **0184** (`webauthn_challenges.purpose` + `data_export` / `account_delete`, siempre con cuenta; `passkey_log` + `confirmo` / `confirmar_fallo`
+      con sus índices). `lib/llaves/llaves.ts`: `retoConfirmar` (reto de ESE propósito, de esta cuenta y este dispositivo, 120 s, verificación requerida,
+      solo sus llaves vivas), `confirmarConLlave` (tope de fallos por cuenta y dirección; el reto se gasta antes de la firma; llave viva de ESTA cuenta;
+      la firma la verifica `firmaDeLlave`, la MISMA de entrar —se sacó de `entrar`, un solo `verifyAuthenticationResponse`—) y `usarConfirmacionEn`
+      (dentro de la transacción del pedido o del borrado: la prueba opaca de un uso y de ese propósito, contador quieto con la llave bloqueada, dispositivo
+      y origen sin bloqueo, cuenta activa, teléfono verificado; «confirmo» en el libro). Super Admin › Usuarios 360° › Seguridad cuenta las
+      confirmaciones de cada llave. Guardián `confirmarConLlave` (y `retoUnUso`, `llaveDeSuCuenta`, `passkeyNoSaltaBloqueo`, `clonSoloConFirma` miran la firma
+      compartida); alreves9tllave 30/30, alreves8d 41/41. e2e `llave9t` (ver PROGRESS 19 nov). Ayuda: descargar-mis-datos, borrar-mi-cuenta,
+      panel-exportar-los-datos, entrar-con-face-id, admin-usuarios._
 - [ ] **→ 9t** · **Un archivo con más de 20 000 filas en una parte** se corta en 20 000 (el LEEME dice cuántas trae cada parte); con la carga de 1M, medir el
       tiempo de armarlo para la cuenta más grande y, si hace falta, partirlo. (9d, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._
 

@@ -5,6 +5,7 @@ import { idioma } from "@/lib/idioma";
 import { yo } from "@/lib/cuenta";
 import { misArchivos } from "@/lib/datos/exportar";
 import { valor } from "@/lib/config";
+import { hayLlaveParaConfirmar } from "@/lib/llaves/llaves";
 import { Exportar } from "./Exportar";
 
 export const metadata: Metadata = { title: "Exportar los datos del negocio · To'Latino" };
@@ -18,7 +19,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const acc = await accesoPanel(id);
   if (!acc) notFound();
   const lang = await idioma();
-  const [archivos, dias] = acc.kind === "owner" ? await Promise.all([misArchivos(me.id, acc.negocio.id), valor("export_cada_dias")]) : [[], 7];
+  const [archivos, dias, llave] = acc.kind === "owner" ? await Promise.all([misArchivos(me.id, acc.negocio.id), valor("export_cada_dias"), hayLlaveParaConfirmar(me.id)]) : [[], 7, false];
   return <Exportar es={lang === "es"} negocio={{ id: acc.negocio.id, name: acc.negocio.name }} dueno={acc.kind === "owner"} tel={me.phone} archivos={archivos} dias={dias}
-    pruebas={process.env.TOLATINO_SMS_MODO === "pruebas"} />;
+    pruebas={process.env.TOLATINO_SMS_MODO === "pruebas"} llave={llave} />;
 }

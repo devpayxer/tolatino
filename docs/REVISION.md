@@ -5598,3 +5598,28 @@ historial y el dueño lo ve). Detalles:
 - El motivo es interno (auditoría y Super Admin); el panel del organizador no lo muestra.
 - El radio del vecino manda (como Patrocinados y Negocios › Destacados): un evento fijado fuera de su radio no le sale en la fila.
 - En el teléfono la fila es de carteles de 160 px que se deslizan; en la computadora, una rejilla como la lista del día.
+## Fase 9 · 9t — Pedir tus datos y borrar tu cuenta con la llave de acceso (19 nov · 0184) — mirar
+**Qué mirar (teléfono y escritorio, ES y EN; con https: el sandbox por HTTP en una IP no ofrece llaves y solo sale el código):**
+- Como alguien **con una llave de acceso** (Mi cuenta › Privacidad › Llaves de acceso), **Mi cuenta › Privacidad › Descargar mis datos**: sale
+  **«Pedir con Face ID»** (en Android «Pedir con la huella»; en una computadora «Pedir con Touch ID», «Windows Hello» o «la llave») y **«Mejor con un código»**,
+  con la nota «Para pedirlo confirmas que eres tú: con Face ID o con un código que te mandamos por texto». Toca la llave → Face ID → «Listo. Te avisamos
+  cuando tu archivo esté listo», sin ningún SMS.
+- **Borrar mi cuenta:** pasos 1 y 2 igual; con llave, el paso 2 dice **Seguir** y el 3 se llama **«Confirma que eres tú»** con **«Borrar con Face ID»**,
+  **«Mejor con un código»** y «Mejor no». Sin llave, todo como antes («Mandarme el código»).
+- **Panel › Más › Exportar los datos del negocio** (el dueño): lo mismo que Descargar mis datos.
+- Sin llave, en un dispositivo que no puede usarla, o con el interruptor `cuenta.llaves` apagado: solo el código, como antes.
+- Super Admin › Usuarios 360° › Seguridad › Llaves de acceso: cada llave dice «· N confirmaciones (archivo o borrado)» cuando las hay.
+
+**Decisiones tomadas por defecto (AB, reversibles):**
+- **Borrar mi cuenta también acepta la llave** (la tarea pedía evaluarlo): es el mismo mecanismo, con su propio propósito (`account_delete`): la
+  confirmación del archivo no borra la cuenta, ni al revés, ni ninguna de las dos sirve para entrar. Si se prefiere que borrar pida SIEMPRE el código
+  por SMS (más fricción a propósito), se quita la opción de la pantalla y de su acción; la base y el resto quedan.
+- **El dueño también exporta su negocio con la llave:** es la misma persona probando que es ella (el permiso de dueño lo revisa el pedido igual).
+- **La llave va primero** cuando se puede (como en Entrar la llave es «la otra opción», aquí el botón principal es la llave porque es más rápido y más
+  seguro que un SMS); «Mejor con un código» está siempre al lado.
+- **Tope de fallos:** el mismo `passkey_fallos_hora` de Configuración › Apps (10), contado por cuenta y por dirección para confirmar (aparte de los de entrar).
+  La vida del reto es la misma `passkey_reto_s` (120 s).
+- **Qué pide la llave además de la firma:** la cuenta activa, el teléfono verificado (si el equipo lo restableció, esa vez con el código), ni este
+  dispositivo ni donde nació la llave bloqueados (como entrar). Una llave de otra cuenta, quitada o revocada no confirma nada.
+- **Auditoría:** cada confirmación queda en el libro de las llaves (`passkey_log` «confirmo» con su propósito; los intentos fallidos «confirmar_fallo»
+  con el motivo) y el pedido donde siempre (Cambios de cuenta «export» / «delete»). No se agregó una columna «cómo confirmó» a Cambios de cuenta.

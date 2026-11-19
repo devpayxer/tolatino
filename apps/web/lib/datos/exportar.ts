@@ -5,6 +5,7 @@ import { db, tx } from "../db";
 import { celda } from "../csv";
 import { zip } from "../pases/zip";
 import { columnasDePersona, ident, mapa, NUNCA_SE_EXPORTA } from "./mapa";
+import type { PruebaLlave } from "../llaves/llaves";
 
 /* 9d · Descargar mis datos (vecino) y Exportar los datos del negocio (panel) (fase9-apertura.md §3.7, §6 #9, §1c «Exportar mis datos»).
    - Se pide con el código de entrada otra vez (propósito data_export; como borrar la cuenta). Uno vivo a la vez y uno cada export_cada_dias (7);
@@ -120,14 +121,18 @@ export async function pedirCodigoArchivo(tel: string): Promise<ResExp> {
   }
 }
 const fecha = (iso: Date, en: boolean) => new Intl.DateTimeFormat(en ? "en-US" : "es-US", { timeZone: "America/New_York", day: "numeric", month: "long" }).format(iso);
-export async function pedirArchivo(u: { id: string; phone: string }, codigo: string, negocio: string | null): Promise<ResExp> {
+/* 9t · Se confirma con el código por SMS (data_export) o con la llave de acceso: una prueba de lib/llaves/llaves.ts confirmarConLlave de ESTE
+   propósito, que se gasta aquí dentro (usarConfirmacionEn; la del borrado no sirve). Guardián confirmarConLlave. */
+export async function pedirArchivo(u: { id: string; phone: string }, codigo: string | PruebaLlave, negocio: string | null): Promise<ResExp> {
   const { consumirCodigo } = await import("../cuenta");
+  const L = typeof codigo === "string" ? null : await import("../llaves/llaves");
   return tx(async (c): Promise<ResExp> => {
     await c.query(`select pg_advisory_xact_lock(hashtextextended($1, 0))`, [`export:${u.id}:${negocio ?? ""}`]);
-    const v = await consumirCodigo(c, u.phone, "data_export", String(codigo ?? ""));
+    const v = typeof codigo === "string" ? await consumirCodigo(c, u.phone, "data_export", codigo) : await L!.usarConfirmacionEn(c, u, codigo, "data_export");
     if (v === "codigo_incorrecto") return no("Ese código no es. Revísalo.", "That code is not right. Check it.");
     if (v === "codigo_vencido") return no("El código venció. Pide uno nuevo.", "The code expired. Ask for a new one.");
     if (v === "demasiados") return no("Demasiados intentos. Pide un código nuevo en un rato.", "Too many tries. Ask for a new code in a while.");
+    if (v !== "ok") { const m = L!.mensajeConfirmar(v); return no(m.es, m.en); }
     if (negocio && !(await c.query(`select 1 from business_members where business_id = $1 and user_id = $2::uuid and kind = 'owner' and status = 'active'`, [negocio, u.id])).rowCount)
       return no("Solo el dueño exporta los datos del negocio.", "Only the owner exports the business data.");
     const viva = (await c.query(`select 1 from data_exports where user_id = $1::uuid and coalesce(business_id, '') = $2::text and status in ('pendiente', 'armando', 'listo')`, [u.id, negocio ?? ""])).rowCount;

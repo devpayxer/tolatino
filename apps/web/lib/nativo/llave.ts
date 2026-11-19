@@ -109,6 +109,11 @@ export async function entrarConLlave(): Promise<Res> {
   try { respuesta = await usarLlave(a.opciones as J); } catch (e) { return cancelado(e) ? { ok: false, cancelado: true } : { ok: false }; }
   return post("/api/cuenta/llave/entrar", { respuesta });
 }
+/* 9t · Confirmar con la llave (pedir el archivo, borrar la cuenta): el reto lo da una acción del servidor de ESE propósito y la firma vuelve a
+   otra; aquí solo se firma con Face ID / la huella (o TLLlave en las apps). Si la persona cierra el diálogo: cancelado, sin mensaje. */
+export async function firmarConLlave(opciones: J): Promise<{ ok: true; respuesta: J } | { ok: false; cancelado: boolean }> {
+  try { return { ok: true, respuesta: await usarLlave(opciones) }; } catch (e) { return { ok: false, cancelado: cancelado(e) }; }
+}
 export async function agregarLlave(): Promise<Res> {
   const a = await post("/api/cuenta/llave/registro/reto", {});
   if (!a.ok) return a;

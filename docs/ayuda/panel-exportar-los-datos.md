@@ -1,7 +1,7 @@
 # Exportar los datos del negocio · Export business data
 
 _Pantallas: **Panel › Más › Exportar los datos del negocio** (`/panel/{negocio}/exportar`), en la web y en la app Negocios. Teléfono y escritorio.
-Versión: 14 nov 2026. Audiencia: negocio. Tema: panel._
+Versión: 19 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - Te armamos **un archivo con lo que tu panel ya muestra** de tu negocio: tu página (nombre, dirección, contacto, horarios y lo que ofreces), tu
@@ -12,7 +12,9 @@ Versión: 14 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Cómo se usa
 1. En tu panel, toca **Más › Exportar los datos del negocio**. Solo el **dueño** lo ve y lo pide.
-2. Toca **«Pedir el archivo»**. Te mandamos un código a tu teléfono; escríbelo y toca **«Pedir el archivo»** otra vez.
+2. Toca **«Pedir el archivo»**. Te mandamos un código a tu teléfono; escríbelo y toca **«Pedir el archivo»** otra vez. Si tienes una **llave de
+   acceso** (Face ID, Touch ID o tu huella) y este dispositivo puede usarla, sale **«Pedir con Face ID»** (o «con la huella»): confirmas con tu
+   cara o tu huella, sin esperar el código; **«Mejor con un código»** sigue ahí.
 3. Tarda unos minutos. Te llega el aviso **«El archivo de tu negocio está listo»** y en la pantalla sale **«Bajar»**.
 4. Toca **«Bajar»**: se baja **una sola vez** y vale **24 horas**.
 
@@ -25,6 +27,7 @@ Versión: 14 nov 2026. Audiencia: negocio. Tema: panel._
 | Ya pediste uno hace menos de 7 días | Sale la fecha en que puedes pedir otro. Uno cada 7 días por negocio. |
 | Alguien abre el enlace en un chat | No pasa nada: el enlace solo baja el archivo desde tu sesión, con «Bajar». |
 | Dejaste de ser el dueño antes de bajarlo | Ya no lo puedes bajar. |
+| No tienes llave de acceso, o este dispositivo no puede usarla | Solo sale el código. |
 
 ## Preguntas frecuentes
 - **¿Por qué no vienen los teléfonos de mis clientes?** Porque tu panel tampoco los guarda para ti: los ves solo mientras dura un pedido o una cita.
@@ -41,7 +44,9 @@ Versión: 14 nov 2026. Audiencia: negocio. Tema: panel._
 
 ### How to use it
 1. In your dashboard, tap **More › Export business data**. Only the **owner** sees it and requests it.
-2. Tap **"Request the file"**. We text you a code; enter it and tap **"Request the file"** again.
+2. Tap **"Request the file"**. We text you a code; enter it and tap **"Request the file"** again. If you have a **passkey** (Face ID, Touch ID or
+   your fingerprint) and this device can use it, you see **"Request with Face ID"** (or "with fingerprint"): confirm with your face or fingerprint,
+   no waiting for the code; **"Use a code instead"** is still there.
 3. It takes a few minutes. You get the notification **"Your business file is ready"** and **"Download"** shows up on the screen.
 4. Tap **"Download"**: it downloads **only once** and is valid for **24 hours**.
 
@@ -54,6 +59,7 @@ Versión: 14 nov 2026. Audiencia: negocio. Tema: panel._
 | You requested one less than 7 days ago | It shows the date you can request another one. One every 7 days per business. |
 | Someone opens the link in a chat | Nothing happens: the link only downloads the file from your session, with "Download". |
 | You stopped being the owner before downloading it | You can no longer download it. |
+| You have no passkey, or this device can't use it | Only the code shows. |
 
 ### FAQ
 - **Why are my clients' phones not included?** Because your dashboard does not keep them for you either: you see them only while an order or appointment lasts.

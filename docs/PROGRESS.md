@@ -2759,3 +2759,26 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   ciudad, cancelado, ocultar libera el puesto, borrar/editar/retirado no vuelve); `next dev` contra esa copia: /eventos (hoy y otro día: fijado
   primero), Crecimiento › Destacados, la ficha del Super Admin y Panel › Eventos renderizan con lo esperado (compilados por `next dev`). **e2e evt9t
   escrita y sin correr** (aquí no hay Docker ni Playwright) y **`next build` no corrió** (la máquina se quedó sin disco a mitad: queda para el CI). Ayuda: `eventos-buscar-y-ver`, `panel-eventos-crear`, `admin-crecimiento` (ES/EN).
+- **19 nov · 9t · Pedir tus datos y borrar tu cuenta con la llave de acceso** (LAUNCH «Pedir el archivo con la llave de acceso» → ✓; REVISION «9t — Pedir
+  tus datos y borrar tu cuenta con la llave de acceso», decisiones por defecto AB): Descargar mis datos, Exportar los datos del negocio (el dueño) y
+  Borrar mi cuenta se confirman con el código por SMS **o** con la llave (Face ID / huella): «Pedir con Face ID» / «Borrar con Face ID» y «Mejor con un
+  código»; sin llave, donde no se ofrecen (`llavesAqui`) o en un dispositivo que no puede, solo el código, como antes. Migración **0184**
+  (`webauthn_challenges.purpose` + `data_export` / `account_delete`, siempre con cuenta; `passkey_log` + `confirmo` / `confirmar_fallo` con dos índices
+  parciales). `lib/llaves/llaves.ts`: la verificación de la firma sale de `entrar` a **`firmaDeLlave`** (la única: entrar y confirmar; un solo
+  `verifyAuthenticationResponse`); `retoConfirmar` (reto de ESE propósito, de esta cuenta y este dispositivo, `passkey_reto_s`, verificación requerida,
+  `allowCredentials` = sus llaves vivas), `confirmarConLlave` (tope `passkey_fallos_hora` por cuenta y por dirección; el reto se gasta antes de la
+  firma; llave viva de ESTA cuenta) → una prueba opaca (WeakMap privado, un uso) que `usarConfirmacionEn` gasta DENTRO de la transacción del pedido
+  (`pedirArchivo`, data_export) o del borrado (`borrarCuenta`, account_delete): propósito y cuenta iguales, contador quieto con la llave bloqueada, este
+  dispositivo y donde nació la llave sin bloqueo, cuenta activa, teléfono verificado; «confirmo» en el libro. Acciones `archivoRetoLlave`,
+  `archivoPedirLlave`, `borrarRetoLlave`, `borrarConLlave` (propósito fijo en el servidor). Super Admin › Usuarios 360° › Seguridad cuenta las
+  confirmaciones de cada llave. Guardián nuevo `confirmarConLlave`; `retoUnUso`, `llaveDeSuCuenta`, `passkeyNoSaltaBloqueo` y `clonSoloConFirma` miran la
+  firma compartida (alreves9tllave 30/30, alreves8d 41/41). e2e **llave9t** 44 ✓ dos veces seguidas en local (copia `tl_9tllave` de la base local
+  Postgres 16 con 0181, 0182 y 0184; `next build` standalone en :3184 con RP ID localhost; Chromium con el autenticador virtual; sin Docker: un `docker
+  exec` de mentira hacia psql fuera del repo): sin llave solo el código; con llave pedir sin SMS; la misma firma otra vez; el reto de entrar no pide el
+  archivo, el del archivo no entra ni borra, el del borrado no pide el archivo (un intento con otro propósito no gasta el reto); la llave y el
+  userHandle de otra cuenta; verificación restablecida, dispositivo bloqueado, cuenta suspendida, tope; interruptor apagado; «Mejor con un código»;
+  borrar con la llave (1360) y cancelar; la llave quitada. Lo que no cubre: Exportar del negocio de punta a punta (misma acción y el mismo pedido) y
+  las apps (TLLlave ya respeta `allowCredentials`). **llave8d** en la misma copia: §1–12 en verde (83 ✓: entrar con la firma compartida, contador y clon,
+  bloqueos, userHandle); §13 no corre en local (necesita la segunda dirección del CI, 192.0.2.2). tsc + build + guardianes + extraer --verificar en
+  verde. Ayuda: descargar-mis-datos,
+  borrar-mi-cuenta, panel-exportar-los-datos, entrar-con-face-id, admin-usuarios (ES/EN).
