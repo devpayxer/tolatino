@@ -40,6 +40,7 @@
     "user_event_plans": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "planes_de_eventos", "fusion": "no" } ] },
     "job_saves": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "empleos_guardados", "fusion": "mover" } ] },
     "post_saves": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "novedades_guardadas", "fusion": "mover" } ] },
+    "item_saves": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "platos_guardados", "fusion": "mover" } ] },
     "post_votes": { "reglas": [ { "col": "user_id", "accion": "borrar", "fusion": "no" } ] },
     "post_poll_votes": { "reglas": [ { "col": "user_id", "accion": "borrar", "fusion": "no" } ] },
     "post_comment_votes": { "reglas": [ { "col": "user_id", "accion": "borrar", "fusion": "no" } ] },

@@ -11177,6 +11177,53 @@ const guardianes = {
       }
     }
   },
+
+  /* 9t · platosGuardadosSinBorrar (decisión del fundador del 19 nov: «Guardar un plato» en la hoja del plato; LAUNCH «Platos guardados»). Lo que se
+     teme: (1) borrar una fila de item_saves (nada se borra: quitar pone removed_at; volver a guardar crea otra fila; solo la purga de una cuenta borrada
+     la saca, por el mapa de datos) o dos filas vivas del mismo plato; (2) guardar un plato que la página del negocio no muestra (otra regla que la de la
+     ficha: oculto por To'Latino, en una sección que no se ve, con el Menú pausado o de un Free fuera de sus primeros platos) o guardar a nombre de
+     otra persona; (3) una lista que muestra un plato que ya no sale como si se pudiera pedir («Pedir» que lleva a nada) o que se rompe con él; (4) el
+     corazón sin estado para el lector de pantalla (aria-pressed) o que, sin sesión, no lleva a entrar; (5) una consulta por plato en la ficha; (6) el
+     archivo de la persona y la purga sin sus platos guardados. Al revés: alreves9tplatos. */
+  platosGuardadosSinBorrar() {
+    const G = "platosGuardadosSinBorrar", M = "packages/db/migrations/0193_platos_guardados.sql", L = "apps/web/lib/platos-guardados.ts", A = "apps/web/app/(app)/n/[id]/acciones-platos.ts",
+      MC = "apps/web/app/(app)/n/[id]/MenuCliente.tsx", GU = "apps/web/app/(app)/cuenta/guardados/Guardados.tsx", PE = "apps/web/lib/pedir.ts", MJ = "packages/db/mapa-de-datos.json", E = "pruebas/e2e/plat9t.cjs";
+    if (!existsSync(M) || !existsSync(L)) return falla(G, L, 0, "faltan los platos guardados (0193 y lib/platos-guardados.ts)");
+    // (1) La base: una fila viva por persona y plato; no se borra (salvo la purga); una fila quitada no vuelve.
+    const m = readFileSync(M, "utf8");
+    if (!/create unique index if not exists item_saves_viva on item_saves \(user_id, item_id\) where removed_at is null;/.test(m)) falla(G, M, 0, "una sola fila viva por persona y plato (índice único parcial where removed_at is null)");
+    if (!/if tg_op = 'DELETE' then\s*if coalesce\(current_setting\('tl\.purga', true\), ''\) = 'si' then return old; end if;\s*raise exception 'item_saves no se borra/.test(m)) falla(G, M, 0, "item_saves no se borra (disparador; solo la purga con tl.purga)");
+    if (!/if old\.removed_at is not null and new\.removed_at is distinct from old\.removed_at then/.test(m) || !/create trigger item_saves_antes before update or delete on item_saves/.test(m)) falla(G, M, 0, "una fila quitada no vuelve: se guarda de nuevo con otra fila");
+    for (const f of [...codigo, ...archivos.filter((x) => /^pruebas\/.*\.(cjs|mjs|sql)$/.test(x))]) {
+      if (f === "guardianes/run.mjs" || !existsSync(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((x, i) => { if (/\b(delete\s+from|truncate)\s+(table\s+)?item_saves\b/i.test(x)) falla(G, f, i + 1, "borra filas de item_saves: quitar de guardados pone removed_at (nada se borra)"); });
+    }
+    // (2) Guardar: candado por persona y plato, quitar con removed_at, y guardar solo lo que la ficha muestra (la misma regla de lib/visible-publico.ts).
+    const l = sinComent(L), gp = cuerpoFn(l, "guardarPlato"), mp = cuerpoFn(l, "misPlatosGuardados");
+    if (!/pg_advisory_xact_lock\(hashtext\('item_save:' \|\| \$1::text \|\| ':' \|\| \$2::text\)\)/.test(gp)) falla(G, L, 0, "guardarPlato sin candado por persona y plato (dos toques = dos filas)");
+    if (!/update item_saves set removed_at = now\(\) where user_id = \$1::uuid and item_id = \$2::bigint and removed_at is null/.test(gp)) falla(G, L, 0, "quitar de guardados pone removed_at en la fila viva de ESA persona");
+    if (!/where i\.id = \$1::bigint and \$\{PLATO_EN_SU_PAGINA\}/.test(gp) || !/insert into item_saves \(user_id, item_id, city_id\) values \(\$1::uuid, \$2::bigint, \$3::text\)/.test(gp)) falla(G, L, 0, "guardar solo un plato que su página muestra, a nombre de quien guarda y con la ciudad del negocio");
+    if (!/b\.status = 'active' and b\.category_id = 'NEG-FOOD' and 'menu' = any\(b\.modules_on\) and not \(coalesce\(b\.modules_off, '\{\}'::jsonb\) \? 'menu'\)/.test(l)
+      || !/and \$\{PLATO_VIVO\("i"\)\} and s\.id is not null and \$\{SECCION_MENU_VISIBLE\("s"\)\}/.test(l) || !/< \$\{cfgSql\("free_items"\)\}\)`;/.test(l)) falla(G, L, 0, "PLATO_EN_SU_PAGINA no es la regla de la ficha (negocio activo de Comida, Menú encendido y sin pausa, plato vivo en sección visible, Free con sus primeros platos)");
+    // (3) La lista: solo lo de quien mira, vivo, con «disponible» por la MISMA regla; tope 100.
+    if (!/coalesce\(\$\{PLATO_EN_SU_PAGINA\}, false\) as disponible/.test(mp) || !/where g\.user_id = \$1::uuid and g\.removed_at is null/.test(mp) || !/limit 100/.test(mp)) falla(G, L, 0, "misPlatosGuardados: solo los de quien mira, vivos, con «disponible» por la regla de la ficha y con tope");
+    const gu = existsSync(GU) ? sinComent(GU) : "";
+    if (!/\.\.\.\(x\.disponible \? \{ v: money\(x\.cents\) \} : \{ tag: \[E2\("NO DISPONIBLE", "NOT AVAILABLE"\), "neutral"\]/.test(gu) || !/: x\.disponible \? \[\[E2\("Pedir", "Order"\), "primary"/.test(gu)) falla(G, GU, 0, "un plato que ya no sale dice «No disponible» y no ofrece «Pedir»");
+    if (!/\["items", E2\("Platos y productos", "Dishes & products"\), d\.platos\.length\]/.test(gu) || !/E2\("Sin platos guardados", "No saved dishes"\)/.test(gu)) falla(G, GU, 0, "Guardados sin el chip «Platos y productos» o sin su vacío (favV)");
+    // La acción pide sesión y mismo origen.
+    if (!existsSync(A) || !/export async function platoGuardar\(item: string\): Promise<R> \{ const q = await quien\(\); return q\.e \?\? guardarPlato\(q\.u\.id, String\(item \?\? ""\)\); \}/.test(sinComent(A))
+      || !/if \(!\(await mismoOrigen\(\)\)\) return/.test(sinComent(A))) falla(G, A, 0, "platoGuardar sin quien() (mismo origen y sesión; el usuario sale de la sesión, nunca de la pantalla)");
+    // (4) El corazón de la hoja: aria-pressed, etiqueta ES/EN y sin sesión a /entrar de vuelta al plato.
+    const mc = existsSync(MC) ? sinComent(MC) : "";
+    if (!/aria-label=\{E2\("Guardar plato", "Save dish"\)\} aria-pressed=\{sh\.saved\} onClick=\{sh\.onSave\}/.test(mc)) falla(G, MC, 0, "el corazón de la hoja del plato sin aria-pressed o sin su etiqueta ES/EN");
+    if (!/if \(!opts\.sesion\) return router\.push\(`\/entrar\?volver=\$\{encodeURIComponent\(`\/n\/\$\{biz\}\?\$\{m\.negocio\.pro \? "tab=menu&" : ""\}plato=\$\{id\}`\)\}`\);/.test(mc)) falla(G, MC, 0, "sin sesión, el corazón lleva a /entrar y de vuelta a la hoja del plato");
+    // (5) Una consulta por ficha.
+    if (!/platosGuardadosDe\(userId \?\? null, negocio\)\]\);/.test(cuerpoFn(sinComent(PE), "menuPublico"))) falla(G, PE, 0, "menuPublico no trae los platos guardados en su misma tanda (una consulta por ficha)");
+    // (6) El archivo y la purga: por el mapa de datos.
+    const mj = existsSync(MJ) ? JSON.parse(readFileSync(MJ, "utf8")) : {}, r = mj.tablas?.item_saves?.reglas?.[0];
+    if (!r || r.col !== "user_id" || r.accion !== "borrar" || !r.exporta) falla(G, MJ, 0, "item_saves en el mapa de datos: se exporta (platos_guardados) y sale con la purga");
+    if (!existsSync(E)) falla(G, E, 0, "falta la prueba de punta a punta de los platos guardados");
+  },
 };
 
 

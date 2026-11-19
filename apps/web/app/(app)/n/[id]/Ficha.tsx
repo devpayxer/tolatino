@@ -70,7 +70,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
   // 9m · «Ir a pagar» sin cuenta abre la hoja «Entra para pedir» (AuthSheet bilingüe, L240) sobre la ficha: el pedido se queda igual.
   const [entrar, setEntrar] = useState(false);
   const pagar = () => { if (sesion) router.push(`/n/${f.id}/pagar`); else setEntrar(true); };
-  const mn = useMenu(menu && !menu.vacio ? menu : null, es, { onPay: pagar });
+  const mn = useMenu(menu && !menu.vacio ? menu : null, es, { onPay: pagar, sesion });
   // Reservaciones (Pro, módulo encendido): pestaña, tarjeta rápida en el Resumen y riel «Tu mesa».
   const rv = useRsv(rsv, es, sesion, rsvInicial?.editar ?? null, rsvInicial);
   // Reseñas: en el Resumen siempre; en Pro, además su pestaña (siempre visible, como el Resumen).

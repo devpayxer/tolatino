@@ -1,6 +1,7 @@
 import { diasEspeciales, horasDelDia } from "./dias-especiales";
 import { VENTAS_SQL, populares, type Ventas30 } from "./menu-ventas";
 import { PLATO_VIVO, SECCION_MENU_VISIBLE } from "./visible-publico";
+import { platosGuardadosDe } from "./platos-guardados";
 import "server-only";
 import { cfgSql } from "./config";
 import type { QueryResult, QueryResultRow } from "pg";
@@ -61,6 +62,7 @@ export type MenuPublico = {
   negocio: { id: string; nombre: string; direccion: string | null; telefono: string | null; pickupNote: string; lat: number | null; lng: number | null; pro: boolean };
   secs: PSec[]; items: Record<string, PItem>; grps: Record<string, PGrp>; pop: string[]; estado: PEstado; desde: number; vacio: boolean;
   dir: DirEntrega | null; // la dirección predeterminada de la persona y si este negocio llega
+  guardados: string[];     // 9t · los platos de este menú que la persona guardó (el corazón de la hoja del plato; lib/platos-guardados.ts)
 };
 
 type Base = {
@@ -245,12 +247,12 @@ export async function menuPublico(negocio: string, lang: Lang, userId?: string |
   const b = await base(db(), negocio);
   if (!b || b.cat !== "NEG-FOOD" || !b.mods.includes("menu") || b.off.menu) return null;
   await vencer({ negocio }); // lo que nadie contestó a tiempo devuelve su inventario antes de mostrar el menú
-  const [R, tope, F] = await Promise.all([rangosHoy(db(), negocio, b.dow, b.hoy), topeFree(db(), negocio, b.mes), filas(db(), negocio, b.tz, false, userId ?? null)]);
+  const [R, tope, F, guardados] = await Promise.all([rangosHoy(db(), negocio, b.dow, b.hoy), topeFree(db(), negocio, b.mes), filas(db(), negocio, b.tz, false, userId ?? null), platosGuardadosDe(userId ?? null, negocio)]);
   const est = calcEstado(b, R, tope.usados, tope.cap, es);
   const m = armar(b, F, est, es);
   return {
     negocio: { id: b.id, nombre: b.name, direccion: b.address, telefono: b.phone, pickupNote: tx(b.pickup_note, es), lat: b.lat, lng: b.lng, pro: b.plan === "pro" },
-    ...m, estado: est, dir: userId && est.dlv ? await dirEntrega(db(), userId, b.id, est.dlv.zone, null) : null,
+    ...m, estado: est, dir: userId && est.dlv ? await dirEntrega(db(), userId, b.id, est.dlv.zone, null) : null, guardados,
   };
 }
 

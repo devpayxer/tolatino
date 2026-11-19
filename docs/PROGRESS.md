@@ -2790,3 +2790,19 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   `botonesQueCaben`, `alreves19caben` 6/6. Además: vec9m abre el negocio todo el día (a las 11 PM la hoja del plato no se abre: solo si se
   puede pedir); ciu9t espera el encabezado de escritorio (la cookie tl_ancho del teléfono pinta primero el de teléfono); `sin-reloj` quita
   «hace N min/h» (compa7e dos veces seguidas); bus9t trae su propio apartado; alreves8a al día; age en CI cuando una dirigida nombra al revés.
+- **19 nov · 9t · Platos guardados** (OK del fundador a la propuesta de REVISION «Guardar un plato»; LAUNCH «Platos guardados» cerrada): en la hoja
+  del plato (y la ventana de escritorio) el cuadro del corazón de la barra de la vacante (50 px) a la izquierda del contador, `aria-label` «Guardar
+  plato» / «Save dish» con `aria-pressed`, rojo y lleno al guardar; sin sesión lleva a /entrar y vuelve a la hoja de ese plato (?plato=). Migración
+  **0193** `item_saves` (id, user_id, item_id, city_id del negocio, created_at, removed_at): nada se borra (quitar pone `removed_at`, volver a guardar
+  crea otra fila; disparador: sin DELETE salvo la purga con tl.purga, una fila quitada no vuelve), una viva por persona y plato (índice único parcial),
+  índice (user_id, created_at desc). `lib/platos-guardados.ts`: `guardarPlato` (candado por persona y plato; solo un plato que su página muestra,
+  con la regla de la ficha: Comida activo, Menú encendido sin pausa, PLATO_VIVO en SECCION_MENU_VISIBLE, Free con sus primeros `free_items`),
+  `platosGuardadosDe` (una consulta por ficha, en la tanda de `menuPublico`), `misPlatosGuardados` (100, una consulta, precio con la oferta de quien
+  mira, `disponible` con la MISMA regla). Acción `platoGuardar` (acciones-platos.ts, `quien()`). Mi cuenta › Guardados: chip «Platos y productos · N»
+  (favV), filas con foto, plato, NEGOCIO, precio y «Pedir» (abre la hoja del plato en su menú); el que ya no sale: «NO DISPONIBLE», sin precio ni
+  «Pedir»; «Editar» → «Quitar»; vacío con el corazón. El conteo de Guardados del Resumen suma los platos vivos. Espejo: el 360° del Super Admin no
+  lista guardados (no se inventó); su «Ver como» y el archivo de la persona salen del mapa de datos, que ahora trae `item_saves` (exporta
+  `platos_guardados`, purga borrar, fusión mover). Guardián **platosGuardadosSinBorrar**, **alreves9tplatos** 27/27. e2e **plat9t** 38 ✓ en local
+  (base `tl_loc` con 0193; `next build` standalone en :3155 con secretos propios fuera del repo; `docker exec` de mentira hacia psql): sin sesión →
+  /entrar y vuelta; guardar, recargar (marcado), lista con precio y «Pedir» → hoja; quitar (fila queda) y volver a guardar (fila nueva); oculto →
+  «No disponible» sin «Pedir», «Quitar» desde Mi cuenta; 1360 y EN. tsc + build + guardianes en verde. Ayuda: mi-cuenta (ES/EN).

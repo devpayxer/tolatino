@@ -97,7 +97,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   // C-006 · Las demás categorías: sus mismas piezas (pestaña, hoja, barra y columna) dentro de la ficha nueva; la lógica no cambia.
   const [entrar, setEntrar] = useState(false);
   const pagar = () => { if (sesion) router.push(`/n/${f.id}/pagar`); else setEntrar(true); };
-  const mn = useMenu(menu && !menu.vacio ? menu : null, es, { onPay: pagar });
+  const mn = useMenu(menu && !menu.vacio ? menu : null, es, { onPay: pagar, sesion });
   const rv = useRsv(rsv ?? null, es, sesion, rsvInicial?.editar ?? null, rsvInicial ?? {});
   const ov = useOficio(ofi ?? null, es, sesion);
   const sa = useSalud(salud ?? null, es);
