@@ -16,9 +16,12 @@ const multipart = (bytes, nombre, tipo) => Buffer.concat([
 // Por partes: «Transfer-Encoding: chunked», sin content-length (como Safari).
 const http = require('http');
 const enviar = (url, cab, buf, conLargo) => new Promise((res, rej) => {
-  const q = http.request(url, { method: 'POST', agent: false, headers: { ...cab, ...(conLargo ? { 'content-length': String(buf.length) } : { 'transfer-encoding': 'chunked' }) } }, (r) => { r.resume(); r.on('end', () => res(r.statusCode)); });
-  q.on('error', rej);
-  (async () => { for (let i = 0; i < buf.length; i += 262144) { if (!q.write(buf.subarray(i, i + 262144))) await new Promise((x) => q.once('drain', x)); } q.end(); })().catch(rej);
+  // Si el servidor contesta antes de recibirlo todo (el 413 de content-length), deja de enviar y vale su respuesta: escribir sobre la conexión
+  // que cerró da EPIPE / ECONNRESET, y un navegador lee la respuesta igual.
+  let st = null;
+  const q = http.request(url, { method: 'POST', agent: false, headers: { ...cab, ...(conLargo ? { 'content-length': String(buf.length) } : { 'transfer-encoding': 'chunked' }) } }, (r) => { st = r.statusCode; r.resume(); r.on('end', () => res(st)); r.on('error', () => res(st)); });
+  q.on('error', (e) => (st != null ? res(st) : rej(e)));
+  (async () => { for (let i = 0; i < buf.length && st == null && !q.destroyed; i += 262144) { if (!q.write(buf.subarray(i, i + 262144))) await new Promise((x) => { q.once('drain', x); q.once('close', x); }); } if (!q.destroyed) q.end(); })().catch(() => undefined);
 });
 (async () => {
   const b = await chromium.launch();
