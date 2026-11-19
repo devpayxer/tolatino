@@ -4,5 +4,7 @@
 const HORA = /\b\d{1,2}(:\d{2})? ?(AM|PM|a\. ?m\.|p\. ?m\.)/gi;
 const SALUDO = /\b(Buenos días|Buenas tardes|Buenas noches|Good morning|Good afternoon|Good evening)\b/g;
 const DIA = /\b(LUNES|MARTES|MIÉRCOLES|JUEVES|VIERNES|SÁBADO|DOMINGO|MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY)\b/gi;
-const norm = (t) => String(t).replace(HORA, 'HORA').replace(SALUDO, 'SALUDO').replace(DIA, 'DÍA').replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
+// 19 nov · «HACE 59 MIN» → «HACE 1 H» entre la foto de antes y la de después (compa7e, dos veces seguidas): el tiempo relativo es reloj.
+const HACE = /\b(HACE|Hace|hace) \d+ ?(MIN|min|H|h|D|d|DÍAS?|días?|SEG|seg|S|s)\b|\b\d+ ?(min|h|d|s|days?|hours?|minutes?) ago\b/g;
+const norm = (t) => String(t).replace(HACE, 'HACE').replace(HORA, 'HORA').replace(SALUDO, 'SALUDO').replace(DIA, 'DÍA').replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
 module.exports = { norm };

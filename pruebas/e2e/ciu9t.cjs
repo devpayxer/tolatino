@@ -76,6 +76,9 @@ const abrir = async (p) => { await p.goto(B + '/?ciudad'); await p.getByText(/¿
     const cad = await ctxDesk(b, { storageState: await ca.storageState() }), pad = await cad.newPage(); abiertas.push(cad); mirar(pad, 'ana-1360');
     await pad.goto(B + '/');
     // 19 nov · Diagnóstico: en el ancho 1024 no salió; si vuelve a fallar, dice lo que mostraba el encabezado y la cookie de esa ventana.
+    // La cookie tl_ancho que se copió del teléfono (390) hace que el servidor pinte primero el encabezado de teléfono; al medir, pasa a
+    // escritorio. Se espera ese cambio (en el ancho 1024 la lectura llegaba antes).
+    await espera(async () => /Hazleton, PA · 5 mi · casa/.test(await texto(pad)));
     const tPad = await texto(pad);
     ok(/Hazleton, PA · 5 mi · casa/.test(tPad), `1360: «Hazleton, PA · 5 mi · casa»${/Hazleton, PA · 5 mi · casa/.test(tPad) ? '' : ` (encabezado: «${(tPad.match(/Hazleton[^·]{0,6}·[^·]{0,30}(·[^·]{0,20})?/) || [''])[0]}», cookie: ${await loc(cad)}, ancho: ${pad.viewportSize()?.width})`}`);
     void trabajo;
