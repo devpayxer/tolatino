@@ -37,7 +37,11 @@ const sh = (c) => execSync(c, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().tr
 // Pedir una dirección con la sesión de esa página: estado, tipo, caché y los primeros bytes (para ver que no lleva metadatos).
 const traerFoto = (p, u) => p.evaluate(async (u) => { const r = await fetch(u, { cache: 'no-store' }); const b = new Uint8Array(await r.arrayBuffer()); let s = ''; for (const x of b.slice(0, 4096)) s += String.fromCharCode(x); return { st: r.status, ct: r.headers.get('content-type'), cc: r.headers.get('cache-control'), cab: s }; }, u);
 const subirCrudo = (p, tipo, n, para = 'dm') => p.evaluate(async ([tipo, n, para]) => { const fd = new FormData(); fd.append('foto', new Blob([new Uint8Array(n)], { type: tipo }), 'x.bin'); fd.append('para', para); return (await fetch('/api/mensajes/foto', { method: 'POST', body: fd })).status; }, [tipo, n, para]);
-const A = '5705550122', BB = '5705550288', X = '5705550433', ADM = '5705550199';
+// Cuentas NUEVAS de esta prueba (teléfonos 555 libres): con las fijas (Marisol, Héctor) la conversación que deja esta prueba le prendía a com5c
+// el «Mensaje» de B → C (quien ya te escribió puede recibir respuesta). Precondición propia: nadie más las usa.
+const { entrarComo, telLibre } = require('../lib/negocio-nuevo.cjs');
+const A = telLibre(); let BB = telLibre(); while (BB === A) BB = telLibre(); let X = telLibre(); while (X === A || X === BB) X = telLibre();
+const ADM = '5705550199';
 const uid = (tel) => sql(`select id from users where phone = '+1${tel}'`);
 const stubN = async () => (await fetch(`${STUB}/__n`)).json();
 let stub = null, trad = false;
@@ -71,8 +75,9 @@ const limpiar = () => {
 };
 
 (async () => {
+  { const b0 = await chromium.launch(); for (const [t, n] of [[A, 'Marisol'], [BB, 'Héctor'], [X, 'Yesenia']]) await entrarComo(await (await b0.newContext()).newPage(), t, { nombre: n, apellido: 'Prueba' }); await b0.close(); }
   RA = uid(A); RB = uid(BB); RX = uid(X);
-  ok(!!RA && !!RB && !!RX, 'las cuentas de prueba existen (Marisol, Héctor, Yesenia)');
+  ok(!!RA && !!RB && !!RX, 'las cuentas nuevas de la prueba existen (Marisol, Héctor, Yesenia)');
   // ── Preparación: los tres en la Comunidad (18+, reglas, bienvenida), sin bloqueos; A y B se siguen; B con la app en inglés ──
   LANG_B0 = sql(`select coalesce(lang, '') from users where id = '${RB}'`);
   for (const u of [RA, RB, RX]) sql(`insert into community_profiles (user_id) values ('${u}') on conflict do nothing`);
