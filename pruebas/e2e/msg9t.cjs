@@ -33,7 +33,15 @@ const subirCrudo = (p, tipo, n) => p.evaluate(async ([tipo, n]) => { const fd = 
 const MARI = "(select id from users where phone='+15705550122')", PEDRO = "(select id from users where phone='+15705550133')";
 const TH = `(select id from chat_threads where user_id = ${MARI} and business_id = '${BIZ}')`;
 const stubN = async () => (await fetch(`${STUB}/__n`)).json();
-let stub = null, COMPA0 = null, IMG0 = null, horario = null, trad = false;
+let stub = null, COMPA0 = null, IMG0 = null, horario = null, trad = false, SVC0 = false;
+// El servicio propio de imágenes (services/moderacion-img, :8790): com5d lo enciende y lo deja encendido. Esta prueba necesita «sin servicio»
+// (la foto queda en revisión, nunca abierta): lo apaga mientras dura y, si estaba encendido, lo vuelve a encender igual que com5d.
+const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhost:8790/salud').toString()).ok === true; } catch { return false; } };
+const servicioImg = (on) => {
+  if (!on) { try { execSync("pkill -f 'services/moderacion-img/app.py'"); } catch { /* ya estaba */ } return; }
+  if (!fs.existsSync(ENT.rec('imgvenv/bin/python'))) return;
+  spawn(ENT.rec('imgvenv/bin/python'), ['-I', ENT.RAIZ + '/services/moderacion-img/app.py'], { env: { ...process.env, PUERTO: '8790' }, detached: true, stdio: 'ignore' }).unref();
+};
 const stubArriba = async () => { stub = spawn('node', [ENT.RAIZ + '/pruebas/lib/stub-traductor.cjs', String(PORT)], { stdio: 'ignore' }); await espera(async () => { try { await stubN(); return true; } catch { return false; } }, 5000); };
 const stubAbajo = async () => { if (stub) { stub.kill(); stub = null; } };
 const servidor = (url) => console.log('  ·', sh(`SOLO=servir TRADUCTOR_URL=${url ?? ''} bash ${ENT.RAIZ}/pruebas/servir/servir.sh`));
@@ -47,6 +55,7 @@ const limpiar = () => {
     sql(`delete from ugc_translations where target_kind = 'chat_message' and target_id in (select id from chat_messages where thread_id = ${TH})`);
     sql(`delete from ugc_translation_uses where who in ('u:' || ${MARI}::text, 'u:' || ${PEDRO}::text)`);
     if (horario) { horario(); horario = null; }
+    if (SVC0 && !saludImg()) servicioImg(true);
   } catch { /* lo que se pudo */ }
 };
 (async () => {
@@ -54,6 +63,8 @@ const limpiar = () => {
   IMG0 = sql(`select coalesce((select enabled::text from mod_rules where key = 'img'), 'true')`);
   if (COMPA0 === 'true') sql(`update compa_business_settings set enabled = false where business_id = '${BIZ}'`);
   sql(`update mod_rules set enabled = true where key = 'img'`);
+  SVC0 = saludImg();
+  if (SVC0) { servicioImg(false); if (!(await espera(async () => !saludImg(), 8000))) throw new Error('PRECONDICIÓN el servicio de imágenes no se apagó'); }
   // La app guarda las reglas 15 s (reglasMod): si la prueba anterior la había apagado, todavía la ve apagada y la foto saldría «visible».
   await new Promise((r) => setTimeout(r, 16000));
   sql(`update chat_threads set blocked_at = null, blocked_by = null where business_id = '${BIZ}'`);

@@ -1,5 +1,5 @@
 // 9t · La pantalla responde en el mismo toque (pedido del fundador, 19 nov: «el sitio se queda como enganchado cuando das un click»).
-// 1) Barra de navegación: al tocar una tarjeta de negocio (botón con router.push, no un enlace) con la página nueva frenada 2,5 s a propósito,
+// 1) Barra de navegación: al tocar un resultado de Buscar (botón con router.push, no un enlace) con la página nueva frenada 2,5 s a propósito,
 //    la barra sale antes de 100 ms y avanza; al llegar la página, se completa y se apaga. Atrás del navegador también la enciende.
 // 2) Esqueleto: a los 300 ms del mismo toque, el contenido de la pantalla vieja ya se cambió por el esqueleto de la ficha (data-esqueleto,
 //    role=status; el encabezado se queda); llega la ficha → el esqueleto se va. Cambiar solo ?tab= no lo saca. Sin loading.tsx: nunca hay
@@ -17,10 +17,12 @@ const estado = (p) => p.locator('.tl-barra-nav').evaluate((e) => ({ e: e.dataset
     for (const [nom, vp, mob] of [['390', { width: 390, height: 844 }, true], ['1360', { width: 1360, height: 900 }, false]]) {
       const c = await b.newContext({ viewport: vp, isMobile: mob, hasTouch: mob, deviceScaleFactor: mob ? 2 : 1 });
       const p = await c.newPage();
-      await p.goto(B + '/', { waitUntil: 'networkidle' });
+      // Precondición propia: Café Quisqueya sale seguro en Buscar (en Inicio depende de lo que dejaron las pruebas anteriores).
+      await p.goto(B + '/buscar?q=' + encodeURIComponent('Café Quisqueya'), { waitUntil: 'networkidle' });
       ok((await estado(p)).e === 'quieta', `${nom} · sin navegar, la barra está apagada`);
       await p.route('**/*', async (r) => { const h = r.request().headers(); if (h['rsc'] === '1' && !h['next-router-prefetch']) await new Promise((x) => setTimeout(x, 2500)); await r.continue(); });
-      const tarjeta = p.getByText('Café Quisqueya').first();
+      const fila = () => p.getByRole('button', { name: /Café\s*Quisqueya/ });
+      const tarjeta = fila().first();
       await tarjeta.waitFor();
       await tarjeta.click({ noWaitAfter: true });
       await p.waitForTimeout(80);
@@ -31,7 +33,7 @@ const estado = (p) => p.locator('.tl-barra-nav').evaluate((e) => ({ e: e.dataset
       ok(e2.e === 'va' && parseFloat(/scaleX\(([\d.]+)\)/.exec(e2.t)?.[1] ?? '0') > parseFloat(/scaleX\(([\d.]+)\)/.exec(e1.t)?.[1] ?? '1'), `${nom} · la barra avanza mientras espera (${e2.t})`);
       await p.waitForTimeout(0);
       ok(await p.locator('[data-esqueleto]').isVisible() && await p.locator('[data-esqueleto] [aria-hidden]').count() > 5, `${nom} · el esqueleto de la ficha ya está en lugar de la pantalla vieja`);
-      ok(await p.getByText('Café Quisqueya').count() === 0, `${nom} · la pantalla vieja ya no está (no hay dos contenidos a la vez)`);
+      ok(await fila().count() === 0, `${nom} · la pantalla vieja ya no está (no hay dos contenidos a la vez)`);
       if (nom === '390') await p.screenshot({ path: OUT + 'nav9t-barra-390.png' });
       await p.waitForURL((u) => u.pathname.startsWith('/n/'), { timeout: 15000 });
       await p.waitForTimeout(600);

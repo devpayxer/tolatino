@@ -3,7 +3,8 @@
 // orden, Servicios, Equipo (con «Ver su página» de cada silla), Horario y Antes de ir. Una barbería Free sigue con la ficha de siempre.
 // La reserva: la hoja nueva (1 servicio y con quién → 2 día y hora, con las horas del servidor) lleva a Booking con la hora elegida, que
 // abre en «Detalles» (2 / 3); en escritorio, la tarjeta pegada a la derecha hace lo mismo. Con extras, la hoja de siempre sigue igual.
-// Precondición propia: los extras del local se apagan mientras corre la parte de día y hora (sell=false) y vuelven al terminar.
+// Precondición propia: los extras del local se apagan mientras corre la parte de día y hora (sell=false) y vuelven al terminar; «Fade» va sin
+// opciones (svc3a le agrega «Largo del pelo»; en orden barajado corría antes y la hoja no lo ofrecía tal cual) y vuelve como estaba.
 const ENT = require('../lib/entorno.cjs');
 const { botonesQueNoCaben } = require('../lib/caben.cjs');
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
@@ -19,6 +20,9 @@ const HORA = /^\d{1,2}:\d{2} (AM|PM)$/;
   const FREE = sql(`select b.id from businesses b join business_stats_cache s on s.business_id = b.id where s.plan = 'free' and b.category_id = 'NEG-BELL' and b.status = 'active' order by b.id limit 1`);
   ok(sql(`select s.plan from business_stats_cache s where s.business_id = '${PRO}'`) === 'pro' && !!FREE, `precondición: ${PRO} es Pro y ${FREE} es Free`);
   const extras = sql(`select coalesce(string_agg(id::text, ','), '') from items where business_id = '${PRO}' and module = 'svc' and is_extra and removed_at is null and sell`);
+  const FADE = sql(`select id from items where business_id = '${PRO}' and module = 'svc' and name->>'es' = 'Fade' and removed_at is null order by id limit 1`);
+  const opts0 = sql(`select coalesce(svc_opts, '[]'::jsonb)::text from items where id = ${FADE}`);
+  sql(`update items set svc_opts = '[]'::jsonb where id = ${FADE}`);
   const b = await chromium.launch(); const abiertas = [];
   try {
     console.log('1 · Teléfono: la ficha nueva y su encabezado');
@@ -85,6 +89,7 @@ const HORA = /^\d{1,2}:\d{2} (AM|PM)$/;
     console.log(`\n${n} ✓ · fic005`);
   } finally {
     if (extras) { try { sql(`update items set sell = true where id in (${extras})`); } catch (e) { console.error('extras:', e.message); } }
+    try { sql(`update items set svc_opts = '${opts0.replace(/'/g, "''")}'::jsonb where id = ${FADE}`); } catch (e) { console.error('fade:', e.message); }
     for (const c of abiertas) await c.close().catch(() => {});
     await b.close();
   }
