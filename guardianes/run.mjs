@@ -9762,10 +9762,13 @@ const guardianes = {
   /* 9t (19 nov) · resumenComunidadUnaPasada: el barrido de la Comunidad con 1 M de vecinos tardaba 9,2 s de 10 (carga 44571463348): «activos por
      rango» recorría tres veces lo mismo (7, 30 y 90 días). Desde 0190 es una pasada (la última actividad de cada vecino por ciudad en 90 días,
      contada para los tres cortes). Que no vuelva el bucle por período ni una pasada por ciudad, y que com5e compare contra la regla
-     (com_activos_por_rango). Al revés (alreves9tresumen): el bucle otra vez, la ventana de 90 días cambiada, o la prueba sin comparar. */
+     (com_activos_por_rango). 0191: en tres partes medibles (com_rangos_resumir, com_activos_resumir, com_recomendados_resumir) que
+     com_cifras_resumir corre juntas. Al revés (alreves9tresumen): el bucle otra vez, la ventana cambiada, una parte fuera, o la prueba sin comparar. */
   resumenComunidadUnaPasada() {
-    const G = "resumenComunidadUnaPasada", f = ultimaFn("com_cifras_resumir");
-    if (!f) return falla(G, "packages/db/migrations", 0, "falta com_cifras_resumir");
+    const G = "resumenComunidadUnaPasada", f = ultimaFn("com_activos_resumir"), todo = ultimaFn("com_cifras_resumir");
+    if (!f) return falla(G, "packages/db/migrations", 0, "falta com_activos_resumir");
+    // 0191 · El resumen en tres partes (rangos, activos, Recomendados): com_cifras_resumir hace las tres.
+    for (const x of ["com_rangos_resumir()", "com_activos_resumir()", "com_recomendados_resumir()"]) if (!todo.includes(x)) falla(G, "packages/db/migrations", 0, `com_cifras_resumir no corre ${x}`);
     if (/foreach\s+\w+\s+in\s+array/i.test(f) || /\bloop\b/i.test(f)) falla(G, "packages/db/migrations", 0, "com_cifras_resumir vuelve a recorrer los períodos uno por uno (una pasada para 7, 30 y 90)");
     if (!/max\(z\.at\)/.test(f) || !/join \(values \(7\), \(30\), \(90\)\) as p\(d\)/.test(f)) falla(G, "packages/db/migrations", 0, "los activos salen de la última actividad por vecino y ciudad, contada para los tres cortes");
     if ((f.match(/::date - 89\)/g) ?? []).length !== 3) falla(G, "packages/db/migrations", 0, "las tres fuentes (publicaciones, comentarios, votos) leen la misma ventana de 90 días");

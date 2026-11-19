@@ -3,9 +3,10 @@
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
-const M = 'packages/db/migrations/0190_comunidad_resumen_una_pasada.sql', G = 'resumenComunidadUnaPasada';
+const M = 'packages/db/migrations/0191_comunidad_resumen_en_partes.sql', G = 'resumenComunidadUnaPasada';
 const casos = [
-  [G, M, 'returns integer language plpgsql as $$\nbegin', 'returns integer language plpgsql as $$\ndeclare d integer;\nbegin\n  foreach d in array array[7, 30, 90] loop null; end loop;'],
+  [G, M, 'create or replace function com_activos_resumir() returns integer language plpgsql as $$\nbegin', 'create or replace function com_activos_resumir() returns integer language plpgsql as $$\ndeclare d integer;\nbegin\n  foreach d in array array[7, 30, 90] loop null; end loop;'],
+  [G, M, 'return com_rangos_resumir() + com_activos_resumir() + com_recomendados_resumir();', 'return com_rangos_resumir() + com_activos_resumir();'],
   [G, M, 'select z.c, z.u, max(z.at) as at', 'select z.c, z.u, min(z.at) as at'],
   [G, M, "where v.created_at >= ((now() at time zone 'America/New_York')::date - 89)", "where v.created_at >= ((now() at time zone 'America/New_York')::date - 29)"],
   [G, 'pruebas/e2e/com5e.cjs', 'el resumen de activos (una pasada) da lo mismo que la regla', 'el resumen'],

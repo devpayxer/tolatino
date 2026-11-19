@@ -137,6 +137,10 @@ await medir("red-de-cuentas", { linea: "L627", presupuesto: 5000, veces: 3, cale
 
 // Lo que el barrido rehace cada 10 min (sin servidor en la carga no corre solo): se rehace aquí, medido, antes de medir lo que lo lee.
 await medir("barrido-comunidad", { linea: "L631", presupuesto: 10000, veces: 1, calentar: 0, que: "barrido: resúmenes de la Comunidad (rangos, activos, candidatos de Recomendados)" }, () => q(`select com_cifras_resumir()`));
+// 9t (0191) · Cada parte por separado, para saber dónde va el tiempo (sin presupuesto propio: el de arriba es el de las tres juntas).
+await medir("barrido-rangos", { linea: "L631", veces: 1, calentar: 0, que: "barrido: rangos por ciudad" }, () => q(`select com_rangos_resumir()`));
+await medir("barrido-activos", { linea: "L631", veces: 1, calentar: 0, que: "barrido: activos por rango 7/30/90 (una pasada)" }, () => q(`select com_activos_resumir()`));
+await medir("barrido-recomendados", { linea: "L631", veces: 1, calentar: 0, que: "barrido: candidatos de Recomendados (180 días)" }, () => q(`select com_recomendados_resumir()`));
 const hoy = await app("lib/hoy.ts"), port = await app("lib/comunidad-portada.ts");
 await medir("hoy", { linea: "L631", presupuesto: 40, que: "Hoy en el barrio de Hazleton" }, () => hoy.hoyEnElBarrio(HZL, null, null, PT));
 await medir("recomendados", { linea: "L631", presupuesto: 50, que: "recomendados por vecinos (180 días)" }, (i) => port.recomendadosPorVecinos(HZL, VS[i % VS.length]));
