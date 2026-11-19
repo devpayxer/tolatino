@@ -2796,6 +2796,17 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   fic005, vec9m, al revés), 44460944263 (llave). En el camino: «Destacar» decía el tope viejo de la caché (bug, arreglado; también en negocios);
   evt9t, pat003 y alreves6f al día; serieUnaVezEnLista mira las dos lecturas de eventosCiudad. La app se sirve en local
   (`tl_loc` + `servir.sh basico` + docker falso que manda el SQL de las pruebas a la base local) para reproducir sin esperar a CI.
+- **19 nov · La pantalla responde en el mismo toque (pedido del fundador: «el sitio se queda como enganchado»):** (1) **barra de navegación** fina
+  arriba (`app/BarraNavegacion.tsx`, color de acción) que sale en el toque de un enlace y también de un botón con router.push (el aviso oficial
+  de Next `instrumentation-client.ts` → «tl:navega»; la casi totalidad de la app navega con botones: 797 router.push) y avanza hasta que llega
+  la página; la mueve el DOM directo (un setState dentro de la transición de Next esperaba a la página nueva: así se quedó quieta la primera
+  vez). (2) **esqueletos** (`Esq/EsqTexto/EsqCirculo/EsqZona` nuevos en packages/ui con el «fondo de foto mientras carga»; `app/_esqueletos.tsx`:
+  ficha, muro, lista, Super Admin) que pone `app/Pendiente.tsx` en el marco de la app y del Super Admin a los 120 ms del toque (sin parpadeo
+  si la página llega antes), solo si cambia la ruta. **No loading.tsx:** el flujo en dos partes deja un instante una copia escondida del
+  contenido (fic005 y a11y9c fallaron con «strict mode»); el guardián lo prohíbe. Local: nav9t 17 ✓ (barra a 80 ms con la página frenada 2,5 s,
+  esqueleto en lugar de la vieja, sin dos contenidos), fic005 22 ✓, menu2b 22 ✓, a11y9c 68 ✓ (se corta en la subida de fotos de Publica: sin
+  almacén local). Guardián `respondeAlToque`, `alreves9tnav` 13/13. **0189**: índice del «ganador del mes» de la Tabla (lo más lento después de
+  0188 en la carga: 61 ms; carga 44529824949: Tabla p95 89 → 59 ms, votar 7 ms, barrido 7,3 s).
 - **19 nov · 9t · «Mi lugar» de la Tabla del Barrio con histograma (0188):** contaba en el índice a todos los de delante (p95 86 ms con 580 mil
   vecinos en una ciudad; presupuesto 40). La base mantiene `monthly_board_hist` (ciudad, mes, pestaña, valor → cuántos, sin excluidos; trigger de
   monthly_boards, guardia por pg_trigger_depth, primer llenado con la Tabla bloqueada) y «mi lugar» suma los valores mayores. Local: 200 de 200

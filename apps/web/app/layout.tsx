@@ -3,6 +3,8 @@ import "./globals.css";
 import { Arranque } from "./_cascara/Arranque";
 import { FocoHojas } from "./FocoHojas";
 import { AreaDeToque } from "./AreaDeToque";
+import { BarraNavegacion } from "./BarraNavegacion";
+import { Suspense } from "react";
 import { Vitales } from "./_vitales/Vitales";
 import { EdicionesE2 } from "./_cms/EdicionesE2";
 import { AhoraProvider } from "@/lib/ahora";
@@ -47,8 +49,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       {/* 8a · Dentro de una de las cuatro cáscaras: splash, botón «atrás» y registro técnico (en la web no hace nada). */}
       {/* 9b-1 · El «ahora» de los tiempos relativos («hace 5 min»): el mismo en el servidor y en la hidratación (lib/ahora.tsx). */}
       {/* 9f-3 · Lo editado de los textos de las pantallas, antes que cualquier componente de cliente (app/_cms/EdicionesE2.tsx). */}
+      {/* 9t · La barra de navegación: responde en el mismo toque de un enlace (app/BarraNavegacion.tsx; los loading.tsx ponen los esqueletos). */}
       {/* 9t · El área de toque de 44 px de cada control, decidida en el momento del toque (packages/ui/src/toque.ts); no pinta nada. */}
-      <body><EdicionesE2 v={ed.v} l={ed.l}><AhoraProvider t={Date.now()}>{children}<Arranque /><FocoHojas /><AreaDeToque /><Vitales /></AhoraProvider></EdicionesE2></body>
+      <body><EdicionesE2 v={ed.v} l={ed.l}><AhoraProvider t={Date.now()}>{children}<Suspense fallback={null}><BarraNavegacion /></Suspense><Arranque /><FocoHojas /><AreaDeToque /><Vitales /></AhoraProvider></EdicionesE2></body>
     </html>
   );
 }

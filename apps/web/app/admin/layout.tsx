@@ -11,6 +11,8 @@ import { idioma } from "@/lib/idioma";
 import { anchoInicial } from "@/lib/ancho";
 import { AnchoInicial } from "@/app/_ancho/Ancho";
 
+import { Pendiente } from "@/app/Pendiente";
+
 export const metadata: Metadata = { title: "Admin · To'Latino", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
@@ -44,7 +46,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <AnchoInicial w={await anchoInicial()}>
     <Shell yo={{ nombre, rol: s.roleName.toUpperCase(), iniciales }} grupos={grupos} casos={{ ...(await casosAbiertos(s)), tomar: s.puede("colas", "aprobar") }} ciudades={ciudades} vista={s.ciudadVista} lang={lang}>
-      {children}
+      <Pendiente>{children}</Pendiente>
     </Shell>
     </AnchoInicial>
   );

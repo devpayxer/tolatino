@@ -3,6 +3,7 @@
 import { useAncho as useAnchoComun } from "@/app/_ancho/Ancho";
 import * as UI from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Pendiente } from "@/app/Pendiente";
 import { useCallback, useEffect, useRef, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import { cambiarIdioma } from "./acciones";
 import { CiudadSelector } from "./CiudadSelector";
@@ -108,7 +109,7 @@ function Marco({ lang, t, yo, ciudad, children, landing = false, letra = false, 
           assetBase="/assets/"
         />
       </div>
-      <div className={desk || pantallaCompleta || compacto ? "" : "pb-[96px]"}>{children}</div>
+      <div className={desk || pantallaCompleta || compacto ? "" : "pb-[96px]"}><Pendiente>{children}</Pendiente></div>
       {drop !== false && desk ? <Desplegable lang={lang} ancla={drop} ciudad={ciudad.nombre} lugar={`${ciudad.nombre} · ${ciudad.radio}`} ph={bp?.ph ?? t.searchDesk} phTodo={t.searchDesk} cat={bp?.cat ?? null} onClose={cerrarDrop}
         onCiudad={(r) => { setDrop(false); setAncla({ left: Math.max(16, Math.min(r.left - 1, window.innerWidth - 780 - 16)), top: r.bottom + 8 }); setSel({ pedir: false }); }} /> : null}
       {sel ? <CiudadSelector lang={lang} modo={desk ? "pop" : "sheet"} ancla={ancla} pedir={sel.pedir} onClose={cerrar} onAplicada={aplicada} /> : null}

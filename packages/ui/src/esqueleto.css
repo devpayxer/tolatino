@@ -1,0 +1,18 @@
+/* 9t · Respuesta inmediata al tocar un enlace (pedido del fundador, 19 nov): la barra de navegación arriba y los esqueletos de carga.
+   Colores del sistema: el esqueleto es el «fondo de foto mientras carga» (--tl-photo-bg) y la barra es lo interactivo (--tl-action).
+   Movimiento suave; con «reducir movimiento» del teléfono, quieto. Lo pinta packages/ui/src/core/Esqueleto.tsx y app/BarraNavegacion.tsx. */
+@keyframes tl-esq-pulso { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+.tl-esq { background: var(--tl-photo-bg); border-radius: var(--radius-9, 9px); animation: tl-esq-pulso 1.4s ease-in-out infinite; }
+.tl-esq-suave { background: var(--tl-paper-2); }
+.tl-barra-nav {
+  position: fixed; top: 0; left: 0; z-index: 2147483000; height: 3px; width: 100%; pointer-events: none;
+  background: var(--tl-action); transform-origin: 0 50%; transform: scaleX(0); opacity: 0;
+  transition: transform .2s ease-out, opacity .25s ease-out;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--tl-action) 45%, transparent);
+}
+.tl-barra-nav[data-estado="va"] { opacity: 1; }
+.tl-barra-nav[data-estado="fin"] { opacity: 0; transform: scaleX(1); transition: transform .15s ease-out, opacity .3s ease-out .12s; }
+@media (prefers-reduced-motion: reduce) {
+  .tl-esq { animation: none; }
+  .tl-barra-nav { transition: opacity .2s linear; }
+}

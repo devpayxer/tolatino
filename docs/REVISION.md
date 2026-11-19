@@ -5715,3 +5715,12 @@ dice «Foto». El aviso de la caja de Mensajes dice ahora «Texto y fotos, sin t
 - **El aviso al vecino y la lista dicen «Foto · Photo» / «Foto»** cuando el mensaje es solo la foto (igual que el chat con negocios).
 - **Arreglo que no se pidió:** la purga de una cuenta borrada fallaba si la persona tenía mensajes entre vecinos (la base no dejaba el texto vacío);
   ahora deja vacío el texto con su marca de oculto. Mirar en la próxima purga real que pase sin error.
+
+## 19 nov — La pantalla responde en el mismo toque (tu pedido) — mirar
+- **Qué mirar:** en el teléfono, toca una tarjeta de negocio, una categoría o una pestaña de abajo. Arriba sale al instante una **barra fina
+  morada** (el color de acción del sistema) que avanza; si la página tarda más de un instante, el contenido se cambia por el **esqueleto**
+  (bloques grises con la forma de la ficha, el muro o la lista) y el encabezado y las pestañas se quedan. Con señal lenta se nota más.
+- **Decisiones que tomé (cámbialas si quieres):** el color de la barra es el de acción (el morado de identidad es solo para el logo); el esqueleto
+  sale a los 120 ms (si la página llega antes, no se ve nada más que la barra: sin parpadeo); con «reducir movimiento» del teléfono, los
+  esqueletos no laten. Las piezas de esqueleto son nuevas en el sistema de diseño (no había): usan el gris «fondo de foto mientras carga».
+- El Panel del negocio no lleva esqueleto (su menú vive dentro de la página): solo la barra.

@@ -9741,6 +9741,37 @@ const guardianes = {
     for (const e of ["pruebas/e2e/fic005.cjs", "pruebas/e2e/bus9t.cjs"]) if (!/botonesQueNoCaben\(/.test(readFileSync(e, "utf8"))) falla(G, e, 0, "la prueba no mira que los botones quepan en su caja (pruebas/lib/caben.cjs)");
   },
 
+  /* 9t (19 nov) · respondeAlToque: el fundador vio que el sitio «se queda como enganchado» al tocar un enlace (la página vieja quieta hasta
+     que llega la nueva). La barra de navegación sale en el mismo toque (app/BarraNavegacion.tsx, montada en el layout raíz) también con
+     router.push de un botón (el aviso de Next: instrumentation-client.ts → «tl:navega»), y la mueve el DOM directo (un setState dentro de la
+     transición de Next esperaría a la página nueva: así falló la primera vez). El esqueleto lo pone Pendiente en el navegador en el mismo
+     aviso (no loading.tsx: copia escondida del contenido). Prueba nav9t. Al revés (alreves9tnav). */
+  respondeAlToque() {
+    const G = "respondeAlToque", BN = "apps/web/app/BarraNavegacion.tsx", IC = "apps/web/instrumentation-client.ts", L = "apps/web/app/layout.tsx";
+    if (!existsSync(IC) || !/export function onRouterTransitionStart\(/.test(sinComent(IC)) || !/dispatchEvent\(new CustomEvent\("tl:navega"/.test(sinComent(IC))) falla(G, IC, 0, "el aviso de Next de cada navegación (onRouterTransitionStart → «tl:navega»): sin él, un router.push de un botón no enciende la barra");
+    if (!existsSync(BN)) return falla(G, BN, 0, "falta la barra de navegación");
+    const b = sinComent(BN);
+    if (!/window\.addEventListener\("tl:navega"/.test(b)) falla(G, BN, 0, "la barra escucha «tl:navega» (las navegaciones de botones, atrás y adelante)");
+    if (/\buseState\b/.test(b)) falla(G, BN, 0, "la barra no usa estado de React: un setState dentro de la transición de Next espera a la página nueva (se queda quieta)");
+    if (!/b\.dataset\.estado = estado/.test(b)) falla(G, BN, 0, "la barra se mueve tocando el DOM directo (dataset.estado)");
+    if (!/<BarraNavegacion \/>/.test(sinComent(L))) falla(G, L, 0, "la barra va montada en el layout raíz");
+    // El esqueleto lo pone Pendiente en el navegador, en el marco de la app y del Super Admin; NUNCA un loading.tsx (el flujo en dos partes
+    // deja por un instante una copia escondida del contenido: fic005 y a11y9c lo cazaron con «strict mode»).
+    const P = "apps/web/app/Pendiente.tsx";
+    if (!existsSync(P) || !/window\.addEventListener\("tl:pendiente"/.test(sinComent(P))) falla(G, P, 0, "el esqueleto sale con el aviso de la barra («tl:pendiente»)");
+    else if (!/window\.setTimeout\(\(\) => setTipo\(tipoDe\(destino\)\), 120\)/.test(sinComent(P))) falla(G, P, 0, "el esqueleto se pone con un temporizador (fuera de la transición de Next) y a los 120 ms (sin parpadeo)");
+    if (!/window\.dispatchEvent\(new CustomEvent\("tl:pendiente"/.test(b)) falla(G, BN, 0, "la barra avisa al esqueleto («tl:pendiente»)");
+    if (!/<Pendiente>\{children\}<\/Pendiente>/.test(sinComent("apps/web/app/(app)/AppShell.tsx"))) falla(G, "apps/web/app/(app)/AppShell.tsx", 0, "el marco de la app envuelve la pantalla con <Pendiente>");
+    if (!/<Pendiente>\{children\}<\/Pendiente>/.test(sinComent("apps/web/app/admin/layout.tsx"))) falla(G, "apps/web/app/admin/layout.tsx", 0, "el marco del Super Admin envuelve la pantalla con <Pendiente>");
+    for (const f of archivos) if (/^apps\/web\/app\/(\(app\)|admin)\/.*loading\.tsx$/.test(f) && existsSync(f)) falla(G, f, 0, "sin loading.tsx en la app ni en el Super Admin: el esqueleto lo pone Pendiente (un loading.tsx deja una copia escondida del contenido)");
+    const E = sinComent("apps/web/app/_esqueletos.tsx");
+    if (/className="[^"]*\bbg-\[#|style=\{\{[^}]*#[0-9a-fA-F]{3,6}/.test(E)) falla(G, "apps/web/app/_esqueletos.tsx", 0, "los esqueletos salen del sistema (Esq…), sin colores inventados");
+    const css = readFileSync("packages/ui/src/esqueleto.css", "utf8");
+    if (!/background: var\(--tl-photo-bg\)/.test(css) || !/prefers-reduced-motion: reduce/.test(css)) falla(G, "packages/ui/src/esqueleto.css", 0, "el esqueleto usa el «fondo de foto mientras carga» del sistema y se queda quieto con «reducir movimiento»");
+    if (!/@import "@tolatino\/ui\/esqueleto\.css";/.test(readFileSync("apps/web/app/globals.css", "utf8"))) falla(G, "apps/web/app/globals.css", 0, "globals.css importa esqueleto.css");
+    if (!existsSync("pruebas/e2e/nav9t.cjs")) falla(G, "pruebas/e2e/nav9t.cjs", 0, "falta la prueba nav9t");
+  },
+
   /* 9t (19 nov) · tablaConHistograma: «mi lugar» de la Tabla del Barrio contaba en el índice a todos los de delante (p95 86 ms con 580 mil vecinos;
      presupuesto 40). La base mantiene monthly_board_hist (0188: cuántos tienen cada valor; lo escribe solo el trigger de monthly_boards, a mano
      no) y «mi lugar» suma los valores mayores. Al revés (alreves9thist): volver a contar en monthly_boards, quitar el trigger o la guardia, o
