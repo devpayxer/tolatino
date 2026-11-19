@@ -15,7 +15,7 @@
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { hidratado } = require('../lib/hidratado.cjs');
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
-const { entrarComo, telLibre } = require('../lib/negocio-nuevo.cjs');
+const { entrarComo, telLibre, abiertoTodoElDia } = require('../lib/negocio-nuevo.cjs');
 const B = ENT.B, OUT = ENT.OUT;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -qAt -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 const sqlErr = (q) => { try { sql(q); return ''; } catch (e) { return String(e.stderr ?? e.message); } };
@@ -136,6 +136,8 @@ const desk = (b, extra = {}) => b.newContext({ viewport: { width: 1360, height: 
     const avPF = sql(`select avail from items where business_id = '${BIZ}' and name->>'es' = 'Pescado frito'`);
     sql(`update items set avail = 'siempre' where business_id = '${BIZ}' and name->>'es' = 'Pescado frito'`);
     process.on('exit', () => sql(`update items set avail = '${avPF}' where business_id = '${BIZ}' and name->>'es' = 'Pescado frito'`));
+    // 19 nov · Y el negocio abierto: cerrado (las 11 PM de Nueva York), la hoja del plato no se abre (solo si se puede pedir ahora).
+    const volverHoras = abiertoTodoElDia(BIZ); process.on('exit', volverHoras);
     await pd.goto(B + `/n/${BIZ}?tab=menu`); await pd.evaluate(() => { localStorage.removeItem('tl-carrito-v1'); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); }); await pd.reload();
     await (await hidratado(vis(pd, 'Pescado frito'))).click();
     const hayLleva = await espera(async () => (await pd.locator('[data-bloque="lleva"]').count()) > 0);
