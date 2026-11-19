@@ -9759,6 +9759,19 @@ const guardianes = {
     if (!/5b · La foto que se sube y nunca se manda/.test(readFileSync("pruebas/e2e/msg9t.cjs", "utf8"))) falla(G, "pruebas/e2e/msg9t.cjs", 0, "msg9t no prueba la purga (§5b)");
   },
 
+  /* 9t (19 nov) · resumenComunidadUnaPasada: el barrido de la Comunidad con 1 M de vecinos tardaba 9,2 s de 10 (carga 44571463348): «activos por
+     rango» recorría tres veces lo mismo (7, 30 y 90 días). Desde 0190 es una pasada (la última actividad de cada vecino por ciudad en 90 días,
+     contada para los tres cortes). Que no vuelva el bucle por período ni una pasada por ciudad, y que com5e compare contra la regla
+     (com_activos_por_rango). Al revés (alreves9tresumen): el bucle otra vez, la ventana de 90 días cambiada, o la prueba sin comparar. */
+  resumenComunidadUnaPasada() {
+    const G = "resumenComunidadUnaPasada", f = ultimaFn("com_cifras_resumir");
+    if (!f) return falla(G, "packages/db/migrations", 0, "falta com_cifras_resumir");
+    if (/foreach\s+\w+\s+in\s+array/i.test(f) || /\bloop\b/i.test(f)) falla(G, "packages/db/migrations", 0, "com_cifras_resumir vuelve a recorrer los períodos uno por uno (una pasada para 7, 30 y 90)");
+    if (!/max\(z\.at\)/.test(f) || !/join \(values \(7\), \(30\), \(90\)\) as p\(d\)/.test(f)) falla(G, "packages/db/migrations", 0, "los activos salen de la última actividad por vecino y ciudad, contada para los tres cortes");
+    if ((f.match(/::date - 89\)/g) ?? []).length !== 3) falla(G, "packages/db/migrations", 0, "las tres fuentes (publicaciones, comentarios, votos) leen la misma ventana de 90 días");
+    if (!/el resumen de activos \(una pasada\) da lo mismo que la regla/.test(readFileSync("pruebas/e2e/com5e.cjs", "utf8"))) falla(G, "pruebas/e2e/com5e.cjs", 0, "com5e no compara el resumen con com_activos_por_rango");
+  },
+
   /* 9t (19 nov) · fotoAprobadaAvisa: la foto de un mensaje que esperaba revisión y el equipo aprueba solo se veía al abrir la conversación: la
      otra parte no recibía aviso (LAUNCH «Mensajes · lo que quedó de 9t» (4)). Ahora, al aprobar (decidirFotoCom «mantener» de una foto en
      revisión), la otra parte recibe el aviso de siempre con «Foto · Photo» (biz_msg al equipo del negocio, msg_user al cliente, dm_message entre

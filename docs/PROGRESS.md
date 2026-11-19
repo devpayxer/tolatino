@@ -2935,3 +2935,8 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   (dm_message; nada con la conversación cerrada, bloqueo o silencio), fuera de la transacción. Guardián **fotoAprobadaAvisa**, alreves9tfotoaviso
   9/9; dm9t verde en local con la comprobación nueva; msg9t la lleva (corre en el CI: necesita el almacén). Ayuda ES/EN: mensajes.md y
   comunidad-vecinos-seguir-bloquear-y-mensajes.md.
+- **19 nov · 9t · El barrido de la Comunidad en una pasada** (LAUNCH «El barrido de la Comunidad con 1 M de vecinos»): migración **0190**
+  redefine `com_cifras_resumir`: «activos por rango» sale de UNA pasada (la última actividad de cada vecino por ciudad en 90 días, contada para
+  los cortes de 7, 30 y 90) en vez de tres. Local (105 mil publicaciones, 526 mil comentarios, 306 mil votos): 2,4–2,9 s → 1,5 s, el mismo
+  resultado fila por fila y 0 diferencias contra `com_activos_por_rango` en cada ciudad y período (98 filas). com5e lo compara en cada corrida
+  (63 ✓ local). Guardián **resumenComunidadUnaPasada**, alreves9tresumen 4/4. La medida con 1 M va en la carga de la Comunidad.

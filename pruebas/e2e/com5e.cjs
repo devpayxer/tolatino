@@ -184,6 +184,10 @@ const limpiar = () => {
   const gd2 = await esc(); await gd2.goto(B + '/'); await gd2.locator(`[data-hoy="${CAFE}"]`).first().waitFor(); await shot(gd2, 'c5e-inicio-d.png', true);
   // 9b-3 · «Recomendados» elige entre los candidatos del resumen que el barrido rehace cada 10 min: aquí se rehace como lo hace él.
   sql(`select com_cifras_resumir()`);
+  // 9t · Los activos por rango del resumen (una pasada para 7, 30 y 90 días, 0190) dan lo mismo que la regla (com_activos_por_rango) en cada ciudad y período.
+  ok(sql(`with ref as (select c.id as city_id, p.d as dias, r.rango, r.activos from cities c cross join (values (7), (30), (90)) p(d)
+      cross join lateral com_activos_por_rango(array[c.id], ((now() at time zone 'America/New_York')::date - (p.d - 1))::timestamp at time zone 'America/New_York') r)
+    select count(*) from ref x full join com_activos_cache y on y.city_id = x.city_id and y.dias = x.dias and y.rango = x.rango where x.activos is distinct from y.activos`) === '0', 'el resumen de activos (una pasada) da lo mismo que la regla en cada ciudad y período');
   const R1 = sql(`with r as (select p.business_id as b, p.author_user_id as u, greatest(p.up_n, 0) as up from com_posts p where p.city_id = 'hzl' and p.kind = 'recomendacion' and p.status = 'visible' and p.publish_at <= now() and p.publish_at > now() - interval '180 days' and p.author_kind = 'user'
     union all select c.business_id, c.author_user_id, greatest(c.up_n, 0) from com_comments c join com_posts p on p.id = c.post_id and p.status = 'visible' where c.city_id = 'hzl' and c.business_id is not null and c.status = 'visible' and c.created_at > now() - interval '180 days')
     select b.name from r join businesses b on b.id = r.b and b.status = 'active' and b.city_id = 'hzl' group by r.b, b.name order by sum(r.up) desc, count(distinct r.u) desc, b.name limit 1`);
