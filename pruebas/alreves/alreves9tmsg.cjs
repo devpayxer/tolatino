@@ -10,7 +10,7 @@ const casos = [
   // fotoMensajePrivada · subir: sin mismo origen, sin sesión, sin tope de tamaño o por hora, guardando los metadatos, pública, sin el modelo o «visible» siempre
   ['fotoMensajePrivada', UP, '  if (!(await mismoOrigen())) return err(403, "No permitido.", "Not allowed.");\n', ''],
   ['fotoMensajePrivada', UP, '  const me = await yo();\n  if (!me) return err(401, "Entra para mandar la foto.", "Sign in to send the photo.");', '  const me = (await yo())!;'],
-  ['fotoMensajePrivada', UP, ' || f.size > MAX_FOTO_MSJ)', ')'],
+  ['fotoMensajePrivada', UP, 'if (f.size > MAX_FOTO_MSJ) return err(413,', 'if (false) return err(413,'],
   ['fotoMensajePrivada', UP, '  if (n >= FOTOS_MSJ_HORA) return err(', '  if (n >= 100000) return err('],
   ['fotoMensajePrivada', UP, '.jpeg({ quality: 82, mozjpeg: true })', '.withMetadata().jpeg({ quality: 82, mozjpeg: true })'],
   ['fotoMensajePrivada', UP, 'clave = `privado/m/${id}.jpg`', 'clave = `m/${id}.jpg`'],
