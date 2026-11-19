@@ -44,7 +44,10 @@ const estado = (p) => p.locator('.tl-barra-nav').evaluate((e) => ({ e: e.dataset
     // Sin flujo en dos partes: lo que manda el servidor no trae esqueleto (sale solo en el navegador al navegar) ni una copia escondida.
     for (const [que, ruta] of [['la ficha', '/n/cafe-quisqueya'], ['Buscar', '/buscar?q=pollo'], ['la Comunidad', '/comunidad']]) {
       const h = await traer(ruta);
-      ok(!h.includes('data-esqueleto') && !/<div hidden id="S:/.test(h), `${que}: el servidor manda la página entera, sin esqueleto ni copia escondida`);
+      // Next puede mandar trozos VACÍOS aparte cuando el servidor va lento (los metadatos y el lugar de la barra: <div hidden id="S:n"></div>);
+      // eso no es una copia de la página. Lo que no puede llegar escondido es contenido (19 nov: loading.tsx mandaba la pantalla entera así).
+      const escondido = [...h.matchAll(/<div hidden id="S:\d+">([\s\S]*?)<\/div><script>/g)].map((m) => m[1].replace(/<[^>]+>/g, '').trim()).filter(Boolean);
+      ok(!h.includes('data-esqueleto') && escondido.length === 0, `${que}: el servidor manda la página entera, sin esqueleto ni copia escondida${escondido.length ? ' → ' + escondido[0].slice(0, 80) : ''}`);
     }
     console.log(`OK (${n} comprobaciones)`);
   } catch (e) { console.error(e); process.exitCode = 1; } finally { await b.close(); }

@@ -3,6 +3,7 @@ import { staff } from "@/lib/admin";
 import { consumirCodigo, mismoOrigen } from "@/lib/cuenta";
 import { tx } from "@/lib/db";
 import { esTipo, guardar, llaveroListo, MAX_BYTES, revisarArchivo, TIPOS } from "@/lib/tiendas/llavero";
+import { leerFormulario } from "@/lib/subida";
 
 /* 8a · Subir una llave al llavero de las tiendas (Super Admin › Sistema › Integraciones › Llaves de las tiendas). Solo un Admin con
    integ:editar, desde nuestra página, con el código que acaba de pedir (propósito «llavero», un uso) — todo revisado AQUÍ, en el servidor.
@@ -16,8 +17,9 @@ export async function POST(req: Request) {
   if (!s || s.role !== "admin" || !s.puede("integ", "editar") || !(await mismoOrigen())) return no("Solo un Admin sube llaves.", 403);
   if (!llaveroListo()) return no("Falta la llave del llavero en los secretos del entorno: no se guarda nada.", 503);
   if (Number(req.headers.get("content-length") ?? 0) > MAX_BYTES + 16_384) return no("El archivo es demasiado grande (64 KB).", 413);
-  let f: FormData;
-  try { f = await req.formData(); } catch { return no("No llegó el archivo.", 400); }
+  const lf = await leerFormulario(req, MAX_BYTES + 16_384);
+  if (!lf.ok) return lf.grande ? no("El archivo es demasiado grande (64 KB).", 413) : no("No llegó el archivo.", 400);
+  const f = lf.fd;
   const tipo = f.get("tipo"), codigo = limpio(f.get("codigo"), 6), motivo = limpio(f.get("motivo"), 300), vence = limpio(f.get("vence"), 10), archivo = f.get("archivo");
   if (!esTipo(tipo)) return no("Ese tipo de llave no existe.", 400);
   if (!(archivo instanceof File)) return no("Elige el archivo de la llave.", 400);

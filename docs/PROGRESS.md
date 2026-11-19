@@ -2947,3 +2947,13 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **19 nov · 9t · Barrido de la Comunidad dentro de sus topes** (carga 44581283913): vuelta de 10 min 2,1 s (de 10), activos cada hora 9,7 s (de 15). LAUNCH ✓.
   La imagen nueva del runner (20261111.196.1) es ~1,5× más lenta en todo (generar la carga misma también): «contenido» y «categoría» se pasan
   de su presupuesto en las tres últimas cargas sin cambios en su código (anotado en LAUNCH «Lo de una sola vuelta varía en el runner»).
+- **19 nov · 9t · Confirmación 44573806469 (fb642c0): «todas las fases» y «al revés» en verde; 5 carriles con UNA roja cada uno, arregladas:**
+  (1) **Subidas con tope aunque el navegador no avise el tamaño** (iPad/SE: msg9t 13 MB daba 400): `lib/subida.ts` `leerFormulario` lee por partes,
+  no guarda nada pasado el tope y termina de recibir (tirándolo) para que llegue el 413 y no un corte; en las 7 rutas de subida (fotos de
+  medios, Mensajes, Ayuda, Reclamo, Repartidor, video del negocio, llavero). Prueba nueva **sub9t** (13 MB por partes y con tamaño → 413 en
+  Mensajes, Ayuda y Reclamo; local contra un servidor con almacén de mentira: los 6 413 ✓), guardián **subidaConTope**, alreves9tsubida 5/5.
+  (2) **nav9t** «dos veces seguidas»: Next a veces manda trozos VACÍOS aparte (metadatos y el lugar de la barra; 1 de 80 en local): la prueba
+  ahora falla solo si llega CONTENIDO escondido o esqueleto. (3) **cit3b** barajada: bus9t devolvía «Fade» sin el precio de cada silla →
+  bus9t guarda y devuelve el precio, y cit3b pone los precios de la semilla como precondición propia. (4) **menu2a-f** escritorio 1024: el
+  segundo toque al interruptor llegaba antes de tiempo → la prueba mira la base y vuelve a tocar si sigue agotado. Local: menu2a-f 11 ✓, nav9t
+  17 ✓, bus9t 87 ✓, cit3b 38 ✓.

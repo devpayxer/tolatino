@@ -18,6 +18,9 @@ const limpiar = () => {
   sql(`delete from appointment_alerts where user_id = ${MARISOL}`);
   sql(`delete from special_hours where business_id = '${BIZ}' and label->>'es' = 'prueba'`);
   sql(`update items set duration_min = 40, svc_opts = '[]'::jsonb, sell = true, status = 'live', hidden_reason = null where id = ${SV('Fade')}`);
+  // Precondición propia: quién hace «Fade» y a qué precio cada silla, como la semilla (Luis $28, Kelvin y Johan $25, Andy $22). 19 nov: otra prueba
+  // (bus9t) lo devolvía sin los precios y en orden barajado el rango salía $25 en vez de $22–$28.
+  sql(`insert into staff_services (item_id, member_id, price_cents) select ${SV('Fade')}, m.id, x.p from business_members m join (values ('Luis Batista', 2800), ('Kelvin Rosario', 2500), ('Andy Mejía', 2200), ('Johan Peralta', 2500)) as x(n, p) on x.n = m.display_name where m.business_id = '${BIZ}' on conflict (member_id, item_id) do update set price_cents = excluded.price_cents`);
   sql(`update business_members set chair_auto = false, chair_deposit_cents = 1000, chair_response_min = 15 where id = ${LUIS}`);
   sql(`update business_members set chair_auto = true, chair_deposit_cents = 500 where id = ${KEL}`); sql(`delete from member_payout_accounts where member_id = ${KEL}`); // sin su cuenta propia: no pide depósito (3d)
   sql(`update businesses set svc_model = 'chair', modules_on = array['svc','citas','staff'], modules_off = modules_off - 'citas' - 'svc' where id = '${BIZ}'`);

@@ -4,6 +4,7 @@ import sharp, { type OutputInfo } from "sharp";
 import { mismoOrigen, yo } from "@/lib/cuenta";
 import { db } from "@/lib/db";
 import { guardarObjeto, mediosListos, urlPublica } from "@/lib/medios";
+import { leerFormulario } from "@/lib/subida";
 
 /* Subir una foto (Publica tu negocio · portada y galería; luego el panel). Con cuenta y del mismo sitio. El servidor
    decide: abre la imagen (si no es una foto, no entra), la endereza, la reduce a 1600 px y la vuelve a codificar en
@@ -20,9 +21,12 @@ export async function POST(req: NextRequest) {
   if (Number(req.headers.get("content-length") ?? 0) > MAX + 4096) return err(413, "La foto pesa demasiado (máximo 12 MB).", "The photo is too large (12 MB max).");
   const n = (await db().query<{ n: number }>(`select count(*)::int as n from media where uploaded_by = $1 and created_at > now() - interval '1 hour'`, [me.id])).rows[0]?.n ?? 0;
   if (n >= 60) return err(429, "Subiste muchas fotos seguidas. Prueba en un rato.", "Too many photos in a row. Try again later.");
-  const form = await req.formData().catch(() => null);
+  const lf = await leerFormulario(req, MAX + 4096);
+  if (!lf.ok && lf.grande) return err(413, "La foto pesa demasiado (máximo 12 MB).", "The photo is too large (12 MB max).");
+  const form = lf.ok ? lf.fd : null;
   const f = form?.get("foto");
-  if (!(f instanceof File) || f.size === 0 || f.size > MAX) return err(400, "No llegó la foto.", "The photo did not arrive.");
+  if (f instanceof File && f.size > MAX) return err(413, "La foto pesa demasiado (máximo 12 MB).", "The photo is too large (12 MB max).");
+  if (!(f instanceof File) || f.size === 0) return err(400, "No llegó la foto.", "The photo did not arrive.");
   let img: { data: Buffer; info: OutputInfo };
   try {
     img = await sharp(Buffer.from(await f.arrayBuffer()), { limitInputPixels: 50_000_000 })

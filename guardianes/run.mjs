@@ -9759,6 +9759,24 @@ const guardianes = {
     if (!/5b · La foto que se sube y nunca se manda/.test(readFileSync("pruebas/e2e/msg9t.cjs", "utf8"))) falla(G, "pruebas/e2e/msg9t.cjs", 0, "msg9t no prueba la purga (§5b)");
   },
 
+  /* 9t (19 nov) · subidaConTope: las rutas de subida leían el formulario entero (req.formData()) antes de mirar el tamaño. Safari manda el cuerpo
+     sin content-length: un archivo de 13 MB se leía completo en memoria y salía «No llegó la foto» (400) en vez de 413 (msg9t en el iPad y el SE,
+     confirmación 44573806469). Toda ruta lee el formulario con lib/subida.ts leerFormulario (tope por partes; pasado el tope no guarda nada) y
+     contesta 413 cuando es grande. Prueba: sub9t (13 MB por partes y con tamaño → 413 en Mensajes, Ayuda y Reclamo). Al revés (alreves9tsubida). */
+  subidaConTope() {
+    const G = "subidaConTope", L = "apps/web/lib/subida.ts";
+    if (!existsSync(L)) return falla(G, L, 0, "falta lib/subida.ts");
+    const l = sinComent(L);
+    if (!/if \(n > tope\) \{/.test(l) || !/partes\.push\(value\)/.test(l) || l.indexOf("if (n > tope) {") > l.indexOf("partes.push(value)")) falla(G, L, 0, "leerFormulario corta ANTES de guardar lo que pasa del tope");
+    if (!/content-length"\) \?\? 0\) > tope\) return \{ ok: false, grande: true \}/.test(l)) falla(G, L, 0, "leerFormulario mira primero el content-length");
+    for (const f of archivos.filter((x) => /^apps\/web\/app\/api\/.*route\.ts$/.test(x))) {
+      const t = sinComent(f);
+      if (/\b(req|request)\.formData\(\)/.test(t)) falla(G, f, 0, "lee el formulario sin tope (req.formData()): usar leerFormulario de lib/subida.ts");
+      if (/leerFormulario\(/.test(t) && !/lf\.grande/.test(t)) falla(G, f, 0, "con leerFormulario, el archivo grande contesta 413 (lf.grande)");
+    }
+    if (!/13 MB por partes, sin avisar el tamaño → 413/.test(readFileSync("pruebas/e2e/sub9t.cjs", "utf8"))) falla(G, "pruebas/e2e/sub9t.cjs", 0, "sub9t no prueba la subida sin content-length");
+  },
+
   /* 9t (19 nov) · resumenComunidadUnaPasada: el barrido de la Comunidad con 1 M de vecinos tardaba 9,2 s de 10 (carga 44571463348): «activos por
      rango» recorría tres veces lo mismo (7, 30 y 90 días). Desde 0190 es una pasada (la última actividad de cada vecino por ciudad en 90 días,
      contada para los tres cortes). Que no vuelva el bucle por período ni una pasada por ciudad, y que com5e compare contra la regla

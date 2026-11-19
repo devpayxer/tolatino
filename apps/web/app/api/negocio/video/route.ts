@@ -5,6 +5,7 @@ import { mismoOrigen } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
 import { valor } from "@/lib/config";
 import { guardarObjeto, mediosListos, urlPublica } from "@/lib/medios";
+import { leerFormulario } from "@/lib/subida";
 import { accesoPanel } from "@/lib/panel";
 import { procesarVideo, videoListo } from "@/lib/video-negocio";
 
@@ -30,9 +31,12 @@ export async function POST(req: NextRequest) {
   // Tope: 10 videos por negocio al día (el servicio de video es caro de correr).
   const n = (await db().query<{ n: number }>(`select count(*)::int as n from business_videos where business_id = $1 and created_at > now() - interval '1 day'`, [a.negocio.id])).rows[0]?.n ?? 0;
   if (n >= 10) return err(429, "Subiste muchos videos hoy. Prueba mañana.", "You uploaded many videos today. Try again tomorrow.");
-  const form = await req.formData().catch(() => null);
+  const lf = await leerFormulario(req, MAX + 64 * 1024);
+  if (!lf.ok && lf.grande) return err(413, "El video pesa demasiado (máximo 120 MB).", "The video is too large (120 MB max).");
+  const form = lf.ok ? lf.fd : null;
   const f = form?.get("video");
-  if (!(f instanceof File) || f.size === 0 || f.size > MAX) return err(400, "No llegó el video.", "The video did not arrive.");
+  if (f instanceof File && f.size > MAX) return err(413, "El video pesa demasiado (máximo 120 MB).", "The video is too large (120 MB max).");
+  if (!(f instanceof File) || f.size === 0) return err(400, "No llegó el video.", "The video did not arrive.");
   const p = await procesarVideo(Buffer.from(await f.arrayBuffer()), await valor("video_max_s"));
   if (!p.ok) {
     if (p.error === "no_es_video") return err(415, "Eso no parece un video. Prueba con otro.", "That doesn’t look like a video. Try another one.");

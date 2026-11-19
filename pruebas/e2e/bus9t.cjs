@@ -51,7 +51,9 @@ const nombres = (r) => (r.filas || []).filter((x) => x.kind === 'item').map((x) 
   if (APT) sql(`insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct) select o.id, x.id, x.name, 1, x.price_cents, x.price_cents, 6 from operations o, (select id, name, price_cents from items where business_id = 'boutique-yaritza' order by id limit 1) x where o.client_key = '${kA}'`);
   const apt0 = APT ? 'cancelled||' : '';
   const fade = sql(`select id from items where business_id = '${BARB}' and module = 'svc' and name->>'es' = 'Fade'`);
-  const ss0 = sql(`select coalesce(string_agg(member_id::text, ','), '') from staff_services where item_id = ${fade}`);
+  // Quién hace «Fade» y A QUÉ PRECIO cada silla (19 nov: se devolvía sin el precio y cit3b, después en orden barajado, ya no veía $22–$28).
+  const ss0 = sql(`select coalesce(string_agg(member_id::text || ':' || coalesce(price_cents::text, ''), ','), '') from staff_services where item_id = ${fade}`);
+  const devolverFade = () => { sql(`delete from staff_services where item_id = ${fade}`); for (const x of ss0.split(',').filter(Boolean)) { const [m, pr] = x.split(':'); sql(`insert into staff_services (item_id, member_id, price_cents) values (${fade}, '${m}', ${pr || 'null'})`); } };
   const M1 = sql(`select id from business_members where business_id = '${BARB}' and status = 'active' and show_on_page and hidden_by_admin is null and takes_bookings order by id limit 1`);
   const tb0 = M1 ? 'true' : 'false';
   // 9t-2 · Lo que la sección 6 toca (vuelve igual al final): el horario de Sabor Dominicano (abierto todo el día: la hoja del plato se abre solo si se
@@ -115,8 +117,7 @@ const nombres = (r) => (r.filas || []).filter((x) => x.kind === 'item').map((x) 
     ok(!nombres(await api(p, 'fade')).includes('Fade'), 'un servicio que nadie que recibe citas hace no sale');
     sql(`update business_members set takes_bookings = ${tb0} where id = '${M1}'`);
     ok(nombres(await api(p, 'fade')).includes('Fade'), '«Fade» sale con quien lo hace');
-    sql(`delete from staff_services where item_id = ${fade}`);
-    for (const x of ss0.split(',').filter(Boolean)) sql(`insert into staff_services (item_id, member_id) values (${fade}, '${x}')`);
+    devolverFade();
     // ── 1b · EN ──
     await c1.addCookies([{ name: 'tl_lang', value: 'en', url: B }]);
     await p.goto(B + '/buscar?q=mofongo'); await p.waitForLoadState('networkidle').catch(() => {});
@@ -340,9 +341,8 @@ const nombres = (r) => (r.filas || []).filter((x) => x.kind === 'item').map((x) 
     const [st, ra, sd] = apt0.split('|');
     sql(`update operations set status = '${st}', ready_at = ${ra ? `'${ra}'` : 'null'}, status_detail = ${sd ? `'${sd}'` : 'null'} where number = '${APT}'`);
     if (M1) sql(`update business_members set takes_bookings = ${tb0} where id = '${M1}'`);
-    if (sql(`select coalesce(string_agg(member_id::text, ','), '') from staff_services where item_id = ${fade}`) !== ss0) {
-      sql(`delete from staff_services where item_id = ${fade}`);
-      for (const x of ss0.split(',').filter(Boolean)) sql(`insert into staff_services (item_id, member_id) values (${fade}, '${x}')`);
+    if (sql(`select coalesce(string_agg(member_id::text || ':' || coalesce(price_cents::text, ''), ','), '') from staff_services where item_id = ${fade}`) !== ss0) {
+      devolverFade();
     }
   }
   console.log(`\nOK bus9t · ${n} ✓`);

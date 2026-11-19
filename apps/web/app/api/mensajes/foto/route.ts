@@ -5,6 +5,7 @@ import { mismoOrigen, yo } from "@/lib/cuenta";
 import { enComunidad } from "@/lib/comunidad";
 import { db } from "@/lib/db";
 import { guardarObjeto, mediosListos } from "@/lib/medios";
+import { leerFormulario } from "@/lib/subida";
 import { reglasMod } from "@/lib/moderacion";
 import { revisarImagen } from "@/lib/moderacion-img";
 
@@ -31,7 +32,9 @@ export async function POST(req: NextRequest) {
   if (Number(req.headers.get("content-length") ?? 0) > MAX_FOTO_MSJ + 4096) return err(413, "La foto pesa demasiado (máximo 12 MB).", "The photo is too large (12 MB max).");
   const n = (await db().query<{ n: number }>(`select count(*)::int as n from media where uploaded_by = $1 and owner_kind in ('chat', 'dm') and created_at > now() - interval '1 hour'`, [me.id])).rows[0]?.n ?? 0;
   if (n >= FOTOS_MSJ_HORA) return err(429, "Mandaste muchas fotos seguidas. Prueba en un rato.", "You sent too many photos in a row. Try again later.");
-  const fd = await req.formData().catch(() => null), f = fd?.get("foto"), kind = fd?.get("para") === "dm" ? "dm" : "chat";
+  const lf = await leerFormulario(req, MAX_FOTO_MSJ + 4096);
+  if (!lf.ok && lf.grande) return err(413, "La foto pesa demasiado (máximo 12 MB).", "The photo is too large (12 MB max).");
+  const fd = lf.ok ? lf.fd : null, f = fd?.get("foto"), kind = fd?.get("para") === "dm" ? "dm" : "chat";
   if (kind === "dm" && !(await enComunidad(me.id)).ok) return err(403, "Antes de mandar fotos, termina tu bienvenida a la Comunidad.", "Before sending photos, finish your Community welcome.");
   if (!(f instanceof File) || f.size === 0) return err(400, "No llegó la foto.", "The photo did not arrive.");
   // El tamaño se mira también aquí: un navegador que no manda content-length por adelantado (el iPad en el CI) llega hasta acá con 13 MB.

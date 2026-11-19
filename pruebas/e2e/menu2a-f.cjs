@@ -29,7 +29,14 @@ const toast = (p, re) => p.locator(`text=${re}`).first().waitFor({ timeout: 1000
   const fila = m.getByText('Pica pollo', { exact: true }).first().locator("xpath=ancestor::*[.//*[@role='switch']][1]");
   await fila.getByRole('switch').click(); await t(m, 'Hasta que lo active').click(); await toast(m, '/agotado · hasta que lo actives/');
   ok(sql("select sold_out::text from items where business_id='sabor-dominicano' and name->>'es'='Pica pollo'") === 'true', 'Pica pollo agotado hasta que lo active');
-  await m.getByText('Pica pollo', { exact: true }).first().locator("xpath=ancestor::*[.//*[@role='switch']][1]").getByRole('switch').click(); await toast(m, '/se puede pedir otra vez/');
+  // Volver a activarlo (19 nov: en escritorio 1024 el toque llegó antes de que la fila se pusiera al día y no pasó nada): se mira en la base y,
+  // si sigue agotado a los 2 s, se toca otra vez (nunca dos veces si ya se activó).
+  const agotado = () => sql("select sold_out::text from items where business_id='sabor-dominicano' and name->>'es'='Pica pollo'") === 'true';
+  const sw = () => m.getByText('Pica pollo', { exact: true }).first().locator("xpath=ancestor::*[.//*[@role='switch']][1]").getByRole('switch');
+  await m.waitForTimeout(400); await sw().click();
+  for (let i = 0; i < 3 && agotado(); i++) { await m.waitForTimeout(2000); if (agotado()) await sw().click(); }
+  await toast(m, '/se puede pedir otra vez/');
+  ok(!agotado(), 'Pica pollo se puede pedir otra vez');
   // 3) inventario: − en Tres leches (2 → 1)
   await m.getByRole('tab', { name: /Inventario/i }).click(); await m.getByText('LO QUE CUENTAS', { exact: true }).waitFor();
   const tl = m.getByText('Tres leches', { exact: true }).first().locator("xpath=ancestor::*[contains(@style,'border-radius')][1]");
