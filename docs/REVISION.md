@@ -5454,3 +5454,38 @@ historial y el dueño lo ve). Detalles:
   de clientes salen como en Transacciones.
 - El Compa del panel no sale en esta vista (es la conversación del dueño) y no se abre nada «en vivo» (se ve lo de la carga de la página).
 - Si prefieres que el equipo pueda **cambiar** desde el panel (con su nombre en el historial), o que solo un Admin lo abra, se cambia sin perder nada.
+
+## Fase 9 · 9t — «No pudo»: Avísame si se libera y Otros restaurantes con mesa (19 nov · 0180) — mirar
+**Qué mirar (teléfono y escritorio, ES y EN):**
+- Como Marisol (570-555-0122), una solicitud de mesa en Sabor Dominicano que el restaurante contesta con **No hay mesa** (Panel › Hoy, como Pedro
+  570-555-0133). En **Tu reservación** (NO PUDO): «Horas con mesa ese día», **OTROS RESTAURANTES CON MESA** (hasta 5 de Hazleton que reservan en la app y
+  tienen mesa ese día para el grupo, cada uno con la hora más cercana; tocar uno abre su pestaña con personas, día y hora puestos) y el botón **Avísame si
+  se libera a esa hora** (solo sale si esa hora sigue llena).
+- Toca **Avísame**: «Estás en la lista de espera» con «Salir de la lista». En **Mi cuenta › Avisos › Tus alertas**: «Mesa en Sabor Dominicano» con «Quitar».
+- Libera la mesa (otra persona cancela esa hora, o Pedro dice «No hay mesa» a otra solicitud de esa hora): en un minuto llega **«Se liberó una mesa»**
+  (una vez, push primero; SMS solo si el push no llega) y en Tu reservación sale la tarjeta **Se liberó una mesa · Tomar la mesa / No, gracias**. Tomar la
+  mesa abre la solicitud con la mesa guardada y su cuenta regresiva (10 minutos).
+- Super Admin › Transacciones › Reservaciones: la reservación dice «lista de espera: esperando / se le guardó la mesa / tomó la mesa / salió de la lista /
+  venció». Configuración › Avisos: **Mesa liberada · cuánto se guarda** (5–30 min, 10 de fábrica). Notificaciones: la plantilla **Se liberó una mesa**.
+
+**Decisiones tomadas por defecto (AB, reversibles):**
+- **Se guarda la mesa a tu nombre** (como el prototipo: «Te la guardamos 10 minutos»), no solo se avisa: la primera persona de la fila (orden de llegada)
+  la recibe; si no la toma, pasa a la siguiente. Un aviso por cada mesa guardada, nunca dos.
+- **Horas de silencio:** si se libera de noche y la persona tiene las horas de silencio, no se le guarda ni se le avisa (sigue en su lugar) y la mesa pasa a
+  quien sí puede verla. Alternativa: guardársela igual y avisar a las 7 AM (la mesa se perdería de noche).
+- La lista es para **esa hora exacta**, ese día y esas personas, en cualquier área. Solo se ofrece si esa hora está llena según las mesas del restaurante;
+  si el restaurante dijo «no hay» pero sus mesas dicen que sí hay, no se ofrece (no podríamos avisar de algo que no vemos).
+- **SIN RESPUESTA:** las «Horas con mesa ese día» ahora incluyen la hora pedida si sigue libre (nadie dijo que no). En NO PUDO no se vuelve a ofrecer.
+- Tope: 5 mesas en espera por persona.
+- **El panel del restaurante no muestra la lista de espera** (no hay diseño y el prototipo no la tiene): la mesa guardada cuenta como ocupada mientras dura;
+  el nombre le llega cuando la persona envía la solicitud. Si se quiere que el restaurante vea cuántos esperan, se agrega con su diseño.
+- «Otros restaurantes con mesa» mide la distancia desde el punto de «¿Dónde buscas?» si es la misma ciudad; si no, desde el restaurante que no pudo.
+
+## Fase 9 · 9t — Mi ciudad: Casa / Trabajo y «Qué es Mi ciudad» (19 nov) — mirar
+**Qué mirar:**
+- Sin entrar, toca la ciudad arriba (**¿Dónde buscas?**): en «Desde dónde medimos», **Entra para medir desde tu casa o tu trabajo** (lleva a Entrar y vuelve);
+  abajo, **Qué es Mi ciudad** abre la ayuda «Ciudades que abren».
+- Como Marisol, con direcciones en **Mi cuenta › Direcciones**: **Casa** y **Trabajo** salen con su calle (solo las que el servidor pudo ubicar en el mapa;
+  una quitada no sale). Elige Casa → **Ver N negocios** → el encabezado dice «Hazleton, PA · 5 mi · casa» y las distancias cuentan desde ahí.
+- «Otra» dirección sale como **Otra dirección** (el modelo no guarda un nombre propio como «Casa de mami» del prototipo).
+- **Lo que más buscan los vecinos** sigue oculto (no hay datos que lo llenen).

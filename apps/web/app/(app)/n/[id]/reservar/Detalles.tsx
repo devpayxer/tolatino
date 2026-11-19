@@ -1,5 +1,5 @@
 "use client";
-/* APP-NEG-RESERVA · móvil y desktop (prototipo rsvDetVals). Te guardamos esta mesa 5 minutos; al enviar, el servidor vuelve
+/* APP-NEG-RESERVA · móvil y desktop (prototipo rsvDetVals). Te guardamos esta mesa 5 minutos (9t: los de Configuración si la guardó la lista de espera); al enviar, el servidor vuelve
    a revisar que la mesa siga libre (si pasaron los 5 minutos y nadie la tomó, se envía igual). */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
@@ -84,7 +84,7 @@ export function Detalles({ h, es }: { h: RsvHold; es: boolean }) {
       <span className="grid flex-none pt-px"><Icon name="clock" size={17} /></span>
       <div className="min-w-0 flex-1">
         <div className="text-[13.5px] font-bold leading-[1.4]">{E2("Se liberó la mesa", "The table was released")}</div>
-        <div className="mt-[3px] text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/65">{E2("Pasaron 5 minutos. Elige la hora otra vez: puede que siga libre.", "5 minutes passed. Pick the time again: it may still be free.")}</div>
+        <div className="mt-[3px] text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/65">{E2(`Pasaron ${h.min} minutos. Elige la hora otra vez: puede que siga libre.`, `${h.min} minutes passed. Pick the time again: it may still be free.`)}</div>
         <button type="button" onClick={volver} className="mt-[9px] text-[12.5px] font-bold text-action">{E2("Elegir la hora otra vez", "Pick the time again")}</button>
       </div>
     </div>

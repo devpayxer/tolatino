@@ -2,7 +2,9 @@
 /* APP-CIUDAD (diseño «To'Latino Ciudad»): hoja en el teléfono (sheet) y ventana bajo el encabezado en escritorio (pop).
    ¿Dónde buscas? Desde dónde medimos (centro, barrio o tu ubicación), qué tan lejos (2 · 5 · 10 · 30 mi, con el mapa del
    radio y lo que entra), dónde ya estamos y lo que sigue, y «Avísame cuando llegue a mi zona». El servidor cuenta y
-   guarda; esta pantalla solo pinta lo que el servidor le da. */
+   guarda; esta pantalla solo pinta lo que el servidor le da.
+   9t · Mi ciudad (1f-2): «Desde dónde medimos» con Casa / Trabajo (tus direcciones con punto; el punto lo pone el servidor) y, sin sesión, «Entra para
+   medir desde tu casa o tu trabajo» (diseño loginAddr); «Qué es Mi ciudad» lleva a la ayuda ciudades-que-abren a quien no entró. */
 import * as UI from "@tolatino/ui";
 import { useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties } from "react";
 import { millas, punto, teselas, vista, type LL } from "@/lib/mapa-geo";
@@ -83,7 +85,10 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
   const set = (p: Partial<Dr>) => setDr((x) => ({ ...(x as Dr), ...p }));
   const centroZ = city.zonas.find((z) => z.centro);
   const nombreZ = (z: { es: string; en: string }) => (es ? z.es : z.en);
+  const dirName = (l: string) => l === "casa" ? E2("Casa", "Home") : l === "trabajo" ? E2("Trabajo", "Work") : E2("Otra dirección", "Other address");
+  const misDirs = d.dirs.filter((x) => x.cs.includes(city.id));
   const ctrName = (k: string) => k === "gps" ? E2("Tu ubicación", "Your location")
+    : k.startsWith("dir:") ? dirName(d.dirs.find((x) => x.k === k)?.label ?? "")
     : nombreZ(city.zonas.find((z) => z.id === k) ?? centroZ ?? { es: `Centro de ${city.corto}`, en: `Downtown ${city.corto}` });
 
   // ── Encabezado y textos ──
@@ -95,7 +100,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
     askCity: E2("¿DÓNDE ESTÁS?", "WHERE ARE YOU?"), askPh: E2("Ej. Bethlehem, PA", "E.g. Bethlehem, PA"), askPhone: E2("TU TELÉFONO PARA AVISARTE", "YOUR PHONE SO WE CAN TELL YOU"), askPhone2: E2("Tu teléfono para avisarte", "Your phone so we can tell you"),
     askWhy: E2("Ciudad o código postal. Abrimos cada zona cuando ya hay vecinos pidiéndola y negocios listos. Solo te escribimos para avisarte que llegó.", "City or ZIP code. We open each area once neighbors ask for it and businesses are ready. We only text you when it arrives."),
     askMine: E2("YA PEDISTE", "YOU ASKED FOR"), remove: E2("Quitar", "Remove"), reset: E2(`Volver a ${d.defecto.n} · centro · ${d.defecto.r} mi`, `Back to ${d.defecto.n} · downtown · ${d.defecto.r} mi`), back: E2("Volver", "Back"),
-    esc: E2("ESC PARA CERRAR", "ESC TO CLOSE"),
+    esc: E2("ESC PARA CERRAR", "ESC TO CLOSE"), loginAddr: E2("Entra para medir desde tu casa o tu trabajo", "Sign in to measure from home or work"),
   };
   const head = view === "ask"
     ? { t: E2("Avísame cuando llegue a mi zona", "Tell me when it reaches my area"), s: E2("To’Latino llega a todo EE. UU.; te avisamos cuando tu zona tenga negocios.", "To’Latino is going nationwide; we will tell you when your area has businesses.") }
@@ -146,6 +151,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
   // ── Desde dónde medimos ──
   const ctrList = [{ k: "centro", t: ctrName("centro"), s: (centroZ ? (es ? centroZ.calleEs : centroZ.calleEn) : "").toUpperCase() }]
     .concat(gps === "ok" && gi && gi.ciudad === city.id ? [{ k: "gps", t: E2("Tu ubicación", "Your location"), s: `${(gi.zona ? nombreZ(gi.zona) : city.corto).toUpperCase()} · ${E2("AHORA", "NOW")}` }] : [])
+    .concat(misDirs.map((x) => ({ k: x.k, t: dirName(x.label), s: x.s })))
     .concat(city.zonas.some((z) => z.id === dr.z && !z.centro) ? [(() => { const z = city.zonas.find((x) => x.id === dr.z)!; return { k: z.id, t: nombreZ(z), s: (es ? z.calleEs : z.calleEn).toUpperCase() }; })()] : []);
   const ctrs = ctrList.map((c, i) => { const sel = on && dr.z === c.k; return { ...c, bt: i ? "1px solid rgba(11,14,18,.07)" : "none", bg: sel ? "rgba(75,55,245,.05)" : "var(--tl-white)", bd: sel ? "var(--tl-action)" : "rgba(11,14,18,.1)", ring: sel ? "6px solid var(--tl-action)" : "1.5px solid rgba(11,14,18,.25)", onClick: () => set(c.k === "gps" ? { z: "gps", g: gi?.g ?? null } : { z: c.k, g: null }) }; });
   const zones = city.zonas.filter((z) => !z.centro).map((z) => ({ l: nombreZ(z), v: on && dr.z === z.id ? "selected" : "filter", onClick: () => set({ z: z.id, g: null }) }));
@@ -215,9 +221,11 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
     t: E2("Esto no cambia Mi ciudad", "This doesn’t change My city"),
     s: E2(`Aquí eliges lo que ves en Negocios, Eventos y Buscar. Tus publicaciones, votos y la Tabla del Barrio siguen en ${myC}${d.sesion && fecha ? ` (puedes cambiarla el ${fecha})` : ""}.`, `Here you choose what you see in Businesses, Events and Search. Your posts, votes and Neighborhood Board stay in ${myC}${d.sesion && fecha ? ` (you can change it on ${fecha})` : ""}.`),
     short: E2(`Esto no cambia Mi ciudad: tus publicaciones y la Tabla del Barrio siguen en ${myC}.`, `This doesn’t change My city: your posts and board stay in ${myC}.`),
-    a: d.sesion ? E2("Mi ciudad", "My city") : null,
+    a: d.sesion ? E2("Mi ciudad", "My city") : E2("Qué es Mi ciudad", "What is My city"),
   };
-  const irMiCiudad = () => { window.location.href = "/cuenta"; };
+  // 9t · Sin sesión, «Qué es Mi ciudad» abre la ayuda (ciudades-que-abren); con sesión, Mi cuenta.
+  const irMiCiudad = () => { window.location.href = d.sesion ? "/cuenta" : "/ayuda/ciudades-que-abren"; };
+  const entrarDirs = () => { window.location.href = `/entrar?volver=${encodeURIComponent(location.pathname + location.search)}`; };
 
   const inAsk = view === "ask";
   const sheet = modo === "sheet";
@@ -260,6 +268,10 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
               <span style={{ width: 20, height: 20, borderRadius: 99, boxSizing: "border-box", border: c.ring, flex: "none" }} />
               <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}><span style={txt("700 14px Manrope,sans-serif")}>{c.t}</span><span style={txt(`600 10.5px ${MONO}`, { letterSpacing: ".04em", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" })}>{c.s}</span></span>
             </div>))}
+          {!d.sesion ? (
+            <div onClick={entrarDirs} role="button" {...tec(entrarDirs)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderTop: "1px solid rgba(11,14,18,.07)", cursor: "pointer" }}>
+              <Icon name="home" size={18} color="var(--tl-action)" /><span style={txt("700 13.5px Manrope,sans-serif", { flex: 1, color: "var(--tl-action)" })}>{L.loginAddr}</span>
+            </div>) : null}
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(170px,1fr))", gap: 6 }}>
@@ -270,7 +282,8 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
             </div>))}
         </div>
       )}
-      {zones.length ? <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{zones.map((z) => <Chip key={z.l} variant={z.v} onClick={z.onClick}>{z.l}</Chip>)}</div> : null}
+      {!sheet && !d.sesion ? <span role="button" onClick={entrarDirs} {...tec(entrarDirs)} style={txt("700 12.5px Manrope,sans-serif", { color: "var(--tl-action)", cursor: "pointer" })}>{L.loginAddr}</span> : null}
+      {zones.length ?<div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{zones.map((z) => <Chip key={z.l} variant={z.v} onClick={z.onClick}>{z.l}</Chip>)}</div> : null}
     </div>
   ) : null;
   const lista = (

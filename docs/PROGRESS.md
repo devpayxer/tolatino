@@ -2654,3 +2654,18 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   (lib/direccion-negocio.ts). Guardián `panelEquipoSoloLectura` (alreves9n23 27/27; `guiaDelPanelCompleta` acepta `const dueno = await accesoPanel`);
   e2e `neg9n23` escrita (390/1360, ES/EN, rechazo con la base igual, sin marcar leído, vecino y equipo sin neg:ver «Sin acceso», el dueño igual): no
   corrió aquí (sin Docker), va al CI dirigido. tsc + guardianes en verde. Ayuda `admin-negocios` (ES/EN).
+- **19 nov · 9t · «No pudo» de una mesa y Mi ciudad (1f-2)** (LAUNCH «Avísame si se libera (lista de espera) y Otros restaurantes con mesa» y «Mi ciudad — lo
+  que queda de 1f-2» → ✓; REVISION «9t — No pudo…» y «9t — Mi ciudad…», decisiones por defecto AB): migración **0180** (`reservation_waitlist`: estados
+  waiting → offered → taken / left / expired, una viva por persona, restaurante, hora y personas, nada se borra salvo la purga de una cuenta; plantilla
+  `rsv_libre` sin_push; `rsv_espera_min` en Configuración › Avisos). `lib/mesa-espera.ts`: anotarse solo la dueña de la solicitud que no se pudo y solo si
+  esa hora sigue llena (`motorMesa` en lib/reservas.ts: el mismo motor de «Elegir hora»); el barrido `esperaMesas` (cada minuto) vence lo pasado y, con el
+  candado del restaurante, guarda la mesa a la primera de la fila (retención a su nombre) y le avisa UNA vez (notif_once, después de la transacción; en
+  sus horas de silencio no se le ofrece). Pantalla «no pudo» (prototipo rsvStVals): «Otros restaurantes con mesa» (`otrosConMesa`: misma ciudad, activos,
+  Pro, Reservaciones sin pausa; ≤ 24 candidatos en 6 lecturas, sin N+1; ≤ 5), «Avísame si se libera a esa hora» / «Estás en la lista de espera» y «Se
+  liberó una mesa · Tomar la mesa / No, gracias»; la solicitud con la mesa guardada cuenta sus minutos (RsvHold.min). Mi cuenta › Avisos › Tus alertas
+  lista las mesas en espera con «Quitar»; Super Admin › Transacciones muestra el estado de la lista. Mi ciudad: «Desde dónde medimos» con Casa / Trabajo
+  (`puntosGuardados`, «dir:<id>»; el punto lo pone el servidor y nunca viaja a la pantalla ni a la cookie), «Entra para medir desde tu casa o tu trabajo» y
+  «Qué es Mi ciudad» → ayuda ciudades-que-abren. Guardianes `esperaMesaUnaVez`, `otrosConMesaDeLaCiudad`, `medirDesdeTuDireccion` (alreves9t 31/31).
+  e2e en local (copia de la base local Postgres 16 con 0180, `next build` standalone en :3197, Chromium; sin Docker: el `sql()` de la prueba se pasó a
+  psql local en una copia fuera del repo): **rsv9t** 37 ✓ y **ciu9t** 29 ✓ (390/1360, ES/EN). tsc + build + guardianes en verde; CMS verificado. Ayuda:
+  `reservar-mesa`, `ciudad` (ES/EN).

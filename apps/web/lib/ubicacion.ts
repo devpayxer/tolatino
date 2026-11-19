@@ -14,7 +14,9 @@ export type Ciudad = {
   id: string; name: string; state: string; status: "on" | "beta" | "soon" | "off"; lat: number; lng: number;
   radios: number[]; radio: number; zips: string[]; meta: number; towns: { n: string; lat: number; lng: number }[]; zonas: Zona[];
 };
-export type Ubicacion = Punto & { c: Ciudad; ctr: string; gps: boolean; porDefecto: boolean };
+export type Ubicacion = Punto & { c: Ciudad; ctr: string; gps: boolean; porDefecto: boolean; dir: "casa" | "trabajo" | "otra" | null };
+/* 9t · Una dirección guardada de la persona (Mi cuenta › Direcciones) con el punto que le puso el servidor: «Desde dónde medimos» › Casa / Trabajo. */
+export type DirPunto = { id: string; label: "casa" | "trabajo" | "otra"; lat: number; lng: number };
 
 let cache: { at: number; ciudades: Ciudad[] } | null = null, escucha = false;
 /* Ciudades y barrios (en memoria; 9b-3: un cambio en cities la olvida al momento en todos los procesos, lib/cambios-config.ts; 60 s de respaldo).
@@ -72,15 +74,19 @@ export const escribir = (u: { ciudad: string; ctr: string; rad: number; g?: [num
   [u.ciudad, u.ctr, u.rad, u.g ? `${u.g[0].toFixed(4)},${u.g[1].toFixed(4)}` : ""].join("|").replace(/\|$/, "");
 export const COOKIE_LOC = COOKIE;
 
-/* Valida lo pedido y devuelve la ubicación completa. Nunca falla: lo que no cuadra cae en lo de por defecto. */
-export function resolver(cs: Ciudad[], p: Pedida): Ubicacion {
+/* Valida lo pedido y devuelve la ubicación completa. Nunca falla: lo que no cuadra cae en lo de por defecto.
+   9t · «dir:<id>» mide desde una dirección guardada SOLO si está en `dirs` (las de quien mira, leídas del servidor) y a ≤ 60 mi del centro; sin
+   sesión o con una dirección ajena o quitada, cae en el centro. El punto nunca viene de la cookie ni de la pantalla. */
+export function resolver(cs: Ciudad[], p: Pedida, dirs?: DirPunto[]): Ubicacion {
   const c = cs.find((x) => x.id === p.c) ?? porDefecto(cs);
   const rad = c.radios.includes(Number(p.r)) ? Number(p.r) : c.radio;
-  let ctr = "centro", ll = centroDe(c), gps = false;
+  let ctr = "centro", ll = centroDe(c), gps = false, dir: Ubicacion["dir"] = null;
   const z = c.zonas.find((x) => x.id === p.z && !x.id.endsWith("-centro"));
+  const d = p.z?.startsWith("dir:") ? dirs?.find((x) => `dir:${x.id}` === p.z) : undefined;
   if (z) { ctr = z.id; ll = [z.lat, z.lng]; }
   else if (p.z === "gps" && p.g && millas(p.g, centroDe(c)) <= 60) { ctr = "gps"; ll = p.g; gps = true; }
-  return { ciudad: c.id, lat: ll[0], lng: ll[1], rad, c, ctr, gps, porDefecto: !p.c };
+  else if (d && millas([d.lat, d.lng], centroDe(c)) <= 60) { ctr = `dir:${d.id}`; ll = [d.lat, d.lng]; dir = d.label; }
+  return { ciudad: c.id, lat: ll[0], lng: ll[1], rad, c, ctr, gps, porDefecto: !p.c, dir };
 }
 
 /* La ubicación de esta visita: cookie del dispositivo; si no hay, la guardada en la cuenta; si no, por defecto. */
@@ -93,12 +99,15 @@ export async function ubicacion(usuario?: { id: string } | null): Promise<Ubicac
       `select viewing_city_id as c, viewing_center as z, viewing_radius_mi as r from users where id = $1`, [usuario.id])).rows[0];
     if (r?.c) p = { c: r.c, z: r.z ?? undefined, r: r.r ?? undefined };
   }
-  return resolver(cs, p);
+  // 9t · Medir desde Casa / Trabajo: el punto sale de las direcciones de ESTA persona (solo si lo pidió).
+  const dirs = usuario && p.z?.startsWith("dir:") ? await (await import("./direcciones")).puntosGuardados(usuario.id) : undefined;
+  return resolver(cs, p, dirs);
 }
 
 /* Nombre corto del punto para el encabezado («tú», «North End»). */
 export function etiquetaCentro(u: Ubicacion, es: boolean) {
   if (u.gps) return es ? "tú" : "you";
+  if (u.dir) return ({ casa: es ? "casa" : "home", trabajo: es ? "trabajo" : "work", otra: es ? "otra dirección" : "other address" })[u.dir];
   const z = u.c.zonas.find((x) => x.id === u.ctr);
   return z ? (es ? z.es : z.en) : null;
 }

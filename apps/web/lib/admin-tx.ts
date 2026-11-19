@@ -44,7 +44,9 @@ export type FilaTx = { num: string; k: "order" | "table" | "appointment" | "plan
   // Nunca la nota, la dirección de la casa del cliente ni datos de su licencia. Nada se cobra en la app.
   vis: { rub: string; que: string; item: string | null; dia: string; min: number; mudar: number | null; otd: number | null; precio: number | null; cierre: string | null; casa: boolean; linea: string | null } | null;
   // 6i: evento privado (día, personas, versión aceptada, cuántas propuestas, cómo cerró, si el depósito se quedó y si hay un cambio abierto). Nunca la nota.
-  ep: { dia: string; pax: number; v: number | null; n: number; cierre: string | null; perdio: boolean; det: string | null } | null };
+  ep: { dia: string; pax: number; v: number | null; n: number; cierre: string | null; perdio: boolean; det: string | null } | null;
+  // 9t: reservación que no se pudo con «Avísame si se libera»: la última entrada de su lista de espera (waiting · offered · taken · left · expired).
+  esp: string | null };
 function donde(s: Staff, f: FiltrosTx) {
   const w = ["o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night', 'enrollment', 'visit', 'tickets', 'private_event')", "o.sent_at > now() - interval '90 days'", "(cardinality($1::text[]) = 0 or o.city_id = any($1::text[]))",
     // 6d · Una cortesía (orden de boletos sin cobro) no es dinero: no sale en Transacciones (sí en la ficha del evento y en Buscar boleto).
@@ -65,6 +67,7 @@ export async function listaTx(s: Staff, f: FiltrosTx) {
               py.status as pago, coalesce(py.refunded_cents, 0) as devuelto, coalesce(py.fee_cents, 0) as comision, case when py.card_last4 is null then null else upper(py.card_brand) || ' ·· ' || py.card_last4 end as tarjeta,
               py.id::text as pid, (select d.status from disputes d where d.payment_id = py.id order by d.id desc limit 1) as disputa,
               case when o.kind = 'market_order' then (select dd.display_name from delivery_drivers dd where dd.id = o.driver_id) end as rep,
+              case when o.kind = 'table' then (select w.status from reservation_waitlist w where w.operation_id = o.id order by w.id desc limit 1) end as esp,
               case when o.discount_cents > 0 then jsonb_build_object('code', (select bp.coupon_code from business_posts bp where bp.id = o.coupon_post_id), 'c', o.discount_cents) end as cup,
               case when o.details->>'rubro' = 'salud' then null else o.details->'svc'->>'es' end as svc, coalesce(o.deposit_cents, 0) as dep,
               o.details->>'rubro' as rub, case when o.details->>'rubro' = 'salud' and coalesce(o.details->'seguro'->>'kind', 'none') <> 'none' then (o.details->'seguro'->>'acepta')::boolean end as "segOk",

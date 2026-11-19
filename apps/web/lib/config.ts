@@ -104,7 +104,9 @@ export type ClaveConfig =
   // 9n-6 · Hogar y Auto: pre-estimado, presupuesto, emergencia y apartado (0150; Configuración › Hogar y Auto) y el techo de Free (Configuración › Dinero)
   | "sol_pre_h" | "sol_pq_h" | "sol_em_min" | "apartado_h" | "free_ops_cap"
   // 9n · Límites del plan Free/Pro por módulo (0179; Catálogo › Módulos y Free/Pro y Configuración › Negocios)
-  | "free_items" | "free_fotos" | "pro_fotos" | "free_equipo";
+  | "free_items" | "free_fotos" | "pro_fotos" | "free_equipo"
+  // 9t · «Avísame si se libera» de una mesa: cuántos minutos se guarda la mesa que se libera (0180; Configuración › Avisos)
+  | "rsv_espera_min";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

@@ -23,6 +23,27 @@ export async function diasEspeciales(c: Q, negocio: string, desde: string, dias:
   };
 }
 
+/* 9t · Lo mismo para varios negocios en UNA lectura (sin N+1: «Otros restaurantes con mesa» mira hasta 24 a la vez). */
+export async function diasEspecialesVarios(c: Q, negocios: string[], desde: string, dias: number): Promise<Map<string, DiasEsp>> {
+  const out = new Map<string, DiasEsp>(negocios.map((n) => [n, { esp: [], temporadas: [], cerradoHasta: null }]));
+  if (!negocios.length) return out;
+  const e = await c.query<{ b: string; desde: string; hasta: string; closed: boolean; ranges: Rango[] | null; season: boolean }>(
+    `select business_id as b, date_from::text as desde, date_to::text as hasta, closed, ranges, kind = 'season' as season from special_hours
+      where business_id = any($1::text[]) and status = 'active' and (kind = 'season' or (date_to >= $2::date and date_from <= $2::date + $3::int))
+      order by business_id, closed desc, id desc`, [negocios, desde, Math.max(1, Math.min(400, dias))]);
+  const b = await c.query<{ b: string; hasta: string }>(
+    `select b.id as b, (b.temp_closed_until at time zone ci.timezone)::date::text as hasta from businesses b join cities ci on ci.id = b.city_id
+      where b.id = any($1::text[]) and b.temp_closed_until > now()`, [negocios]);
+  for (const x of e.rows) {
+    const d = out.get(x.b);
+    if (!d) continue;
+    if (x.season) d.temporadas.push({ desde: x.desde, hasta: x.hasta });
+    else d.esp.push({ desde: x.desde, hasta: x.hasta, closed: x.closed, ranges: x.ranges ?? [] });
+  }
+  for (const x of b.rows) { const d = out.get(x.b); if (d) d.cerradoHasta = x.hasta; }
+  return out;
+}
+
 /* Las horas de una fecha: null = usa el horario de la semana; [] = cerrado ese día; si no, sus horas propias. */
 export function horasDelDia(d: DiasEsp, ymd: string): Rango[] | null {
   if (d.cerradoHasta && ymd <= d.cerradoHasta) return [];

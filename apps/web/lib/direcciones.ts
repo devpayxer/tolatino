@@ -80,6 +80,15 @@ export async function direccionDe(userId: string, id: string): Promise<Direccion
   return r.rows[0] ? fila(r.rows[0]) : null;
 }
 
+/* 9t · Mi ciudad (1f-2): las direcciones guardadas que tienen punto, para «Desde dónde medimos» (Casa / Trabajo). El punto lo ubicó el servidor y
+   nunca sale de aquí hacia la pantalla: el selector solo recibe «dir:<id>», su etiqueta y la calle (lib/ubicacion.ts resuelve el punto). */
+export type PuntoGuardado = { id: string; label: Direccion["label"]; street: string; zip: string; lat: number; lng: number };
+export async function puntosGuardados(userId: string): Promise<PuntoGuardado[]> {
+  return (await db().query<PuntoGuardado>(
+    `select a.id::text, a.label, a.street, a.zip, st_y(a.geo::geometry) as lat, st_x(a.geo::geometry) as lng from user_addresses a
+      where a.user_id = $1 and a.removed_at is null and a.geo is not null order by a.is_default desc, a.created_at limit 20`, [userId])).rows;
+}
+
 /* La zona de entrega que se ve en Mi cuenta: los códigos postales de la ciudad que la persona está viendo (de ahí son
    los negocios a los que pide), y de qué ciudad es cada código postal nuestro. */
 export async function zonaDe(userId: string) {

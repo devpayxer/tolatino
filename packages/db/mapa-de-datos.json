@@ -35,6 +35,7 @@
     "search_alerts": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "alertas_de_busqueda", "fusion": "mover" } ] },
     "search_logs": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "busquedas", "fusion": "no" } ] },
     "appointment_alerts": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "avisos_de_citas", "fusion": "mover" } ] },
+    "reservation_waitlist": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "listas_de_espera_de_mesas", "fusion": "no" } ] },
     "event_save_reminders": { "reglas": [ { "col": "user_id", "accion": "borrar", "fusion": "no" } ] },
     "user_event_plans": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "planes_de_eventos", "fusion": "no" } ] },
     "job_saves": { "reglas": [ { "col": "user_id", "accion": "borrar", "exporta": "empleos_guardados", "fusion": "mover" } ] },

@@ -1,5 +1,5 @@
 import "server-only";
-import { diasEspeciales, horasDelDia, type DiasEsp } from "./dias-especiales";
+import { diasEspeciales, diasEspecialesVarios, horasDelDia, type DiasEsp } from "./dias-especiales";
 import type { PoolClient } from "pg";
 import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { foto } from "./directorio";
@@ -34,26 +34,19 @@ type Ctx = {
   horas: Record<number, [number, number][]>; cerradoHasta: string | null; cerradoHoy: boolean; de: DiasEsp;
 };
 
-/* El negocio, sus ajustes (o los de fábrica) y su horario. */
-async function contexto(c: Q, negocio: string): Promise<Ctx | null> {
-  const r = await (c as ReturnType<typeof db>).query<{
-    id: string; name: string; tz: string; plan: string; phone: string | null; address: string | null; lat: number | null; lng: number | null; mods: string[];
-    off: Record<string, { reason?: string }>; hoy: string; dow: number; hm: string; cat: string; s: Record<string, unknown> | null; cerrado_hasta: string | null; cerrado_hoy: boolean;
-  }>(
-    `select b.id, b.name, ci.timezone as tz, coalesce(st.plan, 'free') as plan, b.phone, b.address, st_y(b.geo::geometry) as lat, st_x(b.geo::geometry) as lng,
-            b.modules_on as mods, b.modules_off as off, b.category_id as cat,
+type FilaCtx = {
+  id: string; name: string; tz: string; plan: string; phone: string | null; address: string | null; lat: number | null; lng: number | null; mods: string[];
+  off: Record<string, { reason?: string }>; hoy: string; dow: number; hm: string; s: Record<string, unknown> | null; cerrado_hasta: string | null; cerrado_hoy: boolean;
+};
+/* Las columnas del negocio que arman su contexto (una o varias filas: «Otros restaurantes con mesa» las lee juntas). */
+const COLS_CTX = `b.id, b.name, ci.timezone as tz, coalesce(st.plan, 'free') as plan, b.phone, b.address, st_y(b.geo::geometry) as lat, st_x(b.geo::geometry) as lng,
+            b.modules_on as mods, b.modules_off as off,
             (now() at time zone ci.timezone)::date::text as hoy, extract(dow from now() at time zone ci.timezone)::int as dow, to_char(now() at time zone ci.timezone, 'HH24:MI') as hm,
-            to_jsonb(rs) as s, (b.temp_closed_until at time zone ci.timezone)::date::text as cerrado_hasta, coalesce(b.closed_on = (now() at time zone ci.timezone)::date, false) as cerrado_hoy
-       from businesses b join cities ci on ci.id = b.city_id left join business_stats_cache st on st.business_id = b.id
-       left join reservation_settings rs on rs.business_id = b.id
-      where b.id = $1 and b.status = 'active'`, [negocio]);
-  const b = r.rows[0];
-  if (!b) return null;
-  const h = await (c as ReturnType<typeof db>).query<{ weekday: number; open: boolean; ranges: [string, string][] }>(`select weekday, open, ranges from business_hours where business_id = $1 and module = ''`, [negocio]);
+            to_jsonb(rs) as s, (b.temp_closed_until at time zone ci.timezone)::date::text as cerrado_hasta, coalesce(b.closed_on = (now() at time zone ci.timezone)::date, false) as cerrado_hoy`;
+/* El contexto de un negocio con sus filas ya leídas: ajustes (o los de fábrica), horario de la semana y días especiales. Puro. */
+function armarCtx(b: FilaCtx, hrs: { weekday: number; open: boolean; ranges: [string, string][] }[], de: DiasEsp): Ctx {
   const horas: Record<number, [number, number][]> = {};
-  for (const d of h.rows) horas[d.weekday] = d.open ? d.ranges.map(([a, z]) => { const A = hm2m(a), Z = hm2m(z); return [A, Z <= A ? Z + 1440 : Z] as [number, number]; }) : [];
-  // 9n-10 · Días especiales y temporada (feriados, vacaciones, días con otras horas, fuera de temporada) para los días que se ofrecen.
-  const de = await diasEspeciales(c as ReturnType<typeof db>, negocio, b.hoy, 60);
+  for (const d of hrs) horas[d.weekday] = d.open ? d.ranges.map(([a, z]) => { const A = hm2m(a), Z = hm2m(z); return [A, Z <= A ? Z + 1440 : Z] as [number, number]; }) : [];
   const x = b.s as Record<string, never> | null;
   const s: Ajustes = x ? {
     areas: x.areas ?? FABRICA.areas, join: x.join_tables ?? true, joinMax: x.join_max ?? 8, walk: x.walk_in ?? 0, dur: x.dur_min ?? 90, days: x.days ?? null,
@@ -61,6 +54,20 @@ async function contexto(c: Q, negocio: string): Promise<Ctx | null> {
   } : FABRICA;
   return { id: b.id, name: b.name, tz: b.tz, plan: b.plan, phone: b.phone, address: b.address, lat: b.lat, lng: b.lng, mods: b.mods ?? [], off: b.off ?? {}, hoy: b.hoy, dow: b.dow,
     now: hm2m(b.hm), s, horas, cerradoHasta: b.cerrado_hasta, cerradoHoy: b.cerrado_hoy, de };
+}
+/* El negocio, sus ajustes (o los de fábrica) y su horario. */
+async function contexto(c: Q, negocio: string): Promise<Ctx | null> {
+  const r = await (c as ReturnType<typeof db>).query<FilaCtx>(
+    `select ${COLS_CTX}
+       from businesses b join cities ci on ci.id = b.city_id left join business_stats_cache st on st.business_id = b.id
+       left join reservation_settings rs on rs.business_id = b.id
+      where b.id = $1 and b.status = 'active'`, [negocio]);
+  const b = r.rows[0];
+  if (!b) return null;
+  const h = await (c as ReturnType<typeof db>).query<{ weekday: number; open: boolean; ranges: [string, string][] }>(`select weekday, open, ranges from business_hours where business_id = $1 and module = ''`, [negocio]);
+  // 9n-10 · Días especiales y temporada (feriados, vacaciones, días con otras horas, fuera de temporada) para los días que se ofrecen.
+  const de = await diasEspeciales(c as ReturnType<typeof db>, negocio, b.hoy, 60);
+  return armarCtx(b, h.rows, de);
 }
 
 const fecha = (hoy: string, i: number) => { const d = new Date(`${hoy}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + i); return d.toISOString().slice(0, 10); };
@@ -123,12 +130,16 @@ const enHorario = (x: Ctx, d: Dia, h: number) => d.hrs.some(([a, z]) => h >= a &
 const turnoDe = (x: Ctx, h: number) => Object.keys(TURNOS).find((k) => { const p = x.s.periods[k]; return p?.on && h >= p.f && h <= p.t; }) ?? "";
 
 /* ¿Hay mesa para p personas a las h (minutos) del día d? Devuelve el área (la pedida o la primera que sirva) o "". */
+/* 9t · ¿Esa hora se puede pedir (abierto, en horario y turno, con la anticipación y dentro de los días que ofrece, el grupo cabe en el local)?
+   Sin mirar si hay mesa: «llena» es reservable y sin área libre. */
+function reservable(x: Ctx, d: Dia, h: number, p: number) {
+  if (!d.abierto || p > maxGrupo(x.s) || d.i < 0 || d.i >= x.s.maxD) return false;
+  if (d.i * 1440 + h - x.now < x.s.minH * 60) return false;
+  return enHorario(x, d, h) && !!turnoDe(x, h);
+}
 function areaLibre(x: Ctx, d: Dia, h: number, p: number, area: string, occ: Ocupa[], blk: { day: string; period: string; area: string }[]) {
-  if (!d.abierto || p > maxGrupo(x.s) || d.i >= x.s.maxD) return "";
-  if (d.i * 1440 + h - x.now < x.s.minH * 60) return "";
-  if (!enHorario(x, d, h)) return "";
+  if (!reservable(x, d, h, p)) return "";
   const tu = turnoDe(x, h);
-  if (!tu) return "";
   const todas = areasOn(x.s), all = todas.reduce((a, k) => a + total(tablasDe(x.s.areas[k]!)), 0);
   for (const k of area ? [area] : todas) {
     if (!todas.includes(k)) continue;
@@ -249,14 +260,16 @@ export async function rsvRetener(userId: string, negocio: string, i: number, h: 
 export type RsvHold = {
   id: string; negocio: { id: string; nombre: string; foto: string | null }; ymd: string; dia: number; h: number; p: number; area: string; segundos: number;
   editar: string | null; editarConfirmada: boolean; auto: boolean; reply: number; hold: number; cxH: number; dur: number; quien: string; telefono: string;
+  /* 9t · Cuántos minutos se guarda esta mesa: 5 al elegir la hora; los de Configuración (rsv_espera_min) si la guardó la lista de espera. */
+  min: number;
 };
 export async function rsvHold(userId: string, holdId: string): Promise<RsvHold | null> {
   if (!/^[0-9a-f-]{36}$/.test(String(holdId))) return null;
-  const h = (await db().query<{ business_id: string; name: string; url: string | null; ymd: string; hoy: string; hm: string; party: number; area: string; seg: number; editar: string | null; edconf: boolean | null;
+  const h = (await db().query<{ business_id: string; name: string; url: string | null; ymd: string; hoy: string; hm: string; party: number; area: string; seg: number; min: number; editar: string | null; edconf: boolean | null;
     first_name: string | null; last_name: string | null; phone: string }>(
     `select h.business_id, b.name, (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1) as url,
             (h.starts_at at time zone ci.timezone)::date::text as ymd, (now() at time zone ci.timezone)::date::text as hoy, to_char(h.starts_at at time zone ci.timezone, 'HH24:MI') as hm,
-            h.party_size as party, h.area, greatest(0, floor(extract(epoch from h.expires_at - now())))::int as seg,
+            h.party_size as party, h.area, greatest(0, floor(extract(epoch from h.expires_at - now())))::int as seg, greatest(1, round(extract(epoch from h.expires_at - h.created_at) / 60))::int as min,
             (select o.number from operations o where o.id = h.edit_of and o.status in ('pending', 'confirmed')) as editar,
             (select o.status = 'confirmed' from operations o where o.id = h.edit_of) as edconf, u.first_name, u.last_name, u.phone
        from reservation_holds h join businesses b on b.id = h.business_id join cities ci on ci.id = b.city_id join users u on u.id = h.user_id
@@ -267,7 +280,7 @@ export async function rsvHold(userId: string, holdId: string): Promise<RsvHold |
   return {
     id: holdId, negocio: { id: h.business_id, nombre: h.name, foto: h.url ? foto(h.url, 200) : null }, ymd: h.ymd, dia: Math.round((Date.parse(h.ymd) - Date.parse(h.hoy)) / 864e5),
     h: hm2m(h.hm), p: h.party, area: h.area, segundos: h.seg, editar: h.editar, editarConfirmada: !!h.edconf && !!h.editar, auto: x.s.auto, reply: x.s.reply, hold: x.s.hold, cxH: x.s.cxH, dur: x.s.dur,
-    quien: [h.first_name, h.last_name].filter(Boolean).join(" "), telefono: h.phone,
+    quien: [h.first_name, h.last_name].filter(Boolean).join(" "), telefono: h.phone, min: h.min,
   };
 }
 
@@ -355,6 +368,8 @@ export async function rsvEnviar(userId: string, holdId: string, f: DetallesIn, e
       await c.query(`insert into operation_events (operation_id, kind, actor, actor_id) values ($1, 'sent', 'user', $2)`, [op.rows[0]!.id, userId]);
       if (auto) await c.query(`insert into operation_events (operation_id, kind, actor, note) values ($1, 'accepted', 'system', $2::jsonb)`, [op.rows[0]!.id, JSON.stringify({ es: "Confirmada al instante", en: "Confirmed instantly" })]);
     }
+    // 9t · Si esta mesa se la guardó la lista de espera («Avísame si se libera»), la entrada queda tomada.
+    await c.query(`update reservation_waitlist set status = 'taken', taken_at = now() where hold_id = $1::uuid and user_id = $2 and status = 'offered'`, [holdId, userId]);
     await c.query(`delete from reservation_holds where id = $1`, [holdId]);
     return { ok: true, numero };
   });
@@ -568,7 +583,7 @@ export async function rsvCambio(negocio: string, numero: string, que: "aceptar" 
 const DIAS_C: [string, string][] = [["dom", "Sun"], ["lun", "Mon"], ["mar", "Tue"], ["mié", "Wed"], ["jue", "Thu"], ["vie", "Fri"], ["sáb", "Sat"]];
 const MESES_C: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
 // «sáb 7 nov» / «Sat Nov 7»: nunca la fecha en crudo (2026-11-07) en una pantalla.
-function fechaCorta(ymd: string): Bi {
+export function fechaCorta(ymd: string): Bi {
   const d = new Date(`${ymd}T12:00:00Z`), w = DIAS_C[d.getUTCDay()]!, m = MESES_C[d.getUTCMonth()]!, n = d.getUTCDate();
   return { es: `${w[0]} ${n} ${m[0]}`, en: `${w[1]} ${m[1]} ${n}` };
 }
@@ -671,4 +686,96 @@ export async function rsvAjustes(negocio: string) {
     horas: Object.fromEntries(Object.entries(x.horas).filter(([, r]) => r.length).map(([k, r]) => [k, [Math.min(...r.map((z) => z[0])), Math.max(...r.map((z) => z[1]))]])) as Record<string, [number, number]>,
     blk: blk.map((b) => ({ ...b, dia: Math.round((Date.parse(b.day) - Date.parse(x.hoy)) / 864e5) })), hoyN: hoyR.rows[0]?.n ?? 0, hoyP: hoyR.rows[0]?.p ?? 0 };
 }
+/* ── 9t · La pantalla «no pudo»: «Avísame si se libera» (lib/mesa-espera.ts) y «Otros restaurantes con mesa» ── */
+
+/* El motor de un restaurante para varias preguntas seguidas (el barrido de la lista de espera): el contexto una vez, lo ocupado y los bloqueos una vez
+   por día. `ocupar` suma una retención recién guardada para que la siguiente persona de la fila no reciba la misma mesa. Usar dentro de la
+   transacción con el candado del restaurante (pg_advisory_xact_lock 'mesa:' || negocio), como rsvRetener. null = no toma reservaciones en línea. */
+export type EstadoHora = "libre" | "llena" | "no";
+export async function motorMesa(c: Q, negocio: string) {
+  const x = await contexto(c, negocio);
+  if (!x || x.plan !== "pro" || !x.mods.includes("rsv") || x.off.rsv || !areasOn(x.s).length) return null;
+  const dias = new Map<string, { occ: Ocupa[]; blk: { day: string; period: string; area: string }[] }>();
+  const cargar = async (ymd: string) => {
+    let L = dias.get(ymd);
+    if (!L) { L = { occ: await ocupacion(c, x, ymd), blk: await bloqueos(c, x, ymd, ymd) }; dias.set(ymd, L); }
+    return L;
+  };
+  const diaDe = (ymd: string) => dia(x, Math.round((Date.parse(ymd) - Date.parse(x.hoy)) / 864e5));
+  return {
+    x,
+    /* «libre» (con el área), «llena» (se puede pedir esa hora pero no hay mesa) o «no» (ya no se puede pedir: pasó, cerrado, fuera de horario). */
+    async estado(ymd: string, h: number, p: number, area: string): Promise<{ st: EstadoHora; area: string }> {
+      const d = diaDe(ymd);
+      if (!reservable(x, d, h, p)) return { st: "no", area: "" };
+      const L = await cargar(ymd), ar = areaLibre(x, d, h, p, area && AREAS[area] ? area : "", L.occ, L.blk);
+      return ar ? { st: "libre", area: ar } : { st: "llena", area: "" };
+    },
+    ocupar(ymd: string, h: number, p: number, area: string) { dias.get(ymd)?.occ.push({ start: h, party: p, area, dur: x.s.dur }); },
+  };
+}
+
+/* «Otros restaurantes con mesa» (prototipo rsvStVals.others): los de la MISMA ciudad que toman reservaciones en línea (activos, Pro, con
+   Reservaciones encendido y sin pausa de To'Latino), con mesa ese día para ese grupo; de cada uno, la hora libre más cercana a la pedida. El
+   servidor decide con el mismo motor que «Elegir hora». Sin N+1: hasta 24 candidatos, los más cercanos, en 6 lecturas en total; salen hasta 5. */
+export type OtroConMesa = { id: string; nombre: string; foto: string | null; r: string | null; mi: number | null; sub: string | null; i: number; h: number };
+export const OTROS_TOPE = 5, OTROS_CANDIDATOS = 24;
+/* `desde`: el punto desde donde mide la persona (Ciudad que estás viendo); si es de otra ciudad, la distancia se mide desde el restaurante que no pudo. */
+export async function otrosConMesa(negocio: string, ymd: string, h: number, p: number, desde: { lat: number; lng: number; ciudad: string } | null, lang: Lang): Promise<OtroConMesa[]> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd) || !(p >= 1 && p <= 40) || !(h >= 0 && h < 1440)) return [];
+  const ok = (n: number, a: number) => Number.isFinite(n) && Math.abs(n) <= a;
+  const pt = desde && ok(desde.lat, 90) && ok(desde.lng, 180) ? desde : null;
+  const r = await db().query<FilaCtx & { r: string | null; mi: number | null; sub: string | null; url: string | null }>(
+    `with o as (select city_id, case when $2::float8 is null or $5::text is distinct from city_id then geo else st_setsrid(st_makepoint($3::float8, $2::float8), 4326)::geography end as g
+                from businesses where id = $1)
+     select ${COLS_CTX}, st.rating_avg::text as r,
+            case when b.geo is null or o.g is null then null else round((st_distance(b.geo, o.g) / 1609.34)::numeric, 1)::float end as mi,
+            (select sc.name->>$4 from subcategorias_vivas sc where sc.id = any(b.subcategory_ids) order by array_position(b.subcategory_ids, sc.id) limit 1) as sub,
+            (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1) as url
+       from o join businesses b on b.city_id = o.city_id join cities ci on ci.id = b.city_id join business_stats_cache st on st.business_id = b.id
+       left join reservation_settings rs on rs.business_id = b.id
+      where b.id <> $1 and b.status = 'active' and st.plan = 'pro' and 'rsv' = any(b.modules_on) and not (coalesce(b.modules_off, '{}'::jsonb) ? 'rsv')
+      order by b.geo <-> o.g nulls last, b.id limit ${OTROS_CANDIDATOS}`, [negocio, pt?.lat ?? null, pt?.lng ?? null, lang === "en" ? "en" : "es", pt?.ciudad ?? null]);
+  if (!r.rows.length) return [];
+  const ids = r.rows.map((b) => b.id), hoy = r.rows[0]!.hoy;
+  const [hrs, de, occ, blk] = await Promise.all([
+    db().query<{ b: string; weekday: number; open: boolean; ranges: [string, string][] }>(`select business_id as b, weekday, open, ranges from business_hours where business_id = any($1::text[]) and module = ''`, [ids]),
+    diasEspecialesVarios(db(), ids, hoy, 60),
+    db().query<{ b: string; hm: string; party: number; area: string; dur: number }>(
+      `select o.business_id as b, to_char(o.scheduled_at at time zone ci.timezone, 'HH24:MI') as hm, o.party_size as party, coalesce(o.details->>'area', 'salon') as area,
+              coalesce(o.duration_min, rs.dur_min, 90) as dur
+         from operations o join businesses b on b.id = o.business_id join cities ci on ci.id = b.city_id left join reservation_settings rs on rs.business_id = o.business_id
+        where o.business_id = any($1::text[]) and o.kind = 'table' and o.status in ('pending', 'change_proposed', 'confirmed') and coalesce(o.status_detail, '') <> 'done'
+          and (o.scheduled_at at time zone ci.timezone)::date = $2::date
+       union all
+       select h.business_id, to_char(h.starts_at at time zone ci.timezone, 'HH24:MI'), h.party_size, h.area, coalesce(rs.dur_min, 90)
+         from reservation_holds h join businesses b on b.id = h.business_id join cities ci on ci.id = b.city_id left join reservation_settings rs on rs.business_id = h.business_id
+        where h.business_id = any($1::text[]) and h.expires_at > now() and (h.starts_at at time zone ci.timezone)::date = $2::date`, [ids, ymd]),
+    db().query<{ b: string; day: string; period: string; area: string }>(
+      `select business_id as b, day::text, period, area from reservation_blocks where business_id = any($1::text[]) and removed_at is null and day = $2::date`, [ids, ymd]),
+  ]);
+  const out: OtroConMesa[] = [];
+  for (const b of r.rows) {
+    if (out.length >= OTROS_TOPE) break;
+    const x = armarCtx(b, hrs.rows.filter((z) => z.b === b.id), de.get(b.id) ?? { esp: [], temporadas: [], cerradoHasta: null });
+    if (!areasOn(x.s).length) continue;
+    const i = Math.round((Date.parse(ymd) - Date.parse(x.hoy)) / 864e5), d = dia(x, i);
+    if (i < 0 || !d.abierto || p > maxGrupo(x.s)) continue;
+    const O = occ.rows.filter((z) => z.b === b.id).map((z) => ({ start: hm2m(z.hm), party: z.party, area: z.area, dur: z.dur })), B = blk.rows.filter((z) => z.b === b.id);
+    let mejor: number | null = null;
+    for (const k of Object.keys(TURNOS)) {
+      const pr = x.s.periods[k];
+      if (!pr?.on) continue;
+      for (let t = pr.f; t <= pr.t; t += 30) {
+        if (i === 0 && t < x.now + 60) continue;
+        if (mejor !== null && Math.abs(t - h) >= Math.abs(mejor - h)) continue;
+        if (areaLibre(x, d, t, p, "", O, B)) mejor = t;
+      }
+    }
+    if (mejor === null) continue;
+    out.push({ id: b.id, nombre: b.name, foto: b.url ? foto(b.url, 200) : null, r: b.r, mi: b.mi, sub: b.sub, i, h: mejor });
+  }
+  return out;
+}
+
 export { FABRICA as AJUSTES_FABRICA, tablasDe, total as totalMesas, SZ as TAMANOS };

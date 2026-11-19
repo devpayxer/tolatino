@@ -1,17 +1,19 @@
 # Dónde buscas (ciudad, punto y distancia) · Where you're looking
 
-_Pantallas: APP-CIUDAD (hoja en el teléfono, ventana en escritorio) y APP-CIUDAD-PRONTO. Versión: 5 nov 2026. Audiencia: vecino. Tema: cuenta._
+_Pantallas: APP-CIUDAD (hoja en el teléfono, ventana en escritorio) y APP-CIUDAD-PRONTO. Versión: 19 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 Elige qué ves en Inicio, Negocios, las categorías y Buscar: **la ciudad**, **desde dónde medimos** (el centro, un
-barrio o tu ubicación) y **qué tan lejos** (2, 5, 10 o 30 millas). Las distancias de cada negocio se cuentan desde el
+barrio, tu ubicación o, si entraste, **Casa** o **Trabajo**: tus direcciones de Mi cuenta › Direcciones) y **qué tan lejos** (2, 5, 10 o 30 millas). Las distancias de cada negocio se cuentan desde el
 punto que elegiste. Si la ciudad todavía no abre, ves cuánto le falta y puedes anotarte para que te avisemos.
 
 Esto **no cambia Mi ciudad** (la de la comunidad: tus publicaciones, votos y la Tabla del Barrio).
 
 ## Cómo se usa
 1. Toca el botón de arriba con el pin (en el teléfono dice «5 MI»; en la computadora «Hazleton, PA · 5 mi»).
-2. Elige desde dónde medimos: **Centro**, un barrio (North End, The Heights…) o **Usar mi ubicación**.
+2. Elige desde dónde medimos: **Centro**, un barrio (North End, The Heights…), **Usar mi ubicación** o, si entraste, **Casa** o
+   **Trabajo** (salen las direcciones guardadas que pudimos ubicar en el mapa, cada una con su calle). Sin cuenta ves **Entra para medir
+   desde tu casa o tu trabajo**.
 3. Elige la distancia. El mapa muestra el círculo, los negocios (negro = Pro, morado = gratis, gris = fuera) y cuántos
    entran y qué pueblos incluye.
 4. Toca **Ver N negocios a X mi**. El encabezado cambia y todo se cuenta desde ahí.
@@ -31,10 +33,17 @@ Esto **no cambia Mi ciudad** (la de la comunidad: tus publicaciones, votos y la 
 | Pide una ciudad nueva sin cuenta | Pide el teléfono para avisarle. | Escribir 10 dígitos. |
 | Pide muchas veces seguidas desde el mismo lugar | «Ya recibimos muchos pedidos desde aquí. Prueba en un rato.» | Esperar. |
 | Quiere quitar un pedido | En **YA PEDISTE**, **Quitar**. | — |
+| Elige **Casa** o **Trabajo** | Todo se mide desde esa dirección; el encabezado dice «Hazleton, PA · 5 mi · casa». | Nada más. |
+| No ve su casa en la lista | La dirección no está guardada, se quitó o no la pudimos ubicar en el mapa (o queda lejos de esa ciudad). | Guardarla o corregirla en Mi cuenta › Direcciones. |
+| Quita la dirección desde la que medía, o sale de su cuenta | Se vuelve a medir desde el centro. | Elegir otro punto. |
+| No ha entrado | **Entra para medir desde tu casa o tu trabajo** lleva a Entra y vuelve; **Qué es Mi ciudad** abre esta ayuda sobre las ciudades. | Entrar o leer. |
 
 ## Preguntas frecuentes
 **¿Guardan mi ubicación?** No. Tu ubicación se usa en tu teléfono para medir distancias; en tu cuenta solo guardamos que
 mides «desde tu ubicación», nunca el punto.
+
+**¿Y si mido desde mi casa?** Guardamos que mides desde esa dirección (la que ya está en Mi cuenta › Direcciones), nunca su punto en este
+teléfono ni en la página. Solo tu cuenta puede medir desde ella.
 
 **¿Por qué no aparece un negocio que está más lejos?** Solo salen los que están dentro de la distancia elegida, más los
 que van a domicilio y llegan hasta tu zona. Amplía la distancia.
@@ -50,15 +59,17 @@ siguen.
 ## English
 
 ### What it does
-It chooses what you see in Home, Businesses, the categories and Search: **the city**, **where we measure from** (the center, a neighborhood or
-your location) and **how far** (2, 5, 10 or 30 miles). The distance to each business is counted from the point you chose. If the city has not
+It chooses what you see in Home, Businesses, the categories and Search: **the city**, **where we measure from** (the center, a neighborhood,
+your location or, if you are signed in, **Home** or **Work**: your addresses in My account › Addresses) and **how far** (2, 5, 10 or 30 miles). The distance to each business is counted from the point you chose. If the city has not
 opened yet, you see how far along it is and you can sign up so we let you know.
 
 This **does not change My city** (the community one: your posts, votes and the Leaderboard).
 
 ### How to use it
 1. Tap the button at the top with the pin (on the phone it says «5 MI»; on the computer «Hazleton, PA · 5 mi»).
-2. Choose where we measure from: **Center**, a neighborhood (North End, The Heights…) or **Use my location**.
+2. Choose where we measure from: **Center**, a neighborhood (North End, The Heights…), **Use my location** or, if you are signed in, **Home** or
+   **Work** (your saved addresses that we could place on the map show up, each with its street). Without an account you see **Sign in to measure
+   from home or work**.
 3. Choose the distance. The map shows the circle, the businesses (black = Pro, purple = free, gray = outside) and how many fall inside and
    which towns it includes.
 4. Tap **See N businesses within X mi**. The header changes and everything is counted from there.
@@ -78,10 +89,17 @@ This **does not change My city** (the community one: your posts, votes and the L
 | Asks for a new city without an account | Asks for a phone number to let them know. | Type 10 digits. |
 | Asks many times in a row from the same place | «We got many requests from here. Try again later.» | Wait. |
 | Wants to remove a request | In **YOU ALREADY ASKED**, **Remove**. | — |
+| Chooses **Home** or **Work** | Everything is measured from that address; the header says «Hazleton, PA · 5 mi · home». | Nothing else. |
+| Doesn't see their home in the list | The address isn't saved, was removed or we couldn't place it on the map (or it is far from that city). | Save or fix it in My account › Addresses. |
+| Removes the address they measured from, or signs out | We go back to measuring from the center. | Choose another point. |
+| Isn't signed in | **Sign in to measure from home or work** goes to Sign in and comes back; **What is My city** opens this help about cities. | Sign in or read. |
 
 ### FAQ
 **Do you keep my location?** No. Your location is used on your phone to measure distances; in your account we only keep that you measure
 «from your location», never the point.
+
+**And if I measure from home?** We keep that you measure from that address (the one already in My account › Addresses), never its point on this
+phone or on the page. Only your account can measure from it.
 
 **Why doesn't a business that is farther away show up?** Only the ones within the chosen distance appear, plus the ones that go to your home
 and reach your area. Widen the distance.

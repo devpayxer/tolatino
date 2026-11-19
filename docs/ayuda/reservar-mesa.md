@@ -2,7 +2,7 @@
 
 _Pantallas: pestaña **Reservaciones** de la página del restaurante (`/n/{negocio}?tab=rsv`), la tarjeta **Reservar mesa** del Resumen, **Solicitud de
 mesa** (`/n/{negocio}/reservar`) y **Tu reservación** (`/reserva/{número}`), teléfono y escritorio. Solo restaurantes Pro con Reservaciones encendido.
-Versión: 6 nov 2026. Audiencia: vecino. Tema: citas._
+Versión: 19 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué hace
 - **Reservar mesa:** primero cuántos son (1 a la mesa más grande, o «N+» para grupos grandes), luego el día (hasta 1
@@ -21,6 +21,16 @@ Versión: 6 nov 2026. Audiencia: vecino. Tema: citas._
   30 minutos o antes de la hora), ves «CAMBIO NO CONFIRMADO» y todo queda como estaba; «Entendido» lo quita.
 - **Cancelar** con motivo opcional. **¿Vas tarde?** el mismo día, ya confirmada y faltando 2 horas o menos: avisas
   5, 10 o 15 minutos.
+- **Cuando no se pudo** (NO PUDO o SIN RESPUESTA), tu reservación te ofrece tres salidas:
+  - **Horas con mesa ese día** en el mismo restaurante.
+  - **Otros restaurantes con mesa:** hasta 5 restaurantes de tu misma ciudad que reservan en To'Latino y tienen mesa ese día para tu
+    grupo, cada uno con la hora libre más cercana a la que pediste (los más cerca de ti primero). Tocas uno y abre su pestaña con
+    personas, día y hora ya puestos.
+  - **Avísame si se libera a esa hora:** te anotas en la lista de espera de esa hora, ese día y esas personas. Si se libera una mesa
+    (alguien cancela, el restaurante dice que no a otra solicitud, una solicitud vence o el restaurante abre más mesas), **te la
+    guardamos a tu nombre** unos minutos (10, o lo que diga To'Latino) y te avisamos **una vez**: al teléfono primero y, si no te llega,
+    por SMS. **Tomar la mesa** abre la solicitud con esa mesa ya guardada; **No, gracias** la suelta para la siguiente persona.
+    Ves y quitas tus mesas en espera en **Mi cuenta › Avisos › Tus alertas**.
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
@@ -30,7 +40,14 @@ Versión: 6 nov 2026. Audiencia: vecino. Tema: citas._
 | Dos personas quieren la última mesa a la vez | Solo una la retiene; la otra ve «Esa mesa se acaba de ocupar». |
 | El restaurante confirma solo (si lo encendió) | Queda **CONFIRMADA** al instante. |
 | El restaurante te propone otra hora | **Te proponen otra hora:** Aceptar (queda confirmada), Buscar otra hora o No, gracias. Tienes 15 minutos. |
-| No hay mesa | «No tiene mesa a esa hora» con las horas de ese día que sí tienen. |
+| No hay mesa | «No tiene mesa a esa hora» con las horas de ese día que sí tienen, otros restaurantes con mesa y «Avísame si se libera a esa hora». |
+| Te anotas en la lista de espera | «Estás en la lista de espera». Puedes salir con «Salir de la lista» o en Mi cuenta › Avisos. |
+| Se libera una mesa a esa hora | La primera persona de la lista (por orden de llegada) recibe la mesa guardada a su nombre y un aviso. Las demás siguen esperando. |
+| No tomas la mesa a tiempo, o dices «No, gracias» | La mesa pasa a la siguiente persona de la lista. Puedes volver a anotarte si esa hora sigue llena. |
+| Se libera de noche (10 PM a 7 AM, si tienes las horas de silencio) | No te la guardamos ni te despertamos: sigues en tu lugar y la mesa pasa a quien sí puede verla. |
+| Esa hora ya tiene mesa cuando quieres anotarte | No hay lista: «A esa hora ya hay mesa»; elígela otra vez y resérvala. |
+| Pasa la hora, o el restaurante deja de reservar en To'Latino | Tu lugar en la lista se cierra solo. |
+| Ya esperas 5 mesas | Quita una en Mi cuenta › Avisos para anotarte en otra. |
 | Cambias una reservación confirmada y el restaurante confirma solo | El cambio se hace al instante. |
 | Cambias y el restaurante ya no tiene mesa a la hora nueva | No puede aceptarlo: tu reservación sigue como estaba. |
 | Nadie responde en 30 minutos (o llega la hora) | **SIN RESPUESTA**: se cierra la solicitud, sin cargo. |
@@ -53,6 +70,15 @@ restaurante. Una solicitud que todavía no contestan sí se cambia.
 **¿Me avisan por SMS?** Sí, si lo eliges al reservar: te llega cuando confirman, proponen otra hora o no pueden. La pantalla de tu
 reservación también se actualiza sola.
 
+**¿Qué otros restaurantes salen cuando no se pudo?** Solo los de tu misma ciudad que reservan en To'Latino, están abiertos ese día y
+tienen mesa para tu grupo. Nunca uno cerrado, en pausa ni de otra ciudad.
+
+**¿Me avisan más de una vez si se libera?** No. Un aviso por cada vez que te guardamos una mesa. Si no la tomas, pasa a la siguiente
+persona.
+
+**¿El restaurante ve quién está en la lista de espera?** No. La mesa guardada cuenta como ocupada mientras dura; tu nombre solo le llega
+cuando envías la solicitud.
+
 ## English
 
 ### What it does
@@ -72,6 +98,16 @@ reservación también se actualiza sola.
   see «CHANGE NOT CONFIRMED» and everything stays as it was; «Got it» removes it.
 - **Cancel** with an optional reason. **Running late?** On the same day, once confirmed and with 2 hours or less to go: you notify them 5, 10 or
   15 minutes.
+- **When it couldn't be done** (COULD NOT or NO RESPONSE), your reservation offers three ways out:
+  - **Times with tables that day** at the same restaurant.
+  - **Other restaurants with tables:** up to 5 restaurants in your same city that book on To'Latino and have a table that day for your group,
+    each with the free time closest to the one you asked for (the closest to you first). Tap one and its tab opens with guests, day and time
+    already set.
+  - **Notify me if it opens up:** you join the waitlist for that time, that day and that number of guests. If a table opens up (someone cancels,
+    the restaurant says no to another request, a request expires or the restaurant adds tables), **we hold it in your name** for a few minutes
+    (10, or what To'Latino sets) and notify you **once**: on your phone first and, if that doesn't reach you, by SMS. **Take the table** opens the
+    request with that table already held; **No, thanks** releases it for the next person. You see and remove your waitlisted tables in **My
+    account › Notifications › Your alerts**.
 
 ### What happens in each case
 | Case | What happens |
@@ -81,7 +117,14 @@ reservación también se actualiza sola.
 | Two people want the last table at the same time | Only one holds it; the other sees «That table was just taken». |
 | The restaurant confirms by itself (if it turned that on) | It is **CONFIRMED** instantly. |
 | The restaurant suggests another time | **They suggest another time:** Accept (it becomes confirmed), Find another time or No, thanks. You have 15 minutes. |
-| There is no table | «No table at that time» with that day's times that do have one. |
+| There is no table | «No table at that time» with that day's times that do have one, other restaurants with tables and «Notify me if it opens up». |
+| You join the waitlist | «You're on the waitlist». You can leave with «Leave the waitlist» or in My account › Notifications. |
+| A table opens up at that time | The first person on the list (in order of arrival) gets the table held in their name and a notification. The rest keep waiting. |
+| You don't take the table in time, or you say «No, thanks» | The table goes to the next person on the list. You can join again if that time is still full. |
+| It opens up at night (10 PM to 7 AM, if you have quiet hours on) | We don't hold it for you or wake you up: you keep your place and the table goes to someone who can see it. |
+| That time already has a table when you want to join | There is no list: «There is a table at that time now»; pick it again and book it. |
+| The time passes, or the restaurant stops booking on To'Latino | Your place on the list closes by itself. |
+| You are already waiting for 5 tables | Remove one in My account › Notifications to join another. |
 | You change a confirmed reservation and the restaurant confirms by itself | The change happens instantly. |
 | You change and the restaurant no longer has a table at the new time | It can't accept it: your reservation stays as it was. |
 | Nobody replies within 30 minutes (or the time arrives) | **NO ANSWER**: the request closes, with no charge. |
@@ -102,3 +145,12 @@ that hasn't been answered yet can be changed.
 
 **Do they notify me by SMS?** Yes, if you choose it when booking: you get it when they confirm, suggest another time or can't. Your reservation
 screen also updates by itself.
+
+**Which other restaurants show up when it couldn't be done?** Only the ones in your same city that book on To'Latino, are open that day and have
+a table for your group. Never one that is closed, paused or in another city.
+
+**Do they notify me more than once if it opens up?** No. One notification each time we hold a table for you. If you don't take it, it goes to the
+next person.
+
+**Does the restaurant see who is on the waitlist?** No. The held table counts as taken while it lasts; your name only reaches them when you send
+the request.
