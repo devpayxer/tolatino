@@ -70,7 +70,14 @@ const op = (n, c) => sql(`select ${c} from operations where number='${n}'`);
   const d = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); watch(d, 'panel');
   await entrar(d, '5705550133'); await d.goto(B + P + `/hoy?det=ped:${n1}`); await d.getByText('ENTREGA', { exact: true }).first().waitFor();
   ok(await d.getByText('420 N Wyoming St, Apt 2').first().isVisible() && await d.getByText('Dejar en la puerta').first().isVisible(), 'panel: a dónde y «Dejar en la puerta»');
-  await d.getByText('Aceptar', { exact: true }).last().click(); await d.getByText(/ya lo ve en su pedido/).waitFor();
+  // 19 nov · En el iPad (WebKit) otra pieza tapaba «Aceptar» (30 s). Si pasa otra vez, dice cuál: el elemento que está encima del centro del botón.
+  { const ac = d.getByText('Aceptar', { exact: true }).last();
+    try { await ac.click({ timeout: 10000 }); } catch (e) {
+      const encima = await ac.evaluate((el) => { const r = el.getBoundingClientRect(), x = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+        const camino = []; for (let n = x; n && camino.length < 4; n = n.parentElement) camino.push(`${n.tagName.toLowerCase()}${n.getAttribute('data-screen-label') ? '[' + n.getAttribute('data-screen-label') + ']' : ''}.${String(n.className).slice(0, 60)}`);
+        return `botón en ${Math.round(r.x)},${Math.round(r.y)} ${Math.round(r.width)}×${Math.round(r.height)} de ${innerWidth}×${innerHeight}; encima: ${camino.join(' < ')} «${(x?.textContent || '').trim().slice(0, 40)}»`; }).catch(() => '');
+      throw new Error(`«Aceptar» tapado: ${encima}`); } }
+  await d.getByText(/ya lo ve en su pedido/).waitFor();
   await d.getByText('Salió en camino').last().click(); await d.getByText(/ya ve que va en camino/).waitFor();
   ok(await espera(() => op(n1, "status||'|'||stage"), 'confirmed|on_the_way') === 'confirmed|on_the_way', 'Salió en camino → on_the_way');
   await shot(d, 'd4-panel-encamino.png');
