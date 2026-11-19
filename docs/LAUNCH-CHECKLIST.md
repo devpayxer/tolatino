@@ -1548,7 +1548,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9t** · **El barrido de la Comunidad con 1 M de vecinos** (`com_cifras_resumir`: rangos por ciudad, activos por rango en 7/30/90 días y candidatos de
       Recomendados, cada 10 min) tardó 8,6 s y 10,8 s en una sola vuelta (cargas 43457199398 / 43460154153; tope propio 10 s; antes 19 s solo los activos).
       No bloquea a nadie (corre aparte y la pantalla lee el resultado), pero con más ciudades crece: hacerlo por partes (solo lo que cambió desde la vuelta
-      anterior) con lo diferido del vecino. (9b-3, 13 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m: el barrido por partes._
+      anterior) con lo diferido del vecino. (9b-3, 13 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m: el barrido por partes._ — _19 nov (9t): por partes: 0190 (activos de una pasada en vez de tres), 0191 (tres partes medibles) y 0192 (rangos y Recomendados cada 10 min; activos cada hora con tope propio de 15 s). Carga 44577890861: rangos 0,7 s, activos 7,5 s, Recomendados 0,5 s (en un runner ~1,5× más lento que el de 44571463348). Se cierra con la carga siguiente dentro de los dos topes._
 - [ ] **→ 9t** · **Lo de una sola vuelta varía en el runner de GitHub** (la base y la carga en la misma máquina de 4 núcleos, disco compartido): entre dos corridas
       iguales, la subida de 500 escaneos 1,35 → 2,2 s, el barrido 8,6 → 10,8 s, el ritmo de posiciones 2 860 → 673 ms. Antes de encender producción, correr
       `scripts/carga` contra una base del tamaño de la de producción (la misma máquina que se contrate) y dejar ahí los presupuestos de las líneas movidas

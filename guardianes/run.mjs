@@ -9772,6 +9772,12 @@ const guardianes = {
     if (/foreach\s+\w+\s+in\s+array/i.test(f) || /\bloop\b/i.test(f)) falla(G, "packages/db/migrations", 0, "com_cifras_resumir vuelve a recorrer los períodos uno por uno (una pasada para 7, 30 y 90)");
     if (!/max\(z\.at\)/.test(f) || !/join \(values \(7\), \(30\), \(90\)\) as p\(d\)/.test(f)) falla(G, "packages/db/migrations", 0, "los activos salen de la última actividad por vecino y ciudad, contada para los tres cortes");
     if ((f.match(/::date - 89\)/g) ?? []).length !== 3) falla(G, "packages/db/migrations", 0, "las tres fuentes (publicaciones, comentarios, votos) leen la misma ventana de 90 días");
+    // 0192 · Por partes: rangos y Recomendados cada 10 min; activos cada hora (com_cifras_al_dia), y la carga mide cada parte con su presupuesto.
+    const aldia = ultimaFn("com_cifras_al_dia");
+    if (!/interval '10 minutes'\) then\s+n := n \+ com_rangos_resumir\(\) \+ com_recomendados_resumir\(\);/.test(aldia)) falla(G, "packages/db/migrations", 0, "com_cifras_al_dia: rangos y Recomendados cada 10 minutos");
+    if (!/com_activos_cache where refreshed_at > now\(\) - interval '60 minutes'\) then\s+n := n \+ com_activos_resumir\(\);/.test(aldia)) falla(G, "packages/db/migrations", 0, "com_cifras_al_dia: activos cada hora, aparte");
+    const carga = readFileSync("scripts/carga/comunidad-1m.mjs", "utf8");
+    if (!/medir\("barrido-comunidad", \{ linea: "L631", presupuesto: 10000/.test(carga) || !/medir\("barrido-activos", \{ linea: "L631", presupuesto: 15000/.test(carga)) falla(G, "scripts/carga/comunidad-1m.mjs", 0, "la carga mide cada parte del barrido con su presupuesto (10 s cada 10 min; 15 s los activos cada hora)");
     if (!/el resumen de activos \(una pasada\) da lo mismo que la regla/.test(readFileSync("pruebas/e2e/com5e.cjs", "utf8"))) falla(G, "pruebas/e2e/com5e.cjs", 0, "com5e no compara el resumen con com_activos_por_rango");
   },
 

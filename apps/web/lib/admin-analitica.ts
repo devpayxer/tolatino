@@ -357,7 +357,7 @@ export async function comunidadAnalitica(s: Alcance, dias: number) {
               coalesce(sum(a.preguntas), 0)::int as preguntas, coalesce(sum(a.resueltas), 0)::int as resueltas, coalesce(sum(a.reportes), 0)::int as reportes
          from cities ci left join com_analitica_dia_cache a on a.city_id = ci.id and a.dia >= ${DESDE}
         where ${scope("ci.id")} group by ci.id, ci.name having ci.id = any(array(select id from cities where status = 'on')) or coalesce(sum(a.publicaciones), 0) > 0 order by ci.name`, [s.cities, dias]),
-    // 9b-3 · 7 · 30 · 90 días: del resumen por ciudad (com_activos_cache, cada 10 min; juntar a todos los que publicaron, comentaron o votaron
+    // 9b-3 · 7 · 30 · 90 días: del resumen por ciudad (com_activos_cache, cada hora desde 0192; juntar a todos los que publicaron, comentaron o votaron
     // tardaba 1,3 s con 1 M de vecinos). Otro período, en el momento.
     [7, 30, 90].includes(dias)
       ? dbAnalisis().query<{ rango: number; activos: number; nombre: string | null }>(

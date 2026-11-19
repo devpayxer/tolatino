@@ -5722,3 +5722,12 @@ dice «Foto». El aviso de la caja de Mensajes dice ahora «Texto y fotos, sin t
 - El Panel del negocio no lleva esqueleto (su menú vive dentro de la página): solo la barra.
 
 > **19 nov (tarde):** el área de toque de 44 px rehecha también se revirtió (falló en el CI). No está en el sandbox; se rehace.
+
+## Fase 9 · 9t — Comunidad con 1 M de vecinos: activos por rango cada hora (19 nov) — decidido por mí, reversible
+- **Qué cambió:** en Super Admin › Analítica › Comunidad, «Vecinos activos por rango» (7, 30 y 90 días) ahora se pone al día **cada hora**
+  (antes cada 10 minutos). Otro período sigue calculándose al abrirlo. Rangos por ciudad, monedas en circulación y Recomendados siguen cada 10 min.
+- **Por qué:** con 1 M de vecinos esa cuenta era el 85 % del barrido de la Comunidad (7,5 s de 8,7 en la carga 44577890861) y el barrido se pasaba
+  de su tope de 10 s. Es una cifra acumulada de días para el equipo; nadie la espera al momento. Ahora la vuelta de 10 min es ~1,2 s y la de
+  los activos tiene su tope propio (15 s, una vez por hora). El resultado es el mismo número que antes (com5e lo compara en cada corrida).
+- **Si prefieres cada 10 min:** se cambia una línea (0192). Ayuda de Analítica al día (ES/EN).
+- **Qué mirar:** nada en pantalla; la cifra solo tarda hasta una hora en moverse.

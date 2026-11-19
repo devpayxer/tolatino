@@ -2940,3 +2940,7 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   los cortes de 7, 30 y 90) en vez de tres. Local (105 mil publicaciones, 526 mil comentarios, 306 mil votos): 2,4–2,9 s → 1,5 s, el mismo
   resultado fila por fila y 0 diferencias contra `com_activos_por_rango` en cada ciudad y período (98 filas). com5e lo compara en cada corrida
   (63 ✓ local). Guardián **resumenComunidadUnaPasada**, alreves9tresumen 4/4. La medida con 1 M va en la carga de la Comunidad.
+- **19 nov · 9t · Barrido de la Comunidad por partes** (0191 + 0192): la carga 44577890861 midió cada parte con 1 M (rangos 0,7 s · activos 7,5 s ·
+  Recomendados 0,5 s; el total 11,7 s en un runner lento: «contenido» y «categoría» también salieron ~1,5× más lentos sin tocarlos). Rangos y
+  Recomendados siguen cada 10 min (tope 10 s); los activos por rango 7/30/90 pasan a cada hora con tope propio de 15 s (REVISION: decidido por mí,
+  reversible). Ayuda de Analítica ES/EN al día. Guardián resumenComunidadUnaPasada ampliado, alreves9tresumen 7/7.

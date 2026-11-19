@@ -15,7 +15,8 @@ export async function comunidadAlDia(): Promise<number> {
   return (await db().query<{ n: number }>(`select com_analitica_al_dia() as n`)).rows[0]?.n ?? 0;
 }
 
-/* 9b-3 · Los resúmenes de la Comunidad (rangos y monedas por ciudad, activos por rango, candidatos de Recomendados) cada 10 minutos. */
+/* 9b-3 · Los resúmenes de la Comunidad: rangos y monedas por ciudad y candidatos de Recomendados cada 10 minutos; activos por rango (7 · 30 · 90 días)
+   cada hora (0192: con 1 M de vecinos son el 85 % del barrido). */
 export async function comunidadCifrasAlDia(): Promise<number> {
   return (await db().query<{ n: number }>(`select com_cifras_al_dia() as n`)).rows[0]?.n ?? 0;
 }

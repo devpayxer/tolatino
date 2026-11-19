@@ -9,6 +9,8 @@ const casos = [
   [G, M, 'return com_rangos_resumir() + com_activos_resumir() + com_recomendados_resumir();', 'return com_rangos_resumir() + com_activos_resumir();'],
   [G, M, 'select z.c, z.u, max(z.at) as at', 'select z.c, z.u, min(z.at) as at'],
   [G, M, "where v.created_at >= ((now() at time zone 'America/New_York')::date - 89)", "where v.created_at >= ((now() at time zone 'America/New_York')::date - 29)"],
+  [G, 'packages/db/migrations/0192_comunidad_activos_cada_hora.sql', "com_activos_cache where refreshed_at > now() - interval '60 minutes'", "com_activos_cache where refreshed_at > now() - interval '10 minutes' and false"],
+  [G, 'scripts/carga/comunidad-1m.mjs', 'medir("barrido-activos", { linea: "L631", presupuesto: 15000', 'medir("barrido-activos", { linea: "L631"'],
   [G, 'pruebas/e2e/com5e.cjs', 'el resumen de activos (una pasada) da lo mismo que la regla', 'el resumen'],
 ];
 let bien = 0, total = 0;

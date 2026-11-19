@@ -43,7 +43,8 @@ levantadas** (de las decididas), **monedas emitidas** (bienvenida y premios) y *
 **canjes** y **canjes por negocio**, **vecinos activos por rango** (publicaron, comentaron o votaron) y **por ciudad**. Solo cifras: sale
 de vistas por ciudad y día que no tienen personas; nunca quién publicó, votó o canjeó. Lo de la cuenta oficial no cuenta como publicación
 de vecinos. **Las cifras se ponen al día cada 10 minutos** (un resumen por ciudad y día que el sistema rehace solo para los últimos 40 días; lo
-que pasó hace más tiempo ya no cambia): algo que se publicó hace un momento puede tardar hasta 10 minutos en sumarse.
+que pasó hace más tiempo ya no cambia): algo que se publicó hace un momento puede tardar hasta 10 minutos en sumarse. Los **vecinos activos por rango** de 7, 30 y 90 días
+se ponen al día **cada hora** (con muchos vecinos es la cuenta más pesada); otro período se calcula al abrirlo.
 
 ## Qué se cuenta y qué no
 | Se guarda | No se guarda |
@@ -76,7 +77,7 @@ prioridad y una persona la mira en el registro oficial; el sello cambia cuando d
 
 **¿Dónde están vendido, comisión y operaciones?** En la pestaña **Dinero**; los rangos y lo de la comunidad, en **Comunidad**.
 
-**¿Por qué una cifra no cambió al momento?** Dinero, Eventos, El Compa y Soporte, la retención y la Comunidad se ponen al día cada 10 minutos.
+**¿Por qué una cifra no cambió al momento?** Dinero, Eventos, El Compa y Soporte, la retención y la Comunidad se ponen al día cada 10 minutos. Los **activos por rango** de la Comunidad (7, 30 y 90 días) se ponen al día **cada hora**; otro período se calcula en el momento.
 
 ## Eventos
 - **De ver a ir:** vistas de eventos, guardados, RSVP (y personas), órdenes de boletos, boletos y cortesías, lista de espera y cuántos compraron.
@@ -197,7 +198,8 @@ rewards) and **redeemed** (and those returned for expired codes), **redemptions*
 (they posted, commented or voted) and **by city**. Figures only: it comes from views by city and day that have no people; never who posted, voted
 or redeemed. What the official account does does not count as neighbor posts. **The numbers are refreshed every 10 minutes** (a summary per city
 and day that the system rebuilds by itself for the last 40 days; what happened longer ago no longer changes): something posted a moment ago can
-take up to 10 minutes to be added.
+take up to 10 minutes to be added. **Active neighbors by rank** for 7, 30 and 90 days are refreshed **every hour** (with many neighbors it
+is the heaviest count); any other period is calculated when you open it.
 
 ### What is counted and what is not
 | Kept | Not kept |
@@ -230,7 +232,7 @@ priority and a person checks it in the official registry; the seal changes when 
 
 **Where are sold, commission and transactions?** In the **Money** tab; the ranks and community numbers are in **Community**.
 
-**Why did a number not change right away?** Money, Events, El Compa and Support, retention and Community are refreshed every 10 minutes.
+**Why did a number not change right away?** Money, Events, El Compa and Support, retention and Community are refreshed every 10 minutes. Community **active members by rank** (7, 30 and 90 days) are refreshed **every hour**; any other period is calculated on the spot.
 
 ### Events
 - **From viewing to going:** event views, saves, RSVPs (and people), ticket orders, tickets and comps, waitlist and how many bought. The "% of views"
