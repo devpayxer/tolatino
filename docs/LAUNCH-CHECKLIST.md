@@ -1953,7 +1953,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       devuelve o avisa fuera de la base; también lib (pedir reseña, patrocinios con `null`, barrido de colas) y el simulador de Cobros. Guardián
       `auditoriaEnLaTransaccion` (alreves9n22 10/10). Payloads iguales salvo `eventos.cancelar`/`eventos.fecha.cancelar`: `por_devolver` en vez de
       `devueltas`/`pendientes` (las devoluciones corren después en lotes; su avance está en `event_cancellations`).
-- [ ] **→ 9t** · **Botones que no caben a 320 px o con letra grande (fuera de la ficha):** la revisión local del 19 nov (pruebas/lib/caben.cjs contra
+- [x] **→ 9t** · **Botones que no caben a 320 px o con letra grande (fuera de la ficha):** la revisión local del 19 nov (pruebas/lib/caben.cjs contra
       Inicio, Negocios, Buscar, Eventos, Comunidad, Ciudad, Entrar) vio, solo a 320 o con letra grande en 320: el campo «Buscar en Hazleton» del
       encabezado (142 px en 130), tarjetas del riel de Inicio que pasan su caja por 7–40 px, «Entrar con mi teléfono» (251 en 244) y una fila de
-      Buscar. A 375 y 390 con letra normal, nada. Pasar `botonesQueNoCaben` a esas pantallas a 320 en la corrida de anchos y acomodarlas. (19 nov)
+      Buscar. A 375 y 390 con letra normal, nada. Pasar `botonesQueNoCaben` a esas pantallas a 320 en la corrida de anchos y acomodarlas. (19 nov) — _19 nov (después): con las filas de Buscar que se encogen (grid minmax(0,1fr)) y el área de toque, la misma revisión (botón contra su caja, sin contar los rieles que se desplazan) en Inicio, Negocios, Buscar, Eventos, Comunidad, Ciudad, Entrar, dos fichas y Mi cuenta, a 320/375/390 con letra normal y grande: ninguno se sale y ninguna página se mueve de lado. Lo de antes eran falsos (el logo y enlaces medidos por scrollWidth) y la fila de Buscar (arreglada). bus9t y fic005 lo siguen mirando._
