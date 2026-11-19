@@ -1,4 +1,5 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { hidratado } = require('../lib/hidratado.cjs');
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', N = '/n/sabor-dominicano', BIZ = 'sabor-dominicano';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"')}"`).toString().trim();
@@ -6,7 +7,7 @@ const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
 const shot = async (p, n, full = false) => { await p.waitForTimeout(450); await p.screenshot({ path: OUT + n, fullPage: full }); };
 // Pickup fijo con el carrito vacío (modoPropio): en teléfono y en escritorio.
-const pickupFijo = async (p) => { await p.evaluate(() => { localStorage.removeItem('tl-carrito-v1'); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); }); await p.reload(); };
+const pickupFijo = async (p) => { await p.evaluate(() => { localStorage.removeItem('tl-carrito-v1'); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); }); await p.reload({ waitUntil: 'domcontentloaded' }); await hidratado(p.locator('[data-screen-label^="Ficha"]').first()); };
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
 const fila = (p, nombre) => p.locator('[data-msec^="m-"]:not([data-msec="m-pop"]) div.grid').filter({ has: p.getByText(nombre, { exact: true }) }).last();
 const MARISOL = "(select id from users where phone='+15705550122')";
@@ -142,7 +143,7 @@ const MARISOL = "(select id from users where phone='+15705550122')";
 
   // Sin sesión: Ir a pagar abre la hoja «Entra para pedir» sobre la ficha (9m, AuthSheet bilingüe); el pedido se queda igual.
   const g = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); watch(g, 'anon');
-  await g.goto(B + N + '?tab=menu'); await pickupFijo(g); await g.locator('[data-screen-label="Ficha · menú"]').waitFor(); // modoPropio: sin sesión también (barajada, 18 nov)
+  await g.goto(B + N + '?tab=menu', { waitUntil: 'domcontentloaded' }); /* hito 19 nov: en el ancho 1024 el «load» de la ficha (fotos y video) no salió en 30 s; la prueba mira las piezas, no el «load» */ await pickupFijo(g); await g.locator('[data-screen-label="Ficha · menú"]').waitFor(); // modoPropio: sin sesión también (barajada, 18 nov)
   await fila(g, 'Aguacate').getByRole('button', { name: 'Agregar' }).click();
   await g.locator('[data-screen-label="Ficha · barra del pedido"]').click();
   await g.locator('[data-screen-label="Menú · tu pedido"]').getByText(/^Ir a pagar/).click();

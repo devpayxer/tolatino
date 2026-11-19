@@ -1,4 +1,5 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { hidratado } = require('../lib/hidratado.cjs');
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', BIZ = 'sabor-dominicano', P = '/panel/' + BIZ;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"')}"`).toString().trim();
@@ -102,7 +103,7 @@ const st = (n) => sql(`select status||'|'||coalesce(stage,'-') from operations w
   // 6 · Pedidos en línea: aceptar al instante y tiempo de preparación
   await d.goto(B + P + '/vendes'); await d.getByText('Pedidos en línea', { exact: true }).first().waitFor(); await shot(d, 'c9-vendes-d.png');
   await d.goto(B + P + '/vendes/pedidos'); await d.getByText('CÓMO ACEPTAS', { exact: true }).waitFor();
-  await d.getByText('Aceptar pedidos al instante', { exact: true }).locator('xpath=ancestor::div[.//*[@role="switch"]][1]').getByRole('switch').click();
+  await (await hidratado(d.getByText('Aceptar pedidos al instante', { exact: true }).locator('xpath=ancestor::div[.//*[@role="switch"]][1]').getByRole('switch'))).click();
   await d.getByText('Tiempo de preparación', { exact: true }).locator('xpath=ancestor::div[.//*[substring(@aria-label, string-length(@aria-label)) = "+"]][1]').getByRole('button', { name: '+' }).click();
   await shot(d, 'c10-pedidos-en-linea-d.png', true);
   await d.getByText('Guardar', { exact: true }).last().click(); await d.getByText('Guardado · el cliente ya lo ve así.').waitFor();

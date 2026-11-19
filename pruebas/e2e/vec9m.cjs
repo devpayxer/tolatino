@@ -13,6 +13,7 @@
 // retiros de esta corrida (se quitan al final); el huso de Hazleton donde ahora es de día para el barrido (vuelve al final). Cuenta solo sus filas (corre barajada y
 // dos veces seguidas).
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { hidratado } = require('../lib/hidratado.cjs');
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
 const { entrarComo, telLibre } = require('../lib/negocio-nuevo.cjs');
 const B = ENT.B, OUT = ENT.OUT;
@@ -136,7 +137,7 @@ const desk = (b, extra = {}) => b.newContext({ viewport: { width: 1360, height: 
     sql(`update items set avail = 'siempre' where business_id = '${BIZ}' and name->>'es' = 'Pescado frito'`);
     process.on('exit', () => sql(`update items set avail = '${avPF}' where business_id = '${BIZ}' and name->>'es' = 'Pescado frito'`));
     await pd.goto(B + `/n/${BIZ}?tab=menu`); await pd.evaluate(() => { localStorage.removeItem('tl-carrito-v1'); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); }); await pd.reload();
-    await vis(pd, 'Pescado frito').click();
+    await (await hidratado(vis(pd, 'Pescado frito'))).click();
     ok(await espera(async () => (await pd.locator('[data-bloque="lleva"]').count()) > 0), 'la hoja del plato trae «Lleva o es»');
     ok(/PESCADO O MARISCOS/.test(await pd.locator('[data-bloque="lleva"]').innerText()), 'con lo que marcó el panel (pescado o mariscos)');
     await shot(pd, 'plato-lleva-1360', false);
