@@ -112,7 +112,7 @@ const limpiar = () => {
 
     // ── 3 · Topes del servidor ──
     ok(await subirCrudo(m, 'text/plain', 64) === 415, 'un archivo que no es foto: 415');
-    ok(await subirCrudo(m, 'image/jpeg', 13 * 1024 * 1024) === 413, 'más de 12 MB: 413');
+    { const st = await subirCrudo(m, 'image/jpeg', 13 * 1024 * 1024); ok(st === 413, 'más de 12 MB: 413 (' + st + ')'); }
     ok(await subirCrudo(m, 'image/jpeg', 256) === 415, 'una «foto» que no se abre: 415');
 
     // ── 4 · El negocio manda solo una foto; el equipo la quita con motivo ──

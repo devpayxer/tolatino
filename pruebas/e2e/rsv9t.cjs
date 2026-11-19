@@ -1,7 +1,7 @@
 // 9t · Reservación de mesa · la pantalla «no pudo» (LAUNCH «Avísame si se libera (lista de espera) y Otros restaurantes con mesa»; prototipo rsvStVals).
 // Teléfono 390 y escritorio 1360, ES y EN.
 // 1 · Sabor Dominicano con UNA mesa de 2 (la prueba lo deja así y lo devuelve al final): Bea tiene mañana a las 7:00 PM; la solicitud de Ana para la
-//     misma hora «no pudo». En su pantalla: «Otros restaurantes con mesa» (Casa Borinquen sí; Cantina Don Beto, en pausa de To'Latino, nunca; Sabor
+//     misma hora «no pudo». En su pantalla: «Otros restaurantes con mesa» (El Fogón sí; Mariscos La Bahía, en pausa de To'Latino, nunca; Casa Borinquen, de Noche, nunca: solo restaurantes; Sabor
 //     Dominicano tampoco) y «Avísame si se libera a esa hora». Ana se anota (una entrada viva; otra igual la base no la deja). Carla, con su propio «no
 //     pudo» a la misma hora, se anota DESPUÉS.
 // 2 · Mi cuenta › Avisos › Tus alertas: «Mesa en Sabor Dominicano» con «Quitar».
@@ -14,11 +14,11 @@
 // 7 · Super Admin › Transacciones (Ana del equipo, 1360): la reservación con «lista de espera: tomó la mesa».
 // 8 · ES/EN y 390/1360 de la pantalla «no pudo» sin scroll de lado.
 // Precondiciones propias: personas nuevas con teléfonos 555 libres y sin silencio (prefs quiet=false: la prueba no depende de la hora); el horario y las
-// mesas de Sabor Dominicano, el horario de Casa Borinquen y de Cantina Don Beto y la pausa de esta última se devuelven al final.
+// mesas de Sabor Dominicano, el horario y las Reservaciones de El Fogón y de Mariscos La Bahía y la pausa de esta última se devuelven al final.
 const ENT = require('../lib/entorno.cjs');
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const { entrarComo, telLibre, abiertoTodoElDia } = require('../lib/negocio-nuevo.cjs');
-const B = ENT.B, OUT = ENT.OUT, BIZ = 'sabor-dominicano', OTRO = 'casa-borinquen', PAUSA = 'cantina-don-beto';
+const B = ENT.B, OUT = ENT.OUT, BIZ = 'sabor-dominicano', OTRO = 'el-fogon', PAUSA = 'mariscos-la-bahia';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -qAt -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 const sqlErr = (q) => { try { sql(q); return ''; } catch (e) { return String(e.stderr ?? e.message); } };
 let n = 0; const ok = (x, m) => { if (!x) throw new Error('ASSERT ' + m); n++; console.log('  ✓', m); };
@@ -46,11 +46,15 @@ const avisos = (u) => Number(sql(`select count(*) from notifications where user_
   const ajustes0 = sql(`select json_build_object('areas', areas, 'join', join_tables, 'min', min_ahead_h)::text from reservation_settings where business_id = '${BIZ}'`);
   const devolver = [abiertoTodoElDia(BIZ), abiertoTodoElDia(OTRO), abiertoTodoElDia(PAUSA)];
   const pausa0 = sql(`select coalesce(modules_off, '{}'::jsonb)::text from businesses where id = '${PAUSA}'`);
+  // Los dos restaurantes toman reservaciones mientras dura la prueba (se devuelve como estaba); Casa Borinquen (Noche) también toma mesa: nunca sale.
+  const mods0 = Object.fromEntries([OTRO, PAUSA].map((x) => [x, sql(`select coalesce(array_to_json(modules_on), '[]')::text from businesses where id = '${x}'`)]));
+  const devolverMods = () => { for (const [x, m] of Object.entries(mods0)) sql(`update businesses set modules_on = array(select json_array_elements_text('${m}'::json)) where id = '${x}'`); };
   const b = await chromium.launch(); const err = [];
   const mirar = (p, tag) => { p.on('pageerror', (e) => err.push(tag + ' ' + e.message)); };
   try {
     sql(`update reservation_settings set areas = '{"salon":{"on":true,"t":{"2":1,"4":0,"6":0,"8":0}},"terraza":{"on":false,"t":{"2":0,"4":0,"6":0,"8":0}},"barra":{"on":false,"t":{"2":0,"4":0,"6":0,"8":0}}}'::jsonb,
          join_tables = false, min_ahead_h = 1 where business_id = '${BIZ}'`);
+    sql(`update businesses set modules_on = array(select distinct unnest(modules_on || '{rsv}'::text[])) where id in ('${OTRO}', '${PAUSA}')`);
     sql(`update businesses set modules_off = coalesce(modules_off, '{}'::jsonb) || '{"rsv":{"reason":"rsv9t"}}'::jsonb where id = '${PAUSA}'`);
     sql(`delete from reservation_holds where business_id = '${BIZ}'`);
     // Lo que una corrida anterior dejó vivo a esa hora (de nadie de esta prueba) se cancela, para que la única mesa quede para Bea.
@@ -70,8 +74,9 @@ const avisos = (u) => Number(sql(`select count(*) from notifications where user_
     await otros.waitFor();
     const tOtros = (await otros.innerText()).replace(/\s+/g, ' ');
     ok(/OTROS RESTAURANTES CON MESA/.test(tOtros), '«Otros restaurantes con mesa» en la pantalla «no pudo»');
-    ok(/Casa Borinquen/.test(tOtros), 'sale un restaurante de la misma ciudad con mesa a esa hora (Casa Borinquen)');
-    ok(!/Cantina Don Beto/.test(tOtros), 'nunca uno con Reservaciones en pausa de To\'Latino');
+    ok(/El Fogón/.test(tOtros), 'sale un restaurante de la misma ciudad con mesa a esa hora (El Fogón): ' + tOtros.slice(0, 200));
+    ok(!/Mariscos La Bahía/.test(tOtros), 'nunca uno con Reservaciones en pausa de To\'Latino');
+    ok(!/Casa Borinquen|Karaoke|Lounge/.test(tOtros), 'solo restaurantes: un lugar de Noche que también toma mesa no sale');
     ok(!/Sabor Dominicano/.test(tOtros), 'nunca el mismo restaurante que no pudo');
     ok((await otros.locator('button, [role=button]').count()) <= 5, 'la lista lleva tope (≤ 5)');
     await shot(pa, 'nopudo-390-es');
@@ -171,6 +176,7 @@ const avisos = (u) => Number(sql(`select count(*) from notifications where user_
     sql(`update reservation_settings set areas = '${JSON.stringify(a0.areas)}'::jsonb, join_tables = ${a0.join}, min_ahead_h = ${a0.min} where business_id = '${BIZ}'`);
     sql(`update businesses set modules_off = '${pausa0}'::jsonb where id = '${PAUSA}'`);
     for (const f of devolver) f();
+    devolverMods();
     await b.close();
   }
   console.log(`\n${n} comprobaciones ✓`);

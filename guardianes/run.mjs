@@ -11278,6 +11278,8 @@ const guardianes = {
     for (const [re, msg] of [
       [/join businesses b on b\.city_id = o\.city_id/, "solo los de la MISMA ciudad del restaurante que no pudo"],
       [/b\.id <> \$1/, "nunca el mismo restaurante que no pudo"],
+      [/b\.category_id = o\.category_id/, "solo de la MISMA categoría (un restaurante lleno ofrece restaurantes, nunca un karaoke o un bar de Noche)"],
+      [/with o as \(select city_id, category_id,/, "la categoría sale del negocio que no pudo"],
       [/b\.status = 'active'/, "solo negocios activos (ni cerrados, ni ocultos, ni suspendidos, ni en cierre temporal)"],
       [/st\.plan = 'pro'/, "Reservaciones es de Pro"],
       [/'rsv' = any\(b\.modules_on\)/, "solo con Reservaciones encendido"],

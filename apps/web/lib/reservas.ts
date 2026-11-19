@@ -715,7 +715,8 @@ export async function motorMesa(c: Q, negocio: string) {
   };
 }
 
-/* «Otros restaurantes con mesa» (prototipo rsvStVals.others): los de la MISMA ciudad que toman reservaciones en línea (activos, Pro, con
+/* «Otros restaurantes con mesa» (prototipo rsvStVals.others): los de la MISMA ciudad y la MISMA categoría (un restaurante lleno ofrece otros
+   restaurantes, nunca un karaoke o un bar de noche, que también toman mesa: 19 nov, rsv9t lo cazó) que toman reservaciones en línea (activos, Pro, con
    Reservaciones encendido y sin pausa de To'Latino), con mesa ese día para ese grupo; de cada uno, la hora libre más cercana a la pedida. El
    servidor decide con el mismo motor que «Elegir hora». Sin N+1: hasta 24 candidatos, los más cercanos, en 6 lecturas en total; salen hasta 5. */
 export type OtroConMesa = { id: string; nombre: string; foto: string | null; r: string | null; mi: number | null; sub: string | null; i: number; h: number };
@@ -726,7 +727,7 @@ export async function otrosConMesa(negocio: string, ymd: string, h: number, p: n
   const ok = (n: number, a: number) => Number.isFinite(n) && Math.abs(n) <= a;
   const pt = desde && ok(desde.lat, 90) && ok(desde.lng, 180) ? desde : null;
   const r = await db().query<FilaCtx & { r: string | null; mi: number | null; sub: string | null; url: string | null }>(
-    `with o as (select city_id, case when $2::float8 is null or $5::text is distinct from city_id then geo else st_setsrid(st_makepoint($3::float8, $2::float8), 4326)::geography end as g
+    `with o as (select city_id, category_id, case when $2::float8 is null or $5::text is distinct from city_id then geo else st_setsrid(st_makepoint($3::float8, $2::float8), 4326)::geography end as g
                 from businesses where id = $1)
      select ${COLS_CTX}, st.rating_avg::text as r,
             case when b.geo is null or o.g is null then null else round((st_distance(b.geo, o.g) / 1609.34)::numeric, 1)::float end as mi,
@@ -734,7 +735,7 @@ export async function otrosConMesa(negocio: string, ymd: string, h: number, p: n
             (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1) as url
        from o join businesses b on b.city_id = o.city_id join cities ci on ci.id = b.city_id join business_stats_cache st on st.business_id = b.id
        left join reservation_settings rs on rs.business_id = b.id
-      where b.id <> $1 and b.status = 'active' and st.plan = 'pro' and 'rsv' = any(b.modules_on) and not (coalesce(b.modules_off, '{}'::jsonb) ? 'rsv')
+      where b.id <> $1 and b.category_id = o.category_id and b.status = 'active' and st.plan = 'pro' and 'rsv' = any(b.modules_on) and not (coalesce(b.modules_off, '{}'::jsonb) ? 'rsv')
       order by b.geo <-> o.g nulls last, b.id limit ${OTROS_CANDIDATOS}`, [negocio, pt?.lat ?? null, pt?.lng ?? null, lang === "en" ? "en" : "es", pt?.ciudad ?? null]);
   if (!r.rows.length) return [];
   const ids = r.rows.map((b) => b.id), hoy = r.rows[0]!.hoy;

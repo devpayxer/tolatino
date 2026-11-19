@@ -33,7 +33,9 @@ export async function POST(req: NextRequest) {
   if (n >= FOTOS_MSJ_HORA) return err(429, "Mandaste muchas fotos seguidas. Prueba en un rato.", "You sent too many photos in a row. Try again later.");
   const fd = await req.formData().catch(() => null), f = fd?.get("foto"), kind = fd?.get("para") === "dm" ? "dm" : "chat";
   if (kind === "dm" && !(await enComunidad(me.id)).ok) return err(403, "Antes de mandar fotos, termina tu bienvenida a la Comunidad.", "Before sending photos, finish your Community welcome.");
-  if (!(f instanceof File) || f.size === 0 || f.size > MAX_FOTO_MSJ) return err(400, "No llegó la foto.", "The photo did not arrive.");
+  if (!(f instanceof File) || f.size === 0) return err(400, "No llegó la foto.", "The photo did not arrive.");
+  // El tamaño se mira también aquí: un navegador que no manda content-length por adelantado (el iPad en el CI) llega hasta acá con 13 MB.
+  if (f.size > MAX_FOTO_MSJ) return err(413, "La foto pesa demasiado (máximo 12 MB).", "The photo is too large (12 MB max).");
   if (f.type && !/^image\//.test(f.type)) return err(415, "Eso no parece una foto. Prueba con otra.", "That doesn’t look like a photo. Try another one.");
   let img: Buffer, w = 0, h = 0;
   try {

@@ -44,9 +44,10 @@ const casos = [
   // de cualquier ciudad
   [O, RS, "join businesses b on b.city_id = o.city_id", "join businesses b on true"],
   // el mismo restaurante que no pudo
-  [O, RS, "where b.id <> $1 and b.status = 'active'", "where b.status = 'active'"],
+  [O, RS, "where b.id <> $1 and b.category_id = o.category_id and b.status = 'active'", "where b.category_id = o.category_id and b.status = 'active'"],
+  [O, RS, "where b.id <> $1 and b.category_id = o.category_id and b.status", "where b.id <> $1 and b.status"],
   // cerrados o suspendidos
-  [O, RS, "where b.id <> $1 and b.status = 'active' and st.plan", "where b.id <> $1 and st.plan"],
+  [O, RS, "b.category_id = o.category_id and b.status = 'active' and st.plan", "b.category_id = o.category_id and st.plan"],
   // sin Pro
   [O, RS, "and st.plan = 'pro' and 'rsv'", "and 'rsv'"],
   // con Reservaciones en pausa de To'Latino

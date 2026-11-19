@@ -2796,6 +2796,11 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   fic005, vec9m, al revés), 44460944263 (llave). En el camino: «Destacar» decía el tope viejo de la caché (bug, arreglado; también en negocios);
   evt9t, pat003 y alreves6f al día; serieUnaVezEnLista mira las dos lecturas de eventosCiudad. La app se sirve en local
   (`tl_loc` + `servir.sh basico` + docker falso que manda el SQL de las pruebas a la base local) para reproducir sin esperar a CI.
+- **19 nov · «Otros restaurantes con mesa» solo de la misma categoría** (rsv9t lo cazó en CI): salían los 5 más cercanos con Reservaciones de
+  CUALQUIER categoría (karaokes y bares de Noche, que también toman mesa) y un restaurante lleno ofrecía un karaoke. `otrosConMesa` filtra
+  `b.category_id = o.category_id`; guardián otrosConMesaDeLaCiudad (+2 reglas), alreves9t2 32/32; rsv9t usa El Fogón (sí) y Mariscos La Bahía
+  (en pausa) y comprueba que ningún lugar de Noche sale. Local: rsv9t 38 ✓. **Foto de Mensajes de más de 12 MB:** si el navegador no manda el
+  tamaño por adelantado (iPad en CI) la ruta respondía 400; ahora 413 también después de leerla (msg9t y dm9t dicen qué llegó).
 - **19 nov · 9t · Mensajes: fotos subidas y nunca mandadas:** el barrido (`fotosSinEnviar` → `lib/mensajes-purga.ts`) saca del almacén privado la
   foto con owner_id 'pendiente' de más de 24 h (las mismas 24 h en que tomarFoto deja mandarla) y la fila queda con purged_at/«sin_enviar»; una
   enviada nunca se toca. msg9t §5b (CI: necesita el almacén), guardián `fotosSinEnviarSePurgan`, `alreves9tpurga` 6/6; ayuda mensajes.md ES/EN.

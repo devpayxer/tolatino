@@ -269,7 +269,7 @@ const limpiar = () => {
       ok(r503 !== 503, 'el almacén de fotos responde (sin él, F2 no puede probar la subida de verdad)');
       ok(r503 === 415, 'una «foto» que no se abre: 415');
       ok(await subirCrudo(a, 'text/plain', 64) === 415, 'un archivo que no es foto: 415');
-      ok(await subirCrudo(a, 'image/jpeg', 13 * 1024 * 1024) === 413, 'más de 12 MB: 413');
+      { const st = await subirCrudo(a, 'image/jpeg', 13 * 1024 * 1024); ok(st === 413, 'más de 12 MB: 413 (' + st + ')'); }
       await a.goto(B + '/comunidad/mensajes/' + RB); await a.getByLabel('Tu mensaje').waitFor();
       await a.locator('input[type=file]').setInputFiles(FOTO); await a.locator('[data-chat-adjunto]').waitFor({ timeout: 20000 });
       await clic(a.getByRole('button', { name: 'Enviar' }));
