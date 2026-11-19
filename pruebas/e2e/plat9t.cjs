@@ -5,8 +5,12 @@
 // 4 · Quitar desde la hoja pone removed_at (la fila queda); volver a guardar crea una fila nueva viva.
 // 5 · Un plato oculto por To'Latino: la lista dice «No disponible» sin precio ni «Pedir» y no se rompe; «Editar» → «Quitar» lo quita (removed_at).
 // 6 · 1360: la ventana del plato con su corazón; la lista en escritorio. EN: «Save dish», «Dishes & products», «NOT AVAILABLE».
-// Precondiciones propias: Sabor Dominicano Pro con «Mofongo de chicharrón» vivo y abierto todo el día (su horario vuelve como estaba al final); una
-// persona nueva con teléfono 555 libre. El plato vuelve a su estado. Las filas de item_saves son de esa persona nueva (nada se borra). Cuenta solo
+// 7 · Mercados y Tiendas (decisión del 19 nov): el mismo corazón en la hoja del producto de Supermercado La Cosecha («Pollo entero», por libra) y en la
+//     del artículo de Boutique Yaritza («Cartera»), a la izquierda de la barra de la hoja; sin sesión a /entrar y de vuelta (?producto=); en la lista
+//     «$X/lb» y la acción de su módulo («Pedir»/«Ver» el mercado, «Apartar» la tienda) que abre la hoja; un artículo oculto, «No disponible».
+// Precondiciones propias: Sabor Dominicano Pro con «Mofongo de chicharrón» vivo y abierto todo el día (su horario vuelve como estaba al final); La
+// Cosecha con «Pollo entero» y Boutique Yaritza con «Cartera» (Pro, vivos); una persona nueva con teléfono 555 libre. El plato y los productos
+// vuelven a su estado. Las filas de item_saves son de esa persona nueva (nada se borra). Cuenta solo
 // sus filas (corre barajada y dos veces seguidas).
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { botonesQueNoCaben } = require('../lib/caben.cjs');
@@ -36,6 +40,17 @@ const pulsado = async (p) => (await corazon(p).getAttribute('aria-pressed')) ===
   if (MOF && st0 !== 'live|') sql(`update items set status = 'live', hidden_reason = null where id = ${MOF}`);
   ok(plan0 === 'pro' && MOF && cents > 0, `precondiciones: Sabor Dominicano Pro con «Mofongo de chicharrón» (${JSON.stringify({ plan0, MOF, cents })})`);
   const URL_PLATO = `${B}/n/${BIZ}?tab=menu&plato=${MOF}`;
+  // 7 · Mercado y tienda.
+  const MERC = 'supermercado-la-cosecha', TIEN = 'boutique-yaritza';
+  const POLLO = sql(`select id from items where business_id = '${MERC}' and module = 'shop' and name->>'es' = 'Pollo entero' and shop_kind = 'peso'`);
+  const CART = sql(`select id from items where business_id = '${TIEN}' and module = 'shop' and name->>'es' = 'Cartera'`);
+  const pSt0 = POLLO ? sql(`select status || '|' || coalesce(hidden_reason, '') from items where id = ${POLLO}`) : '', cSt0 = CART ? sql(`select status || '|' || coalesce(hidden_reason, '') from items where id = ${CART}`) : '';
+  if (POLLO && pSt0 !== 'live|') sql(`update items set status = 'live', hidden_reason = null where id = ${POLLO}`);
+  if (CART && cSt0 !== 'live|') sql(`update items set status = 'live', hidden_reason = null where id = ${CART}`);
+  const centsP = POLLO ? Number(sql(`select coalesce(oferta_precio(id, null), price_cents) from items where id = ${POLLO}`)) : 0, centsC = CART ? Number(sql(`select coalesce(oferta_precio(id, null), price_cents) from items where id = ${CART}`)) : 0;
+  ok(POLLO && CART && sql(`select string_agg(coalesce(s.plan, 'free'), ',' order by b.id) from businesses b left join business_stats_cache s on s.business_id = b.id where b.id in ('${MERC}', '${TIEN}')`) === 'pro,pro',
+    `precondiciones: La Cosecha con «Pollo entero» por libra y Boutique Yaritza con «Cartera», los dos Pro (${JSON.stringify({ POLLO, CART })})`);
+  const URL_POLLO = `${B}/n/${MERC}?tab=svc&producto=${POLLO}`, URL_CART = `${B}/n/${TIEN}?tab=shop&producto=${CART}`;
   const V1 = telLibre();
   const b = await chromium.launch(), err = [], abiertas = [];
   const mirar = (p, k) => { p.on('pageerror', (e) => err.push(`${k}: ${e.message}`)); };
@@ -106,7 +121,7 @@ const pulsado = async (p) => (await corazon(p).getAttribute('aria-pressed')) ===
     sql(`update items set status = 'hidden', hidden_reason = 'prueba plat9t' where id = ${MOF}`);
     await p.goto(B + '/cuenta/guardados?f=items'); await p.waitForLoadState('networkidle').catch(() => {});
     tx = await texto(p);
-    ok(tx.includes('Mofongo de chicharrón') && /NO DISPONIBLE/i.test(tx) && tx.includes('No disponible por ahora en el menú del negocio.'), 'un plato oculto sale con «No disponible» (la página no se rompe)');
+    ok(tx.includes('Mofongo de chicharrón') && /NO DISPONIBLE/i.test(tx) && tx.includes('No disponible por ahora en la página del negocio.'), 'un plato oculto sale con «No disponible» (la página no se rompe)');
     ok(!(await p.getByRole('button', { name: 'Pedir' }).count()) && !tx.includes(PRECIO), 'sin «Pedir» y sin precio');
     await shot(p, '390-guardados-no-disponible');
     await p.getByText('Editar', { exact: true }).click();
@@ -142,10 +157,64 @@ const pulsado = async (p) => (await corazon(p).getAttribute('aria-pressed')) ===
     sql(`update items set status = 'live', hidden_reason = null where id = ${MOF}`);
     await d.goto(URL_PLATO); await d.waitForLoadState('networkidle').catch(() => {});
     ok(await espera(async () => corazon(d).isVisible()) && (await corazon(d).getAttribute('aria-label')) === 'Save dish' && await pulsado(d), 'EN: aria-label «Save dish», marcado');
+
+    // ── 7 · Mercados y Tiendas ──
+    const vivo = (it) => sql(`select count(*) from item_saves where user_id = '${uid}' and item_id = ${it} and removed_at is null`);
+    const izquierda = (q) => q.evaluate(() => {
+      const h = document.querySelector('[role="dialog"] [data-guardar-plato]'), n = h?.nextElementSibling, a = h?.getBoundingClientRect(), r = n?.getBoundingClientRect();
+      return a && r ? { w: Math.round(a.width), h: Math.round(a.height), izq: a.right <= r.left, primero: h.parentElement.firstElementChild === h } : null;
+    });
+    await p0.goto(URL_POLLO); await p0.waitForLoadState('networkidle').catch(() => {});
+    ok(await espera(async () => p0.locator('[data-screen-label="Producto · Mercados"]').isVisible() && corazon(p0).isVisible()), 'mercado (?producto=): la hoja del producto abre con el corazón');
+    const cm = await izquierda(p0);
+    ok(cm && cm.w === 50 && cm.h === 50 && cm.izq && cm.primero, `mercado: el cuadro de 50 px a la izquierda de la barra de la hoja (${JSON.stringify(cm)})`);
+    ok((await corazon(p0).getAttribute('aria-label')) === 'Guardar producto' && !(await pulsado(p0)), 'mercado: «Guardar producto», aria-pressed false');
+    const malosM = await botonesQueNoCaben(p0);
+    ok(!malosM.length, `a 390 la barra de la hoja del mercado cabe (${malosM.join(' | ')})`);
+    await corazon(p0).click();
+    ok(await espera(async () => new URL(p0.url()).pathname === '/entrar') && new URL(p0.url()).searchParams.get('volver') === `/n/${MERC}?tab=svc&producto=${POLLO}`, 'mercado sin sesión: a /entrar y de vuelta a la hoja de ese producto');
+    await p.goto(URL_POLLO); await p.waitForLoadState('networkidle').catch(() => {});
+    ok(await espera(async () => corazon(p).isVisible()) && !(await pulsado(p)), 'mercado con cuenta: la hoja abre sin marcar');
+    await corazon(p).click();
+    ok(await espera(async () => pulsado(p)) && await espera(async () => vivo(POLLO) === '1'), 'mercado: guardar (aria-pressed true, una fila viva)');
+    ok(sql(`select city_id from item_saves where user_id = '${uid}' and item_id = ${POLLO} and removed_at is null`) === sql(`select city_id from businesses where id = '${MERC}'`), 'mercado: con la ciudad del negocio');
+    await shot(p, '390-mercado-guardado', false);
+    await p.reload(); await p.waitForLoadState('networkidle').catch(() => {});
+    ok(await espera(async () => pulsado(p)), 'mercado: al recargar sigue marcado (el servidor lo trae)');
+    await p.goto(URL_CART); await p.waitForLoadState('networkidle').catch(() => {});
+    ok(await espera(async () => p.locator('[data-screen-label="Tienda · artículo"]').isVisible() && corazon(p).isVisible()), 'tienda (?producto=): la hoja del artículo abre con el corazón');
+    const ct = await izquierda(p);
+    ok(ct && ct.w === 50 && ct.izq && ct.primero, `tienda: el cuadro a la izquierda de la barra de la hoja (${JSON.stringify(ct)})`);
+    ok((await corazon(p).getAttribute('aria-label')) === 'Guardar producto' && !(await pulsado(p)), 'tienda: «Guardar producto», sin marcar');
+    const malosT = await botonesQueNoCaben(p);
+    ok(!malosT.length, `a 390 la barra de la hoja de la tienda cabe (${malosT.join(' | ')})`);
+    await corazon(p).click();
+    ok(await espera(async () => pulsado(p)) && await espera(async () => vivo(CART) === '1'), 'tienda: guardar');
+    await shot(p, '390-tienda-guardado', false);
+    await p.goto(B + '/cuenta/guardados?f=items'); await p.waitForLoadState('networkidle').catch(() => {});
+    tx = await texto(p);
+    const lb = `$${(centsP / 100).toFixed(2)}/lb`, pc = `$${(centsC / 100).toFixed(2)}`;
+    ok(tx.includes('Platos y productos · 3') && tx.includes('Pollo entero') && tx.includes('SUPERMERCADO LA COSECHA') && tx.includes(lb), `la lista: el producto del mercado con «${lb}»`);
+    ok(tx.includes('Cartera') && tx.includes('BOUTIQUE YARITZA') && tx.includes(pc), `y el artículo de la tienda con ${pc}`);
+    ok(await p.getByRole('button', { name: 'Apartar' }).isVisible() && (await p.getByRole('button', { name: /^(Pedir|Ver)$/ }).count()) >= 2, 'acciones: «Apartar» la tienda y «Pedir»/«Ver» el plato y el mercado');
+    await shot(p, '390-guardados-productos');
+    await p.getByRole('button', { name: 'Apartar' }).click();
+    ok(await espera(async () => new URL(p.url()).pathname === `/n/${TIEN}` && new URL(p.url()).searchParams.get('producto') === CART), '«Apartar» abre la tienda con ?producto=');
+    ok(await espera(async () => p.locator('[data-screen-label="Tienda · artículo"]').isVisible()) && await espera(async () => pulsado(p)), 'con la hoja del artículo abierta y marcada');
+    sql(`update items set status = 'hidden', hidden_reason = 'prueba plat9t' where id = ${CART}`);
+    await p.goto(B + '/cuenta/guardados?f=items'); await p.waitForLoadState('networkidle').catch(() => {});
+    tx = await texto(p);
+    ok(/Cartera NO DISPONIBLE/i.test(tx) && tx.includes('No disponible por ahora en la página del negocio.') && !(await p.getByRole('button', { name: 'Apartar' }).count()), 'un artículo oculto: «No disponible», sin «Apartar»');
+    sql(`update items set status = 'live', hidden_reason = null where id = ${CART}`);
+    // 1360: la ventana del producto del mercado, marcada.
+    await d.goto(URL_POLLO); await d.waitForLoadState('networkidle').catch(() => {});
+    ok(await espera(async () => corazon(d).isVisible()) && (await corazon(d).getAttribute('aria-label')) === 'Save product' && await espera(async () => pulsado(d)), '1360 EN: la ventana del mercado con «Save product», marcada');
+    await shot(d, '1360-mercado-en', false);
     ok(!err.length, `sin errores de la página (${err.join(' | ')})`);
   } finally {
     for (const c of abiertas) await c.close().catch(() => {});
     await b.close();
+    for (const [it, s0] of [[POLLO, pSt0], [CART, cSt0]]) if (it && s0) { const [s, h] = s0.split('|'); sql(`update items set status = '${s || 'live'}', hidden_reason = ${h ? `'${h.replace(/'/g, "''")}'` : 'null'} where id = ${it}`); }
     if (MOF) { const [s, h] = st0.split('|'); sql(`update items set status = '${s || 'live'}', hidden_reason = ${h ? `'${h.replace(/'/g, "''")}'` : 'null'} where id = ${MOF}`); }
     for (const h of JSON.parse(horas0 || '[]')) sql(`update business_hours set open = ${h.o}, ranges = '${JSON.stringify(h.r)}'::jsonb where business_id = '${BIZ}' and module = '' and weekday = ${h.w}`);
   }

@@ -5740,5 +5740,8 @@ dice «Foto». El aviso de la caja de Mensajes dice ahora «Texto y fotos, sin t
   menú con el plato abierto). **Editar** → **Quitar**. Sin platos: el corazón con «Sin platos guardados».
 - **No disponible:** en el Super Admin oculta ese plato (o pausa el Menú del negocio): en tu lista sale **NO DISPONIBLE**, sin precio ni «Pedir», y la
   página no se rompe; lo puedes quitar. Al volver a mostrarlo, vuelve «Pedir».
-- **Decidido por defecto (AB):** el chip se llama «Platos y productos» como en el diseño, pero hoy solo guarda platos del menú de los restaurantes (la
-  hoja de Mercados y Tiendas es otra pieza: sin corazón por ahora). La lista muestra los últimos 100.
+- **Decidido por defecto (AB):** la lista muestra los últimos 100. (Mercados y Tiendas: abajo, con tu OK del 19 nov.)
+- **Mercados y Tiendas (mirar):** en Supermercado La Cosecha abre «Pollo entero»: abajo a la izquierda, el mismo corazón («Guardar producto»); en
+  Boutique Yaritza, «Cartera». En Guardados salen con «$1.29/lb» y **Pedir** (el mercado) y con su precio y **Apartar** (la tienda), que abren la hoja
+  de ese producto. Oculta la Cartera en el Super Admin: «NO DISPONIBLE», sin «Apartar». La hoja de la tienda de Auto, Hogar y Transporte es la misma:
+  también lleva el corazón.

@@ -6,12 +6,13 @@
    Tiendas, 4f-3). La tarjeta «Tu apartado» y la barra llevan a /n/{id}/apartar. */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import type { ArticuloVenta } from "@/lib/apartados";
 import type { ArticuloRenta } from "@/lib/rentas";
 import { cuotas, type ReglaPlan } from "@/lib/layaway-comun";
 import { PrecioAntes } from "./PrecioAntes";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { CorazonGuardar, useGuardados } from "./Corazon";
 
 type N = "Button" | "Tag" | "Chip" | "Icon" | "OptionGroup" | "DepositNote" | "ReservationCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,11 +30,14 @@ export const lineaValida = (V: ArticuloVenta[], l: { item: string; v?: string })
 /* C-008 · `c`: el menú «C» de la ficha nueva para las Tiendas (canvas «Menú con fotos»): «Lo más pedido» (`pop`, de verdad: lo que el negocio fija y lo
    más apartado en 30 días), cada artículo en su tarjeta con foto y +, y en el teléfono la barra negra «Ver lo que apartas». El + aparta directo lo que
    no tiene talla ni va en plan; lo demás abre la hoja de siempre. «Ver lo que apartas» lleva al apartado de siempre (pagas al recoger). */
-export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas, plan = null, c = false, pop = [] }: { L: ArticuloRenta[]; V: ArticuloVenta[]; negocio: string; es: boolean; mia: Mia; auto: boolean; tienda?: boolean; horas: number; plan?: ReglaPlan | null; c?: boolean; pop?: string[] }) {
+export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas, plan = null, c = false, pop = [], guardados, sesion = false, abrirInicial }: { L: ArticuloRenta[]; V: ArticuloVenta[]; negocio: string; es: boolean; mia: Mia; auto: boolean; tienda?: boolean; horas: number; plan?: ReglaPlan | null; c?: boolean; pop?: string[]; guardados?: string[]; sesion?: boolean; abrirInicial?: string }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [carro, setCarro] = useState<Carrito>([]), [hoja, setHoja] = useState<ArticuloVenta | null>(null), [qi, setQi] = useState(0), [ti, setTi] = useState<number | null>(null);
   const gomas = V.some((x) => x.size), [fSize, setFSize] = useState<"mine" | "all">(mia.goma && gomas ? "mine" : "all"), [fCond, setFCond] = useState<"all" | "n" | "u">("all");
   useEffect(() => { setCarro(leerCarrito(negocio).filter((l) => lineaValida(V, l))); }, [negocio, V]);
+  // 9t · Productos guardados (./Corazon): sin sesión, a entrar y de vuelta a la hoja de ese artículo (?tab=shop&producto=); el aviso, abajo de la hoja.
+  const gd = useGuardados(guardados, sesion, (id) => `/n/${negocio}?tab=shop&producto=${id}`, es), [avisoG, setAvisoG] = useState<string | null>(null);
+  const guardar = (id: string) => { void gd.cambiar(id).then((x) => { if (x) { setAvisoG(x); setTimeout(() => setAvisoG(null), 2600); } }); };
   const mine = fSize === "mine" && mia.goma;
   const ventas = V.filter((x) => !x.size || ((!mine || x.size === mia.goma!.size) && (fCond === "all" || x.cond === fCond)));
   const sinGoma = gomas && !ventas.some((x) => x.size);
@@ -44,6 +48,9 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas,
   const H = `${horas}`, enCarro = (a: ArticuloVenta) => carro.filter((l) => l.item === a.id).reduce((s, l) => s + l.qty, 0);
   const ab = mia.abiertos[0];
   const abrir = (x: ArticuloVenta) => { const l = carro.find((z) => z.item === x.id); setQi(Math.max(0, (l?.qty ?? 1) - 1)); const k = x.tallas.findIndex((t) => t.id === l?.v); setTi(k >= 0 ? k : x.tallas.length === 1 && x.tallas[0]!.quedan > 0 ? 0 : null); setHoja(x); };
+  // 9t · ?producto=<id> (de vuelta de entrar, o «Apartar» en Mi cuenta › Guardados): la hoja de ese artículo se abre una vez, si la tienda lo vende.
+  const abiertoIni = useRef(false);
+  useEffect(() => { if (abiertoIni.current || !abrirInicial) return; abiertoIni.current = true; const x = V.find((z) => z.id === abrirInicial); if (x && !(x.k === "plan" && !plan)) abrir(x); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const directo = (x: ArticuloVenta) => !x.tallas.length && x.k !== "plan" && x.quedan > 0;
   const mas = (x: ArticuloVenta) => { const q = enCarro(x); if (directo(x) && q < Math.min(3, x.quedan)) agregar(x, q + 1); else abrir(x); };
   const menos = (x: ArticuloVenta) => { const q = enCarro(x); if (directo(x) && q > 1) agregar(x, q - 1); else { const c2 = carro.filter((l) => l.item !== x.id); setCarro(c2); guardarCarrito(negocio, c2); } };
@@ -164,7 +171,9 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas,
                   {otros && <div className="mt-2.5 text-pretty text-[12px] font-semibold leading-[1.45] text-pro-ink">{E2("Lo que va en plan se aparta solo: se quita lo demás de tu apartado.", "Layaway items are held on their own: the rest leaves your hold.")}</div>}
                 </div>
               </div>
+              {avisoG && <div role="status" className="mx-4 mb-2 rounded-[13px] bg-ink px-3.5 py-[11px] text-[12.5px] font-bold text-white">{avisoG}</div>}
               <div className="flex flex-none items-center gap-3.5 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
+                <CorazonGuardar etiqueta={E2("Guardar producto", "Save product")} guardado={gd.guardado(hoja.id)} onClick={() => guardar(hoja.id)} />
                 <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{cu ? E2("ABONO HOY", "DOWN TODAY") : E2("EN LA CAJA", "AT THE REGISTER")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{dinero(cu ? cu.abono : hoja.precio * qv)}</div></div>
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5"><div className="flex"><Button block disabled={falta} onClick={() => agregar(hoja, qv, tl?.id)}>{E2("Apartar", "Hold")}</Button></div>
                   {falta && <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-pro-ink">{`${E2("ELIGE LA ", "CHOOSE THE ")}${tit.toUpperCase()}`}</div>}</div>

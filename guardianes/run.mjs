@@ -11445,16 +11445,19 @@ const guardianes = {
     }
   },
 
-  /* 9t · platosGuardadosSinBorrar (decisión del fundador del 19 nov: «Guardar un plato» en la hoja del plato; LAUNCH «Platos guardados»). Lo que se
-     teme: (1) borrar una fila de item_saves (nada se borra: quitar pone removed_at; volver a guardar crea otra fila; solo la purga de una cuenta borrada
-     la saca, por el mapa de datos) o dos filas vivas del mismo plato; (2) guardar un plato que la página del negocio no muestra (otra regla que la de la
-     ficha: oculto por To'Latino, en una sección que no se ve, con el Menú pausado o de un Free fuera de sus primeros platos) o guardar a nombre de
-     otra persona; (3) una lista que muestra un plato que ya no sale como si se pudiera pedir («Pedir» que lleva a nada) o que se rompe con él; (4) el
-     corazón sin estado para el lector de pantalla (aria-pressed) o que, sin sesión, no lleva a entrar; (5) una consulta por plato en la ficha; (6) el
-     archivo de la persona y la purga sin sus platos guardados. Al revés: alreves9tplatos. */
+  /* 9t · platosGuardadosSinBorrar (decisiones del fundador del 19 nov: «Guardar un plato» en la hoja del plato y, después, el mismo corazón en la hoja
+     del producto de Mercados y de Tiendas; LAUNCH «Platos guardados»). Lo que se teme: (1) borrar una fila de item_saves (nada se borra: quitar pone
+     removed_at; volver a guardar crea otra fila; solo la purga de una cuenta borrada la saca, por el mapa de datos) o dos filas vivas de lo mismo; (2)
+     guardar algo que la página del negocio no muestra (otra regla que la de su ficha: oculto por To'Latino, en una sección que no se ve, con el Menú o la
+     tienda en pausa, de un Free fuera de sus primeros platos, lo que no se vende en la app) o a nombre de otra persona; (3) una lista que muestra lo que
+     ya no sale como si se pudiera pedir («Pedir» que lleva a nada) o que se rompe con ello; (4) un corazón sin estado para el lector de pantalla
+     (aria-pressed), una copia del corazón por hoja (una sola pieza: ./Corazon) o que, sin sesión, no lleva a entrar y de vuelta a esa hoja; (5) una
+     consulta por plato o producto en la ficha; (6) el archivo de la persona y la purga sin lo guardado. Al revés: alreves9tplatos. */
   platosGuardadosSinBorrar() {
     const G = "platosGuardadosSinBorrar", M = "packages/db/migrations/0193_platos_guardados.sql", L = "apps/web/lib/platos-guardados.ts", A = "apps/web/app/(app)/n/[id]/acciones-platos.ts",
-      MC = "apps/web/app/(app)/n/[id]/MenuCliente.tsx", GU = "apps/web/app/(app)/cuenta/guardados/Guardados.tsx", PE = "apps/web/lib/pedir.ts", MJ = "packages/db/mapa-de-datos.json", E = "pruebas/e2e/plat9t.cjs";
+      CO = "apps/web/app/(app)/n/[id]/Corazon.tsx", MC = "apps/web/app/(app)/n/[id]/MenuCliente.tsx", ME = "apps/web/app/(app)/n/[id]/Mercado.tsx", TI = "apps/web/app/(app)/n/[id]/Tienda.tsx",
+      GU = "apps/web/app/(app)/cuenta/guardados/Guardados.tsx", PE = "apps/web/lib/pedir.ts", MP = "apps/web/lib/merc-publico.ts", AP = "apps/web/lib/apartados.ts", PG = "apps/web/app/(app)/n/[id]/page.tsx",
+      MJ = "packages/db/mapa-de-datos.json", E = "pruebas/e2e/plat9t.cjs";
     if (!existsSync(M) || !existsSync(L)) return falla(G, L, 0, "faltan los platos guardados (0193 y lib/platos-guardados.ts)");
     // (1) La base: una fila viva por persona y plato; no se borra (salvo la purga); una fila quitada no vuelve.
     const m = readFileSync(M, "utf8");
@@ -11465,31 +11468,52 @@ const guardianes = {
       if (f === "guardianes/run.mjs" || !existsSync(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((x, i) => { if (/\b(delete\s+from|truncate)\s+(table\s+)?item_saves\b/i.test(x)) falla(G, f, i + 1, "borra filas de item_saves: quitar de guardados pone removed_at (nada se borra)"); });
     }
-    // (2) Guardar: candado por persona y plato, quitar con removed_at, y guardar solo lo que la ficha muestra (la misma regla de lib/visible-publico.ts).
+    // (2) Guardar: candado por persona y plato, quitar con removed_at, y guardar solo lo que la ficha muestra (las reglas de lib/visible-publico.ts).
     const l = sinComent(L), gp = cuerpoFn(l, "guardarPlato"), mp = cuerpoFn(l, "misPlatosGuardados");
     if (!/pg_advisory_xact_lock\(hashtext\('item_save:' \|\| \$1::text \|\| ':' \|\| \$2::text\)\)/.test(gp)) falla(G, L, 0, "guardarPlato sin candado por persona y plato (dos toques = dos filas)");
     if (!/update item_saves set removed_at = now\(\) where user_id = \$1::uuid and item_id = \$2::bigint and removed_at is null/.test(gp)) falla(G, L, 0, "quitar de guardados pone removed_at en la fila viva de ESA persona");
-    if (!/where i\.id = \$1::bigint and \$\{PLATO_EN_SU_PAGINA\}/.test(gp) || !/insert into item_saves \(user_id, item_id, city_id\) values \(\$1::uuid, \$2::bigint, \$3::text\)/.test(gp)) falla(G, L, 0, "guardar solo un plato que su página muestra, a nombre de quien guarda y con la ciudad del negocio");
+    if (!/where i\.id = \$1::bigint and \$\{EN_SU_PAGINA\}/.test(gp) || !/insert into item_saves \(user_id, item_id, city_id\) values \(\$1::uuid, \$2::bigint, \$3::text\)/.test(gp)) falla(G, L, 0, "guardar solo lo que su página muestra, a nombre de quien guarda y con la ciudad del negocio");
+    if (!/const EN_SU_PAGINA = `\(\(\$\{PLATO_EN_SU_PAGINA\}\) or \(\$\{PRODUCTO_EN_SU_PAGINA\}\) or \(\$\{ARTICULO_EN_SU_PAGINA\}\)\)`;/.test(l)) falla(G, L, 0, "EN_SU_PAGINA: el plato, el producto del mercado o el artículo de la tienda, cada uno con la regla de su ficha");
     if (!/b\.status = 'active' and b\.category_id = 'NEG-FOOD' and 'menu' = any\(b\.modules_on\) and not \(coalesce\(b\.modules_off, '\{\}'::jsonb\) \? 'menu'\)/.test(l)
       || !/and \$\{PLATO_VIVO\("i"\)\} and s\.id is not null and \$\{SECCION_MENU_VISIBLE\("s"\)\}/.test(l) || !/< \$\{cfgSql\("free_items"\)\}\)`;/.test(l)) falla(G, L, 0, "PLATO_EN_SU_PAGINA no es la regla de la ficha (negocio activo de Comida, Menú encendido y sin pausa, plato vivo en sección visible, Free con sus primeros platos)");
+    if (!/const PRODUCTO_EN_SU_PAGINA = `b\.status = 'active' and b\.category_id = 'NEG-MERC' and not \(coalesce\(b\.modules_off, '\{\}'::jsonb\) \? 'menu'\) and \$\{PRODUCTO_MERCADO_VIVO\("i"\)\}/.test(l)) falla(G, L, 0, "PRODUCTO_EN_SU_PAGINA no es la regla del mercado (lib/merc-publico.ts: activo, sin pausa, PRODUCTO_MERCADO_VIVO)");
+    if (!/'shop' = any\(b\.modules_on\) and not \(coalesce\(b\.modules_off, '\{\}'::jsonb\) \? 'shop'\)\s*and \$\{ARTICULO_TIENDA_VIVO\("i"\)\}/.test(l)) falla(G, L, 0, "ARTICULO_EN_SU_PAGINA no es la regla de la tienda (lib/apartados.ts tiendaVenta: tienda encendida y sin pausa, ARTICULO_TIENDA_VIVO)");
+    // Una sola definición: las fichas del mercado y de la tienda leen lo mismo que guardar.
+    if (!existsSync(MP) || !/where i\.business_id = \$1 and \$\{PRODUCTO_MERCADO_VIVO\("i"\)\} order by/.test(sinComent(MP))) falla(G, MP, 0, "mercPublico no lee PRODUCTO_MERCADO_VIVO (otra regla que la de guardar)");
+    if (!existsSync(AP) || !/where i\.business_id = \$1 and \$\{ARTICULO_TIENDA_VIVO\("i"\)\} and b\.status = 'active'/.test(cuerpoFn(sinComent(AP), "tiendaVenta"))) falla(G, AP, 0, "tiendaVenta no lee ARTICULO_TIENDA_VIVO (otra regla que la de guardar)");
     // (3) La lista: solo lo de quien mira, vivo, con «disponible» por la MISMA regla; tope 100.
-    if (!/coalesce\(\$\{PLATO_EN_SU_PAGINA\}, false\) as disponible/.test(mp) || !/where g\.user_id = \$1::uuid and g\.removed_at is null/.test(mp) || !/limit 100/.test(mp)) falla(G, L, 0, "misPlatosGuardados: solo los de quien mira, vivos, con «disponible» por la regla de la ficha y con tope");
+    if (!/coalesce\(\$\{EN_SU_PAGINA\}, false\) as disponible/.test(mp) || !/where g\.user_id = \$1::uuid and g\.removed_at is null/.test(mp) || !/limit 100/.test(mp)) falla(G, L, 0, "misPlatosGuardados: solo los de quien mira, vivos, con «disponible» por la regla de la ficha y con tope");
     const gu = existsSync(GU) ? sinComent(GU) : "";
-    if (!/\.\.\.\(x\.disponible \? \{ v: money\(x\.cents\) \} : \{ tag: \[E2\("NO DISPONIBLE", "NOT AVAILABLE"\), "neutral"\]/.test(gu) || !/: x\.disponible \? \[\[E2\("Pedir", "Order"\), "primary"/.test(gu)) falla(G, GU, 0, "un plato que ya no sale dice «No disponible» y no ofrece «Pedir»");
+    if (!/\.\.\.\(x\.disponible \? \{ v: precio\(x\) \} : \{ tag: \[E2\("NO DISPONIBLE", "NOT AVAILABLE"\), "neutral"\]/.test(gu) || !/: x\.disponible \? \[\[accion\(x\), "primary"/.test(gu)) falla(G, GU, 0, "lo que ya no sale dice «No disponible» y no ofrece su acción");
+    if (!/const precio = \(x: PG\) => `\$\{money\(x\.cents\)\}\$\{x\.peso \? "\/lb" : ""\}`;/.test(gu)) falla(G, GU, 0, "lo que va por libra se dice «/lb», como el mercado");
     if (!/\["items", E2\("Platos y productos", "Dishes & products"\), d\.platos\.length\]/.test(gu) || !/E2\("Sin platos guardados", "No saved dishes"\)/.test(gu)) falla(G, GU, 0, "Guardados sin el chip «Platos y productos» o sin su vacío (favV)");
     // La acción pide sesión y mismo origen.
     if (!existsSync(A) || !/export async function platoGuardar\(item: string\): Promise<R> \{ const q = await quien\(\); return q\.e \?\? guardarPlato\(q\.u\.id, String\(item \?\? ""\)\); \}/.test(sinComent(A))
       || !/if \(!\(await mismoOrigen\(\)\)\) return/.test(sinComent(A))) falla(G, A, 0, "platoGuardar sin quien() (mismo origen y sesión; el usuario sale de la sesión, nunca de la pantalla)");
-    // (4) El corazón de la hoja: aria-pressed, etiqueta ES/EN y sin sesión a /entrar de vuelta al plato.
-    const mc = existsSync(MC) ? sinComent(MC) : "";
-    if (!/aria-label=\{E2\("Guardar plato", "Save dish"\)\} aria-pressed=\{sh\.saved\} onClick=\{sh\.onSave\}/.test(mc)) falla(G, MC, 0, "el corazón de la hoja del plato sin aria-pressed o sin su etiqueta ES/EN");
-    if (!/if \(!opts\.sesion\) return router\.push\(`\/entrar\?volver=\$\{encodeURIComponent\(`\/n\/\$\{biz\}\?\$\{m\.negocio\.pro \? "tab=menu&" : ""\}plato=\$\{id\}`\)\}`\);/.test(mc)) falla(G, MC, 0, "sin sesión, el corazón lleva a /entrar y de vuelta a la hoja del plato");
+    // (4) Una sola pieza del corazón: aria-pressed, etiqueta fija y sin sesión a /entrar de vuelta a la hoja.
+    const co = existsSync(CO) ? sinComent(CO) : "";
+    if (!/aria-label=\{etiqueta\} aria-pressed=\{guardado\} onClick=\{onClick\}/.test(co)) falla(G, CO, 0, "el corazón sin aria-pressed o sin su etiqueta");
+    if (!/if \(!sesion\) \{ router\.push\(`\/entrar\?volver=\$\{encodeURIComponent\(volver\(id\)\)\}`\); return null; \}/.test(co)) falla(G, CO, 0, "sin sesión, el corazón lleva a /entrar y de vuelta a la hoja");
+    const hojas = [
+      [MC, /<CorazonGuardar etiqueta=\{E2\("Guardar plato", "Save dish"\)\} guardado=\{sh\.saved\}/, /useGuardados\(m\?\.guardados, opts\.sesion, \(id\) => `\/n\/\$\{biz\}\?\$\{m\?\.negocio\.pro \? "tab=menu&" : ""\}plato=\$\{id\}`, es\)/],
+      [ME, /<CorazonGuardar etiqueta=\{E2\("Guardar producto", "Save product"\)\} guardado=\{v\.guardado\(p\.id\)\}/, /useGuardados\(mp\?\.guardados, sesion, \(id\) => `\/n\/\$\{mp\?\.negocio\.id \?\? ""\}\?tab=svc&producto=\$\{id\}`, es\)/],
+      [TI, /<CorazonGuardar etiqueta=\{E2\("Guardar producto", "Save product"\)\} guardado=\{gd\.guardado\(hoja\.id\)\}/, /useGuardados\(guardados, sesion, \(id\) => `\/n\/\$\{negocio\}\?tab=shop&producto=\$\{id\}`, es\)/],
+    ];
+    for (const [f, pieza, vuelta] of hojas) {
+      const t = existsSync(f) ? sinComent(f) : "";
+      if (!pieza.test(t)) falla(G, f, 0, "la hoja sin el corazón de ./Corazon (ES/EN, con su estado)");
+      if (!vuelta.test(t)) falla(G, f, 0, "sin sesión, el corazón de esta hoja no vuelve a la hoja de ESE plato o producto");
+      if (/aria-pressed=|platoGuardar\(/.test(t)) falla(G, f, 0, "una copia del corazón o de su lógica: usa CorazonGuardar y useGuardados (./Corazon)");
+    }
     // (5) Una consulta por ficha.
     if (!/platosGuardadosDe\(userId \?\? null, negocio\)\]\);/.test(cuerpoFn(sinComent(PE), "menuPublico"))) falla(G, PE, 0, "menuPublico no trae los platos guardados en su misma tanda (una consulta por ficha)");
+    if (!/platosGuardadosDe\(userId, negocio\),/.test(cuerpoFn(sinComent(MP), "mercPublico"))) falla(G, MP, 0, "mercPublico no trae los productos guardados en su misma tanda (una consulta por ficha)");
+    if (!existsSync(PG) || !/platosGuardadosDe\(u\?\.id \?\? null, f\.id\)\]\)\.then\(async \(\[L, V, mia, horas, plan, g\]\)/.test(sinComent(PG))) falla(G, PG, 0, "la tienda no trae lo guardado en su misma tanda (una consulta por ficha)");
     // (6) El archivo y la purga: por el mapa de datos.
     const mj = existsSync(MJ) ? JSON.parse(readFileSync(MJ, "utf8")) : {}, r = mj.tablas?.item_saves?.reglas?.[0];
     if (!r || r.col !== "user_id" || r.accion !== "borrar" || !r.exporta) falla(G, MJ, 0, "item_saves en el mapa de datos: se exporta (platos_guardados) y sale con la purga");
     if (!existsSync(E)) falla(G, E, 0, "falta la prueba de punta a punta de los platos guardados");
+    else if (!/supermercado-la-cosecha/.test(readFileSync(E, "utf8")) || !/boutique-yaritza/.test(readFileSync(E, "utf8"))) falla(G, E, 0, "la prueba de punta a punta no cubre un mercado y una tienda");
   },
 };
 

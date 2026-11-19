@@ -17,6 +17,7 @@ import { tiendaPublica } from "@/lib/rentas";
 import { horasApartado, tiendaMia, tiendaPopulares, tiendaVenta } from "@/lib/apartados";
 import { reglaPlan } from "@/lib/layaway";
 import { mercPublico } from "@/lib/merc-publico";
+import { platosGuardadosDe } from "@/lib/platos-guardados";
 import { fiestaPublico } from "@/lib/fiestas-publico";
 import { transPublico } from "@/lib/trans-publico";
 import { nochePublica } from "@/lib/noche-publico";
@@ -57,7 +58,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     openGraph: { title: f.nombre, description: f.subsLinea, type: "website", url, ...(f.fotos[0] ? { images: [{ url: f.fotos[0] }] } : {}) } };
 }
 
-export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; p?: string; d?: string; h?: string; editar?: string; equipo?: string; plato?: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; p?: string; d?: string; h?: string; editar?: string; equipo?: string; plato?: string; producto?: string }> }) {
   const [{ id }, lang, u, sp] = await Promise.all([params, idioma(), yo(), searchParams]);
   const loc = await ubicacion(u);
   let f = await ficha(id, lang, loc);
@@ -99,7 +100,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     f.cat === "NEG-BELL" ? citasPublica(f.id, u?.id ?? null) : Promise.resolve(null),
     f.cat === "NEG-AUTO" || f.cat === "NEG-HOGAR" ? oficiosPublico(f.id, u?.id ?? null) : Promise.resolve(null),
     // Tiendas (4q): lo mismo que la Tienda de Auto y Hogar, con tallas y las horas que guarda la tienda (24/48/72).
-    f.cat === "NEG-AUTO" || f.cat === "NEG-HOGAR" || f.cat === "NEG-TIENDA" || f.cat === "NEG-TRANS" ? Promise.all([tiendaPublica(f.id), tiendaVenta(f.id, u?.id ?? null), tiendaMia(u?.id ?? null, f.id), horasApartado(f.id), f.cat === "NEG-TIENDA" ? reglaPlan(f.id) : null]).then(async ([L, V, mia, horas, plan]) => ({ L, V, mia, horas, plan, pop: f.cat === "NEG-TIENDA" ? await tiendaPopulares(f.id, V) : [] })) : Promise.resolve(null),
+    f.cat === "NEG-AUTO" || f.cat === "NEG-HOGAR" || f.cat === "NEG-TIENDA" || f.cat === "NEG-TRANS" ? Promise.all([tiendaPublica(f.id), tiendaVenta(f.id, u?.id ?? null), tiendaMia(u?.id ?? null, f.id), horasApartado(f.id), f.cat === "NEG-TIENDA" ? reglaPlan(f.id) : null, platosGuardadosDe(u?.id ?? null, f.id)]).then(async ([L, V, mia, horas, plan, g]) => ({ L, V, mia, horas, plan, g, pop: f.cat === "NEG-TIENDA" ? await tiendaPopulares(f.id, V) : [] })) : Promise.resolve(null),
     // Doctores (4i): servicios con el precio según tu seguro, quién atiende y «Tu seguro».
     f.cat === "NEG-SALUD" ? saludPublico(f.id, u?.id ?? null) : Promise.resolve(null),
     // Profesionales (4k): el total (honorario + gobierno), la licencia y lo que no puede.
@@ -219,6 +220,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const t = (await textosT(lang)).ficha;
   // 9t-2 · Buscar abre un plato directo en su hoja (?plato=<id>): la ficha lo abre al hidratar si su menú lo tiene y se puede pedir.
   const platoInicial = sp.plato && /^\d{1,19}$/.test(sp.plato) ? sp.plato : undefined;
+  // 9t · ?producto=<id> (de vuelta de entrar con el corazón, o desde Mi cuenta › Guardados): la hoja del producto del mercado o de la tienda.
+  const productoInicial = sp.producto && /^\d{1,19}$/.test(sp.producto) ? sp.producto : undefined;
   // 9h · schema.org/LocalBusiness: lo que dice la ficha (nombre, teléfono público, dirección si tiene local, el punto público y la portada), sin datos de nadie.
   const ld = { "@context": "https://schema.org", "@type": "LocalBusiness", name: f.nombre, url: `${BASE_URL()}/n/${encodeURIComponent(f.id)}`,
     ...(f.subsLinea ? { description: f.subsLinea } : {}), ...(f.telefono ? { telephone: f.telefono } : {}), ...(f.fotos[0] ? { image: f.fotos[0] } : {}),
@@ -232,7 +235,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     {f.pro && CFG_FICHA[f.cat] && fichaNueva ? (
       <FichaNueva f={{ ...f, guardado: fav.has(f.id) }} svc={svc} menu={menu} rsv={rsv} ofi={ofi} salud={salud} prof={prof} merc={merc} fiesta={fiesta} trans={trans}
         noche={noche} insc={insc} fe={fe} inm={inm} dl={dl} tienda={tienda} resenas={res} novedades={nov && nov.posts.length ? nov : null} jobs={jobs} eventos={evts}
-        sesion={!!u} es={lang === "es"} tabInicial={sp.tab} platoInicial={platoInicial} rsvInicial={rsvInicial}
+        sesion={!!u} es={lang === "es"} tabInicial={sp.tab} platoInicial={platoInicial} productoInicial={productoInicial} rsvInicial={rsvInicial}
         t={{ ...t, photosAll: f.nFotos === 1 ? t.photosOne : t.photosN.replace("{n}", String(f.nFotos)) }} />
     ) : (
     <Ficha
@@ -261,6 +264,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       es={lang === "es"}
       tabInicial={sp.tab}
       platoInicial={platoInicial}
+      productoInicial={productoInicial}
       t={{
         ...t,
         photosAll: f.nFotos === 1 ? t.photosOne : t.photosN.replace("{n}", String(f.nFotos)),

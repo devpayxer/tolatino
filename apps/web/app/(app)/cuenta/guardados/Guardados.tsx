@@ -1,7 +1,8 @@
 "use client";
 /* USR-FAVORITOS (diseño «To'Latino Mi cuenta» · favV): Negocios (los que guardas con el corazón y los que sigues, con
    abierto o cerrado; «Editar» para quitarlos), Platos y productos (9t: los que guardas con el corazón de la hoja del plato; «Pedir» abre el
-   negocio en su menú con la hoja del plato; el que ya no sale en su página dice «No disponible» y no ofrece «Pedir»; «Editar» para quitarlos),
+   negocio en su menú con la hoja del plato; también los productos de Mercados y Tiendas, con «Pedir», «Ver» o «Apartar»; el que ya no sale en su
+   página dice «No disponible» y no ofrece la acción; «Editar» para quitarlos),
    Vacantes, Novedades y Eventos (6b: a los que vas con RSVP y los que guardaste con el corazón; solo los que siguen en vivo). */
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -42,19 +43,24 @@ export function Guardados({ d, ev, f, es, yo }: { d: MisGuardados; ev: MisEvento
       })) });
     }
   }
-  // 9t · Platos y productos (favV): foto, plato, NEGOCIO, precio de su ficha y «Pedir» (abre la hoja del plato en el menú del negocio). El que ya no
-  // sale en su página: «NO DISPONIBLE», sin precio ni «Pedir» (abre el negocio). «Editar» → «Quitar».
+  // 9t · Platos y productos (favV): foto, nombre, NEGOCIO, precio de su ficha (por libra «/lb», como el mercado) y la acción de su módulo, que abre el
+  // negocio en su pestaña con la hoja de ese plato o producto: «Pedir» (menú; mercado que toma pedidos), «Ver» (mercado sin pedidos), «Apartar»
+  // (tienda). Lo que ya no sale en su página: «NO DISPONIBLE», sin precio ni acción (abre el negocio). «Editar» → «Quitar».
   if (f === "items") {
     const money = (c: number) => `$${(c / 100).toFixed(2)}`;
-    const ir = (x: MisGuardados["platos"][number]) => (x.disponible ? `/n/${x.biz}?${x.pro ? "tab=menu&" : ""}plato=${encodeURIComponent(x.id)}` : `/n/${x.biz}`);
+    type PG = MisGuardados["platos"][number];
+    const precio = (x: PG) => `${money(x.cents)}${x.peso ? "/lb" : ""}`;
+    const hoja = (x: PG) => (x.mod === "menu" ? `/n/${x.biz}?${x.pro ? "tab=menu&" : ""}plato=${encodeURIComponent(x.id)}` : `/n/${x.biz}?tab=${x.mod === "merc" ? "svc" : "shop"}&producto=${encodeURIComponent(x.id)}`);
+    const ir = (x: PG) => (x.disponible ? hoja(x) : `/n/${x.biz}`);
+    const accion = (x: PG) => (x.mod === "tienda" ? E2("Apartar", "Hold") : x.mod === "merc" && !x.ord ? E2("Ver", "View") : E2("Pedir", "Order"));
     if (!d.platos.length) B.push({ type: "empty", ic: "heart", t: E2("Sin platos guardados", "No saved dishes"), s: E2("Guarda tus platos favoritos desde el menú de cada negocio.", "Save your favorite dishes from each business menu.") });
     else {
-      B.push({ type: "sec", t: `${d.platos.length} ${d.platos.length === 1 ? E2("plato", "dish") : E2("platos", "dishes")}`, fs: "15px", mt: "2px", a: ed ? E2("Listo", "Done") : E2("Editar", "Edit"), onA: () => setEd(!ed) });
+      B.push({ type: "sec", t: `${d.platos.length} ${d.platos.length === 1 ? E2("guardado", "saved") : E2("guardados", "saved")}`, fs: "15px", mt: "2px", a: ed ? E2("Listo", "Done") : E2("Editar", "Edit"), onA: () => setEd(!ed) });
       B.push({ type: "rows", rows: d.platos.map((x) => ({
         key: x.id, ph: x.foto, ini: bi(x.name, es).slice(0, 1), t: bi(x.name, es), s: x.bname.toUpperCase(), chev: true, on: () => router.push(ir(x)),
-        ...(x.disponible ? { v: money(x.cents) } : { tag: [E2("NO DISPONIBLE", "NOT AVAILABLE"), "neutral"] as [string, string], x: E2("No disponible por ahora en el menú del negocio.", "Not available on the business’s menu right now.") }),
+        ...(x.disponible ? { v: precio(x) } : { tag: [E2("NO DISPONIBLE", "NOT AVAILABLE"), "neutral"] as [string, string], x: E2("No disponible por ahora en la página del negocio.", "Not available on the business’s page right now.") }),
         acts: ed ? [[E2("Quitar", "Remove"), "secondary", () => quitar(() => platoGuardar(x.id), E2(`Quitaste ${bi(x.name, es)} de guardados.`, `Removed ${bi(x.name, es)} from saved.`))]] as [string, string, () => void][]
-          : x.disponible ? [[E2("Pedir", "Order"), "primary", () => router.push(ir(x))]] as [string, string, () => void][] : [],
+          : x.disponible ? [[accion(x), "primary", () => router.push(ir(x))]] as [string, string, () => void][] : [],
       })) });
     }
   }
@@ -79,5 +85,5 @@ export function Guardados({ d, ev, f, es, yo }: { d: MisGuardados; ev: MisEvento
         acts: [[E2("Quitar", "Remove"), "secondary", () => quitar(() => evtGuardar(x.eid), E2("Evento quitado de guardados.", "Event removed from saved."))]] as [string, string, () => void][] })) });
     }
   }
-  return <Marco es={es} code="USR-FAVORITOS" t={E2("Guardados", "Saved")} s={`${d.negocios.length}${E2(" NEGOCIOS · ", " BUSINESSES · ")}${d.platos.length}${E2(" PLATOS · ", " DISHES · ")}${d.vacantes.length}${E2(" VACANTES · ", " JOBS · ")}${d.novedades.length}${E2(" NOVEDADES · ", " UPDATES · ")}${ev.vas.length + ev.guardados.length}${E2(" EVENTOS", " EVENTS")}`} blocks={B} yo={yo} ui={ui} />;
+  return <Marco es={es} code="USR-FAVORITOS" t={E2("Guardados", "Saved")} s={`${d.negocios.length}${E2(" NEGOCIOS · ", " BUSINESSES · ")}${d.platos.length}${E2(" PLATOS Y PRODUCTOS · ", " DISHES & PRODUCTS · ")}${d.vacantes.length}${E2(" VACANTES · ", " JOBS · ")}${d.novedades.length}${E2(" NOVEDADES · ", " UPDATES · ")}${ev.vas.length + ev.guardados.length}${E2(" EVENTOS", " EVENTS")}`} blocks={B} yo={yo} ui={ui} />;
 }

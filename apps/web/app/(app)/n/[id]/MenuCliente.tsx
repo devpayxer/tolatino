@@ -5,11 +5,10 @@
    y el inventario los vuelve a decidir el servidor al enviar. */
 import { flechas } from "@/lib/tec";
 import * as UI from "@tolatino/ui";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties } from "react";
 import type { MenuPublico, PItem } from "@/lib/pedir";
 import { dosIdiomas } from "@/lib/dos-idiomas";
-import { platoGuardar } from "./acciones-platos";
+import { CorazonGuardar, useGuardados } from "./Corazon";
 
 type N = "Icon" | "Button" | "Tag" | "Chip" | "MenuItemRow" | "MenuTile" | "OptionGroup" | "QtyStepper" | "CartLine" | "OrderBar";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -100,7 +99,6 @@ type Ask = { kind: "again" | "which"; id: string; desk: boolean } | null;
 /* El controlador del menú (menuVals): lo usan la pestaña, el Resumen, la barra y el carrito. */
 export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () => void; sesion: boolean }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
-  const router = useRouter();
   const biz = m?.negocio.id ?? "";
   const [cart, setCartS] = useState<Linea[]>([]);
   const [listo, setListo] = useState(false);
@@ -119,12 +117,11 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
   const [noAsk, setNoAsk] = useState(false);
   const [cat, setCat] = useState<string | null>(null);
   const [modoG, setModoG] = useState<Modo | null>(null);
-  // 9t · Platos guardados: lo que la persona ya guardó de este menú (lo trae el servidor en una consulta; el corazón de la hoja lo cambia).
-  const [guard, setGuard] = useState<Record<string, boolean>>(() => Object.fromEntries((m?.guardados ?? []).map((id) => [id, true])));
+  // 9t · Platos guardados (./Corazon): lo que la persona ya guardó de este menú lo trae el servidor; sin sesión, a entrar y de vuelta a la hoja (?plato=).
+  const gd = useGuardados(m?.guardados, opts.sesion, (id) => `/n/${biz}?${m?.negocio.pro ? "tab=menu&" : ""}plato=${id}`, es);
   const tt = useRef<ReturnType<typeof setTimeout> | undefined>(undefined), to = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => { if (m) { setCartS(limpiar(m, carritoGuardado(biz))); setModoG(modoGuardado(biz)); setListo(true); } }, [m, biz]);
-  useEffect(() => { if (m) setGuard(Object.fromEntries((m.guardados ?? []).map((id) => [id, true]))); }, [m]);
   const setCart = useCallback((c: Linea[]) => { setCartS(c); guardarCarrito(biz, c); }, [biz]);
   const flash = useCallback((msg: string, undo: Linea[] | null = null) => {
     setToast({ msg, undo }); clearTimeout(tt.current); tt.current = setTimeout(() => setToast(null), undo ? 4000 : 1800);
@@ -210,17 +207,6 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
 
   /* La hoja del plato */
   const it = sel ? m.items[sel] : undefined;
-  // 9t · El corazón: sin sesión, a /entrar y de vuelta a la hoja de ESTE plato (?plato=, como Buscar); con sesión, el servidor decide (platoGuardar).
-  const guardarP = async (id: string) => {
-    if (!opts.sesion) return router.push(`/entrar?volver=${encodeURIComponent(`/n/${biz}?${m.negocio.pro ? "tab=menu&" : ""}plato=${id}`)}`);
-    const antes = !!guard[id];
-    setGuard((g) => ({ ...g, [id]: !antes }));
-    const r = await platoGuardar(id).catch(() => null);
-    if (r?.ok) { setGuard((g) => ({ ...g, [id]: r.guardado })); flash(r.guardado ? E2("Guardado en Mi cuenta › Guardados", "Saved in My account › Saved") : E2("Quitado de Guardados", "Removed from Saved")); return; }
-    setGuard((g) => ({ ...g, [id]: antes }));
-    if (r && "entrar" in r && r.entrar) return router.push(`/entrar?volver=${encodeURIComponent(`/n/${biz}?${m.negocio.pro ? "tab=menu&" : ""}plato=${id}`)}`);
-    flash(r ? E2(r.msg.es, r.msg.en) : E2("No se pudo. Prueba de nuevo.", "Could not do it. Try again."));
-  };
   const ms = it ? miss(it, ch) : [], u = it ? unit(it, ch) : 0;
   const shortN = (gk: string) => m.grps[gk]!.name.replace(/^(Elige (la |el )?|Choose (the )?)/i, "").toLowerCase();
   const add = () => {
@@ -260,7 +246,7 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
     onNote: (v: string) => setNote(v.slice(0, 200)),
     onInc: () => { const c2 = Math.min(20, capOf(it)); if (qty + 1 > c2) { flash(it.maxQ && it.maxQ === c2 ? E2(`Máximo ${c2} por pedido.`, `Up to ${c2} per order.`) : E2(`Solo quedan ${c2}.`, `Only ${c2} left.`)); return; } setQty(qty + 1); },
     onDec: () => setQty(Math.max(1, qty - 1)), onAdd: add,
-    saved: !!guard[it.id], onSave: () => { void guardarP(it.id); },
+    saved: gd.guardado(it.id), onSave: () => { void gd.cambiar(it.id).then((x) => { if (x) flash(x); }); },
     onClose: () => { setVista(""); if (edit != null && backCart) setCartOpen(true); setEdit(null); },
   } : null;
 
@@ -568,9 +554,7 @@ function Plato({ mn }: { mn: Mn }) {
   const pie = (
     <div className={`flex flex-none items-center gap-[11px] border-t border-line bg-white ${sh.desk ? "px-5 py-3.5" : "px-4 pb-[22px] pt-3"}`}>
       {/* 9t · Guardar el plato: el cuadro del corazón de la barra de la vacante (50 px), a la izquierda del contador (decisión del 19 nov). */}
-      <button type="button" data-guardar-plato aria-label={E2("Guardar plato", "Save dish")} aria-pressed={sh.saved} onClick={sh.onSave} className="box-border grid size-[50px] flex-none place-items-center rounded-[15px] border-[1.5px] border-ink/[.14] bg-white">
-        <Icon name="heart" size={18} color={sh.saved ? "var(--tl-danger)" : "var(--tl-ink)"} fill={sh.saved ? "var(--tl-danger)" : "none"} />
-      </button>
+      <CorazonGuardar etiqueta={E2("Guardar plato", "Save dish")} guardado={sh.saved} onClick={sh.onSave} />
       <div className="flex-none"><QtyStepper decLabel={mn.E2("Uno menos", "One less")} incLabel={mn.E2("Uno más", "One more")} value={sh.qty} onDec={sh.onDec} onInc={sh.onInc} /></div>
       <div className="flex min-w-0 flex-1"><Button block disabled={sh.disabled} onClick={sh.onAdd}>{sh.cta}</Button></div>
     </div>

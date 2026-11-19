@@ -2973,3 +2973,12 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   (base `tl_loc` con 0193; `next build` standalone en :3155 con secretos propios fuera del repo; `docker exec` de mentira hacia psql): sin sesión →
   /entrar y vuelta; guardar, recargar (marcado), lista con precio y «Pedir» → hoja; quitar (fila queda) y volver a guardar (fila nueva); oculto →
   «No disponible» sin «Pedir», «Quitar» desde Mi cuenta; 1360 y EN. tsc + build + guardianes en verde. Ayuda: mi-cuenta (ES/EN).
+- **19 nov · 9t · Platos guardados en Mercados y Tiendas** (OK del fundador: el mismo corazón y la misma tabla `item_saves`): una sola pieza
+  `app/(app)/n/[id]/Corazon.tsx` (`CorazonGuardar` + `useGuardados`: aria-pressed, rojo, sin sesión a /entrar y de vuelta a ESA hoja) en la hoja del
+  plato, la del producto del mercado («Guardar producto», a la izquierda de la barra) y la del artículo de la tienda (también la de Auto, Hogar y
+  Transporte, que es la misma). `?producto=<id>` abre la hoja (mercado: `?tab=svc`; tienda: `?tab=shop`). `lib/visible-publico.ts` +
+  `PRODUCTO_MERCADO_VIVO` y `ARTICULO_TIENDA_VIVO`, que ahora leen `mercPublico` y `tiendaVenta` (una sola definición); `guardarPlato` y la lista
+  usan `EN_SU_PAGINA` = plato, producto o artículo con la regla de su ficha (tope 200 / 120 como sus listas; lo que va en plan, solo con el plan
+  encendido). Lo guardado llega en la tanda de cada ficha (`mercPublico`, la tienda en page.tsx). Guardados: «$X/lb» en lo que va por libra; «Pedir»
+  (menú, mercado que toma pedidos), «Ver» (mercado sin pedidos) o «Apartar» (tienda). Guardián `platosGuardadosSinBorrar` ampliado (una pieza del
+  corazón, las tres hojas, las reglas por módulo), alreves9tplatos y plat9t §7 (La Cosecha «Pollo entero» por libra y Boutique Yaritza «Cartera»).

@@ -82,11 +82,11 @@ type Grupo = { label: string; name: string; items: Fila[] };
 type Persona = { id: string; name: string; short: string; role: string; spec: string; foto: string | null; owner: boolean; silla: number | null };
 
 type TiendaP = Pick<ComponentProps<typeof TiendaTab>, "L" | "V" | "mia" | "horas" | "plan">;
-export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl, tienda, resenas, novedades, jobs, eventos = [], sesion, es, tabInicial, platoInicial, rsvInicial }: {
+export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl, tienda, resenas, novedades, jobs, eventos = [], sesion, es, tabInicial, platoInicial, productoInicial, rsvInicial }: {
   f: F; t: Textos; svc: CitasPublica | null; menu?: MenuPublico | null; rsv?: RsvPublica | null; ofi?: OficiosPublico | null; salud?: SaludPublico | null; prof?: ProPublico | null;
   merc?: MercPublico | null; fiesta?: FiestaPublico | null; trans?: TransPublico | null; noche?: NochePublica | null; insc?: InscPublica | null; fe?: FePublica | null;
-  inm?: InmPublica | null; dl?: AutosPublica | null; tienda?: (TiendaP & { L: ArticuloRenta[]; V: ArticuloVenta[]; pop?: string[] }) | null;
-  resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; eventos?: TarjetaEvt[]; sesion: boolean; es: boolean; tabInicial?: string; platoInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string };
+  inm?: InmPublica | null; dl?: AutosPublica | null; tienda?: (TiendaP & { L: ArticuloRenta[]; V: ArticuloVenta[]; pop?: string[]; g?: string[] }) | null;
+  resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; eventos?: TarjetaEvt[]; sesion: boolean; es: boolean; tabInicial?: string; platoInicial?: string; productoInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string };
 }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const L = (x: [string, string]) => (es ? x[0] : x[1]);
@@ -111,7 +111,10 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   const fv = useFe(fe ?? null, es, true, acc4i);
   const iv = useInm(inm ?? null, es, true, acc4i);
   const dv = useDealer(dl ?? null, es, true, acc4i);
-  const me = useMerc(merc ?? null, es);
+  const me = useMerc(merc ?? null, es, sesion);
+  // 9t · ?producto=<id>: la hoja de ese producto del mercado se abre una vez, ya hidratada la ficha (la de la tienda la abre TiendaTab).
+  const productoHecho = useRef(false);
+  useEffect(() => { if (productoHecho.current || !productoInicial || !me) return; productoHecho.current = true; if (me.mp.prods.some((p) => p.id === productoInicial)) me.abrir(productoInicial); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // DJ y promotor no tienen local (neg-noche-kind.js post): «Por fecha» en vez de «Cerrado · Abre a las…», como en la ficha de siempre.
   const porContrato = !!no && no.np.porFecha && no.np.kind !== "salon";
   if (porContrato) f = { ...f, abierto: true, estadoCorto: E2("Por fecha", "By date"), estadoResto: E2("· no hay local", "· no venue"),
@@ -184,7 +187,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
         </div>) : null,
       capas: <><MenuCapas mn={mn} nombre={f.nombre} />{entrar ? <HojaEntrar es={es} destino={`/n/${f.id}/pagar`} onClose={() => setEntrar(false)} /> : null}</>,
       top: [], n: 1, pick: () => setTab("cat"), hoy: null };
-    if (tienda && f.cat === "NEG-TIENDA" && (tienda.L.length || tienda.V.length)) return { tab: () => <TiendaTab L={tienda.L} V={tienda.V} mia={tienda.mia} auto={false} tienda horas={tienda.horas} plan={tienda.plan ?? null} negocio={f.id} es={es} c pop={tienda.pop ?? []} />,
+    if (tienda && f.cat === "NEG-TIENDA" && (tienda.L.length || tienda.V.length)) return { tab: () => <TiendaTab L={tienda.L} V={tienda.V} mia={tienda.mia} auto={false} tienda horas={tienda.horas} plan={tienda.plan ?? null} negocio={f.id} es={es} c pop={tienda.pop ?? []} guardados={tienda.g} sesion={sesion} abrirInicial={productoInicial} />,
       riel: null, barra: null, capas: null, top: [], n: tienda.L.length + tienda.V.length, pick: () => setTab("cat"), hoy: null };
     return null;
   }, [ov, sa, pr, fi, vi, no, ins, fv, iv, dv, me, mn, tienda, entrar, es]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -526,7 +529,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
           )}
           {tab === "rev" && rs && <div className="pb-6"><ResTab v={rs} desk={false} onMenu={() => setTab("cat")} /></div>}
           {tab === "nov" && novedades && <div className="pb-6"><NovTab v={novedades} logo={f.logo ?? null} sesion={sesion} es={es} onHoras={() => setTab("hor")} onItem={(id) => { setTab("cat"); if (id && me) setTimeout(() => me.abrir(id), 60); }} /></div>}
-          {tab === "shop" && tienda ? <div className="pb-6"><TiendaTab L={tienda.L} V={tienda.V} mia={tienda.mia} auto={f.cat === "NEG-AUTO"} horas={tienda.horas} plan={tienda.plan ?? null} negocio={f.id} es={es} /></div> : null}
+          {tab === "shop" && tienda ? <div className="pb-6"><TiendaTab L={tienda.L} V={tienda.V} mia={tienda.mia} auto={f.cat === "NEG-AUTO"} horas={tienda.horas} plan={tienda.plan ?? null} negocio={f.id} es={es} guardados={tienda.g} sesion={sesion} abrirInicial={productoInicial} /></div> : null}
           {tab === "rsv" && rv ? <div className="pb-6"><RsvTab v={rv} desk={false} /></div> : null}
           {tab === "evt" && <EventosTab eventos={eventos} es={es} />}
           {tab === "jobs" && <div className="pb-6"><JobsTab jobs={jobs} negocio={f.id} sesion={sesion} es={es} /></div>}
@@ -610,7 +613,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
             )) : null}
             {rs ? seccion("rev", E2("Reseñas", "Reviews"), <ResTab v={rs} desk onMenu={() => ir("cat")} />, <button type="button" onClick={rs.escribir} className="text-[13.5px] font-bold text-action">{rs.r.tengo ? E2("Ver tu reseña", "See your review") : E2("Escribir reseña", "Write a review")}</button>) : null}
             {novedades?.posts.length ? seccion("nov", E2("Novedades", "Updates"), <div className="max-w-[680px]"><NovTab v={novedades} logo={f.logo ?? null} sesion={sesion} es={es} onHoras={() => ir("hor")} onItem={(id) => { ir("cat"); if (id && me) setTimeout(() => me.abrir(id), 60); }} /></div>) : null}
-            {tienda && f.cat !== "NEG-TIENDA" && (tienda.L.length || tienda.V.length) ? seccion("shop", E2("Tienda", "Shop"), <TiendaTab L={tienda.L} V={tienda.V} mia={tienda.mia} auto={f.cat === "NEG-AUTO"} horas={tienda.horas} plan={tienda.plan ?? null} negocio={f.id} es={es} />) : null}
+            {tienda && f.cat !== "NEG-TIENDA" && (tienda.L.length || tienda.V.length) ? seccion("shop", E2("Tienda", "Shop"), <TiendaTab L={tienda.L} V={tienda.V} mia={tienda.mia} auto={f.cat === "NEG-AUTO"} horas={tienda.horas} plan={tienda.plan ?? null} negocio={f.id} es={es} guardados={tienda.g} sesion={sesion} abrirInicial={productoInicial} />) : null}
             {rv ? seccion("rsv", E2("Reservar mesa", "Reserve a table"), <div className="max-w-[620px]"><RsvTab v={rv} desk /></div>) : null}
             {eventos.length ? seccion("evt", E2("Eventos", "Events"), <EventosTab eventos={eventos} es={es} />) : null}
             {jobs.length ? seccion("jobs", "Jobs", <div className="max-w-[680px]"><JobsTab jobs={jobs} negocio={f.id} sesion={sesion} es={es} /></div>) : null}

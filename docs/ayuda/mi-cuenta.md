@@ -23,7 +23,7 @@ cuenta._
 - **Citas y reservas:** Próximas y Pasadas, con la fecha, el estado (pendiente, confirmada, te proponen otra hora, no pudo,
   terminada…), para cuántos y a qué hora. Tocarla abre la reservación.
 - **Guardados:** Negocios (los del corazón y los que sigues, abierto o cerrado; «Editar» para quitar o dejar de seguir),
-  **Platos y productos** (los platos que guardas con el corazón en el menú), Vacantes y Novedades guardadas.
+  **Platos y productos** (los platos y los productos de mercados y tiendas que guardas con el corazón), Vacantes y Novedades guardadas.
 - **Reseñas:** las que escribiste (estrellas, si es verificada, la respuesta del negocio, cuántos la marcaron Útil, si
   To'Latino la ocultó y por qué) y las que te faltan de los últimos 30 días.
 - **Empleos:** tus solicitudes (abiertas y cerradas) con su estado y la entrevista.
@@ -117,7 +117,11 @@ quedan cifras; si borras tu cuenta, a los 30 días se vacían tus conversaciones
   hay una para ti) y **Pedir**, que abre el negocio en su menú con el plato ya abierto.
 - **Si el plato ya no está:** si el negocio lo quitó del menú, To'Latino lo ocultó, el menú está en pausa o el negocio ya no sale, el plato sigue
   en tu lista con **No disponible** y sin **Pedir**. Si vuelve, vuelve a salir para pedir.
-- **Quitarlos:** toca el corazón en el plato, o en Guardados toca **Editar** y luego **Quitar** (también los que dicen No disponible).
+- **Productos de mercados y tiendas:** en un mercado o una tienda, abre el producto: el mismo corazón está abajo, a la izquierda. En la lista
+  sale con su precio (lo que va por libra, «$X/lb», como en el mercado; en una tienda con tallas, el precio del artículo) y **Pedir** (el
+  mercado que toma pedidos), **Ver** (el mercado que no toma pedidos en To'Latino) o **Apartar** (la tienda), que abre el negocio con ese
+  producto. Si ya no está a la venta en su página, dice **No disponible**.
+- **Quitarlos:** toca el corazón en el plato o el producto, o en Guardados toca **Editar** y luego **Quitar** (también los que dicen No disponible).
 - **Preguntas:** ¿El negocio ve qué platos guardé? No. ¿Sale en el archivo de mis datos? Sí, en «platos_guardados». ¿Y si borro mi cuenta? A
   los 30 días se borran con ella. ¿Hay un límite? La lista muestra tus últimos 100.
 
@@ -140,7 +144,7 @@ quedan cifras; si borras tu cuenta, a los 30 días se vacían tus conversaciones
 - **Appointments and bookings:** Upcoming and Past, with the date, the status (pending, confirmed, they propose another time, could not,
   finished…), for how many and at what time. Tapping it opens the booking.
 - **Saved:** Businesses (the ones with the heart and the ones you follow, open or closed; «Edit» to remove or unfollow), **Dishes &
-  products** (the dishes you save with the heart on the menu), saved Jobs and Updates.
+  products** (the dishes and the market and store products you save with the heart), saved Jobs and Updates.
 - **Reviews:** the ones you wrote (stars, whether it is verified, the business's reply, how many marked it Helpful, whether To'Latino hid it and
   why) and the ones you still owe from the last 30 days.
 - **Jobs:** your applications (open and closed) with their status and the interview.
@@ -232,6 +236,10 @@ Support cases are emptied (charges stay in Stripe).
   deal if there is one for you) and **Order**, which opens the business on its menu with the dish already open.
 - **If the dish is gone:** if the business removed it from the menu, To'Latino hid it, the menu is paused or the business no longer shows,
   the dish stays on your list with **Not available** and without **Order**. If it comes back, you can order it again.
-- **Remove them:** tap the heart on the dish, or in Saved tap **Edit** and then **Remove** (also the ones that say Not available).
+- **Market and store products:** in a market or a store, open the product: the same heart is at the bottom, on the left. On the list it
+  shows its price (by the pound, «$X/lb», as in the market; in a store with sizes, the item price) and **Order** (a market that takes
+  orders), **View** (a market that does not take To'Latino orders) or **Hold** (a store), which opens the business with that product. If it
+  is no longer for sale on its page, it says **Not available**.
+- **Remove them:** tap the heart on the dish or the product, or in Saved tap **Edit** and then **Remove** (also the ones that say Not available).
 - **Questions:** Can the business see which dishes I saved? No. Is it in my data file? Yes, in «platos_guardados». And if I delete my
   account? After 30 days they are deleted with it. Is there a limit? The list shows your latest 100.

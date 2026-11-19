@@ -11,6 +11,7 @@ import type { MercPublico, ProdMerc } from "@/lib/merc-publico";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { PrecioAntes } from "./PrecioAntes";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { CorazonGuardar, useGuardados } from "./Corazon";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,9 +31,11 @@ export function leerCarritoMerc(): CarritoMerc | null {
 }
 export function guardarCarritoMerc(c: CarritoMerc | null) { try { if (c && c.lines.length) localStorage.setItem(CLAVE, JSON.stringify(c)); else localStorage.removeItem(CLAVE); } catch { /* sin almacenamiento: vive en la pantalla */ } }
 
-export function useMerc(mp: MercPublico | null, es: boolean) {
+export function useMerc(mp: MercPublico | null, es: boolean, sesion = false) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter();
+  // 9t · Productos guardados (./Corazon): sin sesión, a entrar y de vuelta a la hoja de ese producto (?tab=svc&producto=).
+  const gd = useGuardados(mp?.guardados, sesion, (id) => `/n/${mp?.negocio.id ?? ""}?tab=svc&producto=${id}`, es), [avisoG, setAvisoG] = useState<string | null>(null);
   const [hoja, setHoja] = useState<string | null>(null);
   const [cart, setCart] = useState<CarritoMerc | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -68,7 +71,8 @@ export function useMerc(mp: MercPublico | null, es: boolean) {
   const verPedido = () => router.push(`/n/${mp.negocio.id}/mercado`);
   const llegar = () => abrirComoLlegar({ dir: mp.negocio.direccion ?? mp.negocio.nombre });
   const llamar = () => { if (mp.negocio.telefono) location.href = `tel:${mp.negocio.telefono}`; };
-  return { mp, es, E2, nm, h, ord, secs, notes, riel, precio, antes, meta, pod, tot, mio, hoja, aviso, abrir: (id: string, e?: MouseEvent) => { stop(e); setHoja(id); }, cerrar: () => setHoja(null), agregar, quitar, verPedido, llegar, llamar, linea,
+  const guardar = (id: string) => { void gd.cambiar(id).then((x) => { if (x) { setAvisoG(x); setTimeout(() => setAvisoG(null), 2600); } }); };
+  return { mp, es, E2, nm, h, ord, secs, guardado: gd.guardado, guardar, avisoG, notes, riel, precio, antes, meta, pod, tot, mio, hoja, aviso, abrir: (id: string, e?: MouseEvent) => { stop(e); setHoja(id); }, cerrar: () => setHoja(null), agregar, quitar, verPedido, llegar, llamar, linea,
     otroMercado: !!cart && cart.biz !== mp.negocio.id && cart.lines.length > 0, top: mp.prods.filter((p) => !p.ago).slice(0, 4),
     // C-008 · «Lo más pedido» de verdad: lo que el mercado fija y lo más pedido en 30 días (lib/merc-publico).
     pop: mp.pop.map((id) => mp.prods.find((p) => p.id === id)).filter((p): p is ProdMerc => !!p) };
@@ -235,8 +239,11 @@ export function MeHoja({ v }: { v: Me }) {
             {puede && <div className="rounded-2xl bg-paper px-3.5 py-3 text-pretty text-[12.5px] font-medium leading-[1.55] text-ink/75">{pay}{v.otroMercado ? E2(" Tienes un pedido en otro mercado; si agregas aquí, se reemplaza.", " You have an order at another market; adding here replaces it.") : ""}</div>}
           </div>
         </div>
-        <div className="flex flex-none items-center gap-3.5 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
-          {puede && <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{p.k === "peso" ? E2("ESTIMADO", "ESTIMATE") : "TOTAL"}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{`${money(est)}${p.k === "peso" ? E2(" aprox.", " approx.") : ""}`}</div></div>}
+        {v.avisoG && <div role="status" className="mx-4 mb-2 rounded-[13px] bg-ink px-3.5 py-[11px] text-[12.5px] font-bold text-white">{v.avisoG}</div>}
+        {/* 9t · Con el corazón, la cifra va sin «aprox.» (ya dice ESTIMADO arriba): así «Agregar al pedido» cabe a 390. */}
+        <div className="flex flex-none items-center gap-3 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
+          <CorazonGuardar etiqueta={E2("Guardar producto", "Save product")} guardado={v.guardado(p.id)} onClick={() => v.guardar(p.id)} />
+          {puede && <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/60">{p.k === "peso" ? E2("ESTIMADO", "ESTIMATE") : "TOTAL"}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{money(est)}</div></div>}
           <div className="flex min-w-0 flex-1">{puede ? <Button block icon="bag" onClick={() => v.agregar(p, q, p.opc && p.opc.o.length ? oi : null)}>{E2("Agregar al pedido", "Add to order")}</Button> : <Button block icon="pin" onClick={v.llegar}>{E2("Cómo llegar", "Directions")}</Button>}</div>
         </div>
       </div>

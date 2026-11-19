@@ -6,6 +6,11 @@
 
 /* Menú (Comida): el plato que no se quitó y que To'Latino no ocultó. */
 export const PLATO_VIVO = (i: string) => `${i}.module = 'menu' and ${i}.removed_at is null and ${i}.status = 'live'`;
+/* 9t · Mercados (lib/merc-publico.ts mercPublico): el producto que no se quitó y que To'Latino no ocultó (lo de 21+ o solo en la tienda también sale,
+   con «Cómo llegar»). Tiendas, y la tienda de Auto, Hogar y Transporte (lib/apartados.ts tiendaVenta): lo que se vende en la app (sin 21+ ni solo en la
+   tienda). Las fichas y los platos guardados (lib/platos-guardados.ts) leen esto mismo. */
+export const PRODUCTO_MERCADO_VIVO = (i: string) => `${i}.module = 'shop' and ${i}.removed_at is null and ${i}.status = 'live'`;
+export const ARTICULO_TIENDA_VIVO = (i: string) => `${i}.module = 'shop' and ${i}.removed_at is null and ${i}.sell and not ${i}.in_store_only and ${i}.age_min = 0 and ${i}.status = 'live'`;
 /* La sección del menú que se ve en la página («Se ve en tu página»). */
 export const SECCION_MENU_VISIBLE = (s: string) => `${s}.module = 'menu' and ${s}.removed_at is null and ${s}.visible`;
 

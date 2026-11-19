@@ -5,6 +5,7 @@ import { cfgSql } from "./config";
 import { db, tx, type AlGuardar } from "./db";
 import { populares, ventasSqlDe, type Ventas30 } from "./menu-ventas";
 import { PUNTO_PUBLICO } from "./punto";
+import { ARTICULO_TIENDA_VIVO } from "./visible-publico";
 
 /* Apartar productos (Fase 4 · bloque 4f-3). Diseño: TLApartar.hold → el apartado de Tiendas (neg-tienda-flow.js:
    APP-NEG-TIENDA-APARTADO / -ESTADO). Mismo motor para las tiendas de Auto y Hogar y, después, para Tiendas.
@@ -56,7 +57,7 @@ export async function tiendaVenta(negocio: string, userId: string | null = null)
             case when exists (select 1 from item_variants v where v.item_id = i.id and v.removed_at is null) then (select coalesce(sum(v.stock_left), 0)::int from item_variants v where v.item_id = i.id and v.removed_at is null)
                  when i.stock_mode = 'qty' then greatest(i.stock_left, 0) else 99 end as quedan
        from items i join businesses b on b.id = i.business_id
-      where i.business_id = $1 and i.module = 'shop' and i.removed_at is null and i.sell and not i.in_store_only and i.age_min = 0 and i.status = 'live' and b.status = 'active' and 'shop' = any(b.modules_on) and not (b.modules_off ? 'shop')
+      where i.business_id = $1 and ${ARTICULO_TIENDA_VIVO("i")} and b.status = 'active' and 'shop' = any(b.modules_on) and not (b.modules_off ? 'shop')
       order by i.sort, i.id limit 120`, [negocio, userId])).rows.map(({ a, base, ...x }) => ({ ...x, was: base > x.precio ? base : null, d: { es: x.d?.es ?? "", en: x.d?.en ?? "" }, cond: a?.cond === "n" || a?.cond === "u" ? a.cond : null, size: typeof a?.size === "string" ? a.size : null }));
 }
 
