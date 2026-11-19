@@ -293,10 +293,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **→ después de abrir (DA-02)** · **App externa conectada de verdad** (DoorDash Drive / Uber Direct por API): hoy el negocio pide el repartidor en la
   app externa y pega el enlace. Conectarla sería un servicio externo nuevo: decisión del fundador. — _9a (11 nov): conectar DoorDash Drive / Uber Direct es un servicio externo nuevo (regla 3): decisión del fundador. En `docs/DESPUES-DE-ABRIR.md`._
 - [x] **Delivery con tarjeta** (envío y propina cobrados en la app): con el 2d. Hoy solo efectivo al recibir. — **✓ 9a (11 nov):** delivery con tarjeta: envío y propina (2f/2d; app/repartidor, lib/cobros.ts); prueba dlv2f4.
-- [ ] **→ 9t** · **Calles del Censo (TIGER) en el sandbox:** se cargan con `.github/workflows/direcciones.yml`; en el entorno local
+- [x] **→ 9t** · **Calles del Censo (TIGER) en el sandbox:** se cargan con `.github/workflows/direcciones.yml`; en el entorno local
   de pruebas se usan calles sintéticas. Producción las carga en la fase 9.
 
-## Reseñas (bloque 2g-1, 6 nov 2026)
+## Reseñas (bloque 2g-1, 6 nov 2026) — **✓ 19 nov:** el despliegue del sandbox las carga solo (`infra/pruebas/deploy.sh` 3e, unidad `tolatino-direcciones`); estado-sandbox 44603798811: `/api/direcciones?q=40 N Church St Hazleton` y `435 Hamilton St Allentown` responden con calidad «numero» (el número exacto del tramo del Censo).
 - [x] **Rango y puntos** del vecino en la tarjeta («SARGENTO · 23 RESEÑAS», «+15 PUNTOS»): hecho en 5f (desde Sargento; +15 si la reseña
   verificada sumó). Falta solo la nota de rango en «Tu reseña» del formulario de escribir (texto del diseño, sin dato nuevo).
 - [x] **«Ver traducción» (D3)** en reseñas y respuestas: con el servicio de traducción. — **✓ 9a (11 nov):** «Ver traducción» propia en reseñas y respuestas (5h, lib/traduccion.ts); prueba com5h.
@@ -1555,10 +1555,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
       a 9t. (9b-3, 13 nov)
 
 ## Fase 9 · 9c — accesibilidad del sistema de diseño (14 nov) — _19 nov (9t): con la imagen nueva del runner (20261111.196.1) todo sale ~1,5× más lento que con la 20261111.82.6 (generar los datos de la carga: vecinos 0,9 → 1,5 s; Tabla del Barrio 14,8 → 21 s); «contenido» (Super Admin › Contenido, p95 ~100 ms de 80) y «categoría» (p95 ~66 ms de 50) quedan por encima en las tres cargas 44575391134 / 44577890861 / 44581283913 y por debajo en 44571463348 (64 / 39 ms), sin cambios en su código. Se vuelve a medir en la máquina de producción antes de encender._
-- [ ] **→ 9t** · **Contraste de texto AA (4,5 : 1):** los grises de texto del sistema (`--tl-text-muted` = tinta al 50 %, `--tl-text-faint` al 42 % y los
+- [x] **→ 9t** · **Contraste de texto AA (4,5 : 1):** los grises de texto del sistema (`--tl-text-muted` = tinta al 50 %, `--tl-text-faint` al 42 % y los
       `rgba(11,14,18,.42–.5)` en línea de muchos componentes) dan 2,9–3,7 : 1 sobre blanco y papel: no llegan a AA para texto pequeño. Subirlos a
       ≥ 60 % cambia pixeles en las capturas aprobadas de los 9 dispositivos, así que **no se hizo en 9c** (regla: lo visual no cambia sin OK).
-      Se hace en un bloque con captura nueva aprobada en `docs/REVISION.md` (subir `muted` a .62 y `faint` a .55, `pruebas/visual/` por `aprobar`). (9c, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m (sistema de diseño entero; pide el OK del diseño)._ — **9c-2 (15 nov):** hecho en el código (ink al 60 % en el sistema portado, las pantallas y los tokens; guardián `contrasteTexto`); queda que axe lo confirme en las seis pantallas, aprobar las capturas nuevas y sacar `color-contrast` de `axe-conocidas.json`.
+      Se hace en un bloque con captura nueva aprobada en `docs/REVISION.md` (subir `muted` a .62 y `faint` a .55, `pruebas/visual/` por `aprobar`). (9c, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m (sistema de diseño entero; pide el OK del diseño)._ — **9c-2 (15 nov):** hecho en el código (ink al 60 % en el sistema portado, las pantallas y los tokens; guardián `contrasteTexto`); queda que axe lo confirme en las seis pantallas, aprobar las capturas nuevas y sacar `color-contrast` de `axe-conocidas.json`. — **✓ 19 nov:** lo que quedaba ya está: `pruebas/visual/axe-conocidas.json` sin excepciones (color-contrast fuera) y axe «sin violaciones serias ni críticas» en las seis pantallas de los 9 dispositivos, con las capturas aprobadas (confirmación 44573806469: los 9 carriles «dispositivo» en verde).
 - [ ] **→ 9t** · **Objetivos táctiles de 44 px:** a11y9c informa cuántos controles del sistema miden menos de 44 px (íconos de 30–36 px, chips, filas
       compactas). Agrandarlos cambia el diseño aprobado: o se agranda el área de toque sin tocar lo que se ve (relleno invisible con `::after`) o se aprueba
       el cambio. Va con el contraste, en el mismo bloque y la misma aprobación visual. (9c, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._
