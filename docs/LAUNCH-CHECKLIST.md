@@ -1549,9 +1549,17 @@ en el momento. Se marca solo cuando está hecho de verdad.
       `rgba(11,14,18,.42–.5)` en línea de muchos componentes) dan 2,9–3,7 : 1 sobre blanco y papel: no llegan a AA para texto pequeño. Subirlos a
       ≥ 60 % cambia pixeles en las capturas aprobadas de los 9 dispositivos, así que **no se hizo en 9c** (regla: lo visual no cambia sin OK).
       Se hace en un bloque con captura nueva aprobada en `docs/REVISION.md` (subir `muted` a .62 y `faint` a .55, `pruebas/visual/` por `aprobar`). (9c, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m (sistema de diseño entero; pide el OK del diseño)._ — **9c-2 (15 nov):** hecho en el código (ink al 60 % en el sistema portado, las pantallas y los tokens; guardián `contrasteTexto`); queda que axe lo confirme en las seis pantallas, aprobar las capturas nuevas y sacar `color-contrast` de `axe-conocidas.json`.
-- [ ] **→ 9t** · **Objetivos táctiles de 44 px:** a11y9c informa cuántos controles del sistema miden menos de 44 px (íconos de 30–36 px, chips, filas
+- [x] **→ 9t** · **Objetivos táctiles de 44 px:** a11y9c informa cuántos controles del sistema miden menos de 44 px (íconos de 30–36 px, chips, filas
       compactas). Agrandarlos cambia el diseño aprobado: o se agranda el área de toque sin tocar lo que se ve (relleno invisible con `::after`) o se aprueba
       el cambio. Va con el contraste, en el mismo bloque y la misma aprobación visual. (9c, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._
+      — _19 nov: el primer intento (`::after` agrandado, 4bb49b4) se revirtió en 3b82b7d: el área de un control tapaba la caja de otro de otro contenedor._
+      — **✓ 9t (19 nov, rehecho):** el área se decide en el momento del toque, con lo que el navegador tiene bajo el dedo (`packages/ui/src/toque.ts`,
+      montado una vez en el layout raíz con `AreaDeToque`): un toque del dedo que cae en NADA tocable es del control más cercano si está en su área de
+      44 × 44; un toque en la caja de un control o de un campo nunca se reparte; sin estilos (nada cambia en pantalla). a11y9c lo mide (nadie pisa a nadie,
+      44 × 44 o un vecino, un toque real con el dedo, pixel a pixel) en la ficha, «Tu pedido», la reserva, los boletos y publica, y a 320 / 375 con y sin
+      letra grande (lo que cazó: el nombre del encabezado tapaba el botón del idioma a 320 con letra grande, arreglado). Guardián `toqueDe44`,
+      `alreves9ttoque2` 29/29. Con el ratón no se amplía (decisión por defecto, REVISION). Queda para el CI: WebKit (no hay en la máquina local) y el
+      paso de fotos de publica en a11y9c (sin Garage en local).
 - [x] **→ 9t** · **Nombres en inglés de los íconos sin texto del sistema (9c-2):** los controles que solo tienen un ícono (votar en Comunidad, «Foto» de una reseña,
       «Ver el equipo», ficha del dominó, cerrar/atrás/enviar de El Compa y del onboarding, los de la barra del Super Admin…) tienen nombre con un prop
       (`upLabel`, `closeLabel`, `backLabel`, `searchLabel`…) cuyo valor por defecto es ES, o ES/EN si el componente recibe `lang`. Falta que cada pantalla que los
