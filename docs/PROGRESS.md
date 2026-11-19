@@ -2694,3 +2694,13 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   e2e en local (copia de la base local Postgres 16 con 0180, `next build` standalone en :3197, Chromium; sin Docker: el `sql()` de la prueba se pasó a
   psql local en una copia fuera del repo): **rsv9t** 37 ✓ y **ciu9t** 29 ✓ (390/1360, ES/EN). tsc + build + guardianes en verde; CMS verificado. Ayuda:
   `reservar-mesa`, `ciudad` (ES/EN).
+- **19 nov · Confirmación de hito (44428582194) y el tope de «Ayuda con …» (9t):** la confirmación completa en b43f54d salió con 3 rojos
+  de pruebas, ninguno de la app: pedidos2c y vec9m (barajada) hacían clic antes de que React conectara el elemento (el interruptor no
+  cambió y «Guardar» siguió apagado; el plato no abrió su hoja) → `pruebas/lib/hidratado.cjs` espera las props de React de ESE elemento
+  antes del clic; menu2b (ancho 1024) esperaba el «load» de la ficha con fotos y video (30 s) → espera el HTML y la hidratación, no el
+  «load». El tope de ayudas: `ayuda_tope_dia` (0182, Configuración › Soporte, 1–50, de fábrica 5) en vez del 5 fijo en lib/ayuda.ts y
+  lib/ayuda-cita.ts, leído con `cfgSql` en la misma consulta que cuenta (la seguridad nunca se frena); prueba de punta a punta `ayu9t`
+  (persona nueva, tope 2 → la tercera se rechaza, la de ayer no cuenta, tope 3 → pasa), guardián `topeAyudaDeConfig` y `alreves9t3`
+  (8/8); la ayuda (pedido y cita) dice «en 24 horas (To’Latino puede ajustar ese número)». En paralelo (agentes): auditoría de las
+  consultas con texto interpolado (Semgrep en modo taint) y lo que faltaba de Buscar (servicios de las demás categorías, «Tiene … · $»,
+  abrir el plato directo, micrófono y ciudad en el desplegable de escritorio).

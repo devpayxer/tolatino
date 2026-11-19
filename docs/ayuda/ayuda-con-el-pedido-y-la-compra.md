@@ -38,7 +38,7 @@ puedo**. Solo quien tiene permiso de dinero devuelve a la tarjeta.
 | Pagaste en el local | El negocio te lo devuelve en el local; To'Latino puede mediar. |
 | Ya pediste ayuda con ese pedido | Una por pedido o apartado; ves su estado en la misma pantalla. |
 | Pasaron más de 7 días | Ya no se puede pedir desde la app; escribe a Soporte. |
-| Abriste muchas hoy | Hasta 5 solicitudes por día. |
+| Abriste muchas hoy | Hasta 5 solicitudes en 24 horas (To’Latino puede ajustar ese número). |
 
 ## FAQ
 - **¿La reseña me devuelve el dinero?** No. Para eso es la ayuda.
@@ -80,7 +80,7 @@ Only someone with money permission refunds to the card.
 | You paid at the location | The business refunds you at the location; To'Latino can mediate. |
 | You already asked for help with that order | One per order or hold; you see its status on the same screen. |
 | More than 7 days have passed | It can no longer be requested from the app; write to Support. |
-| You opened many today | Up to 5 requests per day. |
+| You opened many today | Up to 5 requests in 24 hours (To’Latino can adjust that number). |
 
 ### FAQ
 - **Does the review refund my money?** No. That is what help is for.

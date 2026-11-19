@@ -47,6 +47,8 @@ export type ClaveConfig =
   | "ayuda_trozos_max" | "ayuda_umbral_rank"
   // 7b · Soporte (0117)
   | "soporte_sla_h" | "soporte_dias" | "soporte_desde_h" | "soporte_hasta_h" | "soporte_casos_dia_max" | "soporte_devolver_max_cents" | "soporte_reabrir_dias"
+  // 9t · el tope de «Ayuda con …» por persona en 24 h (0182)
+  | "ayuda_tope_dia"
   // 7c · El Compa: el motor, el tope y los límites (0118)
   | "compa_tope_mes_cents" | "compa_alerta_pct" | "compa_espera_ms" | "compa_salida_tokens" | "compa_msgs_hora" | "compa_msgs_dia" | "compa_turnos_max"
   | "compa_conv_cierra_h" | "compa_accion_min" | "compa_contexto_ops" | "compa_retener_meses"

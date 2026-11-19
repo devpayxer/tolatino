@@ -32,7 +32,7 @@ Hoy («Ayuda con citas · responde en 24 h») y el detalle de la cita, Super Adm
 | Cita cancelada, vencida o no llegó, con depósito | Solo se puede preguntar por el depósito u otra cosa. |
 | Cita cancelada sin depósito | No hay ayuda (no hubo cita ni cobro): Mensaje o Llamar. |
 | Ya hay una solicitud | La página muestra su estado; una por cita. |
-| Más de 5 solicitudes en un día | «Abriste muchas solicitudes hoy. Prueba mañana.» |
+| Más de 5 solicitudes en 24 horas (To’Latino puede ajustar ese número; un reporte de seguridad nunca se frena) | «Abriste muchas solicitudes hoy. Prueba mañana.» |
 | El negocio acepta una devolución sin depósito pagado | Se arregla en el local; la persona lo ve así. |
 | El negocio propone más que el depósito | No deja: «A su tarjeta puedes devolver hasta $X (el depósito)». |
 | Responde alguien del equipo sin permiso de Cobros y hay que devolver | «Solo el dueño puede devolver dinero.» |
@@ -76,7 +76,7 @@ con la cita.
 | Appointment canceled, expired or no-show, with a deposit | You can only ask about the deposit or something else. |
 | Appointment canceled with no deposit | No help (there was no appointment or charge): Message or Call. |
 | There is already a request | The page shows its status; one per appointment. |
-| More than 5 requests in one day | «You opened many requests today. Try tomorrow.» |
+| More than 5 requests in 24 hours (To’Latino can adjust that number; a safety report is never blocked) | «You opened many requests today. Try tomorrow.» |
 | The business accepts a refund with no deposit paid | It is settled at the business; the client sees it that way. |
 | The business proposes more than the deposit | It will not let it: «You can refund up to $X (the deposit) to their card». |
 | Someone on the team without Charges permission replies and a refund is needed | «Only the owner can refund money.» |

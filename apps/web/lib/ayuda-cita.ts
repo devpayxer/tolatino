@@ -182,9 +182,10 @@ export async function pedirAyudaCita(userId: string, numero: string, p: AyudaCit
     const dada = o.status === "done", sinDar = ["cancelled", "expired", "declined", "noshow"].includes(o.status) && o.dep;
     if (!dada && !sinDar) return no("La ayuda se pide cuando la cita ya pasó.", "Help can be asked once the booking is over.");
     if (!dada && !SIN_CITA.has(reason)) return no("Esta cita no se dio: solo puedes preguntar por el depósito u otra cosa.", "This booking did not happen: you can only ask about the deposit or something else.");
-    const n = (await c.query<{ n: number }>(`select count(*)::int as n from help_requests where user_id = $1 and created_at > now() - interval '1 day'`, [userId])).rows[0]!.n;
+    // 9t · el tope sale de Configuración (ayuda_tope_dia, 0182), leído en la misma consulta que cuenta.
+    const { n, tope } = (await c.query<{ n: number; tope: number }>(`select count(*)::int as n, ${cfgSql("ayuda_tope_dia")} as tope from help_requests where user_id = $1 and created_at > now() - interval '1 day'`, [userId])).rows[0]!;
     // Un reporte de seguridad («Manejo inseguro») nunca se frena por el límite del día.
-    if (n >= 5 && !directo(reason, rubro)) return no("Abriste muchas solicitudes hoy. Prueba mañana.", "You opened many requests today. Try tomorrow.");
+    if (n >= tope && !directo(reason, rubro)) return no("Abriste muchas solicitudes hoy. Prueba mañana.", "You opened many requests today. Try tomorrow.");
     const h = (await c.query<{ id: string; number: string }>(
       `insert into help_requests (number, operation_id, business_id, city_id, user_id, reason, wants, body, amount_cents)
        values ('H-' || nextval('help_request_number_seq'), $1, $2, $3, $4, $5, $6, $7, $8) on conflict (operation_id) do nothing returning id::text, number`,

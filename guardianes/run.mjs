@@ -9527,6 +9527,25 @@ const guardianes = {
     if (!/BASE="\$\{DIRECCIONES_ESPEJO:-https:\/\/www2\.census\.gov\/geo\/tiger\}"/.test(gen) || /googleapis|mapbox|hereapi|nominatim\.openstreetmap|photon\.komoot/.test(gen)) falla(G, "infra/direcciones/generar.sh", 0, "la carga baja datos públicos del Censo (y las fuentes de fuentes-oa.txt): nunca un servicio de geocodificación");
   },
 
+  /* 9t (19 nov) · topeAyudaDeConfig: el tope de «Ayuda con …» por persona en 24 h era un 5 fijo en dos lugares (lib/ayuda.ts y lib/ayuda-cita.ts)
+     y nada lo probaba (LAUNCH). Ahora sale de Configuración (ayuda_tope_dia, 0182, sección Soporte, entre 1 y 50) y se lee con cfgSql en la
+     MISMA consulta que cuenta (lo decide la base, sin caché vieja). En la cita, un reporte de seguridad (directo) nunca se frena. Al revés
+     (alreves9t3): el 5 fijo otra vez, el tope leído aparte, la clave fuera del catálogo, sin límites, o la seguridad frenada por el tope. */
+  topeAyudaDeConfig() {
+    const G = "topeAyudaDeConfig";
+    for (const f of ["apps/web/lib/ayuda.ts", "apps/web/lib/ayuda-cita.ts"]) {
+      const t = sinComent(f);
+      if (/\bn\s*>=\s*\d+/.test(t)) falla(G, f, 0, "el tope de ayudas del día es un número fijo: sale de Configuración (ayuda_tope_dia)");
+      if (!/select count\(\*\)::int as n, \$\{cfgSql\("ayuda_tope_dia"\)\} as tope from help_requests where user_id = \$1 and created_at > now\(\) - interval '1 day'/.test(t))
+        falla(G, f, 0, "el tope se lee en la misma consulta que cuenta las ayudas de 24 h de esa persona (cfgSql(\"ayuda_tope_dia\"))");
+      if (!/if \(n >= tope\b/.test(t)) falla(G, f, 0, "no se compara la cuenta con el tope (n >= tope)");
+    }
+    if (!/if \(n >= tope && !directo\(reason, rubro\)\)/.test(sinComent("apps/web/lib/ayuda-cita.ts"))) falla(G, "apps/web/lib/ayuda-cita.ts", 0, "un reporte de seguridad nunca se frena por el tope del día (!directo)");
+    const m = readFileSync("packages/db/migrations/0182_ayuda_tope.sql", "utf8");
+    if (!/\('ayuda_tope_dia', 1, 50, 5, [^)]*'soporte'/.test(m)) falla(G, "packages/db/migrations/0182_ayuda_tope.sql", 0, "ayuda_tope_dia va al catálogo con sus límites (1–50, de fábrica 5) en Soporte");
+    if (!/\| "ayuda_tope_dia"/.test(sinComent("apps/web/lib/config.ts"))) falla(G, "apps/web/lib/config.ts", 0, "ayuda_tope_dia no está en ClaveConfig");
+  },
+
   /* Anchos (18 nov) · arrastreSeSuelta: en el iPad un arrastre del mapa del pin se quedó «agarrado» (Safari perdió el soltar) y el siguiente
      movimiento del puntero, camino a «Guardar», devolvió el pin a donde empezó ese arrastre: se guardó otro punto que el que se veía. Toda pieza que
      arrastra con onPointerMove (los mapas) se suelta también al perder la captura (onLostPointerCapture), solo sigue al MISMO puntero (pointerId) y,

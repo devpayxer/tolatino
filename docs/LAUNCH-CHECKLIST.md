@@ -1467,9 +1467,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       línea para cerrarla: dos corridas enteras seguidas en verde y una `--barajar` → la corrida de confirmación va al CI de 9b-2.
 
 ## Fase 9 · 9b-1 (la regresión entera en una base nueva; 12 nov)
-- [ ] **→ 9t** · **El tope de «Ayuda con …» (5 por persona en 24 h, `lib/ayuda.ts` y `lib/ayuda-cita.ts`) no tiene su prueba:** la regresión
+- [x] **→ 9t** · **El tope de «Ayuda con …» (5 por persona en 24 h, `lib/ayuda.ts` y `lib/ayuda-cita.ts`) no tiene su prueba:** la regresión
       ahora corre un día hacia atrás la hora de las ayudas de esa persona antes de abrir otra (`sinTopeDeAyuda`), así que nada comprueba que la
-      sexta del día se rechace con «Abriste muchas solicitudes hoy». Además es un número fijo en el código (no sale de Configuración). (9b-1, 12 nov) — _9b-3 (13 nov): la prueba del sexto pedido del día y el número en Configuración, con lo diferido del vecino (9m)._ — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m: la prueba del sexto pedido del día y el número en Configuración._
+      sexta del día se rechace con «Abriste muchas solicitudes hoy». Además es un número fijo en el código (no sale de Configuración). (9b-1, 12 nov) — _9b-3 (13 nov): la prueba del sexto pedido del día y el número en Configuración, con lo diferido del vecino (9m)._ — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m: la prueba del sexto pedido del día y el número en Configuración._ — _9t (19 nov): hecho. El número sale de Configuración › Soporte (`ayuda_tope_dia`, 0182, 1–50, de fábrica 5) y se lee con `cfgSql` en la misma consulta que cuenta (lib/ayuda.ts y lib/ayuda-cita.ts; un reporte de seguridad nunca se frena). Prueba de punta a punta `ayu9t` (persona nueva: con el tope en 2 la tercera se rechaza con «Abriste muchas solicitudes hoy», la de ayer no cuenta, con 3 pasa), guardián `topeAyudaDeConfig` y su al revés `alreves9t3` (8/8)._
 - [ ] **→ 9b** · **La regresión de punta a punta tarda ~1 h 40 min una a la vez** (y más con las que piden a otra con `requiere`): para el CI
       (9b-2) va por grupos en paralelo, cada grupo con su base nueva. (9b-1, 12 nov)
 - [x] **Pruebas con el negocio abierto «00:00–23:59»** (push8c, app8e, pagos2d, pedidos2c, avisos2j, menu2b, compa7h, compa7f,

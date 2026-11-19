@@ -64,8 +64,9 @@ export async function pedirAyuda(userId: string, numero: string, p: AyudaIn): Pr
     const items = (Array.isArray(p?.items) ? p.items : []).map((x) => { const l = L.find((y) => y.n === String(x?.n ?? "")); return l ? { n: l.n, q: Math.max(1, Math.min(l.q, Math.round(Number(x?.q) || 1))) } : null; }).filter((x): x is ItemAyuda => !!x);
     if (POR_PLATO.has(reason) && !items.length) return no("Elige qué platos.", "Choose which dishes.");
     if (wants === "reponer" && !POR_PLATO.has(reason) && reason !== "nollego") return no("Eso no se puede reponer.", "That cannot be replaced.");
-    const n = (await c.query<{ n: number }>(`select count(*)::int as n from help_requests where user_id = $1 and created_at > now() - interval '1 day'`, [userId])).rows[0]!.n;
-    if (n >= 5) return no("Abriste muchas solicitudes hoy. Prueba mañana.", "You opened many requests today. Try tomorrow.");
+    // 9t · el tope sale de Configuración (ayuda_tope_dia, 0182), leído en la misma consulta que cuenta.
+    const { n, tope } = (await c.query<{ n: number; tope: number }>(`select count(*)::int as n, ${cfgSql("ayuda_tope_dia")} as tope from help_requests where user_id = $1 and created_at > now() - interval '1 day'`, [userId])).rows[0]!;
+    if (n >= tope) return no("Abriste muchas solicitudes hoy. Prueba mañana.", "You opened many requests today. Try tomorrow.");
     const r = await c.query<{ number: string }>(
       `insert into help_requests (number, operation_id, business_id, city_id, user_id, reason, items, wants, body) values ('H-' || nextval('help_request_number_seq'), $1, $2, $3, $4, $5, $7::jsonb, $8, $6)
        on conflict (operation_id) do nothing returning number`, [o.id, o.business_id, o.city_id, userId, reason, txt, JSON.stringify(items), wants]);
