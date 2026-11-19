@@ -22,7 +22,9 @@ const UA_PC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.3
 const NEG = 'la-terraza-night', DUENO = '5705550366', ADMIN = '5705550199';
 const RUN = Date.now().toString(36), TAG = `[e9t ${RUN}]`;
 const motivo = async (p, t) => { await p.locator('textarea').last().fill(`${t} ${RUN}`); };
-const toast = (p, re) => p.getByRole('status').filter({ hasText: re }).first().waitFor({ timeout: 10000 });
+// El éxito sale como aviso (role=status); el error de la base, dentro de la hoja (19 nov: la prueba solo buscaba el aviso).
+const toast = async (p, re) => { try { await p.getByRole('status').filter({ hasText: re }).or(p.getByText(re)).first().waitFor({ timeout: 10000 }); }
+  catch (e) { await p.screenshot({ path: OUT + 'evt9t-sin-aviso.png', fullPage: false }).catch(() => {}); const vistos = await p.getByRole('status').allInnerTexts().catch(() => []); throw new Error(`no salió el aviso ${re} (avisos en pantalla: ${JSON.stringify(vistos).slice(0, 300)})`); } }; // 19 nov · si no sale, dice cuál salió
 const CFG = 'destacados_evt_por_ciudad', cfgAntes = sql(`select value::text from platform_config where key = '${CFG}'`);
 const ponerCfg = (v) => sql(`insert into platform_config (key, value, note) values ('${CFG}', to_jsonb(${v}), 'evt9t') on conflict (key) do update set value = excluded.value, note = excluded.note, updated_at = now()`);
 const HOY = sql(`select (now() at time zone 'America/New_York')::date::text`), D = (k) => sql(`select ((now() at time zone 'America/New_York')::date + ${k})::text`);
