@@ -178,9 +178,14 @@ const nombres = (r) => (r.filas || []).filter((x) => x.kind === 'item').map((x) 
     await shot(m, '390-apartados-es');
     await m.getByText('Ver el negocio').first().click();
     ok(await espera(async () => new URL(m.url()).pathname === '/n/boutique-yaritza'), '«Ver el negocio» abre su página');
+    // Marisol puede tener otros apartados vivos de otras pruebas (apt4f/apt4q en la misma base): se cuenta, no se pide que no haya ninguno.
+    const vivos = (t) => t.split('LO RECOGES Y PAGAS EN EL LOCAL').length - 1;
+    await m.goto(B + '/cuenta/pedidos'); await m.waitForLoadState('networkidle').catch(() => {});
+    const n1 = vivos(await texto(m));
     sql(`update operations set status = 'cancelled' where number = '${APT}'`);
     await m.goto(B + '/cuenta/pedidos'); await m.waitForLoadState('networkidle').catch(() => {});
-    ok(!(await texto(m)).includes('LO RECOGES Y PAGAS EN EL LOCAL'), 'un apartado cancelado no sale');
+    const n2 = vivos(await texto(m));
+    ok(n1 >= 1 && n2 === n1 - 1, `un apartado cancelado no sale (antes ${n1}, después ${n2})`);
     await m.goto(B + '/cuenta/pedidos?f=curso'); await m.waitForLoadState('networkidle').catch(() => {});
     ok(!(await texto(m)).includes('LO RECOGES Y PAGAS EN EL LOCAL'), 'en «En curso» no se repiten los apartados (solo en Todos)');
 
