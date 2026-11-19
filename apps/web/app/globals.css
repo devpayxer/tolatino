@@ -104,3 +104,8 @@
   outline: 2px solid var(--tl-brand) !important;
   outline-offset: 2px !important;
 }
+
+/* 9t · «Letra más grande» (Mi cuenta › Ajustes, diseño setV; users.big_text). Las piezas del sistema miden en px, así que no basta con el
+   tamaño de la raíz: se agranda TODO el marco de la app un 12 % (zoom, como el del navegador). El ancho útil de un teléfono de 390 queda en
+   ~348 px, dentro de lo que el diseño ya aguanta (teléfonos de 360); al revés y e2e let9t vigilan que no haya scroll de lado. */
+[data-letra="grande"] { zoom: 1.12; }

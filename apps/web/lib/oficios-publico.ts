@@ -1,5 +1,6 @@
 import "server-only";
 import { db, tx } from "./db";
+import { SERVICIO_VIVO } from "./visible-publico";
 import { enPausa } from "./modulo-pausa";
 import type { Attrs, Bi } from "./oficios";
 
@@ -37,7 +38,7 @@ export async function oficiosPublico(negocio: string, userId: string | null): Pr
     db().query<OficioPub>(
       `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, coalesce(i.svc_kind, 'fijo') as k, i.price_cents as cents, i.duration_min as dur,
               i.svc_attrs as a, i.svc_opts as opts, i.photos[1] as foto
-         from items i where i.business_id = $1 and i.module = 'svc' and i.removed_at is null and i.sell and i.status = 'live' and not i.is_extra order by i.sort, i.id`, [negocio]),
+         from items i where i.business_id = $1 and ${SERVICIO_VIVO("i")} order by i.sort, i.id`, [negocio]),
     db().query<OficiosPublico["tool"]>(`select labor_rate_cents as rate, warranty_months as "warrM", warranty_miles as "warrMi", same_day_cutoff_h as cut, h24, emergency_eta_min as eta, null::int as zone from trade_settings where business_id = $1`, [negocio]),
     db().query<PolPub>(`select auto_approve as auto, response_min as resp, deposit_cents as dep, cancel_free_h as cxh, expires_h as exp, deposit_kinds as kinds, deposit_big_over_cents as "bigOver", deposit_big_cents as big, deposit_min_price_cents as min from booking_policies where business_id = $1`, [negocio]),
     db().query<{ usados: number; cap: number }>(`select (select count(*)::int from operations where business_id = $1 and kind <> 'table' and free_quota_month = $2) as usados,

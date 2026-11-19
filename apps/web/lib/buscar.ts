@@ -69,12 +69,14 @@ export async function entender(q: string, vivo = false): Promise<Entendido> {
     for (const x of D.syn.get(w) ?? D.syn.get(s) ?? []) if (!a.includes(x)) a.push(x);
     return { w, a };
   });
-  // Errores de escritura: palabra de 5+ letras que no es prefijo de nada del vocabulario → la más parecida.
+  // Errores de escritura: palabra de 5+ letras que no es prefijo de nada del vocabulario → la más parecida. 9t · El vocabulario suma los platos y
+  // servicios (search_vocab_platos, 0180): «mofngo» → mofongo.
   const dudosas = grupos.filter((g) => g.w.length >= 5);
   if (dudosas.length) {
     const r = await db().query<{ w: string; pre: string | null; fix: string | null }>(
-      `select w, (select word from search_vocab v where v.word like w || '%' limit 1) as pre,
-              (select word from search_vocab v where v.word % w and similarity(v.word, w) >= 0.4 order by similarity(v.word, w) desc limit 1) as fix
+      `select w, coalesce((select word from search_vocab v where v.word like w || '%' limit 1), (select word from search_vocab_platos v where v.word like w || '%' limit 1)) as pre,
+              (select word from (select word from search_vocab v where v.word % w union all select word from search_vocab_platos v where v.word % w) v
+                where similarity(v.word, w) >= 0.4 order by similarity(v.word, w) desc limit 1) as fix
          from unnest($1::text[]) w`, [dudosas.map((g) => g.w)]);
     for (const x of r.rows) {
       const g = grupos.find((y) => y.w === x.w);

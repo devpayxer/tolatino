@@ -8,6 +8,8 @@ import { armarTarjetas } from "@/lib/tarjetas";
 import { dominante, ejemplos, entender, negocios, N, registrar, resaltar, sugerirCatalogo, tendencias, tsq, type Entendido } from "@/lib/buscar";
 import { buscarVecinos } from "@/lib/comunidad-portada";
 import { filaVecino } from "./vecinos";
+import { platos } from "@/lib/buscar-platos";
+import { filaPlato } from "./platos";
 import { Buscar, type VistaBuscar } from "./Buscar";
 import DATOS from "@/lib/busqueda-datos.json";
 import { ubicacion } from "@/lib/ubicacion";
@@ -23,7 +25,7 @@ const FILTRABLES = new Set(["open", "near", "ver", "dlv", "pk", "walk", "casa", 
 // Filtros rápidos según la categoría dominante (prototipo QK).
 const RAPIDOS: Record<string, string[]> = { "NEG-FOOD": ["dlv", "pk"], "NEG-BELL": ["walk", "casa"], "NEG-SALUD": ["medicaid", "medicare", "sinseg", "esp"], "NEG-HOGAR": ["h24", "casa"], "NEG-AUTO": ["walk", "h24"], "NEG-NOCHE": ["free"], "NEG-PRO": ["esp"], "NEG-INMUEBLE": ["sinssn"], "NEG-MERC": ["dlv", "pk"] };
 
-type SP = { q?: string; cat?: string; f?: string; orden?: string; p?: string; tab?: string; vc?: string; ef?: string };
+type SP = { q?: string; cat?: string; f?: string; orden?: string; p?: string; tab?: string; vc?: string; ef?: string; ic?: string; io?: string };
 
 /* Quita una frase de la búsqueda («barbería abierta ahora» − «abierta ahora»): así se quita una intención. */
 function sinFrase(q: string, frase: string) {
@@ -48,7 +50,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   const orden = (["rel", "near", "best"] as const).find((o) => o === sp.orden);
   const pagina = Math.max(0, (parseInt(String(sp.p ?? "1"), 10) || 1) - 1);
   // 5e · «Vecinos» (lo que dicen los vecinos en la Comunidad) solo con cuenta: sin sesión la pestaña no existe y no se lee nada.
-  const tab = sp.tab === "biz" ? "biz" : sp.tab === "vec" && u ? "vec" : sp.tab === "evt" ? "evt" : "all";
+  const tab = sp.tab === "biz" ? "biz" : sp.tab === "vec" && u ? "vec" : sp.tab === "evt" ? "evt" : sp.tab === "itm" ? "itm" : "all";
   // 6b · Eventos (prototipo Buscar EVF): Todos · Hoy · Este fin de semana · Gratis.
   const ef = (["all", "d0", "wk", "free"] as const).find((x) => x === sp.ef) ?? "all";
   const base: Omit<VistaBuscar, "res"> = {
@@ -79,18 +81,23 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   const limite = tab === "biz" ? 10 : 5;
   // 9m · Vacantes en Buscar (L311) y si ya pidió «Avísame de nuevas vacantes» en esta ciudad.
   const [VAC, alertaVac] = await Promise.all([(await import("@/lib/jobs")).vacantesBuscar(CIUDAD, q, 3), u ? (await import("@/lib/alertas")).tieneAlertaVacantes(u.id, CIUDAD) : Promise.resolve(false)]);
-  const [r, C, V, EV] = await Promise.all([
+  // 9t · Platos y servicios (prototipo it / il): 4 en «Todo»; en su pestaña hasta 40, con el filtro por categoría (ic) y «Precio más bajo» (io).
+  const icCat = tab === "itm" ? cats.find((c) => c.slug === sp.ic)?.id ?? null : null, ioPrecio = tab === "itm" && sp.io === "price";
+  const [r, C, V, EV, PL] = await Promise.all([
     negocios(E, { punto: loc, cat: catSel?.id ?? null, orden, pagina: tab === "biz" ? pagina : 0, limite }),
     sugerirCatalogo(E, CIUDAD, catSel?.id ?? null),
     u && E.grupos.length && !catSel ? buscarVecinos(u.id, CIUDAD, tsq(E.grupos, true), tab === "vec" ? String(sp.vc ?? "") || null : null, tab === "vec" ? 10 : 2) : null,
     E.grupos.length && !catSel ? buscarEventos(tsq(E.grupos, true), loc, tab === "evt" ? ef : "all", u?.id ?? null, es, tab === "evt" ? 40 : 4) : null,
+    platos(E, { punto: loc, cat: catSel?.id ?? null, filtro: icCat, orden: ioPrecio ? "price" : "rel", limite: tab === "itm" ? 40 : 4, userId: u?.id ?? null }),
   ]);
   const vaciaPrimero = !!C.vacias[0] && (!C.subs[0] || C.vacias[0].score > C.subs[0].score);
   const dom = catSel?.id ?? dominante(r.items, C.subs, C.vacias, C.cats, vaciaPrimero);
-  const nada = r.total === 0;
+  // 9t · Un plato o servicio también es un resultado: «mofongo» no está en el nombre de ningún negocio, pero sí en su menú.
+  const nPlatos = Object.values(PL.cats).reduce((a, b) => a + b, 0);
+  const nada = r.total === 0 && nPlatos === 0;
   const dym = nada && E.grupos.some((g) => g.corregida) ? E.palabras.map((w) => E.grupos.find((g) => g.w === w)?.corregida ?? w).join(" ") : null;
   if (q && pagina === 0 && tab === "all") {
-    await registrar(CIUDAD, u?.id ?? null, q, E, dom, r.total);
+    await registrar(CIUDAD, u?.id ?? null, q, E, dom, r.total + nPlatos);
     const ctx = await contexto();
     after(() => evento("buscar", { ciudad: CIUDAD, userId: u?.id ?? null, props: { resultados: r.total, cat: dom } }, ctx));
   }
@@ -144,6 +151,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
         catDominante: dom,
         vecinos: V ? { total: V.total, mas: V.mas, items: V.items.map((x) => filaVecino(x, E, es)) } : null,
         eventos: EV && EV.total ? { total: EV.total, f: ef, items: EV.items } : null,
+        platos: PL.total || Object.keys(PL.cats).length ? {
+          total: nPlatos, ic: icCat ? sp.ic! : null, precio: ioPrecio,
+          cats: Object.entries(PL.cats).map(([id, n]) => ({ slug: catDe(id)?.slug ?? "", l: catDe(id)?.label ?? id, n })).filter((x) => x.slug).sort((a, b) => b.n - a.n),
+          items: PL.items.map((x) => filaPlato(x, E, es)),
+        } : null,
         vacantes: VAC.total ? { total: VAC.total, alerta: alertaVac, items: VAC.items.map((x) => ({ id: x.id, biz: x.biz, negocio: x.bname, puesto: es ? x.title.es : x.title.en || x.title.es, logo: x.logo, pago: x.payFrom ? `$${(x.payFrom / 100).toFixed(x.payFrom % 100 ? 2 : 0)}${x.payTo ? `–$${(x.payTo / 100).toFixed(x.payTo % 100 ? 2 : 0)}` : ""}${L(" / hora", " / hour")}${x.tips ? L(" + propinas", " + tips") : ""}` : null })) } : null,
       },
     }} />

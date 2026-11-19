@@ -5454,3 +5454,46 @@ historial y el dueño lo ve). Detalles:
   de clientes salen como en Transacciones.
 - El Compa del panel no sale en esta vista (es la conversación del dueño) y no se abre nada «en vivo» (se ve lo de la carga de la página).
 - Si prefieres que el equipo pueda **cambiar** desde el panel (con su nombre en el historial), o que solo un Admin lo abra, se cambia sin perder nada.
+
+## Fase 9 · 9t — Buscar: platos y servicios y el desplegable; Mi cuenta: Apartados y letra más grande (19 nov)
+**Qué mirar (teléfono 390 y computadora 1360, en español y en inglés):**
+- **Platos y servicios (teléfono):** busca «mofongo». Además de los negocios sale **Platos y servicios** con «Mofongo de chicharrón · Sabor Dominicano ·
+  DE LA CASA · 0.3 MI · ABIERTO · $10». Busca «corte»: salen los servicios de la Barbería El Primo con **Precio en la ficha**. «Ver los N» abre la pestaña
+  con un chip por categoría («Todos N», «Comida N», «Belleza N»…) y **Precio más bajo**. Tocar una fila abre la ficha del negocio (en Pro, en su Menú o en
+  Servicios). Mientras escribes, las sugerencias traen la sección PLATOS Y SERVICIOS con el precio a la derecha y arriba «3 NEGOCIOS · 1 PLATO O SERVICIO».
+- **Lo que no debe salir:** en el panel de Sabor Dominicano oculta un plato o apaga «Se ve en tu página» de una sección: deja de salir en Buscar. Con el
+  Menú pausado desde el 360° tampoco sale. Un negocio Free solo enseña en Buscar los platos que enseña su página (los primeros 5).
+- **El desplegable (computadora):** en Negocios toca el buscador de arriba: se abre un panel encima de la página (fondo oscuro). Sin escribir: recientes,
+  «Escribe como hablas», lo más buscado y las categorías. Escribe «mofongo» y pasa el cursor por las filas: a la derecha, la **vista previa** (la tarjeta
+  del negocio, el plato con su foto, precio y negocio, la categoría con sus negocios, el evento; en «Buscar «mofongo»», cuántos hay de cada cosa). ↑ ↓,
+  Enter abre, Esc cierra. En una categoría (Comida) el panel lleva «Comida y Bebidas ×».
+- **Mi cuenta › Pedidos (Todos):** arriba, **Apartados** («LO RECOGES Y PAGAS EN EL LOCAL») con lo apartado, el negocio, «VENCE …», LISTO / ESPERANDO /
+  FALTA ALGO / EN PLAN, el total «AL RECOGER», «Cómo llegar» y «Ver el negocio». Los recogidos, cancelados o vencidos no salen.
+- **Mi cuenta › Ajustes › Idioma y pantalla › Letra más grande:** al encenderla toda la app se ve un 12 % más grande (sale «Letra más grande activada.»).
+  Entra con la misma cuenta en otro teléfono: ya sale grande. Mira Inicio, Buscar, una ficha y Mi cuenta a 390: nada se sale de lado.
+
+**Decisiones tomadas por defecto (AB, reversibles):**
+- **Qué servicios entran:** los platos del Menú y los servicios de **Belleza, Auto, Hogar, Doctores y Profesionales** (los que la ficha lista como servicios
+  con reglas claras). Fiestas, Transporte, Noche, Educación/Niños/Deporte, Iglesias, Bienes raíces y Autos venden con su propio módulo (fechas, viajes,
+  cursos, propiedades, carros): quedan para después (LAUNCH «Buscar · servicios de las demás categorías»). Los productos de Mercados y Tiendas tampoco
+  (el prototipo no los busca aquí).
+- **El precio de un servicio dice «Precio en la ficha»** (el texto del prototipo para cuando no hay precio): en la ficha depende de quién lo hace, del
+  seguro o del trabajo, y Buscar no pone un número que la ficha no diga. Los platos sí llevan su precio (con la oferta en vivo para quien mira).
+- **Una sola regla para la ficha y Buscar** (`lib/visible-publico.ts`): las fichas del Menú, Belleza, Auto/Hogar, Doctores y Profesionales leen su filtro
+  de ahí; si una ficha deja de mostrar algo, Buscar deja de encontrarlo en el mismo cambio (guardián `buscarPlatosComoLaFicha`).
+- **Letra más grande = zoom de toda la app (12 %)**, no solo el tamaño de la letra: las piezas del sistema miden en px y solo así crece todo junto. A 390
+  el ancho útil queda en ~348 px (como un teléfono de 360) y no se sale nada de lado en las pantallas probadas. Si prefieres otro tamaño (10 %, 15 %),
+  es un número en `globals.css`. Solo dentro de la app del vecino (el panel del negocio y el Super Admin no cambian).
+- **Los apartados van en Pedidos › Todos** (como el diseño ordersV), solo los vivos; los terminados se ven en la página del apartado y en la tienda.
+
+**Lo que se saltó por no tener diseño (no se inventó):**
+- **Guardar un plato:** la hoja del plato del prototipo (y la de la app) no tiene control para guardarlo (nombre, precio, etiquetas, descripción, opciones,
+  nota, cantidad y «Agregar»); la lista «Platos y productos» de Guardados sí está diseñada (favV). Sin el control la lista estaría siempre vacía y su texto
+  («Guárdalos desde el menú») sería falso, así que no se construyó ninguna de las dos. Propuesta para tu OK: el cuadro del corazón de la barra de la
+  vacante (50 px, a la izquierda del botón) a la izquierda del contador de la hoja del plato. Con el OK se construye todo junto (tabla, acción, lista
+  con «no disponible» si el plato se quitó).
+- **En el desplegable:** el micrófono y el chip de la ciudad que el prototipo pone dentro del campo (la voz pide su aviso de privacidad y vive en la
+  página de Buscar; la ciudad sigue en el encabezado). **«Tiene Mofongo de chicharrón · $12»** como razón en la fila de un negocio y **abrir el plato
+  directo en la hoja** al tocarlo (hoy abre la ficha en su Menú): pendientes en LAUNCH.
+- **«Lo que dicen los vecinos»** no cuenta en la vista previa del desplegable: la búsqueda en vivo no lee la Comunidad (guardián
+  `buscarVecinosConSesion`); sale en la página de resultados con cuenta, como antes.

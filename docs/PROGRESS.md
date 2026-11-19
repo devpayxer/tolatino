@@ -2662,3 +2662,20 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   dependían de la novedad y del tope de Free que dejaban otras; dir9m esperaba la web en el contexto de escritorio del iPad): cada una con su
   precondición propia. 9n-23 «Panel del dueño» (agente): ver arriba en REVISION; neg9n23 en verde en 4 anchos (CI 44418076255). CI dirigidos
   44408239441, 44409877973, 44416311337 y 44418076255 en verde. Confirmación de hito otra vez: 44428582194.
+- **19 nov · 9t · Buscar: platos y servicios y el desplegable de escritorio; Mi cuenta: Apartados y letra más grande** (LAUNCH «Buscar — pendientes con su
+  módulo» y «Boletos, Mensajes, … letra más grande» → ✓; dos líneas nuevas → 9t: servicios de las demás categorías y lo que falta del desplegable, y platos
+  guardados sin diseño del control; REVISION «9t»). Migración **0180** (`items.search_doc` con disparador + GIN parcial `items_search_gin`; vocabulario aparte
+  `search_vocab_platos` que refresca el mismo `refrescar_busqueda()` —expandir, `search_vocab` no se toca—; `users.big_text`). `lib/visible-publico.ts`: UNA
+  regla de lo que la ficha muestra (PLATO_VIVO, SECCION_MENU_VISIBLE, SERVICIO_VIVO, SERVICIO_BELLEZA, ALGUIEN_LO_HACE) que ahora leen pedir.ts, citas.ts,
+  oficios/salud/pro-publico.ts y Buscar. `lib/buscar-platos.ts` (los negocios de Buscar con DESDE; Menú encendido y sin pausa, sección visible, Free solo
+  sus `free_items`; Belleza con alguien que lo hace; Auto/Hogar, Doctores y Profesionales sin pausa; precio con `oferta_precio`, servicios «Precio en la
+  ficha»): sección en Todo, pestaña `itm` (chips por categoría, «Precio más bajo», hasta 40) y sugerencias; «nada» cuenta también los platos. El
+  desplegable (`buscar/Desplegable.tsx`, SearchPanel 2w): el buscador del encabezado en escritorio lo abre sobre la página; explorar, sugerencias y la
+  vista previa (`/api/buscar?drop=1`: tarjeta, plato, subcategoría con sus negocios, evento, conteos; `?explorar=1`); la categoría pasa su alcance
+  (`usarBuscadorPagina(…, cat)`). Mi cuenta: Apartados vivos en Pedidos › Todos (`apartadosActivos`, punto público); «Letra más grande» en Ajustes (yo()
+  la trae, AppShell pone `data-letra`, `globals.css` zoom 1.12). Guardianes `buscarPlatosComoLaFicha`, `letraGrandeDelServidor`, `apartadosEnMiCuenta`
+  (y `propiedadNoEsServicio`/`carroNoEsServicio` leen el filtro de visible-publico con `conVisibles`); al revés **alreves9t 32/32**. e2e **bus9t 51 ✓** dos
+  veces seguidas en local (Postgres 16 `tl_9t` con 180 migraciones, `next build` standalone en :3190, Chrome, un `docker exec` de mentira hacia psql):
+  sugerencias, Todo, pestaña, ficha; oculto / sección invisible / Menú pausado / Free fuera de sus platos (y la ficha Free igual) / servicio que nadie hace
+  no salen; desplegable con vista previa, ↓/Enter/Esc, EN; Apartados; letra grande desde el servidor en otro navegador y sin scroll de lado a 390 en 6
+  pantallas. tsc + guardianes + extraer --verificar en verde. Ayuda: `buscar`, `mi-cuenta` (ES/EN). Sin diseño (REVISION): guardar un plato.

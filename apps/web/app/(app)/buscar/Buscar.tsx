@@ -11,6 +11,7 @@ import { avisameBusqueda } from "../acciones";
 import { LINEA_FIJA } from "@/lib/comunidad-filtro";
 import { vacantesAvisame, vecinosMas, vozGuardar } from "./acciones";
 import type { FilaVecino } from "./vecinos";
+import type { FilaPlato } from "./platos";
 import { TarjetaNegocio } from "../TarjetaNegocio";
 import type { TarjetaEvt } from "@/lib/evt-publico";
 import { dinero } from "@/lib/evt-comun";
@@ -34,7 +35,7 @@ export type VistaBuscar = {
     cats: { slug: string; l: string; full: string; icon: string }[]; subs: string[];
   };
   res: null | {
-    tab: "all" | "biz" | "vec" | "evt"; total: number; parcial: boolean; nada: boolean; pagina: number; paginas: number; orden: string;
+    tab: "all" | "biz" | "vec" | "evt" | "itm"; total: number; parcial: boolean; nada: boolean; pagina: number; paginas: number; orden: string;
     titulo: string; eb: string; palabras: string[]; mostrarEntendido: boolean;
     intenciones: { k: string; label: string; quitar: string }[]; rapidos: { k: string; l: string; on: boolean; href: string }[];
     top: { img: string | null; eb: string; t: string; meta: string; href: string } | null;
@@ -44,6 +45,9 @@ export type VistaBuscar = {
     vecinos: { total: number; mas: string | null; items: FilaVecino[] } | null;
     /* 6b · Eventos que encajan (solo lo que sale al público), con el filtro de la pestaña. */
     eventos?: { total: number; f: "all" | "d0" | "wk" | "free"; items: TarjetaEvt[] } | null;
+    /* 9t · Platos y servicios que encajan (lo que la ficha muestra; lib/buscar-platos.ts): el total, los chips por categoría, el filtro
+       (ic) y «Precio más bajo» (io), y las filas (4 en Todo, hasta 40 en su pestaña). */
+    platos?: { total: number; ic: string | null; precio: boolean; cats: { slug: string; l: string; n: number }[]; items: FilaPlato[] } | null;
     /* 9m · Vacantes que encajan (L311) y si ya pidió «Avísame de nuevas vacantes» en la ciudad. */
     vacantes?: { total: number; alerta: boolean; items: { id: string; biz: string; negocio: string; puesto: string; logo: string | null; pago: string | null }[] } | null;
   };
@@ -60,7 +64,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
   const f = (s: string, x: Record<string, string | number>) => Object.entries(x).reduce((a, [k, val]) => a.replaceAll(`{${k}}`, String(val)), s);
   const [q, setQ] = useState(v.q);
   const [foco, setFoco] = useState(false);
-  const [sug, setSug] = useState<{ filas: Fila[]; intenciones: string[]; total: number } | null>(null);
+  const [sug, setSug] = useState<{ filas: Fila[]; intenciones: string[]; total: number; conteos?: { items: number; evts: number } } | null>(null);
   const [rec, setRec] = useState<string[]>([]);
   const [voz, setVoz] = useState<"no" | "escuchando" | "sin" | "aviso">("no");
   const [vozOk, setVozOk] = useState<boolean | null>(v.voz ?? null);
@@ -136,10 +140,13 @@ export function Buscar({ v }: { v: VistaBuscar }) {
   const placeholder = v.cat ? f(t.phCat, { x: v.cat.name }) : t.ph;
   const verSugerencias = foco && !!q.trim() && q !== v.q && !!sug;
   const R = v.res;
-  const conteoGo = sug?.total ? `${sug.total} ${sug.total === 1 ? t.negocio : t.negocios}` : t.irMeta;
+  const es = v.lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b);
+  // 9t · «N NEGOCIOS · N PLATOS Y SERVICIOS · N EVENTOS» (prototipo sugVals cnt): lo que hay en cada parte de los resultados.
+  const conteoGo = [sug?.total ? `${sug.total} ${sug.total === 1 ? t.negocio : t.negocios}` : "",
+    sug?.conteos?.items ? `${sug.conteos.items} ${sug.conteos.items === 1 ? E2("PLATO O SERVICIO", "DISH OR SERVICE") : E2("PLATOS Y SERVICIOS", "DISHES & SERVICES")}` : "",
+    sug?.conteos?.evts ? `${sug.conteos.evts} ${sug.conteos.evts === 1 ? E2("EVENTO", "EVENT") : E2("EVENTOS", "EVENTS")}` : ""].filter(Boolean).join(" · ") || t.irMeta;
   const secciones = sug ? [...new Set(sug.filas.map((x) => x.seccion))] : [];
 
-  const es = v.lang === "es", E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const preguntar = () => router.push(`/comunidad/nuevo?k=pregunta${v.q ? `&q=${encodeURIComponent(v.q)}` : ""}`);
   const fichaVecino = (x: FilaVecino, lineas: number) => (
     <button key={x.id} type="button" onClick={() => router.push(`/comunidad/p/${x.id}`)} className="flex flex-col gap-2.5 rounded-[18px] border border-ink/[.07] bg-white p-3.5 text-left">
@@ -183,6 +190,29 @@ export function Buscar({ v }: { v: VistaBuscar }) {
       </div>
       <div className="hs -mx-5 flex gap-3 overflow-x-auto px-5 lg:hidden">{EV.items.slice(0, 4).map((x) => evCard(x, 212))}</div>
       <div className="hidden gap-3.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">{EV.items.slice(0, 4).map((x) => evCard(x, "100%"))}</div>
+    </div>
+  );
+
+  // 9t · Platos y servicios (prototipo it / itRow): la fila con el nombre resaltado, el negocio, «SECCIÓN · MI · ABIERTO», el precio y la foto.
+  const PL = R?.platos ?? null;
+  const filaPlato = (x: FilaPlato) => (
+    <button key={x.id} type="button" data-plato={x.id} onClick={() => router.push(x.href)} className="flex w-full items-center gap-3 rounded-[18px] border border-ink/[.07] bg-white p-3 text-left">
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="text-[14.5px] font-medium leading-[1.3]">{x.parts[0]}<span className="font-extrabold">{x.parts[1]}</span>{x.parts[2]}</span>
+        <span className="truncate text-[12.5px] font-bold text-ink/75">{x.bname}</span>
+        <span className="truncate font-mono text-[10.5px] font-semibold tracking-[0.04em]" style={{ color: x.abierto ? "var(--tl-open-text)" : "rgba(11,14,18,.6)" }}>{x.meta}</span>
+        <span className="mt-0.5 font-display text-[15px] font-extrabold tracking-[-0.02em]">{x.precio}</span>
+      </span>
+      <span className="size-[84px] flex-none rounded-[14px] bg-photo-bg bg-cover bg-center" style={x.img ? { backgroundImage: `url("${x.img}")` } : undefined} />
+    </button>
+  );
+  const seccionPlatos = PL && PL.items.length > 0 && (
+    <div data-screen-label="APP-BUSCAR · platos y servicios" className="flex flex-col gap-2.5">
+      <div className="flex items-baseline justify-between gap-2.5">
+        <span className="font-display text-[18px] font-extrabold tracking-[-0.03em] lg:text-[20px]">{E2("Platos y servicios", "Dishes & services")}</span>
+        {PL.total > 4 && <button type="button" onClick={() => ir({ tab: "itm", p: null })} className="whitespace-nowrap text-[12.5px] font-bold text-action">{E2(`Ver los ${PL.total}`, `See all ${PL.total}`)}</button>}
+      </div>
+      <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">{PL.items.slice(0, 4).map(filaPlato)}</div>
     </div>
   );
 
@@ -283,7 +313,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
             <div className="sticky top-[96px] flex flex-col gap-5">
               <div className="flex flex-col gap-1">
                 <span className="px-2.5 font-mono text-[10px] font-extrabold tracking-[0.14em] text-ink/60">{t.resU}</span>
-                {[["all", t.todo, "search", null], ["biz", t.biz, "store", R.total], ...(R.eventos?.total ? [["evt", E2("Eventos", "Events"), "ticket", R.eventos.total >= 100 ? "100+" : R.eventos.total]] : []), ...(R.vecinos?.total ? [["vec", E2("Vecinos", "Neighbors"), "users", R.vecinos.total >= 100 ? "100+" : R.vecinos.total]] : [])].map(([id, l, ic, n]) => (
+                {[["all", t.todo, "search", null], ["biz", t.biz, "store", R.total], ...(R.platos?.total ? [["itm", E2("Platos y servicios", "Dishes & services"), "restaurant", R.platos.total]] : []), ...(R.eventos?.total ? [["evt", E2("Eventos", "Events"), "ticket", R.eventos.total >= 100 ? "100+" : R.eventos.total]] : []), ...(R.vecinos?.total ? [["vec", E2("Vecinos", "Neighbors"), "users", R.vecinos.total >= 100 ? "100+" : R.vecinos.total]] : [])].map(([id, l, ic, n]) => (
                   <button key={String(id)} type="button" onClick={() => ir({ tab: id === "all" ? null : String(id), p: null })}
                     className={`flex items-center gap-2.5 rounded-[11px] px-2.5 py-2 text-left text-[13.5px] font-bold ${R.tab === id ? "bg-ink/[.06] text-ink" : "text-ink/65"}`}>
                     <Icon name={String(ic)} size={17} /><span className="flex-1">{l}</span><span className="font-mono text-[11px] text-ink/60">{n ?? ""}</span>
@@ -334,7 +364,17 @@ export function Buscar({ v }: { v: VistaBuscar }) {
             ) : null}
             {R.parcial && <div className="mx-5 mt-4 rounded-[14px] bg-pro/[.14] px-3.5 py-3 text-[12.5px] font-semibold leading-[1.5] text-[var(--tl-pro-ink)] lg:mx-0">{t.partial}</div>}
 
-            {R.tab === "evt" ? (
+            {R.tab === "itm" && PL ? (
+              <div data-screen-label="APP-BUSCAR · pestaña platos y servicios" className="flex flex-col gap-2.5 px-5 pb-12 pt-4 lg:px-0">
+                <div className="hs -mx-5 mb-1 flex gap-1.5 overflow-x-auto px-5 lg:mx-0 lg:flex-wrap lg:px-0">
+                  <Chip variant={!PL.ic ? "selected" : "filter"} onClick={() => ir({ ic: null })}>{`${E2("Todos", "All")} ${PL.total}`}</Chip>
+                  {PL.cats.map((c) => <Chip key={c.slug} variant={PL.ic === c.slug ? "selected" : "filter"} onClick={() => ir({ ic: c.slug })}>{`${c.l} ${c.n}`}</Chip>)}
+                  <Chip variant={PL.precio ? "selected" : "feature"} onClick={() => ir({ io: PL.precio ? null : "price" })}>{E2("Precio más bajo", "Lowest price")}</Chip>
+                </div>
+                {PL.items.length ? <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">{PL.items.map(filaPlato)}</div>
+                  : <div className="rounded-[18px] border border-line bg-white px-5 py-6 text-center text-[13.5px] font-semibold text-ink/60">{E2("Nada con ese filtro.", "Nothing with that filter.")}</div>}
+              </div>
+            ) : R.tab === "evt" ? (
               <div data-screen-label="APP-BUSCAR · pestaña eventos" className="flex flex-col gap-3 px-5 pb-12 pt-4 lg:px-0">
                 <div className="hs -mx-5 flex gap-1.5 overflow-x-auto px-5 lg:mx-0 lg:flex-wrap lg:px-0">
                   {([["all", E2("Todos", "All")], ["d0", E2("Hoy", "Today")], ["wk", E2("Este fin de semana", "This weekend")], ["free", E2("Gratis", "Free")]] as const).map(([k, l]) => (
@@ -399,7 +439,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                     <span className="absolute bottom-3.5 right-3.5 grid size-[38px] place-items-center rounded-full bg-white"><Icon name="chevronRight" size={17} strokeWidth={2.2} /></span>
                   </button>
                 )}
-                <div className="flex flex-col gap-2.5">
+                {R.total > 0 && <div className="flex flex-col gap-2.5">
                   <div className="flex items-baseline justify-between gap-2.5">
                     <span className="font-display text-[18px] font-extrabold tracking-[-0.03em]">{t.biz}</span>
                     {R.total > 4 && <button type="button" onClick={() => ir({ tab: "biz" })} className="whitespace-nowrap text-[12.5px] font-bold text-action">{f(t.verN, { n: R.total })}</button>}
@@ -410,7 +450,8 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                       <SearchResultRow size="row" parts={x.parts} pro={x.pro} image={x.image} meta={x.meta} status={x.status} statusColor={x.statusColor} onClick={() => router.push(`/n/${x.id}`)} />
                     </div>
                   ))}
-                </div>
+                </div>}
+                {seccionPlatos}
                 {seccionEventos}
                 {seccionVacantes}
                 {R.notYet && !R.notYet.primero && <div className="grid"><NotYetCard layout="row" kicker={t.notYet} title={R.notYet.t} body={t.notYetB} alertLabel={alerta ? t.alertaOn : t.alerta} alertVariant={alerta ? "secondary" : "primary"} onAlert={alerta ? undefined : pedirAlerta} recLabel={t.rec} onRec={() => router.push(`/recomendar?${new URLSearchParams(v.q ? { q: v.q } : {})}`)} /></div>}

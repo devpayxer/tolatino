@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "./db";
+import { SERVICIO_VIVO } from "./visible-publico";
 import { misSeguros, type Seguro } from "./mis-seguros";
 import type { CatSeguro, Clinica } from "./salud-compat";
 import { herramientaSP } from "./salud-pro";
@@ -33,7 +34,7 @@ export async function saludPublico(negocio: string, userId: string | null): Prom
               coalesce(i.svc_kind, 'cons') as k, coalesce((i.svc_attrs->>'esc')::boolean, false) as esc, coalesce((i.svc_attrs->>'rem')::boolean, false) as rem,
               coalesce(i.svc_attrs->'no', '[]'::jsonb) as no, i.photos[1] as foto,
               coalesce((select array_agg(s.member_id::text) from staff_services s where s.item_id = i.id), '{}') as who
-         from items i where i.business_id = $1 and i.module = 'svc' and i.removed_at is null and i.sell and i.status = 'live' and not i.is_extra order by i.sort, i.id`, [negocio]),
+         from items i where i.business_id = $1 and ${SERVICIO_VIVO("i")} order by i.sort, i.id`, [negocio]),
     // ¿Con quién?: solo profesionales del equipo con licencia verificada (recepción sale en Staff, no aquí).
     db().query<ProfPub>(
       `select m.id::text, m.display_name as nombre, m.role as rol, m.photo_url as foto, m.languages as langs,

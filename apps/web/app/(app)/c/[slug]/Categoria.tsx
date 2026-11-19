@@ -48,7 +48,7 @@ export function Categoria({ v }: { v: Vista }) {
     : v.filas.find((r) => r.items.some((x) => x.key === "tufecha"))?.key ?? null;   // Fiestas con «Tu fecha»: abre en «¿Está libre tu fecha?»
   const [pest, setPest] = useState<string>(conSub ?? pestanas[0]?.k ?? "");
   const buscarHref = `/buscar?cat=${v.slug}`;
-  usarBuscadorPagina(v.buscarEn, buscarHref);
+  usarBuscadorPagina(v.buscarEn, buscarHref, { slug: v.slug, label: v.titulo });
   const elegirCiudad = () => { const q = new URLSearchParams(location.search); q.set("ciudad", ""); router.replace(`${ruta}?${q}`, { scroll: false }); };
 
   // Cambiar la URL = pedir al servidor la lista nueva. Cualquier cambio de criterio vuelve a la página 1.

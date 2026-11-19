@@ -41,6 +41,13 @@ export async function idiomaCuenta(lang: "es" | "en"): Promise<ResP> {
   await db().query(`update users set lang = $2 where id = $1`, [u.id, l]);
   return { ok: true };
 }
+/* 9t · «Letra más grande» (Ajustes, diseño setV): por persona y en el servidor (users.big_text); el marco de la app la lee en cada página. */
+export async function letraGrande(on: boolean): Promise<ResP> {
+  const u = await quien();
+  if (!u) return NO;
+  await db().query(`update users set big_text = $2 where id = $1`, [u.id, on === true]);
+  return { ok: true };
+}
 /* Correo (2q): manda el enlace para confirmar el correo. En el sandbox devuelve el enlace (el correo no sale). */
 export async function perfilVerificar(): Promise<{ ok: true; enlacePrueba?: string } | { ok: false; msg: { es: string; en: string } }> {
   const u = await quien();

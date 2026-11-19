@@ -263,7 +263,8 @@ export function appDeSesion(ua: string | null): { app: string; platform: string;
   return { app: a.app, platform: a.plataforma, version: a.version, build: a.build, os: os ? (os[2] ? `${os[1]}.${os[2]}` : os[1]!) : null };
 }
 
-export type Yo = { id: string; phone: string; first_name: string | null; last_name: string | null; nick: string | null; lang: string; estado: string; hasta: string | null };
+/* 9t · `letra`: «Letra más grande» (Mi cuenta › Ajustes; users.big_text): el marco de la app la aplica en el servidor, sin parpadeo. */
+export type Yo = { id: string; phone: string; first_name: string | null; last_name: string | null; nick: string | null; lang: string; estado: string; hasta: string | null; letra?: boolean };
 
 export async function yo(): Promise<Yo | null> {
   const t = (await cookies()).get(COOKIE)?.value;
@@ -279,7 +280,7 @@ export async function yo(): Promise<Yo | null> {
        from users u
       where s.token_hash = $1 and s.user_id = u.id and s.signed_out_at is null and not s.blocked
         and s.expires_at > now() and cuenta_estado(u.status, u.status_until) in ('active', 'muted')
-      returning u.id, u.phone, u.first_name, u.last_name, u.nick, u.lang, cuenta_estado(u.status, u.status_until) as estado, u.status_until as hasta`,
+      returning u.id, u.phone, u.first_name, u.last_name, u.nick, u.lang, cuenta_estado(u.status, u.status_until) as estado, u.status_until as hasta, u.big_text as letra`,
     [huellaToken(t), ap.version, ap.build, ap.app, ap.platform],
   );
   return r.rows[0] ?? null;

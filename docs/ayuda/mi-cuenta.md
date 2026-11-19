@@ -2,7 +2,7 @@
 
 _Pantallas: `/cuenta` (Resumen), `/cuenta/pedidos`, `/cuenta/citas`, `/cuenta/guardados`, `/cuenta/resenas`, `/cuenta/empleos`, `/cuenta/perfil` (y
 `/perfil/telefono`), `/cuenta/direcciones`, `/cuenta/avisos`, `/cuenta/ajustes` (y `/ajustes/ciudad`, `/ajustes/privacidad`, `/ajustes/borrar`) y
-`/cuenta/invitar`; **Ayuda y soporte** abre `/soporte`. Teléfono y escritorio (en escritorio, navegación a la izquierda). Pide haber entrado. Versión: 14 nov 2026. Audiencia: vecino. Tema:
+`/cuenta/invitar`; **Ayuda y soporte** abre `/soporte`. Teléfono y escritorio (en escritorio, navegación a la izquierda). Pide haber entrado. Versión: 19 nov 2026. Audiencia: vecino. Tema:
 cuenta._
 
 ## Qué hace
@@ -15,6 +15,11 @@ cuenta._
 - **Pedidos:** todos, por mes, con filtro (Todos, En curso, Entregados, Cancelados) y «Ver más». Cada uno con el negocio, el
   estado, número, pickup o delivery, fecha, lo que pediste y el total; «Volver a pedir» y «Escribir reseña» en los
   entregados. Tocarlo abre la página del pedido (recibo y estado en vivo).
+  Arriba, en **Todos**, tus **Apartados** que siguen vivos («LO RECOGES Y PAGAS EN EL LOCAL»): lo que apartaste, el negocio, hasta cuándo te
+  lo guardan («VENCE …»), el estado (**ESPERANDO** que confirmen, **FALTA ALGO**, **LISTO**; **EN PLAN** si va en plan de pagos;
+  **CONFIRMADO** si te lo envían) y el total (**AL RECOGER**; si te lo envían, se cobra cuando lo envían). **Cómo llegar** abre el mapa
+  del teléfono hasta el negocio y **Ver el negocio**, su página; tocarlo abre el apartado (`apartar-productos.md`). Los que ya recogiste,
+  se cancelaron o vencieron no salen aquí.
 - **Citas y reservas:** Próximas y Pasadas, con la fecha, el estado (pendiente, confirmada, te proponen otra hora, no pudo,
   terminada…), para cuántos y a qué hora. Tocarla abre la reservación.
 - **Guardados:** Negocios (los del corazón y los que sigues, abierto o cerrado; «Editar» para quitar o dejar de seguir),
@@ -26,7 +31,8 @@ cuenta._
   verificar» hasta que existan los correos). Teléfono → **Cambiar mi número**: el número nuevo y el código que le mandamos.
 - **Avisos:** qué te llega (pedidos, reservas, empleos, negocios que guardas, correo) y horas de silencio. Se guarda hoy y
   se aplica cuando salgan los avisos.
-- **Ajustes:** idioma (cambia la pantalla y el idioma de la cuenta), **Mi ciudad** (cada 30 días, solo a una ciudad
+- **Ajustes:** idioma (cambia la pantalla y el idioma de la cuenta), **Letra más grande** (toda la app un poco más grande, más fácil de
+  leer; se guarda en tu cuenta y vale en cualquier teléfono o computadora donde entres; se apaga igual), **Mi ciudad** (cada 30 días, solo a una ciudad
   abierta), avisos, **Privacidad** (quién ve tu teléfono, tus **llaves de acceso** —Face ID o tu huella, con su dispositivo y la última vez;
   «Agregar» y «Quitar», `entrar-con-face-id.md`—, tus sesiones abiertas, con «Cerrar» para las otras, y **El Compa**: qué ve la IA de
   la ayuda y quién lo lee, `privacidad-de-el-compa.md`), tu negocio
@@ -114,6 +120,11 @@ quedan cifras; si borras tu cuenta, a los 30 días se vacían tus conversaciones
 - **Orders:** all of them, by month, with a filter (All, In progress, Delivered, Canceled) and «See more». Each one with the business, the
   status, number, pickup or delivery, date, what you ordered and the total; «Order again» and «Write review» on the delivered ones. Tapping it
   opens the order page (receipt and live status).
+  At the top, under **All**, your **On hold** items that are still active («PICK UP AND PAY IN STORE»): what you put on hold, the business, until
+  when they keep it («EXPIRES …»), the status (**WAITING** for them to confirm, **SOMETHING IS OUT**, **READY**; **ON LAYAWAY** if it is on
+  a payment plan; **CONFIRMED** if they ship it) and the total (**AT PICKUP**; if they ship it, you are charged when they ship it).
+  **Directions** opens your phone's map to the business and **See business**, its page; tapping it opens the hold (`apartar-productos.md`).
+  The ones you already picked up, canceled or that expired do not show here.
 - **Appointments and bookings:** Upcoming and Past, with the date, the status (pending, confirmed, they propose another time, could not,
   finished…), for how many and at what time. Tapping it opens the booking.
 - **Saved:** Businesses (the ones with the heart and the ones you follow, open or closed; «Edit» to remove or unfollow), saved Jobs and
@@ -125,7 +136,8 @@ quedan cifras; si borras tu cuenta, a los 30 días se vacían tus conversaciones
   verified» until emails exist). Phone → **Change my number**: the new number and the code we send to it.
 - **Notifications:** what reaches you (orders, bookings, jobs, businesses you save, email) and quiet hours. It is saved today and applies when
   notifications go out.
-- **Settings:** language (it changes the screen and the account's language), **My city** (every 30 days, only to an open city),
+- **Settings:** language (it changes the screen and the account's language), **Larger text** (the whole app a bit bigger, easier to read;
+  it is saved in your account and applies on any phone or computer where you sign in; turn it off the same way), **My city** (every 30 days, only to an open city),
   notifications, **Privacy** (who sees your phone, your **passkeys** — Face ID or your fingerprint, with their device and the last time;
   «Add» and «Remove», `entrar-con-face-id.md` —, your open sessions, with «Close» for the other ones, and **El Compa**: what the AI in help
   sees and who reads it, `privacidad-de-el-compa.md`), your business or list it, sign out and **Delete my account**.
