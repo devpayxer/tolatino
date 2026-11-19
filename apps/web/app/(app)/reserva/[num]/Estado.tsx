@@ -1,14 +1,17 @@
 "use client";
 /* APP-NEG-RESERVA-ESTADO · móvil y desktop (prototipo rsvStVals): estado (pendiente, te proponen otra hora, confirmada,
    en tu mesa, terminada, no llegaste, no pudo, sin respuesta, cancelada), los pasos con su hora real, voy tarde, detalles,
-   lo que conviene recordar, Calendario · Compartir · Cómo llegar · Llamar, cambiar la solicitud y cancelar. */
+   lo que conviene recordar, Calendario · Compartir · Cómo llegar · Llamar, cambiar la solicitud y cancelar.
+   9t · «No pudo» y «sin respuesta» (prototipo rvs.lost): horas con mesa ese día, «Otros restaurantes con mesa» (rvs.others) y «Avísame si se
+   libera a esa hora» (rvs.wAsk / rvs.wOn); cuando se libera, «Se liberó una mesa» (rvs.hasOffer) con «Tomar la mesa» o «No, gracias». */
 import { compartir as compartirNativo } from "@/lib/nativo/compartir";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
-import type { RsvVista } from "@/lib/reservas";
+import type { OtroConMesa, RsvVista } from "@/lib/reservas";
+import type { EsperaVista } from "@/lib/mesa-espera";
 import { diaL } from "../../n/[id]/Reservar";
-import { reservaAccion } from "./acciones";
+import { esperaAccion, reservaAccion } from "./acciones";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 
@@ -26,7 +29,7 @@ const NEED: Record<string, [string, string]> = { bebe: ["Silla para bebé", "Hig
 const WHY = [["planes", "Cambié de planes", "Plans changed"], ["otro", "Encontré otro lugar", "Found another place"], ["hora", "Me equivoqué de hora", "Wrong time"], ["grupo", "Cambió el grupo", "Group changed"]] as const;
 const tel = (p: string) => { const d = p.replace(/\D/g, "").slice(-10); return d.length === 10 ? `+1 (${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : p; };
 
-export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[]; telefono: string; es: boolean }) {
+export function Estado({ r, otras, espera = { st: "no" }, otros = [], telefono, es }: { r: RsvVista; otras: number[]; espera?: EsperaVista; otros?: OtroConMesa[]; telefono: string; es: boolean }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const L = (x: [string, string] | undefined, d = "") => (x ? (es ? x[0] : x[1]) : d);
   const router = useRouter();
@@ -51,8 +54,8 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
     pend: ["clock", "bg-ink/5", "var(--tl-ink)", E2("ESPERANDO RESPUESTA", "WAITING FOR REPLY"), E2("Solicitud enviada", "Request sent"), E2(`${n} responde en unos ${r.reply} min. Te guardamos la mesa mientras tanto.`, `${n} replies in about ${r.reply} min. We hold the table meanwhile.`), E2("PENDIENTE", "PENDING"), "bg-pro/[.16]", "text-pro-ink"],
     ok: ["check", "bg-signal/[.16]", "var(--tl-open-text)", E2("CONFIRMADA", "CONFIRMED"), E2("Tu mesa está confirmada", "Your table is confirmed"), E2(`${n} te espera ${whenIn} ${aT}. Te guardan la mesa hasta ${aLas(holdM).slice(2)}.`, `${n} expects you ${whenIn} at ${T}. Table held until ${hora(holdM)}.`), E2("CONFIRMADA", "CONFIRMED"), "bg-signal/[.16]", "text-open-text"],
     alt: ["warning", "bg-pro/[.16]", "var(--tl-pro-ink)", E2("TE PROPONEN UN CAMBIO", "THEY PROPOSE A CHANGE"), E2("Te proponen otra hora", "They suggest another time"), E2(`${aT.charAt(0).toUpperCase()}${aT.slice(1)} no tienen mesa para ${r.p}.`, `At ${T} they have no table for ${r.p}.`), E2("ELIGE UNA OPCIÓN", "CHOOSE AN OPTION"), "bg-pro/[.16]", "text-pro-ink"],
-    no: ["close", "bg-ink/5", "var(--tl-ink)", E2("NO PUDO", "COULD NOT"), E2(`${n} no tiene mesa a esa hora`, `${n} has no table at that time`), E2(`No tienen mesa ${aT}.${otras.length ? " Estas horas sí tienen mesa." : ""}`, `They have no table at ${T}.${otras.length ? " These times have tables." : ""}`), E2("NO PUDO", "COULD NOT"), "bg-ink/[.06]", "text-ink/60"],
-    exp: ["clock", "bg-ink/5", "var(--tl-ink)", E2("SIN RESPUESTA", "NO RESPONSE"), E2("No respondieron a tiempo", "They didn't reply in time"), E2(`${n} no respondió a tiempo, así que cerramos tu solicitud.${otras.length ? " Estas horas sí tienen mesa." : ""}`, `${n} didn't reply in time, so we closed your request.${otras.length ? " These times have tables." : ""}`), E2("CERRADA", "CLOSED"), "bg-ink/[.06]", "text-ink/60"],
+    no: ["close", "bg-ink/5", "var(--tl-ink)", E2("NO PUDO", "COULD NOT"), E2(`${n} no tiene mesa a esa hora`, `${n} has no table at that time`), E2(`No tienen mesa ${aT}.${otras.length || otros.length ? " Estas opciones sí tienen mesa." : ""}`, `They have no table at ${T}.${otras.length || otros.length ? " These options have tables." : ""}`), E2("NO PUDO", "COULD NOT"), "bg-ink/[.06]", "text-ink/60"],
+    exp: ["clock", "bg-ink/5", "var(--tl-ink)", E2("SIN RESPUESTA", "NO RESPONSE"), E2("No respondieron a tiempo", "They didn't reply in time"), E2(`${n} no respondió a tiempo, así que cerramos tu solicitud.${otras.length || otros.length ? " Estas opciones sí tienen mesa." : ""}`, `${n} didn't reply in time, so we closed your request.${otras.length || otros.length ? " These options have tables." : ""}`), E2("CERRADA", "CLOSED"), "bg-ink/[.06]", "text-ink/60"],
     in: ["check", "bg-signal/[.16]", "var(--tl-open-text)", E2("EN TU MESA", "AT YOUR TABLE"), E2("Ya estás en tu mesa", "You are at your table"), E2(`${n} marcó que llegaste. ¡Buen provecho!`, `${n} marked you as arrived. Enjoy!`), E2("EN CURSO", "IN PROGRESS"), "bg-action/10", "text-action"],
     done: ["check", "bg-ink/5", "var(--tl-ink)", E2("TERMINADA", "DONE"), E2("Gracias por venir", "Thanks for coming"), E2(`${n} marcó tu mesa como libre. Tu reservación terminó.`, `${n} marked your table as free. Your reservation is done.`), E2("TERMINADA", "DONE"), "bg-ink/[.06]", "text-ink/60"],
     nos: ["ban", "bg-danger/[.08]", "var(--tl-danger)", E2("NO LLEGASTE", "NO-SHOW"), E2("Marcaron que no llegaste", "Marked as a no-show"), E2(`${n} te guardó la mesa ${r.hold} min y la liberó. No hay ningún cargo. Si fue un error, llama al negocio.`, `${n} held your table ${r.hold} min and freed it. There is no charge. If this is a mistake, call the business.`), E2("NO LLEGASTE", "NO-SHOW"), "bg-danger/[.08]", "text-danger"],
@@ -79,6 +82,15 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
     if (!x.ok) { setError(es ? x.msg.es : x.msg.en); return; }
     setFlash(msg); setCx(false);
     if (luego) luego(); else router.refresh();
+  };
+  // 9t · La lista de espera: anotarse, salir o soltar la mesa que se le guardó (el servidor decide si se puede).
+  const enEspera = async (que: "anotar" | "soltar", id: string | undefined, msg: string) => {
+    if (ocupado) return;
+    setOcupado(true); setError("");
+    const x = await esperaAccion(r.numero, que, id).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
+    setOcupado(false);
+    if (!x.ok) { setError(es ? x.msg.es : x.msg.en); return; }
+    setFlash(msg); router.refresh();
   };
   const ics = () => {
     const ymd = r.ymd.replaceAll("-", ""), hm = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}${String(m % 60).padStart(2, "0")}00`;
@@ -158,6 +170,50 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
     <div className={caja}>
       <div className={K}>{E2("HORAS CON MESA ESE DÍA", "TIMES WITH TABLES THAT DAY")}</div>
       <div className="mt-[11px] flex flex-wrap gap-[7px]">{otras.map((h) => <Chip key={h} variant="filter" onClick={() => tab(`&p=${r.p}&d=${r.dia}&h=${h}`)}>{hora(h)}</Chip>)}</div>
+    </div>
+  );
+  // 9t · «Otros restaurantes con mesa» (rvs.others): los decide el servidor (misma ciudad, toman reservaciones, mesa a esa hora o la más cercana).
+  const metaOtro = (o: OtroConMesa) => [o.r ? `★ ${o.r}` : "", o.mi != null ? `${o.mi} MI` : "", o.sub ?? ""].filter(Boolean).join(" · ").toUpperCase();
+  const otrosR = lost && otros.length > 0 && (
+    <div data-screen-label="Reserva · otros restaurantes" className={caja}>
+      <div className={K}>{E2("OTROS RESTAURANTES CON MESA", "OTHER RESTAURANTS WITH TABLES")}</div>
+      <div className="mt-1.5">{otros.map((o) => (
+        <button key={o.id} type="button" onClick={() => router.push(`/n/${o.id}?tab=rsv&p=${r.p}&d=${o.i}&h=${o.h}`)} className="flex w-full items-center gap-3 border-t border-ink/[.07] py-[11px] text-left">
+          <span aria-hidden="true" className="size-[46px] flex-none rounded-[12px] bg-ink/[.08] bg-cover bg-center" style={o.foto ? { backgroundImage: `url("${o.foto}")` } : undefined} />
+          <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold leading-[1.3]">{o.nombre}</div><div className="mt-[3px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{metaOtro(o)}</div></div>
+          <Chip variant="slot">{hora(o.h)}</Chip>
+        </button>
+      ))}</div>
+    </div>
+  );
+  // 9t · «Avísame si se libera a esa hora» (rvs.wAsk) y «Estás en la lista de espera» (rvs.wOn).
+  const esperaR = lost && (espera.st === "anotada" ? (
+    <div data-screen-label="Reserva · lista de espera" className="flex items-start gap-2.5 rounded-[14px] bg-signal/[.12] px-3.5 py-3">
+      <span className="grid flex-none pt-px"><Icon name="bell" size={16} color="var(--tl-open-text)" /></span>
+      <div className="min-w-0">
+        <div className="text-[13px] font-bold leading-[1.35] text-open-text">{E2("Estás en la lista de espera", "You're on the waitlist")}</div>
+        <div className="mt-[3px] text-pretty text-[12px] font-medium leading-[1.5] text-open-text">{E2(`Si se libera una mesa para ${P(r.p)} ${whenIn} ${aT}, te avisamos y te la guardamos ${espera.min} minutos.`, `If a table for ${P(r.p)} opens up ${whenIn} at ${T}, we let you know and hold it for ${espera.min} minutes.`)}</div>
+        <button type="button" disabled={ocupado} onClick={() => enEspera("soltar", espera.id, E2("Saliste de la lista de espera.", "You left the waitlist."))} className="mt-[9px] text-[12.5px] font-bold text-action">{E2("Salir de la lista", "Leave the waitlist")}</button>
+      </div>
+    </div>
+  ) : espera.st === "puede" ? (
+    <div className="flex"><Button variant="secondary" icon="bell" block disabled={ocupado} onClick={() => enEspera("anotar", undefined, E2("Te anotamos en la lista de espera.", "You're on the waitlist."))}>{E2("Avísame si se libera a esa hora", "Notify me if it opens up")}</Button></div>
+  ) : null);
+  // 9t · «Se liberó una mesa» (rvs.hasOffer): la mesa ya está guardada a tu nombre; «Tomar la mesa» abre la solicitud con esa mesa.
+  const oferta = espera.st === "ofrecida" && (
+    <div data-screen-label="Reserva · mesa liberada" className="rounded-[18px] border-[1.5px] border-open bg-white p-4">
+      <div className="flex items-start gap-3">
+        <span className="grid size-[38px] flex-none place-items-center rounded-[12px] bg-signal/[.16]"><Icon name="bell" size={18} color="var(--tl-open-text)" /></span>
+        <div className="min-w-0 flex-1">
+          <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{E2("Se liberó una mesa", "A table opened up")}</div>
+          <div className="mt-1 text-[13.5px] font-bold leading-[1.35]">{`${dL} · ${T} · ${P(r.p)}`}</div>
+          <div className="mt-[3px] text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{E2(`Te la guardamos ${espera.min} minutos. También te avisamos en tu teléfono.`, `We hold it for ${espera.min} minutes. We also notified your phone.`)}</div>
+        </div>
+      </div>
+      <div className="mt-3 flex gap-2">
+        <div className="grid min-w-0 flex-1"><Button variant="primary" onClick={() => router.push(`/n/${r.negocio.id}/reservar?hold=${espera.hold}`)}>{E2("Tomar la mesa", "Take the table")}</Button></div>
+        <div className="grid min-w-0 flex-1"><Button variant="secondary" disabled={ocupado} onClick={() => enEspera("soltar", espera.id, E2("Soltamos la mesa para otra persona.", "We released the table for someone else."))}>{E2("No, gracias", "No, thanks")}</Button></div>
+      </div>
     </div>
   );
   const linea = pasos.length > 0 && (
@@ -244,13 +300,13 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
           <button type="button" aria-label={E2("Cerrar", "Close")} onClick={() => tab()} className="grid size-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="close" size={15} strokeWidth={2.4} /></button>
           <div className="min-w-0 flex-1"><div className="font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{n}</div><div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{num}</div></div>
         </div>
-        <div className="flex flex-col gap-3 px-4 pt-4">{aviso}{principal(false)}{propuesta}{cambio}{horasOtra}{linea}{tarde}{detalles}{recuerda}{botones}</div>
+        <div className="flex flex-col gap-3 px-4 pt-4">{oferta}{aviso}{principal(false)}{propuesta}{cambio}{horasOtra}{otrosR}{esperaR}{linea}{tarde}{detalles}{recuerda}{botones}</div>
       </div>
       <div data-screen-label="APP-NEG-RESERVA-ESTADO · desktop" className="mx-auto hidden max-w-[1380px] lg:block">
         <button type="button" onClick={() => tab()} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{`${E2("Volver a ", "Back to ")}${n}`}</button>
         <div className="mt-3 font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{num}</div>
         <div className="mt-4 grid items-start gap-x-12 gap-y-8 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
-          <div className="flex min-w-0 flex-col gap-3.5">{aviso}{principal(true)}{propuesta}{cambio}{horasOtra}{linea}{tarde}</div>
+          <div className="flex min-w-0 flex-col gap-3.5">{oferta}{aviso}{principal(true)}{propuesta}{cambio}{horasOtra}{otrosR}{esperaR}{linea}{tarde}</div>
           <div className="flex flex-col gap-3.5 min-[1100px]:sticky min-[1100px]:top-[96px]">{detalles}{recuerda}{botones}</div>
         </div>
       </div>

@@ -10749,6 +10749,89 @@ const guardianes = {
     if (!existsSync(P) || !/apartadosActivos\(u\.id, lang\)/.test(sinComent(P))) falla(G, P, 0, "la página no pide los apartados de la sesión");
   },
 
+  /* 9t · esperaMesaUnaVez («Avísame si se libera» de una mesa, LAUNCH «… y Otros restaurantes con mesa»): la clase que más se teme es avisar dos veces, o
+     a otra persona, o guardarle la mesa a quien no la pidió. (1) 0180: una entrada viva por persona, restaurante, hora y personas (índice único parcial),
+     nada se borra (salvo la purga de una cuenta, tl.purga) y un estado final u «ofrecida» no vuelve a la fila (disparador). (2) lib/mesa-espera.ts:
+     la solicitud se lee SIEMPRE con su dueño (o.user_id), salir y soltar solo la propia (user_id en la misma escritura, y la retención de ESA persona);
+     el barrido reclama cada entrada en la misma escritura (waiting → offered «and status = 'waiting'»), la retención va a nombre de la dueña de la
+     entrada (w.user_id), el aviso sale una vez (notif_once «rsv_libre:») y a w.uid, DESPUÉS de cerrar la transacción, y en las horas de silencio de la
+     persona no se le ofrece. (3) rsvEnviar marca tomada solo la entrada de quien envía. (4) El barrido lo corre; la plantilla rsv_libre va por push y su
+     SMS solo de respaldo (sin_push). Al revés: alreves9t2. */
+  esperaMesaUnaVez() {
+    const G = "esperaMesaUnaVez", M = "packages/db/migrations/0181_mesa_espera_9t.sql", L = "apps/web/lib/mesa-espera.ts", R = "apps/web/lib/reservas.ts";
+    if (!existsSync(M) || !existsSync(L)) return falla(G, L, 0, "falta la lista de espera de mesas (0180 y lib/mesa-espera.ts)");
+    const m = readFileSync(M, "utf8");
+    if (!/create unique index if not exists reservation_waitlist_viva on reservation_waitlist \(user_id, business_id, starts_at, party_size\) where status in \('waiting', 'offered'\);/.test(m))
+      falla(G, M, 0, "una sola entrada viva por persona, restaurante, hora y personas (índice único parcial)");
+    if (!/create trigger reservation_waitlist_antes before update or delete on reservation_waitlist/.test(m) || !/if old\.status = 'offered' and new\.status = 'waiting' then raise exception/.test(m)
+      || !/if old\.status in \('taken', 'left', 'expired'\) and new\.status <> old\.status then raise exception/.test(m) || !/new\.user_id <> old\.user_id/.test(m))
+      falla(G, M, 0, "reservation_waitlist: nada se borra, la persona no cambia y un estado final (u ofrecida) no vuelve a la fila (disparador)");
+    if (!/\('rsv_libre', 'tx', 'cit', true, 'sin_push', true,/.test(m)) falla(G, M, 0, "rsv_libre: push primero y el SMS solo de respaldo (sin_push)");
+    const t = sinComent(L), op = cuerpoFn(t, "opDe"), sol = cuerpoFn(t, "soltarEspera"), of = cuerpoFn(t, "ofrecer"), ve = cuerpoFn(t, "esperaDeMesa");
+    if (!/where o\.number = \$1 and o\.user_id = \$2::uuid and o\.kind = 'table'/.test(op)) falla(G, L, 0, "opDe: la solicitud se lee con su dueño (o.user_id): nadie se anota en la mesa de otro");
+    if (!/where id = \$1::bigint and user_id = \$2::uuid and status in \('waiting', 'offered'\)/.test(sol) || !/delete from reservation_holds where id = \$1::uuid and user_id = \$2::uuid/.test(sol))
+      falla(G, L, 0, "soltarEspera: solo la entrada propia y la retención de esa misma persona");
+    if (!/w\.user_id = \$2::uuid/.test(ve)) falla(G, L, 0, "esperaDeMesa: la entrada que se muestra es la de quien mira (w.user_id)");
+    if (!/update reservation_waitlist set status = 'offered', offered_at = now\(\), hold_id = \$2::uuid where id = \$1::bigint and status = 'waiting'/.test(of))
+      falla(G, L, 0, "ofrecer: cada entrada se reclama en la misma escritura (waiting → offered, and status = 'waiting')");
+    if (!/select w\.business_id, w\.user_id, w\.starts_at, w\.party_size, \$2,[\s\S]{0,120}from reservation_waitlist w where w\.id = \$1::bigint and w\.status = 'waiting'/.test(of))
+      falla(G, L, 0, "ofrecer: la mesa se guarda a nombre de la dueña de la entrada (w.user_id), nunca de otra persona");
+    if (!/not between 7 and 21 and coalesce\(u\.notif_prefs->>'quiet', ''\) <> 'false'\) as silencio/.test(of) || !/if \(e\.st !== "libre" \|\| w\.silencio\) continue;/.test(of))
+      falla(G, L, 0, "ofrecer: en las horas de silencio de la persona no se le guarda ni se le avisa (sigue en la fila)");
+    const iTx = of.indexOf("const r = await tx("), iFin = of.indexOf("\n  });", iTx), iUna = of.indexOf('if (!(await una(`rsv_libre:${w.id}`))) continue;'), iAv = of.indexOf('await avisar(w.uid, "rsv_libre"');
+    if (iTx < 0 || iFin < 0 || iUna < 0 || iAv < 0 || iAv < iFin || iUna > iAv) falla(G, L, 0, "el aviso sale UNA vez (notif_once rsv_libre:<id>), a la dueña de la entrada (w.uid) y después de cerrar la transacción");
+    if (/avisar(?:Muchos|Telefono)?\([^)]*"rsv_libre"/.test(t.replace(/await avisar\(w\.uid, "rsv_libre"/, ""))) falla(G, L, 0, "rsv_libre sale solo desde ofrecer, a w.uid");
+    if (existsSync(R) && !/update reservation_waitlist set status = 'taken', taken_at = now\(\) where hold_id = \$1::uuid and user_id = \$2 and status = 'offered'/.test(cuerpoFn(sinComent(R), "rsvEnviar")))
+      falla(G, R, 0, "rsvEnviar: la entrada queda tomada solo si la mesa era de quien envía (hold_id y user_id)");
+    if (!/\["esperaMesas", async \(\) => \(await import\("\.\/mesa-espera"\)\)\.barrerEsperaMesas\(\)\]/.test(sinComent("apps/web/lib/barrido.ts"))) falla(G, "apps/web/lib/barrido.ts", 0, "el barrido central corre la lista de espera de mesas");
+  },
+
+  /* 9t · otrosConMesaDeLaCiudad («Otros restaurantes con mesa» en la pantalla «no pudo»): nunca un negocio cerrado, en pausa, de otra ciudad, sin Pro o sin
+     Reservaciones, ni el mismo que no pudo; la disponibilidad sale del MISMO motor (areaLibre) y sin N+1 (los candidatos con tope y sus lecturas juntas: nada
+     de await dentro de la vuelta por candidato). La lista lleva tope. Al revés: alreves9t2. */
+  otrosConMesaDeLaCiudad() {
+    const G = "otrosConMesaDeLaCiudad", R = "apps/web/lib/reservas.ts";
+    if (!existsSync(R)) return falla(G, R, 0, "falta lib/reservas.ts");
+    const t = sinComent(R), f = cuerpoFn(t, "otrosConMesa");
+    if (!f) return falla(G, R, 0, "falta otrosConMesa");
+    for (const [re, msg] of [
+      [/join businesses b on b\.city_id = o\.city_id/, "solo los de la MISMA ciudad del restaurante que no pudo"],
+      [/b\.id <> \$1/, "nunca el mismo restaurante que no pudo"],
+      [/b\.status = 'active'/, "solo negocios activos (ni cerrados, ni ocultos, ni suspendidos, ni en cierre temporal)"],
+      [/st\.plan = 'pro'/, "Reservaciones es de Pro"],
+      [/'rsv' = any\(b\.modules_on\)/, "solo con Reservaciones encendido"],
+      [/not \(coalesce\(b\.modules_off, '\{\}'::jsonb\) \? 'rsv'\)/, "nunca uno con Reservaciones en pausa de To'Latino"],
+      [/limit \$\{OTROS_CANDIDATOS\}/, "los candidatos llevan tope (OTROS_CANDIDATOS)"],
+      [/if \(out\.length >= OTROS_TOPE\) break;/, "la lista lleva tope (OTROS_TOPE)"],
+      [/areaLibre\(x, d, t, p, "", O, B\)/, "la mesa la decide el mismo motor de «Elegir hora» (areaLibre)"],
+      [/if \(i < 0 \|\| !d\.abierto \|\| p > maxGrupo\(x\.s\)\) continue;/, "un día cerrado (o un grupo que no cabe) no sale"],
+    ]) if (!re.test(f)) falla(G, R, 0, `otrosConMesa: ${msg}`);
+    const tope = Number(/OTROS_TOPE = (\d+), OTROS_CANDIDATOS = (\d+)/.exec(t)?.[1] ?? 99), cand = Number(/OTROS_CANDIDATOS = (\d+)/.exec(t)?.[1] ?? 999);
+    if (!(tope >= 1 && tope <= 8 && cand <= 50)) falla(G, R, 0, "OTROS_TOPE entre 1 y 8 y OTROS_CANDIDATOS ≤ 50");
+    const vuelta = f.slice(f.indexOf("for (const b of r.rows)"));
+    if (/\bawait\b|\bdb\(\)/.test(vuelta)) falla(G, R, 0, "otrosConMesa: nada de lecturas dentro de la vuelta por candidato (N+1): se leen juntas antes");
+    const P = "apps/web/app/(app)/reserva/[num]/page.tsx";
+    if (existsSync(P) && !/const lost = \(r\.st === "no" \|\| r\.st === "exp"\) && r\.dia >= 0;/.test(sinComent(P))) falla(G, P, 0, "«Otros restaurantes con mesa» solo en «no pudo» o «sin respuesta» de un día que no pasó");
+  },
+
+  /* 9t · medirDesdeTuDireccion (Mi cuenta › Direcciones → «Desde dónde medimos» › Casa / Trabajo, LAUNCH «Mi ciudad — lo que queda de 1f-2»): el punto de
+     una dirección NUNCA viene de la cookie ni de la pantalla y nunca sale hacia ella: el selector recibe «dir:<id>», la etiqueta y la calle; el servidor
+     resuelve el punto con las direcciones de QUIEN mira (sin sesión, o con una dirección ajena o quitada, cae en el centro); la cookie guarda el punto
+     solo de «tu ubicación». Al revés: alreves9t2. */
+  medirDesdeTuDireccion() {
+    const G = "medirDesdeTuDireccion", U = "apps/web/lib/ubicacion.ts", D = "apps/web/lib/direcciones.ts", A = "apps/web/app/(app)/ciudad/acciones.ts";
+    if (!existsSync(U) || !existsSync(D) || !existsSync(A)) return falla(G, U, 0, "falta la ubicación, las direcciones o las acciones del selector");
+    const u = sinComent(U), d = sinComent(D), a = sinComent(A);
+    if (!/const d = p\.z\?\.startsWith\("dir:"\) \? dirs\?\.find\(\(x\) => `dir:\$\{x\.id\}` === p\.z\) : undefined;/.test(cuerpoFn(u, "resolver"))) falla(G, U, 0, "resolver: «dir:<id>» solo con una dirección de la lista del servidor (dirs)");
+    if (!/puntosGuardados\(usuario\.id\)/.test(cuerpoFn(u, "ubicacion"))) falla(G, U, 0, "ubicacion: el punto sale de las direcciones de ESTA persona (puntosGuardados(usuario.id))");
+    if (!/where a\.user_id = \$1 and a\.removed_at is null and a\.geo is not null/.test(cuerpoFn(d, "puntosGuardados"))) falla(G, D, 0, "puntosGuardados: solo las direcciones vivas de la persona, con punto");
+    if (!/escribir\(\{ ciudad: u\.ciudad, ctr: u\.ctr, rad: u\.rad, g: u\.gps \? \[u\.lat, u\.lng\] : null \}\)/.test(cuerpoFn(a, "elegirUbicacion"))) falla(G, A, 0, "la cookie guarda el punto solo de «tu ubicación» (nunca el de una dirección)");
+    for (const fn of ["elegirUbicacion", "medirBorrador"]) if (!/puntosGuardados\(me\.id\)/.test(cuerpoFn(a, fn))) falla(G, A, 0, `${fn}: las direcciones son las de quien elige (puntosGuardados(me.id))`);
+    const ab = cuerpoFn(a, "abrirSelector"), dl = /dirs: puntos\.map\(\(d\) => \(\{([^\n]*)\}\)\),/.exec(ab)?.[1] ?? null;
+    if (dl === null) falla(G, A, 0, "abrirSelector: Casa / Trabajo salen de puntos.map (las direcciones de quien abre)");
+    else if (/\blat\b|\blng\b/.test(dl.replace(/millas\(\[d\.lat, d\.lng\], centroDe\(c\)\)/g, ""))) falla(G, A, 0, "abrirSelector: el punto de una dirección no viaja a la pantalla (solo «dir:<id>», la etiqueta y la calle)");
+  },
+
   telefonoAlAzarRespetaFijos() {
     const G = "telefonoAlAzarRespetaFijos";
     for (const f of archivos.filter((x) => /^pruebas\/(e2e|lib|alreves)\/[^/]+\.(cjs|mjs)$/.test(x))) {

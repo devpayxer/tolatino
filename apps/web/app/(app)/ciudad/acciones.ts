@@ -6,6 +6,7 @@ import { millas, type LL } from "@/lib/mapa-geo";
 import { centroDe, ciudades, COOKIE_LOC, escribir, porDefecto, resolver, ubicacion, vista } from "@/lib/ubicacion";
 import { buscarLugar, ciudadDeTexto, cuantosPiden, masPedidas, medir, miCiudad, misPedidos, resumenCiudades, telefonoBonito } from "@/lib/ciudad";
 import { cookieSegura } from "@/lib/cookie-segura";
+import { puntosGuardados } from "@/lib/direcciones";
 
 /* Acciones de APP-CIUDAD. El servidor valida todo; la pantalla solo pide.
    9i · Una ciudad en «beta» se ve abierta solo para quien está invitado (vista de lib/ubicacion.ts); para los demás es «próximamente» y se puede pedir. */
@@ -19,7 +20,9 @@ export async function elegirUbicacion(p: { c: string; z: string; r: number; g?: 
   const me = await yo();
   const cs = await vista(await ciudades(), me?.id);
   const g = p.g && ok(p.g[0]) && ok(p.g[1]) ? ([p.g[0], p.g[1]] as [number, number]) : undefined;
-  const u = resolver(cs, { c: String(p.c ?? ""), z: String(p.z ?? ""), r: Number(p.r), g });
+  // 9t · Casa / Trabajo: solo las direcciones de quien elige (sin sesión, «dir:…» cae en el centro).
+  const dirs = me && String(p.z ?? "").startsWith("dir:") ? await puntosGuardados(me.id) : undefined;
+  const u = resolver(cs, { c: String(p.c ?? ""), z: String(p.z ?? ""), r: Number(p.r), g }, dirs);
   const jar = await cookies();
   jar.set(COOKIE_LOC, escribir({ ciudad: u.ciudad, ctr: u.ctr, rad: u.rad, g: u.gps ? [u.lat, u.lng] : null }),
     { path: "/", maxAge: UN_ANO, sameSite: "lax", httpOnly: true, secure: await cookieSegura() });
@@ -45,9 +48,11 @@ export async function dondeEstoy(lat: number, lng: number) {
 /* Lo que entra con un punto y un radio (para el mapa del selector mientras se elige). */
 // solo lectura
 export async function medirBorrador(p: { c: string; z: string; r: number; g?: [number, number] | null }) {
-  const cs = await vista(await ciudades(), (await yo())?.id);
+  const me = await yo();
+  const cs = await vista(await ciudades(), me?.id);
   const g = p.g && ok(p.g[0]) && ok(p.g[1]) ? ([p.g[0], p.g[1]] as [number, number]) : undefined;
-  const u = resolver(cs, { c: String(p.c ?? ""), z: String(p.z ?? ""), r: Number(p.r), g });
+  const dirs = me && String(p.z ?? "").startsWith("dir:") ? await puntosGuardados(me.id) : undefined;
+  const u = resolver(cs, { c: String(p.c ?? ""), z: String(p.z ?? ""), r: Number(p.r), g }, dirs);
   if (u.c.status !== "on") return { lat: u.lat, lng: u.lng, biz: 0, evt: 0, prev: null, towns: [], dots: [] };
   return { lat: u.lat, lng: u.lng, ...(await medir(u, u.c)) };
 }
@@ -117,7 +122,8 @@ export async function abrirSelector() {
   const me = await yo();
   const [cs0, dev] = await Promise.all([ciudades(), dispositivo(false)]);
   const cs = await vista(cs0, me?.id);
-  const [u, res, mios, sugeridas, mi] = await Promise.all([ubicacion(me), resumenCiudades(cs), misPedidos(me?.id ?? null, dev), masPedidas(), miCiudad(me?.id ?? null, cs)]);
+  const [u, res, mios, sugeridas, mi, puntos] = await Promise.all([ubicacion(me), resumenCiudades(cs), misPedidos(me?.id ?? null, dev), masPedidas(), miCiudad(me?.id ?? null, cs),
+    me ? puntosGuardados(me.id) : Promise.resolve([])]);
   const def = porDefecto(cs);
   return {
     actual: { c: u.ciudad, z: u.ctr, r: u.rad, g: u.gps ? ([u.lat, u.lng] as [number, number]) : null },
@@ -129,6 +135,8 @@ export async function abrirSelector() {
       towns: c.status === "on" ? c.towns : [],
     })),
     sesion: me ? { tel: telefonoBonito(me.phone) } : null,
+    // 9t · Mi ciudad (1f-2): Casa / Trabajo para «Desde dónde medimos» (las direcciones con punto; cada una sale en las ciudades a ≤ 60 mi). El punto no viaja.
+    dirs: puntos.map((d) => ({ k: `dir:${d.id}`, label: d.label, s: `${d.street} · ${d.zip}`.toUpperCase(), cs: cs.filter((c) => millas([d.lat, d.lng], centroDe(c)) <= 60).map((c) => c.id) })),
     miCiudad: mi, mios: mios.map(({ id, t }) => ({ id, t })), sugeridas,
   };
 }
