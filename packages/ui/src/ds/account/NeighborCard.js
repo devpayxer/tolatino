@@ -110,8 +110,6 @@ function NeighborCard({
     color: "rgba(255,255,255,.5)"
   }) : null), cells.length ? /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '4px',
-      '--tl-toque-y': '4px',
       marginTop: 18,
       display: 'grid',
       gridTemplateColumns: `repeat(${cells.length}, minmax(0,1fr))`,

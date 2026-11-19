@@ -1,7 +1,5 @@
 @import "tailwindcss";
 @import "@tolatino/ui/tokens.css";
-/* 9t · Objetivos táctiles de 44 px: el área de toque invisible de las piezas interactivas del sistema (packages/ui/src/toque.css). */
-@import "@tolatino/ui/toque.css";
 
 
 /* Los tokens del sistema (docs/diseno/design-system/tokens) expuestos a Tailwind.
@@ -105,60 +103,6 @@
 :is(a, button, input, select, textarea, summary, [role="button"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="option"], [role="link"], [tabindex="0"]):focus-visible {
   outline: 2px solid var(--tl-brand) !important;
   outline-offset: 2px !important;
-}
-
-/* 9t · toque — Objetivos táctiles de 44 px en las pantallas (packages/ui/src/toque.css). Un grupo de controles del sistema que la pantalla
-   arma con un gap-* de Tailwind dice la MITAD del hueco a sus hijos directos (--tl-toque-x / -y, que no se heredan): el área de toque de uno
-   no cruza la del de al lado ni le pisa la caja. gap-N = N × 4 px → la mitad = N × 2 px. En fila (flex) → x; en columna (flex-col) → y;
-   si se envuelve (flex-wrap) o es grid → los dos; gap-x-* / gap-y-* → su eje. Hasta gap-10 (40 px): desde 44 no hace falta. Las variantes
-   lg: no cambian el tope (en escritorio el hueco es igual o mayor: el tope queda chico de más, nunca grande). Guardián: toqueDe44 (cada gap-*
-   que usa apps/web tiene su línea aquí). No cambia nada que se vea: solo el tamaño de un área invisible. */
-@layer components {
-  .gap-0:is(.flex, .inline-flex):not(.flex-col, .flex-col-reverse, .flex-wrap), .gap-x-0 { --tl-toque-x: 0px; }
-  .gap-0:is(.flex-col, .flex-col-reverse):not(.flex-wrap), .gap-y-0 { --tl-toque-y: 0px; }
-  .gap-0:is(.flex-wrap, .grid, .inline-grid) { --tl-toque-x: 0px; --tl-toque-y: 0px; }
-  .gap-0\.5:is(.flex, .inline-flex):not(.flex-col, .flex-col-reverse, .flex-wrap), .gap-x-0\.5 { --tl-toque-x: 1px; }
-  .gap-0\.5:is(.flex-col, .flex-col-reverse):not(.flex-wrap), .gap-y-0\.5 { --tl-toque-y: 1px; }
-  .gap-0\.5:is(.flex-wrap, .grid, .inline-grid) { --tl-toque-x: 1px; --tl-toque-y: 1px; }
-  .gap-1:is(.flex, .inline-flex):not(.flex-col, .flex-col-reverse, .flex-wrap), .gap-x-1 { --tl-toque-x: 2px; }
-  .gap-1:is(.flex-col, .flex-col-reverse):not(.flex-wrap), .gap-y-1 { --tl-toque-y: 2px; }
-  .gap-1:is(.flex-wrap, .grid, .inline-grid) { --tl-toque-x: 2px; --tl-toque-y: 2px; }
-  .gap-1\.5:is(.flex, .inline-flex):not(.flex-col, .flex-col-reverse, .flex-wrap), .gap-x-1\.5 { --tl-toque-x: 3px; }
-  .gap-1\.5:is(.flex-col, .flex-col-reverse):not(.flex-wrap), .gap-y-1\.5 { --tl-toque-y: 3px; }
-  .gap-1\.5:is(.flex-wrap, .grid, .inline-grid) { --tl-toque-x: 3px; --tl-toque-y: 3px; }
-  .gap-2:is(.flex, .inline-flex):not(.flex-col, .flex-col-reverse, .flex-wrap), .gap-x-2 { --tl-toque-x: 4px; }
-  .gap-2:is(.flex-col, .flex-col-reverse):not(.flex-wrap), .gap-y-2 { --tl-toque-y: 4px; }
-  .gap-2:is(.flex-wrap, .grid, .inline-grid) { --tl-toque-x: 4px; --tl-toque-y: 4px; }
-  .gap-2\.5:is(.flex, .inline-flex):not(.flex-col, .flex-col-reverse, .flex-wrap), .gap-x-2\.5 { --tl-toque-x: 5px; }
-  .gap-2\.5:is(.flex-col, .flex-col-reverse):not(.flex-wrap), .gap-y-2\.5 { --tl-toque-y: 5px; }
-  .gap-2\.5:is(.flex-wrap, .grid, .inline-grid) { --tl-toque-x: 5px; --tl-toque-y: 5px; }
-  .gap-3:is(.flex, .inline-flex):not(.flex-col, .flex-col-reverse, .flex-wrap), .gap-x-3 { --tl-toque-x: 6px; }
-  .gap-3:is(.flex-col, .flex-col-reverse):not(.flex-wrap), .gap-y-3 { --tl-toque-y: 6px; }
-  .gap-3:is(.flex-wrap, .grid, .inline-grid) { --tl-toque-x: 6px; --tl-toque-y: 6px; }
-  .gap-3\.5:is(.flex, .inline-flex):not(.flex-col, .flex-col-reverse, .flex-wrap), .gap-x-3\.5 { --tl-toque-x: 7px; }
-  .gap-3\.5:is(.flex-col, .flex-col-reverse):not(.flex-wrap), .gap-y-3\.5 { --tl-toque-y: 7px; }
-  .gap-3\.5:is(.flex-wrap, .grid, .inline-grid) { --tl-toque-x: 7px; --tl-toque-y: 7px; }
-  .gap-4:is(.flex, .inline-flex):not(.flex-col, .flex-col-reverse, .flex-wrap), .gap-x-4 { --tl-toque-x: 8px; }
-  .gap-4:is(.flex-col, .flex-col-reverse):not(.flex-wrap), .gap-y-4 { --tl-toque-y: 8px; }
-  .gap-4:is(.flex-wrap, .grid, .inline-grid) { --tl-toque-x: 8px; --tl-toque-y: 8px; }
-  .gap-5:is(.flex, .inline-flex):not(.flex-col, .flex-col-reverse, .flex-wrap), .gap-x-5 { --tl-toque-x: 10px; }
-  .gap-5:is(.flex-col, .flex-col-reverse):not(.flex-wrap), .gap-y-5 { --tl-toque-y: 10px; }
-  .gap-5:is(.flex-wrap, .grid, .inline-grid) { --tl-toque-x: 10px; --tl-toque-y: 10px; }
-  .gap-6:is(.flex, .inline-flex):not(.flex-col, .flex-col-reverse, .flex-wrap), .gap-x-6 { --tl-toque-x: 12px; }
-  .gap-6:is(.flex-col, .flex-col-reverse):not(.flex-wrap), .gap-y-6 { --tl-toque-y: 12px; }
-  .gap-6:is(.flex-wrap, .grid, .inline-grid) { --tl-toque-x: 12px; --tl-toque-y: 12px; }
-  .gap-7:is(.flex, .inline-flex):not(.flex-col, .flex-col-reverse, .flex-wrap), .gap-x-7 { --tl-toque-x: 14px; }
-  .gap-7:is(.flex-col, .flex-col-reverse):not(.flex-wrap), .gap-y-7 { --tl-toque-y: 14px; }
-  .gap-7:is(.flex-wrap, .grid, .inline-grid) { --tl-toque-x: 14px; --tl-toque-y: 14px; }
-  .gap-8:is(.flex, .inline-flex):not(.flex-col, .flex-col-reverse, .flex-wrap), .gap-x-8 { --tl-toque-x: 16px; }
-  .gap-8:is(.flex-col, .flex-col-reverse):not(.flex-wrap), .gap-y-8 { --tl-toque-y: 16px; }
-  .gap-8:is(.flex-wrap, .grid, .inline-grid) { --tl-toque-x: 16px; --tl-toque-y: 16px; }
-  .gap-9:is(.flex, .inline-flex):not(.flex-col, .flex-col-reverse, .flex-wrap), .gap-x-9 { --tl-toque-x: 18px; }
-  .gap-9:is(.flex-col, .flex-col-reverse):not(.flex-wrap), .gap-y-9 { --tl-toque-y: 18px; }
-  .gap-9:is(.flex-wrap, .grid, .inline-grid) { --tl-toque-x: 18px; --tl-toque-y: 18px; }
-  .gap-10:is(.flex, .inline-flex):not(.flex-col, .flex-col-reverse, .flex-wrap), .gap-x-10 { --tl-toque-x: 20px; }
-  .gap-10:is(.flex-col, .flex-col-reverse):not(.flex-wrap), .gap-y-10 { --tl-toque-y: 20px; }
-  .gap-10:is(.flex-wrap, .grid, .inline-grid) { --tl-toque-x: 20px; --tl-toque-y: 20px; }
 }
 
 /* 9t · «Letra más grande» (Mi cuenta › Ajustes, diseño setV; users.big_text). Las piezas del sistema miden en px, así que no basta con el

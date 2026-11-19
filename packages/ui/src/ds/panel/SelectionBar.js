@@ -38,7 +38,6 @@ function SelectionBar({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '5px',
       display: 'flex',
       alignItems: 'center',
       gap: 10
@@ -78,7 +77,6 @@ function SelectionBar({
     strokeWidth: 2.2
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '3px',
       display: 'flex',
       gap: 6,
       overflowX: 'auto',
@@ -126,8 +124,6 @@ function SelectionBar({
     }
   }, subLabel), /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '3px',
-      '--tl-toque-y': '3px',
       display: 'flex',
       flexWrap: 'wrap',
       gap: 6
@@ -160,7 +156,7 @@ function SelectBox({
 }) {
   return /*#__PURE__*/React.createElement("span", {
     onClick: onClick,
-    ...__ds_scope.__btn(onClick, selectLabel, { role: 'checkbox', 'data-toque': '', 'aria-checked': !!on }),
+    ...__ds_scope.__btn(onClick, selectLabel, { role: 'checkbox', 'aria-checked': !!on }),
     style: {
       width: 22,
       height: 22,

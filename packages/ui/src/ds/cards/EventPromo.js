@@ -50,7 +50,6 @@ function EventPromo({
     }
   }, title))), /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '5px',
       padding: 14,
       display: 'flex',
       alignItems: 'center',

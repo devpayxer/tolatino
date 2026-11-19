@@ -202,7 +202,6 @@ function CompaFrame({
     strokeWidth: 2
   })))) : /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '5.5px',
       position: 'sticky',
       top: 0,
       zIndex: 5,
@@ -615,8 +614,6 @@ function CompaChips({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '4px',
-      '--tl-toque-y': '4px',
       margin: M,
       display: 'flex',
       flexWrap: 'wrap',

@@ -1549,27 +1549,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       `rgba(11,14,18,.42–.5)` en línea de muchos componentes) dan 2,9–3,7 : 1 sobre blanco y papel: no llegan a AA para texto pequeño. Subirlos a
       ≥ 60 % cambia pixeles en las capturas aprobadas de los 9 dispositivos, así que **no se hizo en 9c** (regla: lo visual no cambia sin OK).
       Se hace en un bloque con captura nueva aprobada en `docs/REVISION.md` (subir `muted` a .62 y `faint` a .55, `pruebas/visual/` por `aprobar`). (9c, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m (sistema de diseño entero; pide el OK del diseño)._ — **9c-2 (15 nov):** hecho en el código (ink al 60 % en el sistema portado, las pantallas y los tokens; guardián `contrasteTexto`); queda que axe lo confirme en las seis pantallas, aprobar las capturas nuevas y sacar `color-contrast` de `axe-conocidas.json`.
-- [x] **→ 9t** · **Objetivos táctiles de 44 px:** a11y9c informa cuántos controles del sistema miden menos de 44 px (íconos de 30–36 px, chips, filas
+- [ ] **→ 9t** · **Objetivos táctiles de 44 px:** a11y9c informa cuántos controles del sistema miden menos de 44 px (íconos de 30–36 px, chips, filas
       compactas). Agrandarlos cambia el diseño aprobado: o se agranda el área de toque sin tocar lo que se ve (relleno invisible con `::after`) o se aprueba
-      el cambio. Va con el contraste, en el mismo bloque y la misma aprobación visual. (9c, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._ — _9t (19 nov): hecho sin tocar lo que se ve. Cada pieza interactiva del sistema lleva `data-toque` (`__btn`/`__key`, los roles y `<button>` que marca
-      scripts/portar-sistema.mjs, los bloques del panel) y `packages/ui/src/toque.css` le pone un `::after` invisible centrado que la lleva a 44 × 44 px
-      (min(0, 50 % − 22 px) por lado; nada que se dibuje). Vecinos: el contenedor de un grupo con gap dice la mitad del hueco (`--tl-toque-x/-y`, que no se
-      heredan; el primero y el último crecen enteros hacia afuera) — el script lo pone en los grupos del sistema, `globals.css` en los `gap-*` de Tailwind
-      de las pantallas y los bloques del panel a mano; bordes de carrusel y costuras con `--tl-toque-arriba/-abajo/-izq/-der`. a11y9c mide lo servido
-      (`pruebas/lib/toque.cjs`: área real = caja ∪ ::after recortada; falla si en el teléfono un control queda corto sin vecino ni contenedor que lo
-      explique, si un área pisa la caja de otro control o de un campo, o si la página con áreas y sin ellas no es igual pixel a pixel junto a los
-      controles, con el anillo del foco, o cambia lo que se desplaza). Guardián `toqueDe44`, alreves9ttoque 25/25. Verificado en Chrome local sobre
-      /sistema y un banco temporal con los 130 componentes y sus clics (390 y 1440): 0 cortos, 0 que pisan, 0 pixeles distintos, 0 cambios de scroll; un
-      toque real 1–6 px fuera de la caja llega al control. **a11y9c no corrió** (sin Docker ni base aquí) y **WebKit no se probó** (no hay WebKit en
-      esta máquina): lo confirma el CI. Lo que queda sin área, abajo._
-- [ ] **→ 9t** · **Área de toque de las piezas con sombra o recortadas (pide OK visual):** volver `position: relative` a un control lo pinta en su
-      propia capa, y en dos casos eso cambiaba pixeles (lo cazó la comparación con y sin áreas, 19 nov), así que se dejaron SIN área ampliada:
-      `data-toque="sombra"` (el Button «action» —p. ej. «Confirmar» de Super Admin—, la hora elegida del Booking, la fila oscura de OrderBar, el
-      SearchBar, los radios de RadiusMap, la ficha del dominó; su sombra pasaría por encima del texto vecino) y `data-toque="recorte"` (el «− / +» del
-      plato, AddPill: dentro de una caja redondeada con overflow hidden cambia el suavizado de la esquina y el área quedaría recortada igual). a11y9c
-      los informa. Ampliarlos = aceptar ese cambio de pixeles (casi invisible: hasta 9 niveles de 255 bajo la sombra) con captura nueva aprobada, en el
-      mismo bloque que el contraste AA (docs/REVISION.md «9t — Objetivos táctiles de 44 px»). También se informan (no fallan) los controles que su
-      contenedor recorta (pestañas y carruseles con scroll sin relleno) y los del medio de un grupo con el tope de un lado sin vecino. (9t, 19 nov)
+      el cambio. Va con el contraste, en el mismo bloque y la misma aprobación visual. (9c, 14 nov) — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m._
 - [x] **→ 9t** · **Nombres en inglés de los íconos sin texto del sistema (9c-2):** los controles que solo tienen un ícono (votar en Comunidad, «Foto» de una reseña,
       «Ver el equipo», ficha del dominó, cerrar/atrás/enviar de El Compa y del onboarding, los de la barra del Super Admin…) tienen nombre con un prop
       (`upLabel`, `closeLabel`, `backLabel`, `searchLabel`…) cuyo valor por defecto es ES, o ES/EN si el componente recibe `lang`. Falta que cada pantalla que los

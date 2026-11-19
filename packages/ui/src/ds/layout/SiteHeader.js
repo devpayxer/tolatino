@@ -42,7 +42,7 @@ function Bell({
 }) {
   return /*#__PURE__*/React.createElement("span", {
     onClick: onClick,
-    role: "button", 'data-toque': '',
+    role: "button",
     tabIndex: 0,
     "aria-label": label,
     onKeyDown: e => {
@@ -167,7 +167,6 @@ function SiteHeader({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '4px',
       display: 'flex',
       alignItems: 'center',
       gap: 8
@@ -260,7 +259,6 @@ function SiteHeader({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '10px',
       height: 76,
       padding: '0 30px',
       display: 'flex',
@@ -351,7 +349,6 @@ function SiteHeader({
     onClick: onPublish
   }, publishLabel) : null), tabs.length ? /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '14px',
       padding: '0 30px',
       display: 'flex',
       gap: 28,

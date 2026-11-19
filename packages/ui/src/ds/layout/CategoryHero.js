@@ -282,7 +282,6 @@ function CategoryHero({
       }
     }, g.label), /*#__PURE__*/React.createElement("div", {
       style: {
-        '--tl-toque-x': (d ? 14 : 10) / 2 + 'px',
         display: 'flex',
         gap: d ? 14 : 10
       }

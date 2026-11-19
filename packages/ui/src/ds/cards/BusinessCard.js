@@ -177,7 +177,6 @@ function BusinessCard({
       ...bg(photos[0])
     }
   }, media || null), ring ? /*#__PURE__*/React.createElement("button", {
-    'data-toque': '',
     type: 'button',
     'aria-label': ringLabel,
     'data-anillo': '',
@@ -272,8 +271,6 @@ function BusinessCard({
     }
   }, status)) : null), chips.length && !oneLine ? /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '3px',
-      '--tl-toque-y': '3px',
       marginTop: 10,
       display: 'flex',
       flexWrap: 'wrap',

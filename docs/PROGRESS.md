@@ -2796,6 +2796,10 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   fic005, vec9m, al revés), 44460944263 (llave). En el camino: «Destacar» decía el tope viejo de la caché (bug, arreglado; también en negocios);
   evt9t, pat003 y alreves6f al día; serieUnaVezEnLista mira las dos lecturas de eventosCiudad. La app se sirve en local
   (`tl_loc` + `servir.sh basico` + docker falso que manda el SQL de las pruebas a la base local) para reproducir sin esperar a CI.
+- **19 nov · REVERTIDO el mismo día (commit «Revert» de 4bb49b4):** la confirmación completa 44485797353 salió roja en todos los anchos: el `::after` de un
+  control tapa la caja del vecino que está en OTRO contenedor (el logo «To’Latino» de la cabecera, 28 → 44 px, pisa «Ver las 3 fotos» de la ficha) y
+  los clics de menu2b, rsv2e, apt4f, apt4q, fic4id, avisos2j caducan; a11y9c (la propia prueba del bloque) también lo caza. Se rehace aparte
+  (LAUNCH «Objetivos táctiles de 44 px» vuelve a [ ]): lo de abajo describe el intento, no lo que está en main.
 - **19 nov · 9t · Objetivos táctiles de 44 px, sin cambiar lo que se ve** (LAUNCH «Objetivos táctiles de 44 px» → ✓; queda «Área de toque de las
   piezas con sombra o recortadas», con el OK visual del contraste; REVISION «9t — Objetivos táctiles de 44 px»). **`packages/ui/src/toque.css`**
   (importado por globals.css, exportado por el paquete): `[data-toque=""]` = position relative + `::after` invisible centrado con

@@ -150,8 +150,6 @@ function UnderstoodBar({
   if (!words.length && !filters.length) return null;
   return /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '3px',
-      '--tl-toque-y': '3px',
       display: 'flex',
       flexWrap: 'wrap',
       gap: 6,
@@ -228,8 +226,6 @@ function NotYetCard({
   const row = layout === 'row';
   const acts = /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '4px',
-      '--tl-toque-y': '4px',
       display: 'flex',
       gap: 8,
       flexWrap: 'wrap'

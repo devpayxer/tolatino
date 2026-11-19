@@ -159,8 +159,6 @@ function RadiusMap({
     }
   }, place) : null, /*#__PURE__*/React.createElement(Credit, null)), radii.length ? /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '2px',
-      '--tl-toque-y': '2px',
       display: 'grid',
       gridTemplateColumns: 'repeat(' + radii.length + ',minmax(0,1fr))',
       gap: 4,
@@ -182,8 +180,7 @@ function RadiusMap({
       boxShadow: r.on ? '0 1px 3px rgba(11,14,18,.15)' : 'none',
       font: '700 ' + (desk ? 12.5 : 13) + 'px Manrope,sans-serif',
       cursor: 'pointer'
-    },
-    'data-toque': 'sombra'
+    }
   }, r.label))) : null, has(count) || has(towns) ? /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -505,8 +502,6 @@ function CitySoon({
     style: K
   }, asksLabel), /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '3px',
-      '--tl-toque-y': '3px',
       display: 'flex',
       flexWrap: 'wrap',
       gap: 6

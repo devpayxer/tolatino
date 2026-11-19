@@ -54,8 +54,6 @@ function PlanSwitch({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '2px',
-      '--tl-toque-y': '2px',
       padding: 4,
       borderRadius: 14,
       background: 'rgba(11,14,18,.06)',
@@ -252,8 +250,6 @@ function BusinessPreview({
     }
   }, P.status)), P.hasChips ? /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '3px',
-      '--tl-toque-y': '3px',
       marginTop: 10,
       display: 'flex',
       flexWrap: 'wrap',
@@ -480,7 +476,6 @@ function BusinessPreview({
     style: SUB
   }, P.city))), /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '4.5px',
       marginTop: 14,
       display: 'flex',
       gap: 9

@@ -5630,6 +5630,9 @@ historial y el dueño lo ve). Detalles:
   en un teléfono chico (o a 320), «Cómo llegar» baja a una segunda fila de ancho completo.
 - **Qué mirar:** la ficha de Sabor Dominicano en tu teléfono, con letra normal y con Mi cuenta › Ajustes › Letra más grande.
 ## Fase 9 · 9t — Objetivos táctiles de 44 px (19 nov) — mirar
+
+> **Revertido el 19 nov** (no está en el sandbox): el área ampliada de un control tapaba al vecino de otro contenedor y varios toques
+> dejaban de llegar. Se rehace; cuando vuelva, esta sección se actualiza.
 **Qué cambió:** nada de lo que se ve. Los íconos de 30–36 px, los chips y las filas compactas del sistema ahora reciben el toque en **44 × 44 px**
 con un área invisible alrededor (packages/ui/src/toque.css). La prueba compara la página con y sin esas áreas pixel a pixel (con el anillo del foco
 puesto) y no cambia ni un pixel junto a los controles.

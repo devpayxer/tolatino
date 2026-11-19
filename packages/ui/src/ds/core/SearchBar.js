@@ -26,8 +26,7 @@ function SearchBar({
       boxShadow: '0 4px 14px -8px rgba(11,14,18,.18)',
       cursor: onClick ? 'pointer' : 'default',
       ...style
-    },
-    'data-toque': 'sombra'
+    }
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "search",
     size: 18,

@@ -162,7 +162,10 @@ const limpiar = () => {
     ok(await contiene(m, `[stub→es] ${EN}`) && (await stubN()).translate === t0 + 1, 'la segunda vez sale de la caché (el traductor no recibe otra llamada)');
     const ES = `Gracias, paso a las seis por mi pedido ${TAG}`;
     await m.getByPlaceholder(/Escribe a/).fill(ES); await m.getByRole('button', { name: 'Enviar' }).click(); await m.getByText(ES).first().waitFor();
-    ok(await m.locator('[data-tr="ver"]').count() === 1, 'lo suyo y lo de su idioma no traen el botón');
+    // Lo único con [data-tr] es el mensaje en inglés ya traducido («Ver original»): lo suyo (en español) no trae ni botón ni línea.
+    const trs = await espera(async () => (await m.getByText(ES).count()) > 0 && (await m.locator('[data-tr]').count()) === 1);
+    ok(trs && await m.locator('[data-tr="ver"]').count() === 0 && await m.locator('[data-tr="traducido"]').count() === 1,
+      'lo suyo y lo de su idioma no traen el botón (' + JSON.stringify(await m.locator('[data-tr]').evaluateAll((xs) => xs.map((x) => x.getAttribute('data-tr')))) + ')');
     const EN2 = `Hello, is the kitchen open for pickup tonight? ${TAG}`;
     await m.getByPlaceholder(/Escribe a/).fill(EN2); await m.getByRole('button', { name: 'Enviar' }).click();
     ok(await espera(() => sql(`select lang from chat_messages where thread_id = ${TH} and body = '${EN2}'`) === 'en'), 'lo de la vecina en inglés también se detecta');

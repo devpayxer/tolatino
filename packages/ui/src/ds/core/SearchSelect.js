@@ -41,7 +41,7 @@ function SearchSelect({
     const on = value === m.k;
     rows.push(/*#__PURE__*/React.createElement("div", {
       key: m.k,
-      role: "option", 'data-toque': '',
+      role: "option",
       "aria-selected": on,
       onClick: () => onPick && onPick(m.k),
       ...__ds_scope.__key(() => onPick && onPick(m.k)),

@@ -118,7 +118,6 @@ function CommentActions({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '2px',
       marginTop: 12,
       paddingTop: 10,
       borderTop: '1px solid rgba(11,14,18,.07)',
@@ -128,7 +127,6 @@ function CommentActions({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      '--tl-toque-x': '1px',
       display: 'flex',
       alignItems: 'center',
       gap: 2,
@@ -205,7 +203,7 @@ function CommentActions({
     }
   }), onMenu ? /*#__PURE__*/React.createElement("span", {
     onClick: onMenu,
-    role: 'button', 'data-toque': '',
+    role: 'button',
     tabIndex: 0,
     'aria-label': menuLabel,
     onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onMenu(e); } },
@@ -427,7 +425,6 @@ const ReplyBody = ({
   }
 }, /*#__PURE__*/React.createElement(__ds_scope.BusinessRow, r.business)) : null, /*#__PURE__*/React.createElement("div", {
   style: {
-    '--tl-toque-x': '7px',
     marginTop: 6,
     display: 'flex',
     alignItems: 'center',
@@ -461,7 +458,7 @@ const ReplyBody = ({
   }
 }), r.onMenu ? /*#__PURE__*/React.createElement("span", {
   onClick: r.onMenu,
-  role: 'button', 'data-toque': '',
+  role: 'button',
   tabIndex: 0,
   'aria-label': r.menuLabel || 'Opciones',
   onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); r.onMenu(e); } },
@@ -660,7 +657,6 @@ function AlsoRecommended({
   }, items.map((b, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     style: {
-      '--tl-toque-x': '5px',
       position: 'relative',
       overflow: 'hidden',
       height: 56,
