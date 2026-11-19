@@ -447,10 +447,13 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
             <span className="size-2 flex-none rounded-full" style={{ background: stDot }} /><span className="font-extrabold" style={{ color: stFg }}>{f.estadoCorto}</span>{restoC ? <span>{restoC}</span> : null}
           </div>
           {[llamar, escribir, llegar].some(Boolean) ? (
-            <div className="mt-1.5 grid gap-2" style={{ gridTemplateColumns: `repeat(${[llamar, escribir, llegar].filter(Boolean).length},minmax(0,1fr))` }}>
-              {llamar ? <div className="grid"><Button variant="secondary" size="sm" icon="phone" block onClick={llamar}>{E2("Llamar", "Call")}</Button></div> : null}
-              {escribir ? <div className="grid"><Button variant="secondary" size="sm" icon="chat" block onClick={escribir}>{E2("Escribir", "Message")}</Button></div> : null}
-              {llegar ? <div className="grid"><Button variant="secondary" size="sm" icon="pin" block onClick={llegar}>{E2("Cómo llegar", "Directions")}</Button></div> : null}
+            /* 19 nov · Antes, tres columnas iguales: «Cómo llegar» (122 px) no cabía en su tercio (111 a 390) y se salía del margen; con letra
+               grande en el iPhone SE la página se movía de lado. Ahora cada botón toma lo que dice y lo que sobra se reparte; si no caben los
+               tres, el último baja a otra fila (nunca se sale). Guardián botonesQueCaben. */
+            <div data-pieza="acciones-ficha" className="mt-1.5 flex flex-wrap gap-2">
+              {llamar ? <div className="grid flex-[1_1_auto]"><Button variant="secondary" size="sm" icon="phone" block onClick={llamar}>{E2("Llamar", "Call")}</Button></div> : null}
+              {escribir ? <div className="grid flex-[1_1_auto]"><Button variant="secondary" size="sm" icon="chat" block onClick={escribir}>{E2("Escribir", "Message")}</Button></div> : null}
+              {llegar ? <div className="grid flex-[1_1_auto]"><Button variant="secondary" size="sm" icon="pin" block onClick={llegar}>{E2("Cómo llegar", "Directions")}</Button></div> : null}
             </div>
           ) : null}
         </div>

@@ -9663,6 +9663,24 @@ const guardianes = {
     if (!/BASE="\$\{DIRECCIONES_ESPEJO:-https:\/\/www2\.census\.gov\/geo\/tiger\}"/.test(gen) || /googleapis|mapbox|hereapi|nominatim\.openstreetmap|photon\.komoot/.test(gen)) falla(G, "infra/direcciones/generar.sh", 0, "la carga baja datos públicos del Censo (y las fuentes de fuentes-oa.txt): nunca un servicio de geocodificación");
   },
 
+  /* 19 nov · botonesQueCaben: en la ficha Pro, «Llamar · Escribir · Cómo llegar» iban en tres columnas iguales (minmax(0,1fr)): «Cómo llegar»
+     (122 px) no cabía en su tercio (111 a 390) y se salía del margen; con letra grande en el iPhone SE la página se movía de lado. La fila se
+     acomoda (flex-wrap, cada botón con lo suyo) y las pruebas miran cada botón contra su caja (pruebas/lib/caben.cjs, en fic005 y bus9t).
+     Al revés (alreves19caben): la fila vuelve a columnas iguales, se quita el wrap, o las pruebas dejan de mirar. */
+  botonesQueCaben() {
+    const G = "botonesQueCaben", F = "apps/web/app/(app)/n/[id]/FichaNueva.tsx";
+    const t = sinComent(F);
+    const m = t.match(/<div data-pieza="acciones-ficha" className="([^"]*)"/);
+    if (!m) falla(G, F, 0, "no encontré la fila de acciones de la ficha (data-pieza=\"acciones-ficha\")");
+    else {
+      if (!/\bflex\b/.test(m[1]) || !/\bflex-wrap\b/.test(m[1])) falla(G, F, 0, "la fila Llamar · Escribir · Cómo llegar se acomoda (flex flex-wrap): en columnas iguales «Cómo llegar» se sale");
+      const fila = t.slice(m.index, m.index + 900);
+      if (/minmax\(0,\s*1fr\)/.test(fila)) falla(G, F, 0, "la fila de acciones no usa columnas iguales (minmax(0,1fr))");
+      if ((fila.match(/flex-\[1_1_auto\]/g) || []).length < 3) falla(G, F, 0, "cada botón de la fila toma lo que dice (flex-[1_1_auto])");
+    }
+    for (const e of ["pruebas/e2e/fic005.cjs", "pruebas/e2e/bus9t.cjs"]) if (!/botonesQueNoCaben\(/.test(readFileSync(e, "utf8"))) falla(G, e, 0, "la prueba no mira que los botones quepan en su caja (pruebas/lib/caben.cjs)");
+  },
+
   /* 9t (19 nov) · topeAyudaDeConfig: el tope de «Ayuda con …» por persona en 24 h era un 5 fijo en dos lugares (lib/ayuda.ts y lib/ayuda-cita.ts)
      y nada lo probaba (LAUNCH). Ahora sale de Configuración (ayuda_tope_dia, 0182, sección Soporte, entre 1 y 50) y se lee con cfgSql en la
      MISMA consulta que cuenta (lo decide la base, sin caché vieja). En la cita, un reporte de seguridad (directo) nunca se frena. Al revés

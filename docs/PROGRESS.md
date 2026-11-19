@@ -2782,3 +2782,11 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   bloqueos, userHandle); §13 no corre en local (necesita la segunda dirección del CI, 192.0.2.2). tsc + build + guardianes + extraer --verificar en
   verde. Ayuda: descargar-mis-datos,
   borrar-mi-cuenta, panel-exportar-los-datos, entrar-con-face-id, admin-usuarios (ES/EN).
+- **19 nov · La fila «Llamar · Escribir · Cómo llegar» de la ficha Pro se salía (bug real) y lo que destapó la tanda de corridas:** con la app
+  servida en local (base `tl_loc` al día con 184 migraciones y la semilla de pruebas; `pruebas/servir/servir.sh basico`) y Playwright: en tres
+  columnas iguales «Cómo llegar» (122 px) no cabía en su tercio (111 px a 390, 106 a 375): se salía del margen derecho en TODAS las fichas Pro,
+  y con letra grande en el iPhone SE la página se movía de lado (bus9t). Ahora la fila se acomoda (flex-wrap, cada botón con lo suyo); con
+  letra grande o a 320 el tercero baja a otra fila. Nuevo `pruebas/lib/caben.cjs` (botón contra su caja) en fic005 y bus9t, guardián
+  `botonesQueCaben`, `alreves19caben` 6/6. Además: vec9m abre el negocio todo el día (a las 11 PM la hoja del plato no se abre: solo si se
+  puede pedir); ciu9t espera el encabezado de escritorio (la cookie tl_ancho del teléfono pinta primero el de teléfono); `sin-reloj` quita
+  «hace N min/h» (compa7e dos veces seguidas); bus9t trae su propio apartado; alreves8a al día; age en CI cuando una dirigida nombra al revés.

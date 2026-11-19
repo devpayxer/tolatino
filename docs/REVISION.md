@@ -5623,3 +5623,9 @@ historial y el dueño lo ve). Detalles:
   dispositivo ni donde nació la llave bloqueados (como entrar). Una llave de otra cuenta, quitada o revocada no confirma nada.
 - **Auditoría:** cada confirmación queda en el libro de las llaves (`passkey_log` «confirmo» con su propósito; los intentos fallidos «confirmar_fallo»
   con el motivo) y el pedido donde siempre (Cambios de cuenta «export» / «delete»). No se agregó una columna «cómo confirmó» a Cambios de cuenta.
+
+## 19 nov · Ficha Pro: la fila «Llamar · Escribir · Cómo llegar»
+- **Qué cambió:** antes, tres botones de igual ancho; «Cómo llegar» no cabía y se salía del margen derecho (en todos los teléfonos). Ahora cada
+  botón toma lo que dice y lo que sobra se reparte: a 390 se ven los tres en una fila, casi iguales (100 · 105 · 129 px). Con «Letra más grande»
+  en un teléfono chico (o a 320), «Cómo llegar» baja a una segunda fila de ancho completo.
+- **Qué mirar:** la ficha de Sabor Dominicano en tu teléfono, con letra normal y con Mi cuenta › Ajustes › Letra más grande.

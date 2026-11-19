@@ -22,6 +22,7 @@
 // Precondiciones propias: una persona nueva con teléfono 555 libre; el apartado A-9501 de Marisol vuelve a su estado; el plan, la pausa, la sección y el
 // plato de Sabor Dominicano y el equipo de la barbería vuelven como estaban. Cuenta solo sus filas (corre barajada y dos veces seguidas).
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { botonesQueNoCaben } = require('../lib/caben.cjs');
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
 const { entrarComo, telLibre } = require('../lib/negocio-nuevo.cjs');
 const B = ENT.B, OUT = ENT.OUT;
@@ -209,8 +210,9 @@ const nombres = (r) => (r.filas || []).filter((x) => x.kind === 'item').map((x) 
         for (const el of document.querySelectorAll('body *')) { const r = el.getBoundingClientRect(); if (r.width && r.right > W + 1 && ![...el.children].some((c) => c.getBoundingClientRect().right > W + 1)) out.push(`${el.tagName.toLowerCase()}${el.getAttribute('data-screen-label') ? '[' + el.getAttribute('data-screen-label') + ']' : ''}.${String(el.className).slice(0, 60)} «${(el.textContent || '').trim().slice(0, 30)}» →${Math.round(r.right - W)}`); if (out.length > 4) break; }
         return out.join(' ; '); }) : '';
       if (ancho > 1) malas.push(`${u}: scroll de lado (+${ancho}) ${quien}`);
+      const noCaben = await botonesQueNoCaben(w); if (noCaben.length) malas.push(`${u}: botones que no caben: ${noCaben.slice(0, 4).join(' ; ')}`);
     }
-    ok(!malas.length, `con letra grande, a 390: la letra desde el servidor y sin scroll de lado en 6 pantallas${malas.length ? ' → ' + malas.join(' | ') : ''}`);
+    ok(!malas.length, `con letra grande, a 390: la letra desde el servidor y sin scroll de lado ni botones que se salgan de su caja en 6 pantallas${malas.length ? ' → ' + malas.join(' | ') : ''}`);
     await w.goto(B + '/buscar?q=mofongo'); await shot(w, '390-letra-buscar');
     await c5.addCookies([{ name: 'tl_lang', value: 'en', url: B }]);
     await v.goto(B + '/cuenta/ajustes'); await v.waitForLoadState('networkidle').catch(() => {});

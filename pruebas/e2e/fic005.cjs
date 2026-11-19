@@ -5,6 +5,7 @@
 // abre en «Detalles» (2 / 3); en escritorio, la tarjeta pegada a la derecha hace lo mismo. Con extras, la hoja de siempre sigue igual.
 // Precondición propia: los extras del local se apagan mientras corre la parte de día y hora (sell=false) y vuelven al terminar.
 const ENT = require('../lib/entorno.cjs');
+const { botonesQueNoCaben } = require('../lib/caben.cjs');
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const B = ENT.B, OUT = ENT.OUT;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -qAt -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -32,6 +33,7 @@ const HORA = /^\d{1,2}:\d{2} (AM|PM)$/;
     const tabs = await m.getByRole('tab').allInnerTexts();
     ok(tabs.map((x) => x.trim().toUpperCase()).join('|').startsWith('RESUMEN|SERVICIOS|EQUIPO|RESEÑAS'), `pestañas en orden: ${tabs.map((x) => x.trim()).join(' · ')}`);
     ok(!/undefined|null|NaN/.test(await texto(m)), 'sin «undefined», «null» ni «NaN»');
+    const noCaben = await botonesQueNoCaben(m); ok(!noCaben.length, `390: ningún botón se sale de su caja (Llamar · Escribir · Cómo llegar)${noCaben.length ? ' → ' + noCaben.join(' ; ') : ''}`); // 19 nov
     await m.screenshot({ path: OUT + 'fic005-resumen-390.png', fullPage: false });
     await m.getByRole('tab', { name: /Equipo/ }).click();
     const eq = m.locator('[data-screen-label="Ficha · equipo"]'); await eq.waitFor();
