@@ -69,6 +69,7 @@ Super Admin › Colas › **Mensajes reportados** y **Medios** (fotos en revisi�
 | To'Latino oculta el mensaje | La foto se oculta con él. |
 | Las fotos no están disponibles (almacenamiento caído) | «Las fotos no están disponibles en este momento.»; el texto se puede mandar igual. |
 | Borras tu cuenta | Tus fotos se borran con ella (a los 30 días), como lo que escribiste. |
+| Eliges una foto y no la mandas | Se puede mandar durante 24 horas; después se borra sola (nadie más la vio). |
 
 ## Ver traducción (español ↔ inglés)
 - Bajo un mensaje del otro lado que está en otro idioma sale **Ver traducción** (en el panel también). Al tocarlo: «Traduciendo…» y luego el
@@ -153,6 +154,7 @@ promete nada; la IA solo ve la página del negocio y esta conversación.
 | To'Latino hides the message | The photo is hidden with it. |
 | Photos are not available (storage down) | "Photos are not available right now."; you can still send text. |
 | You delete your account | Your photos are deleted with it (after 30 days), like what you wrote. |
+| You pick a photo and don't send it | You can send it for 24 hours; after that it is deleted on its own (nobody else saw it). |
 
 ### See translation (Spanish ↔ English)
 - Under a message from the other side that is in another language, **See translation** shows (in the dashboard too). Tap it: "Translating…" and

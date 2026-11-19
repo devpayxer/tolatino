@@ -9686,6 +9686,24 @@ const guardianes = {
     for (const e of ["pruebas/e2e/fic005.cjs", "pruebas/e2e/bus9t.cjs"]) if (!/botonesQueNoCaben\(/.test(readFileSync(e, "utf8"))) falla(G, e, 0, "la prueba no mira que los botones quepan en su caja (pruebas/lib/caben.cjs)");
   },
 
+  /* 9t (19 nov) · fotosSinEnviarSePurgan: una foto de Mensajes que se sube y no se manda se quedaba para siempre en el almacén privado (sin
+     dueño visible). El barrido (fotosSinEnviar → lib/mensajes-purga.ts) la saca pasadas las MISMAS 24 h que tomarFoto deja para mandarla (antes
+     no: se podría purgar una foto que todavía se puede mandar), solo si sigue 'pendiente' (nunca una enviada), y la fila queda con purged_at
+     (nada se borra de la base). Prueba: msg9t §5b. Al revés (alreves9tpurga). */
+  fotosSinEnviarSePurgan() {
+    const G = "fotosSinEnviarSePurgan", P = "apps/web/lib/mensajes-purga.ts", M = "apps/web/lib/mensajes.ts", BR = "apps/web/lib/barrido.ts";
+    if (!existsSync(P)) return falla(G, P, 0, "falta lib/mensajes-purga.ts");
+    const t = sinComent(P), m = sinComent(M);
+    if (!/\["fotosSinEnviar", async \(\) => \(await import\("\.\/mensajes-purga"\)\)\.purgarFotosSinEnviar\(\)\]/.test(sinComent(BR))) falla(G, BR, 0, "el barrido no corre purgarFotosSinEnviar");
+    const vence = /owner_id = 'pendiente'[^`]*created_at > now\(\) - interval '(\d+) hours'/.exec(m)?.[1];
+    const purga = /owner_id = 'pendiente'[^`]*created_at < now\(\) - interval '(\d+) hours'/.exec(t)?.[1];
+    if (!vence || !purga || vence !== purga) falla(G, P, 0, `la purga y tomarFoto usan las mismas horas (se manda hasta ${vence ?? "?"} h; se purga después de ${purga ?? "?"} h)`);
+    if (!/where id = \$1::uuid and owner_id = 'pendiente' and purged_at is null/.test(t)) falla(G, P, 0, "solo se marca si sigue 'pendiente' (nunca una foto ya enviada)");
+    if (/delete from media/i.test(t)) falla(G, P, 0, "nada se borra de la base: la fila queda con purged_at");
+    if (!/set purged_at = now\(\)/.test(t)) falla(G, P, 0, "la fila purgada lleva purged_at");
+    if (!/5b · La foto que se sube y nunca se manda/.test(readFileSync("pruebas/e2e/msg9t.cjs", "utf8"))) falla(G, "pruebas/e2e/msg9t.cjs", 0, "msg9t no prueba la purga (§5b)");
+  },
+
   /* 9t (19 nov) · exportarSinCorte: «Descargar mis datos» y «Exportar los datos del negocio» cortaban cada archivo en 20 000 filas (limit fijo):
      una cuenta grande recibía su archivo incompleto sin saberlo. Ahora cada archivo sale entero, en partes de PARTE filas (nombre-1.csv, -2…),
      leído con un cursor (declare … cursor / fetch forward) y comprimido parte por parte (zipPorPartes); el LEEME dice cuántas filas y partes.

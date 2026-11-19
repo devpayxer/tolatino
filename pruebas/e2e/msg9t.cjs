@@ -7,6 +7,7 @@
 // 4) El negocio manda SOLO una foto desde el panel → en revisión → el equipo la quita con motivo → la vecina ve «Foto quitada por To’Latino» y
 //    Pedro recibe el motivo (mod_hide). La foto quitada ya no se sirve a nadie.
 // 5) Con la regla de fotos apagada (Auto-moderación) la foto se ve al instante (y se vuelve a encender como estaba).
+// 5b) Una foto subida y nunca mandada: pasadas 24 h el barrido la saca del almacén (purged_at, «sin_enviar»); una ya enviada no se toca.
 // 6) «Ver traducción» con un traductor DE MENTIRA solo para esta prueba (stub-traductor.cjs; dice «[stub→es]»): el negocio escribe en inglés → la
 //    vecina (app en español) ve «Ver traducción» → la traducción con «Ver original»; el original no cambia en la base; la segunda vez sale de la
 //    caché; lo suyo no trae botón. Al revés: la vecina escribe en inglés → el panel (español) lo ofrece. El Super Admin ve el original.
@@ -142,6 +143,19 @@ const limpiar = () => {
     const F3 = sql(`select media_id from chat_messages where thread_id = ${TH} and sender = 'user' and media_id is not null order by id desc limit 1`);
     ok((await traerFoto(p, `/api/mensajes/foto/${F3}`)).st === 200, 'y el negocio la ve');
     sql(`update mod_rules set enabled = ${IMG0 === 'true'} where key = 'img'`);
+
+    // ── 5b · La foto que se sube y nunca se manda: a las 24 h el barrido la saca del almacén (la fila queda con purged_at) ──
+    const subida = await m.evaluate(async (b) => { const fd = new FormData(); fd.append('foto', new Blob([new Uint8Array(b)], { type: 'image/jpeg' }), 'f.jpg'); const r = await fetch('/api/mensajes/foto', { method: 'POST', body: fd }); return r.json(); }, [...fs.readFileSync(FOTO2)]);
+    ok(subida.ok && /^[0-9a-f-]{36}$/.test(subida.id), 'una foto subida y no mandada');
+    ok((await traerFoto(m, `/api/mensajes/foto/${subida.id}`)).st === 200, 'antes de las 24 h quien la subió la ve');
+    const enviada = sql(`select media_id from chat_messages where thread_id = ${TH} and media_id is not null order by id limit 1`);
+    const enviada0 = sql(`select created_at from media where id = '${enviada}'`);
+    sql(`update media set created_at = now() - interval '25 hours' where id in ('${subida.id}', '${enviada}')`);
+    execSync(`curl -s -X POST -H 'x-barrido-token: ${ENT.TOK}' ${B}/api/interno/barrido`);
+    ok(sql(`select (purged_at is not null) || '|' || status || '|' || removed_reason || '|' || owner_id from media where id = '${subida.id}'`) === 'true|removed|sin_enviar|pendiente', 'el barrido la purga (purged_at, «sin_enviar»; la fila queda)');
+    ok((await traerFoto(m, `/api/mensajes/foto/${subida.id}`)).st === 404, 'purgada: la dirección privada ya no la sirve');
+    ok(sql(`select purged_at is null from media where id = '${enviada}'`) === 't', 'una foto ya enviada (aunque sea vieja) no se toca');
+    sql(`update media set created_at = '${enviada0}' where id = '${enviada}'`);
 
     // ── 6 · «Ver traducción» (traductor de mentira) ──
     await stubArriba(); trad = true; servidor(STUB);
