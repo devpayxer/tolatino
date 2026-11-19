@@ -4080,6 +4080,11 @@ const guardianes = {
     for (const fn of ["eventosCiudad", "estaNoche", "destacado", "eventosSemana", "eventosDelOrganizador", "buscarEventos", "relacionados"]) {
       if (!/PRIMERA\(/.test(cuerpoFn(t, fn))) falla(G, L, 0, `«${fn}»: una serie sale una vez (PRIMERA)`);
     }
+    // 19 nov · eventosCiudad tiene DOS lecturas (los destacados arriba, 0183, y las ventanas con el cursor): cada una con su PRIMERA (antes bastaba
+    // una para el guardián y quitar la de las ventanas pasaba; alreves6f lo vio).
+    const ec = cuerpoFn(t, "eventosCiudad");
+    if (!/case when \$\{resto\} then \$\{ES_PRIMERA\(/.test(ec)) falla(G, L, 0, "«eventosCiudad»: las ventanas del cursor marcan la primera fecha de cada evento (ES_PRIMERA)");
+    if (/d\.event_id = any\(/.test(ec) && !/d\.event_id = any\([^`]*and \$\{ES_PRIMERA\(/.test(ec)) falla(G, L, 0, "«eventosCiudad»: los destacados de arriba también salen una vez (ES_PRIMERA)");
   },
 
   /* 6g. D1 · La puerta SOLO escanea (fase6 §3 «La puerta»): nada de /puerta, lib/puerta*, /api/puerta ni del modo puerta del panel importa

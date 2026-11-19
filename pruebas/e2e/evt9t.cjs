@@ -75,8 +75,10 @@ const retirarVivos = (ADMID) => sql(`update featured set retired_at = now(), ret
     await fijarDesdeCrecimiento(pa, A, HOY, D(5), 'Evento de la comunidad');
     await toast(pa, /sale en Destacados de Eventos hasta el/);
     const FA = sql(`select id from featured where event_id = ${A} and retired_at is null and to_at > now()`);
-    ok(!!FA && sql(`select placement || '|' || mode || '|' || city_id || '|' || (from_at <= now())::text || '|' || (to_at at time zone 'America/New_York')::date::text from featured where id = ${FA}`) === `eventos|fijar|hzl|true|${D(6)}`,
-      'en la base: eventos · fijar · hzl · desde ahora · hasta el final del día +5');
+    // 19 nov · El destacado no pasa de la última fecha del evento (A es de un solo día, mañana): «hasta» = el día siguiente a min(+5, su último día).
+    const finA = sql(`select (least(((now() at time zone 'America/New_York')::date + 5), (select max(local_date) from event_dates where event_id = ${A} and listable and ends_at > now())) + 1)::text`);
+    ok(!!FA && sql(`select placement || '|' || mode || '|' || city_id || '|' || (from_at <= now())::text || '|' || (to_at at time zone 'America/New_York')::date::text from featured where id = ${FA}`) === `eventos|fijar|hzl|true|${finA}`,
+      'en la base: eventos · fijar · hzl · desde ahora · hasta el final de su último día (pedí +5; el servidor lo corta en la última fecha del evento)');
     ok(sql(`select count(*) from audit_entries where action = 'mkt.destacado_evt.fijar' and target_kind = 'event' and target_id = '${A}' and reason = 'Evento de la comunidad ${RUN}'`) === '1', 'en la auditoría con su motivo');
     await pa.goto(B + '/admin/crecimiento?t=feat&c=hzl'); await pa.getByText('EVENTOS FIJADOS').waitFor();
     ok((await texto(pa)).includes('Fijados a la vez: 1 de 4'), 'Fijados a la vez: 1 de 4');

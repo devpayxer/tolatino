@@ -1,7 +1,7 @@
 import "server-only";
 import { auditar, type Staff } from "../admin";
 import { destacados } from "../categoria";
-import { valores } from "../config";
+import { cfgSql, valores } from "../config";
 import { db, tx } from "../db";
 import { ciudades, resolver } from "../ubicacion";
 import { sumarDias } from "../evt-comun";
@@ -43,7 +43,8 @@ export async function fijarDestacado(s: Staff, p: { ciudad: string; negocio: str
     });
   } catch (e) {
     const m = String((e as Error).message ?? "");
-    if (m.includes("destacados_tope")) return mal(`Ya hay ${cfg.destacados_por_ciudad} fijados en esta ciudad: retira uno antes.`, `There are already ${cfg.destacados_por_ciudad} pinned in this city: retire one first.`);
+    if (m.includes("destacados_tope")) { const tope = (await db().query<{ n: number }>(`select ${cfgSql("destacados_por_ciudad")} as n`)).rows[0]?.n ?? cfg.destacados_por_ciudad; // 19 nov · el de la base, no el de la caché
+      return mal(`Ya hay ${tope} fijados en esta ciudad: retira uno antes.`, `There are already ${tope} pinned in this city: retire one first.`); }
     if (m.includes("ya tiene uno vivo")) return mal("Ese negocio ya está fijado o quitado: retira eso antes.", "That business is already pinned or removed: retire that first.");
     throw e;
   }
@@ -107,7 +108,9 @@ export async function fijarDestacadoEvento(s: Staff, p: { evento: string; desde:
     });
   } catch (x) {
     const m = String((x as Error).message ?? "");
-    if (m.includes("destacados_evt_tope")) return mal(`Ya hay ${cfg.destacados_evt_por_ciudad} eventos fijados en esas fechas en esta ciudad: retira uno antes o elige otras fechas.`, `There are already ${cfg.destacados_evt_por_ciudad} events pinned on those dates in this city: retire one first or pick other dates.`);
+    // 19 nov · El número del tope, el que impuso la base (cfg_int, sin la caché de 15 s): recién cambiado en Configuración, decía el de antes (evt9t).
+    if (m.includes("destacados_evt_tope")) { const tope = (await db().query<{ n: number }>(`select ${cfgSql("destacados_evt_por_ciudad")} as n`)).rows[0]?.n ?? cfg.destacados_evt_por_ciudad;
+      return mal(`Ya hay ${tope} eventos fijados en esas fechas en esta ciudad: retira uno antes o elige otras fechas.`, `There are already ${tope} events pinned on those dates in this city: retire one first or pick other dates.`); }
     if (m.includes("ya tiene uno vivo")) return mal("Ese evento ya está fijado: retira eso antes.", "That event is already pinned: retire that first.");
     if (m.includes("destacado_evento")) return mal("Ese evento no está publicado en esta ciudad o ya pasó.", "That event is not live in this city or is over.");
     throw x;

@@ -206,7 +206,10 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
     ok(await espera(async () => sql(`select status || '|' || end_kind || '|' || end_reason from event_sponsorships where id = ${SA}`) === 'terminado|admin|El organizador pidió terminarlo.'), 'queda TERMINADO por To’Latino, con su motivo');
     const DA = sql(`select coalesce(refund_cents, 0) || '|' || coalesce(refund_days, 0) from event_sponsorships where id = ${SA}`).split('|').map(Number);
     // De madrugada no se usó ningún día: los 7 de 7 (el total) es lo justo (18 nov).
-    ok(DA[0] > 0 && DA[0] <= 1700 && DA[1] >= 1 && DA[1] <= 7 && DA[0] === Math.floor(1700 * DA[1] / 7), `la base decide devolver ${DA[1]} de 7 días ($${(DA[0] / 100).toFixed(2)})`);
+    // 19 nov · Los días comprados son los de ESTE patrocinio (hasta el evento: de madrugada faltan 6, no 7; la base devolvió 6 de 6 = el total y
+    // la prueba esperaba «de 7»). La misma cuenta que patrocinio_devolucion: días redondeados, y todos los días = el precio entero.
+    const [PR, TOT] = sql(`select price_cents || '|' || greatest(1, ceil((extract(epoch from ends_at - starts_at) - extended_secs) / 86400.0 - 1 / 24.0))::int from event_sponsorships where id = ${SA}`).split('|').map(Number);
+    ok(DA[0] > 0 && DA[0] <= PR && DA[1] >= 1 && DA[1] <= TOT && DA[0] === (DA[1] >= TOT ? PR : Math.floor(PR * DA[1] / TOT)), `la base decide devolver ${DA[1]} de ${TOT} días ($${(DA[0] / 100).toFixed(2)} de $${(PR / 100).toFixed(2)})`);
     ok(await espera(async () => sql(`select amount_cents || '|' || refund_motive from sponsorship_payments where kind = 'evento' and ref_id = ${SA} and reason = 'devolucion'`) === `${DA[0]}|admin`), 'el libro: su devolución (kind evento)');
     ok(await espera(async () => sql(`select count(*) from notifications where tpl = 'biz_patevt_devuelto' and user_id = '${D0}' and created_at > now() - interval '2 minutes'`) !== '0'), 'aviso: «Te devolvimos lo que no se usó»');
     ok(sql(`select count(*) from audit_entries where action = 'mkt.patrocinio_evento.terminar' and reason = 'El organizador pidió terminarlo.' and after->>'patrocinio' = '${SA}'`) === '1', 'en la auditoría con el motivo');
