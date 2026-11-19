@@ -54,6 +54,8 @@ const limpiar = () => {
   IMG0 = sql(`select coalesce((select enabled::text from mod_rules where key = 'img'), 'true')`);
   if (COMPA0 === 'true') sql(`update compa_business_settings set enabled = false where business_id = '${BIZ}'`);
   sql(`update mod_rules set enabled = true where key = 'img'`);
+  // La app guarda las reglas 15 s (reglasMod): si la prueba anterior la había apagado, todavía la ve apagada y la foto saldría «visible».
+  await new Promise((r) => setTimeout(r, 16000));
   sql(`update chat_threads set blocked_at = null, blocked_by = null where business_id = '${BIZ}'`);
   sql(`update businesses set chat_auto_reply = false where id = '${BIZ}'`);
   horario = NN.abiertoTodoElDia(BIZ);

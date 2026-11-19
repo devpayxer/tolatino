@@ -105,7 +105,9 @@ const sha = (b) => crypto.createHash('sha256').update(b).digest('hex');
     fs.writeFileSync(D + '/recibida.p12', Buffer.from(r.j.llaves[0].archivo, 'base64'));
     ok(sha(fs.readFileSync(D + '/recibida.p12')) === sha(fs.readFileSync(P12)) && r.j.llaves[0].huella === sha(fs.readFileSync(P12)), 'el archivo llega entero (la misma huella sha256)');
     ok(/subida/.test(execSync(`openssl pkcs12 -in ${D}/recibida.p12 -passin pass:${r.j.llaves[0].clave} -nokeys 2>/dev/null`).toString()) && r.j.llaves[0].clave === CLAVE, 'la contraseña DERIVADA que entrega el servidor abre el almacén (nunca se guardó)');
-    ok(!JSON.stringify(r.j).includes('BEGIN') && !/apns|fcm|play_service|github/.test(JSON.stringify(r.j)), 'ni APNs, ni Firebase, ni Play, ni el token de GitHub van al CI');
+    // Se mira todo menos el contenido del archivo (base64 al azar: puede traer «fcm» o «github» por casualidad, 1 de cada ~100 corridas).
+    const sinArchivo = JSON.stringify({ ...r.j, llaves: r.j.llaves.map(({ archivo, clave, ...x }) => x) });
+    ok(!JSON.stringify(r.j).includes('BEGIN') && !/apns|fcm|play_service|github/i.test(sinArchivo), 'ni APNs, ni Firebase, ni Play, ni el token de GitHub van al CI');
     ok(sql(`select count(*) || '|' || min(r.ci_run) || '|' || min(r.ci_sha) from store_secret_reads r join store_secrets s on s.id = r.secret_id where r.by = 'ci' and s.kind = 'android_upload_keystore'`) === `1|${cg.run_id}|${cg.sha}`, 'la lectura queda anotada como del CI, con el run y el commit del token');
     r = await ci('/api/tiendas/oidc', tg, { job: 'android', app: 'cliente' });
     ok(r.s === 401 && r.j.motivo === 'jti_repetido' && log().startsWith('jti_repetido|devpayxer/tolatino'), 'el MISMO token otra vez → 401 jti_repetido (la inserción del jti es la prueba)');

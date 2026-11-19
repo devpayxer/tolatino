@@ -52,7 +52,7 @@ async function mandar(d, num, fee, gov, extra) {
   ok(await espera(() => sql(`select t.status || '|' || (t.accepted_ip is not null)::text || '|' || array_to_string(t.accepted_extras, ',') || '|' || o.status_detail || '|' || o.total_cents from written_totals t join operations o on o.id = t.operation_id where t.operation_id = ${O1}`), 'accepted|true|0|hired|33500') === 'accepted|true|0|hired|33500', 'aceptado con el extra: acuerdo con IP; lo que se paga a la oficina $335 (honorario − crédito + extra; el gobierno aparte)');
   let inmutable = false; try { sql(`update written_totals set total_cents = 1 where operation_id = ${O1}`); } catch { inmutable = true; }
   ok(inmutable, 'el total aceptado no se puede cambiar (la base lo impide)');
-  ok(sql(`select count(*) from notifications where ref_id = '${N1}' and tpl = 'biz_pro_ok'`) === '1', 'la oficina sabe que contrataron');
+  ok((await espera(() => sql(`select count(*) from notifications where ref_id = '${N1}' and tpl = 'biz_pro_ok'`), '1')) === '1', 'la oficina sabe que contrataron');
   await m.reload(); await verV(m.getByText(/Tu trámite está en manos de/)); ok(true, 'cliente: «Tu trámite está en manos de…» · CONTRATADO');
   await m.screenshot({ path: OUT + 'l5-contratado-m.png', fullPage: true });
   await d.goto(B + `/panel/${L}/hoy?det=cita:${N1}`); await clic(d.getByRole('button', { name: 'Terminó el trámite' }));
