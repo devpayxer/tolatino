@@ -1,4 +1,4 @@
--- 0180 · 9t · «Avísame si se libera» de una mesa (LAUNCH «Avísame si se libera (lista de espera) y Otros restaurantes con mesa»; prototipo
+-- 0181 · 9t · «Avísame si se libera» de una mesa (LAUNCH «Avísame si se libera (lista de espera) y Otros restaurantes con mesa»; prototipo
 -- rsvStVals: wAsk / wOn / onWait y offerVals «Se liberó una mesa»). Quien recibió «no pudo» (el restaurante no tenía mesa) o «sin respuesta»
 -- se anota para ESA hora, ese día y esas personas. El barrido de cada minuto (lib/mesa-espera.ts) mira con el MISMO motor de disponibilidad
 -- (lib/reservas.ts) si se liberó una mesa (una cancelación, un «no hay», una solicitud que venció, un bloqueo quitado, mesas nuevas): al primero
