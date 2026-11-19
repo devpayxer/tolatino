@@ -55,7 +55,7 @@ const casos = [
   ['platoAbreSuHoja', FP, 'plato=${encodeURIComponent(x.id)}`;', 'x=1`;'],
   ['platoAbreSuHoja', FP, 'abierto: x.open, precio, img: x.foto, href: hrefPlato(x), dist,', 'abierto: x.open, precio, img: x.foto, href: `/n/${x.biz}`, dist,'],
   ['platoAbreSuHoja', FPG, 'const platoInicial = sp.plato && /^\\d{1,19}$/.test(sp.plato) ? sp.plato : undefined;', 'const platoInicial = sp.plato || undefined;'],
-  ['platoAbreSuHoja', FPG, 'tabInicial={sp.tab} platoInicial={platoInicial} rsvInicial={rsvInicial}', 'tabInicial={sp.tab} rsvInicial={rsvInicial}'],
+  ['platoAbreSuHoja', FPG, 'tabInicial={sp.tab} platoInicial={platoInicial} productoInicial={productoInicial} rsvInicial={rsvInicial}', 'tabInicial={sp.tab} productoInicial={productoInicial} rsvInicial={rsvInicial}'],
   ['platoAbreSuHoja', FI, '      if (platoHecho.current) return;\n      platoHecho.current = true;\n', ''],
   ['platoAbreSuHoja', FN, 'mn.abrir(platoInicial, window.innerWidth >= 1024);', 'void 0;'],
   ['platoAbreSuHoja', MC, 'if (!it || offOf(it) || !canOrd) return false;', 'if (!it) return false;'],
