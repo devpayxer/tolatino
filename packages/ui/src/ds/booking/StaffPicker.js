@@ -15,6 +15,7 @@ function StaffPicker({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '5px',
       display: 'flex',
       gap: 10,
       overflowX: 'auto',
@@ -25,7 +26,7 @@ function StaffPicker({
     return /*#__PURE__*/React.createElement("div", {
       key: p.id,
       onClick: () => onSelect && onSelect(p.id),
-      role: 'radio', 'aria-checked': on, 'aria-label': p.name, tabIndex: 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); onSelect && onSelect(p.id); } },
+      role: 'radio', 'data-toque': '', 'aria-checked': on, 'aria-label': p.name, tabIndex: 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); onSelect && onSelect(p.id); } },
       style: {
         flex: 'none',
         width: 66,
@@ -55,7 +56,7 @@ function StaffPicker({
     }, p.next));
   }), anyoneLabel ? /*#__PURE__*/React.createElement("div", {
     onClick: () => onSelect && onSelect('any'),
-    role: 'radio', 'aria-checked': selected === 'any', 'aria-label': anyoneLabel, tabIndex: 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); onSelect && onSelect('any'); } },
+    role: 'radio', 'data-toque': '', 'aria-checked': selected === 'any', 'aria-label': anyoneLabel, tabIndex: 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); onSelect && onSelect('any'); } },
     style: {
       flex: 'none',
       width: 66,
@@ -134,6 +135,7 @@ function DateStrip({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '4px',
       display: 'flex',
       gap: 8,
       overflowX: 'auto',
@@ -144,7 +146,7 @@ function DateStrip({
     return /*#__PURE__*/React.createElement("div", {
       key: d.id,
       onClick: () => !d.off && onSelect && onSelect(d.id),
-      role: 'radio', 'aria-checked': on, 'aria-disabled': d.off ? true : undefined, 'aria-label': d.dow + ' ' + d.num, tabIndex: d.off ? -1 : 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); !d.off && onSelect && onSelect(d.id); } },
+      role: 'radio', 'data-toque': '', 'aria-checked': on, 'aria-disabled': d.off ? true : undefined, 'aria-label': d.dow + ' ' + d.num, tabIndex: d.off ? -1 : 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); !d.off && onSelect && onSelect(d.id); } },
       style: {
         flex: 'none',
         width: 56,
@@ -176,6 +178,8 @@ function TimeSlots({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '4.5px',
+      '--tl-toque-y': '4.5px',
       display: 'grid',
       gridTemplateColumns: 'repeat(3,1fr)',
       gap: 9
@@ -185,7 +189,7 @@ function TimeSlots({
     return /*#__PURE__*/React.createElement("div", {
       key: s.t,
       onClick: () => !s.taken && onSelect && onSelect(s.t),
-      role: 'radio', 'aria-checked': on, 'aria-disabled': s.taken ? true : undefined, 'aria-label': s.t, tabIndex: s.taken ? -1 : 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); !s.taken && onSelect && onSelect(s.t); } },
+      role: 'radio', 'data-toque': '', 'aria-checked': on, 'aria-disabled': s.taken ? true : undefined, 'aria-label': s.t, tabIndex: s.taken ? -1 : 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); !s.taken && onSelect && onSelect(s.t); } },
       style: {
         padding: '12px 0',
         borderRadius: 12,
@@ -197,7 +201,8 @@ function TimeSlots({
         textDecoration: s.taken ? 'line-through' : 'none',
         boxShadow: on ? '0 8px 18px -8px rgba(75,55,245,.7)' : 'none',
         cursor: s.taken ? 'default' : 'pointer'
-      }
+      },
+      'data-toque': 'sombra'
     }, s.t);
   }));
 }
@@ -209,7 +214,7 @@ function AddOnRow({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     onClick: onToggle,
-    role: 'checkbox', 'aria-checked': !!checked, 'aria-label': label + (price ? ' ' + price : ''), tabIndex: 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); onToggle && onToggle(e); } },
+    role: 'checkbox', 'data-toque': '', 'aria-checked': !!checked, 'aria-label': label + (price ? ' ' + price : ''), tabIndex: 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); onToggle && onToggle(e); } },
     style: {
       padding: '13px 14px',
       borderRadius: 14,
@@ -300,7 +305,7 @@ function StepHeader({
     }
   }, /*#__PURE__*/React.createElement("span", {
     onClick: onBack,
-    ...(onBack ? { role: 'button', tabIndex: 0, 'aria-label': backLabel, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); onBack(e); } } } : {}),
+    ...(onBack ? { role: 'button', 'data-toque': '', tabIndex: 0, 'aria-label': backLabel, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); onBack(e); } } } : {}),
     style: {
       transform: 'rotate(180deg)',
       display: 'grid',

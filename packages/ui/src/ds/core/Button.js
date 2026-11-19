@@ -78,7 +78,7 @@ function Button({
   const v = V[disabled ? 'disabled' : variant];
   return /*#__PURE__*/React.createElement("div", {
     onClick: disabled ? undefined : onClick,
-    role: "button",
+    role: "button", 'data-toque': v.boxShadow ? 'sombra' : '',
     tabIndex: disabled ? -1 : 0,
     "aria-disabled": disabled ? true : undefined,
     onKeyDown: disabled || !onClick ? undefined : e => {

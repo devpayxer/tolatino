@@ -55,7 +55,8 @@ function DominoTile({
       transition: hand ? 'transform .15s' : undefined,
       cursor: hand ? 'pointer' : 'default',
       flex: 'none'
-    }
+    },
+    'data-toque': 'sombra'
   }, pips.map((half, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     style: {
@@ -153,6 +154,7 @@ function QuickReactions({
   return /*#__PURE__*/React.createElement("div", {
     className: "hs",
     style: {
+      '--tl-toque-x': '3px',
       display: 'flex',
       gap: 6,
       overflowX: 'auto',
@@ -634,7 +636,8 @@ function ParchisBoard({
       zIndex: p.z,
       cursor: p.onClick ? 'pointer' : 'default',
       transition: 'left .35s ease,top .35s ease'
-    }
+    },
+    'data-toque': 'sombra'
   })));
 }
 

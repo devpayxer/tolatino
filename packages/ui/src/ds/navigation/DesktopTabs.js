@@ -35,6 +35,7 @@ function DesktopTabs({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '14px',
       display: 'flex',
       gap: 28,
       overflowX: 'auto',

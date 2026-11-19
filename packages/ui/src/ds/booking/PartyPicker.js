@@ -46,6 +46,8 @@ function PartyPicker({
     }
   }, label), /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '4px',
+      '--tl-toque-y': '4px',
       marginTop: 10,
       display: 'flex',
       flexWrap: 'wrap',

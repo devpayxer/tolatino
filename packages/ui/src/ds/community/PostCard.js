@@ -31,7 +31,7 @@ const MUTED = 'rgba(11,14,18,.6)';
 
 /* 4c · Votos y comentarios en pastillas con borde; guardar y compartir en círculos. voted = tinte morado (29 oct). */
 const LINE = 'rgba(11,14,18,.12)';
-const btn = (fn, label) => fn ? { role: 'button', tabIndex: 0, 'aria-label': label, onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(e); } } } : {};
+const btn = (fn, label) => fn ? { role: 'button', 'data-toque': '', tabIndex: 0, 'aria-label': label, onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(e); } } } : {};
 const LBL = { up: 'Votar a favor', down: 'Votar en contra', comments: 'Comentarios', save: 'Guardar', share: 'Compartir' };
 function VoteBar({
   labels = LBL,
@@ -64,6 +64,7 @@ function VoteBar({
   };
   return /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '4px',
       marginTop: 12,
       display: 'flex',
       alignItems: 'center',
@@ -170,6 +171,7 @@ function PollOptions({
 }) {
   return /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-y': '4px',
       display: 'flex',
       flexDirection: 'column',
       gap: 8
@@ -414,6 +416,7 @@ function PostCard({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
+      '--tl-toque-x': '2.5px',
       display: 'flex',
       alignItems: 'center',
       gap: 5,

@@ -12,9 +12,10 @@ const tecla = (fn) => (e) => {
     fn(e);
   }
 };
+/* 9t · `data-toque`: el área de toque invisible de 44 × 44 px (packages/ui/src/toque.css). Todo lo que sale de aquí es un control. */
 __ds_scope.__btn = (fn, label, extra, dentro) =>
-  !fn ? {} : dentro ? { role: "presentation" } : { role: "button", tabIndex: 0, ...(label ? { "aria-label": label } : null), ...extra, onKeyDown: tecla(fn) };
-__ds_scope.__key = (fn) => (fn ? { tabIndex: 0, onKeyDown: tecla(fn) } : {});
+  !fn ? {} : dentro ? { role: "presentation" } : { role: "button", tabIndex: 0, "data-toque": "", ...(label ? { "aria-label": label } : null), ...extra, onKeyDown: tecla(fn) };
+__ds_scope.__key = (fn) => (fn ? { tabIndex: 0, "data-toque": "", onKeyDown: tecla(fn) } : {});
 /* 9c · Las flechas entre pestañas (WAI-ARIA tabs): ← → mueven el foco a la anterior / siguiente (en círculo), Inicio y Fin a la primera y la
    última; Enter o Espacio la eligen (activación manual: moverse no cambia de pestaña). Cada pestaña sigue en el orden de Tab. */
 __ds_scope.__flechas = (e) => {

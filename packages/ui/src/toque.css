@@ -1,0 +1,73 @@
+/* 9t · Objetivos táctiles de 44 px (Apple HIG 44 pt, WCAG 2.5.5). Muchos controles del sistema miden menos de lo que pide un dedo
+   (íconos de 30–36 px, chips de 35, filas compactas). Agrandarlos cambiaba el diseño aprobado; aquí se agranda SOLO el área que recibe
+   el toque, sin tocar lo que se ve: cada pieza interactiva del sistema lleva `data-toque` (scope.js `__btn`/`__key`, los roles que el
+   script de portar marca, los <button> y roles de los bloques del panel) y su `::after` es un rectángulo invisible centrado sobre el
+   control que lo lleva a 44 × 44 px. Ni fondo, ni borde, ni sombra, ni contenido: no se dibuja nada, solo recibe el toque (el toque en el
+   `::after` es un toque en el control: mismo destino, mismo onClick; hereda pointer-events, así que un control apagado sigue apagado).
+
+   Cuánto crece cada lado: lo que falta para 44, repartido a los dos lados = min(0, 50 % − 22 px). Un control de 44 o más no crece (el
+   ::after queda dentro de su caja). Los porcentajes de top/bottom son del alto del control y los de left/right de su ancho: el control es
+   el bloque que lo contiene (position: relative; si ya trae position en su estilo —absolute, sticky, fixed—, manda esa y igual lo contiene).
+
+   Vecinos cerca (no robar toques): en un grupo de controles separados por `gap`, el contenedor dice la MITAD del hueco en `--tl-toque-x`
+   (izquierda/derecha) y/o `--tl-toque-y` (arriba/abajo) y ningún lado crece más que eso: el área de uno se queda en su mitad del hueco y
+   nunca llega a la caja del otro. Esas dos NO se heredan (@property inherits: false; el control las toma de su padre con `inherit`): valen
+   para los hijos directos del contenedor, no para lo que haya más adentro. El PRIMERO de los hijos no tiene vecino antes (izquierda,
+   arriba) y el ÚLTIMO no lo tiene después (derecha, abajo): esos lados crecen enteros. Quién las pone: en el sistema, scripts/portar-
+   sistema.mjs (gruposToque: la misma expresión del gap, `gap: 8` → '4px'); en las pantallas, los gap-* de Tailwind (apps/web/app/
+   globals.css, «9t · toque»); en los bloques del panel, a mano.
+   Bordes y costuras: `--tl-toque-arriba`, `-abajo`, `-izq`, `-der` limitan UN lado y SÍ se heredan (un carrusel con 2 px de relleno: el
+   área no se sale del relleno, porque lo que se sale agranda lo que se desplaza; dos controles uno encima del otro con margen, sin gap).
+   Valen también para el primero y el último. Sin variables: 22 px, que nunca limita.
+
+   Lo que NO se amplía (`data-toque` con un valor: la razón; el área es solo para `data-toque=""`). Volver position: relative a un control
+   lo pinta en su propia capa, y eso cambió pixeles en dos casos que cazó la comparación con y sin áreas (19 nov):
+   · "sombra": un control con sombra hacia fuera (el Button «action», la hora elegida del Booking…) se pinta después del texto vecino y
+     su sombra le pasa por encima.
+   · "recorte": un control dentro de una caja redondeada con overflow hidden (el «− / +» del plato) cambia el suavizado de la esquina; y
+     su área ampliada quedaría recortada igual.
+   Se quedan como están hasta que el fundador apruebe ese cambio (docs/REVISION.md).
+
+   Lo mide a11y9c sobre lo servido (pruebas/lib/toque.cjs): el área real de cada control (su caja ∪ su ::after, recortada por lo que la
+   recorta), que nadie pise la caja de otro, y que la página con las áreas y sin ellas sea la misma pixel a pixel (con el anillo del foco
+   del teclado puesto: no cambia, es el outline de :focus-visible de globals.css, sobre la caja del control) y no cambie lo que se desplaza.
+   Guardián: toqueDe44. Al revés: alreves9ttoque. Capa `components`: una clase de Tailwind (utilities) y el estilo en línea ganan siempre. */
+@property --tl-toque-x {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 22px;
+}
+@property --tl-toque-y {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 22px;
+}
+@layer components {
+  [data-toque=""] {
+    position: relative;
+    --tl-toque-x: inherit;
+    --tl-toque-y: inherit;
+  }
+  [data-toque=""]::after {
+    --tl-toque-x: inherit;
+    --tl-toque-y: inherit;
+    content: "";
+    position: absolute;
+    top: max(calc(-1 * min(var(--tl-toque-y, 22px), var(--tl-toque-arriba, 22px))), min(0px, calc(50% - 22px)));
+    bottom: max(calc(-1 * min(var(--tl-toque-y, 22px), var(--tl-toque-abajo, 22px))), min(0px, calc(50% - 22px)));
+    left: max(calc(-1 * min(var(--tl-toque-x, 22px), var(--tl-toque-izq, 22px))), min(0px, calc(50% - 22px)));
+    right: max(calc(-1 * min(var(--tl-toque-x, 22px), var(--tl-toque-der, 22px))), min(0px, calc(50% - 22px)));
+    background: none;
+    border: 0;
+    box-shadow: none;
+  }
+  /* El primero y el último de sus hermanos: nada antes / después (el tope del grupo no aplica de ese lado; los bordes, sí). */
+  [data-toque=""]:first-child::after {
+    top: max(calc(-1 * var(--tl-toque-arriba, 22px)), min(0px, calc(50% - 22px)));
+    left: max(calc(-1 * var(--tl-toque-izq, 22px)), min(0px, calc(50% - 22px)));
+  }
+  [data-toque=""]:last-child::after {
+    bottom: max(calc(-1 * var(--tl-toque-abajo, 22px)), min(0px, calc(50% - 22px)));
+    right: max(calc(-1 * var(--tl-toque-der, 22px)), min(0px, calc(50% - 22px)));
+  }
+}
