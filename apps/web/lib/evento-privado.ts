@@ -188,6 +188,7 @@ const SEL = `select o.id::text, o.number as num, o.business_id as biz, b.name as
                from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id join users u on u.id = o.user_id
                left join payments p on p.operation_id = o.id and p.kind = 'deposit'`;
 async function leer(c: Q, where: string, args: unknown[], lock = false): Promise<Op | null> {
+  // nosemgrep: tolatino-sql-con-texto-interpolado — leer() es privada y cada llamada de este archivo pasa una condición fija con $1/$2
   return (await c.query<Op>(`${SEL} where o.kind = 'private_event' and ${where}${lock ? " for update of o" : ""}`, args)).rows[0] ?? null;
 }
 type Quote = { id: string; v: number; kind: "quote" | "alt" | "change"; ymd: string; m: number; dur: number; p: number; lines: { l: Bi; q: number; unit: number; cents: number; k: string }[]; inc: Bi; nota: string | null;

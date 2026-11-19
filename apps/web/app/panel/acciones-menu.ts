@@ -242,6 +242,7 @@ export async function categoriaGuardar(negocio: string, secId: string, p: { name
     if ((await c.query(`select 1 from item_sections where business_id = $1 and module = $4 and removed_at is null and lower(name->>'es') = lower($2) and id::text <> $3`, [b, name, secId, mod])).rowCount)
       return no("Ya tienes una categoría con ese nombre.", "You already have a category with that name.");
     let id = secId;
+    // nosemgrep: tolatino-sql-con-texto-interpolado — mod sale de moduloDe(): «menu» o «shop», nada más
     if (nuevo) id = (await c.query<{ id: string }>(`insert into item_sections (business_id, name, avail, av, visible, sort, module) values ($1, $2::jsonb, $3, $4::jsonb, $5, (select coalesce(max(sort), 0) + 1 from item_sections where business_id = $1), '${mod}') returning id::text`,
       [b, JSON.stringify({ es: name, en }), avail, av ? JSON.stringify(av) : null, p?.visible !== false])).rows[0]!.id;
     else if (!(await c.query(`update item_sections set name = $3::jsonb, avail = $4, av = $5::jsonb, visible = $6, updated_at = now() where id = $2::bigint and business_id = $1 and removed_at is null`,

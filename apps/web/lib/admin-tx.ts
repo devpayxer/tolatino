@@ -62,6 +62,7 @@ export async function listaTx(s: Staff, f: FiltrosTx) {
   const { w, v } = donde(s, f);
   const [L, n, k] = await Promise.all([
     db().query<FilaTx>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — donde() solo pone condiciones fijas con $n (la pestaña por mapa fijo); la página es un número
       `select o.number as num, o.kind as k, o.business_id as biz, b.name as bname, u.id::text as uid, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as quien,
               to_char(o.sent_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, o.total_cents as total, o.party_size as p, o.mode, ${EST_TX} as st, o.cancelled_by as detalle,
               py.status as pago, coalesce(py.refunded_cents, 0) as devuelto, coalesce(py.fee_cents, 0) as comision, case when py.card_last4 is null then null else upper(py.card_brand) || ' ·· ' || py.card_last4 end as tarjeta,
@@ -100,6 +101,7 @@ export async function listaTx(s: Staff, f: FiltrosTx) {
               (select coalesce(sum(p3.amount_cents - p3.refunded_cents), 0)::int from payments p3 where p3.operation_id = o.id and p3.status in ('captured', 'partially_refunded')) as cob,
               (select coalesce(sum(coalesce(p3.held_cents, p3.amount_cents)), 0)::int from payments p3 where p3.operation_id = o.id and p3.status = 'held') as reten
          ${DESDE} left join payments py on py.operation_id = o.id and py.kind in ('full', 'deposit') where ${w} order by o.id desc limit ${POR_PAGINA_TX} offset ${(f.pag - 1) * POR_PAGINA_TX}`, v),
+    // nosemgrep: tolatino-sql-con-texto-interpolado — donde() solo pone condiciones fijas con $n (la pestaña por mapa fijo); la página es un número
     db().query<{ n: number }>(`select count(*)::int as n ${DESDE} where ${w}`, v),
     db().query<{ hoy: number; hoyc: number; done: number; donec: number; perdidos: number; rsv: number; cit: number; citd: number; plan: number; renta: number; apt: number; ret: number; retc: number; com: number; dev: number; fallos: number }>(
       `select count(*) filter (where o.sent_at > now() - interval '1 day')::int as hoy, coalesce(sum(o.total_cents) filter (where o.sent_at > now() - interval '1 day' and o.kind = 'order'), 0)::int as hoyc,
@@ -121,6 +123,7 @@ export type ListaTx = Awaited<ReturnType<typeof listaTx>>;
 export async function filasExportTx(s: Staff, f: FiltrosTx) {
   const { w, v } = donde(s, f);
   const r = await db().query<{ num: string; at: string; k: string; bname: string; quien: string; total: number; st: string }>(
+    // nosemgrep: tolatino-sql-con-texto-interpolado — donde() solo pone condiciones fijas con $n (la pestaña por mapa fijo); la página es un número
     `select o.number as num, to_char(o.sent_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, o.kind as k, b.name as bname,
             coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as quien, o.total_cents as total, ${EST_TX} as st
        ${DESDE} where ${w} order by o.id desc limit 5000`, v);

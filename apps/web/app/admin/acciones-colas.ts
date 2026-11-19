@@ -415,7 +415,7 @@ export async function decidirCambio(id: string, aprobar: boolean, motivo: string
   if (!s) return no("Tu rol solo puede ver esta cola.");
   const m = motivoOk(motivo);
   if (!m) return no("Escribe el motivo.");
-  let avisosNeg: import("@/lib/negocio-cambios").Aviso[] = [], negocioCambiado: string | null = null;
+  let avisosNeg: Array<import("@/lib/negocio-cambios").Aviso> = [], negocioCambiado: string | null = null;
   const r = await tx(async (c) => {
     const q = await abrir(c, s, id);
     if (typeof q === "string") return q;

@@ -3,23 +3,104 @@
 # Correr: semgrep scan --config semgrep/ --error --metrics=off apps packages services scripts
 # Una línea que de verdad es segura se marca en su propia línea con «// nosemgrep: <regla>» y el porqué (nunca el archivo entero).
 rules:
+  # 9t · En modo TAINT (flujo de datos), no por nombres. Semgrep sin cuenta mira cada función por separado, así que la FUENTE es todo
+  # parámetro de cualquier función (lo que llega de una acción del servidor, de una ruta o de otra función que lo pasó) más lo que se lee
+  # directo del pedido (cookies(), headers(), req.json(), formData…). El SUMIDERO es el texto (primer argumento) de cualquier .query(…).
+  # Los LIMPIADORES son solo lo que de verdad no puede llevar texto: números (Number, Math.*, aritmética, el .length del arreglo de parámetros), booleanos
+  # (comparaciones), la búsqueda en un mapa fijo del código (MAPA[x]) y cuatro funciones revisadas (centroSQL, radioSQL, CTE, ident). Lo demás que es seguro
+  # (columnas fijas de una función de adentro, filtros que ya pasaron por leerFiltros…) lleva su «nosemgrep» con el porqué en la línea.
+  # Prueba de la regla: semgrep --test semgrep/ (tolatino.ts: lo que tiene que cazar y lo que no; la corre el CI). Guardián semgrepSqlPorFlujo.
   - id: tolatino-sql-con-texto-interpolado
     languages: [typescript, javascript]
     severity: ERROR
     message: >-
-      Texto que viene de afuera (búsqueda, formulario, URL, cuerpo) dentro del TEXTO de una consulta SQL por ${...}: inyección SQL. Los
-      valores van como parámetros ($1, $2…) en el arreglo. Lo único que se interpola son fragmentos fijos del propio código (constantes,
-      listas de columnas, el número de un parámetro). Si es de verdad un fragmento elegido entre opciones fijas, ponle
-      «// nosemgrep: tolatino-sql-con-texto-interpolado» en la línea y el porqué.
-    patterns:
+      Un valor que llega de afuera de la función (un parámetro, el pedido, un formulario, la URL) termina dentro del TEXTO de una consulta
+      SQL: inyección SQL. Los valores van como parámetros ($1, $2…) en el arreglo. Lo único que se interpola son fragmentos fijos del
+      propio código (constantes, columnas fijas, el número de un parámetro) o números ya convertidos (Number, Math.*). Si de verdad es un
+      fragmento elegido entre opciones fijas, ponle «// nosemgrep: tolatino-sql-con-texto-interpolado — <por qué es seguro>» en la línea.
+    mode: taint
+    options:
+      # MAPA[x] devuelve lo que hay en el mapa fijo del código (o undefined), nunca el texto de x.
+      taint_assume_safe_indexes: true
+    pattern-sources:
+      # Todo parámetro de una función (con nombre, anónima o flecha; también los desestructurados).
+      - patterns:
+          - pattern-either:
+              - pattern-inside: function $F(..., $P, ...) { ... }
+              - pattern-inside: function (..., $P, ...) { ... }
+              - pattern-inside: (..., $P, ...) => { ... }
+              - pattern-inside: (..., $P, ...) => $E
+          - focus-metavariable: $P
+      - patterns:
+          - pattern-either:
+              - pattern-inside: function $F(..., {..., $P, ...}, ...) { ... }
+              - pattern-inside: "function $F(..., {..., $P, ...}: $T, ...) { ... }"
+              - pattern-inside: (..., {..., $P, ...}, ...) => { ... }
+              - pattern-inside: "(..., {..., $P, ...}: $T, ...) => { ... }"
+          - pattern: $P
+      # Lo que se lee directo del pedido aunque no sea un parámetro.
+      - pattern: cookies()
+      - pattern: headers()
+      - pattern: $R.json()
+      - pattern: $R.text()
+      - pattern: $R.formData()
+      - pattern: $R.nextUrl
+      - pattern: new URL(...).searchParams
+    pattern-propagators:
+      # w.push(`… ${x} …`) y luego w.join(" and "): el arreglo queda manchado.
+      - pattern: $A.push(..., $X, ...)
+        from: $X
+        to: $A
+      - pattern: $A.unshift(..., $X, ...)
+        from: $X
+        to: $A
+    pattern-sanitizers:
       - pattern-either:
-          - pattern: $DB.query(`...${$S}...`, ...)
-          - pattern: $DB.query(`...${$S}...`)
-      - metavariable-regex:
-          metavariable: $S
-          regex: ^(texto|text|q|query|busqueda|search|termino|term|nombre|name|input|body|formData|params|searchParams|req|request|(input|body|params|data|formData|searchParams|req|request|entrada|datos)\..+|.*\.get\(.+\)|.*\.(texto|busqueda|search|termino))$
+          - pattern: Number(...)
+          - pattern: parseInt(...)
+          - pattern: parseFloat(...)
+          - pattern: BigInt(...)
+          - pattern: Boolean(...)
+          - pattern: Math.$M(...)
+          # .length solo del arreglo de parámetros armado aquí mismo (const v = [...]): «$${v.length}». El .length de algo que llegó de
+          # afuera NO limpia (un objeto { length: "…" } desde una acción del servidor).
+          - patterns:
+              - pattern-inside: |
+                  $X = [...];
+                  ...
+              - pattern: $X.length
+          - pattern: $X.toFixed(...)
+          - pattern: $X - $Y
+          - pattern: $X * $Y
+          - pattern: $X / $Y
+          - pattern: $X % $Y
+          - pattern: $X === $Y
+          - pattern: $X !== $Y
+          - pattern: $X == $Y
+          - pattern: $X != $Y
+          - pattern: $X < $Y
+          - pattern: $X > $Y
+          - pattern: $X <= $Y
+          - pattern: $X >= $Y
+          - pattern: "!$X"
+          - pattern: typeof $X
+          # Funciones del código que devuelven SQL sin texto de afuera (cada una definida UNA vez; el guardián semgrepSqlPorFlujo lo vigila):
+          # lib/punto.ts centroSQL/radioSQL (solo números validados; lanzan si no), lib/categoria.ts CTE (solo esas dos) y
+          # lib/datos/mapa.ts ident (nombre de tabla o columna ^[a-z_][a-z0-9_]*$ entre comillas; lanza si no).
+          - pattern: centroSQL(...)
+          - pattern: radioSQL(...)
+          - pattern: CTE(...)
+          - pattern: ident(...)
+    pattern-sinks:
+      # «await x.query<T>(…)» Semgrep lo lee distinto que «x.query<T>(…)» (sin await) y que «x.query(…)»: hacen falta las dos formas, si no
+      # la mitad de las consultas (las que llevan el tipo de la fila y await) no son sumidero. La prueba (tolatino.ts) tiene las tres.
+      - patterns:
+          - pattern-either:
+              - pattern: $DB.query($Q, ...)
+              - pattern: await $DB.query<$T>($Q, ...)
+          - focus-metavariable: $Q
     paths:
-      include: ["**/apps/**", "**/packages/**", "**/services/**"]
+      include: ["**/apps/**", "**/packages/**", "**/services/**", "**/semgrep/**"]
       exclude: ["**/node_modules/**", "**/*.test.*"]
   - id: tolatino-html-crudo
     languages: [typescript, javascript]

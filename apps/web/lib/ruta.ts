@@ -129,6 +129,7 @@ export async function guardarPosiciones(token: string, cuerpo: unknown, fuente: 
     const v: unknown[] = [t.op, t.rider, t.city, fuente];
     const filas = L.map((p) => { v.push(new Date(p.at).toISOString(), p.lng, p.lat, p.acc, p.vel, p.rumbo); const k = v.length;
       return `($1::bigint, $2::uuid, $3, $${k - 5}::timestamptz, st_setsrid(st_makepoint($${k - 4}, $${k - 3}), 4326)::geography, $${k - 2}::real, $${k - 1}::real, $${k}::real, $4)`; });
+    // nosemgrep: tolatino-sql-con-texto-interpolado — filas solo lleva marcadores $n
     return db().query(`insert into delivery_positions (operation_id, rider_user_id, city_id, at, geom, accuracy_m, speed_mps, heading, source) values ${filas.join(", ")}`, v);
   };
   if (ok.length) {

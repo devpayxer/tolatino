@@ -307,6 +307,7 @@ async function filas(ctx: CtxPuerta, f: FiltroF, es: boolean): Promise<FilaPuert
   const curW = cur ? `where (z.orden, z.kind, z.id::bigint) > (${p(cur[0])}, ${p(cur[1] === "t" ? "ticket" : "rsvp")}, ${p(cur[2])}::bigint)` : "";
   // 9b-3 · La orden (operations) solo se une si se busca por número de orden: con 50 mil boletos en una fecha, unirla en cada búsqueda costaba un tercio.
   const r = (await db().query<FilaPuerta & { orden: string; fn: string | null; ln: string | null; hn: string | null; cn: string | null; tipoB: Bi | null; mesaB: Bi | null; otro: string | null }>(
+    // nosemgrep: tolatino-sql-con-texto-interpolado — wT/wR solo llevan condiciones fijas con p() ($n); el límite es un número
     `select * from (
        select 'ticket' as kind, t.id::text as id, t.code, t.admits as de, coalesce(x.entered_n, 0) as entraron, coalesce(x.inside_n, 0) as adentro,
               case when exists (select 1 from ticket_transfers z where z.ticket_id = t.id and z.status = 'pending' and z.kind = 'transfer') then 'pending' else t.status end as estado,

@@ -81,6 +81,7 @@ export async function herramientaGuardar(negocio: string, p: HerramientaIn): Pro
       await c.query(`update businesses set service_radius_mi = $2, updated_at = now() where id = $1`, [a.negocio.id, z]); after.zona = `${z} mi`;
     }
     await c.query(`insert into trade_settings (business_id) values ($1) on conflict (business_id) do nothing`, [a.negocio.id]);
+    // nosemgrep: tolatino-sql-con-texto-interpolado — set lo arma put() con columnas fijas de esta función; los valores van como $n
     if (set.length) await c.query(`update trade_settings set ${set.join(", ")}, updated_by = $${vals.length + 1}, updated_at = now() where business_id = $1`, [...vals, a.yo.id]);
     if (!Object.keys(after).length) return no("Nada que guardar.", "Nothing to save.");
     await auditar(c, a, "herramienta.guardar", null, after);

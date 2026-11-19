@@ -17,6 +17,7 @@ export async function medir(p: Punto, c: Ciudad): Promise<Medida> {
   const centro = centroSQL(p), R = radioSQL(p);
   const [n, d, evt] = await Promise.all([
     db().query<{ biz: number; prev: number }>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — prevR es un radio de la configuración de la ciudad (número); centro y radio validados en lib/punto.ts
       `with c as (select ${centro} as center)
        select count(*) filter (where ${DENTRO(R)})::int as biz,
               ${prevR ? `count(*) filter (where ${DENTRO(String(prevR))})::int` : "null"} as prev

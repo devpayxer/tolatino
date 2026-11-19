@@ -33,6 +33,7 @@ const SEL = `select o.id::text, o.number, o.status, o.status_detail as detail, o
   left join payments p on p.operation_id = o.id and p.kind = 'deposit'`;
 
 async function leer(c: Q, where: string, args: unknown[], lock = false): Promise<Op | null> {
+  // nosemgrep: tolatino-sql-con-texto-interpolado — leer() es privada y cada llamada de este archivo pasa una condición fija con $1/$2
   return (await c.query<Op>(`${SEL} where o.kind = 'appointment' and ${where}${lock ? " for update of o" : ""}`, args)).rows[0] ?? null;
 }
 const ev = (c: Q, op: string, kind: string, actor: "user" | "member" | "system" | "compa", actorId: string | null, note?: Bi) =>

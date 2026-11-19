@@ -51,6 +51,7 @@ export async function platos(E: Entendido, o: OpcionesPlatos): Promise<Platos> {
   const filtro = o.filtro ? `where cat = ${add(o.filtro)}` : "";
   const ord = o.orden === "price" ? "cents asc nulls last, score desc, id" : "pro desc, score desc, id";
   const r = await db().query<Plato & { score: number; total: string; cats: Record<string, number> | null; bfoto: string | null }>(
+    // nosemgrep: tolatino-sql-con-texto-interpolado — CTE(punto) revisado; REGLA y DESDE fijos; cat, filtro, q, pre y u entran por add() como $n; el orden es una de dos cadenas fijas y el límite un entero acotado
     `${CTE(o.punto)},
      n as (select b.id, b.name, b.category_id as cat, s.plan = 'pro' as pro, b.modules_on as mods, b.modules_off as off, b.service_radius_mi as zona,
                   case when b.geo is null then null else round((st_distance(b.geo, c.center) / 1609.34)::numeric, 1)::float end as mi,

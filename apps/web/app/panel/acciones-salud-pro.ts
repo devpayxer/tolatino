@@ -93,6 +93,7 @@ export async function proGuardar(negocio: string, p: ProIn): Promise<Res> {
       if (p?.[k] !== undefined) put(col, !!p[k], l, p[k] ? "sí" : "no");
     if (!set.length) return no("Nada que guardar.", "Nothing to save.");
     await c.query(`insert into pro_settings (business_id) values ($1) on conflict (business_id) do nothing`, [a.negocio.id]);
+    // nosemgrep: tolatino-sql-con-texto-interpolado — set lo arma put() con columnas fijas (y la lista fija de interruptores); los valores van como $n
     await c.query(`update pro_settings set ${set.join(", ")}, updated_by = $${vals.length + 1}, updated_at = now() where business_id = $1`, [...vals, a.yo.id]);
     await auditar(c, a, "herramienta.pro", after);
     return null;

@@ -47,6 +47,7 @@ export async function pausarVenta(q: Quien, eventoId: string, pausar: boolean, a
   try {
     await tx(async (c) => {
       const e = (await c.query<{ id: string; st: string; city: string; frozen: string | null }>(
+        // nosemgrep: tolatino-sql-con-texto-interpolado — DUENO(q) devuelve una de dos condiciones fijas con $2
         `select e.id::text, e.status as st, e.city_id as city, e.sales_frozen_reason as frozen from events e where e.id = $1::bigint and ${DUENO(q)} for update`, [eventoId, arg(q)])).rows[0];
       if (!e) throw no("Ese evento no existe.", "That event does not exist.");
       if (!["live", "paused"].includes(e.st)) throw no("Solo se pausa un evento publicado.", "Only a live event can be paused.");
@@ -74,6 +75,7 @@ export async function congelarVenta(q: Extract<Quien, { tipo: "admin" }>, evento
   try {
     await tx(async (c) => {
       const e = (await c.query<{ st: string; city: string; frozen: boolean; biz: string; t: Bi }>(
+        // nosemgrep: tolatino-sql-con-texto-interpolado — DUENO(q) devuelve una de dos condiciones fijas con $2
         `select e.status as st, e.city_id as city, e.sales_frozen_at is not null as frozen, e.business_id as biz, e.title as t from events e where e.id = $1::bigint and ${DUENO(q)} for update`, [eventoId, arg(q)])).rows[0];
       if (!e) throw no("Ese evento no existe.", "That event does not exist.");
       if (!["live", "paused"].includes(e.st)) throw no("Solo se congela un evento publicado.", "Only a live event can be frozen.");
@@ -98,6 +100,7 @@ export async function moverFecha(q: Quien, fechaId: string, x: { dia: unknown; h
   try {
     r = await tx(async (c) => {
       const d = (await c.query<{ eid: string; st: string; dst: string; empezo: boolean; pend: string | null; kind: string; dmin: number; tz: string; city: string; ldate: string; s0: number; s1: number; title: Bi; idx: number }>(
+        // nosemgrep: tolatino-sql-con-texto-interpolado — DUENO(q) devuelve una de dos condiciones fijas con $2
         `select e.id::text as eid, e.status as st, d.status as dst, d.starts_at <= now() as empezo, e.pending_status as pend, e.kind, e.doors_before_min as dmin, ci.timezone as tz, d.city_id as city,
                 d.local_date::text as ldate, (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as s0,
                 (extract(epoch from d.ends_at - d.starts_at) / 60)::int + (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as s1,
@@ -219,6 +222,7 @@ export async function cancelarEvento(q: Quien, eventoId: string, alcance: "date"
   try {
     cx = await tx(async (c) => {
       const e = (await c.query<{ id: string; st: string; city: string; biz: string; kind: string }>(
+        // nosemgrep: tolatino-sql-con-texto-interpolado — DUENO(q) devuelve una de dos condiciones fijas con $2
         `select e.id::text, e.status as st, e.city_id as city, e.business_id as biz, e.kind from events e where e.id = $1::bigint and ${DUENO(q)} for update`, [eventoId, arg(q)])).rows[0];
       if (!e) throw no("Ese evento no existe.", "That event does not exist.");
       if (!["live", "paused"].includes(e.st)) throw no("Solo se cancela un evento publicado.", "Only a live event can be cancelled.");

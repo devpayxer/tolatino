@@ -61,6 +61,7 @@ export async function guardarFe(c: PoolClient, negocio: string, p: FeIn, actor: 
   // La primera vez se guarda lo que ya dice la página (para no apagar nada sin querer).
   await c.query(`insert into fe_settings (business_id, city_id, bil, help, sinid, h24, plan_n, rep_days, updated_by) values ($1, $2, $3, $4, $5, $6, $7, $8, $9) on conflict (business_id) do nothing`,
     [negocio, b.city, h.bil, h.help, h.sinid, h.h24, h.plan ? 12 : 0, h.rep, actor]);
+  // nosemgrep: tolatino-sql-con-texto-interpolado — set() es de esta función y cada llamada pasa columnas fijas; los valores van como $2, $3
   const set = (sql: string, v: unknown[]) => c.query(`update fe_settings set ${sql}, updated_by = $${v.length + 2}, updated_at = now() where business_id = $1`, [negocio, ...v, actor]);
   const quedan = (sin: (x: HorarioFe) => boolean) => h.horarios.filter((x) => !sin(x)).length;
   const MIN1 = h.kind === "misa" ? err("Deja al menos una misa.", "Keep at least one mass.") : err("Deja al menos un culto.", "Keep at least one service.");

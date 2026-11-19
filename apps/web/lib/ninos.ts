@@ -48,6 +48,7 @@ export async function guardarNinos(c: PoolClient, negocio: string, p: NinosIn, a
   if (!b) return err("Esto es para Niños.", "This is for kids businesses.");
   const h = (await herramientaNinos(negocio, c))!;
   await c.query(`insert into insc_settings (business_id, city_id, rubro, home_based, updated_by) values ($1, $2, 'ninos', $3, $4) on conflict (business_id) do nothing`, [negocio, b.city, h.kind === "casa", actor]);
+  // nosemgrep: tolatino-sql-con-texto-interpolado — set() es de esta función y cada llamada pasa una columna fija (o de la lista TG); el valor va como $2
   const set = (col: string, v: unknown) => c.query(`update insc_settings set ${col} = $2, updated_by = $3, updated_at = now() where business_id = $1`, [negocio, v, actor]);
   if (p.banda !== undefined) {
     if (!h.cuidado) return err("Los cupos por edad son de guardería y cuidado en casa.", "Openings by age are for daycare and home care.");

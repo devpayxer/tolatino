@@ -81,6 +81,7 @@ async function recalcular(c: Q, planId: string): Promise<{ listo: boolean }> {
 type OpPlan = { op: string; numero: string; biz: string; bname: string; uid: string; cliente: string; plan: string; st: string; sms: boolean };
 async function opDe(where: string, args: unknown[], c: Q = db()): Promise<OpPlan | null> {
   return (await c.query<OpPlan>(
+    // nosemgrep: tolatino-sql-con-texto-interpolado — opDe() es privada y cada llamada pasa una condición fija con $1/$2
     `select o.id::text as op, o.number as numero, o.business_id as biz, b.name as bname, o.user_id::text as uid, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente, lp.id::text as plan, lp.status as st,
             coalesce((o.details->>'sms')::boolean, true) as sms
        from operations o join layaway_plans lp on lp.operation_id = o.id join businesses b on b.id = o.business_id join users u on u.id = o.user_id where o.kind = 'hold' and ${where}`, args)).rows[0] ?? null;

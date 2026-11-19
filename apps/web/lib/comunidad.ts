@@ -156,6 +156,7 @@ async function enElRadio(w: string[], v: unknown[], orden: string, top: boolean,
     const vv = [...v, radio], ww = [...w];
     if (ca && cb) { vv.push(ca, cb); ww.push(top ? `(p.hot, p.id) < ($${vv.length - 1}::float8, $${vv.length}::bigint)` : `(p.publish_at, p.id) < ($${vv.length - 1}::timestamptz, $${vv.length}::bigint)`); }
     const r = await db().query<{ id: string; k: string; cerca: boolean }>(
+      // nosemgrep: tolatino-sql-con-texto-interpolado — enElRadio() es privada: w, orden y centro los arma muro() (fijos, $n y centroSQL)
       `select p.id::text, ${top ? "p.hot::text" : `to_char(p.publish_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`} as k, st_dwithin(p.geom, ${centro}, $${v.length + 1}) as cerca
          from com_posts p where ${ww.join(" and ")} order by ${orden} limit ${K}`, vv);
     for (const x of r.rows) if (x.cerca && ids.length <= POR_PAGINA) ids.push(x.id);

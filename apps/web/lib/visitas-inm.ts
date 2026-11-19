@@ -254,6 +254,7 @@ const SEL = `select o.id::text, o.number as num, o.business_id as biz, b.name as
                     c.timezone as tz, o.city_id as city, o.details as det, o.scheduled_at::text as at, o.sent_at::text as sent
                from operations o join businesses b on b.id = o.business_id and o.kind = 'visit' join cities c on c.id = o.city_id join users u on u.id = o.user_id`;
 async function leer(c: Q, where: string, args: unknown[], lock = false): Promise<Op | null> {
+  // nosemgrep: tolatino-sql-con-texto-interpolado — leer() es privada y cada llamada de este archivo pasa una condición fija con $1/$2
   return (await c.query<Op>(`${SEL} where o.kind = 'visit' and ${where}${lock ? " for update of o" : ""}`, args)).rows[0] ?? null;
 }
 const lockV = (c: PoolClient, k: string) => c.query(`select pg_advisory_xact_lock(hashtext('ver:' || $1))`, [k]);

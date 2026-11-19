@@ -157,6 +157,7 @@ export async function resultados(p: Pedido): Promise<{ items: Resultado[]; total
     rev: `reviews desc, id`,
   }[p.orden];
   const r = await db().query<Resultado & { total: string }>(
+    // nosemgrep: tolatino-sql-con-texto-interpolado — condiciones() solo pone $n; el orden sale de un mapa fijo; CTE validado; offset como $n
     `${CTE(p.punto)},
           base as (select ${COLUMNAS} ${DESDE} and b.category_id = $2${extra}),
           r as (

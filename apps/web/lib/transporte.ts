@@ -78,6 +78,7 @@ export async function guardarTrans(c: PoolClient, negocio: string, p: TransIn, a
   if (p.shipWeeks !== undefined) { if (p.shipWeeks != null && !["2-3", "3-4", "4-6"].includes(p.shipWeeks)) return { ok: false, es: "Elige cuánto tarda.", en: "Pick how long it takes." }; add("ship_weeks", p.shipWeeks); }
   if (!set.length) return { ok: true };
   await c.query(`insert into trans_settings (business_id, updated_by) values ($1, $2) on conflict (business_id) do nothing`, [negocio, actor]);
+  // nosemgrep: tolatino-sql-con-texto-interpolado — set lo arma add() con columnas fijas de esta función; los valores van como $n
   await c.query(`update trans_settings set ${set.join(", ")}, updated_by = $2, updated_at = now() where business_id = $1`, v);
   return { ok: true };
 }

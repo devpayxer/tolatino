@@ -72,7 +72,7 @@ export async function evtTraducir(negocio: string, textos: string[]): Promise<Re
 /* 6b · El interruptor del módulo Eventos (Lo que vendes / Panel › Eventos): apagado, ninguno de tus eventos sale al público (la base vuelve a
    calcular `listable`); los eventos no cambian de estado y vuelven a salir al encenderlo. La pausa de To'Latino (modules_off) manda. */
 /* 9n-2 · «Ver más» en Pasados y cancelados (L972): la página siguiente con cursor. Solo de este negocio. */
-export async function evtPasadosMas(negocio: string, antes: string): Promise<Res & { filas?: import("@/lib/evt").FilaPanelEvt[]; mas?: boolean }> {
+export async function evtPasadosMas(negocio: string, antes: string): Promise<Res & { filas?: Array<import("@/lib/evt").FilaPanelEvt>; mas?: boolean }> {
   const a = await entrar(negocio);
   if (!a) return SIN_ACCESO;
   const r = await (await import("@/lib/evt")).pasadosPagina(a.negocio.id, String(antes ?? ""));

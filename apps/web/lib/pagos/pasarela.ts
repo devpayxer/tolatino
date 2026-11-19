@@ -476,6 +476,7 @@ export const pasarela = {
      conectada con su cabecera); en el sandbox, el simulador. Solo lectura. ── */
   async delDia(desde: Date, hasta: Date, cuentas: string[]): Promise<LadoStripe> {
     if (modoPago() === "simulador") {
+      // nosemgrep: tolatino-sql-con-texto-interpolado — q() solo se llama con consultas fijas del simulador
       const q = <T extends Record<string, unknown>>(s: string) => db().query<T>(s, [desde.toISOString(), hasta.toISOString()]).then((r) => r.rows);
       const [I, R, T, V, P, D] = await Promise.all([
         q<{ id: string; monto: number; capturado: number; devuelto: number; estado: string }>(`select id, amount_cents as monto, captured_cents as capturado, refunded_cents as devuelto, status as estado from sim_intents where created_at >= $1::timestamptz and created_at < $2::timestamptz`),

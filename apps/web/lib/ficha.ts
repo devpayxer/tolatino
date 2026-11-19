@@ -224,6 +224,7 @@ function proximoCambio(dias: Dia[], dow: number, t: number, abierto: boolean): {
    con la nota que este negocio escribió del otro. */
 async function relacionados(id: string, lang: Lang, desde: string) {
   const r = await db().query<{ id: string; kind: string; nota: string | null; name: string; verified: boolean; rating: number | null; reviews: number; mi: number | null; address: string | null; open: boolean; foto: string | null; tags: string[]; subs: string | null; radius: number | null; from_home: boolean; lat: number | null; lng: number | null; phone: string | null }>(
+    // nosemgrep: tolatino-sql-con-texto-interpolado — desde es centroSQL(p) (números validados) o «c.center»
     `select o.id, l.kind, case when l.a_id = $1 then l.note_a->>$2 else l.note_b->>$2 end as nota, o.name, s.verified, s.rating_avg::float as rating,
             s.review_count as reviews, case when o.geo is null then null else round((st_distance(o.geo, ${desde}) / 1609.34)::numeric, 1)::float end as mi,
             o.address, negocio_abierto(o.id, now() at time zone c.timezone) as open, o.filter_values as tags,

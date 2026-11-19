@@ -232,6 +232,7 @@ export type ApartadoVista = { numero: string; st: St; detalle: string | null; bi
   plan: import("./layaway").PlanVista | null };
 async function leer(where: string, args: unknown[]): Promise<(ApartadoVista & { op: string; uid: string }) | null> {
   const x = (await db().query<ApartadoVista & { op: string; uid: string }>(
+    // nosemgrep: tolatino-sql-con-texto-interpolado — leer() es privada y cada llamada de este archivo pasa una condición fija con $1/$2
     `select o.id::text as op, o.user_id::text as uid, o.number as numero, o.status as st, o.status_detail as detalle, o.business_id as biz, b.name as bname, coalesce(b.address, '') as dir, b.phone as tel, b.logo_url as foto,
             coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.total_cents as tot,
             o.details->>'dia' as dia, (o.details->>'hora')::int as hora, coalesce((o.details->>'sms')::boolean, true) as sms, o.ready_at as hasta, o.respond_by as responde, o.customer_note as nota, o.sent_at as enviado, o.confirmed_at as guardado, o.done_at as recogido, o.cancelled_by as "cxBy", coalesce((o.details->>'hold_hours')::int, 48) as horas,

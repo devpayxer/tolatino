@@ -90,6 +90,7 @@ export async function sincronizar(id: string): Promise<string> {
   if (!t || t.channel !== "testflight") return "no";
   const guardar = (sync: string, err: string | null, extra: Record<string, string | null> = {}) => {
     const cols = Object.keys(extra), vals = Object.values(extra);
+    // nosemgrep: tolatino-sql-con-texto-interpolado — las llaves de extra son columnas fijas de las llamadas de guardar() en esta función; los valores van como $n
     return db().query(`update beta_testers set sync = $2, sync_error = $3, sync_at = now()${cols.map((k, i) => `, ${k} = $${i + 4}`).join("")} where id = $1::bigint`, [id, sync, err, ...vals]);
   };
   try {

@@ -39,6 +39,7 @@ export async function negociosMapa(loc: Ubicacion, o: { cat: string | null; sub:
   if (o.f === "pro") w.push("s.plan = 'pro'");
   const caja = o.caja ? `st_makeenvelope(${add(o.caja[1])}::float8, ${add(o.caja[0])}::float8, ${add(o.caja[3])}::float8, ${add(o.caja[2])}::float8, 4326)` : null;
   const r = await db().query<Pin & { total: string; adentro: string; sinpin: string }>(
+    // nosemgrep: tolatino-sql-con-texto-interpolado — CTE validado; condiciones(), add() y la caja solo ponen $n
     `${CTE(loc)}
      select b.id, b.name, s.plan = 'pro' as pro, s.verified, s.rating_avg::float as rating, s.review_count as reviews,
             case when b.geo is null then null else round((st_distance(b.geo, c.center) / 1609.34)::numeric, 1)::float end as mi,

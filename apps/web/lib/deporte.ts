@@ -47,6 +47,7 @@ export async function guardarDeporte(c: PoolClient, negocio: string, p: DepIn, a
   if (!b) return err("Esto es para Deporte.", "This is for sports businesses.");
   const h = (await herramientaDeporte(negocio, c))!;
   await c.query(`insert into insc_settings (business_id, city_id, rubro, updated_by) values ($1, $2, 'dep', $3) on conflict (business_id) do nothing`, [negocio, b.city, actor]);
+  // nosemgrep: tolatino-sql-con-texto-interpolado — set() es de esta función y cada llamada pasa columnas fijas; los valores van como $2, $3
   const set = (sql: string, v: unknown[]) => c.query(`update insc_settings set ${sql}, updated_by = $${v.length + 2}, updated_at = now() where business_id = $1`, [negocio, ...v, actor]);
   const precio = (id: string, cents: number) => c.query(`update items set price_cents = $2, updated_at = now() where id = $1 and business_id = $3`, [id, cents, negocio]);
   if (p.contrato !== undefined) {
