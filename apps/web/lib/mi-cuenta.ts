@@ -1,6 +1,7 @@
 import "server-only";
 import { vencerCitas } from "./citas-flujo";
 import { db } from "./db";
+import { misPlatosGuardados } from "./platos-guardados";
 import { vencer } from "./pedidos";
 import { vencerMesas } from "./reservas";
 
@@ -138,7 +139,7 @@ export async function resumen(userId: string) {
     // Tarjeta de vecino y accesos.
     q.query<{ resenas: number; guardados: number; sigues: number; curso: number; proximas: number; solicitudes: number; foto: string | null; email: string | null }>(
       `select (select count(*)::int from reviews where user_id = $1 and status <> 'removed') as resenas,
-              (select count(*)::int from favorites where user_id = $1) + (select count(*)::int from job_saves where user_id = $1) + (select count(*)::int from post_saves where user_id = $1) as guardados,
+              (select count(*)::int from favorites where user_id = $1) + (select count(*)::int from job_saves where user_id = $1) + (select count(*)::int from post_saves where user_id = $1) + (select count(*)::int from item_saves where user_id = $1 and removed_at is null) as guardados,
               (select count(*)::int from follows where follower_user_id = $1) as sigues,
               (select count(*)::int from operations o where o.user_id = $1 and o.kind = 'order' and o.status in ('pending', 'confirmed') and coalesce(o.stage, '') not in ('delivered', 'picked_up')) as curso,
               (select count(*)::int from operations o join cities c on c.id = o.city_id where o.user_id = $1 and o.kind = 'table' and ${UP_MESA}) as proximas,
@@ -151,9 +152,9 @@ export async function resumen(userId: string) {
 export type Resumen = Awaited<ReturnType<typeof resumen>>;
 export type { Bi };
 
-/* ── Guardados (USR-FAVORITOS, diseño favV): negocios que guardas o sigues, vacantes y novedades guardadas ── */
+/* ── Guardados (USR-FAVORITOS, diseño favV): negocios que guardas o sigues, platos (9t: lib/platos-guardados.ts), vacantes y novedades guardadas ── */
 export async function misGuardados(userId: string) {
-  const [N, V, P] = await Promise.all([
+  const [N, V, P, I] = await Promise.all([
     db().query<{ id: string; name: string; foto: string | null; subs: string | null; rating: number | null; reviews: number; verified: boolean; open: boolean | null; saved: boolean; sigue: boolean }>(
       `with ids as (select target_id as id, created_at from favorites where user_id = $1 and kind = 'business'
                     union select target_id, created_at from follows where follower_user_id = $1 and target_kind = 'business')
@@ -174,8 +175,9 @@ export async function misGuardados(userId: string) {
       `select p.id::text, p.business_id as biz, b.name as bname, p.title, p.kind, ${FOTO} as foto
          from post_saves s join business_posts p on p.id = s.post_id join businesses b on b.id = p.business_id
         where s.user_id = $1 and post_en_vivo(p) order by s.created_at desc limit 100`, [userId]),
+    misPlatosGuardados(userId),
   ]);
-  return { negocios: N.rows, vacantes: V.rows, novedades: P.rows };
+  return { negocios: N.rows, vacantes: V.rows, novedades: P.rows, platos: I };
 }
 export type MisGuardados = Awaited<ReturnType<typeof misGuardados>>;
 

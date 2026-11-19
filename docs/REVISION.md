@@ -5731,3 +5731,14 @@ dice «Foto». El aviso de la caja de Mensajes dice ahora «Texto y fotos, sin t
   los activos tiene su tope propio (15 s, una vez por hora). El resultado es el mismo número que antes (com5e lo compara en cada corrida).
 - **Si prefieres cada 10 min:** se cambia una línea (0192). Ayuda de Analítica al día (ES/EN).
 - **Qué mirar:** nada en pantalla; la cifra solo tarda hasta una hora en moverse.
+## Fase 9 · 9t — Platos guardados (19 nov) — mirar
+**Qué mirar (teléfono 390 y computadora 1360, en español y en inglés):**
+- **El corazón:** abre Sabor Dominicano › Menú › «Mofongo de chicharrón». Abajo, a la izquierda del contador, el cuadro del corazón (el de la vacante).
+  Tócalo: se pone rojo y sale «Guardado en Mi cuenta › Guardados». Cierra y vuelve a abrir el plato (o recarga): sigue rojo. Tócalo otra vez: se quita.
+  Sin haber entrado, el corazón te pide entrar y te devuelve a ese mismo plato.
+- **La lista:** Mi cuenta › Guardados › **Platos y productos · 1**: la foto, el plato, SABOR DOMINICANO, el precio de su página y **Pedir** (abre el
+  menú con el plato abierto). **Editar** → **Quitar**. Sin platos: el corazón con «Sin platos guardados».
+- **No disponible:** en el Super Admin oculta ese plato (o pausa el Menú del negocio): en tu lista sale **NO DISPONIBLE**, sin precio ni «Pedir», y la
+  página no se rompe; lo puedes quitar. Al volver a mostrarlo, vuelve «Pedir».
+- **Decidido por defecto (AB):** el chip se llama «Platos y productos» como en el diseño, pero hoy solo guarda platos del menú de los restaurantes (la
+  hoja de Mercados y Tiendas es otra pieza: sin corazón por ahora). La lista muestra los últimos 100.

@@ -1,7 +1,8 @@
 "use client";
 /* USR-FAVORITOS (diseño «To'Latino Mi cuenta» · favV): Negocios (los que guardas con el corazón y los que sigues, con
-   abierto o cerrado; «Editar» para quitarlos), Vacantes, Novedades y Eventos (6b: a los que vas con RSVP y los que guardaste con el
-   corazón; solo los que siguen en vivo). Los platos guardados llegan cuando se puedan guardar. */
+   abierto o cerrado; «Editar» para quitarlos), Platos y productos (9t: los que guardas con el corazón de la hoja del plato; «Pedir» abre el
+   negocio en su menú con la hoja del plato; el que ya no sale en su página dice «No disponible» y no ofrece «Pedir»; «Editar» para quitarlos),
+   Vacantes, Novedades y Eventos (6b: a los que vas con RSVP y los que guardaste con el corazón; solo los que siguen en vivo). */
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { MisGuardados } from "@/lib/mi-cuenta";
@@ -10,11 +11,12 @@ import { guardarNegocio } from "../../acciones";
 import { vacGuardar } from "../../n/[id]/acciones-jobs";
 import { novGuardar, seguir } from "../../n/[id]/acciones-novedades";
 import { evtGuardar, evtQuitarRsvp } from "../../eventos/acciones";
+import { platoGuardar } from "../../n/[id]/acciones-platos";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 type MisEventos = { vas: { fid: string; href: string; t: string; s: string; party: number; foto: string | null }[]; guardados: { eid: string; href: string; t: string; s: string; foto: string | null }[] };
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
 
-export function Guardados({ d, ev, f, es, yo }: { d: MisGuardados; ev: MisEventos; f: "biz" | "vac" | "nov" | "evt"; es: boolean; yo: Yo }) {
+export function Guardados({ d, ev, f, es, yo }: { d: MisGuardados; ev: MisEventos; f: "biz" | "items" | "vac" | "nov" | "evt"; es: boolean; yo: Yo }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const [ed, setEd] = useState(false), [busy, setBusy] = useState(false);
@@ -24,7 +26,7 @@ export function Guardados({ d, ev, f, es, yo }: { d: MisGuardados; ev: MisEvento
     setBusy(false);
     if (r?.ok) { ui.toast(msg); router.refresh(); } else ui.toast(E2("No se pudo. Prueba de nuevo.", "Could not do it. Try again."));
   };
-  const B: Bloque[] = [{ type: "chips", items: ([["biz", E2("Negocios", "Businesses"), d.negocios.length], ["vac", E2("Vacantes", "Jobs"), d.vacantes.length], ["nov", E2("Novedades", "Updates"), d.novedades.length], ["evt", E2("Eventos", "Events"), ev.vas.length + ev.guardados.length]] as const)
+  const B: Bloque[] = [{ type: "chips", items: ([["biz", E2("Negocios", "Businesses"), d.negocios.length], ["items", E2("Platos y productos", "Dishes & products"), d.platos.length], ["vac", E2("Vacantes", "Jobs"), d.vacantes.length], ["nov", E2("Novedades", "Updates"), d.novedades.length], ["evt", E2("Eventos", "Events"), ev.vas.length + ev.guardados.length]] as const)
     .map(([k, l, n]) => ({ l: `${l} · ${n}`, on: f === k, onClick: () => router.push(k === "biz" ? "/cuenta/guardados" : `/cuenta/guardados?f=${k}`) })) }];
   if (f === "biz") {
     if (!d.negocios.length) B.push({ type: "empty", ic: "heart", t: E2("Todavía no guardas negocios", "No saved businesses yet"), s: E2("Toca el corazón en un negocio, o síguelo desde sus novedades, y aquí lo tienes a mano.", "Tap the heart on a business, or follow it from its updates, and keep it handy here."), cta: E2("Explorar negocios", "Explore businesses"), onCta: () => router.push("/negocios") });
@@ -37,6 +39,22 @@ export function Guardados({ d, ev, f, es, yo }: { d: MisGuardados; ev: MisEvento
         s: [meta(x), x.sigue ? E2("LO SIGUES", "FOLLOWING") : null].filter(Boolean).join(" · "), chev: true, on: () => router.push(`/n/${x.id}`),
         acts: [...(x.saved ? [[E2("Quitar", "Remove"), "secondary", () => quitar(() => guardarNegocio(x.id), E2(`Quitaste ${x.name} de guardados.`, `Removed ${x.name} from saved.`))] as [string, string, () => void]] : []),
           ...(x.sigue ? [[E2("Dejar de seguir", "Unfollow"), "secondary", () => quitar(() => seguir(x.id), E2(`Ya no sigues a ${x.name}.`, `You no longer follow ${x.name}.`))] as [string, string, () => void]] : [])],
+      })) });
+    }
+  }
+  // 9t · Platos y productos (favV): foto, plato, NEGOCIO, precio de su ficha y «Pedir» (abre la hoja del plato en el menú del negocio). El que ya no
+  // sale en su página: «NO DISPONIBLE», sin precio ni «Pedir» (abre el negocio). «Editar» → «Quitar».
+  if (f === "items") {
+    const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+    const ir = (x: MisGuardados["platos"][number]) => (x.disponible ? `/n/${x.biz}?${x.pro ? "tab=menu&" : ""}plato=${encodeURIComponent(x.id)}` : `/n/${x.biz}`);
+    if (!d.platos.length) B.push({ type: "empty", ic: "heart", t: E2("Sin platos guardados", "No saved dishes"), s: E2("Guarda tus platos favoritos desde el menú de cada negocio.", "Save your favorite dishes from each business menu.") });
+    else {
+      B.push({ type: "sec", t: `${d.platos.length} ${d.platos.length === 1 ? E2("plato", "dish") : E2("platos", "dishes")}`, fs: "15px", mt: "2px", a: ed ? E2("Listo", "Done") : E2("Editar", "Edit"), onA: () => setEd(!ed) });
+      B.push({ type: "rows", rows: d.platos.map((x) => ({
+        key: x.id, ph: x.foto, ini: bi(x.name, es).slice(0, 1), t: bi(x.name, es), s: x.bname.toUpperCase(), chev: true, on: () => router.push(ir(x)),
+        ...(x.disponible ? { v: money(x.cents) } : { tag: [E2("NO DISPONIBLE", "NOT AVAILABLE"), "neutral"] as [string, string], x: E2("No disponible por ahora en el menú del negocio.", "Not available on the business’s menu right now.") }),
+        acts: ed ? [[E2("Quitar", "Remove"), "secondary", () => quitar(() => platoGuardar(x.id), E2(`Quitaste ${bi(x.name, es)} de guardados.`, `Removed ${bi(x.name, es)} from saved.`))]] as [string, string, () => void][]
+          : x.disponible ? [[E2("Pedir", "Order"), "primary", () => router.push(ir(x))]] as [string, string, () => void][] : [],
       })) });
     }
   }
@@ -61,5 +79,5 @@ export function Guardados({ d, ev, f, es, yo }: { d: MisGuardados; ev: MisEvento
         acts: [[E2("Quitar", "Remove"), "secondary", () => quitar(() => evtGuardar(x.eid), E2("Evento quitado de guardados.", "Event removed from saved."))]] as [string, string, () => void][] })) });
     }
   }
-  return <Marco es={es} code="USR-FAVORITOS" t={E2("Guardados", "Saved")} s={`${d.negocios.length}${E2(" NEGOCIOS · ", " BUSINESSES · ")}${d.vacantes.length}${E2(" VACANTES · ", " JOBS · ")}${d.novedades.length}${E2(" NOVEDADES · ", " UPDATES · ")}${ev.vas.length + ev.guardados.length}${E2(" EVENTOS", " EVENTS")}`} blocks={B} yo={yo} ui={ui} />;
+  return <Marco es={es} code="USR-FAVORITOS" t={E2("Guardados", "Saved")} s={`${d.negocios.length}${E2(" NEGOCIOS · ", " BUSINESSES · ")}${d.platos.length}${E2(" PLATOS · ", " DISHES · ")}${d.vacantes.length}${E2(" VACANTES · ", " JOBS · ")}${d.novedades.length}${E2(" NOVEDADES · ", " UPDATES · ")}${ev.vas.length + ev.guardados.length}${E2(" EVENTOS", " EVENTS")}`} blocks={B} yo={yo} ui={ui} />;
 }

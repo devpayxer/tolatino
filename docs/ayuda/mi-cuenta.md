@@ -23,7 +23,7 @@ cuenta._
 - **Citas y reservas:** Próximas y Pasadas, con la fecha, el estado (pendiente, confirmada, te proponen otra hora, no pudo,
   terminada…), para cuántos y a qué hora. Tocarla abre la reservación.
 - **Guardados:** Negocios (los del corazón y los que sigues, abierto o cerrado; «Editar» para quitar o dejar de seguir),
-  Vacantes y Novedades guardadas.
+  **Platos y productos** (los platos que guardas con el corazón en el menú), Vacantes y Novedades guardadas.
 - **Reseñas:** las que escribiste (estrellas, si es verificada, la respuesta del negocio, cuántos la marcaron Útil, si
   To'Latino la ocultó y por qué) y las que te faltan de los últimos 30 días.
 - **Empleos:** tus solicitudes (abiertas y cerradas) con su estado y la entrevista.
@@ -109,6 +109,18 @@ quedan cifras; si borras tu cuenta, a los 30 días se vacían tus conversaciones
   pide otro.
 - **Correo › Resumen semanal del barrio** (apagado de fábrica): los lunes, los negocios nuevos y los eventos de los próximos 7 días en tu ciudad.
 
+## Platos guardados
+- **Guardar un plato:** en el menú de un restaurante, abre el plato. Abajo, a la izquierda del contador, está el **corazón**: tócalo y el plato
+  queda guardado (el corazón se pone rojo y sale «Guardado en Mi cuenta › Guardados»). Tócalo otra vez para quitarlo. Si no has entrado, te
+  pedimos entrar y te devolvemos al mismo plato.
+- **Dónde los ves:** **Mi cuenta › Guardados › Platos y productos**: la foto, el plato, el negocio, el precio de su página (con la oferta si
+  hay una para ti) y **Pedir**, que abre el negocio en su menú con el plato ya abierto.
+- **Si el plato ya no está:** si el negocio lo quitó del menú, To'Latino lo ocultó, el menú está en pausa o el negocio ya no sale, el plato sigue
+  en tu lista con **No disponible** y sin **Pedir**. Si vuelve, vuelve a salir para pedir.
+- **Quitarlos:** toca el corazón en el plato, o en Guardados toca **Editar** y luego **Quitar** (también los que dicen No disponible).
+- **Preguntas:** ¿El negocio ve qué platos guardé? No. ¿Sale en el archivo de mis datos? Sí, en «platos_guardados». ¿Y si borro mi cuenta? A
+  los 30 días se borran con ella. ¿Hay un límite? La lista muestra tus últimos 100.
+
 ## English
 
 ### What it does
@@ -127,8 +139,8 @@ quedan cifras; si borras tu cuenta, a los 30 días se vacían tus conversaciones
   The ones you already picked up, canceled or that expired do not show here.
 - **Appointments and bookings:** Upcoming and Past, with the date, the status (pending, confirmed, they propose another time, could not,
   finished…), for how many and at what time. Tapping it opens the booking.
-- **Saved:** Businesses (the ones with the heart and the ones you follow, open or closed; «Edit» to remove or unfollow), saved Jobs and
-  Updates.
+- **Saved:** Businesses (the ones with the heart and the ones you follow, open or closed; «Edit» to remove or unfollow), **Dishes &
+  products** (the dishes you save with the heart on the menu), saved Jobs and Updates.
 - **Reviews:** the ones you wrote (stars, whether it is verified, the business's reply, how many marked it Helpful, whether To'Latino hid it and
   why) and the ones you still owe from the last 30 days.
 - **Jobs:** your applications (open and closed) with their status and the interview.
@@ -211,3 +223,15 @@ Support cases are emptied (charges stay in Stripe).
 - **The sign-in code** arrives by text message; if your phone recognizes it, it fills in by itself. If it does not arrive, the system tries
   again; if it has already expired, ask for another.
 - **Email › Weekly neighborhood digest** (off by default): on Mondays, the new businesses and the events of the next 7 days in your city.
+
+### Saved dishes
+- **Save a dish:** on a restaurant's menu, open the dish. At the bottom, to the left of the counter, there is the **heart**: tap it and the
+  dish is saved (the heart turns red and «Saved in My account › Saved» shows). Tap it again to remove it. If you are not signed in, we ask
+  you to sign in and bring you back to the same dish.
+- **Where you see them:** **My account › Saved › Dishes & products**: the photo, the dish, the business, the price on its page (with the
+  deal if there is one for you) and **Order**, which opens the business on its menu with the dish already open.
+- **If the dish is gone:** if the business removed it from the menu, To'Latino hid it, the menu is paused or the business no longer shows,
+  the dish stays on your list with **Not available** and without **Order**. If it comes back, you can order it again.
+- **Remove them:** tap the heart on the dish, or in Saved tap **Edit** and then **Remove** (also the ones that say Not available).
+- **Questions:** Can the business see which dishes I saved? No. Is it in my data file? Yes, in «platos_guardados». And if I delete my
+  account? After 30 days they are deleted with it. Is there a limit? The list shows your latest 100.
