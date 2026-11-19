@@ -2790,3 +2790,9 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   `botonesQueCaben`, `alreves19caben` 6/6. Además: vec9m abre el negocio todo el día (a las 11 PM la hoja del plato no se abre: solo si se
   puede pedir); ciu9t espera el encabezado de escritorio (la cookie tl_ancho del teléfono pinta primero el de teléfono); `sin-reloj` quita
   «hace N min/h» (compa7e dos veces seguidas); bus9t trae su propio apartado; alreves8a al día; age en CI cuando una dirigida nombra al revés.
+- **19 nov · En main y pruebas (a62303c):** el tope de ayuda (0182), Buscar 9t-2, mesa en espera y Mi ciudad (0181), Destacar eventos (0183), el
+  archivo y Borrar mi cuenta con la llave (0184), la auditoría del SQL con Semgrep por flujo, la fila de acciones de la ficha Pro y las filas
+  de Buscar que se salían. Corridas dirigidas en verde en los 4 anchos: 44469203576 (Eventos, pat003, dlv2f4 en el iPad), 44474177557 (bus9t,
+  fic005, vec9m, al revés), 44460944263 (llave). En el camino: «Destacar» decía el tope viejo de la caché (bug, arreglado; también en negocios);
+  evt9t, pat003 y alreves6f al día; serieUnaVezEnLista mira las dos lecturas de eventosCiudad. La app se sirve en local
+  (`tl_loc` + `servir.sh basico` + docker falso que manda el SQL de las pruebas a la base local) para reproducir sin esperar a CI.
