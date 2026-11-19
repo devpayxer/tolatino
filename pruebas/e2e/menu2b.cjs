@@ -46,7 +46,7 @@ const MARISOL = "(select id from users where phone='+15705550122')";
   // La bandera: hoja con opciones obligatorias
   await m.locator('[data-screen-label="Ficha · menú"]').getByText('Mofongo de chicharrón', { exact: true }).last().click();
   const hoja = m.locator('[data-screen-label="Menú · plato y opciones"]'); await hoja.waitFor();
-  ok(await hoja.getByText(/^Elige: /).isVisible(), 'sin elegir, el botón pide lo obligatorio: ' + await hoja.getByText(/^Elige: /).innerText());
+  ok(await hoja.getByText(/^Elige(: | \d+ opciones)/).isVisible(), 'sin elegir, el botón pide lo obligatorio: ' + await hoja.getByText(/^Elige(: | \d+ opciones)/).innerText());
   await shot(m, 'b4-plato-m.png');
   const caldo = sql(`select options->0->>'es' from option_groups where id=6`), caldoC = +sql(`select options->0->>'cents' from option_groups where id=6`);
   await hoja.getByText('Pollo guisado', { exact: true }).click();

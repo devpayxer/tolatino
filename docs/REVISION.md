@@ -5773,3 +5773,6 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   el número), una barbería, Comunidad, Eventos y Mi cuenta; luego lo mismo con Mi cuenta › Ajustes › Letra más grande. Que todo se toque bien al
   primer intento y que nada se tape.
 - **Lo que no cambió:** el escritorio (con ratón) se ve igual salvo por las piezas compartidas (botones, chips, pestañas).
+- **9t · Hoja del plato con el corazón y los 44 px juntos:** el corazón pasó de 50 a 44 px (la medida del objetivo táctil) y, cuando faltan dos o
+  más opciones obligatorias, el botón dice «Elige 2 opciones» / «Choose 2 options» en vez de nombrarlas todas (con una sola sigue diciendo cuál:
+  «Elige: relleno»). Así la barra cabe a 390 px. Las opciones que faltan siguen marcadas en la hoja.

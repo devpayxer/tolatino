@@ -242,7 +242,7 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
       };
     }),
     disabled: ms.length > 0,
-    cta: ms.length ? `${E2("Elige: ", "Choose: ")}${ms.map(shortN).join(", ")}` : `${edit != null ? E2("Guardar cambios · ", "Save changes · ") : E2("Agregar · ", "Add · ")}${money(u * qty)}`,
+    cta: ms.length === 1 ? `${E2("Elige: ", "Choose: ")}${shortN(ms[0]!)}` : ms.length ? E2(`Elige ${ms.length} opciones`, `Choose ${ms.length} options`) : `${edit != null ? E2("Guardar cambios · ", "Save changes · ") : E2("Agregar · ", "Add · ")}${money(u * qty)}`,
     onNote: (v: string) => setNote(v.slice(0, 200)),
     onInc: () => { const c2 = Math.min(20, capOf(it)); if (qty + 1 > c2) { flash(it.maxQ && it.maxQ === c2 ? E2(`Máximo ${c2} por pedido.`, `Up to ${c2} per order.`) : E2(`Solo quedan ${c2}.`, `Only ${c2} left.`)); return; } setQty(qty + 1); },
     onDec: () => setQty(Math.max(1, qty - 1)), onAdd: add,

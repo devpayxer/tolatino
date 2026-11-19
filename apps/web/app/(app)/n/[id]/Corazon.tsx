@@ -1,5 +1,5 @@
 "use client";
-/* 9t · Guardar un plato o un producto (decisiones del fundador del 19 nov): el cuadro del corazón de la barra de la vacante (50 px) en la barra de abajo
+/* 9t · Guardar un plato o un producto (decisiones del fundador del 19 nov): el cuadro del corazón de la barra de la vacante (44 px desde los objetivos táctiles: con el contador a 44 la barra no cabía a 390) en la barra de abajo
    de la hoja, a la izquierda del contador o del botón principal. Una sola pieza para la hoja del plato (MenuCliente), la del producto del mercado
    (Mercado) y la del artículo de la tienda (Tienda). Sin sesión lleva a /entrar y vuelve a la hoja de ESE plato o producto (`volver`); con sesión el
    servidor decide (platoGuardar → lib/platos-guardados.ts). Lo guardado al abrir la ficha lo trae el servidor en una consulta (`ids`). */
@@ -35,7 +35,7 @@ export function useGuardados(ids: string[] | undefined, sesion: boolean, volver:
 /* El cuadro: etiqueta fija («Guardar plato» / «Guardar producto») y el estado en aria-pressed; rojo y lleno cuando está guardado. */
 export function CorazonGuardar({ guardado, onClick, etiqueta }: { guardado: boolean; onClick: () => void; etiqueta: string }) {
   return (
-    <button type="button" data-guardar-plato aria-label={etiqueta} aria-pressed={guardado} onClick={onClick} className="box-border grid size-[50px] flex-none place-items-center rounded-[15px] border-[1.5px] border-ink/[.14] bg-white">
+    <button type="button" data-guardar-plato aria-label={etiqueta} aria-pressed={guardado} onClick={onClick} className="box-border grid size-[44px] flex-none place-items-center rounded-[15px] border-[1.5px] border-ink/[.14] bg-white">
       <Icon name="heart" size={18} color={guardado ? "var(--tl-danger)" : "var(--tl-ink)"} fill={guardado ? "var(--tl-danger)" : "none"} />
     </button>
   );

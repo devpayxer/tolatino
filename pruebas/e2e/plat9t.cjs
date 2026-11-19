@@ -67,7 +67,7 @@ const pulsado = async (p) => (await corazon(p).getAttribute('aria-pressed')) ===
       const h = document.querySelector('[role="dialog"] [data-guardar-plato]'), q = h?.nextElementSibling?.getBoundingClientRect(), a = h?.getBoundingClientRect();
       return a && q ? { w: Math.round(a.width), h: Math.round(a.height), izq: a.right <= q.left } : null;
     });
-    ok(caja && caja.w === 50 && caja.h === 50 && caja.izq, `el cuadro del corazón (50 px) va a la izquierda del contador (${JSON.stringify(caja)})`);
+    ok(caja && caja.w === 44 && caja.h === 44 && caja.izq, `el cuadro del corazón (44 px, el objetivo táctil) va a la izquierda del contador (${JSON.stringify(caja)})`);
     ok((await corazon(p0).getAttribute('aria-label')) === 'Guardar plato' && !(await pulsado(p0)), 'ES: aria-label «Guardar plato», aria-pressed false');
     const malos0 = await botonesQueNoCaben(p0);
     ok(!malos0.length, `a 390 la barra de la hoja cabe (${malos0.join(' | ')})`);
@@ -167,7 +167,7 @@ const pulsado = async (p) => (await corazon(p).getAttribute('aria-pressed')) ===
     await p0.goto(URL_POLLO); await p0.waitForLoadState('networkidle').catch(() => {});
     ok(await espera(async () => p0.locator('[data-screen-label="Producto · Mercados"]').isVisible() && corazon(p0).isVisible()), 'mercado (?producto=): la hoja del producto abre con el corazón');
     const cm = await izquierda(p0);
-    ok(cm && cm.w === 50 && cm.h === 50 && cm.izq && cm.primero, `mercado: el cuadro de 50 px a la izquierda de la barra de la hoja (${JSON.stringify(cm)})`);
+    ok(cm && cm.w === 44 && cm.h === 44 && cm.izq && cm.primero, `mercado: el cuadro de 44 px a la izquierda de la barra de la hoja (${JSON.stringify(cm)})`);
     ok((await corazon(p0).getAttribute('aria-label')) === 'Guardar producto' && !(await pulsado(p0)), 'mercado: «Guardar producto», aria-pressed false');
     const malosM = await botonesQueNoCaben(p0);
     ok(!malosM.length, `a 390 la barra de la hoja del mercado cabe (${malosM.join(' | ')})`);
@@ -184,7 +184,7 @@ const pulsado = async (p) => (await corazon(p).getAttribute('aria-pressed')) ===
     await p.goto(URL_CART); await p.waitForLoadState('networkidle').catch(() => {});
     ok(await espera(async () => p.locator('[data-screen-label="Tienda · artículo"]').isVisible() && corazon(p).isVisible()), 'tienda (?producto=): la hoja del artículo abre con el corazón');
     const ct = await izquierda(p);
-    ok(ct && ct.w === 50 && ct.izq && ct.primero, `tienda: el cuadro a la izquierda de la barra de la hoja (${JSON.stringify(ct)})`);
+    ok(ct && ct.w === 44 && ct.izq && ct.primero, `tienda: el cuadro a la izquierda de la barra de la hoja (${JSON.stringify(ct)})`);
     ok((await corazon(p).getAttribute('aria-label')) === 'Guardar producto' && !(await pulsado(p)), 'tienda: «Guardar producto», sin marcar');
     const malosT = await botonesQueNoCaben(p);
     ok(!malosT.length, `a 390 la barra de la hoja de la tienda cabe (${malosT.join(' | ')})`);
