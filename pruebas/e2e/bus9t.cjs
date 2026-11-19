@@ -184,12 +184,15 @@ const nombres = (r) => (r.filas || []).filter((x) => x.kind === 'item').map((x) 
     ok(await espera(async () => new URL(m.url()).pathname === '/n/boutique-yaritza'), '«Ver el negocio» abre su página');
     // Marisol puede tener otros apartados vivos de otras pruebas (apt4f/apt4q en la misma base): se cuenta, no se pide que no haya ninguno.
     const vivos = (t) => t.split('LO RECOGES Y PAGAS EN EL LOCAL').length - 1;
+    // 19 nov (barajada 44602354318: «antes 1, después 1»): con muchos apartados de otras pruebas, cancelar el suyo dejaba entrar otro a la lista.
+    // Precondición propia: los apartados de PRUEBA que dejaron otras pruebas (ya terminadas) se cierran; queda vivo solo el suyo.
+    sql(`update operations set status = 'cancelled', cancelled_by = 'system', cancelled_at = now() where kind = 'hold' and is_test and number <> '${APT}' and user_id = (select id from users where phone = '+1${MARISOL}') and status in ('pending', 'change_proposed', 'confirmed', 'ready')`);
     await m.goto(B + '/cuenta/pedidos'); await m.waitForLoadState('networkidle').catch(() => {});
     const n1 = vivos(await texto(m));
     sql(`update operations set status = 'cancelled' where number = '${APT}'`);
     await m.goto(B + '/cuenta/pedidos'); await m.waitForLoadState('networkidle').catch(() => {});
     const n2 = vivos(await texto(m));
-    ok(n1 >= 1 && n2 === n1 - 1, `un apartado cancelado no sale (antes ${n1}, después ${n2})`);
+    ok(n1 === 1 && n2 === 0, `un apartado cancelado no sale (antes ${n1}, después ${n2})`);
     await m.goto(B + '/cuenta/pedidos?f=curso'); await m.waitForLoadState('networkidle').catch(() => {});
     ok(!(await texto(m)).includes('LO RECOGES Y PAGAS EN EL LOCAL'), 'en «En curso» no se repiten los apartados (solo en Todos)');
 
