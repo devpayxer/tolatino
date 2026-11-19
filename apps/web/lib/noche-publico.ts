@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "./db";
 import { herramientaNoche } from "./noche";
+import { SERVICIO_NOCHE, SERVICIO_VIVO } from "./visible-publico";
 import { POR_FECHA, type Bi, type EstaNoche, type FilaNoche, type KindNoche, type NocheDia } from "./noche-comun";
 
 /* La ficha de un negocio de Noche (4nb · fase4-noche.md §4nb · neg-noche-listing.js listingAdd L118–157, tonight L114–117, liveIt
@@ -49,8 +50,8 @@ export async function nochePublica(negocio: string): Promise<NochePublica | null
                                                      and (t.sales_end_at is null or t.sales_end_at > now())) end as "evDesde",
             case when i.svc_kind = 'evento' then (select to_char(d.local_date, 'YYYY-MM-DD') from event_dates d join events e on e.id = d.event_id
                                                    where e.id::text = i.svc_attrs->>'event_id' and e.business_id = i.business_id and d.listable and d.ends_at > now() order by d.starts_at limit 1) end as "evDia"
-       from items i where i.business_id = $1 and i.module = 'svc' and i.removed_at is null and i.sell and i.status = 'live' and not i.is_extra
-        and i.svc_kind in ('cover', 'lista', 'mesa', 'vip', 'fecha', 'evento') order by i.sort, i.id`, [negocio]);
+       from items i where i.business_id = $1 and ${SERVICIO_VIVO("i")}
+        and ${SERVICIO_NOCHE("i")} order by i.sort, i.id`, [negocio]);
   // La Lista sigue a «Esta noche»: sin lista esa noche, no sale; la hora es la de la herramienta.
   // La noche especial sale solo con su evento en vivo (6b).
   const servicios = I.rows.filter((s) => (s.k !== "lista" || h.lista) && (s.k !== "evento" || !!s.ev)).map((s) => (s.k === "lista" && h.listaHasta != null ? { ...s, until: h.listaHasta } : s));

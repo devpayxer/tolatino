@@ -82,11 +82,11 @@ type Grupo = { label: string; name: string; items: Fila[] };
 type Persona = { id: string; name: string; short: string; role: string; spec: string; foto: string | null; owner: boolean; silla: number | null };
 
 type TiendaP = Pick<ComponentProps<typeof TiendaTab>, "L" | "V" | "mia" | "horas" | "plan">;
-export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl, tienda, resenas, novedades, jobs, eventos = [], sesion, es, tabInicial, rsvInicial }: {
+export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl, tienda, resenas, novedades, jobs, eventos = [], sesion, es, tabInicial, platoInicial, rsvInicial }: {
   f: F; t: Textos; svc: CitasPublica | null; menu?: MenuPublico | null; rsv?: RsvPublica | null; ofi?: OficiosPublico | null; salud?: SaludPublico | null; prof?: ProPublico | null;
   merc?: MercPublico | null; fiesta?: FiestaPublico | null; trans?: TransPublico | null; noche?: NochePublica | null; insc?: InscPublica | null; fe?: FePublica | null;
   inm?: InmPublica | null; dl?: AutosPublica | null; tienda?: (TiendaP & { L: ArticuloRenta[]; V: ArticuloVenta[]; pop?: string[] }) | null;
-  resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; eventos?: TarjetaEvt[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string };
+  resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; eventos?: TarjetaEvt[]; sesion: boolean; es: boolean; tabInicial?: string; platoInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string };
 }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const L = (x: [string, string]) => (es ? x[0] : x[1]);
@@ -211,6 +211,14 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   const ini = ({ svc: "cat", menu: "cat", reviews: "rev", ...(f.cat === "NEG-TIENDA" ? { shop: "cat" } : {}) } as Record<string, string>)[tabInicial ?? ""] ?? tabInicial ?? "res";
   const [tab, setTabS] = useState(tabs.some((x) => x.id === ini) ? ini : "res");
   const tabsRef = useRef<HTMLDivElement>(null);
+  // 9t-2 · Desde Buscar (?tab=menu&plato=<id>): el plato abre su hoja una vez, ya hidratada la ficha, sobre la pestaña del menú. Si ahora no
+  // se puede pedir, la ficha queda en el menú.
+  const platoHecho = useRef(false);
+  useEffect(() => {
+    if (!platoInicial || !mn) return;
+    const id = setTimeout(() => { if (platoHecho.current) return; platoHecho.current = true; mn.abrir(platoInicial, window.innerWidth >= 1024); }, 60);
+    return () => clearTimeout(id);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const setTab = (id: string) => {
     setTabS(id);
     // La pestaña activa siempre se ve: si ya bajaste más allá de las pestañas, la página sube hasta ellas.

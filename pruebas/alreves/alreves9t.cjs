@@ -34,7 +34,7 @@ const casos = [
   ['buscarPlatosComoLaFicha', BP, ' and not i.is_extra and ${ALGUIEN_LO_HACE("i")})', ' and not i.is_extra)'],
   ['buscarPlatosComoLaFicha', BP, "(n.cat in ('NEG-SALUD', 'NEG-PRO') and ${OFF(\"svc\")} and", "(n.cat in ('NEG-SALUD', 'NEG-PRO') and"],
   ['buscarPlatosComoLaFicha', BP, "from n join items i on i.business_id = n.id and i.removed_at is null and i.module in ('menu', 'svc')", "from n join items i on i.business_id = n.id"],
-  ['buscarPlatosComoLaFicha', BP, 'export const CATS_PLATOS = ["NEG-FOOD",', 'export const CATS_PLATOS = ["NEG-FIESTA", "NEG-FOOD",'],
+  ['buscarPlatosComoLaFicha', BP, 'export const CATS_PLATOS = ["NEG-FOOD",', 'export const CATS_PLATOS = ["NEG-MERC", "NEG-FOOD",'],
   ['buscarPlatosComoLaFicha', BP, "coalesce(oferta_precio(i.id, ${u}::uuid), i.price_cents)", "i.price_cents"],
   ['buscarPlatosComoLaFicha', API, 'platos(E, { punto: loc, cat, limite: 3', 'platos(E, { punto: { ...loc, ciudad: req.nextUrl.searchParams.get("ciudad") ?? loc.ciudad }, cat, limite: 3'],
   ['buscarPlatosComoLaFicha', 'apps/web/app/(app)/buscar/platos.ts', 'x.cents == null ? E2("Precio en la ficha", "Price on listing")', 'x.cents == null ? "$0"'],

@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "./db";
 import { herramientaFe } from "./fe";
+import { SERVICIO_VIVO } from "./visible-publico";
 import {
   DONATIVO, FREQ, HELP, LANG_FE, cortoFe, horaFe, lineaFe, largoFe, DIA_FE,
   type FreqFe, type HelpFe, type HorarioFe, type KindFe, type RepFe,
@@ -46,7 +47,7 @@ export async function fePublica(negocio: string): Promise<FePublica | null> {
     (b.off ?? {}).svc ? Promise.resolve({ rows: [] as (Omit<SvcFePub, "grupos" | "forma" | "don"> & { k: string | null; fe: string | null })[] }) : db().query<Omit<SvcFePub, "grupos" | "forma" | "don"> & { k: string | null; fe: string | null }>(
       `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.svc_kind as k, i.svc_attrs->>'fe' as fe, i.price_cents as cents,
               i.svc_attrs->'dur' as dur, coalesce(i.svc_attrs->'inc', '[]'::jsonb) as inc, coalesce(i.svc_attrs->'no', '[]'::jsonb) as no, i.photos[1] as foto
-         from items i where i.business_id = $1 and i.module = 'svc' and i.removed_at is null and i.sell and i.status = 'live' and not i.is_extra order by i.sort, i.id`, [negocio]),
+         from items i where i.business_id = $1 and ${SERVICIO_VIVO("i")} order by i.sort, i.id`, [negocio]),
     db().query<{ kind: string; titulo: Bi; numero: string | null; etiqueta: string }>(
       `select l.kind, k.title as titulo, l.number as numero, k.number_label as etiqueta from licenses l join license_kinds k on k.key = l.kind
         where l.business_id = $1 and l.status = 'valid' and k.category_id = 'NEG-FE' order by k.sort, l.id`, [negocio]),

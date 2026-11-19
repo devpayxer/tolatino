@@ -109,7 +109,8 @@ function Marco({ lang, t, yo, ciudad, children, landing = false, letra = false, 
         />
       </div>
       <div className={desk || pantallaCompleta || compacto ? "" : "pb-[96px]"}>{children}</div>
-      {drop !== false && desk ? <Desplegable lang={lang} ancla={drop} ciudad={ciudad.nombre} ph={bp?.ph ?? t.searchDesk} phTodo={t.searchDesk} cat={bp?.cat ?? null} onClose={cerrarDrop} /> : null}
+      {drop !== false && desk ? <Desplegable lang={lang} ancla={drop} ciudad={ciudad.nombre} lugar={`${ciudad.nombre} · ${ciudad.radio}`} ph={bp?.ph ?? t.searchDesk} phTodo={t.searchDesk} cat={bp?.cat ?? null} onClose={cerrarDrop}
+        onCiudad={(r) => { setDrop(false); setAncla({ left: Math.max(16, Math.min(r.left - 1, window.innerWidth - 780 - 16)), top: r.bottom + 8 }); setSel({ pedir: false }); }} /> : null}
       {sel ? <CiudadSelector lang={lang} modo={desk ? "pop" : "sheet"} ancla={ancla} pedir={sel.pedir} onClose={cerrar} onAplicada={aplicada} /> : null}
       {!desk && !pantallaCompleta && !compacto && (
         <div className="fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)]">

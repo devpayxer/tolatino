@@ -6,6 +6,7 @@ import type { Punto } from "./punto";
 import { slugCat } from "./directorio";
 import type { Lang } from "./idioma";
 import DATOS from "./busqueda-datos.json";
+import { NEGOCIOS_POR_PLATO, soloNombre } from "./buscar-platos";
 
 /* Motor de Buscar (APP-BUSCAR), en el servidor. Es el del prototipo (search-engine.js) llevado a Postgres:
    1) entender: frases → «intenciones» (abierto ahora, con delivery, que acepte Medicaid…), palabras sin las vacías,
@@ -130,13 +131,17 @@ export async function negocios(E: Entendido, o: Opciones): Promise<{ items: Hall
     const add = (v: unknown) => { params.push(v); return `$${params.length}`; };
     const conTexto = E.grupos.length > 0;
     const q = conTexto ? add(tsq(E.grupos, y, o.vivo)) : null;
+    // 9t-2 · Por lo que vende cuenta su NOMBRE (prototipo: el negocio encaja por el nombre del plato, no por su descripción).
+    const qn = conTexto ? add(soloNombre(tsq(E.grupos, y, o.vivo))) : null;
     const pre = conTexto ? add(`${E.grupos[0]!.w}%`) : null;
-    const w = [...filtros, ...(o.cat ? [`b.category_id = ${add(o.cat)}`] : []), ...(q ? [`b.search_doc @@ to_tsquery('simple', ${q})`] : [])];
+    // 9t-2 · Un negocio encaja por su documento o por algo que su ficha muestra (pp: NEGOCIOS_POR_PLATO, la regla de Buscar › Platos y servicios).
+    const w = [...filtros, ...(o.cat ? [`b.category_id = ${add(o.cat)}`] : []), ...(q ? [`(b.search_doc @@ to_tsquery('simple', ${q}) or b.id in (select id from pp))`] : [])];
     const score = q
-      ? `ts_rank('{0.15, 0.3, 0.7, 1.0}', b.search_doc, to_tsquery('simple', ${q}), 1) * 100 + (case when lower(unaccent(b.name)) like ${pre} then 3 else 0 end) + (case when negocio_abierto(b.id, t.t) then 0.5 else 0 end)`
+      ? `ts_rank('{0.15, 0.3, 0.7, 1.0}', b.search_doc, to_tsquery('simple', ${q}), 1) * 100 + (case when lower(unaccent(b.name)) like ${pre} then 3 else 0 end) + (case when negocio_abierto(b.id, t.t) then 0.5 else 0 end)
+         + (case when b.id in (select id from pp) then 2 else 0 end)`
       : `1 + (case when negocio_abierto(b.id, t.t) then 0.5 else 0 end)`;
     const r = await db().query<Hallado & { total: string; score_q: number }>(
-      `${CTE(o.punto)}, base as (select ${COLUMNAS}, ${score} as score_q ${DESDE}${w.length ? " and " + w.join(" and ") : ""})
+      `${CTE(o.punto)},${qn ? ` pp as (${NEGOCIOS_POR_PLATO(qn)}),` : ""} base as (select ${COLUMNAS}, ${score} as score_q ${DESDE}${w.length ? " and " + w.join(" and ") : ""})
        select base.*, count(*) over () as total, ${FOTO("base")} from base
         order by pro desc, ${ord}, id limit ${limite} offset ${off}`, params);
     return { items: r.rows.map(({ total: _t, score_q, ...x }) => conFoto({ ...x, score: Number(score_q) }) as Hallado), total: Number(r.rows[0]?.total ?? 0) };

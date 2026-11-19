@@ -5,6 +5,7 @@ import { esLiga, esMembresia, type KindDep } from "./deporte-comun";
 import { herramientaNinos } from "./ninos";
 import { esCuidado, type KindNinos, type LicNinos } from "./ninos-comun";
 import { rubroInsc, type Bi, type KindInsc, type RubroInsc } from "./inscripciones-comun";
+import { CURSO_INSC, SERVICIO_VIVO } from "./visible-publico";
 
 /* La ficha de Educación, Niños y Deporte (4ed · fase4-edu-ninos-deporte.md §4ed · neg-edu-listing.js priceFor L60–65, metaOf L94–99,
    listingAdd; neg-ninos-kind.js post y tabL L104; neg-deporte-kind.js post, conL L30 y tabL L151). Todo sale de los servicios, sus grupos
@@ -44,8 +45,8 @@ export async function inscPublica(negocio: string): Promise<InscPublica | null> 
             i.svc_attrs->'cert' as cert, i.svc_attrs->'certBy' as "certBy", coalesce((i.svc_attrs->>'oficial')::boolean, false) as oficial,
             coalesce(i.svc_attrs->'inc', '[]'::jsonb) as inc, coalesce(i.svc_attrs->'no', '[]'::jsonb) as no, coalesce((i.svc_attrs->>'team')::boolean, false) as team,
             coalesce((i.svc_attrs->>'per_field')::boolean, false) as "porCancha", i.photos[1] as foto
-       from items i where i.business_id = $1 and i.module = 'svc' and i.removed_at is null and i.sell and i.status = 'live' and not i.is_extra
-        and i.svc_kind in ('curso', 'mes', 'semana', 'clase', 'hora') order by i.sort, i.id`, [negocio])).rows;
+       from items i where i.business_id = $1 and ${SERVICIO_VIVO("i")}
+        and ${CURSO_INSC("i")} order by i.sort, i.id`, [negocio])).rows;
   // Los grupos que todavía no terminan (abiertos, aunque estén llenos: la ficha dice «Lleno»). Nunca el enlace en línea.
   const G = I.length ? (await db().query<GrupoPub & { item: string }>(
     `select g.id::text, g.item_id::text as item, g.label, g.starts_on::text as inicio, g.ends_on::text as fin, greatest(0, g.seats_total - g.seats_outside - g.seats_booked) as libres, g.start_min as min, g.dows

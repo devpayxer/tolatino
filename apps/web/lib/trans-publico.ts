@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "./db";
 import { enPausa } from "./modulo-pausa";
+import { SERVICIO_VIVO } from "./visible-publico";
 import { herramientaTrans, kindTrans, salidasDe } from "./transporte";
 import { LIC_TRANS, type Bi, type HerrTrans, type KindTrans, type SvcTrans } from "./transporte-comun";
 
@@ -30,7 +31,7 @@ export async function transPublico(negocio: string): Promise<TransPublico | null
             coalesce((select array_agg(x::int order by x::int) from jsonb_array_elements_text(coalesce(i.svc_attrs->'sal', '[]'::jsonb)) x), '{}') as sal,
             (i.svc_attrs->>'pax')::int as pax, (i.svc_attrs->>'child')::int as child, i.svc_attrs->'to' as "to", i.svc_attrs->'from' as "from", (i.svc_attrs->>'dmin')::int as dmin,
             (i.svc_attrs->>'wait')::int as wait, coalesce(i.svc_attrs->'inc', '[]'::jsonb) as inc, i.photos[1] as foto
-       from items i where i.business_id = $1 and i.module = 'svc' and i.removed_at is null and i.sell and i.status = 'live' and not i.is_extra order by i.sort, i.id`, [negocio]);
+       from items i where i.business_id = $1 and ${SERVICIO_VIVO("i")} order by i.sort, i.id`, [negocio]);
   if (!I.rows.length) return null;
   const L = await db().query<{ kind: string; titulo: Bi; numero: string | null; status: string }>(
     `select l.kind, coalesce(nullif(l.title, '{}'::jsonb), lk.title) as titulo, l.number as numero, l.status from licenses l join license_kinds lk on lk.key = l.kind

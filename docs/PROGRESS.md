@@ -2679,6 +2679,23 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   sugerencias, Todo, pestaña, ficha; oculto / sección invisible / Menú pausado / Free fuera de sus platos (y la ficha Free igual) / servicio que nadie hace
   no salen; desplegable con vista previa, ↓/Enter/Esc, EN; Apartados; letra grande desde el servidor en otro navegador y sin scroll de lado a 390 en 6
   pantallas. tsc + guardianes + extraer --verificar en verde. Ayuda: `buscar`, `mi-cuenta` (ES/EN). Sin diseño (REVISION): guardar un plato.
+- **19 nov · 9t-2 · Buscar: servicios de las demás categorías y lo que faltaba del desplegable** (LAUNCH «Buscar · servicios de las demás
+  categorías y lo que falta del desplegable» → ✓; línea nueva → 9t: propiedades, carros y productos, decisión del fundador; REVISION «9t-2»). Sin
+  migración (el índice `items_search_gin` de 0180 lo cubre). `lib/visible-publico.ts` suma `CURSO_INSC` y `SERVICIO_NOCHE` (la Lista solo encendida,
+  la noche especial solo con su evento en vivo) y ahora lo leen también `fiestas-publico`, `trans-publico`, `noche-publico`, `inscripciones-publico`
+  y `fe-publico`; `lib/buscar-platos.ts`: REGLA y CATS_PLATOS con Fiestas, Transporte, Noche, Educación/Niños/Deporte e Iglesias (cada una con la
+  pausa de Servicios de su ficha), `NEGOCIOS_POR_PLATO` (negocios() encaja por el nombre de lo que vende, `soloNombre`: misma regla, mismo índice, la ciudad que se ve) y
+  `porQue()` (la razón «Tiene … · $12» para toda la página en una consulta, precio de ficha con `oferta_precio`, sin número para un servicio; el
+  nombre gana, `textoRazon` en `buscar/platos.ts`). La fila (SearchResultRow `why`), la tarjeta (primer chip) y las sugerencias («TIENE …») la
+  muestran. El plato abre su hoja: `hrefPlato` → `/n/<id>?tab=menu&plato=<id>`, la ficha (de siempre y nueva) lo abre una vez al hidratar con
+  `mn.abrir` (que ahora dice si pudo: agotado, horario, sin pedidos → queda el Menú). El desplegable: micrófono con la lógica de la página
+  (`buscar/voz.ts`, `useVoz`, que también usa Buscar.tsx; el aviso dentro del panel; lo que eligió llega en `?explorar=1`) y el chip de la ciudad
+  (abre «Ciudad que estás viendo» bajo el chip). Guardianes `buscarPlatosComoLaFicha` (ampliado; las piezas de platos() se miran en platos()),
+  `negocioPorLoQueVende`, `platoAbreSuHoja`, `vozDelDesplegable`; al revés **alreves9tbus 44/44** (y alreves9t 32/32). e2e **bus9t 85 ✓** dos
+  veces seguidas en local (copia `tl_bus3` de la base local Postgres 16 con 0181, `next build` standalone en :3193, Chromium; sin Docker: un
+  `docker exec` de mentira hacia psql fuera del repo): las 7 categorías, pausa / Lista apagada / noche sin evento / no-curso no salen (y su ficha
+  tampoco), la razón en tarjeta, fila y sugerencia (ES/EN, el nombre gana), la hoja del plato a 390 y 1360, micrófono con su aviso, sin micrófono
+  con la voz apagada, el chip abre la ciudad. tsc + build + guardianes + extraer --verificar en verde. Ayuda: `buscar` (ES/EN).
 - **19 nov · 9t · «No pudo» de una mesa y Mi ciudad (1f-2)** (LAUNCH «Avísame si se libera (lista de espera) y Otros restaurantes con mesa» y «Mi ciudad — lo
   que queda de 1f-2» → ✓; REVISION «9t — No pudo…» y «9t — Mi ciudad…», decisiones por defecto AB): migración **0180** (`reservation_waitlist`: estados
   waiting → offered → taken / left / expired, una viva por persona, restaurante, hora y personas, nada se borra salvo la purga de una cuenta; plantilla

@@ -10,6 +10,15 @@
 //     cancelado no sale.
 // 5 · Letra más grande: Ajustes › «Idioma y pantalla» la enciende en el servidor (otro navegador con la misma cuenta la ve), la app se pinta con
 //     [data-letra="grande"] y sin scroll de lado a 390 en Inicio, Buscar, Mi cuenta y una ficha; se apaga igual.
+// 6 · 9t-2 (LAUNCH «Buscar · servicios de las demás categorías y lo que falta del desplegable»):
+//     a · Fiestas, Transporte, Noche, Educación, Niños, Deporte e Iglesias en «Platos y servicios», cada uno con la regla de su ficha: con Servicios
+//         pausados no sale (y la ficha tampoco lo lista); la Lista de Noche solo encendida; la noche especial sin su evento no sale; en Educación,
+//         lo que no es curso, programa o membresía no sale.
+//     b · Un negocio encaja por lo que vende y dice por qué: «Tiene Mofongo de chicharrón · $…» (la tarjeta del Pro), «Tiene Oración del viernes»
+//         (la fila del Free), «TIENE NORTEÑO…» en las sugerencias; EN «HAS …»; el nombre gana (no se repite cuando el nombre ya lo dice).
+//     c · Tocar un plato abre SU hoja en la ficha (390 y 1360 desde el desplegable); un ?plato= que no es de su menú no abre nada.
+//     d · El desplegable (1360): el micrófono abre el aviso dentro del panel («Ahora no» vuelve), sin micrófono si la persona lo apagó en
+//         Privacidad; el chip de la ciudad cierra el panel y abre «Ciudad que estás viendo».
 // Precondiciones propias: una persona nueva con teléfono 555 libre; el apartado A-9501 de Marisol vuelve a su estado; el plan, la pausa, la sección y el
 // plato de Sabor Dominicano y el equipo de la barbería vuelven como estaban. Cuenta solo sus filas (corre barajada y dos veces seguidas).
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
@@ -38,6 +47,15 @@ const nombres = (r) => (r.filas || []).filter((x) => x.kind === 'item').map((x) 
   const ss0 = sql(`select coalesce(string_agg(member_id::text, ','), '') from staff_services where item_id = ${fade}`);
   const M1 = sql(`select id from business_members where business_id = '${BARB}' and status = 'active' and show_on_page and hidden_by_admin is null and takes_bookings order by id limit 1`);
   const tb0 = M1 ? 'true' : 'false';
+  // 9t-2 · Lo que la sección 6 toca (vuelve igual al final): el horario de Sabor Dominicano (abierto todo el día: la hoja del plato se abre solo si se
+  // puede pedir ahora), la pausa de Aeropuerto Seguro, la Lista de Casa Borinquen y el tipo de «Contabilidad para tu negocio».
+  const horas0 = sql(`select coalesce(json_agg(json_build_object('w', weekday, 'o', open, 'r', ranges)), '[]') from business_hours where business_id = '${BIZ}' and module = ''`);
+  sql(`update business_hours set ranges = '[["00:00","00:00"]]'::jsonb, open = true where business_id = '${BIZ}' and module = ''`);
+  const AERO = 'aeropuerto-seguro', BORI = 'casa-borinquen';
+  const aeroOff0 = sql(`select coalesce(modules_off::text, '{}') from businesses where id = '${AERO}'`);
+  const lista0 = sql(`select list_on from noche_settings where business_id = '${BORI}'`);
+  const conta = sql(`select id from items where business_id = 'academia-negocios-latina' and module = 'svc' and name->>'es' = 'Contabilidad para tu negocio'`);
+  const contaK0 = conta ? sql(`select svc_kind from items where id = ${conta}`) : '';
   ok(plan0 === 'pro' && mof && tos && apt0 && fade && M1, 'precondiciones: Sabor Dominicano Pro con su menú, la barbería con «Fade» y alguien que recibe citas, y el apartado A-9501');
   const V1 = telLibre();
   const b = await chromium.launch(), err = [], abiertas = [];
@@ -195,6 +213,98 @@ const nombres = (r) => (r.filas || []).filter((x) => x.kind === 'item').map((x) 
     const c7 = await tel390(b); abiertas.push(c7);
     const s = await c7.newPage();
     await s.goto(B + '/'); ok(!(await s.locator('[data-letra]').count()), 'sin cuenta, la letra normal');
+
+    // ── 6a · 9t-2 · Las demás categorías, cada una con la regla de su ficha ──
+    ok(lista0 && conta && contaK0 === 'curso', 'precondiciones 9t-2: la Lista de Casa Borinquen y «Contabilidad para tu negocio» (curso)');
+    await p.goto(B + '/');
+    for (const [qq, nom, cat] of [['norteño', 'Norteño · 2 horas', 'Fiestas'], ['jfk', 'A JFK', 'Transporte'], ['lista', 'Lista + clase de salsa', 'Noche'], ['contabilidad', 'Contabilidad para tu negocio', 'Educación'],
+      ['invierno', 'Campamento de invierno', 'Niños'], ['natacion', 'Clase de natación', 'Deporte'], ['recuperacion', 'Celebremos la Recuperación', 'Iglesias']])
+      ok(nombres(await api(p, qq)).includes(nom), `${cat}: «${qq}» trae «${nom}» en PLATOS Y SERVICIOS`);
+    sql(`update businesses set modules_off = coalesce(modules_off, '{}'::jsonb) || '{"svc": {"reason": "prueba bus9t", "by": "prueba"}}'::jsonb where id = '${AERO}'`);
+    ok(!nombres(await api(p, 'jfk')).includes('A JFK'), 'Transporte con Servicios pausados por To\'Latino: no sale');
+    await p.goto(B + `/n/${AERO}`); await p.waitForLoadState('networkidle').catch(() => {});
+    ok(!(await texto(p)).includes('A JFK'), 'y su ficha tampoco lo lista (la misma regla)');
+    sql(`update businesses set modules_off = '${aeroOff0}'::jsonb where id = '${AERO}'`);
+    ok(nombres(await api(p, 'jfk')).includes('A JFK'), 'sin la pausa, vuelve');
+    sql(`update noche_settings set list_on = false where business_id = '${BORI}'`);
+    ok(!nombres(await api(p, 'lista')).includes('Lista + clase de salsa'), 'Noche: con la Lista apagada esa noche, no sale');
+    sql(`update noche_settings set list_on = ${lista0 === 't'} where business_id = '${BORI}'`);
+    ok(!nombres(await api(p, 'dinastia')).includes('Sábado: Banda La Dinastía'), 'Noche: la noche especial sin su evento en vivo no sale');
+    await p.goto(B + '/n/cantina-don-beto'); await p.waitForLoadState('networkidle').catch(() => {});
+    // (su oferta del día sí dice «Sábado: Banda La Dinastía en vivo, boleto $10»: eso no es el servicio)
+    ok(!/Sábado: Banda La Dinastía(?! en vivo)/.test(await p.content()), 'y su ficha tampoco la enseña');
+    sql(`update items set svc_kind = 'fijo' where id = ${conta}`);
+    ok(!nombres(await api(p, 'contabilidad')).includes('Contabilidad para tu negocio'), 'Educación: lo que no es curso, programa o membresía no sale');
+    sql(`update items set svc_kind = '${contaK0}' where id = ${conta}`);
+    await p.goto(B + '/buscar?q=clase&tab=itm'); await p.waitForLoadState('networkidle').catch(() => {});
+    const tx6 = await texto(p);
+    ok(/Educación \d+/.test(tx6) || /Deporte \d+/.test(tx6), 'la pestaña trae el chip de las categorías nuevas (Educación, Deporte…)');
+    ok(tx6.includes('Precio en la ficha'), 'un servicio de esas categorías dice «Precio en la ficha» (nunca un número que la ficha no diga)');
+    await shot(p, '390-9t2-pestana-clase');
+
+    // ── 6b · La razón de la fila ──
+    r = await api(p, 'norteño');
+    ok((r.filas.find((x) => x.kind === 'biz' && x.href === '/n/banda-la-dinastia')?.meta ?? '').startsWith('TIENE NORTEÑO'), 'sugerencias: el negocio que encajó por lo que vende dice «TIENE NORTEÑO …»');
+    r = await api(p, 'sabor');
+    ok(!(r.filas.find((x) => x.kind === 'biz' && x.href === `/n/${BIZ}`)?.meta ?? '').includes('TIENE'), 'el nombre gana: «sabor» no repite una razón');
+    await p.goto(B + '/buscar?q=mofongo'); await p.waitForLoadState('networkidle').catch(() => {});
+    ok(/Tiene Mofongo de chicharrón · \$\d/.test(await texto(p)), '«mofongo»: Sabor Dominicano sale entre los negocios con «Tiene Mofongo de chicharrón · $…»');
+    await shot(p, '390-9t2-razon-mofongo');
+    await p.goto(B + '/buscar?q=' + encodeURIComponent('oración del viernes')); await p.waitForLoadState('networkidle').catch(() => {});
+    ok(await espera(async () => (await p.locator('[data-negocio="centro-islamico-hazleton"]').count()) > 0 && (await p.locator('[data-negocio="centro-islamico-hazleton"]').innerText()).includes('Tiene Oración del viernes')), 'la fila del Free dice «Tiene Oración del viernes» bajo el nombre');
+    await shot(p, '390-9t2-razon-fila');
+    await c1.addCookies([{ name: 'tl_lang', value: 'en', url: B }]);
+    r = await api(p, 'norteño');
+    ok((r.filas.find((x) => x.kind === 'biz' && x.href === '/n/banda-la-dinastia')?.meta ?? '').startsWith('HAS '), 'EN: «HAS …»');
+    await c1.addCookies([{ name: 'tl_lang', value: 'es', url: B }]);
+
+    // ── 6c · El plato abre su hoja ──
+    await p.goto(B + '/buscar?q=mofongo'); await p.waitForLoadState('networkidle').catch(() => {});
+    await p.locator(`[data-plato="${mof}"]`).click();
+    ok(await espera(async () => new URL(p.url()).pathname === `/n/${BIZ}` && new URL(p.url()).searchParams.get('plato') === mof), 'tocar el plato abre su ficha con ?plato=');
+    ok(await espera(async () => p.locator('[role="dialog"][aria-label="Mofongo de chicharrón"]').isVisible()), '…y su hoja abierta («Mofongo de chicharrón»), sin tocar nada más');
+    await shot(p, '390-9t2-hoja-plato', false);
+    await p.goto(B + `/n/${BIZ}?plato=99999999`); await p.waitForLoadState('networkidle').catch(() => {});
+    await new Promise((x) => setTimeout(x, 400));
+    ok(!(await p.locator('[role="dialog"]').count()), 'un ?plato= que no es de su menú no abre nada (la ficha como siempre)');
+    await d.goto(B + '/negocios'); await d.waitForLoadState('networkidle').catch(() => {});
+    await d.getByText('Buscar negocios', { exact: false }).first().click();
+    await d.keyboard.type('mofongo');
+    await espera(async () => (await d.locator('[data-fila="item"]').count()) > 0);
+    const filas6 = await d.locator('[data-fila]').evaluateAll((xs) => xs.map((x) => x.getAttribute('data-fila')));
+    for (let i = 0; i <= filas6.indexOf('item') + 1; i++) await d.keyboard.press('ArrowDown');
+    await d.keyboard.press('Enter');
+    ok(await espera(async () => new URL(d.url()).searchParams.get('plato') === mof), '1360: Enter en el plato del desplegable abre la ficha con ?plato=');
+    ok(await espera(async () => d.locator('[data-screen-label="Menú · plato · desktop"] [role="dialog"][aria-label="Mofongo de chicharrón"]').isVisible()), '1360: la hoja del plato abierta en la ficha');
+    await shot(d, '1360-9t2-hoja-plato', false);
+
+    // ── 6d · El micrófono y la ciudad dentro del desplegable ──
+    await d.goto(B + '/negocios'); await d.waitForLoadState('networkidle').catch(() => {});
+    await d.evaluate(() => { try { localStorage.removeItem('tl-voz-v1'); } catch { /* sin almacenamiento */ } });
+    await d.getByText('Buscar negocios', { exact: false }).first().click();
+    ok(await espera(async () => (await d.locator('[data-mic]').count()) > 0), 'el micrófono dentro del campo del desplegable');
+    ok((await d.locator('[data-ciudad]').innerText()).includes('Hazleton, PA'), 'el chip de la ciudad dentro del campo («Hazleton, PA · …»)');
+    await shot(d, '1360-9t2-desplegable-mic-ciudad', false);
+    await d.locator('[data-mic]').click();
+    ok(await espera(async () => drop.locator('[data-aviso-voz]').isVisible()), 'la primera vez, el aviso de la voz dentro del panel');
+    await shot(d, '1360-9t2-desplegable-aviso-voz', false);
+    await drop.getByText('Ahora no').click();
+    ok(await espera(async () => (await drop.innerText()).includes('ESCRIBE COMO HABLAS')), '«Ahora no» vuelve al panel');
+    await d.locator('[data-ciudad]').click();
+    ok(await espera(async () => !(await drop.isVisible()) && d.locator('[data-screen-label="APP-CIUDAD · desktop"]').isVisible()), 'el chip de la ciudad cierra el panel y abre «Ciudad que estás viendo»');
+    await shot(d, '1360-9t2-desplegable-ciudad', false);
+    // Con la voz apagada en Privacidad, el desplegable no lleva micrófono.
+    const voz0 = sql(`select coalesce(voice_search::text, 'null') from users where phone = '+1${V1}'`);
+    sql(`update users set voice_search = false where phone = '+1${V1}'`);
+    const c8 = await desk(b); abiertas.push(c8);
+    const e8 = await c8.newPage(); mirar(e8, 'voz-apagada');
+    await entrarComo(e8, V1);
+    await e8.goto(B + '/negocios'); await e8.waitForLoadState('networkidle').catch(() => {});
+    await e8.getByText('Buscar negocios', { exact: false }).first().click();
+    const drop8 = e8.locator('[data-screen-label="APP-BUSCAR · desplegable desktop"]');
+    ok(await espera(async () => (await drop8.innerText()).includes('ESCRIBE COMO HABLAS')), 'con cuenta: el desplegable abre');
+    ok(!(await e8.locator('[data-mic]').count()), 'con la voz apagada en Privacidad, sin micrófono');
+    sql(`update users set voice_search = ${voz0} where phone = '+1${V1}'`);
     ok(!err.length, `sin errores de la página (${err.join(' | ')})`);
   } finally {
     for (const c of abiertas) await c.close().catch(() => {});
@@ -203,6 +313,10 @@ const nombres = (r) => (r.filas || []).filter((x) => x.kind === 'item').map((x) 
     sql(`update item_sections set visible = true where id = ${tos}`);
     sql(`update businesses set modules_off = '${off0}'::jsonb where id = '${BIZ}'`);
     sql(`update business_stats_cache set plan = '${plan0}' where business_id = '${BIZ}'`);
+    for (const h of JSON.parse(horas0 || '[]')) sql(`update business_hours set open = ${h.o}, ranges = '${JSON.stringify(h.r)}'::jsonb where business_id = '${BIZ}' and module = '' and weekday = ${h.w}`);
+    sql(`update businesses set modules_off = '${aeroOff0}'::jsonb where id = '${AERO}'`);
+    if (lista0) sql(`update noche_settings set list_on = ${lista0 === 't'} where business_id = '${BORI}'`);
+    if (conta && contaK0) sql(`update items set svc_kind = '${contaK0}' where id = ${conta}`);
     const [st, ra, sd] = apt0.split('|');
     sql(`update operations set status = '${st}', ready_at = ${ra ? `'${ra}'` : 'null'}, status_detail = ${sd ? `'${sd}'` : 'null'} where number = '${APT}'`);
     if (M1) sql(`update business_members set takes_bookings = ${tb0} where id = '${M1}'`);

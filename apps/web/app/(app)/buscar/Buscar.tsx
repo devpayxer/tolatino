@@ -9,7 +9,8 @@ import { useEffect, useRef, useState, type ComponentType } from "react";
 import type { Tarjeta } from "@/lib/tarjeta";
 import { avisameBusqueda } from "../acciones";
 import { LINEA_FIJA } from "@/lib/comunidad-filtro";
-import { vacantesAvisame, vecinosMas, vozGuardar } from "./acciones";
+import { vacantesAvisame, vecinosMas } from "./acciones";
+import { useVoz } from "./voz";
 import type { FilaVecino } from "./vecinos";
 import type { FilaPlato } from "./platos";
 import { TarjetaNegocio } from "../TarjetaNegocio";
@@ -40,7 +41,7 @@ export type VistaBuscar = {
     intenciones: { k: string; label: string; quitar: string }[]; rapidos: { k: string; l: string; on: boolean; href: string }[];
     top: { img: string | null; eb: string; t: string; meta: string; href: string } | null;
     notYet: { t: string; primero: boolean } | null; nadaT: string; dym: string | null;
-    tarjetas: Tarjeta[]; filas: { id: string; pro: boolean; parts: [string, string, string]; image: string | null; meta: string; status: string; statusColor: string }[];
+    tarjetas: Tarjeta[]; filas: { id: string; pro: boolean; parts: [string, string, string]; image: string | null; meta: string; status: string; statusColor: string; why: [string, string, string] | null }[];
     subsLado: { l: string; m: string; href: string }[]; probar: { l: string; slug: string }[]; catDominante: string | null;
     vecinos: { total: number; mas: string | null; items: FilaVecino[] } | null;
     /* 6b · Eventos que encajan (solo lo que sale al público), con el filtro de la pestaña. */
@@ -66,14 +67,11 @@ export function Buscar({ v }: { v: VistaBuscar }) {
   const [foco, setFoco] = useState(false);
   const [sug, setSug] = useState<{ filas: Fila[]; intenciones: string[]; total: number; conteos?: { items: number; evts: number } } | null>(null);
   const [rec, setRec] = useState<string[]>([]);
-  const [voz, setVoz] = useState<"no" | "escuchando" | "sin" | "aviso">("no");
-  const [vozOk, setVozOk] = useState<boolean | null>(v.voz ?? null);
   const [alerta, setAlerta] = useState(false);
   const [ordenAbierto, setOrdenAbierto] = useState(false);
   const [vecL, setVecL] = useState<FilaVecino[]>(v.res?.vecinos?.items ?? []), [vecMas, setVecMas] = useState<string | null>(v.res?.vecinos?.mas ?? null), [vecCarga, setVecCarga] = useState(false);
   useEffect(() => { setVecL(v.res?.vecinos?.items ?? []); setVecMas(v.res?.vecinos?.mas ?? null); }, [v.res?.vecinos]);
   const inRef = useRef<HTMLInputElement>(null);
-  const recRef = useRef<{ stop: () => void } | null>(null);
   useEffect(() => setRec(leer()), []);
   useEffect(() => setQ(v.q), [v.q]);
 
@@ -109,33 +107,9 @@ export function Buscar({ v }: { v: VistaBuscar }) {
     if (r.ok) setAlerta(true);
     else if ("entrar" in r && r.entrar) router.push(`/entrar?volver=${encodeURIComponent(location.pathname + location.search)}`);
   };
-  // 9m · La primera vez, el aviso (L95): el reconocimiento de voz es el del teléfono o del navegador (Apple o Google lo procesan), no To'Latino.
-  // Sin cuenta, la respuesta queda en este teléfono; con cuenta, en Mi cuenta › Ajustes › Privacidad (users.voice_search).
-  const hablar = () => {
-    let ok = vozOk;
-    if (!v.conSesion && ok == null) { try { const x = localStorage.getItem("tl-voz-v1"); ok = x === "1" ? true : x === "0" ? null : null; } catch { /* sin almacenamiento: se pregunta */ } }
-    if (!ok) { setVoz("aviso"); return; }
-    escuchar();
-  };
-  const aceptarVoz = () => {
-    setVozOk(true);
-    if (v.conSesion) void vozGuardar(true).catch(() => undefined); else { try { localStorage.setItem("tl-voz-v1", "1"); } catch { /* se vuelve a preguntar */ } }
-    escuchar();
-  };
-  const escuchar = () => {
-    const W = window as unknown as { SpeechRecognition?: new () => SR; webkitSpeechRecognition?: new () => SR };
-    const C = W.SpeechRecognition ?? W.webkitSpeechRecognition;
-    if (!C) { setVoz("sin"); return; }
-    const r = new C();
-    r.lang = v.lang === "es" ? "es-US" : "en-US";
-    r.interimResults = false;
-    r.onresult = (e) => { const x = e.results[0]?.[0]?.transcript ?? ""; setVoz("no"); if (x) { setQ(x); buscar(x); } };
-    r.onerror = () => setVoz("no");
-    r.onend = () => setVoz((s) => (s === "escuchando" ? "no" : s));
-    recRef.current = r;
-    setVoz("escuchando");
-    r.start();
-  };
+  // 9m · Buscar con la voz (L95): el aviso la primera vez, la respuesta en Mi cuenta (o en este teléfono sin cuenta); 9t-2 · la misma lógica
+  // que el desplegable de escritorio (./voz.ts). Lo que se oye se busca como si se hubiera escrito.
+  const { voz, mic, hablar, aceptar: aceptarVoz, cancelar: cancelarVoz } = useVoz({ lang: v.lang, conSesion: v.conSesion, inicial: v.voz, onTexto: (x) => { setQ(x); buscar(x); } });
 
   const placeholder = v.cat ? f(t.phCat, { x: v.cat.name }) : t.ph;
   const verSugerencias = foco && !!q.trim() && q !== v.q && !!sug;
@@ -256,7 +230,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
       {q ? (
         <button type="button" aria-label={t.clear} onClick={() => { setQ(""); inRef.current?.focus(); }} className="grid size-[30px] flex-none place-items-center rounded-full bg-ink/[.07]"><Icon name="close" size={13} strokeWidth={2.2} /></button>
       ) : (
-        vozOk !== false ? <button type="button" aria-label={E2("Buscar con la voz", "Search by voice")} onClick={hablar} className="grid size-[34px] flex-none place-items-center rounded-[10px]"><Icon name="mic" size={19} color="var(--tl-action)" /></button> : null
+        mic ? <button type="button" aria-label={E2("Buscar con la voz", "Search by voice")} onClick={hablar} className="grid size-[34px] flex-none place-items-center rounded-[10px]"><Icon name="mic" size={19} color="var(--tl-action)" /></button> : null
       )}
     </div>
   );
@@ -446,8 +420,8 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                   </div>
                   {R.tarjetas[0]?.plan === "pro" && <div className="grid"><TarjetaNegocio es={v.lang === "es"} b={R.tarjetas[0]} origen="buscar" textos={v.tarjeta} /></div>}
                   {R.filas.slice(R.tarjetas[0]?.plan === "pro" ? 1 : 0, R.tarjetas[0]?.plan === "pro" ? 5 : 4).map((x) => (
-                    <div key={x.id} className="grid">
-                      <SearchResultRow size="row" parts={x.parts} pro={x.pro} image={x.image} meta={x.meta} status={x.status} statusColor={x.statusColor} onClick={() => router.push(`/n/${x.id}`)} />
+                    <div key={x.id} className="grid" data-negocio={x.id}>
+                      <SearchResultRow size="row" parts={x.parts} pro={x.pro} image={x.image} meta={x.meta} status={x.status} statusColor={x.statusColor} why={x.why ?? undefined} onClick={() => router.push(`/n/${x.id}`)} />
                     </div>
                   ))}
                 </div>}
@@ -537,7 +511,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
       {/* ── Buscar con la voz ── */}
       {voz !== "no" && (
         <div className="fixed inset-0 z-[60] flex flex-col justify-end lg:items-center lg:justify-center">
-          <div onClick={() => { recRef.current?.stop(); setVoz("no"); }} className="absolute inset-0 bg-ink/45" />
+          <div onClick={cancelarVoz} className="absolute inset-0 bg-ink/45" />
           <div role="dialog" aria-modal="true" aria-label={E2("Buscar con la voz", "Search by voice")} className="relative flex flex-col items-center gap-4 rounded-t-[26px] bg-white px-6 pb-[34px] pt-7 lg:w-[420px] lg:rounded-[22px]">
             <span className="relative grid size-[92px] place-items-center">
               {voz === "escuchando" && <span className="absolute inset-0 animate-ping rounded-full bg-action/20" />}
@@ -547,7 +521,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
             {voz === "escuchando" && <span className="text-center text-[13px] font-medium leading-[1.5] text-ink/60">{t.vozSub}</span>}
             {voz === "aviso" && <span data-aviso-voz="1" className="text-pretty text-center text-[13px] font-medium leading-[1.5] text-ink/65">{E2("Tu voz la convierte en texto el reconocimiento de tu teléfono o de tu navegador (Apple o Google la procesan en sus servidores), no To'Latino. A To'Latino solo llega el texto que buscas. Lo apagas cuando quieras en Mi cuenta › Ajustes › Privacidad.", "Your phone's or browser's speech recognition turns your voice into text (Apple or Google process it on their servers), not To'Latino. To'Latino only gets the text you search. Turn it off anytime in My account › Settings › Privacy.")}</span>}
             {voz === "aviso" && <div className="flex w-full"><Button block variant="primary" icon="mic" onClick={aceptarVoz}>{E2("Activar y hablar", "Turn on and speak")}</Button></div>}
-            <div className="flex w-full"><Button block variant="secondary" onClick={() => { recRef.current?.stop(); setVoz("no"); }}>{voz === "aviso" ? E2("Ahora no", "Not now") : t.cancel}</Button></div>
+            <div className="flex w-full"><Button block variant="secondary" onClick={cancelarVoz}>{voz === "aviso" ? E2("Ahora no", "Not now") : t.cancel}</Button></div>
           </div>
         </div>
       )}
@@ -555,4 +529,3 @@ export function Buscar({ v }: { v: VistaBuscar }) {
   );
 }
 
-type SR = { lang: string; interimResults: boolean; start: () => void; stop: () => void; onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void; onerror: () => void; onend: () => void };
