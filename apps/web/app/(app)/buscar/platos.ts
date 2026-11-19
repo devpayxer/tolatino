@@ -1,0 +1,28 @@
+import "server-only";
+import { resaltar, type Entendido } from "@/lib/buscar";
+import type { Plato } from "@/lib/buscar-platos";
+import { dosIdiomas } from "@/lib/dos-idiomas";
+
+/* 9t · Buscar › «Platos y servicios»: un plato o servicio hallado como lo pinta la pantalla (prototipo itRow / pvVals): el nombre con lo que
+   encajó resaltado, el negocio, «SECCIÓN · 0.8 MI · ABIERTO», el precio (o «Precio en la ficha») y la foto. Abre la ficha del negocio en su
+   Menú o en Servicios (en Pro, su pestaña; en Free, la página única donde se listan). */
+export type FilaPlato = {
+  id: string; plato: boolean; cat: string; parts: [string, string, string]; nombre: string; desc: string; biz: string; bname: string; sec: string;
+  meta: string; abierto: boolean; precio: string; img: string | null; href: string; dist: string;
+};
+
+const money = (c: number) => `$${(c / 100).toFixed(c % 100 ? 2 : 0)}`;
+export function filaPlato(x: Plato, E: Entendido, es: boolean): FilaPlato {
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
+  const nombre = (es ? x.name.es : x.name.en || x.name.es) || x.name.es;
+  const sec = x.sec ? (es ? x.sec.es : x.sec.en || x.sec.es) || "" : "";
+  const dist = x.mi != null ? `${x.mi} MI` : x.zona ? `${E2("A DOMICILIO · ", "COMES TO YOU · ")}${x.zona} MI` : "";
+  const suf = x.unit === "lb" ? "/lb" : x.unit === "hora" ? "/h" : x.unit === "mes" ? E2("/mes", "/mo") : "";
+  const precio = x.cents == null ? E2("Precio en la ficha", "Price on listing") : x.cents === 0 ? E2("Gratis", "Free") : `${money(x.cents)}${suf}`;
+  const tab = x.pro ? (x.plato ? "?tab=menu" : "?tab=svc") : "";
+  return {
+    id: x.id, plato: x.plato, cat: x.cat, parts: resaltar(nombre, E.grupos), nombre, desc: (es ? x.desc.es : x.desc.en || x.desc.es) || "", biz: x.biz, bname: x.bname, sec,
+    meta: [sec, dist, x.open ? E2("ABIERTO", "OPEN") : E2("CERRADO", "CLOSED")].filter(Boolean).join(" · ").toUpperCase(),
+    abierto: x.open, precio, img: x.foto, href: `/n/${x.biz}${tab}`, dist,
+  };
+}

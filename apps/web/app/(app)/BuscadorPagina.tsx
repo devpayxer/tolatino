@@ -4,7 +4,8 @@
    La página lo pide con usarBuscadorPagina(); al salir de la página, el header vuelve a ser el de siempre. */
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
-export type BuscadorPagina = { ph: string; href: string } | null;
+/* 9t · `cat`: el alcance que lleva el desplegable de escritorio («Comida y Bebidas ×», se quita con la ×). */
+export type BuscadorPagina = { ph: string; href: string; cat?: { slug: string; label: string } } | null;
 const Ctx = createContext<{ b: BuscadorPagina; poner: (b: BuscadorPagina) => void }>({ b: null, poner: () => undefined });
 
 export function ProveedorBuscador({ children }: { children: (b: BuscadorPagina) => ReactNode }) {
@@ -12,10 +13,11 @@ export function ProveedorBuscador({ children }: { children: (b: BuscadorPagina) 
   return <Ctx.Provider value={{ b, poner }}>{children(b)}</Ctx.Provider>;
 }
 
-export function usarBuscadorPagina(ph: string, href: string) {
+export function usarBuscadorPagina(ph: string, href: string, cat?: { slug: string; label: string }) {
   const { poner } = useContext(Ctx);
+  const slug = cat?.slug, label = cat?.label;
   useEffect(() => {
-    poner({ ph, href });
+    poner({ ph, href, ...(slug && label ? { cat: { slug, label } } : {}) });
     return () => poner(null);
-  }, [ph, href, poner]);
+  }, [ph, href, slug, label, poner]);
 }

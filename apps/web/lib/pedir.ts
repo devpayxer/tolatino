@@ -1,5 +1,6 @@
 import { diasEspeciales, horasDelDia } from "./dias-especiales";
 import { VENTAS_SQL, populares, type Ventas30 } from "./menu-ventas";
+import { PLATO_VIVO, SECCION_MENU_VISIBLE } from "./visible-publico";
 import "server-only";
 import { cfgSql } from "./config";
 import type { QueryResult, QueryResultRow } from "pg";
@@ -178,13 +179,13 @@ type FilaItem = {
 async function filas(c: Q, negocio: string, tz: string, lock = false, userId: string | null = null) {
   const tzq = `(select c.timezone from cities c join businesses b on b.city_id = c.id where b.id = $1)`;
   const qS = () => c.query<{ id: string; name: Bi; avail: string; av: Av | null }>(
-      `select id::text, name, avail, av from item_sections where business_id = $1 and module = 'menu' and removed_at is null and visible order by sort, item_sections.id`, [negocio]);
+      `select id::text, name, avail, av from item_sections where business_id = $1 and ${SECCION_MENU_VISIBLE("item_sections")} order by sort, item_sections.id`, [negocio]);
   const qI = () => c.query<FilaItem>(
       `select i.id::text, i.section_id::text as sec, i.name, i.descr as "desc", coalesce(oferta_precio(i.id, $2::uuid), i.price_cents) as cents, i.price_cents as base, i.tax_pct::float as tax, i.photos, i.sell, i.channels as ch,
               ${AGOTADO_SQL("i", tzq)} as agotado, i.stock_mode as stk, ${QUEDAN_SQL("i", tzq)} as quedan, i.max_qty as "maxQ", i.tags, i.extra_min as extra,
               i.featured as feat, i.avail, i.av, array(select x::text from unnest(i.group_ids) x) as grp, s.avail as sec_avail, s.av as sec_av
          from items i join item_sections s on s.id = i.section_id and s.removed_at is null and s.visible
-        where i.business_id = $1 and i.module = 'menu' and i.removed_at is null and i.status = 'live'
+        where i.business_id = $1 and ${PLATO_VIVO("i")}
         order by s.sort, s.id, i.sort, i.id${lock ? " for update of i" : ""}`, [negocio, userId]);
   const qG = () => c.query<{ id: string; name: Bi; required: boolean; max_pick: number; options: { es: string; en: string; cents: number; on: boolean }[] }>(
       `select id::text, name, required, max_pick, options from option_groups where business_id = $1 and removed_at is null`, [negocio]);

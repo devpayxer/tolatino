@@ -1,6 +1,6 @@
 # Buscar · Search
 
-_Pantallas: APP-BUSCAR (explorar, sugerencias, resultados, sin resultados, voz). Versión: 14 nov 2026. Audiencia: vecino. Tema: explorar._
+_Pantallas: APP-BUSCAR (explorar, sugerencias, resultados, platos y servicios, sin resultados, voz; el desplegable del encabezado en escritorio). Versión: 19 nov 2026. Audiencia: vecino. Tema: explorar._
 
 ## Qué hace
 Busca negocios en tu ciudad escribiendo como hablas. Entiende lo que importa y lo convierte en filtros: «abierto
@@ -38,8 +38,25 @@ ahora», «sin cita», «con delivery», «24 horas», «a domicilio», «que ac
 ## Preguntas frecuentes
 - **¿Dónde quedan mis búsquedas recientes?** Solo en tu teléfono o computadora. Puedes borrarlas con **Borrar** o la ×.
 - **¿«Lo más buscado» es real?** Sí: sale de las búsquedas de la semana en tu ciudad que encontraron algo.
-- **¿Puedo buscar platos, servicios o eventos?** Los eventos sí: salen en «Todo» y en la pestaña Eventos. Los platos y los servicios
-  se ven dentro de la página de cada negocio; Buscar encuentra el negocio por su nombre, su categoría y lo que ofrece.
+- **¿Puedo buscar platos, servicios o eventos?** Sí. Los eventos salen en «Todo» y en la pestaña Eventos. Los platos y servicios, en
+  «Todo» y en su pestaña (ver abajo).
+- **¿Por qué un plato que vi en el local no sale?** Buscar enseña solo lo que la página del negocio enseña: si el negocio lo ocultó, quitó o
+  lo tiene en una sección que no se ve, si su Menú está apagado o pausado, o si es un plan Free y el plato no está entre los que su página
+  muestra, tampoco sale aquí.
+
+## Platos y servicios
+- Escribe un plato o un servicio («mofongo», «corte de pelo», «cambio de aceite», «consulta»). Salen los platos del Menú de los restaurantes y
+  los servicios de Belleza, Auto, Hogar, Doctores y Profesionales de tu ciudad, dentro de la distancia que elegiste.
+- En **Todo** salen los primeros cuatro, con **Ver los N**. En la pestaña **Platos y servicios**: un chip por categoría con cuántos hay, y
+  **Precio más bajo** para ordenarlos por precio.
+- Cada fila dice el plato o servicio (lo que encajó, en negrita), el negocio, la sección, la distancia y si está abierto, y el precio. El precio
+  de un plato es el de su página (con la oferta si hay una para ti). El de un servicio depende de quién lo hace, de tu seguro o del trabajo:
+  la fila dice **Precio en la ficha**.
+- Al tocarla se abre la página del negocio: en Pro, en su pestaña Menú o Servicios; en Free, en su página única donde se listan.
+- **En la computadora**, el buscador de arriba abre un panel sobre la página: sin escribir, tus recientes, ejemplos, lo más buscado y las
+  categorías; escribiendo, las sugerencias y a la derecha la **vista previa** de la que tiene el cursor (la tarjeta del negocio, el plato con
+  su precio, la categoría con sus negocios, el evento). **↑ ↓** para moverte, **Enter** para abrir, **Esc** para cerrar; Enter en **Buscar
+  «…»** lleva a todos los resultados.
 
 ### Jobs, homes and cars, and voice search
 Searching for a job title shows openings in your city; **Notify me of new jobs** tells you once per new opening (9 AM–9 PM, up to 3 a day) and is
@@ -97,8 +114,25 @@ typing mistakes («barveria» → barbería).
 ### FAQ
 - **Where are my recent searches kept?** Only on your phone or computer. You can delete them with **Clear** or the ×.
 - **Is «Most searched» real?** Yes: it comes from this week's searches in your city that found something.
-- **Can I search dishes, services or events?** Events yes: they show up in «All» and in the Events tab. Dishes and services are seen inside
-  each business's page; Search finds the business by its name, its category and what it offers.
+- **Can I search dishes, services or events?** Yes. Events show up in «All» and in the Events tab. Dishes and services, in «All» and in their
+  own tab (see below).
+- **Why doesn't a dish I saw at the restaurant show up?** Search shows only what the business page shows: if the business hid it, removed it or
+  keeps it in a section that is not shown, if its Menu is off or paused, or if it is on the Free plan and the dish is not among the ones its
+  page shows, it does not show up here either.
+
+### Dishes & services
+- Type a dish or a service («mofongo», «haircut», «oil change», «consultation»). You get the Menu dishes of restaurants and the services of
+  Beauty, Auto, Home, Doctors and Professionals in your city, within the distance you chose.
+- **All** shows the first four, with **See all N**. The **Dishes & services** tab has one chip per category with how many there are, and
+  **Lowest price** to sort them by price.
+- Each row shows the dish or service (what matched, in bold), the business, the section, the distance and whether it is open, and the price. A
+  dish's price is the one on its page (with the deal if there is one for you). A service's price depends on who does it, your insurance or
+  the job: the row says **Price on listing**.
+- Tapping it opens the business page: on Pro, on its Menu or Services tab; on Free, on its single page where they are listed.
+- **On a computer**, the search box at the top opens a panel over the page: before typing, your recent searches, examples, the most searched
+  and the categories; while typing, the suggestions and, on the right, the **preview** of the one under the cursor (the business card, the
+  dish with its price, the category with its businesses, the event). **↑ ↓** to move, **Enter** to open, **Esc** to close; Enter on **Search
+  «…»** takes you to all the results.
 
 ### For El Compa
 <!-- solo-equipo -->

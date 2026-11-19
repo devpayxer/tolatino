@@ -5,8 +5,10 @@
 import { useRouter } from "next/navigation";
 import type { EstPed, FiltroPed, MiPedido, MisPedidos } from "@/lib/mi-cuenta";
 import { Marco, useCuentaUi, type Bloque, type Fila, type Yo } from "../Marco";
-import { diaCorto, mesLargo } from "../fechas";
+import { diaCorto, horaDe, mesLargo } from "../fechas";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import type { ApartadoCuenta } from "@/lib/apartados";
+import { abrirComoLlegar } from "@/lib/como-llegar";
 
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 export const tagPed = (st: EstPed, mode: string, es: boolean): [string, string] => {
@@ -15,13 +17,29 @@ export const tagPed = (st: EstPed, mode: string, es: boolean): [string, string] 
     : st === "no" ? [E2("NO LO ACEPTARON", "NOT ACCEPTED"), "neutral"] : st === "exp" ? [E2("SIN RESPUESTA", "NO REPLY"), "neutral"] : [E2("CANCELADO", "CANCELED"), "neutral"];
 };
 
-export function Pedidos({ d, f, es, yo, pagina }: { d: MisPedidos; f: FiltroPed; es: boolean; yo: Yo; pagina: boolean }) {
+export function Pedidos({ d, f, es, yo, pagina, apartados = [] }: { d: MisPedidos; f: FiltroPed; es: boolean; yo: Yo; pagina: boolean; apartados?: ApartadoCuenta[] }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const ir = (q: string) => router.push("/cuenta/pedidos" + q);
   const B: Bloque[] = [];
   B.push({ type: "chips", items: ([["todo", E2("Todos", "All")], ["curso", E2("En curso", "In progress")], ["hechos", E2("Entregados", "Completed")], ["cx", E2("Cancelados", "Canceled")]] as [FiltroPed, string][])
     .map(([k, l]) => ({ l: k === "todo" ? `${l} · ${d.n.todo}` : l, on: f === k, onClick: () => ir(k === "todo" ? "" : `?f=${k}`) })) });
+  // 9t · Apartados (diseño ordersV: «LO RECOGES Y PAGAS EN EL LOCAL»): los que siguen vivos, cada uno con su página, cómo llegar y el negocio.
+  if (f === "todo" && apartados.length) {
+    B.push({ type: "sec", t: E2("Apartados", "On hold"), s: E2("LO RECOGES Y PAGAS EN EL LOCAL", "PICK UP AND PAY IN STORE"), mt: "4px" });
+    B.push({ type: "rows", rows: apartados.map((a): Fila => {
+      const tag: [string, string] = a.plan ? [E2("EN PLAN", "ON LAYAWAY"), "action"] : a.st === "confirmed" ? (a.ship ? [E2("CONFIRMADO", "CONFIRMED"), "signal"] : [E2("LISTO", "READY"), "signal"])
+        : a.st === "change_proposed" ? [E2("FALTA ALGO", "SOMETHING IS OUT"), "action"] : [E2("ESPERANDO", "WAITING"), "action"];
+      const cuando = a.hasta && !a.plan && !a.ship ? `${E2(" · VENCE ", " · EXPIRES ")}${diaCorto(a.hasta, a.tz, es)} ${horaDe(a.hasta, a.tz, es)}` : a.st === "pending" ? E2(" · ESPERANDO QUE CONFIRMEN", " · WAITING FOR THEM TO CONFIRM") : "";
+      return {
+        key: a.numero, ph: a.foto, ini: a.bname.slice(0, 1), t: a.items.length ? `${a.items.slice(0, 2).join(", ")}${a.items.length > 2 ? E2(` y ${a.items.length - 2} más`, ` and ${a.items.length - 2} more`) : ""}` : a.bname, tag,
+        s: `${a.bname}${cuando}`.toUpperCase(), v: money(a.tot), vs: a.plan ? E2("EN PLAN DE PAGOS", "ON LAYAWAY") : a.ship ? E2("SE COBRA CUANDO LO ENVÍAN", "CHARGED WHEN THEY SHIP IT") : E2("AL RECOGER", "AT PICKUP"),
+        chev: true, on: () => router.push(`/apartado/${a.numero}`),
+        acts: [...(!a.ship && (a.lat != null || a.dir) ? [[E2("Cómo llegar", "Directions"), "secondary", () => abrirComoLlegar({ lat: a.lat, lng: a.lng, dir: a.dir, nombre: a.bname })] as [string, string, () => void]] : []),
+          [E2("Ver el negocio", "See business"), "secondary", () => router.push(`/n/${a.biz}`)]],
+      };
+    }) });
+  }
   if (!d.filas.length) B.push({ type: "empty", ic: "bag", t: f === "todo" ? E2("Todavía no tienes pedidos", "No orders yet") : E2("Nada por aquí", "Nothing here"),
     s: E2("Pide a los negocios de tu ciudad y aquí ves cada pedido con su recibo.", "Order from businesses in your city and every order shows here with its receipt."), cta: E2("Pedir comida", "Order food"), onCta: () => router.push("/negocios") });
   // Por mes; los que van en curso, arriba.

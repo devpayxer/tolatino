@@ -39,6 +39,13 @@ const avisos = [];
 /* Texto de un archivo sin comentarios (los guardianes de la Comunidad miran código, no prosa) y el cuerpo de una función de primer nivel. */
 /* C-001 · Un «/*» pegado a una comilla es un texto (accept="image/*", "video/*"), no un comentario: sin esto el «comentario» se tragaba
    66 líneas del panel hasta el siguiente «*\/» y mensajesEnVivo dejaba de ver el código que vigila (lo cazó alreves9m en CI). */
+/* 9t · Un archivo con los filtros de lib/visible-publico.ts que usa (PLATO_VIVO, SERVICIO_VIVO, SERVICIO_BELLEZA…) puestos en su lugar, con `i`:
+   los guardianes que buscan el filtro escrito en una ficha lo encuentran aunque la ficha lo lea de ahí (una sola definición, la de Buscar). */
+function conVisibles(f) {
+  const t = readFileSync(f, "utf8"), VP = "apps/web/lib/visible-publico.ts";
+  if (!/from "\.\/visible-publico"|from "@\/lib\/visible-publico"/.test(t) || !existsSync(VP)) return t;
+  return t + "\n" + readFileSync(VP, "utf8").replace(/\$\{i\}/g, "i");
+}
 const sinComent = (f) => readFileSync(f, "utf8").replace(/\/\*(?=["'`])/g, "/_").replace(/\/\*[\s\S]*?\*\//g, (x) => x.replace(/[^\n]/g, " ")).replace(/(^|[^:])\/\/.*$/gm, "$1");
 /* La última definición de una función de la base en las migraciones (una migración nueva puede reemplazarla). */
 const ultimaFn = (nombre) => { let b = ""; for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) { const t = readFileSync(`packages/db/migrations/${x}`, "utf8"); const re = new RegExp(`create or replace function ${nombre}\\([\\s\\S]*?\\$\\$([\\s\\S]*?)\\$\\$`, "g"); for (const m of t.matchAll(re)) b = m[1]; } return b; };
@@ -1918,7 +1925,8 @@ const guardianes = {
      depósito) ni se edita por el editor de servicios. Solo por Propiedades (lib/inmuebles.ts). */
   propiedadNoEsServicio() {
     const G = "propiedadNoEsServicio", K = "coalesce(i.svc_kind, '') not in ('renta', 'venta', 'auto')", K2 = "coalesce(svc_kind, '') not in ('renta', 'venta', 'auto')"; // 4ic suma los vehículos
-    const chk = (f, re, msg) => { if (existsSync(f) && !re.test(readFileSync(f, "utf8"))) falla(G, f, 0, msg); };
+    // 9t · citas.ts lee el filtro de lib/visible-publico.ts (SERVICIO_BELLEZA, el mismo que usa Buscar): se revisa ahí, con `i`.
+    const chk = (f, re, msg) => { if (existsSync(f) && !re.test(conVisibles(f))) falla(G, f, 0, msg); };
     chk("apps/web/lib/citas.ts", new RegExp(`i\\.sell and i\\.status <> 'hidden' and ${K.replace(/[()]/g, "\\$&")}`), "los servicios que se reservan (citas) dejan fuera las propiedades");
     chk("apps/web/lib/servicios.ts", new RegExp(`i\\.removed_at is null and ${K.replace(/[()]/g, "\\$&")}`), "la lista de Servicios del panel deja fuera las propiedades");
     const a = "apps/web/app/panel/acciones-servicios.ts";
@@ -2033,7 +2041,7 @@ const guardianes = {
      edita por el editor de servicios. Solo por Inventario (lib/autos.ts). */
   carroNoEsServicio() {
     const G = "carroNoEsServicio", K = "not in ('renta', 'venta', 'auto')";
-    const chk = (f, n, msg) => { if (existsSync(f) && readFileSync(f, "utf8").split(K).length - 1 < n) falla(G, f, 0, msg); };
+    const chk = (f, n, msg) => { if (existsSync(f) && conVisibles(f).split(K).length - 1 < n) falla(G, f, 0, msg); };
     chk("apps/web/lib/citas.ts", 1, "los servicios que se reservan (citas) dejan fuera los vehículos");
     chk("apps/web/lib/servicios.ts", 1, "la lista de Servicios del panel deja fuera los vehículos");
     chk("apps/web/app/panel/acciones-servicios.ts", 3, "guardar, mostrar u ocultar y quitar un servicio no tocan un vehículo (3 consultas con el filtro)");
@@ -10647,6 +10655,98 @@ const guardianes = {
     }
     const AC = "apps/web/app/admin/acciones-catalogo.ts";
     if (existsSync(AC)) { const b = cuerpoFn(sinComent(AC), "limiteCambiar"), i = b.search(/s\.role !== "admin"/), j = b.search(/cambiarConfig\(/); if (i < 0 || j < 0 || i > j) falla(G, AC, 0, "solo un Admin cambia un límite del plan (revisar el rol antes de cambiarConfig)"); }
+  },
+
+  /* 9t · buscarPlatosComoLaFicha: Buscar › «Platos y servicios» encuentra SOLO lo que la página del negocio muestra. La clase de error que se teme:
+     que la búsqueda deje ver un plato oculto por To'Latino, quitado, en una sección que no se ve, de un módulo pausado, de otra ciudad o
+     fuera del límite de un Free (el dueño lo «tiene» pero su página no lo enseña). Por eso hay UNA definición (lib/visible-publico.ts) que leen
+     las fichas y Buscar: las fichas no copian el filtro, Buscar usa todas las reglas y la puerta de cada ficha sigue donde Buscar la copió
+     (si una ficha cambia su puerta, este guardián avisa para revisar Buscar en el mismo cambio). Al revés: alreves9t. */
+  buscarPlatosComoLaFicha() {
+    const G = "buscarPlatosComoLaFicha", VP = "apps/web/lib/visible-publico.ts", BP = "apps/web/lib/buscar-platos.ts";
+    if (!existsSync(VP) || !existsSync(BP)) return falla(G, BP, 0, "faltan lib/visible-publico.ts o lib/buscar-platos.ts");
+    const vp = readFileSync(VP, "utf8");
+    const defs = {
+      PLATO_VIVO: ["${i}.module = 'menu'", "${i}.removed_at is null", "${i}.status = 'live'"],
+      SECCION_MENU_VISIBLE: ["${s}.module = 'menu'", "${s}.removed_at is null", "${s}.visible"],
+      SERVICIO_VIVO: ["${i}.module = 'svc'", "${i}.removed_at is null", "${i}.sell", "${i}.status = 'live'", "not ${i}.is_extra"],
+      SERVICIO_BELLEZA: ["${i}.module = 'svc'", "${i}.removed_at is null", "${i}.sell", "${i}.status <> 'hidden'", "not in ('renta', 'venta', 'auto')"],
+      PERSONA_RECIBE: ["${m}.status = 'active'", "${m}.show_on_page", "${m}.hidden_by_admin is null", "${m}.takes_bookings"],
+    };
+    for (const [k, partes] of Object.entries(defs)) {
+      const i = vp.indexOf(`export const ${k} = `), linea = i < 0 ? "" : vp.slice(i, vp.indexOf("\n", i));
+      if (!linea) { falla(G, VP, 0, `falta ${k}`); continue; }
+      for (const p of partes) if (!linea.includes(p)) falla(G, VP, 0, `${k} sin «${p}»: la ficha y Buscar dejarían ver lo que no se muestra`);
+    }
+    // Las fichas leen la regla de aquí (sin copia) y su puerta (módulo encendido, sin pausa) sigue siendo la que Buscar copió.
+    const fichas = [
+      ["apps/web/lib/pedir.ts", ['${PLATO_VIVO("i")}', '${SECCION_MENU_VISIBLE("item_sections")}'], ['!b.mods.includes("menu") || b.off.menu']],
+      ["apps/web/lib/oficios-publico.ts", ['${SERVICIO_VIVO("i")}'], ['if (!mods.includes("svc") || off.svc) return null;']],
+      ["apps/web/lib/salud-publico.ts", ['${SERVICIO_VIVO("i")}'], ['if (off.svc) return null;']],
+      ["apps/web/lib/pro-publico.ts", ['${SERVICIO_VIVO("i")}'], ['b.cat !== "NEG-PRO" || (b.off ?? {}).svc) return null;']],
+      ["apps/web/lib/citas.ts", ['${SERVICIO_BELLEZA("i")}'], ['if (!x || !(x.mods.includes("svc") || x.mods.includes("citas"))) return null;', "servicios: L.filter((s) => !s.extra && s.hacen.length)"]],
+    ];
+    for (const [f, usa, puertas] of fichas) {
+      if (!existsSync(f)) { falla(G, f, 0, "falta la ficha"); continue; }
+      const t = sinComent(f);
+      for (const u of usa) if (!t.includes(u)) falla(G, f, 0, `la ficha no lee ${u.slice(2, -1)} de lib/visible-publico.ts (la misma regla que Buscar)`);
+      for (const p of puertas) if (!t.includes(p)) falla(G, f, 0, `la puerta de la ficha cambió («${p.slice(0, 60)}»): revisa la regla de Buscar (lib/buscar-platos.ts REGLA) en el mismo cambio`);
+    }
+    // Buscar: los negocios de Buscar (la ciudad que se ve, activos, categoría encendida, radio) y todas las reglas de las fichas.
+    const b = sinComent(BP);
+    const debe = [
+      ["${DESDE}", "los negocios no son los de Buscar (DESDE: la ciudad que se ve, activos, categoría encendida en la ciudad, radio)"],
+      ["const params: unknown[] = [o.punto.ciudad];", "la ciudad no es la que la persona ve ($1 = o.punto.ciudad)"],
+      ['${PLATO_VIVO("i")}', "un plato oculto o quitado sale en Buscar"], ['${SECCION_MENU_VISIBLE("sec")}', "un plato de una sección que no se ve sale en Buscar"],
+      ['${cfgSql("free_items")}', "un Free enseña en Buscar más platos que en su página (free_items)"], ["n.pro or (select count(*)", "un Free enseña en Buscar más platos que en su página (free_items)"],
+      ['${OFF("menu")}', "el Menú pausado por To'Latino sigue saliendo en Buscar"], ["'menu' = any(n.mods)", "un Menú apagado sale en Buscar"],
+      ['${SERVICIO_BELLEZA("i")}', "un servicio de Belleza que la ficha no lista sale en Buscar"], ['${ALGUIEN_LO_HACE("i")}', "un servicio de Belleza que nadie hace sale en Buscar"],
+      ["n.mods && array['svc', 'citas']", "Belleza sin servicios ni citas sale en Buscar"], ['${SERVICIO_VIVO("i")}', "un servicio que la ficha no lista sale en Buscar"],
+      ["'svc' = any(n.mods) and ${OFF(\"svc\")}", "Auto y Hogar con servicios apagados o pausados salen en Buscar"], ["n.cat in ('NEG-SALUD', 'NEG-PRO') and ${OFF(\"svc\")}", "Doctores o Profesionales pausados salen en Buscar"],
+      ["i.removed_at is null and i.module in ('menu', 'svc')", "Buscar mira lo quitado o lo que no es Menú ni Servicios"],
+      ["i.search_doc @@ to_tsquery('simple',", "Buscar no usa el índice (items.search_doc)"], ["coalesce(oferta_precio(i.id,", "el precio no es el de la ficha (oferta_precio)"],
+    ];
+    for (const [x, msg] of debe) if (!b.includes(x)) falla(G, BP, 0, msg);
+    const cats = /CATS_PLATOS = \[([^\]]*)\]/.exec(b)?.[1] ?? "";
+    for (const c of cats.match(/NEG-[A-Z]+/g) ?? []) if (!new RegExp(`'${c}'`).test(b.slice(b.indexOf("const REGLA")))) falla(G, BP, 0, `${c} está en CATS_PLATOS sin su regla`);
+    // El servidor decide: la página y las sugerencias llaman a platos() con la ubicación de la persona (nunca con una ciudad del navegador).
+    for (const f of ["apps/web/app/(app)/buscar/page.tsx", "apps/web/app/api/buscar/route.ts"]) if (existsSync(f) && !/platos\(E, \{ punto: loc,/.test(sinComent(f))) falla(G, f, 0, "platos() sin la ubicación de la persona (loc)");
+    // Un plato sale con su ficha: «Precio en la ficha» cuando el precio depende de quién, del seguro o del trabajo (nunca un número que la ficha no diga).
+    const fp = "apps/web/app/(app)/buscar/platos.ts";
+    if (existsSync(fp) && !/x\.cents == null \? E2\("Precio en la ficha", "Price on listing"\)/.test(readFileSync(fp, "utf8"))) falla(G, fp, 0, "un servicio sin precio de ficha tiene que decir «Precio en la ficha»");
+  },
+
+  /* 9t · letraGrandeDelServidor: «Letra más grande» (Mi cuenta › Ajustes) es de la persona y la decide el servidor: se guarda en users.big_text
+     (con la sesión y el mismo origen), el marco de la app la lee de yo() y la pone en la primera pintura (sin parpadeo, en cualquier teléfono
+     donde entre), y la regla de CSS existe. Lo que se teme: que quede en el navegador (se pierde al cambiar de teléfono), que la pinte el cliente
+     después (salta la pantalla) o que una acción sin sesión la cambie. Al revés: alreves9t. */
+  letraGrandeDelServidor() {
+    const G = "letraGrandeDelServidor";
+    const chk = (f, re, msg) => { if (!existsSync(f) || !re.test(sinComent(f))) falla(G, f, 0, msg); };
+    chk("apps/web/lib/cuenta.ts", /returning u\.id, u\.phone,[^`]*u\.big_text as letra`/, "yo() no trae la letra de la persona (users.big_text)");
+    chk("apps/web/app/(app)/layout.tsx", /letra=\{!!u\?\.letra\}/, "el marco de la app no recibe la letra del servidor");
+    chk("apps/web/app/(app)/AppShell.tsx", /data-letra=\{letra \? "grande" : undefined\}/, "el marco no pone la letra en la primera pintura");
+    chk("apps/web/app/globals.css", /\[data-letra="grande"\] \{ zoom: 1\.\d+; \}/, "falta la regla de la letra más grande");
+    const A = "apps/web/app/(app)/cuenta/acciones-perfil.ts";
+    if (existsSync(A)) {
+      const b = cuerpoFn(sinComent(A), "letraGrande");
+      if (!/const u = await quien\(\);\s*if \(!u\) return NO;/.test(b)) falla(G, A, 0, "letraGrande sin sesión y mismo origen (quien())");
+      if (!/update users set big_text = \$2 where id = \$1`, \[u\.id, on === true\]/.test(b)) falla(G, A, 0, "letraGrande no guarda en users.big_text de quien la pide");
+    } else falla(G, A, 0, "falta la acción");
+    for (const f of archivos.filter((x) => /^apps\/web\/app\/.*\.tsx?$/.test(x))) if (/localStorage[^\n]*letra|tl-letra/i.test(readFileSync(f, "utf8"))) falla(G, f, 0, "la letra más grande va en el servidor, no en el navegador");
+  },
+
+  /* 9t · apartadosEnMiCuenta: Mi cuenta › Pedidos › «Apartados» lista SOLO los apartados de quien mira, vivos (después del barrido: lo vencido no sale)
+     y con el punto PÚBLICO del negocio («Cómo llegar»: nunca la casa de quien trabaja desde casa). Al revés: alreves9t. */
+  apartadosEnMiCuenta() {
+    const G = "apartadosEnMiCuenta", L = "apps/web/lib/apartados.ts", P = "apps/web/app/(app)/cuenta/pedidos/page.tsx";
+    if (!existsSync(L)) return falla(G, L, 0, "falta lib/apartados.ts");
+    const b = cuerpoFn(sinComent(L), "apartadosActivos");
+    if (!b) return falla(G, L, 0, "falta apartadosActivos");
+    if (!/^\s*await barrerApartados\(\{ userId \}\);/m.test(b)) falla(G, L, 0, "la lista no barre antes (lo vencido saldría como vivo)");
+    if (!/where o\.user_id = \$1 and o\.kind = 'hold' and o\.status in \('pending', 'change_proposed', 'confirmed'\)/.test(b)) falla(G, L, 0, "la lista no es solo de los apartados vivos de quien mira");
+    if (!/\$\{PUNTO_PUBLICO\("b"\)\}/.test(b) || !/case when b\.works_from_home then null else b\.address end as dir/.test(b)) falla(G, L, 0, "«Cómo llegar» sin el punto público del negocio (la casa de quien trabaja desde casa)");
+    if (!existsSync(P) || !/apartadosActivos\(u\.id, lang\)/.test(sinComent(P))) falla(G, P, 0, "la página no pide los apartados de la sesión");
   },
 
   telefonoAlAzarRespetaFijos() {

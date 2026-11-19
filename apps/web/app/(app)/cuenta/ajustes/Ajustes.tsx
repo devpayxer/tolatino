@@ -1,20 +1,33 @@
 "use client";
-/* USR-AJUSTES (diseño «To'Latino Mi cuenta» · setV): idioma (la pantalla y la cuenta), mi ciudad, avisos, privacidad y
-   seguridad, tu negocio (o publícalo), cerrar sesión y borrar mi cuenta. Sin «letra más grande» ni soporte todavía. */
+/* USR-AJUSTES (diseño «To'Latino Mi cuenta» · setV): idioma (la pantalla y la cuenta) y «Letra más grande» (9t: por persona en el servidor,
+   users.big_text; el marco de la app la aplica en cada página), mi ciudad, avisos, privacidad y seguridad, tu negocio (o publícalo), cerrar
+   sesión y borrar mi cuenta. */
 import { useRouter } from "next/navigation";
-import { idiomaCuenta } from "../acciones-perfil";
+import { useState } from "react";
+import { idiomaCuenta, letraGrande } from "../acciones-perfil";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
 import { olvidarSinConexion } from "@/lib/boletos-sin-conexion";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 
-export function Ajustes({ es, yo, ciudad, negocio }: { es: boolean; yo: Yo; ciudad: string | null; negocio: { id: string; name: string } | null }) {
+export function Ajustes({ es, yo, ciudad, negocio, letra = false }: { es: boolean; yo: Yo; ciudad: string | null; negocio: { id: string; name: string } | null; letra?: boolean }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi(), ir = (h: string) => router.push(h);
   const lang = async (l: "es" | "en") => { const r = await idiomaCuenta(l).catch(() => null); if (r?.ok) router.refresh(); };
+  const [grande, setGrande] = useState(letra), [guardando, setGuardando] = useState(false);
+  const cambiarLetra = async () => {
+    if (guardando) return;
+    const on = !grande;
+    setGuardando(true); setGrande(on);
+    const r = await letraGrande(on).catch(() => null);
+    setGuardando(false);
+    if (r?.ok) { ui.toast(on ? E2("Letra más grande activada.", "Larger text on.") : E2("Letra normal.", "Normal text.")); router.refresh(); }
+    else { setGrande(!on); ui.toast(E2("No se pudo. Prueba de nuevo.", "Could not do it. Try again.")); }
+  };
   const salir = async () => { await olvidarSinConexion(); await fetch("/api/cuenta/salir", { method: "POST" }); router.replace("/entrar"); };
   const B: Bloque[] = [
-    { type: "sec", t: E2("Idioma", "Language"), fs: "14px", mt: "0" },
-    { type: "rows", rows: [{ ic: "globe", t: E2("Idioma", "Language"), s: es ? "ESPAÑOL" : "ENGLISH", acts: [["Español", es ? "primary" : "secondary", () => void lang("es")], ["English", es ? "secondary" : "primary", () => void lang("en")]] }] },
+    { type: "sec", t: E2("Idioma y pantalla", "Language and display"), fs: "14px", mt: "0" },
+    { type: "rows", rows: [{ ic: "globe", t: E2("Idioma", "Language"), s: es ? "ESPAÑOL" : "ENGLISH", acts: [["Español", es ? "primary" : "secondary", () => void lang("es")], ["English", es ? "secondary" : "primary", () => void lang("en")]] },
+      { key: "letra", ic: "edit", t: E2("Letra más grande", "Larger text"), s: E2("MÁS FÁCIL DE LEER", "EASIER TO READ"), tog: grande, onTog: () => void cambiarLetra() }] },
     { type: "sec", t: E2("Tu cuenta", "Your account"), fs: "14px" },
     { type: "rows", rows: [
       { ic: "pin", t: E2("Mi ciudad", "My city"), s: `${ciudad ? `${ciudad}, PA` : E2("SIN ELEGIR", "NOT CHOSEN")}${E2(" · CAMBIA CADA 30 DÍAS", " · CHANGES EVERY 30 DAYS")}`.toUpperCase(), chev: true, on: () => ir("/cuenta/ajustes/ciudad") },

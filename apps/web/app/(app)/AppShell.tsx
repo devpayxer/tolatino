@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState, useTransition, type Component
 import { cambiarIdioma } from "./acciones";
 import { CiudadSelector } from "./CiudadSelector";
 import { ProveedorBuscador, type BuscadorPagina } from "./BuscadorPagina";
+import { Desplegable, type AnclaBuscar } from "./buscar/Desplegable";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { SiteHeader, BottomNav } = UI as unknown as Record<"SiteHeader" | "BottomNav", ComponentType<any>>;
@@ -24,12 +25,12 @@ function useDesk() {
 const RUTAS: Record<string, string> = { home: "/", neg: "/negocios", com: "/comunidad", evt: "/eventos", me: "/cuenta" };
 const ICONOS = ["home", "store", "users", "ticket", "wallet"]; // prototipo navIcons
 
-export function AppShell(p: { lang: "es" | "en"; t: TextosShell; yo: { iniciales: string; avisos?: number } | null; ciudad: CiudadShell; children: ReactNode; landing?: boolean }) {
+export function AppShell(p: { lang: "es" | "en"; t: TextosShell; yo: { iniciales: string; avisos?: number } | null; ciudad: CiudadShell; children: ReactNode; landing?: boolean; letra?: boolean }) {
   // C-002 · Una página puede poner su propio buscador en el header (la categoría: «Buscar en Comida y Bebidas»).
   return <ProveedorBuscador>{(bp) => <Marco {...p} bp={bp} />}</ProveedorBuscador>;
 }
 
-function Marco({ lang, t, yo, ciudad, children, landing = false, bp }: { lang: "es" | "en"; t: TextosShell; yo: { iniciales: string; avisos?: number } | null; ciudad: CiudadShell; children: ReactNode; landing?: boolean; bp: BuscadorPagina }) {
+function Marco({ lang, t, yo, ciudad, children, landing = false, letra = false, bp }: { lang: "es" | "en"; t: TextosShell; yo: { iniciales: string; avisos?: number } | null; ciudad: CiudadShell; children: ReactNode; landing?: boolean; letra?: boolean; bp: BuscadorPagina }) {
   const desk = useDesk();
   const router = useRouter();
   const ruta = usePathname();
@@ -39,6 +40,11 @@ function Marco({ lang, t, yo, ciudad, children, landing = false, bp }: { lang: "
   const [sel, setSel] = useState<{ pedir: boolean } | null>(null);
   const [ancla, setAncla] = useState<{ left: number; top: number } | null>(null);
   const clic = useRef<DOMRect | null>(null);
+  // 9t · En escritorio el buscador del encabezado abre el desplegable sobre la página (diseño Buscar mode="drop"); en el teléfono, Buscar.
+  const [drop, setDrop] = useState<AnclaBuscar | null | false>(false);
+  const clicBuscar = useRef<DOMRect | null>(null);
+  const cerrarDrop = useCallback(() => setDrop(false), []);
+  useEffect(() => { setDrop(false); }, [ruta]);
   // 9b-1 · Solo «?ciudad» (vacío) y «?ciudad=pedir» son del selector (los manda /ciudad). Un id de ciudad es de la página: «Recomienda un
   // negocio de Allentown» abre /recomendar?ciudad=alw (CiudadPronto) y el selector se lo comía (abría la ventana y la recomendación caía en
   // la ciudad de siempre). Guardián parametroCiudadDelSelector.
@@ -65,9 +71,12 @@ function Marco({ lang, t, yo, ciudad, children, landing = false, bp }: { lang: "
   // 9h · Con el interruptor growth.landing (producción en acceso anticipado, 9t), «/» es la landing: trae su propio encabezado y su pie.
   if (landing && ruta === "/") return <>{children}</>;
   return (
-    <div className="min-h-dvh bg-white">
+    // 9t · «Letra más grande» (Mi cuenta › Ajustes): toda la app un poco más grande (globals.css [data-letra]); el servidor lo decide por persona.
+    <div className="min-h-dvh bg-white" data-letra={letra ? "grande" : undefined}>
       <div className={`sticky top-0 z-40 ${pantallaCompleta ? "hidden" : ""}`}
-        onClickCapture={(e) => { let el = e.target as HTMLElement | null; while (el && !(el.tagName === "SPAN" && el.style.padding === "7px 11px")) el = el.parentElement; clic.current = el ? el.getBoundingClientRect() : null; }}>
+        onClickCapture={(e) => { let el = e.target as HTMLElement | null; while (el && !(el.tagName === "SPAN" && el.style.padding === "7px 11px")) el = el.parentElement; clic.current = el ? el.getBoundingClientRect() : null;
+          // 9t · El campo de búsqueda del encabezado (escritorio): el desplegable se pone encima, con su mismo borde izquierdo.
+          let f = e.target as HTMLElement | null; while (f && f.style?.padding !== "12px 14px 12px 16px") f = f.parentElement; clicBuscar.current = f ? f.getBoundingClientRect() : null; }}>
         <SiteHeader
           variant={desk ? "desktop" : "mobile"}
           compact={compacto || sinBuscador}
@@ -84,7 +93,11 @@ function Marco({ lang, t, yo, ciudad, children, landing = false, bp }: { lang: "
           activeTab={activo}
           onTab={ir}
           onHome={() => router.push("/")}
-          onSearch={() => router.push(bp?.href ?? "/buscar")}
+          onSearch={() => {
+            if (!desk || ruta.startsWith("/buscar")) { router.push(bp?.href ?? "/buscar"); return; }
+            const r = clicBuscar.current;
+            setDrop(r ? { left: Math.max(16, Math.min(r.left, window.innerWidth - 780 - 16)), top: Math.max(8, r.top + r.height / 2 - 27), width: Math.max(r.width, 780) } : null);
+          }}
           onCity={abrir}
           onLang={() => pasar(async () => { await cambiarIdioma(lang === "es" ? "en" : "es"); router.refresh(); })}
           onLogin={() => router.push("/entrar")}
@@ -96,6 +109,7 @@ function Marco({ lang, t, yo, ciudad, children, landing = false, bp }: { lang: "
         />
       </div>
       <div className={desk || pantallaCompleta || compacto ? "" : "pb-[96px]"}>{children}</div>
+      {drop !== false && desk ? <Desplegable lang={lang} ancla={drop} ciudad={ciudad.nombre} ph={bp?.ph ?? t.searchDesk} phTodo={t.searchDesk} cat={bp?.cat ?? null} onClose={cerrarDrop} /> : null}
       {sel ? <CiudadSelector lang={lang} modo={desk ? "pop" : "sheet"} ancla={ancla} pedir={sel.pedir} onClose={cerrar} onAplicada={aplicada} /> : null}
       {!desk && !pantallaCompleta && !compacto && (
         <div className="fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)]">

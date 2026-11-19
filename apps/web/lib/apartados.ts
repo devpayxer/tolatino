@@ -4,6 +4,7 @@ import type { PoolClient } from "pg";
 import { cfgSql } from "./config";
 import { db, tx, type AlGuardar } from "./db";
 import { populares, ventasSqlDe, type Ventas30 } from "./menu-ventas";
+import { PUNTO_PUBLICO } from "./punto";
 
 /* Apartar productos (Fase 4 · bloque 4f-3). Diseño: TLApartar.hold → el apartado de Tiendas (neg-tienda-flow.js:
    APP-NEG-TIENDA-APARTADO / -ESTADO). Mismo motor para las tiendas de Auto y Hogar y, después, para Tiendas.
@@ -279,6 +280,25 @@ export async function misApartados(userId: string): Promise<{ numero: string; st
   await barrerApartados({ userId });
   return (await db().query<{ numero: string; st: St; negocio: string; tot: number; at: string }>(
     `select o.number as numero, o.status as st, b.name as negocio, o.total_cents as tot, o.sent_at as at from operations o join businesses b on b.id = o.business_id where o.user_id = $1 and o.kind = 'hold' order by o.id desc limit 30`, [userId])).rows;
+}
+
+/* 9t · Mi cuenta › Pedidos › «Apartados» (diseño ordersV: «LO RECOGES Y PAGAS EN EL LOCAL»): los que siguen vivos (enviado, falta algo,
+   te lo guardan; en plan o por envío también), con lo apartado, hasta cuándo te lo guardan y el total. Primero el barrido (lo vencido no sale).
+   El punto del negocio es el público (PUNTO_PUBLICO: nunca la casa de quien trabaja desde casa). Cada uno abre su página (/apartado/A-…). */
+export type ApartadoCuenta = { numero: string; st: "pending" | "change_proposed" | "confirmed"; biz: string; bname: string; foto: string | null; items: string[]; tot: number;
+  hasta: string | null; tz: string; ship: boolean; plan: string | null; lat: number | null; lng: number | null; dir: string | null };
+export async function apartadosActivos(userId: string, lang: "es" | "en"): Promise<ApartadoCuenta[]> {
+  await barrerApartados({ userId });
+  return (await db().query<ApartadoCuenta>(
+    `select o.number as numero, o.status as st, o.business_id as biz, b.name as bname,
+            coalesce((select i.photos[1] from operation_lines l join items i on i.id = l.item_id where l.operation_id = o.id and l.status = 'ok' and i.photos[1] is not null order by l.id limit 1), b.logo_url) as foto,
+            coalesce((select array_agg(case when l.qty > 1 then l.qty || ' × ' else '' end || coalesce(nullif(l.name->>$2, ''), l.name->>'es') order by l.id) from operation_lines l where l.operation_id = o.id and l.status = 'ok'), '{}') as items,
+            o.total_cents as tot, case when o.status = 'confirmed' then o.ready_at end as hasta, c.timezone as tz, o.mode = 'delivery' as ship,
+            (select lp.status from layaway_plans lp where lp.operation_id = o.id and lp.status not in ('cancelled', 'declined')) as plan,
+            ${PUNTO_PUBLICO("b")}, case when b.works_from_home then null else b.address end as dir
+       from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id
+      where o.user_id = $1 and o.kind = 'hold' and o.status in ('pending', 'change_proposed', 'confirmed')
+      order by o.status = 'confirmed' desc, o.ready_at nulls last, o.id desc limit 20`, [userId, lang])).rows;
 }
 
 /* ── Movimientos ── */
