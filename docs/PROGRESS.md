@@ -2654,3 +2654,11 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   (lib/direccion-negocio.ts). Guardián `panelEquipoSoloLectura` (alreves9n23 27/27; `guiaDelPanelCompleta` acepta `const dueno = await accesoPanel`);
   e2e `neg9n23` escrita (390/1360, ES/EN, rechazo con la base igual, sin marcar leído, vecino y equipo sin neg:ver «Sin acceso», el dueño igual): no
   corrió aquí (sin Docker), va al CI dirigido. tsc + guardianes en verde. Ayuda `admin-negocios` (ES/EN).
+- **18–19 nov · Pin del iPad, pruebas barajadas y Panel del dueño en main y pruebas (b43f54d, sandbox al día, 179 migraciones):** el mapa del
+  pin quedaba «agarrado» si Safari perdía el soltar de un arrastre y el siguiente movimiento (camino a «Guardar») devolvía el pin a donde empezó:
+  se guardaba otro punto que el que se veía. MapaPin y Mapa solo siguen al mismo puntero, con el botón apretado si es ratón, y se sueltan al perder
+  la captura o con las flechas (guardián `arrastreSeSuelta`, alrevesArrastre 6/6). La confirmación de hito 44388908080 cazó pruebas que dependían
+  del orden (cat9n2 miraba el nombre en toda la ficha; app8a leía la base antes de tiempo y dejaba la app en pausa al caerse; cat9n y menu2b
+  dependían de la novedad y del tope de Free que dejaban otras; dir9m esperaba la web en el contexto de escritorio del iPad): cada una con su
+  precondición propia. 9n-23 «Panel del dueño» (agente): ver arriba en REVISION; neg9n23 en verde en 4 anchos (CI 44418076255). CI dirigidos
+  44408239441, 44409877973, 44416311337 y 44418076255 en verde. Confirmación de hito otra vez: 44428582194.
