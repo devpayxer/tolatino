@@ -2796,6 +2796,11 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   fic005, vec9m, al revés), 44460944263 (llave). En el camino: «Destacar» decía el tope viejo de la caché (bug, arreglado; también en negocios);
   evt9t, pat003 y alreves6f al día; serieUnaVezEnLista mira las dos lecturas de eventosCiudad. La app se sirve en local
   (`tl_loc` + `servir.sh basico` + docker falso que manda el SQL de las pruebas a la base local) para reproducir sin esperar a CI.
+- **19 nov · 9t · «Mi lugar» de la Tabla del Barrio con histograma (0188):** contaba en el índice a todos los de delante (p95 86 ms con 580 mil
+  vecinos en una ciudad; presupuesto 40). La base mantiene `monthly_board_hist` (ciudad, mes, pestaña, valor → cuántos, sin excluidos; trigger de
+  monthly_boards, guardia por pg_trigger_depth, primer llenado con la Tabla bloqueada) y «mi lugar» suma los valores mayores. Local: 200 de 200
+  posiciones iguales a la cuenta vieja; 60 mil vecinos en una ciudad 12,3 → 1,9 ms; después de com5f el histograma sigue exacto (0 diferencias).
+  Guardián `tablaConHistograma`, `alreves9thist` 5/5. Medida a 1 M: corrida `carga` (comunidad) de este commit.
 - **19 nov · «Otros restaurantes con mesa» solo de la misma categoría** (rsv9t lo cazó en CI): salían los 5 más cercanos con Reservaciones de
   CUALQUIER categoría (karaokes y bares de Noche, que también toman mesa) y un restaurante lleno ofrecía un karaoke. `otrosConMesa` filtra
   `b.category_id = o.category_id`; guardián otrosConMesaDeLaCiudad (+2 reglas), alreves9t2 32/32; rsv9t usa El Fogón (sí) y Mariscos La Bahía

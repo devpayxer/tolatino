@@ -47,11 +47,12 @@ export async function tabla(viewer: string, ciudad: string, mes: Mes, tab: Pesta
               exists (select 1 from user_blocks ub where ub.removed_at is null and ub.kind = 'block' and ((ub.user_id = $3::uuid and ub.target_user_id = mb.user_id) or (ub.user_id = mb.user_id and ub.target_user_id = $3::uuid))) as oculto
          from monthly_boards mb join users u on u.id = mb.user_id left join community_profiles cp on cp.user_id = mb.user_id left join zones z on z.city_id = u.home_city_id and z.id = u.zone_id
         where ${w.join(" and ")} order by mb.${col} desc, mb.user_id limit ${POR_PAGINA_TABLA + 1}`, v),
-    // Mi lugar: los que van delante (con el mismo orden de la tabla) + 1. 9b-3: dos cuentas por rango del índice de la Tabla (más puntos; los mismos
-    // puntos y antes en el orden), sin unir con users: con un «o» y la unión, Postgres visitaba la tabla (250 ms con 600 mil vecinos en la carga).
+    // Mi lugar: los que van delante (con el mismo orden de la tabla) + 1. 9t: «los de más puntos» es la suma del histograma que mantiene la base
+    // (monthly_board_hist, 0188: cuántos tienen cada valor), no una cuenta del índice (86 ms con 580 mil vecinos en una ciudad); los del mismo
+    // valor antes en el orden se siguen contando en el índice de la Tabla.
     db().query<{ v: number; excluido: boolean; pos: number }>(
       `select mb.${col} as v, mb.excluded as excluido,
-              (select count(*)::int from monthly_boards o where o.city_id = $1 and o.month = $2::date and not o.excluded and o.${col} > greatest(mb.${col}, 0))
+              (select coalesce(sum(h.n), 0)::int from monthly_board_hist h where h.city_id = $1 and h.month = $2::date and h.col = '${col}' and h.v > greatest(mb.${col}, 0))
               + (select count(*)::int from monthly_boards o where o.city_id = $1 and o.month = $2::date and not o.excluded and mb.${col} > 0 and o.${col} = mb.${col} and o.user_id < mb.user_id)
               + 1 as pos
          from monthly_boards mb join users u on u.id = mb.user_id where mb.city_id = $1 and mb.month = $2::date and mb.user_id = $3::uuid`, [ciudad, m, viewer]),

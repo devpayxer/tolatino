@@ -9741,6 +9741,23 @@ const guardianes = {
     for (const e of ["pruebas/e2e/fic005.cjs", "pruebas/e2e/bus9t.cjs"]) if (!/botonesQueNoCaben\(/.test(readFileSync(e, "utf8"))) falla(G, e, 0, "la prueba no mira que los botones quepan en su caja (pruebas/lib/caben.cjs)");
   },
 
+  /* 9t (19 nov) · tablaConHistograma: «mi lugar» de la Tabla del Barrio contaba en el índice a todos los de delante (p95 86 ms con 580 mil vecinos;
+     presupuesto 40). La base mantiene monthly_board_hist (0188: cuántos tienen cada valor; lo escribe solo el trigger de monthly_boards, a mano
+     no) y «mi lugar» suma los valores mayores. Al revés (alreves9thist): volver a contar en monthly_boards, quitar el trigger o la guardia, o
+     contar a los excluidos. */
+  tablaConHistograma() {
+    const G = "tablaConHistograma", T = "apps/web/lib/tabla.ts", M = "packages/db/migrations/0188_tabla_histograma.sql";
+    const t = sinComent(T);
+    if (!/from monthly_board_hist h where h\.city_id = \$1 and h\.month = \$2::date and h\.col = '\$\{col\}' and h\.v > greatest\(mb\.\$\{col\}, 0\)/.test(t)) falla(G, T, 0, "«mi lugar» suma el histograma de la base (monthly_board_hist) para los de más valor");
+    if (/from monthly_boards o where[^`]*o\.\$\{col\} > /.test(t)) falla(G, T, 0, "«mi lugar» volvió a contar a todos los de delante en monthly_boards (lento con cientos de miles)");
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración 0188 (el histograma de la Tabla)");
+    const m = readFileSync(M, "utf8").replace(/--.*$/gm, "");
+    if (!/create trigger monthly_boards_hist after insert or update or delete on monthly_boards for each row execute function monthly_boards_hist\(\)/.test(m)) falla(G, M, 0, "el histograma lo mantiene un trigger de monthly_boards (alta, cambio y baja)");
+    if (!/when tg_op in \('UPDATE', 'DELETE'\) and not old\.excluded/.test(m) || !/when tg_op in \('INSERT', 'UPDATE'\) and not new\.excluded/.test(m)) falla(G, M, 0, "los excluidos no cuentan en el histograma (igual que en la Tabla)");
+    if (!/if pg_trigger_depth\(\) < 2 then raise exception/.test(m) || !/create trigger monthly_board_hist_guardia before insert or update or delete on monthly_board_hist/.test(m)) falla(G, M, 0, "el histograma es derivado: a mano no se escribe (guardia con pg_trigger_depth)");
+    if (!/^begin;/m.test(m) || !/lock table monthly_boards in share row exclusive mode;/.test(m)) falla(G, M, 0, "el primer llenado va en una transacción con la Tabla quieta (lock)");
+  },
+
   /* 9t (19 nov) · fotosSinEnviarSePurgan: una foto de Mensajes que se sube y no se manda se quedaba para siempre en el almacén privado (sin
      dueño visible). El barrido (fotosSinEnviar → lib/mensajes-purga.ts) la saca pasadas las MISMAS 24 h que tomarFoto deja para mandarla (antes
      no: se podría purgar una foto que todavía se puede mandar), solo si sigue 'pendiente' (nunca una enviada), y la fila queda con purged_at
