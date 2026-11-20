@@ -1975,6 +1975,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       llave por su posición: al quitar un paso, el nodo que era «Mensualidad +» pasa a ser «Cuota de inscripción +» (dep4c lo vio; la prueba
       ahora espera la pantalla). Y un doble toque rápido en el mismo «+» pierde un incremento. Llaves estables por bloque y contador que no
       pierda toques; revisar las demás pruebas que tocan «+» seguido. (20 nov)
+- [ ] **→ 9t** · **`dlv2f4` en el iPad horizontal (WebKit): no pudo tocar «Aceptar» en el detalle del pedido, dos veces seguidas** (corrida
+      programada 44778631725, ancho iPad 4/4; ya había pasado el 19 nov). El botón queda abajo, dentro de la hoja que se desplaza (y=967 de
+      834); en Chromium con las mismas medidas, agente y toque del iPad el clic llega (probado el 20 nov), así que es de WebKit o de un momento.
+      La prueba ahora dice por qué no pudo (tapado, moviéndose, fuera de pantalla) y cuánto se desplazó la hoja: leerlo en la próxima corrida
+      de anchos y, si es de la app (la hoja no se desplaza en Safari), arreglar la hoja del detalle del panel. (20 nov)
 - [ ] **→ 9b** · **`evt9t`: /eventos tardó más de 30 s en cargar una vez** (CI repartido 44743122204, parte 3/4, Chromium). Sin causa todavía;
       el CI ahora imprime lo último del servidor cuando algo cae. Mirarlo si se repite. (20 nov)
 
