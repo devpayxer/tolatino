@@ -53,7 +53,8 @@ const casos = [
   [L, `"case when status = 'reservado' then 'todo' else 'nada' end", "'reserva_cancelada'", false)`, `"'nada'", "'reserva_cancelada'", false)`],
   [L, '  await devolverPendientes("negocio");\n', ''],
   // La base: devuelve todo siempre; sin «una por patrocinio»; sin tope; quita el libro solo de inserción; deja cambiar lo decidido.
-  [M5, "when 'sin_usar' then case when t <= a then total", "when 'sin_usar' then case when true then total"],
+  // Desde 0194 la versión que usa el código (con la zona horaria de la ciudad) vive en 0194: el defecto se inyecta ahí.
+  ['packages/db/migrations/0194_patrocinio_dias_por_calendario.sql', "when 'sin_usar' then case when t <= a then total", "when 'sin_usar' then case when true then total"],
   [M5, "create unique index if not exists sponsorship_payments_una_devolucion on sponsorship_payments (kind, ref_id) where reason = 'devolucion'", "create index if not exists sponsorship_payments_una_devolucion on sponsorship_payments (kind, ref_id)"],
   [M5, "  if new.amount_cents > c.amount_cents then raise exception 'patrocinio_devolucion: nunca más que lo cobrado'; end if;\n", ''],
   [M5, '\ncommit;\n', '\ndrop trigger if exists sponsorship_payments_no_cambia on sponsorship_payments;\ncommit;\n'],
