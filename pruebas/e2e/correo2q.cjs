@@ -28,7 +28,9 @@ const restaurar = () => { try { sql(`update users set email = nullif('${prev.ema
   await m.goto(url); await m.getByText('Ese enlace no sirve').first().waitFor(); ok(true, 'el enlace sirve una sola vez');
   await m.screenshot({ path: OUT + 'q2-enlace-m.png', fullPage: true });
   // recibo de pedido: Pedro marca Entregado
-  const num = sql(`select number from operations where user_id = ${MARI} and business_id = '${BIZ}' and kind = 'order' and mode = 'pickup' order by id desc limit 1`);
+  // 20 nov · Un pedido para recoger de Marisol en Sabor Dominicano: lo hace menu2b de punta a punta (con el CI repartido en partes, menu2b
+  // puede correr en otra base).
+  const num = requiere('menu2b', () => sql(`select number from operations where user_id = ${MARI} and business_id = '${BIZ}' and kind = 'order' and mode = 'pickup' order by id desc limit 1`), { que: 'un pedido para recoger de Marisol' });
   const op = sql(`select id from operations where number = '${num}' and business_id = '${BIZ}'`);
   sql(`update operations set status = 'confirmed', stage = 'ready', done_at = null where id = ${op}`); sql(`delete from email_outbox where idem_key = 'rcpt-ord-${op}'`);
   const p = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); globalThis.__p.push(p); p.on('pageerror', e => err.push(e.message));
