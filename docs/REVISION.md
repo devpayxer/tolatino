@@ -5828,6 +5828,15 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
 - **Lo que decide Claude (capa 2) cuesta dinero por foto dudosa:** va con tope mensual, apagada hasta que haya llave; sin llave o sin presupuesto,
   las dudosas quedan retenidas con «Pedir revisión». Es el único servicio de fuera, y es el mismo que ya usa El Compa (no es uno nuevo).
 - **Elegí lo más seguro:** ante la duda la foto se retiene, no se publica. Si ves que retiene demasiado, se sube el umbral de duda.
+- **Dos decisiones más que tomé por lo seguro (20 nov, al revisar lo que construyó Opus) y puedes cambiar:**
+  - *Foto con 3 reportes de cuentas distintas:* se oculta primero y se revisa después. Si la segunda opinión no está (sin llave o sin
+    presupuesto) queda oculta hasta que el dueño pida revisión. El riesgo: tres cuentas coordinadas pueden esconder una foto legítima por un
+    rato. La alternativa es no ocultar hasta que la segunda opinión lo confirme (más expuesto si la foto sí es mala).
+  - *Tope de gasto de la segunda opinión:* 10 dólares al mes. Sin llave en el entorno no llama a Claude y las dudosas se retienen.
+  - *Una foto retenida no se adjunta a nada:* quien la sube ve «está en revisión» y, cuando se aprueba, recibe el aviso y al volver a subirla
+    entra directo (se recuerda por su contenido). La alternativa (que se adjunte sola al aprobarse) pide saber a dónde iba cada foto.
+  - *Fotos que van solo a un negocio* (solicitudes, citas, estimados, viajes): nunca van a la segunda opinión; si salen dudosas quedan retenidas.
+  - *En el sandbox la segunda opinión es simulada* (como El Compa sin llave): aprueba lo dudoso. En producción sin llave no hay segunda opinión.
 
 ## Fotos a la medida (decisión AI) — ya está en el sandbox (20 nov, commit 2963479)
 - **Qué mirar y en qué condiciones:** desde tu teléfono, en el sandbox, entra al panel de un negocio › Fotos y portada y sube **2 o 3 fotos tomadas con
