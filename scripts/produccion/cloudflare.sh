@@ -66,8 +66,11 @@ PY
     cf PUT "/zones/$Z/rulesets/phases/http_request_cache_settings/entrypoint" "$(py <<'PY'
 import json, sys
 d = json.load(open(sys.argv[1]))
+# edge_ttl «origen» (Fotos a la medida, /medios/n/): Cloudflare y el navegador respetan la caché que manda nginx (un año o 60 s según la respuesta).
+ttl = lambda c: ({"edge_ttl": {"mode": "respect_origin"}, "browser_ttl": {"mode": "respect_origin"}} if c["edge_ttl"] == "origen"
+                 else {"edge_ttl": {"mode": "override_origin", "default": c["edge_ttl"]}})
 print(json.dumps({"rules": [{"description": c["expresion"][:60], "expression": c["expresion"], "action": "set_cache_settings",
-  "action_parameters": {"cache": True, "edge_ttl": {"mode": "override_origin", "default": c["edge_ttl"]}}} for c in d["cache"]]}))
+  "action_parameters": {"cache": True, **ttl(c)}} for c in d["cache"]]}))
 PY
 )" >/dev/null
     echo "✓ WAF sin desafío, límite por IP, caché" ;;

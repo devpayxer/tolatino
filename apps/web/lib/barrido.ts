@@ -186,6 +186,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["colasTomado", async () => (await import("./repartidor-barrido")).soltarTomados()],
         // 9t · Mensajes: la foto que se subió y no se mandó en 24 h sale del almacén privado (la fila queda con purged_at).
         ["fotosSinEnviar", async () => (await import("./mensajes-purga")).purgarFotosSinEnviar()],
+        // Fotos a la medida (decisión AI): las fotos públicas de antes (o a las que les faltó alguna variante) reciben sus variantes WebP, de a una
+        // tanda por minuto (lib/fotos-variantes.ts; guardián fotosConVariantes).
+        ["fotosVariantes", async () => (await import("./fotos-variantes")).barrerVariantes()],
         // 9n-4 · «Me lo devolvieron» sin respuesta: recordatorio a la mitad y cierre a los ayuda_devuelto_dias (4if). El Repartidor: la oferta sola a los que
         // están en línea (rep_auto_intentos) y el recordatorio de los programados (rep_programado_min antes de estar listos).
         ["ayudaDevuelto", async () => (await import("./ayuda-cita")).cerrarDevueltosSinRespuesta()], ["repartoSolo", async () => (await import("./repartidor-auto")).asignarSolos()],

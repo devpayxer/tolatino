@@ -379,10 +379,11 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string,
       await c.query(`update businesses set modules_on = array(select distinct x from unnest(modules_on || array['nov']) x) where id = $1 and not ('nov' = any(modules_on))`, [negocio]);
     }
     // 9n-2 · Fotos de TU GALERÍA (L301): las de la página del negocio se COPIAN a la novedad (la galería no cambia); las subidas nuevas pasan como siempre.
+    // Fotos a la medida: la copia es la misma imagen con las mismas variantes; lleva lo anotado de ellas (guardián fotosConVariantes).
     const gal = fotos.length ? (await c.query<{ id: string }>(`select id::text from media where id = any($1::uuid[]) and owner_kind = 'business' and owner_id = $2 and status = 'visible' and not private`, [fotos, negocio])).rows.map((x) => x.id) : [];
     for (let i = 0; i < fotos.length; i++) {
       if (!gal.includes(fotos[i]!)) continue;
-      const n = (await c.query<{ id: string }>(`insert into media (owner_kind, owner_id, url, w, h, credit, sort, uploaded_by) select 'post', $1, url, w, h, credit, 0, $3 from media where id = $2::uuid returning id::text`, [id, fotos[i], actorId])).rows[0]!;
+      const n = (await c.query<{ id: string }>(`insert into media (owner_kind, owner_id, url, w, h, credit, sort, uploaded_by, bytes, var_widths, var_bytes, var_at) select 'post', $1, url, w, h, credit, 0, $3, bytes, var_widths, var_bytes, var_at from media where id = $2::uuid returning id::text`, [id, fotos[i], actorId])).rows[0]!;
       fotos[i] = n.id;
     }
     if (fotos.length) {

@@ -368,9 +368,10 @@ export async function repetirEvento(a: { userId: string; negocio: string }, id: 
   const copia: BorradorEvt = { ...d, dia, fotos: [], boletos: d.boletos.map((b) => ({ ...b, off: false })), rep: { ...d.rep, skip: [] } };
   const r = await guardarEvento(a, null, copia, { enviar: false }, alGuardar);
   if (!r.ok) return r;
-  // Las fotos se copian (filas nuevas de media con la misma imagen): la copia no le quita fotos al original.
-  await db().query(`insert into media (owner_kind, owner_id, url, w, h, status, sort, uploaded_by)
-                    select 'event', $2, url, w, h, 'visible', sort, $3 from media where owner_kind = 'event' and owner_id = $1 and status = 'visible'`, [id, r.id, a.userId]).catch(() => undefined);
+  // Las fotos se copian (filas nuevas de media con la misma imagen): la copia no le quita fotos al original. Fotos a la medida: la misma imagen
+  // tiene las mismas variantes (el nombre sale de la dirección), así que la copia lleva lo anotado de ellas (guardián fotosConVariantes).
+  await db().query(`insert into media (owner_kind, owner_id, url, w, h, status, sort, uploaded_by, bytes, var_widths, var_bytes, var_at)
+                    select 'event', $2, url, w, h, 'visible', sort, $3, bytes, var_widths, var_bytes, var_at from media where owner_kind = 'event' and owner_id = $1 and status = 'visible'`, [id, r.id, a.userId]).catch(() => undefined);
   return { ok: true, id: r.id };
 }
 
