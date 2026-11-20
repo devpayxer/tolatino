@@ -13,6 +13,9 @@
                           :3100) en otro: los dos carriles no se pisan. Dentro de cada carril, SIEMPRE una a la vez. Por defecto: todo en fila.
      --dispositivo <id>   9b-2 · corre con ese dispositivo (iphone-se, iphone-15, iphone-15-pro-max, pixel, galaxy, ipad, escritorio-1024/-1280/-1440):
                           pone PRUEBAS_DISPOSITIVO y la precarga pruebas/lib/dispositivo-precarga.cjs cambia cada contexto del navegador
+     --reintentar         decisión AG (20 nov) · una prueba de punta a punta que falla se repite UNA vez: si pasa, queda como INESTABLE (en
+                          verde, pero listada al final y en el resumen para arreglarla); si falla otra vez, es roja. Más de 3 inestables en
+                          una corrida ya no se repiten: es algo de fondo y la corrida sale roja. Las pruebas al revés no se repiten.
      --parte <i>/<n>      9b-2 · solo la parte i de n de la selección (reparto por posición, el mismo en cada corrida): un grupo grande, en n trabajos
      --tiempo <min>       tiempo máximo por prueba (25 por defecto)
      --barajar [semilla]  9b-1 · las corre en otro orden (al azar, o el de esa semilla para repetirlo): saca a la luz las que dependen del orden.
@@ -20,7 +23,7 @@
    Salida: $PRUEBAS_SALIDA/res/<nombre>.out por prueba y resumen.json; al final, la tabla con las comprobaciones (✓) de cada una.
    Una prueba pasa si termina con código 0. Nada de esto lleva secretos: los lee cada prueba de $PRUEBAS_SALIDA/secretos.env. */
 import { spawn, execSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync, createWriteStream } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, unlinkSync, writeFileSync, createWriteStream } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -138,7 +141,26 @@ for (const c of ["e2e", "alreves"]) {
   writeFileSync(f, String(process.pid)); candados.push(f);
 }
 process.on("exit", () => { for (const f of candados) try { unlinkSync(f); } catch { /* nada */ } });
-const carril = async (ts) => { const rs = []; for (const t of ts) rs.push(await correrUna(t)); return rs; };
+/* Decisión AG (20 nov) · Con --reintentar, una prueba de punta a punta que falla se repite UNA vez. Pasa → INESTABLE (verde, pero dicho: la
+   primera salida queda en <nombre>.intento1.out y la lista va al final, al resumen y al resumen del trabajo en GitHub). Falla otra vez → roja.
+   Con TOPE_INESTABLES ya anotadas no se repite ninguna más (algo de fondo: sale roja). Las pruebas al revés no se repiten nunca. */
+const REINTENTAR = flag("--reintentar"), TOPE_INESTABLES = 3, inestables = [];
+const carril = async (ts) => {
+  const rs = [];
+  for (const t of ts) {
+    let r = await correrUna(t);
+    if (!r.ok && REINTENTAR && t.carril === "e2e" && inestables.length < TOPE_INESTABLES) {
+      const primera = join(RES, `${t.nombre}.intento1.out`);
+      try { renameSync(r.salida, primera); } catch { /* sin salida */ }
+      console.log(`  ↻ ${t.nombre}: se repite una vez`);
+      const r2 = await correrUna(t);
+      if (r2.ok) { r2.inestable = { error: r.error, salida: primera }; inestables.push(r2); console.log(`  ~ INESTABLE ${t.nombre}: falló una vez (${String(r.error).slice(0, 200)}) y pasó al repetirla`); r = r2; }
+      else r = { ...r2, error: `${r2.error} · dos veces seguidas (la primera: ${String(r.error).slice(0, 140)})` };
+    }
+    rs.push(r);
+  }
+  return rs;
+};
 const inicio = Date.now();
 console.log(`${sel.length} pruebas · salida en ${RES}${flag("--paralelo") ? " · dos carriles (al revés | punta a punta)" : " · una a la vez"}\n`);
 const res = flag("--paralelo")
@@ -149,6 +171,13 @@ const bien = res.filter((r) => r.ok), mal = res.filter((r) => !r.ok);
 const total = res.reduce((s, r) => s + r.checks, 0);
 writeFileSync(join(RES, "resumen.json"), JSON.stringify({ fecha: new Date().toISOString(), commit: (() => { try { return execSync("git rev-parse --short HEAD", { cwd: RAIZ, encoding: "utf8" }).trim(); } catch { return null; } })(), pruebas: res.length, verdes: bien.length, rojas: mal.length, comprobaciones: total, minutos: Math.round((Date.now() - inicio) / 60000), res }, null, 2));
 console.log(`\n${bien.length}/${res.length} en verde · ${total} comprobaciones (✓) · ${Math.round((Date.now() - inicio) / 60000)} min`);
+if (inestables.length) {
+  console.log(`INESTABLES (${inestables.length}) · fallaron una vez y pasaron al repetirlas; se arreglan igual:`);
+  for (const r of inestables) console.log(`  ~ ${r.nombre} · ${r.inestable.error}\n    ${r.inestable.salida}`);
+  if (process.env.CI) for (const r of inestables) { try { const t = readFileSync(r.inestable.salida, "utf8").trimEnd().split("\n").slice(-30); console.log(`\n── cola de ${r.nombre} (el intento que falló) ──\n${t.map((l) => l.slice(0, 2000)).join("\n")}`); } catch { /* sin salida */ } }
+  if (process.env.GITHUB_STEP_SUMMARY) { try { appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Inestables (${inestables.length})\n${inestables.map((r) => `- \`${r.nombre}\` · ${String(r.inestable.error).replace(/[|`]/g, " ").slice(0, 300)}`).join("\n")}\n`); } catch { /* fuera de GitHub */ } }
+  try { writeFileSync(join(RES, "inestables.json"), JSON.stringify(inestables.map((r) => ({ nombre: r.nombre, error: r.inestable.error })), null, 1)); } catch { /* nada */ }
+}
 if (mal.length) { console.log(`En rojo (${mal.length}):`); for (const r of mal) console.log(`  ✗ ${r.nombre} (código ${r.codigo}) · ${r.error}\n    ${r.salida}`); }
 /* 9b-2 · En el CI no hay a dónde mirar después (el almacén de artefactos no siempre se puede bajar): la cola de cada roja va al registro. */
 if (mal.length && process.env.CI) for (const r of mal) { try { const t = readFileSync(r.salida, "utf8").trimEnd().split("\n").slice(-50); console.log(`\n── cola de ${r.nombre} ──\n${t.map((l) => l.slice(0, 2000)).join("\n")}`); } catch { /* sin salida */ } }

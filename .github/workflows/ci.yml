@@ -258,7 +258,7 @@ jobs:
         if: ${{ matrix.nombre == 'al revés' || contains(inputs.solo, 'alreves') }}
         run: sudo apt-get install -y -q age >/dev/null
       - name: Regresión de ${{ matrix.nombre }} en base nueva
-        run: node pruebas/correr.mjs ${{ (inputs.solo != '' && matrix.nombre != 'al revés') && inputs.solo || (matrix.nombre == 'al revés' && '--grupo alreves' || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}
+        run: node pruebas/correr.mjs ${{ (inputs.solo != '' && matrix.nombre != 'al revés') && inputs.solo || (matrix.nombre == 'al revés' && '--grupo alreves' || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }} --reintentar
       - name: Subidas que llegaron sin archivo (si hubo; el servidor dice qué recibió)
         if: always()
         run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true
@@ -297,10 +297,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - uses: ./.github/actions/entorno-pruebas
       - name: Primera pasada
-        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios ${{ matrix.nombre == 'barajada' && format('--barajar {0}', inputs.semilla) || '' }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}
+        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios ${{ matrix.nombre == 'barajada' && format('--barajar {0}', inputs.semilla) || '' }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }} --reintentar
       - name: Segunda pasada, en la MISMA base
         if: ${{ matrix.nombre == 'dos veces seguidas' }}
-        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}
+        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }} --reintentar
       - name: Subidas que llegaron sin archivo (si hubo; el servidor dice qué recibió)
         if: always()
         run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true
@@ -388,7 +388,7 @@ jobs:
         if: ${{ contains(inputs.solo, 'alreves') }}
         run: sudo apt-get install -y -q age >/dev/null
       - name: Toda la punta a punta en ${{ matrix.id }}, en base nueva
-        run: node pruebas/correr.mjs ${{ inputs.solo != '' && inputs.solo || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }} --dispositivo ${{ matrix.id }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}
+        run: node pruebas/correr.mjs ${{ inputs.solo != '' && inputs.solo || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }} --dispositivo ${{ matrix.id }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }} --reintentar
       - name: Subidas que llegaron sin archivo (si hubo; el servidor dice qué recibió)
         if: always()
         run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true

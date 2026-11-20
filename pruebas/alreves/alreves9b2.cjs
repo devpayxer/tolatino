@@ -29,6 +29,13 @@ const casos = [
   ['tuberiaNoSeSalta', Y, "'--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}", "'--grupo fase1,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}"],
   // 20 nov · el reparto en partes a medias: una parte fija, una matriz sin partes, la segunda pasada de la confirmación sin su parte.
   ['tuberiaNoSeSalta', Y, "fase9,varios') }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}", "fase9,varios') }} --parte 1/4"],
+  // 20 nov · decisión AG (reintentoQueSeVe): repetir sin tope, repetir las al revés, callar la inestable, un carril sin --reintentar
+  ['reintentoQueSeVe', 'pruebas/correr.mjs', 'TOPE_INESTABLES = 3, inestables = [];', 'TOPE_INESTABLES = 99, inestables = [];'],
+  ['reintentoQueSeVe', 'pruebas/correr.mjs', 'if (!r.ok && REINTENTAR && t.carril === "e2e" && inestables.length < TOPE_INESTABLES) {', 'if (!r.ok && REINTENTAR && inestables.length < TOPE_INESTABLES) {'],
+  ['reintentoQueSeVe', 'pruebas/correr.mjs', 'if (!r.ok && REINTENTAR && t.carril === "e2e" && inestables.length < TOPE_INESTABLES) {', 'if (!r.ok && t.carril === "e2e") {'],
+  ['reintentoQueSeVe', 'pruebas/correr.mjs', 'console.log(`INESTABLES (${inestables.length})', 'void (`INESTABLES (${inestables.length})'],
+  ['reintentoQueSeVe', 'pruebas/correr.mjs', "else r = { ...r2, error: `${r2.error} · dos veces seguidas", "else r = { ...(await correrUna(t)), error: `${r2.error} · dos veces seguidas"],
+  ['reintentoQueSeVe', Y, "--dispositivo ${{ matrix.id }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }} --reintentar", "--dispositivo ${{ matrix.id }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}"],
   // 20 nov · «todas las fases» fuera de la regresión sin que la confirmación la corra, y la primera pasada de la confirmación recortada.
   ['tuberiaNoSeSalta', Y, `(inputs.confirmar == 'si' && inputs.solo == '') && '["al revés"]' || '["al revés","todas las fases"]'`, `'["al revés"]'`],
   ['tuberiaNoSeSalta', Y, "      - name: Primera pasada\n        run: node pruebas/correr.mjs --grupo fase1,fase2,", "      - name: Primera pasada\n        run: node pruebas/correr.mjs --grupo fase1,"],

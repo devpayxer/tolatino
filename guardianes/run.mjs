@@ -11640,6 +11640,20 @@ const guardianes = {
     t.split("\n").forEach((l, i) => { if (/input\[type=file\]'\)\.setInputFiles\(/.test(l)) falla(G, P, i + 1, "la foto del chat se pone en el input escondido: usar elegirFoto (pruebas/lib/elegir-foto.cjs)"); });
     if (t && (t.match(/await elegirFoto\(m, FOTO2?\)/g) ?? []).length < 3) falla(G, P, 0, "msg9t no elige sus fotos con elegirFoto");
   },
+  /* Decisión AG (20 nov) · reintentoQueSeVe: en el CI una prueba de punta a punta que falla se repite UNA vez; si pasa queda INESTABLE (dicha
+     al final, en inestables.json y en el resumen del trabajo), si falla otra vez es roja, y con 3 inestables ya no se repite ninguna más. Lo
+     que se teme: repetir más de una vez, repetir las pruebas al revés, que el tope desaparezca, que la inestable se cuente en verde sin decirlo,
+     o un carril largo del CI sin --reintentar (volvería el «todo o nada»). Al revés: alreves9b2. */
+  reintentoQueSeVe() {
+    const G = "reintentoQueSeVe", C = "pruebas/correr.mjs", Y = ".github/workflows/ci.yml";
+    const c = existsSync(C) ? readFileSync(C, "utf8") : "", y = existsSync(Y) ? readFileSync(Y, "utf8") : "";
+    if (!/const REINTENTAR = flag\("--reintentar"\), TOPE_INESTABLES = 3, inestables = \[\];/.test(c)) falla(G, C, 0, "el reintento es solo con --reintentar y con tope de 3 inestables");
+    if (!/if \(!r\.ok && REINTENTAR && t\.carril === "e2e" && inestables\.length < TOPE_INESTABLES\) \{/.test(c)) falla(G, C, 0, "se repite solo una prueba de punta a punta que falló, con --reintentar y bajo el tope (nunca las al revés)");
+    if ((c.match(/await correrUna\(t\)/g) ?? []).length !== 2) falla(G, C, 0, "una prueba se corre una vez y, si falla, UNA vez más (ni más ni un bucle)");
+    if (!/else r = \{ \.\.\.r2, error: `\$\{r2\.error\} · dos veces seguidas/.test(c)) falla(G, C, 0, "la que falla dos veces es roja");
+    if (!/console\.log\(`INESTABLES \(\$\{inestables\.length\}\)/.test(c) || !/GITHUB_STEP_SUMMARY/.test(c) || !/inestables\.json/.test(c)) falla(G, C, 0, "las inestables se dicen: al final de la corrida, en inestables.json y en el resumen del trabajo");
+    if (y.split("--parte ${{ matrix.parte }}/${{ inputs.partes || '1' }} --reintentar").length - 1 !== 4 || (y.match(/--reintentar/g) ?? []).length !== 4) falla(G, Y, 0, "los cuatro carriles largos del CI (regresión, las dos pasadas de la confirmación y los anchos) llevan --reintentar");
+  },
   /* 9t · subidaReintenta (20 nov, confirmación 44734711575, msg9t en el iPhone SE): una foto normal recién elegida llegó al servidor sin
      archivo («No llegó la foto», 400). La app la reintenta UNA vez con el archivo original (lib/subir-foto.ts, mandar) y el servidor deja dicho
      qué llegó (lib/subida.ts: bytes, tipo y tamaño de cada parte). La prueba no lo calla: si hubo reintento escribe «INESTABLE». Lo que se
