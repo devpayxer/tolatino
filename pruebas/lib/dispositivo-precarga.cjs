@@ -39,6 +39,10 @@ if (id) {
     let nav = 0;
     page.on('request', (r) => { if (r.isNavigationRequest() && r.frame() === page.mainFrame()) nav = Date.now(); });
     page.on('framenavigated', (f) => { if (f === page.mainFrame()) nav = Date.now(); });
+    // La respuesta del documento de la última navegación: si «load» no sale pero la página ya está, goto devuelve ESTA (no null), para que
+    // la prueba pueda mirar su status (neg9n20 en el iPad, confirmación 44685003383).
+    let docResp = null;
+    page.on('response', (r) => { try { if (r.request().isNavigationRequest() && r.frame() === page.mainFrame()) docResp = r; } catch { /* marco ido */ } });
     const ruido = (txt) => RUIDO.test(String(txt).trim()) && Date.now() - nav < 3000;
     // WebKit no saca capturas de más de 32767 px de alto (una página larga a 375 de ancho): la captura es para mirar, no es la prueba; va la de la pantalla.
     // Tras una acción, la app a veces navega sola (vuelve a la cola); si la prueba hace goto en ese instante, WebKit lo corta («interrupted by another
@@ -48,7 +52,7 @@ if (id) {
     // falta es la carga, es un error de verdad y se queda.
     const ir = page.goto.bind(page);
     page.goto = async (u, o) => {
-      const antes = page.url();
+      const antes = page.url(); docResp = null;
       try { return await ir(u, o); } catch (e) {
         if (/interrupted by another navigation/.test(e.message)) { await page.waitForLoadState('load').catch(() => {}); return ir(u, o); }
         if (e.name === 'TimeoutError' && page.url() === antes && antes !== u) { console.log(`  · webkit: la navegación a ${u} no empezó en 30 s; otra vez`); return ir(u, o); }
@@ -65,7 +69,7 @@ if (id) {
           // «nomodule» que un navegador moderno nunca baja, la prueba sigue: «load» no es lo que prueba, y lo que sí prueba lo espera ella.
           const soloRuido = est.rs && est.rs !== 'loading' && (est.sinFin ?? []).every((x) => !x.startsWith(new URL(u, page.url()).origin) || /\/polyfills-[^/]+\.js$/.test(x));
           console.log(`  · webkit: «load» de ${u} no salió en 30 s (en ${page.url()}): ${JSON.stringify(est)}; ${soloRuido ? 'la página ya está: sigue' : 'otra vez'}`);
-          if (soloRuido) return null;
+          if (soloRuido) return docResp && docResp.url().split('#')[0] === page.url().split('#')[0] ? docResp : null;
           return ir(u, o);
         }
         throw e;

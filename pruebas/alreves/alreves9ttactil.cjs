@@ -20,7 +20,8 @@ const casos = [
   [A, "ok(mi.length === 0, `AA 2.5.8", "console.log(mi.length === 0, `AA 2.5.8"],
   [A, "const TACTIL = require('../lib/tactil.cjs');", "const TACTIL = require('../lib/caben.cjs');"],
   ['packages/ui/src/ds/onboarding/OnbTopBar.js', "      padding: '10px 16px 12px',\n      minWidth: 0,\n", "      padding: '10px 16px 12px',\n"],
-  ['pruebas/e2e/vec9m.cjs', "ok(ancho[0] === 390 && ancho[1] === 390,", "console.log(ancho[0] === 390 && ancho[1] === 390,"],
+  ['pruebas/e2e/vec9m.cjs', "ok(ancho[0] <= ancho[2] && ancho[1] === ancho[2],", "console.log(ancho[0] <= ancho[2] && ancho[1] === ancho[2],"],
+  ['pruebas/e2e/vec9m.cjs', "po.viewportSize().width]", "innerWidth]"],
   [A, "const mi = await minimos(d); ok(mi.length === 0, `1440 ${ruta}: AA 2.5.8", "const mi = await minimos(d); console.log(mi.length === 0, `1440 ${ruta}: AA 2.5.8"],
   [A, "const mi = await minimos(a); ok(mi.length === 0, `el Super Admin a 1440: AA 2.5.8", "const mi = await minimos(a); console.log(mi.length === 0, `el Super Admin a 1440: AA 2.5.8"],
   // la lista de permitidos crece o no dice por qué

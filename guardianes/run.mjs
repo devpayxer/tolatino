@@ -9880,7 +9880,7 @@ const guardianes = {
     { const ob = existsSync("packages/ui/src/ds/onboarding/OnbTopBar.js") ? readFileSync("packages/ui/src/ds/onboarding/OnbTopBar.js", "utf8") : "";
       if (!/padding: '10px 16px 12px',\n      minWidth: 0,\n      boxSizing: 'border-box',/.test(ob)) falla(G, "packages/ui/src/ds/onboarding/OnbTopBar.js", 0, "la barra de arriba del alta pide más que su sitio (sin minWidth: 0): con los botones de 44 ensanchaba la página a 405 px y «Continuar» quedaba fuera");
       const v = existsSync("pruebas/e2e/vec9m.cjs") ? readFileSync("pruebas/e2e/vec9m.cjs", "utf8") : "";
-      if (!/ok\(ancho\[0\] === 390 && ancho\[1\] === 390,/.test(v)) falla(G, "pruebas/e2e/vec9m.cjs", 0, "el alta a 390 no comprueba que la página no se ensancha"); }
+      if (!/ok\(ancho\[0\] <= ancho\[2\] && ancho\[1\] === ancho\[2\],/.test(v) || !/po\.viewportSize\(\)\.width\]/.test(v)) falla(G, "pruebas/e2e/vec9m.cjs", 0, "el alta a 390 no comprueba que la página no se ensancha"); }
     if (!/\} finally \{ sql\(`update users set big_text = false where phone = '\+1\$\{MARISOL\}'`\)/.test(a)) falla(G, A, 0, "la letra grande de Marisol vuelve a la normal en un finally (si no, la hereda la prueba siguiente)");
     const clave = (a.match(/const CLAVE = \[([^\]]*)\]/) || [])[1] || "";
     for (const r of ["'/'", "'/negocios'", "'/n/sabor-dominicano?tab=menu'", "'/comunidad'", "'/eventos'", "'/cuenta'"]) if (!clave.includes(r)) falla(G, A, 0, `falta la pantalla clave ${r}`);
@@ -11587,6 +11587,30 @@ const guardianes = {
     if (!(C > K + N)) falla(G, F, 0, `la mesa se ofrece desde ahora + ${C} min pero enviar() la rechaza hasta ahora + ${K + N}: el selector ofrece horas que no se pueden enviar`);
     if (!/if \(i > 0 \|\| m > x\.ahoraN \+ cerca\) slots\.push\(m\)/.test(s) || !/const cerca = s\.k === "lista" \? LISTA_CERCA_MIN : MESA_CERCA_MIN;/.test(s))
       falla(G, F, 0, "las horas de esta noche no se filtran con LISTA_CERCA_MIN / MESA_CERCA_MIN (el mismo margen que pide enviar())");
+  },
+  /* 9t · gotoDevuelveRespuesta (20 nov, confirmación 44685003383, neg9n20 en el iPad): cuando WebKit no da «load» pero la página ya está, el
+     goto envuelto de pruebas/lib/dispositivo-precarga.cjs devolvía null y la prueba que miraba su status caía (TypeError). Devuelve la respuesta
+     del documento de esa navegación. Al revés: alreves9tsubida. */
+  gotoDevuelveRespuesta() {
+    const G = "gotoDevuelveRespuesta", F = "pruebas/lib/dispositivo-precarga.cjs";
+    const s = existsSync(F) ? readFileSync(F, "utf8") : "";
+    if (/if \(soloRuido\) return null;/.test(s) || !/if \(soloRuido\) return docResp &&/.test(s) || !/r\.request\(\)\.isNavigationRequest\(\) && r\.frame\(\) === page\.mainFrame\(\)\) docResp = r;/.test(s))
+      falla(G, F, 0, "el goto de WebKit que sigue sin «load» no devuelve la respuesta del documento (la prueba que mira su status cae)");
+  },
+  /* 9t · topeFotoSinNavegador (20 nov, confirmación 44685003383, msg9t en el iPad): el tope de 12 MB de las fotos se probaba con un fetch de
+     13 MB armado dentro del WebKit del CI, que a veces no llega entero (400 en vez de 413). El tope del servidor se prueba desde Node con la
+     sesión (pruebas/lib/subida-cruda.cjs, como sub9t) y la app avisa «pesa demasiado» antes de subir (lib/subir-foto.ts, TOPE_FOTO). Lo que se
+     teme: volver a subir MB desde el navegador en una prueba, o un ayudante de subida que mande la foto sin mirar el tope. Al revés:
+     alreves9tsubida. */
+  topeFotoSinNavegador() {
+    const G = "topeFotoSinNavegador", F = "apps/web/lib/subir-foto.ts";
+    const s = existsSync(F) ? readFileSync(F, "utf8") : "";
+    if (!/export const TOPE_FOTO = 12 \* 1024 \* 1024;/.test(s) || !/return b\.size > TOPE_FOTO \? null : b;/.test(s)) falla(G, F, 0, "falta el tope de 12 MB antes de subir (TOPE_FOTO)");
+    s.split("\n").forEach((l, i) => { if (/fd\.append\("foto", await reducir\(/.test(l)) falla(G, F, i + 1, "la foto se sube sin mirar el tope: usar lista(file)"); });
+    for (const f of archivos) {
+      if (!/^pruebas\/e2e\/.*\.cjs$/.test(f) || !existsSync(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/subirCrudo\([^)]*\d+ \* 1024 \* 1024/.test(l)) falla(G, f, i + 1, "un archivo de MB subido desde el navegador de la prueba: usar subirCrudoNode (pruebas/lib/subida-cruda.cjs)"); });
+    }
   },
   /* 9t · patrocinioDiasPorCalendario (confirmación 44658035571, pat002): los días comprados de un patrocinio se deducían de la duración; una compra
      «hoy» en la última hora del día daba 6 días y, al terminarla, se devolvía el precio entero con un día ya usado. Desde 0194 se cuentan por el

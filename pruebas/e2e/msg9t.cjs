@@ -13,6 +13,7 @@
 //    caché; lo suyo no trae botón. Al revés: la vecina escribe en inglés → el panel (español) lo ofrece. El Super Admin ve el original.
 // Preparación propia: El Compa apagado en el negocio mientras dura, conversación sin bloqueo, horario abierto. Todo se devuelve como estaba.
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { subirCrudoNode } = require('../lib/subida-cruda.cjs');
 const { chromium } = require('playwright'); const { execSync, spawn } = require('child_process');
 const fs = require('fs');
 const NN = require('../lib/negocio-nuevo.cjs');
@@ -128,7 +129,9 @@ const limpiar = () => {
 
     // ── 3 · Topes del servidor ──
     ok(await subirCrudo(m, 'text/plain', 64) === 415, 'un archivo que no es foto: 415');
-    { const st = await subirCrudo(m, 'image/jpeg', 13 * 1024 * 1024); ok(st === 413, 'más de 12 MB: 413 (' + st + ')'); }
+    // Más de 12 MB, desde Node con la sesión (por partes y avisando el tamaño): pruebas/lib/subida-cruda.cjs (el fetch de 13 MB dentro del WebKit
+    // del CI no llega entero: 400 en el iPad, confirmación 44685003383).
+    { const st = await subirCrudoNode(m, B, '/api/mensajes/foto', Buffer.alloc(13 * 1024 * 1024, 7), 'image/jpeg'); ok(st[0] === 413 && st[1] === 413, 'más de 12 MB: 413, por partes y avisando el tamaño (' + st.join(' / ') + ')'); }
     ok(await subirCrudo(m, 'image/jpeg', 256) === 415, 'una «foto» que no se abre: 415');
 
     // ── 4 · El negocio manda solo una foto; el equipo la quita con motivo ──

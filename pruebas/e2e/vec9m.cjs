@@ -241,8 +241,10 @@ const desk = (b, extra = {}) => b.newContext({ viewport: { width: 1360, height: 
     await po.getByText('North End', { exact: true }).click(); await po.getByRole('button', { name: 'Continuar' }).click();
     await po.locator('[data-pantalla="ONB-USR-4"]').waitFor();
     // Confirmación 44658035571: la barra de arriba (botones de 44) pedía 405 px, la página se ensanchaba y «Continuar» quedaba fuera de la vista.
-    const ancho = await po.evaluate(() => [document.documentElement.scrollWidth, innerWidth, visualViewport.width]);
-    ok(ancho[0] === 390 && ancho[1] === 390, `pasos 2 a 4 a 390: la página no se ensancha (${ancho.join(' / ')} px) y «Continuar» se ve`);
+    // El ancho del dispositivo es el del viewport pedido (390 aquí; 375 en el SE y 834 en el iPad de la confirmación): si la página se ensancha,
+    // el navegador del teléfono agranda innerWidth con ella, así que se compara contra el viewport, no contra innerWidth.
+    const ancho = [...(await po.evaluate(() => [document.documentElement.scrollWidth, innerWidth])), po.viewportSize().width];
+    ok(ancho[0] <= ancho[2] && ancho[1] === ancho[2], `pasos 2 a 4 en el teléfono: la página no se ensancha (${ancho.join(' / ')} px) y «Continuar» se ve`);
     await po.getByRole('button', { name: 'Continuar' }).click();
     await po.locator('[data-pantalla="ONB-USR-5"]').waitFor();
     await po.getByRole('checkbox', { name: 'Acepto las reglas del barrio' }).click(); await po.getByRole('checkbox', { name: 'Tengo 18 años o más' }).click();

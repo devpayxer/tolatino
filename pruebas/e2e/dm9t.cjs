@@ -19,6 +19,7 @@
 // El servidor con el traductor de mentira: en CI se reinicia con servir.sh (como msg9t); PRUEBAS_REINICIAR=«comando» lo cambia (la corrida local en
 // otro puerto). Todo se devuelve como estaba (seguirse, idioma, bloqueos, casos); en Mensajes nada se borra (los mensajes de la prueba llevan [d9t]).
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { subirCrudoNode } = require('../lib/subida-cruda.cjs');
 const { chromium } = require('playwright'); const { execSync, spawn } = require('child_process');
 const fs = require('fs'), crypto = require('crypto');
 const S = ENT.S, OUT = S + '/cap/', B = ENT.B, PORT = 5098, STUB = `http://127.0.0.1:${PORT}`, TAG = '[d9t]';
@@ -277,7 +278,9 @@ const limpiar = () => {
       ok(r503 !== 503, 'el almacén de fotos responde (sin él, F2 no puede probar la subida de verdad)');
       ok(r503 === 415, 'una «foto» que no se abre: 415');
       ok(await subirCrudo(a, 'text/plain', 64) === 415, 'un archivo que no es foto: 415');
-      { const st = await subirCrudo(a, 'image/jpeg', 13 * 1024 * 1024); ok(st === 413, 'más de 12 MB: 413 (' + st + ')'); }
+      // Más de 12 MB, desde Node con la sesión (por partes y avisando el tamaño): pruebas/lib/subida-cruda.cjs (el fetch de 13 MB dentro del WebKit
+    // del CI no llega entero: 400 en el iPad, confirmación 44685003383).
+    { const st = await subirCrudoNode(a, B, '/api/mensajes/foto', Buffer.alloc(13 * 1024 * 1024, 7), 'image/jpeg', { para: 'dm' }); ok(st[0] === 413 && st[1] === 413, 'más de 12 MB: 413, por partes y avisando el tamaño (' + st.join(' / ') + ')'); }
       await a.goto(B + '/comunidad/mensajes/' + RB); await a.getByLabel('Tu mensaje').waitFor();
       await a.locator('input[type=file]').setInputFiles(FOTO); await a.locator('[data-chat-adjunto]').waitFor({ timeout: 20000 });
       await clic(a.getByRole('button', { name: 'Enviar' }));
