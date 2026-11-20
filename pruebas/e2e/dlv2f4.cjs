@@ -76,7 +76,11 @@ const op = (n, c) => sql(`select ${c} from operations where number='${n}'`);
       const encima = await ac.evaluate((el) => { const r = el.getBoundingClientRect(), x = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
         const camino = []; for (let n = x; n && camino.length < 4; n = n.parentElement) camino.push(`${n.tagName.toLowerCase()}${n.getAttribute('data-screen-label') ? '[' + n.getAttribute('data-screen-label') + ']' : ''}.${String(n.className).slice(0, 60)}`);
         return `botón en ${Math.round(r.x)},${Math.round(r.y)} ${Math.round(r.width)}×${Math.round(r.height)} de ${innerWidth}×${innerHeight}; encima: ${camino.join(' < ')} «${(x?.textContent || '').trim().slice(0, 40)}»`; }).catch(() => '');
-      throw new Error(`«Aceptar» tapado: ${encima}`); } }
+      // 20 nov · Volvió dos veces seguidas en el iPad (CI 44778631725) y aquí no se reproduce sin WebKit: ahora dice también por qué Playwright
+      // no pudo (tapado, moviéndose o fuera de la pantalla) y cuánto se desplazó la hoja.
+      const hoja = await ac.evaluate((el) => { for (let n = el.parentElement; n; n = n.parentElement) if (/(auto|scroll)/.test(getComputedStyle(n).overflowY)) return `hoja desplazada ${Math.round(n.scrollTop)} de ${n.scrollHeight - n.clientHeight}`; return 'sin hoja que se desplace'; }).catch(() => '');
+      const porque = String(e.message).split('\n').filter((l) => /intercepts|not stable|outside of the viewport|not visible|not enabled|detached/.test(l)).slice(-3).map((l) => l.trim().slice(0, 160)).join(' | ');
+      throw new Error(`«Aceptar» tapado: ${encima} · ${hoja} · ${porque}`); } }
   await d.getByText(/ya lo ve en su pedido/).waitFor();
   await d.getByText('Salió en camino').last().click(); await d.getByText(/ya ve que va en camino/).waitFor();
   ok(await espera(() => op(n1, "status||'|'||stage"), 'confirmed|on_the_way') === 'confirmed|on_the_way', 'Salió en camino → on_the_way');

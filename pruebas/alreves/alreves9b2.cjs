@@ -32,7 +32,12 @@ const casos = [
   // 20 nov · el entorno de pruebas sin tope de tiempo en un paso de red
   ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'reintenta 600 npx playwright install', 'npx playwright install'],
   ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'reintenta 600 bash pruebas/servir/base.sh', 'bash pruebas/servir/base.sh'],
-  ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'sleep 5; timeout "$t" "$@"; }', 'sleep 5; "$@"; }'],
+  // 20 nov · el tope de tiempo no puede ser la causa del rojo (CI 44793647835): man-db, el candado de apt, instalar por instala.sh, matar de verdad
+  ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'sudo rm -f /var/lib/man-db/auto-update', 'true'],
+  ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'DPkg::Lock::Timeout "300";', 'DPkg::Lock::Timeout "0";'],
+  ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'reintenta 420 bash "$RUNNER_TEMP/instala.sh" psmisc ffmpeg', 'reintenta 420 sudo apt-get install -y -qq psmisc ffmpeg'],
+  ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'timeout -k 15 "$t" "$@" && return 0;', 'timeout "$t" "$@" && return 0;'],
+  ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'sleep 5; timeout -k 15 "$t" "$@"; }', 'sleep 5; "$@"; }'],
   // 20 nov · decisión AG (reintentoQueSeVe): repetir sin tope, repetir las al revés, callar la inestable, un carril sin --reintentar
   ['reintentoQueSeVe', 'pruebas/correr.mjs', 'TOPE_INESTABLES = 3, inestables = [];', 'TOPE_INESTABLES = 99, inestables = [];'],
   ['reintentoQueSeVe', 'pruebas/correr.mjs', 'if (!r.ok && REINTENTAR && t.carril === "e2e" && inestables.length < TOPE_INESTABLES) {', 'if (!r.ok && REINTENTAR && inestables.length < TOPE_INESTABLES) {'],

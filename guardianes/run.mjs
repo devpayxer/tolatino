@@ -7931,8 +7931,12 @@ const guardianes = {
     // 20 nov · El entorno de cada trabajo no se queda colgado: cada paso que baja algo de la red (pip, apt, npm, navegadores, la base, los
     // recursos, el servidor) va con tope de tiempo y UN reintento (dos trabajos se quedaron 40 min en ese paso, CI 44771585360).
     { const EA = ".github/actions/entorno-pruebas/action.yml", ea = existsSync(EA) ? readFileSync(EA, "utf8") : "";
-      if (!/reintenta\(\) \{ local t="\$1"; shift; timeout "\$t" "\$@" && return 0;[^\n]*sleep 5; timeout "\$t" "\$@"; \}/.test(ea)) falla(G, EA, 0, "falta «reintenta» (tope de tiempo y un reintento) en el entorno de pruebas");
-      for (const c of ["python3 -m pip install", "sudo apt-get update", "sudo apt-get install", "npm ci", "npx playwright install", "bash pruebas/servir/base.sh", "bash pruebas/servir/recursos.sh", "bash pruebas/servir/servir.sh"]) {
+      if (!/reintenta\(\) \{ local t="\$1"; shift; timeout -k 15 "\$t" "\$@" && return 0;[^\n]*>&2; sleep 5; timeout -k 15 "\$t" "\$@"; \}/.test(ea)) falla(G, EA, 0, "falta «reintenta» (tope de tiempo que mata de verdad, un reintento y el aviso por el canal de errores) en el entorno de pruebas");
+      // 20 nov (CI 44793647835) · El tope no puede ser la causa del rojo: sin el índice de man-db, apt espera el candado y cada intento de instalar termina lo que el anterior dejó.
+      if (!/sudo rm -f \/var\/lib\/man-db\/auto-update/.test(ea)) falla(G, EA, 0, "el índice de man-db se apaga antes de instalar (en las máquinas de GitHub tarda minutos y agota el tope)");
+      if (!/DPkg::Lock::Timeout "300";/.test(ea)) falla(G, EA, 0, "apt espera el candado en vez de fallar («Could not get lock» mató el reintento)");
+      if (!/sudo dpkg --configure -a[^\n]*\n\s*exec sudo apt-get install -y -qq "\$@"/.test(ea) || !/reintenta \d+ bash "\$RUNNER_TEMP\/instala\.sh" /.test(ea) || /reintenta \d+ sudo apt-get install/.test(ea)) falla(G, EA, 0, "instalar paquetes va por instala.sh (termina lo que un intento cortado dejó a medias), no por apt-get directo");
+      for (const c of ["python3 -m pip install", "sudo apt-get update", 'bash "$RUNNER_TEMP/instala.sh"', "npm ci", "npx playwright install", "bash pruebas/servir/base.sh", "bash pruebas/servir/recursos.sh", "bash pruebas/servir/servir.sh"]) {
         const n = ea.split(c).length - 1, conTope = (ea.match(new RegExp(`reintenta \\d+ ${c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "g")) ?? []).length;
         if (n === 0 || n !== conTope) falla(G, EA, 0, `«${c}» corre sin tope de tiempo ni reintento en el entorno de pruebas`);
       } }

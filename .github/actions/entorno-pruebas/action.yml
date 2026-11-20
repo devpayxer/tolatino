@@ -25,7 +25,21 @@ runs:
         # colgados aquí (CI 44771585360) y una parte del iPhone SE tardó 78 min por lo mismo (44755954339). Sin tope, un cuelgue de la red
         # se come el trabajo entero. `reintenta <segundos> <comando…>` queda definida para los pasos siguientes.
         cat > "$RUNNER_TEMP/reintenta.sh" <<'FIN'
-        reintenta() { local t="$1"; shift; timeout "$t" "$@" && return 0; echo "::warning::«$*» no terminó en $t s o falló: se intenta una vez más"; sleep 5; timeout "$t" "$@"; }
+        reintenta() { local t="$1"; shift; timeout -k 15 "$t" "$@" && return 0; echo "::warning::«$*» no terminó en $t s o falló: se intenta una vez más" >&2; sleep 5; timeout -k 15 "$t" "$@"; }
+        FIN
+        # 20 nov (CI 44793647835) · Dos trabajos cayeron AQUÍ por el propio tope: `apt-get install` pasó de 420 s (el «man-db» de las máquinas de
+        # GitHub reconstruye su índice en cada instalación y a veces tarda minutos), el tope cortó a sudo pero apt siguió vivo con el candado
+        # puesto, y el reintento murió en «Could not get lock». Ahora: sin el índice de man-db (no lo usa nadie aquí), apt ESPERA el candado en vez
+        # de fallar, y cada intento de instalar empieza terminando lo que el anterior dejó a medias. El aviso del reintento sale por el canal
+        # de errores (con «> /dev/null» no se veía).
+        sudo rm -f /var/lib/man-db/auto-update
+        echo 'DPkg::Lock::Timeout "300";' | sudo tee /etc/apt/apt.conf.d/99-espera-el-candado > /dev/null
+        cat > "$RUNNER_TEMP/instala.sh" <<'FIN'
+        #!/bin/bash
+        sudo pkill -9 -x apt-get 2> /dev/null || true
+        sudo pkill -9 -x dpkg 2> /dev/null || true
+        sudo dpkg --configure -a > /dev/null 2>&1 || true
+        exec sudo apt-get install -y -qq "$@"
         FIN
         . "$RUNNER_TEMP/reintenta.sh"
         reintenta 180 python3 -m pip install -q pillow
@@ -34,7 +48,7 @@ runs:
       run: |
         . "$RUNNER_TEMP/reintenta.sh"
         reintenta 300 sudo apt-get update -qq
-        reintenta 420 sudo apt-get install -y -qq psmisc ffmpeg > /dev/null  # C-001: ffmpeg para el servicio de video propio (vid001 lo levanta en :8791)
+        reintenta 420 bash "$RUNNER_TEMP/instala.sh" psmisc ffmpeg > /dev/null  # C-001: ffmpeg para el servicio de video propio (vid001 lo levanta en :8791)
         reintenta 300 npm ci --ignore-scripts --prefix pruebas/herramientas > /dev/null
         (cd pruebas/herramientas && reintenta 600 npx playwright install --with-deps ${{ inputs.navegadores }} > /dev/null)
         echo "NODE_PATH=$GITHUB_WORKSPACE/pruebas/herramientas/node_modules" >> "$GITHUB_ENV"
