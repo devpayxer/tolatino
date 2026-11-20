@@ -136,8 +136,8 @@ const limpiar = () => {
 
     // ── 4 · El negocio manda solo una foto; el equipo la quita con motivo ──
     const n0 = Number(sql(`select count(*) from notifications where tpl = 'mod_hide' and user_id = ${PEDRO}`));
-    const [ch] = await Promise.all([p.waitForEvent('filechooser'), clic(p.getByText('Agregar una foto', { exact: true }))]);
-    await ch.setFiles(FOTO2);
+    // Como una persona (pruebas/lib/elegir-foto.cjs): si no se sube, dice el status del servidor (CI dirigido 44722172301, iPad).
+    await elegirFoto(p, FOTO2, { toque: (x) => x.getByText('Agregar una foto', { exact: true }), listo: async () => undefined });
     ok(await contiene(p, 'To’Latino la revisa antes de que el cliente la vea.', 20000), 'panel: la foto elegida, con la nota de que la revisa To’Latino');
     await clic(p.getByRole('button', { name: 'Enviar' }));
     ok(await espera(() => sql(`select count(*) from chat_messages where thread_id = ${TH} and sender = 'business' and body = '' and media_id is not null`) === '1'), 'el negocio manda solo la foto (sin texto)');
