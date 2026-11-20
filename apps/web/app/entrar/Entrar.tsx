@@ -393,7 +393,7 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv, llaves 
               </div>
               <p className="text-[12px] font-medium leading-normal text-text-3">{E2("En la Comunidad tus publicaciones dicen tu zona, nunca tu dirección.", "In the Community your posts show your area, never your address.")}</p>
             </div>
-            <button type="button" onClick={() => setFueraOn(true)} className="mt-[18px] flex items-center gap-1.5 self-start text-[13.5px] font-bold text-action">
+            <button type="button" onClick={() => setFueraOn(true)} className="mt-[7px] flex min-h-[44px] items-center gap-1.5 self-start text-[13.5px] font-bold text-action">
               {E2(`No vivo en ${d.ciudad?.name ?? ""}`, `I don't live in ${d.ciudad?.name ?? ""}`)}<Icon name="chevronRight" size={14} color="var(--tl-action)" strokeWidth={2} />
             </button>
           </div>

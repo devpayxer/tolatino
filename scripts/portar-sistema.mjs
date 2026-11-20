@@ -230,6 +230,10 @@ function parchesAccesibilidad(t, rel) {
    Lo mide y lo exige pruebas/e2e/a11y9c.cjs (pruebas/lib/tactil.cjs) a 390 y a 320 con letra grande; guardián objetivosTactiles. */
 const T44 = 44;
 const TACTIL = {
+  // 20 nov (confirmación 44637101290): «Volver» y «Salir» de la bienvenida (Entrar › Comunidad) medían 36 × 36.
+  "onboarding/OnbTopBar.js": [
+    ["  const btn = {\n    width: 36,\n    height: 36,", `  const btn = {\n    width: ${T44},\n    height: ${T44},`],
+  ],
   "core/Button.js": [
     ["  md: {\n    height: 40,", `  md: {\n    height: ${T44},`],
     ["  sm: {\n    height: 34,", `  sm: {\n    height: ${T44},`],

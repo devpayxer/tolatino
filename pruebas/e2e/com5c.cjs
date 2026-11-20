@@ -264,7 +264,7 @@ const sinScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth <
   const avA = sql(`select count(*) from notifications where user_id = '${RA}'`);
   await yp.goto(B + '/comunidad'); await yp.getByText('Feria de comida en el parque').first().waitFor();
   const card = yp.locator('[data-screen-label="Comunidad · publicación"]').filter({ hasText: 'Feria de comida en el parque' }).first();
-  await clic(card.locator('span[style*="-9px"]'));
+  await clic(card.getByRole('button', { name: 'Opciones', exact: true }));
   await clic(yp.getByText('Silenciar a Yaritza', { exact: true }));
   ok(await espera(() => sql(`select count(*) from user_blocks where user_id = '${RY}' and target_user_id = '${RA}' and kind = 'mute' and removed_at is null`) === '1'), 'Y silenció a A');
   ok(await contiene(yp, 'Silenciaste a Yaritza. No se entera.'), 'aviso «No se entera» con Deshacer');

@@ -83,8 +83,8 @@ function OnbTopBar({
   backLabel = typeof lang !== 'undefined' && lang === 'EN' ? "Back" : "Volver"
 }) {
   const btn = {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     background: 'rgba(11,14,18,.05)',
     display: 'grid',

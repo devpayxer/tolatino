@@ -136,7 +136,7 @@ const A = '5705550299', BB = '5705550288', Y = '5705550433', ADM = '5705550199';
 
   // ── 7 · Editar en los 30 minutos sí; después no ──
   await a.goto(B + '/comunidad/p/' + Q); await a.locator('[data-screen-label="APP-COM-POST · publicación"]').first().waitFor();
-  await clic(a.locator('[data-screen-label="APP-COM-POST · publicación"] span[style*="-9px"]'));
+  await clic(a.locator('[data-screen-label="APP-COM-POST · publicación"]').getByRole('button', { name: 'Opciones', exact: true }));
   await clic(a.getByRole('button').filter({ hasText: /^Editar/ }));
   await a.waitForURL(/editar=/); await a.getByLabel('TU PREGUNTA').waitFor();
   await a.getByLabel('TU PREGUNTA').fill(`¿Dónde vacunan gratis a los niños esta semana en Hazleton? Mi hijo tiene tos ${TAG}`);
@@ -146,7 +146,7 @@ const A = '5705550299', BB = '5705550288', Y = '5705550433', ADM = '5705550199';
   ok(sqlErr(`delete from com_edits where target_id = ${Q}`).includes('solo de inserción'), 'com_edits no se borra');
   sql(`update com_posts set created_at = now() - interval '31 minutes' where id = ${Q}`);
   await a.goto(B + `/comunidad/nuevo?editar=${Q}`); ok(await contiene(a, 'Ya no se puede editar'), 'después de 30 minutos: «Ya no se puede editar» (lo decide el servidor)');
-  await a.goto(B + '/comunidad/p/' + Q); await clic(a.locator('[data-screen-label="APP-COM-POST · publicación"] span[style*="-9px"]'));
+  await a.goto(B + '/comunidad/p/' + Q); await clic(a.locator('[data-screen-label="APP-COM-POST · publicación"]').getByRole('button', { name: 'Opciones', exact: true }));
   ok(await (await vis(a.getByRole('button').filter({ hasText: /^Editar/ }))).getAttribute('aria-disabled') === 'true', 'el menú ya no deja editar');
   // 9c · Escape cierra la hoja del menú (FocoHojas); antes hacía falta «Cerrar».
   await a.keyboard.press('Escape');
@@ -167,7 +167,7 @@ const A = '5705550299', BB = '5705550288', Y = '5705550433', ADM = '5705550199';
   // ── 9 · Borrar con Deshacer (en el muro) ──
   await a.goto(B + '/comunidad'); await a.getByText('¿Qué pasa en tu cuadra').first().waitFor();
   const cardE = a.locator('[data-screen-label="Comunidad · publicación"]').filter({ hasText: '¿A qué hora debería abrir el mercado' }).first();
-  await clic(cardE.locator('span[style*="-9px"]')); await clic(a.getByRole('button').filter({ hasText: /^Borrar/ }));
+  await clic(cardE.getByRole('button', { name: 'Opciones', exact: true })); await clic(a.getByRole('button').filter({ hasText: /^Borrar/ }));
   await clic(a.getByRole('button', { name: 'Borrar', exact: true }));
   await a.getByText('Publicación borrada.').waitFor();
   ok(sql(`select status from com_posts where id = ${E}`) === 'deleted' && !(await texto(a)).includes('¿A qué hora debería abrir el mercado'), 'borrar = estado «deleted» y sale del muro');
