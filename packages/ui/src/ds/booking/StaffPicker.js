@@ -37,7 +37,7 @@ function StaffPicker({
         width: 66,
         height: 66,
         borderRadius: 18,
-        background: p.image ? 'center/cover url(' + p.image + ')' : 'var(--tl-desk)',
+        background: p.image ? 'center/cover ' + __ds_scope.__fondo(p.image, 66) : 'var(--tl-desk)',
         border: on ? '2.5px solid var(--tl-ink)' : 'none',
         boxSizing: 'border-box'
       }

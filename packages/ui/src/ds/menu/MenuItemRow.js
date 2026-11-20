@@ -108,7 +108,7 @@ function MenuItemRow({
       height: size,
       borderRadius: 16,
       flex: 'none',
-      background: image ? 'center/cover url(' + image + ')' : PH,
+      background: image ? 'center/cover ' + __ds_scope.__fondo(image, size) : PH,
       backgroundColor: 'var(--tl-photo-bg)',
       opacity: off ? .45 : 1,
       boxShadow: card ? 'none' : ring
@@ -289,7 +289,7 @@ function MenuTile({
       position: 'relative',
       height,
       borderRadius: 16,
-      background: image ? 'center/cover url(' + image + ')' : PH,
+      background: image ? 'center/cover ' + __ds_scope.__fondo(image, width) : PH,
       backgroundColor: 'var(--tl-photo-bg)',
       boxShadow: selected ? '0 0 0 2.5px var(--tl-ink)' : 'none'
     }
@@ -577,7 +577,7 @@ function CartLine({
       width: 48,
       height: 48,
       borderRadius: 12,
-      background: image ? 'center/cover url(' + image + ')' : PH,
+      background: image ? 'center/cover ' + __ds_scope.__fondo(image, 48) : PH,
       backgroundColor: 'var(--tl-photo-bg)',
       flex: 'none',
       cursor: onEdit ? 'pointer' : 'default'

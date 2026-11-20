@@ -101,7 +101,7 @@ function CategoryHero({
     style: {
       position: 'relative',
       height: d ? 300 : 236,
-      background: image ? `center/cover url(${image})` : 'var(--tl-photo-bg-2)',
+      background: image ? `center/cover ${__ds_scope.__fondo(image, d ? 800 : 540)}` : 'var(--tl-photo-bg-2)',
       backgroundColor: 'var(--tl-photo-bg-2)'
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -230,7 +230,7 @@ function CategoryHero({
       width: '100%',
       height: '100%',
       borderRadius: 999,
-      background: t.image ? `center/cover url(${t.image})` : 'var(--tl-photo-bg)',
+      background: t.image ? `center/cover ${__ds_scope.__fondo(t.image, d ? 84 : 66)}` : 'var(--tl-photo-bg)',
       backgroundColor: 'var(--tl-photo-bg)',
       outline: t.active ? '2px solid var(--tl-ink)' : 'none',
       outlineOffset: 2
@@ -243,7 +243,7 @@ function CategoryHero({
       width: d ? 26 : 22,
       height: d ? 17 : 15,
       borderRadius: 4,
-      background: `center/cover url(${t.flag})`,
+      background: `center/cover ${__ds_scope.__fondo(t.flag, d ? 26 : 22)}`,
       boxShadow: '0 0 0 2px var(--tl-white)'
     }
   }) : null), /*#__PURE__*/React.createElement("div", {
@@ -302,7 +302,7 @@ function CategoryHero({
       style: {
         height: d ? 80 : 62,
         borderRadius: d ? 14 : 13,
-        background: t.image ? `center/cover url(${t.image})` : 'var(--tl-photo-bg)',
+        background: t.image ? `center/cover ${__ds_scope.__fondo(t.image, d ? 112 : 84)}` : 'var(--tl-photo-bg)',
         backgroundColor: 'var(--tl-photo-bg)',
         outline: t.active ? '2px solid var(--tl-ink)' : 'none',
         outlineOffset: 2

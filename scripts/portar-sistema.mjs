@@ -474,6 +474,92 @@ function tactiles(t, rel) {
   }
   return t;
 }
+/* Fotos a la medida (F2a, 20 nov) · Cada foto que el sistema pinta pide la variante que le toca a SU caja (packages/ui/src/foto.ts: 320 / 640 / 1080 /
+   1600 px, WebP; lo que no es una foto nuestra pasa igual). `__ds_scope.__fondo(url, caja)` arma el `url("…")` de una dirección suelta y
+   `__ds_scope.__fondoCss(valor, caja)` cambia los url(…) de un fondo que la pantalla ya trae armado (avatares, degradados, `url(x)` envueltos).
+   `caja` = el ancho en px CSS de la caja; en las portadas de ancho completo, 540 (la variante de 1080) en el teléfono y 800 (la de 1600) en el escritorio.
+   Misma forma que TACTIL: [texto del origen, texto nuevo, veces]; si el origen cambia, el script se detiene en vez de perder el parche.
+   Lo vigila el guardián fotoPorLaPieza (pinta una foto de datos sin pasar por aquí = falla). */
+const FOTO = {
+  "core/Placeholder.js": [
+    ["background: image ? 'center/cover url(' + image + ')' :", "background: image ? 'center/cover ' + __ds_scope.__fondo(image, typeof width === 'number' ? width : 540) :"],
+  ],
+  "cards/BusinessCard.js": [
+    ["const bg = p => p ? {\n  backgroundImage: 'url(' + p + ')',", "const bg = (p, w) => p ? {\n  backgroundImage: __ds_scope.__fondo(p, w),"],
+    ["      background: 'var(--tl-photo-bg)',\n      ...bg(photos[0])", "      background: 'var(--tl-photo-bg)',\n      ...bg(photos[0], 64)"],
+    ["      overflow: 'hidden',\n      ...bg(photos[0])", "      overflow: 'hidden',\n      ...bg(photos[0], 540)"],
+    ["...bg(ring)", "...bg(ring, 54)"],
+  ],
+  "cards/StoryCard.js": [
+    ["const bg = u => u ? `center/cover url(${u})` :", "const bg = (u, w) => u ? `center/cover ${__ds_scope.__fondo(u, w)}` :"],
+    ["background: bg(p.image)", "background: bg(p.image, width)"],
+    ["background: bg(logo)", "background: bg(logo, 26)"],
+  ],
+  "layout/CategoryHero.js": [
+    ["background: image ? `center/cover url(${image})` :", "background: image ? `center/cover ${__ds_scope.__fondo(image, d ? 800 : 540)}` :"],
+    ["borderRadius: 999,\n      background: t.image ? `center/cover url(${t.image})`", "borderRadius: 999,\n      background: t.image ? `center/cover ${__ds_scope.__fondo(t.image, d ? 84 : 66)}`"],
+    ["background: `center/cover url(${t.flag})`", "background: `center/cover ${__ds_scope.__fondo(t.flag, d ? 26 : 22)}`"],
+    ["borderRadius: d ? 14 : 13,\n        background: t.image ? `center/cover url(${t.image})`", "borderRadius: d ? 14 : 13,\n        background: t.image ? `center/cover ${__ds_scope.__fondo(t.image, d ? 112 : 84)}`"],
+  ],
+  "listing/OwnerCard.js": [
+    ["marginLeft: -6,\n      borderRadius: 99,\n      border: '2px solid var(--tl-white)',\n      background: 'center 25%/cover url(' + p + ')'", "marginLeft: -6,\n      borderRadius: 99,\n      border: '2px solid var(--tl-white)',\n      background: 'center 25%/cover ' + __ds_scope.__fondo(p, desktop ? 34 : 30)"],
+    ["minHeight: 250,\n      background: 'center 25%/cover url(' + photo + ')'", "minHeight: 250,\n      background: 'center 25%/cover ' + __ds_scope.__fondo(photo, 220)"],
+    ["flex: 'none',\n      background: 'center 25%/cover url(' + photo + ')'", "flex: 'none',\n      background: 'center 25%/cover ' + __ds_scope.__fondo(photo, 64)"],
+  ],
+  "menu/MenuItemRow.js": [
+    ["      height: size,\n      borderRadius: 16,\n      flex: 'none',\n      background: image ? 'center/cover url(' + image + ')' :", "      height: size,\n      borderRadius: 16,\n      flex: 'none',\n      background: image ? 'center/cover ' + __ds_scope.__fondo(image, size) :"],
+    ["      height,\n      borderRadius: 16,\n      background: image ? 'center/cover url(' + image + ')' :", "      height,\n      borderRadius: 16,\n      background: image ? 'center/cover ' + __ds_scope.__fondo(image, width) :"],
+    ["      height: 48,\n      borderRadius: 12,\n      background: image ? 'center/cover url(' + image + ')' :", "      height: 48,\n      borderRadius: 12,\n      background: image ? 'center/cover ' + __ds_scope.__fondo(image, 48) :"],
+  ],
+  "order/DeliveryPrefs.js": [
+    ["background: item.image ? 'center/cover url(' + item.image + ')' :", "background: item.image ? 'center/cover ' + __ds_scope.__fondo(item.image, 48) :"],
+  ],
+  "booking/StaffPicker.js": [
+    ["background: p.image ? 'center/cover url(' + p.image + ')' :", "background: p.image ? 'center/cover ' + __ds_scope.__fondo(p.image, 66) :"],
+  ],
+  "account/NeighborCard.js": [
+    ["background: photo ? `url(${photo}) center/cover` :", "background: photo ? __ds_scope.__fondo(photo, 66) + ' center/cover' :"],
+  ],
+  "listing/ReviewCard.js": [
+    ["background: p.image ? p.image + ' center/cover' :", "background: p.image ? __ds_scope.__fondoCss(p.image, S ? 64 : 76) + ' center/cover' :"],
+  ],
+  "community/Thread.js": [
+    ["    background: avatar || avatarColor,", "    background: __ds_scope.__fondoCss(avatar || avatarColor, size),"],
+    ["background: business.image ? business.image + ' center/cover' :", "background: business.image ? __ds_scope.__fondoCss(business.image, 54) + ' center/cover' :"],
+    ["background: f.image || 'var(--tl-photo-bg-2)',", "background: __ds_scope.__fondoCss(f.image, 22) || 'var(--tl-photo-bg-2)',"],
+    ["background: b.image ? b.image + ' center/cover' :", "background: b.image ? __ds_scope.__fondoCss(b.image, 36) + ' center/cover' :"],
+  ],
+  "community/PostCard.js": [
+    ["      background: avatar || avatarColor,", "      background: __ds_scope.__fondoCss(avatar || avatarColor, 40),"],
+  ],
+  "search/SearchResultRow.js": [
+    ["const bgImg = s => !s ? {} : {\n  backgroundImage: /^url\\(/.test(s) ? s : 'url(' + s + ')',", "const bgImg = (s, w) => !s ? {} : {\n  backgroundImage: __ds_scope.__fondoCss(/^url\\(/.test(s) ? s : 'url(' + s + ')', w),"],
+    ["...bgImg(image)", "...bgImg(image, S)"],
+  ],
+  "admin/AdminBar.js": [
+    ["const bgImg = s => !s || s === 'none' ? {} : {\n  backgroundImage: /^url\\(/.test(s) ? s : 'url(' + s + ')',", "const bgImg = (s, w = 64) => !s || s === 'none' ? {} : {\n  backgroundImage: __ds_scope.__fondoCss(/^url\\(/.test(s) ? s : 'url(' + s + ')', w),"],
+    ["      borderRadius: px(imageRadius),\n      ...bgImg(image),", "      borderRadius: px(imageRadius),\n      ...bgImg(image, parseInt(imageSize) || 64),"],
+  ],
+  "listing/BusinessPreview.js": [
+    ["const bgc = (img, c) => ({\n  background: img ? img + ' center/cover' : c,", "const bgc = (img, c, w) => ({\n  background: img ? __ds_scope.__fondoCss(img, w) + ' center/cover' : c,"],
+    ["...bgc(P.logoBg, P.logoC),\n      color: 'var(--tl-white)',\n      display: 'grid',\n      placeItems: 'center',\n      font: '800 14px/1 Sora,sans-serif'", "...bgc(P.logoBg, P.logoC, 40),\n      color: 'var(--tl-white)',\n      display: 'grid',\n      placeItems: 'center',\n      font: '800 14px/1 Sora,sans-serif'"],
+    ["...bgc(P.logoBg, P.logoC),\n      color: 'var(--tl-white)',\n      display: 'grid',\n      placeItems: 'center',\n      font: '800 19px/1 Sora,sans-serif'", "...bgc(P.logoBg, P.logoC, 62),\n      color: 'var(--tl-white)',\n      display: 'grid',\n      placeItems: 'center',\n      font: '800 19px/1 Sora,sans-serif'"],
+    ["      height: 150,\n      ...bgc(P.cover, 'var(--tl-photo-bg)'),", "      height: 150,\n      ...bgc(P.cover, 'var(--tl-photo-bg)', 540),"],
+    ["      borderRadius: 14,\n      flex: 'none',\n      ...bgc(P.cover, 'var(--tl-photo-bg)')\n", "      borderRadius: 14,\n      flex: 'none',\n      ...bgc(P.cover, 'var(--tl-photo-bg)', 64)\n"],
+    ["      height: 190,\n      ...bgc(P.cover, 'var(--tl-photo-bg-2)'),", "      height: 190,\n      ...bgc(P.cover, 'var(--tl-photo-bg-2)', 540),"],
+    ["...bgc(bg, 'var(--tl-photo-bg)')", "...bgc(bg, 'var(--tl-photo-bg)', 120)"],
+    ["      ...bgc(p.bg, 'var(--tl-photo-bg)'),\n      flex: 'none'", "      ...bgc(p.bg, 'var(--tl-photo-bg)', 42),\n      flex: 'none'"],
+    ["      aspectRatio: '1',\n      ...bgc(p.bg, 'var(--tl-photo-bg)'),", "      aspectRatio: '1',\n      ...bgc(p.bg, 'var(--tl-photo-bg)', 200),"],
+  ],
+};
+function fotos(t, rel) {
+  for (const [de, a, veces = 1] of FOTO[rel] || []) {
+    const n = t.split(de).length - 1;
+    if (n !== veces) throw new Error(`fotos a la medida (${rel}): esperaba ${veces} vez/veces «${de.slice(0, 70)}» y hay ${n} (el origen cambió, revisar)`);
+    t = t.replaceAll(de, a);
+  }
+  return t;
+}
 const puntuales = new Map();
 const nombres = [];
 const grupos = {};
@@ -780,8 +866,9 @@ for (const src of archivos) {
       if (!t.includes(x)) throw new Error(`parche BusinessCard (C-002 una línea): el origen cambió, revisar (${x})`);
   }
   t = tactiles(t, rel);
+  t = fotos(t, rel);
 
-  const m = [...t.matchAll(/Object\.assign\(__ds_scope, \{([^}]*)\}\);/g)];
+  const m =[...t.matchAll(/Object\.assign\(__ds_scope, \{([^}]*)\}\);/g)];
   for (const x of m) {
     const ns = x[1].split(",").map((s) => s.trim()).filter(Boolean);
     nombres.push(...ns);
@@ -802,7 +889,13 @@ import { __ds_scope } from "${profundidad}/scope.js";
 }
 
 writeFileSync(join(DESTINO, "scope.js"), `/* Registro común de los componentes portados: cada módulo se agrega aquí y busca a los demás aquí. */
+import { fotoCss, fotoFondo } from "../foto";
 export const __ds_scope = {};
+
+/* Fotos a la medida (F2a, scripts/portar-sistema.mjs, tabla FOTO): \`__fondo(url, caja)\` = el url("…") de la variante que le toca a una caja de ese
+   ancho en px; \`__fondoCss(valor, caja)\` = lo mismo para un fondo que ya trae sus url(…) (o un color o degradado, que quedan igual). */
+__ds_scope.__fondo = fotoFondo;
+__ds_scope.__fondoCss = fotoCss;
 
 /* 9c · Accesibilidad de lo que era un <div>/<span> con onClick (scripts/portar-sistema.mjs, tabla A11Y). \`__btn(clic, nombre, extra, dentro)\` devuelve
    role="button", tabIndex 0, Enter/Espacio (solo con el foco en el propio elemento, para no robarle la tecla a un campo de dentro) y el nombre

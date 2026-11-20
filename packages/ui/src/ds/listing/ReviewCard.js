@@ -179,7 +179,7 @@ function ReviewCard({
       width: S ? 64 : 76,
       height: S ? 64 : 76,
       borderRadius: 12,
-      background: p.image ? p.image + ' center/cover' : 'var(--tl-photo-bg)',
+      background: p.image ? __ds_scope.__fondoCss(p.image, S ? 64 : 76) + ' center/cover' : 'var(--tl-photo-bg)',
       backgroundColor: 'var(--tl-photo-bg)',
       cursor: p.onClick ? 'pointer' : 'default',
       flex: 'none'

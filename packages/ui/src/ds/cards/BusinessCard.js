@@ -58,8 +58,8 @@ const Stars = ({
     color: 'rgba(11,14,18,.6)'
   }
 }, "(", n, ")"));
-const bg = p => p ? {
-  backgroundImage: 'url(' + p + ')',
+const bg = (p, w) => p ? {
+  backgroundImage: __ds_scope.__fondo(p, w),
   backgroundSize: 'cover',
   backgroundPosition: 'center'
 } : {};
@@ -116,7 +116,7 @@ function BusinessCard({
       borderRadius: 14,
       flex: 'none',
       background: 'var(--tl-photo-bg)',
-      ...bg(photos[0])
+      ...bg(photos[0], 64)
     }
   }), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -181,7 +181,7 @@ function BusinessCard({
       position: 'absolute',
       inset: 0,
       overflow: 'hidden',
-      ...bg(photos[0])
+      ...bg(photos[0], 540)
     }
   }, media || null), ring ? /*#__PURE__*/React.createElement("button", {
     type: 'button',
@@ -212,7 +212,7 @@ function BusinessCard({
       borderRadius: 99,
       border: '3px solid var(--tl-white)',
       backgroundColor: 'var(--tl-photo-bg)',
-      ...bg(ring)
+      ...bg(ring, 54)
     }
   })) : null), /*#__PURE__*/React.createElement("div", {
     style: {

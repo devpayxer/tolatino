@@ -406,7 +406,7 @@ function PostCard({
       boxSizing: 'border-box',
       borderRadius: avatarRadius,
       border: avatarBorder,
-      background: avatar || avatarColor,
+      background: __ds_scope.__fondoCss(avatar || avatarColor, 40),
       backgroundColor: avatarColor,
       display: 'grid',
       placeItems: 'center',

@@ -29,7 +29,7 @@ function Placeholder({
       flex: 'none',
       position: 'relative',
       overflow: 'hidden',
-      background: image ? 'center/cover url(' + image + ')' : 'repeating-linear-gradient(135deg,' + a + ' 0 10px,' + b + ' 10px 20px)',
+      background: image ? 'center/cover ' + __ds_scope.__fondo(image, typeof width === 'number' ? width : 540) : 'repeating-linear-gradient(135deg,' + a + ' 0 10px,' + b + ' 10px 20px)',
       ...style
     }
   }, children);

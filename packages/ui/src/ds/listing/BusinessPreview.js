@@ -42,8 +42,8 @@ const COVER = {
   letterSpacing: '.14em',
   color: 'rgba(11,14,18,.6)'
 };
-const bgc = (img, c) => ({
-  background: img ? img + ' center/cover' : c,
+const bgc = (img, c, w) => ({
+  background: img ? __ds_scope.__fondoCss(img, w) + ' center/cover' : c,
   backgroundColor: c
 });
 
@@ -115,7 +115,7 @@ function BusinessPreview({
       height: 40,
       borderRadius: 12,
       flex: 'none',
-      ...bgc(P.logoBg, P.logoC),
+      ...bgc(P.logoBg, P.logoC, 40),
       color: 'var(--tl-white)',
       display: 'grid',
       placeItems: 'center',
@@ -200,7 +200,7 @@ function BusinessPreview({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       height: 150,
-      ...bgc(P.cover, 'var(--tl-photo-bg)'),
+      ...bgc(P.cover, 'var(--tl-photo-bg)', 540),
       display: 'grid',
       placeItems: 'center'
     }
@@ -294,7 +294,7 @@ function BusinessPreview({
       height: 64,
       borderRadius: 14,
       flex: 'none',
-      ...bgc(P.cover, 'var(--tl-photo-bg)')
+      ...bgc(P.cover, 'var(--tl-photo-bg)', 64)
     }
   }), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -356,7 +356,7 @@ function BusinessPreview({
     style: {
       position: 'relative',
       height: 190,
-      ...bgc(P.cover, 'var(--tl-photo-bg-2)'),
+      ...bgc(P.cover, 'var(--tl-photo-bg-2)', 540),
       display: 'grid',
       placeItems: 'center'
     }
@@ -401,7 +401,7 @@ function BusinessPreview({
       height: 62,
       borderRadius: 18,
       flex: 'none',
-      ...bgc(P.logoBg, P.logoC),
+      ...bgc(P.logoBg, P.logoC, 62),
       color: 'var(--tl-white)',
       display: 'grid',
       placeItems: 'center',
@@ -583,7 +583,7 @@ function BusinessPreview({
     style: {
       aspectRatio: '1',
       borderRadius: 12,
-      ...bgc(bg, 'var(--tl-photo-bg)')
+      ...bgc(bg, 'var(--tl-photo-bg)', 120)
     }
   })))) : null, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: H2
@@ -781,7 +781,7 @@ function BusinessPreview({
       width: 42,
       height: 42,
       borderRadius: 13,
-      ...bgc(p.bg, 'var(--tl-photo-bg)'),
+      ...bgc(p.bg, 'var(--tl-photo-bg)', 42),
       flex: 'none'
     }
   }), /*#__PURE__*/React.createElement("span", {
@@ -831,7 +831,7 @@ function BusinessPreview({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       aspectRatio: '1',
-      ...bgc(p.bg, 'var(--tl-photo-bg)'),
+      ...bgc(p.bg, 'var(--tl-photo-bg)', 200),
       display: 'grid',
       placeItems: 'center',
       font: '800 22px/1 Sora,sans-serif',

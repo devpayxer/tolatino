@@ -6,6 +6,7 @@ import type React from "react";
 import type { CSSProperties, ReactNode } from "react";
 import * as DS from "../ds/index";
 import type { ComponentType } from "react";
+import { fotoCss, fotoFondo } from "../foto";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, Tag, SelectBox, QtyStepper, SelectionBar, MenuItemRow, OptionGroup } = DS as unknown as Record<"Icon" | "Button" | "Chip" | "Tag" | "SelectBox" | "QtyStepper" | "SelectionBar" | "MenuItemRow" | "OptionGroup", ComponentType<any>>;
@@ -109,12 +110,12 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
     case "nprev": return (
       <div>
         {b.k ? <div style={{ ...K, color: "rgba(11,14,18,.6)", marginBottom: 8 }}>{b.k}</div> : null}
-        <DS.PostCard card screenLabel="Novedades · publicación" avatar={b.logo ? `url(${b.logo}) center/cover` : undefined} avatarColor="var(--tl-photo-bg)" initials={b.logo ? undefined : b.name.slice(0, 1)}
+        <DS.PostCard card screenLabel="Novedades · publicación" avatar={b.logo ? `${fotoFondo(b.logo, 40)} center/cover` : undefined} avatarColor="var(--tl-photo-bg)" initials={b.logo ? undefined : b.name.slice(0, 1)}
           name={b.name} nameFont="700 14.5px/1.2" tags={b.tags} body={b.body} bodyFont="500 14px/1.55" bodyGap={10}
           vote={{ score: 0 }} voteStyle={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(11,14,18,.07)", gap: 6 }}>
           {b.photos.length ? (
             <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: `repeat(${Math.min(2, b.photos.length)},minmax(0,1fr))`, gap: 6, borderRadius: 14, overflow: "hidden" }}>
-              {b.photos.map((u, i) => <span key={i} style={{ height: b.photos.length > 2 ? 120 : b.photos.length > 1 ? 150 : 200, background: `url(${u}) center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />)}
+              {b.photos.map((u, i) => <span key={i} style={{ height: b.photos.length > 2 ? 120 : b.photos.length > 1 ? 150 : 200, background: `${fotoFondo(u, b.photos.length > 1 ? 200 : 400)} center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />)}
             </div>) : null}
           {b.foot ? <div style={{ marginTop: 12, padding: 13, borderRadius: 16, background: "var(--tl-paper)", font: "700 13px/1.4 Manrope,sans-serif" }}>{b.foot}</div> : null}
         </DS.PostCard>
@@ -124,7 +125,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
         {b.items.map((m, i) => (
           <div key={m.key ?? i} data-msg-foto={m.img || m.imgL ? (m.img ? "si" : "espera") : undefined} style={{ display: "flex", flexDirection: "column", alignItems: m.mine ? "flex-end" : "flex-start", gap: 3 }}>
             <span style={{ maxWidth: "82%", padding: "10px 13px", borderRadius: m.mine ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: m.soft ? "rgba(75,55,245,.07)" : m.mine ? "var(--tl-ink)" : "var(--tl-paper)", color: m.soft ? "rgba(11,14,18,.62)" : m.mine ? "var(--tl-white)" : "var(--tl-ink)", font: "600 13px/1.45 Manrope,sans-serif", whiteSpace: "pre-wrap", overflowWrap: "anywhere", display: "flex", flexDirection: "column", gap: m.img || m.imgL ? 8 : 0 }}>
-              {m.img ? <a href={m.img} target="_blank" rel="noopener noreferrer" aria-label={m.imgAlt} data-toque="" style={{ display: "block", width: 180, height: 140, maxWidth: "100%", borderRadius: 10, background: `url("${m.img}") center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />
+              {m.img ? <a href={m.img} target="_blank" rel="noopener noreferrer" aria-label={m.imgAlt} data-toque="" style={{ display: "block", width: 180, height: 140, maxWidth: "100%", borderRadius: 10, background: `${fotoFondo(m.img, 180)} center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />
                 : m.imgL ? <span role="img" aria-label={m.imgL} style={{ width: 180, height: 140, maxWidth: "100%", borderRadius: 10, background: "var(--tl-photo-bg)", display: "grid", placeItems: "center", alignContent: "center", gap: 6, padding: 10, boxSizing: "border-box", textAlign: "center", color: "rgba(11,14,18,.6)", font: "600 12px/1.35 Manrope,sans-serif" }}><Icon name="image" size={20} color="rgba(11,14,18,.6)" />{m.imgL}</span> : null}
               {m.t ? <span>{m.t}</span> : null}
             </span>
@@ -162,7 +163,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
     case "hero": return (
       <div style={{ padding: 18, borderRadius: 22, background: "var(--tl-ink)", color: "var(--tl-white)", display: "flex", flexDirection: "column", gap: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ width: 46, height: 46, borderRadius: 14, backgroundImage: b.ph, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "rgba(255,255,255,.12)", display: "grid", placeItems: "center", font: "800 16px/1 Sora,sans-serif", flex: "none" }}>{b.ini}</span>
+          <span style={{ width: 46, height: 46, borderRadius: 14, backgroundImage: fotoCss(b.ph, 46), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "rgba(255,255,255,.12)", display: "grid", placeItems: "center", font: "800 16px/1 Sora,sans-serif", flex: "none" }}>{b.ini}</span>
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: "block", font: "800 19px/1.15 Sora,sans-serif", letterSpacing: "-.03em" }}>{b.t}</span>
             {b.s ? <span style={{ display: "block", marginTop: 3, font: "500 12.5px/1.4 Manrope,sans-serif", color: "rgba(255,255,255,.7)" }}>{b.s}</span> : null}
@@ -219,7 +220,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
             <div key={x.key ?? i} style={{ minWidth: 0, padding: x.compact ? "10px 12px" : "13px 14px", borderRadius: x.compact ? 14 : 17, background: x.bg ?? "var(--tl-white)", border: x.bd ?? "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 11, opacity: x.dim ? 0.55 : 1 }}>
               <div role={x.onClick ? "button" : undefined} onClick={x.onClick} style={{ display: "flex", alignItems: "center", gap: 12, cursor: x.onClick ? "pointer" : "default" }}>
                 {x.sel ? <SelectBox on={x.sel.on} onClick={x.sel.onClick} /> : null}
-                {x.img || x.imgIni ? <span style={{ width: x.imgW ?? "44px", height: x.imgW ?? "44px", borderRadius: 13, backgroundImage: x.img, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", flex: "none", display: "grid", placeItems: "center", font: "800 15px/1 Sora,sans-serif", color: "rgba(11,14,18,.6)" }}>{x.img ? "" : x.imgIni}</span>
+                {x.img || x.imgIni ? <span style={{ width: x.imgW ?? "44px", height: x.imgW ?? "44px", borderRadius: 13, backgroundImage: fotoCss(x.img, parseInt(String(x.imgW ?? 44)) || 44), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", flex: "none", display: "grid", placeItems: "center", font: "800 15px/1 Sora,sans-serif", color: "rgba(11,14,18,.6)" }}>{x.img ? "" : x.imgIni}</span>
                   : x.icon ? <span style={{ width: 40, height: 40, borderRadius: 12, background: x.ibg ?? "rgba(75,55,245,.08)", display: "grid", placeItems: "center", flex: "none" }}><Icon name={x.icon} size={18} color={x.ifg ?? "var(--tl-action)"} /></span> : null}
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: "block", font: "700 14px/1.3 Manrope,sans-serif", color: x.tFg ?? "var(--tl-ink)" }}>{x.t}</span>
@@ -279,7 +280,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
         {b.k ? <span style={{ ...K, display: "flex", justifyContent: "space-between" }}><span>{b.k}</span><span style={{ fontWeight: 600 }}>{b.count}</span></span> : null}
         <div style={{ display: "grid", gridTemplateColumns: `repeat(${b.cols ?? 3},minmax(0,1fr))`, gap: 8 }}>
           {b.items.map((p, i) => (
-            <div key={p.key ?? i} role="button" onClick={p.onClick} tabIndex={0} onKeyDown={tecla(p.onClick)} style={{ position: "relative", aspectRatio: "1", borderRadius: 14, backgroundImage: p.bg, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", boxSizing: "border-box", border: p.on ? "3px solid var(--tl-action)" : "3px solid transparent", cursor: "pointer" }}>
+            <div key={p.key ?? i} role="button" onClick={p.onClick} tabIndex={0} onKeyDown={tecla(p.onClick)} style={{ position: "relative", aspectRatio: "1", borderRadius: 14, backgroundImage: fotoCss(p.bg, 240), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", boxSizing: "border-box", border: p.on ? "3px solid var(--tl-action)" : "3px solid transparent", cursor: "pointer" }}>
               {p.tag ? <span style={{ position: "absolute", left: 6, top: 6, padding: "3px 6px", borderRadius: 6, background: "rgba(11,14,18,.75)", color: "var(--tl-white)", font: `800 8.5px ${MONO}`, letterSpacing: ".1em" }}>{p.tag}</span> : null}
             </div>))}
           {b.onAdd ? (
@@ -394,7 +395,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
       <div style={{ display: "grid", gridTemplateColumns: b.cols ?? "minmax(0,1fr)", gap: 10 }}>
         {b.items.map((x, i) => (
           <button type="button" key={x.key ?? i} onClick={x.onClick} style={{ font: "inherit", color: "inherit", textAlign: "left", width: "100%", minWidth: 0, padding: 12, borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", gap: 13, cursor: "pointer", opacity: x.op ?? 1 }}>
-            <span style={{ position: "relative", width: 78, height: 104, flex: "none", borderRadius: 13, backgroundImage: x.img, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)" }}>
+            <span style={{ position: "relative", width: 78, height: 104, flex: "none", borderRadius: 13, backgroundImage: fotoCss(x.img, 78), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)" }}>
               <span style={{ position: "absolute", left: 6, top: 6, minWidth: 34, padding: "5px 6px 4px", boxSizing: "border-box", borderRadius: 9, background: "var(--tl-white)", textAlign: "center" }}>
                 <span style={{ display: "block", font: `700 8.5px/1 ${MONO}`, letterSpacing: ".1em", color: "var(--tl-danger)" }}>{x.bm}</span>
                 <span style={{ display: "block", marginTop: 3, font: "800 16px/1 Sora,sans-serif", letterSpacing: "-.03em", color: "var(--tl-ink)" }}>{x.bd}</span>
@@ -457,7 +458,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
         </div> : null}
         <div style={{ padding: 14, borderRadius: 22, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 14 }}>
           <div style={{ display: "flex", gap: 13 }}>
-            <span style={{ width: 72, height: 96, flex: "none", borderRadius: 12, backgroundImage: b.img, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)" }} />
+            <span style={{ width: 72, height: 96, flex: "none", borderRadius: 12, backgroundImage: fotoCss(b.img, 72), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)" }} />
             <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 7 }}>
               <span style={{ font: "800 19px/1.18 Sora,sans-serif", letterSpacing: "-.03em", color: "var(--tl-ink)", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", textWrap: "pretty" } as CSSProperties}>{b.t}</span>
               <span style={{ display: "flex", alignItems: "flex-start", gap: 6, font: "600 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.65)" }}><span style={{ display: "grid", flex: "none", paddingTop: 1 }}><Icon name="calendar" size={14} color="rgba(11,14,18,.6)" /></span><span style={{ minWidth: 0 }}>{b.when}</span></span>

@@ -335,7 +335,7 @@ function ChangeProposal({
       width: 48,
       height: 48,
       borderRadius: 12,
-      background: item.image ? 'center/cover url(' + item.image + ')' : PH,
+      background: item.image ? 'center/cover ' + __ds_scope.__fondo(item.image, 48) : PH,
       backgroundColor: 'var(--tl-photo-bg)',
       flex: 'none'
     }

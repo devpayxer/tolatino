@@ -7,8 +7,8 @@ import { __ds_scope } from "../scope.js";
 
 
 const mono = "'JetBrains Mono',monospace";
-const bgImg = s => !s ? {} : {
-  backgroundImage: /^url\(/.test(s) ? s : 'url(' + s + ')',
+const bgImg = (s, w) => !s ? {} : {
+  backgroundImage: __ds_scope.__fondoCss(/^url\(/.test(s) ? s : 'url(' + s + ')', w),
   backgroundSize: 'cover',
   backgroundPosition: 'center'
 };
@@ -70,7 +70,7 @@ function SearchResultRow({
       borderRadius: sug ? 12 : 14,
       flex: 'none',
       backgroundColor: 'var(--tl-photo-bg)',
-      ...bgImg(image)
+      ...bgImg(image, S)
     }
   }) : /*#__PURE__*/React.createElement("span", {
     style: {

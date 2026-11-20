@@ -26,8 +26,8 @@ const KEY = {
 };
 const px = v => typeof v === 'number' ? v + 'px' : v;
 const has = v => v !== undefined && v !== null && v !== '' && v !== false;
-const bgImg = s => !s || s === 'none' ? {} : {
-  backgroundImage: /^url\(/.test(s) ? s : 'url(' + s + ')',
+const bgImg = (s, w = 64) => !s || s === 'none' ? {} : {
+  backgroundImage: __ds_scope.__fondoCss(/^url\(/.test(s) ? s : 'url(' + s + ')', w),
   backgroundSize: 'cover',
   backgroundPosition: 'center'
 };
@@ -637,7 +637,7 @@ function AdminRow({
       width: S,
       height: S,
       borderRadius: px(imageRadius),
-      ...bgImg(image),
+      ...bgImg(image, parseInt(imageSize) || 64),
       backgroundColor: 'var(--tl-photo-bg)',
       flex: 'none',
       display: 'grid',

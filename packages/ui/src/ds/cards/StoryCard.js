@@ -33,7 +33,7 @@ function StoryCard({
     e.stopPropagation();
     if (k < n - 1) setI(k + 1);else if (onEnd) onEnd();
   };
-  const bg = u => u ? `center/cover url(${u})` : 'var(--tl-photo-bg)';
+  const bg = (u, w) => u ? `center/cover ${__ds_scope.__fondo(u, w)}` : 'var(--tl-photo-bg)';
   const mono = (w, s, ls) => `${w} ${s}px 'JetBrains Mono',monospace`;
   const arrow = (dir, on) => on ? /*#__PURE__*/React.createElement("div", {
     onClick: dir < 0 ? back : fwd,
@@ -64,7 +64,7 @@ function StoryCard({
       borderRadius: 22,
       overflow: 'hidden',
       position: 'relative',
-      background: bg(p.image),
+      background: bg(p.image, width),
       backgroundColor: 'var(--tl-photo-bg)',
       scrollSnapAlign: 'start'
     }
@@ -109,7 +109,7 @@ function StoryCard({
       borderRadius: 999,
       flex: 'none',
       border: '1.5px solid var(--tl-white)',
-      background: bg(logo),
+      background: bg(logo, 26),
       backgroundColor: 'var(--tl-photo-bg)',
       boxSizing: 'border-box'
     }
