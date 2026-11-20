@@ -27,7 +27,10 @@ _Actualizado: 14 nov 2026 (9o hecho en su rama: producción como código y ensay
   ahora también mira pruebas/e2e); (2) vec9m medía contra 390 fijo → contra el viewport del dispositivo; (3) el goto de WebKit sin «load»
   devolvía null → devuelve la respuesta del documento (gotoDevuelveRespuesta; neg9n20 en el iPad); (4) el tope de 12 MB se probaba con un fetch
   de 13 MB armado en WebKit, que llega a medias (400) → `pruebas/lib/subida-cruda.cjs` desde Node (msg9t, dm9t) y la app avisa antes de subir
-  (`TOPE_FOTO` en `lib/subir-foto.ts`; topeFotoSinNavegador). alreves9tsubida 12/12.
+  (`TOPE_FOTO` en `lib/subir-foto.ts`; topeFotoSinNavegador). alreves9tsubida 12/12. Los CI dirigidos 44704998727/44707074106 cazaron dos
+  más: pat003 en la pausa (mismo arreglo, por calendario) y msg9t en el iPad/SE: la foto se ponía en el input escondido del chat recién cargado y
+  la miniatura no salía → `pruebas/lib/elegir-foto.cjs` elige como una persona (toca «Agregar una foto», selector, archivo; si no se sube, dice el
+  status) en el chat y en el panel (fotoComoPersona; alreves9tsubida 15/15). CI dirigido 44726480909: iPad, SE y 1024 en verde.
 - **9t · confirmación 44658035571 (20 nov) cazó 4 clases, arregladas con guardián y al revés:** (1) a11y9c medía la bienvenida de /entrar en vez de
   /comunidad (Marisol sin Comunidad en una base nueva) → precondición propia + «es la pantalla pedida» + letra grande restaurada en un finally (por
   eso caía apt4f después); (2) OnbTopBar con botones de 44 pedía 405 px en la celda de grid de Entrar → la página se ensanchaba y «Continuar» quedaba
