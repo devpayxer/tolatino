@@ -9,10 +9,25 @@ const B = ENT.B, FP = ENT.rec('fotos') + '/';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 // Las fotos (/medios/…) las sirve Garage en el puerto web de la base de la corrida (base.sh: PRUEBAS_WEB_PUERTO, 3902 por defecto).
 const PUERTO_MEDIOS = Number(process.env.PRUEBAS_WEB_PUERTO || 3902);
+const delAlmacen = (ruta) => new Promise((ok) => require('http').get({ host: '127.0.0.1', port: PUERTO_MEDIOS, path: ruta, headers: { host: 'medios.web.garage' } }, (res) => { const c = []; res.on('data', (x) => c.push(x)); res.on('end', () => ok({ s: res.statusCode, b: Buffer.concat(c) })); }).on('error', () => ok({ s: 502, b: Buffer.alloc(0) })));
+/* Fotos a la medida (decisión AI): la MISMA regla que nginx (infra/pruebas/nginx-pruebas.conf; probada en pruebas/infra/medios-nginx.test.sh), para
+   que las pruebas vean lo que ve producción. Una variante /medios/n/<uuid>.w<ancho>.webp: si existe y el navegador acepta WebP, la variante con
+   un año; si no existe, la maestra JPEG en esa misma dirección con 60 s; si el navegador no dice image/webp, la maestra, «private», 60 s. Lo demás,
+   tal cual (como siempre, sin cabecera de caché: cc null). Devuelve { s, b, tipo, cc }. Guardián fotosConVariantes. */
+const VARIANTE = /^\/medios\/n\/([0-9a-f-]+)\.w[0-9]+\.webp$/;
+async function servirMedio(pathname, accept) {
+  const v = VARIANTE.exec(pathname), anio = 'public, max-age=31536000, immutable';
+  if (!v) return { ...(await delAlmacen(pathname.replace(/^\/medios/, ''))), tipo: 'image/jpeg', cc: null };
+  const maestra = async (cc) => ({ ...(await delAlmacen(`/n/${v[1]}.jpg`)), tipo: 'image/jpeg', cc });
+  if (!/image\/webp/i.test(accept || '')) return maestra('private, max-age=60');
+  const r = await delAlmacen(pathname.replace(/^\/medios/, ''));
+  return r.s === 404 ? maestra('public, max-age=60') : { ...r, tipo: 'image/webp', cc: anio };
+}
 const medios = (ctx) => ctx.route('**/medios/**', async (r) => {
   const u = new URL(r.request().url());
-  const body = await new Promise((ok) => require('http').get({ host: '127.0.0.1', port: PUERTO_MEDIOS, path: u.pathname.replace(/^\/medios/, ''), headers: { host: 'medios.web.garage' } }, (res) => { const c = []; res.on('data', (x) => c.push(x)); res.on('end', () => ok({ s: res.statusCode, b: Buffer.concat(c) })); }).on('error', () => ok({ s: 502, b: Buffer.alloc(0) })));
-  return r.fulfill({ status: body.s, body: body.b, contentType: 'image/jpeg' });
+  const accept = (await r.request().allHeaders().catch(() => ({}))).accept;
+  const x = await servirMedio(u.pathname, accept);
+  return r.fulfill({ status: x.s, body: x.b, contentType: x.tipo, ...(x.cc ? { headers: { 'cache-control': x.cc, vary: 'Accept' } } : {}) });
 });
 // Un teléfono 570-555-XXXX sin cuenta y sin un negocio «barberia-XXXX» (el nombre del negocio sale de los últimos 4).
 const telLibre = (pre = '570555') => {
@@ -189,4 +204,4 @@ function abiertoTodoElDia(biz) {
   sql(`update business_hours set open = true, ranges = '[["00:00","00:00"]]'::jsonb where business_id = '${biz}' and module = ''`);
   return () => { for (const [d, o, r] of JSON.parse(antes)) sql(`update business_hours set open = ${o}, ranges = '${JSON.stringify(r)}'::jsonb where business_id = '${biz}' and module = '' and weekday = ${d}`); };
 }
-module.exports = { abiertoTodoElDia, lejosDeMedianoche, lejosDelCambioDeNoche, publicarBarberia, negocioSinDueno, entrarComo, telLibre, tarjeta, sinTopeDeAyuda, sinTopesComunidad, smsEsperado, equipo, direccion, medios, PUERTO_MEDIOS, sql };
+module.exports = { abiertoTodoElDia, lejosDeMedianoche, lejosDelCambioDeNoche, publicarBarberia, negocioSinDueno, entrarComo, telLibre, tarjeta, sinTopeDeAyuda, sinTopesComunidad, smsEsperado, equipo, direccion, medios, servirMedio, delAlmacen, PUERTO_MEDIOS, sql };
