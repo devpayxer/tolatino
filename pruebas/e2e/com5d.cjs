@@ -5,7 +5,7 @@
 // la levanta → vuelve y llega el aviso · 7 spam (3 parecidas en 24 h) marca · 8 odio marca sin ocultar; autolesión → línea del 988 · 9
 // límites del día (Configuración en Auto-moderación) · 10 5 reseñas sin transacción en 10 min → caso en repUsr · 11 votos desde un mismo
 // dispositivo → Fraude · 12 reportar a una persona → el admin la silencia → Publicar dice hasta cuándo y por qué · 13 fotos: el modelo
-// propio responde → se ve; caído → revisión manual; regla apagada dice por qué · 14 reportar un comentario (escritorio) · capturas c5d-*.
+// propio responde → se ve; caído → la segunda opinión al subir (AJ); sin las dos → retenida; regla apagada dice por qué · 14 reportar un comentario (escritorio) · capturas c5d-*.
 // Crea sus datos ([c5d]) y deja todo como estaba.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { sinDesborde } = require('../lib/desborde.cjs');
@@ -273,20 +273,23 @@ const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhos
   };
   const F1 = await conFoto(r2, 'Así quedó el parque después de la limpieza');
   ok(sql(`select string_agg(status, ',') from media where owner_kind = 'com_post' and owner_id = '${F1}'`) === 'visible', 'el modelo propio la revisó: la foto se ve');
+  // AJ (20 nov) · Desde la revisión automática de las fotos públicas (lib/fotos-revision.ts), la foto de la Comunidad se revisa AL SUBIRLA: con el
+  // modelo propio caído decide la segunda opinión (el simulador en pruebas) y la publicación no la vuelve a revisar (el veredicto guardado manda);
+  // con la segunda opinión apagada la foto queda retenida al subirla y no se puede adjuntar (el compositor dice que está en revisión). Nunca sin revisar.
   servicioImg(false); await espera(async () => !saludImg(), 8000);
   const F2 = await conFoto(r2, 'Otra del parque, la fuente nueva');
-  ok(sql(`select string_agg(status, ',') from media where owner_kind = 'com_post' and owner_id = '${F2}'`) === 'review', 'servicio caído: la foto queda en revisión (no se publica sin revisar)');
-  ok(await contiene(r2, '1 foto espera revisión antes de verse.'), 'quien publicó ve que su foto espera revisión; la publicación sí salió');
-  await r2.screenshot({ path: OUT + 'c5d-foto-revision-m.png', fullPage: true });
   const MF = sql(`select id from media where owner_kind = 'com_post' and owner_id = '${F2}'`);
-  const QM = sql(`select id from queue_items where queue = 'medios' and subject_kind = 'media' and subject_id = '${MF}' and status = 'open'`);
-  ok(!!QM && sql(`select detail from mod_flags where target_id = '${MF}' and rule_key = 'img'`).includes('no respondió'), 'caso en «Medios marcados»: «El modelo no respondió: revisión manual»');
+  ok(sql(`select string_agg(status, ',') from media where owner_kind = 'com_post' and owner_id = '${F2}'`) === 'visible' && sql(`select string_agg(capa || ':' || decision, ',' order by id) from photo_reviews where media_id = '${MF}'`) === 'c2:publicar',
+    'servicio caído: la segunda opinión la revisó al subirla (c2) y se ve; la publicación no la revisa dos veces');
+  sql(`update mod_rules set enabled = false where key = 'foto2'`);
+  await r2.goto(B + '/comunidad/nuevo?k=publicacion'); await r2.locator('textarea').first().fill(`Una más del parque ${TAG}`);
+  await r2.locator('input[type=file]').first().setInputFiles(IMG);
+  ok(await contiene(r2, 'Tu foto está en revisión antes de publicarse.') && (await r2.locator('[aria-label^="Quitar foto 1"]').count()) === 0, 'sin modelo propio ni segunda opinión: la foto queda retenida al subirla y no se adjunta (lo dice el compositor)');
+  await r2.screenshot({ path: OUT + 'c5d-foto-revision-m.png', fullPage: true });
+  sql(`update mod_rules set enabled = true where key = 'foto2'`);
   await adA.goto(B + '/admin/contenido?tab=auto'); ok(await contiene(adA, 'NO RESPONDE') && await contiene(adA, 'espera revisión manual'), 'Auto-moderación dice que el modelo no responde y qué pasa con las fotos');
-  servicioImg(true); ok(await espera(async () => saludImg(), 20000), 'el servicio vuelve');
-  await adA.goto(B + '/admin/colas?caso=' + QM); await adA.getByText('NO SE VE HASTA QUE DECIDAS').waitFor();
   await adA.screenshot({ path: OUT + 'c5d-medios-d.png', fullPage: true });
-  await clic(adA.getByRole('button', { name: 'Está bien' }));
-  ok(await espera(() => sql(`select status from media where id = '${MF}'`) === 'visible'), 'una persona la aprueba: ahora se ve');
+  servicioImg(true); ok(await espera(async () => saludImg(), 20000), 'el servicio vuelve');
   await adA.goto(B + '/admin/contenido?tab=auto'); await adA.getByRole('switch', { name: 'Fotos: desnudez' }).waitFor();
   ok(await contiene(adA, 'RESPONDE') && await contiene(adA, 'NudeNet'), 'con el servicio arriba: «RESPONDE» y el modelo');
   await clic(adA.getByRole('switch', { name: 'Fotos: desnudez' })); await clic(adA.getByText('Prueba controlada', { exact: true })); await clic(adA.getByRole('button', { name: 'Apagar' }));

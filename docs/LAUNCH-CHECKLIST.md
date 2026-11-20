@@ -2010,3 +2010,37 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       pinte con `<picture type="image/webp">` o mirar «Vary for images» de Cloudflare. (20 nov)
 - [ ] **→ 9u** · **F2–F4:** pintar con `fotoSrc`/`fotoFondo`/`Foto` (F2), las fotos privadas con `?w=` (F3), el bloque del Super Admin con
       `cifrasFotos()` de lib/fotos-variantes.ts y su ayuda de equipo (F4). Hasta F2 las variantes existen pero ninguna pantalla las pide. (20 nov)
+
+## Revisión automática de las fotos públicas — R1 + R2 (decisión AJ, 20 nov) — lo que quedó anotado
+- [ ] **→ 9u** · **Plazo de retención de las fotos rechazadas o retenidas** (`privado/rev/<uuid>.jpg` + su fila en `media`): hoy no se borran
+      nunca (estados; nada se borra). Decidir con el fundador cuánto se guardan (y si la apelación cerrada cambia el plazo) y construir la purga
+      con su guardián. No se inventó un plazo. (R1, 20 nov)
+- [ ] **→ 9u** · **Quitar una foto no llega a las copias por TEXTO de su dirección:** la capa 3 (y el «Quitar» de siempre en «Medios marcados»)
+      cambian el estado en `media` (la galería, la ficha y las filas que comparten el archivo: novedades y eventos copiados), pero `items.photos`
+      (menú y catálogos: ~15 lectores), `users.photo_url`, `business_members.photo_url` y `businesses.logo_url` guardan la DIRECCIÓN y no miran
+      `media`. Antes de AJ la foto quitada seguía viéndose ahí; ahora, con el archivo fuera de `n/`, ahí se ve rota hasta que vuelva. Arreglo de
+      fondo: que esos lectores filtren por `media.status = 'visible'` (o que la quita limpie y restaure esas referencias), con su guardián. (R2, 20 nov)
+- [ ] **→ 9p** · **La foto oculta por reportes sigue en el borde de Cloudflare:** la capa 3 saca el archivo y sus variantes de `n/`, pero
+      Cloudflare guarda `/medios/n/` hasta un año (caché inmutable). Va con la purga del borde ya anotada (F1): pedirle a Cloudflare que suelte la
+      maestra y las variantes al ocultar (y al rechazar algo que estuvo publicado), con reintento desde el barrido. (R2, 20 nov)
+- [ ] **→ 9u** · **La capa 3 solo existe para la galería del negocio:** el reporte de fotos (`photo_reports`, «Reportar foto» de la galería) solo
+      acepta fotos de `owner_kind = 'business'`. Las fotos de reseñas, eventos, novedades, menú y perfil no se pueden reportar como foto. Decidir
+      si se agregan (y su pantalla) en R3. (R2, 20 nov)
+- [ ] **→ 9u** · **R3 (pantallas, Sonnet):** el estado de la foto y «Pedir revisión» donde se ven las fotos propias (hoy cada pantalla que sube
+      muestra el mensaje del servidor como un aviso; la apelación ya se pide en Mi cuenta › Avisos de moderación, que la lista como «Quitamos tu
+      foto» aunque esté retenida: decir «En revisión»), Contenido › Auto-moderación (las cuatro capas ya salen con el patrón de siempre; falta el
+      gasto de la capa 2), el bloque del reporte diario con `cifrasRevisionFotos()` y la ayuda en `docs/ayuda/` (quien sube y el equipo). La
+      acción `pedirRevisionFoto` está hecha y sin botón. (R1, 20 nov)
+- [ ] **→ 9u** · **/api/medios también recibe fotos que van solo a un negocio** (las de una solicitud, una cita, un viaje, un estimado: se
+      guardan en `n/` y se adjuntan con `owner_kind` request, appointment, trip, estimate_line). Ahora pasan por las capas como toda foto
+      pública, y una dudosa va a la segunda opinión (Claude). Decidir si esas fotos deberían subirse por una ruta privada (como ayuda) y no por la
+      pública. (R2, 20 nov)
+- [ ] **→ 9u** · **rev9u (punta a punta con Garage) no corrió fuera del CI:** esta sesión no tenía almacén (/api/medios da 503) ni el servidor
+      de pruebas. Corrieron tipos, todos los guardianes, alreves9urevision 31/31, la prueba pura fotos9urevision y la migración 0196 dos veces
+      sobre todas las anteriores (con el SQL de cada camino probado contra la base). Correr rev9u y com5d (su paso 13 cambió) en el CI dirigido.
+      (R1+R2, 20 nov)
+- [ ] **→ 9u** · **El modelo de la segunda opinión es el «cotidiano» de El Compa** (Configuración › El Compa › modelo de cada papel; hoy Claude
+      Haiku 5.5): cambiar ese modelo cambia también el de las fotos. Si hace falta separarlos, un papel nuevo en `compa_models`. (R2, 20 nov)
+- [ ] **→ 9u** · **La segunda opinión en la subida contra el guardián compaSinRutaCritica:** El Compa nunca está en la ruta crítica, y la segunda
+      opinión usa su modelo dentro de la subida (decisión AJ: en el mismo pedido, ≈ 8 s). Se permitió solo `lib/fotos-segunda-opinion.ts`, con
+      tiempo límite y fallo cerrado (si no contesta, la foto queda retenida y la subida sigue). Confirmarlo con el fundador. (R2, 20 nov)
