@@ -11,6 +11,7 @@ import { olvidarSinConexion } from "@/lib/boletos-sin-conexion";
 
 import { tec } from "@/lib/tec";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 type N = "Icon" | "IconButton" | "Button" | "Chip" | "Tag" | "NeighborCard" | "CompleteAccount" | "WeekAgenda" | "BusinessRow";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, IconButton, Button, Chip, Tag, NeighborCard, CompleteAccount, WeekAgenda, BusinessRow } = UI as unknown as Record<N, ComponentType<any>>;
@@ -213,7 +214,7 @@ function Pieza({ b, M }: { b: Bloque; M: boolean }): ReactNode {
       <div style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", overflow: "hidden" }}>
         {b.rows.map((r, i) => (
           <div key={r.key ?? i} role={r.on ? "link" : undefined} onClick={r.on} {...tec(r.on)} style={{ padding: "13px 16px", borderTop: i ? LINE : "none", display: "flex", gap: 12, alignItems: r.al ?? "center", cursor: r.on ? "pointer" : "default", background: "var(--tl-white)" }}>
-            {r.ph !== undefined && <span style={{ width: 46, height: 46, borderRadius: 13, background: r.ph ? `url("${r.ph}") center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none", display: "grid", placeItems: "center", font: "800 13px Sora,sans-serif", color: "var(--tl-ink)" }}>{r.ph ? "" : r.ini ?? ""}</span>}
+            {r.ph !== undefined && <span style={{ width: 46, height: 46, borderRadius: 13, background: r.ph ? `${fotoFondo(r.ph, 46)} center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none", display: "grid", placeItems: "center", font: "800 13px Sora,sans-serif", color: "var(--tl-ink)" }}>{r.ph ? "" : r.ini ?? ""}</span>}
             {r.date && <span style={{ width: 48, height: 52, borderRadius: 13, background: r.dbg ?? "var(--tl-paper)", color: r.dfg ?? "var(--tl-ink)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: "none" }}><span style={{ font: `700 8.5px ${MONO}`, letterSpacing: ".12em" }}>{r.date.mo}</span><span style={{ marginTop: 2, font: "800 19px/1 Sora,sans-serif" }}>{r.date.dd}</span></span>}
             {r.ic && <span style={{ width: 40, height: 40, borderRadius: 12, background: r.ibg ?? "rgba(75,55,245,.1)", display: "grid", placeItems: "center", flex: "none" }}><Icon name={r.ic} size={18} color={r.ifg ?? "var(--tl-action)"} /></span>}
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -248,13 +249,13 @@ function Pieza({ b, M }: { b: Bloque; M: boolean }): ReactNode {
     case "chat": return (
       <div data-screen-label="Mi cuenta · chat con el negocio" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <div role="link" onClick={b.onBiz} {...tec(b.onBiz)} style={{ alignSelf: "center", display: "flex", alignItems: "center", gap: 8, padding: "6px 12px 6px 6px", borderRadius: 99, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", cursor: "pointer", maxWidth: "100%", boxSizing: "border-box" }}>
-          <span style={{ width: 26, height: 26, borderRadius: 99, background: b.ph ? `url("${b.ph}") center/cover` : "rgba(11,14,18,.1)", flex: "none", display: "grid", placeItems: "center", font: "800 11px Sora,sans-serif" }}>{b.ph ? "" : b.ini}</span>
+          <span style={{ width: 26, height: 26, borderRadius: 99, background: b.ph ? `${fotoFondo(b.ph, 26)} center/cover` : "rgba(11,14,18,.1)", flex: "none", display: "grid", placeItems: "center", font: "800 11px Sora,sans-serif" }}>{b.ph ? "" : b.ini}</span>
           <span style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.ctx}</span>
         </div>
         {b.msgs.map((m, i) => (
           <div key={i} data-msg-foto={m.foto || m.fotoL ? (m.foto ? "si" : "espera") : undefined} style={{ display: "flex", flexDirection: "column", alignItems: m.yo ? "flex-end" : "flex-start", gap: 3 }}>
             <div style={{ maxWidth: "78%", padding: "10px 13px", borderRadius: m.yo ? "18px 18px 6px 18px" : "18px 18px 18px 6px", background: m.suave || m.ia ? "rgba(75,55,245,.07)" : m.yo ? "var(--tl-ink)" : "var(--tl-white)", color: m.suave && !m.ia ? "rgba(11,14,18,.6)" : m.yo ? "var(--tl-white)" : "var(--tl-ink)", border: m.yo && !m.suave ? "none" : "1px solid rgba(11,14,18,.08)", font: "500 14px/1.45 Manrope,sans-serif", textWrap: "pretty", whiteSpace: "pre-wrap", overflowWrap: "anywhere", display: "flex", flexDirection: "column", gap: 8 }}>
-              {m.foto ? <a href={m.foto} target="_blank" rel="noopener noreferrer" aria-label={m.fotoAlt} style={{ display: "block", width: 180, height: 140, maxWidth: "100%", borderRadius: 10, background: `url("${m.foto}") center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />
+              {m.foto ? <a href={m.foto} target="_blank" rel="noopener noreferrer" aria-label={m.fotoAlt} style={{ display: "block", width: 180, height: 140, maxWidth: "100%", borderRadius: 10, background: `${fotoFondo(m.foto, 180)} center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />
                 : m.fotoL ? <span role="img" aria-label={m.fotoL} style={{ width: 180, height: 140, maxWidth: "100%", borderRadius: 10, background: "var(--tl-photo-bg)", display: "grid", placeItems: "center", gap: 6, alignContent: "center", textAlign: "center", padding: 10, boxSizing: "border-box", color: "rgba(11,14,18,.6)", font: "600 12px/1.35 Manrope,sans-serif" }}><Icon name="image" size={20} color="rgba(11,14,18,.6)" />{m.fotoL}</span> : null}
               {m.t ? <span>{m.t}</span> : null}
             </div>
@@ -264,7 +265,7 @@ function Pieza({ b, M }: { b: Bloque; M: boolean }): ReactNode {
         {b.nota ? <div style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(75,55,245,.07)", color: "var(--tl-action-ink)", font: "600 13px/1.45 Manrope,sans-serif", textAlign: "center" }}>{b.nota}</div> : null}
         {!b.off && (
           <div data-screen-label="Mi cuenta · escribir" style={{ position: M ? "fixed" : "relative", left: 0, right: 0, bottom: 0, zIndex: 40, background: M ? "rgba(247,246,243,.96)" : "var(--tl-white)", backdropFilter: M ? "blur(14px)" : "none", WebkitBackdropFilter: M ? "blur(14px)" : "none", borderTop: "1px solid rgba(11,14,18,.08)", borderRadius: M ? 0 : 18, borderLeft: M ? "none" : "1px solid rgba(11,14,18,.08)", borderRight: M ? "none" : "1px solid rgba(11,14,18,.08)", borderBottom: M ? "none" : "1px solid rgba(11,14,18,.08)", padding: M ? "10px 14px 26px" : 10, display: "flex", flexDirection: "column", gap: 8 }}>
-            {b.adj ? <div data-chat-adjunto="" style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ width: 48, height: 48, borderRadius: 10, flex: "none", background: `url("${b.adj.url}") center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />
+            {b.adj ? <div data-chat-adjunto="" style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ width: 48, height: 48, borderRadius: 10, flex: "none", background: `${fotoFondo(b.adj.url, 48)} center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />
               <span role="button" onClick={b.adj.quitar} {...tec(b.adj.quitar)} style={{ font: "700 12.5px Manrope,sans-serif", color: "rgba(11,14,18,.6)", cursor: "pointer" }}>{b.adj.quitarL}</span>
               {b.adj.nota ? <span style={{ font: "500 11.5px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)", minWidth: 0 }}>{b.adj.nota}</span> : null}</div> : null}
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>

@@ -11,12 +11,13 @@ import { detalleL, precioL } from "@/lib/oficios-texto";
 import { casaElegir, casaGuardar, vehiculoElegir, vehiculoGuardar } from "./acciones-oficio";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "Chip" | "OptionGroup" | "AddOnRow" | "DepositNote" | "ReservationCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, OptionGroup, AddOnRow, DepositNote } = UI as unknown as Record<N, ComponentType<any>>;
 const dinero = (c: number) => { const d = c / 100; return `$${d % 1 ? d.toFixed(2) : Math.round(d).toLocaleString("en-US")}`; };
-const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
+const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: MouseEvent) => e?.stopPropagation();
 const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
 
@@ -127,7 +128,7 @@ function Fila({ v, it, tarjeta }: { v: Of; it: Of["top"][number]; tarjeta?: bool
   return (
     <div className={tarjeta ? "flex items-center gap-[13px] rounded-[18px] border border-ink/[.08] bg-white p-3.5" : "flex items-center gap-[13px] border-b border-ink/[.07] py-3.5"}>
       <button type="button" onClick={(e) => v.abrir(it.id, e)} className="flex min-w-0 flex-1 cursor-pointer items-center gap-[13px] text-left">
-        <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(it.foto)} />
+        <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(it.foto, 56)} />
         <div className="min-w-0 flex-1">
           <div className="text-[14.5px] font-bold leading-[1.3]">{it.name}</div>
           <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{it.meta}</div>
@@ -235,7 +236,7 @@ export function OfHoja({ v }: { v: Of }) {
   const depT = dep ? E2(`Depósito de ${dinero(dep)}: se retiene al enviar, se cobra cuando confirman y se descuenta del total. Si ${op.negocio.nombre} no confirma, se libera completo.`, `${dinero(dep)} deposit: held when you send, charged once confirmed and taken off the total. If ${op.negocio.nombre} does not confirm, it is fully released.`) : "";
   const cuerpo = (
     <>
-      <div className="relative h-[200px] flex-none bg-photo-bg" style={fondo(s.foto ?? op.negocio.foto)}>
+      <div className="relative h-[200px] flex-none bg-photo-bg" style={fondo(s.foto ?? op.negocio.foto, 540)}>
         <div className="absolute left-1/2 top-2.5 -ml-[19px] h-1 w-[38px] rounded-[9px] bg-white/85 lg:hidden" />
         <button type="button" aria-label={E2("Cerrar", "Close")} onClick={v.cerrar} className="absolute right-3.5 top-3.5 grid h-9 w-9 place-items-center rounded-xl bg-white/[.94]"><Icon name="close" size={15} strokeWidth={2.4} /></button>
       </div>

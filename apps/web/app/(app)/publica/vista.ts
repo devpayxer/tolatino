@@ -2,6 +2,7 @@
    ciudad, el día de hoy y la fecha de «en To'Latino desde» son los reales. Pura. */
 import { ahora, cap, DAYS, daysOf, derive, F, fmt, items, limites, metaOf, money, needZone, opOf, priceL, status, subL, X, zoneOf, type Borrador } from "./logica";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 const MESES = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
 
@@ -32,7 +33,7 @@ export function vista(d: Borrador, es: boolean, o: { ciudad: string; usuario: { 
   const hoy = new Date(), mes = MESES[hoy.getMonth()]!, diaN = es ? DAYS[t.hoy]![2].toUpperCase() : DAYS[t.hoy]![3].toUpperCase();
   return {
     name, nameOr, logoBg: "", logoC: "var(--tl-ink)", logoTxt: ini, logoIni: ini.slice(0, 1),
-    cover: d.cover ? `url("${o.foto(d.cover, 500)}")` : "", noCover: !d.cover,
+    cover: d.cover ? fotoFondo(o.foto(d.cover, 500), 540) : "", noCover: !d.cover,
     meta: `${subs.length ? subs.slice(0, 2).join(" · ") : catL} · ${op === "casa" ? E2("A DOMICILIO", "MOBILE") : CIU}`.toUpperCase(), metaFree: `${catL} · ${CIU}`.toUpperCase(), subsLine: subs.length ? subs.join(" · ") : catL,
     r: E2("Nuevo · en To'Latino", "New · on To'Latino"), s1: E2("Nuevo", "New"), s1Sub: "EN TO'LATINO", status: stt.s, stLabel: stt.l, stNote: stt.n, stColor: stt.c, stDot: stt.dot,
     dist: op === "casa" ? zone + " MI" : street ? street.split(" ").slice(0, 2).join(" ") : o.ciudad, city: op === "casa" ? E2("A DOMICILIO", "MOBILE") : CIU,
@@ -41,7 +42,7 @@ export function vista(d: Borrador, es: boolean, o: { ciudad: string; usuario: { 
     trust: [{ icon: "phone", label: E2("Teléfono verificado", "Verified phone"), tone: "ok" }].concat(lic ? [{ icon: "shield", label: E2("Licencias en revisión", "Licenses in review"), tone: "wait" }] : []).concat([{ icon: "calendar", label: E2(`En To'Latino desde ${mes[0]} ${hoy.getFullYear()}`, `On To'Latino since ${mes[1]} ${hoy.getFullYear()}`), tone: "info" }]),
     tc: { eyebrow: `${E2("HOY · ", "TODAY · ")}${diaN} ${hoy.getDate()} ${(es ? mes[0] : mes[1])!.toUpperCase()}`, title: stt.s, dot: stt.dot, sub: how, cols: [{ k: E2("HOY", "TODAY"), v: tdy.on ? fmt(tdy.a) + " – " + fmt(tdy.b) : E2("Cerrado", "Closed") }, { k: E2("PAGO", "PAYMENT"), v: E2("En el local", "In person") }, { k: E2("IDIOMA", "LANGUAGE"), v: E2("Español", "Spanish") }] },
     hours, sched: [], amen, hasAmen: amen.length > 0, addr, addrMeta, isZone: needZone(op), zoneD: Math.min(128, 36 + zone * 3) + "px", staff: [],
-    photos: [d.cover].concat(d.gallery || []).filter(Boolean).map((p) => `url("${o.foto(p as string, 300)}")`), freePhotos: limites().fotos, line: "", hasLine: false, sealPend: false,
+    photos: [d.cover].concat(d.gallery || []).filter(Boolean).map((p) => fotoFondo(o.foto(p as string, 300), 200)), freePhotos: limites().fotos, line: "", hasLine: false, sealPend: false,
     lbl: { blockPro: E2("EN RESULTADOS · DESTACADOS", "IN RESULTS · FEATURED"), blockFree: E2(`EN RESULTADOS · TAMBIÉN EN ${CIU}`, `IN RESULTS · ALSO IN ${CIU}`), call: E2("Llamar", "Call"), coverHere: E2("TU PORTADA VA AQUÍ", "YOUR COVER GOES HERE"), photos: E2("Fotos", "Photos"), hours: E2("Horario", "Hours"), map: op === "casa" ? E2("Zona de servicio", "Service area") : E2("Cómo llegar", "Directions"), about: E2("Quiénes somos", "About us"), team: E2("Equipo", "Team"), holi: E2("FERIADO", "HOLIDAY"), freeCap: E2(`FREE MUESTRA ${limites().items} · TIENES `, `FREE SHOWS ${limites().items} · YOU HAVE `) + lista.length, sealPend: E2("SELLO EN REVISIÓN", "BADGE IN REVIEW") },
   };
 }

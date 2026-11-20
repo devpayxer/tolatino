@@ -65,6 +65,7 @@ import { TiendaTab } from "./Tienda";
 import { HojaEntrar } from "../../HojaEntrar";
 import { VideoPortada } from "../../VideoNegocio";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "IconButton" | "Tabs" | "DesktopTabs" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard" | "SectionHeader" | "ServiceRow"
   | "Placeholder" | "ReviewCard" | "StaffPicker" | "DateStrip" | "TimeSlots" | "StepHeader" | "TotalBar" | "DepositNote" | "DepositOutcomes" | "Eyebrow"
@@ -381,11 +382,11 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
     </>
   );
   const relacionados = f.relacionados.map((r) => (
-    <div key={r.id} className="grid"><BusinessRow name={r.nombre} meta={r.meta} verified={r.verificado} slot={E2("Ver", "See")} image={r.foto ? `url(${r.foto})` : undefined} onClick={() => router.push(`/n/${r.id}`)} /></div>
+    <div key={r.id} className="grid"><BusinessRow name={r.nombre} meta={r.meta} verified={r.verificado} slot={E2("Ver", "See")} image={r.foto ? fotoFondo(r.foto, 54) : undefined} onClick={() => router.push(`/n/${r.id}`)} /></div>
   ));
   const chips = [{ id: "all", label: E2("Todos", "All") }, ...grupos.map((g, i) => ({ id: `g${i}`, label: g.name }))];
   const gruposF = grupos.map((g, i) => ({ ...g, k: `g${i}` })).filter((g) => catF === "all" || catF === g.k);
-  const fotoGente = (p: Persona, h: number) => p.foto ? <div style={{ height: h, background: `center/cover url(${p.foto})` }} /> : <Placeholder height={h} />;
+  const fotoGente = (p: Persona, h: number) => p.foto ? <div style={{ height: h, background: `center/cover ${fotoFondo(p.foto, 200)}` }} /> : <Placeholder height={h} />;
 
   // Una sola copia de la página: el servidor manda la del aparato que estima (lib/ancho: el último ancho de este navegador o el tipo de
   // aparato) y, ya en el aparato, se corrige con el ancho real. Así las piezas con estado propio (la tienda, el carrito, la hoja) no existen dos veces.
@@ -427,7 +428,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
       <div className="pb-[116px] lg:hidden" data-screen-label="App · Ficha">
         <div className="relative h-[330px]">
           {f.video ? <div className="absolute inset-0 overflow-hidden" data-portada-video=""><VideoPortada src={f.video.src} poster={f.video.poster} es={es} chipPos={{ left: 20, bottom: 16 }} /></div> : (
-          <button type="button" aria-label={t.photosAll} onClick={verFotos} className="absolute inset-0 block">{f.hero ? <span className="block size-full bg-photo-bg-2" style={{ background: `center/cover url(${f.hero})` }} /> : <Placeholder height="100%" />}</button>
+          <button type="button" aria-label={t.photosAll} onClick={verFotos} className="absolute inset-0 block">{f.hero ? <span className="block size-full bg-photo-bg-2" style={{ background: `center/cover ${fotoFondo(f.hero, 540)}` }} /> : <Placeholder height="100%" />}</button>
           )}
           <div className="absolute inset-x-5 top-4 flex gap-2">
             <IconButton icon="chevronLeft" size={40} label={t.back} onClick={() => router.back()} />
@@ -557,9 +558,9 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
         </div>
         <div className="relative grid h-[448px] grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] grid-rows-2 gap-2 overflow-hidden rounded-[22px]">
           {f.video ? <div className="relative row-span-2 min-w-0 overflow-hidden" data-portada-video=""><VideoPortada src={f.video.src} poster={f.video.poster} es={es} desk onClick={verFotos} /></div> : (
-          <button type="button" aria-label={t.photosAll} onClick={verFotos} className="row-span-2 min-w-0">{f.hero ? <span className="block size-full" style={{ background: `center/cover url(${f.hero})` }} /> : <Placeholder height="100%" />}</button>
+          <button type="button" aria-label={t.photosAll} onClick={verFotos} className="row-span-2 min-w-0">{f.hero ? <span className="block size-full" style={{ background: `center/cover ${fotoFondo(f.hero, 800)}` }} /> : <Placeholder height="100%" />}</button>
           )}
-          {[1, 2, 3, 4].map((k) => <button key={k} type="button" aria-label={t.photosAll} onClick={verFotos} className="min-w-0">{f.fotos[k] ? <span className="block size-full" style={{ background: `center/cover url(${f.fotos[k]})` }} /> : <Placeholder height="100%" />}</button>)}
+          {[1, 2, 3, 4].map((k) => <button key={k} type="button" aria-label={t.photosAll} onClick={verFotos} className="min-w-0">{f.fotos[k] ? <span className="block size-full" style={{ background: `center/cover ${fotoFondo(f.fotos[k], 360)}` }} /> : <Placeholder height="100%" />}</button>)}
           {f.nFotos > 0 ? <button type="button" onClick={verFotos} className="absolute bottom-4 right-4 flex items-center gap-2 rounded-[13px] bg-white px-3.5 py-2.5 text-[13px] font-bold shadow-[var(--shadow-float)]"><Icon name="image" size={16} />{E2(`Ver las ${f.nFotos} fotos`, `See all ${f.nFotos} photos`)}</button> : null}
         </div>
         <div className="flex flex-wrap items-end justify-between gap-6 pb-[22px] pt-[26px]">

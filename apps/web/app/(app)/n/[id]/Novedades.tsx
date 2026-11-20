@@ -14,6 +14,7 @@ import { registrarToque } from "../../acciones";
 import { LineaTr, useTraducir } from "../../Traducir";
 import { ReportarContenido } from "./ReportarContenido";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "Chip" | "Tag" | "PostCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,7 +65,7 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
   const lb = (p: Post) => (p.item?.peso ? "/lb" : "");
   const plato = (p: Post) => p.item && (
     <div className="flex items-center gap-3">
-      <span className="size-14 flex-none rounded-[13px] bg-photo-bg" style={p.item.ph ? { backgroundImage: `url(${p.item.ph})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
+      <span className="size-14 flex-none rounded-[13px] bg-photo-bg" style={p.item.ph ? { backgroundImage: fotoFondo(p.item.ph, 56), backgroundSize: "cover", backgroundPosition: "center" } : {}} />
       <div className="min-w-0 flex-1">
         <div className="font-display text-[15px] font-bold leading-[1.25] tracking-[-0.02em]">{es ? p.item.name.es : p.item.name.en || p.item.name.es}</div>
         <div className="mt-[5px] flex flex-wrap items-baseline gap-[7px]">
@@ -150,7 +151,7 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
       else if (p.link === "web" && p.url) { let h = p.url; try { h = new URL(p.url).host.replace(/^www\./, ""); } catch { /* enlace raro: se muestra entero */ } L = { t: h, s: E2("SALE DE TO'LATINO", "LEAVES TO'LATINO"), ic: "globe", cta: E2("Abrir", "Open"), on: () => window.open(p.url!, "_blank", "noopener,noreferrer") }; }
       if (L) return (
         <button type="button" onClick={L.on} className={`${caja} flex w-full items-center gap-3 text-left`}>
-          <span className="grid size-14 flex-none place-items-center rounded-[13px] bg-[rgba(75,55,245,.1)] bg-cover bg-center" style={L.bg ? { backgroundImage: `url(${L.bg})` } : {}}>{L.ic && <Icon name={L.ic} size={20} color="var(--tl-action)" />}</span>
+          <span className="grid size-14 flex-none place-items-center rounded-[13px] bg-[rgba(75,55,245,.1)] bg-cover bg-center" style={L.bg ? { backgroundImage: fotoFondo(L.bg, 56) } : {}}>{L.ic && <Icon name={L.ic} size={20} color="var(--tl-action)" />}</span>
           <div className="min-w-0 flex-1"><div className="font-display text-[15px] font-bold leading-[1.25] tracking-[-0.02em]">{L.t}</div>{L.s && <div className="mt-1 text-[12.5px] font-medium leading-[1.3] text-ink/60">{L.s}</div>}</div>
           <span className="flex-none text-[12px] font-bold text-action">{L.cta}</span>
         </button>
@@ -184,7 +185,7 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
                     {c.reply && (
                       <div className="mt-2.5 rounded-[13px] bg-[rgba(75,55,245,.06)] px-3 py-[11px]">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="size-[22px] flex-none rounded-full bg-photo-bg bg-cover bg-center" style={logo ? { backgroundImage: `url(${logo})` } : {}} />
+                          <span className="size-[22px] flex-none rounded-full bg-photo-bg bg-cover bg-center" style={logo ? { backgroundImage: fotoFondo(logo, 22) } : {}} />
                           <span className="text-[12.5px] font-bold">{v.negocio.name}</span>
                           <Tag tone="action">{E2("NEGOCIO", "BUSINESS")}</Tag>
                         </div>
@@ -229,7 +230,7 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
       {lista.map((p) => {
         const fotos = p.fotos;
         return (
-          <PostCard key={p.id} card screenLabel="Novedades · publicación" avatar={logo ? `url(${logo}) center/cover` : undefined} avatarColor="var(--tl-photo-bg)" initials={logo ? undefined : v.negocio.name.slice(0, 1)}
+          <PostCard key={p.id} card screenLabel="Novedades · publicación" avatar={logo ? `${fotoFondo(logo, 40)} center/cover` : undefined} avatarColor="var(--tl-photo-bg)" initials={logo ? undefined : v.negocio.name.slice(0, 1)}
             name={v.negocio.name} nameFont="700 14.5px/1.2" time={sc1(ago(p.h))}
             tags={[p.pinned ? { label: E2("FIJADO", "PINNED"), tone: "ink" } : null, { label: TT[p.kind][0], tone: TT[p.kind][1] }, p.hoy ? { label: E2(`EN HOY EN EL BARRIO · QUEDAN ${p.hoy} H`, `IN TODAY NEARBY · ${p.hoy} H LEFT`), tone: "signal" } : null].filter(Boolean)}
             body={p.body ? `${p.title}. ${p.body}` : p.title} bodyFont="500 14px/1.55" bodyGap={10}
@@ -240,7 +241,7 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
             onShare={() => { void compartirNativo({ titulo: p.title, url: `${location.origin}/n/${v.negocio.id}?tab=nov` }); }}>
             {fotos.length > 0 && (
               <div className="mt-3 grid gap-1.5 overflow-hidden rounded-[14px]" style={{ gridTemplateColumns: `repeat(${Math.min(2, fotos.length)},minmax(0,1fr))` }}>
-                {fotos.map((u, i) => <span key={i} className="bg-photo-bg bg-cover bg-center" style={{ height: fotos.length > 2 ? 120 : fotos.length > 1 ? 150 : 200, backgroundImage: `url(${u})` }} />)}
+                {fotos.map((u, i) => <span key={i} className="bg-photo-bg bg-cover bg-center" style={{ height: fotos.length > 2 ? 120 : fotos.length > 1 ? 150 : 200, backgroundImage: fotoFondo(u, fotos.length > 1 ? 200 : 400) }} />)}
               </div>
             )}
             {cuerpo(p)}

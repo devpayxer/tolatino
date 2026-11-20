@@ -5,6 +5,7 @@ import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import { reportarFoto } from "../../../acciones";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "IconButton" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -12,7 +13,7 @@ const { Icon, IconButton, Button } = UI as unknown as Record<N, ComponentType<an
 
 type Foto = { id: string; chica: string; grande: string; reportada: boolean };
 type Textos = Record<string, string | undefined>;
-const fondo = (u: string) => ({ backgroundImage: `url("${u}")`, backgroundSize: "cover", backgroundPosition: "center" });
+const fondo = (u: string, w: number) => ({ backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" });
 
 export function Galeria({ g, inicial, conSesion, t, motivos }: {
   g: { id: string; nombre: string; fotos: Foto[] }; inicial: number; conSesion: boolean; t: Textos; motivos: { k: string; l: string }[];
@@ -70,7 +71,7 @@ export function Galeria({ g, inicial, conSesion, t, motivos }: {
           <span className="text-[12px] font-medium leading-[1.45] text-ink/60">{t.seccionSub}</span>
         </div>
         <div className="grid grid-cols-3 gap-[3px]">
-          {g.fotos.map((f, i) => <button key={f.id} type="button" aria-label={`${i + 1} / ${n}`} onClick={() => setVi(i)} className="aspect-square bg-photo-bg" style={fondo(f.chica)} />)}
+          {g.fotos.map((f, i) => <button key={f.id} type="button" aria-label={`${i + 1} / ${n}`} onClick={() => setVi(i)} className="aspect-square bg-photo-bg" style={fondo(f.chica, 240)} />)}
         </div>
       </div>
 
@@ -90,7 +91,7 @@ export function Galeria({ g, inicial, conSesion, t, motivos }: {
               <span className="text-[13px] font-medium leading-[1.45] text-ink/60">{t.seccionSub}</span>
             </div>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2.5">
-              {g.fotos.map((f, i) => <button key={f.id} type="button" aria-label={`${i + 1} / ${n}`} onClick={() => setVi(i)} className="aspect-square rounded-[14px] bg-photo-bg" style={fondo(f.chica)} />)}
+              {g.fotos.map((f, i) => <button key={f.id} type="button" aria-label={`${i + 1} / ${n}`} onClick={() => setVi(i)} className="aspect-square rounded-[14px] bg-photo-bg" style={fondo(f.chica, 240)} />)}
             </div>
           </div>
         </div>
@@ -113,7 +114,7 @@ export function Galeria({ g, inicial, conSesion, t, motivos }: {
               </button>
             </div>
             <div className="relative min-h-0 flex-1 touch-pan-y select-none bg-contain bg-center bg-no-repeat lg:h-[620px] lg:flex-none lg:rounded-2xl lg:bg-ink"
-              style={{ backgroundImage: `url("${x.grande}")` }}
+              style={{ backgroundImage: fotoFondo(x.grande, 800) }}
               onPointerDown={(e) => { toque.current = e.clientX; }}
               onPointerUp={(e) => { const dx = e.clientX - (toque.current ?? e.clientX); toque.current = null; if (Math.abs(dx) > 40) ir(dx < 0 ? 1 : -1); }}>
               {n > 1 && (

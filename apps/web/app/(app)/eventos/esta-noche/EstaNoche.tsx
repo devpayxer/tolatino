@@ -10,6 +10,7 @@ import type { HistoriaEvt } from "@/lib/evt-publico";
 import { evtCompartir, evtRsvp } from "../acciones";
 import { Icon, MONO, useGuardar, useToast } from "../comun";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { Foto } from "@tolatino/ui";
 
 export function EstaNoche({ es, ciudad, slides, inicio }: { es: boolean; ciudad: string; slides: HistoriaEvt[]; inicio: number }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
@@ -61,7 +62,7 @@ export function EstaNoche({ es, ciudad, slides, inicio }: { es: boolean; ciudad:
         <div ref={caja} className="hs overflow-y-auto" style={{ height: "calc(100dvh - 57px - 43px)", scrollSnapType: "y mandatory" }}>
           {slides.map((s, n) => (
             <div key={s.fecha} data-evento={s.id} className="relative overflow-hidden bg-ink text-white" style={{ height: "calc(100dvh - 57px - 43px)", scrollSnapAlign: "start", scrollSnapStop: "always" }}>
-              {s.img ? <img src={s.img} alt="" className="absolute inset-0 block h-full w-full object-cover" /> : null}
+              {s.img ? <Foto src={s.img} alt="" ancho={540} urgente={n === 0} className="absolute inset-0 block h-full w-full object-cover" /> : null}
               <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(11,14,18,.45),rgba(11,14,18,0) 30%,rgba(11,14,18,0) 45%,rgba(11,14,18,.92) 88%)" }} />
               <div className="absolute left-4 top-3.5 text-white/70" style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em" }}>{`${n + 1} / ${slides.length}`}</div>
               <div className="absolute bottom-[150px] right-3 flex flex-col items-center gap-4">
@@ -94,7 +95,7 @@ export function EstaNoche({ es, ciudad, slides, inicio }: { es: boolean; ciudad:
           <div className="mt-[22px] grid items-center gap-6" style={{ gridTemplateColumns: "64px minmax(0,420px) minmax(0,1fr) 64px" }}>
             <button type="button" aria-label={E2("Anterior", "Previous")} onClick={() => setI(Math.max(0, i - 1))} className="grid size-[52px] place-items-center rounded-full bg-white/[.08]" style={{ opacity: i === 0 ? 0.35 : 1 }}><Icon name="chevronLeft" size={20} /></button>
             <div data-evento={cur.id} className="relative overflow-hidden rounded-[26px] bg-[var(--tl-dark-2)]" style={{ aspectRatio: "9 / 14" }}>
-              {cur.img ? <img src={cur.img} alt="" className="block h-full w-full object-cover" /> : null}
+              {cur.img ? <Foto src={cur.img} alt="" ancho={420} urgente className="block h-full w-full object-cover" /> : null}
               <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(11,14,18,.35),rgba(11,14,18,0) 35%,rgba(11,14,18,0) 60%,rgba(11,14,18,.85))" }} />
               <div className="absolute left-[18px] top-4 text-white/75" style={{ font: `700 10px ${MONO}`, letterSpacing: ".14em" }}>{`${i + 1} / ${slides.length}`}</div>
               <div className="absolute inset-x-[18px] bottom-4">

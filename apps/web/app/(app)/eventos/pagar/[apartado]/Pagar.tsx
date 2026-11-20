@@ -14,6 +14,7 @@ import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "..
 import { useVerificacion } from "../../../pago/Verificacion";
 import { evtPagar, evtSoltar } from "../../acciones-boletos";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "StepHeader" | "PaymentSummary";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -101,7 +102,7 @@ export function Pagar({ p, es, pago }: { p: PantallaPago; es: boolean; pago: { m
   );
   const evento = (
     <div className={`flex items-center gap-[13px] px-[15px] py-3.5 ${caja}`}>
-      <span className="h-[58px] w-[46px] flex-none rounded-[12px] bg-photo-bg" style={p.evento.img ? { backgroundImage: `url(${p.evento.img})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
+      <span className="h-[58px] w-[46px] flex-none rounded-[12px] bg-photo-bg" style={p.evento.img ? { backgroundImage: fotoFondo(p.evento.img, 46), backgroundSize: "cover", backgroundPosition: "center" } : {}} />
       <div className="min-w-0 flex-1"><div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{p.evento.title}</div>
         <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{`${cuando} · ${p.evento.venue}`.toUpperCase()}</div></div>
     </div>

@@ -4,12 +4,13 @@
    columna de escritorio, la barra del teléfono y la hoja. Nada nuevo: se compone con Button, Icon y los mismos tokens. */
 import * as UI from "@tolatino/ui";
 import type { ComponentType, MouseEvent, ReactNode } from "react";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 export { Icon, Button };
-export const fondo = (u: string | null | undefined) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
+export const fondo = (u: string | null | undefined, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 export const stop = (e?: MouseEvent) => e?.stopPropagation();
 
 export type Item = { id: string; name: string; desc: string; foto: string | null; price: string; meta: string; aviso?: string; btn: string };
@@ -42,7 +43,7 @@ export const Nota = ({ ic, t }: { ic: string; t: string }) => (
 export function Fila({ it, can, abrir, tarjeta, desc }: { it: Item; can: boolean; abrir: (id: string, e?: MouseEvent) => void; tarjeta?: boolean; desc?: boolean }) {
   const cuerpo = (
     <>
-      <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(it.foto)} />
+      <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(it.foto, 56)} />
       <div className="min-w-0 flex-1">
         <div className="text-[14.5px] font-bold leading-[1.3]">{it.name}</div>
         {desc && it.desc && <div className="mt-1 line-clamp-3 text-pretty text-[12.5px] leading-[1.5] text-ink/60">{it.desc}</div>}
@@ -150,12 +151,12 @@ export function Hoja({ label, titulo, fotos, price, meta, desc, cerrar, cerrarL,
       <div onClick={cerrar} className="absolute inset-0 bg-ink/50" />
       <div role="dialog" aria-modal="true" aria-label={titulo} className="absolute inset-x-0 bottom-0 top-[60px] flex flex-col overflow-hidden rounded-t-[26px] bg-white lg:inset-auto lg:left-1/2 lg:top-1/2 lg:max-h-[86vh] lg:w-[560px] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-[26px]">
         <div className="flex-1 overflow-y-auto">
-          <div className="relative h-[190px] flex-none bg-photo-bg" style={fondo(fotos[0])}>
+          <div className="relative h-[190px] flex-none bg-photo-bg" style={fondo(fotos[0], 540)}>
             <button type="button" aria-label={cerrarL} onClick={cerrar} className="absolute right-3.5 top-3.5 grid h-9 w-9 place-items-center rounded-xl bg-white/[.94]"><Icon name="close" size={15} strokeWidth={2.4} /></button>
           </div>
           {fotos.length > 1 && (
             <div className="hs flex gap-2 overflow-x-auto px-5 pt-3">
-              {fotos.slice(1, 8).map((u, i) => <span key={i} className="h-[64px] w-[88px] flex-none rounded-[12px] bg-photo-bg" style={fondo(u)} />)}
+              {fotos.slice(1, 8).map((u, i) => <span key={i} className="h-[64px] w-[88px] flex-none rounded-[12px] bg-photo-bg" style={fondo(u, 88)} />)}
             </div>)}
           <div className="flex flex-col gap-4 px-5 pb-6 pt-[18px]">
             <div>

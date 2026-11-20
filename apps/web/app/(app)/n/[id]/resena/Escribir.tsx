@@ -19,6 +19,7 @@ const { Icon, Button, Chip, Tag, ReviewCard } = UI as unknown as Record<N, Compo
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-[15px]";
 import { PII, PRIVADO } from "@/lib/resenas-filtro";
+import { fotoFondo, Foto } from "@tolatino/ui";
 type Foto = { id: string; url: string };
 
 export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: boolean; nombre: string; estrellas: number }) {
@@ -270,7 +271,7 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
   const negocio = (
     <div className={caja}>
       <div className="flex items-center gap-[11px]">
-        <span className="size-[42px] flex-none rounded-xl bg-photo-bg" style={b.logo ? { backgroundImage: `url(${b.logo})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
+        <span className="size-[42px] flex-none rounded-xl bg-photo-bg" style={b.logo ? { backgroundImage: fotoFondo(b.logo, 42), backgroundSize: "cover", backgroundPosition: "center" } : {}} />
         <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{b.name}</div><div className="mt-[3px] font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{b.meta.toUpperCase()}</div></div>
       </div>
       <div className={`mt-4 ${K}`}>{E2("¿SOBRE QUÉ VISITA?", "WHICH VISIT?")}</div>
@@ -356,7 +357,7 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
       <div className="flex justify-between gap-2.5"><span className={K}>{E2("FOTOS · OPCIONAL", "PHOTOS · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{fotos.length} / 6</span></div>
       <div className="mt-[11px] flex flex-wrap gap-2">
         {fotos.map((p) => (
-          <div key={p.id} className="relative size-[76px] rounded-xl bg-photo-bg" style={{ backgroundImage: `url(${p.url})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+          <div key={p.id} className="relative size-[76px] rounded-xl bg-photo-bg" style={{ backgroundImage: fotoFondo(p.url, 76), backgroundSize: "cover", backgroundPosition: "center" }}>
             <button type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((x) => x.filter((z) => z.id !== p.id))} className="absolute right-1 top-1 grid size-6 place-items-center rounded-lg bg-ink/[.72]"><Icon name="close" size={11} color="var(--tl-white)" strokeWidth={2.6} /></button>
           </div>
         ))}

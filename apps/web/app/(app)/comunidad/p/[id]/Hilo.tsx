@@ -21,6 +21,7 @@ import type { Tr } from "../../../Traducir";
 
 import { tec } from "@/lib/tec";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 type N = "Icon" | "Button" | "TopAnswer" | "CommentCard" | "ReplyThread" | "AlsoRecommended";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, TopAnswer, CommentCard, ReplyThread, AlsoRecommended } = UI as unknown as Record<N, ComponentType<any>>;
@@ -29,7 +30,7 @@ type R = { ok: boolean; msg?: Bi; entrar?: boolean };
 type Resp = { items: Cm[]; mas: string | null; abierta: boolean };
 type Destino = { root: string; to: string | null; nombre: string } | null;
 type Adjunto = { id: string; nombre: string; foto: string | null; meta: string } | null;
-const fondo = (u: string | null) => (u ? `url("${u}")` : undefined);
+const fondo = (u: string | null, w: number) => (u ? fotoFondo(u, w) : undefined);
 const primero = (n: string) => n.split(/\s+/)[0] ?? n;
 
 export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: YoCom; pub: Pub; h0: H; orden: OrdenHilo; ui: ComUi; D: boolean; tr: Tr }) {
@@ -153,7 +154,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
 
   /* Lo que el sistema de diseño necesita de cada comentario. */
   const quien = (c: Cm) => ({
-    avatar: fondo(c.autor.foto), avatarColor: "var(--tl-desk)", initials: c.autor.foto ? undefined : c.autor.ini, name: c.mia ? `${c.autor.nombre}${E2(" · tú", " · you")}` : c.autor.nombre,
+    avatar: fondo(c.autor.foto, 38), avatarColor: "var(--tl-desk)", initials: c.autor.foto ? undefined : c.autor.ini, name: c.mia ? `${c.autor.nombre}${E2(" · tú", " · you")}` : c.autor.nombre,
     rank: c.autor.rango >= 4 ? { label: (es ? rango(c.autor.rango).es : rango(c.autor.rango).en).toUpperCase(), tone: c.autor.rango >= 9 ? "ink" : "neutral" } : null,
   });
   const voto = (c: Cm) => ({ score: String(c.score), onUp: () => void votar(c, 1), onDown: () => void votar(c, -1), upColor: c.miVoto === 1 ? "var(--tl-action)" : undefined, downColor: c.miVoto === -1 ? "var(--tl-danger)" : undefined, scoreColor: c.miVoto ? "var(--tl-action)" : "var(--tl-ink)" });
@@ -184,7 +185,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
     }
     return (
       <>
-        <ReplyThread lang={es ? "ES" : "EN"} open={!!st?.abierta} onToggle={() => void abrir(c.id)} faces={c.caras.map((f) => ({ image: fondo(f.foto), initials: f.foto ? "" : f.ini }))}
+        <ReplyThread lang={es ? "ES" : "EN"} open={!!st?.abierta} onToggle={() => void abrir(c.id)} faces={c.caras.map((f) => ({ image: fondo(f.foto, 22), initials: f.foto ? "" : f.ini }))}
           toggleLabel={st?.abierta ? E2("Ocultar respuestas", "Hide replies") : E2(`Ver ${n} ${n === 1 ? "respuesta" : "respuestas"}`, `See ${n} ${n === 1 ? "reply" : "replies"}`)}
           replies={grupos.map((g) => respuesta(c, g.c, g.kids))} />
         {st?.abierta && st.mas && <div style={{ marginTop: 10 }}><span role="button" onClick={() => void masResp(c.id)} {...tec(() => void masResp(c.id))} style={{ font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("Ver más respuestas", "See more replies")}</span></div>}
@@ -192,14 +193,14 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
   };
   const adjunto = (onX: () => void) => att && (
     <div style={{ marginBottom: 8, padding: "7px 9px", borderRadius: 12, background: "var(--tl-white)", border: "1px solid rgba(75,55,245,.3)", display: "flex", gap: 9, alignItems: "center" }}>
-      <span style={{ width: 30, height: 30, borderRadius: 9, background: fondo(att.foto), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
+      <span style={{ width: 30, height: 30, borderRadius: 9, background: fondo(att.foto, 30), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
       <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 12.5px Manrope,sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{att.nombre}</div><div style={{ marginTop: 2, font: `600 8.5px ${MONO}`, letterSpacing: ".06em", color: "var(--tl-action)" }}>{E2("RECOMIENDAS ESTE NEGOCIO", "YOU RECOMMEND THIS BUSINESS")}</div></div>
       <span role="button" aria-label={E2("Quitar el negocio", "Remove the business")} onClick={onX} {...tec(onX)} style={{ display: "grid", cursor: "pointer", padding: 4 }}><Icon name="close" size={14} color="var(--tl-ink)" /></span>
     </div>);
   const botonNegocio = (
     <span role="button" onClick={elegirNegocio} {...tec(elegirNegocio)} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 10, background: "rgba(75,55,245,.08)", font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>
       <Icon name="store" size={15} color="var(--tl-action)" />{E2("Recomendar un negocio", "Recommend a business")}</span>);
-  const yoAv = <span style={{ width: 28, height: 28, borderRadius: 99, background: fondo(yo.foto), backgroundSize: "cover", backgroundColor: "var(--tl-desk)", display: "grid", placeItems: "center", font: "800 10px Sora,sans-serif", flex: "none" }}>{yo.foto ? "" : yo.ini}</span>;
+  const yoAv = <span style={{ width: 28, height: 28, borderRadius: 99, background: fondo(yo.foto, 28), backgroundSize: "cover", backgroundColor: "var(--tl-desk)", display: "grid", placeItems: "center", font: "800 10px Sora,sans-serif", flex: "none" }}>{yo.foto ? "" : yo.ini}</span>;
   /* Responder aquí (escritorio): la cajita bajo el comentario. */
   const cajita = (c: Cm): ReactNode => D && dest?.root === c.id ? (
     <div data-screen-label="Comentario · responder aquí" style={{ marginTop: 12, padding: "12px 14px", borderRadius: 14, background: "var(--tl-paper)", border: "1.5px solid var(--tl-action)" }}>
@@ -241,7 +242,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
       {T && (
         <div id={`c${T.id}`}>
           <TopAnswer screenLabel="Publicación · la más votada" kicker={kick} {...quien(T)} time={hace(T.at, es).toUpperCase()} {...cuerpo(T)}
-            business={T.negocio ? { name: T.negocio.nombre, image: fondo(T.negocio.foto), verified: T.negocio.verificado, meta: es ? T.negocio.meta.es : T.negocio.meta.en, cta: E2("Ver", "View"), onOpen: () => router.push(`/n/${T.negocio!.id}`) } : null}
+            business={T.negocio ? { name: T.negocio.nombre, image: fondo(T.negocio.foto, 54), verified: T.negocio.verificado, meta: es ? T.negocio.meta.es : T.negocio.meta.en, cta: E2("Ver", "View"), onOpen: () => router.push(`/n/${T.negocio!.id}`) } : null}
             actions={acciones(T)}>
             {cajita(T)}{hiloDe(T)}
           </TopAnswer>
@@ -250,7 +251,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
       {h.recs.length > 0 && (
         <AlsoRecommended lang={es ? "ES" : "EN"} screenLabel="Publicación · recomendados" title={T?.negocio ? E2("También recomiendan", "Also recommended") : E2("Recomendados en este hilo", "Recommended in this thread")}
           sub={E2("POR VOTOS DE VECINOS · VOTA SI TÚ TAMBIÉN LO RECOMIENDAS", "BY NEIGHBOR VOTES · VOTE IF YOU RECOMMEND IT TOO")}
-          items={h.recs.map((b) => ({ name: b.negocio.nombre, meta: (es ? b.negocio.meta.es : b.negocio.meta.en) || E2(`${b.recomiendan} ${b.recomiendan === 1 ? "VECINO LO RECOMIENDA" : "VECINOS LO RECOMIENDAN"}`, `${b.recomiendan} ${b.recomiendan === 1 ? "NEIGHBOR RECOMMENDS IT" : "NEIGHBORS RECOMMEND IT"}`), image: fondo(b.negocio.foto), pct: `${b.pct}%`, count: String(b.votos),
+          items={h.recs.map((b) => ({ name: b.negocio.nombre, meta: (es ? b.negocio.meta.es : b.negocio.meta.en) || E2(`${b.recomiendan} ${b.recomiendan === 1 ? "VECINO LO RECOMIENDA" : "VECINOS LO RECOMIENDAN"}`, `${b.recomiendan} ${b.recomiendan === 1 ? "NEIGHBOR RECOMMENDS IT" : "NEIGHBORS RECOMMEND IT"}`), image: fondo(b.negocio.foto, 36), pct: `${b.pct}%`, count: String(b.votos),
             border: b.miVoto === 1 ? "var(--tl-action)" : undefined, color: b.miVoto === 1 || b.mia ? "var(--tl-action)" : "var(--tl-ink)", onOpen: () => router.push(`/n/${b.negocio.id}`), onVote: () => void votarRec(b) }))} />
       )}
       <div data-screen-label="Publicación · comentarios" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -265,7 +266,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
         {D && !h.cerrados && (
           <div data-screen-label="Publicación · comentar desktop" style={{ borderRadius: 18, background: "var(--tl-white)", border: `1.5px solid ${txt.trim() || (att && !dest) ? "var(--tl-action)" : "rgba(11,14,18,.08)"}`, padding: "14px 16px" }}>
             <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <span style={{ width: 36, height: 36, borderRadius: 99, background: fondo(yo.foto), backgroundSize: "cover", backgroundColor: "var(--tl-desk)", display: "grid", placeItems: "center", font: "800 12px Sora,sans-serif", flex: "none" }}>{yo.foto ? "" : yo.ini}</span>
+              <span style={{ width: 36, height: 36, borderRadius: 99, background: fondo(yo.foto, 36), backgroundSize: "cover", backgroundColor: "var(--tl-desk)", display: "grid", placeItems: "center", font: "800 12px Sora,sans-serif", flex: "none" }}>{yo.foto ? "" : yo.ini}</span>
               <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
                 {!dest && adjunto(() => setAtt(null))}
                 <textarea aria-label={E2("Tu comentario", "Your comment")} value={txt} maxLength={MAX_COMENTARIO} onChange={(e) => setTxt(e.target.value)} onKeyDown={tecla("main")} placeholder={ph} rows={2}
@@ -320,7 +321,7 @@ function BuscaNegocio({ es, onPick }: { es: boolean; onPick: (b: NegocioCm & { m
       <div role="listbox" aria-label={E2("Negocios", "Businesses")} style={{ marginTop: 10 }}>
         {L.map((b, i) => (
           <div key={b.id} role="option" aria-selected={false} onClick={() => onPick({ ...b, metaT: es ? b.meta.es : b.meta.en })} {...tec(() => onPick({ ...b, metaT: es ? b.meta.es : b.meta.en }))} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 2px", borderTop: i ? "1px solid rgba(11,14,18,.07)" : "none", cursor: "pointer" }}>
-            <span style={{ width: 40, height: 40, borderRadius: 11, background: fondo(b.foto), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
+            <span style={{ width: 40, height: 40, borderRadius: 11, background: fondo(b.foto, 40), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
             <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{b.nombre}</div><div style={{ marginTop: 3, font: `600 9.5px/1.4 ${MONO}`, color: "rgba(11,14,18,.6)" }}>{(es ? b.meta.es : b.meta.en).toUpperCase()}</div></div>
           </div>))}
         {listo && !L.length && <div style={{ padding: "10px 2px", font: "500 13px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2("No lo encontramos en tu ciudad. Si todavía no está, invítalo a publicar gratis.", "Not found in your city. If they are not listed yet, invite them to list for free.")}</div>}

@@ -12,12 +12,13 @@ import { subirFoto, subirFotoPrivada } from "@/lib/subir-foto";
 import { ayudaCitaPedir, ayudaCitaResponder } from "./acciones";
 import { uuid } from "@/lib/uuid";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "Chip" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, OrderTracker } = UI as unknown as Record<N, ComponentType<any>>;
 const dinero = (c: number) => (c % 100 === 0 ? `$${c / 100}` : `$${(c / 100).toFixed(2)}`);
-const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
+const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-4";
 const T17 = "font-display text-[17px] font-extrabold leading-[1.2] tracking-[-0.03em]";
@@ -220,7 +221,7 @@ export function AyudaCita({ c, v, es }: { c: CabezaAyuda; v: CitaAyudaVista; es:
       </div>);
     const rep = respondio && (
       <div data-screen-label="Ayuda con la cita · respuesta" className={caja}>
-        <div className="flex items-center gap-[11px]"><span className="h-[38px] w-[38px] flex-none rounded-xl bg-photo-bg" style={fondo(c.con?.foto && c.model === "chair" ? c.con.foto : c.negocio.foto)} />
+        <div className="flex items-center gap-[11px]"><span className="h-[38px] w-[38px] flex-none rounded-xl bg-photo-bg" style={fondo(c.con?.foto && c.model === "chair" ? c.con.foto : c.negocio.foto, 38)} />
           <div className="min-w-0 flex-1"><div className={K}>{`${E2("RESPUESTA DE ", "REPLY FROM ")}${quien.toUpperCase()}`}</div><div className="mt-[3px] font-mono text-[9.5px] font-semibold text-ink/60">{hora(a.replyAt)}</div></div></div>
         <div className="mt-3 text-pretty text-[13.5px] font-medium leading-[1.55]">«{a.reply}»</div>
         {c.negocio.telefono && <div className="mt-3.5 flex"><Button size="md" icon="phone" block onClick={llamar}>{`${E2("Llamar a ", "Call ")}${c.negocio.nombre}`}</Button></div>}
@@ -229,7 +230,7 @@ export function AyudaCita({ c, v, es }: { c: CabezaAyuda; v: CitaAyudaVista; es:
     const mandaste = (
       <div data-screen-label="Ayuda con la cita · lo que mandaste" className={caja}>
         <div className={K}>{E2("LO QUE MANDASTE", "WHAT YOU SENT")}</div>
-        {a.fotos.length > 0 && <div className="mt-2.5 flex flex-wrap gap-2">{a.fotos.map((u) => <span key={u} className="h-[60px] w-[60px] rounded-xl bg-photo-bg" style={fondo(u)} />)}</div>}
+        {a.fotos.length > 0 && <div className="mt-2.5 flex flex-wrap gap-2">{a.fotos.map((u) => <span key={u} className="h-[60px] w-[60px] rounded-xl bg-photo-bg" style={fondo(u, 60)} />)}</div>}
         <div className="mt-2 flex flex-col">{filas.map(([k, x]) => <div key={k} className="grid grid-cols-[110px_minmax(0,1fr)] gap-2.5 border-t border-ink/[.06] py-[9px]"><span className="font-mono text-[9.5px] font-bold leading-[1.6] tracking-[0.12em] text-ink/60">{k}</span><span className="text-pretty text-[13px] font-semibold leading-[1.45]">{x}</span></div>)}</div>
       </div>);
     const botones = acts.length > 0 && <div className="grid grid-cols-1 gap-2">{acts.map(([icon, l, on]) => <div key={l} className="grid"><Button variant="secondary" size="md" icon={icon} block disabled={ocupado} onClick={on}>{l}</Button></div>)}</div>;
@@ -285,7 +286,7 @@ export function AyudaCita({ c, v, es }: { c: CabezaAyuda; v: CitaAyudaVista; es:
       <div className={T17}>{rub === "salud" ? (conFoto ? E2("Foto de la factura · obligatoria", "Photo of the bill · required") : E2("Foto de la factura · opcional", "Photo of the bill · optional")) : rub === "pro" ? (conFoto ? E2("Foto del recibo o del total por escrito · obligatoria", "Photo of the receipt or written total · required") : E2("Foto del recibo · opcional", "Photo of the receipt · optional")) : conFoto ? E2("Fotos · obligatorias", "Photos · required") : E2("Fotos · opcional", "Photos · optional")}</div>
       <div className="mt-1 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/60">{sd ? E2("Del recibo, el contrato o lo publicado. Solo los ven el negocio y To’Latino.", "Of the receipt, the contract or what was posted. Only the business and To’Latino see them.") : rub === "salud" ? E2("Tapa los datos médicos si aparecen; solo hace falta el cobro. Solo la ven el consultorio y To’Latino.", "Cover any medical details; only the charge is needed. Only the office and To’Latino see it.") : rub === "pro" ? E2("Tapa los números de tu caso si aparecen. Solo la ven la oficina y To’Latino.", "Cover your case numbers if they show. Only the office and To’Latino see it.") : ins ? E2("Del recibo, el contrato o lo publicado. Nunca fotos de un niño.", "Of the receipt, the contract or what was posted. Never photos of a child.") : rub === "noche" ? E2("Del recibo o de la pantalla con el cover publicado. Nunca de una identificación.", "Of the receipt or the screen with the posted cover. Never of an ID.") : rub === "hogar" ? E2("De cómo quedó o del daño.", "Of how it looks or the damage.") : rub === "auto" ? E2("Del recibo, del estimado o del daño.", "Of the receipt, the estimate or the damage.") : E2("De cómo quedó, o del recibo si es un cobro.", "Of how it turned out, or of the receipt for a charge.")}</div>
       <div className="mt-3 flex flex-wrap gap-2">
-        {fotos.map((f) => <button key={f.id} type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="relative h-[76px] w-[76px] overflow-hidden rounded-[14px] bg-photo-bg" style={fondo(f.url)}>
+        {fotos.map((f) => <button key={f.id} type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="relative h-[76px] w-[76px] overflow-hidden rounded-[14px] bg-photo-bg" style={fondo(f.url, 76)}>
           <span className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-white/95"><Icon name="close" size={10} strokeWidth={2.6} /></span></button>)}
         {fotos.length < 4 && <button type="button" disabled={subiendo} onClick={() => fileRef.current?.click()} className="box-border flex h-[76px] w-[76px] flex-col items-center justify-center gap-1 rounded-[14px] border-[1.5px] border-dashed border-ink/20">
           <Icon name="image" size={20} color="rgba(11,14,18,.6)" /><span className="font-mono text-[9px] font-bold text-ink/60">{subiendo ? "…" : E2("Foto", "Photo")}</span></button>}

@@ -11,6 +11,7 @@ import { K } from "./PasosBC";
 import { tec } from "@/lib/tec";
 import { DireccionCampo } from "@/app/_dir/DireccionCampo";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 type N = "Icon" | "Button" | "Chip" | "OptionCard" | "SelectBox" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, OptionCard, SelectBox, Tag } = UI as unknown as Record<N, ComponentType<any>>;
@@ -148,7 +149,7 @@ export function PasoE1({ d, up, es, ciudad, irA }: { d: Borrador; up: Up; es: bo
                 </div>
                 {hosts.map((h) => (
                   <div key={h.id} role="button" className="hover:bg-[var(--tl-paper)]" onClick={() => up({ join: h.id, joinName: h.name, addr: h.addr || d.addr })} {...tec(() => up({ join: h.id, joinName: h.name, addr: h.addr || d.addr }))} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 14, border: "1px solid rgba(11,14,18,.1)", cursor: "pointer" }}>
-                    <span style={{ width: 34, height: 34, borderRadius: 11, background: h.foto ? `url("${h.foto}") center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
+                    <span style={{ width: 34, height: 34, borderRadius: 11, background: h.foto ? `${fotoFondo(h.foto, 34)} center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
                     <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px/1.3 Manrope,sans-serif" }}>{h.name}</div><div style={{ marginTop: 2, font: `700 9.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{(h.addr || ciudad).toUpperCase()}</div></div>
                   </div>
                 ))}

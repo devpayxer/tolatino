@@ -12,6 +12,7 @@ import { enviarReclamo, pedirCodigo } from "./acciones";
 
 import { tec } from "@/lib/tec";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, IconButton, BusinessRow, Chip, Button, Tag, OrderTracker } = UI as unknown as Record<"Icon" | "IconButton" | "BusinessRow" | "Chip" | "Button" | "Tag" | "OrderTracker", ComponentType<any>>;
 const MONO = "'JetBrains Mono',monospace";
@@ -105,7 +106,7 @@ export function Recuperar({ r, cands, ciudad, lang, conSesion, origen, id }: {
             <span style={K}>{E2("¿QUÉ DOCUMENTO?", "WHICH DOCUMENT?")}</span>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{DOCS.map(([k, a, b]) => <Chip key={k} variant={f.docKind === k ? "selected" : "filter"} onClick={() => up({ docKind: k })}>{E2(a, b)}</Chip>)}</div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              {doc ? <span style={{ width: 64, height: 64, borderRadius: 12, backgroundImage: `url("${doc.ver}")`, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", flex: "none" }} /> : null}
+              {doc ? <span style={{ width: 64, height: 64, borderRadius: 12, backgroundImage: fotoFondo(doc.ver, 64), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", flex: "none" }} /> : null}
               <span role="button" onClick={() => fileRef.current?.click()} {...tec(() => fileRef.current?.click())} style={{ display: "flex", alignItems: "center", gap: 8, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="image" size={16} color="var(--tl-action)" />{doc ? E2("Cambiar foto", "Change photo") : E2("Subir foto del documento", "Upload a photo of the document")}</span>
               <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const x = e.target.files?.[0]; if (x) void subirDoc(x); e.target.value = ""; }} />
             </div>

@@ -16,6 +16,7 @@ import { subirFotoPrivada } from "@/lib/subir-foto";
 import { uuid } from "@/lib/uuid";
 import { reportar } from "./acciones";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { Foto, fotoFondo } from "@tolatino/ui";
 
 type Bi = { es: string; en: string };
 export function Reportar({ es, conSesion, negocio, agitado, horario }: { es: boolean; conSesion: boolean; negocio: { id: string; name: string } | null; agitado: boolean; horario: Bi }) {
@@ -65,7 +66,7 @@ export function Reportar({ es, conSesion, negocio, agitado, horario }: { es: boo
   ] : [
     { type: "head", eye: negocio ? `${negocio.name.toUpperCase()} · ${E2("AYUDA Y SOPORTE", "HELP AND SUPPORT")}` : E2("AYUDA Y SOPORTE", "HELP AND SUPPORT"), t: E2("Reportar un problema", "Report a problem"),
       s: E2("Algo no funciona en la app: cuéntanos qué pasó. Te contesta una persona del equipo.", "Something is not working in the app: tell us what happened. A person on the team replies."), onBack: atras, h1: desk ? 28 : 22 },
-    cap ? { type: "photos", k: E2("CAPTURA", "CAPTURE"), cols: desk ? 4 : 3, items: [{ key: "cap", bg: `url("${cap.url}")`, tag: cap.origen === "agitar" ? E2("ESTA PANTALLA", "THIS SCREEN") : undefined, onClick: () => setGrande(true) }],
+    cap ? { type: "photos", k: E2("CAPTURA", "CAPTURE"), cols: desk ? 4 : 3, items: [{ key: "cap", bg: fotoFondo(cap.url, 240), tag: cap.origen === "agitar" ? E2("ESTA PANTALLA", "THIS SCREEN") : undefined, onClick: () => setGrande(true) }],
       selActs: [{ l: E2("Ver grande", "View large"), icon: "search", onClick: () => setGrande(true) }, { l: E2("Quitar", "Remove"), icon: "close", onClick: quitar }] }
       : { type: "photos", k: E2("CAPTURA · OPCIONAL", "CAPTURE · OPTIONAL"), cols: desk ? 4 : 3, items: [], addL: E2("Agregar una captura", "Add a capture"), onAdd: () => file.current?.click() },
     { type: "field", k: E2("CUÉNTANOS QUÉ PASÓ", "TELL US WHAT HAPPENED"), val: txt, area: true, rows: 5, max: 800, count: `${txt.length}/800`,
@@ -88,7 +89,7 @@ export function Reportar({ es, conSesion, negocio, agitado, horario }: { es: boo
       </div>
       {grande && cap ? (
         <div role="dialog" aria-modal="true" aria-label={E2("Captura", "Capture")} className="fixed inset-0 z-[95] flex flex-col items-center justify-center gap-3 bg-ink/90 p-4" onClick={() => setGrande(false)}>
-          <img src={cap.url} alt={E2("La captura que se envía con tu reporte", "The capture sent with your report")} className="max-h-[80dvh] max-w-full rounded-[14px] object-contain" />
+          <Foto src={cap.url} ancho={540} alt={E2("La captura que se envía con tu reporte", "The capture sent with your report")} className="max-h-[80dvh] max-w-full rounded-[14px] object-contain" />
           <span data-cerrar onClick={() => setGrande(false)} role="presentation"><IconButton icon="close" size={44} label={E2("Cerrar", "Close")} onClick={() => setGrande(false)} /></span>
         </div>
       ) : null}

@@ -13,6 +13,7 @@ import { guardarCarritoMerc, leerCarritoMerc, type CarritoMerc } from "../Mercad
 import { enviarMercado } from "./acciones";
 import { uuid } from "@/lib/uuid";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -69,7 +70,7 @@ export function PedidoMercado({ o, es, yo, pago }: { o: OpcionesMerc; es: boolea
       <div className="flex items-baseline justify-between"><div className={T17}>{E2("1 · Tu pedido", "1 · Your order")}</div><button type="button" onClick={() => router.push(`/n/${o.negocio.id}?tab=svc`)} className="inline-flex min-h-11 items-center text-[12.5px] font-bold text-action">{E2("Agregar más", "Add more")}</button></div>
       {lineas.length ? <div className="mt-2 flex flex-col">{lineas.map((x, i) => (
         <div key={`${x.l.item}-${x.l.o}-${i}`} className="flex items-center gap-3 border-b border-ink/[.06] py-3">
-          <span className="h-11 w-11 flex-none rounded-xl bg-photo-bg" style={x.p.foto ? { backgroundImage: `url(${x.p.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
+          <span className="h-11 w-11 flex-none rounded-xl bg-photo-bg" style={x.p.foto ? { backgroundImage: fotoFondo(x.p.foto, 44), backgroundSize: "cover", backgroundPosition: "center" } : {}} />
           <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{nm(x.p.name)}</div>
             <div className="mt-0.5 font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{[x.p.k === "peso" ? `${x.l.q} LB · ${E2("ESTIMADO", "ESTIMATE")}` : `× ${x.l.q}`, x.p.opc && x.l.o != null ? nm(x.p.opc.o[x.l.o] ?? { es: "", en: "" }).toUpperCase() : ""].filter(Boolean).join(" · ")}</div></div>
           <div className="text-right"><div className="text-[13.5px] font-bold">{money(est(x.p, x.l.q))}{x.p.k === "peso" ? E2(" aprox.", " approx.") : ""}</div>

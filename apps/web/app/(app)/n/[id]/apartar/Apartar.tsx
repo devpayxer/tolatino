@@ -14,6 +14,7 @@ import { useVerificacion } from "../../../pago/Verificacion";
 import { cuotas, terminos } from "@/lib/layaway-comun";
 import { uuid } from "@/lib/uuid";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "StepHeader" | "DateStrip" | "TimeSlots" | "PaymentSummary";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,7 +76,7 @@ export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApa
       {carro && !L.length && <div className="text-[12.5px] font-medium text-ink/60">{E2("No tienes nada apartado en esta tienda.", "You have nothing on hold at this store.")}</div>}
       {L.map((l) => (
         <div key={l.k} className="flex items-center gap-3">
-          <span className="h-12 w-12 flex-none rounded-xl bg-photo-bg" style={l.a.foto ? { backgroundImage: `url(${l.a.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined} />
+          <span className="h-12 w-12 flex-none rounded-xl bg-photo-bg" style={l.a.foto ? { backgroundImage: fotoFondo(l.a.foto, 48), backgroundSize: "cover", backgroundPosition: "center" } : undefined} />
           <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold leading-[1.3]">{nm(l.a.n)}</span><span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{`${talla(l)}× ${l.qty} · ${dinero(l.a.precio * l.qty)}`}</span></span>
           <button type="button" onClick={() => quitar(l.k)} aria-label={`${E2("Quitar", "Remove")} ${nm(l.a.n)}`} className="flex-none text-[12px] font-bold text-danger">{E2("Quitar", "Remove")}</button>
         </div>))}

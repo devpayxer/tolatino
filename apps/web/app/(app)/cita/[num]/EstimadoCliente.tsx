@@ -11,6 +11,7 @@ import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../pago
 import { useVerificacion } from "../../pago/Verificacion";
 import { citaAccion, estimadoDecidir, extraDecidir } from "./acciones";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -59,7 +60,7 @@ export function EstimadoCliente({ c, es, pago, aviso }: { c: CitaVista; es: bool
           {l.dec && !toca && <div className={l.dec === "ok" ? "text-open-text" : ""}>{l.dec === "ok" ? E2("APROBADA", "APPROVED") : E2("NO APROBADA", "NOT APPROVED")}</div>}
         </div>
       </div>
-      <span className="h-[52px] w-[52px] flex-none rounded-xl bg-photo-bg" style={l.foto ? { backgroundImage: `url(${l.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined} />
+      <span className="h-[52px] w-[52px] flex-none rounded-xl bg-photo-bg" style={l.foto ? { backgroundImage: fotoFondo(l.foto, 52), backgroundSize: "cover", backgroundPosition: "center" } : undefined} />
     </div>
   );
   const xt = e.extras.find((l) => l.dec == null) ?? null, xtL = e.extras.filter((l) => l.dec != null);
@@ -80,7 +81,7 @@ export function EstimadoCliente({ c, es, pago, aviso }: { c: CitaVista; es: bool
       {error && <div role="alert" className="rounded-[14px] bg-danger/[.08] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{error}</div>}
       {xt && (
         <div data-screen-label="Cita auto · algo más" className="overflow-hidden rounded-[18px] border-[1.5px] border-pro/60 bg-white">
-          <div className="h-[150px] bg-photo-bg" style={xt.foto ? { backgroundImage: `url(${xt.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined} />
+          <div className="h-[150px] bg-photo-bg" style={xt.foto ? { backgroundImage: fotoFondo(xt.foto, 540), backgroundSize: "cover", backgroundPosition: "center" } : undefined} />
           <div className="p-4">
             <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-pro-ink">{E2("ALGO MÁS · TU OK", "SOMETHING ELSE · YOUR OK")}</div>
             <div className="mt-1.5 flex items-baseline gap-2.5"><span className="min-w-0 flex-1 font-display text-[17px] font-extrabold leading-[1.25] tracking-[-0.02em]">{nm(xt.t)}</span><span className="font-display text-[17px] font-extrabold">{dinero(xt.tot)}</span></div>

@@ -12,11 +12,12 @@ import { fechaCorta, horaInsc, LINEA_EDU, planTexto, usdI, type Bi } from "@/lib
 import type { CursoPub, InscPublica } from "@/lib/inscripciones-publico";
 import { edadTexto, LINEA_NINOS } from "@/lib/ninos-comun";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
-const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
+const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: MouseEvent) => e?.stopPropagation();
 
 type Acc = { llamar: () => void; escribir: () => void; llegar: () => void };
@@ -142,7 +143,7 @@ function Fila({ v, it, tarjeta, desc }: { v: In; it: In["primeros"][number]; tar
   const can = v.pro;
   const cuerpo = (
     <>
-      <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(it.foto)} />
+      <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(it.foto, 56)} />
       <div className="min-w-0 flex-1">
         <div className="text-[14.5px] font-bold leading-[1.3]">{it.name}</div>
         {desc && it.desc && <div className="mt-1 line-clamp-3 text-pretty text-[12.5px] leading-[1.5] text-ink/60">{it.desc}</div>}
@@ -209,7 +210,7 @@ export function InHoja({ v }: { v: In }) {
       <div onClick={v.cerrar} className="absolute inset-0 bg-ink/50" />
       <div role="dialog" aria-modal="true" aria-label={nm(s.name)} className="absolute inset-x-0 bottom-0 top-[60px] flex flex-col overflow-hidden rounded-t-[26px] bg-white lg:inset-auto lg:left-1/2 lg:top-1/2 lg:max-h-[86vh] lg:w-[560px] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-[26px]">
         <div className="flex-1 overflow-y-auto">
-          <div className="relative h-[170px] flex-none bg-photo-bg" style={fondo(s.foto ?? ip.negocio.foto)}>
+          <div className="relative h-[170px] flex-none bg-photo-bg" style={fondo(s.foto ?? ip.negocio.foto, 540)}>
             <button type="button" aria-label={E2("Cerrar", "Close")} onClick={v.cerrar} className="absolute right-3.5 top-3.5 grid h-9 w-9 place-items-center rounded-xl bg-white/[.94]"><Icon name="close" size={15} strokeWidth={2.4} /></button>
           </div>
           <div className="flex flex-col gap-4 px-5 pb-6 pt-[18px]">

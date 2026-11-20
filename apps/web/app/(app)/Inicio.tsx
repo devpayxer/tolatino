@@ -15,6 +15,7 @@ import type { TarjetaEvt } from "@/lib/evt-publico";
 import { dinero } from "@/lib/evt-comun";
 import type { Anuncio, BloqueHome } from "@/lib/cms-home";
 import { MiniMapa } from "@/app/_dir/MiniMapa";
+import { Foto } from "@tolatino/ui";
 
 type N = "ModuleTile" | "SectionHeader" | "BusinessRow" | "InfoCard" | "Button" | "Eyebrow" | "Icon" | "FeedPost" | "EventCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,7 +110,7 @@ export function Inicio({ h, bloques, aviso = null, anuncios = [], semana = [], c
             <SectionHeader title={h.comunidad} />
             <div className="overflow-hidden rounded-[17px] border border-line bg-white">
               {oficial && (
-                <FeedPost author={es ? oficial.nombre.es : oficial.nombre.en} avatar={<img src={oficial.foto} alt="" width={40} height={40} style={{ width: 40, height: 40, borderRadius: 99, flex: "none", display: "block" }} />}
+                <FeedPost author={es ? oficial.nombre.es : oficial.nombre.en} avatar={<Foto src={oficial.foto} alt="" ancho={40} width={40} height={40} style={{ width: 40, height: 40, borderRadius: 99, flex: "none", display: "block" }} />}
                   action={oficial.kind === "pregunta" ? h.pregunto : oficial.kind === "encuesta" ? h.encuesta : h.aviso}
                   time={hace(oficial.at, es).toUpperCase()} place={lugar} body={oficial.body} stats={[{ icon: "chat", value: oficial.cms }, { icon: "like", value: oficial.up }]} />
               )}

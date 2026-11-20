@@ -19,6 +19,7 @@ import { Icon, MONO, useGuardar, useToast } from "../comun";
 import { tec } from "@/lib/tec";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { Foto } from "@tolatino/ui";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const EventCard = UI.EventCard as ComponentType<any>;
 
@@ -279,7 +280,7 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
   const vanB = van ? <div className="flex items-center gap-[11px] rounded-[18px] px-[15px] py-3.5" style={{ background: th.card, border: `1px solid ${w[".09"]}` }}><Icon name="users" size={18} color={w[".6"]} /><span className="flex-1 text-[12.5px] font-bold">{van}</span><span style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: w[".45"] }}>{E2("DE TO’LATINO", "FROM TO’LATINO")}</span></div> : null;
   const galeria = (d: boolean) => (f.gal.length ? (
     <div data-screen-label="Ficha del evento · fotos"><H2 d={d}>{L(f.F.f.galL)}</H2>
-      <div className="grid grid-cols-3" style={{ marginTop: d ? 14 : 12, gap: d ? 12 : 8 }}>{f.gal.map((x) => <img key={x} src={x} alt="" className="block w-full object-cover" style={{ aspectRatio: d ? "4 / 3" : "1", borderRadius: d ? 16 : 13 }} />)}</div>
+      <div className="grid grid-cols-3" style={{ marginTop: d ? 14 : 12, gap: d ? 12 : 8 }}>{f.gal.map((x) => <Foto key={x} src={x} alt="" ancho={d ? 360 : 120} className="block w-full object-cover" style={{ aspectRatio: d ? "4 / 3" : "1", borderRadius: d ? 16 : 13 }} />)}</div>
     </div>
   ) : null);
   const org = (d: boolean) => (
@@ -318,7 +319,7 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
       {/* ── Teléfono ── */}
       <div data-screen-label="APP-EVT-LISTING · móvil" className="min-h-full pb-[120px] lg:hidden">
         <div className="relative h-[340px]" style={{ background: th.card }}>
-          {f.img ? <img src={f.img} alt="" className="block h-full w-full object-cover" /> : null}
+          {f.img ? <Foto src={f.img} alt="" ancho={540} urgente className="block h-full w-full object-cover" /> : null}
           <div className="absolute inset-0" style={{ background: `linear-gradient(180deg,rgba(11,14,18,.35),rgba(11,14,18,0) 35%,rgba(11,14,18,0) 55%,${f.dark ? "var(--tl-ink)" : "var(--tl-white)"})` }} />
           <button type="button" aria-label={E2("Volver a Eventos", "Back to Events")} onClick={() => router.push("/eventos")} className="absolute left-3.5 top-3.5 grid size-[38px] place-items-center rounded-xl text-white" style={{ background: "rgba(11,14,18,.55)", backdropFilter: "blur(10px)" }}><Icon name="chevronLeft" size={18} /></button>
           <div className="absolute right-3.5 top-3.5 flex gap-2">{corazon(38)}{compartirB(38)}</div>
@@ -354,7 +355,7 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
           <div className="mt-[18px] grid items-start gap-x-12 gap-y-8" style={{ gridTemplateColumns: "minmax(0,1fr) 372px" }}>
             <div className="min-w-0">
               <div className="relative overflow-hidden rounded-[22px]" style={{ background: th.card, aspectRatio: "16 / 9" }}>
-                {f.img ? <img src={f.img} alt="" className="block h-full w-full object-cover" /> : null}
+                {f.img ? <Foto src={f.img} alt="" ancho={800} urgente className="block h-full w-full object-cover" /> : null}
                 <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(11,14,18,0) 45%,rgba(11,14,18,.8))" }} />
                 {vasTag}
                 <div className="absolute right-3.5 top-3.5 flex gap-2">{corazon(40)}{compartirB(40)}</div>

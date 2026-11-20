@@ -9,6 +9,7 @@ import type { TagEvt, TarjetaEvt } from "@/lib/evt-publico";
 import { evtGuardar } from "./acciones";
 
 import { tec } from "@/lib/tec";
+import { Foto } from "@tolatino/ui";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const Icon = UI.Icon as ComponentType<any>;
 export const MONO = "'JetBrains Mono',monospace";
@@ -43,7 +44,7 @@ export function Cartel({ k, saved, onLike, desk, es }: { k: TarjetaEvt; saved: b
     <div data-evento={k.id} className="min-w-0">
       <div role="link" tabIndex={0} aria-label={k.title} onClick={abrir} onKeyDown={(e) => { if (e.key === "Enter") abrir(); }}
         className="relative cursor-pointer overflow-hidden rounded-[17px] bg-photo-bg" style={{ aspectRatio: "3 / 4" }}>
-        {k.img ? <img src={k.img} alt="" className="block h-full w-full object-cover" /> : null}
+        {k.img ? <Foto src={k.img} alt="" ancho={240} className="block h-full w-full object-cover" /> : null}
         <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(11,14,18,0) 55%,rgba(11,14,18,.66))" }} />
         <div className="absolute left-2.5 top-2.5 rounded-[11px] bg-white pb-1.5 pt-[5px] text-center" style={{ width: desk ? 42 : 40 }}>
           <span className="block text-danger" style={{ font: `800 8.5px ${MONO}`, letterSpacing: ".12em" }}>{k.bm}</span>

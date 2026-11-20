@@ -26,6 +26,7 @@ import { LINEA988 } from "@/lib/moderacion-comun";
 
 import { tec } from "@/lib/tec";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 type N = "Icon" | "Button" | "IconButton";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, IconButton } = UI as unknown as Record<N, ComponentType<any>>;
@@ -123,7 +124,7 @@ export function Chat({ es, yo, ciudad, c }: { es: boolean; yo: YoCom; ciudad: st
               <div style={{ maxWidth: "78%", padding: "10px 13px", borderRadius: m.mio ? "18px 18px 6px 18px" : "18px 18px 18px 6px", background: suave ? "rgba(11,14,18,.05)" : m.mio ? "var(--tl-ink)" : "var(--tl-white)",
                 color: suave ? "rgba(11,14,18,.6)" : m.mio ? "var(--tl-white)" : "var(--tl-ink)", border: m.mio || suave ? "none" : "1px solid rgba(11,14,18,.08)", font: `${suave ? "600 13px" : "500 14px"}/1.45 Manrope,sans-serif`, textWrap: "pretty", whiteSpace: "pre-wrap", overflowWrap: "anywhere",
                 display: "flex", flexDirection: "column", gap: 8 }}>
-                {!m.oculto && m.foto ? <a href={m.foto} target="_blank" rel="noopener noreferrer" aria-label={E2("Foto", "Photo")} style={{ display: "block", width: 180, height: 140, maxWidth: "100%", borderRadius: 10, background: `url("${m.foto}") center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />
+                {!m.oculto && m.foto ? <a href={m.foto} target="_blank" rel="noopener noreferrer" aria-label={E2("Foto", "Photo")} style={{ display: "block", width: 180, height: 140, maxWidth: "100%", borderRadius: 10, background: `${fotoFondo(m.foto, 180)} center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />
                   : fotoL ? <span role="img" aria-label={fotoL} style={{ width: 180, height: 140, maxWidth: "100%", borderRadius: 10, background: "var(--tl-photo-bg)", display: "grid", placeItems: "center", gap: 6, alignContent: "center", textAlign: "center", padding: 10, boxSizing: "border-box", color: "rgba(11,14,18,.6)", font: "600 12px/1.35 Manrope,sans-serif" }}><Icon name="image" size={20} color="rgba(11,14,18,.6)" />{fotoL}</span> : null}
                 {m.oculto ? <span>{E2("Mensaje oculto por To'Latino", "Message hidden by To'Latino")}</span> : quitada ? <span>{E2("Foto quitada por To’Latino.", "Photo removed by To’Latino.")}</span> : x.body ? <span>{x.body}</span> : null}
               </div>
@@ -141,7 +142,7 @@ export function Chat({ es, yo, ciudad, c }: { es: boolean; yo: YoCom; ciudad: st
             {err && <div role="alert" style={{ marginBottom: 8, padding: "8px 12px", borderRadius: 12, background: "rgba(192,57,43,.08)", font: "600 12.5px/1.4 Manrope,sans-serif", color: "var(--tl-danger)" }}>{err}</div>}
             {foto && (
               <div data-chat-adjunto="" style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 48, height: 48, borderRadius: 10, flex: "none", background: `url("${foto.url}") center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />
+                <span style={{ width: 48, height: 48, borderRadius: 10, flex: "none", background: `${fotoFondo(foto.url, 48)} center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />
                 <span role="button" onClick={() => setFoto(null)} {...tec(() => setFoto(null))} style={{ font: "700 12.5px Manrope,sans-serif", color: "rgba(11,14,18,.6)", cursor: "pointer", flex: "none" }}>{E2("Quitar foto", "Remove photo")}</span>
                 {foto.revision && <span style={{ font: "500 11.5px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)", minWidth: 0 }}>{E2("To’Latino la revisa antes de que se vea.", "To’Latino reviews it before it shows.")}</span>}
               </div>

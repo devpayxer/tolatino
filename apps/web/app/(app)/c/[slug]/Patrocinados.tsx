@@ -13,6 +13,7 @@ import { abrirComoLlegar } from "@/lib/como-llegar";
 import { registrarToque } from "../../acciones";
 import { entroPatrocinado } from "../../acciones-patrocinio";
 import { VideoTarjeta, VisorHoy } from "../../VideoNegocio";
+import { fotoFondo } from "@tolatino/ui";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Button } = UI as unknown as Record<"Button", ComponentType<any>>;
@@ -28,13 +29,13 @@ export function TarjetaAlta({ b, es, onOpen, onCta, onRing, chica = false, sid }
     <div role={onOpen ? "link" : undefined} tabIndex={onOpen ? 0 : undefined} aria-label={b.name} onClick={onOpen} onKeyDown={onOpen ? (e) => { if (e.key === "Enter") onOpen(); } : undefined}
       data-patrocinada={sid}
       className={`relative flex-none snap-start overflow-hidden bg-dark-3 text-white ${chica ? "h-[236px] w-[200px] rounded-[20px]" : "h-[286px] w-[232px] rounded-[22px]"} ${onOpen ? "cursor-pointer" : ""}`}>
-      <span className="absolute inset-0 block bg-cover bg-center" style={foto ? { backgroundImage: `url(${foto})` } : undefined} />
+      <span className="absolute inset-0 block bg-cover bg-center" style={foto ? { backgroundImage: fotoFondo(foto, 232) } : undefined} />
       {vid && !chica ? <div className="absolute inset-0"><VideoTarjeta src={vid.src} poster={vid.poster} nombre={b.name} es={es} /></div> : null}
       {anillo != null ? (
         <button type="button" aria-label={`${es ? "Hoy en el barrio" : "Today nearby"} · ${b.name}`} data-anillo=""
           onClick={(e) => { e.stopPropagation(); onRing?.(); }}
           className={`absolute left-3 top-3 z-[3] box-border rounded-full border-0 bg-action p-[2.5px] ${chica ? "size-[38px]" : "size-11"}`}>
-          <span className="block size-full rounded-full border-[2.5px] border-white bg-photo-bg bg-cover bg-center" style={anillo ? { backgroundImage: `url(${anillo})` } : undefined} />
+          <span className="block size-full rounded-full border-[2.5px] border-white bg-photo-bg bg-cover bg-center" style={anillo ? { backgroundImage: fotoFondo(anillo, 44) } : undefined} />
         </button>
       ) : null}
       <div className={`absolute inset-x-0 bottom-0 z-[2] flex flex-col bg-[linear-gradient(180deg,rgba(11,14,18,0),rgba(11,14,18,.92))] ${chica ? "gap-1 px-3 pb-3 pt-[50px]" : "gap-[5px] px-3.5 pb-3.5 pt-14"}`}>

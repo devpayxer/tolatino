@@ -9,6 +9,7 @@ import type { PlanVista } from "@/lib/planes";
 import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../pago/MetodoPago";
 import { planAccion } from "./acciones";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,7 +20,7 @@ const MO = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep",
 const ORD = { es: ["1.er", "2.º", "3.er", "4.º"], en: ["1st", "2nd", "3rd", "4th"] };
 const hL = (m: number) => { const h = Math.floor(m / 60) % 24; return `${h % 12 || 12} ${h < 12 ? "AM" : "PM"}`; };
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
+const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 
 export function PlanEstado({ p, es, pago }: { p: PlanVista; es: boolean; pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
@@ -71,14 +72,14 @@ export function PlanEstado({ p, es, pago }: { p: PlanVista; es: boolean; pago: {
             <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{E2("PRÓXIMAS VISITAS", "UPCOMING VISITS")}</div>
             <div className="mt-2.5 flex flex-col gap-2">{p.proximas.map((v, i) => (
               <button key={v.fecha} type="button" disabled={!v.cita} onClick={() => v.cita && router.push(`/cita/${v.cita}`)} className="flex items-center gap-3 rounded-[14px] border border-ink/[.08] px-3 py-2.5 text-left">
-                <span className="h-10 w-10 flex-none rounded-xl bg-photo-bg" style={fondo(p.negocio.foto)} />
+                <span className="h-10 w-10 flex-none rounded-xl bg-photo-bg" style={fondo(p.negocio.foto, 40)} />
                 <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{`${cap(fL(v.fecha))} · ${win}`}</span>
                   <span className="mt-0.5 block font-mono text-[9.5px] font-semibold text-ink/60">{`${i === 0 && p.st === "active" ? E2("PRÓXIMA · ", "NEXT · ") : ""}${dinero(p.precio)}${E2(" AL MES", " A MONTH")}`}</span></span>
                 {v.cita && <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" />}</button>))}</div>
           </div>
         )}
         <div className="rounded-[18px] border border-ink/[.07] bg-white p-4">
-          <div className="flex items-center gap-2.5"><span className="h-9 w-9 flex-none rounded-full bg-photo-bg" style={fondo(p.negocio.foto)} />
+          <div className="flex items-center gap-2.5"><span className="h-9 w-9 flex-none rounded-full bg-photo-bg" style={fondo(p.negocio.foto, 36)} />
             <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{`${E2("TU PLAN · ", "YOUR PLAN · ")}${p.negocio.nombre}`.toUpperCase()}</div></div>
           <p className="m-0 mt-3 text-pretty text-[13px] font-medium leading-[1.55]">{E2("Cada visita te llega con lo que se hizo. Si algo necesita más tiempo o piezas, te piden tu OK antes.", "Each visit comes with what was done. If something needs more time or parts, they ask your OK first.")}</p>
           {p.inc.length > 0 && <div className="mt-3.5"><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("INCLUYE", "INCLUDES")}</div>

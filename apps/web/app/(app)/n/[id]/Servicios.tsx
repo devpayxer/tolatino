@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState, type ComponentType, type MouseEvent } fro
 import type { CitasPublica, PersonaPub, ServicioPub } from "@/lib/citas";
 import { proximasHoras } from "./acciones-cita";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "Tag" | "OptionGroup" | "AddOnRow" | "StaffPicker" | "DepositNote" | "ReservationCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,7 +28,7 @@ export function diaS(hoy: string, i: number, es: boolean) {
 }
 export const aprL = (p: Pick<PersonaPub, "auto" | "resp">, es: boolean) => (p.auto ? (es ? "CONFIRMA AL INSTANTE" : "CONFIRMS INSTANTLY") : `${es ? "RESPONDE EN ~" : "REPLIES IN ~"}${p.resp >= 60 ? `${Math.round(p.resp / 60)} H` : `${p.resp} MIN`}`);
 export const aprC = (p: Pick<PersonaPub, "auto">) => (p.auto ? "bg-signal/[.18] text-open-text" : "bg-pro/20 text-pro-ink");
-const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
+const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: MouseEvent) => e?.stopPropagation();
 
 type Hoja = { svc: string; opts: Record<string, number>; adds: string[]; con: string | null };
@@ -143,7 +144,7 @@ export type Svc = NonNullable<ReturnType<typeof useSvc>>;
 function Fila({ v, it, tarjeta }: { v: Svc; it: Svc["top"][number]; tarjeta?: boolean }) {
   const cuerpo = (
     <>
-      <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(it.foto)} />
+      <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(it.foto, 56)} />
       <div className="min-w-0 flex-1">
         <div className="text-[14.5px] font-bold leading-[1.3]">{it.name}</div>
         <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{it.meta}</div>
@@ -204,7 +205,7 @@ export function SvcTab({ v, desk }: { v: Svc; desk: boolean }) {
           {v.pros.map(({ p, seat, meta, next, hoy }) => (
             <div key={p.id} className="flex flex-col gap-[13px] rounded-[18px] border border-ink/[.08] bg-white p-3.5">
               <div className="flex items-center gap-[13px]">
-                <span className="grid h-[60px] w-[60px] flex-none place-items-center rounded-[18px] bg-photo-bg font-display text-[20px] font-extrabold text-ink/60" style={fondo(p.foto)}>{p.foto ? null : p.corto.charAt(0)}</span>
+                <span className="grid h-[60px] w-[60px] flex-none place-items-center rounded-[18px] bg-photo-bg font-display text-[20px] font-extrabold text-ink/60" style={fondo(p.foto, 60)}>{p.foto ? null : p.corto.charAt(0)}</span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline gap-2"><span className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{p.nombre}</span>{seat && <span className="font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/60">{seat}</span>}</div>
                   {meta && <div className="mt-[5px] font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{meta}</div>}
@@ -266,7 +267,7 @@ export function SvcHoja({ v }: { v: Svc }) {
   const meta = `${durL(P.dur)}${v.silla && !own ? E2(` · varía por ${v.w.uno}`, ` · varies by ${v.w.uno}`) : ""}`.toUpperCase();
   const cuerpo = (
     <>
-      <div className="relative h-[200px] flex-none bg-photo-bg" style={fondo(s.foto ?? cp.negocio.foto)}>
+      <div className="relative h-[200px] flex-none bg-photo-bg" style={fondo(s.foto ?? cp.negocio.foto, 540)}>
         <div className="absolute left-1/2 top-2.5 -ml-[19px] h-1 w-[38px] rounded-[9px] bg-white/85 lg:hidden" />
         <button type="button" aria-label={E2("Cerrar", "Close")} onClick={v.cerrar} className="absolute right-3.5 top-3.5 grid h-9 w-9 place-items-center rounded-xl bg-white/[.94]"><Icon name="close" size={15} strokeWidth={2.4} /></button>
       </div>
@@ -295,7 +296,7 @@ export function SvcHoja({ v }: { v: Svc }) {
                 {pros.map((x) => (
                   <button key={x.p.id} type="button" onClick={() => up({ con: x.p.id })} aria-pressed={x.on}
                     className={`flex items-center gap-3 rounded-[15px] text-left ${x.on ? "border-[1.5px] border-ink p-[11.5px]" : "border border-ink/10 p-3"}`}>
-                    <span className="grid h-[46px] w-[46px] flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[16px] font-extrabold text-ink/60" style={fondo(x.p.foto)}>{x.p.foto ? null : x.p.corto.charAt(0)}</span>
+                    <span className="grid h-[46px] w-[46px] flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[16px] font-extrabold text-ink/60" style={fondo(x.p.foto, 46)}>{x.p.foto ? null : x.p.corto.charAt(0)}</span>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-baseline gap-[7px]"><span className="text-[13.5px] font-bold">{x.p.nombre}</span>{x.seat && <span className="font-mono text-[9px] font-bold tracking-[0.1em] text-ink/60">{x.seat}</span>}</div>
                       {x.meta && <div className="mt-1 font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{x.meta}</div>}

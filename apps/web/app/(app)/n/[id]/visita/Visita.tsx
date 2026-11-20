@@ -16,6 +16,7 @@ import { HojaCasa, HojaVehiculo, casaMeta, compatCasa, compatVeh, depositoVer, u
 import { horasDeVisita, pedirVisita } from "./acciones";
 import { uuid } from "@/lib/uuid";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots" | "PaymentSummary" | "DepositOutcomes";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -105,7 +106,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
   // ── Bloques ──
   const tarjetaSvc = (
     <div className={`flex items-center gap-[13px] px-[15px] py-3.5 ${caja}`}>
-      <span className="h-[54px] w-[54px] flex-none rounded-[15px] bg-photo-bg" style={s.foto ? { backgroundImage: `url(${s.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
+      <span className="h-[54px] w-[54px] flex-none rounded-[15px] bg-photo-bg" style={s.foto ? { backgroundImage: fotoFondo(s.foto, 54), backgroundSize: "cover", backgroundPosition: "center" } : {}} />
       <div className="min-w-0 flex-1">
         <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nm(s.name)}</div>
         {(ol.length > 0 || al.length > 0) && <div className="mt-[3px] text-[12px] font-medium leading-[1.4] text-ink/60">{[...ol.map((x) => nm(x.o!.n)), ...al.map((x) => nm(x.n))].join(" · ")}</div>}
@@ -147,7 +148,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
       {desdeK && (
         <div><div className={K}>{E2("FOTOS · OPCIONAL", "PHOTOS · OPTIONAL")}</div>
           <div className="mt-[9px] flex flex-wrap gap-2.5">
-            {fotos.map((f) => <span key={f.id} className="relative h-[68px] w-[68px] rounded-[13px] bg-photo-bg" style={{ backgroundImage: `url(${f.url})`, backgroundSize: "cover" }}><button type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="absolute -right-1.5 -top-1.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-ink"><Icon name="close" size={10} color="var(--tl-white)" strokeWidth={2.6} /></button></span>)}
+            {fotos.map((f) => <span key={f.id} className="relative h-[68px] w-[68px] rounded-[13px] bg-photo-bg" style={{ backgroundImage: fotoFondo(f.url, 68), backgroundSize: "cover" }}><button type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="absolute -right-1.5 -top-1.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-ink"><Icon name="close" size={10} color="var(--tl-white)" strokeWidth={2.6} /></button></span>)}
             {fotos.length < 6 && <button type="button" disabled={subiendo} onClick={() => fileRef.current?.click()} className="box-border flex h-[68px] w-[68px] flex-col items-center justify-center gap-1 rounded-[13px] border-[1.5px] border-dashed border-ink/[.22] text-ink/60"><Icon name="image" size={18} color="rgba(11,14,18,.6)" /><span className="text-[10.5px] font-bold">{subiendo ? "…" : E2("Agregar", "Add")}</span></button>}
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { void subir(e.target.files?.[0]); e.target.value = ""; }} />
           </div></div>

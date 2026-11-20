@@ -53,13 +53,14 @@ import { MiniMapa } from "@/app/_dir/MiniMapa";
 import { HojaEntrar } from "../../HojaEntrar";
 import { VideoPortada, VisorHoy } from "../../VideoNegocio";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 type N = "Icon" | "Button" | "IconButton" | "Tabs" | "DesktopTabs" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, IconButton, Tabs, DesktopTabs, TodayCard, HoursPro, Tag, Chip, OwnerCard } = UI as unknown as Record<N, ComponentType<any>>;
 
 type F = NonNullable<Awaited<ReturnType<typeof ficha>>> & { guardado: boolean };
 type Textos = Record<string, string>;
-const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
+const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const h2 = "font-display text-[18px] font-extrabold leading-[1.1] tracking-[-0.03em] lg:text-[24px] lg:tracking-[-0.035em]";
 
 export type SillaFicha = { k: string; name: string; meta: string; logo: string | null; href: string; miembro: string };
@@ -144,7 +145,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
   // La página de una silla rentada (3d, prototipo «Ficha · renta su silla en»): el local donde renta, con «Ver el local».
   const sillaCard = silla ? (
     <button type="button" data-screen-label="Ficha · renta su silla en" onClick={() => router.push(silla.href)} className="mt-3.5 flex w-full items-center gap-3 rounded-[17px] border border-ink/[.07] bg-paper px-3.5 py-[13px] text-left">
-      <span className="grid h-11 w-11 flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[14px] font-extrabold text-ink/60" style={fondo(silla.logo)}>{silla.logo ? null : silla.name.charAt(0)}</span>
+      <span className="grid h-11 w-11 flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[14px] font-extrabold text-ink/60" style={fondo(silla.logo, 44)}>{silla.logo ? null : silla.name.charAt(0)}</span>
       <div className="min-w-0 flex-1"><div className="font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{silla.k}</div><div className="mt-[5px] text-[13.5px] font-bold">{silla.name}</div><div className="mt-1 font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{silla.meta}</div></div>
       <Icon name="chevronRight" size={16} color="rgba(11,14,18,.35)" />
     </button>
@@ -185,10 +186,10 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
   const logo = (cls: string, off = 2) => hoyAnillo ? (
     <button type="button" onClick={() => setAnillo(true)} aria-label={`${es ? "Hoy en el barrio" : "Today nearby"} · ${f.nombre}`} data-anillo=""
       className={`grid flex-none cursor-pointer place-items-center border border-line font-display font-extrabold leading-none text-white ${cls}`}
-      style={{ ...fondo(f.logo), backgroundColor: f.logo ? "var(--tl-photo-bg)" : "var(--tl-ink)", outline: "3px solid var(--tl-action)", outlineOffset: off }}>{f.logo ? "" : f.iniciales}</button>
+      style={{ ...fondo(f.logo, 120), backgroundColor: f.logo ? "var(--tl-photo-bg)" : "var(--tl-ink)", outline: "3px solid var(--tl-action)", outlineOffset: off }}>{f.logo ? "" : f.iniciales}</button>
   ) : (
     <span className={`grid flex-none place-items-center border border-line font-display font-extrabold leading-none text-white ${cls}`}
-      style={{ ...fondo(f.logo), backgroundColor: f.logo ? "var(--tl-photo-bg)" : "var(--tl-ink)" }}>{f.logo ? "" : f.iniciales}</span>
+      style={{ ...fondo(f.logo, 120), backgroundColor: f.logo ? "var(--tl-photo-bg)" : "var(--tl-ink)" }}>{f.logo ? "" : f.iniciales}</span>
   );
 
   /* ── Bloques del Resumen ── */
@@ -213,7 +214,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
       </div>
       <div className="hs mt-3 flex gap-[9px] overflow-x-auto px-5 lg:px-0">
         {f.fotos.slice(0, 12).map((u, i) => (
-          <button key={i} type="button" aria-label={`${t.photos} ${i + 1}`} onClick={() => verFotos(i)} className="h-[106px] w-[150px] flex-none rounded-[15px] bg-photo-bg lg:h-[140px] lg:w-[200px]" style={fondo(u)} />
+          <button key={i} type="button" aria-label={`${t.photos} ${i + 1}`} onClick={() => verFotos(i)} className="h-[106px] w-[150px] flex-none rounded-[15px] bg-photo-bg lg:h-[140px] lg:w-[200px]" style={fondo(u, 200)} />
         ))}
       </div>
     </div>
@@ -321,7 +322,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
               {items.map((x) => (
                 <div key={x.id} role="link" tabIndex={0} onClick={() => router.push(`/n/${x.id}`)} onKeyDown={(e) => e.key === "Enter" && router.push(`/n/${x.id}`)}
                   className="flex cursor-pointer flex-col overflow-hidden rounded-[18px] border border-line bg-white">
-                  <div className="relative h-[150px] bg-photo-bg" style={fondo(x.foto)}>
+                  <div className="relative h-[150px] bg-photo-bg" style={fondo(x.foto, 540)}>
                     <span className="absolute left-3 top-3 flex"><Tag tone="ink">{x.tag}</Tag></span>
                   </div>
                   <div className="flex flex-1 flex-col gap-2 px-[15px] pb-[15px] pt-3.5">
@@ -371,14 +372,14 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
         {f.pro ? (
           <div className="relative mt-4 grid h-[440px] grid-cols-[2fr_1fr] grid-rows-2 gap-2 overflow-hidden rounded-[24px]">
             {f.video ? <div className="relative row-span-2 overflow-hidden bg-photo-bg-2" data-portada-video=""><VideoPortada src={f.video.src} poster={f.video.poster} es={es} desk onClick={() => verFotos(0)} /></div>
-              : <button type="button" aria-label={t.photosAll} onClick={() => verFotos(0)} className="row-span-2 bg-photo-bg-2" style={fondo(f.hero)} />}
-            {f.mosaico.map((u, i) => <button key={i} type="button" aria-label={t.photosAll} onClick={() => verFotos(Math.min(i + 1, f.nFotos - 1))} className="bg-photo-bg" style={fondo(u)} />)}
+              : <button type="button" aria-label={t.photosAll} onClick={() => verFotos(0)} className="row-span-2 bg-photo-bg-2" style={fondo(f.hero, 800)} />}
+            {f.mosaico.map((u, i) => <button key={i} type="button" aria-label={t.photosAll} onClick={() => verFotos(Math.min(i + 1, f.nFotos - 1))} className="bg-photo-bg" style={fondo(u, 360)} />)}
             <button type="button" onClick={() => verFotos()} className="absolute bottom-[18px] right-[18px] flex h-10 items-center gap-2 rounded-xl bg-white px-[15px] text-[13px] font-bold text-ink shadow-[0_10px_24px_-12px_rgba(11,14,18,.6)]">
               <Icon name="image" size={15} />{t.photosAll}
             </button>
           </div>
         ) : (
-          <div className="mt-4 h-[300px] rounded-[24px] bg-photo-bg-2" style={fondo(f.hero)} />
+          <div className="mt-4 h-[300px] rounded-[24px] bg-photo-bg-2" style={fondo(f.hero, 800)} />
         )}
         <div className="mt-7 flex flex-wrap items-end justify-between gap-7">
           <div className="flex min-w-0 items-center gap-[18px]">
@@ -414,7 +415,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
 
       {/* ── Teléfono: portada y encabezado ── */}
       <div className="lg:hidden">
-        <div className={`relative overflow-hidden bg-photo-bg-2 ${f.pro ? "h-[272px]" : "h-[210px]"}`} style={fondo(f.hero)}>
+        <div className={`relative overflow-hidden bg-photo-bg-2 ${f.pro ? "h-[272px]" : "h-[210px]"}`} style={fondo(f.hero, 540)}>
           {f.video ? <div className="absolute inset-0" data-portada-video=""><VideoPortada src={f.video.src} poster={f.video.poster} es={es} abajo={26} /></div> : null}
           <div className="absolute inset-x-0 top-0 h-[120px] bg-[linear-gradient(180deg,rgba(11,14,18,.55),transparent)]" />
           <button type="button" aria-label={t.back} onClick={() => router.back()} className="absolute left-4 top-3.5 grid size-[38px] place-items-center rounded-[13px] bg-white/95">

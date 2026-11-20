@@ -12,11 +12,12 @@ import { abrirComoLlegar } from "@/lib/como-llegar";
 import { PrecioAntes } from "./PrecioAntes";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 import { CorazonGuardar, useGuardados } from "./Corazon";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, MenuTile, MenuItemRow, OrderBar } = UI as unknown as Record<N | "Chip" | "MenuTile" | "MenuItemRow" | "OrderBar", ComponentType<any>>;
-const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
+const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: MouseEvent) => e?.stopPropagation();
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
@@ -84,7 +85,7 @@ function Fila({ v, p, tarjeta }: { v: Me; p: ProdMerc; tarjeta?: boolean }) {
   return (
     <div className={`${tarjeta ? "flex items-center gap-[13px] rounded-[18px] border border-ink/[.08] bg-white p-3.5" : "flex items-center gap-[13px] border-b border-ink/[.07] py-3.5"}${p.ago ? " opacity-60" : ""}`}>
       <button type="button" onClick={(e) => v.abrir(p.id, e)} className="flex min-w-0 flex-1 cursor-pointer items-center gap-[13px] text-left">
-        <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(p.foto)} />
+        <span className="h-14 w-14 flex-none rounded-[15px] bg-photo-bg" style={fondo(p.foto, 56)} />
         <div className="min-w-0 flex-1">
           <div className="text-[14.5px] font-bold leading-[1.3]">{v.nm(p.name)}</div>
           {v.meta(p) && <div className="mt-1 font-mono text-[10px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{v.meta(p)}</div>}
@@ -215,7 +216,7 @@ export function MeHoja({ v }: { v: Me }) {
       <div onClick={v.cerrar} className="absolute inset-0 bg-ink/50" />
       <div role="dialog" aria-modal="true" aria-label={nm(p.name)} className="absolute inset-x-0 bottom-0 top-[60px] flex flex-col overflow-hidden rounded-t-[26px] bg-white lg:inset-auto lg:left-1/2 lg:top-1/2 lg:max-h-[86vh] lg:w-[560px] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-[26px]">
         <div className="flex-1 overflow-y-auto">
-          <div className="relative h-[190px] flex-none bg-photo-bg" style={fondo(p.foto ?? mp.negocio.foto)}>
+          <div className="relative h-[190px] flex-none bg-photo-bg" style={fondo(p.foto ?? mp.negocio.foto, 540)}>
             <button type="button" aria-label={E2("Cerrar", "Close")} onClick={v.cerrar} className="absolute right-3.5 top-3.5 grid h-9 w-9 place-items-center rounded-xl bg-white/[.94]"><Icon name="close" size={15} strokeWidth={2.4} /></button>
           </div>
           <div className="flex flex-col gap-4 px-5 pb-6 pt-[18px]">

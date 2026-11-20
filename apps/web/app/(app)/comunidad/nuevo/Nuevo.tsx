@@ -16,6 +16,7 @@ import { Avatar, LINE, MONO, Marco, Reglas, useAncho, useComUi, type YoCom } fro
 
 import { tec } from "@/lib/tec";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo, Foto } from "@tolatino/ui";
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
@@ -102,9 +103,9 @@ export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar, d
       <div style={K("")}>{E2("ASÍ SE VE EN LA CONVERSACIÓN", "HOW IT LOOKS IN THE FEED")}</div>
       <div style={{ marginTop: 12, display: "flex", gap: 10, alignItems: "center" }}><Avatar foto={yo.foto} ini={yo.ini} size={34} /><div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px Sora,sans-serif" }}>{yo.nombre}</div><div style={{ marginTop: 2, font: `600 9.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{`${(es ? TIPO[kind].es : TIPO[kind].en).toUpperCase()} · ${E2("AHORA", "NOW")}`}</div></div></div>
       <div style={{ marginTop: 10, font: "500 14px/1.5 Manrope,sans-serif", color: body.trim() ? "var(--tl-ink)" : "rgba(11,14,18,.6)", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{body.trim() || TX[kind][1]}</div>
-      {biz && <div style={{ marginTop: 10, padding: 10, borderRadius: 13, background: "var(--tl-paper)", display: "flex", gap: 10, alignItems: "center" }}><span style={{ width: 36, height: 36, borderRadius: 10, background: biz.foto ? `url("${biz.foto}") center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none" }} /><div style={{ minWidth: 0 }}><div style={{ font: `700 9px ${MONO}`, letterSpacing: ".1em", color: "var(--tl-action)" }}>{E2("RECOMIENDA", "RECOMMENDS") + (para ? ` · ${para.toUpperCase()}` : "")}</div><div style={{ marginTop: 2, font: "700 13.5px Sora,sans-serif" }}>{biz.nombre}</div></div></div>}
+      {biz && <div style={{ marginTop: 10, padding: 10, borderRadius: 13, background: "var(--tl-paper)", display: "flex", gap: 10, alignItems: "center" }}><span style={{ width: 36, height: 36, borderRadius: 10, background: biz.foto ? `${fotoFondo(biz.foto, 40)} center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none" }} /><div style={{ minWidth: 0 }}><div style={{ font: `700 9px ${MONO}`, letterSpacing: ".1em", color: "var(--tl-action)" }}>{E2("RECOMIENDA", "RECOMMENDS") + (para ? ` · ${para.toUpperCase()}` : "")}</div><div style={{ marginTop: 2, font: "700 13.5px Sora,sans-serif" }}>{biz.nombre}</div></div></div>}
       {kind === "encuesta" && <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>{opts.filter((o) => o.trim()).map((o, i) => <div key={i} style={{ padding: "10px 12px", borderRadius: 11, background: "var(--tl-paper)", font: "600 13px Manrope,sans-serif" }}>{o}</div>)}</div>}
-      {fotos.length > 0 && kind !== "encuesta" && <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: `repeat(${Math.min(3, fotos.length)},minmax(0,1fr))`, gap: 6 }}>{fotos.slice(0, 3).map((f) => <span key={f.id} style={{ aspectRatio: "1", borderRadius: 10, background: `url("${f.url}") center/cover` }} />)}</div>}
+      {fotos.length > 0 && kind !== "encuesta" && <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: `repeat(${Math.min(3, fotos.length)},minmax(0,1fr))`, gap: 6 }}>{fotos.slice(0, 3).map((f) => <span key={f.id} style={{ aspectRatio: "1", borderRadius: 10, background: `${fotoFondo(f.url, 120)} center/cover` }} />)}</div>}
     </div>
   );
   return (
@@ -141,7 +142,7 @@ export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar, d
                   <div style={K("")}>{E2("EL NEGOCIO", "THE BUSINESS")}</div>
                   {biz ? (
                     <div style={{ marginTop: 10, padding: 12, borderRadius: 15, background: "var(--tl-paper)", display: "flex", gap: 12, alignItems: "center" }}>
-                      <span style={{ width: 48, height: 48, borderRadius: 13, background: biz.foto ? `url("${biz.foto}") center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
+                      <span style={{ width: 48, height: 48, borderRadius: 13, background: biz.foto ? `${fotoFondo(biz.foto, 40)} center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
                       <div style={{ flex: 1, minWidth: 0 }}><div style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ font: "700 14px/1.25 Manrope,sans-serif" }}>{biz.nombre}</span>{biz.verificado && <Icon name="verified" size={15} color="var(--tl-action)" />}</div>{(es ? biz.meta.es : biz.meta.en) && <div style={{ marginTop: 3, font: `600 9.5px ${MONO}`, letterSpacing: ".04em", color: "rgba(11,14,18,.6)" }}>{(es ? biz.meta.es : biz.meta.en).toUpperCase()}</div>}</div>
                       {!ed && <span role="button" onClick={() => { setBuscar(""); }} {...tec(() => { setBuscar(""); })} style={{ font: "700 12px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer", flex: "none" }}>{E2("Cambiar", "Change")}</span>}
                     </div>
@@ -160,7 +161,7 @@ export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar, d
                       </div>
                       {hall.map((b) => (
                         <div key={b.id} role="option" aria-selected={biz?.id === b.id} onClick={() => { setBiz(b); setPara(null); setNoEsMio(false); setBuscar(null); setErr(null); }} {...tec(() => { setBiz(b); setPara(null); setNoEsMio(false); setBuscar(null); setErr(null); })} style={{ padding: "10px 12px", display: "flex", gap: 10, alignItems: "center", borderTop: LINE, cursor: "pointer" }}>
-                          <span style={{ width: 36, height: 36, borderRadius: 10, background: b.foto ? `url("${b.foto}") center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
+                          <span style={{ width: 36, height: 36, borderRadius: 10, background: b.foto ? `${fotoFondo(b.foto, 36)} center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
                           <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px Manrope,sans-serif" }}>{b.nombre}</div><div style={{ marginTop: 2, font: `600 9px ${MONO}`, letterSpacing: ".04em", color: "rgba(11,14,18,.6)" }}>{(es ? b.meta.es : b.meta.en).toUpperCase()}</div></div>
                         </div>))}
                       {buscar.trim().length >= 2 && !hall.length && <div style={{ padding: "12px", font: "500 12.5px Manrope,sans-serif", color: "rgba(11,14,18,.6)", borderTop: LINE }}>{E2("No encontramos ese negocio en la ciudad.", "We did not find that business in the city.")}</div>}
@@ -212,7 +213,7 @@ export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar, d
                 <div><div style={K("")}>{E2("FOTOS · OPCIONAL", "PHOTOS · OPTIONAL")}</div>
                   <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
                     {fotos.map((f, i) => (
-                      <span key={f.id} style={{ position: "relative", width: 64, height: 64, borderRadius: 13, background: `url("${f.url}") center/cover`, backgroundColor: "var(--tl-photo-bg)", flex: "none" }}>
+                      <span key={f.id} style={{ position: "relative", width: 64, height: 64, borderRadius: 13, background: `${fotoFondo(f.url, 64)} center/cover`, backgroundColor: "var(--tl-photo-bg)", flex: "none" }}>
                         <span role="button" aria-label={E2(`Quitar foto ${i + 1}`, `Remove photo ${i + 1}`)} onClick={() => setFotos(fotos.filter((x) => x.id !== f.id))} {...tec(() => setFotos(fotos.filter((x) => x.id !== f.id)))} style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: 99, background: "rgba(11,14,18,.7)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="close" size={11} strokeWidth={2.2} color="var(--tl-white)" /></span>
                       </span>))}
                     {fotos.length < MAX_FOTOS && (

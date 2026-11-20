@@ -10,6 +10,7 @@ import { ubicacion } from "@/lib/ubicacion";
 import { FichaEvento } from "./FichaEvento";
 import { diaCorto as diaCortoSrv, hora as horaSrv } from "@/lib/evt-comun";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +64,7 @@ function EventoCancelado({ x, es }: { x: { title: string; org: string; dia: stri
     <div data-pantalla="APP-EVT-LISTING" data-screen-label="Ficha del evento · cancelado" className="min-h-[100dvh] bg-paper">
       <div className="mx-auto max-w-[720px] px-4 pb-12 pt-5 lg:px-[30px] lg:pt-8">
         <a href="/eventos" className="text-[13px] font-bold text-action">{E2("Eventos", "Events")}</a>
-        {x.img && <div role="img" aria-label={x.title} className="mt-3 h-[180px] rounded-[18px] bg-cover bg-center opacity-60 grayscale lg:h-[260px]" style={{ backgroundImage: `url("${x.img}")` }} />}
+        {x.img && <div role="img" aria-label={x.title} className="mt-3 h-[180px] rounded-[18px] bg-cover bg-center opacity-60 grayscale lg:h-[260px]" style={{ backgroundImage: fotoFondo(x.img, 540) }} />}
         <div className="mt-4 font-mono text-[10.5px] font-bold tracking-[0.16em] text-ink/60">{`${x.org.toUpperCase()} · ${diaCortoSrv(x.dia, es).toUpperCase()} · ${horaSrv(x.h0)}`}</div>
         <h1 className="m-0 mt-1.5 font-display text-[26px] font-extrabold leading-[1.05] tracking-[-0.045em] text-ink/60 line-through lg:text-[32px]">{x.title}</h1>
         <div role="alert" className="mt-4 rounded-[14px] bg-danger/[.1] px-4 py-3.5">

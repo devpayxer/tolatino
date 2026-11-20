@@ -9,6 +9,7 @@ import type { MiSolicitud } from "@/lib/jobs";
 import { bi, DCORTO, EXP_L, pagoL, tipoL } from "@/lib/jobs-txt";
 import { vacConfirmar, vacRetirar } from "../../n/[id]/acciones-jobs";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,7 +110,7 @@ export function Solicitud({ a, es, enviada }: { a: MiSolicitud; es: boolean; env
           <div className="mt-1.5">
             {a.sim.map((x) => (
               <button key={x.id} type="button" onClick={() => router.push(`/n/${x.biz}/empleo/${x.id}`)} className="flex w-full items-center gap-3 border-t border-ink/[.07] py-[11px] text-left">
-                <span className="size-11 flex-none rounded-xl bg-photo-bg bg-cover bg-center" style={x.logo ? { backgroundImage: `url(${x.logo})` } : {}} />
+                <span className="size-11 flex-none rounded-xl bg-photo-bg bg-cover bg-center" style={x.logo ? { backgroundImage: fotoFondo(x.logo, 44) } : {}} />
                 <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold leading-[1.3]">{bi(x.title, es)}</div><div className="mt-[3px] font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{`${x.bname} · ${tipoL(x.kind, es)}`.toUpperCase()}</div></div>
                 <span className="flex-none font-display text-[13px] font-extrabold">{pagoL(x.payFrom, x.payTo, es)}</span>
               </button>

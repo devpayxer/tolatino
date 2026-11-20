@@ -14,6 +14,7 @@ import { cmComOcultar, pubOcultar } from "./acciones-comunidad";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, plantE, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { useE } from "./idioma-admin";
+import { fotoFondo } from "@tolatino/ui";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const D = UI as unknown as Record<"PostCard" | "CommentCard" | "Button" | "AdminNote", ComponentType<any>>;
@@ -71,7 +72,7 @@ export function HiloAdmin({ h, marcado, puede }: { h: H; marcado: string | null;
           time={fecha(p.at, en)} place={p.inv ? E(`Invitado · de ${p.inv}`, `Guest · from ${p.inv}`) : p.ciudad} placeColor={p.inv ? "var(--tl-pro-ink)" : undefined}
           tags={[{ label: TP[p.kind] ?? E("PUBLICACIÓN", "POST"), tone: "neutral" }, ...(tema ? [{ label: tema.toUpperCase(), tone: "neutral" }] : [])]} body={p.body} vote={{ score: p.score, labels: en ? { up: "Upvote", down: "Downvote", comments: "Comments", save: "Save", share: "Share" } : undefined }}>
           {p.fotos.length ? <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: `repeat(${Math.min(2, p.fotos.length)},minmax(0,1fr))`, gap: 6, borderRadius: 14, overflow: "hidden" }}>
-            {p.fotos.map((u, i) => <span key={i} style={{ height: 150, background: `url(${u}) center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />)}</div> : null}
+            {p.fotos.map((u, i) => <span key={i} style={{ height: 150, background: `${fotoFondo(u, 360)} center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />)}</div> : null}
           {p.opts ? <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>{p.opts.map((o, i) => (
             <div key={i} style={{ padding: "10px 12px", borderRadius: 12, background: "var(--tl-paper)", display: "flex", justifyContent: "space-between", font: "700 13px Manrope,sans-serif" }}>
               <span>{o}</span><span>{(p.conteo ?? [])[i] ?? 0} · {total ? Math.round((100 * ((p.conteo ?? [])[i] ?? 0)) / total) : 0}%</span></div>))}</div> : null}

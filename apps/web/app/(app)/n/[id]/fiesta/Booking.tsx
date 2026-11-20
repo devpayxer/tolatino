@@ -14,6 +14,7 @@ import { useVerificacion } from "../../../pago/Verificacion";
 import { pedirFechaAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots" | "PaymentSummary" | "DepositOutcomes" | "QtyStepper";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -91,7 +92,7 @@ export function BookingFiestaV({ b, es, pago, yo, inicial }: {
   // ── Bloques ──
   const tarjetaSvc = (
     <div className={`flex items-center gap-[13px] px-[15px] py-3.5 ${caja}`}>
-      <span className="h-[54px] w-[54px] flex-none rounded-[15px] bg-photo-bg" style={s.foto ? { backgroundImage: `url(${s.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
+      <span className="h-[54px] w-[54px] flex-none rounded-[15px] bg-photo-bg" style={s.foto ? { backgroundImage: fotoFondo(s.foto, 54), backgroundSize: "cover", backgroundPosition: "center" } : {}} />
       <div className="min-w-0 flex-1">
         <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nm(s.name)}</div>
         <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{[P.l, metaFiesta(s, es), dep ? `${E2("DEPÓSITO ", "DEPOSIT ")}${dinero(dep)}` : ""].filter(Boolean).join(" · ").toUpperCase()}</div>
