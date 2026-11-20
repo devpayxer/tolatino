@@ -29,6 +29,10 @@ const casos = [
   ['tuberiaNoSeSalta', Y, "'--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}", "'--grupo fase1,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}"],
   // 20 nov · el reparto en partes a medias: una parte fija, una matriz sin partes, la segunda pasada de la confirmación sin su parte.
   ['tuberiaNoSeSalta', Y, "fase9,varios') }} --parte ${{ matrix.parte }}/${{ inputs.partes || '4' }}", "fase9,varios') }} --parte 1/4"],
+  // 20 nov · el entorno de pruebas sin tope de tiempo en un paso de red
+  ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'reintenta 600 npx playwright install', 'npx playwright install'],
+  ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'reintenta 600 bash pruebas/servir/base.sh', 'bash pruebas/servir/base.sh'],
+  ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'sleep 5; timeout "$t" "$@"; }', 'sleep 5; "$@"; }'],
   // 20 nov · decisión AG (reintentoQueSeVe): repetir sin tope, repetir las al revés, callar la inestable, un carril sin --reintentar
   ['reintentoQueSeVe', 'pruebas/correr.mjs', 'TOPE_INESTABLES = 3, inestables = [];', 'TOPE_INESTABLES = 99, inestables = [];'],
   ['reintentoQueSeVe', 'pruebas/correr.mjs', 'if (!r.ok && REINTENTAR && t.carril === "e2e" && inestables.length < TOPE_INESTABLES) {', 'if (!r.ok && REINTENTAR && inestables.length < TOPE_INESTABLES) {'],

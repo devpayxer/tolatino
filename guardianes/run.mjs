@@ -7928,6 +7928,14 @@ const guardianes = {
       if (t.split(PA).length - 1 !== n || (t.match(/--parte /g) ?? []).length !== n) falla(G, Y, 0, `«${k}»: cada corrida lleva ${PA} (ni fija ni olvidada)`);
     }
     if (!/\n      partes:\n[\s\S]*?options: \["1", "4"\]/.test(y)) falla(G, Y, 0, "falta el input «partes» (1 o 4)");
+    // 20 nov · El entorno de cada trabajo no se queda colgado: cada paso que baja algo de la red (pip, apt, npm, navegadores, la base, los
+    // recursos, el servidor) va con tope de tiempo y UN reintento (dos trabajos se quedaron 40 min en ese paso, CI 44771585360).
+    { const EA = ".github/actions/entorno-pruebas/action.yml", ea = existsSync(EA) ? readFileSync(EA, "utf8") : "";
+      if (!/reintenta\(\) \{ local t="\$1"; shift; timeout "\$t" "\$@" && return 0;[^\n]*sleep 5; timeout "\$t" "\$@"; \}/.test(ea)) falla(G, EA, 0, "falta «reintenta» (tope de tiempo y un reintento) en el entorno de pruebas");
+      for (const c of ["python3 -m pip install", "sudo apt-get update", "sudo apt-get install", "npm ci", "npx playwright install", "bash pruebas/servir/base.sh", "bash pruebas/servir/recursos.sh", "bash pruebas/servir/servir.sh"]) {
+        const n = ea.split(c).length - 1, conTope = (ea.match(new RegExp(`reintenta \\d+ ${c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "g")) ?? []).length;
+        if (n === 0 || n !== conTope) falla(G, EA, 0, `«${c}» corre sin tope de tiempo ni reintento en el entorno de pruebas`);
+      } }
     // 20 nov · «todas las fases» solo se deja de correr en la regresión cuando la confirmación la corre (confirmar=si y sin «solo»): la primera
     // pasada de «dos veces seguidas» es el mismo comando en base nueva. Lo que se teme: que se quite sin que nadie más la corra.
     if (!rg.includes(`nombre: \${{ fromJSON((inputs.confirmar == 'si' && inputs.solo == '') && '["al revés"]' || '["al revés","todas las fases"]') }}`)) falla(G, Y, 0, "«regresion»: «todas las fases» solo se omite con confirmar=si y sin «solo» (la corre «confirmación · dos veces seguidas»)");
