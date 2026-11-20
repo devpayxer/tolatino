@@ -51,7 +51,7 @@ export function ArticuloAyuda({ es, ver, a, tema, mismos, vis, conSesion }: { es
       <div className="mx-auto grid max-w-[1120px] items-start px-4 pb-[110px] pt-[18px] lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-12 lg:px-8 lg:pb-14 lg:pt-6">
         <article className="flex min-w-0 flex-col gap-[18px]" lang={ver}>
           <div role="link" tabIndex={0} onClick={() => router.push(tema ? `/ayuda?t=${tema.key}` : "/ayuda")} onKeyDown={(e) => { if (e.key === "Enter") router.push("/ayuda"); }}
-            className="inline-flex cursor-pointer items-center gap-1.5 self-start text-[13px] font-bold text-action">
+            className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 self-start text-[13px] font-bold text-action">
             <Icon name="chevronLeft" size={15} strokeWidth={2} />{E2("Centro de ayuda", "Help center")}
           </div>
           <div data-screen-label="Ayuda · artículo · título" className="flex flex-col gap-2.5">

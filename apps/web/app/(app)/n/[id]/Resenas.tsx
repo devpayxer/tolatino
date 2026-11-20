@@ -526,7 +526,7 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
       {filt && lista && (
         <div className="flex items-center justify-between gap-2.5">
           <span className="text-[12.5px] font-bold">{lista.n}{lista.n === 1 ? E2(" reseña con estos filtros", " review with these filters") : E2(" reseñas con estos filtros", " reviews with these filters")}</span>
-          <button type="button" onClick={() => cambiar({ f: "all", star: 0 })} className="text-[12.5px] font-bold text-action">{E2("Quitar filtros", "Clear filters")}</button>
+          <button type="button" onClick={() => cambiar({ f: "all", star: 0 })} className="inline-flex min-h-11 items-center text-[12.5px] font-bold text-action">{E2("Quitar filtros", "Clear filters")}</button>
         </div>
       )}
       <div className="flex flex-col gap-3">{(lista?.cards ?? []).map((c) => <ReviewCard key={c.id} {...v.card(c)} />)}</div>

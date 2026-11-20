@@ -128,7 +128,7 @@ export function EstimadoCliente({ c, es, pago, aviso }: { c: CitaVista; es: bool
                     {selL.length ? `${E2("Aprobar ", "Approve ")}${selL.length}${selL.length === 1 ? (auto ? E2(" arreglo · ", " repair · ") : E2(" trabajo · ", " item · ")) : auto ? E2(" arreglos · ", " repairs · ") : E2(" trabajos · ", " items · ")}${dinero(selRep)}` : auto ? E2("No hacer arreglos", "No repairs") : E2("No hacer nada", "Do nothing")}</Button></div>
                   {c.negocio.telefono && <div className="grid"><Button variant="secondary" size="md" icon="phone" block onClick={() => { location.href = `tel:${c.negocio.telefono}`; }}>{`${E2("Llamar a ", "Call ")}${who}`}</Button></div>}
                 </div>
-                {sel.length > 0 && <button type="button" onClick={() => setSel([])} className="mt-2.5 w-full text-center text-[12px] font-bold leading-[1.45] text-action">{base ? E2(`Solo ${auto ? "el diagnóstico" : "la visita"}: pago ${dinero(base)} y lo dejo así.`, `Just the ${auto ? "diagnosis" : "visit"}: I pay ${dinero(base)} and leave it.`) : E2("No aprobar nada por ahora.", "Approve nothing for now.")}</button>}
+                {sel.length > 0 && <button type="button" onClick={() => setSel([])} className="inline-flex min-h-11 items-center mt-2.5 w-full text-center text-[12px] font-bold leading-[1.45] text-action">{base ? E2(`Solo ${auto ? "el diagnóstico" : "la visita"}: pago ${dinero(base)} y lo dejo así.`, `Just the ${auto ? "diagnosis" : "visit"}: I pay ${dinero(base)} and leave it.`) : E2("No aprobar nada por ahora.", "Approve nothing for now.")}</button>}
               </>
             )}
           </div>

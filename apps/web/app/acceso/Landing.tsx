@@ -91,7 +91,7 @@ export function Landing({ d }: { d: DatosLanding }) {
           <p className="text-[13.5px] font-medium leading-normal text-text-2">{pon(lugar.nombreNegocio ? t.negocioListo! : t.negocioListoSin!, { nombre: lugar.nombreNegocio ?? "", ciudad: lugar.ciudad.name })}</p>
           <div className="flex"><Button icon="store" onClick={() => router.push("/publica")}>{t.publicar}</Button></div>
         </div>) : null}
-      <button type="button" onClick={() => void quitar()} className="self-start text-[13px] font-bold text-text-3 underline">{t.quitar}</button>
+      <button type="button" onClick={() => void quitar()} className="inline-flex min-h-11 items-center self-start text-[13px] font-bold text-text-3 underline">{t.quitar}</button>
     </div>
   ) : null;
 
@@ -111,7 +111,7 @@ export function Landing({ d }: { d: DatosLanding }) {
             <span className="text-[15px] font-bold text-text-3">+1</span>
             <input value={fmt(tel)} onChange={(e) => setTel(e.target.value.replace(/\D/g, "").slice(0, 10))} inputMode="numeric" autoComplete="tel-national" placeholder="(570) 555-0134" readOnly={enviado} aria-label={t.telK}
               className="min-w-0 flex-1 border-0 bg-transparent text-[16px] font-semibold text-ink outline-none" />
-            {enviado ? <button type="button" onClick={() => { setEnviado(false); setCodigo(""); setPrueba(null); }} className="text-[13px] font-bold text-action">{t.cambiar}</button> : null}
+            {enviado ? <button type="button" onClick={() => { setEnviado(false); setCodigo(""); setPrueba(null); }} className="inline-flex min-h-11 items-center text-[13px] font-bold text-action">{t.cambiar}</button> : null}
           </div>
           <span data-linea-fija="landingTel" className="text-[12.5px] font-semibold leading-normal text-text-2">{d.fijas.landingTel}</span>
         </label>) : null}

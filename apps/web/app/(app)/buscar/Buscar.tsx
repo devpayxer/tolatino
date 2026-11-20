@@ -371,7 +371,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                 <span className="grid size-16 place-items-center rounded-[22px] border border-line bg-white lg:hidden"><Icon name="search" size={26} color="rgba(11,14,18,.6)" /></span>
                 <span className="text-balance font-display text-[22px] font-extrabold leading-[1.2] tracking-[-0.035em]">{R.nadaT}</span>
                 <span className="max-w-[320px] text-pretty text-[13.5px] font-medium leading-[1.6] text-ink/60 lg:max-w-[520px]">{f(t.noneB, { c: v.ciudad })}</span>
-                {R.dym && <button type="button" onClick={() => buscar(R.dym!)} className="text-[14px] font-bold text-action">{f(t.dym, { x: R.dym })}</button>}
+                {R.dym && <button type="button" onClick={() => buscar(R.dym!)} className="inline-flex min-h-11 items-center text-[14px] font-bold text-action">{f(t.dym, { x: R.dym })}</button>}
                 <div className="mt-1.5 flex w-full flex-col gap-2 lg:w-auto lg:flex-row">
                   <div className="flex"><Button block icon="bell" variant={alerta ? "secondary" : "primary"} onClick={alerta ? undefined : pedirAlerta}>{alerta ? t.alertaOn : t.alerta}</Button></div>
                   <div className="flex"><Button block variant="secondary" icon="store" onClick={() => router.push(`/recomendar?${new URLSearchParams(v.q ? { q: v.q } : {})}`)}>{t.rec}</Button></div>
@@ -453,7 +453,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
           </div>
           {rec.length > 0 && (
             <div className="flex flex-col gap-2.5">
-              <div className="flex items-baseline justify-between"><span className="font-display text-[18px] font-extrabold tracking-[-0.03em]">{t.recent}</span><button type="button" onClick={() => { guardar([]); setRec([]); }} className="text-[12.5px] font-bold text-action">{t.clear}</button></div>
+              <div className="flex items-baseline justify-between"><span className="font-display text-[18px] font-extrabold tracking-[-0.03em]">{t.recent}</span><button type="button" onClick={() => { guardar([]); setRec([]); }} className="inline-flex min-h-11 items-center text-[12.5px] font-bold text-action">{t.clear}</button></div>
               <div className="overflow-hidden rounded-[17px] border border-line bg-white">
                 {rec.slice(0, 6).map((x, i) => (
                   <div key={x} className={`flex items-center gap-3 px-3.5 py-3 ${i ? "border-t border-ink/[.07]" : ""}`}>

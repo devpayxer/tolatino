@@ -179,7 +179,7 @@ export function Eventos({ es, ciudad, estado, dia, hoy, fin, conEventos, titulo,
         <div className="mt-6 flex items-baseline gap-3.5">
           <h2 data-titulo-dia="" className="font-display text-[21px] font-extrabold leading-none tracking-[-0.03em]">{titulo}</h2>{cont("")}
           <span className="flex-1" />
-          {mios + bol > 0 && <span role="link" onClick={() => router.push(misHref)} {...tec(() => router.push(misHref))} className="flex cursor-pointer items-center gap-[7px] text-[12px] font-bold text-action"><Icon name="ticket" size={15} />{E2("Mis boletos y RSVP", "My tickets & RSVPs")}</span>}
+          {mios + bol > 0 && <span role="link" onClick={() => router.push(misHref)} {...tec(() => router.push(misHref))} className="flex min-h-11 cursor-pointer items-center gap-[7px] text-[12px] font-bold text-action"><Icon name="ticket" size={15} />{E2("Mis boletos y RSVP", "My tickets & RSVPs")}</span>}
         </div>
         {anillos(true)}
         <div className="mt-5 flex flex-wrap gap-2 border-y border-ink/[.08] py-3.5">

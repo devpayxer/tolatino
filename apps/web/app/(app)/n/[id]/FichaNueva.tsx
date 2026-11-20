@@ -551,7 +551,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
       {/* ═════════ Computadora ═════════ */}
       {modo === "d" ? (
       <div className="mx-auto hidden max-w-[1240px] px-8 pb-14 lg:block" data-screen-label="APP-NEG-LISTING · desktop">
-        <button type="button" onClick={() => router.back()} className="inline-flex items-center gap-1.5 pt-[18px] text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} />{E2("Volver", "Back")}</button>
+        <button type="button" onClick={() => router.back()} className="inline-flex min-h-11 items-center gap-1.5 pt-[18px] text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} />{E2("Volver", "Back")}</button>
         <div className="flex flex-wrap items-center gap-2 pb-4 pt-2.5 font-mono text-[10.5px] font-bold tracking-[0.12em] text-ink/60">
           {[f.subsLinea.toUpperCase(), `${f.ciudad}, PA`].filter(Boolean).map((x, i) => <span key={i}>{i ? "· " : ""}{x}</span>)}
         </div>

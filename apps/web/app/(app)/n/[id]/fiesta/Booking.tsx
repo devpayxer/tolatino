@@ -163,7 +163,7 @@ export function BookingFiestaV({ b, es, pago, yo, inicial }: {
                 <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{x.nombre}</span><span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{E2("SALÓN", "VENUE")}{x.dir ? ` · ${x.dir.toUpperCase()}` : ""}</span></span>
               </button>); })}
           </div>
-          <button type="button" onClick={() => (yo ? router.push(`/cuenta/direcciones?volver=${encodeURIComponent(location.pathname + location.search)}`) : entrar())} className="mt-2.5 text-[12.5px] font-bold text-action">{E2("Agregar otra dirección", "Add another address")}</button>
+          <button type="button" onClick={() => (yo ? router.push(`/cuenta/direcciones?volver=${encodeURIComponent(location.pathname + location.search)}`) : entrar())} className="inline-flex min-h-11 items-center mt-2.5 text-[12.5px] font-bold text-action">{E2("Agregar otra dirección", "Add another address")}</button>
           {b.zone ? <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/60">{E2(`Van hasta ${b.zone} millas de ${b.negocio.ciudad}.`, `They travel up to ${b.zone} miles from ${b.negocio.ciudad}.`)}</div> : null}
         </div>
       )}

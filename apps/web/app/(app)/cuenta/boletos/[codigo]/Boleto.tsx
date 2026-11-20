@@ -43,7 +43,7 @@ export function Boleto({ x, es, wallet = { apple: false, google: false }, wallet
   return (
     <div data-pantalla="USR-BOLETO" className="min-h-[100dvh] bg-paper">
       <div className="mx-auto flex max-w-[460px] flex-col gap-4 px-4 pb-12 pt-4 lg:pt-8">
-        <button type="button" onClick={() => router.push(x.mia ? `/eventos/orden/${x.numero}` : "/cuenta/boletos")} className="inline-flex items-center gap-1.5 self-start text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{x.mia ? `${E2("Orden", "Order")} ${x.numero}` : E2("Mis boletos", "My tickets")}</button>
+        <button type="button" onClick={() => router.push(x.mia ? `/eventos/orden/${x.numero}` : "/cuenta/boletos")} className="inline-flex min-h-11 items-center gap-1.5 self-start text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{x.mia ? `${E2("Orden", "Order")} ${x.numero}` : E2("Mis boletos", "My tickets")}</button>
         <div>
           <div className="font-mono text-[10.5px] font-bold tracking-[0.16em] text-ink/60">{cuando}</div>
           <h1 className="m-0 mt-1.5 font-display text-[26px] font-extrabold leading-[1.08] tracking-[-0.04em]">{ev.title}</h1>

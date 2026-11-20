@@ -137,7 +137,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
                 <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{d.t}</span><span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{d.enZona ? E2("TU DIRECCIÓN", "YOUR ADDRESS") : E2("FUERA DE SU ZONA", "OUTSIDE THEIR AREA")}</span></span>
               </button>); })}
           </div>
-          <button type="button" onClick={() => (yo ? router.push(`/cuenta/direcciones?volver=${encodeURIComponent(location.pathname + location.search)}`) : entrar())} className="mt-2.5 text-[12.5px] font-bold text-action">{yo ? E2("Agregar otra dirección", "Add another address") : E2("Entra para elegir tu dirección", "Sign in to pick your address")}</button>
+          <button type="button" onClick={() => (yo ? router.push(`/cuenta/direcciones?volver=${encodeURIComponent(location.pathname + location.search)}`) : entrar())} className="inline-flex min-h-11 items-center mt-2.5 text-[12.5px] font-bold text-action">{yo ? E2("Agregar otra dirección", "Add another address") : E2("Entra para elegir tu dirección", "Sign in to pick your address")}</button>
         </div>
         {esCaja && (
           <div data-screen-label="Envío · destinatario" className="flex flex-col gap-3 border-t border-ink/[.07] pt-3.5">

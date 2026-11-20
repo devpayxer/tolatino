@@ -155,7 +155,7 @@ export function Desplegable({ lang, ancla, ciudad, lugar, ph, phTodo, cat, onClo
       <div className="flex flex-col gap-[18px] border-r border-ink/[.07] px-[22px] py-5">
         {rec.length > 0 && (
           <div className="flex flex-col gap-1">
-            <div className="flex items-baseline justify-between px-2 pb-1"><span className={mono}>{E2("RECIENTES", "RECENT")}</span><button type="button" onClick={() => { guardar([]); setRec([]); }} className="text-[12px] font-bold text-action">{E2("Borrar", "Clear")}</button></div>
+            <div className="flex items-baseline justify-between px-2 pb-1"><span className={mono}>{E2("RECIENTES", "RECENT")}</span><button type="button" onClick={() => { guardar([]); setRec([]); }} className="inline-flex min-h-11 items-center text-[12px] font-bold text-action">{E2("Borrar", "Clear")}</button></div>
             {rec.slice(0, 6).map((x) => (
               <div key={x} className="flex items-center gap-2.5 rounded-[11px] p-2 hover:bg-paper">
                 <Icon name="clock" size={16} color="rgba(11,14,18,.6)" />

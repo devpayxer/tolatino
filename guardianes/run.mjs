@@ -11616,13 +11616,18 @@ const guardianes = {
      underline en su className: tiene que llevar un alto (min-h-, h-, size-, py- o p-). Al revés: alreves9tbotones. */
   botonTextoConAlto() {
     const G = "botonTextoConAlto", alto = /(^|\s)(min-h-|h-\d|h-\[|size-|py-|p-\d|p-\[)/;
+    // Lo de dentro de {…} (un onClick con «=>», un spread) no corta la etiqueta; «"…"» tampoco.
+    const ATTR = String.raw`(?:[^>{"]|"[^"]*"|\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\})*?`;
+    const re = new RegExp(String.raw`<(button|span|div|a|p)\b` + ATTR + String.raw`\bclassName="([^"]*)"` + ATTR + ">", "g");
     for (const f of codigo) {
       if (!/^apps\/web\/(app|components)\/.*\.tsx$/.test(f) || !existsSync(f)) continue;
       const s = readFileSync(f, "utf8");
-      for (const m of s.matchAll(/<button\b[^>]*?className="([^"]*)"[^>]*>/g)) {
-        const c = m[1];
-        if (!/text-action|underline/.test(c) || alto.test(c)) continue;
-        falla(G, f, s.slice(0, m.index).split("\n").length, `un botón con forma de enlace sin alto (mide lo que su texto, menos de 24): agregar min-h-11 · «${c.slice(0, 60)}»`);
+      for (const m of s.matchAll(re)) {
+        const [todo, tag, c] = m;
+        if (tag !== "button" && !/role="(link|button)"/.test(todo)) continue;
+        // Exento: un enlace DENTRO de una oración (sin tamaño de letra propio: hereda el del párrafo; WCAG 2.5.8 lo exime).
+        if (!/text-action|underline/.test(c) || alto.test(c) || !c.includes("text-[")) continue;
+        falla(G, f, s.slice(0, m.index).split("\n").length, `un control con forma de enlace sin alto (mide lo que su texto, menos de 24): agregar min-h-11 · <${tag}> «${c.slice(0, 60)}»`);
       }
     }
   },

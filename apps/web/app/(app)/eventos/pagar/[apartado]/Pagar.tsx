@@ -64,7 +64,7 @@ export function Pagar({ p, es, pago }: { p: PantallaPago; es: boolean; pago: { m
       <span className="grid size-[34px] flex-none place-items-center rounded-xl bg-white/10"><Icon name="clock" size={17} color="var(--tl-signal)" /></span>
       <span className="min-w-0 flex-1"><span className="block font-mono text-[10px] font-bold tracking-[0.14em] text-signal">{p.espera ? E2("SE LIBERÓ UN LUGAR · ES TU TURNO", "A SPOT OPENED UP · IT IS YOUR TURN") : E2("TUS BOLETOS ESTÁN GUARDADOS", "YOUR TICKETS ARE HELD")}</span>
         <span className="mt-0.5 block text-[12.5px] font-semibold text-white/75">{seg > 0 ? E2(`Te quedan ${mmss} para pagar.`, `You have ${mmss} left to pay.`) : p.espera ? E2("Se acabó tu turno: el lugar pasa a la siguiente persona de la lista.", "Your turn is over: the spot goes to the next person on the list.") : E2("Se acabó el tiempo: al pagar intentamos guardarlos otra vez.", "Time is up: when you pay we try to hold them again.")}</span></span>
-      <button type="button" onClick={() => void cambiar()} className="flex-none text-[12px] font-bold text-white underline">{E2("Cambiar", "Change")}</button>
+      <button type="button" onClick={() => void cambiar()} className="inline-flex min-h-11 items-center flex-none text-[12px] font-bold text-white underline">{E2("Cambiar", "Change")}</button>
     </div>
   );
   const nombresB = nombresN > 0 ? (
@@ -121,7 +121,7 @@ export function Pagar({ p, es, pago }: { p: PantallaPago; es: boolean; pago: { m
         </div>
       </div>
       <div data-screen-label="APP-EVT-PAGO · desktop" className="mx-auto hidden max-w-[1180px] px-[30px] pb-[60px] pt-[22px] lg:block">
-        <button type="button" onClick={() => void cambiar()} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2("Cambiar boletos", "Change tickets")}</button>
+        <button type="button" onClick={() => void cambiar()} className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2("Cambiar boletos", "Change tickets")}</button>
         <h1 className="m-0 mt-3.5 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{E2("Paga tus boletos", "Pay for your tickets")}</h1>
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-x-12">
           <div className="flex min-w-0 flex-col gap-3">{guardado}{evento}{nombresB}{antes}</div>

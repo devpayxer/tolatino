@@ -335,7 +335,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
                     <span className="grid h-[26px] w-[38px] flex-none place-items-center rounded-[6px] bg-action/10"><Icon name="dollar" size={15} color="var(--tl-action)" /></span>
                     <div className="min-w-0 flex-1"><div className="font-mono text-[13px] font-bold">{cup.code}</div>
                       <div className="mt-0.5 font-mono text-[10.5px] font-semibold text-open-text">{`−${money(cupOff)}${E2(" · APLICADO", " · APPLIED")}`}</div></div>
-                    <button type="button" onClick={() => { setCup(null); setCupErr(""); }} className="text-[12px] font-bold text-action">{E2("Quitar", "Remove")}</button>
+                    <button type="button" onClick={() => { setCup(null); setCupErr(""); }} className="inline-flex min-h-11 items-center text-[12px] font-bold text-action">{E2("Quitar", "Remove")}</button>
                   </div>
                 ) : (
                   <>

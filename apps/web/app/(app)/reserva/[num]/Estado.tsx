@@ -163,7 +163,7 @@ export function Estado({ r, otras, espera = { st: "no" }, otros = [], telefono, 
       <div className="mt-[3px] text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{r.chg.st === "no"
         ? E2(`No pudieron hacer el cambio. Tu reservación ${aT} sigue en pie.`, `They couldn't make the change. Your ${T} reservation stands.`)
         : E2(`Tu reservación ${aT} sigue en pie hasta que ${n} confirme el cambio.`, `Your ${T} reservation stands until ${n} confirms the change.`)}</div>
-      {r.chg.st === "no" && <button type="button" disabled={ocupado} onClick={() => hacer("chgvisto", undefined, "")} className="mt-[9px] text-[12.5px] font-bold text-action">{E2("Entendido", "Got it")}</button>}
+      {r.chg.st === "no" && <button type="button" disabled={ocupado} onClick={() => hacer("chgvisto", undefined, "")} className="inline-flex min-h-11 items-center mt-[9px] text-[12.5px] font-bold text-action">{E2("Entendido", "Got it")}</button>}
     </div>
   );
   const horasOtra = lost && otras.length > 0 && (
@@ -193,7 +193,7 @@ export function Estado({ r, otras, espera = { st: "no" }, otros = [], telefono, 
       <div className="min-w-0">
         <div className="text-[13px] font-bold leading-[1.35] text-open-text">{E2("Estás en la lista de espera", "You're on the waitlist")}</div>
         <div className="mt-[3px] text-pretty text-[12px] font-medium leading-[1.5] text-open-text">{E2(`Si se libera una mesa para ${P(r.p)} ${whenIn} ${aT}, te avisamos y te la guardamos ${espera.min} minutos.`, `If a table for ${P(r.p)} opens up ${whenIn} at ${T}, we let you know and hold it for ${espera.min} minutes.`)}</div>
-        <button type="button" disabled={ocupado} onClick={() => enEspera("soltar", espera.id, E2("Saliste de la lista de espera.", "You left the waitlist."))} className="mt-[9px] text-[12.5px] font-bold text-action">{E2("Salir de la lista", "Leave the waitlist")}</button>
+        <button type="button" disabled={ocupado} onClick={() => enEspera("soltar", espera.id, E2("Saliste de la lista de espera.", "You left the waitlist."))} className="inline-flex min-h-11 items-center mt-[9px] text-[12.5px] font-bold text-action">{E2("Salir de la lista", "Leave the waitlist")}</button>
       </div>
     </div>
   ) : espera.st === "puede" ? (
@@ -270,7 +270,7 @@ export function Estado({ r, otras, espera = { st: "no" }, otros = [], telefono, 
       {!cxd && <div className="flex"><Button variant="secondary" icon="chat" block onClick={() => router.push(`/cuenta/mensajes/${r.negocio.id}?op=${encodeURIComponent(r.numero)}`)}>{E2("Escribir al negocio", "Message the business")}</Button></div>}
       {(ok || pend) && (
         <div className="flex flex-wrap items-center justify-center gap-[22px] py-1">
-          {(pend || (ok && !r.chg && r.minutosFaltan > 0)) && <button type="button" onClick={() => tab(`&editar=${r.numero}&p=${r.p}&d=${Math.max(0, r.dia)}&h=${r.h}`)} className="text-[13px] font-bold text-action">{pend ? E2("Cambiar solicitud", "Change request") : E2("Cambiar reservación", "Change reservation")}</button>}
+          {(pend || (ok && !r.chg && r.minutosFaltan > 0)) && <button type="button" onClick={() => tab(`&editar=${r.numero}&p=${r.p}&d=${Math.max(0, r.dia)}&h=${r.h}`)} className="inline-flex min-h-11 items-center text-[13px] font-bold text-action">{pend ? E2("Cambiar solicitud", "Change request") : E2("Cambiar reservación", "Change reservation")}</button>}
           <button type="button" onClick={() => { setWhy(""); setCx(true); }} className="text-[13px] font-bold text-danger">{pend ? E2("Cancelar solicitud", "Cancel request") : E2("Cancelar reservación", "Cancel reservation")}</button>
         </div>
       )}
@@ -303,7 +303,7 @@ export function Estado({ r, otras, espera = { st: "no" }, otros = [], telefono, 
         <div className="flex flex-col gap-3 px-4 pt-4">{oferta}{aviso}{principal(false)}{propuesta}{cambio}{horasOtra}{otrosR}{esperaR}{linea}{tarde}{detalles}{recuerda}{botones}</div>
       </div>
       <div data-screen-label="APP-NEG-RESERVA-ESTADO · desktop" className="mx-auto hidden max-w-[1380px] lg:block">
-        <button type="button" onClick={() => tab()} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{`${E2("Volver a ", "Back to ")}${n}`}</button>
+        <button type="button" onClick={() => tab()} className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{`${E2("Volver a ", "Back to ")}${n}`}</button>
         <div className="mt-3 font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{num}</div>
         <div className="mt-4 grid items-start gap-x-12 gap-y-8 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
           <div className="flex min-w-0 flex-col gap-3.5">{oferta}{aviso}{principal(true)}{propuesta}{cambio}{horasOtra}{otrosR}{esperaR}{linea}{tarde}</div>

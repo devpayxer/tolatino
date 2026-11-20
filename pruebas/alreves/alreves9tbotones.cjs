@@ -9,6 +9,8 @@ const casos = [
   ['apps/web/app/(app)/n/[id]/FichaNueva.tsx', 'onClick={rs.escribir} className="inline-flex min-h-11 items-center text-[13.5px]', 'onClick={rs.escribir} className="text-[13.5px]'],
   ['apps/web/app/(app)/pedido/[num]/Pedido.tsx', 'className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action"', 'className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"'],
   ['apps/web/app/(app)/n/[id]/reservar/Detalles.tsx', 'className="inline-flex min-h-11 items-center mt-2 text-[12.5px] font-bold text-action"', 'className="mt-2 text-[12.5px] font-bold text-action underline"'],
+  // un <span role="link"> con onClick de flecha antes del className (lo que el primer guardián no veía: «Mis boletos y RSVP» 130 × 19)
+  ['apps/web/app/(app)/eventos/Eventos.tsx', 'className="flex min-h-11 cursor-pointer items-center gap-[7px] text-[12px] font-bold text-action"', 'className="flex cursor-pointer items-center gap-[7px] text-[12px] font-bold text-action"'],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

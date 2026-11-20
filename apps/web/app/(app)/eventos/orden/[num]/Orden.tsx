@@ -168,10 +168,10 @@ export function Orden({ o, es, cambio = null }: { o: OrdenVista; es: boolean; ca
       <div data-screen-label="APP-EVT-ORDEN · móvil" className="flex flex-col gap-4 pb-10 lg:hidden">
         {cab(false)}{boletos(false)}
         <div className="flex flex-col gap-3 px-4">{!cancelada && <OrderTracker steps={pasos} />}{acciones}{plazos}{recibo && reciboB}
-          <button type="button" onClick={() => router.push("/cuenta/boletos")} className="self-start text-[13px] font-bold text-action">{E2("Mis boletos", "My tickets")}</button></div>
+          <button type="button" onClick={() => router.push("/cuenta/boletos")} className="inline-flex min-h-11 items-center self-start text-[13px] font-bold text-action">{E2("Mis boletos", "My tickets")}</button></div>
       </div>
       <div data-screen-label="APP-EVT-ORDEN · desktop" className="mx-auto hidden max-w-[1180px] px-[30px] pb-[60px] pt-[22px] lg:block">
-        <button type="button" onClick={() => router.push("/cuenta/boletos")} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2("Mis boletos", "My tickets")}</button>
+        <button type="button" onClick={() => router.push("/cuenta/boletos")} className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2("Mis boletos", "My tickets")}</button>
         <div className="mt-3.5 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-x-12">
           <div className="flex min-w-0 flex-col gap-5">{cab(true)}{boletos(true)}</div>
           <aside className={`sticky top-[96px] flex flex-col gap-3 p-4 ${caja}`}>{!cancelada && <OrderTracker steps={pasos} />}{acciones}{plazos}{reciboB}</aside>

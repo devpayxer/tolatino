@@ -365,7 +365,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
       {anillo && hoyAnillo ? <VisorHoy h={hoyAnillo} es={es} onClose={() => setAnillo(false)} /> : null}
       {/* ── Escritorio: volver, fotos y encabezado ── */}
       <div className="hidden lg:block">
-        <button type="button" onClick={() => router.back()} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action">
+        <button type="button" onClick={() => router.back()} className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action">
           <Icon name="chevronLeft" size={16} strokeWidth={2} />{t.back}
         </button>
         {f.pro ? (

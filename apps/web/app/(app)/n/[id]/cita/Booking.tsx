@@ -242,7 +242,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
       ) : (
         <div className="flex flex-col gap-2.5 rounded-[15px] bg-paper px-[15px] py-3.5">
           <div className="text-[13.5px] font-bold leading-[1.4]">{E2(`No quedan horas el ${diaLargo(cp.hoy, i, es)}`, `No times left on ${diaLargo(cp.hoy, i, es)}`)}</div>
-          {H?.sig && <button type="button" onClick={() => { setI(H.sig!.i); setH(null); }} className="text-left text-[12.5px] font-bold text-action">{E2(`Ver el ${diaS(cp.hoy, H.sig.i, es).toLowerCase()} · desde las ${horaL(H.sig.m)}`, `See ${diaS(cp.hoy, H.sig.i, es)} · from ${horaL(H.sig.m)}`)}</button>}
+          {H?.sig && <button type="button" onClick={() => { setI(H.sig!.i); setH(null); }} className="inline-flex min-h-11 items-center text-left text-[12.5px] font-bold text-action">{E2(`Ver el ${diaS(cp.hoy, H.sig.i, es).toLowerCase()} · desde las ${horaL(H.sig.m)}`, `See ${diaS(cp.hoy, H.sig.i, es)} · from ${horaL(H.sig.m)}`)}</button>}
           <button type="button" onClick={async () => { if (!yo) return entrar(); const r = await avisameHora(cp.negocio.id, con, i, !alerta); if (r.ok) setAlerta(r.on); }} className="flex items-center gap-[9px] text-left">
             <Icon name="bell" size={15} color={alerta ? "var(--tl-action)" : "rgba(11,14,18,.6)"} />
             <span className={`text-[12.5px] font-semibold ${alerta ? "text-action" : "text-ink/75"}`}>{alerta ? E2("Te avisamos en Avisos si se libera una hora", "We will notify you in Alerts if a time opens up") : E2("Avísame si se libera una hora", "Tell me if a time opens up")}</span>
@@ -327,7 +327,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
     <div data-screen-label="Booking · tarjeta rechazada" className="flex items-start gap-[11px] rounded-2xl border border-danger/25 bg-danger/[.08] px-[15px] py-3.5">
       <span className="grid flex-none pt-px"><Icon name="warning" size={17} color="var(--tl-danger)" /></span>
       <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold text-danger">{E2("Tu tarjeta fue rechazada", "Your card was declined")}</div><div className="mt-[3px] text-[12.5px] font-medium leading-[1.5] text-ink/70">{E2("No se cobró nada. Usa otra tarjeta para enviar la solicitud.", "Nothing was charged. Use another card to send the request.")}</div>
-        <button type="button" onClick={() => setHoja(true)} className="mt-2 text-[12.5px] font-bold text-action">{E2("Cambiar tarjeta", "Change card")}</button></div>
+        <button type="button" onClick={() => setHoja(true)} className="inline-flex min-h-11 items-center mt-2 text-[12.5px] font-bold text-action">{E2("Cambiar tarjeta", "Change card")}</button></div>
     </div>
   ) : null;
   const politicas = (

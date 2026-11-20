@@ -71,7 +71,7 @@ export function Recibir({ x, token, es }: { x: R; token: string; es: boolean }) 
             ...(ev.edad >= 18 ? [E2(`Es ${ev.edad}+: si en la puerta no muestras ID, no entras.`, `It is ${ev.edad}+: if you do not show ID at the door, you do not get in.`)] : [])]
             .map((t) => <div key={t} className="flex items-start gap-2"><span className="grid flex-none pt-0.5"><Icon name="check" size={13} color="var(--tl-open-text)" /></span>{t}</div>)}
         </div>
-        <button type="button" onClick={() => router.push(`/eventos/${ev.slug}?fecha=${ev.fecha}`)} className="self-start text-[13px] font-bold text-action">{E2("Ver el evento", "See the event")}</button>
+        <button type="button" onClick={() => router.push(`/eventos/${ev.slug}?fecha=${ev.fecha}`)} className="inline-flex min-h-11 items-center self-start text-[13px] font-bold text-action">{E2("Ver el evento", "See the event")}</button>
       </div>
     </div>
   );

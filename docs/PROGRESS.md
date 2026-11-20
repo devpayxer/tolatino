@@ -21,7 +21,7 @@ _Actualizado: 14 nov 2026 (9o hecho en su rama: producción como código y ensay
 
 ## Estado
 - **9t · 24 px en el escritorio y 44 en el resto (20 nov):** AA 2.5.8 exigido a 1440 en las pantallas clave y el Super Admin (a11y9c); buscador del
-  escritorio a 24 (TACTIL `T24`), reseñas «Útil/Editar/Reportar» a 44, 36 botones con forma de enlace a `min-h-11`; guardián botonTextoConAlto.
+  escritorio a 24 (TACTIL `T24`), reseñas «Útil/Editar/Reportar» a 44, 82 controles con forma de enlace (botones y role=link/button) a `min-h-11`; guardián botonTextoConAlto (lee la etiqueta entera, aunque el onClick lleve «=>»).
 - **9t · confirmación 44658035571 (20 nov) cazó 4 clases, arregladas con guardián y al revés:** (1) a11y9c medía la bienvenida de /entrar en vez de
   /comunidad (Marisol sin Comunidad en una base nueva) → precondición propia + «es la pantalla pedida» + letra grande restaurada en un finally (por
   eso caía apt4f después); (2) OnbTopBar con botones de 44 pedía 405 px en la celda de grid de Entrar → la página se ensanchaba y «Continuar» quedaba

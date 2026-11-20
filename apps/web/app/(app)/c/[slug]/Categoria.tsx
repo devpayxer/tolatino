@@ -139,7 +139,7 @@ export function Categoria({ v }: { v: Vista }) {
                 {pestanas.length <= 1 ? <div className="font-display text-[15px] font-extrabold tracking-[-0.03em] lg:text-[17px]">{rw.titulo}</div> : null}
                 {rw.masLabel && (
                   <button type="button" onClick={() => setMasAbierta(masAbierta === rw.key ? null : rw.key)}
-                    className="flex flex-none items-center gap-1 text-[13px] font-bold text-action">
+                    className="flex min-h-11 flex-none items-center gap-1 text-[13px] font-bold text-action">
                     {rw.masLabel}<Icon name={masAbierta === rw.key ? "close" : "chevronDown"} size={14} color="var(--tl-action)" />
                   </button>
                 )}

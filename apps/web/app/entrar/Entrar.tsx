@@ -285,7 +285,7 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv, llaves 
                   className="min-w-0 flex-1 border-0 bg-transparent text-[16px] font-semibold text-ink outline-none"
                 />
                 {enviado && (
-                  <button type="button" onClick={() => (setEnviado(false), setCodigo(""))} className="text-[13px] font-bold text-action">
+                  <button type="button" onClick={() => (setEnviado(false), setCodigo(""))} className="inline-flex min-h-11 items-center text-[13px] font-bold text-action">
                     {E2("Cambiar", "Change")}
                   </button>
                 )}
@@ -463,7 +463,7 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv, llaves 
               ))}
               <p className="text-[12px] font-medium leading-normal text-text-3">{E2("No te pedimos tu fecha de nacimiento: solo que nos digas si tienes 18 años o más. La Comunidad y los mensajes entre vecinos son para personas adultas.", "We don't ask for your date of birth: just tell us if you are 18 or older. The Community and messages between neighbors are for adults.")}</p>
               {!confMenor ? (
-                <button type="button" onClick={() => setConfMenor(true)} className="self-start text-[13px] font-bold text-action">{E2("Tengo menos de 18 años", "I am under 18")}</button>
+                <button type="button" onClick={() => setConfMenor(true)} className="inline-flex min-h-11 items-center self-start text-[13px] font-bold text-action">{E2("Tengo menos de 18 años", "I am under 18")}</button>
               ) : (
                 <div className="flex flex-col gap-2 rounded-[14px] bg-paper p-3">
                   <span className="text-[13px] font-semibold leading-[1.45]">{E2("Si tienes menos de 18 años no puedes entrar a la Comunidad. Puedes usar To'Latino para buscar negocios, pedir y reservar.", "If you are under 18 you can't join the Community. You can use To'Latino to find businesses, order and book.")}</span>

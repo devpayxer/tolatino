@@ -132,7 +132,7 @@ export function PedirEvp({ x, es, p0 }: { x: PaginaEvp; es: boolean; p0: number 
       <div className="mx-auto hidden max-w-[1180px] grid-cols-[minmax(0,1fr)_372px] items-start gap-12 px-[30px] pb-16 pt-[22px] lg:grid">
         <div className="flex min-w-0 flex-col gap-[22px]">
           <div className="flex flex-col gap-2">
-            <button type="button" onClick={() => router.push(`/n/${x.negocio.id}?tab=rsv`)} className="flex items-center gap-1.5 self-start text-[13px] font-bold text-action"><Icon name="chevronLeft" size={15} color="var(--tl-action)" strokeWidth={2} />{B}</button>
+            <button type="button" onClick={() => router.push(`/n/${x.negocio.id}?tab=rsv`)} className="flex min-h-11 items-center gap-1.5 self-start text-[13px] font-bold text-action"><Icon name="chevronLeft" size={15} color="var(--tl-action)" strokeWidth={2} />{B}</button>
             <span className="font-mono text-[10.5px] font-bold tracking-[0.12em] text-ink/60">{`${E2("EVENTO PRIVADO · ", "PRIVATE EVENT · ")}${B}`.toUpperCase()}</span>
             <h1 className="m-0 text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.035em]">{E2("Pide tu evento privado", "Request your private event")}</h1>
             <p className="m-0 max-w-[620px] text-pretty text-[14px] font-medium leading-[1.6] text-ink/65">{E2(`${B} atiende grupos de ${a.minParty} o más como evento privado. Cuéntales qué necesitas y te mandan una propuesta con el precio total.`, `${B} hosts groups of ${a.minParty} or more as a private event. Tell them what you need and they send a proposal with the full price.`)}</p>

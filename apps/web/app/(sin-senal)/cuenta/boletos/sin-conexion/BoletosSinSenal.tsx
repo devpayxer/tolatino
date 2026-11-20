@@ -26,7 +26,7 @@ export function BoletosSinSenal() {
       <div className="mx-auto flex max-w-[460px] flex-col gap-4 px-4 pb-12 pt-4 lg:pt-8">
         <div role="status" className="flex items-center gap-2 self-start rounded-full bg-ink px-3 py-1.5 font-mono text-[10.5px] font-bold tracking-[0.12em] text-white"><Icon name="wifi" size={14} color="var(--tl-white)" />{E2("SIN CONEXIÓN", "OFFLINE")}</div>
         {L === null ? null : b ? (<>
-          {L.length > 1 ? <button type="button" onClick={() => setSel(null)} className="inline-flex items-center gap-1.5 self-start text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2("Tus boletos en este teléfono", "Your tickets on this phone")}</button> : null}
+          {L.length > 1 ? <button type="button" onClick={() => setSel(null)} className="inline-flex min-h-11 items-center gap-1.5 self-start text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2("Tus boletos en este teléfono", "Your tickets on this phone")}</button> : null}
           <div>
             <div className="font-mono text-[10.5px] font-bold tracking-[0.16em] text-ink/60">{b.cuando}</div>
             <h1 className="m-0 mt-1.5 font-display text-[26px] font-extrabold leading-[1.08] tracking-[-0.04em]">{b.titulo}</h1>

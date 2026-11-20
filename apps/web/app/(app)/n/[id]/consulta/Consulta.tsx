@@ -119,7 +119,7 @@ export function Consulta({ sa, svcId, con0, seg0, notaDias, es, yo }: { sa: Salu
       ) : (
         <div className="flex flex-col gap-2.5 rounded-[15px] bg-paper px-[15px] py-3.5">
           <div className="text-[13.5px] font-bold leading-[1.4]">{H ? E2("Ese día no hay consulta. Elige otro.", "No visits that day. Pick another.") : E2("No hay horas para pedir en línea. Llama al consultorio.", "No times to book online. Call the clinic.")}</div>
-          {H?.sig && <button type="button" onClick={() => { setI(H.sig!.i); setH(null); }} className="text-left text-[12.5px] font-bold text-action">{E2(`Ver el siguiente día libre · desde las ${horaL(H.sig.m)}`, `See the next open day · from ${horaL(H.sig.m)}`)}</button>}
+          {H?.sig && <button type="button" onClick={() => { setI(H.sig!.i); setH(null); }} className="inline-flex min-h-11 items-center text-left text-[12.5px] font-bold text-action">{E2(`Ver el siguiente día libre · desde las ${horaL(H.sig.m)}`, `See the next open day · from ${horaL(H.sig.m)}`)}</button>}
         </div>
       )}
       <div className="flex items-center gap-[9px] rounded-[13px] bg-action/[.07] px-[13px] py-[11px]"><Icon name="clock" size={15} color="var(--tl-action)" /><span className="text-[12.5px] font-bold leading-[1.4] text-action-hover">{`${E2("DURA", "LASTS")} ${H?.dur ?? s.dur} MIN · ${hablaEs ? E2("HABLA ESPAÑOL", "SPEAKS SPANISH") : E2("INTÉRPRETE GRATIS SI LO PIDES", "FREE INTERPRETER IF YOU ASK")}`}</span></div>

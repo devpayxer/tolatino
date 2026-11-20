@@ -117,7 +117,7 @@ export function MercadoEstado({ v, es, pago = null, ruta = false }: { v: Mercado
               <div className="mt-0.5 text-[12px] font-medium text-ink/60">{l.st === "out" ? E2("No había · no se cobra", "Out · not charged") : l.peso ? (l.lbReal != null ? E2(`Pediste ${l.lb} lb · pesó ${l.lbReal} lb`, `You asked ${l.lb} lb · weighed ${l.lbReal} lb`) : E2(`${l.lb} lb · estimado`, `${l.lb} lb · estimate`)) : `× ${l.q}`}{l.ops.length ? ` · ${l.ops.join(" · ")}` : ""}</div></div>
             <div className="text-right text-[13.5px] font-bold">{l.st === "out" ? "$0.00" : money(pesado ? l.final : l.est)}</div>
           </div>
-          {l.foto && <button type="button" onClick={() => setFoto(foto === l.foto ? null : l.foto)} className="mt-2 flex items-center gap-2 text-[12px] font-bold text-action"><Icon name="image" size={14} color="var(--tl-action)" />{E2("Foto de la balanza", "Scale photo")}</button>}
+          {l.foto && <button type="button" onClick={() => setFoto(foto === l.foto ? null : l.foto)} className="mt-2 flex min-h-11 items-center gap-2 text-[12px] font-bold text-action"><Icon name="image" size={14} color="var(--tl-action)" />{E2("Foto de la balanza", "Scale photo")}</button>}
           {foto && foto === l.foto && <span className="mt-2 block h-[200px] w-full rounded-[14px] bg-photo-bg" style={{ backgroundImage: `url(${l.foto})`, backgroundSize: "cover", backgroundPosition: "center" }} />}
         </div>))}</div>
     </div>);

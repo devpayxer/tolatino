@@ -74,7 +74,7 @@ export function Soporte({ es, conSesion, negocio, temas, casos, ops, revs, horar
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          <span role="link" tabIndex={0} onClick={atras} onKeyDown={(e) => { if (e.key === "Enter") atras(); }} className="flex cursor-pointer items-center gap-1.5 self-start text-[13px] font-bold text-action">
+          <span role="link" tabIndex={0} onClick={atras} onKeyDown={(e) => { if (e.key === "Enter") atras(); }} className="flex min-h-11 cursor-pointer items-center gap-1.5 self-start text-[13px] font-bold text-action">
             <C.Icon name="chevronLeft" size={15} color="var(--tl-action)" strokeWidth={2} />{E2("Volver", "Back")}</span>
           <span className="text-ink/60" style={{ font: `700 10.5px ${MONO}`, letterSpacing: ".12em" }}>{eye}</span>
           <h1 className="m-0 font-display text-[28px] font-extrabold leading-[1.1] tracking-[-0.035em]">{titulo}</h1>
@@ -224,7 +224,7 @@ function Nuevo({ es, desk, conSesion, negocio, temas, ops, pre, toHome, onCreado
           className="w-full resize-none rounded-[14px] border-[1.5px] border-ink/[.14] bg-white px-3.5 py-3 text-[14px] font-medium leading-normal text-ink outline-none focus:border-ink" />
         <div className="flex items-center gap-3">
           {foto ? <span className="size-14 flex-none rounded-[12px] bg-photo-bg bg-cover bg-center" style={{ backgroundImage: `url("${foto.url}")` }} /> : null}
-          <span role="button" tabIndex={0} onClick={() => file.current?.click()} onKeyDown={(e) => { if (e.key === "Enter") file.current?.click(); }} className="flex cursor-pointer items-center gap-2 text-[13px] font-bold text-action">
+          <span role="button" tabIndex={0} onClick={() => file.current?.click()} onKeyDown={(e) => { if (e.key === "Enter") file.current?.click(); }} className="flex min-h-11 cursor-pointer items-center gap-2 text-[13px] font-bold text-action">
             <C.Icon name="image" size={16} color="var(--tl-action)" />{subiendo ? E2("Subiendo…", "Uploading…") : foto ? E2("Cambiar foto", "Change photo") : E2("Agregar una foto", "Add a photo")}</span>
           {foto ? <span role="button" tabIndex={0} onClick={() => setFoto(null)} className="cursor-pointer text-[13px] font-bold text-ink/60">{E2("Quitar", "Remove")}</span> : null}
         </div>
@@ -299,8 +299,8 @@ function Caso({ es, desk, caso, negocio, toHome, ago, toNew, hor }: {
         <C.Tag tone={e.tone}>{L(e.l)}</C.Tag>
         <span className="min-w-[180px] flex-1 text-[12.5px] font-semibold leading-[1.45] text-ink/65 [text-wrap:pretty]">{help}</span>
         {abierto && caso.propio ? <span role="button" tabIndex={0} data-accion="resuelto" onClick={() => start(async () => { const r = await casoResuelto(caso.num, negocio?.id ?? null); if (!r.ok) setErr(L(r.msg)); else router.refresh(); })}
-          className="flex-none cursor-pointer text-[12.5px] font-bold text-action">{E2("Ya se resolvió", "It is resolved")}</span> : null}
-        {caso.estado === "unido" && caso.unidoA ? <span role="link" tabIndex={0} onClick={() => router.push(`?${negocio ? `negocio=${negocio.id}&` : ""}caso=${caso.unidoA}`)} className="flex-none cursor-pointer text-[12.5px] font-bold text-action">{E2("Ir al caso", "Go to the case")}</span> : null}
+          className="inline-flex min-h-11 items-center flex-none cursor-pointer text-[12.5px] font-bold text-action">{E2("Ya se resolvió", "It is resolved")}</span> : null}
+        {caso.estado === "unido" && caso.unidoA ? <span role="link" tabIndex={0} onClick={() => router.push(`?${negocio ? `negocio=${negocio.id}&` : ""}caso=${caso.unidoA}`)} className="inline-flex min-h-11 items-center flex-none cursor-pointer text-[12.5px] font-bold text-action">{E2("Ir al caso", "Go to the case")}</span> : null}
       </div>
       {caso.ref ? <div className="self-center rounded-full border border-ink/[.08] bg-white px-3 py-1.5 text-ink/60" style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".06em" }}>{L(caso.ref).toUpperCase()}</div> : null}
       {caso.enlazado ? <div className="self-center text-ink/60" style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".06em" }}>{E2(`ENLAZADO A ${caso.enlazado}`, `LINKED TO ${caso.enlazado}`)}</div> : null}

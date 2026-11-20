@@ -162,7 +162,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
       ) : (
         <div className="flex flex-col gap-2.5 rounded-[15px] bg-paper px-[15px] py-3.5">
           <div className="text-[13.5px] font-bold leading-[1.4]">{auto ? E2(`No quedan horas el ${diaL}`, `No times left on ${diaL}`) : E2(`No quedan franjas el ${diaL}`, `No windows left on ${diaL}`)}</div>
-          {H?.sig && <button type="button" onClick={() => { setI(H.sig!.i); setH(null); }} className="text-left text-[12.5px] font-bold text-action">{E2(`Ver el siguiente día libre · desde las ${horaL(H.sig.m)}`, `See the next open day · from ${horaL(H.sig.m)}`)}</button>}
+          {H?.sig && <button type="button" onClick={() => { setI(H.sig!.i); setH(null); }} className="inline-flex min-h-11 items-center text-left text-[12.5px] font-bold text-action">{E2(`Ver el siguiente día libre · desde las ${horaL(H.sig.m)}`, `See the next open day · from ${horaL(H.sig.m)}`)}</button>}
         </div>
       )}
       {hSel != null && <div className="flex items-center gap-[9px] rounded-[13px] bg-action/[.07] px-[13px] py-[11px]"><Icon name="clock" size={15} color="var(--tl-action)" /><span className="text-[12.5px] font-bold leading-[1.4] text-action-hover">{cuandoL}</span></div>}

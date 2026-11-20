@@ -164,7 +164,7 @@ export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { m
   const izq = (
     <div className="flex min-w-0 flex-col gap-[22px]">
       <div className="flex flex-col gap-2">
-        <button type="button" onClick={() => router.push(`/n/${x.negocio.id}`)} className="flex items-center gap-1.5 self-start text-[13px] font-bold text-action"><Icon name="chevronLeft" size={15} color="var(--tl-action)" strokeWidth={2} />{B}</button>
+        <button type="button" onClick={() => router.push(`/n/${x.negocio.id}`)} className="flex min-h-11 items-center gap-1.5 self-start text-[13px] font-bold text-action"><Icon name="chevronLeft" size={15} color="var(--tl-action)" strokeWidth={2} />{B}</button>
         <div className="flex flex-wrap items-center gap-2.5"><Tag tone={tag[1]}>{tag[0]}</Tag><span className="font-mono text-[10.5px] font-bold tracking-[0.1em] text-ink/60">{`${E2("EVENTO PRIVADO #", "PRIVATE EVENT #")}${x.numero}`}</span></div>
         <h1 className="m-0 text-balance font-display text-[24px] font-extrabold leading-[1.12] tracking-[-0.035em] lg:text-[30px]">{h[0]}</h1>
         {h[1] ? <p className="m-0 text-pretty text-[14px] font-medium leading-[1.6] text-ink/[.68]">{h[1]}</p> : null}
