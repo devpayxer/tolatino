@@ -7928,6 +7928,10 @@ const guardianes = {
       if (t.split(PA).length - 1 !== n || (t.match(/--parte /g) ?? []).length !== n) falla(G, Y, 0, `«${k}»: cada corrida lleva ${PA} (ni fija ni olvidada)`);
     }
     if (!/\n      partes:\n[\s\S]*?options: \["1", "4"\]/.test(y)) falla(G, Y, 0, "falta el input «partes» (1 o 4)");
+    // 20 nov · «todas las fases» solo se deja de correr en la regresión cuando la confirmación la corre (confirmar=si y sin «solo»): la primera
+    // pasada de «dos veces seguidas» es el mismo comando en base nueva. Lo que se teme: que se quite sin que nadie más la corra.
+    if (!rg.includes(`nombre: \${{ fromJSON((inputs.confirmar == 'si' && inputs.solo == '') && '["al revés"]' || '["al revés","todas las fases"]') }}`)) falla(G, Y, 0, "«regresion»: «todas las fases» solo se omite con confirmar=si y sin «solo» (la corre «confirmación · dos veces seguidas»)");
+    if (!/- name: Primera pasada\n\s+run: node pruebas\/correr\.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios \$\{\{ matrix\.nombre == 'barajada' && format\('--barajar \{0\}', inputs\.semilla\) \|\| '' \}\} --parte/.test(cf)) falla(G, Y, 0, "«confirmacion»: la primera pasada corre todas las fases (en orden; barajada solo en su carril)");
     if (!/\n  confirmacion:\n[\s\S]*?inputs\.confirmar == 'si'/.test(y)) falla(G, Y, 0, "falta el trabajo «confirmacion» (dos veces seguidas y barajada, a mano con confirmar=si)");
     // 9c · La punta a punta entera en los anchos extremos, de noche (L1511): el trabajo «anchos» corre programado y cuenta en «tuberia».
     const an = /\n  anchos:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";

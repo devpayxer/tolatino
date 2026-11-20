@@ -29,6 +29,9 @@ const casos = [
   ['tuberiaNoSeSalta', Y, "'--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}", "'--grupo fase1,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}"],
   // 20 nov · el reparto en partes a medias: una parte fija, una matriz sin partes, la segunda pasada de la confirmación sin su parte.
   ['tuberiaNoSeSalta', Y, "fase9,varios') }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}", "fase9,varios') }} --parte 1/4"],
+  // 20 nov · «todas las fases» fuera de la regresión sin que la confirmación la corra, y la primera pasada de la confirmación recortada.
+  ['tuberiaNoSeSalta', Y, `(inputs.confirmar == 'si' && inputs.solo == '') && '["al revés"]' || '["al revés","todas las fases"]'`, `'["al revés"]'`],
+  ['tuberiaNoSeSalta', Y, "      - name: Primera pasada\n        run: node pruebas/correr.mjs --grupo fase1,fase2,", "      - name: Primera pasada\n        run: node pruebas/correr.mjs --grupo fase1,"],
   ['tuberiaNoSeSalta', Y, "        id: [iphone-se, ipad, escritorio-1024]\n        parte: ${{ fromJSON((inputs.partes || '1') == '4' && '[1,2,3,4]' || '[1]') }}\n", "        id: [iphone-se, ipad, escritorio-1024]\n        parte: [1]\n"],
   ['tuberiaNoSeSalta', Y, "        if: ${{ matrix.nombre == 'dos veces seguidas' }}\n        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}", "        if: ${{ matrix.nombre == 'dos veces seguidas' }}\n        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios"],
   ['tuberiaVisual', Y, '    timeout-minutes: 40\n', '    timeout-minutes: 40\n    continue-on-error: true\n'],

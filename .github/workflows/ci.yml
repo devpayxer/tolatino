@@ -238,7 +238,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        nombre: ["al revés", "todas las fases"]
+        # Con confirmar=si (y sin «solo»), «todas las fases» sería repetir la primera pasada de «confirmación · dos veces seguidas» (el mismo
+        # comando en base nueva): corre una sola vez, allá. Sin confirmar, corre aquí como siempre.
+        nombre: ${{ fromJSON((inputs.confirmar == 'si' && inputs.solo == '') && '["al revés"]' || '["al revés","todas las fases"]') }}
         parte: ${{ fromJSON((inputs.partes || '1') == '4' && '[1,2,3,4]' || '[1]') }}
     steps:
       # Historia completa: las pruebas al revés de 8a leen versiones viejas de archivos con «git show <sha>».
@@ -257,6 +259,9 @@ jobs:
         run: sudo apt-get install -y -q age >/dev/null
       - name: Regresión de ${{ matrix.nombre }} en base nueva
         run: node pruebas/correr.mjs ${{ (inputs.solo != '' && matrix.nombre != 'al revés') && inputs.solo || (matrix.nombre == 'al revés' && '--grupo alreves' || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}
+      - name: Lo último que dijo el servidor (solo si algo cayó)
+        if: failure()
+        run: tail -n 150 "$RUNNER_TEMP/salida/server.log" 2>/dev/null | cut -c1-600 || true
       - name: Lo que dejó cada prueba (sin secretos, solo res y el registro del servidor)
         if: always()
         run: |
@@ -293,6 +298,17 @@ jobs:
       - name: Segunda pasada, en la MISMA base
         if: ${{ matrix.nombre == 'dos veces seguidas' }}
         run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}
+      - name: Lo último que dijo el servidor (solo si algo cayó)
+        if: failure()
+        run: tail -n 150 "$RUNNER_TEMP/salida/server.log" 2>/dev/null | cut -c1-600 || true
+      - name: Lo que dejó cada prueba
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/subir" && cp -r "$RUNNER_TEMP/salida/res" "$RUNNER_TEMP/subir/res" 2>/dev/null || true
+          cp "$RUNNER_TEMP/salida/server.log" "$RUNNER_TEMP/subir/" 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: "confirmacion-${{ strategy.job-index }}", path: "${{ runner.temp }}/subir", retention-days: 7, if-no-files-found: ignore }
 
   dispositivos:
     name: dispositivo · ${{ matrix.id }}
@@ -367,6 +383,9 @@ jobs:
         run: sudo apt-get install -y -q age >/dev/null
       - name: Toda la punta a punta en ${{ matrix.id }}, en base nueva
         run: node pruebas/correr.mjs ${{ inputs.solo != '' && inputs.solo || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }} --dispositivo ${{ matrix.id }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}
+      - name: Lo último que dijo el servidor (solo si algo cayó)
+        if: failure()
+        run: tail -n 150 "$RUNNER_TEMP/salida/server.log" 2>/dev/null | cut -c1-600 || true
       - name: Lo que dejó cada prueba
         if: always()
         run: |
