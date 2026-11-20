@@ -19,6 +19,10 @@ const casos = [
   [A, "await tactil44(q, `${w} /admin", "await (async () => {})(q, `${w} /admin"],
   [A, "ok(mi.length === 0, `AA 2.5.8", "console.log(mi.length === 0, `AA 2.5.8"],
   [A, "const TACTIL = require('../lib/tactil.cjs');", "const TACTIL = require('../lib/caben.cjs');"],
+  // 20 nov · el cartel de eventos: el corazón vuelve a 32 en el teléfono, o a11y9c deja de medir un día con tarjetas
+  ['apps/web/app/(app)/eventos/comun.tsx', "style={{ width: desk ? 34 : 44, height: desk ? 34 : 44,", "style={{ width: desk ? 34 : 32, height: desk ? 34 : 32,"],
+  [A, "{ const ruta = await diaConEventos(q); await dormir(500);", "{ const ruta = '/eventos'; await dormir(500);"],
+  [A, "ok((await q.locator('[data-evento]').count()) > 0, `${w} ${ruta}: hay tarjetas de evento que medir`);", ""],
   ['packages/ui/src/ds/onboarding/OnbTopBar.js', "      padding: '10px 16px 12px',\n      minWidth: 0,\n", "      padding: '10px 16px 12px',\n"],
   ['pruebas/e2e/vec9m.cjs', "ok(ancho[0] <= ancho[2] && ancho[1] === ancho[2],", "console.log(ancho[0] <= ancho[2] && ancho[1] === ancho[2],"],
   ['pruebas/e2e/vec9m.cjs', "po.viewportSize().width]", "innerWidth]"],

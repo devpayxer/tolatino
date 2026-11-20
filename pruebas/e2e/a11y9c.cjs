@@ -108,6 +108,15 @@ async function tactil44(p, donde) {
   const lado = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth); ok(lado <= 1, `${donde}: la página no se mueve de lado (${lado} px de más)`);
 }
 // Las pantallas clave del vecino (la ficha con el menú, una barbería, Comunidad, Eventos, Mi cuenta…).
+// El primer día (de hoy en adelante, zona de la ciudad) en que /eventos muestra tarjetas de evento. La semilla de pruebas trae eventos.
+const diaConEventos = async (p) => {
+  for (let i = 0; i < 60; i++) {
+    const d = new Date(Date.now() + i * 864e5).toLocaleDateString('en-CA', { timeZone: 'America/New_York' }), ruta = '/eventos?dia=' + d;
+    await p.goto(B + ruta); await p.waitForLoadState('networkidle').catch(() => {});
+    if (await p.locator('[data-evento]').count()) return ruta;
+  }
+  throw new Error('PRECONDICIÓN no hay ningún día con eventos en 60 días (la semilla de pruebas los trae)');
+};
 const CLAVE = ['/', '/negocios', '/buscar?q=pollo', '/n/sabor-dominicano', '/n/sabor-dominicano?tab=menu', '/n/barberia-el-primo', '/comunidad', '/eventos', '/cuenta'];
 
 (async () => {
@@ -315,6 +324,11 @@ const CLAVE = ['/', '/negocios', '/buscar?q=pollo', '/n/sabor-dominicano', '/n/s
             ok(con, `${w} ${ruta}: con letra grande` + (con ? '' : ` · ${q.url()} · la página dice: ${(await q.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 400)}`)); }
           await tactil44(q, `${w}${grande ? ' (letra grande)' : ''} ${ruta}`);
         }
+        // 20 nov · Las tarjetas de evento (cartel, con su corazón) solo salen el día que hay eventos: /eventos de hoy puede no tener ninguna y
+        // entonces no se medían (confirmación barajada 44734711575: el corazón medía 32). Se mide también el primer día que SÍ tiene tarjetas.
+        { const ruta = await diaConEventos(q); await dormir(500);
+          ok((await q.locator('[data-evento]').count()) > 0, `${w} ${ruta}: hay tarjetas de evento que medir`);
+          await tactil44(q, `${w}${grande ? ' (letra grande)' : ''} ${ruta} (con tarjetas de evento)`); }
       } finally { sql(`update users set big_text = false where phone = '+1${MARISOL}'`); await q.context().close(); }
     }
     for (const w of [390, 320]) {

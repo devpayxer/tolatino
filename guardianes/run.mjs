@@ -9884,6 +9884,11 @@ const guardianes = {
     }
     if (!/for \(const \[w, h, grande\] of \[\[390, 844, false\], \[320, 568, true\]\]\)/.test(a)) falla(G, A, 0, "las pantallas clave se miden a 390 y a 320 con letra grande");
     if (!/for \(const ruta of CLAVE\)[\s\S]{0,1200}tactil44\(q,/.test(a)) falla(G, A, 0, "cada pantalla clave pasa por tactil44");
+    // 20 nov (confirmación barajada 44734711575) · Lo que solo sale con datos también se mide: /eventos el día que hay tarjetas de evento. El
+    // corazón del cartel medía 32 en el teléfono y solo se vio el día que /eventos tenía un evento.
+    if (!/const ruta = await diaConEventos\(q\);[\s\S]{0,260}ok\(\(await q\.locator\('\[data-evento\]'\)\.count\(\)\) > 0,[\s\S]{0,160}await tactil44\(q,/.test(a)) falla(G, A, 0, "a11y9c no mide /eventos un día con tarjetas de evento (el cartel y su corazón)");
+    { const F = "apps/web/app/(app)/eventos/comun.tsx", cm = existsSync(F) ? readFileSync(F, "utf8") : "";
+      if (!/aria-pressed=\{saved\} onClick=\{onLike\}\n\s+className=[^\n]*style=\{\{ width: desk \? 34 : 44, height: desk \? 34 : 44,/.test(cm)) falla(G, F, 0, "el corazón del cartel de eventos no mide 44 × 44 en el teléfono"); }
     // Confirmación 44658035571: /comunidad redirigía a la bienvenida de /entrar (Marisol sin Comunidad en una base nueva) y se medía esa pantalla.
     if (!/for \(const ruta of CLAVE\)[\s\S]{0,400}ok\(new URL\(q\.url\(\)\)\.pathname === new URL\(B \+ ruta\)\.pathname/.test(a)) falla(G, A, 0, "cada pantalla clave medida es la pedida (no una redirección)");
     if (!/update community_profiles set rules_version = 1, rules_ok_at = coalesce\(rules_ok_at, now\(\)\), adult = true[\s\S]{0,300}for \(const \[w, h, grande\] of/.test(a)) falla(G, A, 0, "precondición propia: Marisol está en Comunidad antes de medir /comunidad");

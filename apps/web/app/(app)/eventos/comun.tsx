@@ -34,7 +34,9 @@ export function useGuardar(inicial: Record<string, boolean>, toast: (t: string) 
   return { on, toggle };
 }
 
-/* La tarjeta cartel (bq secs · k): 3:4, la fecha en caja, el corazón, la etiqueta; abajo título, lugar y hora, y el precio. */
+/* La tarjeta cartel (bq secs · k): 3:4, la fecha en caja, el corazón, la etiqueta; abajo título, lugar y hora, y el precio.
+   20 nov · El corazón mide 44 × 44 en el teléfono (decisión 9t-44; medía 32 y la confirmación barajada 44734711575 lo cazó en /eventos el día
+   que había un evento: a11y9c medía /eventos solo con lo que hubiera ese día). */
 export function Cartel({ k, saved, onLike, desk, es }: { k: TarjetaEvt; saved: boolean; onLike: (ev: MouseEvent) => void; desk?: boolean; es: boolean }) {
   const router = useRouter(), abrir = () => router.push(k.href);
   return (
@@ -48,8 +50,8 @@ export function Cartel({ k, saved, onLike, desk, es }: { k: TarjetaEvt; saved: b
           <span className="block font-display font-extrabold leading-none tracking-[-0.02em] text-ink" style={{ fontSize: desk ? 16 : 15 }}>{k.bd}</span>
         </div>
         <button type="button" aria-label={saved ? (es ? "Quitar de guardados" : "Remove from saved") : (es ? "Guardar" : "Save")} aria-pressed={saved} onClick={onLike}
-          className="absolute right-2.5 top-2.5 grid place-items-center rounded-full" style={{ width: desk ? 34 : 32, height: desk ? 34 : 32, background: "rgba(11,14,18,.5)", backdropFilter: "blur(8px)", color: saved ? "var(--tl-mod-events)" : "var(--tl-white)" }}>
-          <Icon name="heart" size={desk ? 17 : 16} fill={saved ? "var(--tl-mod-events)" : "none"} />
+          className={`absolute grid place-items-center rounded-full ${desk ? "right-2.5 top-2.5" : "right-1.5 top-1.5"}`} style={{ width: desk ? 34 : 44, height: desk ? 34 : 44, background: "rgba(11,14,18,.5)", backdropFilter: "blur(8px)", color: saved ? "var(--tl-mod-events)" : "var(--tl-white)" }}>
+          <Icon name="heart" size={desk ? 17 : 18} fill={saved ? "var(--tl-mod-events)" : "none"} />
         </button>
         {k.tag ? <span className="absolute bottom-2.5 left-2.5 rounded-[7px] px-[9px] py-[5px]" style={{ background: TAG_COLOR[k.tag.k][0], color: TAG_COLOR[k.tag.k][1], font: `800 9px ${MONO}`, letterSpacing: ".1em" }}>{k.tag.t}</span> : null}
       </div>
