@@ -96,7 +96,7 @@ const P = 'pagar-con-tarjeta';
   console.log('3 · Dueña (panel): ve «Tu panel»; Panel › Más › Ayuda');
   c = await tel(); p = await c.newPage(); await entrar(p, DUENA);
   await p.goto(B + '/ayuda?t=panel'); s = await slugs(p);
-  ok(s.length >= 25 && s.every((x) => /^panel|repartidor-|servicios-|tu-herramienta|productos-|inventario|esta-noche|grupos|cupos|licencia|horarios|membresias|salidas|calendario|video-del-negocio|patrocinados/.test(x)), `el tema «Tu panel» con sus artículos (${s.length})`);
+  ok(s.length >= 25 && s.every((x) => /^panel|repartidor-|servicios-|tu-herramienta|productos-|inventario|esta-noche|grupos|cupos|licencia|horarios|membresias|salidas|calendario|video-del-negocio|patrocinados|fotos-a-la-medida/.test(x)), `el tema «Tu panel» con sus artículos (${s.length})`);
   ok(await estado(p, '/ayuda/panel-pedidos') === 200, 'un miembro del panel abre panel-pedidos');
   ok((await texto(p)).includes('PARA TU NEGOCIO'), 'con su etiqueta');
   ok(await estado(p, '/ayuda/admin-equipo') === 404, 'el panel no abre la ayuda del equipo');

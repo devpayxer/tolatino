@@ -39,13 +39,24 @@ runs:
         # clásico de estas máquinas es una ruta IPv6 que no contesta), corta una conexión muda a los 20 s y reintenta 5 veces. Y lo que apt
         # y Playwright digan queda en un archivo que se enseña si el paso cae (antes iba a /dev/null: no se sabía dónde se quedaba).
         printf 'Acquire::ForceIPv4 "true";\nAcquire::http::Timeout "20";\nAcquire::https::Timeout "20";\nAcquire::Retries "5";\n' | sudo tee /etc/apt/apt.conf.d/99-red-que-no-se-cuelga > /dev/null
+        # 20 nov (CI 44807211977) · Tercera vez, y ahora con lo que dijo: nuestro apt ni llegó a empezar (su registro salió vacío) y el candado lo
+        # tenía OTRO apt-get. La máquina arranca con una actualización del sistema en marcha (la imagen ubuntu-26.04 nueva) que puede tardar
+        # más que nuestro tope; matarla a la fuerza (lo de antes) deja paquetes a medio configurar y `dpkg --configure -a` se queda con eso.
+        # Ahora: se le pide que pare bien, se ESPERA a que suelte (hasta 15 min, diciendo cada minuto quién ocupa apt y desde cuándo) y los
+        # servicios no se reinician al instalar (needrestart solo lista). Ya no se mata ningún apt que no sea el nuestro.
+        sudo systemctl stop unattended-upgrades.service apt-daily.timer apt-daily-upgrade.timer 2> /dev/null || true
+        printf '$nrconf{restart} = %s;\n$nrconf{kernelhints} = 0;\n' "'l'" | sudo tee /etc/needrestart/conf.d/99-solo-lista.conf > /dev/null 2>&1 || true
+        t=0
+        while pgrep -x apt-get > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do
+          if [ $((t % 60)) -eq 0 ]; then echo "::notice::apt del sistema ocupado desde hace ${t} s:"; ps -eo pid,etimes,args | grep -E "[a]pt-get|[d]pkg|[u]nattended" | cut -c1-200; fi
+          sleep 5; t=$((t + 5))
+          if [ "$t" -ge 900 ]; then echo "::warning::el apt del sistema sigue ocupado tras 15 min: se sigue igual"; break; fi
+        done
         cat > "$RUNNER_TEMP/instala.sh" <<'FIN'
         #!/bin/bash
         L="$RUNNER_TEMP/apt.log"
         trap 'echo "--- apt cortado por el tope de tiempo; lo último que dijo:" >&2; tail -n 25 "$L" >&2; sudo pkill -9 -x apt-get; sudo pkill -9 -x dpkg; exit 124' TERM
-        sudo pkill -9 -x apt-get 2> /dev/null || true
-        sudo pkill -9 -x dpkg 2> /dev/null || true
-        sudo dpkg --configure -a > /dev/null 2>&1 || true
+        sudo dpkg --configure -a > "$L" 2>&1 || true
         sudo apt-get install -y -q "$@" > "$L" 2>&1 &
         wait $! || { echo "--- apt falló; lo último que dijo:" >&2; tail -n 25 "$L" >&2; exit 1; }
         FIN
