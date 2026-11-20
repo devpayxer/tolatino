@@ -11596,8 +11596,18 @@ const guardianes = {
     const s = existsSync(F) ? readFileSync(F, "utf8") : "";
     if (/if \(soloRuido\) return null;/.test(s) || !/if \(soloRuido\) return docResp &&/.test(s) || !/r\.request\(\)\.isNavigationRequest\(\) && r\.frame\(\) === page\.mainFrame\(\)\) docResp = r;/.test(s))
       falla(G, F, 0, "el goto de WebKit que sigue sin «load» no devuelve la respuesta del documento (la prueba que mira su status cae)");
-    if (!/LP\.setInputFiles = async function \(f, o\) \{\n\s+if \(this\.page\(\)\.__tlFiltro\) await this\.evaluate\(\(el\) => new Promise[^\n]*__reactProps/.test(s))
-      falla(G, F, 0, "WebKit: setInputFiles no espera las props de React del input (el archivo elegido no llega al onChange)");
+  },
+  /* 9t · fotoComoPersona (20 nov, CI dirigido 44707074106, msg9t en el iPad y el iPhone SE): la prueba ponía la foto directo en el input escondido
+     justo después de cargar el chat; en WebKit a veces antes de que la página respondiera, y la miniatura nunca salía. Una persona elige tocando
+     «Agregar una foto» (que abre el selector): pruebas/lib/elegir-foto.cjs hace eso, vuelve a tocar si el selector no abrió y dice por qué no se
+     subió. Lo que se teme: volver al input escondido en msg9t. Al revés: alreves9tsubida. */
+  fotoComoPersona() {
+    const G = "fotoComoPersona", F = "pruebas/lib/elegir-foto.cjs", P = "pruebas/e2e/msg9t.cjs";
+    const s = existsSync(F) ? readFileSync(F, "utf8") : "", t = existsSync(P) ? readFileSync(P, "utf8") : "";
+    if (!/p\.waitForEvent\('filechooser'/.test(s) || !/await fc\.setFiles\(archivo\);/.test(s) || !/no hubo POST a la ruta de fotos/.test(s))
+      falla(G, F, 0, "elegirFoto no elige como una persona (tocar el botón, selector, setFiles) o no dice por qué no se subió");
+    t.split("\n").forEach((l, i) => { if (/input\[type=file\]'\)\.setInputFiles\(/.test(l)) falla(G, P, i + 1, "la foto del chat se pone en el input escondido: usar elegirFoto (pruebas/lib/elegir-foto.cjs)"); });
+    if (t && (t.match(/await elegirFoto\(m, FOTO2?\)/g) ?? []).length < 3) falla(G, P, 0, "msg9t no elige sus fotos con elegirFoto");
   },
   /* 9t · topeFotoSinNavegador (20 nov, confirmación 44685003383, msg9t en el iPad): el tope de 12 MB de las fotos se probaba con un fetch de
      13 MB armado dentro del WebKit del CI, que a veces no llega entero (400 en vez de 413). El tope del servidor se prueba desde Node con la

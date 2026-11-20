@@ -14,6 +14,7 @@
 // Preparación propia: El Compa apagado en el negocio mientras dura, conversación sin bloqueo, horario abierto. Todo se devuelve como estaba.
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { subirCrudoNode } = require('../lib/subida-cruda.cjs');
+const { elegirFoto } = require('../lib/elegir-foto.cjs'); // como una persona: tocar «Agregar una foto» y elegir (no el input escondido)
 const { chromium } = require('playwright'); const { execSync, spawn } = require('child_process');
 const fs = require('fs');
 const NN = require('../lib/negocio-nuevo.cjs');
@@ -89,10 +90,9 @@ const limpiar = () => {
     // ── 1 · La vecina manda una foto (sin servicio de imágenes: queda en revisión) ──
     await m.goto(B + `/cuenta/mensajes/${BIZ}`); await m.getByPlaceholder(/Escribe a Sabor Dominicano/).waitFor();
     ok(!!(await vis(m.getByRole('button', { name: 'Agregar una foto' }))), 'el composer ofrece «Agregar una foto»');
-    await m.locator('input[type=file]').setInputFiles(FOTO);
-    await m.locator('[data-chat-adjunto]').waitFor({ timeout: 20000 }); ok(true, 'la miniatura de la foto elegida');
+    await elegirFoto(m, FOTO); ok(true, 'la miniatura de la foto elegida');
     await clic(m.getByRole('button', { name: 'Quitar foto' })); ok(await espera(async () => (await m.locator('[data-chat-adjunto]').count()) === 0), '«Quitar foto» la quita antes de enviar');
-    await m.locator('input[type=file]').setInputFiles(FOTO); await m.locator('[data-chat-adjunto]').waitFor({ timeout: 20000 });
+    await elegirFoto(m, FOTO);
     await m.screenshot({ path: OUT + 'm9t-1-adjunto-m.png', fullPage: true });
     await m.getByPlaceholder(/Escribe a/).fill(`Así quedó la mesa ${TAG}`); await m.getByRole('button', { name: 'Enviar' }).click();
     ok(await espera(() => sql(`select count(*) from chat_messages where thread_id = ${TH} and media_id is not null and body like '%${TAG}%'`) === '1'), 'el mensaje se guarda con su foto');
@@ -156,7 +156,7 @@ const limpiar = () => {
 
     // ── 5 · Con la regla de fotos apagada, se ve al instante ──
     sql(`update mod_rules set enabled = false where key = 'img'`); await new Promise((r) => setTimeout(r, 16000)); // la caché de las reglas dura 15 s
-    await m.goto(B + `/cuenta/mensajes/${BIZ}`); await m.locator('input[type=file]').setInputFiles(FOTO2); await m.locator('[data-chat-adjunto]').waitFor({ timeout: 20000 });
+    await m.goto(B + `/cuenta/mensajes/${BIZ}`); await elegirFoto(m, FOTO2);
     await m.getByRole('button', { name: 'Enviar' }).click();
     ok(await espera(() => sql(`select x.status from chat_messages c join media x on x.id = c.media_id where c.thread_id = ${TH} and c.sender = 'user' order by c.id desc limit 1`) === 'visible'), 'regla apagada: visible al instante');
     const F3 = sql(`select media_id from chat_messages where thread_id = ${TH} and sender = 'user' and media_id is not null order by id desc limit 1`);
