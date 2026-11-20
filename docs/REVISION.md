@@ -5797,3 +5797,17 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
     se achican solas.
   - El resto era de las pruebas: los días de un patrocinio de evento se cuentan como los cuenta la base (por calendario), el alta de la cuenta
     se mide con el ancho de cada teléfono (no 390 fijo) y la ficha que el equipo ve «como cliente» en el iPad. Cada clase deja su guardián.
+- **9t · Lo que cazó la confirmación del 20 nov (44734711575), tercera vuelta:** dos cosas de la app y varias de las pruebas.
+  - **El corazón de «Guardar» en las tarjetas de eventos:** en el teléfono medía 32 px; ahora mide 44 (se ve un poco más grande, arriba a la
+    derecha de cada tarjeta). Qué mirar: Eventos en el teléfono, un día que tenga eventos.
+  - **Una foto que no llega se manda otra vez sola:** en el iPhone de pruebas una foto normal recién elegida llegó vacía al servidor («No llegó
+    la foto»). No se sabe todavía si le pasa a un iPhone de verdad. Ahora la app la reintenta una vez con la foto original, y el servidor deja
+    registrado qué recibió. **Qué mirar (importante, desde tu teléfono):** en Mensajes con un negocio, toca «Agregar una foto», elige una foto
+    de la galería y otra tomada con la cámara: la miniatura tiene que salir en un par de segundos las dos veces. Si sale «No llegó la foto» o
+    «No se pudo subir la foto», avísame con la hora.
+  - **Cancelar un evento desde el Super Admin:** la auditoría de «Cancelar y devolver todo» y de «Congelar ventas» ahora se guarda en el mismo
+    paso que el cambio (antes se escribía después de las devoluciones: si el servidor se caía justo ahí, quedaba la cancelación sin su renglón).
+    Qué mirar: nada distinto en pantalla.
+  - El resto era de las pruebas (dependían de datos de otra prueba, o tocaban un botón antes de que la pantalla terminara de cambiar).
+- **CI más rápido (20 nov):** la confirmación completa se reparte en 4 máquinas por carril (`partes=4`) y ya no repite una pasada; la primera
+  medida real se anota en PROGRESS. Decisión AE (vía urgente) anotada; lo que la hace funcionar está en LAUNCH › 9o.

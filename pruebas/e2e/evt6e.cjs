@@ -307,6 +307,9 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
     await pa.goto(B + `/admin/eventos/${E.id}`);
     await clic(btn(pa, 'Congelar ventas')); await clic(pa.getByText('Revisión de Confianza', { exact: true })); await clic(pa.getByRole('button', { name: 'Congelar' }).last());
     ok(await espera(() => sql(`select status || '|' || (sales_frozen_at is not null) from events where id = ${E.id}`) === 'paused|true'), 'admin «Congelar ventas»: pausado y congelado');
+    // 20 nov · La auditoría del admin entra EN la transacción del cambio (alGuardar): cuando el cambio ya se ve, su renglón está. Sin espera, a propósito.
+    const audC = sql(`select count(*) from audit_entries where action = 'evento.venta.congelar' and target_id = '${E.id}'`);
+    ok(audC === '1', `congelar queda en la auditoría con el cambio: un renglón «evento.venta.congelar» (hay ${audC})`);
     await pn.goto(B + `/panel/${NEG}/eventos?det=evt:${E.id}`);
     ok(await contiene(pn, 'To’Latino congeló la venta: Revisión de Confianza'), 'el panel lo dice con el motivo');
     await clic(pn.locator('[role="switch"][aria-label="Venta pausada"]'));
@@ -315,7 +318,11 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
     await pa.goto(B + `/admin/eventos/${E.id}`);
     await clic(btn(pa, 'Cancelar y devolver todo')); await clic(pa.getByText('El evento no va a pasar', { exact: true })); await clic(pa.getByRole('button', { name: 'Cancelar y devolver' }).last());
     ok(await espera(() => pago(OE) === 'refunded|1000|1000') && sql(`select by_kind || '|' || reason_key from event_cancellations where event_id = ${E.id}`) === 'admin|admin', 'admin «Cancelar y devolver todo»: devuelto al 100 % (cancelación del admin, con motivo)');
-    ok(sql(`select count(*) from audit_entries where action = 'evento.cancelar' and target_id = '${E.id}'`) === '1', 'en la auditoría');
+    // 20 nov (CI, ancho 1024: «ASSERT en la auditoría» sin decir cuántos) · El renglón se escribía en OTRA transacción, después de las devoluciones y
+    // los avisos: con la devolución ya visible todavía no estaba (0). Ahora entra con la cancelación (app/admin/acciones-eventos.ts → alGuardar), que
+    // es anterior a la devolución: aquí tiene que haber exactamente uno, sin esperar (una espera taparía que vuelva a escribirse aparte).
+    const audX = sql(`select count(*) from audit_entries where action = 'evento.cancelar' and target_id = '${E.id}'`);
+    ok(audX === '1', `en la auditoría: un renglón «evento.cancelar» escrito con la cancelación (hay ${audX})`);
     await pa.screenshot({ path: OUT + 'e6e-admin-evento-d.png', fullPage: true });
     await pa.goto(B + '/admin/eventos/liquidaciones');
     ok(await contiene(pa, 'Liquidaciones de eventos') && await contiene(pa, 'POR PAGAR') && await contiene(pa, 'PAGADO · 30 DÍAS') && await contiene(pa, 'Noche de cambios'), 'Super Admin › Liquidaciones: KPI y la lista por fecha');

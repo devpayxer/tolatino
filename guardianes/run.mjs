@@ -11718,6 +11718,68 @@ const guardianes = {
       }
     }
   },
+  /* 9t · toqueEsperaLaPantalla (20 nov, CI en el ancho 1024, dep4c: «$25 al mes · inscripción $10»): el panel guarda cada toque y DESPUÉS se
+     vuelve a pintar; la prueba confirmaba el guardado en la base y tocaba el paso siguiente con la pantalla todavía vieja. Al quitar el contrato
+     desaparece un paso y PanelBloques reutiliza los nodos por orden (step#n): el botón que Playwright ya había resuelto como «Mensualidad +» pasó
+     a ser «Cuota de inscripción +» (medido: la misma asa cambia de rótulo) y la inscripción subió dos veces. Lo que se teme: (1) en cualquier
+     prueba, dos toques de paso (botón «… +» / «… −») seguidos sin esperar nada entre ellos, o un toque de paso con una pausa fija detrás
+     (espera(() => false, …), waitForTimeout) en vez de esperar la pantalla; (2) en dep4c, tocar un paso sin toque() (que espera el valor nuevo
+     en SU fila), un toque() que ya no mire la pantalla, o tocar la mensualidad sin esperar a que la pantalla quite «Cancelar antes de tiempo
+     cuesta». Al revés: alreves9tcarrera. */
+  toqueEsperaLaPantalla() {
+    const G = "toqueEsperaLaPantalla", F = "pruebas/e2e/dep4c.cjs";
+    const PASO = String.raw`await clic\(\w+\.getByRole\('button', \{ name: (?:'[^'\n]* [+−]'|` + "`[^`\\n]* [+−]`" + String.raw`)(?:, exact: true)? \}\)(?:\.\w+\(\))?\);`;
+    for (const f of archivos) {
+      if (!/^pruebas\/e2e\/.*\.cjs$/.test(f) || !existsSync(f)) continue;
+      const t = readFileSync(f, "utf8"), linea = (i) => t.slice(0, i).split("\n").length;
+      for (const m of t.matchAll(new RegExp(PASO + String.raw`\s*` + PASO, "g"))) falla(G, f, linea(m.index), "dos toques de paso seguidos sin esperar la pantalla entre ellos: el segundo puede caer mientras se vuelve a pintar (esperar el valor nuevo en la fila)");
+      for (const m of t.matchAll(new RegExp(PASO + String.raw`[ \t]*(?:\}[ \t]*)?await (?:espera\(\(\) => false|\w+\.waitForTimeout\()`, "g"))) falla(G, f, linea(m.index), "un toque de paso con una pausa fija detrás: esperar a que la pantalla diga el valor nuevo, no un tiempo");
+    }
+    if (!existsSync(F)) return falla(G, F, 0, "falta la prueba de punta a punta de Deporte (dep4c)");
+    const s = readFileSync(F, "utf8");
+    s.split("\n").forEach((l, i) => { if (/(?:\bclic\(|\.click\(\))/.test(l) && /name: (?:'[^'\n]* [+−]'|`[^`\n]* [+−]`)/.test(l)) falla(G, F, i + 1, "un paso se toca con toque(): espera el valor nuevo en su fila antes de seguir"); });
+    if (!/const ya = await veo\(async \(\) => \{ dice = await valor\(pg, t\); return dice !== null && \(v === undefined \? dice !== antes : dice === v\); \}\);\s*ok\(ya,/.test(s)) falla(G, F, 0, "toque() ya no espera a que la pantalla diga el valor nuevo del paso");
+    if (!/name: 'Sin contrato', exact: true \}\)\);[\s\S]*?ok\(await veo\(async \(\) => \(await p\.getByRole\('button', \{ name: 'Cancelar antes de tiempo cuesta \+', exact: true \}\)\.count\(\)\) === 0\)[\s\S]*?await toque\(p, 'Mensualidad', '\+', '\$26'\);/.test(s))
+      falla(G, F, 0, "después de «Sin contrato» la mensualidad se toca sin esperar a que la pantalla quite el paso «Cancelar antes de tiempo cuesta»");
+    if (/espera\(\(\) => false/.test(s)) falla(G, F, 0, "una pausa fija entre toques: esperar la pantalla");
+  },
+  /* 9t · auditoriaDelAdminConElCambio (20 nov, CI en el ancho 1024, evt6e: «ASSERT en la auditoría»): «Cancelar y devolver todo» del Super Admin
+     escribía su renglón de audit_entries en OTRA transacción, después de devolver y avisar (hasta 20 s): con la devolución ya visible el renglón
+     todavía no estaba y, si el servidor caía en ese hueco, la cancelación quedaba sin auditoría. Es la clase de auditoriaEnLaTransaccion (panel)
+     en el admin. La regla, sobre apps/web/app: una función que llama a una función de lib que acepta «alGuardar» (la auditoría de quien llama,
+     dentro de la transacción del cambio) no abre una transacción solo para auditar (tx((c) => auditar(…))): le pasa la auditoría. Y lo de
+     eventos queda fijado: evtCancelarAdmin y evtCongelar pasan su auditoría, cancelarEvento y congelarVenta la escriben con el cambio, y evt6e
+     mira el renglón sin esperar y dice cuántos hay. Al revés: alreves9tcarrera. */
+  auditoriaDelAdminConElCambio() {
+    const G = "auditoriaDelAdminConElCambio", A = "apps/web/app/admin/acciones-eventos.ts", L = "apps/web/lib/evt-cambios.ts", P = "pruebas/e2e/evt6e.cjs";
+    const conAl = new Set();
+    for (const f of codigo) {
+      if (!/^apps\/web\/lib\/.*\.ts$/.test(f) || !existsSync(f)) continue;
+      for (const m of readFileSync(f, "utf8").matchAll(/^export async function (\w+)\(.*\balGuardar\??: AlGuardar/gm)) conAl.add(m[1]);
+    }
+    if (conAl.size < 20) falla(G, "apps/web/lib", 0, "no se encuentran las funciones de lib que aceptan alGuardar (¿cambió su firma?)");
+    const SOLO_AUDITA = /\btx\(\s*\(c\) => auditar\w*\(/;
+    for (const f of codigo) {
+      if (!/^apps\/web\/app\/.*\.tsx?$/.test(f) || !existsSync(f)) continue;
+      const t = sinComent(f);
+      if (!SOLO_AUDITA.test(t)) continue;
+      const cortes = [...t.matchAll(/^(?:export )?(?:async )?function \w+|^(?:export )?const \w+ = /gm)].map((m) => m.index);
+      cortes.push(t.length);
+      for (let k = 0; k + 1 < cortes.length; k++) {
+        const b = t.slice(cortes[k], cortes[k + 1]), a = SOLO_AUDITA.exec(b);
+        const n = a ? [...conAl].find((x) => new RegExp(`\\b${x}\\(`).test(b)) : null;
+        if (n) falla(G, f, t.slice(0, cortes[k] + a.index).split("\n").length, `audita en una transacción aparte después de ${n}(): pásale la auditoría (alGuardar) para que entre con el cambio`);
+      }
+    }
+    const a = existsSync(A) ? readFileSync(A, "utf8") : "", l = existsSync(L) ? readFileSync(L, "utf8") : "", p = existsSync(P) ? readFileSync(P, "utf8") : "";
+    if (!/\.cancelarEvento\(\{ tipo: "admin", userId: s\.id, cities: s\.cities \}, String\(id\), "event", null, "admin", m,\s*\(c, g\) => auditar\(c, \{ actor: s\.id, action: "evento\.cancelar"/.test(a)) falla(G, A, 0, "evtCancelarAdmin no le pasa su auditoría a cancelarEvento (entra con la cancelación, no después de devolver)");
+    if (!/\.congelarVenta\(\{ tipo: "admin", userId: s\.id, cities: s\.cities \}, String\(id\), !!congelar, m,\s*\(c\) => auditar\(c, \{ actor: s\.id, action: congelar \? "evento\.venta\.congelar" : "evento\.venta\.descongelar"/.test(a)) falla(G, A, 0, "evtCongelar no le pasa su auditoría a congelarVenta");
+    if (!/if \(alGuardar\) await alGuardar\(c, \{ porDevolver: [\s\S]{0,700}?\n      return id;\n    \}\);/.test(l)) falla(G, L, 0, "cancelarEvento no escribe la auditoría de quien llama dentro de la transacción de la cancelación");
+    const cg = /export async function congelarVenta\([^\n]*\balGuardar\?: AlGuardar\): Promise<Res> \{[\s\S]*?\n\}\n/.exec(l)?.[0] ?? "";
+    if ((cg.split("pasesPronto();")[0].match(/await alGuardar\?\.\(c\);/g) ?? []).length !== 2) falla(G, L, 0, "congelarVenta no escribe la auditoría de quien llama dentro de la transacción del cambio");
+    if (!/const audX = sql\(`select count\(\*\) from audit_entries where action = 'evento\.cancelar' and target_id = '\$\{E\.id\}'`\);\s*ok\(audX === '1', `[^`\n]*\$\{audX\}/.test(p)) falla(G, P, 0, "evt6e no exige exactamente un renglón «evento.cancelar» diciendo cuántos hay");
+    p.split("\n").forEach((x, i) => { if (/action = 'evento\.(cancelar|venta\.congelar)'/.test(x) && /\bespera\(/.test(x)) falla(G, P, i + 1, "la auditoría del admin entra con el cambio: se mira sin esperar (una espera tapa que vuelva a escribirse aparte)"); });
+  },
 };
 
 

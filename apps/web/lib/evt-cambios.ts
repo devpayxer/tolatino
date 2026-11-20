@@ -66,8 +66,9 @@ export async function pausarVenta(q: Quien, eventoId: string, pausar: boolean, a
   } catch (e) { return atrapa(e); }
 }
 
-/* To'Latino congela (o descongela) la venta: el evento queda pausado y el organizador no la reabre; el negocio recibe el motivo. */
-export async function congelarVenta(q: Extract<Quien, { tipo: "admin" }>, eventoId: string, congelar: boolean, motivo: string): Promise<Res> {
+/* To'Latino congela (o descongela) la venta: el evento queda pausado y el organizador no la reabre; el negocio recibe el motivo.
+   alGuardar: la auditoría de quien decide, en la misma transacción que el cambio (como pausarVenta). */
+export async function congelarVenta(q: Extract<Quien, { tipo: "admin" }>, eventoId: string, congelar: boolean, motivo: string, alGuardar?: AlGuardar): Promise<Res> {
   if (!ID.test(String(eventoId))) return falla("Ese evento no existe.", "That event does not exist.");
   const m = limpiar(motivo, 300);
   if (m.length < 4) return falla("Escribe el motivo.", "Write the reason.");
@@ -79,11 +80,12 @@ export async function congelarVenta(q: Extract<Quien, { tipo: "admin" }>, evento
         `select e.status as st, e.city_id as city, e.sales_frozen_at is not null as frozen, e.business_id as biz, e.title as t from events e where e.id = $1::bigint and ${DUENO(q)} for update`, [eventoId, arg(q)])).rows[0];
       if (!e) throw no("Ese evento no existe.", "That event does not exist.");
       if (!["live", "paused"].includes(e.st)) throw no("Solo se congela un evento publicado.", "Only a live event can be frozen.");
-      if (congelar === e.frozen) return;
+      if (congelar === e.frozen) { await alGuardar?.(c); return; }
       if (congelar) await c.query(`update events set sales_frozen_at = now(), sales_frozen_by = $2, sales_frozen_reason = $3, status = 'paused' where id = $1::bigint`, [eventoId, q.userId, m]);
       else await c.query(`update events set sales_frozen_at = null, sales_frozen_by = null, sales_frozen_reason = null, status = 'live' where id = $1::bigint and status = 'paused' and approved_at is not null`, [eventoId]);
       await c.query(`insert into event_changes (event_id, city_id, kind, reason_key, note, by_user, by_kind) values ($1::bigint, $2, $3, 'admin', $4, $5, 'admin')`, [eventoId, e.city, congelar ? "frozen" : "unfrozen", m, q.userId]);
       if (congelar) aviso = { biz: e.biz, t: e.t };
+      await alGuardar?.(c);
     });
     pasesPronto();
     if (aviso) { const a = aviso as { biz: string; t: Bi }; await (await import("./avisos")).avisarNegocio(a.biz, "evt_venta_congelada", { evento: a.t.es, motivo: m }, { href: `/panel/${a.biz}/eventos?det=evt:${eventoId}`, ref: ["event", eventoId] }); }

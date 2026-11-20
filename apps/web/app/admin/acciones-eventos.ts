@@ -52,23 +52,26 @@ export async function evtBoleto(code: string, paso: "reenviar" | "reemitir" | "a
 
 /* 6e · La ficha del evento: «Cancelar y devolver todo» (regla del módulo: cancela el evento → devolución total; evt:retirar, Admin) y
    «Congelar ventas» / «Descongelar» (evt:editar): el organizador no la reabre. Todo con motivo, aviso y auditoría; el dinero lo decide
-   lib/evt-cambios.ts (idempotente por orden, reanudable por el barrido). Solo eventos de las ciudades de quien decide. */
+   lib/evt-cambios.ts (idempotente por orden, reanudable por el barrido). Solo eventos de las ciudades de quien decide.
+   20 nov (evt6e en la CI) · La auditoría entra EN la transacción del cambio (alGuardar), como en el panel: antes se escribía aparte, después de
+   las devoluciones y los avisos (hasta 20 s); en ese hueco la cancelación ya se veía sin su renglón y, si el servidor caía ahí, quedaba sin
+   auditoría. Lo devuelto y lo pendiente quedan en la cancelación misma (event_cancellations). Guardián auditoriaDelAdminConElCambio. */
 export async function evtCancelarAdmin(id: string, motivo: string): Promise<ResAdm> {
   const s = await requerir("evt", "retirar");
   const m = motivoOk(motivo);
   if (m.length < 4) return no("Escribe el motivo: lo ven los que iban.");
-  const r = await (await import("@/lib/evt-cambios")).cancelarEvento({ tipo: "admin", userId: s.id, cities: s.cities }, String(id), "event", null, "admin", m);
+  const r = await (await import("@/lib/evt-cambios")).cancelarEvento({ tipo: "admin", userId: s.id, cities: s.cities }, String(id), "event", null, "admin", m,
+    (c, g) => auditar(c, { actor: s.id, action: "evento.cancelar", targetKind: "event", targetId: String(id), after: { por_devolver: g.porDevolver, regla: "cancela el evento → devolución total" }, reason: m }));
   if (!r.ok) return no(r.msg.es);
-  await tx((c) => auditar(c, { actor: s.id, action: "evento.cancelar", targetKind: "event", targetId: String(id), after: { devueltas: r.devueltas, pendientes: r.pendientes, regla: "cancela el evento → devolución total" }, reason: m }));
   listo();
   return { ok: true, mensaje: r.pendientes ? `Cancelado. ${r.devueltas} órdenes devueltas; las ${r.pendientes} que faltan las sigue el barrido.` : `Cancelado. ${r.devueltas} órdenes devueltas al 100 %; avisamos a cada persona en To'Latino.` };
 }
 export async function evtCongelar(id: string, congelar: boolean, motivo: string): Promise<ResAdm> {
   const s = await requerir("evt", "editar");
   const m = motivoOk(motivo);
-  const r = await (await import("@/lib/evt-cambios")).congelarVenta({ tipo: "admin", userId: s.id, cities: s.cities }, String(id), !!congelar, m);
+  const r = await (await import("@/lib/evt-cambios")).congelarVenta({ tipo: "admin", userId: s.id, cities: s.cities }, String(id), !!congelar, m,
+    (c) => auditar(c, { actor: s.id, action: congelar ? "evento.venta.congelar" : "evento.venta.descongelar", targetKind: "event", targetId: String(id), after: { venta: congelar ? "congelada" : "abierta" }, reason: m }));
   if (!r.ok) return no(r.msg.es);
-  await tx((c) => auditar(c, { actor: s.id, action: congelar ? "evento.venta.congelar" : "evento.venta.descongelar", targetKind: "event", targetId: String(id), after: { venta: congelar ? "congelada" : "abierta" }, reason: m }));
   listo();
   return { ok: true, mensaje: congelar ? "Venta congelada. El organizador recibe el motivo y no la puede reabrir." : "Venta abierta otra vez." };
 }

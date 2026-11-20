@@ -1961,3 +1961,19 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       Inicio, Negocios, Buscar, Eventos, Comunidad, Ciudad, Entrar) vio, solo a 320 o con letra grande en 320: el campo «Buscar en Hazleton» del
       encabezado (142 px en 130), tarjetas del riel de Inicio que pasan su caja por 7–40 px, «Entrar con mi teléfono» (251 en 244) y una fila de
       Buscar. A 375 y 390 con letra normal, nada. Pasar `botonesQueNoCaben` a esas pantallas a 320 en la corrida de anchos y acomodarlas. (19 nov) — _19 nov (después): con las filas de Buscar que se encogen (grid minmax(0,1fr)) y el área de toque, la misma revisión (botón contra su caja, sin contar los rieles que se desplazan) en Inicio, Negocios, Buscar, Eventos, Comunidad, Ciudad, Entrar, dos fichas y Mi cuenta, a 320/375/390 con letra normal y grande: ninguno se sale y ninguna página se mueve de lado. Lo de antes eran falsos (el logo y enlaces medidos por scrollWidth) y la fila de Buscar (arreglada). bus9t y fic005 lo siguen mirando._
+
+
+## Confirmación del 20 nov (44734711575) — lo que quedó anotado
+- [ ] **→ 9t** · **La foto que llega vacía desde WebKit (causa de fondo):** el iPhone SE del CI mandó una foto normal y el servidor contestó «No
+      llegó la foto» (400). Mitigado (la app reintenta una vez con la original, `subidaReintenta`) y el servidor registra qué recibió
+      (`[subida] sin archivo: …`). Falta la causa: leer ese registro en la próxima corrida que lo repita y la prueba del fundador desde un
+      iPhone de verdad en el sandbox (REVISION). Si es solo del WebKit de pruebas, se anota y se cierra. (20 nov)
+- [ ] **→ 9t** · **Auditoría en otra transacción (misma clase que `evtCancelarAdmin`, ya arreglada):** `devolverTx`, `conciliarOtraVez` y
+      `app/admin/acciones-planes.ts` escriben su renglón de auditoría aparte, después del cambio. Pasarlos a la transacción del cambio y
+      extender `auditoriaDelAdminConElCambio`. (20 nov)
+- [ ] **→ 9t** · **Panel: llaves por posición (`step#n`) y doble toque en un «+»:** `packages/ui/src/panel/Bloques.tsx` da a cada bloque una
+      llave por su posición: al quitar un paso, el nodo que era «Mensualidad +» pasa a ser «Cuota de inscripción +» (dep4c lo vio; la prueba
+      ahora espera la pantalla). Y un doble toque rápido en el mismo «+» pierde un incremento. Llaves estables por bloque y contador que no
+      pierda toques; revisar las demás pruebas que tocan «+» seguido. (20 nov)
+- [ ] **→ 9b** · **`evt9t`: /eventos tardó más de 30 s en cargar una vez** (CI repartido 44743122204, parte 3/4, Chromium). Sin causa todavía;
+      el CI ahora imprime lo último del servidor cuando algo cae. Mirarlo si se repite. (20 nov)

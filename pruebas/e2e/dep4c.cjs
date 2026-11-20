@@ -15,6 +15,20 @@ const barrer = () => execSync(`curl -s -X POST -H 'x-barrido-token: ${ENT.TOK}' 
 const tj = (n = NEG) => JSON.parse(sql(`select coalesce(category_attrs->'tarjeta', '{}') from businesses where id = '${n}'`));
 const fv = (n = NEG) => sql(`select filter_values from businesses where id = '${n}'`);
 const espera = async (f, ms = 8000) => { const t = Date.now(); while (Date.now() - t < ms) { if (f()) return true; await new Promise((r) => setTimeout(r, 250)); } return false; };
+// 20 nov (CI, «$25 al mes · inscripción $10») · La base se entera del guardado ANTES que la pantalla: el panel guarda y después se vuelve a pintar.
+// Un toque en ese hueco cae sobre la pantalla vieja. Al quitar el contrato desaparece el paso «Cancelar antes de tiempo cuesta» y los pasos de
+// abajo cambian de nodo (PanelBloques los reutiliza por orden: el nodo de «Mensualidad» pasa a ser «Cuota de inscripción»): el botón que
+// Playwright ya había resuelto como «Mensualidad +» subió la inscripción, dos veces con el toque siguiente. La regla de esta prueba: después de
+// un guardado, el siguiente toque espera a que LA PANTALLA lo diga. veo() espera algo de la pantalla; toque() toca el + o el − de un paso y
+// espera el valor nuevo en SU fila (el que se le dice o, sin decirlo, uno distinto). Guardián toqueEsperaLaPantalla, al revés alreves9tcarrera.
+const veo = async (f, ms = 10000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await f().catch(() => false)) return true; await new Promise((r) => setTimeout(r, 150)); } return false; };
+const valor = async (pg, t) => { const x = await vis(pg.getByRole('button', { name: `${t} +`, exact: true })); return x ? (await x.locator('xpath=preceding-sibling::span[1]').innerText({ timeout: 2000 })).trim() : null; };
+const toque = async (pg, t, signo, v) => {
+  let antes = null, dice = null; ok(await veo(async () => (antes = await valor(pg, t)) !== null), `la pantalla tiene el paso «${t}» (${antes})`);
+  await clic(pg.getByRole('button', { name: `${t} ${signo}`, exact: true }));
+  const ya = await veo(async () => { dice = await valor(pg, t); return dice !== null && (v === undefined ? dice !== antes : dice === v); });
+  ok(ya, `«${t} ${signo}»: la pantalla pasa de ${antes} a ${dice}${ya || v === undefined ? '' : ` (se esperaba ${v})`}`);
+};
 (async () => {
   // Punto de partida conocido.
   sql(`update insc_settings set contract_m = 0, cancel_fee_cents = 0, signup_cents = 0, childcare = true, esp = true, derived_on = null where business_id = '${NEG}'`);
@@ -43,16 +57,18 @@ const espera = async (f, ms = 8000) => { const t = Date.now(); while (Date.now()
   // Contrato de 12 meses → ya no es «sin contrato»; lo que cuesta salirse se dice.
   await clic(p.getByRole('button', { name: '12 meses', exact: true }));
   ok(await espera(() => sql(`select contract_m from insc_settings where business_id = '${NEG}'`) === '12' && !/sincontrato/.test(fv())), 'contrato de 12 meses → sin el filtro «sin contrato»');
-  await clic(p.getByRole('button', { name: 'Cancelar antes de tiempo cuesta +' }));
+  await toque(p, 'Cancelar antes de tiempo cuesta', '+', '$10');
   ok(await espera(() => tj().eta?.es === 'Contrato de 12 meses · cancelar antes cuesta $10'), `la tarjeta dice el contrato y lo que cuesta: ${tj().eta?.es}`);
   await clic(p.getByRole('button', { name: 'Sin contrato', exact: true }));
   ok(await espera(() => sql(`select contract_m || ':' || cancel_fee_cents from insc_settings where business_id = '${NEG}'`) === '0:0' && /sincontrato/.test(fv())), 'sin contrato → salirse vuelve a $0 y vuelve el filtro');
+  // La pantalla ya quitó el paso de «cancelar antes» (cada paso de abajo ya es el que dice ser): solo entonces se toca la mensualidad.
+  ok(await veo(async () => (await p.getByRole('button', { name: 'Cancelar antes de tiempo cuesta +', exact: true }).count()) === 0), 'sin contrato: la pantalla ya no pregunta lo que cuesta cancelar antes');
   // Mensualidad, inscripción y pase: los precios son los del ítem.
-  await clic(p.getByRole('button', { name: 'Mensualidad +' }));
-  await clic(p.getByRole('button', { name: 'Cuota de inscripción +' }));
+  await toque(p, 'Mensualidad', '+', '$26');
+  await toque(p, 'Cuota de inscripción', '+', '$5');
   ok(await espera(() => tj().fee?.es === '$26 al mes · inscripción $5'), `mensualidad e inscripción: ${tj().fee?.es}`);
   ok(sql(`select price_cents from items where business_id = '${NEG}' and svc_kind = 'mes'`) === '2600', 'la mensualidad vive en el ítem (una sola fuente)');
-  await clic(p.getByRole('button', { name: 'Pase de un día +' }));
+  await toque(p, 'Pase de un día', '+', '$11');
   ok(await espera(() => sql(`select price_cents from items where business_id = '${NEG}' and name->>'es' = 'Pase de un día'`) === '1100'), 'pase de un día $11');
   await clic(p.getByRole('switch', { name: 'Primera visita gratis' }));
   ok(await espera(() => !/gratis1/.test(fv())), 'sin primera visita gratis → sin el filtro');
@@ -64,11 +80,13 @@ const espera = async (f, ms = 8000) => { const t = Date.now(); while (Date.now()
   // Liga e inscripciones (Anthony también administra la liga en esta prueba).
   sql(`insert into business_members (business_id, user_id, kind, display_name, role, status, show_on_page, panel_access, since_year, sort, same_as_business_hours) select '${LIGA}', u.id, 'owner', 'Anthony Guzmán', '{"es":"Prueba","en":"Test"}'::jsonb, 'active', false, '{all}', 2020, 9, true from users u where u.phone = '+15705550411' and not exists (select 1 from business_members m where m.business_id = '${LIGA}' and m.user_id = u.id)`);
   await p.goto(`${B}/panel/${LIGA}/vendes/herramienta`); await p.getByText('Liga e inscripciones', { exact: true }).first().waitFor();
-  await clic(p.getByRole('button', { name: 'Cuota del equipo · temporada +' }));
+  await toque(p, 'Cuota del equipo · temporada', '+', '$460');
   ok(await espera(() => tj(LIGA).fee?.es === '$460 por equipo · depósito $100'), `cuota por equipo: ${tj(LIGA).fee?.es}`);
-  await clic(p.getByRole('button', { name: 'Depósito que aparta el lugar −' }));
+  await toque(p, 'Depósito que aparta el lugar', '−', '$90');
   ok(await espera(() => sql(`select deposit_cents from items where business_id = '${LIGA}' and svc_kind = 'curso'`) === '9000'), 'depósito $90 (en el ítem)');
-  for (let i = 0; i < 4; i++) { await clic(p.getByRole('button', { name: 'Equipos que faltan −' })); await espera(() => false, 600); }
+  // Hasta 4 «−» (los 4 lugares del arranque): cada uno espera a que la fila diga uno menos antes del siguiente. Antes iban con 600 ms fijos entre
+  // toques: con la máquina cargada el siguiente salía con el valor viejo de la pantalla y guardaba lo mismo (un toque perdido, nunca «Llena»).
+  for (let i = 0; i < 4 && (await valor(p, 'Equipos que faltan')) !== 'Llena'; i++) await toque(p, 'Equipos que faltan', '−');
   ok(await espera(() => tj(LIGA).eta?.es === 'Liga llena · lista de espera'), `sin lugares: ${tj(LIGA).eta?.es}`);
   await clic(p.getByRole('switch', { name: 'Aceptas jugadores sueltos' }));
   ok(await espera(() => sql(`select free_agents from insc_settings where business_id = '${LIGA}'`) === 't'), 'acepta jugadores sueltos');
