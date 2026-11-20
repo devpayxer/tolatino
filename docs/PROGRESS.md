@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 14 nov 2026 (9o hecho en su rama: producción como código y ensayada —el ensayo en máquinas no corrió—; ver «Fase 9 · 9o» al final. Antes: 9g). Plan de la Fase 9: `docs/diseno/plan/fase9-apertura.md`._
+_Actualizado: 20 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 14 nov 2026 (9o hecho en su rama: producción como código y ensayada —el ensayo en máquinas no corrió—; ver «Fase 9 · 9o» al final. Antes: 9g). Plan de la Fase 9: `docs/diseno/plan/fase9-apertura.md`._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -20,6 +20,26 @@ _Actualizado: 14 nov 2026 (9o hecho en su rama: producción como código y ensay
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **20 nov (tarde) · dónde quedó cada cosa, para retomar:**
+  - **Fotos a la medida (decisión AI):** F1+F2 en `main`, `pruebas` y el sandbox (commit 2963479, migración 0195 aplicada; visto desde fuera con
+    `estado-sandbox`). Falta la medida con fotos de cámara reales del fundador (REVISION), F3 (privadas con `?w=`) y F4 (bloque del Super Admin).
+  - **Revisión automática de fotos (decisión AJ, plan `docs/diseno/plan/fotos-revision-automatica.md`):** R1+R2 hechas por Opus en la rama local
+    `fotos-r1` (migración 0196, `lib/fotos-decision.ts` pura, `lib/fotos-revision.ts`, `lib/fotos-segunda-opinion.ts`, visor `/api/medios/revision/[id]`).
+    Revisada por Fable y DEVUELTA con tres correcciones antes de fusionar: (1) `destino=privado` en la subida para que una foto que va solo a un
+    negocio nunca llegue a la segunda opinión (marca en `media`, comprobada dentro de `esPublica`); (2) la pauta ya no rechaza carteles ni volantes;
+    (3) pie de commits. Después: fusionar, correr todo, R3 (Sonnet: estado y «Pedir revisión», Auto-moderación, reporte diario, ayuda), CI, sandbox.
+  - **Auditoría del Super Admin en la transacción del cambio** (devoluciones, conciliación, planes, Ayuda con monto, disputas; Opus, rama
+    `auditoria-tx` ya fusionada en la rama de trabajo) y **panel: la llave de un paso es su rótulo**: verificadas aquí (tipos, guardianes, al revés,
+    dep4c en el navegador); esperan la revisión rápida del CI para ir a `main`/`pruebas`. Cuatro riesgos de dinero vistos de paso → LAUNCH (9t).
+  - **CI:** tres corridas del día cayeron en la instalación de paquetes del entorno (no en pruebas de la app). Lo último visto (44807211977): el
+    candado de dpkg lo tenía OTRO apt-get y nuestro apt ni empezó → ahora se espera al apt del sistema (hasta 15 min, diciendo quién lo ocupa) en vez
+    de matarlo. Es hipótesis hasta leer el aviso «apt del sistema ocupado» en la corrida 44814175223. Guardián nuevo `alrevesConSuTexto`
+    (`node pruebas/alreves/textos.cjs`, 8 s): un caso al revés que ya no encuentra su texto se ve aquí, no en el CI 40 min después.
+  - **Diseño paso a paso (pedido del fundador, 20 nov):** las variantes se construyen con el código real en una rama aparte y se le enseñan en un
+    artifact con capturas de teléfono y escritorio; solo la elegida entra. Primera ronda: tres variantes del Inicio (A «Ahora mismo», B «¿Qué
+    necesitas hoy?», C «La guía de tu ciudad») en la rama local `diseno-inicio`, ruta `/diseno/inicio/[v]` (Sonnet). Capturas con fotos:
+    guion `capturar.cjs` del scratchpad (entrega las fotos de Pexels a la página; `images.pexels.com` se añadió a los hosts del entorno).
+  - **Pendiente sin causa todavía:** `dlv2f4` en el iPad horizontal (WebKit) no pudo tocar «Aceptar» dos veces (LAUNCH → 9t, con diagnóstico nuevo).
 - **9t · 24 px en el escritorio y 44 en el resto (20 nov):** AA 2.5.8 exigido a 1440 en las pantallas clave y el Super Admin (a11y9c); buscador del
   escritorio a 24 (TACTIL `T24`), reseñas «Útil/Editar/Reportar» a 44, 82 controles con forma de enlace (botones y role=link/button) a `min-h-11`; guardián botonTextoConAlto (lee la etiqueta entera, aunque el onClick lleve «=>»).
 - **9t · confirmación 44685003383 (20 nov) cazó 4 más, todas de pruebas o del iPad:** (1) pat003 esperaba los días de un patrocinio por la duración
