@@ -92,7 +92,7 @@ export function Publicar({ v }: { v: VistaPub }) {
   const subir = async (file: File | undefined) => {
     if (!file) return; setSubiendo(true);
     const r = await subirFoto(file).catch(() => null); setSubiendo(false);
-    if (r?.ok && r.id && r.url) up({ foto: { id: r.id, url: r.url } }); else setError(r?.mensaje ? (es ? r.mensaje.es : r.mensaje.en) : E2("No se pudo subir la foto.", "Could not upload the photo."));
+    if (r?.ok && r.id && r.url) up({ foto: { id: r.id, url: r.url } }); else if (r?.estado !== "revision") setError(r?.mensaje ? (es ? r.mensaje.es : r.mensaje.en) : E2("No se pudo subir la foto.", "Could not upload the photo."));
   };
   const atras = () => router.push("/eventos");
   const precioC = Math.round(Number(f.precio) * 100) || 0, money = (c: number) => `$${(c / 100) % 1 ? (c / 100).toFixed(2) : c / 100}`;

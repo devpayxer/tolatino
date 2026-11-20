@@ -302,12 +302,12 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
     if (k.queue === "medios" && "foto" in k && n) {
       extra = k.foto ? (
         <div style={{ position: "relative", height: 220, borderRadius: 18, backgroundImage: fotoFondo(k.foto.url, 540), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)" }}>
-          <span style={{ position: "absolute", left: 10, bottom: 10, padding: "4px 8px", borderRadius: 7, background: "rgba(11,14,18,.75)", color: "var(--tl-white)", font: "800 9.5px 'JetBrains Mono',monospace", letterSpacing: ".1em" }}>{E("REPORTADA POR UN VECINO", "REPORTED BY A NEIGHBOR")}</span>
+          <span style={{ position: "absolute", left: 10, bottom: 10, padding: "4px 8px", borderRadius: 7, background: "rgba(11,14,18,.75)", color: "var(--tl-white)", font: "800 9.5px 'JetBrains Mono',monospace", letterSpacing: ".1em" }}>{k.foto.oculta ? E("OCULTA MIENTRAS DECIDES", "HIDDEN WHILE YOU DECIDE") : E("REPORTADA POR UN VECINO", "REPORTED BY A NEIGHBOR")}</span>
         </div>) : null;
       const MOT: Record<string, string> = en ? { no_es: "Not from this business", inapropiado: "Inappropriate content", datos: "Shows personal data", spam: "It's advertising or spam", otro: "Other reason" } : { no_es: "No es de este negocio", inapropiado: "Contenido inapropiado", datos: "Muestra datos personales", spam: "Es publicidad o spam", otro: "Otro motivo" };
       const r0 = k.reportes[0];
-      cuerpoB.push({ type: "note", tone: "warn", t: `${E("Reportada por un vecino", "Reported by a neighbor")}: ${MOT[r0?.reason ?? "otro"]}${r0?.note ? ` · «${r0.note}»` : ""}${k.reportes.length > 1 ? E(` · ${k.reportes.length} reportes`, ` · ${k.reportes.length} reports`) : ""} · ${E("Sigue visible mientras decides.", "It stays visible while you decide.")}` });
-      const unica = (k.foto?.visibles ?? 0) <= 1;
+      cuerpoB.push({ type: "note", tone: "warn", t: `${E("Reportada por un vecino", "Reported by a neighbor")}: ${MOT[r0?.reason ?? "otro"]}${r0?.note ? ` · «${r0.note}»` : ""}${k.reportes.length > 1 ? E(` · ${k.reportes.length} reportes`, ` · ${k.reportes.length} reports`) : ""} · ${k.foto?.oculta ? E("Está oculta (nadie la ve) mientras decides: «Está bien» la publica; «Quitar foto» la deja rechazada.", "It is hidden (nobody sees it) while you decide: “It's fine” publishes it; “Remove photo” leaves it rejected.") : E("Sigue visible mientras decides.", "It stays visible while you decide.")}` });
+      const unica = (k.foto?.visibles ?? 0) <= 1 && !k.foto?.oculta;
       if (unica) cuerpoB.push({ type: "note", tone: "info", icon: "image", t: E("Es la única foto visible: para quitarla, pide al dueño que suba otra.", "It's the only visible photo: to remove it, ask the owner to upload another.") });
       acts = [
         { l: E("Está bien", "It's fine"), v: "action", icon: "check", onClick: () => run(() => decidirMedios(k.id, "mantener", ""), () => ir({ caso: null })) },

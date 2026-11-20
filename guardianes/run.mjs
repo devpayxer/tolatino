@@ -12052,13 +12052,13 @@ const guardianes = {
     const G = "fotosRevisionPrivacidad", S = "apps/web/lib/fotos-segunda-opinion.ts", F = "apps/web/lib/fotos-revision.ts", SIM = "apps/web/lib/compa/modelo-simulador.ts", MC = "apps/web/lib/compa/modelo-claude.ts";
     if (!existsSync(S)) return falla(G, S, 0, "falta lib/fotos-segunda-opinion.ts");
     const s = sinComent(S);
-    const IMPORTA_S = new Set([F]), IMPORTA_F = new Set(["apps/web/app/api/medios/route.ts", "apps/web/lib/barrido.ts", "apps/web/app/(app)/acciones.ts", "apps/web/lib/apelaciones.ts"]);
+    const IMPORTA_S = new Set([F]), IMPORTA_F = new Set(["apps/web/app/api/medios/route.ts", "apps/web/lib/barrido.ts", "apps/web/app/(app)/acciones.ts", "apps/web/lib/apelaciones.ts", "apps/web/lib/fotos-resumen.ts", "apps/web/app/admin/acciones-colas.ts"]);
     const PRIVADAS = /^apps\/web\/app\/api\/(mensajes|ayuda|entrega|repartidor|reclamo|soporte|admin)\//;
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
       const t = sinComent(x);
       if (/["'](?:@\/lib\/|\.\.?\/(?:\.\.\/)*)fotos-segunda-opinion["']/.test(t) && !IMPORTA_S.has(x)) falla(G, x, 0, "la segunda opinión (Claude con visión) solo la usa lib/fotos-revision.ts (subida pública, barrido y capa 3)");
-      if (/["'](?:@\/lib\/|\.\.?\/(?:\.\.\/)*)fotos-revision["']/.test(t) && !IMPORTA_F.has(x)) falla(G, x, 0, "la revisión automática solo la llaman la subida pública, el barrido, el reporte de una foto y la apelación");
+      if (/["'](?:@\/lib\/|\.\.?\/(?:\.\.\/)*)fotos-revision["']/.test(t) && !IMPORTA_F.has(x)) falla(G, x, 0, "la revisión automática solo la llaman la subida pública, el barrido, el reporte de una foto, la apelación, la decisión de una persona en Medios marcados y las cifras (lib/fotos-resumen.ts, solo lectura)");
       if (PRIVADAS.test(x) && /fotos-revision|fotos-segunda-opinion/.test(t)) falla(G, x, 0, "una ruta de fotos privadas nunca pasa por la segunda opinión");
     }
     const so = cuerpoFn(s, "segundaOpinion"), ep = cuerpoFn(s, "esPublica");
@@ -12173,6 +12173,35 @@ const guardianes = {
       for (const mm of t.matchAll(/await subirFoto\(/g)) if (!/\.mensaje\b/.test(t.slice(mm.index, mm.index + 700))) falla(G, x, t.slice(0, mm.index).split("\n").length, "sube con subirFoto y no muestra el mensaje del servidor (retenida o rechazada)");
       if ((t.match(/fetch\("\/api\/medios"/g) ?? []).length > 1 || (/fetch\("\/api\/medios"/.test(t) && !/r\?\.mensaje/.test(t))) falla(G, x, 0, "sube a /api/medios por su cuenta: una sola vez y mostrando el mensaje del servidor");
     }
+  },
+
+  /* fotosRevisionAviso (R3, decisión AJ): quien sube siempre sabe qué pasó, y desde UN solo lugar. (1) lib/subir-foto.ts avisa con el evento «tl:foto-estado»
+     cuando el servidor contesta «revision» o «rechazada» (y a la pantalla le deja una línea corta, no un error); ninguna pantalla sube a /api/medios por su
+     cuenta (todas por subirFoto). (2) app/AvisoFoto.tsx, montada en el layout raíz, es la hoja: etiqueta EN REVISIÓN / NO SE PUBLICÓ, la frase del servidor,
+     la miniatura por la pieza de fotos del visor PRIVADO (nunca una dirección pública ni un <img>) y «Pedir revisión» hacia Mi cuenta › Avisos de moderación.
+     (3) Avisos de moderación pide la revisión con pedirRevisionFoto y lista las fotos con su estado; (4) Fotos y portada del panel avisa cuántas fotos de quien
+     mira no se publicaron con el enlace a (3). Al revés: alreves9urevision. */
+  fotosRevisionAviso() {
+    const G = "fotosRevisionAviso", AV = "apps/web/app/AvisoFoto.tsx", LAY = "apps/web/app/layout.tsx", SF = "apps/web/lib/subir-foto.ts", MOD = "apps/web/app/(app)/cuenta/moderacion/Moderacion.tsx",
+      PAN = "apps/web/app/panel/Panel.tsx", PNL = "apps/web/lib/panel.ts";
+    for (const f of [AV, LAY, SF, MOD, PAN, PNL]) if (!existsSync(f)) return falla(G, f, 0, "falta (el aviso de una foto en revisión o rechazada)");
+    const sf = sinComent(SF), av = sinComent(AV), lay = sinComent(LAY), mod = sinComent(MOD), pan = sinComent(PAN);
+    if (!/window\.dispatchEvent\(new CustomEvent<AvisoFotoDetalle>\(EVENTO_FOTO, \{ detail: detalle \}\)\);/.test(sf) || !/return x\.j \? avisoDeEstado\(x\.j\) : \{ ok: false \};/.test(sf))
+      falla(G, SF, 0, "subirFoto avisa a la hoja (evento tl:foto-estado) cuando el servidor contesta «revision» o «rechazada», para todas las pantallas");
+    if (!/^\s*"use client";/.test(readFileSync(AV, "utf8")) || !/addEventListener\(EVENTO_FOTO, alAvisar\)/.test(av)) falla(G, AV, 0, "AvisoFoto es de cliente y escucha el evento de subir-foto");
+    if (/<img\b/.test(av) || !/fotoFondo\(`\/api\/medios\/revision\/\$\{a\.id\}`/.test(av)) falla(G, AV, 0, "la miniatura sale por fotoFondo del visor privado /api/medios/revision/{id} (nunca un <img> ni una dirección pública)");
+    if (!/<Tag tone=\{rev \? "action" : "danger"\}>/.test(av) || !/role="dialog" aria-modal="true" aria-labelledby="aviso-foto-t"/.test(av)) falla(G, AV, 0, "la hoja usa la etiqueta del sistema (EN REVISIÓN en acción, NO SE PUBLICÓ en peligro) y es un diálogo con nombre");
+    if (!/router\.push\(`\/cuenta\/moderacion\?k=media&id=\$\{encodeURIComponent\(a\.id!\)\}`\)/.test(av) || !/E2\("Pedir revisión", "Ask for a review"\)/.test(av)) falla(G, AV, 0, "«Pedir revisión» lleva a Mi cuenta › Avisos de moderación, a esa foto");
+    if (!/<Vitales \/><AvisoFoto \/>/.test(lay) && !/<AvisoFoto \/>/.test(lay)) falla(G, LAY, 0, "el layout raíz monta la hoja de AvisoFoto (una vez, para todas las pantallas)");
+    for (const x of codigo) {
+      if (!/^apps\/web\/app\/.*\.tsx$/.test(x)) continue;
+      if (/fetch\("\/api\/medios"/.test(sinComent(x))) falla(G, x, 0, "sube a /api/medios por su cuenta: toda pantalla sube por subirFoto (lib/subir-foto.ts), que avisa una foto en revisión o rechazada desde un solo lugar");
+    }
+    if (!/pedirRevisionFoto\(a\.id, x\)/.test(mod) || !/fotos = L\.items\.filter\(\(a\) => a\.fotoRev\)/.test(mod) || !/phIc: true/.test(mod)) falla(G, MOD, 0, "Avisos de moderación lista las fotos sin publicar (con su miniatura y estado) y pide la revisión con pedirRevisionFoto");
+    if (!/d\.sinPublicar > 0/.test(pan) || !/window\.location\.assign\("\/cuenta\/moderacion"\)/.test(pan) || !/const sinPublicar = acc\.soloVer \? 0 :/.test(readFileSync(PNL, "utf8"))) falla(G, PAN, 0, "Fotos y portada avisa cuántas fotos de quien mira no se publicaron, con el enlace a Avisos de moderación");
+    const e = existsSync("pruebas/e2e/rev9u2.cjs") ? readFileSync("pruebas/e2e/rev9u2.cjs", "utf8") : "";
+    for (const k of ["la foto en revisión sale como un ESTADO", "Pedir revisión» lleva a Mi cuenta", "después de pedirla dice que una persona la va a mirar", "Fotos y portada dice cuántas fotos", "las cuatro capas, cada una con su fila", "el gasto del mes contra su tope", "la apelación: la foto (por el visor privado)"])
+      if (!e.includes(k)) falla(G, "pruebas/e2e/rev9u2.cjs", 0, `la prueba de punta a punta no revisa: «${k}»`);
   },
 };
 

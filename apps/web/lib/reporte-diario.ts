@@ -7,6 +7,7 @@ import { BASE_URL, encolar } from "./correo";
 import { marco, type Fila } from "./correo/plantillas";
 import { db, tx } from "./db";
 import { dbAnalisis } from "./db-analisis";
+import { gastoFotosMes, resumenFotos, type ResumenFotos } from "./fotos-resumen";
 
 /* 9g · El reporte diario al fundador (HERRAMIENTAS #31, PLAN §5 guardián «Reporte diario»; fase9-apertura.md §4 9g). A las 7:30 AM de Hazleton, por
    correo y push, a los Admins activos: negocios nuevos de ayer, operaciones, dinero, errores, vueltas atrás, colas vencidas, lo que vigilan los
@@ -31,6 +32,9 @@ export type CuerpoReporte = {
   colas: { cola: string; n: number }[]; soporte_vencidos: number;
   guardianes: { sobreventa: number; compa_pct: number | null; errores_vivos: number };
   pendientes: { paquete: string; es: string; en: string }[];
+  /* R3 · Revisión automática de las fotos públicas (AJ): lo de ayer por capa, el gasto del mes de la segunda opinión y cinco publicadas por los modelos, al azar,
+     para mirar. Solo números y la dirección pública de la foto; nunca quién la subió. Ausente en los reportes de antes. */
+  fotos?: { totales: ResumenFotos["totales"]; porCapa: ResumenFotos["porCapa"]; gastoUsd: number; topeUsd: number; muestra: { mediaId: string; capa: string; url: string }[] } | null;
 };
 
 /* Las cifras de ayer (día de Hazleton). Lectura por la base de análisis; nada de una persona. */
@@ -78,7 +82,14 @@ export async function armarReporte(): Promise<CuerpoReporte> {
     pendientes = (await loQueTeToca()).flatMap((p) => p.pasos.filter((x) => x.estado !== "hecho").map((x) => ({ paquete: p.k, es: x.t.es, en: x.t.en })));
   } catch { pendientes = [{ paquete: "?", es: "No se pudo leer «Lo que te toca» (míralo en Sistema › Apps)", en: "Could not read «Your part» (see System › Apps)" }]; }
   const d = din.rows[0]!;
+  // R3 · Las fotos de ayer (la revisión automática). Si no se pueden leer, el reporte sale igual, sin ese bloque.
+  let fotos: CuerpoReporte["fotos"] = null;
+  try {
+    const [r, g] = await Promise.all([resumenFotos(1, 0), gastoFotosMes()]);
+    fotos = { totales: r.totales, porCapa: r.porCapa, gastoUsd: g.gastadoUsd, topeUsd: g.topeUsd, muestra: r.muestra.map((x) => ({ mediaId: x.mediaId, capa: x.capa, url: x.url })) };
+  } catch { fotos = null; }
   return {
+    fotos,
     dia: dias.rows[0]!.dia, ayer: dias.rows[0]!.ayer,
     negocios: { nuevos: neg.rows[0]!.n, nombres: neg.rows[0]!.nombres ?? [] },
     operaciones: ops.rows[0]!,
@@ -90,6 +101,25 @@ export async function armarReporte(): Promise<CuerpoReporte> {
     guardianes: { sobreventa: sv.rows[0]!.n, compa_pct: cg.rows[0]?.pct ?? null, errores_vivos: err.rows[0]!.vivos },
     pendientes,
   };
+}
+
+/* R3 · El bloque «Fotos» del reporte: lo de ayer (publicadas · retenidas · rechazadas · ocultas), por capa, y el gasto del mes de la segunda opinión. */
+const CAPA_REPORTE: Record<string, [string, string]> = { c1: ["Capa 1 · modelo propio", "Layer 1 · own model"], c2: ["Capa 2 · segunda opinión", "Layer 2 · second opinion"], c3: ["Capa 3 · reportes", "Layer 3 · reports"], c4: ["Capa 4 · confianza", "Layer 4 · trust"], memoria: ["Memoria de contenido", "Content memory"], persona: ["Una persona del equipo", "A team member"] };
+function fotosFilas(f: NonNullable<CuerpoReporte["fotos"]>, E: (x: string, y: string) => string): Fila[] {
+  const t = f.totales, usd2 = (n: number) => `$${n.toFixed(2)}`;
+  return [
+    [E("Fotos de ayer (pub. · ret. · rech. · ocultas)", "Yesterday’s photos (pub. · held · rej. · hidden)"), `${t.publicadas} · ${t.retenidas} · ${t.rechazadas} · ${t.ocultadas}`, true],
+    ...f.porCapa.map((x): Fila => { const c = CAPA_REPORTE[x.capa] ?? [x.capa, x.capa]; return [`   ${E(c[0], c[1])}`, `${x.publicadas} · ${x.retenidas} · ${x.rechazadas} · ${x.ocultadas}`]; }),
+    [E("Fotos · segunda opinión, gasto del mes", "Photos · second opinion, spend this month"), f.topeUsd > 0 ? `${usd2(f.gastoUsd)} ${E("de", "of")} ${usd2(f.topeUsd)}` : E("apagada (tope en $0.00)", "off (cap at $0.00)")],
+  ];
+}
+/* Las cinco fotos al azar del reporte, como miniaturas con su enlace (el correo) en el idioma de quien lo recibe. */
+function miniaturasReporte(b: CuerpoReporte, es: boolean) {
+  const f = b.fotos?.muestra ?? [];
+  if (!f.length) return undefined;
+  const base = BASE_URL();
+  return { t: es ? "Para mirar: cinco fotos publicadas por los modelos, al azar" : "To look at: five photos published by the models, at random",
+    fotos: f.map((x, i) => ({ l: `${es ? "Foto" : "Photo"} ${i + 1} · ${(CAPA_REPORTE[x.capa] ?? [x.capa, x.capa])[es ? 0 : 1]}`, href: `${base}${x.url}`, src: `${base}${x.url.replace(".jpg", ".w320.webp")}` })) };
 }
 
 /* El correo (y el texto del push) en el idioma de quien lo recibe. */
@@ -105,6 +135,7 @@ export function textoReporte(b: CuerpoReporte, es: boolean) {
     [E("Vueltas atrás", "Rollbacks"), b.vueltas ? String(b.vueltas.n) : E("sin dato", "no data")],
     [E("Último despliegue", "Last deploy"), b.despliegue ? `${b.despliegue.commit} · ${b.despliegue.result === "ok" ? E("sirvió", "served") : b.despliegue.result === "vuelta_atras" ? E("volvió atrás", "rolled back") : E("no salió", "failed")} · ${b.despliegue.entorno}` : E("ninguno anotado", "none recorded")],
     [E("Colas vencidas", "Overdue queues"), b.colas.length ? b.colas.map((x) => `${x.cola} ${x.n}`).join(" · ") : E("ninguna", "none")], [E("Soporte fuera de plazo", "Support past deadline"), String(b.soporte_vencidos)],
+    ...(b.fotos ? fotosFilas(b.fotos, E) : []),
     [E("Guardianes en vivo", "Live guardians"), E(`sobreventa ${b.guardianes.sobreventa} · errores sin revisar ${b.guardianes.errores_vivos} · El Compa ${b.guardianes.compa_pct ?? "—"} % del tope`,
       `overselling ${b.guardianes.sobreventa} · unreviewed errors ${b.guardianes.errores_vivos} · El Compa ${b.guardianes.compa_pct ?? "—"} % of the cap`)],
   ];
@@ -115,7 +146,7 @@ export function textoReporte(b: CuerpoReporte, es: boolean) {
 /* El correo del reporte: las cifras y, en su propio bloque, «lo que necesita de ti». */
 function correoReporte(b: CuerpoReporte, es: boolean) {
   const t = textoReporte(b, es), subject = es ? `Tu reporte de hoy · ${b.dia}` : `Your report for today · ${b.dia}`;
-  const { html, text } = marco({ es, pre: t.resumen, titulo: subject, intro: t.resumen, filas: t.filas,
+  const { html, text } = marco({ es, pre: t.resumen, titulo: subject, intro: t.resumen, filas: t.filas, miniaturas: miniaturasReporte(b, es),
     nota: `${es ? "Lo que necesita de ti" : "What needs you"}: ${t.pend.join(" · ")}`, cta: { l: es ? "Abrir el Super Admin" : "Open the Super Admin", href: `${BASE_URL()}/admin/analitica?tab=rep` } });
   return { subject, html, text };
 }

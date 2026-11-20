@@ -20,7 +20,7 @@ const LINE = "1px solid rgba(11,14,18,.07)";
 type Fn = () => void;
 
 export type Fila = {
-  t: string; s?: string; x?: string; ic?: string; ibg?: string; ifg?: string; ph?: string | null; ini?: string; date?: { dd: string; mo: string }; dbg?: string; dfg?: string; al?: "center" | "flex-start"; tag?: [string, string] | null;
+  t: string; s?: string; x?: string; ic?: string; ibg?: string; ifg?: string; ph?: string | null; phIc?: boolean; ini?: string; date?: { dd: string; mo: string }; dbg?: string; dfg?: string; al?: "center" | "flex-start"; tag?: [string, string] | null;
   v?: string; vs?: string; chev?: boolean; on?: Fn; acts?: [string, string, Fn][]; tog?: boolean; onTog?: Fn; key?: string;
 };
 export type Campo = {
@@ -214,7 +214,10 @@ function Pieza({ b, M }: { b: Bloque; M: boolean }): ReactNode {
       <div style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", overflow: "hidden" }}>
         {b.rows.map((r, i) => (
           <div key={r.key ?? i} role={r.on ? "link" : undefined} onClick={r.on} {...tec(r.on)} style={{ padding: "13px 16px", borderTop: i ? LINE : "none", display: "flex", gap: 12, alignItems: r.al ?? "center", cursor: r.on ? "pointer" : "default", background: "var(--tl-white)" }}>
-            {r.ph !== undefined && <span style={{ width: 46, height: 46, borderRadius: 13, background: r.ph ? `${fotoFondo(r.ph, 46)} center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none", display: "grid", placeItems: "center", font: "800 13px Sora,sans-serif", color: "var(--tl-ink)" }}>{r.ph ? "" : r.ini ?? ""}</span>}
+            {r.ph !== undefined && (r.phIc
+              /* R3 · Una foto privada (el visor de la revisión): si no carga, queda el marcador del sistema (el ícono de foto) y no una imagen rota. */
+              ? <span style={{ position: "relative", width: 46, height: 46, borderRadius: 13, backgroundColor: "var(--tl-photo-bg)", flex: "none", display: "grid", placeItems: "center", overflow: "hidden" }}><Icon name="image" size={18} color="rgba(11,14,18,.6)" />{r.ph ? <span aria-hidden style={{ position: "absolute", inset: 0, background: `${fotoFondo(r.ph, 46)} center/cover` }} /> : null}</span>
+              : <span style={{ width: 46, height: 46, borderRadius: 13, background: r.ph ? `${fotoFondo(r.ph, 46)} center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none", display: "grid", placeItems: "center", font: "800 13px Sora,sans-serif", color: "var(--tl-ink)" }}>{r.ph ? "" : r.ini ?? ""}</span>)}
             {r.date && <span style={{ width: 48, height: 52, borderRadius: 13, background: r.dbg ?? "var(--tl-paper)", color: r.dfg ?? "var(--tl-ink)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: "none" }}><span style={{ font: `700 8.5px ${MONO}`, letterSpacing: ".12em" }}>{r.date.mo}</span><span style={{ marginTop: 2, font: "800 19px/1 Sora,sans-serif" }}>{r.date.dd}</span></span>}
             {r.ic && <span style={{ width: 40, height: 40, borderRadius: 12, background: r.ibg ?? "rgba(75,55,245,.1)", display: "grid", placeItems: "center", flex: "none" }}><Icon name={r.ic} size={18} color={r.ifg ?? "var(--tl-action)"} /></span>}
             <div style={{ flex: 1, minWidth: 0 }}>

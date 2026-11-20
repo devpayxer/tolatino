@@ -3,6 +3,7 @@ import { cfgSql } from "./config";
 import type { PoolClient } from "pg";
 import { avisar } from "./avisos";
 import { db, tx } from "./db";
+import { MOTIVO_TEXTO, type MotivoRechazo } from "./fotos-decision";
 import { APELABLE, MAX_APELACION, MIN_APELACION, type Apelable } from "./moderacion-comun";
 import { SANCIONES, type Sancion } from "./sanciones";
 
@@ -50,39 +51,47 @@ export async function aplicarSancion(c: Q, s: { userId: string; ciudad: string |
 export type AvisoMod = {
   k: Apelable; id: string; que: Bi; motivo: string | null; at: string; texto: string; foto: string | null; auto: boolean; href: string | null;
   efecto: Bi | null; hasta: string | null; vence: string; puedeApelar: boolean;
+  /* R3 · Una foto que la revisión automática no publicó: su estado y el motivo en los dos idiomas (la pantalla elige). null = lo demás. */
+  fotoRev: { estado: "retenida" | "rechazada" | "oculta"; motivo: Bi | null } | null;
   apelacion: { numero: string; estado: "open" | "upheld" | "lifted"; texto: string; at: string; decision: string | null; decidida: string | null } | null;
 };
-type Fila = { k: Apelable; id: string; motivo: string | null; at: string; texto: string; foto: string | null; auto: boolean; href: string | null; kind: Sancion | null; hasta: string | null };
+type Fila = { k: Apelable; id: string; motivo: string | null; at: string; texto: string; foto: string | null; auto: boolean; href: string | null; kind: Sancion | null; hasta: string | null; fm?: string | null };
 const DIAS = cfgSql("com_apelar_dias"); // 5i · valor de Configuración (lib/config.ts)
 const FILAS = (filtro: string) => `
-  select 'com_post' as k, p.id::text as id, p.hidden_reason as motivo, p.hidden_at as at, left(p.body, 280) as texto, null::text as foto, p.hidden_by = 'auto' as auto, '/comunidad/p/' || p.id as href, null::text as kind, null::timestamptz as hasta
+  select 'com_post' as k, p.id::text as id, p.hidden_reason as motivo, p.hidden_at as at, left(p.body, 280) as texto, null::text as foto, p.hidden_by = 'auto' as auto, '/comunidad/p/' || p.id as href, null::text as kind, null::timestamptz as hasta, null::text as fm
     from com_posts p where p.author_user_id = $1 and p.status = 'hidden' and p.hidden_at > now() - interval '90 days' ${filtro.replace(/\$K/g, "'com_post'").replace(/\$X/g, "p.id::text")}
   union all
-  select 'com_comment', c.id::text, c.hidden_reason, c.hidden_at, left(c.body, 280), null, c.hidden_by = 'auto', '/comunidad/p/' || c.post_id, null, null
+  select 'com_comment', c.id::text, c.hidden_reason, c.hidden_at, left(c.body, 280), null, c.hidden_by = 'auto', '/comunidad/p/' || c.post_id, null, null, null
     from com_comments c where c.author_user_id = $1 and c.status = 'hidden' and c.hidden_at > now() - interval '90 days' ${filtro.replace(/\$K/g, "'com_comment'").replace(/\$X/g, "c.id::text")}
   union all
-  select 'media', m.id::text, m.removed_note, m.removed_at, coalesce(left(p.body, 120), ''), m.url, false, '/comunidad/p/' || p.id, null, null
+  select 'media', m.id::text, m.removed_note, m.removed_at, coalesce(left(p.body, 120), ''), m.url, false, '/comunidad/p/' || p.id, null, null, null
     from media m join com_posts p on m.owner_kind = 'com_post' and p.id::text = m.owner_id
    where m.uploaded_by = $1 and m.status = 'removed' and m.removed_reason = 'admin' and m.removed_at > now() - interval '90 days' ${filtro.replace(/\$K/g, "'media'").replace(/\$X/g, "m.id::text")}
   union all
   -- AJ · La foto que la revisión automática retuvo, rechazó u ocultó por reportes («Pedir revisión»): sin dirección pública (está en la llave privada).
-  select 'media', m.id::text, m.rev_nota, m.rev_at, '', null, m.rev_capa = 'c3', null, null, null
+  -- R3 · Su miniatura sale del visor privado (/api/medios/revision/{id}: solo quien la subió) y «fm» lleva su estado: status:motivo:capa.
+  select 'media', m.id::text, m.rev_nota, m.rev_at, '', '/api/medios/revision/' || m.id, m.rev_capa = 'c3', null, null, null, m.status || ':' || coalesce(m.rev_motivo, '') || ':' || coalesce(m.rev_capa, '')
     from media m
    where m.uploaded_by = $1 and m.rev_llave is not null and m.rev_at is not null and m.purged_at is null and (m.status = 'review' or (m.status = 'removed' and m.removed_reason = 'revision'))
      and m.rev_at > now() - interval '90 days' ${filtro.replace(/\$K/g, "'media'").replace(/\$X/g, "m.id::text")}
   union all
-  select 'event', e.id::text, coalesce(e.hidden_reason, e.review_note), coalesce(e.hidden_at, e.reviewed_at), e.title->>'es', null, false, '/panel/' || e.business_id || '/eventos?det=evt:' || e.id, null, null
+  select 'event', e.id::text, coalesce(e.hidden_reason, e.review_note), coalesce(e.hidden_at, e.reviewed_at), e.title->>'es', null, false, '/panel/' || e.business_id || '/eventos?det=evt:' || e.id, null, null, null
     from events e join business_members bm on bm.business_id = e.business_id and bm.kind = 'owner' and bm.status = 'active' and bm.user_id = $1
    where (e.hidden_at is not null or e.status = 'rejected') and coalesce(e.hidden_at, e.reviewed_at) > now() - interval '90 days' ${filtro.replace(/\$K/g, "'event'").replace(/\$X/g, "e.id::text")}
   union all
-  select 'evt_org', o.business_id, o.blocked_reason, o.blocked_at, b.name, null, false, '/panel/' || o.business_id || '/eventos', null, null
+  select 'evt_org', o.business_id, o.blocked_reason, o.blocked_at, b.name, null, false, '/panel/' || o.business_id || '/eventos', null, null, null
     from event_organizers o join businesses b on b.id = o.business_id join business_members bm on bm.business_id = o.business_id and bm.kind = 'owner' and bm.status = 'active' and bm.user_id = $1
    where o.blocked_at is not null ${filtro.replace(/\$K/g, "'evt_org'").replace(/\$X/g, "o.business_id")}
   union all
-  select 'sanction', s.id::text, s.reason, s.starts_at, '', null, false, null, s.kind, s.ends_at
+  select 'sanction', s.id::text, s.reason, s.starts_at, '', null, false, null, s.kind, s.ends_at, null
     from sanctions s where s.target_kind = 'user' and s.target_id = $1::text and s.lifted_at is null and (s.ends_at is null or s.ends_at > now())
      and s.kind in ('adv', 'mute7', 'nopub', 'susp14', 'ban') and s.starts_at > now() - interval '90 days' ${filtro.replace(/\$K/g, "'sanction'").replace(/\$X/g, "s.id::text")}`;
 
+const QUE_FOTO: Record<NonNullable<AvisoMod["fotoRev"]>["estado"], Bi> = {
+  retenida: { es: "Tu foto está en revisión", en: "Your photo is under review" },
+  oculta: { es: "Ocultamos tu foto mientras la revisamos", en: "We hid your photo while we review it" },
+  rechazada: { es: "No publicamos tu foto", en: "We did not publish your photo" },
+};
 async function armar(userId: string, F: Fila[]): Promise<AvisoMod[]> {
   if (!F.length) return [];
   const [A, dias] = await Promise.all([
@@ -95,10 +104,13 @@ async function armar(userId: string, F: Fila[]): Promise<AvisoMod[]> {
   return F.map((x) => {
     const ap = A.rows.find((a) => a.k === x.k && a.id === x.id) ?? null, vence = new Date(new Date(x.at).getTime() + d * 86_400_000).toISOString();
     const s = x.kind ? SANCIONES[x.kind] : null;
+    // fm = «status:motivo:capa» de una foto de la revisión automática: rechazada (removed), oculta por reportes (review · c3) o retenida (review).
+    const [fst, fmot, fcapa] = (x.fm ?? "").split(":");
+    const fotoRev: AvisoMod["fotoRev"] = x.fm ? { estado: fst === "removed" ? "rechazada" : fcapa === "c3" ? "oculta" : "retenida", motivo: fst === "removed" && fmot && fmot in MOTIVO_TEXTO ? MOTIVO_TEXTO[fmot as MotivoRechazo] : null } : null;
     return {
-      k: x.k, id: x.id, que: x.k === "sanction" && s ? { es: s.es, en: s.en } : { es: APELABLE[x.k].oculto.es, en: APELABLE[x.k].oculto.en }, motivo: x.motivo, at: new Date(x.at).toISOString(),
+      k: x.k, id: x.id, que: x.k === "sanction" && s ? { es: s.es, en: s.en } : fotoRev ? QUE_FOTO[fotoRev.estado] : { es: APELABLE[x.k].oculto.es, en: APELABLE[x.k].oculto.en }, motivo: x.motivo, at: new Date(x.at).toISOString(),
       texto: x.texto, foto: x.foto, auto: x.auto, href: x.href, efecto: s ? s.com : null, hasta: x.hasta ? new Date(x.hasta).toISOString() : null, vence,
-      puedeApelar: !ap && Date.now() < new Date(vence).getTime(),
+      puedeApelar: !ap && Date.now() < new Date(vence).getTime(), fotoRev,
       apelacion: ap ? { numero: ap.numero, estado: ap.estado, texto: ap.texto, at: new Date(ap.at).toISOString(), decision: ap.decision, decidida: ap.decidida ? new Date(ap.decidida).toISOString() : null } : null,
     };
   });

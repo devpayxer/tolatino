@@ -317,8 +317,12 @@ export async function caso(s: Staff, id: string) {
     return { ...base, negocio, video: v ? { src: v.src, poster: v.poster, segundos: Number(v.segundos), status: v.status, pro: v.plan === "pro" } : null };
   }
   if (q.queue === "medios") {
-    const m = (await db().query<{ url: string; status: string; visibles: number }>(
-      `select m.url, m.status, (select count(*)::int from media x where x.owner_kind = 'business' and x.owner_id = m.owner_id and x.status = 'visible') as visibles
+    // R3 · Una foto que la revisión automática ocultó (capa 3, reportes) ya no tiene dirección pública: se ve por el visor privado /api/medios/revision/{id}
+    // (esta persona del equipo la ve porque el caso está abierto; queda en la auditoría) y decidir la publica o la deja rechazada (decidirMedios).
+    const m = (await db().query<{ url: string; status: string; visibles: number; oculta: boolean }>(
+      `select case when m.rev_llave is not null and m.status in ('review', 'removed') then '/api/medios/revision/' || m.id::text else m.url end as url, m.status,
+              (select count(*)::int from media x where x.owner_kind = 'business' and x.owner_id = m.owner_id and x.status = 'visible') as visibles,
+              (m.rev_llave is not null and m.status in ('review', 'removed')) as oculta
          from media m where m.id = $1::uuid`, [q.subject_id])).rows[0];
     const reps = (await db().query<{ reason: string; note: string | null; at: string }>(
       `select reason, note, created_at as at from photo_reports where media_id = $1::uuid and status = 'open' order by created_at`, [q.subject_id])).rows;

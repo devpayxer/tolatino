@@ -73,7 +73,7 @@ export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar, d
     for (const f of Array.from(files).slice(0, MAX_FOTOS - fotos.length)) {
       const r = await subirFoto(f);
       if (r.ok && r.id && r.url) setFotos((L) => (L.length < MAX_FOTOS ? [...L, { id: r.id!, url: r.url! }] : L));
-      else { setErr(r.mensaje ?? { es: "No se pudo subir la foto.", en: "The photo could not be uploaded." }); break; }
+      else { if (r.estado !== "revision") setErr(r.mensaje ?? { es: "No se pudo subir la foto.", en: "The photo could not be uploaded." }); break; }
     }
     setSubiendo(false);
   };

@@ -33,7 +33,7 @@ export function AceptarEquipo({ es, codigo, tel, nombre, v, error }: { es: boole
     B.push({ type: "photos", k: E2("TU FOTO", "YOUR PHOTO"), count: `${foto ? 1 : 0}/1`, cols: 3, items: foto ? [{ bg: fotoFondo(foto.url, 240), onClick: () => setFoto(null) }] : [], addL: subiendo ? E2("Subiendo…", "Uploading…") : E2("Subir foto", "Upload photo"),
       onAdd: foto || subiendo ? undefined : () => {
         const i = document.createElement("input"); i.type = "file"; i.accept = "image/*";
-        i.onchange = async () => { const f = i.files?.[0]; if (!f) return; setSubiendo(true); const r = await subirFoto(f); setSubiendo(false); if (r.ok && r.id && r.url) setFoto({ id: r.id, url: r.url }); else setErr(r.mensaje ? (es ? r.mensaje.es : r.mensaje.en) : E2("No se pudo subir la foto.", "Could not upload the photo.")); };
+        i.onchange = async () => { const f = i.files?.[0]; if (!f) return; setSubiendo(true); const r = await subirFoto(f); setSubiendo(false); if (r.ok && r.id && r.url) setFoto({ id: r.id, url: r.url }); else if (r.estado !== "revision") setErr(r.mensaje ? (es ? r.mensaje.es : r.mensaje.en) : E2("No se pudo subir la foto.", "Could not upload the photo.")); };
         i.click();
       } });
     B.push({ type: "field", k: E2("TUS PALABRAS · SALEN EN «QUIÉN ESTÁ DETRÁS»", "YOUR WORDS · SHOWN IN “WHO IS BEHIND IT”"), val: bio, onChange: (x: string) => setBio(x), ph: E2("Cuenta cómo empezaste y qué haces mejor.", "Say how you started and what you do best."), max: 280, area: true, rows: 3, count: `${bio.length}/280` });

@@ -1,10 +1,10 @@
 // Prueba al revés de los guardianes de la revisión automática de las fotos públicas (decisión AJ, 20 nov): fotosRevisionAntesDePublicar,
-// fotosRevisionPrivacidad, fotosRevisionFalloCerrado, fotosRevisionAuditada y fotosRevisionSinReintento. Se inyecta el defecto, el guardián debe
+// fotosRevisionPrivacidad, fotosRevisionFalloCerrado, fotosRevisionAuditada, fotosRevisionSinReintento y fotosRevisionAviso (R3). Se inyecta el defecto, el guardián debe
 // fallar con SU mensaje ([guardián]); se restaura. La prueba pura de la decisión es fotos9urevision; la de punta a punta, rev9u.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
-const A = 'fotosRevisionAntesDePublicar', P = 'fotosRevisionPrivacidad', C = 'fotosRevisionFalloCerrado', U = 'fotosRevisionAuditada', S = 'fotosRevisionSinReintento';
+const A = 'fotosRevisionAntesDePublicar', P = 'fotosRevisionPrivacidad', C = 'fotosRevisionFalloCerrado', U = 'fotosRevisionAuditada', S = 'fotosRevisionSinReintento', V = 'fotosRevisionAviso';
 const RUTA = 'apps/web/app/api/medios/route.ts', F = 'apps/web/lib/fotos-revision.ts', SO = 'apps/web/lib/fotos-segunda-opinion.ts', D = 'apps/web/lib/fotos-decision.ts';
 const casos = [
   // (a) Guardar en lo público antes de decidir, devolver la dirección de una no publicada, guardar una retenida bajo n/, publicar lo retenido,
@@ -58,6 +58,19 @@ const casos = [
   [S, RUTA, '{ status: v.d.estado === "rechazada" ? HTTP_RECHAZADA : HTTP_RETENIDA }', '{ status: 400 }'],
   [S, 'apps/web/lib/subir-foto.ts', 'if (x.st === 0 || x.st === 400) x = await una(', 'if (x.st === 0 || x.st === 400 || x.st === 202) x = await una('],
   [S, 'apps/web/app/(app)/cuenta/perfil/Perfil.tsx', 'ui.toast(up?.mensaje ? (es ? up.mensaje.es : up.mensaje.en) : E2("No se pudo subir la foto.", "Could not upload the photo."));', 'ui.toast(E2("No se pudo subir la foto.", "Could not upload the photo."));'],
+  // (f) R3 · Quien sube siempre sabe qué pasó, desde un solo lugar: la hoja que no se monta, el evento que no se manda, una pantalla que sube por su cuenta,
+  //     la miniatura por una dirección pública, «Pedir revisión» que no lleva a ningún lado, Avisos de moderación sin pedir la revisión, el panel sin su aviso,
+  //     o la prueba que deja de mirarlo.
+  [V, 'apps/web/app/layout.tsx', '<Vitales /><AvisoFoto />', '<Vitales />'],
+  [V, 'apps/web/lib/subir-foto.ts', '  window.dispatchEvent(new CustomEvent<AvisoFotoDetalle>(EVENTO_FOTO, { detail: detalle }));\n', ''],
+  [V, 'apps/web/lib/subir-foto.ts', 'return x.j ? avisoDeEstado(x.j) : { ok: false };', 'return x.j ?? { ok: false };'],
+  [V, 'apps/web/app/AvisoFoto.tsx', "fotoFondo(`/api/medios/revision/${a.id}`, 64)", "fotoFondo(`/medios/n/${a.id}.jpg`, 64)"],
+  [V, 'apps/web/app/AvisoFoto.tsx', 'router.push(`/cuenta/moderacion?k=media&id=${encodeURIComponent(a.id!)}`)', 'router.push("/cuenta")'],
+  [V, 'apps/web/app/AvisoFoto.tsx', '<Tag tone={rev ? "action" : "danger"}>', '<Tag tone="danger">'],
+  [V, 'apps/web/app/(app)/publica/PasosFH.tsx', 'const r = await subirFoto(f).catch(() => null);\n      setSubiendo', 'const r = await fetch("/api/medios", { method: "POST" }).then((x) => x.json()).catch(() => null);\n      setSubiendo'],
+  [V, 'apps/web/app/(app)/cuenta/moderacion/Moderacion.tsx', 'a.fotoRev ? await pedirRevisionFoto(a.id, x).catch(() => null) : await apelarAccion(a.k, a.id, x).catch(() => null)', 'await apelarAccion(a.k, a.id, x).catch(() => null)'],
+  [V, 'apps/web/app/panel/Panel.tsx', 'cta: E2("Verlas", "See them"), onCta: () => window.location.assign("/cuenta/moderacion") });', '});'],
+  [V, 'pruebas/e2e/rev9u2.cjs', "'la foto en revisión sale como un ESTADO (etiqueta EN REVISIÓN y la frase del servidor)'", "'la foto en revisión sale'"],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

@@ -149,6 +149,11 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
   const st = estado(horas.rows, { dow: b.dow, hm: b.hm }, b.open, lang, null, b.closed_today, !!b.temp_until);
   // Fotos que quitó To'Latino (con su motivo): el dueño lo ve en Fotos y portada.
   const quitadas = (await db().query<{ note: string | null }>(`select removed_note as note from media where owner_kind = 'business' and owner_id = $1 and status = 'removed' and removed_reason = 'admin' order by removed_at desc limit 10`, [id])).rows;
+  // R3 · Revisión automática de las fotos (AJ): cuántas fotos de QUIEN MIRA no se publicaron (retenidas, rechazadas u ocultas por reportes; el mismo criterio
+  // de Mi cuenta › Avisos de moderación). Una foto retenida no pertenece al negocio hasta que se publica: aquí solo se avisa con el número y el enlace.
+  const sinPublicar = acc.soloVer ? 0 : (await db().query<{ n: number }>(
+    `select count(*)::int as n from media where uploaded_by = $1 and rev_llave is not null and rev_at is not null and purged_at is null
+        and (status = 'review' or (status = 'removed' and removed_reason = 'revision')) and rev_at > now() - interval '90 days'`, [acc.yo.id])).rows[0]?.n ?? 0;
   // Reseñas (2g): cifras para «Tu página › Reseñas» y la regla «Responde tus reseñas críticas» (≤ 3 ★ sin respuesta).
   const rs = (await db().query<{ n: number; avg: number | null; norep: number; crit: number }>(
     `select count(*)::int as n, round(avg(stars)::numeric, 1)::float as avg, count(*) filter (where reply is null)::int as norep,
@@ -190,6 +195,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
   return {
     anuncios, especiales: esp, feriados: fer, avisosOff: avOff,
     resenas: rs, novedades: nv, cupones: cu,
+    sinPublicar,
     id, name: b.name, cat: b.cat, city: b.city, ciudad: b.ciudad, ciudadAbierta: b.ciudad_on, kind: acc.kind, partes: acc.partes, pro, verified: b.verified,
     // 9n-23 · Vista del equipo (solo lectura): el aviso arriba, «Guardar» apagado y la dirección leída aquí (la pantalla de Dirección y mapa la pide
     // con una acción que exige ser miembro del negocio).
