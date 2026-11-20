@@ -8207,6 +8207,8 @@ const guardianes = {
       const n = /^\/n\/([^/?#]+)/.exec(pa.ruta)?.[1];
       if (n && !ab.includes(n)) falla(G, P, 0, `la pantalla ${pa.id} (${pa.ruta}) no tiene a ${n} en «abiertos»: de noche la captura sale cerrada y no es la aprobada`);
       if (/^\/panel/.test(pa.ruta) && !ab.length) falla(G, P, 0, `la pantalla ${pa.id} (panel) sin negocios en «abiertos»`);
+      // 20 nov · El Inicio pinta «Abierto ahora» (cuatro tarjetas en el escritorio): con menos de cuatro negocios fijados abiertos, de noche entra otro y la captura se corre.
+      if (pa.ruta === "/" && ab.length < 4) falla(G, P, 0, `la pantalla ${pa.id} (Inicio) pinta cuatro «Abierto ahora»: «abiertos» necesita al menos cuatro negocios o de noche la captura es otra`);
     }
     if (!/cfg\.abiertos/.test(c) || !/finally \{ devolverHorario\(\); \}/.test(c)) falla(G, C, 0, "correr.mjs no abre los negocios de «abiertos» antes de capturar o no devuelve su horario al final");
   },

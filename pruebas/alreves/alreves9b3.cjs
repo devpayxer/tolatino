@@ -61,7 +61,9 @@ const casos = [
   ['esperaQueEspera', 'pruebas/e2e/cit3c.cjs', "await hasta(() => op(T.numero, 'status_detail') === 'live', 'llegó: en atención (en la base)');", "await d.getByText(/en atención/).first().waitFor();"],
   // tarjetaPropia: fie4v deja de guardarle su tarjeta a Marisol y comprueba el depósito retenido igual
   // capturaSinHora: la ficha de Sabor Dominicano se captura sin abrir el negocio (de noche sale cerrada)
-  ['capturaSinHora', 'pruebas/visual/pantallas.json', '"abiertos": ["sabor-dominicano"]', '"abiertos": []'],
+  ['capturaSinHora', 'pruebas/visual/pantallas.json', '"abiertos": ["sabor-dominicano", "barberia-el-primo", "bodega-don-pepe", "clinica-esperanza"]', '"abiertos": []'],
+  // 20 nov · el Inicio pinta cuatro «Abierto ahora»: con tres fijados, de noche entra otro negocio y la captura se corre
+  ['capturaSinHora', 'pruebas/visual/pantallas.json', '"abiertos": ["sabor-dominicano", "barberia-el-primo", "bodega-don-pepe", "clinica-esperanza"]', '"abiertos": ["sabor-dominicano", "barberia-el-primo", "bodega-don-pepe"]'],
   // libroEnAyudantes: sinTopeDeAyuda vuelve a correr los mensajes de El Compa sin el modo réplica
   ['libroEnAyudantes', 'pruebas/lib/negocio-nuevo.cjs', "set session_replication_role = replica; update compa_messages", "update compa_messages"],
   // veinticuatroHoras: pedir.ts vuelve a contar el último pedido desde la medianoche, o una prueba vuelve a «00:00–23:59»
