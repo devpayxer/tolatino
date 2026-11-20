@@ -56,8 +56,8 @@ const casos = [
   ['pagoAlBancoMartes', WH, '    case "payout.paid":\n', ''],
   ['pagoAlBancoMartes', M, `    false, '{"es":"Fijo los martes por decisión del fundador.","en":"Fixed on Tuesdays by founder decision."}', null, 950),`, `    true, null, null, 950),`],
   // devolverRepartido: una sola llave para todas las partes; Transacciones vuelve a devolver de un solo cobro
-  ['devolverRepartido', CB, 'idem: `${x.idem}-p${p.id}` });', 'idem: x.idem });'],
-  ['devolverRepartido', TX, 'const r = await devolverOperacion({ opId: o.id, centavos: cents, kinds: KINDS[o.kind]!, por: "admin", actorId: s.id, motivo: String(motivo ?? "").trim(), idem: `adm-${clave}` });', 'const r = await (await import("@/lib/cobros")).devolverPago({ paymentId: o.id, centavos: cents, por: "admin", actorId: s.id, motivo: String(motivo ?? "").trim(), idem: `adm-${clave}` }) as { ok: true; partes: number } | { ok: false; msg: { es: string; en: string } };'],
+  ['devolverRepartido', CB, 'idem: `${x.idem}-p${p.id}` },', 'idem: x.idem },'],
+  ['devolverRepartido', TX, 'const r = await devolverOperacion({ opId: o.id, centavos: cents, kinds: KINDS[o.kind]!, por: "admin", actorId: s.id, motivo: String(motivo ?? "").trim(), idem: `adm-${clave}` },', 'const r = await devolverUna({ opId: o.id, centavos: cents, kinds: KINDS[o.kind]!, por: "admin", actorId: s.id, motivo: String(motivo ?? "").trim(), idem: `adm-${clave}` },'],
   // contratoCubreLaPasarela (ampliado): el contrato vuelve a correr sin el doble de la base, o deja de probar la huella
   ['contratoCubreLaPasarela', CS, 'const clientes = new Map<string, string | null>();', 'const otros = new Map<string, string | null>();'],
   ['contratoCubreLaPasarela', CP, "const hu = await pasarela.huella('pm_card_visa_123');", "const hu = null;"],

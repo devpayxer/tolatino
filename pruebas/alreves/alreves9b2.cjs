@@ -37,6 +37,9 @@ const casos = [
   ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'DPkg::Lock::Timeout "300";', 'DPkg::Lock::Timeout "0";'],
   ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'reintenta 420 bash "$RUNNER_TEMP/instala.sh" psmisc ffmpeg', 'reintenta 420 sudo apt-get install -y -qq psmisc ffmpeg'],
   ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'timeout -k 15 "$t" "$@" && return 0;', 'timeout "$t" "$@" && return 0;'],
+  ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'Acquire::ForceIPv4 "true";', 'Acquire::ForceIPv4 "false";'],
+  ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', '> "$RUNNER_TEMP/playwright.log") || {', '> /dev/null) || {'],
+  ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'wait $! || { echo "--- apt falló; lo último que dijo:" >&2; tail -n 25 "$L" >&2; exit 1; }', 'wait $!'],
   ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'sleep 5; timeout -k 15 "$t" "$@"; }', 'sleep 5; "$@"; }'],
   // 20 nov · decisión AG (reintentoQueSeVe): repetir sin tope, repetir las al revés, callar la inestable, un carril sin --reintentar
   ['reintentoQueSeVe', 'pruebas/correr.mjs', 'TOPE_INESTABLES = 3, inestables = [];', 'TOPE_INESTABLES = 99, inestables = [];'],
