@@ -5790,3 +5790,10 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   tienen una caja de 44 de alto (se ven igual; ocupan un poco más de alto), y en las reseñas «Útil» es una pastilla de 44 y «Reportar» se toca
   mejor. En el escritorio, el buscador de arriba es 5 px más alto. Qué mirar: la ficha de una barbería y de Sabor Dominicano (Reseñas y la
   columna de reserva) en el teléfono y en la computadora.
+- **9t · Lo que cazó la confirmación del 20 nov (44685003383), segunda vuelta:** cuatro fallos, todos de las pruebas o del iPad; ninguno
+  cambia lo que ves, salvo uno pequeño:
+  - **Foto de más de 12 MB en Mensajes:** si una foto no se pudo achicar y pesa más de 12 MB, la app avisa «La foto pesa demasiado (máximo
+    12 MB)» sin intentar subirla (antes, en un iPad, podía salir «No llegó la foto»). Qué mirar: nada en el día a día; las fotos normales
+    se achican solas.
+  - El resto era de las pruebas: los días de un patrocinio de evento se cuentan como los cuenta la base (por calendario), el alta de la cuenta
+    se mide con el ancho de cada teléfono (no 390 fijo) y la ficha que el equipo ve «como cliente» en el iPad. Cada clase deja su guardián.

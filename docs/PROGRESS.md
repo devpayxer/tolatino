@@ -22,6 +22,12 @@ _Actualizado: 14 nov 2026 (9o hecho en su rama: producción como código y ensay
 ## Estado
 - **9t · 24 px en el escritorio y 44 en el resto (20 nov):** AA 2.5.8 exigido a 1440 en las pantallas clave y el Super Admin (a11y9c); buscador del
   escritorio a 24 (TACTIL `T24`), reseñas «Útil/Editar/Reportar» a 44, 82 controles con forma de enlace (botones y role=link/button) a `min-h-11`; guardián botonTextoConAlto (lee la etiqueta entera, aunque el onClick lleve «=>»).
+- **9t · confirmación 44685003383 (20 nov) cazó 4 más, todas de pruebas o del iPad:** (1) pat003 esperaba los días de un patrocinio por la duración
+  y ponía «ahora + 7 días» (el producto termina a medianoche) → fixture como el producto y `patrocinio_dias_comprados` (patrocinioDiasPorCalendario
+  ahora también mira pruebas/e2e); (2) vec9m medía contra 390 fijo → contra el viewport del dispositivo; (3) el goto de WebKit sin «load»
+  devolvía null → devuelve la respuesta del documento (gotoDevuelveRespuesta; neg9n20 en el iPad); (4) el tope de 12 MB se probaba con un fetch
+  de 13 MB armado en WebKit, que llega a medias (400) → `pruebas/lib/subida-cruda.cjs` desde Node (msg9t, dm9t) y la app avisa antes de subir
+  (`TOPE_FOTO` en `lib/subir-foto.ts`; topeFotoSinNavegador). alreves9tsubida 12/12.
 - **9t · confirmación 44658035571 (20 nov) cazó 4 clases, arregladas con guardián y al revés:** (1) a11y9c medía la bienvenida de /entrar en vez de
   /comunidad (Marisol sin Comunidad en una base nueva) → precondición propia + «es la pantalla pedida» + letra grande restaurada en un finally (por
   eso caía apt4f después); (2) OnbTopBar con botones de 44 pedía 405 px en la celda de grid de Entrar → la página se ensanchaba y «Continuar» quedaba
