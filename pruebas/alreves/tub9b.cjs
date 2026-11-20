@@ -34,7 +34,7 @@ const pinta = (p, x0, y0, w, h, c) => { for (let y = y0; y < y0 + h; y++) for (l
   const y = fs.readFileSync(path.join(R, '.github/workflows/ci.yml'), 'utf8');
   for (const j of ['verificar', 'seguridad', 'web', 'regresion', 'dispositivos', 'tuberia']) ok(new RegExp(`\\n  ${j}:\\n`).test(y), `el CI tiene el trabajo «${j}»`);
   const g = execSync('node guardianes/run.mjs --solo tuberiaNoSeSalta', { cwd: R, stdio: 'pipe' }).toString();
-  ok(/sin fallos/.test(g), 'el guardián tuberiaNoSeSalta pasa: «tuberia» exige todo y la regresión corre en sus 8 trabajos');
+  ok(/sin fallos/.test(g), 'el guardián tuberiaNoSeSalta pasa: «tuberia» exige todo y cada carril largo corre entero (en 1 o en 4 partes)');
   // (2) Las dos corridas del CI quedaron anotadas con su id.
   if (process.env.GITHUB_ACTIONS) { console.log('  · (2) no se comprueba dentro del propio CI (sería circular: las corridas se anotan DESPUÉS); se comprueba en la máquina y en la revisión'); return; }
   const pr = fs.readFileSync(path.join(R, 'docs/PROGRESS.md'), 'utf8'), sec = pr.slice(pr.indexOf('## Fase 9 · 9b-2'));

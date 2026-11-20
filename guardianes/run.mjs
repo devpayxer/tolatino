@@ -7917,8 +7917,17 @@ const guardianes = {
     if (!/on:[\s\S]*?push:[\s\S]*?branches: \[main\]/.test(y) || !/\n  pull_request:/.test(y) || !/schedule:/.test(y)) falla(G, Y, 0, "el CI corre en push a main, en pull_request y programado");
     if (!/- cron: "\d+ \d+ \* \* \*"\n\s+- cron: "\d+ \d+ \* \* \*"/.test(y)) falla(G, Y, 0, "el CI se programa a dos horas distintas del día");
     const rg = /\n  regresion:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";
-    for (const g of ["alreves", "fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios"]) if (!rg.includes(`--grupo ${g}"`)) falla(G, Y, 0, `la regresión no corre «--grupo ${g}»: toda la punta a punta va en UN trabajo, en el orden de las fases (las pruebas se heredan datos; repartida en trabajos con base propia fallaban 30 de 199) y las pruebas al revés en el suyo`);
-    if (/--parte/.test(rg)) falla(G, Y, 0, "la regresión no se reparte con --parte: las pruebas de una fase dependen de las anteriores");
+    for (const g of ["alreves", "fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios"]) if (!rg.includes(`--grupo ${g}'`)) falla(G, Y, 0, `la regresión no corre «--grupo ${g}» (toda la punta a punta en el orden de las fases y las pruebas al revés en su carril)`);
+    // 20 nov · Reparto en partes (input «partes»): cada carril largo (regresión, confirmación, anchos) en n trabajos con base nueva, por posición
+    // (--parte i/n). Se permite porque cada prueba prepara sus datos (precondicionPropia); lo que se teme es un reparto a medias: una parte que no
+    // corre (la matriz sin la parte o un --parte fijo) o un carril que se reparte y otro no.
+    const cf = /\n  confirmacion:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "", an0 = /\n  anchos:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";
+    const PM = "parte: ${{ fromJSON((inputs.partes || '1') == '4' && '[1,2,3,4]' || '[1]') }}", PA = "--parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}";
+    for (const [k, t, n] of [["regresion", rg, 1], ["confirmacion", cf, 2], ["anchos", an0, 1]]) {
+      if (!t.includes(PM)) falla(G, Y, 0, `«${k}» no reparte su matriz en las partes pedidas (${PM})`);
+      if (t.split(PA).length - 1 !== n || (t.match(/--parte /g) ?? []).length !== n) falla(G, Y, 0, `«${k}»: cada corrida lleva ${PA} (ni fija ni olvidada)`);
+    }
+    if (!/\n      partes:\n[\s\S]*?options: \["1", "4"\]/.test(y)) falla(G, Y, 0, "falta el input «partes» (1 o 4)");
     if (!/\n  confirmacion:\n[\s\S]*?inputs\.confirmar == 'si'/.test(y)) falla(G, Y, 0, "falta el trabajo «confirmacion» (dos veces seguidas y barajada, a mano con confirmar=si)");
     // 9c · La punta a punta entera en los anchos extremos, de noche (L1511): el trabajo «anchos» corre programado y cuenta en «tuberia».
     const an = /\n  anchos:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";

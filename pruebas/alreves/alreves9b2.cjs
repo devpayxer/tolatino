@@ -26,8 +26,11 @@ const casos = [
   // tuberiaNoSeSalta: «tuberia» sin una parte, saltando lo saltado, un grupo de la regresión fuera de la matriz, un continue-on-error
   ['tuberiaNoSeSalta', Y, 'needs: [verificar, seguridad, regresion, dispositivos, confirmacion, anchos]', 'needs: [verificar, regresion, dispositivos, confirmacion, anchos]'],
   ['tuberiaNoSeSalta', Y, 'const ok = v.result === "success" || (v.result === "skipped" && parcial);', 'const ok = v.result !== "failure";'],
-  ['tuberiaNoSeSalta', Y, 'fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios" }', 'fase1,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios" }'],
-  ['tuberiaNoSeSalta', Y, 'timeout-minutes: 300\n', 'timeout-minutes: 300\n    # --parte 1/3\n'],
+  ['tuberiaNoSeSalta', Y, "'--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}", "'--grupo fase1,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}"],
+  // 20 nov · el reparto en partes a medias: una parte fija, una matriz sin partes, la segunda pasada de la confirmación sin su parte.
+  ['tuberiaNoSeSalta', Y, "fase9,varios') }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}", "fase9,varios') }} --parte 1/4"],
+  ['tuberiaNoSeSalta', Y, "        id: [iphone-se, ipad, escritorio-1024]\n        parte: ${{ fromJSON((inputs.partes || '1') == '4' && '[1,2,3,4]' || '[1]') }}\n", "        id: [iphone-se, ipad, escritorio-1024]\n        parte: [1]\n"],
+  ['tuberiaNoSeSalta', Y, "        if: ${{ matrix.nombre == 'dos veces seguidas' }}\n        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}", "        if: ${{ matrix.nombre == 'dos veces seguidas' }}\n        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios"],
   ['tuberiaVisual', Y, '    timeout-minutes: 40\n', '    timeout-minutes: 40\n    continue-on-error: true\n'],
 ];
 // borrar: la captura aprobada de una pantalla en un dispositivo (el CI la tomaría como «nueva» y el guardián la echa en falta)
